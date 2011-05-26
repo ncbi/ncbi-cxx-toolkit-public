@@ -403,42 +403,42 @@ class NCBI_XCONNECT_EXPORT CConn_HttpStream : public CConn_IOStream
 {
 public:
     CConn_HttpStream
-    (const string&        host,
-     const string&        path,
-     const string&        args            = kEmptyStr,
-     const string&        user_header     = kEmptyStr,
-     unsigned short       port            = 80,
-     THCC_Flags           flags           = fHCC_AutoReconnect,
-     const STimeout*      timeout         = kDefaultTimeout,
-     streamsize           buf_size        = kConn_DefaultBufSize
+    (const string&       host,
+     const string&       path,
+     const string&       args         = kEmptyStr,
+     const string&       user_header  = kEmptyStr,
+     unsigned short      port         = 80/*HTTP*/,
+     THTTP_Flags         flags        = fHCC_AutoReconnect,
+     const STimeout*     timeout      = kDefaultTimeout,
+     streamsize          buf_size     = kConn_DefaultBufSize
      );
 
     CConn_HttpStream
-    (const string&        url,
-     THCC_Flags           flags           = fHCC_AutoReconnect,
-     const STimeout*      timeout         = kDefaultTimeout,
-     streamsize           buf_size        = kConn_DefaultBufSize
+    (const string&       url,
+     THTTP_Flags         flags        = fHCC_AutoReconnect,
+     const STimeout*     timeout      = kDefaultTimeout,
+     streamsize          buf_size     = kConn_DefaultBufSize
      );
 
     CConn_HttpStream
-    (const string&        url,
-     const SConnNetInfo*  net_info,
-     const string&        user_header     = kEmptyStr,
-     THCC_Flags           flags           = fHCC_AutoReconnect,
-     const STimeout*      timeout         = kDefaultTimeout,
-     streamsize           buf_size        = kConn_DefaultBufSize
+    (const string&       url,
+     const SConnNetInfo* net_info,
+     const string&       user_header  = kEmptyStr,
+     THTTP_Flags         flags        = fHCC_AutoReconnect,
+     const STimeout*     timeout      = kDefaultTimeout,
+     streamsize          buf_size     = kConn_DefaultBufSize
      );
 
     CConn_HttpStream
-    (const SConnNetInfo*  net_info        = 0,
-     const string&        user_header     = kEmptyStr,
-     FHttpParseHTTPHeader parse_header    = 0,
-     FHttpAdjustNetInfo   adjust_net_info = 0,
-     void*                adjust_data     = 0,
-     FHttpAdjustCleanup   adjust_cleanup  = 0,
-     THCC_Flags           flags           = fHCC_AutoReconnect,
-     const STimeout*      timeout         = kDefaultTimeout,
-     streamsize           buf_size        = kConn_DefaultBufSize
+    (const SConnNetInfo* net_info     = 0,
+     const string&       user_header  = kEmptyStr,
+     FHTTP_ParseHeader   parse_header = 0,
+     void*               user_data    = 0,
+     FHTTP_Adjust        adjust       = 0,
+     FHTTP_Cleanup       cleanup      = 0,
+     THTTP_Flags         flags        = fHCC_AutoReconnect,
+     const STimeout*     timeout      = kDefaultTimeout,
+     streamsize          buf_size     = kConn_DefaultBufSize
      );
 
 private:

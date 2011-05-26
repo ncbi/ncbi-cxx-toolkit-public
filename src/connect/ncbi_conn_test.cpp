@@ -286,7 +286,7 @@ EIO_Status CConnTest::HttpOkay(string* reason)
 
 
 extern "C" {
-static int s_ParseHttpHeader(const char* header, void* data, int server_error)
+static int s_ParseHeader(const char* header, void* data, int server_error)
 {
     _ASSERT(data);
     *((int*) data) =
@@ -308,7 +308,7 @@ EIO_Status CConnTest::DispatcherOkay(string* reason)
 
     int okay = 0;
     CConn_HttpStream http(net_info, kEmptyStr/*user_header*/,
-                          s_ParseHttpHeader, 0, &okay, 0,
+                          s_ParseHeader, &okay, 0/*adjust*/, 0/*cleanup*/,
                           0/*flags*/, m_Timeout);
     CIOGuard guard(m_IO, http);
     char buf[1024];

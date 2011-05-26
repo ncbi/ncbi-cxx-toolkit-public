@@ -50,10 +50,10 @@
 extern "C" {
 #endif
 
-
-typedef const SSERV_Info* (*FSERVICE_GetNextInfo)(SERV_ITER iter, void* data);
-typedef void              (*FSERVICE_CleanupData)(void* data);
+    
 typedef void              (*FSERVICE_ResetData)  (void* data);
+typedef void              (*FSERVICE_CleanupData)(void* data);
+typedef const SSERV_Info* (*FSERVICE_GetNextInfo)(void* data, SERV_ITER iter);
 
 
 typedef struct {
@@ -61,7 +61,8 @@ typedef struct {
     FSERVICE_ResetData   reset;         /* called at each close (before iter)*/
     FSERVICE_CleanupData cleanup;       /* called at destruction             */
     FSERVICE_GetNextInfo get_next_info; /* called to get conn point          */
-    THCC_Flags           flags;         /* fHCC_Flushable | fHCC_NoAutoRetry */
+    FHTTP_ParseHeader    parse_header;  /* called if data source is HTTP     */
+    THTTP_Flags          flags;         /* fHCC_Flushable | fHCC_NoAutoRetry */
 } SSERVICE_Extra;
 
 

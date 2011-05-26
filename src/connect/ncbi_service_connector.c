@@ -118,25 +118,24 @@ static void s_Reset(SMetaConnector *meta, CONNECTOR connector)
 }
 
 
-#ifdef __cplusplus
-extern "C" {
-    static int s_ParseHeader(const char*, void*, int);
-}
-#endif /* __cplusplus */
-
 static int/*bool*/ s_ParseHeader(const char* header,
-                                 void*       data,
-                                 int         server_error)
+                                 void*       user_data,
+                                 int         server_error,
+                                 int/*bool*/ callback_enabled)
 {
     static const char   kStateless[] = "TRY_STATELESS";
     static const size_t klen = sizeof(kStateless) - 1;
-    SServiceConnector* uuu = (SServiceConnector*) data;
+    SServiceConnector* uuu = (SServiceConnector*) user_data;
 
     SERV_Update(uuu->iter, header, server_error);
+    if (callback_enabled  &&  uuu->params.parse_header  &&
+        !uuu->params.parse_header(header, uuu->params.data, server_error)) {
+        return 0/*failure*/;
+    }
     if (server_error)
         return 1/*parsed okay*/;
 
-    while (header && *header) {
+    while (header  &&  *header) {
         if (strncasecmp(header, HTTP_CONNECTION_INFO,
                         sizeof(HTTP_CONNECTION_INFO) - 1) == 0) {
             unsigned int  i1, i2, i3, i4, ticket;
@@ -180,6 +179,26 @@ static int/*bool*/ s_ParseHeader(const char* header,
 
     uuu->host = 0;
     return 0/*failure*/;
+}
+
+
+#ifdef __cplusplus
+extern "C" {
+    static int s_ParseHeaderUCB  (const char*, void*);
+    static int s_ParseHeaderNoUCB(const char*, void*);
+}
+#endif /* __cplusplus */
+
+
+static int s_ParseHeaderUCB  (const char* header, void* data, int server_error)
+{
+    return s_ParseHeader(header, data, server_error, 1/*enable CB*/);
+}
+
+
+static int s_ParseHeaderNoUCB(const char* header, void* data, int server_error)
+{
+    return s_ParseHeader(header, data, server_error, 0/*disable CB*/);
 }
 
 
@@ -311,10 +330,9 @@ static const char* s_AdjustNetParams(const char*    service,
 
 static const SSERV_Info* s_GetNextInfo(SServiceConnector* uuu)
 {
-    if (uuu->params.get_next_info)
-        return uuu->params.get_next_info(uuu->iter, uuu->params.data);
-    else
-        return SERV_GetNextInfo(uuu->iter);
+    return uuu->params.get_next_info
+        ? (*uuu->params.get_next_info)(uuu->params.data, uuu->iter)
+        : SERV_GetNextInfo(uuu->iter);
 }
 
 
@@ -328,15 +346,15 @@ static const SSERV_Info* s_GetNextInfo(SServiceConnector* uuu)
 
 #ifdef __cplusplus
 extern "C" {
-    static int s_AdjustNetInfo(SConnNetInfo*, void*, unsigned int);
+    static int s_Adjust(SConnNetInfo*, void*, unsigned int);
 }
 #endif /* __cplusplus */
 
 /*ARGSUSED*/
 /* This callback is only for services called via direct HTTP */
-static int/*bool*/ s_AdjustNetInfo(SConnNetInfo* net_info,
-                                   void*         data,
-                                   unsigned int  n)
+static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
+                            void*         data,
+                            unsigned int  n)
 {
     SServiceConnector* uuu = (SServiceConnector*) data;
     const char* user_header;
@@ -438,7 +456,7 @@ static CONNECTOR s_CreateSocketConnector(const SConnNetInfo* net_info,
 {
     if (*net_info->http_proxy_host) {
         SOCK sock = 0;
-        EIO_Status status = HTTP_CreateTunnelEx(net_info, fHCC_NoAutoRetry,
+        EIO_Status status = HTTP_CreateTunnelEx(net_info, fHTTP_NoAutoRetry,
                                                 init_data, init_size, &sock);
         if (status == eIO_Success) {
             assert(sock);
@@ -608,10 +626,10 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         uuu->ticket = 0;
         net_info->max_try = 1;
         c = HTTP_CreateConnectorEx(net_info,
-                                   (uuu->params.flags & fHCC_Flushable)
-                                   | fHCC_SureFlush/*flags*/,
-                                   s_ParseHeader, 0/*adj.info*/,
-                                   uuu/*adj.data*/, 0/*cleanup.data*/);
+                                   (uuu->params.flags & fHTTP_Flushable)
+                                   | fHTTP_SureFlush/*flags*/,
+                                   s_ParseHeaderNoUCB, uuu/*user_data*/,
+                                   0/*adjust*/, 0/*cleanup*/);
         /* Wait for connection info back (error-transparent by DISPD.CGI) */
         if (c  &&  (status = CONN_Create(c, &conn)) == eIO_Success) {
             CONN_SetTimeout(conn, eIO_Open,      timeout);
@@ -644,10 +662,10 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
     }
     return HTTP_CreateConnectorEx(net_info,
                                   (uuu->params.flags
-                                   & (fHCC_Flushable | fHCC_NoAutoRetry))
-                                  | fHCC_AutoReconnect,
-                                  s_ParseHeader, s_AdjustNetInfo,
-                                  uuu/*adj.data*/, 0/*cleanup.data*/);
+                                   & (fHTTP_Flushable | fHTTP_NoAutoRetry))
+                                  | fHTTP_AutoReconnect,
+                                  s_ParseHeaderUCB, uuu/*user_data*/,
+                                  s_Adjust, 0/*cleanup*/);
 }
 
 
@@ -767,7 +785,7 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
             if ((type = uuu->meta.get_type(uuu->meta.c_get_type)) != 0) {
                 size_t slen = strlen(uuu->service);
                 size_t tlen = strlen(type);
-                char* name = (char*) malloc(slen + tlen + 2);
+                char*  name = (char*) malloc(slen + tlen + 2);
                 if (name) {
                     memcpy(name,        uuu->service, slen);
                     name[slen++] = '/';

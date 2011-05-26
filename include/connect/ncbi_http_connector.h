@@ -38,6 +38,12 @@
 
 #include <connect/ncbi_connutil.h>
 
+#ifndef NCBI_DEPRECATED
+#  define NCBI_HTTP_CONNECTOR_DEPRECATED
+#else
+#  define NCBI_HTTP_CONNECTOR_DEPRECATED NCBI_DEPRECATED
+#endif
+
 
 /** @addtogroup Connectors
  *
@@ -68,9 +74,9 @@ extern "C" {
  * In order to workaround some HTTP communication features, this code does:
  *  1) Accumulate all output data in an internal memory buffer until the
  *     first "Read" (or "Peek", or "Close", or "Wait" on read) is attempted
- *     (also see fHCC_Flushable flag below).
- *  2) On the first "Read" (or "Peek", or "Close", or "Wait" on read), compose
- *     and send the whole HTTP request as:
+ *     (also see fHTTP_Flushable flag below).
+ *  2) On the first "Read" (or "Peek", or "Close", or "Wait" on read),
+ *     compose and send the whole HTTP request as:
  *        {POST|GET} <net_info->path>?<net_info->args> HTTP/1.0\r\n
  *        <user_header\r\n>
  *        Content-Length: <accumulated_data_length>\r\n
@@ -78,8 +84,8 @@ extern "C" {
  *        <accumulated_data>
  *     NOTE:
  *       if <user_header> is neither a NULL pointer nor an empty string, then:
- *       - it must NOT contain any "empty lines":  '\r\n\r\n';
- *       - it must be terminated by a single '\r\n';
+ *       - it must NOT contain any "empty lines":  "\r\n\r\n";
+ *       - it must be terminated by a single "\r\n";
  *       - it gets inserted to the HTTP header "as is", without any
  *         automatic checking or encoding;
  *       - the "user_header" specified in the arguments overrides any user
@@ -87,128 +93,148 @@ extern "C" {
  *         ConnNetInfo_OverrideUserHeader() from <connect/ncbi_connutil.h>.
  *     NOTE:
  *       Data may depart to server side earlier if Flush()'ed in
- *       fHCC_Flushable connector, see below in "flags".
+ *       fHTTP_Flushable connector, see below in "flags".
  *  3) After the request has been sent, then the response data from
  *     the peer (usually a CGI program) can be actually read out.
  *  4) On any "Write" operation, which follows data reading, the connection
  *     to the peer is forcedly closed (the peer CGI process will presumably
  *     die if it has not done so yet on its own), and data to be written
- *     again are stored in the buffer until next "Read" etc, see item 1).
+ *     again get stored in the buffer until next "Read" etc, see item 1).
  *
- *  *) If "fHCC_AutoReconnect" is set in "flags", then the connector makes
+ *  *) If "fHTTP_AutoReconnect" is set in "flags", then the connector makes
  *     an automatic reconnect to the same URL with just the same parameters
  *     for each micro-session steps (1,2,3) repeated.
  *
- *     If "fHCC_AutoReconnect" is not set then only a single
+ *     If "fHTTP_AutoReconnect" is not set then only a single
  *     "Write ... Write Read ... Read" micro-session is allowed, any
  *     following "Write" attempt fails with an error "eIO_Closed".
  *
  *  Other flags:
  *
- *  fHCC_SureFlush --
+ *  fHTTP_SureFlush --
  *       make the connector to send at least the HTTP header on "CLOSE" and
  *       re-"CONNECT", even if no data was written
- *  fHCC_KeepHeader --
+ *  fHTTP_KeepHeader --
  *       do not strip HTTP header (i.e. everything up to the first "\r\n\r\n",
- *       including the "\r\n\r\n") from the CGI script's response
+ *       including the "\r\n\r\n") from the CGI script's response (including
+ *       any server error, which then is made available for reading as well)
  *       NOTE this flag disables automatic authorization, redirection, etc.
- *  fHCC_UrlDecodeInput --
+ *  fHTTP_UrlDecodeInput --
  *       assume the response body single-part, URL-encoded; perform the
  *       URL-decoding on read, and deliver decoded data to the user
- *  fHCC_DropUnread --
+ *  fHTTP_DropUnread --
  *       do not collect incoming data in "Read" mode before switching into
  *       "Write" mode for storing output data in buffer;  by default all
  *       data sent by the CGI program are stored even if not all requested
  *       before "Write" following "Read" was issued (stream emulation)
- *  fHCC_NoUpread --
+ *  fHTTP_NoUpread --
  *       do *not* do internal reading into temporary buffer while sending
  *       data to HTTP server; by default any send operation tries to
  *       extract data(if any) coming back from the CGI program in order to
  *       prevent connection blocking (due to data clogging)
- *  fHCC_Flushable --
+ *  fHTTP_Flushable --
  *       by default all data written to the connection are kept until
  *       read begins (even though Flush() might have been called in between
  *       the writes);  with this flag set, Flush() will result the data
  *       to be actually sent to server side, so the following write will form
  *       new request, and not get added to the previous one
- *  fHCC_InsecureRedirect --
+ *  fHTTP_InsecureRedirect --
  *       for security reasons the following redirects comprise security risk
  *       and, thus, are prohibited:  switching from https to http, and
  *       re-posting data (regardless of the transport, either http or https);
  *       this flag allows such redirects (if needed) to be honored
- *  fHCC_NoAutoRetry --
+ *  fHTTP_NoAutoRetry --
  *       do not attempt any auto-retries in case of failing connections
  *       (this flag effectively means having SConnNetInfo::max_try set to 1)
  *
- * NOTE: the URL encoding/decoding (in the "fHCC_Url_*" cases and
+ * NOTE: the URL encoding/decoding (in the "fHTTP_Url_*" cases and
  *       "net_info->args") is performed by URL_Encode() and URL_Decode()
  *       -- see "ncbi_connutil.[ch]".
  *
  * @sa
- *  SConnNetInfo, ConnNetInfo_OverriderUserHeader, URL_Encode, URL_Decode
+ *  SConnNetInfo, ConnNetInfo_OverrideUserHeader, URL_Encode, URL_Decode
  */
 
 typedef enum {
-    fHCC_AutoReconnect    = 0x1,  /* see (*) above                           */
-    fHCC_SureFlush        = 0x2,  /* always send HTTP request on CLOSE/RECONN*/
-    fHCC_KeepHeader       = 0x4,  /* dont strip HTTP header from CGI response*/
-    fHCC_UrlDecodeInput   = 0x8,  /* URL-decode content of the response body */
-    fHCC_UrlEncodeOutput  = 0x10, /* URL-encode all output data              */
-    fHCC_UrlCodec         = 0x18, /* fHCC_UrlDecodeInput | ...EncodeOutput   */
-    fHCC_UrlEncodeArgs    = 0x20, /* URL-encode "info->args"                 */
-    fHCC_DropUnread       = 0x40, /* each microsession drops yet unread data */
-    fHCC_NoUpread         = 0x80, /* do not use SOCK_SetReadOnWrite() at all */
-    fHCC_Flushable        = 0x100,/* connector will really flush on Flush()  */
-    fHCC_InsecureRedirect = 0x200,/* any redirect will be honored            */
-    fHCC_NoAutoRetry      = 0x400,/* no auto-retries allowed                 */
-    fHCC_DetachableTunnel = 0x800 /* SOCK_Close() won't close the OS handle  */
+    fHTTP_AutoReconnect   = 0x1,  /* see (*) above                           */
+    fHTTP_SureFlush       = 0x2,  /* always send HTTP request on CLOSE/RECONN*/
+    fHTTP_KeepHeader      = 0x4,  /* dont strip HTTP header from CGI response*/
+    fHTTP_UrlDecodeInput  = 0x8,  /* URL-decode content of the response body */
+    fHTTP_UrlEncodeOutput = 0x10, /* URL-encode all output data              */
+    fHTTP_UrlCodec        = 0x18, /* fHTTP_UrlDecodeInput | ...EncodeOutput  */
+    fHTTP_UrlEncodeArgs   = 0x20, /* URL-encode "info->args"                 */
+    fHTTP_DropUnread      = 0x40, /* each microsession drops yet unread data */
+    fHTTP_NoUpread        = 0x80, /* do not use SOCK_SetReadOnWrite() at all */
+    fHTTP_Flushable       = 0x100,/* connector will really flush on Flush()  */
+    fHTTP_InsecureRedirect= 0x200,/* any redirect will be honored            */
+    fHTTP_NoAutoRetry     = 0x400,/* no auto-retries allowed                 */
+    fHTTP_DetachableTunnel= 0x800 /* SOCK_Close() won't close the OS handle  */
+} EHTTP_Flags;
+NCBI_HTTP_CONNECTOR_DEPRECATED
+typedef enum {
+    /* DEPRECATED, do not use! */
+    fHCC_AutoReconnect    = fHTTP_AutoReconnect,
+    fHCC_SureFlush        = fHTTP_SureFlush,
+    fHCC_KeepHeader       = fHTTP_KeepHeader,
+    fHCC_UrlDecodeInput   = fHTTP_UrlDecodeInput,
+    fHCC_UrlEncodeOutput  = fHTTP_UrlEncodeOutput,
+    fHCC_UrlCodec         = fHTTP_UrlCodec,
+    fHCC_UrlEncodeArgs    = fHTTP_UrlEncodeArgs,
+    fHCC_DropUnread       = fHTTP_DropUnread,
+    fHCC_NoUpread         = fHTTP_NoUpread,
+    fHCC_Flushable        = fHTTP_Flushable,
+    fHCC_InsecureRedirect = fHTTP_InsecureRedirect,
+    fHCC_NoAutoRetry      = fHTTP_NoAutoRetry,
+    fHCC_DetachableTunnel = fHTTP_DetachableTunnel
 } EHCC_Flags;
-typedef unsigned int THCC_Flags;  /* bitwise OR of "EHCC_Flags"              */
+NCBI_HTTP_CONNECTOR_DEPRECATED
+typedef unsigned int THCC_Flags;   /* bitwise OR of "EHCC_Flags", deprecated */
+typedef unsigned int THTTP_Flags;  /* bitwise OR of "EHTTP_Flags"            */
 
 extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnector
 (const SConnNetInfo* net_info,
  const char*         user_header,
- THCC_Flags          flags
+ THTTP_Flags         flags
  );
 
 
-/* An extended version of HTTP_CreateConnector() is able to change the URL
- * of the server "on-the-fly":
- *  - "parse_http_hdr()" is called each time a new HTTP response header is
- *     received from the server, and only if fHCC_KeepHeader is NOT set;
- *     a zero (false) return value is equivalent of having an error from
- *     the HTTP server itself.
- *  - "adjust_net_info()" is invoked each time before starting a
- *     new "HTTP micro-session" making a hit when a prior hit has failed;
- *     it is passed "net_info" stored in the connector, and the number of
- *     previously unsuccessful attempts since the connection was opened;
- *     a zero (false) return value ends the retry attempts.
- *  - "adjust_cleanup()" is called when the connector is about to be destroyed.
+/* An extended version of HTTP_CreateConnector() is able to change
+ * the URL of the server "on-the-fly":
+ *  - "FHTTP_ParseHeader()" is called every time a new HTTP response header
+ *    is received from the server, and only if fHTTP_KeepHeader is NOT set;
+ *    a zero (false) return value is equivalent of having an error from
+ *    the HTTP server itself;
+ *  - "FHTTP_Adjust()" is invoked every time before starting a new
+ *    "HTTP micro-session" making a hit when previous hit has failed;
+ *    it is passed "net_info" stored in the connector, and the number of
+ *    previously unsuccessful attempts since the connection was opened;
+ *    a zero (false) return value ends retry attempts;
+ *  - "FHTTP_Cleanup()" is called when the connector is about to be destroyed.
  */
 
-typedef int/*bool*/ (*FHttpParseHTTPHeader)
-(const char* http_header,           /* HTTP header to parse, '\0'-terminated */
- void*       adjust_data,           /* supplemental user data                */
- int         server_error           /* != 0 if HTTP error                    */
+typedef int/*bool*/ (*FHTTP_ParseHeader)
+(const char*         http_header,   /* HTTP header to parse, '\0'-terminated */
+ void*               user_data,     /* supplemental user data                */
+ int                 server_error   /* != 0 if HTTP error                    */
  );
 
-typedef int/*bool*/ (*FHttpAdjustNetInfo)
-(SConnNetInfo* net_info,            /* net_info to adjust (in place)         */
- void*         adjust_data,         /* supplemental user data                */
- unsigned int  failure_count        /* how many failures since open          */
+typedef int/*bool*/ (*FHTTP_Adjust)
+(SConnNetInfo*       net_info,      /* net_info to adjust (in place)         */
+ void*               user_data,     /* supplemental user data                */
+ unsigned int        failure_count  /* how many failures since open          */
  );
 
-typedef void (*FHttpAdjustCleanup)
-(void* adjust_data                  /* supplemental user data for cleanup    */
+typedef void        (*FHTTP_Cleanup)
+(void*               user_data      /* supplemental user data for cleanup    */
  );
 
 extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnectorEx
-(const SConnNetInfo*  net_info,
- THCC_Flags           flags,
- FHttpParseHTTPHeader parse_http_hdr, /* may be NULL, then no addtl. parsing */
- FHttpAdjustNetInfo   adjust_net_info,/* may be NULL, then no adjustments    */
- void*                adjust_data,    /* for "adjust_info" & "adjust_cleanup"*/
- FHttpAdjustCleanup   adjust_cleanup  /* may be NULL                         */
+(const SConnNetInfo* net_info,
+ THTTP_Flags         flags,
+ FHTTP_ParseHeader   parse_header,  /* may be NULL, then no addtl. parsing   */
+ void*               user_data,     /* user data for HTTP callbacks (CBs)    */
+ FHTTP_Adjust        adjust,        /* may be NULL, then no adjustments      */
+ FHTTP_Cleanup       cleanup        /* may be NULL, then no cleanup          */
  );
 
 
@@ -225,7 +251,7 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnectorEx
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status HTTP_CreateTunnelEx
 (const SConnNetInfo* net_info,
- THCC_Flags          flags,
+ THTTP_Flags         flags,
  const void*         init_data,
  size_t              init_size,
  SOCK*               sock
@@ -235,7 +261,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status HTTP_CreateTunnelEx
 /* Same as HTTP_CreateTunnelEx(net_info, flags, 0, 0, sock) */
 extern NCBI_XCONNECT_EXPORT EIO_Status HTTP_CreateTunnel
 (const SConnNetInfo* net_info,
- THCC_Flags          flags,
+ THTTP_Flags         flags,
  SOCK*               sock
  );
 

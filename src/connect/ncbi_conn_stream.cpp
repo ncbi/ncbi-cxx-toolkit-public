@@ -207,8 +207,8 @@ static CONNECTOR s_TunneledSocketConnector(const SConnNetInfo* net_info,
     _ASSERT(net_info);
     if (*net_info->http_proxy_host) {
         SOCK s = 0;
-        status = HTTP_CreateTunnel(net_info, fHCC_DetachableTunnel
-                                   | fHCC_NoAutoRetry, &s);
+        status = HTTP_CreateTunnel(net_info, fHTTP_DetachableTunnel
+                                   | fHTTP_NoAutoRetry, &s);
         if (status == eIO_Success) {
             size_t handle_size = SOCK_OSHandleSize();
             char*  handle      = new char[handle_size];
@@ -299,24 +299,24 @@ struct Deleter<SConnNetInfo>
 };
 
 
-static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo*  a_net_info,
-                                        const char*          url,
-                                        const char*          host,
-                                        unsigned short       port,
-                                        const char*          path,
-                                        const char*          args,
-                                        const char*          user_header,
-                                        FHttpParseHTTPHeader parse_header,
-                                        FHttpAdjustNetInfo   adjust_net_info,
-                                        void*                adjust_data,
-                                        FHttpAdjustCleanup   adjust_cleanup,
-                                        THCC_Flags           flags,
-                                        const STimeout*      timeout)
+static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo* x_net_info,
+                                        const char*         url,
+                                        const char*         host,
+                                        unsigned short      port,
+                                        const char*         path,
+                                        const char*         args,
+                                        const char*         user_header,
+                                        FHTTP_ParseHeader   parse_header,
+                                        void*               user_data,
+                                        FHTTP_Adjust        adjust,
+                                        FHTTP_Cleanup       cleanup,
+                                        THTTP_Flags         flags,
+                                        const STimeout*     timeout)
 {
     size_t len;
     AutoPtr<SConnNetInfo>
-        net_info(a_net_info
-                 ? ConnNetInfo_Clone(a_net_info) : ConnNetInfo_Create(0));
+        net_info(x_net_info
+                 ? ConnNetInfo_Clone(x_net_info) : ConnNetInfo_Create(0));
     if (!net_info.get()) {
         NCBI_THROW(CIO_Exception, eUnknown,
                    "CConn_HttpStream::CConn_HttpStream():  Out of memory");
@@ -355,23 +355,19 @@ static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo*  a_net_info,
         net_info->timeout = &net_info->tmo;
     } else if (!timeout)
         net_info->timeout = 0;
-    return HTTP_CreateConnectorEx(net_info.get(),
-                                  flags,
-                                  parse_header,
-                                  adjust_net_info,
-                                  adjust_data,
-                                  adjust_cleanup);
+    return HTTP_CreateConnectorEx(net_info.get(), flags,
+                                  parse_header, user_data, adjust, cleanup);
 }
 
 
-CConn_HttpStream::CConn_HttpStream(const string&   host,
-                                   const string&   path,
-                                   const string&   args,
-                                   const string&   user_header,
-                                   unsigned short  port,
-                                   THCC_Flags      flags,
-                                   const STimeout* timeout,
-                                   streamsize      buf_size)
+CConn_HttpStream::CConn_HttpStream(const string&       host,
+                                   const string&       path,
+                                   const string&       args,
+                                   const string&       user_header,
+                                   unsigned short      port,
+                                   THTTP_Flags         flags,
+                                   const STimeout*     timeout,
+                                   streamsize          buf_size)
     : CConn_IOStream(s_HttpConnectorBuilder(0,
                                             0,
                                             host.c_str(),
@@ -392,7 +388,7 @@ CConn_HttpStream::CConn_HttpStream(const string&   host,
 
 
 CConn_HttpStream::CConn_HttpStream(const string&       url,
-                                   THCC_Flags          flags,
+                                   THTTP_Flags         flags,
                                    const STimeout*     timeout,
                                    streamsize          buf_size)
     : CConn_IOStream(s_HttpConnectorBuilder(0,
@@ -417,7 +413,7 @@ CConn_HttpStream::CConn_HttpStream(const string&       url,
 CConn_HttpStream::CConn_HttpStream(const string&       url,
                                    const SConnNetInfo* net_info,
                                    const string&       user_header,
-                                   THCC_Flags          flags,
+                                   THTTP_Flags         flags,
                                    const STimeout*     timeout,
                                    streamsize          buf_size)
     : CConn_IOStream(s_HttpConnectorBuilder(net_info,
@@ -439,15 +435,15 @@ CConn_HttpStream::CConn_HttpStream(const string&       url,
 }
 
 
-CConn_HttpStream::CConn_HttpStream(const SConnNetInfo*  net_info,
-                                   const string&        user_header,
-                                   FHttpParseHTTPHeader parse_header,
-                                   FHttpAdjustNetInfo   adjust_net_info,
-                                   void*                adjust_data,
-                                   FHttpAdjustCleanup   adjust_cleanup,
-                                   THCC_Flags           flags,
-                                   const STimeout*      timeout,
-                                   streamsize           buf_size)
+CConn_HttpStream::CConn_HttpStream(const SConnNetInfo* net_info,
+                                   const string&       user_header,
+                                   FHTTP_ParseHeader   parse_header,
+                                   void*               user_data,
+                                   FHTTP_Adjust        adjust,
+                                   FHTTP_Cleanup       cleanup,
+                                   THTTP_Flags         flags,
+                                   const STimeout*     timeout,
+                                   streamsize          buf_size)
     : CConn_IOStream(s_HttpConnectorBuilder(net_info,
                                             0,
                                             0,
@@ -456,9 +452,9 @@ CConn_HttpStream::CConn_HttpStream(const SConnNetInfo*  net_info,
                                             0,
                                             user_header.c_str(),
                                             parse_header,
-                                            adjust_net_info,
-                                            adjust_data,
-                                            adjust_cleanup,
+                                            user_data,
+                                            adjust,
+                                            cleanup,
                                             flags,
                                             timeout),
                      timeout, buf_size)
@@ -469,13 +465,13 @@ CConn_HttpStream::CConn_HttpStream(const SConnNetInfo*  net_info,
 
 static CONNECTOR s_ServiceConnectorBuilder(const char*           service,
                                            TSERV_Type            types,
-                                           const SConnNetInfo*   _net_info,
+                                           const SConnNetInfo*   x_net_info,
                                            const SSERVICE_Extra* params,
                                            const STimeout*       timeout)
 {
     AutoPtr<SConnNetInfo>
-        net_info(_net_info ?
-                 ConnNetInfo_Clone(_net_info) : ConnNetInfo_Create(service));
+        net_info(x_net_info ?
+                 ConnNetInfo_Clone(x_net_info) : ConnNetInfo_Create(service));
     if (!net_info.get()) {
         NCBI_THROW(CIO_Exception, eUnknown,
                    "CConn_ServiceStream::CConn_ServiceStream(): "
@@ -649,9 +645,9 @@ CConn_FtpStream::CConn_FtpStream(const string&        host,
                                  TFTP_Flags           flag,
                                  const SFTP_Callback* cmcb,
                                  const STimeout*      timeout)
-    : CConn_IOStream(FTP_CreateConnectorEx(host.c_str(), port,
-                                           user.c_str(), pass.c_str(),
-                                           path.c_str(), flag, cmcb),
+    : CConn_IOStream(FTP_CreateConnectorSimple(host.c_str(), port,
+                                               user.c_str(), pass.c_str(),
+                                               path.c_str(), flag, cmcb),
                      timeout, 0/*must be unbuffered*/, false/*untied*/)
 {
     return;
