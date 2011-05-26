@@ -459,15 +459,22 @@ void CNetCacheAPI::Remove(const string& blob_id)
 void CNetCacheAPI::PrintBlobInfo(const string& blob_id)
 {
     CNetCacheKey key(blob_id);
-    CNetServerMultilineCmdOutput output(
-        m_Impl->ExecMirrorAware(key, m_Impl->MakeCmd("GETMETA ", key)));
+
+    string cmd(m_Impl->MakeCmd("GETMETA ", key));
+    cmd.append(m_Impl->m_Service->m_EnforcedServerHost.empty() ? " 0" : " 1");
+
+    CNetServerMultilineCmdOutput output(m_Impl->ExecMirrorAware(key, cmd));
 
     output->SetNetCacheCompatMode();
 
     string line;
 
-    while (output.ReadLine(line))
-        NcbiCout << line << NcbiEndl;
+    if (output.ReadLine(line)) {
+        if (!NStr::StartsWith(line, "SIZE="))
+            printf("%s\n", line.c_str());
+        while (output.ReadLine(line))
+            printf("%s\n", line.c_str());
+    }
 }
 
 
