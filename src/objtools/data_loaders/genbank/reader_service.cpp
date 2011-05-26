@@ -154,7 +154,7 @@ static void s_ScanInfoCleanup(void* data)
 }
 
 
-static const SSERV_Info* s_ScanInfoGetNextInfo(SERV_ITER iter, void* data)
+static const SSERV_Info* s_ScanInfoGetNextInfo(void* data, SERV_ITER iter)
 {
     SServerScanInfo* scan_info = static_cast<SServerScanInfo*>(data);
     const SSERV_Info* info = SERV_GetNextInfo(iter);
