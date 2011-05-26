@@ -135,17 +135,17 @@ typedef struct {
     char            pass[64];         /* password (if any)                   */
     char            host[256];        /* host to connect to                  */
     unsigned short  port;             /* port to connect to, host byte order */
-    char            path[1024];       /* service: path(e.g. to  a CGI script)*/
-    char            args[1024];       /* service: args(e.g. for a CGI script)*/
+    char            path[1024];       /* path (e.g. to  a CGI script or page)*/
+    char            args[1024];       /* args (e.g. for a CGI script)        */
     EReqMethod      req_method;       /* method to use in the request (HTTP) */
-    const STimeout* timeout;          /* ptr to i/o tmo (infinite if NULL)   */
+    const STimeout* timeout;          /* ptr to I/O timeout(infinite if NULL)*/
     unsigned short  max_try;          /* max. # of attempts to connect (>= 1)*/
     char            http_proxy_host[256]; /* hostname of HTTP proxy server   */
     unsigned short  http_proxy_port;      /* port #   of HTTP proxy server   */
-    char            http_proxy_user[64];  /* http proxy username             */
+    char            http_proxy_user[64];  /* http proxy username (if req'd)  */
     char            http_proxy_pass[64];  /* http proxy password             */
     char            proxy_host[256];  /* CERN-like (non-transp) f/w proxy srv*/
-    EDebugPrintout  debug_printout;   /* printout some debug info            */
+    EDebugPrintout  debug_printout;   /* switch to printout some debug info  */
     int/*bool*/     stateless;        /* to connect in HTTP-like fashion only*/
     int/*bool*/     firewall;         /* to use firewall/relay in connects   */
     int/*bool*/     lb_disable;       /* to disable local load-balancing     */
@@ -513,11 +513,11 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Destroy(SConnNetInfo* info);
  * Note that the result of the above said courtesy can be incorrect for HTTP
  * retrievals through a proxy server (since the built tag would correspond
  * to the proxy connection point, not the actual resource as it should have).
- * Which is why the Host: tag courtesy is to be discontinued in the future.
+ * Which is why the "Host:" tag courtesy is to be discontinued in the future.
  *
  * If "port" is not specified (0) it will be assigned automatically
  * to a well-known standard value depending on the "fSOCK_Secure" bit
- * in the "flags" parameter, when connecting to the HTTP server.
+ * in the "flags" parameter, when connecting to an HTTP server.
  *
  * The "content_length" must specify an exact(!) amount of data that
  * is going to POST (or be sent with CONNECT) to HTTPD (0 if none).
@@ -536,13 +536,13 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Destroy(SConnNetInfo* info);
  * been tunneled, in which case "args" must be a pointer to such data, but the
  * "Content-Length" header does not get added, and "encode_args" is ignored.
  *
- * If *sock is non-NULL, the call *does not* create a new socket, but builds
+ * If *sock is non-NULL, the call _does not_ create a new socket, but builds
  * the HTTP data stream on top of the passed socket.  If the result is
  * successful, the original SOCK handle will be closed (SOCK_Close), which
- * means that the passed *sock should have been created with fSOCK_KeepOnClose,
- * and a new handle will be returned via the same last parameter.
- * In case of errors, the original *sock will be left intact yet the last
- * parameter may be updated to return as NULL.
+ * means that in order for this to work, the passed *sock should have been
+ * created with fSOCK_KeepOnClose set, and a new handle will be returned via
+ * the same last parameter.  In case of errors, the original *sock will be left
+ * intact yet the last parameter may be updated to return as NULL.
  *
  * On success, return eIO_Success and non-NULL handle of a socket via the last
  * parameter.
@@ -579,7 +579,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status URL_ConnectEx
  SOCK*           sock             /* returned socket (on eIO_Success only)   */
  );
 
-/* Equivalent to the above except that it returns non-NULL socket handle
+/* Equivalent to the above except that it returns a non-NULL socket handle
  * on success, and NULL on error without providing a reason for the failure. */
 extern NCBI_XCONNECT_EXPORT SOCK URL_Connect
 (const char*     host,            /* must be provided                        */
