@@ -79,7 +79,7 @@ typedef struct {
 typedef void* (*FHEAP_Resize)
 (void*      old_base,  /* current base of the heap to be expanded           */
  TNCBI_Size new_size,  /* requested new heap size (zero to deallocate heap) */
- void*      arg        /* user-supplied argument, see HEAP_Create() below   */
+ void*      auxarg     /* user-supplied argument, see HEAP_Create() below   */
  );
 
 
@@ -91,7 +91,7 @@ extern NCBI_XCONNECT_EXPORT HEAP HEAP_Create
  TNCBI_Size   size,        /* initial heap size                        */
  TNCBI_Size   chunk_size,  /* minimal increment size                   */
  FHEAP_Resize resize,      /* NULL if not resizeable                   */
- void*        arg          /* user argument to pass to "resize"        */
+ void*        auxarg       /* a user argument to pass to "resize"      */
  );
 
 
