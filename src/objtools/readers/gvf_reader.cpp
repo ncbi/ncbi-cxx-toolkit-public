@@ -447,19 +447,20 @@ CRef<CVariation_ref> CGvfReader::x_VariationCNV(
         pVariation->SetInsertion();
         return pVariation;
     }
-    if ( strType == "complex"  || strType == "complex_substitution") {
+    if ( strType == "complex"  || strType == "complex_substitution"  ||
+        strType == "complex_sequence_alteration" ) {
         pVariation->SetComplex();
-        return pVariation;
-    }
-    if ( strType == "unknown" || strType == "other" || 
-        strType == "sequence_alteration" ) {
-        pVariation->SetUnknown();
         return pVariation;
     }
     if ( strType == "inversion" ) {
         pVariation->SetInversion( feature.GetLocation() );
         return pVariation;
     }
+//    if ( strType == "unknown" || strType == "other" || 
+//        strType == "sequence_alteration" ) {
+//        pVariation->SetUnknown();
+//        return pVariation;
+//    }
     pVariation->SetUnknown();
     
     return pVariation;
