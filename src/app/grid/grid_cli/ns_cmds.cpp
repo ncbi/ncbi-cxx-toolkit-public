@@ -44,9 +44,6 @@ USING_NCBI_SCOPE;
 void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
     CGridCommandLineInterfaceApp::EAPIClass api_class)
 {
-    if (m_Opts.auth.empty())
-        m_Opts.auth = PROGRAM_NAME;
-
     string queue(!m_Opts.queue.empty() ? m_Opts.queue : "noname");
 
     if (!IsOptionSet(eID))

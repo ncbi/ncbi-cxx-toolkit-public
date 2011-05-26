@@ -38,9 +38,6 @@ USING_NCBI_SCOPE;
 void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
     CGridCommandLineInterfaceApp::EAPIClass api_class)
 {
-    if (m_Opts.auth.empty())
-        m_Opts.auth = "netcache_control";
-
     static const string config_section("netcache_api");
 
     if (IsOptionSet(eEnableMirroring))
@@ -82,14 +79,18 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
 
 void CGridCommandLineInterfaceApp::PrintBlobMeta(const CNetCacheKey& key)
 {
+    CTime generation_time;
+
+    generation_time.SetTimeT((time_t) key.GetCreationTime());
+
     printf("Blob number: %u\n"
-        "Created by: %s:%u\n"
-        "Creation time: %8lX\n"
+        "Primary server: %s:%u\n"
+        "Blob ID generation time: %s\n"
         "Random: %u\n",
         key.GetId(),
         g_NetService_TryResolveHost(key.GetHost()).c_str(),
         key.GetPort(),
-        (unsigned long) key.GetCreationTime(),
+        generation_time.AsString().c_str(),
         (unsigned) key.GetRandomPart());
 
     string service(key.GetServiceName());
@@ -136,9 +137,10 @@ int CGridCommandLineInterfaceApp::Cmd_BlobInfo()
     SetUp_NetCacheCmd(icache_mode ? eNetICacheClient : eNetCacheAPI);
 
     try {
-        if (!icache_mode)
+        if (!icache_mode) {
+            PrintBlobMeta(CNetCacheKey(m_Opts.id));
             m_NetCacheAPI.PrintBlobInfo(m_Opts.id);
-        else
+        } else
             m_NetICacheClient.PrintBlobInfo(m_Opts.icache_key.key,
                 m_Opts.icache_key.version, m_Opts.icache_key.subkey);
     }

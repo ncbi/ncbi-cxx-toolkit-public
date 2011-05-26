@@ -743,6 +743,9 @@ int CGridCommandLineInterfaceApp::Run()
             }
         }
 
+        if (m_Opts.auth.empty())
+            m_Opts.auth = PROGRAM_NAME;
+
         if (IsOptionAcceptedButNotSet(eInputFile)) {
             m_Opts.input_stream = stdin;
 #ifdef WIN32
