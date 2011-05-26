@@ -122,7 +122,7 @@ bool CGvfWriteRecord::x_AssignType(
 //  ----------------------------------------------------------------------------
 {
     m_strType = ".";
-    if ( mapped_feat.IsSetExt() ) {
+    if ( false  &&  mapped_feat.IsSetExt() ) {
         const CSeq_feat::TExt& ext = mapped_feat.GetExt();
         if ( ext.IsSetType() && ext.GetType().IsStr() && 
             ext.GetType().GetStr() == "GvfAttributes" ) 
@@ -137,7 +137,31 @@ bool CGvfWriteRecord::x_AssignType(
     if ( CSeqFeatData::eSubtype_variation_ref != mapped_feat.GetData().GetSubtype() ) {
         return true;
     }
+
     const CVariation_ref& var_ref = mapped_feat.GetData().GetVariation();
+    if ( var_ref.IsComplex() ) {
+        m_strType = "complex_structural_alteration";
+        return true;
+    }
+    if ( var_ref.IsGain() ) {
+        m_strType = "copy_number_gain";
+        return true;
+    }
+    if ( var_ref.IsLoss() ) {
+        if ( var_ref.IsSetConsequence() ) {
+            const CVariation_ref::TConsequence& consequences = var_ref.GetConsequence();
+            for ( CVariation_ref::TConsequence::const_iterator cit = consequences.begin();
+                cit != consequences.end(); ++cit ) 
+            {
+                if ( (*cit)->IsLoss_of_heterozygosity() ) {
+                    m_strType = "loss_of_heterozygosity";
+                    return true;
+                }
+            } 
+        }
+        m_strType = "copy_number_loss";
+        return true;
+    }
     if ( var_ref.IsCNV() ) {
         m_strType = "copy_number_variation";
         return true;
@@ -454,7 +478,7 @@ void CGvfWriteRecord::x_AppendAttribute(
 {
     string key = it->first;
     string value = it->second;
-    bool needsQuotes = ( NStr::Find( value, " " ) != -1 );
+    bool needsQuotes = ( NStr::Find( value, " " ) != NPOS );
 
     if ( !strAttributes.empty() ) {
         strAttributes += ";";
