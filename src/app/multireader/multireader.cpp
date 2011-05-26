@@ -55,6 +55,7 @@
 #include <objtools/readers/idmapper.hpp>
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/bed_reader.hpp>
+#include <objtools/readers/vcf_reader.hpp>
 #include <objtools/readers/wiggle_reader.hpp>
 #include <objtools/readers/gff2_reader.hpp>
 #include <objtools/readers/gff3_reader.hpp>
@@ -192,6 +193,7 @@ void CMultiReaderApp::Init(void)
             "gtf", "gff3", "gff2",
             "gvf", 
             "newick", "tree", "tre",
+            "vcf",
             "guess") );
 
     arg_desc->AddDefaultKey(
@@ -360,9 +362,6 @@ CMultiReaderApp::Run(void)
     }
 
     DumpErrors( cerr );
-
-    
-    
     return 0;
 }
 
@@ -418,6 +417,13 @@ void CMultiReaderApp::SetFormat(
         format == "newick" || format == "tree" || format == "tre" ) {
         m_uFormat = CFormatGuess::eNewick;
     }
+
+    //fl begin hack
+    if ( NStr::StartsWith( strProgramName, "gvf" ) || format == "gvf" ) {
+        m_uFormat = CFormatGuess::eGtf;
+    }
+    //fl end hack
+
     if ( m_uFormat == CFormatGuess::eUnknown ) {
         m_uFormat = CFormatGuess::Format( *m_pInput );
     }
@@ -489,6 +495,15 @@ void CMultiReaderApp::ReadObject(
     CRef<CSerialObject>& object )
 //  ============================================================================
 {
+    string strFormat = GetArgs()[ "format" ].AsString();
+
+    if ( strFormat == "vcf" ) {
+        CStreamLineReader lr( *m_pInput );
+        CVcfReader reader( m_iFlags );
+        object = reader.ReadObject( lr, m_pErrors );
+        return;
+    }
+
     switch ( m_uFormat ) {
     
         default: {
@@ -503,7 +518,6 @@ void CMultiReaderApp::ReadObject(
         }
 
         case CFormatGuess::eGtf: {
-            string strFormat = GetArgs()[ "format" ].AsString();
             CStreamLineReader lr( *m_pInput );
             if ( strFormat == "gtf" ) {
                 CGtfReader reader( 
@@ -543,6 +557,13 @@ void CMultiReaderApp::ReadAnnots(
     vector< CRef<CSeq_annot> >& annots )
 //  ============================================================================
 {
+    string strFormat = GetArgs()[ "format" ].AsString();
+
+    if ( strFormat == "vcf" ) {
+        CVcfReader reader( m_iFlags );
+        return reader.ReadSeqAnnots( annots, *m_pInput, m_pErrors );
+    }
+
     switch ( m_uFormat ) {
    
         default:
@@ -559,7 +580,6 @@ void CMultiReaderApp::ReadAnnots(
             break;
         }    
         case CFormatGuess::eGtf: {
-            string strFormat = GetArgs()[ "format" ].AsString();
             if ( strFormat == "gtf" ) {
                 CGtfReader reader( 
                     (unsigned int)m_iFlags, m_AnnotName, m_AnnotTitle );
@@ -606,7 +626,6 @@ void CMultiReaderApp::DumpAnnots(
     vector< CRef<CSeq_annot> >& annots )
 //  ============================================================================
 {
-//    *m_pOutput << "Here we go:" << endl;
     if ( m_bCheckOnly ) {
         return;
     }
