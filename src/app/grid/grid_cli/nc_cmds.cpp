@@ -148,7 +148,6 @@ int CGridCommandLineInterfaceApp::Cmd_BlobInfo()
         if (e.GetErrCode() != CNetCacheException::eServerError)
             throw;
         if (!icache_mode) {
-            PrintBlobMeta(CNetCacheKey(m_Opts.id));
             printf("Size: %lu\n", (unsigned long)
                 m_NetCacheAPI.GetBlobSize(m_Opts.id));
         } else {

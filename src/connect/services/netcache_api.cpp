@@ -458,10 +458,10 @@ void CNetCacheAPI::Remove(const string& blob_id)
 
 void CNetCacheAPI::PrintBlobInfo(const string& blob_id)
 {
-    CNetCacheKey key(blob_id);
-
-    string cmd(m_Impl->MakeCmd("GETMETA ", key));
+    string cmd("GETMETA " + blob_id);
     cmd.append(m_Impl->m_Service->m_EnforcedServerHost.empty() ? " 0" : " 1");
+
+    CNetCacheKey key(blob_id);
 
     CNetServerMultilineCmdOutput output(m_Impl->ExecMirrorAware(key, cmd));
 
