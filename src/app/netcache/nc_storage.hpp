@@ -269,9 +269,6 @@ private:
     typedef map<Uint2, SSlotCache*>         TSlotCacheMap;
 
 
-    ///
-    static Int8 sx_GetCurTime(void);
-
     /// Check if storage have been already stopped. Throw special exception in
     /// this case.
     void x_CheckStopped(void);
@@ -611,26 +608,6 @@ CNCBlobStorage::x_GetNextMetaId(void)
     TNCDBFileId meta_id = m_CurFiles[eNCMeta][m_LastBlob.meta_id];
     m_LastBlobLock.Unlock();
     return meta_id;
-}
-
-inline Int8
-CNCBlobStorage::sx_GetCurTime(void)
-{
-#ifdef NCBI_OS_MSWIN
-    // Conversion from FILETIME to time since Epoch is taken from MSVC's
-    // implementation of time().
-    union {
-        Uint8    ft_int8;
-        FILETIME ft_struct;
-    } ft;
-    GetSystemTimeAsFileTime(&ft.ft_struct);
-    Uint8 epoch_time = ft.ft_int8 - 116444736000000000i64;
-    return ((epoch_time / 10000000) << 32) + (epoch_time % 10000000 / 10);
-#else
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return (Int8(tv.tv_sec) << 32) + tv.tv_usec;
-#endif
 }
 
 inline TNCChunkId

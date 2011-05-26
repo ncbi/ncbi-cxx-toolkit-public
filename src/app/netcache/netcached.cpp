@@ -418,15 +418,15 @@ CNetCacheServer::~CNetCacheServer()
     INFO_POST("NetCache server is destroying. Usage statistics:");
     x_PrintServerStats(proxy);
 
+    UpdateLastRecNo();
+    delete g_NCStorage;
     s_TaskPool->KillAllThreads(true);
     delete s_TaskPool;
-    UpdateLastRecNo();
     CNCPeriodicSync::Finalize();
     CNCMirroring::Finalize();
     CNCSyncLog::Finalize();
     CNCDistributionConf::Finalize();
 
-    delete g_NCStorage;
     g_NetcacheServer = NULL;
 }
 
@@ -485,29 +485,6 @@ CNetCacheServer::GetMaxConnections(void)
     GetParameters(&params);
     return params.max_connections;
 }
-
-Uint8
-g_SubtractTime(Uint8 lhs, Uint8 rhs)
-{
-    if (Uint4(lhs) >= Uint4(rhs))
-        return lhs - rhs;
-
-    lhs -= Uint8(1) << 32;
-    lhs += 1000000;
-    return lhs - rhs;
-}
-
-Uint8
-g_AddTime(Uint8 lhs, Uint8 rhs)
-{
-    Uint8 result = lhs + rhs;
-    if (Uint4(result) >= 1000000) {
-        result -= 1000000;
-        result += Uint8(1) << 32;
-    }
-    return result;
-}
-
 
 CNetServer
 CNetCacheServer::GetPeerServer(Uint8 server_id)
@@ -1309,12 +1286,6 @@ CNetCacheServer::SyncProlongOurBlob(Uint8 server_id,
                                     const SNCBlobSummary& blob_sum,
                                     bool* need_event /* = NULL */)
 {
-    int cur_time = int(time(NULL));
-    if (!IsDebugMode())
-        cur_time += 30;
-    if (blob_sum.dead_time <= cur_time)
-        return ePeerActionOK;
-
     string cache_name, key, subkey;
     g_NCStorage->UnpackBlobKey(raw_key, cache_name, key, subkey);
 

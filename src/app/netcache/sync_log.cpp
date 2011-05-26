@@ -263,8 +263,6 @@ s_GetSlotData(Uint2 slot)
 }
 
 
-static const Uint8  kMaxUint8 = NCBI_CONST_UINT8( 0xFFFFFFFFFFFFFFFF );
-
 // Provides the minimum record number till which the synchronization is done
 // with all the servers
 static inline Uint8

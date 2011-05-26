@@ -56,7 +56,7 @@ CNCMirroringThread::CNCMirroringThread(Uint8            server_id_,
       distr(distr_),
       mirror_type(mirror_type_),
       finish_flag(false),
-      notifier(0, 1000000)
+      notifier(0, 1000000000)
 {}
 
 void*

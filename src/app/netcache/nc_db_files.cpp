@@ -87,10 +87,10 @@ CAtomicCounter            CNCFileSystem::sm_CntEvents;
 CRef<CThread>             CNCFileSystem::sm_BGThread;
 bool                      CNCFileSystem::sm_Stopped         = false;
 bool volatile             CNCFileSystem::sm_BGWorking       = false;
-CSemaphore                CNCFileSystem::sm_BGSleep        (0, 1000000);
+CSemaphore                CNCFileSystem::sm_BGSleep        (0, 1000000000);
 bool                      CNCFileSystem::sm_DiskInitialized = false;
 CAtomicCounter            CNCFileSystem::sm_WaitingOnAlert;
-CSemaphore                CNCFileSystem::sm_OnAlertWaiter  (0, 1000000);
+CSemaphore                CNCFileSystem::sm_OnAlertWaiter  (0, 1000000000);
 static CNCUint8Tls   s_ThrottleServer;
 
 

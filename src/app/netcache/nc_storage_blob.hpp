@@ -409,7 +409,7 @@ inline void
 CNCBlobAccessor::SetBlobCreateTime(Uint8 create_time)
 {
     m_NewData->create_time = create_time;
-    m_NewData->dead_time = (create_time >> 32) + m_NewData->ttl;
+    m_NewData->dead_time = int(create_time / kNCTimeTicksInSec) + m_NewData->ttl;
 }
 
 inline Uint8

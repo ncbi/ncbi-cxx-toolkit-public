@@ -249,20 +249,20 @@ CNCDistributionConf::Initialize(Uint2 control_port)
         s_CleanLogReserve = s_MaxSlotLogEvents - 1;
     s_MaxCleanLogBatch = reg.GetInt(kNCReg_NCPoolSection, "max_clean_log_batch", 10000);
     s_MinForcedCleanPeriod = reg.GetInt(kNCReg_NCPoolSection, "min_forced_clean_log_period", 10);
-    s_MinForcedCleanPeriod <<= 32;
+    s_MinForcedCleanPeriod *= kNCTimeTicksInSec;
     s_CleanAttemptInterval = reg.GetInt(kNCReg_NCPoolSection, "clean_log_attempt_interval", 1);
     s_PeriodicSyncInterval = reg.GetInt(kNCReg_NCPoolSection, "deferred_sync_interval", 10);
-    s_PeriodicSyncInterval <<= 32;
+    s_PeriodicSyncInterval *= kNCTimeTicksInSec;
     s_PeriodicSyncHeadTime = reg.GetInt(kNCReg_NCPoolSection, "deferred_sync_head_time", 1);
-    s_PeriodicSyncHeadTime <<= 32;
+    s_PeriodicSyncHeadTime *= kNCTimeTicksInSec;
     s_PeriodicSyncTailTime = reg.GetInt(kNCReg_NCPoolSection, "deferred_sync_tail_time", 10);
-    s_PeriodicSyncTailTime <<= 32;
+    s_PeriodicSyncTailTime *= kNCTimeTicksInSec;
     s_PeriodicSyncTimeout = reg.GetInt(kNCReg_NCPoolSection, "deferred_sync_timeout", 10);
-    s_PeriodicSyncTimeout <<= 32;
+    s_PeriodicSyncTimeout *= kNCTimeTicksInSec;
     s_FailedSyncRetryDelay = reg.GetInt(kNCReg_NCPoolSection, "failed_sync_retry_delay", 1);
-    s_FailedSyncRetryDelay <<= 32;
+    s_FailedSyncRetryDelay *= kNCTimeTicksInSec;
     s_NetworkErrorTimeout = reg.GetInt(kNCReg_NCPoolSection, "network_error_timeout", 300);
-    s_NetworkErrorTimeout <<= 32;
+    s_NetworkErrorTimeout *= kNCTimeTicksInSec;
 }
 
 void
@@ -524,7 +524,7 @@ CNCDistributionConf::PrintBlobCopyStat(Uint8 create_time, Uint8 create_server, U
 {
     if (s_CopyDelayLog) {
         Uint8 cur_time = CNetCacheServer::GetPreciseTime();
-        fprintf(s_CopyDelayLog, "%lu,%lu,%lu,%lu\n", cur_time, create_server, write_server, g_SubtractTime(cur_time, create_time));
+        fprintf(s_CopyDelayLog, "%lu,%lu,%lu,%lu\n", cur_time, create_server, write_server, cur_time - create_time);
     }
 }
 

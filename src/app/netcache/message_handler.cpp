@@ -1542,8 +1542,7 @@ CNCMessageHandler::x_ReadCommand(void)
         Uint4 to_wait = CNCPeriodicSync::BeginTimeEvent(m_SrvId);
         if (to_wait != 0) {
             Uint8 now = CNetCacheServer::GetPreciseTime();
-            m_ThrottleTime = now + (Uint8(to_wait / 1000000) << 32);
-            m_ThrottleTime = g_AddTime(m_ThrottleTime, to_wait % 1000000);
+            m_ThrottleTime = now + to_wait;
             if (g_NetcacheServer->IsLogCmds()) {
                 GetDiagContext().Extra().Print("throt", NStr::UIntToString(to_wait));
             }
@@ -1721,7 +1720,8 @@ CNCMessageHandler::x_ProlongBlobDeadTime(void)
         return;
 
     Uint8 cur_time = CNetCacheServer::GetPreciseTime();
-    int new_dead_time = int(cur_time >> 32) + m_BlobAccess->GetCurBlobTTL();
+    int new_dead_time = int(cur_time / kNCTimeTicksInSec)
+                        + m_BlobAccess->GetCurBlobTTL();
     int old_dead_time = m_BlobAccess->GetCurBlobDeadTime();
     if (!CNetCacheServer::IsDebugMode()
         &&  new_dead_time - old_dead_time < m_AppSetup->ttl_unit)
@@ -1742,7 +1742,8 @@ void
 CNCMessageHandler::x_ProlongVersionLife(void)
 {
     Uint8 cur_time = CNetCacheServer::GetPreciseTime();
-    int new_dead_time = int(cur_time >> 32) + m_BlobAccess->GetCurBlobTTL();
+    int new_dead_time = int(cur_time / kNCTimeTicksInSec)
+                        + m_BlobAccess->GetCurBlobTTL();
     int old_dead_time = m_BlobAccess->GetCurVerDeadTime();
     if (!CNetCacheServer::IsDebugMode()
         &&  new_dead_time - old_dead_time < m_AppSetup->ttl_unit)
@@ -1899,7 +1900,8 @@ CNCMessageHandler::x_FinishReadingBlob(void)
     else {
         Uint8 cur_time = CNetCacheServer::GetPreciseTime();
         m_BlobAccess->SetBlobCreateTime(cur_time);
-        m_BlobAccess->SetNewVerDeadTime(Uint4(cur_time >> 32) + m_BlobAccess->GetNewVersionTTL());
+        m_BlobAccess->SetNewVerDeadTime(int(cur_time / kNCTimeTicksInSec)
+                                        + m_BlobAccess->GetNewVersionTTL());
         m_BlobAccess->SetCreateServer(CNCDistributionConf::GetSelfID(),
                                       m_BlobAccess->GetNewBlobId(), m_BlobSlot);
         write_event->orig_server = CNCDistributionConf::GetSelfID();
@@ -2439,21 +2441,6 @@ CNCMessageHandler::x_ManageCmdPipeline(void)
     if (m_InSyncCmd) {
         m_WaitForThrottle = false;
         CNCPeriodicSync::BeginTimeEvent(m_SrvId);
-        /*
-        Uint8 to_wait = CNCPeriodicSync::BeginTimeEvent();
-        if (to_wait == 0) {
-            m_WaitForThrottle = false;
-        }
-        else {
-            Uint8 now = CNetCacheServer::GetPreciseTime();
-            m_ThrottleTime = now + ((to_wait / 1000000) << 32);
-            m_ThrottleTime = g_AddTime(m_ThrottleTime, to_wait % 1000000);
-            LOG_POST("Need to throttle more for " << to_wait << ", now = " << now << ", dest = " << m_ThrottleTime);
-            m_WaitForThrottle = true;
-            m_Server->DeferConnectionProcessing(m_Socket);
-            return;
-        }
-        */
     }
 
     bool do_next_step = false;
@@ -3391,15 +3378,22 @@ CNCMessageHandler::x_DoCmd_GetMeta(void)
     m_SendBuff.reset(new TNCBufferType());
     m_SendBuff->reserve_mem(1024);
     string tmp;
+
+
     tmp = "OK:Slot: ";
     m_SendBuff->append(tmp.data(), tmp.size());
     tmp = NStr::UIntToString(m_BlobSlot);
     m_SendBuff->append(tmp.data(), tmp.size());
-    tmp = "\nOK:Create time: ";
+
+    tmp = "\nOK:Write time: ";
     m_SendBuff->append(tmp.data(), tmp.size());
-    tmp = NStr::UInt8ToString(m_BlobAccess->GetCurBlobCreateTime(), 0, 16);
+    Uint8 create_time = m_BlobAccess->GetCurBlobCreateTime();
+    CTime tmp_time(time_t(create_time / kNCTimeTicksInSec));
+    tmp_time.SetMicroSecond(create_time % kNCTimeTicksInSec);
+    tmp = tmp_time.AsString("M/D/Y h:m:s.r");
     m_SendBuff->append(tmp.data(), tmp.size());
-    tmp = "\nOK:Create server: ";
+
+    tmp = "\nOK:Control server: ";
     m_SendBuff->append(tmp.data(), tmp.size());
     Uint8 create_server = m_BlobAccess->GetCurCreateServer();
     tmp = CSocketAPI::gethostbyaddr(Uint4(create_server >> 32));
@@ -3407,41 +3401,53 @@ CNCMessageHandler::x_DoCmd_GetMeta(void)
     m_SendBuff->append(":", 1);
     tmp = NStr::UIntToString(Uint4(create_server));
     m_SendBuff->append(tmp.data(), tmp.size());
-    tmp = "\nOK:Create id: ";
+
+    tmp = "\nOK:Control id: ";
     m_SendBuff->append(tmp.data(), tmp.size());
     tmp = NStr::Int8ToString(m_BlobAccess->GetCurCreateId());
     m_SendBuff->append(tmp.data(), tmp.size());
+
     tmp = "\nOK:TTL: ";
     m_SendBuff->append(tmp.data(), tmp.size());
     tmp = NStr::IntToString(m_BlobAccess->GetCurBlobTTL());
     m_SendBuff->append(tmp.data(), tmp.size());
+
     tmp = "\nOK:Dead time: ";
     m_SendBuff->append(tmp.data(), tmp.size());
-    tmp = NStr::IntToString(m_BlobAccess->GetCurBlobDeadTime(), 0, 16);
+    tmp_time.SetTimeT(m_BlobAccess->GetCurBlobDeadTime());
+    tmp = tmp_time.AsString();
     m_SendBuff->append(tmp.data(), tmp.size());
+
     tmp = "\nOK:Size: ";
     m_SendBuff->append(tmp.data(), tmp.size());
     tmp = NStr::UInt8ToString(m_BlobAccess->GetCurBlobSize());
     m_SendBuff->append(tmp.data(), tmp.size());
+
     tmp = "\nOK:Password: '";
     m_SendBuff->append(tmp.data(), tmp.size());
     tmp = m_BlobAccess->GetCurPassword();
     m_SendBuff->append(tmp.data(), tmp.size());
     m_SendBuff->append("'", 1);
+
     tmp = "\nOK:Version: ";
     m_SendBuff->append(tmp.data(), tmp.size());
     tmp = NStr::IntToString(m_BlobAccess->GetCurBlobVersion());
     m_SendBuff->append(tmp.data(), tmp.size());
+
     tmp = "\nOK:Version's TTL: ";
     m_SendBuff->append(tmp.data(), tmp.size());
     tmp = NStr::IntToString(m_BlobAccess->GetCurVersionTTL());
     m_SendBuff->append(tmp.data(), tmp.size());
+
     tmp = "\nOK:Version's dead time: ";
     m_SendBuff->append(tmp.data(), tmp.size());
-    tmp = NStr::IntToString(m_BlobAccess->GetCurVerDeadTime(), 0, 16);
+    tmp_time.SetTimeT(m_BlobAccess->GetCurVerDeadTime());
+    tmp = tmp_time.AsString();
     m_SendBuff->append(tmp.data(), tmp.size());
+
     tmp = "\nOK:END\n";
     m_SendBuff->append(tmp.data(), tmp.size());
+
 
     tmp = "SIZE=";
     tmp += NStr::UInt8ToString(m_SendBuff->size());

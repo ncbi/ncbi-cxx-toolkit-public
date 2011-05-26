@@ -265,8 +265,6 @@ CNCBlobVerManager::OnBlockedOpFinish(void)
                 g_NCStorage->UpdateBlobInfo(m_Key, cur_ver);
                 break;
             case eDeleteKey:
-                // TODO: remove this
-                LOG_POST("VerManager deleting blob key of " << m_Key);
                 g_NCStorage->DeleteBlobKey(m_Slot, m_Key);
                 break;
             case eDeleteCurVer:
@@ -305,10 +303,6 @@ CNCBlobVerManager::OnBlockedOpFinish(void)
     x_SetFlag(fCleaningMgr, true);
     if (m_CurVersion)
         m_CurVersion.Reset();
-    else {
-        // TODO: remove this
-        LOG_POST("VerManager deleting itself without version for " << m_Key);
-    }
     delete this;
 }
 
@@ -398,11 +392,8 @@ CNCBlobVerManager::FinalizeWriting(SNCBlobVerData* ver_data)
 inline void
 CNCBlobVerManager::ReleaseVerData(const SNCBlobVerData* ver_data)
 {
-    if (!x_IsFlagSet(fCleaningMgr)) {
-        // TODO: remove this
-        LOG_POST("VerManager deleting version of " << m_Key);
+    if (!x_IsFlagSet(fCleaningMgr))
         g_NCStorage->DeleteBlobInfo(ver_data);
-    }
 }
 
 void

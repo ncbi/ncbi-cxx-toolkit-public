@@ -46,9 +46,9 @@ BEGIN_NCBI_SCOPE
 
 static TSyncSlotsMap    s_SlotsList;
 static TSyncSlotsMap    s_SlotsMap;
-static CSemaphore       s_WorkersSem(0, 1000000);
-static CSemaphore       s_CleanerSem(0, 1000000);
-static CSemaphore       s_MainsSem(0, 1000000);
+static CSemaphore       s_WorkersSem(0, 1000000000);
+static CSemaphore       s_CleanerSem(0, 1000000000);
+static CSemaphore       s_MainsSem(0, 1000000000);
 static CAtomicCounter   s_SyncOnInit;
 static CAtomicCounter   s_WaitToOpenToClients;
 static bool             s_NeedFinish = false;
@@ -95,7 +95,7 @@ static inline void
 s_SetNextTime(Uint8& next_time, Uint8 value, bool add_random)
 {
     if (add_random)
-        value = g_AddTime(value, s_Rnd.GetRand(0, 1000000));
+        value += s_Rnd.GetRand(0, kNCTimeTicksInSec);
     if (next_time < value)
         next_time = value;
 }
@@ -167,7 +167,7 @@ s_StopSync(SSyncSlotData* slot_data,
     SSyncSrvData* srv_data = slot_srv->srv_data;
     CFastMutexGuard guard(srv_data->lock);
     Uint8 now = CNetCacheServer::GetPreciseTime();
-    Uint8 next_time = g_AddTime(now, next_delay);
+    Uint8 next_time = now + next_delay;
     s_SetNextTime(slot_srv->next_sync_time, next_time, true);
     if (srv_data->first_nw_err_time == 0)
         s_SetNextTime(srv_data->next_sync_time, now, false);
@@ -175,8 +175,8 @@ s_StopSync(SSyncSlotData* slot_data,
         s_SetNextTime(srv_data->next_sync_time, next_time, true);
         if (error_from_start)
             s_SrvInitiallySynced(srv_data);
-        if (g_SubtractTime(now, srv_data->first_nw_err_time)
-                    >= CNCDistributionConf::GetNetworkErrorTimeout())
+        if (now - srv_data->first_nw_err_time
+            >= CNCDistributionConf::GetNetworkErrorTimeout())
         {
             s_SlotsInitiallySynced(srv_data, srv_data->slots_to_init);
         }
@@ -255,8 +255,8 @@ s_LogCleanerMain(void)
             else if (!slot_data->clean_required
                      &&  s_SyncOnInit.Get() == 0
                      &&  CNCSyncLog::IsOverLimit(slot)
-                     &&  g_SubtractTime(CNetCacheServer::GetPreciseTime(),
-                                        last_force_time[slot]) >= min_period)
+                     &&  CNetCacheServer::GetPreciseTime()
+                                          - last_force_time[slot] >= min_period)
             {
                 slot_data->clean_required = true;
             }
@@ -342,7 +342,7 @@ s_ActiveSyncsMain(void)
                 if (slot_srv->sync_started) {
                     if (slot_srv->is_passive
                         &&  slot_srv->started_cmds == 0
-                        &&  g_SubtractTime(now, slot_srv->last_active_time)
+                        &&  now - slot_srv->last_active_time
                             >= CNCDistributionConf::GetPeriodicSyncTimeout())
                     {
                         s_StopSync(slot_data, slot_srv, 0, false);
@@ -361,13 +361,13 @@ s_ActiveSyncsMain(void)
             now = CNetCacheServer::GetPreciseTime();
         }
         force_init_sync = s_SyncOnInit.Get() != 0  &&  !did_sync;
-        need_rehash = g_SubtractTime(now, loop_start) >= sync_interval;
+        need_rehash = now - loop_start >= sync_interval;
 
         if (!s_NeedFinish) {
-            Uint8 now = CNetCacheServer::GetPreciseTime();
+            now = CNetCacheServer::GetPreciseTime();
             Uint8 wait_time;
             if (min_next_time > now) {
-                wait_time = g_SubtractTime(min_next_time, now);
+                wait_time = min_next_time - now;
                 if (wait_time > sync_interval)
                     wait_time = sync_interval;
             }
@@ -375,8 +375,8 @@ s_ActiveSyncsMain(void)
                 wait_time = s_Rnd.GetRand(0, 10000);
             }
 
-            Uint4 timeout_sec  = Uint4(wait_time >> 32);
-            Uint4 timeout_usec = Uint4(wait_time & 0xFFFFFFFF);
+            Uint4 timeout_sec  = Uint4(wait_time / kNCTimeTicksInSec);
+            Uint4 timeout_usec = Uint4(wait_time % kNCTimeTicksInSec);
             s_MainsSem.TryWait(timeout_sec, timeout_usec * 1000);
         }
     }
@@ -713,8 +713,8 @@ CActiveSyncControl::DoPeriodicSync(SSyncSlotData* slot_data,
         GetDiagContext().Extra().Print("init_res", NStr::UIntToString(init_res));
     }
 
-    Uint8 local_synced_rec_no;
-    Uint8 remote_synced_rec_no;
+    Uint8 local_synced_rec_no = 0;
+    Uint8 remote_synced_rec_no = 0;
     switch (init_res) {
     case eProceedWithEvents:
         x_PrepareSyncByEvents(local_start_rec_no,
@@ -812,8 +812,7 @@ CActiveSyncControl::DoPeriodicSync(SSyncSlotData* slot_data,
         fprintf(s_LogFile, "%lu,%lu,%u,%lu,%lu,%lu,%d,%d,"
                            "%lu,%lu,%lu,%lu,%lu,%lu,%lu,%u,%u\n",
                 CNCDistributionConf::GetSelfID(), m_SrvId, m_Slot,
-                start_time, end_time,
-                g_SubtractTime(end_time, start_time),
+                start_time, end_time, end_time - start_time,
                 int(m_SlotSrv->is_by_blobs), m_Result, log_size,
                 m_ReadOK, m_ReadERR, m_WriteOK, m_WriteERR,
                 m_ProlongOK, m_ProlongERR,
@@ -1192,8 +1191,7 @@ CNCTimeThrottler::BeginTimeEvent(Uint8 server_id)
         m_PeriodStart = now;
     }
     else {
-        Uint8 diff = g_SubtractTime(now, m_PeriodStart);
-        diff = (diff >> 32) * 1000000 + Uint4(diff);
+        Uint8 diff = now - m_PeriodStart;
         Uint8 allowed = diff * CNCDistributionConf::GetMaxWorkerTimePct() / 100;
         Uint8 spent_srv = m_SrvTime[server_id];
         Uint8 per_srv_allowed = allowed / m_SrvTime.size();
@@ -1243,8 +1241,8 @@ void
 CNCTimeThrottler::EndTimeEvent(Uint8 server_id, Uint8 adj_time)
 {
     Uint8 now = CNetCacheServer::GetPreciseTime();
-    Uint8 evt_time = g_SubtractTime(now, m_CurStart);
-    evt_time = (evt_time >> 32) * 1000000 + Uint4(evt_time) - adj_time;
+    Uint8 evt_time = now - m_CurStart;
+    evt_time -= adj_time;
     m_TotalTime += evt_time;
     m_SrvTime[server_id] += evt_time;
 }

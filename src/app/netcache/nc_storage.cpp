@@ -472,7 +472,8 @@ CNCBlobStorage::CNCBlobStorage(bool do_reinit)
       m_CntUsedHolders(0),
       m_GCBlockWaiter(0, 1),
       m_Blocked(false),
-      m_CntLocksToWait(0)
+      m_CntLocksToWait(0),
+      m_IsStopWrite(false)
 {
     x_ReadStorageParams();
 
@@ -1304,7 +1305,6 @@ void
 CNCBlobStorage::x_GC_DeleteExpired(const SNCBlobListInfo& blob_info,
                                    int dead_before)
 {
-    LOG_POST("GC checking blob " << blob_info.key);
     m_GCAccessor->Prepare(blob_info.key, kEmptyStr, blob_info.slot, eNCGCDelete);
     x_InitializeAccessor(m_GCAccessor);
     while (m_GCAccessor->ObtainMetaInfo(this) == eNCWouldBlock) {
@@ -1313,8 +1313,6 @@ CNCBlobStorage::x_GC_DeleteExpired(const SNCBlobListInfo& blob_info,
     if (m_GCAccessor->IsBlobExists()
         &&  m_GCAccessor->GetCurBlobDeadTime() < dead_before)
     {
-        // TODO: remove this
-        LOG_POST("GC deleting blob " << blob_info.key);
         m_GCAccessor->DeleteBlob();
         ++m_GCDeleted;
     }
@@ -1347,17 +1345,6 @@ CNCBlobStorage::x_GC_CleanDBFile(CNCDBFile* metafile, int dead_before)
             }
         }
         while (!blobs_list.empty());
-        // TODO: remove this
-        {{
-            TMetaFileLock file_lock(metafile);
-            dead_after = 0;
-            last_id = 0;
-            file_lock->GetBlobsList(dead_after, last_id,
-                                    dead_before - m_GCRunDelay,
-                                    1, &blobs_list);
-            if (!blobs_list.empty())
-                abort();
-        }}
     }
     catch (CException& ex) {
         ERR_POST("Error processing file '" << metafile->GetFileName()
@@ -1716,11 +1703,12 @@ CNCBlobStorage::CKeysCleaner::Delete(const string& key) const
     //cache->key_map.EraseIfPassive(key);
     cache->lock.WriteLock();
     TNCBlobSumList::iterator it = cache->key_map.find(key);
-    SNCCacheData* cache_data = it->second;
-    if (cache_data->is_deleted) {
-        LOG_POST("Final delete of key " << key);
-        delete it->second;
-        cache->key_map.erase(it);
+    if (it != cache->key_map.end()) {
+        SNCCacheData* cache_data = it->second;
+        if (cache_data->is_deleted) {
+            delete cache_data;
+            cache->key_map.erase(it);
+        }
     }
     cache->lock.WriteUnlock();
 }

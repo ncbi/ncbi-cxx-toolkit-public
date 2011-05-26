@@ -354,8 +354,6 @@ private:
 
 ///
 extern CNetCacheServer* g_NetcacheServer;
-Uint8 g_SubtractTime(Uint8 lhs, Uint8 rhs);
-Uint8 g_AddTime(Uint8 lhs, Uint8 rhs);
 
 
 /// NetCache daemon application
@@ -438,11 +436,11 @@ CNetCacheServer::GetPreciseTime(void)
     } ft;
     GetSystemTimeAsFileTime(&ft.ft_struct);
     Uint8 epoch_time = ft.ft_int8 - 116444736000000000i64;
-    return Int8(((epoch_time / 10000000) << 32) + (epoch_time % 10000000 / 10));
+    return epoch_time / 10;
 #else
     struct timeval tv;
     gettimeofday(&tv, NULL);
-    return (Int8(tv.tv_sec) << 32) + tv.tv_usec;
+    return Uint8(tv.tv_sec) * kNCTimeTicksInSec + tv.tv_usec;
 #endif
 }
 
