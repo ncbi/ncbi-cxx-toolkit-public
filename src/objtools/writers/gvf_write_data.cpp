@@ -122,7 +122,7 @@ bool CGvfWriteRecord::x_AssignType(
 //  ----------------------------------------------------------------------------
 {
     m_strType = ".";
-    if ( false  &&  mapped_feat.IsSetExt() ) {
+    if ( mapped_feat.IsSetExt() ) {
         const CSeq_feat::TExt& ext = mapped_feat.GetExt();
         if ( ext.IsSetType() && ext.GetType().IsStr() && 
             ext.GetType().GetStr() == "GvfAttributes" ) 
