@@ -188,7 +188,7 @@ int/*bool*/ ConnNetInfo_Boolean(const char* str)
 }
 
 
-static EURLScheme s_ParseScheme(const char* str, size_t len)
+static EURLScheme x_ParseScheme(const char* str, size_t len)
 {
     if (len == 5  &&  strncasecmp(str, "https", len) == 0)
         return eURL_Https;
@@ -202,7 +202,7 @@ static EURLScheme s_ParseScheme(const char* str, size_t len)
 }
 
 
-static const char* s_Scheme(EURLScheme scheme)
+static const char* x_Scheme(EURLScheme scheme, char buf[])
 {
     switch (scheme) {
     case eURL_Unspec:
@@ -219,7 +219,8 @@ static const char* s_Scheme(EURLScheme scheme)
     default:
         break;
     }
-    return "(unknown)";
+    sprintf(buf, "(%u)", (unsigned int) scheme);
+    return buf;
 }
 
 
@@ -407,7 +408,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
     /* "user:pass@host:port" first [any optional] */
     if ((s = strstr(url, "://")) != 0) {
         len = (size_t)(s - url);
-        if ((info->scheme = s_ParseScheme(url, len)) == eURL_Unspec)
+        if ((info->scheme = x_ParseScheme(url, len)) == eURL_Unspec)
             return 0/*failure*/;
 
         host    = s + 3;
@@ -1024,7 +1025,7 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
 }
 
 
-static const char* s_PortStr(unsigned short port, char buf[])
+static const char* x_Port(unsigned short port, char buf[])
 {
     if (port) {
         sprintf(buf, "%hu", port);
@@ -1076,7 +1077,7 @@ static void s_SaveUserHeader(char* s, const char* name,
 
 extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
 {
-    char   port[16];
+    char   buf[40];
     size_t uhlen;
     size_t len;
     char*  s;
@@ -1117,14 +1118,14 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
         s_SaveString(s, "client_host",     info->client_host);
     else
         s_SaveKeyval(s, "client_host",     "(default)");
-    s_SaveString    (s, "scheme",          s_Scheme(info->scheme));
+    s_SaveString    (s, "scheme",          x_Scheme(info->scheme, buf));
     s_SaveString    (s, "user",            info->user);
     if (*info->pass)
         s_SaveKeyval(s, "pass",           *info->user ? "(set)" : "(ignored)");
     else
         s_SaveString(s, "pass",            info->pass);
     s_SaveString    (s, "host",            info->host);
-    s_SaveKeyval    (s, "port",            s_PortStr(info->port, port));
+    s_SaveKeyval    (s, "port",            x_Port(info->port, buf));
     s_SaveString    (s, "path",            info->path);
     s_SaveString    (s, "args",            info->args);
     s_SaveKeyval    (s, "req_method",     (info->req_method
@@ -1146,8 +1147,7 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
         s_SaveKeyval(s, "timeout",         "INFINITE");
     s_SaveULong     (s, "max_try",         info->max_try);
     s_SaveString    (s, "http_proxy_host", info->http_proxy_host);
-    s_SaveKeyval    (s, "http_proxy_port", s_PortStr(info->http_proxy_port,
-                                                     port));
+    s_SaveKeyval    (s, "http_proxy_port", x_Port(info->http_proxy_port, buf));
     s_SaveString    (s, "http_proxy_user", info->http_proxy_user);
     if (*info->http_proxy_pass)
         s_SaveKeyval(s, "http_proxy_pass", "(set)");
@@ -1183,13 +1183,14 @@ extern char* ConnNetInfo_URL(const SConnNetInfo* info)
     const char* args;
     size_t      len;
     char*       url;
+    char        buf[40];
 
     if (!info)
         return 0/*failed*/;
 
-    scheme = s_Scheme(info->scheme);
+    scheme = x_Scheme(info->scheme, buf);
     if ((!scheme  &&  info->req_method != eReqMethod_Connect)  ||
-        ( scheme  &&  !isalpha((unsigned char) *scheme))) {
+        ( scheme  &&  !isalpha((unsigned char)(*scheme)))) {
         return 0/*failed*/;
     }
 
@@ -1299,7 +1300,7 @@ extern EIO_Status URL_ConnectEx
 
     /* select request method and its verbal representation */
     if (req_method == eReqMethod_Any)
-        req_method = content_length ? eReqMethod_Post : eReqMethod_Get;
+        req_method =  content_length ? eReqMethod_Post : eReqMethod_Get;
     else if (req_method == eReqMethod_Get  &&  content_length) {
         CORE_LOGF_X(3, eLOG_Warning,
                     ("[URL_Connect]  Content length ignored with method GET"));
@@ -1453,7 +1454,7 @@ extern EIO_Status URL_ConnectEx
         } else
             *hdr_buf = '\0';
         CORE_LOGF_X(7, eLOG_Error,
-                    ("[URL_Connect]  Socket connect to %s:%hu failed: %s%s",
+                    ("[URL_Connect]  Failed to connect to %s:%hu: %s%s",
                      host, port, IO_StatusStr(status), hdr_buf));
     } else
         verify(SOCK_SetTimeout(*sock, eIO_ReadWrite, rw_timeout)==eIO_Success);
