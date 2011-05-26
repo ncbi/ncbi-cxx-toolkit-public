@@ -134,7 +134,7 @@
 #  define SOCK_NFDS(s)          0
 #  define SOCK_CLOSE(s)         closesocket(s)
 #  define SOCK_SHUTDOWN(s,h)    shutdown(s,h)
-#  define SOCK_STRERROR(err)    s_StrError(0, err)
+#  define SOCK_STRERROR(err)    s_StrError(0, (err))
 #  define SOCK_EVENTS           (FD_CLOSE|FD_CONNECT|FD_OOB|FD_WRITE|FD_READ)
 /* NCBI_OS_MSWIN */
 
@@ -152,7 +152,7 @@
 #  ifndef   INADDR_NONE
 #    define INADDR_NONE         ((unsigned int)(-1))
 #  endif  /*INADDR_NONE*/
-#  define SOCK_STRERROR(err)    s_StrError(0, err)
+#  define SOCK_STRERROR(err)    s_StrError(0, (err))
 /* NCBI_OS_UNIX */
 
 #endif /*NCBI_OS*/
