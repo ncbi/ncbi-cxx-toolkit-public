@@ -144,7 +144,7 @@ extern "C" {
 /*ARGSUSED*/
 static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
                             void*         iter,
-                            unsigned int  n)
+                            unsigned int  unused)
 {
     struct SDISPD_Data* data = (struct SDISPD_Data*)((SERV_ITER) iter)->data;
     return data->fail ? 0/*no more tries*/ : 1/*may try again*/;
@@ -180,8 +180,8 @@ static void s_Resolve(SERV_ITER iter)
                                        : !net_info->stateless
                                        ? "Client-Mode: STATEFUL_CAPABLE\r\n"
                                        : "Client-Mode: STATELESS_ONLY\r\n")) {
-        conn = HTTP_CreateConnectorEx(net_info, fHCC_SureFlush, s_ParseHeader,
-                                      s_Adjust, iter/*data*/, 0/*cleanup*/);
+        conn = HTTP_CreateConnectorEx(net_info, fHTTP_SureFlush, s_ParseHeader,
+                                      iter/*data*/, s_Adjust, 0/*cleanup*/);
     }
     if (s) {
         ConnNetInfo_DeleteUserHeader(net_info, s);
