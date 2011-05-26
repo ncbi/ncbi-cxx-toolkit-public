@@ -79,6 +79,7 @@
 #include <objtools/writers/bed_track_record.hpp>
 #include <objtools/writers/bed_feature_record.hpp>
 #include <objtools/writers/bed_writer.hpp>
+#include <objtools/writers/vcf_writer.hpp>
 #include <objtools/writers/gvf_writer.hpp>
 
 #include <time.h>
@@ -146,6 +147,10 @@ private:
         const CSeq_annot& annot,
         CNcbiOstream& );
 
+    bool WriteVcf(
+        const CSeq_annot& annot,
+        CNcbiOstream& );
+
     bool WriteGff3(
         const CSeq_align& align,
         CNcbiOstream& );
@@ -200,7 +205,8 @@ void CAnnotWriterApp::Init()
             "gff3", 
             "gtf", 
             "wig", "wiggle",
-            "bed" ) );
+            "bed",
+            "vcf" ) );
     }}
 
     // output
@@ -457,6 +463,9 @@ bool CAnnotWriterApp::Write(
     if ( strFormat == "bed" ) {
         return WriteBed( annot, os );
     }
+    if ( strFormat == "vcf" ) {
+        return WriteVcf( annot, os );
+    }
     cerr << "Unexpected!" << endl;
     return false;    
 }
@@ -553,6 +562,21 @@ bool CAnnotWriterApp::WriteBed(
     pScope->AddDefaults();
 
     CBedWriter writer( *pScope, os );
+    return writer.WriteAnnot( annot );
+}
+
+//  -----------------------------------------------------------------------------
+bool CAnnotWriterApp::WriteVcf( 
+    const CSeq_annot& annot,
+    CNcbiOstream& os )
+//  -----------------------------------------------------------------------------
+{
+    CRef< CObjectManager > pObjMngr = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager( *pObjMngr );
+    CRef< CScope > pScope( new CScope( *pObjMngr ) );
+    pScope->AddDefaults();
+
+    CVcfWriter writer( *pScope, os );
     return writer.WriteAnnot( annot );
 }
 

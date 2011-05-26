@@ -9,6 +9,7 @@ SRC = agp_write \
       gtf_writer gtf_write_data \
       gvf_writer gvf_write_data \
       wiggle_writer \
-      bed_writer bed_track_record bed_feature_record
+      bed_writer bed_track_record bed_feature_record \
+      vcf_writer
       
 WATCHERS = ludwigf boukn
