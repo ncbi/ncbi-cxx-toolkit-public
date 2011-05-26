@@ -79,6 +79,15 @@ BEGIN_NCBI_SCOPE
 
 namespace variation {
 
+template<typename T>
+void ChangeIdsInPlace(T& container, sequence::EGetIdType id_type, CScope& scope)
+{
+    for(CTypeIterator<CSeq_id> it = Begin(container); it; ++it) {
+        CSeq_id& id = *it;
+        CSeq_id_Handle idh = sequence::GetId(id, scope, id_type);
+        id.Assign(*idh.GetSeqId());
+    }
+}
 
 CVariationUtil::ETestStatus CVariationUtil::CheckExonBoundary(const CVariantPlacement& p, const CSeq_align& aln)
 {
@@ -571,9 +580,13 @@ void CVariationUtil::x_InferNAfromAA(CVariation& v)
     }
 
     CRef<CSeq_loc> nuc_loc = prot2precursor_mapper->Map(placement.GetLoc());
+    ChangeIdsInPlace(*nuc_loc, sequence::eGetId_ForceAcc, *m_scope);
+
     if(!nuc_loc->IsInt() || sequence::GetLength(*nuc_loc, NULL) != 3) {
         NCBI_THROW(CException, eUnknown, "AA does not remap to a single codon.");
     }
+
+
 
     CSeqVector seqv(*nuc_loc, m_scope, CBioseq_Handle::eCoding_Iupac);
     string original_allele_codon; //nucleotide allele on the sequence
@@ -1033,16 +1046,6 @@ void CVariationUtil::x_AdjustDelinsToInterval(CVariation& v, const CSeq_loc& loc
     }
 
     v.SetPlacements().front()->SetLoc().Assign(loc);
-}
-
-template<typename T>
-void ChangeIdsInPlace(T& container, sequence::EGetIdType id_type, CScope& scope)
-{
-    for(CTypeIterator<CSeq_id> it = Begin(container); it; ++it) {
-        CSeq_id& id = *it;
-        CSeq_id_Handle idh = sequence::GetId(id, scope, id_type);
-        id.Assign(*idh.GetSeqId());
-    }
 }
 
 

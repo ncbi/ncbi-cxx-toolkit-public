@@ -102,6 +102,19 @@ TSeqPos GetLength(const CVariantPlacement& p)
         - (p.IsSetStart_offset() ? p.GetStart_offset() : 0);
 }
 
+void SetComputational(CVariation& variation)
+{
+    CVariationMethod& m = variation.SetMethod();
+    m.SetMethod();
+
+    if(find(m.GetMethod().begin(),
+            m.GetMethod().end(),
+            CVariationMethod::eMethod_E_computational) == m.GetMethod().end())
+    {
+        m.SetMethod().push_back(CVariationMethod::eMethod_E_computational);
+    }
+}
+
 
 bool SeqsMatch(const string& query, const char* text)
 {
@@ -1032,7 +1045,7 @@ CRef<CVariation> CHgvsParser::x_duplication(TIterator const& i, const CContext& 
     TIterator it = i->children.begin();
     CRef<CVariation> vr(new CVariation);
     CVariation_inst& var_inst = vr->SetData().SetInstance();
-    var_inst.SetType(CVariation_inst::eType_ins);
+    var_inst.SetType(CVariation_inst::eType_ins); //replace seq @ location with this*2
 
     SetFirstPlacement(*vr).Assign(context.GetPlacement());
 
@@ -1046,9 +1059,7 @@ CRef<CVariation> CHgvsParser::x_duplication(TIterator const& i, const CContext& 
     //the next node is either expected length or expected sequence
     if(it != i->children.end() && it->value.id() == SGrammar::eID_seq_ref) {
         TDelta dup_seq = x_seq_ref(it, context);
-        if(!dup_seq->GetSeq().IsLiteral()) {
-            HGVS_THROW(eSemantic, "Expected literal after 'dup'");
-        } else if(dup_seq->GetSeq().GetLiteral().IsSetSeq_data()) {
+        if(dup_seq->GetSeq().IsLiteral()) {
             SetFirstPlacement(*vr).SetSeq(dup_seq->SetSeq().SetLiteral());
         }
     }
@@ -1248,6 +1259,7 @@ CRef<CVariation> CHgvsParser::x_prot_fs(TIterator const& i, const CContext& cont
     }
 
     vr->SetData().SetNote("Frameshift");
+    vr->SetFrameshift();
 
     SetFirstPlacement(*vr).Assign(context.GetPlacement());
 
@@ -1411,7 +1423,7 @@ CRef<CVariation> CHgvsParser::x_expr1(TIterator const& i, const CContext& contex
     if(it->value.id() == i->value.id() && s == "(") {
         ++it;
         vr = x_expr1(it, context);
-        vr->SetMethod().push_back(CVariationMethod::eMethod_E_computational);
+        SetComputational(*vr);
     } else if(it->value.id() == SGrammar::eID_list1a) {
         vr = x_list(it, context);
     } else if(it->value.id() == SGrammar::eID_header) {
@@ -1437,7 +1449,7 @@ CRef<CVariation> CHgvsParser::x_expr2(TIterator const& i, const CContext& contex
     if(it->value.id() == i->value.id() && s == "(") {
         ++it;
         vr = x_expr2(it, context);
-        vr->SetMethod().push_back(CVariationMethod::eMethod_E_computational);
+        SetComputational(*vr);
     } else if(it->value.id() == SGrammar::eID_list2a) {
         vr = x_list(it, context);
     } else if(it->value.id() == SGrammar::eID_location) {
@@ -1461,7 +1473,7 @@ CRef<CVariation> CHgvsParser::x_expr2(TIterator const& i, const CContext& contex
             vr->SetConsequence().push_back(cons);
             SetFirstPlacement(*vr).SetLoc().SetEmpty().Assign(context.GetId());
             if(s == "0?") {
-                vr->SetMethod().push_back(CVariationMethod::eMethod_E_computational);
+                SetComputational(*vr);
             }
         } else if(s == "=") {
             vr = x_identity(context);
@@ -1486,7 +1498,7 @@ CRef<CVariation> CHgvsParser::x_expr3(TIterator const& i, const CContext& contex
     if(it->value.id() == i->value.id() && s == "(") {
         ++it;
         vr = x_expr3(it, context);
-        vr->SetMethod().push_back(CVariationMethod::eMethod_E_computational);
+        SetComputational(*vr);
     } else if(it->value.id() == SGrammar::eID_list3a) {
         vr = x_list(it, context);
     } else if(it->value.id() == SGrammar::eID_mut_inst) {
@@ -1494,7 +1506,19 @@ CRef<CVariation> CHgvsParser::x_expr3(TIterator const& i, const CContext& contex
         vr->SetData().SetSet().SetType(CVariation::TData::TSet::eData_set_type_compound);
         for(; it != i->children.end(); ++it) {
             CRef<CVariation> inst_ref = x_mut_inst(it, context);
-            vr->SetData().SetSet().SetVariations().push_back(inst_ref);
+
+            if(inst_ref->GetData().IsNote()
+              && inst_ref->GetData().GetNote() == "Frameshift"
+              && vr->SetData().SetSet().SetVariations().size() > 1)
+            {
+                //if inst_ref is a frameshift subexpression, it is attached as attribute of the
+                //last variation, as frameshift is not a subtype of Variation.data, and thus
+                //not represented as a separate subvariation.
+
+                vr->SetData().SetSet().SetVariations().back()->SetFrameshift().Assign(inst_ref->GetFrameshift());
+            } else {
+                vr->SetData().SetSet().SetVariations().push_back(inst_ref);
+            }
         }
         vr = x_unwrap_iff_singleton(*vr);
     } else {
