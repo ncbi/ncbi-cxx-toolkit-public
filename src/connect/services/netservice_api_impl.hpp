@@ -225,7 +225,8 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     TNetServerSet m_Servers;
     CFastMutex m_ServerMutex;
 
-    STimeout m_Timeout;
+    STimeout m_ConnTimeout;
+    STimeout m_CommTimeout;
     ESwitch m_PermanentConnection;
 
     int m_MaxSubsequentConnectionFailures;

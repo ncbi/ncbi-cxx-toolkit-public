@@ -122,7 +122,7 @@ bool SNetServiceIterator_RandomPivot::Next()
         if (m_RandomIterators.size() > 1) {
             NON_CONST_ITERATE(TRandomIterators, it, m_RandomIterators) {
                 swap(*it, m_RandomIterators[s_RandomIteratorGen.GetRand(0,
-                    m_RandomIterators.size() - 1)]);
+                    CRandom::TValue(m_RandomIterators.size() - 1))]);
             }
         }
         m_RandomIterator = m_RandomIterators.begin();
@@ -256,12 +256,18 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
                 "use_lbsm_affinity", CConfig::eErr_NoThrow, kEmptyStr);
 
         unsigned long timeout = s_SecondsToMilliseconds(config->GetString(
+            section, "connection_timeout", CConfig::eErr_NoThrow, "0"), 0);
+
+        NcbiMsToTimeout(&m_ConnTimeout, timeout > 0 ? timeout :
+            SECONDS_DOUBLE_TO_MS_UL(CONNECTION_TIMEOUT_DEFAULT));
+
+        timeout = s_SecondsToMilliseconds(config->GetString(
             section, "communication_timeout", CConfig::eErr_NoThrow, "0"), 0);
 
         if (timeout > 0)
-            NcbiMsToTimeout(&m_Timeout, timeout);
+            NcbiMsToTimeout(&m_CommTimeout, timeout);
         else
-            m_Timeout = s_GetDefaultCommTimeout();
+            m_CommTimeout = s_GetDefaultCommTimeout();
 
         m_ServerThrottlePeriod = config->GetInt(section,
             "throttle_relaxation_period", CConfig::eErr_NoThrow,
@@ -317,7 +323,9 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
 
         m_RebalanceStrategy = CreateSimpleRebalanceStrategy(*config, section);
     } else {
-        m_Timeout = s_GetDefaultCommTimeout();
+        NcbiMsToTimeout(&m_ConnTimeout,
+            SECONDS_DOUBLE_TO_MS_UL(CONNECTION_TIMEOUT_DEFAULT));
+        m_CommTimeout = s_GetDefaultCommTimeout();
 
         // Throttling parameters.
         m_ServerThrottlePeriod = THROTTLE_RELAXATION_PERIOD_DEFAULT;
@@ -838,11 +846,11 @@ SNetServiceImpl::~SNetServiceImpl()
 
 void CNetService::SetCommunicationTimeout(const STimeout& to)
 {
-    m_Impl->m_Timeout = to;
+    m_Impl->m_CommTimeout = to;
 }
 const STimeout& CNetService::GetCommunicationTimeout() const
 {
-    return m_Impl->m_Timeout;
+    return m_Impl->m_CommTimeout;
 }
 
 void CNetService::SetPermanentConnection(ESwitch type)
@@ -856,7 +864,8 @@ static SNetServiceIteratorImpl* s_CreateRandomIterator(
     if (!servers->m_Servers.empty()) {
         TNetServerList::const_iterator initial_it =
             servers->m_Servers.begin() +
-            s_RandomIteratorGen.GetRand(0, servers->m_Servers.size() - 1);
+            s_RandomIteratorGen.GetRand(0,
+                CRandom::TValue(servers->m_Servers.size() - 1));
         TNetServerList::const_iterator it = initial_it;
         do {
             if (!LBSMD_IS_PENALIZED_RATE(it->second))

@@ -41,6 +41,10 @@
 // Delay between two successive connection attempts in seconds.
 #define RETRY_DELAY_DEFAULT 1.0
 
+// Connection timeout, which is used as the eIO_Open timeout
+// in CSocket::Connect.
+#define CONNECTION_TIMEOUT_DEFAULT 2.0
+
 // Communication timeout, upon reaching which the connection
 // is closed on the client side.
 #define COMMUNICATION_TIMEOUT_DEFAULT 12.0

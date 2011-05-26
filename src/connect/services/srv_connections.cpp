@@ -316,7 +316,7 @@ CNetServerConnection SNetServerImpl::Connect()
     CNetServerConnection conn = new SNetServerConnectionImpl(this);
 
     EIO_Status io_st = conn->m_Socket.Connect(m_Address.host, m_Address.port,
-        &m_Service->m_Timeout, fSOCK_LogOff | fSOCK_KeepAlive);
+        &m_Service->m_ConnTimeout, fSOCK_LogOff | fSOCK_KeepAlive);
 
     if (io_st != eIO_Success) {
         conn->m_Socket.Close();
@@ -331,7 +331,7 @@ CNetServerConnection SNetServerImpl::Connect()
     RegisterConnectionEvent(false);
 
     conn->m_Socket.SetDataLogging(eOff);
-    conn->m_Socket.SetTimeout(eIO_ReadWrite, &m_Service->m_Timeout);
+    conn->m_Socket.SetTimeout(eIO_ReadWrite, &m_Service->m_CommTimeout);
     conn->m_Socket.DisableOSSendDelay();
     conn->m_Socket.SetReuseAddress(eOn);
 
