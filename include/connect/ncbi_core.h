@@ -201,7 +201,7 @@ typedef enum {
  */
 typedef int/*bool*/ (*FMT_LOCK_Handler)
 (void*    user_data,
- EMT_Lock how       
+ EMT_Lock how
  );
 
 /** MT lock cleanup callback.
