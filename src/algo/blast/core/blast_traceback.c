@@ -478,7 +478,6 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
          Int4 adjusted_s_length;
          const Uint1* adjusted_subject;
          Int4 cutoff;
-         Boolean delete_hsp = FALSE;
 
          if (kTranslateSubject) {
             if (program_number == eBlastTypeRpsTblastn) {
@@ -637,6 +636,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
          }
          // -RMH-: Done
          
+         Boolean delete_hsp = FALSE;
          Blast_HSPUpdateWithTraceback(gap_align, hsp);
 
          if (kGreedyTraceback) {
