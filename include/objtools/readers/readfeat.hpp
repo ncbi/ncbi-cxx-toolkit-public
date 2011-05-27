@@ -116,7 +116,9 @@ public:
                              const string& qual,
                              const string& val,
                              const TFlags flags = 0,
-                             IErrorContainer* container=0);
+                             IErrorContainer* container=0,
+                             int line = 0, 	
+                             const string &seq_id = std::string() );
 
 private:
     // this class uses a singleton internally to manage the specifics

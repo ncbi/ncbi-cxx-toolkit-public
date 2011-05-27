@@ -228,7 +228,9 @@ public:
                       const string& qual,
                       const string& val,
                       const CFeature_table_reader::TFlags flags,
-                      IErrorContainer* container);
+                      IErrorContainer* container,
+                      int line,
+                      const string &seq_id );
 
 private:
 
@@ -238,25 +240,29 @@ private:
 
     bool x_ParseFeatureTableLine (const string& line, Int4* startP, Int4* stopP,
                                   bool* partial5P, bool* partial3P, bool* ispointP, bool* isminusP,
-                                  string& featP, string& qualP, string& valP, Int4 offset);
+                                  string& featP, string& qualP, string& valP, Int4 offset,
+                                  IErrorContainer *container, int line_num, const string &seq_id );
 
     bool x_AddIntervalToFeature (CRef<CSeq_feat> sfp, CSeq_loc_mix& mix,
                                  const string& seqid, Int4 start, Int4 stop,
                                  bool partial5, bool partial3, bool ispoint, bool isminus);
 
     bool x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
-                                  const string& qual, const string& val);
+                                  const string& qual, const string& val,
+                                  IErrorContainer *container, int line_num, const string &seq_id );
 
     bool x_AddQualifierToGene     (CSeqFeatData& sfdata,
                                    EQual qtype, const string& val);
     bool x_AddQualifierToCdregion (CRef<CSeq_feat> sfp, CSeqFeatData& sfdata,
-                                   EQual qtype, const string& val);
+                                   EQual qtype, const string& val,
+                                   IErrorContainer *container, int line_num, const string &seq_id );
     bool x_AddQualifierToRna      (CSeqFeatData& sfdata,
                                    EQual qtype, const string& val);
     bool x_AddQualifierToImp      (CRef<CSeq_feat> sfp, CSeqFeatData& sfdata,
                                    EQual qtype, const string& qual, const string& val);
     bool x_AddQualifierToBioSrc   (CSeqFeatData& sfdata,
-                                   EOrgRef rtype, const string& val);
+                                   EOrgRef rtype, const string& val,
+                                   IErrorContainer *container, int line, const string &seq_id );
     bool x_AddQualifierToBioSrc   (CSeqFeatData& sfdata,
                                    CSubSource::ESubtype stype, const string& val);
     bool x_AddQualifierToBioSrc   (CSeqFeatData& sfdata,
@@ -268,6 +274,12 @@ private:
     bool x_StringIsJustQuotes (const string& str);
 
     int x_ParseTrnaString (const string& val);
+
+    long x_StringToLongNoThrow ( 
+        const string &str, 
+        IErrorContainer *container, 
+        int line, 
+        const string &seq_id );
 
     bool x_SetupSeqFeat (CRef<CSeq_feat> sfp, const string& feat,
                          const CFeature_table_reader::TFlags flags, 
@@ -750,7 +762,11 @@ bool CFeature_table_reader_imp::x_ParseFeatureTableLine (
     string& featP,
     string& qualP,
     string& valP,
-    Int4 offset
+    Int4 offset,
+
+    IErrorContainer *container, 
+    int line_num, 
+    const string &seq_id
 )
 
 {
@@ -806,7 +822,7 @@ bool CFeature_table_reader_imp::x_ParseFeatureTableLine (
           start [len - 1] = '\0';
         }
         try {
-            startv = NStr::StringToLong (start);
+            startv = x_StringToLongNoThrow(start, container, line_num, seq_id);
         } catch (...) {
             badNumber = true;
         }
@@ -818,7 +834,7 @@ bool CFeature_table_reader_imp::x_ParseFeatureTableLine (
             stop.erase (0, 1);
         }
         try {
-            stopv = NStr::StringToLong (stop);
+            stopv = x_StringToLongNoThrow (stop, container, line_num, seq_id);
         } catch (CStringException) {
             badNumber = true;
         }
@@ -1004,7 +1020,10 @@ bool CFeature_table_reader_imp::x_AddQualifierToGene (
 bool CFeature_table_reader_imp::x_AddQualifierToCdregion (
     CRef<CSeq_feat> sfp,
     CSeqFeatData& sfdata,
-    EQual qtype, const string& val
+    EQual qtype, const string& val,
+    IErrorContainer *container, 
+    int line, 
+    const string &seq_id 
 )
 
 {
@@ -1012,7 +1031,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToCdregion (
     switch (qtype) {
         case eQual_codon_start:
             {
-                int frame = NStr::StringToInt (val);
+                int frame = x_StringToLongNoThrow (val, container, line, seq_id);
                 switch (frame) {
                     case 0:
                         crp.SetFrame (CCdregion::eFrame_not_set);
@@ -1127,6 +1146,29 @@ int CFeature_table_reader_imp::x_ParseTrnaString (
     }
 
     return 0;
+}
+
+long 
+CFeature_table_reader_imp::x_StringToLongNoThrow ( 
+    const string &str, IErrorContainer *container, int line, const string &seq_id )
+{
+    try {
+        return NStr::StringToLong(str);
+    } catch( ... ) {
+        // See if we start with a number, but there's extra junk after it, try again
+        if( ! str.empty() && isdigit(str[0]) ) {
+            try {
+                long result = NStr::StringToLong(str, NStr::fAllowTrailingSymbols);
+                container->PutError( CLineError( eDiag_Error, line, 
+                    "excess characters found after a number: \"" + string(str) + "\" ", seq_id ) );
+                return result;
+            } catch( ... ) { } // fall-thru to usual handling
+        }
+        container->PutError( CLineError( eDiag_Error, line, 
+            "a number was expected, but instead got: \"" + string(str) + "\" ", seq_id ) );
+        // we have no idea, so just return zero
+        return 0;
+    }
 }
 
 
@@ -1279,7 +1321,10 @@ bool CFeature_table_reader_imp::x_AddQualifierToImp (
 bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (
     CSeqFeatData& sfdata,
     EOrgRef rtype,
-    const string& val
+    const string& val,
+    IErrorContainer *container, 
+    int line, 	
+    const string &seq_id 
 )
 
 {
@@ -1319,7 +1364,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (
             {
                 CBioSource::TOrg& orp = bsp.SetOrg ();
                 COrg_ref::TOrgname& onp = orp.SetOrgname ();
-                int code = NStr::StringToInt (val);
+                int code = x_StringToLongNoThrow (val, container, line, seq_id);
                 onp.SetGcode (code);
                 return true;
             }
@@ -1327,7 +1372,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (
             {
                 CBioSource::TOrg& orp = bsp.SetOrg ();
                 COrg_ref::TOrgname& onp = orp.SetOrgname ();
-                int code = NStr::StringToInt (val);
+                int code = x_StringToLongNoThrow (val, container, line, seq_id);
                 onp.SetMgcode (code);
                 return true;
             }
@@ -1400,7 +1445,10 @@ bool CFeature_table_reader_imp::x_AddGBQualToFeature (
 bool CFeature_table_reader_imp::x_AddQualifierToFeature (
     CRef<CSeq_feat> sfp,
     const string& qual,
-    const string& val
+    const string& val,
+    IErrorContainer *container, 
+    int line, 	
+    const string &seq_id 
 )
 
 {
@@ -1412,7 +1460,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
         TOrgRefMap::const_iterator o_iter = sm_OrgRefKeys.find (qual.c_str ());
         if (o_iter != sm_OrgRefKeys.end ()) {
             EOrgRef rtype = o_iter->second;
-            if (x_AddQualifierToBioSrc (sfdata, rtype, val)) return true;
+            if (x_AddQualifierToBioSrc (sfdata, rtype, val, container, line, seq_id)) return true;
 
         } else {
 
@@ -1444,7 +1492,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                     if (x_AddQualifierToGene (sfdata, qtype, val)) return true;
                     break;
                 case CSeqFeatData::e_Cdregion:
-                    if (x_AddQualifierToCdregion (sfp, sfdata, qtype, val)) return true;
+                    if (x_AddQualifierToCdregion (sfp, sfdata, qtype, val, container, line, seq_id)) return true;
                     break;
                 case CSeqFeatData::e_Rna:
                     if (x_AddQualifierToRna (sfdata, qtype, val)) return true;
@@ -1479,7 +1527,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                 case CSeqFeatData::e_Pub:
                     if( qtype == eQual_PubMed ) {
                         CRef<CPub> new_pub( new CPub );
-                        new_pub->SetPmid( CPubMedId( NStr::StringToInt(val) ) );
+                        new_pub->SetPmid( CPubMedId( x_StringToLongNoThrow(val, container, line, seq_id) ) );
                         sfdata.SetPub().SetPub().Set().push_back( new_pub );
                         return true;
                     }
@@ -1632,7 +1680,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                             CRef<CDbtag> dbt (new CDbtag);
                             dbt->SetDb (db);
                             CRef<CObject_id> oid (new CObject_id);
-                            num = NStr::StringToNumeric (tag);
+                            num = x_StringToLongNoThrow (tag, container, line, seq_id);
                             if (num != -1) {
                                 oid->SetId (num);
                             } else {
@@ -1860,7 +1908,7 @@ bool CFeature_table_reader_imp::x_SetupSeqFeat (
         CSeqFeatData& sfdata = sfp->SetData ();
         CImp_feat_Base& imp = sfdata.SetImp ();
         imp.SetKey ("misc_feature");
-        x_AddQualifierToFeature (sfp, "standard_name", feat);
+        x_AddQualifierToFeature (sfp, "standard_name", feat, container, line, seq_id);
 
         return true;
 
@@ -1942,7 +1990,8 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                 // put nulls between feature intervals !!!!!!!!
 
             } else if (x_ParseFeatureTableLine (line, &start, &stop, &partial5, &partial3,
-                                                &ispoint, &isminus, feat, qual, val, offset)) {
+                                                &ispoint, &isminus, feat, qual, val, offset,
+                                                container, reader.GetLineNumber(), seqid)) {
 
                 // process line in feature table
 
@@ -2029,7 +2078,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                                          seqid,
                                          container);
                         }
-                    } else if ( !x_AddQualifierToFeature (sfp, qual, val) ) {
+                    } else if ( !x_AddQualifierToFeature (sfp, qual, val, container, reader.GetLineNumber(), seqid) ) {
 
                         // unrecognized qualifier key
 
@@ -2057,7 +2106,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                         TSingleSet::const_iterator s_iter = sc_SingleKeys.find (qual.c_str ());
                         if (s_iter != sc_SingleKeys.end ()) {
 
-                            x_AddQualifierToFeature (sfp, qual, val);
+                            x_AddQualifierToFeature (sfp, qual, val, container, reader.GetLineNumber(), seqid);
 
                         }
                     }
@@ -2120,13 +2169,15 @@ void CFeature_table_reader_imp::AddFeatQual (
     const string& qual,
     const string& val,
     const CFeature_table_reader::TFlags flags,
-    IErrorContainer* container
+    IErrorContainer* container,
+    int line, 	
+    const string &seq_id 
 )
 
 {
     if ((! qual.empty ()) && (! val.empty ())) {
 
-        if (! x_AddQualifierToFeature (sfp, qual, val)) {
+        if (! x_AddQualifierToFeature (sfp, qual, val, container, line, seq_id)) {
 
             // unrecognized qualifier key
 
@@ -2146,7 +2197,7 @@ void CFeature_table_reader_imp::AddFeatQual (
         TSingleSet::const_iterator s_iter = sc_SingleKeys.find (qual.c_str ());
         if (s_iter != sc_SingleKeys.end ()) {
 
-            x_AddQualifierToFeature (sfp, qual, val);
+            x_AddQualifierToFeature (sfp, qual, val, container, line, seq_id);
 
         }
     }
@@ -2327,11 +2378,13 @@ void CFeature_table_reader::AddFeatQual (
     const string& qual,
     const string& val,
     const CFeature_table_reader::TFlags flags,
-    IErrorContainer* container
+    IErrorContainer* container,
+    int line, 	
+    const string &seq_id 
 )
 
 {
-    x_GetImplementation ().AddFeatQual (sfp, qual, val, flags, container) ;
+    x_GetImplementation ().AddFeatQual ( sfp, qual, val, flags, container, line, seq_id ) ;
 }
 
 
