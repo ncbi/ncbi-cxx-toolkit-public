@@ -445,41 +445,51 @@ public:
     {
         double score = 0;
 
-        ///
-        /// complicated
-        ///
+        try {
+            ///
+            /// complicated
+            ///
 
-        /// first, generate a gene model
-        CFeatureGenerator generator(*scope);
-        generator.SetFlags(CFeatureGenerator::fDefaults |
-                           CFeatureGenerator::fGenerateLocalIds);
-        generator.SetAllowedUnaligned(10);
+            /// first, generate a gene model
+            CFeatureGenerator generator(*scope);
+            generator.SetFlags(CFeatureGenerator::fDefaults |
+                               CFeatureGenerator::fGenerateLocalIds);
+            generator.SetAllowedUnaligned(10);
 
-        CConstRef<CSeq_align> clean_align = generator.CleanAlignment(align);
-        CSeq_annot annot;
-        CBioseq_set bset;
-        generator.ConvertAlignToAnnot(*clean_align, annot, bset);
+            CConstRef<CSeq_align> clean_align = generator.CleanAlignment(align);
+            CSeq_annot annot;
+            CBioseq_set bset;
+            generator.ConvertAlignToAnnot(*clean_align, annot, bset);
 
-        /// extract the CDS and translate it
-        CRef<CSeq_feat> cds;
-        ITERATE (CSeq_annot::TData::TFtable, it, annot.GetData().GetFtable()) {
-            if ((*it)->GetData().Which() == CSeqFeatData::e_Cdregion) {
-                cds = *it;
-                break;
+            /// extract the CDS and translate it
+            CRef<CSeq_feat> cds;
+            ITERATE (CSeq_annot::TData::TFtable, it, annot.GetData().GetFtable()) {
+                if ((*it)->GetData().Which() == CSeqFeatData::e_Cdregion) {
+                    cds = *it;
+                    break;
+                }
+            }
+
+            if (cds) {
+                string trans;
+                CSeqTranslator::Translate(*cds, *scope, trans);
+                if ( !cds->GetLocation().IsPartialStop(eExtreme_Biological)  &&
+                     NStr::EndsWith(trans, "*")) {
+                    trans.resize(trans.size() - 1);
+                }
+
+                ITERATE (string, i, trans) {
+                    score += (*i == '*');
+                }
             }
         }
-
-        if (cds) {
-            string trans;
-            CSeqTranslator::Translate(*cds, *scope, trans);
-            if ( !cds->GetLocation().IsPartialStop(eExtreme_Biological)  &&
-                 NStr::EndsWith(trans, "*")) {
-                trans.resize(trans.size() - 1);
-            }
-
-            ITERATE (string, i, trans) {
-                score += (*i == '*');
-            }
+        catch (CException& e) {
+            CNcbiOstrstream os;
+            os << MSerial_AsnText << align;
+            ERR_POST(Error << "error computing internal stops: " << e);
+            ERR_POST(Error << "source alignment: "
+                     << string(CNcbiOstrstreamToString(os)));
+            ERR_POST(Error << "proceeding with " << score << " internal stops");
         }
         return score;
     }
