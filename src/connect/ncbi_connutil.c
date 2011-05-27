@@ -569,23 +569,24 @@ static int/*bool*/ x_TagValueMatches(const char* oldval, size_t oldvallen,
 {
     assert(newvallen > 0);
     while (oldvallen > 0) {
-        size_t n;
-        for (n = 0;  n < oldvallen;  n++) {
-            if (!isspace((unsigned char) oldval[n]))
+        do {
+            if (!isspace((unsigned char)(*oldval)))
                 break;
-        }
-        oldvallen -= n;
+            ++oldval;
+        } while (--oldvallen > 0);
         if (oldvallen < newvallen)
             break;
-        oldval    += n;
         if (strncasecmp(oldval, newval, newvallen) == 0
             &&  (oldvallen == newvallen
                  ||  isspace((unsigned char) oldval[newvallen]))) {
             return 1/*true*/;
         }
         assert(oldvallen > 0);
-        --oldvallen;
-        ++oldval;
+        do {
+            if ( isspace((unsigned char)(*oldval)))
+                break;
+            ++oldval;
+        } while (--oldvallen > 0);
     }
     return 0/*false*/;
 }
@@ -699,6 +700,8 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo* info,
                 assert(op != eUserHeaderOp_Delete);
                 off = !eol ? 0 : eol[-1] != '\r' ? 1 : 2;
                 if (op == eUserHeaderOp_Extend) {
+                    assert(line[taglen] == ':');
+                    taglen++;
                     if (x_TagValueMatches(line + taglen, linelen-off - taglen,
                                           newtagval, newlen)) {
                         goto ignore;

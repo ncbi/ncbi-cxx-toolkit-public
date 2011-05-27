@@ -373,7 +373,8 @@ static void TEST_ConnNetInfo(void)
 
     ConnNetInfo_ExtendUserHeader(net_info,
                                  "T2: V2\n"
-                                 "T3: V3\r\n");
+                                 "T3: V3\r\n"
+                                 "T4:W4");
     str = UTIL_PrintableString(net_info->http_user_header, 0, buf, 0);
     if (str)
         *str = '\0';
