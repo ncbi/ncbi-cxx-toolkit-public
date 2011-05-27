@@ -5773,6 +5773,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UBL	s	Universite du Benin",
 "UBT	s	Oekologisch-Botanischer Garten",
 "UBU	s	Mongolian State University, Botany Department",
+"UC<AUS>	scb	University of Canberra Wildlife Tissue Collection",
 "UC<USA-CA>	s	University of California, University Herbarium",
 "UC<USA-MI>	c	Upjohn Culture Collection",
 "UCAC	s	University of Central Arkansas, Department of Biology",
