@@ -80,9 +80,7 @@ protected:
         eUpdate    = (1 << 2),
         eList      = (1 << 3),
         eExtract   = (1 << 4),
-        eStreamIn  = (1 << 5),
-        eStreamOut = (1 << 6),
-        eTest      = (1 << 7)
+        eTest      = (1 << 5)
     };
     typedef unsigned int TAction;
 
