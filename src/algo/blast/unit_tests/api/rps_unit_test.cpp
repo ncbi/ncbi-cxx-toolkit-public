@@ -55,42 +55,40 @@ using namespace ncbi::blast;
 
 void testNuclHitList(const CSeq_align_set& results, ENa_strand strand)
 {
-   const size_t num_hsps_total = 14;
-   const size_t num_hsps_plus = 7;
+   const size_t num_hsps_total = 12;
+   const size_t num_hsps_plus = 4;
    const int scores[num_hsps_total] = 
-     { 62, 51, 49, 42, 44, 44, 44, 41, 43, 43, 46, 48, 45, 41 };
+     { 62, 51, 49, 44, 44, 44, 43, 43, 43, 48, 45, 46 };
    const ENa_strand strands[num_hsps_total] = 
    {
        eNa_strand_minus,
        eNa_strand_plus,
        eNa_strand_minus,
-       eNa_strand_plus,
        eNa_strand_minus,
        eNa_strand_minus,
        eNa_strand_plus,
        eNa_strand_plus,
-       eNa_strand_plus,
        eNa_strand_minus,
-       eNa_strand_plus,
+       eNa_strand_minus,
        eNa_strand_minus,
        eNa_strand_minus,
        eNa_strand_plus
    };
    const int q_offsets[num_hsps_total] =
-      { 3244, 1045, 3133, 8277, 9204, 3163, 8179, 
-        5118, 1090, 1328, 3633,  832, 6776, 8112 };
+      { 3244, 1045, 3133, 9204, 3163, 8179, 1090, 1328, 1328,
+        832, 6776, 3633 };
    const int s_offsets[num_hsps_total] =
-      { 700, 662, 812, 620, 1385, 146, 538, 
-        704, 930, 1340, 966, 1917, 1467, 299 };
+      { 700, 662, 812, 1385, 146, 538, 930, 1340, 610,
+        1917, 1467, 966 };
    const int q_ends[num_hsps_total] =
-      { 3430, 1159, 3283, 8346, 9300, 3328, 8287, 
-        5271, 1174, 1388, 3759, 937, 6968, 8172 };
+      { 3430, 1159, 3283, 9300, 3328, 8287, 1174, 1388, 1388,
+        937, 6968, 3759 };
    const int s_ends[num_hsps_total] =
-      { 761, 699, 861, 643, 1418, 205, 564, 
-        753, 958, 1360, 1007, 1952, 1531, 318 };
+      { 761, 699, 861, 1418, 205, 564, 958, 1360, 630,
+        1952, 1531, 1007 };
    const double evalues[num_hsps_total] =
-      {.055955, 1.08466, 2.03458, 5.88896, 7.14918, 7.94646, 8.23886, 
-       8.33664, 9.18220, 9.97662, 1.13597, 2.57153, 5.55884, 8.75512 };
+      { .0545, 1.048, 1.963, 6.876, 7.640, 7.921, 8.825, 9.587, 9.965,
+        2.479, 5.349, 3.786 };
 
    // compute the total number of alignments
    size_t num_hsps = results.Size();
@@ -138,8 +136,7 @@ void testNuclHitList(const CSeq_align_set& results, ENa_strand strand)
 
            ITERATE(CSeq_align::TScore, sitr, hitlist.GetScore()) {
                const CScore& curr_score = **sitr;
-               if (curr_score.GetId().GetStr() == "e_value" 
-                   && strand == eNa_strand_both) {
+               if (curr_score.GetId().GetStr() == "e_value") {
                    BOOST_REQUIRE_CLOSE(evalues[align_num],
                                  curr_score.GetValue().GetReal(), 0.1);
                }

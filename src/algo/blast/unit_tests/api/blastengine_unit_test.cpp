@@ -118,7 +118,7 @@ void testLongMatchDiagnostics(BlastDiagnostics* diagnostics)
     BOOST_REQUIRE_EQUAL(296537, ungapped_stats->init_extends);
     BOOST_REQUIRE_EQUAL(1256, ungapped_stats->good_init_extends);
     BOOST_REQUIRE_EQUAL(1252, gapped_stats->extensions);
-    BOOST_REQUIRE_EQUAL(20, gapped_stats->good_extensions);
+    BOOST_REQUIRE_EQUAL(18, gapped_stats->good_extensions);
 }
 
 void testShortMatchDiagnostics(BlastDiagnostics* diagnostics)
@@ -132,7 +132,7 @@ void testShortMatchDiagnostics(BlastDiagnostics* diagnostics)
     BOOST_REQUIRE_EQUAL(24, ungapped_stats->init_extends);
     BOOST_REQUIRE_EQUAL(4, ungapped_stats->good_init_extends);
     BOOST_REQUIRE_EQUAL(4, gapped_stats->extensions);
-    BOOST_REQUIRE_EQUAL(4, gapped_stats->good_extensions);
+    BOOST_REQUIRE_EQUAL(3, gapped_stats->good_extensions);
 }
 
 
@@ -146,7 +146,7 @@ void testShortMatchDiagnostics(BlastDiagnostics* diagnostics)
 // single sequence. This can be done, because CBlastPrelimSearch requires 
 // a database-based BlastSeqSrc only for the Seq-align creation.
 BOOST_AUTO_TEST_CASE(testTBLASTNLongMatchBlastEngine) {
-    const Int4 kNumHspsEnd=20;
+    const Int4 kNumHspsEnd=18;
     const Int8 kEffectiveSearchSpace = 1050668186940LL;
     const int kQueryGi = 9790067;
     const int kSubjectGi = 30698605;
@@ -170,20 +170,19 @@ BOOST_AUTO_TEST_CASE(testTBLASTNLongMatchBlastEngine) {
     testLongMatchDiagnostics(id->m_Diagnostics->GetPointer());
 
     const int kQueryOffsetFinal[kNumHspsEnd] = 
-        { 407, 486, 421, 569, 265, 320, 266, 321, 727, 659, 
-          92, 1, 1, 727, 422, 216, 167, 825, 167, 831 };
+        { 486, 421, 569, 407, 265, 320, 266, 321, 727, 659, 92,
+          1, 1, 727, 422, 216, 167, 825 }; 
     const int kQueryLengthFinal[kNumHspsEnd] = 
-        { 164, 85, 62, 67, 58, 74, 56, 69, 56, 66, 147, 69, 
-          73, 61, 40, 26, 35, 54, 35, 48 };
+        { 85, 62, 67, 164, 58, 74, 56, 69, 56, 66, 147, 69, 73, 
+          61, 40, 26, 35, 54 };
     const int kScoreFinal[kNumHspsEnd] = 
-        { 368, 199, 160, 104, 99, 95, 94, 92, 94, 89, 108, 
-          101, 97, 95, 89, 86, 84, 84, 83, 79};
+        {  199, 160, 104, 368, 99, 95, 94, 92, 94, 89, 108, 101, 
+           97, 95, 89, 86, 84, 84}; 
     const double kEvalueFinal[kNumHspsEnd] = 
-        {1.84474e-35, 4.47098e-34, 4.47098e-34, 4.47098e-34, 
-         4.23245e-08, 4.23245e-08, 3.29958e-07, 3.29958e-07, 
-         7.11395e-07, 7.11395e-07, 8.64076e-05, 0.000570668, 
-         0.001678, 0.00287725, 0.0145032, 0.0325588, 
-         0.0558201, 0.0558201, 0.0730883, 0.214807 };
+        {4.471e-34, 4.471e-34, 4.471e-34, 1.01852e-32, 4.23245e-08, 
+         4.23245e-08, 3.29958e-07, 3.29958e-07, 7.11395e-07, 7.11395e-07, 
+         0.0143447, 0.0929796, 0.270529, 0.461453, 
+         2.29017, 5.10196, 8.70263, 8.70263}; 
     
     CBlastHSPResults results
         (prelim_search.ComputeBlastHSPResults
@@ -217,7 +216,7 @@ BOOST_AUTO_TEST_CASE(testTBLASTNLongMatchBlastEngine) {
 // stage of the BLAST search is performed. Checks obtained HSPs and the
 // diagnostic hit counts.
 BOOST_AUTO_TEST_CASE(testTBLASTNShortMatchBlastEngine) {
-    const Int4 kNumHspsEnd=4;
+    const Int4 kNumHspsEnd=3;
     const Int8 kEffectiveSearchSpace = 1050668186940LL;
     const int kQueryGi = 9790067;
     const int kSubjectGi = 38547463;
@@ -241,11 +240,11 @@ BOOST_AUTO_TEST_CASE(testTBLASTNShortMatchBlastEngine) {
 
     testShortMatchDiagnostics(id->m_Diagnostics->GetPointer());
 
-   const int kQueryOffsetFinal[kNumHspsEnd] = { 98, 425, 320, 340};
-   const int kQueryLengthFinal[kNumHspsEnd] = { 223,211,  35,  13};
-   const int kScoreFinal[kNumHspsEnd] = {1138, 173, 72, 46}; 
+   const int kQueryOffsetFinal[kNumHspsEnd] = { 98, 320, 425};
+   const int kQueryLengthFinal[kNumHspsEnd] = { 223, 35, 211};
+   const int kScoreFinal[kNumHspsEnd] = {1138, 72, 173}; 
    const double kEvalueFinal[kNumHspsEnd] = 
-       {1.31128e-147, 3.82037e-17, 3.57857e-05, 0.0421643};
+       {7.45744e-125, 7.45744e-125, 4.164e-10};
 
    CBlastHSPResults results
        (prelim_search.ComputeBlastHSPResults
@@ -416,9 +415,9 @@ BOOST_AUTO_TEST_CASE(testBlastpPrelimSearch)
     const int kNumHitsToCheck = 3;
     const int kIndices[kNumHitsToCheck] = { 1, 4, 8 };
     const int kScores[kNumHitsToCheck] = { 519, 56, 52 };
-    const int kOids[kNumHitsToCheck] = { 74, 971, 665 }; 
-    const int kQueryLengths[kNumHitsToCheck] = { 297, 46, 41 };
-    const int kSubjectLengths[kNumHitsToCheck] = { 298, 48, 41 };
+    const int kOids[kNumHitsToCheck] = { 74, 1979, 1219 };
+    const int kQueryLengths[kNumHitsToCheck] = { 297, 54, 48 };
+    const int kSubjectLengths[kNumHitsToCheck] = { 298, 67, 48 };
     const EProgram kProgram = eBlastp;
 
     CRef<CSeq_loc> query_loc1(new CSeq_loc());
