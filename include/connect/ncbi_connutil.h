@@ -405,12 +405,12 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_OverrideUserHeader
 
 /* Extend user header.
  * Existing tags matching (case-insensitively) first appearances of those
- * from "header" get appended with new value (separated by a space) if the
- * added value is non-empty, otherwise, the tags are left untouched.  If new
- * tag value matches (case-insensitively) last tag value already in the
- * header, the new value does not get added (to avoid repetitive duplicates).
- * All new unmatched tags from "header" with non-empty values get added
- * to the end of the user header (as with "Append" above).
+ * from "header" get appended with the new value (separated by a space) if the
+ * added value is non-empty, otherwise, the tags are left untouched.  However,
+ * if the new tag value matches (case-insensitively) tag's value already in the
+ * header, the new value does not get added (to avoid duplicates).
+ * All other new tags from "header" with non-empty values get added at the end
+ * of the user header (as with "Append" above).
  * Return non-zero if successful, otherwise return 0 to indicate an error.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_ExtendUserHeader
@@ -460,7 +460,7 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_LogEx
 
 
 /* Reconstruct text URL out of the SConnNetInfo's components
- * (excluding username:password for security reasons).
+ * (excluding username:password for safety reasons).
  * Returned string must be free()'d when no longer necessary.
  * Return NULL on error.
  */

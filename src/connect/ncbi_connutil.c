@@ -564,6 +564,30 @@ extern int/*bool*/ ConnNetInfo_AppendUserHeader(SConnNetInfo* info,
 }
 
 
+static int/*bool*/ x_TagValueMatches(const char* oldval, size_t oldvallen,
+                                     const char* newval, size_t newvallen)
+{
+    assert(newvallen > 0);
+    while (oldvallen > 0) {
+        size_t n;
+        for (n = 0;  n < oldvallen;  n++) {
+            if (!isspace((unsigned char) oldval[n]))
+                break;
+        }
+        oldvallen -= n;
+        if (oldvallen < newvallen)
+            break;
+        oldval    += n;
+        if (strncasecmp(oldval, newval, newvallen) == 0
+            &&  (oldvallen == newvallen
+                 ||  isspace((unsigned char) oldval[newvallen]))) {
+            return 1/*true*/;
+        }
+    }
+    return 0/*false*/;
+}
+
+
 typedef enum {
     eUserHeaderOp_Delete,
     eUserHeaderOp_Extend,
@@ -672,21 +696,13 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo* info,
                 assert(op != eUserHeaderOp_Delete);
                 off = !eol ? 0 : eol[-1] != '\r' ? 1 : 2;
                 if (op == eUserHeaderOp_Extend) {
-                    while (++taglen < linelen) {
-                        if (!isspace((unsigned char) line[taglen]))
-                            break;
-                    }
-                    len = linelen-off - taglen;
-                    line   += linelen-off;
-                    linelen = off;
-                    if (len >= newlen
-                        &&  strncasecmp(line - newlen, newtagval, newlen) == 0
-                        &&  (len == newlen  ||
-                             isspace((unsigned char)((line - newlen)[-1])))) {
-                        /* if the tagvalue is the only(or last) added - skip */
+                    if (x_TagValueMatches(line + taglen, linelen-off - taglen,
+                                          newtagval, newlen)) {
                         goto ignore;
                     }
-                    newlen++/*count in one space separator*/;
+                    line += linelen-off;
+                    linelen = off;
+                    newlen++;
                     len = 0;
                 } else
                     len = linelen-off;
