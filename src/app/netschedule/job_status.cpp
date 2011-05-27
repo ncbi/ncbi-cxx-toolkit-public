@@ -506,9 +506,9 @@ void CJobStatusTracker::ReportInvalidStatus(unsigned   job_id,
                                             TJobStatus old_status)
 {
     NCBI_THROW(CNetScheduleException, eInvalidJobStatus,
-               "Job status cannot be changed. Old status " +
+               "Cannot change job status from " +
                 CNetScheduleAPI::StatusToString(old_status) +
-                ". New status " +
+                " to " +
                 CNetScheduleAPI::StatusToString(status));
 }
 
