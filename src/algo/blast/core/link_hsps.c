@@ -1792,7 +1792,7 @@ BLAST_LinkHsps(EBlastProgramType program_number, BlastHSPList* hsp_list,
         /* Calculate individual HSP e-values first - they'll be needed to
            compare with sum e-values. Use decay rate to compensate for 
            multiple tests. */
-        Blast_HSPListGetEvalues(query_info, subject_length, hsp_list, gapped_calculation, FALSE,sbp, 
+        Blast_HSPListGetEvalues(query_info, subject_length, hsp_list, gapped_calculation, sbp, 
                                 link_hsp_params->gap_decay_rate, 1.0);
         
         s_BlastUnevenGapLinkHSPs(program_number, hsp_list, query_info, 

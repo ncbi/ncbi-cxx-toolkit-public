@@ -1528,7 +1528,6 @@ Int2 Blast_HSPListGetEvalues(const BlastQueryInfo* query_info,
                              Int4 subject_length,
                              BlastHSPList* hsp_list, 
                              Boolean gapped_calculation, 
-                             Boolean RPS_prelim,
                              const BlastScoreBlk* sbp, double gap_decay_rate,
                              double scaling_factor)
 {
@@ -1537,9 +1536,7 @@ Int2 Blast_HSPListGetEvalues(const BlastQueryInfo* query_info,
    Blast_KarlinBlk** kbp;
    Int4 hsp_cnt;
    Int4 index;
-   Int4 kbp_context;
    double gap_decay_divisor = 1.;
-   Boolean isRPS = (fabs(scaling_factor - 1.0) > 1.0e-6);
    
    if (hsp_list == NULL || hsp_list->hspcnt == 0)
       return 0;
@@ -1561,42 +1558,24 @@ Int2 Blast_HSPListGetEvalues(const BlastQueryInfo* query_info,
       /* Divide Lambda by the scaling factor, so e-value is 
          calculated correctly from a scaled score. This is needed only
          for RPS BLAST, where scores are scaled, but Lambda is not. */
-      kbp_context = hsp->context;
-      if (RPS_prelim) {
-          /* All kbp in preliminary stage are equivalent.  However, some
-             may be invalid.  Search for the first populated kbp */
-          int i;
-          for (i=0; i<6; ++i) {
-              if (kbp[i]) break;
-          }
-          kbp_context = i;
-      }
-      kbp[kbp_context]->Lambda /= scaling_factor;
+      kbp[hsp->context]->Lambda /= scaling_factor;
 
       if (sbp->gbp) {
           /* Only try Spouge's method if gumbel parameters are available */
-          if (!isRPS) {
-              hsp->evalue =
-                  BLAST_SpougeStoE(hsp->score, kbp[kbp_context], sbp->gbp, 
+          hsp->evalue =
+              BLAST_SpougeStoE(hsp->score, kbp[hsp->context], sbp->gbp, 
                                query_info->contexts[hsp->context].query_length, 
                                subject_length);
-          } else {
-              /* for RPS blast, query and subject is swapped */
-              hsp->evalue =
-                  BLAST_SpougeStoE(hsp->score, kbp[kbp_context], sbp->gbp, 
-                               subject_length,
-                               query_info->contexts[hsp->context].query_length);
-          }
       } else {
           /* Get effective search space from the query information block */
           hsp->evalue =
-              BLAST_KarlinStoE_simple(hsp->score, kbp[kbp_context], 
+              BLAST_KarlinStoE_simple(hsp->score, kbp[hsp->context], 
                                query_info->contexts[hsp->context].eff_searchsp);
       }
 
       hsp->evalue /= gap_decay_divisor;
       /* Put back the unscaled value of Lambda. */
-      kbp[kbp_context]->Lambda *= scaling_factor;
+      kbp[hsp->context]->Lambda *= scaling_factor;
    }
    
    /* Assign the best e-value field. Here the best e-value will always be

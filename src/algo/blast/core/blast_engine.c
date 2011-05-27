@@ -632,7 +632,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
     Uint4 context, first_context, last_context;
     BlastQueryInfo* query_info = query_info_in;
     Int4 orig_length = subject->length;
-    Int4 stat_length = subject->length;
+    Int4 actual_length = orig_length;
     // To support rmblastn -RMH-
     BlastScoreBlk* sbp = gap_align->sbp;
 
@@ -713,7 +713,6 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
             subject->frame = BLAST_ContextToFrame(eBlastTypeBlastx, context);
             subject->sequence = translation_buffer + frame_offsets[context] + 1;
             subject->length = frame_offsets[context+1] - frame_offsets[context] - 1;
-            if (subject->length > 0) stat_length = subject->length;
 
             /* perform per-context mask translation */
             if (context == 0) { /* first positive context */
@@ -760,6 +759,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
     /* restore mask ranges  */
     if (kTranslatedSubject) {
         s_RestoreSubject(subject, &backup);
+        actual_length /= CODON_LENGTH ;
     }
 
     if (status) {
@@ -774,21 +774,14 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
         status = BLAST_LinkHsps(program_number, hsp_list_out, query_info,
                   subject->length, gap_align->sbp, hit_params->link_hsp_params, 
                   score_options->gapped_calculation);
-    } else if (!Blast_ProgramIsPhiBlast(program_number)
-           && !(Blast_ProgramIsRpsBlast(program_number) && !sbp->gbp) ){
+    } else if (!Blast_ProgramIsPhiBlast(program_number) &&
+              !Blast_ProgramIsRpsBlast(program_number)) {
         /* Calculate e-values for all HSPs. Skip this step
-           for PHI or RPS with old FSC, since calculating the E values 
+           for PHI and RPS BLAST, since calculating the E values 
            requires precomputation that has not been done yet */
-        Boolean isRPS = FALSE;
-        double scale_factor = 1.0;
-        if (Blast_ProgramIsRpsBlast(program_number)) {
-            isRPS = TRUE;
-            scale_factor = score_params->scale_factor;
-        }
-        status = Blast_HSPListGetEvalues(query_info, stat_length, hsp_list_out, 
+        status = Blast_HSPListGetEvalues(query_info, actual_length, hsp_list_out, 
                                          score_options->gapped_calculation, 
-                                         isRPS, gap_align->sbp, 0, scale_factor);
-        sbp->matrix_only_scoring = FALSE;
+                                         gap_align->sbp, 0, 1.0);
     }
     
    /* Use score threshold rather than evalue if 
@@ -1141,7 +1134,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
     /* iterate over all subject sequences */
     while ( (seq_arg.oid = BlastSeqSrcIteratorNext(seq_src, itr)) 
            != BLAST_SEQSRC_EOF) {
-       Int4 stat_length;
+       Int4 actual_length;
        if (seq_arg.oid == BLAST_SEQSRC_ERROR)
            break;
        if (BlastSeqSrcGetSequence(seq_src, &seq_arg) < 0)
@@ -1158,7 +1151,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
               return status;
       }
 
-      stat_length = seq_arg.seq->length; 
+      actual_length = seq_arg.seq->length; 
 
       /* Calculate cutoff scores for linking HSPs. Do this only for
          ungapped protein searches and ungapped translated
@@ -1179,7 +1172,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
                   GenCodeSingletonFind(db_options->genetic_code);
           }
           ASSERT(seq_arg.seq->gen_code_string);
-          stat_length /= CODON_LENGTH;
+          actual_length /= CODON_LENGTH;
       }
       status = 
          s_BlastSearchEngineCore(program_number, query, query_info,
@@ -1216,8 +1209,8 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
                                       hit_params->link_hsp_params, 
                                       gapped_calculation);
                } else {
-                  Blast_HSPListGetEvalues(query_info, stat_length,
-                                          hsp_list, gapped_calculation, FALSE,
+                  Blast_HSPListGetEvalues(query_info, actual_length,
+                                          hsp_list, gapped_calculation, 
                                           sbp, 0, 1.0);
                }
                /* Use score threshold rather than evalue if 

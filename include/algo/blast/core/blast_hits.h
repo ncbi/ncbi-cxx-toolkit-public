@@ -428,7 +428,6 @@ Blast_HSPListSaveHSP(BlastHSPList* hsp_list, BlastHSP* hsp);
  * @param subject_length Subject length - needed for Spouge's new FSC [in]
  * @param hsp_list List of HSPs for one subject sequence [in] [out]
  * @param gapped_calculation Is this for a gapped or ungapped search? [in]
- * @param RPS_prelim Is this for a RPS preliminary search? [in]
  * @param sbp Structure containing statistical information [in]
  * @param gap_decay_rate Adjustment parameter to compensate for the effects of
  * performing multiple tests when linking HSPs. No adjustment is made if 0. [in]
@@ -441,7 +440,6 @@ Int2 Blast_HSPListGetEvalues(const BlastQueryInfo* query_info,
                              Int4 subject_length,
                              BlastHSPList* hsp_list,
                              Boolean gapped_calculation, 
-                             Boolean RPS_prelim,
                              const BlastScoreBlk* sbp, double gap_decay_rate,
                              double scaling_factor);
 

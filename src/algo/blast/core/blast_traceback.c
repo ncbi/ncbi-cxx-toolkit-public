@@ -308,7 +308,7 @@ s_HSPListPostTracebackUpdate(EBlastProgramType program_number,
          are rounded down to the nearest even number. */
       Blast_HSPListAdjustOddBlastnScores(hsp_list, kGapped, sbp);
 
-      Blast_HSPListGetEvalues(query_info, subject_length, hsp_list, kGapped, FALSE, sbp, 0,
+      Blast_HSPListGetEvalues(query_info, subject_length, hsp_list, kGapped, sbp, 0,
                               scale_factor);
    }
 
@@ -367,7 +367,6 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
    const Boolean kSmithWaterman = (ext_options->eTbackExt == 
                                    eSmithWatermanTbckFull);
    BlastQueryInfo* query_info = query_info_in;
-   Int4 stat_length = subject_blk->length;
    Int4 offsets[2];
    Int4 num_initial_hsps = hsp_list->hspcnt;
    BlastIntervalTree* tree = NULL;
@@ -499,7 +498,6 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
                  hsp_new = Blast_HSPFree(hsp_new);
             } else
             	 subject = Blast_HSPGetTargetTranslation(target_t, hsp, &subject_length);
-            if (subject_length > 0) stat_length = subject_length;
          }
 
          if (!kIsOutOfFrame && (((hsp->query.gapped_start == 0 && 
@@ -746,7 +744,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
        }
        s_HSPListPostTracebackUpdate(program_number, hsp_list, query_info_in, 
                                     score_params, hit_params, sbp, 
-                                    stat_length);
+                                    subject_blk->length);
    }
    
    return 0;
