@@ -49,7 +49,7 @@
 
 #define NCBI_USE_ERRCODE_X   ConnServ_Connection
 
-#define LBSMD_IS_PENALIZED_RATE(rate) (rate <= -0.01)
+#define LBSMD_PENALIZED_RATE_BOUNDARY -0.01
 
 BEGIN_NCBI_SCOPE
 
@@ -98,26 +98,33 @@ bool SNetServiceIteratorImpl::Next()
 
 bool SNetServiceIterator_OmitPenalized::Next()
 {
-    do
-        if (++m_Position == m_ServerGroup->m_Servers.end())
-            return false;
-    while (LBSMD_IS_PENALIZED_RATE(m_Position->second));
-
-    return true;
+    return ++m_Position != m_ServerGroup->m_SuppressedBegin;
 }
 
 static CRandom s_RandomIteratorGen((CRandom::TValue) time(NULL));
 
+SNetServiceIterator_RandomPivot::SNetServiceIterator_RandomPivot(
+        SDiscoveredServers* server_group_impl) :
+    SNetServiceIteratorImpl(server_group_impl,
+        server_group_impl->m_Servers.begin() + s_RandomIteratorGen.GetRand(0,
+            CRandom::TValue((server_group_impl->m_SuppressedBegin -
+                server_group_impl->m_Servers.begin()) - 1)))
+{
+}
+
 bool SNetServiceIterator_RandomPivot::Next()
 {
     if (m_RandomIterators.empty()) {
-        m_RandomIterators.reserve(m_ServerGroup->m_Servers.size());
-        ITERATE(TNetServerList, it, m_ServerGroup->m_Servers) {
-            if (it != m_Position && !LBSMD_IS_PENALIZED_RATE(it->second))
-                m_RandomIterators.push_back(it);
-        }
-        if (m_RandomIterators.empty())
+        TNetServerList::const_iterator it = m_ServerGroup->m_Servers.begin();
+        size_t more_servers = (m_ServerGroup->m_SuppressedBegin - it) - 1;
+        if (more_servers == 0)
             return false;
+        m_RandomIterators.reserve(more_servers);
+        do {
+            if (it != m_Position)
+                m_RandomIterators.push_back(it);
+            ++it;
+        } while (--more_servers > 0);
         // Shuffle m_RandomIterators.
         if (m_RandomIterators.size() > 1) {
             NON_CONST_ITERATE(TRandomIterators, it, m_RandomIterators) {
@@ -368,18 +375,16 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
 SDiscoveredServers* SNetServiceImpl::AllocServerGroup(
     unsigned discovery_iteration)
 {
-    SDiscoveredServers* server_group;
-
     if (m_ServerGroupPool == NULL)
-        server_group = new SDiscoveredServers;
+        return new SDiscoveredServers(discovery_iteration);
     else {
-        server_group = m_ServerGroupPool;
+        SDiscoveredServers* server_group = m_ServerGroupPool;
         m_ServerGroupPool = server_group->m_NextGroupInPool;
+
+        server_group->Reset(discovery_iteration);
+
+        return server_group;
     }
-
-    server_group->Reset(discovery_iteration);
-
-    return server_group;
 }
 
 SActualService* SNetServiceImpl::FindOrCreateActualService(
@@ -410,6 +415,8 @@ SActualService* SNetServiceImpl::FindOrCreateActualService(
             CFastMutexGuard server_mutex_lock(m_ServerMutex);
             actual_service->m_DiscoveredServers->m_Servers.push_back(
                 TServerRate(FindOrCreateServerImpl(host, port), 1));
+            actual_service->m_DiscoveredServers->m_SuppressedBegin =
+                actual_service->m_DiscoveredServers->m_Servers.end();
         } else
             actual_service->m_ServiceType = eLoadBalancedService;
     }
@@ -464,9 +471,12 @@ void CNetService::StickToServer(const string& host, unsigned port)
 void CNetService::PrintCmdOutput(const string& cmd,
     CNcbiOstream& output_stream, CNetService::ECmdOutputStyle output_style)
 {
+    if (!IsLoadBalanced())
+        output_style = eDumpNoHeaders;
+
     for (CNetServiceIterator it = Iterate(); it; ++it) {
         if (output_style != eDumpNoHeaders)
-            output_stream << (*it)->m_Address.AsString() << endl;
+            output_stream << '[' << (*it)->m_Address.AsString() << ']' << endl;
 
         CNetServer::SExecResult exec_result((*it).ExecWithRetry(cmd));
 
@@ -649,15 +659,44 @@ void SNetServiceImpl::DiscoverServersIfNeeded(SActualService* actual_service)
 
             const SSERV_Info* sinfo;
 
+            TNetServerList& servers = server_group->m_Servers;
+            TNetServerList::size_type number_of_regular_servers = 0;
+            TNetServerList::size_type number_of_standby_servers = 0;
+            double max_standby_rate = LBSMD_PENALIZED_RATE_BOUNDARY;
+
+            // Fill the 'servers' array in accordance with the layout
+            // described above the SDiscoveredServers::m_Servers declaration.
             while ((sinfo = SERV_GetNextInfoEx(srv_it, 0)) != 0)
-                if (sinfo->time > 0 && sinfo->time != NCBI_TIME_INFINITE) {
+                if (sinfo->time > 0 && sinfo->time != NCBI_TIME_INFINITE &&
+                        sinfo->rate != 0.0) {
                     SNetServerImpl* server = FindOrCreateServerImpl(
                         CSocketAPI::ntoa(sinfo->host), sinfo->port);
                     server->m_ActualServiceDiscoveryIteration[actual_service] =
                         actual_service->m_LatestDiscoveryIteration;
-                    server_group->m_Servers.push_back(
-                        TServerRate(server, sinfo->rate));
+
+                    TServerRate server_rate(server, sinfo->rate);
+
+                    if (sinfo->rate > 0)
+                        servers.insert(servers.begin() +
+                            number_of_regular_servers++, server_rate);
+                    else if (sinfo->rate < max_standby_rate ||
+                            sinfo->rate <= LBSMD_PENALIZED_RATE_BOUNDARY)
+                        servers.push_back(server_rate);
+                    else {
+                        servers.insert(servers.begin() +
+                            number_of_regular_servers, server_rate);
+                        if (sinfo->rate == max_standby_rate)
+                            ++number_of_standby_servers;
+                        else {
+                            max_standby_rate = sinfo->rate;
+                            number_of_standby_servers = 1;
+                        }
+                    }
                 }
+
+            server_group->m_SuppressedBegin = servers.begin() +
+                (number_of_regular_servers > 0 ?
+                    number_of_regular_servers : number_of_standby_servers);
 
             server_mutex_lock.Release();
 
@@ -858,44 +897,22 @@ void CNetService::SetPermanentConnection(ESwitch type)
     m_Impl->m_PermanentConnection = type;
 }
 
-static SNetServiceIteratorImpl* s_CreateRandomIterator(
-    SDiscoveredServers* servers)
-{
-    if (!servers->m_Servers.empty()) {
-        TNetServerList::const_iterator initial_it =
-            servers->m_Servers.begin() +
-            s_RandomIteratorGen.GetRand(0,
-                CRandom::TValue(servers->m_Servers.size() - 1));
-        TNetServerList::const_iterator it = initial_it;
-        do {
-            if (!LBSMD_IS_PENALIZED_RATE(it->second))
-                return new SNetServiceIterator_RandomPivot(servers, it);
-            if (++it == servers->m_Servers.end())
-                it = servers->m_Servers.begin();
-        } while (it != initial_it);
-    }
-
-    return NULL;
-}
-
 CNetServiceIterator CNetService::Iterate(CNetService::EIterationMode mode,
     const string* service_name)
 {
     CRef<SDiscoveredServers> servers;
     m_Impl->GetDiscoveredServers(service_name, servers);
 
-    if (mode == eRandomize)
-        return s_CreateRandomIterator(servers);
-    else if (mode == eSortByLoad) {
-        for (TNetServerList::const_iterator it = servers->m_Servers.begin();
-                it != servers->m_Servers.end(); ++it)
-            if (!LBSMD_IS_PENALIZED_RATE(it->second))
-                return new SNetServiceIterator_OmitPenalized(servers, it);
-    } else { /* mode == eIncludePenalized. */
-        TNetServerList::const_iterator it = servers->m_Servers.begin();
-        if (it != servers->m_Servers.end())
-            return new SNetServiceIteratorImpl(servers, it);
-    }
+    if (mode != eIncludePenalized) {
+        if (servers->m_Servers.begin() < servers->m_SuppressedBegin)
+            if (mode == eSortByLoad)
+                return new SNetServiceIterator_OmitPenalized(servers);
+            else
+                return new SNetServiceIterator_RandomPivot(servers);
+    } else
+        if (!servers->m_Servers.empty())
+            return new SNetServiceIteratorImpl(servers);
+
     return NULL;
 }
 
@@ -905,24 +922,17 @@ CNetServiceIterator CNetService::Iterate(CNetServer::TInstance priority_server,
     CRef<SDiscoveredServers> servers;
     m_Impl->GetDiscoveredServers(service_name, servers);
 
-    TNetServerList::const_iterator non_penalized_server =
-        servers->m_Servers.end();
-
     // Find the requested server among the discovered servers.
     for (TNetServerList::const_iterator it = servers->m_Servers.begin();
-            it != servers->m_Servers.end(); ++it)
-        if (!LBSMD_IS_PENALIZED_RATE(it->second)) {
-            if (non_penalized_server == servers->m_Servers.end())
-                non_penalized_server = it;
-            if (it->first == priority_server)
-                return new SNetServiceIterator_RandomPivot(servers, it);
-        }
+            it != servers->m_SuppressedBegin; ++it)
+        if (it->first == priority_server)
+            return new SNetServiceIterator_RandomPivot(servers, it);
 
-    if (non_penalized_server != servers->m_Servers.end()) {
+    if (servers->m_Servers.begin() < servers->m_SuppressedBegin)
         // The requested server is not found in this service,
         // however there are non-penalized servers, so return them.
-        return s_CreateRandomIterator(servers);
-    } else {
+        return new SNetServiceIterator_RandomPivot(servers);
+    else {
         // The service is empty, allocate a server group to contain
         // solely the requested server.
         servers.Reset();
@@ -931,7 +941,9 @@ CNetServiceIterator CNetService::Iterate(CNetServer::TInstance priority_server,
             TServerRate(priority_server, 1));
         servers->m_Service = m_Impl;
         servers->m_ActualService = NULL;
-        return new SNetServiceIteratorImpl(servers, servers->m_Servers.begin());
+        servers->m_SuppressedBegin = servers->m_Servers.end();
+        return new SNetServiceIterator_RandomPivot(servers,
+            servers->m_Servers.begin());
     }
 
     return NULL;

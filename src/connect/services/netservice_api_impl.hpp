@@ -53,6 +53,12 @@ struct SActualService;
 
 struct SDiscoveredServers : public CObject
 {
+    SDiscoveredServers(unsigned discovery_iteration) :
+        m_NextGroupInPool(NULL),
+        m_DiscoveryIteration(discovery_iteration)
+    {
+    }
+
     void Reset(unsigned discovery_iteration)
     {
         m_NextGroupInPool = NULL;
@@ -68,7 +74,12 @@ struct SDiscoveredServers : public CObject
     SDiscoveredServers* m_NextGroupInPool;
 
     // A list of servers discovered by the load balancer.
+    // The structure of this array is as follows:
+    // index: begin()            m_SuppressedBegin              end()
+    //        |                  |                              |
+    // value: regular_srv_0...   suppressed_0... suppressed_last
     TNetServerList m_Servers;
+    TNetServerList::const_iterator m_SuppressedBegin;
 
     // A smart pointer to the SNetServiceImpl object
     // that contains this object.
@@ -82,9 +93,9 @@ struct SDiscoveredServers : public CObject
 
 struct SNetServiceIteratorImpl : public CObject
 {
-    SNetServiceIteratorImpl(SDiscoveredServers* server_group_impl,
-            TNetServerList::const_iterator position) :
-        m_ServerGroup(server_group_impl), m_Position(position)
+    SNetServiceIteratorImpl(SDiscoveredServers* server_group_impl) :
+        m_ServerGroup(server_group_impl),
+        m_Position(server_group_impl->m_Servers.begin())
     {
     }
 
@@ -93,13 +104,20 @@ struct SNetServiceIteratorImpl : public CObject
     CRef<SDiscoveredServers> m_ServerGroup;
 
     TNetServerList::const_iterator m_Position;
+
+protected:
+    // For use by SNetServiceIterator_RandomPivot
+    SNetServiceIteratorImpl(SDiscoveredServers* server_group_impl,
+            TNetServerList::const_iterator position) :
+        m_ServerGroup(server_group_impl), m_Position(position)
+    {
+    }
 };
 
 struct SNetServiceIterator_OmitPenalized : public SNetServiceIteratorImpl
 {
-    SNetServiceIterator_OmitPenalized(SDiscoveredServers* server_group_impl,
-            TNetServerList::const_iterator position) :
-        SNetServiceIteratorImpl(server_group_impl, position)
+    SNetServiceIterator_OmitPenalized(SDiscoveredServers* server_group_impl) :
+        SNetServiceIteratorImpl(server_group_impl)
     {
     }
 
@@ -109,10 +127,12 @@ struct SNetServiceIterator_OmitPenalized : public SNetServiceIteratorImpl
 struct SNetServiceIterator_RandomPivot : public SNetServiceIteratorImpl
 {
     SNetServiceIterator_RandomPivot(SDiscoveredServers* server_group_impl,
-            TNetServerList::const_iterator position) :
-        SNetServiceIteratorImpl(server_group_impl, position)
+            TNetServerList::const_iterator pivot) :
+        SNetServiceIteratorImpl(server_group_impl, pivot)
     {
     }
+
+    SNetServiceIterator_RandomPivot(SDiscoveredServers* server_group_impl);
 
     virtual bool Next();
 
