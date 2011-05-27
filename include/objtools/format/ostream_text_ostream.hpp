@@ -63,6 +63,10 @@ public:
     virtual void AddCLine( const char *line,
                            const CSerialObject* obj = 0);
 
+    // Discouraged
+    virtual void AddRawText( const char *line,
+                             const CSerialObject* obj = 0);
+
 private:
     CNcbiOstream&   m_Ostream;
 };

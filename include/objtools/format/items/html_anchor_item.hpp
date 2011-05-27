@@ -1,3 +1,6 @@
+#ifndef OBJTOOLS_FORMAT_ITEMS___HTML_ANCHOR_ITEM__HPP
+#define OBJTOOLS_FORMAT_ITEMS___HTML_ANCHOR_ITEM__HPP
+
 /*  $Id$
 * ===========================================================================
 *
@@ -23,70 +26,36 @@
 *
 * ===========================================================================
 *
-* Author:  Mati Shomrat
-*          
+* Author:  Michael Kornbluh, NCBI
 *
 * File Description:
+*   This provides an (invisible) HTML anchor item (<a name=...></a>)
 *
 */
-#include <ncbi_pch.hpp>
-#include <corelib/ncbistd.hpp>
 
-#include <objtools/format/ostream_text_ostream.hpp>
-
+#include <objtools/format/items/item_base.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// TextOStream
-
-COStreamTextOStream::COStreamTextOStream(void) :
-    m_Ostream(cout)
+class CHtmlAnchorItem : public CFlatItem
 {
-}
+public:
+    CHtmlAnchorItem( CBioseqContext& ctx, const string &label_core );
+    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
 
+    const string &GetLabelCore(void) const { return m_LabelCore; }
+    const int     GetGI(void)        const { return m_GI; }
 
-COStreamTextOStream::COStreamTextOStream(CNcbiOstream &os) :
-    m_Ostream(os)
-{
-}
+private:
+    void x_GatherInfo(CBioseqContext& ctx);
 
-
-void COStreamTextOStream::AddParagraph
-(const list<string>& text,
- const CSerialObject* obj)
-{
-    ITERATE(list<string>, line, text) {
-        m_Ostream << *line << '\n';
-    }
-
-    // we don't care about the object
-}
-
-void COStreamTextOStream::AddLine(
-    const string& line,
-    const CSerialObject* obj )
-{
-    m_Ostream << line.c_str() << '\n';
-}
-
-void COStreamTextOStream::AddCLine(
-    const char *line,
-    const CSerialObject* obj )
-{
-    m_Ostream << line << '\n';
-}
-
-void COStreamTextOStream::AddRawText(
-    const char *line,
-    const CSerialObject* obj )
-{
-    m_Ostream << line;
-}
-
+    // data
+    const string  m_LabelCore;
+    const int     m_GI;
+};
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+#endif  /* OBJTOOLS_FORMAT_ITEMS___HTML_ANCHOR_ITEM__HPP */

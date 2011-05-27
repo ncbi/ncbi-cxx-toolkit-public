@@ -1158,6 +1158,8 @@ const string strLinkBaseNucSearch(
     "http://www.ncbi.nlm.nih.gov/sites/entrez?db=Nucleotide&amp;cmd=Search&amp;term=" );
 const string strLinkBaseGenomePrj(
     "http://www.ncbi.nlm.nih.gov/genomeprj/" );
+const string strLinkBaseLatLon(
+    "http://www.ncbi.nlm.nih.gov/projects/Sequin/latlonview.html" );
 
 bool ConvertQuotesNotInHTMLTags( string &str )
 {   

@@ -60,6 +60,10 @@ public:
 
     virtual void AddCLine( const char *line,
                            const CSerialObject* obj = 0) = 0;
+
+    // discouraged
+    virtual void AddRawText( const char *line,
+                           const CSerialObject* obj = 0) = 0;
                           
     virtual ~IFlatTextOStream(void) {}
 };

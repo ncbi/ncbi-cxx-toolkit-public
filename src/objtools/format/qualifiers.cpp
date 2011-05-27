@@ -1542,6 +1542,60 @@ void s_ConvertGtLt(string& subname)
     }
 }
 
+void s_HtmlizeLatLon( string &subname ) {
+    string lat;
+    string north_or_south;
+    string lon;
+    string east_or_west;
+
+    // extract the pieces
+    CNcbiIstrstream lat_lon_stream( subname.c_str() );
+    lat_lon_stream >> lat;
+    lat_lon_stream >> north_or_south;
+    lat_lon_stream >> lon;
+    lat_lon_stream >> east_or_west;
+    if( lat_lon_stream.bad() ) {
+        return;
+    }
+
+    // see if lat and lon make numerical sense
+    try {
+        double lat_num = NStr::StringToDouble( lat );
+        double lon_num = NStr::StringToDouble( lon );
+        if( lat_num < -180.0 ) {
+            lat = "-180";
+        } else if( lat_num > 180.0 ) {
+            lat = "180";
+        }
+        if( lon_num < -90.0 ) {
+            lon = "-90";
+        } else if( lon_num > 90.0 ) {
+            lon = "90";
+        }
+    } catch( ... ) {
+        // error parsing numbers
+        return;
+    }
+
+    // negate the numbers if we're west of prime meridian or south of equator
+    if( east_or_west == "W" && ! NStr::StartsWith(lon, "-") ) {
+        lon = "-" + lon;
+    }
+    if( north_or_south == "S" && ! NStr::StartsWith(lat, "-")) {
+        lat = "-" + lat;
+    }
+
+    // now we can form the HTML
+    CNcbiOstrstream result;
+    result << "<a href=\"" << strLinkBaseLatLon << "?lat=" 
+        << lat 
+        << "&amp;lon=" 
+        << lon 
+        << "\">"
+        << subname << "</a>";
+    subname = CNcbiOstrstreamToString(result);
+}
+
 void CFlatSubSourcePrimer::Format(
     TFlatQuals& q, 
     const string& name,
@@ -1659,6 +1713,14 @@ void CFlatSubSourceQVal::Format(TFlatQuals& q, const string& name,
             x_AddFQ(q, name, subname);
             break;
 
+        case CSubSource::eSubtype_lat_lon:
+            if( ctx.Config().DoHTML() ) {
+                s_HtmlizeLatLon(subname);
+            }
+            ExpandTildes(subname, eTilde_space);
+            x_AddFQ(q, name, subname);
+            break;
+
         default:
             if ( ! subname.empty() ) {
                 ExpandTildes(subname, eTilde_space);
@@ -1733,7 +1795,7 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const string& name,
         if (ctx.Config().DoHTML()) {
             string url = dbt.GetUrl();
             if (!NStr::IsBlank(url)) {
-                db_xref <<  "<a href=\"" <<  url << "\">" << id << "</a>";
+                db_xref <<  "<a href=\"" <<  NStr::Replace(url, "&", "&amp;") << "\">" << id << "</a>";
             } else {
                 db_xref << id;
             }

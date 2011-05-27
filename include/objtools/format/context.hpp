@@ -77,14 +77,26 @@ public:
     typedef CRange<TSeqPos>         TRange;
 
     // constructor
-    CBioseqContext(const CBioseq_Handle& seq, CFlatFileContext& ffctx,
+    CBioseqContext(
+        const CBioseq_Handle& seq, 
+        CFlatFileContext& ffctx,
+        CMasterContext* mctx = 0,
+        CTopLevelSeqEntryContext *tlsec = 0);
+
+    CBioseqContext(
+        const CBioseq_Handle& prev_seq, 
+        const CBioseq_Handle& seq, 
+        const CBioseq_Handle& next_seq,
+        CFlatFileContext& ffctx,
         CMasterContext* mctx = 0,
         CTopLevelSeqEntryContext *tlsec = 0);
     // destructor
     ~CBioseqContext(void);
 
-    // Get the bioseq's handle
+    // Get the bioseq's handle (and those of its neighbors)
+    CBioseq_Handle& GetPrevHandle(void) { return m_PrevHandle; }
     CBioseq_Handle& GetHandle(void) { return m_Handle; }
+    CBioseq_Handle& GetNextHandle(void) { return m_NextHandle; }
     CScope& GetScope(void) { return m_Handle.GetScope(); }
     feature::CFeatTree& GetFeatTree(void) { return m_FeatTree; }
 
@@ -218,7 +230,9 @@ private:
     const CUser_object* x_GetEncode(void) const;
 
     // data
+    CBioseq_Handle        m_PrevHandle;
     CBioseq_Handle        m_Handle;
+    CBioseq_Handle        m_NextHandle;
     feature::CFeatTree    m_FeatTree;
     CRef<CSeq_id>         m_PrimaryId;
     string                m_Accession;

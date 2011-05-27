@@ -98,6 +98,7 @@ public:
     virtual void FormatOrigin(const COriginItem& origin, IFlatTextOStream& text_os);
     virtual void FormatGap(const CGapItem& gap, IFlatTextOStream& text_os);
     virtual void FormatGenomeProject(const CGenomeProjectItem&, IFlatTextOStream&);
+    virtual void FormatHtmlAnchor(const CHtmlAnchorItem&, IFlatTextOStream&);
 
 private:
     // source
@@ -113,6 +114,9 @@ private:
     void x_Medline(list<string>& l, const CReferenceItem& ref, CBioseqContext& ctx) const;
     void x_Pubmed(list<string>& l, const CReferenceItem& ref, CBioseqContext& ctx) const;
     void x_Remark(list<string>& l, const CReferenceItem& ref, CBioseqContext& ctx) const;
+
+    // HTML
+    void x_LocusHtmlPrefix( std::string &first_line, CBioseqContext& ctx );
 
     // processing data
     unsigned int m_uFeatureCount;

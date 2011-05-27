@@ -3428,12 +3428,10 @@ void CFeatureItem::x_AddQualsExt(
         if ( field.GetData().IsObject() ) {
             const CUser_object& obj = field.GetData().GetObject();
             x_AddQualsExt(obj);
-            return;
         } else if ( field.GetData().IsObjects() ) {
             ITERATE (CUser_field::C_Data::TObjects, o, field.GetData().GetObjects()) {
                 x_AddQualsExt(**o);
             }
-            return;
         }
     }
     if ( ext.IsSetType()  &&  ext.GetType().IsStr() ) {

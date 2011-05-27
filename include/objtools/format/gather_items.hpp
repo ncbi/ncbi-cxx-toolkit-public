@@ -72,8 +72,10 @@ protected:
 
     virtual void x_GatherSeqEntry(const CSeq_entry_Handle& entry, 
         CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext = CRef<CTopLevelSeqEntryContext>() ) const;
-    virtual void x_GatherBioseq(const CBioseq_Handle& seq, 
+    virtual void x_GatherBioseq(
+        const CBioseq_Handle& prev_seq, const CBioseq_Handle& this_seq, const CBioseq_Handle& next_seq, 
         CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext = CRef<CTopLevelSeqEntryContext>() ) const;
+
     virtual void x_DoMultipleSections(const CBioseq_Handle& seq) const;
     virtual void x_DoSingleSection(CBioseqContext& ctx) const = 0;
 

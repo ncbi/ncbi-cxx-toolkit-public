@@ -93,7 +93,9 @@
 #include <objtools/format/items/ctrl_items.hpp>
 #include <objtools/format/items/alignment_item.hpp>
 #include <objtools/format/items/gap_item.hpp>
+#include <objtools/format/items/html_anchor_item.hpp>
 #include <objtools/format/gather_items.hpp>
+#include <objtools/format/gather_iter.hpp>
 #include <objtools/format/genbank_gather.hpp>
 #include <objtools/format/embl_gather.hpp>
 #include <objtools/format/gff_gather.hpp>
@@ -225,46 +227,32 @@ CFlatGatherer::~CFlatGatherer(void)
 //
 // Protected:
 
-
 void CFlatGatherer::x_GatherSeqEntry(const CSeq_entry_Handle& entry,
     CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext) const
 {
-    if ( entry.IsSet()  &&  entry.GetSet().IsSetClass() ) {
-        CBioseq_set::TClass clss = entry.GetSet().GetClass();
-        if ( clss == CBioseq_set::eClass_genbank  ||
-             clss == CBioseq_set::eClass_mut_set  ||
-             clss == CBioseq_set::eClass_pop_set  ||
-             clss == CBioseq_set::eClass_phy_set  ||
-             clss == CBioseq_set::eClass_eco_set  ||
-             clss == CBioseq_set::eClass_wgs_set  ||
-             clss == CBioseq_set::eClass_gen_prod_set ) {
-            for ( CSeq_entry_CI it(entry); it; ++it ) {
-                x_GatherSeqEntry(*it, topLevelSeqEntryContext);
-            }
-            return;
-        }
-    }
-
-    CSeq_inst::TMol mol_type;
-    const CFlatFileConfig& cfg = Config();
-    if (cfg.IsViewAll()) {
-        mol_type = CSeq_inst::eMol_not_set;
-    } else if (cfg.IsViewNuc()) {
-        mol_type = CSeq_inst::eMol_na;
-    } else if (cfg.IsViewProt()) {
-        mol_type = CSeq_inst::eMol_aa;
-    } else {
-        return;
-    }
-
     // visit bioseqs in the entry (excluding segments)
-    CBioseq_CI seq_iter(entry, mol_type, CBioseq_CI::eLevel_Mains);
+    CGather_Iter seq_iter(entry, Config());
+    CBioseq_Handle prev_seq;
+    CBioseq_Handle this_seq;
+    CBioseq_Handle next_seq;
     for ( ; seq_iter; ++seq_iter ) {
-        CSeq_id_Handle id = GetId(*seq_iter, eGetId_Best);
-        if (id.GetSeqId()->IsLocal()  &&  cfg.SuppressLocalId()) {
-            continue;
+
+        if( this_seq ) {
+            x_GatherBioseq(prev_seq, this_seq, next_seq, topLevelSeqEntryContext);
         }
-        x_GatherBioseq(*seq_iter, topLevelSeqEntryContext);
+
+        // move everything over by one
+        prev_seq = this_seq;
+        this_seq = next_seq;
+        next_seq = *seq_iter;
+    }
+
+    // we don't process the last ones, so we do that now
+    if( this_seq ) {
+        x_GatherBioseq(prev_seq, this_seq, next_seq, topLevelSeqEntryContext);
+    }
+    if( next_seq ) {
+        x_GatherBioseq(this_seq, next_seq, CBioseq_Handle(), topLevelSeqEntryContext);
     }
 } 
 
@@ -327,7 +315,8 @@ bool s_BioSeqHasContig(
 }
 
 // a default implementation for GenBank /  DDBJ formats
-void CFlatGatherer::x_GatherBioseq(const CBioseq_Handle& seq,
+void CFlatGatherer::x_GatherBioseq(
+    const CBioseq_Handle& prev_seq, const CBioseq_Handle& seq, const CBioseq_Handle& next_seq, 
     CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext ) const
 {
     const CFlatFileConfig& cfg = Config();
@@ -349,10 +338,10 @@ void CFlatGatherer::x_GatherBioseq(const CBioseq_Handle& seq,
          (cfg.IsStyleNormal()  ||  cfg.IsStyleSegment())  &&
          (m_Context->GetLocation() == 0)                  &&
          !cfg.IsFormatFTable() ) {
-        x_DoMultipleSections(seq);
+         x_DoMultipleSections(seq);
     } else {
         // display as a single bioseq (single section)
-        m_Current.Reset(new CBioseqContext(seq, *m_Context, 0, 
+        m_Current.Reset(new CBioseqContext(prev_seq, seq, next_seq, *m_Context, 0, 
             (topLevelSeqEntryContext ? &*topLevelSeqEntryContext : NULL)));
         m_Context->AddSection(m_Current);
         x_DoSingleSection(*m_Current);
@@ -1086,8 +1075,13 @@ void CFlatGatherer::x_FeatComments(CBioseqContext& ctx) const
 // We use multiple items to represent the sequence.
 void CFlatGatherer::x_GatherSequence(void) const
 { 
+    CConstRef<IFlatItem> item;
+
+    item.Reset( new CHtmlAnchorItem( *m_Current, "sequence") );
+    *m_ItemOS << item;
+
     static const TSeqPos kChunkSize = 4800;
-    
+
     TSeqPos size = GetLength( m_Current->GetLocation(), &m_Current->GetScope() );
     TSeqPos from = GetStart( m_Current->GetLocation(), &m_Current->GetScope() ) + 1;
     TSeqPos to = GetStop( m_Current->GetLocation(), &m_Current->GetScope() ) + 1;
@@ -1096,7 +1090,6 @@ void CFlatGatherer::x_GatherSequence(void) const
     to = ( to <= size ? to : size );
 
     bool first = true;
-    CConstRef<IFlatItem> item;
     for ( TSeqPos pos = 1; pos <= to; pos += kChunkSize ) {
         TSeqPos end = min( pos + kChunkSize - 1, to );
         item.Reset( new CSequenceItem( pos, end, first, *m_Current ) );

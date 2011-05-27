@@ -882,6 +882,25 @@ void CCommentItem::x_GatherInfo(CBioseqContext& ctx)
     }
 }
 
+// returns the data_str, but wrapped in appropriate <a href...>...</a> if applicable
+static
+string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_str, const string &data_str )
+{
+    if( ! is_html ) {
+        return data_str;
+    }
+
+    if( label_str == "GOLD Stamp ID" ) {
+        CNcbiOstrstream result;
+        result << "<a href=\"http://genomesonline.org/GOLD_CARDS/" << data_str 
+               << ".html\">" << data_str << "</a>";
+        return CNcbiOstrstreamToString(result);
+    } else {
+        // normalize case: nothing to do
+        return data_str;
+    }
+}
+
 // turns data into comment lines (not line-wrapped)
 // result in out_lines
 // out_prefix_len holds the length of the part up to the space after the double-colon
@@ -890,7 +909,8 @@ void s_GetStrForStructuredComment(
     const CUser_object::TData &data, 
     list<string> &out_lines,
     int &out_prefix_len,
-    const bool is_first )
+    const bool is_first,
+    const bool is_html )
 {
     static const int kFieldLenThreshold = 45;
 
@@ -961,7 +981,7 @@ void s_GetStrForStructuredComment(
             next_line.resize( max( next_line.size(), longest_label_len), ' ' );
         }
         next_line.append( " :: " );
-        next_line.append( (*it)->GetData().GetStr() );
+        next_line.append( s_HtmlizeStructuredCommentData( is_html, (*it)->GetLabel().GetStr(), (*it)->GetData().GetStr() ) );
         next_line.append( "\n" );
 
         ExpandTildes(next_line, eTilde_comment);
@@ -1034,7 +1054,7 @@ void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc)
             const CUser_object::TType &type = userObject.GetType();
             if( type.IsStr() && type.GetStr() == "StructuredComment" ) {
                 s_GetStrForStructuredComment( userObject.GetData(),  
-                    m_Comment, m_CommentInternalIndent, IsFirst() );
+                    m_Comment, m_CommentInternalIndent, IsFirst(), GetContext()->Config().DoHTML() );
                 SetNeedPeriod( false );
                 can_add_period = ePeriod_NoAdd;
                 return; // special case because multiple lines

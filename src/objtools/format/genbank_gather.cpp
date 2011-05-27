@@ -59,6 +59,7 @@
 #include <objtools/format/items/contig_item.hpp>
 #include <objtools/format/items/origin_item.hpp>
 #include <objtools/format/items/genome_project_item.hpp>
+#include <objtools/format/items/html_anchor_item.hpp>
 #include <objtools/format/gather_items.hpp>
 #include <objtools/format/genbank_gather.hpp>
 #include <objtools/format/context.hpp>
@@ -96,6 +97,8 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
 
     item.Reset( new CStartSectionItem(ctx) );
     ItemOS() << item;
+    item.Reset( new CHtmlAnchorItem(ctx, "locus") );
+    ItemOS() << item;
     item.Reset( new CLocusItem(ctx) );
     ItemOS() << item;
     item.Reset( new CDeflineItem(ctx) );
@@ -122,8 +125,12 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
     item.Reset( new CSourceItem(ctx) );
     ItemOS() << item;
     x_GatherReferences();
+    item.Reset( new CHtmlAnchorItem(ctx, "comment") );
+    ItemOS() << item;
     x_GatherComments();
     item.Reset( new CPrimaryItem(ctx) );
+    ItemOS() << item;
+    item.Reset( new CHtmlAnchorItem(ctx, "feature") );
     ItemOS() << item;
     item.Reset( new CFeatHeaderItem(ctx) );
     ItemOS() << item;
@@ -142,6 +149,8 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
                 x_GatherFeatures();
             }
         }
+        item.Reset( new CHtmlAnchorItem(ctx, "contig") );
+        ItemOS() << item;
         item.Reset( new CContigItem(ctx) );
         ItemOS() << item;
         if ( cfg.ShowContigAndSeq() ) {
@@ -156,6 +165,8 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
     } else {
         x_GatherFeatures();
         if ( cfg.ShowContigAndSeq()  &&  s_ShowContig(ctx) ) {
+            item.Reset( new CHtmlAnchorItem(ctx, "contig") );
+            ItemOS() << item;
             item.Reset( new CContigItem(ctx) );
             ItemOS() << item;
         }
@@ -168,6 +179,8 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
         x_GatherSequence();
     }
     item.Reset( new CEndSectionItem(ctx) );    
+    ItemOS() << item;
+    item.Reset( new CHtmlAnchorItem(ctx, "slash") );
     ItemOS() << item;
 }
 

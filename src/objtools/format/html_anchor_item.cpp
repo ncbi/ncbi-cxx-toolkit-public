@@ -23,70 +23,40 @@
 *
 * ===========================================================================
 *
-* Author:  Mati Shomrat
-*          
+* Author:  Michael Kornbluh, NCBI
 *
 * File Description:
+*   This provides an (invisible) HTML anchor item (<a name=...></a>)
 *
 */
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistd.hpp>
 
-#include <objtools/format/ostream_text_ostream.hpp>
+#include <objtools/format/items/html_anchor_item.hpp>
 
+#include <objtools/format/context.hpp>
+#include <objtools/format/formatter.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// TextOStream
-
-COStreamTextOStream::COStreamTextOStream(void) :
-    m_Ostream(cout)
+CHtmlAnchorItem::CHtmlAnchorItem( CBioseqContext& ctx, const string &label_core )
+    : CFlatItem(&ctx), m_LabelCore(label_core), m_GI(ctx.GetGI())
 {
+    x_GatherInfo(ctx);
 }
 
-
-COStreamTextOStream::COStreamTextOStream(CNcbiOstream &os) :
-    m_Ostream(os)
+void CHtmlAnchorItem::Format(IFormatter& formatter, IFlatTextOStream& text_os) const
 {
+    formatter.FormatHtmlAnchor(*this, text_os);
 }
 
-
-void COStreamTextOStream::AddParagraph
-(const list<string>& text,
- const CSerialObject* obj)
+void CHtmlAnchorItem::x_GatherInfo(CBioseqContext& ctx)
 {
-    ITERATE(list<string>, line, text) {
-        m_Ostream << *line << '\n';
+    // check if we should skip this
+    if( ! ctx.Config().DoHTML() || ! ctx.Config().IsModeEntrez() ) {
+        x_SetSkip();
     }
-
-    // we don't care about the object
 }
-
-void COStreamTextOStream::AddLine(
-    const string& line,
-    const CSerialObject* obj )
-{
-    m_Ostream << line.c_str() << '\n';
-}
-
-void COStreamTextOStream::AddCLine(
-    const char *line,
-    const CSerialObject* obj )
-{
-    m_Ostream << line << '\n';
-}
-
-void COStreamTextOStream::AddRawText(
-    const char *line,
-    const CSerialObject* obj )
-{
-    m_Ostream << line;
-}
-
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

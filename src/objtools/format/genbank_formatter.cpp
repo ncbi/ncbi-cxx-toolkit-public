@@ -37,6 +37,7 @@
 #include <objects/biblio/Author.hpp>
 #include <objects/biblio/Cit_pat.hpp>
 #include <objects/general/Person_id.hpp>
+#include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/util/sequence.hpp>
 
 #include <objtools/format/text_ostream.hpp>
@@ -44,6 +45,7 @@
 #include <objtools/format/items/locus_item.hpp>
 #include <objtools/format/items/defline_item.hpp>
 #include <objtools/format/items/accession_item.hpp>
+#include <objtools/format/items/ctrl_items.hpp>
 #include <objtools/format/items/version_item.hpp>
 #include <objtools/format/items/dbsource_item.hpp>
 #include <objtools/format/items/segment_item.hpp>
@@ -61,6 +63,7 @@
 #include <objtools/format/items/origin_item.hpp>
 #include <objtools/format/items/gap_item.hpp>
 #include <objtools/format/items/genome_project_item.hpp>
+#include <objtools/format/items/html_anchor_item.hpp>
 #include <objtools/format/context.hpp>
 #include "utils.hpp"
 
@@ -86,7 +89,7 @@ CGenbankFormatter::CGenbankFormatter(void) :
 // END SECTION
 
 void CGenbankFormatter::EndSection
-(const CEndSectionItem&,
+(const CEndSectionItem& end_item,
  IFlatTextOStream& text_os)
 {
     bool bHtml = GetContext().GetConfig().DoHTML();
@@ -138,7 +141,7 @@ void CGenbankFormatter::FormatLocus
 {
     static const string strands[]  = { "   ", "ss-", "ds-", "ms-" };
 
-    const CBioseqContext& ctx = *locus.GetContext();
+    CBioseqContext& ctx = *locus.GetContext();
 
     list<string> l;
     CNcbiOstrstream locus_line;
@@ -183,8 +186,7 @@ void CGenbankFormatter::FormatLocus
 
     Wrap(l, GetWidth(), "LOCUS", CNcbiOstrstreamToString(locus_line));
     if ( GetContext().GetConfig().DoHTML() ) {
-        string& strFirstLine = *l.begin();
-        strFirstLine = "<pre>" + strFirstLine;
+        x_LocusHtmlPrefix( *l.begin(), ctx );
     }
     
     text_os.AddParagraph(l, locus.GetObject());
@@ -282,6 +284,21 @@ void CGenbankFormatter::FormatGenomeProject(
         Wrap(l, GetWidth(), kEmptyStr, *it );
     }
     text_os.AddParagraph(l, gp.GetObject());
+}
+
+///////////////////////////////////////////////////////////////////////////
+//
+// HTML Anchor
+
+void CGenbankFormatter::FormatHtmlAnchor(
+    const CHtmlAnchorItem& html_anchor, IFlatTextOStream& text_os)
+{
+    CNcbiOstrstream result;
+
+    result << "<a name=\"" << html_anchor.GetLabelCore() << "_"
+        << html_anchor.GetGI() << "\"></a>";
+
+    text_os.AddRawText( ((string)CNcbiOstrstreamToString(result)).c_str() );
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -639,6 +656,108 @@ void CGenbankFormatter::x_Remark
     }
 }
 
+// This will change first_line to prepend HTML-relevant stuff.
+void 
+CGenbankFormatter::x_LocusHtmlPrefix( string &first_line, CBioseqContext& ctx )
+{
+    // things are easy when we're not in entrez mode
+    if( ! ctx.Config().IsModeEntrez() ) {
+        first_line = "<pre>" + first_line;
+        return;
+    }
+
+    CNcbiOstrstream result;
+
+    // determine what sections we have.
+
+    // see if we do have a comment
+    bool has_comment = false;
+    {{
+        CSeqdesc_CI desc_ci1( ctx.GetHandle(), CSeqdesc::e_Comment );
+        CSeqdesc_CI desc_ci2( ctx.GetHandle(), CSeqdesc::e_Region );
+        CSeqdesc_CI desc_ci3( ctx.GetHandle(), CSeqdesc::e_Maploc );
+        if( desc_ci1 || desc_ci2 || desc_ci3 ) {
+            has_comment = true;
+        } else {
+            // certain kinds of user objects make COMMENTs appear
+            CSeqdesc_CI user_iter( ctx.GetHandle(), CSeqdesc::e_User );
+            for( ; user_iter; ++user_iter ) {
+                const CSeqdesc & desc = *user_iter;
+                if( desc.GetUser().IsSetType() && desc.GetUser().GetType().IsStr() ) {
+                    const string &type_str = desc.GetUser().GetType().GetStr();
+                    if( type_str == "RefGeneTracking" || 
+                        type_str == "GenomeBuild" || 
+                        type_str == "ENCODE" ) 
+                    {
+                        has_comment = true;
+                    }
+                }
+            }
+        }
+    }}
+
+    // see if we do have a contig
+    bool has_contig = false;
+    {{
+        // we split the if-statement into little local vars for ease of reading
+        const bool is_wgs_master = ( ctx.IsWGSMaster() && ctx.GetTech() == CMolInfo::eTech_wgs );
+        const bool do_contig_style = ctx.DoContigStyle();
+        const bool show_contig = ( (ctx.IsSegmented()  &&  ctx.HasParts())  ||
+                                   (ctx.IsDelta()  &&  ! ctx.IsDeltaLitOnly()) );
+        if( ! is_wgs_master && (do_contig_style || ( ctx.Config().ShowContigAndSeq() && show_contig )) ) {
+            has_contig = true;
+        }
+    }}
+
+    // see if we do have a sequence
+    bool has_sequence = false;
+    {{
+        if( ! ctx.DoContigStyle() || ctx.Config().ShowContigAndSeq() ) {
+            has_sequence = true;
+        }
+    }}
+
+    // list of links that let us jump to sections
+    const int gi = ctx.GetGI();
+    result << "<div class=\"localnav\"><ul class=\"locals\">";
+    if( has_comment ) {
+        result << "<li><a href=\"#comment_" << gi << "\" title=\"Jump to the comment section of this record\">Comment</a></li>";
+    }
+    result << "<li><a href=\"#feature_" << gi << "\" title=\"Jump to the feature table of this record\">Features</a></li>";
+    if( has_contig ) {
+        result << "<li><a href=\"#contig_" << gi << "\" title=\"Jump to the contig section of this record\">Contig</a></li>";
+    }
+    if( has_sequence ) {
+        result << "<li><a href=\"#sequence_" << gi << "\" title=\"Jump to the sequence of this record\">Sequence</a></li>";
+    }
+    result << "</ul>";
+
+    // prev & next links
+    if( ctx.GetPrevHandle() || ctx.GetNextHandle() ) {
+        result << "<ul class=\"nextprevlinks\">";
+        if( ctx.GetNextHandle() ) {
+            // TODO: check for NULL
+            const int gi = ctx.GetNextHandle().GetAccessSeq_id_Handle().GetGi();
+            const string accn = sequence::GetId( ctx.GetNextHandle(), sequence::eGetId_Best).GetSeqId()->GetSeqIdString(true);
+            result << "<li class=\"next\"><a href=\"#locus_" << gi << "\" title=\"Jump to " << accn << "\">Next</a></li>";
+        }
+        if( ctx.GetPrevHandle() ) {
+            // TODO: check for NULL
+            const int gi = ctx.GetPrevHandle().GetAccessSeq_id_Handle().GetGi();
+            const string accn = sequence::GetId( ctx.GetPrevHandle(), sequence::eGetId_Best).GetSeqId()->GetSeqIdString(true);
+            result << "<li class=\"prev\"><a href=\"#locus_" << gi << "\" title=\"Jump to " << accn << "\">Previous</a></li>";
+        }
+        result << "</ul>";
+    }
+
+    // wrapping up here
+    result << "</div>" << endl;
+    result << "<pre class=\"genbank\">";
+
+    result << first_line;
+    first_line = CNcbiOstrstreamToString(result);
+}
+
 
 ///////////////////////////////////////////////////////////////////////////
 //
@@ -908,6 +1027,169 @@ string s_GetLinkFeatureKey(
     return strLink;
 }
 
+// make sure we're not "double-sanitizing"
+// (e.g. "&gt;" to "&amp;gt;")
+//  ============================================================================
+static bool
+s_ShouldWeEscapeAmpersand( 
+    string::const_iterator str_iter, // yes, COPY not reference
+    const string::const_iterator &str_iter_end )
+//  ============================================================================
+{
+    _ASSERT(*str_iter == '&');
+    
+    // This is a long-winded way of checking if str_iter
+    // is at "&gt;", "&lt;" or "&amp;"
+    // I'm concerned about regexes being too slow.
+
+    ++str_iter;
+    if( str_iter != str_iter_end ) {
+        switch( *str_iter ) {
+            case 'g':
+            case 'l':
+                ++str_iter;
+                if( str_iter != str_iter_end && *str_iter == 't' ) {
+                    ++str_iter;
+                    if( str_iter != str_iter_end && *str_iter == ';'  ) {
+                        return false;
+                    }
+                }
+                break;
+            case 'a':
+                ++str_iter;
+                if( str_iter != str_iter_end && *str_iter == 'm' ) {
+                    ++str_iter;
+                    if( str_iter != str_iter_end && *str_iter == 'p' ) {
+                        ++str_iter;
+                        if( str_iter != str_iter_end && *str_iter == ';' ) {
+                            return false;
+                        }
+                    }
+                }
+                break;
+            default:
+                return true;
+        }
+    }
+    return true;
+}
+
+// see if the '<' opens an HTML tag (currently we 
+// only check for "href" (link) tags )
+//  ============================================================================
+static bool
+s_IsTagStart( 
+    const string::const_iterator &str_iter,
+    const string::const_iterator &str_iter_end ) 
+//  ============================================================================
+{
+    if( str_iter == str_iter_end ) {
+        return false;
+    }
+
+    // tags must start with '<'
+    if( *str_iter != '<' ) {
+        return false;
+    }
+
+    // this iter is just used for checking
+    string::const_iterator check_str_iter = str_iter;
+    // skip the "<"
+    ++check_str_iter; 
+
+    // zero or more whitespace next
+    while( check_str_iter != str_iter_end && isspace(*check_str_iter) ) {
+        ++check_str_iter;
+    }
+    if( check_str_iter == str_iter_end ) {
+        return false;
+    }
+
+    const string *expected_str = NULL;    
+
+    if( *check_str_iter == 'a' ) {
+        static const string kHref( " href=\"" );
+        expected_str = &kHref;
+    } else if( *check_str_iter == '/' ) {
+        static const string kClosingHref( "a>" );
+        expected_str = &kClosingHref;
+    } else {
+        return false;
+    }
+    ++check_str_iter;
+
+    string::size_type idx = 0;
+    for( ; check_str_iter != str_iter_end && idx < expected_str->length(); ++idx, ++check_str_iter ) {
+        if( *check_str_iter != (*expected_str)[idx] ) {
+            return false;
+        }
+    }
+
+    // we're in a tag if we matched the whole expected_str
+    return ( idx == expected_str->length() );
+}
+
+// We use the word "try" in the name because this is NOT airtight security,
+// but rather a net that catches the majority of cases.
+//  ============================================================================
+static void
+s_TryToSanitizeHtml( string &str )
+//  ============================================================================
+{
+    string result;
+    
+    // The "* 1.1" should handle most cases since data tends not to have
+    // too many characters that need escaping.
+    result.reserve( 1 + (int)( str.length() * 1.1 ) ); 
+
+    // we only sanitize when we're not in an url
+    bool in_html_tag = false;
+    ITERATE( string, str_iter, str ) {
+        // see if we're entering an HTML tag
+        if( ! in_html_tag && *str_iter =='<' && s_IsTagStart(str_iter, str.end()) ) {
+            in_html_tag = true;
+        }
+
+        // now that we know whether we're in a tag,
+        // process characters appropriately.
+        if( in_html_tag ) {
+            result += *str_iter;
+        } else {
+            switch( *str_iter ) {
+            case '&':
+                // make sure we're not "double-sanitizing"
+                // (e.g. "&gt;" to "&amp;gt;")
+                if( s_ShouldWeEscapeAmpersand(str_iter, str.end()) ) {
+                    result += "&amp;";
+                } else {
+                    result += '&';
+                }
+                break;
+            case '<':
+                result += "&lt;";
+                break;
+            case '>':
+                result += "&gt;";
+                break;
+            default:
+                result += *str_iter;
+                break;
+            }
+        }
+
+        // see if we're exiting an HTML tag
+        if( in_html_tag && *str_iter == '>' ) {
+            // tag is closed now
+            // (Note: does this consider cases where '>' is in quotes?)
+            in_html_tag = false;
+        }
+    }
+
+    // swap is faster than assignment
+    str.swap( result );
+}
+
+
 //  ============================================================================
 void CGenbankFormatter::FormatFeature
 (const CFeatureItemBase& f,
@@ -943,6 +1225,10 @@ void CGenbankFormatter::FormatFeature
     ITERATE (vector<CRef<CFormatQual> >, it, quals ) {
         string qual = '/' + (*it)->GetName(), value = (*it)->GetValue();
         TrimSpacesAndJunkFromEnds( value, true );
+        if( bHtml ) {
+            s_TryToSanitizeHtml( value );
+        }
+
         switch ((*it)->GetStyle()) {
         case CFormatQual::eEmpty:
             value = qual;
@@ -1036,7 +1322,6 @@ void CGenbankFormatter::FormatSequence
     TSeqPos to = seq.GetTo();
     TSeqPos base_count = from;
 
-    
     TSeqPos vec_pos = from-1;
     TSeqPos total = from <= to? to - from + 1: 0;
     
@@ -1193,6 +1478,7 @@ void CGenbankFormatter::FormatContig
     }
 
     Wrap(l, "CONTIG", assembly);
+
     text_os.AddParagraph(l, contig.GetObject());
 }
 

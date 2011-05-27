@@ -117,6 +117,57 @@ CBioseqContext::CBioseqContext
 }
 
 
+CBioseqContext::CBioseqContext
+(const CBioseq_Handle& prev_seq, 
+ const CBioseq_Handle& seq,
+ const CBioseq_Handle& next_seq,
+ CFlatFileContext& ffctx,
+ CMasterContext* mctx,
+ CTopLevelSeqEntryContext *tlsec) :
+    m_PrevHandle(prev_seq),
+    m_Handle(seq),
+    m_NextHandle(next_seq),
+    m_Repr(CSeq_inst::eRepr_not_set),
+    m_Mol(CSeq_inst::eMol_not_set),
+    m_HasParts(false),
+    m_IsPart(false),
+    m_PartNumber(0),
+    m_IsDeltaLitOnly(false),
+    m_IsProt(false),
+    m_IsInGPS(false),
+    m_IsInNucProt(false),
+    m_IsGED(false),
+    m_IsGenbank(false),
+    m_IsEMBL(false),
+    m_IsDDBJ(false),
+    m_IsPDB(false),
+    m_IsSP(false),
+    m_IsTPA(false),
+    m_IsJournalScan(false),
+    m_IsRefSeq(false),
+    m_RefseqInfo(0),
+    m_IsGbGenomeProject(false),  // GenBank Genome project data (AE)
+    m_IsNcbiCONDiv(false),       // NCBI CON division (CH)
+    m_IsPatent(false),
+    m_IsGI(false),
+    m_IsWGS(false),
+    m_IsWGSMaster(false),
+    m_IsHup(false),
+    m_Gi(0),
+    m_ShowGBBSource(false),
+    m_PatSeqid(0),
+    m_HasOperon(false),
+    m_HasMultiIntervalGenes(true), // true is the safe choice if we're not sure
+    m_IsGenomeAssembly(false),
+    m_FFCtx(ffctx),
+    m_Master(mctx),
+    m_TLSeqEntryCtx(tlsec),
+    m_IsUnverified(false)
+{
+    x_Init(seq, m_FFCtx.GetLocation());
+}
+
+
 // destructor
 CBioseqContext::~CBioseqContext(void)
 {
