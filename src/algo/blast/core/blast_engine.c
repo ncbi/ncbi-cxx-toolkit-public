@@ -632,7 +632,6 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
     Uint4 context, first_context, last_context;
     BlastQueryInfo* query_info = query_info_in;
     Int4 orig_length = subject->length;
-    Int4 actual_length = orig_length;
     // To support rmblastn -RMH-
     BlastScoreBlk* sbp = gap_align->sbp;
 
@@ -759,7 +758,6 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
     /* restore mask ranges  */
     if (kTranslatedSubject) {
         s_RestoreSubject(subject, &backup);
-        actual_length /= CODON_LENGTH ;
     }
 
     if (status) {
@@ -779,7 +777,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
         /* Calculate e-values for all HSPs. Skip this step
            for PHI and RPS BLAST, since calculating the E values 
            requires precomputation that has not been done yet */
-        status = Blast_HSPListGetEvalues(query_info, actual_length, hsp_list_out, 
+        status = Blast_HSPListGetEvalues(query_info, hsp_list_out, 
                                          score_options->gapped_calculation, 
                                          gap_align->sbp, 0, 1.0);
     }
@@ -1134,7 +1132,6 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
     /* iterate over all subject sequences */
     while ( (seq_arg.oid = BlastSeqSrcIteratorNext(seq_src, itr)) 
            != BLAST_SEQSRC_EOF) {
-       Int4 actual_length;
        if (seq_arg.oid == BLAST_SEQSRC_ERROR)
            break;
        if (BlastSeqSrcGetSequence(seq_src, &seq_arg) < 0)
@@ -1150,8 +1147,6 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
                           eff_len_params)) != 0)
               return status;
       }
-
-      actual_length = seq_arg.seq->length; 
 
       /* Calculate cutoff scores for linking HSPs. Do this only for
          ungapped protein searches and ungapped translated
@@ -1172,7 +1167,6 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
                   GenCodeSingletonFind(db_options->genetic_code);
           }
           ASSERT(seq_arg.seq->gen_code_string);
-          actual_length /= CODON_LENGTH;
       }
       status = 
          s_BlastSearchEngineCore(program_number, query, query_info,
@@ -1209,8 +1203,8 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
                                       hit_params->link_hsp_params, 
                                       gapped_calculation);
                } else {
-                  Blast_HSPListGetEvalues(query_info, actual_length,
-                                          hsp_list, gapped_calculation, 
+                  Blast_HSPListGetEvalues(query_info, hsp_list, 
+                                          gapped_calculation, 
                                           sbp, 0, 1.0);
                }
                /* Use score threshold rather than evalue if 

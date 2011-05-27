@@ -425,7 +425,6 @@ Blast_HSPListSaveHSP(BlastHSPList* hsp_list, BlastHSP* hsp);
  * are set for each HSP.
  * @param query_info Auxiliary query information - needed only for effective
  *                   search space calculation if it is not provided [in]
- * @param subject_length Subject length - needed for Spouge's new FSC [in]
  * @param hsp_list List of HSPs for one subject sequence [in] [out]
  * @param gapped_calculation Is this for a gapped or ungapped search? [in]
  * @param sbp Structure containing statistical information [in]
@@ -437,7 +436,6 @@ Blast_HSPListSaveHSP(BlastHSPList* hsp_list, BlastHSP* hsp);
  */
 NCBI_XBLAST_EXPORT
 Int2 Blast_HSPListGetEvalues(const BlastQueryInfo* query_info,
-                             Int4 subject_length,
                              BlastHSPList* hsp_list,
                              Boolean gapped_calculation, 
                              const BlastScoreBlk* sbp, double gap_decay_rate,

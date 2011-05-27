@@ -56,7 +56,6 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_stat.h>
 #include <algo/blast/core/ncbi_math.h>
 #include "blast_psi_priv.h"
-#include "erfc.h"
 
 #define BLAST_SCORE_RANGE_MAX   (BLAST_SCORE_MAX - BLAST_SCORE_MIN) /**< maximum allowed range of BLAST scores. */
 
@@ -77,7 +76,7 @@ of K, so high accuracy is generally unwarranted.
 #define BLAST_KARLIN_K_ITER_MAX 100 /**< upper limit on iterations for BlastKarlinLHtoK */
 
 /** Number of statistical parameters in each row of the precomputed tables. */
-#define BLAST_NUM_STAT_VALUES 11  /**< originally 8, now 11 to support Spouge's FSC. see notes below */
+#define BLAST_NUM_STAT_VALUES 8
 
 /** Holds values (gap-opening, extension, etc.) for a matrix. */
 typedef double array_of_8[BLAST_NUM_STAT_VALUES];
@@ -113,25 +112,6 @@ The eight different columns specify:
 Altschul SF, Bundschuh R, Olsen R, Hwa T.
 The estimation of statistical parameters for local alignment score distributions.
 Nucleic Acids Res. 2001 Jan 15;29(2):351-61.).
-
-N.B.: to support John Spouge's idea of FSC, the table is augmented with 3
-more parameters:
-
-9.) C
-10.) alpha_v
-11.) sigma
-
-where C is the prefactor to the p-value expression, alpha_v is the alpha parameter 
-for the variance of length correction:   
-   var(L) = alpha_v * score + beta_v
-in contrast, the original alpha is the alpha parameter for the mean of length correction:
-   avg(L) = alpha * score + beta.
-and finally sigma is the alpha parameter for the covariance of length correction:
-   cov(L1, L2) = sigma * score + tau
-Note: in Spouge's theory, beta, beta_v, and tau are dependent variables.
-
-The values tabulated below are based on the following URL:
-http://www.ncbi.nlm.nih.gov/CBBresearch/Spouge/html.ncbi/blast/index.html
 
 Take BLOSUM45 (below) as an example.  Currently (5/17/02) there are
 14 different allowed combinations (specified by "#define BLOSUM45_VALUES_MAX 14").
@@ -186,20 +166,20 @@ add two lines before the return at the end of the function:
 
 #define BLOSUM45_VALUES_MAX 14 /**< Number of different combinations supported for BLOSUM45. */
 static array_of_8 blosum45_values[BLOSUM45_VALUES_MAX] = {
-    {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.2291, 0.0924, 0.2514, 0.9113, -5.7, 0.641318, 9.611060, 9.611060},
-    {13, 3, (double) INT2_MAX, 0.207, 0.049, 0.14, 1.5, -22, 0.671128, 35.855900, 35.963900},
-    {12, 3, (double) INT2_MAX, 0.199, 0.039, 0.11, 1.8, -34, 0.691530, 45.693600, 45.851700},
-    {11, 3, (double) INT2_MAX, 0.190, 0.031, 0.095, 2.0, -38, 0.691181, 62.874100, 63.103700},
-    {10, 3, (double) INT2_MAX, 0.179, 0.023, 0.075, 2.4, -51, 0.710529, 88.286800, 88.639100},
-    {16, 2, (double) INT2_MAX, 0.210, 0.051, 0.14, 1.5, -24, 0.666680, 36.279800, 36.452400},
-    {15, 2, (double) INT2_MAX, 0.203, 0.041, 0.12, 1.7, -31, 0.673871, 44.825700, 45.060400},
-    {14, 2, (double) INT2_MAX, 0.195, 0.032, 0.10, 1.9, -36, 0.685753, 60.736200, 61.102300},
-    {13, 2, (double) INT2_MAX, 0.185, 0.024, 0.084, 2.2, -45, 0.698480, 85.148100, 85.689400},
-    {12, 2, (double) INT2_MAX, 0.171, 0.016, 0.061, 2.8, -65, 0.713429, 127.758000, 128.582000},
-    {19, 1, (double) INT2_MAX, 0.205, 0.040, 0.11, 1.9, -43, 0.672302, 53.071400, 53.828200},
-    {18, 1, (double) INT2_MAX, 0.198, 0.032, 0.10, 2.0, -43, 0.682580, 72.342400, 73.403900},
-    {17, 1, (double) INT2_MAX, 0.189, 0.024, 0.079, 2.4, -57, 0.695035, 103.055000, 104.721000},
-    {16, 1, (double) INT2_MAX, 0.176, 0.016, 0.063, 2.8, -67, 0.712966, 170.100000, 173.003000},
+    {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.2291, 0.0924, 0.2514, 0.9113, -5.7},
+    {13, 3, (double) INT2_MAX, 0.207, 0.049, 0.14, 1.5, -22},
+    {12, 3, (double) INT2_MAX, 0.199, 0.039, 0.11, 1.8, -34},
+    {11, 3, (double) INT2_MAX, 0.190, 0.031, 0.095, 2.0, -38},
+    {10, 3, (double) INT2_MAX, 0.179, 0.023, 0.075, 2.4, -51},
+    {16, 2, (double) INT2_MAX, 0.210, 0.051, 0.14, 1.5, -24},
+    {15, 2, (double) INT2_MAX, 0.203, 0.041, 0.12, 1.7, -31},
+    {14, 2, (double) INT2_MAX, 0.195, 0.032, 0.10, 1.9, -36},
+    {13, 2, (double) INT2_MAX, 0.185, 0.024, 0.084, 2.2, -45},
+    {12, 2, (double) INT2_MAX, 0.171, 0.016, 0.061, 2.8, -65},
+    {19, 1, (double) INT2_MAX, 0.205, 0.040, 0.11, 1.9, -43},
+    {18, 1, (double) INT2_MAX, 0.198, 0.032, 0.10, 2.0, -43},
+    {17, 1, (double) INT2_MAX, 0.189, 0.024, 0.079, 2.4, -57},
+    {16, 1, (double) INT2_MAX, 0.176, 0.016, 0.063, 2.8, -67},
 };  /**< Supported values (gap-existence, extension, etc.) for BLOSUM45. */
 
 static Int4 blosum45_prefs[BLOSUM45_VALUES_MAX] = {
@@ -222,22 +202,22 @@ BLAST_MATRIX_NOMINAL
 
 #define BLOSUM50_VALUES_MAX 16 /**< Number of different combinations supported for BLOSUM50. */
 static array_of_8 blosum50_values[BLOSUM50_VALUES_MAX] = {
-    {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.2318, 0.112, 0.3362, 0.6895, -4.0, 0.609639, 5.388310, 5.388310},
-    {13, 3, (double) INT2_MAX, 0.212, 0.063, 0.19, 1.1, -16, 0.639287, 18.113800, 18.202800},
-    {12, 3, (double) INT2_MAX, 0.206, 0.055, 0.17, 1.2, -18, 0.644715, 22.654600, 22.777700},
-    {11, 3, (double) INT2_MAX, 0.197, 0.042, 0.14, 1.4, -25, 0.656327, 29.861100, 30.045700},
-    {10, 3, (double) INT2_MAX, 0.186, 0.031, 0.11, 1.7, -34, 0.671150, 42.393800, 42.674000},
-    {9, 3, (double) INT2_MAX, 0.172, 0.022, 0.082, 2.1, -48, 0.694326, 66.069600, 66.516400},
-    {16, 2, (double) INT2_MAX, 0.215, 0.066, 0.20, 1.05, -15, 0.633899, 17.951800, 18.092100},
-    {15, 2, (double) INT2_MAX, 0.210, 0.058, 0.17, 1.2, -20, 0.641985, 21.940100, 22.141800},
-    {14, 2, (double) INT2_MAX, 0.202, 0.045, 0.14, 1.4, -27, 0.650682, 28.681200, 28.961900},
-    {13, 2, (double) INT2_MAX, 0.193, 0.035, 0.12, 1.6, -32, 0.660984, 42.059500, 42.471600},
-    {12, 2, (double) INT2_MAX, 0.181, 0.025, 0.095, 1.9, -41, 0.678090, 63.747600, 64.397300},
-    {19, 1, (double) INT2_MAX, 0.212, 0.057, 0.18, 1.2, -21, 0.635714, 26.311200, 26.923300},
-    {18, 1, (double) INT2_MAX, 0.207, 0.050, 0.15, 1.4, -28, 0.643523, 34.903700, 35.734800},
-    {17, 1, (double) INT2_MAX, 0.198, 0.037, 0.12, 1.6, -33, 0.654504, 48.895800, 50.148600},
-    {16, 1, (double) INT2_MAX, 0.186, 0.025, 0.10, 1.9, -42, 0.667750, 76.469100, 78.443000},
-    {15, 1, (double) INT2_MAX, 0.171, 0.015, 0.063, 2.7, -76, 0.694575, 140.053000, 144.160000},
+    {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.2318, 0.112, 0.3362, 0.6895, -4.0},
+    {13, 3, (double) INT2_MAX, 0.212, 0.063, 0.19, 1.1, -16},
+    {12, 3, (double) INT2_MAX, 0.206, 0.055, 0.17, 1.2, -18},
+    {11, 3, (double) INT2_MAX, 0.197, 0.042, 0.14, 1.4, -25},
+    {10, 3, (double) INT2_MAX, 0.186, 0.031, 0.11, 1.7, -34},
+    {9, 3, (double) INT2_MAX, 0.172, 0.022, 0.082, 2.1, -48},
+    {16, 2, (double) INT2_MAX, 0.215, 0.066, 0.20, 1.05, -15},
+    {15, 2, (double) INT2_MAX, 0.210, 0.058, 0.17, 1.2, -20},
+    {14, 2, (double) INT2_MAX, 0.202, 0.045, 0.14, 1.4, -27},
+    {13, 2, (double) INT2_MAX, 0.193, 0.035, 0.12, 1.6, -32},
+    {12, 2, (double) INT2_MAX, 0.181, 0.025, 0.095, 1.9, -41},
+    {19, 1, (double) INT2_MAX, 0.212, 0.057, 0.18, 1.2, -21},
+    {18, 1, (double) INT2_MAX, 0.207, 0.050, 0.15, 1.4, -28},
+    {17, 1, (double) INT2_MAX, 0.198, 0.037, 0.12, 1.6, -33},
+    {16, 1, (double) INT2_MAX, 0.186, 0.025, 0.10, 1.9, -42},
+    {15, 1, (double) INT2_MAX, 0.171, 0.015, 0.063, 2.7, -76},
 };  /**< Supported values (gap-existence, extension, etc.) for BLOSUM50. */
 
 static Int4 blosum50_prefs[BLOSUM50_VALUES_MAX] = {
@@ -261,18 +241,18 @@ BLAST_MATRIX_NOMINAL
 
 #define BLOSUM62_VALUES_MAX 12 /**< Number of different combinations supported for BLOSUM62. */
 static array_of_8 blosum62_values[BLOSUM62_VALUES_MAX] = {
-    {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.3176, 0.134, 0.4012, 0.7916, -3.2, 0.623757, 4.964660, 4.964660},
-    {11, 2, (double) INT2_MAX, 0.297, 0.082, 0.27, 1.1, -10, 0.641766, 12.673800, 12.757600},
-    {10, 2, (double) INT2_MAX, 0.291, 0.075, 0.23, 1.3, -15, 0.649362, 16.474000, 16.602600},
-    {9, 2, (double) INT2_MAX, 0.279, 0.058, 0.19, 1.5, -19, 0.659245, 22.751900, 22.950000},
-    {8, 2, (double) INT2_MAX, 0.264, 0.045, 0.15, 1.8, -26, 0.672692, 35.483800, 35.821300},
-    {7, 2, (double) INT2_MAX, 0.239, 0.027, 0.10, 2.5, -46, 0.702056, 61.238300, 61.886000},
-    {6, 2, (double) INT2_MAX, 0.201, 0.012, 0.061, 3.3, -58, 0.740802, 140.417000, 141.882000},
-    {13, 1, (double) INT2_MAX, 0.292, 0.071, 0.23, 1.2, -11, 0.647715, 19.506300, 19.893100},
-    {12, 1, (double) INT2_MAX, 0.283, 0.059, 0.19, 1.5, -19, 0.656391, 27.856200, 28.469900},
-    {11, 1, (double) INT2_MAX, 0.267, 0.041, 0.14, 1.9, -30, 0.669720, 42.602800, 43.636200},
-    {10, 1, (double) INT2_MAX, 0.243, 0.024, 0.10, 2.5, -44, 0.693267, 83.178700, 85.065600},
-    {9, 1, (double) INT2_MAX, 0.206, 0.010, 0.052, 4.0, -87, 0.731887, 210.333000, 214.842000},
+    {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.3176, 0.134, 0.4012, 0.7916, -3.2},
+    {11, 2, (double) INT2_MAX, 0.297, 0.082, 0.27, 1.1, -10},
+    {10, 2, (double) INT2_MAX, 0.291, 0.075, 0.23, 1.3, -15},
+    {9, 2, (double) INT2_MAX, 0.279, 0.058, 0.19, 1.5, -19},
+    {8, 2, (double) INT2_MAX, 0.264, 0.045, 0.15, 1.8, -26},
+    {7, 2, (double) INT2_MAX, 0.239, 0.027, 0.10, 2.5, -46},
+    {6, 2, (double) INT2_MAX, 0.201, 0.012, 0.061, 3.3, -58},
+    {13, 1, (double) INT2_MAX, 0.292, 0.071, 0.23, 1.2, -11},
+    {12, 1, (double) INT2_MAX, 0.283, 0.059, 0.19, 1.5, -19},
+    {11, 1, (double) INT2_MAX, 0.267, 0.041, 0.14, 1.9, -30},
+    {10, 1, (double) INT2_MAX, 0.243, 0.024, 0.10, 2.5, -44},
+    {9, 1, (double) INT2_MAX, 0.206, 0.010, 0.052, 4.0, -87},
 }; /**< Supported values (gap-existence, extension, etc.) for BLOSUM62. */
 
 static Int4 blosum62_prefs[BLOSUM62_VALUES_MAX] = {
@@ -293,16 +273,16 @@ static Int4 blosum62_prefs[BLOSUM62_VALUES_MAX] = {
 
 #define BLOSUM80_VALUES_MAX 10 /**< Number of different combinations supported for BLOSUM80. */
 static array_of_8 blosum80_values[BLOSUM80_VALUES_MAX] = {
-    {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.3430, 0.177, 0.6568, 0.5222, -1.6, 0.564057, 1.918130, 1.918130},
-    {25, 2, (double) INT2_MAX, 0.342, 0.17, 0.66, 0.52, -1.6, 0.563956, 1.731000, 1.731300},
-    {13, 2, (double) INT2_MAX, 0.336, 0.15, 0.57, 0.59, -3, 0.570979, 2.673470, 2.692300},
-    {9, 2, (double) INT2_MAX, 0.319, 0.11, 0.42, 0.76, -6, 0.587837, 5.576090, 5.667860},
-    {8, 2, (double) INT2_MAX, 0.308, 0.090, 0.35, 0.89, -9, 0.597556, 7.536950, 7.686230},
-    {7, 2, (double) INT2_MAX, 0.293, 0.070, 0.27, 1.1, -14, 0.615254, 11.586600, 11.840400},
-    {6, 2, (double) INT2_MAX, 0.268, 0.045, 0.19, 1.4, -19, 0.644054, 19.958100, 20.441200},
-    {11, 1, (double) INT2_MAX, 0.314, 0.095, 0.35, 0.90, -9, 0.590702, 8.808610, 9.223320},
-    {10, 1, (double) INT2_MAX, 0.299, 0.071, 0.27, 1.1, -14, 0.609620, 13.833800, 14.533400},
-    {9, 1, (double) INT2_MAX, 0.279, 0.048, 0.20, 1.4, -19, 0.623800, 24.252000, 25.490400},
+    {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.3430, 0.177, 0.6568, 0.5222, -1.6},
+    {25, 2, (double) INT2_MAX, 0.342, 0.17, 0.66, 0.52, -1.6},
+    {13, 2, (double) INT2_MAX, 0.336, 0.15, 0.57, 0.59, -3},
+    {9, 2, (double) INT2_MAX, 0.319, 0.11, 0.42, 0.76, -6},
+    {8, 2, (double) INT2_MAX, 0.308, 0.090, 0.35, 0.89, -9},
+    {7, 2, (double) INT2_MAX, 0.293, 0.070, 0.27, 1.1, -14},
+    {6, 2, (double) INT2_MAX, 0.268, 0.045, 0.19, 1.4, -19},
+    {11, 1, (double) INT2_MAX, 0.314, 0.095, 0.35, 0.90, -9},
+    {10, 1, (double) INT2_MAX, 0.299, 0.071, 0.27, 1.1, -14},
+    {9, 1, (double) INT2_MAX, 0.279, 0.048, 0.20, 1.4, -19},
 }; /**< Supported values (gap-existence, extension, etc.) for BLOSUM80. */
 
 static Int4 blosum80_prefs[BLOSUM80_VALUES_MAX] = {
@@ -320,14 +300,14 @@ static Int4 blosum80_prefs[BLOSUM80_VALUES_MAX] = {
 
 #define BLOSUM90_VALUES_MAX 8 /**< Number of different combinations supported for BLOSUM90. */
 static array_of_8 blosum90_values[BLOSUM90_VALUES_MAX] = {
-    {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.3346, 0.190, 0.7547, 0.4434, -1.4 , 0.544178, 1.377760, 1.377760},
-    {9, 2, (double) INT2_MAX, 0.310, 0.12, 0.46, 0.67, -6 , 0.570267, 4.232290, 4.334170},
-    {8, 2, (double) INT2_MAX, 0.300, 0.099, 0.39, 0.76, -7, 0.581580, 5.797020, 5.961420},
-    {7, 2, (double) INT2_MAX, 0.283, 0.072, 0.30, 0.93, -11, 0.600024, 9.040880, 9.321600},
-    {6, 2, (double) INT2_MAX, 0.259, 0.048, 0.22, 1.2, -16, 0.629344, 16.024400, 16.531600},
-    {11, 1, (double) INT2_MAX, 0.302, 0.093, 0.39, 0.78, -8, 0.576919, 7.143250, 7.619190},
-    {10, 1, (double) INT2_MAX, 0.290, 0.075, 0.28, 1.04, -15, 0.591366, 11.483900, 12.269800},
-    {9, 1, (double) INT2_MAX, 0.265, 0.044, 0.20, 1.3, -19, 0.613013, 21.408300, 22.840900},
+    {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.3346, 0.190, 0.7547, 0.4434, -1.4},
+    {9, 2, (double) INT2_MAX, 0.310, 0.12, 0.46, 0.67, -6},
+    {8, 2, (double) INT2_MAX, 0.300, 0.099, 0.39, 0.76, -7},
+    {7, 2, (double) INT2_MAX, 0.283, 0.072, 0.30, 0.93, -11},
+    {6, 2, (double) INT2_MAX, 0.259, 0.048, 0.22, 1.2, -16},
+    {11, 1, (double) INT2_MAX, 0.302, 0.093, 0.39, 0.78, -8},
+    {10, 1, (double) INT2_MAX, 0.290, 0.075, 0.28, 1.04, -15},
+    {9, 1, (double) INT2_MAX, 0.265, 0.044, 0.20, 1.3, -19},
 };  /**< Supported values (gap-existence, extension, etc.) for BLOSUM90. */
 
 static Int4 blosum90_prefs[BLOSUM90_VALUES_MAX] = {
@@ -343,22 +323,22 @@ static Int4 blosum90_prefs[BLOSUM90_VALUES_MAX] = {
 
 #define PAM250_VALUES_MAX 16 /**< Number of different combinations supported for PAM250. */
 static array_of_8 pam250_values[PAM250_VALUES_MAX] = {
-    {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.2252, 0.0868, 0.2223, 0.98, -5.0, 0.660059, 11.754300, 11.754300},
-    {15, 3, (double) INT2_MAX, 0.205, 0.049, 0.13, 1.6, -23, 0.687656, 34.578400, 34.928000},
-    {14, 3, (double) INT2_MAX, 0.200, 0.043, 0.12, 1.7, -26, 0.689768, 43.353000, 43.443800},
-    {13, 3, (double) INT2_MAX, 0.194, 0.036, 0.10, 1.9, -31, 0.697431, 50.948500, 51.081700},
-    {12, 3, (double) INT2_MAX, 0.186, 0.029, 0.085, 2.2, -41, 0.704565, 69.606500, 69.793600},
-    {11, 3, (double) INT2_MAX, 0.174, 0.020, 0.070, 2.5, -48, 0.722438, 98.653500, 98.927100},
-    {17, 2, (double) INT2_MAX, 0.204, 0.047, 0.12, 1.7, -28, 0.684799, 41.583800, 41.735800},
-    {16, 2, (double) INT2_MAX, 0.198, 0.038, 0.11, 1.8, -29, 0.691098, 51.635200, 51.843900},
-    {15, 2, (double) INT2_MAX, 0.191, 0.031, 0.087, 2.2, -44, 0.699051, 67.256700, 67.558500},
-    {14, 2, (double) INT2_MAX, 0.182, 0.024, 0.073, 2.5, -53, 0.714103, 96.315100, 96.756800},
-    {13, 2, (double) INT2_MAX, 0.171, 0.017, 0.059, 2.9, -64, 0.728738, 135.653000, 136.339000},
-    {21, 1, (double) INT2_MAX, 0.205, 0.045, 0.11, 1.8, -34, 0.683265, 48.728200, 49.218800},
-    {20, 1, (double) INT2_MAX, 0.199, 0.037, 0.10, 1.9, -35, 0.689380, 60.832000, 61.514100},
-    {19, 1, (double) INT2_MAX, 0.192, 0.029, 0.083, 2.3, -52, 0.696344, 84.019700, 84.985600},
-    {18, 1, (double) INT2_MAX, 0.183, 0.021, 0.070, 2.6, -60, 0.710525, 113.829000, 115.184000},
-    {17, 1, (double) INT2_MAX, 0.171, 0.014, 0.052, 3.3, -86, 0.727000, 175.071000, 177.196000},
+    {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.2252, 0.0868, 0.2223, 0.98, -5.0},
+    {15, 3, (double) INT2_MAX, 0.205, 0.049, 0.13, 1.6, -23},
+    {14, 3, (double) INT2_MAX, 0.200, 0.043, 0.12, 1.7, -26},
+    {13, 3, (double) INT2_MAX, 0.194, 0.036, 0.10, 1.9, -31},
+    {12, 3, (double) INT2_MAX, 0.186, 0.029, 0.085, 2.2, -41},
+    {11, 3, (double) INT2_MAX, 0.174, 0.020, 0.070, 2.5, -48},
+    {17, 2, (double) INT2_MAX, 0.204, 0.047, 0.12, 1.7, -28},
+    {16, 2, (double) INT2_MAX, 0.198, 0.038, 0.11, 1.8, -29},
+    {15, 2, (double) INT2_MAX, 0.191, 0.031, 0.087, 2.2, -44},
+    {14, 2, (double) INT2_MAX, 0.182, 0.024, 0.073, 2.5, -53},
+    {13, 2, (double) INT2_MAX, 0.171, 0.017, 0.059, 2.9, -64},
+    {21, 1, (double) INT2_MAX, 0.205, 0.045, 0.11, 1.8, -34},
+    {20, 1, (double) INT2_MAX, 0.199, 0.037, 0.10, 1.9, -35},
+    {19, 1, (double) INT2_MAX, 0.192, 0.029, 0.083, 2.3, -52},
+    {18, 1, (double) INT2_MAX, 0.183, 0.021, 0.070, 2.6, -60},
+    {17, 1, (double) INT2_MAX, 0.171, 0.014, 0.052, 3.3, -86},
 }; /**< Supported values (gap-existence, extension, etc.) for PAM250. */
 
 static Int4 pam250_prefs[PAM250_VALUES_MAX] = {
@@ -382,13 +362,13 @@ BLAST_MATRIX_NOMINAL
 
 #define PAM30_VALUES_MAX 7 /**< Number of different combinations supported for PAM30. */
 static array_of_8 pam30_values[PAM30_VALUES_MAX] = {
-    {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.3400, 0.283, 1.754, 0.1938, -0.3, 0.436164, 0.161818, 0.161818},
-    {7, 2, (double) INT2_MAX, 0.305, 0.15, 0.87, 0.35, -3, 0.479087, 1.014010, 1.162730},
-    {6, 2, (double) INT2_MAX, 0.287, 0.11, 0.68, 0.42, -4, 0.499980, 1.688060, 1.951430},
-    {5, 2, (double) INT2_MAX, 0.264, 0.079, 0.45, 0.59, -7, 0.533009, 3.377010, 3.871950},
-    {10, 1, (double) INT2_MAX, 0.309, 0.15, 0.88, 0.35, -3, 0.474741, 1.372050, 1.788770},
-    {9, 1, (double) INT2_MAX, 0.294, 0.11, 0.61, 0.48, -6, 0.492716, 2.463920, 3.186150},
-    {8, 1, (double) INT2_MAX, 0.270, 0.072, 0.40, 0.68, -10, 0.521286, 5.368130, 6.763480},
+    {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.3400, 0.283, 1.754, 0.1938, -0.3},
+    {7, 2, (double) INT2_MAX, 0.305, 0.15, 0.87, 0.35, -3},
+    {6, 2, (double) INT2_MAX, 0.287, 0.11, 0.68, 0.42, -4},
+    {5, 2, (double) INT2_MAX, 0.264, 0.079, 0.45, 0.59, -7},
+    {10, 1, (double) INT2_MAX, 0.309, 0.15, 0.88, 0.35, -3},
+    {9, 1, (double) INT2_MAX, 0.294, 0.11, 0.61, 0.48, -6},
+    {8, 1, (double) INT2_MAX, 0.270, 0.072, 0.40, 0.68, -10},
 }; /**< Supported values (gap-existence, extension, etc.) for PAM30. */
 
 static Int4 pam30_prefs[PAM30_VALUES_MAX] = {
@@ -404,13 +384,13 @@ BLAST_MATRIX_NOMINAL,
 
 #define PAM70_VALUES_MAX 7 /**< Number of different combinations supported for PAM70. */
 static array_of_8 pam70_values[PAM70_VALUES_MAX] = {
-    {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.3345, 0.229, 1.029, 0.3250,   -0.7, 0.511296, 0.633439, 0.633439},
-    {8, 2, (double) INT2_MAX, 0.301, 0.12, 0.54, 0.56, -5, 0.549019, 2.881650, 3.025710},
-    {7, 2, (double) INT2_MAX, 0.286, 0.093, 0.43, 0.67, -7, 0.565659, 4.534540, 4.785780},
-    {6, 2, (double) INT2_MAX, 0.264, 0.064, 0.29, 0.90, -12, 0.596330, 7.942630, 8.402720},
-    {11, 1, (double) INT2_MAX, 0.305, 0.12, 0.52, 0.59, -6, 0.543514, 3.681400, 4.108020},
-    {10, 1, (double) INT2_MAX, 0.291, 0.091, 0.41, 0.71, -9, 0.560723, 6.002970, 6.716570},
-    {9, 1, (double) INT2_MAX, 0.270, 0.060, 0.28, 0.97, -14, 0.585186, 11.360800, 12.636700},
+    {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.3345, 0.229, 1.029, 0.3250,   -0.7},
+    {8, 2, (double) INT2_MAX, 0.301, 0.12, 0.54, 0.56, -5},
+    {7, 2, (double) INT2_MAX, 0.286, 0.093, 0.43, 0.67, -7},
+    {6, 2, (double) INT2_MAX, 0.264, 0.064, 0.29, 0.90, -12},
+    {11, 1, (double) INT2_MAX, 0.305, 0.12, 0.52, 0.59, -6},
+    {10, 1, (double) INT2_MAX, 0.291, 0.091, 0.41, 0.71, -9},
+    {9, 1, (double) INT2_MAX, 0.270, 0.060, 0.28, 0.97, -14},
 }; /**< Supported values (gap-existence, extension, etc.) for PAM70. */
 
 static Int4 pam70_prefs[PAM70_VALUES_MAX] = {
@@ -429,71 +409,71 @@ BLAST_MATRIX_NOMINAL
 
 #define BLOSUM62_20_VALUES_MAX 65 /**< Number of different combinations supported for BLOSUM62 with 1/20 bit scaling. */
 static array_of_8 blosum62_20_values[BLOSUM62_20_VALUES_MAX] = {
-    {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.03391, 0.125, 0.4544, 0.07462, -3.2,0.0,0.0,0.0},
-    {100, 12, (double) INT2_MAX, 0.0300, 0.056, 0.21, 0.14, -15,0.0,0.0,0.0},
-    {95, 12, (double) INT2_MAX, 0.0291, 0.047, 0.18, 0.16, -20,0.0,0.0,0.0},
-    {90, 12, (double) INT2_MAX, 0.0280, 0.038, 0.15, 0.19, -28,0.0,0.0,0.0},
-    {85, 12, (double) INT2_MAX, 0.0267, 0.030, 0.13, 0.21, -31,0.0,0.0,0.0},
-    {80, 12, (double) INT2_MAX, 0.0250, 0.021, 0.10, 0.25, -39,0.0,0.0,0.0},
-    {105, 11, (double) INT2_MAX, 0.0301, 0.056, 0.22, 0.14, -16,0.0,0.0,0.0},
-    {100, 11, (double) INT2_MAX, 0.0294, 0.049, 0.20, 0.15, -17,0.0,0.0,0.0},
-    {95, 11, (double) INT2_MAX, 0.0285, 0.042, 0.16, 0.18, -25,0.0,0.0,0.0},
-    {90, 11, (double) INT2_MAX, 0.0271, 0.031, 0.14, 0.20, -28,0.0,0.0,0.0},
-    {85, 11, (double) INT2_MAX, 0.0256, 0.023, 0.10, 0.26, -46,0.0,0.0,0.0},
-    {115, 10, (double) INT2_MAX, 0.0308, 0.062, 0.22, 0.14, -20,0.0,0.0,0.0},
-    {110, 10, (double) INT2_MAX, 0.0302, 0.056, 0.19, 0.16, -26,0.0,0.0,0.0},
-    {105, 10, (double) INT2_MAX, 0.0296, 0.050, 0.17, 0.17, -27,0.0,0.0,0.0},
-    {100, 10, (double) INT2_MAX, 0.0286, 0.041, 0.15, 0.19, -32,0.0,0.0,0.0},
-    {95, 10, (double) INT2_MAX, 0.0272, 0.030, 0.13, 0.21, -35,0.0,0.0,0.0},
-    {90, 10, (double) INT2_MAX, 0.0257, 0.022, 0.11, 0.24, -40,0.0,0.0,0.0},
-    {85, 10, (double) INT2_MAX, 0.0242, 0.017, 0.083, 0.29, -51,0.0,0.0,0.0},
-    {115, 9, (double) INT2_MAX, 0.0306, 0.061, 0.24, 0.13, -14,0.0,0.0,0.0},
-    {110, 9, (double) INT2_MAX, 0.0299, 0.053, 0.19, 0.16, -23,0.0,0.0,0.0},
-    {105, 9, (double) INT2_MAX, 0.0289, 0.043, 0.17, 0.17, -23,0.0,0.0,0.0},
-    {100, 9, (double) INT2_MAX, 0.0279, 0.036, 0.14, 0.20, -31,0.0,0.0,0.0},
-    {95, 9, (double) INT2_MAX, 0.0266, 0.028, 0.12, 0.23, -37,0.0,0.0,0.0},
-    {120, 8, (double) INT2_MAX, 0.0307, 0.062, 0.22, 0.14, -18,0.0,0.0,0.0},
-    {115, 8, (double) INT2_MAX, 0.0300, 0.053, 0.20, 0.15, -19,0.0,0.0,0.0},
-    {110, 8, (double) INT2_MAX, 0.0292, 0.046, 0.17, 0.17, -23,0.0,0.0,0.0},
-    {105, 8, (double) INT2_MAX, 0.0280, 0.035, 0.14, 0.20, -31,0.0,0.0,0.0},
-    {100, 8, (double) INT2_MAX, 0.0266, 0.026, 0.12, 0.23, -37,0.0,0.0,0.0},
-    {125, 7, (double) INT2_MAX, 0.0306, 0.058, 0.22, 0.14, -18,0.0,0.0,0.0},
-    {120, 7, (double) INT2_MAX, 0.0300, 0.052, 0.19, 0.16, -23,0.0,0.0,0.0},
-    {115, 7, (double) INT2_MAX, 0.0292, 0.044, 0.17, 0.17, -24,0.0,0.0,0.0},
-    {110, 7, (double) INT2_MAX, 0.0279, 0.032, 0.14, 0.20, -31,0.0,0.0,0.0},
-    {105, 7, (double) INT2_MAX, 0.0267, 0.026, 0.11, 0.24, -41,0.0,0.0,0.0},
-    {120,10,5, 0.0298, 0.049, 0.19, 0.16, -21,0.0,0.0,0.0},
-    {115,10,5, 0.0290, 0.042, 0.16, 0.18, -25,0.0,0.0,0.0},
-    {110,10,5, 0.0279, 0.033, 0.13, 0.21, -32,0.0,0.0,0.0},
-    {105,10,5, 0.0264, 0.024, 0.10, 0.26, -46,0.0,0.0,0.0},
-    {100,10,5, 0.0250, 0.018, 0.081, 0.31, -56,0.0,0.0,0.0},
-    {125,10,4, 0.0301, 0.053, 0.18, 0.17, -25,0.0,0.0,0.0},
-    {120,10,4, 0.0292, 0.043, 0.15, 0.20, -33,0.0,0.0,0.0},
-    {115,10,4, 0.0282, 0.035, 0.13, 0.22, -36,0.0,0.0,0.0},
-    {110,10,4, 0.0270, 0.027, 0.11, 0.25, -41,0.0,0.0,0.0},
-    {105,10,4, 0.0254, 0.020, 0.079, 0.32, -60,0.0,0.0,0.0},
-    {130,10,3, 0.0300, 0.051, 0.17, 0.18, -27,0.0,0.0,0.0},
-    {125,10,3, 0.0290, 0.040, 0.13, 0.22, -38,0.0,0.0,0.0},
-    {120,10,3, 0.0278, 0.030, 0.11, 0.25, -44,0.0,0.0,0.0},
-    {115,10,3, 0.0267, 0.025, 0.092, 0.29, -52,0.0,0.0,0.0},
-    {110,10,3, 0.0252, 0.018, 0.070, 0.36, -70,0.0,0.0,0.0},
-    {135,10,2, 0.0292, 0.040, 0.13, 0.22, -35,0.0,0.0,0.0},
-    {130,10,2, 0.0283, 0.034, 0.10, 0.28, -51,0.0,0.0,0.0},
-    {125,10,2, 0.0269, 0.024, 0.077, 0.35, -71,0.0,0.0,0.0},
-    {120,10,2, 0.0253, 0.017, 0.059, 0.43, -90,0.0,0.0,0.0},
-    {115,10,2, 0.0234, 0.011, 0.043, 0.55, -121,0.0,0.0,0.0},
-    {100,14,3, 0.0258, 0.023, 0.087, 0.33, -59,0.0,0.0,0.0},
-    {105,13,3, 0.0263, 0.024, 0.085, 0.31, -57,0.0,0.0,0.0},
-    {110,12,3, 0.0271, 0.028, 0.093, 0.29, -54,0.0,0.0,0.0},
-    {115,11,3, 0.0275, 0.030, 0.10, 0.27, -49,0.0,0.0,0.0},
-    {125,9,3, 0.0283, 0.034, 0.12, 0.23, -38,0.0,0.0,0.0},
-    {130,8,3, 0.0287, 0.037, 0.12, 0.23, -40,0.0,0.0,0.0},
-    {125,7,3, 0.0287, 0.036, 0.12, 0.24, -44,0.0,0.0,0.0},
-    {140,6,3, 0.0285, 0.033, 0.12, 0.23, -40,0.0,0.0,0.0},
-    {105,14,3, 0.0270, 0.028, 0.10, 0.27, -46,0.0,0.0,0.0},
-    {110,13,3, 0.0279, 0.034, 0.10, 0.27, -50,0.0,0.0,0.0},
-    {115,12,3, 0.0282, 0.035, 0.12, 0.24, -42,0.0,0.0,0.0},
-    {120,11,3, 0.0286, 0.037, 0.12, 0.24, -44,0.0,0.0,0.0},
+    {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.03391, 0.125, 0.4544, 0.07462, -3.2},
+    {100, 12, (double) INT2_MAX, 0.0300, 0.056, 0.21, 0.14, -15},
+    {95, 12, (double) INT2_MAX, 0.0291, 0.047, 0.18, 0.16, -20},
+    {90, 12, (double) INT2_MAX, 0.0280, 0.038, 0.15, 0.19, -28},
+    {85, 12, (double) INT2_MAX, 0.0267, 0.030, 0.13, 0.21, -31},
+    {80, 12, (double) INT2_MAX, 0.0250, 0.021, 0.10, 0.25, -39},
+    {105, 11, (double) INT2_MAX, 0.0301, 0.056, 0.22, 0.14, -16},
+    {100, 11, (double) INT2_MAX, 0.0294, 0.049, 0.20, 0.15, -17},
+    {95, 11, (double) INT2_MAX, 0.0285, 0.042, 0.16, 0.18, -25},
+    {90, 11, (double) INT2_MAX, 0.0271, 0.031, 0.14, 0.20, -28},
+    {85, 11, (double) INT2_MAX, 0.0256, 0.023, 0.10, 0.26, -46},
+    {115, 10, (double) INT2_MAX, 0.0308, 0.062, 0.22, 0.14, -20},
+    {110, 10, (double) INT2_MAX, 0.0302, 0.056, 0.19, 0.16, -26},
+    {105, 10, (double) INT2_MAX, 0.0296, 0.050, 0.17, 0.17, -27},
+    {100, 10, (double) INT2_MAX, 0.0286, 0.041, 0.15, 0.19, -32},
+    {95, 10, (double) INT2_MAX, 0.0272, 0.030, 0.13, 0.21, -35},
+    {90, 10, (double) INT2_MAX, 0.0257, 0.022, 0.11, 0.24, -40},
+    {85, 10, (double) INT2_MAX, 0.0242, 0.017, 0.083, 0.29, -51},
+    {115, 9, (double) INT2_MAX, 0.0306, 0.061, 0.24, 0.13, -14},
+    {110, 9, (double) INT2_MAX, 0.0299, 0.053, 0.19, 0.16, -23},
+    {105, 9, (double) INT2_MAX, 0.0289, 0.043, 0.17, 0.17, -23},
+    {100, 9, (double) INT2_MAX, 0.0279, 0.036, 0.14, 0.20, -31},
+    {95, 9, (double) INT2_MAX, 0.0266, 0.028, 0.12, 0.23, -37},
+    {120, 8, (double) INT2_MAX, 0.0307, 0.062, 0.22, 0.14, -18},
+    {115, 8, (double) INT2_MAX, 0.0300, 0.053, 0.20, 0.15, -19},
+    {110, 8, (double) INT2_MAX, 0.0292, 0.046, 0.17, 0.17, -23},
+    {105, 8, (double) INT2_MAX, 0.0280, 0.035, 0.14, 0.20, -31},
+    {100, 8, (double) INT2_MAX, 0.0266, 0.026, 0.12, 0.23, -37},
+    {125, 7, (double) INT2_MAX, 0.0306, 0.058, 0.22, 0.14, -18},
+    {120, 7, (double) INT2_MAX, 0.0300, 0.052, 0.19, 0.16, -23},
+    {115, 7, (double) INT2_MAX, 0.0292, 0.044, 0.17, 0.17, -24},
+    {110, 7, (double) INT2_MAX, 0.0279, 0.032, 0.14, 0.20, -31},
+    {105, 7, (double) INT2_MAX, 0.0267, 0.026, 0.11, 0.24, -41},
+    {120,10,5, 0.0298, 0.049, 0.19, 0.16, -21},
+    {115,10,5, 0.0290, 0.042, 0.16, 0.18, -25},
+    {110,10,5, 0.0279, 0.033, 0.13, 0.21, -32},
+    {105,10,5, 0.0264, 0.024, 0.10, 0.26, -46},
+    {100,10,5, 0.0250, 0.018, 0.081, 0.31, -56},
+    {125,10,4, 0.0301, 0.053, 0.18, 0.17, -25},
+    {120,10,4, 0.0292, 0.043, 0.15, 0.20, -33},
+    {115,10,4, 0.0282, 0.035, 0.13, 0.22, -36},
+    {110,10,4, 0.0270, 0.027, 0.11, 0.25, -41},
+    {105,10,4, 0.0254, 0.020, 0.079, 0.32, -60},
+    {130,10,3, 0.0300, 0.051, 0.17, 0.18, -27},
+    {125,10,3, 0.0290, 0.040, 0.13, 0.22, -38},
+    {120,10,3, 0.0278, 0.030, 0.11, 0.25, -44},
+    {115,10,3, 0.0267, 0.025, 0.092, 0.29, -52},
+    {110,10,3, 0.0252, 0.018, 0.070, 0.36, -70},
+    {135,10,2, 0.0292, 0.040, 0.13, 0.22, -35},
+    {130,10,2, 0.0283, 0.034, 0.10, 0.28, -51},
+    {125,10,2, 0.0269, 0.024, 0.077, 0.35, -71},
+    {120,10,2, 0.0253, 0.017, 0.059, 0.43, -90},
+    {115,10,2, 0.0234, 0.011, 0.043, 0.55, -121},
+    {100,14,3, 0.0258, 0.023, 0.087, 0.33, -59},
+    {105,13,3, 0.0263, 0.024, 0.085, 0.31, -57},
+    {110,12,3, 0.0271, 0.028, 0.093, 0.29, -54},
+    {115,11,3, 0.0275, 0.030, 0.10, 0.27, -49},
+    {125,9,3, 0.0283, 0.034, 0.12, 0.23, -38},
+    {130,8,3, 0.0287, 0.037, 0.12, 0.23, -40},
+    {125,7,3, 0.0287, 0.036, 0.12, 0.24, -44},
+    {140,6,3, 0.0285, 0.033, 0.12, 0.23, -40},
+    {105,14,3, 0.0270, 0.028, 0.10, 0.27, -46},
+    {110,13,3, 0.0279, 0.034, 0.10, 0.27, -50},
+    {115,12,3, 0.0282, 0.035, 0.12, 0.24, -42},
+    {120,11,3, 0.0286, 0.037, 0.12, 0.24, -44},
 }; /**< Supported values (gap-existence, extension, etc.) for BLOSUM62_20. */
 
 static Int4 blosum62_20_prefs[BLOSUM62_20_VALUES_MAX] = {
@@ -584,8 +564,6 @@ BLAST_MATRIX_NOMINAL
  * 7. Beta,
  * 8. Theta
  */
-
-// TODO: add gumbel parameters for nucleotide cases
 
 /** Karlin-Altschul parameter values for substitution scores 1 and -5. */
 static const array_of_8 blastn_values_1_5[] = {
@@ -811,57 +789,6 @@ SPsiBlastScoreMatrixNew(size_t ncols)
     return retval;
 }
 
-
-/* 
-   Fill up erfc used in FSC
-*/
-static erfc_table*
-s_erfc_tableNew() {
-   erfc_table* retv;
-   retv = (erfc_table*) calloc(1, sizeof(erfc_table));
-   if ( !retv )  return NULL;
-
-   retv->eps = ERFC_EPS;
-   retv->a   = ERFC_A;
-   retv->b   = ERFC_B;
-   retv->N   = ERFC_N;
-   retv->h   = (retv->b - retv->a) /(double) (retv->N);
-   retv->p   = normal_distr_array_for_P_values_calculation;
-   return retv;
-}
-
-/* 
-   Clean up erfc
-*/
-static erfc_table*
-s_erfc_tableFree(erfc_table* t) {
-   sfree(t);
-   return NULL;
-}
-
-/* 
-   allocate space for gumbel block
-*/
-static Blast_GumbelBlk*
-s_BlastGumbelBlkNew() {
-   Blast_GumbelBlk* retv;
-   retv = (Blast_GumbelBlk*) calloc(1, sizeof(Blast_GumbelBlk));
-   if ( !retv ) return NULL;
-   retv->p  = s_erfc_tableNew();
-   return retv;
-}
-
-/* 
-   free space for gumbel blcok
-*/
-static Blast_GumbelBlk*
-s_BlastGumbelBlkFree(Blast_GumbelBlk* gbp) {
-   if ( !gbp) return NULL;
-   s_erfc_tableFree(gbp->p);
-   sfree(gbp);
-   return NULL;
-}
-
 int
 BlastScoreBlkCheck(BlastScoreBlk* sbp)
 {
@@ -898,7 +825,6 @@ BlastScoreBlkNew(Uint1 alphabet, Int4 number_of_contexts)
 
 {
    BlastScoreBlk* sbp;
-   char* use_old_fsc;
 
    sbp = (BlastScoreBlk*) calloc(1, sizeof(BlastScoreBlk));
 
@@ -930,11 +856,6 @@ BlastScoreBlkNew(Uint1 alphabet, Int4 number_of_contexts)
         return BlastScoreBlkFree(sbp);
     }
     sbp->scale_factor = 1.0;
-
-    /* FSCOLD: to switch back to original FSC, comment out the following line */
-    use_old_fsc = getenv("OLD_FSC");
-    if (!use_old_fsc) sbp->gbp = s_BlastGumbelBlkNew();
-
     sbp->number_of_contexts = number_of_contexts;
     sbp->sfp = (Blast_ScoreFreq**) 
      calloc(sbp->number_of_contexts, sizeof(Blast_ScoreFreq*));
@@ -996,8 +917,6 @@ BlastScoreBlkFree(BlastScoreBlk* sbp)
     }
     if (sbp->kbp_ideal)
         sbp->kbp_ideal = Blast_KarlinBlkFree(sbp->kbp_ideal);
-    if (sbp->gbp) 
-        sbp->gbp = s_BlastGumbelBlkFree(sbp->gbp);
     sfree(sbp->sfp);
     sfree(sbp->kbp_std);
     sfree(sbp->kbp_psi);
@@ -3648,116 +3567,6 @@ Blast_KarlinBlkGappedLoadFromTables(Blast_KarlinBlk* kbp, Int4 gap_open,
    return status;
 }
 
-/*
-   Supplies Gumbel parameters for p-value estimation with FSC
-*/
-Int2
-Blast_GumbelBlkCalc(Blast_GumbelBlk* gbp, Int4 gap_open, 
-      Int4 gap_extend, const char* matrix_name, Blast_Message** error_return)
-{
-   char buffer[256];
-   Int2 status = 
-      Blast_GumbelBlkLoadFromTables(gbp, gap_open, gap_extend, matrix_name);
-
-   if (status && error_return) {
-      if (status == 1) {
-         MatrixInfo* matrix_info;
-         ListNode* vnp,* head;      
-
-         vnp = head = BlastLoadMatrixValues();
-
-         sprintf(buffer, "%s is not a supported matrix", matrix_name);
-         Blast_MessageWrite(error_return, eBlastSevError, kBlastMessageNoContext, buffer);
-
-         while (vnp) {
-            matrix_info = vnp->ptr;
-            sprintf(buffer, "%s is a supported matrix", matrix_info->name);
-            Blast_MessageWrite(error_return, eBlastSevError, kBlastMessageNoContext, buffer);
-            vnp = vnp->next;
-         }
-
-         BlastMatrixValuesDestruct(head);
-      } else if (status == 2) {
-         sprintf(buffer, "Gap existence and extension values of %ld and %ld not supported for %s", (long) gap_open, (long) gap_extend, matrix_name);
-         Blast_MessageWrite(error_return, eBlastSevError, kBlastMessageNoContext, buffer);
-         BlastKarlinReportAllowedValues(matrix_name, error_return);
-      }
-   }
-
-   return status;
-}
-
-/*
-   Attempts to fill gumbel parameters.
-   Will return non-zero status if that fails.
-
-   return values: -1 if matrix_name is NULL;
-         1 if matrix not found
-         2 if matrix found, but open, extend etc. values not supported.
-*/
-Int2
-Blast_GumbelBlkLoadFromTables(Blast_GumbelBlk* gbp, Int4 gap_open, 
-                              Int4 gap_extend, const char* matrix_name)
-{
-   Boolean found_matrix=FALSE;
-   array_of_8 *values;
-   Int2 status=0;
-   Int4 max_number_values=0;
-   MatrixInfo* matrix_info;
-   ListNode* vnp,* head;
-   
-   if (matrix_name == NULL)
-      return -1;
-
-   values = NULL;
-
-   vnp = head = BlastLoadMatrixValues();
-   while (vnp) {
-      matrix_info = vnp->ptr;
-      if (strcasecmp(matrix_info->name, matrix_name) == 0) {
-         values = matrix_info->values;
-         max_number_values = matrix_info->max_number_values;
-         found_matrix = TRUE;
-         break;
-      }
-      vnp = vnp->next;
-   }
-
-
-   if (found_matrix) {
-      Boolean found_values=FALSE;
-      Int4 index;
-      for (index=0; index<max_number_values; index++) {
-         if (BLAST_Nint(values[index][0]) == gap_open &&
-            BLAST_Nint(values[index][1]) == gap_extend) {
-            if (gbp) {
-               gbp->Lambda = values[index][3];
-               gbp->C = values[index][8];
-               gbp->G = gap_open + gap_extend;
-               gbp->a = values[index][6];
-               gbp->Alpha = values[index][9];
-               gbp->Sigma = values[index][10];
-               gbp->a_un  = values[0][6];
-               gbp->Alpha_un = values[0][9];
-               gbp->b = 2.0 * gbp->G * (gbp->a_un - gbp->a);
-               gbp->Beta = 2.0 * gbp->G * (gbp->Alpha_un - gbp->Alpha);
-               gbp->Tau  = 2.0 * gbp->G * (gbp->Alpha_un - gbp->Sigma);
-            }
-            found_values = TRUE;
-            break;
-         }
-      }
-
-      status = found_values ? 0 : 2;
-   } else {
-      status = 1;
-   }
-
-   BlastMatrixValuesDestruct(head);
-
-   return status;
-}
-
 char*
 BLAST_PrintMatrixMessage(const char *matrix_name)
 {
@@ -4394,7 +4203,6 @@ s_BlastSumP(Int4 r, double s)
    return s_BlastSumPCalc(r, s);
 }
 
-//TODO: implement Spouge's FSC?
 /*
     Calculates the e-value for alignments with "small" gaps (typically
     under fifty residues/basepairs) following ideas of Stephen Altschul's.
@@ -4448,7 +4256,6 @@ BLAST_SmallGapSumE(
     return sum_e;
 }
 
-//TODO: implement Spouge's FSC?
 /** Calculates the e-value of a collection multiple distinct
  * alignments with asymmetric gaps between the alignments. The gaps
  * in one (protein) sequence are typically small (like in
@@ -4508,7 +4315,6 @@ BLAST_UnevenGapSumE(Int4 query_start_points, Int4 subject_start_points,
 }
 
 
-//TODO: implement Spouge's FSC?
 /*
     Calculates the e-value if a collection of distinct alignments with
     arbitrarily large gaps between the alignments
@@ -5109,114 +4915,3 @@ BLAST_ComputeLengthAdjustment(double K,
 
     return converged ? 0 : 1;
 }
-
-static double s_CalculateNormalProbability(double x_, double eps_) 
-{
-    double pi = 3.1415926535897932384626433832795;
-    double x_max;
-    double const_val, h, res;
-    Int4 i, N;
-
-    if(x_==0)  return 0.5;
-
-    eps_ = MIN(1.0,eps_);
-
-    x_max = 10*eps_+sqrt(MAX(0.0,-2*log(eps_)));
-
-    if(x_>=x_max) {
-        double x=x_/sqrt(2.0);
-        return 1-0.5*exp(-x*x)/(x*sqrt(pi))*(1-1.0/(2*x*2*x));
-    };
-
-    if(x_<=-x_max) {
-        double x=x_/sqrt(2.0);
-        return 0.5*exp(-x*x)/(-x*sqrt(pi))*(1-1.0/(2*x*2*x));
-    };
-
-    const_val = 1/sqrt(2.0*pi);
-    N = (Int4) lround(fabs(x_)/eps_) + 1;
-    h = x_/(double)N;
-    res = 0.0;
-
-    for (i=0;i<=N;i++) {
-        double y=h*i;
-        double tmp=exp(-0.5*y*y);
-        res += (i==0||i==N)? 0.5*tmp : tmp;
-    }
-
-    res *= h;
-    return 0.5+const_val*(res);
-}
-
-static double s_NormalProbability(double x, erfc_table *p, double eps) {
-    Int4 x_n;
-    if (x < p->a || x > p->b) return s_CalculateNormalProbability(x, eps);
-    x_n = MIN((Int4) floor((x - p->a) / p->h),  p->N - 1);
-    return p->p[x_n] + (p->p[x_n + 1] - p->p[x_n]) * (x - (p->h * x_n + p->a)) / p->h;
-}
-
-/*
-   BlastSpougeStoE() -- given a score, return the associated Expect value
-                        using Spouge's FSC
-
-   Error return value is -1.
-*/
-double
-BLAST_SpougeStoE(Int4 y_,
-                 Blast_KarlinBlk* kbp,
-                 Blast_GumbelBlk* gbp,
-                 Int4 m_, Int4 n_) 
-{
-    // the score and lambda may have been rescaled.  We will compute the scaling factor
-    // and use it to scale a, alpha, and Sigma similarly.
-    double scale_factor = kbp->Lambda / gbp->Lambda;
-
-    // the pair-wise e-value must be scaled back to db-wise e-value
-    double db_scale_factor = (gbp->db_length) ? 
-            (double)gbp->db_length/(double)n_ : 1.0;
-
-    double lambda_    = kbp->Lambda;
-    double k_         = kbp->K;
-    double ai_hat_    = gbp->a * scale_factor;
-    double bi_hat_    = gbp->b;
-    double alphai_hat_= gbp->Alpha * scale_factor;
-    double betai_hat_ = gbp->Beta;
-    double sigma_hat_ = gbp->Sigma * scale_factor;
-    double tau_hat_   = gbp->Tau;
-
-    /* here we consider symmetric matrix only */
-    double aj_hat_    = ai_hat_;
-    double bj_hat_    = bi_hat_;
-    double alphaj_hat_= alphai_hat_;
-    double betaj_hat_ = betai_hat_;
-
-    static double const_val = 1/sqrt(2.0*3.1415926535897932384626433832795);
-    double eps = 0.000001;
-
-    double m_li_y, vi_y, sqrt_vi_y, m_F, P_m_F;
-    double n_lj_y, vj_y, sqrt_vj_y, n_F, P_n_F;
-    double c_y, P_m_F_P_n_F, c_y_P_m_F_P_n_F;
-    double p1, p2, p1_p2, area;
-
-    m_li_y = m_ - MAX(0.0, ai_hat_*y_+bi_hat_);
-    vi_y = MAX(0.0, alphai_hat_*y_+betai_hat_);
-    sqrt_vi_y = sqrt(vi_y);
-    m_F = (sqrt_vi_y==0.0) ? 1e100 : m_li_y/sqrt_vi_y;
-    P_m_F = s_NormalProbability(m_F, gbp->p, eps);
-    p1 = m_li_y * P_m_F + sqrt_vi_y * const_val * exp(-0.5*m_F*m_F);
-
-    n_lj_y = n_ - MAX(0.0, aj_hat_*y_+bj_hat_);
-    vj_y = MAX(0.0, alphaj_hat_*y_+betaj_hat_);
-    sqrt_vj_y=sqrt(vj_y);
-    n_F = (sqrt_vj_y==0.0) ? 1e100 : n_lj_y/sqrt_vj_y;
-    P_n_F = s_NormalProbability(n_F, gbp->p, eps);
-    p2 = n_lj_y * P_n_F + sqrt_vj_y * const_val * exp(-0.5*n_F*n_F);
-
-    c_y = MAX(0.0, sigma_hat_*y_+tau_hat_);
-    P_m_F_P_n_F = P_m_F * P_n_F;
-    c_y_P_m_F_P_n_F = c_y * P_m_F_P_n_F;
-    p1_p2 = MAX(p1 * p2, 0.0);
-    area = MAX(p1_p2 + c_y_P_m_F_P_n_F, 0.0);
-
-    return area * k_ * exp(-lambda_ * y_) * db_scale_factor;
-};

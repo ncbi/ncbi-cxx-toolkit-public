@@ -402,7 +402,7 @@ s_HitlistEvaluateAndPurge(int * pbestScore, double *pbestEvalue,
                                 hitParams->link_hsp_params, TRUE);
     } else {
         status =
-            Blast_HSPListGetEvalues(queryInfo, subject_length, hsp_list, TRUE, sbp,
+            Blast_HSPListGetEvalues(queryInfo, hsp_list, TRUE, sbp,
                                     0.0, /* use a non-zero gap decay
                                             only when linking HSPs */
                                     1.0); /* Use scaling factor equal to
