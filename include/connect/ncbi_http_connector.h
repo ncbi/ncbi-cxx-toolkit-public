@@ -85,7 +85,7 @@ extern "C" {
  *     NOTE:
  *       if <user_header> is neither a NULL pointer nor an empty string, then:
  *       - it must NOT contain any "empty lines":  "\r\n\r\n";
- *       - it must be terminated by a single "\r\n";
+ *       - it may be be terminated by a single "\r\n";
  *       - it gets inserted to the HTTP header "as is", without any
  *         automatic checking or encoding;
  *       - the "user_header" specified in the arguments overrides any user
@@ -159,10 +159,10 @@ typedef enum {
     fHTTP_AutoReconnect   = 0x1,  /* see (*) above                           */
     fHTTP_SureFlush       = 0x2,  /* always send HTTP request on CLOSE/RECONN*/
     fHTTP_KeepHeader      = 0x4,  /* dont strip HTTP header from CGI response*/
-    fHTTP_UrlDecodeInput  = 0x8,  /* URL-decode content of the response body */
+    fHTTP_UrlDecodeInput  = 0x8,  /* URL-decode contents of the response body*/
     fHTTP_UrlEncodeOutput = 0x10, /* URL-encode all output data              */
     fHTTP_UrlCodec        = 0x18, /* fHTTP_UrlDecodeInput | ...EncodeOutput  */
-    fHTTP_UrlEncodeArgs   = 0x20, /* URL-encode "info->args"                 */
+    fHTTP_UrlEncodeArgs   = 0x20, /* URL-encode "info->args" (w/o fragment)  */
     fHTTP_DropUnread      = 0x40, /* each microsession drops yet unread data */
     fHTTP_NoUpread        = 0x80, /* do not use SOCK_SetReadOnWrite() at all */
     fHTTP_Flushable       = 0x100,/* connector will really flush on Flush()  */
@@ -209,7 +209,9 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnector
  *    it is passed "net_info" stored in the connector, and the number of
  *    previously unsuccessful attempts since the connection was opened;
  *    a zero (false) return value ends retry attempts;
- *  - "FHTTP_Cleanup()" is called when the connector is about to be destroyed.
+ *  - "FHTTP_Cleanup()" is called when the connector is about to be destroyed;
+ *    "user_data" is guaranteed not to be referenced anymore (so it is a good
+ *    place to clean up "user_data" if necessary).
  */
 
 typedef int/*bool*/ (*FHTTP_ParseHeader)
@@ -225,7 +227,7 @@ typedef int/*bool*/ (*FHTTP_Adjust)
  );
 
 typedef void        (*FHTTP_Cleanup)
-(void*               user_data      /* supplemental user data for cleanup    */
+(void*               user_data      /* supplemental user data                */
  );
 
 extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnectorEx
@@ -233,8 +235,8 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnectorEx
  THTTP_Flags         flags,
  FHTTP_ParseHeader   parse_header,  /* may be NULL, then no addtl. parsing   */
  void*               user_data,     /* user data for HTTP callbacks (CBs)    */
- FHTTP_Adjust        adjust,        /* may be NULL, then no adjustments      */
- FHTTP_Cleanup       cleanup        /* may be NULL, then no cleanup          */
+ FHTTP_Adjust        adjust,        /* may be NULL                           */
+ FHTTP_Cleanup       cleanup        /* may be NULL                           */
  );
 
 
