@@ -241,7 +241,7 @@ static void TEST_ConnNetInfo(void)
 {
     size_t n;
     char* str;
-    char buf[80];
+    char buf[256];
     SConnNetInfo* net_info;
 
     CORE_LOG(eLOG_Note, "ConnNetInfo test started");
@@ -362,6 +362,22 @@ static void TEST_ConnNetInfo(void)
     if (str)
         *str = '\0';
     printf("HTTP User Header after extend:\n%s%s%s\n",
+           "\"" + !str, str ? buf : "NULL", "\"" + !str);
+    assert(strcmp(net_info->http_user_header,
+                  "T0: V0\n"
+                  "T2:V2.1 V2\r\n"
+                  "T3:V3 T3:V3\n"
+                  "T4: W4\r\n"
+                  "T5: V5\r\n"
+                  "T1:V1\r\n") == 0);
+
+    ConnNetInfo_ExtendUserHeader(net_info,
+                                 "T2: V2\n"
+                                 "T3: V3\r\n");
+    str = UTIL_PrintableString(net_info->http_user_header, 0, buf, 0);
+    if (str)
+        *str = '\0';
+    printf("HTTP User Header after no-op extend:\n%s%s%s\n",
            "\"" + !str, str ? buf : "NULL", "\"" + !str);
     assert(strcmp(net_info->http_user_header,
                   "T0: V0\n"

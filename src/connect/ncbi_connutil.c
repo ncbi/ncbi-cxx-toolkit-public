@@ -583,6 +583,9 @@ static int/*bool*/ x_TagValueMatches(const char* oldval, size_t oldvallen,
                  ||  isspace((unsigned char) oldval[newvallen]))) {
             return 1/*true*/;
         }
+        assert(oldvallen > 0);
+        --oldvallen;
+        ++oldval;
     }
     return 0/*false*/;
 }
