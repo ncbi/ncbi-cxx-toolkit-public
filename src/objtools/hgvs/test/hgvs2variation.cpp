@@ -60,6 +60,7 @@
 #include <objtools/hgvs/variation_util2.hpp>
 #include <objects/variation/Variation.hpp>
 #include <objects/seqfeat/VariantProperties.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include <serial/iterator.hpp>
 #include <common/test_assert.h>
@@ -100,6 +101,13 @@ void CHgvs2variationApplication::Init(void)
          "Text file of hgvs expressions; used in conjunction with -in",
          CArgDescriptions::eOutputFile,
          "-",
+         CArgDescriptions::fPreOpen);
+
+    arg_desc->AddOptionalKey
+        ("aln",
+         "alignment",
+         "Text seq-align to remap placement to",
+         CArgDescriptions::eInputFile,
          CArgDescriptions::fPreOpen);
 
     arg_desc->AddFlag("loc_prop", "attach location properties");
@@ -206,6 +214,12 @@ int CHgvs2variationApplication::Run(void)
     CNcbiOstream& ostr = args["out"].AsOutputFile();
 
 
+    CRef<CSeq_align> aln;
+    if(args["aln"]) {
+        aln.Reset(new CSeq_align);
+        args["aln"].AsInputFile() >> MSerial_AsnText >> *aln;
+    }
+
     string line_str("");
     while(NcbiGetlineEOL(istr, line_str)) {
         //expected line format: input_hgvs, optionally followed by "|" and
@@ -234,6 +248,27 @@ int CHgvs2variationApplication::Run(void)
 
         CRef<CVariation> v = parser->AsVariation(input_hgvs);
         v->SetDescription(comment);
+
+        if(aln) {
+            for(CTypeIterator<CVariation> it(Begin(*v)); it; ++it) {
+                CVariation& v2 = *it;
+                if(!v2.IsSetPlacements()) {
+                    continue;
+                }
+                CVariation::TPlacements mapped;
+                ITERATE(CVariation::TPlacements, it2, v2.GetPlacements()) {
+                    const CVariantPlacement& p = **it2;
+                    if(   ncbi::sequence::IsSameBioseq(aln->GetSeq_id(0), ncbi::sequence::GetId(p.GetLoc(), NULL), scope)
+                       || ncbi::sequence::IsSameBioseq(aln->GetSeq_id(1), ncbi::sequence::GetId(p.GetLoc(), NULL), scope))
+                    {
+                        mapped.push_back(variation_util->Remap(p, *aln));
+                    }
+                }
+                NON_CONST_ITERATE(CVariation::TPlacements, it2, mapped) {
+                    v2.SetPlacements().push_back(*it2);
+                }
+            }
+        }
 
         if(args["compute_hgvs"]) {
             AttachHgvs(*v, *parser);

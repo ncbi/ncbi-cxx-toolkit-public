@@ -203,6 +203,8 @@ public:
     static const CVariation::TPlacements* s_GetPlacements(const CVariation& v);
 
 private:
+    CRef<CVariantPlacement> x_Remap(const CVariantPlacement& p, CSeq_loc_Mapper& mapper);
+
     void ChangeToDelins(CVariation& v);
 
     void x_SetVariantProperties(CVariantProperties& p, const CVariation_inst& vi, const CSeq_loc& loc);

@@ -283,7 +283,7 @@ CRef<CVariantPlacement> CVariationUtil::Remap(const CVariantPlacement& p, const 
     CRef<CSeq_loc_Mapper> mapper(new CSeq_loc_Mapper(aln, target_row, m_scope));
     mapper->SetMergeAll();
 
-    CRef<CVariantPlacement> p3 = Remap(*p2, *mapper);
+    CRef<CVariantPlacement> p3 = x_Remap(*p2, *mapper);
 
     if(p3->GetLoc().GetId()
        && aln.GetSegs().IsSpliced()
@@ -298,13 +298,7 @@ CRef<CVariantPlacement> CVariationUtil::Remap(const CVariantPlacement& p, const 
 
 CRef<CVariantPlacement> CVariationUtil::Remap(const CVariantPlacement& p, CSeq_loc_Mapper& mapper)
 {
-    CRef<CVariantPlacement> p2(new CVariantPlacement);
-    CRef<CSeq_loc> mapped_loc = mapper.Map(p.GetLoc());
-    p2->SetLoc(*mapped_loc);
-    p2->SetPlacement_method(CVariantPlacement::ePlacement_method_projected);
-    AttachSeq(*p2);
-    p2->SetMol(GetMolType(sequence::GetId(p2->GetLoc(), NULL)));
-
+    CRef<CVariantPlacement> p2 = x_Remap(p, mapper);
     if((p.IsSetStart_offset() || p.IsSetStop_offset()) && p2->GetMol() == CVariantPlacement::eMol_genomic
        || p.GetMol() == CVariantPlacement::eMol_genomic && p2->GetMol() != CVariantPlacement::eMol_genomic)
     {
@@ -314,6 +308,34 @@ CRef<CVariantPlacement> CVariationUtil::Remap(const CVariantPlacement& p, CSeq_l
         NCBI_THROW(CArgException, CArgException::eInvalidArg, "Cannot use this method to remap between genomic and cdna coordinates");
     }
 
+    return p2;
+}
+
+CRef<CVariantPlacement> CVariationUtil::x_Remap(const CVariantPlacement& p, CSeq_loc_Mapper& mapper)
+{
+    CRef<CVariantPlacement> p2(new CVariantPlacement);
+
+
+    if(p.IsSetStart_offset()) {
+        p2->SetStart_offset() = p.GetStart_offset();
+    }
+    if(p.IsSetStop_offset()) {
+        p2->SetStop_offset() = p.GetStop_offset();
+    }
+    if(p.IsSetStart_offset_fuzz()) {
+        p2->SetStart_offset_fuzz().Assign(p.GetStart_offset_fuzz());
+    }
+    if(p.IsSetStop_offset_fuzz()) {
+        p2->SetStop_offset_fuzz().Assign(p.GetStop_offset_fuzz());
+    }
+
+    CRef<CSeq_loc> mapped_loc = mapper.Map(p.GetLoc());
+    p2->SetLoc(*mapped_loc);
+    p2->SetPlacement_method(CVariantPlacement::ePlacement_method_projected);
+    AttachSeq(*p2);
+    p2->SetMol(GetMolType(sequence::GetId(p2->GetLoc(), NULL)));
+
+    ChangeIdsInPlace(*p2, sequence::eGetId_ForceAcc, *m_scope);
     return p2;
 }
 
