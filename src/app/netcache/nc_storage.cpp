@@ -1316,8 +1316,6 @@ CNCBlobStorage::x_GC_DeleteExpired(const SNCBlobListInfo& blob_info,
         m_GCAccessor->DeleteBlob();
         ++m_GCDeleted;
     }
-    else
-        abort();
     m_GCAccessor->Deinitialize();
 }
 

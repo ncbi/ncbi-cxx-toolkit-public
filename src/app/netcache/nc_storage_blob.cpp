@@ -67,6 +67,25 @@ SNCBlobVerData::~SNCBlobVerData(void)
 {}
 
 
+static bool
+s_IsCurVerOlder(const SNCBlobVerData* cur_ver, const SNCBlobVerData* new_ver)
+{
+    if (cur_ver) {
+        if (cur_ver->create_time > new_ver->create_time)
+            return false;
+        else if (cur_ver->create_time == new_ver->create_time) {
+            if (cur_ver->create_server > new_ver->create_server)
+                return false;
+            else if (cur_ver->create_server == new_ver->create_server) {
+                if (cur_ver->create_id >= new_ver->create_id)
+                    return false;
+            }
+        }
+    }
+    return true;
+}
+
+
 ///
 static CNCBlobVerManager* const kLockedManager
                                 = reinterpret_cast<CNCBlobVerManager*>(size_t(1));
@@ -380,7 +399,9 @@ CNCBlobVerManager::FinalizeWriting(SNCBlobVerData* ver_data)
     CRef<SNCBlobVerData> old_ver(ver_data);
     {{
         _VERIFY(sx_LockCacheData(m_CacheData) == this);
-        if (ver_data->dead_time > int(time(NULL))) {
+        if (ver_data->dead_time > int(time(NULL))
+            &&  s_IsCurVerOlder(m_CurVersion, ver_data))
+        {
             old_ver.Swap(m_CurVersion);
             *(SNCBlobCoords*)m_CacheData = m_CurVersion->coords;
         }
@@ -664,18 +685,8 @@ CNCBlobAccessor::Finalize(void)
 bool
 CNCBlobAccessor::ReplaceBlobInfo(const SNCBlobVerData& new_info)
 {
-    if (m_CurData) {
-        if (m_CurData->create_time > new_info.create_time)
-            return false;
-        else if (m_CurData->create_time == new_info.create_time) {
-            if (m_CurData->create_server > new_info.create_server)
-                return false;
-            else if (m_CurData->create_server == new_info.create_server) {
-                if (m_CurData->create_id >= new_info.create_id)
-                    return false;
-            }
-        }
-    }
+    if (!s_IsCurVerOlder(m_CurData, &new_info))
+        return false;
     m_NewData->create_time = new_info.create_time;
     m_NewData->ttl = new_info.ttl;
     m_NewData->dead_time = new_info.dead_time;

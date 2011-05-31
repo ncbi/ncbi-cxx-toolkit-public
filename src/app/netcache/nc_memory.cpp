@@ -223,6 +223,8 @@ CAtomicCounter  CNCMMCentral::sm_CntCanAlloc;
 CThread*        CNCMMCentral::sm_BGThread      = NULL;
 CSemaphore      CNCMMCentral::sm_WaitForStop(0, 1);
 
+static CFastMutex   s_CacheDeleteLock;
+
 
 
 
@@ -3025,6 +3027,7 @@ CNCMMDBCache::UnpinPage(void* data, bool must_delete)
 inline
 CNCMMDBCache::~CNCMMDBCache(void)
 {
+    CFastMutexGuard guard(s_CacheDeleteLock);
     DeleteAllPages(0);
     _ASSERT(m_CacheSize == 0);
 
@@ -3075,6 +3078,7 @@ CNCMMDBCache::DestroyOnePage(void)
         page = CNCMMDBPage::PeekLRUForDestroy();
         if (!page)
             break;
+        CFastMutexGuard g2(s_CacheDeleteLock);
         CNCMMDBCache* cache = page->GetCache();
         if (cache)
             guard.Guard(cache->m_ObjLock);
@@ -3244,7 +3248,7 @@ void
 CNCMemManager::InitializeApp(void)
 {
     CSQLITE_Global::SetCustomPageCache(&s_NCDBCacheMethods);
-//    CSQLITE_Global::SetCustomMallocFuncs(&s_NCMallocMethods);
+    CSQLITE_Global::SetCustomMallocFuncs(&s_NCMallocMethods);
 
     CNCMMCentral::RunLateInit();
 }
@@ -3330,7 +3334,7 @@ CNCMemManager::IsDBPageDirty(const void* data_ptr)
 
 END_NCBI_SCOPE
 
-/*
+
 void*
 operator new (size_t size)
 #ifndef NCBI_COMPILER_MSVC
@@ -3364,7 +3368,7 @@ operator delete[] (void* ptr) throw ()
 {
     NCBI_NS_NCBI::CNCMMCentral::DeallocMemory(ptr);
 }
-*/
+
 #ifdef __GLIBC__
 // glibc has special method of overriding C library allocation functions.
 
@@ -3385,7 +3389,7 @@ void s_NCFreeHook(void* mem_ptr, const void* caller)
 {
     NCBI_NS_NCBI::CNCMMCentral::DeallocMemory(mem_ptr);
 }
-/*
+
 void s_NCInitMallocHook(void)
 {
     __malloc_hook  = s_NCMallocHook;
@@ -3394,7 +3398,7 @@ void s_NCInitMallocHook(void)
 }
 
 void (*__malloc_initialize_hook) (void) = s_NCInitMallocHook;
-*/
+
 #elif !defined(NCBI_OS_MSWIN)
 // Changing of C library allocation functions on Windows is very tricky (if
 // possible at all) and NetCache will never run in production on Windows. So

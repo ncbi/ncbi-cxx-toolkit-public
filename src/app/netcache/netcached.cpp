@@ -67,8 +67,9 @@ static const char* kNCReg_MaxThreads          = "max_threads";
 static const char* kNCReg_LogCmds             = "log_requests";
 static const char* kNCReg_AdminClient         = "admin_client_name";
 static const char* kNCReg_DefAdminClient      = "netcache_control";
-static const char* kNCReg_MemLimit            = "db_cache_limit";
-//static const char* kNCReg_MemAlert            = "memory_alert";
+//static const char* kNCReg_MemLimit            = "db_cache_limit";
+static const char* kNCReg_MemLimit            = "memory_limit";
+static const char* kNCReg_MemAlert            = "memory_alert";
 static const char* kNCReg_ForceUsePoll        = "force_use_poll";
 static const char* kNCReg_SpecPriority        = "app_setup_priority";
 static const char* kNCReg_NetworkTimeout      = "network_timeout";
@@ -285,14 +286,14 @@ CNetCacheServer::x_ReadServerParams(void)
     try {
         string str_val   = reg.GetString(kNCReg_ServerSection, kNCReg_MemLimit, "1Gb");
         size_t mem_limit = size_t(NStr::StringToUInt8_DataSize(str_val));
-        /*str_val          = reg.GetString(kNCReg_ServerSection, kNCReg_MemAlert, "4Gb");
-        size_t mem_alert = size_t(NStr::StringToUInt8_DataSize(str_val));*/
+        str_val          = reg.GetString(kNCReg_ServerSection, kNCReg_MemAlert, "4Gb");
+        size_t mem_alert = size_t(NStr::StringToUInt8_DataSize(str_val));
         CNCMemManager::SetLimits(mem_limit, mem_limit);
     }
     catch (CStringException& ex) {
-        /*ERR_POST_X(14, "Error in " << kNCReg_MemLimit
-                         << " or " << kNCReg_MemAlert << " parameter: " << ex);*/
-        ERR_POST("Error in " << kNCReg_MemLimit << " parameter: " << ex);
+        ERR_POST_X(14, "Error in " << kNCReg_MemLimit
+                         << " or " << kNCReg_MemAlert << " parameter: " << ex);
+        //ERR_POST("Error in " << kNCReg_MemLimit << " parameter: " << ex);
     }
 
     m_OldSpecParams = m_SpecParams;
@@ -734,6 +735,7 @@ CNetCacheServer::x_WriteBlobToPeer(Uint8 server_id,
         sem.Wait();
     if (!accessor->IsBlobExists()  ||  accessor->IsCurBlobExpired()) {
         accessor->Release();
+        delete op_listener;
         return ePeerActionOK;
     }
 
@@ -817,6 +819,7 @@ CNetCacheServer::x_WriteBlobToPeer(Uint8 server_id,
                     //ERR_POST(Critical << "Cannot write blob to peer");
                     writer->Close();
                     accessor->Release();
+                    delete op_listener;
                     return ePeerBadNetwork;
                 }
             }
@@ -833,6 +836,7 @@ CNetCacheServer::x_WriteBlobToPeer(Uint8 server_id,
             writer->Close();
         }
         accessor->Release();
+        delete op_listener;
         return result;
     }
     catch (CNetSrvConnException& ex) {
@@ -843,11 +847,13 @@ CNetCacheServer::x_WriteBlobToPeer(Uint8 server_id,
             ERR_POST(ex);
         }
         accessor->Release();
+        delete op_listener;
         return ePeerBadNetwork;
     }
     catch (CException& ex) {
         ERR_POST(ex);
         accessor->Release();
+        delete op_listener;
         return ePeerBadNetwork;
     }
 }
@@ -1029,6 +1035,7 @@ CNetCacheServer::x_ProlongBlobOnPeer(Uint8 server_id,
                                              eNCRead, raw_key, "", slot);
     if (accessor->ObtainMetaInfo(op_listener) == eNCWouldBlock)
         sem.Wait();
+    delete op_listener;
     if (!accessor->IsBlobExists()  ||  accessor->IsCurBlobExpired()) {
         accessor->Release();
         return ePeerActionOK;
@@ -1073,6 +1080,7 @@ CNetCacheServer::x_SyncGetBlobFromPeer(Uint8 server_id,
                                              eNCCopyCreate, raw_key, "", slot);
     while (accessor->ObtainMetaInfo(op_listener) == eNCWouldBlock)
         sem.Wait();
+    delete op_listener;
     if (accessor->IsBlobExists()
         &&  accessor->GetCurBlobCreateTime() > create_time)
     {
@@ -1263,6 +1271,7 @@ CNetCacheServer::SyncDelOurBlob(Uint8 server_id, Uint2 slot, SNCSyncEvent* evt)
                                              eNCDelete, evt->key, "", slot);
     if (accessor->ObtainMetaInfo(op_listener) == eNCWouldBlock)
         sem.Wait();
+    delete op_listener;
     if (accessor->IsBlobExists()
         &&  accessor->GetCurBlobCreateTime() < evt->orig_time)
     {
@@ -1295,6 +1304,7 @@ CNetCacheServer::SyncProlongOurBlob(Uint8 server_id,
                                              eNCRead, raw_key, "", slot);
     if (accessor->ObtainMetaInfo(op_listener) == eNCWouldBlock)
         sem.Wait();
+    delete op_listener;
     if (!accessor->IsBlobExists()) {
         accessor->Release();
         return x_SyncGetBlobFromPeer(server_id, slot, raw_key, blob_sum.create_time, 0);

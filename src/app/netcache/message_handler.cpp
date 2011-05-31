@@ -2451,7 +2451,7 @@ CNCMessageHandler::x_ManageCmdPipeline(void)
             // of code.
             m_SockBuffer.Flush();
             if (m_SockBuffer.IsWriteDataPending()) {
-                return;
+                break;
             }
 next_step:
             switch (x_GetState()) {
@@ -2507,8 +2507,11 @@ next_step:
 
             if (m_SockBuffer.IsWriteDataPending()) {
                 m_SockBuffer.Flush();
-                if (!m_SockBuffer.IsWriteDataPending())
+                if (!m_SockBuffer.IsWriteDataPending()) {
+                    // Cannot use continue: do_next_step can be false because
+                    // SockBuffer had something to flush.
                     goto next_step;
+                }
             }
         }
         catch (CIO_Exception& ex) {
@@ -3354,8 +3357,6 @@ CNCMessageHandler::x_DoCmd_SyncCancel(void)
 bool
 CNCMessageHandler::x_DoCmd_GetMeta(void)
 {
-    x_CheckAdminClient();
-
     if (m_LatestSrvId != CNCDistributionConf::GetSelfID()) {
         CDiagContext_Extra extra = GetDiagContext().Extra();
         extra.Print("proxy", "1");
@@ -3388,7 +3389,8 @@ CNCMessageHandler::x_DoCmd_GetMeta(void)
     tmp = "\nOK:Write time: ";
     m_SendBuff->append(tmp.data(), tmp.size());
     Uint8 create_time = m_BlobAccess->GetCurBlobCreateTime();
-    CTime tmp_time(time_t(create_time / kNCTimeTicksInSec));
+    CTime tmp_time(CTime::eEmpty, CTime::eLocal);
+    tmp_time.SetTimeT(time_t(create_time / kNCTimeTicksInSec));
     tmp_time.SetMicroSecond(create_time % kNCTimeTicksInSec);
     tmp = tmp_time.AsString("M/D/Y h:m:s.r");
     m_SendBuff->append(tmp.data(), tmp.size());
