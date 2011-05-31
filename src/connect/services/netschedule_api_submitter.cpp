@@ -180,14 +180,14 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs)
         // Batch size should be reasonable not to trigger network timeout
         const unsigned kMax_Batch = 10000;
 
-        unsigned batch_size = jobs.size() - i;
+        size_t batch_size = jobs.size() - i;
         if (batch_size > kMax_Batch) {
             batch_size = kMax_Batch;
         }
 
         cmd.erase();
         cmd = "BTCH ";
-        cmd.append(NStr::UIntToString(batch_size));
+        cmd.append(NStr::UIntToString((unsigned) batch_size));
 
         exec_result.conn->WriteLine(cmd);
 
