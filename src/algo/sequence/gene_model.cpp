@@ -447,7 +447,7 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& align,
     if (handle) {
         CFeat_CI feat_iter(handle, CSeqFeatData::eSubtype_cdregion);
         if (feat_iter  &&  feat_iter.GetSize() && !cdregion) {
-            cdregion = &feat_iter->GetOriginalFeature();
+            cdregion = &feat_iter->GetMappedFeature();
         }
 
         for (CFeat_CI feat_iter(handle, CSeqFeatData::eSubtype_ncRNA);
