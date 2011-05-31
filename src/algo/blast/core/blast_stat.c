@@ -5190,7 +5190,7 @@ BLAST_SpougeStoE(Int4 y_,
     double alphaj_hat_= alphai_hat_;
     double betaj_hat_ = betai_hat_;
 
-    static double const_val = 1/sqrt(2.0*3.1415926535897932384626433832795);
+    double const_val = 1/sqrt(2.0*3.1415926535897932384626433832795);
     double eps = 0.000001;
 
     double m_li_y, vi_y, sqrt_vi_y, m_F, P_m_F;
