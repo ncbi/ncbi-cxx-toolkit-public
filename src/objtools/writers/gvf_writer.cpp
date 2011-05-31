@@ -119,7 +119,7 @@ bool CGvfWriter::x_WriteHeader(
     const CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! annot.GetDesc().IsSet() ) {
+    if (  ! annot.IsSetDesc()  ||  ! annot.GetDesc().IsSet() ) {
         return x_WriteHeader();
     }
     const list< CRef< CAnnotdesc > > descrs = annot.GetDesc().Get();
