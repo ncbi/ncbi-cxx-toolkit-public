@@ -320,40 +320,47 @@ void CNcbiApplication::x_TryMain(EAppDiagStream diag,
                                  bool*          got_exception)
 {
     // Initialize the application
-    if ( s_HandleExceptions() ) {
-        try {
+    try {
+        if ( s_HandleExceptions() ) {
+            try {
+                x_TryInit(diag, conf);
+            }
+            catch (CArgHelpException& e) {
+                // This exception will be caught later regardless of the
+                // handle-exceptions flag.
+                throw;
+            }
+            catch (CArgException& e) {
+                NCBI_RETHROW_SAME(e, "Application's initialization failed");
+            }
+            catch (CException& e) {
+                NCBI_REPORT_EXCEPTION_X(15,
+                                        "Application's initialization failed", e);
+                *got_exception = true;
+                *exit_code = 2;
+            }
+            catch (exception& e) {
+                ERR_POST_X(6, "Application's initialization failed: " << e.what());
+                *got_exception = true;
+                *exit_code = 2;
+            }
+        }
+        else {
             x_TryInit(diag, conf);
         }
-        catch (CArgHelpException& e) {
-            x_AddDefaultArgs();
-            // Print USAGE
-            if (e.GetErrCode() == CArgHelpException::eHelpXml) {
-                m_ArgDesc->PrintUsageXml(cout);
-            } else {
-                string str;
-                m_ArgDesc->PrintUsage
-                    (str, e.GetErrCode() == CArgHelpException::eHelpFull);
-                cout << str;
-            }
-            *exit_code = 0;
-        }
-        catch (CArgException& e) {
-            NCBI_RETHROW_SAME(e, "Application's initialization failed");
-        }
-        catch (CException& e) {
-            NCBI_REPORT_EXCEPTION_X(15,
-                                    "Application's initialization failed", e);
-            *got_exception = true;
-            *exit_code = 2;
-        }
-        catch (exception& e) {
-            ERR_POST_X(6, "Application's initialization failed: " << e.what());
-            *got_exception = true;
-            *exit_code = 2;
-        }
     }
-    else {
-        x_TryInit(diag, conf);
+    catch (CArgHelpException& e) {
+        x_AddDefaultArgs();
+        // Print USAGE
+        if (e.GetErrCode() == CArgHelpException::eHelpXml) {
+            m_ArgDesc->PrintUsageXml(cout);
+        } else {
+            string str;
+            m_ArgDesc->PrintUsage
+                (str, e.GetErrCode() == CArgHelpException::eHelpFull);
+            cout << str;
+        }
+        *exit_code = 0;
     }
 
     // Run application
