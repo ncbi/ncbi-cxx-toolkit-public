@@ -296,7 +296,7 @@ void SCommandLineParserImpl::Help() const
             const SCommandInfo* command_info = cmd->second;
             string command_name(command_info->GetNameVariants());
             PrintWordWrapped(printf("%s:", command_name.c_str()),
-                command_name.length() + 2, command_info->m_Synopsis);
+                int(command_name.length() + 2), command_info->m_Synopsis);
             printf("\n");
 
             string args;
