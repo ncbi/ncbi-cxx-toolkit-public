@@ -3225,6 +3225,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadDeltaSeq)
              if (i == CMolInfo::eTech_barcode) {
                  expected_errors.push_back(new CExpectedError("good", eDiag_Info, "BadKeyword", "Molinfo.tech barcode without BARCODE keyword"));
              } else if (i == CMolInfo::eTech_tsa) {
+                 expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "HighNContentPercent", "Sequence contains 29 percent Ns"));
+                 expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "HighNContentStretch", "Sequence has a stretch of at least 5 Ns within the first 20 bases"));
+                 expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "HighNContentStretch", "Sequence has a stretch of at least 5 Ns within the last 20 bases"));
                  expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ConflictingBiomolTech", "TSA sequence should not be DNA"));
              }
              CheckErrors (*eval, expected_errors);
@@ -13387,6 +13390,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TranscriptMismatches)
     mrna->SetExcept(true);
     mrna->SetExcept_text ("mismatches in transcription");
     seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ExceptionProblem",
+                      "Genome processing exception should not be combined with other explanations"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -14161,16 +14166,16 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ExceptionProblem)
     // multiple ref-seq exceptions
     feat->SetExcept_text("unclassified transcription discrepancy, RNA editing");
     feat->SetComment("misc_feature needs a comment");
-    expected_errors[0]->SetErrMsg("Genome processing exception should not be combined with other explanations");
-    expected_errors[0]->SetAccession("NC_123456");
-    expected_errors[0]->SetSeverity(eDiag_Warning);
+    CLEAR_ERRORS
+//    expected_errors[0]->SetErrMsg("Genome processing exception should not be combined with other explanations");
+//    expected_errors[0]->SetAccession("NC_123456");
+ //   expected_errors[0]->SetSeverity(eDiag_Warning);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     // not legal (is warning for NC or NT)
     feat->SetExcept_text("not a legal exception");
-    expected_errors[0]->SetErrMsg("not a legal exception is not a legal exception explanation");
-    expected_errors[0]->SetSeverity(eDiag_Warning);
+    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Warning, "ExceptionProblem", "not a legal exception is not a legal exception explanation"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -15834,8 +15839,12 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ErroneousException)
 
     STANDARD_SETUP
 
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "ExceptionProblem", 
+                               "Genome processing exception should not be combined with other explanations"));
     expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "ErroneousException",
                                "CDS has unclassified exception but only difference is 1 mismatches out of 121 residues"));
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "ExceptionProblem", 
+                               "Genome processing exception should not be combined with other explanations"));
     expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "ErroneousException",
                                "mRNA has unclassified exception but only difference is 1 mismatches out of 366 bases"));
     eval = validator.Validate(seh, options);
