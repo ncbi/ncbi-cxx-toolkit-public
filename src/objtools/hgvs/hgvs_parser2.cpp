@@ -95,13 +95,6 @@ CVariantPlacement& SetFirstPlacement(CVariation& v)
     return *v.SetPlacements().front();
 }
 
-TSeqPos GetLength(const CVariantPlacement& p)
-{
-    return ncbi::sequence::GetLength(p.GetLoc(), NULL)
-        + (p.IsSetStop_offset() ? p.GetStop_offset() : 0)
-        - (p.IsSetStart_offset() ? p.GetStart_offset() : 0);
-}
-
 void SetComputational(CVariation& variation)
 {
     CVariationMethod& m = variation.SetMethod();
@@ -753,7 +746,7 @@ CRef<CVariantPlacement> CHgvsParser::x_range(TIterator const& i, const CContext&
 
     if(pnt1.asserted_sequence != "" || pnt2.asserted_sequence != "") {
         //for proteins, the asserted sequence is specified as part of location, rather than variation
-        p->SetSeq().SetLength(GetLength(*p));
+        p->SetSeq().SetLength(CVariationUtil::s_GetLength(*p, NULL));
         string& seq_str = (context.GetPlacement().GetMol() == CVariantPlacement::eMol_protein)
                 ? p->SetSeq().SetSeq_data().SetNcbieaa().Set()
                 : p->SetSeq().SetSeq_data().SetIupacna().Set();
@@ -779,7 +772,7 @@ CRef<CVariantPlacement> CHgvsParser::x_location(TIterator const& i, const CConte
         placement->SetLoc().SetPnt(*pnt.pnt);
         s_SetStartOffset(*placement, pnt.offset);
         if(pnt.asserted_sequence != "") {
-            placement->SetSeq().SetLength(GetLength(*placement));
+            placement->SetSeq().SetLength(CVariationUtil::s_GetLength(*placement, NULL));
             string& seq_str = (context.GetPlacement().GetMol() == CVariantPlacement::eMol_protein)
                     ? placement->SetSeq().SetSeq_data().SetNcbieaa().Set()
                     : placement->SetSeq().SetSeq_data().SetIupacna().Set();
@@ -1123,7 +1116,7 @@ CRef<CVariation> CHgvsParser::x_nuc_inv(TIterator const& i, const CContext& cont
     if(it != i->children.end()) {
         string len_str(it->value.begin(), it->value.end());
         TSeqPos len = NStr::StringToUInt(len_str);
-        if(len != GetLength(SetFirstPlacement(*vr))) {
+        if(len != CVariationUtil::s_GetLength(SetFirstPlacement(*vr), NULL)) {
             HGVS_THROW(eSemantic, "Inversion length not equal to location length");
         }
     }
@@ -1578,12 +1571,13 @@ CRef<CVariation> CHgvsParser::x_list(TIterator const& i, const CContext& context
         varset.SetType(CVariation::TData::TSet::eData_set_type_individual);
     } else if(delimiter == ",") { 
         //if the context is rna (r.) then this describes multiple products from the same precursor;
-        //otherwise this describes mosaic cases
-        if(context.GetPlacement().GetMol() == CVariantPlacement::eMol_rna) {
-            //Note: GetMolType(check=false) because MolType may not eMol_not_set, as
-            //there may not be a sequence in context, e.g.
-            //[NM_004004.2:c.35delG,NM_006783.1:c.689_690insT]" - individual
-            //elements have their own sequence context, but none at the set level.
+        //otherwise this describes mosaic cases.
+        //Note: placement may not be in context yet, if placements defined at subvariations
+        //e.g. [NM_004004.2:c.35delG,NM_006783.1:c.689_690insT]
+
+        if(context.IsSetPlacement()
+           && context.GetPlacement().GetMol() == CVariantPlacement::eMol_rna)
+        {
             varset.SetType(CVariation::TData::TSet::eData_set_type_products);
         } else {
             varset.SetType(CVariation::TData::TSet::eData_set_type_mosaic);

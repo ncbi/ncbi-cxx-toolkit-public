@@ -120,6 +120,72 @@ void CHgvs2variationApplication::Init(void)
 
 using namespace variation;
 
+string RoundTripHgvs(const string& hgvs, CHgvsParser& parser)
+{
+    CRef<CVariation> v = parser.AsVariation(hgvs);
+    string v_out = parser.AsHgvsExpression(*v);
+    return v_out;
+}
+
+//input: pipe-delimited tuple of hgvs synonymous HGVS expressions.
+//output: same-size tuple, where i'th element contains "ok" if
+//the i'th round-trip matches to one of the inputs, or the generated
+//expression if it does not match.
+//
+//That is, the assertion is that every synonym, when converted to
+//variation and back, will produce one of the input synonyms
+//(but not necessarily itself)
+string TestRoundTrip(const string& hgvs_synonyms, CHgvsParser& parser)
+{
+    typedef vector<string> TStrings;
+    TStrings inputs;
+    NStr::Tokenize(hgvs_synonyms, "|", inputs);
+    string result;
+    string delim = "";
+    ITERATE(TStrings, it, inputs) {
+        const string& hgvs_in = *it;
+        string hgvs_out = RoundTripHgvs(hgvs_in, parser);
+
+        bool is_found = find(inputs.begin(), inputs.end(), hgvs_out) != inputs.end();
+        result += delim + (is_found ? "OK" : hgvs_out);
+        delim = "|";
+    }
+    return result;
+}
+
+void AttachHgvs(CVariation& v, CHgvsParser& parser)
+{
+    CVariationUtil util(parser.SetScope());
+
+    //compute and attach placement-specific HGVS expressions
+    for(CTypeIterator<CVariation> it(Begin(v)); it; ++it) {
+        CVariation& v2 = *it;
+        if(!v2.IsSetPlacements()) {
+            continue;
+        }
+        NON_CONST_ITERATE(CVariation::TPlacements, it2, v2.SetPlacements()) {
+            CVariantPlacement& p2 = **it2;
+            util.AttachSeq(p2);
+
+            if(!p2.GetLoc().GetId()) {
+                continue;
+            }
+
+            //compute hgvs-expression specific to the placement and the variation to which it is attached
+            string hgvs_expression = parser.AsHgvsExpression(v2, CConstRef<CSeq_id>(p2.GetLoc().GetId()));
+            p2.SetHgvs_name(hgvs_expression);
+        }
+    }
+
+    //If the root variation does not have placements (e.g. a container for placement-specific subvariations)
+    //then compute the hgvs expression for the root placement and attach it to variation itself as a synonym.
+    if(!v.IsSetPlacements()) {
+        string root_output_hgvs = parser.AsHgvsExpression(v);
+        v.SetSynonyms().push_back(root_output_hgvs);
+    }
+}
+
+
 int CHgvs2variationApplication::Run(void)
 {
     // Setup application registry, error log, and MT-lock for CONNECT library
@@ -142,82 +208,54 @@ int CHgvs2variationApplication::Run(void)
 
     string line_str("");
     while(NcbiGetlineEOL(istr, line_str)) {
-         if(NStr::StartsWith(line_str, "#") || line_str.empty()) {
-             continue;
-         }
-         string hgvs_input_expr, comment;
-         NStr::SplitInTwo(line_str, "#", hgvs_input_expr, comment);
+        //expected line format: input_hgvs, optionally followed by "|" and
+        //expected output expression, optionally followed by "#" and comment
+        if(NStr::StartsWith(line_str, "#") || line_str.empty()) {
+            if(args["roundtrip_hgvs"]) {
+                ostr << line_str << NcbiEndl;
+            }
+            continue;
+        }
 
-         NStr::TruncateSpacesInPlace(hgvs_input_expr);
-         NStr::TruncateSpacesInPlace(comment);
+        string test_expr, comment;
+        NStr::SplitInTwo(line_str, "#", test_expr, comment);
+        NStr::TruncateSpacesInPlace(comment);
+        NStr::TruncateSpacesInPlace(test_expr);
 
-         CRef<CVariation> v = parser->AsVariation(hgvs_input_expr);
-         v->SetDescription(comment);
-
-
-         for(CTypeIterator<CVariation> it(Begin(*v)); it; ++it) {
-             CVariation& v2 = *it;
-             if(!v2.IsSetPlacements()) {
-                 continue;
-             }
-             NON_CONST_ITERATE(CVariation::TPlacements, it2, v2.SetPlacements()) {
-                 CVariantPlacement& p2 = **it2;
-                 variation_util->AttachSeq(p2);
-
-                 if(!p2.GetLoc().GetId()) {
-                     continue;
-                 }
-
-                 if(!args["compute_hgvs"]) {
-                     continue;
-                 }
-
-                 //compute hgvs-expression specific to the placement and the variation to which it is attached
-                 string hgvs_expression = parser->AsHgvsExpression(v2, CConstRef<CSeq_id>(p2.GetLoc().GetId()));
-                 p2.SetHgvs_name(hgvs_expression);
-             }
-         }
+        if(args["roundtrip_hgvs"]) {
+            string result = TestRoundTrip(test_expr, *parser);
+            ostr << test_expr << "\t" << result << NcbiEndl;
+            continue;
+        }
 
 
-         //if the root variation does not have placements (container for placement-specific subvariations)
-         //then compute the hgvs expression for the root placement and attach it to variation.
-         string root_hgvs = "";
-         if(args["compute_hgvs"]) {
-             if(v->IsSetPlacements()) {
-                 string delim = "";
-                 ITERATE(CVariation::TPlacements, it, v->GetPlacements()) {
-                     const CVariantPlacement& p = **it;
-                     root_hgvs += delim + p.GetHgvs_name();
-                     delim = " + ";
-                 }
-             } else {
-                 root_hgvs = parser->AsHgvsExpression(*v);
-                 v->SetSynonyms().push_back(root_hgvs);
-             }
-         }
+        string input_hgvs, other_synonyms;
+        NStr::SplitInTwo(test_expr, "|", input_hgvs, other_synonyms);
 
+        CRef<CVariation> v = parser->AsVariation(input_hgvs);
+        v->SetDescription(comment);
 
-         if(args["loc_prop"]) {
-             variation_util->SetVariantProperties(*v);
-         }
+        if(args["compute_hgvs"]) {
+            AttachHgvs(*v, *parser);
+        }
 
-         if(args["prot_effect"]) {
-             variation_util->AttachProteinConsequences(*v);
-         }
+        if(args["loc_prop"]) {
+            variation_util->SetVariantProperties(*v);
+        }
 
-         if(args["precursor"]) {
-             CRef<CVariation> v2 = variation_util->InferNAfromAA(*v);
-             CVariation::TConsequence::value_type consequence(new CVariation::TConsequence::value_type::TObjectType);
-             consequence->SetVariation(*v);
-             v2->SetConsequence().push_back(consequence);
-             v = v2;
-         }
+        if(args["prot_effect"]) {
+            variation_util->AttachProteinConsequences(*v);
+        }
 
-         if(args["roundtrip_hgvs"]) {
-             ostr << hgvs_input_expr << "\t" << root_hgvs << NcbiEndl;
-         } else {
-             ostr << MSerial_AsnText << *v;
-         }
+        if(args["precursor"]) {
+            CRef<CVariation> v2 = variation_util->InferNAfromAA(*v);
+            CVariation::TConsequence::value_type consequence(new CVariation::TConsequence::value_type::TObjectType);
+            consequence->SetVariation(*v);
+            v2->SetConsequence().push_back(consequence);
+            v = v2;
+        }
+
+        ostr << MSerial_AsnText << *v;
     }
 
     return 0;

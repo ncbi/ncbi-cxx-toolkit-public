@@ -71,6 +71,8 @@ public:
        : m_scope(&scope)
     {}
 
+    static TSeqPos s_GetLength(const CVariantPlacement& p, CScope* scope);
+
 /// Methods to remap a VariantPlacement
 
     /*!
@@ -80,6 +82,9 @@ public:
      * will use the spliced-alignment to create or resolve offset-placement as appropriate.
      */
     CRef<CVariantPlacement> Remap(const CVariantPlacement& p, const CSeq_align& aln);
+
+    // Remap a placement with a specified mapper. If a cdna->genomic or genomic->cdna mapping
+    // is attempted, this will throw.
     CRef<CVariantPlacement> Remap(const CVariantPlacement& p, CSeq_loc_Mapper& mapper);
 
 

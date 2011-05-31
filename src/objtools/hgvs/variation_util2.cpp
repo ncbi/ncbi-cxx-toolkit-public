@@ -89,6 +89,13 @@ void ChangeIdsInPlace(T& container, sequence::EGetIdType id_type, CScope& scope)
     }
 }
 
+TSeqPos CVariationUtil::s_GetLength(const CVariantPlacement& p, CScope* scope)
+{
+    return ncbi::sequence::GetLength(p.GetLoc(), scope)
+        + (p.IsSetStop_offset() ? p.GetStop_offset() : 0)
+        - (p.IsSetStart_offset() ? p.GetStart_offset() : 0);
+}
+
 CVariationUtil::ETestStatus CVariationUtil::CheckExonBoundary(const CVariantPlacement& p, const CSeq_align& aln)
 {
     const CSeq_id* id = p.GetLoc().GetId();
@@ -297,6 +304,16 @@ CRef<CVariantPlacement> CVariationUtil::Remap(const CVariantPlacement& p, CSeq_l
     p2->SetPlacement_method(CVariantPlacement::ePlacement_method_projected);
     AttachSeq(*p2);
     p2->SetMol(GetMolType(sequence::GetId(p2->GetLoc(), NULL)));
+
+    if((p.IsSetStart_offset() || p.IsSetStop_offset()) && p2->GetMol() == CVariantPlacement::eMol_genomic
+       || p.GetMol() == CVariantPlacement::eMol_genomic && p2->GetMol() != CVariantPlacement::eMol_genomic)
+    {
+        //When mapping an offset-placement to a genomic placement, may need to resolve offsets.
+        //or, when mapping from genomic to a product coordinates, may need to add offsets. In above cases
+        //we need to use the seq-align-based mapping.
+        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Cannot use this method to remap between genomic and cdna coordinates");
+    }
+
     return p2;
 }
 
@@ -351,7 +368,7 @@ CVariantPlacement::TMol CVariationUtil::GetMolType(const CSeq_id& id)
           || m->GetBiomol() == CMolInfo::eBiomol_cRNA
           || m->GetBiomol() == CMolInfo::eBiomol_transcribed_RNA)
     {
-        return CVariantPlacement::eMol_rna;
+        return CVariantPlacement::eMol_cdna;
     } else if(m->GetBiomol() == CMolInfo::eBiomol_peptide) {
         return CVariantPlacement::eMol_protein;
     } else {

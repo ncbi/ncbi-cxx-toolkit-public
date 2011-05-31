@@ -263,7 +263,7 @@ protected:
 
         bool IsSetPlacement() const
         {
-            return !m_placement;
+            return !m_placement.IsNull();
         }
 
         CScope& GetScope() const
@@ -762,7 +762,7 @@ private:
     static void s_SetStopOffset(CVariantPlacement& p, const CHgvsParser::SFuzzyInt& fint);
 
 private:
-    //functions to create hgvs expression from a variation
+// Helpers to generate a HGVS expression from a variation
 
     //if no atg_pos, assume that not dealing with coordinate systems (simply return abs-pos)
     //otherwise, convert to hgvs coordinates:
@@ -774,40 +774,49 @@ private:
     //(Note that pos may be negative, e.g. for offset value)
     static string s_IntWithFuzzToStr(long pos, const TSeqPos* ref_pos, bool with_sign, const CInt_fuzz* fuzz);
 
-    static string s_GetHgvsSeqId(const CVariantPlacement& vp);
-    string x_GetHgvsLoc(const CVariantPlacement& vp);
-
+    //Construct an HGVS coordinate, which may be an intronic offset-point, e.g. "5+(10_11)"
     static string s_OffsetPointToString(
-            TSeqPos anchor_pos,
-            const CInt_fuzz* anchor_fuzz,
-            TSeqPos anchor_ref_pos,
-            const long* offset_pos,
-            const CInt_fuzz* offset_fuzz);
+            TSeqPos anchor_pos,             //anchor position in absolute seq-loc coordinates
+            const CInt_fuzz* anchor_fuzz,   //..of anchor-pos, can be NULL
+            TSeqPos anchor_ref_pos,         //first-pos in HGVS coordinates (e.g. 0 for "g.", start_codon or stop_codon+1 for "c."
+            const long* offset_pos,         //if not specified, this is a "native" coordinate; otherwise "c."|"p." -intronic
+            const CInt_fuzz* offset_fuzz);  //..of offset position, can be NULL
 
+    //Construct an hgvs "header" consisting of seq-id and mol-type, e.g. "NG_016831.1:g."
+    static string s_SeqIdToHgvsStr(const CVariantPlacement& vp);
+
+    //In some cases the placement needs to be adjusted depending on inst, e.g. if we have a point-relative insertion,
+    //it needs to be converted to "between-dinucleotide" representation; or, in case of microsatellites, the
+    //location must point to the first repeat unit rather than whole tandem repeat
+    CRef<CVariantPlacement> x_AdjustPlacementForHgvs(const CVariantPlacement& p, const CVariation_inst& inst);
+
+    //If the variation is a package-set, find the subvariation with observation-type "asserted" and return its literal
+    CConstRef<CSeq_literal> x_FindAssertedSequence(const CVariation& v);
+
+    //Compute length of the delta
+    TSeqPos x_GetInstLength(const CVariation_inst& inst, const CVariantPlacement& p, bool account_for_multiplier);
+
+    string x_PlacementCoordsToStr(const CVariantPlacement& vp);
+
+    //Create "inst" part of HGVS expression
     string x_AsHgvsInstExpression(
             const CVariation_inst& inst,
             CConstRef<CVariantPlacement> p,
             CConstRef<CSeq_literal> asserted_seq);
 
-    string CHgvsParser::x_AsHgvsExpression(
+    //Construct HGVS expression for a variation: use first VariantPlacement, or, if id is specified,
+    //first placement with matching id; If an asserted sequence is given explicitly, it will be used
+    //in construction of HGVS expression; otherwise one will be created based on placement's literal.
+    string x_AsHgvsExpression(
             const CVariation& variation,
             CConstRef<CSeq_id> id,
             CConstRef<CSeq_literal> asserted_seq);
 
-    CRef<CVariantPlacement> x_AdjustPlacementForHgvs(const CVariantPlacement& p, const CVariation_inst& inst);
-
-    CRef<CSeq_literal> x_FindAssertedSequence(const CVariation& v);
-
-    //Calculate the length of the inst, multipliers taken into account.
-    TSeqPos x_GetInstLength(const CVariation_inst& inst, const CSeq_loc& this_loc);
-
-    string x_GetInstData(const CVariation_inst& inst, const CSeq_loc& this_loc);
-
+    /// Get literal seq at location
     string x_LocToSeqStr(const CSeq_loc& loc);
 
+    /// Inverse of raw_seq_or_len rule
     string x_SeqLiteralToStr(const CSeq_literal& literal);
-
-
 
 private:
     CRef<CScope> m_scope;

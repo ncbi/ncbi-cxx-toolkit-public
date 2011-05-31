@@ -79,8 +79,6 @@ namespace variation {
 
 CRef<CVariantPlacement> CHgvsParser::x_AdjustPlacementForHgvs(const CVariantPlacement& p, const CVariation_inst& inst)
 {
-    //todo: implement
-
     CRef<CVariantPlacement> placement(new CVariantPlacement);
     placement->Assign(p);
 
@@ -97,17 +95,24 @@ CRef<CVariantPlacement> CHgvsParser::x_AdjustPlacementForHgvs(const CVariantPlac
         CRef<CSeq_loc> dinucleotide_loc = sequence::Seq_loc_Add(*flanks.upstream, p.GetLoc(), CSeq_loc::fSortAndMerge_All, NULL);
         placement->SetLoc(*dinucleotide_loc);
     } else if(inst.GetType() == CVariation_inst::eType_microsatellite) {
+        CRef<CSeq_loc> loc = sequence::Seq_loc_Merge(p.GetLoc(), CSeq_loc::fMerge_SingleRange, NULL);
+        TSeqPos unit_length = x_GetInstLength(inst, p, false);
 
-        //todo microsatellite: the location in HGVS should be a single repeat unit, not the tandem
-        //...
+        if(loc->GetStrand() == eNa_strand_minus) {
+            loc->SetInt().SetFrom(loc->GetInt().GetTo() - (unit_length - 1) );
+        } else {
+            loc->SetInt().SetTo(loc->GetInt().GetFrom() + unit_length - 1 );
+        }
+        placement->SetLoc(*loc);
+        //todo: do we need to do anything special if it is an offset-loc?
     }
 
     return placement;
 }
 
-CRef<CSeq_literal> CHgvsParser::x_FindAssertedSequence(const CVariation& v)
+CConstRef<CSeq_literal> CHgvsParser::x_FindAssertedSequence(const CVariation& v)
 {
-    CRef<CSeq_literal> asserted_seq;
+    CConstRef<CSeq_literal> asserted_seq;
 
     if(!v.GetData().IsSet() || v.GetData().GetSet().GetType() != CVariation::TData::TSet::eData_set_type_package) {
         return asserted_seq;
@@ -121,8 +126,7 @@ CRef<CSeq_literal> CHgvsParser::x_FindAssertedSequence(const CVariation& v)
 
         //capture asserted sequence
         if(v2.GetData().GetInstance().GetObservation() & CVariation_inst::eObservation_asserted) {
-            asserted_seq.Reset(new CSeq_literal);
-            asserted_seq->Assign(v2.GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral());
+            asserted_seq.Reset(&v2.GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral());
             break;
         }
     }
@@ -133,9 +137,22 @@ CRef<CSeq_literal> CHgvsParser::x_FindAssertedSequence(const CVariation& v)
 
 string CHgvsParser::AsHgvsExpression(const CVariation& variation,  CConstRef<CSeq_id> seq_id)
 {
+    //create a copy so we can call Index on it, and attach
+    //seq to placements, as necessary, as it will potentially be used to construct
+    //asserted-sequence part of HGVS
+
     CRef<CVariation> v(new CVariation);
     v->Assign(variation);
     v->Index();
+
+    CVariationUtil util(*m_scope);
+    for(CTypeIterator<CVariantPlacement> it(Begin(*v)); it; ++it) {
+        CVariantPlacement& p = *it;
+        if(!p.IsSetSeq()) {
+            util.AttachSeq(p);
+        }
+    }
+
     return x_AsHgvsExpression(*v, seq_id, CConstRef<CSeq_literal>(NULL));
 }
 
@@ -194,6 +211,7 @@ string CHgvsParser::x_AsHgvsExpression(
     }
 
     string hgvs_data_str = "";
+    size_t subvariation_count(0);
     if(variation.GetData().IsSet()) {
         const CVariation::TData::TSet& vset = variation.GetData().GetSet();
         string delim_type =
@@ -203,12 +221,11 @@ string CHgvsParser::x_AsHgvsExpression(
                 || vset.GetType() == CVariation::TData::TSet::eData_set_type_mosaic   ? ","
               : vset.GetType() == CVariation::TData::TSet::eData_set_type_alleles
                 || vset.GetType() == CVariation::TData::TSet::eData_set_type_genotype
-                || vset.GetType() == CVariation::TData::TSet::eData_set_type_package  ? "]+["
+                || vset.GetType() == CVariation::TData::TSet::eData_set_type_package  ? "+"
               : vset.GetType() == CVariation::TData::TSet::eData_set_type_individual  ? "(+)"
-              : "](+)[";
+              : "(+)";
 
         string delim = "";
-        size_t count(0); //count of subvariations excluding asserted/reference-only observations, i.e. only those that participate in output
         ITERATE(CVariation::TData::TSet::TVariations, it, variation.GetData().GetSet().GetVariations()) {
             const CVariation& v2 = **it;
 
@@ -220,19 +237,12 @@ string CHgvsParser::x_AsHgvsExpression(
                 continue;
             }
 
-            hgvs_data_str += delim + x_AsHgvsExpression(**it, seq_id, asserted_seq);
+            string subvariation_expr = x_AsHgvsExpression(**it, seq_id, asserted_seq);
+
+            hgvs_data_str += delim + subvariation_expr;
             delim = delim_type;
-            count++;
+            subvariation_count++;
         }
-
-        bool is_unbracketed =
-                vset.GetType() == CVariation::TData::TSet::eData_set_type_compound
-             || vset.GetType() == CVariation::TData::TSet::eData_set_type_package && count <= 1;
-
-        if(!is_unbracketed) {
-            hgvs_data_str = "[" + hgvs_data_str + "]";
-        }
-
     } else if(variation.GetData().IsInstance()) {
         if(placement) {
             placement = x_AdjustPlacementForHgvs(*placement, variation.GetData().GetInstance());
@@ -258,13 +268,39 @@ string CHgvsParser::x_AsHgvsExpression(
     }
 
 
+
+
     string hgvs_loc_str = "";
     if(placement && variation.IsSetPlacements()) {
         //prefix the placement only if it is defined at this level (otherwise will be handled at the parent level)
         hgvs_loc_str = AsHgvsExpression(*placement);
     }
 
-    return hgvs_loc_str + hgvs_data_str;
+    hgvs_data_str = hgvs_loc_str + hgvs_data_str;
+
+
+    bool is_bracketed = false;
+    if(variation.GetParent()) {
+        //If a variation is an element of an alleles|genotype set,
+        //it describes an allele and must be bracketed.
+        CVariation::TData::TSet::TType type = variation.GetParent()->GetData().GetSet().GetType();
+        is_bracketed =
+              type == CVariation::TData::TSet::eData_set_type_alleles
+           || type == CVariation::TData::TSet::eData_set_type_genotype;
+    } else if(subvariation_count > 1) {
+        //Root non-singleton variation: it describes a single allele (i.e. also needs to be bracketed)
+        //UNLESS it is a set that itself describes individual alleles.
+        CVariation::TData::TSet::TType type = variation.GetData().GetSet().GetType();
+        is_bracketed =
+                type != CVariation::TData::TSet::eData_set_type_alleles
+             && type != CVariation::TData::TSet::eData_set_type_genotype;
+    }
+    if(is_bracketed) {
+        hgvs_data_str = "[" + hgvs_data_str + "]";
+    }
+
+
+    return hgvs_data_str;
 }
 
 
@@ -310,8 +346,6 @@ string CHgvsParser::x_LocToSeqStr(const CSeq_loc& loc)
 }
 
 
-/////////////////////////////////////////////////////////////////////////////////
-
 long CHgvsParser::s_GetHgvsPos(long abs_pos, const TSeqPos* atg_pos)
 {
     if(!atg_pos) {
@@ -346,14 +380,12 @@ string CHgvsParser::s_IntWithFuzzToStr(long pos, const TSeqPos* hgvs_ref_pos, bo
         }
     }
     if(with_sign || hgvs_pos < 0) {
-        out = (pos >= 0 ? "+" : "-") + out;
+        out = (hgvs_pos >= 0 ? "+" : "-") + out;
     }
-
-
     return out;
 }
 
-string CHgvsParser::s_GetHgvsSeqId(const CVariantPlacement& vp)
+string CHgvsParser::s_SeqIdToHgvsStr(const CVariantPlacement& vp)
 {
     string moltype = "";
 
@@ -371,7 +403,8 @@ string CHgvsParser::s_GetHgvsSeqId(const CVariantPlacement& vp)
         moltype = "u.";
     }
 
-    return sequence::GetId(vp.GetLoc(), NULL).GetSeqIdString(true) + ":" + moltype;
+    return (vp.GetLoc().GetStrand() == eNa_strand_minus ? "o" : "") //in HGVS minus-strand is prefixed with "o"
+           +sequence::GetId(vp.GetLoc(), NULL).GetSeqIdString(true) + ":" + moltype;
 }
 
 string CHgvsParser::s_OffsetPointToString(
@@ -392,10 +425,10 @@ string CHgvsParser::s_OffsetPointToString(
 
 string CHgvsParser::AsHgvsExpression(const CVariantPlacement& p)
 {
-    return s_GetHgvsSeqId(p) + x_GetHgvsLoc(p);
+    return s_SeqIdToHgvsStr(p) + x_PlacementCoordsToStr(p);
 }
 
-string CHgvsParser::x_GetHgvsLoc(const CVariantPlacement& vp)
+string CHgvsParser::x_PlacementCoordsToStr(const CVariantPlacement& vp)
 {
     //for c.-based coordinates, the first pos as start of CDS.
     TSeqPos first_pos = 0;
@@ -503,18 +536,18 @@ string CHgvsParser::x_GetHgvsLoc(const CVariantPlacement& vp)
 }
 
 
-TSeqPos CHgvsParser::x_GetInstLength(const CVariation_inst& inst, const CSeq_loc& this_loc)
+TSeqPos CHgvsParser::x_GetInstLength(const CVariation_inst& inst, const CVariantPlacement& p, bool account_for_multiplier)
 {
     TSeqPos len(0);
 
     ITERATE(CVariation_inst::TDelta, it, inst.GetDelta()) {
         const CDelta_item& d = **it;
-        int multiplier = d.IsSetMultiplier() ? d.GetMultiplier() : 1;
+        int multiplier = d.IsSetMultiplier() && account_for_multiplier ? d.GetMultiplier() : 1;
         TSeqPos d_len(0);
         if(d.GetSeq().IsLiteral()) {
             d_len = d.GetSeq().GetLiteral().GetLength();
         } else if(d.GetSeq().IsThis()) {
-            d_len = sequence::GetLength(this_loc, m_scope);
+            d_len = CVariationUtil::s_GetLength(p, m_scope);
         } else if(d.GetSeq().IsLoc()) {
             d_len = sequence::GetLength(d.GetSeq().GetLoc(), m_scope);
         } else {
@@ -524,32 +557,6 @@ TSeqPos CHgvsParser::x_GetInstLength(const CVariation_inst& inst, const CSeq_loc
     }
     return len;
 }
-
-string CHgvsParser::x_GetInstData(const CVariation_inst& inst, const CSeq_loc& this_loc)
-{
-    CNcbiOstrstream ostr;
-    ITERATE(CVariation_inst::TDelta, it, inst.GetDelta()) {
-        const CDelta_item& d = **it;
-        int multiplier = d.IsSetMultiplier() ? d.GetMultiplier() : 1;
-
-        string d_seq;
-        if(d.GetSeq().IsLiteral()) {
-            d_seq = x_SeqLiteralToStr(d.GetSeq().GetLiteral());
-        } else if(d.GetSeq().IsThis()) {
-            d_seq = x_LocToSeqStr(this_loc);
-        } else if(d.GetSeq().IsLoc()) {
-            d_seq = x_LocToSeqStr(d.GetSeq().GetLoc());
-        } else {
-            HGVS_THROW(eLogic, "Unhandled");
-        }
-        for(int i = 0; i < multiplier; i++) {
-            ostr << d_seq;
-        }
-    }
-
-    return CNcbiOstrstreamToString(ostr);
-}
-
 
 
 string CHgvsParser::x_AsHgvsInstExpression(
@@ -662,13 +669,25 @@ string CHgvsParser::x_AsHgvsInstExpression(
                     p_tmp->SetLoc().Assign(delta.GetSeq().GetLoc());
                     CVariationUtil util(*m_scope);
                     p_tmp->SetMol(util.GetMolType(sequence::GetId(p_tmp->GetLoc(), NULL)));
-                    delta_loc_str = AsHgvsExpression(*p_tmp);
+
+                    if(p_tmp->GetLoc().GetId()
+                       && placement->GetLoc().GetId()
+                       && p_tmp->GetLoc().GetId()->Equals(*placement->GetLoc().GetId()))
+                    {
+                        //if delta has same seq-id as placement, omit the seq-id header,
+                        //e.g. NM_000815.2:c.100delTins5_10
+                        //instead of NM_000815.2:c.100delTinsNM_000815.2:c.5_10
+                        delta_loc_str = x_PlacementCoordsToStr(*p_tmp);
+                    } else {
+                        //with header NM_000815.3:c.100delTinsNM_000815.2:c.5_10
+                        delta_loc_str = AsHgvsExpression(*p_tmp);
+                    }
                 }
 
                 inst_str += delta_loc_str;
 
             } else {
-                NCBI_THROW(CException, eUnknown, "Encountered unhandled delta class");
+                NCBI_THROW(CException, eUnknown, "Unhandled delta class");
             }
 
             //add multiplier, but make sure we're dealing with SSR.
@@ -682,14 +701,14 @@ string CHgvsParser::x_AsHgvsInstExpression(
 
                     if(!NStr::StartsWith(multiplier_str, "(")) {
                         multiplier_str = "[" + multiplier_str + "]";
-                        //In HGVS-land the fuzzy multiplier value existis as is, but an exact value
-                        //is enclosed in brackets a-la allele-set.
+                        //In HGVS-land the fuzzy multiplier value (in parentheses) existis as is, but an exact value
+                        //is enclosed in brackets like an allele-set.
                     }
 
                     inst_str += multiplier_str;
                 } else if(!NStr::StartsWith(inst_str, "dup")) {
                     //multiplier is expected for dup or ssr representation only
-                    //NCBI_THROW(CException, eUnknown, "Multiplier value is set in unexpected context (only STR supported)");
+                    NCBI_THROW(CException, eUnknown, "Multiplier value is set in unexpected context (only STR supported)");
                 }
             }
         }
@@ -697,9 +716,6 @@ string CHgvsParser::x_AsHgvsInstExpression(
 
     return inst_str;
 }
-
-
-
 
 };
 
