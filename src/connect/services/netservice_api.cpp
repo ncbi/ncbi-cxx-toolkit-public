@@ -913,7 +913,10 @@ CNetServiceIterator CNetService::Iterate(CNetService::EIterationMode mode,
         if (!servers->m_Servers.empty())
             return new SNetServiceIteratorImpl(servers);
 
-    return NULL;
+    NCBI_THROW(CNetSrvConnException, eSrvListEmpty,
+        "Couldn't find any available servers for the " +
+        (service_name == NULL || service_name->empty() ?
+        m_Impl->m_MainService->m_ServiceName : *service_name) + " service.");
 }
 
 CNetServiceIterator CNetService::Iterate(CNetServer::TInstance priority_server,
