@@ -286,7 +286,11 @@ count_timeout=0
 count_absent=0
 configurations="$x_confs"
 
-if ! \$is_db_load; then
+if \$is_db_load; then
+    echo "--------------------------------------------------" >> "\$build_dir/test_stat_load.log" 2>&1
+    echo "Loading tests from: \$check_dir"                     >> "\$build_dir/test_stat_load.log" 2>&1
+    echo "--------------------------------------------------" >> "\$build_dir/test_stat_load.log" 2>&1
+else
     rm -f "\$res_journal"
     rm -f "\$res_log"
 fi
@@ -326,6 +330,7 @@ RunTest() {
    x_boost_rep="\$x_work_dir/\$x_app.boost_rep\$x_ext"
 
    if \$is_db_load; then
+      echo "\$x_path_app:" >> "\$build_dir/test_stat_load.log" 2>&1
       case "$x_compiler" in
          MSVC )
             test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" "\$(cygpath -w "\$top_srcdir/build_info")" >> "\$build_dir/test_stat_load.log" 2>&1
