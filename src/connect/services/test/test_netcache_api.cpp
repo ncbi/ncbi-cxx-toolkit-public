@@ -633,5 +633,5 @@ int CTestNetCacheClient::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CTestNetCacheClient().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTestNetCacheClient().AppMain(argc, argv, 0, eDS_Default);
 }

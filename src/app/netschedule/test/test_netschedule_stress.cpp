@@ -438,5 +438,5 @@ int CTestNetScheduleStress::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CTestNetScheduleStress().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTestNetScheduleStress().AppMain(argc, argv, 0, eDS_Default);
 }

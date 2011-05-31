@@ -253,5 +253,5 @@ int CTestNetScheduleClient::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CTestNetScheduleClient().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTestNetScheduleClient().AppMain(argc, argv, 0, eDS_Default);
 }
