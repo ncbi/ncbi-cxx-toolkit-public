@@ -308,7 +308,7 @@ s_HSPListPostTracebackUpdate(EBlastProgramType program_number,
          are rounded down to the nearest even number. */
       Blast_HSPListAdjustOddBlastnScores(hsp_list, kGapped, sbp);
 
-      Blast_HSPListGetEvalues(query_info, hsp_list, kGapped, sbp, 0,
+      Blast_HSPListGetEvalues(query_info, subject_length, hsp_list, kGapped, sbp, 0,
                               scale_factor);
    }
 
