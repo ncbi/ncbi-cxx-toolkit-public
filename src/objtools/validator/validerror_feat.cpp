@@ -5238,13 +5238,6 @@ void CValidError_feat::ValidateExceptText(const string& text, const CSeq_feat& f
     bool found = false;
 
     string str;
-
-    const string* except_begin = s_LegalExceptionStrings;
-    const string* except_end = 
-        &(s_LegalExceptionStrings[sizeof(s_LegalExceptionStrings) / sizeof(string)]);
-    const string* refseq_begin = s_RefseqExceptionStrings;
-    const string* refseq_end = 
-        &(s_RefseqExceptionStrings[sizeof(s_RefseqExceptionStrings) / sizeof(string)]);
     
     bool reasons_in_cit = false;
     bool annotated_by_transcript_or_proteomic = false;
@@ -5258,8 +5251,12 @@ void CValidError_feat::ValidateExceptText(const string& text, const CSeq_feat& f
         if (NStr::IsBlank(*it)) {
             continue;
         }
-        if ( find(except_begin, except_end, str) != except_end ) {
-            found = true;
+        for (size_t i = 0; !found && i < sizeof(s_LegalExceptionStrings) / sizeof(string); i++) {
+            if (NStr::EqualNocase (s_LegalExceptionStrings[i], str)) {
+                found = true;
+            }
+        }
+        if ( found ) {
             if (NStr::EqualNocase(str, "reasons given in citation")) {
                 reasons_in_cit = true;
             } else if (NStr::EqualNocase(str, "annotated by transcript or proteomic data")) {
@@ -5282,9 +5279,13 @@ void CValidError_feat::ValidateExceptText(const string& text, const CSeq_feat& f
                         }
                     }
                 }
-                if (check_refseq && find(refseq_begin, refseq_end, str) != refseq_end ) {
-                    found = true;
-                    refseq_except = true;
+                if (check_refseq) {
+                    for (size_t i = 0; !found && i < sizeof(s_RefseqExceptionStrings) / sizeof(string); i++) {
+                        if (NStr::EqualNocase (s_RefseqExceptionStrings[i], str)) {
+                            found = true;
+                            refseq_except = true;
+                        }
+                    }
                 }
             }
         }
@@ -5308,7 +5309,14 @@ void CValidError_feat::ValidateExceptText(const string& text, const CSeq_feat& f
             "Exception explanation text is also found in feature comment", feat);
     }
     if (refseq_except) {
-        if (find(refseq_begin, refseq_end, str) == refseq_end ) {
+        bool other_exp = false;
+        for (size_t i = 0; !other_exp && i < sizeof(s_RefseqExceptionStrings) / sizeof(string); i++) {
+            if (NStr::EqualNocase (s_RefseqExceptionStrings[i], str)) {
+                other_exp = true;
+            }
+        }
+
+        if ( other_exp ) {
             PostErr (eDiag_Warning, eErr_SEQ_FEAT_ExceptionProblem, 
                      "Genome processing exception should not be combined with other explanations", feat);
         }

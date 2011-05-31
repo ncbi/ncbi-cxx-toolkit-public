@@ -877,6 +877,52 @@ void CValidError_imp::ValidateLatLonCountry
 }
 
 
+/* note - special case for sex because it prevents a different message from being displayed, do not list here */
+static const CSubSource::ESubtype sUnexpectedViralSubSourceQualifiers[] = {
+  CSubSource::eSubtype_cell_line, 
+  CSubSource::eSubtype_cell_type, 
+  CSubSource::eSubtype_tissue_type,
+  CSubSource::eSubtype_dev_stage
+};
+
+static const int sNumUnexpectedViralSubSourceQualifiers = sizeof (sUnexpectedViralSubSourceQualifiers) / sizeof (CSubSource::TSubtype);
+
+
+static bool IsUnexpectedViralSubSourceQualifier (CSubSource::TSubtype subtype)
+{
+  int i;
+  bool rval = false;
+
+  for (i = 0; i < sNumUnexpectedViralSubSourceQualifiers && !rval; i++) {
+    if (subtype == sUnexpectedViralSubSourceQualifiers[i]) {
+      rval = true;
+    }
+  }
+  return rval;
+}
+
+static const COrgMod::TSubtype sUnexpectedViralOrgModQualifiers[] = {
+  COrgMod::eSubtype_breed,
+  COrgMod::eSubtype_cultivar,
+  COrgMod::eSubtype_specimen_voucher
+};
+
+static const int sNumUnexpectedViralOrgModQualifiers = sizeof (sUnexpectedViralOrgModQualifiers) / sizeof (COrgMod::TSubtype);
+
+static bool IsUnexpectedViralOrgModQualifier (COrgMod::TSubtype subtype)
+{
+  int i;
+  bool rval = false;
+
+  for (i = 0; i < sNumUnexpectedViralOrgModQualifiers && !rval; i++) {
+    if (subtype == sUnexpectedViralOrgModQualifiers[i]) {
+      rval = true;
+    }
+  }
+  return rval;
+}
+
+
 void CValidError_imp::ValidateBioSource
 (const CBioSource&    bsrc,
  const CSerialObject& obj,
@@ -1124,27 +1170,6 @@ void CValidError_imp::ValidateBioSource
             }
             break;
         
-        case CSubSource::eSubtype_cell_line:
-            if (isViral) {
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
-                    "Virus has unexpected cell_line qualifier", obj, ctx);
-            }
-            break;
-
-        case CSubSource::eSubtype_cell_type:
-            if (isViral) {
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
-                    "Virus has unexpected cell_type qualifier", obj, ctx);
-            }
-            break;
-
-        case CSubSource::eSubtype_tissue_type:
-            if (isViral) {
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
-                    "Virus has unexpected tissue_type qualifier", obj, ctx);
-            }
-            break;
-
         case CSubSource::eSubtype_frequency:
             break;
 
@@ -1154,6 +1179,11 @@ void CValidError_imp::ValidateBioSource
         default:
             break;
         }
+
+        if (isViral && IsUnexpectedViralSubSourceQualifier (subtype)) {
+                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+                  "Virus has unexpected " + CSubSource::GetSubtypeName(subtype) + " qualifier", obj, ctx);
+        }            
     }
     if ( germline  &&  rearranged ) {
         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
@@ -1292,7 +1322,7 @@ void CValidError_imp::ValidateBioSource
 
     }
 
-    // look for conflicts in orgmods
+    // look for conflicts in orgmods, also look for unexpected viral qualifiers
     bool specific_host = false;
     FOR_EACH_ORGMOD_ON_ORGREF (it, orgref) {
         if (!(*it)->IsSetSubtype()) {
@@ -1313,6 +1343,10 @@ void CValidError_imp::ValidateBioSource
                            obj, ctx);
             }
         }
+        if (isViral && IsUnexpectedViralOrgModQualifier (subtype)) {
+            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+              "Virus has unexpected " + COrgMod::GetSubtypeName(subtype) + " qualifier", obj, ctx);
+        }            
     }
     if (env_sample && !iso_source && !specific_host) {
         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 

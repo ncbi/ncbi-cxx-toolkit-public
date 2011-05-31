@@ -2079,14 +2079,14 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
                     bool n3 = false;
                     TSeqPos num_ns = 0, this_stretch = 0, max_stretch = 0;
                     for (size_t i = 0; i < vec.size(); i++) {
-                        if (vec[i] == 'N' && !vec.IsInGap(i)) {
+                        if (vec[i] == 'N') {
                             num_ns++;
                             this_stretch++;
                             if (this_stretch >= 5) {
                                 if (i < 24) {
                                     n5 = true;
                                 } 
-                                if (vec.size() < 20 || i > vec.size() - 20) {
+                                if (vec.size() < 20 || i > vec.size() - 17) {
                                     n3 = true;
                                 }
                             }
@@ -2362,10 +2362,11 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
                             }
                         }
 
-                        if (!NStr::StartsWith (cds_seq, "NNN")) {
+                        if (!NStr::StartsWith (cds_seq, "N")) {
                             leading_x = false;
                         }
-                        if (!NStr::EndsWith (cds_seq, "NNN")) {
+                        string lastcodon = cds_seq.substr(cds_seq.length() - 3);
+                        if (!NStr::StartsWith (lastcodon, "N")) {
                             trailingX = 0;
                         }
                     }
