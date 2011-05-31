@@ -34,6 +34,7 @@
 #define OBJTOOLS_READERS___VCFREADER__HPP
 
 #include <corelib/ncbistd.hpp>
+#include <objects/seq/Annotdesc.hpp>
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/error_container.hpp>
 #include <objects/seq/Seq_annot.hpp>
@@ -42,6 +43,8 @@
 BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
+
+class CVcfData;
 
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJREAD_EXPORT CVcfReader
@@ -86,11 +89,36 @@ public:
     //  helpers:
     //
 protected:
+    virtual bool
+    x_ProcessMetaLine(
+        const string&,
+        CRef<CSeq_annot> );
+
+    virtual bool
+    x_ProcessHeaderLine(
+        const string&,
+        CRef<CSeq_annot> );
+
+    virtual bool
+    x_ProcessDataLine(
+        const string&,
+        CRef<CSeq_annot> );
         
+    virtual bool
+    x_AssignFeatureLocation(
+        const CVcfData&,
+        CRef<CSeq_feat> );
+
+    virtual bool
+    x_AssignVariationIds(
+        const CVcfData&,
+        CRef<CSeq_feat> );
+
     //
     //  data:
     //
 protected:
+    CRef< CAnnotdesc > m_Meta;
     CErrorContainerLenient m_ErrorsPrivate;
 };
 
