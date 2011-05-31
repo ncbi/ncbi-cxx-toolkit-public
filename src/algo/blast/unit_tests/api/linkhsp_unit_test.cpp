@@ -287,8 +287,8 @@ struct LinkHspTestFixture {
         const int kNumHsps = 8;
         const int kLongestIntron = 4000;
         const double kEvalue = 1e-10;
-        const int kNumsLinked[kNumHsps] = { 4, 4, 4, 4, 4, 4, 4, 4 };
-        const int kScores[kNumHsps] = { 1023, 282, 246, 202, 142, 117, 98, 63 };
+        const int kNumsLinked[kNumHsps] = { 1, 5, 5, 5, 2, 5, 5, 2 };
+        const int kScores[kNumHsps] = { 1023, 282, 246, 202, 142, 117, 98, 92 };
 
         setupLinkHspInputTblastn();
         setupHSPListTransl();
