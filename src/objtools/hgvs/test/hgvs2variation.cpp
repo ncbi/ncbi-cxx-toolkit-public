@@ -95,6 +95,7 @@ void CHgvs2variationApplication::Init(void)
          "-",
          CArgDescriptions::fPreOpen);
 
+
     arg_desc->AddDefaultKey
         ("out",
          "output",
@@ -115,6 +116,7 @@ void CHgvs2variationApplication::Init(void)
     arg_desc->AddFlag("precursor", "calculate precursor variation");
     arg_desc->AddFlag("compute_hgvs", "calculate hgvs expressions");
     arg_desc->AddFlag("roundtrip_hgvs", "roundtrip hgvs expression");
+    arg_desc->AddFlag("asn_in", "in is text-asn");
 
     // Program description
     string prog_description = "Convert hgvs expression to a variation\n";
@@ -193,6 +195,58 @@ void AttachHgvs(CVariation& v, CHgvsParser& parser)
     }
 }
 
+void ProcessVariation(CVariation& v, const CArgs& args, CScope& scope, CConstRef<CSeq_align> aln)
+{
+    CHgvsParser parser(scope);
+    CVariationUtil variation_util(scope);
+
+    if(aln) {
+        for(CTypeIterator<CVariation> it(Begin(v)); it; ++it) {
+            CVariation& v2 = *it;
+            if(!v2.IsSetPlacements()) {
+                continue;
+            }
+            CVariation::TPlacements mapped;
+            ITERATE(CVariation::TPlacements, it2, v2.GetPlacements()) {
+                const CVariantPlacement& p = **it2;
+                if(   ncbi::sequence::IsSameBioseq(aln->GetSeq_id(0), ncbi::sequence::GetId(p.GetLoc(), NULL), &scope)
+                   || ncbi::sequence::IsSameBioseq(aln->GetSeq_id(1), ncbi::sequence::GetId(p.GetLoc(), NULL), &scope))
+                {
+                    mapped.push_back(variation_util.Remap(p, *aln));
+                }
+            }
+            NON_CONST_ITERATE(CVariation::TPlacements, it2, mapped) {
+                v2.SetPlacements().push_back(*it2);
+            }
+        }
+    }
+
+    if(args["compute_hgvs"]) {
+        AttachHgvs(v, parser);
+    }
+
+    if(args["loc_prop"]) {
+        variation_util.SetVariantProperties(v);
+    }
+
+    if(args["prot_effect"]) {
+        CRef<CSeq_id> id(NULL);
+        //CRef<CSeq_id> id(new CSeq_id("NM_022124.5"));
+
+        variation_util.AttachProteinConsequences(v, id);
+    }
+
+    if(args["precursor"]) {
+        CRef<CVariation> v2 = variation_util.InferNAfromAA(v);
+        CVariation::TConsequence::value_type consequence(new CVariation::TConsequence::value_type::TObjectType);
+        consequence->SetVariation(v);
+        v2->SetConsequence().push_back(consequence);
+        v.Assign(*v2);
+    }
+
+}
+
+
 
 int CHgvs2variationApplication::Run(void)
 {
@@ -220,81 +274,58 @@ int CHgvs2variationApplication::Run(void)
         args["aln"].AsInputFile() >> MSerial_AsnText >> *aln;
     }
 
-    string line_str("");
-    while(NcbiGetlineEOL(istr, line_str)) {
-        //expected line format: input_hgvs, optionally followed by "|" and
-        //expected output expression, optionally followed by "#" and comment
-        if(NStr::StartsWith(line_str, "#") || line_str.empty()) {
+
+    if(args["asn_in"]) {
+        while(true) {
+            CRef<CVariation> v (new CVariation);
+            try {
+                args["in"].AsInputFile() >> MSerial_AsnText>> *v;
+            } catch(CEofException& e) {
+                break;
+            }
+            ProcessVariation(*v, args, *scope, aln);
+            ostr << MSerial_AsnText << *v;
+        }
+    } else {
+
+        string line_str("");
+        while(NcbiGetlineEOL(istr, line_str)) {
+            //expected line format: input_hgvs, optionally followed by "|" and
+            //expected output expression, optionally followed by "#" and comment
+            if(NStr::StartsWith(line_str, "#") || line_str.empty()) {
+                if(args["roundtrip_hgvs"]) {
+                    ostr << line_str << NcbiEndl;
+                }
+                continue;
+            }
+
+            string test_expr, comment;
+            NStr::SplitInTwo(line_str, "#", test_expr, comment);
+            NStr::TruncateSpacesInPlace(comment);
+            NStr::TruncateSpacesInPlace(test_expr);
+
             if(args["roundtrip_hgvs"]) {
-                ostr << line_str << NcbiEndl;
+                string result = TestRoundTrip(test_expr, *parser);
+                ostr << test_expr << "\t" << result << NcbiEndl;
+                continue;
             }
-            continue;
+
+            string input_hgvs, other_synonyms;
+            NStr::SplitInTwo(test_expr, "|", input_hgvs, other_synonyms);
+
+            CRef<CVariation> v = parser->AsVariation(input_hgvs);
+            v->SetDescription(comment);
+
+            ProcessVariation(*v, args, *scope, aln);
+
+            ostr << MSerial_AsnText << *v;
         }
 
-        string test_expr, comment;
-        NStr::SplitInTwo(line_str, "#", test_expr, comment);
-        NStr::TruncateSpacesInPlace(comment);
-        NStr::TruncateSpacesInPlace(test_expr);
-
-        if(args["roundtrip_hgvs"]) {
-            string result = TestRoundTrip(test_expr, *parser);
-            ostr << test_expr << "\t" << result << NcbiEndl;
-            continue;
-        }
-
-
-        string input_hgvs, other_synonyms;
-        NStr::SplitInTwo(test_expr, "|", input_hgvs, other_synonyms);
-
-        CRef<CVariation> v = parser->AsVariation(input_hgvs);
-        v->SetDescription(comment);
-
-        if(aln) {
-            for(CTypeIterator<CVariation> it(Begin(*v)); it; ++it) {
-                CVariation& v2 = *it;
-                if(!v2.IsSetPlacements()) {
-                    continue;
-                }
-                CVariation::TPlacements mapped;
-                ITERATE(CVariation::TPlacements, it2, v2.GetPlacements()) {
-                    const CVariantPlacement& p = **it2;
-                    if(   ncbi::sequence::IsSameBioseq(aln->GetSeq_id(0), ncbi::sequence::GetId(p.GetLoc(), NULL), scope)
-                       || ncbi::sequence::IsSameBioseq(aln->GetSeq_id(1), ncbi::sequence::GetId(p.GetLoc(), NULL), scope))
-                    {
-                        mapped.push_back(variation_util->Remap(p, *aln));
-                    }
-                }
-                NON_CONST_ITERATE(CVariation::TPlacements, it2, mapped) {
-                    v2.SetPlacements().push_back(*it2);
-                }
-            }
-        }
-
-        if(args["compute_hgvs"]) {
-            AttachHgvs(*v, *parser);
-        }
-
-        if(args["loc_prop"]) {
-            variation_util->SetVariantProperties(*v);
-        }
-
-        if(args["prot_effect"]) {
-            variation_util->AttachProteinConsequences(*v);
-        }
-
-        if(args["precursor"]) {
-            CRef<CVariation> v2 = variation_util->InferNAfromAA(*v);
-            CVariation::TConsequence::value_type consequence(new CVariation::TConsequence::value_type::TObjectType);
-            consequence->SetVariation(*v);
-            v2->SetConsequence().push_back(consequence);
-            v = v2;
-        }
-
-        ostr << MSerial_AsnText << *v;
     }
-
     return 0;
 }
+
+
 
 
 

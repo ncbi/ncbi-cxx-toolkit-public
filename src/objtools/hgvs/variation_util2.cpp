@@ -852,7 +852,7 @@ void CVariationUtil::AttachProteinConsequences(CVariation& v, const CSeq_id* tar
 
     if(v.GetData().IsSet()) {
         NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
-            AttachProteinConsequences(**it);
+            AttachProteinConsequences(**it, target_id);
         }
         return;
     }
@@ -1049,6 +1049,8 @@ void CVariationUtil::x_AdjustDelinsToInterval(CVariation& v, const CSeq_loc& loc
     const CSeq_loc& orig_loc = v.GetPlacements().front()->GetLoc();
     CRef<CSeq_loc> sub_loc = orig_loc.Subtract(loc, 0, NULL, NULL);
     if(sub_loc->Which() && sequence::GetLength(*sub_loc, NULL) > 0) {
+        //NcbiCerr << MSerial_AsnText << v;
+        //NcbiCerr << MSerial_AsnText << loc;
         NCBI_THROW(CArgException, CArgException::eInvalidArg, "Location must be a superset of the variation's loc");
     }
 
@@ -1441,7 +1443,7 @@ void CVariationUtil::SetVariantProperties(CVariantProperties& prop, const CVaria
 
             if(bsh.GetBioseqMolType() == CSeq_inst::eMol_rna && ci->GetData().IsCdregion()) {
                 cds.Reset(&ci->GetMappedFeature());
-            } else if(ci->GetData().IsRna()) {
+            } else if(ci->GetData().IsRna() && ci->GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
                 cds = sequence::GetBestCdsForMrna(ci->GetMappedFeature(), *m_scope);
             }
 
