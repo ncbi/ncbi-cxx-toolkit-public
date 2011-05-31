@@ -258,8 +258,8 @@ public:
     //  Items on the line are *tab separated*.
     //  ** Note:  positions are listed in 0-based coordinates on the master, unless requested otherwise **
     //  Example:
-    //  28772   cd01334 Lyase_I 1       active sites    1       1       1       82,83,128,129,262
-    //  28772   cd01334 Lyase_I 2       tetramer interface      1       1       1       127,128,129, ... 282,285,300
+    //  28772   cd01334 Lyase_I 1       active sites    1       1       1       82,83,128,129,262    0
+    //  28772   cd01334 Lyase_I 2       tetramer interface      1       1       1       127,128,129, ... 282,285,300    0
     string ToFtpDumpString(bool zeroBasedCoords = true) const;
     static string ToFtpDumpString(const CCdCore& cd, bool zeroBasedCoords = true);
 

@@ -348,6 +348,7 @@ void PurgeTypeFromAlignAnnots(CCdd& cd)
 
 string CAlignAnnotToString(const CAlign_annot& feature, bool includeFromTo, bool includeEvidence, bool hyphenateFromTo) {
     static const string descrHeader = "Description:\n";
+    static const string typeHeader = "\n    Type:    ";
     static const string positionHeader = "\n    Positions:\n    ";
     static const string evidenceHeader = "\n    Details:\n";
     static const string spacer = "    ";
@@ -358,6 +359,11 @@ string CAlignAnnotToString(const CAlign_annot& feature, bool includeFromTo, bool
     //  Global description for the align-annot
     if (feature.IsSetDescription()) {
         featureDesc = descrHeader + spacer + feature.GetDescription();
+    }
+
+    //  Add the type
+    if (feature.IsSetType()) {
+        featureDesc += typeHeader + NStr::IntToString(feature.GetType());
     }
 
     vector<FromToPair> pairs;
@@ -725,7 +731,7 @@ string CCdAnnotationInfo::ToFtpDumpString(bool zeroBasedCoords) const {
     string cdAcc = m_cd->GetAccession();
     string cdName = m_cd->GetName();
     string pssmIdStr = NStr::IntToString(m_cd->GetUID());
-    string rowsStr, featureDesc;
+    string rowsStr, featureDesc, typeStr;
     vector<string> stringsToJoin;
     vector<string> linesToJoin;
 
@@ -733,6 +739,7 @@ string CCdAnnotationInfo::ToFtpDumpString(bool zeroBasedCoords) const {
     unsigned int nPairs, nPositions;
     vector<unsigned int> positions;
     const CRef<CAlign_annot> feature;
+    CAlign_annot::TType annotType;
     CAlign_annot_set::Tdata::const_iterator foundCit;
 
     CdAnnotMap::const_iterator annotCit = m_masterAnnotMap.begin(), annotEnd = m_masterAnnotMap.end();
@@ -783,6 +790,12 @@ string CCdAnnotationInfo::ToFtpDumpString(bool zeroBasedCoords) const {
             }
 
             stringsToJoin.push_back(rowsStr);
+
+            //  If there's not 'type' set, define it to be type 0 (i.e., 'other')
+            annotType = GetAlignAnnotType(**foundCit);
+            if (annotType < 0) annotType = 0;
+            typeStr = NStr::IntToString(annotType);
+            stringsToJoin.push_back(typeStr);
 
             linesToJoin.push_back(NStr::Join(stringsToJoin, tabDelim));
         }
