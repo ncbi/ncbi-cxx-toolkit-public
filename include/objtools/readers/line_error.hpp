@@ -121,8 +121,8 @@ public:
 protected:
     EDiagSev m_eSeverity;
     unsigned int m_uLine;
-    std::string m_strSeqId;
     std::string m_strMessage;
+    std::string m_strSeqId;
 };
 
 //  ============================================================================

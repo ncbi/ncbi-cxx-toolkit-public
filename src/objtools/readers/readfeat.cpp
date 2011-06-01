@@ -279,7 +279,8 @@ private:
         const string &str, 
         IErrorContainer *container, 
         int line, 
-        const string &seq_id );
+        const string &seq_id,
+        CTempString qual );
 
     bool x_SetupSeqFeat (CRef<CSeq_feat> sfp, const string& feat,
                          const CFeature_table_reader::TFlags flags, 
@@ -822,7 +823,7 @@ bool CFeature_table_reader_imp::x_ParseFeatureTableLine (
           start [len - 1] = '\0';
         }
         try {
-            startv = x_StringToLongNoThrow(start, container, line_num, seq_id);
+            startv = x_StringToLongNoThrow(start, container, line_num, seq_id, qual);
         } catch (...) {
             badNumber = true;
         }
@@ -834,7 +835,7 @@ bool CFeature_table_reader_imp::x_ParseFeatureTableLine (
             stop.erase (0, 1);
         }
         try {
-            stopv = x_StringToLongNoThrow (stop, container, line_num, seq_id);
+            stopv = x_StringToLongNoThrow (stop, container, line_num, seq_id, qual);
         } catch (CStringException) {
             badNumber = true;
         }
@@ -1031,7 +1032,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToCdregion (
     switch (qtype) {
         case eQual_codon_start:
             {
-                int frame = x_StringToLongNoThrow (val, container, line, seq_id);
+                int frame = x_StringToLongNoThrow (val, container, line, seq_id, "codon_start");
                 switch (frame) {
                     case 0:
                         crp.SetFrame (CCdregion::eFrame_not_set);
@@ -1150,7 +1151,8 @@ int CFeature_table_reader_imp::x_ParseTrnaString (
 
 long 
 CFeature_table_reader_imp::x_StringToLongNoThrow ( 
-    const string &str, IErrorContainer *container, int line, const string &seq_id )
+    const string &str, IErrorContainer *container, 
+    int line, const string &seq_id, CTempString qual )
 {
     try {
         return NStr::StringToLong(str);
@@ -1160,12 +1162,12 @@ CFeature_table_reader_imp::x_StringToLongNoThrow (
             try {
                 long result = NStr::StringToLong(str, NStr::fAllowTrailingSymbols);
                 container->PutError( CLineError( eDiag_Error, line, 
-                    "excess characters found after a number: \"" + string(str) + "\" ", seq_id ) );
+                    "excess characters found after a number: '" + string(str) + "' on qual '" + (string)qual + "'", seq_id ) );
                 return result;
             } catch( ... ) { } // fall-thru to usual handling
         }
         container->PutError( CLineError( eDiag_Error, line, 
-            "a number was expected, but instead got: \"" + string(str) + "\" ", seq_id ) );
+            "a number was expected, but instead got: '" + string(str) + "' on qual '" + (string)qual + "'", seq_id ) );
         // we have no idea, so just return zero
         return 0;
     }
@@ -1364,7 +1366,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (
             {
                 CBioSource::TOrg& orp = bsp.SetOrg ();
                 COrg_ref::TOrgname& onp = orp.SetOrgname ();
-                int code = x_StringToLongNoThrow (val, container, line, seq_id);
+                int code = x_StringToLongNoThrow (val, container, line, seq_id, "gcode");
                 onp.SetGcode (code);
                 return true;
             }
@@ -1372,7 +1374,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (
             {
                 CBioSource::TOrg& orp = bsp.SetOrg ();
                 COrg_ref::TOrgname& onp = orp.SetOrgname ();
-                int code = x_StringToLongNoThrow (val, container, line, seq_id);
+                int code = x_StringToLongNoThrow (val, container, line, seq_id, "mgcode");
                 onp.SetMgcode (code);
                 return true;
             }
@@ -1527,7 +1529,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                 case CSeqFeatData::e_Pub:
                     if( qtype == eQual_PubMed ) {
                         CRef<CPub> new_pub( new CPub );
-                        new_pub->SetPmid( CPubMedId( x_StringToLongNoThrow(val, container, line, seq_id) ) );
+                        new_pub->SetPmid( CPubMedId( x_StringToLongNoThrow(val, container, line, seq_id, qual) ) );
                         sfdata.SetPub().SetPub().Set().push_back( new_pub );
                         return true;
                     }
@@ -1680,7 +1682,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                             CRef<CDbtag> dbt (new CDbtag);
                             dbt->SetDb (db);
                             CRef<CObject_id> oid (new CObject_id);
-                            num = x_StringToLongNoThrow (tag, container, line, seq_id);
+                            num = x_StringToLongNoThrow (tag, container, line, seq_id, qual);
                             if (num != -1) {
                                 oid->SetId (num);
                             } else {
@@ -1953,6 +1955,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 )
 {
     string feat, qual, val;
+    string curr_feat_name;
     Int4 start, stop;
     bool partial5, partial3, ispoint, isminus, ignore_until_next_feature_key = false;
     Int4 offset = 0;
@@ -2038,6 +2041,8 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
                         ignore_until_next_feature_key = false;
 
+                        curr_feat_name = feat;
+
                     } else {
 
                         // bad feature, set ignore flag
@@ -2083,7 +2088,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                         // unrecognized qualifier key
 
                         if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
-                            x_ProcessMsg(eDiag_Warning, "Unrecognized qualifier " + qual, reader.GetLineNumber(), seqid, container);
+                            x_ProcessMsg(eDiag_Warning, "Unrecognized qualifier \"" + qual + "\" on feat \"" + curr_feat_name + "\"", reader.GetLineNumber(), seqid, container);
                         }
 
                         if ((flags & CFeature_table_reader::fKeepBadKey) != 0) {
@@ -2171,8 +2176,7 @@ void CFeature_table_reader_imp::AddFeatQual (
     const CFeature_table_reader::TFlags flags,
     IErrorContainer* container,
     int line, 	
-    const string &seq_id 
-)
+    const string &seq_id )
 
 {
     if ((! qual.empty ()) && (! val.empty ())) {
@@ -2182,7 +2186,7 @@ void CFeature_table_reader_imp::AddFeatQual (
             // unrecognized qualifier key
 
             if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
-                ERR_POST_X (5, Warning << "Unrecognized qualifier " << qual);
+                ERR_POST_X (5, Warning << "Unrecognized qualifier '" << qual << "'");
             }
 
             if ((flags & CFeature_table_reader::fKeepBadKey) != 0) {

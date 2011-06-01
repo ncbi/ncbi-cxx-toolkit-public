@@ -101,9 +101,9 @@ public:
 
 private:
     std::set<std::string, PNocase_Conditional> m_DisallowedFeatureNames;
+    const EDiagSev m_SevIfFeatureNameNotAllowed;
     const std::string m_ErrPrefix;
     const std::string m_ErrSuffix;
-    const EDiagSev m_SevIfFeatureNameNotAllowed;
 };
              
 END_objects_SCOPE

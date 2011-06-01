@@ -134,7 +134,8 @@ int CSourceModParserTestApp::Run(void)
     tbl_filter.AddDisallowedFeatureName("source");
 
     CErrorContainerLenient err_container;
-    CFeature_table_reader::ReadSequinFeatureTables( args["feattbl"].AsInputFile(), *entry, 0, 
+    CFeature_table_reader::ReadSequinFeatureTables( args["feattbl"].AsInputFile(), *entry, 
+        CFeature_table_reader::fReportBadKey, 
         &err_container, &tbl_filter );
 
     // print out result
