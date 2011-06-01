@@ -311,7 +311,15 @@ CNCBlobVerManager::OnBlockedOpFinish(void)
         break;
     }
     if (m_CurVersion) {
-        *(SNCBlobCoords*)m_CacheData = m_CurVersion->coords;
+        m_CacheData->blob_id = m_CurVersion->coords.blob_id;
+        m_CacheData->meta_id = m_CurVersion->coords.meta_id;
+        m_CacheData->data_id = m_CurVersion->coords.data_id;
+        m_CacheData->create_id = m_CurVersion->create_id;
+        m_CacheData->create_server = m_CurVersion->create_server;
+        m_CacheData->create_time = m_CurVersion->create_time;
+        m_CacheData->dead_time = m_CurVersion->dead_time;
+        m_CacheData->ver_expire = m_CurVersion->ver_expire;
+        m_CacheData->size = m_CurVersion->size;
     }
     else {
         m_CacheData->blob_id = 0;
@@ -364,13 +372,16 @@ CNCBlobVerManager::x_ReadCurVersion(void)
     m_CurVersion->coords.blob_id = m_CacheData->blob_id;
     m_CurVersion->coords.meta_id = m_CacheData->meta_id;
     m_CurVersion->need_write = false;
-    m_CurVersion->need_meta_blob = m_CurVersion->need_data_blob = false;
+    m_CurVersion->need_meta_blob = false;
+    m_CurVersion->need_data_blob = m_CacheData->size == 0;
     if (!g_NCStorage->ReadBlobInfo(m_CurVersion)) {
         //abort();
         ERR_POST(Critical << "Problem reading meta-information about blob "
                           << g_NCStorage->UnpackKeyForLogs(m_Key));
         DeleteVersion(m_CurVersion);
     }
+    if (m_CacheData->size != m_CurVersion->size)
+        abort();
 }
 
 CRef<SNCBlobVerData>
@@ -531,7 +542,7 @@ NCBI_NORETURN
 inline void
 CNCBlobAccessor::x_DelCorruptedVersion(void)
 {
-    abort();
+    //abort();
     ERR_POST_X(19, "Database information about blob "
                    << g_NCStorage->UnpackKeyForLogs(m_BlobKey)
                    << " is corrupted. Blob will be deleted");

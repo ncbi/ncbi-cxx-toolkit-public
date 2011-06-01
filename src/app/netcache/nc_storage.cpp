@@ -1514,7 +1514,8 @@ CNCBlobStorage::x_DoBackgroundWork(void)
                                         key_it->second = new_data;
                                         was_added = true;
                                         SNCDBFileInfo* cache_d_info = m_DBFiles[cache_data->data_id];
-                                        cache_d_info->UsefulToGarbage(cache_data->size);
+                                        if (cache_data->size != 0)
+                                            cache_d_info->UsefulToGarbage(cache_data->size);
                                         if (cache_data->meta_id == file_id)
                                             --cnt_blobs;
                                         else {
@@ -1535,7 +1536,8 @@ CNCBlobStorage::x_DoBackgroundWork(void)
                                     ++cnt_blobs;
                                     SNCDBFileInfo* data_info = m_DBFiles[blob_info->data_id];
                                     data_info->IncRefCnt();
-                                    data_info->IncUsefulBlobs(blob_info->size);
+                                    if (blob_info->size != 0)
+                                        data_info->IncUsefulBlobs(blob_info->size);
                                 }
                             }
                         }
