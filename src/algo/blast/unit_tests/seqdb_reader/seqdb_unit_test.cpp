@@ -4003,6 +4003,18 @@ BOOST_AUTO_TEST_CASE(TestOidNotFoundWithUserAliasFileAndGiList)
     BOOST_CHECK_EQUAL(0U, filtered_gis.size());
 }
 
+BOOST_AUTO_TEST_CASE(TestSpaceInDbName)
+{
+	// SVN does not allow filename with space, so we need to make one up on the fly
+	system("cp data/swiss_cheese.pal 'data/test space.pal'");
+	string db_name = "\"data/test space\"";
+    CSeqDB dbs(db_name, CSeqDB::eProtein);
+
+    // Reuse the swiss-cheese test as sanity check for 'test space' db
+    SDbSumInfo dbs_sum(dbs);
+    BOOST_REQUIRE_EQUAL((string) dbs_sum.CompareSelf(), "+A+B=C+a+b=c");
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
