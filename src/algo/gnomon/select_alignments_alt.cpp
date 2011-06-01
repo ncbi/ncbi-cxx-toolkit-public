@@ -136,6 +136,9 @@ bool HasRetainedIntron(const CGeneModel& under_test, const CGeneModel& control_m
 
 bool CAltSplice::IsAllowedAlternative(const CGeneModel& a, int maxcomposite) const
 {
+    if (a.Support().empty()) {
+        return false;
+    }
     int composite = 0;
     ITERATE(CSupportInfoSet, s, a.Support()) {
         if(s->IsCore() && ++composite > maxcomposite) return false;
@@ -287,6 +290,11 @@ bool CModelCompare::AreSimilar(const CGeneModel& a, const CGeneModel& b, int tol
 
 bool DescendingModelOrder(const CGeneModel& a, const CGeneModel& b)
 {
+    if (!a.Support().empty() && b.Support().empty())
+        return true;
+    else if (a.Support().empty() && !b.Support().empty())
+        return false;
+
     if(!a.TrustedmRNA().empty() && b.TrustedmRNA().empty())       // trusted gene is always better, mRNA is better than protein, both are better than one   
         return true;
     else if(!b.TrustedmRNA().empty() && a.TrustedmRNA().empty()) 
