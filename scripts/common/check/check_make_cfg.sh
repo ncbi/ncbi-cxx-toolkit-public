@@ -125,9 +125,10 @@ if test -n "$NCBI_AUTOMATED_BUILD"; then
       signature=`grep "\"XCODE.*\"" $ncbiconf | sed 's/.*\"\(XCODE.*\)\".*/\1/'`
    else
       case "$COMPILER" in
-         msvc7 ) signature="MSVC_710" ;;
-         msvc8 ) signature="MSVC_800" ;;
-         msvc9 ) signature="MSVC_900" ;;
+         msvc7  ) signature="MSVC_710"  ;;
+         msvc8  ) signature="MSVC_800"  ;;
+         msvc9  ) signature="MSVC_900"  ;;
+         msvc10 ) signature="MSVC_1000" ;;
       esac
       signature="$signature-${x_cfg}"
       case "$x_cfg" in
