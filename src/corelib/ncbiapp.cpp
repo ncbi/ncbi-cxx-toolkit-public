@@ -326,7 +326,7 @@ void CNcbiApplication::x_TryMain(EAppDiagStream diag,
                 x_TryInit(diag, conf);
             }
             catch (CArgHelpException& e) {
-                // This exception will be caught later regardless of the
+                // This exceptions will be caught later regardless of the
                 // handle-exceptions flag.
                 throw;
             }
@@ -638,44 +638,51 @@ int CNcbiApplication::AppMain
     bool got_exception = false;
     s_IsApplicationStarted = true;
 
-    if ( s_HandleExceptions() ) {
-        try {
+    try {
+        if ( s_HandleExceptions() ) {
+            try {
+                x_TryMain(diag, conf, &exit_code, &got_exception);
+            }
+            catch (CArgException& e) {
+                // This exceptions will be caught later regardless of the
+                // handle-exceptions flag.
+                throw;
+            }
+#if defined(NCBI_COMPILER_MSVC)  &&  defined(_DEBUG)
+            // Microsoft promotes many common application errors to exceptions.
+            // This includes occurrences such as dereference of a NULL pointer and
+            // walking off of a dangling pointer.  The catch-all is lifted only in
+            // debug mode to permit easy inspection of such error conditions, while
+            // maintaining safety of production, release-mode applications.
+            catch (...) {
+                ERR_POST_X(10, Warning <<
+                               "Application has thrown an exception of unknown type");
+                throw;
+            }
+#endif
+        }
+        else {
             x_TryMain(diag, conf, &exit_code, &got_exception);
         }
-        catch (CArgException& e) {
-            // Print USAGE and the exception error message
-            if ( m_ArgDesc.get() ) {
-                x_AddDefaultArgs();
-                string str;
-                m_ArgDesc->PrintUsage(str);
-                cerr << str;
-                CStreamDiagHandler* errh =
-                    dynamic_cast<CStreamDiagHandler*>(GetDiagHandler());
-                if (!errh  ||  errh->GetStream() != &cerr) {
-                    cerr << "Error in command-line arguments. "
-                        "See error logs for more details." << endl;
-                }
-                cerr << string(72, '=') << endl;
-            }
-            NCBI_REPORT_EXCEPTION_X(18, "", e);
-            got_exception = true;
-            exit_code = 1;
-        }
-#if defined(NCBI_COMPILER_MSVC)  &&  defined(_DEBUG)
-        // Microsoft promotes many common application errors to exceptions.
-        // This includes occurrences such as dereference of a NULL pointer and
-        // walking off of a dangling pointer.  The catch-all is lifted only in
-        // debug mode to permit easy inspection of such error conditions, while
-        // maintaining safety of production, release-mode applications.
-        catch (...) {
-            ERR_POST_X(10, Warning <<
-                           "Application has thrown an exception of unknown type");
-            throw;
-        }
-#endif
     }
-    else {
-        x_TryMain(diag, conf, &exit_code, &got_exception);
+    catch (CArgException& e) {
+        // Print USAGE and the exception error message
+        if ( m_ArgDesc.get() ) {
+            x_AddDefaultArgs();
+            string str;
+            m_ArgDesc->PrintUsage(str);
+            cerr << str;
+            CStreamDiagHandler* errh =
+                dynamic_cast<CStreamDiagHandler*>(GetDiagHandler());
+            if (!errh  ||  errh->GetStream() != &cerr) {
+                cerr << "Error in command-line arguments. "
+                    "See error logs for more details." << endl;
+            }
+            cerr << string(72, '=') << endl;
+        }
+        NCBI_REPORT_EXCEPTION_X(18, "", e);
+        got_exception = true;
+        exit_code = 1;
     }
 
     if (m_ExitCodeCond == eAllExits
