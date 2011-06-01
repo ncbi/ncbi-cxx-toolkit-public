@@ -56,6 +56,7 @@
 #define TIMEOUT_OPTION "timeout"
 #define CONFIRM_READ_OPTION "confirm-read"
 #define ROLLBACK_READ_OPTION "rollback-read"
+#define JOB_ID_OPTION "job-id"
 #define QUERY_FIELD_OPTION "query-field"
 #define FAIL_JOB_OPTION "fail-job"
 #define NOW_OPTION "now"
@@ -95,6 +96,7 @@ enum EOption {
     eTimeout,
     eConfirmRead,
     eRollbackRead,
+    eJobId,
     eWorkerNodes,
     eActiveJobCount,
     eJobsByAffinity,
@@ -163,6 +165,7 @@ private:
         unsigned limit;
         unsigned timeout;
         string reservation_token;
+        std::vector<std::string> job_ids;
         string query;
         vector<string> query_fields;
         CNetScheduleAPI::EJobStatus job_status;

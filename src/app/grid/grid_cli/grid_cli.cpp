@@ -152,6 +152,10 @@ struct SOptionDefinition {
         ROLLBACK_READ_OPTION, "Release the specified reading reservation "
             "for some or all of the jobs."},
 
+    {CCommandLineParser::eOptionWithParameter, eJobId,
+        JOB_ID_OPTION, "Specify one or more job IDs directly "
+            "on the command line."},
+
     {CCommandLineParser::eSwitch, eWorkerNodes,
         "worker-nodes", "Print the list of active worker nodes."},
 
@@ -392,13 +396,14 @@ struct SCommandDefinition {
         "does not receive a reading confirmation within this time frame "
         "(see below), the jobs will change their status back to Done.\n\n"
         "In finalization mode, " PROGRAM_NAME " accepts job IDs from the "
-        "standard input stream (or the specified input file) and changes "
-        "their state either to from Reading to Confirmed (if the '--"
+        "standard input stream (or the specified input file, or a series "
+        "of the '--" JOB_ID_OPTION "' command line options) and changes "
+        "their state from Reading either to Confirmed (if the '--"
         CONFIRM_READ_OPTION "' " "option is given) or back to Done "
         "(for the '--" ROLLBACK_READ_OPTION "' option), which makes them "
         "available again for subsequent " READJOBS_COMMAND " operations.",
         {eNetSchedule, eQueue, eLimit, eTimeout, eOutputFile,
-            eConfirmRead, eRollbackRead, eInputFile, eAuth, -1}},
+            eConfirmRead, eRollbackRead, eJobId, eInputFile, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_CancelJob,
         "canceljob", "Cancel a NetSchedule job.",
@@ -698,6 +703,9 @@ int CGridCommandLineInterfaceApp::Run()
             case eConfirmRead:
             case eRollbackRead:
                 m_Opts.reservation_token = opt_value;
+                break;
+            case eJobId:
+                m_Opts.job_ids.push_back(opt_value);
                 break;
             case eQuery:
                 m_Opts.query = opt_value;
