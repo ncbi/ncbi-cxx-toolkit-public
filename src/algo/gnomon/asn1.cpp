@@ -532,9 +532,7 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
             int type = m ?  m->Type() : 0;
 
             string accession;
-            if (m == NULL) {
-                continue;
-            } else if ((m->Type()&CGeneModel::eChain)) {
+            if (m == NULL || (m->Type()&CGeneModel::eChain)) {
                 accession = CIdHandler::ToString(*CIdHandler::GnomonMRNA(id));
             } else {
                 accession = CIdHandler::ToString(*m->GetTargetId());
@@ -562,6 +560,7 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
             } else {
                 support = model.Support();
             }
+            vector<string> collected_cores;
             ITERATE(CSupportInfoSet, s, support) {
                 int id = s->GetId();
                 const CGeneModel* m = (id == model.ID()) ? &model : evidence.GetModel(id);
@@ -569,13 +568,17 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
                     CRef<CUser_object> uo = evidence.GetModelEvidenceUserObject(id);
                     if (uo.NotNull() && uo->HasField("Support")) {
                         const CUser_field& support_field = uo->GetField("Support");
-                        CollectUserField(support_field, "Core", cores);
+                        CollectUserField(support_field, "Core", collected_cores);
                         CollectUserField(support_field, "Proteins", proteins);
                         CollectUserField(support_field, "mRNAs", mrnas);
                         CollectUserField(support_field, "ESTs", ests);
                     }
                 }
-            }            
+            }
+            if (!(proteins.empty() && mrnas.empty() && ests.empty())) {
+                cores = collected_cores;
+                unknown.clear();
+            }
         }
 
         if (!chains.empty()) {
