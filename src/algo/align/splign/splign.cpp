@@ -1212,7 +1212,11 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         const THit::TCoord extent_right_m2 (100 + max(fixed_right, rspace));
 
         const THit::TCoord extent_left (min(extent_left_m1, extent_left_m2));
-        const THit::TCoord extent_right (min(extent_right_m1, extent_right_m2));
+        THit::TCoord extent_right (min(extent_right_m1, extent_right_m2));
+
+		//add polya length to extent
+		THit::TCoord poly_length = m_polya_start < kMax_UInt ? mrna_size - m_polya_start : 0;
+		if(extent_right < poly_length) extent_right = poly_length;
 
         if(ctg_strand) {
             smin = max(0, int(smin - extent_left));
