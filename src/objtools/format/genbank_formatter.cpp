@@ -203,6 +203,9 @@ void CGenbankFormatter::FormatDefline
 {
     list<string> l;
     Wrap(l, "DEFINITION", defline.GetDefline());
+    if( GetContext().GetConfig().DoHTML() ) {
+        TryToSanitizeHtmlList(l);
+    }
     text_os.AddParagraph(l, defline.GetObject());
 }
 
@@ -900,6 +903,10 @@ void CGenbankFormatter::FormatComment
             s_FixListIfBadWrap( l, l_old_last, GetIndent().length() + internalIndent );
         }
 
+        if( bHtml ) {
+            TryToSanitizeHtmlList(l);
+        }
+
         is_first = false;
     }
 
@@ -1027,169 +1034,6 @@ string s_GetLinkFeatureKey(
     return strLink;
 }
 
-// make sure we're not "double-sanitizing"
-// (e.g. "&gt;" to "&amp;gt;")
-//  ============================================================================
-static bool
-s_ShouldWeEscapeAmpersand( 
-    string::const_iterator str_iter, // yes, COPY not reference
-    const string::const_iterator &str_iter_end )
-//  ============================================================================
-{
-    _ASSERT(*str_iter == '&');
-    
-    // This is a long-winded way of checking if str_iter
-    // is at "&gt;", "&lt;" or "&amp;"
-    // I'm concerned about regexes being too slow.
-
-    ++str_iter;
-    if( str_iter != str_iter_end ) {
-        switch( *str_iter ) {
-            case 'g':
-            case 'l':
-                ++str_iter;
-                if( str_iter != str_iter_end && *str_iter == 't' ) {
-                    ++str_iter;
-                    if( str_iter != str_iter_end && *str_iter == ';'  ) {
-                        return false;
-                    }
-                }
-                break;
-            case 'a':
-                ++str_iter;
-                if( str_iter != str_iter_end && *str_iter == 'm' ) {
-                    ++str_iter;
-                    if( str_iter != str_iter_end && *str_iter == 'p' ) {
-                        ++str_iter;
-                        if( str_iter != str_iter_end && *str_iter == ';' ) {
-                            return false;
-                        }
-                    }
-                }
-                break;
-            default:
-                return true;
-        }
-    }
-    return true;
-}
-
-// see if the '<' opens an HTML tag (currently we 
-// only check for "href" (link) tags )
-//  ============================================================================
-static bool
-s_IsTagStart( 
-    const string::const_iterator &str_iter,
-    const string::const_iterator &str_iter_end ) 
-//  ============================================================================
-{
-    if( str_iter == str_iter_end ) {
-        return false;
-    }
-
-    // tags must start with '<'
-    if( *str_iter != '<' ) {
-        return false;
-    }
-
-    // this iter is just used for checking
-    string::const_iterator check_str_iter = str_iter;
-    // skip the "<"
-    ++check_str_iter; 
-
-    // zero or more whitespace next
-    while( check_str_iter != str_iter_end && isspace(*check_str_iter) ) {
-        ++check_str_iter;
-    }
-    if( check_str_iter == str_iter_end ) {
-        return false;
-    }
-
-    const string *expected_str = NULL;    
-
-    if( *check_str_iter == 'a' ) {
-        static const string kHref( " href=\"" );
-        expected_str = &kHref;
-    } else if( *check_str_iter == '/' ) {
-        static const string kClosingHref( "a>" );
-        expected_str = &kClosingHref;
-    } else {
-        return false;
-    }
-    ++check_str_iter;
-
-    string::size_type idx = 0;
-    for( ; check_str_iter != str_iter_end && idx < expected_str->length(); ++idx, ++check_str_iter ) {
-        if( *check_str_iter != (*expected_str)[idx] ) {
-            return false;
-        }
-    }
-
-    // we're in a tag if we matched the whole expected_str
-    return ( idx == expected_str->length() );
-}
-
-// We use the word "try" in the name because this is NOT airtight security,
-// but rather a net that catches the majority of cases.
-//  ============================================================================
-static void
-s_TryToSanitizeHtml( string &str )
-//  ============================================================================
-{
-    string result;
-    
-    // The "* 1.1" should handle most cases since data tends not to have
-    // too many characters that need escaping.
-    result.reserve( 1 + (int)( str.length() * 1.1 ) ); 
-
-    // we only sanitize when we're not in an url
-    bool in_html_tag = false;
-    ITERATE( string, str_iter, str ) {
-        // see if we're entering an HTML tag
-        if( ! in_html_tag && *str_iter =='<' && s_IsTagStart(str_iter, str.end()) ) {
-            in_html_tag = true;
-        }
-
-        // now that we know whether we're in a tag,
-        // process characters appropriately.
-        if( in_html_tag ) {
-            result += *str_iter;
-        } else {
-            switch( *str_iter ) {
-            case '&':
-                // make sure we're not "double-sanitizing"
-                // (e.g. "&gt;" to "&amp;gt;")
-                if( s_ShouldWeEscapeAmpersand(str_iter, str.end()) ) {
-                    result += "&amp;";
-                } else {
-                    result += '&';
-                }
-                break;
-            case '<':
-                result += "&lt;";
-                break;
-            case '>':
-                result += "&gt;";
-                break;
-            default:
-                result += *str_iter;
-                break;
-            }
-        }
-
-        // see if we're exiting an HTML tag
-        if( in_html_tag && *str_iter == '>' ) {
-            // tag is closed now
-            // (Note: does this consider cases where '>' is in quotes?)
-            in_html_tag = false;
-        }
-    }
-
-    // swap is faster than assignment
-    str.swap( result );
-}
-
-
 //  ============================================================================
 void CGenbankFormatter::FormatFeature
 (const CFeatureItemBase& f,
@@ -1226,7 +1070,7 @@ void CGenbankFormatter::FormatFeature
         string qual = '/' + (*it)->GetName(), value = (*it)->GetValue();
         TrimSpacesAndJunkFromEnds( value, true );
         if( bHtml ) {
-            s_TryToSanitizeHtml( value );
+            TryToSanitizeHtml( value );
         }
 
         switch ((*it)->GetStyle()) {
@@ -1304,6 +1148,11 @@ void CGenbankFormatter::FormatBasecount
 //
 // SEQUENCE
 
+// 60 bases in a line, a space between every 10 bases.
+const static TSeqPos s_kChunkSize = 10;
+const static TSeqPos s_kChunkCount = 6;
+const static TSeqPos s_kFullLineSize = s_kChunkSize*s_kChunkCount;
+
 static inline
 char* s_FormatSeqPosBack(char* p, TSeqPos v, size_t l)
 {
@@ -1313,10 +1162,135 @@ char* s_FormatSeqPosBack(char* p, TSeqPos v, size_t l)
     return p;
 }
 
+static TSeqPos
+s_CalcDistanceUntilNextSignificantGapOrEnd(
+    const CSequenceItem& seq,
+    CSeqVector_CI iter // yes, COPY not reference
+    )
+{
+    const CSeqMap &seq_map = seq.GetSequence().GetSeqMap();
+
+    TSeqPos dist_to_gap_or_end = 0;
+    while( iter ) {
+        if( ! iter.IsInGap() ) {
+            // CSeqMap_CI seq_map_ci = seq_map.FindSegment( iter.GetPos(), &seq.GetContext()->GetScope() );
+            CSeqMap_CI seq_map_ci = seq_map.FindResolved( &seq.GetContext()->GetScope(), iter.GetPos(), SSeqMapSelector() );
+            const TSeqPos seg_len = seq_map_ci.GetLength();
+            dist_to_gap_or_end += seg_len;
+            iter += seg_len;
+        } else {
+            // see if gap is tiny enough to disregard
+            // (the criterion is that it fit entirely on the current line,
+            // with a non-gap after it)
+            TSeqPos space_left_on_line = 
+                s_kFullLineSize - ( iter.GetPos() % s_kFullLineSize );
+            if( 0 == space_left_on_line ) {
+                space_left_on_line = s_kFullLineSize;
+            }
+
+            TSeqPos gap_size = 0;
+            while( iter && iter.IsInGap() && gap_size < space_left_on_line ) {
+                gap_size += iter.SkipGap();
+            }
+            if( gap_size >= space_left_on_line ) {
+                // gap is too big and should be printed separately
+                break;
+            } else {
+                // gap is tiny enough to print as N's, so keep going
+                dist_to_gap_or_end += gap_size;
+            }
+        }
+    }
+
+    return dist_to_gap_or_end;
+}
+
+static void
+s_FormatRegularSequencePiece
+(const CSequenceItem& seq,
+ IFlatTextOStream& text_os,
+ CSeqVector_CI &iter,
+ TSeqPos &total,
+ TSeqPos &base_count )
+{
+    // format of sequence position
+    const size_t kSeqPosWidth = 9;
+
+    const size_t kLineBufferSize = 100;
+    char line[kLineBufferSize];
+    // prefill the line buffer with spaces
+    fill(line, line+kLineBufferSize, ' ');
+
+    // if base-count is offset, we indent the initial line
+    TSeqPos initial_indent = 0;
+    if( (base_count % s_kFullLineSize) != 1 ) {
+        initial_indent = (base_count % s_kFullLineSize) - 1;
+        if( -1 == initial_indent ) {
+            initial_indent = (s_kFullLineSize - 1);
+        }
+    }
+
+    while ( total >= s_kFullLineSize ) {
+        char* linep = line + kSeqPosWidth;
+        s_FormatSeqPosBack(linep, base_count, kSeqPosWidth);
+
+        TSeqPos i = 0;
+        TSeqPos j = 0;
+
+        // partial beginning line occurs sometimes, so we have to
+        // offset some start-points
+        int bases_to_skip = 0;
+        if( initial_indent != 0 ) {
+            bases_to_skip = initial_indent;
+            // additional space required every chunk
+            int chunks_to_skip = (bases_to_skip / s_kChunkSize);
+            linep += (bases_to_skip + chunks_to_skip);
+            i = chunks_to_skip;
+            j = (bases_to_skip % s_kChunkSize);
+            // don't indent subsequent lines
+            initial_indent = 0; 
+        }
+        for ( ; i < s_kChunkCount; ++i) {
+            ++linep;
+            for ( ; j < s_kChunkSize; ++j, ++iter, ++linep) {
+                *linep = *iter;
+            }
+            j = 0;
+        }
+        i = 0;
+
+        total -= (s_kFullLineSize - bases_to_skip);
+        base_count += (s_kFullLineSize - bases_to_skip);
+
+        *linep = 0;
+        text_os.AddCLine( line, seq.GetObject() );
+    }
+    if ( total > 0 ) {
+        char* linep = line + kSeqPosWidth;
+        s_FormatSeqPosBack(linep, base_count, kSeqPosWidth);
+        base_count += total;
+        for ( TSeqPos i = 0; total > 0  &&  i < s_kChunkCount; ++i) {
+            ++linep;
+            for ( TSeqPos j = 0; total > 0  &&  j < s_kChunkSize; ++j, ++iter, --total, ++linep) {
+                *linep = *iter;
+            }
+        }
+
+        total = 0;
+
+        *linep = 0;
+        text_os.AddCLine( line, seq.GetObject() );
+    }
+}
+
 void CGenbankFormatter::FormatSequence
 (const CSequenceItem& seq,
  IFlatTextOStream& text_os)
 {
+    const bool bGapsHiddenUntilClicked = ( 
+        GetContext().GetConfig().DoHTML() && 
+        GetContext().GetConfig().IsModeEntrez() );
+
     const CSeqVector& vec = seq.GetSequence();
     TSeqPos from = seq.GetFrom();
     TSeqPos to = seq.GetTo();
@@ -1325,46 +1299,45 @@ void CGenbankFormatter::FormatSequence
     TSeqPos vec_pos = from-1;
     TSeqPos total = from <= to? to - from + 1: 0;
     
-    // format of sequence position
-    const size_t kSeqPosWidth = 9;
-    
-    // 60 bases in a line, a space between every 10 bases.
-    const TSeqPos kChunkSize = 10;
-    const TSeqPos kChunkCount = 6;
-    const TSeqPos kFullLineSize = kChunkSize*kChunkCount;
-
-    const size_t kLineBufferSize = 100;
-    char line[kLineBufferSize];
-    // prefill the line buffer with spaces
-    fill(line, line+kLineBufferSize, ' ');
-
     CSeqVector_CI iter(vec, vec_pos, CSeqVector_CI::eCaseConversion_lower);
-    while ( total >= kFullLineSize ) {
-        char* linep = line + kSeqPosWidth;
-        s_FormatSeqPosBack(linep, base_count, kSeqPosWidth);
-        for ( TSeqPos i = 0; i < kChunkCount; ++i) {
-            ++linep;
-            for ( TSeqPos j = 0; j < kChunkSize; ++j, ++iter, ++linep) {
-                *linep = *iter;
-            }
-        }
-        total -= kFullLineSize;
-        base_count += kFullLineSize;
+    if( ! bGapsHiddenUntilClicked ) {
+        // normal case: print entire sequence, including all the N's in any gap.
+        s_FormatRegularSequencePiece( seq, text_os, iter, total, base_count );
+    } else {
+        // special case: instead of showing the N's in a gap right away, we have the 
+        // "Expand Ns" link that users can click to show the Ns
+        while( iter ) {
+            const TSeqPos distance_until_next_significant_gap = 
+                min( total, s_CalcDistanceUntilNextSignificantGapOrEnd(seq, iter) );
 
-        *linep = 0;
-        text_os.AddCLine( line, seq.GetObject() );
-    }
-    if ( total > 0 ) {
-        char* linep = line + kSeqPosWidth;
-        s_FormatSeqPosBack(linep, base_count, kSeqPosWidth);
-        for ( TSeqPos i = 0; total > 0  &&  i < kChunkCount; ++i) {
-            ++linep;
-            for ( TSeqPos j = 0; total > 0  &&  j < kChunkSize; ++j, ++iter, --total, ++linep) {
-                *linep = *iter;
+            if( 0 == distance_until_next_significant_gap ) {
+                const static int kExpandedGapDisplay = 65536;
+
+                TSeqPos gap_size = 0;
+                // sum up gap length, skipping over all gaps until we reach real data
+                while( iter && iter.IsInGap() ) {
+                    gap_size += iter.SkipGap();
+                }
+                
+                // build gap size text and "Expand Ns" link
+                CNcbiOstrstream gap_link;
+                const char *mol_type = ( seq.GetContext()->IsProt() ? "aa" : "bp" );
+                gap_link << "          [gap " << gap_size << " " << mol_type << "]";
+                gap_link << "    <a href=\"" << strLinkBaseEntrezViewer << seq.GetContext()->GetGI();
+                gap_link << "?fmt_mask=" << kExpandedGapDisplay;
+                gap_link << "\">Expand Ns</a>";
+
+                text_os.AddLine( (string)CNcbiOstrstreamToString(gap_link) );
+
+                total -= gap_size;
+                base_count += gap_size;
+            } else {
+                // create a fake total so we stop before the next gap
+                TSeqPos fake_total = distance_until_next_significant_gap;
+                s_FormatRegularSequencePiece( seq, text_os, iter, fake_total, base_count);
+                total -= ( distance_until_next_significant_gap - fake_total );
             }
-        }
-        *linep = 0;
-        text_os.AddCLine( line, seq.GetObject() );
+        }        
     }
 }
 

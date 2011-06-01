@@ -2249,12 +2249,12 @@ void CFeatureItem::x_AddQuals(
 {
 //    /**fl**/
     // leaving this here since it's so useful for debugging purposes.
-    //97649..97654
+    //1017986..1018858
     /* if( 
-        (GetLoc().GetStart(eExtreme_Biological) == 97648 &&
-        GetLoc().GetStop(eExtreme_Biological) == 97653) ||
-        (GetLoc().GetStop(eExtreme_Biological) == 97648 &&
-        GetLoc().GetStart(eExtreme_Biological) == 97653)
+        (GetLoc().GetStart(eExtreme_Biological) == 1017985 &&
+        GetLoc().GetStop(eExtreme_Biological) == 1018857) ||
+        (GetLoc().GetStop(eExtreme_Biological) == 1017985 &&
+        GetLoc().GetStart(eExtreme_Biological) == 1018857)
         ) {
         cerr << "";
         } */
@@ -4482,7 +4482,7 @@ void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
         x_FormatNoteQual(eFQ_go_component, "GO_component", qvec);
         x_FormatNoteQual(eFQ_go_function, "GO_function", qvec);
         x_FormatNoteQual(eFQ_go_process, "GO_process", qvec);
-        s_QualVectorToNote(qvec, false, notestr, suffix, add_period);
+        s_QualVectorToNote(qvec, true, notestr, suffix, add_period);
     }
     s_NoteFinalize(add_period, notestr, ff, eTilde_tilde);
 }
@@ -4547,6 +4547,9 @@ void CFeatureItem::x_FormatGOQualCombined
 
     string combined;
 
+
+    string::size_type this_part_beginning_text_string_pos = 0;
+
     // now concatenate their values into the variable "combined"
     const string *pLastQualTextString = NULL; 
     ITERATE( vector<CConstRef<CFlatGoQVal> >, iter, goQuals ) {
@@ -4564,6 +4567,7 @@ void CFeatureItem::x_FormatGOQualCombined
             // normal case: each CFlatGoQVal has its own part
             if( ! combined.empty() ) {
                 combined += "; ";
+                this_part_beginning_text_string_pos = combined.length() - 1;
             }
             combined += temp_qvec.back()->GetValue();
         } else {
@@ -4576,9 +4580,13 @@ void CFeatureItem::x_FormatGOQualCombined
             _ASSERT( post_text_string_pos != NPOS );
             post_text_string_pos += pLastQualTextString->length();
 
-            // append the new part after the text string
-            combined.append( new_value, post_text_string_pos, 
+            // append the new part after the text string, but only
+            // if it's not a duplicate
+            string str_to_append = new_value.substr( post_text_string_pos, 
                 (pLastQualTextString->length() - post_text_string_pos) );
+            if( NStr::Find(combined, str_to_append, this_part_beginning_text_string_pos) == NPOS ) {
+                combined.append( str_to_append );
+            }
         }
 
         pLastQualTextString = pThisQualTextString;
@@ -5655,6 +5663,183 @@ static ESourceQualifier s_OrgModToSlot(const COrgMod& om)
     }
 }
 
+struct SVoucherInfo {
+    SVoucherInfo( 
+        const string *links,
+        bool          prependInstitute,
+        const string *prefix,
+        const string *suffix,
+        const char   *inst_full_name ): 
+    m_Links(links),
+    m_PrependInstitute(prependInstitute),
+    m_Prefix(prefix),
+    m_Suffix(suffix),
+    m_InstFullName(inst_full_name) { }
+
+    const string *m_Links;
+    bool          m_PrependInstitute;
+    const string *m_Prefix;
+    const string *m_Suffix;
+    const char   *m_InstFullName;
+};
+
+static string s_GetSpecimenVoucherText(
+    CBioseqContext& ctx,
+    const string& strRawName )
+{
+    if ( ! ctx.Config().DoHTML() ) {
+        return strRawName;
+    }
+
+    static const string s_atcc_base("http://www.atcc.org/SearchCatalogs/linkin?id=");
+    static const string s_bcrc_base("http://strain.bcrc.firdi.org.tw/BSAS/controller?event=SEARCH&bcrc_no=");
+    static const string s_cbs_base("http://www.cbs.knaw.nl/collections/BioloMICS.aspx?Fields=All&ExactMatch=T&Table=CBS+strain+database&Name=CBS+");
+    static const string s_ccap_base("http://www.ccap.ac.uk/strain_info.php?Strain_No=");
+    static const string s_ccmp_base("https://ccmp.bigelow.org/node/1/strain/CCMP");
+    static const string s_ccug_base("http://www.ccug.se/default.cfm?page=search_record.cfm&db=mc&s_tests=1&ccugno=");
+    static const string s_cori_base("http://ccr.coriell.org/Sections/Search/Sample_Detail.aspx?Ref=");
+    static const string s_dsmz_base("http://www.dsmz.de/microorganisms/search_no.php?q=");
+    static const string s_fsu_base("http://www.prz.uni-jena.de/data.php?fsu=");
+    static const string s_icmp_base("http://nzfungi.landcareresearch.co.nz/icmp/results_cultures.asp?ID=&icmpVAR=");
+    static const string s_kctc_base("http://www.brc.re.kr/English/_SearchView.aspx?sn=");
+    static const string s_ku_base("http://collections.nhm.ku.edu/");
+    static const string s_pcc_base("http://www.crbip.pasteur.fr/fiches/fichecata.jsp?crbip=PCC+");
+    static const string s_pcmb_base("http://www2.bishopmuseum.org/HBS/PCMB/results3.asp?searchterm3=");
+    static const string s_pdd_base("http://nzfungi.landcareresearch.co.nz/html/data_collections_details.asp?CID=");
+    static const string s_sag_base("http://sagdb.uni-goettingen.de/detailedList.php?str_number=");
+    static const string s_tgrc_base("http://tgrc.ucdavis.edu/Data/Acc/AccDetail.aspx?AccessionNum=");
+    static const string s_uam_base("http://arctos.database.museum/guid/");
+    static const string s_ypm_base("http://peabody.research.yale.edu/cgi-bin/Query.Ledger?");
+
+    static const string s_colon_pfx(":");
+
+    static const string s_kui_pfx("KU_Fish/detail.jsp?record=");
+    static const string s_kuit_pfx("KU_Tissue/detail.jsp?record=");
+    static const string s_psu_pfx("PSU:Mamm:");
+
+    static const string s_ypment_pfx("LE=ent&ID=");
+    static const string s_ypmher_pfx("LE=her&ID=");
+    static const string s_ypmich_pfx("LE=ich&ID=");
+    static const string s_ypmiz_pfx("LE=iz&ID=");
+    static const string s_ypmmam_pfx("LE=mam&ID=");
+    static const string s_ypmorn_pfx("LE=orn&ID=");
+
+    static const string s_bcrc_sfx("&type_id=6&keyword=;;");
+
+    typedef pair<const string, SVoucherInfo>  TVoucherInfoElem;
+    static const TVoucherInfoElem sc_voucher_info_map[] = {
+        TVoucherInfoElem("ATCC",             SVoucherInfo(&s_atcc_base, false, NULL,          NULL,        "American Type Culture Collection") ),
+        TVoucherInfoElem("BCRC",             SVoucherInfo(&s_bcrc_base, false, NULL,          &s_bcrc_sfx, "Bioresource Collection and Research Center") ),
+        TVoucherInfoElem("CBS",              SVoucherInfo(&s_cbs_base,  false, NULL,          NULL,        "Centraalbureau voor Schimmelcultures, Fungal and Yeast Collection") ),
+        TVoucherInfoElem("CCAP",             SVoucherInfo(&s_ccap_base, false, NULL,          NULL,        "Culture Collection of Algae and Protozoa") ),
+        TVoucherInfoElem("CCMP",             SVoucherInfo(&s_ccmp_base, false, NULL,          NULL,        "Provasoli-Guillard National Center for Culture of Marine Phytoplankton") ),
+        TVoucherInfoElem("CCUG",             SVoucherInfo(&s_ccug_base, false, NULL,          NULL,        "Culture Collection, University of Goteborg, Department of Clinical Bacteriology") ),
+        TVoucherInfoElem("CRCM:Bird",        SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Washington State University, Charles R. Conner Museum, bird collection") ),
+        TVoucherInfoElem("Coriell",          SVoucherInfo(&s_cori_base, false, NULL,          NULL,        "Coriell Institute for Medical Research") ),
+        TVoucherInfoElem("DGR:Bird",         SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Division of Genomic Resources, University of New Mexico, bird tissue collection") ),
+        TVoucherInfoElem("DGR:Ento",         SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Division of Genomic Resources, University of New Mexico, entomology tissue collection") ),
+        TVoucherInfoElem("DGR:Fish",         SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Division of Genomic Resources, University of New Mexico, fish tissue collection") ),
+        TVoucherInfoElem("DGR:Herp",         SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Division of Genomic Resources, University of New Mexico, herpetology tissue collection") ),
+        TVoucherInfoElem("DGR:Mamm",         SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Division of Genomic Resources, University of New Mexico, mammal tissue collection") ),
+        TVoucherInfoElem("DSM",              SVoucherInfo(&s_dsmz_base, false, NULL,          NULL,        "Deutsche Sammlung von Mikroorganismen und Zellkulturen GmbH") ),
+        TVoucherInfoElem("FSU<DEU>",         SVoucherInfo(&s_fsu_base,  false, NULL,          NULL,        "Jena Microbial Resource Collection") ),
+        TVoucherInfoElem("ICMP",             SVoucherInfo(&s_icmp_base, false, NULL,          NULL,        "International Collection of Microorganisms from Plants") ),
+        TVoucherInfoElem("KCTC",             SVoucherInfo(&s_kctc_base, false, NULL,          NULL,        "Korean Collection for Type Cultures") ),
+        TVoucherInfoElem("KU:I",             SVoucherInfo(&s_ku_base,   false, &s_kui_pfx,    NULL,        "University of Kansas, Museum of Natural History, Ichthyology collection") ),
+        TVoucherInfoElem("KU:IT",            SVoucherInfo(&s_ku_base,   false, &s_kuit_pfx,   NULL,        "University of Kansas, Museum of Natural History, Ichthyology tissue collection") ),
+        TVoucherInfoElem("KWP:Ento",         SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Kenelm W. Philip Collection, University of Alaska Museum of the North, Lepidoptera collection") ),
+        TVoucherInfoElem("MSB:Bird",         SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Museum of Southwestern Biology, Bird Collection") ),
+        TVoucherInfoElem("MSB:Mamm",         SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Museum of Southwestern Biology, Mammal Collection") ),
+        TVoucherInfoElem("MSB:Para",         SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Museum of Southwestern Biology, Parasitology Collection") ),
+        TVoucherInfoElem("MVZ:Bird",         SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Museum of Vertebrate Zoology, University of California at Berkeley, Bird Collection") ),
+        TVoucherInfoElem("MVZ:Egg",          SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Museum of Vertebrate Zoology, University of California at Berkeley, Egg Collection") ),
+        TVoucherInfoElem("MVZ:Herp",         SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Museum of Vertebrate Zoology, University of California at Berkeley, Herpetology Collection") ),
+        TVoucherInfoElem("MVZ:Hild",         SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Museum of Vertebrate Zoology, University of California at Berkeley, Milton Hildebrand collection") ),
+        TVoucherInfoElem("MVZ:Img",          SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Museum of Vertebrate Zoology, University of California at Berkeley, Image Collection") ),
+        TVoucherInfoElem("MVZ:Mamm",         SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Museum of Vertebrate Zoology, University of California at Berkeley, Mammal Collection") ),
+        TVoucherInfoElem("MVZ:Page",         SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Museum of Vertebrate Zoology, University of California at Berkeley, Notebook Page Collection") ),
+        TVoucherInfoElem("MVZObs:Herp",      SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Museum of Vertebrate Zoology, University of California at Berkeley, Herpetology Collection") ),
+        TVoucherInfoElem("NBSB:Bird",        SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "National Biomonitoring Specimen Bank, U.S. Geological Survey, bird collection") ),
+        TVoucherInfoElem("PCC",              SVoucherInfo(&s_pcc_base,  false, NULL,          NULL,        "Pasteur Culture Collection of Cyanobacteria") ),
+        TVoucherInfoElem("PCMB",             SVoucherInfo(&s_pcmb_base, false, NULL,          NULL,        "The Pacific Center for Molecular Biodiversity") ),
+        TVoucherInfoElem("PDD",              SVoucherInfo(&s_pdd_base,  false, NULL,          NULL,        "New Zealand Fungal Herbarium") ),
+        TVoucherInfoElem("PSU<USA-OR>:Mamm", SVoucherInfo(&s_uam_base,  false, &s_psu_pfx,    NULL,        "Portland State University, Vertebrate Biology Museum, Mammal Collection") ),
+        TVoucherInfoElem("SAG",              SVoucherInfo(&s_sag_base,  false, NULL,          NULL,        "Sammlung von Algenkulturen at Universitat Gottingen") ),
+        TVoucherInfoElem("TGRC",             SVoucherInfo(&s_tgrc_base, false, NULL,          NULL,        "C.M. Rick Tomato Genetics Resource Center") ),
+        TVoucherInfoElem("UAM:Bird",         SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "University of Alaska, Museum of the North, Bird Collection") ),
+        TVoucherInfoElem("UAM:Bryo",         SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "University of Alaska, Museum of the North, Bryozoan Collection") ),
+        TVoucherInfoElem("UAM:Crus",         SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "University of Alaska, Museum of the North, Marine Arthropod Collection") ),
+        TVoucherInfoElem("UAM:Ento",         SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "University of Alaska, Museum of the North, Insect Collection") ),
+        TVoucherInfoElem("UAM:Fish",         SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "University of Alaska, Museum of the North, Fish Collection") ),
+        TVoucherInfoElem("UAM:Herb",         SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "University of Alaska, Museum of the North, UAM Herbarium") ),
+        TVoucherInfoElem("UAM:Herp",         SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "University of Alaska, Museum of the North, Amphibian and Reptile Collection") ),
+        TVoucherInfoElem("UAM:Mamm",         SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "University of Alaska, Museum of the North, Mammal Collection") ),
+        TVoucherInfoElem("UAM:Moll",         SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "University of Alaska, Museum of the North, Mollusc Collection") ),
+        TVoucherInfoElem("UAM:Paleo",        SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "University of Alaska, Museum of the North, paleontology collection") ),
+        TVoucherInfoElem("UAMObs:Mamm",      SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "University of Alaska, Museum of the North, Mammal Collection") ),
+        TVoucherInfoElem("WNMU:Bird",        SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Western New Mexico University Museum, bird collection") ),
+        TVoucherInfoElem("WNMU:Fish",        SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Western New Mexico University Museum, fish collection") ),
+        TVoucherInfoElem("WNMU:Mamm",        SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Western New Mexico University Museum, mammal collection") ),
+        TVoucherInfoElem("YPM:ENT",          SVoucherInfo(&s_ypm_base,  false, &s_ypment_pfx, NULL,        "Yale Peabody Museum of Natural History, Entomology Collection") ),
+        TVoucherInfoElem("YPM:HER",          SVoucherInfo(&s_ypm_base,  false, &s_ypmher_pfx, NULL,        "Yale Peabody Museum of Natural History, Herpetology Collection") ),
+        TVoucherInfoElem("YPM:ICH",          SVoucherInfo(&s_ypm_base,  false, &s_ypmich_pfx, NULL,        "Yale Peabody Museum of Natural History, Ichthyology Collection") ),
+        TVoucherInfoElem("YPM:IZ",           SVoucherInfo(&s_ypm_base,  false, &s_ypmiz_pfx,  NULL,        "Yale Peabody Museum of Natural History, Invertebrate Zoology Collection") ),
+        TVoucherInfoElem("YPM:MAM",          SVoucherInfo(&s_ypm_base,  false, &s_ypmmam_pfx, NULL,        "Yale Peabody Museum of Natural History, Mammology Collection") ),
+        TVoucherInfoElem("YPM:ORN",          SVoucherInfo(&s_ypm_base,  false, &s_ypmorn_pfx, NULL,        "Yale Peabody Museum of Natural History, Ornithology Collection") ),
+    };
+    typedef CStaticArrayMap<const string, SVoucherInfo, PCase> TVoucherInfoMap;
+    DEFINE_STATIC_ARRAY_MAP(TVoucherInfoMap, sc_VoucherInfoMap, sc_voucher_info_map);
+    
+    // extract "inst" and "id".  e.g. For "ATCC:27305", inst becomes "ATCC" and "id" becomes "27305"
+    string inst;
+    string id;
+    {{
+        // if one colon, split there.  If two colons, split on the second one
+        NStr::SplitInTwo( strRawName, ":", inst, id );
+        if( id.empty() ) {
+            // no colon at all, so we can't parse it
+            return strRawName;
+        }
+
+        // if id contains another colon, we should actually split there
+        if( NStr::Find(id, ":") != NPOS ) {
+            string rest_of_inst;
+            string real_id;
+            NStr::SplitInTwo(id, ":", rest_of_inst, real_id);
+            inst = inst + ":" + rest_of_inst;
+            id = real_id;
+        }
+    }}
+
+    
+    
+    TVoucherInfoMap::const_iterator voucher_info_iter = sc_VoucherInfoMap.find(inst);
+    if( voucher_info_iter != sc_VoucherInfoMap.end() ) {
+        const SVoucherInfo &voucher_info = voucher_info_iter->second;
+
+        CNcbiOstrstream text;
+
+        text << "<acronym title=\"" << voucher_info.m_InstFullName << "\" class=\"voucher\">"
+             << inst << "</acronym>"
+             << ":"
+             << "<a href=\"" << *voucher_info.m_Links;
+        if( voucher_info.m_PrependInstitute) {
+            text << inst;
+        }
+        if( voucher_info.m_Prefix != NULL ) {
+            text << *voucher_info.m_Prefix;
+        }
+        text << id;
+        if( voucher_info.m_Suffix ) {
+            text << *voucher_info.m_Suffix;
+        }
+        text << "\">" << id << "</a>";
+        return CNcbiOstrstreamToString(text);
+    } else {
+        return strRawName;
+    }
+}
+
 
 void CSourceFeatureItem::x_AddQuals(const COrg_ref& org, CBioseqContext& ctx) const
 {
@@ -5694,6 +5879,15 @@ void CSourceFeatureItem::x_AddQuals(const COrg_ref& org, CBioseqContext& ctx) co
                 x_AddQual(slot, new CFlatOrgModQVal(mod));
                 break;
                 }
+            case eSQ_bio_material:
+            case eSQ_culture_collection:
+            case eSQ_specimen_voucher:
+                {{
+                    CRef<COrgMod> mod( new COrgMod((*it)->GetSubtype(), 
+                        ( (*it)->CanGetSubname() ? s_GetSpecimenVoucherText(ctx, (*it)->GetSubname()) : kEmptyStr ) ));
+                    x_AddQual(slot, new CFlatOrgModQVal(*mod));
+                }}
+                break;
             case eSQ_none:
                 break;
             default:

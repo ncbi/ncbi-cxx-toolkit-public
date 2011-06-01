@@ -1187,5 +1187,157 @@ bool ConvertQuotesNotInHTMLTags( string &str )
     return changes_made;
 }
 
+// make sure we're not "double-sanitizing"
+// (e.g. "&gt;" to "&amp;gt;")
+//  ============================================================================
+static bool
+s_ShouldWeEscapeAmpersand( 
+    string::const_iterator str_iter, // yes, COPY not reference
+    const string::const_iterator &str_iter_end )
+//  ============================================================================
+{
+    _ASSERT(*str_iter == '&');
+    
+    // This is a long-winded way of checking if str_iter
+    // is at "&gt;", "&lt;" or "&amp;"
+    // I'm concerned about regexes being too slow.
+
+    ++str_iter;
+    if( str_iter != str_iter_end ) {
+        switch( *str_iter ) {
+            case 'g':
+            case 'l':
+                ++str_iter;
+                if( str_iter != str_iter_end && *str_iter == 't' ) {
+                    ++str_iter;
+                    if( str_iter != str_iter_end && *str_iter == ';'  ) {
+                        return false;
+                    }
+                }
+                break;
+            case 'a':
+                ++str_iter;
+                if( str_iter != str_iter_end && *str_iter == 'm' ) {
+                    ++str_iter;
+                    if( str_iter != str_iter_end && *str_iter == 'p' ) {
+                        ++str_iter;
+                        if( str_iter != str_iter_end && *str_iter == ';' ) {
+                            return false;
+                        }
+                    }
+                }
+                break;
+            default:
+                return true;
+        }
+    }
+    return true;
+}
+
+// see if the '<' opens an HTML tag (currently we 
+// only check for a few kinds of tags )
+//  ============================================================================
+static bool
+s_IsTagStart( 
+    const string::const_iterator &str_iter,
+    const string::const_iterator &str_iter_end )
+//  ============================================================================
+{
+    static const string possible_tag_starts[] = {
+        "<a href=",
+        "<acronym title",
+        "</a>",
+        "</acronym"
+    }; 
+    static const size_t num_possible_tag_starts = 
+        (sizeof(possible_tag_starts) / sizeof(possible_tag_starts[0]));
+
+    // check every string it might start with
+    for( int possible_str_idx = 0; possible_str_idx < num_possible_tag_starts; ++possible_str_idx ) {
+        const string &expected_str = possible_tag_starts[possible_str_idx];
+
+        string::size_type idx = 0;
+        string::const_iterator check_str_iter = str_iter;
+        for( ; check_str_iter != str_iter_end && idx < expected_str.length(); ++idx, ++check_str_iter ) {
+            if( *check_str_iter != expected_str[idx] ) {
+                break;
+            }
+        }
+
+        if( idx == expected_str.length() ) {
+            return true;
+        }
+    }
+
+    // we're in a tag if we matched the whole expected_str
+    return false;
+}
+
+//  ============================================================================
+void
+TryToSanitizeHtml( string &str )
+//  ============================================================================
+{
+    string result;
+    
+    // The "* 1.1" should handle most cases since data tends not to have
+    // too many characters that need escaping.
+    result.reserve( 1 + (int)( str.length() * 1.1 ) ); 
+
+    // we only sanitize when we're not in an url
+    bool in_html_tag = false;
+    ITERATE( string, str_iter, str ) {
+        // see if we're entering an HTML tag
+        if( ! in_html_tag && *str_iter =='<' && s_IsTagStart(str_iter, str.end()) ) {
+            in_html_tag = true;
+        }
+
+        // now that we know whether we're in a tag,
+        // process characters appropriately.
+        if( in_html_tag ) {
+            result += *str_iter;
+        } else {
+            switch( *str_iter ) {
+            case '&':
+                // make sure we're not "double-sanitizing"
+                // (e.g. "&gt;" to "&amp;gt;")
+                if( s_ShouldWeEscapeAmpersand(str_iter, str.end()) ) {
+                    result += "&amp;";
+                } else {
+                    result += '&';
+                }
+                break;
+            case '<':
+                result += "&lt;";
+                break;
+            case '>':
+                result += "&gt;";
+                break;
+            default:
+                result += *str_iter;
+                break;
+            }
+        }
+
+        // see if we're exiting an HTML tag
+        if( in_html_tag && *str_iter == '>' ) {
+            // tag is closed now
+            // (Note: does this consider cases where '>' is in quotes?)
+            in_html_tag = false;
+        }
+    }
+
+    // swap is faster than assignment
+    str.swap( result );
+}
+
+void 
+TryToSanitizeHtmlList( std::list<std::string> &strs )
+{
+    NON_CONST_ITERATE( std::list<std::string>, str_iter, strs ) {
+        TryToSanitizeHtml( *str_iter );
+    }
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

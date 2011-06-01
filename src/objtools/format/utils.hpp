@@ -179,6 +179,11 @@ void NcbiId(CNcbiOstream& os, const T& id, bool html = false)
 // Returns true if it made any changes.
 bool ConvertQuotesNotInHTMLTags( string &str );
 
+// We use the word "try" in the name because this is NOT airtight security,
+// but rather a net that catches the majority of cases.
+void TryToSanitizeHtml( std::string &str );
+void TryToSanitizeHtmlList( std::list<std::string> &strs );
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
