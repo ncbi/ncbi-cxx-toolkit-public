@@ -224,7 +224,8 @@ struct SOptionDefinition {
         "wnode-guid", "Worker node GUID."},
 
     {CCommandLineParser::eOptionWithParameter, eFailJob,
-        FAIL_JOB_OPTION, "Report the job as failed."},
+        FAIL_JOB_OPTION, "Report the job as failed "
+            "and specify an error message."},
 
     {CCommandLineParser::ePositionalArgument, eQueueArg, "QUEUE", NULL},
 
