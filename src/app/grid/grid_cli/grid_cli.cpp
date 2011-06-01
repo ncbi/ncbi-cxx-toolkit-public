@@ -210,17 +210,14 @@ struct SOptionDefinition {
     {CCommandLineParser::eSwitch, eAllJobs,
         "all-jobs", "Apply to all jobs in the queue."},
 
-    {CCommandLineParser::eSwitch, eRegisterWNode,
-        "register-wnode", "Register the worker node. Requires a "
-            "control port number. Generates and prints a GUID for "
-            "this registration unless a previously generated GUID "
-            "is specified, in which case that previous registration "
-            "will be renewed."},
+    {CCommandLineParser::eOptionWithParameter, eRegisterWNode,
+        "register-wnode", "Generate and print a new GUID "
+            "and register the specified worker node control "
+            "port with the generated GUID."},
 
-    {CCommandLineParser::eSwitch, eUnregisterWNode,
-        "unregister-wnode", "Unregister the worker node identified by "
-            "the control port number and the GUID that were used "
-            "during worker node initialization."},
+    {CCommandLineParser::eOptionWithParameter, eUnregisterWNode,
+        "unregister-wnode", "Unregister the worker node "
+            "identified by the specified GUID."},
 
     {CCommandLineParser::eOptionWithParameter, eWNodePort,
         "wnode-port", "Worker node control port number."},
@@ -421,8 +418,7 @@ struct SCommandDefinition {
         "regwnode", "Register or unregister a worker node.",
         "This command initiates and terminates worker node sessions "
         "on NetSchedule servers.",
-        {eNetSchedule, eQueue, eRegisterWNode, eUnregisterWNode,
-            eWNodePort, eWNodeGUID, eAuth, -1}},
+        {eNetSchedule, eQueue, eRegisterWNode, eUnregisterWNode, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_RequestJob,
         REQUESTJOB_COMMAND, "Get a job from NetSchedule for processing.",
@@ -720,10 +716,12 @@ int CGridCommandLineInterfaceApp::Run()
             case eExtendLifetime:
                 m_Opts.extend_lifetime_by = NStr::StringToUInt(opt_value);
                 break;
+            case eRegisterWNode:
             case eWNodePort:
                 m_Opts.wnode_port =
                     (unsigned short) NStr::StringToUInt(opt_value);
                 break;
+            case eUnregisterWNode:
             case eWNodeGUID:
                 m_Opts.wnode_guid = opt_value;
                 break;
