@@ -45,6 +45,7 @@
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_safe_static.hpp>
+#include <corelib/ncbi_param.hpp>
 #include <corelib/ncbi_limits.h>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/error_codes.hpp>
@@ -418,6 +419,12 @@ void CThread::CreateThreadsTls(void)
 }
 
 
+NCBI_PARAM_DECL(bool, Thread, Catch_Unhandled_Exceptions);
+NCBI_PARAM_DEF_EX(bool, Thread, Catch_Unhandled_Exceptions, true, 0,
+                  THREAD_CATCH_UNHANDLED_EXCEPTIONS);
+typedef NCBI_PARAM_TYPE(Thread, Catch_Unhandled_Exceptions) TParamThreadCatchExceptions;
+
+
 TWrapperRes CThread::Wrapper(TWrapperArg arg)
 {
     // Get thread object and self ID
@@ -434,38 +441,55 @@ TWrapperRes CThread::Wrapper(TWrapperArg arg)
         CProcess::sx_GetPid(CProcess::ePID_GetThread);
 #endif
 
+    bool catch_all = TParamThreadCatchExceptions::GetDefault();
+
     // Run user-provided thread main function here
-    try {
-        thread_obj->m_ExitData = thread_obj->Main();
-    }
-    catch (CExitThreadException& e) {
-        e.EnterWrapper();
-    }
+    if ( catch_all ) {
+        try {
+            thread_obj->m_ExitData = thread_obj->Main();
+        }
+        catch (CExitThreadException& e) {
+            e.EnterWrapper();
+        }
 #if defined(NCBI_COMPILER_MSVC)  &&  defined(_DEBUG)
-    // Microsoft promotes many common application errors to exceptions.
-    // This includes occurrences such as dereference of a NULL pointer and
-    // walking off of a dangling pointer.  The catch-all is lifted only in
-    // debug mode to permit easy inspection of such error conditions, while
-    // maintaining safety of production, release-mode applications.
-    NCBI_CATCH_X(1, "CThread::Wrapper: CThread::Main() failed");
+        // Microsoft promotes many common application errors to exceptions.
+        // This includes occurrences such as dereference of a NULL pointer and
+        // walking off of a dangling pointer.  The catch-all is lifted only in
+        // debug mode to permit easy inspection of such error conditions, while
+        // maintaining safety of production, release-mode applications.
+        NCBI_CATCH_X(1, "CThread::Wrapper: CThread::Main() failed");
 #else
-    NCBI_CATCH_ALL_X(2, "CThread::Wrapper: CThread::Main() failed");
+        NCBI_CATCH_ALL_X(2, "CThread::Wrapper: CThread::Main() failed");
 #endif
+    }
+    else {
+        try {
+            thread_obj->m_ExitData = thread_obj->Main();
+        }
+        catch (CExitThreadException& e) {
+            e.EnterWrapper();
+        }
+    }
 
     // Call user-provided OnExit()
-    try {
+    if ( catch_all ) {
+        try {
+            thread_obj->OnExit();
+        }
+#if defined(NCBI_COMPILER_MSVC)  &&  defined(_DEBUG)
+        // Microsoft promotes many common application errors to exceptions.
+        // This includes occurrences such as dereference of a NULL pointer and
+        // walking off of a dangling pointer.  The catch-all is lifted only in
+        // debug mode to permit easy inspection of such error conditions, while
+        // maintaining safety of production, release-mode applications.
+        NCBI_CATCH_X(3, "CThread::Wrapper: CThread::OnExit() failed");
+#else
+        NCBI_CATCH_ALL_X(4, "CThread::Wrapper: CThread::OnExit() failed");
+#endif
+    }
+    else {
         thread_obj->OnExit();
     }
-#if defined(NCBI_COMPILER_MSVC)  &&  defined(_DEBUG)
-    // Microsoft promotes many common application errors to exceptions.
-    // This includes occurrences such as dereference of a NULL pointer and
-    // walking off of a dangling pointer.  The catch-all is lifted only in
-    // debug mode to permit easy inspection of such error conditions, while
-    // maintaining safety of production, release-mode applications.
-    NCBI_CATCH_X(3, "CThread::Wrapper: CThread::OnExit() failed");
-#else
-    NCBI_CATCH_ALL_X(4, "CThread::Wrapper: CThread::OnExit() failed");
-#endif
 
     // Cleanup local storages used by this thread
     CUsedTlsBases::GetUsedTlsBases().ClearAll();
