@@ -451,7 +451,7 @@ struct SCommandDefinition {
         "if it succeeds, its output is identical to that of the "
         REQUESTJOB_COMMAND " command. Otherwise, no output is produced.",
         {eID, eNetSchedule, eQueue, eWNodePort, eWNodeGUID,
-            eNetCache, eInputFile, eFailJob, eGetNextJob,
+            eNetCache, eInputFile, eReturnCode, eFailJob, eGetNextJob,
             eOutputFile, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_ReturnJob,
