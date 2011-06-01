@@ -875,8 +875,10 @@ CNcbiTestApplication::AddTestDependsOn(but::test_unit* tu,
 inline void
 CNcbiTestApplication::SetTestDisabled(but::test_unit* tu)
 {
-    tu->p_enabled.set(false);
-    m_DisabledTests.insert(tu);
+    if (but::runtime_config::test_to_run().empty()) {
+        tu->p_enabled.set(false);
+        m_DisabledTests.insert(tu);
+    }
 }
 
 inline CArgDescriptions*
