@@ -132,6 +132,8 @@ bool CServer_ConnectionPool::Add(TConnBase* conn, EConnType type)
     if (data.size() >= m_MaxConnections)
         return false;
 
+    if (data.find(conn) != data.end())
+        abort();
     SPerConnInfo& info = data[conn];
     info.type = type;
     info.UpdateExpiration(conn);
@@ -153,10 +155,8 @@ void CServer_ConnectionPool::SetConnType(TConnBase* conn,
     TData& data = const_cast<TData&>(m_Data);
     TData::iterator it = data.find(conn);
     if (it == data.end()) {
-        if (must_exist) {
-            LOG_POST("Aborting.");
+        if (must_exist)
             abort();
-        }
         return;
     }
     SPerConnInfo& info = it->second;
@@ -265,7 +265,9 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
                 alarm_time = NULL;
             }
         }
-        else if (info.type == eClosedSocket  ||  !conn_base->IsOpen()) {
+        else if (info.type == eClosedSocket
+                 ||  (info.type == eInactiveSocket  &&  !conn_base->IsOpen()))
+        {
             // If it's not eClosedSocket then This connection was closed
             // by the client earlier in CServer::Run after Poll returned
             // eIO_Close which was converted into eServIO_ClientClose.

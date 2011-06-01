@@ -796,12 +796,8 @@ CNCBlobStorage::GetNewBlobCoords(SNCBlobCoords* coords)
     SNCDBFileInfo* data_info = m_DBFiles[coords->data_id];
     m_DBFilesLock.ReadUnlock();
 
-    meta_info->cnt_lock.Lock();
-    ++meta_info->ref_cnt;
-    meta_info->cnt_lock.Unlock();
-    data_info->cnt_lock.Lock();
-    ++data_info->ref_cnt;
-    data_info->cnt_lock.Unlock();
+    meta_info->Locked_IncRefCnt();
+    data_info->Locked_IncRefCnt();
 }
 
 void
@@ -859,8 +855,6 @@ CNCBlobStorage::WriteBlobInfo(const string& blob_key, SNCBlobVerData* ver_data)
 {
     ver_data->old_dead_time = ver_data->dead_time;
     ver_data->generation    = m_BlobGeneration;
-    if (ver_data->create_time == 0)
-        abort();
     {{
         TMetaFileLock metafile(this, ver_data->coords.meta_id);
         metafile->WriteBlobInfo(blob_key, ver_data);
@@ -872,10 +866,8 @@ CNCBlobStorage::WriteBlobInfo(const string& blob_key, SNCBlobVerData* ver_data)
     CSpinGuard guard(file_info->cnt_lock);
     if (!ver_data->need_meta_blob)
         abort();
-    ++file_info->useful_blobs;
+    file_info->IncUsefulBlobs();
     ver_data->need_meta_blob = false;
-    if (file_info->ref_cnt < file_info->useful_blobs)
-        abort();
 }
 
 bool
@@ -912,33 +904,22 @@ CNCBlobStorage::x_UpdBlobInfoSingleChunk(const string&   blob_key,
     }
     catch (CSQLITE_Exception& ex) {
         ERR_POST("Cannot move data for single-chunked blob: " << ex);
-        new_data_info->cnt_lock.Lock();
-        --new_data_info->ref_cnt;
-        new_data_info->cnt_lock.Unlock();
+        new_meta_info->Locked_DecRefCnt();
+        new_data_info->Locked_DecRefCnt();
         return false;
     }
+    new_data_info->Locked_IncUsefulBlobs(ver_data->size);
     try {
         TMetaFileLock metafile(this, new_ver.coords.meta_id);
         metafile->WriteBlobInfo(blob_key, &new_ver);
     }
     catch (CSQLITE_Exception& ex) {
         ERR_POST("Cannot move meta-data for single-chunked blob: " << ex);
-        new_meta_info->cnt_lock.Lock();
-        --new_meta_info->ref_cnt;
-        new_meta_info->cnt_lock.Unlock();
-        new_data_info->cnt_lock.Lock();
-        ++new_data_info->garbage_blobs;
-        new_data_info->garbage_size += ver_data->size;
-        new_data_info->cnt_lock.Unlock();
+        new_meta_info->Locked_DecRefCnt();
+        new_data_info->Locked_UsefulToGarbage(ver_data->size);
         return false;
     }
-    new_data_info->cnt_lock.Lock();
-    ++new_data_info->useful_blobs;
-    new_data_info->useful_size += ver_data->size;
-    new_data_info->cnt_lock.Unlock();
-    new_meta_info->cnt_lock.Lock();
-    ++new_meta_info->useful_blobs;
-    new_meta_info->cnt_lock.Unlock();
+    new_meta_info->Locked_IncUsefulBlobs();
 
     swap(ver_data->coords, new_ver.coords);
     try {
@@ -948,19 +929,8 @@ CNCBlobStorage::x_UpdBlobInfoSingleChunk(const string&   blob_key,
     catch (CSQLITE_Exception& ex) {
         ERR_POST("Cannot delete old blob's meta-information: " << ex);
     }
-    old_meta_info->cnt_lock.Lock();
-    if (--old_meta_info->useful_blobs + 1 == 0)
-        abort();
-    --old_meta_info->ref_cnt;
-    old_meta_info->cnt_lock.Unlock();
-    old_data_info->cnt_lock.Lock();
-    if (--old_data_info->useful_blobs + 1 == 0)
-        abort();
-    ++old_data_info->garbage_blobs;
-    old_data_info->useful_size -= ver_data->size;
-    old_data_info->garbage_size += ver_data->size;
-    --old_data_info->ref_cnt;
-    old_data_info->cnt_lock.Unlock();
+    old_meta_info->Locked_DecUsefulBlobs();
+    old_data_info->Locked_UsefulToGarbage(ver_data->size);
     return true;
 }
 
@@ -1006,23 +976,16 @@ CNCBlobStorage::x_UpdBlobInfoMultiChunk(const string&   blob_key,
     }
     catch (CSQLITE_Exception& ex) {
         ERR_POST("Cannot move multi-chunked blob: " << ex);
-        new_meta_info->cnt_lock.Lock();
-        --new_meta_info->ref_cnt;
-        new_meta_info->cnt_lock.Unlock();
+        new_meta_info->Locked_DecRefCnt();
         new_data_info->cnt_lock.Lock();
         ++new_data_info->garbage_blobs;
         new_data_info->garbage_size += data_written;
-        --new_data_info->ref_cnt;
+        new_data_info->DecRefCnt();
         new_data_info->cnt_lock.Unlock();
         return false;
     }
-    new_data_info->cnt_lock.Lock();
-    ++new_data_info->useful_blobs;
-    new_data_info->useful_size += ver_data->size;
-    new_data_info->cnt_lock.Unlock();
-    new_meta_info->cnt_lock.Lock();
-    ++new_meta_info->useful_blobs;
-    new_meta_info->cnt_lock.Unlock();
+    new_data_info->Locked_IncUsefulBlobs(ver_data->size);
+    new_meta_info->Locked_IncUsefulBlobs();
 
     swap(ver_data->coords, new_ver.coords);
     try {
@@ -1032,20 +995,8 @@ CNCBlobStorage::x_UpdBlobInfoMultiChunk(const string&   blob_key,
     catch (CSQLITE_Exception& ex) {
         ERR_POST("Cannot delete old blob's meta-information: " << ex);
     }
-    old_meta_info->cnt_lock.Lock();
-    if (--old_meta_info->useful_blobs + 1 == 0)
-        abort();
-    ++old_meta_info->garbage_blobs;
-    --old_meta_info->ref_cnt;
-    old_meta_info->cnt_lock.Unlock();
-    old_data_info->cnt_lock.Lock();
-    if (--old_data_info->useful_blobs + 1 == 0)
-        abort();
-    ++old_data_info->garbage_blobs;
-    old_data_info->useful_size -= ver_data->size;
-    old_data_info->garbage_size += ver_data->size;
-    --old_data_info->ref_cnt;
-    old_data_info->cnt_lock.Unlock();
+    old_meta_info->Locked_UsefulToGarbage(0);
+    old_data_info->Locked_UsefulToGarbage(ver_data->size);
     return true;
 }
 
@@ -1092,22 +1043,23 @@ CNCBlobStorage::DeleteBlobInfo(const SNCBlobVerData* ver_data)
     if (!ver_data->need_meta_blob) {
         if (ver_data->create_time == 0)
             abort();
-        if (--meta_info->useful_blobs + 1 == 0)
-            abort();
+        meta_info->DecUsefulBlobs();
     }
-    --meta_info->ref_cnt;
+    else {
+        meta_info->DecRefCnt();
+    }
     meta_info->cnt_lock.Unlock();
     data_info->cnt_lock.Lock();
     if (!ver_data->need_data_blob  &&  ver_data->size != 0) {
         if (ver_data->disk_size == 0)
             abort();
-        if (--data_info->useful_blobs + 1 == 0)
-            abort();
-        ++data_info->garbage_blobs;
+        data_info->UsefulToGarbage(ver_data->disk_size);
     }
-    data_info->useful_size -= ver_data->disk_size;
-    data_info->garbage_size += ver_data->disk_size;
-    --data_info->ref_cnt;
+    else {
+        if (ver_data->disk_size != 0)
+            abort();
+        data_info->DecRefCnt();
+    }
     data_info->cnt_lock.Unlock();
 }
 
@@ -1165,12 +1117,25 @@ CNCBlobStorage::x_WriteChunkData(TNCDBFileId     file_id,
     if (add_blobs_cnt) {
         if (!ver_data->need_data_blob)
             abort();
-        ++file_info->useful_blobs;
+        file_info->IncUsefulBlobs();
         ver_data->need_data_blob = false;
-        if (file_info->ref_cnt < file_info->useful_blobs)
-            abort();
     }
     file_info->useful_size += data->GetSize();
+}
+
+void
+CNCBlobStorage::WriteNextChunk(SNCBlobVerData*      ver_data,
+                               const CNCBlobBuffer* data)
+{
+    TNCChunkId chunk_id = x_GetNextChunkId();
+    x_WriteChunkData(ver_data->coords.data_id, chunk_id,
+                     data, ver_data,
+                     ver_data->chunks.size() == 0);
+    {{
+        TMetaFileLock metafile(this, ver_data->coords.meta_id);
+        metafile->CreateChunk(ver_data->coords.blob_id, chunk_id);
+    }}
+    ver_data->chunks.push_back(chunk_id);
 }
 
 struct SNCTempBlobInfo
@@ -1549,15 +1514,12 @@ CNCBlobStorage::x_DoBackgroundWork(void)
                                         key_it->second = new_data;
                                         was_added = true;
                                         SNCDBFileInfo* cache_d_info = m_DBFiles[cache_data->data_id];
-                                        cache_d_info->useful_size -= cache_data->size;
-                                        --cache_d_info->useful_blobs;
-                                        --cache_d_info->ref_cnt;
+                                        cache_d_info->UsefulToGarbage(cache_data->size);
                                         if (cache_data->meta_id == file_id)
                                             --cnt_blobs;
                                         else {
                                             SNCDBFileInfo* cache_m_info = m_DBFiles[cache_data->meta_id];
-                                            --cache_m_info->useful_blobs;
-                                            --cache_m_info->ref_cnt;
+                                            cache_m_info->DecUsefulBlobs();
                                         }
                                         delete cache_data;
                                     }
@@ -1572,9 +1534,8 @@ CNCBlobStorage::x_DoBackgroundWork(void)
                                 if (was_added) {
                                     ++cnt_blobs;
                                     SNCDBFileInfo* data_info = m_DBFiles[blob_info->data_id];
-                                    ++data_info->useful_blobs;
-                                    data_info->useful_size += blob_info->size;
-                                    ++data_info->ref_cnt;
+                                    data_info->IncRefCnt();
+                                    data_info->IncUsefulBlobs(blob_info->size);
                                 }
                             }
                         }

@@ -288,7 +288,7 @@ CNetCacheServer::x_ReadServerParams(void)
         size_t mem_limit = size_t(NStr::StringToUInt8_DataSize(str_val));
         str_val          = reg.GetString(kNCReg_ServerSection, kNCReg_MemAlert, "4Gb");
         size_t mem_alert = size_t(NStr::StringToUInt8_DataSize(str_val));
-        CNCMemManager::SetLimits(mem_limit, mem_limit);
+        CNCMemManager::SetLimits(mem_limit, mem_alert);
     }
     catch (CStringException& ex) {
         ERR_POST_X(14, "Error in " << kNCReg_MemLimit
@@ -420,11 +420,13 @@ CNetCacheServer::~CNetCacheServer()
     x_PrintServerStats(proxy);
 
     UpdateLastRecNo();
+    s_TaskPool->KillAllThreads(true);
+    CNCPeriodicSync::Finalize();
+    CNCMirroring::Finalize();
+    s_TaskPool->KillAllThreads(true);
     delete g_NCStorage;
     s_TaskPool->KillAllThreads(true);
     delete s_TaskPool;
-    CNCPeriodicSync::Finalize();
-    CNCMirroring::Finalize();
     CNCSyncLog::Finalize();
     CNCDistributionConf::Finalize();
 

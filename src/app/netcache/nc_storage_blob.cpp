@@ -509,11 +509,8 @@ CNCBlobAccessor::ObtainMetaInfo(INCBlockedOpListener* listener)
         m_InitListener = listener;
         return eNCWouldBlock;
     }
-    if (!m_VerManager) {
-        _ASSERT(m_AccessType == eNCRead  ||  m_AccessType == eNCReadData
-                ||  m_AccessType == eNCGCDelete);
+    if (!m_VerManager)
         return eNCSuccessNoBlock;
-    }
     if (m_VerManager->GetCurVersion(&m_CurData, listener) == eNCWouldBlock)
         return eNCWouldBlock;
     if ((IsAuthorized()  &&  m_AccessType == eNCCreate)

@@ -239,6 +239,20 @@ struct SNCDBFileInfo
     Uint8        useful_size;
     Uint8        garbage_blobs;
     Uint8        garbage_size;
+
+
+    void IncRefCnt(void);
+    void DecRefCnt(void);
+    void IncUsefulBlobs(void);
+    void IncUsefulBlobs(Uint8 size);
+    void DecUsefulBlobs(void);
+    void UsefulToGarbage(Uint8 size);
+    void Locked_IncRefCnt(void);
+    void Locked_DecRefCnt(void);
+    void Locked_IncUsefulBlobs(void);
+    void Locked_IncUsefulBlobs(Uint8 size);
+    void Locked_DecUsefulBlobs(void);
+    void Locked_UsefulToGarbage(Uint8 size);
 };
 /// Information about all database parts in NetCache storage
 typedef map<TNCDBFileId, SNCDBFileInfo*> TNCDBFilesMap;
@@ -308,6 +322,100 @@ SNCCacheData::SNCCacheData(SNCBlobListInfo* blob_info)
       ver_manager(NULL),
       is_deleted(false)
 {}
+
+
+inline void
+SNCDBFileInfo::IncRefCnt(void)
+{
+    ++ref_cnt;
+}
+
+inline void
+SNCDBFileInfo::Locked_IncRefCnt(void)
+{
+    cnt_lock.Lock();
+    IncRefCnt();
+    cnt_lock.Unlock();
+}
+
+inline void
+SNCDBFileInfo::DecRefCnt(void)
+{
+    if (ref_cnt == 0  ||  --ref_cnt < useful_blobs)
+        abort();
+}
+
+inline void
+SNCDBFileInfo::Locked_DecRefCnt(void)
+{
+    cnt_lock.Lock();
+    DecRefCnt();
+    cnt_lock.Unlock();
+}
+
+inline void
+SNCDBFileInfo::IncUsefulBlobs(void)
+{
+    if (++useful_blobs > ref_cnt)
+        abort();
+}
+
+inline void
+SNCDBFileInfo::Locked_IncUsefulBlobs(void)
+{
+    cnt_lock.Lock();
+    IncUsefulBlobs();
+    cnt_lock.Unlock();
+}
+
+inline void
+SNCDBFileInfo::IncUsefulBlobs(Uint8 size)
+{
+    IncUsefulBlobs();
+    ++useful_size;
+}
+
+inline void
+SNCDBFileInfo::Locked_IncUsefulBlobs(Uint8 size)
+{
+    cnt_lock.Lock();
+    IncUsefulBlobs(size);
+    cnt_lock.Unlock();
+}
+
+inline void
+SNCDBFileInfo::DecUsefulBlobs(void)
+{
+    if (useful_blobs == 0)
+        abort();
+    --useful_blobs;
+    DecRefCnt();
+}
+
+inline void
+SNCDBFileInfo::Locked_DecUsefulBlobs(void)
+{
+    cnt_lock.Lock();
+    DecUsefulBlobs();
+    cnt_lock.Unlock();
+}
+
+inline void
+SNCDBFileInfo::UsefulToGarbage(Uint8 size)
+{
+    DecUsefulBlobs();
+    ++garbage_blobs;
+    useful_size -= size;
+    garbage_size += size;
+}
+
+inline void
+SNCDBFileInfo::Locked_UsefulToGarbage(Uint8 size)
+{
+    cnt_lock.Lock();
+    UsefulToGarbage(size);
+    cnt_lock.Unlock();
+}
 
 END_NCBI_SCOPE
 

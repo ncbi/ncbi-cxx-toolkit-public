@@ -1453,7 +1453,8 @@ CNCMessageHandler::x_StartCommand(SParsedCmd& cmd)
         x_SetState(eReadyForCommand);
     }
     else if (cmd_extra.storage_access == eWithBlob
-             ||  cmd_extra.storage_access == eWithAutoBlobKey)
+             ||  cmd_extra.storage_access == eWithAutoBlobKey
+             ||  cmd_extra.processor == &CNCMessageHandler::x_DoCmd_HasBlob)
     {
         if ((m_BlobPass.empty()  &&  m_AppSetup->pass_policy == eNCOnlyWithPass)
             ||  (!m_BlobPass.empty()  &&  m_AppSetup->pass_policy == eNCOnlyWithoutPass))
@@ -1493,6 +1494,10 @@ CNCMessageHandler::x_StartCommand(SParsedCmd& cmd)
                 m_SockBuffer.WriteMessage("ERR:", "Not enough disk space");
                 m_SockBuffer.Flush();
                 x_CloseConnection();
+            }
+            else if (cmd_extra.processor == &CNCMessageHandler::x_DoCmd_HasBlob)
+            {
+                x_SetState(eCommandReceived);
             }
             else {
                 m_BlobAccess = g_NCStorage->GetBlobAccess(cmd_extra.blob_access,

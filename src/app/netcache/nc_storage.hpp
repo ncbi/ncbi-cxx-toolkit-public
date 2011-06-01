@@ -503,6 +503,10 @@ CNCDBFileLock<TFile>::CNCDBFileLock(CNCBlobStorage* storage,
     : m_File(NULL)
 {
     storage->GetFile(part_id, &m_File);
+    if (!m_File) {
+        NCBI_THROW_FMT(CSQLITE_Exception, eUnknown,
+                       "Database file " << part_id << " not found");
+    }
     m_File->LockDB();
 }
 
@@ -519,7 +523,8 @@ template <class TFile>
 inline
 CNCDBFileLock<TFile>::~CNCDBFileLock(void)
 {
-    m_File->UnlockDB();
+    if (m_File)
+        m_File->UnlockDB();
 }
 
 template <class TFile>
@@ -551,8 +556,15 @@ CNCBlobStorage::GetFile(TNCDBFileId file_id,
                         TFile**     file_ptr)
 {
     CSpinReadGuard guard(m_DBFilesLock);
-    *file_ptr = static_cast<TFile*>(m_DBFiles[file_id]->file_obj.get());
-    _ASSERT(*file_ptr  &&  (*file_ptr)->GetType() == TFile::GetClassType());
+    TNCDBFilesMap::const_iterator it = m_DBFiles.find(file_id);
+    if (it == m_DBFiles.end()) {
+        *file_ptr = NULL;
+    }
+    else {
+        *file_ptr = (TFile*)(it->second->file_obj.get());
+        if (!(*file_ptr)  ||  (*file_ptr)->GetType() != TFile::GetClassType())
+            abort();
+    }
 }
 
 inline const string&
@@ -626,21 +638,6 @@ CNCBlobStorage::WriteSingleChunk(SNCBlobVerData*      ver_data,
     x_WriteChunkData(ver_data->coords.data_id,
                      ver_data->coords.blob_id,
                      data, ver_data, true);
-}
-
-inline void
-CNCBlobStorage::WriteNextChunk(SNCBlobVerData*      ver_data,
-                               const CNCBlobBuffer* data)
-{
-    TNCChunkId chunk_id = x_GetNextChunkId();
-    x_WriteChunkData(ver_data->coords.data_id, chunk_id,
-                     data, ver_data,
-                     ver_data->chunks.size() == 0);
-    {{
-        TMetaFileLock metafile(this, ver_data->coords.meta_id);
-        metafile->CreateChunk(ver_data->coords.blob_id, chunk_id);
-    }}
-    ver_data->chunks.push_back(chunk_id);
 }
 
 inline Uint8
