@@ -319,8 +319,10 @@ bool SNetScheduleExecuterImpl::GetJobImpl(
 
 void SNetScheduleExecuterImpl::x_RegUnregClient(const string& cmd)
 {
-    for (CNetServiceIterator it = m_API->m_Service.
-            Iterate(CNetService::eIncludePenalized); it; ++it) {
+    CNetServiceIterator it =
+        m_API->m_Service.Iterate(CNetService::eIncludePenalized);
+
+    do {
         CNetServer server = *it;
 
         try {
@@ -333,7 +335,7 @@ void SNetScheduleExecuterImpl::x_RegUnregClient(const string& cmd)
                     ": " << ex.what());
             }
         }
-    }
+    } while (++it);
 }
 
 

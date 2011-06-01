@@ -279,7 +279,9 @@ CNetServer::SExecResult
         }
     }
 
-    for (CNetServiceIterator it = m_Service.Iterate(); it; ++it) {
+    CNetServiceIterator it = m_Service.Iterate();
+
+    do {
         try {
             return (m_SelectedServer = *it).ExecWithRetry(cmd);
         }
@@ -289,7 +291,7 @@ CNetServer::SExecResult
                 throw;
             ERR_POST(ex.what());
         }
-    }
+    } while (++it);
 
     NCBI_THROW(CNetSrvConnException, eSrvListEmpty,
         "Couldn't find any available servers for the " +

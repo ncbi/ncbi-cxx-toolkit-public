@@ -419,11 +419,9 @@ const CNetScheduleAPI::SServerParams& SNetScheduleAPIImpl::GetServerParams()
     m_ServerParams->max_output_size = kMax_UInt;
     m_ServerParams->fast_status = true;
 
-    bool was_called = false;
+    CNetServiceIterator it = m_Service.Iterate();
 
-    for (CNetServiceIterator it = m_Service.Iterate(); it; ++it) {
-        was_called = true;
-
+    do {
         string resp;
         try {
             resp = (*it).ExecWithRetry("GETP").response;
@@ -452,14 +450,12 @@ const CNetScheduleAPI::SServerParams& SNetScheduleAPIImpl::GetServerParams()
         }
         if (m_ServerParams->fast_status)
             m_ServerParams->fast_status = fast_status;
-    }
+    } while (++it);
 
     if (m_ServerParams->max_input_size == kMax_UInt)
         m_ServerParams->max_input_size = kNetScheduleMaxDBDataSize / 4;
     if (m_ServerParams->max_output_size == kMax_UInt)
         m_ServerParams->max_output_size = kNetScheduleMaxDBDataSize / 4;
-    if (!was_called)
-        m_ServerParams->fast_status = false;
 
     return *m_ServerParams;
 }
