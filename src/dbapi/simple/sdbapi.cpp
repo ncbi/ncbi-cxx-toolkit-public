@@ -1414,6 +1414,12 @@ CDatabase::Close(void)
     m_Impl.Reset();
 }
 
+bool
+CDatabase::IsConnected(void)
+{
+    return m_Impl  &&  m_Impl->IsOpen();
+}
+
 CDatabase
 CDatabase::Clone(void)
 {

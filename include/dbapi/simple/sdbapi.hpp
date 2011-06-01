@@ -727,7 +727,11 @@ public:
     /// While cloning new physical connection to database server is created,
     /// so that resulting database object can be used completely independently
     /// from original one.
-    CDatabase Clone(void);           
+    CDatabase Clone(void);
+    /// Check if database object was already connected to database server.
+    /// This checks only that Connect() method was called and Close() wasn't
+    /// called.
+    bool IsConnected(void);
 
     /// Get new CQuery object for this database.
     /// Method can be called only when database object is connected to the
