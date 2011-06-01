@@ -722,7 +722,7 @@ void CNWFormatter::MakeSegments(deque<SSegment>* psegments) const
             swap(tr_idx,        tr_idx_x);
         }
 
-        if(transcript[tr_idx] == CNWAligner::eTS_SlackInsert 
+        if(tr_idx<tr_idx_lo || transcript[tr_idx] == CNWAligner::eTS_SlackInsert 
            || transcript[tr_idx] == CNWAligner::eTS_SlackDelete)
         {
             break;
