@@ -882,9 +882,10 @@ void CVariationUtil::AttachProteinConsequences(CVariation& v, const CSeq_id* tar
     ITERATE(CVariation::TPlacements, it, *placements) {
         const CVariantPlacement& placement = **it;
 
-        if(target_id && !sequence::IsSameBioseq(*target_id,
-                                                sequence::GetId(placement.GetLoc(), NULL),
-                                                m_scope))
+        if(!placement.GetLoc().GetId()
+           || target_id && !sequence::IsSameBioseq(*target_id,
+                                                   sequence::GetId(placement.GetLoc(), NULL),
+                                                   m_scope))
         {
             continue;
         }

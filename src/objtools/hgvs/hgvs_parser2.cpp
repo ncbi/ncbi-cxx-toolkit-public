@@ -1479,15 +1479,14 @@ CRef<CVariation> CHgvsParser::x_expr2(TIterator const& i, const CContext& contex
             vr->SetData().SetUnknown();
             //SetFirstPlacement(*vr).SetLoc().SetEmpty().Assign(context.GetId());
         } else if(s == "0?" || s == "0") {
-            //todo: represent as deletion; in writer, handle deletions with placement == "whole product-id" as "loss of product"
-
-            vr->SetData().SetUnknown();
-            typedef CVariation::TConsequence::value_type::TObjectType TConsequence;
-            CRef<TConsequence> cons(new TConsequence);
-            cons->SetNote("loss of product");
-            vr->SetConsequence().push_back(cons);
-            //SetFirstPlacement(*vr).SetLoc().SetEmpty().Assign(context.GetId());
-
+            //loss of product: represent as deletion of the whole product sequence.
+            SetFirstPlacement(*vr).SetLoc().SetWhole().Assign(context.GetId());
+            CVariation_inst& var_inst = vr->SetData().SetInstance();
+            var_inst.SetType(CVariation_inst::eType_del);
+            CRef<CDelta_item> di(new CDelta_item);
+            di->SetAction(CDelta_item::eAction_del_at);
+            di->SetSeq().SetThis();
+            var_inst.SetDelta().push_back(di);
 
             if(s == "0?") {
                 SetComputational(*vr);
@@ -1623,8 +1622,12 @@ CRef<CVariation> CHgvsParser::x_root(TIterator const& i, const CContext& context
 
     CRef<CVariation> vr = x_list(i, context);
 
-    CVariationUtil::s_FactorOutPlacements(*vr);
+
     RepackageAssertedSequence(*vr);
+
+
+    CVariationUtil::s_FactorOutPlacements(*vr);
+
 
     vr->Index();
     return vr;
@@ -1657,7 +1660,7 @@ CRef<CVariation> CHgvsParser::AsVariation(const string& hgvs, TOpFlags flags)
             tree_to_xml(ostr, info.trees, hgvs2.c_str() , CHgvsParser::SGrammar::s_GetRuleNames());
             string tree_str = CNcbiOstrstreamToString(ostr);
 #endif
-            HGVS_THROW(eGrammatic, "Syntax error at pos " + NStr::IntToString(info.length + 1) + " in \"" + hgvs2 + "\"");
+            HGVS_THROW(eGrammatic, "Syntax error at pos " + NStr::IntToString(info.length + 1) + " in " + hgvs2 + "");
         } else {
             CContext context(m_scope);
             vr = x_root(info.trees.begin(), context);

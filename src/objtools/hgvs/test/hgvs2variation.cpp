@@ -152,15 +152,18 @@ string TestRoundTrip(const string& hgvs_synonyms, CHgvsParser& parser)
     NStr::Tokenize(hgvs_synonyms, "|", inputs);
     string result;
     string delim = "";
+    bool all_ok = true;
     ITERATE(TStrings, it, inputs) {
         const string& hgvs_in = *it;
         string hgvs_out = RoundTripHgvs(hgvs_in, parser);
 
         bool is_found = find(inputs.begin(), inputs.end(), hgvs_out) != inputs.end();
+        all_ok = all_ok && is_found;
         result += delim + (is_found ? "OK" : hgvs_out);
         delim = "|";
     }
-    return result;
+
+    return all_ok ? "OK" : result;
 }
 
 void AttachHgvs(CVariation& v, CHgvsParser& parser)
@@ -230,8 +233,11 @@ void ProcessVariation(CVariation& v, const CArgs& args, CScope& scope, CConstRef
     }
 
     if(args["prot_effect"]) {
+#if 0
         CRef<CSeq_id> id(NULL);
-        //CRef<CSeq_id> id(new CSeq_id("NM_022124.5"));
+#else
+        CRef<CSeq_id> id(new CSeq_id("NM_000441.1"));
+#endif
         variation_util.AttachProteinConsequences(v, id);
     }
 

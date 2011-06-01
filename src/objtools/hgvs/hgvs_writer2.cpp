@@ -268,18 +268,11 @@ string CHgvsParser::x_AsHgvsExpression(
     }
 
 
-
-
-    string hgvs_loc_str = "";
-    if(placement && variation.IsSetPlacements()) {
-        //prefix the placement only if it is defined at this level (otherwise will be handled at the parent level)
-        hgvs_loc_str = AsHgvsExpression(*placement);
-    }
-
-    hgvs_data_str = hgvs_loc_str + hgvs_data_str;
-
-
     bool is_bracketed = false; //will compute whether need to put this subexpression in brackets
+    bool location_within_brackets = true;
+        //will compute whether the location prefix should be factored from brackets, e.g. NM_004004.2:c.35[dupG;A>G]
+        //or within the brackets, e.g. [NM_004004.2:c.35delG]+[NM_006783.1:c.689_690insT]
+
     if(variation.GetParent()) {
         //If a variation is an element of an alleles|genotype set,
         //it describes an allele and must be bracketed.
@@ -303,11 +296,25 @@ string CHgvsParser::x_AsHgvsExpression(
                 type != CVariation::TData::TSet::eData_set_type_alleles
              && type != CVariation::TData::TSet::eData_set_type_genotype
              && type != CVariation::TData::TSet::eData_set_type_compound;
-    }
-    if(is_bracketed) {
-        hgvs_data_str = "[" + hgvs_data_str + "]";
+
+        location_within_brackets = false;
     }
 
+    string hgvs_loc_str = "";
+    if(placement && variation.IsSetPlacements()) {
+        //prefix the placement only if it is defined at this level (otherwise will be handled at the parent level)
+        hgvs_loc_str = AsHgvsExpression(*placement);
+    }
+
+    if(is_bracketed) {
+        if(location_within_brackets) {
+            hgvs_data_str = "[" + hgvs_loc_str + hgvs_data_str + "]";
+        } else {
+            hgvs_data_str = hgvs_loc_str + "[" + hgvs_data_str + "]";
+        }
+    } else {
+        hgvs_data_str = hgvs_loc_str + hgvs_data_str;
+    }
 
     return hgvs_data_str;
 }
@@ -586,14 +593,18 @@ string CHgvsParser::x_AsHgvsInstExpression(
     }
 
     const CSeq_literal* asserted_seq =
-            explicit_asserted_seq ? explicit_asserted_seq
+            explicit_asserted_seq              ? explicit_asserted_seq
           : placement && placement->IsSetSeq() ? &placement->GetSeq()
-          : NULL;
+          :                                      NULL;
+
 
     string asserted_seq_str =
-            !asserted_seq ? ""
+            !asserted_seq                 ? ""
          : asserted_seq->GetLength() < 20 ? x_SeqLiteralToStr(*asserted_seq)
-         : NStr::IntToString(asserted_seq->GetLength());
+         :                                  NStr::IntToString(asserted_seq->GetLength());
+
+    NcbiCerr << "Processing inst expression; asserted_seq = " << asserted_seq_str << " " << asserted_seq << endl;
+
 
     bool append_delta = false;
 
@@ -612,7 +623,11 @@ string CHgvsParser::x_AsHgvsInstExpression(
         inst_str = "del" + asserted_seq_str + "ins";
         append_delta = true;
     } else if(inst.GetType() == CVariation_inst::eType_del) {
-        inst_str = "del" + asserted_seq_str;
+        if(placement && placement->GetLoc().IsWhole()) {
+            inst_str = "0"; //whole-product deletion
+        } else {
+            inst_str = "del" + asserted_seq_str;
+        }
     } else if(inst.GetType() == CVariation_inst::eType_ins) {
         //If the insertion is this*2 then this is a dup
         bool is_dup = false;
