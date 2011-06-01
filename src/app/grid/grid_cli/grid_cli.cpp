@@ -458,7 +458,7 @@ struct SCommandDefinition {
         REQUESTJOB_COMMAND " command. Otherwise, no output is produced.",
         {eID, eNetSchedule, eQueue, eWNodePort, eWNodeGUID,
             eNetCache, eReturnCode, eJobOutput, eInputFile, eFailJob,
-            eGetNextJob, eOutputFile, eAuth, -1}},
+            eGetNextJob, eAffinity, eOutputFile, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_ReturnJob,
         "returnjob", "Return a previously accepted job.",

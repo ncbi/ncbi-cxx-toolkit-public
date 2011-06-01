@@ -748,6 +748,7 @@ int CGridCommandLineInterfaceApp::Cmd_CommitJob()
 
     job.job_id = m_Opts.id;
     job.ret_code = m_Opts.return_code;
+    job.affinity = m_Opts.affinity;
 
     auto_ptr<IEmbeddedStreamWriter> writer(new CStringOrBlobStorageWriter(
         m_NetScheduleAPI.GetServerParams().max_output_size,
@@ -768,7 +769,6 @@ int CGridCommandLineInterfaceApp::Cmd_CommitJob()
         if (writer->Write(m_Opts.job_output.data(),
                 m_Opts.job_output.length()) != eRW_Success)
             goto ErrorExit;
-
 
     if (!IsOptionSet(eFailJob)) {
         if (!IsOptionSet(eGetNextJob))
