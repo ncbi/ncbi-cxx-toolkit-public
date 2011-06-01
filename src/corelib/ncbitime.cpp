@@ -2625,10 +2625,13 @@ void CTimeout::Set(const CTimeSpan& ts)
 inline
 int s_TimeoutCompareHash(const CTimeout& t)
 {
+    if ( t.IsFinite() )  // to avoid warnings
+        return 1; 
     if ( t.IsInfinite() )
         return 2;
     if ( t.IsDefault() )
         return 3;
+    // not reached
     return 1;
 }
 

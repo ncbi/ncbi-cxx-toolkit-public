@@ -2383,13 +2383,13 @@ CTimeout::CTimeout(const CTimeout& t)
 inline
 bool CTimeout::IsDefault() const
 { 
-    return m_Type == eDefault  &&  !m_HasValue;
+    return !m_HasValue  &&  m_Type == eDefault;
 }
 
 inline
 bool CTimeout::IsInfinite() const
 {
-    return m_Type == eInfinite  &&  !m_HasValue;
+    return !m_HasValue  &&  m_Type == eInfinite;
 }
 
 inline
