@@ -159,6 +159,11 @@ bool CNetScheduleExecuter::GetJob(CNetScheduleJob& job)
     if (m_Impl->m_ControlPort != 0) {
         cmd += ' ';
         cmd += NStr::IntToString(m_Impl->m_ControlPort);
+        if (!job.affinity.empty()) {
+            cmd += " \"";
+            cmd += job.affinity;
+            cmd += '"';
+        }
     }
 
     return m_Impl->GetJobImpl(cmd, job);
@@ -241,9 +246,14 @@ bool CNetScheduleExecuter::PutResultGetJob(const CNetScheduleJob& done_job,
     s_CheckOutputSize(done_job.output,
         m_Impl->m_API->GetServerParams().max_output_size);
 
-    return s_ParseGetJobResponse(new_job,
+    string response(done_job.affinity.empty() ?
         m_Impl->m_API->x_SendJobCmdWaitResponse("JXCG",
-            done_job.job_id, done_job.ret_code, done_job.output));
+            done_job.job_id, done_job.ret_code, done_job.output) :
+        m_Impl->m_API->x_SendJobCmdWaitResponse("JXCG",
+            done_job.job_id, done_job.ret_code,
+            done_job.output, done_job.affinity));
+
+    return s_ParseGetJobResponse(new_job, response);
 }
 
 
