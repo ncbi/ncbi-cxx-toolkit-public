@@ -279,7 +279,7 @@ string CHgvsParser::x_AsHgvsExpression(
     hgvs_data_str = hgvs_loc_str + hgvs_data_str;
 
 
-    bool is_bracketed = false;
+    bool is_bracketed = false; //will compute whether need to put this subexpression in brackets
     if(variation.GetParent()) {
         //If a variation is an element of an alleles|genotype set,
         //it describes an allele and must be bracketed.
@@ -287,13 +287,22 @@ string CHgvsParser::x_AsHgvsExpression(
         is_bracketed =
               type == CVariation::TData::TSet::eData_set_type_alleles
            || type == CVariation::TData::TSet::eData_set_type_genotype;
+
+
+        if(variation.GetData().IsInstance()
+            && variation.GetData().GetInstance().GetType() == CVariation_inst::eType_microsatellite)
+        {
+            //Except for microsatellites, as they are bracketed at the inst-level (see the SSR grammar for details)
+            is_bracketed = false;
+        }
     } else if(subvariation_count > 1) {
         //Root non-singleton variation: it describes a single allele (i.e. also needs to be bracketed)
         //UNLESS it is a set that itself describes individual alleles.
         CVariation::TData::TSet::TType type = variation.GetData().GetSet().GetType();
         is_bracketed =
                 type != CVariation::TData::TSet::eData_set_type_alleles
-             && type != CVariation::TData::TSet::eData_set_type_genotype;
+             && type != CVariation::TData::TSet::eData_set_type_genotype
+             && type != CVariation::TData::TSet::eData_set_type_compound;
     }
     if(is_bracketed) {
         hgvs_data_str = "[" + hgvs_data_str + "]";
@@ -326,6 +335,11 @@ string CHgvsParser::x_SeqLiteralToStr(const CSeq_literal& literal)
                || sd->IsNcbipaa()
                || sd->IsNcbistdaa())
         {
+            //todo: convert to 3-letter AA codes?
+            //const static string ncbieaa = "GPAVLIMCFYWHKRQNEDST*-";
+            //const static string verboseaa"GlyProAlaValLeuIleMetCysPheTyrTrpHisLysArgGlnAsnGluAspSerThrX?"
+
+            string prot_str;
             CSeqportUtil::Convert(*sd, sd, CSeq_data::e_Iupacaa, 0, literal.GetLength() );
             out = sd->GetIupacaa().Get();
         }
@@ -446,7 +460,7 @@ string CHgvsParser::x_PlacementCoordsToStr(const CVariantPlacement& vp)
     }
 
     string loc_str = "";
-    if(vp.GetLoc().IsEmpty()) {
+    if(vp.GetLoc().IsEmpty() || vp.GetLoc().IsNull()) {
         loc_str = "?";
     } else if(vp.GetLoc().IsWhole()) {
         ; //E.g. "NG_12345.6:g.=" represents no-change ("=") on the whole "NG_12345.6:g."

@@ -240,6 +240,24 @@ void RepackageAssertedSequence(CVariation& vr)
 }
 
 
+CHgvsParser::CContext::CContext(const CContext& other)
+{
+    this->m_bsh = other.m_bsh;
+    this->m_cds = other.m_cds;
+    this->m_scope = other.m_scope;
+    this->m_placement.Reset();
+    if(other.m_placement) {
+        /*
+         * Note: need to make a copy of the placement, such that if preceding subvariation
+         * is location-specific and the other one isn't, first's placement is not
+         * given to the other one, e.g. "NM_004004.2:c.[35_36dup;40del]+[=]" - if we
+         * made a shallow copy, then the location context for "[=]" would be erroneously
+         * inherited from the last sibling: "NM_004004.2:c.40=" instead of whole "NM_004004.2:c.="
+         */
+         this->m_placement.Reset(new CVariantPlacement);
+         this->m_placement->Assign(*other.m_placement);
+    }
+}
 
 const CSeq_feat& CHgvsParser::CContext::GetCDS() const
 {
@@ -1455,16 +1473,22 @@ CRef<CVariation> CHgvsParser::x_expr2(TIterator const& i, const CContext& contex
         vr = x_prot_ext(it, context);
     } else if(it->value.id() == i->value.id()) {
         vr.Reset(new CVariation);
+        SetFirstPlacement(*vr).Assign(context.GetPlacement());
+
         if(s == "?") {
             vr->SetData().SetUnknown();
-            SetFirstPlacement(*vr).SetLoc().SetEmpty().Assign(context.GetId());
+            //SetFirstPlacement(*vr).SetLoc().SetEmpty().Assign(context.GetId());
         } else if(s == "0?" || s == "0") {
+            //todo: represent as deletion; in writer, handle deletions with placement == "whole product-id" as "loss of product"
+
             vr->SetData().SetUnknown();
             typedef CVariation::TConsequence::value_type::TObjectType TConsequence;
             CRef<TConsequence> cons(new TConsequence);
             cons->SetNote("loss of product");
             vr->SetConsequence().push_back(cons);
-            SetFirstPlacement(*vr).SetLoc().SetEmpty().Assign(context.GetId());
+            //SetFirstPlacement(*vr).SetLoc().SetEmpty().Assign(context.GetId());
+
+
             if(s == "0?") {
                 SetComputational(*vr);
             }
@@ -1620,31 +1644,32 @@ CRef<CVariation>  CHgvsParser::x_unwrap_iff_singleton(CVariation& v)
 }
 
 
-CRef<CVariation> CHgvsParser::AsVariation(const string& hgvs_expression, TOpFlags flags)
+CRef<CVariation> CHgvsParser::AsVariation(const string& hgvs, TOpFlags flags)
 {
-    tree_parse_info<> info = pt_parse(hgvs_expression.c_str(), s_grammar, +space_p);
+    string hgvs2 = NStr::TruncateSpaces(hgvs);
+    tree_parse_info<> info = pt_parse(hgvs2.c_str(), s_grammar, +space_p);
     CRef<CVariation> vr;
 
     try {
         if(!info.full) {
 #if 0
             CNcbiOstrstream ostr;
-            tree_to_xml(ostr, info.trees, hgvs_expression.c_str() , CHgvsParser::SGrammar::s_GetRuleNames());
+            tree_to_xml(ostr, info.trees, hgvs2.c_str() , CHgvsParser::SGrammar::s_GetRuleNames());
             string tree_str = CNcbiOstrstreamToString(ostr);
 #endif
-            HGVS_THROW(eGrammatic, "Syntax error at pos " + NStr::IntToString(info.length + 1));
+            HGVS_THROW(eGrammatic, "Syntax error at pos " + NStr::IntToString(info.length + 1) + " in \"" + hgvs2 + "\"");
         } else {
             CContext context(m_scope);
             vr = x_root(info.trees.begin(), context);
 
-            vr->SetName(hgvs_expression);
+            vr->SetName(hgvs2);
         }
     } catch (CException& e) {
-        if(flags && fOpFlags_RelaxedAA && NStr::Find(hgvs_expression, "p.")) {
+        if(flags && fOpFlags_RelaxedAA && NStr::Find(hgvs2, "p.")) {
             //expression was protein, try non-hgvs-compliant representation of prots
-            string hgvs_expr2 = s_hgvsUCaa2hgvsUL(hgvs_expression);
+            string hgvs2 = s_hgvsUCaa2hgvsUL(hgvs2);
             TOpFlags flags2 = flags & ~fOpFlags_RelaxedAA; //unset the bit so we don't infinite-recurse
-            vr = AsVariation(hgvs_expr2, flags2);
+            vr = AsVariation(hgvs2, flags2);
         } else {
             NCBI_RETHROW_SAME(e, "");
         }

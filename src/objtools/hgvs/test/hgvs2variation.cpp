@@ -232,7 +232,6 @@ void ProcessVariation(CVariation& v, const CArgs& args, CScope& scope, CConstRef
     if(args["prot_effect"]) {
         CRef<CSeq_id> id(NULL);
         //CRef<CSeq_id> id(new CSeq_id("NM_022124.5"));
-
         variation_util.AttachProteinConsequences(v, id);
     }
 

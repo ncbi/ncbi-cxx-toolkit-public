@@ -333,7 +333,12 @@ CRef<CVariantPlacement> CVariationUtil::x_Remap(const CVariantPlacement& p, CSeq
     p2->SetLoc(*mapped_loc);
     p2->SetPlacement_method(CVariantPlacement::ePlacement_method_projected);
     AttachSeq(*p2);
-    p2->SetMol(GetMolType(sequence::GetId(p2->GetLoc(), NULL)));
+
+    if(p2->GetLoc().GetId()) {
+        p2->SetMol(GetMolType(sequence::GetId(p2->GetLoc(), NULL)));
+    } else {
+        p2->SetMol(CVariantPlacement::eMol_unknown);
+    }
 
     ChangeIdsInPlace(*p2, sequence::eGetId_ForceAcc, *m_scope);
     return p2;

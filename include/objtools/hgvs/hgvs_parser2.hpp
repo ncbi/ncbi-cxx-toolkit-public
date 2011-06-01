@@ -222,10 +222,7 @@ protected:
             Clear();
         }
 
-        CContext(const CContext& other)
-        {
-            *this = other; //shallow copy will suffice.
-        }
+        CContext(const CContext& other);
 
         void Clear()
         {
@@ -252,6 +249,8 @@ protected:
         {
             if(!m_placement) {
                 m_placement.Reset(new CVariantPlacement);
+                m_placement->SetLoc().SetNull();
+                m_placement->SetMol(CVariantPlacement::eMol_unknown);
             }
             return *m_placement;
         }
