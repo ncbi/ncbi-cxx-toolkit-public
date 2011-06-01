@@ -162,10 +162,9 @@ CNSInfoCollector::CNSInfoCollector(CNetCacheAPI::TInstance nc_api)
 void CNSInfoCollector::TraverseJobs(CNetScheduleAPI::EJobStatus status,
                                     IAction<CNSJobInfo>& action)
 {
-    CNetServiceIterator it = x_GetNetScheduleAPI().GetService().
-        Iterate(CNetService::eIncludePenalized);
+    for (CNetServiceIterator it = x_GetNetScheduleAPI().GetService().
+        Iterate(CNetService::eIncludePenalized); it; ++it) {
 
-    do {
         CNetServerMultilineCmdOutput output((*it).ExecWithRetry("QPRT " +
                 CNetScheduleAPI::StatusToString(status)));
 
@@ -179,7 +178,7 @@ void CNSInfoCollector::TraverseJobs(CNetScheduleAPI::EJobStatus status,
             CNSJobInfo job_info(jid, *this);
             action(job_info);
         }
-    } while (++it);
+    }
 }
 
 CNSJobInfo* CNSInfoCollector::CreateJobInfo(const string& job_id)

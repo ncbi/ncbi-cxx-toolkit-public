@@ -474,9 +474,7 @@ void CNetService::PrintCmdOutput(const string& cmd,
     if (!IsLoadBalanced())
         output_style = eDumpNoHeaders;
 
-    CNetServiceIterator it = Iterate();
-
-    do {
+    for (CNetServiceIterator it = Iterate(); it; ++it) {
         if (output_style != eDumpNoHeaders)
             output_stream << '[' << (*it)->m_Address.AsString() << ']' << endl;
 
@@ -498,7 +496,7 @@ void CNetService::PrintCmdOutput(const string& cmd,
 
         if (output_style != eDumpNoHeaders)
             output_stream << endl;
-    } while (++it);
+    }
 }
 
 SNetServerImpl* SNetServiceImpl::FindOrCreateServerImpl(
@@ -764,7 +762,7 @@ void SNetServiceImpl::ExecUntilSucceded(const string& cmd,
     CTime max_query_time(GetFastLocalTime());
     CTime retry_delay_until(max_query_time);
 
-    unsigned retry_count = TServConn_ConnMaxRetries::GetDefault();
+    unsigned retry_count;
 
     try {
         (*it)->ConnectAndExec(cmd, exec_result);
@@ -774,6 +772,7 @@ void SNetServiceImpl::ExecUntilSucceded(const string& cmd,
         switch (ex.GetErrCode()) {
         case CNetSrvConnException::eConnectionFailure:
         case CNetSrvConnException::eServerThrottle:
+            retry_count = TServConn_ConnMaxRetries::GetDefault();
             if ((++it || retry_count > 0) &&
                     (m_MaxQueryTime == 0 || GetFastLocalTime() <
                         max_query_time.AddNanoSecond(
@@ -949,6 +948,8 @@ CNetServiceIterator CNetService::Iterate(CNetServer::TInstance priority_server,
         return new SNetServiceIterator_RandomPivot(servers,
             servers->m_Servers.begin());
     }
+
+    return NULL;
 }
 
 bool CNetService::FindServer(INetServerFinder* finder,
@@ -956,16 +957,7 @@ bool CNetService::FindServer(INetServerFinder* finder,
 {
     bool had_comm_err = false;
 
-    CNetServiceIterator it;
-    try {
-        it = Iterate(mode);
-    }
-    catch (CNetSrvConnException& e) {
-        if (e.GetErrCode() != CNetSrvConnException::eSrvListEmpty)
-            throw;
-        return false;
-    }
-    do {
+    for (CNetServiceIterator it = Iterate(mode); it; ++it) {
         CNetServer server = *it;
 
         try {
@@ -987,7 +979,7 @@ bool CNetService::FindServer(INetServerFinder* finder,
 
             had_comm_err = true;
         }
-    } while (++it);
+    }
 
     if (had_comm_err) {
         NCBI_THROW(CNetServiceException,

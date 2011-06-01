@@ -91,11 +91,9 @@ void CNetScheduleAdmin::CreateQueue(const string& qname, const string& qclass,
         cmd += '"';
     }
 
-    CNetServiceIterator it = m_Impl->m_API->m_Service.Iterate();
-
-    do
+    for (CNetServiceIterator it =
+            m_Impl->m_API->m_Service.Iterate(); it; ++it)
         (*it).ExecWithRetry(cmd);
-    while (++it);
 }
 
 
@@ -103,11 +101,9 @@ void CNetScheduleAdmin::DeleteQueue(const string& qname)
 {
     string cmd = "QDEL " + qname;
 
-    CNetServiceIterator it = m_Impl->m_API->m_Service.Iterate();
-
-    do
+    for (CNetServiceIterator it =
+            m_Impl->m_API->m_Service.Iterate(); it; ++it)
         (*it).ExecWithRetry(cmd);
-    while (++it);
 }
 
 void CNetScheduleAdmin::DumpJob(CNcbiOstream& out, const string& job_key)
@@ -130,11 +126,9 @@ void CNetScheduleAdmin::DropQueue()
 {
     string cmd = "DROPQ";
 
-    CNetServiceIterator it = m_Impl->m_API->m_Service.Iterate();
-
-    do
+    for (CNetServiceIterator it =
+            m_Impl->m_API->m_Service.Iterate(); it; ++it)
         (*it).ExecWithRetry(cmd);
-    while (++it);
 }
 
 
@@ -224,9 +218,8 @@ void CNetScheduleAdmin::GetWorkerNodes(
 
     set<pair<string, unsigned short> > m_Unique;
 
-    CNetServiceIterator it = m_Impl->m_API->m_Service.Iterate();
-
-    do {
+    for (CNetServiceIterator it =
+            m_Impl->m_API->m_Service.Iterate(); it; ++it) {
         CNetServer::SExecResult exec_result((*it).ExecWithRetry("STAT"));
         CNetServerMultilineCmdOutput output(exec_result);
 
@@ -281,7 +274,7 @@ void CNetScheduleAdmin::GetWorkerNodes(
                 }
             }
         }
-    } while (++it);
+    }
 }
 
 void CNetScheduleAdmin::PrintConf(CNcbiOstream& output_stream)
@@ -301,16 +294,15 @@ void CNetScheduleAdmin::PrintServerStatistics(CNcbiOstream& output_stream,
 
 void CNetScheduleAdmin::GetQueueList(TQueueList& qlist)
 {
-    CNetServiceIterator it = m_Impl->m_API->m_Service.Iterate();
-
-    do {
+    for (CNetServiceIterator it =
+            m_Impl->m_API->m_Service.Iterate(); it; ++it) {
         CNetServer server = *it;
 
         qlist.push_back(SServerQueueList(server));
 
         NStr::Split(server.ExecWithRetry("QLST").response,
             ",;", qlist.back().queues);
-    } while (++it);
+    }
 }
 
 void CNetScheduleAdmin::StatusSnapshot(
@@ -323,16 +315,15 @@ void CNetScheduleAdmin::StatusSnapshot(
 
     string output_line, st_str, cnt_str;
 
-    CNetServiceIterator it = m_Impl->m_API->m_Service.Iterate();
-
-    do {
+    for (CNetServiceIterator it =
+            m_Impl->m_API->m_Service.Iterate(); it; ++it) {
         CNetServerMultilineCmdOutput cmd_output((*it).ExecWithRetry(cmd));
 
         while (cmd_output.ReadLine(output_line))
             if (NStr::SplitInTwo(output_line, " ", st_str, cnt_str))
                 status_map[CNetScheduleAPI::StringToStatus(st_str)] +=
                     NStr::StringToUInt(cnt_str);
-    } while (++it);
+    }
 }
 
 void CNetScheduleAdmin::AffinitySnapshot(
@@ -342,9 +333,8 @@ void CNetScheduleAdmin::AffinitySnapshot(
 
     string aff_str, cnt_str;
 
-    CNetServiceIterator it = m_Impl->m_API->m_Service.Iterate();
-
-    do {
+    for (CNetServiceIterator it =
+            m_Impl->m_API->m_Service.Iterate(); it; ++it) {
         string cmd_output((*it).ExecWithRetry(cmd).response);
         vector<CTempString> affinities;
         NStr::Tokenize(cmd_output, "&", affinities);
@@ -361,7 +351,7 @@ void CNetScheduleAdmin::AffinitySnapshot(
                 affinity_map[aff_str].first += NStr::StringToUInt(cnt_str);
             }
         }
-    } while (++it);
+    }
 }
 
 unsigned long CNetScheduleAdmin::Count(const string& query)
@@ -372,11 +362,9 @@ unsigned long CNetScheduleAdmin::Count(const string& query)
 
     unsigned long counter = 0;
 
-    CNetServiceIterator it = m_Impl->m_API->m_Service.Iterate();
-
-    do
+    for (CNetServiceIterator it =
+            m_Impl->m_API->m_Service.Iterate(); it; ++it)
         counter += NStr::StringToULong((*it).ExecWithRetry(cmd).response);
-    while (++it);
 
     return counter;
 }
@@ -424,15 +412,14 @@ void CNetScheduleAdmin::RetrieveKeys(const string& query,
     cmd.append(NStr::PrintableString(query));
     cmd.append("\" IDS");
 
-    CNetServiceIterator it = m_Impl->m_API->m_Service.Iterate();
-
-    do {
+    for (CNetServiceIterator it =
+            m_Impl->m_API->m_Service.Iterate(); it; ++it) {
         CNetServer server = *it;
 
         inter_ids[SNetScheduleAdminImpl::TIDsMap::key_type(
             g_NetService_gethostip(server->m_Address.host),
             server->m_Address.port)] = server.ExecWithRetry(cmd).response;
-    } while (++it);
+    }
 
     ids.x_Clear();
     ITERATE(SNetScheduleAdminImpl::TIDsMap, it, inter_ids) {
