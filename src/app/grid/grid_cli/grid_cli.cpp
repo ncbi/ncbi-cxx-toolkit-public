@@ -127,6 +127,11 @@ struct SOptionDefinition {
     {CCommandLineParser::eSwitch, eExclusiveJob,
         "exclusive-job", "Create an exclusive job."},
 
+    {CCommandLineParser::eOptionWithParameter, eJobOutput,
+        JOB_OUTPUT_OPTION, "Provide job output on the command line "
+            "(inhibits reading from the standard input stream or an "
+            "input file)."},
+
     {CCommandLineParser::eOptionWithParameter, eReturnCode,
         "return-code", "Job return code."},
 
@@ -442,7 +447,8 @@ struct SCommandDefinition {
         "Change the state of the job to either 'Done' or 'Failed'. This "
         "command can only be executed on jobs that are in the 'Running' "
         "state.\n\n"
-        "Job output is read from the standard input stream or a file. "
+        "Unless the '--" JOB_OUTPUT_OPTION "' option is given, job "
+        "output is read from the standard input stream or a file.\n\n"
         "If the job is being reported as failed, an error message "
         "must be provided with the '--" FAIL_JOB_OPTION "' command "
         "line option.\n\n"
@@ -451,8 +457,8 @@ struct SCommandDefinition {
         "if it succeeds, its output is identical to that of the "
         REQUESTJOB_COMMAND " command. Otherwise, no output is produced.",
         {eID, eNetSchedule, eQueue, eWNodePort, eWNodeGUID,
-            eNetCache, eInputFile, eReturnCode, eFailJob, eGetNextJob,
-            eOutputFile, eAuth, -1}},
+            eNetCache, eReturnCode, eJobOutput, eInputFile, eFailJob,
+            eGetNextJob, eOutputFile, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_ReturnJob,
         "returnjob", "Return a previously accepted job.",
@@ -672,6 +678,9 @@ int CGridCommandLineInterfaceApp::Run()
                 NStr::SplitInTwo(opt_value, "=", job_tag_name, job_tag_value);
                 m_Opts.job_tags.push_back(
                     CNetScheduleAPI::TJobTag(job_tag_name, job_tag_value));
+                break;
+            case eJobOutput:
+                m_Opts.job_output = opt_value;
                 break;
             case eReturnCode:
                 m_Opts.return_code = NStr::StringToInt(opt_value);

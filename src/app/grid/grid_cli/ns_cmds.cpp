@@ -756,16 +756,19 @@ int CGridCommandLineInterfaceApp::Cmd_CommitJob()
     char buffer[16 * 1024];
     size_t bytes_read;
 
-    while ((bytes_read = fread(buffer, 1,
-            sizeof(buffer), m_Opts.input_stream)) > 0) {
-        if (writer->Write(buffer, bytes_read) != eRW_Success) {
-            fprintf(stderr, PROGRAM_NAME
-                ": error while submitting job output.\n");
-            return 3;
+    if (!IsOptionSet(eJobOutput))
+        while ((bytes_read = fread(buffer, 1,
+                sizeof(buffer), m_Opts.input_stream)) > 0) {
+            if (writer->Write(buffer, bytes_read) != eRW_Success)
+                goto ErrorExit;
+            if (feof(m_Opts.input_stream))
+                break;
         }
-        if (feof(m_Opts.input_stream))
-            break;
-    }
+    else
+        if (writer->Write(m_Opts.job_output.data(),
+                m_Opts.job_output.length()) != eRW_Success)
+            goto ErrorExit;
+
 
     if (!IsOptionSet(eFailJob)) {
         if (!IsOptionSet(eGetNextJob))
@@ -784,6 +787,10 @@ int CGridCommandLineInterfaceApp::Cmd_CommitJob()
     }
 
     return 0;
+
+ErrorExit:
+    fprintf(stderr, PROGRAM_NAME ": error while submitting job output.\n");
+    return 3;
 }
 
 int CGridCommandLineInterfaceApp::Cmd_ReturnJob()
