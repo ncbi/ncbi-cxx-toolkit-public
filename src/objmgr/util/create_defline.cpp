@@ -208,6 +208,7 @@ void CDeflineGenerator::x_SetFlags (
 
     m_Chromosome.clear();
     m_Clone.clear();
+    m_has_clone = false;
     m_Map.clear();
     m_Plasmid.clear();
     m_Segment.clear();
@@ -453,6 +454,7 @@ void CDeflineGenerator::x_SetBioSrc (
                     break;
                 case NCBI_SUBSOURCE(clone):
                     m_Clone = str;
+                    m_has_clone = true;
                     break;
                 case NCBI_SUBSOURCE(map):
                     m_Map = str;
@@ -492,20 +494,44 @@ void CDeflineGenerator::x_SetBioSrc (
         // take first, then break to skip remainder
         break;
     }
+
+    if (m_has_clone) return;
+
+    FOR_EACH_SEQFEAT_ON_BIOSEQ_HANDLE (feat_it, bsh, Biosrc) {
+        const CSeq_feat& feat = feat_it->GetOriginalFeature();
+        if (! feat.IsSetData ()) continue;
+        const CSeqFeatData& sfdata = feat.GetData ();
+        const CBioSource& source = sfdata.GetBiosrc();
+
+        // process SubSource
+        FOR_EACH_SUBSOURCE_ON_BIOSOURCE (sbs_itr, source) {
+            const CSubSource& sbs = **sbs_itr;
+            if (! sbs.IsSetName()) continue;
+            SWITCH_ON_SUBSOURCE_CHOICE (sbs) {
+                case NCBI_SUBSOURCE(clone):
+                    m_has_clone = true;
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
 }
 
 // generate title from BioSource fields
 string CDeflineGenerator::x_DescribeClones (void)
 
 {
+    if (m_HTGSUnfinished && m_HTGSPooled && m_has_clone) {
+        return ", pooled multiple clones";
+    }
+
     SIZE_TYPE count = 1;
     for (SIZE_TYPE pos = m_Clone.find(';'); pos != NPOS;
          pos = m_Clone.find(';', pos + 1)) {
         ++count;
     }
-    if (m_HTGSUnfinished && m_HTGSPooled) {
-        return ", pooled multiple clones";
-    } else if (count > 3) {
+    if (count > 3) {
         return ", " + NStr::IntToString(count) + " clones";
     } else {
         return " clone " + m_Clone;
@@ -559,7 +585,7 @@ string CDeflineGenerator::x_TitleFromBioSrc (void)
     if (! m_Chromosome.empty()) {
         chr = " chromosome " + m_Chromosome;
     }
-    if (! m_Clone.empty()) {
+    if (m_has_clone) {
         cln = x_DescribeClones ();
     }
     if (! m_Map.empty()) {

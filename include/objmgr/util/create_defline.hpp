@@ -218,6 +218,7 @@ private:
     /// subsource fields
     string m_Chromosome;
     string m_Clone;
+    bool m_has_clone;
     string m_Map;
     string m_Plasmid;
     string m_Segment;
