@@ -158,8 +158,8 @@ typedef struct SConnectionTag {
 
 static EIO_Status x_Callback(CONN conn, ECONN_Callback type)
 {
-    FConnCallback func;
-    void*         data;
+    FCONN_Callback func;
+    void*          data;
 
     assert(conn  &&  (int) type >= 0  &&  (int) type < CONN_N_CALLBACKS);
     if (conn->state == eCONN_Unusable)
