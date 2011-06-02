@@ -956,6 +956,7 @@ bool CNetService::FindServer(INetServerFinder* finder,
     CNetService::EIterationMode mode)
 {
     bool had_comm_err = false;
+    string error_message;
 
     for (CNetServiceIterator it = Iterate(mode); it; ++it) {
         CNetServer server = *it;
@@ -965,25 +966,24 @@ bool CNetService::FindServer(INetServerFinder* finder,
                 return true;
         }
         catch (CNetServiceException& ex) {
-            ERR_POST_X(5, server->m_Address.AsString() <<
-                " returned error: \"" << ex.what() << "\"");
-
             if (ex.GetErrCode() != CNetServiceException::eCommunicationError)
                 throw;
 
             had_comm_err = true;
+            error_message = server->m_Address.AsString();
+            error_message += ": ";
+            error_message += ex.what();
         }
         catch (CIO_Exception& ex) {
-            ERR_POST_X(6, server->m_Address.AsString() <<
-                " returned error: \"" << ex.what() << "\"");
-
             had_comm_err = true;
+            error_message = server->m_Address.AsString();
+            error_message += ": ";
+            error_message += ex.what();
         }
     }
 
     if (had_comm_err) {
-        NCBI_THROW(CNetServiceException,
-            eCommunicationError, "Communication error (see details above)");
+        NCBI_THROW(CNetServiceException, eCommunicationError, error_message);
     }
 
     return false;
