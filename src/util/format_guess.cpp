@@ -144,15 +144,15 @@ CFormatGuess::s_CheckOrder[] =
     eRmo,
     eGtf,
     eGff3,
-	eGff2,
-	eGlimmer3,
+    eGff2,
+    eGlimmer3,
     eAgp,
     eXml,
     eWiggle,
     eBed,
     eBed15,
     eNewick,
-	eHgvs,
+    eHgvs,
     eAlignment,
     eDistanceMatrix,
     eFlatFileSequence,
@@ -192,10 +192,10 @@ const char* const CFormatGuess::sm_FormatNames[CFormatGuess::eFormat_max] = {
     "Taxplot",
     "Phrap ACE",
     "table",
-	"GTF",
-	"GFF3",
-	"GFF2",
-	"HGVS"
+    "GTF",
+    "GFF3",
+    "GFF2",
+    "HGVS"
 };
 
 const char*
@@ -415,10 +415,10 @@ bool CFormatGuess::x_TestFormat(EFormat format, EMode mode)
     case eGtf:
         return TestFormatGtf( mode );
     case eGff3:
-		return TestFormatGff3( mode );
-	case eGff2:
-		return TestFormatGff2( mode );
-	case eGlimmer3:
+        return TestFormatGff3( mode );
+    case eGff2:
+        return TestFormatGff2( mode );
+    case eGlimmer3:
         return TestFormatGlimmer3( mode );
     case eAgp:
         return TestFormatAgp( mode );
@@ -452,8 +452,8 @@ bool CFormatGuess::x_TestFormat(EFormat format, EMode mode)
         return TestFormatPhrapAce( mode );
     case eTable:
         return TestFormatTable( mode );
-	case eHgvs:
-		return TestFormatHgvs( mode );
+    case eHgvs:
+        return TestFormatHgvs( mode );
 
     default:
         NCBI_THROW( CCoreException, eInvalidArg,
@@ -493,32 +493,34 @@ CFormatGuess::EnsureTestBuffer()
         return false;
     }
 
-	// Fix to the all-comment problem.
-	// Read a test buffer,
-	// Test it for being all comment
-	// If its all comment, read a twice as long buffer
-	// Stop when its no longer all comment, end of the stream,
-	//   or Multiplier hits 1024 
-	int Multiplier = 1;
+    // Fix to the all-comment problem.
+    // Read a test buffer,
+    // Test it for being all comment
+    // If its all comment, read a twice as long buffer
+    // Stop when its no longer all comment, end of the stream,
+    //   or Multiplier hits 1024 
+    int Multiplier = 1;
     while(true) {
-		m_pTestBuffer = new char[ Multiplier * s_iTestBufferSize ];
-    	m_Stream.read( m_pTestBuffer, Multiplier * s_iTestBufferSize );
-    	m_iTestDataSize = m_Stream.gcount();
-    	m_Stream.clear();  // in case we reached eof
-    	CStreamUtils::Stepback( m_Stream, m_pTestBuffer, m_iTestDataSize );
-    	
-		if(IsAllComment()) {
-			Multiplier *= 2;
-			delete [] m_pTestBuffer;
-			m_pTestBuffer = NULL;
-			if(Multiplier >= 1024 || m_iTestDataSize < ((Multiplier/2) * s_iTestBufferSize) ) 
-				return false;
-			continue;
-		} else {
-			break;
-		}
-	}
-	return true;
+        m_pTestBuffer = new char[ Multiplier * s_iTestBufferSize ];
+        m_Stream.read( m_pTestBuffer, Multiplier * s_iTestBufferSize );
+        m_iTestDataSize = m_Stream.gcount();
+        m_Stream.clear();  // in case we reached eof
+        CStreamUtils::Stepback( m_Stream, m_pTestBuffer, m_iTestDataSize );
+        
+        if (IsAllComment()) {
+            Multiplier *= 2;
+            delete [] m_pTestBuffer;
+            m_pTestBuffer = NULL;
+            if (Multiplier >= 1024 || m_iTestDataSize < ((Multiplier/2) * s_iTestBufferSize) )  {
+                return false;
+            }
+            continue;
+        } else {
+            break;
+        }
+    }
+
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -648,9 +650,9 @@ CFormatGuess::TestFormatGtf(
         //  start of data
         //
         if ( it->empty() || (*it)[0] == '#' ) {
-			continue;
-		}
-		if ( !uGtfLineCount && NStr::StartsWith( *it, "browser " ) ) {
+            continue;
+        }
+        if ( !uGtfLineCount && NStr::StartsWith( *it, "browser " ) ) {
             continue;
         }
         if ( !uGtfLineCount && NStr::StartsWith( *it, "track " ) ) {
@@ -683,9 +685,9 @@ CFormatGuess::TestFormatGff3(
         //  start of data
         //
         if ( it->empty() || (*it)[0] == '#' ) {
-			continue;
-		}
-		if ( !uGffLineCount && NStr::StartsWith( *it, "browser " ) ) {
+            continue;
+        }
+        if ( !uGffLineCount && NStr::StartsWith( *it, "browser " ) ) {
             continue;
         }
         if ( !uGffLineCount && NStr::StartsWith( *it, "track " ) ) {
@@ -718,9 +720,9 @@ CFormatGuess::TestFormatGff2(
         //  start of data
         //
         if ( it->empty() || (*it)[0] == '#' ) {
-			continue;
-		}
-		if ( !uGffLineCount && NStr::StartsWith( *it, "browser " ) ) {
+            continue;
+        }
+        if ( !uGffLineCount && NStr::StartsWith( *it, "browser " ) ) {
             continue;
         }
         if ( !uGffLineCount && NStr::StartsWith( *it, "track " ) ) {
@@ -768,13 +770,13 @@ CFormatGuess::TestFormatAgp(
     if ( ! EnsureTestBuffer() || ! EnsureSplitLines() ) {
         return false;
     }
-	bool LineFound = false;
+    bool LineFound = false;
     ITERATE( list<string>, it, m_TestLines ) {
         if ( it->empty() || (*it)[0] == '#' ) {
-			continue;
-		}
-		if ( IsLineAgp( *it ) ) {
-			LineFound = true;
+            continue;
+        }
+        if ( IsLineAgp( *it ) ) {
+            LineFound = true;
         }
     }
     return LineFound;
@@ -1233,7 +1235,7 @@ CFormatGuess::TestFormatBed15(
         return false;
     }
 
-	bool LineFound = false;
+    bool LineFound = false;
     size_t columncount = 15;
     ITERATE( list<string>, it, m_TestLines ) {
         if ( NStr::TruncateSpaces( *it ).empty() ) {
@@ -1258,8 +1260,8 @@ CFormatGuess::TestFormatBed15(
         if ( columns.size() != columncount ) {
             return false;
         } else {
-			LineFound = true;
-		}
+            LineFound = true;
+        }
     }
     return LineFound;
 }
@@ -1299,8 +1301,8 @@ CFormatGuess::TestFormatHgvs(
 
     for ( ;  it != m_TestLines.end();  ++it) {
         if ( it->empty() || (*it)[0] == '#' ) {
-			continue;
-		}
+            continue;
+        }
         if ( ! IsLineHgvs( *it ) ) {
             return false;
         }
@@ -1720,10 +1722,10 @@ bool CFormatGuess::IsLineGtf(
     if ( tokens[7].size() != 1 || NPOS == tokens[7].find_first_of( ".0123" ) ) {
         return false;
     }
-	if ( tokens.size() < 9 || 
-		 (NPOS == tokens[8].find( "gene_id" ) && NPOS == tokens[8].find( "transcript_id" ) ) ) {
-		return false;
-	}
+    if ( tokens.size() < 9 || 
+         (NPOS == tokens[8].find( "gene_id" ) && NPOS == tokens[8].find( "transcript_id" ) ) ) {
+        return false;
+    }
     return true;
 }
 
@@ -1751,22 +1753,22 @@ bool CFormatGuess::IsLineGff3(
     if ( tokens[7].size() != 1 || NPOS == tokens[7].find_first_of( ".0123" ) ) {
         return false;
     }
-	if ( tokens.size() < 9 || tokens[8].empty()) {
-		return false;
-	}
-	if ( tokens.size() >= 9 && tokens[8].size() > 1) {
-		const string& col9 = tokens[8];
-		if ( NPOS == NStr::FindNoCase(col9, "ID") &&
-			 NPOS == NStr::FindNoCase(col9, "Parent") &&
-			 NPOS == NStr::FindNoCase(col9, "Target") &&
-			 NPOS == NStr::FindNoCase(col9, "Name") &&
-			 NPOS == NStr::FindNoCase(col9, "Alias") &&
-			 NPOS == NStr::FindNoCase(col9, "Note") &&
-			 NPOS == NStr::FindNoCase(col9, "Dbxref") &&
-			 NPOS == NStr::FindNoCase(col9, "Xref") ) {
-			return false;
-		}
-	}
+    if ( tokens.size() < 9 || tokens[8].empty()) {
+        return false;
+    }
+    if ( tokens.size() >= 9 && tokens[8].size() > 1) {
+        const string& col9 = tokens[8];
+        if ( NPOS == NStr::FindNoCase(col9, "ID") &&
+             NPOS == NStr::FindNoCase(col9, "Parent") &&
+             NPOS == NStr::FindNoCase(col9, "Target") &&
+             NPOS == NStr::FindNoCase(col9, "Name") &&
+             NPOS == NStr::FindNoCase(col9, "Alias") &&
+             NPOS == NStr::FindNoCase(col9, "Note") &&
+             NPOS == NStr::FindNoCase(col9, "Dbxref") &&
+             NPOS == NStr::FindNoCase(col9, "Xref") ) {
+            return false;
+        }
+    }
 
     return true;
 }
@@ -1966,59 +1968,75 @@ CFormatGuess::EnsureSplitLines()
 bool
 CFormatGuess::IsAllComment()
 {
-	m_bSplitDone = false;
-	m_TestLines.clear();
-	EnsureSplitLines();
+    // first stab - are we text?  comments are only valid if we are text
+    size_t count = 0;
+    size_t count_print = 0;
+    for (int i = 0;  i < m_iTestDataSize;  ++i, ++count) {
+        if (isprint((unsigned char) m_pTestBuffer[i])) {
+            ++count_print;
+        }
+    }
+    if (count_print < count * 0.9) {
+        // 10% non-printing at least; likely not text
+        return false;
+    }
 
-	ITERATE(list<string>, it, m_TestLines) {
-		if(it->empty())
-			continue;
-		else if(NStr::StartsWith(*it, "#"))
-			continue;
-		else if(NStr::StartsWith(*it, "--"))
-			continue;
-		else {
-			return false;
-		}
-	}
-	
-	return true;
+    m_bSplitDone = false;
+    m_TestLines.clear();
+    EnsureSplitLines();
+
+    ITERATE(list<string>, it, m_TestLines) {
+        if(it->empty()) {
+            continue;
+        }
+        else if(NStr::StartsWith(*it, "#")) {
+            continue;
+        }
+        else if(NStr::StartsWith(*it, "--")) {
+            continue;
+        }
+        else {
+            return false;
+        }
+    }
+    
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
 bool CFormatGuess::IsLineHgvs(
     const string& line )
 {
-	// This simple check can mistake Newwick, so Newwick is checked first
-	//  /:(g|c|r|p|m|mt)\./  as in NC_000001.9:g.1234567C>T
-	int State = 0;
-	ITERATE(string, Iter, line) {
-		char Char = *Iter;
-		char Next = '\0';
-		string::const_iterator NextI = Iter;
-		++NextI;
-		if(NextI != line.end())
-			Next = *NextI;
-		
-		if(State == 0) {
-			if(Char == ':')
-				State = 1;
-		} else if(State == 1) {
-			if (Char == 'g' ||
-				Char == 'c' ||
-				Char == 'r' ||
-				Char == 'p' ||
-			   (Char == 'm' && Next == 't') ||
-			    Char == 'm' ) {
-				State = 2;
-			}
-		} else if(State == 2) {
-			if(Char == '.') 
-				State = 3;
-		}
-	}
-	
-	return (State == 3);	
+    // This simple check can mistake Newwick, so Newwick is checked first
+    //  /:(g|c|r|p|m|mt)\./  as in NC_000001.9:g.1234567C>T
+    int State = 0;
+    ITERATE(string, Iter, line) {
+        char Char = *Iter;
+        char Next = '\0';
+        string::const_iterator NextI = Iter;
+        ++NextI;
+        if(NextI != line.end())
+            Next = *NextI;
+        
+        if(State == 0) {
+            if(Char == ':')
+                State = 1;
+        } else if(State == 1) {
+            if (Char == 'g' ||
+                Char == 'c' ||
+                Char == 'r' ||
+                Char == 'p' ||
+               (Char == 'm' && Next == 't') ||
+                Char == 'm' ) {
+                State = 2;
+            }
+        } else if(State == 2) {
+            if(Char == '.') 
+                State = 3;
+        }
+    }
+    
+    return (State == 3);    
 }
 
 
