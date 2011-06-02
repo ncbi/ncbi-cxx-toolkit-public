@@ -324,18 +324,18 @@ typedef enum {
 } ECONN_Callback;
 #define CONN_N_CALLBACKS 4
 
-typedef EIO_Status (*FConnCallback)(CONN conn, ECONN_Callback type, void*data);
+typedef EIO_Status (*FCONN_Callback)(CONN conn,ECONN_Callback type,void* data);
 
 typedef struct {
-    FConnCallback func;  /* Function to call on the event                */
-    void*         data;  /* Data to pass to the callback as its last arg */
+    FCONN_Callback func;  /* Function to call on the event                */
+    void*          data;  /* Data to pass to the callback as its last arg */
 } SCONN_Callback;
 
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_SetCallback
 (CONN                  conn,    /* [in]  connection to set callback for      */
  ECONN_Callback        type,    /* [in]  callback type                       */
  const SCONN_Callback* new_cb,  /* [in]  callback to set (may be 0 to reset) */
- SCONN_Callback*       old_cb   /* [out] to save old callback at (may be 0)  */
+       SCONN_Callback* old_cb   /* [out] to save old callback at (may be 0)  */
 );
 
 
