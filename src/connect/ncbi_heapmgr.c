@@ -168,8 +168,8 @@ static int/*bool*/ s_HEAP_fast   = 1/*true*/;
 static int/*bool*/ s_HEAP_newalk = 0/*false*/;
 
 
-#define _HEAP_ALIGN_EX(a, b)  ((((TNCBI_Size)(a) + ((b) - 1)) / (b)) * (b))
-#define _HEAP_ALIGN(a, b)     (( (TNCBI_Size)(a) + ((b) - 1)) & ~((b) - 1))
+#define _HEAP_ALIGN_EX(a, b)  ((((unsigned long)(a) + ((b) - 1)) / (b)) * (b))
+#define _HEAP_ALIGN(a, b)     (( (unsigned long)(a) + ((b) - 1)) & ~((b) - 1))
 #define _HEAP_ALIGNSHIFT      4
 #define _HEAP_ALIGNMENT       (1 << _HEAP_ALIGNSHIFT)
 #define HEAP_ALIGN(a)         _HEAP_ALIGN(a, _HEAP_ALIGNMENT)
@@ -215,7 +215,7 @@ HEAP HEAP_Create(void*      base,  TNCBI_Size   size,
     if (base) {
         SHEAP_HeapBlock* b = heap->base;
         /* Reformat the pre-allocated heap */
-        if (_HEAP_ALIGN(base, sizeof(SHEAP_Block)) != (TNCBI_Size) base) {
+        if (_HEAP_ALIGN(base, sizeof(SHEAP_Block)) != (unsigned long) base) {
             CORE_LOGF_X(2, eLOG_Warning,
                         ("Heap Create: Unaligned base (0x%08lX)",
                          (long) base));
@@ -239,7 +239,7 @@ HEAP HEAP_AttachFast(const void* base, TNCBI_Size size, int serial)
 
     if (!base != !size  ||  !(heap = (HEAP) calloc(1, sizeof(*heap))))
         return 0;
-    if (_HEAP_ALIGN(base, sizeof(SHEAP_Block)) != (TNCBI_Size) base) {
+    if (_HEAP_ALIGN(base, sizeof(SHEAP_Block)) != (unsigned long) base) {
         CORE_LOGF_X(3, eLOG_Warning,
                     ("Heap Attach: Unaligned base (0x%08lX)", (long) base));
     }
@@ -501,7 +501,7 @@ static SHEAP_Block* s_HEAP_Alloc(HEAP heap, TNCBI_Size size, int/*bool*/ fast)
         TNCBI_Size hsize = _HEAP_ALIGN_EX(dsize + need, heap->chunk);
         SHEAP_HeapBlock* base = (SHEAP_HeapBlock*)
             heap->resize(heap->base, hsize, heap->auxarg);
-        if (_HEAP_ALIGN(base, sizeof(SHEAP_Block)) != (TNCBI_Size) base) {
+        if (_HEAP_ALIGN(base, sizeof(SHEAP_Block)) != (unsigned long) base) {
             CORE_LOGF_X(9, eLOG_Warning,
                         ("Heap Alloc%s: Unaligned base (0x%08lX)",
                          s_HEAP_Id(_id, heap), (long) base));
@@ -869,7 +869,7 @@ HEAP HEAP_Trim(HEAP heap)
             assert(!base);
         else if (!base)
             return 0;
-        if (_HEAP_ALIGN(base, sizeof(SHEAP_Block)) != (TNCBI_Size) base) {
+        if (_HEAP_ALIGN(base, sizeof(SHEAP_Block)) != (unsigned long) base) {
             CORE_LOGF_X(31, eLOG_Warning,
                         ("Heap Trim%s: Unaligned base (0x%08lX)",
                          s_HEAP_Id(_id, heap), (long) base));
@@ -917,8 +917,8 @@ HEAP HEAP_Copy(const HEAP heap, size_t extra, int serial)
         return 0;
     if (size) {
         char* base = (char*) copy + sizeof(*copy);
-        base += _HEAP_ALIGN(base, sizeof(SHEAP_Block)) - (TNCBI_Size) base;
-        assert(_HEAP_ALIGN(base, sizeof(SHEAP_Block)) == (TNCBI_Size) base);
+        base += _HEAP_ALIGN(base, sizeof(SHEAP_Block)) - (unsigned long) base;
+        assert(_HEAP_ALIGN(base, sizeof(SHEAP_Block)) == (unsigned long) base);
         copy->base = (SHEAP_HeapBlock*) base;
     } else
         copy->base = 0;
