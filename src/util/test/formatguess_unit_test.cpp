@@ -54,6 +54,36 @@ NCBITEST_AUTO_FINI()
 
 // Real data does not matter, just need some non-printable chars.
 static const char* kData_AsnBin = "\1\2\3\4\5\6\7\0";
+static const char* kData_AsnBin_SeqFeat = 
+	"\x30\x80\xa0\x80\xa2\x80\xa0\x80\x02\x01\x09\x00\x00\x00\x00\x00"
+	"\x00\xa1\x80\xa0\x80\x30\x80\xa0\x80\x1a\x07\x56\x4e\x31\x52\x35" 
+	"\x34\x50\x00\x00\x00\x00\x00\x00\x00\x00\xa6\x80\xa3\x80\x30\x80"
+	"\xa0\x80\x02\x03\x0c\x3a\x4c\x00\x00\xa1\x80\x02\x03\x0c\x3d\xc2"
+	"\x00\x00\xa2\x80\x0d\x0a\x01\x01\x00\x00\xa3\x80\xab\x80\x02\x04"
+	"\x0d\x61\xd3\x43\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xa9\x80"
+	"\x30\x80\xa1\x80\xa1\x80\x1a\x1a\x43\x6f\x6d\x62\x69\x6e\x65\x64"
+	"\x46\x65\x61\x74\x75\x72\x65\x55\x73\x65\x72\x4f\x62\x6a\x65\x63"
+	"\x74\x73\x00\x00\x00\x00\xa2\x80\x30\x80\x30\x80\xa0\x80\xa1\x80"
+	"\x1a\x0d\x0a\x54\x72\x61\x63\x6b\x69\x6e\x67\x49\x64\x00\x00\x00"
+	"\x00\xa2\x80\xa1\x80\x02\x03\x01\x82\x08\x00\x00\x00\x00\x00\x00"
+	"\x30\x80\xa0\x80\xa1\x80\x1a\x0d\x4d\x6f\x64\x65\x6c\x45\x76\x69"
+	"\x64\x65\x6e\x63\x65\x00\x00\x00\x00\xa2\x80\xa5\x80\x30\x80\xa1"
+	"\x80\xa1\x80\x1a\x0d\x4d\x6f\x64\x65\x6c\x45\x76\x69\x64\x65\x6e"
+	"\x63\x65\x00\x00\x00\x00\xa2\x80\x30\x80\x30\x80\xa0\x80\xa1\x80"
+	"\x1a\x06\x4d\x65\x74\x68\x6f\x64\x00\x00\x00\x00\xa2\x80\xa0\x80"
+	"\x1a\x0f\x43\x75\x72\x61\x74\x65\x64\x20\x47\x65\x6e\x6f\x6d\x69"
+	"\x63\x00\x00\x00\x00\x00\x00\x30\x80\xa0\x80\xa1\x80\x1a\x06\x53"
+	"\x6f\x75\x72\x63\x65\x00\x00\x00\x00\xa2\x80\xa0\x80\x1a\x0b\x4e"
+	"\x47\x5f\x30\x31\x35\x36\x36\x35\x2e\x31\x00\x00\x00\x00\x00\x00"
+	"\x30\x80\xa0\x80\xa1\x80\x1a\x0b\x43\x6f\x6e\x74\x69\x67\x20\x4e"
+	"\x61\x6d\x65\x00\x00\x00\x00\xa2\x80\xa0\x80\x1a\x09\x4e\x54\x5f"
+	"\x30\x33\x33\x39\x38\x35\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+	"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+	"\xad\x80\x31\x80\x30\x80\xa0\x80\x1a\x06\x47\x65\x6e\x65\x49\x44"
+	"\x00\x00\xa1\x80\xa0\x80\x02\x04\x05\xfa\xa6\xe7\x00\x00\x00\x00"
+	"\x00\x00\x30\x80\xa0\x80\x1a\x04\x48\x47\x4e\x43\x00\x00\xa1\x80"
+	"\xa0\x80\x02\x03\x00\x91\xfe\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+	"\x00\xae\x80\x01\x01\x01\x00\x00\x00\x00";
 static const char* kData_Rmo =
     " 1320 15.6  6.2  0.0  HSU08988  6563 6781 (22462) C  MER7A   "
     "DNA/MER2_type    (0)  337  104  20\n"
@@ -75,14 +105,18 @@ static const char* kData_Gtf =
     "gene_id \"001\"; transcript_id \"001.1\";\n"
     "381 Twinscan  start_codon  380   382   .   +   0  "
     "gene_id \"001\"; transcript_id \"001.1\";\n";
+static const char* kData_Gvf =
+	"NC_000008.9	dbVar	CNV	151699	186841	.	.	.	ID=nsv6034;Name=nsv6034(CNV);Start_range=151699,152699;End_range=185641,186841\n"
+	"NC_000008.9	dbVar	SNV	212185	257141	.	.	.	ID=nsv6035;Name=nsv6035(CNV)\n"
+    "NC_000008.9	dbVar	CNV	577296	606629	.	.	.	ID=nsv6036;Name=nsv6036(CNV)\n";
 static const char* kData_Gff3 =
-	"NC_000008.9	dbVar	CNV	151699	186841	.	.	.	ID=nsv6034;Name=nsv6034(CNV);Var_type=CNV\n"
-	"NC_000008.9	dbVar	CNV	212185	257141	.	.	.	ID=nsv6035;Name=nsv6035(CNV);Var_type=CNV\n"
-    "NC_000008.9	dbVar	CNV	577296	606629	.	.	.	ID=nsv6036;Name=nsv6036(CNV);Var_type=CNV\n";
+	"NC_000008.9	dbVar	misc	151699	186841	.	.	.	ID=nsv6034;Name=nsv6034(CNV)\n"
+	"NC_000008.9	dbVar	misc	212185	257141	.	.	.	ID=nsv6035;Name=nsv6035(CNV)\n"
+    "NC_000008.9	dbVar	misc	577296	606629	.	.	.	ID=nsv6036;Name=nsv6036(CNV)\n";
 static const char* kData_Gff2 =
-	"NC_000008.9	dbVar	CNV	151699	186841	.	.	.	feat=a\n"
-	"NC_000008.9	dbVar	CNV	212185	257141	.	.	.	feat=b\n"
-    "NC_000008.9	dbVar	CNV	577296	606629	.	.	.	feat=c\n";
+	"NC_000008.9	dbVar	misc	151699	186841	.	.	.	feat=a\n"
+	"NC_000008.9	dbVar	misc	212185	257141	.	.	.	feat=b\n"
+    "NC_000008.9	dbVar	misc	577296	606629	.	.	.	feat=c\n";
 // Test for handling cases with huge comments
 static const char* kData_Gff3_Comment = 
 	"##gff-version 3\n"
@@ -110,9 +144,9 @@ static const char* kData_Gff3_Comment =
 	" mauris. Sed non erat lectus. Nullam id sollicitudin urna. Nullam"
 	" placerat, justo in lacinia consectetur, lectus nulla vehicula est,"
 	" eu aliquam mauris velit interdum lorem.\n"
-	"NC_000001.7	dbVar	CNV	10415637	10427143	.	.	.	ID=nsv436924;Name=nsv436924(CNV);Var_type=CNV\n"
-	"NC_000001.7	dbVar 	CNV	101474397	101476638	.	.	.	ID=nsv436925;Name=nsv436925(CNV);Var_type=CNV\n"
-	"NC_000003.8	dbVar 	CNV	164983304	164985198	.	.	.	ID=nsv436926;Name=nsv436926(CNV);Var_type=CNV\n";
+	"NC_000001.7	dbVar	misc	10415637	10427143	.	.	.	ID=nsv436924;Name=nsv436924(CNV)\n"
+	"NC_000001.7	dbVar 	misc	101474397	101476638	.	.	.	ID=nsv436925;Name=nsv436925(CNV)\n"
+	"NC_000003.8	dbVar 	misc	164983304	164985198	.	.	.	ID=nsv436926;Name=nsv436926(CNV)\n";
 static const char* kData_Glimmer3 =
     ">gms:3447|cmr:632 chromosome 1 {Mycobacterium smegmatis MC2}\n"
     "orf00001 499 1692 +1 13.14\n"
@@ -285,6 +319,13 @@ BOOST_AUTO_TEST_CASE(TestBinaryAsn)
     BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eBinaryASN);
 }
 
+BOOST_AUTO_TEST_CASE(TestBinaryAsnSeqFeat)
+{
+	CNcbiIstrstream str(kData_AsnBin_SeqFeat);
+    CFormatGuess guess(str);
+    BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eBinaryASN);
+}
+
 BOOST_AUTO_TEST_CASE(TestRepeatMasker)
 {
     {{
@@ -307,6 +348,13 @@ BOOST_AUTO_TEST_CASE(TestGtf)
     CNcbiIstrstream str(kData_Gtf);
     CFormatGuess guess(str);
     BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eGtf);
+}
+
+BOOST_AUTO_TEST_CASE(TestGvf)
+{
+    CNcbiIstrstream str(kData_Gvf);
+    CFormatGuess guess(str);
+    BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eGvf);
 }
 
 BOOST_AUTO_TEST_CASE(TestGff3)

@@ -80,6 +80,7 @@ public:
 		eGff3                = 22, ///< GFF3, CGff3Reader
 		eGff2                = 23, ///< GFF2, CGff2Reader, any GFF-like that doesn't fit the others
 		eHgvs                = 24, ///< HGVS, CHgvsParser
+		eGvf                 = 25, ///< GVF, CGvfReader
 		/// Max value of EFormat
         eFormat_max
     };
@@ -207,7 +208,9 @@ protected:
         EMode );
     bool TestFormatGtf(
         EMode );
-    bool TestFormatGff3(
+    bool TestFormatGvf(
+		EMode );
+	bool TestFormatGff3(
         EMode );
     bool TestFormatGff2(
         EMode );
@@ -264,7 +267,9 @@ protected:
         const std::string& );
     static bool IsLineGtf(
         const std::string& );
-    static bool IsLineGff3(
+    static bool IsLineGvf(
+		const std::string& );
+	static bool IsLineGff3(
 		const std::string& );
 	static bool IsLineGff2(
 		const std::string& );

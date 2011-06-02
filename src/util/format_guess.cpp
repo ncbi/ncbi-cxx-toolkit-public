@@ -143,6 +143,7 @@ CFormatGuess::s_CheckOrder[] =
     //
     eRmo,
     eGtf,
+	eGvf,
     eGff3,
     eGff2,
     eGlimmer3,
@@ -192,10 +193,11 @@ const char* const CFormatGuess::sm_FormatNames[CFormatGuess::eFormat_max] = {
     "Taxplot",
     "Phrap ACE",
     "table",
-    "GTF",
-    "GFF3",
-    "GFF2",
-    "HGVS"
+	"GTF",
+	"GFF3",
+	"GFF2",
+	"HGVS",
+	"GVF"
 };
 
 const char*
@@ -414,7 +416,9 @@ bool CFormatGuess::x_TestFormat(EFormat format, EMode mode)
         return TestFormatRepeatMasker( mode );
     case eGtf:
         return TestFormatGtf( mode );
-    case eGff3:
+    case eGvf:
+		return TestFormatGvf( mode );
+	case eGff3:
         return TestFormatGff3( mode );
     case eGff2:
         return TestFormatGff2( mode );
@@ -664,6 +668,40 @@ CFormatGuess::TestFormatGtf(
         ++uGtfLineCount;
     }
     return (uGtfLineCount != 0);
+}
+
+//  -----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatGvf(
+    EMode /* not used */ )
+{
+    if ( ! EnsureTestBuffer() || ! EnsureSplitLines() ) {
+        return false;
+    }
+
+    unsigned int uGvfLineCount = 0;
+    list<string>::iterator it = m_TestLines.begin();
+
+    for ( ;  it != m_TestLines.end();  ++it) {
+        //
+        //  Make sure to ignore any UCSC track and browser lines prior to the
+        //  start of data
+        //
+        if ( it->empty() || (*it)[0] == '#' ) {
+			continue;
+		}
+		if ( !uGvfLineCount && NStr::StartsWith( *it, "browser " ) ) {
+            continue;
+        }
+        if ( !uGvfLineCount && NStr::StartsWith( *it, "track " ) ) {
+            continue;
+        }
+        if ( ! IsLineGvf( *it ) ) {
+            return false;
+        }
+        ++uGvfLineCount;
+    }
+    return (uGvfLineCount != 0);
 }
 
 
@@ -1731,6 +1769,77 @@ bool CFormatGuess::IsLineGtf(
 
 
 //  ----------------------------------------------------------------------------
+bool CFormatGuess::IsLineGvf(
+    const string& line )
+{
+    vector<string> tokens;
+    if ( NStr::Tokenize( line, " \t", tokens, NStr::eMergeDelims ).size() < 8 ) {
+        return false;
+    }
+    if ( ! s_IsTokenPosInt( tokens[3] ) ) {
+        return false;
+    }
+    if ( ! s_IsTokenPosInt( tokens[4] ) ) {
+        return false;
+    }
+	{{
+		list<string> terms;
+		terms.push_back("snv");
+		terms.push_back("cnv");
+		terms.push_back("copy_number_variation");
+		terms.push_back("gain");
+		terms.push_back("copy_number_gain");
+		terms.push_back("loss");
+		terms.push_back("copy_number_loss");
+		terms.push_back("loss_of_heterozygosity");
+		terms.push_back("complex");
+		terms.push_back("complex_substitution");
+		terms.push_back("complex_sequence_alteration");
+		terms.push_back("indel");
+		terms.push_back("insertion");
+		terms.push_back("inversion");
+		terms.push_back("substitution");
+		terms.push_back("deletion");
+		terms.push_back("duplication");
+		terms.push_back("translocation");
+		terms.push_back("upd");
+		terms.push_back("uniparental_disomy");
+		terms.push_back("maternal_uniparental_disomy");
+		terms.push_back("paternal_uniparental_disomy");
+		terms.push_back("tandom_duplication");
+		terms.push_back("structural_variation");
+		terms.push_back("sequence_alteration");
+		ITERATE(list<string>, termiter, terms) {
+			if(NStr::EqualNocase(*termiter, tokens[2]))
+				return true;
+		}
+	}}
+	if ( ! s_IsTokenDouble( tokens[5] ) ) {
+        return false;
+    }
+    if ( tokens[6].size() != 1 || NPOS == tokens[6].find_first_of( ".+-" ) ) {
+        return false;
+    }
+    if ( tokens[7].size() != 1 || NPOS == tokens[7].find_first_of( ".0123" ) ) {
+        return false;
+    }
+	if(tokens.size() >= 9) {
+		list<string> terms;
+		terms.push_back("start_range");
+		terms.push_back("end_range");
+		terms.push_back("variant_seq");
+		terms.push_back("genotype");
+		ITERATE(list<string>, termiter, terms) {
+			if(NStr::EqualNocase(*termiter, tokens[8]))
+				return true;
+		}
+	}
+
+    return false;
+}
+
+
+//  ----------------------------------------------------------------------------
 bool CFormatGuess::IsLineGff3(
     const string& line )
 {
@@ -1978,7 +2087,7 @@ CFormatGuess::IsAllComment()
     }
     if (count_print < count * 0.9) {
         // 10% non-printing at least; likely not text
-        return false;
+		return false;
     }
 
     m_bSplitDone = false;
