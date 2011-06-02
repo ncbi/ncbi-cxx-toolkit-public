@@ -159,11 +159,12 @@ bool CNetScheduleExecuter::GetJob(CNetScheduleJob& job, const string& affinity)
     if (m_Impl->m_ControlPort != 0) {
         cmd += ' ';
         cmd += NStr::IntToString(m_Impl->m_ControlPort);
-        if (!affinity.empty()) {
-            cmd += " \"";
-            cmd += affinity;
-            cmd += '"';
-        }
+    }
+
+    if (!affinity.empty()) {
+        cmd += " aff=\"";
+        cmd += NStr::PrintableString(affinity);
+        cmd += '"';
     }
 
     return m_Impl->GetJobImpl(cmd, job);
