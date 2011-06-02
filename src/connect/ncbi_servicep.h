@@ -42,7 +42,15 @@ extern "C" {
 #endif
 
 
-/* Table of iterator "virtual functions"
+#define xSERV_IsSuppressed(i) ((i)->time && (i)->time != NCBI_TIME_INFINITE \
+                               &&  (i)->rate < 0.0)
+#define xSERV_IsStandby(i)    ((i)->time && (i)->time != NCBI_TIME_INFINITE \
+                               &&  fabs((i)->rate) < 0.01)
+#define xSERV_IsDown(i)       ((i)->time && (i)->time != NCBI_TIME_INFINITE \
+                               &&  !(i)->rate)
+
+
+/* Table of iterator's "virtual functions"
  */
 typedef struct {
     void        (*Reset)(SERV_ITER iter);
@@ -80,6 +88,7 @@ struct SSERV_IterTag {
     const char*          val; /* value to match; original pointer            */
     size_t            vallen; /* == 0 for NULL pointer above                 */
     TNCBI_Time          time; /* the time of call                            */
+    const char*          sid; /* session ID as received in response          */
 };
 
 
