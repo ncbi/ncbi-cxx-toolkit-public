@@ -403,16 +403,15 @@ extern size_t BUF_Read(BUF buf, void* dst, size_t size)
 
 extern void BUF_Erase(BUF buf)
 {
-    if (!buf)
-        return;
-
-    while (buf->list) {
-        SBufChunk* head = buf->list;
-        buf->list = head->next;
-        free(head);
+    if (buf) {
+        while (buf->list) {
+            SBufChunk* head = buf->list;
+            buf->list = head->next;
+            free(head);
+        }
+        buf->last = 0;
+        buf->size = 0;
     }
-    buf->last = 0;
-    buf->size = 0;
 }
 
 
