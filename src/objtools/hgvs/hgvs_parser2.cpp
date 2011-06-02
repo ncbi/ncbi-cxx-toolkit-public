@@ -1668,9 +1668,12 @@ CRef<CVariation> CHgvsParser::AsVariation(const string& hgvs, TOpFlags flags)
             vr->SetName(hgvs2);
         }
     } catch (CException& e) {
+
         if(flags && fOpFlags_RelaxedAA && NStr::Find(hgvs2, "p.")) {
             //expression was protein, try non-hgvs-compliant representation of prots
-            string hgvs2 = s_hgvsUCaa2hgvsUL(hgvs2);
+            hgvs2 = s_hgvsUCaa2hgvsUL(hgvs2);
+            //LOG_POST("Trying relaxed parsing on " << hgvs2);
+
             TOpFlags flags2 = flags & ~fOpFlags_RelaxedAA; //unset the bit so we don't infinite-recurse
             vr = AsVariation(hgvs2, flags2);
         } else {

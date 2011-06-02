@@ -236,9 +236,17 @@ void ProcessVariation(CVariation& v, const CArgs& args, CScope& scope, CConstRef
 #if 0
         CRef<CSeq_id> id(NULL);
 #else
-        CRef<CSeq_id> id(new CSeq_id("NM_000441.1"));
+        set<CSeq_id_Handle> ids;
+        for(CTypeConstIterator<CVariantPlacement> it(Begin(v)); it; ++it) {
+            const CVariantPlacement& p = *it;
+            if(p.GetLoc().GetId() && p.GetMol() == CVariantPlacement::eMol_cdna) {
+                ids.insert(CSeq_id_Handle::GetHandle(*p.GetLoc().GetId()));
+            }
+        }
+        ITERATE(set<CSeq_id_Handle>, it, ids) {
+            variation_util.AttachProteinConsequences(v, it->GetSeqId());
+        }
 #endif
-        variation_util.AttachProteinConsequences(v, id);
     }
 
     if(args["precursor"]) {

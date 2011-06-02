@@ -1110,6 +1110,23 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
         NCBI_THROW(CArgException, CArgException::eInvalidArg, "Placement and CDS are on different seqs");
     }
 
+
+    //if placement is not a proper subset of CDS, create and return "unknown effect" variation
+    if(nuc_p.IsSetStart_offset()
+      || nuc_p.IsSetStop_offset()
+      || sequence::Compare(nuc_p.GetLoc(), cds_feat.GetLocation(), NULL) != sequence::eContains)
+    {
+        CRef<CVariantPlacement> p(new CVariantPlacement);
+        p->SetLoc().Assign(cds_feat.GetProduct());
+        p->SetMol(CVariantPlacement::eMol_protein);
+        CRef<CVariation> v(new CVariation);
+        v->SetData().SetUnknown();
+        v->SetPlacements().push_back(p);
+        ChangeIdsInPlace(*v, sequence::eGetId_ForceAcc, *m_scope);
+        return v;
+    }
+
+
     //create an inst-variation from the provided inst with the single specified placement
     CRef<CVariation> v(new CVariation);
     v->SetData().SetInstance().Assign(nuc_inst);
@@ -1118,7 +1135,6 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
     CRef<CVariantPlacement> p(new CVariantPlacement);
     p->Assign(nuc_p);
     v->SetPlacements().push_back(p);
-
 
     //normalize to delins form so we can deal with it uniformly
     ChangeToDelins(*v);
@@ -1196,9 +1212,14 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
 
     prot_v->SetData().SetInstance().SetType(CalcInstTypeForAA(prot_ref_str, prot_delta_str));
 
+
+
     //set inst data
+    CRef<CDelta_item> di(new CDelta_item);
+    prot_v->SetData().SetInstance().SetDelta().push_back(di);
+
     if(prot_delta_str.size() > 0) {
-        CRef<CDelta_item> di(new CDelta_item);
+
 #if 0
         di->SetSeq().SetLiteral().SetSeq_data().SetNcbieaa().Set(prot_delta_str);
         di->SetSeq().SetLiteral().SetLength(prot_delta_str.size());
@@ -1208,9 +1229,11 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
         //The user can always translate this to AAs.
         di->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(variant_codons_str);
         di->SetSeq().SetLiteral().SetLength(variant_codons_str.size());
-        prot_v->SetData().SetInstance().SetDelta().push_back(di);
 #endif
 
+    } else {
+        di->SetSeq().SetThis();
+        di->SetAction(CDelta_item::eAction_del_at);
     }
 
     //set frameshift

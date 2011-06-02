@@ -592,18 +592,26 @@ string CHgvsParser::x_AsHgvsInstExpression(
         bsh = m_scope->GetBioseqHandle(placement->GetLoc());
     }
 
+
+    //cannot use explicit asserted seq to construct prot inst, as it could be partially-specified: e.g.
+    //echo "NP_079142.2:p.C11_G21delinsGlnSerLys - the asserted seq is C..G, so we cannot construct
+    //del??ins representation that asserts the sequence being deleted within a delins
+
+    bool is_usable_asserted_seq =
+            explicit_asserted_seq
+            && !(placement && placement->GetMol() == CVariantPlacement::eMol_protein);
+
     const CSeq_literal* asserted_seq =
-            explicit_asserted_seq              ? explicit_asserted_seq
+            is_usable_asserted_seq ? explicit_asserted_seq
           : placement && placement->IsSetSeq() ? &placement->GetSeq()
           :                                      NULL;
 
 
     string asserted_seq_str =
-            !asserted_seq                 ? ""
+           !asserted_seq                  ? ""
          : asserted_seq->GetLength() < 20 ? x_SeqLiteralToStr(*asserted_seq)
          :                                  NStr::IntToString(asserted_seq->GetLength());
 
-    NcbiCerr << "Processing inst expression; asserted_seq = " << asserted_seq_str << " " << asserted_seq << endl;
 
 
     bool append_delta = false;
