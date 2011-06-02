@@ -152,16 +152,16 @@ void CNetScheduleExecuter::JobDelayExpiration(const string& job_key,
 }
 
 
-bool CNetScheduleExecuter::GetJob(CNetScheduleJob& job)
+bool CNetScheduleExecuter::GetJob(CNetScheduleJob& job, const string& affinity)
 {
     string cmd = "GET";
 
     if (m_Impl->m_ControlPort != 0) {
         cmd += ' ';
         cmd += NStr::IntToString(m_Impl->m_ControlPort);
-        if (!job.affinity.empty()) {
+        if (!affinity.empty()) {
             cmd += " \"";
-            cmd += job.affinity;
+            cmd += affinity;
             cmd += '"';
         }
     }

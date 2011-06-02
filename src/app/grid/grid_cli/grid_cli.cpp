@@ -441,7 +441,8 @@ struct SCommandDefinition {
         "If none of the NetSchedule servers has pending jobs in the "
         "specified queue, nothing is printed and the exit code of zero "
         "is returned.",
-        {eNetSchedule, eQueue, eWNodePort, eWNodeGUID, eOutputFile, eAuth, -1}},
+        {eNetSchedule, eQueue, eAffinity, eWNodePort, eWNodeGUID,
+            eOutputFile, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_CommitJob,
         "commitjob", "Mark the job as complete or failed.",

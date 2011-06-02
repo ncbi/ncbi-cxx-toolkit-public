@@ -483,7 +483,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     ///
     /// @sa WaitJob
     ///
-    bool GetJob(CNetScheduleJob& job);
+    bool GetJob(CNetScheduleJob& job, const string& affinity = kEmptyStr);
 
     /// Wait for a job to come.
     /// Variant of GetJob method. The difference is that if there no

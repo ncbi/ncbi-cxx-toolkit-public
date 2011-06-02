@@ -733,7 +733,7 @@ int CGridCommandLineInterfaceApp::Cmd_RequestJob()
 
     CNetScheduleJob job;
 
-    if (m_NetScheduleExecutor.GetJob(job))
+    if (m_NetScheduleExecutor.GetJob(job, m_Opts.affinity))
         return PrintJobAttrsAndDumpInput(job);
 
     return 0;
