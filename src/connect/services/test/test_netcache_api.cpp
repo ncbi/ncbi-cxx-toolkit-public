@@ -534,7 +534,7 @@ int CTestNetCacheClient::Run(void)
     {{
         {
         CNetCacheAPI nc_client(service, s_ClientName);
-        nc_client.PutData(key, test_data2, sizeof(test_data2) - 1);
+        nc_client.PutData(key, test_data2, sizeof(test_data2));
         }
         {
         CNetCacheAPI nc_client(service, s_ClientName);
