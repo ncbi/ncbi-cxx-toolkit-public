@@ -66,7 +66,7 @@ protected:
     CPollable(void) { }
 
 private:
-    /// disable copy constructor and assignment
+    // disable copy constructor and assignment
     CPollable(const CPollable&);
     CPollable& operator= (const CPollable&);
 };
@@ -99,7 +99,7 @@ public:
     TRIGGER GetTRIGGER(void) const;
 
 protected:
-    TRIGGER    m_Trigger;
+    TRIGGER m_Trigger;
 
 private:
     // disable copy constructor and assignment
@@ -483,7 +483,6 @@ public:
     /// @param direction
     /// @sa
     ///   DSOCK_WipeMsg()
-    ///
     EIO_Status Clear(EIO_Event direction);
 
     /// @param do_broadcast
@@ -622,17 +621,17 @@ class NCBI_XCONNECT_EXPORT CSocketAPI
 public:
     /// Generic
     ///
-    static EIO_Status   Initialize  (void);
-    static EIO_Status   Shutdown    (void);
-    static void         AllowSigPipe(void);
-    static size_t       OSHandleSize(void);
+    static EIO_Status Initialize  (void);
+    static EIO_Status Shutdown    (void);
+    static void       AllowSigPipe(void);
+    static size_t     OSHandleSize(void);
 
     /// Utility
     ///
     static const STimeout*    SetSelectInternalRestartTimeout
-                                    (const STimeout*    timeout);
+                                  (const STimeout*    timeout);
     static ESOCK_IOWaitSysAPI SetIOWaitSysAPI
-                                    (ESOCK_IOWaitSysAPI api);
+                                  (ESOCK_IOWaitSysAPI api);
 
     /// Defaults  (see also per-socket CSocket::SetReadOnWrite, etc.)
     /// @param read_on_write
@@ -683,11 +682,11 @@ public:
     static unsigned short NetToHostShort(unsigned short value);
 
     /// Return empty string on error
-    static string       gethostname(ESwitch log = eOff);
+    static string       gethostname  (ESwitch log = eOff);
 
     /// Return empty string on error
     static string       gethostbyaddr(unsigned int  host, ESwitch log = eOff);
-    /// 0 on error
+    /// Return 0 on error
     static unsigned int gethostbyname(const string& host, ESwitch log = eOff);
 
     /// Loopback address gets returned in network byte order
@@ -697,13 +696,13 @@ public:
     static unsigned int GetLocalHostAddress(ESwitch reget = eDefault);
 
     /// See SOCK_HostPortToString()
-    static string       HostPortToString(unsigned int   host,
-                                         unsigned short port);
+    static string    HostPortToString(unsigned int   host,
+                                      unsigned short port);
 
     /// Return position past the end of parsed portion, NPOS on error
-    static SIZE_TYPE    StringToHostPort(const string&   str,
-                                         unsigned int*   host,
-                                         unsigned short* port);
+    static SIZE_TYPE StringToHostPort(const string&   str,
+                                      unsigned int*   host,
+                                      unsigned short* port);
 };
 
 
