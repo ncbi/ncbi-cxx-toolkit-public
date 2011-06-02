@@ -325,7 +325,7 @@ void CNcbiApplication::x_TryMain(EAppDiagStream diag,
             try {
                 x_TryInit(diag, conf);
             }
-            catch (CArgHelpException& e) {
+            catch (CArgHelpException) {
                 // This exceptions will be caught later regardless of the
                 // handle-exceptions flag.
                 throw;
@@ -643,7 +643,7 @@ int CNcbiApplication::AppMain
             try {
                 x_TryMain(diag, conf, &exit_code, &got_exception);
             }
-            catch (CArgException& e) {
+            catch (CArgException) {
                 // This exceptions will be caught later regardless of the
                 // handle-exceptions flag.
                 throw;
