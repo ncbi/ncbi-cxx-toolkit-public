@@ -175,12 +175,12 @@ void s_ReadObject(CNcbiIstream & file,
                   CRef<TObj>    & obj,
                   const string  & msg)
 {
-    CFormatGuess fg;
+    CFormatGuess fg(file);
     fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eBinaryASN);
     fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eTextASN);
     fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eXml);
     fg.GetFormatHints().DisableAllNonpreferred();
-    s_ReadObject(file, fg.Format(file), obj, msg);
+    s_ReadObject(file, fg.GuessFormat(), obj, msg);
 }
 
 /// Command line flag to represent the input
@@ -690,14 +690,24 @@ void CMakeBlastDBApp::x_ProcessMaskData()
         }
 
         CNcbiIfstream mask_file(mask_list[i].c_str(), ios::binary);
+        CFormatGuess::EFormat mask_file_format = CFormatGuess::eUnknown;
+        {{
+             CFormatGuess fg(mask_file);
+             fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eBinaryASN);
+             fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eTextASN);
+             fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eXml);
+             fg.GetFormatHints().DisableAllNonpreferred();
+             mask_file_format = fg.GuessFormat();
+         }}
         
         int algo_id = -1;
         while (true) {
             CRef<CBlast_db_mask_info> first_obj;
         
             try {
-                s_ReadObject(mask_file, first_obj, "mask data in '" + mask_list[i] + "'");
-            } catch(...) {
+                s_ReadObject(mask_file, mask_file_format, first_obj, "mask data in '" + mask_list[i] + "'");
+            }
+            catch (CEofException&) {
                 // must be end of file
                 break;
             }
@@ -735,7 +745,7 @@ void CMakeBlastDBApp::x_ProcessMaskData()
                 if (! masks->GetMore())
                     break;
             
-                s_ReadObject(mask_file, masks, "mask data (continuation)");
+                s_ReadObject(mask_file, mask_file_format, masks, "mask data (continuation)");
             }
         }
     }
