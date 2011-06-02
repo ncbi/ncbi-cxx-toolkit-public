@@ -54,35 +54,35 @@ extern "C" {
  * Return NULL on error.
  */
 extern NCBI_XCONNECT_EXPORT CONNECTOR FILE_CreateConnector
-(const char* in_file_name,   /* to read data from */
- const char* out_file_name   /* to write the read data to */
+(const char* inp_filename,  /* to read data from         */
+ const char* out_filename   /* to write the read data to */
  );
 
 
 /* Open mode for the output data file
  */
 typedef enum {
-    eFCM_Truncate, /* create new or replace existing file */
-    eFCM_Seek,     /* seek before the first i/o */
-    eFCM_Append    /* add after the end of file */
-} EFileConnMode;
+    eFCM_Truncate,  /* create new or replace existing file               */
+    eFCM_Append,    /* add at the end of file                            */
+    eFCM_Seek       /* seek to specified position before doing first I/O */
+} EFILE_ConnMode;
 
 
 /* Extended file connector attributes
  */
 typedef struct {
-    size_t        r_pos;  /* file position to start reading at */
-    EFileConnMode w_mode; /* how to open output file */
-    size_t        w_pos;  /* eFCM_Seek mode only: begin to write at "w_pos" */
-} SFileConnAttr;
+    EFILE_ConnMode w_mode;  /* how to open output file                   */
+    TNCBI_BigCount w_pos;   /* eFCM_Seek only: begin to write at "w_pos" */
+    TNCBI_BigCount r_pos;   /* file position to start reading at         */
+} SFILE_ConnAttr;
 
 
 /* An extended version of FILE_CreateConnector().
  */
 extern NCBI_XCONNECT_EXPORT CONNECTOR FILE_CreateConnectorEx
-(const char*          in_file_name,
- const char*          out_file_name,
- const SFileConnAttr* attr
+(const char*           inp_filename,
+ const char*           out_filename,
+ const SFILE_ConnAttr* attr
  );
 
 

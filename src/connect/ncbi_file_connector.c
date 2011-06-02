@@ -47,11 +47,11 @@
 /* All internal data necessary to perform the (re)connect and i/o
  */
 typedef struct {
-    const char*   inp_file_name;
-    const char*   out_file_name;
-    FILE*         finp;
-    FILE*         fout;
-    SFileConnAttr attr;
+    const char*    inp_filename;
+    const char*    out_filename;
+    FILE*          finp;
+    FILE*          fout;
+    SFILE_ConnAttr attr;
 } SFileConnector;
 
 
@@ -116,30 +116,41 @@ static EIO_Status s_VT_Open
         mode = "wb";
         break;
     case eFCM_Seek:
-        /* mode = "rb+"; break; */
+        mode = "r+b";
+        break;
     case eFCM_Append:
         mode = "ab";
         break;
     default:
         return eIO_InvalidArg;
     }
-
-    if (!xxx->out_file_name
-        ||  !(xxx->fout = fopen(xxx->out_file_name, mode))) {
+    if (!xxx->out_filename
+        ||  !(xxx->fout = fopen(xxx->out_filename, mode))) {
         return eIO_Unknown;
     }
-
-    /* open file for input */
-    if (!xxx->inp_file_name
-        ||  !(xxx->finp = fopen(xxx->inp_file_name, "rb"))) {
+    if (xxx->attr.w_mode == eFCM_Seek  &&  xxx->attr.w_pos
+        &&  fseek(xxx->fout, xxx->attr.w_pos, SEEK_SET) != 0) {
         fclose(xxx->fout);
         xxx->fout = 0;
         return eIO_Unknown;
     }
 
-    /* Due to shortage of portable 'fseek' call ignore positioning for now;
-     * only 0/EOF are in use for writing, and only 0 for reading
-     */
+    /* open file for input */
+    if (!xxx->inp_filename
+        ||  !(xxx->finp = fopen(xxx->inp_filename, "rb"))) {
+        fclose(xxx->fout);
+        xxx->fout = 0;
+        return eIO_Unknown;
+    }
+    if (xxx->attr.r_pos
+        &&  fseek(xxx->finp, xxx->attr.r_pos, SEEK_SET) != 0) {
+        fclose(xxx->finp);
+        fclose(xxx->fout);
+        xxx->finp = 0;
+        xxx->fout = 0;
+        return eIO_Unknown;
+    }
+
     return eIO_Success;
 }
 
@@ -292,22 +303,31 @@ static void s_Destroy
  ***********************************************************************/
 
 extern CONNECTOR FILE_CreateConnector
-(const char* inp_file_name,
- const char* out_file_name)
+(const char* inp_filename,
+ const char* out_filename)
 {
-    static const SFileConnAttr def_attr = { 0, eFCM_Truncate, 0 };
+    static const SFILE_ConnAttr def_attr = { 0, eFCM_Truncate, 0 };
 
-    return FILE_CreateConnectorEx(inp_file_name, out_file_name, &def_attr);
+    return FILE_CreateConnectorEx(inp_filename, out_filename, &def_attr);
 }
 
 
 extern CONNECTOR FILE_CreateConnectorEx
-(const char*          inp_file_name,
- const char*          out_file_name,
- const SFileConnAttr* attr)
+(const char*           inp_filename,
+ const char*           out_filename,
+ const SFILE_ConnAttr* attr)
 {
-    CONNECTOR       ccc = (SConnector*)     malloc(sizeof(SConnector));
-    SFileConnector* xxx = (SFileConnector*) malloc(sizeof(*xxx));
+    CONNECTOR       ccc;
+    SFileConnector* xxx;
+
+    if (!inp_filename  ||  !out_filename)
+        return 0;
+    if (!(ccc = (SConnector*)     malloc(sizeof(SConnector))))
+        return 0;
+    if (!(xxx = (SFileConnector*) malloc(sizeof(*xxx)))) {
+        free(ccc);
+        return 0;
+    }
 
     /* initialize internal data structures */
     xxx->inp_file_name = strdup(inp_file_name);
