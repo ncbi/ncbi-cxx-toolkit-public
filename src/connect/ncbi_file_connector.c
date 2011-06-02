@@ -103,7 +103,7 @@ static const char* s_VT_GetType
 /*ARGSUSED*/
 static EIO_Status s_VT_Open
 (CONNECTOR       connector,
- const STimeout* timeout)
+ const STimeout* unused)
 {
     SFileConnector* xxx = (SFileConnector*) connector->handle;
     const char*     mode;
@@ -171,7 +171,7 @@ static EIO_Status s_VT_Write
  const void*     buf,
  size_t          size,
  size_t*         n_written,
- const STimeout* timeout)
+ const STimeout* unused)
 {
     SFileConnector* xxx = (SFileConnector*) connector->handle;
 
@@ -189,7 +189,7 @@ static EIO_Status s_VT_Write
 /*ARGSUSED*/
 static EIO_Status s_VT_Flush
 (CONNECTOR       connector,
- const STimeout* timeout)
+ const STimeout* unused)
 {
     SFileConnector* xxx = (SFileConnector*) connector->handle;
 
@@ -205,7 +205,7 @@ static EIO_Status s_VT_Read
  void*           buf,
  size_t          size,
  size_t*         n_read,
- const STimeout* timeout)
+ const STimeout* unused)
 {
     SFileConnector* xxx = (SFileConnector*) connector->handle;
 
@@ -245,10 +245,10 @@ static EIO_Status s_VT_Status
 /*ARGSUSED*/
 static EIO_Status s_VT_Close
 (CONNECTOR       connector,
- const STimeout* timeout)
+ const STimeout* unused)
 {
     SFileConnector* xxx = (SFileConnector*) connector->handle;
-    EIO_Status status;
+    EIO_Status status = eIO_Success;
 
     assert(xxx->finp  &&  xxx->fout);
 
@@ -258,7 +258,7 @@ static EIO_Status s_VT_Close
     if (fclose(xxx->fout) != 0)
         status = eIO_Unknown;
     xxx->fout = 0;
-    return eIO_Success;
+    return status;
 }
 
 
@@ -285,6 +285,7 @@ static void s_Destroy
     SFileConnector* xxx = (SFileConnector*) connector->handle;
     connector->handle = 0;
 
+    assert(!xxx->finp  &&  !xxx->fout);
     if (xxx->inp_filename) {
         free((void*) xxx->inp_filename);
         xxx->inp_filename = 0;
