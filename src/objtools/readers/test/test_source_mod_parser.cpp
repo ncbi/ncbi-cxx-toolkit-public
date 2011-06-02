@@ -129,9 +129,8 @@ int CSourceModParserTestApp::Run(void)
     CRef<CSeq_entry>  entry(reader.ReadSet());
     CObjectOStreamAsn oos(args["out"].AsOutputFile());
 
-    CSimpleTableFilter tbl_filter( eDiag_Warning, 
-        "The feature name \"", "\" is unnecessary because it's already known." );
-    tbl_filter.AddDisallowedFeatureName("source");
+    CSimpleTableFilter tbl_filter;
+    tbl_filter.AddDisallowedFeatureName("source", ITableFilter::eResult_Disallowed );
 
     CErrorContainerLenient err_container;
     CFeature_table_reader::ReadSequinFeatureTables( args["feattbl"].AsInputFile(), *entry, 

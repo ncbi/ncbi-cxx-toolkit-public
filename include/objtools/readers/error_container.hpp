@@ -135,7 +135,8 @@ public:
         const ILineError& err ) 
     {
         m_Errors.push_back( 
-            CLineError( err.Severity(), err.Line(), err.Message(), err.SeqId() ) );
+            CLineError( err.Problem(), err.Severity(), err.SeqId(), err.Line(), 
+                err.FeatureName(), err.QualifierName(), err.QualifierValue() ) );
         return true;
     };
 };        
@@ -156,7 +157,8 @@ public:
         const ILineError& err ) 
     {
         m_Errors.push_back( 
-            CLineError( err.Severity(), err.Line(), err.Message(), err.SeqId() ) );
+            CLineError( err.Problem(), err.Severity(), err.SeqId(), err.Line(), 
+                err.FeatureName(), err.QualifierName(), err.QualifierValue() ) );
         return false;
     };
 };        
@@ -178,7 +180,8 @@ public:
         const ILineError& err ) 
     {
         m_Errors.push_back( 
-            CLineError( err.Severity(), err.Line(), err.Message(), err.SeqId() ) );
+            CLineError( err.Problem(), err.Severity(), err.SeqId(), err.Line(), 
+                err.FeatureName(), err.QualifierName(), err.QualifierValue() ) );
         return (Count() < m_uMaxCount);
     };    
 protected:
@@ -202,7 +205,8 @@ public:
         const ILineError& err ) 
     {
         m_Errors.push_back( 
-            CLineError( err.Severity(), err.Line(), err.Message(), err.SeqId() ) );
+            CLineError( err.Problem(), err.Severity(), err.SeqId(), err.Line(), 
+                err.FeatureName(), err.QualifierName(), err.QualifierValue() ) );
         return (err.Severity() <= m_iAcceptLevel);
     };    
 protected:

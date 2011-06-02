@@ -33,7 +33,7 @@
 #ifndef OBJTOOLS_READERS___TABLEFILTER__HPP
 #define OBJTOOLS_READERS___TABLEFILTER__HPP
 
-#include <set>
+#include <map>
 #include <string>
 
 #include <corelib/ncbidiag.hpp>
@@ -56,12 +56,9 @@ public:
         eResult_Disallowed
     };
 
-    // When there's a problem, this should return eResult_disallowed and return
-    // the severity of the issue via out_sev.
+    // Returns how we should treat the given feature name
     virtual EResult IsFeatureNameOkay( 
-        const string &feature_name, 
-        EDiagSev *out_sev = NULL, 
-        std::string *out_err_msg = NULL ) = 0;
+        const string &feature_name ) = 0;
 };
 
 //  ============================================================================
@@ -70,40 +67,29 @@ class CSimpleTableFilter
 //  ============================================================================
 {
 public:
-    CSimpleTableFilter( EDiagSev sevIfFeatureNameNotAllowed,
-        const string &err_prefix, const string &err_suffix) :
-      m_SevIfFeatureNameNotAllowed(sevIfFeatureNameNotAllowed),
-          m_ErrPrefix(err_prefix), m_ErrSuffix(err_suffix)
-      { }
-
-    void AddDisallowedFeatureName( const string &feature_name )
+    void AddDisallowedFeatureName( const string &feature_name, EResult result )
     {
-        m_DisallowedFeatureNames.insert( feature_name );
+        // set how to handle the given feature_name
+        m_DisallowedFeatureNames[feature_name] = result;
     }
 
-    EResult IsFeatureNameOkay( const string &feature_name, EDiagSev *out_sev, 
-        std::string *out_err_msg )
+    EResult IsFeatureNameOkay( const string &feature_name )
     {
-        if( m_DisallowedFeatureNames.find(feature_name) != 
-            m_DisallowedFeatureNames.end() )
+        TDisallowedMap::const_iterator find_feature_result = 
+            m_DisallowedFeatureNames.find(feature_name);
+
+        if( find_feature_result != m_DisallowedFeatureNames.end() )
         {
-            if( NULL != out_sev ) {
-                *out_sev = m_SevIfFeatureNameNotAllowed;
-            }
-            if( NULL != out_err_msg ) {
-                *out_err_msg = m_ErrPrefix + feature_name + m_ErrSuffix;
-            }
-            return eResult_Disallowed;
+            return find_feature_result->second;
         } else {
             return eResult_Okay;
         }
     }
 
 private:
-    std::set<std::string, PNocase_Conditional> m_DisallowedFeatureNames;
-    const EDiagSev m_SevIfFeatureNameNotAllowed;
-    const std::string m_ErrPrefix;
-    const std::string m_ErrSuffix;
+    typedef std::map<std::string, EResult, PNocase_Conditional> TDisallowedMap;
+    // maps feature names to how they should be handled
+    TDisallowedMap m_DisallowedFeatureNames;
 };
              
 END_objects_SCOPE

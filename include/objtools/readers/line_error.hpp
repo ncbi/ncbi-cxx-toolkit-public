@@ -47,21 +47,64 @@ class ILineError
 //  ============================================================================
 {
 public:
-    virtual ~ILineError() throw() {}
-    virtual EDiagSev
-    Severity() const =0;
-    
-    virtual unsigned int
-    Line() const =0;
+    // If you add to here, make sure to add to ProblemStr()
+    enum EProblem {
+        eProblem_UnrecognizedFeatureName = 1,
+        eProblem_UnrecognizedQualifierName,
+        eProblem_NumericQualifierValueHasExtraTrailingCharacters,
+        eProblem_NumericQualifierValueIsNotANumber,
+        eProblem_FeatureNameNotAllowed,
+        eProblem_NoFeatureProvidedOnIntervals,
+        eProblem_QualifierWithoutFeature,
+        eProblem_FeatureBadStartAndOrStop,
 
-    virtual std::string
-    SeqId() const = 0;
+        eProblem_GeneralParsingError
+    };
+
+    virtual ~ILineError(void) throw() {}
+
+    virtual EProblem
+    Problem(void) const = 0;
+
+    virtual EDiagSev
+    Severity(void) const =0;
     
-    virtual std::string
-    Message() const =0;
+    virtual const std::string &
+    SeqId(void) const = 0;
+
+    virtual unsigned int
+    Line(void) const =0;
+
+    virtual const std::string &
+    FeatureName(void) const = 0;
     
+    virtual const std::string &
+    QualifierName(void) const = 0;
+
+    virtual const std::string &
+    QualifierValue(void) const = 0;
+
+    // combines the other fields to print a reasonable error message
+    virtual std::string
+    Message(void) const
+    {
+        CNcbiOstrstream result;
+        result << "On SeqId '" << SeqId() << "', line " << Line() << ", severity " << SeverityStr() << ": '"
+               << ProblemStr() << "'";
+        if( ! FeatureName().empty() ) {
+            result << ", with feature name '" << FeatureName() << "'";
+        }
+        if( ! QualifierName().empty() ) {
+            result << ", with qualifier name '" << QualifierName() << "'";
+        }
+        if( ! QualifierValue().empty() ) {
+            result << ", with qualifier value '" << QualifierValue() << "'";
+        }
+        return (string)CNcbiOstrstreamToString(result);
+    }
+
     std::string
-    SeverityStr() const
+    SeverityStr(void) const
     {
         switch ( Severity() ) {
         default:
@@ -78,6 +121,33 @@ public:
             return "Fatal";
         }
     };
+
+    std::string
+    ProblemStr(void) const
+    {
+        switch(Problem()) {
+        case eProblem_UnrecognizedFeatureName:
+            return "Unrecognized feature name";
+        case eProblem_UnrecognizedQualifierName:
+            return "Unrecognized qualifier name";
+        case eProblem_NumericQualifierValueHasExtraTrailingCharacters:
+            return "Numeric qualifier value has extra trailing characters after the number";
+        case eProblem_NumericQualifierValueIsNotANumber:
+            return "Numeric qualifier value should be a number";
+        case eProblem_FeatureNameNotAllowed:
+            return "Feature name not allowed";
+        case eProblem_NoFeatureProvidedOnIntervals:
+            return "No feature provided on intervals";
+        case eProblem_QualifierWithoutFeature:
+            return "No feature provided for qualifiers";
+        case eProblem_FeatureBadStartAndOrStop:
+            return "Feature bad start and/or stop";
+        case eProblem_GeneralParsingError:
+            return "General parsing error";
+        default:
+            return "Unknown problem";
+        }
+    }
 };
     
 //  ============================================================================
@@ -87,42 +157,62 @@ class CLineError:
 {
 public:
     CLineError(
-        EDiagSev eSeverity = eDiag_Error,
-        unsigned int uLine = 0,
-        const std::string& strMessage = std::string( "" ),
-        const std::string& seqId = std::string( "" ) )
-    : m_eSeverity( eSeverity ), m_uLine( uLine ), m_strMessage( strMessage ),
-    m_strSeqId(seqId) { }
+        EProblem eProblem,
+        EDiagSev eSeverity,
+        const std::string& strSeqId,
+        unsigned int uLine,
+        const std::string & strFeatureName = string(""),
+        const std::string & strQualifierName = string(""),
+        const std::string & strQualifierValue = string("") )
+    : m_eProblem(eProblem), m_eSeverity( eSeverity ), m_strSeqId(strSeqId), m_uLine( uLine ), 
+      m_strFeatureName(strFeatureName), m_strQualifierName(strQualifierName), 
+      m_strQualifierValue(strQualifierValue)
+     { }
     
-    virtual ~CLineError() throw() {};
+    virtual ~CLineError(void) throw() {}
         
-    EDiagSev
-    Severity() const { return m_eSeverity; };
-    
-    unsigned int
-    Line() const { return m_uLine; };
+    EProblem
+    Problem(void) const { return m_eProblem; }
 
-    std::string
-    SeqId() const { return m_strSeqId; };
+    EDiagSev
+    Severity(void) const { return m_eSeverity; }
     
-    std::string
-    Message() const { return m_strMessage; };
+    const std::string &
+    SeqId(void) const { return m_strSeqId; }
+
+    unsigned int
+    Line(void) const { return m_uLine; }
+
+    const std::string &
+    FeatureName(void) const { return m_strFeatureName; }
+    
+    const std::string &
+    QualifierName(void) const { return m_strQualifierName; }
+
+    const std::string &
+    QualifierValue(void) const { return m_strQualifierValue; }
     
     void Dump( 
         std::ostream& out )
     {
-        out << "            " << SeverityStr() << ":" << endl;
-        out << "Line:       " << Line() << endl;
-        out << "Seq-Id:     " << SeqId() << endl;
-        out << "Message:    " << Message() << endl;
+        out << "                " << SeverityStr() << ":" << endl;
+        out << "Problem:        " << ProblemStr() << endl;
+        out << "SeqId:          " << SeqId() << endl;
+        out << "Line:           " << Line() << endl;
+        out << "FeatureName:    " << FeatureName() << endl;
+        out << "QualifierName:  " << QualifierName() << endl;
+        out << "QualifierValue: " << QualifierValue() << endl;
         out << endl;
     };
         
 protected:
+    EProblem m_eProblem;
     EDiagSev m_eSeverity;
-    unsigned int m_uLine;
-    std::string m_strMessage;
     std::string m_strSeqId;
+    unsigned int m_uLine;
+    std::string m_strFeatureName;
+    std::string m_strQualifierName;
+    std::string m_strQualifierValue;
 };
 
 //  ============================================================================
@@ -134,20 +224,31 @@ public:
     CObjReaderLineException(
         EDiagSev eSeverity,
         unsigned int uLine,
-        const std::string& strMessage,
-        const std::string& strSeqId = std::string() )
-    : CObjReaderParseException( DIAG_COMPILE_INFO, 0, eFormat, strMessage, uLine, 
-        eDiag_Info ), m_uLineNumber(uLine), m_strSeqId(strSeqId)
+        const std::string &strMessage,
+        EProblem eProblem = eProblem_GeneralParsingError,
+        const std::string& strSeqId = string(""),
+        const std::string & strFeatureName = string(""),
+        const std::string & strQualifierName = string(""),
+        const std::string & strQualifierValue = string("") )
+    : CObjReaderParseException( DIAG_COMPILE_INFO, 0, eFormat, strMessage, uLine,
+        eDiag_Info ), m_strSeqId(strSeqId), m_uLineNumber(uLine), 
+        m_strFeatureName(strFeatureName), m_strQualifierName(strQualifierName), 
+        m_strQualifierValue(strQualifierValue)
     {
         SetSeverity( eSeverity );
     };
 
     ~CObjReaderLineException(void) throw() { }
 
-    EDiagSev Severity() const { return GetSeverity(); };
-    unsigned int Line() const { return m_uLineNumber; };
-    std::string SeqId() const { return m_strSeqId; };
-    std::string Message() const { return GetMsg(); };
+    EProblem Problem(void) const { return m_eProblem; }
+    const std::string &SeqId(void) const { return m_strSeqId; }
+    EDiagSev Severity(void) const { return GetSeverity(); }
+    unsigned int Line(void) const { return m_uLineNumber; }
+    const std::string &FeatureName(void) const { return m_strFeatureName; }
+    const std::string &QualifierName(void) const { return m_strQualifierName; }
+    const std::string &QualifierValue(void) const { return m_strQualifierValue; }
+
+    std::string Message() const { return GetMsg(); }
     
     //
     //  Cludge alert: The line number may not be known at the time the exception
@@ -156,11 +257,15 @@ public:
     //
     void 
     SetLineNumber(
-        unsigned int uLineNumber ) { m_uLineNumber = uLineNumber; };
+        unsigned int uLineNumber ) { m_uLineNumber = uLineNumber; }
         
 protected:
+    EProblem m_eProblem;
+    std::string m_strSeqId;
     unsigned int m_uLineNumber;
-    std::string  m_strSeqId;
+    std::string m_strFeatureName;
+    std::string m_strQualifierName;
+    std::string m_strQualifierValue;
 };
 
     

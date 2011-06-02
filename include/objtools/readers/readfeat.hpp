@@ -113,6 +113,7 @@ public:
 
     // add single qualifier to feature
     static void AddFeatQual (CRef<CSeq_feat> sfp,
+                             const string& feat_name,
                              const string& qual,
                              const string& val,
                              const TFlags flags = 0,

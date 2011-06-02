@@ -658,7 +658,7 @@ CRef<CSeq_feat> CGFFReader::x_ParseFeatRecord(const SRecord& record)
             }
 
             CFeature_table_reader::AddFeatQual
-                (feat, tag, value, CFeature_table_reader::fKeepBadKey);
+                (feat, kEmptyStr, tag, value, CFeature_table_reader::fKeepBadKey);
         } else { // don't attempt to parse, just treat as imported
             CRef<CGb_qual> qual(new CGb_qual);
             qual->SetQual(tag);
@@ -703,11 +703,11 @@ CRef<CSeq_feat> CGFFReader::x_ParseFeatRecord(const SRecord& record)
 
         // translate
         CFeature_table_reader::AddFeatQual
-            (feat, "gene_id", gene_id,
+            (feat, kEmptyStr, "gene_id", gene_id,
              CFeature_table_reader::fKeepBadKey);
         if (x_GetFlags() & fGBQuals) {
             CFeature_table_reader::AddFeatQual
-                (feat, "gene", gene_id,
+                (feat, kEmptyStr, "gene", gene_id,
                  CFeature_table_reader::fKeepBadKey);
         }
     }

@@ -144,7 +144,8 @@ public:
         const ILineError& err ) 
     {
         m_Errors.push_back( 
-            CLineError( err.Severity(), err.Line(), err.Message() ) );
+            CLineError( err.Problem(), err.Severity(), err.SeqId(), err.Line(), 
+                err.FeatureName(), err.QualifierName(), err.QualifierValue() ) );
         return (err.Severity() <= m_iMaxLevel) && (m_Errors.size() < m_iMaxCount);
     };
     
