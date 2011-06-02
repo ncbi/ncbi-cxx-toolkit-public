@@ -285,13 +285,13 @@ static void s_Destroy
     SFileConnector* xxx = (SFileConnector*) connector->handle;
     connector->handle = 0;
 
-    if (xxx->inp_file_name) {
-        free((void*) xxx->inp_file_name);
-        xxx->inp_file_name = 0;
+    if (xxx->inp_filename) {
+        free((void*) xxx->inp_filename);
+        xxx->inp_filename = 0;
     }
-    if (xxx->out_file_name) {
-        free((void*) xxx->out_file_name);
-        xxx->out_file_name = 0;
+    if (xxx->out_filename) {
+        free((void*) xxx->out_filename);
+        xxx->out_filename = 0;
     }
     free(xxx);
     free(connector);
@@ -330,10 +330,10 @@ extern CONNECTOR FILE_CreateConnectorEx
     }
 
     /* initialize internal data structures */
-    xxx->inp_file_name = strdup(inp_file_name);
-    xxx->out_file_name = strdup(out_file_name);
-    xxx->finp          = 0;
-    xxx->fout          = 0;
+    xxx->inp_filename = strdup(inp_filename);
+    xxx->out_filename = strdup(out_filename);
+    xxx->finp         = 0;
+    xxx->fout         = 0;
 
     memcpy(&xxx->attr, attr, sizeof(xxx->attr));
 
