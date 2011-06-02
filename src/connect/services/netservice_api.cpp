@@ -904,11 +904,12 @@ CNetServiceIterator CNetService::Iterate(CNetService::EIterationMode mode,
     m_Impl->GetDiscoveredServers(service_name, servers);
 
     if (mode != eIncludePenalized) {
-        if (servers->m_Servers.begin() < servers->m_SuppressedBegin)
+        if (servers->m_Servers.begin() < servers->m_SuppressedBegin) {
             if (mode == eSortByLoad)
                 return new SNetServiceIterator_OmitPenalized(servers);
             else
                 return new SNetServiceIterator_RandomPivot(servers);
+        }
     } else
         if (!servers->m_Servers.empty())
             return new SNetServiceIteratorImpl(servers);
