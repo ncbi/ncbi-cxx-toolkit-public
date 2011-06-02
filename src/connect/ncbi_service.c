@@ -114,7 +114,7 @@ static int/*bool*/ s_AddSkipInfo(SERV_ITER   iter,
               iter->skip[n]->u.firewall.type == info->u.firewall.type))) {
             /* Replace older version */
             if (iter->last == iter->skip[n])
-                iter->last = info;
+                iter->last =  info;
             free(iter->skip[n]);
             iter->skip[n] = info;
             return 1;
@@ -329,13 +329,13 @@ SERV_ITER SERV_OpenP(const char*          service,
 static void s_SkipSkip(SERV_ITER iter)
 {
     size_t n;
-    if (iter->time  &&  (iter->ismask  ||  (iter->type & fSERV_Promiscuous)))
+    if (iter->time  &&  (iter->ismask | iter->ok_down | iter->ok_suppressed))
         return;
     n = 0;
     while (n < iter->n_skip) {
         SSERV_Info* temp = iter->skip[n];
         if (temp->time != NCBI_TIME_INFINITE
-            &&  (!iter->time
+            &&  (!iter->time/*iterator reset*/
                  ||  ((temp->type != fSERV_Dns  ||  temp->host)
                       &&  temp->time < iter->time))) {
             if (n < --iter->n_skip) {
@@ -343,7 +343,7 @@ static void s_SkipSkip(SERV_ITER iter)
                         sizeof(*iter->skip)*(iter->n_skip - n));
             }
             if (iter->last == temp)
-                iter->last = 0;
+                iter->last =  0;
             free(temp);
         } else
             n++;
@@ -363,7 +363,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER   iter,
             s_SkipSkip(iter);
         }
         /* Obtain a fresh entry from the actual mapper */
-        while ((info = (*iter->op->GetNextInfo)(iter, host_info)) != 0) {
+        while ((info = iter->op->GetNextInfo(iter, host_info)) != 0) {
             /* This should never actually be used for LBSMD dispatcher,
              * as all exclusion logic is already done in it internally. */
             int/*bool*/ go =
@@ -494,7 +494,7 @@ int/*bool*/ SERV_Penalize(SERV_ITER iter, double fine)
 {
     if (!iter  ||  !iter->op  ||  !iter->op->Feedback  ||  !iter->last)
         return 0/*false*/;
-    return (*iter->op->Feedback)(iter, fine, 1/*i.e.fine*/);
+    return iter->op->Feedback(iter, fine, 1/*i.e.fine*/);
 }
 
 
@@ -502,7 +502,7 @@ int/*bool*/ SERV_Rerate(SERV_ITER iter, double rate)
 {
     if (!iter  ||  !iter->op  ||  !iter->op->Feedback  ||  !iter->last)
         return 0/*false*/;
-    return (*iter->op->Feedback)(iter, rate, 0/*i.e.rate*/);
+    return iter->op->Feedback(iter, rate, 0/*i.e.rate*/);
 }
 
 
@@ -514,7 +514,7 @@ void SERV_Reset(SERV_ITER iter)
     iter->time  = 0;
     s_SkipSkip(iter);
     if (iter->op  &&  iter->op->Reset)
-        (*iter->op->Reset)(iter);
+        iter->op->Reset(iter);
 }
 
 
@@ -529,7 +529,7 @@ void SERV_Close(SERV_ITER iter)
     iter->n_skip = 0;
     if (iter->op) {
         if (iter->op->Close)
-            (*iter->op->Close)(iter);
+            iter->op->Close(iter);
         iter->op = 0;
     }
     if (iter->skip)
@@ -543,6 +543,7 @@ void SERV_Close(SERV_ITER iter)
 int/*bool*/ SERV_Update(SERV_ITER iter, const char* text, int code)
 {
     static const char used_server_info[] = "Used-Server-Info-";
+    static const char ncbi_sid[] = "NCBI-SID:";
     int retval = 0/*not updated yet*/;
 
     if (iter  &&  iter->op  &&  text) {
@@ -563,7 +564,7 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text, int code)
             else
                 t[len] = '\0';
             p = t;
-            if (iter->op->Update  &&  (*iter->op->Update)(iter, p, code))
+            if (iter->op->Update  &&  iter->op->Update(iter, p, code))
                 retval = 1/*updated*/;
             if (!strncasecmp(p, used_server_info, sizeof(used_server_info) - 1)
                 &&  isdigit((unsigned char) p[sizeof(used_server_info) - 1])) {
@@ -575,8 +576,19 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text, int code)
                     else
                         retval = 1/*updated*/;
                 }
+            } else if (strncasecmp(p, ncbi_sid, sizeof(ncbi_sid) - 1) == 0) {
+                size_t xlen;
+                if (iter->sid)
+                    free((void*) iter->sid);
+                p   += sizeof(ncbi_sid) - 1;
+                len -= sizeof(ncbi_sid) - 1;
+                xlen = strspn(p, " \t");
+                memmove(t, p + xlen, len - xlen);
+                iter->sid = t;
+                t = 0;
             }
-            free(t);
+            if (t)
+                free(t);
         }
     }
     return retval;
@@ -625,6 +637,7 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
     static const char kAcceptedServerTypes[] = "Accepted-Server-Types:";
     static const char kUsedServerInfo[] = "Used-Server-Info: ";
     static const char kServerCount[] = "Server-Count: ";
+    static const char kPreference[] = "Preference: ";
     static const char kSkipInfo[] = "Skip-Info-%u: ";
     static const char kAffinity[] = "Affinity: ";
     char buffer[128], *str;
@@ -666,12 +679,24 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
             }
         }
         if (iter->ismask  ||  (iter->pref  &&  iter->host)) {
+            /* FIXME: To obsolete? */
             /* How many server-infos for the dispatcher to send to us */
             if (!BUF_Write(&buf, kServerCount, sizeof(kServerCount) - 1)  ||
                 !BUF_Write(&buf,
-                           iter->ismask ? "10" : "ALL",
-                           iter->ismask ?   2  :    3)                    ||
-                !BUF_Write(&buf, "\r\n", 2)) {
+                           iter->ismask ? "10\r\n" : "ALL\r\n",
+                           iter->ismask ?       4  :        5)) {
+                BUF_Destroy(buf);
+                return 0;
+            }
+        }
+        if (iter->pref  &&  iter->host) {
+            /* Preference */
+            verify(SOCK_HostPortToString(buffer, sizeof(buffer),
+                                         iter->host, iter->port));
+            buflen  = strlen(buffer);
+            buflen += sprintf(buffer + buflen, " %lf%%\r\n", iter->pref * 1e2);
+            if (!BUF_Write(&buf, kPreference, sizeof(kPreference) - 1)  ||
+                !BUF_Write(&buf, buffer, buflen)) {
                 BUF_Destroy(buf);
                 return 0;
             }
@@ -693,7 +718,8 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
         /* Put all the rest into rejection list */
         for (i = 0; i < iter->n_skip; i++) {
             /* NB: all skip infos are now kept with names (perhaps, empty) */
-            const char* name = SERV_NameOfInfo(iter->skip[i]);
+            const char* name    = SERV_NameOfInfo(iter->skip[i]);
+            size_t      namelen = name  &&  *name ? strlen(name) : 0;
             if (!(str = SERV_WriteInfo(iter->skip[i])))
                 break;
             if (but_last  &&  iter->last == iter->skip[i]) {
@@ -702,10 +728,10 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
             } else
                 buflen = sprintf(buffer, kSkipInfo, (unsigned) i + 1); 
             assert(buflen < sizeof(buffer) - 1);
-            if (!BUF_Write(&buf, buffer, buflen)                  ||
-                (name  &&  !BUF_Write(&buf, name, strlen(name)))  ||
-                (name  &&  *name  &&  !BUF_Write(&buf, " ", 1))   ||
-                !BUF_Write(&buf, str, strlen(str))                ||
+            if (!BUF_Write(&buf, buffer, buflen)                ||
+                (namelen  &&  !BUF_Write(&buf, name, namelen))  ||
+                (namelen  &&  !BUF_Write(&buf, " ", 1))         ||
+                !BUF_Write(&buf, str, strlen(str))              ||
                 !BUF_Write(&buf, "\r\n", 2)) {
                 free(str);
                 break;
