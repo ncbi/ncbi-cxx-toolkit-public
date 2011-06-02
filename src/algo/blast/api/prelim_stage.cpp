@@ -164,20 +164,20 @@ CBlastPrelimSearch::x_LaunchMultiThreadedSearch(SInternalData& internal_data)
     }
 
     // ... and wait for the threads to finish
-    bool error_occurred(false);
+    long retv(0);
     NON_CONST_ITERATE(TBlastThreads, thread, the_threads) {
         long result(0);
         (*thread)->Join(reinterpret_cast<void**>(&result));
-        if (result != 0) {
-            error_occurred = true;
+        if (result) {
+            retv = result;
         }
     }
 
     BlastSeqSrcSetNumberOfThreads(m_InternalData->m_SeqSrc->GetPointer(), 0);
 
-    if (error_occurred) {
-        NCBI_THROW(CBlastException, eCoreBlastError, 
-                   "Preliminary search thread failure!");
+    if (retv) {
+          NCBI_THROW(CBlastException, eCoreBlastError,
+                                   BlastErrorCode2String(retv));
     }
     return 0;
 }
