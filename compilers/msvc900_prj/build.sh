@@ -102,6 +102,8 @@ for tree in $build_trees ; do
         echo "INFO: Configure \"$tree\\$alias\""
         echo "Command line: " $build_dir/build_exec.bat "$tree\\build\\$sol" build "$arch" "$cfg_configure" "-CONFIGURE-" $out
         $build_dir/build_exec.bat "$tree\\build\\$sol" build "$arch" "$cfg_configure" "-CONFIGURE-" $out
+        # Wait a bit to allow compiler to exit and flush logfile
+        sleep 20
         status=$?
         cat $out >> ${log_dir}/${tree}_${cfg_configure}.log
         echo "Build time: $start - `eval $timer`"
@@ -143,6 +145,8 @@ for tree in $build_trees ; do
             echo "Command line: " $build_dir/build_exec.bat "$tree\\build\\$sol" build "$arch" "$cfg" "-BUILD-ALL-" $out
             $build_dir/build_exec.bat "$tree\\build\\$sol" build "$arch" "$cfg" "-BUILD-ALL-" $out
             status=$?
+            # Wait a bit to allow compiler to exit and flush logfile
+            sleep 20
             cat $out >> ${log_dir}/${tree}_${cfg}.log
             echo "Build time: $start - `eval $timer`"
             if [ $status -ne 0 ] ; then
