@@ -92,7 +92,7 @@ extern "C" {
  *         header that can be provided via the "net_info" argument, see
  *         ConnNetInfo_OverrideUserHeader() from <connect/ncbi_connutil.h>.
  *     NOTE:
- *       Data may depart to server side earlier if Flush()'ed in
+ *       Data may depart to the server side earlier if Flush()'ed in
  *       fHTTP_Flushable connector, see below in "flags".
  *  3) After the request has been sent, then the response data from
  *     the peer (usually a CGI program) can be actually read out.
