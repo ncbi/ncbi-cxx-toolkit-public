@@ -56,6 +56,52 @@ public:
     bool WriteAnnot( const CSeq_annot& );
 
 protected:
+    bool x_WriteMeta(
+        const CSeq_annot& );
+    bool x_WriteHeader(
+        const CSeq_annot& );
+    bool x_WriteData(
+        const CSeq_annot& );
+
+    bool x_WriteMetaCreateNew(
+        const CSeq_annot& );
+    bool x_WriteFeature(
+        feature::CFeatTree&,
+        CMappedFeat );
+
+    bool x_WriteFeatureChrom(
+        feature::CFeatTree&,
+        CMappedFeat );
+        
+    bool x_WriteFeaturePos(
+        feature::CFeatTree&,
+        CMappedFeat );
+        
+    bool x_WriteFeatureId(
+        feature::CFeatTree&,
+        CMappedFeat );
+        
+    bool x_WriteFeatureRef(
+        feature::CFeatTree&,
+        CMappedFeat );
+        
+    bool x_WriteFeatureAlt(
+        feature::CFeatTree&,
+        CMappedFeat );
+        
+    bool x_WriteFeatureQual(
+        feature::CFeatTree&,
+        CMappedFeat );
+        
+    bool x_WriteFeatureFilter(
+        feature::CFeatTree&,
+        CMappedFeat );
+        
+    bool x_WriteFeatureInfo(
+        feature::CFeatTree&,
+        CMappedFeat );
+        
+
     CScope& m_Scope;
     CNcbiOstream& m_Os;
     TFlags m_uFlags;
