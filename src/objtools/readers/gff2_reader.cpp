@@ -205,7 +205,6 @@ CGff2Reader::ReadSeqAnnotsNew(
             err.SetLineNumber( linecount );
 //            x_ProcessError( err, pErrorContainer );
         }
-        continue;
     }
 //    if ( m_iFlags & fDumpStats ) {
 //        x_DumpStats( cerr );

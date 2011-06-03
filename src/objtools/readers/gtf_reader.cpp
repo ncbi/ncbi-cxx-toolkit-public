@@ -244,12 +244,13 @@ CGtfReader::ReadSeqAnnots(
             if ( x_ParseTrackLineGff( line, m_CurrentTrackInfo ) ) {
                 continue;
             }
-            x_ParseFeatureGff( line, annots );
+            if ( ! x_ParseFeatureGff( line, annots ) ) {
+                continue;
+            }
         }
         catch( CObjReaderLineException& err ) {
             err.SetLineNumber( linecount );
         }
-        continue;
     }
     x_AddConversionInfoGff( annots, &m_ErrorsPrivate );
 }

@@ -94,10 +94,13 @@ bool CGff2Record::AssignFromGff(
     m_strSource = columns[1];
     m_strType = columns[2];
     m_uSeqStart = NStr::StringToUInt( columns[3] ) - 1;
-//    if ( m_uSeqStart == 929922 ) {
-//        cerr << "BREAK" << endl;
-//    }
     m_uSeqStop = NStr::StringToUInt( columns[4] ) - 1;
+    if (m_uSeqStop < m_uSeqStart) {
+        ERR_POST( 
+            m_strId + ":" + m_strType + " " + columns[3] + "-" + columns[4] + ": " +
+            "Negative length feature--- TOSSED !!!" );
+        return false;
+    }
 
     if ( columns[5] != "." ) {
         m_pdScore = new double( NStr::StringToDouble( columns[5] ) );
