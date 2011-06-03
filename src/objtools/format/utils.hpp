@@ -163,6 +163,9 @@ extern const string strLinkBaseExpasy;
 extern const string strLinkBaseNucSearch;
 extern const string strLinkBaseGenomePrj;
 extern const string strLinkBaseLatLon;
+extern const string strLinkBaseGeneOntology;
+extern const string strLinkBaseGeneOntologyRef;
+extern const string strLinkBaseUSPTO;
 
 template <typename T>
 void NcbiId(CNcbiOstream& os, const T& id, bool html = false)

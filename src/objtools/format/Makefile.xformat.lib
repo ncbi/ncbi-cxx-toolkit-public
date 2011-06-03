@@ -16,6 +16,6 @@ SRC = accession_item basecount_item comment_item contig_item date_item \
       gff_gather gff_formatter origin_item ftable_gather ftable_formatter \
       gbseq_formatter flat_file_config alignment_item gff3_formatter \
       gap_item genome_project_item sam_formatter cigar_formatter \
-      gather_iter html_anchor_item
+      gather_iter html_anchor_item inst_info_map
 
 WATCHERS = ludwigf dicuccio kornbluh

@@ -102,7 +102,10 @@ static bool s_StringIsJustQuotes(const string& str)
     return true;
 }
 
-static string s_GetGOText(const CUser_field& field, bool is_ftable)
+static string s_GetGOText(
+    const CUser_field& field, 
+    const bool is_ftable, 
+    const bool is_html)
 {
     const string* text_string = NULL,
                 * evidence = NULL,
@@ -160,22 +163,54 @@ static string s_GetGOText(const CUser_field& field, bool is_ftable)
         }
     } else { 
         if (go_id != NULL) {
-            go_text = string( "GO:" ) + *go_id;
+            go_text = string( "GO:" );
+            if( is_html ) {
+                go_text += "<a href=\"" + strLinkBaseGeneOntology + *go_id + "\">";
+            }
+            go_text += *go_id;
+            if( is_html ) {
+                go_text += "</a>";
+            }
         } else {
             go_text.clear();
         }
         if ( text_string != 0 && text_string->length() > 0 ) {
+            go_text += string( " - " );
+            if( is_html && go_id != NULL ) {
+                go_text += "<a href=\"" + strLinkBaseGeneOntology + *go_id + "\">";
+            }
             // Yes, we have the dash here even if there's no go_id (compatibility with C)
-            go_text += string( " - " ) + *text_string;
+            go_text += *text_string;
+            if( is_html && go_id != NULL ) {
+                go_text += "</a>";
+            }
         }
         if ( evidence != 0 ) {
             go_text += string( " [Evidence " ) + *evidence + string( "]" );
         }
         if ( pmid != 0 ) {
-            go_text += string( " [PMID " ) + NStr::IntToString(pmid) + string( "]" );
+            string pmid_str = NStr::IntToString(pmid);
+
+            go_text += " [PMID ";
+            if( is_html && go_id != NULL ) {
+                go_text += "<a href=\"" + strLinkBasePubmed + pmid_str + "\">";
+            }
+            go_text += pmid_str;
+            if( is_html && go_id != NULL ) {
+                go_text += "</a>";
+            }
+            go_text += "]";
         }
         if ( go_ref != 0 ) {
-            go_text += string( " [GO Ref " ) + *go_ref + string( "]" );
+            go_text += " [GO Ref ";
+            if( is_html ) {
+                go_text += "<a href=\"" + strLinkBaseGeneOntologyRef + *go_ref + "\">";
+            }
+            go_text += *go_ref;
+            if( is_html ) {
+                go_text += "</a>";
+            }
+            go_text += "]";
         }
     }
     NStr::TruncateSpacesInPlace(go_text);
@@ -696,6 +731,15 @@ void CFlatIllegalQVal::Format(TFlatQuals& q, const string&, CBioseqContext &ctx,
                             IFlatQVal::TFlags) const
 {
     // XXX - return if too strict
+
+    // special case: in sequin mode, orig_protein_id and orig_transcript_id removed,
+    // even though we usually keep illegal quals in sequin mode
+    if( m_Value->GetQual() == "orig_protein_id" || 
+        m_Value->GetQual() == "orig_transcript_id" )
+    {
+        return;
+    }
+        
     x_AddFQ(q, m_Value->GetQual(), m_Value->GetVal());
 }
 
@@ -830,6 +874,8 @@ void CFlatOrgModQVal::Format(TFlatQuals& q, const string& name,
             }
         }
     } else {
+        // TODO: consider adding this back when we switch to just C++
+        // x_AddFQ(q, name, s_GetSpecimenVoucherText(ctx, subname) );
         x_AddFQ(q, name, subname );
     }
 }
@@ -890,6 +936,8 @@ void CFlatOrganelleQVal::Format(TFlatQuals& q, const string& name,
 void CFlatPubSetQVal::Format(TFlatQuals& q, const string& name,
                            CBioseqContext& ctx, IFlatQVal::TFlags) const
 {
+    const bool bHtml = ctx.Config().DoHTML();
+
     if( ! m_Value->IsPub() ) {
         return; // TODO: is this right?
     }
@@ -906,8 +954,19 @@ void CFlatPubSetQVal::Format(TFlatQuals& q, const string& name,
         CPub_set_Base::TPub::iterator pub_iter = unusedPubs.begin();
         for( ; pub_iter != unusedPubs.end() ; ++pub_iter ) {
             if( (*ref_iter)->Matches( **pub_iter ) ) {
-                x_AddFQ(q, name, '[' + NStr::IntToString((*ref_iter)->GetSerial()) + ']',
-                   CFormatQual::eUnquoted);
+                // We have a match, so create the qual
+                string value;
+                if( (*ref_iter)->GetPMID() > 0 && bHtml ) {
+                    // create a link
+                    const int pmid = (*ref_iter)->GetPMID();
+                    value = "[<a href=\"" + strLinkBasePubmed + NStr::IntToString(pmid) + "\">" + 
+                        NStr::IntToString((*ref_iter)->GetSerial()) + 
+                        "</a>]";
+                } else {
+                    value = '[' + NStr::IntToString((*ref_iter)->GetSerial()) + ']';
+                }
+                x_AddFQ(q, name, value, CFormatQual::eUnquoted);
+                
                 pub_iter = unusedPubs.erase( pub_iter ); // only one citation should be created per reference
                 break; // break so we don't show the same ref more than once
             }
@@ -1015,15 +1074,15 @@ void s_HtmlizeLatLon( string &subname ) {
     try {
         double lat_num = NStr::StringToDouble( lat );
         double lon_num = NStr::StringToDouble( lon );
-        if( lat_num < -180.0 ) {
-            lat = "-180";
-        } else if( lat_num > 180.0 ) {
-            lat = "180";
+        if( lon_num < -180.0 ) {
+            lon = "-180";
+        } else if( lon_num > 180.0 ) {
+            lon = "180";
         }
-        if( lon_num < -90.0 ) {
-            lon = "-90";
-        } else if( lon_num > 90.0 ) {
-            lon = "90";
+        if( lat_num < -90.0 ) {
+            lat = "-90";
+        } else if( lat_num > 90.0 ) {
+            lat = "90";
         }
     } catch( ... ) {
         // error parsing numbers
@@ -1248,7 +1307,7 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const string& name,
         if (ctx.Config().DoHTML()) {
             string url = dbt.GetUrl();
             if (!NStr::IsBlank(url)) {
-                db_xref <<  "<a href=\"" <<  NStr::Replace(url, "&", "&amp;") << "\">" << id << "</a>";
+                db_xref <<  "<a href=\"" << url << "\">" << id << "</a>";
             } else {
                 db_xref << id;
             }
@@ -1414,15 +1473,16 @@ void CFlatGoQVal::Format
  IFlatQVal::TFlags flags) const
 {
     _ASSERT(m_Value->GetData().IsFields());
-    bool is_ftable = ctx.Config().IsFormatFTable();
+    const bool is_ftable = ctx.Config().IsFormatFTable();
+    const bool is_html = ctx.Config().DoHTML();
 
     if ( s_IsNote(flags, ctx) ) {
         static const string sfx = ";";
         m_Prefix = &kEOL;
         m_Suffix = &sfx;
-        x_AddFQ(q, "note", name + ": " + s_GetGOText(*m_Value, is_ftable));
+        x_AddFQ(q, "note", name + ": " + s_GetGOText(*m_Value, is_ftable, is_html));
     } else {
-        x_AddFQ(q, name, s_GetGOText(*m_Value, is_ftable));
+        x_AddFQ(q, name, s_GetGOText(*m_Value, is_ftable, is_html));
     }
 }
 

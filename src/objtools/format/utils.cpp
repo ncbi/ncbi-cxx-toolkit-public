@@ -1144,8 +1144,10 @@ const string strLinkBaseNuc(
     "http://www.ncbi.nlm.nih.gov/nuccore/" );
 const string strLinkBaseProt( 
     "http://www.ncbi.nlm.nih.gov/protein/" );
+
 const string strLinkBaseEntrezViewer(
     "http://www.ncbi.nlm.nih.gov/entrez/viewer.fcgi?val=" );
+
 const string strLinkBaseTaxonomy( 
     "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?" );
 const string strLinkBaseTransTable(
@@ -1160,6 +1162,12 @@ const string strLinkBaseGenomePrj(
     "http://www.ncbi.nlm.nih.gov/genomeprj/" );
 const string strLinkBaseLatLon(
     "http://www.ncbi.nlm.nih.gov/projects/Sequin/latlonview.html" );
+const string strLinkBaseGeneOntology (
+    "http://amigo.geneontology.org/cgi-bin/amigo/go.cgi?view=details&depth=1&query=GO:" );
+const string strLinkBaseGeneOntologyRef (
+    "http://www.geneontology.org/cgi-bin/references.cgi#GO_REF:" );
+const string strLinkBaseUSPTO(
+    "http://patft.uspto.gov/netacgi/nph-Parser?patentnumber=" );
 
 bool ConvertQuotesNotInHTMLTags( string &str )
 {   
@@ -1170,6 +1178,7 @@ bool ConvertQuotesNotInHTMLTags( string &str )
     for( ; idx < str.length(); ++idx ) {
         switch( str[idx] ) {
         case '<':
+            // heuristic
             in_tag = true;
             break;
         case '>':
@@ -1199,7 +1208,7 @@ s_ShouldWeEscapeAmpersand(
     _ASSERT(*str_iter == '&');
     
     // This is a long-winded way of checking if str_iter
-    // is at "&gt;", "&lt;" or "&amp;"
+    // is at "&gt;", "&lt;", "&quot;" or "&amp;"
     // I'm concerned about regexes being too slow.
 
     ++str_iter;
@@ -1223,6 +1232,21 @@ s_ShouldWeEscapeAmpersand(
                         ++str_iter;
                         if( str_iter != str_iter_end && *str_iter == ';' ) {
                             return false;
+                        }
+                    }
+                }
+                break;
+            case 'q':
+                ++str_iter;
+                if( str_iter != str_iter_end && *str_iter == 'u' ) {
+                    ++str_iter;
+                    if( str_iter != str_iter_end && *str_iter == 'o' ) {
+                        ++str_iter;
+                        if( str_iter != str_iter_end && *str_iter == 't' ) {
+                            ++str_iter;
+                            if( str_iter != str_iter_end && *str_iter == ';' ) {
+                                return false;
+                            }
                         }
                     }
                 }
@@ -1295,8 +1319,6 @@ TryToSanitizeHtml( string &str )
         // now that we know whether we're in a tag,
         // process characters appropriately.
         if( in_html_tag ) {
-            result += *str_iter;
-        } else {
             switch( *str_iter ) {
             case '&':
                 // make sure we're not "double-sanitizing"
@@ -1307,6 +1329,12 @@ TryToSanitizeHtml( string &str )
                     result += '&';
                 }
                 break;
+            default:
+                result += *str_iter;
+                break;
+            }
+        } else {
+            switch( *str_iter ) {
             case '<':
                 result += "&lt;";
                 break;

@@ -219,6 +219,9 @@ void CGenbankFormatter::FormatAccession
  IFlatTextOStream& text_os)
 {
     string acc_line = x_FormatAccession(acc, ' ');
+    if( acc.GetContext()->Config().DoHTML() && ! acc.GetContext()->GetLocation().IsWhole() ) {
+        acc_line = "<a href=\"" + strLinkBaseEntrezViewer + acc_line + "\">" + acc_line + "</a>";
+    }
     if ( acc.IsSetRegion() ) {
         acc_line += " REGION: ";
         acc_line += CFlatSeqLoc(acc.GetRegion(), *acc.GetContext()).GetString();
@@ -374,7 +377,7 @@ static string s_GetHtmlTaxname(const CSourceItem& source)
 {
     CNcbiOstrstream link;
     
-    if (!NStr::EqualNocase(source.GetTaxname(), "Unknown")) {
+    if (!NStr::EqualNocase(source.GetTaxname(), "Unknown") && !NStr::EqualNocase(source.GetTaxname(), "Unknown.") ) {
         if (source.GetTaxid() != CSourceItem::kInvalidTaxid) {
             link << "<a href=\"" << strLinkBaseTaxonomy << "id=" << source.GetTaxid() << "\">";
         } else {
@@ -479,6 +482,10 @@ void CGenbankFormatter::FormatReference
     }
     x_Pubmed(l, ref, ctx);
     x_Remark(l, ref, ctx);
+
+    if( ctx.Config().DoHTML() ) {
+        TryToSanitizeHtmlList(l);
+    }
 
     text_os.AddParagraph(l, ref.GetObject());
 }
@@ -812,9 +819,10 @@ void s_GenerateWeblinks( const string& strProtocol, string& strText )
         }
     
         string strLink = strText.substr( uLinkStart, uLinkStop - uLinkStart );
-        // chop off final period, if any
-        while( NStr::EndsWith( strLink, "." ) || NStr::EndsWith( strLink, ")") ) {
-            strLink.resize( strLink.size() - 1 );
+        // remove junk
+        string::size_type last_good_char = strLink.find_last_not_of(".),<>");
+        if( last_good_char != NPOS ) {
+            strLink.resize( last_good_char + 1 );
         }
 
         string strDummyLink = NStr::Replace( strLink, strProtocol, strDummyProt );
@@ -1173,9 +1181,7 @@ s_CalcDistanceUntilNextSignificantGapOrEnd(
     TSeqPos dist_to_gap_or_end = 0;
     while( iter ) {
         if( ! iter.IsInGap() ) {
-            // CSeqMap_CI seq_map_ci = seq_map.FindSegment( iter.GetPos(), &seq.GetContext()->GetScope() );
-            CSeqMap_CI seq_map_ci = seq_map.FindResolved( &seq.GetContext()->GetScope(), iter.GetPos(), SSeqMapSelector() );
-            const TSeqPos seg_len = seq_map_ci.GetLength();
+            const TSeqPos seg_len = iter.GetBufferSize();
             dist_to_gap_or_end += seg_len;
             iter += seg_len;
         } else {
@@ -1230,7 +1236,7 @@ s_FormatRegularSequencePiece
         }
     }
 
-    while ( total >= s_kFullLineSize ) {
+    while ( total >= (s_kFullLineSize - initial_indent) ) {
         char* linep = line + kSeqPosWidth;
         s_FormatSeqPosBack(linep, base_count, kSeqPosWidth);
 
@@ -1268,12 +1274,31 @@ s_FormatRegularSequencePiece
     if ( total > 0 ) {
         char* linep = line + kSeqPosWidth;
         s_FormatSeqPosBack(linep, base_count, kSeqPosWidth);
+
+        TSeqPos i = 0;
+        TSeqPos j = 0;
+
+        // partial beginning line occurs sometimes, so we have to
+        // offset some start-points
+        int bases_to_skip = 0;
+        if( initial_indent != 0 ) {
+            bases_to_skip = initial_indent;
+            // additional space required every chunk
+            int chunks_to_skip = (bases_to_skip / s_kChunkSize);
+            linep += (bases_to_skip + chunks_to_skip);
+            i = chunks_to_skip;
+            j = (bases_to_skip % s_kChunkSize);
+            // don't indent subsequent lines
+            initial_indent = 0; 
+        }
+
         base_count += total;
-        for ( TSeqPos i = 0; total > 0  &&  i < s_kChunkCount; ++i) {
+        for ( ; total > 0  &&  i < s_kChunkCount; ++i) {
             ++linep;
-            for ( TSeqPos j = 0; total > 0  &&  j < s_kChunkSize; ++j, ++iter, --total, ++linep) {
+            for ( ; total > 0  &&  j < s_kChunkSize; ++j, ++iter, --total, ++linep) {
                 *linep = *iter;
             }
+            j = 0;
         }
 
         total = 0;
@@ -1306,12 +1331,12 @@ void CGenbankFormatter::FormatSequence
     } else {
         // special case: instead of showing the N's in a gap right away, we have the 
         // "Expand Ns" link that users can click to show the Ns
-        while( iter ) {
+        while( iter && total > 0 ) {
             const TSeqPos distance_until_next_significant_gap = 
                 min( total, s_CalcDistanceUntilNextSignificantGapOrEnd(seq, iter) );
 
             if( 0 == distance_until_next_significant_gap ) {
-                const static int kExpandedGapDisplay = 65536;
+                
 
                 TSeqPos gap_size = 0;
                 // sum up gap length, skipping over all gaps until we reach real data
@@ -1320,6 +1345,7 @@ void CGenbankFormatter::FormatSequence
                 }
                 
                 // build gap size text and "Expand Ns" link
+                const static int kExpandedGapDisplay = 65536;
                 CNcbiOstrstream gap_link;
                 const char *mol_type = ( seq.GetContext()->IsProt() ? "aa" : "bp" );
                 gap_link << "          [gap " << gap_size << " " << mol_type << "]";
@@ -1479,7 +1505,7 @@ void CGenbankFormatter::FormatOrigin
             strOrigin += ".";
         }
         if ( bHtml ) {
-            strOrigin = NStr::XmlEncode( strOrigin );
+            TryToSanitizeHtml( strOrigin );
         }
         Wrap( l, "ORIGIN", strOrigin );
     }

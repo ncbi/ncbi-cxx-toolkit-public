@@ -1058,6 +1058,8 @@ static void s_FormatPatent
     bool embl    = (cfg.GetFormat() == CFlatFileConfig::eFormat_EMBL);
     bool genbank = (cfg.GetFormat() == CFlatFileConfig::eFormat_GenBank);
 
+    const bool is_html = cfg.DoHTML();
+
     journal.erase();
 
     string header;
@@ -1124,7 +1126,15 @@ static void s_FormatPatent
         jour << pat.GetCountry() << suffix;
     }
     if (pat.IsSetNumber()  &&  !NStr::IsBlank(pat.GetNumber())) {
+        const bool do_us_patent_html = 
+            is_html && pat.IsSetCountry() && pat.GetCountry() == "US";
+        if( do_us_patent_html ) {
+            jour << "<a href=\"" << strLinkBaseUSPTO << pat.GetNumber() << "\">";
+        }
         jour << pat.GetNumber();
+        if( do_us_patent_html ) {
+            jour << "</a>";
+        }
     } else if (pat.IsSetApp_number()  &&  !NStr::IsBlank(pat.GetApp_number())) {
         if ( use_pre_grant_formatting ) {
             jour << pat.GetApp_number();
