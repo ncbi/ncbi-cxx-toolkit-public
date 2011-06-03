@@ -231,10 +231,14 @@ struct SOptionDefinition {
             "identified by the specified GUID."},
 
     {CCommandLineParser::eOptionWithParameter, eWNodePort,
-        "wnode-port", "Worker node control port number."},
+        WNODE_PORT_OPTION, "Worker node control port number."},
 
     {CCommandLineParser::eOptionWithParameter, eWNodeGUID,
         "wnode-guid", "Worker node GUID."},
+
+    {CCommandLineParser::eOptionWithParameter, eWaitTimeout,
+        WAIT_TIMEOUT_OPTION, "Wait up to the specified "
+            "number of seconds for a response."},
 
     {CCommandLineParser::eOptionWithParameter, eFailJob,
         FAIL_JOB_OPTION, "Report the job as failed "
@@ -457,7 +461,7 @@ struct SCommandDefinition {
         "specified queue, nothing is printed and the exit code of zero "
         "is returned.",
         {eNetSchedule, eQueue, eAffinity, eWNodePort, eWNodeGUID,
-            eOutputFile, eAuth, -1}},
+            eOutputFile, eWaitTimeout, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_CommitJob,
         "commitjob", "Mark the job as complete or failed.",
@@ -714,6 +718,7 @@ int CGridCommandLineInterfaceApp::Run()
                 m_Opts.limit = NStr::StringToUInt(opt_value);
                 break;
             case eTimeout:
+            case eWaitTimeout:
                 m_Opts.timeout = NStr::StringToUInt(opt_value);
                 break;
             case eConfirmRead:

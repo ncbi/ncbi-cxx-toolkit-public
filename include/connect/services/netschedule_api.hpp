@@ -511,7 +511,8 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     ///
     /// @sa GetJob, WaitNotification
     ///
-    bool WaitJob(CNetScheduleJob& job, unsigned wait_time);
+    bool WaitJob(CNetScheduleJob& job, unsigned wait_time,
+        const string& affinity = kEmptyStr);
 
 
     /// Put job result (job should be received by GetJob() or WaitJob())

@@ -194,7 +194,8 @@ struct SWaitQueuePred {
 
 
 bool CNetScheduleExecuter::WaitJob(CNetScheduleJob& job,
-                                   unsigned   wait_time)
+                                   unsigned   wait_time,
+                                   const string& affinity)
 {
     string cmd = "WGET ";
 
@@ -203,6 +204,10 @@ bool CNetScheduleExecuter::WaitJob(CNetScheduleJob& job,
     cmd += NStr::UIntToString(m_Impl->m_ControlPort);
     cmd += ' ';
     cmd += NStr::UIntToString(wait_time);
+    if (!affinity.empty()) {
+        cmd += ' ';
+        cmd += NStr::PrintableString(affinity);
+    }
 
     if (m_Impl->GetJobImpl(cmd, job))
         return true;
@@ -214,7 +219,7 @@ bool CNetScheduleExecuter::WaitJob(CNetScheduleJob& job,
     // using reliable comm.level and notify server that
     // we no longer on the UDP socket
 
-    return GetJob(job);
+    return GetJob(job, affinity);
 }
 
 

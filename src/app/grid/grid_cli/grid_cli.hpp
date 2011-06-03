@@ -59,6 +59,8 @@
 #define FAIL_READ_OPTION "fail-read"
 #define JOB_ID_OPTION "job-id"
 #define QUERY_FIELD_OPTION "query-field"
+#define WNODE_PORT_OPTION "wnode-port"
+#define WAIT_TIMEOUT_OPTION "wait-timeout"
 #define FAIL_JOB_OPTION "fail-job"
 #define NOW_OPTION "now"
 #define DIE_OPTION "die"
@@ -120,6 +122,7 @@ enum EOption {
     eUnregisterWNode,
     eWNodePort,
     eWNodeGUID,
+    eWaitTimeout,
     eFailJob,
     eQueueArg,
     eModelQueue,

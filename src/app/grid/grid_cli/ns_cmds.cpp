@@ -738,8 +738,20 @@ int CGridCommandLineInterfaceApp::Cmd_RequestJob()
     CNetScheduleJob job;
 
     try {
-        if (m_NetScheduleExecutor.GetJob(job, m_Opts.affinity))
-            return PrintJobAttrsAndDumpInput(job);
+        if (!IsOptionSet(eWaitTimeout)) {
+            if (m_NetScheduleExecutor.GetJob(job, m_Opts.affinity))
+                return PrintJobAttrsAndDumpInput(job);
+        } else {
+            if (!IsOptionSet(eWNodePort)) {
+                fprintf(stderr, PROGRAM_NAME " " REQUESTJOB_COMMAND
+                    ": option '--" WAIT_TIMEOUT_OPTION "' requires '--"
+                    WNODE_PORT_OPTION "' to be specified as well\n");
+                return 2;
+            }
+            if (m_NetScheduleExecutor.WaitJob(job,
+                    m_Opts.timeout, m_Opts.affinity))
+                return PrintJobAttrsAndDumpInput(job);
+        }
     }
     catch (CNetScheduleException& e) {
         if (e.GetErrCode() != CNetScheduleException::eNoJobsWithAffinity)
