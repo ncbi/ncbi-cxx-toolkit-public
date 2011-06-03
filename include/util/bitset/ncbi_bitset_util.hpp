@@ -52,10 +52,11 @@ void BV_Serialize(const TBV&     bv,
     typename TBV::statistics st;
 
     if (optimize_bv) {
-        bv.optimize(0, TBV::opt_compress, &st);
-    } else {
-        bv.calc_stat(&st);
-    }
+        // in the latest bit-vector implementation optimization is not necessary
+        //bv.optimize(0, TBV::opt_compress, &st);
+    } 
+    bv.calc_stat(&st);
+    
 
     if (st.max_serialize_mem > buf.size()) {
         buf.resize(st.max_serialize_mem);
