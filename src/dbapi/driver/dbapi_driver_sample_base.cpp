@@ -67,6 +67,7 @@ CDbapiDriverSampleApp::GetServerType(void) const
          GetServerName() == "MOZART" ||
          GetServerName() == "SCHUMANN" ||
          GetServerName() == "CLEMENTI" ||
+         GetServerName() == "DBAPI_DEV1" ||
          GetServerName() == "OBERON" ||
          GetServerName() == "TAPER" ||
          GetServerName() == "THALBERG" ||

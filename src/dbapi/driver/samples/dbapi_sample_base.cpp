@@ -130,6 +130,7 @@ CDbapiSampleApp::GetServerType(void) const
          || GetServerName() == "MOZART"
          || GetServerName() == "SCHUMANN"
          || GetServerName() == "CLEMENTI"
+         || GetServerName() == "DBAPI_DEV1"
          || GetServerName() == "OBERON"
          || GetServerName() == "TAPER"
          || GetServerName() == "THALBERG"
@@ -166,7 +167,7 @@ CDbapiSampleApp::Init()
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", \
                       "gateway", "odbc"
 #elif defined(HAVE_LIBSYBASE)
-#define DEF_SERVER    "CLEMENTI"
+#define DEF_SERVER    "DBAPI_DEV1"
 #define DEF_DRIVER    "ctlib"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "gateway", \
                       "odbc"

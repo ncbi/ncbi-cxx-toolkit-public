@@ -142,7 +142,7 @@ CDemoApp::RunSample(void)
 
 int main(int argc, const char* argv[])
 {
-    return CDemoApp("CLEMENTI").AppMain(argc, argv);
+    return CDemoApp("DBAPI_DEV1").AppMain(argc, argv);
 }
 
 
