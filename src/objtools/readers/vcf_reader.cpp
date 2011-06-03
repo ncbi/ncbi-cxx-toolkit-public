@@ -80,6 +80,7 @@
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqfeat/Variation_ref.hpp>
+#include <objects/seqfeat/Variation_inst.hpp>
 
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
@@ -294,11 +295,15 @@ CVcfReader::x_ProcessDataLine(
         return false;
     }
     CRef<CSeq_feat> pFeat( new CSeq_feat );
-    pFeat->SetData().SetVariation().SetData().SetNote( "Place Holder" );
+    pFeat->SetData().SetVariation().SetData().SetSet().SetType(
+        CVariation_ref::C_Data::C_Set::eData_set_type_alleles );
     if ( ! x_AssignFeatureLocation( data, pFeat ) ) {
         return false;
     }
     if ( ! x_AssignVariationIds( data, pFeat ) ) {
+        return false;
+    }
+    if ( ! x_AssignVariationAlleles( data, pFeat ) ) {
         return false;
     }
 
@@ -333,6 +338,60 @@ CVcfReader::x_AssignVariationIds(
         return true;
     }
     CVariation_ref& variation = pFeature->SetData().SetVariation();
+    if ( data.m_Info.find( "DB" ) != data.m_Info.end() ) {
+        variation.SetId().SetDb( "dbVar" );
+    }
+    else if ( data.m_Info.find( "H2" ) != data.m_Info.end() ) {
+        variation.SetId().SetDb( "HapMap2" );
+    }
+    else {
+        variation.SetId().SetDb( "local" );
+    }
+    variation.SetId().SetTag().SetStr( data.m_Ids[0] );
+
+    for ( size_t i=1; i < data.m_Ids.size(); ++i ) {
+        if ( data.m_Info.find( "DB" ) != data.m_Info.end()  
+            &&  data.m_Info.find( "H2" ) != data.m_Info.end() ) 
+        {
+            variation.SetId().SetDb( "HapMap2" );
+        }
+        else {
+            variation.SetId().SetDb( "local" );
+        }      
+        variation.SetId().SetTag().SetStr( data.m_Ids[i] );
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CVcfReader::x_AssignVariationAlleles(
+    const CVcfData& data,
+    CRef<CSeq_feat> pFeature )
+//  ----------------------------------------------------------------------------
+{
+    CVariation_ref::TData::TSet::TVariations& alleles = 
+        pFeature->SetData().SetVariation().SetData().SetSet().SetVariations();
+
+    vector<string> reference;
+    reference.push_back( data.m_strRef );
+    CRef<CVariation_ref> pReference( new CVariation_ref );
+    pReference->SetSNV( reference, CVariation_ref::eSeqType_na );
+    pReference->SetData().SetInstance().SetObservation( 
+        CVariation_inst::eObservation_reference );
+    alleles.push_back( pReference );
+
+    for ( vector<string>::const_iterator cit = data.m_Alt.begin(); 
+        cit != data.m_Alt.end(); ++cit )
+    {
+        vector<string> alternative;
+        alternative.push_back( *cit );
+        CRef<CVariation_ref> pAllele( new CVariation_ref );
+        pAllele->SetSNV( alternative, CVariation_ref::eSeqType_na );
+        pAllele->SetData().SetInstance().SetObservation( 
+            CVariation_inst::eObservation_variant );
+        alleles.push_back( pAllele );
+    }
     return true;
 }
 

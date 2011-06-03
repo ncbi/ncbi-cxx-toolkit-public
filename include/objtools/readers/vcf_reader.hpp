@@ -114,6 +114,11 @@ protected:
         const CVcfData&,
         CRef<CSeq_feat> );
 
+    virtual bool
+    x_AssignVariationAlleles(
+        const CVcfData&,
+        CRef<CSeq_feat> );
+
     //
     //  data:
     //
