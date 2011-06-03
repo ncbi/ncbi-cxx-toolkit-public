@@ -474,6 +474,8 @@ static const string kDictyPrim = "http://dictybase.org/db/cgi-bin/gene_page.pl?p
 static const string kMiRBaseMat = "http://www.mirbase.org/cgi-bin/mature.pl?mature_acc=";
 static const string kMaizeGDBInt = "http://www.maizegdb.org/cgi-bin/displaylocusrecord.cgi?id=";
 static const string kMaizeGDBStr = "http://www.maizegdb.org/cgi-bin/displaylocusrecord.cgi?term=";
+static const string kHomdTax = "http://www.homd.org/taxon=";
+static const string kHomdSeq = "http://www.homd.org/seq=";
 
 // mapping of DB to its URL; please sort these by tag name (mostly,
 // but NOT entirely, in case-sensitive ASCII-betical order as above)
@@ -698,6 +700,16 @@ string CDbtag::GetUrl(void) const
 
         case CDbtag::eDbtagType_GeneDB:
             tag +="&organism=pombe";
+            break;
+
+        case CDbtag::eDbtagType_HOMD:
+            if( NStr::StartsWith(tag, "tax_") ) {
+                prefix = &kHomdTax;
+                tag = tag.substr(4);
+            } else if( NStr::StartsWith(tag, "seq_") ) {
+                prefix = &kHomdSeq;
+                tag = tag.substr(4);
+            }
             break;
 
         default:
