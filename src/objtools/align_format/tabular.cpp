@@ -426,7 +426,7 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
         x_IsFieldRequested(eSubjectSeq) || (x_IsFieldRequested(eNumIdentical) && num_ident > 0 ) ||
         x_IsFieldRequested(ePositives) || x_IsFieldRequested(eMismatches) || 
         x_IsFieldRequested(ePercentPositives) || x_IsFieldRequested(ePercentIdentical) ||
-        x_IsFieldRequested(eBTOP)) {
+        x_IsFieldRequested(eQueryFrame) || x_IsFieldRequested(eBTOP)) {
 
     CRef<CSeq_align> finalAln(0);
    
