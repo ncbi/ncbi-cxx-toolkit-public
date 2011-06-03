@@ -770,7 +770,6 @@ int CGridCommandLineInterfaceApp::Cmd_CommitJob()
 
     job.job_id = m_Opts.id;
     job.ret_code = m_Opts.return_code;
-    job.affinity = m_Opts.affinity;
 
     auto_ptr<IEmbeddedStreamWriter> writer(new CStringOrBlobStorageWriter(
         m_NetScheduleAPI.GetServerParams().max_output_size,
@@ -792,20 +791,28 @@ int CGridCommandLineInterfaceApp::Cmd_CommitJob()
                 m_Opts.job_output.length()) != eRW_Success)
             goto ErrorExit;
 
-    if (!IsOptionSet(eFailJob)) {
-        if (!IsOptionSet(eGetNextJob))
-            m_NetScheduleExecutor.PutResult(job);
-        else {
-            CNetScheduleJob new_job;
+    try {
+        if (!IsOptionSet(eFailJob)) {
+            if (!IsOptionSet(eGetNextJob))
+                m_NetScheduleExecutor.PutResult(job);
+            else {
+                CNetScheduleJob new_job;
 
-            if (m_NetScheduleExecutor.PutResultGetJob(job, new_job))
-                return PrintJobAttrsAndDumpInput(new_job);
+                if (m_NetScheduleExecutor.PutResultGetJob(job,
+                        new_job, m_Opts.affinity))
+                    return PrintJobAttrsAndDumpInput(new_job);
+            }
+        } else {
+            job.error_msg = m_Opts.error_message;
+            m_NetScheduleExecutor.PutFailure(job);
+            if (IsOptionSet(eGetNextJob) &&
+                    m_NetScheduleExecutor.GetJob(job, m_Opts.affinity))
+                return PrintJobAttrsAndDumpInput(job);
         }
-    } else {
-        job.error_msg = m_Opts.error_message;
-        m_NetScheduleExecutor.PutFailure(job);
-        if (IsOptionSet(eGetNextJob) && m_NetScheduleExecutor.GetJob(job))
-            return PrintJobAttrsAndDumpInput(job);
+    }
+    catch (CNetScheduleException& e) {
+        if (e.GetErrCode() != CNetScheduleException::eNoJobsWithAffinity)
+            throw;
     }
 
     return 0;

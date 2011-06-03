@@ -529,7 +529,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     ///
     /// @sa PutResult, GetJob
     bool PutResultGetJob(const CNetScheduleJob& done_job,
-        CNetScheduleJob& new_job);
+        CNetScheduleJob& new_job, const string& affinity = kEmptyStr);
 
     /// Put job interim (progress) message
     ///
