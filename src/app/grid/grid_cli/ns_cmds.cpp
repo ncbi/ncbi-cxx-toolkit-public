@@ -593,8 +593,9 @@ int CGridCommandLineInterfaceApp::PrintJobAttrsAndDumpInput(
         printf(job.mask & CNetScheduleAPI::eExclusiveJob ?
             "affinity=\"%s\" exclusive\n" : "affinity=\"%s\"\n",
             affinity.c_str());
-    } else if (job.mask & CNetScheduleAPI::eExclusiveJob)
-        printf("exclusive\n");
+    } else
+        printf(job.mask & CNetScheduleAPI::eExclusiveJob ?
+            "exclusive\n" : "\n");
     return DumpJobInputOutput(job.input);
 }
 
