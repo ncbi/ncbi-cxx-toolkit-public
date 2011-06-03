@@ -718,6 +718,7 @@ int CGridCommandLineInterfaceApp::Run()
                 break;
             case eConfirmRead:
             case eRollbackRead:
+            case eFailRead:
                 m_Opts.reservation_token = opt_value;
                 break;
             case eJobId:
