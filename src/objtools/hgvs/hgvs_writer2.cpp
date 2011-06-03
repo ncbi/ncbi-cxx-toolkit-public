@@ -247,7 +247,8 @@ string CHgvsParser::x_AsHgvsExpression(
         if(placement) {
             placement = x_AdjustPlacementForHgvs(*placement, variation.GetData().GetInstance());
         }
-        hgvs_data_str = x_AsHgvsInstExpression(variation.GetData().GetInstance(), placement, asserted_seq);
+
+        hgvs_data_str = x_AsHgvsInstExpression(variation, placement, asserted_seq);
     } else if(variation.GetData().IsUnknown()) {
         hgvs_data_str = "?";
     }
@@ -581,10 +582,12 @@ TSeqPos CHgvsParser::x_GetInstLength(const CVariation_inst& inst, const CVariant
 
 
 string CHgvsParser::x_AsHgvsInstExpression(
-        const CVariation_inst& inst,
+        const CVariation& variation,
         CConstRef<CVariantPlacement> placement,
         CConstRef<CSeq_literal> explicit_asserted_seq)
 {
+    const CVariation_inst& inst = variation.GetData().GetInstance();
+
     string inst_str = "";
 
     CBioseq_Handle bsh;
@@ -593,19 +596,21 @@ string CHgvsParser::x_AsHgvsInstExpression(
     }
 
 
-    //cannot use explicit asserted seq to construct prot inst, as it could be partially-specified: e.g.
-    //echo "NP_079142.2:p.C11_G21delinsGlnSerLys - the asserted seq is C..G, so we cannot construct
-    //del??ins representation that asserts the sequence being deleted within a delins
+    /*
+     * Cannot use explicit asserted seq to construct prot inst, as it could be partially-specified: e.g.
+     * "NP_079142.2:p.C11_G21delinsGlnSerLys - the asserted seq is C..G, so we cannot construct
+     * del??ins representation that asserts the sequence being deleted within a delins.
+     */
 
     bool is_usable_asserted_seq =
             explicit_asserted_seq
             && !(placement && placement->GetMol() == CVariantPlacement::eMol_protein);
 
+
     const CSeq_literal* asserted_seq =
             is_usable_asserted_seq ? explicit_asserted_seq
           : placement && placement->IsSetSeq() ? &placement->GetSeq()
           :                                      NULL;
-
 
     string asserted_seq_str =
            !asserted_seq                  ? ""
@@ -656,6 +661,9 @@ string CHgvsParser::x_AsHgvsInstExpression(
     } else if(inst.GetType() == CVariation_inst::eType_microsatellite) {
         inst_str = "";
         append_delta = true;
+    } else if(inst.GetType() == CVariation_inst::eType_transposon) {
+        inst_str = "con";
+        append_delta = true;
     } else if(inst.GetType() == CVariation_inst::eType_prot_missense
            || inst.GetType() == CVariation_inst::eType_prot_nonsense
            || inst.GetType() == CVariation_inst::eType_prot_neutral)
@@ -683,7 +691,19 @@ string CHgvsParser::x_AsHgvsInstExpression(
         ITERATE(CVariation_inst::TDelta, it, inst.GetDelta()) {
 
             const CDelta_item& delta = **it;
-            if(delta.GetSeq().IsThis()) {
+
+            if(variation.GetData().GetInstance().GetType() == CVariation_inst::eType_microsatellite
+               && variation.GetParent()
+               && !variation.IsSetPlacements()
+               && variation.GetParent()->GetData().GetSet().GetVariations().front().GetPointer() != &variation)
+            {
+                /*
+                 * Don't use literal subsequent subvariations in a multi-allele microsatellite expression,
+                 * e.g. NM_000815.2:c.100_101TC[5]+[3], as opposed to NM_000815.2:c.100_101TC[5]+TC[3] -
+                 * in the second subexpression we simply want [3] instead of TC[3]
+                 */
+                ;
+            } else if(delta.GetSeq().IsThis()) {
                 ;
             } else if(delta.GetSeq().IsLiteral()) {
                 CRef<CSeq_literal> literal(new CSeq_literal);

@@ -1229,10 +1229,13 @@ CRef<CVariation> CHgvsParser::x_translocation(TIterator const& i, const CContext
 
     CRef<CSeq_loc> loc = x_seq_loc(it, context);
     SetFirstPlacement(*vr).SetLoc().Assign(*loc);
+    CVariationUtil util(context.GetScope());
+    SetFirstPlacement(*vr).SetMol(util.GetMolType(sequence::GetId(*loc, NULL)));
 
-    TDelta delta(new TDelta::TObjectType);
-    delta->SetSeq().SetLoc().SetNull();
-    var_inst.SetDelta().push_back(delta);
+    it = i->children.begin();
+    string iscn_expr(it->value.begin(), it->value.end());
+    vr->SetSynonyms().push_back("ISCN:" + iscn_expr);
+    var_inst.SetDelta(); //no delta contents
 
     return vr;
 }
@@ -1398,7 +1401,14 @@ CRef<CVariation> CHgvsParser::x_mut_inst(TIterator const& i, const CContext& con
         } else if(s == "=") {
             vr = x_identity(context);
         } else {
+#if 0
+            //can represent unparseable catch-all as a variation
+            string content(it->value.begin(), it->value.end());
+            vr->SetData().SetNote(content);
+            SetFirstPlacement(*vr).Assign(context.GetPlacement());
+#else
             HGVS_THROW(eGrammatic, "Unexpected inst terminal: " + s);
+#endif
         }
     } else {
         vr =

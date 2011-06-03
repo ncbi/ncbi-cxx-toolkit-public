@@ -1095,6 +1095,18 @@ void CVariationUtil::x_AdjustDelinsToInterval(CVariation& v, const CSeq_loc& loc
     v.SetPlacements().front()->SetLoc().Assign(loc);
 }
 
+bool Contains(const CSeq_loc& a, const CSeq_loc& b, CScope* scope)
+{
+    CRef<CSeq_loc> a1(new CSeq_loc);
+    a1->Assign(a);
+    a1->ResetStrand();
+
+    CRef<CSeq_loc> b1(new CSeq_loc);
+    b1->Assign(b);
+    b1->ResetStrand();
+
+    return sequence::Compare(*a1, *b1, scope) == sequence::eContains;
+}
 
 CRef<CVariation> CVariationUtil::TranslateNAtoAA(
         const CVariation_inst& nuc_inst,
@@ -1114,7 +1126,7 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
     //if placement is not a proper subset of CDS, create and return "unknown effect" variation
     if(nuc_p.IsSetStart_offset()
       || nuc_p.IsSetStop_offset()
-      || sequence::Compare(nuc_p.GetLoc(), cds_feat.GetLocation(), NULL) != sequence::eContains)
+      || !Contains(cds_feat.GetLocation(), nuc_p.GetLoc(), m_scope))
     {
         CRef<CVariantPlacement> p(new CVariantPlacement);
         p->SetLoc().Assign(cds_feat.GetProduct());

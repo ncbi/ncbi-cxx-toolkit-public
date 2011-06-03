@@ -614,13 +614,14 @@ protected:
 
                 prot_missense   = aminoacid;
 
-                //ISCN expression followed by a seq-loc
-                translocation = str_p("t(")
-                                  >> leaf_node_d[*(print_p - ch_p('(') - ch_p(')'))]
-                                  >> str_p(")(")
-                                  >> leaf_node_d[*(print_p - ch_p('(') - ch_p(')'))]
-                                  >> str_p(")")
-                                  >> seq_loc;
+                //ISCN expression followed by a seq-loc. The ISCN is factored to a single leaf node
+                translocation = leaf_node_d[ch_p('t') >>
+                                                +(
+                                                       ch_p('(')
+                                                    >> *(print_p - ch_p('(') - ch_p(')'))
+                                                    >> ch_p(')')
+                                                 )
+                                           ] >> seq_loc;
 
                 mut_inst        = ch_p('?') //can exist within +mut_inst, e.g. p.Met1?extMet-5
                                 | ch_p('=')
@@ -635,7 +636,9 @@ protected:
                                 | prot_fs
                                 | prot_missense
                                 | prot_ext //this may occur inside location context, e.g. p.Met1ValextMet-12
+//                                | leaf_node_d[+print_p] //catch-all
                                 ;
+
                     //Note: '?' and '=' can exist both within a location context
                     //(i.e. expr3) or within a sequence context (i.e. expr2)
                     //additionally, prot_ext may exist as expr2 (outside of location context) as well.
@@ -799,7 +802,7 @@ private:
 
     //Create "inst" part of HGVS expression
     string x_AsHgvsInstExpression(
-            const CVariation_inst& inst,
+            const CVariation& inst_variation,
             CConstRef<CVariantPlacement> p,
             CConstRef<CSeq_literal> asserted_seq);
 
