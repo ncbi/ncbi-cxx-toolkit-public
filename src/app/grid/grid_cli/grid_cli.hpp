@@ -56,6 +56,7 @@
 #define TIMEOUT_OPTION "timeout"
 #define CONFIRM_READ_OPTION "confirm-read"
 #define ROLLBACK_READ_OPTION "rollback-read"
+#define FAIL_READ_OPTION "fail-read"
 #define JOB_ID_OPTION "job-id"
 #define QUERY_FIELD_OPTION "query-field"
 #define FAIL_JOB_OPTION "fail-job"
@@ -96,6 +97,8 @@ enum EOption {
     eTimeout,
     eConfirmRead,
     eRollbackRead,
+    eFailRead,
+    eErrorMessage,
     eJobId,
     eWorkerNodes,
     eActiveJobCount,

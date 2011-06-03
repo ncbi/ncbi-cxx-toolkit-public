@@ -642,7 +642,8 @@ int CGridCommandLineInterfaceApp::Cmd_ReadJobs()
 {
     SetUp_NetScheduleCmd(eNetScheduleSubmitter);
 
-    if (!IsOptionSet(eConfirmRead) && !IsOptionSet(eRollbackRead)) {
+    if (!IsOptionSet(eConfirmRead) && !IsOptionSet(eFailRead) &&
+            !IsOptionSet(eRollbackRead)) {
         if (!IsOptionSet(eLimit)) {
             fprintf(stderr, PROGRAM_NAME " " READJOBS_COMMAND
                 ": option '--" LIMIT_OPTION "' is required.\n");
@@ -670,6 +671,9 @@ int CGridCommandLineInterfaceApp::Cmd_ReadJobs()
         if (IsOptionSet(eConfirmRead))
             m_NetScheduleSubmitter.ReadConfirm(
                 m_Opts.reservation_token, m_Opts.job_ids);
+        else if (IsOptionSet(eFailRead))
+            m_NetScheduleSubmitter.ReadFail(
+                m_Opts.reservation_token, m_Opts.job_ids, m_Opts.error_message);
         else
             m_NetScheduleSubmitter.ReadRollback(
                 m_Opts.reservation_token, m_Opts.job_ids);

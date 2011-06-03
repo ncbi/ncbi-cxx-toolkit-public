@@ -152,6 +152,13 @@ struct SOptionDefinition {
         ROLLBACK_READ_OPTION, "Release the specified reading reservation "
             "for some or all of the jobs."},
 
+    {CCommandLineParser::eOptionWithParameter, eFailRead,
+        FAIL_READ_OPTION, "For the specified reading reservation, "
+            "mark some or all of the jobs as failed to be read."},
+
+    {CCommandLineParser::eOptionWithParameter, eErrorMessage,
+        "error-message", "Provide an optional error message."},
+
     {CCommandLineParser::eOptionWithParameter, eJobId,
         JOB_ID_OPTION, "Specify one or more job IDs directly "
             "on the command line."},
@@ -387,23 +394,31 @@ struct SCommandDefinition {
         "reservation token is printed to the standard output stream "
         "and is followed by a newline-separated list of completed job "
         "IDs (unless the '--" OUTPUT_FILE_OPTION "' option is given, "
-        "in which case the list of job IDs is sent to that file). If "
-        "there are no completed jobs in the queue, nothing is printed, "
-        "but at the same time the exit code will be zero. This command "
+        "in which case the list of job IDs is sent to that file). "
+        "If there are no completed jobs in the queue, nothing is "
+        "printed and the exit code will be zero. This command "
         "changes the status of the returned jobs from Done to Reading. "
         "The reading reservation is valid for the number of seconds "
         "specified by the '--" TIMEOUT_OPTION "' option. If the server "
         "does not receive a reading confirmation within this time frame "
         "(see below), the jobs will change their status back to Done.\n\n"
-        "In finalization mode, " PROGRAM_NAME " accepts job IDs from the "
-        "standard input stream (or the specified input file, or a series "
-        "of the '--" JOB_ID_OPTION "' command line options) and changes "
-        "their state from Reading either to Confirmed (if the '--"
-        CONFIRM_READ_OPTION "' " "option is given) or back to Done "
-        "(for the '--" ROLLBACK_READ_OPTION "' option), which makes them "
-        "available again for subsequent " READJOBS_COMMAND " operations.",
+        "In finalization mode, " PROGRAM_NAME " accepts IDs of jobs that "
+        "must be in the Reading state and, depending on the option given, "
+        "changes their state as follows:\n\n"
+        "    Option              Resulting state\n"
+        "    ================    ================\n"
+        "    --" CONFIRM_READ_OPTION "      Confirmed\n"
+        "    --" FAIL_READ_OPTION "         ReadFailed\n"
+        "    --" ROLLBACK_READ_OPTION "     Done\n\n"
+        "Job IDs are read from the standard input stream or the specified "
+        "input file. Alternatively, they can be specified as a series of "
+        "'--" JOB_ID_OPTION "' command line options. The Confirmed and "
+        "ReadFailed states are final and cannot be changed, while '--"
+        ROLLBACK_READ_OPTION "' makes the jobs available for another "
+        "run of '" READJOBS_COMMAND "'.",
         {eNetSchedule, eQueue, eLimit, eTimeout, eOutputFile,
-            eConfirmRead, eRollbackRead, eJobId, eInputFile, eAuth, -1}},
+            eConfirmRead, eRollbackRead, eFailRead, eErrorMessage,
+            eJobId, eInputFile, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_CancelJob,
         "canceljob", "Cancel a NetSchedule job.",
@@ -737,6 +752,7 @@ int CGridCommandLineInterfaceApp::Run()
             case eProgressMessage:
                 m_Opts.progress_message = opt_value;
                 break;
+            case eErrorMessage:
             case eFailJob:
                 m_Opts.error_message = opt_value;
                 break;
