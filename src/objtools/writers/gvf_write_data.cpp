@@ -399,7 +399,7 @@ bool CGvfWriteRecord::x_AssignAttributeEndRange(
         return true;
     }
     const CSeq_interval& intv = loc.GetInt();
-    if ( ! intv.IsSetFuzz_from() ) {
+    if ( ! intv.IsSetFuzz_to() ) {
         return true;
     }
     const CSeq_interval::TFuzz_to& fuzz = intv.GetFuzz_to();
