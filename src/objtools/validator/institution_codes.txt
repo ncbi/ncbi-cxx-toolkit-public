@@ -1366,9 +1366,11 @@ DMKKU2	c	Department of Microbiology, Faculty of Medical Science
 DMKU	c	Department of Microbiology, Faculty of Science
 DMMU1	c	Department of Microbiology, Faculty of Science
 DMMU3	c	Department of Microbiology, Faculty of Medicine Siriraj Hospital
-DMNH<USA-CO>	s	Denver Museum of Natural History
 DMNH<USA-DE>	s	Delaware Museum of Natural History
 DMNH<USA-OH>	s	Dayton Museum of Natural History, Biology Department
+DMNS	s	Denver Museum of Nature and Science
+DMNS:Bird	s	Denver Museum of Nature and Science, Ornithology Collections
+DMNS:Mamm	s	Denver Museum of Nature and Science, Mammology Collection
 DMPMC	c	Department of Microbiology
 DMSA	s	Durban Museum
 DMSC	s	Medicinal Plants Research Institute, Department of Medical Sciences
