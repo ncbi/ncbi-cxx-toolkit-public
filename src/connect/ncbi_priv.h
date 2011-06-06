@@ -262,7 +262,7 @@ NCBI_C_DEFINE_ERRCODE_X(Connect_Service,  310,   8);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Socket,   311, 160);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Crypt,    312,   6);
 NCBI_C_DEFINE_ERRCODE_X(Connect_LocalNet, 313,  11);
-NCBI_C_DEFINE_ERRCODE_X(Connect_Mghbn,    319,  16);
+NCBI_C_DEFINE_ERRCODE_X(Connect_Mghbn,    314,  16);
 
 
 /******************************************************************************
