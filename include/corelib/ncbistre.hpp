@@ -191,6 +191,12 @@ public:
         IOS_BASE::openmode _Mode = IOS_BASE::in,
         int _Prot = (int)IOS_BASE::_Openprot
     );
+	void open(const wchar_t *_Filename,
+		IOS_BASE::openmode _Mode = IOS_BASE::in,
+		int _Prot = (int)ios_base::_Openprot)
+	{
+	    IO_PREFIX::ifstream::open(_Filename,_Mode,_Prot);
+	}
 };
 #elif defined(NCBI_COMPILER_MSVC)
 #  if _MSC_VER >= 1200  &&  _MSC_VER < 1300
@@ -257,6 +263,12 @@ public:
         IOS_BASE::openmode _Mode = IOS_BASE::out,
         int _Prot = (int)IOS_BASE::_Openprot
     );
+	void open(const wchar_t *_Filename,
+		IOS_BASE::openmode _Mode = IOS_BASE::out,
+		int _Prot = (int)IOS_BASE::_Openprot)
+	{
+	    IO_PREFIX::ofstream::open(_Filename,_Mode,_Prot);
+	}
 };
 #elif defined(NCBI_COMPILER_MSVC)
 #  if _MSC_VER >= 1200  &&  _MSC_VER < 1300
@@ -323,6 +335,12 @@ public:
         IOS_BASE::openmode _Mode = IOS_BASE::in | IOS_BASE::out,
         int _Prot = (int)IOS_BASE::_Openprot
     );
+	void open(const wchar_t *_Filename,
+		IOS_BASE::openmode _Mode = IOS_BASE::in | IOS_BASE::out,
+		int _Prot = (int)ios_base::_Openprot)
+	{
+	    IO_PREFIX::fstream::open(_Filename,_Mode,_Prot);
+	}
 };
 #elif defined(NCBI_COMPILER_MSVC)
 #  if _MSC_VER >= 1200  &&  _MSC_VER < 1300
