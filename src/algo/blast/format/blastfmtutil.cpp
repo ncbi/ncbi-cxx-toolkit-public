@@ -338,6 +338,7 @@ CBlastFormatUtil::CreateSeqAnnotFromSeqAlignSet(const objects::CSeq_align_set & 
    	retval->AddUserObject(*blast_db_info);
 
    	//Fill in data -- Seq align
+	retval->SetData().SetAlign(); 
     ITERATE(CSeq_align_set::Tdata, itr, alnset.Get()) {
         retval->SetData().SetAlign().push_back(*itr);
     }
