@@ -766,17 +766,17 @@ private:
 private:
 // Helpers to generate a HGVS expression from a variation
 
-    //if no atg_pos, assume that not dealing with coordinate systems (simply return abs-pos)
-    //otherwise, convert to hgvs coordinates:
+    /// if no atg_pos, assume that not dealing with coordinate systems (simply return abs-pos)
+    ///otherwise, convert to hgvs coordinates:
     //  adjust by 1, adjust relative to atg_pos, and adjust by -1 if nonpositive.
     static long s_GetHgvsPos(long abs_pos, const TSeqPos* atg_pos);
 
-    //this function may be used to create hgvs-coordinates (if ref_pos is not null), or
-    //to create a fuzzy hgvs-number specification (e.g. for multipliers, or fuzzy offset values), where pos is not adjusted
-    //(Note that pos may be negative, e.g. for offset value)
+    /// this function may be used to create hgvs-coordinates (if ref_pos is not null), or
+    /// to create a fuzzy hgvs-number specification (e.g. for multipliers, or fuzzy offset values), where pos is not adjusted
+    /// (Note that pos may be negative, e.g. for offset value)
     static string s_IntWithFuzzToStr(long pos, const TSeqPos* ref_pos, bool with_sign, const CInt_fuzz* fuzz);
 
-    //Construct an HGVS coordinate, which may be an intronic offset-point, e.g. "5+(10_11)"
+    /// Construct an HGVS coordinate, which may be an intronic offset-point, e.g. "5+(10_11)"
     static string s_OffsetPointToString(
             TSeqPos anchor_pos,             //anchor position in absolute seq-loc coordinates
             const CInt_fuzz* anchor_fuzz,   //..of anchor-pos, can be NULL
@@ -784,31 +784,31 @@ private:
             const long* offset_pos,         //if not specified, this is a "native" coordinate; otherwise "c."|"p." -intronic
             const CInt_fuzz* offset_fuzz);  //..of offset position, can be NULL
 
-    //Construct an hgvs "header" consisting of seq-id and mol-type, e.g. "NG_016831.1:g."
+    /// Construct an hgvs "header" consisting of seq-id and mol-type, e.g. "NG_016831.1:g."
     static string s_SeqIdToHgvsStr(const CVariantPlacement& vp);
 
-    //In some cases the placement needs to be adjusted depending on inst, e.g. if we have a point-relative insertion,
-    //it needs to be converted to "between-dinucleotide" representation; or, in case of microsatellites, the
-    //location must point to the first repeat unit rather than whole tandem repeat
+    /// In some cases the placement needs to be adjusted depending on inst, e.g. if we have a point-relative insertion,
+    /// it needs to be converted to "between-dinucleotide" representation; or, in case of microsatellites, the
+    /// location must point to the first repeat unit rather than whole tandem repeat
     CRef<CVariantPlacement> x_AdjustPlacementForHgvs(const CVariantPlacement& p, const CVariation_inst& inst);
 
-    //If the variation is a package-set, find the subvariation with observation-type "asserted" and return its literal
+    /// If the variation is a package-set, find the subvariation with observation-type "asserted" and return its literal
     CConstRef<CSeq_literal> x_FindAssertedSequence(const CVariation& v);
 
-    //Compute length of the delta
+    /// Compute length of the delta
     TSeqPos x_GetInstLength(const CVariation_inst& inst, const CVariantPlacement& p, bool account_for_multiplier);
 
     string x_PlacementCoordsToStr(const CVariantPlacement& vp);
 
-    //Create "inst" part of HGVS expression
+    /// Create "inst" part of HGVS expression
     string x_AsHgvsInstExpression(
             const CVariation& inst_variation,
             CConstRef<CVariantPlacement> p,
             CConstRef<CSeq_literal> asserted_seq);
 
-    //Construct HGVS expression for a variation: use first VariantPlacement, or, if id is specified,
-    //first placement with matching id; If an asserted sequence is given explicitly, it will be used
-    //in construction of HGVS expression; otherwise one will be created based on placement's literal.
+    /// Construct HGVS expression for a variation: use first VariantPlacement, or, if id is specified,
+    /// irst placement with matching id; If an asserted sequence is given explicitly, it will be used
+    /// in construction of HGVS expression; otherwise one will be created based on placement's literal.
     string x_AsHgvsExpression(
             const CVariation& variation,
             CConstRef<CSeq_id> id,
@@ -817,8 +817,12 @@ private:
     /// Get literal seq at location
     string x_LocToSeqStr(const CSeq_loc& loc);
 
-    /// Inverse of raw_seq_or_len rule
-    string x_SeqLiteralToStr(const CSeq_literal& literal);
+    /// Inverse of raw_seq_or_len rule.
+    /// translate=true will translate nucleotide literal to prot as appropriate.
+    /// It is intended for cases where delta literal in a protein variation is
+    /// specified as codons rather than AAs; For HGVS purposes we can't use NAs
+    /// in a protein context.
+    string x_SeqLiteralToStr(const CSeq_literal& literal, bool translate);
 
 private:
     CRef<CScope> m_scope;

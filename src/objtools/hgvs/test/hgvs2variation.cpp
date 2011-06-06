@@ -224,9 +224,7 @@ void ProcessVariation(CVariation& v, const CArgs& args, CScope& scope, CConstRef
         }
     }
 
-    if(args["compute_hgvs"]) {
-        AttachHgvs(v, parser);
-    }
+
 
     if(args["loc_prop"]) {
         variation_util.SetVariantProperties(v);
@@ -255,6 +253,10 @@ void ProcessVariation(CVariation& v, const CArgs& args, CScope& scope, CConstRef
         consequence->SetVariation(v);
         v2->SetConsequence().push_back(consequence);
         v.Assign(*v2);
+    }
+
+    if(args["compute_hgvs"]) {
+        AttachHgvs(v, parser);
     }
 
 }

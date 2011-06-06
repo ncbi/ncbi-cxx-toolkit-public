@@ -321,7 +321,7 @@ string CHgvsParser::x_AsHgvsExpression(
 }
 
 
-string CHgvsParser::x_SeqLiteralToStr(const CSeq_literal& literal)
+string CHgvsParser::x_SeqLiteralToStr(const CSeq_literal& literal, bool translate)
 {
     string out("");
 
@@ -336,7 +336,17 @@ string CHgvsParser::x_SeqLiteralToStr(const CSeq_literal& literal)
           || sd->IsNcbipna())
         {
             CSeqportUtil::Convert(*sd, sd, CSeq_data::e_Iupacna, 0, literal.GetLength() );
-            out = sd->GetIupacna().Get();
+            const string& nuc_str = sd->GetIupacna().Get();
+
+            if(translate) {
+                CSeqTranslator translator;
+                translator.Translate(
+                        nuc_str,
+                        out,
+                        CSeqTranslator::fIs5PrimePartial);
+            } else {
+                out = nuc_str;
+            }
         } else if(sd->IsIupacaa()
                || sd->IsNcbi8aa()
                || sd->IsNcbieaa()
@@ -353,6 +363,9 @@ string CHgvsParser::x_SeqLiteralToStr(const CSeq_literal& literal)
         }
 
     } else {
+        if(translate) {
+            NCBI_THROW(CException, eUnknown, "Not supported");
+        }
         out = s_IntWithFuzzToStr(literal.GetLength(), NULL, false, literal.IsSetFuzz() ? &literal.GetFuzz() : NULL);
     }
     return out;
@@ -596,16 +609,26 @@ string CHgvsParser::x_AsHgvsInstExpression(
     }
 
 
+    bool is_prot_inst =
+            inst.GetType() == CVariation_inst::eType_prot_missense
+         || inst.GetType() == CVariation_inst::eType_prot_nonsense
+         || inst.GetType() == CVariation_inst::eType_prot_neutral
+         || inst.GetType() == CVariation_inst::eType_prot_other
+         || inst.GetType() == CVariation_inst::eType_prot_silent;
+    if(is_prot_inst && placement && placement->GetMol() != CVariantPlacement::eMol_protein) {
+        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Can't make protein HGVS expression for nucleotide placement");
+    }
+    bool is_prot = is_prot_inst || placement && placement->GetMol() == CVariantPlacement::eMol_protein;
+
+
     /*
      * Cannot use explicit asserted seq to construct prot inst, as it could be partially-specified: e.g.
      * "NP_079142.2:p.C11_G21delinsGlnSerLys - the asserted seq is C..G, so we cannot construct
      * del??ins representation that asserts the sequence being deleted within a delins.
      */
-
     bool is_usable_asserted_seq =
             explicit_asserted_seq
             && !(placement && placement->GetMol() == CVariantPlacement::eMol_protein);
-
 
     const CSeq_literal* asserted_seq =
             is_usable_asserted_seq ? explicit_asserted_seq
@@ -614,13 +637,12 @@ string CHgvsParser::x_AsHgvsInstExpression(
 
     string asserted_seq_str =
            !asserted_seq                  ? ""
-         : asserted_seq->GetLength() < 20 ? x_SeqLiteralToStr(*asserted_seq)
+         : asserted_seq->GetLength() < 20 ? x_SeqLiteralToStr(*asserted_seq, is_prot)
          :                                  NStr::IntToString(asserted_seq->GetLength());
 
 
 
     bool append_delta = false;
-
     if(inst.GetType() == CVariation_inst::eType_identity
        || inst.GetType() == CVariation_inst::eType_prot_silent)
     {
@@ -713,7 +735,7 @@ string CHgvsParser::x_AsHgvsInstExpression(
                     //length of extension is one less than the length of the sequence that replaces first or last AA
                 }
 
-                inst_str += x_SeqLiteralToStr(*literal);
+                inst_str += x_SeqLiteralToStr(*literal, is_prot);
             } else if(delta.GetSeq().IsLoc()) {
                 string delta_loc_str;
                 //the repeat-unit in microsattelite is always literal sequence:
