@@ -384,6 +384,13 @@ public:
         eLinkTypeGSFastaLinks = (1 << 7)
     };
 
+    ///db type
+    enum DbType {
+        eDbGi = 0,
+        eDbGeneral,
+        eDbTypeNotSet
+    };
+
     ///Output blast errors
     ///@param error_return: list of errors to report
     ///@param error_post: post to stderr or not
@@ -1037,6 +1044,13 @@ public:
                                    int customLinkTypes = eLinkTypeDefault);
 
     static list<string>  GetGiLinksList(SSeqURLInfo *seqUrlInfo,bool hspRange = false);
+
+    ///Set the database as gi type
+    ///@param actual_aln_list: the alignment
+    ///@param scope: scope to fetch sequences
+    ///
+    static CAlignFormatUtil::DbType GetDbType(const objects::CSeq_align_set& actual_aln_list, 
+                                              objects::CScope & scope);
                                           
                                    
     ///Get Gene symobol for gi

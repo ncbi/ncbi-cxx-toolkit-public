@@ -93,12 +93,6 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
   public:
     // Defines
     
-    ///db type
-    enum DbType {
-        eDbGi = 0,
-        eDbGeneral,
-        eDbTypeNotSet
-    };
     
     /// Alignment display type, specific for showing blast-related info
     enum AlignType {
@@ -681,11 +675,6 @@ private:
                           int aln_from, int aln_to, int aln_stop,
                           char pattern_char,  string pattern_id,
                           string& alternative_feat_str) const;
-
-    ///Set the database as gi type
-    ///@param actual_aln_list: the alignment
-    ///
-    DbType x_GetDbType(const objects::CSeq_align_set& actual_aln_list);
 
     ///get insert information
     ///@param insert_list: list to be filled
