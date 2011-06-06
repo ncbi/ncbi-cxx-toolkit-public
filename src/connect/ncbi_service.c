@@ -692,7 +692,7 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
         if (iter->pref  &&  (iter->host | iter->port)) {
             /* Preference */
             verify(SOCK_HostPortToString(iter->host, iter->port,
-                                         buffer, sizeof(buffer));
+                                         buffer, sizeof(buffer)));
             buflen  = strlen(buffer);
             buflen += sprintf(buffer + buflen, " %lf%%\r\n", iter->pref * 1e2);
             if (!BUF_Write(&buf, kPreference, sizeof(kPreference) - 1)  ||
