@@ -807,7 +807,7 @@ unsigned short SERV_ServerPort(const char*  name,
     return port;
 }
 
-
+#if 0
 int/*bool*/ SERV_MatchesHost(const SSERV_Info* info, unsigned int host)
 {
     if (host == SERV_ANYHOST)
@@ -818,3 +818,4 @@ int/*bool*/ SERV_MatchesHost(const SSERV_Info* info, unsigned int host)
         return 1/*true*/;
     return 0/*false*/;
 }
+#endif
