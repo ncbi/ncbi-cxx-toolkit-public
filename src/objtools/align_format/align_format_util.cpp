@@ -3129,7 +3129,28 @@ string  CAlignFormatUtil::GetGeneInfo(int giForGeneLookup)
     return geneSym;
 }
 
-
+CAlignFormatUtil::DbType CAlignFormatUtil::GetDbType(const CSeq_align_set& actual_aln_list, CScope & scope) 
+{
+    //determine if the database has gi by looking at the 1st hit.  
+    //Could be wrong but simple for now
+    DbType type = eDbTypeNotSet;
+    CRef<CSeq_align> first_aln = actual_aln_list.Get().front();
+    const CSeq_id& subject_id = first_aln->GetSeq_id(1);
+    const CBioseq_Handle& handleTemp  = scope.GetBioseqHandle(subject_id);
+    if(handleTemp){
+        int giTemp = FindGi(handleTemp.GetBioseqCore()->GetId());
+        if (giTemp >0) { 
+            type = eDbGi;
+        } else if (subject_id.Which() == CSeq_id::e_General){
+            const CDbtag& dtg = subject_id.GetGeneral();
+            const string& dbName = dtg.GetDb();
+            if(NStr::CompareNocase(dbName, "TI") == 0){
+                type = eDbGeneral;
+            }
+        }   
+    }
+    return type;
+}
 
 
 END_SCOPE(align_format)

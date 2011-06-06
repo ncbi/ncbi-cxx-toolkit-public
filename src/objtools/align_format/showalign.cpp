@@ -201,6 +201,7 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign,
     m_Ctx = NULL;
     m_Matrix = NULL; //-RMH-    
 
+
     CNcbiMatrix<int> mtx;
     CAlignFormatUtil::GetAsciiProteinMatrix(matrix_name 
                                        ? matrix_name 
@@ -1632,7 +1633,7 @@ void CDisplaySeqalign::x_InitAlignParams(CSeq_align_set &actual_aln_list)
         string name = CGBDataLoader::GetLoaderNameFromArgs();
         m_featScope->AddDataLoader(name);
     }   
-    m_CanRetrieveSeq = x_GetDbType(actual_aln_list) == eDbTypeNotSet ? false : true;
+    m_CanRetrieveSeq = CAlignFormatUtil::GetDbType(actual_aln_list,m_Scope) == CAlignFormatUtil::eDbTypeNotSet ? false : true;
     if(m_AlignOption & eHtml || m_AlignOption & eDynamicFeature){
         //set config file
         m_ConfigFile = new CNcbiIfstream(".ncbirc");
@@ -1675,7 +1676,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
     if(m_AlignOption&eSequenceRetrieval && m_AlignOption&eHtml && m_CanRetrieveSeq){         
         if(!newDesign)
             out<<s_GetSeqForm((char*)"submitterTop", m_IsDbNa, m_QueryNumber, 
-                          x_GetDbType(actual_aln_list),m_DbName, m_Rid.c_str(),
+                          CAlignFormatUtil::GetDbType(actual_aln_list,m_Scope),m_DbName, m_Rid.c_str(),
                           s_GetQueryIDFromSeqAlign(actual_aln_list).c_str(),
                           ((m_AlignOption & eDisplayTreeView) ? true: false));
         out<<"<form name=\"getSeqAlignment"<<m_QueryNumber<<"\">\n";
@@ -1877,7 +1878,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
         out<<"</form>\n";        
         if(!newDesign)
             out<<s_GetSeqForm((char*)"submitterBottom", m_IsDbNa,
-                              m_QueryNumber, x_GetDbType(actual_aln_list),
+                              m_QueryNumber, CAlignFormatUtil::GetDbType(actual_aln_list,m_Scope),
                               m_DbName, m_Rid.c_str(),
                               s_GetQueryIDFromSeqAlign(actual_aln_list).c_str(),
                           ((m_AlignOption & eDisplayTreeView) ? true: false));
@@ -2830,30 +2831,6 @@ string CDisplaySeqalign::x_GetDumpgnlLink(const list<CRef<CSeq_id> >& ids) const
 		dowloadUrl = CAlignFormatUtil::MapTemplate(dowloadUrl,"label",label);		
     }
     return dowloadUrl;
-}
-
-
-CDisplaySeqalign::DbType CDisplaySeqalign::x_GetDbType(const CSeq_align_set& actual_aln_list) 
-{
-    //determine if the database has gi by looking at the 1st hit.  
-    //Could be wrong but simple for now
-    DbType type = eDbTypeNotSet;
-    CRef<CSeq_align> first_aln = actual_aln_list.Get().front();
-    const CSeq_id& subject_id = first_aln->GetSeq_id(1);
-    const CBioseq_Handle& handleTemp  = m_Scope.GetBioseqHandle(subject_id);
-    if(handleTemp){
-        int giTemp = FindGi(handleTemp.GetBioseqCore()->GetId());
-        if (giTemp >0) { 
-            type = eDbGi;
-        } else if (subject_id.Which() == CSeq_id::e_General){
-            const CDbtag& dtg = subject_id.GetGeneral();
-            const string& dbName = dtg.GetDb();
-            if(NStr::CompareNocase(dbName, "TI") == 0){
-                type = eDbGeneral;
-            }
-        }   
-    }
-    return type;
 }
 
 
