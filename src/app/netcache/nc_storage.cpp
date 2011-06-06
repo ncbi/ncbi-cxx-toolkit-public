@@ -35,13 +35,10 @@
 #include "nc_storage.hpp"
 #include "netcached.hpp"
 #include "nc_stat.hpp"
-#include "error_codes.hpp"
 #include "message_handler.hpp"
 
 
 BEGIN_NCBI_SCOPE
-
-#define NCBI_USE_ERRCODE_X  NetCache_Storage
 
 
 static const char* kNCStorage_DBFileExt       = ".db";
@@ -74,7 +71,7 @@ static const char* kNCStorage_MinFreeDiskParam  = "disk_free_limit";
 /// Special exception to terminate background thread when storage is
 /// destroying. Class intentionally made without inheritance from CException
 /// or std::exception.
-class CNCStorage_StoppedException
+/*class CNCStorage_StoppedException
 {};
 
 ///
@@ -83,43 +80,27 @@ class CNCStorage_BlockedException
 
 ///
 class CNCStorage_RecacheException
-{};
+{};*/
 
 
 
-const char*
-CNCBlobStorageException::GetErrCodeString(void) const
-{
-    switch (GetErrCode())
-    {
-    case eUnknown:      return "eUnknown";
-    case eWrongConfig:  return "eWrongConfig";
-    case eCorruptedDB:  return "eCorruptedDB";
-    case eWrongBlock:   return "eWrongBlock";
-    default:            return CException::GetErrCodeString();
-    }
-}
-
-
-
-inline void
+bool
 CNCBlobStorage::x_EnsureDirExist(const string& dir_name)
 {
     CDir dir(dir_name);
     if (!dir.Exists()) {
-        dir.Create();
+        return dir.Create();
     }
+    return true;
 }
 
-void
+bool
 CNCBlobStorage::x_ReadVariableParams(void)
 {
     const CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
 
-    m_GCRunDelay  = reg.GetInt(kNCStorage_RegSection, kNCStorage_GCDelayParam,
-                               30,  0, IRegistry::eErrPost);
-    m_GCBatchSize = reg.GetInt(kNCStorage_RegSection, kNCStorage_GCBatchParam,
-                               500, 0, IRegistry::eErrPost);
+    m_GCRunDelay  = reg.GetInt(kNCStorage_RegSection, kNCStorage_GCDelayParam, 30);
+    m_GCBatchSize = reg.GetInt(kNCStorage_RegSection, kNCStorage_GCBatchParam, 500);
 
     string max_size_str_m = reg.GetString(kNCStorage_RegSection,
                                           kNCStorage_MaxMetaSizeParam, "3Mb");
@@ -129,25 +110,17 @@ CNCBlobStorage::x_ReadVariableParams(void)
                                           kNCStorage_MinMetaSizeParam, "1Mb");
     string min_size_str_d = reg.GetString(kNCStorage_RegSection,
                                           kNCStorage_MinDataSizeParam, "100Mb");
-    try {
-        m_MaxFileSize[eNCMeta] = NStr::StringToUInt8_DataSize(max_size_str_m);
-        m_MaxFileSize[eNCData] = NStr::StringToUInt8_DataSize(max_size_str_d);
-        m_MinFileSize[eNCMeta] = NStr::StringToUInt8_DataSize(min_size_str_m);
-        m_MinFileSize[eNCData] = NStr::StringToUInt8_DataSize(min_size_str_d);
-    }
-    catch (CStringException& ex) {
-        ERR_POST_X(21, "Error in meta/data min/max size parameters: " << ex);
-        m_MaxFileSize[eNCMeta] = 3000000;
-        m_MaxFileSize[eNCData] = 300000000;
-        m_MinFileSize[eNCMeta] = 1000000;
-        m_MinFileSize[eNCData] = 100000000;
-    }
+    m_MaxFileSize[eNCMeta] = NStr::StringToUInt8_DataSize(max_size_str_m);
+    m_MaxFileSize[eNCData] = NStr::StringToUInt8_DataSize(max_size_str_d);
+    m_MinFileSize[eNCMeta] = NStr::StringToUInt8_DataSize(min_size_str_m);
+    m_MinFileSize[eNCData] = NStr::StringToUInt8_DataSize(min_size_str_d);
+
     m_MinUsefulPct[eNCMeta] = double(reg.GetInt(kNCStorage_RegSection,
                                                 kNCStorage_MinUsfulMetaParam,
-                                                50, 0, IRegistry::eErrPost)) / 100;
+                                                50)) / 100;
     m_MinUsefulPct[eNCData] = double(reg.GetInt(kNCStorage_RegSection,
                                                 kNCStorage_MinUsfulDataParam,
-                                                50, 0, IRegistry::eErrPost)) / 100;
+                                                50)) / 100;
 
     m_ExtraGCOnSize  = NStr::StringToUInt8_DataSize(reg.GetString(
                        kNCStorage_RegSection, kNCStorage_ExtraGCOnParam, "50Gb"));
@@ -162,11 +135,10 @@ CNCBlobStorage::x_ReadVariableParams(void)
     m_DiskFreeLimit  = NStr::StringToUInt8_DataSize(reg.GetString(
                        kNCStorage_RegSection, kNCStorage_MinFreeDiskParam, "5Gb"));
 
-    int parts_cnt = reg.GetInt(kNCStorage_RegSection, kNCStorage_PartsCntParam,
-                               5, 0, IRegistry::eErrPost);
+    int parts_cnt = reg.GetInt(kNCStorage_RegSection, kNCStorage_PartsCntParam, 5);
     if (parts_cnt <= 0) {
-        NCBI_THROW(CNCBlobStorageException, eWrongConfig,
-                   "Number of database parts cannot be less or equal to 0");
+        ERR_POST(Critical <<  "Number of database parts cannot be less or equal to 0");
+        return false;
     }
     m_PartsPaths.resize(parts_cnt);
     string path_param_prefix(kNCStorage_PathParam);
@@ -180,9 +152,10 @@ CNCBlobStorage::x_ReadVariableParams(void)
     }
     m_CurFiles[eNCMeta].resize(parts_cnt);
     m_CurFiles[eNCData].resize(parts_cnt);
+    return true;
 }
 
-void
+bool
 CNCBlobStorage::x_ReadStorageParams(void)
 {
     const CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
@@ -190,18 +163,24 @@ CNCBlobStorage::x_ReadStorageParams(void)
     m_MainPath = reg.Get(kNCStorage_RegSection, kNCStorage_PathParam);
     m_Prefix   = reg.Get(kNCStorage_RegSection, kNCStorage_FilePrefixParam);
     if (m_MainPath.empty()  ||  m_Prefix.empty()) {
-        NCBI_THROW_FMT(CNCBlobStorageException, eWrongConfig,
-                       "Incorrect parameters for " << kNCStorage_PathParam
-                       << " and " << kNCStorage_FilePrefixParam
-                       << " in the section '" << kNCStorage_RegSection << "': '"
-                       << m_MainPath << "' and '" << m_Prefix << "'");
+        ERR_POST(Critical <<  "Incorrect parameters for " << kNCStorage_PathParam
+                          << " and " << kNCStorage_FilePrefixParam
+                          << " in the section '" << kNCStorage_RegSection << "': '"
+                          << m_MainPath << "' and '" << m_Prefix << "'");
+        return false;
     }
-    x_EnsureDirExist(m_MainPath);
+    if (!x_EnsureDirExist(m_MainPath))
+        return false;
     m_GuardName = CDirEntry::MakePath(m_MainPath,
                                       kNCStorage_StartedFileName,
                                       m_Prefix);
-
-    x_ReadVariableParams();
+    try {
+        return x_ReadVariableParams();
+    }
+    catch (CStringException& ex) {
+        ERR_POST(Critical << "Bad configuration: " << ex);
+        return false;
+    }
 }
 
 string
@@ -226,11 +205,10 @@ CNCBlobStorage::x_GetFileName(ENCDBFileType file_type,
                                     kNCStorage_DBFileExt);
     return CDirEntry::CreateAbsolutePath(file_name);
 }
-
+/*
 void
 CNCBlobStorage::Block(void)
 {
-/*
     CSpinGuard guard(m_HoldersPoolLock);
 
     if (m_Blocked) {
@@ -241,14 +219,11 @@ CNCBlobStorage::Block(void)
     _ASSERT(m_CntLocksToWait == 0);
     m_CntLocksToWait = m_CntUsedHolders;
     m_Blocked = true;
-*/
-    abort();
 }
 
 void
 CNCBlobStorage::Unblock(void)
 {
-/*
     _ASSERT(m_Blocked);
 
     CSpinGuard guard(m_HoldersPoolLock);
@@ -262,39 +237,44 @@ CNCBlobStorage::Unblock(void)
         holder->RemoveFromList(m_UsedAccessors);
         x_InitializeAccessor(holder);
     }
-*/
-    abort();
 }
-
-void
+*/
+bool
 CNCBlobStorage::x_LockInstanceGuard(void)
 {
     m_CleanStart = !CFile(m_GuardName).Exists();
 
-    if (m_CleanStart) {
-        // Just create the file with read and write permissions
-        CFileWriter tmp_writer(m_GuardName, CFileWriter::eOpenAlways);
-        CFile guard_file(m_GuardName);
-        CFile::TMode user_mode, grp_mode, oth_mode;
+    try {
+        if (m_CleanStart) {
+            // Just create the file with read and write permissions
+            CFileWriter tmp_writer(m_GuardName, CFileWriter::eOpenAlways);
+            CFile guard_file(m_GuardName);
+            CFile::TMode user_mode, grp_mode, oth_mode;
 
-        guard_file.GetMode(&user_mode, &grp_mode, &oth_mode);
-        user_mode |= CFile::fRead;
-        guard_file.SetMode(user_mode, grp_mode, oth_mode);
+            guard_file.GetMode(&user_mode, &grp_mode, &oth_mode);
+            user_mode |= CFile::fRead;
+            guard_file.SetMode(user_mode, grp_mode, oth_mode);
+        }
+
+        m_GuardLock = new CFileLock(m_GuardName,
+                                    CFileLock::fDefault,
+                                    CFileLock::eExclusive);
+        if (!m_CleanStart  &&  CFile(m_GuardName).GetLength() == 0)
+            m_CleanStart = true;
+        if (!m_CleanStart) {
+            INFO_POST("NetCache wasn't finished cleanly in previous run. "
+                      "Will try to work with storage as is.");
+        }
+
+        CFileWriter writer(m_GuardLock->GetFileHandle());
+        string pid(NStr::UIntToString(CProcess::GetCurrentPid()));
+        writer.Write(pid.c_str(), pid.size());
     }
-
-    m_GuardLock = new CFileLock(m_GuardName,
-                                CFileLock::fDefault,
-                                CFileLock::eExclusive);
-    if (!m_CleanStart  &&  CFile(m_GuardName).GetLength() == 0)
-        m_CleanStart = true;
-    if (!m_CleanStart) {
-        INFO_POST("NetCache wasn't finished cleanly in previous run. "
-                  "Will try to work with storage as is.");
+    catch (CFileErrnoException& ex) {
+        ERR_POST(Critical << "Can't lock the database (other instance is running?): " << ex);
+        return false;
     }
-
-    CFileWriter writer(m_GuardLock->GetFileHandle());
-    string pid(NStr::UIntToString(CProcess::GetCurrentPid()));
-    writer.Write(pid.c_str(), pid.size());
+    return true;
 }
 
 inline void
@@ -306,7 +286,7 @@ CNCBlobStorage::x_UnlockInstanceGuard(void)
     CFile(m_GuardName).Remove();
 }
 
-void
+bool
 CNCBlobStorage::x_OpenIndexDB(void)
 {
     string index_name = x_GetIndexFileName();
@@ -316,16 +296,16 @@ CNCBlobStorage::x_OpenIndexDB(void)
             m_IndexDB = new CNCDBIndexFile(index_name);
             m_IndexDB->CreateDatabase(eNCIndex);
             m_IndexDB->GetAllDBFiles(&m_DBFiles);
-            return;
+            return true;
         }
         catch (CSQLITE_Exception& ex) {
             m_IndexDB.reset();
-            ERR_POST_X(1, "Index file is broken, reinitializing storage. " << ex);
+            ERR_POST("Index file is broken, reinitializing storage. " << ex);
             CFile(index_name).Remove();
         }
     }
-    NCBI_THROW(CNCBlobStorageException, eCorruptedDB,
-               "Cannot open or create index file for the storage");
+    ERR_POST(Critical << "Cannot open or create index file for the storage.");
+    return false;
 }
 
 void
@@ -341,23 +321,24 @@ CNCBlobStorage::x_CleanDatabase(void)
     m_IndexDB->DeleteAllDBFiles();
 }
 
-void
+bool
 CNCBlobStorage::x_ReinitializeStorage(void)
 {
     try {
         x_CleanDatabase();
+        return true;
     }
     catch (CSQLITE_Exception& ex) {
-        ERR_POST_X(1, "Error in soft reinitialization, trying harder. " << ex);
+        ERR_POST("Error in soft reinitialization, trying harder. " << ex);
         m_IndexDB.reset();
         // GCC 3.0.4 doesn't allow to merge the following 2 lines
         CFile file_obj(x_GetIndexFileName());
         file_obj.Remove();
-        x_OpenIndexDB();
+        return x_OpenIndexDB();
     }
 }
 
-void
+bool
 CNCBlobStorage::x_CreateNewFile(ENCDBFileType file_type, unsigned int part_num)
 {
     // No need in mutex because m_LastBlob is changed only here and will be
@@ -404,23 +385,22 @@ CNCBlobStorage::x_CreateNewFile(ENCDBFileType file_type, unsigned int part_num)
 
         m_CurFiles[file_type][part_num] = file_id;
     }
-    catch (CException& ex) {
-        ERR_POST_X(1, "Error while creating new database part: " << ex);
+    catch (CSQLITE_Exception& ex) {
+        ERR_POST(Critical << "Error while creating new database part: " << ex);
         CNCFileSystem::DeleteFileOnClose(file_name);
-
-        // Re-throw exception after cleanup to break application if storage
-        // cannot create database files during initialization.
-        throw;
+        return false;
     }
+    return true;
 }
 
-void
+bool
 CNCBlobStorage::x_CreateNewCurFiles(void)
 {
     for (unsigned int i = 0; i < m_CurFiles[0].size(); ++i) {
-        x_CreateNewFile(eNCMeta, i);
-        x_CreateNewFile(eNCData, i);
+        if (!x_CreateNewFile(eNCMeta, i)  || !x_CreateNewFile(eNCData, i))
+            return false;
     }
+    return true;
 }
 
 void
@@ -432,8 +412,8 @@ CNCBlobStorage::x_DeleteDBFile(TNCDBFilesMap::iterator files_it)
         CFastMutexGuard guard(m_IndexLock);
         m_IndexDB->DeleteDBFile(file_id);
     }
-    catch (CException& ex) {
-        ERR_POST_X(1, "Index database does not delete rows: " << ex);
+    catch (CSQLITE_Exception& ex) {
+        ERR_POST(Critical << "Index database does not delete rows: " << ex);
     }
     CNCFileSystem::DeleteFileOnClose(files_it->second->file_name);
 
@@ -455,16 +435,15 @@ CNCBlobStorage::x_ReadLastBlobCoords(void)
             m_LastBlob.blob_id = max(m_LastBlob.blob_id, metafile->GetLastBlobId());
             m_LastChunkId = max(m_LastChunkId, metafile->GetLastChunkId());
         }
-        catch (CException& ex) {
-            ERR_POST_X(1, "Error reading last blob id from file '"
-                          << file->GetFileName() << "'. File will be deleted. "
-                          << ex);
+        catch (CSQLITE_Exception& ex) {
+            ERR_POST("Error reading last blob id from file '"
+                     << file->GetFileName() << "'. File will be deleted. " << ex);
             x_DeleteDBFile(it);
         }
     }
 }
 
-CNCBlobStorage::CNCBlobStorage(bool do_reinit)
+CNCBlobStorage::CNCBlobStorage(void)
     : m_Stopped(false),
       m_StopTrigger(0, 100),
       m_FreeAccessors(NULL),
@@ -474,13 +453,24 @@ CNCBlobStorage::CNCBlobStorage(bool do_reinit)
       m_Blocked(false),
       m_CntLocksToWait(0),
       m_IsStopWrite(false)
-{
-    x_ReadStorageParams();
+{}
 
-    x_LockInstanceGuard();
-    x_OpenIndexDB();
+CNCBlobStorage::~CNCBlobStorage(void)
+{}
+
+bool
+CNCBlobStorage::Initialize(bool do_reinit)
+{
+    if (!x_ReadStorageParams())
+        return false;
+
+    if (!x_LockInstanceGuard())
+        return false;
+    if (!x_OpenIndexDB())
+        return false;
     if (do_reinit) {
-        x_ReinitializeStorage();
+        if (!x_ReinitializeStorage())
+            return false;
         m_CleanStart = false;
     }
 
@@ -497,25 +487,41 @@ CNCBlobStorage::CNCBlobStorage(bool do_reinit)
         }
         x_ReadLastBlobCoords();
     }
-    x_CreateNewCurFiles();
+    if (!x_CreateNewCurFiles())
+        return false;
 
     m_GCAccessor = new CNCBlobAccessor();
 
     m_BGThread = NewBGThread(this, &CNCBlobStorage::x_DoBackgroundWork);
-    m_BGThread->Run();
+    try {
+        m_BGThread->Run();
+    }
+    catch (CThreadException& ex) {
+        ERR_POST(Critical << ex);
+        m_BGThread.Reset();
+        return false;
+    }
+    return true;
 }
 
-CNCBlobStorage::~CNCBlobStorage(void)
+void
+CNCBlobStorage::Finalize(void)
 {
     m_Stopped = true;
     // To be on a safe side let's post 100
     m_StopTrigger.Post(100);
-    m_BGThread->Join();
+    if (m_BGThread) {
+        try {
+            m_BGThread->Join();
+        }
+        catch (CThreadException& ex) {
+            ERR_POST(Critical << ex);
+        }
+    }
 
     ITERATE(TNCDBFilesMap, it, m_DBFiles) {
         delete it->second;
     }
-    m_DBFiles.clear();
     m_IndexDB.reset();
 
     x_UnlockInstanceGuard();
@@ -592,7 +598,7 @@ CNCBlobStorage::x_WaitForGC(void)
         NCBI_SCHED_YIELD();
     }
 }
-
+/*
 void
 CNCBlobStorage::Reconfigure(void)
 {
@@ -613,7 +619,6 @@ CNCBlobStorage::Reconfigure(void)
 void
 CNCBlobStorage::ReinitializeCache(const string& cache_key)
 {
-/*
     _ASSERT(IsBlockActive());
 
     x_WaitForGC();
@@ -642,8 +647,6 @@ CNCBlobStorage::ReinitializeCache(const string& cache_key)
     m_CachingTrigger.Reset();
     _VERIFY(m_CachingTrigger.StartWorking(NULL) == eNCSuccessNoBlock);
     _ASSERT(m_CachingTrigger.GetState() == eNCOpInProgress);
-*/
-    abort();
 }
 
 void
@@ -655,12 +658,12 @@ CNCBlobStorage::x_CheckStopped(void)
     else if (m_Blocked) {
         throw CNCStorage_BlockedException();
     }
-/*    else if (m_NeedRecache) {
+    else if (m_NeedRecache) {
         m_NeedRecache = false;
         throw CNCStorage_RecacheException();
-    }*/
+    }
 }
-
+*/
 CNCBlobAccessor*
 CNCBlobStorage::x_GetAccessor(bool* need_initialize)
 {
@@ -832,7 +835,8 @@ CNCBlobStorage::IsBlobExists(Uint2 slot, const string& key)
            &&  cache_data->blob_id != 0;*/
     CFastReadGuard guard(cache->lock);
     TNCBlobSumList::const_iterator it = cache->key_map.find(key);
-    return it != cache->key_map.end()  &&  it->second->blob_id != 0;
+    return it != cache->key_map.end()  &&  it->second->blob_id != 0
+           &&  it->second->expire > int(time(NULL));
 }
 
 bool
@@ -843,22 +847,38 @@ CNCBlobStorage::ReadBlobInfo(SNCBlobVerData* ver_data)
         TMetaFileLock metafile(this, ver_data->coords.meta_id);
         if (metafile->ReadBlobInfo(ver_data))
             return true;
+        abort();
     }
     catch (CSQLITE_Exception& ex) {
-        ERR_POST_X(1, "Error reading blob information: " << ex);
+        ERR_POST(Critical << "Error reading blob information: " << ex);
+        abort();
     }
     return false;
 }
 
-void
+bool
 CNCBlobStorage::WriteBlobInfo(const string& blob_key, SNCBlobVerData* ver_data)
 {
-    ver_data->old_dead_time = ver_data->dead_time;
     ver_data->generation    = m_BlobGeneration;
-    {{
+    if (ver_data->size == 0) {
+        m_DBFilesLock.ReadLock();
+        SNCDBFileInfo* data_info = m_DBFiles[ver_data->coords.data_id];
+        m_DBFilesLock.ReadUnlock();
+        CSpinGuard guard(data_info->cnt_lock);
+        if (!ver_data->need_data_blob)
+            abort();
+        ver_data->need_data_blob = false;
+        data_info->DecRefCnt();
+        ver_data->coords.data_id = 0;
+    }
+    try {
         TMetaFileLock metafile(this, ver_data->coords.meta_id);
         metafile->WriteBlobInfo(blob_key, ver_data);
-    }}
+    }
+    catch (CSQLITE_Exception& ex) {
+        ERR_POST(Critical << "Cannot write blob info: " << ex);
+        return false;
+    }
     m_DBFilesLock.ReadLock();
     SNCDBFileInfo* file_info = m_DBFiles[ver_data->coords.meta_id];
     m_DBFilesLock.ReadUnlock();
@@ -868,6 +888,7 @@ CNCBlobStorage::WriteBlobInfo(const string& blob_key, SNCBlobVerData* ver_data)
         abort();
     file_info->IncUsefulBlobs();
     ver_data->need_meta_blob = false;
+    return true;
 }
 
 bool
@@ -880,9 +901,9 @@ CNCBlobStorage::x_UpdBlobInfoNoMove(const string&   blob_key,
         return true;
     }
     catch (CSQLITE_Exception& ex) {
-        ERR_POST("Cannot update blob's meta-information: " << ex);
+        ERR_POST(Critical << "Cannot update blob's meta-information: " << ex);
+        return false;
     }
-    return false;
 }
 
 bool
@@ -892,45 +913,62 @@ CNCBlobStorage::x_UpdBlobInfoSingleChunk(const string&   blob_key,
     ver_data->generation = m_BlobGeneration;
     SNCBlobVerData new_ver(ver_data);
     GetNewBlobCoords(&new_ver.coords);
+
     m_DBFilesLock.ReadLock();
     SNCDBFileInfo* new_meta_info = m_DBFiles[new_ver.coords.meta_id];
-    SNCDBFileInfo* new_data_info = m_DBFiles[new_ver.coords.data_id];
     SNCDBFileInfo* old_meta_info = m_DBFiles[ver_data->coords.meta_id];
-    SNCDBFileInfo* old_data_info = m_DBFiles[ver_data->coords.data_id];
+    SNCDBFileInfo* new_data_info = NULL;
+    SNCDBFileInfo* old_data_info = NULL;
+    if (ver_data->size != 0) {
+        new_data_info = m_DBFiles[new_ver.coords.data_id];
+        old_data_info = m_DBFiles[ver_data->coords.data_id];
+    }
     m_DBFilesLock.ReadUnlock();
-    try {
-        TDataFileLock datafile(this, new_ver.coords.data_id);
-        datafile->WriteChunkData(new_ver.coords.blob_id, ver_data->data);
+
+    if (ver_data->size != 0) {
+        try {
+            TDataFileLock datafile(this, new_ver.coords.data_id);
+            datafile->WriteChunkData(new_ver.coords.blob_id, ver_data->data);
+        }
+        catch (CSQLITE_Exception& ex) {
+            ERR_POST(Critical << "Cannot move data for single-chunked blob: " << ex);
+            new_meta_info->Locked_DecRefCnt();
+            new_data_info->Locked_DecRefCnt();
+            return false;
+        }
+        new_data_info->Locked_IncUsefulBlobs(ver_data->size);
     }
-    catch (CSQLITE_Exception& ex) {
-        ERR_POST("Cannot move data for single-chunked blob: " << ex);
-        new_meta_info->Locked_DecRefCnt();
+    else {
         new_data_info->Locked_DecRefCnt();
-        return false;
+        new_ver.coords.data_id = 0;
     }
-    new_data_info->Locked_IncUsefulBlobs(ver_data->size);
+
     try {
         TMetaFileLock metafile(this, new_ver.coords.meta_id);
         metafile->WriteBlobInfo(blob_key, &new_ver);
     }
     catch (CSQLITE_Exception& ex) {
-        ERR_POST("Cannot move meta-data for single-chunked blob: " << ex);
+        ERR_POST(Critical << "Cannot move meta-data for single-chunked blob: " << ex);
         new_meta_info->Locked_DecRefCnt();
-        new_data_info->Locked_UsefulToGarbage(ver_data->size);
+        if (ver_data->size != 0)
+            new_data_info->Locked_UsefulToGarbage(ver_data->size);
         return false;
     }
     new_meta_info->Locked_IncUsefulBlobs();
 
-    swap(ver_data->coords, new_ver.coords);
     try {
-        TMetaFileLock metafile(this, new_ver.coords.meta_id);
-        metafile->DeleteBlobInfo(new_ver.coords.blob_id);
+        TMetaFileLock metafile(this, ver_data->coords.meta_id);
+        metafile->DeleteBlobInfo(ver_data->coords.blob_id);
     }
     catch (CSQLITE_Exception& ex) {
-        ERR_POST("Cannot delete old blob's meta-information: " << ex);
+        ERR_POST(Critical << "Cannot delete old blob's meta-information: " << ex);
     }
+
+    swap(ver_data->coords, new_ver.coords);
     old_meta_info->Locked_DecUsefulBlobs();
-    old_data_info->Locked_UsefulToGarbage(ver_data->size);
+    if (ver_data->size != 0)
+        old_data_info->Locked_UsefulToGarbage(ver_data->size);
+
     return true;
 }
 
@@ -975,7 +1013,7 @@ CNCBlobStorage::x_UpdBlobInfoMultiChunk(const string&   blob_key,
         }}
     }
     catch (CSQLITE_Exception& ex) {
-        ERR_POST("Cannot move multi-chunked blob: " << ex);
+        ERR_POST(Critical << "Cannot move multi-chunked blob: " << ex);
         new_meta_info->Locked_DecRefCnt();
         new_data_info->cnt_lock.Lock();
         ++new_data_info->garbage_blobs;
@@ -993,7 +1031,7 @@ CNCBlobStorage::x_UpdBlobInfoMultiChunk(const string&   blob_key,
         metafile->DeleteBlobInfo(new_ver.coords.blob_id);
     }
     catch (CSQLITE_Exception& ex) {
-        ERR_POST("Cannot delete old blob's meta-information: " << ex);
+        ERR_POST(Critical << "Cannot delete old blob's meta-information: " << ex);
     }
     old_meta_info->Locked_UsefulToGarbage(0);
     old_data_info->Locked_UsefulToGarbage(ver_data->size);
@@ -1007,7 +1045,7 @@ CNCBlobStorage::UpdateBlobInfo(const string&   blob_key,
     if (m_BlobGeneration - ver_data->generation <= m_CurFiles[eNCMeta].size()) {
         return x_UpdBlobInfoNoMove(blob_key, ver_data);
     }
-    else if (ver_data->data) {
+    else if (ver_data->size == 0  ||  ver_data->data) {
         return x_UpdBlobInfoSingleChunk(blob_key, ver_data);
     }
     else if (ver_data->data_trigger.GetState() != eNCOpCompleted
@@ -1026,53 +1064,55 @@ CNCBlobStorage::DeleteBlobInfo(const SNCBlobVerData* ver_data)
     if (!ver_data->need_meta_blob) {
         if (ver_data->create_time == 0)
             abort();
-        TMetaFileLock metafile(this, ver_data->coords.meta_id);
         try {
+            TMetaFileLock metafile(this, ver_data->coords.meta_id);
             metafile->DeleteBlobInfo(ver_data->coords.blob_id);
         }
-        catch (CException& ex) {
-            ERR_POST("Error deleting blob from file "
-                     << metafile->GetFileName() << ": " << ex);
+        catch (CSQLITE_Exception& ex) {
+            ERR_POST(Critical << "Error deleting blob: " << ex);
         }
     }
     m_DBFilesLock.ReadLock();
     SNCDBFileInfo* meta_info = m_DBFiles[ver_data->coords.meta_id];
-    SNCDBFileInfo* data_info = m_DBFiles[ver_data->coords.data_id];
+    TNCDBFilesMap::const_iterator data_it = m_DBFiles.find(ver_data->coords.data_id);
+    SNCDBFileInfo* data_info = (data_it == m_DBFiles.end()? NULL: data_it->second);
     m_DBFilesLock.ReadUnlock();
+
     meta_info->cnt_lock.Lock();
-    if (!ver_data->need_meta_blob) {
-        if (ver_data->create_time == 0)
-            abort();
+    if (!ver_data->need_meta_blob)
         meta_info->DecUsefulBlobs();
-    }
-    else {
+    else
         meta_info->DecRefCnt();
-    }
     meta_info->cnt_lock.Unlock();
-    data_info->cnt_lock.Lock();
-    if (!ver_data->need_data_blob  &&  ver_data->size != 0) {
-        if (ver_data->disk_size == 0)
-            abort();
-        data_info->UsefulToGarbage(ver_data->disk_size);
+
+    if (data_info) {
+        data_info->cnt_lock.Lock();
+        if (ver_data->need_data_blob) {
+            if (ver_data->disk_size != 0)
+                abort();
+            data_info->DecRefCnt();
+        }
+        else if (ver_data->size != 0) {
+            if (ver_data->disk_size == 0)
+                abort();
+            data_info->UsefulToGarbage(ver_data->disk_size);
+        }
+        data_info->cnt_lock.Unlock();
     }
-    else {
-        if (ver_data->disk_size != 0)
-            abort();
-        data_info->DecRefCnt();
+    else if (ver_data->size != 0  ||  ver_data->disk_size != 0) {
+        abort();
     }
-    data_info->cnt_lock.Unlock();
 }
 
 void
 CNCBlobStorage::ReadChunkIds(SNCBlobVerData* ver_data)
 {
-    TMetaFileLock metafile(this, ver_data->coords.meta_id);
     try {
+        TMetaFileLock metafile(this, ver_data->coords.meta_id);
         metafile->GetChunkIds(ver_data->coords.blob_id, &ver_data->chunks);
     }
     catch (CSQLITE_Exception& ex) {
-        ERR_POST_X(1, "Error reading chunk ids from file "
-                      << metafile->GetFileName() << ": " << ex);
+        ERR_POST(Critical << "Error reading chunk ids: " << ex);
     }
 }
 
@@ -1081,31 +1121,34 @@ CNCBlobStorage::ReadChunkData(TNCDBFileId    file_id,
                               TNCChunkId     chunk_id,
                               CNCBlobBuffer* buffer)
 {
-    TDataFileLock datafile(this, file_id);
     try {
+        TDataFileLock datafile(this, file_id);
         if (datafile->ReadChunkData(chunk_id, buffer)) {
             CNCStat::AddChunkRead(buffer->GetSize());
             return true;
         }
     }
     catch (CSQLITE_Exception& ex) {
-        ERR_POST_X(1, "Error reading chunk data from file "
-                      << datafile->GetFileName() << ": " << ex);
+        ERR_POST(Critical << "Error reading chunk data: " << ex);
     }
     return false;
 }
 
-void
+bool
 CNCBlobStorage::x_WriteChunkData(TNCDBFileId     file_id,
                                  TNCChunkId      chunk_id,
                                  const CNCBlobBuffer* data,
                                  SNCBlobVerData* ver_data,
                                  bool            add_blobs_cnt)
 {
-    {{
+    try {
         TDataFileLock datafile(this, file_id);
         datafile->WriteChunkData(chunk_id, data);
-    }}
+    }
+    catch (CSQLITE_Exception& ex) {
+        ERR_POST(Critical << "Cannot write chunk data: " << ex);
+        return false;
+    }
     ver_data->disk_size += data->GetSize();
     CNCStat::AddChunkWritten(data->GetSize());
 
@@ -1121,30 +1164,67 @@ CNCBlobStorage::x_WriteChunkData(TNCDBFileId     file_id,
         ver_data->need_data_blob = false;
     }
     file_info->useful_size += data->GetSize();
+    return true;
 }
 
-void
+bool
 CNCBlobStorage::WriteNextChunk(SNCBlobVerData*      ver_data,
                                const CNCBlobBuffer* data)
 {
     TNCChunkId chunk_id = x_GetNextChunkId();
-    x_WriteChunkData(ver_data->coords.data_id, chunk_id,
-                     data, ver_data,
-                     ver_data->chunks.size() == 0);
-    {{
+    if (!x_WriteChunkData(ver_data->coords.data_id, chunk_id,
+                          data, ver_data,
+                          ver_data->chunks.size() == 0))
+    {
+        return false;
+    }
+    try {
         TMetaFileLock metafile(this, ver_data->coords.meta_id);
         metafile->CreateChunk(ver_data->coords.blob_id, chunk_id);
-    }}
+    }
+    catch (CSQLITE_Exception& ex) {
+        ERR_POST(Critical << "Cannot create new chunk: " << ex);
+        return false;
+    }
     ver_data->chunks.push_back(chunk_id);
+    return true;
 }
+
+Uint8
+CNCBlobStorage::GetMaxSyncLogRecNo(void)
+{
+    try {
+        CFastMutexGuard guard(m_IndexLock);
+        return m_IndexDB->GetMaxSyncLogRecNo();
+    }
+    catch (CSQLITE_Exception& ex) {
+        ERR_POST(Critical << "Cannot read max_sync_log_rec_no: " << ex);
+        return 0;
+    }
+}
+
+void
+CNCBlobStorage::SetMaxSyncLogRecNo(Uint8 last_rec_no)
+{
+    try {
+        CFastMutexGuard guard(m_IndexLock);
+        m_IndexDB->SetMaxSyncLogRecNo(last_rec_no);
+    }
+    catch (CSQLITE_Exception& ex) {
+        ERR_POST(Critical << "Error setting max_sync_log_rec_no: " << ex);
+    }
+}
+
 
 struct SNCTempBlobInfo
 {
     string  key;
     Uint8   create_time;
     Uint8   create_server;
+    TNCBlobId blob_id;
     TNCBlobId create_id;
     int     dead_time;
+    int     expire;
     int     ver_expire;
 
     SNCTempBlobInfo(const string& blob_key, SNCCacheData* cache_info)
@@ -1153,7 +1233,9 @@ struct SNCTempBlobInfo
         create_time = cache_info->create_time;
         create_server = cache_info->create_server;
         create_id = cache_info->create_id;
+        blob_id = cache_info->blob_id;
         dead_time = cache_info->dead_time;
+        expire = cache_info->expire;
         ver_expire = cache_info->ver_expire;
     }
 };
@@ -1180,13 +1262,16 @@ CNCBlobStorage::GetFullBlobsList(Uint2 slot, TNCBlobSumList& blobs_lst)
 
     info_ptr = (SNCTempBlobInfo*)big_block;
     for (Uint8 i = 0; i < cnt_blobs; ++i) {
-        SNCCacheData* blob_sum = new SNCCacheData();
-        blob_sum->create_id = info_ptr->create_id;
-        blob_sum->create_server = info_ptr->create_server;
-        blob_sum->create_time = info_ptr->create_time;
-        blob_sum->dead_time = info_ptr->dead_time;
-        blob_sum->ver_expire = info_ptr->ver_expire;
-        blobs_lst[info_ptr->key] = blob_sum;
+        if (info_ptr->blob_id != 0) {
+            SNCCacheData* blob_sum = new SNCCacheData();
+            blob_sum->create_id = info_ptr->create_id;
+            blob_sum->create_server = info_ptr->create_server;
+            blob_sum->create_time = info_ptr->create_time;
+            blob_sum->dead_time = info_ptr->dead_time;
+            blob_sum->expire = info_ptr->expire;
+            blob_sum->ver_expire = info_ptr->ver_expire;
+            blobs_lst[info_ptr->key] = blob_sum;
+        }
         info_ptr->~SNCTempBlobInfo();
         ++info_ptr;
     }
@@ -1292,7 +1377,8 @@ CNCBlobStorage::x_GC_CleanDBFile(CNCDBFile* metafile, int dead_before)
         int dead_after = m_LastDeadTime;
         TNCBlobId last_id = 0;
         do {
-            x_CheckStopped();
+            if (m_Stopped)
+                break;
             {{
                 TMetaFileLock file_lock(metafile);
                 file_lock->GetBlobsList(dead_after, last_id, dead_before,
@@ -1300,18 +1386,16 @@ CNCBlobStorage::x_GC_CleanDBFile(CNCDBFile* metafile, int dead_before)
             }}
             ITERATE(TNCBlobsList, it, blobs_list) {
                 ++m_GCRead;
-                x_CheckStopped();
+                if (m_Stopped)
+                    break;
                 x_GC_DeleteExpired(*it->get(), dead_before);
-                // Avoid this thread to be the most foreground task to execute,
-                // let's give others a chance to work.
-                NCBI_SCHED_YIELD();
             }
         }
         while (!blobs_list.empty());
     }
-    catch (CException& ex) {
-        ERR_POST("Error processing file '" << metafile->GetFileName()
-                 << "': " << ex);
+    catch (CSQLITE_Exception& ex) {
+        ERR_POST(Critical << "Error processing file '" << metafile->GetFileName()
+                          << "': " << ex);
     }
 }
 
@@ -1391,8 +1475,8 @@ CNCBlobStorage::x_GC_HeartBeat(void)
              ||  (size >= m_MinFileSize[eNCMeta]  &&  total != 0
                   &&  useful_cnt / total <= m_MinUsefulPct[eNCMeta])))
         {
-            x_CreateNewFile(eNCMeta, i);
-            next_gen = true;
+            if (x_CreateNewFile(eNCMeta, i))
+                next_gen = true;
         }
     }
     for (unsigned int i = 0; i < m_CurFiles[eNCData].size(); ++i) {
@@ -1409,8 +1493,8 @@ CNCBlobStorage::x_GC_HeartBeat(void)
              ||  (file_size >= m_MinFileSize[eNCData]  &&  total_blobs_size != 0
                   &&  useful_size / total_blobs_size <= m_MinUsefulPct[eNCData])))
         {
-            x_CreateNewFile(eNCData, i);
-            next_gen = true;
+            if (x_CreateNewFile(eNCData, i))
+                next_gen = true;
         }
     }
     if (next_gen)
@@ -1430,8 +1514,13 @@ CNCBlobStorage::x_GC_HeartBeat(void)
     else if (db_size <= m_StopWriteOffSize) {
         m_IsStopWrite = false;
     }
-    if (CFileUtil::GetFreeDiskSpace(m_MainPath) <= m_DiskFreeLimit)
-        m_IsStopWrite = true;
+    try {
+        if (CFileUtil::GetFreeDiskSpace(m_MainPath) <= m_DiskFreeLimit)
+            m_IsStopWrite = true;
+    }
+    catch (CFileErrnoException& ex) {
+        ERR_POST(Critical << "Cannot read free disk space: " << ex);
+    }
 }
 
 bool
@@ -1459,191 +1548,188 @@ CNCBlobStorage::x_CheckFileAging(TNCDBFileId file_id, CNCDBFile* file)
 void
 CNCBlobStorage::x_DoBackgroundWork(void)
 {
-    // Make background postings to be all in the same request id
-    CRef<CRequestContext> diag_context(new CRequestContext());
-    diag_context->SetRequestID();
-    CDiagContext::SetRequestContext(diag_context);
+    CRef<CRequestContext> ctx(new CRequestContext());
+    ctx->SetRequestID();
+    CDiagContext::SetRequestContext(ctx);
 
-    try {
-        for (;;) {
-            try {
-                INFO_POST("Caching of blobs info is started");
-                // Nobody else changes m_DBFiles, so iterating right over it.
-                //    * With REVERSE_ITERATE code should look more ugly to be
-                //    * compilable in WorkShop.
-                NON_CONST_REVERSE_ITERATE(TNCDBFilesMap, file_it, m_DBFiles) {
-                    SNCDBFileInfo* file_info = file_it->second;
-                    CNCDBFile* file = file_info->file_obj.get();
-                    if (file->GetType() != eNCMeta)
-                        continue;
-                    TNCDBFileId file_id = file_it->first;
+    INFO_POST("Caching of blobs info is started");
+    // Nobody else changes m_DBFiles, so iterating right over it.
+    //    * With REVERSE_ITERATE code should look more ugly to be
+    //    * compilable in WorkShop.
+    NON_CONST_REVERSE_ITERATE(TNCDBFilesMap, file_it, m_DBFiles) {
+        SNCDBFileInfo* meta_info = file_it->second;
+        CNCDBMetaFile* metafile = (CNCDBMetaFile*)meta_info->file_obj.get();
+        if (metafile->GetType() != eNCMeta)
+            continue;
+        TNCDBFileId meta_id = file_it->first;
 
-                    Uint4 cnt_blobs = 0;
-                    try {
-                        TNCBlobsList blobs_list;
-                        TNCBlobId last_id = 0;
-                        int dead_after = m_LastDeadTime;
-                        do {
-                            x_CheckStopped();
-                            {{
-                                TMetaFileLock file_lock(file);
-                                file_lock->GetBlobsList(dead_after, last_id,
-                                                        numeric_limits<int>::max(),
-                                                        m_GCBatchSize, &blobs_list);
-                            }}
-                            ITERATE(TNCBlobsList, blob_it, blobs_list) {
-                                SNCBlobListInfo* blob_info = blob_it->get();
-                                blob_info->meta_id = file_id;
-                                SNCCacheData* new_data = new SNCCacheData(blob_info);
-                                SNCCacheData* cache_data;
-                                SSlotCache* cache = m_SlotsCache[blob_info->slot];
-                                if (!cache) {
-                                    cache = new SSlotCache(blob_info->slot);
-                                    m_SlotsCache[blob_info->slot] = cache;
-                                }
-                                //TKeysCacheMap* key_map = &cache->key_map;
-                                //bool was_added = key_map->PutOrGet(blob_info->key, new_data, TKeysCacheMap::eGetActiveAndPassive, cache_data);
-                                TNCBlobSumList* key_map = &cache->key_map;
-                                TNCBlobSumList::iterator key_it = key_map->find(blob_info->key);
-                                //if (!was_added) {
-                                bool was_added = false;
-                                if (key_it != key_map->end()) {
-                                    cache_data = key_it->second;
-                                    if (cache_data->isOlder(*new_data)) {
-                                        //key_map->Put(blob_info->key, new_data);
-                                        key_it->second = new_data;
-                                        was_added = true;
-                                        SNCDBFileInfo* cache_d_info = m_DBFiles[cache_data->data_id];
-                                        if (cache_data->size != 0)
-                                            cache_d_info->UsefulToGarbage(cache_data->size);
-                                        if (cache_data->meta_id == file_id)
-                                            --cnt_blobs;
-                                        else {
-                                            SNCDBFileInfo* cache_m_info = m_DBFiles[cache_data->meta_id];
-                                            cache_m_info->DecUsefulBlobs();
-                                        }
-                                        delete cache_data;
-                                    }
-                                    else {
-                                        delete new_data;
-                                    }
-                                }
-                                else {
-                                    (*key_map)[blob_info->key] = new_data;
-                                    was_added = true;
-                                }
-                                if (was_added) {
-                                    ++cnt_blobs;
-                                    SNCDBFileInfo* data_info = m_DBFiles[blob_info->data_id];
-                                    data_info->IncRefCnt();
-                                    if (blob_info->size != 0)
-                                        data_info->IncUsefulBlobs(blob_info->size);
-                                }
+        Uint4 cnt_blobs = 0;
+        try {
+            TNCBlobsList blobs_list;
+            TNCBlobId last_id = 0;
+            int dead_after = m_LastDeadTime;
+            do {
+                if (m_Stopped)
+                    break;
+                metafile->GetBlobsList(dead_after, last_id,
+                                       numeric_limits<int>::max(),
+                                       m_GCBatchSize, &blobs_list);
+                ITERATE(TNCBlobsList, blob_it, blobs_list) {
+                    SNCBlobListInfo* blob_info = blob_it->get();
+                    blob_info->meta_id = meta_id;
+                    TNCDBFilesMap::const_iterator data_it = m_DBFiles.find(blob_info->data_id);
+                    SNCDBFileInfo* data_info = NULL;
+                    if (data_it == m_DBFiles.end()) {
+                        if (blob_info->size != 0)
+                            continue;
+                    }
+                    else {
+                        data_info = data_it->second;
+                    }
+
+                    SNCCacheData* new_data = new SNCCacheData(blob_info);
+                    SNCCacheData* cache_data;
+                    SSlotCache* cache = m_SlotsCache[blob_info->slot];
+                    if (!cache) {
+                        cache = new SSlotCache(blob_info->slot);
+                        m_SlotsCache[blob_info->slot] = cache;
+                    }
+                    //TKeysCacheMap* key_map = &cache->key_map;
+                    //bool was_added = key_map->PutOrGet(blob_info->key, new_data, TKeysCacheMap::eGetActiveAndPassive, cache_data);
+                    TNCBlobSumList* key_map = &cache->key_map;
+                    TNCBlobSumList::iterator key_it = key_map->find(blob_info->key);
+                    //if (!was_added) {
+                    bool was_added = false;
+                    if (key_it != key_map->end()) {
+                        cache_data = key_it->second;
+                        if (cache_data->isOlder(*new_data)) {
+                            //key_map->Put(blob_info->key, new_data);
+                            key_it->second = new_data;
+                            was_added = true;
+                            SNCDBFileInfo* cache_d_info = m_DBFiles[cache_data->data_id];
+                            if (cache_data->size != 0)
+                                cache_d_info->UsefulToGarbage(cache_data->size);
+                            if (cache_data->meta_id == meta_id)
+                                --cnt_blobs;
+                            else {
+                                SNCDBFileInfo* cache_m_info = m_DBFiles[cache_data->meta_id];
+                                cache_m_info->DecUsefulBlobs();
                             }
-                        }
-                        while (!blobs_list.empty());
-                    }
-                    catch (CException& ex) {
-                        // Try to recover from any database errors by just
-                        // ignoring it and trying to work further.
-                        ERR_POST("Database file " << file_it->second->file_name
-                                 << " was not cached properly: " << ex);
-                    }
-                    file_info->useful_blobs = cnt_blobs;
-                    file_info->ref_cnt = cnt_blobs;
-                }
-
-                INFO_POST("Caching of blobs info is finished");
-                CNetCacheServer::CachingCompleted();
-
-                bool do_extra_gc = false;
-                Uint4 extra_gc_time = 0;
-                for (;;) {
-                    time_t start_time = time(NULL);
-                    do {
-                        m_StopTrigger.TryWait(1, 0);
-                        x_GC_HeartBeat();
-                        try {
-                            x_CheckStopped();
-                        }
-                        catch (CNCStorage_BlockedException&) {
-                            // If storage is blocked heart beat still can work
-                        }
-                    }
-                    while (time(NULL) - start_time < m_GCRunDelay);
-
-                    m_GCInWork = true;
-
-                    int next_dead = int(time(NULL));
-                    if (do_extra_gc) {
-                        if (m_CurDBSize <= m_ExtraGCOffSize) {
-                            do_extra_gc = false;
+                            delete cache_data;
                         }
                         else {
-                            extra_gc_time += m_ExtraGCStep;
-                            next_dead += extra_gc_time;
+                            delete new_data;
                         }
                     }
-                    else if (m_ExtraGCOnSize != 0
-                             &&  m_CurDBSize >= m_ExtraGCOnSize)
-                    {
-                        do_extra_gc = true;
-                        extra_gc_time = m_ExtraGCStep;
-                        next_dead += extra_gc_time;
+                    else {
+                        (*key_map)[blob_info->key] = new_data;
+                        was_added = true;
                     }
-
-                    CRef<CRequestContext> ctx(new CRequestContext());
-                    ctx->SetRequestID();
-                    GetDiagContext().SetRequestContext(ctx);
-                    if (g_NetcacheServer->IsLogCmds()) {
-                        CDiagContext_Extra extra = GetDiagContext().PrintRequestStart();
-                        extra.Print("_type", "gc");
-                        if (do_extra_gc)
-                            extra.Print("force_delete", extra_gc_time);
-                        extra.Flush();
-                    }
-                    ctx->SetRequestStatus(CNCMessageHandler::eStatus_OK);
-                    m_GCRead = m_GCDeleted = 0;
-
-                    try {
-                        x_CheckStopped();
-
-                        x_GC_CollectFilesStats();
-
-                        ERASE_ITERATE(TNCDBFilesMap, it, m_DBFiles) {
-                            CNCDBFile* file = it->second->file_obj.get();
-                            if (file->GetType() == eNCMeta) {
-                                x_GC_CleanDBFile(file, next_dead);
-                            }
-                            if (x_CheckFileAging(it->second->file_id, file)) {
-                                x_DeleteDBFile(it);
-                            }
+                    if (was_added) {
+                        ++cnt_blobs;
+                        if (blob_info->size != 0) {
+                            data_info->IncRefCnt();
+                            data_info->IncUsefulBlobs(blob_info->size);
                         }
-                        m_LastDeadTime = next_dead;
                     }
-                    catch (CNCStorage_BlockedException&) {
-                        // Do nothing - we're already in place where we want to be
-                        INFO_POST("Storage block is in progress");
-                    }
-
-                    ctx->SetBytesRd(Int8(m_GCRead));
-                    ctx->SetBytesWr(Int8(m_GCDeleted));
-                    if (g_NetcacheServer->IsLogCmds()) {
-                        GetDiagContext().PrintRequestStop();
-                    }
-                    ctx.Reset();
-                    GetDiagContext().SetRequestContext(NULL);
-
-                    m_GCInWork = false;
                 }
             }
-            catch (CNCStorage_RecacheException&) {
-                // Do nothing - we're already in place where we want to be
+            while (!blobs_list.empty());
+        }
+        catch (CSQLITE_Exception& ex) {
+            // Try to recover from any database errors by just
+            // ignoring it and trying to work further.
+            ERR_POST(Critical << "Database file " << file_it->second->file_name
+                              << " was not cached properly: " << ex);
+        }
+        meta_info->useful_blobs = cnt_blobs;
+        meta_info->ref_cnt = cnt_blobs;
+    }
+
+    if (m_Stopped)
+        return;
+
+    INFO_POST("Caching of blobs info is finished");
+    CNetCacheServer::CachingCompleted();
+
+    CDiagContext::SetRequestContext(NULL);
+    ctx.Reset();
+
+    bool do_extra_gc = false;
+    Uint4 extra_gc_time = 0;
+    for (;;) {
+        time_t start_time = time(NULL);
+        do {
+            m_StopTrigger.TryWait(1, 0);
+            x_GC_HeartBeat();
+            if (m_Stopped)
+                break;
+        }
+        while (time(NULL) - start_time < m_GCRunDelay);
+
+        if (m_Stopped)
+            break;
+        m_GCInWork = true;
+
+        int next_dead = int(time(NULL));
+        if (do_extra_gc) {
+            if (m_CurDBSize <= m_ExtraGCOffSize) {
+                do_extra_gc = false;
+            }
+            else {
+                extra_gc_time += m_ExtraGCStep;
+                next_dead += extra_gc_time;
             }
         }
-    }
-    catch (CNCStorage_StoppedException&) {
-        // Do nothing - we're already in place where we want to be
+        else if (m_ExtraGCOnSize != 0
+                 &&  m_CurDBSize >= m_ExtraGCOnSize)
+        {
+            do_extra_gc = true;
+            extra_gc_time = m_ExtraGCStep;
+            next_dead += extra_gc_time;
+        }
+
+        CRef<CRequestContext> ctx(new CRequestContext());
+        ctx->SetRequestID();
+        GetDiagContext().SetRequestContext(ctx);
+        if (g_NetcacheServer->IsLogCmds()) {
+            CDiagContext_Extra extra = GetDiagContext().PrintRequestStart();
+            extra.Print("_type", "gc");
+            if (do_extra_gc)
+                extra.Print("force_delete", extra_gc_time);
+            extra.Flush();
+        }
+        ctx->SetRequestStatus(CNCMessageHandler::eStatus_OK);
+        m_GCRead = m_GCDeleted = 0;
+
+        if (!m_Stopped) {
+            x_GC_CollectFilesStats();
+
+            ERASE_ITERATE(TNCDBFilesMap, it, m_DBFiles) {
+                if (m_Stopped)
+                    break;
+                CNCDBFile* file = it->second->file_obj.get();
+                if (file->GetType() == eNCMeta) {
+                    x_GC_CleanDBFile(file, next_dead);
+                }
+                if (x_CheckFileAging(it->second->file_id, file)) {
+                    x_DeleteDBFile(it);
+                }
+            }
+            m_LastDeadTime = next_dead;
+        }
+
+        ctx->SetBytesRd(Int8(m_GCRead));
+        ctx->SetBytesWr(Int8(m_GCDeleted));
+        if (g_NetcacheServer->IsLogCmds()) {
+            GetDiagContext().PrintRequestStop();
+        }
+        ctx.Reset();
+        GetDiagContext().SetRequestContext(NULL);
+
+        m_GCInWork = false;
+        if (m_Stopped)
+            break;
     }
 }
 
@@ -1666,7 +1752,7 @@ CNCBlobStorage::CKeysCleaner::Delete(const string& key) const
     TNCBlobSumList::iterator it = cache->key_map.find(key);
     if (it != cache->key_map.end()) {
         SNCCacheData* cache_data = it->second;
-        if (cache_data->is_deleted) {
+        if (cache_data->key_deleted) {
             delete cache_data;
             cache->key_map.erase(it);
         }

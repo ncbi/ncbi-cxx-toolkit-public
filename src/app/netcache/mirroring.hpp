@@ -50,17 +50,13 @@ BEGIN_NCBI_SCOPE
 class CNCMirroring
 {
 public:
-    static void Initialize(void);
+    static bool Initialize(void);
     static void Finalize(void);
 
     static void BlobWriteEvent(const string& key,
                                Uint2 slot,
                                Uint8 orig_rec_no,
                                Uint8 size);
-    static void BlobRemoveEvent(const string& key,
-                                Uint2 slot,
-                                Uint8 orig_rec_no,
-                                Uint8 orig_time);
     static void BlobProlongEvent(const string& key,
                                  Uint2 slot,
                                  Uint8 orig_rec_no,
@@ -118,17 +114,12 @@ public:
                        SDistribution*   distr,
                        ENCMirroringType mirror_type);
 
-    void WakeUp( void )
+    void WakeUp(void)
     {
-        try {
-            notifier.Post();
-        }
-        catch (CCoreException&) {
-            //
-        }
+        notifier.Post();
     }
 
-    void RequestFinish( void )
+    void RequestFinish(void)
     {
         finish_flag = true;
         WakeUp();

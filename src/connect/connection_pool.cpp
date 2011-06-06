@@ -102,11 +102,7 @@ CServer_ConnectionPool::CServer_ConnectionPool(unsigned max_connections) :
 
 CServer_ConnectionPool::~CServer_ConnectionPool()
 {
-    try {
-        Erase();
-    } catch(...) {
-        ERR_POST_X(3, "Exception thrown from ~CServer_ConnectionPool");
-    }
+    Erase();
 }
 
 void CServer_ConnectionPool::Erase(void)

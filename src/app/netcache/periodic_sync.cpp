@@ -63,7 +63,7 @@ static CRef<CThread> s_LogCleaner;
 
 static CNCThrottler_Getter s_TimeThrottler;
 
-static FILE* s_LogFile;
+static FILE* s_LogFile = NULL;
 
 
 
@@ -132,17 +132,17 @@ s_StartSync(SSyncSlotData* slot_data, SSyncSlotSrv* slot_srv, bool is_passive)
     return eProceedWithEvents;
 }
 
-static inline void
+static void
 s_SrvInitiallySynced(SSyncSrvData* srv_data)
 {
     if (!srv_data->initially_synced) {
-        LOG_POST("Initial sync for " << srv_data->srv_id << " completed");
+        INFO_POST("Initial sync for " << srv_data->srv_id << " completed");
         srv_data->initially_synced = true;
         s_SyncOnInit.Add(-1);
     }
 }
 
-static inline void
+static void
 s_SlotsInitiallySynced(SSyncSrvData* srv_data, Uint2 cnt_slots)
 {
     if (cnt_slots != 0  &&  srv_data->slots_to_init != 0) {
@@ -185,10 +185,10 @@ s_StopSync(SSyncSlotData* slot_data,
     slot_srv->sync_started = false;
     if (!slot_srv->is_passive)
         --srv_data->cnt_active_syncs;
+    if (slot_data->cnt_sync_started == 0)
+        abort();
     if (--slot_data->cnt_sync_started == 0  &&  slot_data->clean_required)
         s_CleanerSem.Post();
-    if (slot_data->cnt_sync_started + 1 == 0)
-        abort();
 }
 
 static void
@@ -418,7 +418,7 @@ CNCPeriodicSync::PreInitialize(void)
     s_TimeThrottler.Initialize();
 }
 
-void
+bool
 CNCPeriodicSync::Initialize(void)
 {
     s_LogFile = fopen(CNCDistributionConf::GetPeriodicLogFile().c_str(), "a");
@@ -474,16 +474,24 @@ CNCPeriodicSync::Initialize(void)
     }
 
     s_LogCleaner = NewBGThread(&s_LogCleanerMain);
-    s_LogCleaner->Run();
-    for (Uint1 i = 0; i < cnt_workers; ++i) {
-        s_Workers[i]->Run();
+    try {
+        s_LogCleaner->Run();
+        for (Uint1 i = 0; i < cnt_workers; ++i) {
+            s_Workers[i]->Run();
+        }
+        for (Uint1 i = 0; i < cnt_syncs; ++i) {
+            s_SyncMains[i]->Run();
+        }
     }
-    for (Uint1 i = 0; i < cnt_syncs; ++i) {
-        s_SyncMains[i]->Run();
+    catch (CThreadException& ex) {
+        ERR_POST(Critical << ex);
+        return false;
     }
 
     if (cnt_to_sync == 0)
         CNetCacheServer::MayOpenToClients();
+
+    return true;
 }
 
 void
@@ -496,17 +504,22 @@ CNCPeriodicSync::Finalize(void)
 
     s_NeedFinish = true;
     s_CleanerSem.Post();
-    s_LogCleaner->Join();
-    s_WorkersSem.Post(CNCDistributionConf::GetCntSyncWorkers());
-    NON_CONST_ITERATE(TThreadsList, it, s_Workers) {
-        (*it)->Join();
+    try {
+        s_LogCleaner->Join();
+        s_WorkersSem.Post(CNCDistributionConf::GetCntSyncWorkers());
+        NON_CONST_ITERATE(TThreadsList, it, s_Workers) {
+            (*it)->Join();
+        }
+        NON_CONST_ITERATE(TSyncControls, it, s_SyncControls) {
+            (*it)->WakeUp();
+        }
+        s_MainsSem.Post(CNCDistributionConf::GetCntActiveSyncs());
+        NON_CONST_ITERATE(TThreadsList, it, s_SyncMains) {
+            (*it)->Join();
+        }
     }
-    NON_CONST_ITERATE(TSyncControls, it, s_SyncControls) {
-        (*it)->WakeUp();
-    }
-    s_MainsSem.Post(CNCDistributionConf::GetCntActiveSyncs());
-    NON_CONST_ITERATE(TThreadsList, it, s_SyncMains) {
-        (*it)->Join();
+    catch (CThreadException& ex) {
+        ERR_POST(Critical << ex);
     }
     if (s_LogFile)
         fclose(s_LogFile);
@@ -786,8 +799,6 @@ CActiveSyncControl::DoPeriodicSync(SSyncSlotData* slot_data,
         if (m_SlotSrv->srv_data->first_nw_err_time == 0)
             m_SlotSrv->srv_data->first_nw_err_time = CNetCacheServer::GetPreciseTime();
         break;
-    default:
-        abort();
     }
 
     if (g_NetcacheServer->IsLogCmds()) {
@@ -956,10 +967,6 @@ CActiveSyncControl::x_DoEventSend(ENCPeerFailure& task_res,
         task_res = CNetCacheServer::SyncWriteBlobToPeer(m_SrvId, m_Slot, event);
         action = eSynActionWrite;
         break;
-    case eSyncRemove:
-        task_res = CNetCacheServer::SyncDelBlobFromPeer(m_SrvId, m_Slot, event);
-        action = eSynActionRemove;
-        break;
     case eSyncProlong:
         task_res = CNetCacheServer::SyncProlongBlobOnPeer(m_SrvId, m_Slot, event);
         action = eSynActionProlong;
@@ -979,10 +986,6 @@ CActiveSyncControl::x_DoEventGet(ENCPeerFailure& task_res,
     case eSyncWrite:
         task_res = CNetCacheServer::SyncGetBlobFromPeer(m_SrvId, m_Slot, event);
         action = eSynActionRead;
-        break;
-    case eSyncRemove:
-        task_res = CNetCacheServer::SyncDelOurBlob(m_SrvId, m_Slot, event);
-        action = eSynActionRemove;
         break;
     case eSyncProlong:
         task_res = CNetCacheServer::SyncProlongOurBlob(m_SrvId, m_Slot, event);

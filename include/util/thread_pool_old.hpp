@@ -46,6 +46,7 @@
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_limits.hpp>
+#include <corelib/ncbi_param.hpp>
 #include <util/util_exception.hpp>
 #include <util/error_codes.hpp>
 
@@ -352,6 +353,23 @@ private:
     virtual void* Main(void);
     virtual void OnExit(void);
 
+    void x_HandleOneRequest(bool catch_all);
+    void x_UnregisterThread(void);
+
+    class CAutoUnregGuard
+    {
+    public:
+        typedef CThreadInPool<TRequest> TThread;
+        CAutoUnregGuard(TThread* thr);
+        ~CAutoUnregGuard(void);
+
+    private:
+        TThread* m_Thread;
+    };
+
+    friend class CAutoUnregGuard;
+
+
     TPool*   m_Pool;     ///< The pool that holds this thread
     ERunMode m_RunMode;  ///< How long to keep running
 
@@ -641,6 +659,11 @@ private:
 };
 
 
+NCBI_PARAM_DECL(bool, ThreadPool, Catch_Unhandled_Exceptions);
+typedef NCBI_PARAM_TYPE(ThreadPool, Catch_Unhandled_Exceptions) TParamThreadPoolCatchExceptions;
+
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 /////////////////////////////////////////////////////////////////////////////
@@ -880,52 +903,74 @@ bool CBlockingQueue<TRequest>::x_WaitForPredicate(TQueuePredicate pred,
 //
 
 template <typename TRequest>
+CThreadInPool<TRequest>::CAutoUnregGuard::CAutoUnregGuard(TThread* thr)
+    : m_Thread(thr)
+{}
+
+template <typename TRequest>
+CThreadInPool<TRequest>::CAutoUnregGuard::~CAutoUnregGuard(void)
+{
+    m_Thread->x_UnregisterThread();
+}
+
+
+template <typename TRequest>
+void CThreadInPool<TRequest>::x_UnregisterThread(void)
+{
+    m_Pool->UnRegister(*this);
+}
+
+template <typename TRequest>
+void CThreadInPool<TRequest>::x_HandleOneRequest(bool catch_all)
+{
+    TItemHandle handle;
+    m_Pool->m_Delta.Add(-1);
+    try {
+        handle.Reset(m_Pool->m_Queue.GetHandle());
+    } catch (CBlockingQueueException& e) {
+        // work around "impossible" timeouts
+        NCBI_REPORT_EXCEPTION_XX(Util_Thread, 1, "Unexpected timeout", e);
+        m_Pool->m_Delta.Add(1);
+        return;
+    }
+    if (catch_all) {
+        try {
+            ProcessRequest(handle);
+        } catch (std::exception& e) {
+            handle->MarkAsForciblyCaught();
+            NCBI_REPORT_EXCEPTION_XX(Util_Thread, 2,
+                                     "Exception from thread in pool: ", e);
+            // throw;
+        } catch (...) {
+            handle->MarkAsForciblyCaught();
+            // silently propagate non-standard exceptions because they're
+            // likely to be CExitThreadException.
+            // ERR_POST_XX(Util_Thread, 3,
+            //             "Thread in pool threw non-standard exception.");
+            throw;
+        }
+    }
+    else {
+        ProcessRequest(handle);
+    }
+}
+
+template <typename TRequest>
 void* CThreadInPool<TRequest>::Main(void)
 {
     m_Pool->Register(*this);
+    CAutoUnregGuard guard(this);
 
-    try {
-        Init();
+    Init();
+    bool catch_all = TParamThreadPoolCatchExceptions::GetDefault();
 
-        for (;;) {
-            TItemHandle handle;
-            m_Pool->m_Delta.Add(-1);
-            try {
-                handle.Reset(m_Pool->m_Queue.GetHandle());
-            } catch (CBlockingQueueException& e) {
-                // work around "impossible" timeouts
-                NCBI_REPORT_EXCEPTION_XX(Util_Thread, 1,
-                                         "Unexpected timeout", e);
-                m_Pool->m_Delta.Add(1);
-                continue;
-            }
-            try {
-                ProcessRequest(handle);
-            } catch (std::exception& e) {
-                handle->MarkAsForciblyCaught();
-                NCBI_REPORT_EXCEPTION_XX(Util_Thread, 2,
-                                         "Exception from thread in pool: ", e);
-                // throw;
-            } catch (...) {
-                handle->MarkAsForciblyCaught();
-                // silently propagate non-standard exceptions because they're
-                // likely to be CExitThreadException.
-                // ERR_POST_XX(Util_Thread, 3,
-                //             "Thread in pool threw non-standard exception.");
-                throw;
-            }
-            if (m_RunMode == eRunOnce) {
-                m_Pool->UnRegister(*this);
-                break;
-            }
-        }
-    } catch (...) {
-        // assumed to be CExitThreadException
-        m_Pool->UnRegister(*this);
-        throw;
+    for (;;) {
+        x_HandleOneRequest(catch_all);
+        if (m_RunMode == eRunOnce)
+            break;
     }
 
-    return 0; // Unreachable, but necessary for WorkShop build
+    return 0;
 }
 
 

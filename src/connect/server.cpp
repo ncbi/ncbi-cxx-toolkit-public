@@ -31,6 +31,7 @@
 /// Framework for a multithreaded network server
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbi_param.hpp>
 #include <connect/server.hpp>
 #include "connection_pool.hpp"
 #include <connect/ncbi_buffer.h>
@@ -41,6 +42,13 @@
 
 
 BEGIN_NCBI_SCOPE
+
+
+NCBI_PARAM_DECL(bool, server, Catch_Unhandled_Exceptions);
+NCBI_PARAM_DEF_EX(bool, server, Catch_Unhandled_Exceptions, true, 0,
+                  CSERVER_CATCH_UNHANDLED_EXCEPTIONS);
+typedef NCBI_PARAM_TYPE(server, Catch_Unhandled_Exceptions) TParamServerCatchExceptions;
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -135,6 +143,8 @@ public:
     virtual void Process(void);
     virtual void Cancel(void);
 private:
+    void x_DoProcess(void);
+
     CServer_Connection* m_Connection;
 } ;
 
@@ -172,27 +182,37 @@ CAcceptRequest::CAcceptRequest(EServIO_Event event,
     m_Connection = conn.release();
 }
 
+void CAcceptRequest::x_DoProcess(void)
+{
+    if (m_ConnPool.Add(m_Connection,
+                       CServer_ConnectionPool::eActiveSocket))
+    {
+        m_Connection->OnSocketEvent(eServIO_Open);
+        m_ConnPool.SetConnType(m_Connection,
+                               CServer_ConnectionPool::eInactiveSocket);
+    }
+    else {
+        // The connection pool is full
+        // This place is the only one which can call OnOverflow now
+        m_Connection->OnOverflow(eOR_ConnectionPoolFull);
+        // Abort connection here to prevent it sitting in TIME_WAIT state
+        // on the server.
+        m_Connection->Abort();
+        delete m_Connection;
+    }
+}
+
 void CAcceptRequest::Process(void)
 {
     if (!m_Connection) return;
-    try {
-        if (m_ConnPool.Add(m_Connection,
-                           CServer_ConnectionPool::eActiveSocket))
-        {
-            m_Connection->OnSocketEvent(eServIO_Open);
-            m_ConnPool.SetConnType(m_Connection,
-                                   CServer_ConnectionPool::eInactiveSocket);
-        }
-        else {
-            // The connection pool is full
-            // This place is the only one which can call OnOverflow now
-            m_Connection->OnOverflow(eOR_ConnectionPoolFull);
-            // Abort connection here to prevent it sitting in TIME_WAIT state
-            // on the server.
-            m_Connection->Abort();
-            delete m_Connection;
-        }
-    } STD_CATCH_ALL_X(5, "CAcceptRequest::Process");
+    if (TParamServerCatchExceptions::GetDefault()) {
+        try {
+            x_DoProcess();
+        } STD_CATCH_ALL_X(5, "CAcceptRequest::Process");
+    }
+    else {
+        x_DoProcess();
+    }
 }
 
 void CAcceptRequest::Cancel(void)
@@ -226,9 +246,14 @@ private:
 
 void CServerConnectionRequest::Process(void)
 {
-    try {
+    if (TParamServerCatchExceptions::GetDefault()) {
+        try {
+            m_Connection->OnSocketEvent(m_Event);
+        } NCBI_CATCH_ALL_X(6, "CServerConnectionRequest::Process");
+    }
+    else {
         m_Connection->OnSocketEvent(m_Event);
-    } NCBI_CATCH_ALL_X(6, "CServerConnectionRequest::Process");
+    }
     // Return socket to poll vector
     m_ConnPool.SetConnType(m_Connection, CServer_ConnectionPool::eInactiveSocket, false);
 }
@@ -361,6 +386,86 @@ static inline bool operator <(const STimeout& to1, const STimeout& to2)
 }
 
 
+void CServer::x_DoRun(void)
+{
+    m_ThreadPool->Spawn(m_Parameters->init_threads);
+
+    Init();
+
+    vector<CSocketAPI::SPoll> polls;
+    size_t     count;
+    typedef vector<IServer_ConnectionBase*> TConnsList;
+    TConnsList timer_requests;
+    TConnsList revived_conns;
+    STimeout   timer_timeout;
+    const STimeout* timeout;
+
+    while (!ShutdownRequested()) {
+        bool has_timer = m_ConnectionPool->GetPollAndTimerVec(
+                         polls, timer_requests, &timer_timeout, revived_conns);
+
+        ITERATE(TConnsList, it, revived_conns) {
+            CreateRequest(*it,
+                          IOEventToServIOEvent((*it)->GetEventsToPollFor(NULL)),
+                          m_Parameters->idle_timeout);
+        }
+
+        timeout = m_Parameters->accept_timeout;
+
+        if (has_timer &&
+            (timeout == kDefaultTimeout ||
+             timeout == kInfiniteTimeout ||
+             timer_timeout < *timeout)) {
+            timeout = &timer_timeout;
+        }
+
+        EIO_Status status = CSocketAPI::Poll(polls, timeout, &count);
+
+        if (status != eIO_Success  &&  status != eIO_Timeout) {
+            int x_errno = errno;
+            const char* temp = IO_StatusStr(status);
+            string ststr(temp
+                         ? temp
+                         : NStr::UIntToString((unsigned int) status));
+            string erstr;
+            if (x_errno) {
+                erstr = ", {" + NStr::IntToString(x_errno);
+                if (temp  &&  *temp) {
+                    erstr += ',';
+                    erstr += temp;
+                }
+                erstr += '}';
+            }
+            ERR_POST_X(8, Critical << "Poll failed with status "
+                       << ststr << erstr);
+            continue;
+        }
+
+        if (count == 0) {
+            if (timeout != &timer_timeout) {
+                ProcessTimeout();
+            }
+            else {
+                ITERATE (vector<IServer_ConnectionBase*>, it, timer_requests)
+                {
+                    CreateRequest(*it, (EServIO_Event) -1, timeout);
+                }
+            }
+            continue;
+        }
+
+        ITERATE (vector<CSocketAPI::SPoll>, it, polls) {
+            if (!it->m_REvent) continue;
+            IServer_ConnectionBase* conn_base =
+                dynamic_cast<IServer_ConnectionBase*>(it->m_Pollable);
+            _ASSERT(conn_base);
+            CreateRequest(conn_base,
+                          IOEventToServIOEvent(it->m_REvent),
+                          m_Parameters->idle_timeout);
+        }
+    }
+}
+
 void CServer::Run(void)
 {
     StartListening(); // detect unavailable ports ASAP
@@ -368,90 +473,20 @@ void CServer::Run(void)
     m_ThreadPool.reset(new CStdPoolOfThreads(m_Parameters->max_threads,
                                              kMax_UInt,
                                              m_Parameters->spawn_threshold));
-    try {
-        m_ThreadPool->Spawn(m_Parameters->init_threads);
-
-        Init();
-
-        vector<CSocketAPI::SPoll> polls;
-        size_t     count;
-        typedef vector<IServer_ConnectionBase*> TConnsList;
-        TConnsList timer_requests;
-        TConnsList revived_conns;
-        STimeout   timer_timeout;
-        const STimeout* timeout;
-
-        while (!ShutdownRequested()) {
-            bool has_timer = m_ConnectionPool->GetPollAndTimerVec(
-                             polls, timer_requests, &timer_timeout, revived_conns);
-
-            ITERATE(TConnsList, it, revived_conns) {
-                CreateRequest(*it,
-                              IOEventToServIOEvent((*it)->GetEventsToPollFor(NULL)),
-                              m_Parameters->idle_timeout);
-            }
-
-            timeout = m_Parameters->accept_timeout;
-
-            if (has_timer &&
-                (timeout == kDefaultTimeout ||
-                 timeout == kInfiniteTimeout ||
-                 timer_timeout < *timeout)) {
-                timeout = &timer_timeout;
-            }
-
-            EIO_Status status = CSocketAPI::Poll(polls, timeout, &count);
-
-            if (status != eIO_Success  &&  status != eIO_Timeout) {
-                int x_errno = errno;
-                const char* temp = IO_StatusStr(status);
-                string ststr(temp
-                             ? temp
-                             : NStr::UIntToString((unsigned int) status));
-                string erstr;
-                if (x_errno) {
-                    erstr = ", {" + NStr::IntToString(x_errno);
-                    if (temp  &&  *temp) {
-                        erstr += ',';
-                        erstr += temp;
-                    }
-                    erstr += '}';
-                }
-                ERR_POST_X(8, Critical << "Poll failed with status "
-                           << ststr << erstr);
-                continue;
-            }
-
-            if (count == 0) {
-                if (timeout != &timer_timeout) {
-                    ProcessTimeout();
-                }
-                else {
-                    ITERATE (vector<IServer_ConnectionBase*>, it, timer_requests)
-                    {
-                        CreateRequest(*it, (EServIO_Event) -1, timeout);
-                    }
-                }
-                continue;
-            }
-
-            ITERATE (vector<CSocketAPI::SPoll>, it, polls) {
-                if (!it->m_REvent) continue;
-                IServer_ConnectionBase* conn_base =
-                    dynamic_cast<IServer_ConnectionBase*>(it->m_Pollable);
-                _ASSERT(conn_base);
-                CreateRequest(conn_base,
-                              IOEventToServIOEvent(it->m_REvent),
-                              m_Parameters->idle_timeout);
-            }
+    if (TParamServerCatchExceptions::GetDefault()) {
+        try {
+            x_DoRun();
+        } catch (CException& ex) {
+            ERR_POST(ex);
+            // Avoid collateral damage from destroying the thread pool
+            // while worker threads are active (or, worse, initializing).
+            m_ThreadPool->KillAllThreads(true);
+            m_ConnectionPool->Erase();
+            throw;
         }
-    } catch (CException& ex) {
-        ERR_POST(ex);
-        // Avoid collateral damage from destroying the thread pool
-        // while worker threads are active (or, worse, initializing).
-        m_ThreadPool->KillAllThreads(true);
-        m_ConnectionPool->Erase();
-        throw;
+    }
+    else {
+        x_DoRun();
     }
 
     // We need to kill all processing threads first, so that there

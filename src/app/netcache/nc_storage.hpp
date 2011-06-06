@@ -50,22 +50,6 @@
 BEGIN_NCBI_SCOPE
 
 
-/// Exception which is thrown from all CNCBlobStorage-related classes
-class CNCBlobStorageException : public CException
-{
-public:
-    enum EErrCode {
-        eUnknown,         ///< Unknown error
-        eWrongConfig,     ///< Wrong file name given in storage settings
-        eCorruptedDB,     ///< Detected corruption of the database
-        eWrongBlock       ///< Block() method is called when it cannot be
-                          ///< executed
-    };
-    virtual const char* GetErrCodeString(void) const;
-    NCBI_EXCEPTION_DEFAULT(CNCBlobStorageException, CException);
-};
-
-
 class CNCBlobStorage;
 
 
@@ -97,16 +81,11 @@ private:
 class CNCBlobStorage : public INCBlockedOpListener
 {
 public:
-    /// Create blob storage or connect to existing one
-    ///
-    /// @param reg
-    ///   Registry to read object configuration
-    /// @param section
-    ///   Section name inside registry to read configuration from
-    /// @param reinit_mode
-    ///   Flag for necessary reinitialization of the database
-    CNCBlobStorage(bool do_reinit);
+    CNCBlobStorage(void);
     virtual ~CNCBlobStorage(void);
+
+    bool Initialize(bool do_reinit);
+    void Finalize(void);
 
     bool IsCleanStart(void);
     bool NeedStopWrite(void);
@@ -116,16 +95,16 @@ public:
     /// Unblock() is called. Method will return immediately and will not wait
     /// for already locked blobs to be unlocked - IsBlockActive() call should
     /// be used to understand if all operations on the storage are freezed.
-    void Block(void);
+    //void Block(void);
     /// Unblock the storage and allow it to continue work as usual.
-    void Unblock(void);
+    //void Unblock(void);
     /// Check if storage blocking is completed and all operations with storage
     /// are stopped.
-    bool IsBlockActive(void);
+    //bool IsBlockActive(void);
     /// Reinitialize storage database.
     /// Method can be called only when storage is completely blocked and all
     /// operations with it are finished.
-    void ReinitializeCache(const string& cache_key);
+    //void ReinitializeCache(const string& cache_key);
     /// Re-read configuration of the storage
     ///
     /// @param reg
@@ -133,7 +112,7 @@ public:
     ///   changed on the fly are set to old values in the registry.
     /// @param section
     ///   Section name inside registry to read configuration from
-    void Reconfigure(void);
+    //void Reconfigure(void);
 
     /// Print usage statistics for the storage
     void PrintStat(CPrintTextProxy& proxy);
@@ -187,7 +166,7 @@ public:
     ///   Pointer to the list receiving chunks ids
     void ReadChunkIds(SNCBlobVerData* ver_data);
     /// Write meta information about blob into the database.
-    void WriteBlobInfo(const string& blob_key, SNCBlobVerData* ver_data);
+    bool WriteBlobInfo(const string& blob_key, SNCBlobVerData* ver_data);
     ///
     bool UpdateBlobInfo(const string& blob_key, SNCBlobVerData* ver_data);
     /// Delete blob from database.
@@ -198,9 +177,9 @@ public:
                        TNCChunkId     chunk_id,
                        CNCBlobBuffer* buffer);
     ///
-    void WriteSingleChunk(SNCBlobVerData* blob_info, const CNCBlobBuffer* data);
+    bool WriteSingleChunk(SNCBlobVerData* blob_info, const CNCBlobBuffer* data);
     ///
-    void WriteNextChunk(SNCBlobVerData* blob_info, const CNCBlobBuffer* data);
+    bool WriteNextChunk(SNCBlobVerData* blob_info, const CNCBlobBuffer* data);
 
     ///
     void DeleteBlobKey(Uint2 slot, const string& key);
@@ -271,18 +250,18 @@ private:
 
     /// Check if storage have been already stopped. Throw special exception in
     /// this case.
-    void x_CheckStopped(void);
+    //void x_CheckStopped(void);
     /// Implementation of background thread. Mainly garbage collector plus
     /// caching of database data at the beginning of the storage work.
     void x_DoBackgroundWork(void);
 
     /// Read all storage parameters from registry
-    void x_ReadStorageParams(void);
+    bool x_ReadStorageParams(void);
     /// Read from registry only those parameters that can be changed on the
     /// fly, without re-starting the application.
-    void x_ReadVariableParams(void);
+    bool x_ReadVariableParams(void);
     ///
-    void x_EnsureDirExist(const string& dir_name);
+    bool x_EnsureDirExist(const string& dir_name);
     /// Make name of the index file in the storage
     string x_GetIndexFileName(void);
     /// Make name of file with meta-information in given database part
@@ -300,7 +279,7 @@ private:
     ///   TRUE if guard file existed and was unlocked meaning that previous
     ///   instance of NetCache was terminated inappropriately. FALSE if file
     ///   didn't exist so that this storage instance is a clean start.
-    void x_LockInstanceGuard(void);
+    bool x_LockInstanceGuard(void);
     /// Unlock and delete specially named file used to ensure only one
     /// instance working with database.
     /// Small race exists here now which cannot be resolved for Windows
@@ -316,7 +295,7 @@ private:
     ///   was opened with an error then it's deleted and created empty. In
     ///   this case *reinit_mode variable is changed to avoid any later
     ///   reinits.
-    void x_OpenIndexDB(void);
+    bool x_OpenIndexDB(void);
     /// Check if database need re-initialization depending on different
     /// parameters and state of the guard file protecting from several
     /// instances running on the same database.
@@ -327,7 +306,7 @@ private:
     ///   Mode of reinitialization requested in configuration and command line
     /// @param reinit_dirty
     ///   Flag if database should be reinitialized if guard file existed
-    void x_ReinitializeStorage(void);
+    bool x_ReinitializeStorage(void);
     /// Reinitialize database cleaning all data from it.
     /// Only database is cleaned, internal cache is left intact.
     void x_CleanDatabase(void);
@@ -352,7 +331,7 @@ private:
     bool x_UpdBlobInfoNoMove(const string& blob_key, SNCBlobVerData* ver_data);
     bool x_UpdBlobInfoSingleChunk(const string& blob_key, SNCBlobVerData* ver_data);
     bool x_UpdBlobInfoMultiChunk(const string& blob_key, SNCBlobVerData* ver_data);
-    void x_WriteChunkData(TNCDBFileId     file_id,
+    bool x_WriteChunkData(TNCDBFileId     file_id,
                           TNCChunkId      chunk_id,
                           const CNCBlobBuffer* data,
                           SNCBlobVerData* ver_data,
@@ -360,9 +339,9 @@ private:
 
     /// Do set of procedures creating and initializing new database part and
     /// switching storage to using new database part as current one.
-    void x_CreateNewFile(ENCDBFileType file_type, unsigned int part_num);
+    bool x_CreateNewFile(ENCDBFileType file_type, unsigned int part_num);
     ///
-    void x_CreateNewCurFiles(void);
+    bool x_CreateNewCurFiles(void);
     ///
     void x_DeleteDBFile(TNCDBFilesMap::iterator files_it);
 
@@ -597,14 +576,14 @@ CNCBlobStorage::NeedStopWrite(void)
 {
     return m_IsStopWrite;
 }
-
+/*
 inline bool
 CNCBlobStorage::IsBlockActive(void)
 {
     _ASSERT(m_Blocked);
     return m_CntLocksToWait == 0;
 }
-
+*/
 inline void
 CNCBlobStorage::x_IncFilePartNum(TNCDBFileId& file_num)
 {
@@ -631,34 +610,14 @@ CNCBlobStorage::x_GetNextChunkId(void)
     return m_LastChunkId;
 }
 
-inline void
+inline bool
 CNCBlobStorage::WriteSingleChunk(SNCBlobVerData*      ver_data,
                                  const CNCBlobBuffer* data)
 {
-    x_WriteChunkData(ver_data->coords.data_id,
-                     ver_data->coords.blob_id,
-                     data, ver_data, true);
+    return x_WriteChunkData(ver_data->coords.data_id,
+                            ver_data->coords.blob_id,
+                            data, ver_data, true);
 }
-
-inline Uint8
-CNCBlobStorage::GetMaxSyncLogRecNo(void)
-{
-    CFastMutexGuard guard(m_IndexLock);
-    return m_IndexDB->GetMaxSyncLogRecNo();
-}
-
-inline void
-CNCBlobStorage::SetMaxSyncLogRecNo(Uint8 last_rec_no)
-{
-    CFastMutexGuard guard(m_IndexLock);
-    try {
-        m_IndexDB->SetMaxSyncLogRecNo(last_rec_no);
-    }
-    catch (CSQLITE_Exception& ex) {
-        ERR_POST(Critical << "Error setting max_sync_log_rec_no: " << ex);
-    }
-}
-
 
 END_NCBI_SCOPE
 

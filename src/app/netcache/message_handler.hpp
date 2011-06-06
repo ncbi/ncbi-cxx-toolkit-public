@@ -78,6 +78,7 @@ public:
     ///
     /// @sa Flush
     bool IsWriteDataPending(void) const;
+    bool HasError(void) const;
 
     /// Read data from socket to the buffer.
     ///
@@ -186,6 +187,7 @@ private:
     size_t      m_WriteDataPos;
     /// Types of end-of-line bytes already read from buffer
     TCRLF_Bytes m_CRLFMet;
+    bool        m_HasError;
 };
 
 
@@ -267,9 +269,9 @@ public:
     bool x_DoCmd_GetConfig(void);
     bool x_DoCmd_GetServerStats(void);
     bool x_DoCmd_Reinit(void);
-    bool x_DoCmd_ReinitImpl(void);
+    //bool x_DoCmd_ReinitImpl(void);
     bool x_DoCmd_Reconf(void);
-    bool x_DoCmd_ReconfImpl(void);
+    //bool x_DoCmd_ReconfImpl(void);
     bool x_DoCmd_Put2(void);
     bool x_DoCmd_Put3(void);
     bool x_DoCmd_Get(void);
@@ -285,8 +287,6 @@ public:
     bool x_DoCmd_SyncBlobsList(void);
     bool x_DoCmd_CopyPut(void);
     bool x_DoCmd_SyncPut(void);
-    bool x_DoCmd_CopyRemove(void);
-    bool x_DoCmd_SyncRemove(void);
     bool x_DoCmd_CopyProlong(void);
     bool x_DoCmd_SyncProlong(void);
     bool x_DoCmd_SyncGet(void);
@@ -341,7 +341,7 @@ private:
                                ///< progress
         eWaitForDeferredTask,
         ePasswordFailed,       ///< Processing of bad password is needed
-        eWaitForStorageBlock,  ///< Locking of all storages in the server is
+        //eWaitForStorageBlock,  ///< Locking of all storages in the server is
                                ///< in progress
         eReadBlobSignature,    ///< Reading of signature in blob transfer
                                ///< protocol
@@ -406,7 +406,7 @@ private:
     bool x_ReadAuthMessage(void);
     /// Check whether current client name is administrative client, throw
     /// exception if not.
-    void x_CheckAdminClient(void);
+    bool x_CheckAdminClient(void);
     /// Read command and start it if it's available
     bool x_ReadCommand(void);
     /// Process current command
@@ -418,7 +418,7 @@ private:
     /// Process the situation when password provided to access blob is incorrect
     bool x_ProcessBadPassword(void);
     /// Process "waiting" for blocking of all storages in the server
-    bool x_WaitForStorageBlock(void);
+    //bool x_WaitForStorageBlock(void);
     /// Read signature in blob transfer protocol
     bool x_ReadBlobSignature(void);
     /// Read length of chunk in blob transfer protocol
@@ -444,11 +444,11 @@ private:
     void x_PrintRequestStart(const SParsedCmd& cmd,
                              auto_ptr<CDiagContext_Extra>& diag_extra);
     /// Start command returned by protocol parser
-    void x_StartCommand(SParsedCmd& cmd);
+    bool x_StartCommand(SParsedCmd& cmd);
     ///
     void x_WaitForWouldBlock(void);
     /// Command execution is finished, do cleanup work
-    void x_FinishCommand(void);
+    void x_FinishCommand(bool do_sock_write);
     /// Start reading blob from socket
     void x_StartReadingBlob(void);
     /// Client finished sending blob, do cleanup
@@ -460,7 +460,6 @@ private:
     /// connection closed also inside this method.
     AutoPtr<CConn_SocketStream> x_PrepareSockStream(void);
 
-    SNCSyncEvent* x_AddRemoveEvent(void);
     void x_ProlongBlobDeadTime(void);
     void x_ProlongVersionLife(void);
     void x_QuickFinishSyncCommand(void);
@@ -706,31 +705,6 @@ private:
     CRef<CRequestContext> m_ReqCtx;
     string          m_Key;
     Uint8           m_EventRecNo;
-};
-
-
-class CNCRemoveOnPeers_Task : public CStdRequest
-{
-public:
-    CNCRemoveOnPeers_Task(CNCMessageHandler* handler,
-                          const TServersList& servers,
-                          Uint1 quorum,
-                          CRequestContext* req_ctx,
-                          const string& key,
-                          SNCSyncEvent* evt);
-
-private:
-    virtual void Process(void);
-    virtual void OnStatusChange(EStatus /* old */, EStatus new_status);
-
-
-    CNCMessageHandler* m_Handler;
-    TServersList m_Servers;
-    Uint1        m_Quorum;
-    CRef<CRequestContext> m_ReqCtx;
-    string       m_Key;
-    Uint8        m_OrigRecNo;
-    Uint8        m_OrigTime;
 };
 
 

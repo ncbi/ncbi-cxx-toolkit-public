@@ -44,7 +44,7 @@ public:
     /// Method attaches memory manager to SQLite and starts background thread
     /// necessary for gathering statistics.
     /// Method must be called before CSQLITE_Global::Initialize().
-    static void InitializeApp(void);
+    static bool InitializeApp(void);
     /// Do finalization steps when application has finished.
     /// This must be called to stop background thread started in
     /// InitializeApp().
@@ -1604,7 +1604,7 @@ public:
     /// Method is intended for stuff that cannot be executed in x_Initialize()
     /// because it needs all corelib (at least) to be initialized before. Now
     /// method is needed only for running manager's background thread.
-    static void RunLateInit(void);
+    static bool RunLateInit(void);
     /// Prepare memory manager to stop when application finished its work.
     /// Now method is needed only to stop manager's background thread.
     static void PrepareToStop(void);

@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 typedef map<Uint8, SDistribution*>  TDistributiorsMap;
 static TDistributiorsMap            s_Distributors;
 static CAtomicCounter               s_TotalQueueSize;
-static FILE*                        s_LogFile;
+static FILE*                        s_LogFile = NULL;
 CAtomicCounter        CNCMirroring::sm_TotalCopyRequests;
 CAtomicCounter        CNCMirroring::sm_CopyReqsRejected;
 
@@ -105,13 +105,6 @@ CNCMirroringThread::Main(void)
                 send_res = CNetCacheServer::SendBlobToPeer(
                            server_id, event->key, event->orig_rec_no, false);
                 break;
-            case eSyncRemove:
-                send_res = CNetCacheServer::RemoveBlobOnPeer(
-                                            server_id, event->key,
-                                            event->orig_rec_no,
-                                            event->orig_time,
-                                            false);
-                break;
             case eSyncProlong:
                 send_res = CNetCacheServer::ProlongBlobOnPeer(
                                             server_id, event->key,
@@ -131,7 +124,7 @@ CNCMirroringThread::Main(void)
 }
 
 
-void
+bool
 CNCMirroring::Initialize(void)
 {
     const TNCPeerList& peers = CNCDistributionConf::GetPeers();
@@ -147,16 +140,22 @@ CNCMirroring::Initialize(void)
 
         for (Uint1 i = 0; i < small_prefered; ++i) {
             distr->handling_threads[i] = new CNCMirroringThread(server_id, distr, eMirrorSmallPrefered);
-            distr->handling_threads[i]->Run();
         }
         for (Uint1 i = 0; i < small_exclusive; ++i) {
             Uint1 ind = small_prefered + i;
             distr->handling_threads[ind] = new CNCMirroringThread(server_id, distr, eMirrorSmallExclusive);
-            distr->handling_threads[ind]->Run();
         }
         for (Uint1 i = small_prefered + small_exclusive; i < cnt_threads; ++i) {
             distr->handling_threads[i] = new CNCMirroringThread(server_id, distr, eMirrorLargePrefered);
-            distr->handling_threads[i]->Run();
+        }
+        try {
+            for (Uint1 i = 0; i < cnt_threads; ++i) {
+                distr->handling_threads[i]->Run();
+            }
+        }
+        catch (CThreadException& ex) {
+            ERR_POST(Critical << ex);
+            return false;
         }
     }
 
@@ -164,6 +163,7 @@ CNCMirroring::Initialize(void)
     s_LogFile = fopen(CNCDistributionConf::GetMirroringSizeFile().c_str(), "a");
     sm_TotalCopyRequests.Set(0);
     sm_CopyReqsRejected.Set(0);
+    return true;
 }
 
 void
@@ -176,10 +176,15 @@ CNCMirroring::Finalize(void)
             it->second->handling_threads[i]->RequestFinish();
         }
     }
-    ITERATE(TDistributiorsMap, it, s_Distributors) {
-        for (Uint1 i = 0; i < cnt_threads; ++i) {
-            it->second->handling_threads[i]->Join();
+    try {
+        ITERATE(TDistributiorsMap, it, s_Distributors) {
+            for (Uint1 i = 0; i < cnt_threads; ++i) {
+                it->second->handling_threads[i]->Join();
+            }
         }
+    }
+    catch (CThreadException& ex) {
+        ERR_POST(Critical << ex);
     }
 
     if (s_LogFile)
@@ -213,7 +218,7 @@ s_QueueEvent(SDistribution* distr, SNCMirrorEvent* event, Uint8 size)
         }
     }
     else {
-        LOG_POST("Mirroring event deleted");
+        //INFO_POST("Mirroring event deleted");
         CNCMirroring::sm_CopyReqsRejected.Add(1);
         delete event;
     }
@@ -231,22 +236,6 @@ CNCMirroring::BlobWriteEvent(const string& key,
         SDistribution* distr = s_Distributors[srv_id];
         SNCMirrorEvent* event = new SNCMirrorEvent(eSyncWrite, key, orig_rec_no);
         s_QueueEvent(distr, event, size);
-    }
-}
-
-void
-CNCMirroring::BlobRemoveEvent(const string& key,
-                              Uint2 slot,
-                              Uint8 orig_rec_no,
-                              Uint8 orig_time)
-{
-    const TServersList& servers = CNCDistributionConf::GetRawServersForSlot(slot);
-    ITERATE(TServersList, it_srv, servers) {
-        Uint8 srv_id = *it_srv;
-        SDistribution* distr = s_Distributors[srv_id];
-        SNCMirrorEvent* event = new SNCMirrorEvent(eSyncRemove, key,
-                                                   orig_rec_no, orig_time);
-        s_QueueEvent(distr, event, 0);
     }
 }
 

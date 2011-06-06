@@ -166,7 +166,7 @@ protected:
     ///
     void DeleteBlobInfo(TNCBlobId blob_id);
     ///
-    void DeleteAllBlobInfos(const string& min_key, const string& max_key);
+    //void DeleteAllBlobInfos(const string& min_key, const string& max_key);
 
     /// Get ids for all chunks of the given blob
     void GetChunkIds(TNCBlobId blob_id, TNCChunksList* id_list);
@@ -256,7 +256,7 @@ public:
     using CNCDBFile::WriteBlobInfo;
     using CNCDBFile::UpdateBlobInfo;
     using CNCDBFile::DeleteBlobInfo;
-    using CNCDBFile::DeleteAllBlobInfos;
+    //using CNCDBFile::DeleteAllBlobInfos;
 
     using CNCDBFile::GetChunkIds;
     using CNCDBFile::CreateChunk;
@@ -305,7 +305,7 @@ class CNCFileSystem
 {
 public:
     /// Initialize virtual file system
-    static void Initialize(void);
+    static bool Initialize(void);
     /// Finalize virtual file system.
     /// Method will wait until all background writings to disk are finished.
     static void Finalize(void);

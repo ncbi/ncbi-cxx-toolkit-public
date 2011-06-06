@@ -114,8 +114,8 @@ s_ReadHeader(FILE* file)
 
     // Read the number of pairs server <--> slot
     if (fread(&count, sizeof(count), 1, file) != 1) {
-        ERR_POST("Cannot read the number of saved pairs(server <--> slot) "
-                 "with the last synced record numbers. Invalid file?");
+        ERR_POST(Critical << "Cannot read the number of saved pairs(server <--> slot) "
+                             "with the last synced record numbers. Invalid file?");
         return false;
     }
 
@@ -123,7 +123,7 @@ s_ReadHeader(FILE* file)
         SFileServRecord record;
 
         if (fread(&record, sizeof(record), 1, file) != 1) {
-            ERR_POST("Cannot read last synced record numbers. Invalid file?");
+            ERR_POST(Critical << "Cannot read last synced record numbers. Invalid file?");
             return false;
         }
         SSrvSyncedData& sync_data = s_SyncedData[record.key_server]
@@ -265,7 +265,7 @@ s_GetSlotData(Uint2 slot)
 
 // Provides the minimum record number till which the synchronization is done
 // with all the servers
-static inline Uint8
+static Uint8
 s_GetMinLocalSyncedRecordNo(Uint2 slot, const SSlotData& data)
 {
     CFastMutexGuard guard(s_GlobalLock);
@@ -286,119 +286,81 @@ s_GetMinLocalSyncedRecordNo(Uint2 slot, const SSlotData& data)
 
 
 // The prolong event is found in the src interval
-static void onProlong( const SBlobEvent &  src_event,
-                       const SBlobEvent &  other_event,
-                       TSyncEvents *       diff )
+static void
+s_ProcessProlong(const SBlobEvent& src_event,
+                 const SBlobEvent& other_event,
+                 TSyncEvents*      diff)
 {
-    if ( other_event.prolong_event != NULL )
-    {
-        if ( other_event.prolong_event->orig_server == src_event.prolong_event->orig_server &&
-             other_event.prolong_event->orig_rec_no == src_event.prolong_event->orig_rec_no )
-            return;
-
-        if ( other_event.prolong_event->isOlder( *src_event.prolong_event )
-             && ((src_event.wr_or_rm_event == NULL)
-                 || (src_event.wr_or_rm_event != NULL && other_event.wr_or_rm_event != NULL
-                     && other_event.wr_or_rm_event->orig_server == src_event.wr_or_rm_event->orig_server &&
-                        other_event.wr_or_rm_event->orig_rec_no == src_event.wr_or_rm_event->orig_rec_no)
-                 || (src_event.wr_or_rm_event != NULL && other_event.wr_or_rm_event != NULL
-                     && src_event.wr_or_rm_event->isOlder(*other_event.wr_or_rm_event))) )
+    if (other_event.prolong_event != NULL) {
+        if (other_event.prolong_event->orig_server == src_event.prolong_event->orig_server
+            &&  other_event.prolong_event->orig_rec_no == src_event.prolong_event->orig_rec_no)
         {
-            diff->push_back( src_event.prolong_event );
+            return;
         }
 
-        return;
-    }
-
-    if ( other_event.wr_or_rm_event != NULL )
-    {
-        if ( other_event.wr_or_rm_event->event_type == eSyncWrite )
+        if (other_event.prolong_event->isOlder(*src_event.prolong_event)
+            &&  ((src_event.wr_or_rm_event == NULL)
+                 ||  (src_event.wr_or_rm_event != NULL
+                      &&  other_event.wr_or_rm_event != NULL
+                      &&  other_event.wr_or_rm_event->orig_server == src_event.wr_or_rm_event->orig_server
+                      &&  other_event.wr_or_rm_event->orig_rec_no == src_event.wr_or_rm_event->orig_rec_no)
+                 ||  (src_event.wr_or_rm_event != NULL
+                      &&  other_event.wr_or_rm_event != NULL
+                      &&  src_event.wr_or_rm_event->isOlder(*other_event.wr_or_rm_event))))
         {
-            if ( other_event.wr_or_rm_event->isOlder( *src_event.prolong_event )
-                 && ((src_event.wr_or_rm_event == NULL)
-                     || (src_event.wr_or_rm_event != NULL
-                         && other_event.wr_or_rm_event->orig_server == src_event.wr_or_rm_event->orig_server &&
-                            other_event.wr_or_rm_event->orig_rec_no == src_event.wr_or_rm_event->orig_rec_no)
-                     || (src_event.wr_or_rm_event != NULL
-                         && src_event.wr_or_rm_event->isOlder(*other_event.wr_or_rm_event))) )
+            diff->push_back(src_event.prolong_event);
+        }
+    }
+    else if (other_event.wr_or_rm_event != NULL) {
+        if (other_event.wr_or_rm_event->event_type == eSyncWrite) {
+            if (other_event.wr_or_rm_event->isOlder(*src_event.prolong_event)
+                &&  ((src_event.wr_or_rm_event == NULL)
+                     ||  (src_event.wr_or_rm_event != NULL
+                          &&  other_event.wr_or_rm_event->orig_server == src_event.wr_or_rm_event->orig_server
+                          &&  other_event.wr_or_rm_event->orig_rec_no == src_event.wr_or_rm_event->orig_rec_no)
+                     ||  (src_event.wr_or_rm_event != NULL
+                          &&  src_event.wr_or_rm_event->isOlder(*other_event.wr_or_rm_event))))
             {
-                diff->push_back( src_event.prolong_event );
+                diff->push_back(src_event.prolong_event);
             }
         }
     }
-    return;
 }
 
-// The write event is found in the src interval
-static void onWrite( SNCSyncEvent *      src_event,
-                     const SBlobEvent &  other_event,
-                     TSyncEvents *       diff )
+static void
+s_ProcessWrite(SNCSyncEvent*     src_event,
+               const SBlobEvent& other_event,
+               TSyncEvents*      diff)
 {
-    if ( other_event.wr_or_rm_event != NULL )
-    {
-        // Here: if there is write or remove it does not matter if there was
+    if (other_event.wr_or_rm_event != NULL) {
+        // If there is write or remove it does not matter if there was
         // prolong or not
-        if ( other_event.wr_or_rm_event->orig_server == src_event->orig_server &&
-             other_event.wr_or_rm_event->orig_rec_no == src_event->orig_rec_no )
-            return;     // The same event
-
-        if ( other_event.wr_or_rm_event->isOlder( *src_event ) )
+        if ((other_event.wr_or_rm_event->orig_server != src_event->orig_server
+             ||  other_event.wr_or_rm_event->orig_rec_no != src_event->orig_rec_no)
+            &&  other_event.wr_or_rm_event->isOlder(*src_event))
         {
             // Take the most recent event
-            diff->push_back( src_event );
+            diff->push_back(src_event);
             return;
         }
     }
-    else
-    {
-        // Here: this is lone prolong
-        diff->push_back( src_event );
+    else {
+        // This is lone prolong
+        diff->push_back(src_event);
     }
-    return;
-}
-
-// The remove event is found in the src interval
-static void onRemove( SNCSyncEvent *      src_event,
-                      const SBlobEvent &  other_event,
-                      TSyncEvents *       diff )
-{
-    if ( other_event.wr_or_rm_event != NULL )
-    {
-        if ( other_event.wr_or_rm_event->orig_server == src_event->orig_server &&
-             other_event.wr_or_rm_event->orig_rec_no == src_event->orig_rec_no )
-            return;     // The same event
-
-        // Note: strictly speaking if it was remove on the other side then
-        // nothing could be taken because it does not matter when a blob was
-        // removed. This situation (rm on both sides) seems to be very rare
-        // though so we save CPU time on one comparison.
-
-        if ( other_event.wr_or_rm_event->isOlder( *src_event ) )
-        {
-            diff->push_back( src_event );
-            return;
-        }
-    }
-    else
-    {
-        // Lone prolong - take write
-        diff->push_back( src_event );
-    }
-    return;
 }
 
 
 static bool
-custom_find( const TReducedSyncEvents &            container,
-             TReducedSyncEvents::const_iterator &  current_iterator,
-             const string &                        key )
+s_SpecialFind(const TReducedSyncEvents& container,
+              TReducedSyncEvents::const_iterator& current_iterator,
+              const string& key)
 {
     // It is known that the container is sorted by keys, so
-    for ( ; current_iterator != container.end(); ++current_iterator )
-    {
-        if ( current_iterator->first == key )
+    for (; current_iterator != container.end(); ++current_iterator) {
+        if (current_iterator->first == key)
             return true;
-        if ( current_iterator->first > key )
+        if (current_iterator->first > key)
             return false;
     }
     return false;
@@ -435,48 +397,47 @@ s_CompareEvents(const TReducedSyncEvents& src,
     Uint8 time_limit = now - CNCDistributionConf::GetPeriodicSyncHeadTime();
     TReducedSyncEvents::const_iterator other_event = other.begin();
 
-    for ( ; k != src_end; ++k )
-    {
-        Uint8  op_rec_no = k->second.getMaxRecNoWithinTimeLimit( time_limit );
-        if ( op_rec_no <= start_rec_no )
+    for (; k != src_end; ++k) {
+        Uint8 op_rec_no = k->second.getMaxRecNoWithinTimeLimit(time_limit);
+        if (op_rec_no <= start_rec_no)
             continue;
 
         // Update the synced record #
-        if ( op_rec_no > max_rec_no )
+        if (op_rec_no > max_rec_no)
             max_rec_no = op_rec_no;
 
-        if ( custom_find( other, other_event, k->first ) == false )
-        {
+        if (s_SpecialFind(other, other_event, k->first) == false) {
             // No operations found with this blob - take the ops
-            if ( k->second.wr_or_rm_event != NULL &&
-                 (k->second.wr_or_rm_event->rec_no > start_rec_no) )
-                diff->push_back( k->second.wr_or_rm_event );
-            else if ( k->second.prolong_event != NULL &&
-                     (k->second.prolong_event->local_time < time_limit) )
-                diff->push_back( k->second.prolong_event );
+            if (k->second.wr_or_rm_event != NULL
+                &&  (k->second.wr_or_rm_event->rec_no > start_rec_no))
+            {
+                diff->push_back(k->second.wr_or_rm_event);
+            }
+            else if (k->second.prolong_event != NULL
+                     &&  (k->second.prolong_event->local_time < time_limit))
+            {
+                diff->push_back(k->second.prolong_event);
+            }
             continue;
         }
 
         // Found on the other side, let's make the decision
-        if ( k->second.wr_or_rm_event != NULL &&
-             (k->second.wr_or_rm_event->rec_no > start_rec_no) )
+        if (k->second.wr_or_rm_event != NULL
+            &&  (k->second.wr_or_rm_event->rec_no > start_rec_no))
         {
-            if ( k->second.wr_or_rm_event->event_type == eSyncWrite )
-                onWrite( k->second.wr_or_rm_event, other_event->second, diff );
-            else
-                onRemove( k->second.wr_or_rm_event, other_event->second, diff );
+            s_ProcessWrite(k->second.wr_or_rm_event, other_event->second, diff);
         }
-        if ( k->second.prolong_event != NULL &&
-             (k->second.prolong_event->local_time < time_limit) )
-            onProlong( k->second, other_event->second, diff );
+        if (k->second.prolong_event != NULL
+            &&  (k->second.prolong_event->local_time < time_limit))
+        {
+            s_ProcessProlong(k->second, other_event->second, diff);
+        }
     }
 
-    if ( max_rec_no != 0 )
-        * synced_rec_no = max_rec_no;
+    if (max_rec_no != 0)
+        *synced_rec_no = max_rec_no;
     else
-        * synced_rec_no = start_rec_no;
-
-    return;
+        *synced_rec_no = start_rec_no;
 }
 
 
@@ -525,8 +486,8 @@ CNCSyncLog::Initialize(bool need_read_saved, Uint8 start_log_rec_no)
 
     // Check for the errors
     if (!feof(log_file)) {
-        ERR_POST("Cannot read records from " << file_name
-                                             << ". Invalid file?");
+        ERR_POST(Critical << "Cannot read records from " << file_name
+                          << ". Invalid file?");
 
         // Error occurred, the file is broken:
         // Reset the counter, clean the log container, set the start number.
@@ -560,7 +521,7 @@ CNCSyncLog::Finalize(void)
     const string& file_name = CNCDistributionConf::GetSyncLogFileName();
     FILE* log_file = fopen(file_name.c_str(), "w");
 
-    if ( !log_file )
+    if (!log_file)
         return false;
 
     // Avoid saving excessive data
@@ -568,11 +529,9 @@ CNCSyncLog::Finalize(void)
         Clean(it->first);
     }
 
-
-    // Save the last synched records
-    if ( ! s_WriteHeader( log_file ) )
-    {
-        fclose( log_file );
+    // Save the last synced records
+    if (!s_WriteHeader(log_file)) {
+        fclose(log_file);
         return false;
     }
 
@@ -713,7 +672,6 @@ CNCSyncLog::GetEventsList(Uint8  server,
         // ^- found
         SBlobEvent& blob_event = (*events)[evt->key];
         switch (evt->event_type) {
-        case eSyncRemove:
         case eSyncWrite:
             if (!blob_event.wr_or_rm_event)
                 blob_event.wr_or_rm_event = evt;

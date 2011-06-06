@@ -37,6 +37,10 @@
 BEGIN_NCBI_SCOPE
 
 
+NCBI_PARAM_DEF_EX(bool, ThreadPool, Catch_Unhandled_Exceptions, true, 0,
+                  THREADPOOL_CATCH_UNHANDLED_EXCEPTIONS);
+
+
 class CFatalRequest : public CStdRequest
 {
 protected:

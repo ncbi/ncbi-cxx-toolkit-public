@@ -2711,11 +2711,19 @@ CNCMMCentral::x_Initialize(void)
     sm_Initialized = true;
 }
 
-inline void
+inline bool
 CNCMMCentral::RunLateInit(void)
 {
     sm_BGThread = NewBGThread(&CNCMMCentral::x_DoBackgroundWork);
-    sm_BGThread->Run();
+    try {
+        sm_BGThread->Run();
+    }
+    catch (CThreadException& ex) {
+        ERR_POST(Critical << ex);
+        sm_BGThread = NULL;
+        return false;
+    }
+    return true;
 }
 
 inline void
@@ -2723,8 +2731,15 @@ CNCMMCentral::PrepareToStop(void)
 {
     sm_Mode = eNCFinalized;
     sm_WaitForStop.Post();
-    sm_BGThread->Join();
-    sm_BGThread = NULL;
+    if (sm_BGThread) {
+        try {
+            sm_BGThread->Join();
+        }
+        catch (CThreadException& ex) {
+            ERR_POST(Critical << ex);
+        }
+        sm_BGThread = NULL;
+    }
 }
 
 inline void
@@ -2921,11 +2936,8 @@ CNCMMDBCache::CNCMMDBCache(int page_size, bool purgeable)
       m_CacheSize(0),
       m_MaxKey(0)
 {
-    if (size_t(page_size) > kNCMMDBPageDataSize) {
+    if (size_t(page_size) > kNCMMDBPageDataSize)
         abort();
-        /*CNcbiDiag::DiagTrouble(DIAG_COMPILE_INFO,
-                               "Memory chunk size is inappropriate");*/
-    }
     //? CNCMMStats::OverheadMemAlloced(sizeof(*this));
 }
 
@@ -3244,13 +3256,19 @@ static sqlite3_mem_methods s_NCMallocMethods = {
 
 
 
-void
+bool
 CNCMemManager::InitializeApp(void)
 {
-    CSQLITE_Global::SetCustomPageCache(&s_NCDBCacheMethods);
-    CSQLITE_Global::SetCustomMallocFuncs(&s_NCMallocMethods);
+    try {
+        CSQLITE_Global::SetCustomPageCache(&s_NCDBCacheMethods);
+        CSQLITE_Global::SetCustomMallocFuncs(&s_NCMallocMethods);
+    }
+    catch (CSQLITE_Exception& ex) {
+        ERR_POST(Critical << ex);
+        return false;
+    }
 
-    CNCMMCentral::RunLateInit();
+    return CNCMMCentral::RunLateInit();
 }
 
 void

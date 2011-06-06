@@ -59,7 +59,7 @@ class CNCDistributionConf
 public:
     // Reads settings from an ini file and fills data structures which are
     // frequently used by other dudes
-    static void Initialize(Uint2 control_port);
+    static bool Initialize(Uint2 control_port);
     static void Finalize(void);
 
     // Provides the slot number for the given key

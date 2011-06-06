@@ -174,6 +174,7 @@ private:
     void CreateRequest(IServer_ConnectionBase* conn_base,
                        EServIO_Event event,
                        const STimeout* timeout);
+    void x_DoRun(void);
 
     friend class CNetCacheServer;
     CStdPoolOfThreads* GetThreadPool(void) { return m_ThreadPool.get(); }

@@ -39,7 +39,6 @@
 #include "message_handler.hpp"
 #include "netcache_version.hpp"
 #include "nc_stat.hpp"
-#include "error_codes.hpp"
 #include "nc_memory.hpp"
 #include "mirroring.hpp"
 #include "distribution_conf.hpp"
@@ -54,9 +53,6 @@
 
 
 BEGIN_NCBI_SCOPE
-
-
-#define NCBI_USE_ERRCODE_X  NetCache_Handler
 
 
 /// Definition of all NetCache commands
@@ -143,6 +139,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "cr_time", eNSPT_Int,  eNSPA_Required },
           { "ttl",     eNSPT_Int,  eNSPA_Required },
           { "dead",    eNSPT_Int,  eNSPA_Required },
+          { "exp",     eNSPT_Int,  eNSPA_Required },
           { "size",    eNSPT_Int,  eNSPA_Required },
           { "ver_ttl", eNSPT_Int,  eNSPA_Required },
           { "ver_dead",eNSPT_Int,  eNSPA_Required },
@@ -151,15 +148,6 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "log_rec", eNSPT_Int,  eNSPA_Required },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "COPY_REMOVE",
-        {&CNCMessageHandler::x_DoCmd_CopyRemove,
-            "COPY_REMOVE",   eWithBlob,        eNCDelete},
-        { { "cache",   eNSPT_Str,  eNSPA_Required },
-          { "key",     eNSPT_Str,  eNSPA_Required },
-          { "subkey",  eNSPT_Str,  eNSPA_Required },
-          { "log_time",eNSPT_Int,  eNSPA_Required },
-          { "log_srv", eNSPT_Int,  eNSPA_Required },
-          { "log_rec", eNSPT_Int,  eNSPA_Required } } },
     { "COPY_PROLONG",
         {&CNCMessageHandler::x_DoCmd_CopyProlong,
             "COPY_PROLONG",  eWithBlob,        eNCRead},
@@ -170,6 +158,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "cr_srv",  eNSPT_Int,  eNSPA_Required },
           { "cr_id",   eNSPT_Int,  eNSPA_Required },
           { "dead",    eNSPT_Int,  eNSPA_Required },
+          { "exp",     eNSPT_Int,  eNSPA_Required },
           { "ver_dead",eNSPT_Int,  eNSPA_Required },
           { "log_time",eNSPT_Int,  eNSPA_Optchain },
           { "log_srv", eNSPT_Int,  eNSPA_Optional },
@@ -202,7 +191,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "pass",    eNSPT_Str,  eNSPA_Optional } } },
     { "RMV2",
         {&CNCMessageHandler::x_DoCmd_Remove2,
-            "RMV2",          eWithBlob,        eNCDelete},
+            "RMV2",          eWithBlob,        eNCCreate},
         { { "key",     eNSPT_NCID, eNSPA_Required },
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
@@ -218,7 +207,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "pass",    eNSPT_Str,  eNSPA_Optional } } },
     { "REMO",
         {&CNCMessageHandler::x_DoCmd_Remove2,
-            "IC_REMOve",     eWithBlob,        eNCDelete},
+            "IC_REMOve",     eWithBlob,        eNCCreate},
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
           { "key",     eNSPT_Str,  eNSPA_Required },
           { "version", eNSPT_Int,  eNSPA_Required },
@@ -341,7 +330,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "pass",    eNSPT_Str,  eNSPA_Optional } } },
     { "PROXY_RMV",
         {&CNCMessageHandler::x_DoCmd_Remove2,
-            "PROXY_ReMoVe",  eWithBlob,        eNCDelete},
+            "PROXY_ReMoVe",  eWithBlob,        eNCCreate},
         { { "cache",   eNSPT_Str,  eNSPA_Required },
           { "key",     eNSPT_Str,  eNSPA_Required },
           { "subkey",  eNSPT_Str,  eNSPA_Required },
@@ -380,22 +369,12 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "cr_time", eNSPT_Int,  eNSPA_Required },
           { "ttl",     eNSPT_Int,  eNSPA_Required },
           { "dead",    eNSPT_Int,  eNSPA_Required },
+          { "exp",     eNSPT_Int,  eNSPA_Required },
           { "size",    eNSPT_Int,  eNSPA_Required },
           { "ver_ttl", eNSPT_Int,  eNSPA_Required },
           { "ver_dead",eNSPT_Int,  eNSPA_Required },
           { "cr_srv",  eNSPT_Int,  eNSPA_Required },
           { "cr_id",   eNSPT_Int,  eNSPA_Required },
-          { "log_rec", eNSPT_Int,  eNSPA_Required } } },
-    { "SYNC_REMOVE",
-        {&CNCMessageHandler::x_DoCmd_SyncRemove,
-            "SYNC_REMOVE",   eWithBlob,        eNCDelete},
-        { { "srv_id",  eNSPT_Int,  eNSPA_Required },
-          { "slot",    eNSPT_Int,  eNSPA_Required },
-          { "cache",   eNSPT_Str,  eNSPA_Required },
-          { "key",     eNSPT_Str,  eNSPA_Required },
-          { "subkey",  eNSPT_Str,  eNSPA_Required },
-          { "log_time",eNSPT_Int,  eNSPA_Required },
-          { "log_srv", eNSPT_Int,  eNSPA_Required },
           { "log_rec", eNSPT_Int,  eNSPA_Required } } },
     { "SYNC_PROLONG",
         {&CNCMessageHandler::x_DoCmd_SyncProlong,
@@ -409,6 +388,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "cr_srv",  eNSPT_Int,  eNSPA_Required },
           { "cr_id",   eNSPT_Int,  eNSPA_Required },
           { "dead",    eNSPT_Int,  eNSPA_Required },
+          { "exp",     eNSPT_Int,  eNSPA_Required },
           { "ver_dead",eNSPT_Int,  eNSPA_Required },
           { "log_time",eNSPT_Int,  eNSPA_Optchain },
           { "log_srv", eNSPT_Int,  eNSPA_Optional },
@@ -476,7 +456,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
         { { "key",     eNSPT_NCID, eNSPA_Required } } },
     { "REMOVE",
         {&CNCMessageHandler::x_DoCmd_Remove,
-            "REMOVE",        eWithBlob,        eNCDelete},
+            "REMOVE",        eWithBlob,        eNCCreate},
         { { "key",     eNSPT_NCID, eNSPA_Required } } },
     { "SHUTDOWN",
         {&CNCMessageHandler::x_DoCmd_Shutdown,       "SHUTDOWN"},
@@ -582,6 +562,7 @@ CBufferedSockReaderWriter::ResetSocket(CSocket* socket, unsigned int def_timeout
     m_ReadDataPos  = 0;
     m_WriteDataPos = 0;
     m_CRLFMet = eNone;
+    m_HasError = false;
     m_ReadBuff.resize(0);
     m_WriteBuff.resize(0);
     m_Socket = socket;
@@ -617,6 +598,12 @@ inline bool
 CBufferedSockReaderWriter::IsWriteDataPending(void) const
 {
     return m_WriteDataPos < m_WriteBuff.size();
+}
+
+inline bool
+CBufferedSockReaderWriter::HasError(void) const
+{
+    return m_HasError;
 }
 
 inline const void*
@@ -714,7 +701,9 @@ CBufferedSockReaderWriter::Read(void)
     case eIO_Closed:
         return m_ReadDataPos < m_ReadBuff.size();
     default:
-        NCBI_IO_CHECK(status);
+        ERR_POST("Error reading from socket: " << IO_StatusStr(status));
+        m_HasError = true;
+        return false;
     }
     m_ReadBuff.resize(m_ReadBuff.size() + cnt_read);
     x_ReadCRLF(false);
@@ -749,7 +738,7 @@ CBufferedSockReaderWriter::ReadLine(CTempString* line)
 void
 CBufferedSockReaderWriter::Flush(void)
 {
-    if (!m_Socket  ||  !IsWriteDataPending()) {
+    if (!m_Socket  ||  HasError()  ||  !IsWriteDataPending()) {
         return;
     }
 
@@ -769,9 +758,10 @@ CBufferedSockReaderWriter::Flush(void)
     case eIO_Interrupt:
         break;
     default:
-        NCBI_IO_CHECK(status);
-        break;
-    } // switch
+        ERR_POST("Error writing to socket: " << IO_StatusStr(status));
+        m_HasError = true;
+        return;
+    }
 
     m_WriteDataPos += n_written;
     x_CompactBuffer(m_WriteBuff, m_WriteDataPos);
@@ -799,8 +789,8 @@ CBufferedSockReaderWriter::WriteToSocket(const void* buff, size_t size)
     case eIO_Interrupt:
         break;
     default:
-        NCBI_IO_CHECK(status);
-        break;
+        ERR_POST("Error writing to socket: " << IO_StatusStr(status));
+        m_HasError = true;
     } // switch
 
     return n_written;
@@ -912,10 +902,11 @@ CNCMessageHandler::CNCMessageHandler(void)
 CNCMessageHandler::~CNCMessageHandler(void)
 {}
 
-inline void
+void
 CNCMessageHandler::OnOpen(void)
 {
-    _ASSERT(x_GetState() == eSocketClosed);
+    if (x_GetState() != eSocketClosed)
+        abort();
 
     m_Socket->DisableOSSendDelay();
 #ifdef NCBI_OS_LINUX
@@ -958,7 +949,7 @@ CNCMessageHandler::OnOpen(void)
     m_InSyncCmd = m_WaitForThrottle = false;
 }
 
-inline void
+void
 CNCMessageHandler::OnTimeout(void)
 {
     CDiagnosticsGuard guard(this);
@@ -970,7 +961,7 @@ CNCMessageHandler::OnTimeout(void)
         m_ConnCtx->SetRequestStatus(eStatus_Inactive);
 }
 
-inline void
+void
 CNCMessageHandler::OnTimer(void)
 {
     if (!x_IsFlagSet(fCommandStarted))
@@ -984,15 +975,15 @@ CNCMessageHandler::OnTimer(void)
     x_CloseConnection();
 }
 
-inline void
+void
 CNCMessageHandler::OnOverflow(void)
 {
     // Max connection overflow
-    ERR_POST("Max number of connections reached, closing connection");
+    ERR_POST(Critical << "Max number of connections reached, closing connection");
     CNCStat::AddOverflowConnection();
 }
 
-inline void
+void
 CNCMessageHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
 {
     // It's possible that this method will be called before OnOpen - when
@@ -1009,7 +1000,7 @@ CNCMessageHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
         if (m_CmdCtx) {
             m_ConnCtx->SetRequestStatus(m_CmdCtx->GetRequestStatus());
         }
-        else {
+        else if (m_ConnCtx->GetRequestStatus() == eStatus_OK) {
             m_ConnCtx->SetRequestStatus(eStatus_Inactive);
         }
         break;
@@ -1029,21 +1020,9 @@ CNCMessageHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
         _ASSERT(m_CmdCtx  &&  m_BlobAccess);
         m_CmdCtx->SetRequestStatus(eStatus_OK);
         m_ConnCtx->SetRequestStatus(eStatus_PUT2Used);
-        try {
-            x_FinishReadingBlob();
-        }
-        catch (CException& ex) {
-            ERR_POST("Error finalizing blob after PUT2: " << ex);
-            m_CmdCtx->SetRequestStatus(eStatus_ServerError);
-        }
+        x_FinishReadingBlob();
     }
-    try {
-        x_FinishCommand();
-    }
-    catch (CException& ex) {
-        ERR_POST("Error finishing command on Close: " << ex);
-        m_ConnCtx->SetRequestStatus(eStatus_ServerError);
-    }
+    x_FinishCommand(false);
 
     if (x_GetState() == ePreAuthenticated) {
         CNCStat::SetFakeConnection();
@@ -1085,7 +1064,7 @@ CNCMessageHandler::OnWrite(void)
     x_ManageCmdPipeline();
 }
 
-inline EIO_Event
+EIO_Event
 CNCMessageHandler::GetEventsToPollFor(const CTime** alarm_time) const
 {
     if (alarm_time  &&  x_IsFlagSet(fCommandStarted)) {
@@ -1108,8 +1087,8 @@ CNCMessageHandler::IsReadyToProcess(void) const
         return m_DeferredDone;
     else if (x_IsFlagSet(fWaitForBlockedOp))
         return false;
-    else if (x_GetState() == eWaitForStorageBlock)
-        return g_NCStorage->IsBlockActive();
+    /*else if (x_GetState() == eWaitForStorageBlock)
+        return g_NCStorage->IsBlockActive();*/
 
     return true;
 }
@@ -1161,7 +1140,8 @@ CNCMessageHandler::x_ReadAuthMessage(void)
 
     if (m_AppSetup->disable) {
         m_ConnCtx->SetRequestStatus(eStatus_Disabled);
-        ERR_POST("Disabled client is being disconnected ('" << auth_line << "').");
+        ERR_POST(Warning << "Disabled client is being disconnected ('"
+                         << auth_line << "').");
         x_CloseConnection();
     }
     else {
@@ -1170,15 +1150,16 @@ CNCMessageHandler::x_ReadAuthMessage(void)
     return true;
 }
 
-inline void
+bool
 CNCMessageHandler::x_CheckAdminClient(void)
 {
     if (m_ClientParams["client"] != g_NetcacheServer->GetAdminClient()
         &&  m_ClientParams["client"] != "nc_peer")
     {
-        NCBI_THROW(CNSProtoParserException, eWrongCommand,
-                   "Command is not accessible");
+        m_SockBuffer.WriteMessage("ERR:", "Command is not accessible");
+        return false;
     }
+    return true;
 }
 
 void
@@ -1188,6 +1169,7 @@ CNCMessageHandler::x_AssignCmdParams(TNSProtoParams& params)
     m_BlobVersion = 0;
     m_RawKey.clear();
     m_BlobPass.clear();
+    m_RawBlobPass.clear();
     m_KeyVersion = 1;
     m_BlobTTL = 0;
     m_StartPos = 0;
@@ -1224,6 +1206,11 @@ CNCMessageHandler::x_AssignCmdParams(TNSProtoParams& params)
         case 'd':
             if (key == "dead") {
                 m_CopyBlobInfo.dead_time = NStr::StringToInt(val);
+            }
+            break;
+        case 'e':
+            if (key == "exp") {
+                m_CopyBlobInfo.expire = NStr::StringToInt(val);
             }
             break;
         case 'i':
@@ -1380,14 +1367,14 @@ CNCMessageHandler::x_PrintRequestStart(const SParsedCmd& cmd,
     x_SetFlag(fCommandPrinted);
 }
 
-inline void
+void
 CNCMessageHandler::x_WaitForWouldBlock(void)
 {
     g_NetcacheServer->DeferConnectionProcessing(m_Socket);
     x_SetFlag(fWaitForBlockedOp);
 }
 
-void
+bool
 CNCMessageHandler::x_StartCommand(SParsedCmd& cmd)
 {
     x_SetFlag(fCommandStarted);
@@ -1414,7 +1401,7 @@ CNCMessageHandler::x_StartCommand(SParsedCmd& cmd)
             diag_extra->Flush();
         m_CmdCtx->SetRequestStatus(eStatus_JustStarted);
         x_SetState(eReadyForCommand);
-        return;
+        return false;
     }
 
     if (!CNetCacheServer::IsOpenToClients()
@@ -1430,14 +1417,14 @@ CNCMessageHandler::x_StartCommand(SParsedCmd& cmd)
             diag_extra->Flush();
         m_CmdCtx->SetRequestStatus(eStatus_JustStarted);
         x_SetState(eReadyForCommand);
-        return;
+        return false;
     }
 
     if (cmd_extra.storage_access == eWithAutoBlobKey  &&  m_RawKey.empty()) {
         m_RawKey = CNCDistributionConf::GenerateBlobKey(m_LocalPort);
         g_NCStorage->PackBlobKey(&m_BlobKey, CTempString(), m_RawKey, CTempString());
 
-        if (x_IsFlagSet(fCommandPrinted)) {
+        if (diag_extra.get() != NULL) {
             diag_extra->Print("key", m_RawKey);
             diag_extra->Print("gen_key", "1");
         }
@@ -1451,16 +1438,23 @@ CNCMessageHandler::x_StartCommand(SParsedCmd& cmd)
         m_CmdCtx->SetRequestStatus(eStatus_Disabled);
         m_SockBuffer.WriteMessage("ERR:", "Cache is disabled");
         x_SetState(eReadyForCommand);
+        return false;
     }
-    else if (cmd_extra.storage_access == eWithBlob
-             ||  cmd_extra.storage_access == eWithAutoBlobKey
-             ||  cmd_extra.processor == &CNCMessageHandler::x_DoCmd_HasBlob)
+    if (cmd_extra.storage_access == eWithBlob
+        ||  cmd_extra.storage_access == eWithAutoBlobKey
+        ||  m_CmdProcessor == &CNCMessageHandler::x_DoCmd_HasBlob)
     {
         if ((m_BlobPass.empty()  &&  m_AppSetup->pass_policy == eNCOnlyWithPass)
             ||  (!m_BlobPass.empty()  &&  m_AppSetup->pass_policy == eNCOnlyWithoutPass))
         {
-            NCBI_THROW(CNSProtoParserException, eWrongParams,
-                       "Password in the command doesn't match server settings.");
+            if (diag_extra.get() != NULL)
+                diag_extra->Flush();
+            string msg = "Password in the command doesn't match server settings.";
+            m_SockBuffer.WriteMessage("ERR:", msg);
+            ERR_POST(msg);
+            m_CmdCtx->SetRequestStatus(eStatus_BadPassword);
+            x_SetState(eReadyForCommand);
+            return false;
         }
         if (m_BlobKey[0] == '\1') {
             try {
@@ -1469,12 +1463,12 @@ CNCMessageHandler::x_StartCommand(SParsedCmd& cmd)
                 g_NCStorage->PackBlobKey(&m_BlobKey, CTempString(), m_RawKey, CTempString());
             }
             catch (CNetCacheException& ex) {
-                ERR_POST("Error parsing blob key: " << ex);
+                ERR_POST(Critical << "Error parsing blob key: " << ex);
             }
         }
         m_BlobSlot = CNCDistributionConf::GetSlotByKey(m_BlobKey);
         m_BlobSize = 0;
-        if (x_IsFlagSet(fCommandPrinted)) {
+        if (diag_extra.get() != NULL) {
             diag_extra->Print("slot", NStr::UIntToString(m_BlobSlot));
             diag_extra->Flush();
         }
@@ -1489,13 +1483,15 @@ CNCMessageHandler::x_StartCommand(SParsedCmd& cmd)
             ||  NStr::StartsWith(m_CurCmd, "SYNC_"))
         {
             if (cmd_extra.blob_access == eNCCreate
+                &&  m_CmdProcessor != &CNCMessageHandler::x_DoCmd_Remove
+                &&  m_CmdProcessor != &CNCMessageHandler::x_DoCmd_Remove2
                 &&  g_NCStorage->NeedStopWrite())
             {
                 m_SockBuffer.WriteMessage("ERR:", "Not enough disk space");
                 m_SockBuffer.Flush();
                 x_CloseConnection();
             }
-            else if (cmd_extra.processor == &CNCMessageHandler::x_DoCmd_HasBlob)
+            else if (m_CmdProcessor == &CNCMessageHandler::x_DoCmd_HasBlob)
             {
                 x_SetState(eCommandReceived);
             }
@@ -1518,31 +1514,40 @@ CNCMessageHandler::x_StartCommand(SParsedCmd& cmd)
 
         x_SetState(eCommandReceived);
     }
+    return true;
 }
 
 bool
 CNCMessageHandler::x_ReadCommand(void)
 {
     CTempString cmd_line;
-    if (!m_SockBuffer.ReadLine(&cmd_line)) {
+    if (!m_SockBuffer.ReadLine(&cmd_line))
         return false;
-    }
 
+    SParsedCmd cmd;
     try {
-        SParsedCmd cmd = m_Parser.ParseCommand(cmd_line);
-
-        m_CmdCtx.Reset(new CRequestContext());
-        m_CmdCtx->SetRequestID();
+        cmd = m_Parser.ParseCommand(cmd_line);
+    }
+    catch (CNSProtoParserException& ex) {
+        ERR_POST("Error parsing command: " << ex);
+        m_ConnCtx->SetRequestStatus(eStatus_BadCmd);
+        x_CloseConnection();
+        return true;
+    }
+    m_CmdCtx.Reset(new CRequestContext());
+    m_CmdCtx->SetRequestID();
+    try {
         x_AssignCmdParams(cmd.params);
+    }
+    catch (CStringException& ex) {
         CDiagContext::SetRequestContext(m_CmdCtx);
-        x_StartCommand(cmd);
+        ERR_POST("Error parsing command: " << ex);
+        m_CmdCtx->SetRequestStatus(eStatus_BadCmd);
+        x_CloseConnection();
+        return true;
     }
-    catch (CException&) {
-        ERR_POST("Error parsing command '" << cmd_line << "'");
-        throw;
-    }
-
-    if (NStr::StartsWith(m_CurCmd, "SYNC_")) {
+    CDiagContext::SetRequestContext(m_CmdCtx);
+    if (x_StartCommand(cmd)  &&  NStr::StartsWith(m_CurCmd, "SYNC_")) {
         m_InSyncCmd = true;
         Uint4 to_wait = CNCPeriodicSync::BeginTimeEvent(m_SrvId);
         if (to_wait != 0) {
@@ -1559,11 +1564,10 @@ CNCMessageHandler::x_ReadCommand(void)
             m_WaitForThrottle = false;
         }
     }
-
     return true;
 }
 
-inline void
+void
 CNCMessageHandler::x_QuickFinishSyncCommand(void)
 {
     if (NStr::CompareCase(m_CurCmd, "COPY_PUT") == 0
@@ -1606,8 +1610,8 @@ CNCMessageHandler::x_WaitForBlobAccess(void)
     }
     bool is_meta = NStr::FindCase(m_CurCmd, "GETMETA") != NPOS;
     if (NStr::CompareCase(m_CurCmd, "COPY_PUT") == 0
-             ||  NStr::StartsWith(m_CurCmd, "SYNC_")
-             ||  (is_meta  &&  m_ForceLocal))
+        ||  NStr::StartsWith(m_CurCmd, "SYNC_")
+        ||  (is_meta  &&  m_ForceLocal))
     {
         m_LatestExist = m_BlobAccess->IsBlobExists()
                         &&  !m_BlobAccess->IsCurBlobExpired()
@@ -1636,6 +1640,8 @@ CNCMessageHandler::x_WaitForBlobAccess(void)
                 m_LatestBlobSum.create_server = m_BlobAccess->GetCurCreateServer();
                 m_LatestBlobSum.create_id = m_BlobAccess->GetCurCreateId();
                 m_LatestBlobSum.dead_time = m_BlobAccess->GetCurBlobDeadTime();
+                m_LatestBlobSum.expire = m_BlobAccess->GetCurBlobExpire();
+                m_LatestBlobSum.ver_expire = m_BlobAccess->GetCurVerExpire();
             }
             m_DeferredDone = false;
             m_DeferredTask = new CNCFindMetaData_Task(
@@ -1677,12 +1683,9 @@ CNCMessageHandler::x_ProcessBadPassword(void)
     m_CmdCtx->SetRequestStatus(eStatus_BadPassword);
     ERR_POST(Warning << "Incorrect password is used to access the blob");
     x_SetState(eReadyForCommand);
-    if (m_BlobAccess->GetAccessType() == eNCCreate) {
-        x_CloseConnection();
-    }
     return true;
 }
-
+/*
 bool
 CNCMessageHandler::x_WaitForStorageBlock(void)
 {
@@ -1695,7 +1698,7 @@ CNCMessageHandler::x_WaitForStorageBlock(void)
         return false;
     }
 }
-
+*/
 inline bool
 CNCMessageHandler::x_DoCommand(void)
 {
@@ -1706,18 +1709,6 @@ CNCMessageHandler::x_DoCommand(void)
     return do_next;
 }
 
-SNCSyncEvent*
-CNCMessageHandler::x_AddRemoveEvent(void)
-{
-    SNCSyncEvent* event = new SNCSyncEvent();
-    event->event_type = eSyncRemove;
-    event->key = m_BlobKey;
-    event->orig_server = CNCDistributionConf::GetSelfID();
-    event->orig_time = CNetCacheServer::GetPreciseTime();
-    CNCSyncLog::AddEvent(m_BlobSlot, event);
-    return event;
-}
-
 void
 CNCMessageHandler::x_ProlongBlobDeadTime(void)
 {
@@ -1725,48 +1716,52 @@ CNCMessageHandler::x_ProlongBlobDeadTime(void)
         return;
 
     Uint8 cur_time = CNetCacheServer::GetPreciseTime();
-    int new_dead_time = int(cur_time / kNCTimeTicksInSec)
-                        + m_BlobAccess->GetCurBlobTTL();
-    int old_dead_time = m_BlobAccess->GetCurBlobDeadTime();
+    int new_expire = int(cur_time / kNCTimeTicksInSec)
+                     + m_BlobAccess->GetCurBlobTTL();
+    int old_expire = m_BlobAccess->GetCurBlobExpire();
     if (!CNetCacheServer::IsDebugMode()
-        &&  new_dead_time - old_dead_time < m_AppSetup->ttl_unit)
+        &&  new_expire - old_expire < m_AppSetup->ttl_unit)
     {
         return;
     }
 
-    m_BlobAccess->SetCurBlobDeadTime(new_dead_time);
+    m_BlobAccess->SetCurBlobExpire(new_expire);
     SNCSyncEvent* event = new SNCSyncEvent();
     event->event_type = eSyncProlong;
     event->key = m_BlobKey;
     event->orig_server = CNCDistributionConf::GetSelfID();
     event->orig_time = cur_time;
     CNCSyncLog::AddEvent(m_BlobSlot, event);
+    CNCMirroring::BlobProlongEvent(m_BlobKey, m_BlobSlot,
+                                   event->orig_rec_no, cur_time);
 }
 
 void
 CNCMessageHandler::x_ProlongVersionLife(void)
 {
     Uint8 cur_time = CNetCacheServer::GetPreciseTime();
-    int new_dead_time = int(cur_time / kNCTimeTicksInSec)
-                        + m_BlobAccess->GetCurBlobTTL();
-    int old_dead_time = m_BlobAccess->GetCurVerDeadTime();
+    int new_expire = int(cur_time / kNCTimeTicksInSec)
+                     + m_BlobAccess->GetCurBlobTTL();
+    int old_expire = m_BlobAccess->GetCurVerExpire();
     if (!CNetCacheServer::IsDebugMode()
-        &&  new_dead_time - old_dead_time < m_AppSetup->ttl_unit)
+        &&  new_expire - old_expire < m_AppSetup->ttl_unit)
     {
         return;
     }
 
-    m_BlobAccess->SetCurVerDeadTime(new_dead_time);
+    m_BlobAccess->SetCurVerExpire(new_expire);
     SNCSyncEvent* event = new SNCSyncEvent();
     event->event_type = eSyncProlong;
     event->key = m_BlobKey;
     event->orig_server = CNCDistributionConf::GetSelfID();
     event->orig_time = cur_time;
     CNCSyncLog::AddEvent(m_BlobSlot, event);
+    CNCMirroring::BlobProlongEvent(m_BlobKey, m_BlobSlot,
+                                   event->orig_rec_no, cur_time);
 }
 
 void
-CNCMessageHandler::x_FinishCommand(void)
+CNCMessageHandler::x_FinishCommand(bool do_sock_write)
 {
     if (!x_IsFlagSet(fCommandStarted)) {
         m_CmdCtx.Reset();
@@ -1777,7 +1772,9 @@ CNCMessageHandler::x_FinishCommand(void)
     bool was_blob_access = (m_BlobAccess != NULL);
     if (was_blob_access) {
         if (!m_BlobAccess->IsBlobExists()
-            ||  m_BlobAccess->GetAccessType() == eNCDelete
+            ||  m_CmdProcessor == &CNCMessageHandler::x_DoCmd_Remove
+            ||  m_CmdProcessor == &CNCMessageHandler::x_DoCmd_Remove2
+            ||  m_CmdCtx->GetRequestStatus() == eStatus_NotFound
             ||  m_CmdCtx->GetRequestStatus() == eStatus_NewerBlob
             ||  m_CmdCtx->GetRequestStatus() == eStatus_StaleSync
             ||  m_CmdCtx->GetRequestStatus() == eStatus_SyncAborted)
@@ -1818,7 +1815,7 @@ CNCMessageHandler::x_FinishCommand(void)
         }
         x_UnsetFlag(fNeedSyncFinish);
     }
-    if (x_IsFlagSet(fConfirmBlobPut)) {
+    if (x_IsFlagSet(fConfirmBlobPut)  &&  do_sock_write) {
         m_SockBuffer.WriteMessage("OK:", "");
         m_SockBuffer.Flush();
     }
@@ -1861,35 +1858,51 @@ CNCMessageHandler::x_FinishCommand(void)
 
 
 
-inline void
+void
 CNCMessageHandler::x_StartReadingBlob(void)
 {
     m_SockBuffer.Flush();
-    x_SetState(eReadBlobSignature);
+    if (m_SockBuffer.HasError())
+        x_SetState(eReadyForCommand);
+    else
+        x_SetState(eReadBlobSignature);
 }
 
 void
 CNCMessageHandler::x_FinishReadingBlob(void)
 {
+    x_SetState(eReadyForCommand);
     if (x_IsFlagSet(fReadExactBlobSize)  &&  m_BlobSize != m_Size) {
-        abort();
         m_CmdCtx->SetRequestStatus(eStatus_CondFailed);
-        NCBI_THROW_FMT(CNetServiceException, eProtocolError,
-                       "Too few data for blob size "
-                       << m_Size << " (received "
-                       << m_BlobSize << " bytes)");
+        ERR_POST("Too few data for blob size " << m_Size << " (received "
+                 << m_BlobSize << " bytes)");
+        if (x_IsFlagSet(fConfirmBlobPut)) {
+            m_SockBuffer.WriteMessage("ERR:", "Too few data for blob");
+        }
+        else {
+            x_CloseConnection();
+        }
+        return;
     }
-
     if (m_CmdCtx->GetRequestStatus() == eStatus_NewerBlob
         ||  m_CmdCtx->GetRequestStatus() == eStatus_SyncAborted)
     {
-        x_SetState(eReadyForCommand);
         return;
     }
-
     if (m_DataWriter.get()) {
-        m_DataWriter->Close();
-        x_SetState(eReadyForCommand);
+        try {
+            m_DataWriter->Close();
+        }
+        catch (CNetServiceException& ex) {
+            ERR_POST(Warning << ex);
+            m_CmdCtx->SetRequestStatus(eStatus_PeerError);
+            x_CloseConnection();
+        }
+        catch (CNetSrvConnException& ex) {
+            ERR_POST(Warning << ex);
+            m_CmdCtx->SetRequestStatus(eStatus_PeerError);
+            x_CloseConnection();
+        }
         return;
     }
 
@@ -1904,9 +1917,11 @@ CNCMessageHandler::x_FinishReadingBlob(void)
     }
     else {
         Uint8 cur_time = CNetCacheServer::GetPreciseTime();
+        Uint4 cur_secs = int(cur_time / kNCTimeTicksInSec);
         m_BlobAccess->SetBlobCreateTime(cur_time);
-        m_BlobAccess->SetNewVerDeadTime(int(cur_time / kNCTimeTicksInSec)
-                                        + m_BlobAccess->GetNewVersionTTL());
+        if (m_BlobAccess->GetNewBlobExpire() == 0)
+            m_BlobAccess->SetNewBlobExpire(cur_secs + m_BlobAccess->GetNewBlobTTL());
+        m_BlobAccess->SetNewVerExpire(cur_secs + m_BlobAccess->GetNewVersionTTL());
         m_BlobAccess->SetCreateServer(CNCDistributionConf::GetSelfID(),
                                       m_BlobAccess->GetNewBlobId(), m_BlobSlot);
         write_event->orig_server = CNCDistributionConf::GetSelfID();
@@ -1914,6 +1929,11 @@ CNCMessageHandler::x_FinishReadingBlob(void)
     }
 
     m_BlobAccess->Finalize();
+    if (m_BlobAccess->HasError()) {
+        m_CmdCtx->SetRequestStatus(eStatus_ServerError);
+        x_CloseConnection();
+        return;
+    }
     m_BlobSize = m_BlobAccess->GetNewBlobSize();
     m_CmdCtx->SetBytesRd(m_BlobSize);
 
@@ -1931,7 +1951,6 @@ CNCMessageHandler::x_FinishReadingBlob(void)
             CNetCacheServer::AddDeferredTask(m_DeferredTask);
             x_SetState(eWaitForDeferredTask);
             m_CmdProcessor = &CNCMessageHandler::x_DoCmd_NoOp;
-            return;
         }
     }
     else if (m_OrigRecNo != 0) {
@@ -1939,8 +1958,6 @@ CNCMessageHandler::x_FinishReadingBlob(void)
     }
     else
         delete write_event;
-
-    x_SetState(eReadyForCommand);
 }
 
 bool
@@ -1958,18 +1975,18 @@ CNCMessageHandler::x_ReadBlobSignature(void)
 
     if (sig == 0x04030201) {
         x_SetFlag(fSwapLengthBytes);
+        x_SetState(eReadBlobChunkLength);
     }
     else if (sig == 0x01020304) {
         x_UnsetFlag(fSwapLengthBytes);
+        x_SetState(eReadBlobChunkLength);
     }
     else {
         m_CmdCtx->SetRequestStatus(eStatus_BadCmd);
-        NCBI_THROW_FMT(CUtilException, eWrongData,
-                       "Cannot determine the byte order. Got: "
-                       << NStr::UIntToString(sig, 0, 16));
+        ERR_POST("Cannot determine the byte order. Got: "
+                 << NStr::UIntToString(sig, 0, 16));
+        x_CloseConnection();
     }
-
-    x_SetState(eReadBlobChunkLength);
     return true;
 }
 
@@ -2003,10 +2020,10 @@ CNCMessageHandler::x_ReadBlobChunkLength(void)
              &&  m_BlobSize + m_ChunkLen > m_Size)
     {
         m_CmdCtx->SetRequestStatus(eStatus_CondFailed);
-        NCBI_THROW_FMT(CNetServiceException, eProtocolError,
-                       "Too much data for blob size " << m_Size
-                       << " (received at least "
-                       << (m_BlobSize + m_ChunkLen) << " bytes)");
+        ERR_POST("Too much data for blob size " << m_Size
+                 << " (received at least "
+                 << (m_BlobSize + m_ChunkLen) << " bytes)");
+        x_CloseConnection();
     }
     else {
         x_SetState(eReadBlobChunk);
@@ -2022,10 +2039,28 @@ CNCMessageHandler::x_ReadBlobChunk(void)
             return false;
 
         Uint4 read_len = Uint4(min(m_SockBuffer.GetReadSize(), size_t(m_ChunkLen)));
-        if (m_DataWriter.get())
-            m_DataWriter->Write(m_SockBuffer.GetReadData(), read_len);
-        else
+        if (m_DataWriter.get()) {
+            ERW_Result write_res = eRW_Error;
+            try {
+                write_res = m_DataWriter->Write(m_SockBuffer.GetReadData(), read_len);
+            }
+            catch (CNetServiceException& ex) {
+                ERR_POST(Warning << ex);
+            }
+            if (write_res != eRW_Success) {
+                m_CmdCtx->SetRequestStatus(eStatus_PeerError);
+                x_CloseConnection();
+                return true;
+            }
+        }
+        else {
             m_BlobAccess->WriteData(m_SockBuffer.GetReadData(), read_len);
+            if (m_BlobAccess->HasError()) {
+                m_CmdCtx->SetRequestStatus(eStatus_ServerError);
+                x_CloseConnection();
+                return true;
+            }
+        }
         m_SockBuffer.EraseReadData(read_len);
         m_ChunkLen -= read_len;
         m_BlobSize += read_len;
@@ -2041,7 +2076,12 @@ CNCMessageHandler::x_WaitForFirstData(void)
         x_WaitForWouldBlock();
         return false;
     }
-    x_SetState(eWriteBlobData);
+    if (m_BlobAccess->HasError()) {
+        m_CmdCtx->SetRequestStatus(eStatus_ServerError);
+        x_CloseConnection();
+    }
+    else
+        x_SetState(eWriteBlobData);
     return true;
 }
 
@@ -2054,6 +2094,11 @@ CNCMessageHandler::x_WriteBlobData(void)
         if (m_Size != Uint8(-1)  &&  m_Size < want_read)
             want_read = size_t(m_Size);
         size_t n_read = m_BlobAccess->ReadData(write_buf, want_read);
+        if (m_BlobAccess->HasError()) {
+            m_CmdCtx->SetRequestStatus(eStatus_ServerError);
+            x_CloseConnection();
+            return true;
+        }
         if (n_read == 0) {
             x_SetState(eReadyForCommand);
             return true;
@@ -2063,7 +2108,7 @@ CNCMessageHandler::x_WriteBlobData(void)
         if (m_Size != Uint8(-1))
             m_Size -= n_read;
     }
-    while (!m_SockBuffer.IsWriteDataPending());
+    while (!m_SockBuffer.HasError()  &&  !m_SockBuffer.IsWriteDataPending());
 
     return false;
 }
@@ -2073,6 +2118,7 @@ CNCMessageHandler::x_WriteSendBuff(void)
 {
     size_t n_written = m_SockBuffer.WriteToSocket(m_SendBuff->data() + m_SendPos,
                                                   m_SendBuff->size() - m_SendPos);
+    // HasError() will be processed in ManageCmdPipeline()
     m_SendPos += n_written;
     if (m_SendPos == m_SendBuff->size()) {
         x_SetState(eReadyForCommand);
@@ -2088,7 +2134,16 @@ CNCMessageHandler::x_WriteFromReader(void)
         void* write_buf  = m_SockBuffer.PrepareDirectWrite();
         size_t want_read = m_SockBuffer.GetDirectWriteSize();
         size_t n_read = 0;
-        ERW_Result read_res = m_DataReader->Read(write_buf, want_read, &n_read);
+        ERW_Result read_res;
+        try {
+            read_res = m_DataReader->Read(write_buf, want_read, &n_read);
+        }
+        catch (CNetServiceException& ex) {
+            ERR_POST(Warning << ex);
+            m_CmdCtx->SetRequestStatus(eStatus_PeerError);
+            x_CloseConnection();
+            return true;
+        }
         if (n_read != 0) {
             m_SockBuffer.AddDirectWritten(n_read);
             m_SockBuffer.Flush();
@@ -2105,7 +2160,7 @@ CNCMessageHandler::x_WriteFromReader(void)
             return true;
         }
     }
-    while (!m_SockBuffer.IsWriteDataPending());
+    while (!m_SockBuffer.HasError()  &&  !m_SockBuffer.IsWriteDataPending());
 
     return false;
 }
@@ -2450,152 +2505,82 @@ CNCMessageHandler::x_ManageCmdPipeline(void)
 
     bool do_next_step = false;
     do {
-        try {
-            // These two commands will be effectively ignored on all cycles
-            // other than first. But they should be here for unification
-            // of code.
-            m_SockBuffer.Flush();
-            if (m_SockBuffer.IsWriteDataPending()) {
-                break;
-            }
-next_step:
-            switch (x_GetState()) {
-            case ePreAuthenticated:
-                do_next_step = x_ReadAuthMessage();
-                break;
-            case eReadyForCommand:
-                x_FinishCommand();
-                do_next_step = x_ReadCommand();
-                break;
-            case eCommandReceived:
-                do_next_step = x_DoCommand();
-                break;
-            case eWaitForBlobAccess:
-                do_next_step = x_WaitForBlobAccess();
-                break;
-            case eWaitForDeferredTask:
-                do_next_step = x_WaitForDeferredTask();
-                break;
-            case ePasswordFailed:
-                do_next_step = x_ProcessBadPassword();
-                break;
-            case eWaitForStorageBlock:
-                do_next_step = x_WaitForStorageBlock();
-                break;
-            case eReadBlobSignature:
-                do_next_step = x_ReadBlobSignature();
-                break;
-            case eReadBlobChunkLength:
-                do_next_step = x_ReadBlobChunkLength();
-                break;
-            case eReadBlobChunk:
-                do_next_step = x_ReadBlobChunk();
-                break;
-            case eWaitForFirstData:
-                do_next_step = x_WaitForFirstData();
-                break;
-            case eWriteBlobData:
-                do_next_step = x_WriteBlobData();
-                break;
-            case eWriteSendBuff:
-                do_next_step = x_WriteSendBuff();
-                break;
-            case eSendCmdAsProxy:
-                do_next_step = x_SendCmdAsProxy();
-                break;
-            case eWriteFromReader:
-                do_next_step = x_WriteFromReader();
-                break;
-            default:
-                abort();
-            }
+        // These two commands will be effectively ignored on all cycles
+        // other than first. But they should be here for unification
+        // of code.
+        m_SockBuffer.Flush();
+        if (m_SockBuffer.HasError()  ||  m_SockBuffer.IsWriteDataPending())
+            break;
 
-            if (m_SockBuffer.IsWriteDataPending()) {
-                m_SockBuffer.Flush();
-                if (!m_SockBuffer.IsWriteDataPending()) {
-                    // Cannot use continue: do_next_step can be false because
-                    // SockBuffer had something to flush.
-                    goto next_step;
-                }
-            }
+        switch (x_GetState()) {
+        case ePreAuthenticated:
+            do_next_step = x_ReadAuthMessage();
+            break;
+        case eReadyForCommand:
+            x_FinishCommand(true);
+            do_next_step = x_ReadCommand();
+            break;
+        case eCommandReceived:
+            do_next_step = x_DoCommand();
+            break;
+        case eWaitForBlobAccess:
+            do_next_step = x_WaitForBlobAccess();
+            break;
+        case eWaitForDeferredTask:
+            do_next_step = x_WaitForDeferredTask();
+            break;
+        case ePasswordFailed:
+            do_next_step = x_ProcessBadPassword();
+            break;
+        /*case eWaitForStorageBlock:
+            do_next_step = x_WaitForStorageBlock();
+            break;*/
+        case eReadBlobSignature:
+            do_next_step = x_ReadBlobSignature();
+            break;
+        case eReadBlobChunkLength:
+            do_next_step = x_ReadBlobChunkLength();
+            break;
+        case eReadBlobChunk:
+            do_next_step = x_ReadBlobChunk();
+            break;
+        case eWaitForFirstData:
+            do_next_step = x_WaitForFirstData();
+            break;
+        case eWriteBlobData:
+            do_next_step = x_WriteBlobData();
+            break;
+        case eWriteSendBuff:
+            do_next_step = x_WriteSendBuff();
+            break;
+        case eSendCmdAsProxy:
+            do_next_step = x_SendCmdAsProxy();
+            break;
+        case eWriteFromReader:
+            do_next_step = x_WriteFromReader();
+            break;
+        default:
+            abort();
         }
-        catch (CIO_Exception& ex) {
-            ERR_POST("IO exception in the command: " << ex);
-            if (m_CmdCtx) {
-                m_CmdCtx->SetRequestStatus(eStatus_ServerError);
-            }
-            else {
-                m_ConnCtx->SetRequestStatus(eStatus_ServerError);
-            }
-            x_CloseConnection();
-        }
-        catch (CNCBlobStorageException& ex) {
-            ERR_POST("Server internal exception: " << ex);
-            if (m_CmdCtx) {
-                m_CmdCtx->SetRequestStatus(eStatus_ServerError);
-            }
-            else {
-                m_ConnCtx->SetRequestStatus(eStatus_ServerError);
-            }
-            x_CloseConnection();
-        }
-        catch (CSQLITE_Exception& ex) {
-            ERR_POST("SQLite exception: " << ex);
-            if (m_CmdCtx.NotNull()) {
-                m_CmdCtx->SetRequestStatus(eStatus_ServerError);
-            }
-            else {
-                m_ConnCtx->SetRequestStatus(eStatus_ServerError);
-            }
-            x_CloseConnection();
-        }
-        catch (CException& ex) {
-            ERR_POST("Unknown exception in the command: " << ex);
-            if (x_GetState() == eReadyForCommand
-                ||  x_GetState() == eCommandReceived)
-            {
-                if (m_CmdCtx) {
-                    if (m_CmdCtx->GetRequestStatus() == eStatus_OK
-                        ||  m_CmdCtx->GetRequestStatus() == 0)
-                    {
-                        m_CmdCtx->SetRequestStatus(eStatus_BadCmd);
-                    }
-                }
-                else {
-                    m_ConnCtx->SetRequestStatus(eStatus_BadCmd);
-                }
-                m_SockBuffer.WriteMessage("ERR:",
-                                          NStr::Replace(ex.what(), "\n", ";"));
-                if (m_BlobAccess
-                    &&  m_BlobAccess->GetAccessType() != eNCCreate
-                    &&  m_BlobAccess->GetAccessType() != eNCCopyCreate)
-                {
-                    x_SetState(eReadyForCommand);
-                    do_next_step = true;
-                }
-                else {
-                    m_ConnCtx->SetRequestStatus(eStatus_BadCmd);
-                    m_SockBuffer.Flush();
-                    x_CloseConnection();
-                }
-            }
-            else {
-                if (m_CmdCtx) {
-                    if (m_CmdCtx->GetRequestStatus() == eStatus_OK
-                        ||  m_CmdCtx->GetRequestStatus() == 0)
-                    {
-                        m_CmdCtx->SetRequestStatus(eStatus_ServerError);
-                    }
-                }
-                else {
-                    m_ConnCtx->SetRequestStatus(eStatus_ServerError);
-                }
-                x_CloseConnection();
-            }
+
+        if (!m_SockBuffer.HasError()  &&  m_SockBuffer.IsWriteDataPending())
+        {
+            m_SockBuffer.Flush();
+            do_next_step = !m_SockBuffer.IsWriteDataPending();
         }
     }
-    while (!m_SockBuffer.IsWriteDataPending()  &&  do_next_step
-           &&  x_GetState() != eSocketClosed);
+    while (!m_SockBuffer.HasError()  &&  !m_SockBuffer.IsWriteDataPending()
+           &&  do_next_step  &&  x_GetState() != eSocketClosed);
+
+    if (m_SockBuffer.HasError()) {
+        if (m_CmdCtx) {
+            m_CmdCtx->SetRequestStatus(eStatus_BadCmd);
+        }
+        else {
+            m_ConnCtx->SetRequestStatus(eStatus_ServerError);
+        }
+        x_CloseConnection();
+    }
 
 #ifdef NCBI_OS_LINUX
     if (x_GetState() != eSocketClosed) {
@@ -2629,8 +2614,8 @@ CNCMessageHandler::x_DoCmd_Health(void)
     m_SockBuffer.WriteMessage("OK:", "HEALTH_COEFF=1");
     m_SockBuffer.WriteMessage("OK:", "UP_TIME=" + NStr::IntToString(g_NetcacheServer->GetUpTime()));
     m_SockBuffer.WriteMessage("OK:", string("ACCEPT_CLIENTS=") + (CNetCacheServer::IsOpenToClients()? "yes": "no"));
-    //m_SockBuffer.WriteMessage("OK:", "MEM_LIMIT=" + NStr::UInt8ToString(CNCMemManager::GetMemoryLimit()));
-    //m_SockBuffer.WriteMessage("OK:", "MEM_USED=" + NStr::UInt8ToString(CNCMemManager::GetMemoryUsed()));
+    m_SockBuffer.WriteMessage("OK:", "MEM_LIMIT=" + NStr::UInt8ToString(CNCMemManager::GetMemoryLimit()));
+    m_SockBuffer.WriteMessage("OK:", "MEM_USED=" + NStr::UInt8ToString(CNCMemManager::GetMemoryUsed()));
     m_SockBuffer.WriteMessage("OK:", "DISK_CACHE=" + NStr::UInt8ToString(CNCMemManager::GetMemoryLimit()));
     m_SockBuffer.WriteMessage("OK:", "DISK_FREE=" + NStr::UInt8ToString(g_NetcacheServer->GetDiskFree()));
     m_SockBuffer.WriteMessage("OK:", "DISK_USED=" + NStr::UInt8ToString(g_NCStorage->GetDBSize()));
@@ -2704,9 +2689,10 @@ CNCMessageHandler::x_DoCmd_Health(void)
 bool
 CNCMessageHandler::x_DoCmd_Shutdown(void)
 {
-    x_CheckAdminClient();
-    g_NetcacheServer->RequestShutdown();
-    m_SockBuffer.WriteMessage("OK:", "");
+    if (x_CheckAdminClient()) {
+        g_NetcacheServer->RequestShutdown();
+        m_SockBuffer.WriteMessage("OK:", "");
+    }
     return true;
 }
 
@@ -2754,7 +2740,7 @@ CNCMessageHandler::x_DoCmd_Reinit(void)
     m_SockBuffer.WriteMessage("ERR:", "Not implemented");
     return true;
 }
-
+/*
 bool
 CNCMessageHandler::x_DoCmd_ReinitImpl(void)
 {
@@ -2763,7 +2749,7 @@ CNCMessageHandler::x_DoCmd_ReinitImpl(void)
     m_SockBuffer.WriteMessage("OK:", "");
     return true;
 }
-
+*/
 bool
 CNCMessageHandler::x_DoCmd_Reconf(void)
 {
@@ -2776,7 +2762,7 @@ CNCMessageHandler::x_DoCmd_Reconf(void)
     m_SockBuffer.WriteMessage("ERR:", "Not implemented");
     return true;
 }
-
+/*
 bool
 CNCMessageHandler::x_DoCmd_ReconfImpl(void)
 {
@@ -2785,7 +2771,7 @@ CNCMessageHandler::x_DoCmd_ReconfImpl(void)
     m_SockBuffer.WriteMessage("OK:", "");
     return true;
 }
-
+*/
 bool
 CNCMessageHandler::x_DoCmd_Put2(void)
 {
@@ -2964,20 +2950,13 @@ CNCMessageHandler::x_DoCmd_HasBlobImpl(void)
 bool
 CNCMessageHandler::x_DoCmd_Remove(void)
 {
-    m_BlobAccess->DeleteBlob();
-    SNCSyncEvent* evt = x_AddRemoveEvent();
-    CNCMirroring::BlobRemoveEvent(m_BlobKey, m_BlobSlot,
-                                  evt->orig_rec_no, evt->orig_time);
-    if (m_Quorum != 1) {
-        if (m_Quorum != 0)
-            --m_Quorum;
-        m_DeferredDone = false;
-        m_DeferredTask = new CNCRemoveOnPeers_Task(this, x_GetCurSlotServers(),
-                                       m_Quorum, m_CmdCtx, m_BlobKey, evt);
-        CNetCacheServer::AddDeferredTask(m_DeferredTask);
-        x_SetState(eWaitForDeferredTask);
-        m_CmdProcessor = &CNCMessageHandler::x_DoCmd_NoOp;
-    }
+    if (!m_BlobAccess->IsBlobExists()  ||  m_BlobAccess->IsCurBlobExpired())
+        return true;
+
+    m_BlobAccess->SetBlobTTL(x_GetBlobTTL());
+    m_BlobAccess->SetBlobVersion(m_BlobVersion);
+    m_BlobAccess->SetNewBlobExpire(int(time(NULL)) - 1);
+    x_FinishReadingBlob();
     return true;
 }
 
@@ -3023,6 +3002,7 @@ CNCMessageHandler::x_ReadFullBlobsList(void)
         m_SendBuff->append(&blob_sum->create_server, sizeof(blob_sum->create_server));
         m_SendBuff->append(&blob_sum->create_id, sizeof(blob_sum->create_id));
         m_SendBuff->append(&blob_sum->dead_time, sizeof(blob_sum->dead_time));
+        m_SendBuff->append(&blob_sum->expire, sizeof(blob_sum->expire));
         m_SendBuff->append(&blob_sum->ver_expire, sizeof(blob_sum->ver_expire));
         delete blob_sum;
     }
@@ -3031,7 +3011,8 @@ CNCMessageHandler::x_ReadFullBlobsList(void)
 bool
 CNCMessageHandler::x_DoCmd_SyncStart(void)
 {
-    x_CheckAdminClient();
+    if (!x_CheckAdminClient())
+        return true;
 
     TReducedSyncEvents sync_events;
     ESyncInitiateResult sync_res = CNCPeriodicSync::Initiate(m_SrvId, m_Slot,
@@ -3136,7 +3117,8 @@ CNCMessageHandler::x_DoCmd_SyncBlobsList(void)
 bool
 CNCMessageHandler::x_DoCmd_CopyPut(void)
 {
-    x_CheckAdminClient();
+    if (!x_CheckAdminClient())
+        return true;
 
     m_CopyBlobInfo.ttl = m_BlobTTL;
     m_CopyBlobInfo.password = m_BlobPass;
@@ -3167,38 +3149,6 @@ CNCMessageHandler::x_DoCmd_SyncPut(void)
 }
 
 bool
-CNCMessageHandler::x_DoCmd_CopyRemove(void)
-{
-    if (m_BlobAccess->IsBlobExists()
-        &&  m_BlobAccess->GetCurBlobCreateTime() < m_OrigTime)
-    {
-        m_BlobAccess->DeleteBlob();
-        SNCSyncEvent* event = new SNCSyncEvent();
-        event->event_type = eSyncRemove;
-        event->key = m_BlobKey;
-        event->orig_server = m_OrigSrvId;
-        event->orig_time = m_OrigTime;
-        event->orig_rec_no = m_OrigRecNo;
-        CNCSyncLog::AddEvent(m_Slot, event);
-    }
-    else {
-        m_CmdCtx->SetRequestStatus(eStatus_NewerBlob);
-    }
-    m_SockBuffer.WriteMessage("OK:", "SIZE=0");
-    return true;
-}
-
-bool
-CNCMessageHandler::x_DoCmd_SyncRemove(void)
-{
-    if (!x_CanStartSyncCommand())
-        return true;
-
-    x_SetFlag(fNeedSyncFinish);
-    return x_DoCmd_CopyRemove();
-}
-
-bool
 CNCMessageHandler::x_DoCmd_CopyProlong(void)
 {
     if (!m_BlobAccess->IsBlobExists()) {
@@ -3212,12 +3162,13 @@ CNCMessageHandler::x_DoCmd_CopyProlong(void)
         &&  m_BlobAccess->GetCurCreateId() == m_CopyBlobInfo.create_id)
     {
         bool need_event = false;
-        if (m_BlobAccess->GetCurBlobDeadTime() < m_CopyBlobInfo.dead_time) {
-            m_BlobAccess->SetCurBlobDeadTime(m_CopyBlobInfo.dead_time);
+        if (m_BlobAccess->GetCurBlobExpire() < m_CopyBlobInfo.expire) {
+            m_BlobAccess->SetCurBlobExpire(m_CopyBlobInfo.expire,
+                                           m_CopyBlobInfo.dead_time);
             need_event = true;
         }
-        if (m_BlobAccess->GetCurVerDeadTime() < m_CopyBlobInfo.ver_expire) {
-            m_BlobAccess->SetCurVerDeadTime(m_CopyBlobInfo.ver_expire);
+        if (m_BlobAccess->GetCurVerExpire() < m_CopyBlobInfo.ver_expire) {
+            m_BlobAccess->SetCurVerExpire(m_CopyBlobInfo.ver_expire);
             need_event = true;
         }
 
@@ -3255,7 +3206,7 @@ CNCMessageHandler::x_DoCmd_SyncGet(void)
         return true;
 
     x_SetFlag(fNeedSyncFinish);
-    if (!m_BlobAccess->IsBlobExists()  ||  m_BlobAccess->IsCurBlobExpired()) {
+    if (!m_BlobAccess->IsBlobExists()) {
         m_CmdCtx->SetRequestStatus(eStatus_NotFound);
         m_SockBuffer.WriteMessage("ERR:", "BLOB not found.");
         return true;
@@ -3292,9 +3243,11 @@ CNCMessageHandler::x_DoCmd_SyncGet(void)
     result.append(1, ' ');
     result += NStr::IntToString(m_BlobAccess->GetCurBlobDeadTime());
     result.append(1, ' ');
+    result += NStr::IntToString(m_BlobAccess->GetCurBlobExpire());
+    result.append(1, ' ');
     result += NStr::UIntToString(Uint4(m_BlobAccess->GetCurVersionTTL()));
     result.append(1, ' ');
-    result += NStr::IntToString(m_BlobAccess->GetCurVerDeadTime());
+    result += NStr::IntToString(m_BlobAccess->GetCurVerExpire());
     result.append(1, ' ');
     result += NStr::UInt8ToString(m_BlobAccess->GetCurCreateServer());
     result.append(1, ' ');
@@ -3331,7 +3284,9 @@ CNCMessageHandler::x_DoCmd_SyncProlongInfo(void)
     result.append(1, ' ');
     result += NStr::IntToString(m_BlobAccess->GetCurBlobDeadTime());
     result.append(1, ' ');
-    result += NStr::IntToString(m_BlobAccess->GetCurVerDeadTime());
+    result += NStr::IntToString(m_BlobAccess->GetCurBlobExpire());
+    result.append(1, ' ');
+    result += NStr::IntToString(m_BlobAccess->GetCurVerExpire());
 
     m_SockBuffer.WriteMessage("OK:", result);
     return true;
@@ -3419,9 +3374,9 @@ CNCMessageHandler::x_DoCmd_GetMeta(void)
     tmp = NStr::IntToString(m_BlobAccess->GetCurBlobTTL());
     m_SendBuff->append(tmp.data(), tmp.size());
 
-    tmp = "\nOK:Dead time: ";
+    tmp = "\nOK:Expire: ";
     m_SendBuff->append(tmp.data(), tmp.size());
-    tmp_time.SetTimeT(m_BlobAccess->GetCurBlobDeadTime());
+    tmp_time.SetTimeT(m_BlobAccess->GetCurBlobExpire());
     tmp = tmp_time.AsString();
     m_SendBuff->append(tmp.data(), tmp.size());
 
@@ -3446,9 +3401,9 @@ CNCMessageHandler::x_DoCmd_GetMeta(void)
     tmp = NStr::IntToString(m_BlobAccess->GetCurVersionTTL());
     m_SendBuff->append(tmp.data(), tmp.size());
 
-    tmp = "\nOK:Version's dead time: ";
+    tmp = "\nOK:Version expire: ";
     m_SendBuff->append(tmp.data(), tmp.size());
-    tmp_time.SetTimeT(m_BlobAccess->GetCurVerDeadTime());
+    tmp_time.SetTimeT(m_BlobAccess->GetCurVerExpire());
     tmp = tmp_time.AsString();
     m_SendBuff->append(tmp.data(), tmp.size());
 
@@ -3467,7 +3422,7 @@ CNCMessageHandler::x_DoCmd_GetMeta(void)
 bool
 CNCMessageHandler::x_DoCmd_ProxyMeta(void)
 {
-    if (!m_BlobAccess->IsBlobExists()) {
+    if (!m_BlobAccess->IsBlobExists()  ||  m_BlobAccess->IsCurBlobExpired()) {
         m_CmdCtx->SetRequestStatus(eStatus_NotFound);
         m_SockBuffer.WriteMessage("ERR:", "BLOB not found.");
         return true;
@@ -3481,6 +3436,10 @@ CNCMessageHandler::x_DoCmd_ProxyMeta(void)
     result += NStr::UInt8ToString(m_BlobAccess->GetCurCreateId());
     result.append(1, ' ');
     result += NStr::IntToString(m_BlobAccess->GetCurBlobDeadTime());
+    result.append(1, ' ');
+    result += NStr::IntToString(m_BlobAccess->GetCurBlobExpire());
+    result.append(1, ' ');
+    result += NStr::IntToString(m_BlobAccess->GetCurVerExpire());
 
     m_SockBuffer.WriteMessage("OK:", result);
 
@@ -3490,7 +3449,8 @@ CNCMessageHandler::x_DoCmd_ProxyMeta(void)
 bool
 CNCMessageHandler::x_DoCmd_GetBlobsList(void)
 {
-    x_CheckAdminClient();
+    if (!x_CheckAdminClient())
+        return true;
 
     const vector<Uint2>& slots = CNCDistributionConf::GetSelfSlots();
     string slot_str;
@@ -3515,10 +3475,14 @@ CNCMessageHandler::x_DoCmd_GetBlobsList(void)
                 msg += ", subkey: ";
                 msg += subkey;
             }
-            msg += ", dead_time: ";
-            msg += NStr::IntToString(blob_sum->dead_time, 0, 16);
+            msg += ", expire: ";
+            CTime tmp_time(CTime::eEmpty, CTime::eLocal);
+            tmp_time.SetTimeT(time_t(blob_sum->expire));
+            msg += tmp_time.AsString("M/D/Y h:m:s");
             msg += ", create_time: ";
-            msg += NStr::UInt8ToString(blob_sum->create_time, 0, 16);
+            tmp_time.SetTimeT(time_t(blob_sum->create_time / kNCTimeTicksInSec));
+            tmp_time.SetMicroSecond(blob_sum->create_time % kNCTimeTicksInSec);
+            msg += tmp_time.AsString("M/D/Y h:m:s.r");
             msg += ", create_id: ";
             msg += NStr::Int8ToString(blob_sum->create_id);
             msg += ", create_server: ";
@@ -3647,52 +3611,6 @@ quorum_met:
 
 void
 CNCPutToPeers_Task::OnStatusChange(EStatus /* old */, EStatus new_status)
-{
-    if (new_status == CQueueItemBase::eComplete)
-        m_Handler->DeferredComplete();
-}
-
-
-CNCRemoveOnPeers_Task::CNCRemoveOnPeers_Task(CNCMessageHandler* handler,
-                                             const vector<Uint8>& servers,
-                                             Uint1 quorum,
-                                             CRequestContext* req_ctx,
-                                             const string& key,
-                                             SNCSyncEvent* evt)
-    : m_Handler(handler),
-      m_Servers(servers),
-      m_Quorum(quorum),
-      m_ReqCtx(req_ctx),
-      m_Key(key),
-      m_OrigRecNo(evt->orig_rec_no),
-      m_OrigTime(evt->orig_time)
-{}
-
-void
-CNCRemoveOnPeers_Task::Process(void)
-{
-    GetDiagContext().SetRequestContext(m_ReqCtx);
-    for (Uint1 j = 0; j < m_Servers.size(); ++j) {
-        Uint8 srv_id = m_Servers[j];
-        if (srv_id == CNCDistributionConf::GetSelfID())
-            continue;
-
-        ENCPeerFailure send_res = CNetCacheServer::RemoveBlobOnPeer(
-                                  srv_id, m_Key, m_OrigRecNo, m_OrigTime, true);
-        if (send_res == ePeerActionOK) {
-            if (m_Quorum == 1)
-                goto quorum_met;
-            else if (m_Quorum != 0)
-                --m_Quorum;
-        }
-    }
-
-quorum_met:
-    g_NetcacheServer->WakeUpPollCycle();
-}
-
-void
-CNCRemoveOnPeers_Task::OnStatusChange(EStatus /* old */, EStatus new_status)
 {
     if (new_status == CQueueItemBase::eComplete)
         m_Handler->DeferredComplete();

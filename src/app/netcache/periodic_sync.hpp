@@ -75,7 +75,7 @@ class CNCPeriodicSync
 {
 public:
     static void PreInitialize(void);
-    static void Initialize(void);
+    static bool Initialize(void);
     static void Finalize(void);
 
     // Initiates synchronization which came from a peer netcache.

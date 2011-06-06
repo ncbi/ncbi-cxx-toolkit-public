@@ -331,17 +331,20 @@ CSQLITE_Global::EnableSharedCache(bool enable /* = true */)
 void
 CSQLITE_Global::SetCustomPageCache(sqlite3_pcache_methods* methods)
 {
-    if (sqlite3_config(SQLITE_CONFIG_PCACHE, methods) != SQLITE_OK) {
-        ERR_POST_X(6, "Custom page cache is not set because of an error");
+    int res = sqlite3_config(SQLITE_CONFIG_PCACHE, methods);
+    if (res != SQLITE_OK) {
+        NCBI_THROW_FMT(CSQLITE_Exception, eBadCall,
+                       "Custom page cache is not set, err_code = " << res);
     }
 }
 
 void
 CSQLITE_Global::SetCustomMallocFuncs(sqlite3_mem_methods* methods)
 {
-    if (sqlite3_config(SQLITE_CONFIG_MALLOC, methods) != SQLITE_OK) {
-        ERR_POST_X(8,
-                   "Custom malloc functions are not set because of an error");
+    int res = sqlite3_config(SQLITE_CONFIG_MALLOC, methods);
+    if (res != SQLITE_OK) {
+        NCBI_THROW_FMT(CSQLITE_Exception, eBadCall,
+                       "Custom malloc functions are not set, err_code = " << res);
     }
 }
 
@@ -354,8 +357,10 @@ CSQLITE_Global::GetDefaultVFS(void)
 void
 CSQLITE_Global::RegisterCustomVFS(sqlite3_vfs* vfs, bool set_default /*= true*/)
 {
-    if (sqlite3_vfs_register(vfs, set_default) != SQLITE_OK) {
-        ERR_POST_X(10, "Custom VFS is not registered because of an error");
+    int res = sqlite3_vfs_register(vfs, set_default);
+    if (res != SQLITE_OK) {
+        NCBI_THROW_FMT(CSQLITE_Exception, eBadCall,
+                       "Custom VFS is not registered, err_code = " << res);
     }
 }
 

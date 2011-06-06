@@ -91,13 +91,16 @@ typedef  map<string, string>  TStringMap;
 class CNetCacheServer : public CServer
 {
 public:
-    /// Create server
+    CNetCacheServer(void);
+    virtual ~CNetCacheServer();
+
+    /// Initialize server
     ///
     /// @param do_reinit
     ///   TRUE if reinitialization should be forced (was requested in command
     ///   line)
-    CNetCacheServer(bool do_reinit);
-    virtual ~CNetCacheServer();
+    bool Initialize(bool do_reinit);
+    void Finalize(void);
 
     /// Check if server was asked to stop
     virtual bool ShutdownRequested(void);
@@ -142,11 +145,6 @@ public:
                                            const string& key,
                                            bool& blob_exist,
                                            SNCBlobSummary& blob_sum);
-    static ENCPeerFailure RemoveBlobOnPeer(Uint8 server_id,
-                                           const string& key,
-                                           Uint8 orig_rec_no,
-                                           Uint8 orig_time,
-                                           bool  add_client_ip);
     static ENCPeerFailure ProlongBlobOnPeer(Uint8 server_id,
                                             const string& key,
                                             Uint8 orig_rec_no,
@@ -164,14 +162,6 @@ public:
         _ASSERT(evt->event_type == eSyncWrite);
         return x_WriteBlobToPeer(server_id, slot, evt->key, evt->orig_rec_no,
                                  true, false);
-    }
-    static ENCPeerFailure SyncDelBlobFromPeer(Uint8 server_id,
-                                              Uint2 slot,
-                                              SNCSyncEvent* evt)
-    {
-        return x_DelBlobFromPeer(server_id, slot, evt->key,
-                                 evt->orig_server, evt->orig_rec_no,
-                                 evt->orig_time, true, false);
     }
     static ENCPeerFailure SyncProlongBlobOnPeer(Uint8 server_id,
                                                 Uint2 slot,
@@ -202,9 +192,6 @@ public:
         return x_SyncGetBlobFromPeer(server_id, slot, evt->key,
                                      evt->orig_time, evt->orig_rec_no);
     }
-    static ENCPeerFailure SyncDelOurBlob(Uint8 server_id,
-                                         Uint2 slot,
-                                         SNCSyncEvent*  evt);
     static ENCPeerFailure SyncProlongOurBlob(Uint8 server_id,
                                              Uint2 slot,
                                              SNCSyncEvent* evt);
@@ -229,7 +216,7 @@ public:
     static bool IsDebugMode(void);
 
     /// Re-read configuration of the server and all storages
-    void Reconfigure(void);
+    //void Reconfigure(void);
     /// Print full server statistics into stream
     void PrintServerStats(CNcbiIostream* ios);
 
@@ -263,14 +250,6 @@ private:
                                                 const string& key,
                                                 Uint8 create_time,
                                                 Uint8 orig_rec_no);
-    static ENCPeerFailure x_DelBlobFromPeer(Uint8 server_id,
-                                            Uint2 slot,
-                                            const string& key,
-                                            Uint8 orig_server,
-                                            Uint8 orig_rec_no,
-                                            Uint8 orig_time,
-                                            bool  is_sync,
-                                            bool  add_client_ip);
     static ENCPeerFailure x_ProlongBlobOnPeer(Uint8 server_id,
                                               Uint2 slot,
                                               const string& raw_key,
@@ -288,7 +267,7 @@ private:
                                               bool is_sync);
 
     /// Read server parameters from application's configuration file
-    void x_ReadServerParams(void);
+    bool x_ReadServerParams(void);
     ///
     void x_ReadSpecificParams(const IRegistry&   reg,
                               const string&      section,
@@ -301,6 +280,7 @@ private:
     SSpecParamsSet* x_FindNextParamsSet(const SSpecParamsSet* cur_set,
                                         const string&         key,
                                         unsigned int&         best_index);
+    void x_ReadPerClientConfig(const CNcbiRegistry& reg);
 
 
     /// Print full server statistics into stream or diagnostics

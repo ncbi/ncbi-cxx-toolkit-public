@@ -62,7 +62,7 @@ public:
     CRef<SNCBlobVerData> CreateNewVersion(void);
 
     ///
-    void FinalizeWriting(SNCBlobVerData* ver_data);
+    bool FinalizeWriting(SNCBlobVerData* ver_data);
     ///
     void DeleteVersion(const SNCBlobVerData* ver_data);
 
@@ -135,7 +135,6 @@ enum ENCAccessType {
     eNCReadData,    ///< Read blob data
     eNCCreate,      ///< Create blob or re-write its contents
     eNCCopyCreate,
-    eNCDelete,      ///< Delete the blob
     eNCGCDelete
 };
 
@@ -154,6 +153,7 @@ public:
     bool IsBlobExists(void) const;
     /// Check if password provided for accessing the blob was correct
     bool IsAuthorized(void) const;
+    bool HasError(void) const;
     TNCBlobId GetNewBlobId(void) const;
     /// Get key of the blob.
     /// Method can be called only after lock is acquired.
@@ -178,6 +178,7 @@ public:
     ENCBlockingOpResult ObtainFirstData(INCBlockedOpListener* listener);
     size_t ReadData(void* buffer, size_t buf_size);
     int GetCurBlobTTL(void) const;
+    int GetNewBlobTTL(void) const;
     /// Set blob's timeout after last access before it will be deleted.
     /// Method can be called only after lock is acquired, if blob exists and
     /// lock is acquired for eNCDelete or eNCCreate access.
@@ -191,11 +192,13 @@ public:
     Uint8 GetNewBlobCreateTime(void) const;
     void SetBlobCreateTime(Uint8 create_time);
     int GetCurBlobDeadTime(void) const;
-    int GetCurVerDeadTime(void) const;
-    void SetCurBlobDeadTime(int dead_time);
-    void SetNewBlobDeadTime(int dead_time);
-    void SetCurVerDeadTime(int dead_time);
-    void SetNewVerDeadTime(int dead_time);
+    int GetCurBlobExpire(void) const;
+    int GetNewBlobExpire(void) const;
+    int GetCurVerExpire(void) const;
+    void SetCurBlobExpire(int expire, int dead_time = 0);
+    void SetNewBlobExpire(int expire, int dead_time = 0);
+    void SetCurVerExpire(int dead_time);
+    void SetNewVerExpire(int dead_time);
     Uint8 GetCurCreateServer(void) const;
     Uint8 GetNewCreateServer(void) const;
     TNCBlobId GetCurCreateId(void) const;
@@ -258,7 +261,7 @@ private:
     ///
     static bool sx_IsOnlyOneChunk(SNCBlobVerData* ver_data);
     ///
-    NCBI_NORETURN void x_DelCorruptedVersion(void);
+    void x_DelCorruptedVersion(void);
     ///
     void x_ReadChunkData(TNCChunkId chunk_id, CNCBlobBuffer* buffer);
     ///
@@ -288,6 +291,7 @@ private:
     CRef<SNCBlobVerData>    m_NewData;
     ///
     bool                    m_Initialized;
+    bool                    m_HasError;
     ///
     INCBlockedOpListener*   m_InitListener;
     ///
@@ -348,7 +352,14 @@ CNCBlobAccessor::IsBlobExists(void) const
 inline bool
 CNCBlobAccessor::IsAuthorized(void) const
 {
-    return !IsBlobExists()  ||  m_CurData->password == m_Password;
+    return !IsBlobExists()  ||  IsCurBlobExpired()
+           ||  m_CurData->password == m_Password;
+}
+
+inline bool
+CNCBlobAccessor::HasError(void) const
+{
+    return m_HasError;
 }
 
 inline const string&
@@ -393,10 +404,16 @@ CNCBlobAccessor::GetCurBlobTTL(void) const
     return m_CurData->ttl;
 }
 
+inline int
+CNCBlobAccessor::GetNewBlobTTL(void) const
+{
+    return m_NewData->ttl;
+}
+
 inline bool
 CNCBlobAccessor::IsCurBlobExpired(void) const
 {
-    return m_CurData->dead_time < int(time(NULL));
+    return m_CurData->expire < int(time(NULL));
 }
 
 inline bool
@@ -409,7 +426,6 @@ inline void
 CNCBlobAccessor::SetBlobCreateTime(Uint8 create_time)
 {
     m_NewData->create_time = create_time;
-    m_NewData->dead_time = int(create_time / kNCTimeTicksInSec) + m_NewData->ttl;
 }
 
 inline Uint8
@@ -431,21 +447,38 @@ CNCBlobAccessor::GetCurBlobDeadTime(void) const
 }
 
 inline int
-CNCBlobAccessor::GetCurVerDeadTime(void) const
+CNCBlobAccessor::GetCurBlobExpire(void) const
+{
+    return m_CurData->expire;
+}
+
+inline int
+CNCBlobAccessor::GetNewBlobExpire(void) const
+{
+    return m_NewData->expire;
+}
+
+inline int
+CNCBlobAccessor::GetCurVerExpire(void) const
 {
     return m_CurData->ver_expire;
 }
 
 inline void
-CNCBlobAccessor::SetCurBlobDeadTime(int dead_time)
+CNCBlobAccessor::SetCurBlobExpire(int expire, int dead_time /* = 0 */)
 {
-    m_CurData->dead_time = dead_time;
+    m_CurData->expire = expire;
+    m_CurData->dead_time = max(expire, max(m_CurData->dead_time, dead_time));
     m_CurData->need_write = true;
 }
 
 inline void
-CNCBlobAccessor::SetNewBlobDeadTime(int dead_time)
+CNCBlobAccessor::SetNewBlobExpire(int expire, int dead_time /* = 0 */)
 {
+    m_NewData->expire = expire;
+    dead_time = max(dead_time, expire);
+    if (m_CurData)
+        dead_time = max(m_CurData->dead_time, dead_time);
     m_NewData->dead_time = dead_time;
 }
 
@@ -480,16 +513,16 @@ CNCBlobAccessor::SetBlobVersion(int ver)
 }
 
 inline void
-CNCBlobAccessor::SetCurVerDeadTime(int dead_time)
+CNCBlobAccessor::SetCurVerExpire(int expire)
 {
-    m_CurData->ver_expire = dead_time;
+    m_CurData->ver_expire = expire;
     m_CurData->need_write = true;
 }
 
 inline void
-CNCBlobAccessor::SetNewVerDeadTime(int dead_time)
+CNCBlobAccessor::SetNewVerExpire(int expire)
 {
-    m_NewData->ver_expire = dead_time;
+    m_NewData->ver_expire = expire;
 }
 
 inline void
@@ -547,9 +580,6 @@ CNCBlobAccessor::GetAccessType(void) const
 inline void
 CNCBlobAccessor::SetPosition(Uint8 pos)
 {
-    _ASSERT(IsBlobExists()  &&  m_AccessType == eNCReadData);
-    _ASSERT(!m_Buffer  &&  pos <= m_CurData->size);
-
     m_CurChunk = Uint4(pos / kNCMaxBlobChunkSize);
     m_ChunkPos = size_t(pos % kNCMaxBlobChunkSize);
 }

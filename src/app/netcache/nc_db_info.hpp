@@ -120,6 +120,7 @@ public:
     TNCChunksList   chunks;
     Uint8   create_time;    ///< Last time blob was moved
     int     ttl;            ///< Timeout for blob living
+    int     expire;
     int     dead_time;
     Uint8   size;           ///< Size of the blob
     string  password;
@@ -132,7 +133,7 @@ public:
     bool    need_write;
     bool    need_meta_blob;
     bool    need_data_blob;
-    int     old_dead_time;
+    bool    has_error;
     Uint8   disk_size;
     Uint8   generation;
     CRef<CNCBlobBuffer> data;
@@ -157,12 +158,13 @@ private:
 
 struct SNCBlobSummary
 {
-    TNCBlobId create_id;
+    Uint8   size;
     Uint8   create_time;
     Uint8   create_server;
+    TNCBlobId create_id;
     int     dead_time;
+    int     expire;
     int     ver_expire;
-    Uint8   size;
 
     bool isOlder(const SNCBlobSummary& other) const
     {
@@ -174,6 +176,8 @@ struct SNCBlobSummary
             return create_id < other.create_id;
         else if (dead_time != other.dead_time)
             return dead_time < other.dead_time;
+        else if (expire != other.expire)
+            return expire < other.expire;
         else
             return ver_expire < other.ver_expire;
     }
@@ -191,6 +195,7 @@ struct SNCBlobSummary
                &&  create_server == other.create_server
                &&  create_id == other.create_id
                &&  dead_time == other.dead_time
+               &&  expire == other.expire
                &&  ver_expire == other.ver_expire;
     }
 };
@@ -207,8 +212,8 @@ typedef list< AutoPtr<SNCBlobListInfo> >   TNCBlobsList;
 
 struct SNCCacheData : public SNCBlobCoords, public SNCBlobSummary
 {
+    bool  key_deleted;
     void* volatile ver_manager;
-    bool  is_deleted;
 
 
     SNCCacheData(void);
@@ -306,8 +311,8 @@ SNCBlobVerData::SNCBlobVerData(const SNCBlobVerData* other)
 
 inline
 SNCCacheData::SNCCacheData(void)
-    : ver_manager(NULL),
-      is_deleted(false)
+    : key_deleted(false),
+      ver_manager(NULL)
 {
     blob_id = create_id = 0;
     meta_id = data_id = 0;
@@ -319,8 +324,8 @@ inline
 SNCCacheData::SNCCacheData(SNCBlobListInfo* blob_info)
     : SNCBlobCoords(*blob_info),
       SNCBlobSummary(*blob_info),
-      ver_manager(NULL),
-      is_deleted(false)
+      key_deleted(false),
+      ver_manager(NULL)
 {}
 
 

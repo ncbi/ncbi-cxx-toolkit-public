@@ -47,7 +47,6 @@
 #include "netcache_version.hpp"
 #include "nc_memory.hpp"
 #include "nc_stat.hpp"
-#include "error_codes.hpp"
 #include "distribution_conf.hpp"
 #include "sync_log.hpp"
 #include "mirroring.hpp"
@@ -55,8 +54,6 @@
 
 
 BEGIN_NCBI_SCOPE
-
-#define NCBI_USE_ERRCODE_X  NetCache_Main
 
 
 static const char* kNCReg_ServerSection       = "server";
@@ -134,44 +131,35 @@ CNetCacheServer::x_ReadSpecificParams(const IRegistry&   reg,
                                       SNCSpecificParams* params)
 {
     if (reg.HasEntry(section, kNCReg_DisableClient, IRegistry::fCountCleared)) {
-        params->disable = reg.GetBool(section, kNCReg_DisableClient,
-                                      false, 0, IRegistry::eErrPost);
+        params->disable = reg.GetBool(section, kNCReg_DisableClient, false);
     }
     if (reg.HasEntry(section, kNCReg_CommandTimeout, IRegistry::fCountCleared)) {
-        params->cmd_timeout = reg.GetInt(section, kNCReg_CommandTimeout,
-                                         600, 0, IRegistry::eErrPost);
+        params->cmd_timeout = reg.GetInt(section, kNCReg_CommandTimeout, 600);
     }
     if (reg.HasEntry(section, kNCReg_NetworkTimeout, IRegistry::fCountCleared)) {
-        params->conn_timeout = reg.GetInt(section, kNCReg_NetworkTimeout,
-                                          10, 0, IRegistry::eErrPost);
+        params->conn_timeout = reg.GetInt(section, kNCReg_NetworkTimeout, 10);
         if (params->conn_timeout == 0) {
-            ERR_POST("INI file sets network timeout to 0. Assuming 10 seconds.");
+            INFO_POST("INI file sets network timeout to 0. Assuming 10 seconds.");
             params->conn_timeout =  10;
         }
     }
     if (reg.HasEntry(section, kNCReg_BlobTTL, IRegistry::fCountCleared)) {
-        params->blob_ttl = reg.GetInt(section, kNCReg_BlobTTL,
-                                      3600, 0, IRegistry::eErrPost);
+        params->blob_ttl = reg.GetInt(section, kNCReg_BlobTTL, 3600);
     }
     if (reg.HasEntry(section, kNCReg_VerTTL, IRegistry::fCountCleared)) {
-        params->ver_ttl = reg.GetInt(section, kNCReg_VerTTL,
-                                     3600, 0, IRegistry::eErrPost);
+        params->ver_ttl = reg.GetInt(section, kNCReg_VerTTL, 3600);
     }
     if (reg.HasEntry(section, kNCReg_TTLUnit, IRegistry::fCountCleared)) {
-        params->ttl_unit = reg.GetInt(section, kNCReg_TTLUnit,
-                                      300, 0, IRegistry::eErrPost);
+        params->ttl_unit = reg.GetInt(section, kNCReg_TTLUnit, 300);
     }
     if (reg.HasEntry(section, kNCReg_ProlongOnRead, IRegistry::fCountCleared)) {
-        params->prolong_on_read = reg.GetBool(section, kNCReg_ProlongOnRead,
-                                              true, 0, IRegistry::eErrPost);
+        params->prolong_on_read = reg.GetBool(section, kNCReg_ProlongOnRead, true);
     }
     if (reg.HasEntry(section, kNCReg_SearchOnRead, IRegistry::fCountCleared)) {
-        params->srch_on_read = reg.GetBool(section, kNCReg_SearchOnRead,
-                                           true, 0, IRegistry::eErrPost);
+        params->srch_on_read = reg.GetBool(section, kNCReg_SearchOnRead, true);
     }
     if (reg.HasEntry(section, kNCReg_Quorum, IRegistry::fCountCleared)) {
-        params->quorum = reg.GetInt(section, kNCReg_Quorum,
-                                    1, 0, IRegistry::eErrPost);
+        params->quorum = reg.GetInt(section, kNCReg_Quorum, 1);
     }
     if (reg.HasEntry(section, kNCReg_PassPolicy, IRegistry::fCountCleared)) {
         string pass_policy = reg.GetString(section, kNCReg_PassPolicy, "any");
@@ -183,8 +171,9 @@ CNetCacheServer::x_ReadSpecificParams(const IRegistry&   reg,
         }
         else {
             if (pass_policy != "any") {
-                ERR_POST_X(16, "Incorrect value of '" << kNCReg_PassPolicy
-                               << "' parameter: '" << pass_policy << "'");
+                ERR_POST("Incorrect value of '" << kNCReg_PassPolicy
+                         << "' parameter: '" << pass_policy
+                         << "', assuming 'any'");
             }
             params->pass_policy = eNCBlobPassAny;
         }
@@ -224,78 +213,8 @@ CNetCacheServer::x_FindNextParamsSet(const SSpecParamsSet*  cur_set,
 }
 
 void
-CNetCacheServer::x_ReadServerParams(void)
+CNetCacheServer::x_ReadPerClientConfig(const CNcbiRegistry& reg)
 {
-    const CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
-
-    string ports_str = reg.Get(kNCReg_ServerSection, kNCReg_Ports);
-    if (ports_str != m_PortsConfStr) {
-        list<string> split_ports;
-        NStr::Split(ports_str, ", \t\r\n", split_ports);
-        TPortsList ports_list;
-        ITERATE(list<string>, it, split_ports) {
-            try {
-                ports_list.insert(NStr::StringToInt(*it));
-            }
-            catch (CException& ex) {
-                ERR_POST_X(17, "Error reading port number from '"
-                               << *it << "': " << ex);
-            }
-        }
-        ITERATE(TPortsList, it, ports_list) {
-            unsigned int port = *it;
-            if (m_Ports.find(port) == m_Ports.end())
-                m_Ports.insert(port);
-        }
-        if (ports_list.size() != m_Ports.size()) {
-            ERR_POST_X(18, "After reconfiguration some ports should not be "
-                           "listened anymore. It requires restarting of the server.");
-        }
-        if (m_Ports.size() == 0) {
-            NCBI_THROW(CUtilException, eWrongData,
-                       "No listening ports were configured.");
-        }
-        m_PortsConfStr = ports_str;
-    }
-    m_CtrlPort = reg.GetInt(kNCReg_ServerSection, kNCReg_CtrlPort, 0, 0,
-                            IRegistry::eErrPost);
-
-    m_LogCmds     = reg.GetBool  (kNCReg_ServerSection, kNCReg_LogCmds, true, 0,
-                                  IRegistry::eErrPost);
-    m_AdminClient = reg.GetString(kNCReg_ServerSection, kNCReg_AdminClient,
-                                  kNCReg_DefAdminClient);
-    bool force_poll = reg.GetBool(kNCReg_ServerSection, kNCReg_ForceUsePoll,
-                                  true, 0, IRegistry::eErrPost);
-    SOCK_SetIOWaitSysAPI(force_poll? eSOCK_IOWaitSysAPIPoll: eSOCK_IOWaitSysAPIAuto);
-
-    SServer_Parameters serv_params;
-    serv_params.max_connections = reg.GetInt(kNCReg_ServerSection, kNCReg_MaxConnections,
-                                             100, 0, IRegistry::eErrPost);
-    serv_params.max_threads     = reg.GetInt(kNCReg_ServerSection, kNCReg_MaxThreads,
-                                             20,  0, IRegistry::eErrPost);
-    if (serv_params.max_threads < 1) {
-        serv_params.max_threads = 1;
-    }
-    serv_params.init_threads = 1;
-    serv_params.accept_timeout = &m_ServerAcceptTimeout;
-    SetParameters(serv_params);
-    s_TaskPool = new CStdPoolOfThreads(serv_params.max_threads, 1000000000);
-
-    m_DebugMode = reg.GetBool(kNCReg_ServerSection, "debug_mode", false, 0, IRegistry::eErrPost);
-
-    try {
-        string str_val   = reg.GetString(kNCReg_ServerSection, kNCReg_MemLimit, "1Gb");
-        size_t mem_limit = size_t(NStr::StringToUInt8_DataSize(str_val));
-        str_val          = reg.GetString(kNCReg_ServerSection, kNCReg_MemAlert, "4Gb");
-        size_t mem_alert = size_t(NStr::StringToUInt8_DataSize(str_val));
-        CNCMemManager::SetLimits(mem_limit, mem_alert);
-    }
-    catch (CStringException& ex) {
-        ERR_POST_X(14, "Error in " << kNCReg_MemLimit
-                         << " or " << kNCReg_MemAlert << " parameter: " << ex);
-        //ERR_POST("Error in " << kNCReg_MemLimit << " parameter: " << ex);
-    }
-
     m_OldSpecParams = m_SpecParams;
 
     string spec_prty = reg.Get(kNCReg_ServerSection, kNCReg_SpecPriority);
@@ -307,8 +226,11 @@ CNetCacheServer::x_ReadServerParams(void)
     main_params->conn_timeout    = 10;
     main_params->blob_ttl        = 3600;
     main_params->ver_ttl         = 3600;
+    main_params->ttl_unit        = 300;
     main_params->prolong_on_read = true;
+    main_params->srch_on_read    = false;
     main_params->pass_policy     = eNCBlobPassAny;
+    main_params->quorum          = 1;
     x_ReadSpecificParams(reg, kNCReg_ServerSection, main_params);
     m_DefConnTimeout = main_params->conn_timeout;
     SSpecParamsSet* params_set = new SSpecParamsSet();
@@ -352,8 +274,8 @@ CNetCacheServer::x_ReadServerParams(void)
                 }
             }
             if (cur_set->entries.size() != 0) {
-                ERR_POST_X(19, "Section '" << section << "' in configuration file is "
-                               "a duplicate of another section - ignoring it.");
+                ERR_POST("Section '" << section << "' in configuration file is "
+                         "a duplicate of another section - ignoring it.");
                 continue;
             }
             SNCSpecificParams* params = new SNCSpecificParams(*main_params);
@@ -366,24 +288,118 @@ CNetCacheServer::x_ReadServerParams(void)
     }
 }
 
-CNetCacheServer::CNetCacheServer(bool do_reinit)
+bool
+CNetCacheServer::x_ReadServerParams(void)
+{
+    const CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
+
+    string ports_str = reg.Get(kNCReg_ServerSection, kNCReg_Ports);
+    if (ports_str != m_PortsConfStr) {
+        list<string> split_ports;
+        NStr::Split(ports_str, ", \t\r\n", split_ports);
+        TPortsList ports_list;
+        ITERATE(list<string>, it, split_ports) {
+            try {
+                ports_list.insert(NStr::StringToInt(*it));
+            }
+            catch (CStringException& ex) {
+                ERR_POST(Critical << "Error reading port number from '"
+                                  << *it << "': " << ex);
+                return false;
+            }
+        }
+        ITERATE(TPortsList, it, ports_list) {
+            unsigned int port = *it;
+            if (m_Ports.find(port) == m_Ports.end())
+                m_Ports.insert(port);
+        }
+        if (ports_list.size() != m_Ports.size()) {
+            ERR_POST("After reconfiguration some ports should not be "
+                     "listened anymore. It requires restarting of the server.");
+        }
+        if (m_Ports.size() == 0) {
+            ERR_POST(Critical << "No listening client ports were configured.");
+            return false;
+        }
+        m_PortsConfStr = ports_str;
+    }
+
+    try {
+        m_CtrlPort = reg.GetInt(kNCReg_ServerSection, kNCReg_CtrlPort, 0);
+
+        m_LogCmds     = reg.GetBool  (kNCReg_ServerSection, kNCReg_LogCmds, true);
+        m_AdminClient = reg.GetString(kNCReg_ServerSection, kNCReg_AdminClient,
+                                      kNCReg_DefAdminClient);
+        bool force_poll = reg.GetBool(kNCReg_ServerSection, kNCReg_ForceUsePoll, true);
+        SOCK_SetIOWaitSysAPI(force_poll? eSOCK_IOWaitSysAPIPoll: eSOCK_IOWaitSysAPIAuto);
+
+        SServer_Parameters serv_params;
+        serv_params.max_connections = reg.GetInt(kNCReg_ServerSection, kNCReg_MaxConnections, 100);
+        serv_params.max_threads     = reg.GetInt(kNCReg_ServerSection, kNCReg_MaxThreads, 20);
+        if (serv_params.max_threads < 1) {
+            serv_params.max_threads = 1;
+        }
+        serv_params.init_threads = 1;
+        serv_params.accept_timeout = &m_ServerAcceptTimeout;
+        try {
+            SetParameters(serv_params);
+        }
+        catch (CServer_Exception& ex) {
+            ERR_POST(Critical << "Cannot set server parameters: " << ex);
+            return false;
+        }
+        s_TaskPool = new CStdPoolOfThreads(serv_params.max_threads, 1000000000);
+
+        m_DebugMode = reg.GetBool(kNCReg_ServerSection, "debug_mode", false);
+
+        string str_val   = reg.GetString(kNCReg_ServerSection, kNCReg_MemLimit, "1Gb");
+        size_t mem_limit = size_t(NStr::StringToUInt8_DataSize(str_val));
+        str_val          = reg.GetString(kNCReg_ServerSection, kNCReg_MemAlert, "4Gb");
+        size_t mem_alert = size_t(NStr::StringToUInt8_DataSize(str_val));
+        CNCMemManager::SetLimits(mem_limit, mem_alert);
+
+        x_ReadPerClientConfig(reg);
+    }
+    catch (CStringException& ex) {
+        ERR_POST(Critical << "Error in configuration: " << ex);
+        return false;
+    }
+
+    return true;
+}
+
+CNetCacheServer::CNetCacheServer(void)
     : m_SpecParams(NULL),
       m_OldSpecParams(NULL),
       m_Shutdown(false),
       m_Signal(0),
       m_OpenToClients(false)
+{}
+
+CNetCacheServer::~CNetCacheServer()
+{}
+
+bool
+CNetCacheServer::Initialize(bool do_reinit)
 {
     m_ServerAcceptTimeout.sec = 1;
     m_ServerAcceptTimeout.usec = 0;
 
-    x_ReadServerParams();
+    if (!x_ReadServerParams())
+        return false;
     INCBlockedOpListener::BindToThreadPool(s_TaskPool);
 
-    CNCDistributionConf::Initialize(m_CtrlPort);
+    if (!CNCDistributionConf::Initialize(m_CtrlPort))
+        return false;
 
     CFastMutexGuard guard(s_CachingLock);
 
-    g_NCStorage = new CNCBlobStorage(do_reinit);
+    _ASSERT(g_NetcacheServer == NULL);
+    g_NetcacheServer = this;
+
+    g_NCStorage = new CNCBlobStorage();
+    if (!g_NCStorage->Initialize(do_reinit))
+        return false;
     CNCFileSystem::SetDiskInitialized();
 
     Uint8 max_rec_no = g_NCStorage->GetMaxSyncLogRecNo();
@@ -392,28 +408,41 @@ CNetCacheServer::CNetCacheServer(bool do_reinit)
     typedef map<Uint8, string> TPeerAddrs;
     const TPeerAddrs& peer_addrs = CNCDistributionConf::GetPeers();
     ITERATE(TPeerAddrs, it_peer, peer_addrs) {
-        s_NCPeers[it_peer->first] = CNetCacheAPI(it_peer->second, "nc_peer");
+        try {
+            s_NCPeers[it_peer->first] = CNetCacheAPI(it_peer->second, "nc_peer");
+        }
+        catch (CNetCacheException& ex) {
+            ERR_POST(Critical << "Cannot create NetCacheAPI: " << ex);
+            return false;
+        }
     }
 
     m_StartTime = GetFastLocalTime();
 
-    _ASSERT(g_NetcacheServer == NULL);
-    g_NetcacheServer = this;
-
-    CNCMirroring::Initialize();
+    if (!CNCMirroring::Initialize())
+        return false;
     CNCPeriodicSync::PreInitialize();
 
     if (m_Ports.find(m_CtrlPort) == m_Ports.end()) {
         Uint4 port = m_CtrlPort;
         if (m_DebugMode)
             port += 10;
-        LOG_POST("Opening control port " << port);
+        INFO_POST("Opening control port " << port);
         AddListener(new CNCMsgHndlFactory_Proxy(), port);
-        StartListening();
+        try {
+            StartListening();
+        }
+        catch (CServer_Exception& ex) {
+            ERR_POST(Critical << "Cannot listen to control port: " << ex);
+            return false;
+        }
     }
+
+    return true;
 }
 
-CNetCacheServer::~CNetCacheServer()
+void
+CNetCacheServer::Finalize(void)
 {
     CPrintTextProxy proxy(CPrintTextProxy::ePrintLog);
     INFO_POST("NetCache server is destroying. Usage statistics:");
@@ -424,9 +453,10 @@ CNetCacheServer::~CNetCacheServer()
     CNCPeriodicSync::Finalize();
     CNCMirroring::Finalize();
     s_TaskPool->KillAllThreads(true);
-    delete g_NCStorage;
+    g_NCStorage->Finalize();
+    //delete g_NCStorage;
     s_TaskPool->KillAllThreads(true);
-    delete s_TaskPool;
+    //delete s_TaskPool;
     CNCSyncLog::Finalize();
     CNCDistributionConf::Finalize();
 
@@ -451,7 +481,7 @@ CNetCacheServer::GetAppSetup(const TStringMap& client_params)
     }
     return static_cast<const SNCSpecificParams*>(cur_set->entries[0].value.GetPointer());
 }
-
+/*
 void
 CNetCacheServer::Reconfigure(void)
 {
@@ -459,7 +489,7 @@ CNetCacheServer::Reconfigure(void)
     x_ReadServerParams();
     g_NCStorage->Reconfigure();
 }
-
+*/
 void
 CNetCacheServer::x_PrintServerStats(CPrintTextProxy& proxy)
 {
@@ -500,57 +530,61 @@ CNetCacheServer::GetPeerServer(Uint8 server_id)
 static bool
 s_ReadBlobsList(IReader* reader, TNCBlobSumList& blobs_list)
 {
-    try {
-        char buf[4096];
-        size_t n_read = 0;
-        size_t buf_pos = 0;
-        for (;;) {
-            size_t bytes_read = 0;
-            ERW_Result read_res = reader->Read(buf + n_read, 4096 - n_read, &bytes_read);
-            if (read_res == eRW_Eof) {
-                if (n_read == 0)
-                    return true;
-                else
-                    goto error_blobs;
-            }
-            else if (read_res == eRW_Error)
-                goto error_blobs;
-
-            n_read += bytes_read;
-            while (n_read - buf_pos > 2) {
-                SNCCacheData* blob_sum = new SNCCacheData();
-                Uint2 key_size = *(Uint2*)(buf + buf_pos);
-                Uint2 rec_size = key_size + sizeof(key_size)
-                                 + sizeof(blob_sum->create_time)
-                                 + sizeof(blob_sum->create_server)
-                                 + sizeof(blob_sum->create_id)
-                                 + sizeof(blob_sum->dead_time)
-                                 + sizeof(blob_sum->ver_expire);
-                if (n_read - buf_pos < rec_size)
-                    break;
-                char* data = buf + buf_pos + sizeof(key_size);
-                string key(key_size, '\0');
-                memcpy(&key[0], data, key_size);
-                data += key_size;
-                blobs_list[key] = blob_sum;
-                memcpy(&blob_sum->create_time, data, sizeof(blob_sum->create_time));
-                data += sizeof(blob_sum->create_time);
-                memcpy(&blob_sum->create_server, data, sizeof(blob_sum->create_server));
-                data += sizeof(blob_sum->create_server);
-                memcpy(&blob_sum->create_id, data, sizeof(blob_sum->create_id));
-                data += sizeof(blob_sum->create_id);
-                memcpy(&blob_sum->dead_time, data, sizeof(blob_sum->dead_time));
-                data += sizeof(blob_sum->dead_time);
-                memcpy(&blob_sum->ver_expire, data, sizeof(blob_sum->ver_expire));
-                buf_pos += rec_size;
-            }
-            memmove(buf, buf + buf_pos, n_read - buf_pos);
-            n_read -= buf_pos;
-            buf_pos = 0;
+    char buf[4096];
+    size_t n_read = 0;
+    size_t buf_pos = 0;
+    for (;;) {
+        size_t bytes_read = 0;
+        ERW_Result read_res = eRW_Error;
+        try {
+            read_res = reader->Read(buf + n_read, 4096 - n_read, &bytes_read);
         }
-    }
-    catch (CException& ex) {
-        ERR_POST(ex);
+        catch (CNetServiceException& ex) {
+            ERR_POST(Warning << "Cannot read from peer: " << ex);
+        }
+        if (read_res == eRW_Eof) {
+            if (n_read == 0)
+                return true;
+            else
+                goto error_blobs;
+        }
+        else if (read_res == eRW_Error)
+            goto error_blobs;
+
+        n_read += bytes_read;
+        while (n_read - buf_pos > 2) {
+            SNCCacheData* blob_sum = new SNCCacheData();
+            Uint2 key_size = *(Uint2*)(buf + buf_pos);
+            Uint2 rec_size = key_size + sizeof(key_size)
+                             + sizeof(blob_sum->create_time)
+                             + sizeof(blob_sum->create_server)
+                             + sizeof(blob_sum->create_id)
+                             + sizeof(blob_sum->dead_time)
+                             + sizeof(blob_sum->expire)
+                             + sizeof(blob_sum->ver_expire);
+            if (n_read - buf_pos < rec_size)
+                break;
+            char* data = buf + buf_pos + sizeof(key_size);
+            string key(key_size, '\0');
+            memcpy(&key[0], data, key_size);
+            data += key_size;
+            blobs_list[key] = blob_sum;
+            memcpy(&blob_sum->create_time, data, sizeof(blob_sum->create_time));
+            data += sizeof(blob_sum->create_time);
+            memcpy(&blob_sum->create_server, data, sizeof(blob_sum->create_server));
+            data += sizeof(blob_sum->create_server);
+            memcpy(&blob_sum->create_id, data, sizeof(blob_sum->create_id));
+            data += sizeof(blob_sum->create_id);
+            memcpy(&blob_sum->dead_time, data, sizeof(blob_sum->dead_time));
+            data += sizeof(blob_sum->dead_time);
+            memcpy(&blob_sum->expire, data, sizeof(blob_sum->expire));
+            data += sizeof(blob_sum->expire);
+            memcpy(&blob_sum->ver_expire, data, sizeof(blob_sum->ver_expire));
+            buf_pos += rec_size;
+        }
+        memmove(buf, buf + buf_pos, n_read - buf_pos);
+        n_read -= buf_pos;
+        buf_pos = 0;
     }
 
 error_blobs:
@@ -579,102 +613,117 @@ CNetCacheServer::StartSyncWithPeer(Uint8                server_id,
     api_cmd += NStr::UInt8ToString(remote_rec_no);
 
     CNetServer srv_api(CNetCacheServer::GetPeerServer(server_id));
+    auto_ptr<IReader> reader;
+    string response;
     try {
-        string response;
-        auto_ptr<IReader> reader(srv_api.ExecRead(api_cmd, &response));
-        if (NStr::FindNoCase(response, "CROSS_SYNC") != NPOS) {
-            return eCrossSynced;
-        }
-        else if (NStr::FindNoCase(response, "IN_PROGRESS") != NPOS) {
-            return eServerBusy;
-        }
-        else if (NStr::FindNoCase(response, "ALL_BLOBS") == NPOS) {
-            list<CTempString> tokens;
-            NStr::Split(response, " ", tokens);
-            list<CTempString>::const_iterator it_tok = tokens.begin();
-            ++it_tok;
-            remote_rec_no = NStr::StringToUInt8(*it_tok);
-            ++it_tok;
-            local_rec_no = NStr::StringToUInt8(*it_tok);
-
-            char buf[4096];
-            size_t n_read = 0;
-            size_t buf_pos = 0;
-            SBlobEvent* last_blob_evt = NULL;
-            for (;;) {
-                size_t bytes_read = 0;
-                ERW_Result read_res = reader->Read(buf + n_read, 4096 - n_read, &bytes_read);
-                if (read_res == eRW_Eof) {
-                    if (n_read == 0)
-                        return eProceedWithEvents;
-                    else
-                        goto error_events;
-                }
-                else if (read_res == eRW_Error)
-                    goto error_events;
-
-                n_read += bytes_read;
-                while (n_read - buf_pos > 2) {
-                    SNCSyncEvent* evt;
-                    Uint2 key_size = *(Uint2*)(buf + buf_pos);
-                    Uint2 rec_size = key_size + sizeof(key_size) + 1
-                                     + sizeof(evt->rec_no) + sizeof(evt->local_time)
-                                     + sizeof(evt->orig_rec_no)
-                                     + sizeof(evt->orig_server)
-                                     + sizeof(evt->orig_time);
-                    if (n_read - buf_pos < rec_size)
-                        break;
-                    evt = new SNCSyncEvent;
-                    char* data = buf + buf_pos + sizeof(key_size);
-                    evt->key.resize(key_size);
-                    memcpy(&evt->key[0], data, key_size);
-                    data += key_size;
-                    evt->event_type = ENCSyncEvent(*data);
-                    ++data;
-                    memcpy(&evt->rec_no, data, sizeof(evt->rec_no));
-                    data += sizeof(evt->rec_no);
-                    memcpy(&evt->local_time, data, sizeof(evt->local_time));
-                    data += sizeof(evt->local_time);
-                    memcpy(&evt->orig_rec_no, data, sizeof(evt->orig_rec_no));
-                    data += sizeof(evt->orig_rec_no);
-                    memcpy(&evt->orig_server, data, sizeof(evt->orig_server));
-                    data += sizeof(evt->orig_server);
-                    memcpy(&evt->orig_time, data, sizeof(evt->orig_time));
-                    buf_pos += rec_size;
-
-                    if (last_blob_evt  &&  evt->event_type == eSyncProlong) {
-                        last_blob_evt->prolong_event = evt;
-                        last_blob_evt = NULL;
-                    }
-                    else {
-                        last_blob_evt = &events_list[evt->key];
-                        last_blob_evt->wr_or_rm_event = evt;
-                    }
-                }
-                memmove(buf, buf + buf_pos, n_read - buf_pos);
-                n_read -= buf_pos;
-                buf_pos = 0;
-            }
-        }
-        else {
-            CTempString str1, str2;
-            NStr::SplitInTwo(response, " ", str1, str2);
-            remote_rec_no = NStr::StringToUInt8(str2);
-            if (s_ReadBlobsList(reader.get(), blobs_list))
-                return eProceedWithBlobs;
-            else
-                return eNetworkError;
-        }
+        reader.reset(srv_api.ExecRead(api_cmd, &response));
+    }
+    catch (CNetCacheException& ex) {
+        ERR_POST(Warning << "Cannot execute command on peer: " << ex);
+        return eNetworkError;
     }
     catch (CNetSrvConnException& ex) {
         if (ex.GetErrCode() != CNetSrvConnException::eConnectionFailure
             &&  ex.GetErrCode() != CNetSrvConnException::eServerThrottle)
         {
-            ERR_POST(ex);
+            ERR_POST(Warning << "Cannot connect to peer: " << ex);
+        }
+        return eNetworkError;
+    }
+    if (NStr::FindNoCase(response, "CROSS_SYNC") != NPOS) {
+        return eCrossSynced;
+    }
+    else if (NStr::FindNoCase(response, "IN_PROGRESS") != NPOS) {
+        return eServerBusy;
+    }
+    else if (NStr::FindNoCase(response, "ALL_BLOBS") == NPOS) {
+        list<CTempString> tokens;
+        NStr::Split(response, " ", tokens);
+        list<CTempString>::const_iterator it_tok = tokens.begin();
+        try {
+            ++it_tok;
+            remote_rec_no = NStr::StringToUInt8(*it_tok);
+            ++it_tok;
+            local_rec_no = NStr::StringToUInt8(*it_tok);
+        }
+        catch (CStringException& ex) {
+            ERR_POST(Warning << "Cannot execute command on peer: " << ex);
+            return eNetworkError;
+        }
+
+        char buf[4096];
+        size_t n_read = 0;
+        size_t buf_pos = 0;
+        SBlobEvent* last_blob_evt = NULL;
+        for (;;) {
+            size_t bytes_read = 0;
+            ERW_Result read_res = eRW_Error;
+            try {
+                read_res = reader->Read(buf + n_read, 4096 - n_read, &bytes_read);
+            }
+            catch (CNetServiceException& ex) {
+                ERR_POST(Warning << "Cannot read from peer: " << ex);
+            }
+            if (read_res == eRW_Eof) {
+                if (n_read == 0)
+                    return eProceedWithEvents;
+                else
+                    goto error_events;
+            }
+            else if (read_res == eRW_Error)
+                goto error_events;
+
+            n_read += bytes_read;
+            while (n_read - buf_pos > 2) {
+                SNCSyncEvent* evt;
+                Uint2 key_size = *(Uint2*)(buf + buf_pos);
+                Uint2 rec_size = key_size + sizeof(key_size) + 1
+                                 + sizeof(evt->rec_no) + sizeof(evt->local_time)
+                                 + sizeof(evt->orig_rec_no)
+                                 + sizeof(evt->orig_server)
+                                 + sizeof(evt->orig_time);
+                if (n_read - buf_pos < rec_size)
+                    break;
+                evt = new SNCSyncEvent;
+                char* data = buf + buf_pos + sizeof(key_size);
+                evt->key.resize(key_size);
+                memcpy(&evt->key[0], data, key_size);
+                data += key_size;
+                evt->event_type = ENCSyncEvent(*data);
+                ++data;
+                memcpy(&evt->rec_no, data, sizeof(evt->rec_no));
+                data += sizeof(evt->rec_no);
+                memcpy(&evt->local_time, data, sizeof(evt->local_time));
+                data += sizeof(evt->local_time);
+                memcpy(&evt->orig_rec_no, data, sizeof(evt->orig_rec_no));
+                data += sizeof(evt->orig_rec_no);
+                memcpy(&evt->orig_server, data, sizeof(evt->orig_server));
+                data += sizeof(evt->orig_server);
+                memcpy(&evt->orig_time, data, sizeof(evt->orig_time));
+                buf_pos += rec_size;
+
+                if (last_blob_evt  &&  evt->event_type == eSyncProlong) {
+                    last_blob_evt->prolong_event = evt;
+                    last_blob_evt = NULL;
+                }
+                else {
+                    last_blob_evt = &events_list[evt->key];
+                    last_blob_evt->wr_or_rm_event = evt;
+                }
+            }
+            memmove(buf, buf + buf_pos, n_read - buf_pos);
+            n_read -= buf_pos;
+            buf_pos = 0;
         }
     }
-    catch (CException& ex) {
-        ERR_POST(ex);
+    else {
+        CTempString str1, str2;
+        NStr::SplitInTwo(response, " ", str1, str2);
+        remote_rec_no = NStr::StringToUInt8(str2);
+        if (s_ReadBlobsList(reader.get(), blobs_list))
+            return eProceedWithBlobs;
+        else
+            return eNetworkError;
     }
 
 error_events:
@@ -698,24 +747,29 @@ CNetCacheServer::GetBlobsListFromPeer(Uint8           server_id,
     api_cmd += NStr::UIntToString(slot);
 
     CNetServer srv_api(CNetCacheServer::GetPeerServer(server_id));
+    auto_ptr<IReader> reader;
+    string response;
     try {
-        string response;
-        auto_ptr<IReader> reader(srv_api.ExecRead(api_cmd, &response));
-        if (NStr::FindNoCase(response, "NEED_ABORT") != NPOS)
-            return ePeerNeedAbort;
-
-        CTempString str1, str2;
-        NStr::SplitInTwo(response, " ", str1, str2);
-        remote_rec_no = NStr::StringToUInt8(str2);
-        if (s_ReadBlobsList(reader.get(), blobs_list))
-            return ePeerActionOK;
-        else
-            return ePeerBadNetwork;
+        reader.reset(srv_api.ExecRead(api_cmd, &response));
     }
-    catch (CException& ex) {
-        ERR_POST(ex);
+    catch (CNetCacheException& ex) {
+        ERR_POST(Warning << "Cannot execute command on peer: " << ex);
         return ePeerBadNetwork;
     }
+    catch (CNetSrvConnException& ex) {
+        ERR_POST(Warning << "Cannot connect to peer: " << ex);
+        return ePeerBadNetwork;
+    }
+    if (NStr::FindNoCase(response, "NEED_ABORT") != NPOS)
+        return ePeerNeedAbort;
+
+    CTempString str1, str2;
+    NStr::SplitInTwo(response, " ", str1, str2);
+    remote_rec_no = NStr::StringToUInt8(str2);
+    if (s_ReadBlobsList(reader.get(), blobs_list))
+        return ePeerActionOK;
+    else
+        return ePeerBadNetwork;
 }
 
 ENCPeerFailure
@@ -729,19 +783,25 @@ CNetCacheServer::x_WriteBlobToPeer(Uint8 server_id,
     string cache_name, key, subkey;
     g_NCStorage->UnpackBlobKey(raw_key, cache_name, key, subkey);
 
+    ENCPeerFailure result = ePeerBadNetwork;
+    CNetServer srv_api(CNetCacheServer::GetPeerServer(server_id));
+    auto_ptr<IEmbeddedStreamWriter> writer;
+    string response;
+    string api_cmd;
+
     CSemaphore sem(0, 1);
     CNCSyncBlockedOpListener* op_listener = new CNCSyncBlockedOpListener(sem);
     CNCBlobAccessor* accessor = g_NCStorage->GetBlobAccess(
                                              eNCReadData, raw_key, "", slot);
     while (accessor->ObtainMetaInfo(op_listener) == eNCWouldBlock)
         sem.Wait();
-    if (!accessor->IsBlobExists()  ||  accessor->IsCurBlobExpired()) {
-        accessor->Release();
-        delete op_listener;
-        return ePeerActionOK;
+    if (accessor->HasError())
+        goto cleanup_and_exit;
+    if (!accessor->IsBlobExists()) {
+        result = ePeerActionOK;
+        goto cleanup_and_exit;
     }
 
-    string api_cmd;
     if (is_sync) {
         api_cmd += "SYNC_PUT ";
         api_cmd += NStr::UInt8ToString(CNCDistributionConf::GetSelfID());
@@ -768,11 +828,13 @@ CNetCacheServer::x_WriteBlobToPeer(Uint8 server_id,
     api_cmd.append(1, ' ');
     api_cmd += NStr::IntToString(accessor->GetCurBlobDeadTime());
     api_cmd.append(1, ' ');
+    api_cmd += NStr::IntToString(accessor->GetCurBlobExpire());
+    api_cmd.append(1, ' ');
     api_cmd += NStr::UInt8ToString(accessor->GetCurBlobSize());
     api_cmd.append(1, ' ');
     api_cmd += NStr::UIntToString(Uint4(accessor->GetCurVersionTTL()));
     api_cmd.append(1, ' ');
-    api_cmd += NStr::IntToString(accessor->GetCurVerDeadTime());
+    api_cmd += NStr::IntToString(accessor->GetCurVerExpire());
     api_cmd.append(1, ' ');
     api_cmd += NStr::UInt8ToString(accessor->GetCurCreateServer());
     api_cmd.append(1, ' ');
@@ -787,77 +849,82 @@ CNetCacheServer::x_WriteBlobToPeer(Uint8 server_id,
         api_cmd.append(1, '"');
     }
 
-    CNetServer srv_api(CNetCacheServer::GetPeerServer(server_id));
     try {
-        string response;
-        ENCPeerFailure result = ePeerActionOK;
-        auto_ptr<IEmbeddedStreamWriter> writer(srv_api.ExecWrite(api_cmd, &response));
-        if (NStr::FindNoCase(response, "NEED_ABORT") != NPOS) {
-            result = ePeerNeedAbort;
-            writer->Flush();
-            writer->Close();
-        }
-        else if (NStr::FindNoCase(response, "HAVE_NEWER") == NPOS) {
-            accessor->SetPosition(0);
-            while (accessor->ObtainFirstData(op_listener) == eNCWouldBlock)
-                sem.Wait();
-
-            char buf[65536];
-            Uint8 total_read = 0;
-            for (;;) {
-                size_t n_read = accessor->ReadData(buf, 65536);
-                if (n_read == 0)
-                    break;
-                total_read += n_read;
-                size_t buf_pos = 0;
-                size_t bytes_written;
-                ERW_Result write_res = eRW_Success;
-                while (write_res == eRW_Success  &&  buf_pos < n_read) {
-                    bytes_written = 0;
-                    write_res = writer->Write(buf + buf_pos, n_read - buf_pos, &bytes_written);
-                    buf_pos += bytes_written;
-                }
-                if (write_res != eRW_Success) {
-                    //ERR_POST(Critical << "Cannot write blob to peer");
-                    writer->Close();
-                    accessor->Release();
-                    delete op_listener;
-                    return ePeerBadNetwork;
-                }
-            }
-            if (total_read != accessor->GetCurBlobSize())
-                abort();
-            writer->Flush();
-            writer->Close();
-            CNCDistributionConf::PrintBlobCopyStat(accessor->GetCurBlobCreateTime(),
-                                                   accessor->GetCurCreateServer(),
-                                                   server_id);
-        }
-        else {
-            writer->Flush();
-            writer->Close();
-        }
-        accessor->Release();
-        delete op_listener;
-        return result;
+        writer.reset(srv_api.ExecWrite(api_cmd, &response));
+    }
+    catch (CNetCacheException& ex) {
+        ERR_POST(Warning << "Cannot execute command on peer: " << ex);
+        goto cleanup_and_exit;
     }
     catch (CNetSrvConnException& ex) {
         if (IsDebugMode()
             ||  (ex.GetErrCode() != CNetSrvConnException::eConnectionFailure
                  &&  ex.GetErrCode() != CNetSrvConnException::eServerThrottle))
         {
-            ERR_POST(ex);
+            ERR_POST(Warning << "Cannot connect to peer: " << ex);
         }
-        accessor->Release();
-        delete op_listener;
-        return ePeerBadNetwork;
+        goto cleanup_and_exit;
     }
-    catch (CException& ex) {
-        ERR_POST(ex);
-        accessor->Release();
-        delete op_listener;
-        return ePeerBadNetwork;
+    if (NStr::FindNoCase(response, "NEED_ABORT") != NPOS) {
+        result = ePeerNeedAbort;
     }
+    else if (NStr::FindNoCase(response, "HAVE_NEWER") == NPOS) {
+        accessor->SetPosition(0);
+        while (accessor->ObtainFirstData(op_listener) == eNCWouldBlock)
+            sem.Wait();
+        if (accessor->HasError())
+            goto cleanup_and_exit;
+
+        char buf[65536];
+        Uint8 total_read = 0;
+        for (;;) {
+            size_t n_read = accessor->ReadData(buf, 65536);
+            if (accessor->HasError())
+                goto cleanup_and_exit;
+            if (n_read == 0)
+                break;
+            total_read += n_read;
+            size_t buf_pos = 0;
+            size_t bytes_written;
+            ERW_Result write_res = eRW_Success;
+            while (write_res == eRW_Success  &&  buf_pos < n_read) {
+                bytes_written = 0;
+                try {
+                    write_res = writer->Write(buf + buf_pos, n_read - buf_pos, &bytes_written);
+                }
+                catch (CNetServiceException& ex) {
+                    ERR_POST(Warning << "Cannot write to peer: " << ex);
+                    goto cleanup_and_exit;
+                }
+                buf_pos += bytes_written;
+            }
+            if (write_res != eRW_Success)
+                goto cleanup_and_exit;
+        }
+        try {
+            writer->Close();
+        }
+        catch (CNetServiceException& ex) {
+            ERR_POST(Warning << "Cannot write to peer: " << ex);
+            goto cleanup_and_exit;
+        }
+        catch (CNetSrvConnException& ex) {
+            ERR_POST(Warning << "Cannot write to peer: " << ex);
+            goto cleanup_and_exit;
+        }
+        CNCDistributionConf::PrintBlobCopyStat(accessor->GetCurBlobCreateTime(),
+                                               accessor->GetCurCreateServer(),
+                                               server_id);
+        result = ePeerActionOK;
+    }
+    else {
+        result = ePeerActionOK;
+    }
+
+cleanup_and_exit:
+    accessor->Release();
+    delete op_listener;
+    return result;
 }
 
 ENCPeerFailure
@@ -871,78 +938,6 @@ CNetCacheServer::SendBlobToPeer(Uint8 server_id,
 }
 
 ENCPeerFailure
-CNetCacheServer::x_DelBlobFromPeer(Uint8 server_id,
-                                   Uint2 slot,
-                                   const string& raw_key,
-                                   Uint8 orig_server,
-                                   Uint8 orig_rec_no,
-                                   Uint8 orig_time,
-                                   bool  is_sync,
-                                   bool  add_client_ip)
-{
-    string cache_name, key, subkey;
-    g_NCStorage->UnpackBlobKey(raw_key, cache_name, key, subkey);
-
-    string api_cmd;
-    if (is_sync) {
-        api_cmd += "SYNC_REMOVE ";
-        api_cmd += NStr::UInt8ToString(CNCDistributionConf::GetSelfID());
-        api_cmd.append(1, ' ');
-        api_cmd += NStr::UIntToString(slot);
-    }
-    else {
-        api_cmd += "COPY_REMOVE";
-    }
-    api_cmd += " \"";
-    api_cmd += cache_name;
-    api_cmd += "\" \"";
-    api_cmd += key;
-    api_cmd += "\" \"";
-    api_cmd += subkey;
-    api_cmd += "\" ";
-    api_cmd += NStr::UInt8ToString(orig_time);
-    api_cmd.append(1, ' ');
-    api_cmd += NStr::UInt8ToString(orig_server);
-    api_cmd.append(1, ' ');
-    api_cmd += NStr::UInt8ToString(orig_rec_no);
-    if (add_client_ip) {
-        api_cmd += " \"";
-        api_cmd += GetDiagContext().GetRequestContext().GetClientIP();
-        api_cmd += "\" \"";
-        api_cmd += GetDiagContext().GetRequestContext().GetSessionID();
-        api_cmd.append(1, '"');
-    }
-
-    CNetServer srv_api(CNetCacheServer::GetPeerServer(server_id));
-    try {
-        string response;
-        IReader* reader = srv_api.ExecRead(api_cmd, &response);
-        delete reader;
-        if (NStr::FindNoCase(response, "NEED_ABORT") != NPOS)
-            return ePeerNeedAbort;
-        else
-            return ePeerActionOK;
-    }
-    catch (CException& ex) {
-        ERR_POST(ex);
-        return ePeerBadNetwork;
-    }
-}
-
-ENCPeerFailure
-CNetCacheServer::RemoveBlobOnPeer(Uint8 server_id,
-                                  const string& key,
-                                  Uint8 orig_rec_no,
-                                  Uint8 orig_time,
-                                  bool  add_client_ip)
-{
-    return x_DelBlobFromPeer(server_id, 0, key,
-                             CNCDistributionConf::GetSelfID(),
-                             orig_rec_no, orig_time,
-                             false, add_client_ip);
-}
-
-ENCPeerFailure
 CNetCacheServer::x_ProlongBlobOnPeer(Uint8 server_id,
                                      Uint2 slot,
                                      const string& raw_key,
@@ -952,13 +947,6 @@ CNetCacheServer::x_ProlongBlobOnPeer(Uint8 server_id,
                                      Uint8 orig_time,
                                      bool  is_sync)
 {
-    /*
-    int cur_time = int(time(NULL));
-    if (!IsDebugMode())
-        cur_time += 30;
-    if (blob_sum.dead_time <= cur_time)
-        return ePeerActionOK;
-    */
     string cache_name, key, subkey;
     g_NCStorage->UnpackBlobKey(raw_key, cache_name, key, subkey);
 
@@ -987,6 +975,8 @@ CNetCacheServer::x_ProlongBlobOnPeer(Uint8 server_id,
     api_cmd.append(1, ' ');
     api_cmd += NStr::IntToString(blob_sum.dead_time);
     api_cmd.append(1, ' ');
+    api_cmd += NStr::IntToString(blob_sum.expire);
+    api_cmd.append(1, ' ');
     api_cmd += NStr::IntToString(blob_sum.ver_expire);
     if (orig_rec_no != 0) {
         api_cmd.append(1, ' ');
@@ -999,10 +989,8 @@ CNetCacheServer::x_ProlongBlobOnPeer(Uint8 server_id,
 
     CNetServer srv_api(CNetCacheServer::GetPeerServer(server_id));
     try {
-        string response;
-        IReader* reader = srv_api.ExecRead(api_cmd, &response);
-        delete reader;
-        if (NStr::FindNoCase(response, "NEED_ABORT") != NPOS)
+        CNetServer::SExecResult exec_res = srv_api.ExecWithRetry(api_cmd);
+        if (NStr::FindNoCase(exec_res.response, "NEED_ABORT") != NPOS)
             return ePeerNeedAbort;
         else
             return ePeerActionOK;
@@ -1012,12 +1000,12 @@ CNetCacheServer::x_ProlongBlobOnPeer(Uint8 server_id,
             return x_WriteBlobToPeer(server_id, slot, raw_key, 0,
                                      true, false);
         else {
-            ERR_POST(ex);
+            ERR_POST(Warning << "Cannot execute command on peer: " << ex);
             return ePeerBadNetwork;
         }
     }
-    catch (CException& ex) {
-        ERR_POST(ex);
+    catch (CNetSrvConnException& ex) {
+        ERR_POST(Warning << "Cannot connect to peer: " << ex);
         return ePeerBadNetwork;
     }
 }
@@ -1038,6 +1026,10 @@ CNetCacheServer::x_ProlongBlobOnPeer(Uint8 server_id,
     if (accessor->ObtainMetaInfo(op_listener) == eNCWouldBlock)
         sem.Wait();
     delete op_listener;
+    if (accessor->HasError()) {
+        accessor->Release();
+        return ePeerBadNetwork;
+    }
     if (!accessor->IsBlobExists()  ||  accessor->IsCurBlobExpired()) {
         accessor->Release();
         return ePeerActionOK;
@@ -1048,7 +1040,7 @@ CNetCacheServer::x_ProlongBlobOnPeer(Uint8 server_id,
     blob_sum.create_server = accessor->GetCurCreateServer();
     blob_sum.create_id = accessor->GetCurCreateId();
     blob_sum.dead_time = accessor->GetCurBlobDeadTime();
-    blob_sum.ver_expire = accessor->GetCurVerDeadTime();
+    blob_sum.ver_expire = accessor->GetCurVerExpire();
     accessor->Release();
 
     return x_ProlongBlobOnPeer(server_id, slot, raw_key, blob_sum,
@@ -1083,6 +1075,10 @@ CNetCacheServer::x_SyncGetBlobFromPeer(Uint8 server_id,
     while (accessor->ObtainMetaInfo(op_listener) == eNCWouldBlock)
         sem.Wait();
     delete op_listener;
+    if (accessor->HasError()) {
+        accessor->Release();
+        return ePeerBadNetwork;
+    }
     if (accessor->IsBlobExists()
         &&  accessor->GetCurBlobCreateTime() > create_time)
     {
@@ -1110,87 +1106,113 @@ CNetCacheServer::x_SyncGetBlobFromPeer(Uint8 server_id,
     api_cmd += NStr::Int8ToString(accessor->GetCurCreateId());
 
     CNetServer srv_api(CNetCacheServer::GetPeerServer(server_id));
+    auto_ptr<IReader> reader;
+    string response;
     try {
-        string response;
-        auto_ptr<IReader> reader(srv_api.ExecRead(api_cmd, &response));
-        if (NStr::FindNoCase(response, "NEED_ABORT") != NPOS) {
-            accessor->Release();
-            return ePeerNeedAbort;
-        }
-        else if (NStr::FindNoCase(response, "HAVE_NEWER") != NPOS)
-        {
-            accessor->Release();
-            return ePeerActionOK;
-        }
-
-        list<CTempString> params;
-        NStr::Split(response, " ", params);
-        if (params.size() < 10) {
-            accessor->Release();
-            return ePeerBadNetwork;
-        }
-        list<CTempString>::const_iterator param_it = params.begin();
-        ++param_it;
-        accessor->SetBlobVersion(NStr::StringToInt(*param_it));
-        ++param_it;
-        accessor->SetPassword(param_it->substr(1, param_it->size() - 2));
-        ++param_it;
-        Uint8 create_time = NStr::StringToUInt8(*param_it);
-        accessor->SetBlobCreateTime(create_time);
-        ++param_it;
-        accessor->SetBlobTTL(int(NStr::StringToUInt(*param_it)));
-        ++param_it;
-        accessor->SetNewBlobDeadTime(NStr::StringToInt(*param_it));
-        ++param_it;
-        accessor->SetVersionTTL(int(NStr::StringToUInt(*param_it)));
-        ++param_it;
-        accessor->SetNewVerDeadTime(NStr::StringToInt(*param_it));
-        ++param_it;
-        Uint8 create_server = NStr::StringToUInt8(*param_it);
-        ++param_it;
-        TNCBlobId create_id = NStr::StringToUInt(*param_it);
-        accessor->SetCreateServer(create_server, create_id, slot);
-
-        char buf[65536];
-        for (;;) {
-            size_t bytes_read;
-            ERW_Result read_res = reader->Read(buf, 65536, &bytes_read);
-            if (read_res == eRW_Error) {
-                accessor->Release();
-                return ePeerBadNetwork;
-            }
-            accessor->WriteData(buf, bytes_read);
-            if (read_res == eRW_Eof)
-                break;
-        }
-        accessor->Finalize();
-        if (orig_rec_no != 0) {
-            SNCSyncEvent* event = new SNCSyncEvent();
-            event->event_type = eSyncWrite;
-            event->key = raw_key;
-            event->orig_server = create_server;
-            event->orig_time = create_time;
-            event->orig_rec_no = orig_rec_no;
-            CNCSyncLog::AddEvent(slot, event);
-        }
-        accessor->Release();
-        CNCDistributionConf::PrintBlobCopyStat(create_time, create_server, CNCDistributionConf::GetSelfID());
-        return ePeerActionOK;
+        reader.reset(srv_api.ExecRead(api_cmd, &response));
     }
     catch (CNetCacheException& ex) {
         accessor->Release();
         if (ex.GetErrCode() == CNetCacheException::eBlobNotFound)
             return ePeerActionOK;
         else {
-            ERR_POST(ex);
+            ERR_POST(Warning << "Cannot execute command on peer: " << ex);
             return ePeerBadNetwork;
         }
     }
-    catch (CException& ex) {
-        ERR_POST(ex);
+    catch (CNetSrvConnException& ex) {
+        ERR_POST(Warning << "Cannot connect to peer: " << ex);
         accessor->Release();
         return ePeerBadNetwork;
     }
+    if (NStr::FindNoCase(response, "NEED_ABORT") != NPOS) {
+        accessor->Release();
+        return ePeerNeedAbort;
+    }
+    else if (NStr::FindNoCase(response, "HAVE_NEWER") != NPOS)
+    {
+        accessor->Release();
+        return ePeerActionOK;
+    }
+
+    list<CTempString> params;
+    NStr::Split(response, " ", params);
+    if (params.size() < 11) {
+        accessor->Release();
+        return ePeerBadNetwork;
+    }
+    list<CTempString>::const_iterator param_it = params.begin();
+    Uint8 create_server;
+    try {
+        ++param_it;
+        accessor->SetBlobVersion(NStr::StringToInt(*param_it));
+        ++param_it;
+        accessor->SetPassword(param_it->substr(1, param_it->size() - 2));
+        ++param_it;
+        create_time = NStr::StringToUInt8(*param_it);
+        accessor->SetBlobCreateTime(create_time);
+        ++param_it;
+        accessor->SetBlobTTL(int(NStr::StringToUInt(*param_it)));
+        ++param_it;
+        int dead_time = NStr::StringToInt(*param_it);
+        ++param_it;
+        int expire = NStr::StringToInt(*param_it);
+        accessor->SetNewBlobExpire(expire, dead_time);
+        ++param_it;
+        accessor->SetVersionTTL(int(NStr::StringToUInt(*param_it)));
+        ++param_it;
+        accessor->SetNewVerExpire(NStr::StringToInt(*param_it));
+        ++param_it;
+        create_server = NStr::StringToUInt8(*param_it);
+        ++param_it;
+        TNCBlobId create_id = NStr::StringToUInt(*param_it);
+        accessor->SetCreateServer(create_server, create_id, slot);
+    }
+    catch (CStringException& ex) {
+        ERR_POST(Warning << "Cannot execute command on peer: " << ex);
+        accessor->Release();
+        return ePeerBadNetwork;
+    }
+
+    char buf[65536];
+    for (;;) {
+        size_t bytes_read;
+        ERW_Result read_res = eRW_Error;
+        try {
+            read_res = reader->Read(buf, 65536, &bytes_read);
+        }
+        catch (CNetServiceException& ex) {
+            ERR_POST(Warning << "Cannot read from peer: " << ex);
+        }
+        if (read_res == eRW_Error) {
+            accessor->Release();
+            return ePeerBadNetwork;
+        }
+        accessor->WriteData(buf, bytes_read);
+        if (accessor->HasError()) {
+            accessor->Release();
+            return ePeerBadNetwork;
+        }
+        if (read_res == eRW_Eof)
+            break;
+    }
+    accessor->Finalize();
+    if (accessor->HasError()) {
+        accessor->Release();
+        return ePeerBadNetwork;
+    }
+    if (orig_rec_no != 0) {
+        SNCSyncEvent* event = new SNCSyncEvent();
+        event->event_type = eSyncWrite;
+        event->key = raw_key;
+        event->orig_server = create_server;
+        event->orig_time = create_time;
+        event->orig_rec_no = orig_rec_no;
+        CNCSyncLog::AddEvent(slot, event);
+    }
+    accessor->Release();
+    CNCDistributionConf::PrintBlobCopyStat(create_time, create_server, CNCDistributionConf::GetSelfID());
+    return ePeerActionOK;
 }
 
 ENCPeerFailure
@@ -1215,26 +1237,9 @@ CNetCacheServer::ReadBlobMetaData(Uint8 server_id,
     api_cmd.append(1, '"');
 
     CNetServer srv_api(CNetCacheServer::GetPeerServer(server_id));
+    CNetServer::SExecResult exec_res;
     try {
-        string response;
-        auto_ptr<IReader> reader(srv_api.ExecRead(api_cmd, &response));
-        list<CTempString> params;
-        NStr::Split(response, " ", params);
-        if (params.size() < 5)
-            return ePeerBadNetwork;
-
-        list<CTempString>::const_iterator param_it = params.begin();
-        ++param_it;
-        blob_sum.create_time = NStr::StringToUInt8(*param_it);
-        ++param_it;
-        blob_sum.create_server = NStr::StringToUInt8(*param_it);
-        ++param_it;
-        blob_sum.create_id = NStr::StringToUInt(*param_it);
-        ++param_it;
-        blob_sum.dead_time = NStr::StringToInt(*param_it);
-
-        blob_exist = true;
-        return ePeerActionOK;
+        exec_res = srv_api.ExecWithRetry(api_cmd);
     }
     catch (CNetCacheException& ex) {
         if (ex.GetErrCode() == CNetCacheException::eBlobNotFound) {
@@ -1242,7 +1247,7 @@ CNetCacheServer::ReadBlobMetaData(Uint8 server_id,
             return ePeerActionOK;
         }
         else {
-            ERR_POST(ex);
+            ERR_POST(Warning << "Cannot execute command on peer: " << ex);
             return ePeerBadNetwork;
         }
     }
@@ -1251,42 +1256,36 @@ CNetCacheServer::ReadBlobMetaData(Uint8 server_id,
             ||  (ex.GetErrCode() != CNetSrvConnException::eConnectionFailure
                  &&  ex.GetErrCode() != CNetSrvConnException::eServerThrottle))
         {
-            ERR_POST(ex);
+            ERR_POST(Warning << "Cannot connect to peer: " << ex);
         }
         return ePeerBadNetwork;
     }
-    catch (CException& ex) {
-        ERR_POST(ex);
+    list<CTempString> params;
+    NStr::Split(exec_res.response, " ", params);
+    if (params.size() < 7)
+        return ePeerBadNetwork;
+
+    list<CTempString>::const_iterator param_it = params.begin();
+    try {
+        ++param_it;
+        blob_sum.create_time = NStr::StringToUInt8(*param_it);
+        ++param_it;
+        blob_sum.create_server = NStr::StringToUInt8(*param_it);
+        ++param_it;
+        blob_sum.create_id = NStr::StringToUInt(*param_it);
+        ++param_it;
+        blob_sum.dead_time = NStr::StringToInt(*param_it);
+        ++param_it;
+        blob_sum.expire = NStr::StringToInt(*param_it);
+        ++param_it;
+        blob_sum.ver_expire = NStr::StringToInt(*param_it);
+    }
+    catch (CStringException& ex) {
+        ERR_POST(Warning << "Cannot execute command on peer: " << ex);
         return ePeerBadNetwork;
     }
-}
 
-ENCPeerFailure
-CNetCacheServer::SyncDelOurBlob(Uint8 server_id, Uint2 slot, SNCSyncEvent* evt)
-{
-    string cache_name, key, subkey;
-    g_NCStorage->UnpackBlobKey(evt->key, cache_name, key, subkey);
-
-    CSemaphore sem(0, 1);
-    CNCSyncBlockedOpListener* op_listener = new CNCSyncBlockedOpListener(sem);
-    CNCBlobAccessor* accessor = g_NCStorage->GetBlobAccess(
-                                             eNCDelete, evt->key, "", slot);
-    if (accessor->ObtainMetaInfo(op_listener) == eNCWouldBlock)
-        sem.Wait();
-    delete op_listener;
-    if (accessor->IsBlobExists()
-        &&  accessor->GetCurBlobCreateTime() < evt->orig_time)
-    {
-        accessor->DeleteBlob();
-        SNCSyncEvent* event = new SNCSyncEvent();
-        event->event_type = eSyncRemove;
-        event->key = evt->key;
-        event->orig_server = evt->orig_server;
-        event->orig_time = evt->orig_time;
-        event->orig_rec_no = evt->orig_rec_no;
-        CNCSyncLog::AddEvent(slot, event);
-    }
-    accessor->Release();
+    blob_exist = true;
     return ePeerActionOK;
 }
 
@@ -1307,6 +1306,10 @@ CNetCacheServer::SyncProlongOurBlob(Uint8 server_id,
     if (accessor->ObtainMetaInfo(op_listener) == eNCWouldBlock)
         sem.Wait();
     delete op_listener;
+    if (accessor->HasError()) {
+        accessor->Release();
+        return ePeerBadNetwork;
+    }
     if (!accessor->IsBlobExists()) {
         accessor->Release();
         return x_SyncGetBlobFromPeer(server_id, slot, raw_key, blob_sum.create_time, 0);
@@ -1318,13 +1321,13 @@ CNetCacheServer::SyncProlongOurBlob(Uint8 server_id,
     {
         if (need_event)
             *need_event = false;
-        if (accessor->GetCurBlobDeadTime() < blob_sum.dead_time) {
-            accessor->SetCurBlobDeadTime(blob_sum.dead_time);
+        if (accessor->GetCurBlobExpire() < blob_sum.expire) {
+            accessor->SetCurBlobExpire(blob_sum.expire, blob_sum.dead_time);
             if (need_event)
                 *need_event = true;
         }
-        if (accessor->GetCurVerDeadTime() < blob_sum.ver_expire) {
-            accessor->SetCurVerDeadTime(blob_sum.ver_expire);
+        if (accessor->GetCurVerExpire() < blob_sum.ver_expire) {
+            accessor->SetCurVerExpire(blob_sum.ver_expire);
             if (need_event)
                 *need_event = true;
         }
@@ -1354,18 +1357,34 @@ CNetCacheServer::SyncProlongOurBlob(Uint8          server_id,
     api_cmd += "\"";
 
     CNetServer srv_api(CNetCacheServer::GetPeerServer(server_id));
+    CNetServer::SExecResult exec_res;
     try {
-        string response;
-        auto_ptr<IReader> reader(srv_api.ExecRead(api_cmd, &response));
-        if (NStr::FindNoCase(response, "NEED_ABORT") != NPOS)
-            return ePeerNeedAbort;
-
-        list<CTempString> params;
-        NStr::Split(response, " ", params);
-        if (params.size() < 6)
+        exec_res = srv_api.ExecWithRetry(api_cmd);
+    }
+    catch (CNetCacheException& ex) {
+        if (ex.GetErrCode() == CNetCacheException::eBlobNotFound) {
+            return ePeerActionOK;
+        }
+        else {
+            ERR_POST(Warning << "Cannot execute command on peer: " << ex);
             return ePeerBadNetwork;
-        SNCBlobSummary blob_sum;
-        list<CTempString>::const_iterator param_it = params.begin();
+        }
+    }
+    catch (CNetSrvConnException& ex) {
+        ERR_POST(Warning << "Cannot connect to peer: " << ex);
+        return ePeerBadNetwork;
+    }
+
+    if (NStr::FindNoCase(exec_res.response, "NEED_ABORT") != NPOS)
+        return ePeerNeedAbort;
+
+    list<CTempString> params;
+    NStr::Split(exec_res.response, " ", params);
+    if (params.size() < 7)
+        return ePeerBadNetwork;
+    SNCBlobSummary blob_sum;
+    list<CTempString>::const_iterator param_it = params.begin();
+    try {
         ++param_it;
         blob_sum.create_time = NStr::StringToUInt8(*param_it);
         ++param_it;
@@ -1375,34 +1394,27 @@ CNetCacheServer::SyncProlongOurBlob(Uint8          server_id,
         ++param_it;
         blob_sum.dead_time = NStr::StringToInt(*param_it);
         ++param_it;
+        blob_sum.expire = NStr::StringToInt(*param_it);
+        ++param_it;
         blob_sum.ver_expire = NStr::StringToInt(*param_it);
-
-        bool need_event = false;
-        ENCPeerFailure op_res = SyncProlongOurBlob(server_id, slot, evt->key, blob_sum, &need_event);
-        if (need_event  &&  op_res == ePeerActionOK) {
-            SNCSyncEvent* event = new SNCSyncEvent();
-            event->event_type = eSyncProlong;
-            event->key = evt->key;
-            event->orig_server = evt->orig_server;
-            event->orig_time = evt->orig_time;
-            event->orig_rec_no = evt->orig_rec_no;
-            CNCSyncLog::AddEvent(slot, event);
-        }
-        return op_res;
     }
-    catch (CNetCacheException& ex) {
-        if (ex.GetErrCode() == CNetCacheException::eBlobNotFound) {
-            return ePeerActionOK;
-        }
-        else {
-            ERR_POST(ex);
-            return ePeerBadNetwork;
-        }
-    }
-    catch (CException& ex) {
-        ERR_POST(ex);
+    catch (CStringException& ex) {
+        ERR_POST(Warning << "Cannot execute command on peer: " << ex);
         return ePeerBadNetwork;
     }
+
+    bool need_event = false;
+    ENCPeerFailure op_res = SyncProlongOurBlob(server_id, slot, evt->key, blob_sum, &need_event);
+    if (need_event  &&  op_res == ePeerActionOK) {
+        SNCSyncEvent* event = new SNCSyncEvent();
+        event->event_type = eSyncProlong;
+        event->key = evt->key;
+        event->orig_server = evt->orig_server;
+        event->orig_time = evt->orig_time;
+        event->orig_rec_no = evt->orig_rec_no;
+        CNCSyncLog::AddEvent(slot, event);
+    }
+    return op_res;
 }
 
 bool
@@ -1422,14 +1434,16 @@ CNetCacheServer::SyncCommitOnPeer(Uint8 server_id,
 
     CNetServer srv_api(CNetCacheServer::GetPeerServer(server_id));
     try {
-        IReader* reader = srv_api.ExecRead(api_cmd, NULL);
-        delete reader;
+        srv_api.ExecWithRetry(api_cmd);
         return true;
     }
-    catch (CException& ex) {
-        ERR_POST(ex);
-        return false;
+    catch (CNetCacheException& ex) {
+        ERR_POST(Warning << "Cannot execute command on peer: " << ex);
     }
+    catch (CNetSrvConnException& ex) {
+        ERR_POST(Warning << "Cannot connect to peer: " << ex);
+    }
+    return false;
 }
 
 void
@@ -1443,11 +1457,13 @@ CNetCacheServer::SyncCancelOnPeer(Uint8 server_id,
 
     CNetServer srv_api(CNetCacheServer::GetPeerServer(server_id));
     try {
-        IReader* reader = srv_api.ExecRead(api_cmd, NULL);
-        delete reader;
+        srv_api.ExecWithRetry(api_cmd);
     }
-    catch (CException& ex) {
-        ERR_POST(ex);
+    catch (CNetCacheException& ex) {
+        ERR_POST(Warning << "Cannot execute command on peer: " << ex);
+    }
+    catch (CNetSrvConnException& ex) {
+        ERR_POST(Warning << "Cannot connect to peer: " << ex);
     }
 }
 
@@ -1471,14 +1487,15 @@ CNetCacheServer::MayOpenToClients(void)
             ports_str.append(", ", 2);
         }
         ports_str.resize(ports_str.size() - 2);
-        LOG_POST("Opening ports " << ports_str << " to clients");
+        INFO_POST("Opening ports " << ports_str << " to clients");
         g_NetcacheServer->StartListening();
+        g_NetcacheServer->m_OpenToClients = true;
     }
-    catch (CException& ex) {
-        ERR_POST("Failed to open client ports: " << ex << " Shutting down.");
+    catch (CServer_Exception& ex) {
+        ERR_POST(Critical << "Failed to open client ports: " << ex
+                          << " Shutting down.");
         g_NetcacheServer->RequestShutdown();
     }
-    g_NetcacheServer->m_OpenToClients = true;
 }
 
 void
@@ -1498,7 +1515,9 @@ CNetCacheServer::CachingCompleted(void)
         return;
 
     g_NetcacheServer->m_CachingComplete = true;
-    CNCPeriodicSync::Initialize();
+    if (!CNCPeriodicSync::Initialize()) {
+        g_NetcacheServer->RequestShutdown();
+    }
 }
 
 bool
@@ -1582,7 +1601,8 @@ CNetCacheDApp::Run(void)
                                CProcess::fDontChroot | CProcess::fKeepStdin
                                                      | CProcess::fKeepStdout);
         if (!is_good) {
-            NCBI_THROW(CCoreException, eCore, "Error during daemonization");
+            ERR_POST(Critical << "Error during daemonization");
+            return 200;
         }
     }
 
@@ -1591,26 +1611,26 @@ CNetCacheDApp::Run(void)
     signal(SIGTERM, s_NCSignalHandler);
 #endif
 
-    CNCMemManager::InitializeApp();
+    CNetCacheServer* server = NULL;
+    if (!CNCMemManager::InitializeApp())
+        goto fin_mem;
     CSQLITE_Global::Initialize();
-    CSQLITE_Global::EnableSharedCache();
-    CNCFileSystem ::Initialize();
-    try {
-        AutoPtr<CNetCacheServer> server(new CNetCacheServer(args["reinit"]));
+    if (!CNCFileSystem::Initialize())
+        goto fin_fs;
+    server = new CNetCacheServer();
+    if (server->Initialize(args["reinit"])) {
         server->Run();
         if (server->GetSignalCode()) {
             INFO_POST("Server got " << server->GetSignalCode() << " signal.");
         }
     }
-    catch (...) {
-        CNCFileSystem ::Finalize();
-        CSQLITE_Global::Finalize();
-        CNCMemManager ::FinalizeApp();
-        throw;
-    }
-    CNCFileSystem ::Finalize();
+    server->Finalize();
+    //delete server;
+fin_fs:
+    CNCFileSystem::Finalize();
     CSQLITE_Global::Finalize();
-    CNCMemManager ::FinalizeApp();
+fin_mem:
+    CNCMemManager::FinalizeApp();
 
     return 0;
 }
@@ -1635,6 +1655,9 @@ int main(int argc, const char* argv[])
     env.Set("NCBI_ABORT_ON_NULL", "true");
     env.Set("DIAG_SILENT_ABORT", "0");
     env.Set("DEBUG_CATCH_UNHANDLED_EXCEPTIONS", "false");
+    env.Set("THREAD_CATCH_UNHANDLED_EXCEPTIONS", "false");
+    env.Set("THREADPOOL_CATCH_UNHANDLED_EXCEPTIONS", "false");
+    env.Set("CSERVER_CATCH_UNHANDLED_EXCEPTIONS", "false");
 #ifdef NCBI_OS_LINUX
     struct rlimit rlim;
     if (getrlimit(RLIMIT_CORE, &rlim) == 0) {
