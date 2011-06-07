@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE(Test_BED_OneLiner)
 ///
 BOOST_AUTO_TEST_CASE(Test_GFF_OneLiner)
 {
-	char GFFLine[] = "NC_000008.9\tdbVar\tCNV\t151699\t186841\t.\t.\t.\n";
+	char GFFLine[] = "NC_000008.9\tdbVar\tmisc\t151699\t186841\t.\t.\t.\n";
 	CNcbiIstrstream Stream(GFFLine, strlen(GFFLine));
 
 	CFormatGuessEx Guesser(Stream);
