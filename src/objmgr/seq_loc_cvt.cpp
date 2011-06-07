@@ -569,7 +569,7 @@ void CSeq_loc_Conversion::ConvertPacked_int(const CSeq_loc& src,
             CRef<CSeq_interval> dst_int = GetDstInterval();
             if ( last_truncated  &&
                 !dst_int->IsPartialStart(eExtreme_Biological) ) {
-                dst_int->SetTruncatedStart(true, eExtreme_Biological);
+                dst_int->SetPartialStart(true, eExtreme_Biological);
             }
             dst_ints->push_back(dst_int);
             last_truncated = false;
@@ -577,7 +577,7 @@ void CSeq_loc_Conversion::ConvertPacked_int(const CSeq_loc& src,
         else {
             if ( !last_truncated  &&  *dst  &&
                 !(*dst)->IsPartialStop(eExtreme_Biological) ) {
-                (*dst)->SetTruncatedStop(true, eExtreme_Biological);
+                (*dst)->SetPartialStop(true, eExtreme_Biological);
             }
             last_truncated = true;
         }
@@ -743,7 +743,7 @@ void CSeq_loc_Conversion::ConvertMix(const CSeq_loc& src,
             _ASSERT(dst_loc);
             if ( last_truncated  &&
                 !dst_loc->IsPartialStart(eExtreme_Biological) ) {
-                dst_loc->SetTruncatedStart(true, eExtreme_Biological);
+                dst_loc->SetPartialStart(true, eExtreme_Biological);
             }
             dst_mix->push_back(dst_loc);
             last_truncated = false;
@@ -751,7 +751,7 @@ void CSeq_loc_Conversion::ConvertMix(const CSeq_loc& src,
         else {
             if ( !last_truncated  &&  *dst  &&
                 !(*dst)->IsPartialStop(eExtreme_Biological) ) {
-                (*dst)->SetTruncatedStop(true, eExtreme_Biological);
+                (*dst)->SetPartialStop(true, eExtreme_Biological);
             }
             last_truncated = true;
         }
@@ -1800,7 +1800,7 @@ bool CSeq_loc_Conversion_Set::ConvertPacked_int(const CSeq_loc& src,
         if (mapped) {
             if ( last_truncated  &&
                 !dst_int->IsPartialStart(eExtreme_Biological) ) {
-                dst_int->SetTruncatedStart(true, eExtreme_Biological);
+                dst_int->SetPartialStart(true, eExtreme_Biological);
             }
             if ( dst_int->IsInt() ) {
                 dst_ints.push_back(CRef<CSeq_interval>(&dst_int->SetInt()));
@@ -1816,7 +1816,7 @@ bool CSeq_loc_Conversion_Set::ConvertPacked_int(const CSeq_loc& src,
         else {
             if ( !last_truncated  &&
                 !(*dst)->IsPartialStop(eExtreme_Biological) ) {
-                (*dst)->SetTruncatedStop(true, eExtreme_Biological);
+                (*dst)->SetPartialStop(true, eExtreme_Biological);
             }
         }
         m_Partial |= !mapped;
@@ -1894,7 +1894,7 @@ bool CSeq_loc_Conversion_Set::ConvertMix(const CSeq_loc& src,
             _ASSERT(dst_loc);
             if ( last_truncated  &&
                 !dst_loc->IsPartialStart(eExtreme_Biological) ) {
-                dst_loc->SetTruncatedStart(true, eExtreme_Biological);
+                dst_loc->SetPartialStart(true, eExtreme_Biological);
             }
             dst_mix.push_back(dst_loc);
             res = true;
@@ -1903,7 +1903,7 @@ bool CSeq_loc_Conversion_Set::ConvertMix(const CSeq_loc& src,
         else {
             if ( !last_truncated  &&
                 !(*dst)->IsPartialStop(eExtreme_Biological) ) {
-                (*dst)->SetTruncatedStop(true, eExtreme_Biological);
+                (*dst)->SetPartialStop(true, eExtreme_Biological);
             }
             last_truncated = true;
         }
