@@ -521,7 +521,7 @@ string CVariationUtil::s_CollapseAmbiguities(const vector<string>& seqs)
 {
     string collapsed_seq;
 
-    vector<int> bits; //4-bit bitmask denoting whether a nucleotide occurs at this pos at any seq
+    vector<int> bits; //4-bit bitmask denoting whether a nucleotide occurs at this pos at any seq in seqs
 
     typedef const vector<string> TConstStrs;
     ITERATE(TConstStrs, it, seqs) {
@@ -544,32 +544,40 @@ string CVariationUtil::s_CollapseAmbiguities(const vector<string>& seqs)
         }
     }
 
-    static const string iupac_bases = "NTGKCYSBAWRDMHVN";
+    static const string iupac_nuc_ambiguity_codes = "NTGKCYSBAWRDMHVN";
     collapsed_seq.resize(bits.size());
     for(size_t i = 0; i < collapsed_seq.size(); i++) {
-        collapsed_seq[i] = iupac_bases[bits[i]];
+        collapsed_seq[i] = iupac_nuc_ambiguity_codes[bits[i]];
     }
     return collapsed_seq;
 }
 
 
-void CVariationUtil::x_InferNAfromAA(CVariation& v)
+void CVariationUtil::x_InferNAfromAA(CVariation& v, TAA2NAFlags flags)
 {
-    if(v.IsSetPlacements()) {
-        /*
-         * Do we need to propagate / factor placements into sub-variations? e.g.
-         * single-base change in a codon will require truncating the location by 2 bases
-         * (either from one side, or from both, as necessary). If another subvariation
-         * has a different base changed, the location will need to be truncated differently.
-         */
-    }
-
     if(v.GetData().IsSet()) {
-        NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
-            CVariation& v2 = **it;
-            x_InferNAfromAA(v2);
+        CVariation::TData::TSet::TVariations variations = v.SetData().SetSet().SetVariations();
+        v.SetData().SetSet().SetVariations().clear();
+
+        NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, variations) {
+            CRef<CVariation> v2 = *it;
+
+            if(v2->GetData().IsInstance()
+               && v2->GetData().GetInstance().IsSetObservation()
+               && !(v2->GetData().GetInstance().GetObservation() & CVariation_inst::eObservation_variant))
+            {
+                //only variant observations are propagated to the nuc level
+                continue;
+            }
+            x_InferNAfromAA(*v2, flags);
+            v.SetData().SetSet().SetVariations().push_back(v2);
         }
-        v.ResetPlacements(); //nucleotide placement is computed for each instance and attached at its level
+        v.ResetPlacements(); //nucleotide placement will be computed for each instance and attached at its level
+
+        if(v.GetData().GetSet().GetVariations().size() == 1) {
+            v.Assign(*v.GetData().GetSet().GetVariations().front());
+        }
+        return;
     }
 
     if(!v.GetData().IsInstance()) {
@@ -648,31 +656,36 @@ void CVariationUtil::x_InferNAfromAA(CVariation& v)
 
     string variant_codon = s_CollapseAmbiguities(variant_codons);
 
-#if 0
-    //If the original and variant codons have terminal bases shared, we can truncate the variant codon and location accordingly.
-    while(variant_codon.length() > 1 && variant_codon.at(0) == original_allele_codon.at(0)) {
-        variant_codon = variant_codon.substr(1);
-        original_allele_codon = variant_codon.substr(1);
-        if(nuc_loc->GetStrand() == eNa_strand_minus) {
-            nuc_loc->SetInt().SetTo()--;
-        } else {
-            nuc_loc->SetInt().SetFrom()++;
+    if(flags & fAA2NA_truncate_common_prefix_and_suffix  && variant_codon != original_allele_codon) {
+        while(variant_codon.length() > 0
+              && original_allele_codon.length() > 0
+              && variant_codon.at(0) == original_allele_codon.at(0))
+        {
+            variant_codon = variant_codon.substr(1);
+            original_allele_codon = original_allele_codon.substr(1);
+            if(nuc_loc->GetStrand() == eNa_strand_minus) {
+                nuc_loc->SetInt().SetTo()--;
+            } else {
+                nuc_loc->SetInt().SetFrom()++;
+            }
+        }
+
+        while(variant_codon.length() > 0
+              && original_allele_codon.length() > 0
+              &&    variant_codon.at(variant_codon.length() - 1)
+                 == original_allele_codon.at(original_allele_codon.length() - 1))
+        {
+            variant_codon.resize(variant_codon.length() - 1);
+            original_allele_codon.resize(original_allele_codon.length() - 1);
+            //Note: normally given a protein, the parent will be a mRNA and the CDS location
+            //will have plus strand; however, the parent could be MT, so we can't assume plus strand
+            if(nuc_loc->GetStrand() == eNa_strand_minus) {
+                nuc_loc->SetInt().SetFrom()++;
+            } else {
+                nuc_loc->SetInt().SetTo()--;
+            }
         }
     }
-    while(variant_codon.length() > 1 &&
-          variant_codon.at(variant_codon.length() - 1) == original_allele_codon.at(original_allele_codon.length() - 1))
-    {
-        variant_codon.resize(variant_codon.length() - 1);
-        original_allele_codon.resize(variant_codon.length() - 1);
-        //Note: normally given a protein, the parent will be a mRNA and the CDS location
-        //will have plus strand; however, the parent could be MT, so we can't assume plus strand
-        if(nuc_loc->GetStrand() == eNa_strand_minus) {
-            nuc_loc->SetInt().SetFrom()++;
-        } else {
-            nuc_loc->SetInt().SetTo()--;
-        }
-    }
-#endif
 
     CRef<CDelta_item> delta2(new CDelta_item);
     delta2->SetSeq().SetLiteral().SetLength(variant_codon.length());
@@ -689,8 +702,6 @@ void CVariationUtil::x_InferNAfromAA(CVariation& v)
     v2->SetPlacements().push_back(p2);
 
 
-
-
     CVariation_inst& inst2 = v2->SetData().SetInstance();
     inst2.SetType(variant_codon.length() == 1 ? CVariation_inst::eType_snv : CVariation_inst::eType_mnp);
     inst2.SetDelta().push_back(delta2);
@@ -702,18 +713,22 @@ void CVariationUtil::x_InferNAfromAA(CVariation& v)
     v.Assign(*v2);
 }
 
-CRef<CVariation> CVariationUtil::InferNAfromAA(const CVariation& v)
+CRef<CVariation> CVariationUtil::InferNAfromAA(const CVariation& v, TAA2NAFlags flags)
 {
     CRef<CVariation> v2(new CVariation);
     v2->Assign(v);
     v2->Index();
-    x_InferNAfromAA(*v2);
+    x_InferNAfromAA(*v2, flags);
     s_FactorOutPlacements(*v2);
-
     v2->Index();
+
     //Note: The result describes whole codons, even for point mutations, i.e. common suffx/prefix are not truncated.
     return v2;
 }
+
+
+
+
 
 CRef<CSeq_literal> CVariationUtil::x_GetLiteralAtLoc(const CSeq_loc& loc)
 {
@@ -1173,6 +1188,9 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
 
     CRef<CSeq_loc> prot_loc = nuc2prot_mapper->Map(p->GetLoc());
     CRef<CSeq_loc> codons_loc = prot2nuc_mapper->Map(*prot_loc);
+    TSignedSeqPos frame = abs(
+              (TSignedSeqPos)p->GetLoc().GetStart(eExtreme_Biological)
+            - (TSignedSeqPos)codons_loc->GetStart(eExtreme_Biological));
 
     codons_loc->SetId(sequence::GetId(p->GetLoc(), NULL)); //restore the original id, as mapping forward and back may have changed the type
     ChangeIdsInPlace(*prot_loc, sequence::eGetId_ForceAcc, *m_scope); //not strictly required, but generally prefer accvers in the output for readability
@@ -1205,17 +1223,18 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
 
     //will have two placements: one describing the AA, and the other describing codons
     CRef<CVariantPlacement> prot_p(new CVariantPlacement);
-    CRef<CVariantPlacement> codons_p(new CVariantPlacement);
-    prot_v->SetPlacements().push_back(prot_p);
-    prot_v->SetPlacements().push_back(codons_p);
     prot_p->SetLoc(*prot_loc);
-    codons_p->SetLoc(*codons_loc);
-
     prot_p->SetMol(GetMolType(sequence::GetId(prot_p->GetLoc(), NULL)));
-    codons_p->SetMol(GetMolType(sequence::GetId(codons_p->GetLoc(), NULL)));
-
     AttachSeq(*prot_p);
+    prot_v->SetPlacements().push_back(prot_p);
+
+    CRef<CVariantPlacement> codons_p(new CVariantPlacement);
+    codons_p->SetLoc(*codons_loc);
+    codons_p->SetMol(GetMolType(sequence::GetId(codons_p->GetLoc(), NULL)));
+    codons_p->SetFrame(frame);
     AttachSeq(*codons_p);
+    prot_v->SetPlacements().push_back(codons_p);
+
 
     prot_v->SetVariant_prop().SetEffect(CalcEffectForProt(prot_ref_str, prot_delta_str));
     if(prot_v->SetVariant_prop().GetEffect() == 0) {

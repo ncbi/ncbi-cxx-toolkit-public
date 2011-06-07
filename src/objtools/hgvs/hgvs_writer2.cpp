@@ -124,8 +124,14 @@ CConstRef<CSeq_literal> CHgvsParser::x_FindAssertedSequence(const CVariation& v)
             continue;
         }
 
-        //capture asserted sequence
-        if(v2.GetData().GetInstance().GetObservation() & CVariation_inst::eObservation_asserted) {
+        //Note that we are only interested in allerted observation if it has the same
+        //placement as its sibling (i.e. placement attached at the parent level, rather at v2). This situation may
+        //arise when we compute a nucleotide precursor variation from a protein variation, and truncate
+        //common suffix and prefix. The variant allele may be truncated differently than the asserted allele,
+        //and they each will get different placements.
+        if(v2.GetData().GetInstance().GetObservation() & CVariation_inst::eObservation_asserted
+           && !v2.IsSetPlacements())
+        {
             asserted_seq.Reset(&v2.GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral());
             break;
         }
@@ -202,8 +208,8 @@ string CHgvsParser::x_AsHgvsExpression(
         return x_AsHgvsExpression(*flipped_variation, seq_id, flipped_asserted_seq);
     }
 
-    //if this variation is a package containing asserted sequence, unwrap it and call recursively
-    //(as asserted sequence does not participate in HGVS expression as independent instance subexpression)
+    //Asserted sequence does not participate in HGVS expression as independent instance subexpression.
+    //Instead, we'll find it here (e.g. "A") and pass down to create variant subexpressions, e.g. [A>C]+[A>G]
     if(variation.GetData().IsSet()
        && variation.GetData().GetSet().GetType() == CVariation::TData::TSet::eData_set_type_package)
     {

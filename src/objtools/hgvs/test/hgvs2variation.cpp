@@ -248,9 +248,9 @@ void ProcessVariation(CVariation& v, const CArgs& args, CScope& scope, CConstRef
     }
 
     if(args["precursor"]) {
-        CRef<CVariation> v2 = variation_util.InferNAfromAA(v);
+        CRef<CVariation> v2 = variation_util.InferNAfromAA(v, CVariationUtil::fAA2NA_truncate_common_prefix_and_suffix);
         CVariation::TConsequence::value_type consequence(new CVariation::TConsequence::value_type::TObjectType);
-        consequence->SetVariation(v);
+        consequence->SetVariation().Assign(v);
         v2->SetConsequence().push_back(consequence);
         v.Assign(*v2);
     }

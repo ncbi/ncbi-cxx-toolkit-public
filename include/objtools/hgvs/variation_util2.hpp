@@ -91,7 +91,13 @@ public:
 /// Methods to convert between nucleotide and protein
 
     /// Convert protein-variation (single-AA missense/nonsense) to nuc-variation on the precursor in the parent nuc-prot.
-    CRef<CVariation> InferNAfromAA(const CVariation& prot_variation);
+    typedef int TAA2NAFlags;
+    enum EAA2NAFlags
+    {
+        fAA2NA_truncate_common_prefix_and_suffix = 1,
+        fAA2NA_default = 0
+    };
+    CRef<CVariation> InferNAfromAA(const CVariation& prot_variation, TAA2NAFlags flags = fAA2NA_default);
 
 
     /// Evaluate protein effect of a single-inst @ single-placement
@@ -202,6 +208,7 @@ public:
      */
     static const CVariation::TPlacements* s_GetPlacements(const CVariation& v);
 
+
 private:
     CRef<CVariantPlacement> x_Remap(const CVariantPlacement& p, CSeq_loc_Mapper& mapper);
 
@@ -212,7 +219,7 @@ private:
 
     void x_ChangeToDelins(CVariation& v);
 
-    void x_InferNAfromAA(CVariation& v);
+    void x_InferNAfromAA(CVariation& v, TAA2NAFlags flags);
 
     void x_TranslateNAtoAA(CVariation& prot_variation);
 
