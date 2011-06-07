@@ -1274,7 +1274,6 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
     string df_db_name = m_IgOptions->m_Origin + "_gl_V";
     CRef<CSearchDatabase> db(new CSearchDatabase(df_db_name, mol_type));
     m_IgOptions->m_Db[3].Reset(new CLocalDbAdapter(*db));
-    m_Scope->AddDataLoader(s_RegisterOMDataLoader(db->GetSeqDb()));
 
     CRef<CBlastOptionsHandle> opts_hndl;
     if (m_IgOptions->m_IsProtein) {
