@@ -2134,7 +2134,7 @@ if   test "$with_runpath" = "no" ; then
    pure_runpath=
 elif test -n "$with_runpath"  -a  "$with_runpath" != "yes" ; then
    root_base=`basename $build_root`
-   pure_runpath=`echo ${with_runpath} | sed s/{}/$root_base/g`
+   pure_runpath=`echo "${with_runpath}" | sed -e "s/{}/$root_base/g"`
    runpath="${CONF_f_runpath}${pure_runpath}"
    case "$host_os:$compiler" in
     darwin* )
@@ -6327,9 +6327,9 @@ else
   AC_MSG_NOTICE([...done])
 fi
 
-eval ncbi_runpath=`echo $pure_runpath`
+ncbi_runpath=`eval echo "$pure_runpath"`
 dnl AC_DEFINE_UNQUOTED(NCBI_RUNPATH, "$ncbi_runpath", [NCBI runpath])
-c_ncbi_runpath=`echo $ncbi_runpath | sed -e 's:\$\$:\$:g'`
+c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 ### Template substitutions
 AC_SUBST(signature)
