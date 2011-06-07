@@ -58,10 +58,13 @@ public:
     CVariation(void);
     // destructor
     ~CVariation(void);
-
+    
     const CVariation* GetParent() const;
     CVariation* SetParent();   
-    
+
+    const CVariation* GetConsequenceParent() const;
+    CVariation* SetConsequenceParent();   
+
     // Update children->parent links
     void Index();
 
@@ -70,8 +73,9 @@ private:
     CVariation(const CVariation& value);
     CVariation& operator=(const CVariation& value);
 
-    CVariation* m_parent;
-
+    CVariation* m_parent; //Point to the parent variation from a variation.data.set
+    CVariation* m_consequence_parent; //Point to the parent variation from variation.consequence
+    
 };
 
 /////////////////// CVariation inline methods
@@ -80,6 +84,7 @@ private:
 inline
 CVariation::CVariation(void)
   : m_parent(NULL)
+  , m_consequence_parent(NULL)
 {
 }
 
@@ -93,6 +98,18 @@ inline CVariation* CVariation::SetParent()
 {
     return m_parent;
 }
+
+
+inline const CVariation* CVariation::GetConsequenceParent() const
+{
+    return m_consequence_parent;
+}
+
+inline CVariation* CVariation::SetConsequenceParent()
+{
+    return m_consequence_parent;
+}
+
 
 /////////////////// end of CVariation inline methods
 

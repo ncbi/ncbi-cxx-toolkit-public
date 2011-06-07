@@ -75,6 +75,9 @@ VariantPlacement ::= SEQUENCE
     stop-offset INTEGER OPTIONAL,
     stop-offset-fuzz Int-fuzz OPTIONAL,
 
+    -- 0-based position of bio-start relative to containing codon
+    frame INTEGER OPTIONAL,
+
     -- for situations in which a raw location isn't sufficient
     seq Seq-literal OPTIONAL, 
 

@@ -54,14 +54,30 @@ CVariation::~CVariation(void)
 
 void CVariation::Index()
 {
-    if(!(this->IsSetData() && this->GetData().IsSet() && this->GetData().GetSet().IsSetVariations())) {
-        return;
-    }   
-    NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, this->SetData().SetSet().SetVariations()) {
-        CVariation& v = **it;
-        v.m_parent = this;
-        v.Index();
-    }   
+    //process consequences
+    if(this->IsSetConsequence()) {
+        NON_CONST_ITERATE(CVariation::TConsequence, it, this->SetConsequence()) {
+            CVariation::TConsequence::value_type::TObjectType& cons = **it;
+            if(!cons.IsVariation()) {
+                continue;
+            }
+            cons.SetVariation().m_consequence_parent = this;
+            cons.SetVariation().Index();
+        }
+    }
+
+
+    //procsess subvariations if this is a set
+    if(this->IsSetData() 
+       && this->GetData().IsSet() 
+       && this->GetData().GetSet().IsSetVariations()) 
+    {
+        NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, this->SetData().SetSet().SetVariations()) {
+            CVariation& v = **it;
+            v.m_parent = this;
+            v.Index();
+        }   
+    }
 }
 
 END_objects_SCOPE // namespace ncbi::objects::
