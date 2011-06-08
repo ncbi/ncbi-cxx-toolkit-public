@@ -74,16 +74,32 @@ public:
 struct SNCMirrorEvent
 {
     ENCSyncEvent evt_type;
+    Uint2   slot;
     string  key;
     Uint8   orig_rec_no;
     Uint8   orig_time;
 
 
-    SNCMirrorEvent(ENCSyncEvent typ, const string& key_, Uint8 rec_no)
-        : evt_type(typ), key(key_), orig_rec_no(rec_no), orig_time(0)
+    SNCMirrorEvent(ENCSyncEvent typ,
+                   Uint2 slot_,
+                   const string& key_,
+                   Uint8 rec_no)
+        : evt_type(typ),
+          slot(slot_),
+          key(key_),
+          orig_rec_no(rec_no),
+          orig_time(0)
     {}
-    SNCMirrorEvent(ENCSyncEvent typ, const string& key_, Uint8 rec_no, Uint8 tm)
-        : evt_type(typ), key(key_), orig_rec_no(rec_no), orig_time(tm)
+    SNCMirrorEvent(ENCSyncEvent typ,
+                   Uint2 slot_,
+                   const string& key_,
+                   Uint8 rec_no,
+                   Uint8 tm)
+        : evt_type(typ),
+          slot(slot_),
+          key(key_),
+          orig_rec_no(rec_no),
+          orig_time(tm)
     {}
 };
 

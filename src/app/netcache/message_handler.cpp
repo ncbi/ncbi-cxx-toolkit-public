@@ -1947,7 +1947,9 @@ CNCMessageHandler::x_FinishReadingBlob(void)
                 --m_Quorum;
             m_DeferredDone = false;
             m_DeferredTask = new CNCPutToPeers_Task(this, x_GetCurSlotServers(),
-                                    m_Quorum, m_CmdCtx, m_BlobKey, event_rec_no);
+                                                    m_Quorum, m_CmdCtx,
+                                                    m_BlobSlot, m_BlobKey,
+                                                    event_rec_no);
             CNetCacheServer::AddDeferredTask(m_DeferredTask);
             x_SetState(eWaitForDeferredTask);
             m_CmdProcessor = &CNCMessageHandler::x_DoCmd_NoOp;
@@ -2955,7 +2957,9 @@ CNCMessageHandler::x_DoCmd_Remove(void)
 
     m_BlobAccess->SetBlobTTL(x_GetBlobTTL());
     m_BlobAccess->SetBlobVersion(m_BlobVersion);
-    m_BlobAccess->SetNewBlobExpire(int(time(NULL)) - 1);
+    int expire = int(time(NULL)) - 1;
+    int ttl = max(m_BlobAccess->GetCurBlobTTL(), m_BlobAccess->GetNewBlobTTL());
+    m_BlobAccess->SetNewBlobExpire(expire, expire + ttl + 1);
     x_FinishReadingBlob();
     return true;
 }
@@ -3576,11 +3580,13 @@ CNCPutToPeers_Task::CNCPutToPeers_Task(CNCMessageHandler* handler,
                                        const vector<Uint8>& servers,
                                        Uint1 quorum,
                                        CRequestContext* req_ctx,
+                                       Uint2 slot,
                                        const string& key,
                                        Uint8 event_rec_no)
     : m_Handler(handler),
       m_Servers(servers),
       m_Quorum(quorum),
+      m_Slot(slot),
       m_ReqCtx(req_ctx),
       m_Key(key),
       m_EventRecNo(event_rec_no)
@@ -3596,7 +3602,7 @@ CNCPutToPeers_Task::Process(void)
             continue;
 
         ENCPeerFailure send_res = CNetCacheServer::SendBlobToPeer(
-                                  srv_id, m_Key, m_EventRecNo, true);
+                                  srv_id, m_Slot, m_Key, m_EventRecNo, true);
         if (send_res == ePeerActionOK) {
             if (m_Quorum == 1)
                 goto quorum_met;

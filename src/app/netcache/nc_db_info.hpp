@@ -134,8 +134,8 @@ public:
     bool    need_meta_blob;
     bool    need_data_blob;
     bool    has_error;
+    Uint4   generation;
     Uint8   disk_size;
-    Uint8   generation;
     CRef<CNCBlobBuffer> data;
 
     CNCBlobVerManager*  manager;
@@ -210,10 +210,15 @@ struct SNCBlobListInfo : public SNCBlobCoords, public SNCBlobSummary
 typedef list< AutoPtr<SNCBlobListInfo> >   TNCBlobsList;
 
 
+class CNCBlobVerManager;
+
 struct SNCCacheData : public SNCBlobCoords, public SNCBlobSummary
 {
     bool  key_deleted;
-    void* volatile ver_manager;
+    int   key_del_time;
+    Uint4 generation;
+    CSpinLock lock;
+    CNCBlobVerManager* ver_mgr;
 
 
     SNCCacheData(void);
@@ -293,6 +298,7 @@ inline
 SNCBlobVerData::SNCBlobVerData(const SNCBlobVerData* other)
     : create_time(other->create_time),
       ttl(other->ttl),
+      expire(other->expire),
       dead_time(other->dead_time),
       size(other->size),
       password(other->password),
@@ -305,6 +311,7 @@ SNCBlobVerData::SNCBlobVerData(const SNCBlobVerData* other)
       generation(other->generation)
 {
     coords.blob_id = other->coords.blob_id;
+    coords.meta_id = other->coords.meta_id;
     coords.data_id = other->coords.data_id;
 }
 
@@ -312,7 +319,7 @@ SNCBlobVerData::SNCBlobVerData(const SNCBlobVerData* other)
 inline
 SNCCacheData::SNCCacheData(void)
     : key_deleted(false),
-      ver_manager(NULL)
+      ver_mgr(NULL)
 {
     blob_id = create_id = 0;
     meta_id = data_id = 0;
@@ -325,7 +332,7 @@ SNCCacheData::SNCCacheData(SNCBlobListInfo* blob_info)
     : SNCBlobCoords(*blob_info),
       SNCBlobSummary(*blob_info),
       key_deleted(false),
-      ver_manager(NULL)
+      ver_mgr(NULL)
 {}
 
 

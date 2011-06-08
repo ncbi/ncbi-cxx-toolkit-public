@@ -169,7 +169,7 @@ s_WrapNextReturnPtr(void)
     }
 }
 
-static inline void
+static void
 s_ReturnListenStub(SNCBlockedOpListeners* stub)
 {
     if (stub >= s_ListenStubs  &&  stub < &s_ListenStubs[kListenStubsCnt]) {
@@ -192,7 +192,7 @@ s_GetNextListenStub_Overflowed(unsigned int ind)
     return new SNCBlockedOpListeners;
 }
 
-static inline SNCBlockedOpListeners*
+static SNCBlockedOpListeners*
 s_GetNextListenStub(void)
 {
     unsigned int ind = s_NextGetPtr.Add(1);

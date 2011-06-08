@@ -52,7 +52,7 @@ SConstCharCompare::operator() (const char* left, const char* right) const
 }
 
 
-inline unsigned int
+unsigned int
 CNCStat::x_GetSizeIndex(Uint8 size)
 {
     if (size <= 1)
@@ -416,7 +416,7 @@ CNCStat::AddChunkWritten(size_t size)
     stat->m_ObjLock.Unlock();
 }
 
-inline void
+void
 CNCStat::x_CollectTo(CNCStat* dest)
 {
     CSpinGuard guard(m_ObjLock);

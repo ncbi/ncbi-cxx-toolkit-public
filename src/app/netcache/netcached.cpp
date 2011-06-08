@@ -654,7 +654,6 @@ CNetCacheServer::StartSyncWithPeer(Uint8                server_id,
         char buf[4096];
         size_t n_read = 0;
         size_t buf_pos = 0;
-        SBlobEvent* last_blob_evt = NULL;
         for (;;) {
             size_t bytes_read = 0;
             ERW_Result read_res = eRW_Error;
@@ -702,14 +701,10 @@ CNetCacheServer::StartSyncWithPeer(Uint8                server_id,
                 memcpy(&evt->orig_time, data, sizeof(evt->orig_time));
                 buf_pos += rec_size;
 
-                if (last_blob_evt  &&  evt->event_type == eSyncProlong) {
-                    last_blob_evt->prolong_event = evt;
-                    last_blob_evt = NULL;
-                }
-                else {
-                    last_blob_evt = &events_list[evt->key];
-                    last_blob_evt->wr_or_rm_event = evt;
-                }
+                if (evt->event_type == eSyncProlong)
+                    events_list[evt->key].prolong_event = evt;
+                else
+                    events_list[evt->key].wr_or_rm_event = evt;
             }
             memmove(buf, buf + buf_pos, n_read - buf_pos);
             n_read -= buf_pos;
@@ -929,11 +924,12 @@ cleanup_and_exit:
 
 ENCPeerFailure
 CNetCacheServer::SendBlobToPeer(Uint8 server_id,
+                                Uint2 slot,
                                 const string& key,
                                 Uint8 orig_rec_no,
                                 bool  add_client_ip)
 {
-    return x_WriteBlobToPeer(server_id, CNCDistributionConf::GetSlotByKey(key),
+    return x_WriteBlobToPeer(server_id, slot,
                              key, orig_rec_no, false, add_client_ip);
 }
 
@@ -1023,7 +1019,7 @@ CNetCacheServer::x_ProlongBlobOnPeer(Uint8 server_id,
     CNCSyncBlockedOpListener* op_listener = new CNCSyncBlockedOpListener(sem);
     CNCBlobAccessor* accessor = g_NCStorage->GetBlobAccess(
                                              eNCRead, raw_key, "", slot);
-    if (accessor->ObtainMetaInfo(op_listener) == eNCWouldBlock)
+    while (accessor->ObtainMetaInfo(op_listener) == eNCWouldBlock)
         sem.Wait();
     delete op_listener;
     if (accessor->HasError()) {
@@ -1040,6 +1036,7 @@ CNetCacheServer::x_ProlongBlobOnPeer(Uint8 server_id,
     blob_sum.create_server = accessor->GetCurCreateServer();
     blob_sum.create_id = accessor->GetCurCreateId();
     blob_sum.dead_time = accessor->GetCurBlobDeadTime();
+    blob_sum.expire = accessor->GetCurBlobExpire();
     blob_sum.ver_expire = accessor->GetCurVerExpire();
     accessor->Release();
 
@@ -1049,11 +1046,12 @@ CNetCacheServer::x_ProlongBlobOnPeer(Uint8 server_id,
 
 ENCPeerFailure
 CNetCacheServer::ProlongBlobOnPeer(Uint8 server_id,
+                                   Uint2 slot,
                                    const string& key,
                                    Uint8 orig_rec_no,
                                    Uint8 orig_time)
 {
-    return x_ProlongBlobOnPeer(server_id, 0, key,
+    return x_ProlongBlobOnPeer(server_id, slot, key,
                                CNCDistributionConf::GetSelfID(),
                                orig_rec_no, orig_time, false);
 }
@@ -1303,7 +1301,7 @@ CNetCacheServer::SyncProlongOurBlob(Uint8 server_id,
     CNCSyncBlockedOpListener* op_listener = new CNCSyncBlockedOpListener(sem);
     CNCBlobAccessor* accessor = g_NCStorage->GetBlobAccess(
                                              eNCRead, raw_key, "", slot);
-    if (accessor->ObtainMetaInfo(op_listener) == eNCWouldBlock)
+    while (accessor->ObtainMetaInfo(op_listener) == eNCWouldBlock)
         sem.Wait();
     delete op_listener;
     if (accessor->HasError()) {

@@ -138,6 +138,7 @@ public:
                                                TNCBlobSumList& blobs_list,
                                                Uint8& remote_rec_no);
     static ENCPeerFailure SendBlobToPeer(Uint8 server_id,
+                                         Uint2 slot,
                                          const string& key,
                                          Uint8 orig_rec_no,
                                          bool  add_client_ip);
@@ -146,6 +147,7 @@ public:
                                            bool& blob_exist,
                                            SNCBlobSummary& blob_sum);
     static ENCPeerFailure ProlongBlobOnPeer(Uint8 server_id,
+                                            Uint2 slot,
                                             const string& key,
                                             Uint8 orig_rec_no,
                                             Uint8 orig_time);

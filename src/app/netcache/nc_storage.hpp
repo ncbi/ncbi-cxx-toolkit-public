@@ -441,7 +441,7 @@ private:
     /// Coordinates of the latest blob created by the storage
     SNCBlobCoords            m_LastBlob;
     ///
-    Uint8                    m_BlobGeneration;
+    Uint4                    m_BlobGeneration;
     ///
     CSpinLock                m_LastChunkLock;
     ///

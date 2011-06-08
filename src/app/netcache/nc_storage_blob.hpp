@@ -75,11 +75,6 @@ private:
     CNCBlobVerManager& operator= (const CNCBlobVerManager&);
 
     ///
-    static CNCBlobVerManager* sx_LockCacheData(SNCCacheData* cache_data);
-    ///
-    static void sx_UnlockCacheData(SNCCacheData*      cache_data,
-                                   CNCBlobVerManager* new_mgr);
-    ///
     CNCBlobVerManager(Uint2 slot, const string& key, SNCCacheData* cache_data);
     virtual ~CNCBlobVerManager(void);
     ///

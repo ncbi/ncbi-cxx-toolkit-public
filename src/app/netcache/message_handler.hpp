@@ -691,6 +691,7 @@ public:
                        const TServersList& servers,
                        Uint1 quorum,
                        CRequestContext* req_ctx,
+                       Uint2 slot,
                        const string& key,
                        Uint8 event_rec_no);
 
@@ -702,6 +703,7 @@ private:
     CNCMessageHandler* m_Handler;
     TServersList    m_Servers;
     Uint1           m_Quorum;
+    Uint2           m_Slot;
     CRef<CRequestContext> m_ReqCtx;
     string          m_Key;
     Uint8           m_EventRecNo;

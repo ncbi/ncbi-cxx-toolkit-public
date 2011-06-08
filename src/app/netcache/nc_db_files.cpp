@@ -55,7 +55,6 @@ static const char* kNCBlobInfo_CreateSrvCol   = "srv";
 static const char* kNCBlobInfo_CreateIdCol    = "cid";
 static const char* kNCBlobInfo_SlotCol        = "sl";
 static const char* kNCBlobInfo_DataIdCol      = "di";
-static const char* kNCBlobInfo_GenerationCol  = "g";
 static const char* kNCBlobInfo_ExpireCol      = "exp";
 
 static const char* kNCBlobChunks_Table        = "NCC";
@@ -223,7 +222,6 @@ CNCDBFile::x_CreateMetaDatabase(void)
                << kNCBlobInfo_CreateSrvCol  << " int64 not null,"
                << kNCBlobInfo_CreateIdCol   << " int64 not null,"
                << kNCBlobInfo_SlotCol       << " int not null,"
-               << kNCBlobInfo_GenerationCol << " int not null,"
                << "unique(" << kNCBlobInfo_DeadTimeCol << ","
                             << kNCBlobInfo_BlobIdCol
                <<       ")"
@@ -335,9 +333,8 @@ CNCDBFile::x_GetStatement(ENCStmtType typ)
                        << kNCBlobInfo_CreateSrvCol  << ","
                        << kNCBlobInfo_CreateIdCol   << ","
                        << kNCBlobInfo_SlotCol       << ","
-                       << kNCBlobInfo_GenerationCol << ","
                        << kNCBlobInfo_ExpireCol
-                << ")values(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16)";
+                << ")values(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15)";
             break;
         case eStmt_UpdateBlobInfo:
             sql << "update " << kNCBlobInfo_Table
@@ -359,7 +356,6 @@ CNCDBFile::x_GetStatement(ENCStmtType typ)
                              << kNCBlobInfo_CreateSrvCol  << ","
                              << kNCBlobInfo_CreateIdCol   << ","
                              << kNCBlobInfo_SlotCol       << ","
-                             << kNCBlobInfo_GenerationCol << ","
                              << kNCBlobInfo_ExpireCol
                 <<  " from " << kNCBlobInfo_Table
                 << " where " << kNCBlobInfo_BlobIdCol << "=?1";
@@ -572,8 +568,7 @@ CNCDBFile::WriteBlobInfo(const string& blob_key, const SNCBlobVerData* blob_info
     stmt->Bind(12, blob_info->create_server);
     stmt->Bind(13, blob_info->create_id);
     stmt->Bind(14, blob_info->slot);
-    stmt->Bind(15, blob_info->generation);
-    stmt->Bind(16, blob_info->expire);
+    stmt->Bind(15, blob_info->expire);
     stmt->Execute();
 }
 
@@ -611,8 +606,7 @@ CNCDBFile::ReadBlobInfo(SNCBlobVerData* blob_info)
         blob_info->create_server  = Uint8(stmt->GetInt8(9));
         blob_info->create_id      = TNCBlobId(stmt->GetInt8(10));
         blob_info->slot           = Uint2(stmt->GetInt(11));
-        blob_info->generation     = Uint8(stmt->GetInt8(12));
-        blob_info->expire         = stmt->GetInt(13);
+        blob_info->expire         = stmt->GetInt(12);
         return true;
     }
     return false;

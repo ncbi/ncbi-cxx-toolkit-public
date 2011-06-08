@@ -742,6 +742,7 @@ CNCBlobStorage::x_InitializeAccessor(CNCBlobAccessor* acessor)
         }
         else {
             data = it->second;
+            data->key_deleted = false;
         }
         cache->lock.WriteUnlock();
         _ASSERT(data);
@@ -757,6 +758,8 @@ CNCBlobStorage::x_InitializeAccessor(CNCBlobAccessor* acessor)
         }
         else {
             data = it->second;
+            if (data->key_deleted)
+                data = NULL;
         }
         cache->lock.ReadUnlock();
     }
@@ -808,9 +811,11 @@ CNCBlobStorage::DeleteBlobKey(Uint2 slot, const string& key)
 {
     SSlotCache* cache = x_GetSlotCache(slot);
     //_VERIFY(cache->key_map.PassivateKey(key));
-    /*cache->lock.WriteLock();
-    cache->key_map.erase(key);
-    cache->lock.WriteUnlock();*/
+    cache->lock.WriteLock();
+    SNCCacheData* data = cache->key_map[key];
+    data->key_deleted = true;
+    data->key_del_time = int(time(NULL));
+    cache->lock.WriteUnlock();
     cache->deleter.AddElement(key);
 }
 
@@ -819,11 +824,11 @@ CNCBlobStorage::RestoreBlobKey(Uint2 slot,
                                const string& key,
                                SNCCacheData* cache_data)
 {
-    /*SSlotCache* cache = x_GetSlotCache(slot);
+    SSlotCache* cache = x_GetSlotCache(slot);
     //_VERIFY(cache->key_map.ActivateKey(key));
     cache->lock.WriteLock();
-    cache->key_map[key] = cache_data;
-    cache->lock.WriteUnlock();*/
+    cache->key_map[key]->key_deleted = false;
+    cache->lock.WriteUnlock();
 }
 
 bool
@@ -847,11 +852,9 @@ CNCBlobStorage::ReadBlobInfo(SNCBlobVerData* ver_data)
         TMetaFileLock metafile(this, ver_data->coords.meta_id);
         if (metafile->ReadBlobInfo(ver_data))
             return true;
-        abort();
     }
     catch (CSQLITE_Exception& ex) {
         ERR_POST(Critical << "Error reading blob information: " << ex);
-        abort();
     }
     return false;
 }
@@ -859,7 +862,7 @@ CNCBlobStorage::ReadBlobInfo(SNCBlobVerData* ver_data)
 bool
 CNCBlobStorage::WriteBlobInfo(const string& blob_key, SNCBlobVerData* ver_data)
 {
-    ver_data->generation    = m_BlobGeneration;
+    ver_data->generation = m_BlobGeneration;
     if (ver_data->size == 0) {
         m_DBFilesLock.ReadLock();
         SNCDBFileInfo* data_info = m_DBFiles[ver_data->coords.data_id];
@@ -1588,6 +1591,7 @@ CNCBlobStorage::x_DoBackgroundWork(void)
                     }
 
                     SNCCacheData* new_data = new SNCCacheData(blob_info);
+                    new_data->generation = 1;
                     SNCCacheData* cache_data;
                     SSlotCache* cache = m_SlotsCache[blob_info->slot];
                     if (!cache) {
@@ -1753,8 +1757,13 @@ CNCBlobStorage::CKeysCleaner::Delete(const string& key) const
     if (it != cache->key_map.end()) {
         SNCCacheData* cache_data = it->second;
         if (cache_data->key_deleted) {
-            delete cache_data;
-            cache->key_map.erase(it);
+            if (cache_data->key_del_time >= int(time(NULL)) - 2) {
+                cache->deleter.AddElement(key);
+            }
+            else {
+                delete cache_data;
+                cache->key_map.erase(it);
+            }
         }
     }
     cache->lock.WriteUnlock();

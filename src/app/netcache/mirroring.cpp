@@ -103,11 +103,12 @@ CNCMirroringThread::Main(void)
             switch (event->evt_type) {
             case eSyncWrite:
                 send_res = CNetCacheServer::SendBlobToPeer(
-                           server_id, event->key, event->orig_rec_no, false);
+                                            server_id, event->slot, event->key,
+                                            event->orig_rec_no, false);
                 break;
             case eSyncProlong:
                 send_res = CNetCacheServer::ProlongBlobOnPeer(
-                                            server_id, event->key,
+                                            server_id, event->slot, event->key,
                                             event->orig_rec_no, event->orig_time);
                 break;
             }
@@ -218,7 +219,6 @@ s_QueueEvent(SDistribution* distr, SNCMirrorEvent* event, Uint8 size)
         }
     }
     else {
-        //INFO_POST("Mirroring event deleted");
         CNCMirroring::sm_CopyReqsRejected.Add(1);
         delete event;
     }
@@ -234,7 +234,7 @@ CNCMirroring::BlobWriteEvent(const string& key,
     ITERATE(TServersList, it_srv, servers) {
         Uint8 srv_id = *it_srv;
         SDistribution* distr = s_Distributors[srv_id];
-        SNCMirrorEvent* event = new SNCMirrorEvent(eSyncWrite, key, orig_rec_no);
+        SNCMirrorEvent* event = new SNCMirrorEvent(eSyncWrite, slot, key, orig_rec_no);
         s_QueueEvent(distr, event, size);
     }
 }
@@ -249,7 +249,7 @@ CNCMirroring::BlobProlongEvent(const string& key,
     ITERATE(TServersList, it_srv, servers) {
         Uint8 srv_id = *it_srv;
         SDistribution* distr = s_Distributors[srv_id];
-        SNCMirrorEvent* event = new SNCMirrorEvent(eSyncProlong, key,
+        SNCMirrorEvent* event = new SNCMirrorEvent(eSyncProlong, slot, key,
                                                    orig_rec_no, orig_time);
         s_QueueEvent(distr, event, 0);
     }
