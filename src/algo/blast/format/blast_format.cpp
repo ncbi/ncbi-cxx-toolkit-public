@@ -349,12 +349,23 @@ CBlastFormat::x_SplitSeqAlign(CConstRef<CSeq_align_set> full_alignment,
     }
 }
 
+bool
+s_IsGlobalSeqAlign(CConstRef<objects::CSeq_align_set> seqalign_set)
+{
+   bool kIsGlobal = (seqalign_set->IsSet() && seqalign_set->CanGet() &&
+          seqalign_set->Get().front()->CanGetType() &&
+          seqalign_set->Get().front()->GetType() == CSeq_align_Base::eType_global);
+
+   return kIsGlobal;
+}
+
 
 void
 CBlastFormat::x_DisplayDeflines(CConstRef<CSeq_align_set> aln_set, 
                         unsigned int itr_num,
                         blast::CPsiBlastIterationState::TSeqIds& prev_seqids)
 {
+
     if (itr_num != numeric_limits<unsigned int>::max() && 
         !prev_seqids.empty()) {
         // Split seq-align-set
@@ -394,7 +405,7 @@ CBlastFormat::x_DisplayDeflines(CConstRef<CSeq_align_set> aln_set,
 int
 s_SetFlags(string& program, 
     blast::CFormattingArgs::EOutputFormat format_type,
-    bool html, bool showgi, bool isbl2seq)
+    bool html, bool showgi, bool isbl2seq, bool disableKAStats)
 {
    // set the alignment flags
     int flags = CDisplaySeqalign::eShowBlastInfo;
@@ -428,6 +439,10 @@ s_SetFlags(string& program,
     if (program == "tblastx") {
         flags |= CDisplaySeqalign::eTranslateNucToNucAlignment;
     }
+
+    if (disableKAStats)
+        flags |= CDisplaySeqalign::eShowRawScoreOnly;
+
     return flags;
 }
 
@@ -716,12 +731,14 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
         aln_set.Reset(CDisplaySeqalign::PrepareBlastUngappedSeqalign(*aln_set));
     }
 
+    const bool kIsGlobal = s_IsGlobalSeqAlign(aln_set);
+
     //-------------------------------------------------
     // print 1-line summaries
     // Also disable when program is rmblastn.  At this time
     // we do not want summary bit scores/evalues for this 
     // program. -RMH-
-    if ( !m_IsBl2Seq && !m_DisableKAStats ) {
+    if ( !m_IsBl2Seq && !(m_DisableKAStats || kIsGlobal) ) {
         x_DisplayDeflines(aln_set, itr_num, prev_seqids);
     }
 
@@ -736,14 +753,7 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
     CBlastFormatUtil::PruneSeqalign(*aln_set, copy_aln_set, m_NumAlignments);
 
     int flags = s_SetFlags(m_Program, m_FormatType, m_IsHTML, m_ShowGi,
-                           m_IsBl2Seq);
-
-    /* Display the raw score and disable the display of bitscore and 
-     * evalue. -RMH- 
-     */
-    if ( m_DisableKAStats ) {
-        flags |= CDisplaySeqalign::eShowRawScoreOnly;
-    }
+                           m_IsBl2Seq, (m_DisableKAStats || kIsGlobal));
 
     CDisplaySeqalign display(copy_aln_set, *m_Scope, &masklocs, NULL, m_MatrixName);
     display.SetDbName(m_DbName);
@@ -1061,7 +1071,7 @@ CBlastFormat::PrintPhiResult(const blast::CSearchResultSet& result_set,
 
 
     int flags = s_SetFlags(m_Program, m_FormatType, m_IsHTML, m_ShowGi,
-                           m_IsBl2Seq);
+                           m_IsBl2Seq, false);
 
     if (phi_query_info)
     {

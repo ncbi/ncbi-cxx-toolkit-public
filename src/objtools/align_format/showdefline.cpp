@@ -662,14 +662,6 @@ void CShowBlastDefline::x_InitDefline(void)
 
 void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
 {
-    // We cannot get on ungapped results, should check why?
-    bool kIsGlobal = (m_AlnSetRef->IsSet() && m_AlnSetRef->CanGet() && 
-          m_AlnSetRef->Get().front()->CanGetType() &&
-          m_AlnSetRef->Get().front()->GetType() == CSeq_align_Base::eType_global);
-
-    if (kIsGlobal)
-      return;
-
     if(!(m_Option & eNoShowHeader)) {
         if((m_PsiblastStatus == eFirstPass) ||
            (m_PsiblastStatus == eRepeatPass)){
@@ -688,8 +680,7 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
             CAlignFormatUtil::AddSpace(out, m_MaxScoreLen - kScore.size());
             CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
             CAlignFormatUtil::AddSpace(out, 2); //E align to l of value
-            if (!kIsGlobal)
-                out << kE;
+            out << kE;
             out << "\n";
             out << kHeader;
             if(m_Option & eHtml){
@@ -804,16 +795,12 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
         if((m_Option & eHtml) && (sdl->score_url != NcbiEmptyString)) {
             out << sdl->score_url;
         }
-        if (kIsGlobal)
-            out << (*iter)->raw_score_string;
-        else
-            out << (*iter)->bit_string;
+        out << (*iter)->bit_string;
         if((m_Option & eHtml) && (sdl->score_url != NcbiEmptyString)) {
             out << "</a>";
         }   
         CAlignFormatUtil::AddSpace(out, m_MaxScoreLen - (*iter)->bit_string.size());
-        if (!kIsGlobal)
-            out << kTwoSpaceMargin << (*iter)->evalue_string;
+        out << kTwoSpaceMargin << (*iter)->evalue_string;
         CAlignFormatUtil::AddSpace(out, m_MaxEvalueLen - (*iter)->evalue_string.size());
         if(m_Option & eShowSumN){ 
             out << kTwoSpaceMargin << (*iter)->sum_n;   
