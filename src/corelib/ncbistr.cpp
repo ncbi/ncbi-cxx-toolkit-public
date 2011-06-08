@@ -2610,22 +2610,21 @@ static SIZE_TYPE s_EndOfTag(const string& str, SIZE_TYPE start)
 
 
 // Determines the end of an HTML &foo; character/entity reference
-// (which might not actually end with a semicolon :-/)
+// (which might not actually end with a semicolon  :-/ , but we ignore that case)
 static SIZE_TYPE s_EndOfReference(const string& str, SIZE_TYPE start)
 {
     _ASSERT(start < str.size()  &&  str[start] == '&');
-#ifdef NCBI_STRICT_HTML_REFS
-    return str.find(';', start + 1);
-#else
+
     SIZE_TYPE pos = str.find_first_not_of
         ("#0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
          start + 1);
-    if (pos == NPOS  ||  str[pos] == ';') {
+    if (pos != NPOS  &&  str[pos] == ';') {
+        // found terminating semicolon, so it's valid, and we return that
         return pos;
     } else {
-        return pos - 1;
+        // We consider it just a '&' by itself since it's invalid
+        return start;
     }
-#endif
 }
 
 
@@ -2677,6 +2676,19 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
         eNewline
     };
 
+    // To avoid copying parts of str when we need to store a 
+    // substr of str, we store the substr as a pair
+    // representing start (inclusive) and end (exclusive).
+    typedef pair<SIZE_TYPE, SIZE_TYPE> TWrapSubstr;
+
+    // This variable is used for HTML links that cross line boundaries.
+    // Since it's aesthetically displeasing for a link to cross a boundary, we 
+    // close it at the end of each line and re-open it after the next line's 
+    // prefix
+    // (This is needed in, e.g. AE017351)
+    TWrapSubstr best_link(0, 0); // last link found before current best_pos
+    TWrapSubstr latest_link(0, 0); // last link found at all
+
     while (pos < len) {
         bool      hyphen     = false; // "-" or empty
         SIZE_TYPE column     = is_html? s_VisibleHtmlWidth(*pfx) : pfx->size();
@@ -2684,20 +2696,37 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
         // the next line will start at best_pos
         SIZE_TYPE best_pos   = NPOS;
         EScore    best_score = eForced;
-        SIZE_TYPE pos0       = pos;
-        if (nl_pos <= pos) {
-            nl_pos = str.find('\n', pos);
-            if (nl_pos == NPOS) {
-                nl_pos = len;
-            }
-        }
-        if (column + (nl_pos-pos) <= width) {
-            pos0 = nl_pos;
-        }
 
         // certain logic can be skipped if this part has no backspace,
         // which is, by far, the most common case
         bool thisPartHasBackspace = false;
+
+        arr.push_back("");
+        arr.back().reserve( width );
+        arr.back() = *pfx;
+
+        // append any still-open links from previous lines
+        if( is_html && best_link.second != 0 ) {
+            arr.back().append( 
+                str.begin() + best_link.first,
+                str.begin() + best_link.second );
+        }
+
+        SIZE_TYPE pos0 = pos;
+
+        // we can't do this in HTML mode because we might have to deal with
+        // link tags that go across lines.
+        if( ! is_html ) {
+            if (nl_pos <= pos) {
+                nl_pos = str.find('\n', pos);
+                if (nl_pos == NPOS) {
+                    nl_pos = len;
+                }
+            }
+            if (column + (nl_pos-pos) <= width ) {
+                pos0 = nl_pos;
+            }
+        }
 
         for (SIZE_TYPE pos2 = pos0;  pos2 < len  &&  column <= width;
              ++pos2, ++column) {
@@ -2708,6 +2737,7 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
             if (c == '\n') {
                 best_pos   = pos2;
                 best_score = eNewline;
+                best_link = latest_link;
                 break;
             } else if (isspace((unsigned char) c)) {
                 if ( !do_flat  &&  pos2 > 0  &&
@@ -2720,10 +2750,33 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
                 score = eSpace;
             } else if (is_html && c == '<') {
                 // treat tags as zero-width...
+                SIZE_TYPE start_of_tag = pos2;
                 pos2 = s_EndOfTag(str, pos2);
                 --column;
                 if (pos2 == NPOS) {
                     break;
+                }
+
+                if( (pos2 - start_of_tag) >= 6 &&
+                    str[start_of_tag+1] == 'a' && 
+                    str[start_of_tag+2] == ' ' && 
+                    str[start_of_tag+3] == 'h' &&
+                    str[start_of_tag+4] == 'r' &&
+                    str[start_of_tag+5] == 'e' &&
+                    str[start_of_tag+6] == 'f' )
+                {
+                    // remember current link in case of line wrap
+                    latest_link.first  = start_of_tag;
+                    latest_link.second = pos2 + 1;
+                }
+                if( (pos2 - start_of_tag) >= 3 &&
+                    str[start_of_tag+1] == '/' && 
+                    str[start_of_tag+2] == 'a' && 
+                    str[start_of_tag+3] == '>') 
+                {
+                    // link is closed
+                    latest_link.first  = 0;
+                    latest_link.second = 0;
                 }
             } else if (is_html && c == '&') {
                 // ...and references as single characters
@@ -2753,6 +2806,7 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
             if (score >= best_score  &&  score_pos > pos0) {
                 best_pos   = score_pos;
                 best_score = score;
+                best_link = latest_link;
             }
 
             while (pos2 < len - 1  &&  str[pos2 + 1] == '\b') {
@@ -2769,6 +2823,7 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
             if( best_pos != len ) {
                 // If the whole remaining text can fit, don't split it...
                 best_pos = len;
+                best_link = latest_link;
                 // Force backspace checking, to play it safe
                 thisPartHasBackspace = true;
             }
@@ -2776,10 +2831,6 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
             hyphen = true;
             --best_pos;
         }
-
-        arr.push_back("");
-        arr.back().reserve( width );
-        arr.back() = *pfx;
 
         {{ 
             string::const_iterator begin = str.begin() + pos;
@@ -2810,6 +2861,13 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
                 arr.back().append(begin, end);
             }
         }}
+
+        // if we didn't close the link on this line, we 
+        // close it here
+        if( is_html && best_link.second != 0 ) {
+            arr.back() += "</a>";
+        }
+
         if ( hyphen ) {
             arr.back() += '-';
         }
