@@ -1625,7 +1625,8 @@ CNCMessageHandler::x_WaitForBlobAccess(void)
     else if ((m_BlobAccess->GetAccessType() == eNCRead
                 ||  m_BlobAccess->GetAccessType() == eNCReadData)
              &&  NStr::FindCase(m_CurCmd, "SETVALID") == NPOS
-             &&  NStr::CompareCase(m_CurCmd, "PROXY_META") != 0)
+             &&  NStr::CompareCase(m_CurCmd, "PROXY_META") != 0
+             &&  NStr::CompareCase(m_CurCmd, "COPY_PROLONG") != 0)
     {
         m_LatestExist = m_BlobAccess->IsBlobExists()
                         &&  !m_BlobAccess->IsCurBlobExpired()
@@ -2204,17 +2205,22 @@ CNCMessageHandler::x_EcecuteProxyCmd(Uint8          srv_id,
         return true;
     }
     catch (CNetSrvConnException& ex) {
-        ERR_POST(Warning << "Error executing command on peer: " << ex);
+        if (ex.GetErrCode() != CNetSrvConnException::eConnectionFailure
+            &&  ex.GetErrCode() != CNetSrvConnException::eServerThrottle)
+        {
+            ERR_POST(Warning << "Error executing command on peer: " << ex);
+        }
         return false;
     }
     catch (CNetCacheException& ex) {
-        ERR_POST(Warning << "Error executing command on peer: " << ex);
         if (ex.GetErrCode() == CNetCacheException::eBlobNotFound) {
             m_SockBuffer.WriteMessage("ERR:", "BLOB not found.");
             return true;
         }
-        else
+        else {
+            ERR_POST(Warning << "Error executing command on peer: " << ex);
             return false;
+        }
     }
 }
 
