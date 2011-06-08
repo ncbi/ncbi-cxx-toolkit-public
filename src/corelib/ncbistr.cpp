@@ -1255,6 +1255,17 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString& str,
 }
 
 
+size_t NStr::StringToSizet(const CTempString& str,
+                           TStringToNumFlags flags, int base)
+{
+#if (SIZEOF_SIZE_T > 4)
+    return StringToUInt8(str, flags, base);
+#else
+    return StringToUInt(str, flags, base);
+#endif
+}
+
+
 void NStr::IntToString(string& out_str, long svalue,
                        TNumToStringFlags flags, int base)
 {
@@ -1625,6 +1636,16 @@ SIZE_TYPE NStr::DoubleToString(double value, unsigned int precision,
     SIZE_TYPE n_copy = min((SIZE_TYPE) n, buf_size);
     memcpy(buf, buffer, n_copy);
     return n_copy;
+}
+
+
+string NStr::SizetToString(size_t value, TNumToStringFlags flags, int base)
+{
+#if (SIZEOF_SIZE_T > 4)
+    return UInt8ToString(value, flags, base);
+#else
+    return UIntToString(value, flags, base);
+#endif
 }
 
 

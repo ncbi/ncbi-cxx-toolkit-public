@@ -402,6 +402,24 @@ public:
                                         TStringToNumFlags  flags = 0,
                                         int                base  = 10);
 
+    /// Convert string to size_t.
+    ///
+    /// @param str
+    ///   String to be converted.
+    /// @param flags
+    ///   How to convert string to value.
+    /// @param base
+    ///   Radix base. Default is 10. Allowed values are 0, 2..32.
+    /// @return
+    ///   - Convert "str" to "size_t" value and return it.
+    ///   - 0 if "str" contains illegal symbols, or if it represents a number
+    ///     that does not fit into range, and flag fConvErr_NoThrow is set,
+    ///     errno is set to EINVAL or ERANGE in this case.
+    ///   - Throw an exception otherwise.
+    static size_t StringToSizet(const CTempString& str,
+                                TStringToNumFlags  flags = 0,
+                                int                base  = 10);
+
     /// Convert string to pointer.
     ///
     /// @param str
@@ -608,6 +626,22 @@ public:
     static SIZE_TYPE DoubleToString(double value, unsigned int precision,
                                     char* buf, SIZE_TYPE buf_size,
                                     TNumToStringFlags flags = 0);
+
+    /// Convert size_t to string.
+    ///
+    /// @param value
+    ///   Value to be converted.
+    /// @param flags
+    ///   How to convert value to string.
+    /// @param base
+    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
+    ///   If necessary you should add it yourself.
+    /// @return
+    ///   Converted string value.
+    static string SizetToString(size_t value,
+                                TNumToStringFlags flags = 0,
+                                int               base  = 10);
 
     /// Convert pointer to string.
     ///
