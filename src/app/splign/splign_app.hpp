@@ -123,8 +123,6 @@ protected:
 
     size_t                              m_CurHitRef;
 
-    auto_ptr<objects::CLDS_Database>    m_LDS_db;
-
     CRef<objects::CObjectManager>       m_ObjMgr;
 };
 

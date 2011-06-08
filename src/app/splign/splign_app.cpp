@@ -115,6 +115,11 @@ void CSplignApp::Init()
          CArgDescriptions::eString);
 
     argdescr->AddOptionalKey
+        ("blastdb", "blastdb",
+         "[Batch mode] Blast DB.",
+         CArgDescriptions::eString);
+
+    argdescr->AddOptionalKey
         ("ldsdir", "ldsdir",
          "[Batch mode] Directory holding LDS subdirectory.",
          CArgDescriptions::eString);
@@ -547,7 +552,7 @@ int CSplignApp::Run()
     // check that modes aren't mixed
 
     const bool is_mklds   = args["mklds"];
-    const bool is_ldsdir  = args["ldsdir"];
+    const bool is_batch  =  args["blastdb"] || args["ldsdir"];
 
     const bool is_hits    = args["hits"];
     const bool is_query   = args["query"];
@@ -594,13 +599,13 @@ int CSplignApp::Run()
     // determine mode and verify arguments
     ERunMode run_mode (eNotSet);
     
-    if(is_query && is_subj && !(is_hits || is_comps || is_ldsdir)) {
+    if(is_query && is_subj && !(is_hits || is_comps || is_batch)) {
         run_mode = ePairwise;
     }
-    else if(is_hits && is_ldsdir && !(is_comps ||is_query || is_subj)) {
+    else if(is_hits && is_batch && !(is_comps ||is_query || is_subj)) {
         run_mode = eBatch1;
     }
-    else if(is_comps && is_ldsdir && !(is_hits ||is_query || is_subj)) {
+    else if(is_comps && is_batch && !(is_hits ||is_query || is_subj)) {
         run_mode = eBatch2;
     }
 
@@ -646,14 +651,66 @@ int CSplignApp::Run()
     }
     else if(run_mode == eBatch1 || run_mode == eBatch2) {
         
-        const string fasta_dir = args["ldsdir"].AsString();
-        const string ldsdb_dir = GetLdsDbDir(fasta_dir);
-        CLDS_Database* ldsdb (
-              new CLDS_Database(ldsdb_dir, kSplignLdsDb));
-        m_LDS_db.reset(ldsdb);
-        m_LDS_db->Open();
-        CLDS_DataLoader::RegisterInObjectManager(
-            *m_ObjMgr, *ldsdb, CObjectManager::eDefault);
+        int priority = 1;
+
+        typedef vector<string> TDbs;
+        TDbs dbs;
+
+        string blastdbstr;
+        if (args["blastdb"].HasValue()) {
+            blastdbstr = args["blastdb"].AsString();
+        }
+        dbs.clear();
+        NStr::Tokenize(blastdbstr, ",", dbs);
+        ITERATE(TDbs, i, dbs) {
+            string db = NStr::TruncateSpaces(*i);
+            if (db.empty()) {
+                continue;
+            }
+            CBlastDbDataLoader::EDbType dbtype(CBlastDbDataLoader::eUnknown);
+            if (NStr::StartsWith(db, "na:", NStr::eNocase)) {
+                db.erase(0, 3);
+                dbtype = CBlastDbDataLoader::eNucleotide;
+            } else if (NStr::StartsWith(db, "aa:", NStr::eNocase)) {
+                db.erase(0, 3);
+                dbtype = CBlastDbDataLoader::eProtein;
+            }
+            CBlastDbDataLoader::RegisterInObjectManager(*m_ObjMgr,db, dbtype, true,CObjectManager::eDefault,priority);
+            LOG_POST(Info << "added loader: BlastDB: "
+                     << (dbtype == CBlastDbDataLoader::eNucleotide ?
+                     "nucl" : "protein")
+                     << ": " << db
+                     << " (" << priority << ")");
+            ++priority;
+        }
+
+        string ldsdbstr;
+        if (args["ldsdir"].HasValue()) {
+            ldsdbstr = args["ldsdir"].AsString();
+        }
+        dbs.clear();
+        NStr::Tokenize(ldsdbstr, ",", dbs);
+        ITERATE(TDbs, i, dbs) {
+            const string fasta_dir = *i;
+            string db = GetLdsDbDir(fasta_dir);
+            db = NStr::TruncateSpaces(db);
+
+            if (db.empty()) {
+                continue;
+            }
+            db = CDirEntry::CreateAbsolutePath(db);
+            db = CDirEntry::NormalizePath(db);
+
+            string alias("lds");
+            alias += NStr::IntToString(priority);
+            AutoPtr<CLDS_Database> lds(new CLDS_Database(db, alias));
+            lds->Open(CLDS_Database::eReadOnly);
+            CLDS_DataLoader::RegisterInObjectManager(*m_ObjMgr,*lds.release(),CObjectManager::eDefault,priority);
+            LOG_POST(Info << "added loader: LDS: " << db << " (" << priority << ")");
+            ++priority;
+        }
+       
+
         scope.Reset (new CScope(*m_ObjMgr));
         scope->AddDefaults();
     }
