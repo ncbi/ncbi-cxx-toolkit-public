@@ -1615,7 +1615,7 @@ class NCBI_XNCBI_EXPORT CStopWatch
 public:
     /// Defines how to create new timer.
     enum EStart {
-        eStart,   ///< Stat timer immediately after creating.
+        eStart,   ///< Start timer immediately after creating.
         eStop     ///< Do not start timer, just create it.
     };
 
