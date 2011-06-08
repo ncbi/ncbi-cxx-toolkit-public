@@ -49,7 +49,10 @@ class ILineError
 public:
     // If you add to here, make sure to add to ProblemStr()
     enum EProblem {
-        eProblem_UnrecognizedFeatureName = 1,
+        // useful when you have a problem variable, but haven't found a problem yet
+        eProblem_Unset = 1, 
+
+        eProblem_UnrecognizedFeatureName,
         eProblem_UnrecognizedQualifierName,
         eProblem_NumericQualifierValueHasExtraTrailingCharacters,
         eProblem_NumericQualifierValueIsNotANumber,
@@ -57,6 +60,7 @@ public:
         eProblem_NoFeatureProvidedOnIntervals,
         eProblem_QualifierWithoutFeature,
         eProblem_FeatureBadStartAndOrStop,
+        eProblem_BadFeatureInterval,
 
         eProblem_GeneralParsingError
     };
@@ -126,6 +130,8 @@ public:
     ProblemStr(void) const
     {
         switch(Problem()) {
+        case eProblem_Unset:
+            return "Unset";
         case eProblem_UnrecognizedFeatureName:
             return "Unrecognized feature name";
         case eProblem_UnrecognizedQualifierName:
@@ -144,6 +150,8 @@ public:
             return "Feature bad start and/or stop";
         case eProblem_GeneralParsingError:
             return "General parsing error";
+        case eProblem_BadFeatureInterval:
+            return "Bad feature interval";
         default:
             return "Unknown problem";
         }

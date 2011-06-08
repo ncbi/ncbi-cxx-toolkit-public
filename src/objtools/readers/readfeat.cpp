@@ -284,7 +284,10 @@ private:
         const std::string& strSeqId,
         unsigned int uLine,
         CTempString strFeatureName,
-        CTempString strQualifierName );
+        CTempString strQualifierName,
+        // user can override the default problem types that are set on error
+        ILineError::EProblem eProblem = ILineError::eProblem_Unset
+    );
 
     bool x_SetupSeqFeat (CRef<CSeq_feat> sfp, const string& feat,
                          const CFeature_table_reader::TFlags flags, 
@@ -836,7 +839,8 @@ bool CFeature_table_reader_imp::x_ParseFeatureTableLine (
           start [len - 1] = '\0';
         }
         try {
-            startv = x_StringToLongNoThrow(start, container, seq_id, line_num, feat, qual);
+            startv = x_StringToLongNoThrow(start, container, seq_id, line_num, feat, qual,
+                ILineError::eProblem_BadFeatureInterval);
         } catch (...) {
             badNumber = true;
         }
@@ -848,7 +852,8 @@ bool CFeature_table_reader_imp::x_ParseFeatureTableLine (
             stop.erase (0, 1);
         }
         try {
-            stopv = x_StringToLongNoThrow (stop, container, seq_id, line_num, feat, qual);
+            stopv = x_StringToLongNoThrow (stop, container, seq_id, line_num, feat, qual,
+                ILineError::eProblem_BadFeatureInterval);
         } catch (CStringException) {
             badNumber = true;
         }
@@ -1168,7 +1173,8 @@ long CFeature_table_reader_imp::x_StringToLongNoThrow (
     const std::string& strSeqId,
     unsigned int uLine,
     CTempString strFeatureName,
-    CTempString strQualifierName
+    CTempString strQualifierName,
+    ILineError::EProblem eProblem
 )
 {
     try {
@@ -1178,15 +1184,29 @@ long CFeature_table_reader_imp::x_StringToLongNoThrow (
         if( ! strToConvert.empty() && isdigit(strToConvert[0]) ) {
             try {
                 long result = NStr::StringToLong(strToConvert, NStr::fAllowTrailingSymbols);
+
+                ILineError::EProblem problem = 
+                    ILineError::eProblem_NumericQualifierValueHasExtraTrailingCharacters;
+                if( eProblem != ILineError::eProblem_Unset ) {
+                    problem = eProblem;
+                }
+
                 x_ProcessMsg( container, 
-                    ILineError::eProblem_NumericQualifierValueHasExtraTrailingCharacters,
+                    problem,
                     eDiag_Warning,
                     strSeqId, uLine, strFeatureName, strQualifierName, strToConvert );
                 return result;
             } catch( ... ) { } // fall-thru to usual handling
         }
-        x_ProcessMsg( container, 
-            ILineError::eProblem_NumericQualifierValueIsNotANumber,
+
+        ILineError::EProblem problem = 
+            ILineError::eProblem_NumericQualifierValueIsNotANumber;
+        if( eProblem != ILineError::eProblem_Unset ) {
+            problem = eProblem;
+        }
+
+        x_ProcessMsg( container,
+            problem,
             eDiag_Warning,
             strSeqId, uLine, strFeatureName, strQualifierName, strToConvert );
         // we have no idea, so just return zero
