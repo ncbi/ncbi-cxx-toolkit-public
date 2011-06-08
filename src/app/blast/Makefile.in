@@ -18,6 +18,7 @@ psiblast \
 rpsblast \
 rpstblastn \
 igblastn \
+igblastp \
 blast_formatter
 
 USR_PROJ = legacy_blast update_blastdb
@@ -47,6 +48,8 @@ rpstblastn: lib
 	make -f Makefile.rpstblastn_app
 igblastn: lib
 	make -f Makefile.igblastn_app
+igblastp: lib
+	make -f Makefile.igblastp_app
 blast_formatter: lib
 	make -f Makefile.blast_formatter_app
 rmblastn: lib

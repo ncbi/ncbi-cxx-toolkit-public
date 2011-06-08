@@ -125,6 +125,11 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                      "Expectation value (E) threshold for saving hits ",
                      CArgDescriptions::eDouble,
                      NStr::DoubleToString(BLAST_EXPECT_VALUE));
+    } else if (m_QueryIsProtein) {
+        arg_desc.AddDefaultKey(kArgEvalue, "evalue", 
+                     "Expectation value (E) threshold for saving hits ",
+                     CArgDescriptions::eDouble,
+                     NStr::DoubleToString(1.0));
     } else {
         arg_desc.AddDefaultKey(kArgEvalue, "evalue", 
                      "Expectation value (E) threshold for saving hits ",
@@ -1605,7 +1610,7 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
         m_Subjects.Reset(new blast::CObjMgr_QueryFactory(*subjects));
 
     } else if (!m_IsIgBlast){
-        // IgBlast will set a default db 
+        // IgBlast allows default db to germline database
         NCBI_THROW(CInputException, eInvalidInput,
            "Either a BLAST database or subject sequence(s) must be specified");
     }
