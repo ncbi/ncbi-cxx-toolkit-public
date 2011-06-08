@@ -47,8 +47,9 @@ class CGtfRecord
 {
 public: 
     CGtfRecord(
-        feature::CFeatTree& feat_tree
-    ): m_feat_tree( feat_tree ) {};
+        feature::CFeatTree& feat_tree,
+        bool bNoExonNumbers = false )
+    : m_feat_tree( feat_tree ), m_bNoExonNumbers(bNoExonNumbers) {};
 
     ~CGtfRecord() {};
 
@@ -157,6 +158,7 @@ protected:
     feature::CFeatTree& m_feat_tree;
     string m_strGeneId;
     string m_strTranscriptId;
+    bool m_bNoExonNumbers;
 };
 
 END_objects_SCOPE

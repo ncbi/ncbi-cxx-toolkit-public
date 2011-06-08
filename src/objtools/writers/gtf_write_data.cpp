@@ -153,9 +153,11 @@ string CGtfRecord::StrAttributes() const
         strAttributes += x_AttributeToString( strKey, it->second );
     }
     
-    it = attrs.find( "exon_number" );
-    if ( it != attrs.end() ) {
-        strAttributes += x_AttributeToString( "exon_number", it->second );
+    if ( ! m_bNoExonNumbers ) {
+        it = attrs.find( "exon_number" );
+        if ( it != attrs.end() ) {
+            strAttributes += x_AttributeToString( "exon_number", it->second );
+        }
     }
     return strAttributes;
 }

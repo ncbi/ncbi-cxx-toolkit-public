@@ -230,7 +230,14 @@ void CAnnotWriterApp::Init()
         "structibutes",
         "limit attributes to inter feature relationships",
         true );
-        
+    arg_desc->AddFlag(
+        "skip-gene-features",
+        "GTF only: Do not emit gene features (for GTF 2.2 compliancy)",
+        true );
+    arg_desc->AddFlag(
+        "skip-exon-numbers",
+        "GTF only: For exon features, do not emit exon numbers",
+        true );
     }}
     
     SetupArgDescriptions(arg_desc.release());
@@ -588,6 +595,12 @@ CGff2Writer::TFlags CAnnotWriterApp::GffFlags(
     CGff2Writer::TFlags eFlags = CGff2Writer::fNormal;
     if ( args["structibutes"] ) {
         eFlags = CGtfWriter::TFlags( eFlags | CGtfWriter::fStructibutes );
+    }
+    if ( args["skip-gene-features"] ) {
+        eFlags = CGtfWriter::TFlags( eFlags | CGtfWriter::fNoGeneFeatures );
+    }
+    if ( args["skip-exon-numbers"] ) {
+        eFlags = CGtfWriter::TFlags( eFlags | CGtfWriter::fNoExonNumbers );
     }
     if ( args["single-header"] ) {
         eFlags = CGff2Writer::TFlags( eFlags | CGff2Writer::fNoFooter );

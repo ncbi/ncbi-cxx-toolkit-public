@@ -57,6 +57,8 @@ class NCBI_XOBJWRITE_EXPORT CGtfWriter:
 public:
     enum {
         fStructibutes = 1<<16,
+        fNoGeneFeatures = 1<<17,
+        fNoExonNumbers = 1<<18
     };
 
     CGtfWriter(
