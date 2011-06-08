@@ -975,22 +975,20 @@ static CRef<CPub> BuildGoodCitGenPub(CRef<CAuthor> author, int serial_number)
 
 CRef<CSeq_entry> BuildGoodSeq(void)
 {
-    CRef<CBioseq> seq(new CBioseq());
-    seq->SetInst().SetMol(CSeq_inst::eMol_dna);
-    seq->SetInst().SetRepr(CSeq_inst::eRepr_raw);
-    seq->SetInst().SetSeq_data().SetIupacna().Set("AATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAA");
-    seq->SetInst().SetLength(60);
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_dna);
+    entry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("AATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAA");
+    entry->SetSeq().SetInst().SetLength(60);
 
     CRef<CSeq_id> id(new CSeq_id());
     id->SetLocal().SetStr ("good");
-    seq->SetId().push_back(id);
+    entry->SetSeq().SetId().push_back(id);
 
     CRef<CSeqdesc> mdesc(new CSeqdesc());
     mdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);    
-    seq->SetDescr().Set().push_back(mdesc);
+    entry->SetSeq().SetDescr().Set().push_back(mdesc);
 
-    CRef<CSeq_entry> entry(new CSeq_entry());
-    entry->SetSeq(*seq);
     AddGoodSource (entry);
     AddGoodPub(entry);
 
@@ -1034,6 +1032,30 @@ static void SetBiomol (CRef<CSeq_entry> entry, CMolInfo::TBiomol biomol)
         CRef<CSeqdesc> mdesc(new CSeqdesc());
         mdesc->SetMolinfo().SetBiomol(biomol);
         entry->SetSeq().SetDescr().Set().push_back(mdesc);
+    }
+}
+
+
+static void SetCompleteness(CRef<CSeq_entry> entry, CMolInfo::TCompleteness completeness)
+{
+    if (entry->IsSeq()) {
+        bool found = false;
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+            if ((*it)->IsMolinfo()) {
+                (*it)->SetMolinfo().SetCompleteness (completeness);
+                found = true;
+            }
+        }
+        if (!found) {
+            CRef<CSeqdesc> mdesc(new CSeqdesc());
+            if (entry->GetSeq().IsAa()) {
+                mdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
+            } else {
+                mdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);
+            }
+            mdesc->SetMolinfo().SetCompleteness (completeness);
+            entry->SetSeq().SetDescr().Set().push_back(mdesc);
+        }
     }
 }
 
@@ -1212,6 +1234,45 @@ static CRef<CSeq_feat> GetProtFeatFromGoodNucProtSet (CRef<CSeq_entry> entry)
 }
 
 
+static void RetranslateCdsForNucProtSet (CRef<CSeq_entry> entry, CScope &scope)
+{
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    CRef<CBioseq> bioseq = CSeqTranslator::TranslateToProtein(*cds, scope);
+    CRef<CSeq_entry> pentry = GetProteinSequenceFromGoodNucProtSet(entry);
+    pentry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set(bioseq->GetInst().GetSeq_data().GetIupacaa().Get());
+    pentry->SetSeq().SetInst().SetLength(bioseq->GetInst().GetLength());
+    AdjustProtFeatForNucProtSet (entry);
+}
+
+
+static void SetNucProtSetPartials (CRef<CSeq_entry> entry, bool partial5, bool partial3)
+{
+    // partials for CDS
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    cds->SetPartial(partial5 || partial3);
+    cds->SetLocation().SetPartialStart(partial5, eExtreme_Biological);
+    cds->SetLocation().SetPartialStop(partial3, eExtreme_Biological);
+
+    // partials for protein feature
+    CRef<CSeq_feat> prot = GetProtFeatFromGoodNucProtSet (entry);
+    prot->SetPartial(partial5 || partial3);
+    prot->SetLocation().SetPartialStart(partial5, eExtreme_Biological);
+    prot->SetLocation().SetPartialStop(partial3, eExtreme_Biological);
+
+    // molinfo completeness
+    CRef<CSeq_entry> pentry = GetProteinSequenceFromGoodNucProtSet(entry);
+    if (partial5 && partial3) {
+        SetCompleteness (pentry, CMolInfo::eCompleteness_no_ends);
+    } else if (partial5) {
+        SetCompleteness (pentry, CMolInfo::eCompleteness_no_left);
+    } else if (partial3) {
+        SetCompleteness (pentry, CMolInfo::eCompleteness_no_right);
+    } else {
+        SetCompleteness (pentry, CMolInfo::eCompleteness_complete);
+    }
+}
+
+
 static void ChangeNucProtSetProteinId (CRef<CSeq_entry> entry, CRef<CSeq_id> id)
 {
     CRef<CSeq_entry> pseq = GetProteinSequenceFromGoodNucProtSet(entry);
@@ -1236,30 +1297,6 @@ static void ChangeNucProtSetNucId (CRef<CSeq_entry> entry, CRef<CSeq_id> id)
     } else if (cds->GetLocation().IsMix()) {
         cds->SetLocation().SetMix().Set().front()->SetInt().SetId().Assign(*id);
         cds->SetLocation().SetMix().Set().back()->SetInt().SetId().Assign(*id);
-    }
-}
-
-
-static void SetCompleteness(CRef<CSeq_entry> entry, CMolInfo::TCompleteness completeness)
-{
-    if (entry->IsSeq()) {
-        bool found = false;
-        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
-            if ((*it)->IsMolinfo()) {
-                (*it)->SetMolinfo().SetCompleteness (completeness);
-                found = true;
-            }
-        }
-        if (!found) {
-            CRef<CSeqdesc> mdesc(new CSeqdesc());
-            if (entry->GetSeq().IsAa()) {
-                mdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
-            } else {
-                mdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);
-            }
-            mdesc->SetMolinfo().SetCompleteness (completeness);
-            entry->SetSeq().SetDescr().Set().push_back(mdesc);
-        }
     }
 }
 
@@ -11699,6 +11736,24 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_Range)
                                                  "Code-break location not in coding region"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    codebreak->SetLoc().SetInt().SetFrom(0);
+    codebreak->SetLoc().SetInt().SetTo(1);
+    cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_three);
+    CRef<CSeq_entry> nentry = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    cds->SetLocation().SetInt().SetTo(nentry->GetSeq().GetInst().GetLength() - 1);
+    SetNucProtSetPartials (entry, true, true);
+    RetranslateCdsForNucProtSet (entry, scope);
+    scope.RemoveTopLevelSeqEntry(seh);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "Range",
+                                                 "Code-break location not in coding region - may be frame problem"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
     CLEAR_ERRORS
 
     scope.RemoveTopLevelSeqEntry(seh);
@@ -12915,6 +12970,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TranslExceptPhase)
 
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "TranslExceptPhase", 
                               "transl_except qual out of frame."));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "Range",
+                                                 "Code-break location not in coding region - may be frame problem"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 

@@ -1551,6 +1551,27 @@ void CValidError_feat::ValidateCdregion (
 }
 
 
+static bool s_FrameMatch (const CCdregion& cds, int frame)
+{
+    bool rval = false;
+
+    if (!cds.IsSetFrame() || cds.GetFrame() == CCdregion::eFrame_not_set || cds.GetFrame() == CCdregion::eFrame_one) {
+        if (frame == 0 || frame == 1) {
+            rval = true;
+        }
+    } else if (cds.GetFrame() == CCdregion::eFrame_two) {
+        if (frame == 2) {
+            rval = true;
+        }
+    } else if (cds.GetFrame() == CCdregion::eFrame_three) {
+        if (frame == 3) {
+            rval = true;
+        }
+    }
+    return rval;
+}
+
+
 void CValidError_feat::x_ValidateCdregionCodebreak
 (const CCdregion& cds,
  const CSeq_feat& feat)
@@ -1565,6 +1586,17 @@ void CValidError_feat::x_ValidateCdregionCodebreak
         if ( (comp != eContained) && (comp != eSame)) {
             PostErr (eDiag_Error, eErr_SEQ_FEAT_Range, 
                 "Code-break location not in coding region", feat);
+        } else if (feat.IsSetProduct()) {
+            if (cbr_loc.GetStop(eExtreme_Biological) == feat_loc.GetStop(eExtreme_Biological)) {
+                // terminal exception - don't bother checking, can't be mapped
+            } else {
+                int frame = 0;
+                CRef<CSeq_loc> p_loc = SourceToProduct(feat, cbr_loc, fS2P_AllowTer, m_Scope, &frame);
+                if (!p_loc || p_loc->IsNull() || !s_FrameMatch (cds, frame)) {
+                    PostErr (eDiag_Error, eErr_SEQ_FEAT_Range, 
+                        "Code-break location not in coding region - may be frame problem", feat);
+                }
+            }
         }
         if ( prev_cbr != 0 ) {
             if ( Compare(cbr_loc, prev_cbr->GetLoc(), m_Scope) == eSame ) {
