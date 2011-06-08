@@ -106,8 +106,7 @@ int CIgBlastnApp::Run(void)
         CBlastInputSourceConfig iconfig(dlconfig, query_opts->GetStrand(),
                                      query_opts->UseLowercaseMasks(),
                                      query_opts->GetParseDeflines(),
-                                     query_opts->GetRange(),
-                                     !m_CmdLineArgs->ExecuteRemotely());
+                                     query_opts->GetRange());
         iconfig.SetQueryLocalIdMode();
         CBlastFastaInputSource fasta(m_CmdLineArgs->GetInputStream(), iconfig);
         CBlastInput input(&fasta, m_CmdLineArgs->GetQueryBatchSize());
@@ -117,6 +116,7 @@ int CIgBlastnApp::Run(void)
         CRef<CIgBlastOptions> ig_opts(ig_args->GetIgBlastOptions());
 
         /*** Initialize the database/subject ***/
+        bool db_is_remote = true;
         CRef<CScope> scope;
         CRef<CLocalDbAdapter> blastdb;
         CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
@@ -124,6 +124,7 @@ int CIgBlastnApp::Run(void)
             db_args->GetSubjects().Empty()) {
             blastdb.Reset(&(*(ig_opts->m_Db[0])));
             scope.Reset(new CScope(*CObjectManager::GetInstance()));
+            db_is_remote = false;
         } else {
             InitializeSubject(db_args, opts_hndl, m_CmdLineArgs->ExecuteRemotely(),
                               blastdb, scope);
@@ -148,7 +149,7 @@ int CIgBlastnApp::Run(void)
                                opt.GetQueryGeneticCode(),
                                opt.GetDbGeneticCode(),
                                opt.GetSumStatisticsMode(),
-                               m_CmdLineArgs->ExecuteRemotely(),
+                               false,
                                blastdb->GetFilteringAlgorithm(),
                                fmt_args->GetCustomOutputFormatSpec(),
                                m_CmdLineArgs->GetTask() == "megablast",
@@ -166,7 +167,7 @@ int CIgBlastnApp::Run(void)
             //SaveSearchStrategy(args, m_CmdLineArgs, queries, opts_hndl);
             CRef<CSearchResultSet> results;
 
-            if (m_CmdLineArgs->ExecuteRemotely()) {
+            if (m_CmdLineArgs->ExecuteRemotely() && db_is_remote) {
                 CIgBlast rmt_blast(query, 
                                    db_args->GetSearchDatabase(), 
                                    db_args->GetSubjects(),
