@@ -102,6 +102,8 @@ CInstInfoMap::GetInstitutionVoucherInfo(
         TVoucherInfoElem("DGR:Fish",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Division of Genomic Resources, University of New Mexico, fish tissue collection") ) ),
         TVoucherInfoElem("DGR:Herp",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Division of Genomic Resources, University of New Mexico, herpetology tissue collection") ) ),
         TVoucherInfoElem("DGR:Mamm",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Division of Genomic Resources, University of New Mexico, mammal tissue collection") ) ),
+        TVoucherInfoElem("DMNS:Bird",        TVoucherInfoRef(new SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Denver Museum of Nature and Science, Ornithology Collections") ) ),
+        TVoucherInfoElem("DMNS:Mamm",        TVoucherInfoRef(new SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Denver Museum of Nature and Science, Mammology Collection") ) ),
         TVoucherInfoElem("DSM",              TVoucherInfoRef(new SVoucherInfo(&s_dsmz_base, false, NULL,          NULL,        "Deutsche Sammlung von Mikroorganismen und Zellkulturen GmbH") ) ),
         TVoucherInfoElem("FSU<DEU>",         TVoucherInfoRef(new SVoucherInfo(&s_fsu_base,  false, NULL,          NULL,        "Jena Microbial Resource Collection") ) ),
         TVoucherInfoElem("ICMP",             TVoucherInfoRef(new SVoucherInfo(&s_icmp_base, false, NULL,          NULL,        "International Collection of Microorganisms from Plants") ) ),

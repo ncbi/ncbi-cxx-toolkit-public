@@ -979,7 +979,20 @@ void CFlatPubSetQVal::Format(TFlatQuals& q, const string& name,
         CPub_set_Base::TPub::iterator pub_iter = unusedPubs.begin();
         for( ; pub_iter != unusedPubs.end() ; ++pub_iter ) {
             if( (*pub_iter)->IsPmid() ) {
-                x_AddFQ(q, name, "[PUBMED " + NStr::IntToString( (*pub_iter)->GetPmid().Get() ) + ']',
+                const int pmid = (*pub_iter)->GetPmid().Get();
+
+                CNcbiOstrstream pubmed;
+                pubmed << "[PUBMED ";
+                if( bHtml ) {
+                    pubmed << "<a href=\"" << strLinkBasePubmed << pmid << "\">";
+                }
+                pubmed << pmid;
+                if( bHtml ) {
+                    pubmed << "</a>";
+                }
+                pubmed << ']';
+
+                x_AddFQ(q, name, CNcbiOstrstreamToString(pubmed),
                     CFormatQual::eUnquoted);
             }
         }
@@ -1047,10 +1060,10 @@ void s_ConvertGtLt(string& subname)
 {
     SIZE_TYPE pos;
     for (pos = subname.find('<'); pos != NPOS; pos = subname.find('<', pos)) {
-        subname.replace(pos, 1, "&lt");
+        subname.replace(pos, 1, "&lt;");
     }
     for (pos = subname.find('>'); pos != NPOS; pos = subname.find('>', pos)) {
-        subname.replace(pos, 1, "&gt");
+        subname.replace(pos, 1, "&gt;");
     }
 }
 
@@ -1067,6 +1080,14 @@ void s_HtmlizeLatLon( string &subname ) {
     lat_lon_stream >> lon;
     lat_lon_stream >> east_or_west;
     if( lat_lon_stream.bad() ) {
+        return;
+    }
+
+    if( north_or_south != "N" && north_or_south != "S" ) {
+        return;
+    }
+
+    if( east_or_west != "E" && east_or_west != "W" ) {
         return;
     }
 

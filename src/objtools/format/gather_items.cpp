@@ -2020,8 +2020,10 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
             /// we may need to assert proper product resolution
             ///
 
-            if( slice_mapper && (feat.GetFeatSubtype() == CSeqFeatData::eSubtype_gap) ) {
-                // skip gaps when we take slices (i.e. "-from" and "-to" command-line args)
+            if( slice_mapper && (feat.GetFeatSubtype() == CSeqFeatData::eSubtype_gap) && ! feat.IsPlainFeat() ) {
+                // skip gaps when we take slices (i.e. "-from" and "-to" command-line args),
+                // unless they're a plain feature.
+                // (compare NW_001468136 (100 to 200000) and AC185591 (100 to 100000) )
                 continue;
             }
 

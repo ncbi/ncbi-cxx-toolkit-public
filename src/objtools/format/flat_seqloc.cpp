@@ -498,7 +498,7 @@ void CFlatSeqLoc::x_AddID
  CBioseqContext& ctx,
  TType type)
 {
-    const bool do_html = ctx.Config().DoHTML();
+    const bool do_html = ( ctx.Config().DoHTML() && type == eType_assembly);
 
     if (ctx.GetHandle().IsSynonym(id)) {
         if ( type == eType_assembly ) {

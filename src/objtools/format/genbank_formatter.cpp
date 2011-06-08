@@ -377,7 +377,7 @@ static string s_GetHtmlTaxname(const CSourceItem& source)
 {
     CNcbiOstrstream link;
     
-    if (!NStr::EqualNocase(source.GetTaxname(), "Unknown") && !NStr::EqualNocase(source.GetTaxname(), "Unknown.") ) {
+    if ( ! NStr::StartsWith(source.GetTaxname(), "Unknown", NStr::eNocase ) ) {
         if (source.GetTaxid() != CSourceItem::kInvalidTaxid) {
             link << "<a href=\"" << strLinkBaseTaxonomy << "id=" << source.GetTaxid() << "\">";
         } else {
@@ -490,6 +490,49 @@ void CGenbankFormatter::FormatReference
     text_os.AddParagraph(l, ref.GetObject());
 }
 
+
+// Find bare links in the text and replace them with clickable links.
+// E.g.
+// http://www.example.com
+// becomes
+// <a href="http://www.example.com">http://www.example.com</a>
+void s_GenerateWeblinks( const string& strProtocol, string& strText )
+{
+    const string strDummyProt( "<!PROT!>" );
+
+    size_t uLinkStart = NStr::FindNoCase( strText, strProtocol + "://" );
+    while ( uLinkStart != NPOS ) {
+        size_t uLinkStop = strText.find_first_of( " \t\n", uLinkStart );
+        if( uLinkStop == NPOS ) {
+            uLinkStop = strText.length();
+        }
+
+        // detect if this link is already embedded in an href HTML tag so we don't
+        // "re-embed" it, producing bad HTML.
+        if( uLinkStart > 0 && ( strText[uLinkStart-1] == '"' || strText[uLinkStart-1]  == '>' )  ) {
+            uLinkStart = NStr::FindNoCase( strText, strProtocol + "://", uLinkStop );
+            continue;
+        }
+    
+        string strLink = strText.substr( uLinkStart, uLinkStop - uLinkStart );
+        // remove junk
+        string::size_type last_good_char = strLink.find_last_not_of(".),<>");
+        if( last_good_char != NPOS ) {
+            strLink.resize( last_good_char + 1 );
+        }
+
+        string strDummyLink = NStr::Replace( strLink, strProtocol, strDummyProt );
+        string strReplace( "<a href=\"" );
+        strReplace += strDummyLink;
+        strReplace += "\">";
+        strReplace += strDummyLink;
+        strReplace += "</a>";
+
+        NStr::ReplaceInPlace( strText, strLink, strReplace, uLinkStart, 1 );        
+        uLinkStart = NStr::FindNoCase( strText, strProtocol + "://", uLinkStart + strReplace.length() );
+    }
+    NStr::ReplaceInPlace( strText, strDummyProt, strProtocol );
+}
 
 // The REFERENCE line contains the number of the particular reference and
 // (in parentheses) the range of bases in the sequence entry reported in
@@ -652,14 +695,27 @@ void CGenbankFormatter::x_Remark
  const CReferenceItem& ref,
  CBioseqContext& ctx) const
 {
+    const bool is_html = ctx.Config().DoHTML();
+
     if (!NStr::IsBlank(ref.GetRemark())) {
-        Wrap(l, "REMARK", ref.GetRemark(), eSubp);
+        if( is_html ) {
+            string remarks = ref.GetRemark();
+            s_GenerateWeblinks( "http", remarks );
+            s_GenerateWeblinks( "https", remarks );
+            Wrap(l, "REMARK", remarks, eSubp);
+        } else {
+            Wrap(l, "REMARK", ref.GetRemark(), eSubp);
+        }
     }
     if ( ctx.Config().GetMode() == CFlatFileConfig::eMode_Entrez ) {
         if ( ref.IsSetPatent() ) {
             string strCambiaPatentLens = s_GetLinkCambiaPatentLens( ref, 
                 ctx.Config().DoHTML() );
             if ( ! strCambiaPatentLens.empty() ) {
+                if( is_html ) {
+                    s_GenerateWeblinks( "http", strCambiaPatentLens );
+                    s_GenerateWeblinks( "https", strCambiaPatentLens );
+                }
                 Wrap(l, "REMARK", strCambiaPatentLens, eSubp);
             }  
         }      
@@ -795,49 +851,6 @@ void s_OrphanFixup( list< string >& wrapped, size_t uMaxSize = 0 )
     }
 }
 
-// Find bare links in the text and replace them with clickable links.
-// E.g.
-// http://www.example.com
-// becomes
-// <a href="http://www.example.com">http://www.example.com</a>
-void s_GenerateWeblinks( const string& strProtocol, string& strText )
-{
-    const string strDummyProt( "<!PROT!>" );
-
-    size_t uLinkStart = NStr::FindNoCase( strText, strProtocol + "://" );
-    while ( uLinkStart != NPOS ) {
-        size_t uLinkStop = strText.find_first_of( " \t\n", uLinkStart );
-        if( uLinkStop == NPOS ) {
-            uLinkStop = strText.length();
-        }
-
-        // detect if this link is already embedded in an href HTML tag so we don't
-        // "re-embed" it, producing bad HTML.
-        if( uLinkStart > 0 && ( strText[uLinkStart-1] == '"' || strText[uLinkStart-1]  == '>' )  ) {
-            uLinkStart = NStr::FindNoCase( strText, strProtocol + "://", uLinkStop );
-            continue;
-        }
-    
-        string strLink = strText.substr( uLinkStart, uLinkStop - uLinkStart );
-        // remove junk
-        string::size_type last_good_char = strLink.find_last_not_of(".),<>");
-        if( last_good_char != NPOS ) {
-            strLink.resize( last_good_char + 1 );
-        }
-
-        string strDummyLink = NStr::Replace( strLink, strProtocol, strDummyProt );
-        string strReplace( "<a href=\"" );
-        strReplace += strDummyLink;
-        strReplace += "\">";
-        strReplace += strDummyLink;
-        strReplace += "</a>";
-
-        NStr::ReplaceInPlace( strText, strLink, strReplace, uLinkStart, 1 );        
-        uLinkStart = NStr::FindNoCase( strText, strProtocol + "://", uLinkStart + strReplace.length() );
-    }
-    NStr::ReplaceInPlace( strText, strDummyProt, strProtocol );
-}
-
 //void s_FixLineBrokenWeblinks( list<string>& l )
 //{
 //}
@@ -892,11 +905,16 @@ void CGenbankFormatter::FormatComment
         bool bHtml = GetContext().GetConfig().DoHTML();
         if ( bHtml ) {
             s_GenerateWeblinks( "http", *comment_it );
+            s_GenerateWeblinks( "https", *comment_it );
         }
 
         list<string>::iterator l_old_last = l.end();
         if( ! l.empty() ) {
             --l_old_last;
+        }
+
+        if( bHtml ) {
+            TryToSanitizeHtml(*comment_it);
         }
 
         if (!is_first) {
@@ -909,10 +927,6 @@ void CGenbankFormatter::FormatComment
         // for structured comments (e.g. FJ888345.1)
         if( internalIndent > 0 ) {
             s_FixListIfBadWrap( l, l_old_last, GetIndent().length() + internalIndent );
-        }
-
-        if( bHtml ) {
-            TryToSanitizeHtmlList(l);
         }
 
         is_first = false;
@@ -958,7 +972,10 @@ bool s_GetFeatureKeyLinkLocation(
         ITERATE( CSeq_loc, loc_iter, loc ) {
             CSeq_id_Handle idh = loc_iter.GetSeq_id_Handle();
             if ( idh && idh.IsGi() ) {
-                iGi = idh.GetGi();
+                CBioseq_Handle bioseq_h = feat.GetScope().GetBioseqHandle( idh );
+                if( bioseq_h ) {
+                    iGi = idh.GetGi();
+                }
             }
         }
     }
@@ -989,15 +1006,13 @@ string s_GetLinkFeatureKey(
 
     // check if this is a protein or nucleotide link
     bool is_prot = false;
-    switch( type ) {
-        case CSeqFeatData::e_Region:
-        case CSeqFeatData::e_Prot:
-        case CSeqFeatData::e_Site:
-            is_prot = true;
-            break;
-        default:
-            break;
-    }
+    {{
+        CBioseq_Handle bioseq_h = 
+            item.GetContext()->GetScope().GetBioseqHandle( item.GetFeat().GetLocation() );
+        if( bioseq_h ) {
+            is_prot = ( bioseq_h.GetBioseqMolType() == CSeq_inst::eMol_aa );
+        }
+    }}
 
     // link base
     string strLinkbase;
@@ -1061,7 +1076,10 @@ void CGenbankFormatter::FormatFeature
     // const string strDummy( "[FEATKEY]" );
     string strKey = feat->GetKey(); // bHtml ? strDummy : feat->GetKey();
     Wrap(l, strKey, feat->GetLoc().GetString(), eFeat );
-    if ( bHtml ) {
+
+    // In HTML mode, if not taking a "slice" (i.e. -from and -to args )
+    // we need to add a link
+    if ( bHtml && f.GetContext()->GetLocation().IsWhole() ) {
         // we will need to pad since the feature's key might be smaller than strDummy
         // negative padding means we need to remove spaces.
         // const int padding_needed = (int)strDummy.length() - (int)feat->GetKey().length();
@@ -1176,6 +1194,11 @@ s_CalcDistanceUntilNextSignificantGapOrEnd(
     CSeqVector_CI iter // yes, COPY not reference
     )
 {
+    // see if we started in the middle of a gap
+    if( iter.IsInGap() && iter.GetGapSizeBackward() > 0 ) {
+        return 0;
+    }
+
     const CSeqMap &seq_map = seq.GetSequence().GetSeqMap();
 
     TSeqPos dist_to_gap_or_end = 0;
@@ -1236,9 +1259,19 @@ s_FormatRegularSequencePiece
         }
     }
 
+    // When the sequence begins with a gap, we show the "N's" but the base count on the left
+    // starts where the non-gap starts.
+    // e.g. AC174915
+    TSeqPos gap_at_beginning_base_count_offset = 0;
+
     while ( total >= (s_kFullLineSize - initial_indent) ) {
         char* linep = line + kSeqPosWidth;
-        s_FormatSeqPosBack(linep, base_count, kSeqPosWidth);
+
+        if( initial_indent == 0 && iter.IsInGap() ) {
+            gap_at_beginning_base_count_offset = iter.GetBufferSize();
+        }
+        s_FormatSeqPosBack(linep, base_count + gap_at_beginning_base_count_offset, kSeqPosWidth);
+        gap_at_beginning_base_count_offset = 0;
 
         TSeqPos i = 0;
         TSeqPos j = 0;
@@ -1322,7 +1355,7 @@ void CGenbankFormatter::FormatSequence
     TSeqPos base_count = from;
 
     TSeqPos vec_pos = from-1;
-    TSeqPos total = from <= to? to - from + 1: 0;
+    TSeqPos total = from <= to? to - from + 1 : 0;
     
     CSeqVector_CI iter(vec, vec_pos, CSeqVector_CI::eCaseConversion_lower);
     if( ! bGapsHiddenUntilClicked ) {
@@ -1336,14 +1369,26 @@ void CGenbankFormatter::FormatSequence
                 min( total, s_CalcDistanceUntilNextSignificantGapOrEnd(seq, iter) );
 
             if( 0 == distance_until_next_significant_gap ) {
-                
+
+                const bool gap_started_before_this_point = ( iter.GetGapSizeBackward() > 0 );
 
                 TSeqPos gap_size = 0;
                 // sum up gap length, skipping over all gaps until we reach real data
                 while( iter && iter.IsInGap() ) {
                     gap_size += iter.SkipGap();
                 }
-                
+
+                if( total >= gap_size ) {
+                    total -= gap_size;
+                } else {
+                    total = 0;
+                }
+                base_count += gap_size;
+
+                if( gap_started_before_this_point && ! seq.IsFirst() ) {
+                    continue;
+                }
+
                 // build gap size text and "Expand Ns" link
                 const static int kExpandedGapDisplay = 65536;
                 CNcbiOstrstream gap_link;
@@ -1354,14 +1399,17 @@ void CGenbankFormatter::FormatSequence
                 gap_link << "\">Expand Ns</a>";
 
                 text_os.AddLine( (string)CNcbiOstrstreamToString(gap_link) );
-
-                total -= gap_size;
-                base_count += gap_size;
             } else {
                 // create a fake total so we stop before the next gap
                 TSeqPos fake_total = distance_until_next_significant_gap;
                 s_FormatRegularSequencePiece( seq, text_os, iter, fake_total, base_count);
-                total -= ( distance_until_next_significant_gap - fake_total );
+                const TSeqPos amount_to_subtract_from_total = 
+                    ( distance_until_next_significant_gap - fake_total );
+                if( total >= amount_to_subtract_from_total ) {
+                    total -= amount_to_subtract_from_total;
+                } else {
+                    total = 0;
+                }
             }
         }        
     }

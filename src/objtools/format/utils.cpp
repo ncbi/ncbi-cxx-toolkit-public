@@ -1159,7 +1159,7 @@ const string strLinkBaseExpasy(
 const string strLinkBaseNucSearch(
     "http://www.ncbi.nlm.nih.gov/sites/entrez?db=Nucleotide&amp;cmd=Search&amp;term=" );
 const string strLinkBaseGenomePrj(
-    "http://www.ncbi.nlm.nih.gov/genomeprj/" );
+    "http://www.ncbi.nlm.nih.gov/bioproject/" );
 const string strLinkBaseLatLon(
     "http://www.ncbi.nlm.nih.gov/projects/Sequin/latlonview.html" );
 const string strLinkBaseGeneOntology (
@@ -1168,6 +1168,9 @@ const string strLinkBaseGeneOntologyRef (
     "http://www.geneontology.org/cgi-bin/references.cgi#GO_REF:" );
 const string strLinkBaseUSPTO(
     "http://patft.uspto.gov/netacgi/nph-Parser?patentnumber=" );
+
+const string strDocLink(
+    "http://www.ncbi.nlm.nih.gov/genome/guide/build.shtml" );
 
 bool ConvertQuotesNotInHTMLTags( string &str )
 {   
@@ -1304,7 +1307,7 @@ TryToSanitizeHtml( string &str )
 {
     string result;
     
-    // The "* 1.1" should handle most cases since data tends not to have
+    // The "* 1.1" should keep up efficient in most cases since data tends not to have
     // too many characters that need escaping.
     result.reserve( 1 + (int)( str.length() * 1.1 ) ); 
 

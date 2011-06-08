@@ -74,6 +74,28 @@ const CGenomeProjectItem::TDBLinkLineVec & CGenomeProjectItem::GetDBLinkLines() 
 /*                                  PRIVATE                                */
 /***************************************************************************/
 
+static string
+s_JoinSRAStrs(const CUser_field_Base::C_Data::TStrs &strs, const bool is_html )
+{
+    const static string kStrLinkBaseSRA = "http://www.ncbi.nlm.nih.gov/sites/entrez?db=sra&term=";
+
+    CNcbiOstrstream result;
+    ITERATE( CUser_field_Base::C_Data::TStrs, str_iter, strs ) {
+        if( str_iter != strs.begin() ) {
+            result << ", ";
+        }
+        const string &id = *str_iter;
+        if( is_html ) {
+            result << "<a href=\"" << kStrLinkBaseSRA << id << "\">";
+        }
+        result << id;
+        if( is_html ) {
+            result << "</a>";
+        }
+    }
+    
+    return CNcbiOstrstreamToString( result );
+}
 
 void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
 {
@@ -118,7 +140,7 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
                     if ( NStr::EqualNocase(label, "Sequence Read Archive") ) {
                         const CUser_field_Base::C_Data::TStrs &strs = field.GetData().GetStrs();
                         m_DBLinkLines.push_back( "Sequence Read Archive: " + 
-                            NStr::Join( strs, ", " ) );
+                            s_JoinSRAStrs( strs, ctx.Config().DoHTML() ) );
                     }
             }
         }

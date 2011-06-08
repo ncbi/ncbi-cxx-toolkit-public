@@ -64,7 +64,9 @@ BEGIN_SCOPE(objects)
 bool CCommentItem::sm_FirstComment = true;
 
 static const string kRefSeq = "REFSEQ";
+static const string kRefSeqInformation = "REFSEQ INFORMATION";
 static const string kRefSeqLink = "<a href=\"http://www.ncbi.nlm.nih.gov/RefSeq/\">REFSEQ</a>";
+static const string kRefSeqInformationLink = "<a href=\"http://www.ncbi.nlm.nih.gov/RefSeq/\">REFSEQ INFORMATION</a>";
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -462,15 +464,14 @@ string CCommentItem::GetStringForRefTrack
         }
     }
 
-    const string *refseq = (format == eFormat_Html ? &kRefSeqLink : &kRefSeq);
-
     string build_num = CGenomeAnnotComment::GetGenomeBuildNumber(bsh);
 
     CNcbiOstrstream oss;
     if (status == eRefTrackStatus_Pipeline) {
-        oss << *refseq << " INFORMATION: ";
+        oss << ( format == eFormat_Html ? kRefSeqInformationLink : kRefSeqInformation ) << ": ";
     } else {
-        oss << status_str << ' ' << *refseq << ": ";
+        oss << status_str << ' ' 
+            << ( format == eFormat_Html ? kRefSeqLink : kRefSeq ) << ": ";
     }
     switch ( status ) {
     case eRefTrackStatus_Inferred:
@@ -481,7 +482,15 @@ string CCommentItem::GetStringForRefTrack
         if ( !build_num.empty() ) {
             oss << "Features on this sequence have been produced for build "
                 << build_num << " of the NCBI's genome annotation"
-                << " [see " << "documentation" << "].";
+                << " [see ";
+            if( format == eFormat_Html ) {
+                oss << "<a href=\"" << strDocLink << "\">" ;
+            }
+            oss << "documentation";
+            if( format == eFormat_Html ) {
+                oss << "</a>";
+            }
+            oss << "].";
         } else {
             oss << "NCBI contigs are derived from assembled genomic sequence data."
                 << "~Also see:~"
@@ -530,7 +539,8 @@ string CCommentItem::GetStringForRefTrack
 
     if ( !identical_to.empty() ) {
         oss << " The reference sequence is identical to ";
-        NcbiId( oss, identical_to, format == eFormat_Html );
+        const bool add_link = (format == eFormat_Html && identical_to_priority != eIdenticalToPriority_Name);
+        NcbiId( oss, identical_to, add_link );
 
         if( ! identical_to_start.empty() && ! identical_to_end.empty() ) {
             oss << " (range: " << identical_to_start << "-" << 
@@ -843,12 +853,24 @@ static bool s_GetEncodeValues
 
 string CCommentItem::GetStringForEncode(CBioseqContext& ctx)
 {
+    const static string kEncodeProjLink = "http://www.nhgri.nih.gov/10005107";
+
+    const bool bHtml = ctx.Config().DoHTML();
+
     if (!ctx.IsEncode()) {
         return kEmptyStr;
     }
 
     CNcbiOstrstream str;
-    str << "REFSEQ:  This record was provided by the ENCODE project.";
+    str << "REFSEQ:  This record was provided by the ";
+    if( bHtml ) {
+        str << "<a href=\"" << kEncodeProjLink << "\">";
+    }
+    str << "ENCODE";
+    if( bHtml ) {
+        str << "</a>";
+    }
+    str << " project.";
 
     string chromosome, assembly_date, ncbi_annotation;
     if (s_GetEncodeValues(chromosome, assembly_date, ncbi_annotation, ctx)) {
@@ -890,7 +912,7 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
         return data_str;
     }
 
-    if( label_str == "GOLD Stamp ID" ) {
+    if( label_str == "GOLD Stamp ID" && NStr::StartsWith(data_str, "Gi") ) {
         CNcbiOstrstream result;
         result << "<a href=\"http://genomesonline.org/GOLD_CARDS/" << data_str 
                << ".html\">" << data_str << "</a>";
@@ -1211,15 +1233,25 @@ string CGenomeAnnotComment::GetGenomeBuildNumber(const CBioseq_Handle& bsh)
 
 void CGenomeAnnotComment::x_GatherInfo(CBioseqContext& ctx)
 {
-    const string *refseq = ctx.Config().DoHTML() ? &kRefSeqLink : &kRefSeq;
+    const bool bHtml = ctx.Config().DoHTML();
+
+    const string *refseq = ( bHtml ? &kRefSeqLink : &kRefSeq );
 
     CNcbiOstrstream text;
 
     text << "GENOME ANNOTATION " << *refseq << ": ";
-    if ( !m_GenomeBuildNumber.empty() ) {
+    if ( ! m_GenomeBuildNumber.empty() ) {
          text << "Features on this sequence have been produced for build "
               << m_GenomeBuildNumber << " of the NCBI's genome annotation"
-              << " [see " << "documentation" << "].";
+              << " [see ";
+         if( bHtml ) {
+             text << "<a href=\"" << strDocLink << "\">";
+         }
+         text << "documentation";
+         if( bHtml ) {
+             text << "</a>";
+         }
+         text << "].";
     } else {
         text << "NCBI contigs are derived from assembled genomic sequence data."
              << "~Also see:~"

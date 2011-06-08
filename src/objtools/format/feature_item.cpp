@@ -2252,12 +2252,12 @@ void CFeatureItem::x_AddQuals(
 {
 //    /**fl**/
     // leaving this here since it's so useful for debugging purposes.
-    //1017986..1018858
+    //3961..5076
     /* if( 
-        (GetLoc().GetStart(eExtreme_Biological) == 1017985 &&
-        GetLoc().GetStop(eExtreme_Biological) == 1018857) ||
-        (GetLoc().GetStop(eExtreme_Biological) == 1017985 &&
-        GetLoc().GetStart(eExtreme_Biological) == 1018857)
+        (GetLoc().GetStart(eExtreme_Biological) == 3960 &&
+        GetLoc().GetStop(eExtreme_Biological) == 5075) ||
+        (GetLoc().GetStop(eExtreme_Biological) == 3960 &&
+        GetLoc().GetStart(eExtreme_Biological) == 5075)
         ) {
         cerr << "";
         } */
@@ -3500,7 +3500,25 @@ void CFeatureItem::x_AddGoQuals(
 
             ITERATE (CUser_field::TData::TFields, it, field.GetData().GetFields()) {
                 if ( (*it)->GetData().IsFields() ) {
-                    x_AddQual(slot, new CFlatGoQVal(**it));
+                    CRef<CFlatGoQVal> go_val( new CFlatGoQVal(**it) );
+
+                    bool okay_to_add = true;
+
+                    const string & data_str = go_val->GetTextString();
+
+                    // check for dups
+                    CFeatureItem::TQCI iter = x_GetQual(slot);
+                    for ( ; iter != m_Quals.end()  &&  iter->first == slot; ++iter) {
+                        const CFlatGoQVal & qual = dynamic_cast<const CFlatGoQVal &>( *iter->second );
+                        if( NStr::EqualNocase(qual.GetTextString(), data_str) ) {
+                            okay_to_add = false;
+                            break;
+                        }
+                    }
+
+                    if( okay_to_add ) {
+                        x_AddQual(slot, go_val);
+                    }
                 }
             }
         }
@@ -4485,7 +4503,7 @@ void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
         x_FormatNoteQual(eFQ_go_component, "GO_component", qvec);
         x_FormatNoteQual(eFQ_go_function, "GO_function", qvec);
         x_FormatNoteQual(eFQ_go_process, "GO_process", qvec);
-        s_QualVectorToNote(qvec, true, notestr, suffix, add_period);
+        s_QualVectorToNote(qvec, false, notestr, suffix, add_period);
     }
     s_NoteFinalize(add_period, notestr, ff, eTilde_tilde);
 }
