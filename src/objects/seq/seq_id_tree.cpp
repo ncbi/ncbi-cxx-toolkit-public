@@ -42,6 +42,11 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+//#define NCBI_SLOW_ATOMIC_SWAP
+#ifdef NCBI_SLOW_ATOMIC_SWAP
+DEFINE_STATIC_FAST_MUTEX(sx_GetSeqIdMutex);
+#endif
+
 ////////////////////////////////////////////////////////////////////
 //
 //  CSeq_id_***_Tree::

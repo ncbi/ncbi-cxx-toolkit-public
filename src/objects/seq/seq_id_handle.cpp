@@ -47,11 +47,6 @@ BEGIN_SCOPE(objects)
 // CSeq_id_Info
 //
 
-//#define NCBI_SLOW_ATOMIC_SWAP
-#ifdef NCBI_SLOW_ATOMIC_SWAP
-DEFINE_STATIC_FAST_MUTEX(sx_GetSeqIdMutex);
-#endif
-
 
 CSeq_id_Info::CSeq_id_Info(CSeq_id::E_Choice type,
                            CSeq_id_Mapper* mapper)
