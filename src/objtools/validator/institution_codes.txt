@@ -3957,7 +3957,7 @@ NCS	s	North Carolina State University
 NCSC<THA>	c	National Center of Streptococcus Collection, Department of Microbiology, Faculty of Medical Science
 NCSC<USA-NC>	s	North Carolina State University, Botany Department
 NCSM	s	North Carolina State Museum of Natural Sciences
-NCSU	s	NC State University Insect Museum
+NCSU	s	North Carolina State University Collections
 NCTC	c	National Collection of Type Cultures
 NCU	s	University of North Carolina, North Carolina Botanical Garden
 NCUT	s	Nicolaus Copernicus University
