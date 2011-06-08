@@ -912,6 +912,6 @@ void CCgi2RCgiApp::OnJobFailed(const string& msg,
 /////////////////////////////////////////////////////////////////////////////
 int main(int argc, const char* argv[])
 {
-    GetDiagContext().SetOldPostFormat(false);                           \
+    GetDiagContext().SetOldPostFormat(false);
     return CCgi2RCgiApp().AppMain(argc, argv, 0, eDS_Default);
 }
