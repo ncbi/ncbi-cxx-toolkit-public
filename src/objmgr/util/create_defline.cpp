@@ -526,6 +526,10 @@ string CDeflineGenerator::x_DescribeClones (void)
         return ", pooled multiple clones";
     }
 
+    if( m_Clone.empty() ) {
+        return kEmptyStr;
+    }
+
     SIZE_TYPE count = 1;
     for (SIZE_TYPE pos = m_Clone.find(';'); pos != NPOS;
          pos = m_Clone.find(';', pos + 1)) {
