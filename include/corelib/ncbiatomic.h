@@ -121,14 +121,14 @@ void* NCBI_SwapPointers(void * volatile * location, void* new_value)
     asm volatile("swap [%2], %1" : "=m" (*nv_loc), "=r" (old_value)
                  : "r" (nv_loc), "1" (new_value), "m" (*nv_loc));
     return old_value;
-#    elif defined(__ppc__) ||  defined(__ppc64__)
+#    elif defined(__powerpc__) || defined(__powerpc64__) || defined(__ppc__) || defined(__ppc64__)
     void* old_value;
     int   swapped = 0;
     NCBI_SCHED_SPIN_INIT();
     while ( !swapped ) {
         swapped = 0;
         asm volatile(
-#ifdef __ppc64__
+#if defined(__powerpc64__)  ||  defined(__ppc64__)
                      "ldarx %1,0,%4\n\tstdcx. %3,0,%4"
 #else
                      "lwarx %1,0,%4\n\tstwcx. %3,0,%4"
