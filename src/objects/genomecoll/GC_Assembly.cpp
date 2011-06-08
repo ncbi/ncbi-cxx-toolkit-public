@@ -598,226 +598,6 @@ static void s_Extract(const CGC_AssemblySet& set,
                       list< CConstRef<CGC_Sequence> >& molecules,
                       CGC_Assembly::ESubset subset);
 
-static void s_Extract(const CGC_Replicon& repl,
-                      list< CConstRef<CGC_Sequence> >& molecules,
-                      CGC_Assembly::ESubset subset);
-
-static void s_Extract(const CGC_Sequence& seq,
-                      list< CConstRef<CGC_Sequence> >& molecules,
-                      CGC_Assembly::ESubset subset);
-
-static void s_Extract(const CGC_TaggedSequences& seq,
-                      list< CConstRef<CGC_Sequence> >& molecules,
-                      CGC_Assembly::ESubset subset);
-
-
-
-static void s_Extract(const CGC_TaggedSequences& seq,
-                      list< CConstRef<CGC_Sequence> >& molecules,
-                      CGC_Assembly::ESubset subset)
-{
-    switch (subset) {
-    case CGC_Assembly::eChromosome:
-        NCBI_THROW(CException, eUnknown,
-                   "s_Extract(): don't extract chromosomes this way");
-        break;
-
-    case CGC_Assembly::eScaffold:
-        /// by definition, we are called on a replicon
-        /// we therefore skip this sequence and go one level deeper
-        ITERATE (CGC_TaggedSequences::TSeqs, i, seq.GetSeqs()) {
-            molecules.push_back(*i);
-        }
-        break;
-
-    case CGC_Assembly::eTopLevel:
-        // add ourselves
-        ITERATE (CGC_TaggedSequences::TSeqs, i, seq.GetSeqs()) {
-            molecules.push_back(*i);
-        }
-        break;
-
-    case CGC_Assembly::eComponent:
-        /// by definition, we are called on a replicon
-        /// we therefore skip this sequence and go one level deeper
-        ITERATE (CGC_TaggedSequences::TSeqs, i, seq.GetSeqs()) {
-            s_Extract(**i, molecules, subset);
-        }
-        break;
-
-    default:
-        break;
-    }
-}
-
-
-static void s_Extract(const CGC_Sequence& seq,
-                      list< CConstRef<CGC_Sequence> >& molecules,
-                      CGC_Assembly::ESubset subset)
-{
-    switch (subset) {
-    case CGC_Assembly::eChromosome:
-        {{
-             bool has_placed = false;
-             if (seq.IsSetSequences()) {
-                 ITERATE (CGC_Sequence::TSequences, i, seq.GetSequences()) {
-                     if ((*i)->GetState() == CGC_TaggedSequences::eState_placed) {
-                         has_placed = true;
-                         break;
-                     }
-                 }
-             }
-             else {
-                 // assume that the replicon is real...
-                 has_placed = true;
-             }
-             if (has_placed) {
-                 molecules.push_back(CConstRef<CGC_Sequence>(&seq));
-             }
-         }}
-        break;
-
-    case CGC_Assembly::eScaffold:
-        /// skip this sequence and go one level deeper
-        if (seq.IsSetSequences()) {
-
-            // complex rules here, in lieu of explicit mark-up
-            set<CSeq_id_Handle> syns;
-            if (seq.IsSetSeq_id_synonyms()) {
-                ITERATE (CGC_Sequence::TSeq_id_synonyms, i,
-                         seq.GetSeq_id_synonyms()) {
-                    CTypeConstIterator<CSeq_id> id_it(**i);
-                    for ( ;  id_it;  ++id_it) {
-                        syns.insert(CSeq_id_Handle::GetHandle(*id_it));
-                    }
-                }
-            }
-
-            ITERATE (CGC_Sequence::TSequences, it, seq.GetSequences()) {
-                switch ((*it)->GetState()) {
-                case CGC_TaggedSequences::eState_placed:
-                    {{
-                         bool is_syn = false;
-                         ITERATE (CGC_TaggedSequences::TSeqs, i,
-                                  (*it)->GetSeqs()) {
-                             // this sequence likely should be a scaffold
-                             // corner case: avoid adding a sequence that is
-                             // explicitly a synonym of the parent we still do
-                             // see some cases in which a sequence is reported
-                             // as being composed of a placed sequence that is
-                             // itself
-                             //
-                             // note that it is fine to include the self
-                             // reference if it is *NOT* a synonym...
-                             CSeq_id_Handle idh =
-                                 CSeq_id_Handle::GetHandle((*i)->GetSeq_id());
-                             if (syns.find(idh) != syns.end()) {
-                                 is_syn = true;
-                                 break;
-                             }
-                         }
-                         if (is_syn) {
-                             molecules.push_back(CConstRef<CGC_Sequence>(&seq));
-                         }
-                         else {
-                             ITERATE (CGC_TaggedSequences::TSeqs, i,
-                                      (*it)->GetSeqs()) {
-                                 // assumed to be scaffold
-                                 molecules.push_back(*i);
-                             }
-                         }
-                     }}
-                    break;
-
-                default:
-                    ITERATE (CGC_TaggedSequences::TSeqs, i, (*it)->GetSeqs()) {
-                        // assumed to be scaffold
-                        molecules.push_back(*i);
-                    }
-                    break;
-                }
-            }
-        }
-        else {
-            // only one level to consider; therefore, it's a scaffold
-            molecules.push_back(CConstRef<CGC_Sequence>(&seq));
-        }
-        break;
-
-    case CGC_Assembly::eComponent:
-        /// migrate all the way to leaves
-        if (seq.IsSetSequences()) {
-            ITERATE (CGC_Sequence::TSequences, it, seq.GetSequences()) {
-                ITERATE (CGC_TaggedSequences::TSeqs, i, (*it)->GetSeqs()) {
-                    s_Extract(**i, molecules, subset);
-                }
-            }
-        } else {
-            molecules.push_back(CConstRef<CGC_Sequence>(&seq));
-        }
-        break;
-
-    case CGC_Assembly::eTopLevel:
-        {{
-             // the current sequence is top-level iff there are placed
-             // sequences (i.e., chromosomes and top-level scaffolds)
-             bool has_placed = false;
-             if (seq.IsSetSequences()) {
-                 ITERATE (CGC_Sequence::TSequences, i, seq.GetSequences()) {
-                     if ((*i)->GetState() == CGC_TaggedSequences::eState_placed) {
-                         has_placed = true;
-                         break;
-                     }
-                 }
-             }
-             else {
-                 // assume that the replicon is real...
-                 has_placed = true;
-             }
-             if (has_placed) {
-                 molecules.push_back(CConstRef<CGC_Sequence>(&seq));
-             }
-             // the order here is explicit
-             // we check and iterate again, excluding placed sequences
-             if (seq.IsSetSequences()) {
-                 ITERATE (CGC_Sequence::TSequences, it, seq.GetSequences()) {
-                     switch ((*it)->GetState()) {
-                     case CGC_TaggedSequences::eState_placed:
-                         continue;
-
-                     default:
-                         break;
-                     }
-                     s_Extract(**it, molecules, subset);
-                 }
-             }
-         }}
-        break;
-
-    default:
-        break;
-    }
-}
-
-
-static void s_Extract(const CGC_Replicon& repl,
-                      list< CConstRef<CGC_Sequence> >& molecules,
-                      CGC_Assembly::ESubset subset)
-{
-    // replicons are chromosomes;
-    // we report the replicon as real iff it contains a set of placed
-    // sequences
-    if (repl.GetSequence().IsSingle()) {
-        s_Extract(repl.GetSequence().GetSingle(), molecules, subset);
-    } else {
-        // replicon is a set; 
-        ITERATE (CGC_Replicon::TSequence::TSet, i,
-                 repl.GetSequence().GetSet()) {
-            s_Extract(**i, molecules, subset);
-        }
-    }
-}
-
 static bool s_RoleFitsSubset(int role, CGC_Assembly::ESubset subset)
 {
     switch (subset) {
@@ -843,93 +623,34 @@ static void s_Extract(const CGC_AssemblyUnit& unit,
                       list< CConstRef<CGC_Sequence> >& molecules,
                       CGC_Assembly::ESubset subset)
 {
+    bool no_roles_set = true;
     CTypeConstIterator<CGC_Sequence> sequence_it(unit);
-    if (!sequence_it) {
-        /// Deal with case of assembly containing no sequences; we no there's
-        /// nothing to extract
-        return;
-    }
-
-    if (sequence_it->IsSetRoles()) {
-        for ( ;  sequence_it;  ++sequence_it) {
-            /// Include this sequence if it has the correct role, or if
-            /// all sequences are requested
-            bool fits_role = false;
-            if (subset == CGC_Assembly::eAll) {
-                fits_role = true;
-            } else {
-                ITERATE (CGC_Sequence::TRoles, it, sequence_it->GetRoles()) {
-                    if (s_RoleFitsSubset(*it, subset)) {
-                        fits_role = true;
-                        break;
-                    }
+    size_t count = 0;
+    for ( ;  sequence_it;  ++sequence_it, ++count) {
+        // Include this sequence if it has the correct role, or if
+        // all sequences are requested
+        bool fits_role = false;
+        if (subset == CGC_Assembly::eAll) {
+            fits_role = true;
+        }
+        else if (sequence_it->IsSetRoles()) {
+            no_roles_set = false;
+            ITERATE (CGC_Sequence::TRoles, it, sequence_it->GetRoles()) {
+                if (s_RoleFitsSubset(*it, subset)) {
+                    fits_role = true;
+                    break;
                 }
             }
-            if (fits_role) {
-                molecules.push_back(CConstRef<CGC_Sequence>(&*sequence_it));
-            }
         }
-        return;
+        if (fits_role) {
+            molecules.push_back(CConstRef<CGC_Sequence>(&*sequence_it));
+        }
     }
-    
-    /// Data does not contain sequence roles, so we need to use the older,
-    /// recursive method for getting the right sequences
-    switch (subset) {
-    case CGC_Assembly::eChromosome:
-        if (unit.GetClass() != CGC_AssemblyUnit::eClass_alt_loci  &&
-            unit.GetClass() != CGC_AssemblyUnit::eClass_assembly_patch  &&
-            unit.IsSetMols()) {
-            ITERATE (CGC_AssemblyUnit::TMols, it, unit.GetMols()) {
-                s_Extract(**it, molecules, subset);
-            }
-        }
-        break;
 
-    case CGC_Assembly::eScaffold:
-    case CGC_Assembly::eComponent:
-        if (unit.IsSetMols()) {
-            ITERATE (CGC_AssemblyUnit::TMols, it, unit.GetMols()) {
-                s_Extract(**it, molecules, subset);
-            }
-        }
-        if (unit.IsSetOther_sequences()) {
-            ITERATE (CGC_AssemblyUnit::TOther_sequences, it,
-                     unit.GetOther_sequences()) {
-                s_Extract(**it, molecules, subset);
-            }
-        }
-        break;
-
-    case CGC_Assembly::eTopLevel:
-        if (unit.IsSetMols()) {
-            CGC_Assembly::ESubset tmp = subset;
-            if (unit.GetClass() == CGC_AssemblyUnit::eClass_alt_loci  ||
-                unit.GetClass() == CGC_AssemblyUnit::eClass_assembly_patch) {
-                tmp = CGC_Assembly::eScaffold;
-            }
-            ITERATE (CGC_AssemblyUnit::TMols, it, unit.GetMols()) {
-                s_Extract(**it, molecules, tmp);
-            }
-        }
-        if (unit.IsSetOther_sequences()) {
-            ITERATE (CGC_AssemblyUnit::TOther_sequences, it,
-                     unit.GetOther_sequences()) {
-                s_Extract(**it, molecules, subset);
-            }
-        }
-        break;
-
-    case CGC_Assembly::eAll:
-        {{
-             CTypeConstIterator<CGC_Sequence> seq_it(unit);
-             for ( ;  seq_it;  ++seq_it) {
-                 molecules.push_back(CConstRef<CGC_Sequence>(&*seq_it));
-             }
-         }}
-        break;
-
-    default:
-        break;
+    if (no_roles_set  &&  count) {
+        NCBI_THROW(CException, eUnknown,
+                   "GC-Sequence.roles is not set in the current assembly; "
+                   "please re-extract GC-Assembly");
     }
 }
 
