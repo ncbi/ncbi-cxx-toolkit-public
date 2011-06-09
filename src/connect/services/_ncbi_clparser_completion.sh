@@ -14,8 +14,12 @@
 # compfile=/am/ncbiapdata/bin/_ncbi_clparser_completion.sh
 # if test -f "$compfile"; then
 #     source "$compfile"
-#     complete -F _ncbi_clparser_completion grid_cli
-#     complete -F _ncbi_clparser_completion svn
+#
+#     compfile="/am/ncbiapdata/bin/_ncbi_clparser_opt_compl.sh"
+#     test -f "$compfile" && source "$compfile"
+#
+#     complete -o default -F _ncbi_clparser_completion grid_cli
+#     complete -o default -F _ncbi_clparser_completion svn
 # fi
 #
 # Author: Dmitry Kazimirov <kazimird@ncbi.nlm.nih.gov>
@@ -24,28 +28,57 @@ _ncbi_clparser_completion()
 {
     COMPREPLY=()
     local program="${COMP_WORDS[0]}"
-    which "$program" > /dev/null 2>&1 || return
-    local word cmd
+    local cword="${COMP_WORDS[COMP_CWORD]}"
+    local line="${COMP_LINE::COMP_POINT}"
+    [[ $line != *$cword ]] && cword="${line##* }"
+    local pword="${COMP_WORDS[COMP_CWORD-1]}"
+    [[ $pword = '=' && $COMP_CWORD -gt 1 ]] && \
+        pword="${COMP_WORDS[COMP_CWORD-2]}"
+    local word cmd opts
     for word in "${COMP_WORDS[@]:1}"; do
-        [[ "$word" != -* ]] && cmd="$word" && break
+        if [[ $word != -* ]]; then
+            [[ ! $cmd ]] && cmd="$word"
+        elif [[ $word != $cword ]]; then
+            if [[ $word == --* ]]; then
+                opts="$opts ${word%%=*}"
+            else
+                opts="$opts ${word:0:2}"
+            fi
+        fi
     done
-    word="${COMP_LINE::COMP_POINT}"
-    word="${word##* }"
-    if [[ $word == $cmd || $cmd == 'help' ]]; then
-        COMPREPLY=($("$program" help 2> /dev/null | perl -wne \
-            "if (!\$parse) {\$parse = m/commands:/o; next}
-            if (@cmd = m/^\s{2,4}([a-z]\\S+)(?: \\(([^)]+)\\))?/o) {
-                print map {\$_ . ' '} grep {length() > 2 && m/^$word/}
-                    \$cmd[0], split(m/[ ,]+/, \$cmd[1] || '')
-            }"))
-    elif [[ -z $word || $word == -* ]]; then
+    if [[ $cword == $cmd || $cmd == 'help' ]]; then
+        COMPREPLY=($(compgen -W "$("$program" help 2> /dev/null | perl -ne '
+            if (!$parse) {$parse = m/commands:/o; next}
+            if (@cmd = m/^\s{2,4}([a-z]\S+)(?: \(([^)]+)\))?/o) {
+                print map {" $_"} grep {length() > 2}
+                    $cmd[0], split(m/[ ,]+/, $cmd[1] || "")
+            }')" -- "$cword"))
+    elif [[ -z $cword || $cword == -* && $cword != --*=* ]]; then
         [[ -z $cmd ]] && cmd="${COMP_LINE:COMP_POINT}" && cmd="${cmd%% *}"
-        COMPREPLY=($("$program" help "$cmd" 2> /dev/null | perl -wne \
-            "if (!\$parse) {\$parse = m/options:/o; next}
-            if (@opt = m/^\s{2,4}(-\\S+) (?:\\[([^\\]]+)\\] )?(ARG)?/io) {
-                \$eq = \$opt[2] ? '= ' : ' ';
-                print map {\$_ . \$eq} grep {length() > 4 && m/^$word/}
-                    \$opt[0], split(m/[ ,]+/, \$opt[1] || '')
-            }"));
+        local compl="$("$program" help "$cmd" 2> /dev/null | perl -e '
+            %spec_opts = map {$_ => 1} split(" ", $ARGV[0]);
+            $pword = $ARGV[1];
+            while (<STDIN>) {last if m/options:/o}
+            while (<STDIN>) {
+                if (@opt = m/^\s{2,4}(-\S+) (?:\[([^\]]+)\] )?(ARG)?/io) {
+                    %opt = map {$_ => 1} $opt[0], split(m/[ ,]+/, $opt[1] || "");
+                    if ($opt{$pword} && $opt[2]) {print "ARG"; exit}
+                    next if grep {$spec_opts{$_}} keys %opt;
+                    push @compl, grep {length() > 4} @opt
+                }
+            }
+            print " $_" for @compl' -- "$opts" "$pword")"
+        if [[ $compl != 'ARG' ]]; then
+            COMPREPLY=($(compgen -W "$compl" -- "$cword"))
+        else
+            COMPREPLY=($(compgen -W " $(_ncbi_clparser_opt_compl \
+                "$program" "$pword" "$cword" 2> /dev/null)"))
+        fi
+    elif [[ $pword == --* ]]; then
+        "$program" help "$cmd" 2> /dev/null |
+            grep -- "$pword" 2> /dev/null |
+            grep -qiw ARG &&
+                COMPREPLY=($(compgen -W " $(_ncbi_clparser_opt_compl \
+                    "$program" "$pword" "$cword" 2> /dev/null)"))
     fi
 }
