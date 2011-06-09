@@ -64,9 +64,9 @@ static const char* kNCReg_MaxThreads          = "max_threads";
 static const char* kNCReg_LogCmds             = "log_requests";
 static const char* kNCReg_AdminClient         = "admin_client_name";
 static const char* kNCReg_DefAdminClient      = "netcache_control";
-//static const char* kNCReg_MemLimit            = "db_cache_limit";
-static const char* kNCReg_MemLimit            = "memory_limit";
-static const char* kNCReg_MemAlert            = "memory_alert";
+static const char* kNCReg_MemLimit            = "db_cache_limit";
+//static const char* kNCReg_MemLimit            = "memory_limit";
+//static const char* kNCReg_MemAlert            = "memory_alert";
 static const char* kNCReg_ForceUsePoll        = "force_use_poll";
 static const char* kNCReg_SpecPriority        = "app_setup_priority";
 static const char* kNCReg_NetworkTimeout      = "network_timeout";
@@ -251,7 +251,7 @@ CNetCacheServer::x_ReadPerClientConfig(const CNcbiRegistry& reg)
                 continue;
             SSpecParamsSet* cur_set  = m_SpecParams;
             SSpecParamsSet* prev_set = NULL;
-            ITERATE(TSpecKeysList, prty_it, m_SpecPriority) {
+            REVERSE_ITERATE(TSpecKeysList, prty_it, m_SpecPriority) {
                 const string& key_name = *prty_it;
                 if (reg.HasEntry(section, key_name, IRegistry::fCountCleared)) {
                     const string& key_value = reg.Get(section, key_name);
@@ -270,6 +270,10 @@ CNetCacheServer::x_ReadPerClientConfig(const CNcbiRegistry& reg)
                     cur_set = next_set;
                 }
                 else {
+                    if (cur_set->entries.size() == 0) {
+                        cur_set->entries.push_back(SSpecParamsEntry(kEmptyStr, static_cast<SSpecParamsSet*>(prev_set->entries[0].value.GetPointer())->entries[0].value));
+                    }
+                    prev_set = cur_set;
                     cur_set = static_cast<SSpecParamsSet*>(cur_set->entries[0].value.GetPointer());
                 }
             }
@@ -354,9 +358,10 @@ CNetCacheServer::x_ReadServerParams(void)
 
         string str_val   = reg.GetString(kNCReg_ServerSection, kNCReg_MemLimit, "1Gb");
         size_t mem_limit = size_t(NStr::StringToUInt8_DataSize(str_val));
-        str_val          = reg.GetString(kNCReg_ServerSection, kNCReg_MemAlert, "4Gb");
+        /*str_val          = reg.GetString(kNCReg_ServerSection, kNCReg_MemAlert, "4Gb");
         size_t mem_alert = size_t(NStr::StringToUInt8_DataSize(str_val));
-        CNCMemManager::SetLimits(mem_limit, mem_alert);
+        CNCMemManager::SetLimits(mem_limit, mem_alert);*/
+        CNCMemManager::SetLimits(mem_limit, mem_limit);
 
         x_ReadPerClientConfig(reg);
     }
@@ -467,7 +472,7 @@ const SNCSpecificParams*
 CNetCacheServer::GetAppSetup(const TStringMap& client_params)
 {
     const SSpecParamsSet* cur_set = m_SpecParams;
-    ITERATE(TSpecKeysList, key_it, m_SpecPriority) {
+    REVERSE_ITERATE(TSpecKeysList, key_it, m_SpecPriority) {
         TStringMap::const_iterator it = client_params.find(*key_it);
         const SSpecParamsSet* next_set = NULL;
         if (it != client_params.end()) {

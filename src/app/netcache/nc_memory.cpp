@@ -3261,7 +3261,7 @@ CNCMemManager::InitializeApp(void)
 {
     try {
         CSQLITE_Global::SetCustomPageCache(&s_NCDBCacheMethods);
-        CSQLITE_Global::SetCustomMallocFuncs(&s_NCMallocMethods);
+        //CSQLITE_Global::SetCustomMallocFuncs(&s_NCMallocMethods);
     }
     catch (CSQLITE_Exception& ex) {
         ERR_POST(Critical << ex);
@@ -3352,7 +3352,7 @@ CNCMemManager::IsDBPageDirty(const void* data_ptr)
 
 END_NCBI_SCOPE
 
-
+/*
 void*
 operator new (size_t size)
 #ifndef NCBI_COMPILER_MSVC
@@ -3386,7 +3386,7 @@ operator delete[] (void* ptr) throw ()
 {
     NCBI_NS_NCBI::CNCMMCentral::DeallocMemory(ptr);
 }
-
+*/
 #ifdef __GLIBC__
 // glibc has special method of overriding C library allocation functions.
 
@@ -3407,7 +3407,7 @@ void s_NCFreeHook(void* mem_ptr, const void* caller)
 {
     NCBI_NS_NCBI::CNCMMCentral::DeallocMemory(mem_ptr);
 }
-
+/*
 void s_NCInitMallocHook(void)
 {
     __malloc_hook  = s_NCMallocHook;
@@ -3416,7 +3416,7 @@ void s_NCInitMallocHook(void)
 }
 
 void (*__malloc_initialize_hook) (void) = s_NCInitMallocHook;
-
+*/
 #elif !defined(NCBI_OS_MSWIN)
 // Changing of C library allocation functions on Windows is very tricky (if
 // possible at all) and NetCache will never run in production on Windows. So

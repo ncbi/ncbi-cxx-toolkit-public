@@ -403,7 +403,13 @@ CNetCacheServer::GetUpTime(void)
 inline Uint8
 CNetCacheServer::GetDiskFree(void)
 {
-    return CFileUtil::GetFreeDiskSpace(g_NCStorage->GetMainPath());
+    try {
+        return CFileUtil::GetFreeDiskSpace(g_NCStorage->GetMainPath());
+    }
+    catch (CFileErrnoException& ex) {
+        ERR_POST(Critical << "Cannot read free disk space: " << ex);
+        return 0;
+    }
 }
 
 inline Uint8
