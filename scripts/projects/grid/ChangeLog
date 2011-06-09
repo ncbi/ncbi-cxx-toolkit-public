@@ -1,3 +1,15 @@
+2011-06-09 Dmitry Kazimirov <kazimird@ncbi.nlm.nih.gov>
+
+	* grid_cli: Initial release.
+	* cgi2rcgi.cgi: Now allows to narrow the set of job affinities.
+	* netcache_control: New option to override blob server address.
+	* netschedule_control: New option to override job server address.
+	* netcache_control: New parameter -blobinfo.
+
+	* all worker nodes: Fixed listening port allocation on Windows.
+	* cgi2rcgi: Does not create blobs for empty progress messages anymore.
+	* cgi2rcgi: Fix for: some substitutions missing if expect_complete = 0.
+
 2010-09-28 Dmitry Kazimirov <kazimird@ncbi.nlm.nih.gov>
 
 	* cgi2rcgi.cgi: Support for JSON output.
