@@ -631,6 +631,7 @@ static void s_Extract(const CGC_AssemblyUnit& unit,
         // all sequences are requested
         bool fits_role = false;
         if (subset == CGC_Assembly::eAll) {
+            no_roles_set = false;
             fits_role = true;
         }
         else if (sequence_it->IsSetRoles()) {
