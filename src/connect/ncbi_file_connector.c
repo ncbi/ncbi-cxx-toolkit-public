@@ -307,7 +307,7 @@ extern CONNECTOR FILE_CreateConnector
 (const char* inp_filename,
  const char* out_filename)
 {
-    static const SFILE_ConnAttr def_attr = { 0, eFCM_Truncate, 0 };
+    static const SFILE_ConnAttr def_attr = { eFCM_Truncate, 0, 0 };
 
     return FILE_CreateConnectorEx(inp_filename, out_filename, &def_attr);
 }
