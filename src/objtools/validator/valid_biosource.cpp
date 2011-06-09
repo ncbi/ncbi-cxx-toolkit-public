@@ -3214,78 +3214,6 @@ bool CPCRSetList::AreSetsUnique(void)
 
 
 // ===== for validating instituation and collection codes in specimen-voucher, ================
-// ===== biomaterial, and culture-collection BioSource subsource modifiers     ================
-
-typedef map<string, string, PNocase> TInstitutionCodeMap;
-static TInstitutionCodeMap s_BiomaterialInstitutionCodeMap;
-static TInstitutionCodeMap s_SpecimenVoucherInstitutionCodeMap;
-static TInstitutionCodeMap s_CultureCollectionInstitutionCodeMap;
-static TInstitutionCodeMap s_InstitutionCodeTypeMap;
-static bool                    s_InstitutionCollectionCodeMapInitialized = false;
-DEFINE_STATIC_FAST_MUTEX(s_InstitutionCollectionCodeMutex);
-
-#include "institution_codes.inc"
-
-static void s_ProcessInstitutionCollectionCodeLine(const CTempString& line)
-{
-    vector<string> tokens;
-    NStr::Tokenize(line, "\t", tokens);
-    if (tokens.size() != 3) {
-        ERR_POST_X(1, Warning << "Bad format in institution_codes.txt entry " << line
-                   << "; disregarding");
-    } else {
-        switch (tokens[1].c_str()[0]) {
-            case 'b':
-                s_BiomaterialInstitutionCodeMap[tokens[0]] = tokens[2];
-                break;
-            case 'c':
-                s_CultureCollectionInstitutionCodeMap[tokens[0]] = tokens[2];
-                break;
-            case 's':
-                s_SpecimenVoucherInstitutionCodeMap[tokens[0]] = tokens[2];
-                break;
-            default:
-                ERR_POST_X(1, Warning << "Bad format in institution_codes.txt entry " << line
-                           << "; unrecognized subtype (" << tokens[1] << "); disregarding");
-                break;
-        }
-        s_InstitutionCodeTypeMap[tokens[0]] = tokens[1];
-    }
-}
-
-
-static void s_InitializeInstitutionCollectionCodeMaps(void)
-{
-    CFastMutexGuard GUARD(s_InstitutionCollectionCodeMutex);
-    if (s_InstitutionCollectionCodeMapInitialized) {
-        return;
-    }
-    string file = g_FindDataFile("institution_codes.txt");
-    CRef<ILineReader> lr;
-    if ( !file.empty() ) {
-        try {
-            lr = ILineReader::New(file);
-        } NCBI_CATCH("s_InitializeInstitutionCollectionCodeMaps")
-    }
-
-    if (lr.Empty()) {
-        ERR_POST_X(2, Info << "s_InitializeInstitutionCollectionCodeMaps: "
-                   "falling back on built-in data.");
-        size_t num_codes = sizeof (kInstitutionCollectionCodeList) / sizeof (char *);
-        for (size_t i = 0; i < num_codes; i++) {
-            const char *p = kInstitutionCollectionCodeList[i];
-            s_ProcessInstitutionCollectionCodeLine(p);
-        }
-    } else {
-        do {
-            s_ProcessInstitutionCollectionCodeLine(*++*lr);
-        } while ( !lr->AtEOF() );
-    }
-
-    s_InstitutionCollectionCodeMapInitialized = true;
-}
-
-
 void CValidError_imp::ValidateOrgModVoucher(const COrgMod& orgmod, const CSerialObject& obj, const CSeq_entry *ctx)
 {
     if (!orgmod.IsSetSubtype() || !orgmod.IsSetSubname() || NStr::IsBlank(orgmod.GetSubname())) {
@@ -3328,35 +3256,40 @@ void CValidError_imp::ValidateOrgModVoucher(const COrgMod& orgmod, const CSerial
         inst_coll = inst_code + ":" + coll_code;
     }    
 
-    s_InitializeInstitutionCollectionCodeMaps();
-
     // first, check combination of institution and collection (if collection found)
-    TInstitutionCodeMap::iterator it = s_InstitutionCodeTypeMap.find(inst_coll);
-    if (it != s_InstitutionCodeTypeMap.end()) {
-        if (NStr::EqualCase (it->first, inst_coll)) {
-            char type_ch = it->second.c_str()[0];
-            if ((subtype == COrgMod::eSubtype_bio_material && type_ch != 'b') ||
-                (subtype == COrgMod::eSubtype_culture_collection && type_ch != 'c') ||
-                (subtype == COrgMod::eSubtype_specimen_voucher && type_ch != 's')) {
-                if (type_ch == 'b') {
+    string voucher_type;
+    bool is_miscapitalized;
+    bool needs_country;
+    string correct_cap;
+    if (COrgMod::IsInstitutionCodeValid(inst_coll, voucher_type, is_miscapitalized, correct_cap, needs_country)) {
+        if (needs_country) {
+            PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, 
+                        "Institution code " + inst_coll + " needs to be qualified with a <COUNTRY> designation",
+                        obj, ctx);
+            return;
+        } else if (is_miscapitalized) {
+            PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, 
+                        "Institution code " + inst_coll + " exists, but correct capitalization is " + correct_cap,
+                        obj, ctx);
+            return;
+        } else {   
+            if ((subtype == COrgMod::eSubtype_bio_material && !NStr::Equal (voucher_type, "b")) ||
+                (subtype == COrgMod::eSubtype_culture_collection && !NStr::Equal (voucher_type, "c")) ||
+                (subtype == COrgMod::eSubtype_specimen_voucher && !NStr::Equal (voucher_type, "s"))) {
+                if (NStr::Equal (voucher_type, "b")) {
                     PostObjErr (eDiag_Info, eErr_SEQ_DESCR_WrongVoucherType, 
                                 "Institution code " + inst_coll + " should be bio_material", 
                                 obj, ctx);
-                } else if (type_ch == 'c') {
+                } else if (NStr::Equal (voucher_type, "c")) {
                     PostObjErr (eDiag_Info, eErr_SEQ_DESCR_WrongVoucherType, 
                                 "Institution code " + inst_coll + " should be culture_collection",
                                 obj, ctx);
-                } else if (type_ch == 's') {
+                } else if (NStr::Equal (voucher_type, "s")) {
                     PostObjErr (eDiag_Info, eErr_SEQ_DESCR_WrongVoucherType, 
                                 "Institution code " + inst_coll + " should be specimen_voucher",
                                 obj, ctx);
                 }
             }
-            return;
-        } else if (NStr::EqualNocase(it->first, inst_coll)) {
-            PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, 
-                        "Institution code " + inst_coll + " exists, but correct capitalization is " + it->first,
-                        obj, ctx);
             return;
         } 
     } else if (NStr::StartsWith(inst_coll, "personal", NStr::eNocase)) {
@@ -3366,71 +3299,38 @@ void CValidError_imp::ValidateOrgModVoucher(const COrgMod& orgmod, const CSerial
                         obj, ctx);
         }
         return;
-    } else {
-        // check for partial match
-        bool found = false;
-        if (NStr::Find(inst_coll, "<") == string::npos) {
-            string check = inst_coll + "<";
-            it = s_InstitutionCodeTypeMap.begin();
-            while (!found && it != s_InstitutionCodeTypeMap.end()) {
-                if (NStr::StartsWith(it->first, check, NStr::eNocase)) {
-                    found = true;
-                    break;
-                }
-                ++it;
+    } else if (NStr::IsBlank(coll_code)) {
+        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, 
+                    "Institution code " + inst_coll + " is not in list",
+                    obj, ctx);
+        return;
+    } else if (COrgMod::IsInstitutionCodeValid(inst_code, voucher_type, is_miscapitalized, correct_cap, needs_country)) {
+        if (needs_country) {
+            PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, 
+                        "Institution code in " + inst_coll + " needs to be qualified with a <COUNTRY> designation",
+                        obj, ctx);
+        } else if (is_miscapitalized) {
+            PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, 
+                        "Institution code " + inst_code + " exists, but correct capitalization is " + correct_cap,
+                        obj, ctx);
+
+        } else if (NStr::Equal (coll_code, "DNA")) {
+            // DNA is a valid collection for any institution (using bio_material)
+            if (!NStr::Equal (voucher_type, "b")) {
+                PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_WrongVoucherType, 
+                            "DNA should be bio_material",
+                            obj, ctx);
             }
-        }
-        if (found) {
-            PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, 
-                        "Institution code " + inst_coll + " needs to be qualified with a <COUNTRY> designation",
-                        obj, ctx);
-            return;
-        } else if (NStr::IsBlank(coll_code)) {
-            PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, 
-                        "Institution code " + inst_coll + " is not in list",
-                        obj, ctx);
-            return;
         } else {
-            it = s_InstitutionCodeTypeMap.find(inst_code);
-            if (it != s_InstitutionCodeTypeMap.end()) {
-                if (NStr::Equal (coll_code, "DNA")) {
-                    // DNA is a valid collection for any institution (using bio_material)
-                    if (it->second.c_str()[0] != 'b') {
-                        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_WrongVoucherType, 
-                                    "DNA should be bio_material",
-                                    obj, ctx);
-                    }
-                } else {
-                    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadCollectionCode, 
-                                "Institution code " + inst_code + " exists, but collection "
-                                + inst_coll + " is not in list",
-                                obj, ctx);
-                }
-                return;
-            } else {
-                found = false;
-                if (NStr::Find(inst_code, "<") == string::npos) {
-                    string check = inst_code + "<";
-                    it = s_InstitutionCodeTypeMap.begin();
-                    while (!found && it != s_InstitutionCodeTypeMap.end()) {
-                        if (NStr::StartsWith(it->first, check, NStr::eNocase)) {
-                            found = true;
-                            break;
-                        }
-                        ++it;
-                    }
-                }
-                if (found) {
-                    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, 
-                                "Institution code in " + inst_coll + " needs to be qualified with a <COUNTRY> designation",
-                                obj, ctx);
-                } else {
-                    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, 
-                                "Institution code " + inst_coll + " is not in list",
-                                obj, ctx);
-                }
-            }
+            PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadCollectionCode, 
+                        "Institution code " + inst_code + " exists, but collection "
+                        + inst_coll + " is not in list",
+                        obj, ctx);
         }
+    } else {
+        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, 
+                    "Institution code " + inst_coll + " is not in list",
+                    obj, ctx);
     }    
 }
 

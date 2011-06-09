@@ -37,6 +37,8 @@
 // standard includes
 #include <ncbi_pch.hpp>
 #include <util/static_map.hpp>
+#include <util/util_misc.hpp>
+#include <util/line_reader.hpp>
 #include <serial/enumvalues.hpp>
 
 // generated includes
@@ -101,6 +103,118 @@ bool COrgMod::ParseStructuredVoucher(const string& str, string& inst, string& co
 	} else {
 		return true;
 	}
+}
+
+
+// ===== biomaterial, and culture-collection BioSource subsource modifiers     ================
+
+typedef map<string, string, PNocase> TInstitutionCodeMap;
+static TInstitutionCodeMap s_BiomaterialInstitutionCodeMap;
+static TInstitutionCodeMap s_SpecimenVoucherInstitutionCodeMap;
+static TInstitutionCodeMap s_CultureCollectionInstitutionCodeMap;
+static TInstitutionCodeMap s_InstitutionCodeTypeMap;
+static bool                    s_InstitutionCollectionCodeMapInitialized = false;
+DEFINE_STATIC_FAST_MUTEX(s_InstitutionCollectionCodeMutex);
+
+#include "institution_codes.inc"
+
+static void s_ProcessInstitutionCollectionCodeLine(const CTempString& line)
+{
+    vector<string> tokens;
+    NStr::Tokenize(line, "\t", tokens);
+    if (tokens.size() != 3) {
+//        ERR_POST_X(1, Warning << "Bad format in institution_codes.txt entry " << line
+//                   << "; disregarding");
+    } else {
+        switch (tokens[1].c_str()[0]) {
+            case 'b':
+                s_BiomaterialInstitutionCodeMap[tokens[0]] = tokens[2];
+                break;
+            case 'c':
+                s_CultureCollectionInstitutionCodeMap[tokens[0]] = tokens[2];
+                break;
+            case 's':
+                s_SpecimenVoucherInstitutionCodeMap[tokens[0]] = tokens[2];
+                break;
+            default:
+//                ERR_POST_X(1, Warning << "Bad format in institution_codes.txt entry " << line
+//                           << "; unrecognized subtype (" << tokens[1] << "); disregarding");
+                break;
+        }
+        s_InstitutionCodeTypeMap[tokens[0]] = tokens[1];
+    }
+}
+
+
+static void s_InitializeInstitutionCollectionCodeMaps(void)
+{
+    CFastMutexGuard GUARD(s_InstitutionCollectionCodeMutex);
+    if (s_InstitutionCollectionCodeMapInitialized) {
+        return;
+    }
+    string file = g_FindDataFile("institution_codes.txt");
+    CRef<ILineReader> lr;
+    if ( !file.empty() ) {
+        try {
+            lr = ILineReader::New(file);
+        } NCBI_CATCH("s_InitializeInstitutionCollectionCodeMaps")
+    }
+
+    if (lr.Empty()) {
+//        ERR_POST_X(2, Info << "s_InitializeInstitutionCollectionCodeMaps: "
+//                   "falling back on built-in data.");
+        size_t num_codes = sizeof (kInstitutionCollectionCodeList) / sizeof (char *);
+        for (size_t i = 0; i < num_codes; i++) {
+            const char *p = kInstitutionCollectionCodeList[i];
+            s_ProcessInstitutionCollectionCodeLine(p);
+        }
+    } else {
+        do {
+            s_ProcessInstitutionCollectionCodeLine(*++*lr);
+        } while ( !lr->AtEOF() );
+    }
+
+    s_InstitutionCollectionCodeMapInitialized = true;
+}
+
+
+bool COrgMod::IsInstitutionCodeValid(const string& inst_coll, string &voucher_type, bool& is_miscapitalized, string& correct_cap, bool& needs_country)
+{
+    bool rval = false;
+
+    is_miscapitalized = false;
+    needs_country = false;
+    correct_cap = "";
+
+    s_InitializeInstitutionCollectionCodeMaps();
+
+    TInstitutionCodeMap::iterator it = s_InstitutionCodeTypeMap.find(inst_coll);
+    if (it != s_InstitutionCodeTypeMap.end()) {
+        if (NStr::EqualCase (it->first, inst_coll)) {
+        } else if (NStr::EqualNocase (it->first, inst_coll)) {
+            is_miscapitalized = true;
+        }
+        voucher_type = it->second.substr(0, 1);
+        correct_cap = it->first;
+        rval = true;
+    } else {
+        if (NStr::Find(inst_coll, "<") == string::npos) {
+            string check = inst_coll + "<";
+            it = s_InstitutionCodeTypeMap.begin();
+            while (!rval && it != s_InstitutionCodeTypeMap.end()) {
+                if (NStr::StartsWith(it->first, check, NStr::eNocase)) {
+                    needs_country = true;
+                    rval = true;
+                    if (!NStr::StartsWith(it->first, check, NStr::eCase)) {
+                        is_miscapitalized = true;
+                    }
+                    correct_cap = it->first.substr(0, inst_coll.length());
+                }
+                ++it;
+            }
+        }
+    }
+    return rval;
 }
 
 

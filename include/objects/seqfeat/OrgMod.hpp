@@ -68,6 +68,7 @@ public:
     static string GetSubtypeName(TSubtype stype);
 
 	static bool ParseStructuredVoucher(const string& str, string& inst, string& coll, string& id);
+  static bool IsInstitutionCodeValid(const string& inst_coll, string &voucher_type, bool& is_miscapitalized, string& correct_cap, bool& needs_country);
 
 	private:
     // Prohibit copy constructor and assignment operator
