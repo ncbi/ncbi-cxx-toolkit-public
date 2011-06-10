@@ -351,7 +351,20 @@ bool CVcfWriter::x_WriteFeatureQual(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    m_Os << ".";
+    string score = ".";
+
+    if ( mf.IsSetExt() ) {
+        const CSeq_feat::TExt& ext = mf.GetExt();
+        if ( ext.IsSetType() && ext.GetType().IsStr() && 
+            ext.GetType().GetStr() == "VcfAttributes" ) 
+        {
+            if ( ext.HasField( "score" ) ) {
+                score = NStr::DoubleToString( 
+                    ext.GetField( "score" ).GetData().GetReal() );
+            }
+        }
+    }
+    m_Os << score;
     return true;
 }
 
@@ -361,7 +374,18 @@ bool CVcfWriter::x_WriteFeatureFilter(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    m_Os << ".";
+    string filter = "<FIX ME>";
+    if ( mf.IsSetExt() ) {
+        const CSeq_feat::TExt& ext = mf.GetExt();
+        if ( ext.IsSetType() && ext.GetType().IsStr() && 
+            ext.GetType().GetStr() == "VcfAttributes" ) 
+        {
+            if ( ext.HasField( "filter" ) ) {
+                filter = ext.GetField( "filter" ).GetData().GetStr();
+            }
+        }
+    }
+    m_Os << filter;
     return true;
 }
 
@@ -371,6 +395,21 @@ bool CVcfWriter::x_WriteFeatureInfo(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
+
+    if ( mf.IsSetExt() ) {
+        string info = ".";
+        const CSeq_feat::TExt& ext = mf.GetExt();
+        if ( ext.IsSetType() && ext.GetType().IsStr() && 
+            ext.GetType().GetStr() == "VcfAttributes" ) 
+        {
+            if ( ext.HasField( "info" ) ) {
+                info = ext.GetField( "info" ).GetData().GetStr();
+            }
+        }
+        m_Os << info;
+        return true;
+    }
+   
     vector<string> infos;
     const CVariation_ref& var = mf.GetData().GetVariation();
     if ( var.IsSetId() ) {
