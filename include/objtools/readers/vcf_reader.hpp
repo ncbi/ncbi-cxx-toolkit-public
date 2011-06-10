@@ -119,6 +119,21 @@ protected:
         const CVcfData&,
         CRef<CSeq_feat> );
 
+    virtual bool
+    x_ProcessScore(
+        const CVcfData&,
+        CRef<CSeq_feat> );
+
+    virtual bool
+    x_ProcessFilter(
+        const CVcfData&,
+        CRef<CSeq_feat> );
+
+    virtual bool
+    x_ProcessInfo(
+        const CVcfData&,
+        CRef<CSeq_feat> );
+
     //
     //  data:
     //

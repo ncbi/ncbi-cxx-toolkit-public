@@ -102,8 +102,8 @@ class CVcfData
 //  ============================================================================
 {
 public:
-    CVcfData() {};
-    ~CVcfData() {};
+    CVcfData() { m_pdQual = 0; };
+    ~CVcfData() { delete m_pdQual; };
 
     bool ParseData(
         const string& );
@@ -113,9 +113,11 @@ public:
     vector<string> m_Ids;
     string m_strRef;
     vector<string> m_Alt;
-    double m_dQual;
+    double* m_pdQual;
     string m_strFilter;
     map<string,string> m_Info;
+    vector<string> m_FormatKeys;
+    vector< vector<string> > m_FormatValues;
 };
 
 //  ----------------------------------------------------------------------------
@@ -138,15 +140,29 @@ CVcfData::ParseData(
         }
         m_strRef = columns[3];
         NStr::Tokenize( columns[4], ",", m_Alt, NStr::eNoMergeDelims );
-        m_dQual = NStr::StringToDouble( columns[5] );
+        if ( columns[5] != "." ) {
+            m_pdQual = new double( NStr::StringToDouble( columns[5] ) );
+        }
         m_strFilter = columns[6];
 
         vector<string> infos;
-        NStr::Tokenize( columns[7], ";", infos, NStr::eMergeDelims );
-        for ( vector<string>::iterator it = infos.begin(); it != infos.end(); ++it ) {
-            string key, value;
-            NStr::SplitInTwo( *it, "=", key, value );
-            m_Info[key] = value;
+        if ( columns[7] != "." ) {
+            NStr::Tokenize( columns[7], ";", infos, NStr::eMergeDelims );
+            for ( vector<string>::iterator it = infos.begin(); 
+                it != infos.end(); ++it ) 
+            {
+                string key, value;
+                NStr::SplitInTwo( *it, "=", key, value );
+                m_Info[key] = value;
+            }
+        }
+        if ( columns.size() > 8 ) {
+            NStr::Tokenize( columns[8], ":", m_FormatKeys, NStr::eMergeDelims );
+            for ( size_t u=9; u < columns.size(); ++u ) {
+                vector<string> values;
+                NStr::Tokenize( columns[u], ":", values, NStr::eMergeDelims );
+                m_FormatValues.push_back( values );
+            }
         }
     }
     catch ( ... ) {
@@ -297,6 +313,9 @@ CVcfReader::x_ProcessDataLine(
     CRef<CSeq_feat> pFeat( new CSeq_feat );
     pFeat->SetData().SetVariation().SetData().SetSet().SetType(
         CVariation_ref::C_Data::C_Set::eData_set_type_alleles );
+    CSeq_feat::TExt& ext = pFeat->SetExt();
+    ext.SetType().SetStr( "VcfAttributes" );
+
     if ( ! x_AssignFeatureLocation( data, pFeat ) ) {
         return false;
     }
@@ -307,6 +326,19 @@ CVcfReader::x_ProcessDataLine(
         return false;
     }
 
+    if ( ! x_ProcessScore( data, pFeat ) ) {
+        return false;
+    }
+    if ( ! x_ProcessFilter( data, pFeat ) ) {
+        return false;
+    }
+    if ( ! x_ProcessInfo( data, pFeat ) ) {
+        return false;
+    }
+
+    if ( pFeat->GetExt().GetData().empty() ) {
+        pFeat->ResetExt();
+    }
     pAnnot->SetData().SetFtable().push_back( pFeat );
     return true;
 }
@@ -324,6 +356,59 @@ CVcfReader::x_AssignFeatureLocation(
     pFeature->SetLocation().SetInt().SetFrom( data.m_iPos - 1 );
     pFeature->SetLocation().SetInt().SetTo( 
         data.m_iPos + data.m_strRef.length() - 1 );
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool 
+CVcfReader::x_ProcessScore(
+    const CVcfData& data,
+    CRef<CSeq_feat> pFeature )
+//  ----------------------------------------------------------------------------
+{
+    CSeq_feat::TExt& ext = pFeature->SetExt();
+    if ( data.m_pdQual ) {
+        ext.AddField( "score", *data.m_pdQual );
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool 
+CVcfReader::x_ProcessFilter(
+    const CVcfData& data,
+    CRef<CSeq_feat> pFeature )
+//  ----------------------------------------------------------------------------
+{
+    CSeq_feat::TExt& ext = pFeature->SetExt();
+    ext.AddField( "filter", data.m_strFilter );
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool 
+CVcfReader::x_ProcessInfo(
+    const CVcfData& data,
+    CRef<CSeq_feat> pFeature )
+//  ----------------------------------------------------------------------------
+{
+    CSeq_feat::TExt& ext = pFeature->SetExt();
+    if ( ! data.m_Info.empty() ) {
+        vector<string> infos;
+        for ( map<string,string>::const_iterator cit = data.m_Info.begin();
+            cit != data.m_Info.end(); cit++ )
+        {
+            string key = cit->first;
+            string value = cit->second;
+            if ( value.empty() ) {
+                infos.push_back( key );
+            }
+            else {
+                infos.push_back( key + "=" + value );
+            }
+        }
+        ext.AddField( "info", NStr::Join( infos, ";" ) );
+    }
     return true;
 }
 
