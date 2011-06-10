@@ -26,5 +26,3 @@ Linux64-Centos : O1g  : GCC.sh 4.4.2 --without-debug --with-mt CXXFLAGS=-O1 CFLA
 Linux64-Centos : d : GCC.sh 4.4.2 --without-debug --without-optimization --with-mt CPPFLAGS=-g
 Linux64-Centos : IO  : ICC.sh --without-debug --with-mt CPPFLAGS=-g
 Linux64-Centos : Id : ICC.sh --without-debug --without-optimization --with-mt CPPFLAGS=-g
-
-USE_COMPONENTS

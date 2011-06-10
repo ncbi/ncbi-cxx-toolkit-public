@@ -1063,7 +1063,9 @@ check_once_more:
         CNCBlobAccessor* accessor = GetBlobAccess(eNCReadData, blob_key, "", ver_data->slot);
         while (accessor->ObtainMetaInfo(op_listener) == eNCWouldBlock)
             sem.Wait();
-        if (!accessor->HasError()) {
+        if (!accessor->HasError()  &&  accessor->IsBlobExists()
+            &&  !accessor->IsCurBlobExpired())
+        {
             accessor->SetPosition(0);
             while (accessor->ObtainFirstData(op_listener) == eNCWouldBlock)
                 sem.Wait();
