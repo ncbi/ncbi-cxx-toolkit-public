@@ -1045,19 +1045,40 @@ bool
 CNCBlobStorage::UpdateBlobInfo(const string&   blob_key,
                                SNCBlobVerData* ver_data)
 {
+check_once_more:
     if (m_BlobGeneration - ver_data->generation <= m_CurFiles[eNCMeta].size()) {
         return x_UpdBlobInfoNoMove(blob_key, ver_data);
     }
     else if (ver_data->size == 0  ||  ver_data->data) {
         return x_UpdBlobInfoSingleChunk(blob_key, ver_data);
     }
-    else if (ver_data->data_trigger.GetState() != eNCOpCompleted
-             ||  ver_data->chunks.size() == 0)
+    else if (ver_data->data_trigger.GetState() == eNCOpCompleted
+             &&  ver_data->chunks.size() != 0)
     {
-        return x_UpdBlobInfoNoMove(blob_key, ver_data);
+        return x_UpdBlobInfoMultiChunk(blob_key, ver_data);
     }
     else {
-        return x_UpdBlobInfoMultiChunk(blob_key, ver_data);
+        CSemaphore sem(0, 1);
+        CNCSyncBlockedOpListener* op_listener = new CNCSyncBlockedOpListener(sem);
+        CNCBlobAccessor* accessor = GetBlobAccess(eNCReadData, blob_key, "", ver_data->slot);
+        while (accessor->ObtainMetaInfo(op_listener) == eNCWouldBlock)
+            sem.Wait();
+        if (!accessor->HasError()) {
+            accessor->SetPosition(0);
+            while (accessor->ObtainFirstData(op_listener) == eNCWouldBlock)
+                sem.Wait();
+        }
+        accessor->Release();
+        delete op_listener;
+
+        if (ver_data->data_trigger.GetState() != eNCOpCompleted
+            ||  ver_data->chunks.size() == 0)
+        {
+            return x_UpdBlobInfoNoMove(blob_key, ver_data);
+        }
+        else {
+            goto check_once_more;
+        }
     }
 }
 

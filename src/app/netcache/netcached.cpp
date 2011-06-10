@@ -378,7 +378,8 @@ CNetCacheServer::CNetCacheServer(void)
       m_OldSpecParams(NULL),
       m_Shutdown(false),
       m_Signal(0),
-      m_OpenToClients(false)
+      m_OpenToClients(false),
+      m_CachingComplete(false)
 {}
 
 CNetCacheServer::~CNetCacheServer()
