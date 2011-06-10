@@ -35,11 +35,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#if 0
-#  define eLOG_Warning eLOG_Fatal
-#  define eLOG_Error   eLOG_Fatal
-#  include "../ncbi_heapmgr.c"
-#endif
 /* This header must go last */
 #include "test_assert.h"
 
