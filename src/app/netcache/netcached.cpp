@@ -251,7 +251,7 @@ CNetCacheServer::x_ReadPerClientConfig(const CNcbiRegistry& reg)
                 continue;
             SSpecParamsSet* cur_set  = m_SpecParams;
             SSpecParamsSet* prev_set = NULL;
-            REVERSE_ITERATE(TSpecKeysList, prty_it, m_SpecPriority) {
+            NON_CONST_REVERSE_ITERATE(TSpecKeysList, prty_it, m_SpecPriority) {
                 const string& key_name = *prty_it;
                 if (reg.HasEntry(section, key_name, IRegistry::fCountCleared)) {
                     const string& key_value = reg.Get(section, key_name);
@@ -472,7 +472,7 @@ const SNCSpecificParams*
 CNetCacheServer::GetAppSetup(const TStringMap& client_params)
 {
     const SSpecParamsSet* cur_set = m_SpecParams;
-    REVERSE_ITERATE(TSpecKeysList, key_it, m_SpecPriority) {
+    NON_CONST_REVERSE_ITERATE(TSpecKeysList, key_it, m_SpecPriority) {
         TStringMap::const_iterator it = client_params.find(*key_it);
         const SSpecParamsSet* next_set = NULL;
         if (it != client_params.end()) {
