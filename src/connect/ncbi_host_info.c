@@ -81,7 +81,7 @@ HOST_INFO HINFO_Create(unsigned int addr, const void* hinfo, size_t hinfo_size,
 }
 
 
-unsigned int HINFO_HostAddr(const HOST_INFO host_info)
+extern unsigned int HINFO_HostAddr(const HOST_INFO host_info)
 {
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
         return 0;
@@ -89,7 +89,7 @@ unsigned int HINFO_HostAddr(const HOST_INFO host_info)
 }
 
 
-int HINFO_CpuCount(const HOST_INFO host_info)
+extern int HINFO_CpuCount(const HOST_INFO host_info)
 {
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
         return -1;
@@ -97,7 +97,7 @@ int HINFO_CpuCount(const HOST_INFO host_info)
 }
 
 
-int HINFO_CpuUnits(const HOST_INFO host_info)
+extern int HINFO_CpuUnits(const HOST_INFO host_info)
 {
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
         return -1;
@@ -105,14 +105,14 @@ int HINFO_CpuUnits(const HOST_INFO host_info)
 }
 
 
-double HINFO_CpuClock(const HOST_INFO host_info)
+extern double HINFO_CpuClock(const HOST_INFO host_info)
 {
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
         return 0.0;
     return LBSM_HINFO_CpuClock(host_info);
 }
 
-int HINFO_TaskCount(const HOST_INFO host_info)
+extern int HINFO_TaskCount(const HOST_INFO host_info)
 {
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
         return -1;
@@ -120,7 +120,7 @@ int HINFO_TaskCount(const HOST_INFO host_info)
 }
  
 
-int HINFO_Memusage(const HOST_INFO host_info, double memusage[5])
+extern int HINFO_Memusage(const HOST_INFO host_info, double memusage[5])
 {
     memset(memusage, 0, sizeof(memusage[0]) * 5);
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
@@ -129,7 +129,7 @@ int HINFO_Memusage(const HOST_INFO host_info, double memusage[5])
 }
 
 
-int HINFO_MachineParams(const HOST_INFO host_info, SHINFO_Params* p)
+extern int HINFO_MachineParams(const HOST_INFO host_info, SHINFO_Params* p)
 {
     memset(p, 0, sizeof(*p));
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
@@ -138,7 +138,7 @@ int HINFO_MachineParams(const HOST_INFO host_info, SHINFO_Params* p)
 }
 
 
-int/*bool*/ HINFO_LoadAverage(const HOST_INFO host_info, double lavg[2])
+extern int/*bool*/ HINFO_LoadAverage(const HOST_INFO host_info, double lavg[2])
 {
     memset(lavg, 0, sizeof(lavg[0]) * 2);
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
@@ -147,7 +147,7 @@ int/*bool*/ HINFO_LoadAverage(const HOST_INFO host_info, double lavg[2])
 }
 
 
-int/*bool*/ HINFO_Status(const HOST_INFO host_info, double status[2])
+extern int/*bool*/ HINFO_Status(const HOST_INFO host_info, double status[2])
 {
     memset(status, 0, sizeof(status[0]) * 2);
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
@@ -156,7 +156,7 @@ int/*bool*/ HINFO_Status(const HOST_INFO host_info, double status[2])
 }
 
 
-const char* HINFO_Environment(const HOST_INFO host_info)
+extern const char* HINFO_Environment(const HOST_INFO host_info)
 {
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
         return 0;
@@ -164,7 +164,7 @@ const char* HINFO_Environment(const HOST_INFO host_info)
 }
 
 
-const char* HINFO_AffinityArgument(const HOST_INFO host_info)
+extern const char* HINFO_AffinityArgument(const HOST_INFO host_info)
 {
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
         return 0;
@@ -172,7 +172,7 @@ const char* HINFO_AffinityArgument(const HOST_INFO host_info)
 }
 
 
-const char* HINFO_AffinityArgvalue(const HOST_INFO host_info)
+extern const char* HINFO_AffinityArgvalue(const HOST_INFO host_info)
 {
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
         return 0;
