@@ -427,7 +427,7 @@ BEGIN_NCBI_SCOPE
 inline size_t __stl_hash_string(const char* __s, size_t __l)
 {
 #ifdef NCBI_USE_STRING_HASH_FUNC__NCBI
-    unsigned long __h = __l;
+    unsigned long __h = (unsigned long) __l;
     for ( ; __l; ++__s, --__l)
         __h = __h*17 + *__s;
 #else
