@@ -47,6 +47,12 @@
  * @{
  */
 
+#define SERV_DEFAULT_FLAG       fSERV_Regular
+#define SERV_MINIMAL_RATE       0.001
+#define SERV_MAXIMAL_RATE       100000.0
+#define SERV_MINIMAL_BONUS      0.01
+#define SERV_MAXIMAL_BONUS      100.0
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -74,8 +80,6 @@ typedef enum {
     fSERV_Blast   = 0x1
 } ESERV_Flag;
 
-#define SERV_DEFAULT_FLAG  fSERV_Regular
-                                 
 
 /* Verbal representation of a server type (no internal spaces allowed)
  */
@@ -249,7 +253,7 @@ extern NCBI_XCONNECT_EXPORT char* SERV_WriteInfo
  *           be taken in first place, regardless of its rate, if that rate
  *           is larger than percent of expressed by the absolute value
  *           of this coefficient of the average rate coefficient of other
- *           servers for the same service. That is -5 instructs to
+ *           servers for the same service.  That is, -5 instructs to
  *           ignore locally run server if its status is less than 5% of
  *           average status of remaining servers for the same service.
  *
@@ -257,11 +261,11 @@ extern NCBI_XCONNECT_EXPORT char* SERV_WriteInfo
  *       C=type/subtype [no default]
  *           specification of Content-Type (including encoding), which server
  *           accepts. The value of this flag gets added automatically to any
- *           HTTP packet sent to the server by SERVICE connector. However,
- *           in order to communicate, a client still has to know and generate
- *           the data type accepted by the server, i.e. a protocol, which
- *           server understands. This flag just helps insure that HTTP packets
- *           all get proper content type, defined at service configuration.
+ *           HTTP packet sent to the server by SERVICE connector. However, in
+ *           order to communicate, a client still has to know and generate the
+ *           data type accepted by the server, i.e. a protocol, which server
+ *           understands.  This flag just helps ensure that all HTTP packets
+ *           get proper content type, defined at service configuration.
  *           This tag is not allowed in DNS server specifications.
  *
  *    Local server:
@@ -276,7 +280,7 @@ extern NCBI_XCONNECT_EXPORT char* SERV_WriteInfo
  *       P=yes
  *           specifies whether the server is private for the host.
  *           Private server cannot be used from anywhere else but
- *           this host. When non-private (default), the server lacks
+ *           this host.  When non-private (default), the server lacks
  *           'P=no' in verbal representation resulted from SERV_WriteInfo().
  *           This tag is not allowed in DNS server specifications.
  *
@@ -285,9 +289,9 @@ extern NCBI_XCONNECT_EXPORT char* SERV_WriteInfo
  *           specifies how many dynamic service entries have to be defined
  *           by respective hosts in order for this entry to be INACTIVE.
  *           Note that value 0 disables the quorum and the entry becomes
- *           effective immediately. The quorum flag is to create a backup
- *           configuration to be activated in case of multicast/daemon
- *           malfunction.
+ *           effective immediately.  The quorum flag is to create a standby
+ *           configuration, which is to be activated in case of either server
+ *           or network malfunction.  Use of this flag is not encouraged.
  *           Only static and non-FIREWALL server specs can have this tag.
  *
  *    Reachability base rate:
@@ -301,12 +305,19 @@ extern NCBI_XCONNECT_EXPORT char* SERV_WriteInfo
  *           for the entire family of servers for the same service.
  *           (If equal to 0.0 then defaulted by the LBSM Daemon to 1000.0.)
  *           Normally, LBSMD keeps track of server reachability, and
- *           dynamically switches this rate to be maximal specified when
+ *           dynamically switches this rate to be the maximal specified when
  *           the server is up, and to be zero when the server is down.
  *           Note that negative values are reserved for LBSMD private use.
- *           To specify that a server as inactive in LBSMD configuration file,
+ *           To specify a server as inactive in LBSMD configuration file,
  *           one can use any negative number (note that value "0" in the config
  *           file means "default" and gets replaced with the value 1000.0).
+ *           Values less than 0.01 define standby server entries, which are
+ *           used by the clients only if there are no working entries with a
+ *           higher initial rate available (the final rate, which takes load
+ *           into account can make it smaller than 0.01 for such entries).
+ *           Standby entries are not governed by the host load but the values
+ *           of rates in the descending order (for same-rate entries, an entry
+ *           is taken at random).
  *
  *    Stateful server:
  *       S=no           (default)
@@ -367,7 +378,7 @@ extern NCBI_XCONNECT_EXPORT size_t SERV_SizeOfInfo
  );
 
 
-/* Return 'true' if two server infos are equal.
+/* Return non-zero('true') if two server infos are equal.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_EqualInfo
 (const SSERV_Info* info1,
