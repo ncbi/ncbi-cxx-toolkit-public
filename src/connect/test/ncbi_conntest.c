@@ -343,7 +343,7 @@ static void s_DummySetup(SMetaConnector* meta, CONNECTOR connector)
  */
 
 
-extern void CONN_TestConnector
+void CONN_TestConnector
 (CONNECTOR       connector,
  const STimeout* timeout,
  FILE*           data_file,

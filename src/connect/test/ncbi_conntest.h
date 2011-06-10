@@ -61,7 +61,7 @@ typedef enum {
 typedef unsigned int TTestConnFlags;
 
 
-extern void CONN_TestConnector
+void CONN_TestConnector
 (CONNECTOR       connector,  /* [in]  connector handle */
  const STimeout* timeout,    /* [in]  timeout for all i/o */
  FILE*           data_file,  /* [in]  output data file */
