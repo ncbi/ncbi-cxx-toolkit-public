@@ -74,9 +74,9 @@ typedef struct BUF_tag* BUF;  /* handle of a buffer */
 
 /*!
  * Set minimal size of a buffer memory chunk.
- * Return the actually set chunk size on success;  zero on error
- * NOTE:  if "*pBuf" == NULL then create it
- *        if "chunk_size" is passed 0 then set it to BUF_DEF_CHUNK_SIZE
+ * Return the actually set chunk size on success;  zero on error.
+ * NOTE:  if "*pBuf" == NULL then create it;
+ *        if "chunk_size" is passed 0 then set it to BUF_DEF_CHUNK_SIZE.
  */
 #define BUF_DEF_CHUNK_SIZE 1024
 extern NCBI_XCONNECT_EXPORT size_t BUF_SetChunkSize
@@ -87,7 +87,7 @@ extern NCBI_XCONNECT_EXPORT size_t BUF_SetChunkSize
 
 /*!
  * Return the number of bytes stored in "buf".
- * NOTE: return 0 if "buf" == NULL
+ * NOTE: return 0 if "buf" == NULL.
  */
 extern NCBI_XCONNECT_EXPORT size_t BUF_Size(BUF buf);
 
@@ -187,9 +187,9 @@ extern NCBI_XCONNECT_EXPORT size_t BUF_PeekAtCB
 
 
 /*!
- * Copy up to "size" bytes stored in "buf" to "data" and remove
- * copied data from the "buf".
- * Return the # of copied-and/or-removed bytes(can be less than "size")
+ * Copy up to "size" bytes stored in "buf" to "data" and remove the copied
+ * data from the "buf".
+ * Return the # of copied-and/or-removed bytes (can be less than "size").
  * NOTE: if "buf"  == NULL then do nothing and return 0
  *       if "data" == NULL then do not copy data anywhere(still, remove it)
  */
@@ -202,14 +202,14 @@ extern NCBI_XCONNECT_EXPORT size_t BUF_Read
 
 /*!
  * Make the buffer empty.
- * NOTE: do nothing if "buf" == NULL
+ * NOTE: do nothing if "buf" == NULL.
  */
 extern NCBI_XCONNECT_EXPORT void BUF_Erase(BUF buf);
 
 
 /*!
  * Destroy all internal data.
- * NOTE: do nothing if "buf" == NULL
+ * NOTE: do nothing if "buf" == NULL.
  */
 extern NCBI_XCONNECT_EXPORT void BUF_Destroy(BUF buf);
 

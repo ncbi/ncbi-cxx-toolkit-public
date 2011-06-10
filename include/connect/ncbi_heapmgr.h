@@ -219,9 +219,8 @@ extern NCBI_XCONNECT_EXPORT void* HEAP_Base(const HEAP heap);
 extern NCBI_XCONNECT_EXPORT TNCBI_Size HEAP_Size(const HEAP heap);
 
 
-/* Get non-zero serial number of the heap.
- * Return 0 if heap is passed as NULL,
- * or the heap is not a copy but the original.
+/* Get a serial number of the heap as assigned by Attach or Copy.
+ * Return 0 if the heap is not a copy but the original, or passed as NULL.
  */
 extern NCBI_XCONNECT_EXPORT int HEAP_Serial(const HEAP heap);
 
@@ -230,13 +229,13 @@ extern NCBI_XCONNECT_EXPORT int HEAP_Serial(const HEAP heap);
  * fast == eOn  turns on fast heap operations (default);
  * fast == eOff turns off fast heap operations (more checks, slower);
  * fast == eDefault does not change current setting;
- * newalk == eOn turns on new heap integrity checks while walking;
+ * newalk == eOn turns on new heap integrity checks while walking slow;
  * newalk == eOff turns off new heap integrity checks (default);
  * newalk == eDefault keeps current setting.
  * This call is intended for internal uses; and default settings (fast ops
  * w/o new structure integrity checks) should suffice for most users.
  * Note that in current implementation, new heap walk is only coupled with
- * slow heap operations, that is if heap access is set to fast==eOn, then
+ * slow heap operations;  that is, if heap access is set to fast==eOn, then
  * newalk setting is read but ignored.
  */
 extern NCBI_XCONNECT_EXPORT void HEAP_Options(ESwitch fast, ESwitch newalk);
