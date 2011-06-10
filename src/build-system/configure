@@ -11514,7 +11514,7 @@ cat >>conftest.$ac_ext <<_ACEOF
          #ifdef HAVE_UNISTD_H
          #  include <unistd.h>
          #endif
-         RETSIGTYPE handler(int sig) { }
+         RETSIGTYPE handler(int sig) { alarm(0); }
 int
 main ()
 {

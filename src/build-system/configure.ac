@@ -2831,7 +2831,7 @@ AC_CACHE_CHECK([whether select updates the timeout when interrupted],
          #ifdef HAVE_UNISTD_H
          #  include <unistd.h>
          #endif
-         RETSIGTYPE handler(int sig) { }]],
+         RETSIGTYPE handler(int sig) { alarm(0); }]],
        [[struct timeval timeout = { 5, 0 };
          signal(SIGALRM, &handler);
          alarm(1);
