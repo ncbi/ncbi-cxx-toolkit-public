@@ -116,7 +116,7 @@ int main(void)
     /* SOCK_SetDataLoggingAPI(eOn); */
 
     /* Run the tests */
-    flags = fHCC_KeepHeader | fHCC_UrlCodec | fHCC_UrlEncodeArgs;
+    flags = fHTTP_KeepHeader | fHTTP_UrlCodec | fHTTP_UrlEncodeArgs;
     connector = HTTP_CreateConnector(0, user_header, flags);
     CONN_TestConnector(connector, &timeout, data_file, fTC_SingleBouncePrint);
 
@@ -124,11 +124,11 @@ int main(void)
     connector = HTTP_CreateConnector(0, user_header, flags);
     CONN_TestConnector(connector, &timeout, data_file, fTC_SingleBounceCheck);
 
-    flags = fHCC_AutoReconnect;
+    flags = fHTTP_AutoReconnect;
     connector = HTTP_CreateConnector(0, user_header, flags);
     CONN_TestConnector(connector, &timeout, data_file, fTC_Everything);
 
-    flags = fHCC_AutoReconnect | fHCC_UrlCodec;
+    flags = fHTTP_AutoReconnect | fHTTP_UrlCodec;
     connector = HTTP_CreateConnector(0, user_header, flags);
     CONN_TestConnector(connector, &timeout, data_file, fTC_Everything);
 
