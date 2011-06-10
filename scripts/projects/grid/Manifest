@@ -21,7 +21,7 @@ ETC: src/app/grid/cgi_tunnel2grid/sample/sample.ini
 APP: test_gridclient_stress
 ETC: src/app/grid/test/test_gridclient_stress.ini
 
-APP: netschedule_check netschedule_control
+APP: grid_cli netschedule_check netschedule_control
 APP: netcache_check netcache_control ncfetch.cgi$exe save_to_nc
 
 # Each line describes a single configuration
