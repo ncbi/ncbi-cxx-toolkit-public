@@ -127,8 +127,8 @@ static SBufChunk* s_AllocChunk(size_t data_size, size_t chunk_size)
 
 
 /*not yet public*/
-extern int/*bool*/ BUF_AppendEx(BUF* buf, void* data,
-                                size_t size, size_t alloc_size)
+int/*bool*/ BUF_AppendEx(BUF* buf, void* data,
+                         size_t size, size_t alloc_size)
 {
     SBufChunk* chunk;
 
@@ -167,8 +167,8 @@ extern int/*bool*/ BUF_Append(BUF* buf, const void* data, size_t size)
 
 
 /*not yet public*/
-extern int/*bool*/ BUF_PrependEx(BUF* buf, void* data,
-                                 size_t size, size_t alloc_size)
+int/*bool*/ BUF_PrependEx(BUF* buf, void* data,
+                          size_t size, size_t alloc_size)
 {
     SBufChunk* chunk;
 
