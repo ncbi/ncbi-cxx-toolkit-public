@@ -7295,9 +7295,9 @@ extern unsigned int SOCK_gethostbynameEx(const char* hostname,
         char addr[40];
         s_Warning = 1;
         if (SOCK_ntoa(retval, addr + 1, sizeof(addr) - 1) != 0)
-            addr[0] = '\0';
+            *addr = '\0';
         else
-            addr[0] = ' ';
+            *addr = ' ';
         CORE_LOGF_X(155, eLOG_Warning,
                     ("[SOCK::gethostbyname]: "
                      " Got loopback address%s for local host name", addr));
@@ -7327,7 +7327,8 @@ extern char* SOCK_gethostbyaddrEx(unsigned int host,
         s_Warning = 1;
         CORE_LOGF_X(10, eLOG_Warning,
                     ("[SOCK::gethostbyaddr]: "
-                     " Got %s for local host address", retval));
+                     " Got \"%s\" for %s address",
+                     retval, host ? "loopback" : "local host"));
     }
     return retval;
 }
