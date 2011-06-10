@@ -116,10 +116,14 @@ private:
     void x_Remark(list<string>& l, const CReferenceItem& ref, CBioseqContext& ctx) const;
 
     // HTML
-    void x_LocusHtmlPrefix( std::string &first_line, CBioseqContext& ctx );
+    void   x_LocusHtmlPrefix( std::string &first_line,      CBioseqContext& ctx );
+    string x_GetFeatureDivStart( const char * strKey, CBioseqContext& ctx );
 
     // processing data
     unsigned int m_uFeatureCount;
+
+    typedef std::map<string, int> TFeatureKeyToCountMap;
+    TFeatureKeyToCountMap m_FeatureKeyToCountMap;
 };
 
 

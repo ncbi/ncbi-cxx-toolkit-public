@@ -3504,13 +3504,12 @@ void CFeatureItem::x_AddGoQuals(
 
                     bool okay_to_add = true;
 
-                    const string & data_str = go_val->GetTextString();
-
                     // check for dups
                     CFeatureItem::TQCI iter = x_GetQual(slot);
                     for ( ; iter != m_Quals.end()  &&  iter->first == slot; ++iter) {
                         const CFlatGoQVal & qual = dynamic_cast<const CFlatGoQVal &>( *iter->second );
-                        if( NStr::EqualNocase(qual.GetTextString(), data_str) ) {
+                        if( qual.Equals(*go_val) )
+                        {
                             okay_to_add = false;
                             break;
                         }

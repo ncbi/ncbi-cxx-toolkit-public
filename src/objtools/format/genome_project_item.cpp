@@ -42,6 +42,8 @@
 #include <objtools/format/items/genome_project_item.hpp>
 #include <objtools/format/context.hpp>
 
+#include "utils.hpp"
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -99,6 +101,8 @@ s_JoinSRAStrs(const CUser_field_Base::C_Data::TStrs &strs, const bool is_html )
 
 void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
 {
+    const bool bHtml = ctx.Config().DoHTML();
+
     const CUser_object *genome_projects_user_obje = NULL;
     const CUser_object *dblink_user_obj = NULL;
 
@@ -140,7 +144,10 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
                     if ( NStr::EqualNocase(label, "Sequence Read Archive") ) {
                         const CUser_field_Base::C_Data::TStrs &strs = field.GetData().GetStrs();
                         m_DBLinkLines.push_back( "Sequence Read Archive: " + 
-                            s_JoinSRAStrs( strs, ctx.Config().DoHTML() ) );
+                            s_JoinSRAStrs( strs, bHtml ) );
+                        if( bHtml ) {
+                            TryToSanitizeHtml( m_DBLinkLines.back() );
+                        }
                     }
             }
         }

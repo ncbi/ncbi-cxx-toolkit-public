@@ -37,6 +37,7 @@
 #include <objects/biblio/Author.hpp>
 #include <objects/biblio/Cit_pat.hpp>
 #include <objects/general/Person_id.hpp>
+#include <objects/seq/Seq_hist_rec.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/util/sequence.hpp>
 
@@ -722,6 +723,17 @@ void CGenbankFormatter::x_Remark
     }
 }
 
+static bool
+s_GiInCSeq_hist_ids( const int gi, const CSeq_hist_rec_Base::TIds & ids )
+{
+    ITERATE( CSeq_hist_rec_Base::TIds, hist_iter, ids ) {
+        if( (*hist_iter) && (*hist_iter)->IsGi() && (*hist_iter)->GetGi() == gi ) {
+            return true;
+        }
+    }
+    return false;
+}
+
 // This will change first_line to prepend HTML-relevant stuff.
 void 
 CGenbankFormatter::x_LocusHtmlPrefix( string &first_line, CBioseqContext& ctx )
@@ -754,6 +766,32 @@ CGenbankFormatter::x_LocusHtmlPrefix( string &first_line, CBioseqContext& ctx )
                     if( type_str == "RefGeneTracking" || 
                         type_str == "GenomeBuild" || 
                         type_str == "ENCODE" ) 
+                    {
+                        has_comment = true;
+                    }
+                }
+            }
+        }
+
+        // replaces or replaced-by can trigger comments, too
+        if( ! has_comment ) {
+            CBioseq_Handle bioseq = ctx.GetHandle();
+            if( bioseq && bioseq.IsSetInst_Hist() ) {
+                const CSeq_hist& hist = bioseq.GetInst_Hist();
+
+                if ( hist.CanGetReplaced_by() ) {
+                    const CSeq_hist::TReplaced_by& r = hist.GetReplaced_by();
+                    if ( r.CanGetDate()  &&  !r.GetIds().empty() && 
+                        ! s_GiInCSeq_hist_ids( ctx.GetGI(), r.GetIds()  ) ) 
+                    {
+                        has_comment = true;
+                    }
+                }
+
+                if ( hist.IsSetReplaces()  &&  !ctx.Config().IsModeGBench() ) {
+                    const CSeq_hist::TReplaces& r = hist.GetReplaces();
+                    if ( r.CanGetDate()  &&  !r.GetIds().empty() &&
+                        ! s_GiInCSeq_hist_ids( ctx.GetGI(), r.GetIds() ) ) 
                     {
                         has_comment = true;
                     }
@@ -822,6 +860,20 @@ CGenbankFormatter::x_LocusHtmlPrefix( string &first_line, CBioseqContext& ctx )
 
     result << first_line;
     first_line = CNcbiOstrstreamToString(result);
+}
+
+string 
+CGenbankFormatter::x_GetFeatureDivStart( 
+    const char * strKey, CBioseqContext& ctx )
+{
+    // determine the count for this type
+    const int feat_type_count = (m_FeatureKeyToCountMap[strKey]++);
+
+    CNcbiOstrstream div_tag;
+    div_tag << "<div id=\"feature_" << ctx.GetGI()
+        << "_" << strKey << "_" << feat_type_count << "\">";
+
+    return CNcbiOstrstreamToString(div_tag);
 }
 
 
@@ -1037,20 +1089,11 @@ string s_GetLinkFeatureKey(
         strLocation += "?itemid=TBD";
     }
 
-    // report style:
-    string strReport;
-    if ( is_prot ) {
-        strReport = "&amp;report=gpwithparts";
-    } else {
-        strReport = "&amp;report=gbwithparts";
-    }
-
     // assembly of the actual string:
     string strLink = "<a href=\"";
     strLink += strLinkbase;
     strLink += strId;
     strLink += strLocation;
-    strLink += strReport;
     strLink += "\">";
     strLink += strRawKey;
     strLink += "</a>";
@@ -1073,8 +1116,7 @@ void CGenbankFormatter::FormatFeature
         ++ m_uFeatureCount;
     }
 
-    // const string strDummy( "[FEATKEY]" );
-    string strKey = feat->GetKey(); // bHtml ? strDummy : feat->GetKey();
+    string strKey = feat->GetKey(); 
     Wrap(l, strKey, feat->GetLoc().GetString(), eFeat );
 
     // In HTML mode, if not taking a "slice" (i.e. -from and -to args )
@@ -1090,6 +1132,11 @@ void CGenbankFormatter::FormatFeature
             // string::size_type dummy_loc = (*it).find(strDummy);
             NStr::ReplaceInPlace( *it, strKey, strFeatKey );
         }
+    }
+
+    // write <div...> in HTML mode
+    if( bHtml ) {
+        *l.begin() = x_GetFeatureDivStart(strKey.c_str(), *f.GetContext() ) + *l.begin();
     }
 
     ITERATE (vector<CRef<CFormatQual> >, it, quals ) {
@@ -1141,6 +1188,11 @@ void CGenbankFormatter::FormatFeature
     }
         
     text_os.AddParagraph(l, f.GetObject());
+
+    if( bHtml ) {
+        // close the <div...>, without an endline
+        text_os.AddRawText("</div>");
+    }
 }
 
 
@@ -1185,6 +1237,32 @@ char* s_FormatSeqPosBack(char* p, TSeqPos v, size_t l)
     do {
         *--p = '0'+v%10;
     } while ( (v /= 10) && --l );
+    return p;
+}
+
+// span should look like <span class="ff_line" id="gi_259526172_61">
+//                                                              ^   ^
+// "p" should point to the base_count part:  -------------------|   ^
+// and everything before that should be filled in.  This fills      ^
+// the rest and returns a pointer to just after the closing tag: ---|
+static inline
+char *s_FormatSeqSpanTag( char *p, int base_count )
+{
+    char * const initial_p = p;
+    // To be as fast as possible, we write our own "int to string" function.
+    // We actually write the number backward and then reverse it.  Is there a way
+    // to avoid the reversal?
+    do {
+        *p = '0'+base_count%10;
+        ++p;
+    } while ( (base_count /= 10) > 0 );
+    reverse( initial_p, p );
+
+    *p = '\"';
+    ++p;
+    *p = '>';
+    ++p;
+
     return p;
 }
 
@@ -1242,13 +1320,27 @@ s_FormatRegularSequencePiece
  TSeqPos &total,
  TSeqPos &base_count )
 {
+    const bool bHtml = seq.GetContext()->Config().DoHTML();
+    const int gi = seq.GetContext()->GetGI();
+
     // format of sequence position
     const size_t kSeqPosWidth = 9;
 
-    const size_t kLineBufferSize = 100;
+    const size_t kLineBufferSize = 170;
     char line[kLineBufferSize];
     // prefill the line buffer with spaces
     fill(line, line+kLineBufferSize, ' ');
+
+    // add the span stuff
+    const static string kCloseSpan = "</span>";
+    TSeqPos length_of_span_before_base_count = 0;
+    if( bHtml ) {
+        string kSpan = " <span class=\"ff_line\" id=\"gi_";
+        kSpan += NStr::IntToString(gi);
+        kSpan += '_';
+        copy( kSpan.begin(), kSpan.end(), line + kSeqPosWidth );
+        length_of_span_before_base_count = kSpan.length();
+    }
 
     // if base-count is offset, we indent the initial line
     TSeqPos initial_indent = 0;
@@ -1264,13 +1356,21 @@ s_FormatRegularSequencePiece
     // e.g. AC174915
     TSeqPos gap_at_beginning_base_count_offset = 0;
 
-    while ( total >= (s_kFullLineSize - initial_indent) ) {
+    while ( total > 0 ) {
         char* linep = line + kSeqPosWidth;
 
         if( initial_indent == 0 && iter.IsInGap() ) {
             gap_at_beginning_base_count_offset = iter.GetBufferSize();
         }
         s_FormatSeqPosBack(linep, base_count + gap_at_beginning_base_count_offset, kSeqPosWidth);
+        if( bHtml ) {
+            linep += length_of_span_before_base_count;
+            linep = s_FormatSeqSpanTag( linep, base_count );
+            --linep; // to balance out the extra ++linep farther below
+        }
+
+        char * const linep_right_after_span_tag = (linep + 1);
+
         gap_at_beginning_base_count_offset = 0;
 
         TSeqPos i = 0;
@@ -1287,54 +1387,48 @@ s_FormatRegularSequencePiece
             i = chunks_to_skip;
             j = (bases_to_skip % s_kChunkSize);
             // don't indent subsequent lines
-            initial_indent = 0; 
+            initial_indent = 0;
         }
-        for ( ; i < s_kChunkCount; ++i) {
-            ++linep;
-            for ( ; j < s_kChunkSize; ++j, ++iter, ++linep) {
-                *linep = *iter;
+
+        if( total >= (s_kFullLineSize - bases_to_skip) ) {
+            for ( ; i < s_kChunkCount; ++i) {
+                ++linep;
+                for ( ; j < s_kChunkSize; ++j, ++iter, ++linep) {
+                    *linep = *iter;
+                }
+                *linep = ' ';
+                j = 0;
             }
-            j = 0;
+
+            total -= (s_kFullLineSize - bases_to_skip);
+            base_count += (s_kFullLineSize - bases_to_skip);
+        } else {
+            base_count += total;
+            for ( ; total > 0  &&  i < s_kChunkCount; ++i) {
+                ++linep;
+                for ( ; total > 0  &&  j < s_kChunkSize; ++j, ++iter, --total, ++linep) {
+                    *linep = *iter;
+                }
+                *linep = ' ';
+                j = 0;
+            }
         }
         i = 0;
 
-        total -= (s_kFullLineSize - bases_to_skip);
-        base_count += (s_kFullLineSize - bases_to_skip);
-
-        *linep = 0;
-        text_os.AddCLine( line, seq.GetObject() );
-    }
-    if ( total > 0 ) {
-        char* linep = line + kSeqPosWidth;
-        s_FormatSeqPosBack(linep, base_count, kSeqPosWidth);
-
-        TSeqPos i = 0;
-        TSeqPos j = 0;
-
-        // partial beginning line occurs sometimes, so we have to
-        // offset some start-points
-        int bases_to_skip = 0;
-        if( initial_indent != 0 ) {
-            bases_to_skip = initial_indent;
-            // additional space required every chunk
-            int chunks_to_skip = (bases_to_skip / s_kChunkSize);
-            linep += (bases_to_skip + chunks_to_skip);
-            i = chunks_to_skip;
-            j = (bases_to_skip % s_kChunkSize);
-            // don't indent subsequent lines
-            initial_indent = 0; 
-        }
-
-        base_count += total;
-        for ( ; total > 0  &&  i < s_kChunkCount; ++i) {
-            ++linep;
-            for ( ; total > 0  &&  j < s_kChunkSize; ++j, ++iter, --total, ++linep) {
-                *linep = *iter;
+        if( bHtml ) {
+            // Need to space-pad out to full length (except for the *very* last line)
+            const bool doneWithEntireSequence = ( ! iter );
+            if( ! doneWithEntireSequence ) {
+                char * const linep_at_close_span = 
+                    linep_right_after_span_tag + s_kFullLineSize + s_kChunkCount - 1;
+                fill( linep, linep_at_close_span, ' ' );
+                linep = linep_at_close_span;
             }
-            j = 0;
-        }
 
-        total = 0;
+            // put on closing </span> tag
+            copy( kCloseSpan.begin(), kCloseSpan.end(), linep );
+            linep += kCloseSpan.length();
+        }
 
         *linep = 0;
         text_os.AddCLine( line, seq.GetObject() );
@@ -1567,6 +1661,8 @@ void CGenbankFormatter::FormatOrigin
 
 void CGenbankFormatter::FormatGap(const CGapItem& gap, IFlatTextOStream& text_os)
 {
+    const bool bHtml = gap.GetContext()->Config().DoHTML();
+
     list<string> l;
 
     TSeqPos gapStart = gap.GetFrom();
@@ -1586,6 +1682,9 @@ void CGenbankFormatter::FormatGap(const CGapItem& gap, IFlatTextOStream& text_os
     loc += NStr::UIntToString(gapEnd);
 
     Wrap(l, "gap", loc, eFeat);
+    if( bHtml ) {
+        *l.begin() = x_GetFeatureDivStart("gap", *gap.GetContext()) + *l.begin();
+    }
 
     // size zero gaps indicate non-consecutive residues
     if( isGapOfLengthZero ) {
@@ -1604,6 +1703,10 @@ void CGenbankFormatter::FormatGap(const CGapItem& gap, IFlatTextOStream& text_os
         GetFeatIndent(), GetFeatIndent() + "/estimated_length=");
 
     text_os.AddParagraph(l, gap.GetObject());
+
+    if( bHtml ) {
+        text_os.AddRawText("</div>"); // no newline at end
+    }
 }
 
 END_SCOPE(objects)

@@ -591,6 +591,8 @@ public:
     void Format(TFlatQuals& quals, const string& name, CBioseqContext& ctx,
                 TFlags flags) const;
 
+    bool Equals( const CFlatGoQVal &rhs ) const;
+
     const string & GetTextString(void) const;
     int GetPubmedId(void) const;
 

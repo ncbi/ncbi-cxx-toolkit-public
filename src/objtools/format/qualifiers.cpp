@@ -1507,6 +1507,11 @@ void CFlatGoQVal::Format
     }
 }
 
+bool CFlatGoQVal::Equals( const CFlatGoQVal &rhs ) const
+{
+    return m_Value->Equals( *rhs.m_Value );
+}
+
 const string & CFlatGoQVal::GetTextString(void) const
 {
     if( m_Value.IsNull() ) {
