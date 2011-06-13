@@ -1686,6 +1686,12 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             CArgDescriptions::eInteger);
     arg_desc.SetConstraint(kArgMaxTargetSequences,
                            new CArgAllowValuesGreaterThanOrEqual(1));
+    arg_desc.SetDependency(kArgMaxTargetSequences,
+                           CArgDescriptions::eExcludes,
+                           kArgNumDescriptions);
+    arg_desc.SetDependency(kArgMaxTargetSequences,
+                           CArgDescriptions::eExcludes,
+                           kArgNumAlignments);
 
     arg_desc.SetCurrentGroup("");
 }
@@ -1795,6 +1801,37 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
     }
 
     m_Html = static_cast<bool>(args[kArgProduceHtml]);
+    
+    // Issue warnings, per SB-830
+    switch (m_OutputFormat) {
+    case ePairwise:
+    case eQueryAnchoredIdentities:
+    case eQueryAnchoredNoIdentities:
+    case eFlatQueryAnchoredIdentities:
+    case eFlatQueryAnchoredNoIdentities:
+        if (args[kArgMaxTargetSequences]) {
+            LOG_POST(Warning << kArgMaxTargetSequences << " should not be set "
+                     "with " << kArgOutputFormat << " " << (int)m_OutputFormat);
+        }
+        break;
+    case eXml: 
+    case eTabular:
+    case eTabularWithComments:
+    case eAsnText:
+    case eAsnBinary:
+    case eCommaSeparatedValues:
+    case eArchiveFormat:
+        if (m_NumAlignments != 0) {
+            LOG_POST(Warning << kArgNumAlignments << " should not be set "
+                     "with " << kArgOutputFormat << " " << (int)m_OutputFormat);
+        }
+        if (m_NumDescriptions != 0) {
+            LOG_POST(Warning << kArgNumDescriptions << " should not be set "
+                     "with " << kArgOutputFormat << " " << (int)m_OutputFormat);
+        }
+    case eEndValue:
+        break;
+    }
 }
 
 void
