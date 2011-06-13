@@ -101,6 +101,7 @@
 #    include <arpa/inet.h>
 #  endif /*NCBI_OS_BEOS*/
 #  include <signal.h>
+#  include <sys/param.h>
 #  ifdef HAVE_POLL_H
 #    include <sys/poll.h>
 #  endif /*HAVE_POLL_H*/
@@ -113,6 +114,10 @@
  */
 #include <ctype.h>
 #include <stdlib.h>
+
+#ifndef   MAXHOSTNAMELEN
+#  define MAXHOSTNAMELEN  255
+#endif // MAXHOSTNAMELEN
 
 
 
@@ -1066,7 +1071,7 @@ static int s_gethostname(char* name, size_t namelen, ESwitch log)
     if (s_InitAPI(0) != eIO_Success)
         return eIO_NotSupported;
 
-    CORE_TRACEF(("[SOCK::gethostname]  Begin"));
+    CORE_TRACE("[SOCK::gethostname]");
 
     assert(name  &&  namelen > 0);
     name[0] = name[namelen - 1] = '\0';
@@ -1091,8 +1096,8 @@ static int s_gethostname(char* name, size_t namelen, ESwitch log)
     } else
         error = 0/*false*/;
 
-    CORE_TRACEF(("[SOCK::gethostname]  End: \"%.*s\"%s",
-                 (int) namelen, name, error ? " (error)" : ""));
+    CORE_TRACEF(("[SOCK::gethostname] "
+                 " \"%.*s\"%s", (int) namelen, name, error ? " (error)" : ""));
     if (error)
         *name = '\0';
     return *name ? 0/*success*/ : -1/*failure*/;
@@ -1101,6 +1106,7 @@ static int s_gethostname(char* name, size_t namelen, ESwitch log)
 
 static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
 {
+    CORE_DEBUG_ARG(char addr[40]);
     unsigned int host;
     char buf[256];
 
@@ -1137,8 +1143,8 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
                 CORE_LOGF_ERRNO_EXX(105, eLOG_Warning,
                                     x_error, strerr,
                                     ("[SOCK_gethostbyname] "
-                                     " Failed getaddrinfo(\"%.64s\")",
-                                     hostname));
+                                     " Failed getaddrinfo(\"%.*s\")",
+                                     MAXHOSTNAMELEN, hostname));
                 UTIL_ReleaseBuffer(strerr);
             }
             host = 0;
@@ -1199,14 +1205,18 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
             CORE_LOGF_ERRNO_EXX(106, eLOG_Warning,
                                 x_error, strerr,
                                 ("[SOCK_gethostbyname] "
-                                 " Failed gethostbyname%s(\"%.64s\")",
-                                 suffix, hostname));
+                                 " Failed gethostbyname%s(\"%.*s\")",
+                                 suffix, MAXHOSTNAMELEN, hostname));
             UTIL_ReleaseBuffer(strerr);
         }
 
 #endif /*HAVE_GETADDR_INFO*/
     }
 
+    CORE_TRACEF(("[SOCK::gethostbyname]  \"%s\" @ %s", hostname,
+                 SOCK_ntoa(host, addr, sizeof(addr)) == 0
+                 ? addr : sprintf(addr, "0x%08X", (unsigned int) ntohl(host))
+                 ? addr : "(unknown)"));
     return host;
 }
 
@@ -1223,7 +1233,7 @@ static unsigned int s_getlocalhostaddress(ESwitch reget, ESwitch log)
         return s_LocalHostAddress;
     if (!s_Warning  &&  reget != eOff) {
         s_Warning = 1;
-        CORE_LOGF_X(9, eLOG_Warning,
+        CORE_LOGF_X(9, reget == eDefault ? eLOG_Warning : eLOG_Error,
                     ("[SOCK::GetLocalHostAddress]: "
                      " Cannot obtain local host address%s",
                      reget == eDefault ? ", using loopback instead" : ""));
@@ -1235,6 +1245,8 @@ static unsigned int s_getlocalhostaddress(ESwitch reget, ESwitch log)
 static char* s_gethostbyaddr(unsigned int host, char* name,
                              size_t namelen, ESwitch log)
 {
+    char addr[40];
+
     assert(name  &&  namelen > 0);
 
     /* initialize internals */
@@ -1246,7 +1258,10 @@ static char* s_gethostbyaddr(unsigned int host, char* name,
     if (!host)
         host = s_getlocalhostaddress(eDefault, log);
 
-    CORE_TRACEF(("[SOCK::gethostbyaddr]  0x%08X", (unsigned int) ntohl(host)));
+    CORE_TRACEF(("[SOCK::gethostbyaddr]  %s",
+                 SOCK_ntoa(host, addr, sizeof(addr)) == 0
+                 ? addr : sprintf(addr, "0x%08X", (unsigned int) ntohl(host))
+                 ? addr : "(unknown)"));
 
     if (host) {
         int x_error;
@@ -1273,9 +1288,9 @@ static char* s_gethostbyaddr(unsigned int host, char* name,
                 name = 0;
             }
             if (!name  &&  log) {
-                char addr[40];
                 const char* strerr;
-                SOCK_ntoa(host, addr, sizeof(addr));
+                if (SOCK_ntoa(host, addr, sizeof(addr)) != 0)
+                    sprintf(addr, "0x%08X", (unsigned int) ntohl(host));
                 if (x_error == EAI_SYSTEM)
                     x_error = SOCK_ERRNO;
                 else
@@ -1289,7 +1304,6 @@ static char* s_gethostbyaddr(unsigned int host, char* name,
                 UTIL_ReleaseBuffer(strerr);
             }
         }
-        return name;
 
 #else /* use some variant of gethostbyaddr */
         struct hostent* he;
@@ -1343,13 +1357,13 @@ static char* s_gethostbyaddr(unsigned int host, char* name,
 #  endif /*HAVE_GETHOSTBYADDR_R*/
 
         if (!name  &&  log) {
-            char addr[40];
             const char* strerr;
 #  ifdef NETDB_INTERNAL
             if (x_error == NETDB_INTERNAL + DNS_BASE)
                 x_error = SOCK_ERRNO;
 #  endif /*NETDB_INTERNAL*/
-            SOCK_ntoa(host, addr, sizeof(addr));
+            if (SOCK_ntoa(host, addr, sizeof(addr)) != 0)
+                sprintf(addr, "0x%08X", (unsigned int) ntohl(host));
             strerr = SOCK_STRERROR(x_error);
             CORE_LOGF_ERRNO_EXX(108, eLOG_Warning,
                                 x_error, strerr,
@@ -1359,13 +1373,18 @@ static char* s_gethostbyaddr(unsigned int host, char* name,
             UTIL_ReleaseBuffer(strerr);
         }
 
-        return name;
-
 #endif /*HAVE_GETNAMEINFO*/
+    } else {
+        name[0] = 0;
+        name = 0;
     }
 
-    name[0] = '\0';
-    return 0;
+    CORE_TRACEF(("[SOCK::gethostbyaddr]  %s @ %s%s%s",
+                 SOCK_ntoa(host, addr, sizeof(addr)) == 0
+                 ? addr : sprintf(addr, "0x%08X", (unsigned int) ntohl(host))
+                 ? addr : "(unknown)",
+                 &"\""[!name], name ? name : "(unknown)", &"\""[!name]));
+    return name;
 }
 
 
@@ -3740,8 +3759,8 @@ static EIO_Status s_Connect(SOCK            sock,
         if (host && !(sock->host = s_gethostbyname(host, (ESwitch)sock->log))){
             CORE_LOGF_X(22, eLOG_Error,
                         ("%s[SOCK::Connect] "
-                         " Failed SOCK_gethostbyname(\"%.64s\")",
-                         s_ID(sock, _id), host));
+                         " Failed SOCK_gethostbyname(\"%.*s\")",
+                         s_ID(sock, _id), MAXHOSTNAMELEN, host));
             return eIO_Unknown;
         }
         /* set the port to connect to (same port if zero) */
@@ -6462,8 +6481,8 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
     else if (!(host = s_gethostbyname(hostname, (ESwitch) sock->log))) {
         CORE_LOGF_X(83, eLOG_Error,
                     ("%s[DSOCK::Connect] "
-                     " Failed SOCK_gethostbyname(\"%.64s\")",
-                     s_ID(sock, _id), hostname));
+                     " Failed SOCK_gethostbyname(\"%.*s\")",
+                     s_ID(sock, _id), MAXHOSTNAMELEN, hostname));
         return eIO_Unknown;
     }
 
@@ -6603,8 +6622,8 @@ extern EIO_Status DSOCK_SendMsg(SOCK           sock,
     else if (!(x_host = s_gethostbyname(host, (ESwitch) sock->log))) {
         CORE_LOGF_X(88, eLOG_Error,
                     ("%s[DSOCK::SendMsg] "
-                     " Failed SOCK_gethostbyname(\"%.64s\")",
-                     s_ID(sock, w), host));
+                     " Failed SOCK_gethostbyname(\"%.*s\")",
+                     s_ID(sock, w), MAXHOSTNAMELEN, host));
         return eIO_Unknown;
     }
 
@@ -7327,7 +7346,7 @@ extern char* SOCK_gethostbyaddrEx(unsigned int host,
         s_Warning = 1;
         CORE_LOGF_X(10, eLOG_Warning,
                     ("[SOCK::gethostbyaddr]: "
-                     " Got \"%s\" for %s address",
+                     " Got \"%.*s\" for %s address", MAXHOSTNAMELEN,
                      retval, host ? "loopback" : "local host"));
     }
     return retval;
