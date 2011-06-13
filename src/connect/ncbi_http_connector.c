@@ -349,22 +349,6 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
 }
 
 
-/* Unconditionally drop the connection; timeout may specify time allowance */
-static void s_DropConnection(SHttpConnector* uuu, const STimeout* timeout)
-{
-    assert(uuu->sock);
-    BUF_Erase(uuu->http);
-    if (uuu->read_header
-        ||  (uuu->net_info->req_method == eReqMethod_Connect
-             &&  (uuu->flags & fHTTP_DetachableTunnel))) {
-        SOCK_Abort(uuu->sock);
-    } else
-        SOCK_SetTimeout(uuu->sock, eIO_Close, timeout);
-    SOCK_Close(uuu->sock);
-    uuu->sock = 0;
-}
-
-
 static int/*bool*/ s_MakeHostTag(SConnNetInfo* net_info)
 {
     char*  temp, port[10];
@@ -439,42 +423,37 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
     for (;;) {
         TSOCK_Flags flags;
 
-        sock = uuu->sock;
+        sock = 0;
         flags = (uuu->net_info->debug_printout == eDebugPrintout_Data
                  ? fSOCK_LogOn : fSOCK_LogDefault);
-        if (*uuu->net_info->http_proxy_host
-            &&  uuu->net_info->scheme == eURL_Https
-            &&  uuu->net_info->req_method != eReqMethod_Connect) {
-            SConnNetInfo* net_info = ConnNetInfo_Clone(uuu->net_info);
-            if (!net_info) {
-                status = eIO_Unknown;
-                break;
-            }
-            net_info->scheme = eURL_Http;
-            net_info->user[0] = '\0';
-            net_info->pass[0] = '\0';
-            if (!net_info->port)
-                net_info->port = 443/*HTTPS*/;
-            net_info->firewall = 0/*false*/;
-            net_info->proxy_host[0] = '\0';
-            ConnNetInfo_DeleteUserHeader(net_info, kHttpHostTag);
-            status = HTTP_CreateTunnel(net_info,
-                                       fHTTP_NoUpread |
-                                       fHTTP_DetachableTunnel, &sock);
-            assert((status == eIO_Success) ^ !sock);
-            ConnNetInfo_Destroy(net_info);
+        if (uuu->net_info->scheme == eURL_Https) {
             flags |= fSOCK_Secure;
-        } else {
-            if (uuu->net_info->scheme == eURL_Https) {
-                if  (uuu->net_info->req_method == eReqMethod_Connect
-                     &&  (uuu->flags & fHTTP_DetachableTunnel)) {
+            if (uuu->net_info->req_method == eReqMethod_Connect) {
+                if (uuu->flags & fHTTP_DetachableTunnel) {
                     status = eIO_InvalidArg;
                     break;
                 }
-                flags |= fSOCK_Secure;
+            } else if (*uuu->net_info->http_proxy_host) {
+                SConnNetInfo* net_info = ConnNetInfo_Clone(uuu->net_info);
+                if (!net_info) {
+                    status = eIO_Unknown;
+                    break;
+                }
+                net_info->scheme = eURL_Http;
+                net_info->user[0] = '\0';
+                net_info->pass[0] = '\0';
+                if (!net_info->port)
+                    net_info->port = 443/*HTTPS*/;
+                net_info->firewall = 0/*false*/;
+                net_info->proxy_host[0] = '\0';
+                ConnNetInfo_DeleteUserHeader(net_info, kHttpHostTag);
+                status = HTTP_CreateTunnel(net_info, fHTTP_DetachableTunnel
+                                           | fHTTP_NoUpread, &sock);
+                assert((status == eIO_Success) ^ !sock);
+                ConnNetInfo_Destroy(net_info);
             }
-            status = eIO_Success;
-        }
+        } else
+            status =  eIO_Success;
 
         if (status == eIO_Success) {
             int/*bool*/    reset_user_header;
@@ -488,7 +467,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
 
             len = BUF_Size(uuu->w_buf);
             if (uuu->net_info->req_method == eReqMethod_Connect
-                ||  (sock == uuu->sock  &&  *uuu->net_info->http_proxy_host)) {
+                ||  (!sock  &&  *uuu->net_info->http_proxy_host)) {
                 char* temp;
                 host = uuu->net_info->http_proxy_host;
                 port = uuu->net_info->http_proxy_port;
@@ -500,10 +479,10 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 if (uuu->net_info->req_method == eReqMethod_Connect) {
                     if (uuu->flags & fHTTP_DetachableTunnel)
                         flags |= fSOCK_KeepOnClose;
-                    if (!len)
+                    if (!len) {
                         args = 0;
-                    else if (!(temp = (char*) malloc(len))
-                             ||  BUF_Peek(uuu->w_buf, temp, len) != len) {
+                    } else if (!(temp = (char*) malloc(len))
+                               ||  BUF_Peek(uuu->w_buf, temp, len) != len) {
                         if (temp)
                             free(temp);
                         status = eIO_Unknown;
@@ -512,8 +491,8 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                         args = temp;
                 } else {
                     if (!s_MakeHostTag(uuu->net_info)) {
-                        assert(sock == uuu->sock);
                         status = eIO_Unknown;
+                        assert(!sock);
                         break;
                     }
                     if (uuu->flags & fHTTP_UrlEncodeArgs) {
@@ -582,7 +561,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 break;
             }
             assert(status != eIO_Success);
-            if (sock != uuu->sock) {
+            if (sock) {
                 /*HTTPS tunnel*/
                 assert(sock);
                 SOCK_Abort(sock);
@@ -597,16 +576,31 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
             break;
     }
     if (status != eIO_Success) {
-        if (sock  &&  sock != uuu->sock) {
+        if (sock) {
             SOCK_Abort(sock);
             SOCK_Close(sock);
         }
-        uuu->sock = 0;
         return status;
     }
     assert(sock);
     uuu->sock = sock;
     return eIO_Success;
+}
+
+
+/* Unconditionally drop the connection; timeout may specify time allowance */
+static void s_DropConnection(SHttpConnector* uuu, const STimeout* timeout)
+{
+    assert(uuu->sock);
+    BUF_Erase(uuu->http);
+    if (uuu->read_header
+        ||  (uuu->net_info->req_method == eReqMethod_Connect
+             &&  (uuu->flags & fHTTP_DetachableTunnel))) {
+        SOCK_Abort(uuu->sock);
+    } else
+        SOCK_SetTimeout(uuu->sock, eIO_Close, timeout);
+    SOCK_Close(uuu->sock);
+    uuu->sock = 0;
 }
 
 
@@ -1584,15 +1578,20 @@ static EIO_Status s_CreateHttpConnector
     xxx = net_info ? ConnNetInfo_Clone(net_info) : ConnNetInfo_Create(0);
     if (!xxx)
         return eIO_Unknown;
-    if ((xxx->scheme != eURL_Unspec  && 
-         xxx->scheme != eURL_Https   &&
-         xxx->scheme != eURL_Http)   ||
-        (!tunnel  &&  xxx->req_method == eReqMethod_Connect)) {
-        ConnNetInfo_Destroy(xxx);
-        return eIO_InvalidArg;
+    if (!tunnel) {
+        if ((xxx->scheme != eURL_Unspec  && 
+             xxx->scheme != eURL_Https   &&
+             xxx->scheme != eURL_Http)   ||
+            xxx->req_method == eReqMethod_Connect) {
+            ConnNetInfo_Destroy(xxx);
+            return eIO_InvalidArg;
+        }
+        if (xxx->scheme == eURL_Unspec)
+            xxx->scheme =  eURL_Http;
+        if ((fff = strchr(xxx->args, '#')) != 0)
+            *fff = '\0';
+        flags &= ~fHTTP_DetachableTunnel;
     }
-    if (xxx->scheme == eURL_Unspec)
-        xxx->scheme =  eURL_Http;
     ConnNetInfo_OverrideUserHeader(xxx, user_header);
     if (tunnel) {
         xxx->req_method = eReqMethod_Connect;
@@ -1603,8 +1602,7 @@ static EIO_Status s_CreateHttpConnector
             xxx->http_referer = 0;
         }
         ConnNetInfo_DeleteUserHeader(xxx, "Referer:");
-    } else if ((fff = strchr(xxx->args, '#')) != 0)
-        *fff = '\0';
+    }
     x_AddAppNameRefererStripCAF(xxx);
 
     if ((flags & fHTTP_NoAutoRetry)  ||  !xxx->max_try)
