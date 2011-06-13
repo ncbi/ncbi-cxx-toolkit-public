@@ -40,10 +40,6 @@
 #include "ncbi_servicep.h"
 #include <algorithm>
 
-#ifndef   MAXHOSTNAMELEN
-#  define MAXHOSTNAMELEN  255
-#endif // MAXHOSTNAMELEN
-
 #define __STR(x)  #x
 #define _STR(x)   __STR(x)
 
