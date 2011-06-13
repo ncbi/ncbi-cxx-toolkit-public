@@ -390,7 +390,7 @@ void CNetScheduleAdmin::Query(const string& query,
     cmd += '"';
 
     m_Impl->m_API->m_Service.PrintCmdOutput(cmd, os,
-        CNetService::eDumpNoHeaders);
+        CNetService::eMultilineOutput_NoHeaders);
 }
 
 void CNetScheduleAdmin::Select(const string& select_stmt, CNcbiOstream& os)
@@ -400,7 +400,7 @@ void CNetScheduleAdmin::Select(const string& select_stmt, CNcbiOstream& os)
     cmd += '"';
 
     m_Impl->m_API->m_Service.PrintCmdOutput(cmd, os,
-        CNetService::eDumpNoHeaders);
+        CNetService::eMultilineOutput_NoHeaders);
 }
 
 void CNetScheduleAdmin::RetrieveKeys(const string& query,

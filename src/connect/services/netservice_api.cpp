@@ -471,11 +471,11 @@ void CNetService::StickToServer(const string& host, unsigned port)
 void CNetService::PrintCmdOutput(const string& cmd,
     CNcbiOstream& output_stream, CNetService::ECmdOutputStyle output_style)
 {
-    if (!IsLoadBalanced())
-        output_style = eDumpNoHeaders;
+    bool print_headers = IsLoadBalanced() ?
+        output_style != eMultilineOutput_NoHeaders : false;
 
     for (CNetServiceIterator it = Iterate(); it; ++it) {
-        if (output_style != eDumpNoHeaders)
+        if (print_headers)
             output_stream << '[' << (*it)->m_Address.AsString() << ']' << endl;
 
         CNetServer::SExecResult exec_result((*it).ExecWithRetry(cmd));
@@ -494,7 +494,7 @@ void CNetService::PrintCmdOutput(const string& cmd,
                 output_stream << line << endl;
         }
 
-        if (output_style != eDumpNoHeaders)
+        if (print_headers)
             output_stream << endl;
     }
 }
