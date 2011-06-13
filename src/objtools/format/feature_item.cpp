@@ -5735,7 +5735,7 @@ static string s_GetSpecimenVoucherText(
         return CNcbiOstrstreamToString(text);
     } else {
         // fall back on at least getting institution name
-        const string &inst_full_name = CInstInfoMap::GetInstitutionFullName( inst );
+        const string &inst_full_name =  COrgMod::GetInstitutionFullName( inst );
         if( ! inst_full_name.empty() ) {
             CNcbiOstrstream text;
 

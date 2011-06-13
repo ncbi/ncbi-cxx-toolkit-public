@@ -57,15 +57,9 @@ public:
     virtual void AddParagraph(const list<string>& text, 
                               const CSerialObject* obj = 0);
 
-    virtual void AddLine( const string& line,
-                          const CSerialObject* obj = 0);
-
-    virtual void AddCLine( const char *line,
-                           const CSerialObject* obj = 0);
-
-    // Discouraged
-    virtual void AddRawText( const char *line,
-                             const CSerialObject* obj = 0);
+    virtual void AddLine( const CTempString& line,
+                          const CSerialObject* obj = 0,
+                          EAddNewline add_newline = eAddNewline_Yes );
 
 private:
     CNcbiOstream&   m_Ostream;

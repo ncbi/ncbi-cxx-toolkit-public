@@ -189,6 +189,8 @@ bool ConvertQuotesNotInHTMLTags( string &str );
 void TryToSanitizeHtml( std::string &str );
 void TryToSanitizeHtmlList( std::list<std::string> &strs );
 
+bool CommentHasSuspiciousHtml( const string &str );
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 

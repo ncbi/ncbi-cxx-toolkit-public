@@ -32,6 +32,8 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
+#include <util/strsearch.hpp>
+
 #include <objects/general/Date.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
@@ -1368,6 +1370,39 @@ TryToSanitizeHtmlList( std::list<std::string> &strs )
     NON_CONST_ITERATE( std::list<std::string>, str_iter, strs ) {
         TryToSanitizeHtml( *str_iter );
     }
+}
+
+bool 
+CommentHasSuspiciousHtml( const string &str )
+{
+    // list is not complete, still need to take proper precautions
+    static const string bad_html_strings[] = { 
+        "<script", "<object", "<applet", "<embed", "<form", 
+        "javascript:", "vbscript:"
+    };
+
+    // load matching fsa if not already done
+    static CTextFsa fsa;
+    if( ! fsa.IsPrimed() ) {
+        int ii = 0;
+        for( ; ii < sizeof(bad_html_strings)/sizeof(bad_html_strings[0]) ; ++ii ) {
+            fsa.AddWord( bad_html_strings[ii] );
+        }
+        fsa.Prime();
+    }
+
+    // do the match
+    int current_state = 0;
+    for ( SIZE_TYPE str_idx = 0 ; str_idx < str.length(); ++str_idx) {
+        const char ch = str[str_idx];
+        int next_state = fsa.GetNextState (current_state, ch);
+        if (fsa.IsMatchFound (next_state)) {
+            return true;
+        }
+        current_state = next_state;
+    }
+
+    return false;
 }
 
 END_SCOPE(objects)

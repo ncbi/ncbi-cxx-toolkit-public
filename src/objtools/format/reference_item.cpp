@@ -1144,7 +1144,7 @@ void CReferenceItem::x_CleanData(void)
     s_RemovePeriod(m_Title);
     x_CapitalizeTitleIfNecessary();
     // remark
-    ConvertQuotes(m_Remark);
+    ConvertQuotesNotInHTMLTags(m_Remark);
     ExpandTildes(m_Remark, eTilde_newline);
 }
 
@@ -1221,6 +1221,8 @@ DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<string>, sc_Remarks, sc_RemarkText);
 
 void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
 {
+    const static string kDoiLink = "http://dx.doi.org/";
+
     list<string> l;
 
     // comment
@@ -1356,7 +1358,15 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
                                 if( (*it)->Which() == CArticleId_Base::e_Doi) {
                                     const string & doi = (*it)->GetDoi().Get();
                                     if( NStr::StartsWith( doi, "10." ) ) {
-                                        l.push_back( "DOI: " + doi );
+                                        if( ctx.Config().DoHTML() && ! CommentHasSuspiciousHtml(doi) ) {
+                                            CNcbiOstrstream result;
+                                            result << "DOI: <a href=\""
+                                                   << kDoiLink << doi << "\">"
+                                                   << doi << "</a>";
+                                            l.push_back( CNcbiOstrstreamToString(result) );
+                                        } else {
+                                            l.push_back( "DOI: " + doi );
+                                        }
                                         break;
                                     }
                                 }

@@ -117,7 +117,7 @@ private:
 
     // HTML
     void   x_LocusHtmlPrefix( std::string &first_line,      CBioseqContext& ctx );
-    string x_GetFeatureDivStart( const char * strKey, CBioseqContext& ctx );
+    string x_GetFeatureSpanStart( const char * strKey, CBioseqContext& ctx );
 
     // processing data
     unsigned int m_uFeatureCount;

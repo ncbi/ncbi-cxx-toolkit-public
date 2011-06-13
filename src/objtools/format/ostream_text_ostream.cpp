@@ -67,26 +67,15 @@ void COStreamTextOStream::AddParagraph
 }
 
 void COStreamTextOStream::AddLine(
-    const string& line,
-    const CSerialObject* obj )
-{
-    m_Ostream << line.c_str() << '\n';
-}
-
-void COStreamTextOStream::AddCLine(
-    const char *line,
-    const CSerialObject* obj )
-{
-    m_Ostream << line << '\n';
-}
-
-void COStreamTextOStream::AddRawText(
-    const char *line,
-    const CSerialObject* obj )
+    const CTempString& line,
+    const CSerialObject* obj,
+    EAddNewline add_newline )
 {
     m_Ostream << line;
+    if( add_newline == eAddNewline_Yes ) {
+        m_Ostream << '\n';
+    }
 }
-
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

@@ -109,9 +109,14 @@ bool COrgMod::ParseStructuredVoucher(const string& str, string& inst, string& co
 // ===== biomaterial, and culture-collection BioSource subsource modifiers     ================
 
 typedef map<string, string, PNocase> TInstitutionCodeMap;
+
 static TInstitutionCodeMap s_BiomaterialInstitutionCodeMap;
 static TInstitutionCodeMap s_SpecimenVoucherInstitutionCodeMap;
 static TInstitutionCodeMap s_CultureCollectionInstitutionCodeMap;
+
+// holds all the data in the specific ones above
+static TInstitutionCodeMap s_CompleteInstitutionCodeMap;
+
 static TInstitutionCodeMap s_InstitutionCodeTypeMap;
 static bool                    s_InstitutionCollectionCodeMapInitialized = false;
 DEFINE_STATIC_FAST_MUTEX(s_InstitutionCollectionCodeMutex);
@@ -141,6 +146,8 @@ static void s_ProcessInstitutionCollectionCodeLine(const CTempString& line)
 //                           << "; unrecognized subtype (" << tokens[1] << "); disregarding");
                 break;
         }
+        s_CompleteInstitutionCodeMap[tokens[0]] = tokens[2];
+
         s_InstitutionCodeTypeMap[tokens[0]] = tokens[1];
     }
 }
@@ -215,6 +222,18 @@ bool COrgMod::IsInstitutionCodeValid(const string& inst_coll, string &voucher_ty
         }
     }
     return rval;
+}
+
+const string &
+COrgMod::GetInstitutionFullName( const string &short_name )
+{
+    s_InitializeInstitutionCollectionCodeMaps();
+    TInstitutionCodeMap::const_iterator iter = s_CompleteInstitutionCodeMap.find( short_name );
+    if( iter != s_CompleteInstitutionCodeMap.end() ) {
+        return iter->second;
+    } else {
+        return kEmptyStr;
+    }
 }
 
 

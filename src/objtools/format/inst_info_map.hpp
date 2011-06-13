@@ -67,11 +67,6 @@ public:
     static TVoucherInfoRef GetInstitutionVoucherInfo(
         const string &inst_abbrev );
 
-    // For many institutions, we have only the name.
-    // returns empty string if can't find it.
-    static const string &GetInstitutionFullName(
-        const string &inst_abbrev );
-
 private:
 
     // forbid construction, etc.

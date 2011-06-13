@@ -305,7 +305,8 @@ void CGenbankFormatter::FormatHtmlAnchor(
     result << "<a name=\"" << html_anchor.GetLabelCore() << "_"
         << html_anchor.GetGI() << "\"></a>";
 
-    text_os.AddRawText( ((string)CNcbiOstrstreamToString(result)).c_str() );
+    text_os.AddLine( (string)CNcbiOstrstreamToString(result), 0, 
+        IFlatTextOStream::eAddNewline_No );
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -863,19 +864,18 @@ CGenbankFormatter::x_LocusHtmlPrefix( string &first_line, CBioseqContext& ctx )
 }
 
 string 
-CGenbankFormatter::x_GetFeatureDivStart( 
+CGenbankFormatter::x_GetFeatureSpanStart( 
     const char * strKey, CBioseqContext& ctx )
 {
     // determine the count for this type
     const int feat_type_count = (m_FeatureKeyToCountMap[strKey]++);
 
     CNcbiOstrstream div_tag;
-    div_tag << "<div id=\"feature_" << ctx.GetGI()
+    div_tag << "<span id=\"feature_" << ctx.GetGI()
         << "_" << strKey << "_" << feat_type_count << "\">";
 
     return CNcbiOstrstreamToString(div_tag);
 }
-
 
 ///////////////////////////////////////////////////////////////////////////
 //
@@ -1135,8 +1135,8 @@ void CGenbankFormatter::FormatFeature
     }
 
     // write <div...> in HTML mode
-    if( bHtml ) {
-        *l.begin() = x_GetFeatureDivStart(strKey.c_str(), *f.GetContext() ) + *l.begin();
+    if( bHtml && f.GetContext()->Config().IsModeEntrez() ) {
+        *l.begin() = x_GetFeatureSpanStart(strKey.c_str(), *f.GetContext() ) + *l.begin();
     }
 
     ITERATE (vector<CRef<CFormatQual> >, it, quals ) {
@@ -1189,9 +1189,9 @@ void CGenbankFormatter::FormatFeature
         
     text_os.AddParagraph(l, f.GetObject());
 
-    if( bHtml ) {
+    if( bHtml && f.GetContext()->Config().IsModeEntrez() ) {
         // close the <div...>, without an endline
-        text_os.AddRawText("</div>");
+        text_os.AddLine("</span>", 0, IFlatTextOStream::eAddNewline_No );
     }
 }
 
@@ -1312,6 +1312,17 @@ s_CalcDistanceUntilNextSignificantGapOrEnd(
     return dist_to_gap_or_end;
 }
 
+static bool
+s_NextPieceIsAlsoGap( 
+    CSeqVector_CI iter // yes, COPY not reference
+)
+{
+    _ASSERT( iter.IsInGap() );
+
+    iter += iter.GetBufferSize();
+    return iter.IsInGap();
+}
+
 static void
 s_FormatRegularSequencePiece
 (const CSequenceItem& seq,
@@ -1359,7 +1370,9 @@ s_FormatRegularSequencePiece
     while ( total > 0 ) {
         char* linep = line + kSeqPosWidth;
 
-        if( initial_indent == 0 && iter.IsInGap() ) {
+        if( initial_indent == 0 && iter.IsInGap() && iter.GetBufferSize() < kSeqPosWidth && 
+            ! s_NextPieceIsAlsoGap(iter) )
+        {
             gap_at_beginning_base_count_offset = iter.GetBufferSize();
         }
         s_FormatSeqPosBack(linep, base_count + gap_at_beginning_base_count_offset, kSeqPosWidth);
@@ -1431,7 +1444,7 @@ s_FormatRegularSequencePiece
         }
 
         *linep = 0;
-        text_os.AddCLine( line, seq.GetObject() );
+        text_os.AddLine( line, seq.GetObject() );
     }
 }
 
@@ -1682,8 +1695,8 @@ void CGenbankFormatter::FormatGap(const CGapItem& gap, IFlatTextOStream& text_os
     loc += NStr::UIntToString(gapEnd);
 
     Wrap(l, "gap", loc, eFeat);
-    if( bHtml ) {
-        *l.begin() = x_GetFeatureDivStart("gap", *gap.GetContext()) + *l.begin();
+    if( bHtml && gap.GetContext()->Config().IsModeEntrez() ) {
+        *l.begin() = x_GetFeatureSpanStart("gap", *gap.GetContext()) + *l.begin();
     }
 
     // size zero gaps indicate non-consecutive residues
@@ -1704,8 +1717,9 @@ void CGenbankFormatter::FormatGap(const CGapItem& gap, IFlatTextOStream& text_os
 
     text_os.AddParagraph(l, gap.GetObject());
 
-    if( bHtml ) {
-        text_os.AddRawText("</div>"); // no newline at end
+    if( bHtml && gap.GetContext()->Config().IsModeEntrez() ) {
+        text_os.AddLine("</span>", 0, 
+            IFlatTextOStream::eAddNewline_No );
     }
 }
 

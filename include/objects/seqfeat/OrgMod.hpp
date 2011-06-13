@@ -68,7 +68,11 @@ public:
     static string GetSubtypeName(TSubtype stype);
 
 	static bool ParseStructuredVoucher(const string& str, string& inst, string& coll, string& id);
-  static bool IsInstitutionCodeValid(const string& inst_coll, string &voucher_type, bool& is_miscapitalized, string& correct_cap, bool& needs_country);
+    static bool IsInstitutionCodeValid(const string& inst_coll, string &voucher_type, bool& is_miscapitalized, string& correct_cap, bool& needs_country);
+
+    //e.g. "DMNS:Bird" to "Denver Museum of Nature and Science, Ornithology Collections"
+    // returns empty string if not found
+    static const string &GetInstitutionFullName( const string &short_name );
 
 	private:
     // Prohibit copy constructor and assignment operator
