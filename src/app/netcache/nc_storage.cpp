@@ -982,6 +982,7 @@ CNCBlobStorage::x_UpdBlobInfoMultiChunk(const string&   blob_key,
     ver_data->generation = m_BlobGeneration;
     SNCBlobVerData new_ver(ver_data);
     GetNewBlobCoords(&new_ver.coords);
+
     CNCDBDataFile* old_datafile;
     CNCDBDataFile* new_datafile;
     m_DBFilesLock.ReadLock();
@@ -1074,7 +1075,7 @@ check_once_more:
         delete op_listener;
 
         if (ver_data->data_trigger.GetState() != eNCOpCompleted
-            ||  ver_data->chunks.size() == 0)
+            ||  ver_data->has_error)
         {
             return x_UpdBlobInfoNoMove(blob_key, ver_data);
         }

@@ -1182,6 +1182,7 @@ CNCThrottler_Getter::DeleteTlsObject(void* obj)
 CNCTimeThrottler::CNCTimeThrottler(void)
     : m_PeriodStart(0),
       m_TotalTime(0),
+      m_CurStart(0),
       m_Mode(eTotal)
 {}
 
@@ -1243,11 +1244,15 @@ CNCTimeThrottler::BeginTimeEvent(Uint8 server_id)
 void
 CNCTimeThrottler::EndTimeEvent(Uint8 server_id, Uint8 adj_time)
 {
+    if (m_CurStart == 0)
+        return;
+
     Uint8 now = CNetCacheServer::GetPreciseTime();
     Uint8 evt_time = now - m_CurStart;
     evt_time -= adj_time;
     m_TotalTime += evt_time;
     m_SrvTime[server_id] += evt_time;
+    m_CurStart = 0;
 }
 
 
