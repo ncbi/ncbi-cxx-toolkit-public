@@ -45,6 +45,7 @@ static char const rcsid[] =
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/blast/format/blast_format.hpp>
 #include "blast_app_util.hpp"
+#include <algo/blast/api/rpsblast_local.hpp>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
@@ -151,15 +152,18 @@ int CRPSBlastApp::Run(void)
 
             CRef<CSearchResultSet> results;
 
-            if (m_CmdLineArgs->ExecuteRemotely()) {
+            if (m_CmdLineArgs->ExecuteRemotely())
+            {
                 CRef<CRemoteBlast> rmt_blast = 
                     InitializeRemoteBlast(queries, db_args, opts_hndl,
                           m_CmdLineArgs->ProduceDebugRemoteOutput(),
                           m_CmdLineArgs->GetClientId());
                 results = rmt_blast->GetResultSet();
-            } else {
-                CLocalBlast lcl_blast(queries, opts_hndl, db_adapter);
-                results = lcl_blast.Run();
+            }
+            else
+            {
+            	CLocalRPSBlast  local_search (query_batch, args[kArgDb].AsString(), opts_hndl, args[kArgNumThreads].AsInteger() );
+            	results = local_search.Run();
             }
 
             if (fmt_args->ArchiveFormatRequested(args)) {
@@ -185,6 +189,8 @@ int CRPSBlastApp::Run(void)
 #ifndef SKIP_DOXYGEN_PROCESSING
 int main(int argc, const char* argv[] /*, const char* envp[]*/)
 {
-    return CRPSBlastApp().AppMain(argc, argv, 0, eDS_Default, 0);
+	int status = CRPSBlastApp().AppMain(argc, argv, 0, eDS_Default, 0);
+
+	return status;
 }
 #endif /* SKIP_DOXYGEN_PROCESSING */

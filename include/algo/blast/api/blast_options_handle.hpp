@@ -146,7 +146,7 @@ public:
     
     /// Default c-tor
     CBlastOptionsHandle(EAPILocality locality);
-    
+
     /// Validate the options contained in this object
     /// @note This method is meant to be used before calling any code that
     /// processes the BLAST options classes
@@ -305,6 +305,9 @@ public:
     }
     
 protected: 
+    /// Create Options Handle from Existing CBlastOptions Object
+    CBlastOptionsHandle(CRef<CBlastOptions> opt);
+
     /// Set the program and service name for remote blast.
     virtual void SetRemoteProgramAndService_Blast3() = 0;
     

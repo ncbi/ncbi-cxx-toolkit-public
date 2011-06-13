@@ -52,6 +52,11 @@ CBlastRPSOptionsHandle::CBlastRPSOptionsHandle(EAPILocality locality)
     m_Opts->SetProgram(eRPSBlast);
 }
 
+CBlastRPSOptionsHandle::CBlastRPSOptionsHandle(CRef<CBlastOptions> opt)
+    : CBlastOptionsHandle(opt)
+{
+}
+
 void 
 CBlastRPSOptionsHandle::SetLookupTableDefaults()
 {

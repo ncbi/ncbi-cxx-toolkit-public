@@ -61,6 +61,12 @@ CBlastOptionsHandle::CBlastOptionsHandle(EAPILocality locality)
     m_Opts.Reset(new CBlastOptions(locality));
 }
 
+CBlastOptionsHandle::CBlastOptionsHandle(CRef<CBlastOptions> opt)
+    : m_Opts(opt),
+      m_DefaultsMode(false)
+{
+}
+
 void
 CBlastOptionsHandle::SetDefaults()
 {

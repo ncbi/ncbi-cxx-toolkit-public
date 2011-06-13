@@ -57,6 +57,9 @@ public:
     /// Creates object with default options set
     CBlastRPSOptionsHandle(EAPILocality locality = CBlastOptions::eLocal);
 
+    /// Create Options Handle from Existing CBlastOptions Object
+    CBlastRPSOptionsHandle(CRef<CBlastOptions> opt);
+
     /******************* Lookup table options ***********************/
     /// Returns WordThreshold
     double GetWordThreshold() const { return m_Opts->GetWordThreshold(); }
