@@ -815,6 +815,10 @@ int CGridCommandLineInterfaceApp::Run()
         }
         throw;
     }
+    catch (CException& e) {
+        fprintf(stderr, "%s\n", e.what());
+        return 3;
+    }
 }
 
 CGridCommandLineInterfaceApp::~CGridCommandLineInterfaceApp()
