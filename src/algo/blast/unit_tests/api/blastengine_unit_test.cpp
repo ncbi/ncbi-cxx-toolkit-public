@@ -245,7 +245,7 @@ BOOST_AUTO_TEST_CASE(testTBLASTNShortMatchBlastEngine) {
    const int kQueryLengthFinal[kNumHspsEnd] = { 223,211,  35,  13};
    const int kScoreFinal[kNumHspsEnd] = {1138, 173, 72, 46}; 
    const double kEvalueFinal[kNumHspsEnd] = 
-       {1.31128e-147, 3.82037e-17, 3.57857e-05, 0.0421643};
+       {5.16853e-155, 4.55739e-18, 2.45125e-05, 0.0352845};
 
    CBlastHSPResults results
        (prelim_search.ComputeBlastHSPResults

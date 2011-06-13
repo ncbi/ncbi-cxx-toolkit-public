@@ -2045,7 +2045,7 @@ BOOST_AUTO_TEST_CASE(ProteinBlastMultipleQueries) {
     sar = *(++(seqalign_v[1]->Get().begin()));
     BOOST_REQUIRE_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
 
-    BOOST_REQUIRE_EQUAL(2, seqalign_v[2]->Get().size());
+    BOOST_REQUIRE_EQUAL(3, seqalign_v[2]->Get().size());
     sar = *(seqalign_v[2]->Get().begin());
     BOOST_REQUIRE_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
     sar = *(++(seqalign_v[2]->Get().begin()));

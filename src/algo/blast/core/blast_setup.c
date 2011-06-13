@@ -654,9 +654,6 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
    if (Blast_SubjectIsTranslated(program_number))
       db_length = db_length/3;  
 
-   if (sbp->gbp) 
-      sbp->gbp->db_length = db_length;
-       
    if (eff_len_options->dbseq_num > 0)
       db_num_seqs = eff_len_options->dbseq_num;
    else
@@ -809,10 +806,42 @@ BLAST_GapAlignSetUp(EBlastProgramType program_number,
 {
    Int2 status = 0;
    Uint4 max_subject_length;
-   Int8 total_length;
-   Int4 num_seqs;
+   Int8 total_length = -1;
+   Int4 num_seqs = -1;
 
-   BLAST_GetSubjectTotals(seq_src, &total_length, &num_seqs);
+   if (seq_src) {
+      total_length = BlastSeqSrcGetTotLenStats(seq_src);
+      if (total_length <= 0)
+          total_length = BlastSeqSrcGetTotLen(seq_src);
+
+      /* Set the database length for new FSC */
+      if (sbp->gbp) {
+          Int8 dbl = total_length;
+          /* if a database length is overriden and we are
+             not in bl2seq mode */
+          if (dbl && eff_len_options->db_length) {
+              dbl = eff_len_options->db_length;
+          }
+          sbp->gbp->db_length = 
+              (Blast_SubjectIsTranslated(program_number))?
+              dbl/3 : dbl;
+      }
+
+      if (total_length > 0) {
+          num_seqs = BlastSeqSrcGetNumSeqsStats(seq_src);
+          if (num_seqs <= 0)
+              num_seqs = BlastSeqSrcGetNumSeqs(seq_src);
+      } else {
+          /* Not a database search; each subject sequence is considered
+             individually */
+          Int4 oid = 0;  /* Get length of first sequence. */
+          if ( (total_length = BlastSeqSrcGetSeqLen(seq_src, (void*) &oid)) < 0) {
+              total_length = -1;
+              num_seqs = -1;
+          }
+          num_seqs = 1;
+      }
+   }
 
    /* Initialize the effective length parameters with real values of
       database length and number of sequences */
