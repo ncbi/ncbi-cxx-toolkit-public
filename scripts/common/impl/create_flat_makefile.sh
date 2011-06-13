@@ -248,18 +248,22 @@ dtfound="no"
 dtdep=""
 if test $ptb_ver_major -ge 2 -a $verno -gt 250; then
   ptb251="yes"
-  dtreqver="."
-  dtver="$srcdir/src/build-system/datatool_version.txt"
-  if test -r "$dtver"; then
-    dtreqver=`cat "$dtver" | sed -e 's/ //'`
-  fi
-  datatool="$reldatatoolpath$PLATFORM/$dtreqver/datatool"
-  if test -x "$datatool"; then
-    $datatool -version >/dev/null 2>&1
-    if test $? -eq 0; then
-      dtfound="yes"
-    else
-      echo "WARNING: $datatool does not work"
+  if test "$PREBUILT_DATATOOL_EXE" = "bootstrap"; then
+    echo "WARNING: Using in-tree datatool"
+  else
+    dtreqver="."
+    dtver="$srcdir/src/build-system/datatool_version.txt"
+    if test -r "$dtver"; then
+      dtreqver=`cat "$dtver" | sed -e 's/ //'`
+    fi
+    datatool="$reldatatoolpath$PLATFORM/$dtreqver/datatool"
+    if test -x "$datatool"; then
+      $datatool -version >/dev/null 2>&1
+      if test $? -eq 0; then
+        dtfound="yes"
+      else
+        echo "WARNING: $datatool does not work"
+      fi
     fi
   fi
 fi
