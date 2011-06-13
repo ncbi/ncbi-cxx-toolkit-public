@@ -53,6 +53,34 @@ BlastDiagnostics* Blast_DiagnosticsFree(BlastDiagnostics* diagnostics)
    return NULL;
 }
 
+BlastDiagnostics* Blast_DiagnosticsCopy(const BlastDiagnostics* diagnostics)
+{
+    BlastDiagnostics* retval = NULL;
+    if (diagnostics == NULL) {
+        return retval;
+    }
+    retval = Blast_DiagnosticsInit();
+    if (diagnostics->ungapped_stat) {
+        memcpy((void*)retval->ungapped_stat, (void*)diagnostics->ungapped_stat,
+               sizeof(*retval->ungapped_stat));
+    } else {
+      sfree(diagnostics->ungapped_stat);
+    }
+    if (diagnostics->gapped_stat) {
+        memcpy((void*)retval->gapped_stat, (void*)diagnostics->gapped_stat,
+               sizeof(*retval->gapped_stat));
+    } else {
+      sfree(diagnostics->gapped_stat);
+    }
+    if (diagnostics->cutoffs) {
+        memcpy((void*)retval->cutoffs, (void*)diagnostics->cutoffs,
+               sizeof(*retval->cutoffs));
+    } else {
+      sfree(diagnostics->cutoffs);
+    }
+    return retval;
+}
+
 BlastDiagnostics* Blast_DiagnosticsInit() 
 {
    BlastDiagnostics* diagnostics = 

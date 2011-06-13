@@ -435,9 +435,16 @@ CSearchResultSet::CSearchResultSet(TSeqAlignVector aligns,
     x_Init(queries, aligns, msg_vec, ancillary_data, NULL);
 }
 
+TSeqLocInfoVector
+CSearchResultSet::GetFilteredQueryRegions() const
+{
+    return m_QueryMasks;
+}
+
 void
 CSearchResultSet::SetFilteredQueryRegions(const TSeqLocInfoVector& orig_masks)
 {
+    m_QueryMasks = orig_masks;
     if (orig_masks.empty()) {
         return;
     }

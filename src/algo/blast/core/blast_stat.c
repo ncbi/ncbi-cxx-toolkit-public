@@ -5199,6 +5199,7 @@ BLAST_SpougeStoE(Int4 y_,
     double c_y, P_m_F_P_n_F, c_y_P_m_F_P_n_F;
     double p1, p2, p1_p2, area;
 
+
     m_li_y = m_ - MAX(0.0, ai_hat_*y_+bi_hat_);
     vi_y = MAX(0.0, alphai_hat_*y_+betai_hat_);
     sqrt_vi_y = sqrt(vi_y);

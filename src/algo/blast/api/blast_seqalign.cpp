@@ -1230,7 +1230,7 @@ BLASTHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list,
     return;
 }
 
-static CRef<CSeq_align_set> s_CreateEmptySeq_align_set()
+CRef<CSeq_align_set> CreateEmptySeq_align_set()
 {
     CRef<CSeq_align_set> retval(new CSeq_align_set);
     retval->Set().clear();
@@ -1277,7 +1277,7 @@ BlastHitList2SeqAlign_OMF(const BlastHitList     * hit_list,
                           bool                     is_ooframe,
                           TSeqLocInfoVector      & subj_masks)
 {
-    CRef<CSeq_align_set> seq_aligns = s_CreateEmptySeq_align_set();
+    CRef<CSeq_align_set> seq_aligns = CreateEmptySeq_align_set();
     
     if (!hit_list) {
         return seq_aligns;
@@ -1563,7 +1563,7 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
                 seq_aligns->Set().push_back(*iter);
             }
         } else {
-            seq_aligns = s_CreateEmptySeq_align_set();
+            seq_aligns = CreateEmptySeq_align_set();
         }
         retval.push_back(seq_aligns);
     }

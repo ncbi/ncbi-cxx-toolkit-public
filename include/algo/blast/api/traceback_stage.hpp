@@ -85,6 +85,8 @@ public:
     /// Sets the m_DBscanInfo field.
     void SetDBScanInfo(CRef<SDatabaseScanData> dbscan_info);
 
+    /// Retrieve any error/warning messages that occurred during the search
+    TSearchMessages GetSearchMessages() const;
 private:
     /// Common initialization performed when doing traceback only
     void x_Init(CRef<IQueryFactory>   qf, 
@@ -127,6 +129,13 @@ private:
     /// for the number of occurrences of a pattern in phiblast run.
     CRef<SDatabaseScanData> m_DBscanInfo;
 };
+
+
+inline TSearchMessages
+CBlastTracebackSearch::GetSearchMessages() const
+{
+    return m_Messages;
+}
 
 END_SCOPE(BLAST)
 END_NCBI_SCOPE

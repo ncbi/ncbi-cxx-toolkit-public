@@ -28,8 +28,7 @@
  */
 
 /** @file local_blast.hpp
- * NOTE: This file contains work in progress and the APIs are likely to change,
- * please do not rely on them until this notice is removed.
+ * Main class to perform a BLAST search on the local machine.
  */
 
 #ifndef ALGO_BLAST_API___LOCAL_BLAST_HPP
@@ -43,6 +42,7 @@
  *
  * @{
  */
+class CBlastFilterTest;
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -97,6 +97,8 @@ public:
         return m_PrelimSearch->SetInterruptCallback(fnptr, user_data);
     }
   
+    /// Retrieve any error/warning messages that occurred during the search
+    TSearchMessages GetSearchMessages() const;
 private:
     /// Query factory from which to obtain the query sequence data
     CRef<IQueryFactory> m_QueryFactory;
@@ -120,7 +122,19 @@ private:
     /// User-specified IBlastSeqInfoSrc implementation
     /// (may be used for non-standard databases, etc.)
     CRef<IBlastSeqInfoSrc> m_SeqInfoSrc;
+
+    /// Warnings and error messages
+    TSearchMessages                 m_Messages;
+
+    friend class ::CBlastFilterTest;
+    friend class CBl2Seq;
 };
+
+inline TSearchMessages
+CLocalBlast::GetSearchMessages() const
+{
+    return m_Messages;
+}
 
 END_SCOPE(BLAST)
 END_NCBI_SCOPE

@@ -1,4 +1,3 @@
-# $Id$
 
 APP = blast_unit_test
 # N.B.: if you remove sources, don't remove blast_unit_test lest you #undef

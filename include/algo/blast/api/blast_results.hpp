@@ -397,10 +397,15 @@ public:
     /// eSequenceComparison, the masks can be one for each query and they will
     /// be duplicated as necessary to meet this class' pre-conditions.
     void SetFilteredQueryRegions(const TSeqLocInfoVector& masks);
+    /// Retrieves the filtered query regions
+    TSeqLocInfoVector GetFilteredQueryRegions() const;
 
     /// Identical to GetNumResults, provided to facilitate STL-style iteration
     /// @sa note in GetNumResults
     size_type size() const { return GetNumResults(); }
+
+    /// Returns whether this container is empty or not.
+    bool empty() const { return size() == 0; }
 
     /// Returns const_iterator to beginning of container, provided to
     /// facilitate STL-style iteration
@@ -455,6 +460,9 @@ private:
 
     /// True if this object contains PHI-BLAST results
     bool m_IsPhiBlast;
+
+    /// Stores the masked query regions, for convenience and usage in CBl2Seq
+    TSeqLocInfoVector m_QueryMasks;
 };
 
 END_SCOPE(blast)

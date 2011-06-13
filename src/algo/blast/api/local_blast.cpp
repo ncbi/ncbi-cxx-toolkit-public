@@ -122,7 +122,11 @@ CLocalBlast::Run()
     // already.
 
     int status = m_PrelimSearch->CheckInternalData();
-
+    try {
+        m_PrelimSearch->SetNumberOfThreads(GetNumberOfThreads());
+        m_InternalData = m_PrelimSearch->Run();
+    } catch (...) {
+    }
     if (status != 0)
     {
          // Search was not run, but we send back an empty CSearchResultSet.
@@ -144,13 +148,19 @@ CLocalBlast::Run()
          }
          TSearchMessages msg_vec;
          local_query_data->GetMessages(msg_vec);
-         CRef<CSearchResultSet> result_set(new CSearchResultSet(seqid_vec, sa_vec, msg_vec, ancill_vec));
+         EResultType res_type = eDatabaseSearch;
+         if (m_LocalDbAdapter.NotEmpty() && !m_LocalDbAdapter->IsBlastDb()) {
+             res_type = eSequenceComparison;
+         }
+         CRef<CSearchResultSet> result_set(new CSearchResultSet(seqid_vec,
+                                                                sa_vec,
+                                                                msg_vec,
+                                                                ancill_vec, 0,
+                                                                res_type));
          return result_set;
     }
     
-    m_PrelimSearch->SetNumberOfThreads(GetNumberOfThreads());
-    m_InternalData = m_PrelimSearch->Run();
-    _ASSERT(m_InternalData);
+    //_ASSERT(m_InternalData);
     
     TSearchMessages search_msgs = m_PrelimSearch->GetSearchMessages();
     
@@ -183,6 +193,7 @@ CLocalBlast::Run()
     }
     CRef<CSearchResultSet> retval = m_TbackSearch->Run();
     retval->SetFilteredQueryRegions(m_PrelimSearch->GetFilteredQueryRegions());
+    m_Messages = m_TbackSearch->GetSearchMessages();
     return retval;
 }
 

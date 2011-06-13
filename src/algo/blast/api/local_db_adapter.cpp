@@ -38,6 +38,7 @@ static char const rcsid[] =
 #include <ncbi_pch.hpp>
 #include <algo/blast/api/local_db_adapter.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp> // for CObjMgr_QueryFactory
+#include <algo/blast/api/seqsrc_multiseq.hpp>  // for MultiSeqBlastSeqSrcInit
 #include <algo/blast/api/seqsrc_seqdb.hpp>  // for SeqDbBlastSeqSrcInit
 #include <algo/blast/api/seqinfosrc_seqdb.hpp>  // for CSeqDbSeqInfoSrc
 #include <algo/blast/api/seqinfosrc_seqvec.hpp> // for CSeqVecSeqInfoSrc
@@ -133,7 +134,8 @@ CLocalDbAdapter::MakeSeqSrc()
             const EBlastProgramType program =
                                m_OptsHandle->GetOptions().GetProgramType();
             if ( !m_Subjects.empty() ) {
-                m_SeqSrc = QueryFactoryBlastSeqSrcInit(m_Subjects, program);
+                //m_SeqSrc = QueryFactoryBlastSeqSrcInit(m_Subjects, program);
+                m_SeqSrc = MultiSeqBlastSeqSrcInit(m_Subjects, program);
             } else {
                 m_SeqSrc = QueryFactoryBlastSeqSrcInit(m_SubjectFactory,
                                                        program);

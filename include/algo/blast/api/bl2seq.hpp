@@ -38,6 +38,7 @@
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/api/blast_options_handle.hpp>
 #include <algo/blast/api/blast_results.hpp>
+#include <algo/blast/api/local_blast.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -50,7 +51,9 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 /// Runs the BLAST algorithm between 2 sequences.
-
+/// @note this is a single-BLAST search run object (i.e.: it caches the results
+/// after a BLAST search is done). If multiple BLAST searches with different
+/// queries, subjects, or options are required, please create a separate object
 class NCBI_XBLAST_EXPORT CBl2Seq : public CObject
 {
 public:
@@ -133,18 +136,6 @@ public:
     /// subjects)
     CRef<CSearchResultSet> RunEx();
 
-    /// Runs the search but does not produce seqalign output
-    /// (useful if the raw search results are needed, rather
-    /// than a set of complete Seq-aligns)
-    /// @deprecated Please DO NOT use this method, use Run() or RunEx() instead.
-    NCBI_DEPRECATED virtual void RunWithoutSeqalignGeneration();
-
-    /// Retrieves the list of HSP results from the engine
-    /// (to be used after RunWithoutSeqalignGeneration() method)
-    /// @deprecated Please DO NOT use this method, use Run() or RunEx() 
-    /// instead, as this is an internal data structure of the BLAST engine
-    NCBI_DEPRECATED BlastHSPResults* GetResults() const;
-
     /// Retrieves regions filtered on the query/queries
     TSeqLocInfoVector GetFilteredQueryRegions() const;
 
@@ -173,74 +164,50 @@ public:
     TInterruptFnPtr SetInterruptCallback(TInterruptFnPtr fnptr, 
                                          void* user_data = NULL);
 
+    /// Converts m_Results data member to a TSeqAlignVector
+    static TSeqAlignVector
+        CSearchResultSet2TSeqAlignVector(CRef<CSearchResultSet> res);
 protected:
-    /// Process the queries, do setup, and build the lookup table.
-    virtual void SetupSearch();
-
-    /// Creates a BlastHSPStream and calls the engine.
-    virtual void RunFullSearch();
-
-    /// Return a seqalign list for each query/subject pair, even if it is empty.
-    virtual TSeqAlignVector x_Results2SeqAlign();
-
-    /// Convert the TSeqLocVector to a vector of Seq-ids
-    /// @param slv TSeqLocVector used as source [in]
-    /// @param query_ids output of this method [in|out]
-    static void x_SimplifyTSeqLocVector(const TSeqLocVector& slv,
-                           vector< CConstRef<objects::CSeq_id> >& query_ids);
-
     /// Populate the internal m_AncillaryData member
-    /// @param alignments aligments to use
-    void x_BuildAncillaryData(const TSeqAlignVector& alignments);
+    void x_BuildAncillaryData();
 
 private:
     // Data members received from client code
     TSeqLocVector        m_tQueries;         ///< query sequence(s)
     TSeqLocVector        m_tSubjects;        ///< sequence(s) to BLAST against
     CRef<CBlastOptionsHandle>  m_OptsHandle; ///< Blast options
+    CRef<CLocalBlast>    m_Blast;            ///< The actual BLAST instance
 
     /// Common initialization code for all c-tors
     void x_Init(const TSeqLocVector& queries, const TSeqLocVector& subjs);
+    /// Common initialization of the CLocalBlast object
+    void x_InitCLocalBlast();
 
     /// Prohibit copy constructor
     CBl2Seq(const CBl2Seq& rhs);
     /// Prohibit assignment operator
     CBl2Seq& operator=(const CBl2Seq& rhs);
 
-    /************ Internal data structures (m_i = internal members)***********/
-    bool                                mi_bQuerySetUpDone;    ///< internal: query processing already done?
-    CBLAST_SequenceBlk                  mi_clsQueries;         ///< internal: one for all queries
-    CBlastQueryInfo                     mi_clsQueryInfo;       ///< internal: one for all queries
-
-    BlastSeqSrc*                        mi_pSeqSrc;            ///< internal: Subject sequences source
-    BlastScoreBlk*                      mi_pScoreBlock;        ///< internal: score block
-    CLookupTableWrap                    mi_pLookupTable;       ///< internal: one for all queries
-    BlastSeqLoc*                        mi_pLookupSegments;    ///< internal: regions of queries to scan during lookup table creation
-
     /// Stores any warnings emitted during query setup
     TSearchMessages                     m_Messages;
 
-    /// Results for all queries and subjects together
-    BlastHSPResults*                    mi_pResults;
+    /************ Internal data structures (m_i = internal members)***********/
     /// Return search statistics data
     BlastDiagnostics*                   mi_pDiagnostics;
 
-    /// Regions filtered out from the query sequences
-    BlastMaskLoc* m_ipFilteredRegions;
-
-    /// User-provided interrupt callback
-    TInterruptFnPtr                     m_fnpInterrupt;
-    /// Structure to aid in progress monitoring/interruption
-    CSBlastProgress                     m_ProgressMonitor;
     /// Ancillary BLAST data
     CSearchResultSet::TAncillaryVector  m_AncillaryData;
-    /// Subject masks for those which intersect hits
-    vector<TSeqLocInfoVector>           m_SubjectMasks;
+    
+    /// CLocalBlast results
+    CRef<CSearchResultSet> m_Results;
 
-    /// Resets query data structures
-    void x_ResetQueryDs();
-    /// Resets subject data structures
-    void x_ResetSubjectDs();
+    /// Interrupt callback
+    TInterruptFnPtr m_InterruptFnx;
+    /// Interrupt user datacallback
+    void* m_InterruptUserData;
+
+    /// Clean up structures and results from any previous search
+    void x_ResetInternalDs();
 
     friend class ::CBlastFilterTest;
 };
@@ -248,7 +215,7 @@ private:
 inline void
 CBl2Seq::SetQuery(const SSeqLoc& query)
 {
-    x_ResetQueryDs();
+    x_ResetInternalDs();
     m_tQueries.clear();
     m_tQueries.push_back(query);
 }
@@ -262,7 +229,7 @@ CBl2Seq::GetQuery() const
 inline void
 CBl2Seq::SetQueries(const TSeqLocVector& queries)
 {
-    x_ResetQueryDs();
+    x_ResetInternalDs();
     m_tQueries.clear();
     m_tQueries = queries;
 }
@@ -276,7 +243,7 @@ CBl2Seq::GetQueries() const
 inline void
 CBl2Seq::SetSubject(const SSeqLoc& subject)
 {
-    x_ResetSubjectDs();
+    x_ResetInternalDs();
     m_tSubjects.clear();
     m_tSubjects.push_back(subject);
 }
@@ -290,7 +257,7 @@ CBl2Seq::GetSubject() const
 inline void
 CBl2Seq::SetSubjects(const TSeqLocVector& subjects)
 {
-    x_ResetSubjectDs();
+    x_ResetInternalDs();
     m_tSubjects.clear();
     m_tSubjects = subjects;
 }
@@ -304,7 +271,7 @@ CBl2Seq::GetSubjects() const
 inline CBlastOptionsHandle&
 CBl2Seq::SetOptionsHandle()
 {
-    mi_bQuerySetUpDone = false;
+    x_ResetInternalDs();
     return *m_OptsHandle;
 }
 
@@ -319,11 +286,6 @@ inline BlastDiagnostics* CBl2Seq::GetDiagnostics() const
     return mi_pDiagnostics;
 }
 
-inline BlastHSPResults* CBl2Seq::GetResults() const
-{
-    return mi_pResults;
-}
-
 inline void
 CBl2Seq::GetMessages(TSearchMessages& messages) const
 {
@@ -333,21 +295,16 @@ CBl2Seq::GetMessages(TSearchMessages& messages) const
 inline TInterruptFnPtr
 CBl2Seq::SetInterruptCallback(TInterruptFnPtr fnptr, void* user_data)
 {
-    swap(m_fnpInterrupt, fnptr);
-    m_ProgressMonitor.Reset(SBlastProgressNew(user_data));
-    return fnptr;
+    TInterruptFnPtr tmp = m_InterruptFnx;
+    m_InterruptFnx = fnptr;
+    m_InterruptUserData = user_data;
+    return tmp;
 }
 
 inline void 
 CBl2Seq::GetAncillaryResults(CSearchResultSet::TAncillaryVector& retval) const
 {
     retval = m_AncillaryData;
-}
-
-inline void
-CBl2Seq::GetFilteredSubjectRegions(vector<TSeqLocInfoVector>& retval) const
-{
-    retval = m_SubjectMasks;
 }
 
 END_SCOPE(blast)

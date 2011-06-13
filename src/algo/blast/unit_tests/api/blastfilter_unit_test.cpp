@@ -221,45 +221,45 @@ public:
 
             if (ignore_strand_in_mask || strand == eNa_strand_both) {
                 starting_offset = 
-                    blaster.mi_clsQueryInfo->contexts[0].query_offset;
+                    blaster.m_Blast->m_InternalData->m_QueryInfo->contexts[0].query_offset;
                 BOOST_CHECK(x_AreAllBasesMasked
-                               (blaster.mi_clsQueries->sequence,
+                               (blaster.m_Blast->m_InternalData->m_Queries->sequence,
                                 starting_offset + range_plus.first,
                                 starting_offset + range_plus.second));
 
                 starting_offset = 
-                    blaster.mi_clsQueryInfo->contexts[1].query_offset;
+                    blaster.m_Blast->m_InternalData->m_QueryInfo->contexts[1].query_offset;
                 BOOST_CHECK(x_AreAllBasesMasked
-                               (blaster.mi_clsQueries->sequence,
+                               (blaster.m_Blast->m_InternalData->m_Queries->sequence,
                                 starting_offset + range_minus.first,
                                 starting_offset + range_minus.second));
             } else {
 
                 if (strand == eNa_strand_plus) {
                     starting_offset = 
-                        blaster.mi_clsQueryInfo->contexts[0].query_offset;
+                        blaster.m_Blast->m_InternalData->m_QueryInfo->contexts[0].query_offset;
                     BOOST_CHECK(x_AreAllBasesMasked
-                                   (blaster.mi_clsQueries->sequence,
+                                   (blaster.m_Blast->m_InternalData->m_Queries->sequence,
                                     starting_offset + range_plus.first,
                                     starting_offset + range_plus.second));
 
                     starting_offset = 
-                        blaster.mi_clsQueryInfo->contexts[1].query_offset;
+                        blaster.m_Blast->m_InternalData->m_QueryInfo->contexts[1].query_offset;
                     BOOST_CHECK(!x_AreAllBasesMasked
-                                   (blaster.mi_clsQueries->sequence,
+                                   (blaster.m_Blast->m_InternalData->m_Queries->sequence,
                                     starting_offset + range_minus.first,
                                     starting_offset + range_minus.second));
                 } else if (strand == eNa_strand_minus) {
                     starting_offset = 
-                        blaster.mi_clsQueryInfo->contexts[0].query_offset;
+                        blaster.m_Blast->m_InternalData->m_QueryInfo->contexts[0].query_offset;
                     BOOST_CHECK(!x_AreAllBasesMasked
-                                   (blaster.mi_clsQueries->sequence,
+                                   (blaster.m_Blast->m_InternalData->m_Queries->sequence,
                                     starting_offset + range_plus.first,
                                     starting_offset + range_plus.second));
                     starting_offset = 
-                        blaster.mi_clsQueryInfo->contexts[1].query_offset;
+                        blaster.m_Blast->m_InternalData->m_QueryInfo->contexts[1].query_offset;
                     BOOST_CHECK(x_AreAllBasesMasked
-                                   (blaster.mi_clsQueries->sequence,
+                                   (blaster.m_Blast->m_InternalData->m_Queries->sequence,
                                     starting_offset + range_minus.first,
                                     starting_offset + range_minus.second));
                 } else {

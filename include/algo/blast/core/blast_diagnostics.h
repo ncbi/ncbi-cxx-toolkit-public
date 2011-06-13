@@ -93,6 +93,9 @@ BlastDiagnostics* Blast_DiagnosticsFree(BlastDiagnostics* diagnostics);
 /** Initialize the BlastDiagnostics structure and all its substructures. */
 BlastDiagnostics* Blast_DiagnosticsInit(void);
 
+/** Free the BlastDiagnostics structure and all substructures. */
+BlastDiagnostics* Blast_DiagnosticsCopy(const BlastDiagnostics* diagnostics);
+
 /** Initialize the BlastDiagnostics structure for a multi-threaded search.
  * @param mt_lock Mutex locking mechanism to be used for updates. [in]
  */

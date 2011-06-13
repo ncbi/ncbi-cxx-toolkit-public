@@ -105,8 +105,42 @@ CQueryFactoryInfo::CQueryFactoryInfo(const TSeqLocVector& subj_seqs,
 : m_IsProt(Blast_SubjectIsProtein(program) ? true : false), m_MaxLength(0),
       m_AvgLength(0), m_QuerySource(0), m_NumSeqs(subj_seqs.size())
 {
-    SetupSubjects(const_cast<TSeqLocVector&>(subj_seqs), program, 
-                  &m_SeqBlkVector, &m_MaxLength);
+    // Fix subject location for tblast[nx].  
+    if (Blast_SubjectIsTranslated(program))
+    {
+        TSeqLocVector temp_slv;
+        vector<Int2> strand_v;
+        ITERATE(TSeqLocVector, iter, subj_seqs)
+        {
+            strand_v.push_back((Int2) (*iter).seqloc->GetStrand());
+            CRef<CSeq_loc> sl(new CSeq_loc);
+            sl->Assign(*((*iter).seqloc));
+            sl->SetStrand(eNa_strand_both);
+            if ((*iter).mask) 
+            {
+                CRef<CSeq_loc> mask_sl(new CSeq_loc);
+                mask_sl->Assign(*((*iter).mask));
+            	SSeqLoc sseq_loc(*sl, *((*iter).scope), *mask_sl);
+            	temp_slv.push_back(sseq_loc);
+            }
+            else
+            {
+                SSeqLoc sseq_loc(*sl, *((*iter).scope));
+            	temp_slv.push_back(sseq_loc);
+            }
+        }
+
+        SetupSubjects(temp_slv, program, &m_SeqBlkVector, &m_MaxLength);
+
+        int index=0;
+        ITERATE(vector<Int2>, s_iter, strand_v)
+        {
+        	m_SeqBlkVector[index++]->subject_strand = *s_iter;
+        }
+    }
+    else
+    	SetupSubjects(const_cast<TSeqLocVector&>(subj_seqs), program, &m_SeqBlkVector, &m_MaxLength);
+
     _ASSERT(!m_SeqBlkVector.empty());
 }
 

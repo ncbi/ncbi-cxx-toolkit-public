@@ -32,31 +32,9 @@
 /// Implementation of CBl2Seq class.
 
 #include <ncbi_pch.hpp>
-#include <objmgr/util/sequence.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seqalign/Seq_align_set.hpp>
-#include <objects/seqalign/Seq_align.hpp>
-
 #include <algo/blast/api/bl2seq.hpp>
-#include <algo/blast/api/seqsrc_multiseq.hpp>
-#include <algo/blast/api/seqinfosrc_seqvec.hpp>
-#include "dust_filter.hpp"
-#include <algo/blast/api/repeats_filter.hpp>
-#include "blast_seqalign.hpp"
 #include "blast_objmgr_priv.hpp"
 #include <algo/blast/api/objmgr_query_data.hpp>
-
-// NewBlast includes
-#include <algo/blast/core/blast_def.h>
-#include <algo/blast/core/blast_util.h>
-#include <algo/blast/core/blast_setup.h>
-#include <algo/blast/core/lookup_wrap.h>
-#include <algo/blast/core/blast_engine.h>
-#include <algo/blast/core/blast_traceback.h>
-#include <algo/blast/core/blast_hspstream.h>
-#include <algo/blast/core/hspfilter_collector.h>
-#include "blast_aux_priv.hpp"
-
 
 /** @addtogroup AlgoBlast
  *
@@ -68,7 +46,7 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
 CBl2Seq::CBl2Seq(const SSeqLoc& query, const SSeqLoc& subject, EProgram p)
-    : mi_bQuerySetUpDone(false)
+    : m_InterruptFnx(0), m_InterruptUserData(0)
 {
     TSeqLocVector queries;
     TSeqLocVector subjects;
@@ -77,11 +55,28 @@ CBl2Seq::CBl2Seq(const SSeqLoc& query, const SSeqLoc& subject, EProgram p)
 
     x_Init(queries, subjects);
     m_OptsHandle.Reset(CBlastOptionsFactory::Create(p));
+}
+
+void CBl2Seq::x_InitCLocalBlast()
+{
+    _ASSERT( !m_tQueries.empty() );
+    _ASSERT( !m_tSubjects.empty() );
+    _ASSERT( !m_OptsHandle.Empty() );
+    CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(m_tQueries));
+    CRef<IQueryFactory> subject_factory(new CObjMgr_QueryFactory(m_tSubjects));
+    CRef<CLocalDbAdapter> db(new CLocalDbAdapter(subject_factory, m_OptsHandle));
+    m_Blast.Reset(new CLocalBlast(query_factory, m_OptsHandle, db));
+    if (m_InterruptFnx != NULL) {
+        m_Blast->SetInterruptCallback(m_InterruptFnx, m_InterruptUserData);
+    }
+    // Set the hitlist size to the total number of subject sequences, to 
+    // make sure that no hits are discarded (ported from CBl2Seq::SetupSearch
+    m_OptsHandle->SetHitlistSize((int) m_tSubjects.size());
 }
 
 CBl2Seq::CBl2Seq(const SSeqLoc& query, const SSeqLoc& subject,
                  CBlastOptionsHandle& opts)
-    : mi_bQuerySetUpDone(false)
+    : m_InterruptFnx(0), m_InterruptUserData(0)
 {
     TSeqLocVector queries;
     TSeqLocVector subjects;
@@ -94,7 +89,7 @@ CBl2Seq::CBl2Seq(const SSeqLoc& query, const SSeqLoc& subject,
 
 CBl2Seq::CBl2Seq(const SSeqLoc& query, const TSeqLocVector& subjects, 
                  EProgram p)
-    : mi_bQuerySetUpDone(false)
+    : m_InterruptFnx(0), m_InterruptUserData(0)
 {
     TSeqLocVector queries;
     queries.push_back(query);
@@ -105,7 +100,7 @@ CBl2Seq::CBl2Seq(const SSeqLoc& query, const TSeqLocVector& subjects,
 
 CBl2Seq::CBl2Seq(const SSeqLoc& query, const TSeqLocVector& subjects, 
                  CBlastOptionsHandle& opts)
-    : mi_bQuerySetUpDone(false)
+    : m_InterruptFnx(0), m_InterruptUserData(0)
 {
     TSeqLocVector queries;
     queries.push_back(query);
@@ -116,7 +111,7 @@ CBl2Seq::CBl2Seq(const SSeqLoc& query, const TSeqLocVector& subjects,
 
 CBl2Seq::CBl2Seq(const TSeqLocVector& queries, const TSeqLocVector& subjects, 
                  EProgram p)
-    : mi_bQuerySetUpDone(false)
+    : m_InterruptFnx(0), m_InterruptUserData(0)
 {
     x_Init(queries, subjects);
     m_OptsHandle.Reset(CBlastOptionsFactory::Create(p));
@@ -124,7 +119,7 @@ CBl2Seq::CBl2Seq(const TSeqLocVector& queries, const TSeqLocVector& subjects,
 
 CBl2Seq::CBl2Seq(const TSeqLocVector& queries, const TSeqLocVector& subjects, 
                  CBlastOptionsHandle& opts)
-    : mi_bQuerySetUpDone(false)
+    : m_InterruptFnx(0), m_InterruptUserData(0)
 {
     x_Init(queries, subjects);
     m_OptsHandle.Reset(&opts);
@@ -134,261 +129,109 @@ void CBl2Seq::x_Init(const TSeqLocVector& queries, const TSeqLocVector& subjs)
 {
     m_tQueries = queries;
     m_tSubjects = subjs;
-    mi_pScoreBlock = NULL;
-    mi_pLookupTable = NULL;
-    mi_pLookupSegments = NULL;
-    mi_pResults = NULL;
     mi_pDiagnostics = NULL;
-    mi_pSeqSrc = NULL;
-    m_ipFilteredRegions = NULL;
-    m_fnpInterrupt = NULL;
-    m_ProgressMonitor = NULL;
 }
 
 CBl2Seq::~CBl2Seq()
 { 
-    x_ResetQueryDs();
-    x_ResetSubjectDs();
+    x_ResetInternalDs();
 }
 
 void
-CBl2Seq::x_ResetQueryDs()
+CBl2Seq::x_ResetInternalDs()
 {
-    mi_bQuerySetUpDone = false;
     // should be changed if derived classes are created
-    mi_clsQueries.Reset();
-    mi_clsQueryInfo.Reset();
     m_Messages.clear();
-    mi_pScoreBlock = BlastScoreBlkFree(mi_pScoreBlock);
-    mi_pLookupTable = LookupTableWrapFree(mi_pLookupTable);
-    mi_pLookupSegments = BlastSeqLocFree(mi_pLookupSegments);
-    m_ipFilteredRegions = BlastMaskLocFree(m_ipFilteredRegions);
-}
-
-void
-CBl2Seq::x_ResetSubjectDs()
-{
-    // Clean up structures and results from any previous search
-    mi_pSeqSrc = BlastSeqSrcFree(mi_pSeqSrc);
-    mi_pResults = Blast_HSPResultsFree(mi_pResults);
     mi_pDiagnostics = Blast_DiagnosticsFree(mi_pDiagnostics);
     m_AncillaryData.clear();
-    m_SubjectMasks.clear();
+    m_Results.Reset();
+}
+
+extern CRef<CSeq_align_set> CreateEmptySeq_align_set();
+
+TSeqAlignVector
+CBl2Seq::CSearchResultSet2TSeqAlignVector(CRef<CSearchResultSet> res)
+{
+    if (res.Empty()) {
+        return TSeqAlignVector();
+    }
+    _ASSERT(res->GetResultType() == eSequenceComparison);
+    TSeqAlignVector retval;
+    retval.reserve(res->GetNumResults());
+    ITERATE(CSearchResultSet, r, *res) {
+        CRef<CSeq_align_set> sa;
+        if ((*r)->HasAlignments()) {
+            sa.Reset(const_cast<CSeq_align_set*>(&*(*r)->GetSeqAlign()));
+        } else {
+            sa.Reset(CreateEmptySeq_align_set());
+        }
+        retval.push_back(sa);
+    }
+    return retval;
 }
 
 TSeqAlignVector
 CBl2Seq::Run()
 {
-    //m_OptsHandle->GetOptions().DebugDumpText(cerr, "m_OptsHandle", 1);
-    m_OptsHandle->GetOptions().Validate();  // throws an exception on failure
-    SetupSearch();
-    RunFullSearch();
-    TSeqAlignVector retval = x_Results2SeqAlign();
-    x_BuildAncillaryData(retval);
-    return retval;
+    if (m_Results.NotEmpty()) {
+        // return cached results from previous run
+        return CBl2Seq::CSearchResultSet2TSeqAlignVector(m_Results);
+    }
+
+    (void) RunEx();
+    x_BuildAncillaryData();
+    return CBl2Seq::CSearchResultSet2TSeqAlignVector(m_Results);
 }
 
 void
-CBl2Seq::x_BuildAncillaryData(const TSeqAlignVector& alignments)
+CBl2Seq::x_BuildAncillaryData()
 {
-    vector< CConstRef<CSeq_id> > query_ids;
-    x_SimplifyTSeqLocVector(m_tQueries, query_ids);
-    BuildBlastAncillaryData(m_OptsHandle->GetOptions().GetProgramType(),
-                            query_ids, mi_pScoreBlock, mi_clsQueryInfo, 
-                            alignments, 
-                            ncbi::blast::eSequenceComparison,
-                            m_AncillaryData);
-}
-
-void
-CBl2Seq::x_SimplifyTSeqLocVector(const TSeqLocVector& slv,
-                             vector< CConstRef<objects::CSeq_id> >& query_ids)
-{
-    query_ids.clear();
-    for (size_t i = 0; i < slv.size(); i++) {
-        query_ids.push_back(CConstRef<CSeq_id>(slv[i].seqloc->GetId()));
+    m_AncillaryData.clear();
+    m_AncillaryData.reserve(m_Results->size());
+    ITERATE(CSearchResultSet, r, *m_Results) {
+        m_AncillaryData.push_back((*r)->GetAncillaryData());
     }
 }
 
 CRef<CSearchResultSet>
 CBl2Seq::RunEx()
 {
-    TSeqAlignVector alignments = Run();
-    TSeqLocInfoVector query_masks = GetFilteredQueryRegions();
-
-    vector< CConstRef<CSeq_id> > query_ids;
-    x_SimplifyTSeqLocVector(m_tQueries, query_ids);
-
-    CRef<CSearchResultSet> retval = 
-        BlastBuildSearchResultSet(query_ids, mi_pScoreBlock,
-                                  mi_clsQueryInfo,
-                                  m_OptsHandle->GetOptions().GetProgramType(),
-                                  alignments, m_Messages, m_SubjectMasks,
-                                  &query_masks,
-                                  ncbi::blast::eSequenceComparison);
-
-    m_AncillaryData.reserve(retval->size());
-    ITERATE(CSearchResultSet, result, *retval) {
-        m_AncillaryData.push_back((*result)->GetAncillaryData());
+    x_InitCLocalBlast();
+    if (m_Results.NotEmpty()) {
+        // return cached results from previous run
+        return m_Results;
     }
 
-    return retval;
-}
-
-void
-CBl2Seq::RunWithoutSeqalignGeneration()
-{
     //m_OptsHandle->GetOptions().DebugDumpText(cerr, "m_OptsHandle", 1);
-    m_OptsHandle->GetOptions().Validate();  // throws an exception on failure
-    SetupSearch();
-    RunFullSearch();
-}
-
-void 
-CBl2Seq::SetupSearch()
-{
-    if ( !mi_bQuerySetUpDone ) {
-        x_ResetQueryDs();
-        const CBlastOptions& kOptions = m_OptsHandle->GetOptions();
-        EBlastProgramType prog = kOptions.GetProgramType();
-        ENa_strand strand_opt = kOptions.GetStrandOption();
-
-        if (CBlastNucleotideOptionsHandle *nucl_handle =
-            dynamic_cast<CBlastNucleotideOptionsHandle*>(&*m_OptsHandle)) {
-            Blast_FindDustFilterLoc(m_tQueries, nucl_handle);
-            Blast_FindRepeatFilterLoc(m_tQueries, nucl_handle);
-        }
-        
-        SetupQueryInfo(m_tQueries, prog, strand_opt, &mi_clsQueryInfo);
-        m_Messages.resize(mi_clsQueryInfo->num_queries);
-        SetupQueries(m_tQueries, mi_clsQueryInfo, &mi_clsQueries, 
-                     prog, strand_opt, m_Messages);
-
-        Blast_Message* blmsg = NULL;
-        double scale_factor = 1.0;
-        short st;
-       
-        st = BLAST_MainSetUp(m_OptsHandle->GetOptions().GetProgramType(), 
-                             m_OptsHandle->GetOptions().GetQueryOpts(),
-                             m_OptsHandle->GetOptions().GetScoringOpts(),
-                             mi_clsQueries, mi_clsQueryInfo, scale_factor,
-                             &mi_pLookupSegments, &m_ipFilteredRegions, &mi_pScoreBlock,
-                             &blmsg, &BlastFindMatrixPath);
-
-        // TODO: Check that lookup_segments are not filtering the whole 
-        // sequence (SSeqRange set to -1 -1)
-        const string error_msg1(blmsg
-                               ? blmsg->message
-                               : "BLAST_MainSetUp failed");
-        Blast_Message2TSearchMessages(blmsg, mi_clsQueryInfo, m_Messages);
-        blmsg = Blast_MessageFree(blmsg);
-        if (st != 0) {
-            NCBI_THROW(CBlastException, eCoreBlastError, error_msg1);
-        }
-
-        st = LookupTableWrapInit(mi_clsQueries, 
-                            m_OptsHandle->GetOptions().GetLutOpts(),
-                            m_OptsHandle->GetOptions().GetQueryOpts(),
-                            mi_pLookupSegments, mi_pScoreBlock, 
-                            &mi_pLookupTable, NULL, &blmsg);
-        const string error_msg2(blmsg 
-                      ? blmsg->message
-                       : "LookupTableWrapInit failed");
-        Blast_Message2TSearchMessages(blmsg, mi_clsQueryInfo, m_Messages);
-        blmsg = Blast_MessageFree(blmsg);
-        if (st != 0) {
-            NCBI_THROW(CBlastException, eCoreBlastError, error_msg2);
-        }
-
-        mi_bQuerySetUpDone = true;
+    _ASSERT(m_Blast.NotEmpty());
+    m_Results = m_Blast->Run();
+    m_Messages = m_Blast->GetSearchMessages();
+    if (m_Blast->m_InternalData.NotEmpty()) {
+        mi_pDiagnostics =
+            Blast_DiagnosticsCopy(m_Blast->m_InternalData->m_Diagnostics->GetPointer());
     }
-
-    x_ResetSubjectDs();
-
-    mi_pSeqSrc = 
-        MultiSeqBlastSeqSrcInit(m_tSubjects, 
-                                m_OptsHandle->GetOptions().GetProgramType());
-    char* error_str = BlastSeqSrcGetInitError(mi_pSeqSrc);
-    if (error_str) {
-        string msg(error_str);
-        sfree(error_str);
-        NCBI_THROW(CBlastException, eSeqSrcInit, msg);
-    }
-
-    // Set the hitlist size to the total number of subject sequences, to 
-    // make sure that no hits are discarded.
-    m_OptsHandle->SetHitlistSize((int) m_tSubjects.size());
-}
-
-void 
-CBl2Seq::RunFullSearch()
-{
-    mi_pResults = NULL;
-    mi_pDiagnostics = Blast_DiagnosticsInit();
-
-    const CBlastOptions& kOptions = GetOptionsHandle().GetOptions();
-    auto_ptr<const CBlastOptionsMemento> opts_mem(kOptions.CreateSnapshot());
-    
-    BlastHSPStream* hsp_stream = 
-        CSetupFactory::CreateHspStream(opts_mem.get(),
-                                       mi_clsQueryInfo->num_queries,
-        CSetupFactory::CreateHspWriter(opts_mem.get(), mi_clsQueryInfo));
-
-    BlastHSPStreamRegisterPipe(hsp_stream,
-        CSetupFactory::CreateHspPipe(opts_mem.get(), mi_clsQueryInfo),
-                               eTracebackSearch);
-
-    TBlastHSPStream thsp_stream(hsp_stream, BlastHSPStreamFree);
-    
-    SBlastProgressReset(m_ProgressMonitor);
-    Int4 status = Blast_RunFullSearch(kOptions.GetProgramType(),
-                                      mi_clsQueries, mi_clsQueryInfo, 
-                                      mi_pSeqSrc, mi_pScoreBlock, 
-                                      kOptions.GetScoringOpts(),
-                                      mi_pLookupTable,
-                                      kOptions.GetInitWordOpts(),
-                                      kOptions.GetExtnOpts(),
-                                      kOptions.GetHitSaveOpts(),
-                                      kOptions.GetEffLenOpts(),
-                                      NULL, kOptions.GetDbOpts(),
-                                      thsp_stream.GetPointer(), NULL, mi_pDiagnostics, 
-                                      &mi_pResults, m_fnpInterrupt,
-                                      m_ProgressMonitor);
-    if (status) {
-        NCBI_THROW(CBlastException, eCoreBlastError,
-                   BlastErrorCode2String(status));
-    }
-}
-
-/* Unlike the database search, we want to make sure that a seqalign list is   
- * returned for each query/subject pair, even if it is empty. Also we don't 
- * want subjects to be sorted in seqalign results.
- */
-TSeqAlignVector
-CBl2Seq::x_Results2SeqAlign()
-{
-    EBlastProgramType program = m_OptsHandle->GetOptions().GetProgramType();
-    bool gappedMode = m_OptsHandle->GetGappedMode();
-    bool outOfFrameMode = m_OptsHandle->GetOptions().GetOutOfFrameMode();
-
-    CSeqVecSeqInfoSrc seqinfo_src(m_tSubjects);
-    CObjMgr_QueryFactory qf(m_tQueries);
-    CRef<ILocalQueryData> query_data =
-        qf.MakeLocalQueryData(&m_OptsHandle->GetOptions());
-
-    return LocalBlastResults2SeqAlign(mi_pResults, *query_data, seqinfo_src,
-                                      program, gappedMode, outOfFrameMode,
-                                      m_SubjectMasks, eSequenceComparison);
+    _ASSERT(m_Results->GetResultType() == eSequenceComparison);
+    return m_Results;
 }
 
 TSeqLocInfoVector
 CBl2Seq::GetFilteredQueryRegions() const
 {
-    CConstRef<CPacked_seqint> queries(TSeqLocVector2Packed_seqint(m_tQueries));
-    EBlastProgramType program(GetOptionsHandle().GetOptions().GetProgramType());
-    TSeqLocInfoVector retval;
-    Blast_GetSeqLocInfoVector(program, *queries, m_ipFilteredRegions, retval);
-    return retval;
+    return m_Results->GetFilteredQueryRegions();
+}
+
+void
+CBl2Seq::GetFilteredSubjectRegions(vector<TSeqLocInfoVector>& retval) const
+{
+    retval.clear();
+    if (m_Results.Empty() || m_Results->empty()) {
+        return;
+    }
+    ITERATE(CSearchResultSet, res, *m_Results) {
+        TSeqLocInfoVector subj_masks;
+        (*res)->GetSubjectMasks(subj_masks);
+        retval.push_back(subj_masks);
+    }
 }
 
 END_SCOPE(blast)

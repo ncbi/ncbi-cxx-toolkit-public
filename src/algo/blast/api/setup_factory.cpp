@@ -102,7 +102,13 @@ CRef<CPacked_seqint> s_LocalQueryData2Packed_seqint(ILocalQueryData& query_data)
         if (query_data.GetSeq_loc(i)->IsInt()) {
             retval->AddInterval(query_data.GetSeq_loc(i)->GetInt());
         } else if (id.NotEmpty()) {
-            retval->AddInterval(*id, 0, query_data.GetSeqLength(i));
+            TSeqPos len = 0;
+            try { len = query_data.GetSeqLength(i); }
+            catch (...) { 
+                /* exception means that it's an invalid seqid, so we do
+                 * nothing, the error message should be captured elsewhere */
+            }
+            retval->AddInterval(*id, 0, len);
         }
     }
 
