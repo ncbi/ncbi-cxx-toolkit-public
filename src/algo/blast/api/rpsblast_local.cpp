@@ -211,7 +211,7 @@ static bool s_SortDbSize(pair<string, int> a, pair<string, int> b)
 static void s_MapDbToThread(vector<string> & db, unsigned int num_of_threads)
 {
 	unsigned int db_size = db.size();
-	vector <pair <string, unsigned long long> > 	 p;
+	vector <pair <string, Int8> > 	 p;
 
 	for(unsigned int i=0; i < db_size; i++)
 	{
@@ -228,7 +228,7 @@ static void s_MapDbToThread(vector<string> & db, unsigned int num_of_threads)
 	sort(p.begin(), p.end(),s_SortDbSize);
 
 	db.resize(num_of_threads);
-	unsigned long long acc_size[num_of_threads];
+	Int8 acc_size[num_of_threads];
 
 	for(unsigned char i=0; i < num_of_threads; i++)
 	{
