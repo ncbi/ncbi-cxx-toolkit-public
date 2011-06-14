@@ -668,7 +668,7 @@ void CIgBlast::s_AppendResults(CRef<CSearchResultSet> &results,
             final_results->push_back(ig_result);
         } else if (!align.Empty()) {
             CIgBlastResults *ig_result = dynamic_cast<CIgBlastResults *>
-                                         (&(*final_results)[iq++]);
+                                         (&(*final_results)[iq]);
             CSeq_align_set::Tdata & ig_list = ig_result->SetSeqAlign()->Set();
             // Remove duplicates first
             CSeq_align_set::Tdata & align_list = align->Set();
@@ -681,6 +681,7 @@ void CIgBlast::s_AppendResults(CRef<CSearchResultSet> &results,
                 ig_result->GetErrors().Combine(errmsg);
             }
         } 
+        ++iq;
     }
 };
 
