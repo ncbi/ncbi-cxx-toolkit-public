@@ -147,13 +147,13 @@ static CRef<CSearchResultSet>  s_CombineSearchSets(vector<CRef<CSearchResultSet>
 
 	for(unsigned int i=0; i < t[0]->GetNumQueries(); i++)
 	{
-		CRef<CSearchResults>  thread_results[num_of_threads];
-		thread_results[0] = CRef<CSearchResults> (&((*(t[0]))[i]));
+		vector< CRef<CSearchResults> >  thread_results;
+		thread_results.push_back (CRef<CSearchResults> (&((*(t[0]))[i])));
 		const CSeq_id & id = *(thread_results[0]->GetSeqId());
 
 		for(unsigned int d=1; d < num_of_threads; d++)
 		{
-			thread_results[d] = (*(t[d]))[id];
+			thread_results.push_back ((*(t[d]))[id]);
 		}
 
 		CRef<CSeq_align_set>  align_set(new CSeq_align_set);
@@ -228,7 +228,7 @@ static void s_MapDbToThread(vector<string> & db, unsigned int num_of_threads)
 	sort(p.begin(), p.end(),s_SortDbSize);
 
 	db.resize(num_of_threads);
-	Int8 acc_size[num_of_threads];
+	vector<Int8> acc_size(num_of_threads, 0);
 
 	for(unsigned char i=0; i < num_of_threads; i++)
 	{
@@ -391,8 +391,8 @@ CRef<CSearchResultSet> CLocalRPSBlast::RunThreadedSearch(void)
    		s_MapDbToThread(rps_database, m_num_of_threads);
    	}
 
-   	CRef<CSearchResultSet> *	thread_results[m_num_of_threads];
-   	CRPSThread*				  	thread[m_num_of_threads];
+   	vector<CRef<CSearchResultSet> * > 	thread_results(m_num_of_threads, NULL);
+   	vector <CRPSThread* >				thread(m_num_of_threads, NULL);
    	vector<CRef<CSearchResultSet> >   results;
 
    	for(unsigned int t=0; t < m_num_of_threads; t++)
