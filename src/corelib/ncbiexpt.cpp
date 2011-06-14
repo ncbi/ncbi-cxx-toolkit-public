@@ -663,13 +663,13 @@ extern const char*  Ncbi_strerror(int errnum)
 #if defined(NCBI_OS_MSWIN)
 
 // MT: Store pointer to the last error message in TLS
-static CStaticTls<char*> s_TlsErrorMessage;
+static CStaticTls<char> s_TlsErrorMessage;
 
 const char* CLastErrorAdapt::GetErrCodeString(int errnum)
 {
-    char** p = s_TlsErrorMessage.GetValue();
-    if (p && *p) {
-        LocalFree(*p);
+    char* p = s_TlsErrorMessage.GetValue();
+    if (p) {
+        LocalFree(p);
     }
     TXChar* xptr = NULL;
     FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
@@ -695,7 +695,7 @@ const char* CLastErrorAdapt::GetErrCodeString(int errnum)
         }
     }
     // Save pointer
-    s_TlsErrorMessage.SetValue(&ptr);
+    s_TlsErrorMessage.SetValue(ptr);
     return ptr;
 }
 
