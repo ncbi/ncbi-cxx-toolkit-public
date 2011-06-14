@@ -86,4 +86,4 @@ LDFLAGS  = $(FAST_LDFLAGS)
 .core_%.c: # $(srcdir)/../core/%.c
 	echo '#include "$(srcdir)/../core/$*.c"' > $@
 
-WATCHERS = coulouri maning morgulis boratyng madden camacho
+WATCHERS = coulouri maning morgulis boratyng madden camacho fongah2
