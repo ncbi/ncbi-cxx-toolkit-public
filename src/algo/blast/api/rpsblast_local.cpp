@@ -203,7 +203,7 @@ static void s_ModifyVolumePaths(vector<string> & rps_database)
 	}
 }
 
-static bool s_SortDbSize(pair<string, int> a, pair<string, int> b)
+static bool s_SortDbSize(const pair<string, Int8> & a, const pair<string, Int8>  & b)
 {
 	return(a.second > b.second);
 }
