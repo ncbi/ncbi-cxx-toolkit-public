@@ -1106,7 +1106,7 @@ static int s_gethostname(char* name, size_t namelen, ESwitch log)
 
 static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
 {
-    CORE_DEBUG_ARG(char addr[40]);
+    CORE_DEBUG_ARG(char addr[40];)
     unsigned int host;
     char buf[256];
 
