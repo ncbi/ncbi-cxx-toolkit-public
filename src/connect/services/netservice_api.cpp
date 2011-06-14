@@ -481,7 +481,7 @@ void CNetService::PrintCmdOutput(const string& cmd,
         CNetServer::SExecResult exec_result((*it).ExecWithRetry(cmd));
 
         if (output_style == eSingleLineOutput)
-            output_stream << exec_result.response;
+            output_stream << exec_result.response << endl;
         else {
             CNetServerMultilineCmdOutput output(exec_result);
 
@@ -492,10 +492,10 @@ void CNetService::PrintCmdOutput(const string& cmd,
 
             while (output.ReadLine(line))
                 output_stream << line << endl;
-        }
 
-        if (print_headers)
-            output_stream << endl;
+            if (print_headers)
+                output_stream << endl;
+        }
     }
 }
 
