@@ -304,7 +304,7 @@ GC-Replicon ::= SEQUENCE
 GC-SeqIdAlias ::= SEQUENCE {
     public Seq-id,   -- the refseq/genbank accession
     gpipe  Seq-id OPTIONAL,   -- the gpipe accession
-    gi     Seq-id,
+    gi     Seq-id OPTIONAL,   -- optional since not all sequences have GIs
     -- Similarity: relationship between this synonym to main seqid of the
     -- GC-Sequence
     -- Can be expanded to multiple level of identicality
