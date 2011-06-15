@@ -224,7 +224,6 @@ function FillTreeStructure(oShell, oTree)
     if (!GetMakeSolution()) {
         return;
     }
-    var temp_dir = oTree.TreeRoot + "\\temp";
     var oFso = new ActiveXObject("Scripting.FileSystemObject");
 
     if (oTask.DllBuild) {
@@ -303,6 +302,10 @@ function CheckoutSubDir(oShell, oTree, sub_dir)
 function RemoveFolder(oShell, oFso, folder)
 {
     if ( oFso.FolderExists(folder) ) {
+        execute(oShell, "rmdir /S /Q \"" + folder + "\"");
+    }
+    if ( oFso.FolderExists(folder) ) {
+        WScript.Sleep(500);
         execute(oShell, "rmdir /S /Q \"" + folder + "\"");
     }
 }
@@ -440,26 +443,26 @@ function GetMakeSolution()
 
 function SetBranch(oArgs, flag)
 {
-	var branch = GetFlaggedValue(oArgs, flag, "");
-	if (branch.length == 0)
-		return;
-	g_branch = branch;
-	g_usefilecopy = false;
+    var branch = GetFlaggedValue(oArgs, flag, "");
+    if (branch.length == 0)
+        return;
+    g_branch = branch;
+    g_usefilecopy = false;
 }
 
 function GetBranch()
 {
-	return g_branch;
+    return g_branch;
 }
 
 function GetDefaultBranch()
 {
-	return g_def_branch;
+    return g_def_branch;
 }
 
 function IsFileCopyAllowed()
 {
-	return g_usefilecopy;
+    return g_usefilecopy;
 }
 
 function VerboseEcho(message)
@@ -502,10 +505,10 @@ function GetFlaggedValue(oArgs, flag, default_val)
 {
     for(var arg_i = 0; arg_i < oArgs.length; arg_i++) {
         if (oArgs.item(arg_i) == flag) {
-			arg_i++;
-			if (arg_i < oArgs.length) {
-	            return oArgs.item(arg_i);
-			}
+            arg_i++;
+            if (arg_i < oArgs.length) {
+                return oArgs.item(arg_i);
+            }
         }
     }
     return default_val;
@@ -547,7 +550,7 @@ function GetOptionalPositionalValue(oArgs, position, default_value)
         else
         {
 // flag values go last; if we see one, we know there is no more positional args
-			break;
+            break;
         }
     }
     return default_value;
@@ -658,11 +661,12 @@ function CopyRes(oShell, oTree, oTask)
 {
     if ( oTask.CopyRes ) {
         var oFso = new ActiveXObject("Scripting.FileSystemObject");
+        var tempname = oFso.GetTempName();
         var res_target_dir = oTree.SrcRootBranch + "\\gui\\res"
             CreateFolderIfAbsent(oFso, res_target_dir);
-        execute(oShell, "svn checkout " + GetRepository(oShell,"src/gui/res") + " temp");
-        execute(oShell, "copy /Y temp\\*.* \"" + res_target_dir + "\"");
-        RemoveFolder(oShell, oFso, "temp");
+        execute(oShell, "svn checkout " + GetRepository(oShell,"src/gui/res") + " " + tempname);
+        execute(oShell, "xcopy " + tempname + " \"" + res_target_dir + "\" /S /E /Y /C");
+        RemoveFolder(oShell, oFso, tempname);
     } else {
         VerboseEcho("CopyRes:  skipped (not requested)");
     }
@@ -670,12 +674,12 @@ function CopyRes(oShell, oTree, oTask)
 // SVN tree root
 function GetSvnRepositoryRoot()
 {
-	return "https://svn.ncbi.nlm.nih.gov/repos/";
+    return "https://svn.ncbi.nlm.nih.gov/repos/";
 }
 
 function GetRepositoryRoot()
 {
-	return GetSvnRepositoryRoot() + GetBranch();
+    return GetSvnRepositoryRoot() + GetBranch();
 }
 
 function RepositoryExists(oShell,path)
@@ -774,41 +778,41 @@ function GetFilesFromTree(oShell, oTree, oTask, cvs_rel_path, files, target_abs_
 
     // Try to get the file from the pre-built toolkit
     if (IsFileCopyAllowed()) {
-		var folder = BackSlashes(oTask.ToolkitSrcPath + cvs_rel_path);
-		if ( oFso.FolderExists(folder) ) {
-			var dir = oFso.GetFolder(folder);
-			var dir_files = new Enumerator(dir.files);
-			if (!dir_files.atEnd()) {
+        var folder = BackSlashes(oTask.ToolkitSrcPath + cvs_rel_path);
+        if ( oFso.FolderExists(folder) ) {
+            var dir = oFso.GetFolder(folder);
+            var dir_files = new Enumerator(dir.files);
+            if (!dir_files.atEnd()) {
                 for (var i = 0; i < files.length; ++i) {
-			    	execute(oShell, "copy /Y \"" + folder + "\\" + files[i] + "\" \"" + target_abs_dir + "\"");
-			    }
-				return;
-			}
-		}
+                    execute(oShell, "copy /Y \"" + folder + "\\" + files[i] + "\" \"" + target_abs_dir + "\"");
+                }
+                return;
+            }
+        }
     }
 
     // Get it from SVN
-    RemoveFolder(oShell, oFso, "temp");
+    var tempname = oFso.GetTempName();
     var cvs_dir = GetRepository(oShell, cvs_rel_path);
-    var res = execute(oShell, "svn checkout -N " + cvs_dir + " temp");
+    var res = execute(oShell, "svn checkout -N " + cvs_dir + " " + tempname);
     for (var i = 0; i < files.length; ++i) {
-        execute(oShell, "copy /Y \"temp\\" + files[i] + "\" \""+ target_abs_dir + "\"");
+        execute(oShell, "copy /Y \"" + tempname + "\\" + files[i] + "\" \""+ target_abs_dir + "\"");
     }
-    RemoveFolder(oShell, oFso, "temp");
+    RemoveFolder(oShell, oFso, tempname);
 
     // if SVN failed, still try to get the file
     if (res != 0 && trycopy) {
-		var folder = BackSlashes(oTask.ToolkitSrcPath + cvs_rel_path);
-		if ( oFso.FolderExists(folder) ) {
-			var dir = oFso.GetFolder(folder);
-			var dir_files = new Enumerator(dir.files);
-			if (!dir_files.atEnd()) {
+        var folder = BackSlashes(oTask.ToolkitSrcPath + cvs_rel_path);
+        if ( oFso.FolderExists(folder) ) {
+            var dir = oFso.GetFolder(folder);
+            var dir_files = new Enumerator(dir.files);
+            if (!dir_files.atEnd()) {
                 for (var i = 0; i < files.length; ++i) {
-			    	execute(oShell, "copy /Y \"" + folder + "\\" + files[i] + "\" \"" + target_abs_dir + "\"");
-			    }
-				return;
-			}
-		}
+                    execute(oShell, "copy /Y \"" + folder + "\\" + files[i] + "\" \"" + target_abs_dir + "\"");
+                }
+                return;
+            }
+        }
     }
 }
 
@@ -818,26 +822,26 @@ function GetFileFromTree(oShell, oTree, oTask, cvs_rel_path, target_abs_dir)
 
     // Try to get the file from the pre-built toolkit
     if (IsFileCopyAllowed()) {
-		var toolkit_file_path = BackSlashes(oTask.ToolkitSrcPath + cvs_rel_path);
-		var folder = oFso.GetParentFolderName(toolkit_file_path);
-		if ( oFso.FolderExists(folder) ) {
-			var dir = oFso.GetFolder(folder);
-			var dir_files = new Enumerator(dir.files);
-			if (!dir_files.atEnd()) {
-				execute(oShell, "copy /Y \"" + toolkit_file_path + "\" \"" + target_abs_dir + "\"");
-				return;
-			}
-		}
+        var toolkit_file_path = BackSlashes(oTask.ToolkitSrcPath + cvs_rel_path);
+        var folder = oFso.GetParentFolderName(toolkit_file_path);
+        if ( oFso.FolderExists(folder) ) {
+            var dir = oFso.GetFolder(folder);
+            var dir_files = new Enumerator(dir.files);
+            if (!dir_files.atEnd()) {
+                execute(oShell, "copy /Y \"" + toolkit_file_path + "\" \"" + target_abs_dir + "\"");
+                return;
+            }
+        }
     }
 
     // Get it from CVS
-    RemoveFolder(oShell, oFso, "temp");
+    var tempname = oFso.GetTempName();
     var rel_dir = oFso.GetParentFolderName(cvs_rel_path);
     var cvs_dir = GetRepository(oShell, rel_dir);
     var cvs_file = oFso.GetFileName(cvs_rel_path);
-    execute(oShell, "svn checkout -N " + cvs_dir + " temp");
-    execute(oShell, "copy /Y \"temp\\" + cvs_file + "\" \""+ target_abs_dir + "\"");
-    RemoveFolder(oShell, oFso, "temp");
+    execute(oShell, "svn checkout -N " + cvs_dir + " " + tempname);
+    execute(oShell, "copy /Y \"" + tempname + "\\" + cvs_file + "\" \""+ target_abs_dir + "\"");
+    RemoveFolder(oShell, oFso, tempname);
 }
 
 function GetSubtreeFromTree(oShell, oTree, oTask, cvs_rel_path, target_abs_dir)
@@ -846,19 +850,19 @@ function GetSubtreeFromTree(oShell, oTree, oTask, cvs_rel_path, target_abs_dir)
 
     // Try to get the file from the pre-built toolkit
     if (IsFileCopyAllowed()) {
-		var src_folder = BackSlashes(oTask.ToolkitSrcPath + "/" + cvs_rel_path);
-		if ( oFso.FolderExists(src_folder) ) {
-			execute(oShell, "xcopy \"" + src_folder + "\" \"" + target_abs_dir + "\" /S /E /Y /C /Q");
-			return;
-		}
+        var src_folder = BackSlashes(oTask.ToolkitSrcPath + "/" + cvs_rel_path);
+        if ( oFso.FolderExists(src_folder) ) {
+            execute(oShell, "xcopy \"" + src_folder + "\" \"" + target_abs_dir + "\" /S /E /Y /C /Q");
+            return;
+        }
     }
 
     // Get it from SVN (CVS not implemented!)
-    RemoveFolder(oShell, oFso, "temp");
+    var tempname = oFso.GetTempName();
     var cvs_path = GetRepository(oShell, cvs_rel_path);
-    execute(oShell, "svn checkout " + cvs_path + " temp");
-	execute(oShell, "xcopy temp \"" + target_abs_dir + "\" /S /E /Y /C");
-    RemoveFolder(oShell, oFso, "temp");
+    execute(oShell, "svn checkout " + cvs_path + " " + tempname);
+    execute(oShell, "xcopy " + tempname + " \"" + target_abs_dir + "\" /S /E /Y /C");
+    RemoveFolder(oShell, oFso, tempname);
 }
 
 function CheckNetworkDrive()
