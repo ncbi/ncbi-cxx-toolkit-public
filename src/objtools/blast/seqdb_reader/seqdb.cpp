@@ -491,6 +491,36 @@ string CSeqDB::GetDate() const
     return m_Impl->GetDate();
 }
 
+CTime
+CSeqDB::GetDate(const string   & dbname,
+                ESeqType         seqtype)
+{
+    vector<string> vols;
+    CSeqDB::FindVolumePaths(dbname, seqtype, vols);
+    string fmt = "b d, Y  H:m P";
+    CTime retv;
+    char date[128];
+    ITERATE(vector<string>, vol, vols) {
+        string fn = *vol + ((seqtype == CSeqDB::eProtein)? ".pin" : ".nin");
+        ifstream f(fn.c_str(), ios::in|ios::binary);
+        char s[4];   // size of next chunk
+        if (f.is_open()) {
+            f.seekg(8, ios::beg);
+            f.read(s, 4);
+            Uint4 offset = SeqDB_GetStdOrd((Uint4 *) s);
+            f.seekg(offset, ios::cur);
+            f.read(s, 4);
+            offset = SeqDB_GetStdOrd((Uint4 *) s);
+            f.read(date, offset);
+            CTime d(string(date), fmt);
+            if (retv.IsEmpty() || d > retv) {
+                retv = d;
+            } 
+        }
+    }
+    return retv;
+}
+
 int CSeqDB::GetNumSeqs() const
 {
     return m_Impl->GetNumSeqs();
@@ -849,8 +879,6 @@ CSeqDB::FindVolumePaths(const string   & dbname,
                         vector<string> * alias_paths,
                         bool             recursive)
 {
-    bool done = false;
-    
     if (seqtype == CSeqDB::eProtein) {
         CSeqDBImpl::FindVolumePaths(dbname, 'p', paths, alias_paths, recursive);
     } else if (seqtype == CSeqDB::eNucleotide) {
@@ -858,13 +886,8 @@ CSeqDB::FindVolumePaths(const string   & dbname,
     } else {
         try {
             CSeqDBImpl::FindVolumePaths(dbname, 'p', paths, alias_paths, recursive);
-            done = true;
         }
         catch(...) {
-            done = false;
-        }
-        
-        if (! done) {
             CSeqDBImpl::FindVolumePaths(dbname, 'n', paths, alias_paths, recursive);
         }
     }

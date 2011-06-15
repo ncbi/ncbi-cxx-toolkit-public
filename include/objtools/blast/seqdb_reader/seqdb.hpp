@@ -703,9 +703,20 @@ public:
     /// Returns the construction date of the database.
     /// 
     /// This is encoded in the database.  If multiple databases or
-    /// multiple volumes were accessed, the first available date will
+    /// multiple volumes were accessed, the latest date will
     /// be used.
     string GetDate() const;
+
+    /// Returns the construction date of the database.
+    /// 
+    /// @param dbname
+    ///   The database name.
+    /// @param seqtype
+    ///   The type of database (nucleotide or protein)
+    /// @return
+    ///   The latest date
+    static CTime GetDate(const string & dbname,
+                         ESeqType       seqtype);
     
     /// Returns the number of sequences available.
     int GetNumSeqs() const;
