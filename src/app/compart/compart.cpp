@@ -65,14 +65,14 @@ void CCompartApp::Init()
     argdescr->AddDefaultKey("penalty", "penalty", "Per-compartment penalty",
                             CArgDescriptions::eDouble, "0.55");
     
-    argdescr->AddDefaultKey("min_idty", "min_idty", "Minimal overall identity",
+    argdescr->AddDefaultKey("min_idty", "min_idty", "Minimal overall identity. Note: in current implementation  there is no sense to set different 'min_idty' and 'min_singleton_idty' (minimum is used anyway).",
                             CArgDescriptions::eDouble, "0.70");
     
     argdescr->AddDefaultKey("min_singleton_idty", "min_singleton_idty", 
                             "Minimal identity for singleton compartments. "
                             "The actual parameter passed to the compartmentization "
                             "procedure is least of this parameter multipled "
-                            "by the seq length, and min_singleton_idty_bps.",
+                            "by the seq length, and min_singleton_idty_bps. Note: in current implementation  there is no sense to set different 'min_idty' and 'min_singleton_idty' (minimum is used anyway).",
                             CArgDescriptions::eDouble, "0.70");
 
     argdescr->AddDefaultKey("min_singleton_idty_bps", "min_singleton_idty_bps", 
