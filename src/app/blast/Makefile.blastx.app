@@ -1,4 +1,4 @@
-WATCHERS = camacho madden maning
+WATCHERS = camacho madden maning fongah2
 
 APP = blastx
 SRC = blastx_app
