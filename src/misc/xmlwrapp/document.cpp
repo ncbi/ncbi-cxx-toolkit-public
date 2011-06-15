@@ -331,12 +331,14 @@ void xml::document::save_to_string (std::string &s,
 
     // Compression level is currently not analyzed by libxml2
     // So this might work in the future implementations but is ignored now.
-    std::swap(pimpl_->doc_->compression, compression_level);
 
     if (pimpl_->xslt_result_ != 0) {
-        pimpl_->xslt_result_->save_to_string(s);
-        std::swap(pimpl_->doc_->compression, compression_level);
-        return;
+        if (pimpl_->treat_ == xslt::type_no_treat) {
+            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression, compression_level);
+            pimpl_->xslt_result_->save_to_string(s);
+            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression, compression_level);
+            return;
+        }
     }
 
     int libxml2_options = convert_to_libxml2_save_options(flags);
@@ -345,10 +347,18 @@ void xml::document::save_to_string (std::string &s,
                                        enc, libxml2_options);
 
     if (ctxt) {
-        xmlSaveDoc(ctxt, pimpl_->doc_);
+        if (pimpl_->xslt_result_ == 0) {
+            std::swap(pimpl_->doc_->compression, compression_level);
+            xmlSaveDoc(ctxt, pimpl_->doc_);
+            std::swap(pimpl_->doc_->compression, compression_level);
+        }
+        else {
+            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression, compression_level);
+            xmlSaveDoc(ctxt, pimpl_->xslt_result_->get_raw_doc());
+            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression, compression_level);
+        }
         xmlSaveClose(ctxt);     // xmlSaveFlush() is called in xmlSaveClose()
     }
-    std::swap(pimpl_->doc_->compression, compression_level);
     return;
 }
 //####################################################################
@@ -358,14 +368,16 @@ void xml::document::save_to_stream (std::ostream &stream,
 
     // Compression level is currently not analyzed by libxml2
     // So this might work in the future implementations but is ignored now.
-    std::swap(pimpl_->doc_->compression, compression_level);
 
     if (pimpl_->xslt_result_ != 0) {
-        std::string s;
-        pimpl_->xslt_result_->save_to_string(s);
-        stream << s;
-        std::swap(pimpl_->doc_->compression, compression_level);
-        return;
+        if (pimpl_->treat_ == xslt::type_no_treat) {
+            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression, compression_level);
+            std::string s;
+            pimpl_->xslt_result_->save_to_string(s);
+            stream << s;
+            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression, compression_level);
+            return;
+        }
     }
 
     int libxml2_options = convert_to_libxml2_save_options(flags);
@@ -374,7 +386,16 @@ void xml::document::save_to_stream (std::ostream &stream,
                                        enc, libxml2_options);
 
     if (ctxt) {
-        xmlSaveDoc(ctxt, pimpl_->doc_);
+        if (pimpl_->xslt_result_ == 0) {
+            std::swap(pimpl_->doc_->compression, compression_level);
+            xmlSaveDoc(ctxt, pimpl_->doc_);
+            std::swap(pimpl_->doc_->compression, compression_level);
+        }
+        else {
+            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression, compression_level);
+            xmlSaveDoc(ctxt, pimpl_->xslt_result_->get_raw_doc());
+            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression, compression_level);
+        }
         xmlSaveClose(ctxt);     // xmlSaveFlush() is called in xmlSaveClose()
     }
     std::swap(pimpl_->doc_->compression, compression_level);
@@ -387,13 +408,15 @@ bool xml::document::save_to_file (const char *filename,
 
     // Compression level is currently not analyzed by libxml2
     // So this might work in the future implementations but is ignored now.
-    std::swap(pimpl_->doc_->compression, compression_level);
 
     if (pimpl_->xslt_result_ != 0) {
-        bool rc = pimpl_->xslt_result_->save_to_file(filename, compression_level);
-        std::swap(pimpl_->doc_->compression, compression_level);
+        if (pimpl_->treat_ == xslt::type_no_treat) {
+            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression, compression_level);
+            bool rc = pimpl_->xslt_result_->save_to_file(filename, compression_level);
+            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression, compression_level);
 
-        return rc;
+            return rc;
+        }
     }
 
     int libxml2_options = convert_to_libxml2_save_options(flags);
@@ -401,15 +424,23 @@ bool xml::document::save_to_file (const char *filename,
     xmlSaveCtxtPtr  ctxt = xmlSaveToFilename(filename,
                                              enc, libxml2_options);
 
-    if (!ctxt) {
-        std::swap(pimpl_->doc_->compression, compression_level);
+    if (!ctxt)
         return false;
-    }
 
-    long rc = xmlSaveDoc(ctxt, pimpl_->doc_);
+    long rc = 0;
+
+    if (pimpl_->xslt_result_ == 0) {
+        std::swap(pimpl_->doc_->compression, compression_level);
+        rc = xmlSaveDoc(ctxt, pimpl_->doc_);
+        std::swap(pimpl_->doc_->compression, compression_level);
+    }
+    else {
+        std::swap(pimpl_->xslt_result_->get_raw_doc()->compression, compression_level);
+        rc = xmlSaveDoc(ctxt, pimpl_->xslt_result_->get_raw_doc());
+        std::swap(pimpl_->xslt_result_->get_raw_doc()->compression, compression_level);
+    }
     xmlSaveClose(ctxt);     // xmlSaveFlush() is called in xmlSaveClose()
 
-    std::swap(pimpl_->doc_->compression, compression_level);
     return (rc != -1);
 }
 //####################################################################
@@ -419,10 +450,12 @@ void xml::document::set_doc_data (void *data) {
     pimpl_->xslt_result_ = 0;
 }
 //####################################################################
-void xml::document::set_doc_data_from_xslt (void *data, xslt::impl::result *xr) {
+void xml::document::set_doc_data_from_xslt (void *data, xslt::impl::result *xr,
+                                            xslt::result_treat_type treat) {
     // this document came from a XSLT transformation
     pimpl_->set_doc_data(static_cast<xmlDocPtr>(data), false);
     pimpl_->xslt_result_ = xr;
+    pimpl_->treat_ = treat;
 }
 //####################################################################
 void* xml::document::get_doc_data (void) {

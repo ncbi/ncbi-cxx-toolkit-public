@@ -47,6 +47,7 @@
 // xmlwrapp includes
 #include <misc/xmlwrapp/xslt_init.hpp>
 #include <misc/xmlwrapp/document.hpp>
+#include <misc/xmlwrapp/xslt_result_type.hpp>
 
 // standard includes
 #include <map>
@@ -106,12 +107,14 @@ public:
      *
      * @param doc The XML document to transform.
      * @param result The result tree after applying this stylesheet.
+     * @param treat How to treat XSLT result
      * @return True if the transformation was successful and the results placed in result.
      * @return False if there was an error, result is not modified.
      * @author Peter Jones
     **/
     //####################################################################
-    bool apply (const xml::document &doc, xml::document &result);
+    bool apply (const xml::document &doc, xml::document &result,
+                result_treat_type  treat=type_no_treat);
 
     //####################################################################
     /**
@@ -121,12 +124,15 @@ public:
      * @param doc The XML document to transform.
      * @param result The result tree after applying this stylesheet.
      * @param with_params Override xsl:param elements using the given key/value map
+     * @param treat How to treat XSLT result
      * @return True if the transformation was successful and the results placed in result.
      * @return False if there was an error, result is not modified.
      * @author Peter Jones
     **/
     //####################################################################
-    bool apply (const xml::document &doc, xml::document &result, const param_type &with_params);
+    bool apply (const xml::document &doc, xml::document &result,
+                const param_type &with_params,
+                result_treat_type  treat=type_no_treat);
 
     //####################################################################
     /**
@@ -139,11 +145,13 @@ public:
      * course, unless you copied it first.
      *
      * @param doc The XML document to transform.
+     * @param treat How to treat XSLT result
      * @return A reference to the result tree.
      * @author Peter Jones
     **/
     //####################################################################
-    xml::document& apply (const xml::document &doc);
+    xml::document& apply (const xml::document &doc,
+                          result_treat_type  treat=type_no_treat);
 
     //####################################################################
     /**
@@ -157,11 +165,14 @@ public:
      *
      * @param doc The XML document to transform.
      * @param with_params Override xsl:param elements using the given key/value map
+     * @param treat How to treat XSLT result
      * @return A reference to the result tree.
      * @author Peter Jones
     **/
     //####################################################################
-    xml::document& apply (const xml::document &doc, const param_type &with_params);
+    xml::document& apply (const xml::document &doc,
+                          const param_type &with_params,
+                          result_treat_type  treat=type_no_treat);
 
     //####################################################################
     /**
@@ -190,3 +201,4 @@ private:
 
 } // end xslt namespace
 #endif
+

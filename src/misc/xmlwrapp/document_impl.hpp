@@ -45,6 +45,7 @@
 // xmlwrapp includes
 #include <misc/xmlwrapp/node.hpp>
 #include <misc/xmlwrapp/dtd.hpp>
+#include <misc/xmlwrapp/xslt_result_type.hpp>
 #include "node_manip.hpp"
 
 // standard includes
@@ -71,6 +72,8 @@ struct doc_impl {
     xmlDocPtr doc_;
 
     xslt::impl::result *xslt_result_;
+    xslt::result_treat_type treat_;
+
     node root_;
     std::string version_;
     mutable std::string encoding_;

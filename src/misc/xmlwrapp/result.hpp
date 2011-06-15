@@ -97,6 +97,11 @@ public:
     **/
     //####################################################################
     virtual ~result (void) { }
+
+private:
+    virtual xmlDocPtr get_raw_doc (void) = 0;
+
+    friend class xml::document;
 };
 
 } // end impl namespace

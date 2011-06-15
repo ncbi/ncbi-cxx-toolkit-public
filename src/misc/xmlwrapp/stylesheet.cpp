@@ -85,7 +85,9 @@ class result_impl : public xslt::impl::result
 public:
     // We don't own the pointers given to us, their lifetime must be greater
     // than the lifetime of this object.
-    result_impl(xmlDocPtr doc, xsltStylesheetPtr ss) : doc_(doc), ss_(ss) {}
+    result_impl(xmlDocPtr doc, xsltStylesheetPtr ss) :
+        doc_(doc), ss_(ss)
+    {}
 
     virtual void save_to_string(std::string &s) const
     {
@@ -106,6 +108,12 @@ public:
     }
 
 private:
+    virtual xmlDocPtr get_raw_doc (void)
+    {
+        return doc_;
+    }
+
+    friend class xml::document;
     xmlDocPtr doc_;
     xsltStylesheetPtr ss_;
 };
@@ -252,14 +260,17 @@ xslt::stylesheet::~stylesheet()
 }
 
 
-bool xslt::stylesheet::apply(const xml::document &doc, xml::document &result)
+bool xslt::stylesheet::apply(const xml::document &doc, xml::document &result,
+                             result_treat_type  treat)
 {
     xmlDocPtr input = static_cast<xmlDocPtr>(doc.get_doc_data_read_only());
     xmlDocPtr xmldoc = apply_stylesheet(pimpl_, input);
 
     if (xmldoc)
     {
-        result.set_doc_data_from_xslt(xmldoc, new result_impl(xmldoc, pimpl_->ss_));
+        result.set_doc_data_from_xslt(xmldoc,
+                                      new result_impl(xmldoc, pimpl_->ss_),
+                                      treat);
         return true;
     }
 
@@ -268,14 +279,17 @@ bool xslt::stylesheet::apply(const xml::document &doc, xml::document &result)
 
 
 bool xslt::stylesheet::apply(const xml::document &doc, xml::document &result,
-                            const param_type &with_params)
+                             const param_type &with_params,
+                             result_treat_type  treat)
 {
     xmlDocPtr input = static_cast<xmlDocPtr>(doc.get_doc_data_read_only());
     xmlDocPtr xmldoc = apply_stylesheet(pimpl_, input, &with_params);
 
     if (xmldoc)
     {
-        result.set_doc_data_from_xslt(xmldoc, new result_impl(xmldoc, pimpl_->ss_));
+        result.set_doc_data_from_xslt(xmldoc,
+                                      new result_impl(xmldoc, pimpl_->ss_),
+                                      treat);
         return true;
     }
 
@@ -283,7 +297,8 @@ bool xslt::stylesheet::apply(const xml::document &doc, xml::document &result,
 }
 
 
-xml::document& xslt::stylesheet::apply(const xml::document &doc)
+xml::document& xslt::stylesheet::apply(const xml::document &doc,
+                                       result_treat_type  treat)
 {
     xmlDocPtr input = static_cast<xmlDocPtr>(doc.get_doc_data_read_only());
     xmlDocPtr xmldoc = apply_stylesheet(pimpl_, input);
@@ -291,13 +306,16 @@ xml::document& xslt::stylesheet::apply(const xml::document &doc)
     if ( !xmldoc )
         throw xml::exception(pimpl_->error_);
 
-    pimpl_->doc_.set_doc_data_from_xslt(xmldoc, new result_impl(xmldoc, pimpl_->ss_));
+    pimpl_->doc_.set_doc_data_from_xslt(xmldoc,
+                                        new result_impl(xmldoc, pimpl_->ss_),
+                                        treat);
     return pimpl_->doc_;
 }
 
 
 xml::document& xslt::stylesheet::apply(const xml::document &doc,
-                                       const param_type &with_params)
+                                       const param_type &with_params,
+                                       result_treat_type  treat)
 {
     xmlDocPtr input = static_cast<xmlDocPtr>(doc.get_doc_data_read_only());
     xmlDocPtr xmldoc = apply_stylesheet(pimpl_, input, &with_params);
@@ -305,7 +323,9 @@ xml::document& xslt::stylesheet::apply(const xml::document &doc,
     if ( !xmldoc )
         throw xml::exception(pimpl_->error_);
 
-    pimpl_->doc_.set_doc_data_from_xslt(xmldoc, new result_impl(xmldoc, pimpl_->ss_));
+    pimpl_->doc_.set_doc_data_from_xslt(xmldoc,
+                                        new result_impl(xmldoc, pimpl_->ss_),
+                                        treat);
     return pimpl_->doc_;
 }
 
@@ -314,3 +334,4 @@ const std::string& xslt::stylesheet::get_error_message() const
 {
     return pimpl_->error_;
 }
+

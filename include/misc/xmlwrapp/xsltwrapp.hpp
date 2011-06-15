@@ -42,6 +42,7 @@
 
 #include <misc/xmlwrapp/xmlwrapp.hpp>
 #include <misc/xmlwrapp/xslt_init.hpp>
+#include <misc/xmlwrapp/xslt_result_type.hpp>
 #include <misc/xmlwrapp/stylesheet.hpp>
 
 #endif

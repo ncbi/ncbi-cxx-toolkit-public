@@ -52,6 +52,7 @@
 #include <misc/xmlwrapp/node.hpp>
 #include <misc/xmlwrapp/errors.hpp>
 #include <misc/xmlwrapp/xml_save.hpp>
+#include <misc/xmlwrapp/xslt_result_type.hpp>
 
 // standard includes
 #include <iosfwd>
@@ -747,7 +748,8 @@ public:
 private:
     impl::doc_impl *pimpl_;
     void set_doc_data (void *data);
-    void set_doc_data_from_xslt (void *data, xslt::impl::result *xr);
+    void set_doc_data_from_xslt (void *data, xslt::impl::result *xr,
+                                 xslt::result_treat_type treat);
     void* get_doc_data (void);
     void* get_doc_data_read_only (void) const;
     void* release_doc_data (void);
