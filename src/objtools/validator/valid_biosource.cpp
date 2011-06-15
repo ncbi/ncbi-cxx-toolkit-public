@@ -990,6 +990,7 @@ void CValidError_imp::ValidateBioSource
     bool sex = false;
     bool mating_type = false;
     bool iso_source = false;
+    bool has_plasmid_name = false;
 
     FOR_EACH_SUBSOURCE_ON_BIOSOURCE (ssit, bsrc) {
         ValidateSubSource (**ssit, obj, ctx);
@@ -1134,6 +1135,7 @@ void CValidError_imp::ValidateBioSource
                 PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
                     "Plasmid subsource but not plasmid location", obj, ctx);
             }
+            has_plasmid_name = true;
             break;
 
         case CSubSource::eSubtype_plastid_name:
@@ -1200,6 +1202,10 @@ void CValidError_imp::ValidateBioSource
     if (sex && mating_type) {
         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
              "Sex and mating type should not both be present", obj, ctx);
+    }
+    if (bsrc.IsSetGenome() && bsrc.GetGenome() == CBioSource::eGenome_plasmid && !has_plasmid_name) {
+        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+             "Plasmid location but not plasmid subsource", obj, ctx);
     }
 
     if ( chrom_count > 1 ) {

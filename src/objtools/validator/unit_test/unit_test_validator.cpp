@@ -7083,7 +7083,16 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    // if plasmid genome, better have plasmid name
+    SetSubSource(entry, CSubSource::eSubtype_plasmid_name, "");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceInconsistency",
+                              "Plasmid location but not plasmid subsource"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+
     // plastid-name
+    SetGenome (entry, CBioSource::eGenome_unknown);
     vector<string> plastid_vals;
     plastid_vals.push_back("chloroplast");
     plastid_vals.push_back("chromoplast");
