@@ -1398,7 +1398,23 @@ void CSemaphore::Post(unsigned int count)
 }
 
 
-// Made not inline because of platform-dependent behavior
+// All methods must be not inline to avoid unwanted optimizations by compiler
+void
+CFastRWLock::ReadLock(void)
+{
+    while (m_LockCount.Add(1) > kWriteLockValue) {
+        m_LockCount.Add(-1);
+        m_WriteLock.Lock();
+        m_WriteLock.Unlock();
+    }
+}
+
+void
+CFastRWLock::ReadUnlock(void)
+{
+    m_LockCount.Add(-1);
+}
+
 void
 CFastRWLock::WriteLock(void)
 {
@@ -1409,6 +1425,12 @@ CFastRWLock::WriteLock(void)
     }
 }
 
+void
+CFastRWLock::WriteUnlock(void)
+{
+    m_LockCount.Add(-kWriteLockValue);
+    m_WriteLock.Unlock();
+}
 
 
 IRWLockHolder_Listener::~IRWLockHolder_Listener(void)
@@ -1637,23 +1659,16 @@ CYieldingRWLock::x_ReleaseLock(CRWLockHolder* holder)
     }
 }
 
-void
-CSpinLock::x_WaitForLock(void)
-{
-    do {
-        NCBI_SCHED_YIELD();
-    }
-    while (SwapPointers(&m_Value, (void*)1) != NULL);
-}
 
-#if !(defined(NCBI_COMPILER_MSVC)  ||  defined(NCBI_COMPILER_GCC)  ||  defined(NCBI_COMPILER_ICC))
-
+// All methods must be not inline to avoid unwanted optimizations by compiler
 void
 CSpinLock::Lock(void)
 {
-    if (SwapPointers(&m_Value, (void*)1) != NULL) {
-        x_WaitForLock();
-    }
+retry:
+    while (m_Value != NULL)
+        NCBI_SCHED_YIELD();
+    if (SwapPointers(&m_Value, (void*)1) != NULL)
+        goto retry;
 }
 
 bool
@@ -1662,6 +1677,14 @@ CSpinLock::TryLock(void)
     return SwapPointers(&m_Value, (void*)1) == NULL;
 }
 
+void
+CSpinLock::Unlock(void)
+{
+#ifdef _DEBUG
+    _VERIFY(SwapPointers(&m_Value, NULL) != NULL);
+#else
+    m_Value = NULL;
 #endif
+}
 
 END_NCBI_SCOPE

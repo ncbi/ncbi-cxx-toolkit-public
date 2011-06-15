@@ -174,7 +174,7 @@ void
 CNCDBFile::x_CreateIndexDatabase(void)
 {
     CQuickStrStream sql;
-    CSQLITE_Statement  stmt(this);
+    CSQLITE_Statement stmt(this);
 
     sql.Clear();
     sql << "create table if not exists " << kNCDBIndex_Table
@@ -248,7 +248,7 @@ void
 CNCDBFile::x_CreateDataDatabase(void)
 {
     CQuickStrStream sql;
-    CSQLITE_Statement  stmt(this);
+    CSQLITE_Statement stmt(this);
 
     sql.Clear();
     sql << "create table " << kNCBlobData_Table
@@ -988,8 +988,9 @@ CNCFileSystem::WriteToFile(CNCFSOpenFile* file,
         if (!file->WriteFirstPage(&data, &cnt))
             return;
     }
-    else if (CNCMemManager::IsDBPageDirty(data))
+    else if (CNCMemManager::IsDBPageDirty(data)) {
         return;
+    }
     else {
         CNCMemManager::LockDBPage(data);
         CNCMemManager::SetDBPageDirty(data);

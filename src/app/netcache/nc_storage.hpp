@@ -331,8 +331,7 @@ private:
     bool x_UpdBlobInfoNoMove(const string& blob_key, SNCBlobVerData* ver_data);
     bool x_UpdBlobInfoSingleChunk(const string& blob_key, SNCBlobVerData* ver_data);
     bool x_UpdBlobInfoMultiChunk(const string& blob_key, SNCBlobVerData* ver_data);
-    bool x_WriteChunkData(TNCDBFileId     file_id,
-                          TNCChunkId      chunk_id,
+    bool x_WriteChunkData(TNCChunkId      chunk_id,
                           const CNCBlobBuffer* data,
                           SNCBlobVerData* ver_data,
                           bool            add_blobs_cnt);
@@ -614,9 +613,7 @@ inline bool
 CNCBlobStorage::WriteSingleChunk(SNCBlobVerData*      ver_data,
                                  const CNCBlobBuffer* data)
 {
-    return x_WriteChunkData(ver_data->coords.data_id,
-                            ver_data->coords.blob_id,
-                            data, ver_data, true);
+    return x_WriteChunkData(ver_data->coords.blob_id, data, ver_data, true);
 }
 
 END_NCBI_SCOPE

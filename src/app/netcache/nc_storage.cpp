@@ -1162,14 +1162,13 @@ CNCBlobStorage::ReadChunkData(TNCDBFileId    file_id,
 }
 
 bool
-CNCBlobStorage::x_WriteChunkData(TNCDBFileId     file_id,
-                                 TNCChunkId      chunk_id,
+CNCBlobStorage::x_WriteChunkData(TNCChunkId      chunk_id,
                                  const CNCBlobBuffer* data,
                                  SNCBlobVerData* ver_data,
                                  bool            add_blobs_cnt)
 {
     try {
-        TDataFileLock datafile(this, file_id);
+        TDataFileLock datafile(this, ver_data->coords.data_id);
         datafile->WriteChunkData(chunk_id, data);
     }
     catch (CSQLITE_Exception& ex) {
@@ -1180,7 +1179,7 @@ CNCBlobStorage::x_WriteChunkData(TNCDBFileId     file_id,
     CNCStat::AddChunkWritten(data->GetSize());
 
     m_DBFilesLock.ReadLock();
-    SNCDBFileInfo* file_info = m_DBFiles[file_id];
+    SNCDBFileInfo* file_info = m_DBFiles[ver_data->coords.data_id];
     m_DBFilesLock.ReadUnlock();
 
     CSpinGuard guard(file_info->cnt_lock);
@@ -1199,8 +1198,7 @@ CNCBlobStorage::WriteNextChunk(SNCBlobVerData*      ver_data,
                                const CNCBlobBuffer* data)
 {
     TNCChunkId chunk_id = x_GetNextChunkId();
-    if (!x_WriteChunkData(ver_data->coords.data_id, chunk_id,
-                          data, ver_data,
+    if (!x_WriteChunkData(chunk_id, data, ver_data,
                           ver_data->chunks.size() == 0))
     {
         return false;

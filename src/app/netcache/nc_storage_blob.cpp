@@ -39,12 +39,13 @@ BEGIN_NCBI_SCOPE
 
 
 ///
-static CObjPool<CNCBlobBuffer>  s_BufferPool;
+static CObjPool<CNCBlobBuffer>  s_BufferPool(50);
 ///
-static CObjPool<SNCBlobVerData> s_VerDataPool;
+static CObjPool<SNCBlobVerData> s_VerDataPool(50);
 
 
 CNCBlobBuffer::CNCBlobBuffer(void)
+    : m_Size(0)
 {}
 
 CNCBlobBuffer::~CNCBlobBuffer(void)
@@ -406,6 +407,8 @@ CNCBlobVerManager::FinalizeWriting(SNCBlobVerData* ver_data)
             &&  s_IsCurVerOlder(m_CurVersion, ver_data))
         {
             old_ver.Swap(m_CurVersion);
+            if (m_CurVersion->need_meta_blob  ||  m_CurVersion->need_data_blob)
+                abort();
             m_CacheData->blob_id = m_CurVersion->coords.blob_id;
             m_CacheData->meta_id = m_CurVersion->coords.meta_id;
             m_CacheData->data_id = m_CurVersion->coords.data_id;

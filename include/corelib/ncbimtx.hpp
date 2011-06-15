@@ -821,26 +821,25 @@ public:
     typedef CSpinGuard TWriteLockGuard;
 
     /// Lock the mutex
+    NCBI_XNCBI_EXPORT
     void Lock(void);
     /// Attempt to lock the mutex and return TRUE if it succeeded or FALSE if
     /// mutex is locked by other thread.
+    NCBI_XNCBI_EXPORT
     bool TryLock(void);
     /// Unlock the mutex.
     /// There's no check that mutex is unlocked by the same thread that
     /// locked it.
+    NCBI_XNCBI_EXPORT
     void Unlock(void);
 
-    ///
+    /// Check if mutex is currently locked
     bool IsLocked(void) const;
 
 private:
     /// Prohibit copying of the object
     CSpinLock(const CSpinLock&);
     CSpinLock& operator= (const CSpinLock&);
-
-    /// Waiting for lock to be acquired when it didn't work on the first attempt
-    NCBI_XNCBI_EXPORT
-    void x_WaitForLock(void);
 
     /// Flag showing if mutex is locked (non-NULL value) or unlocked
     /// (NULL value).

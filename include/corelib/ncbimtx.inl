@@ -292,50 +292,10 @@ CSpinLock::~CSpinLock(void)
     _ASSERT(m_Value == NULL);
 }
 
-#if defined(NCBI_COMPILER_MSVC)  ||  defined(NCBI_COMPILER_GCC)  ||  defined(NCBI_COMPILER_ICC)
-
-inline
-void CSpinLock::Lock(void)
-{
-    if (SwapPointers(&m_Value, (void*)1) != NULL) {
-        x_WaitForLock();
-    }
-#ifdef NCBI_COMPILER_MSVC
-    _ReadWriteBarrier();
-#elif defined(NCBI_COMPILER_GCC) || defined(NCBI_COMPILER_ICC)
-    asm volatile ("" : : : "memory");
-#endif
-}
-
-inline
-bool CSpinLock::TryLock(void)
-{
-    bool result = SwapPointers(&m_Value, (void*)1) == NULL;
-
-#ifdef NCBI_COMPILER_MSVC
-    _ReadWriteBarrier();
-#elif defined(NCBI_COMPILER_GCC) || defined(NCBI_COMPILER_ICC)
-    asm volatile ("" : : : "memory");
-#endif
-    return result;
-}
-
-#endif
-
-inline
-void CSpinLock::Unlock(void)
-{
-#ifdef _DEBUG
-    _VERIFY(SwapPointers(&m_Value, NULL) != NULL);
-#else
-    m_Value = NULL;
-#endif
-}
-
 inline
 bool CSpinLock::IsLocked(void) const
 {
-    return m_Value == (void*)1;
+    return m_Value != NULL;
 }
 
 
@@ -349,29 +309,6 @@ inline
 CFastRWLock::~CFastRWLock(void)
 {
     _ASSERT(m_LockCount.Get() == 0);
-}
-
-inline void
-CFastRWLock::ReadLock(void)
-{
-    while (m_LockCount.Add(1) > kWriteLockValue) {
-        m_LockCount.Add(-1);
-        m_WriteLock.Lock();
-        m_WriteLock.Unlock();
-    }
-}
-
-inline void
-CFastRWLock::ReadUnlock(void)
-{
-    m_LockCount.Add(-1);
-}
-
-inline void
-CFastRWLock::WriteUnlock(void)
-{
-    m_LockCount.Add(-kWriteLockValue);
-    m_WriteLock.Unlock();
 }
 
 

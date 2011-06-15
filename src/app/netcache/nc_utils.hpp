@@ -765,53 +765,6 @@ CSpinRWLock::~CSpinRWLock(void)
     _ASSERT(m_LockCount.Get() == 0);
 }
 
-inline void
-CSpinRWLock::ReadLock(void)
-{
-    CAtomicCounter::TValue lock_cnt = m_LockCount.Add(kReadLockValue);
-    // If some writer already acquired or requested a lock we should release
-    // read lock and re-acquire it after writer is done.
-    while (lock_cnt > kWriteLockValue) {
-        m_LockCount.Add(-kReadLockValue);
-        NCBI_SCHED_YIELD();
-        lock_cnt = m_LockCount.Add(kReadLockValue);
-    }
-}
-
-inline void
-CSpinRWLock::ReadUnlock(void)
-{
-    _VERIFY(m_LockCount.Add(-kReadLockValue) + kReadLockValue >= kReadLockValue);
-}
-
-inline void
-CSpinRWLock::WriteLock(void)
-{
-    CAtomicCounter::TValue lock_cnt = m_LockCount.Add(kWriteLockValue);
-    // If there's another writer who already acquired or requested the lock
-    // earlier then we need to release write lock and wait until another
-    // writer is done.
-    while (lock_cnt >= 2 * kWriteLockValue) {
-        m_LockCount.Add(-kWriteLockValue);
-        NCBI_SCHED_YIELD();
-        lock_cnt = m_LockCount.Add(kWriteLockValue);
-    }
-    // We will be here if no other writer exists or we requested a write lock
-    // earlier than other writer. So we need just to wait until other readers
-    // release there locks - wait without releasing our lock to prevent new
-    // read locks.
-    while (lock_cnt != kWriteLockValue) {
-        NCBI_SCHED_YIELD();
-        lock_cnt = m_LockCount.Get();
-    }
-}
-
-inline void
-CSpinRWLock::WriteUnlock(void)
-{
-    _VERIFY(m_LockCount.Add(-kWriteLockValue) + kWriteLockValue >= kWriteLockValue);
-}
-
 
 inline void
 CQuickStrStream::Clear(void)

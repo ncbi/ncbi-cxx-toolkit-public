@@ -384,7 +384,7 @@ inline void
 SNCDBFileInfo::IncUsefulBlobs(Uint8 size)
 {
     IncUsefulBlobs();
-    ++useful_size;
+    useful_size += size;
 }
 
 inline void
@@ -417,6 +417,8 @@ SNCDBFileInfo::UsefulToGarbage(Uint8 size)
 {
     DecUsefulBlobs();
     ++garbage_blobs;
+    if (useful_size < size)
+        abort();
     useful_size -= size;
     garbage_size += size;
 }

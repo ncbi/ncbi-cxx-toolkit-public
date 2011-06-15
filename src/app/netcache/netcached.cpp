@@ -64,9 +64,9 @@ static const char* kNCReg_MaxThreads          = "max_threads";
 static const char* kNCReg_LogCmds             = "log_requests";
 static const char* kNCReg_AdminClient         = "admin_client_name";
 static const char* kNCReg_DefAdminClient      = "netcache_control";
-static const char* kNCReg_MemLimit            = "db_cache_limit";
-//static const char* kNCReg_MemLimit            = "memory_limit";
-//static const char* kNCReg_MemAlert            = "memory_alert";
+//static const char* kNCReg_MemLimit            = "db_cache_limit";
+static const char* kNCReg_MemLimit            = "memory_limit";
+static const char* kNCReg_MemAlert            = "memory_alert";
 static const char* kNCReg_ForceUsePoll        = "force_use_poll";
 static const char* kNCReg_SpecPriority        = "app_setup_priority";
 static const char* kNCReg_NetworkTimeout      = "network_timeout";
@@ -358,10 +358,10 @@ CNetCacheServer::x_ReadServerParams(void)
 
         string str_val   = reg.GetString(kNCReg_ServerSection, kNCReg_MemLimit, "1Gb");
         size_t mem_limit = size_t(NStr::StringToUInt8_DataSize(str_val));
-        /*str_val          = reg.GetString(kNCReg_ServerSection, kNCReg_MemAlert, "4Gb");
+        str_val          = reg.GetString(kNCReg_ServerSection, kNCReg_MemAlert, "4Gb");
         size_t mem_alert = size_t(NStr::StringToUInt8_DataSize(str_val));
-        CNCMemManager::SetLimits(mem_limit, mem_alert);*/
-        CNCMemManager::SetLimits(mem_limit, mem_limit);
+        CNCMemManager::SetLimits(mem_limit, mem_alert);
+        //CNCMemManager::SetLimits(mem_limit, mem_limit);
 
         x_ReadPerClientConfig(reg);
     }

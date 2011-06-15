@@ -142,6 +142,7 @@ public:
     void operator delete(void* mem_ptr);
 
     CNCMMDBPage(void);
+    ~CNCMMDBPage(void);
 
     /// Get pointer to page data
     void* GetData(void);

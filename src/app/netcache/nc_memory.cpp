@@ -1370,9 +1370,8 @@ CNCMMDBPage::x_AddToLRUImpl(void)
 inline void
 CNCMMDBPage::AddToLRU(void)
 {
-    _ASSERT(!IsInLRU());
-
     sm_LRULock.Lock();
+    _ASSERT(!IsInLRU());
     if (m_StateFlags < fCounterStep) {
         x_AddToLRUImpl();
     }
@@ -1421,6 +1420,12 @@ CNCMMDBPage::CNCMMDBPage(void)
     memset(m_Data, 0, sizeof(void*));
 }
 
+CNCMMDBPage::~CNCMMDBPage(void)
+{
+    if ((m_StateFlags & ~fInLRU) != 0)
+        abort();
+}
+
 inline CNCMMDBPage*
 CNCMMDBPage::PeekLRUForDestroy(void)
 {
@@ -1437,6 +1442,7 @@ CNCMMDBPage::PeekLRUForDestroy(void)
 inline void
 CNCMMDBPage::operator delete(void* mem_ptr)
 {
+    //memset(mem_ptr, 0xab, sizeof(CNCMMDBPage));
     CNCMMChunksPool::PutChunk(mem_ptr);
     CNCMMCentral::DBPageDeleted();
 }
@@ -1471,6 +1477,7 @@ CNCMMDBPage::operator new(size_t _DEBUG_ARG(size))
         page = CNCMMChunksPool::GetChunk();
         CNCMMCentral::DBPageCreated();
     }
+    //memset(page, 0xba, sizeof(CNCMMDBPage));
     return page;
 }
 
@@ -2633,6 +2640,7 @@ CNCMMCentral::AllocMemory(size_t size)
         mem_ptr = slab->GetData();
     }
 
+    //memset(mem_ptr, 0xdc, size);
     return mem_ptr;
 }
 
@@ -2645,6 +2653,7 @@ CNCMMCentral::DeallocMemory(void* mem_ptr)
     CNCMMSlab* slab            = GetSlab(mem_ptr);
     CNCMMBlocksSetBase* bl_set = slab->GetBlocksSet(mem_ptr);
     size_t block_size          = bl_set->GetBlockSize();
+    //memset(mem_ptr, 0xcd, block_size);
     if (block_size <= kNCMMMaxSmallSize) {
         CNCMMSizePool::DeallocateBlock(mem_ptr,
                                        static_cast<CNCMMBlocksSet*>(bl_set));
@@ -3062,9 +3071,8 @@ CNCMMDBCache::operator delete(void* ptr)
 inline bool
 CNCMMDBPage::DoPeekedDestruction(void)
 {
-    _ASSERT((m_StateFlags & fPeeked) != 0);
-
     sm_LRULock.Lock();
+    _ASSERT((m_StateFlags & fPeeked) != 0);
     bool do_destroy = IsInLRU()  &&  m_StateFlags < fCounterStep;
     m_StateFlags &= ~fPeeked;
     sm_LRULock.Unlock();
@@ -3261,7 +3269,7 @@ CNCMemManager::InitializeApp(void)
 {
     try {
         CSQLITE_Global::SetCustomPageCache(&s_NCDBCacheMethods);
-        //CSQLITE_Global::SetCustomMallocFuncs(&s_NCMallocMethods);
+        CSQLITE_Global::SetCustomMallocFuncs(&s_NCMallocMethods);
     }
     catch (CSQLITE_Exception& ex) {
         ERR_POST(Critical << ex);
@@ -3352,7 +3360,7 @@ CNCMemManager::IsDBPageDirty(const void* data_ptr)
 
 END_NCBI_SCOPE
 
-/*
+
 void*
 operator new (size_t size)
 #ifndef NCBI_COMPILER_MSVC
@@ -3386,7 +3394,7 @@ operator delete[] (void* ptr) throw ()
 {
     NCBI_NS_NCBI::CNCMMCentral::DeallocMemory(ptr);
 }
-*/
+
 #ifdef __GLIBC__
 // glibc has special method of overriding C library allocation functions.
 
@@ -3407,7 +3415,7 @@ void s_NCFreeHook(void* mem_ptr, const void* caller)
 {
     NCBI_NS_NCBI::CNCMMCentral::DeallocMemory(mem_ptr);
 }
-/*
+
 void s_NCInitMallocHook(void)
 {
     __malloc_hook  = s_NCMallocHook;
@@ -3416,7 +3424,7 @@ void s_NCInitMallocHook(void)
 }
 
 void (*__malloc_initialize_hook) (void) = s_NCInitMallocHook;
-*/
+
 #elif !defined(NCBI_OS_MSWIN)
 // Changing of C library allocation functions on Windows is very tricky (if
 // possible at all) and NetCache will never run in production on Windows. So
