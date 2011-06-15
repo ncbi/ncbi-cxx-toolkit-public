@@ -71,7 +71,7 @@ DEFINE_STATIC_ARRAY_MAP(TRnaTypeMap, sc_RnaTypeMap, sc_rna_type_map);
 
 string CRNA_ref::GetRnaTypeName (const CRNA_ref::EType rna_type)
 {
-    if (rna_type == CRNA_ref::eType_other) {
+    if (rna_type == CRNA_ref::eType_miscRNA) {
         return "misc_RNA";
     }
     string rna_type_name = "";
