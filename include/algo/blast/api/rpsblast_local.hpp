@@ -34,9 +34,9 @@ public:
 	 * 						  value of the num of threads is ignored.
 	 */
     CLocalRPSBlast(CRef<CBlastQueryVector> query_vector,
-              	  	  const string db,
+              	  	  const string & db,
               	  	  CRef<CBlastOptionsHandle> options,
-              	  	  const unsigned int num_of_threads = CThreadable::kMinNumThreads);
+              	  	  unsigned int num_of_threads = CThreadable::kMinNumThreads);
 
     /*
      * Run Local RPS Search
@@ -53,7 +53,7 @@ private:
     CRef<CSearchResultSet> RunThreadedSearch();
 
     unsigned int					m_num_of_threads;
-    const string 					m_db_name;
+    const string & 					m_db_name;
     CRef<CBlastOptionsHandle>  		m_opt_handle;
     CRef<CBlastQueryVector>	 		m_query_vector;
 };

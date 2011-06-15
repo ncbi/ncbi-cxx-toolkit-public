@@ -343,7 +343,7 @@ CRef<CSearchResultSet> CRPSThread::RunTandemSearches(void)
 
 /* CThreadedRpsBlast */
 CLocalRPSBlast::CLocalRPSBlast(CRef<CBlastQueryVector> query_vector,
-              	  	  	  	   const string db,
+              	  	  	  	   const string & db,
               	  	  	  	   CRef<CBlastOptionsHandle> options,
               	  	  	  	   unsigned int num_of_threads):
               	  	  	  	   m_num_of_threads(num_of_threads),
