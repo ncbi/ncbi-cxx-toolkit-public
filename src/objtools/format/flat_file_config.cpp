@@ -71,14 +71,14 @@ const bool CFlatFileConfig::sm_ModeFlags[4][32] = {
     { 
         true, true, true, true, true, true, true, true, true, true,
         true, true, true, true, true, true, true, true, true, true,
-        true, true, true, true, true, true, true, false, false, false, 
+        true, true, true, true, true, true, true, false, false, true, 
         false, false
     },
     // Entrez
     {
         false, true, true, true, true, false, true, true, true, true,
         true, true, true, true, true, true, false, false, true, true,
-        true, true, true, true, false, true, true, true, false, false, 
+        true, true, true, true, false, true, true, true, false, true, 
         false, false
     },
     // GBench
@@ -132,6 +132,7 @@ MODE_FLAG_GET(HideUnclassPartial, 25);
 // MODE_FLAG_GET(CodonRecognizedToNote, 26); // implementation below
 MODE_FLAG_GET(GoQualsEachMerge, 27);
 MODE_FLAG_GET(ShowOutOfBoundsFeats, 28);
+MODE_FLAG_GET(HideSpecificGeneMaps, 29);
 
 #undef MODE_FLAG_GET
 

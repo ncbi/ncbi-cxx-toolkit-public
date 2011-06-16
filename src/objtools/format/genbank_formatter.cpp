@@ -102,6 +102,9 @@ void CGenbankFormatter::EndSection
         l.push_back("//");
     }
     text_os.AddParagraph(l, NULL);
+
+    // Need to reset counts between records
+    m_FeatureKeyToCountMap.clear();
 }
 
 
@@ -1362,20 +1365,10 @@ s_FormatRegularSequencePiece
         }
     }
 
-    // When the sequence begins with a gap, we show the "N's" but the base count on the left
-    // starts where the non-gap starts.
-    // e.g. AC174915
-    TSeqPos gap_at_beginning_base_count_offset = 0;
-
     while ( total > 0 ) {
         char* linep = line + kSeqPosWidth;
 
-        if( initial_indent == 0 && iter.IsInGap() && iter.GetBufferSize() < kSeqPosWidth && 
-            ! s_NextPieceIsAlsoGap(iter) )
-        {
-            gap_at_beginning_base_count_offset = iter.GetBufferSize();
-        }
-        s_FormatSeqPosBack(linep, base_count + gap_at_beginning_base_count_offset, kSeqPosWidth);
+        s_FormatSeqPosBack(linep, base_count, kSeqPosWidth);
         if( bHtml ) {
             linep += length_of_span_before_base_count;
             linep = s_FormatSeqSpanTag( linep, base_count );
@@ -1383,8 +1376,6 @@ s_FormatRegularSequencePiece
         }
 
         char * const linep_right_after_span_tag = (linep + 1);
-
-        gap_at_beginning_base_count_offset = 0;
 
         TSeqPos i = 0;
         TSeqPos j = 0;

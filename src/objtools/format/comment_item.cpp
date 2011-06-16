@@ -47,7 +47,9 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/general/Dbtag.hpp>
+
 #include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include <objtools/format/formatter.hpp>
 #include <objtools/format/text_ostream.hpp>
@@ -258,7 +260,8 @@ string CCommentItem::GetStringForBankIt(const CUser_object& uo)
 
 static void s_GetAssemblyInfo(const CUser_object& uo,
                               string& s,
-                              CCommentItem::ECommentFormat format)
+                              CCommentItem::ECommentFormat format,
+                              CScope &scope )
 {
     s.clear();
 
@@ -314,7 +317,19 @@ static void s_GetAssemblyInfo(const CUser_object& uo,
             if ( ! accession.empty() ) {
                 CNcbiOstrstream oss;
 
-                NcbiId(oss, accession, is_html);
+                int new_gi = 0;
+                try {
+                    new_gi = sequence::GetGiForAccession( accession, scope, sequence::eGetId_ForceGi | sequence::eGetId_VerifyId );
+                } catch(...) {
+                    // do nothing, we know there's an error because new_gi is zero
+                }
+                if( 0 == new_gi ) {
+                    oss << accession;
+                } else {
+                    gi = new_gi;
+                    NcbiId(oss, accession, is_html);
+                }
+
                 if( from > 0 && to > 0 ) {
                     oss << " (range: " << from << "-" << to << ")";
                 }
@@ -552,7 +567,7 @@ string CCommentItem::GetStringForRefTrack
     {{
          /// add our assembly info
          string s;
-         s_GetAssemblyInfo(uo, s, format);
+         s_GetAssemblyInfo(uo, s, format, bsh.GetScope());
          oss << s;
      }}
 
@@ -1271,7 +1286,8 @@ void CGenomeAnnotComment::x_GatherInfo(CBioseqContext& ctx)
         s_GetAssemblyInfo(uo, s,
                           ctx.Config().DoHTML() ?
                           CCommentItem::eFormat_Html :
-                          CCommentItem::eFormat_Text);
+                          CCommentItem::eFormat_Text,
+                              ctx.GetScope() );
         text << s;
         break;
     }

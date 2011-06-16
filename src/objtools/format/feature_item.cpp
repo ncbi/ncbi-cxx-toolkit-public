@@ -1160,7 +1160,9 @@ void CFeatureItem::x_AddQualPartial(
     if ( !ctx.Config().HideUnclassPartial() ) {
         if ( !IsMappedFromCDNA() || !ctx.IsProt() ) {
             if ( m_Feat.IsSetPartial()  &&  m_Feat.GetPartial() ) {
-                if ( !s_LocIsFuzz( m_Feat, GetLoc() ) ) {
+                if ( eSeqlocPartial_Complete == sequence::SeqLocPartialCheck( GetLoc(), &ctx.GetScope() ) &&
+                    !s_LocIsFuzz( m_Feat, GetLoc() ) ) 
+                {
                     x_AddQual( eFQ_partial, new CFlatBoolQVal( true ) );
                 }
             }
@@ -2252,12 +2254,12 @@ void CFeatureItem::x_AddQuals(
 {
 //    /**fl**/
     // leaving this here since it's so useful for debugging purposes.
-    //3961..5076
+    //2419700..2435351
     /* if( 
-        (GetLoc().GetStart(eExtreme_Biological) == 3960 &&
-        GetLoc().GetStop(eExtreme_Biological) == 5075) ||
-        (GetLoc().GetStop(eExtreme_Biological) == 3960 &&
-        GetLoc().GetStart(eExtreme_Biological) == 5075)
+        (GetLoc().GetStart(eExtreme_Biological) == 2419699 &&
+        GetLoc().GetStop(eExtreme_Biological) == 2435350) ||
+        (GetLoc().GetStop(eExtreme_Biological) == 2419699 &&
+        GetLoc().GetStart(eExtreme_Biological) == 2435350)
         ) {
         cerr << "";
         } */
@@ -3744,7 +3746,7 @@ void CFeatureItem::x_AddQualsProt(
         }
         if (pref.IsSetEc()  &&  !pref.GetEc().empty()) {
             ITERATE(CProt_ref::TEc, ec, pref.GetEc()) {
-                if (s_IsLegalECNumber(*ec)) {
+                if ( !ctx.Config().DropIllegalQuals() ||  s_IsLegalECNumber(*ec)) {
                     x_AddQual(eFQ_prot_EC_number, new CFlatStringQVal(*ec));
                 }
             }
@@ -3957,6 +3959,70 @@ static bool s_IsValidnConsSplice(const string& cons_splice) {
            NStr::EqualNocase(cons_splice, "(5'site:ABSENT, 3'site:YES)")  ||
            NStr::EqualNocase(cons_splice, "(5'site:ABSENT, 3'site:NO)")   ||
            NStr::EqualNocase(cons_splice, "(5'site:ABSENT, 3'site:ABSENT)");
+}
+
+// currently just converts PMIDs into links
+static void
+s_HTMLizeExperimentQual( string &out_new_val, const string &val)
+{
+    static const string kPmid("PMID:");
+
+    // just to make sure
+    out_new_val.clear();
+
+    // str_pos should generally be considered as holding the first position
+    // in val that we have not yet processed and copied to out_new_val.
+    SIZE_TYPE str_pos = 0;
+    while( str_pos < val.length() ) {
+
+        // find next "PMID:" to process
+        const SIZE_TYPE pmid_label_pos = val.find( "PMID:", str_pos );
+        if( pmid_label_pos == NPOS ) {
+            // no more PMIDs left.
+            // copy the rest of the string and let's leave
+            copy( val.begin() + str_pos, val.end(), back_inserter(out_new_val) );
+            return;
+        }
+
+        // copy val up to just after "PMID:"
+        const SIZE_TYPE first_pmid_pos = pmid_label_pos + kPmid.length();
+        copy( val.begin() + str_pos, val.begin() + first_pmid_pos, back_inserter(out_new_val) );
+        str_pos = first_pmid_pos;
+
+        // push pmids (with links) onto the output
+        // we consider the pmids to be numbers separated by one or more spaces and/or commas.
+        bool first_num = true;
+        while( str_pos < val.length() ) {
+            // skip spaces and commas before pmid
+            const SIZE_TYPE next_pmid_pos = val.find_first_not_of(" ,", str_pos);
+            if( next_pmid_pos == NPOS || ! isdigit(val[next_pmid_pos]) ) {
+                break;
+            }
+
+            // find end of pmid
+            SIZE_TYPE end_of_pmid_pos = val.find_first_not_of("0123456789", next_pmid_pos );
+            if( NPOS == end_of_pmid_pos ) {
+                end_of_pmid_pos = val.length();
+            }
+
+            // extract the actual pmid
+            string pmid = val.substr(next_pmid_pos, end_of_pmid_pos - next_pmid_pos );
+
+            // write pmid with link
+            if( ! first_num ) {
+                out_new_val += ',';
+            }
+            out_new_val += "<a href=\"";
+            out_new_val += strLinkBasePubmed;
+            out_new_val += pmid;
+            out_new_val += "\">";
+            out_new_val += pmid;
+            out_new_val += "</a>";
+            str_pos = end_of_pmid_pos;
+
+            first_num = false;
+        }
+    }
 }
 
 //  ----------------------------------------------------------------------------
@@ -4186,6 +4252,18 @@ void CFeatureItem::x_ImportQuals(
             }}
             break;
 
+        case eFQ_experiment:
+            {{
+                if( ctx.Config().DoHTML() && ! CommentHasSuspiciousHtml(val) ) {
+                    string new_val;
+                    s_HTMLizeExperimentQual(new_val, val);
+                    x_AddQual(slot, new CFlatStringQVal(new_val));
+                } else {
+                    x_AddQual(slot, new CFlatStringQVal(val));
+                }
+            }}
+            break;
+
         default:
             x_AddQual(slot, new CFlatStringQVal(val));
             break;
@@ -4200,7 +4278,7 @@ void CFeatureItem::x_ImportQuals(
     }
 
     // some "map-related" qual adjustments
-    if( ! x_HasQual(eFQ_map) ) {
+    if( ctx.Config().HideSpecificGeneMaps() && ! x_HasQual(eFQ_map) ) {
         if( x_HasQual(eFQ_cyt_map) ) {
             x_AddQual(eFQ_map, x_GetQual(eFQ_cyt_map)->second );
         } else if( x_HasQual(eFQ_gen_map) ) {
@@ -4368,8 +4446,11 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(frequency);
     DO_QUAL(EC_number);
     x_FormatQual(eFQ_gene_map, "map", qvec);
-    // Moved to eFQ_gene_map by x_ImportQuals:
-    // cyt_map, gen_map, rad_map
+    // In certain modes, cyt_map, gen_map, and rad_map are 
+    // moved to eFQ_gene_map by x_ImportQuals:
+    DO_QUAL(cyt_map);
+    DO_QUAL(gen_map);
+    DO_QUAL(rad_map);
     DO_QUAL(estimated_length);
     DO_QUAL(allele);
     DO_QUAL(map);
@@ -5673,8 +5754,6 @@ static ESourceQualifier s_OrgModToSlot(const COrgMod& om)
         CASE_ORGMOD(gb_anamorph);
         CASE_ORGMOD(gb_synonym);
         CASE_ORGMOD(metagenome_source);
-        // TODO: remove the following line once we've tested that it's not needed
-     // case COrgMod::eSubtype_metagenome_source: return eSQ_metagenome_source;
         CASE_ORGMOD(old_lineage);
         CASE_ORGMOD(old_name);
 #undef CASE_ORGMOD
@@ -6112,6 +6191,8 @@ void CSourceFeatureItem::x_FormatGBNoteQuals(CFlatFeature& ff) const
     DO_QUAL(anamorph);
     DO_QUAL(teleomorph);
     DO_QUAL(breed);
+
+    DO_QUAL(metagenome_source),
 
 //    DO_QUAL(collection_date);
 //    DO_QUAL(collected_by);

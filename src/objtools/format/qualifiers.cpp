@@ -393,7 +393,7 @@ void CFlatStringQVal::Format(TFlatQuals& q, const string& name,
     // if( ! is_note ) {
     // e.g. NP_008173
     if( m_Style != CFormatQual::eUnquoted ) {
-        ConvertQuotes( m_Value );
+        ConvertQuotesNotInHTMLTags( m_Value );
     }
     // }
 

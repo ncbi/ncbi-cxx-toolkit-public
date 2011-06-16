@@ -116,13 +116,13 @@ bool CGather_Iter::x_AddSeqEntryToStack(
         {
             CSeq_entry_CI it(entry);
             if( it ) {
-                m_SeqEntryIterStack.push_back(it);
                 for ( ; it; ++it ) {
+                    m_SeqEntryIterStack.push_back(it);
                     if( x_AddSeqEntryToStack(*it) ) {
                         return true;
                     }
+                    m_SeqEntryIterStack.pop_back();
                 }
-                m_SeqEntryIterStack.pop_back();
             }
             return false;
         }
