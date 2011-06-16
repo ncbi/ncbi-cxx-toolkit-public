@@ -71,10 +71,10 @@ public:
     vector<string> m_ChainType;      // chain types of the query[0] and the subjects[1:]
     int m_GeneInfo[6];               // The (start) and (end offset + 1) for VDJ
     int m_FrameInfo[2];              // Frame number for V end and J start
-    int m_DomainInfo[14];            // The (start) and (end offset) for FWR1, 
+    int m_DomainInfo[12];            // The (start) and (end offset) for FWR1, 
                                      // CDR1, FWR2, CDR2, FWR3, CDR3 domains
-                                     // plus the extension of the first and the last 
-                                     // annotated domains
+    int m_FirstExt;                  // the extension of the first annotated domain
+    int m_LastExt;                   // the extension of the last annotated domain
                                 
 
     /// Constructor
@@ -83,7 +83,9 @@ public:
     {
         for (int i=0; i<6; i++) m_GeneInfo[i] = -1;
         for (int i=0; i<2; i++) m_FrameInfo[i] = -1;
-        for (int i=0; i<14; i++) m_DomainInfo[i] = -1;
+        for (int i=0; i<12; i++) m_DomainInfo[i] = -1;
+        m_FirstExt = -1;
+        m_LastExt = -1;
     }
 
 };
