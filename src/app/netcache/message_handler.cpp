@@ -1540,9 +1540,9 @@ CNCMessageHandler::x_ReadCommand(void)
         x_AssignCmdParams(cmd.params);
     }
     catch (CStringException& ex) {
-        CDiagContext::SetRequestContext(m_CmdCtx);
-        ERR_POST("Error parsing command: " << ex);
-        m_CmdCtx->SetRequestStatus(eStatus_BadCmd);
+        ERR_POST("Error while parsing command '" << cmd_line << "': " << ex);
+        m_ConnCtx->SetRequestStatus(eStatus_BadCmd);
+        m_CmdCtx.Reset();
         x_CloseConnection();
         return true;
     }
@@ -2215,6 +2215,8 @@ CNCMessageHandler::x_EcecuteProxyCmd(Uint8          srv_id,
     catch (CNetCacheException& ex) {
         if (ex.GetErrCode() == CNetCacheException::eBlobNotFound) {
             m_SockBuffer.WriteMessage("ERR:", "BLOB not found.");
+            m_CmdCtx->SetRequestStatus(eStatus_NotFound);
+            x_SetState(eReadyForCommand);
             return true;
         }
         else {

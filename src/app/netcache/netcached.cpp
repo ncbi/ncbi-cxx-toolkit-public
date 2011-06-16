@@ -1653,6 +1653,7 @@ int main(int argc, const char* argv[])
     // Main thread request context already created, so is not affected
     // by just set default, so set it manually.
     CDiagContext::GetRequestContext().SetAutoIncRequestIDOnPost(true);
+    SetDiagPostLevel(eDiag_Warning);
 
     // Defaults that should be always set for NetCache
     CNcbiEnvironment env;
