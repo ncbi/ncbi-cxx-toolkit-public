@@ -1821,6 +1821,12 @@ CNCMessageHandler::x_FinishCommand(bool do_sock_write)
         m_SockBuffer.Flush();
     }
 
+    m_DataReader.reset();
+    if (m_DataWriter.get()) {
+        m_DataWriter->Abort();
+        m_DataWriter.reset();
+    }
+
     int cmd_status = m_CmdCtx->GetRequestStatus();
     if (x_IsFlagSet(fCommandPrinted)) {
         if (was_blob_access
@@ -1851,8 +1857,6 @@ CNCMessageHandler::x_FinishCommand(bool do_sock_write)
     }
 
     m_SendBuff.reset();
-    m_DataReader.reset();
-    m_DataWriter.reset();
     m_CmdCtx.Reset();
     CDiagContext::SetRequestContext(m_ConnCtx);
 }
