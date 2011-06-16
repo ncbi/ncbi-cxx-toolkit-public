@@ -455,6 +455,8 @@ static int s_AbortTest(const string& service)
         NcbiCout << e.what();
     }
 
+    NcbiCout << "Error: blob " << key << " exist after Abort()." << NcbiEndl;
+
     return err_code;
 }
 
