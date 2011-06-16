@@ -348,7 +348,6 @@ void CWNCTConnectionHandler::x_ProcessRequest(BUF buffer)
                                 m_Server.GetWorkerNode()))
         processor->Process(request, os, m_Server.GetWorkerNode());
 
-    os << ends;
     try {
         socket.Write(os.str(), os.pcount());
     }  catch (...) {
