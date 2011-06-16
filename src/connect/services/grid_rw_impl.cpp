@@ -96,6 +96,12 @@ void CStringOrBlobStorageWriter::Close()
         m_NetCacheWriter->Close();
 }
 
+void CStringOrBlobStorageWriter::Abort()
+{
+    if (m_NetCacheWriter.get())
+        m_NetCacheWriter->Abort();
+}
+
 
 ////////////////////////////////////////////////////////////////////////////
 //

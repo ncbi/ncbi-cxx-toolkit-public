@@ -91,6 +91,7 @@ class NCBI_XCONNECT_EXPORT IEmbeddedStreamWriter : public IWriter
 {
 public:
     virtual void Close() = 0;
+    virtual void Abort() = 0;
 };
 
 ///////////////////////////////////////////////////////////////////////////

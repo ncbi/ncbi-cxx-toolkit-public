@@ -169,7 +169,7 @@ void CNetServerWriter::Close()
     ERW_Result res = m_TransmissionWriter->Close();
 
     if (res != eRW_Success) {
-        AbortConnection();
+        Abort();
         if (res == eRW_Timeout) {
             NCBI_THROW(CNetServiceException, eTimeout,
                 "Timeout while sending EOF packet");
@@ -187,7 +187,7 @@ void CNetServerWriter::Close()
             m_Connection->ReadCmdOutputLine(dummy);
         }
         catch (...) {
-            AbortConnection();
+            Abort();
             throw;
         }
     }
@@ -240,8 +240,12 @@ void CNetServerWriter::ResetWriters()
     }
 }
 
-void CNetServerWriter::AbortConnection()
+void CNetServerWriter::Abort()
 {
+    if (IsConnectionOpen())
+        m_TransmissionWriter->SetSendEof(
+            CTransmissionWriter::eDontSendEofPacket);
+
     ResetWriters();
 
     if (m_Connection->m_Socket.GetStatus(eIO_Open) != eIO_Closed)
@@ -286,7 +290,7 @@ void CNetServerWriter::Transmit(const void* buf,
         }
     }
     catch (...) {
-        AbortConnection();
+        Abort();
         throw;
     }
 }

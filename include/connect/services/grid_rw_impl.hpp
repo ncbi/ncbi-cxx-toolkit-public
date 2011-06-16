@@ -63,6 +63,7 @@ public:
     virtual ERW_Result Flush(void);
 
     virtual void Close();
+    virtual void Abort();
 
 private:
     CNetCacheAPI m_Storage;

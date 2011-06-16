@@ -400,8 +400,7 @@ void s_ReadUpdateCharTest(const string& service)
 
 }
 
-static
-int s_PasswordTest(const string& service)
+static int s_PasswordTest(const string& service)
 {
     static const int err_code = 4;
     CNetCacheAPI nc(service, s_ClientName);
@@ -429,6 +428,34 @@ int s_PasswordTest(const string& service)
     }
 
     return 0;
+}
+
+static int s_AbortTest(const string& service)
+{
+    static const int err_code = 8;
+
+    CNetCacheAPI nc(service, s_ClientName);
+
+    string key;
+
+    {{
+        auto_ptr<IEmbeddedStreamWriter> writer(nc.PutData(&key, 0,
+            CNetCacheAPI::eCaching_Disable));
+
+        writer->Write("Hello", 5);
+        writer->Abort();
+    }}
+
+    try {
+        nc.GetBlobSize(key);
+    }
+    catch (CNetCacheException& e) {
+        if (e.GetErrCode() == CNetCacheException::eBlobNotFound)
+            return 0;
+        NcbiCout << e.what();
+    }
+
+    return err_code;
 }
 
 int CTestNetCacheClient::Run(void)
@@ -575,6 +602,7 @@ int CTestNetCacheClient::Run(void)
     s_ReadUpdateCharTest(service);
 
     error_level |= s_PasswordTest(service);
+    error_level |= s_AbortTest(service);
 
     vector<STransactionInfo> log;
     vector<STransactionInfo> log_read;

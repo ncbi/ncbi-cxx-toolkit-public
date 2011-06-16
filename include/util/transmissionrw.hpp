@@ -114,6 +114,8 @@ public:
 
     ERW_Result Close(void);
 
+    void SetSendEof(ESendEofPacket flag) { m_SendEof = flag; }
+
     virtual ~CTransmissionWriter();
 
     /// Get underlying writer

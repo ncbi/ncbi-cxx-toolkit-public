@@ -100,6 +100,7 @@ public:
     virtual ERW_Result Flush(void);
 
     virtual void Close();
+    virtual void Abort();
 
     void WriteBufferAndClose(const char* buf_ptr, size_t buf_size);
 
@@ -108,7 +109,6 @@ protected:
 
     bool IsConnectionOpen() { return m_TransmissionWriter.get() != NULL; }
     void ResetWriters();
-    void AbortConnection();
     void Transmit(const void* buf, size_t count, size_t* bytes_written);
 
     CNetServerConnection m_Connection;
