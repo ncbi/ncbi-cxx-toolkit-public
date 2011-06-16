@@ -135,7 +135,7 @@ CIgBlast::Run()
     x_SetupVSearch(qf, opts_hndl);
     CLocalBlast blast(qf, opts_hndl, m_IgOptions->m_Db[0]);
     results[0] = blast.Run();
-    s_AnnotateV(results[0], annots);
+    x_AnnotateV(results[0], annots);
 
     /*** search V for domain annotation */
     if (m_IgOptions->m_Db[3]->GetDatabaseName() 
@@ -156,7 +156,8 @@ CIgBlast::Run()
             CLocalBlast blast(qf, opts_hndl, m_IgOptions->m_Db[gene]);
             results[gene] = blast.Run();
         }
-        x_AnnotateDJ(results[1], results[2], annots);
+        x_AnnotateJ(results[2], annots);
+        x_AnnotateD(results[1], annots);
     }
 
     /*** collect germline search results */
@@ -182,7 +183,7 @@ CIgBlast::Run()
     }
     s_AppendResults(result, -1, final_results);
 
-    /*** set chain type */
+    /*** set the chain type infor */
     x_SetChainType(final_results, annots);
 
     /*** attach annotation info back to the results */
@@ -303,7 +304,7 @@ void CIgBlast::x_SetupDbSearch(vector<CRef <CIgAnnotation> > &annots,
     qf.Reset(new CObjMgr_QueryFactory(*m_Query));
 };
 
-void CIgBlast::s_AnnotateV(CRef<CSearchResultSet>        &results, 
+void CIgBlast::x_AnnotateV(CRef<CSearchResultSet>        &results, 
                            vector<CRef <CIgAnnotation> > &annots)
 {
     ITERATE(CSearchResultSet, result, *results) {
@@ -342,36 +343,15 @@ static bool s_CompareSeqAlign(const CRef<CSeq_align> &x, const CRef<CSeq_align> 
     return (sx <= sy);
 };
 
-void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
-                            CRef<CSearchResultSet>        &results_J,
-                            vector<CRef <CIgAnnotation> > &annots)
+void CIgBlast::x_AnnotateJ(CRef<CSearchResultSet>        &results,
+                           vector<CRef <CIgAnnotation> > &annots)
 {
-    /* Here is the D J identification logic from Jian:
-       First we find J segment based on the following rule (we keep 5 hits at this stage):
-
-    1.  J segment needs to be on the plus strand (assuming query is the strand that 
-        contains the plus strand of germline V genes).
-    2.  J segment stop must be after the V gene end.  J start must be within 60 bp after V gene end.
-    3.  Subject J segment sequence should contain at least the first 32 bp.
-
-    To find D segment (5 hits at this stage):
-
-    1.  D segment stop must be after V gene end and D segment start must be within 30 bp 
-        after V gene end.
-    2.  Query (assuming query is the strand that contains the plus strand of germline V genes) 
-        can only have D match on minus strand if no any plus strand match is found.
-
-    Apply position consistency rule:
-    To resolve consistency between D and J gene match, we need to make sure that D start is at 
-    least 3 bp before J start and D stop is at least 3 bp before J end.  So, if ALL D genes and 
-    J genes are found to satisfy this rule, then we report D and J genes as is (numbers can be 
-    specified by user).  */
-
     int iq = 0;
-    ITERATE(CSearchResultSet, result, *results_J) {
+    ITERATE(CSearchResultSet, result, *results) {
 
         CIgAnnotation *annot = &*(annots[iq++]);
- 
+        string qct = annot->m_ChainType[0];
+
         if ((*result)->HasAlignments()) {
 
             CRef<CSeq_align_set> align(const_cast<CSeq_align_set *>
@@ -389,18 +369,31 @@ void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
             while (it != align_list.end()) {
                 
                 bool keep = true;
-                if (annot->m_MinusStrand) {
-                    if ((*it)->GetSeqStrand(0) != strand                ||
-                        (int)(*it)->GetSeqStop(0)   <  V_end - 60       ||
-                        (int)(*it)->GetSeqStart(0)  >  V_end            ||
-                        (int)(*it)->GetSeqStart(1)  >  32) keep = false;
-                } else {
-                    if ((*it)->GetSeqStrand(0) != strand                ||
-                        (int)(*it)->GetSeqStart(0)  >  V_end + 60       ||
-                        (int)(*it)->GetSeqStop(0)   <  V_end            ||
-                        (int)(*it)->GetSeqStart(1)  >  32) keep = false;
+
+                if (qct != "N/A") {
+                    string sid = (*it)->GetSeq_id(1).AsFastaString();
+                    if (sid.substr(0, 4) == "lcl|") sid = sid.substr(4, sid.length());
+                    string sct = m_AnnotationInfo.GetChainType(sid);
+                    if (sct != "N/A") {
+                        if (qct == "VH" && sct != "JH" ||
+                            qct != "VH" && sct == "JH") keep = false;
+                    }
                 }
 
+                if (keep) {
+                    if (annot->m_MinusStrand) {
+                        if ((*it)->GetSeqStrand(0) != strand                ||
+                            (int)(*it)->GetSeqStop(0)   <  V_end - 60       ||
+                            (int)(*it)->GetSeqStart(0)  >  V_end            ||
+                            (int)(*it)->GetSeqStart(1)  >  32) keep = false;
+                    } else {
+                        if ((*it)->GetSeqStrand(0) != strand                ||
+                            (int)(*it)->GetSeqStart(0)  >  V_end + 60       ||
+                            (int)(*it)->GetSeqStop(0)   <  V_end            ||
+                            (int)(*it)->GetSeqStart(1)  >  32) keep = false;
+                    }
+                }
+    
                 if (!keep) {
                      it = align_list.erase(it);
                 } else {
@@ -424,11 +417,16 @@ void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
             }
         }
     }
+};
 
-    iq = 0;
-    ITERATE(CSearchResultSet, result, *results_D) {
+void CIgBlast::x_AnnotateD(CRef<CSearchResultSet>        &results,
+                           vector<CRef <CIgAnnotation> > &annots)
+{
+    int iq = 0;
+    ITERATE(CSearchResultSet, result, *results) {
 
         CIgAnnotation *annot = &*(annots[iq++]);
+        string qct = annot->m_ChainType[0];
  
         if ((*result)->HasAlignments()) {
 
@@ -460,23 +458,27 @@ void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
                          annot->m_GeneInfo[0] : annot->m_GeneInfo[1] - 1;
             int J_begin = annot->m_GeneInfo[4];
             int J_end = annot->m_GeneInfo[5] - 1;
+
             bool annotated = false;
             it = align_list.begin();
             while (it != align_list.end()) {
                 
-                bool keep = true;
-                if (annot->m_MinusStrand) {
-                    if ((int)(*it)->GetSeqStop(0)   <  V_end - 30 ||
-                        (int)(*it)->GetSeqStart(0)  >  V_end) keep = false;
-                    if (J_begin>=0 &&
-                        ((int)(*it)->GetSeqStart(0) <  J_begin + 3 ||
-                         (int)(*it)->GetSeqStop(0)  <  J_end + 3)) keep = false;
-                } else {
-                    if ((int)(*it)->GetSeqStart(0)  >  V_end + 30 ||
-                        (int)(*it)->GetSeqStop(0)   <  V_end) keep = false;
-                    if (J_begin>=0 &&
-                        ((int)(*it)->GetSeqStart(0) >  J_begin - 3 ||
-                         (int)(*it)->GetSeqStop(0)  >  J_end - 3)) keep = false; 
+                bool keep = (qct=="VH" || qct=="N/A");
+
+                if (keep) {
+                    if (annot->m_MinusStrand) {
+                        if ((int)(*it)->GetSeqStop(0)   <  V_end - 30 ||
+                            (int)(*it)->GetSeqStart(0)  >  V_end) keep = false;
+                        if (J_begin>=0 &&
+                            ((int)(*it)->GetSeqStart(0) <  J_begin + 3 ||
+                             (int)(*it)->GetSeqStop(0)  <  J_end + 3)) keep = false;
+                    } else {
+                        if ((int)(*it)->GetSeqStart(0)  >  V_end + 30 ||
+                            (int)(*it)->GetSeqStop(0)   <  V_end) keep = false;
+                        if (J_begin>=0 &&
+                            ((int)(*it)->GetSeqStart(0) >  J_begin - 3 ||
+                             (int)(*it)->GetSeqStop(0)  >  J_end - 3)) keep = false; 
+                    }
                 }
 
                 if (!keep) {
@@ -494,6 +496,7 @@ void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
     }
 };
 
+// query chain type and domain is annotated by germline alignment
 void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
                                 CRef<CSearchResultSet>        &dm_results, 
                                 vector<CRef <CIgAnnotation> > &annots)
@@ -534,6 +537,8 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
 
                 string sid = (*it)->GetSeq_id(1).AsFastaString();
                 if (sid.substr(0, 4) == "lcl|") sid = sid.substr(4, sid.length());
+                annot->m_ChainType.push_back(m_AnnotationInfo.GetChainType(sid));
+
                 int domain_info[10];
 
                 if (m_AnnotationInfo.GetDomainInfo(sid, domain_info)) {

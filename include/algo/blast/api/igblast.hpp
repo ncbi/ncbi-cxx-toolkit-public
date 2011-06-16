@@ -68,7 +68,7 @@ class NCBI_XBLAST_EXPORT CIgAnnotation : public CObject
 {
 public:
     bool m_MinusStrand;              // hit is on minus strand of the query
-    vector<string> m_ChainType;      // chain type of the subjects
+    vector<string> m_ChainType;      // chain types of the query[0] and the subjects[1:]
     int m_GeneInfo[6];               // The (start) and (end offset + 1) for VDJ
     int m_FrameInfo[2];              // Frame number for V end and J start
     int m_DomainInfo[13];            // The (start) and (end offset) for FWR1, 
@@ -240,21 +240,24 @@ private:
     void x_SetupDbSearch(vector<CRef <CIgAnnotation> > &annot,
                          CRef<IQueryFactory>           &qf);
 
-    /// Anntate the V gene based on blast results
-    static void s_AnnotateV(CRef<CSearchResultSet>        &results_V, 
-                            vector<CRef <CIgAnnotation> > &annot);
+    /// Annotate the V gene based on blast results
+    void x_AnnotateV(CRef<CSearchResultSet>        &results,
+                     vector<CRef <CIgAnnotation> > &annot);
 
-    /// Anntate the domains based on blast results
+    /// Annotate the D genes based on blast results
+    void x_AnnotateD(CRef<CSearchResultSet>        &results,
+                     vector<CRef <CIgAnnotation> > &annot);
+
+    /// Annotate the J genes based on blast results
+    void x_AnnotateJ(CRef<CSearchResultSet>        &results,
+                     vector<CRef <CIgAnnotation> > &annot);
+
+    /// Annotate the query chaintype and domains based on blast results
     void x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results, 
                           CRef<CSearchResultSet>        &dm_results, 
                           vector<CRef <CIgAnnotation> > &annot);
 
-    /// Anntate the D, J genes based on blast results
-    void x_AnnotateDJ(CRef<CSearchResultSet>        &results_D, 
-                      CRef<CSearchResultSet>        &results_J, 
-                      vector<CRef <CIgAnnotation> > &annot);
-
-    /// Set the chain type and frame info
+    /// Set the subject chain type and frame info
     void x_SetChainType(CRef<CSearchResultSet>        &results, 
                         vector<CRef <CIgAnnotation> > &annot);
 

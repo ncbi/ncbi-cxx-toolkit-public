@@ -579,7 +579,7 @@ CBlastFormat::x_PrintIgTabularReport(const blast::CIgBlastResults& results)
         tabinfo.SetIgAnnotation(annots, m_IgOptions->m_IsProtein);
         tabinfo.PrintMasterAlign();        
  
-        int j = 0;
+        int j = 1;
         for (; itr != aln_set->Get().end(); ++itr) {
             tabinfo.SetFields(**itr, *m_Scope, 
                               annots->m_ChainType[j++], 
