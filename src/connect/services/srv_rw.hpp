@@ -109,6 +109,7 @@ protected:
 
     bool IsConnectionOpen() { return m_TransmissionWriter.get() != NULL; }
     void ResetWriters();
+    void AbortConnection();
     void Transmit(const void* buf, size_t count, size_t* bytes_written);
 
     CNetServerConnection m_Connection;
