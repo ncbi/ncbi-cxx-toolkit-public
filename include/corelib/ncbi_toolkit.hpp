@@ -79,7 +79,7 @@ void NCBI_XNCBI_EXPORT NcbiToolkit_Init
    (int                            argc,
     const TXChar* const*           argv,
     const TXChar* const*           envp        = NULL,
-    const INcbiToolkit_LogHandler* log_handler = NULL);
+          INcbiToolkit_LogHandler* log_handler = NULL);
 
 
 
@@ -149,7 +149,7 @@ private:
 class INcbiToolkit_LogHandler
 {
 public:
-    virtual void Post(const CNcbiToolkit_LogMessage& msg) const = 0;
+    virtual void Post(const CNcbiToolkit_LogMessage& msg) = 0;
 };
 
 

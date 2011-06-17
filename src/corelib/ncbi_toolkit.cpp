@@ -140,15 +140,15 @@ public:
 class CNcbiToolkitImpl_DiagHandler : public CDiagHandler
 {
 public:
-    CNcbiToolkitImpl_DiagHandler(const INcbiToolkit_LogHandler* log_handler);
+    CNcbiToolkitImpl_DiagHandler(INcbiToolkit_LogHandler* log_handler);
     virtual ~CNcbiToolkitImpl_DiagHandler(void);
     virtual void Post(const SDiagMessage& msg);
 private:
-    const INcbiToolkit_LogHandler* m_LogHandler;
+    INcbiToolkit_LogHandler* m_LogHandler;
 };
 
 CNcbiToolkitImpl_DiagHandler::CNcbiToolkitImpl_DiagHandler
-(const INcbiToolkit_LogHandler* log_handler)
+(INcbiToolkit_LogHandler* log_handler)
     : m_LogHandler(log_handler)
 {
     SetDiagHandler(this, false/*eNoOwnership*/);
@@ -175,7 +175,7 @@ public:
     CNcbiToolkit(int                  argc,
                  const TXChar* const* argv,
                  const TXChar* const* envp = NULL,
-                 const INcbiToolkit_LogHandler* log_handler = NULL);
+                       INcbiToolkit_LogHandler* log_handler = NULL);
     ~CNcbiToolkit(void);
 
 private:
@@ -187,7 +187,7 @@ private:
 CNcbiToolkit::CNcbiToolkit(int                  argc,
                            const TXChar* const* argv,
                            const TXChar* const* envp,
-                           const INcbiToolkit_LogHandler* log_handler)
+                                 INcbiToolkit_LogHandler* log_handler)
 {
     if (log_handler) {
         m_DiagHandler.reset(new CNcbiToolkitImpl_DiagHandler(log_handler));
@@ -219,7 +219,7 @@ void NcbiToolkit_Init
 (int                            argc,
  const TXChar* const*           argv,
  const TXChar* const*           envp,
- const INcbiToolkit_LogHandler* log_handler)
+       INcbiToolkit_LogHandler* log_handler)
 {
     CFastMutexGuard mtx_guard(s_NcbiToolkit_Mtx);
 
