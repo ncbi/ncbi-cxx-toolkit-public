@@ -999,8 +999,7 @@ CNetCacheServer::x_ProlongBlobOnPeer(Uint8 server_id,
     }
     catch (CNetCacheException& ex) {
         if (ex.GetErrCode() == CNetCacheException::eBlobNotFound)
-            return x_WriteBlobToPeer(server_id, slot, raw_key, 0,
-                                     true, false);
+            return x_WriteBlobToPeer(server_id, slot, raw_key, 0, is_sync, false);
         else {
             ERR_POST(Warning << "Cannot execute command on peer: " << ex);
             return ePeerBadNetwork;
