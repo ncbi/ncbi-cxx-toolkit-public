@@ -2517,15 +2517,11 @@ CNCMessageHandler::x_ManageCmdPipeline(void)
         CNCPeriodicSync::BeginTimeEvent(m_SrvId);
     }
 
-    bool do_next_step = false;
-    do {
-        // These two commands will be effectively ignored on all cycles
-        // other than first. But they should be here for unification
-        // of code.
-        m_SockBuffer.Flush();
-        if (m_SockBuffer.HasError()  ||  m_SockBuffer.IsWriteDataPending())
-            break;
-
+    bool do_next_step = true;
+    m_SockBuffer.Flush();
+    while (!m_SockBuffer.HasError()  &&  !m_SockBuffer.IsWriteDataPending()
+           &&  do_next_step  &&  x_GetState() != eSocketClosed)
+    {
         switch (x_GetState()) {
         case ePreAuthenticated:
             do_next_step = x_ReadAuthMessage();
@@ -2577,16 +2573,13 @@ CNCMessageHandler::x_ManageCmdPipeline(void)
             abort();
         }
 
-        if (!m_SockBuffer.HasError()  &&  m_SockBuffer.IsWriteDataPending())
-        {
+        if (!m_SockBuffer.HasError()  &&  m_SockBuffer.IsWriteDataPending()) {
             m_SockBuffer.Flush();
             do_next_step = !m_SockBuffer.IsWriteDataPending();
         }
     }
-    while (!m_SockBuffer.HasError()  &&  !m_SockBuffer.IsWriteDataPending()
-           &&  do_next_step  &&  x_GetState() != eSocketClosed);
 
-    if (m_SockBuffer.HasError()) {
+    if (m_SockBuffer.HasError()  &&  x_GetState() != eSocketClosed) {
         if (m_CmdCtx) {
             m_CmdCtx->SetRequestStatus(eStatus_BadCmd);
         }
@@ -2595,9 +2588,8 @@ CNCMessageHandler::x_ManageCmdPipeline(void)
         }
         x_CloseConnection();
     }
-
 #ifdef NCBI_OS_LINUX
-    if (x_GetState() != eSocketClosed) {
+    else if (x_GetState() != eSocketClosed) {
         int fd = 0, val = 1;
         m_Socket->GetOSHandle(&fd, sizeof(fd));
         setsockopt(fd, IPPROTO_TCP, TCP_QUICKACK, &val, sizeof(val));

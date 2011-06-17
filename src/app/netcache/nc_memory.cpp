@@ -245,7 +245,7 @@ s_GetGradeValue(unsigned int cur_cnt, unsigned int cnt_per_grade)
 }
 
 
-inline void
+void
 CNCMMCentral::SetMemLimits(size_t limit, size_t alert_level)
 {
     if (limit == 0)
@@ -279,7 +279,7 @@ CNCMMCentral::GetStats(void)
 }
 
 
-inline void
+void
 CNCMMStats::InitInstance(void)
 {
     memset(this, 0, sizeof(*this));
@@ -339,7 +339,7 @@ CNCMMStats::x_CollectAllTo(CNCMMStats* stats)
     }
 }
 
-inline void
+void
 CNCMMStats::AggregateUsage(CNCMMStats* stats)
 {
     stats->m_SystemMem = CNCMMCentral::GetStats().m_SystemMem;
@@ -629,7 +629,7 @@ CNCMMStats::DBPageNotInCache(void)
     stat->m_ObjLock.Unlock();
 }
 
-inline void
+void
 CNCMMStats::AddAggregateMeasures(const CNCMMStats& stats)
 {
     CSpinGuard guard(m_ObjLock);
@@ -661,7 +661,7 @@ CNCMMStats::GetDBCacheMem(void) const
     return m_DBCacheMem;
 }
 
-inline void
+void
 CNCMMStats::CollectAllStats(CNCMMStats* stats)
 {
     stats->InitInstance();
@@ -671,7 +671,7 @@ CNCMMStats::CollectAllStats(CNCMMStats* stats)
     }
 }
 
-inline void
+void
 CNCMMStats::Print(CPrintTextProxy& proxy)
 {
     proxy << "Memory  - " << m_SystemMem                   << " (sys), "
@@ -746,7 +746,7 @@ CNCMMStats::Print(CPrintTextProxy& proxy)
 }
 
 
-inline void
+void
 CNCMMStats_Getter::Initialize(void)
 {
     TBase::Initialize();
@@ -811,7 +811,7 @@ CNCMMCentral::x_AlignSizeToPage(size_t size)
 
 #ifndef NCBI_OS_MSWIN
 
-inline void*
+void*
 CNCMMCentral::x_DoCallMmap(size_t size)
 {
     void* ptr;
@@ -881,7 +881,7 @@ CNCMMCentral::x_AllocAlignedLongWay(void*& mem_ptr, size_t size)
 #endif
 }
 
-inline void*
+void*
 CNCMMCentral::x_DoAlloc(size_t& size)
 {
     size_t unaligned_size = size;
@@ -905,7 +905,7 @@ CNCMMCentral::SysAlloc(size_t size)
     return x_DoAlloc(size);
 }
 
-inline void*
+void*
 CNCMMCentral::SysAllocAligned(size_t size)
 {
     CSpinGuard guard(sm_CentralLock);
@@ -918,7 +918,7 @@ CNCMMCentral::SysAllocAligned(size_t size)
     return mem_ptr;
 }
 
-inline void
+void
 CNCMMCentral::SysFree(void* ptr, size_t size)
 {
     CSpinGuard guard(sm_CentralLock);
@@ -1010,7 +1010,7 @@ CNCMMFreeChunk::~CNCMMFreeChunk(void)
     CNCMMStats::FreeChunkDeleted();
 }
 
-inline void
+void
 CNCMMFreeChunk::MarkChain(unsigned int chain_size, unsigned int slab_grade)
 {
     CNCMMFreeChunk* chain_end = this + (chain_size - 1);
@@ -1038,7 +1038,7 @@ CNCMMFreeChunk::operator delete(void*)
 {}
 #endif // NCBI_OS_MSWIN
 
-inline void
+void
 CNCMMFreeChunk::DestroyChain(unsigned int chain_size)
 {
     CNCMMFreeChunk* chain_end = this + chain_size;
@@ -1047,7 +1047,7 @@ CNCMMFreeChunk::DestroyChain(unsigned int chain_size)
     }
 }
 
-inline CNCMMFreeChunk*
+CNCMMFreeChunk*
 CNCMMFreeChunk::ConstructChain(void* mem_ptr, unsigned int chain_size)
 {
     CNCMMFreeChunk* chain_start = new (mem_ptr) CNCMMFreeChunk();
@@ -1095,7 +1095,6 @@ CNCMMSlab::operator delete(void* mem_ptr)
     CNCMMCentral::SysFree(mem_ptr, kNCMMSlabSize);
 }
 
-inline
 CNCMMSlab::CNCMMSlab(void)
 {
     m_CntFree    = kNCMMCntChunksInSlab;
@@ -1112,7 +1111,7 @@ CNCMMSlab::~CNCMMSlab(void)
 }
 
 
-inline void
+void
 CNCMMChunksPool::InitInstance(void)
 {
     // Hack to initialize spin lock.
@@ -1141,7 +1140,7 @@ CNCMMChunksPool::ReleaseRef(void)
 }
 
 
-inline void
+void
 CNCMMChunksPool_Getter::Initialize(void)
 {
     TBase::Initialize();
@@ -1211,7 +1210,7 @@ CNCMMChunksPool::x_AdvanceChunkPtr(CNCMMFreeChunk** chunk_ptr)
     return chunk_ptr;
 }
 
-inline void*
+void*
 CNCMMChunksPool::x_GetChunk(void)
 {
     m_ObjLock.Lock();
@@ -1226,7 +1225,7 @@ CNCMMChunksPool::x_GetChunk(void)
     return chunk;
 }
 
-inline void
+void
 CNCMMChunksPool::x_PutChunk(void* mem_ptr)
 {
     CNCMMFreeChunk* chunk = new (mem_ptr) CNCMMFreeChunk();
@@ -1367,7 +1366,7 @@ CNCMMDBPage::x_AddToLRUImpl(void)
     }
 }
 
-inline void
+void
 CNCMMDBPage::AddToLRU(void)
 {
     sm_LRULock.Lock();
@@ -1399,7 +1398,7 @@ CNCMMDBPage::x_RemoveFromLRUImpl(void)
     m_PrevInLRU = m_NextInLRU = NULL;
 }
 
-inline void
+void
 CNCMMDBPage::RemoveFromLRU(void)
 {
     sm_LRULock.Lock();
@@ -1409,7 +1408,6 @@ CNCMMDBPage::RemoveFromLRU(void)
     sm_LRULock.Unlock();
 }
 
-inline
 CNCMMDBPage::CNCMMDBPage(void)
     : m_Cache(NULL),
       m_StateFlags(0),
@@ -1420,13 +1418,14 @@ CNCMMDBPage::CNCMMDBPage(void)
     memset(m_Data, 0, sizeof(void*));
 }
 
+inline
 CNCMMDBPage::~CNCMMDBPage(void)
 {
     if ((m_StateFlags & ~fInLRU) != 0)
         abort();
 }
 
-inline CNCMMDBPage*
+CNCMMDBPage*
 CNCMMDBPage::PeekLRUForDestroy(void)
 {
     sm_LRULock.Lock();
@@ -1447,7 +1446,7 @@ CNCMMDBPage::operator delete(void* mem_ptr)
     CNCMMCentral::DBPageDeleted();
 }
 
-inline void*
+void*
 CNCMMDBPage::operator new(size_t _DEBUG_ARG(size))
 {
     _ASSERT(size == kNCMMChunkSize);
@@ -1481,7 +1480,7 @@ CNCMMDBPage::operator new(size_t _DEBUG_ARG(size))
     return page;
 }
 
-inline void
+void
 CNCMMDBPage::DeletedFromHash(void)
 {
     TStateFlags flags;
@@ -1497,7 +1496,7 @@ CNCMMDBPage::DeletedFromHash(void)
         delete this;
 }
 
-inline void
+void
 CNCMMDBPage::Lock(void)
 {
     sm_LRULock.Lock();
@@ -1506,7 +1505,7 @@ CNCMMDBPage::Lock(void)
     sm_LRULock.Unlock();
 }
 
-inline void
+void
 CNCMMDBPage::Unlock(void)
 {
     bool need_delete = false;
@@ -1584,7 +1583,6 @@ CNCMMBlocksSet::CountFreeBlocks(void)
     return static_cast<unsigned int>(m_LastFree - x_GetFirstFreePtr());
 }
 
-inline
 CNCMMBlocksSet::CNCMMBlocksSet(CNCMMSizePool* pool, unsigned int size_index)
 {
     m_Pool = pool;
@@ -1621,7 +1619,7 @@ CNCMMBlocksSet::GetEmptyGrade(void)
     return m_EmptyGrade;
 }
 
-inline void
+void
 CNCMMBlocksSet::x_CalcEmptyGrade(void)
 {
     unsigned int cnt_free  = CountFreeBlocks();
@@ -1682,7 +1680,7 @@ CNCMMSlab::GetBlocksSet(void* mem_ptr)
                                          &m_Chunks[x_GetChunkIndex(mem_ptr)]);
 }
 
-inline unsigned int
+unsigned int
 CNCMMSlab::x_CalcEmptyGrade(void)
 {
     m_EmptyGrade = s_GetGradeValue(m_CntFree, kNCMMChunksPerSlabGrade);
@@ -1690,7 +1688,7 @@ CNCMMSlab::x_CalcEmptyGrade(void)
     return m_EmptyGrade;
 }
 
-inline unsigned int
+unsigned int
 CNCMMSlab::MarkChainOccupied(const SNCMMChainInfo& chain)
 {
     CSpinGuard guard(m_ObjLock);
@@ -1702,7 +1700,7 @@ CNCMMSlab::MarkChainOccupied(const SNCMMChainInfo& chain)
     return m_EmptyGrade;
 }
 
-inline void
+void
 CNCMMSlab::MarkChainFree(SNCMMChainInfo* chain,
                          SNCMMChainInfo* chain_left,
                          SNCMMChainInfo* chain_right)
@@ -1730,7 +1728,7 @@ CNCMMSlab::MarkChainFree(SNCMMChainInfo* chain,
 }
 
 
-inline void
+void
 CNCMMChainsPool::InitInstance(void)
 {
     // Hack to initialize spin lock.
@@ -1759,7 +1757,7 @@ CNCMMChainsPool::ReleaseRef(void)
 }
 
 
-inline void
+void
 CNCMMChainsPool_Getter::Initialize(void)
 {
     TBase::Initialize();
@@ -1820,7 +1818,7 @@ CNCMMChainsPool::Initialize(void)
     sm_Getter.Initialize();
 }
 
-inline void*
+void*
 CNCMMChainsPool::x_GetChain(unsigned int chain_size)
 {
     void* chain = NULL;
@@ -1841,7 +1839,7 @@ CNCMMChainsPool::x_GetChain(unsigned int chain_size)
     return chain;
 }
 
-inline void
+void
 CNCMMChainsPool::x_PutChain(void* chain, unsigned int chain_size)
 {
     m_ObjLock.Lock();
@@ -1885,7 +1883,7 @@ CNCMMChainsPool::PutChain(void* mem_ptr, unsigned int chain_size)
 }
 
 
-inline void
+void
 CNCMMReserve::x_InitInstance(void)
 {
     // Hack to initialize spin lock.
@@ -1894,7 +1892,7 @@ CNCMMReserve::x_InitInstance(void)
     memset(m_Chains, 0, sizeof(m_Chains));
 }
 
-inline void
+void
 CNCMMReserve::Initialize(void)
 {
     for (unsigned int i = 0; i < kNCMMSlabEmptyGrades; ++i) {
@@ -1910,7 +1908,7 @@ CNCMMReserve::x_MarkListIfEmpty(unsigned int list_index)
     }
 }
 
-inline void
+void
 CNCMMReserve::Link(const SNCMMChainInfo& chain)
 {
     CSpinGuard guard(m_ObjLock);
@@ -1924,7 +1922,7 @@ CNCMMReserve::Link(const SNCMMChainInfo& chain)
     list_head = chain.start;
 }
 
-inline void
+void
 CNCMMReserve::x_Unlink(const SNCMMChainInfo& chain)
 {
     CNCMMFreeChunk*& list_head = m_Chains[chain.size];
@@ -1942,7 +1940,7 @@ CNCMMReserve::x_Unlink(const SNCMMChainInfo& chain)
     chain.start->m_NextChain = chain.start->m_PrevChain = NULL;
 }
 
-inline bool
+bool
 CNCMMReserve::UnlinkIfExist(const SNCMMChainInfo& chain)
 {
     CSpinGuard guard(m_ObjLock);
@@ -1958,7 +1956,7 @@ CNCMMReserve::UnlinkIfExist(const SNCMMChainInfo& chain)
     return false;
 }
 
-inline bool
+bool
 CNCMMReserve::x_FindFreeChain(unsigned int    min_size,
                               SNCMMChainInfo* chain)
 {
@@ -1976,7 +1974,7 @@ CNCMMReserve::x_FindFreeChain(unsigned int    min_size,
     return true;
 }
 
-inline bool
+bool
 CNCMMReserve::x_GetChain(unsigned int min_size, SNCMMChainInfo* chain)
 {
     CSpinGuard guard(m_ObjLock);
@@ -2014,7 +2012,7 @@ CNCMMReserve::x_CreateMergedChain(const SNCMMChainInfo& chain)
     }
 }
 
-inline void
+void
 CNCMMReserve::x_OccupyChain(const SNCMMChainInfo& chain,
                             unsigned int          occupy_size)
 {
@@ -2032,7 +2030,7 @@ CNCMMReserve::x_OccupyChain(const SNCMMChainInfo& chain,
     }
 }
 
-inline unsigned int
+unsigned int
 CNCMMReserve::FillChunksFromChains(CNCMMFreeChunk** chunk_ptrs,
                                    unsigned int     max_cnt,
                                    SNCMMChainInfo*  chain_ptrs)
@@ -2096,7 +2094,7 @@ CNCMMReserve::x_MergeChain(const SNCMMChainInfo& chain_from,
         chain_to.start = chain_from.start;
 }
 
-inline bool
+bool
 CNCMMReserve::x_MergeChainIfValid(const SNCMMChainInfo& chain_from,
                                   SNCMMChainInfo&       chain_to)
 {
@@ -2163,7 +2161,7 @@ CNCMMReserve::GetChunks(CNCMMFreeChunk** chunk_ptrs, unsigned int max_cnt)
     return cnt_got;
 }
 
-inline void
+void
 CNCMMReserve::x_SortChunkPtrs(CNCMMFreeChunk** chunk_ptrs, unsigned int cnt)
 {
     for (unsigned int i = 0; i < cnt; ++i) {
@@ -2259,7 +2257,7 @@ CNCMMBigBlockSet::GetData(void)
     return this + 1;
 }
 
-inline void*
+void*
 CNCMMBigBlockSet::operator new(size_t, size_t combined_size)
 {
     _ASSERT(combined_size <= kNCMMMaxCombinedSize);
@@ -2271,7 +2269,7 @@ CNCMMBigBlockSet::operator new(size_t, size_t combined_size)
     return CNCMMChainsPool::GetChain(chain_size);
 }
 
-inline void
+void
 CNCMMBigBlockSet::operator delete(void* mem_ptr, size_t combined_size)
 {
     unsigned int chain_size = x_GetChunksCnt(combined_size);
@@ -2342,7 +2340,7 @@ CNCMMSizePool_Getter::GetMainPool(unsigned int size_index)
 }
 
 
-inline void
+void
 CNCMMSizePool::x_RemoveSetFromList(CNCMMBlocksSet* bl_set,
                                    unsigned int    list_grade)
 {
@@ -2361,7 +2359,7 @@ CNCMMSizePool::x_RemoveSetFromList(CNCMMBlocksSet* bl_set,
     bl_set->m_PrevInPool = bl_set->m_NextInPool = NULL;
 }
 
-inline void
+void
 CNCMMSizePool::x_AddSetToList(CNCMMBlocksSet* bl_set,
                               unsigned int    list_grade)
 {
@@ -2385,7 +2383,6 @@ CNCMMSizePool::x_AddBlocksSet(CNCMMBlocksSet* bl_set, unsigned int grade)
     x_AddSetToList(bl_set, grade);
 }
 
-inline
 CNCMMSizePool::CNCMMSizePool(unsigned int size_index)
     : m_SizeIndex(size_index),
       m_EmptySet(NULL)
@@ -2396,7 +2393,6 @@ CNCMMSizePool::CNCMMSizePool(unsigned int size_index)
     m_ExistMask.Initialize(0);
 }
 
-inline
 CNCMMSizePool::~CNCMMSizePool(void)
 {
     // NB: theoretically some crash could happen here if pool will be
@@ -2430,7 +2426,7 @@ CNCMMSizePool::operator delete(void*, void*)
 {}
 
 
-inline void
+void
 CNCMMSizePool_Getter::Initialize(void)
 {
     TBase::Initialize();
@@ -2497,7 +2493,7 @@ CNCMMSizePool_Getter::DeleteTlsObject(void* obj_ptr)
 }
 
 
-inline void
+void
 CNCMMSizePool::x_CheckGradeChange(CNCMMBlocksSet* bl_set,
                                   unsigned int    old_grade)
 {
@@ -2508,7 +2504,7 @@ CNCMMSizePool::x_CheckGradeChange(CNCMMBlocksSet* bl_set,
     }
 }
 
-inline CNCMMBlocksSet*
+CNCMMBlocksSet*
 CNCMMSizePool::x_GetEmptySet(void)
 {
     CNCMMBlocksSet* bl_set;
@@ -2527,7 +2523,7 @@ CNCMMSizePool::x_GetEmptySet(void)
     return bl_set;
 }
 
-inline void
+void
 CNCMMSizePool::x_NewEmptySet(CNCMMBlocksSet* bl_set, unsigned int grade)
 {
     x_RemoveSetFromList(bl_set, grade);
@@ -2544,7 +2540,7 @@ CNCMMSizePool::x_NewEmptySet(CNCMMBlocksSet* bl_set, unsigned int grade)
     }
 }
 
-inline void*
+void*
 CNCMMSizePool::x_AllocateBlock(void)
 {
     CNCMMStats::MemBlockAlloced(m_SizeIndex);
@@ -2565,7 +2561,7 @@ CNCMMSizePool::x_AllocateBlock(void)
     return block;
 }
 
-inline void
+void
 CNCMMSizePool::x_DeallocateBlock(void* block, CNCMMBlocksSet* bl_set)
 {
     _ASSERT(bl_set->GetBlockSize() == kNCMMSmallSize[m_SizeIndex]);
@@ -2584,7 +2580,7 @@ CNCMMSizePool::x_DeallocateBlock(void* block, CNCMMBlocksSet* bl_set)
     m_ObjLock.Unlock();
 }
 
-inline void
+void
 CNCMMSizePool::Initialize(void)
 {
     static CFastRWLock destruct_lock;
@@ -2666,7 +2662,7 @@ CNCMMCentral::DeallocMemory(void* mem_ptr)
     }
 }
 
-inline void*
+void*
 CNCMMCentral::ReallocMemory(void* mem_ptr, size_t new_size)
 {
     void* new_ptr = AllocMemory(new_size);
@@ -2720,7 +2716,7 @@ CNCMMCentral::x_Initialize(void)
     sm_Initialized = true;
 }
 
-inline bool
+bool
 CNCMMCentral::RunLateInit(void)
 {
     sm_BGThread = NewBGThread(&CNCMMCentral::x_DoBackgroundWork);
@@ -2735,7 +2731,7 @@ CNCMMCentral::RunLateInit(void)
     return true;
 }
 
-inline void
+void
 CNCMMCentral::PrepareToStop(void)
 {
     sm_Mode = eNCFinalized;
@@ -2751,7 +2747,7 @@ CNCMMCentral::PrepareToStop(void)
     }
 }
 
-inline void
+void
 CNCMMCentral::x_CalcMemoryMode(const CNCMMStats& stats)
 {
     size_t free_mem     = stats.GetFreeMem();
@@ -2846,7 +2842,7 @@ CNCMMDBPagesHash::~CNCMMDBPagesHash(void)
     x_FreeHash(m_Hash, m_Size);
 }
 
-inline void
+void
 CNCMMDBPagesHash::SetOptimalSize(int new_size)
 {
     new_size /= kNCMMDBHashSizeFactor;
@@ -2875,7 +2871,7 @@ CNCMMDBPagesHash::SetOptimalSize(int new_size)
     m_Size = new_size;
 }
 
-inline void
+void
 CNCMMDBPagesHash::PutPage(unsigned int key, CNCMMDBPage* page)
 {
     // According to SQLite's implementation of page cache adding to hash when
@@ -2888,7 +2884,7 @@ CNCMMDBPagesHash::PutPage(unsigned int key, CNCMMDBPage* page)
     hash_val           = page;
 }
 
-inline CNCMMDBPage*
+CNCMMDBPage*
 CNCMMDBPagesHash::GetPage(unsigned int key)
 {
     unsigned int index = key & (m_Size - 1);
@@ -2900,7 +2896,7 @@ CNCMMDBPagesHash::GetPage(unsigned int key)
     return page;
 }
 
-inline bool
+bool
 CNCMMDBPagesHash::RemovePage(CNCMMDBPage* page)
 {
     unsigned int index = page->m_Key & (m_Size - 1);
@@ -2916,7 +2912,7 @@ CNCMMDBPagesHash::RemovePage(CNCMMDBPage* page)
     return false;
 }
 
-inline int
+int
 CNCMMDBPagesHash::RemoveAllPages(unsigned int min_key)
 {
     int cnt_removed = 0;
@@ -2950,7 +2946,7 @@ CNCMMDBCache::CNCMMDBCache(int page_size, bool purgeable)
     //? CNCMMStats::OverheadMemAlloced(sizeof(*this));
 }
 
-inline void
+void
 CNCMMDBCache::SetOptimalSize(int num_pages)
 {
     CSpinGuard guard(m_ObjLock);
@@ -2964,7 +2960,7 @@ CNCMMDBCache::GetSize(void)
     return m_CacheSize;
 }
 
-inline void
+void
 CNCMMDBCache::x_AttachPage(unsigned int key, CNCMMDBPage* page)
 {
     m_Pages.PutPage(key, page);
@@ -2973,7 +2969,7 @@ CNCMMDBCache::x_AttachPage(unsigned int key, CNCMMDBPage* page)
     m_MaxKey = max(m_MaxKey, key);
 }
 
-inline void
+void
 CNCMMDBCache::DetachPage(CNCMMDBPage* page)
 {
     _ASSERT(page->GetCache() == this);
@@ -2988,7 +2984,7 @@ CNCMMDBCache::DetachPage(CNCMMDBPage* page)
     // CNCMMDBPage::Unlock().
 }
 
-inline void
+void
 CNCMMDBCache::DeleteAllPages(unsigned int min_key)
 {
     CSpinGuard guard(m_ObjLock);
@@ -3003,7 +2999,7 @@ CNCMMDBCache::DeleteAllPages(unsigned int min_key)
     m_MaxKey = (min_key == 0 || m_CacheSize == 0? 0: min_key - 1);
 }
 
-inline void*
+void*
 CNCMMDBCache::PinPage(unsigned int key, EPageCreate create_flag)
 {
     CSpinGuard guard(m_ObjLock);
@@ -3031,7 +3027,7 @@ CNCMMDBCache::PinPage(unsigned int key, EPageCreate create_flag)
     return page->GetData();
 }
 
-inline void
+void
 CNCMMDBCache::UnpinPage(void* data, bool must_delete)
 {
     CNCMMDBPage* page = CNCMMDBPage::FromDataPtr(data);
@@ -3045,7 +3041,6 @@ CNCMMDBCache::UnpinPage(void* data, bool must_delete)
     }
 }
 
-inline
 CNCMMDBCache::~CNCMMDBCache(void)
 {
     CFastMutexGuard guard(s_CacheDeleteLock);
@@ -3068,7 +3063,7 @@ CNCMMDBCache::operator delete(void* ptr)
 }
 
 // Special place for this method because it uses CNCMMDBCache::DetachPage().
-inline bool
+bool
 CNCMMDBPage::DoPeekedDestruction(void)
 {
     sm_LRULock.Lock();
@@ -3319,7 +3314,7 @@ CNCMemManager::GetMemoryUsed(void)
     return stat.GetSystemMem();
 }
 
-static inline CNCMMDBPage*
+static CNCMMDBPage*
 s_DataPtrToDBPage(const void* data_ptr)
 {
     void* ptr = const_cast<void*>(data_ptr);
