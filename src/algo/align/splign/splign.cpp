@@ -1026,6 +1026,18 @@ bool CSplign::AlignSingleCompartment(THitRefs* phitrefs,
     return rv;
 }
 
+bool CSplign::s_IsPolyA(const char * seq, size_t polya_start, size_t dim, size_t cds_stop) {
+    const size_t kMinPolyaLen(10);
+    const double kMinPercAInPolya (0.80);
+    if( ( polya_start + kMinPolyaLen > dim ) || ( polya_start <= cds_stop ) ) return false;
+    size_t cnt = 0;
+    for(size_t i = polya_start; i<dim; ++i) {
+        if(seq[i] == 'A') ++cnt;
+    }
+    if(cnt >= (dim - polya_start)*kMinPercAInPolya) return true;
+    return false;
+}
+
 // naive polya detection; sense direction assumed
 size_t CSplign::s_TestPolyA(const char * seq, size_t dim, size_t cds_stop)
 {
@@ -1298,102 +1310,101 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
             NCBI_THROW(CAlgoAlignException, eNoAlignment, g_msg_NoAlignment);
         }
 
-        // try to extend the last segment as long as it's a perfect match
-        if(m_polya_start < kMax_UInt && seg_dim && m_segments[seg_dim-1].m_exon) {
-
-            TSegment& s (const_cast<TSegment&>(m_segments[seg_dim-1]));
-
-            const char* p0 = &m_mrna.front() + s.m_box[1] + 1;
-            const char* q = &m_genomic.front() + s.m_box[3] + 1;
-            const char* p = p0;
-            const char* pe = &m_mrna.front() + mrna_size;
-            const char* qe = &m_genomic.front() + m_genomic.size();
-            for(; p < pe && q < qe; ++p, ++q) {
-                if(*p != *q) break;
-            }
-        
-            const size_t sh (p - p0);
-            if(sh) {
-                // resize
-                s.m_box[1] += sh;
-                s.m_box[3] += sh;
-                s.m_details.append(sh, 'M');
-                s.Update(m_aligner);
-            
-                // fix annotation
-                const size_t ann_dim = s.m_annot.size();
-                if(ann_dim > 2 && s.m_annot[ann_dim - 3] == '>') {
-
-                    s.m_annot[ann_dim - 2] = q < qe? *q: ' ';
-                    ++q;
-                    s.m_annot[ann_dim - 1] = q < qe? *q: ' ';
-                }
-            
-                m_polya_start += sh;
-            }
-        }
-    
-        // look for PolyA in trailing segments:
-        // if a segment is mostly 'A's then we add it to PolyA
-
-        int j (seg_dim - 1), j0 (j);
-        for(; j >= 0; --j) {
-        
-            const TSegment& s (m_segments[j]);
-
-            const char* p0 (&m_mrna[qmin] + s.m_box[0]);
-            const char* p1 (&m_mrna[qmin] + s.m_box[1] + 1);
-            const size_t len_chars (p1 - p0);
-            size_t count (0);
-            for(const char* pc (p0); pc != p1; ++pc) {
-                if(*pc == 'A') ++count;
-            }
-
-            double min_a_content (0.76); // min 'A' content in a polyA
-
-            // also check splices
-            if(s.m_exon && j > 0 && m_segments[j-1].m_exon) {
-
-                bool consensus (TSegment::s_IsConsensusSplice(
-                                m_segments[j-1].GetDonor(), s.GetAcceptor()));
-                if(!consensus || len_chars <= 6) {
-                    min_a_content = 0.599;
-                }
-                if(len_chars < 3) {
-                    min_a_content = 0.49;
-                }
-            }
-
-            if(!s.m_exon) {
-                min_a_content = (s.m_len <= 4)? 0.49: 0.599;
-            }
-        
-            if(double(count)/len_chars < min_a_content) {
-                if(s.m_exon && s.m_len > 4) break;
-            }
-            else {
-                j0 = j - 1;
-            }
-        }
-
-        if(j0 >= 0 && j0 < int(seg_dim - 1)) {
-            m_polya_start = m_segments[j0].m_box[1] + 1;
-        }
-
-        // test if we have at least one exon before poly(a)
-        bool some_exons (false);
-        for(int i = 0; i <= j0; ++i ) {
+		//look for the last exon
+        int last_exon = -1;
+        for(int i = m_segments.size(); i > 0;  ) {
+			--i;
             if(m_segments[i].m_exon) {
-                some_exons = true;
-                break;
+                last_exon = i;
+				break;
             }
         }
 
-        if(!some_exons) {
+        if(last_exon == -1) {//no exons found
             NCBI_THROW(CAlgoAlignException, eNoAlignment,g_msg_NoExonsAboveIdtyLimit);
         }
+
+		// try to extend the last exon as long as it's a good match (min exon identity at the end required)
+		TSegment& s (const_cast<TSegment&>(m_segments[last_exon]));
+
+        const char* p0 = &m_mrna.front() + s.m_box[1] + 1;
+        const char* q0 = &m_genomic.front() + s.m_box[3] + 1;
+        const char* p = p0;
+		const char* q = q0;
+        const char* pe = &m_mrna.front() + mrna_size;
+        const char* qe = &m_genomic.front() + m_genomic.size();
+
+        int match_num = 0;
+		size_t sh = 0, ct =0;
+		for(; p < pe && q < qe; ++p, ++q, ++ct) {
+            if(*p == *q) {
+        		++match_num;
+		    	if( match_num >= (ct+1)*GetMinExonIdentity() ) { // % ident
+	    	    	sh = ct+1;
+    			} 
+            } 
+        }
+
+        // cut low identity flank region in extention
+        const double kMinExonFlankIdty (0.5);
+        _ASSERT( kMinExonFlankIdty < GetMinExonIdentity() );
+        if(sh) {
+            p = p0+(sh-1);
+            q = q0+(sh-1);
+            ct = 1;
+            match_num = 0;
+            for(;p>=p0;--p,--q,++ct) {
+                if(*p == *q) {
+            		++match_num;
+                } else {
+                    if( match_num < ct*kMinExonFlankIdty) {//cut flank
+                        sh = p - p0;
+                    }
+                }
+            }
+        }
+
+        if(sh) {
+            // resize
+            s.m_box[1] += sh;
+            s.m_box[3] += sh;
+    		for(ct = 0,p = p0, q = q0; ct < sh; ++p, ++q, ++ct) {
+    		if(*p == *q) {
+    			s.m_details.append(1, 'M');
+				} else {
+					s.m_details.append(1, 'R');
+				}
+			}
+            s.Update(m_aligner);
+            
+            // fix annotation
+            const size_t ann_dim = s.m_annot.size();
+    		++q;
+            if(ann_dim > 2 && s.m_annot[ann_dim - 3] == '>') {
+                s.m_annot[ann_dim - 2] = q < qe? *q: ' ';
+                ++q;
+                s.m_annot[ann_dim - 1] = q < qe? *q: ' ';
+            }           
+        }
     
-        m_segments.resize(j0 + 1);
+        m_segments.resize(last_exon + 1);
+
+        //check if the rest is polya or a gap
+        THit::TCoord coord = s.m_box[1] + 1;
+        m_polya_start = kMax_UInt;
+        if(coord < mrna_size ) {//there is unaligned flanking part of mRNA 
+            if(!m_nopolya && s_IsPolyA(&m_mrna.front(), coord, m_mrna.size(), m_cds_stop)) {//polya
+                m_polya_start = coord;
+            } else {//gap
+                TSegment ss;
+                ss.m_box[0] = coord;
+                ss.m_box[1] = mrna_size - 1;
+                ss.SetToGap();
+                m_segments.push_back(ss);
+            }
+        }
+
+            
 
         // scratch it if the total coverage is too low
         double mcount (0);
