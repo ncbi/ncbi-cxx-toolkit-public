@@ -334,32 +334,6 @@ bool SNetScheduleExecuterImpl::GetJobImpl(
 }
 
 
-void SNetScheduleExecuterImpl::x_RegUnregClient(const string& cmd)
-{
-    for (CNetServiceIterator it = m_API->m_Service.
-            Iterate(CNetService::eIncludePenalized); it; ++it) {
-        CNetServer server = *it;
-
-        try {
-            server.ExecWithRetry(cmd);
-        } catch (CNetServiceException& ex) {
-            if (ex.GetErrCode() != CNetServiceException::eCommunicationError)
-                throw;
-            else {
-                ERR_POST_X(12, server->m_Address.AsString() <<
-                    ": " << ex.what());
-            }
-        }
-    }
-}
-
-
-void CNetScheduleExecuter::RegisterClient()
-{
-    m_Impl->x_RegUnregClient("REGC " +
-        NStr::IntToString(m_Impl->m_ControlPort));
-}
-
 const string& CNetScheduleExecuter::GetGUID()
 {
     return m_Impl->m_UID;
@@ -372,9 +346,23 @@ const CNetScheduleAPI::SServerParams& CNetScheduleExecuter::GetServerParams()
 
 void CNetScheduleExecuter::UnRegisterClient()
 {
-    m_Impl->x_RegUnregClient("URGC " +
-        NStr::IntToString(m_Impl->m_ControlPort));
-    m_Impl->x_RegUnregClient("CLRN " + m_Impl->m_UID);
+    string cmd("CLRN " + m_Impl->m_UID);
+
+    for (CNetServiceIterator it = m_Impl->m_API->m_Service.
+            Iterate(CNetService::eIncludePenalized); it; ++it) {
+        CNetServer server = *it;
+
+        try {
+            server.ExecWithRetry(cmd);
+        } catch (CNetServiceException& ex) {
+            if (ex.GetErrCode() != CNetServiceException::eCommunicationError)
+                throw;
+            else {
+                ERR_POST_X(12,
+                    server->m_Address.AsString() << ": " << ex.what());
+            }
+        }
+    }
 }
 
 const string& CNetScheduleExecuter::GetQueueName()

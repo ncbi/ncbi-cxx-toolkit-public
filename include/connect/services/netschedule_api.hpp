@@ -588,9 +588,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     void JobDelayExpiration(const string& job_key, unsigned runtime_inc);
 
 
-    /// Register client-listener
-    void RegisterClient();
-
     const string& GetGUID();
 
     const CNetScheduleAPI::SServerParams& GetServerParams();

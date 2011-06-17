@@ -238,8 +238,6 @@ struct SNetScheduleExecuterImpl : public CObject
 
     bool GetJobImpl(const string& cmd, CNetScheduleJob& job);
 
-    void x_RegUnregClient(const string& cmd);
-
     CNetScheduleAPI m_API;
     string m_UID;
     unsigned short m_ControlPort;

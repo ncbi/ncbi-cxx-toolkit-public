@@ -1088,15 +1088,6 @@ int CGridWorkerNode::Run()
         "Queue name: " << GetQueueName() << "\n"
         "Maximum job threads: " << m_MaxThreads << "\n");
 
-    try {
-        GetNSExecuter().RegisterClient();
-    } catch (CNetServiceException& ex) {
-        // If the server does not understand this new command, ignore the error.
-        if (ex.GetErrCode() != CNetServiceException::eCommunicationError ||
-                NStr::Find(ex.what(), "Server error:Unknown request") == NPOS)
-            throw;
-    }
-
     m_Listener->OnGridWorkerStart();
 
     auto_ptr<CGridThreadContext> single_thread_context;
