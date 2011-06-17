@@ -424,6 +424,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
         TSOCK_Flags flags;
 
         sock = 0;
+        status = eIO_Success;
         flags = (uuu->net_info->debug_printout == eDebugPrintout_Data
                  ? fSOCK_LogOn : fSOCK_LogDefault);
         if (uuu->net_info->scheme == eURL_Https) {
@@ -452,8 +453,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 assert((status == eIO_Success) ^ !sock);
                 ConnNetInfo_Destroy(net_info);
             }
-        } else
-            status =  eIO_Success;
+        }
 
         if (status == eIO_Success) {
             int/*bool*/    reset_user_header;
