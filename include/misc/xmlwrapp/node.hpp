@@ -1059,6 +1059,8 @@ public:
      *  XPath query result nodes set
      * @exception
      *  Throws exceptions in case of problems
+     * @note
+     *  Default namespace, if so, will not be registered
      * @author Sergey Satskiy, NCBI
     **/
     node_set run_xpath_query (const char *  expr);
@@ -1074,6 +1076,8 @@ public:
      *  XPath query const result nodes set
      * @exception
      *  Throws exceptions in case of problems
+     * @note
+     *  Default namespace, if so, will not be registered
      * @author Sergey Satskiy, NCBI
     **/
     const node_set run_xpath_query (const char *  expr) const;
@@ -1277,7 +1281,7 @@ private:
     // XML XPath support
     void* create_xpath_context (const xml::xpath_expression& expr) const;
     void* evaluate_xpath_expression (const xml::xpath_expression& expr, void* context) const;
-    ns_list_type get_effective_namespaces (void) const;
+    ns_list_type get_effective_namespaces (bool excludeDefault = false) const;
 }; // end xml::node class
 
 } // end xml namespace
