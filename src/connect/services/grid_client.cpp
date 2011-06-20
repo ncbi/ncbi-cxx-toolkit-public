@@ -126,6 +126,10 @@ void CGridJobSubmitter::SetJobAffinity(const string& affinity)
 {
     m_Job.affinity = affinity;
 }
+void CGridJobSubmitter::SetProgressMessage(const string& progress_message)
+{
+    m_Job.progress_msg = progress_message;
+}
 
 CNcbiOstream& CGridJobSubmitter::GetOStream()
 {
@@ -222,6 +226,14 @@ void CGridJobBatchSubmitter::SetJobAffinity(const string& affinity)
     if (m_Jobs.empty())
         PrepareNextJob();
     m_Jobs[m_JobIndex].affinity = affinity;
+}
+
+void CGridJobBatchSubmitter::SetProgressMessage(const string& progress_message)
+{
+    CheckIfAlreadySubmitted();
+    if (m_Jobs.empty())
+        PrepareNextJob();
+    m_Jobs[m_JobIndex].progress_msg = progress_message;
 }
 
 void CGridJobBatchSubmitter::PrepareNextJob()

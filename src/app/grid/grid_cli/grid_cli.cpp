@@ -349,7 +349,8 @@ struct SCommandDefinition {
         "  input=\"DATA\"\n"
         "  affinity=\"TOKEN\"\n"
         "  tag=\"MAME=VALUE\"\n"
-        "  exclusive\n\n"
+        "  exclusive\n"
+        "  progress_message=\"TEXT\"\n\n"
         "Special characters in all quoted strings must be properly "
         "escaped. It is OK to omit quotation marks for a string that "
         "doesn't contain spaces. The \"input\" attribute is required. "
@@ -367,7 +368,8 @@ struct SCommandDefinition {
         "standard output stream (or the specified output file) one job "
         "ID per line.",
         {eNetSchedule, eQueue, eBatch, eNetCache, eInput, eInputFile,
-            eAffinity, eJobTag, eExclusiveJob, eOutputFile, eAuth, -1}},
+            eAffinity, eJobTag, eExclusiveJob, eProgressMessage,
+            eOutputFile, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_GetJobInput,
         "getjobinput", "Read job input.",

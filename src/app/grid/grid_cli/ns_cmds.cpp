@@ -331,6 +331,9 @@ bool CBatchSubmitAttrParser::NextAttribute()
         break;*/
     case 'e':
         ATTR_CHECK_SET("exclusive", eExclusiveJob);
+        break;
+    case 'p':
+        ATTR_CHECK_SET("progress_message", eProgressMessage);
     }
 
     CTempString attr_name(name_beg, attribute_name_len);
@@ -430,6 +433,9 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
                     case eExclusiveJob:
                         submitter.SetJobMask(CNetScheduleAPI::eExclusiveJob);
                         break;
+                    case eProgressMessage:
+                        submitter.SetProgressMessage(attr_value);
+                        break;
                     default:
                         _ASSERT(0);
                         break;
@@ -491,6 +497,9 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
                         batch_submitter.SetJobMask(
                             CNetScheduleAPI::eExclusiveJob);
                         break;
+                    case eProgressMessage:
+                        batch_submitter.SetProgressMessage(attr_value);
+                        break;
                     default:
                         _ASSERT(0);
                         break;
@@ -543,6 +552,9 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
 
         if (IsOptionSet(eExclusiveJob))
             submitter.SetJobMask(CNetScheduleAPI::eExclusiveJob);
+
+        if (IsOptionSet(eProgressMessage))
+            submitter.SetProgressMessage(m_Opts.progress_message);
 
         fprintf(m_Opts.output_stream,
             "%s\n", submitter.Submit(m_Opts.affinity).c_str());
