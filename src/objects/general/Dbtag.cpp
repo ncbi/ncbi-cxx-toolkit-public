@@ -690,10 +690,6 @@ string CDbtag::GetUrl(void) const
             }
             break;
 
-        case CDbtag::eDbtagType_GeneDB:
-            tag +="&organism=pombe";
-            break;
-
         case CDbtag::eDbtagType_HOMD:
             if( NStr::StartsWith(tag, "tax_") ) {
                 prefix = &kHomdTax;
