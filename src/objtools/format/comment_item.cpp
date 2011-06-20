@@ -317,17 +317,18 @@ static void s_GetAssemblyInfo(const CUser_object& uo,
             if ( ! accession.empty() ) {
                 CNcbiOstrstream oss;
 
-                int new_gi = 0;
                 try {
-                    new_gi = sequence::GetGiForAccession( accession, scope, sequence::eGetId_ForceGi | sequence::eGetId_VerifyId );
+                    int new_gi = sequence::GetGiForAccession( accession, scope, sequence::eGetId_ForceGi | sequence::eGetId_VerifyId );
+                    if( 0 != new_gi ) {
+                        gi = new_gi;
+                    }
                 } catch(...) {
                     // do nothing, we know there's an error because new_gi is zero
                 }
-                if( 0 == new_gi ) {
-                    oss << accession;
-                } else {
-                    gi = new_gi;
+                if( IsValidAccession(accession) ) {
                     NcbiId(oss, accession, is_html);
+                } else {
+                    oss << accession;                    
                 }
 
                 if( from > 0 && to > 0 ) {

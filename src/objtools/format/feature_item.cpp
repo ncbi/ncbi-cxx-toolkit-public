@@ -3639,7 +3639,7 @@ void CFeatureItem::x_AddQualsGene(
     }
 
     // gene nomenclature
-    if( gene_ref->IsSetFormal_name() ) {
+    if( gene_ref->IsSetFormal_name() && subtype == CSeqFeatData::eSubtype_gene ) {
         x_AddQual( eFQ_nomenclature, new CFlatNomenclatureQVal(gene_ref->GetFormal_name()) );
     }
 
@@ -4184,7 +4184,8 @@ void CFeatureItem::x_ImportQuals(
             x_AddQual(slot, new CFlatLabelQVal(val));
             break;
         case eFQ_EC_number:
-            if ((*it)->IsSetVal()  &&  s_IsLegalECNumber(val)) {
+            if ((*it)->IsSetVal()  &&  
+                ( ! ctx.Config().DropIllegalQuals() || s_IsLegalECNumber(val) ) ) {
                 x_AddQual(slot, new CFlatStringQVal(val));
             }
             break;
@@ -4203,8 +4204,9 @@ void CFeatureItem::x_ImportQuals(
                     product != NULL ? product->GetValue() : kEmptyStr;
                 if (val != gene_val  &&  val != product_val) {
                     
-                    if ( ! x_HasQual(eFQ_trna_codons) ||
-                         NStr::Find(val, "RNA") == NPOS)
+                    if ( ! ctx.Config().CodonRecognizedToNote() ||
+                         ! x_HasQual(eFQ_trna_codons) || 
+                         NStr::Find(val, "RNA") == NPOS )
                     {
                         x_AddQual(eFQ_xtra_prod_quals, new CFlatStringQVal(val));
                     }
@@ -4281,10 +4283,13 @@ void CFeatureItem::x_ImportQuals(
     if( ctx.Config().HideSpecificGeneMaps() && ! x_HasQual(eFQ_map) ) {
         if( x_HasQual(eFQ_cyt_map) ) {
             x_AddQual(eFQ_map, x_GetQual(eFQ_cyt_map)->second );
+            x_RemoveQuals(eFQ_cyt_map);
         } else if( x_HasQual(eFQ_gen_map) ) {
             x_AddQual(eFQ_map, x_GetQual(eFQ_gen_map)->second );
+            x_RemoveQuals(eFQ_gen_map);
         } else if( x_HasQual(eFQ_rad_map) ) {
             x_AddQual(eFQ_map, x_GetQual(eFQ_rad_map)->second );
+            x_RemoveQuals(eFQ_rad_map);
         }
     }
 }

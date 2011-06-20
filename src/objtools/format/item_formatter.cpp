@@ -940,7 +940,7 @@ static void s_FormatCitGen
 
     SIZE_TYPE pos = journal.find_first_of("=\"");
     if (pos != NPOS) {
-        journal.erase();
+        journal.resize(pos);
         prefix = kEmptyStr;
     }
 

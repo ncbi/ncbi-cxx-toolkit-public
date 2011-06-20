@@ -521,7 +521,7 @@ void s_GenerateWeblinks( const string& strProtocol, string& strText )
     
         string strLink = strText.substr( uLinkStart, uLinkStop - uLinkStart );
         // remove junk
-        string::size_type last_good_char = strLink.find_last_not_of(".),<>");
+        string::size_type last_good_char = strLink.find_last_not_of("\".),<>'");
         if( last_good_char != NPOS ) {
             strLink.resize( last_good_char + 1 );
         }
