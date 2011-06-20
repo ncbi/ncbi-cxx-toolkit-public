@@ -408,7 +408,8 @@ void CNetScheduleHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
         if (m_DiagContext.NotNull()) {
             m_ConnContext->SetRequestStatus(m_DiagContext->GetRequestStatus());
         } else {
-            m_ConnContext->SetRequestStatus(eStatus_Inactive);
+            if (m_ConnContext->GetRequestStatus() != eStatus_HTTPProbe)
+                m_ConnContext->SetRequestStatus(eStatus_Inactive);
         }
         break;
     case IServer_ConnectionHandler::eClientClose:
@@ -571,6 +572,31 @@ void CNetScheduleHandler::WriteMessage(CTempString  prefix,
 }
 
 
+void CNetScheduleHandler::WriteMessage(CTempString msg)
+{
+    size_t  msg_size = msg.size();
+    size_t  required_size = msg_size + 1;
+
+    if (required_size > m_MsgBufferSize) {
+        delete [] m_MsgBuffer;
+        while (required_size > m_MsgBufferSize)
+            m_MsgBufferSize += kMessageBufferIncrement;
+        m_MsgBuffer = new char[m_MsgBufferSize];
+    }
+
+    memcpy(m_MsgBuffer, msg.data(), msg_size);
+    m_MsgBuffer[required_size-1] = '\n';
+
+    // Write to the socket as a single transaction
+    size_t      n_written;
+    if (GetSocket().Write(m_MsgBuffer, required_size,
+                          &n_written) != eIO_Success) {
+        NCBI_THROW(CNetServiceException,
+                   eCommunicationError, "Socket write error.");
+    }
+}
+
+
 void CNetScheduleHandler::x_WriteMessageNoThrow(CTempString  prefix,
                                                 CTempString  msg)
 {
@@ -607,6 +633,24 @@ void CNetScheduleHandler::x_ProcessMsgAuth(BUF buffer)
     // This is done to avoid copying parsed parameters and to have exactly one
     // diagnostics extra with both auth parameters and queue name.
     s_ReadBufToString(buffer, m_RawAuthString);
+
+    // Check if it was systems probe...
+    if (strncmp(m_RawAuthString.c_str(), "GET / HTTP/1.", 13) == 0) {
+        // That was systems probing ports
+
+        if (m_ConnContext.NotNull()) {
+            m_ConnContext->SetRequestStatus(eStatus_HTTPProbe);
+        }
+
+        // read trailing input and close the port
+        CSocket& socket = GetSocket();
+        STimeout to; to.sec = to.usec = 0;
+        socket.SetTimeout(eIO_Read, &to);
+        socket.Read(NULL, 1024);
+        m_Server->CloseConnection(&socket);
+        return;
+    }
+
     m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgQueue;
     x_SetQuickAcknowledge();
 }
@@ -739,7 +783,7 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
         // bypass for admin tools
         (m_Incaps & eNSAC_Admin)) {
         if (!x_CheckVersion()) {
-            WriteMessage("ERR:", "eInvalidClientOrVersion:");
+            WriteMessage("ERR:eInvalidClientOrVersion:");
             m_Server->CloseConnection(&GetSocket());
             return;
         }
@@ -1023,9 +1067,7 @@ void CNetScheduleHandler::x_ProcessSubmit(CQueue* q)
         job.SetClientIP(s_ip);
     }
 
-    unsigned    job_id = q->Submit(job);
-    string      str_job_id(q->MakeKey(job_id));
-    WriteMessage("OK:", str_job_id);
+    WriteMessage("OK:", q->MakeKey(q->Submit(job)));
 
     // There is no need to log the job key, it is logged at lower level
     // together with all the submitted job parameters
@@ -1042,7 +1084,7 @@ void CNetScheduleHandler::x_ProcessSubmitBatch(CQueue* q)
     else
         NS_FormatIPAddress(m_PeerAddr, m_BatchClientIP);
     m_BatchClientSID   = m_JobReq.param2;
-    WriteMessage("OK:", "Batch submit ready");
+    WriteMessage("OK:Batch submit ready");
     m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgBatchHeader;
 }
 
@@ -1066,7 +1108,7 @@ void CNetScheduleHandler::x_ProcessBatchSequenceEnd(CQueue*)
 {
     m_BatchJobs.clear();
     m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
-    WriteMessage("OK:", "");
+    WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -1075,7 +1117,7 @@ void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
 {
     q->Cancel(m_JobReq.job_id);
 
-    WriteMessage("OK:", "");
+    WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -1133,7 +1175,7 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
     if (job.GetId())
         WriteMessage("OK:", x_FormGetJobResponse(q, job));
     else
-        WriteMessage("OK:", "");
+        WriteMessage("OK:");
 
     // We don't call UnRegisterNotificationListener here
     // because for old worker nodes it finishes the session
@@ -1161,7 +1203,7 @@ void CNetScheduleHandler::x_ProcessWaitGet(CQueue* q)
     }
 
     // job not found, initiate waiting mode
-    WriteMessage("OK:", "");
+    WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
 
     q->GetWorkerNodeList().
@@ -1174,7 +1216,7 @@ void CNetScheduleHandler::x_ProcessPut(CQueue* q)
     string      output = NStr::ParseEscapes(m_JobReq.output);
     q->PutResultGetJob(m_WorkerNode, m_JobReq.job_id,
                        m_JobReq.job_return_code, &output, 0, 0);
-    WriteMessage("OK:", "");
+    WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -1195,7 +1237,7 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
     if (job.GetId())
         WriteMessage("OK:", x_FormGetJobResponse(q, job));
     else
-        WriteMessage("OK:", "");
+        WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -1203,11 +1245,11 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
 void CNetScheduleHandler::x_ProcessPutMessage(CQueue* q)
 {
     if (q->PutProgressMessage(m_JobReq.job_id, m_JobReq.param1)) {
-        WriteMessage("OK:", "");
+        WriteMessage("OK:");
         x_PrintRequestStop(eStatus_OK);
     }
     else {
-        WriteMessage("ERR:", "Job not found");
+        WriteMessage("ERR:Job not found");
         x_PrintRequestStop(eStatus_NotFound);
     }
 }
@@ -1221,7 +1263,7 @@ void CNetScheduleHandler::x_ProcessGetMessage(CQueue* q)
         x_PrintRequestStop(eStatus_OK);
     }
     else {
-        WriteMessage("ERR:", "Job not found");
+        WriteMessage("ERR:Job not found");
         x_PrintRequestStop(eStatus_NotFound);
     }
 }
@@ -1230,7 +1272,7 @@ void CNetScheduleHandler::x_ProcessGetMessage(CQueue* q)
 void CNetScheduleHandler::x_ProcessForceReschedule(CQueue* q)
 {
     q->ForceReschedule(m_JobReq.job_id);
-    WriteMessage("OK:", "");
+    WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -1241,7 +1283,7 @@ void CNetScheduleHandler::x_ProcessPutFailure(CQueue* q)
                NStr::ParseEscapes(m_JobReq.err_msg),
                NStr::ParseEscapes(m_JobReq.output),
                m_JobReq.job_return_code);
-    WriteMessage("OK:", "");
+    WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -1249,7 +1291,7 @@ void CNetScheduleHandler::x_ProcessPutFailure(CQueue* q)
 void CNetScheduleHandler::x_ProcessDropQueue(CQueue* q)
 {
     q->Truncate();
-    WriteMessage("OK:", "");
+    WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -1257,7 +1299,7 @@ void CNetScheduleHandler::x_ProcessDropQueue(CQueue* q)
 void CNetScheduleHandler::x_ProcessReturn(CQueue* q)
 {
     q->ReturnJob(m_JobReq.job_id);
-    WriteMessage("OK:", "");
+    WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -1265,7 +1307,7 @@ void CNetScheduleHandler::x_ProcessReturn(CQueue* q)
 void CNetScheduleHandler::x_ProcessJobDelayExpiration(CQueue* q)
 {
     q->JobDelayExpiration(m_WorkerNode, m_JobReq.job_id, m_JobReq.timeout);
-    WriteMessage("OK:", "");
+    WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -1273,7 +1315,7 @@ void CNetScheduleHandler::x_ProcessJobDelayExpiration(CQueue* q)
 void CNetScheduleHandler::x_ProcessDropJob(CQueue* q)
 {
     q->EraseJob(m_JobReq.job_id);
-    WriteMessage("OK:", "");
+    WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -1290,7 +1332,7 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
         return;
     }
 
-    WriteMessage("OK:", "Started: " + m_Server->GetStartTime().AsString());
+    WriteMessage("OK:Started: ", m_Server->GetStartTime().AsString());
 
     WriteMessage("OK:",
                  "Load: jobs dispatched: " +
@@ -1323,7 +1365,7 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
 
 
     if (m_JobReq.param1 == "ALL") {
-        WriteMessage("OK:", "[Berkeley DB Mutexes]:");
+        WriteMessage("OK:[Berkeley DB Mutexes]:");
         {{
             CNcbiOstrstream ostr;
 
@@ -1338,7 +1380,7 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
             ostr.freeze(false);
         }}
 
-        WriteMessage("OK:", "[Berkeley DB Locks]:");
+        WriteMessage("OK:[Berkeley DB Locks]:");
         {{
             CNcbiOstrstream ostr;
 
@@ -1353,7 +1395,7 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
             ostr.freeze(false);
         }}
 
-        WriteMessage("OK:", "[Berkeley DB Memory Usage]:");
+        WriteMessage("OK:[Berkeley DB Memory Usage]:");
         {{
             CNcbiOstrstream ostr;
 
@@ -1368,14 +1410,14 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
             ostr.freeze(false);
         }}
 
-        WriteMessage("OK:", "[BitVector block pool]:");
+        WriteMessage("OK:[BitVector block pool]:");
         {{
             const TBlockAlloc::TBucketPool::TBucketVector& bv =
                 TBlockAlloc::GetPoolVector();
             size_t      pool_vec_size = bv.size();
 
-            WriteMessage("OK:", "Pool vector size: " +
-                                NStr::UIntToString(pool_vec_size));
+            WriteMessage("OK:Pool vector size: ",
+                         NStr::UIntToString(pool_vec_size));
 
             for (size_t  i = 0; i < pool_vec_size; ++i) {
                 const TBlockAlloc::TBucketPool::TResourcePool* rp =
@@ -1392,16 +1434,16 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
         }}
     }
 
-    WriteMessage("OK:", "[Worker node statistics]:");
+    WriteMessage("OK:[Worker node statistics]:");
     q->PrintWorkerNodeStat(*this, curr);
 
-    WriteMessage("OK:", "[Configured job submitters]:");
+    WriteMessage("OK:[Configured job submitters]:");
     q->PrintSubmHosts(*this);
 
-    WriteMessage("OK:", "[Configured workers]:");
+    WriteMessage("OK:[Configured workers]:");
     q->PrintWNodeHosts(*this);
 
-    WriteMessage("OK:", "END");
+    WriteMessage("OK:END");
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -1423,7 +1465,7 @@ void CNetScheduleHandler::x_ProcessStatusSnapshot(CQueue* q)
         WriteMessage("OK:", CNetScheduleAPI::StatusToString(it->first) +
                             " " + NStr::UIntToString(it->second));
     }
-    WriteMessage("OK:", "END");
+    WriteMessage("OK:END");
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -1435,7 +1477,7 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
     bool reloaded = app->ReloadConfig(CMetaRegistry::fReloadIfChanged);
     if (reloaded)
         m_Server->Configure(app->GetConfig());
-    WriteMessage("OK:", "");
+    WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -1456,7 +1498,7 @@ void CNetScheduleHandler::x_ProcessDump(CQueue* q)
     if (m_JobReq.job_id == 0) {
         // The whole queue dump
         q->PrintAllJobDbStat(*this);
-        WriteMessage("OK:", "END");
+        WriteMessage("OK:END");
         x_PrintRequestStop(eStatus_OK);
         return;
     }
@@ -1465,12 +1507,12 @@ void CNetScheduleHandler::x_ProcessDump(CQueue* q)
     // Certain job dump
     if (q->PrintJobDbStat(*this, m_JobReq.job_id) == 0) {
         // Nothing was printed because there is no such a job
-        WriteMessage("ERR:", "Job not found");
+        WriteMessage("ERR:Job not found");
         x_PrintRequestStop(eStatus_NotFound);
         return;
     }
 
-    WriteMessage("OK:", "END");
+    WriteMessage("OK:END");
     x_PrintRequestStop(eStatus_OK);
     return;
 }
@@ -1481,13 +1523,13 @@ void CNetScheduleHandler::x_ProcessPrintQueue(CQueue* q)
     TJobStatus job_status = CNetScheduleAPI::StringToStatus(m_JobReq.param1);
 
     if (job_status == CNetScheduleAPI::eJobNotFound) {
-        WriteMessage("ERR:", "Status unknown: " + m_JobReq.param1);
+        WriteMessage("ERR:Status unknown: ", m_JobReq.param1);
         x_PrintRequestStop(eStatus_BadCmd);
         return;
     }
 
     q->PrintQueue(*this, job_status);
-    WriteMessage("OK:", "END");
+    WriteMessage("OK:END");
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -1495,14 +1537,14 @@ void CNetScheduleHandler::x_ProcessPrintQueue(CQueue* q)
 void CNetScheduleHandler::x_ProcessShutdown(CQueue*)
 {
     x_PrintRequestStop(eStatus_OK);
-    WriteMessage("OK:", "");
+    WriteMessage("OK:");
     m_Server->SetShutdownFlag();
 }
 
 
 void CNetScheduleHandler::x_ProcessVersion(CQueue*)
 {
-    WriteMessage("OK:", NETSCHEDULED_FULL_VERSION);
+    WriteMessage("OK:" NETSCHEDULED_FULL_VERSION);
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -1511,7 +1553,7 @@ void CNetScheduleHandler::x_ProcessRegisterClient(CQueue* q)
 {
     q->GetWorkerNodeList().
         RegisterNotificationListener(m_WorkerNode, 0);
-    WriteMessage("OK:", "");
+    WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -1519,7 +1561,7 @@ void CNetScheduleHandler::x_ProcessRegisterClient(CQueue* q)
 void CNetScheduleHandler::x_ProcessUnRegisterClient(CQueue* q)
 {
     q->UnRegisterNotificationListener(m_WorkerNode);
-    WriteMessage("OK:", "");
+    WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -1552,7 +1594,7 @@ void CNetScheduleHandler::x_ProcessCreateQueue(CQueue*)
     m_Server->CreateQueue(m_JobReq.param1,                          // qname
                           m_JobReq.param2,                          // qclass
                           NStr::ParseEscapes(m_JobReq.param3));     // comment
-    WriteMessage("OK:", "");
+    WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -1560,7 +1602,7 @@ void CNetScheduleHandler::x_ProcessCreateQueue(CQueue*)
 void CNetScheduleHandler::x_ProcessDeleteQueue(CQueue*)
 {
     m_Server->DeleteQueue(m_JobReq.param1);     // qname
-    WriteMessage("OK:", "");
+    WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -1594,7 +1636,7 @@ void CNetScheduleHandler::x_ProcessQuery(CQueue* q)
     m_SelectedIds.reset(q->ExecSelect(query, fields));
 
     if (!fields.empty()) {
-        WriteMessage("ERR:", "eProtocolSyntaxError:SELECT is not allowed");
+        WriteMessage("ERR:eProtocolSyntaxError:SELECT is not allowed");
         m_SelectedIds.release();
         x_PrintRequestStop(eStatus_BadCmd);
         return;
@@ -1622,7 +1664,7 @@ void CNetScheduleHandler::x_ProcessQuery(CQueue* q)
     } else if (action == "CNCL") {
         // NOT IMPLEMENTED
     } else {
-        WriteMessage("ERR:", "eProtocolSyntaxError:Unknown action " + action);
+        WriteMessage("ERR:eProtocolSyntaxError:Unknown action ", action);
         m_SelectedIds.release();
         x_PrintRequestStop(eStatus_BadCmd);
         return;
@@ -1642,8 +1684,8 @@ void CNetScheduleHandler::x_ProcessSelectQuery(CQueue* q)
     m_SelectedIds.reset(q->ExecSelect(query, fields));
 
     if (fields.empty()) {
-        WriteMessage("ERR:", "eProtocolSyntaxError:"
-                             "SQL-like select is expected");
+        WriteMessage("ERR:eProtocolSyntaxError:"
+                     "SQL-like select is expected");
         m_SelectedIds.release();
         x_PrintRequestStop(eStatus_BadCmd);
     } else {
@@ -1684,7 +1726,7 @@ void CNetScheduleHandler::x_ProcessGetConfiguration(CQueue* q)
         if (m_Server->IsLog())
             GetDiagContext().Extra().Print(it->first, it->second);
     }
-    WriteMessage("OK:", "END");
+    WriteMessage("OK:END");
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -1714,7 +1756,7 @@ void CNetScheduleHandler::x_ProcessConfirm(CQueue* q)
 {
     TNSBitVector    jobs = NS_DecodeBitVector(m_JobReq.output);
     q->ConfirmJobs(m_JobReq.count, jobs);
-    WriteMessage("OK:", "");
+    WriteMessage("OK:");
 
     if (m_Server->IsLog()) {
         GetDiagContext().Extra().Print("group_id", m_JobReq.count);
@@ -1733,7 +1775,7 @@ void CNetScheduleHandler::x_ProcessReadFailed(CQueue* q)
     TNSBitVector        jobs = NS_DecodeBitVector(m_JobReq.output);
 //    m_JobReq.err_msg; we still don't (and probably, won't) use this
     q->FailReadingJobs(m_JobReq.count, jobs);
-    WriteMessage("OK:", "");
+    WriteMessage("OK:");
 
     if (m_Server->IsLog()) {
         GetDiagContext().Extra().Print("group_id", m_JobReq.count);
@@ -1751,7 +1793,7 @@ void CNetScheduleHandler::x_ProcessReadRollback(CQueue* q)
 {
     TNSBitVector        jobs = NS_DecodeBitVector(m_JobReq.output);
     q->ReturnReadingJobs(m_JobReq.count, jobs);
-    WriteMessage("OK:", "");
+    WriteMessage("OK:");
 
     if (m_Server->IsLog()) {
         GetDiagContext().Extra().Print("group_id", m_JobReq.count);
@@ -1784,7 +1826,7 @@ void CNetScheduleHandler::x_ProcessInitWorkerNode(CQueue* q)
         q->GetWorkerNodeList().SetId(m_WorkerNode, new_id);
     }
 
-    WriteMessage("OK:", "");
+    WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -1794,14 +1836,14 @@ void CNetScheduleHandler::x_ProcessClearWorkerNode(CQueue* q)
     q->ClearWorkerNode(
         m_JobReq.param1.substr(0, kMaxWorkerNodeIdSize), "cleared");
 
-    WriteMessage("OK:", "");
+    WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
 }
 
 
 void CNetScheduleHandler::x_CmdNotImplemented(CQueue*)
 {
-    WriteMessage("ERR:", "Not implemented");
+    WriteMessage("ERR:Not implemented");
     x_PrintRequestStop(eStatus_NoImpl);
 }
 
@@ -1856,7 +1898,7 @@ void CNetScheduleHandler::x_WriteProjection()
         }
     }
     if (!m_SelectedIds->any()) {
-        WriteMessage("OK:", "END");
+        WriteMessage("OK:END");
         m_SelectedIds.release();
         m_DelayedOutput = NULL;
     }
@@ -2068,9 +2110,9 @@ void CNetScheduleHandler::x_StatisticsNew(CQueue*       q,
                 WriteMessage("OK:", CNetScheduleAPI::StatusToString(st) +
                                     ": " + NStr::UIntToString(count));
         } // for
-        WriteMessage("OK:", "Total: " + NStr::UIntToString(total));
+        WriteMessage("OK:Total: ", NStr::UIntToString(total));
     }
-    WriteMessage("OK:", "END");
+    WriteMessage("OK:END");
     x_PrintRequestStop(eStatus_OK);
 }
 

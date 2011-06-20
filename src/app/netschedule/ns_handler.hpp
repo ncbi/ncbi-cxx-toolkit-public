@@ -83,6 +83,7 @@ public:
 
     /// Writes a message to the socket
     void WriteMessage(CTempString prefix, CTempString msg);
+    void WriteMessage(CTempString msg);
 
     /// Statuses of commands to be set in diagnostics' request context
     /// Additional statuses can be taken from
@@ -93,6 +94,7 @@ public:
                                            ///< timeout
         eStatus_BadCmd              = 400, ///< Command is incorrect
         eStatus_BadAuth             = 401, ///< Operation is not permitted
+        eStatus_HTTPProbe           = 402, ///< Routine test from systems
         eStatus_NotFound            = 404, ///< Job is not found
         eStatus_CmdTimeout          = 408, ///< Command timeout is exceeded
         eStatus_ServerError         = 500, ///< Internal server error
