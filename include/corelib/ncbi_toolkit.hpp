@@ -149,6 +149,7 @@ private:
 class INcbiToolkit_LogHandler
 {
 public:
+    virtual ~INcbiToolkit_LogHandler() {}
     virtual void Post(const CNcbiToolkit_LogMessage& msg) = 0;
 };
 
