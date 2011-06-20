@@ -42,14 +42,13 @@ class NetSchedule:
 
         if not self.__path.endswith( os.path.sep ):
             self.__path += os.path.sep
+
         self.__grid_cli = grid_cli_path.strip()
+        if not self.__grid_cli.endswith( os.path.sep ):
+            self.__grid_cli += os.path.sep
+        self.__grid_cli += "grid_cli"
 
         self.checkPresence()
-
-        # Check for grid_cli
-        if os.system( self.__grid_cli + " help > /dev/null 2>&1" ) != 0:
-            raise Exception( "Cannot find grid_cli at the " \
-                             "specified location: " + self.__grid_cli )
         return
 
     def connect( self, timeout = None ):
@@ -124,6 +123,11 @@ class NetSchedule:
 
     def checkPresence( self ):
         " Checks that the given file exists on the remote host "
+
+        # Check for grid_cli
+        if os.system( self.__grid_cli + " help > /dev/null 2>&1" ) != 0:
+            raise Exception( "Cannot find grid_cli at the " \
+                             "specified location: " + self.__grid_cli )
 
         # Executable file
         cmdLine = [ "ls", self.__path + "netscheduled" ]
