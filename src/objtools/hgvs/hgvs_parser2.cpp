@@ -245,6 +245,7 @@ CHgvsParser::CContext::CContext(const CContext& other)
     this->m_bsh = other.m_bsh;
     this->m_cds = other.m_cds;
     this->m_scope = other.m_scope;
+    this->m_seq_id_resolvers = other.m_seq_id_resolvers;
     this->m_placement.Reset();
     if(other.m_placement) {
         /*
@@ -655,8 +656,37 @@ CHgvsParser::CContext CHgvsParser::x_header(TIterator const& i, const CContext& 
     it  = (i->children.rbegin() + 1)->children.begin();
     string id_str(it->value.begin(), it->value.end());
 
-    CRef<CSeq_id> id(new CSeq_id(id_str));
-    ctx.SetId(*id, mol_type);
+    CSeq_id_Handle idh = context.ResolevSeqId(id_str);
+    CBioseq_Handle bsh = context.GetScope().GetBioseqHandle(idh);
+
+    if(bsh.IsNucleotide() && mol_type == CVariantPlacement::eMol_protein) {
+        //If we have something like CCDS2.1:p., the CCDS2.1 will resolve
+        //to an NM, but we need to resolve it to corresponding NP.
+        //
+        //In general, we'll support auto-converting nucleatide id to corresponding
+        //protein when we have ".p", if we can do it uniquely
+
+        SAnnotSelector sel;
+        sel.SetResolveTSE();
+        sel.IncludeFeatType(CSeqFeatData::e_Cdregion);
+        bool already_found = false;
+        for(CFeat_CI ci(bsh, sel); ci; ++ci) {
+            const CMappedFeat& mf = *ci;
+            if(mf.IsSetProduct() && mf.GetProduct().GetId()) {
+                if(already_found) {
+                    NCBI_THROW(CException, eUnknown, "Can't resolve to prot - multiple CDSes on " + idh.AsString());
+                } else {
+                    idh = sequence::GetId(*mf.GetProduct().GetId(), context.GetScope(), sequence::eGetId_ForceAcc);
+                    already_found = true;
+                }
+            }
+        }
+        if(!already_found) {
+            NCBI_THROW(CException, eUnknown, "Can't resolve to prot - can't find CDS on " + idh.AsString());
+        }
+    }
+
+    ctx.SetId(*idh.GetSeqId(), mol_type);
 
     if(i->children.size() == 3) {
         it  = (i->children.rbegin() + 2)->children.begin();
@@ -1672,7 +1702,7 @@ CRef<CVariation> CHgvsParser::AsVariation(const string& hgvs, TOpFlags flags)
 #endif
             HGVS_THROW(eGrammatic, "Syntax error at pos " + NStr::IntToString(info.length + 1) + " in " + hgvs2 + "");
         } else {
-            CContext context(m_scope);
+            CContext context(m_scope, m_seq_id_resolvers);
             vr = x_root(info.trees.begin(), context);
 
             vr->SetName(hgvs2);

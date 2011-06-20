@@ -71,10 +71,7 @@ using namespace boost::spirit;
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seq_vector.hpp>
 
-#include <dbapi/dbapi.hpp>
-#include <dbapi/driver/drivers.hpp>
-#include <dbapi/driver/dbapi_driver_conn_params.hpp>
-
+#include <objtools/hgvs/seq_id_resolver.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -90,7 +87,12 @@ class CHgvsParser : public CObject
 public:
     CHgvsParser(CScope& scope)
        : m_scope(&scope)
-    {}
+    {
+        m_seq_id_resolvers.push_back(CRef<CSeq_id_Resolver>(new CSeq_id_Resolver__LRG(scope)));
+        m_seq_id_resolvers.push_back(CRef<CSeq_id_Resolver>(new CSeq_id_Resolver__CCDS(scope)));
+        m_seq_id_resolvers.push_back(CRef<CSeq_id_Resolver>(new CSeq_id_Resolver(scope)));
+    }
+
 
     enum EOpFlags
     {
@@ -108,6 +110,12 @@ public:
     {
         return *m_scope;
     }
+
+    CSeq_id_Resolver::TResolvers& SetSeq_id_Resolvers()
+    {
+        return m_seq_id_resolvers;
+    }
+
 
     class CHgvsParserException : public CException
     {
@@ -216,8 +224,9 @@ protected:
     class CContext
     {
     public:
-        CContext(CRef<CScope> scope)
+        CContext(CRef<CScope> scope, CSeq_id_Resolver::TResolvers& id_resolvers)
           : m_scope(scope)
+          , m_seq_id_resolvers(id_resolvers)
         {
             Clear();
         }
@@ -272,11 +281,17 @@ protected:
 
         const CSeq_feat& GetCDS() const;
 
+        CSeq_id_Handle ResolevSeqId(const string& s) const
+        {
+            return CSeq_id_Resolver::s_Get(m_seq_id_resolvers, s);
+        }
+
     private:
         CBioseq_Handle m_bsh;
         CRef<CSeq_feat> m_cds;
         CRef<CVariantPlacement> m_placement;
         mutable CRef<CScope> m_scope;
+        mutable CSeq_id_Resolver::TResolvers m_seq_id_resolvers;
     };
 
     struct SGrammar: public grammar<SGrammar>
@@ -305,7 +320,12 @@ protected:
            Note: cases below are not described in recommendations, but found in Mutalyzer docs.
            N : AL449423.14(CDKN2A_v003):g.10del - not in symbol{seq_id} format
            N : CDKN2A_v003{AL449423.14}:c.1_*3352del cDNA coordinates on a genomic sequence.
+
+         * In addition to accessions, CCDS and LRG ids are supported.
          *
+         * If a seq-id is nucleotide, but HGVS is ".p", the seq-id is must be uniquely mappable
+         * to a protein seq-id (e.g. NM->NP), e.g. "CCDS2.2:c." and "CCDS2.2:p." will be resolved to
+         * related NM/NP respectively.
          */
 
         enum E_NodeIds {
@@ -492,7 +512,10 @@ protected:
                                 ;
                     //Note: in HGVS X=stop as in p.X110GlnextX17, whereas in IUPAC X=any
 
-                raw_seq         = leaf_node_d[+aminoacid | +chset<>("ACGTN") | +chset<>("acgun")];
+                raw_seq         = leaf_node_d[
+                                              +aminoacid
+                                             | +chset<>("TGKCYSBAWRDMHVN")   //dna IUPAC with ambiguity codes
+                                             | +chset<>("ugkcysbawrdmhvn")]; //rna IUPAC with ambiguity codes
                     /*
                      * Note: there's no distinction between protein, DNA and RNA sequences, as
                      * at the parse time it is not known without context which sequence it is - i.e.
@@ -507,8 +530,10 @@ protected:
                 /*
                  * Positions and Locations
                  */
-
-                int_fuzz        = ch_p('(') >> (ch_p('?')|int_p) >> ch_p('_') >> (ch_p('?')|int_p) >> ch_p(')')
+                int_fuzz        = ch_p('(') >> (ch_p('?')|int_p)
+                                            >> ch_p('_')
+                                            >> (ch_p('?')|int_p)
+                                            >> ch_p(')')
                                 | ch_p('(') >> int_p >> ch_p(')') //note: not ch_p('?') here as this makes grammar amgiguous
                                 | (ch_p('?')|int_p);
 
@@ -826,6 +851,7 @@ private:
 
 private:
     CRef<CScope> m_scope;
+    CSeq_id_Resolver::TResolvers m_seq_id_resolvers;
 };
 
 };

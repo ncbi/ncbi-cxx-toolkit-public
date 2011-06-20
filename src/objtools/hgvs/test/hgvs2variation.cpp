@@ -114,6 +114,7 @@ void CHgvs2variationApplication::Init(void)
     arg_desc->AddFlag("loc_prop", "attach location properties");
     arg_desc->AddFlag("prot_effect", "attach effect on the protein");
     arg_desc->AddFlag("precursor", "calculate precursor variation");
+    arg_desc->AddFlag("tr_precursor", "calculate precursor variation");
     arg_desc->AddFlag("compute_hgvs", "calculate hgvs expressions");
     arg_desc->AddFlag("roundtrip_hgvs", "roundtrip hgvs expression");
     arg_desc->AddFlag("asn_in", "in is text-asn");
@@ -168,6 +169,7 @@ string TestRoundTrip(const string& hgvs_synonyms, CHgvsParser& parser)
 
 void AttachHgvs(CVariation& v, CHgvsParser& parser)
 {
+    v.Index();
     CVariationUtil util(parser.SetScope());
 
     //compute and attach placement-specific HGVS expressions
@@ -181,6 +183,12 @@ void AttachHgvs(CVariation& v, CHgvsParser& parser)
             util.AttachSeq(p2);
 
             if(!p2.GetLoc().GetId()) {
+                continue;
+            }
+
+            if(p2.GetMol() != CVariantPlacement::eMol_protein && v2.GetConsequenceParent()) {
+                //if this variation is in consequnece, only compute HGVS for protein variations
+                //(as otherwise it will throw - can't have HGVS expression for protein with nuc placement)
                 continue;
             }
 
@@ -247,14 +255,16 @@ void ProcessVariation(CVariation& v, const CArgs& args, CScope& scope, CConstRef
 #endif
     }
 
-    if(args["precursor"]) {
-        CRef<CVariation> v2 = variation_util.InferNAfromAA(v, CVariationUtil::fAA2NA_truncate_common_prefix_and_suffix);
+    if(args["precursor"] || args["tr_precursor"]) {
+        CRef<CVariation> v2 = variation_util.InferNAfromAA(
+                v,
+                args["tr_precursor"] ? CVariationUtil::fAA2NA_truncate_common_prefix_and_suffix : 0);
         CVariation::TConsequence::value_type consequence(new CVariation::TConsequence::value_type::TObjectType);
         consequence->SetVariation().Assign(v);
         v2->SetConsequence().push_back(consequence);
         v.Assign(*v2);
-    }
 
+    }
     if(args["compute_hgvs"]) {
         AttachHgvs(v, parser);
     }

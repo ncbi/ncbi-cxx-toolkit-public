@@ -12,7 +12,9 @@ SRC = hgvs2variation
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB_ = hgvs variation seq xregexp $(PCRE_LIB) xobjutil $(OBJMGR_LIBS)
+LIB_ = hgvs variation \
+       entrez2cli entrez2 xser xconnect xutil xncbi \
+       seq xregexp $(PCRE_LIB) xobjutil $(OBJMGR_LIBS) \
 
 LIB = $(LIB_:%=%$(STATIC))
     
