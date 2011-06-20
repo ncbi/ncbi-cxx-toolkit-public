@@ -131,6 +131,9 @@ static void s_ProcessInstitutionCollectionCodeLine(const CTempString& line)
 //        ERR_POST_X(1, Warning << "Bad format in institution_codes.txt entry " << line
 //                   << "; disregarding");
     } else {
+        NStr::TruncateSpacesInPlace( tokens[0] );
+        NStr::TruncateSpacesInPlace( tokens[1] );
+        NStr::TruncateSpacesInPlace( tokens[2] );
         switch (tokens[1].c_str()[0]) {
             case 'b':
                 s_BiomaterialInstitutionCodeMap[tokens[0]] = tokens[2];
