@@ -40,6 +40,7 @@ static char const rcsid[] =
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <objtools/alnmgr/alnmap.hpp>
+#include <algo/blast/composition_adjustment/composition_constants.h>
 
 
 /** @addtogroup AlgoBlast
@@ -195,10 +196,10 @@ CIgBlast::Run()
 void CIgBlast::x_SetupVSearch(CRef<IQueryFactory>       &qf,
                               CRef<CBlastOptionsHandle> &opts_hndl)
 {
+    CBlastOptions & opts = opts_hndl->SetOptions();
     if (m_IgOptions->m_IsProtein) {
-        // TODO: no composition based.
+        opts.SetCompositionBasedStats(eNoCompositionBasedStats);
     } else {
-        CBlastOptions & opts = opts_hndl->SetOptions();
         int penalty = m_Options->GetOptions().GetMismatchPenalty();
         opts.SetMatchReward(1);
         opts.SetMismatchPenalty(penalty);
@@ -212,6 +213,7 @@ void CIgBlast::x_SetupVSearch(CRef<IQueryFactory>       &qf,
     opts_hndl->SetFilterString("F");
     opts_hndl->SetHitlistSize(5);
     qf.Reset(new CObjMgr_QueryFactory(*m_Query));
+
 };
 
 void CIgBlast::x_SetupDJSearch(vector<CRef <CIgAnnotation> > &annots,
@@ -227,7 +229,7 @@ void CIgBlast::x_SetupDJSearch(vector<CRef <CIgAnnotation> > &annots,
     opts.SetGapExtensionCost(2);
     opts_hndl->SetEvalueThreshold(1000.0);
     opts_hndl->SetFilterString("F");
-    opts_hndl->SetHitlistSize(10);
+    opts_hndl->SetHitlistSize(50);
 
     // Mask query for D, J search
     int iq = 0;
@@ -475,6 +477,7 @@ void CIgBlast::x_AnnotateD(CRef<CSearchResultSet>        &results,
                     } else {
                         if ((int)(*it)->GetSeqStart(0)  >  V_end + 30 ||
                             (int)(*it)->GetSeqStop(0)   <  V_end) keep = false;
+
                         if (J_begin>=0 &&
                             ((int)(*it)->GetSeqStart(0) >  J_begin - 3 ||
                              (int)(*it)->GetSeqStop(0)  >  J_end - 3)) keep = false; 
