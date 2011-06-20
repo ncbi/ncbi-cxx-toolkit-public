@@ -104,6 +104,15 @@ class CNCMMDBCache;
 class CNCMMStats;
 
 
+class CNCMMMutex : public SSystemFastMutex
+{
+public:
+    using SSystemFastMutex::InitializeDynamic;
+};
+
+typedef CGuard<CNCMMMutex>  CNCMMMutexGuard;
+
+
 /// Size of memory necessary for data in each page in database cache.
 /// This is a size of memory allocated for each page in SQLite.
 static const size_t kNCMMDBPageDataSize      = 32976;
@@ -253,7 +262,7 @@ private:
     char          m_Data[kNCMMDBPageDataSize];
 
     /// Mutex for working with LRU list
-    static CSpinLock    sm_LRULock;
+    static CFastMutex   sm_LRULock;
     /// Head of LRU list of database pages (i.e. the least recently used page
     /// and the first candidate for reuse).
     static CNCMMDBPage* sm_LRUHead;
@@ -397,7 +406,7 @@ private:
     void* operator new (size_t, void*);
 
     /// Global lock managing creation and deletion of pool instances
-    static CSpinLock        sm_CreateLock;
+    static CNCMMMutex       sm_CreateLock;
     /// Array of all pool instances used in manager
     static CNCMMChunksPool  sm_Pools   [kNCMMMaxThreadsCnt];
     /// Array of pool instances that are to be yet used
@@ -469,7 +478,7 @@ private:
     void x_CleanPoolSpace(void);
 
     /// Mutex protecting object using
-    CSpinLock        m_ObjLock;
+    CNCMMMutex       m_ObjLock;
     /// Pointer to the next chunk that will be returned by x_GetChunk()
     CNCMMFreeChunk** m_GetPtr;
     /// Pointer to the place where next x_PutChunk() will put free chunk
@@ -521,7 +530,7 @@ protected:
     CNCMMSlabBase(void);
 
     /// Mutex to control access to the object
-    CSpinLock                        m_ObjLock;
+    CNCMMMutex                       m_ObjLock;
     /// Bit mask showing which chunks in the slab are free
     /// (1 - free, 0 - occupied).
     CNCBitMask<kNCMMCntChunksInSlab> m_FreeMask;
@@ -795,7 +804,7 @@ private:
     void* operator new (size_t, void*);
 
     /// Global lock managing creation and deletion of pool instances
-    static CSpinLock        sm_CreateLock;
+    static CNCMMMutex       sm_CreateLock;
     /// Array of all pool instances used in manager
     static CNCMMChainsPool  sm_Pools   [kNCMMMaxThreadsCnt];
     /// Array of pool instances that are to be yet used
@@ -856,7 +865,7 @@ private:
 
 
     /// Mutex protecting object using
-    CSpinLock       m_ObjLock;
+    CNCMMMutex      m_ObjLock;
     /// List of cached chains distributed by their size
     void*           m_FreeChains[kNCMMCntChunksInSlab + 1];
     /// Reference counter for this object
@@ -1020,7 +1029,7 @@ private:
 
 
     /// Mutex protecting access to the object
-    CSpinLock                            m_ObjLock;
+    CNCMMMutex                           m_ObjLock;
     /// Bit mask containing information about chain sizes that exist in the
     /// storage. If bit with index n is set then chain with size n exists.
     CNCBitMask<kNCMMCntChunksInSlab + 1> m_ExistMask;
@@ -1064,7 +1073,7 @@ private:
     void* operator new (size_t, void*);
 
     /// Global lock managing creation and deletion of pool instances
-    static CSpinLock      sm_CreateLock;
+    static CNCMMMutex     sm_CreateLock;
     /// Array of pool instances that are used at the moment.
     /// Actually it's pointers to arrays of pools where array contains pool
     /// instances for each small size that memory manager allocates.
@@ -1136,7 +1145,7 @@ private:
 
 
     /// Mutex protecting access to the object
-    CSpinLock                         m_ObjLock;
+    CNCMMMutex                        m_ObjLock;
     /// Index of blocks size located in this pool (index is from
     /// kNCMMSmallSize)
     unsigned int                      m_SizeIndex;
@@ -1290,7 +1299,7 @@ private:
 
 
     /// Mutex protecting access to the object
-    CSpinLock        m_ObjLock;
+    CFastMutex       m_ObjLock;
     /// TRUE if pages in this cache instance can be deleted at any time
     /// after they're unpinned by SQLite. FALSE if pages must never be
     /// deleted unless SQLite explicitly said so.
@@ -1464,7 +1473,7 @@ private:
 
 
     /// Mutex controlling access to the object.
-    CSpinLock    m_ObjLock;
+    CNCMMMutex            m_ObjLock;
 
     /// Amount of memory allocated from OS.
     size_t                m_SystemMem;
@@ -1664,7 +1673,7 @@ private:
 
 
     /// Mutex controlling access to central operations
-    static CSpinLock      sm_CentralLock;
+    static CNCMMMutex     sm_CentralLock;
     /// Central operations statistics.
     /// By-thread statistics is not used for central operations because they
     /// are executed under central mutex anyway. Also this makes easier access

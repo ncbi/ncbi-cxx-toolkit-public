@@ -179,11 +179,11 @@ static const int kNCMmapProtection  = PROT_READ | PROT_WRITE;
 #endif
 
 
-CSpinLock    CNCMMDBPage::sm_LRULock;
+CFastMutex   CNCMMDBPage::sm_LRULock;
 CNCMMDBPage* CNCMMDBPage::sm_LRUHead = NULL;
 CNCMMDBPage* CNCMMDBPage::sm_LRUTail = NULL;
 
-CSpinLock        CNCMMChunksPool_Getter::sm_CreateLock;
+CNCMMMutex       CNCMMChunksPool_Getter::sm_CreateLock;
 CNCMMChunksPool  CNCMMChunksPool_Getter::sm_Pools   [kNCMMMaxThreadsCnt];
 CNCMMChunksPool* CNCMMChunksPool_Getter::sm_PoolPtrs[kNCMMMaxThreadsCnt]
                                                                      = {NULL};
@@ -191,7 +191,7 @@ unsigned int     CNCMMChunksPool_Getter::sm_CntUsed     = 0;
 
 CNCMMChunksPool_Getter  CNCMMChunksPool::sm_Getter;
 
-CSpinLock        CNCMMChainsPool_Getter::sm_CreateLock;
+CNCMMMutex       CNCMMChainsPool_Getter::sm_CreateLock;
 CNCMMChainsPool  CNCMMChainsPool_Getter::sm_Pools   [kNCMMMaxThreadsCnt];
 CNCMMChainsPool* CNCMMChainsPool_Getter::sm_PoolPtrs[kNCMMMaxThreadsCnt]
                                                                      = {NULL};
@@ -201,7 +201,7 @@ CNCMMChainsPool_Getter  CNCMMChainsPool::sm_Getter;
 
 CNCMMReserve CNCMMReserve::sm_Instances[kNCMMSlabEmptyGrades];
 
-CSpinLock      CNCMMSizePool_Getter::sm_CreateLock;
+CNCMMMutex     CNCMMSizePool_Getter::sm_CreateLock;
 CNCMMSizePool* CNCMMSizePool_Getter::sm_PoolPtrs[kNCMMMaxThreadsCnt] = {NULL};
 unsigned int   CNCMMSizePool_Getter::sm_RefCnts [kNCMMMaxThreadsCnt] = {0};
 
@@ -212,7 +212,7 @@ CNCMMStats               CNCMMStats::sm_Stats   [kNCMMMaxThreadsCnt];
 
 CNCMMStats_Getter        CNCMMStats::sm_Getter;
 
-CSpinLock       CNCMMCentral::sm_CentralLock;
+CNCMMMutex      CNCMMCentral::sm_CentralLock;
 CNCMMStats      CNCMMCentral::sm_Stats;
 bool            CNCMMCentral::sm_Initialized   = false;
 ENCMMMode       CNCMMCentral::sm_Mode          = eNCMemStable;
@@ -283,8 +283,7 @@ void
 CNCMMStats::InitInstance(void)
 {
     memset(this, 0, sizeof(*this));
-    // Hack to initialize spin lock.
-    new (&m_ObjLock) CSpinLock();
+    m_ObjLock.InitializeDynamic();
     m_SysMemAggr    .Initialize();
     m_FreeMemAggr   .Initialize();
     m_RsrvMemAggr   .Initialize();
@@ -297,7 +296,7 @@ CNCMMStats::InitInstance(void)
 void
 CNCMMStats::x_CollectAllTo(CNCMMStats* stats)
 {
-    CSpinGuard guard(m_ObjLock);
+    CNCMMMutexGuard guard(m_ObjLock);
 
     stats->m_SystemMem              += m_SystemMem;
     stats->m_FreeMem                += m_FreeMem;
@@ -346,7 +345,7 @@ CNCMMStats::AggregateUsage(CNCMMStats* stats)
     stats->m_FreeMem = stats->m_ReservedMem = stats->m_OverheadMem = 0;
     stats->m_LostMem = stats->m_DBCacheMem = stats->m_DataMem = 0;
     for (unsigned int i = 0; i < kNCMMMaxThreadsCnt; ++i) {
-        CSpinGuard guard(sm_Stats[i].m_ObjLock);
+        CNCMMMutexGuard guard(sm_Stats[i].m_ObjLock);
 
         stats->m_FreeMem     += sm_Stats[i].m_FreeMem;
         stats->m_ReservedMem += sm_Stats[i].m_ReservedMem;
@@ -632,7 +631,7 @@ CNCMMStats::DBPageNotInCache(void)
 void
 CNCMMStats::AddAggregateMeasures(const CNCMMStats& stats)
 {
-    CSpinGuard guard(m_ObjLock);
+    CNCMMMutexGuard guard(m_ObjLock);
 
     m_SysMemAggr    .AddValue(stats.m_SystemMem  );
     m_FreeMemAggr   .AddValue(stats.m_FreeMem    );
@@ -901,14 +900,14 @@ CNCMMCentral::x_DoAlloc(size_t& size)
 inline void*
 CNCMMCentral::SysAlloc(size_t size)
 {
-    CSpinGuard guard(sm_CentralLock);
+    CNCMMMutexGuard guard(sm_CentralLock);
     return x_DoAlloc(size);
 }
 
 void*
 CNCMMCentral::SysAllocAligned(size_t size)
 {
-    CSpinGuard guard(sm_CentralLock);
+    CNCMMMutexGuard guard(sm_CentralLock);
 
     void* mem_ptr = x_DoAlloc(size);
     void* aligned_ptr = x_AlignToBottom(mem_ptr);
@@ -921,7 +920,7 @@ CNCMMCentral::SysAllocAligned(size_t size)
 void
 CNCMMCentral::SysFree(void* ptr, size_t size)
 {
-    CSpinGuard guard(sm_CentralLock);
+    CNCMMMutexGuard guard(sm_CentralLock);
     size_t aligned_size = x_AlignSizeToPage(size);
 
 #ifdef NCBI_OS_MSWIN
@@ -1079,7 +1078,9 @@ SNCMMChainInfo::AssignFromChain(CNCMMFreeChunk* chain)
 
 inline
 CNCMMSlabBase::CNCMMSlabBase(void)
-{}
+{
+    m_ObjLock.InitializeDynamic();
+}
 
 
 inline void*
@@ -1114,8 +1115,7 @@ CNCMMSlab::~CNCMMSlab(void)
 void
 CNCMMChunksPool::InitInstance(void)
 {
-    // Hack to initialize spin lock.
-    new (&m_ObjLock) CSpinLock();
+    m_ObjLock.InitializeDynamic();
     m_GetPtr = m_PutPtr = &m_Chunks[0];
     m_RefCnt.Set(0);
 }
@@ -1144,8 +1144,7 @@ void
 CNCMMChunksPool_Getter::Initialize(void)
 {
     TBase::Initialize();
-    // Hack to initialize spin lock.
-    new (&sm_CreateLock) CSpinLock();
+    sm_CreateLock.InitializeDynamic();
     for (unsigned int i = 0; i < kNCMMMaxThreadsCnt; ++i) {
         sm_Pools[i].InitInstance();
         sm_PoolPtrs[i] = &sm_Pools[i];
@@ -1164,7 +1163,7 @@ CNCMMChunksPool_Getter::CreateTlsObject(void)
 
 #else  // NCBI_OS_MSWIN
 
-    CSpinGuard guard(sm_CreateLock);
+    CNCMMMutexGuard guard(sm_CreateLock);
 
     CNCMMChunksPool* pool;
     if (sm_CntUsed == kNCMMMaxThreadsCnt) {
@@ -1184,7 +1183,7 @@ CNCMMChunksPool_Getter::DeleteTlsObject(void* mem_ptr)
 {
 #ifndef NCBI_OS_MSWIN
 
-    CSpinGuard guard(sm_CreateLock);
+    CNCMMMutexGuard guard(sm_CreateLock);
 
     CNCMMChunksPool* pool = static_cast<CNCMMChunksPool*>(mem_ptr);
     if (pool->ReleaseRef() == 0) {
@@ -1691,7 +1690,7 @@ CNCMMSlab::x_CalcEmptyGrade(void)
 unsigned int
 CNCMMSlab::MarkChainOccupied(const SNCMMChainInfo& chain)
 {
-    CSpinGuard guard(m_ObjLock);
+    CNCMMMutexGuard guard(m_ObjLock);
 
     _ASSERT(m_CntFree >= chain.size);
     m_CntFree -= chain.size;
@@ -1705,7 +1704,7 @@ CNCMMSlab::MarkChainFree(SNCMMChainInfo* chain,
                          SNCMMChainInfo* chain_left,
                          SNCMMChainInfo* chain_right)
 {
-    CSpinGuard guard(m_ObjLock);
+    CNCMMMutexGuard guard(m_ObjLock);
 
     _ASSERT(m_CntFree + chain->size <= kNCMMCntChunksInSlab);
     m_CntFree += chain->size;
@@ -1731,8 +1730,7 @@ CNCMMSlab::MarkChainFree(SNCMMChainInfo* chain,
 void
 CNCMMChainsPool::InitInstance(void)
 {
-    // Hack to initialize spin lock.
-    new (&m_ObjLock) CSpinLock();
+    m_ObjLock.InitializeDynamic();
     memset(m_FreeChains, 0, sizeof(m_FreeChains));
     m_RefCnt.Set(0);
 }
@@ -1761,8 +1759,7 @@ void
 CNCMMChainsPool_Getter::Initialize(void)
 {
     TBase::Initialize();
-    // Hack to initialize spin lock.
-    new (&sm_CreateLock) CSpinLock();
+    sm_CreateLock.InitializeDynamic();
     for (unsigned int i = 0; i < kNCMMMaxThreadsCnt; ++i) {
         sm_Pools[i].InitInstance();
         sm_PoolPtrs[i] = &sm_Pools[i];
@@ -1781,7 +1778,7 @@ CNCMMChainsPool_Getter::CreateTlsObject(void)
 
 #else // NCBI_OS_MSWIN
 
-    CSpinGuard guard(sm_CreateLock);
+    CNCMMMutexGuard guard(sm_CreateLock);
 
     CNCMMChainsPool* pool;
     if (sm_CntUsed == kNCMMMaxThreadsCnt) {
@@ -1801,7 +1798,7 @@ CNCMMChainsPool_Getter::DeleteTlsObject(void* mem_ptr)
 {
 #ifndef NCBI_OS_MSWIN
 
-    CSpinGuard guard(sm_CreateLock);
+    CNCMMMutexGuard guard(sm_CreateLock);
 
     CNCMMChainsPool* pool = static_cast<CNCMMChainsPool*>(mem_ptr);
     if (pool->ReleaseRef() == 0) {
@@ -1886,8 +1883,7 @@ CNCMMChainsPool::PutChain(void* mem_ptr, unsigned int chain_size)
 void
 CNCMMReserve::x_InitInstance(void)
 {
-    // Hack to initialize spin lock.
-    new (&m_ObjLock) CSpinLock();
+    m_ObjLock.InitializeDynamic();
     m_ExistMask.Initialize(0);
     memset(m_Chains, 0, sizeof(m_Chains));
 }
@@ -1911,7 +1907,7 @@ CNCMMReserve::x_MarkListIfEmpty(unsigned int list_index)
 void
 CNCMMReserve::Link(const SNCMMChainInfo& chain)
 {
-    CSpinGuard guard(m_ObjLock);
+    CNCMMMutexGuard guard(m_ObjLock);
 
     x_MarkListIfEmpty(chain.size);
     CNCMMFreeChunk*& list_head = m_Chains[chain.size];
@@ -1943,7 +1939,7 @@ CNCMMReserve::x_Unlink(const SNCMMChainInfo& chain)
 bool
 CNCMMReserve::UnlinkIfExist(const SNCMMChainInfo& chain)
 {
-    CSpinGuard guard(m_ObjLock);
+    CNCMMMutexGuard guard(m_ObjLock);
 
     CNCMMFreeChunk* chain_in_pool = m_Chains[chain.size];
     while (chain_in_pool  &&  chain_in_pool != chain.start) {
@@ -1977,7 +1973,7 @@ CNCMMReserve::x_FindFreeChain(unsigned int    min_size,
 bool
 CNCMMReserve::x_GetChain(unsigned int min_size, SNCMMChainInfo* chain)
 {
-    CSpinGuard guard(m_ObjLock);
+    CNCMMMutexGuard guard(m_ObjLock);
 
     if (!x_FindFreeChain(min_size, chain))
         return false;
@@ -2035,7 +2031,7 @@ CNCMMReserve::FillChunksFromChains(CNCMMFreeChunk** chunk_ptrs,
                                    unsigned int     max_cnt,
                                    SNCMMChainInfo*  chain_ptrs)
 {
-    CSpinGuard guard(m_ObjLock);
+    CNCMMMutexGuard guard(m_ObjLock);
 
     SNCMMChainInfo cur_chain;
     cur_chain.Initialize();
@@ -2387,8 +2383,7 @@ CNCMMSizePool::CNCMMSizePool(unsigned int size_index)
     : m_SizeIndex(size_index),
       m_EmptySet(NULL)
 {
-    // Hack to initialize spin lock.
-    new (&m_ObjLock) CSpinLock();
+    m_ObjLock.InitializeDynamic();
     memset(m_Sets, 0, sizeof(m_Sets));
     m_ExistMask.Initialize(0);
 }
@@ -2430,8 +2425,7 @@ void
 CNCMMSizePool_Getter::Initialize(void)
 {
     TBase::Initialize();
-    // Hack to initialize spin lock.
-    new (&sm_CreateLock) CSpinLock();
+    sm_CreateLock.InitializeDynamic();
     memset(sm_PoolPtrs, 0, sizeof(sm_PoolPtrs));
     memset(sm_RefCnts,  0, sizeof(sm_RefCnts));
     GetObjPtr();
@@ -2440,7 +2434,7 @@ CNCMMSizePool_Getter::Initialize(void)
 CNCMMSizePool*
 CNCMMSizePool_Getter::CreateTlsObject(void)
 {
-    CSpinGuard guard(sm_CreateLock);
+    CNCMMMutexGuard guard(sm_CreateLock);
 
     unsigned int index;
 #ifdef NCBI_OS_MSWIN
@@ -2473,7 +2467,7 @@ CNCMMSizePool_Getter::DeleteTlsObject(void* obj_ptr)
 {
 #ifndef NCBI_OS_MSWIN
 
-    CSpinGuard guard(sm_CreateLock);
+    CNCMMMutexGuard guard(sm_CreateLock);
 
     CNCMMSizePool* pools_array = static_cast<CNCMMSizePool*>(obj_ptr);
     void* mem_ptr = static_cast<char*>(obj_ptr) - 8;
@@ -2677,8 +2671,7 @@ CNCMMCentral::ReallocMemory(void* mem_ptr, size_t new_size)
 void
 CNCMMCentral::x_Initialize(void)
 {
-    // Hack to initialize spin lock.
-    new (&sm_CentralLock) CSpinLock();
+    sm_CentralLock.InitializeDynamic();
     sm_Stats.InitInstance();
 
     // Initialize all arrays related to info about blocks set for each block
@@ -2949,7 +2942,7 @@ CNCMMDBCache::CNCMMDBCache(int page_size, bool purgeable)
 void
 CNCMMDBCache::SetOptimalSize(int num_pages)
 {
-    CSpinGuard guard(m_ObjLock);
+    CFastMutexGuard guard(m_ObjLock);
 
     m_Pages.SetOptimalSize(num_pages);
 }
@@ -2987,7 +2980,7 @@ CNCMMDBCache::DetachPage(CNCMMDBPage* page)
 void
 CNCMMDBCache::DeleteAllPages(unsigned int min_key)
 {
-    CSpinGuard guard(m_ObjLock);
+    CFastMutexGuard guard(m_ObjLock);
 
     if (m_MaxKey < min_key  ||  m_CacheSize == 0)
         return;
@@ -3002,7 +2995,7 @@ CNCMMDBCache::DeleteAllPages(unsigned int min_key)
 void*
 CNCMMDBCache::PinPage(unsigned int key, EPageCreate create_flag)
 {
-    CSpinGuard guard(m_ObjLock);
+    CFastMutexGuard guard(m_ObjLock);
 
     CNCMMDBPage* page = m_Pages.GetPage(key);
     if (page) {
@@ -3032,7 +3025,7 @@ CNCMMDBCache::UnpinPage(void* data, bool must_delete)
 {
     CNCMMDBPage* page = CNCMMDBPage::FromDataPtr(data);
     if (must_delete) {
-        CSpinGuard guard(m_ObjLock);
+        CFastMutexGuard guard(m_ObjLock);
         DetachPage(page);
         page->DeletedFromHash();
     }
@@ -3087,7 +3080,7 @@ CNCMMDBPage::DoPeekedDestruction(void)
 void*
 CNCMMDBCache::DestroyOnePage(void)
 {
-    CSpinGuard guard(eEmptyGuard);
+    CFastMutexGuard guard(eEmptyGuard);
     CNCMMDBPage* page;
     for (;;) {
         page = CNCMMDBPage::PeekLRUForDestroy();

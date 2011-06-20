@@ -290,7 +290,6 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
         { { "cache",   eNSPT_Str,  eNSPA_Required },
           { "key",     eNSPT_Str,  eNSPA_Required },
           { "subkey",  eNSPT_Str,  eNSPA_Required },
-          { "version", eNSPT_Int,  eNSPA_Required },
           { "qrum",    eNSPT_Int,  eNSPA_Required },
           { "ip",      eNSPT_Str,  eNSPA_Required },
           { "sid",     eNSPT_Str,  eNSPA_Required },
@@ -978,7 +977,7 @@ CNCMessageHandler::OnTimer(void)
 void
 CNCMessageHandler::OnOverflow(void)
 {
-    // Max connection overflow
+    abort();
     ERR_POST(Critical << "Max number of connections reached, closing connection");
     CNCStat::AddOverflowConnection();
 }
@@ -1370,8 +1369,8 @@ CNCMessageHandler::x_PrintRequestStart(const SParsedCmd& cmd,
 void
 CNCMessageHandler::x_WaitForWouldBlock(void)
 {
-    g_NetcacheServer->DeferConnectionProcessing(m_Socket);
     x_SetFlag(fWaitForBlockedOp);
+    g_NetcacheServer->DeferConnectionProcessing(m_Socket);
 }
 
 bool
@@ -2410,8 +2409,6 @@ CNCMessageHandler::x_SendCmdAsProxy(void)
         proxy_cmd += "\" \"";
         proxy_cmd += subkey;
         proxy_cmd += "\" ";
-        proxy_cmd += NStr::IntToString(m_BlobVersion);
-        proxy_cmd.append(1, ' ');
         proxy_cmd += NStr::UIntToString(m_Quorum);
         proxy_cmd += " \"";
         proxy_cmd += m_CmdCtx->GetClientIP();

@@ -33,6 +33,7 @@
 #include "nc_stat.hpp"
 #include "netcached.hpp"
 #include "distribution_conf.hpp"
+#include "nc_memory.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -55,7 +56,10 @@ void
 CNCBlobBuffer::DeleteThis(void)
 {
     m_Size = 0;
-    s_BufferPool.Return(this);
+    if (CNCMemManager::IsOnAlert())
+        delete this;
+    else
+        s_BufferPool.Return(this);
 }
 
 
@@ -442,7 +446,10 @@ SNCBlobVerData::DeleteThis(void)
     password.clear();
     data.Reset();
     data_trigger.Reset();
-    s_VerDataPool.Return(this);
+    if (CNCMemManager::IsOnAlert())
+        delete this;
+    else
+        s_VerDataPool.Return(this);
 }
 
 
