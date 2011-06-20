@@ -53,6 +53,7 @@ static char const rcsid[] = "$Id$";
 #include <objects/general/Object_id.hpp>
 
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
+#include <util/range.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(ncbi);
@@ -381,5 +382,148 @@ CBlastFormattingMatrix::CBlastFormattingMatrix(int** data, unsigned int nrows,
     }
 }
 
+
+/// Auxiliary structure used for sorting CRange<int> objects in increasing
+/// order of starting positions.
+struct SRangeStartSort {
+    bool operator()(CRange<int> const& range1, CRange<int> const& range2)
+    {
+        return (range1.GetFrom() < range2.GetFrom());
+    }
+};
+
+/// Masks a query sequence string corresponding to an alignment, given a list
+/// of mask locations.
+/// @param alnvec One alignment [in]
+/// @param query_seq Query string corresponding to this alignment [in] [out]
+/// @param mask_info List of masking locations [in]
+/// @param mask_char How should sequence be masked? [in]
+/// @param query_frame If query is translated, what query frame is this
+///                    alignment for?
+static void
+s_MaskQuerySeq(CAlnVec& alnvec, string& query_seq,
+               const ncbi::TMaskedQueryRegions& mask_info,
+               CDisplaySeqalign::SeqLocCharOption mask_char,
+               int query_frame)
+{
+    const int kNumSegs = alnvec.GetNumSegs();
+    vector<CRange<int> > segs_v;
+    for (int index = 0; index < kNumSegs; ++index) {
+        CRange<int> range(alnvec.GetAlnStart(index),
+                          alnvec.GetAlnStop(index));
+        segs_v.push_back(range);
+    }
+
+    vector<CRange<int> > masks_v;
+    int aln_stop = query_seq.size() - 1;
+    ITERATE(ncbi::TMaskedQueryRegions, mask_iter, mask_info) {
+        if ((*mask_iter)->GetFrame() != query_frame)
+            continue;
+        int start =
+            alnvec.GetAlnPosFromSeqPos(0,
+                                       (*mask_iter)->GetInterval().GetFrom());
+        int stop =
+            alnvec.GetAlnPosFromSeqPos(0,
+                                       (*mask_iter)->GetInterval().GetTo());
+        // For negative frames, start and stop must be swapped.
+        if (query_frame < 0) {
+            int tmp = start;
+            start = stop;
+            stop = tmp;
+        }
+        if (start >= 0) {
+            if (stop < 0)
+                stop = aln_stop;
+            CRange<int>  range(start, stop);
+            masks_v.push_back(range);
+        }
+    }
+
+    sort(masks_v.begin(), masks_v.end(), SRangeStartSort());
+
+    // Mask the sequence
+    int mask_index = 0;
+    for (int seg_index = 0;
+         seg_index < (int) segs_v.size() && mask_index < (int) masks_v.size();
+         ++seg_index) {
+        if (segs_v[seg_index].Empty())
+            continue;
+        int seg_start = segs_v[seg_index].GetFrom();
+        int seg_stop = segs_v[seg_index].GetTo();
+        int mask_pos;
+        while (mask_index < (int) masks_v.size() &&
+               (mask_pos = max(seg_start, masks_v[mask_index].GetFrom()))
+               <= seg_stop) {
+            int mask_stop = min(seg_stop, masks_v[mask_index].GetTo());
+            // Mask the respective part of the sequence
+            for ( ; mask_pos <= mask_stop; ++mask_pos) {
+		if(  query_seq[mask_pos] == '-' ) continue; // preserve gap
+                if (mask_char == CDisplaySeqalign::eX) {
+                    query_seq[mask_pos] = 'X';
+                } else if (mask_char == CDisplaySeqalign::eN){
+                    query_seq[mask_pos]='N';
+                } else if (mask_char == CDisplaySeqalign::eLowerCase) {
+                    query_seq[mask_pos] =
+                        tolower((unsigned char)query_seq[mask_pos]);
+                }
+            }
+            // Advance to the next mask if this mask is done with. Otherwise
+            // break out of the loop.
+            if (mask_pos < seg_stop)
+                ++mask_index;
+            else
+                break;
+        }
+    }
+}
+
+static void
+s_GetQueryAndSubjectStrings(CAlnVec & aln_vec,
+							string & query,
+							string & subject,
+							int master_gen_code,
+							int slave_gen_code)
+{
+	//Note: do not switch the set order per calnvec specs.
+	aln_vec.SetGenCode(slave_gen_code);
+	aln_vec.SetGenCode(master_gen_code, 0);
+
+    aln_vec.SetGapChar('-');
+    aln_vec.GetWholeAlnSeqString(0, query);
+    aln_vec.GetWholeAlnSeqString(1, subject);
+}
+
+void
+CBlastFormatUtil::GetWholeAlnSeqStrings(string & query,
+								 	   string & subject,
+								 	   const objects::CDense_seg& ds,
+								 	   objects::CScope& scope,
+								 	   int master_gen_code,
+								 	   int slave_gen_code)
+{
+	CAlnVec aln_vec(ds, scope);
+
+	s_GetQueryAndSubjectStrings(aln_vec, query, subject, master_gen_code, slave_gen_code);
+}
+
+void
+CBlastFormatUtil::GetWholeAlnSeqStrings(string & query,
+						   	   	   	   	string & masked_query,
+						   	   	   	   	string & subject,
+						   	   	   	   	const objects::CDense_seg & ds,
+						   	   	   	   	objects::CScope & scope,
+						   	   	   	   	int master_gen_code,
+						   	   	   	   	int slave_gen_code,
+						   	   	   	   	const ncbi::TMaskedQueryRegions& mask_info,
+						   	   	   	   	const CDisplaySeqalign::SeqLocCharOption mask_char,
+						   	   	   	   	int query_frame)
+{
+	CAlnVec aln_vec(ds, scope);
+
+	s_GetQueryAndSubjectStrings(aln_vec, query, subject, master_gen_code, slave_gen_code);
+
+	masked_query = query;
+	s_MaskQuerySeq(aln_vec, masked_query, mask_info, mask_char, query_frame);
+}
 
 END_NCBI_SCOPE

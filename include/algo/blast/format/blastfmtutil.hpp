@@ -37,6 +37,8 @@
 #include <algo/blast/api/version.hpp>
 #include <algo/blast/api/blast_results.hpp> // for CBlastAncillaryData
 #include <objtools/align_format/align_format_util.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
+#include <objtools/align_format/showalign.hpp>
 
 /** @addtogroup BlastFormatting
  *
@@ -108,6 +110,57 @@ public:
     				   const objects::CSeq_align_set & alnset,
     				   blast::EProgram program,
     				   const string & db_name);
+
+
+    /*
+     * @brief Create Query and Subject Strings
+     * @input parm: query -- buffer to store the query string
+     * 				subject -- buffer to store subject string
+     * 				ds -- dense seg
+	 * 				scope -- scope
+	 * 				master_gen_code - master genetic code
+	 * 				slave_gen_code - slave genetic code
+     * @output parm: query -- query string in whole
+     * 				 subject -- subject string in whole
+     * @note: intermediate solution to get rid of CAlnVec for XML formatting
+     *
+     */
+    static void GetWholeAlnSeqStrings(string & query,
+    								 string & subject,
+    								 const objects::CDense_seg & ds,
+    								 objects::CScope & scope,
+    								 int master_gen_code,
+    								 int slave_gen_code);
+
+    /*
+     * @brief Create Query and Subject Strings
+     * @input parm: query -- buffer to store the query string
+     * 				masked_query -- buffer to store the maksed query string
+     * 				subject -- buffer to store subject string
+     * 				ds -- dense seg
+	 * 				scope -- scope
+	 * 				master_gen_code - master genetic code
+	 * 				slave_gen_code - slave genetic code
+	 * 				 mask_info -- query masked regions
+	 * 				 mask_char -- char to be used for masking
+	 * 				 query_frame -- frame num for query
+	 *
+     * @output parm: query -- query string in whole
+     * 				 masked_query -- masked in whole
+     * 				 subject -- subject string in whole
+     * @note: intermediate solution to get rid of CAlnVec for XML formatting
+     *
+     */
+    static void GetWholeAlnSeqStrings(string & query,
+    								  string & masked_query,
+    								  string & subject,
+    								  const objects::CDense_seg & ds,
+    								  objects::CScope & scope,
+    								  int master_gen_code,
+    								  int slave_gen_code,
+    								  const ncbi::TMaskedQueryRegions& mask_info,
+    								  const align_format::CDisplaySeqalign::SeqLocCharOption mask_char,
+    								  int query_frame);
 
 };
 
