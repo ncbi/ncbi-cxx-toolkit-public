@@ -89,7 +89,6 @@ CSeqTest::x_TestAllCdregions(const CSerialObject& obj,
         }
 
         CRef<CSeq_test_result> result = x_SkeletalTestResult(test_name);
-        ref->Set().push_back(result);
 
         (*cdregion_tester)(*id, ctx, feat_iter, *result);
 
@@ -107,6 +106,12 @@ CSeqTest::x_TestAllCdregions(const CSerialObject& obj,
                 }
             }
             result->SetOutput_data().AddField("cds_feat", asn_text);
+        }
+
+        // Avoid saving empty results since the data element is mandatory.
+        if ( result->IsSetOutput_data() &&
+             result->GetOutput_data().IsSetData() ) {
+            ref->Set().push_back(result);
         }
     }
 
