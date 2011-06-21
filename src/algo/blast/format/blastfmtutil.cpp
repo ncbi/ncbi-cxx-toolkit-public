@@ -403,7 +403,7 @@ struct SRangeStartSort {
 static void
 s_MaskQuerySeq(CAlnVec& alnvec, string& query_seq,
                const ncbi::TMaskedQueryRegions& mask_info,
-               CDisplaySeqalign::SeqLocCharOption mask_char,
+               align_format::CDisplaySeqalign::SeqLocCharOption mask_char,
                int query_frame)
 {
     const int kNumSegs = alnvec.GetNumSegs();
@@ -515,7 +515,7 @@ CBlastFormatUtil::GetWholeAlnSeqStrings(string & query,
 						   	   	   	   	int master_gen_code,
 						   	   	   	   	int slave_gen_code,
 						   	   	   	   	const ncbi::TMaskedQueryRegions& mask_info,
-						   	   	   	   	const CDisplaySeqalign::SeqLocCharOption mask_char,
+						   	   	   	   	align_format::CDisplaySeqalign::SeqLocCharOption mask_char,
 						   	   	   	   	int query_frame)
 {
 	CAlnVec aln_vec(ds, scope);
