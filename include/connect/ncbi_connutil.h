@@ -31,8 +31,8 @@
  * File Description:
  *   Auxiliary API to:
  *    1.Retrieve connection related info from the registry:
- *       ConnNetInfo_GetValue
- *       ConnNetInfo_Boolean
+ *       ConnNetInfo_GetValue()
+ *       ConnNetInfo_Boolean()
  *       SConnNetInfo
  *       ConnNetInfo_Create()
  *       ConnNetInfo_Clone()
@@ -131,24 +131,24 @@ typedef enum {
 typedef struct {
     char            client_host[256]; /* effective client hostname ('\0'=def)*/
     EURLScheme      scheme;           /* only pre-defined types (limited)    */
+    EReqMethod      req_method;       /* method to use in the request (HTTP) */
     char            user[64];         /* username (if specified)             */
     char            pass[64];         /* password (if any)                   */
     char            host[256];        /* host to connect to                  */
     unsigned short  port;             /* port to connect to, host byte order */
     char            path[1024];       /* path (e.g. to  a CGI script or page)*/
     char            args[1024];       /* args (e.g. for a CGI script)        */
-    EReqMethod      req_method;       /* method to use in the request (HTTP) */
-    const STimeout* timeout;          /* ptr to I/O timeout(infinite if NULL)*/
-    unsigned short  max_try;          /* max. # of attempts to connect (>= 1)*/
     char            http_proxy_host[256]; /* hostname of HTTP proxy server   */
     unsigned short  http_proxy_port;      /* port #   of HTTP proxy server   */
     char            http_proxy_user[64];  /* http proxy username (if req'd)  */
     char            http_proxy_pass[64];  /* http proxy password             */
     char            proxy_host[256];  /* CERN-like (non-transp) f/w proxy srv*/
+    const STimeout* timeout;          /* ptr to I/O timeout(infinite if NULL)*/
+    unsigned short  max_try;          /* max. # of attempts to connect (>= 1)*/
+    short/*bool*/   firewall;         /* to use firewall/relay in connects   */
+    short/*bool*/   stateless;        /* to connect in HTTP-like fashion only*/
+    short/*bool*/   lb_disable;       /* to disable local load-balancing     */
     EDebugPrintout  debug_printout;   /* switch to printout some debug info  */
-    int/*bool*/     stateless;        /* to connect in HTTP-like fashion only*/
-    int/*bool*/     firewall;         /* to use firewall/relay in connects   */
-    int/*bool*/     lb_disable;       /* to disable local load-balancing     */
     const char*     http_user_header; /* user header to add to HTTP request  */
     const char*     http_referer;     /* default referrer (when not spec'd)  */
 
@@ -161,6 +161,9 @@ typedef struct {
 /* Defaults and the registry entry names for "SConnNetInfo" fields
  */
 #define DEF_CONN_REG_SECTION      "CONN"
+
+#define REG_CONN_REQ_METHOD       "REQ_METHOD"
+#define DEF_CONN_REQ_METHOD       "ANY"
 
 #define REG_CONN_USER             "USER"
 #define DEF_CONN_USER             ""
@@ -180,15 +183,6 @@ typedef struct {
 #define REG_CONN_ARGS             "ARGS"
 #define DEF_CONN_ARGS             ""
 
-#define REG_CONN_REQ_METHOD       "REQ_METHOD"
-#define DEF_CONN_REQ_METHOD       "ANY"
-
-#define REG_CONN_TIMEOUT          "TIMEOUT"
-#define DEF_CONN_TIMEOUT          30.0
-
-#define REG_CONN_MAX_TRY          "MAX_TRY"
-#define DEF_CONN_MAX_TRY          3
-
 #define REG_CONN_HTTP_PROXY_HOST  "HTTP_PROXY_HOST"
 #define DEF_CONN_HTTP_PROXY_HOST  ""
 
@@ -204,17 +198,23 @@ typedef struct {
 #define REG_CONN_PROXY_HOST       "PROXY_HOST"
 #define DEF_CONN_PROXY_HOST       ""
 
-#define REG_CONN_DEBUG_PRINTOUT   "DEBUG_PRINTOUT"
-#define DEF_CONN_DEBUG_PRINTOUT   ""
+#define REG_CONN_TIMEOUT          "TIMEOUT"
+#define DEF_CONN_TIMEOUT          30.0
 
-#define REG_CONN_STATELESS        "STATELESS"
-#define DEF_CONN_STATELESS        ""
+#define REG_CONN_MAX_TRY          "MAX_TRY"
+#define DEF_CONN_MAX_TRY          3
 
 #define REG_CONN_FIREWALL         "FIREWALL"
 #define DEF_CONN_FIREWALL         ""
 
+#define REG_CONN_STATELESS        "STATELESS"
+#define DEF_CONN_STATELESS        ""
+
 #define REG_CONN_LB_DISABLE       "LB_DISABLE"
 #define DEF_CONN_LB_DISABLE       ""
+
+#define REG_CONN_DEBUG_PRINTOUT   "DEBUG_PRINTOUT"
+#define DEF_CONN_DEBUG_PRINTOUT   ""
 
 #define REG_CONN_HTTP_USER_HEADER "HTTP_USER_HEADER"
 #define DEF_CONN_HTTP_USER_HEADER ""
@@ -276,25 +276,25 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_Boolean
  *
  *  -- INFO FIELD --  ----- NAME -----  ---------- REMARKS/EXAMPLES ---------
  *  client_host       local host name   assigned automatically
- *  service_name      SERVICE_NAME      no search/no value without service
+ *  req_method        REQ_METHOD
  *  host              HOST
  *  port              PORT
  *  path              PATH
  *  args              ARGS
- *  req_method        REQ_METHOD
- *  timeout           TIMEOUT           "<sec>.<usec>": "3.00005", "infinite"
- *  max_try           MAX_TRY  
  *  http_proxy_host   HTTP_PROXY_HOST   no HTTP proxy if empty/NULL
  *  http_proxy_port   HTTP_PROXY_PORT
  *  http_proxy_user   HTTP_PROXY_USER
  *  http_proxy_pass   HTTP_PROXY_PASS
  *  proxy_host        PROXY_HOST
- *  debug_printout    DEBUG_PRINTOUT
- *  stateless         STATELESS
+ *  timeout           TIMEOUT           "<sec>.<usec>": "3.00005", "infinite"
+ *  max_try           MAX_TRY  
  *  firewall          FIREWALL
- *  lb_disable        LB_DISABLE
+ *  stateless         STATELESS
+ *  lb_disable        LB_DISABLE        obsolete
+ *  debug_printout    DEBUG_PRINTOUT
  *  http_user_header  HTTP_USER_HEADER  "\r\n" (if missing) is auto-appended
  *  http_referer      HTTP_REFERER      may be assigned automatically
+ *  svc               SERVICE_NAME      no search/no value without service
  *
  * A value of the field NAME is first looked up in the environment variable
  * of the form service_CONN_<NAME>; then in the current corelib registry,
@@ -303,7 +303,10 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_Boolean
  * registry section (DEF_CONN_REG_SECTION), using just <NAME>. If service
  * is NULL or empty then the first 2 steps in the above lookup are skipped.
  *
- * For default values see right above, in macros DEF_CONN_<NAME>.
+ * For default values see right above, within macros DEF_CONN_<NAME>.
+ *
+ * @sa
+ *   ConnNetInfo_GetValue
  */
 extern NCBI_XCONNECT_EXPORT SConnNetInfo* ConnNetInfo_Create
 (const char* service
@@ -420,11 +423,11 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_ExtendUserHeader
 
 
 /* Delete entries from current user header, if their tags match those
- * passed in "hdr" (regardless of the values, if any, in the latter).
+ * passed in "header" (regardless of the values, if any, in the latter).
  */
 extern NCBI_XCONNECT_EXPORT void ConnNetInfo_DeleteUserHeader
 (SConnNetInfo* info,
- const char*   hdr
+ const char*   header
  );
 
 
@@ -448,7 +451,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetupStandardArgs
  );
 
 
-/* Log the contents of "*info" into log "log" with severity "sev".
+/* Log the contents of "*info" into specified "log" with severity "sev".
  */
 extern NCBI_XCONNECT_EXPORT void ConnNetInfo_LogEx
 (const SConnNetInfo* info,
@@ -770,6 +773,8 @@ extern NCBI_XCONNECT_EXPORT char* MIME_ComposeContentTypeEx
  *        be ignored, e.g. these are valid content type strings:
  *           "   Content-Type: text/plain  foobar"
  *           "  text/html \r\n  barfoo coocoo ....\n boooo"
+ *
+ * PERFORMANCE NOTE:  this call uses heap allocations internally.
  *
  * If it does not match any of NCBI MIME type/subtypes/encodings, then
  * return TRUE, eMIME_T_Unknown, eMIME_Unknown or eENCOD_None, respectively.

@@ -253,6 +253,16 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     /* scheme */
     info->scheme = eURL_Unspec;
 
+    /* request method */
+    REG_VALUE(REG_CONN_REQ_METHOD, str, DEF_CONN_REQ_METHOD);
+    if (!*str  ||  strcasecmp(str, "ANY") == 0)
+        info->req_method = eReqMethod_Any;
+    else if (strcasecmp(str, "POST") == 0)
+        info->req_method = eReqMethod_Post;
+    else if (strcasecmp(str, "GET") == 0)
+        info->req_method = eReqMethod_Get;
+    /* NB: CONNECT is not allowed here */
+
     /* username */
     REG_VALUE(REG_CONN_USER, info->user, DEF_CONN_USER);
 
@@ -276,33 +286,6 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 
     /* args */
     REG_VALUE(REG_CONN_ARGS, info->args, DEF_CONN_ARGS);
-
-    /* request method */
-    REG_VALUE(REG_CONN_REQ_METHOD, str, DEF_CONN_REQ_METHOD);
-    if (!*str  ||  strcasecmp(str, "ANY") == 0)
-        info->req_method = eReqMethod_Any;
-    else if (strcasecmp(str, "POST") == 0)
-        info->req_method = eReqMethod_Post;
-    else if (strcasecmp(str, "GET") == 0)
-        info->req_method = eReqMethod_Get;
-    /* NB: CONNECT is not allowed here */
-
-    /* connection timeout */
-    REG_VALUE(REG_CONN_TIMEOUT, str, 0);
-    len = strlen(str);
-    if (len < 3  ||  8 < len  ||  strncasecmp(str, "infinite", len) != 0) {
-        if (!*str  ||  (dbl = atof(str)) < 0.0)
-            dbl = DEF_CONN_TIMEOUT;
-        info->tmo.sec  = (unsigned int)  dbl;
-        info->tmo.usec = (unsigned int)((dbl - info->tmo.sec) * 1000000.0);
-        info->timeout  = &info->tmo;
-    } else
-        info->timeout  = kInfiniteTimeout/*0*/;
-
-    /* max. # of attempts to establish connection */
-    REG_VALUE(REG_CONN_MAX_TRY, str, 0);
-    val = atoi(str);
-    info->max_try = (unsigned short)(val > 0 ? val : DEF_CONN_MAX_TRY);
 
     /* HTTP proxy server? */
     REG_VALUE(REG_CONN_HTTP_PROXY_HOST, info->http_proxy_host,
@@ -331,6 +314,35 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     /* non-transparent CERN-like firewall proxy server? */
     REG_VALUE(REG_CONN_PROXY_HOST, info->proxy_host, DEF_CONN_PROXY_HOST);
 
+    /* connection timeout */
+    REG_VALUE(REG_CONN_TIMEOUT, str, 0);
+    len = strlen(str);
+    if (len < 3  ||  8 < len  ||  strncasecmp(str, "infinite", len) != 0) {
+        if (!*str  ||  (dbl = atof(str)) < 0.0)
+            dbl = DEF_CONN_TIMEOUT;
+        info->tmo.sec  = (unsigned int)  dbl;
+        info->tmo.usec = (unsigned int)((dbl - info->tmo.sec) * 1000000.0);
+        info->timeout  = &info->tmo;
+    } else
+        info->timeout  = kInfiniteTimeout/*0*/;
+
+    /* max. # of attempts to establish connection */
+    REG_VALUE(REG_CONN_MAX_TRY, str, 0);
+    val = atoi(str);
+    info->max_try = (unsigned short)(val > 0 ? val : DEF_CONN_MAX_TRY);
+
+    /* firewall mode? */
+    REG_VALUE(REG_CONN_FIREWALL, str, DEF_CONN_FIREWALL);
+    info->firewall = ConnNetInfo_Boolean(str);
+
+    /* stateless client? */
+    REG_VALUE(REG_CONN_STATELESS, str, DEF_CONN_STATELESS);
+    info->stateless = ConnNetInfo_Boolean(str);
+
+    /* prohibit the use of local load balancer? */
+    REG_VALUE(REG_CONN_LB_DISABLE, str, DEF_CONN_LB_DISABLE);
+    info->lb_disable = ConnNetInfo_Boolean(str);
+
     /* turn on debug printout? */
     REG_VALUE(REG_CONN_DEBUG_PRINTOUT, str, DEF_CONN_DEBUG_PRINTOUT);
     if (ConnNetInfo_Boolean(str)
@@ -341,18 +353,6 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
         info->debug_printout = eDebugPrintout_Data;
     } else
         info->debug_printout = eDebugPrintout_None;
-
-    /* stateless client? */
-    REG_VALUE(REG_CONN_STATELESS, str, DEF_CONN_STATELESS);
-    info->stateless = ConnNetInfo_Boolean(str);
-
-    /* firewall mode? */
-    REG_VALUE(REG_CONN_FIREWALL, str, DEF_CONN_FIREWALL);
-    info->firewall = ConnNetInfo_Boolean(str);
-
-    /* prohibit the use of local load balancer? */
-    REG_VALUE(REG_CONN_LB_DISABLE, str, DEF_CONN_LB_DISABLE);
-    info->lb_disable = ConnNetInfo_Boolean(str);
 
     /* user header */
     REG_VALUE(REG_CONN_HTTP_USER_HEADER, str, DEF_CONN_HTTP_USER_HEADER);
@@ -375,9 +375,10 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
 {
     /* URL elements and their parsed lengths as passed */
-    const char *user,    *pass,   *host,   *path,   *args;
+    const char *user,   *pass,   *host,   *path,   *args;
     size_t     userlen, passlen, hostlen, pathlen, argslen;
     unsigned short port;
+    EURLScheme scheme;
     const char* s;
     size_t len;
     char* p;
@@ -408,7 +409,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
     /* "user:pass@host:port" first [any optional] */
     if ((s = strstr(url, "://")) != 0) {
         len = (size_t)(s - url);
-        if ((info->scheme = x_ParseScheme(url, len)) == eURL_Unspec)
+        if ((scheme = x_ParseScheme(url, len)) == eURL_Unspec)
             return 0/*failure*/;
 
         host    = s + 3;
@@ -518,11 +519,6 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         memcpy(p, path, pathlen);
         p[pathlen] = '\0';
     }
-    if (host) {
-        memcpy(info->host, host, hostlen);
-        info->host[hostlen] = '\0';
-        info->port = port;
-    }
     if (user) {
         assert(pass);
         memcpy(info->user, user, userlen);
@@ -530,6 +526,12 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         memcpy(info->pass, pass, passlen);
         info->pass[passlen] = '\0';
     }
+    if (host) {
+        memcpy(info->host, host, hostlen);
+        info->host[hostlen] = '\0';
+        info->port = port;
+    }
+    info->scheme = scheme;
     return 1/*success*/;
 }
 
@@ -1117,7 +1119,7 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
     }
 
     uhlen = info->http_user_header ? strlen(info->http_user_header) : 0;
-       
+
     len = sizeof(*info) + 1024/*slack for all labels & keywords*/
         + UTIL_PrintableStringSize(info->http_user_header, uhlen)
         + (info->http_referer ? strlen(info->http_referer) : 0)
@@ -1141,15 +1143,6 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
     else
         s_SaveKeyval(s, "client_host",     "(default)");
     s_SaveString    (s, "scheme",          x_Scheme(info->scheme, buf));
-    s_SaveString    (s, "user",            info->user);
-    if (*info->pass)
-        s_SaveKeyval(s, "pass",           *info->user ? "(set)" : "(ignored)");
-    else
-        s_SaveString(s, "pass",            info->pass);
-    s_SaveString    (s, "host",            info->host);
-    s_SaveKeyval    (s, "port",            x_Port(info->port, buf));
-    s_SaveString    (s, "path",            info->path);
-    s_SaveString    (s, "args",            info->args);
     s_SaveKeyval    (s, "req_method",     (info->req_method
                                            == eReqMethod_Connect
                                            ? "CONNECT"
@@ -1162,12 +1155,15 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
                                                  : (info->req_method
                                                     == eReqMethod_Any
                                                     ? "ANY" : "(unknown)")))));
-    if (info->timeout) {
-        s_SaveULong (s, "timeout(sec)",    info->timeout->sec);
-        s_SaveULong (s, "timeout(usec)",   info->timeout->usec);
-    } else
-        s_SaveKeyval(s, "timeout",         "INFINITE");
-    s_SaveULong     (s, "max_try",         info->max_try);
+    s_SaveString    (s, "user",            info->user);
+    if (*info->pass)
+        s_SaveKeyval(s, "pass",           *info->user ? "(set)" : "(ignored)");
+    else
+        s_SaveString(s, "pass",            info->pass);
+    s_SaveString    (s, "host",            info->host);
+    s_SaveKeyval    (s, "port",            x_Port(info->port, buf));
+    s_SaveString    (s, "path",            info->path);
+    s_SaveString    (s, "args",            info->args);
     s_SaveString    (s, "http_proxy_host", info->http_proxy_host);
     s_SaveKeyval    (s, "http_proxy_port", x_Port(info->http_proxy_port, buf));
     s_SaveString    (s, "http_proxy_user", info->http_proxy_user);
@@ -1176,6 +1172,15 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
     else
         s_SaveString(s, "http_proxy_pass", info->http_proxy_pass);
     s_SaveString    (s, "proxy_host",      info->proxy_host);
+    if (info->timeout) {
+        s_SaveULong (s, "timeout(sec)",    info->timeout->sec);
+        s_SaveULong (s, "timeout(usec)",   info->timeout->usec);
+    } else
+        s_SaveKeyval(s, "timeout",         "INFINITE");
+    s_SaveULong     (s, "max_try",         info->max_try);
+    s_SaveBool      (s, "firewall",        info->firewall);
+    s_SaveBool      (s, "stateless",       info->stateless);
+    s_SaveBool      (s, "lb_disable",      info->lb_disable);
     s_SaveKeyval    (s, "debug_printout", (info->debug_printout
                                            == eDebugPrintout_None
                                            ? "NONE"
@@ -1185,9 +1190,6 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
                                               : (info->debug_printout
                                                  == eDebugPrintout_Data
                                                  ? "DATA" : "(unknown)"))));
-    s_SaveBool      (s, "stateless",       info->stateless);
-    s_SaveBool      (s, "firewall",        info->firewall);
-    s_SaveBool      (s, "lb_disable",      info->lb_disable);
     s_SaveUserHeader(s, "http_user_header",info->http_user_header, uhlen);
     s_SaveString    (s, "http_referer",    info->http_referer);
     strcat(s, "#################### [END] SConnNetInfo\n");
