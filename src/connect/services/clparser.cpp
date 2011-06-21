@@ -537,7 +537,7 @@ int SCommandLineParserImpl::ParseAndValidate(int argc, const char* const *argv)
                 }
         else
             if (arg_value != positional_arguments.end())
-                Throw("too many positional arguments");
+                Throw("too many positional arguments", command_name);
         break;
     }
 
