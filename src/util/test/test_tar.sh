@@ -38,7 +38,7 @@ huge_tar="/am/ftp-geo/DATA/supplementary/series/GSE15735/GSE15735_RAW.tar"
 if [ -f "$huge_tar" ]; then
   if $okay ; then
     echo
-    echo "`date` *** Testing compatibility with existing NCBI data"
+    echo "`date` *** Checking compatibility with existing NCBI data"
     echo
     
     test_tar -T -f "$huge_tar"  ||  exit 1
@@ -207,38 +207,29 @@ if [ "`uname`" = "Linux" ]; then
   spabs="`expr $$ % 1000  + 1`"
   posbs="`expr $$ % 10240 + 1`"
   nseek="`expr 1024000 / $spabs`"
-  size="`expr $nseek '*' $spabs + $spabs`"
 
   echo
-  echo "`date` *** Checking sparse file tolerance (seek: ${nseek}, bs: ${spabs}, size: ${size})"
+  echo "`date` *** Checking sparse file tolerance"
   echo
 
-  dd of=$test_base.1/newdir/pre-sparse  bs="$prebs" count=1               if=/dev/urandom               ||  exit 1
-  dd of=$test_base.1/newdir/sparse-file bs="$spabs" count=1 seek="$nseek" if=/dev/urandom               ||  exit 1
-  dd of=$test_base.1/newdir/post-sparse bs="$posbs" count=1               if=/dev/urandom               ||  exit 1
+  dd of=$test_base.1/newdir/pre-sparse  bs="$prebs" count=1                            if=/dev/urandom  ||  exit 1
+  dd of=$test_base.1/newdir/sparse-file bs="$spabs" count=1 seek="$nseek"              if=/dev/urandom  ||  exit 1
+  nseek="`expr $nseek '*' 2`"
+  dd of=$test_base.1/newdir/sparse-file bs="$spabs" count=1 seek="$nseek" conv=notrunc if=/dev/urandom  ||  exit 1
+  nseek="`expr $nseek '*' 2`"
+  dd of=$test_base.1/newdir/sparse-file bs="$spabs" count=1 seek="$nseek" conv=notrunc if=/dev/urandom  ||  exit 1
+  nseek="`expr $nseek '*' 2`"
+  dd of=$test_base.1/newdir/sparse-file bs="$spabs" count=1 seek="$nseek" conv=notrunc if=/dev/urandom  ||  exit 1
+  nseek="`expr $nseek '*' 2`"
+  dd of=$test_base.1/newdir/sparse-file bs="$spabs" count=1 seek="$nseek" conv=notrunc if=/dev/urandom  ||  exit 1
+  nseek="`expr $nseek '*' 2`"
+  dd of=$test_base.1/newdir/sparse-file bs="$spabs" count=1 seek="$nseek" conv=notrunc if=/dev/urandom  ||  exit 1
+  dd of=$test_base.1/newdir/post-sparse bs="$posbs" count=1                            if=/dev/urandom  ||  exit 1
   ls -l $test_base.1/newdir/*sparse*
-
-  real="`ls -l $test_base.1/newdir/sparse-file | tail -1 | sed 's/  */ /g' | cut -f 5 -d ' '`"
-  if [ "$size" != "$real" ]; then
-    echo "--- Sparse file size mismatch: $size is expected, $real is found"
-    exit 1
-  fi
 
   ( cd $test_base.1/newdir  &&  $tar ${format}Srvf $test_base.tar pre-sparse sparse-file post-sparse )  ||  exit 1
 
-  test_tar -T    -f $test_base.tar                                                                      ||  exit 1
-  test_tar -x -s -f $test_base.tar sparse-file > $test_base.2/newdir/sparse-file                        ||  exit 1
-
-  temp="`ls -l $test_base.2/newdir/sparse-file | tail -1 | sed 's/  */ /g' | cut -f 5 -d ' '`"
-  if [ "$temp" = "$real" ]; then
-    echo "--- Looks like the sparse file format is not used, checking plain"
-    cmp -l               $test_base.1/newdir/sparse-file $test_base.2/newdir/sparse-file                ||  exit 1
-  else
-    real="`expr $size - $spabs`"
-    nseek="`expr $real / 512 '*' 512`"
-    echo "--- Sparse file size in the file system: $temp, comparing @ $nseek"
-    cmp -l -i ${nseek}:0 $test_base.1/newdir/sparse-file $test_base.2/newdir/sparse-file                ||  exit 1
-  fi
+  test_tar -T -f $test_base.tar                                                                         ||  exit 1
 
   if $okay ; then
     free="`df -k /tmp | tail -1 | sed 's/  */ /g' | cut -f 4 -d ' '`"

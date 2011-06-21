@@ -51,7 +51,7 @@
 USING_NCBI_SCOPE;
 
 
-const unsigned int fVerbose = CTar::fDumpBlockHeaders;
+const unsigned int fVerbose = CTar::fDumpEntryHeaders;
 
 
 //////////////////////////////////////////////////////////////////////////////

@@ -143,7 +143,7 @@ static bool s_NumToBase256(Uint8 val, char* ptr, size_t len)
 // conventional octal representation (perhaps, with terminating '\0'
 // sacrificed), or -1 if the value converted using base-256.
 static int s_EncodeUint8(Uint8 val, char* ptr, size_t len)
-{                                          // Max file size:
+{                                          // Max file size (for len == 12):
     if (s_NumToOctal  (val, ptr,   len)) { //   8GiB-1
         return  1/*okay*/;
     }
@@ -341,35 +341,45 @@ enum ETar_Format {
     eTar_Legacy  = 1,
     eTar_OldGNU  = 2,
     eTar_Ustar   = 4,
-    eTar_Posix   = 5
+    eTar_Posix   = 5,
+    eTar_Star    = 6
 };
 
 
 /// POSIX "ustar" tar archive member header
-typedef struct SHeader {     // byte offset
-    char name[100];          //   0
-    char mode[8];            // 100
-    char uid[8];             // 108
-    char gid[8];             // 116
-    char size[12];           // 124
-    char mtime[12];          // 136
-    char checksum[8];        // 148
-    char typeflag[1];        // 156
-    char linkname[100];      // 157
-    char magic[6];           // 257
-    char version[2];         // 263
-    char uname[32];          // 265
-    char gname[32];          // 297
-    char devmajor[8];        // 329
-    char devminor[8];        // 337
-    union {                  // 345
-        char prefix[155];    // NB: not valid with old GNU format (no need)
-        struct {             // NB:                old GNU format only
+typedef struct SHeader {      // byte offset
+    char name[100];           //   0
+    char mode[8];             // 100
+    char uid[8];              // 108
+    char gid[8];              // 116
+    char size[12];            // 124
+    char mtime[12];           // 136
+    char checksum[8];         // 148
+    char typeflag[1];         // 156
+    char linkname[100];       // 157
+    char magic[6];            // 257
+    char version[2];          // 263
+    char uname[32];           // 265
+    char gname[32];           // 297
+    char devmajor[8];         // 329
+    char devminor[8];         // 337
+    union {                   // 345
+        char prefix[155];     // NB: not valid with old GNU format (no need)
+        struct {              // NB:                old GNU format only
             char atime[12];
-            char ctime[12];  // 357
-        } gt;
-    };                       // 500
-    // NCBI in last 4 bytes  // 508
+            char ctime[12];   // 357
+            char unused[17];  // 369
+            char sparse[96];  // 386 sparse map: [12] offset + [12] gapsize
+            char extend[1];   // 482 non-zero if to continue in the next header
+            char extent[12];  // 483 true file size
+        } gnu;
+        struct {
+            char prefix[131]; // NB: prefix + 107 == extent (char[12]) for 'S'
+            char atime[12];   // 476
+            char ctime[12];   // 488
+        } star;
+    };                        // 500
+    // NCBI in last 4 bytes   // 508
 } SHeader;
 
 
@@ -659,9 +669,10 @@ static string s_PositionAsString(const string& file, Uint8 pos, size_t recsize,
 
 static string s_AddressAsString(size_t offset)
 {
-    // All addresses but the base are greater than 100:
-    // do the quick and dirty formatting here
-    return offset ? NStr::UIntToString((unsigned long) offset) : "000";
+    char buf[20];
+    _ASSERT(0 <= offset  &&  offset < 1000);
+    _VERIFY(sprintf(buf, "%03u", (unsigned int) offset));
+    return buf;
 }
 
 
@@ -677,15 +688,18 @@ static bool memcchr(const char* s, char c, size_t len)
 
 static string s_Printable(const char* field, size_t maxsize, bool text)
 {
+    bool check = false;
     if (!text  &&  maxsize > 1  &&  !*field) {
         field++, maxsize--;
+        check = true;
     }
     size_t len = s_Length(field, maxsize);
-    return NStr::PrintableString(string(field,
-                                        memcchr(field + len, '\0',
-                                                maxsize - len)
-                                        ? maxsize
-                                        : len));
+    string retval = NStr::PrintableString(string(field,
+                                                 memcchr(field + len, '\0',
+                                                         maxsize - len)
+                                                 ? maxsize
+                                                 : len));
+    return check  &&  !retval.empty() ? "\\0" + retval : retval;
 }
 
 
@@ -698,8 +712,64 @@ static string s_Printable(const char* field, size_t maxsize, bool text)
 
 #define TAR_PRINTABLE(field, text)                                      \
     "@" + s_AddressAsString((size_t) offsetof(SHeader, field)) +        \
-    '[' + _STR(field) + "]:" + string(10 - sizeof(_STR(field)), ' ') +  \
+    "[" _STR(field) "]:" + string(13 - sizeof(_STR(field)), ' ') +      \
     '"' + s_Printable(h->field, sizeof(h->field), text  ||  ex) + '"'
+
+
+static string s_DumpSparseMap(const SHeader* h, const char* sparse,
+                              const char* extend, bool ex = false)
+{
+    string dump;
+    size_t offset;
+    bool done = false;
+
+    do {
+        if (memcchr(sparse, '\0', 24)) {
+            offset = (size_t)(sparse - (const char*) h);
+            if (!dump.empty())
+                dump += '\n';
+            dump += '@' + s_AddressAsString(offset);
+            if (!done) {
+                Uint8 off, gap;
+                int ok_off = s_DecodeUint8(off, sparse,      12);
+                int ok_gap = s_DecodeUint8(gap, sparse + 12, 12);
+                if (ok_off & ok_gap) {
+                    dump += "[gnu.map]:" + string(5, ' ');
+                    if (ok_off > 0) {
+                        dump += '"' + s_Printable(sparse, 12, ex) + "\" ";
+                    } else {
+                        dump += string(14, ' ');
+                    }
+                    sparse += 12;
+                    if (ok_gap > 0) {
+                        dump += '"' + s_Printable(sparse, 12, ex) + "\" ";
+                    } else {
+                        dump += string(14, ' ');
+                    }
+                    sparse += 12;
+                    dump += " [" + NStr::UInt8ToString(off) + ", ";
+                    dump +=        NStr::UInt8ToString(gap) + ']';
+                    continue;
+                }
+                done = true;
+            }
+            dump += ':' + string(14, ' ')
+                + '"' + NStr::PrintableString(string(sparse, 24)) + '"';
+        } else {
+            done = true;
+        }
+        sparse += 24;
+    } while (sparse < extend);
+    if (!dump.empty()) {
+        dump += '\n';
+    }
+    offset = (size_t)(extend - (const char*) h);
+    dump += '@' + s_AddressAsString(offset) + "[gnu.extend]:" + string(2, ' ')
+        + '"' + NStr::PrintableString(string(extend, 1)) + '"'
+        + string(*extend ? " [continued]" : " [last]");
+    return dump;
+}
+
 
 static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
 {
@@ -707,7 +777,8 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
     Uint8 val;
     int ok;
 
-    dump += TAR_PRINTABLE(name, true) + '\n';
+    dump += TAR_PRINTABLE(name, true);
+    dump += '\n';
 
     ok = s_OctalToNum(val, h->mode, sizeof(h->mode));
     dump += TAR_PRINTABLE(mode, !ok);
@@ -718,7 +789,7 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
 
     ok = s_DecodeUint8(val, h->uid, sizeof(h->uid));
     dump += TAR_PRINTABLE(uid, ok <= 0);
-    if (ok  &&  (ok < 0  || val > 7)) {
+    if (ok  &&  (ok < 0  ||  val > 7)) {
         dump += " [" + NStr::UInt8ToString(val) + ']';
         if (ok < 0) {
             dump += " (base-256)";
@@ -740,6 +811,9 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
     dump += TAR_PRINTABLE(size, ok <= 0);
     if (ok  &&  (ok < 0  ||  val > 7)) {
         dump += " [" + NStr::UInt8ToString(val) + ']';
+        if (ok  &&  h->typeflag[0] == 'S'  &&  fmt == eTar_OldGNU) {
+            dump += " w/o map!";
+        }
         if (ok < 0) {
             dump += " (base-256)";
         }
@@ -761,7 +835,8 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
     dump += '\n';
 
     ok = s_OctalToNum(val, h->checksum, sizeof(h->checksum));
-    dump += TAR_PRINTABLE(checksum, !ok) + '\n';
+    dump += TAR_PRINTABLE(checksum, !ok);
+    dump += '\n';
 
     // Classify to the extent possible to help debug the problem (if any)
     dump += TAR_PRINTABLE(typeflag, true);
@@ -851,7 +926,9 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
         tname = "Solaris extended attribute file";
         break;
     case 'I':
-        tname = "inode only";
+        // CAUTION:  Entry size shows actual file size in the filesystem but
+        // no actual data blocks stored in the archive following the header!
+        tname = "Inode metadata only";
         break;
     case 'K':
         if (fmt == eTar_OldGNU) {
@@ -866,8 +943,15 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
         }
         break;
     case 'M':
-        if (fmt == eTar_OldGNU) {
-            tname = "GNU extension: multivolume archive";
+        switch (fmt) {
+        case eTar_OldGNU:
+            tname = "GNU extension: multi-volume entry";
+            break;
+        case eTar_Star:
+            tname = "STAR extension: multi-volume entry";
+            break;
+        default:
+            break;
         }
         break;
     case 'N':
@@ -876,27 +960,37 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
         }
         break;
     case 'S':
-        if (fmt == eTar_OldGNU) {
+        switch (fmt) {
+        case eTar_OldGNU:
+            // CAUTION:  Entry size does not include sparse entry map stored in
+            // additional (non-standard) headers that may follow this header!
             tname = "GNU extension: sparse file";
+            break;
+        case eTar_Star:
+            // Entry size already includes size of additional sparse file maps
+            // that may follow this header before the actual file data.
+            tname = "STAR extension: sparse file";
+            break;
+        default:
+            break;
         }
         break;
     case 'V':
-        if (fmt == eTar_OldGNU) {
-            tname = "GNU extension: volume header";
-        }
+        tname = "Volume header";
         break;
     default:
         break;
     }
     if (!tname  &&  h->typeflag[0] >= 'A'  &&  h->typeflag[0] <= 'Z') {
-        tname = "user-defined extension";
+        tname = "local vendor enhancement / user-defined extension";
     }
     dump += (" [" + string(tname ? tname : "reserved") +
              (ok
               ? "]\n"
               : " -- NOT SUPPORTED]\n"));
 
-    dump += TAR_PRINTABLE(linkname, true) + '\n';
+    dump += TAR_PRINTABLE(linkname, true);
+    dump += '\n';
 
     switch (fmt) {
     case eTar_Legacy:  // NCBI does not ever write this header
@@ -923,6 +1017,9 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
             tname = "posix";
         }
         break;
+    case eTar_Star:
+        tname = "star";
+        break;
     default:
         tname = 0;
         break;
@@ -938,9 +1035,11 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
     if (fmt != eTar_Legacy) {
         dump += '\n';
 
-        dump += TAR_PRINTABLE(uname, true) + '\n';
+        dump += TAR_PRINTABLE(uname, true);
+        dump += '\n';
 
-        dump += TAR_PRINTABLE(gname, true) + '\n';
+        dump += TAR_PRINTABLE(gname, true);
+        dump += '\n';
 
         ok = s_OctalToNum(val, h->devmajor, sizeof(h->devmajor));
         dump += TAR_PRINTABLE(devmajor, !ok);
@@ -956,9 +1055,28 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
         }
         dump += '\n';
 
-        if (fmt == eTar_OldGNU) {
-            ok = s_OctalToNum(val, h->gt.atime, sizeof(h->gt.atime));
-            dump += TAR_PRINTABLE(gt.atime, !ok);
+        switch (fmt) {
+        case eTar_Star:
+            if (h->typeflag[0] == 'S') {
+                const char* extent = h->star.prefix + 107;
+                ok = s_DecodeUint8(val, extent, 12);
+                dump += "@"
+                    + s_AddressAsString((size_t)(extent - (const char*) h))
+                    + "[star.extent]: \""
+                    + s_Printable(extent, 12, !ok  ||  ex) + '"';
+                if (ok  &&  (ok < 0  ||  val > 7)) {
+                    dump += " [" + NStr::UInt8ToString(val) + ']';
+                    if (ok < 0) {
+                        dump += " (base-256)";
+                    }
+                }
+            } else {
+                dump += TAR_PRINTABLE(star.prefix, true);
+            }
+            dump += '\n';
+
+            ok = s_OctalToNum(val, h->star.atime, sizeof(h->star.atime));
+            dump += TAR_PRINTABLE(star.atime, !ok);
             if (ok  &&  val) {
                 CTime atime((time_t) val);
                 ok = (Uint8) atime.GetTimeT() == val ? true : false;
@@ -973,8 +1091,8 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
             }
             dump += '\n';
 
-            ok = s_OctalToNum(val, h->gt.ctime, sizeof(h->gt.ctime));
-            dump += TAR_PRINTABLE(gt.ctime, !ok);
+            ok = s_OctalToNum(val, h->star.ctime, sizeof(h->star.ctime));
+            dump += TAR_PRINTABLE(star.ctime, !ok);
             if (ok  &&  val) {
                 CTime ctime((time_t) val);
                 ok = (Uint8) ctime.GetTimeT() == val ? true : false;
@@ -987,10 +1105,70 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
                              + ']');
                 }
             }
-            tname = h->gt.ctime + sizeof(h->gt.ctime);
-        } else {
+            tname = (const char*) &h->star + sizeof(h->star);
+            break;
+
+        case eTar_OldGNU:
+            ok = s_OctalToNum(val, h->gnu.atime, sizeof(h->gnu.atime));
+            dump += TAR_PRINTABLE(gnu.atime, !ok);
+            if (ok  &&  val) {
+                CTime atime((time_t) val);
+                ok = (Uint8) atime.GetTimeT() == val ? true : false;
+                if (ok  ||  val > 7) {
+                    dump += (" ["
+                             + (val > 7 ? NStr::UInt8ToString(val) + ", " : "")
+                             + (ok
+                                ? atime.ToLocalTime().AsString("Y-M-D h:m:s")
+                                : "")
+                             + ']');
+                }
+            }
+            dump += '\n';
+
+            ok = s_OctalToNum(val, h->gnu.ctime, sizeof(h->gnu.ctime));
+            dump += TAR_PRINTABLE(gnu.ctime, !ok);
+            if (ok  &&  val) {
+                CTime ctime((time_t) val);
+                ok = (Uint8) ctime.GetTimeT() == val ? true : false;
+                if (ok  ||  val > 7) {
+                    dump += (" ["
+                             + (val > 7 ? NStr::UInt8ToString(val) + ", " : "")
+                             + (ok
+                                ? ctime.ToLocalTime().AsString("Y-M-D h:m:s")
+                                : "")
+                             + ']');
+                }
+            }
+
+            if (h->typeflag[0] == 'S') {
+                if (memcchr(h->gnu.unused, '\0', sizeof(h->gnu.unused))) {
+                    dump += '\n';
+                    dump += TAR_PRINTABLE(gnu.unused, true);
+                }
+                dump += '\n' + s_DumpSparseMap(h, h->gnu.sparse,
+                                               h->gnu.extend, ex);
+                if (memcchr(h->gnu.extent, '\0', sizeof(h->gnu.extent))) {
+                    ok = s_DecodeUint8(val,
+                                       h->gnu.extent, sizeof(h->gnu.extent));
+                    dump += '\n';
+                    dump += TAR_PRINTABLE(gnu.extent, ok <= 0);
+                    if (ok  &&  (ok < 0  ||  val > 7)) {
+                        dump += " [" + NStr::UInt8ToString(val) + ']';
+                    }
+                    if (ok < 0) {
+                        dump += " (base-256)";
+                    }
+                }
+                tname = (const char*) &h->gnu + sizeof(h->gnu);
+            } else {
+                tname = h->gnu.ctime + sizeof(h->gnu.ctime);
+            }
+            break;
+
+        default:
             dump += TAR_PRINTABLE(prefix, true);
             tname = h->prefix + sizeof(h->prefix);
+            break;
         }
     } else {
         tname = h->version + sizeof(h->version);
@@ -1015,7 +1193,7 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
                 ok = false;
             }
             _ASSERT(len);
-            dump += "\n@" + s_AddressAsString(offset) + ':' + string(11, ' ')
+            dump += "\n@" + s_AddressAsString(offset) + ':' + string(14, ' ')
                 + '"' + NStr::PrintableString(string(&tname[n], len)) + '"';
             if (ok) {
                 CTime time((time_t) val);
@@ -1119,7 +1297,7 @@ CTar::~CTar()
 
 #define TAR_THROW_EX(who, errcode, message, h, fmt)                     \
     TAR_THROW(who, errcode,                                             \
-              who->m_Flags & fDumpBlockHeaders                          \
+              who->m_Flags & fDumpEntryHeaders                          \
               ? string(message) + ":\n" + s_DumpHeader(h, fmt, true)    \
               : string(message))
 
@@ -1477,41 +1655,50 @@ void CTar::x_WriteArchive(size_t nwrite, const char* src)
 
 // Define bitmasks for extended numeric information
 typedef enum {
-    fPAXNone  = 0,
-    fPAXMtime = 1 << 0,
-    fPAXAtime = 1 << 1,
-    fPAXCtime = 1 << 2,
-    fPAXSize  = 1 << 3,
-    fPAXUid   = 1 << 4,
-    fPAXGid   = 1 << 5
+    fPAXNone   = 0,
+    fPAXSparse = 1 << 0,
+    fPAXMtime  = 1 << 1,
+    fPAXAtime  = 1 << 2,
+    fPAXCtime  = 1 << 3,
+    fPAXSize   = 1 << 4,
+    fPAXUid    = 1 << 5,
+    fPAXGid    = 1 << 6
 } EPAXBit;
 typedef unsigned int TPAXBits;  // Bitwise-OR of EPAXBit(s)
 
 
 static bool s_ParsePAXInt(Uint8* valp, const char* str, size_t len, bool dot)
 {
+    _ASSERT(str[len] == '\n');
     if (!isdigit((unsigned char)(*str))) {
         return false;
     }
-    char* e;
-    errno = 0;
-    unsigned long val = strtoul(str, &e, 10);
-    if (errno  ||  (size_t)(e - str) > len  ||  (*e != '.'  &&  *e != '\n')) {
+    const char* p = (const char*) memchr(str, '.', len);
+    if (!p) {
+        p = str + len;
+    } else if (!dot) {
         return false;
     }
-    if (*e++ == '.') {
-        if (!dot) {
-            return false;
-        }
-        if (!isdigit((unsigned char)(*e))) {
-            return false;
-        }
-        _ASSERT(!errno);
-        (void) strtoul(e, &e, 10);
-        if (errno  ||  (size_t)(e - str) != len  ||  *e != '\n') {
-            return false;
-        }
+    Uint8 val;
+    try {
+        val = NStr::StringToUInt8(CTempString(str, (size_t)(p - str)));
     }
+    catch (...) {
+        return false;
+    }
+    if (*p == '.') {
+        if (++p != str + len) {
+            if (!isdigit((unsigned char)(*p)))
+                return false;
+            len -= (size_t)(p - str);
+            try {
+                (void) NStr::StringToUInt8(CTempString(p, len));
+            }
+            catch (...) {
+                return false;
+            }
+        }
+    } // NB: else (*p == '\n')
     *valp = val;
     return true;
 }
@@ -1520,23 +1707,25 @@ static bool s_ParsePAXInt(Uint8* valp, const char* str, size_t len, bool dot)
 static bool s_AllLowerCase(const char* str, size_t len)
 {
     for (size_t i = 0;  i < len;  i++) {
-        if (!islower((unsigned char) str[i]))
+        unsigned char c = (unsigned char) str[i];
+        if (!isalpha(c)  ||  !islower(c))
             return false;
     }
     return true;
 }
 
 
-CTar::EStatus CTar::x_ParsePAXHeader(const string& buffer)
+CTar::EStatus CTar::x_ParsePAXData(const string& buffer)
 {
-    Uint8 mtime = 0, atime = 0, ctime = 0, size = 0, uid = 0, gid = 0;
-    string path, linkpath, uname, gname;
+    Uint8 size = 0, sparse = 0, uid = 0, gid = 0;
+    Uint8 mtime = 0, atime = 0, ctime = 0, dummy;
+    string path, linkpath, name, uname, gname;
     string* nodot = (string*)(-1);
     const struct SPAXParseTable {
         const char* key;
         Uint8*      val;  // non-null for numeric, else do as string
         string*     str;  // null for check only (numeric: non-null for no '.')
-        EPAXBit     bit;  // for numerics only (NB: ePAXNone if check only)
+        EPAXBit     bit;  // for numerics only
     } parser[] = {
         { "mtime",    &mtime, 0,         fPAXMtime },  // numeric w/dot: assign
         { "atime",    &atime, 0,         fPAXAtime },
@@ -1550,7 +1739,15 @@ CTar::EStatus CTar::x_ParsePAXHeader(const string& buffer)
         { "uname",    0,      &uname,    fPAXNone  },
         { "gname",    0,      &gname,    fPAXNone  },
         { "comment",  0,      0,         fPAXNone  },  // string: check only
-        { "charset",  0,      0,         fPAXNone  }   // string: check only
+        { "charset",  0,      0,         fPAXNone  },  // string: check only
+        /* GNU sparse extensions (NB: .size and .realsize don't go together) */
+        { "GNU.sparse.realsize", &sparse, nodot, fPAXSparse },
+        { "GNU.sparse.major",    &dummy,  nodot, fPAXSparse },
+        { "GNU.sparse.minor",    &dummy,  nodot, fPAXSparse },
+        { "GNU.sparse.size",     &sparse, nodot, fPAXSparse },
+        { "GNU.sparse.name",     0,       &name, fPAXNone   },
+        /* Other*/
+        { "SCHILY.realsize",     &size,   nodot, fPAXSize   }
     };
     const char* str = buffer.c_str();
     TPAXBits parsed = fPAXNone;
@@ -1562,11 +1759,13 @@ CTar::EStatus CTar::x_ParsePAXHeader(const string& buffer)
 
         errno = 0;
         if (!isdigit((unsigned char)(*str)) || !(e = (char*) strchr(str, '\n'))
-            ||  !(len = strtoul(str, &k, 10))  ||  str + len - 1 != e
-            ||  *k++ != ' '  ||  !(v = (char*) memchr(k, '=', (size_t)(e - k)))
-            ||  !(klen = (size_t)(v++ - k))  ||  memchr(k, ' ', klen)
+            ||  !(len = strtoul(str, &k, 10))  ||  errno  ||  str + len-1 != e
+            ||  (*k != ' '  &&  *k != '\t')
+            ||  !(v = (char*) memchr(k, '=', (size_t)(e - k)))
+            ||  !(klen = (size_t)(v++ - ++k))
+            ||  memchr(k, ' ', klen)  ||  memchr(k, '\t', klen)
             ||  !(vlen = (size_t)(e - v))) {
-            TAR_POST(74, Error, "Skipping malformed PAX header");
+            TAR_POST(74, Error, "Skipping malformed PAX data");
             return eFailure;
         }
         bool done = false;
@@ -1576,9 +1775,8 @@ CTar::EStatus CTar::x_ParsePAXHeader(const string& buffer)
                 if (!parser[n].val) {
                     if (parser[n].str)
                         parser[n].str->assign(v, vlen);
-                } else if (!isdigit((unsigned char) v[0])
-                           ||  !s_ParsePAXInt(parser[n].val, v, vlen,
-                                              !parser[n].str ? true : false)) {
+                } else if (!s_ParsePAXInt(parser[n].val, v, vlen,
+                                          !parser[n].str ? true : false)) {
                     TAR_POST(75, Warning,
                              "Ignoring bad numeric '" + string(v, vlen)
                              + "' in PAX value '" + string(k, klen) + '\'');
@@ -1597,6 +1795,13 @@ CTar::EStatus CTar::x_ParsePAXHeader(const string& buffer)
         str = ++e;
     } while (*str);
 
+    if (!name.empty()) {
+        path.swap(name);
+        parsed |= fPAXSparse;
+    }
+    if ((parsed & fPAXSparse)  &&  sparse) {
+        size = sparse;
+    }
     m_Current.m_Name.swap(path);
     m_Current.m_LinkName.swap(linkpath);
     m_Current.m_UserName.swap(uname);
@@ -1613,18 +1818,36 @@ CTar::EStatus CTar::x_ParsePAXHeader(const string& buffer)
 }
 
 
-static void s_Dump(const string& file, Uint8 pos, size_t recsize,
-                   const string& entryname, const SHeader* h, ETar_Format fmt,
-                   Uint8 datasize)
+static void s_Dump(const string& file, Uint8 pos,
+                   size_t recsize, const string& entryname,
+                   const SHeader* h, ETar_Format fmt, Uint8 datasize)
 {
     EDiagSev level = SetDiagPostLevel(eDiag_Info);
     Uint8 blocks = BLOCK_OF(ALIGN_SIZE(datasize));
     ERR_POST(Info << '\n' + s_PositionAsString(file, pos, recsize, entryname)
              + s_DumpHeader(h, fmt) + '\n'
              + (blocks
-                ? "Blocks of data: " + NStr::UInt8ToString(blocks) + '\n'
+                ? "Blocks of data:    " + NStr::UInt8ToString(blocks) + '\n'
                 : kEmptyStr));
     SetDiagPostLevel(level);
+}
+
+
+static void s_DumpSparse(const string& file, Uint8 pos,
+                         size_t recsize, const string& entryname,
+                         const SHeader* h, const char* extend)
+{
+    EDiagSev level = SetDiagPostLevel(eDiag_Info);
+    ERR_POST(Info << '\n' + s_PositionAsString(file, pos, recsize, entryname)
+             + "GNU sparse file map header:\n"
+             + s_DumpSparseMap(h, (const char*) h, extend) + '\n');
+    SetDiagPostLevel(level);
+}
+
+
+static inline bool s_IsOctal(char c)
+{
+    return '0' <= c  &&  c <= '7' ? true : false;
 }
 
 
@@ -1646,7 +1869,14 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
     // Check header format
     ETar_Format fmt = eTar_Unknown;
     if (memcmp(h->magic, "ustar", 6) == 0) {
-        fmt = pax ? eTar_Posix : eTar_Ustar;
+        if ((h->star.prefix[sizeof(h->star.prefix) - 1] == '\0'
+             &&  s_IsOctal(h->star.atime[0])  &&  h->star.atime[0] == ' '
+             &&  s_IsOctal(h->star.ctime[0])  &&  h->star.ctime[0] == ' ')
+            ||  strcmp(block->buffer + BLOCK_SIZE - 4, "tar") == 0) {
+            fmt = eTar_Star;
+        } else {
+            fmt = pax ? eTar_Posix : eTar_Ustar;
+        }
     } else if (memcmp(h->magic, "ustar  ", 8) == 0) {
         // NB: Here, the magic protruded into the adjacent version field
         fmt = eTar_OldGNU;
@@ -1691,7 +1921,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
     // Compare checksum(s)
     if (checksum != ssum   &&  (unsigned int) checksum != usum) {
         string message = "Header checksum failed";
-        if (m_Flags & fDumpBlockHeaders) {
+        if (m_Flags & fDumpEntryHeaders) {
             message += ", expected ";
             if (usum != (unsigned int) ssum) {
                 message += "either ";
@@ -1720,14 +1950,17 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
     if (m_Current.GetName().empty()) {
         if ((fmt & eTar_Ustar)  &&  h->prefix[0]
             &&  tolower((unsigned char) h->typeflag[0]) != 'x') {
+            const char* prefix = fmt == eTar_Star ? h->star.prefix : h->prefix;
+            size_t      pfxlen = fmt == eTar_Star
+                ? s_Length(h->star.prefix, sizeof(h->star.prefix))
+                : s_Length(h->prefix,      sizeof(h->prefix));
             m_Current.m_Name =
-                CDirEntry::ConcatPath(string(h->prefix,
-                                             s_Length(h->prefix,
-                                                      sizeof(h->prefix))),
+                CDirEntry::ConcatPath(string(prefix, pfxlen),
                                       string(h->name,
                                              s_Length(h->name,
                                                       sizeof(h->name))));
         } else {
+            // Name prefix cannot be used
             m_Current.m_Name.assign(h->name,
                                     s_Length(h->name, sizeof(h->name)));
         }
@@ -1784,19 +2017,24 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
                                      s_Length(h->gname,sizeof(h->gname)));
     }
 
-    if (fmt == eTar_OldGNU) {
-        // Name prefix cannot be used because there are times, and other stuff
-        // NB: times are valid for incremental archive only, so checks relaxed
-        if (!s_OctalToNum(val, h->gt.atime, sizeof(h->gt.atime))) {
-            if (memcchr(h->gt.atime, '\0', sizeof(h->gt.atime))) {
+    if (fmt == eTar_OldGNU  ||  fmt == eTar_Star) {
+        // NB: GNU times may not be valid so checks are relaxed
+        const char* time;
+        size_t      tlen;
+        time = fmt == eTar_Star ?        h->star.atime  :        h->gnu.atime;
+        tlen = fmt == eTar_Star ? sizeof(h->star.atime) : sizeof(h->gnu.atime);
+        if (!s_OctalToNum(val, time, tlen)) {
+            if (fmt == eTar_Star  ||  memcchr(time, '\0', tlen)) {
                 TAR_THROW_EX(this, eUnsupportedTarFormat,
                              "Bad last access time", h, fmt);
             }
         } else {
             m_Current.m_Stat.st_atime = (time_t) val;
         }
-        if (!s_OctalToNum(val, h->gt.ctime, sizeof(h->gt.ctime))) {
-            if (memcchr(h->gt.ctime, '\0', sizeof(h->gt.ctime))) {
+        time = fmt == eTar_Star ?        h->star.ctime  :        h->gnu.ctime;
+        tlen = fmt == eTar_Star ? sizeof(h->star.ctime) : sizeof(h->gnu.ctime);
+        if (!s_OctalToNum(val, time, tlen)) {
+            if (fmt == eTar_Star  ||  memcchr(time, '\0', tlen)) {
                 TAR_THROW_EX(this, eUnsupportedTarFormat,
                              "Bad creation time", h, fmt);
             }
@@ -1807,11 +2045,6 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
 
     // Entry type
     switch (h->typeflag[0]) {
-    case '7':
-        ERR_POST_ONCE(Critical << "CAUTION:"
-                      " *** Contiguous TAR entries processed as regular ones"
-                      " ***");
-        /*FALLTHRU*/
     case '0':
     case '\0':
         if (!(fmt & eTar_Ustar)  &&  fmt != eTar_OldGNU) {
@@ -1826,22 +2059,22 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
         break;
     case '1':
     case '2':
-        m_Current.m_Type = (h->typeflag[0] == '1'
-                            ? CTarEntryInfo::eHardLink
-                            : CTarEntryInfo::eSymLink);
+        m_Current.m_Type = (h->typeflag[0] != '1'
+                            ? CTarEntryInfo::eSymLink
+                            : CTarEntryInfo::eHardLink);
         m_Current.m_LinkName.assign(h->linkname,
                                     s_Length(h->linkname,sizeof(h->linkname)));
-        if (!m_Current.GetSize()) {
-            break;
-        }
-        if (h->typeflag[0] != '1') {
-            m_Current.m_Stat.st_size = 0;
-        } else if (fmt != eTar_Posix) {
-            TAR_POST(77, Warning,
-                     "Non-zero hard-link size ("
-                     + NStr::UInt8ToString(m_Current.GetSize())
-                     + ") is ignored (non-PAX)");
-            m_Current.m_Stat.st_size = 0;
+        if (m_Current.GetSize()) {
+            if (h->typeflag[0] != '1') {
+                // Mandatory to ignore
+                m_Current.m_Stat.st_size = 0;
+            } else if (fmt != eTar_Posix) {
+                TAR_POST(77, Warning,
+                         "Non-zero hard-link size ("
+                         + NStr::UInt8ToString(m_Current.GetSize())
+                         + ") is ignored (non-PAX)");
+                m_Current.m_Stat.st_size = 0;
+            } // else POSIX (re-)allowed hard links to be followed by file data
         }
         break;
     case '3':
@@ -1876,25 +2109,36 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
         m_Current.m_Type = CTarEntryInfo::ePipe;
         m_Current.m_Stat.st_size = 0;
         break;
-    case 'x':
-    case 'X':
+    case '7':
+        ERR_POST_ONCE(Critical << "CAUTION:"
+                      " *** Contiguous TAR entries processed as regular files"
+                      " ***");
+        m_Current.m_Type = CTarEntryInfo::eFile;
+        break;
     case 'K':
     case 'L':
+    case 'S':
+    case 'x':
+    case 'X':
         if ((tolower((unsigned char) h->typeflag[0]) == 'x'
              &&  (fmt & eTar_Ustar))  ||
             (tolower((unsigned char) h->typeflag[0]) != 'x'
-             &&  fmt == eTar_OldGNU)) {
+             &&  fmt == eTar_OldGNU)  ||
+            (h->typeflag[0] == 'S'  &&  fmt == eTar_Star)) {
             // Assign actual type
             switch (h->typeflag[0]) {
             case 'x':
             case 'X':
                 if (pax) {
                     TAR_POST(78, Warning,
-                             "Double PAX header encountered,"
+                             "Duplicate PAX header encountered,"
                              " archive may be corrupt");
                 }
                 fmt = eTar_Posix;  // upgrade
                 m_Current.m_Type = CTarEntryInfo::ePAXHeader;
+                break;
+            case 'S':
+                m_Current.m_Type = CTarEntryInfo::eSparseFile;
                 break;
             case 'K':
                 m_Current.m_Type = CTarEntryInfo::eGNULongLink;
@@ -1902,7 +2146,11 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
             case 'L':
                 m_Current.m_Type = CTarEntryInfo::eGNULongName;
                 break;
+            default:
+                _TROUBLE;
+                break;
             }
+
             // Dump header
             size_t hsize = (size_t) m_Current.GetSize();
             if (dump) {
@@ -1910,7 +2158,44 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
                        m_Current.GetName(), h, fmt, hsize);
             }
             m_StreamPos += BLOCK_SIZE;  // NB: nread
-            // Read in the extended information
+
+            if (m_Current.m_Type == CTarEntryInfo::eSparseFile) {
+                const char* extent
+                    = fmt == eTar_Star ? h->star.prefix + 107  : h->gnu.extent;
+                hsize
+                    = fmt != eTar_Star ? sizeof(h->gnu.extent) : 12;
+                // Real file size (if present)
+                if (!s_DecodeUint8(val, extent, hsize)){
+                    val = (Uint8) m_Current.GetSize();
+                }
+                if (fmt == eTar_Star) {
+                    // Archive file size includes sparse map, and already valid
+                    m_Current.m_Pos = val;  // NB: real file size
+                    return eContinue;
+                }
+                // Skip all GNU sparse file headers
+                const char* extend = h->gnu.extend;
+                while (*extend) {
+                    nread = BLOCK_SIZE;
+                    if (!(block = (const TBlock*) x_ReadArchive(nread))
+                        ||  nread != BLOCK_SIZE) {
+                        TAR_THROW(this, eRead,
+                                  "Unexpected EOF in GNU sparse file map");
+                    }
+                    h = &block->header;
+                    extend = block->buffer + 504;
+                    if (dump) {
+                        s_DumpSparse(m_FileName, m_StreamPos, m_BufferSize,
+                                     m_Current.GetName(), h, extend);
+                    }
+                    m_Current.m_HeaderSize += BLOCK_SIZE;
+                    m_StreamPos += BLOCK_SIZE;  // NB: nread
+                }
+                m_Current.m_Pos = val;  // NB: real file size
+                return eContinue;
+            }
+
+            // Read in the extended header information
             string buffer;
             while (hsize) {
                 nread = hsize;
@@ -1920,7 +2205,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
                               string("Unexpected EOF in ") +
                               (m_Current.GetType()
                                == CTarEntryInfo::ePAXHeader
-                               ? "PAX header" :
+                               ? "PAX data" :
                                m_Current.GetType()
                                == CTarEntryInfo::eGNULongName
                                ? "long name"
@@ -1930,14 +2215,16 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
                 m_StreamPos += ALIGN_SIZE(nread);
                 hsize -= nread;
             }
-            // Make sure there's no embedded '\0'(s)
-            buffer.resize(strlen(buffer.c_str()));
+            if (m_Current.GetType() != CTarEntryInfo::ePAXHeader) {
+                // Make sure there's no embedded '\0'(s)
+                buffer.resize(strlen(buffer.c_str()));
+            }
             if (dump) {
                 string what(m_Current.GetType() == CTarEntryInfo::ePAXHeader
-                            ? "PAX header:\n" :
+                            ? "PAX data:\n" :
                             m_Current.GetType() == CTarEntryInfo::eGNULongName
-                            ? "Long name:      \""
-                            : "Long link name: \"");
+                            ? "Long name:         \""
+                            : "Long link name:    \"");
                 EDiagSev level = SetDiagPostLevel(eDiag_Info);
                 ERR_POST(Info << Message << '\n' + what
                          + NStr::PrintableString(buffer,
@@ -1958,26 +2245,29 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
             if (!hsize  ||  !buffer.size()) {
                 TAR_POST(79, Error,
                          "Skipping " + string(hsize ? "empty" : "zero-sized")
-                         + " extended header");
+                         + " extended header data");
                 return eFailure;
             }
-            if (m_Current.GetType() == CTarEntryInfo::ePAXHeader) {
-                if (hsize != buffer.size()) {
-                    TAR_POST(80, Error,
-                             "Skipping truncated ("
-                             + NStr::UInt8ToString((Uint8) hsize) + "->"
-                             + NStr::UInt8ToString((Uint8) buffer.size())
-                             + ") PAX header");
-                    return eFailure;
-                }
-                return x_ParsePAXHeader(buffer);
-            }
-            if (m_Current.GetType() == CTarEntryInfo::eGNULongName) {
+            switch (m_Current.GetType()) {
+            case CTarEntryInfo::ePAXHeader:
+                return x_ParsePAXData(buffer);
+            case CTarEntryInfo::eGNULongName:
                 m_Current.m_Name.swap(buffer);
-            } else {
+                return eContinue;
+            case CTarEntryInfo::eGNULongLink:
                 m_Current.m_LinkName.swap(buffer);
+                return eContinue;
+            default:
+                _TROUBLE;
+                break;
             }
-            return eContinue;
+            return eFailure;
+        }
+        /*FALLTHRU*/
+    case 'I':
+        if (h->typeflag[0] == 'I') {
+            // safety for no data to actually follow
+            m_Current.m_Stat.st_size = 0;
         }
         /*FALLTHRU*/
     default:
@@ -2113,9 +2403,9 @@ void CTar::x_WriteEntryInfo(const string& name)
         break;
     default:
         TAR_THROW(this, eUnsupportedEntryType,
-                  "Don't know how to store entry '" + name + "' w/type #" +
-                  NStr::IntToString(int(type)) + " into archive: "
-                  "Internal error, please report!");
+                  "Don't know how to store entry '" + name
+                  + "' of type #" + NStr::IntToString(int(type))
+                  + " into archive: Internal error, please report!");
     }
 
     // User and group
@@ -2274,7 +2564,7 @@ void CTar::x_Backspace(EAction action, Uint8 blocks)
 
     // Always set put position here
     if (!m_FileStream->seekp(rec * m_BufferSize)) {
-        TAR_POST(86, Error,
+        TAR_POST(80, Error,
                  "Archive backspace error in record reset");
     }
 }
@@ -2292,7 +2582,7 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
         m_Current = CTarEntryInfo(pos);
         m_Current.m_Name = xinfo.GetName();
         EStatus status = x_ReadEntryInfo
-            (action == eTest  &&  (m_Flags & fDumpBlockHeaders),
+            (action == eTest  &&  (m_Flags & fDumpEntryHeaders),
              xinfo.GetType() == CTarEntryInfo::ePAXHeader);
         switch (status) {
         case eFailure:
@@ -2333,6 +2623,8 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
 
             switch (m_Current.GetType()) {
             case CTarEntryInfo::ePAXHeader:
+                xinfo.m_Pos = m_Current.m_Pos;  // NB: parse mask, not pos!
+                m_Current.m_Pos = pos;
                 if (xinfo.GetType() != CTarEntryInfo::eUnknown) {
                     TAR_POST(7, Error, "Unused extended header replaced");
                 }
@@ -2342,8 +2634,7 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
                 xinfo.m_UserName.swap(m_Current.m_UserName);
                 xinfo.m_GroupName.swap(m_Current.m_GroupName);
                 xinfo.m_Stat = m_Current.m_Stat;
-                xinfo.m_Pos  = m_Current.m_Pos;  // NB: Parsed mask, not pos!
-                break;
+                continue;
 
             case CTarEntryInfo::eGNULongName:
                 if (xinfo.GetType() == CTarEntryInfo::ePAXHeader
@@ -2355,7 +2646,7 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
                 // Latch next long name here then just skip
                 xinfo.m_Type = CTarEntryInfo::eGNULongName;
                 xinfo.m_Name.swap(m_Current.m_Name);
-                break;
+                continue;
 
             case CTarEntryInfo::eGNULongLink:
                 if (xinfo.GetType() == CTarEntryInfo::ePAXHeader
@@ -2367,12 +2658,20 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
                 // Latch next long link here then just skip
                 xinfo.m_Type = CTarEntryInfo::eGNULongLink;
                 xinfo.m_LinkName.swap(m_Current.m_LinkName);
+                continue;
+
+            case CTarEntryInfo::eSparseFile:
+                xinfo.m_Type = CTarEntryInfo::eSparseFile;
+                xinfo.m_Stat.st_size = (off_t) m_Current.m_Pos;
+                m_Current.m_Pos = pos;  // NB: real file size was stored
+                status = eSuccess;
                 break;
 
             default:
                 NCBI_THROW(CCoreException, eCore, "Internal error");
+                /*NOTREACHED*/
+                break;
             }
-            continue;
         }
 
         // Fixup current 'info' with extended information obtained previously
@@ -2405,7 +2704,11 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
             if (parsed & fPAXCtime) {
                 m_Current.m_Stat.st_ctime = xinfo.m_Stat.st_ctime;
             }
-            if (parsed & fPAXSize) {
+            if (parsed & fPAXSparse) {
+                // GTar does not store "size" correctly in PAX form in this
+                // case: there is a real size instead of the archived size.
+                xinfo.m_Type = CTarEntryInfo::eSparseFile;
+            } else if (parsed & fPAXSize) {
                 m_Current.m_Stat.st_size = xinfo.m_Stat.st_size;
             }
             if (parsed & fPAXUid) {
@@ -2414,6 +2717,14 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
             if (parsed & fPAXGid) {
                 m_Current.m_Stat.st_gid = xinfo.m_Stat.st_gid;
             }
+        }
+        Uint8 size = m_Current.GetSize();  // NB: archive size of the entry
+        if (xinfo.GetType() == CTarEntryInfo::eSparseFile) {
+            m_Current.m_Stat.st_size = xinfo.m_Stat.st_size;  // display size
+            m_Current.m_Type = CTarEntryInfo::eUnknown;
+            // To unconditionally disable extractions of these totally
+            // clobbered (who knows how) files, uncomment the following line:
+            // m_Current.m_Type = CTarEntryInfo::eSparseFile;
         }
         xinfo.m_Type = CTarEntryInfo::eUnknown;
         _ASSERT(status == eFailure  ||  status == eSuccess);
@@ -2434,7 +2745,7 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
 
         // NB: match is 'false' when processing a failing entry
         if ((match  &&  action == eInternal)
-            ||  x_ProcessEntry(match  &&  action == eExtract, done.get())
+            ||  x_ProcessEntry(match  &&  action == eExtract, size, done.get())
             ||  (match  &&  !(int(action) & ((eExtract | eInternal) & ~eRW)))){
             _ASSERT(status == eSuccess);
             done->push_back(m_Current);
@@ -2456,9 +2767,9 @@ struct CTmpDirEntryDeleter {
 };
 
 
-bool CTar::x_ProcessEntry(bool extract, const CTar::TEntries* entries)
+bool CTar::x_ProcessEntry(bool extract, Uint8 size,
+                          const CTar::TEntries* entries)
 {
-    Uint8                size = m_Current.GetSize();
     CTarEntryInfo::EType type = m_Current.GetType();
 
     if (extract) {
@@ -2767,13 +3078,6 @@ bool CTar::x_ExtractEntry(Uint8& size,
         }}
         break;
 
-    case CTarEntryInfo::ePAXHeader:
-    case CTarEntryInfo::eGNULongName:
-    case CTarEntryInfo::eGNULongLink:
-        // Extended headers should have already been processed and not be here
-        _TROUBLE;
-        /*FALLTHRU*/
-
     case CTarEntryInfo::ePipe:
         {{
             _ASSERT(size == 0);
@@ -2825,10 +3129,20 @@ bool CTar::x_ExtractEntry(Uint8& size,
         }}
         break;
 
+    case CTarEntryInfo::ePAXHeader:
+    case CTarEntryInfo::eGNULongName:
+    case CTarEntryInfo::eGNULongLink:
+        // Extended headers should have already been processed and not be here
+        _TROUBLE;
+        /*FALLTHRU*/
+
+    case CTarEntryInfo::eSparseFile:
+        /*FALLTHRU*/
+
     default:
         TAR_POST(13, Warning,
                  "Skipping unsupported entry '" + m_Current.GetName()
-                 + "' w/type #" + NStr::IntToString(int(type)));
+                 + "' of type #" + NStr::IntToString(int(type)));
         result = false;
         break;
     }
@@ -3150,7 +3464,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
     default:
         TAR_POST(14, Warning,
                  "Skipping unsupported source '" + path
-                 + "' w/type #" + NStr::IntToString(int(type)));
+                 + "' of type #" + NStr::IntToString(int(type)));
         break;
     }
 
