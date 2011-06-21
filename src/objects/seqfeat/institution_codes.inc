@@ -1280,7 +1280,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "DAL	s	Dalhousie University, Biology Department",
 "DANV	s	Umweltamt Darmstadt",
 "DAO	s	Agriculture and Agri-Food Canada",
-"DAOM	c	Plant Research Institute, National Mycological Herbarium",
+"DAOM	sc	National Mycological Herbarium, Agriculture and Agri-Food Canada",
 "DAR	c	Plant Pathology Herbarium",
 "DARI	s	Insect Collection, New South Wales Department of Agriculture",
 "DAS	s	Agriculture and Agri-Food Canada",
