@@ -16,7 +16,7 @@ from subprocess import Popen, PIPE
 from optparse import OptionParser
 
 
-defaultGridCliPath = "grid_cli"
+defaultGridCliPath = ""
 defaultNetschedulePath = "netscheduled"
 verbose = False
 
@@ -29,7 +29,7 @@ def getUsername():
 class NetSchedule:
     " Represents a single netschedule server "
 
-    def __init__( self, host, port, path, grid_cli_path ):
+    def __init__( self, host, port, path, grid_cli_path, db_path ):
         " initializes the netschedule object "
         self.__host = host
         self.__port = port
@@ -44,9 +44,14 @@ class NetSchedule:
             self.__path += os.path.sep
 
         self.__grid_cli = grid_cli_path.strip()
-        if not self.__grid_cli.endswith( os.path.sep ):
+        if not self.__grid_cli.endswith( os.path.sep ) and \
+           self.__grid_cli != "":
             self.__grid_cli += os.path.sep
         self.__grid_cli += "grid_cli"
+
+        self.__dbPath = db_path
+        while self.__dbPath.endswith( os.path.sep ):
+            self.__dbPath = self.__dbPath[ : -1 ]
 
         self.checkPresence()
         return
@@ -165,6 +170,13 @@ class NetSchedule:
         except:
             raise Exception( "netscheduled.ini.2 configuration " \
                              "is not found on " + self.__host )
+
+        # DB path
+        dirname = os.path.dirname( self.__dbPath )
+        if not os.path.exists( dirname ) or not os.path.isdir( dirname ):
+            raise Exception( "DB path is invalid. The '" + dirname + \
+                             "' expected to be an existing directory." )
+
         return
 
     def setConfig( self, number = 1 ):
@@ -185,12 +197,19 @@ class NetSchedule:
             print "Executing command: " + " ".join( cmdLine )
         safeRun( cmdLine )
 
-        cmdLine = [ "cp", fName, self.__path + "netscheduled.ini" ]
+
+        replaceWhat = "\\$DBPATH"
+        replaceTo = self.__dbPath.replace( "/", "\\/" )
+        cmdLine = "sed -e 's/" + replaceWhat + "/" + replaceTo + "/g' " + \
+                  fName + " > " + self.__path + "netscheduled.ini"
         if not self.isLocal():
-            cmdLine = [ "ssh", self.__host ] + cmdLine
+            cmdLine = "ssh " + self.__host + " " + cmdLine
         if verbose:
-            print "Executing command: " + " ".join( cmdLine )
-        safeRun( cmdLine )
+            print "Executing command: " + cmdLine
+        retCode = os.system( cmdLine )
+        if retCode != 0:
+            raise Exception( "Error executing command: " + cmdLine )
+
         return
 
 
@@ -292,20 +311,9 @@ class NetSchedule:
             raise Exception( "Cannot delete data directory " \
                              "while netschedule is running" )
 
-        cmdLine = [ "rm", "-rf", self.__path + "data/" ]
+        cmdLine = [ "rm", "-rf", self.__dbPath ]
         if not self.isLocal():
             cmdLine = [ "ssh", self.__host ] + cmdLine
-        if verbose:
-            print "Executing command: " + " ".join( cmdLine )
-        safeRun( cmdLine )
-
-        srcDir = os.path.dirname( os.path.abspath( sys.argv[0] ) )
-        cmdLine = [ "rm", "-rf", srcDir + "/data/" ]
-        if verbose:
-            print "Executing command: " + " ".join( cmdLine )
-        safeRun( cmdLine )
-
-        cmdLine = [ "rm", "-rf", os.getcwd() + "/data/" ]
         if verbose:
             print "Executing command: " + " ".join( cmdLine )
         safeRun( cmdLine )
@@ -1190,6 +1198,10 @@ def main():
     parser.add_option( "--path-netschedule", dest="pathNetschedule",
                        default=defaultNetschedulePath,
                        help="Path to the netschedule daemon" )
+    parser.add_option( "--db-path", dest="pathDB",
+                       default=os.path.dirname( os.path.abspath( sys.argv[ 0 ] ) ) + \
+                               os.path.sep + "data",
+                       help="Directory name where data are stored" )
     parser.add_option( "--start-from", dest="start_from",
                        default="0",
                        help="Test index to start from (default: 0)" )
@@ -1215,10 +1227,12 @@ def main():
     if verbose:
         print "Using netschedule path: " + options.pathNetschedule
         print "Using grid_cli path: " + options.pathGridCli
+        print "Using DB path: " + options.pathDB
         print "Starting tests from: " + options.start_from
 
     netschedule = NetSchedule( "127.0.0.1", port,
-                                options.pathNetschedule, options.pathGridCli )
+                                options.pathNetschedule, options.pathGridCli,
+                                options.pathDB )
 
     tests = [ Scenario00( netschedule ), Scenario01( netschedule ),
               Scenario02( netschedule ), Scenario03( netschedule ),
@@ -1281,8 +1295,13 @@ def main():
                                     " failed. Exception:\n" + str( exct )
             testCount += 1
         netschedule.safeStop()
+        netschedule.deleteDB()
     except:
         netschedule.safeStop()
+        try:
+            netschedule.deleteDB()
+        except:
+            pass
         raise
 
     print "Total succeeded: " + str( successCount )
