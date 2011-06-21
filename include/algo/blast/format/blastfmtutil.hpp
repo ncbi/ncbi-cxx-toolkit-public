@@ -159,7 +159,7 @@ public:
     								  int master_gen_code,
     								  int slave_gen_code,
     								  const ncbi::TMaskedQueryRegions& mask_info,
-    								  const align_format::CDisplaySeqalign::SeqLocCharOption mask_char,
+    								  align_format::CDisplaySeqalign::SeqLocCharOption mask_char,
     								  int query_frame);
 
 };
