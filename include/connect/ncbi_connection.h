@@ -71,11 +71,10 @@ typedef unsigned int TCONN_Flags;  /* bitwise OR of ECONN_Flags   */
 
 
 /* Create all data necessary to establish a new connection (merely bind it to
- * the specified connector). Unsuccessful completion  sets conn to 0, and
+ * the specified connector).  Unsuccessful completion sets "*conn" to NULL, and
  * leaves the connector intact (can be used again).
- * NOTE1:  The real connection will not be established right away.  Instead,
- *         it will be established at the moment of the first call to one of
- *         "Flush", "Wait", "Write", or "Read" methods.
+ * NOTE1:  Connection is not established right away but at the moment of the
+ *         first call to one of "Flush", "Wait", "Write", or "Read" methods.
  * NOTE2:  "Connection establishment" at this level of abstraction may differ
  *         from actual link establishment at the underlying connector's level.
  * NOTE3:  Initial timeout values are set to kDefaultTimeout, meaning
@@ -95,12 +94,12 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Create
 
 
 /* Reinit using new "connector".
- * If "conn" is already opened then close the current connection at first,
+ * If "conn" is already opened, then close the current connection first,
  * even if "connector" is just the same as the current connector.
- * If "connector" is NULL then close and destroy the incumbent, and leave
+ * If "connector" is NULL, then close and destroy the incumbent, and leave
  * the connection empty (effective way to destroy connector(s)).
  * NOTE:  Although it closes the previous connection immediately, however it
- *        does not open the new connection right away:  see notes on "Create".
+ *        does not open the new connection right away:  see notes in "Create".
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_ReInit
 (CONN      conn,      /* [in] connection handle */
@@ -109,9 +108,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_ReInit
 
 
 /* Get verbal representation of connection type as a character string.
- * Note that the returned value is only valid until the next
- * I/O operation in the connection.  Return value NULL denotes
- * unknown connection type.
+ * Note that the returned value is only valid until the next I/O operation in
+ * the connection.  Return value NULL denotes unknown connection type.
  */
 extern NCBI_XCONNECT_EXPORT const char* CONN_GetType
 (CONN conn  /* [in]  connection handle */ 
