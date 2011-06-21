@@ -37,7 +37,7 @@
 
 #ifndef HAVE_STRDUP
 
-extern char* strdup(const char* str)
+char* strdup(const char* str)
 {
     size_t size = strlen(str) + 1;
     char*   res = (char*) malloc(size);
@@ -51,7 +51,7 @@ extern char* strdup(const char* str)
 
 #ifndef HAVE_STRNDUP
 
-extern char* strndup(const char* str, size_t n)
+char* strndup(const char* str, size_t n)
 {
     const char* end = n   ? memchr(str, '\0', n) : 0;
     size_t     size = end ? (size_t)(end - str)  : n;
@@ -69,7 +69,7 @@ extern char* strndup(const char* str, size_t n)
 #ifndef HAVE_STRCASECMP
 
 /* We assume that we're using ASCII-based charsets */
-extern int strcasecmp(const char* s1, const char* s2)
+int strcasecmp(const char* s1, const char* s2)
 {
     const unsigned char* p1 = (const unsigned char*) s1;
     const unsigned char* p2 = (const unsigned char*) s2;
@@ -89,7 +89,7 @@ extern int strcasecmp(const char* s1, const char* s2)
 }
 
 
-extern int strncasecmp(const char* s1, const char* s2, size_t n)
+int strncasecmp(const char* s1, const char* s2, size_t n)
 {
     const unsigned char* p1 = (const unsigned char*) s1;
     const unsigned char* p2 = (const unsigned char*) s2;
@@ -111,7 +111,7 @@ extern int strncasecmp(const char* s1, const char* s2, size_t n)
 #endif /*HAVE_STRCASECMP*/
 
 
-extern char* strupr(char* s)
+char* strupr(char* s)
 {
     unsigned char* t = (unsigned char*) s;
 
@@ -123,7 +123,7 @@ extern char* strupr(char* s)
 }
 
 
-extern char* strlwr(char* s)
+char* strlwr(char* s)
 {
     unsigned char* t = (unsigned char*) s;
 
@@ -135,14 +135,14 @@ extern char* strlwr(char* s)
 }
 
 
-extern char* strncpy0(char* s1, const char* s2, size_t n)
+char* strncpy0(char* s1, const char* s2, size_t n)
 {
     *s1 = '\0';
     return strncat(s1, s2, n);
 }
 
 
-extern char* strrncpy0(char* s1, const char* s2, size_t n)
+char* strrncpy0(char* s1, const char* s2, size_t n)
 {
     char* end = (char*) memchr(s2, '\0', n);
     if (end)

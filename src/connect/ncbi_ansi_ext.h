@@ -55,7 +55,7 @@ extern "C" {
  * Return an identical malloc'ed string, which must be explicitly freed 
  * by free() when no longer needed.
  */
-extern NCBI_XCONNECT_EXPORT
+NCBI_XCONNECT_EXPORT
 char* strdup(const char* str);
 
 #endif /*HAVE_STRDUP*/
@@ -72,7 +72,7 @@ char* strdup(const char* str);
  * Return a malloc'ed and '\0'-terminated string, which must be
  * explicitly freed by free() when no longer needed.
  */
-extern NCBI_XCONNECT_EXPORT
+NCBI_XCONNECT_EXPORT
 char* strndup(const char* str, size_t n);
 
 #endif /*HAVE_STRNDUP*/
@@ -91,14 +91,14 @@ char* strndup(const char* str, size_t n);
  * Return less than, equal to or greater than zero if
  * "s1" is lexicographically less than, equal to or greater than "s2".
  */
-extern NCBI_XCONNECT_EXPORT
+NCBI_XCONNECT_EXPORT
 int strcasecmp(const char* s1, const char* s2);
 
 /* Compare not more than "n" characters of "s1" and "s2", ignoring case.
  * Return less than, equal to or greater than zero if
  * "s1" is lexicographically less than, equal to or greater than "s2".
  */
-extern NCBI_XCONNECT_EXPORT
+NCBI_XCONNECT_EXPORT
 int strncasecmp(const char* s1, const char* s2, size_t n);
 
 #endif/*HAVE_STRCASECMP*/
@@ -115,14 +115,12 @@ int strncasecmp(const char* s1, const char* s2, size_t n);
  * the altered string. Because the conversion is made in place, the
  * returned pointer is the same as the passed one.
  */
-extern NCBI_XCONNECT_EXPORT
 char* strupr(char* s);
 
 /* Convert a string to lowercase, then return pointer to
  * the altered string. Because the conversion is made in place, the
  * returned pointer is the same as the passed one.
  */
-extern NCBI_XCONNECT_EXPORT
 char* strlwr(char* s);
 
 
@@ -132,14 +130,13 @@ char* strlwr(char* s);
  * that the result is always null-terminated and that the function does not
  * pad "s1" with null bytes should "s2" be shorter than "n" characters.
  */
-extern NCBI_XCONNECT_EXPORT
+NCBI_XCONNECT_EXPORT
 char* strncpy0(char* s1, const char* s2, size_t n);
 
 
 /* Copy not more than "n" characters from string "s2" into "s1" scanning
  * backwards, and return the result, which is always null-terminated.
  */
-extern NCBI_XCONNECT_EXPORT
 char* strrncpy0(char* s1, const char* s2, size_t n);
 
 
@@ -153,7 +150,6 @@ char* strrncpy0(char* s1, const char* s2, size_t n);
 /* Find address of the last occurrence of char "c" within "n" bytes of a memory
  * block beginning at the address "s".  Return NULL if no such byte is found.
  */
-extern NCBI_XCONNECT_EXPORT
 void* memrchr(const void* s, int c, size_t n);
 
 #endif/*!HAVE_MEMRCHR*/
