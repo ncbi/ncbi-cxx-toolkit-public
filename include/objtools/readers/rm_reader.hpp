@@ -758,7 +758,7 @@ public:
     typedef IIdGenerator< CRef<CFeat_id> > TIdGenerator;
 
     CRepeatToFeat(TFlags flags = fDefaults,
-            CConstRef<TRepeatLibrary> lib = 0,
+            CConstRef<TRepeatLibrary> lib = null,
             TIdGenerator& ids =
                     *(CIRef<TIdGenerator>(new COrdinalFeatIdGenerator)));
 
@@ -823,7 +823,7 @@ public:
     /// Implement CReaderBase.
 
     CRepeatMaskerReader(TFlags flags = fDefaults,
-            CConstRef<TRepeatLibrary> lib = 0,
+            CConstRef<TRepeatLibrary> lib = null,
             const ISeqIdResolver& seqid_resolver =
                     *(CConstIRef<ISeqIdResolver>(new CFastaIdsResolver)),
             TIdGenerator& ids =
