@@ -4093,7 +4093,7 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
             os << "Message[" << sev[0] << "]:";
         }
         else {
-            os << sev + ':';
+            os << sev << ':';
         }
         os << resetiosflags(IOS_BASE::left);
     }
