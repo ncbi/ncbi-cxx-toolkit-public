@@ -4083,12 +4083,13 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
     // <severity>:
     if ( IsSetDiagPostFlag(eDPF_AppLog, m_Flags) ) {
         os << setfill(' ') << setw(13) << setiosflags(IOS_BASE::left)
-            << GetEventName(m_Event) << resetiosflags(IOS_BASE::left);
+            << GetEventName(m_Event) << resetiosflags(IOS_BASE::left)
+            << setw(0);
     }
     else {
         string sev = CNcbiDiag::SeverityName(m_Severity);
         os << setfill(' ') << setw(13) // add 1 for space
-            << setiosflags(IOS_BASE::left);
+            << setiosflags(IOS_BASE::left) << setw(0);
         if ( IsSetDiagPostFlag(eDPF_IsMessage, m_Flags) ) {
             os << "Message[" << sev[0] << "]:";
         }
