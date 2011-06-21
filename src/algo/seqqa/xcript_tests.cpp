@@ -863,6 +863,18 @@ static void s_OrfExtension(const CSeq_id& id,
             break;
         }
     }
+
+    // MSS-59 
+    // Count the total number of 'ATG' triplets found in the 5'UTR of a 
+    // transcript, in frames 1, 2, and 3.
+    int upstream_utr_atg_count(0);
+    for (int i = upstream_length - 3;  i >= 0;  i -= 1) {
+        vec.GetSeqData(i, i + 3, codon);
+        if (codon == "ATG") {
+            upstream_utr_atg_count++;
+        }
+    }
+
     result.SetOutput_data()
         .AddField("max_extension_weak_kozak",
                   static_cast<int>(upstream_length - starts[eWeak]));
@@ -872,6 +884,9 @@ static void s_OrfExtension(const CSeq_id& id,
     result.SetOutput_data()
         .AddField("max_extension_strong_kozak",
                   static_cast<int>(upstream_length - starts[eStrong]));
+    result.SetOutput_data()
+        .AddField("upstream_utr_atg_count",
+                  upstream_utr_atg_count);
 }
 
 
