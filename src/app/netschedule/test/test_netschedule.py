@@ -214,7 +214,8 @@ class NetSchedule:
         replaceWhat = "\\$PORT"
         replaceTo = str( self.__port )
         cmdLine = "sed -e 's/" + replaceWhat + "/" + replaceTo + "/g' " + \
-                  "netscheduled.ini.temp > " + self.__path + "netscheduled.ini"
+                  self.__path + "netscheduled.ini.temp > " + \
+                  self.__path + "netscheduled.ini"
         if not self.isLocal():
             cmdLine = "ssh " + self.__host + " " + cmdLine
         if verbose:
