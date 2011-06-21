@@ -1677,15 +1677,20 @@ public:
         eAFFS,          ///< Amiga Fast File System
         eAFS,           ///< AFS File System
         eAUTOFS,        ///< Automount File Sustem
-        eBFS,           ///< The Be (BeOS) File System (BeFS)
+        eBEFS,          ///< The Be (BeOS) File System (BeFS)
+        eBFS,           ///< Boot File System
         eCacheFS,       ///< Cache File System
+        eCryptFS,       ///< eCryptfs (Enterprise Cryptographic Filesystem)
         eCDFS,          ///< ISO 9660 CD-ROM file system (CDFS/ISO9660)
         eCIFS,          ///< Common Internet File System
         eCODA,          ///< Coda File System
         eCOH,           ///< Coherent (System V)
         eCRAMFS,        ///< Compressed ROMFS
+        eDebugFS,       ///< Debug File Sytem (Linux)
         eDEVFS,         ///< Device File Sytem
         eDFS,           ///< DCE Distributed File System (DCE/DFS)
+        eEFS,           ///< The Encrypting File System (EFS) (MSWin)
+        eEXOFS,         ///< EXtended Object File System (EXOFS)
         eExt,           ///< Extended file system
         eExt2,          ///< Second Extended file system
         eExt3,          ///< Journalled form of ext2
@@ -1694,7 +1699,12 @@ public:
         eFDFS,          ///< File Descriptor File System
         eFFM,           ///< File-on-File Mounting file system
         eFFS,           ///< Fast File System (*BSD)
+        eFUSE,          ///< Filesystem in Userspace (FUSE)
+        eFUSE_CTL,      ///< Fusectl (helper filesystem for FUSE)
+        eGFS2,          ///< Global File System
+        eGPFS,          ///< IBM General Parallel File System
         eHFS,           ///< Hierarchical File System
+        eHFSPLUS,       ///< Hierarchical File System
         eHPFS,          ///< OS/2 High-Performance File System
         eHSFS,          ///< High Sierra File System
         eJFS,           ///< Journalling File System
@@ -1704,16 +1714,21 @@ public:
         eMFS,           ///< Memory File System
         eMinix,         ///< Minix v1
         eMinix2,        ///< Minix v2
+        eMinix3,        ///< Minix v3
         eMSFS,          ///< Mail Slot File System
         eNCPFS,         ///< NetWare Core Protocol File System
         eNFS,           ///< Network File System (NFS)
         eNTFS,          ///< New Technology File System
+        eOCFS2,         ///< Oracle Cluster File System 2
         eOPENPROM,      ///< /proc/openprom filesystem
+        ePANFS,         ///< Panasas FS
         ePROC,          ///< /proc file system
+        ePVFS2,         ///< Parallel Virtual File System 
+        eReiserFS,      ///< Reiser File System
         eRFS,           ///< Remote File Share file system (AT&T RFS)
         eQNX4,          ///< QNX4 file system
-        eReiserFS,      ///< Reiser File System
         eROMFS,         ///< ROM File System
+        eSELINUX,       ///< Security-Enhanced Linux (SELinux)
         eSMBFS,         ///< Samba File System 
         eSPECFS,        ///< SPECial File System
         eSquashFS,      ///< Compressed read-only filesystem (Linux)
@@ -1721,8 +1736,10 @@ public:
         eSYSV2,         ///< System V
         eSYSV4,         ///< System V
         eTMPFS,         ///< Virtual Memory File System (TMPFS/SHMFS)
+        eUBIFS,         ///< The Unsorted Block Image File System
         eUDF,           ///< Universal Disk Format
         eUFS,           ///< UNIX File System
+        eUFS2,          ///< UNIX File System
         eUSBDEVICE,     ///< USBDevice file system
         eV7,            ///< UNIX V7 File System
         eVxFS,          ///< VERITAS File System (VxFS)

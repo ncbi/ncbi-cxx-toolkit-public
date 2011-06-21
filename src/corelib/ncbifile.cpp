@@ -3898,45 +3898,62 @@ void s_GetFileSystemInfo(const string&               path,
     if (flags & fFSI_Type) {
         switch (st.f_type) {
             case 0xADF5:      info->fs_type = CFileUtil::eADFS;     break;
-            case 0xADFF:      info->fs_type = CFileUtil::eFFS;      break;
-            case 0x012FF7B9:  info->fs_type = CFileUtil::eAFS;      break;
+            case 0xADFF:      info->fs_type = CFileUtil::eAFFS;     break;
+            case 0x5346414F:  info->fs_type = CFileUtil::eAFS;      break;
             case 0x0187:      info->fs_type = CFileUtil::eAUTOFS;   break;
             case 0x1BADFACE:  info->fs_type = CFileUtil::eBFS;      break;
+            case 0x4004:
+            case 0x4000:
+            case 0x9660:      info->fs_type = CFileUtil::eCDFS;     break;
+            case 0xF15F:      info->fs_type = CFileUtil::eCryptFS;  break;
             case 0xFF534D42:  info->fs_type = CFileUtil::eCIFS;     break;
             case 0x73757245:  info->fs_type = CFileUtil::eCODA;     break;
             case 0x012FF7B7:  info->fs_type = CFileUtil::eCOH;      break;
             case 0x28CD3D45:  info->fs_type = CFileUtil::eCRAMFS;   break;
             case 0x1373:      info->fs_type = CFileUtil::eDEVFS;    break;
+            case 0x414A53:    info->fs_type = CFileUtil::eEFS;      break;
+            case 0x5DF5:      info->fs_type = CFileUtil::eEXOFS;    break;
             case 0x137D:      info->fs_type = CFileUtil::eExt;      break;
             case 0xEF51:
             case 0xEF53:      info->fs_type = CFileUtil::eExt2;     break;
+            case 0x4d44:      info->fs_type = CFileUtil::eFAT;      break;
+            case 0x65735546:  info->fs_type = CFileUtil::eFUSE;     break;
+            case 0x65735543:  info->fs_type = CFileUtil::eFUSE_CTL; break;
+            case 0x01161970:  info->fs_type = CFileUtil::eGFS2;     break;
             case 0x4244:      info->fs_type = CFileUtil::eHFS;      break;
+            case 0x482B:      info->fs_type = CFileUtil::eHFSPLUS;  break;
             case 0xF995E849:  info->fs_type = CFileUtil::eHPFS;     break;
-            case 0x4004:
-            case 0x4000:
-            case 0x9660:      info->fs_type = CFileUtil::eCDFS;     break;
             case 0x3153464A:  info->fs_type = CFileUtil::eJFS;      break;
             case 0x07C0:      info->fs_type = CFileUtil::eJFFS;     break;
             case 0x72B6:      info->fs_type = CFileUtil::eJFFS2;    break;
+            case 0x47504653:  info->fs_type = CFileUtil::eGPFS;     break;
             case 0x137F:
             case 0x138F:      info->fs_type = CFileUtil::eMinix;    break;
             case 0x2468:
             case 0x2478:      info->fs_type = CFileUtil::eMinix2;   break;
-            case 0x4d44:      info->fs_type = CFileUtil::eFAT;      break;
+            case 0x4D5A:      info->fs_type = CFileUtil::eMinix3;   break;
             case 0x564C:      info->fs_type = CFileUtil::eNCPFS;    break;
             case 0x6969:      info->fs_type = CFileUtil::eNFS;      break;
             case 0x5346544E:  info->fs_type = CFileUtil::eNTFS;     break;
+            case 0x7461636F:  info->fs_type = CFileUtil::eOCFS2;    break;
             case 0x9fA1:      info->fs_type = CFileUtil::eOPENPROM; break;
+            case 0xAAD7AAEA:  info->fs_type = CFileUtil::ePANFS;    break;
             case 0x9fA0:      info->fs_type = CFileUtil::ePROC;     break;
+            case 0x20030528:  info->fs_type = CFileUtil::ePVFS2;    break;
             case 0x002F:      info->fs_type = CFileUtil::eQNX4;     break;
+            case 0x52654973:  info->fs_type = CFileUtil::eReiserFS; break;
             case 0x7275:      info->fs_type = CFileUtil::eROMFS;    break;
+            case 0xF97CFF8C:  info->fs_type = CFileUtil::eSELINUX;  break;
             case 0x517B:      info->fs_type = CFileUtil::eSMBFS;    break;
+            case 0x73717368:  info->fs_type = CFileUtil::eSquashFS; break;
             case 0x62656572:  info->fs_type = CFileUtil::eSYSFS;    break;
             case 0x012FF7B6:  info->fs_type = CFileUtil::eSYSV2;    break;
             case 0x012FF7B5:  info->fs_type = CFileUtil::eSYSV4;    break;
             case 0x01021994:  info->fs_type = CFileUtil::eTMPFS;    break;
+            case 0x24051905:  info->fs_type = CFileUtil::eUBIFS;    break;
             case 0x15013346:  info->fs_type = CFileUtil::eUDF;      break;
             case 0x00011954:  info->fs_type = CFileUtil::eUFS;      break;
+            case 0x19540119:  info->fs_type = CFileUtil::eUFS2;     break;
             case 0x9fA2:      info->fs_type = CFileUtil::eUSBDEVICE;break;
             case 0x012FF7B8:  info->fs_type = CFileUtil::eV7;       break;
             case 0xa501FCF5:  info->fs_type = CFileUtil::eVxFS;     break;
@@ -3947,6 +3964,7 @@ void s_GetFileSystemInfo(const string&               path,
             default:          info->fs_type = CFileUtil::eUnknown;  break;
         }
     }
+
 #ifdef NEED_NAME_MAX
     info->filename_max = (unsigned long)st.f_namelen;
 #endif
