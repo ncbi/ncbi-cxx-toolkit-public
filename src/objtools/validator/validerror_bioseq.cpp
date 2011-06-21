@@ -8048,7 +8048,7 @@ bool CValidError_bioseq::ValidateGraphLocation (const CSeq_graph& graph)
             || !loc.IsInt() || loc.GetStrand() == eNa_strand_minus) {
             string label = GetValidatorLocationLabel (loc);
             PostErr (eDiag_Error, eErr_SEQ_GRAPH_GraphLocInvalid, 
-                     "SeqGraph location (" + label + ") is invalid", *(bsh.GetCompleteBioseq()));
+                     "SeqGraph location (" + label + ") is invalid", graph);
             return false;
         }
     }
