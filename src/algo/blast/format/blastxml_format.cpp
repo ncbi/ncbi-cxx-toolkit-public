@@ -267,7 +267,7 @@ s_SeqAlignSetToXMLHsps(list<CRef<CHsp> >& xhsp_list,
 
        if (mask_info)
        {
-    	   const CDisplaySeqalign::SeqLocCharOption kMaskCharOpt =
+    	  CDisplaySeqalign::SeqLocCharOption kMaskCharOpt =
                            (kIsBlastn ? CDisplaySeqalign::eN : CDisplaySeqalign::eX);
 
           CBlastFormatUtil::GetWholeAlnSeqStrings(query_seq,
@@ -291,8 +291,6 @@ s_SeqAlignSetToXMLHsps(list<CRef<CHsp> >& xhsp_list,
         	                					   slave_genetic_code);
         }
 
-        //unsigned int num_gaps = CBlastFormatUtil::GetNumOfGaps(query_seq) +
-        //						CBlastFormatUtil::GetNumOfGaps(subject_seq);
         num_ident = 0;
         int num_positives = 0;
         middle_seq = query_seq;
