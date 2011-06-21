@@ -974,6 +974,53 @@ BOOST_AUTO_TEST_CASE(BlastxLowerCaseMask) {
     BOOST_REQUIRE(bqff.GetNumFrames() == NUM_FRAMES);
 }
 
+// Inspired by SB-597
+BOOST_AUTO_TEST_CASE(BlastxLowerCaseMaskProteinLocations)
+{
+    vector<TSeqRange> masks;
+    masks.push_back(TSeqRange(0, 75));
+
+    TMaskedQueryRegions mqr;
+    CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, 1945388));
+    ITERATE(vector<TSeqRange>, range, masks) {
+        CRef<CSeq_interval> intv(new CSeq_interval(*id,
+                                                   range->GetFrom(),
+                                                   range->GetTo()));
+        CRef<CSeqLocInfo> sli_plus(new CSeqLocInfo(intv, 
+                                              CSeqLocInfo::eFramePlus1));
+        mqr.push_back(sli_plus);
+        CRef<CSeqLocInfo> sli_minus(new CSeqLocInfo(intv, 
+                                              CSeqLocInfo::eFrameMinus1));
+        mqr.push_back(sli_minus);
+    }
+    CBlastQueryFilteredFrames bqff(eBlastTypeBlastx, mqr);
+    bqff.UseProteinCoords(9180); // 9180 is length of GI|1945388
+
+    BlastSeqLoc* bsl = *bqff[CSeqLocInfo::eFramePlus1];
+    BOOST_REQUIRE_EQUAL(bsl->ssr->left, 0);
+    BOOST_REQUIRE_EQUAL(bsl->ssr->right, 25);
+
+    bsl = *bqff[CSeqLocInfo::eFramePlus2];
+    BOOST_REQUIRE_EQUAL(bsl->ssr->left, 0);
+    BOOST_REQUIRE_EQUAL(bsl->ssr->right, 24);
+
+    bsl = *bqff[CSeqLocInfo::eFramePlus3];
+    BOOST_REQUIRE_EQUAL(bsl->ssr->left, 0);
+    BOOST_REQUIRE_EQUAL(bsl->ssr->right, 24);
+
+    bsl = *bqff[CSeqLocInfo::eFrameMinus1];
+    BOOST_REQUIRE_EQUAL(bsl->ssr->left, 3034);
+    BOOST_REQUIRE_EQUAL(bsl->ssr->right, 3059);
+
+    bsl = *bqff[CSeqLocInfo::eFrameMinus2];
+    BOOST_REQUIRE_EQUAL(bsl->ssr->left, 3034);
+    BOOST_REQUIRE_EQUAL(bsl->ssr->right, 3058);
+
+    bsl = *bqff[CSeqLocInfo::eFrameMinus3];
+    BOOST_REQUIRE_EQUAL(bsl->ssr->left, 3034);
+    BOOST_REQUIRE_EQUAL(bsl->ssr->right, 3058);
+}
+
 // Inspired by SB-285
 BOOST_AUTO_TEST_CASE(BlastnLowerCaseMask_SingleStrand) {
     TSeqRange mask(TSeqRange(0, 75));

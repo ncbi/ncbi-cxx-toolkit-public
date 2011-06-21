@@ -401,8 +401,8 @@ s_RestrictSeqLocs_Multiframe(CBlastQueryFilteredFrames & frame_to_bsl,
                     
                 BlastSeqLoc_RestrictToInterval(bsl,
                                                qseqloc->GetStart(eExtreme_Positional),
-                                               qseqloc->GetStop (eExtreme_Positional));
-                    
+					        qseqloc->GetStop (eExtreme_Positional));
+
                 break;
             }
         }
@@ -1488,6 +1488,23 @@ CBlastQueryFilteredFrames(EBlastProgramType           program,
         
         AddSeqLoc(intv, frame);
         frames.insert(frame);
+        if (Blast_QueryIsTranslated(program))
+        { 
+            if(frame == ncbi::CSeqLocInfo::eFramePlus1)
+            {
+        	AddSeqLoc(intv, ncbi::CSeqLocInfo::eFramePlus2);
+        	frames.insert(ncbi::CSeqLocInfo::eFramePlus2);
+        	AddSeqLoc(intv, ncbi::CSeqLocInfo::eFramePlus3);
+        	frames.insert(ncbi::CSeqLocInfo::eFramePlus3);
+            }  
+            else if (frame == ncbi::CSeqLocInfo::eFrameMinus1)
+            {
+        	AddSeqLoc(intv, ncbi::CSeqLocInfo::eFrameMinus2);
+        	frames.insert(ncbi::CSeqLocInfo::eFrameMinus2);
+        	AddSeqLoc(intv, ncbi::CSeqLocInfo::eFrameMinus3);
+        	frames.insert(ncbi::CSeqLocInfo::eFrameMinus3);
+            }
+        }
     }
 }
 
@@ -1532,8 +1549,8 @@ void CBlastQueryFilteredFrames::UseProteinCoords(TSeqPos dna_length)
                 int to(0), from(0);
                 
                 if (frame < 0) {
-                    from = (dna_length + frame - itr->ssr->right) / CODON_LENGTH;
-                    to = (dna_length + frame - itr->ssr->left) / CODON_LENGTH;
+                    from = ((int) dna_length + frame - itr->ssr->right) / CODON_LENGTH;
+                    to = ((int) dna_length + frame - itr->ssr->left) / CODON_LENGTH;
                 } else {
                     from = (itr->ssr->left - frame + 1) / CODON_LENGTH;
                     to = (itr->ssr->right - frame + 1) / CODON_LENGTH;
