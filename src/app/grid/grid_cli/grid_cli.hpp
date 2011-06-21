@@ -88,6 +88,7 @@ enum EOption {
     eEnableMirroring,
     eNetSchedule,
     eQueue,
+    eWorkerNode,
     eBatch,
     eAffinity,
     eJobTag,
@@ -280,6 +281,7 @@ private:
         eNetScheduleAdmin,
         eNetScheduleSubmitter,
         eNetScheduleExecutor,
+        eWorkerNodeAdmin,
         eGridClient
     };
     EAPIClass SetUp_AdminCmd();

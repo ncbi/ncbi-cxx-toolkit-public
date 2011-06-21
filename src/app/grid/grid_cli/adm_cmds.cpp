@@ -44,7 +44,8 @@ CGridCommandLineInterfaceApp::EAPIClass
     CGridCommandLineInterfaceApp::SetUp_AdminCmd()
 {
     switch (IsOptionSet(eNetCache, OPTION_N(0)) |
-            IsOptionSet(eNetSchedule, OPTION_N(1))) {
+            IsOptionSet(eNetSchedule, OPTION_N(1)) |
+            IsOptionSet(eWorkerNode, OPTION_N(2))) {
     case 0:
         fprintf(stderr, "This command requires either "
             "'--nc' or '--ns' option to be specified.\n");
@@ -58,8 +59,13 @@ CGridCommandLineInterfaceApp::EAPIClass
         SetUp_NetScheduleCmd(eNetScheduleAdmin);
         return eNetScheduleAdmin;
 
+    case OPTION_N(2): // eWorkerNode
+        SetUp_NetScheduleCmd(eWorkerNodeAdmin);
+        return eWorkerNodeAdmin;
+
     default: // A combination of options
-        fprintf(stderr, "Options '--nc' and '--ns' are mutually exclusive.\n");
+        fprintf(stderr, "Options '--nc', '--ns', and '--wn' "
+            "are mutually exclusive.\n");
         return eUnknownAPI;
     }
 }
@@ -164,6 +170,10 @@ int CGridCommandLineInterfaceApp::Cmd_ServerInfo()
         }
         return 0;
 
+    case eWorkerNodeAdmin:
+        PrintVersionParts(m_NetScheduleAdmin.GetServerVersion().c_str());
+        return 0;
+
     default:
         return 2;
     }
@@ -214,6 +224,10 @@ int CGridCommandLineInterfaceApp::Cmd_Stats()
             m_NetScheduleAdmin.PrintServerStatistics(NcbiCout,
                 IsOptionSet(eBrief) ? CNetScheduleAdmin::eStatisticsBrief :
                     CNetScheduleAdmin::eStatisticsAll);
+        return 0;
+
+    case eWorkerNodeAdmin:
+        m_NetScheduleAdmin.PrintServerStatistics(NcbiCout);
         return 0;
 
     default:
@@ -269,6 +283,7 @@ int CGridCommandLineInterfaceApp::Cmd_Shutdown()
         return 0;
 
     case eNetScheduleAdmin:
+    case eWorkerNodeAdmin:
         switch (IsOptionSet(eNow, OPTION_N(0)) |
                 IsOptionSet(eDie, OPTION_N(1))) {
         case 0: // No additional options.

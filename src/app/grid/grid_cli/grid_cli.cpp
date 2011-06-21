@@ -114,6 +114,9 @@ struct SOptionDefinition {
     {CCommandLineParser::eOptionWithParameter, eQueue,
         QUEUE_OPTION, "NetSchedule queue."},
 
+    {CCommandLineParser::eOptionWithParameter, eWorkerNode,
+        "wn|worker-node", "Worker node address (a host:port pair)."},
+
     {CCommandLineParser::eOptionWithParameter, eBatch,
         BATCH_OPTION, "Enable batch mode and specify batch size."},
 
@@ -551,14 +554,16 @@ struct SCommandDefinition {
         "If the '--" QUEUE_OPTION "' option is specified "
         "for a NetSchedule server, queue parameters will "
         "be printed as well.",
-        {eNetCache, eNetSchedule, eQueue, eAuth, -1}},
+        {eNetCache, eNetSchedule, eWorkerNode, eQueue,
+            eCompatMode, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_Stats,
         "stats", "Show server access statistics.",
         "Dump accumulated statistics on server access and "
         "performance.",
-        {eNetCache, eNetSchedule, eQueue, eBrief, eWorkerNodes, eActiveJobCount,
-            eJobsByAffinity, eJobsByStatus, eAffinity, eAuth, -1}},
+        {eNetCache, eNetSchedule, eWorkerNode, eQueue, eBrief,
+            eWorkerNodes, eActiveJobCount, eJobsByAffinity,
+            eJobsByStatus, eAffinity, eCompatMode, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_Health,
         "health", "Evaluate availability of a server.",
@@ -589,8 +594,10 @@ struct SCommandDefinition {
         "a shutdown request to a NetCache or NetSchedule server "
         "or a worker node process.\n\n"
         "Additional options '--" NOW_OPTION "' and '--" DIE_OPTION
-        "' are applicable to NetSchedule servers only.",
-        {eNetCache, eNetSchedule, eNow, eDie, eCompatMode, eAuth, -1}},
+        "' are applicable only to NetSchedule servers and worker "
+        "nodes.",
+        {eNetCache, eNetSchedule, eWorkerNode, eNow, eDie,
+            eCompatMode, eAuth, -1}},
 };
 
 #define TOTAL_NUMBER_OF_COMMANDS int(sizeof(s_CommandDefinitions) / \
@@ -688,6 +695,7 @@ int CGridCommandLineInterfaceApp::Run()
                 m_Opts.ttl = NStr::StringToUInt(opt_value);
                 break;
             case eNetSchedule:
+            case eWorkerNode:
                 m_Opts.ns_service = opt_value;
                 break;
             case eQueue:

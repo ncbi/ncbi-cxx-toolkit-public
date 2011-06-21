@@ -69,15 +69,17 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         m_NetScheduleAPI = CNetScheduleAPI(key.host, m_Opts.auth, queue);
     }
 
-    if (IsOptionSet(eCompatMode))
+    if (IsOptionSet(eCompatMode)) {
         m_NetScheduleAPI.UseOldStyleAuth();
-
-    // If api_class == eWorkerNode: m_NetScheduleAPI.EnableWorkerNodeCompatMode();
+        if (IsOptionSet(eWorkerNode))
+            m_NetScheduleAPI.EnableWorkerNodeCompatMode();
+    }
 
     switch (api_class) {
     case eNetScheduleAPI:
         break;
     case eNetScheduleAdmin:
+    case eWorkerNodeAdmin:
         m_NetScheduleAdmin = m_NetScheduleAPI.GetAdmin();
         break;
     case eNetScheduleSubmitter:
