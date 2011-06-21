@@ -3860,20 +3860,22 @@ string SDiagMessage::x_GetModule(void) const
         return kEmptyStr;
     }
     char sep_chr = CDirEntry::GetPathSeparator();
-    const char* last_sep = strrchr(m_File, sep_chr);
-    if ( !last_sep || !*last_sep ) {
+    const char* last_sep = m_File;
+    while (last_sep  &&  *last_sep) {
+        if (*last_sep == sep_chr) break;
+        last_sep++;
+    }
+    if (last_sep == m_File) {
         return kEmptyStr;
     }
-    const char* sep = strchr(m_File, sep_chr);
-    while (sep < last_sep) {
-        _ASSERT(sep && *sep);
-        const char* next_sep = strchr(sep+1, sep_chr);
-        if (next_sep == last_sep) {
-            string ret(sep+1, next_sep - sep - 1);
+    const char* cur = last_sep - 1;
+    while (cur  &&  *cur  &&  cur >= m_File) {
+        if (*cur == sep_chr) {
+            string ret(cur + 1, last_sep - cur - 1);
             NStr::ToUpper(ret);
             return ret;
         }
-        sep = next_sep;
+        cur--;
     }
     return kEmptyStr;
 }
@@ -4088,14 +4090,14 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
         os << setfill(' ') << setw(13) // add 1 for space
             << setiosflags(IOS_BASE::left);
         if ( IsSetDiagPostFlag(eDPF_IsMessage, m_Flags) ) {
-            os << string("Message[") + sev[0] + "]:";
+            os << "Message[" << sev[0] << "]:";
         }
         else {
-            os << sev + ":";
+            os << sev + ':';
         }
         os << resetiosflags(IOS_BASE::left);
     }
-    os << " ";
+    os << ' ';
 
     // <module>-<err_code>.<err_subcode> or <module>-<err_text>
     bool have_module = (m_Module && *m_Module) || (m_File && *m_File);
@@ -4105,12 +4107,12 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
         os << (have_module ? x_GetModule() : "UNK_MODULE");
         if (m_ErrCode  ||  m_ErrSubCode || m_ErrText) {
             if (m_ErrText) {
-                os << "(" << m_ErrText << ")";
+                os << '(' << m_ErrText << ')';
             } else {
-                os << "(" << m_ErrCode << '.' << m_ErrSubCode << ")";
+                os << '(' << m_ErrCode << '.' << m_ErrSubCode << ')';
             }
         }
-        os << " ";
+        os << ' ';
     }
 
     // "<file>"

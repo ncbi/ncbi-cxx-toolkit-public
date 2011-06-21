@@ -1060,6 +1060,7 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
 #endif
     }
     string str;
+    str.reserve(64); // try to save on memory allocations
     string fmt;
     CTimeFormat::TFlags fmt_flags;
     if ( format.IsEmpty() ) {
@@ -2204,6 +2205,7 @@ CTimeFormat CTimeSpan::GetFormat(void)
 string CTimeSpan::AsString(const CTimeFormat& format) const
 {
     string str;
+    str.reserve(64); // try to save on memory allocations
     string fmt;
     CTimeFormat::TFlags fmt_flags;
     if ( format.IsEmpty() ) {
