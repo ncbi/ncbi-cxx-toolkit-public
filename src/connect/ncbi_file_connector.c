@@ -39,6 +39,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef NCBI_OS_MSWIN
+#  define fseek  _fseeki64
+#endif /*NCBI_OS_MSWIN*/
+
 
 /***********************************************************************
  *  INTERNAL -- Auxiliary types and static functions
