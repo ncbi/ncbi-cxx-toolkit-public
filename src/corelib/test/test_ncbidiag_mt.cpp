@@ -250,10 +250,12 @@ void CTestDiagApp::x_TestNewFormat(TStringList& messages)
             assert(strcmp(msg.m_Class, "CTestDiagApp") == 0);
         }
     }
+    assert(err_msg_count == s_NumThreads);
+#ifdef _DEBUG
     assert(create_msg_count == s_NumThreads);
     assert(log_msg_count == s_NumThreads);
-    assert(err_msg_count == s_NumThreads);
     assert(other_msg_count == 1);
+#endif
 }
 
 
