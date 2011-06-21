@@ -1666,6 +1666,22 @@ Convert(const FROM& value)
     return value_slice::CValueConvert<value_slice::SRunTimeCP, FROM>(value);
 }
 
+#if SIZEOF_LONG == 4
+inline
+const value_slice::CValueConvert<value_slice::SRunTimeCP, Int4>
+Convert(long value)
+{
+    return value_slice::CValueConvert<value_slice::SRunTimeCP, Int4>(value);
+}
+
+inline
+const value_slice::CValueConvert<value_slice::SRunTimeCP, Uint4>
+Convert(unsigned long value)
+{
+    return value_slice::CValueConvert<value_slice::SRunTimeCP, Uint4>(value);
+}
+#endif
+
 template <typename FROM>
 inline
 const value_slice::CValueConvert<value_slice::SRunTimeCP, FROM> 
@@ -1683,6 +1699,22 @@ ConvertSafe(const FROM& value)
 {
     return value_slice::CValueConvert<value_slice::SSafeCP, FROM>(value);
 }
+
+#if SIZEOF_LONG == 4
+inline
+const value_slice::CValueConvert<value_slice::SSafeCP, Int4>
+ConvertSafe(long value)
+{
+    return value_slice::CValueConvert<value_slice::SSafeCP, Int4>(value);
+}
+
+inline
+const value_slice::CValueConvert<value_slice::SSafeCP, Uint4>
+ConvertSafe(unsigned long value)
+{
+    return value_slice::CValueConvert<value_slice::SSafeCP, Uint4>(value);
+}
+#endif
 
 template <typename FROM>
 inline
