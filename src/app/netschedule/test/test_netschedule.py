@@ -197,11 +197,24 @@ class NetSchedule:
             print "Executing command: " + " ".join( cmdLine )
         safeRun( cmdLine )
 
-
+        # Substitute DB path
         replaceWhat = "\\$DBPATH"
         replaceTo = self.__dbPath.replace( "/", "\\/" )
         cmdLine = "sed -e 's/" + replaceWhat + "/" + replaceTo + "/g' " + \
-                  fName + " > " + self.__path + "netscheduled.ini"
+                  fName + " > " + self.__path + "netscheduled.ini.temp"
+        if not self.isLocal():
+            cmdLine = "ssh " + self.__host + " " + cmdLine
+        if verbose:
+            print "Executing command: " + cmdLine
+        retCode = os.system( cmdLine )
+        if retCode != 0:
+            raise Exception( "Error executing command: " + cmdLine )
+
+        # Substitute port
+        replaceWhat = "\\$PORT"
+        replaceTo = str( self.__port )
+        cmdLine = "sed -e 's/" + replaceWhat + "/" + replaceTo + "/g' " + \
+                  "netscheduled.ini.temp > " + self.__path + "netscheduled.ini"
         if not self.isLocal():
             cmdLine = "ssh " + self.__host + " " + cmdLine
         if verbose:
@@ -211,7 +224,6 @@ class NetSchedule:
             raise Exception( "Error executing command: " + cmdLine )
 
         return
-
 
     def isLocal( self ):
         " Returns True if it is a local netschedule "
@@ -223,10 +235,10 @@ class NetSchedule:
 
     def isRunning( self ):
         " Provides True if the server is still running "
-        cmdLine = [ "ps", "-ef", "|", "grep",
-                    "netscheduled", "|", "grep", "-v", "grep",
-                    "|", "grep", "-v", "less",
-                    "|", "grep", "-v", "vim",
+        cmdLine = [ "ps", "-ef", "|", "grep", "netscheduled",
+                    "|", "grep", "conffile",
+                    "|", "grep", "logfile",
+                    "|", "grep", "-v", "grep",
                     "|", "grep", getUsername(), "|", "wc", "-l" ]
 
         if not self.isLocal():
@@ -246,7 +258,6 @@ class NetSchedule:
         psProc.stdout.close()
         psProc.wait()
         return output.strip() != "0"
-
 
     def start( self ):
         " starts netschedule "
