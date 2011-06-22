@@ -181,6 +181,12 @@ public:
                                    std::string& value) { return false; }
     virtual bool HasIdentifier(const std::string& identifier) { return false; }
     
+    /// Some applications may know the type of an identifier.  This hook
+    /// should be overriden to return an identifier's type, when available.
+    /// Return one of eIntConst, eBoolConst, eFloatConst, eString, or eNotSet.
+    virtual CQueryParseNode::EType IdentifierType(const std::string& identifier)
+        { return CQueryParseNode::eNotSet; }
+    
 protected:
     friend class CQueryFunctionBase;
     CQueryParseTree* GetQTree() { return m_QTree; }
