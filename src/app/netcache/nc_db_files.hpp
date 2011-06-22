@@ -410,7 +410,7 @@ private:
     static bool                 sm_DiskInitialized;
     /// Number of threads frozen and waiting while any disk write will happen
     /// and some memory will be freed.
-    static CAtomicCounter       sm_WaitingOnAlert;
+    static Uint4                sm_WaitingOnAlert;
     /// Semaphore for freezing threads waiting for disk writes.
     static CSemaphore           sm_OnAlertWaiter;
 };

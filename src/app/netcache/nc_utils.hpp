@@ -1350,12 +1350,6 @@ CNCLongOpTrigger::GetState(void)
     return m_State;
 }
 
-inline void
-CNCLongOpTrigger::SetState(ENCLongOpState state)
-{
-    m_State = state;
-}
-
 
 inline
 CNCLongOpGuard::CNCLongOpGuard(CNCLongOpTrigger& trigger)

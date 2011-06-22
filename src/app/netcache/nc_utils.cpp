@@ -204,6 +204,13 @@ s_GetNextListenStub(void)
         return s_ListenStubPtrs[ind];
 }
 
+void
+CNCLongOpTrigger::SetState(ENCLongOpState state)
+{
+    CSpinGuard guard(m_ObjLock);
+    m_State = state;
+}
+
 ENCBlockingOpResult
 CNCLongOpTrigger::StartWorking(INCBlockedOpListener* listener)
 {

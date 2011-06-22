@@ -1238,6 +1238,8 @@ CNCTimeThrottler::BeginTimeEvent(Uint8 server_id)
         }
     }
     m_CurStart = now;
+    if (to_wait > 2 * kNCTimeTicksInSec)
+        to_wait = 2 * kNCTimeTicksInSec;
     return to_wait;
 }
 

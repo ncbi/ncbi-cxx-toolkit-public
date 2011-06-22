@@ -87,7 +87,7 @@ bool                      CNCFileSystem::sm_Stopped         = false;
 bool volatile             CNCFileSystem::sm_BGWorking       = false;
 CSemaphore                CNCFileSystem::sm_BGSleep        (0, 1000000000);
 bool                      CNCFileSystem::sm_DiskInitialized = false;
-CAtomicCounter            CNCFileSystem::sm_WaitingOnAlert;
+Uint4                     CNCFileSystem::sm_WaitingOnAlert;
 CSemaphore                CNCFileSystem::sm_OnAlertWaiter  (0, 1000000000);
 static CNCUint8Tls   s_ThrottleServer;
 
@@ -849,7 +849,7 @@ CNCFileSystem::Initialize(void)
         return false;
     }
 
-    sm_WaitingOnAlert.Set(0);
+    sm_WaitingOnAlert = 0;
 
     sm_BGThread = NewBGThread(&CNCFileSystem::x_DoBackgroundWork);
     try {
@@ -919,16 +919,16 @@ CNCFileSystem::x_AddNewEvent(SNCFSEvent* event)
         sm_EventsHead = event;
     }
     sm_EventsTail = event;
-    if (!sm_BGWorking) {
-        try {
-            sm_BGSleep.Post();
-        }
-        catch (CCoreException&) {
-            // For some reason this can happen sometimes (attempt to exceed
-            // max_count) but we can safely ignore that.
-        }
+    if (!sm_BGWorking)
+        sm_BGSleep.Post();
+    if (CNCMemManager::IsOnAlert()) {
+        ++sm_WaitingOnAlert;
+        sm_EventsLock.Unlock();
+        sm_OnAlertWaiter.TryWait(5, 0);
     }
-    sm_EventsLock.Unlock();
+    else {
+        sm_EventsLock.Unlock();
+    }
     sm_CntEvents.Add(1);
 }
 
@@ -996,22 +996,6 @@ CNCFileSystem::WriteToFile(CNCFSOpenFile* file,
         CNCMemManager::SetDBPageDirty(data);
     }
 
-    if (CNCMemManager::IsOnAlert()
-        // Two conditions below will ensure that background writer is working
-        // and will be able to wake us up.
-        &&  sm_BGWorking  &&  sm_EventsHead != NULL)
-    {
-        sm_EventsLock.Lock();
-        if (sm_BGWorking  &&  sm_EventsHead != NULL) {
-            sm_WaitingOnAlert.Add(1);
-            sm_EventsLock.Unlock();
-            sm_OnAlertWaiter.Wait();
-        }
-        else {
-            sm_EventsLock.Unlock();
-        }
-    }
-
     SNCFSEvent* event = new SNCFSEvent;
     event->type    = SNCFSEvent::eWrite;
     event->file    = file;
@@ -1061,6 +1045,7 @@ CNCFileSystem::x_DoBackgroundWork(void)
             SNCFSEvent* head = sm_EventsHead;
             sm_EventsHead = sm_EventsTail = NULL;
             sm_BGWorking = head != NULL;
+            Uint4 to_signal = sm_WaitingOnAlert;
             sm_EventsLock.Unlock();
 
             if (!head)
@@ -1079,13 +1064,24 @@ CNCFileSystem::x_DoBackgroundWork(void)
                 delete prev;
                 sm_CntEvents.Add(-1);
 
-                if (sm_WaitingOnAlert.Get() != 0) {
-                    sm_WaitingOnAlert.Add(-1);
+                if (to_signal) {
+                    --to_signal;
+                    sm_EventsLock.Lock();
+                    --sm_WaitingOnAlert;
                     sm_OnAlertWaiter.Post();
+                    sm_EventsLock.Unlock();
                 }
             }
         }
-        sm_BGSleep.Wait();
+        if (sm_BGSleep.TryWait()) {
+            // Drain semaphore's counter in case if we didn't have a chance
+            // to wait between different batches of events.
+            while (sm_BGSleep.TryWait())
+            {}
+        }
+        else {
+            sm_BGSleep.Wait();
+        }
     }
 }
 

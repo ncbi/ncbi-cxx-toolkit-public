@@ -266,7 +266,9 @@ CNCBlobStorage::x_LockInstanceGuard(void)
                       "Will try to work with storage as is.");
         }
 
-        CFileWriter writer(m_GuardLock->GetFileHandle());
+        CFileIO writer;
+        writer.SetFileHandle(m_GuardLock->GetFileHandle());
+        writer.SetFileSize(0, CFileIO::eBegin);
         string pid(NStr::UIntToString(CProcess::GetCurrentPid()));
         writer.Write(pid.c_str(), pid.size());
     }

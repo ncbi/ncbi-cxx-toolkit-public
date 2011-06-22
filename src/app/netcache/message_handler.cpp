@@ -344,7 +344,9 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
         { { "cache",   eNSPT_Str,  eNSPA_Required },
           { "key",     eNSPT_Str,  eNSPA_Required },
           { "subkey",  eNSPT_Str,  eNSPA_Required },
-          { "qrum",    eNSPT_Int,  eNSPA_Required } } },
+          { "qrum",    eNSPT_Int,  eNSPA_Required },
+          { "ip",      eNSPT_Str,  eNSPA_Required },
+          { "sid",     eNSPT_Str,  eNSPA_Required } } },
     { "SYNC_START",
         {&CNCMessageHandler::x_DoCmd_SyncStart, "SYNC_START"},
         { { "srv_id",  eNSPT_Int,  eNSPA_Required },
@@ -977,7 +979,7 @@ CNCMessageHandler::OnTimer(void)
 void
 CNCMessageHandler::OnOverflow(void)
 {
-    abort();
+    //abort();
     ERR_POST(Critical << "Max number of connections reached, closing connection");
     CNCStat::AddOverflowConnection();
 }
@@ -1404,7 +1406,7 @@ CNCMessageHandler::x_StartCommand(SParsedCmd& cmd)
     }
 
     if (!CNetCacheServer::IsOpenToClients()
-        &&  NStr::CompareCase(m_CurCmd, "COPY_PUT") != 0
+        &&  !NStr::StartsWith(m_CurCmd, "COPY_")
         &&  !NStr::StartsWith(m_CurCmd, "SYNC_")
         &&  NStr::CompareCase(m_CurCmd, "GETSTAT") != 0
         &&  NStr::CompareCase(m_CurCmd, "HEALTH") != 0
@@ -1546,7 +1548,9 @@ CNCMessageHandler::x_ReadCommand(void)
         return true;
     }
     CDiagContext::SetRequestContext(m_CmdCtx);
-    if (x_StartCommand(cmd)  &&  NStr::StartsWith(m_CurCmd, "SYNC_")) {
+    if (x_StartCommand(cmd)  &&  NStr::StartsWith(m_CurCmd, "SYNC_")
+        &&  CNetCacheServer::IsOpenToClients())
+    {
         m_InSyncCmd = true;
         Uint4 to_wait = CNCPeriodicSync::BeginTimeEvent(m_SrvId);
         if (to_wait != 0) {
@@ -2311,11 +2315,11 @@ CNCMessageHandler::x_CreateProxyGetLastCmd(string& proxy_cmd,
     proxy_cmd += key;
     proxy_cmd += "\" \"";
     proxy_cmd += subkey;
-    proxy_cmd.append(1, ' ');
+    proxy_cmd += "\" ";
     proxy_cmd += NStr::UIntToString(quorum);
     proxy_cmd.append(1, ' ');
     proxy_cmd += NStr::UIntToString(Uint1(search));
-    proxy_cmd += "\" \"";
+    proxy_cmd += " \"";
     proxy_cmd += m_CmdCtx->GetClientIP();
     proxy_cmd += "\" \"";
     proxy_cmd += m_CmdCtx->GetSessionID();
@@ -2341,9 +2345,12 @@ CNCMessageHandler::x_CreateProxyGetMetaCmd(string& proxy_cmd,
     proxy_cmd += "\" \"";
     proxy_cmd += subkey;
     proxy_cmd += "\" ";
-    proxy_cmd += NStr::IntToString(m_BlobVersion);
-    proxy_cmd.append(1, ' ');
     proxy_cmd += NStr::UIntToString(quorum);
+    proxy_cmd += " \"";
+    proxy_cmd += m_CmdCtx->GetClientIP();
+    proxy_cmd += "\" \"";
+    proxy_cmd += m_CmdCtx->GetSessionID();
+    proxy_cmd.append(1, '"');
 }
 
 bool
