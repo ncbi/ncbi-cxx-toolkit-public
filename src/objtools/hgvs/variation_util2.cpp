@@ -31,6 +31,7 @@
 #include <ncbi_pch.hpp>
 #include <objects/seqloc/Seq_point.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/general/Dbtag.hpp>
 
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Spliced_seg.hpp>
@@ -1369,8 +1370,43 @@ string CVariationUtil::AsString(ESOTerm term)
 
 
 /// Calculate location-specific categories
-void CVariationUtil::SetVariantProperties(CVariantProperties& prop, const CVariantPlacement& placement)
+void CVariationUtil::x_SetVariantProperties(CVariantProperties& prop, CVariantPlacement& placement)
 {
+    struct SGeneID_collector
+    {
+        void Add(const CMappedFeat& mf)
+        {
+            if(mf.IsSetDbxref()) {
+                ITERATE(CSeq_feat::TDbxref, it, mf.GetDbxref()) {
+                    const CDbtag& dbtag = **it;
+                    if(dbtag.GetDb() == "GeneID" && dbtag.GetTag().IsId()) {
+                        gene_ids.insert(dbtag.GetTag().GetId());
+                    }
+                }
+            }
+        }
+
+        void Attach(CVariantPlacement::TDbxrefs& dbxrefs)
+        {
+            set<int> gene_ids2 = gene_ids;
+            ITERATE(CVariantPlacement::TDbxrefs, it, dbxrefs) {
+                const CDbtag& dbtag = **it;
+                if(dbtag.GetDb() == "GeneID" && dbtag.GetTag().IsId()) {
+                    gene_ids2.erase(dbtag.GetTag().GetId());
+                }
+            }
+            ITERATE(set<int>, it, gene_ids2) {
+                CRef<CDbtag> dbtag(new CDbtag());
+                dbtag->SetDb("GeneID");
+                dbtag->SetTag().SetId(*it);
+                dbxrefs.push_back(dbtag);
+            }
+        }
+        set<int> gene_ids;
+    } gene_id_collector;
+
+
+
     if(!prop.IsSetGene_location()) {
         //need to zero-out the bitmask, otherwise in debug mode it will be preset to a magic value,
         //and then modifying it with "|=" will produce garbage.
@@ -1388,6 +1424,7 @@ void CVariationUtil::SetVariantProperties(CVariantProperties& prop, const CVaria
     flanks.upstream->SetStrand(eNa_strand_both);
 
     SAnnotSelector sel;
+    sel.SetResolveAll(); //needs to work on NCs
     sel.SetAdaptiveDepth();
     sel.IncludeFeatType(CSeqFeatData::e_Gene);
     sel.IncludeFeatType(CSeqFeatData::e_Rna);
@@ -1413,6 +1450,7 @@ void CVariationUtil::SetVariantProperties(CVariantProperties& prop, const CVaria
     }
 
     for(CFeat_CI ci(*m_scope, *loc, sel); ci; ++ci) {
+        gene_id_collector.Add(*ci);
         if(ci->GetData().IsGene()) {
             overlaps_gene_range = true;
         } if(ci->GetData().IsRna()) {
@@ -1499,24 +1537,32 @@ void CVariationUtil::SetVariantProperties(CVariantProperties& prop, const CVaria
         CRef<CSeq_loc> loc2 = bsh.GetBioseqMolType() == CSeq_inst::eMol_rna ? bsh.GetRangeSeq_loc(0,0) : loc;
 
         for(CFeat_CI ci(*m_scope, *loc2, sel); ci; ++ci)  {
-            CConstRef<CSeq_feat> cds;
+            gene_id_collector.Add(*ci);
+            CRef<CSeq_loc> cds_loc;
 
             if(bsh.GetBioseqMolType() == CSeq_inst::eMol_rna && ci->GetData().IsCdregion()) {
-                cds.Reset(&ci->GetMappedFeature());
+                cds_loc.Reset(new CSeq_loc);
+                cds_loc->Assign(ci->GetLocation());
             } else if(ci->GetData().IsRna() && ci->GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
-                cds = sequence::GetBestCdsForMrna(ci->GetMappedFeature(), *m_scope);
+                CMappedFeat cds_mf = feature::GetBestCdsForMrna(*ci, NULL, &sel);
+                //note: feature::GetBestCdsForMrna can't find CDS for mRNA on NCs,
+                //but feat-tree-based implementation works
+                if(cds_mf) {
+                    cds_loc.Reset(new CSeq_loc);
+                    cds_loc->Assign(cds_mf.GetLocation());
+                }
             }
 
-            if(cds) {
-                bool is_minus_strand = (eNa_strand_minus == sequence::GetStrand(cds->GetLocation(), NULL));
+            if(cds_loc) {
+                bool is_minus_strand = (eNa_strand_minus == sequence::GetStrand(*cds_loc, NULL));
 
-                if(loc->GetStop(eExtreme_Positional) < cds->GetLocation().GetStart(eExtreme_Positional)) {
+                if(loc->GetStop(eExtreme_Positional) < cds_loc->GetStart(eExtreme_Positional)) {
                     prop.SetGene_location() |= is_minus_strand ?
                                                CVariantProperties::eGene_location_utr_3
                                              : CVariantProperties::eGene_location_utr_5;
                 }
 
-                if(loc->GetStart(eExtreme_Positional) > cds->GetLocation().GetStop(eExtreme_Positional)) {
+                if(loc->GetStart(eExtreme_Positional) > cds_loc->GetStop(eExtreme_Positional)) {
                     prop.SetGene_location() |= is_minus_strand ?
                                                CVariantProperties::eGene_location_utr_5
                                              : CVariantProperties::eGene_location_utr_3;
@@ -1536,13 +1582,13 @@ void CVariationUtil::SetVariantProperties(CVariantProperties& prop, const CVaria
         CRef<CSeq_loc> neighborhood_loc = sequence::Seq_loc_Add(*flanks2k.upstream, *flanks2k.downstream, CSeq_loc::fMerge_SingleRange, NULL);
         neighborhood_loc->SetStrand(eNa_strand_both);
 
-        SAnnotSelector gene_sel;
-        gene_sel.SetAdaptiveDepth();
-        gene_sel.IncludeFeatType(CSeqFeatData::e_Gene);
-        gene_sel.SetIgnoreStrand();
 
         bool found_in_neighborhood = false;
-        for(CFeat_CI ci(*m_scope, *neighborhood_loc, gene_sel); ci; ++ci) {
+        for(CFeat_CI ci(*m_scope, *neighborhood_loc, sel); ci; ++ci) {
+            if(!ci->GetData().IsGene()) {
+                continue;
+            }
+            gene_id_collector.Add(*ci);
             const CSeq_loc& gene_loc = ci->GetLocation();
             SFlankLocs flanks500 = CreateFlankLocs(gene_loc, 500);
             SFlankLocs flanks2000 = CreateFlankLocs(gene_loc, 2000);
@@ -1558,9 +1604,10 @@ void CVariationUtil::SetVariantProperties(CVariantProperties& prop, const CVaria
             }
         }
 
-        //if there's any gene feature on the bioseq, we must be in an intergenic region;
+        //if there's any gene/mrna/cds feature on the bioseq and we're not in neighborhood,
+        //we must be in an intergenic region;
         if(!found_in_neighborhood) {
-            for(CFeat_CI ci(m_scope->GetBioseqHandle(*loc), gene_sel); ci; ++ci) {
+            for(CFeat_CI ci(m_scope->GetBioseqHandle(*loc), sel); ci; ++ci) {
                 prop.SetGene_location() |= CVariantProperties::eGene_location_intergenic;
                 break;
             }
@@ -1569,6 +1616,10 @@ void CVariationUtil::SetVariantProperties(CVariantProperties& prop, const CVaria
 
     if(prop.GetGene_location() == 0) {
         prop.ResetGene_location();
+    }
+
+    if(gene_id_collector.gene_ids.size() > 0) {
+        gene_id_collector.Attach(placement.SetDbxrefs());
     }
 }
 
@@ -1620,8 +1671,8 @@ void CVariationUtil::SetVariantProperties(CVariation& v)
         if(!v2.IsSetPlacements()) {
             continue;
         }
-        ITERATE(CVariation::TPlacements, it2, v2.GetPlacements()) {
-            SetVariantProperties(v2.SetVariant_prop(), **it2);
+        NON_CONST_ITERATE(CVariation::TPlacements, it2, v2.SetPlacements()) {
+            x_SetVariantProperties(v2.SetVariant_prop(), **it2);
         }
     }
 }

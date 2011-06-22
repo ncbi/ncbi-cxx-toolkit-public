@@ -166,10 +166,9 @@ public:
 
 /// Methods to compute properties
 
-    /// Fill location-specific variant-properties for a placement.
-    void SetVariantProperties(CVariantProperties& prop, const CVariantPlacement& placement);
 
-    /// Set location-specific variant properties for a variation
+    /// Set location-specific variant properties for a variation by applying
+    /// x_SetVariantProperties(...) on each found placement + its variation
     void SetVariantProperties(CVariation& v);
 
     /// Supported SO-terms
@@ -210,6 +209,11 @@ public:
 
 
 private:
+    /// Fill location-specific variant-properties for a placement.
+    /// Attach related GeneID(s) to placement with respect to which the properties are defined.
+    /// Note: This may include
+    void x_SetVariantProperties(CVariantProperties& prop, CVariantPlacement& placement);
+
     CRef<CVariantPlacement> x_Remap(const CVariantPlacement& p, CSeq_loc_Mapper& mapper);
 
     void ChangeToDelins(CVariation& v);
