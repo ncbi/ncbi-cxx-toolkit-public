@@ -291,6 +291,9 @@ static void TEST_ConnNetInfo(void)
 
     strcpy(net_info->user, "user");
     strcpy(net_info->pass, "pass");
+
+    ConnNetInfo_LogEx(net_info, eLOG_Note, CORE_GetLOG());
+
     str = ConnNetInfo_URL(net_info);
     assert(str);
     assert(strcmp(str, "https://www/path3?arg3#frag3") == 0);
@@ -302,9 +305,16 @@ static void TEST_ConnNetInfo(void)
     assert(strcmp(net_info->path, "/path4/path5")      == 0);
     assert(strcmp(net_info->args, "arg4")              == 0);
 
-    assert(ConnNetInfo_ParseURL(net_info, "../path6"));
+    assert(ConnNetInfo_ParseURL(net_info, "../path6?args"));
     assert(strcmp(net_info->path, "/path4/../path6")   == 0);
-    assert(strcmp(net_info->args, "")                  == 0);
+    assert(strcmp(net_info->args, "args")              == 0);
+
+    ConnNetInfo_LogEx(net_info, eLOG_Note, CORE_GetLOG());
+
+    str = ConnNetInfo_URL(net_info);
+    assert(str);
+    assert(strcmp(str, "https://www/path4/../path6?args") == 0);
+    free(str);
 
     ConnNetInfo_SetUserHeader(net_info, "");
     str = UTIL_PrintableString(net_info->http_user_header, 0, buf, 0);
