@@ -206,7 +206,7 @@ CReaderServiceConnector::Connect(int error_count)
         params.reset = s_ScanInfoReset;
         params.cleanup = s_ScanInfoCleanup;
         params.get_next_info = s_ScanInfoGetNextInfo;
-        params.flags = fHCC_NoAutoRetry;
+        params.flags = fHTTP_NoAutoRetry;
         
         if ( s_GetDebugLevel() > 0 ) {
             CDebugPrinter s("CReaderConnector");
