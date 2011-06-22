@@ -28,6 +28,8 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbidiag.hpp>
 #include <corelib/ncbi_toolkit.hpp>
 
 
@@ -81,9 +83,19 @@ const SDiagMessage& CNcbiToolkit_LogMessage::GetNativeToolkitMessage(void)
     return m_Msg;
 }
 
-EDiagSev CNcbiToolkit_LogMessage::Severity(void) const
+CNcbiToolkit_LogMessage::ESeverity CNcbiToolkit_LogMessage::Severity(void) const
 {
-    return m_Msg.m_Severity;
+    ESeverity sev = eLogMsg_Fatal;
+    switch (m_Msg.m_Severity) {
+    default:                                      break;
+    case eDiag_Info:      sev = eLogMsg_Info;     break;
+    case eDiag_Warning:   sev = eLogMsg_Warning;  break;
+    case eDiag_Error:     sev = eLogMsg_Error;    break;
+    case eDiag_Critical:  sev = eLogMsg_Critical; break;
+    case eDiag_Fatal:     sev = eLogMsg_Fatal;    break;
+    case eDiag_Trace:     sev = eLogMsg_Trace;    break;
+    }
+    return sev;
 }
 
 int CNcbiToolkit_LogMessage::ErrCode(void) const
