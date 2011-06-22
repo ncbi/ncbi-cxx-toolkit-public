@@ -230,7 +230,7 @@ public:
         fIgnoreErrno          = (1 << 18),   ///< Do not throw exception when errno != 0
         fAllStringToNumFlags  = 0x7F00
     };
-    typedef int TStringToNumFlags;   ///< Binary OR of "EStringToNumFlags"
+    typedef int TStringToNumFlags;   ///< Bitwise OR of "EStringToNumFlags"
 
     /// Convert string to int.
     ///
