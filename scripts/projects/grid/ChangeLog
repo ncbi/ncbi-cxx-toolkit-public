@@ -1,3 +1,13 @@
+2011-06-22 Dmitry Kazimirov <kazimird@ncbi.nlm.nih.gov>
+
+	* grid_cli: Support for worker nodes (serverinfo, stats, shutdown).
+	* grid_cli: New submitjob option '--progress-message'.
+
+	* remote_cgi, remote_app: Dropped NetSchedule commands REGC, URGC.
+
+	* grid_cli, netcache_control: Restored NetCache backward compatibility.
+	* remote_cgi, remote_app: Do not send binary zeros over control socket.
+
 2011-06-09 Dmitry Kazimirov <kazimird@ncbi.nlm.nih.gov>
 
 	* grid_cli: Initial release.
