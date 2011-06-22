@@ -73,18 +73,18 @@ struct SAnnotObject_Key
     void SetMultiple(size_t from, size_t to)
         {
             m_Handle.Reset();
-            m_Range.SetFrom(from);
-            m_Range.SetToOpen(to);
+            m_Range.SetFrom(TSeqPos(from));
+            m_Range.SetToOpen(TSeqPos(to));
         }
     size_t begin(void) const
         {
             _ASSERT(!IsSingle());
-            return m_Range.GetFrom();
+            return size_t(m_Range.GetFrom());
         }
     size_t end(void) const
         {
             _ASSERT(!IsSingle());
-            return m_Range.GetToOpen();
+            return size_t(m_Range.GetToOpen());
         }
     void Reset()
         {
