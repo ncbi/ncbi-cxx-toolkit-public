@@ -452,6 +452,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
             return 0/*failure*/;
         }
     } else {
+        scheme  = info->scheme;
         user    = pass    = host    = 0;
         userlen = passlen = hostlen = 0;
         path    = url;
