@@ -157,8 +157,7 @@ CIgBlast::Run()
             CLocalBlast blast(qf, opts_hndl, m_IgOptions->m_Db[gene]);
             results[gene] = blast.Run();
         }
-        x_AnnotateJ(results[2], annots);
-        x_AnnotateD(results[1], annots);
+        x_AnnotateDJ(results[1], results[2], annots);
     }
 
     /*** collect germline search results */
@@ -345,157 +344,161 @@ static bool s_CompareSeqAlign(const CRef<CSeq_align> &x, const CRef<CSeq_align> 
     return (sx <= sy);
 };
 
-void CIgBlast::x_AnnotateJ(CRef<CSearchResultSet>        &results,
-                           vector<CRef <CIgAnnotation> > &annots)
+// Test if D and J annotation not compatible
+static bool s_DJNotCompatible(const CSeq_align &d, const CSeq_align &j, bool ms)
 {
-    int iq = 0;
-    ITERATE(CSearchResultSet, result, *results) {
-
-        CIgAnnotation *annot = &*(annots[iq++]);
-        string qct = annot->m_ChainType[0];
-
-        if ((*result)->HasAlignments()) {
-
-            CRef<CSeq_align_set> align(const_cast<CSeq_align_set *>
-                                           (&*((*result)->GetSeqAlign())));
-            CSeq_align_set::Tdata & align_list = align->Set();
-            align_list.sort(s_CompareSeqAlign);
-
-            CSeq_align_set::Tdata::iterator it = align_list.begin();
-
-            int V_end = (annot->m_MinusStrand) ? 
-                         annot->m_GeneInfo[0] : annot->m_GeneInfo[1] - 1;
-            ENa_strand strand = (annot->m_MinusStrand) ? eNa_strand_minus : eNa_strand_plus;
-
-            bool annotated = false;
-            while (it != align_list.end()) {
-                
-                bool keep = true;
-
-                if (qct != "N/A") {
-                    string sid = (*it)->GetSeq_id(1).AsFastaString();
-                    if (sid.substr(0, 4) == "lcl|") sid = sid.substr(4, sid.length());
-                    string sct = m_AnnotationInfo.GetChainType(sid);
-                    if (sct != "N/A") {
-                        if (qct == "VH" && sct != "JH" ||
-                            qct != "VH" && sct == "JH") keep = false;
-                    }
-                }
-
-                if (keep) {
-                    if (annot->m_MinusStrand) {
-                        if ((*it)->GetSeqStrand(0) != strand                ||
-                            (int)(*it)->GetSeqStop(0)   <  V_end - 60       ||
-                            (int)(*it)->GetSeqStart(0)  >  V_end            ||
-                            (int)(*it)->GetSeqStart(1)  >  32) keep = false;
-                    } else {
-                        if ((*it)->GetSeqStrand(0) != strand                ||
-                            (int)(*it)->GetSeqStart(0)  >  V_end + 60       ||
-                            (int)(*it)->GetSeqStop(0)   <  V_end            ||
-                            (int)(*it)->GetSeqStart(1)  >  32) keep = false;
-                    }
-                }
-    
-                if (!keep) {
-                     it = align_list.erase(it);
-                } else {
-                     if (!annotated) {
-                         annot->m_GeneInfo[4] = (*it)->GetSeqStart(0);
-                         annot->m_GeneInfo[5] = (*it)->GetSeqStop(0)+1;
-
-                         string sid = (*it)->GetSeq_id(1).AsFastaString();
-                         if (sid.substr(0, 4) == "lcl|") sid = sid.substr(4, sid.length());
-                         int frame_offset = m_AnnotationInfo.GetFrameOffset(sid);
-                         if (frame_offset >= 0) {
-                             int frame_adj = ((*it)->GetSeqStart(1) - frame_offset) % 3 + 3;
-                             annot->m_FrameInfo[1] = (annot->m_MinusStrand) ?
-                                                     (*it)->GetSeqStop(0)  + frame_adj 
-                                                   : (*it)->GetSeqStart(0) - frame_adj;
-                         } 
-                         annotated = true;
-                     }
-                     ++it;
-                }
-            }
-        }
-    }
+    int ds = d.GetSeqStart(0);
+    int de = d.GetSeqStop(0);
+    int js = j.GetSeqStart(0);
+    int je = j.GetSeqStop(0);
+    if (ms)if (ds < js + 3 || de < je + 3) return true;
+    else   if (ds > js - 3 || de > je - 3) return true;
+    return false;
 };
 
-void CIgBlast::x_AnnotateD(CRef<CSearchResultSet>        &results,
-                           vector<CRef <CIgAnnotation> > &annots)
+void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
+                            CRef<CSearchResultSet>        &results_J,
+                            vector<CRef <CIgAnnotation> > &annots)
 {
     int iq = 0;
-    ITERATE(CSearchResultSet, result, *results) {
+    NON_CONST_ITERATE(vector<CRef <CIgAnnotation> >, annot, annots) {
 
-        CIgAnnotation *annot = &*(annots[iq++]);
-        string qct = annot->m_ChainType[0];
- 
-        if ((*result)->HasAlignments()) {
+        string q_ct = (*annot)->m_ChainType[0];
+        bool q_ms = (*annot)->m_MinusStrand;
+        ENa_strand q_st = (q_ms) ? eNa_strand_minus : eNa_strand_plus;
+        int q_ve = (q_ms) ? (*annot)->m_GeneInfo[0] : (*annot)->m_GeneInfo[1] - 1;
 
-            CRef<CSeq_align_set> align(const_cast<CSeq_align_set *>
-                                           (&*((*result)->GetSeqAlign())));
-            CSeq_align_set::Tdata & align_list = align->Set();
-            align_list.sort(s_CompareSeqAlign);
+        CRef<CSeq_align_set> align_D, align_J;
 
-            ENa_strand strand = (annot->m_MinusStrand) ? eNa_strand_minus : eNa_strand_plus;
+        /* preprocess D */
+        CSearchResults& res_D = (*results_D)[iq];
+        if (res_D.HasAlignments()) {
+            align_D.Reset(const_cast<CSeq_align_set *>
+                                           (&*(res_D.GetSeqAlign())));
+            CSeq_align_set::Tdata & align_list = align_D->Set();
+            CSeq_align_set::Tdata::iterator it = align_list.begin();
+            /* chain type test */
+            if (q_ct!="VH" && q_ct!="N/A") {
+                while (it != align_list.end()) {
+                    it = align_list.erase(it);
+                }
+            }
+            /* strand test */
             bool strand_found = false;
-            ITERATE(CSeq_align_set::Tdata, itt, align_list) {
-                if ((*itt)->GetSeqStrand(0) == strand) {
+            ITERATE(CSeq_align_set::Tdata, it, align_list) {
+                if ((*it)->GetSeqStrand(0) == q_st) {
                     strand_found = true;
                     break;
                 }
             }
-            CSeq_align_set::Tdata::iterator it = align_list.begin();
             if (strand_found) {
+                it = align_list.begin();
                 while (it != align_list.end()) {
-                    if ((*it)->GetSeqStrand(0) != strand) {
+                    if ((*it)->GetSeqStrand(0) != q_st) {
                         it = align_list.erase(it);
-                    } else {
-                        ++it;
-                    }
+                    } else ++it;
                 }
             }
-        
-            int V_end = (annot->m_MinusStrand) ? 
-                         annot->m_GeneInfo[0] : annot->m_GeneInfo[1] - 1;
-            int J_begin = annot->m_GeneInfo[4];
-            int J_end = annot->m_GeneInfo[5] - 1;
-
-            bool annotated = false;
+            /* v end test */
             it = align_list.begin();
             while (it != align_list.end()) {
-                
-                bool keep = (qct=="VH" || qct=="N/A");
+                bool keep = false;
+                int q_ds = (*it)->GetSeqStart(0);
+                int q_de = (*it)->GetSeqStop(0);
+                if (q_ms) keep = (q_de >= q_ve - 30 && q_ds <= q_ve);
+                else      keep = (q_ds <= q_ve + 30 && q_de >= q_ve);
+                if (!keep) it = align_list.erase(it);
+                else ++it;
+            }
+            /* sort according to score */
+            align_list.sort(s_CompareSeqAlign);
+        }
 
-                if (keep) {
-                    if (annot->m_MinusStrand) {
-                        if ((int)(*it)->GetSeqStop(0)   <  V_end - 30 ||
-                            (int)(*it)->GetSeqStart(0)  >  V_end) keep = false;
-                        if (J_begin>=0 &&
-                            ((int)(*it)->GetSeqStart(0) <  J_begin + 3 ||
-                             (int)(*it)->GetSeqStop(0)  <  J_end + 3)) keep = false;
-                    } else {
-                        if ((int)(*it)->GetSeqStart(0)  >  V_end + 30 ||
-                            (int)(*it)->GetSeqStop(0)   <  V_end) keep = false;
-
-                        if (J_begin>=0 &&
-                            ((int)(*it)->GetSeqStart(0) >  J_begin - 3 ||
-                             (int)(*it)->GetSeqStop(0)  >  J_end - 3)) keep = false; 
+        /* preprocess J */
+        CSearchResults& res_J = (*results_J)[iq];
+        if (res_J.HasAlignments()) {
+            align_J.Reset(const_cast<CSeq_align_set *>
+                                           (&*(res_J.GetSeqAlign())));
+            CSeq_align_set::Tdata & align_list = align_J->Set();
+            CSeq_align_set::Tdata::iterator it = align_list.begin();
+            while (it != align_list.end()) {
+                bool keep = true;
+                /* chain type test */
+                if (q_ct != "N/A") {
+                    string sid = (*it)->GetSeq_id(1).AsFastaString();
+                    if (sid.substr(0, 4) == "lcl|") sid = sid.substr(4, sid.length());
+                    string sct = m_AnnotationInfo.GetChainType(sid);
+                    if (sct != "N/A") {
+                        if (q_ct == "VH" && sct != "JH" ||
+                            q_ct != "VH" && sct == "JH") keep = false;
                     }
                 }
+                /* strand test */
+                if ((*it)->GetSeqStrand(0) != q_st) keep = false;
+                /* subject start test */
+                if ((*it)->GetSeqStart(1) > 32) keep = false;
+                /* v end test */
+                int q_js = (*it)->GetSeqStart(0);
+                int q_je = (*it)->GetSeqStop(0);
+                if (q_ms) if (q_je < q_ve - 60 || q_js > q_ve) keep = false;
+                else      if (q_js > q_ve + 60 || q_je < q_ve) keep = false;
+                /* remove failed seq_align */
+                if (!keep) it = align_list.erase(it);
+                else ++it;
+            }
+            /* sort according to score */
+            align_list.sort(s_CompareSeqAlign);
+        }
 
-                if (!keep) {
-                     it = align_list.erase(it);
-                } else {
-                     if (!annotated) {
-                         annot->m_GeneInfo[2] = (*it)->GetSeqStart(0);
-                         annot->m_GeneInfo[3] = (*it)->GetSeqStop(0)+1;
-                         annotated = true;
-                     }
-                     ++it;
+        /* which one to keep, D or J? */
+        if (align_D.NotEmpty() && !align_D->IsEmpty() &&
+            align_J.NotEmpty() && !align_J->IsEmpty()) {
+            CSeq_align_set::Tdata & al_D = align_D->Set();
+            CSeq_align_set::Tdata & al_J = align_J->Set();
+            CSeq_align_set::Tdata::iterator it;
+            bool keep_J = s_CompareSeqAlign(*(al_J.begin()), *(al_D.begin()));
+            if (keep_J) {
+                it = al_D.begin();
+                while (it != al_D.end()) {
+                    if (s_DJNotCompatible(**it, **(al_J.begin()), q_ms)) {
+                        it = al_D.erase(it);
+                    } else ++it;
+                }
+            } else {
+                it = al_J.begin();
+                while (it != al_J.end()) {
+                    if (s_DJNotCompatible(**(al_D.begin()), **it, q_ms)) {
+                        it = al_J.erase(it);
+                    } else ++it;
                 }
             }
         }
+                
+        /* annotate D */    
+        if (align_D.NotEmpty() && !align_D->IsEmpty()) {
+            const CSeq_align & it = **(align_D->Get().begin());
+            (*annot)->m_GeneInfo[2] = it.GetSeqStart(0);
+            (*annot)->m_GeneInfo[3] = it.GetSeqStop(0)+1;
+        }
+            
+        /* annotate J */    
+        if (align_J.NotEmpty() && !align_J->IsEmpty()) {
+            const CSeq_align & it = **(align_J->Get().begin());
+            (*annot)->m_GeneInfo[4] = it.GetSeqStart(0);
+            (*annot)->m_GeneInfo[5] = it.GetSeqStop(0)+1;
+            string sid = it.GetSeq_id(1).AsFastaString();
+            if (sid.substr(0, 4) == "lcl|") sid = sid.substr(4, sid.length());
+            int frame_offset = m_AnnotationInfo.GetFrameOffset(sid);
+            if (frame_offset >= 0) {
+                int frame_adj = (it.GetSeqStart(1) - frame_offset) % 3 + 3;
+                (*annot)->m_FrameInfo[1] = (q_ms) ?
+                                           it.GetSeqStop(0)  + frame_adj 
+                                         : it.GetSeqStart(0) - frame_adj;
+            } 
+        }
+     
+        /* next set of results */
+        ++iq;
     }
 };
 

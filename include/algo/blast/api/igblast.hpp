@@ -246,13 +246,10 @@ private:
     void x_AnnotateV(CRef<CSearchResultSet>        &results,
                      vector<CRef <CIgAnnotation> > &annot);
 
-    /// Annotate the D genes based on blast results
-    void x_AnnotateD(CRef<CSearchResultSet>        &results,
-                     vector<CRef <CIgAnnotation> > &annot);
-
-    /// Annotate the J genes based on blast results
-    void x_AnnotateJ(CRef<CSearchResultSet>        &results,
-                     vector<CRef <CIgAnnotation> > &annot);
+    /// Annotate the D and J genes based on blast results
+    void x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
+                      CRef<CSearchResultSet>        &results_J,
+                      vector<CRef <CIgAnnotation> > &annot);
 
     /// Annotate the query chaintype and domains based on blast results
     void x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results, 
