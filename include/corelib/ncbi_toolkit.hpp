@@ -52,6 +52,7 @@ namespace ncbi {
 
 class  INcbiToolkit_LogHandler;
 struct SDiagMessage;
+class  CNcbiApplication;
 
 #if defined(_T_XSTRING)
 typedef TXChar NcbiToolkit_TXChar;
@@ -188,6 +189,17 @@ public:
     virtual void Post(const CNcbiToolkit_LogMessage& msg) = 0;
 };
 
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// Provide means of creating custom CNcbiApplication object
+///
+
+typedef CNcbiApplication* ( *FNcbiApplicationFactory)(void);
+
+void NCBITOOLKIT_EXPORT NcbiToolkit_RegisterNcbiApplicationFactory
+    (FNcbiApplicationFactory& f);
 
 
 } /* namespace ncbi */

@@ -144,6 +144,17 @@ public:
     }
 };
 
+/////////////////////////////////////////////////////////////////////////////
+// CNcbiApplication factory
+
+CNcbiApplication* DefaultFactory(void)
+{
+    return new CNcbiToolkitImpl_Application();
+}
+
+typedef CNcbiApplication* ( *FNcbiApplicationFactory)(void);
+static FNcbiApplicationFactory s_fAppFactory = DefaultFactory;
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -177,7 +188,6 @@ void CNcbiToolkitImpl_DiagHandler::Post(const SDiagMessage& msg)
 }
 
 
-
 /////////////////////////////////////////////////////////////////////////////
 // CNcbiToolkit (singleton)
 
@@ -191,7 +201,7 @@ public:
     ~CNcbiToolkit(void);
 
 private:
-    auto_ptr<CNcbiToolkitImpl_Application>  m_App;
+    auto_ptr<CNcbiApplication>              m_App;
     auto_ptr<CNcbiToolkitImpl_DiagHandler>  m_DiagHandler;
 };
 
@@ -204,9 +214,11 @@ CNcbiToolkit::CNcbiToolkit(int                  argc,
     if (log_handler) {
         m_DiagHandler.reset(new CNcbiToolkitImpl_DiagHandler(log_handler));
     }
-    m_App.reset(new CNcbiToolkitImpl_Application);
-    m_App->AppMain(argc, argv, envp,
-                   m_DiagHandler.get() ? eDS_User : eDS_Default);
+    if (s_fAppFactory) {
+        m_App.reset( s_fAppFactory() );
+        m_App->AppMain(argc, argv, envp,
+                       m_DiagHandler.get() ? eDS_User : eDS_Default);
+    }
 }
 
 
@@ -250,6 +262,12 @@ void NcbiToolkit_Fini(void)
         delete s_NcbiToolkit;
         s_NcbiToolkit = kNcbiToolkit_Finalized;
     }
+}
+
+void NcbiToolkit_RegisterNcbiApplicationFactory(FNcbiApplicationFactory& f)
+{
+    CFastMutexGuard mtx_guard(s_NcbiToolkit_Mtx);
+    s_fAppFactory = f;
 }
 
 END_NCBI_SCOPE
