@@ -381,7 +381,7 @@ static void s_SetQual(CSeq_feat::TQual& qual_list,
 {
     CRef<CGb_qual> result(new CGb_qual);
     result->SetQual(qual);
-    string s = Convert(val);
+    string s = Convert(val).operator string();
     result->SetVal(s);
     qual_list.push_back(result);
 }
