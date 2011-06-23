@@ -180,8 +180,6 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
     }
     item.Reset( new CEndSectionItem(ctx) );    
     ItemOS() << item;
-    item.Reset( new CHtmlAnchorItem(ctx, "slash") );
-    ItemOS() << item;
 }
 
 

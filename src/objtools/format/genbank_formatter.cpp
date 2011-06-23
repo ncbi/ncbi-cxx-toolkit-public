@@ -89,10 +89,74 @@ CGenbankFormatter::CGenbankFormatter(void) :
 //
 // END SECTION
 
+static
+void s_PrintLocAsJavascriptArray( 
+    CBioseqContext &ctx,
+    IFlatTextOStream& text_os,
+    const CSeq_loc &loc )
+{
+    CBioseq_Handle &bioseq_handle = ctx.GetHandle();
+
+    CNcbiOstrstream result; // will hold complete printed location
+    result << "            [";
+
+    // special case for when the location is just a point with "lim tr" 
+    // ( This imitates C.  Not sure why C does this. )
+    if( loc.IsPnt() && 
+        loc.GetPnt().IsSetFuzz() && 
+        loc.GetPnt().GetFuzz().IsLim() &&
+        loc.GetPnt().GetFuzz().GetLim() == CInt_fuzz::eLim_tr ) 
+    {
+        const TSeqPos point = loc.GetPnt().GetPoint();
+        // Note the "+2"
+        result << "[" << (point+1) << ", " << (point+2) << "]]";
+        text_os.AddLine( (string)CNcbiOstrstreamToString(result), 0, 
+            IFlatTextOStream::eAddNewline_No );
+        return;
+    }
+
+    bool is_first = true;
+    ITERATE( CSeq_loc, loc_piece_iter, loc ) {
+        if( ! bioseq_handle || ! bioseq_handle.IsSynonym(loc_piece_iter.GetSeq_id()) ) {
+            continue;
+        }
+
+        if( ! is_first ) {
+            result << ",";
+        }
+
+        TSeqPos from = loc_piece_iter.GetRange().GetFrom();
+        TSeqPos to = loc_piece_iter.GetRange().GetTo();
+        if( (to == kMax_UInt || to == (kMax_UInt-1)) && bioseq_handle.CanGetInst_Length() ) {
+            to = (bioseq_handle.GetInst_Length() - 1);
+        }
+        result << "[" <<  (from + 1) << ", " << (to + 1) << "]";
+
+        is_first = false;
+    }
+    result << "]";
+    text_os.AddLine( (string)CNcbiOstrstreamToString(result), 0, 
+        IFlatTextOStream::eAddNewline_No );
+}
+
+static
+string s_GetAccessionWithoutPeriod( 
+    const CBioseqContext &ctx )
+{
+    string accn = ctx.GetAccession();
+    SIZE_TYPE period_pos = accn.find_first_of(".");
+    if( period_pos != NPOS ) {
+        accn.resize(period_pos);
+    }
+
+    return accn;
+}
+
 void CGenbankFormatter::EndSection
 (const CEndSectionItem& end_item,
  IFlatTextOStream& text_os)
 {
+    // print the double-slashes
     bool bHtml = GetContext().GetConfig().DoHTML();
     list<string> l;
     if ( bHtml ) {
@@ -103,8 +167,63 @@ void CGenbankFormatter::EndSection
     }
     text_os.AddParagraph(l, NULL);
 
-    // Need to reset counts between records
-    m_FeatureKeyToCountMap.clear();
+    // print the final javascript section
+    if( bHtml ) {
+        CHtmlAnchorItem( *end_item.GetContext(), "slash").Format( *this, text_os );
+
+        text_os.AddLine("<script type=\"text/javascript\">");
+        text_os.AddLine("if (typeof(oData) == \"undefined\") oData = [];");
+        text_os.AddLine("oData.push (");
+        text_os.AddLine("{");
+
+        text_os.AddLine("gi:" + NStr::IntToString(end_item.GetContext()->GetGI()) + ",");
+        text_os.AddLine("acc:\"" + s_GetAccessionWithoutPeriod(*end_item.GetContext()) + "\",");
+        text_os.AddLine("features:");
+        text_os.AddLine("  {");
+
+        // add data for each feature
+        ITERATE( TFeatureKeyToLocMap, feat_to_loc_iter, m_FeatureKeyToLocMap ) {
+            const string &feat_key = feat_to_loc_iter->first;
+            const TSeqLocConstRefVec &loc_vec = feat_to_loc_iter->second;
+            _ASSERT( ! loc_vec.empty() );
+
+            // don't print "source" items
+            if( feat_key == "source" ) {
+                continue;
+            }
+            
+            // close previous, if any
+            if( feat_to_loc_iter != m_FeatureKeyToLocMap.begin() ) {
+                text_os.AddLine("    ],");
+            }
+
+            // print loc of all features of that type
+            text_os.AddLine("    \"" + feat_key + "\":[");
+            ITERATE( TSeqLocConstRefVec, loc_iter, loc_vec ) {
+                // close previous
+                if( loc_iter != loc_vec.begin() ) {
+                    text_os.AddLine(",");
+                }
+                s_PrintLocAsJavascriptArray( *end_item.GetContext(), text_os, **loc_iter );
+            }
+
+            text_os.AddLine(""); // endline for last location
+        }
+
+        // close up opened Javascript brackets, if there
+        // were any features printed
+        if( ! m_FeatureKeyToLocMap.empty() &&
+            ! ( m_FeatureKeyToLocMap.size() == 1 && m_FeatureKeyToLocMap.begin()->first == "source" ) ) {
+            text_os.AddLine("    ]");
+        }
+        text_os.AddLine("  }");
+        text_os.AddLine("}");
+        text_os.AddLine(")");
+        text_os.AddLine("</script>");
+    }
+
+    // reset counts between records
+    m_FeatureKeyToLocMap.clear();
 }
 
 
@@ -206,10 +325,12 @@ void CGenbankFormatter::FormatDefline
  IFlatTextOStream& text_os)
 {
     list<string> l;
-    Wrap(l, "DEFINITION", defline.GetDefline());
+    string defline_text = defline.GetDefline();
     if( GetContext().GetConfig().DoHTML() ) {
-        TryToSanitizeHtmlList(l);
+        TryToSanitizeHtml(defline_text);
     }
+    Wrap(l, "DEFINITION", defline_text);
+    
     text_os.AddParagraph(l, defline.GetObject());
 }
 
@@ -373,8 +494,13 @@ void CGenbankFormatter::x_FormatSourceLine
     if ( !source.GetCommon().empty() ) {
         source_line << prefix << source.GetCommon() << ")";
     }
+    string line = CNcbiOstrstreamToString(source_line);
     
-    Wrap(l, GetWidth(), "SOURCE", CNcbiOstrstreamToString(source_line));
+    if( source.GetContext()->Config().DoHTML() ) {
+        TryToSanitizeHtml(line);
+    }
+    Wrap(l, GetWidth(), "SOURCE", line, 
+        ePara, source.GetContext()->Config().DoHTML() );
 }
 
 
@@ -395,7 +521,9 @@ static string s_GetHtmlTaxname(const CSourceItem& source)
         return source.GetTaxname();
     }
 
-    return CNcbiOstrstreamToString(link);
+    string link_str = CNcbiOstrstreamToString(link);
+    TryToSanitizeHtml(link_str);
+    return link_str;
 }
 
 
@@ -785,8 +913,7 @@ CGenbankFormatter::x_LocusHtmlPrefix( string &first_line, CBioseqContext& ctx )
 
                 if ( hist.CanGetReplaced_by() ) {
                     const CSeq_hist::TReplaced_by& r = hist.GetReplaced_by();
-                    if ( r.CanGetDate()  &&  !r.GetIds().empty() && 
-                        ! s_GiInCSeq_hist_ids( ctx.GetGI(), r.GetIds()  ) ) 
+                    if ( r.CanGetDate()  &&  !r.GetIds().empty() ) 
                     {
                         has_comment = true;
                     }
@@ -794,8 +921,7 @@ CGenbankFormatter::x_LocusHtmlPrefix( string &first_line, CBioseqContext& ctx )
 
                 if ( hist.IsSetReplaces()  &&  !ctx.Config().IsModeGBench() ) {
                     const CSeq_hist::TReplaces& r = hist.GetReplaces();
-                    if ( r.CanGetDate()  &&  !r.GetIds().empty() &&
-                        ! s_GiInCSeq_hist_ids( ctx.GetGI(), r.GetIds() ) ) 
+                    if ( r.CanGetDate()  &&  !r.GetIds().empty() ) 
                     {
                         has_comment = true;
                     }
@@ -868,10 +994,15 @@ CGenbankFormatter::x_LocusHtmlPrefix( string &first_line, CBioseqContext& ctx )
 
 string 
 CGenbankFormatter::x_GetFeatureSpanStart( 
-    const char * strKey, CBioseqContext& ctx )
+    const char * strKey, 
+    const CSeq_loc &feat_loc,
+    CBioseqContext& ctx )
 {
-    // determine the count for this type
-    const int feat_type_count = (m_FeatureKeyToCountMap[strKey]++);
+    // determine the count for this type, and push back
+    // the new location
+    TSeqLocConstRefVec &loc_vec = m_FeatureKeyToLocMap[strKey];
+    const int feat_type_count = loc_vec.size();
+    loc_vec.push_back( CConstRef<CSeq_loc>( &feat_loc ) );
 
     CNcbiOstrstream div_tag;
     div_tag << "<span id=\"feature_" << ctx.GetGI()
@@ -1087,7 +1218,7 @@ string s_GetLinkFeatureKey(
         strLocation += NStr::IntToString( iFrom );
         strLocation += "&amp;to=";
         strLocation += NStr::IntToString( iTo );
-    } else {
+    } else if(strRawKey != "Precursor") {
         // TODO: this fails on URLs that require "?itemID=" (e.g. almost any, such as U54469)
         strLocation += "?itemid=TBD";
     }
@@ -1139,7 +1270,7 @@ void CGenbankFormatter::FormatFeature
 
     // write <div...> in HTML mode
     if( bHtml && f.GetContext()->Config().IsModeEntrez() ) {
-        *l.begin() = x_GetFeatureSpanStart(strKey.c_str(), *f.GetContext() ) + *l.begin();
+        *l.begin() = x_GetFeatureSpanStart(strKey.c_str(), f.GetLoc(),  *f.GetContext() ) + *l.begin();
     }
 
     ITERATE (vector<CRef<CFormatQual> >, it, quals ) {
@@ -1531,6 +1662,9 @@ void CGenbankFormatter::FormatDBSource
             tag.erase();
         }
         if ( !l.empty() ) {
+            if( dbs.GetContext()->Config().DoHTML() ) {
+                TryToSanitizeHtmlList(l);
+            }
             text_os.AddParagraph(l, dbs.GetObject());
         }
     }        
@@ -1687,7 +1821,10 @@ void CGenbankFormatter::FormatGap(const CGapItem& gap, IFlatTextOStream& text_os
 
     Wrap(l, "gap", loc, eFeat);
     if( bHtml && gap.GetContext()->Config().IsModeEntrez() ) {
-        *l.begin() = x_GetFeatureSpanStart("gap", *gap.GetContext()) + *l.begin();
+        CRef<CSeq_loc> gapLoc( new CSeq_loc );
+        gapLoc->SetInt().SetFrom(gapStart);
+        gapLoc->SetInt().SetTo(gapEnd);
+        *l.begin() = x_GetFeatureSpanStart("gap", *gapLoc, *gap.GetContext()) + *l.begin();
     }
 
     // size zero gaps indicate non-consecutive residues

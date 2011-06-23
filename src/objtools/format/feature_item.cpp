@@ -5801,7 +5801,9 @@ static string s_GetSpecimenVoucherText(
     if( voucher_info_ref ) {
         CNcbiOstrstream text;
 
-        text << "<acronym title=\"" << voucher_info_ref->m_InstFullName << "\" class=\"voucher\">"
+        text << "<acronym title=\"" 
+             << NStr::Replace(voucher_info_ref->m_InstFullName, "\"", "&quot;") 
+             << "\" class=\"voucher\">"
              << inst << "</acronym>"
              << ":"
              << "<a href=\"" << *voucher_info_ref->m_Links;

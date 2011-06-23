@@ -65,7 +65,7 @@ class CDBSourceItem;
 class CBioseqContext;
 class COriginItem;
 class CGapItem;
-
+class CSeq_loc;
 
 
 class NCBI_FORMAT_EXPORT CGenbankFormatter : public CFlatItemFormatter
@@ -117,13 +117,19 @@ private:
 
     // HTML
     void   x_LocusHtmlPrefix( std::string &first_line,      CBioseqContext& ctx );
-    string x_GetFeatureSpanStart( const char * strKey, CBioseqContext& ctx );
+    string x_GetFeatureSpanStart( const char * strKey, 
+        const CSeq_loc &feat_loc, 
+        CBioseqContext& ctx );
 
     // processing data
     unsigned int m_uFeatureCount;
 
-    typedef std::map<string, int> TFeatureKeyToCountMap;
-    TFeatureKeyToCountMap m_FeatureKeyToCountMap;
+    // HTML data
+
+    // used for ids in <span...> tags
+    typedef std::vector< CConstRef<CSeq_loc> > TSeqLocConstRefVec;
+    typedef std::map< std::string, TSeqLocConstRefVec > TFeatureKeyToLocMap;
+    TFeatureKeyToLocMap m_FeatureKeyToLocMap;
 };
 
 

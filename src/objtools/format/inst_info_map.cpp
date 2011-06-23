@@ -148,7 +148,15 @@ CInstInfoMap::GetInstitutionVoucherInfo(
     typedef CStaticArrayMap<const string, TVoucherInfoRef, PCase> TVoucherInfoMap;
     DEFINE_STATIC_ARRAY_MAP(TVoucherInfoMap, sc_VoucherInfoMap, sc_voucher_info_map);
 
-    TVoucherInfoMap::const_iterator iter = sc_VoucherInfoMap.find( inst_abbrev );
+    TVoucherInfoMap::const_iterator iter;
+    SIZE_TYPE inst_first_space_pos = inst_abbrev.find_first_of(" ");
+    if( NPOS == inst_first_space_pos ) {
+        iter = sc_VoucherInfoMap.find( inst_abbrev );
+    } else {
+        // space in inst_abbrev, so lookup using part before the space
+        iter = sc_VoucherInfoMap.find( inst_abbrev.substr(0, inst_first_space_pos) );
+    }
+
     if( iter == sc_VoucherInfoMap.end() ) {
         // can't find it
         return TVoucherInfoRef();

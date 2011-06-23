@@ -209,6 +209,14 @@ void CFlatGatherer::Gather(CFlatFileContext& ctx, CFlatItemOStream& os) const
 
     CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext( new CTopLevelSeqEntryContext(ctx.GetEntry()) );
 
+    // See if there even are any Bioseqs to print
+    // (If we don't do this test, we might print a CStartItem
+    // and CEndItem with nothing in between )
+    CGather_Iter seq_iter(ctx.GetEntry(), Config());
+    if( ! seq_iter ) {
+        return;
+    }
+
     CConstRef<IFlatItem> item;
     item.Reset( new CStartItem() );
     os << item;
