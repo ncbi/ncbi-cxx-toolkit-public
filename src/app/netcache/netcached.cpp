@@ -352,7 +352,7 @@ CNetCacheServer::x_ReadServerParams(void)
             ERR_POST(Critical << "Cannot set server parameters: " << ex);
             return false;
         }
-        s_TaskPool = new CStdPoolOfThreads(serv_params.max_threads, 1000000000);
+        s_TaskPool = new CStdPoolOfThreads(serv_params.max_threads, serv_params.max_connections);
 
         m_DebugMode = reg.GetBool(kNCReg_ServerSection, "debug_mode", false);
 
@@ -385,6 +385,12 @@ CNetCacheServer::CNetCacheServer(void)
 CNetCacheServer::~CNetCacheServer()
 {}
 
+void
+CNetCacheServer::Init(void)
+{
+    INCBlockedOpListener::BindToThreadPool(GetThreadPool());
+}
+
 bool
 CNetCacheServer::Initialize(bool do_reinit)
 {
@@ -393,7 +399,6 @@ CNetCacheServer::Initialize(bool do_reinit)
 
     if (!x_ReadServerParams())
         return false;
-    INCBlockedOpListener::BindToThreadPool(s_TaskPool);
 
     if (!CNCDistributionConf::Initialize(m_CtrlPort))
         return false;
@@ -1535,10 +1540,17 @@ CNetCacheServer::IsDebugMode(void)
     return g_NetcacheServer  &&  g_NetcacheServer->m_DebugMode;
 }
 
-void
+bool
 CNetCacheServer::AddDeferredTask(CStdRequest* task)
 {
-    s_TaskPool->AcceptRequest(CRef<CStdRequest>(task));
+    try {
+        s_TaskPool->AcceptRequest(CRef<CStdRequest>(task));
+        return true;
+    }
+    catch (CBlockingQueueException& ex) {
+        ERR_POST(Critical << "Queue for deferred tasks is full: " << ex);
+        return false;
+    }
 }
 
 

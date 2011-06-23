@@ -1652,7 +1652,8 @@ CNCMessageHandler::x_WaitForBlobAccess(void)
                                     this, x_GetCurSlotServers(), m_Quorum,
                                     false, m_CmdCtx, m_BlobKey, m_LatestExist,
                                     m_LatestBlobSum, m_LatestSrvId);
-            CNetCacheServer::AddDeferredTask(m_DeferredTask);
+            if (!CNetCacheServer::AddDeferredTask(m_DeferredTask))
+                m_DeferredDone = true;
             x_SetState(eWaitForDeferredTask);
         }
         else {
@@ -1958,7 +1959,8 @@ CNCMessageHandler::x_FinishReadingBlob(void)
                                                     m_Quorum, m_CmdCtx,
                                                     m_BlobSlot, m_BlobKey,
                                                     event_rec_no);
-            CNetCacheServer::AddDeferredTask(m_DeferredTask);
+            if (!CNetCacheServer::AddDeferredTask(m_DeferredTask))
+                m_DeferredDone = true;
             x_SetState(eWaitForDeferredTask);
             m_CmdProcessor = &CNCMessageHandler::x_DoCmd_NoOp;
         }
@@ -2624,9 +2626,9 @@ CNCMessageHandler::x_DoCmd_Health(void)
     m_SockBuffer.WriteMessage("OK:", "HEALTH_COEFF=1");
     m_SockBuffer.WriteMessage("OK:", "UP_TIME=" + NStr::IntToString(g_NetcacheServer->GetUpTime()));
     m_SockBuffer.WriteMessage("OK:", string("ACCEPT_CLIENTS=") + (CNetCacheServer::IsOpenToClients()? "yes": "no"));
-    //m_SockBuffer.WriteMessage("OK:", "MEM_LIMIT=" + NStr::UInt8ToString(CNCMemManager::GetMemoryLimit()));
-    //m_SockBuffer.WriteMessage("OK:", "MEM_USED=" + NStr::UInt8ToString(CNCMemManager::GetMemoryUsed()));
-    m_SockBuffer.WriteMessage("OK:", "DISK_CACHE=" + NStr::UInt8ToString(CNCMemManager::GetMemoryLimit()));
+    m_SockBuffer.WriteMessage("OK:", "MEM_LIMIT=" + NStr::UInt8ToString(CNCMemManager::GetMemoryLimit()));
+    m_SockBuffer.WriteMessage("OK:", "MEM_USED=" + NStr::UInt8ToString(CNCMemManager::GetMemoryUsed()));
+    //m_SockBuffer.WriteMessage("OK:", "DISK_CACHE=" + NStr::UInt8ToString(CNCMemManager::GetMemoryLimit()));
     m_SockBuffer.WriteMessage("OK:", "DISK_FREE=" + NStr::UInt8ToString(g_NetcacheServer->GetDiskFree()));
     m_SockBuffer.WriteMessage("OK:", "DISK_USED=" + NStr::UInt8ToString(g_NCStorage->GetDBSize()));
     m_SockBuffer.WriteMessage("OK:", "N_DB_FILES=" + NStr::IntToString(g_NCStorage->GetNDBFiles()));
@@ -2939,7 +2941,8 @@ CNCMessageHandler::x_DoCmd_HasBlob(void)
                                 this, x_GetCurSlotServers(), m_Quorum, true,
                                 m_CmdCtx, m_BlobKey, m_LatestExist,
                                 m_LatestBlobSum, m_LatestSrvId);
-        CNetCacheServer::AddDeferredTask(m_DeferredTask);
+        if (!CNetCacheServer::AddDeferredTask(m_DeferredTask))
+            m_DeferredDone = true;
         x_SetState(eWaitForDeferredTask);
         m_CmdProcessor = &CNCMessageHandler::x_DoCmd_HasBlobImpl;
         return true;

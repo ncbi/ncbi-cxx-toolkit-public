@@ -534,6 +534,15 @@ CNCStat::CollectAllStats(CNCStat& stat)
 }
 
 void
+CNCStat::PrintCntConnections(void)
+{
+    CNCStat stat;
+    CollectAllStats(stat);
+    LOG_POST("conns_cnt=" << (stat.m_OpenedConns - stat.m_ConnSpan.GetCount())
+             << ", active_cmds=" << stat.GetProgressCmds());
+}
+
+void
 CNCStat::Print(CPrintTextProxy& proxy)
 {
     CNCStat stat;

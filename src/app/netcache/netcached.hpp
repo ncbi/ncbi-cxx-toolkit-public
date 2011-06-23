@@ -212,7 +212,7 @@ public:
     static void MayOpenToClients(void);
     static void UpdateLastRecNo(void);
 
-    static void AddDeferredTask(CStdRequest* task);
+    static bool AddDeferredTask(CStdRequest* task);
 
     static bool IsCachingComplete(void);
     static bool IsDebugMode(void);
@@ -239,6 +239,9 @@ private:
 
         virtual ~SSpecParamsSet(void);
     };
+
+
+    virtual void Init(void);
 
 
     static ENCPeerFailure x_WriteBlobToPeer(Uint8 server_id,

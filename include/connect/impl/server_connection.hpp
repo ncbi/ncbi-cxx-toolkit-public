@@ -64,8 +64,8 @@ public:
     virtual void Passivate(void) { }
 };
 
-class CServer_Connection : public CSocket, // CPollable
-                           public IServer_ConnectionBase
+class CServer_Connection : public IServer_ConnectionBase,
+                           public CSocket // CPollable
 {
 public:
     CServer_Connection(IServer_ConnectionHandler* handler)
@@ -91,8 +91,8 @@ private:
     bool m_Open;
 } ;
 
-class CServer_Listener : public CListeningSocket, // CPollable
-                         public IServer_ConnectionBase
+class CServer_Listener : public IServer_ConnectionBase,
+                         public CListeningSocket // CPollable
 {
 public:
     CServer_Listener(IServer_ConnectionFactory* factory, unsigned short port)

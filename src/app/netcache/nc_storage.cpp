@@ -1730,6 +1730,8 @@ CNCBlobStorage::x_DoBackgroundWork(void)
         ctx->SetRequestStatus(CNCMessageHandler::eStatus_OK);
         m_GCRead = m_GCDeleted = 0;
 
+        //CNCStat::PrintCntConnections();
+
         if (!m_Stopped) {
             x_GC_CollectFilesStats();
 

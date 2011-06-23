@@ -202,6 +202,7 @@ public:
     static void CollectAllStats(CNCStat& stat);
     /// Print statistics to the given proxy object
     static void Print(CPrintTextProxy& proxy);
+    static void PrintCntConnections(void);
 
 private:
     friend class CNCStat_Getter;
