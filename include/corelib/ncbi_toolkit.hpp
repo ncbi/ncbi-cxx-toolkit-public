@@ -33,9 +33,8 @@
 
 /// @file ncbi_toolkit.hpp
 ///
-/// CNcbiToolkit and related classes - an easy way to initialize
-/// NCBI C++ Toolkit internals to use the Toolkit's APIs from other
-/// application frameworks.
+/// This API provides an easy way to initialize NCBI C++ Toolkit internals
+/// to use the Toolkit from other application frameworks.
 ///
 
 /** @addtogroup AppFramework
@@ -43,40 +42,10 @@
  * @{
  */
 
+#include "impl/ncbi_toolkit_impl.hpp"
 
 namespace ncbi {
 
-
-/////////////////////////////////////////////////////////////////////////////
-// fwd decl
-
-class  INcbiToolkit_LogHandler;
-struct SDiagMessage;
-class  CNcbiApplication;
-
-#if defined(_T_XSTRING)
-typedef TXChar NcbiToolkit_TXChar;
-#else
-#  if defined(_MSC_VER) && defined(_UNICODE)
-typedef wchar_t NcbiToolkit_TXChar;
-#  else
-typedef char   NcbiToolkit_TXChar;
-#  endif
-#endif
-
-#if defined(NCBI_XNCBI_EXPORT)
-#  define NCBITOOLKIT_EXPORT NCBI_XNCBI_EXPORT
-#else
-#  if defined(_MSC_VER) && defined(_USRDLL)
-#    ifdef NCBI_XNCBI_EXPORTS
-#      define NCBITOOLKIT_EXPORT __declspec(dllexport)
-#    else
-#      define NCBITOOLKIT_EXPORT __declspec(dllimport)
-#    endif
-#  else
-#    define NCBITOOLKIT_EXPORT
-#  endif
-#endif
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -95,15 +64,15 @@ typedef char   NcbiToolkit_TXChar;
 ///   a null pointer (the default) corresponds to the standard system
 ///   array (environ on most Unix platforms).
 /// @param log_handler
-///   Handler of diagnostic messages that are emitted by the C++ Toolkit code
+///   Handler for diagnostic messages that are emitted by the C++ Toolkit code
 /// @sa
 ///   INcbiToolkit_LogHandler, NcbiToolkit_Fini
 
-void NCBITOOLKIT_EXPORT NcbiToolkit_Init
+void NCBI_TOOLKIT_EXPORT NcbiToolkit_Init
    (int                                argc,
-    const NcbiToolkit_TXChar* const*   argv,
-    const NcbiToolkit_TXChar* const*   envp        = NULL,
-          INcbiToolkit_LogHandler*     log_handler = NULL);
+    const TNcbiToolkit_XChar* const*   argv,
+    const TNcbiToolkit_XChar* const*   envp        = NULL,
+    INcbiToolkit_LogHandler*           log_handler = NULL);
 
 
 
@@ -113,7 +82,7 @@ void NCBITOOLKIT_EXPORT NcbiToolkit_Init
 ///
 /// @sa NcbiToolkit_Init
 
-void NCBITOOLKIT_EXPORT NcbiToolkit_Fini(void);
+void NCBI_TOOLKIT_EXPORT NcbiToolkit_Fini(void);
 
 
 
@@ -121,40 +90,45 @@ void NCBITOOLKIT_EXPORT NcbiToolkit_Fini(void);
 ///
 /// Logging message
 ///
-/// Diagnostic message from the NCBI C++ Toolkit
+/// Diagnostic message that comes from the NCBI C++ Toolkit to the log handler
 /// @sa
 ///   INcbiToolkit_LogHandler
 
 
-class NCBITOOLKIT_EXPORT CNcbiToolkit_LogMessage
+class NCBI_TOOLKIT_EXPORT CNcbiToolkit_LogMessage
 {
 public:
     /// Log message severity
     enum ESeverity {
-        eLogMsg_Info = 0, ///< Informational message
-        eLogMsg_Warning,  ///< Warning message
-        eLogMsg_Error,    ///< Error message
-        eLogMsg_Critical, ///< Critical error message
-        eLogMsg_Fatal,    ///< Fatal error
+        eInfo = 0, ///< Informational message
+        eWarning,  ///< Warning message
+        eError,    ///< Error message
+        eCritical, ///< Critical error message
+        eFatal,    ///< Fatal error
         //
-        eLogMsg_Trace,    ///< Trace message
+        eTrace,    ///< Trace message
     };
 
-    /// Get Log message string the way it is formatted by the Toolkit
+    /// Get the message the way it is formatted by the Toolkit
     operator std::string(void) const;
 
     /// Get text part of the message
-    std::string   Message(void) const;
+    std::string Message(void) const;
+
     /// Get message severity
     ESeverity Severity(void) const;
+
     /// Get error code
-    int      ErrCode(void) const;
+    int ErrCode(void) const;
+
     /// Get error subcode
-    int      ErrSubCode(void) const;
+    int ErrSubCode(void) const;
+
     /// Get file name in which message was originated
-    std::string   File(void) const;
+    std::string File(void) const;
+
     /// Get line number in which message was originated
-    size_t   Line(void) const;
+    size_t Line(void) const;
 
     /// Get all of the message's data -- as provided natively by the Toolkit
     const SDiagMessage& GetNativeToolkitMessage(void) const;    
@@ -176,7 +150,7 @@ private:
 ///
 /// Logging interface
 ///
-/// Client application must provide implementaion of this interface
+/// Client application must provide implementation of this interface
 /// and pass it to the Toolkit to receive diagnostic messages.
 /// Message data is encapsulated into an CNcbiToolkit_LogMessage object.
 /// @sa
@@ -188,18 +162,6 @@ public:
     virtual ~INcbiToolkit_LogHandler() {}
     virtual void Post(const CNcbiToolkit_LogMessage& msg) = 0;
 };
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-///
-/// Provide means of creating custom CNcbiApplication object
-///
-
-typedef CNcbiApplication* ( *FNcbiApplicationFactory)(void);
-
-void NCBITOOLKIT_EXPORT NcbiToolkit_RegisterNcbiApplicationFactory
-    (FNcbiApplicationFactory& f);
 
 
 } /* namespace ncbi */

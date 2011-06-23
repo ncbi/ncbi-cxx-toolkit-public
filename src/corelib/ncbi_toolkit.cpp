@@ -85,15 +85,15 @@ const SDiagMessage& CNcbiToolkit_LogMessage::GetNativeToolkitMessage(void)
 
 CNcbiToolkit_LogMessage::ESeverity CNcbiToolkit_LogMessage::Severity(void) const
 {
-    ESeverity sev = eLogMsg_Fatal;
+    ESeverity sev = eFatal;
     switch (m_Msg.m_Severity) {
     default:                                      break;
-    case eDiag_Info:      sev = eLogMsg_Info;     break;
-    case eDiag_Warning:   sev = eLogMsg_Warning;  break;
-    case eDiag_Error:     sev = eLogMsg_Error;    break;
-    case eDiag_Critical:  sev = eLogMsg_Critical; break;
-    case eDiag_Fatal:     sev = eLogMsg_Fatal;    break;
-    case eDiag_Trace:     sev = eLogMsg_Trace;    break;
+    case eDiag_Info:      sev = eInfo;     break;
+    case eDiag_Warning:   sev = eWarning;  break;
+    case eDiag_Error:     sev = eError;    break;
+    case eDiag_Critical:  sev = eCritical; break;
+    case eDiag_Fatal:     sev = eFatal;    break;
+    case eDiag_Trace:     sev = eTrace;    break;
     }
     return sev;
 }
