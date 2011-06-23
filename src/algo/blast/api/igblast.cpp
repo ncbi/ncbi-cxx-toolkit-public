@@ -351,8 +351,11 @@ static bool s_DJNotCompatible(const CSeq_align &d, const CSeq_align &j, bool ms)
     int de = d.GetSeqStop(0);
     int js = j.GetSeqStart(0);
     int je = j.GetSeqStop(0);
-    if (ms)if (ds < js + 3 || de < je + 3) return true;
-    else   if (ds > js - 3 || de > je - 3) return true;
+    if (ms) {
+        if (ds < js + 3 || de < je + 3) return true;
+    } else { 
+        if (ds > js - 3 || de > je - 3) return true;
+    }
     return false;
 };
 
