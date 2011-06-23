@@ -4178,7 +4178,7 @@ void CValidError_feat::ValidateImpGbquals
                 }}
                 break;
 
-            case CSeqFeatData::eQual_mobile_element:
+            case CSeqFeatData::eQual_mobile_element_type:
                 {{
                     bool found = false;
                     for (size_t i = 0; 
