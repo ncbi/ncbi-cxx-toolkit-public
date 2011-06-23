@@ -36,7 +36,7 @@ if [ -f "$map" ]; then
 fi
 
 if "$get_lock" "$base" $$; then
-    trap 'clean_up' 1 2 15
+    trap 'clean_up; exit 1' 1 2 15
     if [ -n "$logfile" ]; then
         status_file=$base.lock/status
         ("$@"; echo $? > "$status_file") 2>&1 | tee "$logfile.new"
