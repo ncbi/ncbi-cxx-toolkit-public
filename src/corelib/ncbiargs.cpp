@@ -2179,7 +2179,7 @@ CArgs* CArgDescriptions::CreateArgs(const CNcbiArguments& args) const
 }
 
 
-void CArgDescriptions::x_CheckAutoHelp(const string& arg) const
+bool CArgDescriptions::x_CheckAutoHelp(const string& arg, int /*iarg*/) const
 {
 //    _ASSERT(m_AutoHelp);
     if (m_AutoHelp) {
@@ -2193,6 +2193,7 @@ void CArgDescriptions::x_CheckAutoHelp(const string& arg) const
     if (arg.compare(string("-") + s_AutoHelpXml) == 0) {
         NCBI_THROW(CArgHelpException,eHelpXml,kEmptyStr);
     }
+    return arg.compare("--") != 0;
 }
 
 

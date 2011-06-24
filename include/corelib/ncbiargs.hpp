@@ -904,7 +904,7 @@ private:
 
     /// Helper method for checking if auto help requested and throw
     /// CArgHelpException if help requested.
-    void x_CheckAutoHelp(const string& arg) const;
+    bool x_CheckAutoHelp(const string& arg, int iarg) const;
 
     void x_PrintComment(list<string>&   arr,
                         const CArgDesc& arg,
@@ -975,9 +975,8 @@ public:
         x_PreCheck();
 
         // Check for "-h" flag
-        for (TSize i = 1;  i < argc;  i++) {
-            x_CheckAutoHelp(argv[i]);
-        }
+        for (TSize i = 1;  i < argc && x_CheckAutoHelp(argv[i], i);  i++)
+            ;
 
         // Create new "CArgs" to fill up, and parse cmd.-line args into it
         auto_ptr<CArgs> args(new CArgs());
