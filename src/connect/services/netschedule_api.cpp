@@ -93,13 +93,17 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::OnInit(
         }
         ns_impl->m_Queue = config->GetString(config_section,
             "queue_name", CConfig::eErr_Throw, "noname");
+    }
+    if (config == NULL)
+        ns_impl->m_UseEmbeddedStorage = true;
+    else {
         try {
             ns_impl->m_UseEmbeddedStorage = config->GetBool(config_section,
-                "use_embedded_storage", CConfig::eErr_Throw, false);
+                "use_embedded_storage", CConfig::eErr_Throw, true);
         }
-        catch (...) {
+        catch (CConfigException&) {
             ns_impl->m_UseEmbeddedStorage = config->GetBool(config_section,
-                "use_embedded_input", CConfig::eErr_NoThrow, false);
+                "use_embedded_input", CConfig::eErr_NoThrow, true);
         }
     }
 
