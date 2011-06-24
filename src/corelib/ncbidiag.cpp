@@ -280,6 +280,23 @@ NCBI_PARAM_DEF_EX(bool, Log, NoCreate, false, eParam_NoThread, LOG_NOCREATE);
 typedef NCBI_PARAM_TYPE(Log, NoCreate) TLogNoCreate;
 
 
+// Logging of environment variables: space separated list of names which
+// should be logged after each request start.
+NCBI_PARAM_DECL(string, Log, LogEnvironment);
+NCBI_PARAM_DEF_EX(string, Log, LogEnvironment, kEmptyStr,
+                  eParam_NoThread,
+                  DIAG_LOG_ENVIRONMENT);
+typedef NCBI_PARAM_TYPE(Log, LogEnvironment) TLogEnvironment;
+
+
+// Logging of registry values: space separated list of 'section:name' strings.
+NCBI_PARAM_DECL(string, Log, LogRegistry);
+NCBI_PARAM_DEF_EX(string, Log, LogRegistry, kEmptyStr,
+                  eParam_NoThread,
+                  DIAG_LOG_REGISTRY);
+typedef NCBI_PARAM_TYPE(Log, LogRegistry) TLogRegistry;
+
+
 static bool s_UseRootLog = true;
 static bool s_FinishedSetupDiag = false;
 static bool s_MergeLinesSetBySetupDiag = false;
@@ -2052,6 +2069,38 @@ void CDiagContext::x_StartRequest(void)
             "Duplicate request-start or missing request-stop");
     }
     ctx.StartRequest();
+
+    // Print selected environment and registry values.
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    if ( !app ) return;
+    string log_args = TLogEnvironment::GetDefault();
+    if ( !log_args.empty() ) {
+        list<string> log_args_list;
+        NStr::Split(log_args, " ", log_args_list);
+        CDiagContext_Extra extra = GetDiagContext().Extra();
+        extra.Print("LogEnvironment", "true");
+        const CNcbiEnvironment& env = app->GetEnvironment();
+        ITERATE(list<string>, it, log_args_list) {
+            const string& val = env.Get(*it);
+            extra.Print(*it, val);
+        }
+        extra.Flush();
+    }
+    log_args = TLogRegistry::GetDefault();
+    if ( !log_args.empty() ) {
+        list<string> log_args_list;
+        NStr::Split(log_args, " ", log_args_list);
+        CDiagContext_Extra extra = GetDiagContext().Extra();
+        extra.Print("LogRegistry", "true");
+        const CNcbiRegistry& reg = app->GetConfig();
+        ITERATE(list<string>, it, log_args_list) {
+            string section, name;
+            NStr::SplitInTwo(*it, ":", section, name);
+            const string& val = reg.Get(section, name);
+            extra.Print(*it, val);
+        }
+        extra.Flush();
+    }
 }
 
 
@@ -5780,8 +5829,8 @@ extern void SetDiagStream(CNcbiOstream* os,
                           const string& stream_name)
 {
     SetDiagHandler(new CCompatStreamDiagHandler(os, quick_flush,
-                                                cleanup, cleanup_data,
-                                                stream_name));
+        cleanup, cleanup_data,
+        stream_name.empty() ? "STREAM" : stream_name));
 }
 
 

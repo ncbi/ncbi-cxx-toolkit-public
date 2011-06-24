@@ -2506,10 +2506,10 @@ NCBI_XNCBI_EXPORT extern void SetDoubleDiagHandler(void); ///< @deprecated
 NCBI_XNCBI_EXPORT
 extern void SetDiagStream
 (CNcbiOstream* os,
- bool          quick_flush  = true,///< Do stream flush after every message
- FDiagCleanup  cleanup      = 0,   ///< Call "cleanup(cleanup_data)" if diag.
- void*         cleanup_data = 0,   ///< Stream is changed (see SetDiagHandler)
- const string& stream_name  = "STREAM" ///< Stream name (e.g. STDERR, file.log)
+ bool          quick_flush  = true, ///< Do stream flush after every message
+ FDiagCleanup  cleanup      = 0,    ///< Call "cleanup(cleanup_data)" if diag.
+ void*         cleanup_data = 0,    ///< Stream is changed (see SetDiagHandler)
+ const string& stream_name  = ""    ///< Stream name (e.g. STDERR, file.log)
  );
 
 // Return TRUE if "os" is the current diag. stream.
