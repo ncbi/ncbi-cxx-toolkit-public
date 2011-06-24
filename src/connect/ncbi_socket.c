@@ -169,9 +169,9 @@
 #define SESSION_INVALID         ((void*)(-1L))
 
 #if defined(HAVE_SOCKLEN_T)  ||  defined(_SOCKLEN_T)
-typedef socklen_t  SOCK_socklen_t;
+typedef socklen_t  TSOCK_socklen_t;
 #else
-typedef int	       SOCK_socklen_t;
+typedef int	       TSOCK_socklen_t;
 #endif /*HAVE_SOCKLEN_T || _SOCKLEN_T*/
 
 
@@ -525,7 +525,7 @@ static const char* s_ID(const SOCK sock, char buf[MAXIDLEN])
 static unsigned short s_GetLocalPort(TSOCK_Handle fd)
 {
     struct sockaddr_in sin;
-    SOCK_socklen_t sinlen = (SOCK_socklen_t) sizeof(sin);
+    TSOCK_socklen_t sinlen = (TSOCK_socklen_t) sizeof(sin);
     memset(&sin, 0, sizeof(sin));
 #ifdef HAVE_SIN_LEN
     sin.sin_len = sinlen;
@@ -1270,7 +1270,7 @@ static char* s_gethostbyaddr(unsigned int host, char* name,
 
         memset(&sin, 0, sizeof(sin));
 #  ifdef HAVE_SIN_LEN
-        sin.sin_len = (SOCK_socklen_t) sizeof(sin);
+        sin.sin_len = (TSOCK_socklen_t) sizeof(sin);
 #  endif /*HAVE_SIN_LEN*/
         sin.sin_family      = AF_INET; /* we only handle IPv4 currently */
         sin.sin_addr.s_addr = host;
@@ -1402,10 +1402,9 @@ static int/*bool*/ s_SetNonblock(TSOCK_Handle sock, int/*bool*/ nonblock)
     unsigned long argp = nonblock ? 1 : 0;
     return ioctlsocket(sock, FIONBIO, &argp) == 0;
 #elif defined(NCBI_OS_UNIX)
-    return fcntl(sock, F_SETFL,
-                 nonblock ?
-                 fcntl(sock, F_GETFL, 0) |        O_NONBLOCK :
-                 fcntl(sock, F_GETFL, 0) & (int) ~O_NONBLOCK) != -1;
+    return fcntl(sock, F_SETFL, nonblock
+                 ? fcntl(sock, F_GETFL, 0) |        O_NONBLOCK
+                 : fcntl(sock, F_GETFL, 0) & (int) ~O_NONBLOCK) != -1;
 #else
 #   error "Unsupported platform"
 #endif /*NCBI_OS*/
@@ -1417,10 +1416,9 @@ static int/*bool*/ s_SetNonblock(TSOCK_Handle sock, int/*bool*/ nonblock)
 static int/*bool*/ s_SetCloexec(TSOCK_Handle x_sock, int/*bool*/ cloexec)
 {
 #if defined(NCBI_OS_UNIX)
-    return fcntl(x_sock, F_SETFD,
-                 cloexec ?
-                 fcntl(x_sock, F_GETFD, 0) |        FD_CLOEXEC :
-                 fcntl(x_sock, F_GETFD, 0) & (int) ~FD_CLOEXEC) != -1;
+    return fcntl(x_sock, F_SETFD, cloexec
+                 ? fcntl(x_sock, F_GETFD, 0) |        FD_CLOEXEC
+                 : fcntl(x_sock, F_GETFD, 0) & (int) ~FD_CLOEXEC) != -1;
 #elif defined(NCBI_OS_MSWIN)
     return SetHandleInformation((HANDLE)x_sock,HANDLE_FLAG_INHERIT,!cloexec);
 #else
@@ -2526,7 +2524,7 @@ static EIO_Status s_IsConnected(SOCK                  sock,
 
 #if defined(NCBI_OS_UNIX)  ||  defined(NCBI_OS_MSWIN)
     if (!sock->connected  &&  status == eIO_Success) {
-        SOCK_socklen_t len = (SOCK_socklen_t) sizeof(*error);
+        TSOCK_socklen_t len = (TSOCK_socklen_t) sizeof(*error);
         if (getsockopt(sock->sock, SOL_SOCKET, SO_ERROR, (void*) error, &len)
             != 0  ||  *error != 0) {
             status = eIO_Unknown;
@@ -2555,8 +2553,8 @@ static EIO_Status s_IsConnected(SOCK                  sock,
         char mtu[128];
 #  if defined(SOL_IP)  &&  defined(IP_MTU)
         if (sock->port) {
-            int            m;
-            SOCK_socklen_t mlen = (SOCK_socklen_t) sizeof(m);
+            int             m;
+            TSOCK_socklen_t mlen = (TSOCK_socklen_t) sizeof(m);
             if (getsockopt(sock->sock, SOL_IP, IP_MTU, &m, &mlen) != 0) {
                 const char* strerr = SOCK_STRERROR(SOCK_ERRNO);
                 sprintf(mtu, ", MTU unknown (%s)", strerr);
@@ -3269,7 +3267,8 @@ static EIO_Status s_WritePending(SOCK                  sock,
             if (status != eIO_Timeout) {
                 char _id[MAXIDLEN];
                 const char* strerr = s_StrError(sock, x_error);
-                CORE_LOGF_ERRNO_EXX(12, eLOG_Error,
+                CORE_LOGF_ERRNO_EXX(12, sock->log != eOff
+                                    ? eLOG_Error : eLOG_Trace,
                                     x_error, strerr,
                                     ("%s[SOCK::WritePending] "
                                      " Failed pending connect(): %s",
@@ -3333,7 +3332,7 @@ static EIO_Status s_Write(SOCK        sock,
 
     if (sock->w_status == eIO_Closed) {
         if (size) {
-            CORE_DEBUG_ARG(char _id[MAXIDLEN]);
+            CORE_DEBUG_ARG(char _id[MAXIDLEN];)
             CORE_TRACEF(("%s[SOCK::Write] "
                          " Socket already shut down for writing",
                          s_ID(sock, _id)));
@@ -3697,12 +3696,12 @@ static EIO_Status s_Connect(SOCK            sock,
         struct sockaddr_un un;
 #endif /*NCBI_OS_UNIX*/
     } addr;
-    char           _id[MAXIDLEN];
-    int            x_error;
-    SOCK_socklen_t addrlen;
-    TSOCK_Handle   x_sock;
-    EIO_Status     status;
-    int            n;
+    char            _id[MAXIDLEN];
+    int             x_error;
+    TSOCK_socklen_t addrlen;
+    TSOCK_Handle    x_sock;
+    EIO_Status      status;
+    int             n;
 
     assert(sock->type == eSocket  &&  sock->side == eSOCK_Client);
 
@@ -3745,7 +3744,7 @@ static EIO_Status s_Connect(SOCK            sock,
                          (unsigned long) sizeof(addr.un.sun_path)));
             return eIO_InvalidArg;
         }
-        addrlen = (SOCK_socklen_t) sizeof(addr.un);
+        addrlen = (TSOCK_socklen_t) sizeof(addr.un);
 #  ifdef HAVE_SIN_LEN
         addr.un.sun_len    = addrlen;
 #  endif /*HASE_SIN_LEN*/
@@ -3768,7 +3767,7 @@ static EIO_Status s_Connect(SOCK            sock,
             sock->port = port;
         else
             assert(sock->port);
-        addrlen = (SOCK_socklen_t) sizeof(addr.in);
+        addrlen = (TSOCK_socklen_t) sizeof(addr.in);
 #ifdef HAVE_SIN_LEN
         addr.in.sin_len         = addrlen;
 #endif /*HAVE_SIN_LEN*/
@@ -3894,7 +3893,8 @@ static EIO_Status s_Connect(SOCK            sock,
             x_error != SOCK_EWOULDBLOCK) {
             if (x_error != SOCK_EINTR) {
                 const char* strerr = SOCK_STRERROR(x_error);
-                CORE_LOGF_ERRNO_EXX(25, eLOG_Error,
+                CORE_LOGF_ERRNO_EXX(25, sock->log != eOff
+                                    ? eLOG_Error : eLOG_Trace,
                                     x_error, strerr,
                                     ("%s[SOCK::Connect] "
                                      " Failed connect()",
@@ -3936,7 +3936,8 @@ static EIO_Status s_Connect(SOCK            sock,
                 reason = IO_StatusStr(status);
             {
                 const char* strerr = s_StrError(sock, x_error);
-                CORE_LOGF_ERRNO_EXX(26, eLOG_Error,
+                CORE_LOGF_ERRNO_EXX(26, sock->log != eOff
+                                    ? eLOG_Error : eLOG_Trace,
                                     x_error, strerr,
                                     ("%s[SOCK::Connect] "
                                      " Failed pending connect(): %s",
@@ -4312,10 +4313,10 @@ static EIO_Status s_CreateListening(const char*    path,
                                     LSOCK*         lsock,
                                     TSOCK_Flags    flags)
 {
-    unsigned int   x_id = ++s_ID_Counter;
-    TSOCK_Handle   x_lsock;
-    int            x_error;
-    SOCK_socklen_t addrlen;
+    unsigned int    x_id = ++s_ID_Counter;
+    TSOCK_Handle    x_lsock;
+    int             x_error;
+    TSOCK_socklen_t addrlen;
     union {
         struct sockaddr    sa;
         struct sockaddr_in in;
@@ -4436,7 +4437,7 @@ static EIO_Status s_CreateListening(const char*    path,
 #ifdef NCBI_OS_UNIX
     if (path) {
         assert(addr.un.sun_family == AF_UNIX);
-        addrlen = (SOCK_socklen_t) sizeof(addr.un);
+        addrlen = (TSOCK_socklen_t) sizeof(addr.un);
 #  ifdef HAVE_SIN_LEN
         addr.un.sun_len = addrlen;
 #  endif /*HAVE_SIN_LEN*/
@@ -4692,17 +4693,17 @@ static EIO_Status s_Accept(LSOCK           lsock,
         struct sockaddr_un un;
 #endif /*NCBI_OS_UNIX*/
     } addr;
-    unsigned int   x_id;
-    const char*    path;
-    unsigned int   host;
-    unsigned short port;
+    unsigned int    x_id;
+    const char*     path;
+    unsigned int    host;
+    unsigned short  port;
 #ifdef NCBI_OS_MSWIN
-	WSAEVENT	   event;
+	WSAEVENT	    event;
 #endif /*NCBI_OS_MSWIN*/
-    TSOCK_Handle   x_sock;
-    int            x_error;
-    SOCK_socklen_t addrlen;
-    char           _id[MAXIDLEN];
+    TSOCK_Handle    x_sock;
+    int             x_error;
+    TSOCK_socklen_t addrlen;
+    char            _id[MAXIDLEN];
 
     if (!lsock  ||  lsock->sock == SOCK_INVALID) {
         CORE_LOGF_X(39, eLOG_Error,
@@ -4745,7 +4746,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
     memset(&addr, 0, sizeof(addr));
 #ifdef NCBI_OS_UNIX
     if (lsock->path[0]) {
-        addrlen = (SOCK_socklen_t) sizeof(addr.un);
+        addrlen = (TSOCK_socklen_t) sizeof(addr.un);
 #  ifdef HAVE_SIN_LEN
         addr.un.sun_len = addrlen;
 #  endif /*HAVE_SIN_LEN*/
@@ -4753,7 +4754,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
     } else
 #endif /*NCBI_OS_UNIX*/
     {
-        addrlen = (SOCK_socklen_t) sizeof(addr.in);
+        addrlen = (TSOCK_socklen_t) sizeof(addr.in);
 #ifdef HAVE_SIN_LEN
         addr.in.sin_len = addrlen;
 #endif /*HAVE_SIN_LEN*/
@@ -4833,7 +4834,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
 #endif /*NCBI_OS_MSWIN*/
 
     /* create new SOCK structure */
-    addrlen = *path ? (SOCK_socklen_t) strlen(path) : 0;
+    addrlen = *path ? (TSOCK_socklen_t) strlen(path) : 0;
     if (!(*sock = (SOCK) calloc(1, sizeof(**sock) + addrlen))) {
         SOCK_ABORT(x_sock);
 #ifdef NCBI_OS_MSWIN
@@ -5150,14 +5151,14 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
         struct sockaddr_un un;
 #endif /*NCBI_OS_UNIX*/
     } peer;
-    TSOCK_Handle   fd;
-    SOCK           x_sock;
-    int            x_error;
-    SOCK_socklen_t peerlen;
-    size_t         socklen;
-    BUF            w_buf = 0;
-    char           _id[MAXIDLEN];
-    unsigned int   x_id = ++s_ID_Counter * 1000;
+    TSOCK_Handle    fd;
+    SOCK            x_sock;
+    int             x_error;
+    TSOCK_socklen_t peerlen;
+    size_t          socklen;
+    BUF             w_buf = 0;
+    char            _id[MAXIDLEN];
+    unsigned int    x_id = ++s_ID_Counter * 1000;
 
     *sock = 0;
 
@@ -5180,7 +5181,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
         return eIO_NotSupported;
 
     /* get peer's address */
-    peerlen = (SOCK_socklen_t) sizeof(peer);
+    peerlen = (TSOCK_socklen_t) sizeof(peer);
     memset(&peer, 0, sizeof(peer));
 #ifdef HAVE_SIN_LEN
     peer.sa.sa_len = peerlen;
@@ -5216,7 +5217,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
 #  endif /*NCBI_OS*/
         peer.sa.sa_family == AF_UNIX) {
         if (!peer.un.sun_path[0]) {
-            peerlen = (SOCK_socklen_t) sizeof(peer);
+            peerlen = (TSOCK_socklen_t) sizeof(peer);
             memset(&peer, 0, sizeof(peer));
 #  ifdef HAVE_SIN_LEN
             peer.sa.sa_len = peerlen;
@@ -6417,7 +6418,7 @@ extern EIO_Status DSOCK_Bind(SOCK sock, unsigned short port)
     /* bind */
     memset(&sin, 0, sizeof(sin));
 #ifdef HAVE_SIN_LEN
-    sin.sin_len         = (SOCK_socklen_t) sizeof(sin);
+    sin.sin_len         = (TSOCK_socklen_t) sizeof(sin);
 #endif /*HAVE_SIN_LEN*/
     sin.sin_family      = AF_INET;
     sin.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -6498,7 +6499,7 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
     /* connect (non-empty address) or drop association (on empty address) */
     memset(&peer, 0, sizeof(peer));
 #ifdef HAVE_SIN_LEN
-    peer.sin_len             = (SOCK_socklen_t) sizeof(peer);
+    peer.sin_len             = (TSOCK_socklen_t) sizeof(peer);
 #endif /*HAVE_SIN_LEN*/
     if (host/*  &&  port*/) {
         peer.sin_family      = AF_INET;
@@ -6648,7 +6649,7 @@ extern EIO_Status DSOCK_SendMsg(SOCK           sock,
 
     memset(&sin, 0, sizeof(sin));
 #ifdef HAVE_SIN_LEN
-    sin.sin_len         = (SOCK_socklen_t) sizeof(sin);
+    sin.sin_len         = (TSOCK_socklen_t) sizeof(sin);
 #endif /*HAVE_SIN_LEN*/
     sin.sin_family      = AF_INET;
     sin.sin_addr.s_addr =       x_host;
@@ -6793,7 +6794,7 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
         int                x_error;
         int                x_read;
         struct sockaddr_in sin;
-        SOCK_socklen_t     sinlen = (SOCK_socklen_t) sizeof(sin);
+        TSOCK_socklen_t    sinlen = (TSOCK_socklen_t) sizeof(sin);
         memset(&sin, 0, sizeof(sin));
 #ifdef HAVE_SIN_LEN
         sin.sin_len = sinlen;
