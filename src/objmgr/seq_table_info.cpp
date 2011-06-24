@@ -981,29 +981,51 @@ void CSeqTableInfo::UpdateSeq_feat(size_t row,
 }
 
 
-const CSeqTableColumnInfo&
-CSeqTableInfo::GetColumn(int field_id) const
+const CSeqTableColumnInfo*
+CSeqTableInfo::FindColumn(int field_id) const
 {
     TColumnsById::const_iterator iter = m_ColumnsById.find(field_id);
     if ( iter == m_ColumnsById.end() ) {
+        return 0;
+    }
+    return &iter->second;
+}
+
+
+const CSeqTableColumnInfo*
+CSeqTableInfo::FindColumn(const string& field_name) const
+{
+    TColumnsByName::const_iterator iter = m_ColumnsByName.find(field_name);
+    if ( iter == m_ColumnsByName.end() ) {
+        return 0;
+    }
+    return &iter->second;
+}
+
+
+const CSeqTableColumnInfo&
+CSeqTableInfo::GetColumn(int field_id) const
+{
+    const CSeqTableColumnInfo* column = FindColumn(field_id);
+    if ( !column ) {
         NCBI_THROW_FMT(CAnnotException, eOtherError,
                        "CSeqTableInfo::GetColumn: "
                        "column "<<field_id<<" not found");
     }
-    return iter->second;
+    return *column;
 }
 
 
 const CSeqTableColumnInfo&
 CSeqTableInfo::GetColumn(const string& field_name) const
 {
-    TColumnsByName::const_iterator iter = m_ColumnsByName.find(field_name);
-    if ( iter == m_ColumnsByName.end() ) {
+    const CSeqTableColumnInfo* column = FindColumn(field_name);
+    if ( !column ) {
         NCBI_THROW_FMT(CAnnotException, eOtherError,
                        "CSeqTableInfo::GetColumn: "
                        "column "<<field_name<<" not found");
     }
-    return iter->second;
+    return *column;
 }
 
 

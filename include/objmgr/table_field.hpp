@@ -106,6 +106,9 @@ public:
     
 protected:
     bool x_ThrowUnsetValue(void) const;
+    const CSeqTable_column* x_FindColumn(const CFeat_CI& feat_ci) const;
+    const CSeqTable_column* x_FindColumn(const CSeq_annot_Info& annot) const;
+    const CSeqTable_column* x_FindColumn(const CSeq_annot_Handle& annot) const;
     const CSeqTable_column& x_GetColumn(const CFeat_CI& feat_ci) const;
     const CSeqTable_column& x_GetColumn(const CSeq_annot_Info& annot) const;
     const CSeqTable_column& x_GetColumn(const CSeq_annot_Handle& annot) const;

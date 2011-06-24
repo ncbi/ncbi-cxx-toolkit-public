@@ -72,21 +72,62 @@ CTableFieldHandle_Base::~CTableFieldHandle_Base()
 }
 
 
-const CSeqTable_column&
-CTableFieldHandle_Base::x_GetColumn(const CSeq_annot_Info& annot) const
+const CSeqTable_column*
+CTableFieldHandle_Base::x_FindColumn(const CSeq_annot_Info& annot) const
 {
     if ( &annot != m_CachedAnnotInfo ) {
         m_CachedAnnotInfo = &annot;
+        const CSeqTableColumnInfo* column;
         if ( m_FieldId < 0 ) {
-            m_CachedFieldInfo =
-                annot.GetTableInfo().GetColumn(m_FieldName).Get();
+            column = annot.GetTableInfo().FindColumn(m_FieldName);
         }
         else {
-            m_CachedFieldInfo =
-                annot.GetTableInfo().GetColumn(m_FieldId).Get();
+            column = annot.GetTableInfo().FindColumn(m_FieldId);
+        }
+        if ( column ) {
+            m_CachedFieldInfo = column->Get();
+        }
+        else {
+            m_CachedFieldInfo = null;
         }
     }
-    return *m_CachedFieldInfo;
+    return m_CachedFieldInfo.GetPointerOrNull();
+}
+
+
+inline
+const CSeqTable_column*
+CTableFieldHandle_Base::x_FindColumn(const CSeq_annot_Handle& annot) const
+{
+    return x_FindColumn(annot.x_GetInfo());
+}
+
+
+inline
+const CSeqTable_column*
+CTableFieldHandle_Base::x_FindColumn(const CFeat_CI& feat_ci) const
+{
+    return x_FindColumn(feat_ci.Get().GetSeq_annot_Info());
+}
+
+
+const CSeqTable_column&
+CTableFieldHandle_Base::x_GetColumn(const CSeq_annot_Info& annot) const
+{
+    const CSeqTable_column* column = x_FindColumn(annot);
+    if ( !column ) {
+        if ( m_FieldId < 0 ) {
+            NCBI_THROW_FMT(CAnnotException, eOtherError,
+                           "CTableFieldHandle: "
+                           "column "<<m_FieldName<<" not found");
+        }
+        else {
+            NCBI_THROW_FMT(CAnnotException, eOtherError,
+                           "CTableFieldHandle: "
+                           "column "<<m_FieldId<<" not found");
+        }
+    }
+    return *column;
 }
 
 
@@ -129,7 +170,10 @@ bool CTableFieldHandle_Base::IsSet(const CSeq_annot_Handle& annot,
 bool CTableFieldHandle_Base::TryGet(const CFeat_CI& feat_ci,
                                     bool& v) const
 {
-    return x_GetColumn(feat_ci).TryGetBool(x_GetRow(feat_ci), v);
+    if ( const CSeqTable_column* column = x_FindColumn(feat_ci) ) {
+        return column->TryGetBool(x_GetRow(feat_ci), v);
+    }
+    return false;
 }
 
 
@@ -145,7 +189,10 @@ void CTableFieldHandle_Base::Get(const CFeat_CI& feat_ci,
 bool CTableFieldHandle_Base::TryGet(const CFeat_CI& feat_ci,
                                     int& v) const
 {
-    return x_GetColumn(feat_ci).TryGetInt(x_GetRow(feat_ci), v);
+    if ( const CSeqTable_column* column = x_FindColumn(feat_ci) ) {
+        return column->TryGetInt(x_GetRow(feat_ci), v);
+    }
+    return false;
 }
 
 
@@ -162,7 +209,10 @@ bool CTableFieldHandle_Base::TryGet(const CSeq_annot_Handle& annot,
                                     size_t row,
                                     bool& v) const
 {
-    return x_GetColumn(annot).TryGetBool(row, v);
+    if ( const CSeqTable_column* column = x_FindColumn(annot) ) {
+        return column->TryGetBool(row, v);
+    }
+    return false;
 }
 
 
@@ -180,7 +230,10 @@ bool CTableFieldHandle_Base::TryGet(const CSeq_annot_Handle& annot,
                                     size_t row,
                                     int& v) const
 {
-    return x_GetColumn(annot).TryGetInt(row, v);
+    if ( const CSeqTable_column* column = x_FindColumn(annot) ) {
+        return column->TryGetInt(row, v);
+    }
+    return false;
 }
 
 
@@ -197,7 +250,10 @@ void CTableFieldHandle_Base::Get(const CSeq_annot_Handle& annot,
 bool CTableFieldHandle_Base::TryGet(const CFeat_CI& feat_ci,
                                     double& v) const
 {
-    return x_GetColumn(feat_ci).TryGetReal(x_GetRow(feat_ci), v);
+    if ( const CSeqTable_column* column = x_FindColumn(feat_ci) ) {
+        return column->TryGetReal(x_GetRow(feat_ci), v);
+    }
+    return false;
 }
 
 
@@ -214,7 +270,10 @@ bool CTableFieldHandle_Base::TryGet(const CSeq_annot_Handle& annot,
                                     size_t row,
                                     double& v) const
 {
-    return x_GetColumn(annot).TryGetReal(row, v);
+    if ( const CSeqTable_column* column = x_FindColumn(annot) ) {
+        return column->TryGetReal(row, v);
+    }
+    return false;
 }
 
 
@@ -233,8 +292,10 @@ CTableFieldHandle_Base::GetPtr(const CFeat_CI& feat_ci,
                                const string* /*dummy*/,
                                bool force) const
 {
-    const string* ret =
-        x_GetColumn(feat_ci).GetStringPtr(x_GetRow(feat_ci));
+    const string* ret = 0;
+    if ( const CSeqTable_column* column = x_FindColumn(feat_ci) ) {
+        ret = column->GetStringPtr(x_GetRow(feat_ci));
+    }
     if ( !ret && force ) {
         x_ThrowUnsetValue();
     }
@@ -271,7 +332,10 @@ CTableFieldHandle_Base::GetPtr(const CSeq_annot_Handle& annot,
                                const string* /*dummy*/,
                                bool force) const
 {
-    const string* ret = x_GetColumn(annot).GetStringPtr(row);
+    const string* ret = 0;
+    if ( const CSeqTable_column* column = x_FindColumn(annot) ) {
+        ret = column->GetStringPtr(row);
+    }
     if ( !ret && force ) {
         x_ThrowUnsetValue();
     }
@@ -309,8 +373,10 @@ CTableFieldHandle_Base::GetPtr(const CFeat_CI& feat_ci,
                                const vector<char>* /*dummy*/,
                                bool force) const
 {
-    const vector<char>* ret =
-        x_GetColumn(feat_ci).GetBytesPtr(x_GetRow(feat_ci));
+    const vector<char>* ret = 0;
+    if ( const CSeqTable_column* column = x_FindColumn(feat_ci) ) {
+        ret = column->GetBytesPtr(x_GetRow(feat_ci));
+    }
     if ( !ret && force ) {
         x_ThrowUnsetValue();
     }
@@ -347,7 +413,10 @@ CTableFieldHandle_Base::GetPtr(const CSeq_annot_Handle& annot,
                                const vector<char>* /*dummy*/,
                                bool force) const
 {
-    const vector<char>* ret = x_GetColumn(annot).GetBytesPtr(row);
+    const vector<char>* ret = 0;
+    if ( const CSeqTable_column* column = x_FindColumn(annot) ) {
+        ret = column->GetBytesPtr(row);
+    }
     if ( !ret && force ) {
         x_ThrowUnsetValue();
     }

@@ -244,7 +244,11 @@ public:
         return m_Product;
     }
     bool IsPartial(size_t row) const;
-    
+
+    // returns null if column not found
+    const CSeqTableColumnInfo* FindColumn(int field_id) const;
+    const CSeqTableColumnInfo* FindColumn(const string& field_name) const;
+    // throws an exception if column not found
     const CSeqTableColumnInfo& GetColumn(int field_id) const;
     const CSeqTableColumnInfo& GetColumn(const string& field_name) const;
 
