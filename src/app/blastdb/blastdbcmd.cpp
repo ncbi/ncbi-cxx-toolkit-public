@@ -261,7 +261,7 @@ CBlastDBCmdApp::x_InitApplicationData()
 
     m_SeqRange = TSeqRange::GetEmpty();
     if (args["range"].HasValue()) {
-        m_SeqRange = ParseSequenceRange(args["range"].AsString());
+        m_SeqRange = ParseSequenceRangeOpenEnd(args["range"].AsString());
     }
 
     m_Strand = eNa_strand_unknown;
@@ -449,7 +449,7 @@ void CBlastDBCmdApp::Init()
     arg_desc->SetCurrentGroup("Sequence retrieval configuration options");
     arg_desc->AddOptionalKey("range", "numbers",
                          "Range of sequence to extract in 1-based offsets "
-                         "(Format: start-stop)",
+                         "(Format: start-stop, for start to end of sequence use start - )",
                          CArgDescriptions::eString);
 
     arg_desc->AddDefaultKey("strand", "strand",

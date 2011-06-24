@@ -60,13 +60,15 @@ public:
                       bool                target_only = true,
                       bool                ctrl_a = false)
             : m_BlastDb(blastdb),
+              m_OrigSeqRange(range),
               m_SeqRange(range),
               m_Strand(strand),
               m_FiltAlgoId(filt_algo_id),
               m_FmtAlgoId(fmt_algo_id),
               m_LineWidth(line_width),
               m_TargetOnly(target_only),
-              m_UseCtrlA(ctrl_a) 
+              m_UseCtrlA(ctrl_a),
+              m_Oid(0)
     {}
 
     /// Setting seqid
@@ -93,6 +95,8 @@ public:
 protected:
     /// underlying Blast database
     CSeqDB& m_BlastDb;
+    /// sequence range
+    TSeqRange m_OrigSeqRange;
     /// sequence range
     TSeqRange m_SeqRange;
     /// strand

@@ -148,6 +148,46 @@ ParseSequenceRange(const string& range_str,
     return retval;
 }
 
+TSeqRange
+ParseSequenceRangeOpenEnd(const string& range_str,
+                   	   	  const char* error_prefix /* = NULL */)
+{
+    static const char* kDfltErrorPrefix = "Failed to parse sequence range";
+    static const string kDelimiters("-");
+    string error_msg(error_prefix ? error_prefix : kDfltErrorPrefix);
+
+    vector<string> tokens;
+    NStr::Tokenize(range_str, kDelimiters, tokens);
+    if (tokens.front().empty()) {
+        error_msg += " (start cannot be empty)";
+        NCBI_THROW(CBlastException, eInvalidArgument, error_msg);
+    }
+
+    TSeqRange retval;
+    int from = NStr::StringToInt(tokens.front());
+    int to = 0;
+
+    if(!tokens.back().empty()) {
+    	to = NStr::StringToInt(tokens.back());
+
+    	if (from <= 0 || to <= 0) {
+    		error_msg += " (range elements cannot be less than or equal to 0)";
+    		NCBI_THROW(CBlastException, eInvalidArgument, error_msg);
+    	}
+    	if (from > to) {
+    	    error_msg += " (start cannot be larger than stop)";
+    	    NCBI_THROW(CBlastException, eInvalidArgument, error_msg);
+    	}
+    	to--;
+    	retval.SetTo(to);
+    }
+    //Note: TSeqRange is defaulted to max value.
+
+    from--;
+    retval.SetFrom(from);
+    return retval;
+}
+
 CRef<CScope>
 ReadSequencesToBlast(CNcbiIstream& in, 
                      bool read_proteins, 

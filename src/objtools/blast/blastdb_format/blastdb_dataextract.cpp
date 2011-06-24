@@ -87,6 +87,26 @@ void CBlastDBExtractor::SetSeqId(const CBlastDBSeqId &id, bool get_data) {
                    "Entry not found in BLAST database");
     }
 
+   	int length = m_BlastDb.GetSeqLength(m_Oid);
+   	if (length <= 0) {
+       	NCBI_THROW(CSeqDBException, eArgErr,
+           	       "Entry found in BLAST database has invalid length");
+   	}
+
+   	m_SeqRange = m_OrigSeqRange;
+	if(length < m_SeqRange.GetTo())
+	{
+		m_SeqRange.SetTo(length-1);
+	}
+
+    if(TSeqRange::GetPositionMax() == m_OrigSeqRange.GetTo())
+    {
+		if (m_SeqRange.GetTo() < m_SeqRange.GetFrom()) {
+	        NCBI_THROW(CSeqDBException, eArgErr,
+	                   "start pos > length of sequence");
+	    	}
+    }
+
     try {
         if (get_data) {
             m_Bioseq.Reset(m_BlastDb.GetBioseq(m_Oid, target_gi, target_seq_id)); 

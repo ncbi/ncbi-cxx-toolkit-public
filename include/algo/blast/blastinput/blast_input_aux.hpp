@@ -225,6 +225,21 @@ NCBI_BLASTINPUT_EXPORT
 TSeqRange
 ParseSequenceRange(const string& range_str, const char* error_prefix = NULL);
 
+/** Parse and extract a sequence range from argument provided to this function.
+ * The format is N-M, where N and M are positive integers in 1-based offsets and
+ * N < M. Open end range N- and single range N-N formats are supported.
+ * @param range_str string to extract the range from [in]
+ * @param error_prefix error message prefix which will be encoded in the
+ * exception thrown in case of error (if NULL a default message will be used) [in]
+ * @return properly constructed range if parsing succeeded in 0-based offsets.
+ * @throw CStringException or CBlastException with error code eInvalidArgument
+ * if parsing fails or the range is invalid (i.e.: empty, negative, N>M,
+ * in 0-based offsets)
+ */
+NCBI_BLASTINPUT_EXPORT
+TSeqRange
+ParseSequenceRangeOpenEnd(const string& range_str, const char* error_prefix = NULL);
+
 /** Retrieve the appropriate batch size for the specified task 
  * @param program BLAST task [in]
  * @param is_ungapped true if ungapped BLAST search is requested [in]
