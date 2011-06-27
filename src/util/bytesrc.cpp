@@ -201,6 +201,7 @@ bool CStreamByteSourceReader::Pushback(const char* data, size_t size)
 
 void CStreamByteSourceReader::Seekg(CNcbiStreampos pos)
 {
+    m_Stream->clear();
     m_Stream->seekg(pos);
 }
 
