@@ -304,9 +304,11 @@ public:
             return !(*this == b);
         }
         bool operator<(const TKey& b) const {
-            return m_Hash < b.m_Hash || m_Hash == b.m_Hash &&
-                (m_Version < b.m_Version || m_Version == b.m_Version &&
-                 NStr::CompareNocase(m_Prefix, b.m_Prefix) < 0);
+            return m_Hash < b.m_Hash ||
+                (m_Hash == b.m_Hash &&
+                 (m_Version < b.m_Version ||
+                  (m_Version == b.m_Version &&
+                   NStr::CompareNocase(m_Prefix, b.m_Prefix) < 0)));
         }
 
         bool SameHash(const TKey& b) const {
