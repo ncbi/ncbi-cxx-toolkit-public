@@ -52,7 +52,7 @@ CAgpValidateReader::CAgpValidateReader(CAgpErrEx& agpErr, CMapCompLen& comp2len)
   m_CommentLineCount=m_EolComments=0;
   m_componentsInLastScaffold=m_componentsInLastObject=0;
   m_gapsInLastScaffold=m_gapsInLastObject=0;
-  m_prev_orientation_unknown=false;
+  m_prev_orientation=0; // m_prev_orientation_unknown=false;
   m_ObjCount = 0;
   m_ScaffoldCount = 0;
   m_SingleCompScaffolds = 0;
@@ -89,7 +89,7 @@ bool CAgpValidateReader::OnError()
 {
   if(m_line_skipped) {
     // Avoid printing the wrong AGP line along with "orientation_unknown" error
-    m_prev_orientation_unknown=false;
+    m_prev_orientation=0; // m_prev_orientation_unknown=false;
 
     // For lines with non-syntax errors that are not skipped,
     // these are called from OnGapOrComponent()
@@ -118,10 +118,12 @@ void CAgpValidateReader::OnGapOrComponent()
     m_prev_component_id.clear();
     if( !m_this_row->GapEndsScaffold() ) {
       m_gapsInLastScaffold++;
-      if(m_prev_orientation_unknown && m_componentsInLastScaffold==1) {
-                                   // ^^^can probably ASSERT this^^^
+      if(
+        m_prev_orientation && m_prev_orientation != '+' && m_prev_orientation != '-' // m_prev_orientation_unknown
+        && m_componentsInLastScaffold==1 // can probably ASSERT this
+      ) {
         agpErr.Msg(CAgpErrEx::E_UnknownOrientation, NcbiEmptyString, CAgpErr::fAtPrevLine);
-        m_prev_orientation_unknown=false;
+        m_prev_orientation-0; // m_prev_orientation_unknown=false;
       }
     }
     else if(!m_at_beg && !m_prev_row->IsGap()) {
@@ -142,31 +144,31 @@ void CAgpValidateReader::OnGapOrComponent()
 
     //// Orientation "0" or "na" only for singletons
     // A saved potential error
-    if(m_prev_orientation_unknown) {
+    if(
+      m_prev_orientation && m_prev_orientation != '+' && m_prev_orientation != '-' // m_prev_orientation_unknown
+    ) {
       // Make sure that prev_orientation_unknown
       // is not a leftover from the preceding singleton.
       if( m_componentsInLastScaffold==2 ) {
         agpErr.Msg(CAgpErrEx::E_UnknownOrientation,
           NcbiEmptyString, CAgpErr::fAtPrevLine);
       }
-      m_prev_orientation_unknown=false;
+      m_prev_orientation=0; // m_prev_orientation_unknown=false;
     }
 
-    if( m_this_row->orientation != '+' && m_this_row->orientation != '-' ) {
-      if(m_componentsInLastScaffold==1) {
-        // Report an error later if the current scaffold
-        // turns out not a singleton. Only singletons can have
-        // components with unknown orientation.
-        //
-        // Note: previous component != previous line
-        // if there was a non-breaking gap; thus, we check
-        // prev_orientation_unknown for such gaps, too.
-        m_prev_orientation_unknown=true;
-      }
-      else {
-        // This error is real, not "potential"; report it now.
-        agpErr.Msg(CAgpErrEx::E_UnknownOrientation, NcbiEmptyString);
-      }
+    if(m_componentsInLastScaffold==1) {
+      // Report an error later if the current scaffold
+      // turns out not a singleton. Only singletons can have
+      // components with unknown orientation.
+      //
+      // Note: previous component != previous line if there was a non-breaking gap;
+      // we check prev_orientation after such gaps, too.
+      m_prev_orientation=m_this_row->orientation; // if (...) m_prev_orientation_unknown=true;
+    }
+    else if( m_this_row->orientation != '+' && m_this_row->orientation != '-' ) {
+      // This error is real, not "potential"; report it now.
+      agpErr.Msg(CAgpErrEx::E_UnknownOrientation, NcbiEmptyString);
+      m_prev_orientation=0;
     }
 
     //// Check that component spans do not overlap and are in correct order

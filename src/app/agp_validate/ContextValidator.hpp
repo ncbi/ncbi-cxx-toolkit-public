@@ -170,7 +170,8 @@ protected:
   int m_componentsInLastObject;
   int m_gapsInLastScaffold;
   int m_gapsInLastObject;
-  bool m_prev_orientation_unknown;
+  //bool m_prev_orientation_unknown;
+  char m_prev_orientation; // 0 when we need not warn about it (not in singleton, etc)
 
   string m_prev_component_id; // for W_BreakingGapSameCompId: only set when encountering a breaking gap
 
