@@ -201,11 +201,13 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
                              vector<CSocketAPI::SPoll>& polls,
                              vector<IServer_ConnectionBase*>& timer_requests,
                              STimeout* timer_timeout,
-                             vector<IServer_ConnectionBase*>& revived_conns) const
+                             vector<IServer_ConnectionBase*>& revived_conns,
+                             vector<IServer_ConnectionBase*>& to_close_conns) const
 {
     CTime now = GetFastLocalTime();
     polls.clear();
     revived_conns.clear();
+    to_close_conns.clear();
     list<TConnBase*> to_delete;
 
     CMutexGuard guard(m_Mutex);
@@ -228,10 +230,8 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
         CServer_Connection* conn = dynamic_cast<CServer_Connection*>(conn_base);
         SPerConnInfo& info = it->second;
         if (info.type == eInactiveSocket  &&  info.expiration <= now) {
-            conn_base->OnTimeout();
-            conn->OnSocketEvent(eServIO_OurClose);
-            conn->Abort();
-            to_delete.push_back(conn_base);
+            to_close_conns.push_back(conn_base);
+
         }
         else if ((info.type == eInactiveSocket  ||  info.type == eListener)
                  &&  conn_base->IsOpen())
@@ -280,6 +280,10 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
     }
     ITERATE(list<TConnBase*>, it, to_delete) {
         data.erase(*it);
+    }
+    guard.Release();
+
+    ITERATE(list<TConnBase*>, it, to_delete) {
         delete *it;
     }
     if (alarm_time_defined) {

@@ -60,12 +60,13 @@ class  CStdPoolOfThreads;
 /// Extended copy of the type EIO_Event allowing to distinguish between
 /// connection closing from client and from ourselves
 enum EServIO_Event {
-    eServIO_Open        = 0x0,
-    eServIO_Read        = 0x1,
-    eServIO_Write       = 0x2,
-    eServIO_ReadWrite   = 0x3, /**< eIO_Read | eIO_Write */
-    eServIO_ClientClose = 0x4,
-    eServIO_OurClose    = 0x8
+    eServIO_Open        = 0x00,
+    eServIO_Read        = 0x01,
+    eServIO_Write       = 0x02,
+    eServIO_ReadWrite   = 0x03, /**< eIO_Read | eIO_Write */
+    eServIO_ClientClose = 0x04,
+    eServIO_OurClose    = 0x08,
+    eServIO_Inactivity  = 0x10
 };
 
 

@@ -98,7 +98,8 @@ public:
     bool GetPollAndTimerVec(vector<CSocketAPI::SPoll>& polls,
                             vector<IServer_ConnectionBase*>& timer_requests,
                             STimeout* timer_timeout,
-                            vector<IServer_ConnectionBase*>& revived_conns) const;
+                            vector<IServer_ConnectionBase*>& revived_conns,
+                            vector<IServer_ConnectionBase*>& to_close_conns) const;
 
     void StartListening(void);
     void StopListening(void);

@@ -312,6 +312,11 @@ void CServer_Connection::OnSocketEvent(EServIO_Event event)
     } else if (eServIO_ClientClose == event) {
         m_Handler->OnClose(IServer_ConnectionHandler::eClientClose);
         m_Open = false;
+    } else if (eServIO_Inactivity == event) {
+        OnTimeout();
+        m_Handler->OnClose(IServer_ConnectionHandler::eOurClose);
+        Abort();
+        m_Open = false;
     } else {
         if (eServIO_Read & event)
             m_Handler->OnRead();
@@ -397,17 +402,22 @@ void CServer::x_DoRun(void)
     typedef vector<IServer_ConnectionBase*> TConnsList;
     TConnsList timer_requests;
     TConnsList revived_conns;
+    TConnsList to_close_conns;
     STimeout   timer_timeout;
     const STimeout* timeout;
 
     while (!ShutdownRequested()) {
         bool has_timer = m_ConnectionPool->GetPollAndTimerVec(
-                         polls, timer_requests, &timer_timeout, revived_conns);
+                                           polls, timer_requests, &timer_timeout,
+                                           revived_conns, to_close_conns);
 
         ITERATE(TConnsList, it, revived_conns) {
             CreateRequest(*it,
                           IOEventToServIOEvent((*it)->GetEventsToPollFor(NULL)),
                           m_Parameters->idle_timeout);
+        }
+        ITERATE(TConnsList, it, to_close_conns) {
+            CreateRequest(*it, eServIO_Inactivity, m_Parameters->idle_timeout);
         }
 
         timeout = m_Parameters->accept_timeout;
