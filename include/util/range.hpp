@@ -89,6 +89,24 @@ struct SPositionTraits :
 {
 };
 
+// Explicitly specialize for floating-point types, as only integral or
+// enumeration types can technically appear in constant expressions.
+template<>
+struct SPositionTraits<float> : SPositionTraitsBySignedness<true, float>
+{
+};
+
+template<>
+struct SPositionTraits<double> : SPositionTraitsBySignedness<true, double>
+{
+};
+
+template<>
+struct SPositionTraits<long double>
+    : SPositionTraitsBySignedness<true, long double>
+{
+};
+
 /////////////////////////////////////////////////////////////////////////////
 // End of SPositionTraits implementation
 /////////////////////////////////////////////////////////////////////////////
