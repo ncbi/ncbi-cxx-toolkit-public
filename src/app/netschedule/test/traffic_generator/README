@@ -1,0 +1,6 @@
+ns_traffic_generator.py is a threaded traffic generator
+Each thread simulates certain type of client activity.
+
+Each loader can be tuned separately, see the ns_traffic_settings.py file.
+
+
