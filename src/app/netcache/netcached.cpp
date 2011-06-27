@@ -459,14 +459,19 @@ CNetCacheServer::Finalize(void)
     INFO_POST("NetCache server is destroying. Usage statistics:");
     x_PrintServerStats(proxy);
 
-    UpdateLastRecNo();
-    s_TaskPool->KillAllThreads(true);
+    if (g_NCStorage)
+        UpdateLastRecNo();
+    if (s_TaskPool)
+        s_TaskPool->KillAllThreads(true);
     CNCPeriodicSync::Finalize();
     CNCMirroring::Finalize();
-    s_TaskPool->KillAllThreads(true);
-    g_NCStorage->Finalize();
+    if (s_TaskPool)
+        s_TaskPool->KillAllThreads(true);
+    if (g_NCStorage)
+        g_NCStorage->Finalize();
     //delete g_NCStorage;
-    s_TaskPool->KillAllThreads(true);
+    if (s_TaskPool)
+        s_TaskPool->KillAllThreads(true);
     //delete s_TaskPool;
     CNCSyncLog::Finalize();
     CNCDistributionConf::Finalize();
