@@ -486,11 +486,10 @@ CIndexedDb::CIndexedDb( const string & indexnames, BlastSeqSrc * db )
 
         // Interpret indexname as a space separated list of database names.
         //
-        while( end != string::npos ) {
+        while( start != string::npos ) {
             end = indexnames.find_first_of( " ", start );
-            dbnames.push_back( indexnames.substr( start, end ) );
-            start = end + 1;
-            end = indexnames.find_first_not_of( " ", end );
+            dbnames.push_back( indexnames.substr( start, end - start ) );
+            start = indexnames.find_first_not_of( " ", end );
         }
 
         std::sort( dbnames.begin(), dbnames.end(), &SeqDB_CompareVolume );
