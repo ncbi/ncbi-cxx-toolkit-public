@@ -520,7 +520,7 @@ void CAgpValidateApplication::x_LoadLenFa(CNcbiIstream& istr, const string& file
       if(pos2<pos1) pos1 = pos2;
       if(pos1!=NPOS) {
         pos1--;
-        while(pos1>0 && line[pos1-1]=='|') pos1--;
+        if(pos1>0 && line[pos1]=='|') pos1--;
       }
 
       acc_long=line.substr(1, pos1);
