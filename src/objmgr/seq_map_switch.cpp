@@ -585,8 +585,8 @@ void CSeqMapSwitchPoint::InsertInPlace(TSeqPos add_left, TSeqPos add_right)
         NCBI_THROW(CObjMgrException, eInvalidHandle,
                    "switch point is not initialized");
     }
-    if ( add_left && add_left > GetLeftInPlaceInsert() ||
-         add_right && add_right > GetRightInPlaceInsert() ) {
+    if ( (add_left && add_left > GetLeftInPlaceInsert()) ||
+         (add_right && add_right > GetRightInPlaceInsert()) ) {
         NCBI_THROW(CSeqMapException, eOutOfRange,
                    "adding more bases than available");
     }
@@ -616,8 +616,8 @@ CRef<CSeqMapSwitchPoint> GetSwitchPoint(const CBioseq_Handle& seq,
     for ( ; iter2; ++iter1, ++iter2 ) {
         if ( iter1.GetType() == CSeqMap::eSeqRef &&
              iter2.GetType() == CSeqMap::eSeqRef ) {
-            if ( iter1.GetRefSeqid() == id1 && iter2.GetRefSeqid() == id2 ||
-                 iter1.GetRefSeqid() == id2 && iter2.GetRefSeqid() == id1 ) {
+            if ( (iter1.GetRefSeqid() == id1 && iter2.GetRefSeqid() == id2) ||
+                 (iter1.GetRefSeqid() == id2 && iter2.GetRefSeqid() == id1) ) {
                 return x_GetSwitchPoint(seq, info, iter1, iter2);
             }
         }

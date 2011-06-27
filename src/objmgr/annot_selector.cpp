@@ -721,9 +721,9 @@ bool SAnnotSelector::IncludedFeatType(TFeatType type) const
     }
     // Make sure features are selected
     return GetAnnotType() == CSeq_annot::C_Data::e_not_set ||
-        GetAnnotType() == CSeq_annot::C_Data::e_Ftable &&
-        (GetFeatType() == CSeqFeatData::e_not_set ||
-         GetFeatType() == type);
+        (GetAnnotType() == CSeq_annot::C_Data::e_Ftable &&
+         (GetFeatType() == CSeqFeatData::e_not_set ||
+          GetFeatType() == type));
 }
 
 
@@ -735,12 +735,12 @@ bool SAnnotSelector::IncludedFeatSubtype(TFeatSubtype subtype) const
     }
     // Make sure features are selected
     return GetAnnotType() == CSeq_annot::C_Data::e_not_set ||
-        GetAnnotType() == CSeq_annot::C_Data::e_Ftable &&
-        (GetFeatType() == CSeqFeatData::e_not_set ||
-         subtype == CSeqFeatData::eSubtype_any ||
-         GetFeatSubtype() == subtype ||
-         (GetFeatSubtype() == CSeqFeatData::eSubtype_any &&
-          GetFeatType() == CSeqFeatData::GetTypeFromSubtype(subtype)));
+        (GetAnnotType() == CSeq_annot::C_Data::e_Ftable &&
+         (GetFeatType() == CSeqFeatData::e_not_set ||
+          subtype == CSeqFeatData::eSubtype_any ||
+          GetFeatSubtype() == subtype ||
+          (GetFeatSubtype() == CSeqFeatData::eSubtype_any &&
+           GetFeatType() == CSeqFeatData::GetTypeFromSubtype(subtype))));
 }
 
 

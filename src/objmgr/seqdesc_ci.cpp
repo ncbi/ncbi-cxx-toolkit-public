@@ -75,7 +75,7 @@ bool CSeqdesc_CI::x_RequestedType(void) const
 inline
 bool CSeqdesc_CI::x_Valid(void) const
 {
-    return !m_Entry || x_ValidDesc() && x_RequestedType();
+    return !m_Entry || (x_ValidDesc() && x_RequestedType());
 }
 
 

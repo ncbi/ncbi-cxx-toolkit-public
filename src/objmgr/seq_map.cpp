@@ -459,7 +459,7 @@ void CSeqMap::x_SetChunk(CSegment& seg, CTSE_Chunk_Info& chunk)
     //CMutexGuard guard(m_SeqMap_Mtx);
     // check for object
     if ( seg.m_ObjType == eSeqChunk ||
-         seg.m_RefObject && seg.m_SegType == seg.m_ObjType ) {
+         (seg.m_RefObject && seg.m_SegType == seg.m_ObjType) ) {
         NCBI_THROW(CSeqMapException, eDataError, "object already set");
     }
     // set object

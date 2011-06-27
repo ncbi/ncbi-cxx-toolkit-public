@@ -1453,18 +1453,19 @@ namespace {
         // sort first by start coordinate, then by end coordinate
         bool operator()(const SFeatRangeInfo& a, const SFeatRangeInfo& b) const
             {
-                return a.m_Id < b.m_Id || a.m_Id == b.m_Id &&
-                    a.m_Range < b.m_Range;
+                return a.m_Id < b.m_Id ||
+                    (a.m_Id == b.m_Id && a.m_Range < b.m_Range);
             }
     };
     struct PLessByEnd {
         // sort first by end coordinate, then by start coordinate
         bool operator()(const SFeatRangeInfo& a, const SFeatRangeInfo& b) const
             {
-                return a.m_Id < b.m_Id || a.m_Id == b.m_Id &&
-                    (a.m_Range.GetToOpen() < b.m_Range.GetToOpen() ||
-                     a.m_Range.GetToOpen() == b.m_Range.GetToOpen() &&
-                     a.m_Range.GetFrom() < b.m_Range.GetFrom());
+                return a.m_Id < b.m_Id ||
+                    (a.m_Id == b.m_Id &&
+                     (a.m_Range.GetToOpen() < b.m_Range.GetToOpen() ||
+                      (a.m_Range.GetToOpen() == b.m_Range.GetToOpen() &&
+                       a.m_Range.GetFrom() < b.m_Range.GetFrom())));
             }
     };
 

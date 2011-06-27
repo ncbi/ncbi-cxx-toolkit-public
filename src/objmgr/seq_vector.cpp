@@ -988,8 +988,8 @@ void CSeqVector::x_GetPacked2naSeqData(string& dst_str,
                     dataPos = seg.GetRefPosition() +
                         (src_pos - seg.GetPosition());
                 }
-                _ASSERT(!randomizer && dst_coding == CSeq_data::e_Ncbi2na ||
-                        randomizer && dst_coding == CSeq_data::e_Ncbi4na);
+                _ASSERT((!randomizer && dst_coding == CSeq_data::e_Ncbi2na) ||
+                        (randomizer && dst_coding == CSeq_data::e_Ncbi4na));
                 x_AppendAnyTo2(dst_str, dst_c, dst_pos,
                                data, dataPos, count, table, reverse,
                                randomizer, src_pos);
