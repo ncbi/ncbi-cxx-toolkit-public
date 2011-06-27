@@ -47,6 +47,8 @@ if [ $act = true ]; then
             fi
         done
     done > '.#lock-map'
+    # Don't bother keeping empty maps around.
+    [ -s '.#lock-map' ]  ||  rm '.#lock-map'
 fi
 
 exit 0
