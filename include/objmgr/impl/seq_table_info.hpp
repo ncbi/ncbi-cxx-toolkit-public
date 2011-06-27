@@ -88,17 +88,17 @@ public:
     bool GetBool(size_t row, bool& v, bool force = false) const
         {
             return m_Column->TryGetBool(row, v) ||
-                force && x_ThrowUnsetValue();
+                (force && x_ThrowUnsetValue());
         }
     bool GetInt(size_t row, int& v, bool force = false) const
         {
             return m_Column->TryGetInt(row, v) ||
-                force && x_ThrowUnsetValue();
+                (force && x_ThrowUnsetValue());
         }
     bool GetReal(size_t row, double& v, bool force = false) const
         {
             return m_Column->TryGetReal(row, v) ||
-                force && x_ThrowUnsetValue();
+                (force && x_ThrowUnsetValue());
         }
     bool GetString(size_t row, string& v, bool force = false) const;
     bool GetBytes(size_t row, vector<char>& v, bool force = false) const;
