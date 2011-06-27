@@ -46,6 +46,54 @@
 
 BEGIN_NCBI_SCOPE
 
+
+/////////////////////////////////////////////////////////////////////////////
+// The SPositionTraits template is necessary to make comparison with 0
+// optional only if the position type is signed.
+// Many other implementation of this optional check make ICC to issue warning
+// about meaningless comparison with 0 if the position type is signed.
+/////////////////////////////////////////////////////////////////////////////
+
+template<bool Signed, class Position>
+struct SPositionTraitsBySignedness
+{
+};
+
+
+// An instantiation of SPositionTraitsBySignedness for signed position types.
+template<class Position>
+struct SPositionTraitsBySignedness<true, Position>
+{
+    static bool IsNegative(Position pos)
+        {
+            return pos < 0;
+        }
+};
+
+
+// An instantiation of SPositionTraitsBySignedness for unsigned position types.
+template<class Position>
+struct SPositionTraitsBySignedness<false, Position>
+{
+    static bool IsNegative(Position )
+        {
+            return false;
+        }
+};
+
+
+// Select an instantiation depending on signedness of the position type.
+template<class Position>
+struct SPositionTraits :
+    SPositionTraitsBySignedness<(Position(-1)<Position(1)), Position>
+{
+};
+
+/////////////////////////////////////////////////////////////////////////////
+// End of SPositionTraits implementation
+/////////////////////////////////////////////////////////////////////////////
+
+
 // range
 template<class Position>
 class COpenRange
@@ -87,6 +135,7 @@ public:
         {
             return GetToOpen() > GetFrom();
         }
+
     // return length of regular region
     position_type GetLength(void) const
         {
@@ -94,7 +143,7 @@ public:
             if ( toOpen <= from )
                 return 0;
             position_type len = toOpen - from;
-            if ( len < 0 )
+            if ( SPositionTraits<position_type>::IsNegative(len) )
                 len = GetWholeLength();
             return len;
         }
@@ -126,7 +175,7 @@ public:
     // length must be >= 0
     TThisType& SetLength(position_type length)
         {
-            _ASSERT(length >= 0);
+            _ASSERT(!SPositionTraits<position_type>::IsNegative(length));
             position_type from = GetFrom();
             position_type toOpen = from + length;
             if ( toOpen < from )
