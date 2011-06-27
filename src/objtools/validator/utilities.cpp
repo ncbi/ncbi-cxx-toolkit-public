@@ -355,6 +355,8 @@ static string s_GetAccessionForSeqdesc (CSeq_entry_Handle seh, const CSeqdesc& d
 
 string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, CScope& scope)
 {
+    string empty_acc = "";
+
     if (obj && obj->GetThisTypeInfo() == CSeqdesc::GetTypeInfo() && ctx) {
         CSeq_entry_Handle seh = scope.GetSeq_entryHandle(*ctx);
         const CSeqdesc& desc = dynamic_cast<const CSeqdesc&>(*obj);
@@ -417,7 +419,7 @@ string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, 
             const CSeq_align& align = dynamic_cast<const CSeq_align&>(*obj);
             // temporary - to match C Toolkit
             if (align.IsSetSegs() && align.GetSegs().IsStd()) {
-                return kEmptyStr;
+                return empty_acc;
             }
             try {
                 if (align.IsSetDim()) {
@@ -448,7 +450,7 @@ string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, 
             }
         }
     }
-    return kEmptyStr;
+    return empty_acc;
 }
 
 

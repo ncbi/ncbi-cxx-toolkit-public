@@ -18608,6 +18608,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphLocInvalid)
     graph->ResetLoc();
     seh = scope.AddTopLevelSeqEntry(*entry);
 
+    expected_errors[0]->SetAccession("");
     expected_errors[0]->SetErrMsg("SeqGraph location (Unknown) is invalid");
     expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "GraphPackagingProblem",
                               "There is 1 mispackaged graph in this record."));
