@@ -207,8 +207,12 @@ unsigned CNetScheduleAdmin::CountActiveJobs()
 {
     string cmd("ACNT");
 
-    return NStr::StringToUInt(m_Impl->m_API->m_Service->
-        RequireStandAloneServerSpec(cmd).ExecWithRetry(cmd).response);
+    unsigned counter = 0;
+
+    for (CNetServiceIterator it = m_Impl->m_API->m_Service.Iterate(); it; ++it)
+        counter += NStr::StringToUInt((*it).ExecWithRetry(cmd).response);
+
+    return counter;
 }
 
 void CNetScheduleAdmin::GetWorkerNodes(
@@ -362,8 +366,7 @@ unsigned long CNetScheduleAdmin::Count(const string& query)
 
     unsigned long counter = 0;
 
-    for (CNetServiceIterator it =
-            m_Impl->m_API->m_Service.Iterate(); it; ++it)
+    for (CNetServiceIterator it = m_Impl->m_API->m_Service.Iterate(); it; ++it)
         counter += NStr::StringToULong((*it).ExecWithRetry(cmd).response);
 
     return counter;
