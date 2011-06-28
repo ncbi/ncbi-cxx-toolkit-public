@@ -113,6 +113,8 @@ inline Uint4 CMultiSeqInfo::GetNumSeqs()
 /// @return The sequence block.
 inline BLAST_SequenceBlk* CMultiSeqInfo::GetSeqBlk(int index)
 {
+    _ASSERT(!m_ivSeqBlkVec.empty());
+    _ASSERT((int)m_ivSeqBlkVec.size() > index);
     return m_ivSeqBlkVec[index];
 }
 
@@ -183,16 +185,18 @@ s_MultiSeqGetMaxLength(void* multiseq_handle, void*)
 {
     Int4 retval = 0;
     Uint4 index;
-    CMultiSeqInfo* seq_info = (CMultiSeqInfo*) multiseq_handle;
+    CRef<CMultiSeqInfo>* seq_info =
+        static_cast<CRef<CMultiSeqInfo>*>(multiseq_handle);
 
     _ASSERT(seq_info);
+    _ASSERT(seq_info->NotEmpty());
     
-    if ((retval = seq_info->GetMaxLength()) > 0)
+    if ((retval = (*seq_info)->GetMaxLength()) > 0)
         return retval;
 
-    for (index=0; index<seq_info->GetNumSeqs(); ++index)
-        retval = MAX(retval, seq_info->GetSeqBlk(index)->length);
-    seq_info->SetMaxLength(retval);
+    for (index=0; index<(*seq_info)->GetNumSeqs(); ++index)
+        retval = MAX(retval, (*seq_info)->GetSeqBlk(index)->length);
+    (*seq_info)->SetMaxLength(retval);
 
     return retval;
 }
@@ -206,19 +210,21 @@ s_MultiSeqGetAvgLength(void* multiseq_handle, void*)
     Uint4 num_seqs = 0;
     Uint4 avg_length;
     Uint4 index;
-    CMultiSeqInfo* seq_info = (CMultiSeqInfo*) multiseq_handle;
+    CRef<CMultiSeqInfo>* seq_info =
+        static_cast<CRef<CMultiSeqInfo>*>(multiseq_handle);
 
     _ASSERT(seq_info);
+    _ASSERT(seq_info->NotEmpty());
 
-    if ((avg_length = seq_info->GetAvgLength()) > 0)
+    if ((avg_length = (*seq_info)->GetAvgLength()) > 0)
         return avg_length;
 
-    if ((num_seqs = seq_info->GetNumSeqs()) == 0)
+    if ((num_seqs = (*seq_info)->GetNumSeqs()) == 0)
         return 0;
     for (index = 0; index < num_seqs; ++index) 
-        total_length += (Int8) seq_info->GetSeqBlk(index)->length;
+        total_length += (Int8) (*seq_info)->GetSeqBlk(index)->length;
     avg_length = (Uint4) (total_length / num_seqs);
-    seq_info->SetAvgLength(avg_length);
+    (*seq_info)->SetAvgLength(avg_length);
 
     return avg_length;
 }
@@ -228,10 +234,12 @@ s_MultiSeqGetAvgLength(void* multiseq_handle, void*)
 static Int4 
 s_MultiSeqGetNumSeqs(void* multiseq_handle, void*)
 {
-    CMultiSeqInfo* seq_info = (CMultiSeqInfo*) multiseq_handle;
+    CRef<CMultiSeqInfo>* seq_info =
+        static_cast<CRef<CMultiSeqInfo>*>(multiseq_handle);
 
     _ASSERT(seq_info);
-    return seq_info->GetNumSeqs();
+    _ASSERT(seq_info->NotEmpty());
+    return (*seq_info)->GetNumSeqs();
 }
 
 /// Returns zero as this implementation does not support alias files.
@@ -267,11 +275,13 @@ s_MultiSeqGetName(void* /*multiseq_handle*/, void*)
 static Boolean 
 s_MultiSeqGetIsProt(void* multiseq_handle, void*)
 {
-    CMultiSeqInfo* seq_info = (CMultiSeqInfo*) multiseq_handle;
+    CRef<CMultiSeqInfo>* seq_info =
+        static_cast<CRef<CMultiSeqInfo>*>(multiseq_handle);
 
     _ASSERT(seq_info);
+    _ASSERT(seq_info->NotEmpty());
 
-    return (Boolean) seq_info->GetIsProtein();
+    return (Boolean) (*seq_info)->GetIsProtein();
 }
 
 /// Retrieves the sequence for a given index, in a given encoding.
@@ -282,21 +292,23 @@ s_MultiSeqGetIsProt(void* multiseq_handle, void*)
 static Int2 
 s_MultiSeqGetSequence(void* multiseq_handle, BlastSeqSrcGetSeqArg* args)
 {
-    CMultiSeqInfo* seq_info = (CMultiSeqInfo*) multiseq_handle;
+    CRef<CMultiSeqInfo>* seq_info =
+        static_cast<CRef<CMultiSeqInfo>*>(multiseq_handle);
     Int4 index;
 
     _ASSERT(seq_info);
+    _ASSERT(seq_info->NotEmpty());
     _ASSERT(args);
 
-    if (seq_info->GetNumSeqs() == 0 || !args)
+    if ((*seq_info)->GetNumSeqs() == 0 || !args)
         return BLAST_SEQSRC_ERROR;
 
     index = args->oid;
 
-    if (index >= (Int4) seq_info->GetNumSeqs())
+    if (index >= (Int4) (*seq_info)->GetNumSeqs())
         return BLAST_SEQSRC_EOF;
 
-    BlastSequenceBlkCopy(&args->seq, seq_info->GetSeqBlk(index));
+    BlastSequenceBlkCopy(&args->seq, (*seq_info)->GetSeqBlk(index));
     /* If this is a nucleotide sequence, and it is the traceback stage, 
        we need the uncompressed buffer, stored in the 'sequence_start' 
        pointer. That buffer has an extra sentinel byte for blastn, but
@@ -334,14 +346,16 @@ s_MultiSeqReleaseSequence(void* /*multiseq_handle*/, BlastSeqSrcGetSeqArg* args)
 static Int4 
 s_MultiSeqGetSeqLen(void* multiseq_handle, void* args)
 {
-    CMultiSeqInfo* seq_info = (CMultiSeqInfo*)multiseq_handle;
+    CRef<CMultiSeqInfo>* seq_info =
+        static_cast<CRef<CMultiSeqInfo>*>(multiseq_handle);
     Int4 index;
 
     _ASSERT(seq_info);
+    _ASSERT(seq_info->NotEmpty());
     _ASSERT(args);
 
     index = *((Int4*) args);
-    return seq_info->GetSeqBlk(index)->length;
+    return (*seq_info)->GetSeqBlk(index)->length;
 }
 
 /// Mirrors the database iteration interface. Next chunk of indices retrieval 
@@ -356,15 +370,18 @@ s_MultiSeqGetSeqLen(void* multiseq_handle, void* args)
 static Int2 
 s_MultiSeqGetNextChunk(void* multiseq_handle, BlastSeqSrcIterator* itr)
 {
-    CMultiSeqInfo* seq_info = (CMultiSeqInfo*) multiseq_handle;
+    CRef<CMultiSeqInfo>* seq_info =
+        static_cast<CRef<CMultiSeqInfo>*>(multiseq_handle);
 
+    _ASSERT(seq_info);
+    _ASSERT(seq_info->NotEmpty());
     _ASSERT(itr);
 
     if (itr->current_pos == UINT4_MAX) {
         itr->current_pos = 0;
     }
 
-    if (itr->current_pos >= seq_info->GetNumSeqs())
+    if (itr->current_pos >= (*seq_info)->GetNumSeqs())
         return BLAST_SEQSRC_EOF;
 
     return BLAST_SEQSRC_SUCCESS;
@@ -417,12 +434,28 @@ s_MultiSeqSrcFree(BlastSeqSrc* seq_src)
 {
     if (!seq_src) 
         return NULL;
-    CMultiSeqInfo* seq_info = static_cast<CMultiSeqInfo*>
-                                (_BlastSeqSrcImpl_GetDataStructure(seq_src));
-
+    CRef<CMultiSeqInfo>* seq_info = static_cast<CRef<CMultiSeqInfo>*>
+        (_BlastSeqSrcImpl_GetDataStructure(seq_src));
     delete seq_info;
-
     return NULL;
+}
+
+/// Multi-sequence sequence source copier: creates a new reference to the
+/// CMultiSeqInfo object and copies the rest of the BlastSeqSrc structure.
+/// @param seq_src BlastSeqSrc structure to copy [in]
+/// @return Pointer to the new BlastSeqSrc.
+static BlastSeqSrc* 
+s_MultiSeqSrcCopy(BlastSeqSrc* seq_src)
+{
+    if (!seq_src) 
+        return NULL;
+    CRef<CMultiSeqInfo>* seq_info = static_cast<CRef<CMultiSeqInfo>*>
+        (_BlastSeqSrcImpl_GetDataStructure(seq_src));
+    CRef<CMultiSeqInfo>* seq_info2 = new CRef<CMultiSeqInfo>(*seq_info);
+
+    _BlastSeqSrcImpl_SetDataStructure(seq_src, (void*) seq_info2);
+    
+    return seq_src;
 }
 
 /// Multi-sequence source constructor 
@@ -437,10 +470,10 @@ s_MultiSeqSrcNew(BlastSeqSrc* retval, void* args)
 
     SMultiSeqSrcNewArgs* seqsrc_args = (SMultiSeqSrcNewArgs*) args;
     
-    CMultiSeqInfo* seq_info =  NULL;
+    CRef<CMultiSeqInfo>* seq_info = new CRef<CMultiSeqInfo>(0);
     try {
-        seq_info = new CMultiSeqInfo(seqsrc_args->seq_vector, 
-                                     seqsrc_args->program);
+        seq_info->Reset(new CMultiSeqInfo(seqsrc_args->seq_vector, 
+                                          seqsrc_args->program));
     } catch (const ncbi::CException& e) {
         _BlastSeqSrcImpl_SetInitErrorStr(retval, strdup(e.ReportAll().c_str()));
     } catch (const std::exception& e) {
@@ -453,8 +486,7 @@ s_MultiSeqSrcNew(BlastSeqSrc* retval, void* args)
     /* Initialize the BlastSeqSrc structure fields with user-defined function
      * pointers and seq_info */
     _BlastSeqSrcImpl_SetDeleteFnPtr(retval, &s_MultiSeqSrcFree);
-    /// @todo FIXME Must there be a copy function in this implementation?
-    ///       If so, should CMultiSeqInfo* be changed to a CRef
+    _BlastSeqSrcImpl_SetCopyFnPtr(retval, &s_MultiSeqSrcCopy);
     _BlastSeqSrcImpl_SetDataStructure(retval, (void*) seq_info);
     _BlastSeqSrcImpl_SetGetNumSeqs(retval, &s_MultiSeqGetNumSeqs);
     _BlastSeqSrcImpl_SetGetNumSeqsStats(retval, &s_MultiSeqGetNumSeqsStats);

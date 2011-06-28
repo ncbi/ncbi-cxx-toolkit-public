@@ -57,7 +57,9 @@ QueryFactoryBlastSeqSrcInit(CRef<IQueryFactory> query_factory,
  * @param subj_seqs TSeqLocVector object from which the queries will be
  * manufactured [in]
  * @param program Type of BLAST to be performed [in]
+ * @note this is deprecated, use MultiSeqBlastSeqSrcInit instead
  */
+NCBI_DEPRECATED
 NCBI_XBLAST_EXPORT BlastSeqSrc* 
 QueryFactoryBlastSeqSrcInit(const TSeqLocVector& subj_seqs,
                             EBlastProgramType program);
