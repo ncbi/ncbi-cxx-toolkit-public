@@ -579,11 +579,11 @@ CNCBlobAccessor::x_ReadNextChunk(void)
         return;
 
     bool is_last = m_CurChunk == m_CurData->chunks.size();
-    if ((is_last  &&  m_Buffer->GetSize() != m_CurData->size % kNCMaxBlobChunkSize)
-        ||  (!is_last  &&  m_Buffer->GetSize() != kNCMaxBlobChunkSize))
-    {
+    size_t need_size = size_t(m_CurData->size % kNCMaxBlobChunkSize);
+    if (!is_last  ||  need_size == 0)
+        need_size = kNCMaxBlobChunkSize;
+    if (m_Buffer->GetSize() != need_size)
         x_DelCorruptedVersion();
-    }
 }
 
 void
