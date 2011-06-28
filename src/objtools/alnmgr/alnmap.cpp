@@ -379,7 +379,7 @@ CAlnMap::TNumseg CAlnMap::GetSeg(TSeqPos aln_pos) const
     TNumseg btm, top, mid;
 
     btm = 0;
-    top = m_AlnStarts.size() - 1;
+    top = TNumseg(m_AlnStarts.size()) - 1;
 
     if (aln_pos > m_AlnStarts[top] +
         m_Lens[x_GetRawSegFromSeg(top)] - 1) 
@@ -791,9 +791,9 @@ void CAlnMap::GetResidueIndexMap(TNumrow row0,
     // determine left seq positions
     l_pos0 = m_Starts[l_idx0];
     l_pos1 = m_Starts[l_idx1];
+    _ASSERT(aln_start >= aln_pos);
     l_delta = aln_start - aln_pos;
     l_len -= l_delta;
-    _ASSERT(l_delta >= 0);
     if (plus0) {
         l_pos0 += l_delta;
     } else {
@@ -828,9 +828,9 @@ void CAlnMap::GetResidueIndexMap(TNumrow row0,
     // determine right seq positions
     r_pos0 = m_Starts[r_idx0];
     r_pos1 = m_Starts[r_idx1];
+    _ASSERT(aln_pos >= aln_stop);
     r_delta = aln_pos - aln_stop;
     r_len -= r_delta;
-    _ASSERT(r_delta >= 0);
     if (plus0) {
         r_pos0 += r_len - 1;
     } else {
@@ -858,7 +858,7 @@ void CAlnMap::GetResidueIndexMap(TNumrow row0,
     l_idx0 = row0;
     l_idx1 = row1;
     TNumseg seg = l_seg;
-    TSeqPos delta;
+    TSignedSeqPos delta;
     while (true) {
         if (m_Starts[l_idx0] >= 0) { // if row0 is not gapped
 
@@ -986,7 +986,7 @@ TSignedSeqPos CAlnMap::GetSeqAlnStart(TNumrow row) const
 TSignedSeqPos CAlnMap::GetSeqAlnStop(TNumrow row) const
 {
     if (IsSetAnchor()) {
-        TNumseg seg = m_AlnSegIdx.size();
+        TNumseg seg = TNumseg(m_AlnSegIdx.size());
         while (seg--) {
             if (m_Starts[m_AlnSegIdx[seg] * m_NumRows + row] >= 0) {
                 return GetAlnStop(seg);
@@ -1156,7 +1156,7 @@ void CAlnMap::x_GetChunks(CAlnChunkVec * vec,
 
     // add the participating segments to the vector
     for (TNumseg seg = left_seg;  seg <= right_seg;  seg++, hint_idx += m_NumRows) {
-        type = x_GetRawSegType(row, seg, hint_idx);
+        type = x_GetRawSegType(row, seg, int(hint_idx));
     
         // see if the segment needs to be skipped
         if (x_SkipType(type, flags)) {
@@ -1172,7 +1172,7 @@ void CAlnMap::x_GetChunks(CAlnChunkVec * vec,
 
         // find the stop seg
         TNumseg test_seg = seg;
-        int test_hint_idx = hint_idx;
+        int test_hint_idx = int(hint_idx);
         while (test_seg < right_seg) {
             test_seg++;
             test_hint_idx += m_NumRows;
@@ -1412,8 +1412,8 @@ CRef<CSeq_align> CAlnMap::CreateAlignFromRange(
 
     // Initialize selected rows
     size_t dim = selected_rows.size();
-    ret->SetDim(dim);
-    ds.SetDim(dim);
+    ret->SetDim(CSeq_align::TDim(dim));
+    ds.SetDim(CDense_seg::TDim(dim));
     ds.SetIds().resize(dim);
     if ( have_widths ) {
         ds.SetWidths().resize(dim);
@@ -1445,7 +1445,7 @@ CRef<CSeq_align> CAlnMap::CreateAlignFromRange(
         // Check trimming of the first segment
         TSeqPos aln_seg_from = GetAlnStart(seg);
         TSeqPos from_trim = 0;
-        if (seg == from_seg  &&  aln_from > aln_seg_from) {
+        if (seg == from_seg  &&  TSeqPos(aln_from) > aln_seg_from) {
             if (seg_flag == eSegment_Remove) {
                 continue; // ignore incomplete segments
             }
@@ -1458,7 +1458,7 @@ CRef<CSeq_align> CAlnMap::CreateAlignFromRange(
         // Check trimming of the last segment
         if (seg == to_seg) {
             TSeqPos aln_seg_to = GetAlnStop(seg);
-            if (aln_seg_to > aln_to) {
+            if (aln_seg_to > TSeqPos(aln_to)) {
                 if (seg_flag == eSegment_Remove) {
                     continue; // ignore incomplete segments
                 }

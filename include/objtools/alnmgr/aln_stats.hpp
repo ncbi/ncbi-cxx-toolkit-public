@@ -85,11 +85,11 @@ public:
                     TIdxVec& idx_vec = it->second;
                     TIdxVec::iterator idx_it = idx_vec.begin();
                     while (idx_it != idx_vec.end()) {
-                        if ( !m_BitVecVec[*idx_it][aln_i] ) {
+                        if ( !m_BitVecVec[*idx_it][bm::id_t(aln_i)] ) {
                             // create a mapping b/n the id and the alignment
-                            m_BitVecVec[*idx_it][aln_i] = true;
+                            m_BitVecVec[*idx_it][bm::id_t(aln_i)] = true;
                             _ASSERT(m_RowVecVec[*idx_it][aln_i] == -1);
-                            m_RowVecVec[*idx_it][aln_i] = row_i;
+                            m_RowVecVec[*idx_it][aln_i] = int(row_i);
                             break;
                         }
                         ++idx_it;
@@ -122,7 +122,7 @@ public:
     /// What is the dimension of an alignment?
     TDim GetDimForAln(size_t aln_idx) const {
         _ASSERT(aln_idx < GetAlnCount());
-        return m_AlnIdVec[aln_idx].size();
+        return TDim(m_AlnIdVec[aln_idx].size());
     }
 
 
@@ -156,13 +156,13 @@ public:
 
                 /// temp, to keep track of already found aligned ids
                 TBitVec id_bit_vec;
-                id_bit_vec.resize(m_IdVec.size());
+                id_bit_vec.resize(bm::bvector<>::size_type(m_IdVec.size()));
 
                 const size_t& id_idx = it->second[0];
                 for (size_t aln_i = 0; aln_i < m_AlnCount; ++aln_i) {
 
                     /// if query paricipates in alignment
-                    if (m_BitVecVec[id_idx][aln_i]) {
+                    if (m_BitVecVec[id_idx][bm::id_t(aln_i)]) {
 
                         /// find all participating subjects for this alignment
                         for (size_t aligned_id_idx = 0;
@@ -171,11 +171,11 @@ public:
 
                             /// if an aligned subject
                             if (aligned_id_idx != id_idx  &&
-                                m_BitVecVec[aligned_id_idx][aln_i]) {
+                                m_BitVecVec[aligned_id_idx][bm::id_t(aln_i)]) {
 
-                                if ( !id_bit_vec[aligned_id_idx] ) {
+                                    if ( !id_bit_vec[bm::id_t(aligned_id_idx)] ) {
                                     /// add only if not already added
-                                    id_bit_vec[aligned_id_idx] = true;
+                                    id_bit_vec[bm::id_t(aligned_id_idx)] = true;
                                     aligned_ids_vec.push_back
                                         (m_IdVec[aligned_id_idx]);
                                 }
@@ -277,15 +277,15 @@ private:
         {
             m_BitVecVec.push_back(TBitVec());
             TBitVec& bit_vec = m_BitVecVec.back();
-            bit_vec.resize(m_AlnCount);
-            bit_vec[aln_i] = true;
+            bit_vec.resize(bm::bvector<>::size_type(m_AlnCount));
+            bit_vec[bm::id_t(aln_i)] = true;
             _ASSERT(m_IdVec.size() == m_BitVecVec.size());
         }
         {
             m_RowVecVec.push_back(TRowVec());
             TRowVec& rows = m_RowVecVec.back();
             rows.resize(m_AlnCount, -1);
-            rows[aln_i] = row_i;
+            rows[aln_i] = int(row_i);
             _ASSERT(m_IdVec.size() == m_RowVecVec.size());
         }
         return m_IdVec.size() - 1;

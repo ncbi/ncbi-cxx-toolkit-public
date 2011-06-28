@@ -255,7 +255,7 @@ public:
 
         CConstRef<CAlnChunk> operator[] (TNumchunk i) const;
 
-        TNumchunk size(void) const { return m_StartSegs.size(); };
+        TNumchunk size(void) const { return TNumchunk(m_StartSegs.size()); };
 
     private:
 #if defined(NCBI_COMPILER_MSVC) // kludge
@@ -509,7 +509,7 @@ CAlnMap::GetSegType(TNumrow row, TNumseg seg, int offset) const
 inline
 CAlnMap::TNumseg CAlnMap::GetNumSegs(void) const
 {
-    return IsSetAnchor() ? m_AlnSegIdx.size() : m_NumSegs;
+    return IsSetAnchor() ? TNumseg(m_AlnSegIdx.size()) : m_NumSegs;
 }
 
 
