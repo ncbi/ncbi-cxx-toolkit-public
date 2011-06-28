@@ -112,7 +112,7 @@ CIgBlastnAppArgs::CIgBlastnAppArgs()
     arg.Reset(m_QueryOptsArgs);
     m_Args.push_back(arg);
 
-    m_FormattingArgs.Reset(new CFormattingArgs);
+    m_FormattingArgs.Reset(new CFormattingArgs(true));
     arg.Reset(m_FormattingArgs);
     m_Args.push_back(arg);
 
@@ -138,7 +138,6 @@ CIgBlastnAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
     retval.Reset(CBlastOptionsFactory::CreateTask(GetTask(), locality));
     _ASSERT(retval.NotEmpty());
 
-    retval->SetHitlistSize(10);
     retval->SetFilterString("F");
     //retval->SetEvalueThreshold(1e-15);  <- this will be overwritten anyway
     CBlastOptions &opts = retval->SetOptions();
