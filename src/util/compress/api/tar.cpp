@@ -667,10 +667,10 @@ static string s_PositionAsString(const string& file, Uint8 pos, size_t recsize,
 }
 
 
-static string s_AddressAsString(size_t offset)
+static string s_OffsetAsString(size_t offset)
 {
     char buf[20];
-    _ASSERT(0 <= offset  &&  offset < 1000);
+    _ASSERT(offset < 1000);
     _VERIFY(sprintf(buf, "%03u", (unsigned int) offset));
     return buf;
 }
@@ -711,7 +711,7 @@ static string s_Printable(const char* field, size_t maxsize, bool text)
 #define _STR(s) #s
 
 #define TAR_PRINTABLE(field, text)                                      \
-    "@" + s_AddressAsString((size_t) offsetof(SHeader, field)) +        \
+    "@" + s_OffsetAsString((size_t) offsetof(SHeader, field)) +         \
     "[" _STR(field) "]:" + string(13 - sizeof(_STR(field)), ' ') +      \
     '"' + s_Printable(h->field, sizeof(h->field), text  ||  ex) + '"'
 
@@ -728,7 +728,7 @@ static string s_DumpSparseMap(const SHeader* h, const char* sparse,
             offset = (size_t)(sparse - (const char*) h);
             if (!dump.empty())
                 dump += '\n';
-            dump += '@' + s_AddressAsString(offset);
+            dump += '@' + s_OffsetAsString(offset);
             if (!done) {
                 Uint8 off, gap;
                 int ok_off = s_DecodeUint8(off, sparse,      12);
@@ -764,7 +764,7 @@ static string s_DumpSparseMap(const SHeader* h, const char* sparse,
         dump += '\n';
     }
     offset = (size_t)(extend - (const char*) h);
-    dump += '@' + s_AddressAsString(offset) + "[gnu.extend]:" + string(2, ' ')
+    dump += '@' + s_OffsetAsString(offset) + "[gnu.extend]:" + string(2, ' ')
         + '"' + NStr::PrintableString(string(extend, 1)) + '"'
         + string(*extend ? " [continued]" : " [last]");
     return dump;
@@ -1061,7 +1061,7 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
                 const char* extent = h->star.prefix + 107;
                 ok = s_DecodeUint8(val, extent, 12);
                 dump += "@"
-                    + s_AddressAsString((size_t)(extent - (const char*) h))
+                    + s_OffsetAsString((size_t)(extent - (const char*) h))
                     + "[star.extent]: \""
                     + s_Printable(extent, 12, !ok  ||  ex) + '"';
                 if (ok  &&  (ok < 0  ||  val > 7)) {
@@ -1193,7 +1193,7 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
                 ok = false;
             }
             _ASSERT(len);
-            dump += "\n@" + s_AddressAsString(offset) + ':' + string(14, ' ')
+            dump += "\n@" + s_OffsetAsString(offset) + ':' + string(14, ' ')
                 + '"' + NStr::PrintableString(string(&tname[n], len)) + '"';
             if (ok) {
                 CTime time((time_t) val);
