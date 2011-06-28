@@ -5239,7 +5239,7 @@ void CFileIO::CreateTemporary(const string& dir,
         NcbiSys_remove(_T_XCSTRING(m_Pathname));
 
 #  elif defined(NCBI_OS_MSWIN)
-    char buffer[MAX_PATH];
+    char buffer[MAX_PATH+1];
     srand((unsigned) time(0));
     unsigned long ofs = rand();
 
