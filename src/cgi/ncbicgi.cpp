@@ -908,7 +908,7 @@ static const char* s_PropName[eCgi_NProperties + 1] = {
 
 const string CCgiRequest::GetPropertyName(ECgiProp prop)
 {
-    if ((long) prop < 0  ||  (long) eCgi_NProperties <= (long) prop) {
+    if ((unsigned int) eCgi_NProperties <= (unsigned int) prop) {
         _TROUBLE;
         NCBI_THROW(CCgiException, eUnknown,
                    "CCgiRequest::GetPropertyName(BadPropIdx)");
@@ -918,10 +918,10 @@ const string CCgiRequest::GetPropertyName(ECgiProp prop)
 
 
 // Add another entry to the container of entries
-void s_AddEntry(TCgiEntries& entries, const string& name,
-                const string& value, unsigned int position,
-                const string& filename = kEmptyStr,
-                const string& type = kEmptyStr)
+static void s_AddEntry(TCgiEntries& entries, const string& name,
+                       const string& value, unsigned int position,
+                       const string& filename = kEmptyStr,
+                       const string& type     = kEmptyStr)
 {
     entries.insert(TCgiEntries::value_type
                    (name, CCgiEntry(value, filename, position, type)));
