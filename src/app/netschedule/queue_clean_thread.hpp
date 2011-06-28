@@ -48,10 +48,12 @@ class CJobQueueCleanerThread : public CThreadNonStop
 public:
     CJobQueueCleanerThread(CBackgroundHost&     host,
                            CQueueDataBase&      qdb,
-                           unsigned             run_delay)
+                           unsigned             run_delay,
+                           const bool &         logging)
     : CThreadNonStop(run_delay),
       m_Host(host),
-      m_QueueDB(qdb)
+      m_QueueDB(qdb),
+      m_CleaningLogging(logging)
 #ifdef _DEBUG
       , m_DbgTriggerDBRecover(false)
 #endif
@@ -66,6 +68,7 @@ private:
 private:
     CBackgroundHost&    m_Host;
     CQueueDataBase&     m_QueueDB;
+    const bool &        m_CleaningLogging;
 #ifdef _DEBUG
     bool                m_DbgTriggerDBRecover;
 #endif
@@ -80,10 +83,12 @@ class CJobQueueExecutionWatcherThread : public CThreadNonStop
 public:
     CJobQueueExecutionWatcherThread(CBackgroundHost&    host,
                                     CQueueDataBase&     qdb,
-                                    unsigned            run_delay)
+                                    unsigned            run_delay,
+                                    const bool &        logging)
     : CThreadNonStop(run_delay),
       m_Host(host),
-      m_QueueDB(qdb)
+      m_QueueDB(qdb),
+      m_ExecutionLogging(logging)
     {}
 
     virtual void DoJob(void);
@@ -96,6 +101,7 @@ private:
 private:
     CBackgroundHost &       m_Host;
     CQueueDataBase &        m_QueueDB;
+    const bool &            m_ExecutionLogging;
 };
 
 

@@ -52,6 +52,11 @@ struct SNS_Parameters : SServer_Parameters
 
     bool            is_daemon;
     bool            is_log;
+    bool            log_batch_each_job;
+    bool            log_notification_thread;
+    bool            log_cleaning_thread;
+    bool            log_execution_watcher_thread;
+    bool            log_statistics_thread;
 
     std::string     admin_hosts;
 

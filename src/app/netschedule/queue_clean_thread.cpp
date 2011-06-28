@@ -53,7 +53,7 @@ void CJobQueueCleanerThread::DoJob(void)
         return;
 
 
-    bool                    is_log = m_Host.IsLog();
+    bool                    is_log = m_CleaningLogging;
     CRef<CRequestContext>   ctx;
 
     if (is_log) {
@@ -129,7 +129,7 @@ void CJobQueueExecutionWatcherThread::DoJob(void)
         return;
 
 
-    bool                    is_log = m_Host.IsLog();
+    bool                    is_log = m_ExecutionLogging;
     CRef<CRequestContext>   ctx;
 
     if (is_log) {
@@ -143,7 +143,7 @@ void CJobQueueExecutionWatcherThread::DoJob(void)
 
 
     try {
-        m_QueueDB.CheckExecutionTimeout();
+        m_QueueDB.CheckExecutionTimeout(is_log);
     }
     catch (CBDB_ErrnoException& ex)
     {

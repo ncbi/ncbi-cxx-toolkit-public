@@ -299,10 +299,10 @@ public:
 
     /// Notify all listeners
     void NotifyListeners(void);
-    void RunNotifThread(bool  is_log);
+    void RunNotifThread(void);
     void StopNotifThread(void);
 
-    void CheckExecutionTimeout(void);
+    void CheckExecutionTimeout(bool  logging);
     void RunExecutionWatcherThread(unsigned run_delay);
     void StopExecutionWatcherThread(void);
 

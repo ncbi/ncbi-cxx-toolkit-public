@@ -857,10 +857,10 @@ void CQueueDataBase::NotifyListeners(void)
 }
 
 
-void CQueueDataBase::CheckExecutionTimeout(void)
+void CQueueDataBase::CheckExecutionTimeout(bool  logging)
 {
     NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
-        (*it).CheckExecutionTimeout();
+        (*it).CheckExecutionTimeout(logging);
     }
 }
 
@@ -957,7 +957,7 @@ void CQueueDataBase::Purge(void)
         try {
             DeleteQueue((*it));
         } catch (...) { // TODO: use more specific exception
-            LOG_POST(Error << "Queue " << (*it) << " already gone.");
+            LOG_POST(Error << "Queue " << (*it) << " has already gone.");
         }
     }
 }
@@ -1021,7 +1021,9 @@ bool CQueueDataBase::x_CheckStopPurge(void)
 
 void CQueueDataBase::RunPurgeThread(void)
 {
-    m_PurgeThread.Reset(new CJobQueueCleanerThread(m_Host, *this, 1));
+    m_PurgeThread.Reset(new CJobQueueCleanerThread(
+                                m_Host, *this, 1,
+                                m_Server->IsLogCleaningThread()));
     m_PurgeThread->Run();
 }
 
@@ -1037,12 +1039,14 @@ void CQueueDataBase::StopPurgeThread(void)
 }
 
 
-void CQueueDataBase::RunNotifThread(bool  is_log)
+void CQueueDataBase::RunNotifThread(void)
 {
     if (GetUdpPort() == 0)
         return;
 
-    m_NotifThread.Reset(new CJobNotificationThread(*this, 1, is_log));
+    m_NotifThread.Reset(new CJobNotificationThread(
+                                *this, 1,
+                                m_Server->IsLogNotificationThread()));
     m_NotifThread->Run();
 }
 
@@ -1059,9 +1063,9 @@ void CQueueDataBase::StopNotifThread(void)
 
 void CQueueDataBase::RunExecutionWatcherThread(unsigned run_delay)
 {
-    m_ExeWatchThread.Reset(new CJobQueueExecutionWatcherThread(m_Host,
-                                                               *this,
-                                                               run_delay));
+    m_ExeWatchThread.Reset(new CJobQueueExecutionWatcherThread(
+                                    m_Host, *this, run_delay,
+                                    m_Server->IsLogExecutionWatcherThread()));
     m_ExeWatchThread->Run();
 }
 

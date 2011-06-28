@@ -439,11 +439,13 @@ public:
 
     /// Check execution timeout. Now checks reading timeout as well.
     /// All jobs failed to execute, go back to pending
-    void CheckExecutionTimeout(void);
+    void CheckExecutionTimeout(bool logging);
 
     /// Check timeout for a job
-    void x_CheckExecutionTimeout(unsigned queue_run_timeout,
-                                 unsigned job_id, time_t curr_time);
+    void x_CheckExecutionTimeout(unsigned  queue_run_timeout,
+                                 unsigned  job_id,
+                                 time_t    curr_time,
+                                 bool      logging);
 
     /// Check jobs for expiry and if expired, delete up to batch_size jobs
     /// @return
@@ -491,11 +493,13 @@ public:
     {
         typedef CQueue TContainer;
     public:
-        CStatisticsThread(TContainer& container);
+        CStatisticsThread(TContainer &  container,
+                          const bool &  logging);
         void DoJob(void);
     private:
         TContainer &        m_Container;
-        size_t              run_counter;
+        size_t              m_RunCounter;
+        const bool &        m_StatisticsLogging;
     };
     CRef<CStatisticsThread>     m_StatThread;
 
@@ -698,7 +702,8 @@ private:
     CNetSchedule_AccessList      m_WnodeHosts;
 
     CNetScheduleKeyGenerator     m_KeyGenerator;
-    bool                         m_IsLog;
+    const bool &                 m_Log;
+    const bool &                 m_LogBatchEachJob;
 };
 
 

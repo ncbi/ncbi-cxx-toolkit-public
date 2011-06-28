@@ -47,10 +47,10 @@ class CJobNotificationThread : public CThreadNonStop
 public:
     CJobNotificationThread(CQueueDataBase&  qdb,
                            unsigned         run_delay,
-                           bool             is_log)
+                           const bool &     logging)
     : CThreadNonStop(run_delay),
       m_QueueDB(qdb),
-      m_IsLog(is_log)
+      m_NotifLogging(logging)
     {}
 
     ~CJobNotificationThread();
@@ -63,7 +63,7 @@ private:
 
 private:
     CQueueDataBase &        m_QueueDB;
-    bool                    m_IsLog;
+    const bool &            m_NotifLogging;
 };
 
 

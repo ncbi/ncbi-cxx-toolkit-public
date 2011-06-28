@@ -115,14 +115,16 @@ CQueue::CQueue(CRequestExecutor&     executor,
     m_LogAccessViolations(true),
     m_KeepAffinity(false),
     m_KeyGenerator(server->GetHost(), server->GetPort()),
-    m_IsLog(server->IsLog())
+    m_Log(server->IsLog()),
+    m_LogBatchEachJob(server->IsLogBatchEachJob())
 {
     _ASSERT(!queue_name.empty());
     for (TStatEvent n = 0; n < eStatNumEvents; ++n) {
         m_EventCounter[n].Set(0);
         m_Average[n] = 0;
     }
-    m_StatThread.Reset(new CStatisticsThread(*this));
+    m_StatThread.Reset(new CStatisticsThread(*this,
+                                             server->IsLogStatisticsThread()));
     m_StatThread->Run();
     m_LastId.Set(0);
     m_GroupLastId.Set(0);
@@ -374,18 +376,20 @@ unsigned CQueue::LoadStatusMatrix()
 
 
 // Used to log a job submit.
-// if separate_request == true => it was a bach submit and batch_id should also
+// if batch_submit == true => it was a bach submit and batch_id should also
 // be logged.
 void CQueue::x_LogSubmit(const CJob &   job,
                          unsigned int   batch_id,
-                         bool           separate_request)
+                         bool           batch_submit)
 {
-    if (!m_IsLog)
+    if (!m_Log)
         return;
 
     CRef<CRequestContext>   current_context(& CDiagContext::GetRequestContext());
+    bool                    log_batch_each_job = m_LogBatchEachJob;
+    bool                    create_sep_request = batch_submit && log_batch_each_job;
 
-    if (separate_request) {
+    if (create_sep_request) {
         CRequestContext *   ctx(new CRequestContext());
         ctx->SetRequestID();
         GetDiagContext().SetRequestContext(ctx);
@@ -396,28 +400,30 @@ void CQueue::x_LogSubmit(const CJob &   job,
         ctx->SetRequestStatus(CNetScheduleHandler::eStatus_OK);
     }
 
-    CDiagContext_Extra extra = GetDiagContext().Extra()
-        .Print("job_key", MakeKey(job.GetId()))
-        .Print("queue", GetQueueName())
-        .Print("input", job.GetInput())
-        .Print("aff", job.GetAffinityToken())
-        .Print("mask", job.GetMask())
-        .Print("subm_addr", CSocketAPI::gethostbyaddr(job.GetSubmAddr()))
-        .Print("subm_port", job.GetSubmPort())
-        .Print("subm_timeout", job.GetSubmTimeout())
-        .Print("timeout", NStr::UIntToString(job.GetTimeout()))
-        .Print("run_timeout", job.GetRunTimeout());
-    ITERATE(TNSTagList, it, job.GetTags()) {
-        extra.Print("tag_name", it->first);
-        extra.Print("tag_value", it->second);
+    if (!batch_submit || log_batch_each_job) {
+        CDiagContext_Extra extra = GetDiagContext().Extra()
+            .Print("job_key", MakeKey(job.GetId()))
+            .Print("queue", GetQueueName())
+            .Print("input", job.GetInput())
+            .Print("aff", job.GetAffinityToken())
+            .Print("mask", job.GetMask())
+            .Print("subm_addr", CSocketAPI::gethostbyaddr(job.GetSubmAddr()))
+            .Print("subm_port", job.GetSubmPort())
+            .Print("subm_timeout", job.GetSubmTimeout())
+            .Print("timeout", NStr::UIntToString(job.GetTimeout()))
+            .Print("run_timeout", job.GetRunTimeout());
+        ITERATE(TNSTagList, it, job.GetTags()) {
+            extra.Print("tag_name", it->first);
+            extra.Print("tag_value", it->second);
+        }
+
+        const string &  progress_msg = job.GetProgressMsg();
+        if (!progress_msg.empty())
+            extra.Print("progress_msg", progress_msg);
+        extra.Flush();
     }
 
-    const string &  progress_msg = job.GetProgressMsg();
-    if (!progress_msg.empty())
-        extra.Print("progress_msg", progress_msg);
-    extra.Flush();
-
-    if (separate_request) {
+    if (create_sep_request) {
         GetDiagContext().PrintRequestStop();
         GetDiagContext().SetRequestContext(current_context);
     }
@@ -829,7 +835,7 @@ void CQueue::JobDelayExpiration(CWorkerNode*     worker_node,
 
     TimeLineMove(job_id, exp_time, curr + tm);
 
-    if (m_IsLog) {
+    if (m_Log) {
         CTime       tmp_t(GetFastLocalTime());
         tmp_t.SetTimeT(curr + tm);
         tmp_t.ToLocalTime();
@@ -1837,7 +1843,7 @@ bool CQueue::FailJob(CWorkerNode*  worker_node,
         CJob::EJobFetchResult   res = job.Fetch(this, job_id);
         if (res != CJob::eJF_Ok) {
             // TODO: Integrity error or job just expired?
-            if (m_IsLog)
+            if (m_Log)
                 LOG_POST(Error << "Can not fetch job " << DecorateJobId(job_id));
             return false;
         }
@@ -1849,7 +1855,7 @@ bool CQueue::FailJob(CWorkerNode*  worker_node,
             job.SetStatus(CNetScheduleAPI::ePending);
             js_guard.SetStatus(CNetScheduleAPI::ePending);
             rescheduled = true;
-            if (m_IsLog)
+            if (m_Log)
                 LOG_POST(Error <<"Job " << DecorateJobId(job_id)
                                << " rescheduled with "
                                << (failed_retries - run_count)
@@ -1857,7 +1863,7 @@ bool CQueue::FailJob(CWorkerNode*  worker_node,
         } else {
             job.SetStatus(CNetScheduleAPI::eFailed);
             rescheduled = false;
-            if (m_IsLog)
+            if (m_Log)
                 LOG_POST(Error << "Job " << DecorateJobId(job_id)
                                << " failed");
         }
@@ -2505,7 +2511,7 @@ void CQueue::x_RemoveTags(CBDB_Transaction&   trans,
 
 //
 
-void CQueue::CheckExecutionTimeout()
+void CQueue::CheckExecutionTimeout(bool  logging)
 {
     if (!m_RunTimeLine)
         return;
@@ -2520,14 +2526,15 @@ void CQueue::CheckExecutionTimeout()
 
     TNSBitVector::enumerator en(bv.first());
     for ( ;en.valid(); ++en) {
-        x_CheckExecutionTimeout(queue_run_timeout, *en, curr);
+        x_CheckExecutionTimeout(queue_run_timeout, *en, curr, logging);
     }
 }
 
 
 void CQueue::x_CheckExecutionTimeout(unsigned   queue_run_timeout,
                                      unsigned   job_id,
-                                     time_t     curr_time)
+                                     time_t     curr_time,
+                                     bool       logging)
 {
     TJobStatus      status = GetJobStatus(job_id);
 
@@ -2599,7 +2606,7 @@ void CQueue::x_CheckExecutionTimeout(unsigned   queue_run_timeout,
     if (status == CNetScheduleAPI::eRunning)
         m_WorkerNodeList.RemoveJob(this, job, eNSCTimeout);
 
-    if (m_IsLog)
+    if (logging)
     {
         CTime       tm_start;
         tm_start.SetTimeT(time_start);
@@ -2715,7 +2722,7 @@ unsigned CQueue::CheckJobsExpiry(unsigned batch_size, TJobStatus status)
             }
         }
     }}
-    if (m_IsLog  &&  not_found_jobs.any()) {
+    if (m_Log  &&  not_found_jobs.any()) {
         if (has_db_error) {
             LOG_POST(Error << "While deleting, errors in database"
                               ", status " << CNetScheduleAPI::StatusToString(status)
@@ -2760,9 +2767,10 @@ void CQueue::TimeLineRemove(unsigned job_id)
     CWriteLockGuard guard(m_RunTimeLineLock);
     m_RunTimeLine->RemoveObject(job_id);
 
-    if (m_IsLog)
-        LOG_POST(Error << "Job removed from time line, job: "
-                       << DecorateJobId(job_id));
+    // I think it is extra
+    // if (m_Log)
+    //     LOG_POST(Error << "Job removed from time line, job: "
+    //                    << DecorateJobId(job_id));
 }
 
 
@@ -2780,14 +2788,15 @@ void CQueue::TimeLineExchange(unsigned remove_job_id,
         m_RunTimeLine->AddObject(timeout, add_job_id);
 
 
-    if (m_IsLog) {
-        if (remove_job_id)
-            LOG_POST(Error << "Job removed from time line, job: "
-                           << DecorateJobId(remove_job_id));
-        if (add_job_id)
-            LOG_POST(Error << "Job added to time line, job: "
-                           << DecorateJobId(add_job_id));
-    }
+    // I think it is extra
+    // if (m_Log) {
+    //     if (remove_job_id)
+    //         LOG_POST(Error << "Job removed from time line, job: "
+    //                        << DecorateJobId(remove_job_id));
+    //     if (add_job_id)
+    //         LOG_POST(Error << "Job added to time line, job: "
+    //                        << DecorateJobId(add_job_id));
+    // }
 }
 
 
@@ -2846,7 +2855,7 @@ unsigned CQueue::DeleteBatch(unsigned batch_size)
         // x_RemoveTags(trans, batch);
     }
 
-    if (m_IsLog  &&  del_rec > 0)
+    if (m_Log  &&  del_rec > 0)
         LOG_POST(Error << del_rec << " job(s) deleted");
 
     return del_rec;
@@ -3120,15 +3129,17 @@ static const unsigned kFixed_1 = 1 << kFixedShift;
 // kDecayExp = 2 ^ kFixedShift / 2 ^ ( kMeasureInterval * log2(e) / kDecayInterval)
 static const unsigned kDecayExp = 116;
 
-CQueue::CStatisticsThread::CStatisticsThread(TContainer& container)
+CQueue::CStatisticsThread::CStatisticsThread(TContainer &  container,
+                                             const bool &  logging)
     : CThreadNonStop(kMeasureInterval),
-        m_Container(container), run_counter(0)
+        m_Container(container), m_RunCounter(0),
+        m_StatisticsLogging(logging)
 {}
 
 
 void CQueue::CStatisticsThread::DoJob(void)
 {
-    ++run_counter;
+    ++m_RunCounter;
 
     int     counter;
     for (TStatEvent n = 0; n < eStatNumEvents; ++n) {
@@ -3140,10 +3151,10 @@ void CQueue::CStatisticsThread::DoJob(void)
                     kFixedShift;
     }
 
-    if (run_counter > 10) {
-        run_counter = 0;
+    if (m_RunCounter > 10) {
+        m_RunCounter = 0;
 
-        if (m_Container.m_IsLog) {
+        if (m_StatisticsLogging) {
             CRef<CRequestContext>       ctx(new CRequestContext());
             ctx->SetRequestID();
             GetDiagContext().SetRequestContext(ctx);
@@ -3262,7 +3273,8 @@ CQueue::EGetJobUpdateStatus CQueue::x_UpdateDB_GetJobNoLock(
     {
         CJob::EJobFetchResult res;
         if ((res = job.Fetch(this, job_id)) != CJob::eJF_Ok) {
-            if (res == CJob::eJF_NotFound) return eGetJobUpdate_NotFound;
+            if (res == CJob::eJF_NotFound)
+                return eGetJobUpdate_NotFound;
             // FIXME: does it make sense to retry right after DB error?
             continue;
         }
@@ -3297,7 +3309,7 @@ CQueue::EGetJobUpdateStatus CQueue::x_UpdateDB_GetJobNoLock(
             m_StatusTracker.ChangeStatus(job_id, CNetScheduleAPI::eFailed);
             job.Flush(this);
 
-            if (m_IsLog)
+            if (m_Log)
                 LOG_POST(Error << "Job timeout expired, job: "
                                << DecorateJobId(job_id));
 

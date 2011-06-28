@@ -51,7 +51,12 @@ CNetScheduleServer::CNetScheduleServer()
       m_SigNum(0),
       m_InactivityTimeout(0),
       m_QueueDB(0),
-      m_StartTime(GetFastLocalTime())
+      m_StartTime(GetFastLocalTime()),
+      m_LogFlag(false),
+      m_LogBatchEachJobFlag(false),
+      m_LogNotificationThreadFlag(false),
+      m_LogCleaningThreadFlag(false),
+      m_LogStatisticsThreadFlag(false)
 {
     m_AtomicCommandNumber.Set(1);
     sm_netschedule_server = this;
@@ -84,7 +89,24 @@ void CNetScheduleServer::SetNSParameters(const SNS_Parameters& params)
     }
 
     m_InactivityTimeout = params.network_timeout;
-    m_LogFlag.Set(params.is_log ? 1 : 0);
+    m_LogFlag           = params.is_log;
+
+    if (m_LogFlag) {
+        m_LogBatchEachJobFlag           = params.log_batch_each_job;
+        m_LogNotificationThreadFlag     = params.log_notification_thread;
+        m_LogCleaningThreadFlag         = params.log_cleaning_thread;
+        m_LogExecutionWatcherThreadFlag = params.log_execution_watcher_thread;
+        m_LogStatisticsThreadFlag       = params.log_statistics_thread;
+    }
+    else {
+        // [server]/log key is a top level logging key
+        m_LogBatchEachJobFlag           = false;
+        m_LogNotificationThreadFlag     = false;
+        m_LogCleaningThreadFlag         = false;
+        m_LogExecutionWatcherThreadFlag = false;
+        m_LogStatisticsThreadFlag       = false;
+    }
+
     m_AdminHosts.SetHosts(params.admin_hosts);
 }
 
@@ -108,20 +130,6 @@ void CNetScheduleServer::SetShutdownFlag(int signum)
         m_Shutdown = true;
         m_SigNum = signum;
     }
-}
-
-//////////////////////////////////////////////////////////////////
-/// Service for Handlers
-/// TRUE if logging is ON
-bool CNetScheduleServer::IsLog() const
-{
-    return m_LogFlag.Get() != 0;
-}
-
-
-void CNetScheduleServer::SetLogging(bool flag)
-{
-    m_LogFlag.Set(flag);
 }
 
 

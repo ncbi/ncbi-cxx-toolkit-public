@@ -44,8 +44,9 @@ BEGIN_NCBI_SCOPE
 void CJobNotificationThread::DoJob(void)
 {
     CRef<CRequestContext>       ctx;
+    bool                        is_logging = m_NotifLogging;
 
-    if (m_IsLog) {
+    if (is_logging) {
         ctx.Reset(new CRequestContext());
         ctx->SetRequestID();
         GetDiagContext().SetRequestContext(ctx);
@@ -62,7 +63,7 @@ void CJobNotificationThread::DoJob(void)
         RequestStop();
         ERR_POST("Error during notification: " << ex.what() <<
                  " notification thread has been stopped.");
-        if (m_IsLog)
+        if (is_logging)
             ctx->SetRequestStatus(
                         CNetScheduleHandler::eStatus_JobNotifierError);
     }
@@ -70,12 +71,12 @@ void CJobNotificationThread::DoJob(void)
         RequestStop();
         ERR_POST("Unknown error during notification. "
                  "Notification thread has been stopped.");
-        if (m_IsLog)
+        if (is_logging)
             ctx->SetRequestStatus(
                         CNetScheduleHandler::eStatus_JobNotifierError);
     }
 
-    if (m_IsLog) {
+    if (is_logging) {
         GetDiagContext().PrintRequestStop();
         ctx.Reset();
         GetDiagContext().SetRequestContext(NULL);

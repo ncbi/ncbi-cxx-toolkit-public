@@ -73,7 +73,14 @@ void SNS_Parameters::Read(const IRegistry& reg, const string& sname)
         network_timeout =  10;
     }
 
-    is_log      = GetBoolNoErr("log", false);
+    // Logging parameters
+    is_log                       = GetBoolNoErr("log", false);
+    log_batch_each_job           = GetBoolNoErr("log_batch_each_job", true);
+    log_notification_thread      = GetBoolNoErr("log_notification_thread", true);
+    log_cleaning_thread          = GetBoolNoErr("log_cleaning_thread", true);
+    log_execution_watcher_thread = GetBoolNoErr("log_execution_watcher_thread", true);
+    log_statistics_thread        = GetBoolNoErr("log_statistics_thread", true);
+
     is_daemon   = GetBoolNoErr("daemon", false);
     admin_hosts = reg.GetString(sname, "admin_host", kEmptyStr);
     return;
@@ -82,17 +89,22 @@ void SNS_Parameters::Read(const IRegistry& reg, const string& sname)
 
 static string s_NSParameters[] =
 {
-    "reinit",           // 0
-    "max_connections",  // 1
-    "max_threads",      // 2
-    "init_threads",     // 3
-    "port",             // 4
-    "udp_port",         // 5
-    "use_hostname",     // 6
-    "network_timeout",  // 7
-    "log",              // 8
-    "daemon",           // 9
-    "admin_host"        // 10
+    "reinit",                       // 0
+    "max_connections",              // 1
+    "max_threads",                  // 2
+    "init_threads",                 // 3
+    "port",                         // 4
+    "udp_port",                     // 5
+    "use_hostname",                 // 6
+    "network_timeout",              // 7
+    "log",                          // 8
+    "daemon",                       // 9
+    "admin_host",                   // 10
+    "log_batch_each_job",           // 11
+    "log_notification_thread",      // 12
+    "log_cleaning_thread",          // 13
+    "log_execution_watcher_thread", // 14
+    "log_statistics_thread"         // 15
 };
 static unsigned s_NumNSParameters = sizeof(s_NSParameters) / sizeof(string);
 
@@ -125,6 +137,11 @@ string SNS_Parameters::GetParamValue(unsigned n) const
     case 8:  return NStr::BoolToString(is_log);
     case 9:  return NStr::BoolToString(is_daemon);
     case 10: return admin_hosts;
+    case 11: return NStr::BoolToString(log_batch_each_job);
+    case 12: return NStr::BoolToString(log_notification_thread);
+    case 13: return NStr::BoolToString(log_cleaning_thread);
+    case 14: return NStr::BoolToString(log_execution_watcher_thread);
+    case 15: return NStr::BoolToString(log_statistics_thread);
     default: return kEmptyStr;
     }
 }

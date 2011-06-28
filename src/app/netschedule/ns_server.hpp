@@ -63,11 +63,13 @@ public:
 
     void SetShutdownFlag(int signum = 0);
 
-    //////////////////////////////////////////////////////////////////
-    /// Service for Handlers
-    /// TRUE if logging is ON
-    bool IsLog() const;
-    void SetLogging(bool flag);
+    const bool &  IsLog() const                       { return m_LogFlag; }
+    const bool &  IsLogBatchEachJob() const           { return m_LogBatchEachJobFlag; }
+    const bool &  IsLogNotificationThread() const     { return m_LogNotificationThreadFlag; }
+    const bool &  IsLogCleaningThread() const         { return m_LogCleaningThreadFlag; }
+    const bool &  IsLogExecutionWatcherThread() const { return m_LogExecutionWatcherThreadFlag; }
+    const bool &  IsLogStatisticsThread() const       { return m_LogStatisticsThreadFlag; }
+
     unsigned GetCommandNumber();
 
     // Queue handling
@@ -117,7 +119,15 @@ private:
     unsigned                                    m_InactivityTimeout;
     CQueueDataBase*                             m_QueueDB;
     CTime                                       m_StartTime;
-    CAtomicCounter                              m_LogFlag;
+
+    /// Log related flags
+    bool                                        m_LogFlag;
+    bool                                        m_LogBatchEachJobFlag;
+    bool                                        m_LogNotificationThreadFlag;
+    bool                                        m_LogCleaningThreadFlag;
+    bool                                        m_LogExecutionWatcherThreadFlag;
+    bool                                        m_LogStatisticsThreadFlag;
+
     /// Quick local timer
     CFastLocalTime                              m_LocalTimer;
     /// List of admin stations
