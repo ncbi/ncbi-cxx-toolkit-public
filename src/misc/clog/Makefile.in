@@ -1,0 +1,7 @@
+# $Id$
+
+LIB_PROJ = clog 
+SUB_PROJ = demo
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

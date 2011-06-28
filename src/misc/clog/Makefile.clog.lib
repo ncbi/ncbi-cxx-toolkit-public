@@ -1,0 +1,8 @@
+# $Id$
+
+SRC = ncbi_c_log
+
+LIB = clog
+LIBS = $(ORIG_C_LIBS)
+
+WATCHERS = ivanov
