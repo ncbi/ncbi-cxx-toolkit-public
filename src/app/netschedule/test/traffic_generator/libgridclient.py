@@ -79,6 +79,106 @@ class GridClient:
         safeRun( cmdLine )
         return
 
+    def submitBatch( self, qname, jobs ):
+        " Performs a batch submit "
+        if len( jobs ) <= 0:
+            raise Exception( "Jobs list expected" )
+
+        # Save the jobs in a temporary file
+        f, filename = tempfile.mkstemp()
+        for job in jobs:
+            os.write( f, "input=" + job + "\n" )
+        os.close( f )
+
+        try:
+            # Execute the command
+            cmdLine = [ "grid_cli", "submitjob",
+                        "--batch=" + str( len(jobs) ),
+                        "--input-file=" + filename,
+                        "--queue=" + qname,
+                        "--ns=" + self.__host + ":" + self.__port ]
+            self.__printCmd( cmdLine )
+            jobids = safeRun( cmdLine )
+
+        except:
+            # Remove the temporary file
+            os.unlink( filename )
+            raise
+
+        # Remove the temporary file
+        os.unlink( filename )
+
+        ids = []
+        for jobid in jobids.split( '\n' ):
+            jobid = jobid.strip()
+            if jobid != "":
+                ids.append( jobid )
+        return ids
+
+    def getJob( self, qname, aff = '' ):
+        " Get a job for execution "
+
+        cmdLine = [ "grid_cli", "requestjob",
+                    "--queue=" + qname,
+                    "--ns=" + self.__host + ":" + self.__port ]
+        if aff != '':
+            cmdLine += [ "--affinity=" + aff ]
+
+        self.__printCmd( cmdLine )
+        output = safeRun( cmdLine ).split( '\n' )
+
+        if len( output ) == 0:
+            return ""
+        return output[ 0 ].strip()      # This is JOB ID
+
+    def commitJob( self, qname, jobID, retCode, out = "" ):
+        " Commits the job "
+
+        cmdLine = [ "grid_cli", "commitjob",
+                    "--queue=" + qname, jobID,
+                    "--return-code=" + str( retCode ),
+                    "--ns=" + self.__host + ":" + self.__port ]
+        if out != "":
+            cmdLine += [ "--job-output=" + out ]
+
+        self.__printCmd( cmdLine )
+        return safeRun( cmdLine )
+
+    def readJobs( self, qname, count ):
+        " Get jobs for reading "
+
+        cmdLine = [ "grid_cli", "readjobs",
+                    "--limit=" + str( count ),
+                    "--queue=" + qname,
+                    "--ns=" + self.__host + ":" + self.__port ]
+
+        self.__printCmd( cmdLine )
+        groupID = -1
+        jobs = []
+        for line in safeRun( cmdLine ).split( '\n' ):
+            line = line.strip()
+            if line == "":
+                continue
+            if groupID == -1:
+                groupID = int( line )
+                continue
+            jobs.append( line )
+        return groupID, jobs
+
+    def confirmJobRead( self, qname, groupID, jobs ):
+        " Confirms the fact that jobs have been read "
+        if len( jobs ) <= 0:
+            raise Exception( "Jobs list expected" )
+
+        cmdLine = [ "grid_cli", "readjobs",
+                    "--confirm-read=" + str( groupID ),
+                    "--queue=" + qname,
+                    "--ns=" + self.__host + ":" + self.__port ]
+        for jobid in jobs:
+            cmdLine.append( "--job-id=" + jobid )
+
+        self.__printCmd( cmdLine )
+        return safeRun( cmdLine )
 
 
 

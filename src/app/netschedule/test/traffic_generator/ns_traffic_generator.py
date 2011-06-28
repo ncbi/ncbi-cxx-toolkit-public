@@ -14,6 +14,9 @@ import sys, threading, time, datetime
 from optparse import OptionParser
 from libgridclient import GridClient
 from ns_traffic_settings import IndividualLoaders, SubmitDropSettings
+from submitdroploader import SubmitDropLoader
+from batchsubmitdroploader import BatchSubmitDropLoader
+from singlefullok import SingleFullOKLoopLoader
 
 
 queueName = 'TEST'
@@ -61,8 +64,11 @@ def main():
     threads = []
 
     if IndividualLoaders.SubmitDropLoader:
-        threads.append( SubmitDropLoader( gridClient ) )
-
+        threads.append( SubmitDropLoader( gridClient, queueName ) )
+    if IndividualLoaders.BatchSubmitDropLoader:
+        threads.append( BatchSubmitDropLoader( gridClient, queueName ) )
+    if IndividualLoaders.SingleFullOKLoopLoader:
+        threads.append( SingleFullOKLoopLoader( gridClient, queueName ) )
 
 
     if len( threads ) == 0:
@@ -117,82 +123,6 @@ class ExecutionMonitor( threading.Thread ):
 
 
 
-######## Loaders definitions begin
-
-class SubmitDropLoader( threading.Thread ):
-    " Submit/drop loader "
-
-    def __init__( self, gridClient ):
-        threading.Thread.__init__( self )
-        self.__gridClient = gridClient
-        self.__count = 0
-        return
-
-    def getName( self ):
-        " Loader identification "
-        return "Submit/drop"
-
-    def getCount( self ):
-        " Provides haw many loops completed "
-        return self.__count
-
-    def run( self ):
-        " threaded function "
-        pSize = SubmitDropSettings.packageSize
-        if pSize <= 0:
-            print >> sys.stderr, \
-                     "Invalid SubmitDropSettings.packageSize (" + \
-                     str( pSize ) + "). Must be > 0"
-            return
-        pause = SubmitDropSettings.pause
-        if pause < 0:
-            print >> sys.stderr, \
-                     "Invalid SubmitDropSettings.pause (" + \
-                     str( pause ) + "). Must be >= 0"
-            return
-
-        pCount = SubmitDropSettings.packagesCount
-        if not ( pCount == -1 or pCount > 0 ):
-            print >> sys.stderr, \
-                     "Invalid SubmitDropSettings.packagesCount (" + \
-                     str( pCount ) + "). Must be > 0 or -1"
-            return
-
-        # Settings are OK
-        while True:
-            pSize = SubmitDropSettings.packageSize
-            while pSize > 0:
-                jobKey = ""
-                try:
-                    jobKey = self.__gridClient.submitJob( queueName, "bla" )
-                    try:
-                        self.__gridClient.killJob( queueName, jobKey )
-                    except Exception, excp:
-                        print >> sys.stderr, "Submit/Drop: Cannot kill job: " + jobKey
-                        print >> sys.stderr, str( excp )
-                except Exception, excp:
-                    print >> sys.stderr, "Submit/Drop: Cannot submit job"
-                    print >> sys.stderr, str( excp )
-
-                self.__count += 1
-                pSize -= 1
-
-            if pause > 0:
-                time.sleep( pause )
-
-            if pCount == -1:    # Infinite loop
-                continue
-            pCount -= 1
-            if pCount <= 0:
-                break
-        return
-
-
-
-######## Loaders definitions end
-
-
-
 def parserError( parser, message ):
     " Prints the message and help on stderr "
 
@@ -213,7 +143,6 @@ if __name__ == "__main__":
 
     except Exception, excpt:
         print >> sys.stderr, str( excpt )
-        raise
         returnValue = 1
 
     sys.exit( returnValue )
