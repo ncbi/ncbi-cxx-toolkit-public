@@ -264,7 +264,7 @@ void NcbiToolkit_Fini(void)
     }
 }
 
-void NcbiToolkit_RegisterNcbiApplicationFactory(FNcbiApplicationFactory& f)
+void NcbiToolkit_RegisterNcbiApplicationFactory(FNcbiApplicationFactory f)
 {
     CFastMutexGuard mtx_guard(s_NcbiToolkit_Mtx);
     s_fAppFactory = f;

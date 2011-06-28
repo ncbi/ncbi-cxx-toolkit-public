@@ -77,7 +77,7 @@ typedef char    TNcbiToolkit_XChar;
 typedef CNcbiApplication* (*FNcbiApplicationFactory)(void);
 
 void NCBI_TOOLKIT_EXPORT NcbiToolkit_RegisterNcbiApplicationFactory
-    (FNcbiApplicationFactory& f);
+    (FNcbiApplicationFactory f);
 
 } /* namespace ncbi */
 
