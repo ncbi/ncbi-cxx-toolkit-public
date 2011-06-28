@@ -185,6 +185,7 @@ int CNetScheduleDApp::Run(void)
         m_ServerAcceptTimeout.usec = 0;
         params.accept_timeout      = &m_ServerAcceptTimeout;
 
+        SOCK_SetIOWaitSysAPI(eSOCK_IOWaitSysAPIPoll);
         auto_ptr<CNetScheduleServer>    server(new CNetScheduleServer());
         server->SetNSParameters(params);
 
