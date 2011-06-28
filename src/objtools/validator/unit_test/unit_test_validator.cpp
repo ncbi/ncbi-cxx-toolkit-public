@@ -18587,7 +18587,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphNScoreMany)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphLocInvalid)
+BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphLocInvalid_1)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
 
@@ -18603,16 +18603,26 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphLocInvalid)
                            "SeqGraph location (lcl|good:1-62) is invalid"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+}
 
-    scope.RemoveTopLevelSeqEntry(seh);
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphLocInvalid_2)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    CRef<CSeq_graph> graph = BuildGoodByteGraph(entry);
     graph->ResetLoc();
-    seh = scope.AddTopLevelSeqEntry(*entry);
+    annot->SetData().SetGraph().push_back(graph);
+    entry->SetSeq().SetAnnot().push_back(annot);
 
-    expected_errors[0]->SetAccession("");
-    expected_errors[0]->SetErrMsg("SeqGraph location (Unknown) is invalid");
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("", eDiag_Error, "GraphLocInvalid", 
+                           "SeqGraph location (Unknown) is invalid"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "GraphPackagingProblem",
                               "There is 1 mispackaged graph in this record."));
-
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 

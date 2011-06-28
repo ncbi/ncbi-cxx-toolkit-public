@@ -2362,11 +2362,11 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
                             }
                         }
 
-                        if (!NStr::StartsWith (cds_seq, "N")) {
+                        if (!NStr::StartsWith (cds_seq, "NNN")) {
                             leading_x = false;
                         }
                         string lastcodon = cds_seq.substr(cds_seq.length() - 3);
-                        if (!NStr::StartsWith (lastcodon, "N")) {
+                        if (!NStr::StartsWith (lastcodon, "NNN")) {
                             trailingX = 0;
                         }
                     }
@@ -7899,13 +7899,15 @@ void CValidError_bioseq::ValidateGraphsOnBioseq(const CBioseq& seq)
         ValidateByteGraphOnBioseq(graph, seq);
         ValidateGraphValues(graph, seq, first_N, first_ACGT, num_bases, Ns_with_score, gaps_with_score, ACGTs_without_score, vals_below_min, vals_above_max);
         
-        // Test for overlapping graphs
-        const CSeq_loc& loc = graph.GetLoc();
-        if ( (int)loc.GetTotalRange().GetFrom() <= last_loc ) {
-            overlaps = true;
-            overlap_graph = &graph;
+        if (graph.IsSetLoc() && graph.GetLoc().Which() != CSeq_loc::e_not_set) {
+            // Test for overlapping graphs
+            const CSeq_loc& loc = graph.GetLoc();
+            if ( (int)loc.GetTotalRange().GetFrom() <= last_loc ) {
+                overlaps = true;
+                overlap_graph = &graph;
+            }
+            last_loc = loc.GetTotalRange().GetTo();
         }
-        last_loc = loc.GetTotalRange().GetTo();
 
         graphs_len += graph.GetNumval();
         ++num_graphs;
