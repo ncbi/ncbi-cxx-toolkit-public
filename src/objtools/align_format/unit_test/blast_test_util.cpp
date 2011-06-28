@@ -37,9 +37,6 @@
 #include <corelib/ncbitype.h>
 #include <util/random_gen.hpp>
 
-// NewBlast includes
-#include <algo/blast/api/blast_aux.hpp>
-
 // Serialization includes
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>
@@ -65,7 +62,6 @@
 using namespace std;
 using namespace ncbi;
 using namespace ncbi::objects;
-using namespace ncbi::blast;
 using namespace ncbi::align_format;
 
 namespace TestUtil {
@@ -74,27 +70,6 @@ objects::CSeq_id* GenerateRandomSeqid_Gi()
 {
 	static CRandom random_gen(static_cast<CRandom::TValue>(time(0)));
     return new CSeq_id(CSeq_id::e_Gi, random_gen.GetRand(1, 20000000));
-}
-
-vector<EBlastProgramType> GetAllBlastProgramTypes()
-{
-    vector<EBlastProgramType> retval;
-    retval.push_back(eBlastTypeBlastp);
-    retval.push_back(eBlastTypeBlastn);
-    retval.push_back(eBlastTypeBlastx);
-    retval.push_back(eBlastTypeTblastn);
-    retval.push_back(eBlastTypeTblastx);
-
-    retval.push_back(eBlastTypePsiBlast);
-    retval.push_back(eBlastTypePsiTblastn);
-
-    retval.push_back(eBlastTypeRpsBlast);
-    retval.push_back(eBlastTypeRpsTblastn);
-
-    retval.push_back(eBlastTypePhiBlastp);
-    retval.push_back(eBlastTypePhiBlastn);
-
-    return retval;
 }
 
 CRef<CSeq_align_set>
@@ -130,113 +105,6 @@ void PrintFormattedSeqAlign(ostream& out,
     CDisplaySeqalign formatter(*saset, scope);
     formatter.SetAlignOption(align_opt);
     formatter.DisplaySeqalign(out);
-}
-
-// Pretty print sequence
-void PrintSequence(const Uint1* seq, TSeqPos len, ostream& out,
-                   bool show_markers, TSeqPos chars_per_line)
-{
-    TSeqPos nlines = len/chars_per_line;
-
-    for (TSeqPos line = 0; line < nlines + 1; line++) {
-
-        // print chars_per_line residues/bases
-        for (TSeqPos i = (chars_per_line*line); 
-             i < chars_per_line*(line+1) && (i < len); i++) {
-            out << GetResidue(seq[i]);
-        }
-        out << endl;
-
-        if ( !show_markers )
-            continue;
-
-        // print the residue/base markers
-        for (TSeqPos i = (chars_per_line*line); 
-             i < chars_per_line*(line+1) && (i < len); i++) {
-            if (i == 0 || ((i%10) == 0)) {
-                out << i;
-                stringstream ss;
-                ss << i;
-                TSeqPos marker_length = ss.str().size();
-                i += (marker_length-1);
-            } else {
-                out << " ";
-            }
-        }
-        out << endl;
-    }
-}
-
-void PrintSequence(const CSeqVector svector, ostream& out,
-                   bool show_markers, TSeqPos chars_per_line)
-{
-    TSeqPos nlines = svector.size()/chars_per_line;
-
-    for (TSeqPos line = 0; line < nlines + 1; line++) {
-
-        // print chars_per_line residues/bases
-        for (TSeqPos i = (chars_per_line*line); 
-             i < chars_per_line*(line+1) && (i < svector.size()); i++) {
-            out << GetResidue(svector[i]);
-        }
-        out << endl;
-
-        if ( !show_markers )
-            continue;
-
-        // print the residue/base markers
-        for (TSeqPos i = (chars_per_line*line); 
-             i < chars_per_line*(line+1) && (i < svector.size()); i++) {
-            if (i == 0 || ((i%10) == 0)) {
-                out << i;
-                stringstream ss;
-                ss << i;
-                TSeqPos marker_length = ss.str().size();
-                i += (marker_length-1);
-            } else {
-                out << " ";
-            }
-        }
-        out << endl;
-    }
-}
-
-char GetResidue(unsigned int res)
-{
-    if ( !(res < BLASTAA_SIZE)) {
-        std::stringstream ss;
-        ss << "TestUtil::GetResidue(): Invalid residue " << res;
-        throw std::runtime_error(ss.str());
-    }
-    return NCBISTDAA_TO_AMINOACID[res];
-
-}
-
-BlastQueryInfo*
-CreateProtQueryInfo(unsigned int query_size)
-{
-    BlastQueryInfo* retval = BlastQueryInfoNew(eBlastTypeBlastp, 1);
-    if ( !retval ) {
-        return NULL;
-    }
-    retval->contexts[0].query_length = query_size;
-    retval->max_length              = query_size;
-    return retval;
-}
-
-void CheckForBlastSeqSrcErrors(const BlastSeqSrc* seqsrc)
-    THROWS((CBlastException))
-{
-    if ( !seqsrc ) {
-        return;
-    }
-
-    char* error_str = BlastSeqSrcGetInitError(seqsrc);
-    if (error_str) {
-        string msg(error_str);
-        sfree(error_str);
-        NCBI_THROW(CBlastException, eSeqSrcInit, msg);
-    }
 }
 
 namespace {

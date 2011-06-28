@@ -36,9 +36,9 @@
 
 #include <string>
 #include <exception>
+#include <assert.h>
 
 #include <corelib/ncbistd.hpp>
-#include <algo/blast/api/blast_types.hpp>
 #include <serial/serial.hpp>
 #include <serial/objostr.hpp>
 #include <util/random_gen.hpp>
@@ -46,13 +46,11 @@
 
 #include <serial/serial.hpp>
 
-// NewBlast includes
-#include <algo/blast/core/blast_def.h>
-#include <algo/blast/core/blast_query_info.h>
-#include <algo/blast/core/blast_seqsrc.h>
-#include <algo/blast/api/blast_exception.hpp>
-
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
+
+#ifndef ASSERT
+#define ASSERT assert
+#endif
 
 // forward declarations
 namespace ncbi {
@@ -85,8 +83,6 @@ private:
     ncbi::CRandom m_Gen;
 };
 
-std::vector<EBlastProgramType> GetAllBlastProgramTypes();
-
 ncbi::objects::CSeq_id* GenerateRandomSeqid_Gi();
 
 template <class T>
@@ -113,9 +109,6 @@ ncbi::CRef<T> ReadObject(const std::string& filename) {
     return retval;
 }
 
-void CheckForBlastSeqSrcErrors(const BlastSeqSrc* seqsrc)
-    THROWS((ncbi::blast::CBlastException));
-
 /// Convenience template function to print ASN.1 objects to a new file
 template <class T>
 void PrintTextAsn1Object(std::string filename, T* obj) {
@@ -135,21 +128,6 @@ FlattenSeqAlignSet(const ncbi::objects::CSeq_align_set& sset);
 void PrintFormattedSeqAlign(std::ostream& out,
                             const ncbi::objects::CSeq_align_set* sas,
                             ncbi::objects::CScope& scope);
-
-void PrintSequence(const Uint1* seq, ncbi::TSeqPos len, std::ostream& out,
-                   bool show_markers = true,
-                   ncbi::TSeqPos chars_per_line = 80);
-void PrintSequence(const ncbi::objects::CSeqVector& svector, 
-                   std::ostream& out, bool show_markers = true,
-                   ncbi::TSeqPos chars_per_line = 80);
-
-/// Returns character representation of a residue from ncbistdaa
-char GetResidue(unsigned int res);
-
-/// Creates and initializes a BlastQueryInfo structure for a single protein
-/// sequence
-BlastQueryInfo*
-CreateProtQueryInfo(unsigned int query_size);
 
 /// Endianness independent hash function.
 ///
