@@ -96,6 +96,9 @@ for ((i = 0; i < 7; ++i)); do
     fi
 
     cat "${PLATF_DIR}/bin/test_stat_load${EXE}" | ssh coremake@"${PLATF_SERVERS[$i]}" "cat >${PLATF_NCBI_BIN_DIRS[$i]}/test_stat_load${EXE}" || exit 7
+    if [[ -f "${PLATF_DIR}/bin/test_stat_load${EXE}.manifest" ]]; then
+        cat "${PLATF_DIR}/bin/test_stat_load${EXE}.manifest" | ssh coremake@"${PLATF_SERVERS[$i]}" "cat >${PLATF_NCBI_BIN_DIRS[$i]}/test_stat_load${EXE}.manifest" || exit 8
+    fi
 
 
     if [[ "${PLATF_FILE_MASKS[$i]}" == *"Linux64"* ]]; then
