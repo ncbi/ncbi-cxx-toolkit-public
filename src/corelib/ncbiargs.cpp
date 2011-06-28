@@ -2179,7 +2179,7 @@ CArgs* CArgDescriptions::CreateArgs(const CNcbiArguments& args) const
 }
 
 
-bool CArgDescriptions::x_CheckAutoHelp(const string& arg, int /*iarg*/) const
+void CArgDescriptions::x_CheckAutoHelp(const string& arg) const
 {
 //    _ASSERT(m_AutoHelp);
     if (m_AutoHelp) {
@@ -2193,7 +2193,6 @@ bool CArgDescriptions::x_CheckAutoHelp(const string& arg, int /*iarg*/) const
     if (arg.compare(string("-") + s_AutoHelpXml) == 0) {
         NCBI_THROW(CArgHelpException,eHelpXml,kEmptyStr);
     }
-    return arg.compare("--") != 0;
 }
 
 
@@ -2308,6 +2307,10 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
     _ASSERT(*it);
 
     const CArgDesc& arg = **it;
+
+    if ( s_IsFlag(arg) ) {
+        x_CheckAutoHelp( arg1);
+    }
 
     // Check value separated by '='
     string arg_val;
