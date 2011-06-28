@@ -144,9 +144,13 @@ bool CGff2Writer::x_WriteBioseqHandle(
             }
         }
     }
+    SAnnotSelector sel = x_GetAnnotSelector();
+    feature::CFeatTree feat_tree( CFeat_CI( bsh, sel ) );
     for ( CAnnot_CI aci( bsh ); aci; ++aci ) {
-        if ( ! x_WriteSeqAnnotHandle( *aci ) ) {
-            return false;
+        for ( CFeat_CI mf( *aci, sel ); mf; ++mf ) {
+            if ( ! x_WriteFeature( feat_tree, *mf ) ) {
+                return false;
+            }
         }
     }
     return true;

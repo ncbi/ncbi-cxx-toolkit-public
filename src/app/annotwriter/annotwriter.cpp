@@ -159,6 +159,10 @@ private:
         CBioseq_Handle bsh,
         CNcbiOstream& );
 
+    bool WriteHandleGff3(
+        CSeq_entry_Handle seh,
+        CNcbiOstream& );
+
     bool WriteHandleGvf(
         CBioseq_Handle bsh,
         CNcbiOstream& );
@@ -374,33 +378,23 @@ bool CAnnotWriterApp::TrySeqEntry(
 {
     CNcbiStreampos curr = istr.GetStreamPos();
     try {
-        // special case: test writer handling of bioseq handles
         CRef<CSeq_entry> pEntry( new CSeq_entry );
         istr >> *pEntry;
-        if ( TestHandles() ) {
-            CRef< CObjectManager > pObjMngr = CObjectManager::GetInstance();
-            CGBDataLoader::RegisterInObjectManager( *pObjMngr );
-            CRef< CScope > pScope( new CScope( *pObjMngr ) );
-            pScope->AddDefaults();
 
-            CSeq_entry_Handle seh = pScope->AddTopLevelSeqEntry( *pEntry );
-            for ( CBioseq_CI bci( seh ); bci; ++bci ) {
-                if ( ! WriteHandleGff3( *bci, ostr ) ) {
-                    return false;
-                }
-            }
-            return true;
-        }
+        CRef< CObjectManager > pObjMngr = CObjectManager::GetInstance();
+        CGBDataLoader::RegisterInObjectManager( *pObjMngr );
+        CRef< CScope > pScope( new CScope( *pObjMngr ) );
+        pScope->AddDefaults();
 
-        // normal case: just dump all the annots
-        CTypeIterator<CSeq_annot> annot_iter( *pEntry );
-        for ( ;  annot_iter;  ++annot_iter ) {
-            CRef< CSeq_annot > annot( annot_iter.operator->() );
-            if ( ! Write( *annot, ostr ) ) {
+        CSeq_entry_Handle seh = pScope->AddTopLevelSeqEntry( *pEntry );
+        CGff3Writer writer( *pScope, ostr, GffFlags( GetArgs() ) );
+        for ( CBioseq_CI bci( seh ); bci; ++bci ) {
+            if ( ! writer.WriteBioseqHandle( *bci ) ) {
                 return false;
             }
         }
         return true;
+
     }
     catch ( ... ) {
         istr.SetStreamPos ( curr );
