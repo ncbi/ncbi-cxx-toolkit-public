@@ -263,6 +263,18 @@
         assert(zf.Close()); 
 
         // Compare original and "decompressed" data
+#ifdef NCBI_OS_DARWIN
+        if (memcmp(src_buf, cmp_buf, kDataLen) != 0) {
+            string new_file_name = string("s:\\log\\") + kFileName;
+            string new_file_name_cmp = new_file_name + ".cmp";
+            CFile(kFileName).Copy(new_file_name);
+            CNcbiOfstream os(new_file_name_cmp.c_str(), IOS_BASE::out | IOS_BASE::binary);
+            os.write(cmp_buf, kDataLen);
+            os.close();
+            ERR_POST("Original data file: " << new_file_name << 
+                     ", cmp_buf dumped into: " << new_file_name_cmp);
+        }
+#endif
         assert(memcmp(src_buf, cmp_buf, kDataLen) == 0);
 
         CFile(kFileName).Remove();
