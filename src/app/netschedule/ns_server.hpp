@@ -55,7 +55,8 @@ public:
     virtual ~CNetScheduleServer();
 
     void AddDefaultListener(IServer_ConnectionFactory* factory);
-    void SetNSParameters(const SNS_Parameters& new_params);
+    void SetNSParameters(const SNS_Parameters &  new_params,
+                         bool                    log_only);
 
     virtual bool ShutdownRequested(void);
 

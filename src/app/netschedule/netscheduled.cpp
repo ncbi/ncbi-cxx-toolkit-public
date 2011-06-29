@@ -187,7 +187,7 @@ int CNetScheduleDApp::Run(void)
 
         SOCK_SetIOWaitSysAPI(eSOCK_IOWaitSysAPIPoll);
         auto_ptr<CNetScheduleServer>    server(new CNetScheduleServer());
-        server->SetNSParameters(params);
+        server->SetNSParameters(params, false);
 
         // Use port passed through parameters
         server->AddDefaultListener(new CNetScheduleConnectionFactory(&*server));

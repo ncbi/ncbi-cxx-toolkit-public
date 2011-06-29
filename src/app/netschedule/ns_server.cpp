@@ -77,20 +77,10 @@ void CNetScheduleServer::AddDefaultListener(IServer_ConnectionFactory* factory)
 }
 
 
-void CNetScheduleServer::SetNSParameters(const SNS_Parameters& params)
+void CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
+                                         bool                    log_only)
 {
-    CServer::SetParameters(params);
-    m_Port = params.port;
-    m_HostNetAddr = CSocketAPI::gethostbyname(kEmptyStr);
-    if (params.use_hostname) {
-        m_Host = CSocketAPI::gethostname();
-    } else {
-        NS_FormatIPAddress(m_HostNetAddr, m_Host);
-    }
-
-    m_InactivityTimeout = params.network_timeout;
-    m_LogFlag           = params.is_log;
-
+    m_LogFlag = params.is_log;
     if (m_LogFlag) {
         m_LogBatchEachJobFlag           = params.log_batch_each_job;
         m_LogNotificationThreadFlag     = params.log_notification_thread;
@@ -106,6 +96,21 @@ void CNetScheduleServer::SetNSParameters(const SNS_Parameters& params)
         m_LogExecutionWatcherThreadFlag = false;
         m_LogStatisticsThreadFlag       = false;
     }
+
+    if (log_only)
+        return;
+
+
+    CServer::SetParameters(params);
+    m_Port = params.port;
+    m_HostNetAddr = CSocketAPI::gethostbyname(kEmptyStr);
+    if (params.use_hostname) {
+        m_Host = CSocketAPI::gethostname();
+    } else {
+        NS_FormatIPAddress(m_HostNetAddr, m_Host);
+    }
+
+    m_InactivityTimeout = params.network_timeout;
 
     m_AdminHosts.SetHosts(params.admin_hosts);
 }

@@ -1474,9 +1474,17 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
 {
     CNcbiApplication* app = CNcbiApplication::Instance();
 
-    bool reloaded = app->ReloadConfig(CMetaRegistry::fReloadIfChanged);
+    bool                    reloaded = app->ReloadConfig(CMetaRegistry::fReloadIfChanged);
+    const CNcbiRegistry &   reg = app->GetConfig();
     if (reloaded)
-        m_Server->Configure(app->GetConfig());
+        m_Server->Configure(reg);
+
+    // Logging from the [server] section
+    SNS_Parameters          params;
+
+    params.Read(reg, "server");
+    m_Server->SetNSParameters(params, true);
+
     WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
 }
