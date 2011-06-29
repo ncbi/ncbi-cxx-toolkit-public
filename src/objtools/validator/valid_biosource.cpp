@@ -1105,7 +1105,7 @@ void CValidError_imp::ValidateBioSource
                 // always use /sex, do not check values at this time
             } else if (isViral) {
                 PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
-                    "Virus has unexpected sex qualifier", obj, ctx);
+                    "Virus has unexpected Sex qualifier", obj, ctx);
             } else if (isBacteria || isArchaea || isFungal) {
                 PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
                     "Unexpected use of /sex qualifier", obj, ctx);
@@ -1183,8 +1183,12 @@ void CValidError_imp::ValidateBioSource
         }
 
         if (isViral && IsUnexpectedViralSubSourceQualifier (subtype)) {
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
-                  "Virus has unexpected " + CSubSource::GetSubtypeName(subtype) + " qualifier", obj, ctx);
+            string subname = CSubSource::GetSubtypeName(subtype);
+            if (subname.length() > 0) {
+                subname[0] = toupper(subname[0]);
+            }
+            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+              "Virus has unexpected " + subname + " qualifier", obj, ctx);
         }            
     }
     if ( germline  &&  rearranged ) {
@@ -1350,8 +1354,12 @@ void CValidError_imp::ValidateBioSource
             }
         }
         if (isViral && IsUnexpectedViralOrgModQualifier (subtype)) {
+            string subname = COrgMod::GetSubtypeName(subtype);
+            if (subname.length() > 0) {
+                subname[0] = toupper(subname[0]);
+            }
             PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
-              "Virus has unexpected " + COrgMod::GetSubtypeName(subtype) + " qualifier", obj, ctx);
+              "Virus has unexpected " + subname + " qualifier", obj, ctx);
         }            
     }
     if (env_sample && !iso_source && !specific_host) {
