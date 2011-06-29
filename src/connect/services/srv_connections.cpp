@@ -53,6 +53,7 @@
 BEGIN_NCBI_SCOPE
 
 static const STimeout s_ZeroTimeout = {0, 0};
+static const STimeout s_InternalConnectTimeout = {0, 250 * 1000};
 
 ///////////////////////////////////////////////////////////////////////////
 SNetServerMultilineCmdOutputImpl::~SNetServerMultilineCmdOutputImpl()
@@ -315,8 +316,29 @@ CNetServerConnection SNetServerImpl::Connect()
 {
     CNetServerConnection conn = new SNetServerConnectionImpl(this);
 
-    EIO_Status io_st = conn->m_Socket.Connect(m_Address.host, m_Address.port,
-        &m_Service->m_ConnTimeout, fSOCK_LogOff | fSOCK_KeepAlive);
+    EIO_Status io_st;
+    STimeout internal_timeout = s_InternalConnectTimeout;
+    STimeout remaining_timeout = m_Service->m_ConnTimeout;
+
+    do {
+        if (remaining_timeout.sec == s_InternalConnectTimeout.sec ?
+                remaining_timeout.usec > s_InternalConnectTimeout.usec :
+                remaining_timeout.sec > s_InternalConnectTimeout.sec) {
+            remaining_timeout.sec -= s_InternalConnectTimeout.sec;
+            if (remaining_timeout.usec < s_InternalConnectTimeout.usec) {
+                --remaining_timeout.sec;
+                remaining_timeout.usec += 1000 * 1000;
+            }
+            remaining_timeout.usec -= s_InternalConnectTimeout.usec;
+        } else {
+            internal_timeout = remaining_timeout;
+            remaining_timeout.sec = remaining_timeout.usec = 0;
+        }
+
+        io_st = conn->m_Socket.Connect(m_Address.host, m_Address.port,
+            &internal_timeout, fSOCK_LogOff | fSOCK_KeepAlive);
+    } while (io_st == eIO_Timeout && (remaining_timeout.usec > 0 ||
+        remaining_timeout.sec > 0));
 
     if (io_st != eIO_Success) {
         conn->m_Socket.Close();
