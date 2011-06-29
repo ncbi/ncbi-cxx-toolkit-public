@@ -1800,6 +1800,19 @@ bool CFeatTree::x_AssignParentByRef(CFeatInfo& info)
             }
         }
     }
+    // check if gene is found over possible intemediate parents
+    if ( parent.second->m_Feat.GetFeatSubtype() == CSeqFeatData::eSubtype_gene ) {
+        // the gene link may be turned off
+        if ( m_BestGeneFeatIdMode == eBestGeneFeatId_ignore ) {
+            return false;
+        }
+        // if intermediate parents are possible
+        if ( STypeLink(info.m_Feat.GetFeatSubtype()).m_ParentType!=CSeqFeatData::eSubtype_gene ) {
+            // then assign gene only
+            info.m_Gene = parent.second;
+            return false;
+        }
+    }
     x_SetParent(info, *parent.second);
     return true;
 }
@@ -2083,7 +2096,7 @@ void CFeatTree::x_AssignGenes(void)
             has_genes = true;
             continue;
         }
-        else if ( !info.m_Gene && STypeLink(feat_type) ) {
+        else if ( !info.m_Gene && STypeLink(feat_type).CanHaveGeneParent() ) {
             if ( m_BestGeneFeatIdMode == eBestGeneFeatId_always ) {
                 CFeatInfo* gene =
                     x_LookupParentByRef(info,
