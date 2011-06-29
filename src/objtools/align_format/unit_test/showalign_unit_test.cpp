@@ -38,7 +38,6 @@
 #include <serial/serial.hpp>    
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
-#include <algo/blast/blastinput/blast_scope_src.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 
 #include <objtools/align_format/showalign.hpp>

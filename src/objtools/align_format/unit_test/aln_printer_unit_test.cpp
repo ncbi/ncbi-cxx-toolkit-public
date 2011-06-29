@@ -42,7 +42,6 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objmgr/scope.hpp>
 
-#include <algo/blast/blastinput/blast_scope_src.hpp>
 #include <objtools/align_format/aln_printer.hpp>
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
@@ -50,11 +49,13 @@
 #include <objtools/readers/reader_exception.hpp>
 
 #include <corelib/test_boost.hpp>
+#include "blast_test_util.hpp"
 
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 USING_SCOPE(align_format);
+using namespace TestUtil;
 
 
 // Read sequences from fasta file and add them to scope
@@ -274,8 +275,10 @@ BOOST_AUTO_TEST_SUITE_END()
 
 CRef<CScope> CreateScope(const string& filename)
 {
-    blast::CBlastScopeSource scope_src(true);
-    CRef<CScope> scope(scope_src.NewScope());
+	const string kDbName("prot_dbs");
+	const CBlastDbDataLoader::EDbType kDbType(CBlastDbDataLoader::eProtein);
+	TestUtil::CBlastOM tmp_data_loader(kDbName, kDbType, CBlastOM::eLocal);
+	CRef<CScope> scope = tmp_data_loader.NewScope();
 
     if (filename == "") {
         return scope;
