@@ -161,20 +161,6 @@ void CTest::Init(void)
 
 int CTest::Run(void)
 {
-    char b[300];
-    CNcbiIstrstream is(b, 20);
-    CNcbiOstrstream os;
-
-//    os << MCompress_Zip << os;
-//    is >> MCompress_Zip >> is;
-    CTempString tmp("1111111111111111111111111111");
-
-    os << MCompress_Zip << tmp;
-
-    return 0;
-
-
-
     // Get arguments
     CArgs args = GetArgs();
     string test = args["lib"].AsString();
@@ -192,8 +178,8 @@ int CTest::Run(void)
     for (size_t i=0; i<kBufLen; i++) {
         // Use a set of 25 chars [A-Z]
         src_buf[i] = (char)(65+(double)rand()/RAND_MAX*(90-65));
-
     }
+
     // Test compressors with different size of data
     for (size_t i = 0; i < kTestCount; i++) {
 
