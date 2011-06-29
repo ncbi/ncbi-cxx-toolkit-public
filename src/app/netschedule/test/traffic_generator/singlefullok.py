@@ -109,7 +109,8 @@ class SingleFullOKLoopLoader( threading.Thread ):
             self.__gridClient.commitJob( self.__qname, jobKey, 0 )
         except Exception, excp:
             print >> sys.stderr, \
-                     "Submit/Get/Commit/Read/Confirm: Cannot commit a job"
+                     "Submit/Get/Commit/Read/Confirm: Cannot commit a job (" + \
+                     jobKey + ")"
             print >> sys.stderr, str( excp )
             return False
         return True
@@ -133,7 +134,8 @@ class SingleFullOKLoopLoader( threading.Thread ):
         except Exception, excp:
             print >> sys.stderr, \
                      "Submit/Get/Commit/Read/Confirm: " \
-                     "Cannot confirm reading a job"
+                     "Cannot confirm reading a job (" + \
+                     ", ".join( jobs ) + ")"
             print >> sys.stderr, str( excp )
         return
 
