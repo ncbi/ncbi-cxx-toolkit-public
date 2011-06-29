@@ -703,8 +703,11 @@ void CIgBlast::s_AppendResults(CRef<CSearchResultSet> &results,
                 ig_result->GetErrors().Combine(errmsg);
             }
         } 
-        if (gene >= 0) {
-            *(ig_result->SetNumAlignments(gene)) = actual_align;
+        switch(gene) {
+        case 0: ig_result->m_NumActualV = actual_align; break;
+        case 1: ig_result->m_NumActualD = actual_align; break;
+        case 2: ig_result->m_NumActualJ = actual_align; break;
+        default: break;
         }
         ++iq;
     }

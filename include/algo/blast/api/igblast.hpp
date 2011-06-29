@@ -131,7 +131,9 @@ class NCBI_XBLAST_EXPORT CIgBlastResults : public CSearchResults
 {
 public:
 
-    int *m_NumV, *m_NumD, *m_NumJ; 
+    int m_NumActualV;
+    int m_NumActualD;
+    int m_NumActualJ;
 
     const CRef<CIgAnnotation> & GetIgAnnotation() const {
         return m_Annotation;
@@ -145,10 +147,6 @@ public:
         return m_Alignment;
     }
 
-    int *SetNumAlignments(int gene) {
-        return &m_NumAlignments[gene];
-    }
-    
     /// Constructor
     /// @param query List of query identifiers [in]
     /// @param align alignments for a single query sequence [in]
@@ -161,13 +159,10 @@ public:
                     const TQueryMessages         &errs,
                     CRef<CBlastAncillaryData>     ancillary_data)
            : CSearchResults(query, align, errs, ancillary_data),
-             m_NumV(m_NumAlignments), 
-             m_NumD(&m_NumAlignments[1]), 
-             m_NumJ(&m_NumAlignments[2]) { }
+             m_NumActualV(0), m_NumActualD(0), m_NumActualJ(0) { }
 
 private:
     CRef<CIgAnnotation> m_Annotation;
-    int m_NumAlignments[3];        // the alignments for V, D, and J
 };
 
 class NCBI_XBLAST_EXPORT CIgBlast : public CObject
