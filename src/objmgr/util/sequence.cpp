@@ -1171,6 +1171,7 @@ CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
             const CSeq_id& product_id =
                 sequence::GetId(cds_feat.GetProduct(), &scope);
 
+            TFeatScores matching_feats;
             ITERATE (TFeatScores, feat_iter, feats) {
 
                 // we grab the mRNA product, if available, and scan it for
@@ -1207,9 +1208,17 @@ CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
 
                     if (prot_handle.IsSynonym(product_id)) {
                         // got it!
-                        mrna_feat.Reset(&mrna);
-                        return mrna_feat;
+                        matching_feats.push_back(*feat_iter);
+                        break;
                     }
+                }
+            }
+            if ( !matching_feats.empty() ) {
+                // keep only matching features
+                feats.swap(matching_feats);
+                if ( feats.size() == 1 ) {
+                    mrna_feat = feats.front().second;
+                    return mrna_feat;
                 }
             }
         }
