@@ -50,7 +50,6 @@
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
-USING_SCOPE(blast);
 USING_SCOPE(align_format);
 using namespace TestUtil;
 
@@ -67,8 +66,10 @@ BOOST_AUTO_TEST_CASE(TestPerformance)
     CRef<CSeq_align_set> fileSeqAlignSet(new CSeq_align_set);  
     fileSeqAlignSet->Set() = san->GetData().GetAlign();     
   
-    CBlastScopeSource scope_src(false);
-    CRef<CScope> scope(scope_src.NewScope());
+    const string kDbName("nucl_dbs");
+    const CBlastDbDataLoader::EDbType kDbType(CBlastDbDataLoader::eNucleotide);
+    TestUtil::CBlastOM tmp_data_loader(kDbName, kDbType, CBlastOM::eLocal);
+    CRef<CScope> scope = tmp_data_loader.NewScope();
     CDisplaySeqalign ds(*fileSeqAlignSet, *scope);
     CNcbiOfstream dumpster("/dev/null");  // we don't care about the output
     ds.DisplaySeqalign(dumpster);

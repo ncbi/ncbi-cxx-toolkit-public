@@ -45,8 +45,6 @@
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
-#include <algo/blast/blastinput/blast_scope_src.hpp>
-
 #include <objtools/align_format/align_format_util.hpp>
 #include <objtools/align_format/tabular.hpp>
 
