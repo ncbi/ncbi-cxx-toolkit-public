@@ -132,6 +132,7 @@ public:
      * Check if there are warnings in the error messages.
      *
      * @return true if there is at least one warning in the error messages.
+     *         It does not consider errors and fatal errors.
      * @author Sergey Satskiy, NCBI
     **/
     bool has_warnings (void) const;
@@ -140,6 +141,7 @@ public:
      * Check if there are errors in the error messages.
      *
      * @return true if there is at least one error in the error messages.
+    *          It does not consider fatal errors.
      * @author Sergey Satskiy, NCBI
     **/
     bool has_errors (void) const;
