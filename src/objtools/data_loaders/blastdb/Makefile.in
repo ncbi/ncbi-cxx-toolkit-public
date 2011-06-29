@@ -4,8 +4,7 @@
 ##################################
 
 LIB_PROJ = ncbi_xloader_blastdb ncbi_xloader_blastdb_rmt
-# Exclude for now until dependencies are resolved
-EXPENDABLE_SUB_PROJ = unit_test
+SUB_PROJ = unit_test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
