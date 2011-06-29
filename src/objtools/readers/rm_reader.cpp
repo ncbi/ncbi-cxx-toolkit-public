@@ -286,7 +286,7 @@ void CRepeatLibrary::Read(CNcbiIstream& stream)
             if ((repeat.m_RptClass == "Simple_repeat"  ||
                  repeat.m_RptClass == "Low_complexity")  &&
                  repeat.m_RptSpecificityName == "universal"  &&
-                 repeat.m_RptFamily == "") repeat.m_RptLength = 0;
+                 repeat.m_RptFamily == "") repeat.m_RptLength = kInvalidSeqPos;
             m_Map[repeat.m_RptName] = repeat;
             continue;
         }
@@ -566,8 +566,8 @@ CRef<CSeq_feat> CRepeatToFeat::operator()(const IRepeatRegion& repeat)
         bool include_rpt_left(m_Flags & fIncludeCoreStatistics);
         if ((m_Flags & fRemoveRedundancy)  &&
                 (m_Flags & fIncludeRepeatLength)  &&
-                (extra.GetRptLength() == repeat.GetRptPosEnd() +
-                                         repeat.GetRptLeft())) {
+                (rpt_length == repeat.GetRptPosEnd() +
+                               repeat.GetRptLeft())) {
             // Do not store rpt_left if we know the repeat length,
             // rpt_left matches it (so it's redundant), and we
             // want to remove redundancy.

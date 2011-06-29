@@ -248,7 +248,7 @@ public:
 class SRepeat : public IRepeat
 {
 public:
-    SRepeat() : m_RptLength(0), m_RptSpecificity(0) { }
+    SRepeat() : m_RptLength(kInvalidSeqPos), m_RptSpecificity(0) { }
 
     string GetRptName() const { return m_RptName; }
     string GetRptFamily() const { return m_RptFamily; }
