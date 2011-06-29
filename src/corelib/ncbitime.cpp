@@ -1109,7 +1109,7 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
         case 'P': str += ( t->Hour() < 12) ? "AM" : "PM" ;  break;
         case 'z': {
 #if defined(TIMEZONE_IS_UNDEFINED)
-                  ERR_POST_X(5, "Format symbol 'z' is unsupported " \
+                  ERR_POST_X(5, "Format symbol 'z' is unsupported "
                                 "on this platform");
 #else
                   str += "GMT";
@@ -1387,7 +1387,7 @@ CTime& CTime::x_SetTime(const time_t* value)
     if ( !t ) {
         // Error was detected: incorrect timer value or system error
         NCBI_THROW(CTimeException, eConvert, 
-                   "CTime::x_SetTime(): localtime/gmtime error, " \
+                   "CTime::x_SetTime(): localtime/gmtime error, "
                    "possible incorrect time_t value");
     }
 #endif
@@ -1753,7 +1753,7 @@ CTime& CTime::ToTime(ETimeZone tz)
         if ( !t ) {
             // Error was detected: incorrect timer value or system error
             NCBI_THROW(CTimeException, eConvert, 
-                       "CTime::ToTime(): localtime/gmtime error, " \
+                       "CTime::ToTime(): localtime/gmtime error, "
                        "possible incorrect time_t value");
         }
 #endif
@@ -2450,31 +2450,16 @@ string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
 //=============================================================================
 
 
-string s_SpecialValueName(CTimeout::EType type)
+static string s_SpecialValueName(CTimeout::EType type)
 { 
     switch(type) {
     case CTimeout::eDefault:
         return "eDefault";
     case CTimeout::eInfinite:
         return "eInfinity";
-    case CTimeout::eZero:
-        // kEmptyStr
-        break;
+    default:
+        return kEmptyStr;
     }
-    return kEmptyStr;
-}
-
-
-const CTimeout& CTimeout::operator= (const CTimeout& t)
-{
-    if ( &t == this ) {
-        return *this;
-    }
-    m_Type     = t.m_Type;
-    m_HasValue = t.m_HasValue;
-    m_Sec      = t.m_Sec;
-    m_MicroSec = t.m_MicroSec;
-    return *this;
 }
 
 
@@ -2483,7 +2468,7 @@ bool CTimeout::IsZero() const
     if ( !IsFinite() ) {
         if (m_Type == eDefault) {
             NCBI_THROW(CTimeException, eInvalid, 
-                       "CTimeout::IsZero():  cannot be used for " \
+                       "CTimeout::IsZero():  cannot be used for "
                        "default timeout");
         }
         return false;
@@ -2566,9 +2551,9 @@ void CTimeout::Set(EType type)
     case eDefault:
     case eInfinite:
         m_Type = type;
-        m_HasValue = false;
         break;
     case eZero:
+        m_Type = eFinite;
         Set(0,0);
         break;
     default:
@@ -2580,7 +2565,7 @@ void CTimeout::Set(EType type)
 
 void CTimeout::Set(unsigned int sec, unsigned int usec)
 {
-    m_HasValue = true;
+    m_Type     = eFinite;
     m_Sec      = sec + usec / kMicroSecondsPerSecond;
     m_MicroSec = usec % kMicroSecondsPerSecond;
 }
@@ -2597,7 +2582,7 @@ void CTimeout::Set(double sec)
                    "CTimeout::Set(double): timeout value " +
                    NStr::DoubleToString(sec) + " is too big");
     }
-    m_HasValue = true;
+    m_Type     = eFinite;
     m_Sec      = (unsigned int)sec;
     m_MicroSec = (unsigned int)((sec - m_Sec) * kMicroSecondsPerSecond);
 }
@@ -2607,7 +2592,7 @@ void CTimeout::Set(const CTimeSpan& ts)
 {
     if (ts.GetSign() == eNegative) {
         NCBI_THROW(CTimeException, eConvert, 
-                   "CTimeout::Set(): cannot convert from negative " \
+                   "CTimeout::Set(): cannot convert from negative "
                    "CTimeStamp '" + ts.AsString() + "'");
     }
     if ((Uint8)ts.GetCompleteSeconds() > kMax_UInt) {
@@ -2618,139 +2603,106 @@ void CTimeout::Set(const CTimeSpan& ts)
         // normalized value and its value can be safely converted
         // to microseconds.
     }
-    m_HasValue = true;
+    m_Type     = eFinite;
     m_Sec      = (unsigned int)ts.GetCompleteSeconds();
     m_MicroSec = (unsigned int)((ts.GetNanoSecondsAfterSecond()+500)/1000);
 }
 
 
-inline
-int s_TimeoutCompareHash(const CTimeout& t)
-{
-    if ( t.IsFinite() )  // to avoid warnings
-        return 1; 
-    if ( t.IsInfinite() )
-        return 2;
-    if ( t.IsDefault() )
-        return 3;
-    // not reached
-    return 1;
-}
+#define COMPARE_TIMEOUT_TYPES(t1, t2) (int(t1) << 2 | int(t2))
 
 
 bool CTimeout::operator== (const CTimeout& t) const
 {
-    int h = s_TimeoutCompareHash(*this)*10 + s_TimeoutCompareHash(t);
-    switch (h) {
-        case 11:
-            return m_Sec == t.m_Sec  &&  m_MicroSec == t.m_MicroSec;
-        case 22:
-            return true;  // infinite == infinite
-        case 12:
-        case 21:
-            return false; // infinite != value
-        default:
-            NCBI_THROW(CTimeException, eArgument, 
-                "CTimeout::operator==(): unable to compare with " \
-                "eDefault timeout");
+    switch (COMPARE_TIMEOUT_TYPES(m_Type, t.m_Type)) {
+    case COMPARE_TIMEOUT_TYPES(eFinite, eFinite):
+        return m_Sec == t.m_Sec  &&  m_MicroSec == t.m_MicroSec;
+    case COMPARE_TIMEOUT_TYPES(eInfinite, eInfinite):
+        return true;  // infinite == infinite
+    case COMPARE_TIMEOUT_TYPES(eFinite, eInfinite):
+    case COMPARE_TIMEOUT_TYPES(eInfinite, eFinite):
+        return false; // infinite != value
+    default:
+        NCBI_THROW(CTimeException, eArgument,
+            "CTimeout::operator==(): unable to compare with eDefault timeout");
     }
 }
 
 
 bool CTimeout::operator< (const CTimeout& t) const
 {
-    int h = s_TimeoutCompareHash(*this)*10 + s_TimeoutCompareHash(t);
-    switch (h) {
-        case 11:
-            if (m_Sec == t.m_Sec) {
-                return m_MicroSec < t.m_MicroSec;
-            }
-            return m_Sec < t.m_Sec;
-        case 12:
-            return true;  // value < infinite
-        case 21:
-        case 22:
-            return false;
-        default:
-            NCBI_THROW(CTimeException, eArgument, 
-                "CTimeout::operator<(): unable to compare with " \
-                "eDefault timeout");
+    switch (COMPARE_TIMEOUT_TYPES(m_Type, t.m_Type)) {
+    case COMPARE_TIMEOUT_TYPES(eFinite, eFinite):
+        return m_Sec == t.m_Sec ? m_MicroSec < t.m_MicroSec : m_Sec < t.m_Sec;
+    case COMPARE_TIMEOUT_TYPES(eFinite, eInfinite):
+        return true;  // value < infinite
+    case COMPARE_TIMEOUT_TYPES(eInfinite, eFinite):
+    case COMPARE_TIMEOUT_TYPES(eInfinite, eInfinite):
+        return false;
+    default:
+        NCBI_THROW(CTimeException, eArgument,
+            "CTimeout::operator<(): unable to compare with eDefault timeout");
     }
 }
 
 
 bool CTimeout::operator> (const CTimeout& t) const
 {
-    int h = s_TimeoutCompareHash(*this)*10 + s_TimeoutCompareHash(t);
-    switch (h) {
-        case 11:
-            if (m_Sec == t.m_Sec) {
-                return m_MicroSec > t.m_MicroSec;
-            }
-            return m_Sec > t.m_Sec;
-        case 21:
-            return true;  // infinite > value
-        case 12:
-        case 22:
-            return false;
-        default:
-            NCBI_THROW(CTimeException, eArgument, 
-                "CTimeout::operator>(): unable to compare with " \
-                "eDefault timeout");
+    switch (COMPARE_TIMEOUT_TYPES(m_Type, t.m_Type)) {
+    case COMPARE_TIMEOUT_TYPES(eFinite, eFinite):
+        return m_Sec == t.m_Sec ? m_MicroSec > t.m_MicroSec : m_Sec > t.m_Sec;
+    case COMPARE_TIMEOUT_TYPES(eInfinite, eFinite):
+        return true;  // infinite > value
+    case COMPARE_TIMEOUT_TYPES(eFinite, eInfinite):
+    case COMPARE_TIMEOUT_TYPES(eInfinite, eInfinite):
+        return false;
+    default:
+        NCBI_THROW(CTimeException, eArgument,
+            "CTimeout::operator>(): unable to compare with eDefault timeout");
     }
 }
 
 
 bool CTimeout::operator>= (const CTimeout& t) const
 {
-    int h = s_TimeoutCompareHash(*this)*10 + s_TimeoutCompareHash(t);
-    switch (h) {
-        case 11:
-            if (m_Sec == t.m_Sec) {
-                return m_MicroSec >= t.m_MicroSec;
-            }
-            return m_Sec >= t.m_Sec;
-        case 12:
-            return false;     // value < infinity
-        case 21:
-        case 22:
-        case 23:
-            return true;      // infinity >= everything
-        case 31:
-            if ( t.IsZero() ) 
-                return true;  // default >= zero
-            // fall through
-        default:
-            NCBI_THROW(CTimeException, eArgument, 
-                "CTimeout::operator>=(): unable to compare with " \
-                "eDefault timeout");
+    switch (COMPARE_TIMEOUT_TYPES(m_Type, t.m_Type)) {
+    case COMPARE_TIMEOUT_TYPES(eFinite, eFinite):
+        return m_Sec == t.m_Sec ? m_MicroSec >= t.m_MicroSec : m_Sec >= t.m_Sec;
+    case COMPARE_TIMEOUT_TYPES(eFinite, eInfinite):
+        return false;     // value < infinity
+    case COMPARE_TIMEOUT_TYPES(eInfinite, eFinite):
+    case COMPARE_TIMEOUT_TYPES(eInfinite, eInfinite):
+    case COMPARE_TIMEOUT_TYPES(eInfinite, eDefault):
+        return true;      // infinity >= everything
+    case COMPARE_TIMEOUT_TYPES(eDefault, eFinite):
+        if ( t.IsZero() ) 
+            return true;  // default >= zero
+        // fall through
+    default:
+        NCBI_THROW(CTimeException, eArgument,
+            "CTimeout::operator>=(): unable to compare with eDefault timeout");
     }
 }
 
 
 bool CTimeout::operator<= (const CTimeout& t) const
 {
-    int h = s_TimeoutCompareHash(*this)*10 + s_TimeoutCompareHash(t);
-    switch (h) {
-        case 11:
-            if (m_Sec == t.m_Sec) {
-                return m_MicroSec <= t.m_MicroSec;
-            }
-            return m_Sec <= t.m_Sec;
-        case 21:
-            return false;    // infinity > value
-        case 12:
-        case 22:
-        case 32:
-            return true;     // everything <= infinity
-        case 13:
-            if ( IsZero() ) 
-                return true; // zero <= default
-            // fall through
-        default:
-            NCBI_THROW(CTimeException, eArgument, 
-                "CTimeout::operator<=(): unable to compare with " \
-                "eDefault timeout");
+    switch (COMPARE_TIMEOUT_TYPES(m_Type, t.m_Type)) {
+    case COMPARE_TIMEOUT_TYPES(eFinite, eFinite):
+        return m_Sec == t.m_Sec ? m_MicroSec <= t.m_MicroSec : m_Sec <= t.m_Sec;
+    case COMPARE_TIMEOUT_TYPES(eInfinite, eFinite):
+        return false;    // infinity > value
+    case COMPARE_TIMEOUT_TYPES(eFinite, eInfinite):
+    case COMPARE_TIMEOUT_TYPES(eInfinite, eInfinite):
+    case COMPARE_TIMEOUT_TYPES(eDefault, eInfinite):
+        return true;     // everything <= infinity
+    case COMPARE_TIMEOUT_TYPES(eFinite, eDefault):
+        if ( IsZero() ) 
+            return true; // zero <= default
+        // fall through
+    default:
+        NCBI_THROW(CTimeException, eArgument,
+            "CTimeout::operator<=(): unable to compare with eDefault timeout");
     }
 }
 

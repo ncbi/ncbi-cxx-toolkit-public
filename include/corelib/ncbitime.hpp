@@ -1451,7 +1451,8 @@ class NCBI_XNCBI_EXPORT CTimeout
 public:
     /// Type of timeouts.
     enum EType {
-        eDefault,   ///< Default timeout (depends from implementation).
+        eFinite,    ///< A finite timeout value has been set.
+        eDefault,   ///< Default timeout (to be interpreted by the client code).
         eInfinite,  ///< Infinite timeout.
         eZero       ///< Zero timeout, equal to CTimeout(0,0).
     };
@@ -1474,14 +1475,8 @@ public:
     /// Initialize timeout from number of seconds (fractional value).
     CTimeout(double sec);
 
-    /// Copy constructor.
-    CTimeout(const CTimeout& t);
-
     /// Destructor.
     ~CTimeout(void) {}
-
-    /// Assignment operator.
-    const CTimeout& operator= (const CTimeout& t);
 
     // Check on special timeout values.
     bool IsDefault()  const;
@@ -1551,7 +1546,6 @@ public:
 
 private:
     EType         m_Type;       ///< Type of timeout.
-    bool          m_HasValue;   ///< Timeout holds numeric value.
     unsigned int  m_Sec;        ///< Seconds part of the timeout.
     unsigned int  m_MicroSec;   ///< Microseconds part of the timeout.
 };
@@ -2372,30 +2366,21 @@ inline
 CTimeout::CTimeout(double sec) { Set(sec); }
 
 inline
-CTimeout::CTimeout(const CTimeout& t)
-{
-    m_Type     = t.m_Type;
-    m_HasValue = t.m_HasValue;
-    m_Sec      = t.m_Sec;
-    m_MicroSec = t.m_MicroSec;
-}
-
-inline
 bool CTimeout::IsDefault() const
 { 
-    return !m_HasValue  &&  m_Type == eDefault;
+    return m_Type == eDefault;
 }
 
 inline
 bool CTimeout::IsInfinite() const
 {
-    return !m_HasValue  &&  m_Type == eInfinite;
+    return m_Type == eInfinite;
 }
 
 inline
 bool CTimeout::IsFinite() const
 {
-    return m_HasValue;
+    return m_Type == eFinite;
 }
 
 inline
