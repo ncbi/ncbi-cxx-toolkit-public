@@ -162,7 +162,7 @@ CIgBlast::Run()
 
     /*** collect germline search results */
     for (int gene = 0; gene  < num_genes; ++gene) {
-        s_AppendResults(results[gene], m_IgOptions->m_NumAlign[gene], final_results);
+        s_AppendResults(results[gene], m_IgOptions->m_NumAlign[gene], gene, final_results);
     }
 
     /*** search user specified db */
@@ -181,7 +181,7 @@ CIgBlast::Run()
         }
         result = blast->GetResultSet();
     }
-    s_AppendResults(result, -1, final_results);
+    s_AppendResults(result, -1, -1, final_results);
 
     /*** set the chain type infor */
     x_SetChainType(final_results, annots);
@@ -647,6 +647,7 @@ void CIgBlast::x_SetChainType(CRef<CSearchResultSet>  &results,
 
 void CIgBlast::s_AppendResults(CRef<CSearchResultSet> &results,
                                int                     num_aligns,
+                               int                     gene,
                                CRef<CSearchResultSet> &final_results)
 {
     bool  new_result = (final_results.Empty());
@@ -658,6 +659,7 @@ void CIgBlast::s_AppendResults(CRef<CSearchResultSet> &results,
     ITERATE(CSearchResultSet, result, *results) {
 
         CRef<CSeq_align_set> align;
+        int actual_align = 0;
 
         if ((*result)->HasAlignments()) {
 
@@ -670,22 +672,25 @@ void CIgBlast::s_AppendResults(CRef<CSearchResultSet> &results,
                     CSeq_align_set::Tdata::iterator it = align_list.begin();
                     for (int i=0; i<num_aligns; ++i) ++it;
                     align_list.erase(it, align_list.end());
+                    actual_align = num_aligns;
+                } else {
+                    actual_align = align_list.size();
                 }
             }
         }
 
         TQueryMessages errmsg = (*result)->GetErrors();
 
+        CIgBlastResults *ig_result;
         if (new_result) {
             CConstRef<CSeq_id> query = (*result)->GetSeqId();
             // TODO maybe we need the db ancillary instead?
             CRef<CBlastAncillaryData> ancillary = (*result)->GetAncillaryData();
-            CRef<CSearchResults> ig_result(
-                  new CIgBlastResults(query, align, errmsg, ancillary));
-            final_results->push_back(ig_result);
+            ig_result = new CIgBlastResults(query, align, errmsg, ancillary);
+            CRef<CSearchResults> r(ig_result);
+            final_results->push_back(r);
         } else if (!align.Empty()) {
-            CIgBlastResults *ig_result = dynamic_cast<CIgBlastResults *>
-                                         (&(*final_results)[iq]);
+            ig_result = dynamic_cast<CIgBlastResults *> (&(*final_results)[iq]);
             CSeq_align_set::Tdata & ig_list = ig_result->SetSeqAlign()->Set();
             // Remove duplicates first
             CSeq_align_set::Tdata & align_list = align->Set();
@@ -698,6 +703,9 @@ void CIgBlast::s_AppendResults(CRef<CSearchResultSet> &results,
                 ig_result->GetErrors().Combine(errmsg);
             }
         } 
+        if (gene >= 0) {
+            *(ig_result->SetNumAlignments(gene)) = actual_align;
+        }
         ++iq;
     }
 };
