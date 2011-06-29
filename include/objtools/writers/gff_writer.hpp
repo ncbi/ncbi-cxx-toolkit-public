@@ -68,6 +68,13 @@ public:
         unsigned int = fNormal );
     virtual ~CGff2Writer();
 
+    virtual bool WriteHeader();
+    virtual bool WriteHeader(
+        const CSeq_annot& ) { return WriteHeader(); };
+    virtual bool WriteFooter();
+    virtual bool WriteFooter(
+        const CSeq_annot& ) { return WriteFooter(); };
+
     //  ------------------------------------------------------------------------
     //  Supported object types:
     //  ------------------------------------------------------------------------
@@ -103,13 +110,6 @@ protected:
         CBioseq_Handle );
     virtual bool x_WriteSeqAnnotHandle(
         CSeq_annot_Handle );
-
-    virtual bool x_WriteHeader();
-    virtual bool x_WriteHeader(
-        const CSeq_annot& ) { return x_WriteHeader(); };
-    virtual bool x_WriteFooter();
-    virtual bool x_WriteFooter(
-        const CSeq_annot& ) { return x_WriteFooter(); };
 
     virtual bool x_WriteFeature(
         feature::CFeatTree&,

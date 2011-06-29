@@ -61,11 +61,11 @@ public:
         unsigned int = fNormal );
     virtual ~CGvfWriter();
 
-protected:
-    virtual bool x_WriteHeader();
-    virtual bool x_WriteHeader(
+    virtual bool WriteHeader();
+    virtual bool WriteHeader(
         const CSeq_annot& );
 
+protected:
     virtual bool x_WriteFeature(
         feature::CFeatTree&,
         CMappedFeat );

@@ -32,12 +32,15 @@
 #ifndef OBJTOOLS_WRITERS___VCF_WRITER__HPP
 #define OBJTOOLS_READERS___VCF_WRITER__HPP
 
+#include <objtools/writers/writer.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 
 //  ============================================================================
-class NCBI_XOBJWRITE_EXPORT CVcfWriter   
+class NCBI_XOBJWRITE_EXPORT CVcfWriter :
+    public CWriterBase 
 //  ============================================================================
 {
 public:
@@ -53,7 +56,10 @@ public:
 
     virtual ~CVcfWriter();
 
-    bool WriteAnnot( const CSeq_annot& );
+    bool WriteAnnot( 
+        const CSeq_annot&,
+        const string& = "",
+        const string& = "" );
 
 protected:
     bool x_WriteMeta(
@@ -103,8 +109,6 @@ protected:
         
 
     CScope& m_Scope;
-    CNcbiOstream& m_Os;
-    TFlags m_uFlags;
 };
 
 END_objects_SCOPE

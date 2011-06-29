@@ -33,6 +33,8 @@
 #define OBJTOOLS_WRITERS___WRITER__HPP
 
 #include <corelib/ncbistd.hpp>
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/seq_annot_handle.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -70,6 +72,9 @@ public:
         cerr << "Object type not supported!" << endl;
         return false;
     };
+
+    virtual bool WriteHeader() { return true; };
+    virtual bool WriteFooter() { return true; };
 
     //  ------------------------------------------------------------------------
     //  Supported handle types:

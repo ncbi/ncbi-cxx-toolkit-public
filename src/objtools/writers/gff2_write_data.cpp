@@ -546,7 +546,6 @@ bool CGffWriteRecordFeature::x_AssignType(
 
     switch ( feature.GetData().GetSubtype() ) {
     default:
-        m_strType = feature.GetData().GetKey();
         break;
 
     case CSeq_feat::TData::eSubtype_gene:

@@ -115,12 +115,12 @@ CGvfWriter::~CGvfWriter()
 };
 
 //  ----------------------------------------------------------------------------
-bool CGvfWriter::x_WriteHeader(
+bool CGvfWriter::WriteHeader(
     const CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
     if (  ! annot.IsSetDesc()  ||  ! annot.GetDesc().IsSet() ) {
-        return x_WriteHeader();
+        return WriteHeader();
     }
     const list< CRef< CAnnotdesc > > descrs = annot.GetDesc().Get();
     list< CRef< CAnnotdesc > >::const_iterator cit = descrs.begin();
@@ -143,7 +143,7 @@ bool CGvfWriter::x_WriteHeader(
         }
     }
 
-    if ( ! x_WriteHeader() ) {
+    if ( ! WriteHeader() ) {
         return false;
     } 
     if ( ! pDescPragmas ) {
@@ -172,7 +172,7 @@ bool CGvfWriter::x_WriteHeader(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGvfWriter::x_WriteHeader()
+bool CGvfWriter::WriteHeader()
 //  ----------------------------------------------------------------------------
 {
     m_Os << "##gff-version 3" << endl;

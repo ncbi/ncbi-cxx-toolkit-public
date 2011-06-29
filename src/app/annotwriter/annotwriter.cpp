@@ -388,11 +388,13 @@ bool CAnnotWriterApp::TrySeqEntry(
 
         CSeq_entry_Handle seh = pScope->AddTopLevelSeqEntry( *pEntry );
         CGff3Writer writer( *pScope, ostr, GffFlags( GetArgs() ) );
+        writer.WriteHeader();
         for ( CBioseq_CI bci( seh ); bci; ++bci ) {
             if ( ! writer.WriteBioseqHandle( *bci ) ) {
                 return false;
             }
         }
+        writer.WriteFooter();
         return true;
 
     }
@@ -478,7 +480,10 @@ bool CAnnotWriterApp::WriteGff2(
 //  -----------------------------------------------------------------------------
 {
     CGff2Writer writer( os, GffFlags( GetArgs() ) );
-    return writer.WriteAnnot( annot );
+    writer.WriteHeader();
+    writer.WriteAnnot( annot );
+    writer.WriteFooter();
+    return true;
 }
 
 //  -----------------------------------------------------------------------------
@@ -493,7 +498,10 @@ bool CAnnotWriterApp::WriteGff3(
     pScope->AddDefaults();
 
     CGff3Writer writer( *pScope, os, GffFlags( GetArgs() ) );
-    return writer.WriteAnnot( annot );
+    writer.WriteHeader();
+    writer.WriteAnnot( annot );
+    writer.WriteFooter();
+    return true;
 }
 
 //  -----------------------------------------------------------------------------
@@ -508,7 +516,10 @@ bool CAnnotWriterApp::WriteGvf(
     pScope->AddDefaults();
 
     CGvfWriter writer( *pScope, os, GffFlags( GetArgs() ) );
-    return writer.WriteAnnot( annot );
+    writer.WriteHeader();
+    writer.WriteAnnot( annot );
+    writer.WriteFooter();
+    return true;
 }
 
 //  -----------------------------------------------------------------------------
@@ -518,7 +529,10 @@ bool CAnnotWriterApp::WriteHandleGff3(
 //  -----------------------------------------------------------------------------
 {
     CGff3Writer writer( ostr, GffFlags( GetArgs() ) );
-    return writer.WriteBioseqHandle( bsh ) || true;
+    writer.WriteHeader();
+    writer.WriteBioseqHandle( bsh ) || true;
+    writer.WriteFooter();
+    return true;
 }
 
 //  -----------------------------------------------------------------------------
@@ -528,7 +542,10 @@ bool CAnnotWriterApp::WriteGff3(
 //  -----------------------------------------------------------------------------
 {
     CGff3Writer writer( os, GffFlags( GetArgs() ) );
-    return writer.WriteAlign( align );
+    writer.WriteHeader();
+    writer.WriteAlign( align );
+    writer.WriteFooter();
+    return true;
 }
 
 //  -----------------------------------------------------------------------------
@@ -538,7 +555,10 @@ bool CAnnotWriterApp::WriteGtf(
 //  -----------------------------------------------------------------------------
 {
     CGtfWriter writer( os, GffFlags( GetArgs() ) );
-    return writer.WriteAnnot( annot );
+    writer.WriteHeader();
+    writer.WriteAnnot( annot );
+    writer.WriteFooter();
+    return true;
 }
 
 //  -----------------------------------------------------------------------------
@@ -548,7 +568,10 @@ bool CAnnotWriterApp::WriteWiggle(
 //  -----------------------------------------------------------------------------
 {
     CWiggleWriter writer( os, GetArgs()["tracksize"].AsInteger() );
-    return writer.WriteAnnot( annot );
+    writer.WriteHeader();
+    writer.WriteAnnot( annot );
+    writer.WriteFooter();
+    return true;
 }
 
 //  -----------------------------------------------------------------------------
@@ -563,7 +586,10 @@ bool CAnnotWriterApp::WriteBed(
     pScope->AddDefaults();
 
     CBedWriter writer( *pScope, os );
-    return writer.WriteAnnot( annot );
+    writer.WriteHeader();
+    writer.WriteAnnot( annot );
+    writer.WriteFooter();
+    return true;
 }
 
 //  -----------------------------------------------------------------------------
@@ -578,7 +604,10 @@ bool CAnnotWriterApp::WriteVcf(
     pScope->AddDefaults();
 
     CVcfWriter writer( *pScope, os );
-    return writer.WriteAnnot( annot );
+    writer.WriteHeader();
+    writer.WriteAnnot( annot );
+    writer.WriteFooter();
+    return true;
 }
 
 //  -----------------------------------------------------------------------------

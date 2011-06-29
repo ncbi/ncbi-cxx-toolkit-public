@@ -83,7 +83,7 @@ CGtfWriter::~CGtfWriter()
 };
 
 //  ----------------------------------------------------------------------------
-bool CGtfWriter::x_WriteHeader()
+bool CGtfWriter::WriteHeader()
 //  ----------------------------------------------------------------------------
 {
     m_Os << "#gtf-version 2.2" << endl;

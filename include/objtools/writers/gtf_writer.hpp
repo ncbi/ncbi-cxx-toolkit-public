@@ -70,9 +70,9 @@ public:
         unsigned int = 0 );
     ~CGtfWriter();
 
-protected:
-    bool x_WriteHeader();
+    bool WriteHeader();
 
+protected:
     bool x_WriteRecord( 
         const CGffWriteRecord* );
 

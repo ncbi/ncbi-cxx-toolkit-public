@@ -58,7 +58,7 @@ CWiggleWriter::CWiggleWriter(
     CNcbiOstream& ostr,
     size_t uTrackSize ) :
 //  ----------------------------------------------------------------------------
-    m_Os( ostr ),
+    CWriterBase( ostr, 0 ),
     m_uTrackSize( uTrackSize == 0 ? size_t( -1 ) : uTrackSize )
 {
 };
@@ -70,7 +70,10 @@ CWiggleWriter::~CWiggleWriter()
 };
 
 //  ----------------------------------------------------------------------------
-bool CWiggleWriter::WriteAnnot( const CSeq_annot& annot )
+bool CWiggleWriter::WriteAnnot( 
+    const CSeq_annot& annot,
+    const string&,
+    const string& )
 //  ----------------------------------------------------------------------------
 {
     if ( annot.IsGraph() ) {

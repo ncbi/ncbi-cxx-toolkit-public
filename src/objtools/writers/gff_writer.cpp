@@ -95,14 +95,8 @@ bool CGff2Writer::WriteAnnot(
     const string& strAssemblyAccession )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! (m_uFlags & fNoHeader) ) {
-        x_WriteHeader( annot );
-    }
     if ( ! x_WriteAnnot( annot ) ) {
         return false;
-    }
-    if ( ! (m_uFlags & fNoFooter) ) {
-        x_WriteFooter( annot );
     }
     return true;
 }
@@ -114,16 +108,13 @@ bool CGff2Writer::WriteBioseqHandle(
     const string& strAssemblyAccession )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! (m_uFlags & fNoHeader) ) {
-        x_WriteHeader();
-    }
     if ( ! x_WriteAssemblyInfo( strAssemblyName, strAssemblyAccession ) ) {
         return false;
     }
     if ( ! x_WriteBioseqHandle( bsh ) ) {
         return false;
     }
-    return x_WriteFooter();
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -163,16 +154,13 @@ bool CGff2Writer::WriteSeqAnnotHandle(
     const string& strAssemblyAccession )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! (m_uFlags & fNoHeader) ) {
-        x_WriteHeader();
-    }
     if ( ! x_WriteAssemblyInfo( strAssemblyName, strAssemblyAccession ) ) {
         return false;
     }
     if ( ! x_WriteSeqAnnotHandle( sah ) ) {
         return false;
     }
-    return x_WriteFooter();
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -250,9 +238,6 @@ bool CGff2Writer::WriteAlign(
     const string& strAssAcc )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! (m_uFlags & fNoHeader) ) {
-        x_WriteHeader();
-    }
     if ( ! x_WriteAssemblyInfo( strAssName, strAssAcc ) ) {
         return false;
     }
@@ -267,7 +252,7 @@ bool CGff2Writer::WriteAlign(
     if ( ! x_WriteAlign( align ) ) {
         return false;
     }
-    return x_WriteFooter();
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -406,7 +391,7 @@ CRef< CUser_object > CGff2Writer::x_GetDescriptor(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Writer::x_WriteHeader()
+bool CGff2Writer::WriteHeader()
 //  ----------------------------------------------------------------------------
 {
     m_Os << "##gff-version 2" << endl;
@@ -414,7 +399,7 @@ bool CGff2Writer::x_WriteHeader()
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Writer::x_WriteFooter()
+bool CGff2Writer::WriteFooter()
 //  ----------------------------------------------------------------------------
 {
     m_Os << "###" << endl;

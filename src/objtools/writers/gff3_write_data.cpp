@@ -285,6 +285,9 @@ string CGff3WriteRecordFeature::StrAttributes() const
         if ( quote )
             strAttributes += '\"';
     }
+    if ( strAttributes.empty() ) {
+        strAttributes = ".";
+    }
     return strAttributes;
 }
 
@@ -338,7 +341,6 @@ bool CGff3WriteRecordFeature::x_AssignAttributesCds(
 //  ----------------------------------------------------------------------------
 {
     return (
-//        x_AssignAttributeDbXref( mapped_feat )  &&
         x_AssignAttributeProteinId( mapped_feat )  &&
         x_AssignAttributeProduct( mapped_feat ) );
 }
@@ -348,9 +350,8 @@ bool CGff3WriteRecordFeature::x_AssignAttributesMiscFeature(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
-    return (
-//        x_AssignAttributeDbXref( mapped_feat ) &&
-        true );
+    m_Attributes[ "gbkey" ] = mapped_feat.GetData().GetKey();
+    return true;
 }
 
 //  ----------------------------------------------------------------------------

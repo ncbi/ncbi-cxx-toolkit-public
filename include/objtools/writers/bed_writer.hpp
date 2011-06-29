@@ -32,17 +32,20 @@
 #ifndef OBJTOOLS_WRITERS___BED_WRITER__HPP
 #define OBJTOOLS_READERS___BED_WRITER__HPP
 
+#include <objtools/writers/writer.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 
 //  ============================================================================
-class NCBI_XOBJWRITE_EXPORT CBedWriter   
+class NCBI_XOBJWRITE_EXPORT CBedWriter:
+    public CWriterBase 
 //  ============================================================================
 {
 public:
     typedef enum {
-        fNormal =       0,
+        fNormal = 0,
     } TFlags;
     
 public:
@@ -53,7 +56,10 @@ public:
 
     virtual ~CBedWriter();
 
-    bool WriteAnnot( const CSeq_annot& );
+    bool WriteAnnot( 
+        const CSeq_annot&,
+        const string& = "",
+        const string& = "" );
 
 protected:
     bool x_WriteAnnotFTable( 
@@ -69,8 +75,6 @@ protected:
     virtual SAnnotSelector x_GetAnnotSelector();
 
     CScope& m_Scope;
-    CNcbiOstream& m_Os;
-    TFlags m_uFlags;
 };
 
 END_objects_SCOPE

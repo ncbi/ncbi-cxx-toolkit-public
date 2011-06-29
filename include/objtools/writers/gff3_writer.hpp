@@ -61,6 +61,8 @@ public:
         unsigned int = fNormal );
     virtual ~CGff3Writer();
 
+    virtual bool WriteHeader();
+
 protected:
     bool x_WriteAlign( 
         const CSeq_align&,
@@ -75,7 +77,6 @@ protected:
         const CSeq_align&,    
         bool=false );                   // invert width 
 
-    virtual bool x_WriteHeader();
 //    TFlags m_uFlags;
 
     virtual bool x_WriteFeature(

@@ -62,9 +62,8 @@ CVcfWriter::CVcfWriter(
     CNcbiOstream& ostr,
     TFlags uFlags ) :
 //  ----------------------------------------------------------------------------
-    m_Scope( scope ),
-    m_Os( ostr ),
-    m_uFlags( uFlags )
+    CWriterBase( ostr, uFlags ),
+    m_Scope( scope )
 {
 };
 
@@ -76,7 +75,9 @@ CVcfWriter::~CVcfWriter()
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::WriteAnnot( 
-    const CSeq_annot& annot )
+    const CSeq_annot& annot,
+    const string&,
+    const string& )
 //  ----------------------------------------------------------------------------
 {
     if ( ! x_WriteMeta( annot ) ) {

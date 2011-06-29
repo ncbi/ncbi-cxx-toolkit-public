@@ -51,9 +51,8 @@ CBedWriter::CBedWriter(
     CNcbiOstream& ostr,
     TFlags uFlags ) :
 //  ----------------------------------------------------------------------------
-    m_Scope( scope ),
-    m_Os( ostr ),
-    m_uFlags( uFlags )
+    CWriterBase( ostr, uFlags ),
+    m_Scope( scope )
 {
 };
 
@@ -64,7 +63,10 @@ CBedWriter::~CBedWriter()
 };
 
 //  ----------------------------------------------------------------------------
-bool CBedWriter::WriteAnnot( const CSeq_annot& annot )
+bool CBedWriter::WriteAnnot( 
+    const CSeq_annot& annot,
+    const string&,
+    const string& )
 //  ----------------------------------------------------------------------------
 {
     if ( annot.IsFtable() ) {

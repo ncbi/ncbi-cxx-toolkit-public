@@ -35,12 +35,14 @@
 #include <corelib/ncbistd.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objtools/writers/writer.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ============================================================================
-class NCBI_XOBJWRITE_EXPORT CWiggleWriter
+class NCBI_XOBJWRITE_EXPORT CWiggleWriter:
+    public CWriterBase 
 //  ============================================================================
 {
 public:
@@ -49,7 +51,10 @@ public:
         size_t = 0 );
     ~CWiggleWriter();
 
-    bool WriteAnnot( const CSeq_annot& );
+    bool WriteAnnot( 
+        const CSeq_annot&,
+        const string& = "",
+        const string& = "" );
 
 protected:
     bool WriteAnnotTable( const CSeq_annot& );
@@ -63,7 +68,6 @@ protected:
 
     bool ContainsData( const CSeq_graph&, size_t );
 
-    CNcbiOstream& m_Os;
     size_t m_uTrackSize;
 };
 

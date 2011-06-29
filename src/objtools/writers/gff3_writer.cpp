@@ -277,7 +277,7 @@ bool CGff3Writer::x_WriteAlignDenseg(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff3Writer::x_WriteHeader()
+bool CGff3Writer::WriteHeader()
 //  ----------------------------------------------------------------------------
 {
     m_Os << "##gff-version 3" << endl;
