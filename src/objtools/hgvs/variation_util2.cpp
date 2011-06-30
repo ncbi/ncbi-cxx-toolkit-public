@@ -301,8 +301,11 @@ CRef<CVariantPlacement> CVariationUtil::Remap(const CVariantPlacement& p, CSeq_l
 {
     CRef<CVariantPlacement> p2 = x_Remap(p, mapper);
     if((p.IsSetStart_offset() || p.IsSetStop_offset()) && p2->GetMol() == CVariantPlacement::eMol_genomic
-       || p.GetMol() == CVariantPlacement::eMol_genomic && p2->GetMol() != CVariantPlacement::eMol_genomic)
+       || p.GetMol() == CVariantPlacement::eMol_genomic
+          && p2->GetMol() != CVariantPlacement::eMol_genomic
+          && p2->GetMol() != CVariantPlacement::eMol_unknown /*in case remapped to nothing*/)
     {
+        NcbiCerr << "Mapped: " << MSerial_AsnText << *p2;
         //When mapping an offset-placement to a genomic placement, may need to resolve offsets.
         //or, when mapping from genomic to a product coordinates, may need to add offsets. In above cases
         //we need to use the seq-align-based mapping.
