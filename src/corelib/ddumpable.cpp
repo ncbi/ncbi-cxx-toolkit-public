@@ -181,7 +181,7 @@ void CDebugDumpContext::Log(const string& name, short value,
 void CDebugDumpContext::Log(const string& name, unsigned short value,
                             const string& comment)
 {
-    Log(name, NStr::UIntToString(value), CDebugDumpFormatter::eValue, comment);
+    Log(name, NStr::UIntToString((unsigned int)value), CDebugDumpFormatter::eValue, comment);
 }
 
 
@@ -202,14 +202,14 @@ void CDebugDumpContext::Log(const string& name, unsigned int value,
 void CDebugDumpContext::Log(const string& name, long value,
                             const string& comment)
 {
-    Log(name, NStr::IntToString(value), CDebugDumpFormatter::eValue, comment);
+    Log(name, NStr::LongToString(value), CDebugDumpFormatter::eValue, comment);
 }
 
 
 void CDebugDumpContext::Log(const string& name, unsigned long value,
                             const string& comment)
 {
-    Log(name, NStr::UIntToString(value), CDebugDumpFormatter::eValue, comment);
+    Log(name, NStr::ULongToString(value), CDebugDumpFormatter::eValue, comment);
 }
 
 #if (SIZEOF_LONG < 8)

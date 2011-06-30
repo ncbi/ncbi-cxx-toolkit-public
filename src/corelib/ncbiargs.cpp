@@ -841,7 +841,7 @@ string CArgDesc::PrintXml(CNcbiOstream& out) const
     s_WriteXmlLine(out, "description", GetComment());
     size_t group = GetGroup();
     if (group != 0) {
-        s_WriteXmlLine(out, "group", NStr::UIntToString((unsigned long)group));
+        s_WriteXmlLine(out, "group", NStr::SizetToString(group));
     }
     const CArgDescSynopsis* syn = 
         dynamic_cast<const CArgDescSynopsis*>(this);

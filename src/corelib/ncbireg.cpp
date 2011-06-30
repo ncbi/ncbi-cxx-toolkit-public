@@ -1475,7 +1475,7 @@ IRWRegistry* CNcbiRegistry::x_Read(CNcbiIstream& is, TFlags flags)
         }
         ++m_RuntimeOverrideCount;
         x_Add(*crwreg, ePriority_RuntimeOverrides + m_RuntimeOverrideCount,
-              sm_OverrideRegName + NStr::IntToString(m_RuntimeOverrideCount));
+              sm_OverrideRegName + NStr::UIntToString(m_RuntimeOverrideCount));
         return crwreg.GetPointer();
     } else {
         // This will only affect the main registry, but still needs to

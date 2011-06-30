@@ -2763,8 +2763,8 @@ void CDiagBuffer::DiagHandler(SDiagMessage& mess)
                         limit_type = CDiagContext::eLogRate_Trace;
                 }
                 string txt = "Exceeded maximum logging rate for " + limit_name + " (" +
-                    NStr::IntToString(ctx.GetLogRate_Limit(limit_type)) + " messages per " +
-                    NStr::IntToString(ctx.GetLogRate_Period(limit_type)) +
+                    NStr::UIntToString(ctx.GetLogRate_Limit(limit_type)) + " messages per " +
+                    NStr::UIntToString(ctx.GetLogRate_Period(limit_type)) +
                     " sec), suspending the output.";
                 const CNcbiDiag diag(DIAG_COMPILE_INFO);
                 SDiagMessage err_msg(eDiag_Error,

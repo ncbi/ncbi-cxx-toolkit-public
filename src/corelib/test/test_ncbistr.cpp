@@ -360,7 +360,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
         try {
             long value = NStr::StringToLong(str, flags);
             NcbiCout << "long value: " << value << ", toString: '"
-                     << NStr::IntToString(value, str_flags) << "', "
+                     << NStr::LongToString(value, str_flags) << "', "
                      << "Int8ToString: '"
                      << NStr::Int8ToString(value, str_flags) << "'"
                      << NcbiEndl;
@@ -368,7 +368,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
                 BOOST_CHECK(test->IsGoodInt());
                 BOOST_CHECK_EQUAL(value, test->i);
                 if (allow_same_test)
-                    BOOST_CHECK(test->Same(NStr::IntToString(value, str_flags)));
+                    BOOST_CHECK(test->Same(NStr::LongToString(value, str_flags)));
             #else
                 BOOST_CHECK(test->IsGoodInt8());
                 BOOST_CHECK_EQUAL(value, test->i8);
@@ -397,7 +397,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             long value = NStr::StringToLong(str, flags | NStr::fConvErr_NoThrow);
             int err = errno;
             NcbiCout << "long value: " << value << ", toString: '"
-                     << NStr::IntToString(value, str_flags) << "', "
+                     << NStr::LongToString(value, str_flags) << "', "
                      << "Int8ToString: '"
                      << NStr::Int8ToString(value, str_flags) << "'"
                      << " errno: " << err << NcbiEndl;
@@ -407,7 +407,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
                 BOOST_CHECK(test->IsGoodInt());
                 BOOST_CHECK_EQUAL(value, test->i);
                 if (allow_same_test)
-                    BOOST_CHECK(test->Same(NStr::IntToString(value, str_flags)));
+                    BOOST_CHECK(test->Same(NStr::LongToString(value, str_flags)));
             #else
                 BOOST_CHECK(test->IsGoodInt8());
                 BOOST_CHECK_EQUAL(value, test->i8);
@@ -429,7 +429,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
         try {
             unsigned long value = NStr::StringToULong(str, flags);
             NcbiCout << "unsigned long value: " << value << ", toString: '"
-                     << NStr::UIntToString(value, str_flags) << "', "
+                     << NStr::ULongToString(value, str_flags) << "', "
                      << "UInt8ToString: '"
                      << NStr::UInt8ToString(value, str_flags) << "'"
                      << NcbiEndl;
@@ -437,7 +437,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
                 BOOST_CHECK(test->IsGoodUInt());
                 BOOST_CHECK_EQUAL(value, test->u);
                 if (allow_same_test)
-                    BOOST_CHECK(test->Same(NStr::UIntToString(value, str_flags)));
+                    BOOST_CHECK(test->Same(NStr::ULongToString(value, str_flags)));
             #else
                 BOOST_CHECK(test->IsGoodUInt8());
                 BOOST_CHECK_EQUAL(value, test->u8);
@@ -466,7 +466,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             unsigned long value = NStr::StringToULong(str, flags | NStr::fConvErr_NoThrow);
             int err = errno;
             NcbiCout << "unsigned long value: " << value << ", toString: '"
-                     << NStr::UIntToString(value, str_flags) << "', "
+                     << NStr::ULongToString(value, str_flags) << "', "
                      << "UInt8ToString: '"
                      << NStr::UInt8ToString(value, str_flags) << "'"
                      << " errno: " << err << NcbiEndl;
@@ -476,7 +476,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
                 BOOST_CHECK(test->IsGoodUInt());
                 BOOST_CHECK_EQUAL(value, test->u);
                 if (allow_same_test)
-                    BOOST_CHECK(test->Same(NStr::UIntToString(value, str_flags)));
+                    BOOST_CHECK(test->Same(NStr::ULongToString(value, str_flags)));
             #else
                 BOOST_CHECK(test->IsGoodUInt8());
                 BOOST_CHECK_EQUAL(value, test->u8);
@@ -1044,14 +1044,28 @@ BOOST_AUTO_TEST_CASE(s_StringToNumRadix)
 
     string str;
 
-    NStr::IntToString(str, kMax_Long, 0, 2);
+    NStr::IntToString(str, kMax_Int, 0, 2);
+#if (SIZEOF_INT == 4)
+    BOOST_CHECK(str == "1111111111111111111111111111111");
+#elif (SIZEOF_INT == 8)
+    BOOST_CHECK(str == "111111111111111111111111111111111111111111111111111111111111111");
+#endif
+
+    NStr::LongToString(str, kMax_Long, 0, 2);
 #if (SIZEOF_LONG == 4)
     BOOST_CHECK(str == "1111111111111111111111111111111");
 #elif (SIZEOF_LONG == 8)
     BOOST_CHECK(str == "111111111111111111111111111111111111111111111111111111111111111");
 #endif
 
-    NStr::UIntToString(str, kMax_ULong, 0, 2);
+    NStr::UIntToString(str, kMax_UInt, 0, 2);
+#if (SIZEOF_INT == 4)
+    BOOST_CHECK(str == "11111111111111111111111111111111");
+#elif (SIZEOF_INT == 8)
+    BOOST_CHECK(str == "1111111111111111111111111111111111111111111111111111111111111111");
+#endif
+
+    NStr::ULongToString(str, kMax_ULong, 0, 2);
 #if (SIZEOF_LONG == 4)
     BOOST_CHECK(str == "11111111111111111111111111111111");
 #elif (SIZEOF_LONG == 8)
@@ -1059,6 +1073,13 @@ BOOST_AUTO_TEST_CASE(s_StringToNumRadix)
 #endif
 
     NStr::IntToString(str, -1, 0, 8);
+#if (SIZEOF_INT == 4) 
+    BOOST_CHECK(str == "37777777777");
+#elif (SIZEOF_INT == 8)
+    BOOST_CHECK(str == "1777777777777777777777");
+#endif
+
+    NStr::LongToString(str, -1, 0, 8);
 #if (SIZEOF_LONG == 4) 
     BOOST_CHECK(str == "37777777777");
 #elif (SIZEOF_LONG == 8)
@@ -1066,6 +1087,13 @@ BOOST_AUTO_TEST_CASE(s_StringToNumRadix)
 #endif
 
     NStr::IntToString(str, -1, 0, 16);
+#if (SIZEOF_INT == 4)
+    BOOST_CHECK(str == "FFFFFFFF");
+#elif (SIZEOF_INT == 8)
+    BOOST_CHECK(str == "FFFFFFFFFFFFFFFF");
+#endif
+
+    NStr::LongToString(str, -1, 0, 16);
 #if (SIZEOF_LONG == 4)
     BOOST_CHECK(str == "FFFFFFFF");
 #elif (SIZEOF_LONG == 8)
@@ -2197,12 +2225,12 @@ BOOST_AUTO_TEST_CASE(s_StringToIntSpeed)
 
         errno = 0;
         Uint8 v8 = NStr::StringToUInt8(ss[t], NStr::fConvErr_NoThrow);
-        v = v8;
+        v = (int)v8;
         if ( !v8 && errno ) v = -1;
         if ( v != ssr[t] ) Abort();
         
         try {
-            v = NStr::StringToUInt8(ss[t]);
+            v = (int)NStr::StringToUInt8(ss[t]);
         }
         catch ( exception& ) {
             v = -1;

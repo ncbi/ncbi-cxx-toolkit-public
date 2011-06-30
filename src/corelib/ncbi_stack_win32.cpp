@@ -249,7 +249,7 @@ static bool s_FillModuleListPSAPI(TModules& mods, DWORD pid, HANDLE hProcess)
         if ( needed > modules.size() * sizeof(HMODULE)) {
             NCBI_THROW(CCoreException, eCore,
                        string("More than ") +
-                       NStr::IntToString(modules.size()) + " modules");
+                       NStr::SizetToString(modules.size()) + " modules");
         }
 
 

@@ -2426,7 +2426,7 @@ string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
         if ( !result.empty() ) {
             result += " ";
         }
-        result += NStr::IntToString(val) + " " + span[i].str;
+        result += NStr::LongToString(val) + " " + span[i].str;
         if (val > 1  ||  val == 0) {
             result += "s";
         }
