@@ -1193,14 +1193,12 @@ ECompare Compare(const CSeq_loc& me,
             // current range is contained in 'you'?
             bool mit_contained = false;
             ITERATE(TRangeInfoList, yit, yid_it->second) {
-                if (yit->second < mit->first  ||  yit->first > mit->second) {
-                    // No overlap between these ranges
-                    continue;
-                }
-                overlap = true;
-                if (yit->first <= mit->first  &&  yit->second >= mit->second) {
-                    mit_contained = true;
-                    break;
+                if (yit->second > mit->first  &&  yit->first < mit->second) {
+                    overlap = true;
+                    if (yit->first <= mit->first  &&  yit->second >= mit->second) {
+                        mit_contained = true;
+                        break;
+                    }
                 }
             }
             if ( !mit_contained ) {
