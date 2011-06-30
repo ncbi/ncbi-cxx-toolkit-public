@@ -1766,8 +1766,8 @@ Int8 TestForOverlap64(const CSeq_loc& loc1,
             if ( cmp != eContains ) {
                 return -1;
             }
-            return Int8(GetCoverage(*ploc2, scope)) -
-                Int8(GetCoverage(*ploc1, scope));
+            return Int8(GetCoverage(*ploc1, scope)) -
+                Int8(GetCoverage(*ploc2, scope));
         }
     case eOverlap_CheckIntRev:
         swap(ploc1, ploc2);
