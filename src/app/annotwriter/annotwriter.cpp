@@ -72,6 +72,8 @@
 #include <util/compress/zlib.hpp>
 #include <util/compress/stream.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objtools/writers/writer_exception.hpp>
+#include <objtools/writers/writer.hpp>
 #include <objtools/writers/gff_writer.hpp>
 #include <objtools/writers/gtf_writer.hpp>
 #include <objtools/writers/gff3_writer.hpp>
@@ -93,94 +95,54 @@ class CAnnotWriterApp : public CNcbiApplication
 {
 public:
     void Init();
-    int Run ();
+    int Run();
 
 private:
     CObjectIStream* x_OpenIStream(
         const CArgs& args );
 
+    CWriterBase* x_CreateWriter(
+        CScope&,
+        CNcbiOstream&,
+        const CArgs& );
+
     bool TrySeqAnnot(
+        CScope&,
         CObjectIStream&,
         CNcbiOstream& );
 
     bool TrySeqEntry(
+        CScope&,
         CObjectIStream&,
         CNcbiOstream& );
 
     bool TryBioseqSet(
+        CScope&,
         CObjectIStream&,
         CNcbiOstream& );
 
     bool TryBioseq(
+        CScope&,
         CObjectIStream&,
         CNcbiOstream& );
 
     bool TrySeqAlign(
+        CScope&,
         CObjectIStream&,
         CNcbiOstream& );
 
-    bool Write(
-        const CSeq_annot& annot,
-        CNcbiOstream& );
-
-    bool WriteGff2(
-        const CSeq_annot& annot,
-        CNcbiOstream& );
-
-    bool WriteGff3(
-        const CSeq_annot& annot,
-        CNcbiOstream& );
-
-    bool WriteGtf(
-        const CSeq_annot& annot,
-        CNcbiOstream& );
-
-    bool WriteGvf(
-        const CSeq_annot& annot,
-        CNcbiOstream& );
-
-    bool WriteWiggle(
-        const CSeq_annot& annot,
-        CNcbiOstream& );
-
-    bool WriteBed(
-        const CSeq_annot& annot,
-        CNcbiOstream& );
-
-    bool WriteVcf(
-        const CSeq_annot& annot,
-        CNcbiOstream& );
-
-    bool WriteGff3(
-        const CSeq_align& align,
-        CNcbiOstream& );
-
     bool WriteHandleGff3(
-        CBioseq_Handle bsh,
-        CNcbiOstream& );
-
-    bool WriteHandleGff3(
-        CSeq_entry_Handle seh,
-        CNcbiOstream& );
-
-    bool WriteHandleGvf(
         CBioseq_Handle bsh,
         CNcbiOstream& );
 
     CGff2Writer::TFlags GffFlags( 
         const CArgs& );
-
-    bool TestHandles() const;
-
-    bool m_bHeadersWritten;
 };
 
 //  ----------------------------------------------------------------------------
 void CAnnotWriterApp::Init()
 //  ----------------------------------------------------------------------------
 {
-    m_bHeadersWritten = false;
-
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(
         GetArguments().GetProgramBasename(),
@@ -222,15 +184,6 @@ void CAnnotWriterApp::Init()
     //  flags
     {{
     arg_desc->AddFlag(
-        "single-header",
-        "list pragmas only once at the beginning of output",
-        true );
-    //  testing
-    arg_desc->AddFlag(
-        "test-handle",
-        "call writer interface with handle object",
-        true );
-    arg_desc->AddFlag(
         "structibutes",
         "limit attributes to inter feature relationships",
         true );
@@ -269,20 +222,25 @@ int CAnnotWriterApp::Run()
         NCBI_THROW(CFlatException, eInternal, msg);
     }
 
+    CRef< CObjectManager > pObjMngr = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager( *pObjMngr );
+    CRef< CScope > pScope( new CScope( *pObjMngr ) );
+    pScope->AddDefaults();
+
     while ( true ) {
-        if ( TrySeqAnnot( *pIs, *pOs ) ) {
+        if ( TrySeqAnnot( *pScope, *pIs, *pOs ) ) {
             continue;
         }
-        if ( TrySeqEntry( *pIs, *pOs ) ) {
+        if ( TrySeqEntry( *pScope, *pIs, *pOs ) ) {
             continue;
         }
-        if ( TryBioseqSet( *pIs, *pOs ) ) {
+        if ( TryBioseqSet( *pScope, *pIs, *pOs ) ) {
             continue;
         }
-        if ( TryBioseq( *pIs, *pOs ) ) {
+        if ( TryBioseq( *pScope, *pIs, *pOs ) ) {
             continue;
         }
-        if ( TrySeqAlign( *pIs, *pOs ) ) {
+        if ( TrySeqAlign( *pScope, *pIs, *pOs ) ) {
             continue;
         }
         if ( ! pIs->EndOfData() ) {
@@ -298,15 +256,26 @@ int CAnnotWriterApp::Run()
 
 //  -----------------------------------------------------------------------------
 bool CAnnotWriterApp::TrySeqAnnot(
+    CScope& scope,
     CObjectIStream& istr,
     CNcbiOstream& ostr )
 //  -----------------------------------------------------------------------------
 {
     CNcbiStreampos curr = istr.GetStreamPos();
     try {
-        CRef<CSeq_annot> annot(new CSeq_annot);
-        istr >> *annot;
-        return Write( *annot, ostr );
+        CRef<CSeq_annot> pAnnot(new CSeq_annot);
+        istr >> *pAnnot;
+
+        CWriterBase* pWriter = x_CreateWriter( scope, ostr, GetArgs() );
+        if ( ! pWriter ) {
+            cerr << "annotwriter: Cannot create suitable writer!" << endl;
+            return false;
+        }
+        pWriter->WriteHeader();
+        pWriter->WriteAnnot( *pAnnot );
+        pWriter->WriteFooter();
+        delete pWriter;
+        return true;
     }
     catch ( ... ) {
         istr.SetStreamPos ( curr );
@@ -316,6 +285,7 @@ bool CAnnotWriterApp::TrySeqAnnot(
 
 //  -----------------------------------------------------------------------------
 bool CAnnotWriterApp::TryBioseqSet(
+    CScope& scope,
     CObjectIStream& istr,
     CNcbiOstream& ostr )
 //  -----------------------------------------------------------------------------
@@ -335,7 +305,8 @@ bool CAnnotWriterApp::TryBioseqSet(
             pScope->AddDefaults();
             const CBioseq& bs = se.GetSeq();
             pScope->AddBioseq( bs );
-            this->WriteHandleGff3( pScope->GetBioseqHandle( bs ), ostr );
+
+            WriteHandleGff3( pScope->GetBioseqHandle( bs ), ostr );
         }
         return true;
     }
@@ -347,6 +318,7 @@ bool CAnnotWriterApp::TryBioseqSet(
 
 //  -----------------------------------------------------------------------------
 bool CAnnotWriterApp::TryBioseq(
+    CScope& scope,
     CObjectIStream& istr,
     CNcbiOstream& ostr )
 //  -----------------------------------------------------------------------------
@@ -355,13 +327,22 @@ bool CAnnotWriterApp::TryBioseq(
     try {
         CRef<CBioseq> pBioseq(new CBioseq);
         istr >> *pBioseq;
+
+        CWriterBase* pWriter = x_CreateWriter( scope, ostr, GetArgs() );
+        if ( ! pWriter ) {
+            cerr << "annotwriter: Cannot create suitable writer!" << endl;
+            return false;
+        }
+        pWriter->WriteHeader();
         CTypeIterator<CSeq_annot> annot_iter( *pBioseq );
         for ( ;  annot_iter;  ++annot_iter ) {
             CRef< CSeq_annot > annot( annot_iter.operator->() );
-            if ( ! Write( *annot, ostr ) ) {
+            if ( ! pWriter->WriteAnnot( *annot ) ) {
                 return false;
             }
         }
+        pWriter->WriteFooter();
+        delete pWriter;
         return true;
     }
     catch ( ... ) {
@@ -372,6 +353,7 @@ bool CAnnotWriterApp::TryBioseq(
 
 //  -----------------------------------------------------------------------------
 bool CAnnotWriterApp::TrySeqEntry(
+    CScope& scope,
     CObjectIStream& istr,
     CNcbiOstream& ostr )
 //  -----------------------------------------------------------------------------
@@ -381,20 +363,20 @@ bool CAnnotWriterApp::TrySeqEntry(
         CRef<CSeq_entry> pEntry( new CSeq_entry );
         istr >> *pEntry;
 
-        CRef< CObjectManager > pObjMngr = CObjectManager::GetInstance();
-        CGBDataLoader::RegisterInObjectManager( *pObjMngr );
-        CRef< CScope > pScope( new CScope( *pObjMngr ) );
-        pScope->AddDefaults();
-
-        CSeq_entry_Handle seh = pScope->AddTopLevelSeqEntry( *pEntry );
-        CGff3Writer writer( *pScope, ostr, GffFlags( GetArgs() ) );
-        writer.WriteHeader();
+        CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry( *pEntry );
+        CWriterBase* pWriter = x_CreateWriter( scope, ostr, GetArgs() );
+        if ( ! pWriter ) {
+            cerr << "annotwriter: Cannot create suitable writer!" << endl;
+            return false;
+        }
+        pWriter->WriteHeader();
         for ( CBioseq_CI bci( seh ); bci; ++bci ) {
-            if ( ! writer.WriteBioseqHandle( *bci ) ) {
+            if ( ! pWriter->WriteBioseqHandle( *bci ) ) {
                 return false;
             }
         }
-        writer.WriteFooter();
+        pWriter->WriteFooter();
+        delete pWriter;
         return true;
 
     }
@@ -406,6 +388,7 @@ bool CAnnotWriterApp::TrySeqEntry(
 
 //  -----------------------------------------------------------------------------
 bool CAnnotWriterApp::TrySeqAlign(
+    CScope& scope,
     CObjectIStream& istr,
     CNcbiOstream& ostr )
 //  -----------------------------------------------------------------------------
@@ -414,7 +397,17 @@ bool CAnnotWriterApp::TrySeqAlign(
     try {
         CRef<CSeq_align> pAlign(new CSeq_align);
         istr >> *pAlign;
-        return WriteGff3( *pAlign, ostr );
+
+        CWriterBase* pWriter = x_CreateWriter( scope, ostr, GetArgs() );
+        if ( ! pWriter ) {
+            cerr << "annotwriter: Cannot create suitable writer!" << endl;
+            return false;
+        }
+        pWriter->WriteHeader();
+        pWriter->WriteAlign( *pAlign );
+        pWriter->WriteFooter();
+        delete pWriter;
+        return true;
     }
     catch ( ... ) {
         istr.SetStreamPos ( curr );
@@ -441,88 +434,6 @@ CObjectIStream* CAnnotWriterApp::x_OpenIStream(
 }
 
 //  -----------------------------------------------------------------------------
-bool CAnnotWriterApp::Write( 
-    const CSeq_annot& annot,
-    CNcbiOstream& os )
-//  -----------------------------------------------------------------------------
-{
-    const string strFormat = GetArgs()[ "format" ].AsString();
-
-    if ( strFormat == "gff"  ||  strFormat == "gff2" ) { 
-        return WriteGff2( annot, os );
-    }
-    if ( strFormat == "gff3" ) { 
-        return WriteGff3( annot, os );
-    }
-    if ( strFormat == "gvf" ) { 
-        return WriteGvf( annot, os );
-    }
-    if ( strFormat == "gtf" ) {
-        return WriteGtf( annot, os );
-    }
-    if ( strFormat == "wiggle"  ||  strFormat == "wig" ) {
-        return WriteWiggle( annot, os );
-    }
-    if ( strFormat == "bed" ) {
-        return WriteBed( annot, os );
-    }
-    if ( strFormat == "vcf" ) {
-        return WriteVcf( annot, os );
-    }
-    cerr << "Unexpected!" << endl;
-    return false;    
-}
-
-//  -----------------------------------------------------------------------------
-bool CAnnotWriterApp::WriteGff2( 
-    const CSeq_annot& annot,
-    CNcbiOstream& os )
-//  -----------------------------------------------------------------------------
-{
-    CGff2Writer writer( os, GffFlags( GetArgs() ) );
-    writer.WriteHeader();
-    writer.WriteAnnot( annot );
-    writer.WriteFooter();
-    return true;
-}
-
-//  -----------------------------------------------------------------------------
-bool CAnnotWriterApp::WriteGff3( 
-    const CSeq_annot& annot,
-    CNcbiOstream& os )
-//  -----------------------------------------------------------------------------
-{
-    CRef< CObjectManager > pObjMngr = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager( *pObjMngr );
-    CRef< CScope > pScope( new CScope( *pObjMngr ) );
-    pScope->AddDefaults();
-
-    CGff3Writer writer( *pScope, os, GffFlags( GetArgs() ) );
-    writer.WriteHeader();
-    writer.WriteAnnot( annot );
-    writer.WriteFooter();
-    return true;
-}
-
-//  -----------------------------------------------------------------------------
-bool CAnnotWriterApp::WriteGvf( 
-    const CSeq_annot& annot,
-    CNcbiOstream& os )
-//  -----------------------------------------------------------------------------
-{
-    CRef< CObjectManager > pObjMngr = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager( *pObjMngr );
-    CRef< CScope > pScope( new CScope( *pObjMngr ) );
-    pScope->AddDefaults();
-
-    CGvfWriter writer( *pScope, os, GffFlags( GetArgs() ) );
-    writer.WriteHeader();
-    writer.WriteAnnot( annot );
-    writer.WriteFooter();
-    return true;
-}
-
-//  -----------------------------------------------------------------------------
 bool CAnnotWriterApp::WriteHandleGff3(
     CBioseq_Handle bsh,
     CNcbiOstream& ostr )
@@ -531,81 +442,6 @@ bool CAnnotWriterApp::WriteHandleGff3(
     CGff3Writer writer( ostr, GffFlags( GetArgs() ) );
     writer.WriteHeader();
     writer.WriteBioseqHandle( bsh ) || true;
-    writer.WriteFooter();
-    return true;
-}
-
-//  -----------------------------------------------------------------------------
-bool CAnnotWriterApp::WriteGff3( 
-    const CSeq_align& align,
-    CNcbiOstream& os )
-//  -----------------------------------------------------------------------------
-{
-    CGff3Writer writer( os, GffFlags( GetArgs() ) );
-    writer.WriteHeader();
-    writer.WriteAlign( align );
-    writer.WriteFooter();
-    return true;
-}
-
-//  -----------------------------------------------------------------------------
-bool CAnnotWriterApp::WriteGtf( 
-    const CSeq_annot& annot,
-    CNcbiOstream& os )
-//  -----------------------------------------------------------------------------
-{
-    CGtfWriter writer( os, GffFlags( GetArgs() ) );
-    writer.WriteHeader();
-    writer.WriteAnnot( annot );
-    writer.WriteFooter();
-    return true;
-}
-
-//  -----------------------------------------------------------------------------
-bool CAnnotWriterApp::WriteWiggle( 
-    const CSeq_annot& annot,
-    CNcbiOstream& os )
-//  -----------------------------------------------------------------------------
-{
-    CWiggleWriter writer( os, GetArgs()["tracksize"].AsInteger() );
-    writer.WriteHeader();
-    writer.WriteAnnot( annot );
-    writer.WriteFooter();
-    return true;
-}
-
-//  -----------------------------------------------------------------------------
-bool CAnnotWriterApp::WriteBed( 
-    const CSeq_annot& annot,
-    CNcbiOstream& os )
-//  -----------------------------------------------------------------------------
-{
-    CRef< CObjectManager > pObjMngr = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager( *pObjMngr );
-    CRef< CScope > pScope( new CScope( *pObjMngr ) );
-    pScope->AddDefaults();
-
-    CBedWriter writer( *pScope, os );
-    writer.WriteHeader();
-    writer.WriteAnnot( annot );
-    writer.WriteFooter();
-    return true;
-}
-
-//  -----------------------------------------------------------------------------
-bool CAnnotWriterApp::WriteVcf( 
-    const CSeq_annot& annot,
-    CNcbiOstream& os )
-//  -----------------------------------------------------------------------------
-{
-    CRef< CObjectManager > pObjMngr = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager( *pObjMngr );
-    CRef< CScope > pScope( new CScope( *pObjMngr ) );
-    pScope->AddDefaults();
-
-    CVcfWriter writer( *pScope, os );
-    writer.WriteHeader();
-    writer.WriteAnnot( annot );
     writer.WriteFooter();
     return true;
 }
@@ -625,23 +461,39 @@ CGff2Writer::TFlags CAnnotWriterApp::GffFlags(
     if ( args["skip-exon-numbers"] ) {
         eFlags = CGtfWriter::TFlags( eFlags | CGtfWriter::fNoExonNumbers );
     }
-    if ( args["single-header"] ) {
-        eFlags = CGff2Writer::TFlags( eFlags | CGff2Writer::fNoFooter );
-        if ( m_bHeadersWritten ) {
-            eFlags = CGff2Writer::TFlags( eFlags | CGff2Writer::fNoHeader );
-        }
-        else {
-            m_bHeadersWritten = true;
-        }
-    }
     return eFlags;
 }
 
 //  ----------------------------------------------------------------------------
-bool CAnnotWriterApp::TestHandles() const
+CWriterBase* CAnnotWriterApp::x_CreateWriter(
+    CScope& scope,
+    CNcbiOstream& ostr,
+    const CArgs& args )
 //  ----------------------------------------------------------------------------
 {
-    return GetArgs()["test-handle"];
+    const string strFormat = args[ "format" ].AsString();
+    if ( strFormat == "gff"  ||  strFormat == "gff2" ) { 
+        return new CGff2Writer( scope, ostr, GffFlags( args ) );
+    }
+    if ( strFormat == "gff3" ) { 
+        return new CGff3Writer( scope, ostr, GffFlags( args ) );
+    }
+    if ( strFormat == "gtf" ) {
+        return new CGtfWriter( scope, ostr, GffFlags( args ) );
+    }
+    if ( strFormat == "gvf" ) { 
+        return new CGvfWriter( scope, ostr, GffFlags( args ) );
+    }
+    if ( strFormat == "wiggle"  ||  strFormat == "wig" ) {
+        return new CWiggleWriter( ostr, args["tracksize"].AsInteger() );
+    }
+    if ( strFormat == "bed" ) {
+        return new CBedWriter( scope, ostr );
+    }
+    if ( strFormat == "vcf" ) {
+        return new CVcfWriter( scope, ostr );
+    }
+    return 0;
 }
 
 END_NCBI_SCOPE
@@ -649,7 +501,6 @@ END_NCBI_SCOPE
 USING_NCBI_SCOPE;
 
 /////////////////////////////////////////////////////////////////////////////
-//
 // Main
 
 int main(int argc, const char** argv)
