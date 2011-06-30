@@ -1488,9 +1488,10 @@ CNCMessageHandler::x_StartCommand(SParsedCmd& cmd)
                 &&  m_CmdProcessor != &CNCMessageHandler::x_DoCmd_Remove2
                 &&  g_NCStorage->NeedStopWrite())
             {
+                m_CmdCtx->SetRequestStatus(eStatus_NoDiskSpace);
                 m_SockBuffer.WriteMessage("ERR:", "Not enough disk space");
                 m_SockBuffer.Flush();
-                x_CloseConnection();
+                x_SetState(eReadyForCommand);
             }
             else if (m_CmdProcessor == &CNCMessageHandler::x_DoCmd_HasBlob)
             {

@@ -1390,7 +1390,7 @@ CNCBlobStorage::x_GC_DeleteExpired(const SNCBlobListInfo& blob_info,
     if (m_GCAccessor->IsBlobExists()
         &&  m_GCAccessor->GetCurBlobDeadTime() < dead_before)
     {
-        m_GCAccessor->DeleteBlob();
+        m_GCAccessor->DeleteBlob(dead_before);
         ++m_GCDeleted;
     }
     m_GCAccessor->Deinitialize();
@@ -1535,15 +1535,21 @@ CNCBlobStorage::x_GC_HeartBeat(void)
     }
     m_CurDBSize = db_size;
     if (!m_IsStopWrite) {
-        if (m_StopWriteOnSize != 0  &&  db_size >= m_StopWriteOnSize)
+        if (m_StopWriteOnSize != 0  &&  db_size >= m_StopWriteOnSize) {
             m_IsStopWrite = true;
+            ERR_POST(Critical << "Database size exceeded limit. "
+                                 "Will no longer accept any writes.");
+        }
     }
     else if (db_size <= m_StopWriteOffSize) {
         m_IsStopWrite = false;
     }
     try {
-        if (CFileUtil::GetFreeDiskSpace(m_MainPath) <= m_DiskFreeLimit)
+        if (CFileUtil::GetFreeDiskSpace(m_MainPath) <= m_DiskFreeLimit) {
             m_IsStopWrite = true;
+            ERR_POST(Critical << "Free disk space is below threshold. "
+                                 "Will no longer accept any writes.");
+        }
     }
     catch (CFileErrnoException& ex) {
         ERR_POST(Critical << "Cannot read free disk space: " << ex);

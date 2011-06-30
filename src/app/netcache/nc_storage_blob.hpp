@@ -208,7 +208,7 @@ public:
     /// Method can be called only after lock is acquired and
     /// lock is acquired for eNCDelete or eNCCreate access. If blob doesn't exist
     /// or was already deleted by call to this method then method is no-op.
-    void DeleteBlob(void);
+    void DeleteBlob(int dead_time);
 
     /// Release blob lock.
     /// No other method can be called after call to this one.

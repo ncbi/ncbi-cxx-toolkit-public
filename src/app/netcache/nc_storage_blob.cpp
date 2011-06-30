@@ -733,18 +733,18 @@ CNCBlobAccessor::ReplaceBlobInfo(const SNCBlobVerData& new_info)
 }
 
 void
-CNCBlobAccessor::DeleteBlob(void)
+CNCBlobAccessor::DeleteBlob(int dead_time)
 {
     _ASSERT(m_AccessType == eNCGCDelete);
 
-    if (!IsBlobExists()  ||  m_CurData->size == 0)
+    if (!IsBlobExists())
         return;
 
     m_NewData = m_VerManager->CreateNewVersion();
     m_NewData->create_time = CNetCacheServer::GetPreciseTime();
     m_NewData->ttl = m_CurData->ttl;
-    m_NewData->expire = int(m_NewData->create_time >> 32) - 1;
-    m_NewData->dead_time = m_NewData->expire + m_NewData->ttl + 1;
+    SetNewBlobExpire(int(m_NewData->create_time / kNCTimeTicksInSec) - 1,
+                     dead_time + 1);
     m_NewData->create_id = m_NewData->coords.blob_id;
     m_NewData->create_server = CNCDistributionConf::GetSelfID();
     m_NewData->slot = m_CurData->slot;

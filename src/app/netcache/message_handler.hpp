@@ -328,7 +328,8 @@ public:
         eStatus_ServerError = 500,  ///< Internal server error
         eStatus_NoImpl      = 501,  ///< Command is not implemented
         eStatus_StaleSync   = 502,
-        eStatus_PeerError   = 503
+        eStatus_PeerError   = 503,
+        eStatus_NoDiskSpace = 504
     };
 
 private:
