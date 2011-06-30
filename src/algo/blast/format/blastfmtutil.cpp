@@ -128,7 +128,7 @@ void CBlastFormatUtil::PrintDbInformation(size_t line_len,
     str << dbString << definition_line << endl;
     if(!(html && with_links)) x_WrapOutputLine(str.str(),line_len, out);
 
-    out << "           " << NStr::IntToString(nNumSeqs,NStr::fWithCommas) << " sequences; " << NStr::IntToString(nTotalLength,NStr::fWithCommas) << " total letters" << endl;
+    out << "           " << NStr::IntToString(nNumSeqs,NStr::fWithCommas) << " sequences; " << NStr::UInt8ToString(nTotalLength,NStr::fWithCommas) << " total letters" << endl;
 }
 
 /** Standard order of letters according to S. Altschul
