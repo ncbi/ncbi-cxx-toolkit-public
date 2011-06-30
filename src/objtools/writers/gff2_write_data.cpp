@@ -224,6 +224,9 @@ string CGffWriteRecord::StrAttributes() const
 		if ( quote )
 			strAttributes += '\"';
     }
+    if ( strAttributes.empty() ) {
+        strAttributes = ".";
+    }
     return strAttributes;
 }
 
@@ -723,7 +726,7 @@ bool CGffWriteRecordFeature::x_AssignAttributes(
 //  ----------------------------------------------------------------------------
 {
     cerr << "FIXME: CGffWriteRecord::x_AssignAttributes" << endl;
-    return false;
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
