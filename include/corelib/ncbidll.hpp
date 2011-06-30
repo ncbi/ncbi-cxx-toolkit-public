@@ -56,7 +56,7 @@ struct SDllHandle;
 #  ifdef NCBI_OS_MSWIN
 #    define NCBI_PLUGIN_PREFIX ""
 #    define NCBI_PLUGIN_MIN_SUFFIX ".dll"
-#  elif defined(NCBI_XCODE_BUILD)
+#  elif defined(NCBI_OS_DARWIN)  &&  !defined(NCBI_USE_BUNDLES)
 #    define NCBI_PLUGIN_PREFIX "lib"
 #    define NCBI_PLUGIN_MIN_SUFFIX ".dylib"
 #  else

@@ -131,6 +131,8 @@ AC_ARG_WITH(static-exe,
    [ --with-static-exe       build all executables as statically as possible])
 AC_ARG_WITH(plugin-auto-load,
    [ --with-plugin-auto-load always enable the plugin manager by default])
+AC_ARG_WITH(bundles,
+   [ --with-bundles          build bundles in addition to dylibs on Mac OS X])
 AC_ARG_WITH(bin-release,
    [ --with-bin-release      build executables suitable for public release])
 AC_ARG_WITH(mt,
@@ -446,7 +448,7 @@ AC_ARG_WITH(manuals,
 #### Check the passed arguments against the list of available ones
 x_with_list="\
 debug optimization profiling tcheck dll static static-exe plugin-auto-load \
-bin-release mt 64 universal exe runpath lfs \
+bundles bin-release mt 64 universal exe runpath lfs \
 autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
@@ -1082,11 +1084,16 @@ case "$host_os:$compiler" in
    ;;
 
  darwin*:GCC)
-   # There's a distinction between shared libraries (dylibs) and
-   # loadable objects (bundles).
-   # See <http://fink.sourceforge.net/doc/porting/shared.php>.
+   # Per <http://fink.sourceforge.net/doc/porting/shared.php>, it was
+   # historically necessary to build plugins as Mach-O bundles rather than
+   # dynamic libraries.  That's not such a big deal on modern Mac OS X
+   # versions, so the Toolkit now defaults to building only the latter.
    CONF_dll_ext=".dylib"
-   CONF_loadable_ext=".so"
+   if test "$with_bundles" = yes; then
+      CONF_loadable_ext=".so"
+   else
+      CONF_loadable_ext=".dylib"
+   fi
    if $CXX -v 2>&1 | grep -q Apple; then
       CFLAGS="-fpascal-strings $CFLAGS"
       CXXFLAGS="-fno-permissive -fpascal-strings $CXXFLAGS"
@@ -2185,10 +2192,16 @@ case "$compiler" in
         FORBID_UNDEF="-Wl,-z,defs"
         ;;
       darwin* )
-        # There is a distinction between shared libraries (dylibs)
-        # and loadable objects (bundles).
-        # See <http://fink.sourceforge.net/doc/porting/shared.php>.
-        has_dll_loadable=""
+        # Per <http://fink.sourceforge.net/doc/porting/shared.php>, it was
+        # historically necessary to build plugins as Mach-O bundles rather than
+        # dynamic libraries.  That's not such a big deal on modern Mac OS X
+        # versions, so the Toolkit now defaults to building only the latter.
+        if test "$with_bundle" = yes; then
+           has_dll_loadable=""
+           AC_DEFINE(NCBI_USE_BUNDLES, 1,
+              [Define to 1 if building plugins as bundles, as Mac OS X
+               traditionally required.])
+        fi
         if $CXX -v 2>&1 | grep -q Apple; then
            LINK_DLL="$LINK $ARCH_CFLAGS -dynamiclib -install_name ${pure_runpath%%:*}/\$(XDLL) -o"
            LINK_LOADABLE="$LINK $ARCH_CFLAGS -bundle -o"
