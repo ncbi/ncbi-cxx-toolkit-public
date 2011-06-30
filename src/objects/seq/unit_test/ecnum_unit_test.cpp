@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE(s_TestGetStatus)
     BOOST_CHECK_EQUAL(CProt_ref::GetECNumberStatus("5.4.3.1"),
                       CProt_ref::eEC_deleted);
     BOOST_CHECK_EQUAL(CProt_ref::GetECNumberStatus("6.3.2.15"),
-                      CProt_ref::eEC_deleted);
+                      CProt_ref::eEC_replaced);
     BOOST_CHECK_EQUAL(CProt_ref::GetECNumberStatus("asdf"),
                       CProt_ref::eEC_unknown);
     BOOST_CHECK_EQUAL(CProt_ref::GetECNumberStatus("3.4.n.-"),
@@ -95,8 +95,8 @@ BOOST_AUTO_TEST_CASE(s_TestGetReplacement)
                       CCoreException);
     BOOST_CHECK_THROW(CProt_ref::GetECNumberReplacement("3.4.-.-"),
                       CCoreException);
-    BOOST_CHECK_EQUAL(CProt_ref::GetECNumberReplacement("4.2.2.4"),
-                      string("4.2.2.20"));
+    BOOST_CHECK_EQUAL(CProt_ref::GetECNumberReplacement("4.2.1.16"),
+                      string("4.3.1.19"));
     BOOST_CHECK_THROW(CProt_ref::GetECNumberReplacement("5.4.3.1"),
                       CCoreException);
     BOOST_CHECK_THROW(CProt_ref::GetECNumberReplacement("9.8.7.6"),
