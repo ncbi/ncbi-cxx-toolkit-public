@@ -1266,7 +1266,7 @@ size_t NStr::StringToSizet(const CTempString& str,
 }
 
 
-void NStr::IntToString(string& out_str, long svalue,
+void NStr::LongToString(string& out_str, long svalue,
                        TNumToStringFlags flags, int base)
 {
     _ASSERT(flags == 0  ||  flags > 32);
@@ -1327,7 +1327,7 @@ void NStr::IntToString(string& out_str, long svalue,
 }
 
 
-void NStr::UIntToString(string&           out_str,
+void NStr::ULongToString(string&          out_str,
                         unsigned long     value,
                         TNumToStringFlags flags,
                         int               base)

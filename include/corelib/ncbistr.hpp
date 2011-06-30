@@ -44,7 +44,7 @@
 #include <time.h>
 #include <vector>
 #if defined(NCBI_OS_MSWIN)
-#include <tchar.h>
+#  include <tchar.h>
 #endif
 
 
@@ -440,10 +440,10 @@ public:
     ///   Return -1 on error.
     static int HexChar(char ch);
 
-    /// Convert Int to String.
+    /// Convert int to string.
     ///
     /// @param value
-    ///   Integer value (long) to be converted.
+    ///   Integer value to be converted.
     /// @param flags
     ///   How to convert value to string.
     /// @param base
@@ -452,22 +452,43 @@ public:
     ///   If necessary you should add it yourself.
     /// @return
     ///   Converted string value.
+    static string IntToString(int value, TNumToStringFlags flags = 0,
+                              int  base = 10);
+    NCBI_DEPRECATED
+    static string IntToString(unsigned int value, TNumToStringFlags flags = 0,
+                              int  base = 10);
+    NCBI_DEPRECATED
     static string IntToString(long value, TNumToStringFlags flags = 0,
                               int  base = 10);
+    NCBI_DEPRECATED
+    static string IntToString(unsigned long value, TNumToStringFlags flags = 0,
+                              int  base = 10);
 
-    /// Convert Int to String.
+    /// Convert int to string.
     ///
     /// @param out_str
     ///   Output string variable.
     /// @param value
-    ///   Integer value (long) to be converted.
+    ///   Integer value to be converted.
     /// @param flags
     ///   How to convert value to string.
     /// @param base
     ///   Radix base. Default is 10. Allowed values are 2..32.
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
+    static void IntToString(string& out_str, int value, 
+                            TNumToStringFlags flags = 0,
+                            int               base  = 10);
+    NCBI_DEPRECATED
+    static void IntToString(string& out_str, unsigned int value, 
+                            TNumToStringFlags flags = 0,
+                            int               base  = 10);
+    NCBI_DEPRECATED
     static void IntToString(string& out_str, long value, 
+                            TNumToStringFlags flags = 0,
+                            int               base  = 10);
+    NCBI_DEPRECATED
+    static void IntToString(string& out_str, unsigned long value, 
                             TNumToStringFlags flags = 0,
                             int               base  = 10);
 
@@ -483,7 +504,19 @@ public:
     ///   If necessary you should add it yourself.
     /// @return
     ///   Converted string value.
+    static string UIntToString(unsigned int      value,
+                               TNumToStringFlags flags = 0,
+                               int               base  = 10);
+    NCBI_DEPRECATED
+    static string UIntToString(int               value,
+                               TNumToStringFlags flags = 0,
+                               int               base  = 10);
+    NCBI_DEPRECATED
     static string UIntToString(unsigned long     value,
+                               TNumToStringFlags flags = 0,
+                               int               base  = 10);
+    NCBI_DEPRECATED
+    static string UIntToString(long              value,
                                TNumToStringFlags flags = 0,
                                int               base  = 10);
 
@@ -499,9 +532,84 @@ public:
     ///   Radix base. Default is 10. Allowed values are 2..32.
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
+    static void UIntToString(string& out_str, unsigned int value,
+                             TNumToStringFlags flags = 0,
+                             int               base  = 10);
+    NCBI_DEPRECATED
+    static void UIntToString(string& out_str, int value,
+                             TNumToStringFlags flags = 0,
+                             int               base  = 10);
+    NCBI_DEPRECATED
     static void UIntToString(string& out_str, unsigned long value,
                              TNumToStringFlags flags = 0,
                              int               base  = 10);
+    NCBI_DEPRECATED
+    static void UIntToString(string& out_str, long value,
+                             TNumToStringFlags flags = 0,
+                             int               base  = 10);
+
+    /// Convert Int to string.
+    ///
+    /// @param value
+    ///   Integer value (long) to be converted.
+    /// @param flags
+    ///   How to convert value to string.
+    /// @param base
+    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
+    ///   If necessary you should add it yourself.
+    /// @return
+    ///   Converted string value.
+    static string LongToString(long value, TNumToStringFlags flags = 0,
+                               int  base = 10);
+
+    /// Convert Int to string.
+    ///
+    /// @param out_str
+    ///   Output string variable.
+    /// @param value
+    ///   Integer value (long) to be converted.
+    /// @param flags
+    ///   How to convert value to string.
+    /// @param base
+    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
+    ///   If necessary you should add it yourself.
+    static void LongToString(string& out_str, long value, 
+                             TNumToStringFlags flags = 0,
+                             int               base  = 10);
+
+    /// Convert unsigned long to string.
+    ///
+    /// @param value
+    ///   Integer value (unsigned long) to be converted.
+    /// @param flags
+    ///   How to convert value to string.
+    /// @param base
+    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
+    ///   If necessary you should add it yourself.
+    /// @return
+    ///   Converted string value.
+    static string ULongToString(unsigned long     value,
+                                TNumToStringFlags flags = 0,
+                                int               base  = 10);
+
+    /// Convert unsigned long to string.
+    ///
+    /// @param out_str
+    ///   Output string variable
+    /// @param value
+    ///   Integer value (unsigned long) to be converted.
+    /// @param flags
+    ///   How to convert value to string.
+    /// @param base
+    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
+    ///   If necessary you should add it yourself.
+    static void ULongToString(string& out_str, unsigned long value,
+                              TNumToStringFlags flags = 0,
+                              int               base  = 10);
 
     /// Convert Int8 to string.
     ///
@@ -2774,7 +2882,7 @@ public:
             message), m_Pos(pos)
     {
         this->x_Init(info,
-                     string("{") + NStr::UIntToString((unsigned long)m_Pos) +
+                     string("{") + NStr::SizetToString(m_Pos) +
                      "} " + message,
                      prev_exception,
                      severity);
@@ -3357,11 +3465,84 @@ const string& CNcbiEmptyString::Get(void)
 //
 
 inline
+string NStr::IntToString(int value,
+                         TNumToStringFlags flags, int base)
+{
+    string ret;
+    LongToString(ret, value, flags, base);
+    return ret;
+}
+
+inline
+string NStr::IntToString(unsigned int value,
+                         TNumToStringFlags flags, int base)
+{
+    string ret;
+    LongToString(ret, value, flags, base);
+    return ret;
+}
+
+inline
 string NStr::IntToString(long value,
                          TNumToStringFlags flags, int base)
 {
     string ret;
-    IntToString(ret, value, flags, base);
+    LongToString(ret, value, flags, base);
+    return ret;
+}
+
+inline
+string NStr::IntToString(unsigned long value,
+                         TNumToStringFlags flags, int base)
+{
+    string ret;
+    LongToString(ret, value, flags, base);
+    return ret;
+}
+
+inline
+void NStr::IntToString(string& out_str, int value, 
+                       TNumToStringFlags flags, int base)
+{
+    LongToString(out_str, value, flags, base);
+}
+
+inline
+void NStr::IntToString(string& out_str, unsigned int value, 
+                       TNumToStringFlags flags, int base)
+{
+    LongToString(out_str, value, flags, base);
+}
+
+inline
+void NStr::IntToString(string& out_str, long value, 
+                       TNumToStringFlags flags, int base)
+{
+    LongToString(out_str, value, flags, base);
+}
+
+inline
+void NStr::IntToString(string& out_str, unsigned long value, 
+                       TNumToStringFlags flags, int base)
+{
+    LongToString(out_str, value, flags, base);
+}
+
+inline
+string NStr::UIntToString(unsigned int value,
+                          TNumToStringFlags flags, int base)
+{
+    string ret;
+    ULongToString(ret, value, flags, base);
+    return ret;
+}
+
+inline
+string NStr::UIntToString(int value,
+                          TNumToStringFlags flags, int base)
+{
+    string ret;
+    ULongToString(ret, value, flags, base);
     return ret;
 }
 
@@ -3370,7 +3551,62 @@ string NStr::UIntToString(unsigned long value,
                           TNumToStringFlags flags, int base)
 {
     string ret;
-    UIntToString(ret, value, flags, base);
+    ULongToString(ret, value, flags, base);
+    return ret;
+}
+
+inline
+string NStr::UIntToString(long value,
+                          TNumToStringFlags flags, int base)
+{
+    string ret;
+    ULongToString(ret, value, flags, base);
+    return ret;
+}
+
+inline
+void NStr::UIntToString(string& out_str, unsigned int value,
+                        TNumToStringFlags flags, int base)
+{
+    ULongToString(out_str, value, flags, base);
+}
+
+inline
+void NStr::UIntToString(string& out_str, int value,
+                        TNumToStringFlags flags, int base)
+{
+    ULongToString(out_str, value, flags, base);
+}
+
+inline
+void NStr::UIntToString(string& out_str, unsigned long value,
+                        TNumToStringFlags flags, int base)
+{
+    ULongToString(out_str, value, flags, base);
+}
+
+inline
+void NStr::UIntToString(string& out_str, long value,
+                        TNumToStringFlags flags, int base)
+{
+    ULongToString(out_str, value, flags, base);
+}
+
+inline
+string NStr::LongToString(long value,
+                          TNumToStringFlags flags, int base)
+{
+    string ret;
+    LongToString(ret, value, flags, base);
+    return ret;
+}
+
+inline
+string NStr::ULongToString(unsigned long value,
+                           TNumToStringFlags flags, int base)
+{
+    string ret;
+    ULongToString(ret, value, flags, base);
     return ret;
 }
 
