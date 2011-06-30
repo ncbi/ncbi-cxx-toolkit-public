@@ -1324,7 +1324,7 @@ bool CRegionMap::MapFile(CSeqDBAtlas * atlas)
         CHECK_MARKER();
         
         string msg("CSeqDBAtlas::MapFile: allocation failed for ");
-        msg += NStr::IntToString(rdsize);
+        msg += NStr::UInt8ToString(rdsize);
         msg += " bytes.";
         
         NCBI_THROW(CSeqDBException, eMemErr, msg);
