@@ -43,6 +43,9 @@
 #include <stdarg.h>
 #include <time.h>
 #include <vector>
+#if defined(NCBI_OS_MSWIN)
+#include <tchar.h>
+#endif
 
 
 
