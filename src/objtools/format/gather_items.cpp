@@ -433,6 +433,24 @@ bool s_FilterPubdesc(const CPubdesc& pubdesc, CBioseqContext& ctx)
     return false;
 }
 
+static bool s_IsDuplicatePmid(const CPubdesc& pubdesc,
+                              set<int>& included_pmids)
+{
+    bool is_duplicate = false;
+    ITERATE (CPubdesc::TPub::Tdata, it, pubdesc.GetPub().Get()) {
+        const CPub& pub = **it;
+        if (pub.IsPmid()) {
+            if ( !included_pmids.insert
+                 (pub.GetPmid()).second) {
+                is_duplicate = true;
+            }
+            break;
+        }
+    }
+    return is_duplicate;
+}
+
+
 void CFlatGatherer::x_GatherReferences(const CSeq_loc& loc, TReferences& refs) const
 {
     CScope& scope = m_Current->GetScope();
@@ -442,12 +460,17 @@ void CFlatGatherer::x_GatherReferences(const CSeq_loc& loc, TReferences& refs) c
         return;
     }
 
+    set<int> included_pmids;
+
     // gather references from descriptors (top-level first)
     // (Since CSeqdesc_CI doesn't currently support bottom-to-top iteration,
     //  we approximate this by iterating over top-level, then non-top-level seqs )
     for (CSeqdesc_CI it(seq.GetTopLevelEntry(), CSeqdesc::e_Pub); it; ++it) {
         const CPubdesc& pubdesc = it->GetPub();
         if ( s_FilterPubdesc(pubdesc, *m_Current) ) {
+            continue;
+        }
+        if (s_IsDuplicatePmid(pubdesc, included_pmids)) {
             continue;
         }
         refs.push_back(CBioseqContext::TRef(new CReferenceItem(*it, *m_Current)));
@@ -459,6 +482,9 @@ void CFlatGatherer::x_GatherReferences(const CSeq_loc& loc, TReferences& refs) c
         }
         const CPubdesc& pubdesc = it->GetPub();
         if ( s_FilterPubdesc(pubdesc, *m_Current) ) {
+            continue;
+        }
+        if (s_IsDuplicatePmid(pubdesc, included_pmids)) {
             continue;
         }
         refs.push_back(CBioseqContext::TRef(new CReferenceItem(*it, *m_Current)));
@@ -479,6 +505,9 @@ void CFlatGatherer::x_GatherReferences(const CSeq_loc& loc, TReferences& refs) c
                  }
                  const CPubdesc& pubdesc = (*it)->GetPub();
                  if ( s_FilterPubdesc(pubdesc, *m_Current) ) {
+                     continue;
+                 }
+                 if (s_IsDuplicatePmid(pubdesc, included_pmids)) {
                      continue;
                  }
                  CRef<CSeqdesc> desc(new CSeqdesc);
@@ -517,6 +546,9 @@ void CFlatGatherer::x_GatherReferences(const CSeq_loc& loc, TReferences& refs) c
                     for (CSeqdesc_CI dit(CSeq_descr_CI(part, 1), CSeqdesc::e_Pub); dit; ++dit) {
                         const CPubdesc& pubdesc = dit->GetPub();
                         if ( s_FilterPubdesc(pubdesc, *m_Current) ) {
+                            continue;
+                        }
+                        if (s_IsDuplicatePmid(pubdesc, included_pmids)) {
                             continue;
                         }
 
