@@ -2691,7 +2691,9 @@ unsigned CQueue::CheckJobsExpiry(unsigned batch_size, TJobStatus status)
             // Calculate time of last update and effective timeout
             const CJobRun* run = job.GetLastRun();
             time_done = 0;
-            if (run) time_done = run->GetTimeDone();
+            if (run) {
+                time_done = run->GetTimeDone();
+            }
             if (status == CNetScheduleAPI::eRunning ||
                 status == CNetScheduleAPI::eReading) {
                 // Running/reading job
@@ -2925,10 +2927,6 @@ void CQueue::x_PrintJobStat(CNetScheduleHandler &   handler,
                                 CNetScheduleAPI::StatusToString(job.GetStatus()));
 
     NS_PRINT_TIME("time_submit: ", job.GetTimeSubmit());
-    if (last_run) {
-        NS_PRINT_TIME("time_start: ", last_run->GetTimeStart());
-        NS_PRINT_TIME("time_done: ", last_run->GetTimeDone());
-    }
 
     handler.WriteMessage("OK:", "timeout: " +
                                 NStr::IntToString(job.GetTimeout()));
@@ -2936,11 +2934,13 @@ void CQueue::x_PrintJobStat(CNetScheduleHandler &   handler,
                                 NStr::IntToString(run_timeout));
 
     if (last_run) {
-        if (run_timeout == 0)
-            run_timeout = queue_run_timeout;
-        time_t exp_time =
-            run_timeout == 0 ? 0 : last_run->GetTimeStart() + run_timeout;
-        NS_PRINT_TIME("time_run_expire: ", exp_time);
+        if (last_run->GetStatus() == CNetScheduleAPI::eRunning) {
+            if (run_timeout == 0)
+                run_timeout = queue_run_timeout;
+            time_t exp_time =
+                run_timeout == 0 ? 0 : last_run->GetTimeStart() + run_timeout;
+            NS_PRINT_TIME("time_run_expire: ", exp_time);
+        }
     }
 
     if (subm_addr == 0)
@@ -2954,40 +2954,67 @@ void CQueue::x_PrintJobStat(CNetScheduleHandler &   handler,
     handler.WriteMessage("OK:", "subm_timeout: " +
                                 NStr::IntToString(job.GetSubmTimeout()));
 
-    int         node_num = 1;
-    ITERATE(vector<CJobRun>, it, job.GetRuns()) {
-        unsigned    addr = it->GetNodeAddr();
-        string      node_name = "worker_node" +
-                                NStr::IntToString(node_num++) + ": ";
+    // Print detailed information about the job runs
+    const vector<CJobRun> &     runs = job.GetRuns();
+    int                         attempt = 1;
 
+    handler.WriteMessage("OK:", "attempt_counter: " +
+                                NStr::IntToString(runs.size()) );
+    ITERATE(vector<CJobRun>, it, runs) {
+        string          message("attempt" + NStr::IntToString(attempt++) + ": ");
+        unsigned int    addr = it->GetNodeAddr();
+        unsigned short  port = it->GetNodePort();
+
+        // Address part
+        message += "worker_node=";
         if (addr == 0)
-            handler.WriteMessage("OK:", node_name);
+            message += "unknown";
         else
-            handler.WriteMessage("OK:", node_name +
-                                        CSocketAPI::gethostbyaddr(addr));
+            message += CSocketAPI::gethostbyaddr(addr);
+        message += ":";
+        if (port == 0)
+            message += "unknown";
+        else
+            message += NStr::IntToString(it->GetNodePort());
+        message += " ";
+
+        message += "status=" +
+                   CNetScheduleAPI::StatusToString(it->GetStatus()) + " "
+                   "ret_code=" + NStr::IntToString(it->GetRetCode()) + " ";
+
+        // Time part
+        CTime   startTime(it->GetTimeStart());
+        startTime.ToLocalTime();
+        message += "time_start='" + startTime.AsString() + "' ";
+
+        message += "time_done=";
+        unsigned int    done = it->GetTimeDone();
+        if (done == 0) {
+            message += "n/a ";
+        }
+        else {
+            CTime   doneTime(it->GetTimeDone());
+            doneTime.ToLocalTime();
+            message += "'" + doneTime.AsString() + "' ";
+        }
+
+        // The rest
+        message += "nodeID=" + it->GetNodeId() + " "
+                   "err_msg=" + it->GetQuotedErrorMsg();
+        handler.WriteMessage("OK:", message);
     }
 
     handler.WriteMessage("OK:", "run_counter: " +
                                 NStr::IntToString(job.GetRunCount()));
-    if (last_run)
-        handler.WriteMessage("OK:", "ret_code: " +
-                                    NStr::IntToString(last_run->GetRetCode()));
-
 
     if (aff_id)
         handler.WriteMessage("OK:", "aff_token: '" +
                                     job.GetAffinityToken() + "'");
     handler.WriteMessage("OK:", "aff_id: " + NStr::IntToString(aff_id));
     handler.WriteMessage("OK:", "mask: " + NStr::IntToString(job.GetMask()));
-
     handler.WriteMessage("OK:", "input: " + job.GetQuotedInput());
     handler.WriteMessage("OK:", "output: " + job.GetQuotedOutput());
-
-    if (last_run)
-        handler.WriteMessage("OK:", "err_msg: " +
-                                    last_run->GetQuotedErrorMsg());
     handler.WriteMessage("OK:", "progress_msg: '" + job.GetProgressMsg() + "'");
-
 
     const TNSTagList &   tags = job.GetTags();
     if (!tags.empty()) {
@@ -3035,7 +3062,7 @@ size_t CQueue::PrintJobDbStat(CNetScheduleHandler &     handler,
         CJob::EJobFetchResult   res = job.Fetch(this, job_id);
 
         if (res == CJob::eJF_Ok) {
-            handler.WriteMessage("", "");
+            handler.WriteMessage("");
             job.FetchAffinityToken(this);
             x_PrintJobStat(handler, job, queue_run_timeout);
             ++print_count;
@@ -3049,7 +3076,7 @@ size_t CQueue::PrintJobDbStat(CNetScheduleHandler &     handler,
             CQueueGuard             guard(this);
             CJob::EJobFetchResult   res = job.Fetch(this, *en);
             if (res == CJob::eJF_Ok) {
-                handler.WriteMessage("", "");
+                handler.WriteMessage("");
                 job.FetchAffinityToken(this);
                 x_PrintJobStat(handler, job, queue_run_timeout);
                 ++print_count;
@@ -3070,7 +3097,7 @@ void CQueue::PrintAllJobDbStat(CNetScheduleHandler &   handler)
 
     while (cur.Fetch() == eBDB_Ok) {
         if (job.Fetch(this) == CJob::eJF_Ok) {
-            handler.WriteMessage("", "");
+            handler.WriteMessage("");
             job.FetchAffinityToken(this);
             x_PrintJobStat(handler, job, queue_run_timeout);
         }
