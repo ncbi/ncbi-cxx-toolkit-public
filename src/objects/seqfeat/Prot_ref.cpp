@@ -98,7 +98,13 @@ static void s_ProcessECNumberLine(const CTempString& line,
             s_ECNumberReplacementMap[lhs] = rhs;
         }
     } else {
-        s_ECNumberStatusMap[line] = status;
+        SIZE_TYPE tab_pos = line.find('\t');
+        if (tab_pos == NPOS) {
+            s_ECNumberStatusMap[line] = status;
+        } else {
+            string lhs(line.substr(0, tab_pos));
+            s_ECNumberStatusMap[lhs] = status;
+        }
     }
 }
 
