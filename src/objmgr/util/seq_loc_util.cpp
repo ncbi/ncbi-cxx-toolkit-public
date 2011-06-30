@@ -1180,7 +1180,6 @@ ECompare Compare(const CSeq_loc& me,
     bool overlap = false;
 
     ITERATE(TRangeInfoMap, mid_it, me_infos) {
-        bool mid_contained = true;
         TRangeInfoMap::const_iterator yid_it = you_infos.find(mid_it->first);
         if (yid_it == you_infos.end()) {
             // The id is missing from 'you'.
@@ -1218,7 +1217,6 @@ ECompare Compare(const CSeq_loc& me,
     bool you_contained = true;
 
     ITERATE(TRangeInfoMap, yid_it, you_infos) {
-        bool yid_contained = true;
         TRangeInfoMap::const_iterator mid_it = me_infos.find(yid_it->first);
         if (mid_it == me_infos.end()) {
             // The id is missing from 'me'.
