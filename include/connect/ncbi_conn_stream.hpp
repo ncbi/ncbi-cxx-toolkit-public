@@ -612,8 +612,9 @@ public:
      const STimeout*      timeout = kDefaultTimeout
      );
 
-    // Abort any command in progress, read and discard all input data
-    // NB:  The call empties both the stream and the underlying CONN
+    // Abort any command in progress, read and discard all input data,
+    // clear stream error state when successful (eIO_Success returns).
+    // NB:  The call empties both the stream and the underlying CONN.
     virtual EIO_Status Drain(const STimeout* timeout = kDefaultTimeout);
 
 private:
