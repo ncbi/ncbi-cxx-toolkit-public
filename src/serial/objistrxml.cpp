@@ -94,7 +94,7 @@ bool CObjectIStreamXml::EndOfData(void)
 
 string CObjectIStreamXml::GetPosition(void) const
 {
-    return "line "+NStr::UIntToString(m_Input.GetLine());
+    return "line "+NStr::SizetToString(m_Input.GetLine());
 }
 
 void CObjectIStreamXml::SetEnforcedStdXml(bool set)

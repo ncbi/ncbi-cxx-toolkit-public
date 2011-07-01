@@ -100,7 +100,7 @@ void CObjectOStreamJson::SetBinaryDataFormat(CObjectOStreamJson::EBinaryDataForm
 
 string CObjectOStreamJson::GetPosition(void) const
 {
-    return "line "+NStr::UIntToString(m_Output.GetLine());
+    return "line "+NStr::SizetToString(m_Output.GetLine());
 }
 
 void CObjectOStreamJson::WriteFileHeader(TTypeInfo type)

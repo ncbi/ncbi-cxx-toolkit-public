@@ -954,7 +954,7 @@ const CPrimitiveTypeInfo* CPrimitiveTypeInfo::GetIntegerTypeInfo(size_t size,
     }
     else {
         string message("Illegal enum size: ");
-        message += NStr::UIntToString(size);
+        message += NStr::SizetToString(size);
         NCBI_THROW(CSerialException,eInvalidData, message);
     }
     _ASSERT(info->GetSize() == size);

@@ -153,7 +153,7 @@ void CObjectOStreamXml::SetEnforcedStdXml(bool set)
 
 string CObjectOStreamXml::GetPosition(void) const
 {
-    return "line "+NStr::UIntToString(m_Output.GetLine());
+    return "line "+NStr::SizetToString(m_Output.GetLine());
 }
 
 static string GetPublicModuleName(TTypeInfo type)

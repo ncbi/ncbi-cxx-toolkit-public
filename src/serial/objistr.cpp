@@ -1761,7 +1761,7 @@ char ReplaceVisibleChar(char c, EFixNonPrint fix_method, size_t at_line)
     if ( fix_method != eFNP_Replace ) {
         string message = "Bad char in VisibleString" +
             ((at_line > 0) ?
-             " starting at line " + NStr::UIntToString(at_line) :
+             " starting at line " + NStr::SizetToString(at_line) :
              string("")) + ": " + NStr::IntToString(int(c) & 0xff);
         switch (fix_method) {
         case eFNP_ReplaceAndWarn:

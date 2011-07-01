@@ -362,7 +362,7 @@ void CObjectIStreamAsnBinary::ExpectShortLength(size_t length)
 {
     if ( ReadShortLength() != length ) {
         ThrowError(fFormatError,
-                   "length expected: "+NStr::UIntToString(length));
+                   "length expected: "+NStr::SizetToString(length));
     }
 }
 
@@ -602,7 +602,7 @@ double CObjectIStreamAsnBinary::ReadDouble(void)
     }
     if ( length > kMaxDoubleLength ) {
         ThrowError(fFormatError, "too long REAL data: length > "
-            + NStr::UIntToString(kMaxDoubleLength));
+            + NStr::SizetToString(kMaxDoubleLength));
     }
 
     ExpectByte(eDecimal);
@@ -1375,7 +1375,7 @@ void CObjectIStreamAsnBinary::SkipFNumber(void)
         ThrowError(fFormatError, "too short REAL data: length < 2");
     if ( length > kMaxDoubleLength )
         ThrowError(fFormatError, "too long REAL data: length > "
-            + NStr::UIntToString(kMaxDoubleLength));
+            + NStr::SizetToString(kMaxDoubleLength));
 
     ExpectByte(eDecimal);
     length--;

@@ -104,7 +104,7 @@ bool CObjectIStreamAsn::EndOfData(void)
 
 string CObjectIStreamAsn::GetPosition(void) const
 {
-    return "line "+NStr::UIntToString(m_Input.GetLine());
+    return "line "+NStr::SizetToString(m_Input.GetLine());
 }
 
 inline
@@ -797,7 +797,7 @@ double CObjectIStreamAsn::ReadDouble(void)
     double mantissa = NStr::StringToDoublePosix(buffer, &endptr);
     if ( *endptr != 0 )
         ThrowError(fFormatError, "bad double in line "
-            + NStr::UIntToString(m_Input.GetLine()));
+            + NStr::SizetToString(m_Input.GetLine()));
     Expect(',', true);
     unsigned base = ReadUint4();
     Expect(',', true);
@@ -820,7 +820,7 @@ void CObjectIStreamAsn::BadStringChar(size_t startLine, char c)
 {
     ThrowError(fFormatError,
                "bad char in string starting at line "+
-               NStr::UIntToString(startLine)+": "+
+               NStr::SizetToString(startLine)+": "+
                NStr::IntToString(c));
 }
 
@@ -828,7 +828,7 @@ void CObjectIStreamAsn::UnendedString(size_t startLine)
 {
     ThrowError(fFormatError,
                "unclosed string starts at line "+
-               NStr::UIntToString(startLine));
+               NStr::SizetToString(startLine));
 }
 
 
@@ -986,7 +986,7 @@ void CObjectIStreamAsn::SkipSNumber(void)
     }
     if ( c < '0' || c > '9' ) {
         ThrowError(fFormatError, "bad signed integer in line "
-            + NStr::UIntToString(m_Input.GetLine()));
+            + NStr::SizetToString(m_Input.GetLine()));
     }
     while ( (c = m_Input.PeekChar(i)) >= '0' && c <= '9' ) {
         ++i;
@@ -1011,7 +1011,7 @@ void CObjectIStreamAsn::SkipUNumber(void)
     }
     if ( c < '0' || c > '9' ) {
         ThrowError(fFormatError, "bad unsigned integer in line "
-            + NStr::UIntToString(m_Input.GetLine()));
+            + NStr::SizetToString(m_Input.GetLine()));
     }
     while ( (c = m_Input.PeekCharNoEOF(i)) >= '0' && c <= '9' ) {
         ++i;

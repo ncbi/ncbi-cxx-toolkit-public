@@ -80,7 +80,7 @@ CObjectIStreamJson::~CObjectIStreamJson(void)
 
 string CObjectIStreamJson::GetPosition(void) const
 {
-    return "line "+NStr::UIntToString(m_Input.GetLine());
+    return "line "+NStr::SizetToString(m_Input.GetLine());
 }
 
 void CObjectIStreamJson::SetDefaultStringEncoding(EEncoding enc)

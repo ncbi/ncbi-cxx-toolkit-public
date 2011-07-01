@@ -86,7 +86,7 @@ CObjectOStreamAsn::~CObjectOStreamAsn(void)
 
 string CObjectOStreamAsn::GetPosition(void) const
 {
-    return "line "+NStr::UIntToString(m_Output.GetLine());
+    return "line "+NStr::SizetToString(m_Output.GetLine());
 }
 
 void CObjectOStreamAsn::WriteFileHeader(TTypeInfo type)
