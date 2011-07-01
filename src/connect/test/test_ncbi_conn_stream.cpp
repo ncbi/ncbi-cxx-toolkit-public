@@ -334,7 +334,7 @@ int main(int argc, const char* argv[])
                 time_t time = udiff(stop, start.GetTimeT());
                 double rate = (val / 1024.0) / (time ? time : 1);
                 speedstr += (" in "
-                             + NStr::UIntToString(time)
+                             + NStr::ULongToString((unsigned long) time)
                              + " sec @ "
                              + NStr::DoubleToString(rate,2, NStr::fDoubleFixed)
                              + " KB/s");
