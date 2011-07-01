@@ -463,6 +463,15 @@ public:
     NCBI_DEPRECATED
     static string IntToString(unsigned long value, TNumToStringFlags flags = 0,
                               int  base = 10);
+#if (SIZEOF_LONG < 8)
+    NCBI_DEPRECATED
+    static string IntToString(Int8 value, TNumToStringFlags flags = 0,
+                              int  base = 10);
+    NCBI_DEPRECATED
+    static string IntToString(Uint8 value, TNumToStringFlags flags = 0,
+                              int  base = 10);
+#endif
+
 
     /// Convert int to string.
     ///
@@ -491,6 +500,16 @@ public:
     static void IntToString(string& out_str, unsigned long value, 
                             TNumToStringFlags flags = 0,
                             int               base  = 10);
+#if (SIZEOF_LONG < 8)
+    NCBI_DEPRECATED
+    static void IntToString(string& out_str, Int8 value, 
+                            TNumToStringFlags flags = 0,
+                            int               base  = 10);
+    NCBI_DEPRECATED
+    static void IntToString(string& out_str, Uint8 value, 
+                            TNumToStringFlags flags = 0,
+                            int               base  = 10);
+#endif
 
     /// Convert UInt to string.
     ///
@@ -519,6 +538,16 @@ public:
     static string UIntToString(long              value,
                                TNumToStringFlags flags = 0,
                                int               base  = 10);
+#if (SIZEOF_LONG < 8)
+    NCBI_DEPRECATED
+    static string UIntToString(Int8              value,
+                               TNumToStringFlags flags = 0,
+                               int               base  = 10);
+    NCBI_DEPRECATED
+    static string UIntToString(Uint8             value,
+                               TNumToStringFlags flags = 0,
+                               int               base  = 10);
+#endif
 
     /// Convert UInt to string.
     ///
@@ -547,6 +576,16 @@ public:
     static void UIntToString(string& out_str, long value,
                              TNumToStringFlags flags = 0,
                              int               base  = 10);
+#if (SIZEOF_LONG < 8)
+    NCBI_DEPRECATED
+    static void UIntToString(string& out_str, Int8 value, 
+                             TNumToStringFlags flags = 0,
+                             int               base  = 10);
+    NCBI_DEPRECATED
+    static void UIntToString(string& out_str, Uint8 value, 
+                             TNumToStringFlags flags = 0,
+                             int               base  = 10);
+#endif
 
     /// Convert Int to string.
     ///
@@ -3501,6 +3540,26 @@ string NStr::IntToString(unsigned long value,
     return ret;
 }
 
+#if (SIZEOF_LONG < 8)
+inline
+string NStr::IntToString(Int8 value,
+                         TNumToStringFlags flags, int base)
+{
+    string ret;
+    Int8ToString(ret, value, flags, base);
+    return ret;
+}
+
+inline
+string NStr::IntToString(Uint8 value,
+                         TNumToStringFlags flags, int base)
+{
+    string ret;
+    Int8ToString(ret, (Int8)value, flags, base);
+    return ret;
+}
+#endif
+
 inline
 void NStr::IntToString(string& out_str, unsigned int value, 
                        TNumToStringFlags flags, int base)
@@ -3521,6 +3580,22 @@ void NStr::IntToString(string& out_str, unsigned long value,
 {
     LongToString(out_str, value, flags, base);
 }
+
+#if (SIZEOF_LONG < 8)
+inline
+void NStr::IntToString(string& out_str, Int8 value, 
+                       TNumToStringFlags flags, int base)
+{
+    Int8ToString(out_str, value, flags, base);
+}
+
+inline
+void NStr::IntToString(string& out_str, Uint8 value, 
+                       TNumToStringFlags flags, int base)
+{
+    Int8ToString(out_str, (Int8)value, flags, base);
+}
+#endif
 
 inline
 string NStr::UIntToString(unsigned int value,
@@ -3558,6 +3633,26 @@ string NStr::UIntToString(long value,
     return ret;
 }
 
+#if (SIZEOF_LONG < 8)
+inline
+string NStr::UIntToString(Int8 value,
+                          TNumToStringFlags flags, int base)
+{
+    string ret;
+    UInt8ToString(ret, (Uint8)value, flags, base);
+    return ret;
+}
+
+inline
+string NStr::UIntToString(Uint8 value,
+                          TNumToStringFlags flags, int base)
+{
+    string ret;
+    UInt8ToString(ret, value, flags, base);
+    return ret;
+}
+#endif
+
 inline
 void NStr::UIntToString(string& out_str, unsigned int value,
                         TNumToStringFlags flags, int base)
@@ -3585,6 +3680,22 @@ void NStr::UIntToString(string& out_str, long value,
 {
     ULongToString(out_str, (unsigned long)value, flags, base);
 }
+
+#if (SIZEOF_LONG < 8)
+inline
+void NStr::UIntToString(string& out_str, Int8 value,
+                        TNumToStringFlags flags, int base)
+{
+    UInt8ToString(out_str, (Uint8)value, flags, base);
+}
+
+inline
+void NStr::UIntToString(string& out_str, Uint8 value,
+                        TNumToStringFlags flags, int base)
+{
+    UInt8ToString(out_str, value, flags, base);
+}
+#endif
 
 inline
 string NStr::LongToString(long value,
