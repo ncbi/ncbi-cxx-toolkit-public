@@ -587,13 +587,13 @@ static string s_UserGroupAsString(const CTarEntryInfo& info)
     if (group.empty()) {
         NStr::UIntToString(group, info.GetGroupId());
     }
-    return user + "/" + group;
+    return user + '/' + group;
 }
 
 
 static string s_MajorMinor(unsigned int n)
 {
-    return n == (unsigned int)(-1) ? string("?") : NStr::UIntToString(n);
+    return n != (unsigned int)(-1) ? NStr::UIntToString(n) : string(1, '?');
 }
 
 
@@ -1746,7 +1746,7 @@ CTar::EStatus CTar::x_ParsePAXData(const string& buffer)
         { "GNU.sparse.minor",    &dummy,  nodot, fPAXSparse },
         { "GNU.sparse.size",     &sparse, nodot, fPAXSparse },
         { "GNU.sparse.name",     0,       &name, fPAXNone   },
-        /* Other*/
+        /* Other */
         { "SCHILY.realsize",     &size,   nodot, fPAXSize   }
     };
     const char* str = buffer.c_str();
@@ -3190,8 +3190,8 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
         if (!dst->SetOwner(info.GetUserName(),
                            info.GetGroupName(),
                            eIgnoreLinks)) {
-            dst->SetOwner(NStr::IntToString(info.GetUserId()),
-                          NStr::IntToString(info.GetGroupId()),
+            dst->SetOwner(NStr::UIntToString(info.GetUserId()),
+                          NStr::UIntToString(info.GetGroupId()),
                           eIgnoreLinks);
         }
     }
@@ -3354,14 +3354,19 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
     unsigned int uid = 0, gid = 0;
     entry.GetOwner(&m_Current.m_UserName, &m_Current.m_GroupName,
                    follow_links, &uid, &gid);
-    if (uid == 0  &&  st.orig.st_uid)
-        uid  = (unsigned int) st.orig.st_uid;
-    if (gid == 0  &&  st.orig.st_gid)
-        gid  = (unsigned int) st.orig.st_uid;
-    if (m_Current.m_UserName.empty()   &&  uid)
-        NStr::UIntToString(m_Current.m_UserName,  uid);
-    if (m_Current.m_GroupName.empty()  &&  gid)
-        NStr::UIntToString(m_Current.m_GroupName, gid);
+#ifdef NCBI_OS_UNIX
+    if (NStr::UIntToString(uid) == m_Current.GetUserName()) {
+        m_Current.m_UserName.erase();
+    }
+    if (NStr::UIntToString(gid) == m_Current.GetGroupName()) {
+        m_Current.m_GroupName.erase();
+    }
+#endif //NCBI_OS_UNIX
+#ifdef NCBI_OS_MWSWIN
+    /* these are fake but we don't want to leave plain 0 (root) in there */
+    st.orig.st_uid = (uid_t) uid;
+    st.orig.st_gid = (gid_t) gid;
+#endif //NCBI_OS_MWSWIN
 
     m_Current.m_Stat = st.orig;
     // Fixup for mode bits
@@ -3538,10 +3543,6 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
     /* these are fake but we don't want to leave plain 0 (root) in there */
     m_Current.m_Stat.st_uid = (uid_t) uid;
     m_Current.m_Stat.st_gid = (gid_t) gid;
-    if (m_Current.m_UserName.empty()   &&  uid)
-        NStr::UIntToString(m_Current.m_UserName,  uid);
-    if (m_Current.m_GroupName.empty()  &&  gid)
-        NStr::UIntToString(m_Current.m_GroupName, gid);
 #endif // NCBI_OS_UNIX
 
     x_AppendStream(entry.GetName(), is);

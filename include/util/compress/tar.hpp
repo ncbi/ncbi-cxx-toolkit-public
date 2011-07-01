@@ -203,8 +203,8 @@ public:
                           CDirEntry::TSpecialModeBits* special_bits = 0) const;
     unsigned int  GetMajor(void)            const;
     unsigned int  GetMinor(void)            const;
-    int           GetUserId(void)           const { return m_Stat.st_uid;   }
-    int           GetGroupId(void)          const { return m_Stat.st_gid;   }
+    unsigned int  GetUserId(void)           const { return m_Stat.st_uid;   }
+    unsigned int  GetGroupId(void)          const { return m_Stat.st_gid;   }
     Uint8         GetPosition(EPos which)   const
     { return which == ePos_Header ? m_Pos : m_Pos + m_HeaderSize; }
 
