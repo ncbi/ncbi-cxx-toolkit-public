@@ -232,12 +232,6 @@ void CAsnvalApp::Init(void)
     // Pass argument descriptions to the application
     SetupArgDescriptions(arg_desc.release());
 
-	// set the data directory, so that we can find the ec numbers file
-	// and countries info
-	if (CNcbiApplication* app = CNcbiApplication::Instance()) {
-		app->GetConfig().Set("NCBI", "DATA", "E:\\Users\\Bollin\\ncbi\\data");
-	}
-
 }
 
 
@@ -439,14 +433,13 @@ void CAsnvalApp::ReadClassMember
                     }
                 } else {
                     // CConstRef<CValidError> eval = validator.Validate(*se, &scope, m_Options);
-                    time_t t1 = time (NULL);
+                    CStopWatch sw(CStopWatch::eStart);
                     CConstRef<CValidError> eval = validator.Validate(seh, m_Options);
-                    time_t t2 = time (NULL);
+                    if (m_ValidErrorStream) {
+                        *m_ValidErrorStream << "Elapsed = " << sw.Elapsed() << endl;
+                    }
                     if ( eval ) {
                         PrintValidError(eval, GetArgs());
-                    }
-                    if (m_ValidErrorStream) {
-                        *m_ValidErrorStream << "Elapsed time " << NStr::IntToString (t2 - t1) << endl;
                     }
                 }
                 n++;
@@ -497,11 +490,11 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(void)
     // Validate Seq-entry
     CValidator validator(*m_ObjMgr);
     CRef<CScope> scope = BuildScope();
-    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*se);
     if (m_DoCleanup) {        
         m_Cleanup.SetScope (scope);
         m_Cleanup.BasicCleanup (*se);
     }
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*se);
 
     if ( m_OnlyAnnots ) {
         for (CSeq_annot_CI ni(seh); ni; ++ni) {
