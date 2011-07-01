@@ -3478,7 +3478,7 @@ string NStr::IntToString(unsigned int value,
                          TNumToStringFlags flags, int base)
 {
     string ret;
-    LongToString(ret, value, flags, base);
+    LongToString(ret, (int)value, flags, base);
     return ret;
 }
 
@@ -3496,7 +3496,7 @@ string NStr::IntToString(unsigned long value,
                          TNumToStringFlags flags, int base)
 {
     string ret;
-    LongToString(ret, value, flags, base);
+    LongToString(ret, (int)value, flags, base);
     return ret;
 }
 
@@ -3504,14 +3504,14 @@ inline
 void NStr::IntToString(string& out_str, int value, 
                        TNumToStringFlags flags, int base)
 {
-    LongToString(out_str, value, flags, base);
+    LongToString(out_str, (int)value, flags, base);
 }
 
 inline
 void NStr::IntToString(string& out_str, unsigned int value, 
                        TNumToStringFlags flags, int base)
 {
-    LongToString(out_str, value, flags, base);
+    LongToString(out_str, (unsigned int)value, flags, base);
 }
 
 inline
@@ -3525,7 +3525,7 @@ inline
 void NStr::IntToString(string& out_str, unsigned long value, 
                        TNumToStringFlags flags, int base)
 {
-    LongToString(out_str, value, flags, base);
+    LongToString(out_str, (unsigned long)value, flags, base);
 }
 
 inline
@@ -3533,7 +3533,7 @@ string NStr::UIntToString(unsigned int value,
                           TNumToStringFlags flags, int base)
 {
     string ret;
-    ULongToString(ret, value, flags, base);
+    ULongToString(ret, (unsigned int)value, flags, base);
     return ret;
 }
 
@@ -3542,7 +3542,7 @@ string NStr::UIntToString(int value,
                           TNumToStringFlags flags, int base)
 {
     string ret;
-    ULongToString(ret, value, flags, base);
+    ULongToString(ret, (unsigned int)value, flags, base);
     return ret;
 }
 
@@ -3560,7 +3560,7 @@ string NStr::UIntToString(long value,
                           TNumToStringFlags flags, int base)
 {
     string ret;
-    ULongToString(ret, value, flags, base);
+    ULongToString(ret, (unsigned long)value, flags, base);
     return ret;
 }
 
@@ -3575,7 +3575,7 @@ inline
 void NStr::UIntToString(string& out_str, int value,
                         TNumToStringFlags flags, int base)
 {
-    ULongToString(out_str, value, flags, base);
+    ULongToString(out_str, (unsigned int)value, flags, base);
 }
 
 inline
@@ -3589,7 +3589,7 @@ inline
 void NStr::UIntToString(string& out_str, long value,
                         TNumToStringFlags flags, int base)
 {
-    ULongToString(out_str, value, flags, base);
+    ULongToString(out_str, (unsigned int)value, flags, base);
 }
 
 inline
