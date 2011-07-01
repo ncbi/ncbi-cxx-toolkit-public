@@ -222,6 +222,9 @@ void CAsn2FlatApp::Init(void)
          arg_desc->AddFlag("no-external",
                            "Disable all external annotation sources");
 
+         arg_desc->AddFlag("resolve-all",
+                           "Resolves all, e.g. for contigs.");
+
          arg_desc->AddFlag("show-flags",
                            "Describe the current flag set in ENUM terms");
 
@@ -294,6 +297,9 @@ int CAsn2FlatApp::Run(void)
     if (args["no-external"]) {
         m_FFGenerator->SetAnnotSelector()
             .SetExcludeExternal(true);
+    }
+    if( args["resolve-all"]) {
+        m_FFGenerator->SetAnnotSelector().SetResolveAll();
     }
 
     auto_ptr<CObjectIStream> is;
