@@ -512,6 +512,8 @@ CShowBlastDefline::CShowBlastDefline(const CSeq_align_set& seqalign,
     m_ScopeRef(&scope),
     m_LineLen(line_length),
     m_NumToShow(num_defline_to_show),
+    m_SkipFrom(-1),
+    m_SkipTo(-1),
     m_TranslatedNucAlignment(translated_nuc_alignment),
     m_MasterRange(master_range)
 {
@@ -620,10 +622,13 @@ void CShowBlastDefline::x_InitDefline(void)
     bool master_is_na = false;
     //prepare defline
 
+    int ialn = 0;
     for (CSeq_align_set::Tdata::const_iterator 
-             iter = m_AlnSetRef->Get().begin(); 
+             iter = m_AlnSetRef->Get().begin();
          iter != m_AlnSetRef->Get().end() && num_align < m_NumToShow; 
-         iter++){
+         iter++, ialn++){
+        if (ialn < m_SkipTo && ialn >= m_SkipFrom) continue;
+
         if (is_first_aln) {
             _ASSERT(m_ScopeRef);
             CBioseq_Handle bh = m_ScopeRef->GetBioseqHandle((*iter)->GetSeq_id(0));
@@ -902,11 +907,13 @@ void CShowBlastDefline::x_InitDeflineTable(void)
     bool master_is_na = false;
     //prepare defline
 
+    int ialn = 0;
     for (CSeq_align_set::Tdata::const_iterator 
-             iter = m_AlnSetRef->Get().begin(); 
+             iter = m_AlnSetRef->Get().begin();
          iter != m_AlnSetRef->Get().end() && num_align < m_NumToShow; 
-         iter++){
+         iter++, ialn++){
 
+        if (ialn < m_SkipTo && ialn >= m_SkipFrom) continue;
         if (is_first_aln) {
             m_QueryLength = m_MasterRange ? 
                 m_MasterRange->GetLength() :

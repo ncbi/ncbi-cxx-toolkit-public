@@ -176,6 +176,14 @@ public:
         m_NumToShow = num;
     }
 
+    ///Skip certain seqaligns (only used in Igblast)
+    ///@param from: skip from (inclusive)
+    ///@param to: skip to (exclusive)
+    void SetSkipRange(int from, int to) {
+        m_SkipFrom = from;
+        m_SkipTo = to;
+    }
+
     ///Set this for constructing structure linkout
     ///@param term: entrez query term
     ///
@@ -376,6 +384,10 @@ protected:
 
     ///used to calculate the alignment length
     bool m_TranslatedNucAlignment;
+
+    ///seq aligns to be skipped
+    int m_SkipFrom;
+    int m_SkipTo;
 
     ///Score header size
     size_t m_MaxScoreLen;

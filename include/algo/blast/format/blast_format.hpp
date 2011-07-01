@@ -285,9 +285,13 @@ private:
     /// numeric_limits<unsigned int>::max() [in]
     /// @param prev_seqids list of previously found Seq-ids, if applicable,
     /// otherwise it should be an empty list [in]
+    /// @param skip_from skipping display from [in]
+    /// @param skip_to skipping display to [in]
     void x_DisplayDeflines(CConstRef<CSeq_align_set> aln_set,
                    unsigned int itr_num,
-                   blast::CPsiBlastIterationState::TSeqIds& prev_seqids);
+                   blast::CPsiBlastIterationState::TSeqIds& prev_seqids,
+                   int skip_from = -1,
+                   int skip_to = -1);
 
     /// Split the full alignment into two sets of alignments: one for those
     /// seen in the previous iteration and used to build the PSSM and the other
@@ -305,7 +309,11 @@ private:
 
     /// Configure the CShowBlastDefline instance passed to it
     /// @param showdef CShowBlastDefline object to configure [in|out]
-    void x_ConfigCShowBlastDefline(align_format::CShowBlastDefline& showdef);
+    /// @param skip_from skipping display from [in]
+    /// @param skip_to skipping display to [in]
+    void x_ConfigCShowBlastDefline(align_format::CShowBlastDefline& showdef,
+                                   int skip_from = -1,
+                                   int skip_to = -1);
 
     /// Prints XML and both species of ASN.1
     /// @param results Results for one query or Phi-blast iteration [in]
