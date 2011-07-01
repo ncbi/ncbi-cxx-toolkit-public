@@ -210,9 +210,14 @@ public:
     string         GetField(int index) const;
 
     // manipulators
-    CJobRun&       AppendRun();
-    const CJobRun* GetLastRun() const;
-    CJobRun*       GetLastRun();
+    CJobRun&        AppendRun();
+    const CJobRun * GetLastRun() const;
+    CJobRun*        GetLastRun();
+
+    // Time related helpers
+    time_t          GetLastUpdateTime(void) const;
+    time_t          GetJobExpirationTime(time_t  queue_timeout,
+                                         time_t  queue_run_timeout) const;
 
     // preparatory
     // Lookup affinity token and fill out affinity id

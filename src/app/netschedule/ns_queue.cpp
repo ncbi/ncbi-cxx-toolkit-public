@@ -2678,52 +2678,17 @@ unsigned CQueue::CheckJobsExpiry(unsigned batch_size, TJobStatus status)
             }
 
             // Is the job expired?
-            time_t time_update, time_done;
-            time_t timeout, run_timeout;
-
-            TJobStatus status = job.GetStatus();
-
-            timeout = job.GetTimeout();
-            if (timeout == 0) timeout = queue_timeout;
-            run_timeout = job.GetRunTimeout();
-            if (run_timeout == 0) run_timeout = queue_run_timeout;
-
-            // Calculate time of last update and effective timeout
-            const CJobRun* run = job.GetLastRun();
-            time_done = 0;
-            if (run) {
-                time_done = run->GetTimeDone();
-            }
-            if (status == CNetScheduleAPI::eRunning ||
-                status == CNetScheduleAPI::eReading) {
-                // Running/reading job
-                if (run) {
-                    time_update = run->GetTimeStart();
-                } else {
-                    ERR_POST("No JobRun for running/reading job " <<
-                             DecorateJobId(job_id));
-                    time_update = 0; // ??? force job deletion
-                }
-                timeout += run_timeout;
-            } else if (time_done == 0) {
-                // Submitted job
-                time_update = job.GetTimeSubmit();
-            } else {
-                // Done, Failed, Canceled, Reading, Confirmed, ReadFailed
-                time_update = time_done;
-            }
-
-            if (time_update + timeout <= curr) {
+            if (job.GetJobExpirationTime(queue_timeout,
+                                         queue_run_timeout) <= curr) {
                 m_StatusTracker.Erase(job_id);
                 job_ids.set_bit(job_id);
-                if (status == CNetScheduleAPI::eReading) {
-                    unsigned group_id = job.GetReadGroup();
-                    x_RemoveFromReadGroup(group_id, job_id);
-                }
+                if (status == CNetScheduleAPI::eReading)
+                    x_RemoveFromReadGroup(job.GetReadGroup(), job_id);
                 ++del_count;
             }
         }
     }}
+
     if (m_Log  &&  not_found_jobs.any()) {
         if (has_db_error) {
             LOG_POST(Error << "While deleting, errors in database"
@@ -2915,7 +2880,6 @@ void CQueue::x_PrintJobStat(CNetScheduleHandler &   handler,
                             const CJob &            job,
                             unsigned                queue_run_timeout)
 {
-    const CJobRun *     last_run = job.GetLastRun();
     unsigned            run_timeout = job.GetRunTimeout();
     unsigned            subm_addr = job.GetSubmAddr();
     unsigned            aff_id = job.GetAffinityId();
@@ -2927,21 +2891,12 @@ void CQueue::x_PrintJobStat(CNetScheduleHandler &   handler,
                                 CNetScheduleAPI::StatusToString(job.GetStatus()));
 
     NS_PRINT_TIME("time_submit: ", job.GetTimeSubmit());
-
     handler.WriteMessage("OK:", "timeout: " +
                                 NStr::IntToString(job.GetTimeout()));
     handler.WriteMessage("OK:", "run_timeout: " +
                                 NStr::IntToString(run_timeout));
-
-    if (last_run) {
-        if (last_run->GetStatus() == CNetScheduleAPI::eRunning) {
-            if (run_timeout == 0)
-                run_timeout = queue_run_timeout;
-            time_t exp_time =
-                run_timeout == 0 ? 0 : last_run->GetTimeStart() + run_timeout;
-            NS_PRINT_TIME("time_run_expire: ", exp_time);
-        }
-    }
+    NS_PRINT_TIME("expiration_time: ",
+                  job.GetJobExpirationTime(GetTimeout(), GetRunTimeout()));
 
     if (subm_addr == 0)
         handler.WriteMessage("OK:", "subm_addr: ");

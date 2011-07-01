@@ -480,7 +480,7 @@ CJobRun& CJob::AppendRun()
 
 const CJobRun* CJob::GetLastRun() const
 {
-    if (m_Runs.size() == 0)
+    if (m_Runs.empty())
         return NULL;
 
     return &(m_Runs[m_Runs.size()-1]);
@@ -489,17 +489,45 @@ const CJobRun* CJob::GetLastRun() const
 
 CJobRun* CJob::GetLastRun()
 {
-    if (m_Runs.size() == 0)
+    if (m_Runs.empty())
         return NULL;
 
     m_Dirty |= fRunsPart;
     return &(m_Runs[m_Runs.size()-1]);
 }
 
+time_t  CJob::GetLastUpdateTime(void) const
+{
+    if (m_Runs.empty())
+        return m_TimeSubmit;    // The job had no attempts to be executed
+
+    vector<CJobRun>::const_reverse_iterator     last_run = m_Runs.rbegin();
+    if (m_Status == CNetScheduleAPI::eRunning ||
+        m_Status == CNetScheduleAPI::eReading)
+        return last_run->GetTimeStart();
+
+    // Done, Failed, Canceled, Returned, Confirmed, ReadFailed
+    return last_run->GetTimeDone();
+}
+
+time_t  CJob::GetJobExpirationTime(time_t  queue_timeout,
+                                   time_t  queue_run_timeout) const
+{
+    if (m_Status == CNetScheduleAPI::eRunning ||
+        m_Status == CNetScheduleAPI::eReading) {
+        if (m_RunTimeout != 0)
+            return GetLastUpdateTime() + m_RunTimeout;
+        return GetLastUpdateTime() + queue_run_timeout;
+    }
+
+    if (m_Timeout != 0)
+        return GetLastUpdateTime() + m_Timeout;
+    return GetLastUpdateTime() + queue_timeout;
+}
 
 void CJob::CheckAffinityToken(CAffinityDictGuard& aff_dict_guard)
 {
-    if (m_AffinityToken.size()) {
+    if (!m_AffinityToken.empty()) {
         m_AffinityId =
             aff_dict_guard.CheckToken(m_AffinityToken);
     }
