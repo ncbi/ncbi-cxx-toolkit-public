@@ -1266,16 +1266,14 @@ size_t NStr::StringToSizet(const CTempString& str,
 }
 
 
-void NStr::LongToString(string& out_str, long svalue,
-                       TNumToStringFlags flags, int base)
-{
-    _ASSERT(flags == 0  ||  flags > 32);
-    if ( base < 2  ||  base > 36 ) {
-        return;
-    }
 
-    unsigned long value = static_cast<unsigned long>(svalue);
-    
+/// @internal
+static void s_SignedToString(string&                 out_str,
+                             unsigned long           value,
+			     long                    svalue,
+                             NStr::TNumToStringFlags flags,
+                             int                     base)
+{
     const SIZE_TYPE kBufSize = CHAR_BIT * sizeof(value);
     char  buffer[kBufSize];
     char* pos = buffer + kBufSize;
@@ -1285,7 +1283,7 @@ void NStr::LongToString(string& out_str, long svalue,
             value = static_cast<unsigned long>(-svalue);
         }
         
-        if ( (flags & fWithCommas) ) {
+        if ( (flags & NStr::fWithCommas) ) {
             int cnt = -1;
             do {
                 if (++cnt == 3) {
@@ -1307,7 +1305,7 @@ void NStr::LongToString(string& out_str, long svalue,
 
         if (svalue < 0)
             *--pos = '-';
-        else if (flags & fWithSign)
+        else if (flags & NStr::fWithSign)
             *--pos = '+';
     }
     else if ( base == 16 ) {
@@ -1324,6 +1322,38 @@ void NStr::LongToString(string& out_str, long svalue,
     }
 
     out_str.assign(pos, buffer + kBufSize - pos);
+}
+			  
+
+void NStr::IntToString(string& out_str, int svalue,
+                       TNumToStringFlags flags, int base)
+{
+    _ASSERT(flags == 0  ||  flags > 32);
+    if ( base < 2  ||  base > 36 ) {
+        return;
+    }
+    unsigned int value = static_cast<unsigned int>(svalue);
+    
+    if ( base == 10  &&  svalue < 0 ) {
+        value = static_cast<unsigned int>(-svalue);
+    }
+    s_SignedToString(out_str, value, svalue, flags, base);
+}
+
+
+void NStr::LongToString(string& out_str, long svalue,
+                       TNumToStringFlags flags, int base)
+{
+    _ASSERT(flags == 0  ||  flags > 32);
+    if ( base < 2  ||  base > 36 ) {
+        return;
+    }
+    unsigned long value = static_cast<unsigned long>(svalue);
+    
+    if ( base == 10  &&  svalue < 0 ) {
+        value = static_cast<unsigned long>(-svalue);
+    }
+    s_SignedToString(out_str, value, svalue, flags, base);
 }
 
 
