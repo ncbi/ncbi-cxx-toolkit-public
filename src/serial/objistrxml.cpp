@@ -359,7 +359,7 @@ CTempString CObjectIStreamXml::ReadName(char c)
     if ( !IsFirstNameChar(c) )
         ThrowError(fFormatError,
             "Name begins with an invalid character: #"
-            +NStr::UIntToString(c));
+            +NStr::UIntToString((unsigned int)c));
 
     // find end of tag name
     size_t i = 1, iColon = 0;

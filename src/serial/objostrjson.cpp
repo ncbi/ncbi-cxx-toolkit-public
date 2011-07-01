@@ -567,7 +567,7 @@ void CObjectOStreamJson::WriteCustomBytes(const char* bytes, size_t length)
         default:
         case eArray_Uint:
             m_Output.WrapAt(78, false);
-            m_Output.PutString( NStr::UIntToString(c));
+            m_Output.PutString( NStr::UIntToString((unsigned int)c));
             m_Output.PutChar(',');
             break;
         case eString_01:

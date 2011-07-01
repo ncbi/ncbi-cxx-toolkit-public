@@ -159,7 +159,7 @@ CObjectIStreamAsnBinary::PeekTag(TByte first_tag_byte)
     do {
         if ( tag >= (1 << (KTagBits - 7)) ) {
             ThrowError(fOverflow,
-                       "tag number is too big: "+NStr::UIntToString(tag));
+                       "tag number is too big: "+NStr::IntToString(tag));
         }
         byte = PeekTagByte(i++);
         tag = (tag << 7) | (byte & 0x7f);
@@ -175,8 +175,8 @@ void CObjectIStreamAsnBinary::UnexpectedTagClassByte(TByte first_tag_byte,
                                                      TByte expected_class_byte)
 {
     ThrowError(fFormatError, "unexpected tag class/constructed: #"
-               + NStr::UIntToString(first_tag_byte) + ", should be #"
-               + NStr::UIntToString(expected_class_byte));
+               + NStr::UIntToString((unsigned int)first_tag_byte) + ", should be #"
+               + NStr::UIntToString((unsigned int)expected_class_byte));
 }
 
 string CObjectIStreamAsnBinary::PeekClassTag(void)
