@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/opt/python-2.5/bin/python -u
 #
 # Authors: Sergey Satskiy
 #
@@ -1217,6 +1217,12 @@ def main():
     parser.add_option( "--start-from", dest="start_from",
                        default="0",
                        help="Test index to start from (default: 0)" )
+    parser.add_option( "--header", dest="header",
+                       default="",
+                       help="Header for the tests output" )
+    parser.add_option( "--all-to-stderr",
+                       action="store_true", dest="alltostderr", default=False,
+                       help="print the messages on stderr only (default: False)" )
 
 
     # parse the command line options
@@ -1224,6 +1230,10 @@ def main():
 
     global verbose
     verbose = options.verbose
+
+    if options.alltostderr:
+        sys.stdout = sys.stderr
+
 
     startIndex = int( options.start_from )
     if startIndex < 0:
@@ -1271,7 +1281,8 @@ def main():
               Scenario36( netschedule ), Scenario37( netschedule ),
               Scenario38( netschedule ), Scenario39( netschedule ),
               Scenario40( netschedule ), Scenario41( netschedule ),
-              Scenario42( netschedule ), Scenario43( netschedule ),
+              Scenario42( netschedule ),
+              # Scenario43( netschedule ),
               Scenario44( netschedule ),
               # Scenario45( netschedule ),
               Scenario46( netschedule ), Scenario47( netschedule ),
@@ -1288,6 +1299,9 @@ def main():
     failureCount = 0
     testCount = startIndex
 
+    if options.header != "":
+        print options.header
+
     try:
         for index in range( startIndex, len( tests ) ):
             aTest = tests[ index ]
@@ -1296,15 +1310,18 @@ def main():
                 if succeeded:
                     successCount += 1
                     print "Test #" + str( testCount ) + " succeeded"
+                    sys.stdout.flush()
                 else:
                     print >> sys.stderr, "Test #" + str( testCount ) + \
                                         " failed. Scenario: " + \
                                         aTest.getScenario()
+                    sys.stderr.flush()
                     failureCount += 1
             except Exception, exct:
                 failureCount += 1
                 print >> sys.stderr, "Test #" + str( testCount ) + \
                                     " failed. Exception:\n" + str( exct )
+                sys.stderr.flush()
             testCount += 1
         netschedule.safeStop()
         netschedule.deleteDB()
@@ -3440,3 +3457,4 @@ if __name__ == "__main__":
         returnValue = 1
 
     sys.exit( returnValue )
+
