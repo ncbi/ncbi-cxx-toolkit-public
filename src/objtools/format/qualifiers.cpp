@@ -1095,6 +1095,8 @@ void s_HtmlizeLatLon( string &subname ) {
     try {
         double lat_num = NStr::StringToDouble( lat );
         double lon_num = NStr::StringToDouble( lon );
+
+        // cap ranges
         if( lon_num < -180.0 ) {
             lon = "-180";
         } else if( lon_num > 180.0 ) {

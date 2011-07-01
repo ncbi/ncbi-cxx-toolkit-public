@@ -117,7 +117,9 @@ void s_PrintLocAsJavascriptArray(
 
     bool is_first = true;
     ITERATE( CSeq_loc, loc_piece_iter, loc ) {
-        if( ! bioseq_handle || ! bioseq_handle.IsSynonym(loc_piece_iter.GetSeq_id()) ) {
+
+        CSeq_id_Handle seq_id_handle = loc_piece_iter.GetSeq_id_Handle();
+        if( seq_id_handle && bioseq_handle && ! bioseq_handle.IsSynonym(seq_id_handle) ) {
             continue;
         }
 
@@ -130,6 +132,14 @@ void s_PrintLocAsJavascriptArray(
         if( (to == kMax_UInt || to == (kMax_UInt-1)) && bioseq_handle.CanGetInst_Length() ) {
             to = (bioseq_handle.GetInst_Length() - 1);
         }
+
+        // reverse from and to if minus strand
+        if( loc_piece_iter.IsSetStrand() && 
+            loc_piece_iter.GetStrand() == eNa_strand_minus ) 
+        {
+            swap( from, to );
+        }
+
         result << "[" <<  (from + 1) << ", " << (to + 1) << "]";
 
         is_first = false;
@@ -443,6 +453,9 @@ void CGenbankFormatter::FormatKeywords
 {
     list<string> l;
     x_GetKeywords(keys, "KEYWORDS", l);
+    if( keys.GetContext()->Config().DoHTML() ) {
+        TryToSanitizeHtmlList(l);
+    }
     text_os.AddParagraph(l, keys.GetObject());
 }
 
@@ -1822,8 +1835,8 @@ void CGenbankFormatter::FormatGap(const CGapItem& gap, IFlatTextOStream& text_os
     Wrap(l, "gap", loc, eFeat);
     if( bHtml && gap.GetContext()->Config().IsModeEntrez() ) {
         CRef<CSeq_loc> gapLoc( new CSeq_loc );
-        gapLoc->SetInt().SetFrom(gapStart);
-        gapLoc->SetInt().SetTo(gapEnd);
+        gapLoc->SetInt().SetFrom(gapStart - 1);
+        gapLoc->SetInt().SetTo(gapEnd - 1);
         *l.begin() = x_GetFeatureSpanStart("gap", *gapLoc, *gap.GetContext()) + *l.begin();
     }
 
@@ -1833,7 +1846,7 @@ void CGenbankFormatter::FormatGap(const CGapItem& gap, IFlatTextOStream& text_os
             GetFeatIndent(), GetFeatIndent() + "/note=");
     }
 
-    // format mandtory /estimated_length qualifier
+    // format mandatory /estimated_length qualifier
     string estimated_length;
     if (gap.HasEstimatedLength()) {
         estimated_length = NStr::UIntToString(gap.GetEstimatedLength());

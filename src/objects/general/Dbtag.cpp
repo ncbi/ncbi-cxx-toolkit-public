@@ -700,6 +700,10 @@ string CDbtag::GetUrl(void) const
             }
             break;
 
+        case eDbtagType_IRD:
+            tag += "&decorator=influenza";
+            break;
+
         default:
             break;
     }
