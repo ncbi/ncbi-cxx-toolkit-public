@@ -52,8 +52,6 @@
 #  pragma warning(disable: 4097)
 // inherits ... via dominance
 #  pragma warning(disable: 4250)
-// C++ exception specification ignored...
-#  pragma warning(disable: 4290)
 // 'this' : used in base member initializer list
 #  pragma warning(disable: 4355)
 // identifier was truncated to '255' characters in the browser information
