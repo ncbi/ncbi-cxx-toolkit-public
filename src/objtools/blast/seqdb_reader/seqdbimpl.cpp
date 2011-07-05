@@ -1336,16 +1336,12 @@ void CSeqDBImpl::x_ScanTotals(bool             approx,
 
 void CSeqDBImpl::GetTaxInfo(int taxid, SSeqDBTaxInfo & info)
 {
-    CHECK_MARKER();
-    CSeqDBLockHold locked(m_Atlas);
+    CSeqDBAtlasHolder AH(true, NULL, NULL);
+    CSeqDBAtlas &atlas(AH.Get());
+    CSeqDBLockHold locked(atlas);
     
-    if (m_TaxInfo.Empty()) {
-        NCBI_THROW(CSeqDBException,
-                   eFileErr,
-                   "Taxonomic database was not found.");
-    }
-    
-    if (! m_TaxInfo->GetTaxNames(taxid, info, locked)) {
+    CSeqDBTaxInfo taxinfo(atlas);
+    if (! taxinfo.GetTaxNames(taxid, info, locked)) {
         NCBI_THROW(CSeqDBException,
                    eArgErr,
                    "Specified taxid was not found.");

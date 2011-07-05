@@ -937,11 +937,9 @@ void CSeqDB::GetAliasFileValues(TAliasFileValues & afv)
     m_Impl->Verify();
 }
 
-void CSeqDB::GetTaxInfo(int taxid, SSeqDBTaxInfo & info) const
+void CSeqDB::GetTaxInfo(int taxid, SSeqDBTaxInfo & info) 
 {
-    m_Impl->Verify();
-    m_Impl->GetTaxInfo(taxid, info);
-    m_Impl->Verify();
+    CSeqDBImpl::GetTaxInfo(taxid, info);
 }
 
 void CSeqDB::GetTotals(ESummaryType   sumtype,

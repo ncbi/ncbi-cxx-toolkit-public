@@ -1067,7 +1067,7 @@ public:
     ///   An integer identifying the taxid to fetch.
     /// @param info
     ///   A structure containing taxonomic description strings.
-    void GetTaxInfo(int taxid, SSeqDBTaxInfo & info) const;
+    static void GetTaxInfo(int taxid, SSeqDBTaxInfo & info);
 
     /// Fetch data as a CSeq_data object.
     ///

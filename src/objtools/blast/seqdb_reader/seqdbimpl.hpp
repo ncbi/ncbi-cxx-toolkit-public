@@ -717,7 +717,7 @@ public:
     ///   An integer identifying the taxid to fetch.
     /// @param info
     ///   A structure containing taxonomic description strings.
-    void GetTaxInfo(int taxid, SSeqDBTaxInfo & info);
+    static void GetTaxInfo(int taxid, SSeqDBTaxInfo & info);
     
     /// Returns the sum of the sequence lengths.
     ///
