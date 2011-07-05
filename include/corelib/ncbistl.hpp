@@ -38,7 +38,7 @@
 #include <common/ncbi_export.h>
 
 
-// Get rid of some warnings in MSVC++ 6.00
+// Get rid of some warnings in MSVC++
 #if (_MSC_VER >= 1200)
 // too long identificator name in the debug info;  truncated
 #  pragma warning(disable: 4786)
@@ -52,6 +52,8 @@
 #  pragma warning(disable: 4097)
 // inherits ... via dominance
 #  pragma warning(disable: 4250)
+// C++ exception specification ignored...
+#  pragma warning(disable: 4290)
 // 'this' : used in base member initializer list
 #  pragma warning(disable: 4355)
 // identifier was truncated to '255' characters in the browser information
