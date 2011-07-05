@@ -22,7 +22,7 @@ Components with incorrect taxids:
 15 errors, 10 not printed:
   Count Code  Description
      10  w31  gap line missing column 9 (null)
-      1  g41  invalid component_id
-      2  g42  component_id not in GenBank
-      1  g43  component_id X is ambiguous without an explicit version
-      1  g44  component_end greater than sequence length
+      1  g51  invalid component_id
+      2  g52  component_id not in GenBank
+      1  g53  component_id X is ambiguous without an explicit version
+      1  g54  component_end greater than sequence length

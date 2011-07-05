@@ -379,10 +379,13 @@ public:
         W_ObjEqCompId,          // -- agp_validate --
         W_GapSizeNot100,        // CAgpRow
         W_BreakingGapSameCompId,// -- agp_validate --
+        W_UnSingleCompNotInFull,// -- agp_validate --
+
+        W_UnSingleOriNotPlus,   // -- agp_validate --
         W_Last, W_First = 21,
 
         // "GenBank" checks that rely on information about the sequence
-        G_InvalidCompId=41,     // -- agp_validate --
+        G_InvalidCompId=51,     // -- agp_validate --
         G_NotInGenbank,         // -- agp_validate --
         G_NeedVersion,          // -- agp_validate --
         G_CompEndGtLength,      // CAgpRow::CheckComponentEnd() (used in agp_validate)
@@ -421,7 +424,7 @@ public:
     // ???
     enum {
         CODE_First=1,
-        CODE_Extended=51, // reserve space for some user errors (to count, or to skip)
+        CODE_Extended=61, // reserve space for some user errors (to count, or to skip)
         CODE_Last=CODE_Extended+20
     };
 

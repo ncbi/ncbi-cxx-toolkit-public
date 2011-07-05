@@ -21,8 +21,8 @@
 5 errors, 1 warning.
   Count Code  Description
       1  w21  gap at the end of object 
-      4  g41  invalid component_id
-      1  g44  component_end greater than sequence length
+      4  g51  invalid component_id
+      1  g54  component_end greater than sequence length
 
 
 Objects                : 1

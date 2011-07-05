@@ -53,6 +53,8 @@ CAgpValidateReader::CAgpValidateReader(CAgpErrEx& agpErr, CMapCompLen& comp2len)
   m_componentsInLastScaffold=m_componentsInLastObject=0;
   m_gapsInLastScaffold=m_gapsInLastObject=0;
   m_prev_orientation=0; // m_prev_orientation_unknown=false;
+  m_prev_component_beg = m_prev_component_end = 0;
+
   m_ObjCount = 0;
   m_ScaffoldCount = 0;
   m_SingleCompScaffolds = 0;
@@ -67,6 +69,8 @@ CAgpValidateReader::CAgpValidateReader(CAgpErrEx& agpErr, CMapCompLen& comp2len)
   m_expected_obj_len=0;
   m_comp_name_matches=0;
   m_obj_name_matches=0;
+
+  m_unplaced=false;
 
   memset(m_CompOri, 0, sizeof(m_CompOri));
   memset(m_GapTypeCnt, 0, sizeof(m_GapTypeCnt));
@@ -90,6 +94,7 @@ bool CAgpValidateReader::OnError()
   if(m_line_skipped) {
     // Avoid printing the wrong AGP line along with "orientation_unknown" error
     m_prev_orientation=0; // m_prev_orientation_unknown=false;
+    m_prev_component_beg = m_prev_component_end = 0;
 
     // For lines with non-syntax errors that are not skipped,
     // these are called from OnGapOrComponent()
@@ -123,7 +128,7 @@ void CAgpValidateReader::OnGapOrComponent()
         && m_componentsInLastScaffold==1 // can probably ASSERT this
       ) {
         agpErr.Msg(CAgpErrEx::E_UnknownOrientation, NcbiEmptyString, CAgpErr::fAtPrevLine);
-        m_prev_orientation-0; // m_prev_orientation_unknown=false;
+        m_prev_orientation=0; // m_prev_orientation_unknown=false;
       }
     }
     else if(!m_at_beg && !m_prev_row->IsGap()) {
@@ -163,7 +168,9 @@ void CAgpValidateReader::OnGapOrComponent()
       //
       // Note: previous component != previous line if there was a non-breaking gap;
       // we check prev_orientation after such gaps, too.
-      m_prev_orientation=m_this_row->orientation; // if (...) m_prev_orientation_unknown=true;
+      m_prev_orientation   = m_this_row->orientation; // if (...) m_prev_orientation_unknown=true;
+      m_prev_component_beg = m_this_row->component_beg;
+      m_prev_component_end = m_this_row->component_end;
     }
     else if( m_this_row->orientation != '+' && m_this_row->orientation != '-' ) {
       // This error is real, not "potential"; report it now.
@@ -265,6 +272,22 @@ void CAgpValidateReader::OnScaffoldEnd()
   if(m_componentsInLastScaffold==1) {
     m_SingleCompScaffolds++;
     if(m_gapsInLastScaffold) m_SingleCompScaffolds_withGaps++;
+
+    if(m_unplaced && m_prev_orientation) {
+      if(m_prev_orientation!='+') agpErr.Msg( CAgpErrEx::W_UnSingleOriNotPlus   , CAgpErr::fAtPrevLine );
+
+      TMapStrInt::iterator it = m_comp2len.find( m_this_row->GetComponentId() );
+      if( it!=m_comp2len.end() ) {
+        int len = it->second;
+        if(m_prev_component_beg!=1 || m_prev_component_end<len ) {
+          agpErr.Msg( CAgpErrEx::W_UnSingleCompNotInFull,
+            " (" + NStr::IntToString(m_prev_component_end-m_prev_component_beg+1) + " out of " + NStr::IntToString(len)+ " bp)",
+            CAgpErr::fAtPrevLine );
+        }
+      }
+      else if(m_prev_component_beg!=1) agpErr.Msg( CAgpErrEx::W_UnSingleCompNotInFull, CAgpErr::fAtPrevLine );
+    }
+
   }
   else if(m_componentsInLastScaffold==0) {
     m_NoCompScaffolds++;

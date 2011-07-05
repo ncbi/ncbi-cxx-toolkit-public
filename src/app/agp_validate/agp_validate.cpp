@@ -115,6 +115,8 @@ public:
     "  -g         Check that component names look like Nucleotide accessions\n"
     "             (this does not require components to be in GenBank).\n"
     "  -obj       Use FASTA files to read names and lengths of objects (the default is components).\n"
+    "  -un        Enable the checks specific to unplaced/unlocalized single-component scaffolds\n"
+    "             (use the whole component in orientation '+').\n"
     /*
     "\n"
     "  -fa  FILE (fasta)\n"
@@ -149,6 +151,7 @@ void CAgpValidateApplication::Init(void)
 
   arg_desc->AddFlag("g" , "");
   arg_desc->AddFlag("obj", "");
+  arg_desc->AddFlag("un", "");
 
   arg_desc->AddFlag("species", "allow components from different subspecies");
 
@@ -230,6 +233,7 @@ int CAgpValidateApplication::Run(void)
   */
 
   m_reader.m_CheckObjLen=args["obj"].HasValue();
+  m_reader.m_unplaced   =args["un" ].HasValue();
   if( args["alt"].HasValue() || args["species"].HasValue() ) {
     if(m_reader.m_CheckObjLen) {
       cerr << "Error -- cannot specify -obj with -alt/-species.\n";

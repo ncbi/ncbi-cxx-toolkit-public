@@ -92,6 +92,28 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     // Database Collaboration uses a length of 100 bases for all gaps of unknown length.
     "gap length (column 6) is not 100 for a gap of unknown size (an INSDC standard)",
     "scaffold-breaking gap between component lines with the same component_id",
+    /*
+    "component X is not used in full in a single-component scaffold",
+    "only a part of component X is included in a singleton scaffold",
+    "not the whole length of the component is included in a singleton scaffold",
+    "singleton scaffold includes only X bases of Y in the component Z",
+    "only X out of Y bases of component Z are used in the singleton scaffold",
+    "singleton scaffold includes only a part of the component",
+    "singleton scaffold include the whole component",
+    "singleton scaffold includes only part of the component"
+    */
+    "in unplaced singleton scaffold, component is not used in full", // (X out of Y bp)
+
+    "in unplaced singleton scaffold, component orientation is not \"+\"",
+    kEmptyCStr,
+    kEmptyCStr,
+    kEmptyCStr,
+    kEmptyCStr,
+
+    kEmptyCStr,
+    kEmptyCStr,
+    kEmptyCStr,
+    kEmptyCStr,
     kEmptyCStr, // W_Last
 
     // GenBank-related errors

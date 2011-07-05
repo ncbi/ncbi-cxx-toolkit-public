@@ -1,0 +1,6 @@
+# W_UnSingleOriNotPlus, W_UnSingleCompNotInFull
+singleton_0	1	630	1	W	LACBIscaffold_1_Cont1	1	630	+
+singleton_1	1	630	1	W	LACBIscaffold_1_Cont1	1	630	-
+singleton_1na	1	630	1	W	LACBIscaffold_1_Cont1	1	630	na
+singleton_2	1	600	1	W	LACBIscaffold_1_Cont1	1	600	+
+singleton_3	1	600	1	W	LACBIscaffold_1_Cont1	31	630	+

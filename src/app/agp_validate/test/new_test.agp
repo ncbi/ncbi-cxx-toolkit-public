@@ -24,4 +24,7 @@ LACBIscaffold_1	1104	3435	2	U	2332	fragment	yes
 LACBIscaffold_1	3436	4636	3	W	LACBIscaffold_1_Cont2	1	1201	+
 LACBIscaffold_1	4637	5256	4	N	620	contig	no
 LACBIscaffold_1	5257	6500	5	W	LACBIscaffold_1_Cont2	1202	2445	+
-
+# W_UnSingleOriNotPlus, W_UnSingleCompNotInFull
+LACBIscaffold_2	1	1103	1	W	LACBIscaffold_2_Cont1	1	1103	-
+scaffold_0	1	2106	1	W	AAGU02000001.1	1	2106	+#OK line
+LACBIscaffold_3	1	1103	1	W	LACBIscaffold_3_Cont1	1	1103	-

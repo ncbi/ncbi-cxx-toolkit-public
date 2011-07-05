@@ -133,6 +133,7 @@ public:
   void PrintTotals();
   bool m_CheckCompNames;
   bool m_CheckObjLen; // false: check compoment lengths
+  bool m_unplaced;    // check that singleton components are in '+' orientation
 
 protected:
   void x_PrintTotals(); // without comment counts
@@ -172,6 +173,7 @@ protected:
   int m_gapsInLastObject;
   //bool m_prev_orientation_unknown;
   char m_prev_orientation; // 0 when we need not warn about it (not in singleton, etc)
+  int m_prev_component_beg, m_prev_component_end;
 
   string m_prev_component_id; // for W_BreakingGapSameCompId: only set when encountering a breaking gap
 
