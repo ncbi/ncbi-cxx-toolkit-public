@@ -1,5 +1,9 @@
 include $(builddir)/Makefile.mk
 
+loadable_ext = @loadable_ext@
+
+# No loadable_ext here -- Python on Mac OS X only looks for .so files,
+# but allows them to be dynamic libraries rather than bundles.
 LINK = $(libdir)/python_ncbi_dbapi.so
 
 all: $(LINK)
@@ -9,7 +13,7 @@ $(LINK):
 	     -a ! -d $(libdir)/64 ]; then \
 	    cd $(libdir)  &&  $(LN_S) . 64; \
 	fi
-	cd $(libdir)  &&  $(LN_S) libpython_ncbi_dbapi.so $(LINK)
+	cd $(libdir)  &&  $(LN_S) libpython_ncbi_dbapi$(loadable_ext) $(LINK)
 
 clean:;
 
