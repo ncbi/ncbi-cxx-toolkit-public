@@ -1,0 +1,4 @@
+# $Id$
+
+LIB = macro
+SRC = macro__ macro___

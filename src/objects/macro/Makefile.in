@@ -1,0 +1,5 @@
+# $Id$
+
+ASN_PROJ = macro
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
