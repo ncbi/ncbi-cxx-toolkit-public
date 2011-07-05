@@ -108,6 +108,12 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
         string feature_id;               // ID for feature
     };
 
+    ///structure for showing domains on the master sequence
+    struct DomainInfo : public CObject {
+        CConstRef < objects::CSeq_loc > seqloc; //seqloc int only. use seq coodindate 
+        string domain_name;               //domain string to show
+    };
+
     ///option for alignment display
     enum DisplayOption {
         eHtml = (1 << 0),               // Html output. Default text.
@@ -160,11 +166,26 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
         eShowEndGaps = (1 << 26),      // if set end gaps will be shown as '-'
                                        // otherwise as spaces
         eShowGapOnlyLines = (1 << 27), // Show lines than contain only gaps
-        eShowRawScoreOnly = (1 << 28)  // For RMBLASTN.  This disables the
+        eShowRawScoreOnly = (1 << 28),  // For RMBLASTN.  This disables the
                                        //   display of the bitscore and
                                        //   the evalue fields. -RMH-
+        eShowTranslationForLocalSeq = (1 << 29),  //show translated protein for 
+                                                  //local master nuc sequence
+                                                  //and first local subject seq only.
+
+        eShowAlignStatsForMultiAlignView = (1 << 30)
     };
     
+    enum TranslatedFrameForLocalSeq {
+        eFirst = 0,             
+        eSecond,
+        eThird
+    };
+    
+    void SetTranslatedFrameForLocalSeq (TranslatedFrameForLocalSeq frame) {
+        m_TranslatedFrameForLocalSeq = frame;
+    }
+
     ///Middle line style option
     enum MiddleLineStyle {
         eChar = 0,              // show character as identity between query
@@ -380,6 +401,11 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
 
     void SetAlignTemplates(SAlignTemplates *alignTemplates) {m_AlignTemplates = alignTemplates;}    
     
+    
+    void SetMasterDomain(list <CRef<DomainInfo> >* domain) {
+        
+        m_DomainInfo = domain;
+    }
 private:
 
     /// Prohibit copy constructor
@@ -433,6 +459,11 @@ private:
         int max_feature_num;
         bool colorMismatch;
         int         rowNum;
+        vector<int> match;
+        vector<int> align_length;
+        vector<double> percent_ident;
+        vector<string> align_stats;
+        int max_align_stats_len;
     };
 
     
@@ -502,6 +533,7 @@ private:
 
     /// external feature such as phiblast
     list < FeatureInfo * >* m_QueryFeature; 
+    list <CRef<DomainInfo> >* m_DomainInfo; 
     objects::CScope & m_Scope;
     objects::CAlnVec *m_AV;                  // current aln vector
     int **m_Matrix;                 // matrix used to compute the midline
@@ -547,6 +579,8 @@ private:
     int     m_currAlignHsp;///< Current HSP number for single alignmnet
 
     string  m_PreComputedResID;///<CDD precomputed results ID
+
+    TranslatedFrameForLocalSeq m_TranslatedFrameForLocalSeq;
 
     string x_PrintDynamicFeatures(void); 
     ///Display the current alnvec
@@ -835,7 +869,14 @@ private:
 	string	x_MapDefLine(SAlnDispParams *alnDispParams,bool isFisrt, bool linkout,bool hideDefline);
 	void x_ShowAlnvecInfoTemplate(CNcbiOstream& out, SAlnInfo* aln_vec_info,bool show_defline,bool showSortControls);
 	void x_ShowAlnvecInfo(CNcbiOstream& out, SAlnInfo* aln_vec_info,bool show_defline);    
+
+    void x_GetDomainInfo(int row_num, int aln_stop,
+                         vector<TSAlnFeatureInfoList>& retval)  const;
+
+    void x_AddTranslationForLocalSeq(vector<TSAlnFeatureInfoList>& retval,
+                                     vector<string>& sequence) const; 
 };
+
 
 END_SCOPE(align_format)
 END_NCBI_SCOPE

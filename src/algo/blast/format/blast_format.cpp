@@ -893,23 +893,63 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
     results.GetMaskedQueryRegions(masklocs);
 
     int flags = CDisplaySeqalign::eMergeAlign
-              + CDisplaySeqalign::eShowIdentity
-              + CDisplaySeqalign::eShowGapOnlyLines;
+        + CDisplaySeqalign::eShowIdentity
+        + CDisplaySeqalign::eShowGapOnlyLines
+        + CDisplaySeqalign::eShowEndGaps
+        + CDisplaySeqalign::eShowTranslationForLocalSeq
+        + CDisplaySeqalign::eShowAlignStatsForMultiAlignView;
+    
+    if (m_IsHTML) {
+          flags += CDisplaySeqalign::eHtml;
+    }
 
-    CDisplaySeqalign display(*aln_set, *m_Scope, &masklocs, NULL, m_MatrixName);
+    list < CRef<CDisplaySeqalign::DomainInfo> >  domain;
+    string domain_name[] = {"FWR1", "CDR1", "FWR2", "CDR2", "FWR3"};
+    const CRef<CIgAnnotation> & annots = results.GetIgAnnotation();
+    
+    bool first_annotated_domain = true;
+    for (int i=0; i<9; i = i + 2) {
+        if (annots->m_DomainInfo[i] >= 0){            CRef<CDisplaySeqalign::DomainInfo> temp(new CDisplaySeqalign::DomainInfo);
+            int start = annots->m_DomainInfo[i];
+            if (first_annotated_domain && annots->m_FirstExt > 0) {
+                start = max (0, start - annots->m_FirstExt);
+            }
+            first_annotated_domain = false;
+
+            int stop = annots->m_DomainInfo[i+1];
+            //extend the last domain
+            if (i < 9 && annots->m_DomainInfo[i + 2] < 0 &&
+                annots->m_LastExt > 0){
+                stop += annots->m_LastExt;
+            }
+            temp->seqloc = new CSeq_loc((CSeq_loc::TId &) aln_set->Get().front()->GetSeq_id(0),
+                                        (CSeq_loc::TPoint) start,
+                                        (CSeq_loc::TPoint) stop);
+            temp->domain_name = domain_name[i/2];
+            domain.push_back(temp); 
+        }
+    }    
+
+
+    CDisplaySeqalign display(*aln_set, *m_Scope, &masklocs, NULL,  m_MatrixName);
+    display.SetMasterDomain(&domain);
     display.SetDbName(m_DbName);
     display.SetDbType(!m_DbIsAA);
-
+    display.SetLineLen(70);
     // set the alignment flags
     display.SetAlignOption(flags);
-    display.SetAlignType(CDisplaySeqalign::eNuc);
-
+    if (m_Program == "blastn") {
+        display.SetAlignType(CDisplaySeqalign::eNuc);
+    } else {
+        display.SetAlignType(CDisplaySeqalign::eProt);
+    }
     display.SetMasterGeneticCode(m_QueryGenCode);
     display.SetSlaveGeneticCode(m_DbGenCode);
     display.SetSeqLocChar(CDisplaySeqalign::eLowerCase);
     TSeqLocInfoVector subj_masks;
     results.GetSubjectMasks(subj_masks);
     display.SetSubjectMasks(subj_masks);
+
     display.DisplaySeqalign(m_Outfile);
 
     // print the ancillary data for this query
