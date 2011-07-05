@@ -203,8 +203,8 @@ public:
         if (s.length() != len) {
             string errstr = "Unable to load data for seq-id=\"" + 
                 m_SeqId->AsFastaString() + "\" "
-                "start=" + NStr::IntToString(start) + " "
-                "length=" + NStr::IntToString(len) + ".";
+                "start=" + NStr::UIntToString(start) + " "
+                "length=" + NStr::UIntToString(len) + ".";
             NCBI_THROW(CAlnException, eInvalidSeqId,
                        errstr);
         }
