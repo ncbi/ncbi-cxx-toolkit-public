@@ -2171,13 +2171,13 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
                     bool first_partial = first && part.IsPartialStart(eExtreme_Biological);
 
                     // check donor
-                    if (!last || (checkExonDonor && !last_partial)) {
+                    if (!last || (checkExonDonor && !last_partial) || (last && last_partial)) {
                         ValidateDonor (strand, stop, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
                                        label, report_errors, relax_to_warning, has_errors, feat);
                     }
                                             
                     // check acceptor
-                    if (!first || (checkExonAcceptor && !first_partial)) {
+                    if (!first || (checkExonAcceptor && !first_partial) || (first && first_partial)) {
                         ValidateAcceptor (strand, start, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
                                        label, report_errors, relax_to_warning, has_errors, feat);
                     }
