@@ -94,7 +94,6 @@ static char const rcsid[] = "$Id$";
 #include <util/tables/raw_scoremat.h>
 #include <objtools/readers/getfeature.hpp>
 #include <html/htmlhelper.hpp>
-#include <algo/align/util/score_builder.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -1336,9 +1335,19 @@ CDisplaySeqalign::SAlnRowInfo *CDisplaySeqalign::x_PrepareRowData(void)
            m_AlignOption&eMergeAlign && m_AV->GetWidth(row) != 3) {
             if (alnIter != m_SeqalignSetRef->Get().end()){
                 //note we have N alignment but N+1 rows
-                CScoreBuilder cb;
-                match[row-1] = cb.GetIdentityCount(m_Scope, **alnIter);
-                align_length[row-1] =  cb.GetAlignLength(**alnIter, false);
+                int blast_score;
+                double blast_bits;
+                double blast_evalue;
+                int blast_sumn;
+                int num_ident;
+                list<int> use_this_gi;
+                CAlignFormatUtil::GetAlnScores(**alnIter, blast_score, blast_bits,
+                                               blast_evalue, blast_sumn,
+                                               num_ident, use_this_gi);
+
+
+                match[row-1] = num_ident;
+                align_length[row-1] =  (*alnIter)->GetAlignLength();
                 if (align_length[row-1] > 0){
                     percent_ident[row-1] = ((double)match[row-1])/align_length[row-1]*100;
                     align_stats[row-1] = NStr::DoubleToString(percent_ident[row-1], 1, 0) + 
