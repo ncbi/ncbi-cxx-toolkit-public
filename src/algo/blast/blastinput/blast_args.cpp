@@ -1808,7 +1808,7 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
         NCBI_THROW(CInputException, eInvalidInput, msg);
     }
     else {
-        int df_hitlist_size = (TSeqPos)opt.GetHitlistSize();
+        TSeqPos df_hitlist_size = opt.GetHitlistSize();
         if (hitlist_size != 0 || 
             df_hitlist_size <= MIN(m_NumDescriptions, m_NumAlignments)) { 
             if (hitlist_size == 0) hitlist_size = df_hitlist_size;
@@ -1820,11 +1820,12 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
             m_NumAlignments = MIN(m_NumAlignments, 
                               (TSeqPos)opt.GetHitlistSize());
         } else {
-            if (m_OutputFormat <= eFlatQueryAnchoredNoIdentities)
-        	opt.SetHitlistSize(MAX(m_NumDescriptions, m_NumAlignments));
-	    else 
+            if (m_OutputFormat <= eFlatQueryAnchoredNoIdentities) {
+                opt.SetHitlistSize(MAX(m_NumDescriptions, m_NumAlignments));
+            } else {
                 // These formats do not have sections just for descriptions or alignments.
-        	opt.SetHitlistSize(MIN(m_NumDescriptions, m_NumAlignments));
+                opt.SetHitlistSize(MIN(m_NumDescriptions, m_NumAlignments));
+            }
         }
     }
 
@@ -1849,11 +1850,11 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
     case eAsnBinary:
     case eCommaSeparatedValues:
     case eArchiveFormat:
-        if (m_NumAlignments != 0) {
+        if (args[kArgNumAlignments]) {
             LOG_POST(Warning << kArgNumAlignments << " should not be set "
                      "with " << kArgOutputFormat << " " << (int)m_OutputFormat);
         }
-        if (m_NumDescriptions != 0) {
+        if (args[kArgNumDescriptions]) {
             LOG_POST(Warning << kArgNumDescriptions << " should not be set "
                      "with " << kArgOutputFormat << " " << (int)m_OutputFormat);
         }
