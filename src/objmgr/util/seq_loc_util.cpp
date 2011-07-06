@@ -1594,6 +1594,24 @@ Int8 TestForOverlap64(const CSeq_loc& loc1,
         }
         multi_seq = true;
     }
+
+    // Get seq-ids. They should be cached by GetTotalRange() above and should
+    // not be null.
+    const CSeq_id *id1 = ploc1->GetId();
+    const CSeq_id *id2 = ploc2->GetId();
+    _ASSERT(id1);
+    _ASSERT(id2);
+    if ( scope ) {
+        if ( !IsSameBioseq(*id1, *id2, scope) ) {
+            return -1;
+        }
+    }
+    else {
+        if ( !id1->Equals(*id2) ) {
+            return -1;
+        }
+    }
+
     if ( scope && ploc1->IsWhole() ) {
         CBioseq_Handle h1 = scope->GetBioseqHandle(ploc1->GetWhole());
         if ( h1 ) {
