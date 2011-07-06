@@ -227,13 +227,26 @@ s_SeqAlignSetToXMLHsps(list<CRef<CHsp> >& xhsp_list,
 
         int q_start, q_end, s_start, s_end, q_frame=0, s_frame=0;
 
-        q_start = kAlign.GetSeqStart(0) + 1;
-        q_end = kAlign.GetSeqStop(0) + 1;
-        s_start = kAlign.GetSeqStart(1) + 1;
-        s_end = kAlign.GetSeqStop(1) + 1;
+        unsigned int num_gaps = 0;
+        int align_length = 0;
 
-        unsigned int num_gaps = kAlign.GetTotalGapCount();
-        int	align_length = kAlign.GetAlignLength();
+        if (kAlign.GetSegs().IsDendiag())
+        {
+        	align_length = final_aln->GetAlignLength();
+        	q_start = final_aln->GetSeqStart(0) + 1;
+        	q_end = final_aln->GetSeqStop(0) + 1;
+        	s_start = final_aln->GetSeqStart(1) + 1;
+        	s_end = final_aln->GetSeqStop(1) + 1;
+        }
+        else
+        {
+        	num_gaps = kAlign.GetTotalGapCount();
+        	align_length = kAlign.GetAlignLength();
+        	q_start = kAlign.GetSeqStart(0) + 1;
+        	q_end = kAlign.GetSeqStop(0) + 1;
+        	s_start = kAlign.GetSeqStart(1) + 1;
+        	s_end = kAlign.GetSeqStop(1) + 1;
+        }
 
         if (!kTranslated && query_is_na && subject_is_na) {
             q_frame = s_frame = 1;
