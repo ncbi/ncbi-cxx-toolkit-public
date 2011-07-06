@@ -2,7 +2,7 @@ WATCHERS = camacho madden maning fongah2
 
 APP = igblastn
 SRC = igblastn_app
-LIB_ = $(BLAST_INPUT_LIBS)  xalgoalignutil $(BLAST_LIBS) $(OBJMGR_LIBS) 
+LIB_ = $(BLAST_INPUT_LIBS)  xalgoalignutil xqueryparse $(BLAST_LIBS) $(OBJMGR_LIBS) 
 LIB = blast_app_util $(LIB_:%=%$(STATIC))
 
 # De-universalize Mac builds to work around a PPC toolchain limitation
