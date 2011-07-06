@@ -40,8 +40,8 @@ $(SUB_MF_IN):
 	    cvs upd -ld -D 1970-01-01 `basename \`dirname $@\``
 	@-cd $(srcdir)  &&  test -d CVS  &&  \
 	    cvs upd -A `basename \`dirname $@\``/Makefile.in
-	mkdir -p `dirname $@`
-	test -f $@  ||  cp -p $(build_sys_dir)/Makefile.in.skel $@
+	$(MKDIR) -p `dirname $@`
+	test -f $@  ||  $(COPY) -p $(build_sys_dir)/Makefile.in.skel $@
 
 $(builddir)/Makefile%: $(build_sys_dir)/Makefile%.in $(config_status)
 	$(UPDATE_CONFIGURABLE) $@

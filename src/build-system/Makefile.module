@@ -22,17 +22,17 @@ all_files: sources # makefiles
 sources: $(FILES) #$(FULL_MODULE) $(FULL_MODULE_BASE)
 
 clean_sources:
-	-rm $(FILES)
+	-$(RM) $(FILES)
 
 purge_sources:
-	-rm $(FILES) *_.cpp $(INCLUDEDIR)/*_.hpp $(MODULE).dump
-	-rm `grep -l '^[^"]*\$$Id\$$[^"]*$$' *.cpp $(INCLUDEDIR)/*.hpp`
+	-$(RM) $(FILES) *_.cpp $(INCLUDEDIR)/*_.hpp $(MODULE).dump
+	-$(RM) `grep -l '^[^"]*\$$Id\$$[^"]*$$' *.cpp $(INCLUDEDIR)/*.hpp`
 
 purge_all_sources:
-	-rm $(FILES) *.cpp $(INCLUDEDIR)/*.hpp $(MODULE).dump
+	-$(RM) $(FILES) *.cpp $(INCLUDEDIR)/*.hpp $(MODULE).dump
 
 purge_all_files:
-	-rm $(FILES) *.cpp $(INCLUDEDIR)/*.hpp Makefile.$(MODULE).lib \
+	-$(RM) $(FILES) *.cpp $(INCLUDEDIR)/*.hpp Makefile.$(MODULE).lib \
 	    $(MODULE).dump
 
 .NO_PARALLEL:
@@ -54,5 +54,5 @@ $(MODULE).module:
 	@touch $@
 
 directories:
-	mkdir -p $(top_srcdir)/src/$(MODULE_PATH)
-	mkdir -p $(top_srcdir)/include/$(MODULE_PATH)
+	$(MKDIR) -p $(top_srcdir)/src/$(MODULE_PATH)
+	$(MKDIR) -p $(top_srcdir)/include/$(MODULE_PATH)

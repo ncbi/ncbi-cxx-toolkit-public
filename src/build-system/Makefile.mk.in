@@ -16,7 +16,6 @@
 
 @make_shell@
 
-
 ### Configurable paths
 
 top_srcdir     = @top_srcdir@
@@ -51,13 +50,14 @@ STD_INCLUDE = -I$(incdir) -I$(includedir0) $(OPT_GROUPS:%=-I$(includedir0)/%)
 
 ### Auxiliary commands, filters
 
-RM       = rm -f
-RMDIR    = rm -rf
-COPY     = cp -p
+RM       = /bin/rm -f
+RMDIR    = /bin/rm -rf
+COPY     = /bin/cp -p
 BINCOPY  = @BINCOPY@
-TOUCH    = touch
+TOUCH    = /usr/bin/touch
+MKDIR    = /bin/mkdir
 BINTOUCH = $(TOUCH)
-LN_S       = @LN_S@
+LN_S     = @LN_S@
 
 ### filters for screening out bogus messages
 CC_FILTER    = @CC_FILTER@

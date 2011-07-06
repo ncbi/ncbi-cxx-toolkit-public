@@ -27,6 +27,9 @@ status_dir = @status_dir@
 ### Make sure we are using a right command shell
 
 @make_shell@
+RM    = /bin/rm
+TOUCH = /usr/bin/touch
+MKDIR = /bin/mkdir
 
 ### Protect against two MAKE processes running in the same dir
 
@@ -59,7 +62,7 @@ USRP_BRA = \
 	|| test ! -z "$(EXPENDABLE_USR_PROJ)" ; then \
    x_project="$(USR_PROJ) @UNIX_USR_PROJ@ - $(EXPENDABLE_USR_PROJ)" ; \
    expendable=false ; \
-   test -f requirements  ||  touch -t 197607040000 requirements ; \
+   test -f requirements  ||  $(TOUCH) -t 197607040000 requirements ; \
    for i in $$x_project ; do \
       if test "x$$i" = "x-" ; then \
          expendable=true ; \
@@ -79,7 +82,7 @@ USRP_KET = || $(NOTK_BRA) echo "FAILED$$NCBI_BUT_EXPENDABLE: $(rel_srcdir)/Makef
          echo "NOTE:  skipping project \"$$i\" due to unmet requirements"; \
       fi; \
    done ; \
-   test -s requirements  ||  rm -f requirements ; \
+   test -s requirements  ||  $(RM) -f requirements ; \
 fi
 
 MAKE_ASN = $(builddir)/new_module.sh "$$i"
@@ -156,7 +159,7 @@ APPP_BRA = \
 +if test ! -z "$(APP_PROJ)"  -o  ! -z "$(EXPENDABLE_APP_PROJ)" ; then \
    x_project="$(APP_PROJ) - $(EXPENDABLE_APP_PROJ)" ; \
    expendable=false ; \
-   test -f requirements  ||  touch -t 197607040000 requirements ; \
+   test -f requirements  ||  $(TOUCH) -t 197607040000 requirements ; \
    for i in $$x_project ; do \
      if test "x$$i" = "x-" ; then \
         expendable=true ; \
@@ -174,7 +177,7 @@ APPP_KET = && continue ; \
        echo "NOTE:  skipping project \"$$i\" due to unmet requirements"; \
      fi; \
    done ; \
-   test -s requirements  ||  rm -f requirements ; \
+   test -s requirements  ||  $(RM) -f requirements ; \
 fi
 
 CHECK_BRA = \
@@ -208,10 +211,10 @@ sources: configurables
 	@$(RWL) $(MAKE) $(MFLAGS_NR) sources.usr
 	@$(MAKE) $(MFLAGS_NR) sources.nonusr
 all.usr sources.usr: configurables
-	@-rm -f .built .built_r
+	@-$(RM) -f .built .built_r
 	@-echo "`date`: starting to build in `pwd`" > .building
 	@$(USRP_BRA) all   $(USRP_KET)
-	@-rm -f .building
+	@-$(RM) -f .building
 	@-echo "`date`: local build succeeded in `pwd`" > .built
 sources.nonusr:
 	@$(ASNP_BRA) all   $(ASNP_KET)
@@ -223,22 +226,22 @@ all.real:
 	@$(MAKE) $(MFLAGS_NR) all.usr
 	@$(MAKE) $(MFLAGS_NR) all.nonusr
 all.nonusr: sources.nonusr
-	@-rm -f .built .built_r
+	@-$(RM) -f .built .built_r
 	@-echo "`date`: starting to build in `pwd`" > .building
 	@cd $(abs_srcdir)  &&  $(MAKE_LOCK_MAP)
 	@$(LIBP_BRA) all   $(LIBP_KET)
 	@$(APPP_BRA) all   $(APPP_KET)
-	@-rm -f .building
+	@-$(RM) -f .building
 	@-echo "`date`: local build succeeded in `pwd`" > .built
 
 clean.real:
 	@$(RWL) $(MAKE) $(MFLAGS_NR) clean.usr
 	@$(MAKE) $(MFLAGS_NR) clean.nonusr
 clean.usr:
-	@-rm -f .building .built .built_r
+	@-$(RM) -f .building .built .built_r
 	@$(USRP_BRA) clean $(USRP_KET)
 clean.nonusr: # clean_sources
-	@-rm -f .building .built .built_r
+	@-$(RM) -f .building .built .built_r
 	@cd $(abs_srcdir)  &&  $(MAKE_LOCK_MAP)
 	@$(LIBP_BRA) clean $(LIBP_KET)
 	@$(APPP_BRA) clean $(APPP_KET)
@@ -251,10 +254,10 @@ purge.real:
 	@$(RWL) $(MAKE) $(MFLAGS_NR) purge.usr
 	@$(MAKE) $(MFLAGS_NR) purge.nonusr
 purge.usr:
-	@-rm -f .building .built .built_r
+	@-$(RM) -f .building .built .built_r
 	@$(USRP_BRA) purge $(USRP_KET)
 purge.nonusr: # purge_sources
-	@-rm -f .building .built .built_r
+	@-$(RM) -f .building .built .built_r
 	@cd $(abs_srcdir)  &&  $(MAKE_LOCK_MAP)
 	@$(LIBP_BRA) purge $(LIBP_KET)
 	@$(APPP_BRA) purge $(APPP_KET)
@@ -332,10 +335,10 @@ check_add_r: check_add_r.needs-reqs
 libs_r:      libs_r.needs-reqs
 
 all_r.real: all.real
-	@-rm -f .built_r
+	@-$(RM) -f .built_r
 	@-echo "`date`: building in subdirectories of `pwd`" > .building
 	@$(SUB_BRA) all_r   $(SUB_KET)
-	@-rm -f .building
+	@-$(RM) -f .building
 	@-echo "`date`: recursive build succeeded in `pwd`" > .built_r
 clean_r.real: clean.real
 	@$(SUB_BRA) clean_r $(SUB_KET)
@@ -358,7 +361,7 @@ PROJECTS  = $(builddir)/projects.pseudo.i
 
 # Some preprocessors only accept files with appropriate extensions....
 $(builddir)/projects.pseudo.c: $(PROJECTS_)
-	rm -f $@
+	$(RM) -f $@
 	if test -r "$(PROJECTS_)"; then \
 	    $(LN_S) "$(PROJECTS_)" $@; \
 	else \
@@ -440,11 +443,11 @@ check_add_p: check_add_p.needs-reqs
 libs_p:      libs_p.needs-reqs
 
 all_p.real: $(RELEVANT_SUB_FILE) $(IRRELEVANT_SUB_FILE)
-	@-rm -f .built_r
+	@-$(RM) -f .built_r
 	@-echo "`date`: starting to build in `pwd`" > .building
 	@+if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS_NR) all.real; else true; fi
 	@+if $(RELEVANT_SUBS); then $(MAKE) $(MFLAGS_NR) configurables  &&  $(SUB_BRA_P) all_p $(SUB_KET_P); else true; fi
-	@-rm -f .building
+	@-$(RM) -f .building
 	@-echo "`date`: recursive build succeeded in `pwd`" > .built_r
 
 clean_p.real: $(RELEVANT_SUB_FILE) $(IRRELEVANT_SUB_FILE)

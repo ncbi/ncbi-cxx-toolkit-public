@@ -27,16 +27,16 @@ requirements:  $(REQUIRES:%=$(status_dir)/%.enabled)
 @GCCPCH@pchdir = $(incdir)/common/ncbi_pch_impl.hpp.gch
 @GCCPCH@pchsrc = $(includedir0)/common/ncbi_pch_impl.hpp
 @GCCPCH@$(pchdir)/normal: $(pchsrc)
-@GCCPCH@	mkdir -p $(pchdir)
+@GCCPCH@	$(MKDIR) -p $(pchdir)
 @GCCPCH@	$(CXX_WRAPPER) $(ORIG_CXX) -xc++-header @f_compile@ $(ORIG_CXXFLAGS) $(ORIG_CPPFLAGS) -DNCBI_PCH__HPP= $(pchsrc) @f_outobj@$@ $(CXX_FILTER)
 @GCCPCH@$(pchdir)/dll: $(pchsrc)
-@GCCPCH@	mkdir -p $(pchdir)
+@GCCPCH@	$(MKDIR) -p $(pchdir)
 @GCCPCH@	$(CXX_WRAPPER) $(ORIG_CXX) -xc++-header @f_compile@ $(ORIG_CXXFLAGS) $(CXXFLAGS_DLL) $(ORIG_CPPFLAGS) -DNCBI_PCH__HPP= $(pchsrc) @f_outobj@$@ $(CXX_FILTER)
 @GCCPCH@$(pchdir)/fast: $(pchsrc)
-@GCCPCH@	mkdir -p $(pchdir)
+@GCCPCH@	$(MKDIR) -p $(pchdir)
 @GCCPCH@	$(CXX_WRAPPER) $(ORIG_CXX) -xc++-header @f_compile@ $(FAST_CXXFLAGS) $(ORIG_CPPFLAGS) -DNCBI_PCH__HPP= $(pchsrc) @f_outobj@$@ $(CXX_FILTER)
 @GCCPCH@$(pchdir)/fastdll: $(pchsrc)
-@GCCPCH@	mkdir -p $(pchdir)
+@GCCPCH@	$(MKDIR) -p $(pchdir)
 @GCCPCH@	$(CXX_WRAPPER) $(ORIG_CXX) -xc++-header @f_compile@ $(FAST_CXXFLAGS) $(CXXFLAGS_DLL) $(ORIG_CPPFLAGS) -DNCBI_PCH__HPP= $(pchsrc) @f_outobj@$@ $(CXX_FILTER)
 
 clean-common:
@@ -48,7 +48,7 @@ clean-common:
 	-$(RM) ir.out
 
 ### Header exporting, SSS-style.
-# NB: export-headers explicitly uses cp rather than $(bincopy) because
+# NB: export-headers explicitly uses $(COPY) rather than $(bincopy) because
 # the whole point is to have build-specific copies of the headers
 # guaranteed to be in sync with the corresponding library.
 
@@ -60,16 +60,16 @@ export-headers: $(exp_headers)
 
 $(pkg_incdir)/%: $(srcdir)/%
 	@if [ -n "$(PACKAGE_EXPORT)" -a -n "$(HEADER_EXPORT)" ]; then \
-	    test -d $(pkg_incdir)  ||  rm -f $(pkg_incdir); \
-	    mkdir -p $(pkg_incdir); \
-	    echo cp -fp $< $@; \
-	    cp -fp $< $@; \
+	    test -d $(pkg_incdir)  ||  $(RM) -f $(pkg_incdir); \
+	    $(MKDIR) -p $(pkg_incdir); \
+	    echo $(COPY) -fp $< $@; \
+	    $(COPY) -fp $< $@; \
 	fi
 
 purge-headers:
 	@-if [ -n "$(PACKAGE_EXPORT)" -a -n "$(HEADER_EXPORT)" ]; then \
-	    echo rm -f $(exp_headers); \
-	    rm -f $(exp_headers); \
+	    echo $(RM) -f $(exp_headers); \
+	    $(RM) -f $(exp_headers); \
 	    cd $(incdest)  &&  rmdir -p $(PACKAGE_EXPORT); \
 	fi
 
