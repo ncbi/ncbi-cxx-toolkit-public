@@ -261,6 +261,11 @@ CGenericSearchArgs::ExtractAlgorithmOptions(const CArgs& args,
     }
 
     if (args[kArgEffSearchSpace]) {
+        LOG_POST(Warning << kArgEffSearchSpace << " is not compatible with " <<
+                     "the new finite size correction algorithsm.  Falling back " <<
+                     "to the old statistics.");
+        CNcbiEnvironment env;
+        env.Set("OLD_FSC", "true");
         opt.SetEffectiveSearchSpace(args[kArgEffSearchSpace].AsInt8());
     }
 
