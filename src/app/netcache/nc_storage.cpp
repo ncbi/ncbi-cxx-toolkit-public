@@ -1705,7 +1705,8 @@ CNCBlobStorage::x_DoBackgroundWork(void)
             break;
         m_GCInWork = true;
 
-        int next_dead = int(time(NULL));
+        int cur_time = int(time(NULL));
+        int next_dead = cur_time;
         if (do_extra_gc) {
             if (m_CurDBSize <= m_ExtraGCOffSize) {
                 do_extra_gc = false;
@@ -1749,10 +1750,15 @@ CNCBlobStorage::x_DoBackgroundWork(void)
                     x_GC_CleanDBFile(file, next_dead);
                 }
                 if (x_CheckFileAging(it->second->file_id, file)) {
+                    m_CurDBSize -= file->GetFileSize();
                     x_DeleteDBFile(it);
+                    if (do_extra_gc  &&  m_CurDBSize <= m_ExtraGCOffSize) {
+                        do_extra_gc = false;
+                        next_dead = cur_time;
+                    }
                 }
             }
-            m_LastDeadTime = next_dead;
+            m_LastDeadTime = cur_time;
         }
 
         ctx->SetBytesRd(Int8(m_GCRead));

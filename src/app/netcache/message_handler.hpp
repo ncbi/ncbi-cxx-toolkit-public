@@ -467,10 +467,21 @@ private:
     bool x_CanStartSyncCommand(bool can_abort = true);
     void x_ReadFullBlobsList(void);
     TServersList x_GetCurSlotServers(void);
-    void x_CreateProxyGetCmd(string& proxy_cmd, Uint1 quorum, bool search);
-    void x_CreateProxyGetSizeCmd(string& proxy_cmd, Uint1 quorum, bool search);
-    void x_CreateProxyGetLastCmd(string& proxy_cmd, Uint1 quorum, bool search);
-    void x_CreateProxyGetMetaCmd(string& proxy_cmd, Uint1 quorum);
+    void x_CreateProxyGetCmd(string& proxy_cmd,
+                             Uint1 quorum,
+                             bool search,
+                             bool force_local);
+    void x_CreateProxyGetSizeCmd(string& proxy_cmd,
+                                 Uint1 quorum,
+                                 bool search,
+                                 bool force_local);
+    void x_CreateProxyGetLastCmd(string& proxy_cmd,
+                                 Uint1 quorum,
+                                 bool search,
+                                 bool force_local);
+    void x_CreateProxyGetMetaCmd(string& proxy_cmd,
+                                 Uint1 quorum,
+                                 bool force_local);
     bool x_EcecuteProxyCmd(Uint8 srv_id,
                            const string& proxy_cmd,
                            bool  need_reader,

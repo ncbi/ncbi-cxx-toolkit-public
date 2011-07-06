@@ -153,7 +153,7 @@ s_SlotsInitiallySynced(SSyncSrvData* srv_data, Uint2 cnt_slots)
         if (srv_data->slots_to_init == 0) {
             s_SrvInitiallySynced(srv_data);
             if (s_WaitToOpenToClients.Add(-1) == 0)
-                CNetCacheServer::MayOpenToClients();
+                CNetCacheServer::InitialSyncComplete();
         }
     }
 }
@@ -198,7 +198,7 @@ s_CommitSync(SSyncSlotData* slot_data, SSyncSlotSrv* slot_srv)
     CFastMutexGuard g_srv(slot_srv->lock);
     if (slot_srv->is_by_blobs)
         slot_srv->was_blobs_sync = true;
-    if (!slot_srv->made_initial_sync  &&  !CNetCacheServer::IsOpenToClients())
+    if (!slot_srv->made_initial_sync  &&  !CNetCacheServer::IsInitiallySynced())
     {
         slot_srv->made_initial_sync = true;
         SSyncSrvData* srv_data = slot_srv->srv_data;
@@ -489,7 +489,7 @@ CNCPeriodicSync::Initialize(void)
     }
 
     if (cnt_to_sync == 0)
-        CNetCacheServer::MayOpenToClients();
+        CNetCacheServer::InitialSyncComplete();
 
     return true;
 }

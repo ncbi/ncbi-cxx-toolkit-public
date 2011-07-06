@@ -208,8 +208,8 @@ public:
                                  Uint8 remote_rec_no);
     static void SyncCancelOnPeer(Uint8 server_id, Uint2 slot);
     static void CachingCompleted(void);
-    static bool IsOpenToClients(void);
-    static void MayOpenToClients(void);
+    static bool IsInitiallySynced(void);
+    static void InitialSyncComplete(void);
     static void UpdateLastRecNo(void);
 
     static bool AddDeferredTask(CStdRequest* task);
@@ -319,7 +319,7 @@ private:
     /// Signal which caused the shutdown request
     int                            m_Signal;
     bool                           m_DebugMode;
-    bool                           m_OpenToClients;
+    bool                           m_InitiallySynced;
     bool                           m_CachingComplete;
 };
 

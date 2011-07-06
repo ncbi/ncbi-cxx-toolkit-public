@@ -378,7 +378,7 @@ CNetCacheServer::CNetCacheServer(void)
       m_OldSpecParams(NULL),
       m_Shutdown(false),
       m_Signal(0),
-      m_OpenToClients(false),
+      m_InitiallySynced(false),
       m_CachingComplete(false)
 {}
 
@@ -438,15 +438,26 @@ CNetCacheServer::Initialize(bool do_reinit)
         Uint4 port = m_CtrlPort;
         if (m_DebugMode)
             port += 10;
-        INFO_POST("Opening control port " << port);
+        INFO_POST("Opening control port: " << port);
         AddListener(new CNCMsgHndlFactory_Proxy(), port);
-        try {
-            StartListening();
-        }
-        catch (CServer_Exception& ex) {
-            ERR_POST(Critical << "Cannot listen to control port: " << ex);
-            return false;
-        }
+    }
+    string ports_str;
+    ITERATE(TPortsList, it, m_Ports) {
+        unsigned int port = *it;
+        if (IsDebugMode())
+            port += 10;
+        AddListener(new CNCMsgHndlFactory_Proxy(), port);
+        ports_str.append(NStr::IntToString(port));
+        ports_str.append(", ", 2);
+    }
+    ports_str.resize(ports_str.size() - 2);
+    INFO_POST("Opening client ports: " << ports_str);
+    try {
+        StartListening();
+    }
+    catch (CServer_Exception& ex) {
+        ERR_POST(Critical << "Cannot listen to control port: " << ex);
+        return false;
     }
 
     return true;
@@ -461,17 +472,15 @@ CNetCacheServer::Finalize(void)
 
     if (g_NCStorage)
         UpdateLastRecNo();
-    if (s_TaskPool)
-        s_TaskPool->KillAllThreads(true);
     CNCPeriodicSync::Finalize();
     CNCMirroring::Finalize();
     if (s_TaskPool)
         s_TaskPool->KillAllThreads(true);
+    if (GetThreadPool())
+        GetThreadPool()->KillAllThreads(true);
     if (g_NCStorage)
         g_NCStorage->Finalize();
     //delete g_NCStorage;
-    if (s_TaskPool)
-        s_TaskPool->KillAllThreads(true);
     //delete s_TaskPool;
     CNCSyncLog::Finalize();
     CNCDistributionConf::Finalize();
@@ -730,7 +739,13 @@ CNetCacheServer::StartSyncWithPeer(Uint8                server_id,
     else {
         CTempString str1, str2;
         NStr::SplitInTwo(response, " ", str1, str2);
-        remote_rec_no = NStr::StringToUInt8(str2);
+        try {
+            remote_rec_no = NStr::StringToUInt8(str2);
+        }
+        catch (CStringException& ex) {
+            ERR_POST(Warning << "Cannot execute command on peer: " << ex);
+            return eNetworkError;
+        }
         if (s_ReadBlobsList(reader.get(), blobs_list))
             return eProceedWithBlobs;
         else
@@ -1481,34 +1496,15 @@ CNetCacheServer::SyncCancelOnPeer(Uint8 server_id,
 }
 
 bool
-CNetCacheServer::IsOpenToClients(void)
+CNetCacheServer::IsInitiallySynced(void)
 {
-    return g_NetcacheServer  &&  g_NetcacheServer->m_OpenToClients;
+    return g_NetcacheServer  &&  g_NetcacheServer->m_InitiallySynced;
 }
 
 void
-CNetCacheServer::MayOpenToClients(void)
+CNetCacheServer::InitialSyncComplete(void)
 {
-    try {
-        string ports_str;
-        ITERATE(TPortsList, it, g_NetcacheServer->m_Ports) {
-            unsigned int port = *it;
-            if (g_NetcacheServer->IsDebugMode())
-                port += 10;
-            g_NetcacheServer->AddListener(new CNCMsgHndlFactory_Proxy(), port);
-            ports_str.append(NStr::IntToString(port));
-            ports_str.append(", ", 2);
-        }
-        ports_str.resize(ports_str.size() - 2);
-        INFO_POST("Opening ports " << ports_str << " to clients");
-        g_NetcacheServer->StartListening();
-        g_NetcacheServer->m_OpenToClients = true;
-    }
-    catch (CServer_Exception& ex) {
-        ERR_POST(Critical << "Failed to open client ports: " << ex
-                          << " Shutting down.");
-        g_NetcacheServer->RequestShutdown();
-    }
+    g_NetcacheServer->m_InitiallySynced = true;
 }
 
 void

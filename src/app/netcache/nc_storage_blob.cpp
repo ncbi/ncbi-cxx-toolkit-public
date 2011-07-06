@@ -740,16 +740,7 @@ CNCBlobAccessor::DeleteBlob(int dead_time)
     if (!IsBlobExists())
         return;
 
-    m_NewData = m_VerManager->CreateNewVersion();
-    m_NewData->create_time = CNetCacheServer::GetPreciseTime();
-    m_NewData->ttl = m_CurData->ttl;
-    SetNewBlobExpire(int(m_NewData->create_time / kNCTimeTicksInSec) - 1,
-                     dead_time + 1);
-    m_NewData->create_id = m_NewData->coords.blob_id;
-    m_NewData->create_server = CNCDistributionConf::GetSelfID();
-    m_NewData->slot = m_CurData->slot;
-
-    Finalize();
+    m_VerManager->DeleteVersion(m_CurData);
 }
 
 END_NCBI_SCOPE

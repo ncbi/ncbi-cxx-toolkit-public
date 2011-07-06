@@ -427,7 +427,7 @@ CNCDistributionConf::GetCntSyncWorkers(void)
 Uint1
 CNCDistributionConf::GetMaxWorkerTimePct(void)
 {
-    return CNetCacheServer::IsOpenToClients()? s_MaxWorkerTimePct: 100;
+    return CNetCacheServer::IsInitiallySynced()? s_MaxWorkerTimePct: 100;
 }
 
 Uint1
