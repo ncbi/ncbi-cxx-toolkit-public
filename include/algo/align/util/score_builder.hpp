@@ -34,6 +34,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <util/range_coll.hpp>
+#include <objtools/alnmgr/score_builder_base.hpp>
 #include <algo/blast/api/blast_types.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 
@@ -49,7 +50,7 @@ BEGIN_SCOPE(objects)
 
 class CScope;
 
-class NCBI_XALGOALIGN_EXPORT CScoreBuilder
+class NCBI_XALGOALIGN_EXPORT CScoreBuilder : public CScoreBuilderBase
 {
 public:
 
@@ -57,31 +58,6 @@ public:
     CScoreBuilder(enum blast::EProgram program_type);
     CScoreBuilder(blast::CBlastOptionsHandle& options);
     ~CScoreBuilder();
-
-    enum EScoreType {
-        //< typical blast 'score'
-        eScore_Blast,
-
-        //< blast 'bit_score' score
-        eScore_Blast_BitScore,
-
-        //< blast 'e_value' score
-        eScore_Blast_EValue,
-
-        //< count of ungapped identities as 'num_ident'
-        eScore_IdentityCount,
-
-        //< count of ungapped identities as 'num_mismatch'
-        eScore_MismatchCount,
-
-        //< percent identity as defined in CSeq_align, range 0.0-100.0
-        //< this will also create 'num_ident' and 'num_mismatch'
-        //< NOTE: see Seq_align.hpp for definitions
-        eScore_PercentIdentity,
-
-        //< percent coverage of query as 'pct_coverage', range 0.0-100.0
-        eScore_PercentCoverage
-    };
 
     /// @name Functions to add scores directly to Seq-aligns
     /// @{
@@ -106,40 +82,6 @@ public:
     /// @name Functions to compute scores without adding
     /// @{
 
-    /// Compute percent identity (range 0-100)
-    enum EPercentIdentityType {
-        eGapped,    //< count gaps as mismatches
-        eUngapped,  //< ignore gaps; only count aligned bases
-        eGBDNA      //< each gap counts as a 1nt mismatch
-    };
-    double GetPercentIdentity(CScope& scope, const CSeq_align& align,
-                              EPercentIdentityType type = eGapped);
-
-    /// Compute percent coverage of the query (sequence 0) (range 0-100)
-    double GetPercentCoverage(CScope& scope, const CSeq_align& align);
-
-    /// Compute percent identity or coverage of the query within specified range
-    double GetPercentIdentity(CScope& scope, const CSeq_align& align,
-                              const TSeqRange &range,
-                              EPercentIdentityType type = eGapped);
-    double GetPercentCoverage(CScope& scope, const CSeq_align& align,
-                              const TSeqRange &range);
-
-    /// Compute percent identity or coverage of the query within specified collection of ranges
-    double GetPercentIdentity(CScope& scope, const CSeq_align& align,
-                              const CRangeCollection<TSeqPos> &ranges,
-                              EPercentIdentityType type = eGapped);
-    double GetPercentCoverage(CScope& scope, const CSeq_align& align,
-                              const CRangeCollection<TSeqPos> &ranges);
-
-    /// Compute the number of identities in the alignment
-    int GetIdentityCount  (CScope& scope, const CSeq_align& align);
-
-    /// Compute the number of mismatches in the alignment
-    int GetMismatchCount  (CScope& scope, const CSeq_align& align);
-    void GetMismatchCount  (CScope& scope, const CSeq_align& align,
-                            int& identities, int& mismatches);
-
     /// Compute the BLAST score of the alignment
     int GetBlastScore     (CScope& scope, const CSeq_align& align);
 
@@ -148,17 +90,6 @@ public:
 
     /// Compute the BLAST e-value
     double GetBlastEValue (CScope& scope, const CSeq_align& align);
-
-    /// Compute the number of gaps in the alignment
-    int GetGapCount       (const CSeq_align& align);
-
-    /// Compute the number of gap bases in the alignment (= length of all gap
-    /// segments)
-    int GetGapBaseCount   (const CSeq_align& align);
-
-    /// Compute the length of the alignment (= length of all segments, gaps +
-    /// aligned)
-    TSeqPos GetAlignLength(const CSeq_align& align, bool ungapped=false);
 
     /// @}
 
