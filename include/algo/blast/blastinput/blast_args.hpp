@@ -544,7 +544,8 @@ private:
     /// file
     CRef<objects::CPssmWithParameters>
     x_CreatePssmFromMsa(CNcbiIstream& input_stream, CBlastOptions& opt, 
-                        bool save_ascii_pssm, unsigned int msa_master_idx);
+                        bool save_ascii_pssm, unsigned int msa_master_idx,
+                        bool ignore_pssm_tmpl_seq);
 };
 
 /// Argument class to collect options specific to PHI-BLAST

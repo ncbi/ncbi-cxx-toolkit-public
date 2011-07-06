@@ -199,7 +199,7 @@ TField B4Param_UngappedMode          ("UngappedMode",          CBlast4_value::e_
 // New option for RMBlastN -RMH-
 TField B4Param_ComplexityAdjustMode          ("ComplexityAdjustMode",          CBlast4_value::e_Boolean);
 // New option for RMBlastN -RMH-
-TField B4Param_MaskLevel          ("MaskLevel",               CBlast4_value::e_Integer);
+TField B4Param_MaskLevel             ("MaskLevel",             CBlast4_value::e_Integer);
 TField B4Param_UseRealDbSize         ("UseRealDbSize",         CBlast4_value::e_Boolean);
 TField B4Param_WindowMaskerDatabase  ("WindowMaskerDatabase",  CBlast4_value::e_String);
 TField B4Param_WindowMaskerTaxId     ("WindowMaskerTaxId",     CBlast4_value::e_Integer);
@@ -214,6 +214,7 @@ TField B4Param_GapXDropoffFinal      ("GapXDropoffFinal",      CBlast4_value::e_
 TField B4Param_SmithWatermanMode     ("SmithWatermanMode",     CBlast4_value::e_Boolean);
 TField B4Param_UnifiedP              ("UnifiedP",              CBlast4_value::e_Integer);
 TField B4Param_ForceMbIndex          ("ForceMbIndex",          CBlast4_value::e_Boolean);
+TField B4Param_IgnoreMsaMaster       ("IgnoreMsaMaster",       CBlast4_value::e_Boolean);
 TField B4Param_MbIndexName           ("MbIndexName",           CBlast4_value::e_String);
 
 TField B4Param_Web_BlastSpecialPage  ("Web_BlastSpecialPage", CBlast4_value::e_String);

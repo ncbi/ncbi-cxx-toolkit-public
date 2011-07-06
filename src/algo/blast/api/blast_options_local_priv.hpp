@@ -279,6 +279,9 @@ public:
     
     int GetPseudoCount() const;
     void SetPseudoCount(int ps);
+
+    bool GetIgnoreMsaMaster() const;
+    void SetIgnoreMsaMaster(bool val);
     
     /******************** Megablast Database Index *******************/
     bool GetUseIndex() const;
@@ -1452,6 +1455,18 @@ inline void
 CBlastOptionsLocal::SetPseudoCount(int pc)
 {
     m_PSIBlastOpts->pseudo_count = pc;
+}
+
+inline bool 
+CBlastOptionsLocal::GetIgnoreMsaMaster() const
+{
+    return m_PSIBlastOpts->nsg_compatibility_mode;
+}
+
+inline void 
+CBlastOptionsLocal::SetIgnoreMsaMaster(bool val)
+{
+    m_PSIBlastOpts->nsg_compatibility_mode = val;
 }
 
 inline void 

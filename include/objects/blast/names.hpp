@@ -182,6 +182,7 @@ NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_UnifiedP;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_WindowMaskerDatabase;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_WindowMaskerTaxId;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_ForceMbIndex;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_IgnoreMsaMaster;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_MbIndexName;
 
 // List of web-related options

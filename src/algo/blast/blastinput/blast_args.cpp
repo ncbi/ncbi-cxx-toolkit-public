@@ -1019,8 +1019,10 @@ CPsiBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         msa_exclusions.push_back(kArgQueryLocation);
         // pattern and MSA is not supported
         msa_exclusions.push_back(kArgPHIPatternFile);   
+        arg_desc.SetCurrentGroup("");
 
         // MSA restart file
+        arg_desc.SetCurrentGroup("PSSM engine options");
         arg_desc.AddOptionalKey(kArgMSAInputFile, "align_restart",
                                 "File name of multiple sequence alignment to "
                                 "restart PSI-BLAST",
@@ -1032,18 +1034,40 @@ CPsiBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         }
 
         arg_desc.AddOptionalKey(kArgMSAMasterIndex, "index",
-                                "Index (1-based) of sequence to use as a master"
-                                " in the multiple sequence alignment. If not "
-                                "provided, the first sequence in the multiple "
-                                "sequence alignment will be used",
-                                CArgDescriptions::eInteger);
+                                "Ordinal number (1-based index) of the sequence"
+                                " to use as a master in the multiple sequence "
+                                "alignment. If not provided, the first sequence"
+                                " in the multiple sequence alignment will be "
+                                "used", CArgDescriptions::eInteger);
         arg_desc.SetConstraint(kArgMSAMasterIndex, 
                                new CArgAllowValuesGreaterThanOrEqual(1));
         ITERATE(vector<string>, exclusion, msa_exclusions) {
-            arg_desc.SetDependency(kArgMSAInputFile,
+            arg_desc.SetDependency(kArgMSAMasterIndex,
                                    CArgDescriptions::eExcludes,
                                    *exclusion);
         }
+        arg_desc.SetDependency(kArgMSAMasterIndex,
+                               CArgDescriptions::eRequires,
+                               kArgMSAInputFile);
+        arg_desc.SetDependency(kArgMSAMasterIndex,
+                               CArgDescriptions::eExcludes,
+                               kArgIgnoreMsaMaster);
+
+        arg_desc.AddFlag(kArgIgnoreMsaMaster, 
+                         "Ignore the master sequence when creating PSSM", true);
+        vector<string> ignore_pssm_master_exclusions;
+        ignore_pssm_master_exclusions.push_back(kArgMSAMasterIndex);
+        ignore_pssm_master_exclusions.push_back(kArgPSIInputChkPntFile);
+        ignore_pssm_master_exclusions.push_back(kArgQuery);
+        ignore_pssm_master_exclusions.push_back(kArgQueryLocation);
+        ITERATE(vector<string>, exclusion, msa_exclusions) {
+            arg_desc.SetDependency(kArgIgnoreMsaMaster,
+                                   CArgDescriptions::eExcludes,
+                                   *exclusion);
+        }
+        arg_desc.SetDependency(kArgIgnoreMsaMaster,
+                               CArgDescriptions::eRequires,
+                               kArgMSAInputFile);
 
         // PSI-BLAST checkpoint
         arg_desc.AddOptionalKey(kArgPSIInputChkPntFile, "psi_chkpt_file", 
@@ -1063,11 +1087,13 @@ CPsiBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 CRef<CPssmWithParameters>
 CPsiBlastArgs::x_CreatePssmFromMsa(CNcbiIstream& input_stream, 
                                    CBlastOptions& opt, bool save_ascii_pssm, 
-                                   unsigned int msa_master_idx)
+                                   unsigned int msa_master_idx,
+                                   bool ignore_pssm_tmplt_seq)
 {
     // FIXME get these from CBlastOptions
     CPSIBlastOptions psiblast_opts;
     PSIBlastOptionsNew(&psiblast_opts); 
+    psiblast_opts->nsg_compatibility_mode = ignore_pssm_tmplt_seq;
 
     CPSIDiagnosticsRequest diags(PSIDiagnosticsRequestNewEx(save_ascii_pssm));
     CPsiBlastInputClustalW pssm_input(input_stream, *psiblast_opts,
@@ -1106,8 +1132,10 @@ CPsiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
                 msa_master_idx = args[kArgMSAMasterIndex].AsInteger() - 1;
             }
             m_Pssm = x_CreatePssmFromMsa(in, opt, kSaveAsciiPssm,
-                                         msa_master_idx);
+                                         msa_master_idx, 
+                                         args[kArgIgnoreMsaMaster]);
         }
+        opt.SetIgnoreMsaMaster(args[kArgIgnoreMsaMaster]);
     }
 
     if (args.Exist(kArgPSIInputChkPntFile) && args[kArgPSIInputChkPntFile]) {

@@ -124,7 +124,8 @@ enum EBlastOptIdx {
     eBlastOpt_ForceMbIndex,         // corresponds to -use_index flag
     eBlastOpt_MbIndexName,          // corresponds to -index_name flag
     eBlastOpt_BestHitScoreEdge,
-    eBlastOpt_BestHitOverhang
+    eBlastOpt_BestHitOverhang,
+    eBlastOpt_IgnoreMsaMaster
 };
 
 /// Encapsulates all blast input parameters
@@ -794,6 +795,9 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const bool & v)
         x_SetParam(B4Param_ForceMbIndex, v);
         return;
 
+    case eBlastOpt_IgnoreMsaMaster:
+        x_SetParam(B4Param_IgnoreMsaMaster, v);
+        return;
     default:
         break;
     }
@@ -2189,6 +2193,24 @@ CBlastOptions::SetPseudoCount(int u)
     }
 }
 
+bool
+CBlastOptions::GetIgnoreMsaMaster() const
+{
+    if (! m_Local) {
+        x_Throwx("Error: GetIgnoreMsaMaster() not available.");
+    }
+    return m_Local->GetIgnoreMsaMaster();
+}
+void 
+CBlastOptions::SetIgnoreMsaMaster(bool val)
+{
+    if (m_Local) {
+        m_Local->SetIgnoreMsaMaster(val);
+    }
+    if (m_Remote) {
+        m_Remote->SetValue(eBlastOpt_IgnoreMsaMaster, val);
+    }
+}
 
 /// Allows to dump a snapshot of the object
 void 

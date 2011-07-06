@@ -377,6 +377,9 @@ public:
 
     int GetPseudoCount() const;
     void SetPseudoCount(int u);
+
+    bool GetIgnoreMsaMaster() const;
+    void SetIgnoreMsaMaster(bool val);
     
     /******************** Megablast Database Index *******************/
     bool GetUseIndex() const;
