@@ -383,13 +383,13 @@ void CWiggleReader::x_AssignTrackData(
     CRef<CSeq_annot>& annot )
 //  ----------------------------------------------------------------------------
 {
-    CAnnot_descr& desc = annot->SetDesc();
-    CRef<CAnnotdesc> title( new CAnnotdesc() );
-    title->SetTitle( m_pTrackDefaults->Description() );
-    desc.Set().push_back( title );
-    CRef<CAnnotdesc> name( new CAnnotdesc() );
-    name->SetName( m_pTrackDefaults->Name() );
-    desc.Set().push_back( name );
+    if ( !m_pTrackDefaults->Description().empty() ) {
+        annot->SetTitle(m_pTrackDefaults->Description());
+    }
+
+    if ( !m_pTrackDefaults->Name().empty() ) {
+        annot->AddName(m_pTrackDefaults->Name());
+    }
 
     CRef<CUser_object> trackdata( new CUser_object() );
     trackdata->SetType().SetStr( "Track Data" );   
@@ -399,6 +399,7 @@ void CWiggleReader::x_AssignTrackData(
         ++cit;
     }
     if ( trackdata->CanGetData() && ! trackdata->GetData().empty() ) {
+        CAnnot_descr& desc = annot->SetDesc();
         CRef<CAnnotdesc> user( new CAnnotdesc() );
         user->SetUser( *trackdata );
         desc.Set().push_back( user );
