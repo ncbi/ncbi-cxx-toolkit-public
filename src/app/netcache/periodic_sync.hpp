@@ -101,6 +101,7 @@ public:
     // Completes the current sync transaction
     static void Commit(Uint8 server_id,
                        Uint2 slot,
+                       Uint8 sync_id,
                        Uint8 local_synced_rec_no,
                        Uint8 remote_synced_rec_no);
 

@@ -194,8 +194,6 @@ s_StopSync(SSyncSlotData* slot_data,
 static void
 s_CommitSync(SSyncSlotData* slot_data, SSyncSlotSrv* slot_srv)
 {
-    CFastMutexGuard g_slot(slot_data->lock);
-    CFastMutexGuard g_srv(slot_srv->lock);
     if (slot_srv->is_by_blobs)
         slot_srv->was_blobs_sync = true;
     if (!slot_srv->made_initial_sync  &&  !CNetCacheServer::IsInitiallySynced())
@@ -632,6 +630,7 @@ CNCPeriodicSync::SyncCommandFinished(Uint8 server_id, Uint2 slot, Uint8 sync_id)
 void
 CNCPeriodicSync::Commit(Uint8 server_id,
                         Uint2 slot,
+                        Uint8 sync_id,
                         Uint8 local_synced_rec_no,
                         Uint8 remote_synced_rec_no)
 {
@@ -643,7 +642,14 @@ CNCPeriodicSync::Commit(Uint8 server_id,
     SSyncSlotData* slot_data;
     SSyncSlotSrv* slot_srv;
     s_FindServerSlot(server_id, slot, slot_data, slot_srv);
-    s_CommitSync(slot_data, slot_srv);
+
+    CFastMutexGuard g_slot(slot_data->lock);
+    CFastMutexGuard g_srv(slot_srv->lock);
+    if (slot_srv->sync_started  &&  slot_srv->is_passive
+        &&  slot_srv->cur_sync_id == sync_id)
+    {
+        s_CommitSync(slot_data, slot_srv);
+    }
 }
 
 void
@@ -832,12 +838,12 @@ CActiveSyncControl::DoPeriodicSync(SSyncSlotData* slot_data,
         fflush(s_LogFile);
     }
 
+    CFastMutexGuard g_slot(m_SlotData->lock);
+    CFastMutexGuard g_srv(m_SlotSrv->lock);
     if (m_Result == eSynOK) {
         s_CommitSync(m_SlotData, m_SlotSrv);
     }
     else {
-        CFastMutexGuard g_slot(m_SlotData->lock);
-        CFastMutexGuard g_srv(m_SlotSrv->lock);
         s_StopSync(m_SlotData, m_SlotSrv,
                    CNCDistributionConf::GetFailedSyncRetryDelay(),
                    error_from_start);

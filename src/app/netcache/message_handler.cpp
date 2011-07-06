@@ -3332,7 +3332,7 @@ CNCMessageHandler::x_DoCmd_SyncCommit(void)
     if (!x_CanStartSyncCommand(false))
         return true;
 
-    CNCPeriodicSync::Commit(m_SrvId, m_Slot, m_LocalRecNo, m_RemoteRecNo);
+    CNCPeriodicSync::Commit(m_SrvId, m_Slot, m_SyncId, m_LocalRecNo, m_RemoteRecNo);
     m_SockBuffer.WriteMessage("OK:", "SIZE=0");
     return true;
 }
