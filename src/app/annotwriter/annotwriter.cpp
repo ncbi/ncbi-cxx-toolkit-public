@@ -84,8 +84,6 @@
 #include <objtools/writers/vcf_writer.hpp>
 #include <objtools/writers/gvf_writer.hpp>
 
-#include <time.h>
-
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
@@ -98,6 +96,9 @@ public:
     int Run();
 
 private:
+    CObjectIStream* x_OpenIStream(
+        const CArgs& args );
+
     CWriterBase* x_CreateWriter(
         CScope&,
         CNcbiOstream&,
@@ -128,14 +129,6 @@ private:
         CObjectIStream&,
         CNcbiOstream& );
 
-    void WriteSeqId(CScope& scope,
-                    CNcbiIstream& istr,
-                    CNcbiOstream& ostr);
-
-    bool WriteHandleGff3(
-        CBioseq_Handle bsh,
-        CNcbiOstream& );
-
     CGff2Writer::TFlags GffFlags( 
         const CArgs& );
 };
@@ -152,18 +145,8 @@ void CAnnotWriterApp::Init()
     
     // input
     {{
-         arg_desc->AddDefaultKey( "i", "InputFile", 
-                                  "Input file name",
-                                  CArgDescriptions::eInputFile,
-                                  "-");
-         arg_desc->AddDefaultKey("ifmt", "InputFormat",
-                                 "Format of input file",
-                                 CArgDescriptions::eString,
-                                 "asn");
-         arg_desc->SetConstraint("ifmt",
-                                 &(*new CArgAllow_Strings,
-                                   "id", 
-                                   "asn-text"));
+        arg_desc->AddOptionalKey( "i", "InputFile", 
+            "Input file name", CArgDescriptions::eInputFile );
     }}
 
     // format
@@ -225,22 +208,20 @@ int CAnnotWriterApp::Run()
         NCBI_THROW(CFlatException, eInternal, "Could not open output stream");
     }
 
+    auto_ptr<CObjectIStream> pIs;
+    pIs.reset( x_OpenIStream( args ) );
+    if ( pIs.get() == NULL ) {
+        string msg = args["i"]? "Unable to open input file" + args["i"].AsString() :
+                        "Unable to read data from stdin";
+        NCBI_THROW(CFlatException, eInternal, msg);
+    }
+
     CRef< CObjectManager > pObjMngr = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager( *pObjMngr );
     CRef< CScope > pScope( new CScope( *pObjMngr ) );
     pScope->AddDefaults();
 
-    CNcbiIstream& istr = args["i"].AsInputFile();
-    auto_ptr<CObjectIStream> pIs
-        (CObjectIStream::Open(eSerial_AsnText, istr));
-
-    string ifmt = args["ifmt"].AsString();
-
     while ( true ) {
-        if (ifmt == "id") {
-            WriteSeqId(*pScope, istr, *pOs);
-            break;
-        }
         if ( TrySeqAnnot( *pScope, *pIs, *pOs ) ) {
             continue;
         }
@@ -265,32 +246,6 @@ int CAnnotWriterApp::Run()
 
     pIs.reset();
     return 0;
-}
-
-//  -----------------------------------------------------------------------------
-void CAnnotWriterApp::WriteSeqId(
-    CScope& scope,
-    CNcbiIstream& istr,
-    CNcbiOstream& ostr )
-//  -----------------------------------------------------------------------------
-{
-    string line;
-    while (NcbiGetlineEOL(istr, line)) {
-        NStr::TruncateSpacesInPlace(line);
-        if (line.empty()  ||  line[0] == '#') {
-            continue;
-        }
-        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(line);
-        CBioseq_Handle bsh = scope.GetBioseqHandle(idh);
-
-        auto_ptr<CWriterBase> pWriter(x_CreateWriter(scope, ostr, GetArgs()));
-        if ( ! pWriter.get() ) {
-            cerr << "annotwriter: Cannot create suitable writer!" << endl;
-        }
-        pWriter->WriteHeader();
-        pWriter->WriteBioseqHandle(bsh);
-        pWriter->WriteFooter();
-    }
 }
 
 //  -----------------------------------------------------------------------------
@@ -330,23 +285,27 @@ bool CAnnotWriterApp::TryBioseqSet(
 //  -----------------------------------------------------------------------------
 {
     CNcbiStreampos curr = istr.GetStreamPos();
+
     try {
         CRef<CBioseq_set> pBioset(new CBioseq_set);
         istr >> *pBioset;
 
+        CWriterBase* pWriter = x_CreateWriter( scope, ostr, GetArgs() );
+        if ( ! pWriter ) {
+            cerr << "annotwriter: Cannot create suitable writer!" << endl;
+            return false;
+        }
+        pWriter->WriteHeader();
+
         const CBioseq_set::TSeq_set& bss = pBioset->GetSeq_set();
         for ( CBioseq_set::TSeq_set::const_iterator it = bss.begin(); it != bss.end(); ++it ) {
             const CSeq_entry& se = **it;
-
-            CRef< CObjectManager > pObjMngr = CObjectManager::GetInstance();
-            CGBDataLoader::RegisterInObjectManager( *pObjMngr );
-            CRef< CScope > pScope( new CScope( *pObjMngr ) );
-            pScope->AddDefaults();
             const CBioseq& bs = se.GetSeq();
-            pScope->AddBioseq( bs );
-
-            WriteHandleGff3( pScope->GetBioseqHandle( bs ), ostr );
+            scope.AddBioseq( bs );
+            pWriter->WriteBioseqHandle( scope.GetBioseqHandle( bs ) );
         }
+        pWriter->WriteFooter();
+        delete pWriter;
         return true;
     }
     catch ( ... ) {
@@ -455,16 +414,21 @@ bool CAnnotWriterApp::TrySeqAlign(
 }
 
 //  -----------------------------------------------------------------------------
-bool CAnnotWriterApp::WriteHandleGff3(
-    CBioseq_Handle bsh,
-    CNcbiOstream& ostr )
+CObjectIStream* CAnnotWriterApp::x_OpenIStream( 
+    const CArgs& args )
 //  -----------------------------------------------------------------------------
 {
-    CGff3Writer writer( ostr, GffFlags( GetArgs() ) );
-    writer.WriteHeader();
-    writer.WriteBioseqHandle( bsh ) || true;
-    writer.WriteFooter();
-    return true;
+    ESerialDataFormat serial = eSerial_AsnText;
+    CNcbiIstream* pInputStream = &NcbiCin;
+    bool bDeleteOnClose = false;
+    if ( args["i"] ) {
+        pInputStream = new CNcbiIfstream( 
+            args["i"].AsString().c_str(), ios::binary  );
+        bDeleteOnClose = true;
+    }
+    CObjectIStream* pI = CObjectIStream::Open( 
+        serial, *pInputStream, bDeleteOnClose );
+    return pI;
 }
 
 //  -----------------------------------------------------------------------------
