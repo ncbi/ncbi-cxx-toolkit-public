@@ -454,7 +454,7 @@ public:
     ///   Converted string value.
     static string IntToString(int value, TNumToStringFlags flags = 0,
                               int  base = 10);
-    NCBI_DEPRECATED
+
     static string IntToString(unsigned int value, TNumToStringFlags flags = 0,
                               int  base = 10);
     NCBI_DEPRECATED
@@ -488,7 +488,7 @@ public:
     static void IntToString(string& out_str, int value, 
                             TNumToStringFlags flags = 0,
                             int               base  = 10);
-    NCBI_DEPRECATED
+
     static void IntToString(string& out_str, unsigned int value, 
                             TNumToStringFlags flags = 0,
                             int               base  = 10);
@@ -526,7 +526,7 @@ public:
     static string UIntToString(unsigned int      value,
                                TNumToStringFlags flags = 0,
                                int               base  = 10);
-    NCBI_DEPRECATED
+
     static string UIntToString(int               value,
                                TNumToStringFlags flags = 0,
                                int               base  = 10);
@@ -564,7 +564,7 @@ public:
     static void UIntToString(string& out_str, unsigned int value,
                              TNumToStringFlags flags = 0,
                              int               base  = 10);
-    NCBI_DEPRECATED
+
     static void UIntToString(string& out_str, int value,
                              TNumToStringFlags flags = 0,
                              int               base  = 10);
