@@ -1599,17 +1599,9 @@ Int8 TestForOverlap64(const CSeq_loc& loc1,
     // not be null.
     const CSeq_id *id1 = ploc1->GetId();
     const CSeq_id *id2 = ploc2->GetId();
-    _ASSERT(id1);
-    _ASSERT(id2);
-    if ( scope ) {
-        if ( !IsSameBioseq(*id1, *id2, scope) ) {
-            return -1;
-        }
-    }
-    else {
-        if ( !id1->Equals(*id2) ) {
-            return -1;
-        }
+    bool same_id = false;
+    if (id1  &&  id2) {
+        same_id = scope ? IsSameBioseq(*id1, *id2, scope) : id1->Equals(*id2);
     }
 
     if ( scope && ploc1->IsWhole() ) {
@@ -1653,6 +1645,7 @@ Int8 TestForOverlap64(const CSeq_loc& loc1,
     switch (type) {
     case eOverlap_Simple:
         {
+            if ( !same_id ) return -1;
             if (circular_len != kInvalidSeqPos) {
                 Int8 from1 = ploc1->GetStart(eExtreme_Positional);
                 Int8 from2 = ploc2->GetStart(eExtreme_Positional);
@@ -1710,6 +1703,7 @@ Int8 TestForOverlap64(const CSeq_loc& loc1,
         }
     case eOverlap_Contained:
         {
+            if ( !same_id ) return -1;
             if (circular_len != kInvalidSeqPos) {
                 Int8 from1 = ploc1->GetStart(eExtreme_Positional);
                 Int8 from2 = ploc2->GetStart(eExtreme_Positional);
@@ -1742,6 +1736,7 @@ Int8 TestForOverlap64(const CSeq_loc& loc1,
         }
     case eOverlap_Contains:
         {
+            if ( !same_id ) return -1;
             if (circular_len != kInvalidSeqPos) {
                 Int8 from1 = ploc1->GetStart(eExtreme_Positional);
                 Int8 from2 = ploc2->GetStart(eExtreme_Positional);
