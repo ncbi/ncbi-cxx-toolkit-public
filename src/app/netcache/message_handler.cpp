@@ -2407,6 +2407,11 @@ CNCMessageHandler::x_SendGetMetaCmd(void)
 bool
 CNCMessageHandler::x_ReadMetaResults(void)
 {
+    CNCActiveHandler* handler;
+    bool cur_exist;
+    const SNCBlobSummary* cur_blob_sum;
+    bool for_hasb = m_CmdProcessor == &CNCMessageHandler::x_DoCmd_HasBlobImpl;
+
     if (m_ActiveHub->GetStatus() == eNCHubCmdInProgress) {
         g_NetcacheServer->DeferConnectionProcessing(m_Socket);
         return false;
@@ -2416,10 +2421,9 @@ CNCMessageHandler::x_ReadMetaResults(void)
     if (m_ActiveHub->GetStatus() != eNCHubSuccess)
         abort();
 
-    CNCActiveHandler* handler = m_ActiveHub->GetHandler();
-    bool cur_exist = handler->IsBlobExists();
-    const SNCBlobSummary& cur_blob_sum = handler->GetBlobSummary();
-    bool for_hasb = m_CmdProcessor == &CNCMessageHandler::x_DoCmd_HasBlobImpl;
+    handler = m_ActiveHub->GetHandler();
+    cur_exist = handler->IsBlobExists();
+    cur_blob_sum = &handler->GetBlobSummary();
     if (!cur_exist  &&  !for_hasb)
         goto results_processed;
 
@@ -2428,12 +2432,12 @@ CNCMessageHandler::x_ReadMetaResults(void)
         goto meta_search_finished;
     }
     if (cur_exist  &&  (!m_LatestExist
-                        ||  (!cur_blob_sum.isSameData(m_LatestBlobSum)
-                             &&  m_LatestBlobSum.isOlder(cur_blob_sum))))
+                        ||  (!cur_blob_sum->isSameData(m_LatestBlobSum)
+                             &&  m_LatestBlobSum.isOlder(*cur_blob_sum))))
     {
         m_LatestExist = true;
         m_LatestSrvId = m_CheckSrvs[m_SrvsIndex - 1];
-        m_LatestBlobSum = cur_blob_sum;
+        m_LatestBlobSum = *cur_blob_sum;
     }
     if (m_Quorum == 1)
         goto meta_search_finished;
