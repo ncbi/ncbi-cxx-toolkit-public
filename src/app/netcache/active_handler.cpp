@@ -2121,7 +2121,7 @@ out_of_cycle:
 #ifdef NCBI_OS_LINUX
     else if (x_GetState() != eConnClosed) {
         int fd = 0, val = 1;
-        m_Socket->GetOSHandle(&fd, sizeof(fd));
+        m_SrvConn->GetOSHandle(&fd, sizeof(fd));
         setsockopt(fd, IPPROTO_TCP, TCP_QUICKACK, &val, sizeof(val));
     }
 #endif
