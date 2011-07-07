@@ -123,15 +123,15 @@ CNCBlobStorage::x_ReadVariableParams(void)
                                                 50)) / 100;
 
     m_ExtraGCOnSize  = NStr::StringToUInt8_DataSize(reg.GetString(
-                       kNCStorage_RegSection, kNCStorage_ExtraGCOnParam, "50Gb"));
+                       kNCStorage_RegSection, kNCStorage_ExtraGCOnParam, "0"));
     m_ExtraGCOffSize = NStr::StringToUInt8_DataSize(reg.GetString(
-                       kNCStorage_RegSection, kNCStorage_ExtraGCOffParam, "45Gb"));
+                       kNCStorage_RegSection, kNCStorage_ExtraGCOffParam, "0"));
     m_ExtraGCStep    = reg.GetInt(kNCStorage_RegSection,
                                   kNCStorage_ExtraGCStepParam, 900);
     m_StopWriteOnSize  = NStr::StringToUInt8_DataSize(reg.GetString(
-                       kNCStorage_RegSection, kNCStorage_StopWriteOnParam, "100Gb"));
+                       kNCStorage_RegSection, kNCStorage_StopWriteOnParam, "0"));
     m_StopWriteOffSize = NStr::StringToUInt8_DataSize(reg.GetString(
-                       kNCStorage_RegSection, kNCStorage_StopWriteOffParam, "90Gb"));
+                       kNCStorage_RegSection, kNCStorage_StopWriteOffParam, "0"));
     m_DiskFreeLimit  = NStr::StringToUInt8_DataSize(reg.GetString(
                        kNCStorage_RegSection, kNCStorage_MinFreeDiskParam, "5Gb"));
 
