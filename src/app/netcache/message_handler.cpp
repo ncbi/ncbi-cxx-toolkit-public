@@ -536,19 +536,6 @@ static SNSProtoArgument s_AuthArgs[] = {
 
 
 
-inline void
-CBufferedSockReaderWriter::ZeroSocketTimeout(void)
-{
-    m_Socket->SetTimeout(eIO_ReadWrite, &m_ZeroTimeout);
-}
-
-inline void
-CBufferedSockReaderWriter::ResetSocketTimeout(void)
-{
-    m_Socket->SetTimeout(eIO_ReadWrite, &m_DefTimeout);
-}
-
-
 inline
 CBufferedSockReaderWriter::CReadWriteTimeoutGuard
     ::CReadWriteTimeoutGuard(CBufferedSockReaderWriter* parent)
