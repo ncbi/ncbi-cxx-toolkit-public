@@ -551,12 +551,20 @@ bool CGffWriteRecordFeature::x_AssignType(
     default:
         break;
 
-    case CSeq_feat::TData::eSubtype_gene:
-        m_strType = "gene";
-        break;
-
     case CSeq_feat::TData::eSubtype_cdregion:
         m_strType = "CDS";
+        break;
+
+    case CSeq_feat::TData::eSubtype_exon:
+        m_strType = "exon";
+        break;
+
+    case CSeq_feat::TData::eSubtype_misc_RNA:
+        m_strType = "transcript";
+        break;
+
+    case CSeq_feat::TData::eSubtype_gene:
+        m_strType = "gene";
         break;
 
     case CSeq_feat::TData::eSubtype_mRNA:
@@ -565,11 +573,6 @@ bool CGffWriteRecordFeature::x_AssignType(
 
     case CSeq_feat::TData::eSubtype_scRNA:
         m_strType = "scRNA";
-        break;
-
-//    case CSeq_feat::TData::eSubtype_otherRNA:
-    case CSeq_feat::TData::eSubtype_exon:
-        m_strType = "exon";
         break;
     }
     return true;

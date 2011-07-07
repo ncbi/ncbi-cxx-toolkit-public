@@ -183,23 +183,6 @@ bool CGff3WriteRecordFeature::x_AssignAttributesFromAsnCore(
         m_Attributes[ "ID" ] = value;
         bIdAssigned = true;
     }
-
-    if ( mapped_feat.IsSetXref() ) {
-        const CSeq_feat::TXref& xref = mapped_feat.GetXref();
-        string value;
-        for ( size_t i=0; i < xref.size(); ++i ) {
-            if ( xref[i]->CanGetId() /* && xref[i]->CanGetData() */ ) {
-                const CSeqFeatXref::TId& id = xref[i]->GetId();
-                if ( ! value.empty() ) {
-                    value += ",";
-                }
-                value += CGffWriteRecordFeature::x_FeatIdString( id );
-            }
-        }
-        if ( ! value.empty() ) {
-            m_Attributes[ "Parent" ] = value;
-        }
-    }
     return true;
 }
 
