@@ -5,6 +5,8 @@ LOCAL_CONFIGURABLES = Makefile $(ALL_SUB_PROJ:%=%/Makefile) $(EXTRA_CONFIGURABLE
 
 SUB_MF_IN = $(ALL_SUB_PROJ:%=$(srcdir)/%/Makefile.in)
 
+COPY  = /bin/cp -p
+
 # XXX - we have to wildcard under $(builddir) rather than
 # $(abs_top_srcdir), so explicitly list any new root configurables to
 # ensure they get picked up properly.
@@ -41,7 +43,7 @@ $(SUB_MF_IN):
 	@-cd $(srcdir)  &&  test -d CVS  &&  \
 	    cvs upd -A `basename \`dirname $@\``/Makefile.in
 	$(MKDIR) -p `dirname $@`
-	test -f $@  ||  $(COPY) -p $(build_sys_dir)/Makefile.in.skel $@
+	test -f $@  ||  $(COPY) $(build_sys_dir)/Makefile.in.skel $@
 
 $(builddir)/Makefile%: $(build_sys_dir)/Makefile%.in $(config_status)
 	$(UPDATE_CONFIGURABLE) $@
