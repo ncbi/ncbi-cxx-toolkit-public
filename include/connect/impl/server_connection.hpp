@@ -64,8 +64,8 @@ public:
     virtual void Passivate(void) { }
 };
 
-class CServer_Connection : public IServer_ConnectionBase,
-                           public CSocket // CPollable
+class NCBI_XCONNECT_EXPORT CServer_Connection : public IServer_ConnectionBase,
+                                                public CSocket // CPollable
 {
 public:
     CServer_Connection(IServer_ConnectionHandler* handler)
