@@ -440,6 +440,7 @@ private:
 
     TBlob_Map             m_Blob_Map;       // TBlobId -> CTSE_Info
     mutable TBlob_Cache   m_Blob_Cache;     // unlocked blobs
+    mutable size_t        m_Blob_Cache_Size;// list<>::size() is slow
 
     // Prefetching thread and lock, used when initializing the thread
     CRef<CPrefetchThreadOld> m_PrefetchThread;

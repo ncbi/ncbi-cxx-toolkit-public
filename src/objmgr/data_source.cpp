@@ -88,14 +88,16 @@ NCBI_DEFINE_ERR_SUBCODE_X(3);
 BEGIN_SCOPE(objects)
 
 CDataSource::CDataSource(void)
-    : m_DefaultPriority(9)
+    : m_DefaultPriority(9),
+      m_Blob_Cache_Size(0)
 {
 }
 
 
 CDataSource::CDataSource(CDataLoader& loader)
     : m_Loader(&loader),
-      m_DefaultPriority(99)
+      m_DefaultPriority(99),
+      m_Blob_Cache_Size(0)
 {
     m_Loader->SetTargetDataSource(*this);
 }
@@ -103,7 +105,8 @@ CDataSource::CDataSource(CDataLoader& loader)
 
 CDataSource::CDataSource(const CObject& shared_object, const CSeq_entry& entry)
     : m_SharedObject(&shared_object),
-      m_DefaultPriority(9)
+      m_DefaultPriority(9),
+      m_Blob_Cache_Size(0)
 {
     CTSE_Lock tse_lock = AddTSE(const_cast<CSeq_entry&>(entry));
     m_StaticBlobs.PutLock(tse_lock);
@@ -156,6 +159,7 @@ void CDataSource::DropAllTSEs(void)
         m_StaticBlobs.Drop();
         m_Blob_Map.clear();
         m_Blob_Cache.clear();
+        m_Blob_Cache_Size = 0;
     }}
 }
 
@@ -1576,16 +1580,20 @@ void CDataSource::x_ReleaseLastTSELock(CRef<CTSE_Info> tse)
             _ASSERT(find(m_Blob_Cache.begin(), m_Blob_Cache.end(), tse) ==
                     m_Blob_Cache.end());
             tse->m_CachePosition = m_Blob_Cache.insert(m_Blob_Cache.end(),tse);
+            m_Blob_Cache_Size += 1;
+            _ASSERT(m_Blob_Cache_Size == m_Blob_Cache.size());
             tse->m_CacheState = CTSE_Info::eInCache;
         }
         _ASSERT(tse->m_CachePosition ==
                 find(m_Blob_Cache.begin(), m_Blob_Cache.end(), tse));
-        
+        _ASSERT(m_Blob_Cache_Size == m_Blob_Cache.size());
         
         unsigned cache_size = s_GetCacheSize();
-        while ( m_Blob_Cache.size() > cache_size ) {
+        while ( m_Blob_Cache_Size > cache_size ) {
             CRef<CTSE_Info> del_tse = m_Blob_Cache.front();
             m_Blob_Cache.pop_front();
+            m_Blob_Cache_Size -= 1;
+            _ASSERT(m_Blob_Cache_Size == m_Blob_Cache.size());
             del_tse->m_CacheState = CTSE_Info::eNotInCache;
             to_delete.push_back(del_tse);
             _VERIFY(DropTSE(*del_tse));
@@ -1610,6 +1618,8 @@ void CDataSource::x_SetLock(CTSE_Lock& lock, CConstRef<CTSE_Info> tse) const
                 find(m_Blob_Cache.begin(), m_Blob_Cache.end(), tse));
         tse->m_CacheState = CTSE_Info::eNotInCache;
         m_Blob_Cache.erase(tse->m_CachePosition);
+        m_Blob_Cache_Size -= 1;
+        _ASSERT(m_Blob_Cache_Size == m_Blob_Cache.size());
     }
     
     _ASSERT(find(m_Blob_Cache.begin(), m_Blob_Cache.end(), tse) ==
