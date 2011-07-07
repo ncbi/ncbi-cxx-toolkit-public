@@ -170,6 +170,7 @@ public:
 
     /// Initially set current position in the blob to start reading from
     void SetPosition(Uint8 pos);
+    Uint8 GetPosition(void);
     ENCBlockingOpResult ObtainFirstData(INCBlockedOpListener* listener);
     size_t ReadData(void* buffer, size_t buf_size);
     int GetCurBlobTTL(void) const;
@@ -577,6 +578,12 @@ CNCBlobAccessor::SetPosition(Uint8 pos)
 {
     m_CurChunk = Uint4(pos / kNCMaxBlobChunkSize);
     m_ChunkPos = size_t(pos % kNCMaxBlobChunkSize);
+}
+
+inline Uint8
+CNCBlobAccessor::GetPosition(void)
+{
+    return Uint8(m_CurChunk) * kNCMaxBlobChunkSize + m_ChunkPos;
 }
 
 inline TNCBlobId

@@ -37,6 +37,7 @@
 #include <util/random_gen.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <connect/services/netcache_key.hpp>
+#include <connect/services/netcache_api_expt.hpp>
 
 #include "distribution_conf.hpp"
 #include "netcached.hpp"
@@ -78,12 +79,17 @@ static string   s_PeriodicLogFile;
 static FILE*    s_CopyDelayLog = NULL;
 static Uint1    s_CntActiveSyncs = 4;
 static Uint1    s_MaxSyncsOneServer = 2;
-static Uint1    s_CntSyncWorkers = 30;
 static Uint1    s_MaxWorkerTimePct = 50;
+static Uint2    s_MaxPeerTotalConns = 100;
+static Uint2    s_MaxPeerBGConns = 50;
+static Uint1    s_CntErrorsToThrottle = 10;
+static Uint8    s_PeerThrottlePeriod = 10 * kNCTimeTicksInSec;
+static Uint1    s_PeerTimeout = 10;
 static Uint1    s_CntMirroringThreads = 0;
 static Uint1    s_MirrorSmallExclusive = 2;
 static Uint1    s_MirrorSmallPreferred = 2;
 static Uint8    s_SmallBlobBoundary = 65535;
+static Uint2    s_MaxMirrorQueueSize = 10000;
 static string   s_SyncLogFileName;
 static Uint4    s_MaxSlotLogEvents;
 static Uint4    s_CleanLogReserve;
@@ -220,12 +226,16 @@ CNCDistributionConf::Initialize(Uint2 control_port)
         s_CntActiveSyncs = reg.GetInt(kNCReg_NCPoolSection, "max_active_syncs", 4);
         s_MaxSyncsOneServer = reg.GetInt(kNCReg_NCPoolSection, "max_syncs_one_server", 2);
         s_MaxWorkerTimePct = reg.GetInt(kNCReg_NCPoolSection, "max_deferred_time_pct", 10);
-        s_CntSyncWorkers = reg.GetInt(kNCReg_NCPoolSection, "threads_deferred", 30);
-        if (s_CntSyncWorkers < 1)
-            s_CntSyncWorkers = 1;
+        s_MaxPeerTotalConns = reg.GetInt(kNCReg_NCPoolSection, "max_peer_connections", 100);
+        s_MaxPeerBGConns = reg.GetInt(kNCReg_NCPoolSection, "max_peer_bg_connections", 50);
+        s_CntErrorsToThrottle = reg.GetInt(kNCReg_NCPoolSection, "peer_errors_for_throttle", 10);
+        s_PeerThrottlePeriod = reg.GetInt(kNCReg_NCPoolSection, "peer_throttle_period", 10);
+        s_PeerThrottlePeriod *= kNCTimeTicksInSec;
+        s_PeerTimeout = reg.GetInt(kNCReg_NCPoolSection, "peer_communication_timeout", 10);
         s_CntMirroringThreads = reg.GetInt(kNCReg_NCPoolSection, "threads_instant", 6);
         s_SmallBlobBoundary = reg.GetInt(kNCReg_NCPoolSection, "small_blob_max_size", 100);
         s_SmallBlobBoundary *= 1024;
+        s_MaxMirrorQueueSize = reg.GetInt(kNCReg_NCPoolSection, "max_instant_queue_size", 10000);
         s_MirrorSmallPreferred = reg.GetInt(kNCReg_NCPoolSection, "small_blob_preferred_threads_pct", 33);
         if (s_MirrorSmallPreferred > 100)
             s_MirrorSmallPreferred = 100;
@@ -419,15 +429,39 @@ CNCDistributionConf::GetMaxSyncsOneServer(void)
 }
 
 Uint1
-CNCDistributionConf::GetCntSyncWorkers(void)
-{
-    return s_CntSyncWorkers;
-}
-
-Uint1
 CNCDistributionConf::GetMaxWorkerTimePct(void)
 {
     return CNetCacheServer::IsInitiallySynced()? s_MaxWorkerTimePct: 100;
+}
+
+Uint2
+CNCDistributionConf::GetMaxPeerTotalConns(void)
+{
+    return s_MaxPeerTotalConns;
+}
+
+Uint2
+CNCDistributionConf::GetMaxPeerBGConns(void)
+{
+    return s_MaxPeerBGConns;
+}
+
+Uint1
+CNCDistributionConf::GetCntErrorsToThrottle(void)
+{
+    return s_CntErrorsToThrottle;
+}
+
+Uint8
+CNCDistributionConf::GetPeerThrottlePeriod(void)
+{
+    return s_PeerThrottlePeriod;
+}
+
+Uint1
+CNCDistributionConf::GetPeerTimeout(void)
+{
+    return s_PeerTimeout;
 }
 
 Uint1
@@ -452,6 +486,12 @@ Uint8
 CNCDistributionConf::GetSmallBlobBoundary(void)
 {
     return s_SmallBlobBoundary;
+}
+
+Uint2
+CNCDistributionConf::GetMaxMirrorQueueSize(void)
+{
+    return s_MaxMirrorQueueSize;
 }
 
 const string&
