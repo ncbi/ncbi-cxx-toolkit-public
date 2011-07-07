@@ -37,7 +37,6 @@
 #include <objtools/alnmgr/alnvec.hpp>
 #include <objtools/alnmgr/pairwise_aln.hpp>
 #include <objtools/alnmgr/aln_converters.hpp>
-#include <objmgr/util/sequence.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/feat_ci.hpp>
 
