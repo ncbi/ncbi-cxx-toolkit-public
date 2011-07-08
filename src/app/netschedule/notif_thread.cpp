@@ -34,7 +34,7 @@
 #include <corelib/request_ctx.hpp>
 
 #include "notif_thread.hpp"
-#include "queue_coll.hpp"
+#include "queue_database.hpp"
 #include "ns_handler.hpp"
 
 BEGIN_NCBI_SCOPE

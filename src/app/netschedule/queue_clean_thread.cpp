@@ -37,7 +37,7 @@
 #include <db.h>
 #include <db/bdb/bdb_expt.hpp>
 
-#include "queue_coll.hpp"
+#include "queue_database.hpp"
 #include "queue_clean_thread.hpp"
 #include "ns_handler.hpp"
 

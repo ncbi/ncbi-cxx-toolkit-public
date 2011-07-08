@@ -70,7 +70,7 @@ CNSTagMap::~CNSTagMap()
 
 //////////////////////////////////////////////////////////////////////////
 CQueueEnumCursor::CQueueEnumCursor(CQueue* queue)
-  : CBDB_FileCursor(queue->m_JobDB)
+  : CBDB_FileCursor(queue->m_QueueDbBlock->job_db)
 {
     SetCondition(CBDB_FileCursor::eFirst);
 }
@@ -78,6 +78,13 @@ CQueueEnumCursor::CQueueEnumCursor(CQueue* queue)
 
 //////////////////////////////////////////////////////////////////////////
 // CQueue
+
+
+// Used together with m_SavedId. m_SavedId is saved in a DB and is used
+// as to start from value for the restarted neschedule.
+// s_ReserveDelta value is used to avoid to often DB updates
+static const unsigned int       s_ReserveDelta = 10000;
+
 
 CQueue::CQueue(CRequestExecutor&     executor,
                const string&         queue_name,
@@ -96,6 +103,10 @@ CQueue::CQueue(CRequestExecutor&     executor,
 
     m_BecameEmpty(-1),
     m_WorkerNodeList(queue_name),
+
+    m_LastId(0),
+    m_SavedId(s_ReserveDelta),
+
     m_AffWrapped(false),
     m_CurrAffId(0),
     m_LastAffId(0),
@@ -126,7 +137,6 @@ CQueue::CQueue(CRequestExecutor&     executor,
     m_StatThread.Reset(new CStatisticsThread(*this,
                                              server->IsLogStatisticsThread()));
     m_StatThread->Run();
-    m_LastId.Set(0);
     m_GroupLastId.Set(0);
 }
 
@@ -146,6 +156,16 @@ void CQueue::Attach(SQueueDbBlock* block)
     m_QueueDbBlock = block;
     m_AffinityDict.Attach(&m_QueueDbBlock->aff_dict_db,
                           &m_QueueDbBlock->aff_dict_token_idx);
+
+    // Here we have a db, so we can read the counter value we should start from
+    m_LastId = x_ReadStartFromCounter();
+    m_SavedId = m_LastId + s_ReserveDelta;
+    if (m_SavedId < m_LastId) {
+        // Overflow
+        m_LastId = 0;
+        m_SavedId = s_ReserveDelta;
+    }
+    x_UpdateStartFromCounter();
 }
 
 
@@ -259,8 +279,8 @@ unsigned CQueue::LoadStatusMatrix()
         { m_JobsToDelete, m_DeletedJobs, m_AffJobsToDelete };
 
     for (size_t i = 0; i < sizeof(all_ids) / sizeof(all_ids[0]); ++i) {
-        m_DeletedJobsDB.id = all_ids[i];
-        err = m_DeletedJobsDB.ReadVector(&all_vects[i]);
+        m_QueueDbBlock->deleted_jobs_db.id = all_ids[i];
+        err = m_QueueDbBlock->deleted_jobs_db.ReadVector(&all_vects[i]);
         if (err != eBDB_Ok && err != eBDB_NotFound) {
             // TODO: throw db error
         }
@@ -269,22 +289,21 @@ unsigned CQueue::LoadStatusMatrix()
 
     // scan the queue, load the state machine from DB
     TNSBitVector        running_jobs;
-    CBDB_FileCursor     cur(m_JobDB);
+    CBDB_FileCursor     cur(m_QueueDbBlock->job_db);
 
     cur.InitMultiFetch(1024*1024);
     cur.SetCondition(CBDB_FileCursor::eGE);
     cur.From << 0;
 
     unsigned    recs = 0;
-    unsigned    last_id = 0;
     unsigned    group_last_id = 0;
 
     for (; cur.Fetch() == eBDB_Ok; ) {
-        unsigned    job_id = m_JobDB.id;
+        unsigned    job_id = m_QueueDbBlock->job_db.id;
         if (m_JobsToDelete.test(job_id))
             continue;
 
-        int         i_status = m_JobDB.status;
+        int         i_status = m_QueueDbBlock->job_db.status;
         if (i_status <  (int) CNetScheduleAPI::ePending ||
             i_status >= (int) CNetScheduleAPI::eLastStatus)
         {
@@ -297,9 +316,10 @@ unsigned CQueue::LoadStatusMatrix()
         m_StatusTracker.SetExactStatusNoLock(job_id, status, true);
 
         if (status == CNetScheduleAPI::eReading) {
-            unsigned group_id = m_JobDB.read_group;
+            unsigned group_id = m_QueueDbBlock->job_db.read_group;
             x_AddToReadGroupNoLock(group_id, job_id);
-            if (group_last_id < group_id) group_last_id = group_id;
+            if (group_last_id < group_id)
+                group_last_id = group_id;
         }
         if ((status == CNetScheduleAPI::eRunning ||
              status == CNetScheduleAPI::eReading) &&
@@ -314,7 +334,6 @@ unsigned CQueue::LoadStatusMatrix()
         }
         if (status == CNetScheduleAPI::eRunning)
             running_jobs.set(job_id);
-        if (last_id < job_id) last_id = job_id;
         ++recs;
     }
 
@@ -369,7 +388,6 @@ unsigned CQueue::LoadStatusMatrix()
 
         m_WorkerNodeList.AddJob(worker_node, job, exp_time);
     }
-    m_LastId.Set(last_id);
     m_GroupLastId.Set(group_last_id);
     return recs;
 }
@@ -1103,22 +1121,77 @@ bool CQueue::IsExpired()
 
 unsigned int CQueue::GetNextId()
 {
-    if (m_LastId.Get() >= CAtomicCounter::TValue(kMax_I4))
-        m_LastId.Set(0);
-    return (unsigned) m_LastId.Add(1);
+    CFastMutexGuard     guard(m_lastIdLock);
+
+    // Job indexes are expected to start from 1,
+    // the m_LastId is 0 at the very beginning
+    ++m_LastId;
+    if (m_LastId >= m_SavedId) {
+        m_SavedId += s_ReserveDelta;
+        if (m_SavedId < m_LastId) {
+            // Overflow for the saved ID
+            m_LastId = 1;
+            m_SavedId = s_ReserveDelta;
+        }
+        x_UpdateStartFromCounter();
+    }
+    return m_LastId;
 }
 
 
-unsigned int CQueue::GetNextIdBatch(unsigned count)
+unsigned int CQueue::GetNextIdBatch(unsigned int  count)
 {
-    // Modified wrap-around zero, so it will work in the
-    // case of batch id - client expect monotonously
-    // growing range of ids.
-    if (m_LastId.Get() >= CAtomicCounter::TValue(kMax_I4 - count))
-        m_LastId.Set(0);
-    unsigned int    id = (unsigned) m_LastId.Add(count);
-    id = id - count + 1;
-    return id;
+    CFastMutexGuard     guard(m_lastIdLock);
+
+    // Job indexes are expected to start from 1 and be monotonously growing
+    unsigned int    start_index = m_LastId;
+
+    m_LastId += count;
+    if (m_LastId < start_index ) {
+        // Overflow
+        m_LastId = count;
+        m_SavedId = count + s_ReserveDelta;
+        x_UpdateStartFromCounter();
+    }
+
+    // There were no overflow, check the reserved value
+    if (m_LastId >= m_SavedId) {
+        m_SavedId += s_ReserveDelta;
+        if (m_SavedId < m_LastId) {
+            // Overflow for the saved ID
+            m_LastId = count;
+            m_SavedId = count + s_ReserveDelta;
+        }
+        x_UpdateStartFromCounter();
+    }
+
+    return m_LastId - count + 1;
+}
+
+
+void CQueue::x_UpdateStartFromCounter(void)
+{
+    // Updates the start_from value in the Berkley DB file
+    if (m_QueueDbBlock) {
+        // The only record is expected and its key is always 1
+        m_QueueDbBlock->start_from_db.pseudo_key = 1;
+        m_QueueDbBlock->start_from_db.start_from = m_SavedId;
+        m_QueueDbBlock->start_from_db.UpdateInsert();
+    }
+    return;
+}
+
+
+unsigned int  CQueue::x_ReadStartFromCounter(void)
+{
+    // Reads the start_from value from the Berkley DB file
+    if (m_QueueDbBlock) {
+        // The only record is expected and its key is always 1
+        m_QueueDbBlock->start_from_db.pseudo_key = 1;
+        m_QueueDbBlock->start_from_db.Fetch();
+        return m_QueueDbBlock->start_from_db.start_from;
+    }
+    return 1;
 }
 
 
@@ -1347,10 +1420,10 @@ void CQueue::FlushDeletedVectors(EVectorId vid)
         if (vid != eVIAll && vid != all_ids[i])
             continue;
 
-        m_DeletedJobsDB.id = all_ids[i];
+        m_QueueDbBlock->deleted_jobs_db.id = all_ids[i];
         TNSBitVector& bv = all_vects[i];
         bv.optimize();
-        m_DeletedJobsDB.WriteVector(bv, SDeletedJobsDB::eNoCompact);
+        m_QueueDbBlock->deleted_jobs_db.WriteVector(bv, SDeletedJobsDB::eNoCompact);
     }
 }
 
@@ -1391,15 +1464,15 @@ void CQueue::ClearAffinityIdx()
     // get batch of affinity tokens in the index
     {{
         CFastMutexGuard guard(m_AffinityIdxLock);
-        m_AffinityIdx.SetTransaction(NULL);
-        CBDB_FileCursor cur(m_AffinityIdx);
+        m_QueueDbBlock->affinity_idx.SetTransaction(NULL);
+        CBDB_FileCursor cur(m_QueueDbBlock->affinity_idx);
         cur.SetCondition(CBDB_FileCursor::eGE);
         cur.From << curr_aff_id;
 
         unsigned n = 0;
         EBDB_ErrCode ret;
         for (; (ret = cur.Fetch()) == eBDB_Ok && n < kAffBatchSize; ++n) {
-            curr_aff_id = m_AffinityIdx.aff_id;
+            curr_aff_id = m_QueueDbBlock->affinity_idx.aff_id;
             if (wrapped && curr_aff_id >= last_aff_id) // run over the tail
                 break;
             bv.set(curr_aff_id);
@@ -1416,7 +1489,7 @@ void CQueue::ClearAffinityIdx()
                 cur.SetCondition(CBDB_FileCursor::eGE);
                 cur.From << curr_aff_id;
                 for (; n < kAffBatchSize && (ret = cur.Fetch()) == eBDB_Ok; ++n) {
-                    curr_aff_id = m_AffinityIdx.aff_id;
+                    curr_aff_id = m_QueueDbBlock->affinity_idx.aff_id;
                     if (curr_aff_id >= last_aff_id) // run over the tail
                         break;
                     bv.set(curr_aff_id);
@@ -1440,12 +1513,12 @@ void CQueue::ClearAffinityIdx()
         CNS_Transaction     trans(this);
         CFastMutexGuard     guard(m_AffinityIdxLock);
 
-        m_AffinityIdx.SetTransaction(&trans);
+        m_QueueDbBlock->affinity_idx.SetTransaction(&trans);
 
         TNSBitVector        bvect(bm::BM_GAP);
-        m_AffinityIdx.aff_id = aff_id;
-        EBDB_ErrCode        ret = m_AffinityIdx.ReadVector(&bvect,
-                                                           bm::set_OR, NULL);
+        m_QueueDbBlock->affinity_idx.aff_id = aff_id;
+        EBDB_ErrCode        ret = m_QueueDbBlock->affinity_idx.ReadVector(&bvect,
+                                                                          bm::set_OR, NULL);
         if (ret != eBDB_Ok) {
             if (ret != eBDB_NotFound)
                 ERR_POST("Error reading affinity index: " << ret);
@@ -1458,10 +1531,10 @@ void CQueue::ClearAffinityIdx()
             continue;
         }
 
-        m_AffinityIdx.aff_id = aff_id;
+        m_QueueDbBlock->affinity_idx.aff_id = aff_id;
         if (bvect.any()) {
             bvect.optimize();
-            m_AffinityIdx.WriteVector(bvect, SAffinityIdx::eNoCompact);
+            m_QueueDbBlock->affinity_idx.WriteVector(bvect, SAffinityIdx::eNoCompact);
         } else {
             // TODO: if there is no record in m_AffinityMap,
             // remove record from SAffinityDictDB
@@ -1472,7 +1545,7 @@ void CQueue::ClearAffinityIdx()
             //    if (!m_AffinityMap.CheckAffinity(aff_id);
             //        m_AffinityDict.RemoveToken(aff_id, trans);
             //}}
-            m_AffinityIdx.Delete();
+            m_QueueDbBlock->affinity_idx.Delete();
         }
         trans.Commit();
 //        cout << aff_id << " cleaned" << endl;
@@ -1514,22 +1587,22 @@ void CQueue::AddJobsToAffinity(CBDB_Transaction&    trans,
 
 {
     CFastMutexGuard     guard(m_AffinityIdxLock);
-    m_AffinityIdx.SetTransaction(&trans);
+    m_QueueDbBlock->affinity_idx.SetTransaction(&trans);
     TNSBitVector        bv(bm::BM_GAP);
 
     // check if vector is in the database
 
     // read vector from the file
-    m_AffinityIdx.aff_id = aff_id;
+    m_QueueDbBlock->affinity_idx.aff_id = aff_id;
     /*EBDB_ErrCode ret = */
-    m_AffinityIdx.ReadVector(&bv, bm::set_OR, NULL);
+    m_QueueDbBlock->affinity_idx.ReadVector(&bv, bm::set_OR, NULL);
     if (job_id_to == 0) {
         bv.set(job_id_from);
     } else {
         bv.set_range(job_id_from, job_id_to);
     }
-    m_AffinityIdx.aff_id = aff_id;
-    m_AffinityIdx.WriteVector(bv, SAffinityIdx::eNoCompact);
+    m_QueueDbBlock->affinity_idx.aff_id = aff_id;
+    m_QueueDbBlock->affinity_idx.WriteVector(bv, SAffinityIdx::eNoCompact);
 }
 
 
@@ -1537,7 +1610,7 @@ void CQueue::AddJobsToAffinity(CBDB_Transaction& trans,
                                const vector<CJob>& batch)
 {
     CFastMutexGuard guard(m_AffinityIdxLock);
-    m_AffinityIdx.SetTransaction(&trans);
+    m_QueueDbBlock->affinity_idx.SetTransaction(&trans);
     // TODO: Is not it easier to have map with auto_ptrs?
     // In this case we don't need this clumsy map freeing.
     typedef map<unsigned, TNSBitVector*> TBVMap;
@@ -1555,9 +1628,9 @@ void CQueue::AddJobsToAffinity(CBDB_Transaction& trans,
 
             if (aff_it == bv_map.end()) { // new element
                 auto_ptr<TNSBitVector> bv(new TNSBitVector(bm::BM_GAP));
-                m_AffinityIdx.aff_id = aff_id;
+                m_QueueDbBlock->affinity_idx.aff_id = aff_id;
                 /*EBDB_ErrCode ret = */
-                m_AffinityIdx.ReadVector(bv.get(), bm::set_OR, NULL);
+                m_QueueDbBlock->affinity_idx.ReadVector(bv.get(), bm::set_OR, NULL);
                 aff_bv = bv.get();
                 bv_map[aff_id] = bv.release();
             } else {
@@ -1592,8 +1665,8 @@ void CQueue::AddJobsToAffinity(CBDB_Transaction& trans,
             TNSBitVector*   bv = it->second;
             bv->optimize();
 
-            m_AffinityIdx.aff_id = aff_id;
-            m_AffinityIdx.WriteVector(*bv, SAffinityIdx::eNoCompact);
+            m_QueueDbBlock->affinity_idx.aff_id = aff_id;
+            m_QueueDbBlock->affinity_idx.WriteVector(*bv, SAffinityIdx::eNoCompact);
 
             delete it->second;
             it->second = 0;
@@ -1614,8 +1687,8 @@ void CQueue::AddJobsToAffinity(CBDB_Transaction& trans,
 void CQueue::x_ReadAffIdx_NoLock(unsigned      aff_id,
                                  TNSBitVector* jobs)
 {
-    m_AffinityIdx.aff_id = aff_id;
-    m_AffinityIdx.ReadVector(jobs, bm::set_OR);
+    m_QueueDbBlock->affinity_idx.aff_id = aff_id;
+    m_QueueDbBlock->affinity_idx.ReadVector(jobs, bm::set_OR);
 }
 
 
@@ -1623,7 +1696,7 @@ void CQueue::GetJobsWithAffinities(const TNSBitVector& aff_id_set,
                                    TNSBitVector*       jobs)
 {
     CFastMutexGuard     guard(m_AffinityIdxLock);
-    m_AffinityIdx.SetTransaction(NULL);
+    m_QueueDbBlock->affinity_idx.SetTransaction(NULL);
     TNSBitVector::enumerator en(aff_id_set.first());
     for (; en.valid(); ++en) {  // for each affinity id
         unsigned        aff_id = *en;
@@ -1636,7 +1709,7 @@ void CQueue::GetJobsWithAffinity(unsigned      aff_id,
                                  TNSBitVector* jobs)
 {
     CFastMutexGuard guard(m_AffinityIdxLock);
-    m_AffinityIdx.SetTransaction(NULL);
+    m_QueueDbBlock->affinity_idx.SetTransaction(NULL);
     x_ReadAffIdx_NoLock(aff_id, jobs);
 }
 
@@ -1752,17 +1825,17 @@ string CQueue::GetAffinityList()
 
     {{
     CFastMutexGuard     guard(m_AffinityIdxLock);
-    m_AffinityIdx.SetTransaction(NULL);
-    CBDB_FileCursor cur(m_AffinityIdx);
+    m_QueueDbBlock->affinity_idx.SetTransaction(NULL);
+    CBDB_FileCursor cur(m_QueueDbBlock->affinity_idx);
     cur.SetCondition(CBDB_FileCursor::eGE);
     cur.From << 0;
 
     EBDB_ErrCode    ret;
     // for every affinity
     for (; (ret = cur.Fetch()) == eBDB_Ok;) {
-        aff_id = m_AffinityIdx.aff_id;
+        aff_id = m_QueueDbBlock->affinity_idx.aff_id;
         TNSBitVector bvect(bm::BM_GAP);
-        ret = m_AffinityIdx.ReadVector(&bvect, bm::set_OR);
+        ret = m_QueueDbBlock->affinity_idx.ReadVector(&bvect, bm::set_OR);
         m_StatusTracker.PendingIntersect(&bvect);
         // how many pending tasks with this affinity
         bv_cnt = bvect.count();
@@ -2371,7 +2444,7 @@ void CQueue::BlacklistJob(CWorkerNode*  worker_node,
 
 void CQueue::SetTagDbTransaction(CBDB_Transaction* trans)
 {
-    m_TagDB.SetTransaction(trans);
+    m_QueueDbBlock->tag_db.SetTransaction(trans);
 }
 
 
@@ -2404,34 +2477,34 @@ void CQueue::AppendTags(CNSTagMap&        tag_map,
 void CQueue::FlushTags(CNSTagMap& tag_map, CBDB_Transaction& trans)
 {
     CFastMutexGuard guard(m_TagLock);
-    m_TagDB.SetTransaction(&trans);
+    m_QueueDbBlock->tag_db.SetTransaction(&trans);
     NON_CONST_ITERATE(TNSTagMap, it, *tag_map) {
-        m_TagDB.key = it->first.first;
-        m_TagDB.val = it->first.second;
+        m_QueueDbBlock->tag_db.key = it->first.first;
+        m_QueueDbBlock->tag_db.val = it->first.second;
         /*
-        EBDB_ErrCode err = m_TagDB.ReadVector(it->second, bm::set_OR);
+        EBDB_ErrCode err = m_QueueDbBlock->tag_db.ReadVector(it->second, bm::set_OR);
         if (err != eBDB_Ok && err != eBDB_NotFound) {
             // TODO: throw db error
         }
-        m_TagDB.key = it->first.first;
-        m_TagDB.val = it->first.second;
+        m_QueueDbBlock->tag_db.key = it->first.first;
+        m_QueueDbBlock->tag_db.val = it->first.second;
         it->second->optimize();
         if (it->first.first == "transcript") {
             it->second->stat();
         }
-        m_TagDB.WriteVector(*(it->second), STagDB::eNoCompact);
+        m_QueueDbBlock->tag_db.WriteVector(*(it->second), STagDB::eNoCompact);
         */
 
         TNSBitVector bv_tmp(bm::BM_GAP);
-        EBDB_ErrCode err = m_TagDB.ReadVector(&bv_tmp);
+        EBDB_ErrCode err = m_QueueDbBlock->tag_db.ReadVector(&bv_tmp);
         if (err != eBDB_Ok && err != eBDB_NotFound) {
             // TODO: throw db error
         }
         bm::combine_or(bv_tmp, it->second->begin(), it->second->end());
 
-        m_TagDB.key = it->first.first;
-        m_TagDB.val = it->first.second;
-        m_TagDB.WriteVector(bv_tmp, STagDB::eNoCompact);
+        m_QueueDbBlock->tag_db.key = it->first.first;
+        m_QueueDbBlock->tag_db.val = it->first.second;
+        m_QueueDbBlock->tag_db.WriteVector(bv_tmp, STagDB::eNoCompact);
 
         delete it->second;
         it->second = 0;
@@ -2445,7 +2518,7 @@ bool CQueue::ReadTag(const string& key,
                      TBuffer*      buf)
 {
     // Guarded by m_TagLock through GetTagLock()
-    CBDB_FileCursor cur(m_TagDB);
+    CBDB_FileCursor cur(m_QueueDbBlock->tag_db);
     cur.SetCondition(CBDB_FileCursor::eEQ);
     cur.From << key << val;
 
@@ -2456,7 +2529,7 @@ bool CQueue::ReadTag(const string& key,
 void CQueue::ReadTags(const string& key, TNSBitVector* bv)
 {
     // Guarded by m_TagLock through GetTagLock()
-    CBDB_FileCursor     cur(m_TagDB);
+    CBDB_FileCursor     cur(m_QueueDbBlock->tag_db);
     cur.SetCondition(CBDB_FileCursor::eEQ);
     cur.From << key;
 
@@ -2478,8 +2551,8 @@ void CQueue::x_RemoveTags(CBDB_Transaction&   trans,
                           const TNSBitVector& ids)
 {
     CFastMutexGuard guard(m_TagLock);
-    m_TagDB.SetTransaction(&trans);
-    CBDB_FileCursor cur(m_TagDB, trans,
+    m_QueueDbBlock->tag_db.SetTransaction(&trans);
+    CBDB_FileCursor cur(m_QueueDbBlock->tag_db, trans,
                         CBDB_FileCursor::eReadModifyUpdate);
     // iterate over tags database, deleting ids from every entry
     cur.SetCondition(CBDB_FileCursor::eFirst);
@@ -2803,17 +2876,17 @@ unsigned CQueue::DeleteBatch(unsigned batch_size)
         unsigned n;
         for (n = 0; en.valid() && n < txn_size; ++en, ++n) {
             unsigned job_id = *en;
-            m_JobDB.id = job_id;
+            m_QueueDbBlock->job_db.id = job_id;
             try {
-                m_JobDB.Delete();
+                m_QueueDbBlock->job_db.Delete();
                 ++del_rec;
             } catch (CBDB_ErrnoException& ex) {
                 ERR_POST("BDB error " << ex.what());
             }
 
-            m_JobInfoDB.id = job_id;
+            m_QueueDbBlock->job_info_db.id = job_id;
             try {
-                m_JobInfoDB.Delete();
+                m_QueueDbBlock->job_info_db.Delete();
             } catch (CBDB_ErrnoException& ex) {
                 ERR_POST("BDB error " << ex.what());
             }
@@ -2831,10 +2904,10 @@ unsigned CQueue::DeleteBatch(unsigned batch_size)
 
 CBDB_FileCursor& CQueue::GetRunsCursor()
 {
-    CBDB_Transaction* trans = m_RunsDB.GetBDBTransaction();
+    CBDB_Transaction* trans = m_QueueDbBlock->runs_db.GetBDBTransaction();
     CBDB_FileCursor* cur = m_RunsCursor.get();
     if (!cur) {
-        cur = new CBDB_FileCursor(m_RunsDB);
+        cur = new CBDB_FileCursor(m_QueueDbBlock->runs_db);
         m_RunsCursor.reset(cur);
     } else {
         cur->Close();
@@ -3092,14 +3165,14 @@ void CQueue::StatusStatistics(TJobStatus                status,
 unsigned CQueue::CountRecs()
 {
     CQueueGuard guard(this);
-    return m_JobDB.CountRecs();
+    return m_QueueDbBlock->job_db.CountRecs();
 }
 
 
 void CQueue::PrintStat(CNcbiOstream& out)
 {
     CQueueGuard guard(this);
-    m_JobDB.PrintStat(out);
+    m_QueueDbBlock->job_db.PrintStat(out);
 }
 
 

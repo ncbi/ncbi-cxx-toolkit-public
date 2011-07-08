@@ -117,7 +117,7 @@ unsigned SNS_Parameters::GetNumParams() const
 
 string SNS_Parameters::GetParamName(unsigned n) const
 {
-    if (n > s_NumNSParameters)
+    if (n >= s_NumNSParameters)
         return kEmptyStr;
     return s_NSParameters[n];
 }

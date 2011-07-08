@@ -52,16 +52,20 @@ struct SQueueDbBlock
     void Close();
     void Truncate();
 
-    bool                  allocated; // Am I allocated?
-    int                   pos;       // My own pos in array
-    SQueueDB              job_db;
-    SJobInfoDB            job_info_db;
-    SRunsDB               runs_db;
-    SDeletedJobsDB        deleted_jobs_db;
-    SAffinityIdx          affinity_idx;
-    SAffinityDictDB       aff_dict_db;
-    SAffinityDictTokenIdx aff_dict_token_idx;
-    STagDB                tag_db;
+    bool                    allocated; // Am I allocated?
+    int                     pos;       // My own pos in array
+    SQueueDB                job_db;
+    SJobInfoDB              job_info_db;
+    SRunsDB                 runs_db;
+    SDeletedJobsDB          deleted_jobs_db;
+    SAffinityIdx            affinity_idx;
+    SAffinityDictDB         aff_dict_db;
+    SAffinityDictTokenIdx   aff_dict_token_idx;
+    STagDB                  tag_db;
+    SStartCounterDB         start_from_db;
+
+private:
+    void x_InitStartCounter(void);
 };
 
 

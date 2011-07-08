@@ -33,6 +33,7 @@
 
 #include "ns_server.hpp"
 #include "queue_coll.hpp"
+#include "queue_database.hpp"
 
 
 USING_NCBI_SCOPE;

@@ -60,7 +60,8 @@ void SQueueDbBlock::Open(CBDB_Env& env, const string& path, int pos_)
         // space here
         job_db.RevSplitOff();
 
-        if (group_tables_for_queue) tname = "job";
+        if (group_tables_for_queue)
+            tname = "job";
         job_db.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
 
         if (group_tables_for_queue)
@@ -114,14 +115,36 @@ void SQueueDbBlock::Open(CBDB_Env& env, const string& path, int pos_)
         tag_db.RevSplitOff();
         tag_db.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
 
+        if (group_tables_for_queue)
+            tname = "start_from";
+        else
+            fname = prefix + "_start_from.idx";
+        start_from_db.SetEnv(env);
+        start_from_db.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
+
     } catch (CBDB_ErrnoException&) {
         throw;
     }
 }
 
 
+void SQueueDbBlock::x_InitStartCounter(void)
+{
+    // Checks if there are any records in the start_from_db
+    // If not then creates a record with an initial value
+    start_from_db.pseudo_key = 1;
+    if (start_from_db.Fetch() == eBDB_NotFound) {
+        // There are no records, create the initial one
+        start_from_db.pseudo_key = 1;
+        start_from_db.start_from = 0;
+        start_from_db.UpdateInsert();
+    }
+}
+
+
 void SQueueDbBlock::Close()
 {
+    start_from_db.Close();
     tag_db.Close();
     aff_dict_token_idx.Close();
     aff_dict_db.Close();
@@ -135,6 +158,7 @@ void SQueueDbBlock::Close()
 
 void SQueueDbBlock::Truncate()
 {
+    start_from_db.SafeTruncate();
     tag_db.SafeTruncate();
     aff_dict_token_idx.SafeTruncate();
     aff_dict_db.SafeTruncate();
@@ -215,7 +239,7 @@ bool CQueueDbBlockArray::Allocate(int pos)
 SQueueDbBlock* CQueueDbBlockArray::Get(int pos)
 {
     if (pos < 0 || unsigned(pos) >= m_Count)
-        return 0;
+        return NULL;
 
     return &m_Array[pos];
 }

@@ -550,9 +550,9 @@ void CJob::Delete()
 
 CJob::EJobFetchResult CJob::Fetch(CQueue* queue)
 {
-    SQueueDB&       job_db      = queue->m_JobDB;
-    SJobInfoDB&     job_info_db = queue->m_JobInfoDB;
-    SRunsDB&        runs_db     = queue->m_RunsDB;
+    SQueueDB&       job_db      = queue->m_QueueDbBlock->job_db;
+    SJobInfoDB&     job_info_db = queue->m_QueueDbBlock->job_info_db;
+    SRunsDB&        runs_db     = queue->m_QueueDbBlock->runs_db;
 
     m_Id          = job_db.id;
 
@@ -634,7 +634,7 @@ CJob::EJobFetchResult CJob::Fetch(CQueue* queue)
 
 CJob::EJobFetchResult CJob::Fetch(CQueue* queue, unsigned id)
 {
-    SQueueDB&       job_db = queue->m_JobDB;
+    SQueueDB&       job_db = queue->m_QueueDbBlock->job_db;
     job_db.id = id;
 
     EBDB_ErrCode    res = job_db.Fetch();
@@ -668,9 +668,9 @@ bool CJob::Flush(CQueue* queue)
     }
     _ASSERT(!m_AffinityToken.size() || m_AffinityId);
 
-    SQueueDB&       job_db      = queue->m_JobDB;
-    SJobInfoDB&     job_info_db = queue->m_JobInfoDB;
-    SRunsDB&        runs_db     = queue->m_RunsDB;
+    SQueueDB&       job_db      = queue->m_QueueDbBlock->job_db;
+    SJobInfoDB&     job_info_db = queue->m_QueueDbBlock->job_info_db;
+    SRunsDB&        runs_db     = queue->m_QueueDbBlock->runs_db;
 
     bool            flush_job = (m_Dirty & fJobPart) || m_New;
     bool            input_overflow = m_Input.size() > kNetScheduleSplitSize;

@@ -572,11 +572,15 @@ private:
     void x_LogSubmit(const CJob &   job,
                      unsigned int   batch_id,
                      bool           separate_request);
+    void x_UpdateStartFromCounter(void);
+    unsigned int x_ReadStartFromCounter(void);
 
 private:
     friend class CQueueGuard;
     friend class CQueueJSGuard;
     friend class CJob;
+    friend class CQueueEnumCursor;
+    friend class CQueueParamAccessor;
 
     CJobStatusTracker           m_StatusTracker;    ///< status FSA
 
@@ -604,35 +608,17 @@ private:
     string                      m_QueueClass;      ///< Parameter class
     TQueueKind                  m_Kind;            ///< 0 - static, 1 - dynamic
 
-    friend class CQueueEnumCursor;
     SQueueDbBlock*              m_QueueDbBlock;
 
-    // Databases
-    //    SQueueDB                     m_JobDB;           ///< Main queue database
-#define m_JobDB m_QueueDbBlock->job_db
-    //    SJobInfoDB                   m_JobInfoDB;       ///< Aux info on jobs, tags etc.
-#define m_JobInfoDB m_QueueDbBlock->job_info_db
-
-    //    SRunsDB                      m_RunsDB;          ///< Info on jobs runs
-#define m_RunsDB m_QueueDbBlock->runs_db
     auto_ptr<CBDB_FileCursor>   m_RunsCursor;      ///< DB cursor for RunsDB
 
     CFastMutex                  m_DbLock;          ///< db, cursor lock
-
-    // Affinity
-    //    SAffinityIdx                 m_AffinityIdx;     ///< Q affinity index
-#define m_AffinityIdx m_QueueDbBlock->affinity_idx
     CFastMutex                  m_AffinityIdxLock;
-
+    CFastMutex                  m_TagLock;
 
     // affinity dictionary does not need a mutex, because
     // CAffinityDict is a syncronized class itself (mutex included)
     CAffinityDict               m_AffinityDict;    ///< Affinity tokens
-
-    // Tags
-    //    STagDB                       m_TagDB;
-#define m_TagDB m_QueueDbBlock->tag_db
-    CFastMutex                  m_TagLock;
 
     ///< When the queue became empty, guarded by 'm_DbLock'
     time_t                      m_BecameEmpty;
@@ -642,7 +628,10 @@ private:
 
 
     /// Last valid id for queue
-    CAtomicCounter              m_LastId;
+    unsigned int                m_LastId;      // Last used job ID
+    unsigned int                m_SavedId;     // The ID we will start next time
+                                               // the netschedule is loaded
+    CFastMutex                  m_lastIdLock;
 
     // Read group support
     typedef map<unsigned, TNSBitVector>     TGroupMap;
@@ -653,9 +642,6 @@ private:
 
     /// Lock for deleted jobs vectors
     CFastMutex                   m_JobsToDeleteLock;
-    /// Database for vectors of deleted jobs
-//    SDeletedJobsDB               m_DeletedJobsDB;
-#define m_DeletedJobsDB m_QueueDbBlock->deleted_jobs_db
     /// Vector of jobs to be deleted from db unconditionally
     /// keeps jobs still to be deleted from main DB
     TNSBitVector                 m_JobsToDelete;
@@ -673,7 +659,6 @@ private:
 
     // Configurable queue parameters
     // When modifying this, modify all places marked with PARAMETERS
-    friend class CQueueParamAccessor;
     mutable CRWLock              m_ParamLock;
     int                          m_Timeout;         ///< Result exp. timeout
     int                          m_NotifyTimeout;   ///< Notification interval
@@ -908,9 +893,9 @@ public:
         : m_Queue(0)
     {
         Guard(q);
-        q->m_JobDB.SetTransaction(trans);
-        q->m_JobInfoDB.SetTransaction(trans);
-        q->m_RunsDB.SetTransaction(trans);
+        q->m_QueueDbBlock->job_db.SetTransaction(trans);
+        q->m_QueueDbBlock->job_info_db.SetTransaction(trans);
+        q->m_QueueDbBlock->runs_db.SetTransaction(trans);
     }
 
     ~CQueueGuard()

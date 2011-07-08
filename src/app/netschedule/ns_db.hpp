@@ -295,11 +295,25 @@ struct SQueueDescriptionDB : public CBDB_File
     SQueueDescriptionDB()
     {
         DisableNull();
-        BindKey("queue",    &queue);
-        BindData("kind",    &kind);
-        BindData("pos",     &pos);
-        BindData("qclass",  &qclass);
-        BindData("comment", &comment);
+        BindKey("queue",      &queue);
+        BindData("kind",      &kind);
+        BindData("pos",       &pos);
+        BindData("qclass",    &qclass);
+        BindData("comment",   &comment);
+    }
+};
+
+
+struct SStartCounterDB : public CBDB_File
+{
+    CBDB_FieldUint4     pseudo_key;
+    CBDB_FieldUint4     start_from;
+
+    SStartCounterDB()
+    {
+        DisableNull();
+        BindKey("pseudo_key", &pseudo_key);
+        BindData("start_from", &start_from);
     }
 };
 
