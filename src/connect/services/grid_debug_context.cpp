@@ -62,7 +62,7 @@ CGridDebugContext::CGridDebugContext(eMode mode,
     : m_Mode(mode), m_NetCacheAPI(netcache_api)
 {
     TPid cur_pid = CProcess::GetCurrentPid();
-    m_SPid = NStr::UIntToString(cur_pid);
+    m_SPid = NStr::ULongToString(cur_pid);
 }
 
 CGridDebugContext:: ~CGridDebugContext()

@@ -242,7 +242,7 @@ CNetCacheKey::GenerateBlobKey(string*        key,
     key->append(1, '_');
     key->append(tmp);
 
-    NStr::IntToString(tmp, (long) ::time(0));
+    NStr::ULongToString(tmp, (unsigned long) ::time(0));
     key->append(1, '_');
     key->append(tmp);
 
