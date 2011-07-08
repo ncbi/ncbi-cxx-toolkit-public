@@ -493,7 +493,7 @@ void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
             if (sid.substr(0, 4) == "lcl|") sid = sid.substr(4, sid.length());
             int frame_offset = m_AnnotationInfo.GetFrameOffset(sid);
             if (frame_offset >= 0) {
-                int frame_adj = (it.GetSeqStart(1) - frame_offset) % 3 + 3;
+                int frame_adj = (it.GetSeqStart(1) + 3 - frame_offset) % 3;
                 (*annot)->m_FrameInfo[1] = (q_ms) ?
                                            it.GetSeqStop(0)  + frame_adj 
                                          : it.GetSeqStart(0) - frame_adj;
