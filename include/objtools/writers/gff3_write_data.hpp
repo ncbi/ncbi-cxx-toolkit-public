@@ -72,6 +72,9 @@ public:
         const string& );
 
 protected:
+    virtual bool x_AssignType(
+        CMappedFeat );
+
     virtual bool x_AssignAttributes(
         CMappedFeat );
     virtual bool x_AssignAttributesFromAsnCore(
