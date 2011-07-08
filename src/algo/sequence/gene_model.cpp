@@ -441,18 +441,20 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& align,
     static CAtomicCounter counter;
     size_t model_num = counter.Add(1);
 
-    vector<const CSeq_feat *> ncRNAs;
+    vector<CMappedFeat> ncRNAs;
+    CMappedFeat cdregion_handle;
 
     CBioseq_Handle handle = m_scope->GetBioseqHandle(rna_id);
     if (handle) {
         CFeat_CI feat_iter(handle, CSeqFeatData::eSubtype_cdregion);
         if (feat_iter  &&  feat_iter.GetSize() && !cdregion) {
-            cdregion = &feat_iter->GetMappedFeature();
+            cdregion_handle = *feat_iter;
+            cdregion = &cdregion_handle.GetMappedFeature();
         }
 
         for (CFeat_CI feat_iter(handle, CSeqFeatData::eSubtype_ncRNA);
              feat_iter;  ++feat_iter) {
-            ncRNAs.push_back(&feat_iter->GetOriginalFeature());
+            ncRNAs.push_back(*feat_iter);
         }
     }
     else {
@@ -524,8 +526,9 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& align,
     if(cds_feat)
         propagated_features.push_back(cds_feat);
 
-    ITERATE(vector<const CSeq_feat *>, it, ncRNAs){
-        CRef<CSeq_feat> ncrna_feat = x_CreateNcRnaFeature(*it, align, loc, opts);
+    ITERATE(vector<CMappedFeat>, it, ncRNAs){
+        CRef<CSeq_feat> ncrna_feat =
+            x_CreateNcRnaFeature(&it->GetOriginalFeature(), align, loc, opts);
         if(ncrna_feat)
             propagated_features.push_back(ncrna_feat);
     }
