@@ -53,7 +53,11 @@
 BEGIN_NCBI_SCOPE
 
 static const STimeout s_ZeroTimeout = {0, 0};
+#ifndef NCBI_OS_MSWIN
 static const STimeout s_InternalConnectTimeout = {0, 250 * 1000};
+#else
+static const STimeout s_InternalConnectTimeout = {1, 250 * 1000};
+#endif
 
 ///////////////////////////////////////////////////////////////////////////
 SNetServerMultilineCmdOutputImpl::~SNetServerMultilineCmdOutputImpl()
