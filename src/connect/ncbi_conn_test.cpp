@@ -45,7 +45,7 @@
 
 #define NCBI_HELP_DESK  "NCBI Help Desk info@ncbi.nlm.nih.gov"
 #define NCBI_FW_URL                                                     \
-    "http://ww.ncbi.nlm.nih.gov/IEB/ToolBox/NETWORK/firewall.html#Settings"
+    "http://www.ncbi.nlm.nih.gov/IEB/ToolBox/NETWORK/firewall.html#Settings"
 
 
 BEGIN_NCBI_SCOPE
