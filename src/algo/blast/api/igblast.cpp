@@ -662,10 +662,14 @@ void CIgBlast::s_AppendResults(CRef<CSearchResultSet> &results,
         int actual_align = 0;
 
         if ((*result)->HasAlignments()) {
-
-            // keep only the first num_alignments
             align.Reset(const_cast<CSeq_align_set *>
                                    (&*((*result)->GetSeqAlign())));
+            CSeq_align_set::Tdata & align_list = align->Set();
+
+            // sort by score
+            align_list.sort(s_CompareSeqAlign);
+
+            // keep only the first num_alignments
             if (num_aligns >= 0) {
                 CSeq_align_set::Tdata & align_list = align->Set();
                 if (align_list.size() > (CSeq_align_set::Tdata::size_type)num_aligns) {
@@ -689,20 +693,23 @@ void CIgBlast::s_AppendResults(CRef<CSearchResultSet> &results,
             ig_result = new CIgBlastResults(query, align, errmsg, ancillary);
             CRef<CSearchResults> r(ig_result);
             final_results->push_back(r);
-        } else if (!align.Empty()) {
+        } else {
             ig_result = dynamic_cast<CIgBlastResults *> (&(*final_results)[iq]);
-            CSeq_align_set::Tdata & ig_list = ig_result->SetSeqAlign()->Set();
-            // Remove duplicates first
-            CSeq_align_set::Tdata & align_list = align->Set();
-            CSeq_align_set::Tdata::iterator it = align_list.begin();
-            while (it != align_list.end() && s_SeqAlignInSet(ig_list, *it)) ++it;
-            if (it != align_list.begin())  align_list.erase(align_list.begin(), it);
+            if (!align.Empty()) {
+                CSeq_align_set::Tdata & ig_list = ig_result->SetSeqAlign()->Set();
+                // Remove duplicates first
+                CSeq_align_set::Tdata & align_list = align->Set();
+                CSeq_align_set::Tdata::iterator it = align_list.begin();
+                while (it != align_list.end() && s_SeqAlignInSet(ig_list, *it)) ++it;
+                if (it != align_list.begin())  align_list.erase(align_list.begin(), it);
 
-            if (!align_list.empty()) {
-                ig_list.insert(ig_list.end(), align_list.begin(), align_list.end());
-                ig_result->GetErrors().Combine(errmsg);
+                if (!align_list.empty()) {
+                    ig_list.insert(ig_list.end(), align_list.begin(), align_list.end());
+                    ig_result->GetErrors().Combine(errmsg);
+                }
             }
-        } 
+        }
+
         switch(gene) {
         case 0: ig_result->m_NumActualV = actual_align; break;
         case 1: ig_result->m_NumActualD = actual_align; break;
