@@ -714,7 +714,10 @@ void CSeqDB::AccessionToOids(const string & acc, vector<int> & oids) const
             int oid(-1);
             
             if (gi > 0 && GiToOid(gi, oid)) {
-                oids.push_back(oid);
+                int oid0 = oid;
+                if (m_Impl->CheckOrFindOID(oid) && (oid==oid0)) {
+                    oids.push_back(oid);
+                }
             }
         }
         catch(...) {

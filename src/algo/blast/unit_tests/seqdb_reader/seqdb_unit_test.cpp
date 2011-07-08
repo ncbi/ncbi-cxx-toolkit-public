@@ -3986,9 +3986,11 @@ BOOST_AUTO_TEST_CASE(TestOidNotFoundWithUserAliasFileAndGiList)
     int gi2search = 129;    // shouldn't be found
     oids.clear();
     db->AccessionToOids(NStr::IntToString(gi2search), oids);
-    BOOST_CHECK_EQUAL(1U, oids.size());
+    BOOST_CHECK_EQUAL(0U, oids.size());
+    /*
     list< CRef< CSeq_id> > filtered_ids = db->GetSeqIDs(oids[0]);
     BOOST_CHECK_EQUAL(0U, filtered_ids.size());
+    */
 
     int oid = -1;
     bool found = false;
