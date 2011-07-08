@@ -259,7 +259,7 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
         key.HasExtensions() && key.GetServiceName() !=
             m_Service.GetServiceName() ? &key.GetServiceName() : NULL);
 
-    m_Service->ExecUntilSucceded(cmd, exec_result, &iteration_beginner);
+    m_Service->IterateAndExec(cmd, exec_result, &iteration_beginner);
 
     return exec_result;
 }

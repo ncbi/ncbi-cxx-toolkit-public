@@ -314,11 +314,6 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
                     CConfig::eErr_NoThrow,
                         THROTTLE_BY_SUBSEQUENT_CONNECTION_FAILURES_DEFAULT);
 
-            m_MaxQueryTime = s_SecondsToMilliseconds(config->GetString(section,
-                "max_connection_time", CConfig::eErr_NoThrow,
-                    NCBI_AS_STRING(MAX_CONNECTION_TIME_DEFAULT)),
-                    SECONDS_DOUBLE_TO_MS_UL(MAX_CONNECTION_TIME_DEFAULT));
-
             m_ThrottleUntilDiscoverable = config->GetBool(section,
                 "throttle_hold_until_active_in_lb", CConfig::eErr_NoThrow,
                     THROTTLE_HOLD_UNTIL_ACTIVE_IN_LB_DEFAULT);
@@ -327,6 +322,11 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
                 "throttle_forced_rebalance", CConfig::eErr_NoThrow,
                     THROTTLE_FORCED_REBALANCE_DEFAULT);
         }
+
+        m_MaxConnectionTime = s_SecondsToMilliseconds(config->GetString(section,
+            "max_connection_time", CConfig::eErr_NoThrow,
+                NCBI_AS_STRING(MAX_CONNECTION_TIME_DEFAULT)),
+                SECONDS_DOUBLE_TO_MS_UL(MAX_CONNECTION_TIME_DEFAULT));
 
         m_RebalanceStrategy = CreateSimpleRebalanceStrategy(*config, section);
     } else {
@@ -342,9 +342,11 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
             THROTTLE_BY_ERROR_RATE_DEFAULT_DENOMINATOR;
         m_MaxSubsequentConnectionFailures =
             THROTTLE_BY_SUBSEQUENT_CONNECTION_FAILURES_DEFAULT;
-        m_MaxQueryTime = SECONDS_DOUBLE_TO_MS_UL(MAX_CONNECTION_TIME_DEFAULT);
         m_ThrottleUntilDiscoverable = THROTTLE_HOLD_UNTIL_ACTIVE_IN_LB_DEFAULT;
         m_ForceRebalanceAfterThrottleWithin = THROTTLE_FORCED_REBALANCE_DEFAULT;
+
+        m_MaxConnectionTime =
+            SECONDS_DOUBLE_TO_MS_UL(MAX_CONNECTION_TIME_DEFAULT);
 
         m_RebalanceStrategy = CreateDefaultRebalanceStrategy();
     }
@@ -581,7 +583,7 @@ CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd)
 
     SRandomIterationBeginner iteration_beginner(*this);
 
-    m_Impl->ExecUntilSucceded(cmd, exec_result, &iteration_beginner);
+    m_Impl->IterateAndExec(cmd, exec_result, &iteration_beginner);
 
     return exec_result;
 }
@@ -753,14 +755,14 @@ static void SleepUntil(const CTime& time)
     }
 }
 
-void SNetServiceImpl::ExecUntilSucceded(const string& cmd,
+void SNetServiceImpl::IterateAndExec(const string& cmd,
     CNetServer::SExecResult& exec_result,
     IIterationBeginner* iteration_beginner)
 {
     CNetServiceIterator it = iteration_beginner->BeginIteration();
 
-    CTime max_query_time(GetFastLocalTime());
-    CTime retry_delay_until(max_query_time);
+    CTime max_connection_time(GetFastLocalTime());
+    CTime retry_delay_until(max_connection_time);
 
     unsigned retry_count;
 
@@ -774,9 +776,9 @@ void SNetServiceImpl::ExecUntilSucceded(const string& cmd,
         case CNetSrvConnException::eServerThrottle:
             retry_count = TServConn_ConnMaxRetries::GetDefault();
             if ((++it || retry_count > 0) &&
-                    (m_MaxQueryTime == 0 || GetFastLocalTime() <
-                        max_query_time.AddNanoSecond(
-                            m_MaxQueryTime * 1000 * 1000)))
+                    (m_MaxConnectionTime == 0 || GetFastLocalTime() <
+                        max_connection_time.AddNanoSecond(
+                            m_MaxConnectionTime * 1000 * 1000)))
                 break;
             /* else: FALL THROUGH */
 
@@ -787,8 +789,8 @@ void SNetServiceImpl::ExecUntilSucceded(const string& cmd,
 
     // At this point, 'it' points to the next server (or NULL);
     // variable 'retry_count' is set from the respective configuration
-    // parameter; 'max_query_time' is set correctly unless
-    // m_MaxQueryTime is zero.
+    // parameter; 'max_connection_time' is set correctly unless
+    // m_MaxConnectionTime is zero.
 
     unsigned long retry_delay = s_GetRetryDelay() * 1000 * 1000;
     retry_delay_until.AddNanoSecond(retry_delay);
@@ -825,10 +827,10 @@ void SNetServiceImpl::ExecUntilSucceded(const string& cmd,
             break;
         --retry_count;
 
-        if (m_MaxQueryTime > 0 &&
-                GetFastLocalTime() >= max_query_time) {
+        if (m_MaxConnectionTime > 0 &&
+                GetFastLocalTime() >= max_connection_time) {
             LOG_POST(Error <<
-                "Timeout (max_query_time=" << m_MaxQueryTime <<
+                "Timeout (max_connection_time=" << m_MaxConnectionTime <<
                 "); cmd=" << cmd <<
                 "; exception=" << last_error);
             break;

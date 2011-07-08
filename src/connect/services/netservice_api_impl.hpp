@@ -215,7 +215,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
 
     void Monitor(CNcbiOstream& out, const string& cmd);
 
-    void ExecUntilSucceded(const string& cmd,
+    void IterateAndExec(const string& cmd,
         CNetServer::SExecResult& exec_result,
         IIterationBeginner* iteration_beginner);
 
@@ -253,7 +253,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     int m_ReconnectionFailureThresholdNumerator;
     int m_ReconnectionFailureThresholdDenominator;
     int m_ServerThrottlePeriod;
-    int m_MaxQueryTime;
+    int m_MaxConnectionTime;
     bool m_ThrottleUntilDiscoverable;
     int m_ForceRebalanceAfterThrottleWithin;
 

@@ -515,8 +515,9 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd)
 {
     CNetServer::SExecResult exec_result;
 
-    CTime max_query_time(GetFastLocalTime());
-    max_query_time.AddNanoSecond(m_Impl->m_Service->m_MaxQueryTime * 1000000);
+    CTime max_connection_time(GetFastLocalTime());
+    max_connection_time.AddNanoSecond(
+        m_Impl->m_Service->m_MaxConnectionTime * 1000000);
 
     unsigned attempt = 0;
 
@@ -530,10 +531,10 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd)
                     e.GetErrCode() == CNetSrvConnException::eServerThrottle)
                 throw;
 
-            if (m_Impl->m_Service->m_MaxQueryTime > 0 &&
-                    max_query_time <= GetFastLocalTime()) {
-                LOG_POST(Error << "Timeout (max_query_time=" <<
-                    m_Impl->m_Service->m_MaxQueryTime <<
+            if (m_Impl->m_Service->m_MaxConnectionTime > 0 &&
+                    max_connection_time <= GetFastLocalTime()) {
+                LOG_POST(Error << "Timeout (max_connection_time=" <<
+                    m_Impl->m_Service->m_MaxConnectionTime <<
                     "); cmd=" << cmd <<
                     "; exception=" << e.GetMsg());
                 throw;
