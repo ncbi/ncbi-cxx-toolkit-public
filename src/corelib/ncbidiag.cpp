@@ -2349,6 +2349,19 @@ void CDiagContext::x_FinalizeSetupDiag(void)
 }
 
 
+// Helper function to set log file with forced splitting.
+bool SetApplogFile(const string& file_name)
+{
+    bool old_split = GetSplitLogFile();
+    SetSplitLogFile(true);
+    bool res = SetLogFile(file_name);
+    if ( !res ) {
+        SetSplitLogFile(old_split);
+    }
+    return res;
+}
+
+
 void CDiagContext::SetupDiag(EAppDiagStream       ds,
                              CNcbiRegistry*       config,
                              EDiagCollectMessages collect)
@@ -2450,7 +2463,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                         // Try /log/<port>
                         if ( !def_log_dir.empty() ) {
                             log_name = CFile::ConcatPath(def_log_dir, log_base);
-                            if ( SetLogFile(log_name, eDiagFile_All) ) {
+                            if ( SetApplogFile(log_name) ) {
                                 log_switched = true;
                                 name_changed = log_name != old_log_name;
                                 to_applog = true;
@@ -2459,7 +2472,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                         }
                         // Try /log/srv if port is unknown or not writable
                         log_name = CFile::ConcatPath("/log/srv", log_base);
-                        if ( SetLogFile(log_name, eDiagFile_All) ) {
+                        if ( SetApplogFile(log_name) ) {
                             log_switched = true;
                             name_changed = log_name != old_log_name;
                             to_applog = true;
@@ -2473,7 +2486,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                         }
                         // Try to switch to /log/fallback/
                         log_name = CFile::ConcatPath("/log/fallback/", log_base);
-                        if ( SetLogFile(log_name, eDiagFile_All) ) {
+                        if ( SetApplogFile(log_name) ) {
                             log_switched = true;
                             name_changed = log_name != old_log_name;
                             to_applog = true;
@@ -2495,7 +2508,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                     static const char* kDefaultFallback = "/log/fallback/UNKNOWN";
                     // Try to switch to /log/fallback/UNKNOWN
                     if ( s_UseRootLog ) {
-                        if ( SetLogFile(kDefaultFallback, eDiagFile_All) ) {
+                        if ( SetApplogFile(kDefaultFallback) ) {
                             log_switched = true;
                             name_changed = kDefaultFallback != old_log_name;
                             to_applog = true;
