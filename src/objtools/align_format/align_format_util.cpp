@@ -1373,6 +1373,11 @@ bool CAlignFormatUtil::SortHitByTotalScoreDescending(CRef<CSeq_align_set> const&
         
 }
 
+#ifndef NCBI_COMPILER_WORKSHOP
+/** Class to sort by linkout bit 
+ * @note this code doesn't compile under the Solaris' WorkShop, and because
+ * this feature is only used inside NCBI (LinkoutDB), we disable this code.
+ */
 class CSortHitByMolecularTypeEx
 {
 public:
@@ -1400,6 +1405,7 @@ private:
     ILinkoutDB* m_LinkoutDB;
     string m_MapViewerBuildName;
 };
+#endif /* NCBI_COMPILER_WORKSHOP */
 
 void CAlignFormatUtil::
 SortHitByMolecularType(list< CRef<CSeq_align_set> >& seqalign_hit_list,
@@ -1408,7 +1414,9 @@ SortHitByMolecularType(list< CRef<CSeq_align_set> >& seqalign_hit_list,
 {
 
     kScope = &scope;
+#ifndef NCBI_COMPILER_WORKSHOP
     seqalign_hit_list.sort(CSortHitByMolecularTypeEx(linkoutdb, mv_build_name));
+#endif /* NCBI_COMPILER_WORKSHOP */
 }
 
 void CAlignFormatUtil::SortHit(list< CRef<CSeq_align_set> >& seqalign_hit_list,
@@ -1420,8 +1428,10 @@ void CAlignFormatUtil::SortHit(list< CRef<CSeq_align_set> >& seqalign_hit_list,
     kTranslation = do_translation;
     
     if (sort_method == 1) {
+#ifndef NCBI_COMPILER_WORKSHOP
         seqalign_hit_list.sort(CSortHitByMolecularTypeEx(linkoutdb,
                                                          mv_build_name));
+#endif /* NCBI_COMPILER_WORKSHOP */
     } else if (sort_method == 2) {
         seqalign_hit_list.sort(SortHitByTotalScoreDescending);
     } else if (sort_method == 3) {
