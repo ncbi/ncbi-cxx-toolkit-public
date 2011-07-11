@@ -210,11 +210,18 @@ CPsiBlastApp::DoIterations(CRef<CBlastOptionsHandle> opts_hndl,
             // exit code
 
             CRef<CSearchResultSet> results = rmt_psiblast->GetResultSet();
-            BlastFormatter_PreFetchSequenceData(*results, scope);
-            ITERATE(CSearchResultSet, result, *results) {
-                formatter.PrintOneResultSet(**result, query);
+            if(CFormattingArgs::eArchiveFormat ==
+               m_CmdLineArgs->GetFormattingArgs()->GetFormattedOutputChoice())
+            {
+            	formatter.WriteArchive(*query_factory, *opts_hndl, *results);
             }
-
+            else
+            {
+            	BlastFormatter_PreFetchSequenceData(*results, scope);
+            	ITERATE(CSearchResultSet, result, *results) {
+                	formatter.PrintOneResultSet(**result, query);
+            	}
+            }
             SavePssmToFile(rmt_psiblast->GetPSSM());
 
         } else {
@@ -276,11 +283,19 @@ CPsiBlastApp::DoIterations(CRef<CBlastOptionsHandle> opts_hndl,
                 else
                 {
                    results = psiblast->Run();
-                   BlastFormatter_PreFetchSequenceData(*results, scope);
-                   ITERATE(CSearchResultSet, result, *results) {
-                       formatter.PrintOneResultSet(**result, query,
-                                                itr.GetIterationNumber(),
-                                                itr.GetPreviouslyFoundSeqIds());
+                   if(CFormattingArgs::eArchiveFormat ==
+                	  m_CmdLineArgs->GetFormattingArgs()->GetFormattedOutputChoice())
+                   {
+                	   formatter.WriteArchive(*query_factory, *opts_hndl, *results);
+                   }
+                   else
+                   {
+                	   BlastFormatter_PreFetchSequenceData(*results, scope);
+	                   ITERATE(CSearchResultSet, result, *results) {
+ 	                      formatter.PrintOneResultSet(**result, query,
+	                                                itr.GetIterationNumber(),
+	                                                itr.GetPreviouslyFoundSeqIds());
+	                   }
                    }
                 }
                 // FIXME: what if there are no results!?!
