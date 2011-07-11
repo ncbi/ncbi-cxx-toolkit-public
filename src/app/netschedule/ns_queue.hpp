@@ -574,6 +574,7 @@ private:
                      bool           separate_request);
     void x_UpdateStartFromCounter(void);
     unsigned int x_ReadStartFromCounter(void);
+    void x_DeleteJobRuns(unsigned int  job_id);
 
 private:
     friend class CQueueGuard;

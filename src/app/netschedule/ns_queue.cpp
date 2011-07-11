@@ -300,8 +300,11 @@ unsigned CQueue::LoadStatusMatrix()
 
     for (; cur.Fetch() == eBDB_Ok; ) {
         unsigned    job_id = m_QueueDbBlock->job_db.id;
-        if (m_JobsToDelete.test(job_id))
+
+        if (m_JobsToDelete.test(job_id)) {
+            x_DeleteJobRuns(job_id);
             continue;
+        }
 
         int         i_status = m_QueueDbBlock->job_db.status;
         if (i_status <  (int) CNetScheduleAPI::ePending ||
@@ -310,6 +313,7 @@ unsigned CQueue::LoadStatusMatrix()
             // Invalid job, skip it
             ERR_POST("Job " << DecorateJobId(job_id) <<
                      " has invalid status " << i_status << ", ignored.");
+            x_DeleteJobRuns(job_id);
             continue;
         }
         TJobStatus      status = TJobStatus(i_status);
@@ -2890,6 +2894,7 @@ unsigned CQueue::DeleteBatch(unsigned batch_size)
             } catch (CBDB_ErrnoException& ex) {
                 ERR_POST("BDB error " << ex.what());
             }
+            x_DeleteJobRuns(job_id);
         }
         trans.Commit();
         // x_RemoveTags(trans, batch);
@@ -2899,6 +2904,21 @@ unsigned CQueue::DeleteBatch(unsigned batch_size)
         LOG_POST(Error << del_rec << " job(s) deleted");
 
     return del_rec;
+}
+
+
+void CQueue::x_DeleteJobRuns(unsigned int  job_id)
+{
+    try {
+        for (unsigned int  run_number = 0; ; ++run_number) {
+            m_QueueDbBlock->runs_db.id = job_id;
+            m_QueueDbBlock->runs_db.run = run_number;
+            if (m_QueueDbBlock->runs_db.Delete() == eBDB_NotFound)
+                break;
+        }
+    } catch (CBDB_ErrnoException& ex) {
+        ERR_POST("BDB error " << ex.what());
+    }
 }
 
 
