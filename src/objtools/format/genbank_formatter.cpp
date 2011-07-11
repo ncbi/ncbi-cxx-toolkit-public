@@ -192,6 +192,7 @@ void CGenbankFormatter::EndSection
         text_os.AddLine("  {");
 
         // add data for each feature
+        bool is_first = true;
         ITERATE( TFeatureKeyToLocMap, feat_to_loc_iter, m_FeatureKeyToLocMap ) {
             const string &feat_key = feat_to_loc_iter->first;
             const TSeqLocConstRefVec &loc_vec = feat_to_loc_iter->second;
@@ -203,7 +204,7 @@ void CGenbankFormatter::EndSection
             }
             
             // close previous, if any
-            if( feat_to_loc_iter != m_FeatureKeyToLocMap.begin() ) {
+            if( ! is_first ) {
                 text_os.AddLine("    ],");
             }
 
@@ -218,6 +219,7 @@ void CGenbankFormatter::EndSection
             }
 
             text_os.AddLine(""); // endline for last location
+            is_first = false;
         }
 
         // close up opened Javascript brackets, if there
@@ -317,8 +319,14 @@ void CGenbankFormatter::FormatLocus
         << ' '
         << locus.GetDate();
 
-    Wrap(l, GetWidth(), "LOCUS", CNcbiOstrstreamToString(locus_line));
-    if ( GetContext().GetConfig().DoHTML() ) {
+    const bool is_html = GetContext().GetConfig().DoHTML() ;
+
+    string locus_line_str = CNcbiOstrstreamToString(locus_line);
+    if ( is_html ) {
+        TryToSanitizeHtml( locus_line_str );
+    }
+    Wrap(l, GetWidth(), "LOCUS", locus_line_str );
+    if ( is_html ) {
         x_LocusHtmlPrefix( *l.begin(), ctx );
     }
     
@@ -365,6 +373,9 @@ void CGenbankFormatter::FormatAccession
     if (NStr::IsBlank(acc_line)) {
         l.push_back("ACCESSION   ");
     } else {
+        if( acc.GetContext()->Config().DoHTML() ) {
+            TryToSanitizeHtml( acc_line );
+        }
         Wrap(l, "ACCESSION", acc_line);
     }
     text_os.AddParagraph(l, acc.GetObject());
@@ -389,7 +400,11 @@ void CGenbankFormatter::FormatVersion
         if ( version.GetGi() > 0 ) {
             version_line << "  GI:" << version.GetGi();
         }
-        Wrap(l, GetWidth(), "VERSION", CNcbiOstrstreamToString(version_line));
+        string version_line_str = CNcbiOstrstreamToString(version_line);
+        if( version.GetContext()->Config().DoHTML() ) {
+            TryToSanitizeHtml( version_line_str );
+        }
+        Wrap(l, GetWidth(), "VERSION", version_line_str );
     }
 
     text_os.AddParagraph(l, version.GetObject());
@@ -402,29 +417,45 @@ void CGenbankFormatter::FormatVersion
 
 void CGenbankFormatter::FormatGenomeProject(
     const CGenomeProjectItem& gp,
-    IFlatTextOStream& text_os) {
-    
-    if (0 == gp.GetProjectNumber()) {
-        return;
-    }
+    IFlatTextOStream& text_os) 
+{
     list<string> l;
-    CNcbiOstrstream project_line;
-    project_line << "Project: ";
+    const char *prefix = "DBLINK";
 
-    const int proj_num = gp.GetProjectNumber(); 
-    const bool is_html = GetContext().GetConfig().DoHTML();
-    if( is_html ) {
-        project_line << "<a href=\"" << strLinkBaseGenomePrj << proj_num << "\">" << 
-            proj_num << "</a>";
-    } else {
-        project_line << proj_num;
+    if (0 != gp.GetProjectNumber()) {
+
+        CNcbiOstrstream project_line;
+        project_line << "Project: ";
+
+        const int proj_num = gp.GetProjectNumber(); 
+        const bool is_html = GetContext().GetConfig().DoHTML();
+        if( is_html ) {
+            project_line << "<a href=\"" << strLinkBaseGenomePrj << proj_num << "\">" << 
+                proj_num << "</a>";
+        } else {
+            project_line << proj_num;
+        }
+
+        string project_line_str = CNcbiOstrstreamToString(project_line);
+        if( gp.GetContext()->Config().DoHTML() ) {
+            TryToSanitizeHtml( project_line_str );
+        }
+        Wrap(l, GetWidth(), prefix, project_line_str );
+        prefix = kEmptyCStr;
     }
 
-    Wrap(l, GetWidth(), "DBLINK", CNcbiOstrstreamToString(project_line));
     ITERATE( CGenomeProjectItem::TDBLinkLineVec, it, gp.GetDBLinkLines() ) {
-        Wrap(l, GetWidth(), kEmptyStr, *it );
+        string line = *it;
+        if( gp.GetContext()->Config().DoHTML() ) {
+            TryToSanitizeHtml( line );
+        }
+        Wrap(l, GetWidth(), prefix, line );
+        prefix = kEmptyCStr;
     }
-    text_os.AddParagraph(l, gp.GetObject());
+
+    if( ! l.empty() ) {
+        text_os.AddParagraph(l, gp.GetObject());
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -551,7 +582,13 @@ void CGenbankFormatter::x_FormatOrganismLine
         Wrap(l, "ORGANISM", source.GetTaxname(), eSubp);
     }
     // lineage
-    Wrap(l, kEmptyStr, source.GetLineage(), eSubp);
+    if (source.GetContext()->Config().DoHTML()) {
+        string lineage = source.GetLineage();
+        TryToSanitizeHtml( lineage );
+        Wrap(l, kEmptyStr, lineage, eSubp);
+    } else {
+        Wrap(l, kEmptyStr, source.GetLineage(), eSubp);
+    }
 }
 
 
@@ -712,7 +749,11 @@ void CGenbankFormatter::x_Reference
     } else {
         x_FormatRefLocation(ref_line, ref.GetLoc(), " to ", "; ", ctx);
     }
-    Wrap(l, GetWidth(), "REFERENCE", CNcbiOstrstreamToString(ref_line));
+    string ref_line_str = CNcbiOstrstreamToString(ref_line);
+    if( ref.GetContext()->Config().DoHTML() ) {
+        TryToSanitizeHtml( ref_line_str );
+    }
+    Wrap(l, GetWidth(), "REFERENCE", ref_line_str );
 }
 
 
@@ -746,6 +787,9 @@ void CGenbankFormatter::x_Authors
     if (!NStr::EndsWith(authors, '.')) {
         authors += '.';
     }
+    if( ref.GetContext()->Config().DoHTML() ) {
+        TryToSanitizeHtml( authors );
+    }
     Wrap(l, "AUTHORS", authors, eSubp);
 }
 
@@ -756,7 +800,11 @@ void CGenbankFormatter::x_Consortium
  CBioseqContext& ctx) const
 {
     if (!NStr::IsBlank(ref.GetConsortium())) {
-        Wrap(l, "CONSRTM", ref.GetConsortium(), eSubp);
+        string consortium = ref.GetConsortium();
+        if( ref.GetContext()->Config().DoHTML() ) {
+            TryToSanitizeHtml( consortium );
+        }
+        Wrap(l, "CONSRTM", consortium, eSubp);
     }
 }
 
@@ -767,7 +815,11 @@ void CGenbankFormatter::x_Title
  CBioseqContext& ctx) const
 {
     if (!NStr::IsBlank(ref.GetTitle())) {
-        Wrap(l, "TITLE", ref.GetTitle(),   eSubp);
+        string title = ref.GetTitle();
+        if( ref.GetContext()->Config().DoHTML() ) {
+            TryToSanitizeHtml( title );
+        }
+        Wrap(l, "TITLE", title,   eSubp);
     }
 }
 
@@ -781,6 +833,9 @@ void CGenbankFormatter::x_Journal
     x_FormatRefJournal(ref, journal, ctx);
     
     if (!NStr::IsBlank(journal)) {
+        if( ref.GetContext()->Config().DoHTML() ) {
+            TryToSanitizeHtml( journal );
+        }
         Wrap(l, "JOURNAL", journal, eSubp);
     }
 }
@@ -846,6 +901,7 @@ void CGenbankFormatter::x_Remark
     if (!NStr::IsBlank(ref.GetRemark())) {
         if( is_html ) {
             string remarks = ref.GetRemark();
+            TryToSanitizeHtml(remarks);
             s_GenerateWeblinks( "http", remarks );
             s_GenerateWeblinks( "https", remarks );
             Wrap(l, "REMARK", remarks, eSubp);
@@ -1668,10 +1724,16 @@ void CGenbankFormatter::FormatDBSource
 {
     list<string> l;
 
+    const bool bHtml = dbs.GetContext()->Config().DoHTML();
+
     if ( !dbs.GetDBSource().empty() ) {
         string tag = "DBSOURCE";
         ITERATE (list<string>, it, dbs.GetDBSource()) {
-            Wrap(l, tag, *it);
+            string db_src = *it;
+            if( bHtml ) {
+                TryToSanitizeHtml( db_src );
+            }
+            Wrap(l, tag, db_src);
             tag.erase();
         }
         if ( !l.empty() ) {
@@ -1711,11 +1773,21 @@ void CGenbankFormatter::FormatWGS
         return;
     }
 
+    const bool bHtml = wgs.GetContext()->Config().DoHTML();
+
     list<string> l;
+    string first_id = wgs.GetFirstID();
+    if( bHtml ) {
+        TryToSanitizeHtml( first_id );
+    }
     if ( wgs.GetFirstID() == wgs.GetLastID() ) {
-        Wrap(l, tag, wgs.GetFirstID());
+        Wrap(l, tag, first_id);
     } else {
-        Wrap(l, tag, wgs.GetFirstID() + "-" + wgs.GetLastID());
+        string last_id = wgs.GetLastID();
+        if( bHtml ) {
+            TryToSanitizeHtml( last_id );
+        }
+        Wrap(l, tag, first_id + "-" + last_id);
     }
     text_os.AddParagraph(l, wgs.GetObject());
 }
@@ -1731,7 +1803,11 @@ void CGenbankFormatter::FormatPrimary
 {
     list<string> l;
 
-    Wrap(l, "PRIMARY", primary.GetString());
+    string primary_str = primary.GetString();
+    if( primary.GetContext()->Config().DoHTML() ) {
+        TryToSanitizeHtml( primary_str );
+    }
+    Wrap(l, "PRIMARY", primary_str);
 
     text_os.AddParagraph(l, primary.GetObject());
 }

@@ -279,9 +279,9 @@ static bool s_LocationsTouch( const CSeq_loc& loc1, const CSeq_loc& loc2 )
 };
 
 
-static bool s_LocationsOverlap( const CSeq_loc& loc1, const CSeq_loc& loc2 )
+static bool s_LocationsOverlap( const CSeq_loc& loc1, const CSeq_loc& loc2, CScope *p_scope )
 {
-    return ( -1 != TestForOverlap( loc1, loc2, eOverlap_Simple, kInvalidSeqPos, 0 ) );
+    return ( -1 != TestForOverlap( loc1, loc2, eOverlap_Simple, kInvalidSeqPos, p_scope ) );
 };
 
 
@@ -1592,7 +1592,7 @@ bool CFlatGatherer::x_BiosourcesEqualForMergingPurposes(
     // for equality, make sure locations overlap or are adjacent
     // if not, they should definitely not be equal.
     const bool locations_overlap_or_touch = 
-        ( s_LocationsOverlap( src1.GetLoc(), src2.GetLoc() ) ||
+        ( s_LocationsOverlap( src1.GetLoc(), src2.GetLoc(), &src1.GetContext()->GetScope() ) ||
         s_LocationsTouch(  src1.GetLoc(), src2.GetLoc() ) );
     if( ! locations_overlap_or_touch ) {
         return false;

@@ -107,11 +107,8 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
     ItemOS() << item;
     item.Reset( new CVersionItem(ctx) );
     ItemOS() << item;
-
-    if ( ctx.IsGbGenomeProject() ) {
-        item.Reset( new CGenomeProjectItem(ctx) );
-        ItemOS() << item;
-    }
+    item.Reset( new CGenomeProjectItem(ctx) );
+    ItemOS() << item;
     if ( ctx.IsProt() ) {
         item.Reset( new CDBSourceItem(ctx) );
         ItemOS() << item;
