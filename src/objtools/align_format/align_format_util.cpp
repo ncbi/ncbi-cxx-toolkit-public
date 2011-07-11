@@ -2181,18 +2181,17 @@ CAlignFormatUtil::GetBdlLinkoutInfo(const list< CRef< CBlast_def_line > > &bdl,
 }
 static string s_GetTaxName(int taxid)
 {
-    bool isSpecies,isUncult;
-    string taxName,blastName;
-    if(taxid > 0) {
-        CTaxon1 tax;
-        bool success = tax.Init();
-        if(success) {
-            CConstRef<COrg_ref> orgRef = tax.GetOrgRef(taxid, isSpecies,isUncult,blastName);
-            if(orgRef->CanGetCommon()) {
-                taxName = orgRef->GetCommon();
-            }
+    string taxName;
+    try {
+        if(taxid != 0) {
+            SSeqDBTaxInfo info;
+            CSeqDB::GetTaxInfo(taxid, info);
+            taxName = info.common_name;            
         }
-     }
+    }
+    catch (CException&) {
+        
+    }
     return taxName;
 }
 
@@ -2228,7 +2227,7 @@ list<string> CAlignFormatUtil::GetFullLinkoutUrl(const list< CRef< CBlast_def_li
         int linkout = s_LinkLetterToType(linkLetters[i]);        
         string taxName;
         if(linkout & (eMapviewer | eGenomicSeq)) {            
-            linkout = (linkout_map[eGenomicSeq].size() != 0) ? eGenomicSeq : eMapviewer;            
+            linkout = (linkout_map[eGenomicSeq].size() != 0) ? eGenomicSeq : eMapviewer;                        
             taxName = s_GetTaxName(taxid);
         }
         idList = linkout_map[linkout];                 
@@ -2885,7 +2884,7 @@ string CAlignFormatUtil::GetIDUrl(SSeqURLInfo *seqUrlInfo,const CBioseq::TId* id
 {
     string url_link = NcbiEmptyString;
     CConstRef<CSeq_id> wid = FindBestChoice(*ids, CSeq_id::WorstRank);
-    
+    //hit_not_in_mapviewer = true if DbisNa && not genomic sequence
     bool hit_not_in_mapviewer = (seqUrlInfo->advancedView) ? true :
                                         (!seqUrlInfo->isDbNa || (seqUrlInfo->linkout != 0 && !(seqUrlInfo->linkout & eGenomicSeq)));
     string logstr_location = (seqUrlInfo->isAlignLink) ? "align" : "top";
