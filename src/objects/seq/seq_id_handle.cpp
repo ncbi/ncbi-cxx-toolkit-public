@@ -163,6 +163,19 @@ bool CSeq_id_Handle::operator==(const CSeq_id& id) const
 }
 
 
+int CSeq_id_Handle::CompareOrdered(const CSeq_id_Handle& id) const
+{
+    // small optimization to avoid creation of temporary CSeq_id objects
+    if ( int diff = Which() - id.Which() ) {
+        return diff;
+    }
+    if ( IsGi() && id.IsGi() ) {
+        return GetGi() - id.GetGi();
+    }
+    return GetSeqId()->CompareOrdered(*id.GetSeqId());
+}
+
+
 string CSeq_id_Handle::AsString() const
 {
     CNcbiOstrstream os;
