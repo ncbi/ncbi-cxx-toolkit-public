@@ -350,11 +350,11 @@ CMasterSeqSegments::CMasterSeqSegments(const CBioseq_Info& master)
 {
     AddSegments(master.GetSeqMap());
     for ( size_t idx = 0; idx < GetSegmentCount(); ++idx ) {
-        const CSeq_id_Handle& h = GetHandle(int(idx));
+        const CSeq_id_Handle& h = GetHandle(idx);
         CConstRef<CBioseq_Info> seg =
             master.GetTSE_Info().FindMatchingBioseq(h);
         if ( seg ) {
-            AddSegmentIds(int(idx), seg->GetId());
+            AddSegmentIds(idx, seg->GetId());
         }
     }
 }
@@ -362,7 +362,7 @@ CMasterSeqSegments::CMasterSeqSegments(const CBioseq_Info& master)
 
 int CMasterSeqSegments::AddSegment(const CSeq_id_Handle& id, bool minus_strand)
 {
-    int idx = int(m_SegSet.size());
+    int idx = m_SegSet.size();
     m_SegSet.push_back(TSeg(id, minus_strand));
     AddSegmentId(idx, id);
     return idx;

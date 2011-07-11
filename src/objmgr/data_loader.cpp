@@ -257,7 +257,7 @@ int CDataLoader::GetTaxId(const CSeq_id_Handle& idh)
 
 void CDataLoader::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
 {
-    int count = int(ids.size());
+    int count = ids.size();
     _ASSERT(ids.size() == loaded.size());
     _ASSERT(ids.size() == ret.size());
     TIds seq_ids;
@@ -274,7 +274,7 @@ void CDataLoader::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
 
 void CDataLoader::GetGis(const TIds& ids, TLoaded& loaded, TGis& ret)
 {
-    int count = int(ids.size());
+    int count = ids.size();
     _ASSERT(ids.size() == loaded.size());
     _ASSERT(ids.size() == ret.size());
     TIds seq_ids;
@@ -291,7 +291,7 @@ void CDataLoader::GetGis(const TIds& ids, TLoaded& loaded, TGis& ret)
 
 void CDataLoader::GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret)
 {
-    int count = int(ids.size());
+    int count = ids.size();
     _ASSERT(ids.size() == loaded.size());
     _ASSERT(ids.size() == ret.size());
     TIds seq_ids;
@@ -311,7 +311,7 @@ void CDataLoader::GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret)
 
 void CDataLoader::GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret)
 {
-    int count = int(ids.size());
+    int count = ids.size();
     _ASSERT(ids.size() == loaded.size());
     _ASSERT(ids.size() == ret.size());
     for ( int i = 0; i < count; ++i ) {

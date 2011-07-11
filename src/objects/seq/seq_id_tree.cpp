@@ -635,7 +635,7 @@ CSeq_id_Textseq_Info::ParseAcc(const string& acc,
                                const CTextseq_id* tid)
 {
     TKey key;
-    int len = int(acc.size()), prefix_len = len, most_significant = -1;
+    int len = acc.size(), prefix_len = len, most_significant = -1;
     while ( prefix_len ) {
         char c = acc[--prefix_len];
         if ( c >= '1' && c <= '9' ) {
@@ -1661,7 +1661,7 @@ CSeq_id_General_Str_Info::Parse(const CDbtag& dbtag)
     TKey key;
     key.m_Key = 0;
     const string& str = dbtag.GetTag().GetStr();
-    int len = int(str.size()), prefix_len = len, str_digits = 0;
+    int len = str.size(), prefix_len = len, str_digits = 0;
     // find longest digit substring
     int cur_digits = 0;
     for ( int i = len; i >= 0; ) {

@@ -68,7 +68,7 @@ CStd_seg::TDim CStd_seg::CheckNumRows() const
                    "CStd_seg::CheckNumRows():"
                    " ids.size is inconsistent with dim");
     }
-    return TDim(dim);
+    return dim;
 }
 
 
@@ -126,9 +126,9 @@ void CStd_seg::Validate(bool /* full_test */) const
 
 void CStd_seg::SwapRows(int row0, int row1)
 {
-    _ASSERT(row0 < int(GetLoc().size()));
-    _ASSERT(row1 < int(GetLoc().size()));
-    if (row0 < int(GetLoc().size())  &&  row1 < int(GetLoc().size())) {
+    _ASSERT(row0 < GetLoc().size());
+    _ASSERT(row1 < GetLoc().size());
+    if (row0 < GetLoc().size()  &&  row1 < GetLoc().size()) {
         swap(SetLoc()[row0], SetLoc()[row1]);
         if (IsSetIds()) {
             swap(SetIds()[row0], SetIds()[row1]);
@@ -256,11 +256,11 @@ void CStd_seg::RemapToLoc(TDim row,
                       " Target Seq-loc is not long enough to"
                       " cover the Std-seg's seq-loc!"
                       " Maximum row seq pos is ");
-        errstr += NStr::UIntToString(src_stop);
+        errstr += NStr::IntToString(src_stop);
         errstr += ". The total seq-loc len is only ";
-        errstr += NStr::UIntToString(dst_len);
+        errstr += NStr::IntToString(dst_len);
         errstr += ", it should be at least ";
-        errstr += NStr::UIntToString(src_stop + 1);
+        errstr += NStr::IntToString(src_stop + 1);
         errstr += " (= max seq pos + 1).";
         NCBI_THROW(CSeqalignException, eOutOfRange, errstr);
     }

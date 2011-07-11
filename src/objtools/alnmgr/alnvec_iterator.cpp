@@ -115,7 +115,7 @@ CAlnVecIterator::CAlnVecIterator()
 CAlnVecIterator::CAlnVecIterator(const TChunkVec& vec, bool reversed, size_t index)
 :   m_ChunkVec(&vec),
     m_Reversed(reversed),
-    m_ChunkIndex(int(index))
+    m_ChunkIndex(index)
 {
     if(x_IsValidChunk())    {
         m_Segment.Init((*m_ChunkVec)[m_ChunkIndex], m_Reversed);

@@ -324,23 +324,23 @@ void CAlnVecPrinter::ClustalStyle(int scrn_width,
             }
 
         
-            TSeqPos aln_pos = 0;
+            TSeqPos pos = 0;
             do {
                 for (CAlnMap::TNumrow row = 0; row < m_NumRows; row++) {
                     PrintId(row);
-                    *m_Out << buffer[row].substr(aln_pos, scrn_width)
+                    *m_Out << buffer[row].substr(pos, scrn_width)
                            << endl;
                 }
                 m_Out->width(m_IdFieldLen);
                 *m_Out << "";
-                *m_Out << buffer[m_NumRows].substr(aln_pos, scrn_width)
+                *m_Out << buffer[m_NumRows].substr(pos, scrn_width)
                        << endl << endl;
 
-                aln_pos += scrn_width;
-                if (aln_pos + scrn_width > aln_len) {
-                    scrn_width = aln_len - aln_pos;
+                pos += scrn_width;
+                if (pos + scrn_width > aln_len) {
+                    scrn_width = aln_len - pos;
                 }
-            } while (aln_pos < aln_len);
+            } while (pos < aln_len);
             break;
         }
     case eUseAlnSeqString:

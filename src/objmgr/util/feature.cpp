@@ -726,7 +726,7 @@ int CFeatIdRemapper::RemapId(int old_id, const CTSE_Handle& tse)
     TFullId key(old_id, tse);
     int& new_id = m_IdMap[key];
     if ( !new_id ) {
-        new_id = int(m_IdMap.size());
+        new_id = m_IdMap.size();
     }
     return new_id;
 }
@@ -890,7 +890,7 @@ CMappedFeat MapSeq_feat(const CSeq_feat_Handle& feat,
     CSeq_annot_Handle annot = feat.GetAnnot();
     sel.SetLimitSeqAnnot(annot);
     sel.SetSourceLoc(feat.GetOriginalSeq_feat()->GetLocation());
-    for (int depth = 0; depth < 10; ++depth) {
+    for ( size_t depth = 0; depth < 10; ++depth ) {
         sel.SetResolveDepth(depth);
         for ( CFeat_CI it(master_seq, range, sel); it; ++it ) {
             if ( it->GetSeq_feat_Handle() == feat ) {

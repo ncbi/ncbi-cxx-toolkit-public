@@ -244,7 +244,7 @@ void CPhrap_Seq::ReadData(CNcbiIstream& in)
         line = ReadLine(in);
         char c = in.peek();
         m_Data += NStr::ToUpper(line);
-        cnt += TSeqPos(line.size());
+        cnt += line.size();
         if ((m_Flags & fPhrap_OldVersion) != 0  &&  isspace(c)) {
             break;
         }
@@ -261,13 +261,13 @@ void CPhrap_Seq::ReadData(CNcbiIstream& in)
     size_t new_pos = 0;
     for (size_t pos = 0; pos < m_PaddedLength; pos++) {
         if (m_Data[pos] == kPadChar) {
-            m_PadMap[pos] = TSeqPos(pos - new_pos);
+            m_PadMap[pos] = pos - new_pos;
             continue;
         }
         m_Data[new_pos] = m_Data[pos];
         new_pos++;
     }
-    m_UnpaddedLength = TSeqPos(new_pos);
+    m_UnpaddedLength = new_pos;
     m_Data.resize(m_UnpaddedLength);
     m_PadMap[m_PaddedLength] = m_PaddedLength - m_UnpaddedLength;
     m_AlignedTo = m_PaddedLength - 1;
@@ -917,7 +917,7 @@ void CPhrap_Contig::ReadBaseQualities(CNcbiIstream& in)
     for (size_t i = 0; i < GetUnpaddedLength(); i++) {
         in >> bq;
         m_BaseQuals.push_back(bq);
-        bq = int(i);
+        bq = i;
     }
     CheckStreamState(in, "BQ data.");
     _ASSERT( isspace((unsigned char) in.peek()) );
@@ -1173,13 +1173,13 @@ CRef<CSeq_align> CPhrap_Contig::x_CreateSeq_align(TAlignMap&     aln_map,
     }
     CRef<CSeq_align> align(new CSeq_align);
     align->SetType(CSeq_align::eType_partial);
-    align->SetDim(CSeq_align::TDim(dim)); // contig + one reads
+    align->SetDim(dim); // contig + one reads
     CDense_seg& dseg = align->SetSegs().SetDenseg();
-    dseg.SetDim(CDense_seg::TDim(dim));
+    dseg.SetDim(dim);
     ITERATE(TAlignRows, row, rows) {
         dseg.SetIds().push_back((*row)->GetId());
     }
-    int numseg = 0;
+    size_t numseg = 0;
     size_t data_size = 0;
     CDense_seg::TStarts& starts = dseg.SetStarts();
     CDense_seg::TStrands& strands = dseg.SetStrands();

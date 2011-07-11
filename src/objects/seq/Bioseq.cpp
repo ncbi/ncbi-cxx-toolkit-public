@@ -245,7 +245,7 @@ void CBioseq::GetLabel(string* label, ELabelType type, bool worst) const
     tv = CSeq_inst::GetTypeInfo_enum_EMol();
     (*label) += tv->FindName(GetInst().GetMol(), true);
     if (GetInst().IsSetLength()) {
-        (*label) += string(" len=") + NStr::UIntToString(GetInst().GetLength());
+        (*label) += string(" len=") + NStr::IntToString(GetInst().GetLength());
     }
 }
 

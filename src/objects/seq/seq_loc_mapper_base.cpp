@@ -270,7 +270,7 @@ CMappingRange::TRange CMappingRange::Map_Range(TSeqPos           from,
         // extend to beginning if necessary
         // example accession that triggers this "if": AJ237662.1
         if( (frame_shift > 0) && partial_from && (from == 0) && (m_Src_from == 0) ) {
-            if( m_Dst_from >= TSeqPos(frame_shift) ) {
+            if( m_Dst_from >= frame_shift ) {
                 ret.SetFrom( m_Dst_from - frame_shift );
             } else {
                 ret.SetFrom( m_Dst_from );
@@ -878,15 +878,13 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
 
     if ( frame ) {
         const int shift = frame - 1;
-        if (dst_type == eSeq_prot  &&  src_start != kInvalidSeqPos &&
-            TSeqPos(shift) < src_len ) {
+        if (dst_type == eSeq_prot  &&  src_start != kInvalidSeqPos && shift < src_len ) {
             if( ! source.IsReverseStrand() ) {
                 src_start += shift;
             }
             src_len -= shift;
         }
-        if (src_type == eSeq_prot  &&  dst_start != kInvalidSeqPos &&
-            TSeqPos(shift) < dst_len ) {
+        if (src_type == eSeq_prot  &&  dst_start != kInvalidSeqPos && shift < dst_len ) {
             if( ! target.IsReverseStrand() ) {
                 dst_start += shift;
             }
@@ -1061,10 +1059,10 @@ void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
                 // Prefer to map from the second subrow to the first one
                 // if their ids are the same.
                 if ((*it)->GetFirst_id().Equals(to_id)) {
-                    x_InitSparse(sparse, int(row), fAlign_Sparse_ToFirst);
+                    x_InitSparse(sparse, row, fAlign_Sparse_ToFirst);
                 }
                 else if ((*it)->GetSecond_id().Equals(to_id)) {
-                    x_InitSparse(sparse, int(row), fAlign_Sparse_ToSecond);
+                    x_InitSparse(sparse, row, fAlign_Sparse_ToSecond);
                 }
             }
             break;
@@ -1140,7 +1138,7 @@ void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
         }
     case CSeq_align::C_Segs::e_Sparse:
         {
-            x_InitSparse(map_align.GetSegs().GetSparse(), int(to_row), opts);
+            x_InitSparse(map_align.GetSegs().GetSparse(), to_row, opts);
             break;
         }
     default:
@@ -1266,8 +1264,8 @@ void CSeq_loc_Mapper_Base::x_InitAlign(const CDense_seg& denseg,
         if (opts & fAlign_Dense_seg_TotalRange) {
             // Get total range for source and destination rows.
             // Both ranges must be not empty.
-            TSeqRange r_src = denseg.GetSeqRange(CDense_seg::TDim(row));
-            TSeqRange r_dst = denseg.GetSeqRange(CDense_seg::TDim(to_row));
+            TSeqRange r_src = denseg.GetSeqRange(row);
+            TSeqRange r_dst = denseg.GetSeqRange(to_row);
 
             _ASSERT(r_src.GetLength() != 0  &&  r_dst.GetLength() != 0);
             ENa_strand dst_strand = have_strands ?
@@ -2631,7 +2629,7 @@ bool CSeq_loc_Mapper_Base::x_MapInterval(const CSeq_id&   src_id,
             const CMappingRange &mapping = *rg_it->second;
             // try to detect if we hit the case where we couldn't do a frame-shift
             if( ! mapping.m_Reverse && mapping.m_Frame > 1 && mapping.m_Dst_from == 0 &&
-                mapping.m_Dst_len <= TSeqPos(mapping.m_Frame - 1)  )
+                mapping.m_Dst_len <= (mapping.m_Frame - 1)  )
             {
                 const int shift = ( mappings[0]->m_Frame - 1 );
                 if( src_rg.GetFrom() != 0 ) {

@@ -107,7 +107,7 @@ bool CTestDiagApp::TestApp_Init(void)
     }
     NcbiCout << NcbiEndl
              << "Testing NCBIDIAG with "
-             << NStr::UIntToString(s_NumThreads)
+             << NStr::IntToString(s_NumThreads)
              << " threads ("
              << (GetDiagContext().IsSetOldPostFormat() ? "old" : "new")
              << " format)..."
@@ -151,7 +151,7 @@ void CTestDiagApp::x_TestOldFormat(TStringList& messages)
         TStringList::iterator it = find(
             messages.begin(),
             messages.end(),
-            "Thread " + NStr::UIntToString(i) + " created");
+            "Thread " + NStr::IntToString(i) + " created");
         assert(it != messages.end());
         messages.erase(it);
     }
@@ -162,7 +162,7 @@ void CTestDiagApp::x_TestOldFormat(TStringList& messages)
         TStringList::iterator it = find(
             messages.begin(),
             messages.end(),
-            "Error: ERROR message from thread " + NStr::UIntToString(i));
+            "Error: ERROR message from thread " + NStr::IntToString(i));
         assert(it != messages.end());
         messages.erase(it);
     }
@@ -173,7 +173,7 @@ void CTestDiagApp::x_TestOldFormat(TStringList& messages)
         TStringList::iterator it = find(
             messages.begin(),
             messages.end(),
-            "LOG message from thread " + NStr::UIntToString(i));
+            "LOG message from thread " + NStr::IntToString(i));
         assert(it != messages.end());
         messages.erase(it);
     }

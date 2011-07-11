@@ -436,7 +436,7 @@ bool CTestDiagApp::TestApp_Init(void)
     NcbiCout << NcbiEndl
              << "Testing NCBIDIAG FILTERING case ("
              << m_Case << ") with "
-             << NStr::UIntToString(s_NumThreads)
+             << NStr::IntToString(s_NumThreads)
              << " threads..."
              << NcbiEndl;
 

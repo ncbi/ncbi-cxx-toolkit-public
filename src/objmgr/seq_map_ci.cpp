@@ -424,7 +424,7 @@ bool CSeqMap_CI::x_Push(TSeqPos pos, bool resolveExternal)
         if ( (m_Stack.size() & 63) == 0 ) {
             // check for self-recursion every 64'th stack frame
             const CSeqMap* top_seq_map = &m_Stack.back().x_GetSeqMap();
-            for ( size_t i = m_Stack.size()-2; i >= 0; --i ) {
+            for ( int i = m_Stack.size()-2; i >= 0; --i ) {
                 if ( &m_Stack[i].x_GetSeqMap() == top_seq_map ) {
                     NCBI_THROW(CSeqMapException, eSelfReference,
                                "Self-reference in CSeqMap");

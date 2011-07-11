@@ -145,11 +145,11 @@ CAlnMixSegments::Build(bool gap_join,
                                 " row=" + NStr::IntToString(row->m_RowIdx) +
                                 " seq=" + NStr::IntToString(row->m_SeqIdx)
                                 + " curr_row_start="
-                                + NStr::UIntToString(curr_row_start)
+                                + NStr::IntToString(curr_row_start)
                                 + " row_start=" +
-                                NStr::UIntToString(row_start)
+                                NStr::IntToString(row_start)
                                 + " refseq_start=" +
-                                NStr::UIntToString(refseq_start)
+                                NStr::IntToString(refseq_start)
                                 + " strand=" +
                                 (row->m_PositiveStrand ? "plus" : "minus");
                             NCBI_THROW(CAlnException, eMergeFailure, errstr);
@@ -199,11 +199,11 @@ CAlnMixSegments::Build(bool gap_join,
                                 " row=" + NStr::IntToString(row->m_RowIdx) +
                                 " seq=" + NStr::IntToString(row->m_SeqIdx)
                                 + " curr_row_start="
-                                + NStr::UIntToString(curr_row_start)
+                                + NStr::IntToString(curr_row_start)
                                 + " row_start=" +
-                                NStr::UIntToString(row_start)
+                                NStr::IntToString(row_start)
                                 + " refseq_start=" +
-                                NStr::UIntToString(refseq_start)
+                                NStr::IntToString(refseq_start)
                                 + " strand=" +
                                 (row->m_PositiveStrand ? "plus" : "minus");
                             NCBI_THROW(CAlnException, eMergeFailure, errstr);
@@ -552,20 +552,20 @@ CAlnMixSegment::StartItsConsistencyCheck(const CAlnMixSeq& seq,
         if ((*st_it_i).second->second != this) {
             string errstr =
                 string("CAlnMixSegment::StartItsConsistencyCheck")
-                + " [match_idx=" + NStr::SizetToString(match_idx) + "]"
+                + " [match_idx=" + NStr::IntToString(match_idx) + "]"
                 + " The internal consistency check failed for"
                 + " the segment containing ["
                 + " row=" + NStr::IntToString((*st_it_i).first->m_RowIdx)
                 + " seq=" + NStr::IntToString((*st_it_i).first->m_SeqIdx)
                 + " strand=" +
                 ((*st_it_i).first->m_PositiveStrand ? "plus" : "minus")
-                + " start=" + NStr::UIntToString((*st_it_i).second->first)
+                + " start=" + NStr::IntToString((*st_it_i).second->first)
                 + "] aligned to: ["
                 + " row=" + NStr::IntToString(seq.m_RowIdx)
                 + " seq=" + NStr::IntToString(seq.m_SeqIdx)
                 + " strand=" +
                 (seq.m_PositiveStrand ? "plus" : "minus")
-                + " start=" + NStr::UIntToString(start)
+                + " start=" + NStr::IntToString(start)
                 + "].";
             NCBI_THROW(CAlnException, eMergeFailure, errstr);
         }

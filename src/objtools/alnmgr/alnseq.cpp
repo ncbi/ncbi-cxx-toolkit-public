@@ -192,7 +192,7 @@ CAlnMixSequences::Add(const CDense_seg& ds, TAddFlags flags)
                     another_row->m_Width        = aln_seq->m_Width;
                     another_row->m_SeqIdx       = aln_seq->m_SeqIdx;
                     another_row->m_ChildIdx     = aln_seq->m_ChildIdx + 1;
-                    another_row->m_DsIdx        = int(m_DsCnt);
+                    another_row->m_DsIdx        = m_DsCnt;
                     another_row->m_RowIdx       = row;
 
                     m_Seqs.push_back(another_row);

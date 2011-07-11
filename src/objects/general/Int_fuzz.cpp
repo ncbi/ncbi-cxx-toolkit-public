@@ -63,11 +63,11 @@ void CInt_fuzz::GetLabel(string* label, TSeqPos pos, bool right) const
     char lim = 0;
     switch (Which()) {
     case CInt_fuzz::e_P_m:
-        (*label) += "<+-" + NStr::UIntToString(GetP_m()) + ">";
+        (*label) += "<+-" + NStr::IntToString(GetP_m()) + ">";
         break;
     case CInt_fuzz::e_Range:
-        (*label) += "<" + NStr::UIntToString(GetRange().GetMin()) +
-            "." + NStr::UIntToString(GetRange().GetMax()) + ">";
+        (*label) += "<" + NStr::IntToString(GetRange().GetMin()) +
+            "." + NStr::IntToString(GetRange().GetMax()) + ">";
         break;
     case CInt_fuzz::e_Pct:
         (*label) += "<" + NStr::IntToString(GetPct()) + "%>";
@@ -104,7 +104,7 @@ void CInt_fuzz::GetLabel(string* label, TSeqPos pos, bool right) const
     }
 
     if (right) {
-        (*label) += NStr::UIntToString(pos + 1);
+        (*label) += NStr::IntToString(pos + 1);
     }
 
     if (lim == 'r') {
@@ -112,7 +112,7 @@ void CInt_fuzz::GetLabel(string* label, TSeqPos pos, bool right) const
     }
 
     if (!right) {
-        (*label) += NStr::UIntToString(pos + 1);
+        (*label) += NStr::IntToString(pos + 1);
     }
 }
 

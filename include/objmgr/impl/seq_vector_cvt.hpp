@@ -51,7 +51,7 @@ void copy_8bit_any(DstIter dst, size_t count,
 {
     size_t endPos = srcPos + count;
     if ( endPos < srcPos || endPos > srcCont.size() ) {
-        ThrowOutOfRangeSeq_inst(TSeqPos(endPos));
+        ThrowOutOfRangeSeq_inst(endPos);
     }
     if ( table ) {
         if ( reverse ) {
@@ -80,7 +80,7 @@ void copy_4bit_any(DstIter dst, size_t count,
 {
     size_t endPos = srcPos + count;
     if ( endPos < srcPos || endPos / 2 > srcCont.size() ) {
-        ThrowOutOfRangeSeq_inst(TSeqPos(endPos));
+        ThrowOutOfRangeSeq_inst(endPos);
     }
     if ( table ) {
         if ( reverse ) {
@@ -109,7 +109,7 @@ void copy_2bit_any(DstIter dst, size_t count,
 {
     size_t endPos = srcPos + count;
     if ( endPos < srcPos || endPos / 4 > srcCont.size() ) {
-        ThrowOutOfRangeSeq_inst(TSeqPos(endPos));
+        ThrowOutOfRangeSeq_inst(endPos);
     }
     if ( table ) {
         if ( reverse ) {

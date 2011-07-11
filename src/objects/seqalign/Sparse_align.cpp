@@ -65,7 +65,7 @@ CSparse_align::TNumseg CSparse_align::CheckNumSegs(void) const {
     _SEQALIGN_ASSERT(GetLens().size() == numseg);
     _SEQALIGN_ASSERT(IsSetSecond_strands() ? GetSecond_strands().size() == numseg : true);
     _SEQALIGN_ASSERT(IsSetSeg_scores() ? GetSeg_scores().size() == numseg : true);
-    return TNumseg(numseg);
+    return numseg;
 }    
 
 

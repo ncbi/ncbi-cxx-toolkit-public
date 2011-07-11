@@ -163,7 +163,7 @@ CAlnMixMerger::x_Merge()
 
     first_refseq = true; // mark the first loop
 
-    x_SetTaskTotal(int(m_Matches.size()));
+    x_SetTaskTotal(m_Matches.size());
 
     while (true) {
 
@@ -273,7 +273,7 @@ CAlnMixMerger::x_Merge()
 
         // save the match info into the segments map
         if (seq1) {
-            x_SetTaskCompleted(int(m_MatchIdx++));
+            x_SetTaskCompleted(m_MatchIdx++);
 
             // this match is used, erase from seq1 list
             if ( !first_refseq ) {
@@ -790,7 +790,7 @@ CAlnMixMerger::x_Merge()
             }
         }
     }
-    x_SetTaskCompleted(int(m_MatchIdx));
+    x_SetTaskCompleted(m_MatchIdx);
     
     m_AlnMixSequences->BuildRows();
     m_AlnMixSegments->Build(m_MergeFlags & fGapJoin,
@@ -1128,9 +1128,9 @@ void
 CAlnMixMerger::x_CreateDenseg()
 {
     int numrow  = 0,
-        numrows = int(m_Rows.size());
+        numrows = m_Rows.size();
     int numseg  = 0,
-        numsegs = int(m_AlnMixSegments->m_Segments.size());
+        numsegs = m_AlnMixSegments->m_Segments.size();
     int num     = numrows * numsegs;
 
     m_DS = new CDense_seg();

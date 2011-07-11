@@ -530,13 +530,13 @@ string CDeflineGenerator::x_DescribeClones (void)
         return kEmptyStr;
     }
 
-    size_t count = 1;
-    for (size_t pos = m_Clone.find(';'); pos != NPOS;
+    SIZE_TYPE count = 1;
+    for (SIZE_TYPE pos = m_Clone.find(';'); pos != NPOS;
          pos = m_Clone.find(';', pos + 1)) {
         ++count;
     }
     if (count > 3) {
-        return ", " + NStr::SizetToString(count) + " clones";
+        return ", " + NStr::IntToString(count) + " clones";
     } else {
         return " clone " + m_Clone;
     }
@@ -1532,7 +1532,7 @@ string CDeflineGenerator::x_SetSuffix (
                 if (pieces == 1) {
                     // suffix += (", 1 " + un + "ordered piece");
                 } else {
-                    suffix += (", " + NStr::UIntToString(pieces)
+                    suffix += (", " + NStr::IntToString (pieces)
                                + " " + un + "ordered pieces");
                 }
             } else {

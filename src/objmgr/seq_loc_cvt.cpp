@@ -592,7 +592,7 @@ void CSeq_loc_Conversion::ConvertPacked_pnt(const CSeq_loc& src,
     const CPacked_seqpnt& src_pack_pnts = src.GetPacked_pnt();
     if ( !GoodSrcId(src_pack_pnts.GetId()) ) {
         if ( m_GraphRanges ) {
-            m_GraphRanges->IncOffset(TSeqPos(src_pack_pnts.GetPoints().size()));
+            m_GraphRanges->IncOffset(src_pack_pnts.GetPoints().size());
         }
         return;
     }

@@ -94,7 +94,7 @@ ostream& operator<<(ostream& out, const CPairwiseAln::TAlnRng& aln_rng)
 
 ostream& operator<<(ostream& out, const CPairwiseAln::EFlags& flags)
 {
-    out << " Flags = " << NStr::UIntToString((unsigned int)flags, 0, 2)
+    out << " Flags = " << NStr::UIntToString(flags, 0, 2)
         << ":" << endl;
     
     if (flags & CPairwiseAln::fKeepNormalized) out << "fKeepNormalized" << endl;

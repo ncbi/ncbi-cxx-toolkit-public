@@ -1470,7 +1470,7 @@ CRef<CSeq_align> CAlnMap::CreateAlignFromRange(
         }
         ds.SetLens().push_back(len);
         // Copy rows to the destination
-        for (TNumrow row = 0; row < TNumrow(selected_rows.size()); row++) {
+        for (TNumrow row = 0; row < selected_rows.size(); row++) {
             TSignedSeqPos row_start = GetStart(selected_rows[row], seg);
             if (row_start >= 0) {
                 row_start += from_trim;

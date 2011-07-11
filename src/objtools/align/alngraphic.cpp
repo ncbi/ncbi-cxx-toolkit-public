@@ -590,14 +590,14 @@ void CAlnGraphic::x_DisplayMaster(int master_len, CNCBINode* center, CHTML_table
     //print scale digits from second mark and on
     for (TSeqPos i = 1; (int)i*round_number <= master_len; i++) {
        
-        digit_str = NStr::UIntToString(i*round_number + 
-                                       (m_MasterRange ?
-                                        m_MasterRange->GetFrom() : 0)); 
+        digit_str = NStr::IntToString(i*round_number + 
+                                      (m_MasterRange ?
+                                       m_MasterRange->GetFrom() : 0)); 
 
-        spacer_length = int(pixel_factor*round_number
+        spacer_length = (int)(pixel_factor*round_number) 
             - kDigitWidth*(previous_digitstr.size() 
                            - previous_digitstr.size()/2) 
-            - kDigitWidth*(digit_str.size()/2));
+            - kDigitWidth*(digit_str.size()/2);
         previous_digitstr = digit_str;
 
         image = new CHTML_img(m_ImagePath + kGifWhite, spacer_length, m_BarHeight);
