@@ -2155,10 +2155,7 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
 			int taxid = 0;
 			string type_temp = m_BlastType;
 			type_temp = NStr::TruncateSpaces(NStr::ToLower(type_temp));
-			if(( ( m_AlignTemplates == NULL && (type_temp == "mapview" ||type_temp == "mapview_prev")) || 
-                            type_temp == "gsfasta" || type_temp == "gsfasta_prev") && 
-                            bdl->IsSetTaxid() && 
-                            bdl->CanGetTaxid()){
+			if(bdl->IsSetTaxid() &&  bdl->CanGetTaxid()){
 				taxid = bdl->GetTaxid();
 			}
             
