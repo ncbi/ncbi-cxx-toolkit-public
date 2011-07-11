@@ -1,3 +1,20 @@
+Release 4.9.0 based on SC 8.0 (2011-07-11)
+
+Improvements and bug fixes
+
+    * Job dump provides a full information about each attempt to run a job and
+      also provides the job expiration time (JIRA: CXX-2228)
+    * NetSchedule ignores HTTP GET probes and closes the opened connection
+      (JIRA: CXX-2407)
+    * Fine-grain control of what service threads should generate log records
+      and whether to log batch submit as a single log record or each job in the
+      batch separately (JIRA: CXX-2414)
+    * Pick up logging settings upon the RECO command (JIRA: CXX-2476)
+    * Do not reserve file descriptors at the very beginning (JIRA: CXX-2487)
+    * Jobs will not disappear after netschedule restart (JIRA: CXX-2493)
+    * Job runs are deleted when a job is deleted (JIRA: CXX-2499)
+
+
 Release 4.8.0 based on SC 8.0 (2011-05-24)
 
 Improvements
