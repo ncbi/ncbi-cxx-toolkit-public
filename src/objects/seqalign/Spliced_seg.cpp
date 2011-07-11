@@ -417,7 +417,7 @@ s_ExonToDenseg(const CSpliced_exon& exon,
         }
     }
 
-    ds->SetNumseg(lens.size());
+    ds->SetNumseg(CDense_seg::TNumseg(lens.size()));
 
     ds->Compact();  // join adjacent match/mismatch/diag parts
 

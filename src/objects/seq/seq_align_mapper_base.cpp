@@ -864,7 +864,7 @@ void CSeq_align_Mapper_Base::x_Init(const CSparse_seg& sparse)
     if ( row.IsSetSeg_scores() ) {
         // If per-row scores are set, store them along with the group number.
         // Only pointers are copied.
-        scores_group = m_GroupScores.size();
+        scores_group = int(m_GroupScores.size());
         m_GroupScores.resize(m_GroupScores.size() + 1);
         CopyContainer<CSparse_align::TSeg_scores, TScores>(
             row.GetSeg_scores(), m_GroupScores[scores_group]);
@@ -1256,7 +1256,7 @@ void CSeq_align_Mapper_Base::x_GetDstDendiag(CRef<CSeq_align>& dst) const
     ITERATE(TSegments, seg_it, m_Segs) {
         const SAlignment_Segment& seg = *seg_it;
         CRef<CDense_diag> diag(new CDense_diag);
-        diag->SetDim(seg.m_Rows.size());
+        diag->SetDim(CDense_diag::TDim(seg.m_Rows.size()));
         int len_width = 1;
         size_t str_idx = 0; // row index in the strands container
         // Add each row to the dense-seg.
@@ -1310,8 +1310,8 @@ void CSeq_align_Mapper_Base::x_GetDstDenseg(CRef<CSeq_align>& dst) const
     _ASSERT((m_AlignFlags & eAlign_MultiDim) == 0);
 
     CDense_seg& dseg = dst->SetSegs().SetDenseg();
-    dseg.SetDim(m_Segs.front().m_Rows.size());
-    dseg.SetNumseg(m_Segs.size());
+    dseg.SetDim(CDense_seg::TDim(m_Segs.front().m_Rows.size()));
+    dseg.SetNumseg(CDense_seg::TNumseg(m_Segs.size()));
     if ( !m_SegsScores.empty() ) {
         // This will copy every element rather just pointers.
         CloneContainer<CScore, TScores, CDense_seg::TScores>(
@@ -1389,7 +1389,7 @@ void CSeq_align_Mapper_Base::x_GetDstStd(CRef<CSeq_align>& dst) const
     ITERATE(TSegments, seg_it, m_Segs) {
         // Create new std-seg for each segment.
         CRef<CStd_seg> std_seg(new CStd_seg);
-        std_seg->SetDim(seg_it->m_Rows.size());
+        std_seg->SetDim(CStd_seg::TDim(seg_it->m_Rows.size()));
         if ( !seg_it->m_Scores.empty() ) {
             // Copy scores (not just pointers).
             CloneContainer<CScore, TScores, CStd_seg::TScores>(
@@ -1437,8 +1437,8 @@ void CSeq_align_Mapper_Base::x_GetDstPacked(CRef<CSeq_align>& dst) const
     _ASSERT((m_AlignFlags & eAlign_MultiDim) == 0);
 
     CPacked_seg& pseg = dst->SetSegs().SetPacked();
-    pseg.SetDim(m_Segs.front().m_Rows.size());
-    pseg.SetNumseg(m_Segs.size());
+    pseg.SetDim(CPacked_seg::TDim(m_Segs.front().m_Rows.size()));
+    pseg.SetNumseg(CPacked_seg::TNumseg(m_Segs.size()));
     if ( !m_SegsScores.empty() ) {
         // Copy elements, not just pointers.
         CloneContainer<CScore, TScores, CPacked_seg::TScores>(
@@ -2179,7 +2179,7 @@ void CSeq_align_Mapper_Base::x_GetDstSparse(CRef<CSeq_align>& dst) const
     }
     CRef<CSparse_align> aln(new CSparse_align);
     sparse.SetRows().push_back(aln);
-    aln->SetNumseg(m_Segs.size());
+    aln->SetNumseg(CSparse_align::TNumseg(m_Segs.size()));
 
     CSeq_id_Handle first_idh;
     CSeq_id_Handle second_idh;
@@ -2282,8 +2282,8 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
 {
     CDense_seg& dseg = dst->SetSegs().SetDenseg();
     dst->SetType(CSeq_align::eType_partial);
-    dseg.SetDim(m_Segs.front().m_Rows.size());
-    CDense_seg::TNumseg num_seg = m_Segs.size();
+    dseg.SetDim(CDense_seg::TDim(m_Segs.front().m_Rows.size()));
+    CDense_seg::TNumseg num_seg = CDense_seg::TNumseg(m_Segs.size());
 
     int len_width = 1;
 
@@ -2300,7 +2300,7 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
     // Remember number of rows in the first segment. Break the dense-seg
     // when the next segment has a different number of rows.
     size_t num_rows = start_segment.m_Rows.size();
-    int last_seg = m_Segs.size() - 1;
+    int last_seg = int(m_Segs.size()) - 1;
 
     // Find first non-gap in each row, get its seq-id, detect the first
     // one which is different. Also stop if number or rows per segment

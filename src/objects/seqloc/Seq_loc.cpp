@@ -1281,7 +1281,7 @@ const CSeq_id* s_GetLabel
         pnt.GetFuzz().GetLabel(label, pnt.GetPoint());
     } else {
         // Append 1 based point to label
-        *label += NStr::IntToString(pnt.GetPoint()+1);
+        *label += NStr::UIntToString(pnt.GetPoint()+1);
     }
 
     // update last_id
@@ -1312,26 +1312,26 @@ const CSeq_id* s_GetLabel
         if (itval.IsSetFuzz_to()) {
             itval.GetFuzz_to().GetLabel(label, itval.GetTo(), false);
         } else {
-            *label += NStr::IntToString(itval.GetTo()+1);
+            *label += NStr::UIntToString(itval.GetTo()+1);
         }
         *label += "-";
         if (itval.IsSetFuzz_from()) {
             itval.GetFuzz_from().GetLabel(label, itval.GetFrom());
         } else {
-            *label += NStr::IntToString(itval.GetFrom()+1);
+            *label += NStr::UIntToString(itval.GetFrom()+1);
         }
     } else {
         if (itval.IsSetFuzz_from()) {
             itval.GetFuzz_from().GetLabel
                 (label, itval.GetFrom(), false);
         } else {
-            *label += NStr::IntToString(itval.GetFrom()+1);
+            *label += NStr::UIntToString(itval.GetFrom()+1);
         }
         *label += "-";
         if (itval.IsSetFuzz_to()) {
             itval.GetFuzz_to().GetLabel(label, itval.GetTo());
         } else {
-            *label += NStr::IntToString(itval.GetTo()+1);
+            *label += NStr::UIntToString(itval.GetTo()+1);
         }
     }
     return last_id;
@@ -1427,7 +1427,7 @@ const CSeq_id* s_GetLabel
                  if ( !str.empty() ) {
                      str += ", ";
                  }
-                 str += NStr::IntToString(*iter);
+                 str += NStr::UIntToString(*iter);
              }
              *label += str;
          }}

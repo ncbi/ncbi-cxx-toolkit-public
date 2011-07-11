@@ -130,7 +130,7 @@ CDense_diag::TDim CDense_diag::CheckNumRows() const
                    "CDense_diag::CheckNumRows()"
                    " dim is not consistent with ids.size & starts.size");
     }
-    return dim;
+    return TDim(dim);
 }
 
 

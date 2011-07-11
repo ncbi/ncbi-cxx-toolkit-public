@@ -1313,7 +1313,7 @@ static size_t s_GetAlignmentLength(const CSeq_align& align,
                 }
             } else {
                 for (size_t i = 0;  i < ds.GetLens().size();  ++i) {
-                    len += s_DenseSegLength(ds, i, ranges);
+                    len += s_DenseSegLength(ds, CDense_seg::TNumseg(i), ranges);
                }
             }
         }}
@@ -1464,25 +1464,25 @@ static size_t s_GetAlignmentLength(const CSeq_align& align,
 
 TSeqPos CSeq_align::GetAlignLength(bool include_gaps) const
 {
-    return s_GetAlignmentLength(*this,
-                                CRangeCollection<TSeqPos>(TSeqRange::GetWhole()),
-                                !include_gaps );
+    return TSeqPos(s_GetAlignmentLength(*this,
+        CRangeCollection<TSeqPos>(TSeqRange::GetWhole()),
+        !include_gaps));
 }
 
 
 TSeqPos CSeq_align::GetAlignLengthWithinRange(const TSeqRange &range,
                                               bool include_gaps) const
 {
-    return s_GetAlignmentLength(*this,
-                                CRangeCollection<TSeqPos>(range),
-                                !include_gaps );
+    return TSeqPos(s_GetAlignmentLength(*this,
+        CRangeCollection<TSeqPos>(range),
+        !include_gaps));
 }
 
 
 TSeqPos CSeq_align::GetAlignLengthWithinRanges(const CRangeCollection<TSeqPos> &ranges,
                                                bool include_gaps) const
 {
-    return s_GetAlignmentLength(*this, ranges, !include_gaps );
+    return TSeqPos(s_GetAlignmentLength(*this, ranges, !include_gaps));
 }
 
 

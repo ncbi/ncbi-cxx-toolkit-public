@@ -251,7 +251,7 @@ void CThreadedApp::Init(void)
     arg_desc->AddDefaultKey
         ("threads", "NumThreads",
          "Total number of threads to create and run",
-         CArgDescriptions::eInteger, NStr::IntToString(s_NumThreads));
+         CArgDescriptions::eInteger, NStr::UIntToString(s_NumThreads));
     arg_desc->SetConstraint
         ("threads", new CArgAllow_Integers(k_NumThreadsMin, k_NumThreadsMax));
 

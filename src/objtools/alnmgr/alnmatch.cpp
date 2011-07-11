@@ -218,7 +218,7 @@ CAlnMixMatches::Add(const CDense_seg& ds, TAddFlags flags)
                             match->m_AlnSeq2 = ds_seq[row2];
                             match->m_Start2 = start2;
                             match->m_Len = len;
-                            match->m_DsIdx = m_DsCnt;
+                            match->m_DsIdx = int(m_DsCnt);
                             match->m_StrandsDiffer = false;
                             if (strands_exist) {
                                 if ((strand1 == eNa_strand_minus  &&
@@ -244,7 +244,7 @@ CAlnMixMatches::Add(const CDense_seg& ds, TAddFlags flags)
                     match->m_Start2 = 0;
                     match->m_Len = len;
                     match->m_StrandsDiffer = false;
-                    match->m_DsIdx = m_DsCnt;
+                    match->m_DsIdx = int(m_DsCnt);
                     m_Matches.push_back(match);
                 }
             }

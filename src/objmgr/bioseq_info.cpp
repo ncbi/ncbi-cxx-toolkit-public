@@ -1122,7 +1122,7 @@ TSeqPos CBioseq_Info::x_CalcBioseqLength(const CSeq_loc& seq_loc) const
     case CSeq_loc::e_Packed_int:
         return x_CalcBioseqLength(seq_loc.GetPacked_int());
     case CSeq_loc::e_Packed_pnt:
-        return seq_loc.GetPacked_pnt().GetPoints().size();
+        return TSeqPos(seq_loc.GetPacked_pnt().GetPoints().size());
     case CSeq_loc::e_Mix:
         return x_CalcBioseqLength(seq_loc.GetMix());
     case CSeq_loc::e_Equiv:

@@ -483,7 +483,7 @@ BuildAln(TAnchoredAlnVec& in_alns,
         }
         break;
     }
-    out_aln.SetAnchorRow(out_aln.GetPairwiseAlns().size() - 1);
+    out_aln.SetAnchorRow(CAnchoredAln::TDim(out_aln.GetPairwiseAlns().size()) - 1);
     if ( !(options.m_MergeFlags & CAlnUserOptions::fUseAnchorAsAlnSeq) ) {
         if ( !pseudo_seqid ) {
             CRef<CSeq_id> seq_id (new CSeq_id("lcl|pseudo [timestamp: " + CTime(CTime::eCurrent).AsString() + "]"));

@@ -79,7 +79,6 @@ void CDense_diag::OffsetRow(TDim row,
         NCBI_THROW(CSeqalignException, eInvalidRowNumber,
                    "row > dim");
     }
-    _ASSERT(GetStarts()[row] >= 0);
     if (offset < 0) {
         _ASSERT((TSignedSeqPos)GetStarts()[row] + offset >= 0);
         if ((TSignedSeqPos)GetStarts()[row] < -offset) {

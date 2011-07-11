@@ -1230,7 +1230,7 @@ int CDataSource::GetTaxId(const CSeq_id_Handle& idh)
 
 void CDataSource::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
 {
-    int count = ids.size(), remaining = 0;
+    int count = int(ids.size()), remaining = 0;
     _ASSERT(ids.size() == loaded.size());
     _ASSERT(ids.size() == ret.size());
     TTSE_LockSet locks;
@@ -1255,7 +1255,7 @@ void CDataSource::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
 
 void CDataSource::GetGis(const TIds& ids, TLoaded& loaded, TGis& ret)
 {
-    int count = ids.size(), remaining = 0;
+    int count = int(ids.size()), remaining = 0;
     _ASSERT(ids.size() == loaded.size());
     _ASSERT(ids.size() == ret.size());
     TTSE_LockSet locks;
@@ -1280,7 +1280,7 @@ void CDataSource::GetGis(const TIds& ids, TLoaded& loaded, TGis& ret)
 
 void CDataSource::GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret)
 {
-    int count = ids.size(), remaining = 0;
+    int count = int(ids.size()), remaining = 0;
     _ASSERT(ids.size() == loaded.size());
     _ASSERT(ids.size() == ret.size());
     TTSE_LockSet locks;
@@ -1305,7 +1305,7 @@ void CDataSource::GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret)
 
 void CDataSource::GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret)
 {
-    int count = ids.size(), remaining = 0;
+    int count = int(ids.size()), remaining = 0;
     _ASSERT(ids.size() == loaded.size());
     _ASSERT(ids.size() == ret.size());
     TTSE_LockSet locks;

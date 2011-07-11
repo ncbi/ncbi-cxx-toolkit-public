@@ -129,7 +129,7 @@ bool sx_IsProt(CSeq_inst::EMol mol)
 
 bool CBioseq_CI::x_SkipClass(CBioseq_set::TClass set_class)
 {
-    int pos = m_EntryStack.size();
+    int pos = int(m_EntryStack.size());
     while ( --pos >= 0 &&
             m_EntryStack[pos].GetParentBioseq_set().GetClass() != set_class ) {
         // level up

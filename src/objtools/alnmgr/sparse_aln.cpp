@@ -442,7 +442,7 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
                 buffer.replace(0, off, off, m_GapChar);
             } else {   // this is not the first segement
                 off = max(prev_to_open, off);
-                int gap_size = off - prev_to_open;
+                int gap_size = int(off - prev_to_open);
                 buffer.replace(prev_to_open, gap_size, gap_size, m_GapChar);
             }
 
@@ -454,7 +454,7 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
             prev_to_open = off + len;
             ++it;
         }
-        int fill_len = size - prev_to_open;
+        int fill_len = int(size - prev_to_open);
         if(prev_to_open != string::npos  &&  fill_len > 0  &&  pairwise_aln.GetFirstTo() > aln_range.GetTo()) {
             // there is gap on the right
             buffer.replace(prev_to_open, fill_len, fill_len, m_GapChar);

@@ -82,7 +82,7 @@ CDelta_seq& CDelta_ext::AddLiteral(const string& iupac_seq,
                                    CSeq_inst::EMol mol)
 {
     CRef<CDelta_seq> seg(new CDelta_seq());
-    seg->SetLiteral().SetLength(iupac_seq.size());
+    seg->SetLiteral().SetLength(CSeq_literal::TLength(iupac_seq.size()));
 
     switch (mol) {
     case CSeq_inst::eMol_aa:

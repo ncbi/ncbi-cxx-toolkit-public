@@ -420,7 +420,7 @@ CAlnVec::CreateConsensus(int& consensus_row, CBioseq& consensus_seq,
     for (i = 0;  i < consens.size();  ++i) {
         // copy the old entries
         for (j = 0;  j < (size_t)m_NumRows;  ++j) {
-            int idx = i * m_NumRows + j;
+            int idx = int(i * m_NumRows + j);
             new_ds->SetStarts().push_back(m_Starts[idx]);
             if ( !m_Strands.empty() ) {
                 new_ds->SetStrands().push_back(m_Strands[idx]);
@@ -442,7 +442,7 @@ CAlnVec::CreateConsensus(int& consensus_row, CBioseq& consensus_seq,
             new_ds->SetStrands().push_back(eNa_strand_unknown);
         }
 
-        total_bases += consens[i].length();
+        total_bases += TSignedSeqPos(consens[i].length());
         data += consens[i];
     }
 
@@ -471,7 +471,7 @@ CAlnVec::CreateConsensus(int& consensus_row, CBioseq& consensus_seq,
          CSeq_inst& inst = consensus_seq.SetInst();
          inst.SetRepr(CSeq_inst::eRepr_raw);
          inst.SetMol(isNucleotide ? CSeq_inst::eMol_na : CSeq_inst::eMol_aa);
-         inst.SetLength(data.length());
+         inst.SetLength(CSeq_inst::TLength(data.length()));
 
          CSeq_data& seq_data = inst.SetSeq_data();
          if (isNucleotide) {
@@ -483,7 +483,7 @@ CAlnVec::CreateConsensus(int& consensus_row, CBioseq& consensus_seq,
          }
     }}
 
-    consensus_row = new_ds->GetIds().size() - 1;
+    consensus_row = int(new_ds->GetIds().size()) - 1;
     return new_ds;
 }
 
@@ -739,7 +739,7 @@ void CAlnVec::CreateConsensus(vector<string>& consens) const
 
 void CAlnVec::RetrieveSegmentSequences(size_t segment, vector<string>& segs) const
 {
-    int segment_row_index = segment*m_NumRows;
+    int segment_row_index = int(segment*m_NumRows);
     for (size_t i = 0;  i < (size_t)m_NumRows;  ++i, ++segment_row_index) {
         TSignedSeqPos start = m_Starts[ segment_row_index ];
         if (start != -1) {
@@ -747,10 +747,10 @@ void CAlnVec::RetrieveSegmentSequences(size_t segment, vector<string>& segs) con
             
             string& s = segs[i];
 
-            if (IsPositiveStrand(i)) {
-                x_GetSeqVector(i).GetSeqData(start, stop, s);
+            if (IsPositiveStrand(CAlnMap::TNumrow(i))) {
+                x_GetSeqVector(CAlnMap::TNumrow(i)).GetSeqData(start, stop, s);
             } else {
-                CSeqVector &  seq_vec = x_GetSeqVector(i);
+                CSeqVector &  seq_vec = x_GetSeqVector(CAlnMap::TNumrow(i));
                 TSeqPos size = seq_vec.size();
                 seq_vec.GetSeqData(size - stop, size - start, s);
             }

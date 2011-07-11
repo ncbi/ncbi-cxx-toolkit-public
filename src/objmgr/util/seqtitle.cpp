@@ -460,7 +460,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
             if (pieces == 1) {
                 // suffix += (", 1 " + un + "ordered piece");
             } else {
-                suffix += (", " + NStr::IntToString(pieces)
+                suffix += (", " + NStr::UIntToString(pieces)
                            + ' ' + un + "ordered pieces");
             }
         } else {
@@ -843,15 +843,15 @@ bool GetTitle(const CBioseq& seq, string* title_ptr, TGetTitleFlags flags)
 
 static string s_DescribeClones(const string& clone, bool pooled)
 {
-    SIZE_TYPE count = 1;
-    for (SIZE_TYPE pos = clone.find(';');  pos != NPOS;
+    size_t count = 1;
+    for (size_t pos = clone.find(';');  pos != NPOS;
          pos = clone.find(';', pos + 1)) {
         ++count;
     }
     if (pooled) {
         return ", pooled multiple clones";
     } else if (count > 3) {
-        return ", " + NStr::IntToString(count) + " clones,";
+        return ", " + NStr::SizetToString(count) + " clones,";
     } else {
         return " clone " + clone;
     }

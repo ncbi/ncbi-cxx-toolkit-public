@@ -855,7 +855,7 @@ CRef<CSeq_id> CLDS2_Database::x_BlobToSeq_id(CSQLITE_Statement& st,
         ret.Reset(new CSeq_id);
         AutoPtr<char, ArrayDeleter<char> > data(new char[sz]);
         st.GetBlob(data_idx, data.get(), sz);
-        CNcbiIstrstream in(data.get(), sz);
+        CNcbiIstrstream in(data.get(), int(sz));
         ret.Reset(new CSeq_id);
         in >> MSerial_AsnBinary >> *ret;
     }

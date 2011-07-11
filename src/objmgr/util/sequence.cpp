@@ -2371,7 +2371,7 @@ CRef<CBioseq> CreateBioseqFromBioseq(const CBioseq_Handle& bsh,
         CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
         string seq;
         vec.GetSeqData(from, to, seq);
-        TSeqPos len = seq.size();
+        TSeqPos len = TSeqPos(seq.size());
         if (bsh.IsNa()) {
             inst.SetSeq_data().SetIupacna().Set().swap(seq);
             CSeqportUtil::Pack(&inst.SetSeq_data(), len);
@@ -2924,8 +2924,8 @@ void x_Translate(const Container& seq,
 
     size_t i;
     size_t k;
-    size_t state = 0;
-    size_t start_state = 0;
+    int state = 0;
+    int start_state = 0;
     size_t length = usable_size / 3;
     bool check_start = (is_5prime_complete && frame == 0);
     bool first_time = true;
@@ -3042,7 +3042,7 @@ static void AddAAToDeltaSeq (CRef<CBioseq> prot, char residue)
     }
         
     size_t len = last->GetLiteral().GetLength();
-    last->SetLiteral().SetLength(len + 1);
+    last->SetLiteral().SetLength(CSeq_literal::TLength(len + 1));
 }
 
 
@@ -3052,7 +3052,7 @@ static void AddGapToDeltaSeq (CRef<CBioseq>prot, bool unknown_length, size_t add
         // create new segment for gap
         CRef<CDelta_seq> new_seg(new CDelta_seq());
         new_seg->SetLiteral().SetSeq_data().SetGap().SetType(CSeq_gap::eType_unknown);
-        new_seg->SetLiteral().SetLength(add_len);
+        new_seg->SetLiteral().SetLength(CSeq_literal::TLength(add_len));
         if (unknown_length) {
             new_seg->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
         }
@@ -3064,12 +3064,13 @@ static void AddGapToDeltaSeq (CRef<CBioseq>prot, bool unknown_length, size_t add
                  || (!unknown_length && !last->SetLiteral().IsSetFuzz()))) {
             // ok, already creating gap segment with correct fuzz
             size_t len = prot->GetInst().GetExt().GetDelta().Get().back()->GetLiteral().GetLength();
-            prot->SetInst().SetExt().SetDelta().Set().back()->SetLiteral().SetLength(len + add_len);
+            prot->SetInst().SetExt().SetDelta().Set().back()->SetLiteral().
+                SetLength(CSeq_literal::TLength(len + add_len));
         } else {
             // create new segment for gap
             CRef<CDelta_seq> new_seg(new CDelta_seq());
             new_seg->SetLiteral().SetSeq_data().SetGap().SetType(CSeq_gap::eType_unknown);
-            new_seg->SetLiteral().SetLength(add_len);
+            new_seg->SetLiteral().SetLength(CSeq_literal::TLength(add_len));
             if (unknown_length) {
                 new_seg->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
             }
@@ -3132,8 +3133,8 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
 
     size_t i;
     size_t k;
-    size_t state = 0;
-    size_t start_state = 0;
+    int state = 0;
+    int start_state = 0;
     size_t length = usable_size / 3;
     bool check_start = (is_5prime_complete && frame == 0);
     bool first_time = true;
@@ -3150,9 +3151,9 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
         // loop through one codon at a time
         for (k = 0;  k < 3;  ++k, ++start) {
             state = tbl.NextCodonState(state, *start);
-            if (seq.IsInGap(pos + k )) {
+            if (seq.IsInGap(TSeqPos(pos + k))) {
                 if (is_gap && !unknown_length) {
-                    CSeqMap_CI map_iter(map, &scope, SSeqMapSelector(), pos + k);
+                    CSeqMap_CI map_iter(map, &scope, SSeqMapSelector(), TSeqPos(pos + k));
                     if (map_iter.GetType() == CSeqMap::eSeqGap
                         && map_iter.IsUnknownLength()) {
                         unknown_length = true;
@@ -3191,9 +3192,9 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
         size_t pos = (length * 3) + frame;
         for (k = 0;  k < mod;  ++k, ++start) {
             state = tbl.NextCodonState(state, *start);
-            if (seq.IsInGap(pos + k)) {
+            if (seq.IsInGap(TSeqPos(pos + k))) {
                 if (is_gap && !unknown_length) {
-                    CSeqMap_CI map_iter(map, &scope, SSeqMapSelector(), pos + k);
+                    CSeqMap_CI map_iter(map, &scope, SSeqMapSelector(), TSeqPos(pos + k));
                     if (map_iter.GetType() == CSeqMap::eSeqGap) {
                         if (map_iter.IsUnknownLength()) {
                             unknown_length = true;
@@ -3283,13 +3284,13 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
             string& last_seg = end->SetLiteral().SetSeq_data().SetIupacaa().Set();
             if (NStr::EndsWith(last_seg, "*")) {
                 last_seg = last_seg.substr(0, last_seg.length() - 1);
-                end->SetLiteral().SetLength(last_seg.length());
+                end->SetLiteral().SetLength(CSeq_literal::TLength(last_seg.length()));
             }
         } else if (end->GetLiteral().GetSeq_data().IsNcbieaa()) {
             string& last_seg = end->SetLiteral().SetSeq_data().SetNcbieaa().Set();
             if (NStr::EndsWith(last_seg, "*")) {
                 last_seg = last_seg.substr(0, last_seg.length() - 1);
-                end->SetLiteral().SetLength(last_seg.length());
+                end->SetLiteral().SetLength(CSeq_literal::TLength(last_seg.length()));
             }
         }
     }
@@ -4006,7 +4007,7 @@ void CSeqSearch::AddNucleotidePattern
     // record expansion of reverse complement of asymmetric pattern
     if (!symmetric  &&  (!x_IsJustTopStrand(flags))) {
         size_t revcomp_cut_site = pattern.length() - cut_site;
-        x_AddNucleotidePattern(name, revcomp, revcomp_cut_site,
+        x_AddNucleotidePattern(name, revcomp, Int2(revcomp_cut_site),
             eNa_strand_minus, flags);
     }
 }
@@ -4033,7 +4034,7 @@ int CSeqSearch::Search
     // report matches (if any)
     if (m_Fsa.IsMatchFound(next_state)) {
         ITERATE(vector<TPatternInfo>, it, m_Fsa.GetMatches(next_state)) {
-            int start = position - it->GetSequence().length() + 1;
+            int start = position - int(it->GetSequence().length()) + 1;
 
             // prevent multiple reports of patterns for circular sequences.
             if (start < length) {
@@ -4069,7 +4070,7 @@ void CSeqSearch::Search(const CBioseq_Handle& bsh)
     int state = m_Fsa.GetInitialState();
 
     for (size_t i = 0; i < search_len; ++i) {
-        state = Search(state, seq_vec[i % seq_len], i, seq_len);
+        state = Search(state, seq_vec[TSeqPos(i % seq_len)], int(i), int(seq_len));
     }
 }
 

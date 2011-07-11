@@ -80,7 +80,7 @@ CDense_seg::TDim CDense_seg::CheckNumRows() const
                    "CDense_seg::CheckNumRows()"
                    " ids.size is inconsistent with dim");
     }
-    return dim;
+    return TDim(dim);
 }
 
 
@@ -115,7 +115,7 @@ CDense_seg::TNumseg CDense_seg::CheckNumSegs() const
             + " widths.size is inconsistent with dim";
         NCBI_THROW(CSeqalignException, eInvalidAlignment, errstr);
     }
-    return numsegs;
+    return TNumseg(numsegs);
 }
 
 
@@ -274,8 +274,8 @@ void CDense_seg::Validate(bool full_test) const
                     if (start < min_start) {
                         string errstr = string("CDense_seg::Validate():")
                             + " Starts are not consistent!"
-                            + " Row=" + NStr::IntToString(numrow) +
-                            " Seg=" + NStr::IntToString(plus ? numseg :
+                            + " Row=" + NStr::SizetToString(numrow) +
+                            " Seg=" + NStr::SizetToString(plus ? numseg :
                                                         numsegs - 1 - numseg) +
                             " MinStart=" + NStr::IntToString(min_start) +
                             " Start=" + NStr::IntToString(start);
@@ -296,7 +296,7 @@ void CDense_seg::Validate(bool full_test) const
             }
             if (min_start == -1) {
                 string errstr = string("CDense_seg::Validate():")
-                    + " Row " + NStr::IntToString(numrow) +
+                    + " Row " + NStr::SizetToString(numrow) +
                     " is empty.";
                 NCBI_THROW(CSeqalignException, eInvalidAlignment,
                            errstr);
@@ -392,7 +392,7 @@ void CDense_seg::TrimEndGaps()
     }
 
     /// fix our number of segments
-    SetNumseg(SetLens().size());
+    SetNumseg(TNumseg(SetLens().size()));
 
     _ASSERT(GetNumseg() == static_cast<TNumseg>(GetLens().size()));
     _ASSERT(GetNumseg() * GetDim() == static_cast<int>(GetStarts().size()));
@@ -502,7 +502,7 @@ void CDense_seg::Compact()
         SetStrands().swap(new_strands);
     }
 
-    SetNumseg(SetLens().size());
+    SetNumseg(TNumseg(SetLens().size()));
 
     _ASSERT(GetNumseg() == static_cast<TNumseg>(GetLens().size()));
     _ASSERT(GetNumseg() * GetDim() == static_cast<int>(GetStarts().size()));
@@ -575,7 +575,7 @@ void CDense_seg::RemovePureGapSegs()
         SetStrands().swap(new_strands);
     }
 
-    SetNumseg(SetLens().size());
+    SetNumseg(TNumseg(SetLens().size()));
 
 #ifdef _DEBUG
     Validate(true);
@@ -705,13 +705,13 @@ ExtractSlice(TDim row, TSeqPos from, TSeqPos to) const
     if (from < GetSeqStart(row)) {
         NCBI_THROW(CSeqalignException, eOutOfRange,
                    "CDense_seg::ExtractSlice(): "
-                   "start position (" + NStr::IntToString(from) +
+                   "start position (" + NStr::UIntToString(from) +
                    ") off end of alignment");
     }
     if (to > GetSeqStop(row)) {
         NCBI_THROW(CSeqalignException, eOutOfRange,
                    "CDense_seg::ExtractSlice(): "
-                   "stop position (" + NStr::IntToString(to) +
+                   "stop position (" + NStr::UIntToString(to) +
                    ") off end of alignment");
     }
 
@@ -787,7 +787,7 @@ CRef<CDense_seg> CDense_seg::ExtractRows(const vector<TDim>& rows) const
     TNumseg numseg = CheckNumSegs();
 
     CRef<CDense_seg> new_ds(new CDense_seg);
-    new_ds->SetDim(rows.size());
+    new_ds->SetDim(TDim(rows.size()));
     new_ds->SetNumseg(GetNumseg());
 
     // reserve for efficiency
@@ -888,11 +888,11 @@ void CDense_seg::RemapToLoc(TDim row, const CSeq_loc& loc,
                       " Seq-loc is not long enough to"
                       " cover the alignment!"
                       " Maximum row seq pos is ");
-        errstr += NStr::IntToString(row_stop);
+        errstr += NStr::UIntToString(row_stop);
         errstr += ". The total seq-loc len is only ";
-        errstr += NStr::IntToString(ttl_loc_len);
+        errstr += NStr::SizetToString(ttl_loc_len);
         errstr += ", it should be at least ";
-        errstr += NStr::IntToString(row_stop+1);
+        errstr += NStr::UIntToString(row_stop+1);
         errstr += " (= max seq pos + 1).";
         NCBI_THROW(CSeqalignException, eOutOfRange, errstr);
     }
@@ -916,7 +916,7 @@ void CDense_seg::RemapToLoc(TDim row, const CSeq_loc& loc,
 
     // iterate through segments
     size_t  idx = loc_plus ? row : (numsegs - 1) * numrows + row;
-    TNumseg seg = loc_plus ? 0 : numsegs - 1;
+    TNumseg seg = TNumseg(loc_plus ? 0 : numsegs - 1);
     while (loc_plus ? seg < GetNumseg() : seg >= 0) {
         if (starts[idx] == -1) {
             // ignore gaps in our sequence
@@ -957,7 +957,7 @@ void CDense_seg::RemapToLoc(TDim row, const CSeq_loc& loc,
             SetStarts()[idx] += start - len_so_far;
         } else {
             SetStarts()[idx] = 
-                start - len_so_far + ttl_loc_len - starts[idx] - lens[seg];
+                start - len_so_far + TSeqPos(ttl_loc_len) - starts[idx] - TSeqPos(lens[seg]);
         }
 
         if (lens[seg] > len) {
@@ -1059,8 +1059,8 @@ CRef<CDense_seg> CDense_seg::FillUnaligned() const
     const CDense_seg::TLens&    lens    = GetLens();
     const CDense_seg::TIds&     ids     = GetIds();
 
-    const size_t& numrows = CheckNumRows();
-    const size_t& numsegs = CheckNumSegs();
+    const TDim numrows = CheckNumRows();
+    const TNumseg numsegs = CheckNumSegs();
 
     bool strands_exist = !strands.empty();
 
@@ -1070,7 +1070,7 @@ CRef<CDense_seg> CDense_seg::FillUnaligned() const
     // extra segments
     CDense_seg::TStarts extra_starts;
     CDense_seg::TLens   extra_lens;
-    size_t extra_numsegs = 0;
+    TNumseg extra_numsegs = 0;
     size_t extra_seg = 0;
     vector<size_t> extra_segs;
 
@@ -1083,7 +1083,7 @@ CRef<CDense_seg> CDense_seg::FillUnaligned() const
     CDense_seg::TIds&     new_ids     = new_ds->SetIds();
 
     // dimentions
-    new_ds->SetDim(numrows);
+    new_ds->SetDim(TDim(numrows));
     TNumseg& new_numsegs = new_ds->SetNumseg();
     new_numsegs = numsegs; // initialize
 
@@ -1137,9 +1137,9 @@ CRef<CDense_seg> CDense_seg::FillUnaligned() const
                     if (extra_len < 0) {
                         string errstr("CDense_seg::AddUnalignedSegments():"
                                       " Illegal overlap at Row ");
-                        errstr += NStr::IntToString(row);
+                        errstr += NStr::SizetToString(row);
                         errstr += " Segment ";
-                        errstr += NStr::IntToString(seg);
+                        errstr += NStr::SizetToString(seg);
                         errstr += ".";
                         NCBI_THROW(CSeqalignException, eInvalidAlignment,
                                    errstr);
@@ -1239,7 +1239,7 @@ void CDense_seg::FromTranscript(TSeqPos query_start, ENa_strand query_strand,
     SetDim(2);
 
     // iterate through the transcript
-    size_t seg_count = 0;
+    TNumseg seg_count = 0;
 
     size_t start1 = 0, pos1 = 0; // relative to exon start in mrna
     size_t start2 = 0, pos2 = 0; // and genomic
@@ -1286,13 +1286,13 @@ void CDense_seg::FromTranscript(TSeqPos query_start, ENa_strand query_strand,
             else {
                 
                 // close current seg
-                TSeqPos query_close = query_strand == eNa_strand_plus?
-                    start1: 1 - pos1;
+                TSeqPos query_close = TSeqPos(query_strand == eNa_strand_plus?
+                    start1: 1 - pos1);
                 starts.push_back(seg_type == 1? (TSeqPos)-1: query_start + query_close);
                 strands.push_back(query_strand);
                 
-                TSeqPos subj_close = subj_strand == eNa_strand_plus?
-                    start2: 1- pos2;
+                TSeqPos subj_close = subj_strand == TSeqPos(eNa_strand_plus?
+                    start2: 1- pos2);
                 starts.push_back(seg_type == 2? (TSeqPos)-1: subj_start + subj_close);
                 strands.push_back(subj_strand);
                 
@@ -1301,7 +1301,7 @@ void CDense_seg::FromTranscript(TSeqPos query_start, ENa_strand query_strand,
                 case 1: seg_len = pos2 - start2; break;
                 case 2: seg_len = pos1 - start1; break;
                 }
-                lens.push_back(seg_len);
+                lens.push_back(TSeqPos(seg_len));
                 ++seg_count;
                 
                 // start a new seg
@@ -1351,11 +1351,11 @@ void CDense_seg::FromTranscript(TSeqPos query_start, ENa_strand query_strand,
         }
     }
     
-    TSeqPos query_close = query_strand == eNa_strand_plus? start1: 1 - pos1;
+    TSeqPos query_close = TSeqPos(query_strand == eNa_strand_plus? start1: 1 - pos1);
     starts.push_back(seg_type == 1? (TSeqPos)-1: query_start + query_close);
     strands.push_back(query_strand);
     
-    TSeqPos subj_close = subj_strand == eNa_strand_plus? start2: 1 - pos2;
+    TSeqPos subj_close = TSeqPos(subj_strand == eNa_strand_plus? start2: 1 - pos2);
     starts.push_back(seg_type == 2? (TSeqPos)-1: subj_start + subj_close);
     strands.push_back(subj_strand);
     
@@ -1365,7 +1365,7 @@ void CDense_seg::FromTranscript(TSeqPos query_start, ENa_strand query_strand,
     case 1: seg_len = pos2 - start2; break;
     case 2: seg_len = pos1 - start1; break;
     }
-    lens.push_back(seg_len);
+    lens.push_back(TSeqPos(seg_len));
     ++seg_count;
     
     SetNumseg(seg_count);
