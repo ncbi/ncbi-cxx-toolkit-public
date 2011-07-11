@@ -149,18 +149,6 @@ void CBlastDBExtractor::x_SetGi() {
     return;
 }
 
-string CBlastDBExtractor::ExtractLinkoutInteger()
-{
-    x_InitDefline();
-    x_InitLinkoutData();
-
-    if (m_Gi == 0) {
-        return NStr::IntToString(m_Gi);
-    }
-
-    return NStr::IntToString(CLinkoutDB::GetInstance().GetLinkout(m_Gi));
-}
-
 string CBlastDBExtractor::ExtractMembershipInteger()
 {
     x_InitDefline();
@@ -188,38 +176,16 @@ string CBlastDBExtractor::ExtractMembershipInteger()
     return NStr::IntToString(retval);
 }
 
-string CBlastDBExtractor::ExtractLinkoutTokens()
-{
-    x_InitDefline();
-    x_InitLinkoutData();
-
-    if (m_Gi == 0) {
-        return NOT_AVAILABLE;
-    }
-
-    vector<string> linkouts;
-    int linkout = CLinkoutDB::GetInstance().GetLinkout(m_Gi);
-    ITERATE(vector<CLinkoutDB::TLinkoutTypeString>, lt, m_LinkoutTypes) {
-        if (linkout & lt->first) {
-            linkouts.push_back(lt->second);
-        }
-    }
-
-    if (linkouts.empty()) {
-        return NOT_AVAILABLE;
-    }
-    string retval;
-    ITERATE(vector<string>, l, linkouts) {
-        retval += *l + " ";
-    }
-    return NStr::TruncateSpaces(retval);
-}
-
 string CBlastDBExtractor::ExtractAccession() {
     string acc;
     CRef<CSeq_id> theId = FindBestChoice(m_Bioseq->GetId(), CSeq_id::WorstRank);
     theId->GetLabel(&acc, CSeq_id::eContent);
     return acc;
+}
+
+string CBlastDBExtractor::ExtractSeqId() {
+    CRef<CSeq_id> theId = FindBestChoice(m_Bioseq->GetId(), CSeq_id::WorstRank);
+    return theId->AsFastaString();
 }
 
 string CBlastDBExtractor::ExtractTitle() {

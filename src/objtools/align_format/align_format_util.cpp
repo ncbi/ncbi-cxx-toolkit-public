@@ -78,9 +78,9 @@ static char const rcsid[] = "$Id$";
 #include <objtools/blast/seqdb_reader/seqdbcommon.hpp>   // for CSeqDBException
 
 #include <objects/seq/seqport_util.hpp>
+#include <objects/blastdb/defline_extra.hpp>
 #include <objects/blastdb/Blast_def_line.hpp>
 #include <objects/blastdb/Blast_def_line_set.hpp>
-#include <objtools/blast/seqdb_reader/linkoutdb.hpp>
 
 #include <stdio.h>
 #include <sstream>
@@ -1373,23 +1373,55 @@ bool CAlignFormatUtil::SortHitByTotalScoreDescending(CRef<CSeq_align_set> const&
         
 }
 
+class CSortHitByMolecularTypeEx
+{
+public:
+    CSortHitByMolecularTypeEx(ILinkoutDB* linkoutdb,
+                              const string& mv_build_name)
+        : m_LinkoutDB(linkoutdb), m_MapViewerBuildName(mv_build_name) {}
+
+    bool operator() (const CRef<CSeq_align_set>& info1, const CRef<CSeq_align_set>& info2) 
+    {
+        CConstRef<CSeq_id> id1, id2;
+        id1 = &(info1->Get().front()->GetSeq_id(1));
+        id2 = &(info2->Get().front()->GetSeq_id(1));
+
+        int linkout1 = 0, linkout2 = 0;
+        linkout1 = m_LinkoutDB 
+            ? m_LinkoutDB->GetLinkout(*id1, m_MapViewerBuildName) 
+            : 0;
+        linkout2 = m_LinkoutDB 
+            ? m_LinkoutDB->GetLinkout(*id2, m_MapViewerBuildName) 
+            : 0;
+
+        return (linkout1 & eGenomicSeq) <= (linkout2 & eGenomicSeq);
+    }
+private:
+    ILinkoutDB* m_LinkoutDB;
+    string m_MapViewerBuildName;
+};
+
 void CAlignFormatUtil::
 SortHitByMolecularType(list< CRef<CSeq_align_set> >& seqalign_hit_list,
-                       CScope& scope)
+                       CScope& scope, ILinkoutDB* linkoutdb,
+                       const string& mv_build_name)
 {
 
     kScope = &scope;
-    seqalign_hit_list.sort(SortHitByMolecularTypeEx);
+    seqalign_hit_list.sort(CSortHitByMolecularTypeEx(linkoutdb, mv_build_name));
 }
 
 void CAlignFormatUtil::SortHit(list< CRef<CSeq_align_set> >& seqalign_hit_list,
-                               bool do_translation, CScope& scope, int sort_method) 
+                               bool do_translation, CScope& scope, int
+                               sort_method, ILinkoutDB* linkoutdb,
+                               const string& mv_build_name) 
 {
     kScope = &scope; 
     kTranslation = do_translation;
     
     if (sort_method == 1) {
-        seqalign_hit_list.sort(SortHitByMolecularTypeEx);
+        seqalign_hit_list.sort(CSortHitByMolecularTypeEx(linkoutdb,
+                                                         mv_build_name));
     } else if (sort_method == 2) {
         seqalign_hit_list.sort(SortHitByTotalScoreDescending);
     } else if (sort_method == 3) {
@@ -1397,37 +1429,24 @@ void CAlignFormatUtil::SortHit(list< CRef<CSeq_align_set> >& seqalign_hit_list,
     } 
 }
 
-bool CAlignFormatUtil::SortHitByMolecularTypeEx (const CRef<CSeq_align_set>& info1,
-                                                 const CRef<CSeq_align_set>& info2) 
-{
-    CConstRef<CSeq_id> id1, id2;
-    id1 = &(info1->Get().front()->GetSeq_id(1));
-    id2 = &(info2->Get().front()->GetSeq_id(1));
-
-    int linkout1 = 0, linkout2 = 0;
-    CLinkoutDB& linkoutdb = CLinkoutDB::GetInstance();
-    linkout1 = linkoutdb.GetLinkout(*id1);
-    linkout2 = linkoutdb.GetLinkout(*id2);
-
-    return (linkout1 & eGenomicSeq) <= (linkout2 & eGenomicSeq);
-}
-
 void CAlignFormatUtil::
 SplitSeqalignByMolecularType(vector< CRef<CSeq_align_set> >& 
                              target,
                              int sort_method,
                              const CSeq_align_set& source,
-                             CScope& scope)
+                             CScope& scope,
+                             ILinkoutDB* linkoutdb,
+                             const string& mv_build_name)
 {
-    CLinkoutDB& linkoutdb = CLinkoutDB::GetInstance();
-    
     ITERATE(CSeq_align_set::Tdata, iter, source.Get()) { 
         
         const CSeq_id& id = (*iter)->GetSeq_id(1);
         try {
             const CBioseq_Handle& handle = scope.GetBioseqHandle(id);
             if (handle) {
-                int linkout = linkoutdb.GetLinkout(id);
+                int linkout = linkoutdb 
+                    ? linkoutdb->GetLinkout(id, mv_build_name) 
+                    : 0;
                         
                 if (linkout & eGenomicSeq) {
                     if (sort_method == 1) {
@@ -1805,19 +1824,19 @@ void CAlignFormatUtil::BuildFormatQueryString(CCgiContext& ctx, string& cgi_quer
 
 
 bool CAlignFormatUtil::IsMixedDatabase(const CSeq_align_set& alnset, 
-                                       CScope& scope) 
+                                       CScope& scope, ILinkoutDB* linkoutdb,
+                                       const string& mv_build_name) 
 {
     bool is_mixed = false;
     bool is_first = true;
     int prev_database = 0;
 
-    CLinkoutDB& linkoutdb = CLinkoutDB::GetInstance();
-
     ITERATE(CSeq_align_set::Tdata, iter, alnset.Get()) { 
        
         const CSeq_id& id = (*iter)->GetSeq_id(1);
-        const CBioseq_Handle& handle = scope.GetBioseqHandle(id);
-        int linkout = linkoutdb.GetLinkout(id);
+        int linkout = linkoutdb 
+            ? linkoutdb->GetLinkout(id, mv_build_name) 
+            : 0;
         int cur_database = (linkout & eGenomicSeq);
         if (!is_first && cur_database != prev_database) {
             is_mixed = true;
@@ -2119,7 +2138,11 @@ static void s_AddLinkoutInfo(map<int, vector < CBioseq::TId > > &linkout_map,int
 
 
 
-void CAlignFormatUtil::GetBdlLinkoutInfo(const list< CRef< CBlast_def_line > > &bdl,map<int, vector <CBioseq::TId > >  &linkout_map)
+void 
+CAlignFormatUtil::GetBdlLinkoutInfo(const list< CRef< CBlast_def_line > > &bdl,
+                                    map<int, vector <CBioseq::TId > > &linkout_map,
+                                    ILinkoutDB* linkoutdb, 
+                                    const string& mv_build_name)
 {
     
     
@@ -2129,7 +2152,7 @@ void CAlignFormatUtil::GetBdlLinkoutInfo(const list< CRef< CBlast_def_line > > &
         int gi = FindGi(cur_id);        
         CRef<CSeq_id> seqID = FindBestChoice(cur_id, CSeq_id::WorstRank);
         
-	    int linkout = CLinkoutDB::GetInstance().GetLinkout(gi);
+	    int linkout = linkoutdb ? linkoutdb->GetLinkout(gi, mv_build_name) : 0;
         
 
         if(linkout & eGene){
@@ -2187,14 +2210,16 @@ list<string> CAlignFormatUtil::GetFullLinkoutUrl(const list< CRef< CBlast_def_li
                                                  string &database,
                                                  int query_number,                                                 
                                                  string &user_url,
-                                                 string &preComputedResID)                                                 
+                                                 string &preComputedResID,
+                                                 ILinkoutDB* linkoutdb,
+                                                 const string& mv_build_name)
                                                  
 {
     list<string> linkout_list;
     map<int, vector < CBioseq::TId > >  linkout_map;
     map<int, vector < CBioseq::TId > >::iterator  it;    
     
-    GetBdlLinkoutInfo(bdl,linkout_map);
+    GetBdlLinkoutInfo(bdl,linkout_map, linkoutdb, mv_build_name);
 
     vector<string> linkLetters;
     NStr::Tokenize(linkoutOrder,",",linkLetters); //linkoutOrder = "G,U,M,E,S,B"   
@@ -2395,7 +2420,9 @@ CAlignFormatUtil::SortSeqalignForSortableFormat(CCgiContext& ctx,
                                              bool nuc_to_nuc_translation,
                                              int db_sort,
                                              int hit_sort,
-                                             int hsp_sort) {
+                                             int hsp_sort,
+                                             ILinkoutDB* linkoutdb,
+                                             const string& mv_build_name) {
     
    
     if (db_sort == 0 && hit_sort < 1 && hsp_sort < 1)
@@ -2407,7 +2434,8 @@ CAlignFormatUtil::SortSeqalignForSortableFormat(CCgiContext& ctx,
     seqalign_vec[1] = new CSeq_align_set;
 
     if(IsMixedDatabase(ctx)) {
-        SplitSeqalignByMolecularType(seqalign_vec, db_sort, aln_set, scope);
+        SplitSeqalignByMolecularType(seqalign_vec, db_sort, aln_set, scope,
+                                     linkoutdb, mv_build_name);
     }else {
         seqalign_vec[0] = const_cast<CSeq_align_set*>(&aln_set);
     }

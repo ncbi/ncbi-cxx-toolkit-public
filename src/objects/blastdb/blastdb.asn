@@ -36,7 +36,7 @@ Blast-def-line ::= SEQUENCE {
 	seqid SEQUENCE OF Seq-id,                 -- Regular NCBI Seq-Id
 	taxid  INTEGER OPTIONAL,                  -- taxonomy id
 	memberships SEQUENCE OF INTEGER OPTIONAL, -- bit arrays
-	links SEQUENCE OF INTEGER OPTIONAL,       -- bit arrays
+	links SEQUENCE OF INTEGER OPTIONAL,       -- DEPRECATED, replaced by LinkoutDB
 	other-info SEQUENCE OF INTEGER OPTIONAL   -- for future use (probably genomic sequences)
 }
 

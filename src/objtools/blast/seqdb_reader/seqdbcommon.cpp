@@ -43,8 +43,8 @@ static char const rcsid[] = "$Id$";
 #include <util/sequtil/sequtil_convert.hpp>
 #include <objects/seq/seq__.hpp>
 #include <objects/general/general__.hpp>
-#include "seqdbgeneral.hpp"
-#include "seqdbatlas.hpp"
+#include <objtools/blast/seqdb_reader/impl/seqdbgeneral.hpp>
+#include <objtools/blast/seqdb_reader/impl/seqdbatlas.hpp>
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE

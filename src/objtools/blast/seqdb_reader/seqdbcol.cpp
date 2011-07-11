@@ -39,7 +39,7 @@ static char const rcsid[] = "$Id$";
 #include <ncbi_pch.hpp>
 #include <objtools/blast/seqdb_reader/column_reader.hpp>
 #include "seqdbcol.hpp"
-#include "seqdbgeneral.hpp"
+#include <objtools/blast/seqdb_reader/impl/seqdbgeneral.hpp>
 
 BEGIN_NCBI_SCOPE
 

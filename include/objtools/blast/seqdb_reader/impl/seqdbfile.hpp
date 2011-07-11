@@ -42,8 +42,8 @@
 ///
 /// Implemented for: UNIX, MS-Windows
 
-#include "seqdbgeneral.hpp"
-#include "seqdbatlas.hpp"
+#include <objtools/blast/seqdb_reader/impl/seqdbgeneral.hpp>
+#include <objtools/blast/seqdb_reader/impl/seqdbatlas.hpp>
 
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbifile.hpp>

@@ -239,6 +239,14 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
     ///
     void DisplaySeqalign(CNcbiOstream & out);
 
+    /// Set the linkout implementation
+    void SetLinkoutDB(ILinkoutDB* l,
+                      const string& mv_build_name) 
+    {
+        m_LinkoutDB = l; 
+        m_MapViewerBuildName = mv_build_name;
+    }
+
     //Display pariwise seqalign for the set of seq IDS (for future use)
     void DisplayPairwiseSeqalign(CNcbiOstream& out,hash_set <string> selectedIDs);
     //Data representing templates for defline display 
@@ -579,6 +587,12 @@ private:
     int     m_currAlignHsp;///< Current HSP number for single alignmnet
 
     string  m_PreComputedResID;///<CDD precomputed results ID
+
+    /// Reference to LinkoutDB implementation. Not owned by this class
+    ILinkoutDB* m_LinkoutDB;
+    /// mapviewer build name associated with the sequences in the BLAST
+    /// database out of which the results are being formatted by this class.
+    string m_MapViewerBuildName;
 
     TranslatedFrameForLocalSeq m_TranslatedFrameForLocalSeq;
 

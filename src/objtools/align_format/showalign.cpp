@@ -88,7 +88,7 @@ static char const rcsid[] = "$Id$";
 
 #include <objects/blastdb/Blast_def_line.hpp>
 #include <objects/blastdb/Blast_def_line_set.hpp>
-#include <objtools/blast/seqdb_reader/linkoutdb.hpp>
+#include <objects/blastdb/defline_extra.hpp>
 
 #include <stdio.h>
 #include <util/tables/raw_scoremat.h>
@@ -175,7 +175,8 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign,
     : m_SeqalignSetRef(&seqalign),
       m_Seqloc(mask_seqloc),
       m_QueryFeature(external_feature),
-      m_Scope(scope) 
+      m_Scope(scope),
+      m_LinkoutDB(NULL)
 {
     m_AlignOption = 0;
     m_SeqLocChar = eX;
@@ -1149,7 +1150,8 @@ string CDisplaySeqalign::x_GetUrl(const CBioseq_Handle& bsp_handle,int giToUse,s
                                            m_DbName,
                                            m_QueryNumber,                                                 
                                            seqUrlInfo->user_url,
-                                           m_PreComputedResID);			    
+                                           m_PreComputedResID,
+                                           m_LinkoutDB, m_MapViewerBuildName);
         }
         list<string> ::iterator it = m_CustomLinksList.end();
         m_CustomLinksList.splice(it,linkoutStr);
@@ -1571,7 +1573,10 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
                     if((row == 0 && (m_AlignOption & eHyperLinkMasterSeqid)) ||
                        (row > 0 && (m_AlignOption & eHyperLinkSlaveSeqid))){
 						
-                        int linkout = CLinkoutDB::GetInstance().GetLinkout(m_AV->GetSeqId(row));
+                        int linkout = m_LinkoutDB 
+                            ?
+                            m_LinkoutDB->GetLinkout(m_AV->GetSeqId(row),m_MapViewerBuildName) 
+                            : 0;
                             
                         m_cur_align = row;
                         urlLink = x_GetUrl(gi,alnRoInfo->seqidArray[row],linkout,alnRoInfo->taxid[row],m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId());
@@ -2157,7 +2162,9 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
 				taxid = bdl->GetTaxid();
 			}
             
-            int linkout = CLinkoutDB::GetInstance().GetLinkout(gi);
+            int linkout = m_LinkoutDB 
+                ? m_LinkoutDB->GetLinkout(gi,m_MapViewerBuildName)
+                : 0;
                 
             int linksDisplayOption = 0;
 
@@ -2172,7 +2179,9 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
 		}
 		
 		if(m_AlignOption&eLinkout && m_AlignTemplates == NULL){                    
-			int linkout = CLinkoutDB::GetInstance().GetLinkout(gi);
+			int linkout = m_LinkoutDB 
+                ? m_LinkoutDB->GetLinkout(gi,m_MapViewerBuildName)
+                : 0;
                 
 			string user_url = m_Reg->Get(m_BlastType,"TOOL_URL");
 			list<string> linkout_url =  CAlignFormatUtil::
@@ -3099,7 +3108,10 @@ bool CDisplaySeqalign::x_IsGeneInfoAvailable(SAlnInfo* aln_vec_info)
 
         ITERATE(CBlast_def_line_set::Tdata, iter, bdl)
         {
-            int linkout = CLinkoutDB::GetInstance().GetLinkout(*(*iter)->GetSeqid().front());
+            int linkout = m_LinkoutDB
+                ?
+                m_LinkoutDB->GetLinkout(*(*iter)->GetSeqid().front(),m_MapViewerBuildName)
+                : 0;
                 
             if (linkout & eGene)
             {
@@ -3257,7 +3269,7 @@ string CDisplaySeqalign::x_FormatAlignSortInfo(string id_label)
     alignSort = CAlignFormatUtil::MapTemplate(alignSort,"id_label",id_label);
     string hsp_sort_value = m_Ctx->GetRequestValue("HSP_SORT").GetValue();
     int hsp_sort = hsp_sort_value == NcbiEmptyString ?  0 : NStr::StringToInt(hsp_sort_value);
-    for(size_t i = 0; i < 5; i++) {
+    for(int i = 0; i < 5; i++) {
         if(hsp_sort == i) {
             alignSort = CAlignFormatUtil::MapTemplate(alignSort,"sorted_" + NStr::IntToString(hsp_sort),"sortAlnArrowLinkW");                    
         }

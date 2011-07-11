@@ -53,6 +53,23 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(align_format)
 
+/// Interface to LinkoutDB
+class NCBI_ALIGN_FORMAT_EXPORT ILinkoutDB : public CObject {
+public:
+    /// Retrieve the Linkout for a given GI
+    /// @param gi GI of interest [in]
+    /// @param mv_build_name MapViewer build name for this GI [in]
+    /// @return integer encoding linkout bits or 0 if not found
+    virtual int GetLinkout(int gi, const string& mv_build_name) = 0;
+
+    /// Retrieve the Linkout for a given Seq-id
+    /// @param id Seq-id of interest [in]
+    /// @param mv_build_name MapViewer build name for this Seq-id [in]
+    /// @return integer encoding linkout bits or 0 if not found
+    virtual int GetLinkout(const objects::CSeq_id& id, const string& mv_build_name) = 0;
+};
+
+
 ///blast related url
 
 ///class info
@@ -771,25 +788,29 @@ public:
     ///
     static void 
     SortHitByMolecularType(list< CRef<objects::CSeq_align_set> >& seqalign_hit_list,
-                           objects::CScope& scope);
+                           objects::CScope& scope, ILinkoutDB* linkoutdb,
+                           const string& mv_build_name);
     
     ///actual sorting function for SortHitByMolecularType
     ///@param info1: the first element 
     ///@param info2: the second element
     ///@return: info1 >= info2?
     ///
-    static bool SortHitByMolecularTypeEx (const CRef<objects::CSeq_align_set>& info1,
-                                          const CRef<objects::CSeq_align_set>& info2);
+    //static bool SortHitByMolecularTypeEx (const CRef<objects::CSeq_align_set>& info1,
+    //                                      const CRef<objects::CSeq_align_set>& info2);
 
     static void 
     SortHit(list< CRef<objects::CSeq_align_set> >& seqalign_hit_list,
-            bool do_translation, objects::CScope& scope, int sort_method);
+            bool do_translation, objects::CScope& scope, int sort_method,
+            ILinkoutDB* linkoutdb, const string& mv_build_name);
     
     static void SplitSeqalignByMolecularType(vector< CRef<objects::CSeq_align_set> >& 
                                              target,
                                              int sort_method,
                                              const objects::CSeq_align_set& source,
-                                             objects::CScope& scope);
+                                             objects::CScope& scope,
+                                             ILinkoutDB* linkoutdb,
+                                             const string& mv_build_name);
     static CRef<objects::CSeq_align_set> 
     SortSeqalignForSortableFormat(CCgiContext& ctx,
                                objects::CScope& scope,
@@ -797,7 +818,9 @@ public:
                                bool nuc_to_nuc_translation,
                                int db_order,
                                int hit_order,
-                               int hsp_order);
+                               int hsp_order,
+                               ILinkoutDB* linkoutdb,
+                               const string& mv_build_name);
 
 	/// function for calculating  percent match for an alignment.	
 	///@param numerator
@@ -882,7 +905,8 @@ public:
                                         string& cgi_query);
 
     static bool IsMixedDatabase(const objects::CSeq_align_set& alnset, 
-                                objects::CScope& scope); 
+                                objects::CScope& scope, ILinkoutDB* linkoutdb,
+                                const string& mv_build_name); 
     static bool IsMixedDatabase(CCgiContext& ctx);
 
     
@@ -917,7 +941,9 @@ public:
     ///@param linkout_map: map that holds linkouts and corresponding CBioseq::TId for the whole list  of blast deflines  
     ///
     static void GetBdlLinkoutInfo(const list< CRef< objects::CBlast_def_line > > &bdl,
-                                  map<int, vector < objects::CBioseq::TId > >  &linkout_map);
+                                  map<int, vector < objects::CBioseq::TId > > &linkout_map,
+                                  ILinkoutDB* linkoutdb,
+                                  const string& mv_build_name);
     ///Get linkout membership for for the list of blast deflines
     ///@param bdl: list of CRef<CBlast_def_line>    
     ///@param rid: blast rid
@@ -949,7 +975,9 @@ public:
                                                  string &database,
                                                  int query_number,                                                 
                                                  string &user_url,
-                                                 string &preComputedResID);
+                                                 string &preComputedResID,
+                                                 ILinkoutDB* linkoutdb,
+                                                 const string& mv_build_name);
                                    
     static int GetMasterCoverage(const objects::CSeq_align_set& alnset);
 	static CRange<TSeqPos> GetSeqAlignCoverageParams(const objects::CSeq_align_set& alnset,int *masterCoverage,bool *flip);

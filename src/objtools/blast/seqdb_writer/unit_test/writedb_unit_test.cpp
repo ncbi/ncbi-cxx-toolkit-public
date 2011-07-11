@@ -46,7 +46,6 @@
 #include <boost/current_function.hpp>
 #include <objtools/blast/seqdb_writer/build_db.hpp>
 #include <objtools/blast/seqdb_writer/writedb_isam.hpp>
-#include <objtools/blast/seqdb_reader/linkoutdb.hpp>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 
@@ -1350,85 +1349,6 @@ BOOST_AUTO_TEST_CASE(UsPatId)
     BOOST_REQUIRE_EQUAL(oid,   0);
     
     s_WrapUpFiles(files);
-}
-
-// Unit test for SB-218 and SB-819
-// Note: the CWriteDB_Isam API allows the client to enter duplicates, these
-// should be weeded out so that when the index is written, it is not
-// incorrectly built (if duplicates are not removed the ISAM files will be
-// built file, but queries for sequences that should be found will fail), hence
-// this unit test uses CLinkoutDB to test this functionality
-BOOST_AUTO_TEST_CASE(StringIsamWrite_DuplicateAccession)
-{
-    // duplication of accessions is deliberate
-    const char* accs[] = {
-        "AAC76335.1", "AAC77159.1",
-        "AAC76335.1", "AAC77159.1",
-"gnl|GNOMON|107044.m", "gnl|GNOMON|107044.p",
-"gnl|GNOMON|107044.m", "gnl|GNOMON|107044.p",
-"pdb|2WBY|c", "pdb|2WBY|e",
-"pdb|2WBY|c", "pdb|2WBY|e",
-"AAA58145.1", "AAC76880.1", "AAC76230.1", "AAC76373.1", "AAC77137.1", "AAC76637.2",
-"AAA58101.1", "AAC76329.1", "AAC76702.1", "AAC77109.1", "AAC76757.1", "AAA58162.1",
-"AAC76604.1", "AAC76539.1", "AAA24224.1", "AAC76351.1", "AAC76926.1", "AAC77047.1",
-"AAC76390.1", "AAC76195.1", "AAA57930.1", "AAC76134.1", "AAC76586.2", "AAA58123.1",
-"AAC76430.1", "AAA58107.1", "AAC76765.1", "AAA24272.1", "AAC76396.2", "AAA24183.1",
-"AAC76918.1", "AAC76727.1", "AAC76161.1", "AAA57964.1", "AAA24251.1"
-    };
-
-    const string kBaseName("test_isam");
-    const bool kIsProt(true);   // doesn't really matter
-    const int kIdx(0);
-    const Uint8 kMaxSize(NStr::StringToUInt8_DataSize("1Mb"));
-    const bool kSparse(false);
-
-    const string kIndexFile = kBaseName + ".psi";
-    const string kDataFile = kBaseName + ".psd";
-    const int kLinkout = 7;
-
-    CFileDeleteList delete_list;
-    delete_list.Add(kIndexFile);
-    delete_list.Add(kDataFile);
-    CRef<CWriteDB_Isam> isam(new CWriteDB_Isam(eAcc, kBaseName, kIsProt,
-                                               kIdx, kMaxSize, kSparse));
-    for (size_t i = 0; i < (sizeof(accs)/sizeof(*accs)); i++) {
-        CRef<CSeq_id> id (new CSeq_id(accs[i]));
-        CWriteDB_Isam::TIdList idlist(1, id);
-        isam->AddIds(kLinkout, idlist);    // deliberately add all IDs to OID kLinkout
-    }
-    isam->Close();
-    isam->RenameSingle();
-    vector<string> files_produced;
-    isam->ListFiles(files_produced);
-    isam.Reset();
-
-    // Make sure the files produced match our expectation
-    BOOST_REQUIRE_EQUAL(2U, files_produced.size());
-    vector<string>::iterator pos = find(files_produced.begin(),
-                                        files_produced.end(),
-                                        kIndexFile);
-    BOOST_REQUIRE(pos != files_produced.end());
-    files_produced.erase(pos);
-    pos = find(files_produced.begin(), files_produced.end(), kDataFile);
-    BOOST_REQUIRE(pos != files_produced.end());
-    files_produced.erase(pos);
-    BOOST_REQUIRE(files_produced.empty());
-
-    // Check that files exist
-    BOOST_REQUIRE(CFile(kIndexFile).Exists());
-    BOOST_REQUIRE(CFile(kDataFile).Exists());
-
-    CLinkoutDB& ldb = CLinkoutDB::GetInstance(kBaseName);
-    for (size_t i = 0; i < (sizeof(accs)/sizeof(*accs)); i++) {
-        CRef<CSeq_id> id (new CSeq_id(accs[i]));
-        int linkout = ldb.GetLinkout(*id);
-        CNcbiOstrstream oss;
-        oss << "Failed to get proper linkout for " << id->AsFastaString()
-            << "; got " << linkout << " expected " << kLinkout;
-        string msg = CNcbiOstrstreamToString(oss);
-        BOOST_CHECK_MESSAGE(kLinkout == linkout, msg);
-    }
-
 }
 
 BOOST_AUTO_TEST_CASE(IsamSorting)

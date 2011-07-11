@@ -128,6 +128,14 @@ public:
         m_Option = option;
     }
 
+    /// Set the linkout implementation
+    void SetLinkoutDB(ILinkoutDB* l,
+                      const string& mv_build_name) 
+    {
+        m_LinkoutDB = l; 
+        m_MapViewerBuildName = mv_build_name;
+    }
+
     /// PSI-BLAST sequence status (applicable in HTML only)
     enum PsiblastSeqStatus {
         eUnknown = (0 << 0),            ///< Uninitialized
@@ -415,6 +423,12 @@ protected:
     string m_PreComputedResID;
     
     CCgiContext* m_Ctx;
+
+    /// Reference to LinkoutDB implementation. Not owned by this class
+    ILinkoutDB* m_LinkoutDB;
+    /// mapviewer build name associated with the sequences in the BLAST
+    /// database out of which the results are being formatted by this class.
+    string m_MapViewerBuildName;
 
     ///Internal function to return score info
     ///@param aln seq-align we are working with [in]

@@ -52,7 +52,7 @@ static char const rcsid[] = "$Id$";
 #include <sstream>
 
 #include "seqdbalias.hpp"
-#include "seqdbfile.hpp"
+#include <objtools/blast/seqdb_reader/impl/seqdbfile.hpp>
 
 BEGIN_NCBI_SCOPE
 

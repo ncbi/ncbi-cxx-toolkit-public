@@ -189,6 +189,19 @@ CBlast_def_line_set::PutTargetGiFirst(int gi)
     }
 }
 
+void GetLinkoutTypes(vector<TLinkoutTypeString>& rv)
+{
+    rv.clear();
+    // N.B.: only add those linkout types that are actively supported
+    rv.push_back(make_pair(eUnigene, string("eUnigene")));
+    rv.push_back(make_pair(eStructure, string("eStructure")));
+    rv.push_back(make_pair(eGeo, string("eGeo")));
+    rv.push_back(make_pair(eGene, string("eGene")));
+    rv.push_back(make_pair(eMapviewer, string("eMapviewer")));
+    rv.push_back(make_pair(eGenomicSeq, string("eGenomicSeq")));
+    rv.push_back(make_pair(eBioAssay, string("eBioAssay")));
+}
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

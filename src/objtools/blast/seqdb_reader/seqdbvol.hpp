@@ -38,8 +38,8 @@
 ///
 /// Implemented for: UNIX, MS-Windows
 
-#include "seqdbatlas.hpp"
-#include "seqdbgeneral.hpp"
+#include <objtools/blast/seqdb_reader/impl/seqdbatlas.hpp>
+#include <objtools/blast/seqdb_reader/impl/seqdbgeneral.hpp>
 #include "seqdbtax.hpp"
 #include "seqdbcol.hpp"
 #include <objects/seq/seq__.hpp>

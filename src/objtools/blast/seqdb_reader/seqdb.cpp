@@ -38,7 +38,7 @@ static char const rcsid[] = "$Id$";
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
 #include "seqdbimpl.hpp"
-#include "seqdbgeneral.hpp"
+#include <objtools/blast/seqdb_reader/impl/seqdbgeneral.hpp>
 #include <map>
 #include <string>
 

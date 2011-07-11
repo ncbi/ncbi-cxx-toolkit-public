@@ -45,10 +45,10 @@
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <objtools/blast/seqdb_reader/seqdbcommon.hpp>
 #include "seqdboidlist.hpp"
-#include "seqdbfile.hpp"
+#include <objtools/blast/seqdb_reader/impl/seqdbfile.hpp>
 #include "seqdbvol.hpp"
 #include "seqdbvolset.hpp"
-#include "seqdbgeneral.hpp"
+#include <objtools/blast/seqdb_reader/impl/seqdbgeneral.hpp>
 
 BEGIN_NCBI_SCOPE
 

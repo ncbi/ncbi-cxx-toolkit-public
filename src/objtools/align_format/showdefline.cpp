@@ -68,7 +68,7 @@ static char const rcsid[] = "$Id$";
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/blastdb/Blast_def_line.hpp>
 #include <objects/blastdb/Blast_def_line_set.hpp>
-#include <objtools/blast/seqdb_reader/linkoutdb.hpp>
+#include <objects/blastdb/defline_extra.hpp>
 
 #include <objtools/align_format/showdefline.hpp>
 
@@ -368,8 +368,9 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
             int cur_gi =  FindGi(cur_id);            
             if(use_this_gi.empty()){
                 if(sdl->gi == cur_gi){                 
-                    sdl->linkout =
-                        CLinkoutDB::GetInstance().GetLinkout(cur_gi);
+                    sdl->linkout = m_LinkoutDB
+                        ? m_LinkoutDB->GetLinkout(cur_gi,m_MapViewerBuildName)
+                        : 0;
                     if (m_DeflineTemplates == NULL || !m_DeflineTemplates->advancedView)            
                         sdl->linkout_list =
                             CAlignFormatUtil::GetLinkoutUrl(sdl->linkout,
@@ -385,8 +386,10 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
             } else {
                 ITERATE(list<int>, iter_gi, use_this_gi){
                     if(cur_gi == *iter_gi){                     
-                        sdl->linkout =
-                            CLinkoutDB::GetInstance().GetLinkout(cur_gi);
+                        sdl->linkout = m_LinkoutDB
+                            ?
+                            m_LinkoutDB->GetLinkout(cur_gi,m_MapViewerBuildName)
+                            : 0;
                         if (m_DeflineTemplates == NULL || !m_DeflineTemplates->advancedView)
                             sdl->linkout_list = 
                                 CAlignFormatUtil::GetLinkoutUrl(sdl->linkout,
@@ -444,7 +447,8 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                                            m_Database,
                                            m_QueryNumber,                                                 
                                            user_url,
-                                           m_PreComputedResID);
+                                           m_PreComputedResID, m_LinkoutDB,
+                                           m_MapViewerBuildName);
             }
             //Links to GenBank,FASTA,Graphics
             list <string> customLinksList = 
@@ -515,7 +519,8 @@ CShowBlastDefline::CShowBlastDefline(const CSeq_align_set& seqalign,
     m_SkipFrom(-1),
     m_SkipTo(-1),
     m_TranslatedNucAlignment(translated_nuc_alignment),
-    m_MasterRange(master_range)
+    m_MasterRange(master_range),
+    m_LinkoutDB(NULL)
 {
     
     m_Option = 0;

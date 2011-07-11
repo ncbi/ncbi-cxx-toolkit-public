@@ -36,7 +36,6 @@
 
 #include <objtools/blast/blastdb_format/blastdb_seqid.hpp>
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
-#include <objtools/blast/seqdb_reader/linkoutdb.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <sstream>
 
@@ -78,6 +77,7 @@ public:
     string ExtractPig();
     string ExtractGi();
     string ExtractAccession();
+    string ExtractSeqId();
     string ExtractTitle();
     string ExtractTaxId();
     string ExtractCommonTaxonomicName();
@@ -117,25 +117,11 @@ protected:
     int m_Gi;
     /// bioseq
     CRef<CBioseq> m_Bioseq;
-
-    /**** BEGIN: Support for printing linkouts */
-
-    /// Cache the defline (for membership bits, not for linkouts)
+    /// Cache the defline (for membership bits)
     CRef<CBlast_def_line_set> m_Defline; 
-    /// Convenience for printing strings of linkout types
-    vector<CLinkoutDB::TLinkoutTypeString> m_LinkoutTypes;
-
-    /**** END: Support for printing linkouts */
 private:
     void x_ExtractMaskingData(CSeqDB::TSequenceRanges &ranges, int algo_id);
     int x_ExtractTaxId();
-
-    /// Initialize the data structures required to print the linkout information
-    void x_InitLinkoutData() {
-        if (m_LinkoutTypes.empty()) {
-            CLinkoutDB::GetLinkoutTypes(m_LinkoutTypes);
-        }
-    }
 
     /// Initialize the cached defline
     void x_InitDefline() {

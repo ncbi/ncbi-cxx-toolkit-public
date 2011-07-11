@@ -38,8 +38,8 @@
 ///
 /// Implemented for: UNIX, MS-Windows
 
-#include "seqdbatlas.hpp"
-#include "seqdbfile.hpp"
+#include <objtools/blast/seqdb_reader/impl/seqdbatlas.hpp>
+#include <objtools/blast/seqdb_reader/impl/seqdbfile.hpp>
 #include <objects/seq/seq__.hpp>
 
 BEGIN_NCBI_SCOPE

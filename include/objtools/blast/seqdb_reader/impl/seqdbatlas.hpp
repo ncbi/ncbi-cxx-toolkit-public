@@ -53,7 +53,7 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_system.hpp>
 
-#include "seqdbgeneral.hpp"
+#include <objtools/blast/seqdb_reader/impl/seqdbgeneral.hpp>
 
 #include <vector>
 #include <map>

@@ -39,7 +39,7 @@ static char const rcsid[] = "$Id$";
 #include <corelib/ncbistr.hpp>
 #include "seqdboidlist.hpp"
 #include "seqdbfilter.hpp"
-#include "seqdbfile.hpp"
+#include <objtools/blast/seqdb_reader/impl/seqdbfile.hpp>
 #include "seqdbgilistset.hpp"
 #include <algorithm>
 

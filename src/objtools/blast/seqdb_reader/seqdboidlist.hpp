@@ -39,7 +39,7 @@
 /// Implemented for: UNIX, MS-Windows
 
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
-#include "seqdbfile.hpp"
+#include <objtools/blast/seqdb_reader/impl/seqdbfile.hpp>
 #include "seqdbvolset.hpp"
 #include "seqdbfilter.hpp"
 #include "seqdbgilistset.hpp"

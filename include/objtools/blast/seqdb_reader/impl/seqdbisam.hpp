@@ -39,7 +39,7 @@
 /// Implemented for: UNIX, MS-Windows
 
 
-#include "seqdbfile.hpp"
+#include <objtools/blast/seqdb_reader/impl/seqdbfile.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
 BEGIN_NCBI_SCOPE
