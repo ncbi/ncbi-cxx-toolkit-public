@@ -1611,41 +1611,39 @@ s_BlastResults2SeqAlignSequenceCmp_OMF(const BlastHSPResults* results,
                                        vector<TSeqLocInfoVector>& subj_masks)
 {
     TSeqAlignVector retval;
-    retval.reserve(query_data.GetNumQueries() * seqinfo_src->Size());
+    size_t seqinfo_size = seqinfo_src->Size();
+    retval.reserve(query_data.GetNumQueries() * seqinfo_size);
 
-    _ASSERT(results->num_queries == (int)query_data.GetNumQueries());
+    int num_of_queries = results->num_queries;
+    _ASSERT(num_of_queries == (int)query_data.GetNumQueries());
 
     // Compute the subject masks
     subj_masks.clear();
-    subj_masks.resize(results->num_queries);
+    subj_masks.resize(num_of_queries *seqinfo_size);
 
-    for (Uint4 index = 0; index < seqinfo_src->Size(); index++) {
+    for (Uint4 index = 0; index < seqinfo_size; index++) {
+    	vector<TSeqLocInfoVector> tmp_subj_masks(num_of_queries);
         TSeqAlignVector seqalign =
             s_BLAST_OneSubjectResults2CSeqAlign(results, query_data, 
                                                 *seqinfo_src, prog, index, 
                                                 is_gapped, is_ooframe, 
-                                                subj_masks);
+                                                tmp_subj_masks);
 
         /* Merge the new vector with the current. Assume that both vectors
            contain CSeq_align_sets for all queries, i.e. have the same 
            size. */
         _ASSERT(seqalign.size() == query_data.GetNumQueries());
 
-        if (retval.size() == 0) {
-            // First time around, just fill the empty vector with the 
-            // seqaligns from the first subject.
-            retval.swap(seqalign);
-        } else {
-
-            for (TSeqAlignVector::size_type i = 0; i < seqalign.size(); ++i) {
+        for (TSeqAlignVector::size_type i = 0; i < seqalign.size(); ++i) {
                 retval.push_back(seqalign[i]);
-            }
-
+                //seqalign size = num of queries
+                subj_masks[ seqinfo_size * i + index] = tmp_subj_masks[i];
         }
     }
-    _ASSERT(retval.size() == query_data.GetNumQueries() * seqinfo_src->Size());
+    _ASSERT(retval.size() == query_data.GetNumQueries() * seqinfo_size);
+
     return s_TransposeSeqAlignVector(retval, query_data.GetNumQueries(),
-                                     seqinfo_src->Size());
+                                     seqinfo_size);
 }
 
 static TSeqAlignVector
