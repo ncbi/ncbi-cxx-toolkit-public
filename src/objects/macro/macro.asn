@@ -1234,7 +1234,7 @@ Remove-duplicate-feature-action ::= SEQUENCE {
   ignore-partials BOOLEAN ,
   case-sensitive BOOLEAN ,
   remove-proteins BOOLEAN ,
-  constraint Constraint-choice-set OPTIONAL }
+  rd-constraint Constraint-choice-set OPTIONAL }
 
 Gene-xref-suppression-type ::= ENUMERATED {
   any (0) ,
