@@ -1,3 +1,5 @@
+# $Id$
+
 ASN = gencoll_client
 
 # SRC = $(ASN:%=%__) $(ASN:%=%___)
@@ -9,3 +11,5 @@ LIB = gencoll_client
 LIB_OR_DLL = lib
 
 #REQUIRES = objects dbapi
+
+WATCHERS = kumarv2 dicuccio
