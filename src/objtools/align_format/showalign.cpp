@@ -93,6 +93,7 @@ static char const rcsid[] = "$Id$";
 #include <stdio.h>
 #include <util/tables/raw_scoremat.h>
 #include <objtools/readers/getfeature.hpp>
+#include <objtools/alnmgr/score_builder_base.hpp>
 #include <html/htmlhelper.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -1337,20 +1338,19 @@ CDisplaySeqalign::SAlnRowInfo *CDisplaySeqalign::x_PrepareRowData(void)
            m_AlignOption&eMergeAlign && m_AV->GetWidth(row) != 3) {
             if (alnIter != m_SeqalignSetRef->Get().end()){
                 //note we have N alignment but N+1 rows
-                int blast_score;
-                double blast_bits;
-                double blast_evalue;
-                int blast_sumn;
-                int num_ident;
-                list<int> use_this_gi;
-                CAlignFormatUtil::GetAlnScores(**alnIter, blast_score, blast_bits,
-                                               blast_evalue, blast_sumn,
-                                               num_ident, use_this_gi);
+                //make sure alignvec and original matches as accasionally alnmgr
+                //drop/merge some row but this should only happen rarely
+                while (count(m_Scope.GetBioseqHandle((*alnIter)->GetSeq_id(1)).GetId().begin(), 
+                             m_Scope.GetBioseqHandle((*alnIter)->GetSeq_id(1)).GetId().end(), 
+                             m_AV->GetSeqId(row)) == 0) {
+                    alnIter ++;
+                }
 
-
-                match[row-1] = num_ident;
-                align_length[row-1] =  (*alnIter)->GetAlignLength();
-                if (align_length[row-1] > 0){
+                CScoreBuilderBase cb;
+                match[row-1] = cb.GetIdentityCount  (m_Scope, **alnIter);
+                align_length[row-1] = cb.GetAlignLength(**alnIter);
+                
+                if (align_length[row-1] > 0 ){
                     percent_ident[row-1] = ((double)match[row-1])/align_length[row-1]*100;
                     align_stats[row-1] = NStr::DoubleToString(percent_ident[row-1], 1, 0) + 
                         "% (" + NStr::IntToString(match[row-1]) + "/" +
@@ -1359,6 +1359,7 @@ CDisplaySeqalign::SAlnRowInfo *CDisplaySeqalign::x_PrepareRowData(void)
                     percent_ident[row - 1] = 0;
                     align_stats[row-1] = "0";
                 }
+                
                 alnIter++;
             } else { //in case m_AV is somehow different from original alignment
                 match[row - 1] = 0;
