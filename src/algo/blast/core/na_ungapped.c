@@ -1612,12 +1612,17 @@ Int2 BlastNaWordFinder(BLAST_SequenceBlk * subject,
 
     /* if sequence is masked, fall back to generic scanner and extender */
     if (subject->mask_type != eNoSubjMasking) {
-        scansub = (TNaScanSubjectFunction) 
+        if (lookup_wrap->lut_type == eMBLookupTable &&
+            ((BlastMBLookupTable *) lookup_wrap->lut)->discontiguous) {
+            /* discontiguous scan subs assumes any (non-aligned starting offset */
+        } else {
+            scansub = (TNaScanSubjectFunction) 
                   BlastChooseNucleotideScanSubjectAny(lookup_wrap);
-        if (extend != (TNaExtendFunction)s_BlastNaExtendDirect) {
-             extend = (lookup_wrap->lut_type == eSmallNaLookupTable) 
+            if (extend != (TNaExtendFunction)s_BlastNaExtendDirect) {
+                 extend = (lookup_wrap->lut_type == eSmallNaLookupTable) 
                     ? (TNaExtendFunction)s_BlastSmallNaExtend
                     : (TNaExtendFunction)s_BlastNaExtend;
+            }
         }
         /* generic scanner permits any (non-aligned) starting offset */
         scan_range[1] = subject->seq_ranges[0].left + word_length - lut_word_length;
