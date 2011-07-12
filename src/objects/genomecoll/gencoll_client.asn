@@ -1,0 +1,77 @@
+-- $Id$
+-- **********************************************************************
+--
+--  NCBI Genome Collections Statistics
+--  by Michael DiCuccio, Vinay Kumar
+--
+-- **********************************************************************
+
+
+
+
+NCBI-GencollClient DEFINITIONS ::=
+BEGIN
+
+IMPORTS GC-Assembly FROM NCBI-GenomeCollection;
+
+
+GCClientRequest ::= CHOICE {
+    get-assembly GCClient-GetAssemblyRequest
+}
+
+
+GCClientResponse ::= CHOICE {
+    get-assembly GC-Assembly,
+    
+    --  errors encountered at the server side.
+    srvr-error GCClient-Error
+}
+
+GCClient-Error ::= SEQUENCE {
+    error-id INTEGER {
+        assembly-not-found(0),
+        other(255)
+    },
+    description VisibleString OPTIONAL
+}
+
+-- This is a bitfield.  All values should be powers of two.
+GCClient-AttributeFlags ::= INTEGER {
+    none(0),
+    biosource(1),
+    molinfo(2),
+    publications(4)
+}
+
+
+GCClient-GetAssemblyRequest ::= SEQUENCE {
+
+    -- One of accession or release id MUST BE SUPPLIED
+    
+    -- Assembly accession or accession.version
+    -- (versionless accession is answered with most recent version)
+    accession VisibleString OPTIONAL,
+
+    -- release ID
+    release-id INTEGER OPTIONAL,
+
+    level INTEGER {
+        assembly(0),
+        replicon(1),
+        scaffold(2),
+        component(3)
+    } DEFAULT scaffold,
+
+    -- assm-flags, chrom-flags, scaf-flags, component-flags
+    assm-flags GCClient-AttributeFlags DEFAULT none,
+
+    chrom-flags GCClient-AttributeFlags DEFAULT biosource,
+    
+    scaf-flags GCClient-AttributeFlags DEFAULT none,
+    
+    component-flags GCClient-AttributeFlags DEFAULT none
+}
+
+
+
+END

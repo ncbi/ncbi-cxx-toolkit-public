@@ -1,0 +1,2 @@
+MODULE_PATH=internal/gpipe/objects/genomecoll
+MODULE_IMPORT=objects/genomecoll/genome_collection
