@@ -1340,9 +1340,9 @@ CDisplaySeqalign::SAlnRowInfo *CDisplaySeqalign::x_PrepareRowData(void)
                 //note we have N alignment but N+1 rows
                 //make sure alignvec and original matches as accasionally alnmgr
                 //drop/merge some row but this should only happen rarely
-                while (count(m_Scope.GetBioseqHandle((*alnIter)->GetSeq_id(1)).GetId().begin(), 
-                             m_Scope.GetBioseqHandle((*alnIter)->GetSeq_id(1)).GetId().end(), 
-                             m_AV->GetSeqId(row)) == 0) {
+                while (find(m_Scope.GetBioseqHandle((*alnIter)->GetSeq_id(1)).GetId().begin(), 
+                            m_Scope.GetBioseqHandle((*alnIter)->GetSeq_id(1)).GetId().end(), 
+                            m_AV->GetSeqId(row)) == m_Scope.GetBioseqHandle((*alnIter)->GetSeq_id(1)).GetId().end()) {
                     alnIter ++;
                 }
 
