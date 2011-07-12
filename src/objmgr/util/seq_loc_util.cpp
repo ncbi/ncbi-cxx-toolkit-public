@@ -1270,12 +1270,20 @@ bool TestForStrands(ENa_strand strand1, ENa_strand strand2)
 }
 
 
-bool TestForIntervals(CSeq_loc_CI it1, CSeq_loc_CI it2, bool minus_strand)
+bool TestForIntervals(CSeq_loc_CI it1,
+                      CSeq_loc_CI it2,
+                      bool minus_strand,
+                      CScope* scope,
+                      bool checked_same_id)
 {
     // Check intervals one by one
     while ( it1  &&  it2 ) {
+        bool same_it_id = checked_same_id;
+        if ( !same_it_id ) {
+            same_it_id = IsSameBioseq(it1.GetSeq_id(), it2.GetSeq_id(), scope);
+        }
         if ( !TestForStrands(it1.GetStrand(), it2.GetStrand())  ||
-             !it1.GetSeq_id().Equals(it2.GetSeq_id())) {
+             !same_it_id) {
             return false;
         }
         if ( minus_strand ) {
@@ -1354,7 +1362,8 @@ Int8 x_GetRangeDiff(const CHandleRange& hrg1,
 
 Int8 x_TestForOverlap_MultiSeq(const CSeq_loc& loc1,
                               const CSeq_loc& loc2,
-                              EOverlapType type)
+                              EOverlapType type,
+                              CScope* scope)
 {
     // Special case of TestForOverlap() - multi-sequences locations
     typedef CRange<Int8> TRange8;
@@ -1365,7 +1374,7 @@ Int8 x_TestForOverlap_MultiSeq(const CSeq_loc& loc1,
             Int8 diff = 0;
             for (CSeq_loc_CI li1(loc1); li1; ++li1) {
                 for (CSeq_loc_CI li2(loc2); li2; ++li2) {
-                    if ( !li1.GetSeq_id().Equals(li2.GetSeq_id()) ) {
+                    if ( !IsSameBioseq(li1.GetSeq_id(), li2.GetSeq_id(), scope) ) {
                         continue;
                     }
                     // Compare strands
@@ -1539,7 +1548,7 @@ Int8 x_TestForOverlap_MultiStrand(const CSeq_loc& loc1,
     case eOverlap_Contained:
     case eOverlap_Contains:
         {
-            return x_TestForOverlap_MultiSeq(loc1, loc2, type);
+            return x_TestForOverlap_MultiSeq(loc1, loc2, type, scope);
         }
     case eOverlap_CheckIntervals:
     case eOverlap_CheckIntRev:
@@ -1590,7 +1599,7 @@ Int8 TestForOverlap64(const CSeq_loc& loc1,
             if (circular_len != 0  &&  circular_len != kInvalidSeqPos) {
                 throw;
             }
-            return x_TestForOverlap_MultiSeq(*ploc1, *ploc2, type);
+            return x_TestForOverlap_MultiSeq(*ploc1, *ploc2, type, scope);
         }
         multi_seq = true;
     }
@@ -1601,7 +1610,7 @@ Int8 TestForOverlap64(const CSeq_loc& loc1,
     const CSeq_id *id2 = ploc2->GetId();
     bool same_id = false;
     if (id1  &&  id2) {
-        same_id = scope ? IsSameBioseq(*id1, *id2, scope) : id1->Equals(*id2);
+        same_id = IsSameBioseq(*id1, *id2, scope);
     }
 
     if ( scope && ploc1->IsWhole() ) {
@@ -1806,7 +1815,7 @@ Int8 TestForOverlap64(const CSeq_loc& loc1,
                 // Find the first interval in loc1 intersecting with loc2
                 for ( ; it1  &&  it1.GetRange().GetTo() >= loc2start; ++it1) {
                     if (it1.GetRange().GetTo() >= loc2end  &&
-                        TestForIntervals(it1, it2, true)) {
+                        TestForIntervals(it1, it2, true, scope, same_id)) {
                         return Int8(GetLength(*ploc1, scope)) -
                             Int8(GetLength(*ploc2, scope));
                     }
@@ -1817,9 +1826,16 @@ Int8 TestForOverlap64(const CSeq_loc& loc1,
                 //TSeqPos loc2end = it2.GetRange().GetTo();
                 // Find the first interval in loc1 intersecting with loc2
                 for ( ; it1  /*&&  it1.GetRange().GetFrom() <= loc2end*/; ++it1) {
-                    if (it1.GetSeq_id().Equals(it2.GetSeq_id())  &&
+                    bool same_it_id = same_id;
+                    // If there are multiple ids per seq-loc, check each pair.
+                    if ( !same_it_id ) {
+                        same_it_id =
+                            IsSameBioseq(it1.GetSeq_id(), it2.GetSeq_id(),
+                            scope);
+                    }
+                    if (same_it_id  &&
                         it1.GetRange().GetFrom() <= loc2start  &&
-                        TestForIntervals(it1, it2, false)) {
+                        TestForIntervals(it1, it2, false, scope, same_id)) {
                         return Int8(GetLength(*ploc1, scope)) -
                             Int8(GetLength(*ploc2, scope));
                     }
