@@ -201,18 +201,18 @@ public:
 
         TSeqLocVector query_v;
         query_v.push_back(*qsl);
-        CBlastNucleotideOptionsHandle nucl_handle;
-        nucl_handle.SetDustFiltering(false);
-        nucl_handle.SetMaskAtHash(false);
+        CRef<CBlastNucleotideOptionsHandle> nucl_handle(new CBlastNucleotideOptionsHandle);
+        nucl_handle->SetDustFiltering(false);
+        nucl_handle->SetMaskAtHash(false);
 
         // Run a self hit BLAST search, discard the return value, and get the
         // masked query regions
-        blast::CBl2Seq blaster(*qsl.get(), *qsl.get(), nucl_handle);
+        blast::CBl2Seq blaster(*qsl.get(), *qsl.get(), *nucl_handle);
         (void) blaster.Run();
 
         // check that the actual query sequence was masked at the proper
         // locations
-        BOOST_CHECK_EQUAL(false, nucl_handle.GetMaskAtHash());
+        BOOST_CHECK_EQUAL(false, nucl_handle->GetMaskAtHash());
         for (i = 0; i < kNumLcaseLocs; i++) {
             const pair<int, int> range_plus(kLcaseStarts[i], kLcaseEnds[i]);
             const pair<int, int> range_minus(kLcaseStartsNegStrand[i], 
@@ -334,10 +334,10 @@ static void x_TestGetFilteredQueryRegions(ENa_strand strand) {
                           CTestObjMgr::Instance().CreateSSeqLoc(id, strand));
     TSeqLocVector query_reference(kNumQueries, *qsl);
     TSeqLocVector query_test(kNumQueries, *qsl);
-    CBlastNucleotideOptionsHandle nucl_handle;
+    CRef<CBlastNucleotideOptionsHandle> nucl_handle(new CBlastNucleotideOptionsHandle);
 
     // Filter the query regions using the C++ APIs
-    Blast_FindDustFilterLoc(query_reference, &nucl_handle);
+    Blast_FindDustFilterLoc(query_reference, &(*nucl_handle));
     BOOST_CHECK(query_reference[0].mask->IsPacked_int());
     const CPacked_seqint::Tdata& seqinterval_list = 
         query_reference[0].mask->GetPacked_int().Get();
@@ -355,7 +355,7 @@ static void x_TestGetFilteredQueryRegions(ENa_strand strand) {
 
     // Run a self hit BLAST search, discard the return value, and get the
     // masked query regions
-    blast::CBl2Seq blaster(query_test, query_test, nucl_handle);
+    blast::CBl2Seq blaster(query_test, query_test, *nucl_handle);
     (void) blaster.Run();
     TSeqLocInfoVector masked_regions_vector = 
         blaster.GetFilteredQueryRegions();
