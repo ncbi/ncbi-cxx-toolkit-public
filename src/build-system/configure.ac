@@ -2196,7 +2196,7 @@ case "$compiler" in
         # historically necessary to build plugins as Mach-O bundles rather than
         # dynamic libraries.  That's not such a big deal on modern Mac OS X
         # versions, so the Toolkit now defaults to building only the latter.
-        if test "$with_bundle" = yes; then
+        if test "$with_bundles" = yes; then
            has_dll_loadable=""
            AC_DEFINE(NCBI_USE_BUNDLES, 1,
               [Define to 1 if building plugins as bundles, as Mac OS X
