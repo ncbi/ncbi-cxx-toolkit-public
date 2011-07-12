@@ -383,7 +383,7 @@ void CDllResolver::x_AddExtraDllPath(vector<string>& paths, TExtraDllPath which)
             paths.push_back(_T_STDSTRING(buf));
         }
         // Parse PATH environment variable
-        const TXChar* env = NcbiSys_getenv(_T("PATH"));
+        const TXChar* env = NcbiSys_getenv(_TX("PATH"));
         if (env  &&  *env) {
             NStr::Tokenize(_T_STDSTRING(env), ";", paths);
         }

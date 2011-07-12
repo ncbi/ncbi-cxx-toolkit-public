@@ -2992,8 +2992,8 @@ static bool s_GetHomeByLOGIN(string& home)
 {
     const TXChar* ptr = 0;
     // Get user name
-    if ( !(ptr = NcbiSys_getenv(_T("USER"))) ) {
-        if ( !(ptr = NcbiSys_getenv(_T("LOGNAME"))) ) {
+    if ( !(ptr = NcbiSys_getenv(_TX("USER"))) ) {
+        if ( !(ptr = NcbiSys_getenv(_TX("LOGNAME"))) ) {
             if ( !(ptr = getlogin()) ) {
                 LOG_ERROR_AND_RETURN_ERRNO("s_GetHomeByLOGIN():"
                                            " Unable to get user name");
@@ -3020,12 +3020,12 @@ string CDir::GetHome(void)
 #if defined(NCBI_OS_MSWIN)
     // Get home dir from environment variables
     // like - C:\Documents and Settings\user\Application Data
-    const TXChar* str = NcbiSys_getenv(_T("APPDATA"));
+    const TXChar* str = NcbiSys_getenv(_TX("APPDATA"));
     if ( str ) {
         home = _T_CSTRING(str);
     } else {
         // like - C:\Documents and Settings\user
-        str = NcbiSys_getenv(_T("USERPROFILE"));
+        str = NcbiSys_getenv(_TX("USERPROFILE"));
         if ( str ) {
             home = _T_CSTRING(str);
         }
@@ -3068,7 +3068,7 @@ string CDir::GetTmpDir(void)
 
 #elif defined(NCBI_OS_MSWIN)
 
-    const TXChar* tmpdir = NcbiSys_getenv(_T("TEMP"));
+    const TXChar* tmpdir = NcbiSys_getenv(_TX("TEMP"));
     if ( tmpdir ) {
         tmp = _T_CSTRING(tmpdir);
     } else  {
@@ -3157,8 +3157,8 @@ void s_SetFindFileError(void)
 
 #  define IS_RECURSIVE_ENTRY                     \
     ( (flags & CDir::fIgnoreRecursive)  &&       \
-      ((NcbiSys_strcmp(entry.cFileName, _T("."))  == 0) ||  \
-       (NcbiSys_strcmp(entry.cFileName, _T("..")) == 0)) )
+      ((NcbiSys_strcmp(entry.cFileName, _TX("."))  == 0) ||  \
+       (NcbiSys_strcmp(entry.cFileName, _TX("..")) == 0)) )
 
 void s_AddEntry(CDir::TEntries* contents, const string& base_path,
                 const WIN32_FIND_DATA& entry, CDir::TGetEntriesFlags flags)

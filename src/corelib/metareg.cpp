@@ -308,13 +308,13 @@ bool CMetaRegistry::x_Reload(const string& path, IRWRegistry& reg,
 void CMetaRegistry::GetDefaultSearchPath(CMetaRegistry::TSearchPath& path)
 {
 
-    const TXChar* cfg_path = NcbiSys_getenv(_T("NCBI_CONFIG_PATH"));
+    const TXChar* cfg_path = NcbiSys_getenv(_TX("NCBI_CONFIG_PATH"));
     if (cfg_path) {
         path.push_back(_T_STDSTRING(cfg_path));
         return;
     }
 
-    if (NcbiSys_getenv(_T("NCBI_DONT_USE_LOCAL_CONFIG")) == NULL) {
+    if (NcbiSys_getenv(_TX("NCBI_DONT_USE_LOCAL_CONFIG")) == NULL) {
         path.push_back(".");
         string home = CDir::GetHome();
         if ( !home.empty() ) {
@@ -323,7 +323,7 @@ void CMetaRegistry::GetDefaultSearchPath(CMetaRegistry::TSearchPath& path)
     }
 
     {{
-        const TXChar* ncbi = NcbiSys_getenv(_T("NCBI"));
+        const TXChar* ncbi = NcbiSys_getenv(_TX("NCBI"));
         if (ncbi  &&  *ncbi) {
             path.push_back(_T_STDSTRING(ncbi));
         }
@@ -331,7 +331,7 @@ void CMetaRegistry::GetDefaultSearchPath(CMetaRegistry::TSearchPath& path)
 
 #ifdef NCBI_OS_MSWIN
     {{
-        const TXChar* sysroot = NcbiSys_getenv(_T("SYSTEMROOT"));
+        const TXChar* sysroot = NcbiSys_getenv(_TX("SYSTEMROOT"));
         if (sysroot  &&  *sysroot) {
             path.push_back(_T_STDSTRING(sysroot));
         }

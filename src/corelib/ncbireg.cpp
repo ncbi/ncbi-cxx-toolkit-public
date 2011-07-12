@@ -1343,7 +1343,7 @@ void CNcbiRegistry::x_Init(void)
     m_SysRegistry.Reset(new CTwoLayerRegistry(NULL, cf));
     x_Add(*m_SysRegistry, ePriority_Default - 1, sm_SysRegName);
 
-    const TXChar* xoverride_path = NcbiSys_getenv(_T("NCBI_CONFIG_OVERRIDES"));
+    const TXChar* xoverride_path = NcbiSys_getenv(_TX("NCBI_CONFIG_OVERRIDES"));
     if (xoverride_path  &&  *xoverride_path) {
         string override_path = _T_STDSTRING(xoverride_path);
         m_OverrideRegistry.Reset(new CCompoundRWRegistry(cf));

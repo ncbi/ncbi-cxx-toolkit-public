@@ -1144,7 +1144,7 @@ string CNcbiApplication::FindProgramExecutablePath
             if (instance) {
                 env_path = instance->GetEnvironment().Get("PATH");
             } else {
-                env_path = _T_STDSTRING(NcbiSys_getenv(_T("PATH")));
+                env_path = _T_STDSTRING(NcbiSys_getenv(_TX("PATH")));
             }
             list<string> split_path;
 #  ifdef NCBI_OS_MSWIN

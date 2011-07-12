@@ -43,9 +43,6 @@
 #include <stdarg.h>
 #include <time.h>
 #include <vector>
-#if defined(NCBI_OS_MSWIN)
-#  include <tchar.h>
-#endif
 
 
 
@@ -132,8 +129,8 @@ const SIZE_TYPE NPOS = static_cast<SIZE_TYPE>(-1);
 typedef wchar_t TXChar;
 typedef wstring TXString;
 
-#  if !defined(_T)
-#    define _T(x) L ## x
+#  if !defined(_TX)
+#    define _TX(x) L ## x
 #  endif
 
 #  if defined(_DEBUG)
@@ -158,8 +155,8 @@ typedef wstring TXString;
 typedef char   TXChar;
 typedef string TXString;
 
-#  if !defined(_T)
-#    define _T(x) x
+#  if !defined(_TX)
+#    define _TX(x) x
 #  endif
 
 #  define _T_XSTRING(x)       (x)

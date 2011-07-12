@@ -1349,7 +1349,7 @@ const string& CDiagContext::GetHost(void) const
 
 #if defined(NCBI_OS_MSWIN)
     // MSWIN - use COMPUTERNAME
-    const TXChar* compname = NcbiSys_getenv(_T("COMPUTERNAME"));
+    const TXChar* compname = NcbiSys_getenv(_TX("COMPUTERNAME"));
     if ( compname  &&  *compname ) {
         m_Host->SetString(_T_STDSTRING(compname));
         return m_Host->GetOriginalString();
@@ -1357,7 +1357,7 @@ const string& CDiagContext::GetHost(void) const
 #endif
 
     // Server env. - use SERVER_ADDR
-    const TXChar* servaddr = NcbiSys_getenv(_T("SERVER_ADDR"));
+    const TXChar* servaddr = NcbiSys_getenv(_TX("SERVER_ADDR"));
     if ( servaddr  &&  *servaddr ) {
         m_Host->SetString(_T_STDSTRING(servaddr));
     }
@@ -2289,7 +2289,7 @@ string GetDefaultLogLocation(CNcbiApplication& app)
     }
     // Could not find a valid web-dir entry, use /log/port or empty string
     // to try /log/srv later.
-    const TXChar* port = NcbiSys_getenv(_T("SERVER_PORT"));
+    const TXChar* port = NcbiSys_getenv(_TX("SERVER_PORT"));
     return port ? log_path + string(_T_CSTRING(port)) : kEmptyStr;
 }
 
@@ -5895,11 +5895,11 @@ extern void Abort(void)
     // If don't defined handler or application doesn't still terminated
 
     // Check environment variable for silent exit
-    const TXChar* value = NcbiSys_getenv(_T("DIAG_SILENT_ABORT"));
-    if (value  &&  (*value == _T('Y')  ||  *value == _T('y')  ||  *value == _T('1'))) {
+    const TXChar* value = NcbiSys_getenv(_TX("DIAG_SILENT_ABORT"));
+    if (value  &&  (*value == _TX('Y')  ||  *value == _TX('y')  ||  *value == _TX('1'))) {
         ::exit(255);
     }
-    else if (value  &&  (*value == _T('N')  ||  *value == _T('n') || *value == _T('0'))) {
+    else if (value  &&  (*value == _TX('N')  ||  *value == _TX('n') || *value == _TX('0'))) {
         ::abort();
     }
     else
