@@ -324,7 +324,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
 #endif
                 block += n;
             }
-            *block = _T('\0');
+            *block = _TX('\0');
         }
 
         HANDLE stdout_handle = ::GetStdHandle(STD_OUTPUT_HANDLE);
