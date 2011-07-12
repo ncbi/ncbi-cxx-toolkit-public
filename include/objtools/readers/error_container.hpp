@@ -212,7 +212,37 @@ public:
 protected:
     int m_iAcceptLevel;
 };
-    
+
+//  ===========================================================================
+class CErrorContainerWithLog:
+//
+//  Accept everything, and besides storing all errors, post them.
+//  ===========================================================================
+    public CErrorContainerBase
+{
+public:
+    CErrorContainerWithLog(const CDiagCompileInfo& info)
+        : m_Info(info) {};
+    ~CErrorContainerWithLog() {};
+
+    bool
+    PutError(
+        const ILineError& err )
+    {
+        CNcbiDiag(m_Info, err.Severity(),
+                  eDPF_Log | eDPF_IsMessage).GetRef()
+           << err.Message() << Endm;
+
+        m_Errors.push_back(
+            CLineError( err.Problem(), err.Severity(), err.SeqId(), err.Line(),
+                err.FeatureName(), err.QualifierName(), err.QualifierValue() ) );
+        return true;
+    };
+
+private:
+    const CDiagCompileInfo m_Info;
+};
+
 END_objects_SCOPE
 END_NCBI_SCOPE
 

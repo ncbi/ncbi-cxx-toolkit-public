@@ -78,6 +78,7 @@
 
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
+#include <objtools/readers/error_container.hpp>
 #include <objtools/readers/rm_reader.hpp>
 #include <objtools/error_codes.hpp>
 
@@ -1033,7 +1034,8 @@ void CRmReader::Read(CRef<CSeq_annot> annot,
 {
     annot->Reset();
     CRepeatMaskerReader impl(flags);
-    CRef<CSeq_annot> result(impl.ReadSeqAnnot(m_Istr));
+    CErrorContainerWithLog error_container(DIAG_COMPILE_INFO);
+    CRef<CSeq_annot> result(impl.ReadSeqAnnot(m_Istr, &error_container));
     annot->Assign(*result, eShallow);
 }
 
