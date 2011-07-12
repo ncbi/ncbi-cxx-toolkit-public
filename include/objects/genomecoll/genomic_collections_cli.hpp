@@ -41,9 +41,9 @@
 
 
 // generated includes
-#include <internal/gpipe/objects/genomecoll/genomic_collections_cli_.hpp>
-#include <internal/gpipe/objects/genomecoll/GCClient_AttributeFlags.hpp>
-#include <internal/gpipe/objects/genomecoll/GCClient_GetAssemblyReques.hpp>
+#include <objects/genomecoll/genomic_collections_cli_.hpp>
+#include <objects/genomecoll/GCClient_AttributeFlags.hpp>
+#include <objects/genomecoll/GCClient_GetAssemblyReques.hpp>
 // generated classes
 
 BEGIN_NCBI_SCOPE

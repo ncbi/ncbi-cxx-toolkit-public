@@ -38,11 +38,11 @@
 #include <ncbi_pch.hpp>
 
 // generated includes
-#include <internal/gpipe/objects/genomecoll/genomic_collections_cli.hpp>
-#include <internal/gpipe/objects/genomecoll/GCClient_AttributeFlags.hpp>
-#include <internal/gpipe/objects/genomecoll/GCClient_GetAssemblyReques.hpp>
-#include <internal/gpipe/objects/genomecoll/GCClient_GetAssemblyReques.hpp>
-#include <internal/gpipe/objects/genomecoll/GCClient_Error.hpp>
+#include <objects/genomecoll/genomic_collections_cli.hpp>
+#include <objects/genomecoll/GCClient_AttributeFlags.hpp>
+#include <objects/genomecoll/GCClient_GetAssemblyReques.hpp>
+#include <objects/genomecoll/GCClient_GetAssemblyReques.hpp>
+#include <objects/genomecoll/GCClient_Error.hpp>
 #include <objects/genomecoll/GC_Assembly.hpp>
 #include <sstream>
 
