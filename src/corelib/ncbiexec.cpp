@@ -287,7 +287,7 @@ void s_Create_Args(
     int i_arg=0;
 #if defined(NCBI_OS_MSWIN)
     if (strstr(cmdname, " ")) {
-        xargs.push_back( TXString(_T("\"")) + _T_XSTRING(cmdname) + _T("\""));
+        xargs.push_back( TXString(_TX("\"")) + _T_XSTRING(cmdname) + _TX("\""));
     } else {
 #if defined(_UNICODE)
         xargs.push_back( _T_XSTRING(cmdname) );
@@ -682,13 +682,13 @@ CExec::CResult CExec::RunSilent(EMode mode, const char *cmdname,
     cmdline = _T_XCSTRING(cmdname);
 
     if (argv) {
-        cmdline += _T(" "); 
+        cmdline += _TX(" "); 
         cmdline += _T_XCSTRING(argv);
         va_list vargs;
         va_start(vargs, argv);
         const char* p = NULL;
         while ( (p = va_arg(vargs, const char*)) ) {
-            cmdline += _T(" "); 
+            cmdline += _TX(" "); 
             cmdline += _T_XSTRING(CExec::QuoteArg(p));
         }
         va_end(vargs);
@@ -803,7 +803,7 @@ string CExec::ResolvePath(const string& filename)
             // Try to find filename among the paths of the PATH
             // environment variable.
             if ( path.empty() ) {
-                const TXChar* env = NcbiSys_getenv(_T("PATH"));
+                const TXChar* env = NcbiSys_getenv(_TX("PATH"));
                 if (env  &&  *env) {
                     list<string> split_path;
 #  ifdef NCBI_OS_MSWIN
