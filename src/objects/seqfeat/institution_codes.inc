@@ -3320,6 +3320,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MBC<USA>	b	Montgomery Botanical Center",
 "MBCG	s	Museo di Scienze Naturali \"Enrico Caffi\"",
 "MBCSC	s	Marine Biodiversity Collection of South China Sea, Chinese Academy of Sciences",
+"MBCSC:Fish	s	Marine Biodiversity Collection of South China Sea, Chinese Academy of Sciences, Fish Collection",
 "Mbg	s	Fachberich Geowissenschaften",
 "MBH	s	Marlborough College",
 "MBIC	c	Marine Biotechnology Institute Culture Collection",
