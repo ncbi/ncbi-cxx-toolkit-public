@@ -191,6 +191,13 @@ protected:
     void x_PrintQueryAccession(void);
     /// Print query accession.version
     void x_PrintQueryAccessionVersion(void);
+    /// Print query and database names
+    void x_PrintQueryAndDbNames(const string& program, 
+                       const objects::CBioseq& bioseq, 
+                       const string& dbname, 
+                       const string& rid,
+                       unsigned int iteration,
+                       CConstRef<objects::CBioseq> subj_bioseq);
     /// Print subject Seq-id
     void x_PrintSubjectSeqId(void);
     /// Print all Seq-ids associated with this subject, separated by ';'
@@ -433,7 +440,11 @@ public:
     /// struct containing annotated gene information
     struct SIgGene {
         void Set(const string id, int s, int e) {
-            sid = id;
+            if (id.substr(0,4) == "lcl|") {
+                sid = id.substr(4, id.size());
+            } else {
+                sid = id;
+            }
             start = s;
             end = e;
         }
@@ -460,6 +471,16 @@ public:
     ~CIgBlastTabularInfo() {
         x_ResetIgFields();
     };
+
+    void PrintHeader(const string& program, 
+                     const objects::CBioseq& bioseq, 
+                     const string& dbname, 
+                     const string& rid = kEmptyStr,
+                     unsigned int iteration = 
+                                numeric_limits<unsigned int>::max(),
+                     const objects::CSeq_align_set* align_set=0,
+                     CConstRef<objects::CBioseq> subj_bioseq
+                                = CConstRef<objects::CBioseq>()); 
 
     /// Set fields for master alignment
     int SetMasterFields(const objects::CSeq_align& align, 

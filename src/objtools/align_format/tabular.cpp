@@ -705,6 +705,25 @@ CBlastTabularInfo::PrintHeader(const string& program_version,
        const CSeq_align_set* align_set /* = 0 */,
        CConstRef<CBioseq> subj_bioseq /* = CConstRef<CBioseq>() */)
 {
+    x_PrintQueryAndDbNames(program_version, bioseq, dbname, rid, iteration, subj_bioseq);
+    // Print number of alignments found, but only if it has been set.
+    if (align_set) {
+       int num_hits = align_set->Get().size();
+       if (num_hits != 0) {
+           x_PrintFieldNames();
+       }
+       m_Ostream << "# " << num_hits << " hits found" << "\n";
+    }
+}
+
+void 
+CBlastTabularInfo::x_PrintQueryAndDbNames(const string& program_version,
+       const CBioseq& bioseq,
+       const string& dbname,
+       const string& rid,
+       unsigned int iteration,
+       CConstRef<CBioseq> subj_bioseq)
+{
     m_Ostream << "# ";
     m_Ostream << program_version << "\n";
 
@@ -730,15 +749,6 @@ CBlastTabularInfo::PrintHeader(const string& program_version,
                                                   m_Ostream, m_ParseLocalIds,
                                                   kHtmlFormat, kTabularFormat);
         m_Ostream << "\n";
-    }
-
-    // Print number of alignments found, but only if it has been set.
-    if (align_set) {
-       int num_hits = align_set->Get().size();
-       if (num_hits != 0) {
-           x_PrintFieldNames();
-       }
-       m_Ostream << "# " << num_hits << " hits found" << "\n";
     }
 }
 
@@ -904,6 +914,28 @@ CBlastTabularInfo::x_PrintField(ETabularField field)
     }
 }
 
+/// @todo FIXME add means to specify masked database (SB-343)
+void 
+CIgBlastTabularInfo::PrintHeader(const string& program_version, 
+       const CBioseq& bioseq, 
+       const string& dbname, 
+       const string& rid /* = kEmptyStr */,
+       unsigned int iteration /* = numeric_limits<unsigned int>::max() */,
+       const CSeq_align_set* align_set /* = 0 */,
+       CConstRef<CBioseq> subj_bioseq /* = CConstRef<CBioseq>() */)
+{
+    x_PrintQueryAndDbNames(program_version, bioseq, dbname, rid, iteration, subj_bioseq);
+    PrintMasterAlign();
+    // Print number of alignments found, but only if it has been set.
+    if (align_set) {
+       int num_hits = align_set->Get().size();
+       if (num_hits != 0) {
+           x_PrintFieldNames();
+       }
+       m_Ostream << "# " << num_hits << " hits found" << "\n";
+    }
+}
+
 int CIgBlastTabularInfo::SetMasterFields(const CSeq_align& align, 
                                  CScope& scope, 
                                  const string& chain_type,
@@ -950,9 +982,9 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
     // TODO top VDJ match sid?
 
     // Gene info coordinates are half inclusive
-    SetVGene("TopV", annot->m_GeneInfo[0], annot->m_GeneInfo[1]);
-    SetDGene("TopD", annot->m_GeneInfo[2], annot->m_GeneInfo[3]);
-    SetJGene("TopJ", annot->m_GeneInfo[4], annot->m_GeneInfo[5]);
+    SetVGene(annot->m_TopGeneIds[0], annot->m_GeneInfo[0], annot->m_GeneInfo[1]);
+    SetDGene(annot->m_TopGeneIds[1], annot->m_GeneInfo[2], annot->m_GeneInfo[3]);
+    SetJGene(annot->m_TopGeneIds[2], annot->m_GeneInfo[4], annot->m_GeneInfo[5]);
 
     // Compute Frame info
     if (annot->m_FrameInfo[1] >= 0) {
@@ -991,24 +1023,55 @@ void CIgBlastTabularInfo::Print(void)
 
 void CIgBlastTabularInfo::PrintMasterAlign() const
 {
-    m_Ostream << m_ChainType << m_FieldDelimiter;
-
-    x_PrintQuerySeqId();
-
-    m_Ostream << m_FieldDelimiter
-              << ((m_IsMinusStrand) ? '-' : '+')
-              << m_FieldDelimiter
-              << m_FrameInfo
-              << m_FieldDelimiter;
-
-    x_PrintIgGenes();
-
-    for (unsigned int i=0; i<m_IgDomains.size(); ++i) {
-        m_Ostream << m_FieldDelimiter;
-        x_PrintIgDomain(*(m_IgDomains[i]));
+    m_Ostream << endl;
+    if (m_IsNucl) {
+        m_Ostream << "#V(D)J rearrangement summary for query sequence ";
+        m_Ostream << "(Top V gene match, ";
+        if (m_ChainType == "VH") m_Ostream << "Top D gene match, ";
+        m_Ostream << "Top J gene match, Chain type, V-J Frame, Strand):" << endl;
+        m_Ostream << m_VGene.sid << m_FieldDelimiter;
+        if (m_ChainType == "VH") m_Ostream << m_DGene.sid << m_FieldDelimiter;
+        m_Ostream << m_JGene.sid << m_FieldDelimiter;
+        m_Ostream << m_ChainType << m_FieldDelimiter;
+        if (m_FrameInfo == "IF") m_Ostream << "In-frame" << m_FieldDelimiter;
+        else if (m_FrameInfo == "OF") m_Ostream << "Out-of-frame" << m_FieldDelimiter;
+        else if (m_FrameInfo == "IP") m_Ostream << "In-frame with stop codon" << m_FieldDelimiter;
+        m_Ostream << ((m_IsMinusStrand) ? '-' : '+' ) << endl << endl;
+        x_PrintIgGenes();
     }
 
-    m_Ostream << "\n";
+    int length = 0;
+    for (unsigned int i=0; i<m_IgDomains.size(); ++i) {
+        if (m_IgDomains[i]->length > 0) {
+            length += m_IgDomains[i]->length;
+        }
+    }
+    if (!length) return;
+
+    m_Ostream << "#Alignment summary between query and top germline V gene hit ";
+    m_Ostream << "(from, to, length, matches, mismatches, gaps, percent identity)" << endl;
+
+    int num_match = 0;
+    int num_mismatch = 0;
+    int num_gap = 0;
+    for (unsigned int i=0; i<m_IgDomains.size(); ++i) {
+        x_PrintIgDomain(*(m_IgDomains[i]));
+        m_Ostream << endl;
+        if (m_IgDomains[i]->length > 0) {
+            num_match += m_IgDomains[i]->num_match;
+            num_mismatch += m_IgDomains[i]->num_mismatch;
+            num_gap += m_IgDomains[i]->num_gap;
+        }
+    }
+    m_Ostream << "Total" 
+              << m_FieldDelimiter << "N/A"
+              << m_FieldDelimiter << "N/A"
+              << m_FieldDelimiter << length  
+              << m_FieldDelimiter << num_match 
+              << m_FieldDelimiter << num_mismatch
+              << m_FieldDelimiter << num_gap
+              << m_FieldDelimiter << std::setprecision(3) << num_match*100.0/length
+              << endl << endl;
 };
 
 void CIgBlastTabularInfo::PrintHtmlSummary() const
@@ -1168,6 +1231,12 @@ void CIgBlastTabularInfo::x_PrintIgGenes(bool isHtml) const
             m_Ostream << "<td>V-J junction*</td>";
         }
         m_Ostream << "<td>J region start</td></tr>\n<tr>";
+    } else {
+        m_Ostream << "#Nucleotide details around V(D)J junctions ";
+        m_Ostream << "(V region end, ";
+        if (m_ChainType == "VH")  m_Ostream << "V-D junction, D region, D-J junction, ";
+        else m_Ostream << "V-J junction, ";
+        m_Ostream << "J region start)" << endl;
     }
 
     x_PrintPartialQuery(max(b0, a1 - 5), a1, isHtml); m_Ostream << m_FieldDelimiter;
@@ -1190,6 +1259,7 @@ void CIgBlastTabularInfo::x_PrintIgGenes(bool isHtml) const
                   << "Such bases will be shown inside a parenthesis (i.e., (TACAT))"
                   << " and will not be included under V, D or J region itself.\n";
     }
+    m_Ostream << endl << endl;
 };
 
 void CIgBlastTabularInfo::x_ComputeIgDomain(SIgDomain &domain)
@@ -1236,9 +1306,15 @@ void CIgBlastTabularInfo::x_PrintIgDomain(const SIgDomain &domain) const
               << m_FieldDelimiter
               << domain.num_mismatch
               << m_FieldDelimiter
-              << domain.num_gap;
+              << domain.num_gap
+              << m_FieldDelimiter
+              << std::setprecision(3)
+              << domain.num_match*100.0/domain.length;
     } else {
         m_Ostream  << "N/A" << m_FieldDelimiter
+              <<  "N/A" << m_FieldDelimiter
+              <<  "N/A" << m_FieldDelimiter
+              <<  "N/A" << m_FieldDelimiter
               <<  "N/A" << m_FieldDelimiter
               <<  "N/A" << m_FieldDelimiter
               <<  "N/A";

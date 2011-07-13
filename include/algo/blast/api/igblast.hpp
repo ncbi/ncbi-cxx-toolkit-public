@@ -68,6 +68,7 @@ class NCBI_XBLAST_EXPORT CIgAnnotation : public CObject
 {
 public:
     bool m_MinusStrand;              // hit is on minus strand of the query
+    vector<string> m_TopGeneIds;     // Top match germline gene ID
     vector<string> m_ChainType;      // chain types of the query[0] and the subjects[1:]
     int m_GeneInfo[6];               // The (start) and (end offset + 1) for VDJ
     int m_FrameInfo[2];              // Frame number for V end and J start
@@ -81,6 +82,7 @@ public:
     CIgAnnotation() 
         : m_MinusStrand (false) 
     {
+        m_TopGeneIds.resize(3);
         for (int i=0; i<6; i++) m_GeneInfo[i] = -1;
         for (int i=0; i<2; i++) m_FrameInfo[i] = -1;
         for (int i=0; i<12; i++) m_DomainInfo[i] = -1;

@@ -317,6 +317,7 @@ void CIgBlast::x_AnnotateV(CRef<CSearchResultSet>        &results,
             CRef<CSeq_align> align = (*result)->GetSeqAlign()->Get().front();
             annot->m_GeneInfo[0] = align->GetSeqStart(0);
             annot->m_GeneInfo[1] = align->GetSeqStop(0)+1;
+            annot->m_TopGeneIds[0] = align->GetSeq_id(1).AsFastaString();
         } 
     }
 };
@@ -482,6 +483,7 @@ void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
             const CSeq_align & it = **(align_D->Get().begin());
             (*annot)->m_GeneInfo[2] = it.GetSeqStart(0);
             (*annot)->m_GeneInfo[3] = it.GetSeqStop(0)+1;
+            (*annot)->m_TopGeneIds[1] = it.GetSeq_id(1).AsFastaString();
         }
             
         /* annotate J */    
@@ -489,6 +491,7 @@ void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
             const CSeq_align & it = **(align_J->Get().begin());
             (*annot)->m_GeneInfo[4] = it.GetSeqStart(0);
             (*annot)->m_GeneInfo[5] = it.GetSeqStop(0)+1;
+            (*annot)->m_TopGeneIds[2] = it.GetSeq_id(1).AsFastaString();
             string sid = it.GetSeq_id(1).AsFastaString();
             if (sid.substr(0, 4) == "lcl|") sid = sid.substr(4, sid.length());
             int frame_offset = m_AnnotationInfo.GetFrameOffset(sid);

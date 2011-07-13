@@ -563,16 +563,6 @@ CBlastFormat::x_PrintIgTabularReport(const blast::CIgBlastResults& results)
     CIgBlastTabularInfo tabinfo(m_Outfile, m_CustomOutputFormatSpec, kDelim);
     tabinfo.SetParseLocalIds(m_BelieveQuery);
 
-    if (m_FormatType == CFormattingArgs::eTabularWithComments) {
-        string strProgVersion =
-                NStr::ToUpper(m_Program) + " " + blast::CBlastVersion().Print();
-        CConstRef<CBioseq> subject_bioseq = x_CreateSubjectBioseq();
-        tabinfo.PrintHeader(strProgVersion, *(bhandle.GetBioseqCore()),
-                                m_DbName, results.GetRID(), 
-                                numeric_limits<unsigned int>::max(),
-                                aln_set, subject_bioseq);
-    }
-
     // print the master alignment
     if (results.HasAlignments()) {
         const CRef<CIgAnnotation> & annots = results.GetIgAnnotation();
@@ -581,7 +571,14 @@ CBlastFormat::x_PrintIgTabularReport(const blast::CIgBlastResults& results)
                                 annots->m_ChainType[0], 
                                 &m_ScoringMatrix);
         tabinfo.SetIgAnnotation(annots, m_IgOptions->m_IsProtein);
-        tabinfo.PrintMasterAlign();        
+
+        string strProgVersion =
+                "IG" + NStr::ToUpper(m_Program) + " " + blast::CBlastVersion().Print();
+        CConstRef<CBioseq> subject_bioseq = x_CreateSubjectBioseq();
+        tabinfo.PrintHeader(strProgVersion, *(bhandle.GetBioseqCore()),
+                                m_DbName, results.GetRID(), 
+                                numeric_limits<unsigned int>::max(),
+                                aln_set, subject_bioseq);
  
         int j = 1;
         for (; itr != aln_set->Get().end(); ++itr) {
@@ -888,6 +885,24 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
     //-------------------------------------------------
     // print the alignments
     m_Outfile << "\n";
+
+    const CBlastTabularInfo::EFieldDelimiter kDelim =
+            (m_FormatType == CFormattingArgs::eCommaSeparatedValues
+             ? CBlastTabularInfo::eComma : CBlastTabularInfo::eTab);
+
+    CIgBlastTabularInfo tabinfo(m_Outfile, m_CustomOutputFormatSpec, kDelim);
+    tabinfo.SetParseLocalIds(m_BelieveQuery);
+
+    // print the master alignment
+    if (results.HasAlignments()) {
+        const CRef<CIgAnnotation> & annots = results.GetIgAnnotation();
+        CSeq_align_set::Tdata::const_iterator itr = aln_set->Get().begin();
+        tabinfo.SetMasterFields(**itr, *m_Scope, 
+                                annots->m_ChainType[0], 
+                                &m_ScoringMatrix);
+        tabinfo.SetIgAnnotation(annots, m_IgOptions->m_IsProtein);
+        tabinfo.PrintMasterAlign();
+    }
 
     TMaskedQueryRegions masklocs;
     results.GetMaskedQueryRegions(masklocs);
