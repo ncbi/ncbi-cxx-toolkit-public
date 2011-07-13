@@ -460,6 +460,28 @@ static int s_AbortTest(const string& service)
     return err_code;
 }
 
+static size_t ReadIntoBuffer(IReader* reader, char* buf_ptr, size_t buf_size)
+{
+    size_t bytes_read;
+    size_t total_bytes_read = 0;
+
+    while (buf_size > 0) {
+        ERW_Result rw_res = reader->Read(buf_ptr, buf_size, &bytes_read);
+        if (rw_res == eRW_Success) {
+            total_bytes_read += bytes_read;
+            buf_ptr += bytes_read;
+            buf_size -= bytes_read;
+        } else if (rw_res == eRW_Eof) {
+            break;
+        } else {
+            NCBI_THROW(CNetServiceException, eCommunicationError,
+                "Error while reading BLOB");
+        }
+    }
+
+    return total_bytes_read;
+}
+
 int CTestNetCacheClient::Run(void)
 {
     int error_level = 0;
@@ -510,25 +532,26 @@ int CTestNetCacheClient::Run(void)
 
         char dataBuf[1024];
         memset(dataBuf, 0xff, sizeof(dataBuf));
+
         size_t blob_size;
         IReader* reader = nc_client.GetData(key, &blob_size);
         assert(reader);
-        reader->Read(dataBuf, 1024);
+        assert(blob_size == sizeof(test_data));
+
+        size_t bytes_read = ReadIntoBuffer(reader, dataBuf, sizeof(dataBuf));
         delete reader;
 
-        int res = strcmp(dataBuf, test_data);
-        assert(res == 0);
+        assert(bytes_read == sizeof(test_data));
 
-        assert(blob_size == sizeof(test_data));
+        int res = memcmp(dataBuf, test_data, sizeof(test_data));
+        assert(res == 0);
 
         reader = nc_client.GetPartReader(key,
             sizeof(test_data) - sizeof("dog."), sizeof(dataBuf), &blob_size);
 
         assert(blob_size == sizeof("dog."));
 
-        size_t bytes_read;
-
-        reader->Read(dataBuf, sizeof(dataBuf), &bytes_read);
+        bytes_read = ReadIntoBuffer(reader, dataBuf, sizeof(dataBuf));
 
         assert(bytes_read == sizeof("dog."));
 

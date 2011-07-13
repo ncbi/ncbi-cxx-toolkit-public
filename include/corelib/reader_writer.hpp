@@ -78,6 +78,13 @@ public:
     /// "buf" is ignored, and no change should be made to the state
     /// of input device (but may return non-eRW_Success to indicate
     /// that the input device has already been in an error condition).
+    /// @attention
+    ///     It is implementation-specific whether the call blocks until
+    ///     the entire buffer is read or the call returns when at least
+    ///     some bytes are available. In general, it is advised that this
+    ///     call is made within a loop that checks for EOF condition and
+    ///     proceeds with the reading until the requested amount of data
+    ///     has been retrieved.
     virtual ERW_Result Read(void*   buf,
                             size_t  count,
                             size_t* bytes_read = 0) = 0;

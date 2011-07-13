@@ -142,6 +142,10 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
         void* buf,
         size_t buf_size);
 
+    /// Read a lengthy blob via the IReader interface. The Read() method
+    /// of the returned implementation is not blocking. The caller
+    /// must provide a reading completion loop for the Read() call.
+    /// @see CNetCacheAPI::GetReader() for an example.
     IReader* GetReadStream(
         const string& key,
         int version,
@@ -149,6 +153,10 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
         size_t* blob_size_ptr,
         CNetCacheAPI::ECachingMode caching_mode);
 
+    /// Read a lengthy blob via the IReader interface. The Read() method
+    /// of the returned implementation is not blocking. The caller
+    /// must provide a reading completion loop for the Read() call.
+    /// @see CNetCacheAPI::GetReader() for an example.
     virtual IReader* GetReadStream(
         const string& key,
         const string& subkey,
@@ -160,6 +168,30 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
         const string& subkey,
         int version);
 
+    /// Read data from the specified blob. The IReader implementation
+    /// returned is NOT blocking: its Read() method may return a partial
+    /// result before the requested amount of data is retrieved.
+    /// The Read() call must be placed within a loop that completes
+    /// data retrieval.
+    /// @see CNetCacheAPI::GetReader() for an example.
+    ///
+    /// @param key
+    ///    ICache key
+    /// @param version
+    ///    ICache key version
+    /// @param subkey
+    ///    ICache subkey
+    /// @param offset
+    ///    Offset in the blob at which to start reading it.
+    /// @param part_size
+    ///    Maximum number of bytes to read with this call.
+    /// @param blob_size_ptr
+    ///    If not NULL, this parameter must point to a variable
+    ///    that will receive the total blob size in bytes.
+    /// @param caching_mode
+    ///    Defines whether to enable file caching.
+    /// @return
+    ///    IReader* (to be deleted by the caller).
     IReader* GetReadStreamPart(
         const string& key,
         int version,
@@ -169,6 +201,10 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
         size_t* blob_size_ptr,
         CNetCacheAPI::ECachingMode caching_mode);
 
+    /// Read a lengthy blob via the IReader interface. The Read() method
+    /// of the returned implementation is not blocking. The caller
+    /// must provide a reading completion loop for the Read() call.
+    /// @see CNetCacheAPI::GetReader() for an example.
     virtual IReader* GetReadStream(const string&  key,
                                    int            version,
                                    const string&  subkey);

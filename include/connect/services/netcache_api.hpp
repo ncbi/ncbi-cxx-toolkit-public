@@ -197,11 +197,42 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     /// This is a safe version of the GetData method having the same
     /// signature. Unlike GetData, GetReader will throw an exception
     /// if the requested blob is not found.
+    ///
+    /// @note
+    ///   The Read() method of the returned IReader object is not
+    ///   blocking. A reading completion loop is required, see an
+    ///   example below.
+    ///
+    /// @code
+    /// size_t blob_size;
+    /// auto_ptr<IReader> reader(nc_api.GetReader(key, &blob_size));
+    /// size_t bytes_read;
+    /// size_t total_bytes_read = 0;
+    ///
+    /// while (buf_size > 0) {
+    ///     ERW_Result rw_res = reader->Read(buf_ptr, buf_size, &bytes_read);
+    ///     if (rw_res == eRW_Success) {
+    ///         total_bytes_read += bytes_read;
+    ///         buf_ptr += bytes_read;
+    ///         buf_size -= bytes_read;
+    ///     } else if (rw_res == eRW_Eof) {
+    ///         break;
+    ///     } else {
+    ///         NCBI_THROW(CNetServiceException, eCommunicationError,
+    ///             "Error while reading BLOB");
+    ///     }
+    /// }
+    ///
+    /// return total_bytes_read;
+    /// @endcode
     IReader* GetReader(const string& key, size_t* blob_size = NULL,
         ECachingMode caching_mode = eCaching_AppDefault);
 
     /// Get a pointer to the IReader interface to read a portion of
     /// the blob contents. See the description of GetReader() for details.
+    /// The Read() method of the returned IReader interface implementation
+    /// is not blocking.
+    /// @see CNetCacheAPI::GetReader() for details.
     IReader* GetPartReader(const string& key,
         size_t offset, size_t part_size, size_t* blob_size = NULL,
         ECachingMode caching_mode = eCaching_AppDefault);
@@ -230,13 +261,14 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     /// Retrieve BLOB from server by key.
     //
     /// Caller is responsible for deletion of the IReader* object.
-    /// IReader* MUST be deleted before destruction of CNetCacheAPI.
+    /// It must be deleted before the destruction of CNetCacheAPI.
     ///
     /// @note
-    ///   IReader implementation used here is TCP/IP socket
-    ///   based, so when reading the BLOB please remember to check
+    ///   IReader implementation used here is based on TCP/IP
+    ///   sockets; when reading the blob, please remember to check
     ///   IReader::Read return codes, it may not be able to read
-    ///   the whole BLOB in one call because of network delays.
+    ///   the whole blob in one call because of network delays.
+    /// @see CNetCacheAPI::GetReader() for details.
     ///
     /// @param key
     ///    BLOB key to read (returned by PutData)
