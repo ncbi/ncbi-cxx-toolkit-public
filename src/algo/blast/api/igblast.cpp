@@ -136,6 +136,7 @@ CIgBlast::Run()
     x_SetupVSearch(qf, opts_hndl);
     CLocalBlast blast(qf, opts_hndl, m_IgOptions->m_Db[0]);
     results[0] = blast.Run();
+    s_SortResultsByEvalue(results[0]);
     x_AnnotateV(results[0], annots);
 
     /*** search V for domain annotation */
@@ -181,6 +182,7 @@ CIgBlast::Run()
         }
         result = blast->GetResultSet();
     }
+    s_SortResultsByEvalue(result);
     s_AppendResults(result, -1, -1, final_results);
 
     /*** set the chain type infor */
@@ -334,7 +336,17 @@ static bool s_SeqAlignInSet(CSeq_align_set::Tdata & align_list, CRef<CSeq_align>
 };
 
 // Compare two seqaligns according to their evalue and coverage
-static bool s_CompareSeqAlign(const CRef<CSeq_align> &x, const CRef<CSeq_align> &y)
+static bool s_CompareSeqAlignByEvalue(const CRef<CSeq_align> &x, 
+                                      const CRef<CSeq_align> &y)
+{
+    double sx, sy;
+    x->GetNamedScore(CSeq_align::eScore_EValue, sx);
+    y->GetNamedScore(CSeq_align::eScore_EValue, sy);
+    return (sx <= sy);
+};
+
+// Compare two seqaligns according to their evalue and coverage
+static bool s_CompareSeqAlignByScore(const CRef<CSeq_align> &x, const CRef<CSeq_align> &y)
 {
     int sx, sy;
     x->GetNamedScore(CSeq_align::eScore_Score, sx);
@@ -415,7 +427,7 @@ void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
                 else ++it;
             }
             /* sort according to score */
-            align_list.sort(s_CompareSeqAlign);
+            align_list.sort(s_CompareSeqAlignByScore);
         }
 
         /* preprocess J */
@@ -451,7 +463,7 @@ void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
                 else ++it;
             }
             /* sort according to score */
-            align_list.sort(s_CompareSeqAlign);
+            align_list.sort(s_CompareSeqAlignByScore);
         }
 
         /* which one to keep, D or J? */
@@ -460,7 +472,7 @@ void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
             CSeq_align_set::Tdata & al_D = align_D->Set();
             CSeq_align_set::Tdata & al_J = align_J->Set();
             CSeq_align_set::Tdata::iterator it;
-            bool keep_J = s_CompareSeqAlign(*(al_J.begin()), *(al_D.begin()));
+            bool keep_J = s_CompareSeqAlignByScore(*(al_J.begin()), *(al_D.begin()));
             if (keep_J) {
                 it = al_D.begin();
                 while (it != al_D.end()) {
@@ -648,6 +660,19 @@ void CIgBlast::x_SetChainType(CRef<CSearchResultSet>  &results,
     }
 };
 
+void CIgBlast::s_SortResultsByEvalue(CRef<CSearchResultSet> &results)
+{
+    ITERATE(CSearchResultSet, result, *results) {
+        if ((*result)->HasAlignments()) {
+            CRef<CSeq_align_set> align(const_cast<CSeq_align_set *>
+                                   (&*((*result)->GetSeqAlign())));
+            CSeq_align_set::Tdata & align_list = align->Set();
+            align_list.sort(s_CompareSeqAlignByEvalue);
+        }
+    }
+};
+
+            // keep only the first num_alignments
 void CIgBlast::s_AppendResults(CRef<CSearchResultSet> &results,
                                int                     num_aligns,
                                int                     gene,
@@ -667,10 +692,6 @@ void CIgBlast::s_AppendResults(CRef<CSearchResultSet> &results,
         if ((*result)->HasAlignments()) {
             align.Reset(const_cast<CSeq_align_set *>
                                    (&*((*result)->GetSeqAlign())));
-            CSeq_align_set::Tdata & align_list = align->Set();
-
-            // sort by score
-            align_list.sort(s_CompareSeqAlign);
 
             // keep only the first num_alignments
             if (num_aligns >= 0) {
@@ -700,11 +721,16 @@ void CIgBlast::s_AppendResults(CRef<CSearchResultSet> &results,
             ig_result = dynamic_cast<CIgBlastResults *> (&(*final_results)[iq]);
             if (!align.Empty()) {
                 CSeq_align_set::Tdata & ig_list = ig_result->SetSeqAlign()->Set();
-                // Remove duplicates first
                 CSeq_align_set::Tdata & align_list = align->Set();
-                CSeq_align_set::Tdata::iterator it = align_list.begin();
-                while (it != align_list.end() && s_SeqAlignInSet(ig_list, *it)) ++it;
-                if (it != align_list.begin())  align_list.erase(align_list.begin(), it);
+
+                if (gene < 0) {
+                    // Remove duplicate seq_aligns
+                    CSeq_align_set::Tdata::iterator it = align_list.begin();
+                    while (it != align_list.end()) {
+                        if (s_SeqAlignInSet(ig_list, *it)) it = align_list.erase(it);
+                        else ++it;
+                    }
+                }
 
                 if (!align_list.empty()) {
                     ig_list.insert(ig_list.end(), align_list.begin(), align_list.end());
