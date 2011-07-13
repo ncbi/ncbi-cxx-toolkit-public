@@ -778,10 +778,18 @@ public:
     /// Default constructor
     CFormattingArgs(bool isIgblast = false)
         : m_OutputFormat(ePairwise), m_ShowGis(false), 
-        m_NumDescriptions(align_format::kDfltArgNumDescriptions),
-        m_NumAlignments(align_format::kDfltArgNumAlignments), m_Html(false),
+        m_NumDescriptions(0), m_NumAlignments(0),
+        m_DfltNumDescriptions(0), m_DfltNumAlignments(0),
+        m_Html(false),
         m_IsIgBlast(isIgblast)
-    {};
+    {
+        if (m_IsIgBlast) {
+            m_DfltNumAlignments = m_DfltNumDescriptions = 10;
+        } else {
+            m_DfltNumAlignments = align_format::kDfltArgNumAlignments;
+            m_DfltNumDescriptions = align_format::kDfltArgNumDescriptions;
+        }
+    };
 
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
@@ -846,11 +854,16 @@ private:
     bool m_ShowGis;                 ///< Display NCBI GIs?
     TSeqPos m_NumDescriptions;      ///< Number of 1-line descr. to show
     TSeqPos m_NumAlignments;        ///< Number of alignments to show
+    TSeqPos m_DfltNumDescriptions;  ///< Default value for num descriptions
+    TSeqPos m_DfltNumAlignments;    ///< Default value for num alignments
     bool m_Html;                    ///< Display HTML output?
     bool m_IsIgBlast;               ///< IgBlast has a different default num_alignments
     /// The format specification for custom output, e.g.: tabular or
     /// comma-separated value (populated if applicable)
     string m_CustomOutputFormatSpec;
+
+    /// Issues warnings that can only be caught at runtime
+    void x_IssueWarningsOnIncompatibleOptions(const CArgs& args) const;
 };
 
 /// Argument class to collect multi-threaded arguments

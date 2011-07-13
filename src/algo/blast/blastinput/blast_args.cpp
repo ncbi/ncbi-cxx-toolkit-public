@@ -1694,7 +1694,7 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                  "Number of database sequences to show one-line "
                  "descriptions for",
                  CArgDescriptions::eInteger,
-                 NStr::IntToString((m_IsIgBlast)? 10 :kDfltArgNumDescriptions));
+                 NStr::IntToString(m_DfltNumDescriptions));
     arg_desc.SetConstraint(kArgNumDescriptions, 
                            new CArgAllowValuesGreaterThanOrEqual(0));
 
@@ -1702,7 +1702,7 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.AddDefaultKey(kArgNumAlignments, "int_value",
                  "Number of database sequences to show alignments for",
                  CArgDescriptions::eInteger, 
-                 NStr::IntToString((m_IsIgBlast)? 10 :kDfltArgNumAlignments));
+                 NStr::IntToString(m_DfltNumAlignments));
     arg_desc.SetConstraint(kArgNumAlignments, 
                            new CArgAllowValuesGreaterThanOrEqual(0));
 
@@ -1771,6 +1771,61 @@ CFormattingArgs::ParseFormattingString(const CArgs& args,
     }
 }
 
+void 
+CFormattingArgs::x_IssueWarningsOnIncompatibleOptions(const CArgs& args) const
+{
+    // Issue warnings, per SB-830
+    bool max_target_seqs_set = false;
+    bool num_descr_set = false;
+    bool num_alignments_set = false;
+    typedef vector< CRef<CArgValue> > TArgs;
+    TArgs cmdline_args = args.GetAll();
+    ITERATE(TArgs, arg, cmdline_args) {
+        if ((*arg)->GetName() == kArgMaxTargetSequences) {
+            max_target_seqs_set = true;
+            continue;
+        }
+        if ((*arg)->GetName() == kArgNumAlignments) {
+            num_alignments_set = true;
+            continue;
+        }
+        if ((*arg)->GetName() == kArgNumDescriptions) {
+            num_descr_set = true;
+            continue;
+        }
+    }
+    
+    switch (m_OutputFormat) {
+    case ePairwise:
+    case eQueryAnchoredIdentities:
+    case eQueryAnchoredNoIdentities:
+    case eFlatQueryAnchoredIdentities:
+    case eFlatQueryAnchoredNoIdentities:
+        if (max_target_seqs_set) {
+            LOG_POST(Warning << kArgMaxTargetSequences << " should not be set "
+                     "with " << kArgOutputFormat << " " << (int)m_OutputFormat);
+        }
+        break;
+    case eXml: 
+    case eTabular:
+    case eTabularWithComments:
+    case eAsnText:
+    case eAsnBinary:
+    case eCommaSeparatedValues:
+    case eArchiveFormat:
+        if (num_alignments_set && (m_NumAlignments != m_DfltNumAlignments)) {
+            LOG_POST(Warning << kArgNumAlignments << " should not be set "
+                     "with " << kArgOutputFormat << " " << (int)m_OutputFormat);
+        }
+        if (num_descr_set && (m_NumDescriptions != m_DfltNumDescriptions)) {
+            LOG_POST(Warning << kArgNumDescriptions << " should not be set "
+                     "with " << kArgOutputFormat << " " << (int)m_OutputFormat);
+        }
+    case eEndValue:
+        break;
+    }
+}
+
 void
 CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
                                          CBlastOptions& opt)
@@ -1833,36 +1888,7 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
 
     m_Html = static_cast<bool>(args[kArgProduceHtml]);
     
-    // Issue warnings, per SB-830
-    switch (m_OutputFormat) {
-    case ePairwise:
-    case eQueryAnchoredIdentities:
-    case eQueryAnchoredNoIdentities:
-    case eFlatQueryAnchoredIdentities:
-    case eFlatQueryAnchoredNoIdentities:
-        if (args[kArgMaxTargetSequences]) {
-            LOG_POST(Warning << kArgMaxTargetSequences << " should not be set "
-                     "with " << kArgOutputFormat << " " << (int)m_OutputFormat);
-        }
-        break;
-    case eXml: 
-    case eTabular:
-    case eTabularWithComments:
-    case eAsnText:
-    case eAsnBinary:
-    case eCommaSeparatedValues:
-    case eArchiveFormat:
-        if (args[kArgNumAlignments]) {
-            LOG_POST(Warning << kArgNumAlignments << " should not be set "
-                     "with " << kArgOutputFormat << " " << (int)m_OutputFormat);
-        }
-        if (args[kArgNumDescriptions]) {
-            LOG_POST(Warning << kArgNumDescriptions << " should not be set "
-                     "with " << kArgOutputFormat << " " << (int)m_OutputFormat);
-        }
-    case eEndValue:
-        break;
-    }
+    x_IssueWarningsOnIncompatibleOptions(args);
 }
 
 void
