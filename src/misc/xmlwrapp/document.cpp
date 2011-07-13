@@ -61,6 +61,10 @@
 #include <string.h>
 
 // libxml includes
+#include <libxml/parser.h>
+#include <libxml/parserInternals.h>
+#include <libxml/SAX.h>
+#include <libxml/xmlversion.h>
 #include <libxml/tree.h>
 #include <libxml/xinclude.h>
 #include <libxml/xmlsave.h>
@@ -77,21 +81,133 @@ using namespace xml::impl;
 
 
 //####################################################################
+/*
+ * This is a hack to fix a problem with a change in the libxml2 API for
+ * versions starting at 2.6.0
+ */
+#if LIBXML_VERSION >= 20600
+#   define initxmlDefaultSAXHandler xmlSAX2InitDefaultSAXHandler
+#   include <libxml/SAX2.h>
+#endif
+
+
+//####################################################################
 namespace {
     const char const_default_encoding[] = "ISO-8859-1";
 
     // Callbacks for validating internal DTD
     extern "C" void cb_dtd_valid_error (void *v, const char *message, ...);
     extern "C" void cb_dtd_valid_warning (void *v, const char *message, ...);
+
+    // Callbacks for the tree parser
+    extern "C" void cb_tree_parser_fatal_error (void *v,
+                                                const char *message, ...);
+    extern "C" void cb_tree_parser_error (void *v, const char *message, ...);
+    extern "C" void cb_tree_parser_warning (void *v, const char *message, ...);
+    extern "C" void cb_tree_parser_ignore (void*, const xmlChar*, int);
 }
 //####################################################################
-xml::document::document (void) {
+xml::document::document (void) :
+    pimpl_(new doc_impl)
+{}
+//####################################################################
+xml::document::document (const char *               filename,
+                         error_messages *           messages,
+                         warnings_as_errors_type    how) :
+    pimpl_(0)
+{
+    if (!filename)
+        throw xml::exception("invalid file name");
+
     pimpl_ = new doc_impl;
+
+    xmlSAXHandler   sax;
+    memset(&sax, 0, sizeof(sax));
+    initxmlDefaultSAXHandler(&sax, 0);
+
+    sax.warning    = cb_tree_parser_warning;
+    sax.error      = cb_tree_parser_error;
+    sax.fatalError = cb_tree_parser_fatal_error;
+
+    if (xmlKeepBlanksDefaultValue == 0)
+        sax.ignorableWhitespace =  cb_tree_parser_ignore;
+
+    error_messages *                temp(messages);
+    std::auto_ptr<error_messages>   msgs;
+    if (!messages)
+        msgs.reset(temp = new error_messages);
+    else
+        messages->get_messages().clear();
+
+    xmlDocPtr tmpdoc = xmlSAXParseFileWithData(&sax, filename,
+                                               0, temp);
+
+    if (is_failure(temp, how) || !tmpdoc) {
+        if (tmpdoc) xmlFreeDoc(tmpdoc);
+        throw parser_exception(*temp);
+    }
+    set_doc_data(tmpdoc);
 }
 //####################################################################
-xml::document::document (const char *root_name) {
-    pimpl_ = new doc_impl(root_name);
+xml::document::document (const char *               data,
+                         size_type                  size,
+                         error_messages *           messages,
+                         warnings_as_errors_type    how) :
+    pimpl_(0)
+{
+    if (!data)
+        throw xml::exception("invalid data pointer");
+
+    pimpl_ = new doc_impl;
+
+    xmlParserCtxtPtr    ctxt = xmlCreateMemoryParserCtxt(
+                                    data, static_cast<int>(size));
+    if (ctxt == 0)
+        throw std::bad_alloc();
+
+    xmlSAXHandler   sax;
+    memset(&sax, 0, sizeof(sax));
+    initxmlDefaultSAXHandler(&sax, 0);
+
+    sax.warning    = cb_tree_parser_warning;
+    sax.error      = cb_tree_parser_error;
+    sax.fatalError = cb_tree_parser_fatal_error;
+
+    if (xmlKeepBlanksDefaultValue == 0)
+        sax.ignorableWhitespace =  cb_tree_parser_ignore;
+
+    if (ctxt->sax)
+        xmlFree(ctxt->sax);
+    ctxt->sax = &sax;
+
+    error_messages *                temp(messages);
+    std::auto_ptr<error_messages>   msgs;
+    if (!messages)
+        msgs.reset(temp = new error_messages);
+    else
+        messages->get_messages().clear();
+    ctxt->_private = temp;
+
+    int ret(xmlParseDocument(ctxt));
+
+    if (!ctxt->wellFormed || ret != 0 || is_failure(temp, how)) {
+        xmlFreeDoc(ctxt->myDoc);
+        ctxt->myDoc = 0;
+        ctxt->sax = 0;
+        xmlFreeParserCtxt(ctxt);
+
+        throw parser_exception(*temp);
+    }
+
+    set_doc_data(ctxt->myDoc);
+    ctxt->sax = 0;
+
+    xmlFreeParserCtxt(ctxt);
 }
+//####################################################################
+xml::document::document (const char *root_name) :
+    pimpl_(new doc_impl(root_name))
+{}
 //####################################################################
 xml::document::document (const node &n) {
     std::auto_ptr<doc_impl> ap(pimpl_ = new doc_impl);
@@ -99,9 +215,9 @@ xml::document::document (const node &n) {
     ap.release();
 }
 //####################################################################
-xml::document::document (const document &other) {
-    pimpl_ = new doc_impl(*(other.pimpl_));
-} /* NCBI_FAKE_WARNING */
+xml::document::document (const document &other) :
+    pimpl_(new doc_impl(*(other.pimpl_)))
+{} /* NCBI_FAKE_WARNING */
 //####################################################################
 xml::document& xml::document::operator= (const document &other) {
     document tmp(other);        /* NCBI_FAKE_WARNING */
@@ -134,10 +250,17 @@ const std::string& xml::document::get_version (void) const {
 }
 //####################################################################
 void xml::document::set_version (const char *version) {
-    const xmlChar *old_version = pimpl_->doc_->version;
-    if ( (pimpl_->doc_->version = xmlStrdup(reinterpret_cast<const xmlChar*>(version))) == 0) throw std::bad_alloc();
+    const xmlChar *     old_version = pimpl_->doc_->version;
+
+    pimpl_->doc_->version = xmlStrdup(
+                                reinterpret_cast<const xmlChar*>(version));
+
+    if ( pimpl_->doc_->version == 0)
+        throw std::bad_alloc();
+
     pimpl_->version_ = version;
-    if (old_version) xmlFree(const_cast<char*>(reinterpret_cast<const char*>(old_version)));
+    if (old_version)
+        xmlFree(const_cast<char*>(reinterpret_cast<const char*>(old_version)));
 }
 //####################################################################
 const std::string& xml::document::get_encoding (void) const {
@@ -148,10 +271,14 @@ const std::string& xml::document::get_encoding (void) const {
 void xml::document::set_encoding (const char *encoding) {
     pimpl_->encoding_ = encoding;
 
-    if (pimpl_->doc_->encoding) xmlFree(const_cast<xmlChar*>(pimpl_->doc_->encoding));
-    pimpl_->doc_->encoding = xmlStrdup(reinterpret_cast<const xmlChar*>(encoding));
+    if (pimpl_->doc_->encoding)
+        xmlFree(const_cast<xmlChar*>(pimpl_->doc_->encoding));
 
-    if (!pimpl_->doc_->encoding) throw std::bad_alloc();
+    pimpl_->doc_->encoding = xmlStrdup(
+                                reinterpret_cast<const xmlChar*>(encoding));
+
+    if (!pimpl_->doc_->encoding)
+        throw std::bad_alloc();
 }
 //####################################################################
 bool xml::document::get_is_standalone (void) const {
@@ -190,8 +317,10 @@ const xml::dtd& xml::document::get_external_subset (void) const {
 }
 //####################################################################
 bool xml::document::validate (const char *dtdname) {
-    dtd     file_dtd(dtdname, type_warnings_not_errors);        /* NCBI_FAKE_WARNING */
-    return file_dtd.validate(*this, type_warnings_not_errors);  /* NCBI_FAKE_WARNING */
+    dtd     file_dtd(dtdname,
+                     type_warnings_not_errors);         /* NCBI_FAKE_WARNING */
+    return file_dtd.validate(*this,
+                             type_warnings_not_errors); /* NCBI_FAKE_WARNING */
 }
 //####################################################################
 bool xml::document::validate (dtd &dtd_,
@@ -244,13 +373,16 @@ bool document::validate (const schema& schema_, error_messages* messages_,
 //####################################################################
 void document::set_external_subset (const dtd& dtd_) {
     if (!dtd_.get_raw_pointer())
-        throw xml::exception("xml::document::set_external_subset dtd is not loaded");
+        throw xml::exception("xml::document::set_external_subset "
+                             "dtd is not loaded");
 
-    xmlDtdPtr   copy = xmlCopyDtd(static_cast<xmlDtdPtr>(dtd_.get_raw_pointer()));
+    xmlDtdPtr   copy = xmlCopyDtd(
+                            static_cast<xmlDtdPtr>(dtd_.get_raw_pointer()));
     if (copy == NULL)
         throw xml::exception("Error copying DTD");
 
-    if (pimpl_->doc_->extSubset != 0) xmlFreeDtd(pimpl_->doc_->extSubset);
+    if (pimpl_->doc_->extSubset != 0)
+        xmlFreeDtd(pimpl_->doc_->extSubset);
     pimpl_->doc_->extSubset = copy;
 }
 
@@ -285,43 +417,65 @@ xml::node::const_iterator xml::document::end (void) const {
 //####################################################################
 void xml::document::push_back (const node &child) {
     if (child.get_type() == node::type_element)
-        throw xml::exception("xml::document::push_back can't take element type nodes");
+        throw xml::exception("xml::document::push_back "
+                             "can't take element type nodes");
     xml::impl::node_insert(reinterpret_cast<xmlNodePtr>(pimpl_->doc_), 0,
-                           static_cast<xmlNodePtr>(const_cast<node&>(child).get_node_data()));
+                           static_cast<xmlNodePtr>(
+                               const_cast<node&>(child).get_node_data()));
 }
 //####################################################################
 xml::node::iterator xml::document::insert (const node &n) {
     if (n.get_type() == node::type_element)
-        throw xml::exception("xml::document::insert can't take element type nodes");
-    return node::iterator(xml::impl::node_insert(reinterpret_cast<xmlNodePtr>(pimpl_->doc_), 0,
-                                                 static_cast<xmlNodePtr>(const_cast<node&>(n).get_node_data())));
+        throw xml::exception("xml::document::insert "
+                             "can't take element type nodes");
+    return node::iterator(
+            xml::impl::node_insert(reinterpret_cast<xmlNodePtr>(pimpl_->doc_),
+                                   0,
+                                   static_cast<xmlNodePtr>(
+                                       const_cast<node&>(n).get_node_data())));
 }
 //####################################################################
-xml::node::iterator xml::document::insert (node::iterator position, const node &n) {
+xml::node::iterator xml::document::insert (node::iterator position,
+                                           const node &n) {
     if (n.get_type() == node::type_element)
-        throw xml::exception("xml::document::insert can't take element type nodes");
-    return node::iterator(xml::impl::node_insert(reinterpret_cast<xmlNodePtr>(pimpl_->doc_),
-                                                 static_cast<xmlNodePtr>(position.get_raw_node()),
-                                                 static_cast<xmlNodePtr>(const_cast<node&>(n).get_node_data())));
+        throw xml::exception("xml::document::insert "
+                             "can't take element type nodes");
+    return node::iterator(
+            xml::impl::node_insert(reinterpret_cast<xmlNodePtr>(pimpl_->doc_),
+                                   static_cast<xmlNodePtr>(
+                                                    position.get_raw_node()),
+                                   static_cast<xmlNodePtr>(
+                                       const_cast<node&>(n).get_node_data())));
 }
 //####################################################################
-xml::node::iterator xml::document::replace (node::iterator old_node, const node &new_node) {
-    if (old_node->get_type() == node::type_element || new_node.get_type() == node::type_element) {
-        throw xml::exception("xml::document::replace can't replace element type nodes");
+xml::node::iterator xml::document::replace (node::iterator old_node,
+                                            const node &new_node) {
+    if (old_node->get_type() == node::type_element ||
+        new_node.get_type() == node::type_element) {
+        throw xml::exception("xml::document::replace "
+                             "can't replace element type nodes");
     }
 
-    return node::iterator(xml::impl::node_replace(static_cast<xmlNodePtr>(old_node.get_raw_node()),
-                                                  static_cast<xmlNodePtr>(const_cast<node&>(new_node).get_node_data())));
+    return node::iterator(
+            xml::impl::node_replace(
+                static_cast<xmlNodePtr>(old_node.get_raw_node()),
+                static_cast<xmlNodePtr>(
+                    const_cast<node&>(new_node).get_node_data())));
 }
 //####################################################################
 xml::node::iterator xml::document::erase (node::iterator to_erase) {
     if (to_erase->get_type() == node::type_element)
-        throw xml::exception("xml::document::erase can't erase element type nodes");
-    return node::iterator(xml::impl::node_erase(static_cast<xmlNodePtr>(to_erase.get_raw_node())));
+        throw xml::exception("xml::document::erase "
+                             "can't erase element type nodes");
+    return node::iterator(
+            xml::impl::node_erase(
+                static_cast<xmlNodePtr>(to_erase.get_raw_node())));
 }
 //####################################################################
-xml::node::iterator xml::document::erase (node::iterator first, node::iterator last) {
-    while (first != last) first = erase(first);
+xml::node::iterator xml::document::erase (node::iterator first,
+                                          node::iterator last) {
+    while (first != last)
+        first = erase(first);
     return first;
 }
 //####################################################################
@@ -334,9 +488,11 @@ void xml::document::save_to_string (std::string &s,
 
     if (pimpl_->xslt_result_ != 0) {
         if (pimpl_->treat_ == xslt::type_no_treat) {
-            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression, compression_level);
+            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression,
+                      compression_level);
             pimpl_->xslt_result_->save_to_string(s);
-            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression, compression_level);
+            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression,
+                      compression_level);
             return;
         }
     }
@@ -353,9 +509,11 @@ void xml::document::save_to_string (std::string &s,
             std::swap(pimpl_->doc_->compression, compression_level);
         }
         else {
-            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression, compression_level);
+            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression,
+                      compression_level);
             xmlSaveDoc(ctxt, pimpl_->xslt_result_->get_raw_doc());
-            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression, compression_level);
+            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression,
+                      compression_level);
         }
         xmlSaveClose(ctxt);     // xmlSaveFlush() is called in xmlSaveClose()
     }
@@ -371,11 +529,13 @@ void xml::document::save_to_stream (std::ostream &stream,
 
     if (pimpl_->xslt_result_ != 0) {
         if (pimpl_->treat_ == xslt::type_no_treat) {
-            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression, compression_level);
+            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression,
+                      compression_level);
             std::string s;
             pimpl_->xslt_result_->save_to_string(s);
             stream << s;
-            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression, compression_level);
+            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression,
+                      compression_level);
             return;
         }
     }
@@ -392,9 +552,11 @@ void xml::document::save_to_stream (std::ostream &stream,
             std::swap(pimpl_->doc_->compression, compression_level);
         }
         else {
-            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression, compression_level);
+            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression,
+                      compression_level);
             xmlSaveDoc(ctxt, pimpl_->xslt_result_->get_raw_doc());
-            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression, compression_level);
+            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression,
+                      compression_level);
         }
         xmlSaveClose(ctxt);     // xmlSaveFlush() is called in xmlSaveClose()
     }
@@ -411,9 +573,12 @@ bool xml::document::save_to_file (const char *filename,
 
     if (pimpl_->xslt_result_ != 0) {
         if (pimpl_->treat_ == xslt::type_no_treat) {
-            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression, compression_level);
-            bool rc = pimpl_->xslt_result_->save_to_file(filename, compression_level);
-            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression, compression_level);
+            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression,
+                      compression_level);
+            bool rc = pimpl_->xslt_result_->save_to_file(filename,
+                                                         compression_level);
+            std::swap(pimpl_->xslt_result_->get_raw_doc()->compression,
+                      compression_level);
 
             return rc;
         }
@@ -435,9 +600,11 @@ bool xml::document::save_to_file (const char *filename,
         std::swap(pimpl_->doc_->compression, compression_level);
     }
     else {
-        std::swap(pimpl_->xslt_result_->get_raw_doc()->compression, compression_level);
+        std::swap(pimpl_->xslt_result_->get_raw_doc()->compression,
+                  compression_level);
         rc = xmlSaveDoc(ctxt, pimpl_->xslt_result_->get_raw_doc());
-        std::swap(pimpl_->xslt_result_->get_raw_doc()->compression, compression_level);
+        std::swap(pimpl_->xslt_result_->get_raw_doc()->compression,
+                  compression_level);
     }
     xmlSaveClose(ctxt);     // xmlSaveFlush() is called in xmlSaveClose()
 
@@ -478,11 +645,26 @@ std::ostream& xml::operator<< (std::ostream &stream, const xml::document &doc) {
     return stream;
 }
 //####################################################################
+bool xml::document::is_failure (error_messages* messages,
+                                warnings_as_errors_type how) const {
+    // if there are fatal errors or errors it is a failure
+    if (messages->has_errors() ||
+        messages->has_fatal_errors())
+        return true;
+    // if there are warnings and they are treated as errors it is a failure
+    if ((how == type_warnings_are_errors) &&
+         messages->has_warnings())
+        return true;
+    return false;
+}
+//####################################################################
 
 namespace {
-    void register_error_helper (error_message::message_type mt,
-                                void *v,
-                                const std::string &message) {
+
+    // DTD related callbacks
+    static void register_dtd_error_helper (error_message::message_type mt,
+                                           void *v,
+                                           const std::string &message) {
         try {
             error_messages *p = static_cast<error_messages*>(v);
             if (p)
@@ -498,7 +680,7 @@ namespace {
         printf2string(temporary, message, ap);
         va_end(ap);
 
-        register_error_helper(error_message::type_error, v, temporary);
+        register_dtd_error_helper(error_message::type_error, v, temporary);
     }
 
     extern "C" void cb_dtd_valid_warning (void *v, const char *message, ...) {
@@ -509,7 +691,59 @@ namespace {
         printf2string(temporary, message, ap);
         va_end(ap);
 
-        register_error_helper(error_message::type_warning, v, temporary);
+        register_dtd_error_helper(error_message::type_warning, v, temporary);
+    }
+
+    // Tree parser related callbacks
+    static void register_tree_error_helper (error_message::message_type mt,
+                                            void *v,
+                                            const std::string &message) {
+        try {
+            xmlParserCtxtPtr ctxt = static_cast<xmlParserCtxtPtr>(v);
+            error_messages *p = static_cast<error_messages*>(ctxt->_private);
+
+            if (p) // handle bug in older versions of libxml
+                p->get_messages().push_back(error_message(message, mt));
+        } catch (...) {}
+    }
+
+    extern "C" void cb_tree_parser_fatal_error (void *v,
+                                                const char *message, ...) {
+        std::string temporary;
+
+        va_list ap;
+        va_start(ap, message);
+        printf2string(temporary, message, ap);
+        va_end(ap);
+
+        register_tree_error_helper(error_message::type_fatal_error,
+                                   v, temporary);
+    }
+
+    extern "C" void cb_tree_parser_error (void *v, const char *message, ...) {
+        std::string temporary;
+
+        va_list ap;
+        va_start(ap, message);
+        printf2string(temporary, message, ap);
+        va_end(ap);
+
+        register_tree_error_helper(error_message::type_error, v, temporary);
+    }
+
+    extern "C" void cb_tree_parser_warning (void *v, const char *message, ...) {
+        std::string temporary;
+
+        va_list ap;
+        va_start(ap, message);
+        printf2string(temporary, message, ap);
+        va_end(ap);
+
+        register_tree_error_helper(error_message::type_warning, v, temporary);
+    }
+
+    extern "C" void cb_tree_parser_ignore (void*, const xmlChar*, int) {
+        return;
     }
 }
 

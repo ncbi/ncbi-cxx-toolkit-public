@@ -99,6 +99,47 @@ public:
 
     //####################################################################
     /**
+     * Create a new XML document object by parsing the given XML file.
+     *
+     * @param filename The XML file name.
+     * @param messages A pointer to the object where all the warnings are
+     *                 collected. If NULL then no messages will be collected.
+     * @param how How to treat warnings (default: warnings are not treated as
+     *            errors). If warnings are treated as errors then an exception
+     *            is thrown in case of both errors and/or warnings. If warnings
+     *            are not treated as errors then an exception will be thrown
+     *            only when there are errors.
+     * @exception Throws xml::parser_exception in case of parsing errors
+     *            and std::exception in case of other problems.
+     * @author Sergey Satskiy, NCBI
+    **/
+    document (const char* filename, error_messages* messages,
+              warnings_as_errors_type how = type_warnings_not_errors);
+
+    //####################################################################
+    /**
+     * Create a new XML documant object by parsing the given XML from a
+     * memory buffer.
+     *
+     * @param data The XML memory buffer.
+     * @param size Size of the memory buffer.
+     * @param messages A pointer to the object where all the warnings are
+     *                 collected. If NULL then no messages will be collected.
+     * @param how How to treat warnings (default: warnings are not treated as
+     *            errors). If warnings are treated as errors then an exception
+     *            is thrown in case of both errors and/or warnings. If warnings
+     *            are not treated as errors then an exception will be thrown
+     *            only when there are errors.
+     * @exception Throws xml::parser_exception in case of parsing errors
+     *            and std::exception in case of other problems.
+     * @author Sergey Satskiy, NCBI
+    **/
+    document (const char* data, size_type size,
+              error_messages* messages,
+              warnings_as_errors_type how = type_warnings_not_errors);
+
+    //####################################################################
+    /**
      * Create a new XML document and set the name of the root element to the
      * given text.
      *
@@ -753,6 +794,9 @@ private:
     void* get_doc_data (void);
     void* get_doc_data_read_only (void) const;
     void* release_doc_data (void);
+
+    bool is_failure (error_messages* messages,
+                     warnings_as_errors_type how) const;
 
     friend class tree_parser;
     friend class xslt::stylesheet;
