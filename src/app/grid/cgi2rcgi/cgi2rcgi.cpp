@@ -606,6 +606,8 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
 
         try {
             if (!job_key.empty()) {
+                GetDiagContext().Extra().Print("ctg_poll", "true");
+
                 phase = x_CheckJobStatus(grid_ctx, job_status);
 
                 if (phase == eTerminated)
