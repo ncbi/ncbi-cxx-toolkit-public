@@ -121,7 +121,12 @@ public:
                 switch (context.GetShutdownLevel()) {
                 case CNetScheduleAdmin::eShutdownImmediate:
                 case CNetScheduleAdmin::eDie:
-                    // Return the job for processing by other instances.
+                    // Either this job is not needed anymore (canceled,
+                    // expired or already executed elsewhere), or the
+                    // server is going down and the job's execution
+                    // should be gracefully (yet urgently) aborted and
+                    // the job returned back to the network queue
+                    // for execution by other worker node instances.
                     context.ReturnJob();
                     return 1;
                 default:
@@ -141,7 +146,12 @@ public:
             switch (context.GetShutdownLevel()) {
             case CNetScheduleAdmin::eShutdownImmediate:
             case CNetScheduleAdmin::eDie:
-                // Return the job for processing by other instances.
+                // Either this job is not needed anymore (canceled,
+                // expired or already executed elsewhere), or the
+                // server is going down and the job's execution
+                // should be gracefully (yet urgently) aborted and
+                // the job returned back to the network queue
+                // for execution by other worker node instances.
                 context.ReturnJob();
                 return 1;
             default:

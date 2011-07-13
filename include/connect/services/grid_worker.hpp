@@ -248,9 +248,15 @@ public:
 
     /// Schedule the job for return.
     ///
-    /// This method should be called before exiting the IWorkerNodeJob::Do()
-    /// method.  The job will be returned back to the NetSchedule queue
-    /// and re-executed after a while.
+    /// This method should be called before exiting IWorkerNodeJob::Do()
+    /// if the job is not needed anymore (canceled, expired or already
+    /// executed elsewhere), or if the worker node is shutting down and
+    /// the execution of this job should be gracefully (yet urgently)
+    /// aborted and the job returned back to the network queue for
+    /// execution by other worker node instances. Use the
+    /// GetShutdownLevel() method to detect whether the job is not
+    /// needed anymore.
+    /// @see GetShutdownLevel()
     ///
     void ReturnJob();
 
