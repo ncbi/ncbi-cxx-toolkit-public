@@ -267,6 +267,9 @@ private:
     void x_SetChainType(CRef<CSearchResultSet>        &results, 
                         vector<CRef <CIgAnnotation> > &annot);
 
+    /// Sort blast results according to evalue
+    static void s_SortResultsByEvalue(CRef<CSearchResultSet> &results);
+
     /// Append blast results to the final results
     static void s_AppendResults(CRef<CSearchResultSet> &results,
                                 int                     num_aligns,
