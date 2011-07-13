@@ -379,6 +379,7 @@ string CHgvsParser::x_SeqLiteralToStr(const CSeq_literal& literal, bool translat
                         nuc_str,
                         out,
                         CSeqTranslator::fIs5PrimePartial);
+                out = Ncbistdaa2HgvsAA(out);
             } else {
                 out = nuc_str;
             }
@@ -393,7 +394,6 @@ string CHgvsParser::x_SeqLiteralToStr(const CSeq_literal& literal, bool translat
             prot_str = sd->GetIupacaa().Get();
             out = Ncbistdaa2HgvsAA(prot_str);
         }
-
 
     } else {
         if(translate) {
