@@ -1340,27 +1340,32 @@ CDisplaySeqalign::SAlnRowInfo *CDisplaySeqalign::x_PrepareRowData(void)
                 //note we have N alignment but N+1 rows
                 //make sure alignvec and original matches as accasionally alnmgr
                 //drop/merge some row but this should only happen rarely
-                while (find(m_Scope.GetBioseqHandle((*alnIter)->GetSeq_id(1)).GetId().begin(), 
+                while (alnIter != m_SeqalignSetRef->Get().end() &&
+                       find(m_Scope.GetBioseqHandle((*alnIter)->GetSeq_id(1)).GetId().begin(), 
                             m_Scope.GetBioseqHandle((*alnIter)->GetSeq_id(1)).GetId().end(), 
                             m_AV->GetSeqId(row)) == m_Scope.GetBioseqHandle((*alnIter)->GetSeq_id(1)).GetId().end()) {
                     alnIter ++;
                 }
-
-                CScoreBuilderBase cb;
-                match[row-1] = cb.GetIdentityCount  (m_Scope, **alnIter);
-                align_length[row-1] = cb.GetAlignLength(**alnIter);
+                if (alnIter != m_SeqalignSetRef->Get().end()){
+                    CScoreBuilderBase cb;
+                    match[row-1] = cb.GetIdentityCount  (m_Scope, **alnIter);
+                    align_length[row-1] = cb.GetAlignLength(**alnIter);
+                    
+                    if (align_length[row-1] > 0 ){
+                        percent_ident[row-1] = ((double)match[row-1])/align_length[row-1]*100;
+                        align_stats[row-1] = NStr::DoubleToString(percent_ident[row-1], 1, 0) + 
+                            "% (" + NStr::IntToString(match[row-1]) + "/" +
+                            NStr::IntToString(align_length[row-1]) + ")"    ;
+                    } else {//something is wrong
+                        percent_ident[row - 1] = 0;
+                        align_stats[row-1] = "0";
+                    }
                 
-                if (align_length[row-1] > 0 ){
-                    percent_ident[row-1] = ((double)match[row-1])/align_length[row-1]*100;
-                    align_stats[row-1] = NStr::DoubleToString(percent_ident[row-1], 1, 0) + 
-                        "% (" + NStr::IntToString(match[row-1]) + "/" +
-                        NStr::IntToString(align_length[row-1]) + ")"    ;
-                } else {//something is wrong
+                    alnIter++;
+                } else { //error
                     percent_ident[row - 1] = 0;
-                    align_stats[row-1] = "0";
+                    align_stats[row-1] = "0"; 
                 }
-                
-                alnIter++;
             } else { //in case m_AV is somehow different from original alignment
                 match[row - 1] = 0;
                 percent_ident[row - 1] = 0;
