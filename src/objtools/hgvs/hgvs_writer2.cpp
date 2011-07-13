@@ -327,6 +327,35 @@ string CHgvsParser::x_AsHgvsExpression(
 }
 
 
+string Ncbistdaa2HgvsAA(const string& prot_str)
+{
+    //convert to 3-letter AA codes
+    const static string ncbieaa = "GPAVLIMCFYWHKRQNEDST";
+    const static string verboseaa = "GlyProAlaValLeuIleMetCysPheTyrTrpHisLysArgGlnAsnGluAspSerThr";
+
+    string out = "";
+    for(size_t i = 0; i < prot_str.size(); i++) {
+        char aa = prot_str[i];
+
+        if(aa == '*') {
+            out += "X";
+        } else if(aa == '-') {
+            out += "?";
+        } else {
+            size_t pos = ncbieaa.find(aa);
+            if(pos == NPOS) {
+                //Can't convert. Use ncbistdaa alphabet
+                out = prot_str;
+                break;
+            } else {
+                out += verboseaa.substr(pos*3, 3);
+            }
+        }
+    }
+
+    return out;
+}
+
 string CHgvsParser::x_SeqLiteralToStr(const CSeq_literal& literal, bool translate)
 {
     string out("");
@@ -359,14 +388,12 @@ string CHgvsParser::x_SeqLiteralToStr(const CSeq_literal& literal, bool translat
                || sd->IsNcbipaa()
                || sd->IsNcbistdaa())
         {
-            //todo: convert to 3-letter AA codes?
-            //const static string ncbieaa = "GPAVLIMCFYWHKRQNEDST*-";
-            //const static string verboseaa"GlyProAlaValLeuIleMetCysPheTyrTrpHisLysArgGlnAsnGluAspSerThrX?"
-
             string prot_str;
             CSeqportUtil::Convert(*sd, sd, CSeq_data::e_Iupacaa, 0, literal.GetLength() );
-            out = sd->GetIupacaa().Get();
+            prot_str = sd->GetIupacaa().Get();
+            out = Ncbistdaa2HgvsAA(prot_str);
         }
+
 
     } else {
         if(translate) {
@@ -403,12 +430,12 @@ long CHgvsParser::s_GetHgvsPos(long abs_pos, const TSeqPos* atg_pos)
 string CHgvsParser::s_IntWithFuzzToStr(long pos, const TSeqPos* hgvs_ref_pos, bool with_sign, const CInt_fuzz* fuzz)
 {
     long hgvs_pos = s_GetHgvsPos(pos, hgvs_ref_pos);
-    string out = NStr::IntToString(abs(hgvs_pos));
+    string out = NStr::LongToString(abs(hgvs_pos));
 
     if(fuzz) {
         if(fuzz->IsRange()) {
-            string from = NStr::IntToString(s_GetHgvsPos(fuzz->GetRange().GetMin(), hgvs_ref_pos));
-            string to = NStr::IntToString(s_GetHgvsPos(fuzz->GetRange().GetMax(), hgvs_ref_pos));
+            string from = NStr::LongToString(s_GetHgvsPos(fuzz->GetRange().GetMin(), hgvs_ref_pos));
+            string to = NStr::LongToString(s_GetHgvsPos(fuzz->GetRange().GetMax(), hgvs_ref_pos));
             out = "(" + from + "_" + to + ")";
         } else if(fuzz->IsLim()) {
             if(fuzz->GetLim() == CInt_fuzz::eLim_gt || fuzz->GetLim() == CInt_fuzz::eLim_tr) {
@@ -513,7 +540,9 @@ string CHgvsParser::x_PlacementCoordsToStr(const CVariantPlacement& vp)
         }
 
         if(vp.GetMol() == CVariantPlacement::eMol_protein) {
-            loc_str = vp.GetSeq().GetSeq_data().GetNcbieaa().Get().substr(0,1) + loc_str;
+            //prepend first AA of asserted sequence
+            string aa = vp.GetSeq().GetSeq_data().GetNcbieaa().Get().substr(0,1);
+            loc_str = Ncbistdaa2HgvsAA(aa) + loc_str;
         }
     } else {
         CConstRef<CSeq_loc> int_loc;
@@ -538,7 +567,8 @@ string CHgvsParser::x_PlacementCoordsToStr(const CVariantPlacement& vp)
                 vp.IsSetStart_offset() ? &biostart_offset : NULL,
                 vp.IsSetStart_offset_fuzz() ? &vp.GetStart_offset_fuzz() : NULL);
         if(vp.GetMol() == CVariantPlacement::eMol_protein) {
-            biostart_str = vp.GetSeq().GetSeq_data().GetNcbieaa().Get().substr(0,1) + biostart_str;
+            string aa = vp.GetSeq().GetSeq_data().GetNcbieaa().Get().substr(0,1);
+            biostart_str = Ncbistdaa2HgvsAA(aa) + biostart_str;
         }
         if(is_biostart_cdsstop_relative) {
             biostart_str = "*" + biostart_str;
@@ -560,8 +590,9 @@ string CHgvsParser::x_PlacementCoordsToStr(const CVariantPlacement& vp)
                 vp.IsSetStop_offset() ? &biostop_offset : NULL,
                 vp.IsSetStop_offset_fuzz() ? &vp.GetStop_offset_fuzz() : NULL);
         if(vp.GetMol() == CVariantPlacement::eMol_protein) {
+            //prepend last aa of the asserted sequence
             const string& prot_str = vp.GetSeq().GetSeq_data().GetNcbieaa().Get();
-            biostop_str = prot_str.substr(prot_str.size() - 1,1) + biostop_str;
+            biostop_str = Ncbistdaa2HgvsAA(prot_str.substr(prot_str.size() - 1,1)) + biostop_str;
         }
         if(is_biostop_cdsstop_relative) {
             biostop_str = "*" + biostop_str;
