@@ -2736,7 +2736,7 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
                       ? m_Mask->Match(m_Current.GetName(),
                                       m_Flags & fMaskNocase
                                       ? NStr::eNocase
-                                      : NStr::eCase)    \
+                                      : NStr::eCase)
                       : true);
 
         // NB: match is 'false' when processing a failing entry
