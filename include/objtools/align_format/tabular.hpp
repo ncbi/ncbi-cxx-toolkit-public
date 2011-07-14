@@ -480,7 +480,8 @@ public:
                                 numeric_limits<unsigned int>::max(),
                      const objects::CSeq_align_set* align_set=0,
                      CConstRef<objects::CBioseq> subj_bioseq
-                                = CConstRef<objects::CBioseq>()); 
+                                = CConstRef<objects::CBioseq>(),
+                     const string& domain_sys = "Kabat"); 
 
     /// Set fields for master alignment
     int SetMasterFields(const objects::CSeq_align& align, 

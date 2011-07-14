@@ -82,7 +82,7 @@ public:
     CIgAnnotation() 
         : m_MinusStrand (false) 
     {
-        m_TopGeneIds.resize(3);
+        for (int i=0; i<3; i++) m_TopGeneIds.push_back("N/A");
         for (int i=0; i<6; i++) m_GeneInfo[i] = -1;
         for (int i=0; i<2; i++) m_FrameInfo[i] = -1;
         for (int i=0; i<12; i++) m_DomainInfo[i] = -1;

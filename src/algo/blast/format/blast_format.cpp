@@ -578,7 +578,8 @@ CBlastFormat::x_PrintIgTabularReport(const blast::CIgBlastResults& results)
         tabinfo.PrintHeader(strProgVersion, *(bhandle.GetBioseqCore()),
                                 m_DbName, results.GetRID(), 
                                 numeric_limits<unsigned int>::max(),
-                                aln_set, subject_bioseq);
+                                aln_set, subject_bioseq, 
+                                m_IgOptions->m_DomainSystem);
  
         int j = 1;
         for (; itr != aln_set->Get().end(); ++itr) {
@@ -901,6 +902,7 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
                                 annots->m_ChainType[0], 
                                 &m_ScoringMatrix);
         tabinfo.SetIgAnnotation(annots, m_IgOptions->m_IsProtein);
+        m_Outfile << "# Domain classification requested: " << m_IgOptions->m_DomainSystem << endl << endl;
         tabinfo.PrintMasterAlign();
     }
 

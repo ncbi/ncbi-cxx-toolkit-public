@@ -922,12 +922,15 @@ CIgBlastTabularInfo::PrintHeader(const string& program_version,
        const string& rid /* = kEmptyStr */,
        unsigned int iteration /* = numeric_limits<unsigned int>::max() */,
        const CSeq_align_set* align_set /* = 0 */,
-       CConstRef<CBioseq> subj_bioseq /* = CConstRef<CBioseq>() */)
+       CConstRef<CBioseq> subj_bioseq /* = CConstRef<CBioseq>() */,
+       const string& domain_sys)
 {
     x_PrintQueryAndDbNames(program_version, bioseq, dbname, rid, iteration, subj_bioseq);
+    m_Ostream << "# Domain classification requested: " << domain_sys << endl;
     PrintMasterAlign();
     // Print number of alignments found, but only if it has been set.
     if (align_set) {
+        m_Ostream <<  "# Hit table" << endl;
        int num_hits = align_set->Get().size();
        if (num_hits != 0) {
            x_PrintFieldNames();
@@ -1025,7 +1028,7 @@ void CIgBlastTabularInfo::PrintMasterAlign() const
 {
     m_Ostream << endl;
     if (m_IsNucl) {
-        m_Ostream << "#V(D)J rearrangement summary for query sequence ";
+        m_Ostream << "# V(D)J rearrangement summary for query sequence ";
         m_Ostream << "(Top V gene match, ";
         if (m_ChainType == "VH") m_Ostream << "Top D gene match, ";
         m_Ostream << "Top J gene match, Chain type, V-J Frame, Strand):" << endl;
@@ -1048,7 +1051,7 @@ void CIgBlastTabularInfo::PrintMasterAlign() const
     }
     if (!length) return;
 
-    m_Ostream << "#Alignment summary between query and top germline V gene hit ";
+    m_Ostream << "# Alignment summary between query and top germline V gene hit ";
     m_Ostream << "(from, to, length, matches, mismatches, gaps, percent identity)" << endl;
 
     int num_match = 0;
@@ -1232,11 +1235,15 @@ void CIgBlastTabularInfo::x_PrintIgGenes(bool isHtml) const
         }
         m_Ostream << "<td>J region start</td></tr>\n<tr>";
     } else {
-        m_Ostream << "#Nucleotide details around V(D)J junctions ";
+        m_Ostream << "# Nucleotide details around V(D)J junctions ";
         m_Ostream << "(V region end, ";
         if (m_ChainType == "VH")  m_Ostream << "V-D junction, D region, D-J junction, ";
         else m_Ostream << "V-J junction, ";
         m_Ostream << "J region start)" << endl;
+        m_Ostream << "# Note that overlapping nucleotides at V-D-J junction, if exist, will be shown inside a parenthesis (i.e., (TACAT)) and"
+                  << endl
+                  << "# will not be included under V, D or J region itself"
+                  << endl;
     }
 
     x_PrintPartialQuery(max(b0, a1 - 5), a1, isHtml); m_Ostream << m_FieldDelimiter;
