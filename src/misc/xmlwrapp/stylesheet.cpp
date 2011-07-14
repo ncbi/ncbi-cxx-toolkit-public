@@ -213,9 +213,9 @@ xslt::stylesheet::stylesheet(const char *filename)
 {
     std::auto_ptr<pimpl> ap(pimpl_ = new pimpl);
 
-    xml::error_messages msgs;
-    xml::tree_parser parser(filename, &msgs, xml::type_warnings_not_errors);
-    xmlDocPtr xmldoc = static_cast<xmlDocPtr>(parser.get_document().get_doc_data());
+    xml::error_messages     msgs;
+    xml::document           doc(filename, &msgs, xml::type_warnings_not_errors);
+    xmlDocPtr xmldoc = static_cast<xmlDocPtr>(doc.get_doc_data());
 
     if ( (pimpl_->ss_ = xsltParseStylesheetDoc(xmldoc)) == 0)
     {
@@ -227,7 +227,7 @@ xslt::stylesheet::stylesheet(const char *filename)
 
     // if we got this far, the xmldoc we gave to xsltParseStylesheetDoc is
     // now owned by the stylesheet and will be cleaned up in our destructor.
-    parser.get_document().release_doc_data();
+    doc.release_doc_data();
     ap.release();
 }
 
