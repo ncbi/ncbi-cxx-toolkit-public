@@ -3592,6 +3592,7 @@ MNHNUL	s	Museu Nacional de Historia Natural de Universidade de Lisboa
 MNHP	s	Princeton University
 MNHS	s	Manchester Natural History Society
 MNK	s	Museo de Historia Natural "Noel Kempff Mercado"
+MNK:A	s	Museo de Historia Natural "Noel Kempff Mercado", Amphibian Collection
 MNK:R	s	Museo de Historia Natural "Noel Kempff Mercado", Reptile Collection
 MNKS	s	Milton Keynes Development Corporation
 MNMB	s	Magyar Nenzeti Museum
@@ -4297,6 +4298,7 @@ OAKL	s	Oakland Museum of California, Natural Sciences Department
 OAMB	s	Open Air Museum of Ethnography and Natural Sciences
 OAX	s	Instituto Politecnico Nacional (CIIDIR-Oax., I.P.N.)
 OAXM	s	Centro Interdisciplinario de Estudios, Coleccion Mastozoologica (Mexico)
+OBG<OMN>	s	The Oman Botanic Garden
 OBI	s	California Polytechnic State University, Biological Sciences Department
 OBPF	s	Planting Fields Arboretum State Historic Park
 OC	s	Oberlin College, Biology Department
