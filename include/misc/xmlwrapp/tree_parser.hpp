@@ -69,8 +69,7 @@ struct tree_impl;
  * tree_parser, with either a file to parse or some in memory data to parse,
  * you can walk the tree using the xml::node interface.
 **/
-NCBI_DEPRECATED
-class tree_parser {
+class NCBI_DEPRECATED tree_parser {
 public:
     typedef std::size_t size_type;
 
