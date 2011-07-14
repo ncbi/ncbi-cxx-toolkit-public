@@ -121,10 +121,12 @@ bool SNetServiceIterator_RandomPivot::Next()
             return false;
         m_RandomIterators.reserve(more_servers);
         do {
-            if (it != m_Position)
+            if (it != m_Position) {
                 m_RandomIterators.push_back(it);
+                --more_servers;
+            }
             ++it;
-        } while (--more_servers > 0);
+        } while (more_servers > 0);
         // Shuffle m_RandomIterators.
         if (m_RandomIterators.size() > 1) {
             NON_CONST_ITERATE(TRandomIterators, it, m_RandomIterators) {
@@ -644,18 +646,17 @@ void SNetServiceImpl::DiscoverServersIfNeeded(SActualService* actual_service)
                 SleepMilliSec(s_GetRetryDelay());
             }
 
-            // If the replaced group hasn't been "issued" to the outside
-            // callers yet, put it in the pool for recycling.
-            if (actual_service->m_DiscoveredServers != NULL &&
-                    !actual_service->m_DiscoveredServers->m_Service) {
-                actual_service->m_DiscoveredServers->m_NextGroupInPool =
-                    m_ServerGroupPool;
-                m_ServerGroupPool = actual_service->m_DiscoveredServers;
-            }
-
             SDiscoveredServers* server_group =
-                actual_service->m_DiscoveredServers = AllocServerGroup(
-                    actual_service->m_LatestDiscoveryIteration);
+                actual_service->m_DiscoveredServers;
+
+            if (server_group != NULL && !server_group->m_Service)
+                server_group->Reset(actual_service->m_LatestDiscoveryIteration);
+            else
+                // Either the group does not exist or it has been
+                // "issued" to the outside callers; allocate a new one.
+                server_group = actual_service->m_DiscoveredServers =
+                    AllocServerGroup(
+                        actual_service->m_LatestDiscoveryIteration);
 
             CFastMutexGuard server_mutex_lock(m_ServerMutex);
 
