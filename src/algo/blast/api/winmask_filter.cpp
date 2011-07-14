@@ -318,7 +318,8 @@ Blast_FindWindowMaskerLoc(TSeqLocVector & queries, const string & lstat)
                             *query_seq_id,
                             0,
                             & queries[j].mask);
-        
+       
+	if( queries[0].mask ) {
         CPacked_seqint::Tdata & seqint_list =
             queries[0].mask->SetPacked_int().Set();
         
@@ -336,6 +337,7 @@ Blast_FindWindowMaskerLoc(TSeqLocVector & queries, const string & lstat)
                 }
             }
         }
+	}
     }
 }
 
