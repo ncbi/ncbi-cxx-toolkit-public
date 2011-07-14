@@ -199,7 +199,6 @@ public:
      * @author Peter Jones
     **/
     //####################################################################
-    NCBI_DEPRECATED
     tree_parser (const char *filename, bool allow_exceptions);
 
     //####################################################################
@@ -219,7 +218,6 @@ public:
      * @author Peter Jones
     **/
     //####################################################################
-    NCBI_DEPRECATED
     tree_parser (const char *data, size_type size, bool allow_exceptions);
 
     //####################################################################
@@ -239,7 +237,6 @@ public:
      * @deprecated
      * @author Sergey Satskiy, NCBI
     **/
-    NCBI_DEPRECATED
     tree_parser (const char* data, size_type size,
                  warnings_as_errors_type how = type_warnings_not_errors);
 
@@ -256,7 +253,6 @@ public:
      * @author Peter Jones
     **/
     //####################################################################
-    NCBI_DEPRECATED
     bool operator! (void) const;
 
     //####################################################################
@@ -271,7 +267,6 @@ public:
      * @author Peter Jones
     **/
     //####################################################################
-    NCBI_DEPRECATED
     const std::string& get_error_message (void) const;
 
     //####################################################################
@@ -283,7 +278,6 @@ public:
      * @deprecated
      * @author Sergey Satskiy, NCBI
     **/
-    NCBI_DEPRECATED
     const error_messages& get_parser_messages (void) const;
 
     //####################################################################
@@ -301,7 +295,6 @@ public:
      * @author Peter Jones
     **/
     //####################################################################
-    NCBI_DEPRECATED
     bool had_warnings (void) const;
 
 private:
@@ -309,6 +302,11 @@ private:
 
     bool is_failure (error_messages* messages,
                      warnings_as_errors_type how) const;
+#  if 0
+    // To avoid extraneous deprecation warnings this if 0 is introduced.
+    // The existing code could not have used these dangerous operations,
+    // and new code must not use deprecated class
+
     /*
      * Don't allow anyone to copy construct a xml::tree_parser or allow the
      * assignment operator to be called. It is not very useful to copy a
@@ -316,6 +314,7 @@ private:
      */
     tree_parser (const tree_parser&);
     tree_parser& operator= (const tree_parser&);
+#  endif
 }; // end xml::tree_parser class
 
 } // end xml namespace
