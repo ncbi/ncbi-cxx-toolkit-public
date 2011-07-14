@@ -55,6 +55,34 @@
 #include <cstddef>
 #include <string>
 
+
+// NB: The following macro definitions have been copied from ncbimisc.hpp.
+//     If they are changed in the first place they should be updated here as
+//     well.
+
+/// Macro used to mark a constructor as deprecated.
+///
+/// The correct syntax for this varies from compiler to compiler:
+/// older versions of GCC (prior to 3.4) require NCBI_DEPRECATED to
+/// follow any relevant constructor declarations, but some other
+/// compilers (Microsoft Visual Studio 2005, IBM Visual Age / XL)
+/// require it to precede any relevant declarations, whether or not
+/// they are for constructors.
+#if defined(NCBI_COMPILER_MSVC) || defined(NCBI_COMPILER_VISUALAGE)
+#  define NCBI_DEPRECATED_CTOR(decl) NCBI_DEPRECATED decl
+#else
+#  define NCBI_DEPRECATED_CTOR(decl) decl NCBI_DEPRECATED
+#endif
+
+/// Macro used to mark a class as deprecated.
+///
+/// @sa NCBI_DEPRECATED_CTOR
+#define NCBI_DEPRECATED_CLASS NCBI_DEPRECATED_CTOR(class)
+
+
+
+
+
 namespace xml {
 
 // forward declarations
@@ -69,7 +97,7 @@ struct tree_impl;
  * tree_parser, with either a file to parse or some in memory data to parse,
  * you can walk the tree using the xml::node interface.
 **/
-class NCBI_DEPRECATED tree_parser {
+NCBI_DEPRECATED_CLASS tree_parser {
 public:
     typedef std::size_t size_type;
 
