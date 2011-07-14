@@ -1141,7 +1141,7 @@ static void s_TestGMTSpeedRun(string comment, CTime::ETimeZone tz,
     t = "03/31/2001 00:00:00"; 
 
     LOG_POST("Minute add, " + comment);
-    LOG_POST("Iterations  = " + NStr::UIntToString(kCount));
+    LOG_POST("Iterations  = " + NStr::LongToString(kCount));
 
     timer.Start();
     for (long i = 0; i < kCount; i++) {
