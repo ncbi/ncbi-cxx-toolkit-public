@@ -186,6 +186,14 @@ cat $test_exe $test_base.out.temp $test_base.2/newdir/datefile                  
 cmp -l $test_base.out.1 $test_base.out.2                                                                   ||  exit 1
 
 echo
+echo "`date` *** Checking in-stream append"
+echo
+
+touch $test_base.cat $test_base.dog
+test_tar -c -v -f - $test_base.cat $test_base.dog | tar tvf - | tee $test_base.lst      ||  exit 1
+test "`cat $test_base.lst | wc -l`" = "2"                                               ||  exit 1
+
+echo
 echo "`date` *** Checking stream append"
 echo
 

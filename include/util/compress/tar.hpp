@@ -383,8 +383,8 @@ public:
     ///   Append
     auto_ptr<TEntries> Append(const CTarUserEntryInfo& entry, istream& is);
 
-    /// Look for more recent copies, if available, of archive members,
-    /// and place them at the end of the archive:
+    /// Look whether more recent copies of archive members are available in
+    /// the file system, and if so, append them to the archive:
     ///
     /// if fUpdate is set in processing flags, only the existing archive
     /// entries (including directories) will be updated;  that is, Update(".")
@@ -591,8 +591,8 @@ private:
     void x_Init(void);
 
     // Open/close the archive.
-    auto_ptr<TEntries> x_Open(EAction action);
-    virtual void x_Close(void);
+    void x_Open(EAction action);
+    void x_Close(void);
 
     // Flush the archive (writing an appropriate EOT if necessary).
     void x_Flush(bool no_throw = false);
@@ -717,20 +717,22 @@ auto_ptr<CTar::TEntries> CTar::Append(const CTarUserEntryInfo& entry,
 inline
 auto_ptr<CTar::TEntries> CTar::Update(const string& name)
 {
-    auto_ptr<TEntries> toc = x_Open(eUpdate);
-    return x_Append(name, toc.get());
+    x_Open(eUpdate);
+    return x_Append(name, x_ReadAndProcess(eUpdate).get());
 }
 
 inline
 auto_ptr<CTar::TEntries> CTar::List(void)
 {
-    return x_Open(eList);
+    x_Open(eList);
+    return x_ReadAndProcess(eList);
 }
 
 inline
 void CTar::Test(void)
 {
     x_Open(eTest);
+    x_ReadAndProcess(eTest);
 }
 
 inline

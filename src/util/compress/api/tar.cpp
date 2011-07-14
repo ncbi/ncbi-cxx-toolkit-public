@@ -1377,20 +1377,20 @@ void CTar::x_Close(void)
 }
 
 
-auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
+void CTar::x_Open(EAction action)
 {
     _ASSERT(action);
     // We can only open a named file here, and if an external stream
     // is being used as an archive, it must be explicitly repositioned by
     // user's code (outside of this class) before each archive operation.
     if (!m_FileStream) {
-        if (m_Modified  &&  action != eAppend) {
+        if (action != eAppend  &&  m_Modified) {
             TAR_POST(1, Warning,
                      "Pending changes may be discarded"
                      " upon reopen of in-stream archive");
             m_Modified = false;
         }
-        if (action != eInternal) {
+        if (action != eAppend  &&  action != eInternal) {
             m_BufferPos = 0;
             m_StreamPos = 0;
         }
@@ -1461,30 +1461,25 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
                 m_FileStream->seekg(0, IOS_BASE::beg);
             }
         } else {
+            m_OpenMode = mode;
             if (action == eAppend  &&  !m_Modified) {
                 // There may be an extra and unnecessary archive scanning
                 // if Append() follows Update() that caused no modifications;
                 // but there is no way to distinguish this, currently :-/
                 // Also, this sequence should be a real rarity in practice.
-                x_ReadAndProcess(eAppend);  // positions at logical EOF
+                x_ReadAndProcess(eAppend);  // to position at logical EOF
             }
-            m_OpenMode = mode;
         }
     }
     _ASSERT(m_Stream);
     _ASSERT(m_Stream->rdbuf());
-
-    if (int(action) & ((eList | eExtract | eInternal) & ~eRW)) {
-        return x_ReadAndProcess(action);
-    } else {
-        return auto_ptr<TEntries>(0);
-    }
 }
 
 
 auto_ptr<CTar::TEntries> CTar::Extract(void)
 {
-    auto_ptr<TEntries> entries = x_Open(eExtract);
+    x_Open(eExtract);
+    auto_ptr<TEntries> entries = x_ReadAndProcess(eExtract);
 
     // Restore attributes of "postponed" directory entries
     if (m_Flags & fPreserveAll) {
@@ -1506,7 +1501,8 @@ const CTarEntryInfo* CTar::GetNextEntryInfo(void)
                         + ALIGN_SIZE(m_Current.GetSize()) - m_StreamPos));
     }
 
-    auto_ptr<TEntries> temp = x_Open(eInternal);
+    x_Open(eInternal);
+    auto_ptr<TEntries> temp = x_ReadAndProcess(eInternal);
     _ASSERT(temp.get()  &&  temp->size() < 2);
     if (temp->size() < 1) {
         return 0;
@@ -2733,20 +2729,20 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
             status = eFailure;
 
         // Match file name with the set of masks
-        bool match = (status == eFailure ? false :
-                      m_Mask  &&  (action == eList     ||
-                                   action == eExtract  ||
-                                   action == eInternal)
+        bool match = (status == eFailure ? false
+                      : m_Mask  &&  (action == eList     ||
+                                     action == eExtract  ||
+                                     action == eInternal)
                       ? m_Mask->Match(m_Current.GetName(),
                                       m_Flags & fMaskNocase
                                       ? NStr::eNocase
-                                      : NStr::eCase)
+                                      : NStr::eCase)    \
                       : true);
 
         // NB: match is 'false' when processing a failing entry
         if ((match  &&  action == eInternal)
             ||  x_ProcessEntry(match  &&  action == eExtract, size, done.get())
-            ||  (match  &&  !(int(action) & ((eExtract | eInternal) & ~eRW)))){
+            ||  (match  &&  (action == eList  ||  action == eUpdate))) {
             _ASSERT(status == eSuccess);
             done->push_back(m_Current);
             if (action == eInternal) {
@@ -3728,7 +3724,8 @@ IReader* CTar::Extract(istream& is, const string& name, CTar::TFlags flags)
     tar->SetMask(mask.get(), eTakeOwnership);
     mask.release();
    
-    auto_ptr<TEntries> temp = tar->x_Open(eInternal);
+    tar->x_Open(eInternal);
+    auto_ptr<TEntries> temp = tar->x_ReadAndProcess(eInternal);
     _ASSERT(temp.get()  &&  temp->size() < 2);
     if (temp->size() < 1) {
         return 0;
