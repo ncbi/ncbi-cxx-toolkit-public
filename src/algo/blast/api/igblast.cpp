@@ -456,8 +456,11 @@ void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
                 /* v end test */
                 int q_js = (*it)->GetSeqStart(0);
                 int q_je = (*it)->GetSeqStop(0);
-                if (q_ms) if (q_je < q_ve - 60 || q_js > q_ve) keep = false;
-                else      if (q_js > q_ve + 60 || q_je < q_ve) keep = false;
+                if (q_ms) { 
+                    if (q_je < q_ve - 60 || q_js > q_ve) keep = false;
+                } else {
+                    if (q_js > q_ve + 60 || q_je < q_ve) keep = false;
+                }
                 /* remove failed seq_align */
                 if (!keep) it = align_list.erase(it);
                 else ++it;
