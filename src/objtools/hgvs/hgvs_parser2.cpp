@@ -1311,9 +1311,11 @@ CRef<CVariation> CHgvsParser::x_prot_fs(TIterator const& i, const CContext& cont
     if(it != i->children.end()) {
         //fsX# description: the remaining tokens are 'X' and integer
         ++it; //skip 'X'
-        string s(it->value.begin(), it->value.end());
-        int x_length = NStr::StringToInt(s);
-        vr->SetFrameshift().SetX_length(x_length);
+        if(it != i->children.end()) {
+            string s(it->value.begin(), it->value.end());
+            int x_length = NStr::StringToInt(s);
+            vr->SetFrameshift().SetX_length(x_length);
+        }
     }
 
     return vr;
@@ -1565,11 +1567,11 @@ CRef<CVariation> CHgvsParser::x_expr3(TIterator const& i, const CContext& contex
 
             if(inst_ref->GetData().IsNote()
               && inst_ref->GetData().GetNote() == "Frameshift"
-              && vr->SetData().SetSet().SetVariations().size() > 1)
+              && vr->SetData().SetSet().SetVariations().size() > 0)
             {
-                //if inst_ref is a frameshift subexpression, it is attached as attribute of the
-                //last variation, as frameshift is not a subtype of Variation.data, and thus
-                //not represented as a separate subvariation.
+                //if inst_ref is a frameshift subexpression, we need to attach it as attribute of the
+                //previous variation in a compound inst-list, since frameshift is not a subtype of
+                //Variation.data, and thus not represented as a separate subvariation.
 
                 vr->SetData().SetSet().SetVariations().back()->SetFrameshift().Assign(inst_ref->GetFrameshift());
             } else {

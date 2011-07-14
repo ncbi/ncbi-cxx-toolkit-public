@@ -660,7 +660,10 @@ void CVariationUtil::x_InferNAfromAA(CVariation& v, TAA2NAFlags flags)
 
     string variant_codon = s_CollapseAmbiguities(variant_codons);
 
-    if(flags & fAA2NA_truncate_common_prefix_and_suffix  && variant_codon != original_allele_codon) {
+    if(flags & fAA2NA_truncate_common_prefix_and_suffix
+        && !v.IsSetFrameshift()
+        && variant_codon != original_allele_codon)
+    {
         while(variant_codon.length() > 0
               && original_allele_codon.length() > 0
               && variant_codon.at(0) == original_allele_codon.at(0))
@@ -706,12 +709,16 @@ void CVariationUtil::x_InferNAfromAA(CVariation& v, TAA2NAFlags flags)
     v2->SetPlacements().push_back(p2);
 
 
-    CVariation_inst& inst2 = v2->SetData().SetInstance();
-    inst2.SetType(variant_codon.length() == 1 ? CVariation_inst::eType_snv : CVariation_inst::eType_mnp);
-    inst2.SetDelta().push_back(delta2);
+    if(v.IsSetFrameshift()) {
+        v2->SetData().SetUnknown(); //don't know what is happening at nucleotide level
+    } else {
+        CVariation_inst& inst2 = v2->SetData().SetInstance();
+        inst2.SetType(variant_codon.length() == 1 ? CVariation_inst::eType_snv : CVariation_inst::eType_mnp);
+        inst2.SetDelta().push_back(delta2);
 
-    if(v.GetData().GetInstance().IsSetObservation()) {
-        inst2.SetObservation(v.GetData().GetInstance().GetObservation());
+        if(v.GetData().GetInstance().IsSetObservation()) {
+            inst2.SetObservation(v.GetData().GetInstance().GetObservation());
+        }
     }
 
     v.Assign(*v2);

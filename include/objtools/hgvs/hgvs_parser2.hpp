@@ -633,7 +633,7 @@ protected:
                      */
 
 
-                prot_fs         = str_p("fs") >> !(ch_p('X') >> int_p);
+                prot_fs         = str_p("fs") >> !(ch_p('X') >> !int_p);
 
                 prot_ext        = (str_p("extMet") | str_p("extX")) >> int_p;
 
