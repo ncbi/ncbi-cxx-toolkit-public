@@ -60,6 +60,7 @@ const string kArgDbSize("dbsize");
 const string kArgDbType("dbtype");
 
 const string kArgGiList("gilist");
+const string kArgDbTitle("title");
 const string kArgSeqIdList("seqidlist");
 const string kArgNegativeGiList("negative_gilist");
 const string kArgDbSoftMask("db_soft_mask");

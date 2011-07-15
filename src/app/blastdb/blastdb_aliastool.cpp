@@ -131,8 +131,8 @@ void CBlastDBAliasApp::Init()
     string dflt("Default = input file name provided to -gi_file_in argument");
     dflt += " with the .bgl extension";
 
-    const char* exclusions[]  = { "db", "dbtype", "title", "gilist", "out",
-        "dblist", "num_volumes" };
+    const char* exclusions[]  = { kArgDb.c_str(), kArgDbType.c_str(), kArgDbTitle.c_str(), 
+		kArgGiList.c_str(), kArgOutput.c_str(), "dblist", "num_volumes" };
     arg_desc->SetCurrentGroup("GI file conversion options");
     arg_desc->AddOptionalKey("gi_file_in", "input_file",
                      "Text file to convert, should contain one GI per line",
@@ -153,31 +153,31 @@ void CBlastDBAliasApp::Init()
     }
 
     arg_desc->SetCurrentGroup("Alias file creation options");
-    arg_desc->AddOptionalKey("db", "dbname", "BLAST database name", 
+    arg_desc->AddOptionalKey(kArgDb, "dbname", "BLAST database name", 
                              CArgDescriptions::eString);
-    arg_desc->SetDependency("db", CArgDescriptions::eRequires, "gilist");
-    arg_desc->SetDependency("db", CArgDescriptions::eRequires, kOutput);
+    arg_desc->SetDependency(kArgDb, CArgDescriptions::eRequires, kArgGiList);
+    arg_desc->SetDependency(kArgDb, CArgDescriptions::eRequires, kOutput);
 
-    arg_desc->AddDefaultKey("dbtype", "molecule_type",
+    arg_desc->AddDefaultKey(kArgDbType, "molecule_type",
                             "Molecule type stored in BLAST database",
                             CArgDescriptions::eString, "prot");
-    arg_desc->SetConstraint("dbtype", &(*new CArgAllow_Strings,
+    arg_desc->SetConstraint(kArgDbType, &(*new CArgAllow_Strings,
                                         "nucl", "prot"));
 
-    arg_desc->AddOptionalKey("title", "database_title",
+    arg_desc->AddOptionalKey(kArgDbTitle, "database_title",
                      "Title for BLAST database\n"
                      "Default = name of BLAST database provided to -db"
                      " argument with the -gifile argument appended to it",
                      CArgDescriptions::eString);
-    arg_desc->SetDependency("title", CArgDescriptions::eRequires, kOutput);
+    arg_desc->SetDependency(kArgDbTitle, CArgDescriptions::eRequires, kOutput);
 
-    arg_desc->AddOptionalKey("gilist", "input_file", 
+    arg_desc->AddOptionalKey(kArgGiList, "input_file", 
                              "Text or binary gi file to restrict the BLAST "
                              "database provided in -db argument\n"
                              "If text format is provided, it will be converted "
                              "to binary",
                              CArgDescriptions::eInputFile);
-    arg_desc->SetDependency("gilist", CArgDescriptions::eRequires, kOutput);
+    arg_desc->SetDependency(kArgGiList, CArgDescriptions::eRequires, kOutput);
 
     arg_desc->AddOptionalKey(kOutput, "database_name",
                              "Name of BLAST database alias to be created",
@@ -187,11 +187,11 @@ void CBlastDBAliasApp::Init()
                              "A space separated list of BLAST database names to"
                              " aggregate",
                              CArgDescriptions::eString);
-    arg_desc->SetDependency("dblist", CArgDescriptions::eExcludes, "db");
+    arg_desc->SetDependency("dblist", CArgDescriptions::eExcludes, kArgDb);
     arg_desc->SetDependency("dblist", CArgDescriptions::eExcludes, "num_volumes");
     arg_desc->SetDependency("dblist", CArgDescriptions::eRequires, kOutput);
-    arg_desc->SetDependency("dblist", CArgDescriptions::eRequires, "dbtype");
-    arg_desc->SetDependency("dblist", CArgDescriptions::eRequires, "title");
+    arg_desc->SetDependency("dblist", CArgDescriptions::eRequires, kArgDbType);
+    arg_desc->SetDependency("dblist", CArgDescriptions::eRequires, kArgDbTitle);
 
     CNcbiOstrstream msg;
     msg << "Number of volumes to aggregate, in which case the "
@@ -200,12 +200,12 @@ void CBlastDBAliasApp::Init()
     arg_desc->AddOptionalKey("num_volumes", "positive_integer", 
                              CNcbiOstrstreamToString(msg),
                              CArgDescriptions::eInteger);
-    arg_desc->SetDependency("num_volumes", CArgDescriptions::eExcludes, "db");
-    arg_desc->SetDependency("num_volumes", CArgDescriptions::eExcludes, "gilist");
+    arg_desc->SetDependency("num_volumes", CArgDescriptions::eExcludes, kArgDb);
+    arg_desc->SetDependency("num_volumes", CArgDescriptions::eExcludes, kArgGiList);
     arg_desc->SetDependency("num_volumes", CArgDescriptions::eExcludes, "dblist");
     arg_desc->SetDependency("num_volumes", CArgDescriptions::eRequires, kOutput);
-    arg_desc->SetDependency("num_volumes", CArgDescriptions::eRequires, "dbtype");
-    arg_desc->SetDependency("num_volumes", CArgDescriptions::eRequires, "title");
+    arg_desc->SetDependency("num_volumes", CArgDescriptions::eRequires, kArgDbType);
+    arg_desc->SetDependency("num_volumes", CArgDescriptions::eRequires, kArgDbTitle);
     arg_desc->SetConstraint("num_volumes", new CArgAllowValuesBetween(0, 100));
 
     SetupArgDescriptions(arg_desc.release());
@@ -249,30 +249,30 @@ CBlastDBAliasApp::CreateAliasFile() const
 {
     const CArgs& args = GetArgs();
     string title;
-    if (args["title"].HasValue()) {
-        title = args["title"].AsString();
-    } else if (args["db"].HasValue()) {
-        _ASSERT(args["gilist"].HasValue());
-        title = args["db"].AsString() + " limited by " + 
-            args["gilist"].AsString();
+    if (args[kArgDbTitle].HasValue()) {
+        title = args[kArgDbTitle].AsString();
+    } else if (args[kArgDb].HasValue()) {
+        _ASSERT(args[kArgGiList].HasValue());
+        title = args[kArgDb].AsString() + " limited by " + 
+            args[kArgGiList].AsString();
     }
     const CWriteDB::ESeqType seq_type = 
-        args["dbtype"].AsString() == "prot"
+        args[kArgDbType].AsString() == "prot"
         ? CWriteDB::eProtein
         : CWriteDB::eNucleotide;
 
-    string gilist = args["gilist"] ? args["gilist"].AsString() : kEmptyStr;
+    string gilist = args[kArgGiList] ? args[kArgGiList].AsString() : kEmptyStr;
     if ( !gilist.empty() ) {
         if ( !CFile(gilist).Exists() ) {
             NCBI_THROW(CSeqDBException, eFileErr, gilist + " not found");
         }
         if ( !SeqDB_IsBinaryGiList(gilist) ) {
-            const char mol_type = args["dbtype"].AsString()[0];
+            const char mol_type = args[kArgDbType].AsString()[0];
             _ASSERT(mol_type == 'p' || mol_type == 'n');
             CNcbiOstrstream oss;
             oss << args[kOutput].AsString() << "." << mol_type << ".gil";
             gilist.assign(CNcbiOstrstreamToString(oss));
-            const string& ifname = args["gilist"].AsString();
+            const string& ifname = args[kArgGiList].AsString();
             ifstream input(ifname.c_str());
             ofstream output(gilist.c_str());
             ConvertGiFile(input, output, &ifname, &gilist);
@@ -292,7 +292,7 @@ CBlastDBAliasApp::CreateAliasFile() const
                                  title);
     } else {
         CWriteDB_CreateAliasFile(args[kOutput].AsString(),
-                                 args["db"].AsString(),
+                                 args[kArgDb].AsString(),
                                  seq_type, gilist,
                                  title);
     }

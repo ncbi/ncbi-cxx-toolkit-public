@@ -213,14 +213,14 @@ void CMakeBlastDBApp::Init()
                             "\tBLAST database(s)\n",
                             CArgDescriptions::eInputFile, "-");
     
-    arg_desc->AddDefaultKey("dbtype", "molecule_type",
+    arg_desc->AddDefaultKey(kArgDbType, "molecule_type",
                             "Molecule type of input",
                             CArgDescriptions::eString, "prot");
-    arg_desc->SetConstraint("dbtype", &(*new CArgAllow_Strings,
+    arg_desc->SetConstraint(kArgDbType, &(*new CArgAllow_Strings,
                                         "nucl", "prot"));
 
     arg_desc->SetCurrentGroup("Configuration options");
-    arg_desc->AddOptionalKey("title", "database_title",
+    arg_desc->AddOptionalKey(kArgDbTitle, "database_title",
                              "Title for BLAST database\n" + dflt,
                              CArgDescriptions::eString);
     
@@ -861,12 +861,12 @@ void CMakeBlastDBApp::x_BuildDatabase()
     
     // Get arguments to the CBuildDatabase constructor.
     
-    bool is_protein = (args["dbtype"].AsString() == "prot");
+    bool is_protein = (args[kArgDbType].AsString() == "prot");
     
     // 1. title option if present
     // 2. otherwise, kInput
-    string title = (args["title"].HasValue()
-                    ? args["title"]
+    string title = (args[kArgDbTitle].HasValue()
+                    ? args[kArgDbTitle]
                     : args[kInput]).AsString();
     
     // 1. database name option if present

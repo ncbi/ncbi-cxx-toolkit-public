@@ -254,8 +254,8 @@ CBlastDBCmdApp::x_InitApplicationData()
 {
     const CArgs& args = GetArgs();
 
-    CSeqDB::ESeqType seqtype = ParseTypeString(args["dbtype"].AsString());;
-    m_BlastDb.Reset(new CSeqDBExpert(args["db"].AsString(), seqtype));
+    CSeqDB::ESeqType seqtype = ParseTypeString(args[kArgDbType].AsString());;
+    m_BlastDb.Reset(new CSeqDBExpert(args[kArgDb].AsString(), seqtype));
 
     m_DbIsProtein = static_cast<bool>(m_BlastDb->GetSequenceType() == CSeqDB::eProtein);
 
@@ -408,13 +408,13 @@ void CBlastDBCmdApp::Init()
                   "BLAST database client, version " + CBlastVersion().Print());
 
     arg_desc->SetCurrentGroup("BLAST database options");
-    arg_desc->AddDefaultKey("db", "dbname", "BLAST database name", 
+    arg_desc->AddDefaultKey(kArgDb, "dbname", "BLAST database name", 
                             CArgDescriptions::eString, "nr");
 
-    arg_desc->AddDefaultKey("dbtype", "molecule_type",
+    arg_desc->AddDefaultKey(kArgDbType, "molecule_type",
                             "Molecule type stored in BLAST database",
                             CArgDescriptions::eString, "guess");
-    arg_desc->SetConstraint("dbtype", &(*new CArgAllow_Strings,
+    arg_desc->SetConstraint(kArgDbType, &(*new CArgAllow_Strings,
                                         "nucl", "prot", "guess"));
 
     arg_desc->SetCurrentGroup("Retrieval options");
@@ -515,7 +515,7 @@ void CBlastDBCmdApp::Init()
                       "Use Ctrl-A as the non-redundant defline separator",true);
 
     const char* exclusions_discovery[]  = { "entry", "entry_batch", "outfmt",
-        "strand", "target_only", "ctrl_a", "get_dups", "pig", "range", "db",
+        "strand", "target_only", "ctrl_a", "get_dups", "pig", "range", kArgDb.c_str(),
         "info", "mask_sequence", "line_length" };
     arg_desc->SetCurrentGroup("BLAST database configuration and discovery options");
     arg_desc->AddFlag("show_blastdb_search_path", 
@@ -572,8 +572,8 @@ int CBlastDBCmdApp::Run(void)
         } else if (args["list"]) {
             const string& blastdb_dir = args["list"].AsString();
             const bool recurse = args["recursive"];
-            const string dbtype = args["dbtype"] 
-                ? args["dbtype"].AsString() 
+            const string dbtype = args[kArgDbType] 
+                ? args[kArgDbType].AsString() 
                 : "guess";
             const string& kOutFmt = args["list_outfmt"].AsString();
             const vector<SSeqDBInitInfo> dbs = 
