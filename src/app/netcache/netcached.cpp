@@ -511,7 +511,8 @@ CNetCacheServer::x_PrintServerStats(CPrintTextProxy& proxy)
           << endl;
     CNCMemManager::PrintStats(proxy);
     proxy << endl;
-    g_NCStorage->PrintStat(proxy);
+    if (g_NCStorage)
+        g_NCStorage->PrintStat(proxy);
     proxy << endl
           << "Copy queue - " << CNCPeerControl::GetMirrorQueueSize() << endl
           << "Sync log queue - " << CNCSyncLog::GetLogSize() << endl;

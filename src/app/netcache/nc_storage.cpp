@@ -1343,6 +1343,8 @@ CNCBlobStorage::PrintStat(CPrintTextProxy& proxy)
             }
         }
     }}
+    if (num_meta == 0  ||  num_data == 0)
+        return;
 /*
     proxy << "Now in cache - " << m_SlotsCache.CountValues() << " values, "
                                << m_SlotsCache.CountNodes()  << " nodes, "
