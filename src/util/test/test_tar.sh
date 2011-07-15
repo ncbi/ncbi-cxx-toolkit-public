@@ -191,7 +191,7 @@ echo
 
 touch $test_base.cat $test_base.dog
 test_tar -c -v -f - $test_base.cat $test_base.dog | tar tvf - | tee $test_base.lst      ||  exit 1
-test "`cat $test_base.lst | wc -l`" = "2"                                               ||  exit 1
+test `cat $test_base.lst | wc -l` = 2                                                   ||  exit 1
 
 echo
 echo "`date` *** Checking stream append"
