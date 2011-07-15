@@ -13,3 +13,5 @@ SRC = agp_write \
       vcf_writer
       
 WATCHERS = ludwigf boukn
+
+DLL_LIB = xobjrwutil
