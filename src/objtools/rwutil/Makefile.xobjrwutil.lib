@@ -1,6 +1,6 @@
 # $Id$
 
-#ASN_DEP = seqset
+ASN_DEP = seq
 
 LIB = xobjrwutil
 SRC = sofa_map
