@@ -55,5 +55,6 @@
 #include <misc/xmlwrapp/exception.hpp>
 #include <misc/xmlwrapp/errors.hpp>
 #include <misc/xmlwrapp/xml_save.hpp>
+#include <misc/xmlwrapp/document_proxy.hpp>
 
 #endif

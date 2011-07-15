@@ -113,6 +113,7 @@ public:
      * @author Peter Jones
     **/
     //####################################################################
+    NCBI_DEPRECATED
     bool apply (const xml::document &doc, xml::document &result,
                 result_treat_type  treat=type_no_treat);
 
@@ -130,6 +131,7 @@ public:
      * @author Peter Jones
     **/
     //####################################################################
+    NCBI_DEPRECATED
     bool apply (const xml::document &doc, xml::document &result,
                 const param_type &with_params,
                 result_treat_type  treat=type_no_treat);
@@ -138,41 +140,33 @@ public:
     /**
      * Apply this stylesheet to the given XML document. The results document
      * is returned. If there is an error during transformation, this
-     * function will throw a xml::exception exception.
-     *
-     * Each time you call this member function, the xml::document object
-     * that was returned from the last call becomes invalid. That is, of
-     * course, unless you copied it first.
+     * function will throw an xml::exception exception.
      *
      * @param doc The XML document to transform.
      * @param treat How to treat XSLT result
-     * @return A reference to the result tree.
-     * @author Peter Jones
+     * @return The result tree.
+     * @author Denis Vakatov
     **/
     //####################################################################
-    xml::document& apply (const xml::document &doc,
-                          result_treat_type  treat=type_no_treat);
+    xml::document_proxy apply (const xml::document &doc,
+                               result_treat_type  treat=type_no_treat);
 
     //####################################################################
     /**
      * Apply this stylesheet to the given XML document. The results document
      * is returned. If there is an error during transformation, this
-     * function will throw a xml::exception exception.
-     *
-     * Each time you call this member function, the xml::document object
-     * that was returned from the last call becomes invalid. That is, of
-     * course, unless you copied it first.
+     * function will throw an xml::exception exception.
      *
      * @param doc The XML document to transform.
      * @param with_params Override xsl:param elements using the given key/value map
      * @param treat How to treat XSLT result
-     * @return A reference to the result tree.
-     * @author Peter Jones
+     * @return The result tree.
+     * @author Denis Vakatov
     **/
     //####################################################################
-    xml::document& apply (const xml::document &doc,
-                          const param_type &with_params,
-                          result_treat_type  treat=type_no_treat);
+    xml::document_proxy apply (const xml::document &doc,
+                               const param_type &with_params,
+                               result_treat_type  treat=type_no_treat);
 
     //####################################################################
     /**
@@ -189,6 +183,7 @@ public:
      * @author Peter Jones
     **/
     //####################################################################
+    NCBI_DEPRECATED
     const std::string& get_error_message (void) const;
 
 private:

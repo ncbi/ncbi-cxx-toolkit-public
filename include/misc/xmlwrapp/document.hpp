@@ -53,6 +53,7 @@
 #include <misc/xmlwrapp/errors.hpp>
 #include <misc/xmlwrapp/xml_save.hpp>
 #include <misc/xmlwrapp/xslt_result_type.hpp>
+#include <misc/xmlwrapp/document_proxy.hpp>
 
 // standard includes
 #include <iosfwd>
@@ -158,6 +159,17 @@ public:
     **/
     //####################################################################
     explicit document (const node &n);
+
+    //####################################################################
+    /**
+     * Creates a new XML document using the document_proxy, i.e. essentially
+     * xslt results. (see CXX-2458)
+     *
+     * @param doc_proxy XSLT results
+     * @author Denis Vakatov
+    **/
+    //####################################################################
+    document (const document_proxy &  doc_proxy);
 
     //####################################################################
     /**

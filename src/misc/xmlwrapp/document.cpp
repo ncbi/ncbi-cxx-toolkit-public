@@ -215,6 +215,16 @@ xml::document::document (const node &n) {
     ap.release();
 }
 //####################################################################
+xml::document::document (const document_proxy &  doc_proxy) :
+    pimpl_(new doc_impl)
+{
+    set_doc_data_from_xslt(doc_proxy.xslt_result_->get_raw_doc(),
+                           doc_proxy.xslt_result_,
+                           doc_proxy.treat_);
+    // Now the reult doc is owned
+    doc_proxy.release();
+}
+//####################################################################
 xml::document::document (const document &other) :
     pimpl_(new doc_impl(*(other.pimpl_)))
 {} /* NCBI_FAKE_WARNING */

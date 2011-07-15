@@ -44,5 +44,6 @@
 #include <misc/xmlwrapp/xslt_init.hpp>
 #include <misc/xmlwrapp/xslt_result_type.hpp>
 #include <misc/xmlwrapp/stylesheet.hpp>
+#include <misc/xmlwrapp/document_proxy.hpp>
 
 #endif

@@ -297,8 +297,8 @@ bool xslt::stylesheet::apply(const xml::document &doc, xml::document &result,
 }
 
 
-xml::document& xslt::stylesheet::apply(const xml::document &doc,
-                                       result_treat_type  treat)
+xml::document_proxy  xslt::stylesheet::apply(const xml::document &doc,
+                                             result_treat_type  treat)
 {
     xmlDocPtr input = static_cast<xmlDocPtr>(doc.get_doc_data_read_only());
     xmlDocPtr xmldoc = apply_stylesheet(pimpl_, input);
@@ -306,16 +306,15 @@ xml::document& xslt::stylesheet::apply(const xml::document &doc,
     if ( !xmldoc )
         throw xml::exception(pimpl_->error_);
 
-    pimpl_->doc_.set_doc_data_from_xslt(xmldoc,
-                                        new result_impl(xmldoc, pimpl_->ss_),
-                                        treat);
-    return pimpl_->doc_;
+    xml::document_proxy     proxy(new result_impl(xmldoc, pimpl_->ss_),
+                                  treat);
+    return proxy;
 }
 
 
-xml::document& xslt::stylesheet::apply(const xml::document &doc,
-                                       const param_type &with_params,
-                                       result_treat_type  treat)
+xml::document_proxy  xslt::stylesheet::apply(const xml::document &doc,
+                                             const param_type &with_params,
+                                             result_treat_type  treat)
 {
     xmlDocPtr input = static_cast<xmlDocPtr>(doc.get_doc_data_read_only());
     xmlDocPtr xmldoc = apply_stylesheet(pimpl_, input, &with_params);
@@ -323,10 +322,9 @@ xml::document& xslt::stylesheet::apply(const xml::document &doc,
     if ( !xmldoc )
         throw xml::exception(pimpl_->error_);
 
-    pimpl_->doc_.set_doc_data_from_xslt(xmldoc,
-                                        new result_impl(xmldoc, pimpl_->ss_),
-                                        treat);
-    return pimpl_->doc_;
+    xml::document_proxy     proxy(new result_impl(xmldoc, pimpl_->ss_),
+                                  treat);
+    return proxy;
 }
 
 
