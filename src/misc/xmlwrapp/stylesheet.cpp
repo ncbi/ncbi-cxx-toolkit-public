@@ -114,8 +114,8 @@ private:
     }
 
     friend class xml::document;
-    xmlDocPtr doc_;
-    xsltStylesheetPtr ss_;
+    xmlDocPtr           doc_;
+    xsltStylesheetPtr   ss_;
 };
 
 
@@ -207,6 +207,17 @@ xmlDocPtr apply_stylesheet(xslt::stylesheet::pimpl *impl,
 }
 
 } // end of anonymous namespace
+
+
+xslt::impl::result *  xslt::impl::make_copy (xslt::impl::result *  pattern)
+{
+    result_impl *   other_instance = dynamic_cast<result_impl *>(pattern);
+
+    if (other_instance == NULL)
+        throw xml::exception("Design error: unexpected xslt result type");
+
+    return new result_impl(*other_instance);
+}
 
 
 xslt::stylesheet::stylesheet(const char *filename)

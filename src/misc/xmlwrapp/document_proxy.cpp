@@ -36,6 +36,7 @@
 
 // xmlwrapp includes
 #include <misc/xmlwrapp/document_proxy.hpp>
+#include "result.hpp"
 
 
 
@@ -48,6 +49,12 @@ document_proxy::document_proxy (xslt::impl::result *     result,
     owner_(true), xslt_result_(result), treat_(treat)
 {}
 
+
+document_proxy::document_proxy (const document_proxy &  other) :
+    owner_(true),
+    xslt_result_(xslt::impl::make_copy(other.xslt_result_)),
+    treat_(other.treat_)
+{}
 
 document_proxy::~document_proxy ()
 {

@@ -50,6 +50,10 @@
 // forward declarations
 typedef struct _xmlDoc *xmlDocPtr;
 
+namespace xml {
+    class document;
+}
+
 namespace xslt {
 
 namespace impl {
@@ -103,6 +107,14 @@ private:
 
     friend class xml::document;
 };
+
+
+// The auxiliary function which needs for the document_proxy copy constructor
+// only. The function essentially takes a pointer to a class which derives from
+// result and makes a copy of the derived class.
+// It throws an exception if copying error occured.
+// the function should be deleted when document_proxy is deleted.
+result *  make_copy (result *  pattern);
 
 } // end impl namespace
 

@@ -58,6 +58,7 @@ class document_proxy
 {
 public:
     ~document_proxy ();
+    document_proxy (const document_proxy &  other);
 
 private:
     /* Internal library use only */
@@ -75,7 +76,6 @@ private:
     friend class document;
     friend class xslt::stylesheet;
 
-    document_proxy (const document_proxy &  other);
     document_proxy &  operator= (const document_proxy &  other);
 };
 
