@@ -1,0 +1,8 @@
+# $Id$
+
+#ASN_DEP = seqset
+
+LIB = xobjrwutil
+SRC = sofa_map
+      
+WATCHERS = ludwigf
