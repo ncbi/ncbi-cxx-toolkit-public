@@ -551,7 +551,7 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* read,
         if (bytes_avail > count) {
             bytes_avail = count;
         }
-        if ( !::ReadFile(fd, buf, count, &bytes_avail, NULL) ) {
+        if ( !::ReadFile(fd, buf, bytes_avail, &bytes_avail, NULL) ) {
             PIPE_THROW(::GetLastError(), "Failed to read data from pipe");
         }
         if ( read ) {
