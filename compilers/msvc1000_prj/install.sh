@@ -127,7 +127,7 @@ for i in 'DLL' '' ; do
   if test -d "$builddir"/compilers/$compiler/static/bin/Release$i ; then
     cd "$builddir"/compilers/$compiler/static/bin/Release$i
     if ls *.exe >/dev/null 2>&1 ; then
-      cp -p *.exe *.dll *.exp "$bindir"
+      cp -p *.exe *.dll *.exp *.manifest "$bindir"
       break
     fi
   fi
