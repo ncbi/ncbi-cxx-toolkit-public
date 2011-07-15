@@ -639,6 +639,7 @@ void CQueue::PutResultGetJob(CWorkerNode *              worker_node,
     unsigned    run_timeout;
     {{
         CQueueParamAccessor     qp(*this);
+
         delete_done = qp.GetDeleteDone();
         keep_node_affinity = qp.GetKeepAffinity() && done_job_id;
         max_output_size = qp.GetMaxOutputSize();
@@ -684,8 +685,9 @@ void CQueue::PutResultGetJob(CWorkerNode *              worker_node,
     // disregarding existing affinities so the queue is not to grow.
     unsigned        pending_job_id = 0;
     if (new_job)
-        pending_job_id =
-            FindPendingJob(worker_node, *aff_list, curr, keep_node_affinity);
+        pending_job_id = FindPendingJob(worker_node, *aff_list,
+                                        curr, keep_node_affinity);
+
     bool            done_rec_updated = false;
     CJob            job;
 
@@ -724,18 +726,18 @@ void CQueue::PutResultGetJob(CWorkerNode *              worker_node,
 
             // TODO: commit FindPendingJob guard here
             switch (upd_status) {
-            case eGetJobUpdate_JobFailed:
-                m_StatusTracker.ChangeStatus(pending_job_id,
-                    CNetScheduleAPI::eFailed);
-                /* FALLTHROUGH */
-            case eGetJobUpdate_JobStopped:
-            case eGetJobUpdate_NotFound:
-                pending_job_id = 0;
-                break;
-            case eGetJobUpdate_Ok:
-                break;
-            default:
-                _ASSERT(0);
+                case eGetJobUpdate_JobFailed:
+                    m_StatusTracker.ChangeStatus(pending_job_id,
+                                                 CNetScheduleAPI::eFailed);
+                    /* FALLTHROUGH */
+                case eGetJobUpdate_JobStopped:
+                case eGetJobUpdate_NotFound:
+                    pending_job_id = 0;
+                    break;
+                case eGetJobUpdate_Ok:
+                    break;
+                default:
+                    _ASSERT(0);
             }
 
             // NB BOTH Remove and Add lock worker node list
@@ -752,40 +754,39 @@ void CQueue::PutResultGetJob(CWorkerNode *              worker_node,
                     SleepMilliSec(250);
                     continue;
                 }
+                ERR_POST("Too many transaction repeats in CQueue::JobExchange.");
             } else if (ex.IsNoMem()) {
                 if (++dead_locks < k_max_dead_locks) {
                     ERR_POST("No resource repeat in CQueue::JobExchange");
                     SleepMilliSec(250);
                     continue;
                 }
-            } else {
-                throw;
+                ERR_POST("Too many transaction repeats in CQueue::JobExchange.");
             }
-            ERR_POST("Too many transaction repeats in CQueue::JobExchange.");
             throw;
         }
     }
 
-    unsigned        job_aff_id;
-    if (new_job && (job_aff_id = new_job->GetAffinityId())) {
-        CStopWatch  sw(CStopWatch::eStart);
-        time_t      exp_time = run_timeout ? curr + 2*run_timeout : 0;
-        AddAffinity(worker_node, job_aff_id, exp_time);
-//        LOG_POST(Warning << "Added affinity: " << sw.Elapsed() * 1000 << "ms");
+    if (new_job) {
+        unsigned int    job_aff_id = new_job->GetAffinityId();
+        if (job_aff_id) {
+            // CStopWatch      sw(CStopWatch::eStart);
+            time_t          exp_time = run_timeout ? curr + 2*run_timeout : 0;
+
+            AddAffinity(worker_node, job_aff_id, exp_time);
+            // LOG_POST(Warning << "Added affinity: " << sw.Elapsed() * 1000 << "ms");
+        }
     }
+
 
     TimeLineExchange(done_job_id, pending_job_id, curr + run_timeout);
 
-    if (done_rec_updated  &&  job.ShouldNotify(curr)) {
+    if (done_rec_updated  &&  job.ShouldNotify(curr))
         Notify(job.GetSubmAddr(), job.GetSubmPort(), done_job_id);
-    }
 
-    // Final touch, if we requested a job with specific affinity, and there was
-    // no such job found, report it as an exception with affinity preference.
-    if (!pending_job_id && aff_list && aff_list->size()) {
-        NCBI_THROW(CNetScheduleException, eNoJobsWithAffinity,
-                   GetAffinityList());
-    }
+    // There is no need to throw exception here in case if there is no such a
+    // job with the given affinity. Without exception it will be consistent
+    // with GET command output which simply gives no key if there are no jobs.
 }
 
 
