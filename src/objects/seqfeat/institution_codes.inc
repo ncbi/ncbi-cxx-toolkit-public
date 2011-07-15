@@ -287,6 +287,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ATH	s	Goulandris Natural History Museum",
 "ATHU	s	National and Kapodistrian University of Athens, Biology Department",
 "ATHUM	c	ATHUM Culture Collection of Fungi",
+"ATSC<AUS>	b	Australian Tree Seed Centre",
 "ATU	c	Dept.of Biotechnology University of Tokyo",
 "AU	s	Xiamen University, Biology Department",
 "AUA	s	Auburn University, Biological Sciences Department",
