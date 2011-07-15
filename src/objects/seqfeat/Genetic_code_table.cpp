@@ -717,7 +717,7 @@ const char * CGen_code_table_imp::sm_GenCodeTblMemStr [] =
     "sncbieaa \"--------------------------------M--M---------------M------------\" } };\n",
     "{ name \"Pterobranchia Mitochondrial\" , id 24 ,\n",
     "ncbieaa  \"FFLLSSSSYY**CCWWLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSSKVVVVAAAADDEEGGGG\",\n",
-    "sncbieaa \"---M---------------M---------------M----------------------------\" } ,\n",
+    "sncbieaa \"---M---------------M---------------M---------------M------------\" } ,\n",
     0  // to indicate that there is no more data
 };
 
