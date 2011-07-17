@@ -13,7 +13,7 @@ LIB =  xalgophytree biotree fastme xalnmgr tables xobjreadex xobjread xobjutil \
        $(SOBJMGR_LIBS)
 LIBS = $(DL_LIBS) $(ORIG_LIBS)
 
-REQUIRES = objects -Cygwin
+REQUIRES = objects algo -Cygwin
 
 
 WATCHERS = ludwigf
