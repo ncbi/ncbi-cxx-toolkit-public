@@ -3482,7 +3482,7 @@ fi
 
 ### Third-party libraries
 
-no_usr_lib='s,-L/usr/lib[[^/ ]]* ,,g; s,-L/lib[[^/ ]]* ,,g'
+no_usr_lib='s,[-L[/usr]*/lib/*[amdsprcv]*[23469]*] ,,g;'
 
 NCBI_CHECK_THIRD_PARTY_LIB(z,
  [[AC_LANG_PROGRAM([#include <zlib.h>],

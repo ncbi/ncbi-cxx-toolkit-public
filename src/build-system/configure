@@ -20609,7 +20609,7 @@ fi
 
 ### Third-party libraries
 
-no_usr_lib='s,-L/usr/lib[^/ ]* ,,g; s,-L/lib[^/ ]* ,,g'
+no_usr_lib='s,-L[/usr]*/lib/*[amdsprcv]*[23469]* ,,g;'
 
 if test "$with_z" != "no"; then
     case "$with_z" in
