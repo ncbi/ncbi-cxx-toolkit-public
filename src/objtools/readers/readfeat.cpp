@@ -1102,6 +1102,10 @@ bool CFeature_table_reader_imp::x_AddQualifierToCdregion (
             /* !!! */
             /* if (x_ParseCodeBreak (sfp, crp, val)) return true; */
             return true;
+        case eQual_translation:
+            // we should accept, but ignore this qual on CDSs.
+            // so, do nothing but return success
+            return true;
         default:
             break;
     }
@@ -2146,7 +2150,6 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                         if (s_iter != sc_SingleKeys.end ()) {
 
                             x_AddQualifierToFeature (sfp, curr_feat_name, qual, val, container, reader.GetLineNumber(), seqid);
-
                         }
                     }
                 } else if (! feat.empty ()) {
