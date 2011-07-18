@@ -5144,6 +5144,39 @@ BOOST_AUTO_TEST_CASE(Test_SeqLitDataLength0)
 }
 
 
+static CRef<CSeq_entry> BuildGapFuzz100DeltaSeq(void)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+
+    entry->SetSeq().SetInst().ResetSeq_data();
+    entry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_delta);
+    entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("ATGATGATGCCC", CSeq_inst::eMol_dna);
+    CRef<CDelta_seq> gap_seg(new CDelta_seq());
+    gap_seg->SetLiteral().SetSeq_data().SetGap();
+    gap_seg->SetLiteral().SetLength(101);
+    gap_seg->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+    entry->SetSeq().SetInst().SetExt().SetDelta().Set().push_back(gap_seg);
+    entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("CCCATGATGATG", CSeq_inst::eMol_dna);
+    entry->SetSeq().SetInst().SetLength(125);
+
+    return entry;
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SeqLitGapFuzzNot100)
+{
+    CRef<CSeq_entry> entry = BuildGapFuzz100DeltaSeq();
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "SeqLitGapFuzzNot100", "Gap of unknown length should have length 100"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_DSmRNA)
 {
     // prepare entry
