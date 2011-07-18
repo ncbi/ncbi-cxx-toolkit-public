@@ -1053,6 +1053,7 @@ void CQueue::ForceReschedule(unsigned job_id)
         if (res == CJob::eJF_Ok) {
             job.SetStatus(CNetScheduleAPI::ePending);
             job.SetRunCount(0);
+            job.Flush(this);
         } else {
             // TODO: Integrity error or job just expired?
             return;
@@ -1905,8 +1906,9 @@ bool CQueue::FailJob(CWorkerNode*  worker_node,
 
     if (output.size() > max_output_size) {
         NCBI_THROW(CNetScheduleException, eDataTooLong,
-           "Output is too long");
+                   "Output is too long");
     }
+
     // We first change memory state to "Failed", it is safer because
     // there is only danger to find job in inconsistent state, and because
     // Failed is terminal, usually you can not allocate job or do anything
