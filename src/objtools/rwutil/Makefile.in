@@ -1,9 +1,0 @@
-# $Id$
-
-# Meta-makefile ("objtools/so" project)
-############################################
-
-LIB_PROJ = xobjrwutil
-
-srcdir = @srcdir@
-include @builddir@/Makefile.meta
