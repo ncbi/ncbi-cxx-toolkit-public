@@ -139,6 +139,7 @@ enum EErrType {
     eErr_SEQ_INST_DSmRNA,
     eErr_SEQ_INST_HighNContentStretch,
     eErr_SEQ_INST_HighNContentPercent,
+    eErr_SEQ_INST_SeqLitGapFuzzNot100,
     ERR_CODE_END(SEQ_INST),
 
     ERR_CODE_BEGIN(SEQ_DESCR) = 1000,

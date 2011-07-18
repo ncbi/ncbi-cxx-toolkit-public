@@ -300,6 +300,9 @@ the whole of a sequence.")),
    TErrTypStrs ( eErr_SEQ_INST_HighNContentPercent,
    TErrStrs( "HighNContentPercent",
 "This sequence contains a high percentage of Ns.")),
+   TErrTypStrs ( eErr_SEQ_INST_SeqLitGapFuzzNot100,
+   TErrStrs( "SeqLitGapFuzzNot100",
+"Gap of unknown length should have standard length of 100.")),
 
 /* SEQ_DESCR */
 

@@ -2970,6 +2970,12 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                             "Gap of length 0 with unknown fuzz in delta chain", seq);
                     }
                 }
+                if (lit.CanGetLength() && lit.GetLength() != 100) {
+                    if (lit.IsSetFuzz()) {
+                        PostErr(eDiag_Warning, eErr_SEQ_INST_SeqLitGapFuzzNot100,
+                            "Gap of unknown length should have length 100", seq);
+                    }
+                }
                 last_is_gap = true;
                 ++num_gaps;
             }
