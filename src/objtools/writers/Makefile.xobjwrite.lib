@@ -14,4 +14,3 @@ SRC = agp_write \
       
 WATCHERS = ludwigf boukn
 
-DLL_LIB = xobjrwutil
