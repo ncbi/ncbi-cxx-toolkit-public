@@ -49,9 +49,9 @@
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
 
-#include <objtools/rwutil/genbank_type.hpp>
-#include <objtools/rwutil/sofa_type.hpp>
-#include <objtools/rwutil/sofa_map.hpp>
+#include <objects/seq/genbank_type.hpp>
+#include <objects/seq/sofa_type.hpp>
+#include <objects/seq/sofa_map.hpp>
 
 BEGIN_NCBI_SCOPE
 

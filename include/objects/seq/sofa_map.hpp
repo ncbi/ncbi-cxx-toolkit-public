@@ -29,17 +29,16 @@
  *
  */
 
-#ifndef OBJTOOLS_SO___SOFAMAP__HPP
-#define OBJTOOLS_SO___SOFAMAP__HPP
+#ifndef OBJECTS___SOFAMAP__HPP
+#define OBJECTS___SOFAMAP__HPP
 
-#include <corelib/ncbistd.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ============================================================================
-class NCBI_XOBJRWUTIL_EXPORT CSofaMap
+class NCBI_SEQ_EXPORT CSofaMap
 //  ============================================================================
 {
 public:
@@ -74,4 +73,4 @@ protected:
 END_objects_SCOPE
 END_NCBI_SCOPE
 
-#endif  // OBJTOOLS_SO___SOFAMAP__HPP
+#endif  // OBJECTS___SOFAMAP__HPP

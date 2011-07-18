@@ -1208,14 +1208,6 @@
 #  define NCBI_XOBJWRITE_EXPORT NCBI_DLL_IMPORT
 #endif
 
-/* Export specifier for library xobjso
- */
-#ifdef NCBI_XOBJRWUTIL_EXPORTS
-#  define NCBI_XOBJRWUTIL_EXPORT NCBI_DLL_EXPORT
-#else
-#  define NCBI_XOBJRWUTIL_EXPORT NCBI_DLL_IMPORT
-#endif
-
 /* Export specifier for library xomssa
  */
 #ifdef NCBI_XOMSSA_EXPORTS

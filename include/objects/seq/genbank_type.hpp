@@ -29,36 +29,38 @@
  *
  */
 
-#ifndef OBJTOOLS_SO___SOFATYPE__HPP
-#define OBJTOOLS_SO___SOFATYPE__HPP
+#ifndef OBJECTS___GENBANKTYPE__HPP
+#define OBJECTS___GENBANKTYPE__HPP
 
-#include <corelib/ncbistd.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ============================================================================
-struct NCBI_XOBJRWUTIL_EXPORT SofaType
+struct NCBI_SEQ_EXPORT GenbankType
 //  ============================================================================
 {
-    unsigned int m_id;
-    string m_name;
-
-    SofaType() :
-    m_id( 0 ),
-    m_name( "invalid" )
+    GenbankType( 
+        CSeqFeatData::E_Choice type,
+        CSeqFeatData::ESubtype subtype ) :
+        m_type( type ),
+        m_subtype( subtype )
     {};
 
-    SofaType(
-        unsigned int id,
-        const string& name ) :
-    m_id( id ),
-    m_name( name )
-    {};
+    CSeqFeatData::E_Choice m_type;
+    CSeqFeatData::ESubtype m_subtype;
+
+    bool operator <( const GenbankType& other ) const {
+        if ( m_type != other.m_type ) {
+            return ( m_type < other.m_type );
+        }
+        return m_subtype < other.m_subtype;
+    }
+
 };
 
 END_objects_SCOPE
 END_NCBI_SCOPE
 
-#endif  // OBJTOOLS_SO___SOFATYPE__HPP
+#endif  // OBJECTS___GENBANKTYPE__HPP
