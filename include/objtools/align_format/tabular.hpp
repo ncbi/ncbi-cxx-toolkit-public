@@ -499,7 +499,7 @@ public:
     virtual void Print(void);
 
     /// Print domain information
-    void PrintMasterAlign() const;
+    void PrintMasterAlign(const string& header = "# ") const;
 
     /// Print Html style summary
     void PrintHtmlSummary() const;
@@ -548,7 +548,7 @@ public:
 
 protected:
     void x_ResetIgFields();
-    void x_PrintIgGenes(bool isHtml=false) const;
+    void x_PrintIgGenes(bool isHtml=false, const string& header="# ") const;
     void x_ComputeIgDomain(SIgDomain &domain);
     void x_PrintIgDomain(const SIgDomain &domain) const;
     void x_PrintIgDomainHtml(const SIgDomain &domain) const;

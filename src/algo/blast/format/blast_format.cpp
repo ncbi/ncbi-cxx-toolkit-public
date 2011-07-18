@@ -563,7 +563,10 @@ CBlastFormat::x_PrintIgTabularReport(const blast::CIgBlastResults& results)
     CIgBlastTabularInfo tabinfo(m_Outfile, m_CustomOutputFormatSpec, kDelim);
     tabinfo.SetParseLocalIds(m_BelieveQuery);
 
-    // print the master alignment
+    string strProgVersion =
+                "IG" + NStr::ToUpper(m_Program) + " " + blast::CBlastVersion().Print();
+    CConstRef<CBioseq> subject_bioseq = x_CreateSubjectBioseq();
+
     if (results.HasAlignments()) {
         const CRef<CIgAnnotation> & annots = results.GetIgAnnotation();
         CSeq_align_set::Tdata::const_iterator itr = aln_set->Get().begin();
@@ -572,9 +575,6 @@ CBlastFormat::x_PrintIgTabularReport(const blast::CIgBlastResults& results)
                                 &m_ScoringMatrix);
         tabinfo.SetIgAnnotation(annots, m_IgOptions->m_IsProtein);
 
-        string strProgVersion =
-                "IG" + NStr::ToUpper(m_Program) + " " + blast::CBlastVersion().Print();
-        CConstRef<CBioseq> subject_bioseq = x_CreateSubjectBioseq();
         tabinfo.PrintHeader(strProgVersion, *(bhandle.GetBioseqCore()),
                                 m_DbName, results.GetRID(), 
                                 numeric_limits<unsigned int>::max(),
@@ -588,8 +588,13 @@ CBlastFormat::x_PrintIgTabularReport(const blast::CIgBlastResults& results)
                               &m_ScoringMatrix);
             tabinfo.Print();
         }
+    } else {
+        tabinfo.PrintHeader(strProgVersion, *(bhandle.GetBioseqCore()),
+                                m_DbName, results.GetRID(), 
+                                numeric_limits<unsigned int>::max(),
+                                0, subject_bioseq, 
+                                m_IgOptions->m_DomainSystem);
     }
-    // else TODO print something like this is not ig sequence?
 }
 
 CConstRef<objects::CBioseq> CBlastFormat::x_CreateSubjectBioseq()
@@ -826,6 +831,7 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
     if (m_FormatType == CFormattingArgs::eTabular ||
         m_FormatType == CFormattingArgs::eTabularWithComments ||
         m_FormatType == CFormattingArgs::eCommaSeparatedValues) {
+        m_FormatType = CFormattingArgs::eTabularWithComments;
         x_PrintIgTabularReport(results);
         return;
     }
@@ -902,8 +908,8 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
                                 annots->m_ChainType[0], 
                                 &m_ScoringMatrix);
         tabinfo.SetIgAnnotation(annots, m_IgOptions->m_IsProtein);
-        m_Outfile << "# Domain classification requested: " << m_IgOptions->m_DomainSystem << endl << endl;
-        tabinfo.PrintMasterAlign();
+        m_Outfile << "Domain classification requested: " << m_IgOptions->m_DomainSystem << endl << endl;
+        tabinfo.PrintMasterAlign("");
     }
 
     TMaskedQueryRegions masklocs;

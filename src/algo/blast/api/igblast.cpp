@@ -531,9 +531,11 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
     int iq = 0;
     ITERATE(CSearchResultSet, result, *dm_results) {
 
+        CIgAnnotation *annot = &*(annots[iq]);
+        annot->m_ChainType.push_back("NON");  // Assuming non-ig sequence first
+
         if ((*result)->HasAlignments() && (*gl_results)[iq].HasAlignments()) {
 
-            CIgAnnotation *annot = &*(annots[iq]);
 
             CConstRef<CSeq_align> master_align = 
                             (*gl_results)[iq].GetSeqAlign()->Get().front();
@@ -564,7 +566,7 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
 
                 string sid = (*it)->GetSeq_id(1).AsFastaString();
                 if (sid.substr(0, 4) == "lcl|") sid = sid.substr(4, sid.length());
-                annot->m_ChainType.push_back(m_AnnotationInfo.GetChainType(sid));
+                annot->m_ChainType[0] = m_AnnotationInfo.GetChainType(sid);
 
                 int domain_info[10];
 
