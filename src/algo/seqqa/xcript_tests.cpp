@@ -70,14 +70,7 @@ bool CTestTranscript::CanTest(const CSerialObject& obj,
     const CSeq_id* id = dynamic_cast<const CSeq_id*>(&obj);
     if (id  &&  ctx) {
         CBioseq_Handle handle = ctx->GetScope().GetBioseqHandle(*id);
-
-        CSeqdesc_CI iter(handle, CSeqdesc::e_Molinfo);
-        for ( ;  iter;  ++iter) {
-            const CMolInfo& info = iter->GetMolinfo();
-            if (info.GetBiomol() == CMolInfo::eBiomol_mRNA) {
-                return true;
-            }
-        }
+        return handle.CanGetInst_Mol() && handle.GetInst_Mol() == CSeq_inst::eMol_rna;
     }
     return false;
 }
