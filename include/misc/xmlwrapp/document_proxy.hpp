@@ -35,6 +35,8 @@
 #ifndef _xmlwrapp_document_proxy_hpp_
 #define _xmlwrapp_document_proxy_hpp_
 
+// for compiler versions defines
+#include <ncbiconf.h>
 
 // xmlwrapp includes
 #include <misc/xmlwrapp/errors.hpp>
@@ -58,6 +60,15 @@ class document_proxy
 {
 public:
     ~document_proxy ();
+
+// Some compilers (MSVC and GCC 4.4.2) are clever enough to avoid using the
+// copy constructor, so for those compilers it is private
+#if defined(NCBI_COMPILER_MSVC) || \
+    (defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION >= 442)
+private:
+#else
+public:
+#endif
     document_proxy (const document_proxy &  other);
 
 private:
