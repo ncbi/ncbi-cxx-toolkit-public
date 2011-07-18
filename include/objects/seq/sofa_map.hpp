@@ -55,8 +55,8 @@ public:
         CSeqFeatData::E_Choice type,
         CSeqFeatData::ESubtype subtype )
     {
-        map< GenbankType, SofaType >::const_iterator cit = m_Map.find(
-            GenbankType( type, subtype ) );
+        map< CFeatListItem, SofaType >::const_iterator cit = m_Map.find(
+            CFeatListItem( type, subtype, "", "" ) );
         if ( cit != m_Map.end() ) {
             return cit->second.m_name;
         }
@@ -66,7 +66,7 @@ public:
 protected:
     void x_Init();
 
-    map< GenbankType, SofaType > m_Map;
+    map< CFeatListItem, SofaType > m_Map;
     SofaType m_default;
 };
 

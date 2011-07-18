@@ -49,7 +49,6 @@
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
 
-#include <objects/seq/genbank_type.hpp>
 #include <objects/seq/sofa_type.hpp>
 #include <objects/seq/sofa_map.hpp>
 

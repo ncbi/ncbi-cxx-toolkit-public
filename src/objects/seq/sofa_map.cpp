@@ -30,14 +30,14 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <objects/seq/genbank_type.hpp>
+//#include <objects/seq/genbank_type.hpp>
 #include <objects/seq/sofa_type.hpp>
 #include <objects/seq/sofa_map.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-#define GT( a, b ) GenbankType( CSeqFeatData::a, CSeqFeatData::b )
+#define GT( a, b ) CFeatListItem( CSeqFeatData::a, CSeqFeatData::b, "", "" )
 
 void CSofaMap::x_Init() 
 {
