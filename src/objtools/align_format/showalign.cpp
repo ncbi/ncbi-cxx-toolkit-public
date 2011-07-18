@@ -1276,6 +1276,42 @@ void CDisplaySeqalign::x_AddTranslationForLocalSeq(vector<TSAlnFeatureInfoList>&
     }
 }
 
+//this is a special function to calculate pert_identity between master and a given row 
+//for multiple alignment.  Excluding leading and trailing gaps.
+void s_CalculateIdentity(const string& sequence_standard,
+                         const string& sequence , char gap_char,
+                         int& match, int& align_length){
+    match = 0;
+    align_length = 0;
+    int start = 0;
+    int end = sequence.size() - 1;
+    for(int i = 0; i < (int)sequence.size(); i++){
+        if (sequence[i] != gap_char){
+            start = i;
+            break;
+        }
+    }
+    
+    for(int i = (int)sequence.size() - 1; i > 0; i--){
+        if (sequence[i] != gap_char){
+            end = i;
+            break;
+        }
+     }
+    
+    
+    for(int i = start; i <= end && i < (int)sequence.size() && i < (int)sequence_standard.size(); i++){
+        if(sequence[i] == gap_char && sequence_standard[i] == gap_char) {
+            //skip
+        } else {
+            if (sequence_standard[i]==sequence[i]){  
+                match ++;
+            }
+            align_length ++;
+        }  
+    }
+}
+
 CDisplaySeqalign::SAlnRowInfo *CDisplaySeqalign::x_PrepareRowData(void)
 {
     size_t maxIdLen=0, maxStartLen=0;
@@ -1331,51 +1367,8 @@ CDisplaySeqalign::SAlnRowInfo *CDisplaySeqalign::x_PrepareRowData(void)
     list<list<CRange<TSeqPos> > > feat_seq_range;
     list<ENa_strand> feat_seq_strand;
 
-    CSeq_align_set::Tdata::const_iterator 
-        alnIter = m_SeqalignSetRef->Get().begin();
     for (int row=0; row<rowNum; row++) {
-        if(row > 0 && m_AlignOption & eShowAlignStatsForMultiAlignView &&
-           m_AlignOption&eMergeAlign && m_AV->GetWidth(row) != 3) {
-            if (alnIter != m_SeqalignSetRef->Get().end()){
-                //note we have N alignment but N+1 rows
-                //make sure alignvec and original matches as accasionally alnmgr
-                //drop/merge some row but this should only happen rarely
-                while (alnIter != m_SeqalignSetRef->Get().end() &&
-                       find(m_Scope.GetBioseqHandle((*alnIter)->GetSeq_id(1)).GetId().begin(), 
-                            m_Scope.GetBioseqHandle((*alnIter)->GetSeq_id(1)).GetId().end(), 
-                            m_AV->GetSeqId(row)) == m_Scope.GetBioseqHandle((*alnIter)->GetSeq_id(1)).GetId().end()) {
-                    alnIter ++;
-                }
-                if (alnIter != m_SeqalignSetRef->Get().end()){
-                    CScoreBuilderBase cb;
-                    match[row-1] = cb.GetIdentityCount  (m_Scope, **alnIter);
-                    align_length[row-1] = cb.GetAlignLength(**alnIter);
-                    
-                    if (align_length[row-1] > 0 ){
-                        percent_ident[row-1] = ((double)match[row-1])/align_length[row-1]*100;
-                        align_stats[row-1] = NStr::DoubleToString(percent_ident[row-1], 1, 0) + 
-                            "% (" + NStr::IntToString(match[row-1]) + "/" +
-                            NStr::IntToString(align_length[row-1]) + ")"    ;
-                    } else {//something is wrong
-                        percent_ident[row - 1] = 0;
-                        align_stats[row-1] = "0";
-                    }
-                
-                    alnIter++;
-                } else { //error
-                    percent_ident[row - 1] = 0;
-                    align_stats[row-1] = "0"; 
-                }
-            } else { //in case m_AV is somehow different from original alignment
-                match[row - 1] = 0;
-                percent_ident[row - 1] = 0;
-                align_length[row-1] = 0;
-                align_stats[row-1] = "0";
-            }
-            max_align_stats = max(max_align_stats,
-                                  (int)align_stats[row-1].size());
-        }
-
+        
         string type_temp = m_BlastType;
         type_temp = NStr::TruncateSpaces(NStr::ToLower(type_temp));
         if((m_AlignTemplates == NULL && (type_temp == "mapview" || type_temp == "mapview_prev")) || 
@@ -1397,6 +1390,27 @@ CDisplaySeqalign::SAlnRowInfo *CDisplaySeqalign::x_PrepareRowData(void)
         m_AV->GetWholeAlnSeqString(row, sequence[row], &insertAlnStart[row],
                                    &insertStart[row], &insertLength[row],
                                    (int)m_LineLen, &seqStarts[row], &seqStops[row]);
+        if(row > 0 && m_AlignOption & eShowAlignStatsForMultiAlignView &&
+           m_AlignOption&eMergeAlign && m_AV->GetWidth(row) != 3) {
+            
+            s_CalculateIdentity(sequence[0], sequence[row], m_AV->GetGapChar(row), 
+                                match[row-1], align_length[row-1]); 
+           
+            if (align_length[row-1] > 0 ){
+                percent_ident[row-1] = ((double)match[row-1])/align_length[row-1]*100;
+                align_stats[row-1] = NStr::DoubleToString(percent_ident[row-1], 1, 0) + 
+                    "% (" + NStr::IntToString(match[row-1]) + "/" +
+                    NStr::IntToString(align_length[row-1]) + ")"    ;
+            } else {//something is wrong
+                percent_ident[row - 1] = 0;
+                align_stats[row-1] = "0";
+            }
+            
+            max_align_stats = max(max_align_stats,
+                                  (int)align_stats[row-1].size());
+        }
+
+
         if (row == 1 && eShowTranslationForLocalSeq & m_AlignOption 
             && m_AV->GetWidth(row) != 3 
             && !(m_AlignType & eProt)) {
