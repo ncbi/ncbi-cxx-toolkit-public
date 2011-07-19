@@ -465,7 +465,6 @@ public:
 
     void PrintSubmHosts(CNetScheduleHandler &  handler) const;
     void PrintWNodeHosts(CNetScheduleHandler &  handler) const;
-    void PrintJobStatusMatrix(CNcbiOstream& out) const;
 
     void PrintQueue(CNetScheduleHandler &   handler,
                     TJobStatus              job_status);

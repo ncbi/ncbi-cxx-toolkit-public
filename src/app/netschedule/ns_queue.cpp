@@ -2954,12 +2954,6 @@ void CQueue::PrintWNodeHosts(CNetScheduleHandler &  handler) const
 }
 
 
-void CQueue::PrintJobStatusMatrix(CNcbiOstream& out) const
-{
-    m_StatusTracker.PrintStatusMatrix(out);
-}
-
-
 #define NS_PRINT_TIME(field, t) \
 do { \
     if (t == 0) \

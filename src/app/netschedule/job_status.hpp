@@ -191,9 +191,6 @@ public:
     /// Optimize bitvectors memory
     void OptimizeMem();
 
-    void PrintStatusMatrix(CNcbiOstream& out) const;
-
-
 protected:
     TJobStatus x_GetStatusNoLock(unsigned job_id) const;
 
