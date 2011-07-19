@@ -481,9 +481,9 @@ void CArgTestApplication::Init(void)
     // Specify USAGE context
     string prog_description =
         "This is a test program for command-line argument processing.\n"
-        "TEST #" + NStr::UIntToString(m_TestNo) +
+        "TEST #" + NStr::SizetToString(m_TestNo) +
         "    (To run another test, set env.variable $TEST_NO to 0.." +
-        NStr::UIntToString(max_test) + ")";
+        NStr::SizetToString(max_test) + ")";
     bool usage_sort_args = (m_TestNo == 10);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               prog_description, usage_sort_args);
