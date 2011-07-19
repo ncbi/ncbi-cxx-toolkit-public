@@ -1936,6 +1936,50 @@ void CSeq_id_General_Tree::x_Unindex(const CSeq_id_Info* info)
 }
 
 
+bool CSeq_id_General_Tree::HaveMatch(const CSeq_id_Handle& id) const
+{
+    return true;
+}
+
+
+void CSeq_id_General_Tree::FindMatch(const CSeq_id_Handle& id,
+                                     TSeq_id_MatchList& id_list) const
+{
+    TReadLockGuard guard(m_TreeLock);
+    id_list.insert(id);
+    CConstRef<CSeq_id> seq_id = id.GetSeqId();
+    const CDbtag& dbtag = seq_id->GetGeneral();
+    const CObject_id& obj_id = dbtag.GetTag();
+    if ( obj_id.IsId() ) {
+        int n = obj_id.GetId();
+        if ( n >= 0 ) {
+            CSeq_id seq_id2;
+            CDbtag& dbtag2 = seq_id2.SetGeneral();
+            dbtag2.SetDb(dbtag.GetDb());
+            dbtag2.SetTag().SetStr(NStr::IntToString(n));
+            CSeq_id_Handle id2 = FindInfo(seq_id2);
+            if ( id2 ) {
+                id_list.insert(id2);
+            }
+        }
+    }
+    else {
+        const string& s = obj_id.GetStr();
+        int n = NStr::StringToNumeric(s);
+        if ( n >= 0 && NStr::IntToString(n) == s ) {
+            CSeq_id seq_id2;
+            CDbtag& dbtag2 = seq_id2.SetGeneral();
+            dbtag2.SetDb(dbtag.GetDb());
+            dbtag2.SetTag().SetId(n);
+            CSeq_id_Handle id2 = FindInfo(seq_id2);
+            if ( id2 ) {
+                id_list.insert(id2);
+            }
+        }
+    }
+}
+
+
 void CSeq_id_General_Tree::FindMatchStr(const string& sid,
                                         TSeq_id_MatchList& id_list) const
 {

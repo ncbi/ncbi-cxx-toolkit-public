@@ -721,6 +721,10 @@ public:
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
 
+    // Get the list of matching seq-id (int id = str id).
+    virtual bool HaveMatch(const CSeq_id_Handle& id) const;
+    virtual void FindMatch(const CSeq_id_Handle& id,
+                           TSeq_id_MatchList& id_list) const;
     virtual void FindMatchStr(const string& sid,
                               TSeq_id_MatchList& id_list) const;
 
