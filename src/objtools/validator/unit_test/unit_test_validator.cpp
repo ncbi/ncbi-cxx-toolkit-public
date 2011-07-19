@@ -4480,6 +4480,10 @@ BOOST_AUTO_TEST_CASE(Test_SeqLitGapLength0)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "SeqLitGapLength0", "Gap of length 0 in delta chain"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "SeqLitGapFuzzNot100", "Gap of unknown length should have length 100"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDeltaSeq", "Last delta seq component is a gap"));
     // some kinds of fuzz don't trigger other kind of error
     delta_seq->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_gt);
     eval = validator.Validate(seh, options);
@@ -4504,6 +4508,7 @@ BOOST_AUTO_TEST_CASE(Test_SeqLitGapLength0)
     expected_errors[0]->SetSeverity(eDiag_Warning);
     expected_errors[0]->SetAccession("AY123456");
     expected_errors[1]->SetAccession("AY123456");
+    expected_errors[2]->SetAccession("AY123456");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -4517,6 +4522,12 @@ BOOST_AUTO_TEST_CASE(Test_SeqLitGapLength0)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "SeqLitGapLength0", "Gap of length 0 in delta chain"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDeltaSeq", "Last delta seq component is a gap"));
+    expected_errors[0]->SetSeverity(eDiag_Warning);
+    expected_errors[0]->SetAccession("AY123456");
+    expected_errors[1]->SetAccession("AY123456");
     delta_seq->SetLiteral().ResetFuzz();
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -16610,6 +16621,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureCrossesGap)
     misc->SetLocation().SetInt().SetTo(30);
 
     STANDARD_SETUP
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "SeqLitGapFuzzNot100",
+                              "Gap of unknown length should have length 100"));
     expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "FeatureCrossesGap",
                                "Feature crosses gap of unknown length"));
 
@@ -16847,6 +16860,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureBeginsOrEndsInGap)
     misc->SetLocation().SetInt().SetTo(20);
 
     STANDARD_SETUP
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "SeqLitGapFuzzNot100",
+                              "Gap of unknown length should have length 100"));
     expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "FeatureBeginsOrEndsInGap",
                                "Feature begins or ends in gap"));
 
