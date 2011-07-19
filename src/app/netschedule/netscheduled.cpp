@@ -92,7 +92,12 @@ class CNetScheduleDApp : public CNcbiApplication
 public:
     CNetScheduleDApp()
         : CNcbiApplication()
-    {}
+    {
+        SetVersion(CVersionInfo(
+            NCBI_PACKAGE_VERSION_MAJOR,
+            NCBI_PACKAGE_VERSION_MINOR,
+            NCBI_PACKAGE_VERSION_PATCH));
+    }
 
     void Init(void);
     int Run(void);
@@ -119,8 +124,8 @@ void CNetScheduleDApp::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "netscheduled");
 
-    arg_desc->AddFlag("reinit",       "Recreate the storage directory.");
-    arg_desc->AddFlag("version-full", "Version");
+    arg_desc->AddFlag("reinit",   "Recreate the storage directory.");
+    arg_desc->AddFlag("-version", "Package, storage, protocol versions and build date");
 
     SetupArgDescriptions(arg_desc.release());
     //CONNECT_Init(&GetConfig());
@@ -132,7 +137,7 @@ int CNetScheduleDApp::Run(void)
 {
     const CArgs& args = GetArgs();
 
-    if (args["version-full"]) {
+    if (args["-version"]) {
         printf(NETSCHEDULED_FULL_VERSION "\n");
         return 0;
     }
