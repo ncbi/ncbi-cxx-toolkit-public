@@ -2303,15 +2303,15 @@ void CTar::x_WriteEntryInfo(const string& name)
                   " entry '" + name + '\'');
     }
 
-    /* NOTE:  Although some sources on the Internet indicate that
-     * all but size, mtime and version numeric fields are '\0'-terminated,
-     * we could not confirm that with existing tar programs, all of
-     * which we saw using either '\0' or ' '-terminated values in both size
-     * and mtime fields.  For ustar archive we have found a document
-     * that definitively tells that _all_ numeric fields are '\0'-terminated,
-     * and can keep maximum sizeof(field)-1 octal digits.  We follow it here.
-     * However, GNU and ustar checksums seem to be different indeed,
-     * so we don't use a trailing space for ustar, but for GNU only.
+    /* NOTE:  Although some sources on the Internet indicate that all but size,
+     * mtime, and version numeric fields are '\0'-terminated, we could not
+     * confirm that with existing tar programs, all of which we saw using
+     * either '\0' or ' '-terminated values in both size and mtime fields.
+     * For the ustar archive we have found a document that definitively tells
+     * that _all_ numeric fields are '\0'-terminated, and that they can keep
+     * up to "sizeof(field)-1" octal digits.  We follow it here.
+     * However, GNU and ustar checksums seem to be different indeed, so we
+     * don't use a trailing space for ustar, but for GNU only.
      */
 
     // Mode
@@ -2416,7 +2416,7 @@ void CTar::x_WriteEntryInfo(const string& name)
         memcpy(h->gname, grp.c_str(), len);
     }
 
-    // Device nos to complete the ustar header protocol (all fields ok)
+    // Device numbers to complete the ustar header protocol (all fields ok)
     if (!device  &&  fmt != eTar_OldGNU) {
         s_NumToOctal(0, h->devmajor, sizeof(h->devmajor) - 1);
         s_NumToOctal(0, h->devminor, sizeof(h->devminor) - 1);
