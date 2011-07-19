@@ -120,6 +120,10 @@ void CAgpValidateReader::OnGapOrComponent()
       "m_GapTypeCnt[] index out of bounds" );
     m_GapTypeCnt[i]++;
 
+    if(m_this_row->gap_length < 10) {
+      agpErr.Msg(CAgpErrEx::W_ShortGap);
+    }
+
     m_prev_component_id.clear();
     if( !m_this_row->GapEndsScaffold() ) {
       m_gapsInLastScaffold++;

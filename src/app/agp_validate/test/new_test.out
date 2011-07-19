@@ -25,31 +25,34 @@
 26:LACBIscaffold_1	5257	6500	5	W	LACBIscaffold_1_Cont2	1202	2445	+
 	WARNING: duplicate component with non-draft type; preceding span: 1..1201 at line 24
 	WARNING: scaffold-breaking gap between component lines with the same component_id
+	WARNING: in unplaced singleton scaffold, component is not used in full
 
-27:
-	ERROR, line skipped: empty line
+28:LACBIscaffold_2	1	1103	1	W	LACBIscaffold_2_Cont1	1	1103	-
+	WARNING: in unplaced singleton scaffold, component orientation is not "+"
 
-1 error, 16 warnings; 7 not printed.
+30:LACBIscaffold_3	1	1103	1	W	LACBIscaffold_3_Cont1	1	1103	-
+	WARNING: in unplaced singleton scaffold, component orientation is not "+"
+
+No errors, 19 warnings; 7 not printed.
   Count Code  Description
-      1  e03  empty line
       1  w27  duplicate component with non-draft type
       7  w31  gap line missing column 9 (null)
       6  w37  object name (column 1) is the same as component_id (column 6)
       1  w38  gap length (column 6) is not 100 for a gap of unknown size (an INSDC standard)
       1  w39  scaffold-breaking gap between component lines with the same component_id
+      1  w40  in unplaced singleton scaffold, component is not used in full
+      2  w41  in unplaced singleton scaffold, component orientation is not "+"
 
-NOTE: 1 invalid lines were skipped (not subjected to all the checks, not included in most of the counts below).
 
+Objects                : 13
+- with single component:  9
 
-Objects                : 10
-- with single component:  6
+Scaffolds              : 14
+- with single component: 10
 
-Scaffolds              : 11
-- with single component:  7
-
-Components             : 17 (W)
-	orientation +  : 17
-	orientation -  :  0
+Components             : 20 (W)
+	orientation +  : 18
+	orientation -  :  2
 	orientation 0  :  0
 	orientation na :  0
 
@@ -68,16 +71,22 @@ Gaps                   :  7 (N:6, U:1)
 	heterochromatin:  0
 	telomere       :  0
 
-Object names               : 10
+Object names               : 13
   ps1010rel4_chr[1..100022]:  9
-  LACBIscaffold_1          :  1
+  LACBIscaffold_[1..3]     :  3
+  scaffold_0               :  1
 
-Component names                        : 16
-  ps1010rel4_chr[100016..100022]_[1..4]:  8
-  ps1010rel4_chr[1..100014]            :  6
-  LACBIscaffold_1_Cont[1,2]            :  2
+Component names                        : 19
+----------------- Nucleotide accessions:  1
+  AAGU02000001.1                       :  1
+----------------- OTHER identifiers    : 18
+  ps1010rel4_chr[100016..100022]_[1..4]:  8 (local or misspelled)
+  ps1010rel4_chr[1..100014]            :  6 (local or misspelled)
+  LACBIscaffold_[1..3]_Cont[1,2]       :  4 (local or misspelled)
+Use -g or -a to print lines with suspicious accessions.
 
 6 names are used both as object and as component_id:
   ps1010rel4_chr1, ps1010rel4_chr100000, ps1010rel4_chr100002, ...
 
-#Comment line count    : 2
+#Comment line count    : 3
+End of line #comments  : 1

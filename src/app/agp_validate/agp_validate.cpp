@@ -125,10 +125,11 @@ public:
     "    and component_end is within the sequence length. Multiple -fa and -len are allowed.\n"
     */
     "\n"
-    "  -list              List error and warning messages.\n"
-    "  -limit COUNT       Print only the first COUNT messages of each type.\n"
-    "                     Default=100. To print all, use: -limit 0\n"
-    "  -skip, -only WHAT  Skip, or report only a particular error or warning.\n"
+    "  -list               List error and warning messages.\n"
+    "  -limit COUNT        Print only the first COUNT messages of each type.\n"
+    "                      Default=100. To print all, use: -limit 0\n"
+    "  -skip, -only WHAT   Skip, or report only a particular error or warning.\n"
+    "  -show WHAT          Show the warning hidden by default (w30, w31, w35, w36, w42).\n"
     "  'WHAT' could be a part of the message text, an error code (e11, w22, etc; see -list),\n"
     "  or a keyword: all, warn, err, alt.\n"
     "\n"
@@ -175,7 +176,12 @@ void CAgpValidateApplication::Init(void)
     CArgDescriptions::fAllowMultiple);
 
   arg_desc->AddOptionalKey( "only", "error_or_warning",
-    "Message or message code to print",
+    "Message or message code to print (hide other)",
+    CArgDescriptions::eString,
+    CArgDescriptions::fAllowMultiple);
+
+  arg_desc->AddOptionalKey( "show", "error_or_warning",
+    "Message or message code to print (if not printed by default)",
     CArgDescriptions::eString,
     CArgDescriptions::fAllowMultiple);
 
@@ -279,6 +285,11 @@ int CAgpValidateApplication::Run(void)
      action="Skipping messages:\n";
   }
   else if(onlyNotSkip) {
+    if( args["show"].HasValue() ) {
+      cerr << "Error -- cannot specify both -only and -show; please use multiple -only instead.\n";
+      exit(1);
+    }
+
     err_warn = &( args["only"].GetStringList() );
     agpErr.SkipMsg("all");
     action="Allowed messages:\n";
@@ -305,6 +316,15 @@ int CAgpValidateApplication::Run(void)
           needHeading=true;
         }
       }
+    }
+  }
+
+  if( args["show"].HasValue() ) {
+    err_warn = &( args["show"].GetStringList() );
+    for( CArgValue::TStringArray::const_iterator it =
+      err_warn->begin();  it != err_warn->end(); ++it
+    ) {
+      agpErr.SkipMsg(*it, true);
     }
   }
 
