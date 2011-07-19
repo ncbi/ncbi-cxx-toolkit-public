@@ -587,12 +587,12 @@ static string s_GetSeqIDString(CBioseq_Handle& handle, bool get_gi_first)
     if(get_gi_first) {        
         try {
             seq_id_handle = sequence::GetId(handle, sequence::eGetId_ForceGi);
-            if(seq_id_handle.IsGi()) get_best_id = false;
+            if(seq_id_handle.IsGi()) {
+                get_best_id = false;
+            }
         }
-        catch(CException& e) {
-            //x_TraceLog("sequence::GetId-ForceGi error"  + (string)e.what());
-            //seq_id_handle = sequence::GetId(handle,sequence::eGetId_Best);                 
-        }
+        // This exception is handled by the calling sequence::GetId() below
+        catch(CException&) {}
     }
 
     if(get_best_id) {

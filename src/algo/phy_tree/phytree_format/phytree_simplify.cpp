@@ -279,7 +279,7 @@ ETreeTraverseCode CPhyTreeLabelTracker::operator() (
     if (delta == 0 || delta == 1) {
 
         // if query node
-        if (m_QueryNodeId >= 0 && (*node).GetId() == m_QueryNodeId) {
+        if ((*node).GetId() == m_QueryNodeId) {
                 m_QueryNode = &node;
                 m_QueryNodeColor = node.GetFeature(m_QueryNodeColorFeatureTag);
         }
