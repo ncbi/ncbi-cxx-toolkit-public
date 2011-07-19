@@ -52,74 +52,83 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
+static void s_ReadLinesFromFile(const string& fn, vector<string>& lines)
+{
+    CNcbiIfstream fs(fn.c_str(), IOS_BASE::in);
+    lines.clear();
+
+    if (CFile(fn).Exists() && ! fs.fail()) {
+        char line[256];
+        while(true) {
+            fs.getline(line, 256);
+            if (fs.eof()) break;
+            if (line[0] == '#') continue;
+            string l(line);
+            lines.push_back(l);
+        }
+    }
+    fs.close();
+};
+
 CIgAnnotationInfo::CIgAnnotationInfo(CConstRef<CIgBlastOptions> &ig_opt)
 {
+    vector<string> lines;
+
     // read domain info from pdm or ndm file
     const string suffix = (ig_opt->m_IsProtein) ? "_gl_V.p.dm." : "_gl_V.n.dm.";
     string fn = ig_opt->m_Origin + suffix + ig_opt->m_DomainSystem;
-    CNcbiIfstream fs(fn.c_str(), IOS_BASE::in);
-
-    if (!(! CFile(fn).Exists()) || fs.fail()) {
-        char line[256];
-        fs.getline(line, 256);
-        int index = 0;
-        while(!fs.eof()) {
-            string l(line);
-            vector<string> tokens;
-            NStr::Tokenize(l, " \t\n\r", tokens, NStr::eMergeDelims);
-
-            if (!tokens.empty() && tokens[0][0] != '#') {
-                m_DomainIndex[tokens[0]] = index;
-                for (int i=1; i<11; ++i) {
-                    m_DomainData.push_back(NStr::StringToInt(tokens[i]));
-                }
-                index += 10;
-            } 
-            fs.getline(line, 256);
-        }
+    s_ReadLinesFromFile(fn, lines);
+    int index = 0;
+    ITERATE(vector<string>, l, lines) {
+        vector<string> tokens;
+        NStr::Tokenize(*l, " \t\n\r", tokens, NStr::eMergeDelims);
+        if (!tokens.empty()) {
+            m_DomainIndex[tokens[0]] = index;
+            for (int i=1; i<11; ++i) {
+                m_DomainData.push_back(NStr::StringToInt(tokens[i]));
+            }
+            index += 10;
+        } 
     }
-    fs.close();
 
     // read chain type info from ct files
     fn = ig_opt->m_Origin + "_gl.ct";
-    fs.open(fn.c_str(), IOS_BASE::in);
-
-    if (!(! CFile(fn).Exists()) || fs.fail()) {
-        char line[256];
-        fs.getline(line, 256);
-        while(!fs.eof()) {
-            string l(line);
-            vector<string> tokens;
-            NStr::Tokenize(l, " \t\n\r", tokens, NStr::eMergeDelims);
-
-            if (!tokens.empty() && tokens[0][0] != '#') {
-                m_ChainType[tokens[0]] = tokens[1];
-            }
-            fs.getline(line, 256);
+    s_ReadLinesFromFile(fn, lines);
+    ITERATE(vector<string>, l, lines) {
+        vector<string> tokens;
+        NStr::Tokenize(*l, " \t\n\r", tokens, NStr::eMergeDelims);
+        if (!tokens.empty()) {
+            m_ChainType[tokens[0]] = tokens[1];
         }
     }
-    fs.close();
 
-    // read frame info from nfm file
     if (ig_opt->m_IsProtein) return; 
-    fn = ig_opt->m_Origin + "_gl_J.nfm";
-    fs.open(fn.c_str(), IOS_BASE::in);
 
-    if (!(! CFile(fn).Exists()) || fs.fail()) {
-        char line[256];
-        fs.getline(line, 256);
-        while(!fs.eof()) {
-            string l(line);
-            vector<string> tokens;
-            NStr::Tokenize(l, " \t\n\r", tokens, NStr::eMergeDelims);
-
-            if (!tokens.empty() && tokens[0][0] != '#') {
-                m_FrameOffset[tokens[0]] = NStr::StringToInt(tokens[1]);
-            }
-            fs.getline(line, 256);
+    // read frame info for V
+    fn = (ig_opt->m_Db[0]->IsBlastDb()) ? 
+         ig_opt->m_Db[0]->GetDatabaseName() + ".nfm" :
+         ig_opt->m_Origin + "_gl_V.nfm";
+    s_ReadLinesFromFile(fn, lines);
+    ITERATE(vector<string>, l, lines) {
+        vector<string> tokens;
+        NStr::Tokenize(*l, " \t\n\r", tokens, NStr::eMergeDelims);
+        if (!tokens.empty()) {
+            m_FrameOffset[tokens[0]] = NStr::StringToInt(tokens[1]);
         }
     }
-    fs.close();
+
+    // read frame info for J
+    fn = (ig_opt->m_Db[2]->IsBlastDb()) ? 
+         ig_opt->m_Db[2]->GetDatabaseName() + ".nfm" :
+         ig_opt->m_Origin + "_gl_J.nfm";
+    s_ReadLinesFromFile(fn, lines);
+    ITERATE(vector<string>, l, lines) {
+        vector<string> tokens;
+        NStr::Tokenize(*l, " \t\n\r", tokens, NStr::eMergeDelims);
+        if (!tokens.empty()) {
+            m_FrameOffset[tokens[0]] = NStr::StringToInt(tokens[1]);
+        }
+    }
 };
 
 CRef<CSearchResultSet>
@@ -558,7 +567,14 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
                 q_dir = 1;
             }
 
-            annot->m_FrameInfo[0] = q_ends[1] - q_dir * (master_align->GetSeqStop(1) % 3);
+            string sid = master_align->GetSeq_id(1).AsFastaString();
+            if (sid.substr(0, 4) == "lcl|") sid = sid.substr(4, sid.length());
+            int frame_offset = m_AnnotationInfo.GetFrameOffset(sid);
+            if (frame_offset >= 0) {
+                annot->m_FrameInfo[2] = frame_offset;
+                int frame_adj = (master_align->GetSeqStop(1) + 3 - frame_offset) % 3;
+                annot->m_FrameInfo[0] = q_ends[1] - q_dir * frame_adj;
+            }
 
             const CSeq_align_set::Tdata & align_list = (*result)->GetSeqAlign()->Get();
 
@@ -665,8 +681,11 @@ void CIgBlast::x_SetChainType(CRef<CSearchResultSet>  &results,
     }
 };
 
-void CIgBlast::s_SortResultsByEvalue(CRef<CSearchResultSet> &results)
+void CIgBlast::s_SortResultsByEvalue(CRef<CSearchResultSet>& results)
 {
+    if (results->GetResultType() == eSequenceComparison) {
+        //TODO convert bl2seq align_set to db align_set
+    }
     ITERATE(CSearchResultSet, result, *results) {
         if ((*result)->HasAlignments()) {
             CRef<CSeq_align_set> align(const_cast<CSeq_align_set *>

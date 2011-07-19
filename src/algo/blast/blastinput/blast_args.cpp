@@ -1224,18 +1224,20 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     for (int gene=0; gene<num_genes; ++gene) {
         // Subject sequence input
+        /* TODO disabled for now
         string arg_sub = kArgGLSubject;
         arg_sub.push_back(suffix[gene]);
         arg_desc.AddOptionalKey(arg_sub , "filename",
                             "Germline subject sequence to align",
                             CArgDescriptions::eInputFile);
+        */
         // Germline database file name
         string arg_db = kArgGLDatabase;
         arg_db.push_back(suffix[gene]);
         arg_desc.AddOptionalKey(arg_db, "germline_database_name",
                             "Germline database name",
                             CArgDescriptions::eString);
-        arg_desc.SetDependency(arg_db, CArgDescriptions::eExcludes, arg_sub);
+        //arg_desc.SetDependency(arg_db, CArgDescriptions::eExcludes, arg_sub);
         // Number of alignments to show
         string arg_na = kArgGLNumAlign;
         arg_na.push_back(suffix[gene]);
@@ -1257,6 +1259,7 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             CArgDescriptions::eString, "kabat");
     arg_desc.SetConstraint(kArgGLDomainSystem, &(*new CArgAllow_Strings, "kabat", "imgt"));
 
+//TODO: these seqidlist must inheritate through...
     arg_desc.AddOptionalKey(kArgGLFuncClass, "func_class",
                             "Restrict search of germline database to certain function class",
                             CArgDescriptions::eString);

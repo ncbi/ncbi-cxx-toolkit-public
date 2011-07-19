@@ -984,15 +984,13 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
     SetSeqType(!is_protein);
     SetMinusStrand(annot->m_MinusStrand);
 
-    // TODO top VDJ match sid?
-
     // Gene info coordinates are half inclusive
     SetVGene(annot->m_TopGeneIds[0], annot->m_GeneInfo[0], annot->m_GeneInfo[1]);
     SetDGene(annot->m_TopGeneIds[1], annot->m_GeneInfo[2], annot->m_GeneInfo[3]);
     SetJGene(annot->m_TopGeneIds[2], annot->m_GeneInfo[4], annot->m_GeneInfo[5]);
 
     // Compute Frame info
-    if (annot->m_FrameInfo[1] >= 0) {
+    if (annot->m_FrameInfo[0] >= 0 && annot->m_FrameInfo[1] >= 0) {
         int off = annot->m_FrameInfo[0];
         int len = annot->m_FrameInfo[1] - off;
         if ( len % 3 == 0) {
@@ -1043,10 +1041,11 @@ void CIgBlastTabularInfo::PrintMasterAlign(const string &header) const
         if (m_ChainType == "VH") m_Ostream << m_DGene.sid << m_FieldDelimiter;
         m_Ostream << m_JGene.sid << m_FieldDelimiter;
         m_Ostream << m_ChainType << m_FieldDelimiter;
-        if (m_FrameInfo == "IF") m_Ostream << "In-frame" << m_FieldDelimiter;
-        else if (m_FrameInfo == "OF") m_Ostream << "Out-of-frame" << m_FieldDelimiter;
-        else if (m_FrameInfo == "IP") m_Ostream << "In-frame with stop codon" << m_FieldDelimiter;
-        m_Ostream << ((m_IsMinusStrand) ? '-' : '+' ) << endl << endl;
+        if (m_FrameInfo == "IF") m_Ostream << "In-frame";
+        else if (m_FrameInfo == "OF") m_Ostream << "Out-of-frame";
+        else if (m_FrameInfo == "IP") m_Ostream << "In-frame with stop codon";
+        else m_Ostream << "N/A";
+        m_Ostream << m_FieldDelimiter << ((m_IsMinusStrand) ? '-' : '+' ) << endl << endl;
         x_PrintIgGenes(false, header);
     }
 
