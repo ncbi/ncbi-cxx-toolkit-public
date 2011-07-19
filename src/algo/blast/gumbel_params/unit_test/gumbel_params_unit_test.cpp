@@ -138,9 +138,9 @@ BOOST_AUTO_TEST_CASE(TestGumbelParamsOptionsFactory)
         opts = CGumbelParamsOptionsFactory::CreateStandard20AAOptions();
     // make sure that the unit test does not fail because time limit is exceeded
     opts->SetMaxCalcTime(2.0);
-    BOOST_REQUIRE_NO_THROW(opts->Validate());
+    BOOST_REQUIRE(opts->Validate());
     CRef<CGumbelParamsCalc> gp_calc(new CGumbelParamsCalc(opts));
-    BOOST_REQUIRE_NO_THROW(!gp_calc->Run().Empty());
+    BOOST_REQUIRE(!gp_calc->Run().Empty());
 
     opts = CGumbelParamsOptionsFactory::CreateBasicOptions();
     CRef<CGeneralScoreMatrix> smat = s_ReadScoreMatrix("data/blosum62.txt");
@@ -151,9 +151,9 @@ BOOST_AUTO_TEST_CASE(TestGumbelParamsOptionsFactory)
     opts->SetSeq2ResidueProbs(probs);
     // make sure that the unit test does not fail because time limit is exceeded
     opts->SetMaxCalcTime(2.0);
-    BOOST_REQUIRE_NO_THROW(opts->Validate());
+    BOOST_REQUIRE(opts->Validate());
     gp_calc.Reset(new CGumbelParamsCalc(opts));
-    BOOST_REQUIRE_NO_THROW(!gp_calc->Run().Empty());
+    BOOST_REQUIRE(!gp_calc->Run().Empty());
 }
 
 // Checks whether CGumbelParamsOptions::Validate() throws or reports warning
@@ -250,7 +250,7 @@ BOOST_AUTO_TEST_CASE(TestValidateGumbelParamsOptions)
     // message
     orig_param_d = opts->GetLambdaAccuracy();
     opts->SetLambdaAccuracy(0.0001);
-    BOOST_CHECK_NO_THROW(!opts->Validate());
+    BOOST_CHECK(!opts->Validate());
     BOOST_CHECK(opts->IsMessage());
     BOOST_CHECK(opts->GetMessages().size() > 0);
     opts->SetLambdaAccuracy(orig_param_d);
@@ -258,7 +258,7 @@ BOOST_AUTO_TEST_CASE(TestValidateGumbelParamsOptions)
     // K accuracy out of the range 0.001 - 0.01 generates a warning message
     orig_param_d = opts->GetKAccuracy();
     opts->SetLambdaAccuracy(0.0001);
-    BOOST_CHECK_NO_THROW(!opts->Validate());
+    BOOST_CHECK(!opts->Validate());
     BOOST_CHECK(opts->IsMessage());
     BOOST_CHECK(opts->GetMessages().size() > 0);
     opts->SetKAccuracy(orig_param_d);
@@ -266,7 +266,7 @@ BOOST_AUTO_TEST_CASE(TestValidateGumbelParamsOptions)
     // Max calculation time < 1.0 generates a warning message
     orig_param_d = opts->GetMaxCalcTime();
     opts->SetMaxCalcTime(0.1);
-    BOOST_CHECK_NO_THROW(!opts->Validate());
+    BOOST_CHECK(!opts->Validate());
     BOOST_CHECK(opts->IsMessage());
     BOOST_CHECK(opts->GetMessages().size() > 0);
     opts->SetMaxCalcTime(orig_param_d);
@@ -274,7 +274,7 @@ BOOST_AUTO_TEST_CASE(TestValidateGumbelParamsOptions)
     // Max allowed memory < 1.0 generates a warning message
     orig_param_d = opts->GetMaxCalcMemory();
     opts->SetMaxCalcMemory(0.1);
-    BOOST_CHECK_NO_THROW(!opts->Validate());
+    BOOST_CHECK(!opts->Validate());
     BOOST_CHECK(opts->IsMessage());
     BOOST_CHECK(opts->GetMessages().size() > 0);
     opts->SetMaxCalcMemory(orig_param_d);
@@ -300,7 +300,7 @@ BOOST_AUTO_TEST_CASE(TestValidateScorePValuesOptions)
     CRef<CScorePValuesOptions> opts(new CScorePValuesOptions(100, 200,
                                                              200, 300,
                                                              gp_result));
-    BOOST_REQUIRE_NO_THROW(opts->Validate());
+    BOOST_REQUIRE(opts->Validate());
 
     // Options object cannot be created with empty gumbel params result
     BOOST_REQUIRE_THROW(opts.Reset(new CScorePValuesOptions(100, 200, 200, 300,
