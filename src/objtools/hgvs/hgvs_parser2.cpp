@@ -921,71 +921,80 @@ CHgvsParser::TDelta CHgvsParser::x_seq_ref(TIterator const& i, const CContext& c
     return delta;
 }
 
-string CHgvsParser::s_hgvsaa2ncbieaa(const string& hgvsaa)
+
+bool CHgvsParser::s_hgvsaa2ncbieaa(const string& hgvsaa, string& out)
 {
-    string ncbieaa = hgvsaa;
-    NStr::ReplaceInPlace(ncbieaa, "Gly", "G");
-    NStr::ReplaceInPlace(ncbieaa, "Pro", "P");
-    NStr::ReplaceInPlace(ncbieaa, "Ala", "A");
-    NStr::ReplaceInPlace(ncbieaa, "Val", "V");
-    NStr::ReplaceInPlace(ncbieaa, "Leu", "L");
-    NStr::ReplaceInPlace(ncbieaa, "Ile", "I");
-    NStr::ReplaceInPlace(ncbieaa, "Met", "M");
-    NStr::ReplaceInPlace(ncbieaa, "Cys", "C");
-    NStr::ReplaceInPlace(ncbieaa, "Phe", "F");
-    NStr::ReplaceInPlace(ncbieaa, "Tyr", "Y");
-    NStr::ReplaceInPlace(ncbieaa, "Trp", "W");
-    NStr::ReplaceInPlace(ncbieaa, "His", "H");
-    NStr::ReplaceInPlace(ncbieaa, "Lys", "K");
-    NStr::ReplaceInPlace(ncbieaa, "Arg", "R");
-    NStr::ReplaceInPlace(ncbieaa, "Gln", "Q");
-    NStr::ReplaceInPlace(ncbieaa, "Asn", "N");
-    NStr::ReplaceInPlace(ncbieaa, "Glu", "E");
-    NStr::ReplaceInPlace(ncbieaa, "Asp", "D");
-    NStr::ReplaceInPlace(ncbieaa, "Ser", "S");
-    NStr::ReplaceInPlace(ncbieaa, "Thr", "T");
-    NStr::ReplaceInPlace(ncbieaa, "X", "*");
-    NStr::ReplaceInPlace(ncbieaa, "?", "-");
-    return ncbieaa;
+    //try to interpret sequence that was matched by either of aminoacid1, aminoacid, or aminoacid3
+    string tmp_out(""); //so that the caller may pass same variable for in and out
+    bool ret = s_hgvsaa2ncbieaa(hgvsaa, true, tmp_out);
+    if(!ret) {
+        ret = s_hgvsaa2ncbieaa(hgvsaa, false, tmp_out);
+    }
+    if(!ret) {
+        ret = s_hgvs_iupacaa2ncbieaa(hgvsaa, tmp_out);
+    }
+
+    out = tmp_out;
+    return ret;
 }
 
-
-string CHgvsParser::s_hgvsUCaa2hgvsUL(const string& hgvsaa)
+bool CHgvsParser::s_hgvs_iupacaa2ncbieaa(const string& hgvsaa, string& out)
 {
-    string s = hgvsaa;
-    NStr::ReplaceInPlace(s, "GLY", "Gly");
-    NStr::ReplaceInPlace(s, "PRO", "Pro");
-    NStr::ReplaceInPlace(s, "ALA", "Ala");
-    NStr::ReplaceInPlace(s, "VAL", "Val");
-    NStr::ReplaceInPlace(s, "LEU", "Leu");
-    NStr::ReplaceInPlace(s, "ILE", "Ile");
-    NStr::ReplaceInPlace(s, "MET", "Met");
-    NStr::ReplaceInPlace(s, "CYS", "Cys");
-    NStr::ReplaceInPlace(s, "PHE", "Phe");
-    NStr::ReplaceInPlace(s, "TYR", "Tyr");
-    NStr::ReplaceInPlace(s, "TRP", "Trp");
-    NStr::ReplaceInPlace(s, "HIS", "His");
-    NStr::ReplaceInPlace(s, "LYS", "Lys");
-    NStr::ReplaceInPlace(s, "ARG", "Arg");
-    NStr::ReplaceInPlace(s, "GLN", "Gln");
-    NStr::ReplaceInPlace(s, "ASN", "Asn");
-    NStr::ReplaceInPlace(s, "GLU", "Glu");
-    NStr::ReplaceInPlace(s, "ASP", "Asp");
-    NStr::ReplaceInPlace(s, "SER", "Ser");
-    NStr::ReplaceInPlace(s, "THR", "Thr");
-    return s;
+    out = hgvsaa;
+    NStr::ReplaceInPlace(out, "X", "*");
+    NStr::ReplaceInPlace(out, "?", "-");
+    return true;
 }
+
+bool CHgvsParser::s_hgvsaa2ncbieaa(const string& hgvsaa, bool uplow, string& out)
+{
+    string in = hgvsaa;
+    out = "";
+    while(in != "") {
+        if(       NStr::StartsWith(in, uplow ? "Gly" : "GLY")) { out.push_back('G'); in = in.substr(3);
+        } else if(NStr::StartsWith(in, uplow ? "Pro" : "PRO")) { out.push_back('P'); in = in.substr(3);
+        } else if(NStr::StartsWith(in, uplow ? "Ala" : "ALA")) { out.push_back('A'); in = in.substr(3);
+        } else if(NStr::StartsWith(in, uplow ? "Val" : "VAL")) { out.push_back('V'); in = in.substr(3);
+        } else if(NStr::StartsWith(in, uplow ? "Leu" : "LEU")) { out.push_back('L'); in = in.substr(3);
+        } else if(NStr::StartsWith(in, uplow ? "Ile" : "ILE")) { out.push_back('I'); in = in.substr(3);
+        } else if(NStr::StartsWith(in, uplow ? "Met" : "MET")) { out.push_back('M'); in = in.substr(3);
+        } else if(NStr::StartsWith(in, uplow ? "Cys" : "CYS")) { out.push_back('C'); in = in.substr(3);
+        } else if(NStr::StartsWith(in, uplow ? "Phe" : "PHE")) { out.push_back('F'); in = in.substr(3);
+        } else if(NStr::StartsWith(in, uplow ? "Tyr" : "TYR")) { out.push_back('Y'); in = in.substr(3);
+        } else if(NStr::StartsWith(in, uplow ? "Trp" : "TRP")) { out.push_back('W'); in = in.substr(3);
+        } else if(NStr::StartsWith(in, uplow ? "His" : "HIS")) { out.push_back('H'); in = in.substr(3);
+        } else if(NStr::StartsWith(in, uplow ? "Lys" : "LYS")) { out.push_back('K'); in = in.substr(3);
+        } else if(NStr::StartsWith(in, uplow ? "Arg" : "ARG")) { out.push_back('R'); in = in.substr(3);
+        } else if(NStr::StartsWith(in, uplow ? "Gln" : "GLN")) { out.push_back('Q'); in = in.substr(3);
+        } else if(NStr::StartsWith(in, uplow ? "Asn" : "ASN")) { out.push_back('N'); in = in.substr(3);
+        } else if(NStr::StartsWith(in, uplow ? "Glu" : "GLU")) { out.push_back('E'); in = in.substr(3);
+        } else if(NStr::StartsWith(in, uplow ? "Asp" : "ASP")) { out.push_back('D'); in = in.substr(3);
+        } else if(NStr::StartsWith(in, uplow ? "Ser" : "SER")) { out.push_back('S'); in = in.substr(3);
+        } else if(NStr::StartsWith(in, uplow ? "Thr" : "THR")) { out.push_back('T'); in = in.substr(3);
+        } else if(NStr::StartsWith(in, uplow ? "Ter" : "TER")) { out.push_back('*'); in = in.substr(3);
+        } else if(NStr::StartsWith(in, "*")) { out.push_back('*'); in = in.substr(1);
+        } else if(NStr::StartsWith(in, "X")) { out.push_back('*'); in = in.substr(1);
+        } else if(NStr::StartsWith(in, "?")) { out.push_back('-'); in = in.substr(1);
+        } else {
+            out = hgvsaa;
+            return false;
+        }
+    }
+    return true;
+}
+
 
 
 CRef<CSeq_literal> CHgvsParser::x_raw_seq(TIterator const& i, const CContext& context)
 {
     HGVS_ASSERT_RULE(i, eID_raw_seq);
     TIterator it = i->children.begin();
+
     string seq_str(it->value.begin(), it->value.end());
 
     CRef<CSeq_literal>literal(new CSeq_literal);
     if(context.GetPlacement().GetMol() == CVariantPlacement::eMol_protein) {
-        seq_str = s_hgvsaa2ncbieaa(seq_str);
+        s_hgvsaa2ncbieaa(seq_str, seq_str);
         literal->SetSeq_data().SetNcbieaa().Set(seq_str);
     } else {
         if(context.GetPlacement().GetMol() == CVariantPlacement::eMol_rna) {
@@ -1375,11 +1384,11 @@ CRef<CVariation> CHgvsParser::x_prot_missense(TIterator const& i, const CContext
     HGVS_ASSERT_RULE(i, eID_prot_missense);
     TIterator it = i->children.begin();
 
-    HGVS_ASSERT_RULE(it, eID_aminoacid);
+//    HGVS_ASSERT_RULE(it, eID_aminoacid);
     TIterator it2 = it->children.begin();
 
     string seq_str(it2->value.begin(), it2->value.end());
-    seq_str = s_hgvsaa2ncbieaa(seq_str);
+    s_hgvsaa2ncbieaa(seq_str, seq_str);
 
     if(context.GetPlacement().GetMol() != CVariantPlacement::eMol_protein) {
         HGVS_THROW(eContext, "Expected protein context");
@@ -1695,32 +1704,18 @@ CRef<CVariation> CHgvsParser::AsVariation(const string& hgvs, TOpFlags flags)
     tree_parse_info<> info = pt_parse(hgvs2.c_str(), s_grammar, +space_p);
     CRef<CVariation> vr;
 
-    try {
-        if(!info.full) {
+    if(!info.full) {
 #if 0
-            CNcbiOstrstream ostr;
-            tree_to_xml(ostr, info.trees, hgvs2.c_str() , CHgvsParser::SGrammar::s_GetRuleNames());
-            string tree_str = CNcbiOstrstreamToString(ostr);
+        CNcbiOstrstream ostr;
+        tree_to_xml(ostr, info.trees, hgvs2.c_str() , CHgvsParser::SGrammar::s_GetRuleNames());
+        string tree_str = CNcbiOstrstreamToString(ostr);
 #endif
-            HGVS_THROW(eGrammatic, "Syntax error at pos " + NStr::IntToString(info.length + 1) + " in " + hgvs2 + "");
-        } else {
-            CContext context(m_scope, m_seq_id_resolvers);
-            vr = x_root(info.trees.begin(), context);
+        HGVS_THROW(eGrammatic, "Syntax error at pos " + NStr::SizetToString(info.length + 1) + " in " + hgvs2 + "");
+    } else {
+        CContext context(m_scope, m_seq_id_resolvers);
+        vr = x_root(info.trees.begin(), context);
 
-            vr->SetName(hgvs2);
-        }
-    } catch (CException& e) {
-
-        if(flags && fOpFlags_RelaxedAA && NStr::Find(hgvs2, "p.")) {
-            //expression was protein, try non-hgvs-compliant representation of prots
-            hgvs2 = s_hgvsUCaa2hgvsUL(hgvs2);
-            //LOG_POST("Trying relaxed parsing on " << hgvs2);
-
-            TOpFlags flags2 = flags & ~fOpFlags_RelaxedAA; //unset the bit so we don't infinite-recurse
-            vr = AsVariation(hgvs2, flags2);
-        } else {
-            NCBI_RETHROW_SAME(e, "");
-        }
+        vr->SetName(hgvs2);
     }
 
     return vr;

@@ -96,8 +96,7 @@ public:
 
     enum EOpFlags
     {
-        fOpFlags_RelaxedAA = 1 << 0, ///< try assumbing all-uppercase three-letter AA representation
-        fOpFlags_Default = fOpFlags_RelaxedAA
+        fOpFlags_Default = 0
     };
     typedef int TOpFlags;
 
@@ -357,7 +356,9 @@ protected:
             eID_mut_inst,
             eID_raw_seq,
             eID_raw_seq_or_len,
-            eID_aminoacid,
+            eID_aminoacid1,
+            eID_aminoacid2,
+            eID_aminoacid3,
             eID_nuc_subst,
             eID_deletion,
             eID_insertion,
@@ -408,7 +409,9 @@ protected:
                 s_rule_names[eID_pos_spec]          = "pos_spec";
                 s_rule_names[eID_raw_seq]           = "raw_seq";
                 s_rule_names[eID_raw_seq_or_len]    = "raw_seq_or_len";
-                s_rule_names[eID_aminoacid]         = "aminoacid";
+                s_rule_names[eID_aminoacid1]        = "aminoacid1";
+                s_rule_names[eID_aminoacid2]        = "aminoacid2";
+                s_rule_names[eID_aminoacid3]        = "aminoacid3";
                 s_rule_names[eID_nuc_subst]         = "nuc_subst";
                 s_rule_names[eID_deletion]          = "deletion";
                 s_rule_names[eID_insertion]         = "insertion";
@@ -459,7 +462,9 @@ protected:
             rule<ScannerT, parser_context<>, parser_tag<eID_prot_range> >       prot_range;
             rule<ScannerT, parser_context<>, parser_tag<eID_raw_seq> >          raw_seq;
             rule<ScannerT, parser_context<>, parser_tag<eID_raw_seq_or_len> >   raw_seq_or_len;
-            rule<ScannerT, parser_context<>, parser_tag<eID_aminoacid> >        aminoacid;
+            rule<ScannerT, parser_context<>, parser_tag<eID_aminoacid1> >       aminoacid1;
+            rule<ScannerT, parser_context<>, parser_tag<eID_aminoacid2> >       aminoacid2;
+            rule<ScannerT, parser_context<>, parser_tag<eID_aminoacid3> >       aminoacid3;
             rule<ScannerT, parser_context<>, parser_tag<eID_nuc_subst> >        nuc_subst;
             rule<ScannerT, parser_context<>, parser_tag<eID_deletion> >         deletion;
             rule<ScannerT, parser_context<>, parser_tag<eID_insertion> >        insertion;
@@ -486,7 +491,7 @@ protected:
                 //      leaf_node_d[...] is a directive to treat pattern in ... as leaf parse-tree node.
 
 
-                aminoacid       = str_p("Ala")
+                aminoacid1      = str_p("Ala")
                                 | str_p("Asx")
                                 | str_p("Cys")
                                 | str_p("Asp")
@@ -508,12 +513,41 @@ protected:
                                 | str_p("Trp")
                                 | str_p("Tyr")
                                 | str_p("Glx")
-                                | chset<>("XARNDCEQGHILKMFPSTWYV")
-                                ;
+                                | str_p("Ter")
+                                | chset<>("*X");
+
+                aminoacid2      = str_p("ALA")
+                                | str_p("ASX")
+                                | str_p("CYS")
+                                | str_p("ASP")
+                                | str_p("GLU")
+                                | str_p("PHE")
+                                | str_p("GLY")
+                                | str_p("HIS")
+                                | str_p("ILE")
+                                | str_p("LYS")
+                                | str_p("LEU")
+                                | str_p("MET")
+                                | str_p("ASN")
+                                | str_p("PRO")
+                                | str_p("GLN")
+                                | str_p("ARG")
+                                | str_p("SER")
+                                | str_p("THR")
+                                | str_p("VAL")
+                                | str_p("TRP")
+                                | str_p("TYR")
+                                | str_p("GLX")
+                                | str_p("TER")
+                                | chset<>("*"); //no 'X' because it is part of other tokens, e.g GLX, ASX
+
+                aminoacid3      = chset<>("*XARNDCEQGHILKMFPSTWYV");
                     //Note: in HGVS X=stop as in p.X110GlnextX17, whereas in IUPAC X=any
 
                 raw_seq         = leaf_node_d[
-                                              +aminoacid
+                                               +aminoacid1
+                                             | +aminoacid2
+                                             | +aminoacid3
                                              | +chset<>("TGKCYSBAWRDMHVN")   //dna IUPAC with ambiguity codes
                                              | +chset<>("ugkcysbawrdmhvn")]; //rna IUPAC with ambiguity codes
                     /*
@@ -637,7 +671,7 @@ protected:
 
                 prot_ext        = (str_p("extMet") | str_p("extX")) >> int_p;
 
-                prot_missense   = aminoacid;
+                prot_missense   = aminoacid1 | aminoacid2 | aminoacid3;
 
                 //ISCN expression followed by a seq-loc. The ISCN is factored to a single leaf node
                 translocation = leaf_node_d[ch_p('t') >>
@@ -779,8 +813,11 @@ private:
     static CRef<CVariation>  x_unwrap_iff_singleton(CVariation& v);
 
 
-    ///Convert HGVS amino-acid code to ncbieaa
-    static string s_hgvsaa2ncbieaa(const string& hgvsaa);
+    ///Convert HGVS amino-acid code to ncbieaa.
+    ///Return true iff success; otherwise false and out = in.
+    static bool s_hgvsaa2ncbieaa(const string& hgvsaa, string& out);
+    static bool s_hgvs_iupacaa2ncbieaa(const string& hgvsaa, string& out);
+    static bool s_hgvsaa2ncbieaa(const string& hgvsaa, bool uplow, string& out);
 
     ///Convert non-HGVS compliant all-uppercase AAs to UpLow, e.g. ILECYS ->IleCys
     static string s_hgvsUCaa2hgvsUL(const string& hgvsaa);
