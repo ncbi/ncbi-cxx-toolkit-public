@@ -38,6 +38,7 @@
 
 #include <objmgr/scope.hpp>
 #include <objmgr/feat_ci.hpp>  // for CMappedFeat
+#include <objmgr/util/seq_loc_util.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/GIBB_mol.hpp>
 #include <util/strsearch.hpp>
@@ -1046,7 +1047,7 @@ class CmRNAAndCDSIndex
 public:
     CmRNAAndCDSIndex();
     ~CmRNAAndCDSIndex();
-    void SetBioseq(CFeat_CI * feat_list);
+    void SetBioseq(CFeat_CI * feat_list, CBioseq_Handle bioseq, CScope * scope);
     CMatchmRNA * FindMatchmRNA (const CMappedFeat& mrna);
     bool MatchmRNAToCDSEnd (const CMappedFeat& mrna, unsigned int partial_type);
 
@@ -1178,6 +1179,8 @@ private:
     bool x_IsDeltaLitOnly(const CSeq_inst& inst) const;
 
     void ValidatemRNAGene (const CBioseq& seq);
+
+    int x_TestForOverlap(const CSeq_loc& loc1, const CSeq_loc& loc2, sequence::EOverlapType type);
     
     size_t x_CountAdjacentNs(const CSeq_literal& lit);
 
@@ -1200,7 +1203,7 @@ private:
     public:
         CmRNACDSIndex();
         ~CmRNACDSIndex();
-        void SetBioseq(CFeat_CI * feat_list, const CTSE_Handle& tse);
+        void SetBioseq(CFeat_CI * feat_list, const CTSE_Handle& tse, CBioseq_Handle bioseq, CScope * scope);
 
         CMappedFeat GetmRNAForCDS(CMappedFeat cds);
         CMappedFeat GetCDSFormRNA(CMappedFeat cds);

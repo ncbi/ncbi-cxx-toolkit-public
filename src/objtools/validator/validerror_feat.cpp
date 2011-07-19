@@ -2118,7 +2118,27 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
                 mrna_stop = mrna->GetLocation().GetStop(eExtreme_Biological);
                 set_mrna_stop = true;
             }
-        }           
+        }    
+
+        bool ignore_mrna_partial5 = false;
+        bool ignore_mrna_partial3 = false;
+        if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
+            CConstRef<CSeq_feat> cds = GetBestOverlappingFeat(
+                loc,
+                CSeqFeatData::eSubtype_cdregion,
+                eOverlap_Contains,
+                *m_Scope);
+            if (cds) {
+                if (!cds->GetLocation().IsPartialStart(eExtreme_Biological) 
+                    && cds->GetLocation().GetStart(eExtreme_Biological) == feat.GetLocation().GetStart(eExtreme_Biological)) {
+                    ignore_mrna_partial5 = true;
+                }
+                if (!cds->GetLocation().IsPartialStop(eExtreme_Biological) 
+                    && cds->GetLocation().GetStop(eExtreme_Biological) == feat.GetLocation().GetStop(eExtreme_Biological)) {
+                    ignore_mrna_partial3 = true;
+                }
+            }
+        }
 
         bool rare_consensus_not_expected = s_RareConsensusNotExpected (bsh);
         int part_num = 0;
@@ -2171,13 +2191,13 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
                     bool first_partial = first && part.IsPartialStart(eExtreme_Biological);
 
                     // check donor
-                    if (!last || (checkExonDonor && !last_partial) || (last && last_partial)) {
+                    if (!last || (checkExonDonor && !last_partial) || (last && last_partial && !ignore_mrna_partial3)) {
                         ValidateDonor (strand, stop, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
                                        label, report_errors, relax_to_warning, has_errors, feat);
                     }
                                             
                     // check acceptor
-                    if (!first || (checkExonAcceptor && !first_partial) || (first && first_partial)) {
+                    if (!first || (checkExonAcceptor && !first_partial) || (first && first_partial && !ignore_mrna_partial5)) {
                         ValidateAcceptor (strand, start, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
                                        label, report_errors, relax_to_warning, has_errors, feat);
                     }
@@ -6379,7 +6399,7 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
 
     while (gene_it) {
         if (TestForOverlap (gene_it->GetLocation(), feat.GetLocation(), 
-          gene_it->GetLocation().IsInt() ? eOverlap_Contained : eOverlap_Subset, circular_len) >= 0) {
+          gene_it->GetLocation().IsInt() ? eOverlap_Contained : eOverlap_Subset, circular_len, m_Scope) >= 0) {
             size_t len = GetLength(gene_it->GetLocation(), m_Scope);
             if (len < max || num_genes == 0) {
                 num_genes = 1;
