@@ -2892,7 +2892,7 @@ static EIO_Status s_Read(SOCK    sock,
 }
 
 
-/* s_Select() with stall protection: try pull incoming data from sockets.
+/* s_Select() with stall protection:  try pull incoming data from sockets.
  * This method returns array of polls, "revent"s of which are always
  * compatible with requested "event"s.  That is, it always strips additional
  * events that s_Select() may have set to indicate additional I/O events

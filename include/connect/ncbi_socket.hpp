@@ -161,6 +161,7 @@ public:
     /// @param direction
     ///  is one of
     ///     - eIO_Open  - return eIO_Success if CSocket is okay and open,
+    ///                   eIO_Timeout if CSocket is still pending connect,
     ///                   eIO_Closed if closed by Close() or not yet open;
     ///     - eIO_Read  - status of last read operation;
     ///     - eIO_Write - status of last write operation.

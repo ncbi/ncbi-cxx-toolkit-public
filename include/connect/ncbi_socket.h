@@ -58,7 +58,7 @@
  *  LSOCK_Close
  *  LSOCK_GetOSHandle
  *  LSOCK_GetPort
- *  
+ *
  * I/O Socket (handle SOCK):
  *
  *  SOCK_Create[Ex]      (see also LSOCK_Accept)
@@ -182,11 +182,11 @@ typedef enum {
 /** Forward declarations of the hidden socket internal structures, and
  *  their upper-level handles to use by the LSOCK_*() and SOCK_*() API
  */
-struct LSOCK_tag;                /* listening socket:  internal storage */
-typedef struct LSOCK_tag* LSOCK; /* listening socket:  handle, opaque   */
+struct LSOCK_tag;                  /* listening socket:  internal storage */
+typedef struct LSOCK_tag*   LSOCK; /* listening socket:  handle, opaque   */
 
-struct SOCK_tag;                 /* socket:  internal storage           */
-typedef struct SOCK_tag*  SOCK;  /* socket:  handle, opaque             */
+struct SOCK_tag;                   /* socket:  internal storage           */
+typedef struct SOCK_tag*    SOCK;  /* socket:  handle, opaque             */
 
 struct TRIGGER_tag;
 typedef struct TRIGGER_tag* TRIGGER;
@@ -233,7 +233,7 @@ typedef struct TRIGGER_tag* TRIGGER;
 /** Initialize all internal/system data & resources to be used by the SOCK API.
  * @li <b>NOTE:</b>
  *  You can safely call it more than once; just, all calls after the first
- *  one will have no result. 
+ *  one will have no result.
  * @li <b>NOTE:</b>
  *  Usually, SOCK API does not require an explicit initialization -- as it is
  *  guaranteed to initialize itself automagically, in one of API functions,
@@ -253,7 +253,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_InitializeAPI(void);
  * ATTENTION:  no function from the SOCK API should be called after this call!
  * @li <b>NOTE:</b>
  *  You can safely call it more than once; just, all calls after the first
- *  one will have no result. 
+ *  one will have no result.
  * @sa
  *  SOCK_InitializeAPI
  */
@@ -288,9 +288,9 @@ extern NCBI_XCONNECT_EXPORT size_t SOCK_OSHandleSize(void);
  * @sa
  *  SOCK_Wait, SOCK_Poll
  */
-extern NCBI_XCONNECT_EXPORT const STimeout*
-SOCK_SetSelectInternalRestartTimeout
-(const STimeout* timeslice);
+extern NCBI_XCONNECT_EXPORT const STimeout*SOCK_SetSelectInternalRestartTimeout
+(const STimeout* timeslice
+ );
 
 
 /** Selector of I/O wait system API:  auto, poll(), or select().
@@ -315,9 +315,9 @@ typedef enum {
  * @sa
  *  SOCK_Wait, SOCK_Poll
  */
-extern NCBI_XCONNECT_EXPORT ESOCK_IOWaitSysAPI
-SOCK_SetIOWaitSysAPI
-(ESOCK_IOWaitSysAPI api);
+extern NCBI_XCONNECT_EXPORT ESOCK_IOWaitSysAPI SOCK_SetIOWaitSysAPI
+(ESOCK_IOWaitSysAPI api
+ );
 
 
 
@@ -348,7 +348,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status TRIGGER_Create
  *  TRIGGER_Create
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status TRIGGER_Close
-(TRIGGER  trigger
+(TRIGGER trigger
  );
 
 
@@ -361,7 +361,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status TRIGGER_Close
  *  TRIGGER_Create, TRIGGER_IsSet
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status TRIGGER_Set
-(TRIGGER  trigger
+(TRIGGER trigger
  );
 
 
@@ -377,7 +377,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status TRIGGER_Set
  *  TRIGGER_Create, TRIGGER_Set, TRIGGER_Reset
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status TRIGGER_IsSet
-(TRIGGER  trigger
+(TRIGGER trigger
  );
 
 
@@ -390,7 +390,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status TRIGGER_IsSet
  *  TRIGGER_Create, TRIGGER_Set
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status TRIGGER_Reset
-(TRIGGER  trigger
+(TRIGGER trigger
  );
 
 
@@ -437,10 +437,10 @@ typedef unsigned int TSOCK_Flags;  /** Bitwise "OR" of ESOCK_Flags */
  *  LSOCK_Create, LSOCK_Close, LSOCK_GetPort
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_CreateEx
-(unsigned short port,    
- unsigned short backlog, 
- LSOCK*         lsock,   
- TSOCK_Flags    flags    
+(unsigned short port,
+ unsigned short backlog,
+ LSOCK*         lsock,
+ TSOCK_Flags    flags
  );
 
 
@@ -459,9 +459,9 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_CreateEx
  *  LSOCK_CreateEx, LSOCK_Close
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_Create
-(unsigned short port,   
- unsigned short backlog, 
- LSOCK*         lsock    
+(unsigned short port,
+ unsigned short backlog,
+ LSOCK*         lsock
  );
 
 
@@ -481,8 +481,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_Create
  *  SOCK_Create, SOCK_Close, TSOCK_Flags
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_AcceptEx
-(LSOCK           lsock,    
- const STimeout* timeout, 
+(LSOCK           lsock,
+ const STimeout* timeout,
  SOCK*           sock,
  TSOCK_Flags     flags
  );
@@ -494,9 +494,9 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_AcceptEx
  *  LSOCK_AcceptEx
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_Accept
-(LSOCK           lsock,    
- const STimeout* timeout, 
- SOCK*           sock      
+(LSOCK           lsock,
+ const STimeout* timeout,
+ SOCK*           sock
  );
 
 
@@ -513,7 +513,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_Close(LSOCK lsock);
 /** Get an OS-dependent native socket handle to use by platform-specific API.
  * FYI: on MS-Windows it will be "SOCKET", on other platforms -- "int".
  * @param lsock
- *  [in]  socket handle 
+ *  [in]  socket handle
  * @param handle_buf
  *  [in]  pointer to a memory location to store the OS-dependent handle at
  * @param handle_size
@@ -523,7 +523,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_Close(LSOCK lsock);
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_GetOSHandle
 (LSOCK  lsock,
- void*  handle_buf, 
+ void*  handle_buf,
  size_t handle_size
  );
 
@@ -532,7 +532,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_GetOSHandle
  * The returned port is either one specified when the socket was created,
  * or an automatically assigned number if LSOCK_Create provided the port as 0.
  * @param lsock
- *  [in]  socket handle 
+ *  [in]  socket handle
  * @param byte_order
  *  [in]  byte order for port on return
  * @return
@@ -555,9 +555,9 @@ extern NCBI_XCONNECT_EXPORT unsigned short LSOCK_GetPort
  * (socket() + connect() [+ select()])
  *
  * @param host
- *  [in]  host to connect to 
+ *  [in]  host to connect to
  * @param port
- *  [in]  port to connect to 
+ *  [in]  port to connect to
  * @param timeout
  *  [in]  the connect timeout (infinite if NULL)
  * @param sock
@@ -572,10 +572,10 @@ extern NCBI_XCONNECT_EXPORT unsigned short LSOCK_GetPort
  *  SOCK_Create, SOCK_Reconnect, SOCK_Close
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateEx
-(const char*     host,    
- unsigned short  port,    
- const STimeout* timeout,  
- SOCK*           sock,     
+(const char*     host,
+ unsigned short  port,
+ const STimeout* timeout,
+ SOCK*           sock,
  const void*     init_data,
  size_t          init_size,
  TSOCK_Flags     flags
@@ -588,9 +588,9 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateEx
  * SOCK_CreateEx(host, port, timeout, sock, 0, 0, fSOCK_LogDefault).
  *
  * @param host
- *  [in]  host to connect to 
+ *  [in]  host to connect to
  * @param port
- *  [in]  port to connect to 
+ *  [in]  port to connect to
  * @param timeout
  *  [in]  the connect timeout (infinite if NULL)
  * @param sock
@@ -599,10 +599,10 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateEx
  *  SOCK_CreateEx, SOCK_Reconnect, SOCK_Close
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
-(const char*     host,   
- unsigned short  port,   
- const STimeout* timeout, 
- SOCK*           sock     
+(const char*     host,
+ unsigned short  port,
+ const STimeout* timeout,
+ SOCK*           sock
  );
 
 
@@ -625,7 +625,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  *  [in]  size of the initial data segment (may be 0)
  * @param flags
  *  [in]  additional socket requirements
- * @return 
+ * @return
  *  Return eIO_Success on success;  otherwise: eIO_Closed if the "handle"
  *  does not refer to an open socket [but e.g. to a normal file or a pipe];
  *  other error codes in case of other errors
@@ -633,12 +633,12 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  *  SOCK_CreateOnTop, SOCK_Reconnect, SOCK_Close
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateOnTopEx
-(const void*   handle,
- size_t        handle_size,
- SOCK*         sock,
- const void*   init_data,
- size_t        init_size,
- TSOCK_Flags   flags
+(const void* handle,
+ size_t      handle_size,
+ SOCK*       sock,
+ const void* init_data,
+ size_t      init_size,
+ TSOCK_Flags flags
  );
 
 
@@ -655,9 +655,9 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateOnTopEx
  *  SOCK_CreateOnTopEx
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateOnTop
-(const void*   handle,
- size_t        handle_size,
- SOCK*         sock
+(const void* handle,
+ size_t      handle_size,
+ SOCK*       sock
  );
 
 
@@ -685,10 +685,10 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateOnTop
  *  [in]  the connect timeout (infinite if NULL)
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Reconnect
-(SOCK            sock,   
- const char*     host,    
- unsigned short  port,    
- const STimeout* timeout  
+(SOCK            sock,
+ const char*     host,
+ unsigned short  port,
+ const STimeout* timeout
  );
 
 
@@ -699,15 +699,15 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Reconnect
  * for eIO_Close timeout as previously set by SOCK_SetTimeout).
  * Cannot be applied to datagram sockets (eIO_InvalidArg results).
  * @param sock
- *  [in]  handle of the socket to shutdown  
+ *  [in]  handle of the socket to shutdown
  * @param how
  *  [in]  one of:  eIO_Read, eIO_Write, eIO_ReadWrite
  * @sa
  *  SOCK_SetTimeout
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Shutdown
-(SOCK      sock, 
- EIO_Event how   
+(SOCK      sock,
+ EIO_Event how
  );
 
 
@@ -732,14 +732,14 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Close(SOCK sock);
  * @li <b>NOTE</b>  SOCK_CloseEx(sock, 1) is equivalent to SOCK_Close(sock);
  * @param sock
  *  [in]  handle of the socket to close
- * @param destroy 
+ * @param destroy
  *  [in]  =1 to destroy handle; =0 to keep handle
  * @sa
  *  SOCK_Close, SOCK_Create, SOCK_CreateOnTop, DSOCK_Create, SOCK_SetTimeout
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CloseEx
-(SOCK         sock,    
- int/**bool*/ destroy  
+(SOCK         sock,
+ int/**bool*/ destroy
  );
 
 
@@ -751,9 +751,9 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CloseEx
  * read out.  Either of eIO_Open, eIO_Write and eIO_ReadWrite always succeed
  * immediately for the datagram socket.
  * @param sock
- *  [in]  socket handle 
+ *  [in]  socket handle
  * @param event
- *  [in]  one of:  eIO_Open, eIO_Read, eIO_Write, eIO_ReadWrite 
+ *  [in]  one of:  eIO_Open, eIO_Read, eIO_Write, eIO_ReadWrite
  * @param timeout
  *  [in]  maximal time to wait for the event to occur
  * @return
@@ -774,7 +774,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CloseEx
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Wait
 (SOCK            sock,
- EIO_Event       event, 
+ EIO_Event       event,
  const STimeout* timeout
  );
 
@@ -790,24 +790,27 @@ typedef struct {
 
 
 /** Block until at least one of the sockets enlisted in "polls" array
- * (of size "n") becomes available for requested operation (event),
- * or until timeout expires (wait indefinitely if timeout is passed NULL).
+ * (of size "n") becomes available for requested operation (SSOCK_Poll::event),
+ * or until timeout expires (wait indefinitely if timeout is passed as NULL).
  * Return eIO_Success if at least one socket was found ready;  eIO_Timeout
  * if timeout expired;  eIO_Unknown if underlying system call(s) failed.
- * @li <b>NOTE 1:</b> NULL sockets as well as non-NULL sockets with eIO_Open
- *        requested in their "event" do not get polled;
+ * @li <b>NOTE 1:</b> NULL sockets (w/o any verification for the contents of
+ *        the "event" field) as well as non-NULL sockets with eIO_Open
+ *        requested in their "event" do not get polled (yet corresponding
+ *        "revent" updated to reflect eIO_Open -- for no I/O event ready);
  * @li <b>NOTE 2:</b> For a socket found not ready for an operation, eIO_Open
- *        is returned in its "revent"; for a failing socket, eIO_Close
- *        is returned;
- * @li <b>NOTE 3:</b> This call may return eIO_InvalidArg if
- *        - parameters to the call are inconsistent;
- *        - a non-NULL socket polled with a bad "event" (eIO_Close).
- *        With this return code, the calling program cannot rely on "revent"
+ *        get returned in its "revent";  for a failing / closed socket,
+ *        eIO_Close gets returned;
+ * @li <b>NOTE 3:</b> This call may return eIO_InvalidArg if:
+ *        - parameters to the call are incomplete / inconsistent;
+ *        - a non-NULL socket polled with a bad "event" (e.g. eIO_Close).
+ *        With this return code, the calling code cannot rely on "revent"
  *        fields in the "polls" array as they might not be properly updated.
  * @li <b>NOTE 4:</b> If either both "n" and "polls" are NULL, or all sockets
- *        in "polls" are NULL, then the returned result is either:
+ *        in "polls" are either NULL or without any events requested
+ *        (eIO_Open), then the returned status is either:
  *        - eIO_Timeout (after the specified amount of time was spent idle), or
- *        - eIO_Interrupted (if signal came while the waiting was in progress).
+ *        - eIO_Interrupt (if a signal came while the waiting was in progress).
  * @li <b>NOTE 5:</b> For datagram sockets, the readiness for reading is
  *        determined by the message data latched since last message receive
  *        call, DSOCK_RecvMsg.
@@ -826,10 +829,10 @@ typedef struct {
  *  [out] # of ready sockets  (may be NULL)
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Poll
-(size_t          n,         
- SSOCK_Poll      polls[],   
- const STimeout* timeout,   
- size_t*         n_ready    
+(size_t          n,
+ SSOCK_Poll      polls[],
+ const STimeout* timeout,
+ size_t*         n_ready
  );
 
 
@@ -845,8 +848,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Poll
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_SetTimeout
 (SOCK            sock,
- EIO_Event       event,   
- const STimeout* timeout  
+ EIO_Event       event,
+ const STimeout* timeout
  );
 
 
@@ -863,7 +866,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_SetTimeout
  */
 extern NCBI_XCONNECT_EXPORT const STimeout* SOCK_GetTimeout
 (SOCK      sock,
- EIO_Event event  
+ EIO_Event event
  );
 
 
@@ -923,10 +926,10 @@ extern NCBI_XCONNECT_EXPORT const STimeout* SOCK_GetTimeout
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Read
 (SOCK           sock,
- void*          buf,   
- size_t         size,   
- size_t*        n_read, 
- EIO_ReadMethod how    
+ void*          buf,
+ size_t         size,
+ size_t*        n_read,
+ EIO_ReadMethod how
  );
 
 
@@ -955,10 +958,10 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Read
  *  the indicated error occurred (especially when connection closed).
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_ReadLine
-(SOCK           sock,
- char*          buf,    
- size_t         size,   
- size_t*        n_read  
+(SOCK    sock,
+ char*   buf,
+ size_t  size,
+ size_t* n_read
  );
 
 
@@ -974,8 +977,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_ReadLine
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_PushBack
 (SOCK        sock,
- const void* buf,  
- size_t      size  
+ const void* buf,
+ size_t      size
  );
 
 
@@ -1007,7 +1010,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_PushBack
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Status
 (SOCK      sock,
- EIO_Event direction  
+ EIO_Event direction
  );
 
 
@@ -1049,10 +1052,10 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Status
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Write
 (SOCK            sock,
- const void*     buf,       
- size_t          size,      
- size_t*         n_written, 
- EIO_WriteMethod how        
+ const void*     buf,
+ size_t          size,
+ size_t*         n_written,
+ EIO_WriteMethod how
  );
 
 
@@ -1092,9 +1095,9 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Abort
  *  SOCK_GetLocalPort
  */
 extern NCBI_XCONNECT_EXPORT unsigned short SOCK_GetLocalPortEx
-(SOCK            sock,
- int/*bool*/     trueport,
- ENH_ByteOrder   byte_order          
+(SOCK          sock,
+ int/*bool*/   trueport,
+ ENH_ByteOrder byte_order
  );
 
 
@@ -1112,8 +1115,8 @@ extern NCBI_XCONNECT_EXPORT unsigned short SOCK_GetLocalPortEx
  *  SOCK_GetLocalPortEx
  */
 extern NCBI_XCONNECT_EXPORT unsigned short SOCK_GetLocalPort
-(SOCK            sock,
- ENH_ByteOrder   byte_order          
+(SOCK          sock,
+ ENH_ByteOrder byte_order
  );
 
 
@@ -1133,9 +1136,9 @@ extern NCBI_XCONNECT_EXPORT unsigned short SOCK_GetLocalPort
  */
 extern NCBI_XCONNECT_EXPORT void SOCK_GetPeerAddress
 (SOCK            sock,
- unsigned int*   host,               
- unsigned short* port,                
- ENH_ByteOrder   byte_order          
+ unsigned int*   host,
+ unsigned short* port,
+ ENH_ByteOrder   byte_order
  );
 
 
@@ -1152,8 +1155,8 @@ extern NCBI_XCONNECT_EXPORT void SOCK_GetPeerAddress
  *  SOCK_GetPeerAddress, SOCK_GetLocalPort
  */
 extern NCBI_XCONNECT_EXPORT unsigned short SOCK_GetRemotePort
-(SOCK            sock,
- ENH_ByteOrder   byte_order
+(SOCK          sock,
+ ENH_ByteOrder byte_order
  );
 
 
@@ -1174,7 +1177,7 @@ extern NCBI_XCONNECT_EXPORT unsigned short SOCK_GetRemotePort
 typedef enum {
     eSAF_Full = 0,  /** address in full, native form                      */
     eSAF_Port,      /** only numeric port if INET socket, empty otherwise */
-    eSAF_IP         /** only numeric IP if INET socket,   empty otherwise */  
+    eSAF_IP         /** only numeric IP if INET socket,   empty otherwise */
 } ESOCK_AddressFormat;
 
 extern NCBI_XCONNECT_EXPORT char* SOCK_GetPeerAddressStringEx
@@ -1257,7 +1260,7 @@ extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetReadOnWrite
  */
 extern NCBI_XCONNECT_EXPORT void SOCK_SetCork
 (SOCK         sock,
- int/**bool*/ on_off  
+ int/**bool*/ on_off
  );
 
 
@@ -1279,7 +1282,7 @@ extern NCBI_XCONNECT_EXPORT void SOCK_SetCork
  */
 extern NCBI_XCONNECT_EXPORT void SOCK_DisableOSSendDelay
 (SOCK         sock,
- int/**bool*/ on_off  
+ int/**bool*/ on_off
  );
 
 
@@ -1334,8 +1337,8 @@ extern NCBI_XCONNECT_EXPORT void SOCK_DisableOSSendDelay
  *  [in]  additional socket properties
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_CreateEx
-(SOCK*           sock,               
- TSOCK_Flags     flags
+(SOCK*       sock,
+ TSOCK_Flags flags
  );
 
 
@@ -1344,7 +1347,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_CreateEx
  *  [out] socket created
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_Create
-(SOCK*           sock                                
+(SOCK* sock
  );
 
 
@@ -1355,8 +1358,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_Create
  *  [in] port to bind to (!=0)
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_Bind
-(SOCK            sock,                  
- unsigned short  port                  
+(SOCK           sock,
+ unsigned short port
  );
 
 
@@ -1369,9 +1372,9 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_Bind
  *  [in] peer port
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_Connect
-(SOCK            sock,                  
- const char*     host,                 
- unsigned short  port                   
+(SOCK           sock,
+ const char*    host,
+ unsigned short port
  );
 
 
@@ -1382,8 +1385,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_Connect
  *  [in] time to wait for message
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_WaitMsg
-(SOCK            sock,                 
- const STimeout* timeout            
+(SOCK            sock,
+ const STimeout* timeout
  );
 
 
@@ -1400,11 +1403,11 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_WaitMsg
  *  [in] size of additional data (bytes)
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_SendMsg
-(SOCK            sock,                
- const char*     host,                 
- unsigned short  port,           
- const void*     data,                 
- size_t          datalen               
+(SOCK           sock,
+ const char*    host,
+ unsigned short port,
+ const void*    data,
+ size_t         datalen
  );
 
 
@@ -1414,7 +1417,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_SendMsg
  * @param buf
  *  [in] buf to store msg at,m.b.NULL
  * @param buflen
- *  [in]  buf length provided 
+ *  [in]  buf length provided
  * @param maxmsglen
  *  [in] maximal expected message len
  * @param msglen
@@ -1425,13 +1428,13 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_SendMsg
  *  [out] host byte order, may be NULL
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_RecvMsg
-(SOCK            sock,                 
- void*           buf,                  
- size_t          buflen,                
- size_t          maxmsglen,             
- size_t*         msglen,                
- unsigned int*   sender_addr,           
- unsigned short* sender_port            
+(SOCK            sock,
+ void*           buf,
+ size_t          buflen,
+ size_t          maxmsglen,
+ size_t*         msglen,
+ unsigned int*   sender_addr,
+ unsigned short* sender_port
 );
 
 
@@ -1442,8 +1445,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_RecvMsg
  *  [in] either of eIO_Read, eIO_Write
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_WipeMsg
-(SOCK            sock,                 
- EIO_Event       direction             
+(SOCK      sock,
+ EIO_Event direction
  );
 
 /**
@@ -1453,8 +1456,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_WipeMsg
  *  [in] set(1)/unset(0) broadcast capability
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_SetBroadcast
-(SOCK            sock,                  
- int/**bool*/    broadcast             
+(SOCK         sock,
+ int/**bool*/ broadcast
  );
 
 /**
@@ -1480,7 +1483,7 @@ extern NCBI_XCONNECT_EXPORT TNCBI_BigCount DSOCK_GetMessageCount
 /**
  * @param sock
  *  [in] socket handle
- * @return 
+ * @return
  *  Non-zero value if socket "sock" was created by DSOCK_Create[Ex]().
  *  Return zero otherwise.
  */
@@ -1639,7 +1642,8 @@ extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetReuseAddressAPI
  */
 extern NCBI_XCONNECT_EXPORT void SOCK_SetReuseAddress
 (SOCK         sock,
- int/**bool*/ on_off);
+ int/**bool*/ on_off
+ );
 
 
 /******************************************************************************
@@ -1789,7 +1793,7 @@ extern NCBI_XCONNECT_EXPORT unsigned int SOCK_HostToNetLong
 
 #define SOCK_NetToHostLong SOCK_HostToNetLong
 
-/** 
+/**
  * @param value
  *
  */
@@ -1818,7 +1822,7 @@ unsigned short SOCK_htons(unsigned short);
  * @param name
  *  [out] (guaranteed to be '\0'-terminated)
  * @param namelen
- *  [in]  max # of bytes allowed to put to "name" 
+ *  [in]  max # of bytes allowed to put to "name"
  * @param log
  *  [in]  whether to log failures
  * @return
@@ -1844,9 +1848,9 @@ extern NCBI_XCONNECT_EXPORT int SOCK_gethostname
  );
 
 
-/** 
+/**
  * @param hostname
- *  [in] specified host, or the current host if hostname is 0 
+ *  [in] specified host, or the current host if hostname is 0
  * @param log
  *  [in] whether to log failures
  * @return
@@ -1879,9 +1883,9 @@ extern NCBI_XCONNECT_EXPORT unsigned int SOCK_gethostbyname
  * @param addr
  *  [in]  host address in network byte order
  * @param name
- *  [out] buffer to put the name to 
+ *  [out] buffer to put the name to
  * @param namelen
- *  [in]  size (bytes) of the buffer above 
+ *  [in]  size (bytes) of the buffer above
  * @param log
  *  [in]  whether to log failures
  * @return
@@ -1947,9 +1951,9 @@ extern NCBI_XCONNECT_EXPORT unsigned int SOCK_GetLocalHostAddress
  *  unlike 'port', which always comes out in host (native) byte order.
  */
 extern NCBI_XCONNECT_EXPORT const char* SOCK_StringToHostPort
-(const char*     str,  
- unsigned int*   host,  
- unsigned short* port   
+(const char*     str,
+ unsigned int*   host,
+ unsigned short* port
  );
 
 
