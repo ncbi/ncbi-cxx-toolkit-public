@@ -593,8 +593,10 @@ EIO_Status CSocketAPI::Poll(vector<SPoll>&  polls,
                             const STimeout* timeout,
                             size_t*         n_ready)
 {
+    static const STimeout kZero = {0, 0};
     size_t          x_n     = polls.size();
     SPOLLABLE_Poll* x_polls = 0;
+    size_t          x_ready = 0;
 
     if (x_n  &&  !(x_polls = new SPOLLABLE_Poll[x_n]))
         return eIO_Unknown;
@@ -613,25 +615,37 @@ EIO_Status CSocketAPI::Poll(vector<SPoll>&  polls,
                                                            : 0);
                 } else
                     x_polls[i].poll = POLLABLE_FromLSOCK(ls->GetLSOCK());
+                polls[i].m_REvent = eIO_Open;
             } else {
-                x_polls[i].poll =
-                    POLLABLE_FromSOCK(s->GetStatus(eIO_Open) == eIO_Success
-                                      ? s->GetSOCK()
-                                      : 0);
+                EIO_Event revent;
+                if (s->GetStatus(eIO_Open) != eIO_Closed) {
+                    x_polls[i].poll = POLLABLE_FromSOCK(s->GetSOCK());
+                    revent = eIO_Open;
+                } else {
+                    x_polls[i].poll = 0;
+                    revent = eIO_Close;
+                    x_ready++;
+                }
+                polls[i].m_REvent = revent;
             }
             x_polls[i].event = event;
-        } else
-            x_polls[i].poll  = 0;
+        } else {
+            x_polls[i].poll = 0;
+            polls[i].m_REvent = eIO_Open;
+        }
     }
 
-    size_t x_ready;
-    EIO_Status status = POLLABLE_Poll(x_n, x_polls, timeout, &x_ready);
+    size_t xx_ready;
+    EIO_Status status = POLLABLE_Poll(x_n, x_polls,
+                                      x_ready ? &kZero : timeout, &xx_ready);
 
-    for (size_t i = 0;  i < x_n;  i++)
-        polls[i].m_REvent = x_polls[i].revent;
+    for (size_t i = 0;  i < x_n;  i++) {
+        if (x_polls[i].revent)
+            polls[i].m_REvent = x_polls[i].revent;
+    }
 
     if (n_ready)
-        *n_ready = x_ready;
+        *n_ready = xx_ready + x_ready;
 
     delete[] x_polls;
     return status;
