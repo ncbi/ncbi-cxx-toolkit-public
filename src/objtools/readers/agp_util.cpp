@@ -105,7 +105,7 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "in unplaced singleton scaffold, component is not used in full", // (X out of Y bp)
 
     "in unplaced singleton scaffold, component orientation is not \"+\"",
-    kEmptyCStr,
+    "gap shorter than 10 bp",
     kEmptyCStr,
     kEmptyCStr,
     kEmptyCStr,
@@ -887,6 +887,7 @@ CAgpErrEx::CAgpErrEx(CNcbiOstream* out) : m_out(out)
     m_MustSkip[W_ExtraTab          ]=true;
     m_MustSkip[W_CompIsWgsTypeIsNot]=true;
     m_MustSkip[W_CompIsNotWgsTypeIs]=true;
+    m_MustSkip[W_ShortGap          ]=true;
 
     // A "random check" to make sure enum and msg[] are not out of skew.
     //cerr << sizeof(msg)/sizeof(msg[0]) << "\n";

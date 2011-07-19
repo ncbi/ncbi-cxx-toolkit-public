@@ -382,6 +382,7 @@ public:
         W_UnSingleCompNotInFull,// -- agp_validate --
 
         W_UnSingleOriNotPlus,   // -- agp_validate --
+        W_ShortGap          ,   // -- agp_validate --
         W_Last, W_First = 21,
 
         // "GenBank" checks that rely on information about the sequence
