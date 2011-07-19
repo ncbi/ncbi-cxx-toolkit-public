@@ -377,6 +377,8 @@ private:
     // e.g. if ends with ",..", turn into "..."
     void x_FixUpEllipsis( string &str );
 
+    void x_RemoveFlankingQuotes( string &val );
+
     void x_MoveCdregionXrefsToProt (CCdregion& cds, CSeq_feat& seqfeat);
     bool x_InGpsGenomic( const CSeq_feat& seqfeat );
 

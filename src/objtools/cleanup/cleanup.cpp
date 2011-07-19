@@ -349,7 +349,7 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Cleanup Date",
     "Change BioseqInst",
     "Remove SeqID",
-    "Add ProtXref",
+    "Add ProtXref", // 60
     "Change Partial",
     "Change Prot Names",
     "Change Prot Activities",
@@ -359,7 +359,7 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Move To Prot Xref",
     "Compress Spaces",
     "Strip serial",
-    "Remove Orgmod",
+    "Remove Orgmod", // 70
     "Remove SubSource",
     "Create Gene Nomenclature",
     "Clean Seq-feat xref",
@@ -376,6 +376,7 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Remove Exception",
     "Add NcbiCleanupObject",
     "Clean Delta-ext",
+    "Trim Flanking Quotes",
 
     // set when any other change is made.
     "Change Other", 

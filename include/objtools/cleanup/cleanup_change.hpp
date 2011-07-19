@@ -150,6 +150,7 @@ public:
         eRemoveException,
         eAddNcbiCleanupObject,
         eCleanDeltaExt,
+        eTrimFlankingQuotes,
 
         // set when any other change is made.
         eChangeOther,

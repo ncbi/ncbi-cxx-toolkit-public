@@ -93,5 +93,5 @@ SCRIPTS
 +easy_auto_replace
 - Converts .template files into .template_expanded files or multiple .test 
   files.  Users might consider copying this script and using it for their
-  own purposes, since it's good in generaly for generating a large
-   number of test cases that differ only a little.
+  own purposes, since it's good in general for generating a large
+  number of test cases that differ only a little.

@@ -5886,6 +5886,37 @@ void CNewCleanup_imp::x_FixUpEllipsis( string &str )
     }
 }
 
+void CNewCleanup_imp::x_RemoveFlankingQuotes( string &val )
+{
+    // holds the first and last pos that we will keep
+    SIZE_TYPE first_pos = 0;
+    SIZE_TYPE last_pos = ( val.length() - 1 );
+
+    // move inwards until there are no more quotes to trim
+    for( ; first_pos <= last_pos ; ++first_pos, --last_pos ) {
+        const char ch1 = val[first_pos];
+        const char ch2 = val[last_pos];
+        if( (ch1 != '\'' && ch1 != '\"') || ch1 != ch2 ) {
+            break;
+        }
+    }
+
+    // check if there was no change (this is the case almost always)
+    if( 0 == first_pos ) {
+        return;
+    }
+
+    // check if string is all nested quotes
+    if( first_pos > last_pos ) {
+        // Just clear it
+        val.clear();
+    } else {
+        val = val.substr( first_pos, (last_pos - first_pos + 1) );
+    }
+
+    ChangeMade(CCleanupChange::eTrimFlankingQuotes);
+}
+
 static
 bool s_IsIllegalQual( const string &qual )
 {
@@ -6777,6 +6808,11 @@ void CNewCleanup_imp::PostProtFeatfBC (
     }
     if (! DBXREF_ON_PROTREF_IS_UNIQUE (prot_ref, s_DbtagEqual)) {
         UNIQUE_DBXREF_ON_PROTREF (prot_ref, s_DbtagEqual);
+        ChangeMade (CCleanupChange::eCleanDbxrefs);
+    }
+
+    if( RAW_FIELD_IS_EMPTY_OR_UNSET(prot_ref, Desc) ) {
+        RESET_FIELD(prot_ref, Desc);
         ChangeMade (CCleanupChange::eCleanDbxrefs);
     }
 }

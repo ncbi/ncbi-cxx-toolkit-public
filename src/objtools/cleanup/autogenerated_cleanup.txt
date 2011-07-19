@@ -154,6 +154,13 @@ use m_NewCleanup.x_StripSpacesMarkChanged {
     Cit-art.title.E.name
 }
 
+use m_NewCleanup.x_RemoveFlankingQuotes {
+    RNA-ref.ext.name ,
+    RNA-gen.product ,
+    Prot-ref.name.E ,
+    Prot-ref.desc
+}
+
 use m_NewCleanup.x_FixUpEllipsis {
     Seq-feat.comment
 }

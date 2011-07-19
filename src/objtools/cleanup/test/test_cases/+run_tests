@@ -10,7 +10,7 @@ NEW_CLEANUP=/home/kornbluh/c++.opt/GCC/build/objtools/cleanup/test/test_basic_cl
 
 PRETTY_PRINTER=/home/kornbluh/bin/asn_pretty_print
 
-AUTO_REPLACE=/home/kornbluh/bin/easy_auto_replace
+AUTO_REPLACE=./+easy_auto_replace
 
 CHANGES_FILE=/tmp/kornbluh.cleanup_tests.changes.$$
 

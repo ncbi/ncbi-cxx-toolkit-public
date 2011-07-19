@@ -419,6 +419,7 @@ void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_activity
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_txorg_txorg_orgname_ETC( COrgName & arg0 );
   void x_BasicCleanupSeqFeat_data_data_org_org( COrg_ref & arg0 );
   void x_BasicCleanupSeqFeat_data_data_org( COrg_ref & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_desc_ETC( std::string & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_ec_E_ETC( std::string & arg0 );
   template< typename Tcontainer_std_string_ >
 void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_ec_ETC( Tcontainer_std_string_ & arg0 );
@@ -438,7 +439,7 @@ void x_BasicCleanupSeqFeat_xref_E_E_data_data_pub_pub_pub_pub1760_ETC( Tcontaine
   void x_BasicCleanupSeqFeat_data_data_pub_pub_pub_ETC( CPub_equiv & arg0 );
   void x_BasicCleanupSeqFeat_data_data_pub_pub_ETC( CPubdesc & arg0 );
   void x_BasicCleanupSeqFeat_data_data_pub_ETC( CPubdesc & arg0 );
-  void x_BasicCleanupSeqFeat_xref_E_E_data_data_rna_rna_ext_name_ETC( std::string & arg0 );
+  void x_BasicCleanupSeqFeat_data_data_region_ETC( std::string & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_rna_rna_ext_gen_gen_quals_quals_E_E_ETC( CRNA_qual & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_rna_rna_ext_gen_gen_quals_quals_E_ETC( CRNA_qual & arg0 );
   template< typename Tcontainer_ncbi_cref_crna_qual_ >
@@ -446,6 +447,7 @@ void x_BasicCleanupSeqFeat_xref_E_E_data_data_rna_rna_ext_gen_gen_quals_quals_ET
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_rna_rna_ext_gen_gen_quals_ETC( CRNA_qual_set & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_rna_rna_ext_gen_gen_ETC( CRNA_gen & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_rna_rna_ext_gen_ETC( CRNA_gen & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_rna_rna_ext_name_ETC( std::string & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_rna_rna_ext_tRNA_tRNA_ETC( CTrna_ext & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_rna_rna_ext_tRNA_ETC( CTrna_ext & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_rna_rna_ext_ETC( CRNA_ref::C_Ext & arg0 );
