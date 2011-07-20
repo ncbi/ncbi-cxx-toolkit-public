@@ -166,7 +166,6 @@ private:
     void x_ProcessJobExchange(CQueue*);
     void x_ProcessPutMessage(CQueue*);
     void x_ProcessGetMessage(CQueue*);
-    void x_ProcessForceReschedule(CQueue*);
     void x_ProcessPutFailure(CQueue*);
     void x_ProcessDropQueue(CQueue*);
     void x_ProcessReturn(CQueue*);

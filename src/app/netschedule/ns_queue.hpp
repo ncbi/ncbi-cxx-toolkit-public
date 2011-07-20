@@ -248,9 +248,6 @@ public:
     /// Cancel job execution (job stays in special Canceled state)
     void Cancel(unsigned job_id);
 
-    /// Move job to pending ignoring its current status
-    void ForceReschedule(unsigned job_id);
-
     TJobStatus GetJobStatus(unsigned job_id) const;
 
     /// count status snapshot for affinity token

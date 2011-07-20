@@ -1042,29 +1042,6 @@ void CQueue::Cancel(unsigned job_id)
 }
 
 
-void CQueue::ForceReschedule(unsigned job_id)
-{
-    CJob                job;
-    CNS_Transaction     trans(this);
-    {{
-        CQueueGuard             guard(this, &trans);
-        CJob::EJobFetchResult   res = job.Fetch(this, job_id);
-
-        if (res == CJob::eJF_Ok) {
-            job.SetStatus(CNetScheduleAPI::ePending);
-            job.SetRunCount(0);
-            job.Flush(this);
-        } else {
-            // TODO: Integrity error or job just expired?
-            return;
-        }
-    }}
-    trans.Commit();
-
-    m_StatusTracker.SetStatus(job_id, CNetScheduleAPI::ePending);
-}
-
-
 TJobStatus  CQueue::GetJobStatus(unsigned job_id) const
 {
     return m_StatusTracker.GetStatus(job_id);

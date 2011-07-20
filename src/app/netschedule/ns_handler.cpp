@@ -196,9 +196,8 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "ip",           eNSPT_Str, eNSPA_Optional, "" },
           { "sid",          eNSPT_Str, eNSPA_Optional, "" } } },
     // FRES job_key : id
-    { "FRES",     { &CNetScheduleHandler::x_ProcessForceReschedule,
-                    eNSCR_Submitter },
-        { { "job_key", eNSPT_Id, eNSPA_Required } } },
+    { "FRES",     { &CNetScheduleHandler::x_CmdNotImplemented,
+                    eNSCR_Submitter } },
     // READ limit : int [ timeout : int ] -> group : int jobs : str (encoded_vec)
     { "READ",     { &CNetScheduleHandler::x_ProcessReading,
                     eNSCR_Submitter },
@@ -1266,14 +1265,6 @@ void CNetScheduleHandler::x_ProcessGetMessage(CQueue* q)
         WriteMessage("ERR:Job not found");
         x_PrintRequestStop(eStatus_NotFound);
     }
-}
-
-
-void CNetScheduleHandler::x_ProcessForceReschedule(CQueue* q)
-{
-    q->ForceReschedule(m_JobReq.job_id);
-    WriteMessage("OK:");
-    x_PrintRequestStop(eStatus_OK);
 }
 
 
