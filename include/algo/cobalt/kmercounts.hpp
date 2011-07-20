@@ -382,7 +382,7 @@ protected:
         if (v==0) return 0; // early bailout for sparse vectors
         v = v - ((v >> 1) & 0x55555555);
         v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
-        v = (v + (v >> 4) & 0xF0F0F0F);
+        v = ((v + (v >> 4)) & 0xF0F0F0F);
         v = v*0x1010101;
 
         return v >> 24; // count

@@ -437,7 +437,7 @@ void CMultiAligner::x_Run(void)
         break;
 
     case CMultiAlignerOptions::eToPrototype:
-        if (is_cluster_found = x_FindQueryClusters()) {
+        if ((is_cluster_found = x_FindQueryClusters())) {
             x_AlignInClusters();
 
             // No multiple alignment is done for one cluster
@@ -449,7 +449,7 @@ void CMultiAligner::x_Run(void)
         break;
 
     case CMultiAlignerOptions::eMulti:
-        if (is_cluster_found = x_FindQueryClusters()) {
+        if ((is_cluster_found = x_FindQueryClusters())) {
             x_ComputeClusterTrees(cluster_trees);
             x_FindLocalInClusterHits(cluster_trees);
         }

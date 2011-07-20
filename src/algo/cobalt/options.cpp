@@ -185,7 +185,7 @@ bool CMultiAlignerOptions::Validate(void)
                        "User constraint range is invalid");
         }
 
-        if (range1 == 1 && range2 != 1 || range1 != 1 && range2 == 1) {
+        if ((range1 == 1 && range2 != 1) || (range1 != 1 && range2 == 1)) {
             NCBI_THROW(CMultiAlignerException, eInvalidOptions,
                        "Range specified by user constraints is degenerate");
         }

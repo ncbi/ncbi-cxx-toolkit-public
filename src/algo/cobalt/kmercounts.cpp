@@ -314,11 +314,9 @@ void CSparseKmerCounts::Reset(const objects::CSeq_loc& seq,
             }
 
             pos = GetAALetter(sv[i]) - 1;
-            _ASSERT(pos >= 0);
             _ASSERT(GetAALetter(sv[i]) <= alphabet_size);
             for (Uint4 j=1;j < kmer_len;j++) {
                 pos += (Uint4)(((double)GetAALetter(sv[i + j]) - 1) * base[j]);
-                _ASSERT(pos >= 0);
                 _ASSERT(GetAALetter(sv[i + j]) <= alphabet_size);
             }
             counts[pos]++;
@@ -598,11 +596,9 @@ void CBinaryKmerCounts::Reset(const objects::CSeq_loc& seq,
         }
 
         pos = GetAALetter(sv[i]) - 1;
-        _ASSERT(pos >= 0);
         _ASSERT(GetAALetter(sv[i]) <= alphabet_size);
         for (Uint4 j=1;j < kmer_len;j++) {
             pos += (Uint4)(((double)GetAALetter(sv[i + j]) - 1) * base[j]);
-            _ASSERT(pos >= 0);
             _ASSERT(GetAALetter(sv[i + j]) <= alphabet_size);
         }
         MarkUsed(pos, m_Counts, kBitChunk);

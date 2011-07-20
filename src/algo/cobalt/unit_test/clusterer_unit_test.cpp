@@ -326,8 +326,8 @@ static void s_TestClustersAndTrees(int num_elems,
             
 
             // there can be only one zero
-            BOOST_REQUIRE(!zero_found && ref_elem >= 0
-                          || zero_found && ref_elem > 0);
+            BOOST_REQUIRE((!zero_found && ref_elem >= 0)
+                          || (zero_found && ref_elem > 0));
 
             if (ref_elem == 0) {
                 zero_found = true;
