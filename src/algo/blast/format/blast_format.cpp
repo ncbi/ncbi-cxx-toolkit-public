@@ -919,8 +919,9 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
         + CDisplaySeqalign::eShowIdentity
         + CDisplaySeqalign::eShowGapOnlyLines
         + CDisplaySeqalign::eShowEndGaps
-        + CDisplaySeqalign::eShowTranslationForLocalSeq
         + CDisplaySeqalign::eShowAlignStatsForMultiAlignView;
+
+ 
     
     if (m_IsHTML) {
           flags += CDisplaySeqalign::eHtml;
@@ -959,6 +960,12 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
     display.SetDbName(m_DbName);
     display.SetDbType(!m_DbIsAA);
     display.SetLineLen(70);
+    if (annots->m_FrameInfo[2] >= 0 && m_IgOptions->m_Translate) {
+        display.SetTranslatedFrameForLocalSeq((CDisplaySeqalign::TranslatedFrameForLocalSeq) annots->m_FrameInfo[2]); 
+        flags += CDisplaySeqalign::eShowTranslationForLocalSeq;
+    }
+ 
+   
     // set the alignment flags
     display.SetAlignOption(flags);
     if (m_Program == "blastn") {
