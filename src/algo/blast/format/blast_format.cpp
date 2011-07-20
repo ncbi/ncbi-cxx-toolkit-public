@@ -921,7 +921,9 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
         + CDisplaySeqalign::eShowEndGaps
         + CDisplaySeqalign::eShowAlignStatsForMultiAlignView;
 
- 
+    if (m_FormatType == CFormattingArgs::eFlatQueryAnchoredNoIdentities) {
+        flags -= CDisplaySeqalign::eShowIdentity;
+    }
     
     if (m_IsHTML) {
           flags += CDisplaySeqalign::eHtml;
