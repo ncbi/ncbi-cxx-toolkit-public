@@ -40,7 +40,6 @@
 #include <util/random_gen.hpp>
 #include <util/line_reader.hpp>
 #include <corelib/ncbi_mask.hpp>
-#include "blastdb_aux.hpp"
 
 #include <algo/blast/blastinput/blast_input.hpp>
 #include "../blast/blast_app_util.hpp"
