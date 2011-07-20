@@ -8,7 +8,7 @@ my $new_program = "./igblastn";
 my $old_program = "/export/home/jianye/igblast/trunk/c++/src/app/blast/igblastn";
 my $testcasefile = "igblastntestcase";
 my $base_parameters = " -germline_db_V Human_gl_V -germline_db_J Human_gl_J -germline_db_D Human_gl_D -query $testcasefile -show_translation -outfmt "; 
-my @format = ("3", "6", "7");
+my @format = ("3", "4", "6", "7");
 
 
 system ("rm *.out");
@@ -27,7 +27,6 @@ foreach my $fmt (@format){
 #test seqid list
 $testcasefile = "igblastntestcase.idlist";
 $base_parameters = " -germline_db_V Human_gl_V -germline_db_J Human_gl_J -germline_db_D Human_gl_D -query $testcasefile -show_translation  -germline_db_seqidlist Human_gl_V.n.functional.seqid -outfmt "; 
-my @format = ("3", "6", "7");
 
 
 
