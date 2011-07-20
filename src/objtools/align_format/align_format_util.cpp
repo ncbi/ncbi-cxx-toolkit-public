@@ -615,41 +615,40 @@ s_OssToDefline(const CUser_field::TData::TOss & oss,
     inpstr >> bdls;
 }
 
+#define GetBlastDeflineImpl(handle)                                           \
+{                                                                             \
+    CRef<CBlast_def_line_set> bdls(new CBlast_def_line_set);                  \
+    if(handle.IsSetDescr()){                                                  \
+        ITERATE(CSeq_descr::Tdata, iter, handle.GetDescr().Get()) {           \
+            if((*iter)->IsUser()){                                            \
+                const CUser_object& uobj = (*iter)->GetUser();                \
+                const CObject_id& uobjid = uobj.GetType();                    \
+                if(uobjid.IsStr()){                                           \
+                    const string& label = uobjid.GetStr();                    \
+                    if (label == kAsnDeflineObjLabel){                        \
+                        const vector< CRef< CUser_field > >& usf =            \
+                            uobj.GetData();                                   \
+                        if(usf.front()->GetData().IsOss()){                   \
+                            /*only one user field*/                           \
+                            typedef const CUser_field::TData::TOss TOss;      \
+                            const TOss& oss = usf.front()->GetData().GetOss();\
+                            s_OssToDefline(oss, *bdls);                       \
+                        }                                                     \
+                    }                                                         \
+                }                                                             \
+            }                                                                 \
+        }                                                                     \
+    }                                                                         \
+    return bdls;                                                              \
+}                                                                             \
+
+CRef<CBlast_def_line_set> 
+CAlignFormatUtil::GetBlastDefline (const CBioseq& bioseq) 
+GetBlastDeflineImpl(bioseq)
+
 CRef<CBlast_def_line_set> 
 CAlignFormatUtil::GetBlastDefline (const CBioseq_Handle& handle) 
-{
-    CRef<CBlast_def_line_set> bdls(new CBlast_def_line_set);
-    
-    if(handle.IsSetDescr()){
-        const CSeq_descr& desc = handle.GetDescr();
-        const list< CRef< CSeqdesc > >& descList = desc.Get();
-        for (list<CRef< CSeqdesc > >::const_iterator iter = descList.begin();
-             iter != descList.end(); iter++){
-            
-            if((*iter)->IsUser()){
-                const CUser_object& uobj = (*iter)->GetUser();
-                const CObject_id& uobjid = uobj.GetType();
-                if(uobjid.IsStr()){
-                    
-                    const string& label = uobjid.GetStr();
-                    if (label == kAsnDeflineObjLabel){
-                        const vector< CRef< CUser_field > >& usf = 
-                            uobj.GetData();
-                        
-                        if(usf.front()->GetData().IsOss()){
-                            //only one user field
-                            typedef const CUser_field::TData::TOss TOss;
-                            const TOss& oss = usf.front()->GetData().GetOss();
-                            
-                            s_OssToDefline(oss, *bdls);
-                        }
-                    }
-                }
-            }
-        }
-    }
-    return bdls;
-}
+GetBlastDeflineImpl(handle)
 
 void CAlignFormatUtil::GetAlnScores(const CSeq_align& aln,
                                     int& score, 
