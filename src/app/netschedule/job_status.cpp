@@ -157,8 +157,13 @@ void CJobStatusTracker::SetStatus(unsigned    job_id,
                 ERR_POST("State matrix was damaged, "
                          "more than one status active for job " << job_id);
             old_status = TJobStatus(i);
+
+            if ((int)status != (int)i)
+                bv.set(job_id, false);
+        } else {
+            if ((int)status == (int)i)
+                bv.set(job_id, true);
         }
-        bv.set(job_id, (int)status == (int)i);
     }
 
     if (old_status == CNetScheduleAPI::eDone &&
