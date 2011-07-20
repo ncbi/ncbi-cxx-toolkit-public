@@ -173,7 +173,7 @@ const string kArgGLSubject("germline_sequence_");
 const string kArgGLDatabase("germline_db_");
 const string kArgGLNumAlign("num_alignments_");
 const string kArgGLOrigin("origin");
-const string kArgGLFuncClass("func_class");
+const string kArgGLFuncClass("germline_db_seqidlist");
 const string kArgGLDomainSystem("domain_system");
 const string kArgGLFocusV("focus_on_V_segment");
 const string kArgTranslate("show_translation");

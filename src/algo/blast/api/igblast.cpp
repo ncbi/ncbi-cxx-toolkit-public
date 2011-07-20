@@ -142,21 +142,19 @@ CIgBlast::Run()
     CRef<CSearchResultSet> results[4], result;
 
     /*** search V germline */
-    x_SetupVSearch(qf, opts_hndl);
-    CLocalBlast blast(qf, opts_hndl, m_IgOptions->m_Db[0]);
-    results[0] = blast.Run();
-    s_SortResultsByEvalue(results[0]);
-    x_AnnotateV(results[0], annots);
+    {
+        x_SetupVSearch(qf, opts_hndl);
+        CLocalBlast blast(qf, opts_hndl, m_IgOptions->m_Db[0]);
+        results[0] = blast.Run();
+        s_SortResultsByEvalue(results[0]);
+        x_AnnotateV(results[0], annots);
+    }
 
     /*** search V for domain annotation */
-    if (m_IgOptions->m_Db[3]->GetDatabaseName() 
-        !=  m_IgOptions->m_Db[0]->GetDatabaseName()) {
-        //x_SetupVSearch(qf, opts_hndl);
+    {
         CLocalBlast blast(qf, opts_hndl, m_IgOptions->m_Db[3]);
         results[3] = blast.Run();
         x_AnnotateDomain(results[0], results[3], annots);
-    } else {
-        x_AnnotateDomain(results[0], results[0], annots);
     }
 
     /*** search DJ germline */

@@ -1259,11 +1259,9 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             CArgDescriptions::eString, "kabat");
     arg_desc.SetConstraint(kArgGLDomainSystem, &(*new CArgAllow_Strings, "kabat", "imgt"));
 
-//TODO: these seqidlist must inheritate through...
-    arg_desc.AddOptionalKey(kArgGLFuncClass, "func_class",
-                            "Restrict search of germline database to certain function class",
+    arg_desc.AddOptionalKey(kArgGLFuncClass, "filename",
+                            "Restrict search of germline database to list of SeqIds's",
                             CArgDescriptions::eString);
-    arg_desc.SetConstraint(kArgGLFuncClass, &(*new CArgAllow_Strings, "functional", "pseudogene"));
 
     arg_desc.AddFlag(kArgGLFocusV, "Should the alignments focus only on V segment?", true);
 
@@ -1362,10 +1360,7 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
             db.Reset(new CSearchDatabase(db_name, mol_type));
 
             if (gene==0 && args.Exist(kArgGLFuncClass) && args[kArgGLFuncClass]) {
-                string fn(SeqDB_ResolveDbPath(
-                            m_IgOptions->m_Origin + "_gl_V." + 
-                          ((m_IgOptions->m_IsProtein) ? "p." : "n.") +
-                          args[kArgGLFuncClass].AsString() + ".seqid"));
+                string fn(SeqDB_ResolveDbPath(args[kArgGLFuncClass].AsString()));
                 db->SetGiList(CRef<CSeqDBGiList> (new CSeqDBFileGiList(fn,
                              CSeqDBFileGiList::eSiList)));
             }
