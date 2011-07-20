@@ -145,6 +145,12 @@ void CVariationUtil::s_ResolveIntronicOffsets(CVariantPlacement& p)
     if(loc->IsPnt()) {
         //convert to interval
         loc = sequence::Seq_loc_Merge(*loc, CSeq_loc::fMerge_SingleRange, NULL);
+        if(!p.IsSetStop_offset() && p.IsSetStart_offset()) {
+            //In case of point, only start-offset may be specified. In this case
+            //temporarily set stop-offset to be the same (it will be reset below),
+            //such that start and stop of point-as-interval are adjusted consistently.
+            p.SetStop_offset(p.GetStart_offset());
+        }
     }
 
     if(!loc->IsInt() && (p.IsSetStart_offset() || p.IsSetStop_offset())) {
