@@ -934,7 +934,7 @@ bool CDbTest::Test(CTestActionList & action)
     vector<string> dbs;
     NStr::Tokenize(m_Db, " ", dbs, NStr::eMergeDelims);
     
-    CSeqDB::ESeqType seqtype = ParseTypeString(m_DbType);
+    CSeqDB::ESeqType seqtype = ParseMoleculeTypeString(m_DbType);
 
     set <string> vol_list;
     set <string> ali_list;

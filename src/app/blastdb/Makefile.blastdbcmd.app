@@ -1,7 +1,7 @@
-WATCHERS = camacho maning 
+WATCHERS = maning 
 
 APP = blastdbcmd
-SRC = blastdbcmd blastdb_aux
+SRC = blastdbcmd
 LIB_ = $(BLAST_FORMATTER_LIBS) $(BLAST_LIBS) $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 

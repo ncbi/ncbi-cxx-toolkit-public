@@ -1478,6 +1478,18 @@ void CSeqDBIter::x_RetSeq()
         m_DB->RetSequence(& m_Data);
 }
 
+/// Convert a string to a CSeqDB ESeqType object
+/// @param str string containing the molecule type (e.g.: prot, nucl, guess)
+NCBI_XOBJREAD_EXPORT 
+CSeqDB::ESeqType ParseMoleculeTypeString(const string& str);
+
+/// Deletes all files associated with a BLAST database
+/// @param dbpath BLAST database file path [in]
+/// @param seq_type Sequence type [in]
+/// @return true if relevant files were deleted, else false
+NCBI_XOBJREAD_EXPORT 
+bool DeleteBlastDb(const string& dbpath, CSeqDB::ESeqType seq_type);
+
 END_NCBI_SCOPE
 
 #endif // OBJTOOLS_BLAST_SEQDB_READER___SEQDB__HPP

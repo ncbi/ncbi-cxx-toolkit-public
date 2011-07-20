@@ -1254,5 +1254,50 @@ Int8 CSeqDB::GetDiskUsage() const
     return retval;
 }
 
+CSeqDB::ESeqType 
+ParseMoleculeTypeString(const string& s)
+{
+    CSeqDB::ESeqType retval = CSeqDB::eUnknown;
+    if (NStr::StartsWith(s, "prot")) {
+        retval = CSeqDB::eProtein;
+    } else if (NStr::StartsWith(s, "nucl")) {
+        retval = CSeqDB::eNucleotide;
+    } else if (NStr::StartsWith(s, "guess")) {
+        retval = CSeqDB::eUnknown;
+    } else {
+        _ASSERT("Unknown molecule for BLAST DB" != 0);
+    }
+    return retval;
+}
+
+bool DeleteBlastDb(const string& dbpath, CSeqDB::ESeqType seq_type)
+{
+    int num_files_removed = 0;
+    vector<string> db_files, alias_files;
+
+    vector<string> extn;
+    SeqDB_GetFileExtensions((seq_type == CSeqDB::eProtein), extn);
+
+    CSeqDB::FindVolumePaths(dbpath, seq_type, db_files, &alias_files);
+    ITERATE(vector<string>, f, db_files) {
+        ITERATE(vector<string>, e, extn) {
+            CNcbiOstrstream oss;
+            oss << *f << "." << *e;
+            const string fname = CNcbiOstrstreamToString(oss);
+            if (CFile(fname).Remove()) {
+                LOG_POST(Info << "Deleted " << fname);
+                num_files_removed++;
+            }
+        }
+    }
+    ITERATE(vector<string>, f, alias_files) {
+        if (CFile(*f).Remove()) {
+            LOG_POST(Info << "Deleted " << *f);
+            num_files_removed++;
+        }
+    }
+    return static_cast<bool>(num_files_removed != 0);
+}
+
 END_NCBI_SCOPE
 

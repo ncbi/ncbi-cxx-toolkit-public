@@ -2216,6 +2216,8 @@ const string SeqDB_SimplifyAccession(const string &acc)
 
 void SeqDB_GetFileExtensions(bool db_is_protein, vector<string>& extn)
 {
+    // NOTE: If more extensions are added, please keep in sync with
+    // updatedb.pl's DistributeBlastDbsToBackends
     extn.clear();
 
     const string kExtnMol(1, db_is_protein ? 'p' : 'n');

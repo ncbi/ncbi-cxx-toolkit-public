@@ -254,7 +254,7 @@ CBlastDBCmdApp::x_InitApplicationData()
 {
     const CArgs& args = GetArgs();
 
-    CSeqDB::ESeqType seqtype = ParseTypeString(args[kArgDbType].AsString());;
+    CSeqDB::ESeqType seqtype = ParseMoleculeTypeString(args[kArgDbType].AsString());
     m_BlastDb.Reset(new CSeqDBExpert(args[kArgDb].AsString(), seqtype));
 
     m_DbIsProtein = static_cast<bool>(m_BlastDb->GetSequenceType() == CSeqDB::eProtein);

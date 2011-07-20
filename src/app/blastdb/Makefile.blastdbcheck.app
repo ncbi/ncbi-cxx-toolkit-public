@@ -1,9 +1,9 @@
 # $Id$
 
-WATCHERS = camacho maning 
+WATCHERS = maning 
 
 APP = blastdbcheck
-SRC = blastdbcheck blastdb_aux
+SRC = blastdbcheck
 
 LIB_ = $(BLAST_INPUT_LIBS) $(BLAST_LIBS) $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
