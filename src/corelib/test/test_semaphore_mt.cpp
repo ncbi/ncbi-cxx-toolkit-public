@@ -152,7 +152,7 @@ bool CTestSemaphoreApp::TestApp_Init(void)
     NcbiCout
         << NcbiEndl
         << "Testing semaphores with "
-        << NStr::IntToString(s_NumThreads)
+        << NStr::UIntToString(s_NumThreads)
         << " threads"
         << NcbiEndl;
     if ( s_NumThreads%2 != 0 ) {
