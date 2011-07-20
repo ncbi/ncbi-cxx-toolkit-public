@@ -1249,8 +1249,12 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             new CArgAllowValuesBetween(0, 4));
     }
 
+    arg_desc.AddOptionalKey(kArgGLFuncClass, "filename",
+                            "Restrict search of germline database to list of SeqIds's",
+                            CArgDescriptions::eString);
+
     arg_desc.AddDefaultKey(kArgGLOrigin, "germline_origin",
-                            "Origin of the species to be annotated",
+                            "Origin of the species for domain and chain type annotation",
                             CArgDescriptions::eString, "Human");
     arg_desc.SetConstraint(kArgGLOrigin, &(*new CArgAllow_Strings, "Human", "Mouse"));
 
@@ -1258,10 +1262,6 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             "Domain system to be used for segment annotation",
                             CArgDescriptions::eString, "kabat");
     arg_desc.SetConstraint(kArgGLDomainSystem, &(*new CArgAllow_Strings, "kabat", "imgt"));
-
-    arg_desc.AddOptionalKey(kArgGLFuncClass, "filename",
-                            "Restrict search of germline database to list of SeqIds's",
-                            CArgDescriptions::eString);
 
     arg_desc.AddFlag(kArgGLFocusV, "Should the alignments focus only on V segment?", true);
 

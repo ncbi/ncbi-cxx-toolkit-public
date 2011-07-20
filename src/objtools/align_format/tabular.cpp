@@ -930,7 +930,7 @@ CIgBlastTabularInfo::PrintHeader(const string& program_version,
     // Print number of alignments found, but only if it has been set.
     if (align_set) {
        PrintMasterAlign();
-       m_Ostream <<  "# Hit table" << endl;
+       m_Ostream <<  "# Hit table (the first field indicates the chain type of the hit)" << endl;
        int num_hits = align_set->Get().size();
        if (num_hits != 0) {
            x_PrintFieldNames();
