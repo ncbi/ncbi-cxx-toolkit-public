@@ -349,7 +349,11 @@ static bool s_CompareSeqAlignByEvalue(const CRef<CSeq_align> &x,
     double sx, sy;
     x->GetNamedScore(CSeq_align::eScore_EValue, sx);
     y->GetNamedScore(CSeq_align::eScore_EValue, sy);
-    return (sx <= sy);
+    if (sx != sy) return (sx < sy);
+    int ix, iy;
+    x->GetNamedScore(CSeq_align::eScore_Score, ix);
+    y->GetNamedScore(CSeq_align::eScore_Score, iy);
+    return (ix >= iy);
 };
 
 // Compare two seqaligns according to their evalue and coverage
