@@ -1297,8 +1297,11 @@ void CNetScheduleHandler::x_ProcessDropQueue(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessReturn(CQueue* q)
 {
-    q->ReturnJob(m_JobReq.job_id);
-    WriteMessage("OK:");
+    if (q->ReturnJob(m_JobReq.job_id) == CNetScheduleAPI::eReturned)
+        WriteMessage("OK:");
+    else
+        WriteMessage("ERR:Job not found");
+
     x_PrintRequestStop(eStatus_OK);
 }
 

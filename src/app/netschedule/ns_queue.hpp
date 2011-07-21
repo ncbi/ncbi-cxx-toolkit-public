@@ -227,7 +227,10 @@ public:
     bool PutProgressMessage(unsigned      job_id,
                             const string& msg);
 
-    void ReturnJob(unsigned job_id);
+    /// Can return the following states:
+    /// eReturned    => everything is fine
+    /// eJobNotFound => job not found
+    TJobStatus  ReturnJob(unsigned job_id);
 
     /// @param expected_status
     ///    If current status is different from expected try to

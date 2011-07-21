@@ -890,50 +890,49 @@ bool CQueue::PutProgressMessage(unsigned      job_id,
 }
 
 
-void CQueue::ReturnJob(unsigned job_id)
+TJobStatus  CQueue::ReturnJob(unsigned int  job_id)
 {
     // FIXME: Provide fallback to
     // RegisterWorkerNodeVisit if unsuccessful
     if (!job_id)
-        return;
-
-    CQueueJSGuard   js_guard(this, job_id, CNetScheduleAPI::ePending);
-    TJobStatus      st = js_guard.GetOldStatus();
-
-    if (st != CNetScheduleAPI::eRunning)
-        return;
+        return CNetScheduleAPI::eJobNotFound;
 
     CJob                job;
     CNS_Transaction     trans(this);
+
     {{
-        CQueueGuard     guard(this, &trans);
+        CQueueGuard             guard(this, &trans);
+        CQueueJSGuard           js_guard(this, job_id, CNetScheduleAPI::ePending);
 
-        CJob::EJobFetchResult   res = job.Fetch(this, job_id);
-        if (res != CJob::eJF_Ok)
-            return;
 
-        job.SetStatus(CNetScheduleAPI::ePending);
+        if (job.Fetch(this, job_id) != CJob::eJF_Ok)
+            return CNetScheduleAPI::eJobNotFound;
+
 
         unsigned    run_count = job.GetRunCount();
         CJobRun *   run = job.GetLastRun();
+
         if (!run) {
             ERR_POST("No JobRun for running job " << DecorateJobId(job_id));
             run = &job.AppendRun();
         }
-        // This is the only legitimate place where Returned status appears
-        // as a signal that the job was actually returned
+
         run->SetStatus(CNetScheduleAPI::eReturned);
         run->SetTimeDone(time(0));
 
-        if (run_count) {
+        if (run_count)
             job.SetRunCount(run_count-1);
-        }
+
+        job.SetStatus(CNetScheduleAPI::ePending);
         job.Flush(this);
-    }}
+
+        js_guard.Commit();
+     }}
+
     trans.Commit();
-    js_guard.Commit();
     RemoveJobFromWorkerNode(job, eNSCReturned);
     TimeLineRemove(job_id);
+    return CNetScheduleAPI::eReturned;
 }
 
 
@@ -1016,9 +1015,8 @@ TJobStatus  CQueue::Cancel(unsigned int  job_id)
         }
 
         CJob                    job;
-        CJob::EJobFetchResult   res = job.Fetch(this, job_id);
 
-        if (res != CJob::eJF_Ok) {
+        if (job.Fetch(this, job_id) != CJob::eJF_Ok) {
             // The job might have just expired, i.e. does not exist any more
             return CNetScheduleAPI::eJobNotFound;
         }
