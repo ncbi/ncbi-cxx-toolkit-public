@@ -1351,7 +1351,8 @@ Suspect-rule ::= SEQUENCE {
   except Search-func OPTIONAL ,
   feat-constraint Constraint-choice-set OPTIONAL ,
   rule-type Fix-type DEFAULT none ,
-  replace Replace-rule OPTIONAL }  
+  replace Replace-rule OPTIONAL ,
+  description VisibleString OPTIONAL }  
 
 Suspect-rule-set ::= SET OF Suspect-rule
 
