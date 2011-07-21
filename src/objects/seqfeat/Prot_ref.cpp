@@ -191,6 +191,59 @@ const string& CProt_ref::GetECNumberReplacement(const string& old_ecno)
 }
 
 
+bool CProt_ref::IsValidECNumberFormat (const string&  ecno)
+{
+    char     ch;
+    bool     is_ambig;
+    int      numdashes;
+    int      numdigits;
+    int      numperiods;
+
+    if (NStr::IsBlank (ecno)) {
+        return false;
+    }
+
+    is_ambig = false;
+    numperiods = 0;
+    numdigits = 0;
+    numdashes = 0;
+
+    string::const_iterator sit = ecno.begin();
+    while (sit != ecno.end()) {
+        ch = *sit;
+        if (isdigit (ch)) {
+            numdigits++;
+            if (is_ambig) return false;
+        } else if (ch == '-') {
+            numdashes++;
+            is_ambig = true;
+        } else if (ch == 'n') {
+            if (numperiods == 3 && numdigits == 0) {
+              // allow/ignore n in first position of fourth number to not mean ambiguous, if followed by digit
+            } else {
+              numdashes++;
+              is_ambig = true;
+            }
+        } else if (ch == '.') {
+            numperiods++;
+            if (numdigits > 0 && numdashes > 0) return false;
+            if (numdigits == 0 && numdashes == 0) return false;
+            if (numdashes > 1) return false;
+            numdigits = 0;
+            numdashes = 0;
+        }
+        ++sit;
+    }
+
+    if (numperiods == 3) {
+        if (numdigits > 0 && numdashes > 0) return false;
+        if (numdigits > 0 || numdashes == 1) return true;
+    }
+
+    return false;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

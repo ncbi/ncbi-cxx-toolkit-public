@@ -74,6 +74,9 @@ public:
     /// Return a replaced EC number's replacement.
     static const string& GetECNumberReplacement(const string& old_ecno);
 
+    /// Verify correct form of EC number.
+    static bool IsValidECNumberFormat (const string&  ecno);
+
 private:
     // Prohibit copy constructor and assignment operator
     CProt_ref(const CProt_ref& value);
