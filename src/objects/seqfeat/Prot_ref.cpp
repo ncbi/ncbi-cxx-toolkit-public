@@ -219,10 +219,17 @@ bool CProt_ref::IsValidECNumberFormat (const string&  ecno)
             is_ambig = true;
         } else if (ch == 'n') {
             if (numperiods == 3 && numdigits == 0) {
-              // allow/ignore n in first position of fourth number to not mean ambiguous, if followed by digit
+                string::const_iterator sit2 = sit;
+                sit2++;
+                if (isdigit (*sit2)) {
+                    // allow/ignore n in first position of fourth number to not mean ambiguous, if followed by digit
+                } else {
+                    numdashes++;
+                    is_ambig = true;
+                }
             } else {
-              numdashes++;
-              is_ambig = true;
+                numdashes++;
+                is_ambig = true;
             }
         } else if (ch == '.') {
             numperiods++;
