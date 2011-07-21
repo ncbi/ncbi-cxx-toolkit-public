@@ -67,11 +67,14 @@ GetQueryBatchSize(EProgram program, bool is_ungapped /* = false */)
 {
     int retval = 0;
 
+    /*  It seems no harm to turn on query concatenation for ungapped search
+        JIRA SB-764
     if (is_ungapped) {
-        retval = 1;
+        retval = 1000000;
         _TRACE("Using query batch size " << retval);
         return retval;
     }
+    */
 
     // used for experimentation purposes
     char* batch_sz_str = getenv("BATCH_SIZE");
