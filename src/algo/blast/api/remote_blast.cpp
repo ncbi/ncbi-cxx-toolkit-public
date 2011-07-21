@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbitime.hpp>
 #include <serial/iterator.hpp>
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/api/blast_options_builder.hpp>
@@ -355,7 +356,7 @@ bool CRemoteBlast::CheckDone(void)
         break;
         
     case eWait:
-        x_CheckResults();
+        if( m_use_disk_cache ) x_CheckResultsDC(); else x_CheckResults();
     }
     
     int state = x_GetState();
@@ -747,7 +748,7 @@ void CRemoteBlast::x_PollUntilDone(EImmediacy immed, int timeout)
         cout << "line " << __LINE__ << " sleep next " << sleep_next << " sleep totl " << sleep_totl << endl;
     
     if (ePollAsync == immed) {
-        x_CheckResults();
+        if( m_use_disk_cache ) x_CheckResultsDC(); else x_CheckResults();
     }
     
     while (m_Pending && (sleep_totl < max_time)) {
@@ -781,7 +782,7 @@ void CRemoteBlast::x_PollUntilDone(EImmediacy immed, int timeout)
         if (eDebug == m_Verbose)
             cout << " next sleep time = " << sleep_next << endl;
         
-        x_CheckResults();
+        if( m_use_disk_cache ) x_CheckResultsDC(); else x_CheckResults();
     }
 }
 
@@ -1220,16 +1221,19 @@ const vector<string> & CRemoteBlast::GetErrorVector()
 CRemoteBlast::CRemoteBlast(CNcbiIstream&  f)
 {
     x_Init(f);
+    x_InitDiskCache();
 }
 
 CRemoteBlast::CRemoteBlast(const string & RID)
 {
     x_Init(RID);
+    x_InitDiskCache();
 }
 
 CRemoteBlast::CRemoteBlast(CBlastOptionsHandle * algo_opts)
 {
     x_Init(algo_opts);
+    x_InitDiskCache();
 }
 
 CRemoteBlast::CRemoteBlast(CRef<IQueryFactory>         queries,
@@ -1238,6 +1242,7 @@ CRemoteBlast::CRemoteBlast(CRef<IQueryFactory>         queries,
 {
     x_Init(opts_handle, db);
     x_InitQueries(queries);
+    x_InitDiskCache();
 }
 
 void
@@ -1267,6 +1272,7 @@ CRemoteBlast::CRemoteBlast(CRef<IQueryFactory>       queries,
     x_Init(&* opts_handle);
     x_InitQueries(queries);
     SetSubjectSequences(subjects);
+    x_InitDiskCache();
 }
 
 void CRemoteBlast::x_InitQueries(CRef<IQueryFactory> queries)
@@ -1398,6 +1404,29 @@ void CRemoteBlast::x_Init(CRef<CBlastOptionsHandle>   opts_handle,
 
     // Set the filtering algorithms
     SetDbFilteringAlgorithmId(db.GetFilteringAlgorithm());
+}
+// initialize disk cache support variables
+void CRemoteBlast::x_InitDiskCache(void)
+{
+    m_use_disk_cache = false;
+    m_disk_cache_error_flag = false;
+    m_disk_cache_error_msg.clear();
+    CNcbiEnvironment env;
+    if( env.Get("BLAST4_DISK_CACHE") != kEmptyStr )
+    {
+		string l_disk_cache_flag = env.Get("BLAST4_DISK_CACHE");
+		if( !NStr::CompareNocase(l_disk_cache_flag,"ON") )
+		{
+			m_use_disk_cache = true;
+			LOG_POST(Info << "CRemoteBlast: DISK CACHE IS ON" );
+		}
+		else{
+			LOG_POST(Info << "CRemoteBlast: DISK CACHE IS OFF; KEY: "<<l_disk_cache_flag );
+		}
+    }
+	else{
+			LOG_POST(Info << "CRemoteBlast: DISK CACHE IS OFF; NO ENVIRONMENT SETTINGS FOUND");
+	}
 }
 
 CRemoteBlast::~CRemoteBlast()
@@ -2258,6 +2287,179 @@ string CRemoteBlast::GetTitle(void)
   } // get body
 
     return return_title;
+}
+// Disk Cache version: x_CheckResults
+// only difference is that if search finished,
+// different approach to call and get results will be orchestrated
+// to fist get data from services as-is an deserialize them
+// later. This steps will minimize time OM is working.
+//
+void CRemoteBlast::x_CheckResultsDC(void)
+{
+    LOG_POST(Info << "CRemoteBlast::x_CheckResultsDC");
+    if (! m_Errs.empty()) {
+        m_Pending = false;
+    }
+    
+    if (! m_Pending) {
+        return;
+    }
+    
+    CRef<CBlast4_reply> r;
+    
+    bool try_again = true;
+    
+    while(try_again) {
+        try {
+	    // asking for search statistics
+            r = x_GetSearchStatsOnly();
+            m_Pending = s_SearchPending(r);
+            try_again = false;
+        }
+        catch(const CEofException&) {
+            --m_ErrIgn;
+            
+            if (m_ErrIgn == 0) {
+                m_Errs.push_back("No response from server, "
+                                 "cannot complete request.");
+                return;
+            }
+            
+            SleepSec(10);
+        }
+    }
+    
+    if (! m_Pending) {
+	// search finishedi check for errors
+        x_SearchErrors(r);
+        
+        if (! m_Errs.empty()) {
+            return;
+        }
+	
+	if( !r->CanGetBody() ) {
+            m_Errs.push_back("Results were not a get-search-results reply 2");
+	    return;
+	}
+	if( r->CanGetBody() && !r->GetBody().IsGet_search_results()) {
+            m_Errs.push_back("Results were not a get-search-results reply");
+	    return;
+	}
+	//ATTENTION: fullscale get results call
+	// search finished, retriev results
+	r = x_GetSearchResultsHTTP();
+	if( r.Empty() ){
+            m_Errs.push_back("Results were not a get-search-results reply 3");
+	    return;
+	}
+	if( r->CanGetBody() && !r->GetBody().IsGet_search_results()) {
+            m_Errs.push_back("Results were not a get-search-results reply 4");
+	    return;
+	}
+        m_Pending = s_SearchPending(r);
+        m_Reply = r;
+    }
+
+}
+// disk cache support.
+// ask for search statistics  to check status w/o polling results.
+CRef<objects::CBlast4_reply>
+CRemoteBlast::x_GetSearchStatsOnly(void)
+{
+    CRef<CBlast4_get_search_results_request>
+        gsrr(new CBlast4_get_search_results_request);
+    
+    gsrr->SetRequest_id(m_RID);
+    // result-types
+    gsrr->ResetResult_types();
+    gsrr->SetResult_types( 16) ;
+    
+    CRef<CBlast4_request_body> body(new CBlast4_request_body);
+    body->SetGet_search_results(*gsrr);
+    
+    return x_SendRequest(body);
+}
+//
+// get search results caching first on a file system.
+// TODO: check for errors and disable disk caching
+CRef<objects::CBlast4_reply>
+CRemoteBlast::x_GetSearchResultsHTTP(void)
+{
+    CRef<objects::CBlast4_reply>   one_reply( new CBlast4_reply );
+	CStopWatch swatch;
+    CNcbiEnvironment env;
+    string BLAST4_CONN_SERVICE_NAME = "blast4";
+    if( env.Get("BLAST4_CONN_SERVICE_NAME") != kEmptyStr )
+	BLAST4_CONN_SERVICE_NAME = env.Get("BLAST4_CONN_SERVICE_NAME");
+
+    // construct request
+    CRef<CBlast4_get_search_results_request> gsrr(new CBlast4_get_search_results_request);
+    gsrr->SetRequest_id( m_RID);
+
+    CRef<CBlast4_request_body> body(new CBlast4_request_body);
+    body->SetGet_search_results(*gsrr);
+
+    CRef<CBlast4_request> request( new CBlast4_request );
+    request->SetBody(*body );
+    // call service
+	swatch.Start();
+    CConn_ServiceStream ios( BLAST4_CONN_SERVICE_NAME , fSERV_HttpPost, 0);
+    ios << MSerial_AsnBinary << *request;
+    ios.flush();
+    // cache answer to the file
+    char incoming_buffer[8192];
+    int  read_max = 8192;
+    int  l_total_bytes=0, n_read;
+	bool l_cached_ok = true;
+
+    auto_ptr<fstream> tmp_stream( CDirEntry::CreateTmpFile() );
+
+    do{
+		ios.readsome(incoming_buffer, read_max);
+		n_read = ios.gcount();
+		if( n_read >= 0 ){
+			l_total_bytes += n_read;
+			try{
+				tmp_stream->write(incoming_buffer,n_read);
+				if( tmp_stream->bad() || tmp_stream->fail() )
+				{
+					l_cached_ok = false;
+					LOG_POST(Error << "CRemoteBlast::x_GetSearchResultsHTTP CAN'T WRITE CACHED DATA: BAD/FAIL STATE" );
+					m_disk_cache_error_msg = "bad/fail fstream state on write";
+					break;
+				}
+			}
+			catch ( ios_base::failure &err){
+				LOG_POST(Error << "CRemoteBlast::x_GetSearchResultsHTTP CAN'T WRITE CACHED DATA: "<<err.what() );
+				l_cached_ok = false;
+				m_disk_cache_error_msg = err.what();	
+			}
+		}
+    }
+    while( ios);
+	swatch.Stop();
+    
+	if(!l_cached_ok ){
+		// Attention: in case of caching error, disable it and re-read w/o caching
+		LOG_POST(Info << "CRemoteBlast::x_GetSearchResultsHTTP: DISABLE CACHE, RE-READ");
+		m_use_disk_cache = false;
+		m_disk_cache_error_flag = true;
+		return x_GetSearchResults();
+	}
+
+    tmp_stream->seekg(0);
+    // read cached answer
+	swatch.Restart();
+    {
+		auto_ptr<CObjectIStream> 
+	    in_stream( CObjectIStream::Open(eSerial_AsnBinary,  *tmp_stream) );
+		in_stream->Read(ObjectInfo(*one_reply), CObjectIStream::eNoFileHeader);
+
+    }
+    
+	swatch.Stop();
+	
+    return one_reply ;
 }
 END_SCOPE(blast)
 END_NCBI_SCOPE

@@ -454,9 +454,24 @@ public:
 
     /// Loads next chunk of archive from file.
     bool LoadFromArchive();
+
     /// Get the title assigned for this search. 
     string GetTitle(void);
-    
+
+    /// Controls disk cache usage for results retrieval
+    void EnableDiskCacheUse() { m_use_disk_cache = true;  }
+    void DisableDiskCacheUse(){ m_use_disk_cache = false; }
+    bool IsDiskCacheActive(void) { return m_use_disk_cache; } 
+    /// disk cache error handling
+    // m_disk_cache_error_flag
+    bool IsDiskCacheError(void) { return m_disk_cache_error_flag; }
+    void ClearDiskCacheError(void){ m_disk_cache_error_flag = false;}
+    string GetDiskCacheErrorMessahe(void) { return m_disk_cache_error_msg; }
+    // ask for search stats to check status.
+    CRef<objects::CBlast4_reply> x_GetSearchStatsOnly(void);
+    // actual code to get results using disk cache intermediate storage
+    CRef<objects::CBlast4_reply> x_GetSearchResultsHTTP(void);
+
 private:
 
     bool x_HasRetrievedSubjects() const {
@@ -543,6 +558,9 @@ private:
     /// Initialize queries based on a query factory.
     /// @param queries Query factory from which to pull queries.
     void x_InitQueries(CRef<IQueryFactory> queries);
+
+    /// Initialize disk caching 
+    void x_InitDiskCache(void);
     
     /// Configure new search from options handle passed to constructor.
     void x_SetAlgoOpts(void);
@@ -597,6 +615,10 @@ private:
     
     /// Try to get and process results.
     void x_CheckResults(void);
+    
+    /// Try to get and process results using disk cache.
+    void x_CheckResultsDC(void);
+
     
     /// Iterate over error list, splitting into errors and warnings.
     void x_SearchErrors(CRef<objects::CBlast4_reply> reply);
@@ -773,6 +795,14 @@ private:
 
     /// Client ID submitting requests throw this interface
     string m_ClientId;
+
+    /// Use disk cache for retrieving results
+    /// default: false
+    bool m_use_disk_cache;
+    /// disk cache error flag
+    bool m_disk_cache_error_flag;
+    /// disk cache error message
+    string m_disk_cache_error_msg;
 };
 
 /** Converts the return value of CSeqLocInfo::GetFrame into the
