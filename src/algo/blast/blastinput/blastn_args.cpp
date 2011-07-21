@@ -61,6 +61,7 @@ CBlastnAppArgs::CBlastnAppArgs()
     SetTask(kDefaultTask);
     set<string> tasks
         (CBlastOptionsFactory::GetTasks(CBlastOptionsFactory::eNuclNucl));
+    tasks.erase("vecscreen"); // SB-501: for now, remove vecscreen
     arg.Reset(new CTaskCmdLineArgs(tasks, kDefaultTask));
     m_Args.push_back(arg);
 
