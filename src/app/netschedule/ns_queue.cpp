@@ -2981,12 +2981,12 @@ void CQueue::x_PrintJobStat(CNetScheduleHandler &   handler,
 
     // Print detailed information about the job runs
     const vector<CJobRun> &     runs = job.GetRuns();
-    int                         attempt = 1;
+    int                         event = 1;
 
-    handler.WriteMessage("OK:", "attempt_counter: " +
+    handler.WriteMessage("OK:", "event_counter: " +
                                 NStr::IntToString(runs.size()) );
     ITERATE(vector<CJobRun>, it, runs) {
-        string          message("attempt" + NStr::IntToString(attempt++) + ": ");
+        string          message("event" + NStr::IntToString(event++) + ": ");
         unsigned int    addr = it->GetNodeAddr();
         unsigned short  port = it->GetNodePort();
 
