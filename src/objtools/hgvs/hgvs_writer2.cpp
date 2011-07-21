@@ -668,9 +668,9 @@ string CHgvsParser::x_AsHgvsInstExpression(
             && !(placement && placement->GetMol() == CVariantPlacement::eMol_protein);
 
     const CSeq_literal* asserted_seq =
-            is_usable_asserted_seq ? explicit_asserted_seq
-          : placement && placement->IsSetSeq() ? &placement->GetSeq()
-          :                                      NULL;
+            (placement && placement->IsSetSeq()) ? &placement->GetSeq()
+          : is_usable_asserted_seq               ? explicit_asserted_seq.GetPointer()
+          : NULL;
 
     string asserted_seq_str =
            !asserted_seq                  ? ""
