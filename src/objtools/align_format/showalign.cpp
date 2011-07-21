@@ -2050,7 +2050,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                             ds->GetStrands().front()==eNa_strand_minus){
                             mix[i]->Add(*ds, CAlnMix::fNegativeStrand);
                         } else {
-                            mix[i]->Add(*ds);
+                            mix[i]->Add(*ds, CAlnMix::fPreserveRows);
                         }
                     }
                 } catch (const CException& e){
