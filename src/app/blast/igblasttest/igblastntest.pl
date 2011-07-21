@@ -25,6 +25,22 @@ foreach my $fmt (@format){
   system("diff  $testcasefile.$fmt.old.out $testcasefile.$fmt.new.out > $testcasefile.$fmt.diff");
 }
 
+#test gi igseqnt
+$testcasefile = "igblastntestcase.giigseqnt";
+$base_parameters = " -germline_db_V Human_gl_V -germline_db_J Human_gl_J -germline_db_D Human_gl_D -query $testcasefile   -show_translation -db igSeqNt -num_threads 4 -outfmt ";
+
+
+
+foreach my $fmt (@format){
+  my $parameters = $base_parameters." ".$fmt;
+  print ("$parameters\n");
+  print ("old\n");
+  
+  system("time $old_program $parameters > $testcasefile.$fmt.old.out");
+  print ("new\n");
+  system("time $new_program $parameters > $testcasefile.$fmt.new.out");
+  system("diff  $testcasefile.$fmt.old.out $testcasefile.$fmt.new.out > $testcasefile.$fmt.diff");
+}
 
 #test gi
 $testcasefile = "igblastntestcase.gi";
@@ -129,23 +145,7 @@ foreach my $fmt (@format){
   system("diff  $testcasefile.$fmt.old.out $testcasefile.$fmt.new.out > $testcasefile.$fmt.diff");
 }
 
-#test gi igseqnt
-$testcasefile = "igblastntestcase.giigseqnt";
-$base_parameters = " -germline_db_V Human_gl_V -germline_db_J Human_gl_J -germline_db_D Human_gl_D -query $testcasefile   -show_translation -db igSeqNt -num_threads 4
- -outfmt "; 
 
-
-
-foreach my $fmt (@format){
-  my $parameters = $base_parameters." ".$fmt;
-  print ("$parameters\n");
-  print ("old\n");
-  
-  system("time $old_program $parameters > $testcasefile.$fmt.old.out");
-  print ("new\n");
-  system("time $new_program $parameters > $testcasefile.$fmt.new.out");
-  system("diff  $testcasefile.$fmt.old.out $testcasefile.$fmt.new.out > $testcasefile.$fmt.diff");
-}
 
 
 #test v focus igSeqNT db 
