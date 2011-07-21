@@ -1453,7 +1453,7 @@ public:
     /// Flags for GetEntries()
     /// @sa GetEntries, GetEntriesPtr
     enum EGetEntriesFlags {
-        fIgnoreRecursive = (1<<1), ///< Supress self recursive elements ("..")
+        fIgnoreRecursive = (1<<1), ///< Suppress self recursive elements ("..")
         fCreateObjects   = (1<<2), ///< Get objects accordingly to entry type
                                    ///< (CFile,CDir,...), not just a CDirEntry
         fNoCase          = (1<<3), ///< Use case insensitive compare by mask

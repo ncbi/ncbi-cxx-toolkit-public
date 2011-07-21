@@ -1760,7 +1760,7 @@ public:
     /// @param merge
     ///   Whether to merge the delimiters or not. The default setting of
     ///   eNoMergeDelims means that delimiters that immediately follow each
-    ///    other are treated as separate delimiters.
+    ///   other are treated as separate delimiters.
     /// @param token_pos
     ///   Optional array for the tokens' positions in "str".
     /// @return 
