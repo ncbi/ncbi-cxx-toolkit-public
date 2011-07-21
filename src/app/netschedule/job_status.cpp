@@ -269,16 +269,20 @@ TJobStatus CJobStatusTracker::ChangeStatus(unsigned   job_id,
         break;
 
     case CNetScheduleAPI::eCanceled:
-        old_status = IsStatusNoLock(job_id,
-                                    CNetScheduleAPI::ePending,
-                                    CNetScheduleAPI::eRunning);
-        if (old_status != CNetScheduleAPI::eJobNotFound) {
-            x_SetClearStatusNoLock(job_id, status, old_status);
-            status_updated = true;
+        old_status = x_GetStatusNoLock(job_id);
+        if (old_status == CNetScheduleAPI::eCanceled) {
+            // There is nothing to do, the job has already been canceled
+            old_status = CNetScheduleAPI::eCanceled;
             break;
         }
-        // in this case (failed, done) we just do nothing.
-        old_status = CNetScheduleAPI::eCanceled;
+        if (old_status == CNetScheduleAPI::eJobNotFound) {
+            // The job has not been found
+            break;
+        }
+
+        // All the other states allow canceling
+        x_SetClearStatusNoLock(job_id, status, old_status);
+        status_updated = true;
         break;
 
     case CNetScheduleAPI::eFailed:
@@ -356,7 +360,7 @@ bool CJobStatusTracker::GetPendingJobFromSet(TNSBitVector *  candidate_set,
             CReadLockGuard              guard(m_Lock);
             TNSBitVector::enumerator    en(candidate_set->first());
 
-            if (!en.valid()) 
+            if (!en.valid())
                 return bv.any();    // no more candidates
 
             for (; en.valid(); ++en) {
@@ -406,7 +410,7 @@ bool CJobStatusTracker::GetPendingJob(const TNSBitVector& unwanted_jobs,
     *job_id = 0;
 
     CWriteLockGuard     guard(m_Lock);
-    TNSBitVector&       bv = *m_StatusStor[(int) CNetScheduleAPI::ePending];
+    TNSBitVector &      bv = *m_StatusStor[(int) CNetScheduleAPI::ePending];
 
     if (!bv.any())
         return false;
@@ -518,7 +522,7 @@ void CJobStatusTracker::ReportInvalidStatus(unsigned   job_id,
                                             TJobStatus old_status)
 {
     NCBI_THROW(CNetScheduleException, eInvalidJobStatus,
-               "Cannot change job status from " +
+               "Invalid change job status from " +
                 CNetScheduleAPI::StatusToString(old_status) +
                 " to " +
                 CNetScheduleAPI::StatusToString(status));

@@ -998,47 +998,50 @@ void CQueue::Truncate(void)
 }
 
 
-void CQueue::Cancel(unsigned job_id)
+TJobStatus  CQueue::Cancel(unsigned int  job_id)
 {
-    CQueueJSGuard   js_guard(this, job_id, CNetScheduleAPI::eCanceled);
-    TJobStatus      st = js_guard.GetOldStatus();
-    if (st != CNetScheduleAPI::ePending &&
-        st != CNetScheduleAPI::eRunning) {
-            return;
-    }
-    CJob                job;
+    TJobStatus          old_status;
     CNS_Transaction     trans(this);
+
     {{
         CQueueGuard             guard(this, &trans);
+        CQueueJSGuard           js_guard(this, job_id, CNetScheduleAPI::eCanceled);
+
+        old_status = js_guard.GetOldStatus();
+        if (old_status == CNetScheduleAPI::eJobNotFound ||
+            old_status == CNetScheduleAPI::eCanceled) {
+            // There is nothing to do if the job does not exist or it is already in
+            // the canceled state
+            return old_status;
+        }
+
+        CJob                    job;
         CJob::EJobFetchResult   res = job.Fetch(this, job_id);
+
         if (res != CJob::eJF_Ok) {
-            // TODO: Integrity error or job just expired?
-            return;
+            // The job might have just expired, i.e. does not exist any more
+            return CNetScheduleAPI::eJobNotFound;
         }
 
-        TJobStatus      status = job.GetStatus();
-        if (status != st) {
-            ERR_POST("Status mismatch for job " << DecorateJobId(job_id) <<
-                     " matrix: " << st << " db: " << status);
-            // TODO: server error exception?
-            return;
-        }
+        _ASSERT(job.GetStatus() == old_status);
 
-        CJobRun *   run = job.GetLastRun();
-        if (!run)
-            run = &job.AppendRun();
+        CJobRun *               run = &job.AppendRun();
 
         run->SetStatus(CNetScheduleAPI::eCanceled);
         run->SetTimeDone(time(0));
         run->SetErrorMsg("Job canceled from " +
-                         CNetScheduleAPI::StatusToString(status) + " state");
+                         CNetScheduleAPI::StatusToString(old_status) + " state");
+
         job.SetStatus(CNetScheduleAPI::eCanceled);
         job.Flush(this);
+
+        js_guard.Commit();
     }}
+
     trans.Commit();
-    js_guard.Commit();
 
     TimeLineRemove(job_id);
+    return old_status;
 }
 
 
@@ -3005,9 +3008,16 @@ void CQueue::x_PrintJobStat(CNetScheduleHandler &   handler,
                    "ret_code=" + NStr::IntToString(it->GetRetCode()) + " ";
 
         // Time part
-        CTime   startTime(it->GetTimeStart());
-        startTime.ToLocalTime();
-        message += "time_start='" + startTime.AsString() + "' ";
+        message += "time_start='";
+        unsigned int    start = it->GetTimeStart();
+        if (start == 0) {
+            message += "n/a ";
+        }
+        else {
+            CTime   startTime(start);
+            startTime.ToLocalTime();
+            message += "'" + startTime.AsString() + "' ";
+        }
 
         message += "time_done=";
         unsigned int    done = it->GetTimeDone();
@@ -3015,7 +3025,7 @@ void CQueue::x_PrintJobStat(CNetScheduleHandler &   handler,
             message += "n/a ";
         }
         else {
-            CTime   doneTime(it->GetTimeDone());
+            CTime   doneTime(done);
             doneTime.ToLocalTime();
             message += "'" + doneTime.AsString() + "' ";
         }

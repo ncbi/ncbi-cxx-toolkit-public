@@ -246,7 +246,8 @@ public:
     void Truncate(void);
 
     /// Cancel job execution (job stays in special Canceled state)
-    void Cancel(unsigned job_id);
+    /// Returns the previous job status
+    TJobStatus  Cancel(unsigned job_id);
 
     TJobStatus GetJobStatus(unsigned job_id) const;
 

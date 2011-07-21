@@ -1114,9 +1114,17 @@ void CNetScheduleHandler::x_ProcessBatchSequenceEnd(CQueue*)
 
 void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
 {
-    q->Cancel(m_JobReq.job_id);
+    switch (q->Cancel(m_JobReq.job_id)) {
+        case CNetScheduleAPI::eJobNotFound:
+            WriteMessage("OK:WARNING:Job not found;");
+            break;
+        case CNetScheduleAPI::eCanceled:
+            WriteMessage("OK:WARNING:Already canceled;");
+            break;
+        default:
+            WriteMessage("OK:");
+    }
 
-    WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
 }
 
