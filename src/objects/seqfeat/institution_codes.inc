@@ -5773,6 +5773,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UASM	s	University of Alberta, E.H. Strickland Entomological Museum",
 "UAT	s	Universidad Autonoma de Tamaulipas",
 "UAVP	s	University of Alberta, Laboratory for Vertebrate Paleontology",
+"UAWC<WBK>	b	Union of Agricultural Work Committees",
 "UAY	s	Universidad Autonoma de Yucatan, Facultad de Medicina Veterinaria y Zootecnia",
 "UAZ	s	University of Arizona",
 "UB<BRA>	s	Universidade de Brasilia, Departamento de Botanica",
