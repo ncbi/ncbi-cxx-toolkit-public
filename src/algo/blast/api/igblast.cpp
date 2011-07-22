@@ -231,7 +231,7 @@ void CIgBlast::x_SetupDJSearch(vector<CRef <CIgAnnotation> > &annots,
     // Only igblastn will search DJ
     CBlastOptions & opts = opts_hndl->SetOptions();
     opts.SetMatchReward(1);
-    opts.SetMismatchPenalty(-3);
+    opts.SetMismatchPenalty(-4);
     opts.SetWordSize(5);
     opts.SetGapOpeningCost(5);
     opts.SetGapExtensionCost(2);
