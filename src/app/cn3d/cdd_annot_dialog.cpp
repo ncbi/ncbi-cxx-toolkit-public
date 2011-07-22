@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+#include <util/xregexp/regexp.hpp>
 
 #include <objects/cdd/Align_annot.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -73,6 +74,7 @@
 #include "opengl_renderer.hpp"
 #include "show_hide_manager.hpp"
 
+#include "pattern_dialog.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // The following is taken unmodified from wxDesigner's C++ header from cdd_annot_dialog.wdr
@@ -92,17 +94,20 @@
 #define ID_L_ANNOT 10000
 #define ID_B_NEW_ANNOT 10001
 #define ID_B_HIGHLIGHT 10002
-#define ID_B_ANNOT_UP 10003
-#define ID_B_EDIT_ANNOT 10004
-#define ID_B_DEL_ANNOT 10005
-#define ID_B_ANNOT_DOWN 10006
-#define ID_L_EVID 10007
-#define ID_B_NEW_EVID 10008
-#define ID_B_SHOW 10009
-#define ID_B_EVID_UP 10010
-#define ID_B_EDIT_EVID 10011
-#define ID_B_DEL_EVID 10012
-#define ID_B_EVID_DOWN 10013
+#define ID_B_DEFINE_MOTIF 10003
+#define ID_B_ANNOT_UP 10004
+#define ID_B_EDIT_ANNOT 10005
+#define ID_B_DEL_ANNOT 10006
+#define ID_B_DEL_MOTIF 10007
+#define ID_B_HIGHLIGHT_MOTIF 10008
+#define ID_B_ANNOT_DOWN 10009
+#define ID_L_EVID 10010
+#define ID_B_NEW_EVID 10011
+#define ID_B_SHOW 10012
+#define ID_B_EVID_UP 10013
+#define ID_B_EDIT_EVID 10014
+#define ID_B_DEL_EVID 10015
+#define ID_B_EVID_DOWN 10016
 wxSizer *SetupCDDAnnotDialog( wxWindow *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
 #define ID_R_COMMENT 10014
@@ -290,6 +295,15 @@ void CDDAnnotateDialog::OnButton(wxCommandEvent& event)
         case ID_B_HIGHLIGHT:
             HighlightAnnotation();
             break;
+        case ID_B_DEFINE_MOTIF:
+            NewOrEditMotif();
+            break;
+        case ID_B_DEL_MOTIF:
+            DeleteMotif();
+            break;
+        case ID_B_HIGHLIGHT_MOTIF:
+            HighlightMotif();
+            break;
         case ID_B_ANNOT_UP: case ID_B_ANNOT_DOWN:
             MoveAnnotation(event.GetId() == ID_B_ANNOT_UP);
             break;
@@ -335,7 +349,10 @@ void CDDAnnotateDialog::SetupGUIControls(int selectAnnot, int selectEvidence)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bNewAnnot, ID_B_NEW_ANNOT, wxButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bDelAnnot, ID_B_DEL_ANNOT, wxButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bEditAnnot, ID_B_EDIT_ANNOT, wxButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bNewEditMotif, ID_B_DEFINE_MOTIF, wxButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bDelMotif, ID_B_DEL_MOTIF, wxButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bHighlight, ID_B_HIGHLIGHT, wxButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bHighlightMotif, ID_B_HIGHLIGHT_MOTIF, wxButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bAnnotUp, ID_B_ANNOT_UP, wxButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bAnnotDown, ID_B_ANNOT_DOWN, wxButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bNewEvid, ID_B_NEW_EVID, wxButton)
@@ -412,7 +429,14 @@ void CDDAnnotateDialog::SetupGUIControls(int selectAnnot, int selectEvidence)
     bNewAnnot->Enable(!readOnly);
     bDelAnnot->Enable(selectedAnnot != NULL && !readOnly);
     bEditAnnot->Enable(selectedAnnot != NULL && !readOnly);
+    if (selectedAnnot->IsSetMotif()) 
+        bNewEditMotif->SetLabel("Edit Motif");
+    else 
+        bNewEditMotif->SetLabel("New Motif");
+    bNewEditMotif->Enable(selectedAnnot != NULL && !readOnly);
+    bDelMotif->Enable(selectedAnnot != NULL && !readOnly && selectedAnnot->IsSetMotif());
     bHighlight->Enable(selectedAnnot != NULL);
+    bHighlightMotif->Enable(selectedAnnot != NULL && selectedAnnot->IsSetMotif());
     bAnnotUp->Enable(annots->GetSelection() > 0 && !readOnly);
     bAnnotDown->Enable(annots->GetSelection() < ((int) annots->GetCount()) - 1 && !readOnly);
     bNewEvid->Enable(selectedAnnot != NULL && !readOnly);
@@ -562,6 +586,228 @@ void CDDAnnotateDialog::EditAnnotation(void)
     SetupGUIControls(annots->GetSelection(), evids->GetSelection());
 }
 
+// Return true if the regexp matches the string constructed by concatenating the
+// highlighted residues of the sequence.  [Note that the string thus created is not,
+// in general, a true substring of the sequence.]  Return false otherwise. 
+// If there are no highlighted residues, also return false.
+bool DoesPatternMatchHighlightedResidues(const Sequence& sequence, const Sequence::MoleculeHighlightMap& restrictTo, CRegexp& regexp, set<unsigned int>* highlightedSeqIndicesPtr)
+{
+    bool result = false;
+    unsigned int i = 0, count = 0;
+    unsigned int len = sequence.sequenceString.length();
+    int start = 0;
+    string highlightedResidues;
+
+    if (highlightedSeqIndicesPtr) highlightedSeqIndicesPtr->clear();
+
+    Sequence::MoleculeHighlightMap::const_iterator r = restrictTo.find(sequence.identifier);
+    if (r != restrictTo.end()) {
+        for (; i < len; ++i) {
+            if (r->second[i]) {
+                highlightedResidues += sequence.sequenceString[i];
+                if (highlightedSeqIndicesPtr) highlightedSeqIndicesPtr->insert(i);
+            }
+        }
+    }
+
+    // do the search
+    if (highlightedResidues.length() > 0) {
+        string ignore = regexp.GetMatch(highlightedResidues, 0, 0, CRegexp::fMatch_default, true);
+        if (regexp.NumFound() > 0)
+            result = true;
+    }
+
+    return result;
+}
+
+//  Returns the number of rows matched.
+unsigned int DoHighlightMotif(StructureSet* structureSet, const string& regexPattern, Messenger::MoleculeHighlightMap& restrictTo)
+{
+    if (!structureSet || regexPattern.length() == 0 || restrictTo.size() == 0) return 0;
+
+    // Highlight matches of annotated residues to pattern from each (unique) sequence in the display
+    unsigned int nRowsMatched = 0;
+    map < const Sequence * , bool > usedSequences;
+    const BlockMultipleAlignment *alignment = structureSet->alignmentManager->GetCurrentMultipleAlignment();
+    CRegexp regexp(regexPattern, CRegexp::fCompile_ungreedy);
+    set<unsigned int> highlightedSeqIndices;
+
+    for (unsigned int i=0; i<alignment->NRows(); ++i) {
+
+        const Sequence *sequence = alignment->GetSequenceOfRow(i);
+        if (!sequence || usedSequences.find(sequence) != usedSequences.end()) continue;
+        usedSequences[sequence] = true;
+
+        if (DoesPatternMatchHighlightedResidues(*sequence, restrictTo, regexp, &highlightedSeqIndices)) {
+            ++nRowsMatched;
+            ITERATE(set<unsigned int>, setIt, highlightedSeqIndices) {
+                GlobalMessenger()->AddHighlights(sequence, *setIt, *setIt);
+            }
+        }
+    }
+    return nRowsMatched;
+}
+
+void CDDAnnotateDialog::NewOrEditMotif(void)
+{
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(annots, ID_L_ANNOT, wxListBox)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(evids, ID_L_EVID, wxListBox)
+
+    // get selection
+    if (annots->GetCount() == 0 || annots->GetSelection() < 0) return;
+    CAlign_annot *selectedAnnot =
+        reinterpret_cast<CAlign_annot*>(annots->GetClientData(annots->GetSelection()));
+    if (!selectedAnnot) {
+        ERRORMSG("CDDAnnotateDialog::NewOrEditMotif() - error getting annotation pointer");
+        return;
+    }
+
+    bool isMotifValid = true;
+    bool wasMotifSet = selectedAnnot->IsSetMotif();
+    int status = wxID_CANCEL, nGroups = 0;
+    TSeqPos from, to;
+    TSeqPos annotationLength = 0, patternLength = 0;
+    wxString msg, labelText;
+    wxString originalMotif = (wasMotifSet) ? selectedAnnot->GetMotif().c_str() : "";
+    wxString title = (wasMotifSet && originalMotif.length() > 0) ? "Edit Motif" : "New Motif";
+
+    //  Find the annotated residues on the master to display in PatternDialog
+    const BlockMultipleAlignment *alignment = structureSet->alignmentManager->GetCurrentMultipleAlignment();
+    const Sequence *master = alignment->GetMaster();
+    string annotatedMasterResidues, masterSequence = master->sequenceString;
+    if (selectedAnnot->GetLocation().IsInt()) {
+        annotationLength = selectedAnnot->GetLocation().GetInt().GetLength();
+        from = selectedAnnot->GetLocation().GetInt().GetFrom();
+        to = selectedAnnot->GetLocation().GetInt().GetTo();
+        if (to < masterSequence.length()) {
+            for (; from <= to; ++from) annotatedMasterResidues += masterSequence[from];
+        }
+    } else if (selectedAnnot->GetLocation().IsPacked_int()) {
+        CPacked_seqint::Tdata::iterator s,
+            se = selectedAnnot->SetLocation().SetPacked_int().Set().end();
+        for (s=selectedAnnot->SetLocation().SetPacked_int().Set().begin(); s!=se; ++s) {
+            annotationLength += (**s).GetLength();
+            from = (**s).GetFrom();
+            to = (**s).GetTo();
+            if (to < masterSequence.length()) {
+                for (; from <= to; ++from) annotatedMasterResidues += masterSequence[from];
+            } else {
+                annotatedMasterResidues = kEmptyStr;
+                break;
+            }
+        }
+    }
+
+    //  Copied from OnFindPattern
+    PatternDialog dialog(this);
+    dialog.SetTitle(title);
+    dialog.m_Pattern->SetValue(originalMotif);
+    dialog.m_Pattern->SetSelection(-1, -1);
+    dialog.m_Mode->SetStringSelection("Within");
+    dialog.m_Mode->Show(false);   //  mode is not relevant in this context
+
+    //  Since user may not be able to see the entire annotation
+    //  (and highlights will have been removed) include the annotated
+    //  residues on the master as a hint for users in building a pattern.
+    if (annotatedMasterResidues.length() > 0) {
+
+        //  If this is a new motif, use the master annotated residues as the default
+        if (!wasMotifSet) {
+            wxString defaultMotif(annotatedMasterResidues.c_str());
+            defaultMotif.MakeLower();
+            dialog.m_Pattern->SetValue(defaultMotif);
+        }
+
+        labelText = dialog.m_Text->GetLabelText();
+        annotatedMasterResidues = "\n[Annotated residues on master:  " + annotatedMasterResidues + "]\n";
+        labelText += wxString(annotatedMasterResidues.c_str());
+        dialog.m_Text->SetLabel(labelText);
+    }
+
+    dialog.Fit();
+    status = dialog.ShowModal();
+    
+    if (status != wxID_OK)
+        return;
+
+    wxString newMotif = dialog.m_Pattern->GetValue();
+    string prositePattern(newMotif.c_str()), regexPattern;
+    patternLength = PrositePatternLength(prositePattern);
+
+    // add trailing period if not present (convenience for the user;
+    // this must be done prior to calling Prosite2Regex)
+    if (prositePattern[prositePattern.size() - 1] != '.') prositePattern += '.';
+
+    if (newMotif.size() == 0 || newMotif == originalMotif)
+        return;
+    else if (patternLength == 0) {
+        msg.Printf("The entered motif\n\n%s\n\ndoes not specify a valid Cn3D motif.\nMotif not created/modified.", newMotif.c_str());
+        wxMessageBox(msg, "Invalid Motif Specification", wxOK | wxICON_WARNING | wxCENTRE, this);
+        return;
+    } else if (patternLength != annotationLength) {
+        msg.Printf("The entered motif\n\n%s\n\nmust define the same number of residues as the annotation (%d).\nMotif not created/modified.", newMotif.c_str(), annotationLength);
+        wxMessageBox(msg, "Wrong Motif Length", wxOK | wxICON_WARNING | wxCENTRE, this);
+        return;
+    } else if (!Prosite2Regex(prositePattern, &regexPattern, &nGroups)) {
+        msg.Printf("The entered motif\n\n%s\n\ndid not parse as valid ProSite syntax.\nMotif not created/modified.", newMotif.c_str());
+        wxMessageBox(msg, "Motif Parsing Error", wxOK | wxICON_WARNING | wxCENTRE, this);
+        return;
+    }
+
+    //  The 'restrictTo' map will constrain the motif to the columns of the selected 
+    //  annotation.  Temporarily highlight the annotation for the purpose of getting
+    //  the set of residues in the annotation on each row.  Immediately clear highlights 
+    //  again so that it will be obvious which rows matched the pattern.
+    Messenger::MoleculeHighlightMap restrictTo;
+    HighlightAnnotation();
+    GlobalMessenger()->GetHighlights(&restrictTo);
+    GlobalMessenger()->RemoveAllHighlights(true);  
+
+    //  find & highlight rows for which motif is found        
+    unsigned int nMatchesTotal = DoHighlightMotif(structureSet, regexPattern, restrictTo);
+
+    //  Perform some sort of sanity-check before accepting the new motif.
+    if (nMatchesTotal == 0) {
+        msg.Printf("For the entered motif\n\n%s\n\nno matches to annotated columns were found.\nMotif not created/modified.", newMotif.c_str());
+        wxMessageBox(msg, "Motif Not Found", wxOK | wxICON_WARNING | wxCENTRE, this);
+        return;
+    } else if (!isMotifValid) {
+        GlobalMessenger()->RemoveAllHighlights(true);  
+        msg.Printf("The entered motif\n\n%s\n\ndid not satisfy validity checks.\nMotif not created/modified.", newMotif.c_str());
+        wxMessageBox(msg, "Motif Failed Validity Checks", wxOK | wxICON_WARNING | wxCENTRE, this);
+        return;
+    } else {
+        selectedAnnot->SetMotif(newMotif.c_str());
+        selectedAnnot->SetMotifuse(0);
+        structureSet->SetDataChanged(StructureSet::eUserAnnotationData);
+    }
+
+    // update GUI
+    SetupGUIControls(annots->GetSelection(), evids->GetSelection());
+}
+
+void CDDAnnotateDialog::DeleteMotif(void)
+{
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(annots, ID_L_ANNOT, wxListBox)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(evids, ID_L_EVID, wxListBox)
+
+    // get selection
+    if (annots->GetCount() == 0 || annots->GetSelection() < 0) return;
+    CAlign_annot *selectedAnnot =
+        reinterpret_cast<CAlign_annot*>(annots->GetClientData(annots->GetSelection()));
+    if (!selectedAnnot) {
+        ERRORMSG("CDDAnnotateDialog::DeleteMotif() - error getting annotation pointer");
+        return;
+    } else if (selectedAnnot->IsSetMotif()) {
+        selectedAnnot->ResetMotif();
+        selectedAnnot->ResetMotifuse();
+        structureSet->SetDataChanged(StructureSet::eUserAnnotationData);
+    }
+
+    // update GUI
+    SetupGUIControls(annots->GetSelection(), evids->GetSelection());
+}
+
 bool CDDAnnotateDialog::HighlightInterval(const ncbi::objects::CSeq_interval& interval)
 {
     const BlockMultipleAlignment *alignment = structureSet->alignmentManager->GetCurrentMultipleAlignment();
@@ -607,6 +853,58 @@ void CDDAnnotateDialog::HighlightAnnotation(void)
         wxMessageBox("WARNING: this annotation specifies master residues outside the aligned blocks;"
             " see the message log for details.", "Annotation Error",
             wxOK | wxCENTRE | wxICON_ERROR, this);
+}
+
+void CDDAnnotateDialog::HighlightMotif(void)
+{
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(annots, ID_L_ANNOT, wxListBox)
+
+    // get selection
+    if (annots->GetCount() == 0 || annots->GetSelection() < 0) return;
+    CAlign_annot *selectedAnnot =
+        reinterpret_cast<CAlign_annot*>(annots->GetClientData(annots->GetSelection()));
+    if (!selectedAnnot) {
+        ERRORMSG("CDDAnnotateDialog::HighlightMotif() - error getting annotation pointer");
+        return;
+    } else if (!selectedAnnot->IsSetMotif()) {
+        return;
+    }
+
+    int nGroups = 0;
+    unsigned int patternLength;
+    wxString msg;
+    string prositePattern, regexPattern;
+    prositePattern = selectedAnnot->GetMotif();
+
+    // add trailing period if not present (convenience for the user;
+    // this must be done prior to calling Prosite2Regex)
+    if (prositePattern[prositePattern.size() - 1] != '.') prositePattern += '.';
+
+    patternLength = PrositePatternLength(prositePattern);
+    if (patternLength == 0) {
+        msg.Printf("The motif '%s' \n\ndoes not specify a valid Cn3D motif.", prositePattern.c_str());
+        wxMessageBox(msg, "Invalid Motif Specification", wxOK | wxICON_WARNING | wxCENTRE, this);
+        return;
+    } else if (!Prosite2Regex(prositePattern, &regexPattern, &nGroups)) {
+        msg.Printf("The motif '%s'\n\ndid not parse as valid ProSite syntax.", prositePattern.c_str());
+        wxMessageBox(msg, "Motif Parsing Error", wxOK | wxICON_WARNING | wxCENTRE, this);
+        return;
+    }
+
+    //  The 'restrictTo' map will constrain the motif to the columns of the selected 
+    //  annotation.  Temporarily highlight the annotation for the purpose of getting
+    //  the set of residues in the annotation on each row.  Immediately clear highlights 
+    //  again so that it will be obvious which rows matched the pattern.
+    Messenger::MoleculeHighlightMap restrictTo;
+    HighlightAnnotation();
+    GlobalMessenger()->GetHighlights(&restrictTo);
+    GlobalMessenger()->RemoveAllHighlights(true);  
+
+    unsigned int nMatchesTotal = DoHighlightMotif(structureSet, regexPattern, restrictTo);
+    if (nMatchesTotal == 0) {
+        msg.Printf("For the motif '%s'\n\nno matches to annotated columns were found.", selectedAnnot->GetMotif().c_str());
+        wxMessageBox(msg, "Motif Not Found", wxOK | wxICON_WARNING | wxCENTRE, this);
+    }
 }
 
 void CDDAnnotateDialog::MoveAnnotation(bool moveUp)
@@ -1050,6 +1348,7 @@ CDDEvidenceDialog::CDDEvidenceDialog(wxWindow *parent, const ncbi::objects::CFea
     SetupGUIControls();
 }
 
+
 // same as hitting cancel button
 void CDDEvidenceDialog::OnCloseWindow(wxCloseEvent& event)
 {
@@ -1449,69 +1748,94 @@ wxSizer *SetupCDDAnnotDialog( wxWindow *parent, bool call_fit, bool set_sizer )
 
     wxFlexGridSizer *item1 = new wxFlexGridSizer( 1, 0, 0, 0 );
 
-    wxStaticBox *item3 = new wxStaticBox( parent, -1, "Annotations" );
+    wxStaticBox *item3 = new wxStaticBox( parent, -1, wxT("Annotations") );
     wxStaticBoxSizer *item2 = new wxStaticBoxSizer( item3, wxVERTICAL );
 
     wxString *strs4 = (wxString*) NULL;
-    wxListBox *item4 = new wxListBox( parent, ID_L_ANNOT, wxDefaultPosition, wxSize(300,100), 0, strs4, wxLB_SINGLE|wxHSCROLL|wxLB_NEEDED_SB );
+    wxListBox *item4 = new wxListBox( parent, ID_L_ANNOT, wxDefaultPosition, wxSize(300,100), 0, strs4, wxLB_SINGLE|wxLB_NEEDED_SB|wxHSCROLL );
     item2->Add( item4, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     wxGridSizer *item5 = new wxGridSizer( 2, 0, 0, 0 );
 
-    wxButton *item6 = new wxButton( parent, ID_B_NEW_ANNOT, "New", wxDefaultPosition, wxDefaultSize, 0 );
-    item5->Add( item6, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item6 = new wxButton( parent, ID_B_NEW_ANNOT, wxT("New"), wxDefaultPosition, wxDefaultSize, 0 );
+    item5->Add( item6, 0, wxALIGN_CENTER|wxALL, 5 );
 
-    wxButton *item7 = new wxButton( parent, ID_B_HIGHLIGHT, "Highlight", wxDefaultPosition, wxDefaultSize, 0 );
-    item5->Add( item7, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item7 = new wxButton( parent, ID_B_HIGHLIGHT, wxT("Highlight"), wxDefaultPosition, wxDefaultSize, 0 );
+    item5->Add( item7, 0, wxALIGN_CENTER|wxALL, 5 );
 
-    wxButton *item8 = new wxButton( parent, ID_B_ANNOT_UP, "Move Up", wxDefaultPosition, wxDefaultSize, 0 );
-    item5->Add( item8, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item8 = new wxButton( parent, ID_B_DEFINE_MOTIF, wxT("Define Motif"), wxDefaultPosition, wxDefaultSize, 0 );
+    item5->Add( item8, 0, wxALIGN_CENTER|wxALL, 5 );
 
-    wxButton *item9 = new wxButton( parent, ID_B_EDIT_ANNOT, "Edit", wxDefaultPosition, wxDefaultSize, 0 );
-    item5->Add( item9, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item5->Add( 20, 20, 0, wxALIGN_CENTER|wxALL, 5 );
 
-    wxButton *item10 = new wxButton( parent, ID_B_DEL_ANNOT, "Delete", wxDefaultPosition, wxDefaultSize, 0 );
-    item5->Add( item10, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item9 = new wxButton( parent, ID_B_ANNOT_UP, wxT("Move Up"), wxDefaultPosition, wxDefaultSize, 0 );
+    item5->Add( item9, 0, wxALIGN_CENTER|wxALL, 5 );
 
-    wxButton *item11 = new wxButton( parent, ID_B_ANNOT_DOWN, "Move Down", wxDefaultPosition, wxDefaultSize, 0 );
-    item5->Add( item11, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item10 = new wxButton( parent, ID_B_EDIT_ANNOT, wxT("Edit"), wxDefaultPosition, wxDefaultSize, 0 );
+    item5->Add( item10, 0, wxALIGN_CENTER|wxALL, 5 );
 
-    item2->Add( item5, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item11 = new wxButton( parent, ID_B_DEL_ANNOT, wxT("Delete"), wxDefaultPosition, wxDefaultSize, 0 );
+    item5->Add( item11, 0, wxALIGN_CENTER|wxALL, 5 );
 
-    item1->Add( item2, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item12 = new wxButton( parent, ID_B_DEL_MOTIF, wxT("Delete Motif"), wxDefaultPosition, wxDefaultSize, 0 );
+    item5->Add( item12, 0, wxALIGN_CENTER|wxALL, 5 );
 
-    wxStaticBox *item13 = new wxStaticBox( parent, -1, "Evidence" );
-    wxStaticBoxSizer *item12 = new wxStaticBoxSizer( item13, wxVERTICAL );
+    wxButton *item13 = new wxButton( parent, ID_B_HIGHLIGHT_MOTIF, wxT("Show Motif"), wxDefaultPosition, wxDefaultSize, 0 );
+    item5->Add( item13, 0, wxALIGN_CENTER|wxALL, 5 );
 
-    wxString *strs14 = (wxString*) NULL;
-    wxListBox *item14 = new wxListBox( parent, ID_L_EVID, wxDefaultPosition, wxSize(300,100), 0, strs14, wxLB_SINGLE );
-    item12->Add( item14, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    wxButton *item14 = new wxButton( parent, ID_B_ANNOT_DOWN, wxT("Move Down"), wxDefaultPosition, wxDefaultSize, 0 );
+    item5->Add( item14, 0, wxALIGN_CENTER|wxALL, 5 );
 
-    wxGridSizer *item15 = new wxGridSizer( 2, 0, 0, 0 );
+    item2->Add( item5, 0, wxALIGN_CENTER|wxALL, 5 );
 
-    wxButton *item16 = new wxButton( parent, ID_B_NEW_EVID, "New", wxDefaultPosition, wxDefaultSize, 0 );
-    item15->Add( item16, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item1->Add( item2, 0, wxALIGN_CENTER|wxALL, 5 );
 
-    wxButton *item17 = new wxButton( parent, ID_B_SHOW, "Show", wxDefaultPosition, wxDefaultSize, 0 );
-    item15->Add( item17, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxStaticBox *item16 = new wxStaticBox( parent, -1, wxT("Evidence") );
+    wxStaticBoxSizer *item15 = new wxStaticBoxSizer( item16, wxVERTICAL );
 
-    wxButton *item18 = new wxButton( parent, ID_B_EVID_UP, "Move Up", wxDefaultPosition, wxDefaultSize, 0 );
-    item15->Add( item18, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxString *strs17 = (wxString*) NULL;
+    wxListBox *item17 = new wxListBox( parent, ID_L_EVID, wxDefaultPosition, wxSize(300,100), 0, strs17, wxLB_SINGLE );
+    item15->Add( item17, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    wxButton *item19 = new wxButton( parent, ID_B_EDIT_EVID, "Edit", wxDefaultPosition, wxDefaultSize, 0 );
-    item15->Add( item19, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxGridSizer *item18 = new wxGridSizer( 2, 0, 0, 0 );
 
-    wxButton *item20 = new wxButton( parent, ID_B_DEL_EVID, "Delete", wxDefaultPosition, wxDefaultSize, 0 );
-    item15->Add( item20, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item19 = new wxButton( parent, ID_B_NEW_EVID, wxT("New"), wxDefaultPosition, wxDefaultSize, 0 );
+    item18->Add( item19, 0, wxALIGN_CENTER|wxALL, 5 );
 
-    wxButton *item21 = new wxButton( parent, ID_B_EVID_DOWN, "Move Down", wxDefaultPosition, wxDefaultSize, 0 );
-    item15->Add( item21, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item20 = new wxButton( parent, ID_B_SHOW, wxT("Show"), wxDefaultPosition, wxDefaultSize, 0 );
+    item18->Add( item20, 0, wxALIGN_CENTER|wxALL, 5 );
 
-    item12->Add( item15, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item21 = new wxButton( parent, ID_B_EVID_UP, wxT("Move Up"), wxDefaultPosition, wxDefaultSize, 0 );
+    item18->Add( item21, 0, wxALIGN_CENTER|wxALL, 5 );
 
-    item1->Add( item12, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item22 = new wxButton( parent, ID_B_EDIT_EVID, wxT("Edit"), wxDefaultPosition, wxDefaultSize, 0 );
+    item18->Add( item22, 0, wxALIGN_CENTER|wxALL, 5 );
 
-    item0->Add( item1, 0, wxALIGN_CENTRE, 5 );
+    wxButton *item23 = new wxButton( parent, ID_B_DEL_EVID, wxT("Delete"), wxDefaultPosition, wxDefaultSize, 0 );
+    item18->Add( item23, 0, wxALIGN_CENTER|wxALL, 5 );
+
+    wxButton *item24 = new wxButton( parent, ID_B_EVID_DOWN, wxT("Move Down"), wxDefaultPosition, wxDefaultSize, 0 );
+    item18->Add( item24, 0, wxALIGN_CENTER|wxALL, 5 );
+
+    item15->Add( item18, 0, wxALIGN_CENTER|wxALL, 5 );
+
+    item1->Add( item15, 0, wxALIGN_CENTER|wxALL, 5 );
+
+    item0->Add( item1, 0, wxALIGN_CENTER, 5 );
+
+    if (set_sizer)
+    {
+        parent->SetSizer( item0 );
+        if (call_fit)
+            item0->SetSizeHints( parent );
+    }
+    
+    return item0;
+}
+
+/*  before added motif buttons, there were a couple extra lines at end;
+    not sure if they were added by hand, or if wxDesigner simply no longer 
+    adds them...
 
     if (set_sizer)
     {
@@ -1523,9 +1847,7 @@ wxSizer *SetupCDDAnnotDialog( wxWindow *parent, bool call_fit, bool set_sizer )
             item0->SetSizeHints( parent );
         }
     }
-
-    return item0;
-}
+*/
 
 wxSizer *SetupEvidenceDialog( wxWindow *parent, bool call_fit, bool set_sizer )
 {

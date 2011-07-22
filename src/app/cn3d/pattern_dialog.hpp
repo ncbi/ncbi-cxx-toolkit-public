@@ -105,6 +105,7 @@ public:
 ////@begin PatternDialog member variables
     wxTextCtrl* m_Pattern;
     wxRadioBox* m_Mode;
+    wxStaticText* m_Text;
 ////@end PatternDialog member variables
 };
 

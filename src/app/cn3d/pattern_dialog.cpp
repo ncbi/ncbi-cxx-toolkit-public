@@ -105,6 +105,7 @@ void PatternDialog::CreateControls()
     itemDialog1->SetSizer(itemBoxSizer2);
     itemDialog1->SetAutoLayout(TRUE);
     wxStaticText* itemStaticText3 = new wxStaticText( itemDialog1, wxID_STATIC, _("Enter a pattern using ProSite syntax:"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_Text = itemStaticText3;
     itemBoxSizer2->Add(itemStaticText3, 0, wxALIGN_LEFT|wxALL|wxADJUST_MINSIZE, 5);
 
     wxTextCtrl* itemTextCtrl4 = new wxTextCtrl( itemDialog1, ID_T_PATTERN, _T(""), wxDefaultPosition, wxSize(300, -1), 0 );

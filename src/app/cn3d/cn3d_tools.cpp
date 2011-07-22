@@ -519,4 +519,169 @@ char LookupCharacterFromNCBIStdaaNumber(unsigned char n)
     return '?';
 }
 
+bool Prosite2Regex(const string& prosite, string *regex, int *nGroups)
+{
+    try {
+        // check allowed characters ('#' isn't ProSite, but is a special case used to match an 'X' residue character)
+        static const string allowed = "-ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789[],(){}<>.#";
+        unsigned int i;
+        for (i=0; i<prosite.size(); ++i)
+            if (allowed.find(toupper((unsigned char) prosite[i])) == string::npos) break;
+        if (i != prosite.size()) throw "invalid ProSite character";
+        if (prosite[prosite.size() - 1] != '.') throw "ProSite pattern must end with '.'";
+
+        // translate into real regex syntax;
+        regex->erase();
+        *nGroups = 0;
+
+        bool inGroup = false;
+        for (unsigned int i=0; i<prosite.size(); ++i) {
+
+            // handle grouping and termini
+            bool characterHandled = true;
+            switch (prosite[i]) {
+                case '-': case '.': case '>':
+                    if (inGroup) {
+                        *regex += ')';
+                        inGroup = false;
+                    }
+                    if (prosite[i] == '>') *regex += '$';
+                    break;
+                case '<':
+                    *regex += '^';
+                    break;
+                default:
+                    characterHandled = false;
+                    break;
+            }
+            if (characterHandled) continue;
+            if (!inGroup && (
+                    (isalpha((unsigned char) prosite[i]) && toupper((unsigned char) prosite[i]) != 'X') ||
+                    prosite[i] == '[' || prosite[i] == '{' || prosite[i] == '#')) {
+                *regex += '(';
+                ++(*nGroups);
+                inGroup = true;
+            }
+
+            // translate syntax
+            switch (prosite[i]) {
+                case '(':
+                    *regex += '{';
+                    break;
+                case ')':
+                    *regex += '}';
+                    break;
+                case '{':
+                    *regex += "[^";
+                    break;
+                case '}':
+                    *regex += ']';
+                    break;
+                case 'X': case 'x':
+                    *regex += '.';
+                    break;
+                case '#':
+                    *regex += 'X';
+                    break;
+                default:
+                    *regex += toupper((unsigned char) prosite[i]);
+                    break;
+            }
+        }
+    }
+
+    catch (const char *err) {
+        ERRORMSG("Prosite2Regex() - " << err);
+        return false;
+    }
+
+    return true;
+}
+
+unsigned int PrositePatternLength(const string& prosite)
+{
+    //  ('#' isn't ProSite, but is a special case used to match an 'X' residue character)
+    static const string allowed = "-ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789[],(){}<>.#";
+
+    // check allowed characters 
+    unsigned int i;
+    for (i=0; i<prosite.size(); ++i)
+        if (allowed.find(toupper((unsigned char) prosite[i])) == string::npos) break;
+    if (i != prosite.size()) return 0;
+
+    bool hasOnlyX = true, stopParsing = false;
+    bool inBraces = false, inBrackets = false, inParens = false;
+    unsigned int length = 0;
+    int nFromParens;
+    string betweenParens;
+
+    for (i=0; i < prosite.size() && !stopParsing; ++i) {
+
+        // handle grouping and termini
+        bool characterHandled = true;
+        switch (prosite[i]) {
+            case '-': case '.': case '>': case '<':
+                break;
+            default:
+                characterHandled = false;
+                break;
+        }
+        if (inParens && prosite[i] != ')' && !characterHandled) betweenParens += prosite[i];
+        if (characterHandled) continue;
+
+        if (hasOnlyX && isalpha((unsigned char) prosite[i]) && toupper((unsigned char) prosite[i]) != 'X') {
+            hasOnlyX = false;
+        }
+
+        // translate syntax
+        switch (prosite[i]) {
+            case '(':
+                inParens = true;
+                break;
+            case ')':
+                nFromParens = NStr::StringToNumeric(betweenParens);
+
+                //  Do not allow a variable number of repetitions.
+                //  Also, length has already been incremented by 1 for whatever the (...) references
+                if (nFromParens > 0) 
+                    length += nFromParens - 1;
+                else   
+                    stopParsing = true;
+
+                inParens = false;
+                betweenParens.erase();
+                break;
+            case '{':
+                inBraces = true;
+                break;
+            case '}':
+                ++length;
+                inBraces = false;
+                break;
+            case '[':
+                inBrackets = true;
+                break;
+            case ']':
+                ++length;
+                inBrackets = false;
+                break;
+            default:
+                if (!inParens && !inBraces && !inBrackets) ++length;
+                break;
+        }
+    }
+
+    //  Invalid pattern:  Appear to have missed a closing parenthesis/brace/bracket.
+    if (inParens || inBrackets || inBraces) length = 0;
+
+    //  Invalid pattern:  Appear to have all 'X' characters.
+    if (hasOnlyX) length = 0;
+
+    //  If there was some parsing error or prosite pattern allowed
+    //  a match of indeterminate length, return 0.
+    if (stopParsing) length = 0;
+
+    return length;
+}
+
 END_SCOPE(Cn3D)

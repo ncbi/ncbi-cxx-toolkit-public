@@ -79,7 +79,10 @@ private:
     void NewAnnotation(void);
     void DeleteAnnotation(void);
     void EditAnnotation(void);
+    void NewOrEditMotif(void);
+    void DeleteMotif(void);
     void HighlightAnnotation(void);
+    void HighlightMotif(void);
     void MoveAnnotation(bool moveUp);
     void NewEvidence(void);
     void DeleteEvidence(void);
