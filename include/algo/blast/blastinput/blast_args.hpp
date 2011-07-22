@@ -805,10 +805,10 @@ public:
     /// [out]
     /// @param custom_fmt_spec Custom output format specification in command
     /// line options [out]
-    static void
+    virtual void
     ParseFormattingString(const CArgs& args,
                           EOutputFormat& fmt_type,
-                          string& custom_fmt_spec);
+                          string& custom_fmt_spec) const;
 
     /// Get the choice of formatted output
     EOutputFormat GetFormattedOutputChoice() const {

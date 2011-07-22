@@ -1679,10 +1679,25 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         DescribeTabularOutputFormatSpecifiers() + 
         string("\n");
 
+    const string kIgOutputFormatDescription = string(
+    "alignment view options:\n"
+    "  3 = flat query-anchored, show identities,\n"
+    "  4 = flat query-anchored, no identities,\n"
+    "  7 = tabular with comment lines\n\n"
+    "Options 7 can be additionally configured to produce\n"
+    "a custom format specified by space delimited format specifiers.\n"
+    "The supported format specifiers are:\n") +
+        DescribeTabularOutputFormatSpecifiers() + 
+        string("\n");
+
+    int dft_outfmt = (m_IsIgBlast) ? 3 : kDfltArgOutputFormat;
+
     // alignment view
-    arg_desc.AddDefaultKey(kArgOutputFormat, "format", kOutputFormatDescription,
+    arg_desc.AddDefaultKey(kArgOutputFormat, "format", 
+                           (m_IsIgBlast) ? kIgOutputFormatDescription
+                                         : kOutputFormatDescription,
                            CArgDescriptions::eString, 
-                           NStr::IntToString(kDfltArgOutputFormat));
+                           NStr::IntToString(dft_outfmt));
 
     // show GIs in deflines
     arg_desc.AddFlag(kArgShowGIs, "Show NCBI GIs in deflines?", true);
@@ -1736,7 +1751,7 @@ CFormattingArgs::ArchiveFormatRequested(const CArgs& args) const
 void
 CFormattingArgs::ParseFormattingString(const CArgs& args, 
                                        EOutputFormat& fmt_type, 
-                                       string& custom_fmt_spec)
+                                       string& custom_fmt_spec) const
 {
     custom_fmt_spec.clear();
     if (args[kArgOutputFormat]) {
@@ -1758,6 +1773,10 @@ CFormattingArgs::ParseFormattingString(const CArgs& args,
         }
         if (val < 0 || val >= static_cast<int>(eEndValue)) {
             string msg("Formatting choice is out of range");
+            throw std::out_of_range(msg);
+        }
+        if (m_IsIgBlast && (val != 3 and val != 4 and val != 7)) {
+            string msg("Formatting choice is not valid");
             throw std::out_of_range(msg);
         }
         fmt_type = static_cast<EOutputFormat>(val);
