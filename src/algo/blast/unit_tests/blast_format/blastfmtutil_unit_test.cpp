@@ -100,8 +100,7 @@ BOOST_AUTO_TEST_CASE(GetBlastDeflineFromGenbank)
     BOOST_REQUIRE(bh);
 
     CRef<CBlast_def_line_set> defline = CSeqDB::ExtractBlastDefline(bh);
-    BOOST_REQUIRE(defline.NotEmpty());
-    BOOST_REQUIRE(defline->Get().empty());
+    BOOST_REQUIRE(defline.Empty());
 }
 
 BOOST_AUTO_TEST_CASE(GetBlastDeflineFromBlastDb)
