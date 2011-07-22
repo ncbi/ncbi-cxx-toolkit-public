@@ -1077,7 +1077,7 @@ BOOST_AUTO_TEST_CASE(testMultiSeqAlignmentHasRegionsUnalignedToQuery) {
              i < kUnalignedRange.second; i++) {
             ss.str("");
             ss << "Alignment extents differ at position " 
-               << NStr::IntToString(i);
+               << NStr::SizetToString(i);
             BOOST_REQUIRE_MESSAGE((int)-1 == (int)aligned_blocks->pos_extnt[i].left, ss.str());
             BOOST_REQUIRE_MESSAGE( (int)pssm_input->GetQueryLength() == (int)aligned_blocks->pos_extnt[i].right, ss.str());
             BOOST_REQUIRE_MESSAGE(

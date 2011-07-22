@@ -266,7 +266,7 @@ public:
                                           sizeof(value_type));
                 if ( !reallocation ) {
                     string msg("Failed to allocate ");
-                    msg += NStr::IntToString(num_elements + 1) + " elements";
+                    msg += NStr::SizetToString(num_elements + 1) + " elements";
                     NCBI_THROW(CSeqDBException, eMemErr, msg);
                 }
                 _data = (TSeqPos*) reallocation;

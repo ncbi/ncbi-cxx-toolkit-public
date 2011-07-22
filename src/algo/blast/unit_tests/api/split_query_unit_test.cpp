@@ -253,7 +253,7 @@ public:
         CRef<ILocalQueryData> query_data(qf->MakeLocalQueryData(&*opts));
 
         CAutoEnvironmentVariable tmp_env("CHUNK_SIZE",
-                                         NStr::IntToString(chunk_size,
+                                         NStr::SizetToString(chunk_size,
                                                            NStr::fConvErr_NoThrow));
         CRef<CQuerySplitter> splitter(new CQuerySplitter(qf, &*opts));
         CRef<CSplitQueryBlk> sqb = splitter->Split();

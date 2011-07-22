@@ -119,7 +119,7 @@ s_SeqIntervalToSeqLocInfo(CRef<CSeq_interval> interval,
     TSeqRange loc(interval->GetFrom(), 0);
     loc.SetToOpen(interval->GetTo());
 
-    for (int ir=0; ir< target_ranges.size(); ir++) {
+    for (size_t ir=0; ir< target_ranges.size(); ir++) {
         if (target_ranges[ir] != TSeqRange::GetEmpty() &&  
            loc.IntersectingWith(target_ranges[ir])) {
            CRef<CSeqLocInfo> sli(new CSeqLocInfo(interval, frame));

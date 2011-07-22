@@ -871,7 +871,7 @@ Blast_GetSeqLocInfoVector(EBlastProgramType program,
 
     if (query_intervals.size() != mask->total_size/kNumContexts) {
         string msg = "Blast_GetSeqLocInfoVector: number of query ids " +
-            NStr::IntToString(query_intervals.size()) + 
+            NStr::SizetToString(query_intervals.size()) + 
             " not equal to number of queries in mask " + 
             NStr::IntToString(mask->total_size/kNumContexts);
         NCBI_THROW(CBlastException, eInvalidArgument, msg);

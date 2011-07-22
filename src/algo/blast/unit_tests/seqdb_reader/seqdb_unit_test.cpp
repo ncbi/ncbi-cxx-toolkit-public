@@ -1798,7 +1798,7 @@ BOOST_AUTO_TEST_CASE(CSeqDBFileGiList_GetGis)
     
     // Compare the contents
     for (size_t i = 0; i < reference.size(); i++) {
-        string msg = "Failed on element " + NStr::IntToString(i);
+        string msg = "Failed on element " + NStr::SizetToString(i);
         BOOST_REQUIRE_MESSAGE(reference[i] == gis[i], msg);
     }
 }

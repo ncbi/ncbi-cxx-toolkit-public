@@ -126,7 +126,7 @@ bool CSeqDbSeqInfoSrc::GetMasks(Uint4 index,
     CSeqDB::TSequenceRanges ranges;
     m_iSeqDb->GetMaskData(index, m_FilteringAlgoId, ranges);
     ITERATE(CSeqDB::TSequenceRanges, itr, ranges) {
-        for (int it=0; it<target.size(); it++) {
+        for (size_t it=0; it<target.size(); it++) {
             if (target[it] != TSeqRange::GetEmpty() &&
                 target[it].IntersectingWith(*itr)) {
                 CRef<CSeq_interval> si

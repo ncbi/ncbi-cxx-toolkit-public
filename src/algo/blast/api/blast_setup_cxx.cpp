@@ -857,7 +857,7 @@ GetSequenceProtein(IBlastSeqVector& sv, string* warnings = 0)
         }
         if (invalid_residues.size() > kMaxResiduesToWarnAbout) {
             error += ",... (only first ";
-            error += NStr::IntToString(kMaxResiduesToWarnAbout) + " shown)";
+            error += NStr::SizetToString(kMaxResiduesToWarnAbout) + " shown)";
         }
         NCBI_THROW(CBlastException, eInvalidCharacter, error);
     }
@@ -873,7 +873,7 @@ GetSequenceProtein(IBlastSeqVector& sv, string* warnings = 0)
         }
         if (replaced_residues.size() > kMaxResiduesToWarnAbout) {
             *warnings += ",... (only first ";
-            *warnings += NStr::IntToString(kMaxResiduesToWarnAbout);
+            *warnings += NStr::SizetToString(kMaxResiduesToWarnAbout);
             *warnings += " shown)";
         }
     }

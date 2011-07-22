@@ -134,8 +134,8 @@ CSeqAlignCmp::Run(string* errors)
     if (m_Ref.size() != m_Test.size()) {
         if (errors) {
             (*errors) += "Different number of alignments:\n";
-            (*errors) += NStr::IntToString(m_Ref.size()) + " vs. ";
-            (*errors) += NStr::IntToString(m_Test.size()) + "\n";
+            (*errors) += NStr::SizetToString(m_Ref.size()) + " vs. ";
+            (*errors) += NStr::SizetToString(m_Test.size()) + "\n";
         }
         retval = false;
     }

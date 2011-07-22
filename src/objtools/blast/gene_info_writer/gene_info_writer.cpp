@@ -458,7 +458,7 @@ bool CGeneFileWriter::
     {
         NCBI_THROW(CGeneInfoException, eDataFormatError,
             "GeneInfo file format not recognized.\nLine: " + strLine +
-            "\nFound " + NStr::IntToString(strItems.size()) + " items.");
+            "\nFound " + NStr::SizetToString(strItems.size()) + " items.");
     }
 
     // read geneId

@@ -167,7 +167,7 @@ private:
 
     /// Verify the algorithm exists.  If not, raise an exception
     void x_VerifyAlgorithmId(int algo_id) const {
-        if (algo_id < 0 || algo_id >= m_MaskNames.size()) {
+        if (algo_id < 0 || algo_id >= (int)m_MaskNames.size()) {
             CNcbiOstrstream oss;
             oss << "Filtering algorithm ID " << algo_id
                 << " does not exist." << endl;

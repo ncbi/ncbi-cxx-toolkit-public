@@ -516,9 +516,9 @@ CShowBlastDefline::CShowBlastDefline(const CSeq_align_set& seqalign,
     m_ScopeRef(&scope),
     m_LineLen(line_length),
     m_NumToShow(num_defline_to_show),
+    m_TranslatedNucAlignment(translated_nuc_alignment),
     m_SkipFrom(-1),
     m_SkipTo(-1),
-    m_TranslatedNucAlignment(translated_nuc_alignment),
     m_MasterRange(master_range),
     m_LinkoutDB(NULL)
 {

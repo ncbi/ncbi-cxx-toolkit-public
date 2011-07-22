@@ -1392,7 +1392,7 @@ static void s_SeqDBMaskSequence(char                    * seq,
     while (i < masks->size() && (*masks)[i].second <= begin) ++i;
 
     while (i < masks->size() && (*masks)[i].first < end) {
-        for (int j = max((*masks)[i].first, begin);
+        for (size_t j = max((*masks)[i].first, begin);
                  j < min((*masks)[i].second, end); ++j) {
             seq[j] = mask_letter;
         }

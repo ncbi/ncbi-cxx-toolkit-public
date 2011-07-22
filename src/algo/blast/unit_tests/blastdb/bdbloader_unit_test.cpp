@@ -281,7 +281,7 @@ void RetrievePartsOfLargeChromosome(bool is_remote)
         const string ref(1, seq_data[i]);
         const string test(1, buffer[i]);
         string msg("Unexpected base at position ");
-        msg += NStr::IntToString(i+kRange.GetFrom()) + ": '" + ref + "' vs. '";
+        msg += NStr::SizetToString(i+kRange.GetFrom()) + ": '" + ref + "' vs. '";
         msg += test + "'";
         BOOST_REQUIRE_MESSAGE(ref == test, msg);
     }

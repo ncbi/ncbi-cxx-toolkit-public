@@ -1451,7 +1451,7 @@ CDisplaySeqalign::SAlnRowInfo *CDisplaySeqalign::x_PrepareRowData(void)
         x_FillSeqid(seqidArray[row], row);
         maxIdLen=max<size_t>(seqidArray[row].size(), maxIdLen);
         size_t maxCood=max<size_t>(m_AV->GetSeqStart(row), m_AV->GetSeqStop(row));
-        maxStartLen = max<size_t>(NStr::IntToString(maxCood).size(), maxStartLen);
+        maxStartLen = max<size_t>(NStr::SizetToString(maxCood).size(), maxStartLen);
     }
     for(int i = 0; i < rowNum; i ++){//adjust max id length for feature id 
         int num_feature = 0;

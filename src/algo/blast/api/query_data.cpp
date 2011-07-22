@@ -78,9 +78,9 @@ void
 ILocalQueryData::x_ValidateIndex(size_t index)
 {
     if (index > GetNumQueries()) {
-        throw std::out_of_range("Index " + NStr::IntToString(index) +
+        throw std::out_of_range("Index " + NStr::SizetToString(index) +
                                 " out of range (" +
-                                NStr::IntToString(GetNumQueries()) +
+                                NStr::SizetToString(GetNumQueries()) +
                                 " max)");
     }
 }

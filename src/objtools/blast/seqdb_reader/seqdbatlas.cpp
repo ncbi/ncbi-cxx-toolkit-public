@@ -339,7 +339,7 @@ bool CSeqDBAtlas::GetFileSizeL(const string & fname,
         if (file_length >= 0) {
             data.first  = true;
             data.second = SeqDB_CheckLength<Int8,TIndx>(file_length);
-            if (file_length > m_MaxFileSize) m_MaxFileSize = file_length;
+            if ((Uint8)file_length > m_MaxFileSize) m_MaxFileSize = file_length;
         } else {
             data.first  = false;
             data.second = 0;

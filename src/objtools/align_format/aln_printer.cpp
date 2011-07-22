@@ -47,7 +47,7 @@ USING_SCOPE(align_format);
 // Relace non-alphanumeric characters with '_'
 static void s_ReplaceNonAlphaNum(string& str)
 {
-    for (int i=0;i < str.length();i++) {
+    for (size_t i=0;i < str.length();i++) {
         if (!isalnum(str[i])) {
             str[i] = '_';
         }

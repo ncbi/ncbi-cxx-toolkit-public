@@ -341,7 +341,7 @@ CBlastDBCmdApp::x_ProcessSearchRequest()
         }
         if (outfmt.find("%m") != string::npos) {
             int algo_id = 0;
-            int i = outfmt.find("%m") + 2;
+            size_t i = outfmt.find("%m") + 2;
             bool found = false;
             while (i < outfmt.size() 
                 && outfmt[i] >= '0' && outfmt[i] <= '9') {

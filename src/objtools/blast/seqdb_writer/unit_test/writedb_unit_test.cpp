@@ -1816,7 +1816,7 @@ RegisterTooManyVariantsOfSameMaskingAlgorithm
         if (i == 0 && masking_algo < eBlast_filter_program_repeat) {
             options.assign("");
         } else {
-            options.assign(NStr::IntToString(i));
+            options.assign(NStr::SizetToString(i));
         }
     
         int algo_id = -1;
@@ -1995,7 +1995,7 @@ BOOST_AUTO_TEST_CASE(TooManyAlgoId)
     const size_t kMaxNumSupportedAlgorithmVariants =
         eBlast_filter_program_windowmasker - masking_algorithm;
     for (size_t i = 0; i < kMaxNumSupportedAlgorithmVariants*2; i++) {
-        string options( i == 0 ? "" : NStr::IntToString(i));
+        string options( i == 0 ? "" : NStr::SizetToString(i));
         int algo_id = -1;
         if (i >= kMaxNumSupportedAlgorithmVariants) {
             BOOST_REQUIRE_THROW( 

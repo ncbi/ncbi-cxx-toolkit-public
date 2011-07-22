@@ -527,7 +527,7 @@ BOOST_AUTO_TEST_CASE(TestMultipleIterationsAndConvergence_ProteinAsQuery_NoCBS) 
 
         string m("On round ");
         m += NStr::IntToString(itr.GetIterationNumber()) + " found ";
-        m += NStr::IntToString(ids.size()) + " qualifying ids";
+        m += NStr::SizetToString(ids.size()) + " qualifying ids";
         BOOST_REQUIRE_MESSAGE( 
                 hits_below_threshold[iteration_counter]==(int)ids.size(), m);
         itr.Advance(ids);
@@ -1043,7 +1043,7 @@ BOOST_AUTO_TEST_CASE(TestMultipleIterationsAndConvergence_PssmAsQuery_NoCBS) {
 
         string m("On round ");
         m += NStr::IntToString(itr.GetIterationNumber()) + " found ";
-        m += NStr::IntToString(ids.size()) + " qualifying ids";
+        m += NStr::SizetToString(ids.size()) + " qualifying ids";
         BOOST_REQUIRE_EQUAL(hits_below_threshold[iteration_counter],
                              (int)ids.size());
         itr.Advance(ids);
@@ -1088,7 +1088,7 @@ BOOST_AUTO_TEST_CASE(TestMultipleIterationsAndConvergence_PssmAsQuery_CBS) {
 
         string m("On round ");
         m += NStr::IntToString(itr.GetIterationNumber()) + " found ";
-        m += NStr::IntToString(ids.size()) + " qualifying ids";
+        m += NStr::SizetToString(ids.size()) + " qualifying ids";
         BOOST_REQUIRE_EQUAL(hits_below_threshold[iteration_counter],
                              (int)ids.size());
         itr.Advance(ids);

@@ -59,10 +59,10 @@ static void s_ConvertConcatStringToVectorOfString(const string & s, vector<strin
 	int pos_start = 0;
 	while(1)
 	{
-		int pos_find = s.find(delimiter, pos_start);
+		size_t pos_find = s.find(delimiter, pos_start);
 		if(pos_find == string::npos)
 			break;
-		int length = pos_find - pos_start;
+		TSeqPos length = pos_find - pos_start;
 		v.push_back(s.substr(pos_start, length));
 		pos_start = pos_find + delimiter.size();
 	}

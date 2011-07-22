@@ -807,7 +807,7 @@ private:
     {
         int num_failures = 0;
 
-        for (int i=1; i< tokens.size(); ++i) {
+        for (size_t i=1; i< tokens.size(); ++i) {
             CFile f(CDirEntry::MakePath(dir, tokens[i]));
 
             // File naming check 
