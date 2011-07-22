@@ -1623,7 +1623,7 @@ CSeq_align::TLengthRange CSeq_align::GapLengthRange() const
                              (minus_strand ? seg_ranges : last_seg_ranges)[i];
                          const TSeqRange &upper_seg =
                              (minus_strand ? last_seg_ranges : seg_ranges)[i];
-                         TSeqPos gap = upper_seg.GetFrom() - lower_seg.GetToOpen();
+                         TSignedSeqPos gap = upper_seg.GetFrom() - lower_seg.GetToOpen();
                          if (gap > 0) {
                              length_range.AddLength(gap);
                          }
