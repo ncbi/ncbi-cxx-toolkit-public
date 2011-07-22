@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_CASE(GetBlastDeflineFromGenbank)
     CBioseq_Handle bh = scope->GetBioseqHandle(id);
     BOOST_REQUIRE(bh);
 
-    CRef<CBlast_def_line_set> defline = SeqDB_GetBlastDefline(bh);
+    CRef<CBlast_def_line_set> defline = CSeqDB::ExtractBlastDefline(bh);
     BOOST_REQUIRE(defline.NotEmpty());
     BOOST_REQUIRE(defline->Get().empty());
 }
@@ -128,7 +128,7 @@ BOOST_AUTO_TEST_CASE(GetBlastDeflineFromBlastDb)
     CSeq_id id;
     id.SetGi(gi);
     const CBioseq_Handle& handle = scope->GetBioseqHandle(id);
-    const CRef<CBlast_def_line_set> bdls = SeqDB_GetBlastDefline(handle);
+    const CRef<CBlast_def_line_set> bdls = CSeqDB::ExtractBlastDefline(handle);
     const list< CRef< CBlast_def_line > >& bdl = bdls->Get();
     ITERATE(list< CRef< CBlast_def_line > >, iter, bdl){
         const CBioseq::TId& cur_id = (*iter)->GetSeqid();

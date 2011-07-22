@@ -149,6 +149,19 @@ void CBlastDBExtractor::x_SetGi() {
     return;
 }
 
+void CBlastDBExtractor::x_InitDefline() 
+{
+    if (m_Defline.NotEmpty()) {
+        return;
+    }
+    if (m_Bioseq.NotEmpty()) {
+        m_Defline = CSeqDB::ExtractBlastDefline(*m_Bioseq);
+    }
+    if (m_Defline.Empty()) {
+        m_Defline = m_BlastDb.GetHdr(m_Oid);
+    }
+}
+
 string CBlastDBExtractor::ExtractMembershipInteger()
 {
     x_InitDefline();
@@ -359,6 +372,24 @@ string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
 int CBlastDBExtractor::x_ExtractTaxId() 
 {
     x_SetGi();
+#if 0
+    if (m_Bioseq.NotEmpty()) {
+        // try to use the defline first to avoid re-reading it from the database
+        x_InitDefline();
+        ITERATE(CBlast_def_line_set::Tdata, bd, m_Defline->Get()) {
+            ITERATE(CBlast_def_line::TSeqid, id, ((*bd)->GetSeqid())) {
+                if ((*id)->IsGi()) {
+                    if ((*id)->GetGi() == m_Gi) {
+                        return (*bd)->GetTaxid();
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+    } 
+#endif
+
     if (m_Gi) {
         map <int, int> gi2taxid;
         m_BlastDb.GetTaxIDs(m_Oid, gi2taxid);

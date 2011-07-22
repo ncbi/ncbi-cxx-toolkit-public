@@ -51,7 +51,7 @@ static char const rcsid[] = "$Id$";
 //#include <objects/general/User_field.hpp>
 //#include <objects/general/Dbtag.hpp>
 
-#include <objtools/blast/seqdb_reader/seqdb.hpp>    // for SeqDB_GetBlastDefline
+#include <objtools/blast/seqdb_reader/seqdb.hpp>    // for CSeqDB::ExtractBlastDefline
 
 #include <objmgr/scope.hpp>
 #include <objmgr/feat_ci.hpp>
@@ -1124,7 +1124,7 @@ string CDisplaySeqalign::x_GetUrl(const CBioseq_Handle& bsp_handle,int giToUse,s
     
         list<string>  linkoutStr;
         if(m_AlignOption&eLinkout && (seqUrlInfo->gi > 0)){     			                    
-            const CRef<CBlast_def_line_set> bdlRef =  SeqDB_GetBlastDefline(bsp_handle);
+            const CRef<CBlast_def_line_set> bdlRef =  CSeqDB::ExtractBlastDefline(bsp_handle);
             const list< CRef< CBlast_def_line > >& bdl_list = bdlRef->Get();
             linkoutStr = CAlignFormatUtil::GetFullLinkoutUrl(bdl_list,
                                            m_Rid, 
@@ -2251,7 +2251,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
                            CSeq_id::WorstRank);
     
         const CRef<CBlast_def_line_set> bdlRef 
-            =  SeqDB_GetBlastDefline(bsp_handle);
+            =  CSeqDB::ExtractBlastDefline(bsp_handle);
         const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
         bool isFirst = true;
         int firstGi = 0;
@@ -3109,7 +3109,7 @@ bool CDisplaySeqalign::x_IsGeneInfoAvailable(SAlnInfo* aln_vec_info)
         }
 
         const CRef<CBlast_def_line_set> bdlRef 
-            =  SeqDB_GetBlastDefline(bsp_handle);
+            =  CSeqDB::ExtractBlastDefline(bsp_handle);
         const CBlast_def_line_set::Tdata& bdl = bdlRef->Get();
 
         ITERATE(CBlast_def_line_set::Tdata, iter, bdl)
@@ -3522,7 +3522,7 @@ CDisplaySeqalign::x_FormatDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnIn
     string linksStr;
     list<string> linkoutStr;
     if(bsp_handle){        
-        const CRef<CBlast_def_line_set> bdlRef =  SeqDB_GetBlastDefline(bsp_handle);
+        const CRef<CBlast_def_line_set> bdlRef =  CSeqDB::ExtractBlastDefline(bsp_handle);
         const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
         bool isFirst = true;
         int firstGi = 0;

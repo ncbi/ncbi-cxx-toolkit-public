@@ -895,7 +895,7 @@ int CAlignFormatUtil::GetTaxidForSeqid(const CSeq_id& id, CScope& scope)
     try{
         const CBioseq_Handle& handle = scope.GetBioseqHandle(id);
         const CRef<CBlast_def_line_set> bdlRef = 
-            SeqDB_GetBlastDefline(handle);
+            CSeqDB::ExtractBlastDefline(handle);
         const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
         ITERATE(list<CRef<CBlast_def_line> >, iter_bdl, bdl) {
             CConstRef<CSeq_id> bdl_id = 

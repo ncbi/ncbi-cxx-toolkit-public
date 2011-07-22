@@ -540,6 +540,11 @@ public:
     /// @param bioseq Bioseq retrieved from CSeqDB [in]
     static CRef<CBlast_def_line_set> 
     ExtractBlastDefline(const CBioseq & bioseq);
+    /// Extract a Blast-def-line-set object from a Bioseq_Handle retrieved by 
+    /// CSeqDB
+    /// @param bioseq Bioseq retrieved from CSeqDB [in]
+    static CRef<CBlast_def_line_set> 
+    ExtractBlastDefline(const CBioseq_Handle& handle);
     
     /// Get a pointer to raw sequence data.
     ///
@@ -1490,18 +1495,6 @@ CSeqDB::ESeqType ParseMoleculeTypeString(const string& str);
 /// @return true if relevant files were deleted, else false
 NCBI_XOBJREAD_EXPORT 
 bool DeleteBlastDb(const string& dbpath, CSeqDB::ESeqType seq_type);
-
-/// Get blast defline from a bioseq retrieved from a BLAST database
-/// @param handle: bioseq handle to extract blast defline from
-NCBI_XOBJREAD_EXPORT 
-CRef<objects::CBlast_def_line_set> 
-SeqDB_GetBlastDefline(const objects::CBioseq_Handle& handle);
-
-/// Get blast defline from a bioseq retrieved from a BLAST database
-/// @param bioseq: bioseq to extract blast defline from
-NCBI_XOBJREAD_EXPORT 
-CRef<objects::CBlast_def_line_set> 
-SeqDB_GetBlastDefline(const objects::CBioseq& bioseq);
 
 END_NCBI_SCOPE
 

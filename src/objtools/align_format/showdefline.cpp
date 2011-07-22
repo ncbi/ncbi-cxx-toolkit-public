@@ -58,7 +58,7 @@ static char const rcsid[] = "$Id$";
 #include <objects/blastdb/defline_extra.hpp>
 
 #include <objtools/align_format/showdefline.hpp>
-#include <objtools/blast/seqdb_reader/seqdb.hpp>    // for SeqDB_GetBlastDefline
+#include <objtools/blast/seqdb_reader/seqdb.hpp>    // for CSeqDB::ExtractBlastDefline
 
 #include <stdio.h>
 #include <html/htmlhelper.hpp>
@@ -218,7 +218,7 @@ CShowBlastDefline::GetBioseqHandleDeflineAndId(const CBioseq_Handle& handle,
     // Retrieve the CBlast_def_line_set object and save in a CRef, preventing
     // its destruction; then extract the list of CBlast_def_line objects.
     CRef<CBlast_def_line_set> bdlRef = 
-        SeqDB_GetBlastDefline(handle);
+        CSeqDB::ExtractBlastDefline(handle);
     bdlRef->PutTargetGiFirst(this_gi_first);
     const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
 
@@ -274,7 +274,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                                            int blast_rank)
 {
 
-    const CRef<CBlast_def_line_set> bdlRef = SeqDB_GetBlastDefline(handle);
+    const CRef<CBlast_def_line_set> bdlRef = CSeqDB::ExtractBlastDefline(handle);
     const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
     const CBioseq::TId* ids = &handle.GetBioseqCore()->GetId();
     CRef<CSeq_id> wid;    
@@ -567,7 +567,7 @@ bool CShowBlastDefline::x_CheckForStructureLink()
 
       ITERATE(vector<SScoreInfo*>, iter, m_ScoreList) {
           const CBioseq_Handle& handle = m_ScopeRef->GetBioseqHandle(*(*iter)->id);
-          const CRef<CBlast_def_line_set> bdlRef = SeqDB_GetBlastDefline(handle);
+          const CRef<CBlast_def_line_set> bdlRef = CSeqDB::ExtractBlastDefline(handle);
           const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
           for(list< CRef< CBlast_def_line > >::const_iterator bdl_iter = bdl.begin();
               bdl_iter != bdl.end() && struct_linkout == false; bdl_iter++){

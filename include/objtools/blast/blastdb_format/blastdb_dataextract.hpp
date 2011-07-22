@@ -124,12 +124,7 @@ private:
     int x_ExtractTaxId();
 
     /// Initialize the cached defline
-    void x_InitDefline() {
-        if (m_Defline.NotEmpty()) {
-            return;
-        }
-        m_Defline = m_BlastDb.GetHdr(m_Oid);
-    }
+    void x_InitDefline();
 
     /// Setting the target_only m_Gi
     void x_SetGi();

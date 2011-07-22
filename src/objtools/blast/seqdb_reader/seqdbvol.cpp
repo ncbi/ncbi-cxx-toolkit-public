@@ -1103,8 +1103,9 @@ s_OssToDefline(const CUser_field::TData::TOss & oss)
     return retval;
 }
 
-CRef<CBlast_def_line_set> 
-CSeqDB::ExtractBlastDefline(const CBioseq & bioseq)
+template<class T>
+CRef<CBlast_def_line_set>
+s_ExtractBlastDefline(const T& bioseq)
 {
     CRef<CBlast_def_line_set> failure;
     if ( !bioseq.IsSetDescr() ) {
@@ -1130,6 +1131,14 @@ CSeqDB::ExtractBlastDefline(const CBioseq & bioseq)
     }
     return failure;
 }
+
+CRef<CBlast_def_line_set> 
+CSeqDB::ExtractBlastDefline(const CBioseq_Handle & handle)
+{ return s_ExtractBlastDefline(handle); }
+
+CRef<CBlast_def_line_set> 
+CSeqDB::ExtractBlastDefline(const CBioseq & bioseq)
+{ return s_ExtractBlastDefline(bioseq); }
 
 CRef<CSeqdesc>
 CSeqDBVol::x_GetAsnDefline(int                    oid,
