@@ -269,12 +269,21 @@ class NetSchedule:
                     "-logfile", self.__path + "netscheduled.log" ]
         if not self.isLocal():
             cmdLine = [ "ssh", self.__host ] + cmdLine
-        if verbose:
-            print "Executing command: " + " ".join( cmdLine )
-        safeRun( cmdLine )
+
+        count = 7
+        while count > 0:
+            if verbose:
+                print "Executing command: " + " ".join( cmdLine )
+            safeRun( cmdLine )
+            if self.isRunning():
+                time.sleep( 5 )
+                return
+            time.sleep( 2 )
+            count -= 1
         if not self.isRunning():
             raise Exception( "Error starting netschedule" )
-        time.sleep( 5 )
+
+        time.sleep( 10 )
         return
 
     def kill( self, signal = "SIGKILL", seconds = 30 ):
@@ -1263,7 +1272,8 @@ def main():
               Scenario08( netschedule ), Scenario09( netschedule ),
               Scenario10( netschedule ), Scenario11( netschedule ),
               Scenario12( netschedule ), Scenario13( netschedule ),
-              Scenario14( netschedule ), Scenario15( netschedule ),
+              Scenario14( netschedule ),
+              # Scenario15( netschedule ),
               Scenario16( netschedule ), Scenario17( netschedule ),
               Scenario18( netschedule ),
               # Scenario19( netschedule ),
@@ -1313,14 +1323,16 @@ def main():
                     sys.stdout.flush()
                 else:
                     print >> sys.stderr, "Test #" + str( testCount ) + \
-                                        " failed. Scenario: " + \
-                                        aTest.getScenario()
+                                         " failed. Scenario: " + \
+                                         aTest.getScenario()
                     sys.stderr.flush()
                     failureCount += 1
             except Exception, exct:
                 failureCount += 1
                 print >> sys.stderr, "Test #" + str( testCount ) + \
-                                    " failed. Exception:\n" + str( exct )
+                                     " failed. Scenario: " + \
+                                     aTest.getScenario() + "\n" \
+                                     "Exception:\n" + str( exct )
                 sys.stderr.flush()
             testCount += 1
         netschedule.safeStop()
@@ -1348,8 +1360,13 @@ def getRetCode( info ):
         return info[ "ret_code" ]
 
     # New format
-    lastAttempt = info[ "attempt_counter" ]
-    attemptLine = info[ "attempt" + lastAttempt ]
+    if info.has_key( "attempt_counter" ):
+        lastAttempt = info[ "attempt_counter" ]
+        attemptLine = info[ "attempt" + lastAttempt ]
+    else:
+        lastAttempt = info[ "event_counter" ]
+        attemptLine = info[ "event" + lastAttempt ]
+
     parts = attemptLine.split( ' ' )
     retcodePart = parts[ 2 ]
     if not retcodePart.startswith( "ret_code=" ):
@@ -1366,8 +1383,13 @@ def getErrMsg( info ):
         return info[ "err_msg" ]
 
     # New format
-    lastAttempt = info[ "attempt_counter" ]
-    attemptLine = info[ "attempt" + lastAttempt ]
+    if info.has_key( "attempt_counter" ):
+        lastAttempt = info[ "attempt_counter" ]
+        attemptLine = info[ "attempt" + lastAttempt ]
+    else:
+        lastAttempt = info[ "event_counter" ]
+        attemptLine = info[ "event" + lastAttempt ]
+
     parts = attemptLine.split( 'err_msg=' )
     value = parts[ 1 ].strip()
     return value
@@ -1870,7 +1892,7 @@ class Scenario16( TestBase ):
             raise Exception( "Cannot start netschedule" )
 
         params = self.ns.getQueueConfiguration( 'TEST' )
-        return params[ 'timeout' ] == '15' and \
+        return params[ 'timeout' ] == '30' and \
                params[ 'run_timeout' ] == "7" and \
                params[ 'failed_retries' ] == "3"
 
@@ -2194,7 +2216,7 @@ class Scenario24( TestBase ):
         if info[ "status" ] != "Running" or info[ "run_counter" ] != "1":
             return False
 
-        time.sleep( 20 )    # Till the job is expired
+        time.sleep( 40 )    # Till the job is expired
         jobIDReceived = self.ns.getJob( 'TEST' )
         if jobID != jobIDReceived:
             return False
@@ -3208,7 +3230,7 @@ class Scenario49( TestBase ):
                                  "received " + info[ 'status' ]
             return False
 
-        time.sleep( 20 )
+        time.sleep( 16 )
 
         info = self.ns.getJobInfo( 'TEST', jobID1 )
         if info[ 'status' ] != 'Done':
