@@ -1775,7 +1775,7 @@ CFormattingArgs::ParseFormattingString(const CArgs& args,
             string msg("Formatting choice is out of range");
             throw std::out_of_range(msg);
         }
-        if (m_IsIgBlast && (val != 3 and val != 4 and val != 7)) {
+        if (m_IsIgBlast && (val != 3 && val != 4 && val != 7)) {
             string msg("Formatting choice is not valid");
             throw std::out_of_range(msg);
         }
