@@ -53,6 +53,7 @@
 #include <util/sequtil/sequtil.hpp>
 #include <util/range.hpp>
 #include <set>
+#include <objmgr/bioseq_handle.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -1489,6 +1490,18 @@ CSeqDB::ESeqType ParseMoleculeTypeString(const string& str);
 /// @return true if relevant files were deleted, else false
 NCBI_XOBJREAD_EXPORT 
 bool DeleteBlastDb(const string& dbpath, CSeqDB::ESeqType seq_type);
+
+/// Get blast defline from a bioseq retrieved from a BLAST database
+/// @param handle: bioseq handle to extract blast defline from
+NCBI_XOBJREAD_EXPORT 
+CRef<objects::CBlast_def_line_set> 
+SeqDB_GetBlastDefline(const objects::CBioseq_Handle& handle);
+
+/// Get blast defline from a bioseq retrieved from a BLAST database
+/// @param bioseq: bioseq to extract blast defline from
+NCBI_XOBJREAD_EXPORT 
+CRef<objects::CBlast_def_line_set> 
+SeqDB_GetBlastDefline(const objects::CBioseq& bioseq);
 
 END_NCBI_SCOPE
 

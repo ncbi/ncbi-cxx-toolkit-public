@@ -47,12 +47,6 @@ static char const rcsid[] = "$Id$";
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbifile.hpp>
 #include <html/htmlhelper.hpp>
-#include <serial/objistr.hpp>
-#include <serial/objostr.hpp>
-#include <serial/serial.hpp>
-#include <serial/objostrasnb.hpp> 
-#include <serial/objistrasnb.hpp> 
-#include <connect/ncbi_conn_stream.hpp>
 #include <util/tables/raw_scoremat.h>
 
 #include <objects/seqalign/Seq_align.hpp>
@@ -67,11 +61,6 @@ static char const rcsid[] = "$Id$";
 #include <objects/seq/Seqdesc.hpp> 
 #include <objects/blastdb/defline_extra.hpp>
 #include <objects/taxon1/taxon1.hpp>
-
-#include <objects/general/Object_id.hpp>
-#include <objects/general/User_object.hpp>
-#include <objects/general/User_field.hpp>
-#include <objects/general/Dbtag.hpp>
 
 #include <objtools/blast/services/blast_services.hpp>   // for CBlastServices
 #include <objtools/blast/seqdb_reader/seqdb.hpp>   // for CSeqDB
@@ -575,81 +564,6 @@ void CAlignFormatUtil::PrintPhiInfo(int num_patterns,
 }
                                     
 
-/// Efficiently decode a Blast-def-line-set from binary ASN.1.
-/// @param oss Octet string sequence of binary ASN.1 data.
-/// @param bdls Blast def line set decoded from oss.
-static void
-s_OssToDefline(const CUser_field::TData::TOss & oss,
-               CBlast_def_line_set            & bdls)
-{
-    typedef const CUser_field::TData::TOss TOss;
-    
-    const char * data = NULL;
-    size_t size = 0;
-    string temp;
-    
-    if (oss.size() == 1) {
-        // In the single-element case, no copies are needed.
-        
-        const vector<char> & v = *oss.front();
-        data = & v[0];
-        size = v.size();
-    } else {
-        // Determine the octet string length and do one allocation.
-        
-        ITERATE (TOss, iter1, oss) {
-            size += (**iter1).size();
-        }
-        
-        temp.reserve(size);
-        
-        ITERATE (TOss, iter3, oss) {
-            // 23.2.4[1] "The elements of a vector are stored contiguously".
-            temp.append(& (**iter3)[0], (*iter3)->size());
-        }
-        
-        data = & temp[0];
-    }
-    
-    CObjectIStreamAsnBinary inpstr(data, size);
-    inpstr >> bdls;
-}
-
-#define GetBlastDeflineImpl(handle)                                           \
-{                                                                             \
-    CRef<CBlast_def_line_set> bdls(new CBlast_def_line_set);                  \
-    if(handle.IsSetDescr()){                                                  \
-        ITERATE(CSeq_descr::Tdata, iter, handle.GetDescr().Get()) {           \
-            if((*iter)->IsUser()){                                            \
-                const CUser_object& uobj = (*iter)->GetUser();                \
-                const CObject_id& uobjid = uobj.GetType();                    \
-                if(uobjid.IsStr()){                                           \
-                    const string& label = uobjid.GetStr();                    \
-                    if (label == kAsnDeflineObjLabel){                        \
-                        const vector< CRef< CUser_field > >& usf =            \
-                            uobj.GetData();                                   \
-                        if(usf.front()->GetData().IsOss()){                   \
-                            /*only one user field*/                           \
-                            typedef const CUser_field::TData::TOss TOss;      \
-                            const TOss& oss = usf.front()->GetData().GetOss();\
-                            s_OssToDefline(oss, *bdls);                       \
-                        }                                                     \
-                    }                                                         \
-                }                                                             \
-            }                                                                 \
-        }                                                                     \
-    }                                                                         \
-    return bdls;                                                              \
-}                                                                             \
-
-CRef<CBlast_def_line_set> 
-CAlignFormatUtil::GetBlastDefline (const CBioseq& bioseq) 
-GetBlastDeflineImpl(bioseq)
-
-CRef<CBlast_def_line_set> 
-CAlignFormatUtil::GetBlastDefline (const CBioseq_Handle& handle) 
-GetBlastDeflineImpl(handle)
-
 void CAlignFormatUtil::GetAlnScores(const CSeq_align& aln,
                                     int& score, 
                                     double& bits, 
@@ -981,7 +895,7 @@ int CAlignFormatUtil::GetTaxidForSeqid(const CSeq_id& id, CScope& scope)
     try{
         const CBioseq_Handle& handle = scope.GetBioseqHandle(id);
         const CRef<CBlast_def_line_set> bdlRef = 
-            CAlignFormatUtil::GetBlastDefline(handle);
+            SeqDB_GetBlastDefline(handle);
         const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
         ITERATE(list<CRef<CBlast_def_line> >, iter_bdl, bdl) {
             CConstRef<CSeq_id> bdl_id = 

@@ -46,18 +46,12 @@ static char const rcsid[] = "$Id$";
 #include <util/range.hpp>
 #include <util/md5.hpp>
 
-#include <objects/general/Object_id.hpp>
-#include <objects/general/User_object.hpp>
-#include <objects/general/User_field.hpp>
-#include <objects/general/Dbtag.hpp>
+//#include <objects/general/Object_id.hpp>
+//#include <objects/general/User_object.hpp>
+//#include <objects/general/User_field.hpp>
+//#include <objects/general/Dbtag.hpp>
 
-#include <serial/iterator.hpp>
-#include <serial/objistr.hpp>
-#include <serial/objostr.hpp>
-#include <serial/serial.hpp>
-#include <serial/objostrasnb.hpp> 
-#include <serial/objistrasnb.hpp> 
-#include <connect/ncbi_conn_stream.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>    // for SeqDB_GetBlastDefline
 
 #include <objmgr/scope.hpp>
 #include <objmgr/feat_ci.hpp>
@@ -86,12 +80,7 @@ static char const rcsid[] = "$Id$";
 #include <objtools/alnmgr/alnmix.hpp>
 #include <objtools/alnmgr/alnvec.hpp>
 
-#include <objects/blastdb/Blast_def_line.hpp>
-#include <objects/blastdb/Blast_def_line_set.hpp>
-#include <objects/blastdb/defline_extra.hpp>
-
 #include <stdio.h>
-#include <util/tables/raw_scoremat.h>
 #include <objtools/readers/getfeature.hpp>
 #include <objtools/alnmgr/score_builder_base.hpp>
 #include <html/htmlhelper.hpp>
@@ -1135,7 +1124,7 @@ string CDisplaySeqalign::x_GetUrl(const CBioseq_Handle& bsp_handle,int giToUse,s
     
         list<string>  linkoutStr;
         if(m_AlignOption&eLinkout && (seqUrlInfo->gi > 0)){     			                    
-            const CRef<CBlast_def_line_set> bdlRef =  CAlignFormatUtil::GetBlastDefline(bsp_handle);
+            const CRef<CBlast_def_line_set> bdlRef =  SeqDB_GetBlastDefline(bsp_handle);
             const list< CRef< CBlast_def_line > >& bdl_list = bdlRef->Get();
             linkoutStr = CAlignFormatUtil::GetFullLinkoutUrl(bdl_list,
                                            m_Rid, 
@@ -2262,7 +2251,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
                            CSeq_id::WorstRank);
     
         const CRef<CBlast_def_line_set> bdlRef 
-            =  CAlignFormatUtil::GetBlastDefline(bsp_handle);
+            =  SeqDB_GetBlastDefline(bsp_handle);
         const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
         bool isFirst = true;
         int firstGi = 0;
@@ -3120,7 +3109,7 @@ bool CDisplaySeqalign::x_IsGeneInfoAvailable(SAlnInfo* aln_vec_info)
         }
 
         const CRef<CBlast_def_line_set> bdlRef 
-            =  CAlignFormatUtil::GetBlastDefline(bsp_handle);
+            =  SeqDB_GetBlastDefline(bsp_handle);
         const CBlast_def_line_set::Tdata& bdl = bdlRef->Get();
 
         ITERATE(CBlast_def_line_set::Tdata, iter, bdl)
@@ -3533,7 +3522,7 @@ CDisplaySeqalign::x_FormatDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnIn
     string linksStr;
     list<string> linkoutStr;
     if(bsp_handle){        
-        const CRef<CBlast_def_line_set> bdlRef =  CAlignFormatUtil::GetBlastDefline(bsp_handle);
+        const CRef<CBlast_def_line_set> bdlRef =  SeqDB_GetBlastDefline(bsp_handle);
         const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
         bool isFirst = true;
         int firstGi = 0;

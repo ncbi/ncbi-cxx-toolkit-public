@@ -522,16 +522,6 @@ public:
                                     vector<int>& offsets,
                                     CNcbiOstream& out);
 
-    ///Get blast defline
-    ///@param handle: bioseq handle to extract blast defline from
-    ///
-    static CRef<objects::CBlast_def_line_set> 
-    GetBlastDefline (const objects::CBioseq_Handle& handle);
-    ///Get blast defline from a bioseq
-    ///@param bioseq: bioseq to extract blast defline from
-    static CRef<objects::CBlast_def_line_set> 
-    GetBlastDefline (const objects::CBioseq& bioseq);
-
     ///Extract score info from blast alingment
     ///@param aln: alignment to extract score info from
     ///@param score: place to extract the raw score to

@@ -45,7 +45,7 @@
 #include <algo/blast/blastinput/blast_scope_src.hpp>
 #include <algo/blast/format/blastfmtutil.hpp>
 #include <objmgr/util/sequence.hpp>
-#include <objects/blastdb/defline_extra.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
 
 #define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
@@ -99,8 +99,7 @@ BOOST_AUTO_TEST_CASE(GetBlastDeflineFromGenbank)
     CBioseq_Handle bh = scope->GetBioseqHandle(id);
     BOOST_REQUIRE(bh);
 
-    CRef<CBlast_def_line_set> defline =
-        CBlastFormatUtil::GetBlastDefline(bh);
+    CRef<CBlast_def_line_set> defline = SeqDB_GetBlastDefline(bh);
     BOOST_REQUIRE(defline.NotEmpty());
     BOOST_REQUIRE(defline->Get().empty());
 }
@@ -129,8 +128,7 @@ BOOST_AUTO_TEST_CASE(GetBlastDeflineFromBlastDb)
     CSeq_id id;
     id.SetGi(gi);
     const CBioseq_Handle& handle = scope->GetBioseqHandle(id);
-    const CRef<CBlast_def_line_set> bdls = CBlastFormatUtil::
-        GetBlastDefline(handle);
+    const CRef<CBlast_def_line_set> bdls = SeqDB_GetBlastDefline(handle);
     const list< CRef< CBlast_def_line > >& bdl = bdls->Get();
     ITERATE(list< CRef< CBlast_def_line > >, iter, bdl){
         const CBioseq::TId& cur_id = (*iter)->GetSeqid();

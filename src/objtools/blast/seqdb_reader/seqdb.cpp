@@ -42,6 +42,17 @@ static char const rcsid[] = "$Id$";
 #include <map>
 #include <string>
 
+#include <serial/objistr.hpp>
+#include <serial/objostr.hpp>
+#include <serial/serial.hpp>
+#include <serial/objostrasnb.hpp> 
+#include <serial/objistrasnb.hpp> 
+
+#include <objects/general/Object_id.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
+#include <objects/general/Dbtag.hpp>
+
 BEGIN_NCBI_SCOPE
 
 const string CSeqDB::kOidNotFound("OID not found");
@@ -1298,6 +1309,85 @@ bool DeleteBlastDb(const string& dbpath, CSeqDB::ESeqType seq_type)
     }
     return static_cast<bool>(num_files_removed != 0);
 }
+
+/// Efficiently decode a Blast-def-line-set from binary ASN.1.
+/// @param oss Octet string sequence of binary ASN.1 data.
+/// @param bdls Blast def line set decoded from oss.
+static CRef<CBlast_def_line_set>
+s_OssToDefline(const CUser_field::TData::TOss & oss)
+{
+    typedef const CUser_field::TData::TOss TOss;
+    
+    const char * data = NULL;
+    size_t size = 0;
+    string temp;
+    
+    if (oss.size() == 1) {
+        // In the single-element case, no copies are needed.
+        
+        const vector<char> & v = *oss.front();
+        data = & v[0];
+        size = v.size();
+    } else {
+        // Determine the octet string length and do one allocation.
+        
+        ITERATE (TOss, iter1, oss) {
+            size += (**iter1).size();
+        }
+        
+        temp.reserve(size);
+        
+        ITERATE (TOss, iter3, oss) {
+            // 23.2.4[1] "The elements of a vector are stored contiguously".
+            temp.append(& (**iter3)[0], (*iter3)->size());
+        }
+        
+        data = & temp[0];
+    }
+    
+    CRef<CBlast_def_line_set> retval(new CBlast_def_line_set);
+    CObjectIStreamAsnBinary inpstr(data, size);
+    inpstr >> *retval;
+    return retval;
+}
+
+template<class T>
+CRef<CBlast_def_line_set>
+s_SeqDB_GetBlastDefline(const T& bioseq_obj)
+{
+    CRef<CBlast_def_line_set> retval;
+    if(bioseq_obj.IsSetDescr()){              
+        retval.Reset(new CBlast_def_line_set);
+        ITERATE(CSeq_descr::Tdata, iter, bioseq_obj.GetDescr().Get()) {
+            if((*iter)->IsUser()){
+                const CUser_object& uobj = (*iter)->GetUser();
+                const CObject_id& uobjid = uobj.GetType();
+                if(uobjid.IsStr()){
+                    const string& label = uobjid.GetStr();
+                    if (label == kAsnDeflineObjLabel){
+                        const vector< CRef< CUser_field > >& usf =            
+                            uobj.GetData();
+                        if(usf.front()->GetData().IsOss()){
+                            /*only one user field*/
+                            typedef const CUser_field::TData::TOss TOss;      
+                            const TOss& oss = usf.front()->GetData().GetOss();
+                            return s_OssToDefline(oss);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return retval;
+}
+
+CRef<objects::CBlast_def_line_set> 
+SeqDB_GetBlastDefline(const objects::CBioseq_Handle& handle)
+{ return s_SeqDB_GetBlastDefline(handle); }
+
+CRef<objects::CBlast_def_line_set> 
+SeqDB_GetBlastDefline(const objects::CBioseq& bioseq)
+{ return s_SeqDB_GetBlastDefline(bioseq); }
 
 END_NCBI_SCOPE
 

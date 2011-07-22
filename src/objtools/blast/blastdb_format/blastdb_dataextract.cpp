@@ -87,7 +87,7 @@ void CBlastDBExtractor::SetSeqId(const CBlastDBSeqId &id, bool get_data) {
                    "Entry not found in BLAST database");
     }
 
-   	int length = m_BlastDb.GetSeqLength(m_Oid);
+   	TSeqPos length = m_BlastDb.GetSeqLength(m_Oid);
    	if (length <= 0) {
        	NCBI_THROW(CSeqDBException, eArgErr,
            	       "Entry found in BLAST database has invalid length");
@@ -135,7 +135,7 @@ string CBlastDBExtractor::ExtractPig() {
 
 string CBlastDBExtractor::ExtractGi() {
     x_SetGi();
-    return (m_Gi ? NStr::IntToString(m_Gi) : "NA");
+    return (m_Gi ? NStr::IntToString(m_Gi) : NOT_AVAILABLE);
 }
 
 void CBlastDBExtractor::x_SetGi() {

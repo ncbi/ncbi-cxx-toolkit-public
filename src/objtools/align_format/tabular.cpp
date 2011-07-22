@@ -296,7 +296,7 @@ void CBlastTabularInfo::SetSubjectId(const CBioseq_Handle& bh)
     // Retrieve the CBlast_def_line_set object and save in a CRef, preventing
     // its destruction; then extract the list of CBlast_def_line objects.
     const CRef<CBlast_def_line_set> bdlRef = 
-        CAlignFormatUtil::GetBlastDefline(bh);
+        SeqDB_GetBlastDefline(bh);
     const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
     
     vector< CConstRef<CSeq_id> > original_seqids;
