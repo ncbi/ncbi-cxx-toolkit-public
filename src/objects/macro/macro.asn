@@ -1332,19 +1332,19 @@ Replace-rule ::= SEQUENCE {
 Fix-type ::= ENUMERATED {
   none (0) ,
   typo (1) ,
-  quickfix (2) ,
-  no-organelle-for-prokaryote (3),
-  might-be-nonfunctional (4),
-  database (5),
-  remove-organism-name (6),
-  inappropriate-symbol (7),
-  evolutionary-relationship (8),
-  use-protein (9),
-  hypothetical (10),
-  british (11),
-  description (12),
-  gene (13) }  
-  
+  putative-typo (2) ,
+  quickfix (3) ,
+  no-organelle-for-prokaryote (4),
+  might-be-nonfunctional (5),
+  database (6),
+  remove-organism-name (7),
+  inappropriate-symbol (8),
+  evolutionary-relationship (9),
+  use-protein (10),
+  hypothetical (11),
+  british (12),
+  description (13),
+  gene (14) }  
 
 Suspect-rule ::= SEQUENCE {
   find Search-func ,
