@@ -4,7 +4,7 @@
 #################################
 
 SUB_PROJ = composition_adjustment core dbindex dbindex_search api format blastinput \
-           gumbel_params unit_tests
+           igblast gumbel_params unit_tests
 
 WATCHERS = camacho madden
 

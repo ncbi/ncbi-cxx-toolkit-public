@@ -1,0 +1,19 @@
+# $Id$
+
+SRC_CXX = \
+igblast 
+
+SRC  = $(SRC_CXX)
+
+LIB = igblast
+
+DLL_LIB = xblast $(OBJMGR_LIBS)
+
+# should be redundant, given the above :-/
+# ASN_DEP = seqset xnetblast
+
+CFLAGS   = $(FAST_CFLAGS)
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
+
+WATCHERS = madden camacho maning

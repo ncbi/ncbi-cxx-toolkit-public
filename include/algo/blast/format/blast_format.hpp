@@ -41,7 +41,7 @@ Author: Jason Papadopoulos
 #include <algo/blast/api/setup_factory.hpp>
 #include <algo/blast/api/uniform_search.hpp>
 #include <algo/blast/api/blast_results.hpp>
-#include <algo/blast/api/igblast.hpp>
+#include <algo/blast/igblast/igblast.hpp>
 #include <algo/blast/api/psiblast_iteration.hpp>
 #include <algo/blast/core/blast_seqsrc.h>
 #include <objtools/align_format/tabular.hpp>

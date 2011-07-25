@@ -35,7 +35,7 @@ static char const rcsid[] =
  */
 
 #include <ncbi_pch.hpp>
-#include <algo/blast/api/igblast.hpp>
+#include <algo/blast/igblast/igblast.hpp>
 #include <algo/blast/api/local_blast.hpp>
 #include <algo/blast/api/bl2seq.hpp>
 #include <algo/blast/api/remote_blast.hpp>

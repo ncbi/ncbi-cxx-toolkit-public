@@ -40,7 +40,7 @@
 #include <algo/blast/api/uniform_search.hpp>
 #include <algo/blast/api/blast_options.hpp>
 #include <algo/blast/api/blast_options_handle.hpp>
-#include <algo/blast/api/igblast.hpp>
+#include <algo/blast/igblast/igblast.hpp>
 #include <algo/blast/api/setup_factory.hpp> // for CThreadable
 #include <algo/blast/blastinput/cmdline_flags.hpp>
 #include <algo/blast/blastinput/blast_input_aux.hpp>

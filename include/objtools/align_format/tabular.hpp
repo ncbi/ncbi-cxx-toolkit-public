@@ -39,7 +39,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/scope.hpp>
 #include <objtools/align_format/align_format_util.hpp>
-#include <algo/blast/api/igblast.hpp>
+#include <algo/blast/igblast/igblast.hpp>
 
 #include <algorithm>
 
