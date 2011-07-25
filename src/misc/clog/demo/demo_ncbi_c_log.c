@@ -25,7 +25,7 @@
  *
  * Author:  Vladimir Ivanov
  *
- * File Description:  Demo application for NSCBI C Logging (clog.lib).
+ * File Description:  Demo application for NCBI C Logging (clog.lib).
  *
  */
 
