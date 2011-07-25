@@ -37,8 +37,10 @@ static char const rcsid[] =
 #include <ncbi_pch.hpp>
 #include <algo/blast/api/igblast.hpp>
 #include <algo/blast/api/local_blast.hpp>
+#include <algo/blast/api/bl2seq.hpp>
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
+#include <algo/blast/blastinput/blast_scope_src.hpp>
 #include <objtools/alnmgr/alnmap.hpp>
 #include <algo/blast/composition_adjustment/composition_constants.h>
 
@@ -539,6 +541,20 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
                                 CRef<CSearchResultSet>        &dm_results, 
                                 vector<CRef <CIgAnnotation> > &annots)
 {
+    CRef<CScope> scope;
+    bool annotate_subject = false;
+    if (m_IgOptions->m_Db[0]->IsBlastDb()) {
+        CRef<CSeqDB> db_domain(new CSeqDB(m_IgOptions->m_Db[0]->GetDatabaseName(), 
+                  ((m_IgOptions->m_IsProtein)? CSeqDB::eProtein : CSeqDB::eNucleotide)));
+        CBlastScopeSource scope_src_domain(db_domain);
+        scope = scope_src_domain.NewScope();
+        CRef<CSeqDB> db_V(new CSeqDB(m_IgOptions->m_Db[3]->GetDatabaseName(), 
+                  ((m_IgOptions->m_IsProtein)? CSeqDB::eProtein : CSeqDB::eNucleotide)));
+        CBlastScopeSource scope_src_V(db_domain);
+        scope_src_V.AddDataLoaders(scope);
+        annotate_subject = true;
+    }
+
     int iq = 0;
     ITERATE(CSearchResultSet, result, *dm_results) {
 
@@ -590,15 +606,52 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
 
                 if (m_AnnotationInfo.GetDomainInfo(sid, domain_info)) {
 
+
                     CAlnMap s_map((*it)->GetSegs().GetDenseg());
                     int s_start = (*it)->GetSeqStart(1);
                     int s_stop = (*it)->GetSeqStop(1);
+
+                    CRef<CAlnMap> d_map;
+                    int d_start = -1;
+                    int d_stop = -1;
+
                     int start, stop;
+
+                    if (annotate_subject) {
+                        CSeq_loc query, subject;
+                        query.SetWhole();
+                        query.SetId((*it)->GetSeq_id(1));
+                        subject.SetWhole();
+                        subject.SetId(master_align->GetSeq_id(1));
+                        SSeqLoc q_loc(&query, &(*scope));
+                        SSeqLoc s_loc(&subject, &(*scope));
+                        CBl2Seq bl2seq(q_loc, s_loc, (m_IgOptions->m_IsProtein)? eBlastp: eBlastn);
+                        const CSearchResults& result = (*(bl2seq.RunEx()))[0];
+                        if (result.HasAlignments()) {
+                            CConstRef<CSeq_align> subject_align = result.GetSeqAlign()->Get().front();
+                            d_map.Reset(new CAlnMap(subject_align->GetSegs().GetDenseg()));
+                            d_start = subject_align->GetSeqStart(0);
+                            d_stop = subject_align->GetSeqStop(0);
+                        }
+                    }
 
                     for (int i =0; i<10; i+=2) {
 
                         start = domain_info[i] - 1;
                         stop = domain_info[i+1] - 1;
+
+                        if (start <= d_stop && stop >= d_start) {
+                            int start_copy = start;
+                            int stop_copy = stop;
+                            if (start_copy < d_start) start_copy = d_start;
+                            if (stop_copy > d_stop) stop_copy = d_stop;
+                            if (start_copy <= stop_copy) {
+                                annot->m_DomainInfo_S[i] = 
+                                   d_map->GetSeqPosFromSeqPos(1, 0, start_copy, IAlnExplorer::eForward);
+                                annot->m_DomainInfo_S[i+1] = 
+                                   d_map->GetSeqPosFromSeqPos(1, 0, stop_copy, IAlnExplorer::eBackwards);
+                            }
+                        }
                     
                         if (start > s_stop || stop < s_start) continue;
 
