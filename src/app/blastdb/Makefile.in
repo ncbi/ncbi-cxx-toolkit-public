@@ -5,7 +5,7 @@
 
 REQUIRES = objects algo
 
-APP_PROJ = blastdbcmd makeblastdb blastdb_aliastool blastdbcheck convert2blastmask
+APP_PROJ = blastdbcmd makeblastdb blastdb_aliastool blastdbcheck convert2blastmask blastdbcp
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
@@ -17,6 +17,9 @@ makeblastdb:
 
 blastdbcmd:
 	make -f Makefile.blastdbcmd_app
+
+blastdbcp:
+	make -f Makefile.blastdbcp_app
 
 blastdb_aliastool:
 	make -f Makefile.blastdb_aliastool_app
