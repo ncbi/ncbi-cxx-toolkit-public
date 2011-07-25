@@ -31,7 +31,9 @@ for origin in ['Human', 'Mouse']:
 
     f = open(origin + '_gl_V.nfm', 'w')
     f.write('# The first coding frame position within the V sequence.\n\n')
-    items = subprocess.Popen('blastdbcmd -entry all -db ' + origin + '_gl_V -dbtype nucl -outfmt "%a"', 
-                             shell=True, stdout=subprocess.PIPE).communicate()[0].split()
-    for id in items: f.write('%s\t0\n' %id)
+    for line in open(origin + '_gl_V.n.dm.kabat').readlines():
+	line = line.strip()
+	if len(line) == 0 or line[0]=='#': continue
+	id = line.split()[0]
+    	f.write('%s\t0\n' %id)
     f.close()
