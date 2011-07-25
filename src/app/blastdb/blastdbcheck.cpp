@@ -593,7 +593,7 @@ public:
     {
         CTime now(CTime::eCurrent);
         time_t t = now.GetTimeT();
-        m_Rng.SetSeed(t);
+		m_Rng.SetSeed((CRandom::TValue)t);
     }
     
     virtual int DoTest(CSeqDB & db, TSeen & seen)
@@ -697,9 +697,9 @@ public:
             return ++num_failures;
         }
 
-        Int8 length;
+        Int8 length=-1;
         int oidlist, gilist, nseq, mem_bit, first_oid, last_oid, maxoid, maxlen;
-        oidlist=gilist=nseq=length=mem_bit=first_oid=last_oid=maxoid=maxlen=-1;
+        oidlist=gilist=nseq=mem_bit=first_oid=last_oid=maxoid=maxlen=-1;
 
         CNcbiIfstream is(name.c_str());
         CStreamLineReader line(is);

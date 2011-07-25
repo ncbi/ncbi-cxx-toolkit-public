@@ -379,7 +379,7 @@ CBlastDBCmdApp::x_ProcessSearchRequest()
     }
 
     TQueries queries;
-    errors_found = x_GetQueries(queries);
+	errors_found = (x_GetQueries(queries) > 0 ? true : false);
     _ASSERT( !queries.empty() );
 
     NON_CONST_ITERATE(TQueries, itr, queries) {
