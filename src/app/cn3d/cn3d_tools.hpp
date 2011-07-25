@@ -127,12 +127,12 @@ extern int GetBLOSUM62Score(char a, char b);
 extern double GetStandardProbability(char ch);
 
 // parse a string as ProSite into a regular expression
-bool Prosite2Regex(const string& prosite, string *regex, int *nGroups);
+bool Prosite2Regex(const std::string& prosite, std::string *regex, int *nGroups);
 
 //  Returns 0 for invalid Prosite patterns, including patterns that
 //  contain only 'X' characters, or those of indeterminate length.
 //  Does not require that the prosite string have a terminal '.'.
-unsigned int PrositePatternLength(const string& prosite);
+unsigned int PrositePatternLength(const std::string& prosite);
 
 // global program registry manipulation
 extern void LoadRegistry(void);
