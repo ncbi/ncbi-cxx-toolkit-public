@@ -198,12 +198,14 @@ Blast_GetSeqLocInfoVector(EBlastProgramType program,
 class NCBI_XBLAST_EXPORT CAutomaticGenCodeSingleton {
 public:
     /// Default constructor
-    CAutomaticGenCodeSingleton();
+    CAutomaticGenCodeSingleton(int genetic_code = 0);
     /// destructor
     ~CAutomaticGenCodeSingleton();
 private:
+
     /// Reference counter for this object so that the genetic code singleton is
     //not deleted prematurely
+    DECLARE_CLASS_STATIC_FAST_MUTEX(sm_Mutex);
     static Uint4 m_RefCounter;
 };
 

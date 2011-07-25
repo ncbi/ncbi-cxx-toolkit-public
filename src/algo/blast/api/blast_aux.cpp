@@ -617,24 +617,28 @@ FindGeneticCode(int genetic_code)
     return retval;
 }
 
+DEFINE_CLASS_STATIC_FAST_MUTEX(CAutomaticGenCodeSingleton::sm_Mutex);
 Uint4 CAutomaticGenCodeSingleton::m_RefCounter = 0;
 
-CAutomaticGenCodeSingleton::CAutomaticGenCodeSingleton()
+CAutomaticGenCodeSingleton::CAutomaticGenCodeSingleton(int genetic_code)
 {
-    CFastMutex mutex;
+    if ( !genetic_code ) {
+        genetic_code = BLAST_GENETIC_CODE;
+    }
+
+    CFastMutexGuard LOCK(sm_Mutex);
     m_RefCounter++;
     GenCodeSingletonInit(); 
     // N.B.: this is added as this is the default value
-    const int kDefaultGeneticCode(BLAST_GENETIC_CODE);
-    if (GenCodeSingletonFind(kDefaultGeneticCode) == NULL) {
-        TAutoUint1ArrayPtr gc = FindGeneticCode(BLAST_GENETIC_CODE);
-        GenCodeSingletonAdd(BLAST_GENETIC_CODE, gc.get());
+    if (GenCodeSingletonFind(genetic_code) == NULL) {
+        TAutoUint1ArrayPtr gc = FindGeneticCode(genetic_code);
+        GenCodeSingletonAdd(genetic_code, gc.get());
     }
 }
 
 CAutomaticGenCodeSingleton::~CAutomaticGenCodeSingleton()
 { 
-    CFastMutex mutex;
+    CFastMutexGuard LOCK(sm_Mutex);
     if (--m_RefCounter == 0) {
         GenCodeSingletonFini(); 
     }
