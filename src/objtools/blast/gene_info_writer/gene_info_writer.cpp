@@ -362,8 +362,8 @@ void CGeneFileWriter::x_Gene2Accn_ProcessFile(bool bOverwrite)
 
     // estimate the number of records we will have
 
-    int nTotalLenght = GetLength(m_strGene2AccessionFile);
-    int nNumLinesEstimate = nTotalLenght / GENE_2_ACCN_LINE_MIN;
+    Int8 nTotalLenght = GetLength(m_strGene2AccessionFile);
+    TSeqPos nNumLinesEstimate = (TSeqPos)nTotalLenght / GENE_2_ACCN_LINE_MIN;
 
     // create the array of (gi, geneId) records
 
@@ -565,8 +565,8 @@ void CGeneFileWriter::x_GeneInfo_ProcessFile(bool bOverwrite)
 
     // estimate the number of records we will have
 
-    int nTotalLenght = GetLength(m_strGeneInfoFile);
-    int nNumLinesEstimate = nTotalLenght / GENE_INFO_LINE_MIN;
+    Int8 nTotalLenght = GetLength(m_strGeneInfoFile);
+    TSeqPos nNumLinesEstimate = (TSeqPos)nTotalLenght / GENE_INFO_LINE_MIN;
 
     // create the array of (geneId, offset) records
     // and clear the corresponding map
@@ -675,8 +675,8 @@ void CGeneFileWriter::
 
     // estimate the number of records we will have
 
-    int nTotalLenght = GetLength(m_strGene2PubMedFile);
-    int nNumLinesEstimate = nTotalLenght / GENE_2_PM_LINE_MIN;
+    Int8 nTotalLenght = GetLength(m_strGene2PubMedFile);
+    TSeqPos nNumLinesEstimate = (TSeqPos)nTotalLenght / GENE_2_PM_LINE_MIN;
 
     // create the array of Gene Id to PMID lines
 
