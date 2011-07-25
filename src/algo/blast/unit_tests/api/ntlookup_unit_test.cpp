@@ -439,7 +439,7 @@ BOOST_AUTO_TEST_CASE(testDiscontiguousMBLookupTableTwoTemplatesWordSize11) {
 	BlastMBLookupTable* lookup = (BlastMBLookupTable*) lookup_wrap_ptr->lut;
 	BOOST_REQUIRE_EQUAL(4194304, lookup->hashsize); // 4**11
 	BOOST_REQUIRE_EQUAL(11, (int)lookup->word_length); 
-	BOOST_REQUIRE_EQUAL(true, (bool)lookup->discontiguous);
+	BOOST_REQUIRE_EQUAL(true, static_cast<bool>(lookup->discontiguous));
 	BOOST_REQUIRE_EQUAL(16, (int)lookup->template_length);
 	BOOST_REQUIRE_EQUAL(1, (int)lookup->template_type);
 	BOOST_REQUIRE_EQUAL(1, (int)lookup->two_templates);

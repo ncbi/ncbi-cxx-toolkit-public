@@ -1460,7 +1460,7 @@ CBlastOptionsLocal::SetPseudoCount(int pc)
 inline bool 
 CBlastOptionsLocal::GetIgnoreMsaMaster() const
 {
-    return m_PSIBlastOpts->nsg_compatibility_mode;
+	return m_PSIBlastOpts->nsg_compatibility_mode ? true : false;
 }
 
 inline void 

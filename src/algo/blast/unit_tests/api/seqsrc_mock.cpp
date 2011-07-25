@@ -48,7 +48,7 @@ const char* CRandomlyFailMockBlastSeqSrc::kNullString = NULL;
 const Int4 CRandomlyFailMockBlastSeqSrc::kDefaultOid = 7;
 
 CRandomlyFailMockBlastSeqSrc::CRandomlyFailMockBlastSeqSrc()
-    : m_RandGen(new ncbi::CRandom(time(NULL)))
+    : m_RandGen(new ncbi::CRandom((CRandom::TValue)time(NULL)))
 {
     m_IsProtein = x_SelectRandomlyBetween(TRUE, FALSE);
 }

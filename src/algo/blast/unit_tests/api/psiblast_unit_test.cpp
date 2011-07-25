@@ -151,8 +151,8 @@ struct CPsiBlastTestFixture {
                                   CConstRef<CPSIBlastOptionsHandle> opts_handle,
                                   CConstRef<CBlastAncillaryData> ancillary_data)
     {
-        CSeqDB db("data/seqp", CSeqDB::eProtein);
-        CBlastScopeSource blast_om(&db);
+        CRef<CSeqDB> db(new CSeqDB("data/seqp", CSeqDB::eProtein));
+        CBlastScopeSource blast_om(db);
         CRef<CScope> scope(blast_om.NewScope());
         CPSIDiagnosticsRequest diags(PSIDiagnosticsRequestNew());
         diags->frequency_ratios = true;

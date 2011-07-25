@@ -49,7 +49,7 @@ s_DetermineScanningOffsets(const BLAST_SequenceBlk* subject,
     ASSERT(subject->num_seq_ranges >= 1);
     while (range[1] > range[2]) {
         range[0]++;
-        if (range[0] >= subject->num_seq_ranges) {
+        if (range[0] >= (Int4)subject->num_seq_ranges) {
             return FALSE;
         }
         range[1] = subject->seq_ranges[range[0]].left + word_length - lut_word_length;

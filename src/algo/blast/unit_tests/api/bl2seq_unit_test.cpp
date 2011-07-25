@@ -976,7 +976,7 @@ BOOST_AUTO_TEST_CASE(testInterruptBlastpExitAtRandom) {
     BOOST_REQUIRE(fnptr == NULL);
 
     TSeqAlignVector sav(blaster->Run()); // won't throw
-    CRandom r(time(0));
+	CRandom r((CRandom::TValue)time(0));
     int max_interrupt_callbacks = r.GetRand(1, num_callbacks_executed);
     pair<int, int> progress_pair(make_pair(0, max_interrupt_callbacks));
 
@@ -1003,7 +1003,7 @@ BOOST_AUTO_TEST_CASE(testInterruptBlastnExitAtRandom) {
     BOOST_REQUIRE(fnptr == NULL);
 
     TSeqAlignVector sav(blaster->Run()); // won't throw
-    CRandom r(time(0));
+    CRandom r((CRandom::TValue)time(0));
     int max_interrupt_callbacks = r.GetRand(1, num_callbacks_executed);
     pair<int, int> progress_pair(make_pair(0, max_interrupt_callbacks));
 
@@ -1031,7 +1031,7 @@ BOOST_AUTO_TEST_CASE(testInterruptBlastxExitAtRandom) {
     BOOST_REQUIRE(fnptr == NULL);
 
     TSeqAlignVector sav(blaster->Run()); // won't throw
-    CRandom r(time(0));
+    CRandom r((CRandom::TValue)time(0));
     int max_interrupt_callbacks = r.GetRand(1, num_callbacks_executed);
     pair<int, int> progress_pair(make_pair(0, max_interrupt_callbacks));
 
@@ -1058,7 +1058,7 @@ BOOST_AUTO_TEST_CASE(testInterruptTblastnExitAtRandom) {
     BOOST_REQUIRE(fnptr == NULL);
 
     TSeqAlignVector sav(blaster->Run()); // won't throw
-    CRandom r(time(0));
+    CRandom r((CRandom::TValue)time(0));
     int max_interrupt_callbacks = r.GetRand(1, num_callbacks_executed);
     pair<int, int> progress_pair(make_pair(0, max_interrupt_callbacks));
 
@@ -1085,7 +1085,7 @@ BOOST_AUTO_TEST_CASE(testInterruptTblastxExitAtRandom) {
     BOOST_REQUIRE(fnptr == NULL);
 
     TSeqAlignVector sav(blaster->Run()); // won't throw
-    CRandom r(time(0));
+    CRandom r((CRandom::TValue)time(0));
     int max_interrupt_callbacks = r.GetRand(1, num_callbacks_executed);
     pair<int, int> progress_pair(make_pair(0, max_interrupt_callbacks));
 

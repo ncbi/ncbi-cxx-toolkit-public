@@ -482,7 +482,7 @@ BOOST_AUTO_TEST_CASE(testGappedOffsets)
                     '\005', '\014', '\023', '\021', '\003', '\016', '\005', '\013', '\006', 
                     '\020', '\011', '\006', '\015', '\016', '\004', '\017'};
 
-     bool retval = false;
+     Boolean retval = FALSE;
      BlastScoreBlk *sbp = BlastScoreBlkNew(BLASTAA_SEQ_CODE, 1);
          // generate score options
      BlastScoringOptions *score_options;

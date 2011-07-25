@@ -424,7 +424,7 @@ int BlastHSPStreamMerge(SSplitQueryBlk *squery_blk,
    fprintf(stderr, "\n");
 #elif defined(_DEBUG)
    for (num_queries = 0; query_list[num_queries] != UINT4_MAX; num_queries++) ;
-   for (num_ctx = 0, max_ctx = INT4_MIN; num_ctx < num_contexts; num_ctx++) 
+   for (num_ctx = 0, max_ctx = INT4_MIN; num_ctx < (Int4)num_contexts; num_ctx++) 
        max_ctx = MAX(max_ctx, context_list[num_ctx]);
    for (num_ctx_offsets = 0; offset_list[num_ctx_offsets] != UINT4_MAX;
         num_ctx_offsets++) ;

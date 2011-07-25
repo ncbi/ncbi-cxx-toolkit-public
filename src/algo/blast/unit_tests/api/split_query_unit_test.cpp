@@ -1086,7 +1086,7 @@ return; // FIXME
                                   os.str() + " query_index");
             BOOST_REQUIRE_MESSAGE((int)reference->contexts[ctx].frame==(int)test->contexts[ctx].frame,
                                   os.str() + " frame");
-            BOOST_REQUIRE_MESSAGE((bool)reference->contexts[ctx].is_valid==(bool)test->contexts[ctx].is_valid,
+            BOOST_REQUIRE_MESSAGE(reference->contexts[ctx].is_valid==test->contexts[ctx].is_valid,
                                   os.str() + " is_valid");
 
         }
@@ -1192,7 +1192,7 @@ BOOST_AUTO_TEST_CASE(SplitQueriesIn1Chunk) {
 }
 
 BOOST_AUTO_TEST_CASE(SplitQueriesRandomly) {
-    CRandom random(time(0));
+    CRandom random((CRandom::TValue)time(0));
     const Uint4 kNumChunks(random.GetRand(1, 100));
     TSplitQueryChunkMap map;
     map.resize(kNumChunks);

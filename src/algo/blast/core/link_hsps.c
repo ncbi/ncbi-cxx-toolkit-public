@@ -1245,7 +1245,7 @@ s_SumScoreCompareLinkedHSPSets(const void* v1, const void* v2)
  */
 static Int4 
 s_HSPOffsetBinarySearch(BlastLinkedHSPSet** hsp_array, Int4 size, 
-                        Int4 queryId, Int4 offset)
+                        Uint4 queryId, Int4 offset)
 {
    Int4 index, begin, end;
    
@@ -1283,7 +1283,7 @@ s_HSPOffsetBinarySearch(BlastLinkedHSPSet** hsp_array, Int4 size,
  */
 static Int4 
 s_HSPOffsetEndBinarySearch(BlastLinkedHSPSet** hsp_array, Int4 size, 
-                           Int4* qend_index_array, Int4 queryId, Int4 offset)
+                           Int4* qend_index_array, Uint4 queryId, Int4 offset)
 {
    Int4 begin, end;
    

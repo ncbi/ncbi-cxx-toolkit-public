@@ -639,7 +639,7 @@ s_SeqLoc2MaskedSubjRanges(const CSeq_loc* slp,
 {
     output.clear();
     
-    Int4 offset, length; 
+    TSeqPos offset, length; 
 
     _ASSERT(range->IsInt() || range->IsWhole());
   

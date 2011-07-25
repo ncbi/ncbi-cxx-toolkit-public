@@ -70,7 +70,7 @@ namespace TestUtil {
 
 objects::CSeq_id* GenerateRandomSeqid_Gi() 
 {
-    static CRandom random_gen(time(0));
+    static CRandom random_gen((CRandom::TValue)time(0));
     return new CSeq_id(CSeq_id::e_Gi, random_gen.GetRand(1, 20000000));
 }
 

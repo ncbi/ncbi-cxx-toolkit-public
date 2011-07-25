@@ -188,7 +188,7 @@ BOOST_AUTO_TEST_CASE(QueryIsTranslated) {
         bool reference = (*program == eBlastTypeBlastx ||
                             *program == eBlastTypeTblastx ||
                             *program == eBlastTypeRpsTblastn);
-        bool test = Blast_QueryIsTranslated(*program);
+        bool test = !!Blast_QueryIsTranslated(*program);
         string prog(Blast_ProgramNameFromType(*program));
         BOOST_REQUIRE_MESSAGE(reference == test, "Failed on " + prog);
     }
@@ -216,7 +216,7 @@ BOOST_AUTO_TEST_CASE(SubjectIsProtein) {
                             *program == eBlastTypePsiBlast ||
                             Blast_ProgramIsRpsBlast(*program) ||
                             *program == eBlastTypePhiBlastp);
-        bool test = Blast_SubjectIsProtein(*program);
+        bool test = !!Blast_SubjectIsProtein(*program);
         string prog(Blast_ProgramNameFromType(*program));
         BOOST_REQUIRE_MESSAGE(reference == test, "Failed on " + prog);
     }
@@ -231,7 +231,7 @@ BOOST_AUTO_TEST_CASE(SubjectIsNucleotide) {
                             *program == eBlastTypeTblastx ||
                             *program == eBlastTypePsiTblastn ||
                             *program == eBlastTypePhiBlastn);
-        bool test = Blast_SubjectIsNucleotide(*program);
+        bool test = !!Blast_SubjectIsNucleotide(*program);
         string prog(Blast_ProgramNameFromType(*program));
         BOOST_REQUIRE_MESSAGE(reference == test, "Failed on " + prog);
     }

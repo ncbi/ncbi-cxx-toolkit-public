@@ -177,7 +177,7 @@ CBlastPrelimSearch::x_LaunchMultiThreadedSearch(SInternalData& internal_data)
 
     if (retv) {
           NCBI_THROW(CBlastException, eCoreBlastError,
-                                   BlastErrorCode2String(retv));
+                                   BlastErrorCode2String((Int2)retv));
     }
     return 0;
 }

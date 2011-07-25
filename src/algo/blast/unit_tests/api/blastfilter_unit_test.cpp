@@ -1973,7 +1973,7 @@ BOOST_AUTO_TEST_CASE(GetSeqLocInfoVector_AllPrograms) {
         TestUtil::GetAllBlastProgramTypes();
 
     // Generate the different number of sequences to pass to test function
-    CRandom random_gen(time(0));
+    CRandom random_gen((CRandom::TValue)time(0));
     vector<int> num_seqs_array;
     num_seqs_array.reserve(3);
     num_seqs_array.push_back(random_gen.GetRand(1,10));

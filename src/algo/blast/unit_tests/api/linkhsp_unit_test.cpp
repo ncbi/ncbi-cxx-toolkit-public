@@ -63,7 +63,7 @@ struct AllCutoffScores {
     Int4 gap_trigger;
     Int4 cutoff_score_ungapped;
     Int4 cutoff_score_final;
-    bool do_sum_stats;
+    Boolean do_sum_stats;
     Int4 cutoff_small_gap;
     Int4 cutoff_big_gap;
 };

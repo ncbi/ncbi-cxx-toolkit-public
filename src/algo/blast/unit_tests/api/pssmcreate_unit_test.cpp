@@ -223,7 +223,7 @@ public:
         }
 
         // Randomly assign a position in the query to contain a gap
-        CRandom r(time(NULL));
+        CRandom r((CRandom::TValue)time(0));
         int gap_position = r.GetRand(0, GetQueryLength() - 1);
         m_query[gap_position] = AMINOACID_TO_NCBISTDAA[(int)'-'];
         m_msa->data[0][gap_position].letter = m_query[gap_position];
@@ -940,8 +940,8 @@ BOOST_AUTO_TEST_CASE(testPurgeSelfHit) {
         int rv = _PSIPurgeBiasedSegments(msa.get());
         BOOST_REQUIRE_EQUAL(PSI_SUCCESS, rv);    
         const Uint4 kSelfHitIndex = 1;
-        BOOST_REQUIRE_EQUAL(true, (bool) msa->use_sequence[kQueryIndex]);
-        BOOST_REQUIRE_EQUAL(false, (bool) msa->use_sequence[kSelfHitIndex]);
+		BOOST_REQUIRE_EQUAL(true, !!msa->use_sequence[kQueryIndex]);
+		BOOST_REQUIRE_EQUAL(false, !!msa->use_sequence[kSelfHitIndex]);
 }
 
 BOOST_AUTO_TEST_CASE(testPurgeDuplicateHit) {
@@ -952,10 +952,9 @@ BOOST_AUTO_TEST_CASE(testPurgeDuplicateHit) {
         int rv = _PSIPurgeBiasedSegments(msa.get());
         BOOST_REQUIRE_EQUAL(PSI_SUCCESS, rv);    
         const Uint4 kDuplicateHitIndex = 2;
-        BOOST_REQUIRE_EQUAL(false, 
-                             (bool) msa->use_sequence[kDuplicateHitIndex]);
-        BOOST_REQUIRE_EQUAL(true, (bool) msa->use_sequence[kQueryIndex]);
-        BOOST_REQUIRE_EQUAL(true, (bool) msa->use_sequence[kQueryIndex + 1]);
+        BOOST_REQUIRE_EQUAL(false, !!msa->use_sequence[kDuplicateHitIndex]);
+        BOOST_REQUIRE_EQUAL(true, !!msa->use_sequence[kQueryIndex]);
+        BOOST_REQUIRE_EQUAL(true, !!msa->use_sequence[kQueryIndex + 1]);
 }
 
 BOOST_AUTO_TEST_CASE(testPurgeNearIdenticalHits) {
@@ -967,9 +966,9 @@ BOOST_AUTO_TEST_CASE(testPurgeNearIdenticalHits) {
         BOOST_REQUIRE_EQUAL(PSI_SUCCESS, rv);    
         const Uint4 kRemovedHitIndex = 2;
         BOOST_REQUIRE_EQUAL(false, 
-                             (bool) msa->use_sequence[kRemovedHitIndex]);
-        BOOST_REQUIRE_EQUAL(true, (bool) msa->use_sequence[kQueryIndex]);
-        BOOST_REQUIRE_EQUAL(true, (bool) msa->use_sequence[kQueryIndex + 1]);
+                             !! msa->use_sequence[kRemovedHitIndex]);
+        BOOST_REQUIRE_EQUAL(true, !!msa->use_sequence[kQueryIndex]);
+        BOOST_REQUIRE_EQUAL(true, !! msa->use_sequence[kQueryIndex + 1]);
 }
 
 BOOST_AUTO_TEST_CASE(testQueryAlignedWithInternalGaps) {
@@ -1036,9 +1035,9 @@ BOOST_AUTO_TEST_CASE(testMultiSeqAlignmentHasRegionsUnalignedToQuery) {
         int rv = _PSIPurgeBiasedSegments(packed_msa.get());
         BOOST_REQUIRE_EQUAL(PSI_SUCCESS, rv);    
         BOOST_REQUIRE_EQUAL(true, 
-                             (bool) packed_msa->use_sequence[kQueryIndex]);
-        BOOST_REQUIRE_EQUAL(true, (bool) packed_msa->use_sequence[1]);
-        BOOST_REQUIRE_EQUAL(true, (bool) packed_msa->use_sequence[2]);
+                             !!packed_msa->use_sequence[kQueryIndex]);
+        BOOST_REQUIRE_EQUAL(true, !! packed_msa->use_sequence[1]);
+        BOOST_REQUIRE_EQUAL(true, !! packed_msa->use_sequence[2]);
 
         AutoPtr<_PSIMsa> msa(_PSIMsaNew(packed_msa.get(), BLASTAA_SIZE));
         /*** Run the stage to calculate alignment extents */
@@ -1106,7 +1105,7 @@ BOOST_AUTO_TEST_CASE(testMultiSeqAlignmentHasRegionsUnalignedToQuery) {
 
         // Verify the validity of sequence weights corresponding to the aligned
         // regions
-        BOOST_REQUIRE_EQUAL(false, (bool)opts->nsg_compatibility_mode);
+        BOOST_REQUIRE_EQUAL(false, !!opts->nsg_compatibility_mode);
         const Uint1 kXResidue = AMINOACID_TO_NCBISTDAA[(int)'X'];
         for (vector<CPssmInputTestData::TAlignedSegment>::const_iterator i =
              aligned_regions.begin();
@@ -1216,9 +1215,9 @@ BOOST_AUTO_TEST_CASE(testQueryIsOnlyAlignedSequenceInMsa) {
         BOOST_REQUIRE_EQUAL(PSI_SUCCESS, rv);    
         const Uint4 kSelfHitIndex = 1;
         BOOST_REQUIRE_EQUAL(true, 
-                             (bool) packed_msa->use_sequence[kQueryIndex]);
+                             !! packed_msa->use_sequence[kQueryIndex]);
         BOOST_REQUIRE_EQUAL(false, 
-                             (bool) packed_msa->use_sequence[kSelfHitIndex]);
+                             !! packed_msa->use_sequence[kSelfHitIndex]);
 
         AutoPtr<_PSIMsa> msa(_PSIMsaNew(packed_msa.get(), BLASTAA_SIZE));
         /*** Run the stage to calculate alignment extents */

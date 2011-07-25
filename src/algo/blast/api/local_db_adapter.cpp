@@ -187,7 +187,7 @@ CLocalDbAdapter::IsProtein() const
         const EBlastProgramType p = m_OptsHandle->GetOptions().GetProgramType();
         retval = Blast_SubjectIsProtein(p) ? true : false;
     } else if (m_SeqSrc) {
-        retval = (bool)BlastSeqSrcGetIsProt(m_SeqSrc);
+		retval = BlastSeqSrcGetIsProt(m_SeqSrc) ? true : false;
     } else {
         // Data type provided in a constructor, but not handled here
         abort();
