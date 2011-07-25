@@ -362,7 +362,8 @@ CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(string* blob_id,
 
     if (NStr::FindCase(exec_result.response, "ID:") != 0) {
         // Answer is not in the "ID:....." format
-        string msg = "Unexpected server response:";
+        exec_result.conn->Abort();
+        string msg = "Unexpected server response: ";
         msg += exec_result.response;
         NCBI_THROW(CNetServiceException, eCommunicationError, msg);
     }
