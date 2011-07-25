@@ -145,6 +145,8 @@ static void s_LOG_Handler(void*       /*user_data*/,
             level = eDiag_Fatal;
             break;
         }
+        if (!IsVisibleDiagPostLevel(level))
+            return;
 
         CNcbiDiag diag(level);
         if (call_data->file) {
