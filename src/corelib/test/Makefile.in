@@ -15,7 +15,7 @@ APP_PROJ = test_ncbitime_mt test_ncbitime test_ncbithr coretest \
            test_stacktrace test_tempstr test_ncbi_config test_ncbicfg \
            test_weakref test_request_control test_expr test_sub_reg \
            test_resource_info test_interprocess_lock test_ncbithr_native \
-           test_ncbi_rwstream
+           test_ncbi_rwstream test_condvar
 PROJ_TAG = test
 
 srcdir = @srcdir@

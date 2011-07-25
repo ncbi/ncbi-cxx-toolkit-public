@@ -62,7 +62,7 @@ void SSystemFastMutex::CheckInitialized(void) const
 #if defined(NCBI_NO_THREADS)
 // empty version of Lock/Unlock methods for inlining
 inline
-void SSystemFastMutex::Lock(void)
+void SSystemFastMutex::Lock(ELockSemantics)
 {
 }
 
@@ -75,7 +75,7 @@ bool SSystemFastMutex::TryLock(void)
 
 
 inline
-void SSystemFastMutex::Unlock(void)
+void SSystemFastMutex::Unlock(ELockSemantics)
 {
 }
 #endif
@@ -106,13 +106,16 @@ inline
 void SSystemMutex::InitializeDynamic(void)
 {
     m_Mutex.InitializeDynamic();
+    CThreadSystemID id = THREAD_SYSTEM_ID_INITIALIZER;
+    m_Owner.Set(id);
     m_Count = 0;
 }
+
 
 #if defined(NCBI_NO_THREADS)
 // empty version of Lock/Unlock methods for inlining
 inline
-void SSystemMutex::Lock(void)
+void SSystemMutex::Lock(SSystemFastMutex::ELockSemantics)
 {
 }
 
@@ -125,7 +128,7 @@ bool SSystemMutex::TryLock(void)
 
 
 inline
-void SSystemMutex::Unlock(void)
+void SSystemMutex::Unlock(SSystemFastMutex::ELockSemantics)
 {
 }
 #endif

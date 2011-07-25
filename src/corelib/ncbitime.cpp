@@ -2473,7 +2473,7 @@ bool CTimeout::IsZero() const
         }
         return false;
     }
-    return !m_Sec  &&  !m_MicroSec;
+    return !m_Sec  &&  !m_NanoSec;
 }
 
 
@@ -2494,7 +2494,8 @@ unsigned long CTimeout::GetAsMilliSeconds(void) const
                    " sec is too big to convert to 'unsigned long'");
     }
 #endif
-    return m_Sec * kMilliSecondsPerSecond + m_MicroSec / 1000;
+    return m_Sec * kMilliSecondsPerSecond +
+        m_NanoSec / (kNanoSecondsPerSecond/kMilliSecondsPerSecond);
 }
 
 
@@ -2505,7 +2506,7 @@ double CTimeout::GetAsDouble(void) const
                    "CTimeout::GetAsDouble(): cannot convert from " +
                    s_SpecialValueName(m_Type) + " timeout value");
     }
-    return m_Sec + double(m_MicroSec) / kMicroSecondsPerSecond;
+    return m_Sec + double(m_NanoSec) / kNanoSecondsPerSecond;
 }
 
 
@@ -2526,12 +2527,12 @@ CTimeSpan CTimeout::GetAsTimeSpan(void) const
         // normalized value and can be safely converted to nanoseconds.
     }
 #endif
-    CTimeSpan ts(m_Sec, long(m_MicroSec)*1000);
+    CTimeSpan ts(m_Sec, m_NanoSec);
     return ts;
 }
 
 
-void CTimeout::Get(unsigned int *sec, unsigned int *usec) const
+void CTimeout::Get(unsigned int *sec, unsigned int *microsec) const
 {
     if ( !IsFinite() ) {
         NCBI_THROW(CTimeException, eConvert, 
@@ -2540,8 +2541,21 @@ void CTimeout::Get(unsigned int *sec, unsigned int *usec) const
     }
     if ( sec )
         *sec  = m_Sec;
-    if ( usec )
-        *usec = m_MicroSec;
+    if ( microsec )
+        *microsec = m_NanoSec / (kNanoSecondsPerSecond/kMicroSecondsPerSecond);
+}
+
+void CTimeout::GetNano(unsigned int *sec, unsigned int *nanosec) const
+{
+    if ( !IsFinite() ) {
+        NCBI_THROW(CTimeException, eConvert, 
+                   "CTimeout::Get(): cannot convert from " +
+                   s_SpecialValueName(m_Type) + " timeout value");
+    }
+    if ( sec )
+        *sec  = m_Sec;
+    if ( nanosec )
+        *nanosec = m_NanoSec;
 }
 
 
@@ -2563,11 +2577,19 @@ void CTimeout::Set(EType type)
     }
 }
 
-void CTimeout::Set(unsigned int sec, unsigned int usec)
+void CTimeout::Set(unsigned int sec, unsigned int microsec)
 {
     m_Type     = eFinite;
-    m_Sec      = sec + usec / kMicroSecondsPerSecond;
-    m_MicroSec = usec % kMicroSecondsPerSecond;
+    m_Sec      = sec + microsec / kMicroSecondsPerSecond;
+    m_NanoSec  = (microsec % kMicroSecondsPerSecond) *
+        (kNanoSecondsPerSecond/kMicroSecondsPerSecond);
+}
+
+void CTimeout::SetNano(unsigned int sec, unsigned int nanosec)
+{
+    m_Type     = eFinite;
+    m_Sec      = sec + nanosec / kNanoSecondsPerSecond;
+    m_NanoSec  = nanosec % kNanoSecondsPerSecond;
 }
 
 void CTimeout::Set(double sec)
@@ -2584,7 +2606,7 @@ void CTimeout::Set(double sec)
     }
     m_Type     = eFinite;
     m_Sec      = (unsigned int)sec;
-    m_MicroSec = (unsigned int)((sec - m_Sec) * kMicroSecondsPerSecond);
+    m_NanoSec  = (unsigned int)((sec - m_Sec) * kNanoSecondsPerSecond);
 }
 
 
@@ -2605,7 +2627,7 @@ void CTimeout::Set(const CTimeSpan& ts)
     }
     m_Type     = eFinite;
     m_Sec      = (unsigned int)ts.GetCompleteSeconds();
-    m_MicroSec = (unsigned int)((ts.GetNanoSecondsAfterSecond()+500)/1000);
+    m_NanoSec  = (unsigned int)ts.GetNanoSecondsAfterSecond();
 }
 
 
@@ -2616,7 +2638,7 @@ bool CTimeout::operator== (const CTimeout& t) const
 {
     switch (COMPARE_TIMEOUT_TYPES(m_Type, t.m_Type)) {
     case COMPARE_TIMEOUT_TYPES(eFinite, eFinite):
-        return m_Sec == t.m_Sec  &&  m_MicroSec == t.m_MicroSec;
+        return m_Sec == t.m_Sec  &&  m_NanoSec == t.m_NanoSec;
     case COMPARE_TIMEOUT_TYPES(eInfinite, eInfinite):
         return true;  // infinite == infinite
     case COMPARE_TIMEOUT_TYPES(eFinite, eInfinite):
@@ -2633,7 +2655,7 @@ bool CTimeout::operator< (const CTimeout& t) const
 {
     switch (COMPARE_TIMEOUT_TYPES(m_Type, t.m_Type)) {
     case COMPARE_TIMEOUT_TYPES(eFinite, eFinite):
-        return m_Sec == t.m_Sec ? m_MicroSec < t.m_MicroSec : m_Sec < t.m_Sec;
+        return m_Sec == t.m_Sec ? m_NanoSec < t.m_NanoSec : m_Sec < t.m_Sec;
     case COMPARE_TIMEOUT_TYPES(eFinite, eInfinite):
         return true;  // value < infinite
     case COMPARE_TIMEOUT_TYPES(eInfinite, eFinite):
@@ -2650,7 +2672,7 @@ bool CTimeout::operator> (const CTimeout& t) const
 {
     switch (COMPARE_TIMEOUT_TYPES(m_Type, t.m_Type)) {
     case COMPARE_TIMEOUT_TYPES(eFinite, eFinite):
-        return m_Sec == t.m_Sec ? m_MicroSec > t.m_MicroSec : m_Sec > t.m_Sec;
+        return m_Sec == t.m_Sec ? m_NanoSec > t.m_NanoSec : m_Sec > t.m_Sec;
     case COMPARE_TIMEOUT_TYPES(eInfinite, eFinite):
         return true;  // infinite > value
     case COMPARE_TIMEOUT_TYPES(eFinite, eInfinite):
@@ -2667,7 +2689,7 @@ bool CTimeout::operator>= (const CTimeout& t) const
 {
     switch (COMPARE_TIMEOUT_TYPES(m_Type, t.m_Type)) {
     case COMPARE_TIMEOUT_TYPES(eFinite, eFinite):
-        return m_Sec == t.m_Sec ? m_MicroSec >= t.m_MicroSec : m_Sec >= t.m_Sec;
+        return m_Sec == t.m_Sec ? m_NanoSec >= t.m_NanoSec : m_Sec >= t.m_Sec;
     case COMPARE_TIMEOUT_TYPES(eFinite, eInfinite):
         return false;     // value < infinity
     case COMPARE_TIMEOUT_TYPES(eInfinite, eFinite):
@@ -2689,7 +2711,7 @@ bool CTimeout::operator<= (const CTimeout& t) const
 {
     switch (COMPARE_TIMEOUT_TYPES(m_Type, t.m_Type)) {
     case COMPARE_TIMEOUT_TYPES(eFinite, eFinite):
-        return m_Sec == t.m_Sec ? m_MicroSec <= t.m_MicroSec : m_Sec <= t.m_Sec;
+        return m_Sec == t.m_Sec ? m_NanoSec <= t.m_NanoSec : m_Sec <= t.m_Sec;
     case COMPARE_TIMEOUT_TYPES(eInfinite, eFinite):
         return false;    // infinity > value
     case COMPARE_TIMEOUT_TYPES(eFinite, eInfinite):
@@ -2706,7 +2728,114 @@ bool CTimeout::operator<= (const CTimeout& t) const
     }
 }
 
+//=============================================================================
+//
+//  CAbsTimeout
+//
+//=============================================================================
 
+CAbsTimeout::CAbsTimeout(unsigned int sec, unsigned int nanosec)
+    : m_Seconds(0), m_Nanoseconds(0), m_Infinite(false)
+{
+    x_Now();
+    x_Add(sec,nanosec);
+
+}
+
+CAbsTimeout::CAbsTimeout(const CTimeout& rel_timeout)
+    : m_Seconds(0), m_Nanoseconds(0), m_Infinite(false)
+{
+    if (rel_timeout.IsInfinite()) {
+        m_Infinite = true;
+    }
+    else if (rel_timeout.IsFinite()) {
+        x_Now();
+        unsigned int sec, mksec;
+        rel_timeout.Get(&sec, &mksec);
+        x_Add(sec,mksec*1000);
+    }
+}
+
+void CAbsTimeout::x_Now(void)
+{
+#if defined(NCBI_OS_MSWIN)
+    struct _timeb timebuffer;
+    _ftime(&timebuffer);
+    m_Seconds = timebuffer.time;
+    m_Nanoseconds = (unsigned int)timebuffer.millitm *
+        (kNanoSecondsPerSecond / kMilliSecondsPerSecond);
+#else
+#if 0
+    struct timespec timebuffer;
+    clock_gettime(CLOCK_REALTIME, &timebuffer);
+    m_Seconds = timebuffer.tv_sec;
+    m_Nanoseconds = timebuffer.tv_nsec;
+#else
+    struct timeval tp;
+    if (gettimeofday(&tp,0) != -1) {
+        m_Seconds = tp.tv_sec;
+        m_Nanoseconds = tp.tv_usec *
+            (kNanoSecondsPerSecond / kMicroSecondsPerSecond);
+    }
+#endif
+#endif
+}
+
+void CAbsTimeout::x_Add(unsigned int seconds, unsigned int nanoseconds)
+{
+    if (m_Infinite || (seconds == 0 && nanoseconds == 0)) {
+        return;
+    }
+    unsigned int nn = m_Nanoseconds + nanoseconds;
+    m_Seconds    += nn/kNanoSecondsPerSecond;
+    m_Nanoseconds = nn%kNanoSecondsPerSecond;
+    m_Seconds += seconds;
+}
+
+void CAbsTimeout::GetExpirationTime(time_t* sec, unsigned int* nanosec) const
+{
+    if ( IsInfinite() ) {
+        NCBI_THROW(CTimeException, eConvert, 
+                   "CAbsTimeout::GetExpirationTime(): cannot convert from " +
+                   s_SpecialValueName(CTimeout::eInfinite) + " timeout value");
+    }
+    if (sec) {
+        *sec = m_Seconds;
+    }
+    if (nanosec) {
+        *nanosec = m_Nanoseconds;
+    }
+}
+
+CNanoTimeout CAbsTimeout::GetRemainingTime(void) const
+{
+    if ( IsInfinite() ) {
+        NCBI_THROW(CTimeException, eConvert, 
+                   "CAbsTimeout::GetRemainingTime(): cannot convert from " +
+                   s_SpecialValueName(CTimeout::eInfinite) + " timeout value");
+    }
+
+    CAbsTimeout now(0,0);
+
+    time_t       thenS  = m_Seconds;
+    unsigned int thenNS = m_Nanoseconds;
+    time_t       nowS   = now.m_Seconds;
+    unsigned int nowNS  = now.m_Nanoseconds;
+
+    if (thenNS >= nowNS) {
+        thenNS -= nowNS;
+    } else {
+        --thenS;
+        thenNS = kNanoSecondsPerSecond - (nowNS - thenNS);
+    }
+    thenS -= nowS;
+
+    if (thenS < 0) {
+        thenS = 0;
+        thenNS = 0;
+    }
+    return CNanoTimeout((unsigned int)thenS,thenNS);
+}
 
 //=============================================================================
 //

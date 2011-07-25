@@ -208,12 +208,15 @@ void SSystemMutex::Destroy(void)
 }
 
 #if !defined(NCBI_NO_THREADS)
-void SSystemFastMutex::Lock(void)
+void SSystemFastMutex::Lock(ELockSemantics lock /*= eNormal*/)
 {
     WRITE_MUTEX_EVENT(this, "SSystemFastMutex::Lock()");
 
     // check
     CheckInitialized();
+    if (lock != eNormal) {
+        return;
+    }
 
     // Acquire system mutex
 #  if defined(NCBI_WIN32_THREADS)
@@ -269,12 +272,15 @@ bool SSystemFastMutex::TryLock(void)
 #  endif
 }
 
-void SSystemFastMutex::Unlock(void)
+void SSystemFastMutex::Unlock(ELockSemantics lock /*= eNormal*/)
 {
     WRITE_MUTEX_EVENT(this, "SSystemFastMutex::Unlock()");
 
     // check
     CheckInitialized();
+    if (lock != eNormal) {
+        return;
+    }
 
     // Release system mutex
 # if defined(NCBI_WIN32_THREADS)
@@ -292,7 +298,7 @@ void SSystemFastMutex::Unlock(void)
 # endif
 }
 
-void SSystemMutex::Lock(void)
+void SSystemMutex::Lock(SSystemFastMutex::ELockSemantics lock)
 {
     m_Mutex.CheckInitialized();
 
@@ -304,7 +310,7 @@ void SSystemMutex::Lock(void)
     }
 
     // Lock the mutex and remember the owner
-    m_Mutex.Lock();
+    m_Mutex.Lock(lock);
     assert(m_Count == 0);
     m_Owner.Set(owner);
     m_Count = 1;
@@ -333,7 +339,7 @@ bool SSystemMutex::TryLock(void)
     return false;
 }
 
-void SSystemMutex::Unlock(void)
+void SSystemMutex::Unlock(SSystemFastMutex::ELockSemantics lock)
 {
     m_Mutex.CheckInitialized();
 
@@ -351,7 +357,7 @@ void SSystemMutex::Unlock(void)
 
     assert(m_Count == 0);
     // This was the last lock - clear the owner and unlock the mutex
-    m_Mutex.Unlock();
+    m_Mutex.Unlock(lock);
 }
 #endif
 
@@ -1685,6 +1691,281 @@ CSpinLock::Unlock(void)
 #else
     m_Value = NULL;
 #endif
+}
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CONDITION VARIABLE
+//
+
+
+#if defined(NCBI_HAVE_CONDITIONAL_VARIABLE)
+
+
+CConditionVariable::CConditionVariable(void)
+    : m_WaitCounter(0),
+      m_WaitMutex(NULL)
+{
+#if defined(NCBI_OS_MSWIN)
+    InitializeConditionVariable(&m_ConditionVar);
+#else
+    int res = pthread_cond_init(&m_ConditionVar, NULL);
+    switch (res) {
+    case 0:
+        break;
+    case EAGAIN:
+        NCBI_THROW(CConditionVariableException, eInvalidValue,
+                   "CConditionVariable: not enough resources");
+    case ENOMEM:
+        NCBI_THROW(CConditionVariableException, eInvalidValue,
+                   "CConditionVariable: not enough memory");
+    case EBUSY:
+        NCBI_THROW(CConditionVariableException, eInvalidValue,
+                   "CConditionVariable: attempt to reinitialize"
+                   " already used variable");
+    case EINVAL:
+        NCBI_THROW(CConditionVariableException, eInvalidValue,
+                   "CConditionVariable: invalid attribute value");
+    default:
+        NCBI_THROW(CConditionVariableException, eInvalidValue,
+                   "CConditionVariable: unknown error");
+    }
+#endif
+}
+
+
+CConditionVariable::~CConditionVariable(void)
+{
+#if !defined(NCBI_OS_MSWIN)
+    int res = pthread_cond_destroy(&m_ConditionVar);
+    switch (res) {
+    case 0:
+        return;
+    case EBUSY:
+        ERR_POST(Critical <<
+                 "~CConditionVariable: attempt to destroy variable that"
+                 " is currently in use");
+        break;
+    case EINVAL:
+        ERR_POST(Critical <<
+                 "~CConditionVariable: invalid condition variable");
+        break;
+    default:
+        ERR_POST(Critical <<
+                 "~CConditionVariable: unknown error");
+    }
+    NCBI_TROUBLE("CConditionVariable: pthread_cond_destroy() failed");
+#endif
+}
+
+
+template <class T>
+class CQuickAndDirtySamePointerGuard
+{
+public:
+    typedef T* TPointer;
+
+    CQuickAndDirtySamePointerGuard(CAtomicCounter&    atomic_counter,
+                                   TPointer volatile& guarded_ptr,
+                                   TPointer           new_ptr)
+        : m_AtomicCounter (atomic_counter),
+          m_GuardedPtr    (guarded_ptr),
+          m_SavedPtr      (new_ptr)
+    {
+        _ASSERT(new_ptr != NULL);
+        m_AtomicCounter.Add(1);
+        // If two threads enter the guard simultaneously, and with different
+        // pointers, then we may not detect this. There is chance however that
+        // we 'll detect it -- in DEBUG mode only -- in dtor. And if not, then:
+        // Oh well. We don't promise 100% protection.  It is good enough
+        // though, and what's important -- no false negatives.
+        m_GuardedPtr = new_ptr;
+    }
+
+    bool DetectedDifferentPointers(void)
+    {
+        if ((m_SavedPtr == NULL)  ||
+            (m_GuardedPtr != NULL  &&  m_GuardedPtr != m_SavedPtr)) {
+            NCBI_TROUBLE("Different pointers detected");
+            m_SavedPtr = NULL;
+            return true;
+        }
+        return false;
+    }
+
+    ~CQuickAndDirtySamePointerGuard() {
+        _ASSERT( !DetectedDifferentPointers() );
+        if (m_AtomicCounter.Add(-1) == 0) {
+            // If other thread goes into the guard at this very moment, then
+            // this thread can NULL up the protection, and won't detect
+            // any same-ptr cases until after the counter goes back to zero.
+            // Oh well. We don't promise 100% protection.  It is good enough
+            // though, and what's important -- no false negatives.
+            m_GuardedPtr = NULL;
+        }
+    }
+
+private:
+    CAtomicCounter&     m_AtomicCounter;
+    volatile TPointer&  m_GuardedPtr;
+    TPointer            m_SavedPtr;
+};
+
+
+inline void s_ThrowIfDifferentMutexes
+(CQuickAndDirtySamePointerGuard<SSystemFastMutex>& mutex_guard)
+{
+    if ( mutex_guard.DetectedDifferentPointers() ) {
+        NCBI_THROW(CConditionVariableException, eMutexDifferent,
+                   "WaitForSignal called with different mutexes");
+    }
+}
+
+
+bool CConditionVariable::x_WaitForSignal
+(SSystemFastMutex&  mutex, const CAbsTimeout&  timeout)
+{
+    CQuickAndDirtySamePointerGuard<SSystemFastMutex> mutex_guard
+        (m_WaitCounter, m_WaitMutex, &mutex);
+    s_ThrowIfDifferentMutexes(mutex_guard);
+
+#if defined(NCBI_OS_MSWIN)
+    DWORD timeout_msec = timeout.IsInfinite() ?
+        INFINITE : timeout.GetRemainingTime().GetAsMilliSeconds();
+    BOOL res = SleepConditionVariableCS
+        (&m_ConditionVar, &mutex.m_Handle, timeout_msec);
+    s_ThrowIfDifferentMutexes(mutex_guard);
+
+    if ( res )
+        return true;
+
+    DWORD err_code = GetLastError();
+    if (err_code == ERROR_TIMEOUT  ||  err_code == WAIT_TIMEOUT)
+        return false;
+
+    NCBI_THROW(CConditionVariableException, eInvalidValue,
+               "WaitForSignal failed");
+#else
+    int res;
+    if (timeout.IsInfinite()) {
+        res = pthread_cond_wait(&m_ConditionVar, &mutex.m_Handle);
+    } else {
+        struct timespec ts;
+        time_t s;
+        unsigned int ns;
+        timeout.GetExpirationTime(&s, &ns);
+        ts.tv_sec = s;
+        ts.tv_nsec = ns;
+        res = pthread_cond_timedwait(&m_ConditionVar, &mutex.m_Handle, &ts);
+    }
+    s_ThrowIfDifferentMutexes(mutex_guard);
+
+    if (res != 0) {
+        switch (res) {
+        case ETIMEDOUT:
+            return false;
+        case EINVAL:
+            NCBI_THROW(CConditionVariableException, eInvalidValue,
+                       "WaitForSignal failed: invalid paramater");
+        case EPERM:
+            NCBI_THROW(CConditionVariableException, eMutexOwner,
+                       "WaitForSignal: mutex not owned by the current thread");
+        default:
+            NCBI_THROW(CConditionVariableException, eInvalidValue,
+                       "WaitForSignal failed: unknown error");
+        }
+    }
+#endif
+
+    return true;
+}
+
+
+bool CConditionVariable::WaitForSignal(CMutex&            mutex,
+                                       const CAbsTimeout& timeout)
+{
+    SSystemMutex& sys_mtx = mutex;
+    if (sys_mtx.m_Count != 1) {
+        NCBI_THROW(CConditionVariableException, eMutexLockCount,
+                   "WaitForSignal: mutex lock count not 1");
+    }
+#if defined(NCBI_OS_MSWIN)
+    if (!sys_mtx.m_Owner.Is(CThreadSystemID::GetCurrent())) {
+        NCBI_THROW(CConditionVariableException, eMutexOwner,
+                   "WaitForSignal: mutex not owned by the current thread");
+    }
+#endif
+    sys_mtx.Unlock(SSystemFastMutex::ePseudo);
+    bool res = x_WaitForSignal(sys_mtx.m_Mutex, timeout);
+    sys_mtx.Lock(SSystemFastMutex::ePseudo);
+    return res;
+}
+
+
+bool CConditionVariable::WaitForSignal(CFastMutex&        mutex,
+                                       const CAbsTimeout& timeout)
+{
+    SSystemFastMutex& sys_mtx = mutex;
+    sys_mtx.Unlock(SSystemFastMutex::ePseudo);
+    bool res = x_WaitForSignal(sys_mtx, timeout);
+    sys_mtx.Lock(SSystemFastMutex::ePseudo);
+    return res;
+}
+
+
+void CConditionVariable::SignalSome(void)
+{
+#if defined(NCBI_OS_MSWIN)
+    WakeConditionVariable(&m_ConditionVar);
+#else
+    int res = pthread_cond_signal(&m_ConditionVar);
+    if (res != 0) {
+        switch (res) {
+        case EINVAL:
+            NCBI_THROW(CConditionVariableException, eInvalidValue,
+                       "WaitForSignal failed: invalid paramater");
+        default:
+            NCBI_THROW(CConditionVariableException, eInvalidValue,
+                       "WaitForSignal failed: unknown error");
+        }
+    }
+#endif
+}
+
+
+void CConditionVariable::SignalAll(void)
+{
+#if defined(NCBI_OS_MSWIN)
+    WakeAllConditionVariable(&m_ConditionVar);
+#else
+    int res = pthread_cond_broadcast(&m_ConditionVar);
+    if (res != 0) {
+        switch (res) {
+        case EINVAL:
+            NCBI_THROW(CConditionVariableException, eInvalidValue,
+                       "WaitForSignal failed: invalid paramater");
+        default:
+            NCBI_THROW(CConditionVariableException, eInvalidValue,
+                       "WaitForSignal failed: unknown error");
+        }
+    }
+#endif
+}
+
+#endif  /* NCBI_HAVE_CONDITIONAL_VARIABLE */
+
+
+const char* CConditionVariableException::GetErrCodeString(void) const
+{
+    switch ( GetErrCode() ) {
+    case eInvalidValue:   return "eInvalidValue";
+    case eMutexLockCount: return "eMutexLockCount";
+    case eMutexOwner:     return "eMutexOwner";
+    case eMutexDifferent: return "eMutexDifferent";
+    default:              return CException::GetErrCodeString();
+    }
 }
 
 END_NCBI_SCOPE

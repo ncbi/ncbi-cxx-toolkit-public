@@ -1443,7 +1443,7 @@ private:
 ///
 /// CTimeout -- Timeout interval
 ///
-/// @sa STimeout, CConnTimeout, CTimeSpan
+/// @sa CNanoTimeout, STimeout, CConnTimeout, CTimeSpan
 /// @note Throw exception of type CTimeException on errors.
 
 class NCBI_XNCBI_EXPORT CTimeout
@@ -1452,7 +1452,7 @@ public:
     /// Type of timeouts.
     enum EType {
         eFinite,    ///< A finite timeout value has been set.
-        eDefault,   ///< Default timeout (to be interpreted by the client code).
+        eDefault,   ///< Default timeout (to be interpreted by the client code)
         eInfinite,  ///< Infinite timeout.
         eZero       ///< Zero timeout, equal to CTimeout(0,0).
     };
@@ -1464,12 +1464,12 @@ public:
     CTimeout(EType type);
 
     /// Initialize timeout from CTimeSpan.
-    ///
-    /// @note
-    ///   Nanoseconds part of the CTimeSpan will be rounded to microseconds.
     CTimeout(const CTimeSpan& ts);
 
     /// Initialize timeout in seconds and microseconds.
+    /// @note
+    ///  Use CNanoTimeout ctor to initialize with (seconds and) nanoseconds
+    /// @sa CNanoTimeout
     CTimeout(unsigned int sec, unsigned int usec);
 
     /// Initialize timeout from number of seconds (fractional value).
@@ -1499,7 +1499,10 @@ public:
     CTimeSpan GetAsTimeSpan(void) const;
 
     /// Get timeout in seconds and microseconds.
-    void Get(unsigned int *sec, unsigned int *usec) const;
+    void Get(unsigned int *sec, unsigned int *microsec) const;
+
+    /// Get timeout in seconds and nanoseconds.
+    void GetNano(unsigned int *sec, unsigned int *nanosec) const;
 
 
     //
@@ -1510,15 +1513,15 @@ public:
     void Set(EType type);
 
     /// Set timeout in seconds and microseconds.
-    void Set(unsigned int sec, unsigned int usec);
+    void Set(unsigned int sec, unsigned int microsec);
+
+    /// Set timeout in seconds and nanoseconds.
+    void SetNano(unsigned int sec, unsigned int nanosec);
 
     /// Set timeout from number of seconds (fractional value).
     void Set(double sec);
 
     /// Set from CTimeSpan.
-    ///
-    /// @note
-    ///   Nanoseconds part of the CTimeSpan will be rounded to microseconds.
     void Set(const CTimeSpan& ts);
 
     //
@@ -1547,9 +1550,71 @@ public:
 private:
     EType         m_Type;       ///< Type of timeout.
     unsigned int  m_Sec;        ///< Seconds part of the timeout.
-    unsigned int  m_MicroSec;   ///< Microseconds part of the timeout.
+    unsigned int  m_NanoSec;    ///< Nanoseconds part of the timeout.
 };
 
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CNanoTimeout -- Timeout interval, using nanoseconds 
+///
+/// @sa CTimeout, STimeout, CConnTimeout, CTimeSpan
+/// @note Throw exception of type CTimeException on errors.
+
+
+class CNanoTimeout : public CTimeout
+{
+public:
+    CNanoTimeout(unsigned int seconds, unsigned int nanoseconds)
+        : CTimeout() {
+        SetNano(seconds, nanoseconds);
+    }
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+/// 
+/// CAbsTimeout
+///
+///  Given a relative timeout, compose the absolute time mark
+///  by adding the timeout to the current time.
+///
+/// @sa CTimeout
+
+class CAbsTimeout
+{
+public:
+    /// Initialize absolute timeout using seconds and nanoseconds
+    /// (adding to the current time)
+    /// @param rel_seconds
+    ///   Number of seconds to add to the current time
+    /// @param rel_nanoseconds
+    ///   Number of nanoseconds to add to the current time
+    CAbsTimeout(unsigned int rel_seconds, unsigned int rel_nanoseconds);
+    
+    /// Initialize absolute timeout by adding relative one to the current time
+    CAbsTimeout(const CTimeout& rel_timeout);
+    
+    /// Check if the timeout is infinite
+    bool IsInfinite(void) const { return m_Infinite; }
+
+    /// Get the number of seconds and nanoseconds (since 1/1/1970).
+    /// Throw an exception if the timeout is infinite.
+    void GetExpirationTime(time_t* sec, unsigned int* nanosec) const;
+
+    /// Get time left to the expiration time
+    CNanoTimeout GetRemainingTime(void) const;
+
+private:
+    void x_Now(void);
+    void x_Add(unsigned int seconds, unsigned int nanoseconds);
+
+    time_t       m_Seconds;
+    unsigned int m_Nanoseconds;
+    bool         m_Infinite;
+};
 
 
 /////////////////////////////////////////////////////////////////////////////

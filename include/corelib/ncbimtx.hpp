@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Author:  Denis Vakatov, Aleksey Grichenko
+ * Author:  Denis Vakatov, Aleksey Grichenko, Andrei Gourianov
  *
  *
  */
@@ -51,6 +51,9 @@
 /// - CReadLockGuard   -- acquire R-lock, then guarantee for its release
 /// - CWriteLockGuard  -- acquire W-lock, then guarantee for its release
 ///
+/// CONDITION VARIABLE:
+/// - CConditionVariable -- condition variable
+///
 /// SEMAPHORE:
 /// - CSemaphore       -- application-wide semaphore
 ///
@@ -60,6 +63,7 @@
 #include <corelib/ncbicntr.hpp>
 #include <corelib/guard.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbitime.hpp>
 #include <memory>
 #include <deque>
 #ifdef NCBI_COMPILER_MSVC
@@ -272,13 +276,20 @@ struct SSystemFastMutex
     };
     volatile EMagic m_Magic;    ///< Magic flag
 
+    /// This is for condition variables
+    enum ELockSemantics
+    {
+        eNormal, /// Modify object data and call system
+        ePseudo  /// Modify object data, but do not call system
+    };
+
     /// Acquire mutex for the current thread with no nesting checks.
     NCBI_XNCBI_EXPORT
-    void Lock(void);
+    void Lock(ELockSemantics lock = eNormal);
 
     /// Release mutex with no owner or nesting checks.
     NCBI_XNCBI_EXPORT
-    void Unlock(void);
+    void Unlock(ELockSemantics lock = eNormal);
 
     /// Try to lock.
     /// 
@@ -393,11 +404,13 @@ struct SSystemMutex
 
     /// Acquire mutex for the current thread.
     NCBI_XNCBI_EXPORT
-    void Lock(void);
+    void Lock
+    (SSystemFastMutex::ELockSemantics lock = SSystemFastMutex::eNormal);
 
     /// Release mutex.
     NCBI_XNCBI_EXPORT
-    void Unlock(void);
+    void Unlock
+    (SSystemFastMutex::ELockSemantics lock = SSystemFastMutex::eNormal);
 
     /// Try to lock.
     /// 
@@ -751,8 +764,8 @@ public:
     ///
     /// Try to acquire the mutex.
     /// @return
-    ///   - On success, return TRUE, and acquire the mutex just as the Lock() does.
-    ///   - If the mutex is already acquired by another thread, then return FALSE.
+    ///  TRUE if succesfully acquired;  FALSE otherwise (e.g if the mutex is
+    ///  already acquired by another thread).
     /// @sa
     ///   Lock()
     bool TryLock(void);
@@ -760,7 +773,8 @@ public:
     /// Unlock mutex.
     ///
     /// Operation:
-    /// - If the mutex is acquired by this thread, then decrease the lock counter.
+    /// - If the mutex is acquired by this thread, then decrease the lock
+    ///   counter.
     /// - If the lock counter becomes zero, then release the mutex completely.
     /// - Report error if the mutex is not locked or locked by another thread.
     void Unlock(void);
@@ -1354,6 +1368,123 @@ private:
     CSemaphore& operator= (const CSemaphore&);
 };
 
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CConditionVariable --
+///
+///   Condition variable.
+
+#if defined(NCBI_POSIX_THREADS) || (defined(NCBI_WIN32_THREADS) && defined(NCBI_USE_CRITICAL_SECTION))
+#  define NCBI_HAVE_CONDITIONAL_VARIABLE
+#endif
+
+#if defined(NCBI_HAVE_CONDITIONAL_VARIABLE)
+
+class NCBI_XNCBI_EXPORT CConditionVariable
+{
+public:
+    CConditionVariable(void);
+    ~CConditionVariable(void);
+
+    /// Release mutex and lock the calling thread until the condition
+    /// variable is signalled.
+    ///
+    /// @param mutex
+    ///  Mutex to release while waiting for a signal.
+    ///  At the time of the call the mutex must be locked by this thread
+    ///  exactly once. Otherwise, an exception will be thrown.
+    /// @param abs_timeout
+    ///   The wait will time out when system time equals or exceeds
+    ///   the absolute time specified in 'abs_timeout'
+    /// @return
+    ///   - TRUE when condition variable is signalled
+    ///   - FALSE if the wait has timed out
+    /// @sa
+    ///   SignalSome, SignalAll, CConditionVariableException
+    bool WaitForSignal
+    (CMutex&            mutex,
+     const CAbsTimeout& abs_timeout = CAbsTimeout(CTimeout::eInfinite));
+
+    /// Release mutex and lock the calling thread until the condition
+    /// variable is signalled.
+    ///
+    /// @param mutex
+    ///  Mutex to release while waiting for a signal.
+    ///  At the time of the call the mutex must be locked by this thread.
+    ///  Otherwise, an exception will be thrown.
+    /// @param abs_timeout
+    ///   The wait will time out when system time equals or exceeds
+    ///   the absolute time specified in 'abs_timeout'
+    /// @return
+    ///   TRUE when condition variable is signalled;  FALSE if timed out
+    /// @sa
+    ///   SignalSome, SignalAll, CConditionVariableException
+    bool WaitForSignal
+    (CFastMutex& mutex,
+     const CAbsTimeout& abs_timeout = CAbsTimeout(CTimeout::eInfinite));
+
+    /// Wake at least one of the threads that are currently waiting on this
+    /// condition variable (if any threads are waiting on it).
+    /// @note
+    ///  More than one thread can be awaken.
+    /// @sa WaitForSignal, SignalAll
+    void SignalSome(void);
+
+    /// Wake all threads that are currently waiting on the condition variable.
+    /// @sa WaitForSignal, SignalSome
+    void SignalAll(void);
+
+private:
+    bool x_WaitForSignal(SSystemFastMutex& mutex, const CAbsTimeout& timeout);
+
+#if defined(NCBI_OS_MSWIN)
+    CONDITION_VARIABLE m_ConditionVar;
+#else
+    pthread_cond_t     m_ConditionVar;
+#endif
+    CAtomicCounter_WithAutoInit  m_WaitCounter;
+    SSystemFastMutex* volatile   m_WaitMutex;
+};
+
+#endif  /* NCBI_HAVE_CONDITIONAL_VARIABLE */
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CConditionVariableException --
+///
+///  Exceptions generated by condition variable.
+///
+/// CConditionVariableException inherits its basic functionality from
+/// CCoreException, and defines additional error codes.
+///
+/// @sa CConditionVariable, CCoreException
+
+class NCBI_XNCBI_EXPORT CConditionVariableException : public CCoreException
+{
+public:
+    /// Error types that a condition variable can generate.
+    enum EErrCode {
+        ///< Parameter of WaitForSignal function is invalid
+        eInvalidValue,
+         ///< Mutex passed to WaitForSignal is not locked exactly once
+        eMutexLockCount,
+        ///< Mutex passed to WaitForSignal is not owned by the current thread
+        eMutexOwner,
+        ///< Different mutexes were supplied for concurrent WaitForSignal
+        ///< operations on this condition variable
+        eMutexDifferent
+    };
+
+    /// Translate from the error code value to its string representation.
+    virtual const char* GetErrCodeString(void) const;
+
+    // Standard exception boilerplate code.
+    NCBI_EXCEPTION_DEFAULT(CConditionVariableException,CCoreException);
+};
 
 /* @} */
 
