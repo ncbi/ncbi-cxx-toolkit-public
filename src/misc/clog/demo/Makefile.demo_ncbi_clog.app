@@ -1,7 +1,7 @@
 # $Id$
 
-APP = demo_ncbi_c_log
-SRC = demo_ncbi_c_log
+APP = demo_ncbi_clog
+SRC = demo_ncbi_clog
 LIB = clog
 
 LIBS = $(ORIG_LIBS)
