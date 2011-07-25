@@ -44,20 +44,28 @@
  * If this file can't be found or can't be read, or the log files can not
  * be open, the module will immediately fall back to logging to STDERR.
  *
+ * Thread-specific serial number is always 0. We cannot provide mechanism
+ * to maintain correct value for each thread.
+ *
  */
 
 #include <time.h>
 
-#ifdef _MSC_VER
-#  ifndef NCBI_OS_MSWIN
+
+/** @addtogroup Diagnostics
+ *
+ * @{
+ */
+
+#if defined(_MSC_VER)
+#  if !defined(NCBI_OS_MSWIN)
 #    define NCBI_OS_MSWIN  1
 #  endif
 #else
-#  ifndef NCBI_OS_UNIX
+#  if !defined(NCBI_OS_UNIX)
 #    define NCBI_OS_UNIX   1
 #  endif
 #endif
-
 
 #if defined(NCBI_OS_UNIX)
 #  ifndef   __STDC_FORMAT_MACROS
@@ -69,11 +77,6 @@
 #endif
 
 
-/** @addtogroup Diagnostics
- *
- * @{
- */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -83,7 +86,6 @@ extern "C" {
 /******************************************************************************
  *  MT locking
  */
-
 
 /** Lock handle -- keeps all data needed for the locking and for the cleanup.
  */
@@ -126,7 +128,8 @@ typedef enum {
  */
 typedef int/*bool*/ (*FNcbiLog_MTLock_Handler)
     (void*                  user_data,
-     ENcbiLog_MTLock_Action action);
+     ENcbiLog_MTLock_Action action
+     );
 
 
 /** Create new MT lock.
@@ -142,7 +145,7 @@ typedef int/*bool*/ (*FNcbiLog_MTLock_Handler)
 extern TNcbiLog_MTLock NcbiLog_MTLock_Create
     (void*                   user_data,
      FNcbiLog_MTLock_Handler handler
-    );
+     );
 
 
 /** Call cleanup action on the handler, then destroy it.
@@ -152,6 +155,22 @@ extern TNcbiLog_MTLock NcbiLog_MTLock_Create
  *    NcbiLog_MTLock_Create, FNcbiLog_MTLock_Handler
  */
 extern void NcbiLog_MTLock_Delete(TNcbiLog_MTLock lock);
+
+
+/** Default implementation of simple MT locking callback.
+ *  @param user_data
+ *    Simple handler don't use this parameter; will be ignored.
+ *  @param action
+ *    Operation that should be done in the callback handler.
+ *  @return
+ *    Non-zero value if the requested operation was successful.
+ * @sa
+ *    FNcbiLog_MTLock_Handler, NcbiLog_MTLock_Create
+ */
+extern int/*bool*/ NcbiLog_Default_MTLock_Handler
+    (void*                  user_data, 
+     ENcbiLog_MTLock_Action action
+     );
 
 
 
@@ -182,7 +201,6 @@ typedef enum {
     eNcbiLog_Critical,        /**< Critical error message */
     eNcbiLog_Fatal            /**< Fatal error -- guarantees exit (or abort) */
 } ENcbiLog_Severity;
-
 
 
 /** Structure to describe pairs 'key=value', used to posting parameters.
@@ -238,22 +256,67 @@ typedef TNcbiLog_UInt8 TNcbiLog_Counter;
  *    to show in logs. Also, any spaces contained in the base file name 
  *    will be URL-encoded.
  *  @param mt_lock
- *    User defined MT lock. It is necessary for using NcbiLog API in
+ *    User defined MT lock. It is necessary to use NcbiLog API in
  *    multi-threaded applications.
  *  @param own_mt_lock
  *    MT lock ownership flag. If eNcbiLog_MT_TakeOwnership is passed,
  *    then the MT lock handler will be destroyed in NcbiLog_Destroy().
+ *  @note
+ *    It is recommended to call NcbiLog_InitST() instead of NcbiLog_Init[MT]()
+ *    if you don't use threads.
  *  @sa
- *    NcbiLog_SetDestination, NcbiLog_Destroy, NcbiLog_MTLock_Create
+ *    NcbiLog_InitMT, NcbiLog_InitST, NcbiLog_Destroy, NcbiLog_MTLock_Create
  */
 extern void NcbiLog_Init(const char*               appname, 
                          TNcbiLog_MTLock           mt_lock, 
                          ENcbiLog_MTLock_Ownership mt_lock_ownership);
 
-/** Shortcut version of NcbiLog_Init to use in single-threaded applications.
- *  @sa NcbiLog_Init
+
+/** Version of NcbiLog_Init with default MT lock implementation.
+ *  This function should be called before any other API's function,
+ *  and only once. Preferable, in MT applications it should be called before
+ *  creating any threads.
+ *  @sa NcbiLog_Init, NcbiLog_InitST
+ */
+extern void NcbiLog_InitMT(const char* appname);
+
+
+/** Version of NcbiLog_Init to use in single-threaded applications.
+ *  This function should be called before any other API's function,
+ *  and only once. Preferable, in MT applications it should be called before
+ *  creating any threads.
+ *  @note
+ *    It is recommended to call NcbiLog_InitST() instead of NcbiLog_Init[MT]()
+ *    if you don't use threads.
+ *  @sa NcbiLog_Init, NcbiLog_InitMT
  */
 extern void NcbiLog_InitST(const char* appname);
+
+
+/** Destroy NcbiLog API.
+ *  This function should be called last. After it any other API's calls
+ *  will be ignored. For MT applications see also NcbiLog_Destroy_Thread().
+ *  @sa
+ *    NcbiLog_Init, NcbiLog_Destroy_Thread
+ */
+extern void NcbiLog_Destroy(void);
+
+
+/** Destroy thread-specific NcbiLog API information.
+ *  Each thread should call this function before termination, and
+ *  before NcbiLog_Destroy() call.
+ *  Calling any other API function in the current thread except
+ *  NcbiLog_Destroy() is prohibited and can lead to application crash.
+ *  @note 
+ *    Not necessary to call this function in single-threaded
+ *    applications if NcbiLog_InitST() was used.
+ *  @note
+ *    It is not fatal do not call NcbiLog_Destroy_Thread(), but this
+ *    prevent have memory leaks in your application.
+ *  @sa
+ *    NcbiLog_Init, NcbiLog_InitST, NcbiLog_Destroy
+ */
+extern void NcbiLog_Destroy_Thread(void);
 
 
 /** Set up diagnostics destination.
@@ -265,21 +328,15 @@ extern void NcbiLog_InitST(const char* appname);
 extern void NcbiLog_SetDestination(ENcbiLog_Destination ds);
 
 
-/** Destroy NcbiLog API.
- *  This function should be called last. After it any other API's calls
- *  will be ignored.
- *  @sa
- *    NcbiLog_Init
- */
-extern void NcbiLog_Destroy(void);
-
-
 /** Set PID/TID values */
 extern void             NcbiLog_SetProcessId (TNcbiLog_PID pid);
 extern void             NcbiLog_SetThreadId  (TNcbiLog_TID tid);
 
 
-/** Set/get/increase request ID. 
+/** Set/get request ID. 
+ *  @note
+ *    NcbiLog_SetRequestId() do not affect already started requests.
+ *    Only newly started request will have new ID.
  *  @note
  *    NcbiLog_ReqStart() automaticaly increase request number. 
  *    So, next request will start with (rid + 1).
@@ -287,16 +344,6 @@ extern void             NcbiLog_SetThreadId  (TNcbiLog_TID tid);
  */
 extern void             NcbiLog_SetRequestId(TNcbiLog_Counter rid);
 extern TNcbiLog_Counter NcbiLog_GetRequestId(void);
-extern void             NcbiLog_IncreaseRequestId(void);
-
-
-/** Set/get/increase thread-specific posting serial number
- *  @note
- *    Process-wide post serial number will be increased automatically.
- */
-extern void             NcbiLog_SetSerialNo_Thread(TNcbiLog_Counter n);
-extern TNcbiLog_Counter NcbiLog_GetSerialNo_Thread(void);
-extern void             NcbiLog_IncreaseSerialNo_Thread(void);
 
 
 /** This function allows a program to override the posting date and time
@@ -365,7 +412,6 @@ extern void NcbiLog_SetSession(const char* session);
 
 /** Set new posting level.
  *  All messages with severity lower than specified will be ignored.
- *  The new posting severity can not be lower than the current one.
  *  Always returns the active level. 
  */
 extern ENcbiLog_Severity NcbiLog_SetPostLevel(ENcbiLog_Severity sev);
@@ -431,7 +477,7 @@ extern void NcbiLog_AppStopSignal(int exit_status, int exit_signal);
  *  has provided alternate info, it may be overridden as a side-effect of
  *  calling this method. Automatically increase request id number.
  *
- *  @sa NcbiLog_SetRequestId, NcbiLog_IncreaseRequestId, NcbiLog_ReqStop
+ *  @sa NcbiLog_SetRequestId, NcbiLog_ReqStop
  */
 extern void NcbiLog_ReqStart(const SNcbiLog_Param* params);
 

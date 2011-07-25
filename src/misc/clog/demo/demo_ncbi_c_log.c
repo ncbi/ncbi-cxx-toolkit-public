@@ -43,7 +43,10 @@
 /* Fake MT-lock handler -- for display purposes only */
 static int Test_MT_Handler(void* user_data, ENcbiLog_MTLock_Action action)
 {
-    return 1;
+    /*
+        MT lock implementation goes here
+    */
+    return 1 /*true*/;
 }
 
 
@@ -53,11 +56,18 @@ static int Test_MT_Handler(void* user_data, ENcbiLog_MTLock_Action action)
 
 int main(int argc, const char* argv[] /*, const char* envp[]*/)
 {
-    TNcbiLog_MTLock mt_lock = NcbiLog_MTLock_Create(NULL, Test_MT_Handler);
+    TNcbiLog_MTLock mt_lock = NcbiLog_MTLock_Create(NULL, NcbiLog_Default_MTLock_Handler);
+    /* Or,
+       TNcbiLog_MTLock mt_lock = NcbiLog_MTLock_Create(NULL, Test_MT_Handler); 
+    */
     
     /* Initialize logging API 
     */
     NcbiLog_Init(argv[0], mt_lock, eNcbiLog_MT_TakeOwnership);
+    /* Or,
+       NcbiLog_InitMT(argv[0]); -- use default MT handler as above.
+       NcbiLog_InitST(argv[0]); -- only for single-threaded applications
+    */
 
     /* Set logging destination 
     */

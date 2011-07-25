@@ -50,7 +50,6 @@
 #  include <direct.h>
 #endif
 
-
 #if defined(_MT)
 #  if defined(NCBI_OS_MSWIN)
 #    define NCBI_WIN32_THREADS
@@ -63,15 +62,10 @@
 #  define NCBI_NO_THREADS
 #endif
 
-#if !defined(NCBI_NO_THREADS)
-#  define NCBI_THREADS
-#endif
-
 #if defined(NCBI_POSIX_THREADS)
 #    include <pthread.h>
 #    include <sys/errno.h>
 #endif
-
 
 /* assert, verify */
 #if !defined(NDEBUG)  &&  !defined(_DEBUG)
@@ -83,6 +77,13 @@
 #else
 #  define verify(expr)  assert(expr)
 #endif
+
+/* Critical error. Should never happens */ 
+#ifdef TROUBLE
+#    undef TROUBLE
+#endif
+#define TROUBLE assert(0)
+
 
 /* Directory separator */
 #if defined(NCBI_OS_MSWIN)
@@ -97,7 +98,7 @@
  *  Configurables that could theoretically change 
  */
 
-/* Maximum length of each log entry, all text after this position will be truncated */
+/** Maximum length of each log entry, all text after this position will be truncated */
 #define NCBILOG_ENTRY_MAX   8192 
 
 #define HOST_MAX            256
@@ -149,35 +150,29 @@ typedef enum {
 } ENcbiLog_DiagFile;
 
 
-/** Application access log and error postings info structure.
+/** Application access log and error postings info structure (global).
  */
 struct SInfo_tag {
 
     /* Posting data */
 
     TNcbiLog_PID      pid;                      /**< Process ID                                          */
-    TNcbiLog_TID      tid;                      /**< Thread  ID                                          */
     TNcbiLog_Counter  rid;                      /**< Request ID (e.g. iteration number in case of a CGI) */
     ENcbiLog_AppState state;                    /**< Application state                                   */
-    TNcbiLog_Int8     guid;	                    /**< Globally unique process ID                          */
-    TNcbiLog_Counter  psn;	                    /**< Serial number of the posting within the process     */
-    TNcbiLog_Counter  tsn;                      /**< Serial number of the posting within the thread.     */
-                                                /**< User controlled value, cannot be updated automaticaly */
+    TNcbiLog_Int8     guid;                     /**< Globally unique process ID                          */
+    TNcbiLog_Counter  psn;                      /**< Serial number of the posting within the process     */
     STime             post_time;                /**< GMT time at which the message was posted, 
                                                      use current time if it is not specified (equal to 0)*/
     char              host[HOST_MAX+1];         /**< Name of the host where the process runs 
                                                      (UNK_HOST if unknown)                               */
-    char              client[CLIENT_MAX+1];     /**< Client IP address (UNK_CLIENT if unknown)           */
-    char              session[3*SESSION_MAX+1]; /**< Session ID (UNK_SESSION if unknown)                 */
     char              appname[3*APPNAME_MAX+1]; /**< Name of the application (UNK_APP if unknown)        */
     
-    char*             message;                  /**< Buffer used to collect a message and log it  */
+    char*             message;                  /**< Buffer used to collect a message and log it         */
 
     /* Control parameters */
     
     ENcbiLog_Severity post_level;               /**< Posting level                                */
     STime             app_start_time;           /**< Application start time                       */
-    STime             req_start_time;           /**< Rrequest start time                          */
     char*             app_full_name;            /**< Pointer to a full application name (argv[0]) */
     char*             app_base_name;            /**< Poiter to application base name              */
 
@@ -186,7 +181,7 @@ struct SInfo_tag {
 
     ENcbiLog_Destination destination;           /**< Current logging destination            */
     time_t            last_reopen_time;         /**< Last reopen time for log files         */
-    FILE*             file_trace;               /**< Saved file names for log files         */
+    FILE*             file_trace;               /**< Saved files for log files              */
     FILE*             file_err;
     FILE*             file_log;
     FILE*             file_perf;
@@ -196,6 +191,24 @@ struct SInfo_tag {
     char*             file_perf_name;
     int               reuse_file_names;         /**< File names where not changed, reuse it */
 };
+typedef struct SInfo_tag TNcbiLog_Info;
+
+
+/** Thread-specific context data.
+ */
+struct SContext_tag {
+    TNcbiLog_TID      tid;                      /**< Thread  ID                                          */
+    TNcbiLog_Counter  tsn;                      /**< Serial number of the posting within the thread      */
+    TNcbiLog_Counter  rid;                      /**< Request ID (e.g. iteration number in case of a CGI) */
+                                                /**< Local value, use global value if equal to 0         */
+    ENcbiLog_AppState state;                    /**< Application state                                   */
+                                                /**< Local value, use global value if eNcbiLog_NotSet    */
+    char              client[CLIENT_MAX+1];     /**< Client IP address (UNK_CLIENT if unknown)           */
+    char              session[3*SESSION_MAX+1]; /**< Session ID (UNK_SESSION if unknown)                 */
+    STime             req_start_time;           /**< Rrequest start time                                 */
+};
+typedef struct SContext_tag TNcbiLog_Context;
+
 
 
 /*****************************************************************************
@@ -208,9 +221,11 @@ static volatile int /*bool*/         sx_IsInit     = 0;
 /* Enable/disable logging */
 static volatile int /*bool*/         sx_IsEnabled  = 0;
 
-/* Application access log and error postings info structure */
-typedef struct SInfo_tag TNcbiLog_Info;
+/* Application access log and error postings info structure (global) */
 static volatile TNcbiLog_Info*       sx_Info        = NULL;
+
+/* Pointer to the thread-specific context */
+static volatile TNcbiLog_Context*    sx_Context     = NULL;
 
 static volatile TNcbiLog_MTLock      sx_MTLock      = NULL; 
 static volatile int /*bool*/         sx_MTLock_Own  = 0;
@@ -281,6 +296,145 @@ static int/*bool*/ s_MTLock_Do(ENcbiLog_MTLock_Action action)
 #define MT_DESTROY verify(MT_LOCK_Do(eNcbiLog_MT_Destroy))
 
 
+/* Define default MT handler */
+
+#if defined(NCBI_POSIX_THREADS)
+static pthread_mutex_t sx_MT_handle;
+#elif defined(NCBI_WIN32_THREADS)
+static CRITICAL_SECTION sx_MT_handle;
+#endif
+
+int/*bool*/ NcbiLog_Default_MTLock_Handler
+    (void*                  user_data, 
+     ENcbiLog_MTLock_Action action
+     )
+{
+#if defined(NCBI_POSIX_THREADS)
+    switch (action) {
+        case eNcbiLog_MT_Init:
+            assert(pthread_mutex_init(&sx_MT_handle, 0) == 0);
+            break;
+        case eNcbiLog_MT_Destroy:
+            /* Mutex should be unlocked before destroying */
+            verify(pthread_mutex_unlock(&sx_MT_handle) == 0);
+            assert(pthread_mutex_destroy(&sx_MT_handle) == 0);
+            break;
+        case eNcbiLog_MT_Lock:
+            assert(pthread_mutex_lock(&sx_MT_handle) == 0);
+            break;
+        case eNcbiLog_MT_Unlock:
+            assert(pthread_mutex_unlock(&sx_MT_handle) == 0);
+            break;
+    }
+    return 1;
+
+#elif defined(NCBI_WIN32_THREADS)
+
+    switch (action) {
+        case eNcbiLog_MT_Init:
+            InitializeCriticalSection(&sx_MT_handle);
+            break;
+        case eNcbiLog_MT_Destroy:
+            DeleteCriticalSection(&sx_MT_handle);
+            break;
+        case eNcbiLog_MT_Lock:
+            EnterCriticalSection(&sx_MT_handle);
+            break;
+        case eNcbiLog_MT_Unlock:
+            LeaveCriticalSection(&sx_MT_handle);
+            break;
+    }
+    return 1;
+
+#endif
+    /* Not implemented -- not an MT build or current platform
+       doesn't support MT-threading */
+    return 0;
+}
+
+
+
+/******************************************************************************
+ *  Thread-local storage (TLS)
+ */
+
+/* Init is done for TLS */
+static int /*bool*/ sx_TlsIsInit = 0;
+/* Platform-specific TLS key */
+#if defined(NCBI_POSIX_THREADS)
+static pthread_key_t sx_Tls;
+#elif defined(NCBI_WIN32_THREADS)
+static DWORD         sx_Tls;
+#else
+static int           sx_Tls;
+#endif
+
+
+static void s_TlsInit(void)
+{
+    verify(!sx_TlsIsInit);
+    /* Create platform-dependent TLS key (index) */
+#if defined(NCBI_POSIX_THREADS)
+    assert(pthread_key_create(&sx_Tls, NULL) == 0);
+    /* pthread_key_create does not reset the value to 0 if the key */
+    /* has been used and deleted. */
+    assert(pthread_setspecific(sx_Tls, 0) == 0);
+    sx_TlsIsInit = 1;
+#elif defined(NCBI_WIN32_THREADS)
+    sx_Tls = TlsAlloc();
+    assert(sx_Tls != TLS_OUT_OF_INDEXES);
+    sx_TlsIsInit = 1 /*true*/;
+#else
+    /* Do not use TLS */
+#endif
+}
+
+
+static void s_TlsDestroy(void)
+{
+    verify(sx_TlsIsInit);
+#if defined(NCBI_POSIX_THREADS)
+    assert(pthread_key_delete(sx_Tls) == 0);
+#elif defined(NCBI_WIN32_THREADS)
+    TlsFree(sx_Tls);
+#else
+    TROUBLE;
+#endif
+    sx_TlsIsInit = 0 /*false*/;
+}
+
+
+static void* s_TlsGetValue(void)
+{
+    void* ptr = NULL;
+    verify(sx_TlsIsInit);
+#if defined(NCBI_POSIX_THREADS)
+    ptr = pthread_getspecific(sx_Tls);
+#elif defined(NCBI_WIN32_THREADS)
+    ptr = TlsGetValue(sx_Tls);
+    if (!ptr) {
+        assert(GetLastError() == ERROR_SUCCESS);
+    }
+#else
+    TROUBLE;
+#endif
+    return ptr;
+}
+
+
+static void s_TlsSetValue(void* ptr)
+{
+    verify(sx_TlsIsInit);
+#if defined(NCBI_POSIX_THREADS)
+    assert(pthread_setspecific(sx_Tls, ptr) == 0);
+#elif defined(NCBI_WIN32_THREADS)
+    assert(TlsSetValue(sx_Tls, ptr));
+#else
+    TROUBLE;
+#endif
+}
+
+
 
 /******************************************************************************
  *  Useful macro
@@ -293,20 +447,24 @@ static int/*bool*/ s_MTLock_Do(ENcbiLog_MTLock_Action action)
 
 
 /* Check initialization and acquire MT lock */
-#define MT_LOCK_AND_CHECKS   \
+#define MT_LOCK_API          \
     if (!sx_IsEnabled) {     \
         return;              \
     }                        \
     MT_LOCK;                 \
-    CHECK_INIT
+    CHECK_INIT;              \
+    s_GetContext()
+
 
 /* Check initialization and acquire MT lock, return FALSE */
-#define MT_LOCK_AND_CHECKS_0 \
+#define MT_LOCK_API_0        \
     if (!sx_IsEnabled) {     \
         return 0;            \
     }                        \
     MT_LOCK;                 \
-    CHECK_INIT
+    CHECK_INIT;              \
+    s_GetContext()
+
 
 /* Print application start message, if not done yet */
 void s_AppStart(const char* argv[]);
@@ -314,12 +472,6 @@ void s_AppStart(const char* argv[]);
     if (sx_Info->state == eNcbiLog_NotSet) { \
         s_AppStart(NULL);    \
     }
-
-/* Critical error. Should never happens */ 
-#ifdef TROUBLE
-#    undef TROUBLE
-#endif
-#define TROUBLE assert(0)
 
 /* Verify an expression and unlock/return on error */
 #ifdef VERIFY
@@ -332,6 +484,7 @@ void s_AppStart(const char* argv[]);
         MT_UNLOCK;           \
         return;              \
     }
+
 
 
 /******************************************************************************
@@ -813,9 +966,9 @@ void s_Abort(void)
  */
 static const char* s_GetDefaultLogLocation()
 {
-    static const char* log_path = NULL;
-    static const char* kBaseLogDir  = "s:\\log\\"; //"/log/";
-    static const char* kToolkitRc   = "s:\\log\\toolkitrc"; //"/etc/toolkitrc";
+    static const char* log_path     = NULL;
+    static const char* kBaseLogDir  = "/log/";
+    static const char* kToolkitRc   = "/etc/toolkitrc";
     static const char* kSectionName = "[Web_dir_to_port]";
 
     FILE* fp;
@@ -866,7 +1019,7 @@ static const char* s_GetDefaultLogLocation()
             if (line[0] == '/') {
                 /* absolute path */
                 *++p = '\0';
-                if (strcmp(line, sx_Info->app_full_name) != 0) {
+                if (strncmp(line, sx_Info->app_full_name, strlen(sx_Info->app_full_name)) != 0) {
                     continue;
                 }
             } else {
@@ -900,7 +1053,7 @@ static const char* s_GetDefaultLogLocation()
                 log_path = s_StrDup(path);
                 break;
             }}
-            continue;
+            /* continue to next line */
         }
         if (memcmp(line, kSectionName, sizeof(kSectionName)) == 0) {
             inside_section = 1;
@@ -1023,7 +1176,6 @@ static int /*bool*/ s_SetLogFiles(const char* dir)
 }
 
 
-
 /** (Re)Initialize logging file streams.
  */
 static void s_InitDestination() 
@@ -1035,7 +1187,6 @@ static void s_InitDestination()
         /* We already have destination set to stdout/stderr -- don't need to reopen it */
         return;
     }
-
     /* Reopen files every 1 minute */
     time(&now);
     if (now - sx_Info->last_reopen_time < 60) {
@@ -1142,10 +1293,38 @@ static void s_SetClient(const char* client)
     if (client  &&  *client) {
         size_t len;
         len = strlen(client);
-        memcpy((char*)sx_Info->client, client, len > CLIENT_MAX ? CLIENT_MAX : len);
-        sx_Info->client[CLIENT_MAX] = '\0';
+        memcpy((char*)sx_Context->client, client, len > CLIENT_MAX ? CLIENT_MAX : len);
+        sx_Context->client[CLIENT_MAX] = '\0';
     } else {
-        sx_Info->client[0] = '\0';
+        sx_Context->client[0] = '\0';
+    }
+}
+
+
+/* Get pointer to the thread-specific context.
+ * After this call global sx_Context will point to the right context data.
+ */
+static void s_GetContext(void)
+{
+    /* Get context for current thread, or use global value for ST */
+    if ( sx_TlsIsInit ) {
+        sx_Context = s_TlsGetValue();
+    }
+    if ( sx_Context ) {
+        return;
+    }
+    /* Special case, context for current thread was already destroyed */
+    verify(sx_IsInit != 2);
+    /* Allocate memory for context */
+    sx_Context = (TNcbiLog_Context*) malloc(sizeof(TNcbiLog_Context));
+    assert(sx_Context);
+    memset((char*)sx_Context, 0, sizeof(TNcbiLog_Context));
+    /* Initialize context values, all other values = 0 */
+    sx_Context->tid = s_GetTID();
+    sx_Context->tsn = 1;
+    /* Save context pointer for MT applications in TLS */
+    if ( sx_TlsIsInit ) {
+        s_TlsSetValue((void*)sx_Context);
     }
 }
 
@@ -1160,7 +1339,7 @@ static void s_SetClient(const char* client)
  */
 static void s_Post(ENcbiLog_DiagFile diag)
 {
-    FILE* f;
+    FILE* f = NULL;
     if (sx_Info->destination == eNcbiLog_Disable) {
         return;
     }
@@ -1188,14 +1367,13 @@ static void s_Post(ENcbiLog_DiagFile diag)
     fprintf(f, "%s\n", sx_Info->message);
     fflush(f);
 
-    /* Increase posting serial number */
+    /* Increase posting serial numbers */
     sx_Info->psn++;
+    sx_Context->tsn++;
 
     /* Reset posting time */
-/*
     sx_Info->post_time.sec = 0;
     sx_Info->post_time.ns  = 0;
-*/    
 }
 
 
@@ -1211,12 +1389,13 @@ static const char* sx_AppStateStr[] = {
  */
 static size_t s_PrintCommonPrefix(void)
 {
-    TNcbiLog_PID  x_pid;
-    TNcbiLog_TID  x_tid;
-    const char   *x_state, *x_host, *x_client, *x_session, *x_appname;
-    char          x_time[24];
-    int           x_guid_hi, x_guid_lo;
-    int           n;
+    TNcbiLog_PID      x_pid;
+    TNcbiLog_Counter  x_rid;
+    ENcbiLog_AppState x_st;
+    const char        *x_state, *x_host, *x_client, *x_session, *x_appname;
+    char              x_time[24];
+    int               x_guid_hi, x_guid_lo;
+    int               n;
 
     /* Calculate GUID */
     if ( !sx_Info->guid ) {
@@ -1225,8 +1404,10 @@ static size_t s_PrintCommonPrefix(void)
     x_guid_hi = (int)((sx_Info->guid >> 32) & 0xFFFFFFFF);
     x_guid_lo = (int) (sx_Info->guid & 0xFFFFFFFF);
 
-    /* Get application state */
-    x_state = sx_AppStateStr[sx_Info->state];
+    /* Get application state (context-specific) */
+    x_st = (sx_Context->state == eNcbiLog_NotSet)
+           ? sx_Info->state : sx_Context->state;
+    x_state = sx_AppStateStr[x_st];
 
     /* Get posting time string (current or specified by user) */
     if (!sx_Info->post_time.sec) {
@@ -1240,29 +1421,29 @@ static size_t s_PrintCommonPrefix(void)
         return 0;
     }
 
+    /* Define properties */
+
     if (!sx_Info->host[0]) {
         s_SetHost(s_GetHostName());
     }
-
-    /* Define properties */
-    x_pid     = sx_Info->pid        ? sx_Info->pid            : s_GetPID();
-    x_tid     = sx_Info->tid        ? sx_Info->tid            : s_GetTID();
-    x_host    = sx_Info->host[0]    ? (char*)sx_Info->host    : UNKNOWN_HOST;
-    x_client  = sx_Info->client[0]  ? (char*)sx_Info->client  : UNKNOWN_CLIENT;
-    x_session = sx_Info->session[0] ? (char*)sx_Info->session : UNKNOWN_SESSION;
-    x_appname = sx_Info->appname[0] ? (char*)sx_Info->appname : UNKNOWN_APPNAME;
+    x_pid     = sx_Info->pid           ? sx_Info->pid               : s_GetPID();
+    x_rid     = sx_Context->rid        ? sx_Context->rid            : sx_Info->rid;
+    x_host    = sx_Info->host[0]       ? (char*)sx_Info->host       : UNKNOWN_HOST;
+    x_client  = sx_Context->client[0]  ? (char*)sx_Context->client  : UNKNOWN_CLIENT;
+    x_session = sx_Context->session[0] ? (char*)sx_Context->session : UNKNOWN_SESSION;
+    x_appname = sx_Info->appname[0]    ? (char*)sx_Info->appname    : UNKNOWN_APPNAME;
 
     n = sprintf(sx_Info->message,
         "%05" NCBILOG_UINT8_FORMAT_SPEC "/%03" NCBILOG_UINT8_FORMAT_SPEC \
         "/%04" NCBILOG_UINT8_FORMAT_SPEC "/%-2s %08X%08X %04" NCBILOG_UINT8_FORMAT_SPEC \
         "/%04" NCBILOG_UINT8_FORMAT_SPEC " %s %-15s %-15s %-24s %s ",
         x_pid,
-        x_tid,
-        sx_Info->rid,
+        sx_Context->tid,
+        x_rid,
         x_state,
         x_guid_hi, x_guid_lo,
         sx_Info->psn,
-        sx_Info->tsn, 
+        sx_Context->tsn,
         x_time,
         x_host,
         x_client,
@@ -1333,10 +1514,10 @@ static const char* sx_SeverityStr[] = {
  */
 static void s_PrintMessage(ENcbiLog_Severity severity, const char* msg)
 {
-    int    n, pos;
-    size_t r_len, w_len;
-    char*  buf;
-    ENcbiLog_DiagFile diag;
+    int     n, pos;
+    size_t  r_len, w_len;
+    char*   buf;
+    ENcbiLog_DiagFile diag = eDiag_Trace;
 
     switch (severity) {
         case eNcbiLog_Trace:
@@ -1357,8 +1538,9 @@ static void s_PrintMessage(ENcbiLog_Severity severity, const char* msg)
         return;
     }
 
-    MT_LOCK_AND_CHECKS;
+    MT_LOCK_API;
     CHECK_APP_START;
+
     /* Prefix */
     buf = sx_Info->message;
     pos = s_PrintCommonPrefix();
@@ -1374,8 +1556,8 @@ static void s_PrintMessage(ENcbiLog_Severity severity, const char* msg)
 
     /* Post a message */
     s_Post(diag);
-    MT_UNLOCK;
 
+    MT_UNLOCK;
     if (severity == eNcbiLog_Fatal) {
         s_Abort();
     }
@@ -1400,9 +1582,9 @@ extern void NcbiLog_Init(const char*               appname,
         return;
     }
     /* Start Init() */
-    /* The race is possible here, if NcbiLog_Init() is simultaneously
+    /* The race is possible here if NcbiLog_Init() is simultaneously
        called from several threads. But NcbiLog_Init() should be called
-       only once, so we can leave this user's discretion.
+       only once, so we can leave this to user's discretion.
     */
     sx_IsInit = 1;
     sx_MTLock = mt_lock;
@@ -1412,6 +1594,16 @@ extern void NcbiLog_Init(const char*               appname,
     MT_INIT;
     MT_LOCK;
 
+    /* Initialize TLS */
+    if (!mt_lock) {
+        /* Disable using TLS for ST applications */
+        sx_TlsIsInit = 0;
+    } else {
+        s_TlsInit();
+    }
+    /* Get thread specific context */
+    s_GetContext();
+
     /* Create info structure */
     verify(!sx_Info);
     sx_Info = (TNcbiLog_Info*) malloc(sizeof(TNcbiLog_Info));
@@ -1419,6 +1611,7 @@ extern void NcbiLog_Init(const char*               appname,
     memset((char*)sx_Info, 0, sizeof(TNcbiLog_Info));
 
     /* Set defaults */
+    sx_Info->psn = 1;
     sx_Info->destination = eNcbiLog_Default;
 #if defined(NDEBUG)
     sx_Info->post_level = eNcbiLog_Error;
@@ -1450,9 +1643,32 @@ extern void NcbiLog_Init(const char*               appname,
 }
 
 
+extern void NcbiLog_InitMT(const char* appname)
+{
+    TNcbiLog_MTLock mt_lock = NcbiLog_MTLock_Create(NULL, NcbiLog_Default_MTLock_Handler);
+    NcbiLog_Init(appname, mt_lock, eNcbiLog_MT_TakeOwnership);
+}
+
+
 extern void NcbiLog_InitST(const char* appname)
 {
     NcbiLog_Init(appname, NULL, eNcbiLog_MT_NoOwnership);
+}
+
+
+extern void s_Destroy_Context(void)
+{
+    free((void*)sx_Context);
+    sx_Context = NULL;
+    s_TlsSetValue(NULL);
+}
+
+
+extern void NcbiLog_Destroy_Thread(void)
+{
+    MT_LOCK_API;
+    s_Destroy_Context();
+    MT_UNLOCK;
 }
 
 
@@ -1461,6 +1677,9 @@ extern void NcbiLog_Destroy(void)
     MT_LOCK;
     sx_IsEnabled = 0;
     sx_IsInit    = 2; /* still TRUE to prevent recurring initialization, but not default 1 */
+
+    /* Get current thread-specific context */
+    s_GetContext();
 
     /* Close files */
     s_CloseLogFiles(1 /*force cleanup*/);
@@ -1479,46 +1698,68 @@ extern void NcbiLog_Destroy(void)
         free((void*)sx_Info);
         sx_Info = NULL;
     }
+    /* Destroy thread-specific context and TLS */
+    if (sx_TlsIsInit) {
+        s_Destroy_Context();
+        s_TlsDestroy();
+    }
+    /* Destroy MT support */
     MT_DESTROY;
 }
 
 
-/** Set application state -- internal version without MT locking
+/** Set application state -- internal version without MT locking.
+ *
+ *  We have two states: global and context-specific.
+ *  We use global state if context-specific state is not specified.
+ *  Setting state to eNcbiLog_App* always overwrite context-specific
+ *  state. The eNcbiLog_Request* affect only context-specific state.
  */
 static void s_SetState(ENcbiLog_AppState state)
 {
+    ENcbiLog_AppState s = (sx_Context->state == eNcbiLog_NotSet)
+                          ? sx_Info->state
+                          : sx_Context->state;
     switch ( state ) {
         case eNcbiLog_AppBegin:
             verify(sx_Info->state == eNcbiLog_NotSet);
-            break;
-        case eNcbiLog_AppEnd:
-            verify(sx_Info->state != eNcbiLog_AppEnd);
+            sx_Info->state = state;
+            sx_Context->state = state;
             break;
         case eNcbiLog_AppRun:
             verify(sx_Info->state == eNcbiLog_AppBegin);
+            sx_Info->state = state;
+            sx_Context->state = state;
+            break;
+        case eNcbiLog_AppEnd:
+            verify(sx_Info->state != eNcbiLog_AppEnd);
+            sx_Info->state = state;
+            sx_Context->state = state;
             break;
         case eNcbiLog_RequestBegin:
-            verify(sx_Info->state == eNcbiLog_AppBegin  ||
-                   sx_Info->state == eNcbiLog_AppRun    ||
-                   sx_Info->state == eNcbiLog_RequestEnd);
+            verify(s == eNcbiLog_AppBegin  ||
+                   s == eNcbiLog_AppRun    ||
+                   s == eNcbiLog_RequestEnd);
+            sx_Context->state = state;
             break;
         case eNcbiLog_Request:
-            verify(sx_Info->state == eNcbiLog_RequestBegin);
+            verify(s == eNcbiLog_RequestBegin);
+            sx_Context->state = state;
             break;
         case eNcbiLog_RequestEnd:
-            verify(sx_Info->state == eNcbiLog_Request  ||
-                   sx_Info->state == eNcbiLog_RequestBegin);
+            verify(s == eNcbiLog_Request  ||
+                   s == eNcbiLog_RequestBegin);
+            sx_Context->state = state;
             break;
         default:
             TROUBLE;
     }
-    sx_Info->state = state;
 }
 
 
 void NcbiLog_SetDestination(ENcbiLog_Destination ds)
 {
-    MT_LOCK_AND_CHECKS;
+    MT_LOCK_API;
     if (ds != sx_Info->destination) {
         /* Close current destination */
         s_CloseLogFiles(1 /*force cleanup*/);
@@ -1536,7 +1777,7 @@ void NcbiLog_SetDestination(ENcbiLog_Destination ds)
 
 void NcbiLog_SetProcessId(TNcbiLog_PID pid)
 {
-    MT_LOCK_AND_CHECKS;
+    MT_LOCK_API;
     sx_Info->pid = pid;
     MT_UNLOCK;
 }
@@ -1544,15 +1785,15 @@ void NcbiLog_SetProcessId(TNcbiLog_PID pid)
 
 void NcbiLog_SetThreadId(TNcbiLog_TID tid)
 {
-    MT_LOCK_AND_CHECKS;
-    sx_Info->tid = tid;
+    MT_LOCK_API;
+    sx_Context->tid = tid;
     MT_UNLOCK;
 }
 
 
 void NcbiLog_SetRequestId(TNcbiLog_Counter rid)
 {
-    MT_LOCK_AND_CHECKS;
+    MT_LOCK_API;
     sx_Info->rid = rid;
     MT_UNLOCK;
 }
@@ -1561,50 +1802,16 @@ void NcbiLog_SetRequestId(TNcbiLog_Counter rid)
 TNcbiLog_Counter NcbiLog_GetRequestId(void)
 {
     TNcbiLog_Counter rid;
-    MT_LOCK_AND_CHECKS_0;
+    MT_LOCK_API_0;
     rid = sx_Info->rid;
     MT_UNLOCK;
     return rid;
 }
 
 
-void NcbiLog_IncreaseRequestId(void)
-{
-    MT_LOCK_AND_CHECKS;
-    sx_Info->rid++;
-    MT_UNLOCK;
-}
-
-
-void NcbiLog_SetSerialNo_Thread(TNcbiLog_Counter tsn)
-{
-    MT_LOCK_AND_CHECKS;
-    sx_Info->tsn = tsn;
-    MT_UNLOCK;
-}
-
-
-TNcbiLog_Counter NcbiLog_GetSerialNo_Thread(void)
-{
-    TNcbiLog_Counter tsn;
-    MT_LOCK_AND_CHECKS_0;
-    tsn = sx_Info->tsn;
-    MT_UNLOCK;
-    return tsn;
-}
-
-
-void NcbiLog_IncreaseSerialNo_Thread(void)
-{
-    MT_LOCK_AND_CHECKS;
-    sx_Info->tsn++;
-    MT_UNLOCK;
-}
-
-
 void NcbiLog_SetTime(time_t time_sec, unsigned long time_ns)
 {
-    MT_LOCK_AND_CHECKS;
+    MT_LOCK_API;
     sx_Info->post_time.sec = time_sec;
     sx_Info->post_time.ns  = time_ns;
     MT_UNLOCK;
@@ -1613,7 +1820,7 @@ void NcbiLog_SetTime(time_t time_sec, unsigned long time_ns)
 
 void NcbiLog_SetHost(const char* host)
 {
-    MT_LOCK_AND_CHECKS;
+    MT_LOCK_API;
     s_SetHost(host);
     MT_UNLOCK;
 }
@@ -1621,7 +1828,7 @@ void NcbiLog_SetHost(const char* host)
 
 void NcbiLog_SetClient(const char* client)
 {
-    MT_LOCK_AND_CHECKS;
+    MT_LOCK_API;
     s_SetClient(client);
     MT_UNLOCK;
 }
@@ -1629,15 +1836,15 @@ void NcbiLog_SetClient(const char* client)
 
 void NcbiLog_SetSession(const char* session)
 {
-    MT_LOCK_AND_CHECKS;
+    MT_LOCK_API;
     if (session  &&  *session) {
         /* URL-encode session name */
         size_t len, r_len, w_len;
         len = strlen(session);
-        s_URL_Encode(session, len, &r_len, (char*)sx_Info->session, 3*SESSION_MAX, &w_len);
-        sx_Info->session[w_len] = '\0';
+        s_URL_Encode(session, len, &r_len, (char*)sx_Context->session, 3*SESSION_MAX, &w_len);
+        sx_Context->session[w_len] = '\0';
     } else {
-        sx_Info->session[0] = '\0';
+        sx_Context->session[0] = '\0';
     }
     MT_UNLOCK;
 }
@@ -1646,7 +1853,11 @@ void NcbiLog_SetSession(const char* session)
 ENcbiLog_Severity NcbiLog_SetPostLevel(ENcbiLog_Severity sev)
 {
     ENcbiLog_Severity prev;
-    MT_LOCK_AND_CHECKS_0;
+    if (!sx_IsEnabled) {
+        return (ENcbiLog_Severity)0; /* error */
+    }
+    MT_LOCK;
+    CHECK_INIT;
     prev = sx_Info->post_level;
     sx_Info->post_level = sev;
     MT_UNLOCK;
@@ -1692,7 +1903,7 @@ void s_AppStart(const char* argv[])
 
 void NcbiLog_AppStart(const char* argv[])
 {
-    MT_LOCK_AND_CHECKS;
+    MT_LOCK_API;
     s_AppStart(argv);
     MT_UNLOCK;
 }
@@ -1700,7 +1911,7 @@ void NcbiLog_AppStart(const char* argv[])
 
 void NcbiLog_AppRun(void)
 {
-    MT_LOCK_AND_CHECKS;
+    MT_LOCK_API;
     CHECK_APP_START;
     s_SetState(eNcbiLog_AppRun);
     MT_UNLOCK;
@@ -1718,7 +1929,7 @@ void NcbiLog_AppStopSignal(int exit_status, int exit_signal)
     int n, pos;
     double timespan;
 
-    MT_LOCK_AND_CHECKS;
+    MT_LOCK_API;
     CHECK_APP_START;
     s_SetState(eNcbiLog_AppEnd);
     /* Prefix */
@@ -1745,28 +1956,28 @@ void NcbiLog_ReqStart(const SNcbiLog_Param* params)
     int   n, pos;
     char* buf;
 
-    MT_LOCK_AND_CHECKS;
+    MT_LOCK_API;
     CHECK_APP_START;
     s_SetState(eNcbiLog_RequestBegin);
 
-    /* Increase request number */
+    /* Increase global request number, and save it in the context */
     sx_Info->rid++;
+    sx_Context->rid = sx_Info->rid;
 
     /* Try to get client IP from environment, if unknown */
-    if  ( !sx_Info->client[0] ) {
+    if  ( !sx_Context->client[0] ) {
         s_SetClient(s_GetClientIP());
     }
 
     /* Create fake session id, if unknown */
-    if ( !sx_Info->session[0] ) {
+    if ( !sx_Context->session[0] ) {
         int x_guid_hi, x_guid_lo;
         x_guid_hi = (int)((sx_Info->guid >> 32) & 0xFFFFFFFF);
         x_guid_lo = (int) (sx_Info->guid & 0xFFFFFFFF);
-        n = sprintf((char*)sx_Info->session, "%08X%08X_%04" NCBILOG_UINT8_FORMAT_SPEC "SID", 
+        n = sprintf((char*)sx_Context->session, "%08X%08X_%04" NCBILOG_UINT8_FORMAT_SPEC "SID", 
                      x_guid_hi, x_guid_lo, sx_Info->rid);
         VERIFY(n > 0);
     }
-    
     
     /* Prefix */
     buf = sx_Info->message;
@@ -1774,8 +1985,8 @@ void NcbiLog_ReqStart(const SNcbiLog_Param* params)
     VERIFY(pos > 0);
     /* We already have current time in sx_Info->post_time */
     /* Save it into sx_RequestStartTime. */
-    sx_Info->req_start_time.sec = sx_Info->post_time.sec;
-    sx_Info->req_start_time.ns  = sx_Info->post_time.ns;
+    sx_Context->req_start_time.sec = sx_Info->post_time.sec;
+    sx_Context->req_start_time.ns  = sx_Info->post_time.ns;
 
     /* TODO: 
         if "params" is NULL, parse and print $ENV{"QUERY_STRING"}  
@@ -1796,7 +2007,7 @@ void NcbiLog_ReqStart(const SNcbiLog_Param* params)
 
 void NcbiLog_ReqRun(void)
 {
-    MT_LOCK_AND_CHECKS;
+    MT_LOCK_API;
     CHECK_APP_START;
     s_SetState(eNcbiLog_Request);
     MT_UNLOCK;
@@ -1808,22 +2019,23 @@ void NcbiLog_ReqStop(int status, size_t bytes_rd, size_t bytes_wr)
     int n, pos;
     double timespan;
 
-    MT_LOCK_AND_CHECKS;
+    MT_LOCK_API;
     CHECK_APP_START;
     s_SetState(eNcbiLog_RequestEnd);
     /* Prefix */
     pos = s_PrintCommonPrefix();
     VERIFY(pos > 0);
     /* We already have current time in sx_Info->post_time */
-    timespan = s_DiffTime(sx_Info->req_start_time, sx_Info->post_time);
-    n = sprintf(sx_Info->message + pos, "%-13s %d %.3f %d %d",
+    timespan = s_DiffTime(sx_Context->req_start_time, sx_Info->post_time);
+    n = sprintf(sx_Info->message + pos, "%-13s %d %.3f %u %u",
                 "request-stop", status, timespan, bytes_rd, bytes_wr);
     VERIFY(n > 0);
     /* Post a message */
     s_Post(eDiag_Log);
-    /* Reset client and session id */
-    sx_Info->client[0]  = '\0';
-    sx_Info->session[0] = '\0';
+    /* Reset request, client and session id's */
+    sx_Context->rid = 0;
+    sx_Context->client[0]  = '\0';
+    sx_Context->session[0] = '\0';
     MT_UNLOCK;
 }
 
@@ -1833,7 +2045,7 @@ void NcbiLog_Extra(const SNcbiLog_Param* params)
     int   n, pos;
     char* buf;
 
-    MT_LOCK_AND_CHECKS;
+    MT_LOCK_API;
     CHECK_APP_START;
     /* Prefix */
     buf = sx_Info->message;
@@ -1858,7 +2070,7 @@ void NcbiLog_Perf(int status, double timespan,
     int   n, pos;
     char* buf;
 
-    MT_LOCK_AND_CHECKS;
+    MT_LOCK_API;
     CHECK_APP_START;
     /* Prefix */
     buf = sx_Info->message;
