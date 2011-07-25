@@ -5889,8 +5889,9 @@ void CNewCleanup_imp::x_FixUpEllipsis( string &str )
 void CNewCleanup_imp::x_RemoveFlankingQuotes( string &val )
 {
     // holds the first and last pos that we will keep
-    SIZE_TYPE first_pos = 0;
-    SIZE_TYPE last_pos = ( val.length() - 1 );
+    // (have to use "ints" since might be negative)
+    int first_pos = 0;
+    int last_pos = ( val.length() - 1 );
 
     // move inwards until there are no more quotes to trim
     for( ; first_pos <= last_pos ; ++first_pos, --last_pos ) {
