@@ -1,7 +1,6 @@
 # $Id$
 
-SRC_CXX = \
-igblast 
+SRC_CXX = igblast
 
 SRC  = $(SRC_CXX)
 
