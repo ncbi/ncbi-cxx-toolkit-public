@@ -1,7 +1,7 @@
 # $Id$
 
 LIB_PROJ = 
-APP_PROJ = demo_ncbi_c_log
+APP_PROJ = demo_ncbi_clog
 PROJ_TAG = demo
 
 srcdir = @srcdir@
