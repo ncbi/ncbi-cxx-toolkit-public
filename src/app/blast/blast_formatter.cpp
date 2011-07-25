@@ -256,7 +256,8 @@ int CBlastFormatterApp::PrintFormattedOutput(void)
 
 
     const EBlastProgramType p = opts.GetProgramType();
-    CRef<CBlastQueryVector> queries = x_ExtractQueries(Blast_QueryIsProtein(p));
+    CRef<CBlastQueryVector> queries = 
+		x_ExtractQueries(Blast_QueryIsProtein(p)?true:false);
     CRef<CScope> scope = queries->GetScope(0);
     _ASSERT(queries);
 
@@ -279,7 +280,8 @@ int CBlastFormatterApp::PrintFormattedOutput(void)
         TSeqLocVector subjects = s_ConvertSubjects2TSeqLocVector(m_RmtBlast);
         CRef<IQueryFactory> subject_factory(new CObjMgr_QueryFactory(subjects));
         CRef<CScope> subj_scope = subjects.front().scope;
-        db_args->SetSubjects(subject_factory, subj_scope, Blast_SubjectIsProtein(p));
+        db_args->SetSubjects(subject_factory, subj_scope, 
+			Blast_SubjectIsProtein(p)?true:false);
     }
 
     CRef<CLocalDbAdapter> db_adapter;
