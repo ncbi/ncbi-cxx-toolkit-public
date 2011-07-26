@@ -572,6 +572,9 @@ string CCommentItem::GetStringForRefTrack
          oss << s;
      }}
 
+    const static string kRefSeqGeneLink = "<a href=\"http://www.ncbi.nlm.nih.gov/RefSeq/RSG\">RefSeqGene</a>";
+    const static string kRefSeqGene = "RefSeqGene";
+
     /// check for a concomitant RefSeqGene item
     for (CSeqdesc_CI desc_it(bsh, CSeqdesc::e_User);
          desc_it;  ++desc_it) {
@@ -582,8 +585,9 @@ string CCommentItem::GetStringForRefTrack
             if (f  &&  f->GetData().IsStr()) {
                 const string& status = f->GetData().GetStr();
                 if (status == "Reference Standard") {
-                    oss << "~This sequence is a reference standard in "
-                        "the RefSeqGene project.";
+                    oss << "~This sequence is a reference standard in the " 
+                        << ( format == eFormat_Html ? kRefSeqGeneLink : kRefSeqGene )
+                        << " project.";
                 }
             }
         }
@@ -1438,3 +1442,4 @@ void CLocalIdComment::x_GatherInfo(CBioseqContext&)
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+

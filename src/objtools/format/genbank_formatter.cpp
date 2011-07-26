@@ -77,7 +77,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 CGenbankFormatter::CGenbankFormatter(void) :
-    m_uFeatureCount( 0 )
+    m_uFeatureCount( 0 ), m_bHavePrintedSourceFeatureJavascript(false)
 {
     SetIndent(string(12, ' '));
     SetFeatIndent(string(21, ' '));
@@ -92,13 +92,13 @@ CGenbankFormatter::CGenbankFormatter(void) :
 static
 void s_PrintLocAsJavascriptArray( 
     CBioseqContext &ctx,
-    IFlatTextOStream& text_os,
+    CNcbiOstream& text_os,
     const CSeq_loc &loc )
 {
     CBioseq_Handle &bioseq_handle = ctx.GetHandle();
 
     CNcbiOstrstream result; // will hold complete printed location
-    result << "            [";
+    result << "[";
 
     // special case for when the location is just a point with "lim tr" 
     // ( This imitates C.  Not sure why C does this. )
@@ -110,13 +110,13 @@ void s_PrintLocAsJavascriptArray(
         const TSeqPos point = loc.GetPnt().GetPoint();
         // Note the "+2"
         result << "[" << (point+1) << ", " << (point+2) << "]]";
-        text_os.AddLine( (string)CNcbiOstrstreamToString(result), 0, 
-            IFlatTextOStream::eAddNewline_No );
+        text_os << (string)CNcbiOstrstreamToString(result);
         return;
     }
 
     bool is_first = true;
-    ITERATE( CSeq_loc, loc_piece_iter, loc ) {
+    CSeq_loc_CI loc_piece_iter( loc, CSeq_loc_CI::eEmpty_Skip, CSeq_loc_CI::eOrder_Biological );
+    for( ; loc_piece_iter ; ++loc_piece_iter ) {
 
         CSeq_id_Handle seq_id_handle = loc_piece_iter.GetSeq_id_Handle();
         if( seq_id_handle && bioseq_handle && ! bioseq_handle.IsSynonym(seq_id_handle) ) {
@@ -145,8 +145,9 @@ void s_PrintLocAsJavascriptArray(
         is_first = false;
     }
     result << "]";
-    text_os.AddLine( (string)CNcbiOstrstreamToString(result), 0, 
-        IFlatTextOStream::eAddNewline_No );
+    //text_os.AddLine( (string)CNcbiOstrstreamToString(result), 0, 
+        // IFlatTextOStream::eAddNewline_No );
+    text_os << (string)CNcbiOstrstreamToString(result);
 }
 
 static
@@ -177,65 +178,13 @@ void CGenbankFormatter::EndSection
     }
     text_os.AddParagraph(l, NULL);
 
-    // print the final javascript section
     if( bHtml ) {
         CHtmlAnchorItem( *end_item.GetContext(), "slash").Format( *this, text_os );
-
-        text_os.AddLine("<script type=\"text/javascript\">");
-        text_os.AddLine("if (typeof(oData) == \"undefined\") oData = [];");
-        text_os.AddLine("oData.push (");
-        text_os.AddLine("{");
-
-        text_os.AddLine("gi:" + NStr::IntToString(end_item.GetContext()->GetGI()) + ",");
-        text_os.AddLine("acc:\"" + s_GetAccessionWithoutPeriod(*end_item.GetContext()) + "\",");
-        text_os.AddLine("features:");
-        text_os.AddLine("  {");
-
-        // add data for each feature
-        bool is_first = true;
-        ITERATE( TFeatureKeyToLocMap, feat_to_loc_iter, m_FeatureKeyToLocMap ) {
-            const string &feat_key = feat_to_loc_iter->first;
-            const TSeqLocConstRefVec &loc_vec = feat_to_loc_iter->second;
-            _ASSERT( ! loc_vec.empty() );
-
-            // don't print "source" items
-            if( feat_key == "source" ) {
-                continue;
-            }
-            
-            // close previous, if any
-            if( ! is_first ) {
-                text_os.AddLine("    ],");
-            }
-
-            // print loc of all features of that type
-            text_os.AddLine("    \"" + feat_key + "\":[");
-            ITERATE( TSeqLocConstRefVec, loc_iter, loc_vec ) {
-                // close previous
-                if( loc_iter != loc_vec.begin() ) {
-                    text_os.AddLine(",");
-                }
-                s_PrintLocAsJavascriptArray( *end_item.GetContext(), text_os, **loc_iter );
-            }
-
-            text_os.AddLine(""); // endline for last location
-            is_first = false;
-        }
-
-        // close up opened Javascript brackets, if there
-        // were any features printed
-        if( ! m_FeatureKeyToLocMap.empty() &&
-            ! ( m_FeatureKeyToLocMap.size() == 1 && m_FeatureKeyToLocMap.begin()->first == "source" ) ) {
-            text_os.AddLine("    ]");
-        }
-        text_os.AddLine("  }");
-        text_os.AddLine("}");
-        text_os.AddLine(")");
-        text_os.AddLine("</script>");
     }
 
-    // reset counts between records
+    // New record, so reset
     m_FeatureKeyToLocMap.clear();
+    m_bHavePrintedSourceFeatureJavascript = false;
 }
 
 
@@ -1062,22 +1011,39 @@ CGenbankFormatter::x_LocusHtmlPrefix( string &first_line, CBioseqContext& ctx )
 }
 
 string 
-CGenbankFormatter::x_GetFeatureSpanStart( 
+CGenbankFormatter::x_GetFeatureSpanAndScriptStart( 
     const char * strKey, 
     const CSeq_loc &feat_loc,
     CBioseqContext& ctx )
 {
     // determine the count for this type, and push back
     // the new location
-    TSeqLocConstRefVec &loc_vec = m_FeatureKeyToLocMap[strKey];
-    const int feat_type_count = loc_vec.size();
-    loc_vec.push_back( CConstRef<CSeq_loc>( &feat_loc ) );
+    // ( Note the post-increment )
+    const int feat_type_count = ( m_FeatureKeyToLocMap[strKey]++ );
 
-    CNcbiOstrstream div_tag;
-    div_tag << "<span id=\"feature_" << ctx.GetGI()
-        << "_" << strKey << "_" << feat_type_count << "\">";
+    // The span
+    CNcbiOstrstream pre_feature_html;
+    pre_feature_html << "<span id=\"feature_" << ctx.GetGI()
+        << "_" << strKey << "_" << feat_type_count << "\" class=\"feature\">";
 
-    return CNcbiOstrstreamToString(div_tag);
+    // The javascript
+    if( NStr::Equal(strKey, "source") ) {
+        // special treatment for source features
+
+        if( ! m_bHavePrintedSourceFeatureJavascript ) {
+            pre_feature_html << "<script>if (typeof(oData) == \"undefined\") oData = []; oData.push ({gi:" << ctx.GetGI() << ",acc:\"" << s_GetAccessionWithoutPeriod(ctx) << "\",features: {}});</script>";
+            m_bHavePrintedSourceFeatureJavascript = true;
+        }
+       
+    } else {
+        pre_feature_html << "<script type=\"text/javascript\">"
+            << "if (!oData[oData.length - 1].features." << strKey << ") oData[oData.length - 1].features." << strKey << " = [];"
+            << "oData[oData.length - 1].features." << strKey << ".push(";
+        s_PrintLocAsJavascriptArray( ctx, pre_feature_html, feat_loc );
+        pre_feature_html << ");</script>";
+    }
+
+    return CNcbiOstrstreamToString(pre_feature_html);
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -1337,9 +1303,9 @@ void CGenbankFormatter::FormatFeature
         }
     }
 
-    // write <div...> in HTML mode
+    // write <span...> and <script...> in HTML mode
     if( bHtml && f.GetContext()->Config().IsModeEntrez() ) {
-        *l.begin() = x_GetFeatureSpanStart(strKey.c_str(), f.GetLoc(),  *f.GetContext() ) + *l.begin();
+        *l.begin() = x_GetFeatureSpanAndScriptStart(strKey.c_str(), f.GetLoc(),  *f.GetContext() ) + *l.begin();
     }
 
     ITERATE (vector<CRef<CFormatQual> >, it, quals ) {
@@ -1393,7 +1359,7 @@ void CGenbankFormatter::FormatFeature
     text_os.AddParagraph(l, f.GetObject());
 
     if( bHtml && f.GetContext()->Config().IsModeEntrez() ) {
-        // close the <div...>, without an endline
+        // close the <span...>, without an endline
         text_os.AddLine("</span>", 0, IFlatTextOStream::eAddNewline_No );
     }
 }
@@ -1913,7 +1879,7 @@ void CGenbankFormatter::FormatGap(const CGapItem& gap, IFlatTextOStream& text_os
         CRef<CSeq_loc> gapLoc( new CSeq_loc );
         gapLoc->SetInt().SetFrom(gapStart - 1);
         gapLoc->SetInt().SetTo(gapEnd - 1);
-        *l.begin() = x_GetFeatureSpanStart("gap", *gapLoc, *gap.GetContext()) + *l.begin();
+        *l.begin() = x_GetFeatureSpanAndScriptStart("gap", *gapLoc, *gap.GetContext()) + *l.begin();
     }
 
     // size zero gaps indicate non-consecutive residues

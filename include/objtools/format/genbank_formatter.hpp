@@ -117,7 +117,7 @@ private:
 
     // HTML
     void   x_LocusHtmlPrefix( std::string &first_line,      CBioseqContext& ctx );
-    string x_GetFeatureSpanStart( const char * strKey, 
+    string x_GetFeatureSpanAndScriptStart( const char * strKey, 
         const CSeq_loc &feat_loc, 
         CBioseqContext& ctx );
 
@@ -127,9 +127,11 @@ private:
     // HTML data
 
     // used for ids in <span...> tags
-    typedef std::vector< CConstRef<CSeq_loc> > TSeqLocConstRefVec;
-    typedef std::map< std::string, TSeqLocConstRefVec > TFeatureKeyToLocMap;
-    TFeatureKeyToLocMap m_FeatureKeyToLocMap;
+    typedef std::map< std::string, int > TFeatureKeyCountMap;
+    TFeatureKeyCountMap m_FeatureKeyToLocMap;
+
+    // used 
+    bool m_bHavePrintedSourceFeatureJavascript;
 };
 
 
