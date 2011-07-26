@@ -1074,12 +1074,6 @@ CRemoteBlast::ConvertToRemoteMasks(const TSeqLocInfoVector& masking_locations,
         if (query_masks->empty()) {
             continue;
         }
-        if (query_masks->HasNegativeStrandMasks() && warnings) {
-            string w("Ignoring masked locations on negative strand for query");
-            w += " '" + query_masks->front()->GetSeqId().AsFastaString();
-            w += "'";
-            warnings->push_back(w);
-        }
 
         int current_frame = query_masks->front()->GetFrame();
         ITERATE(TMaskedQueryRegions, mask_locs, *query_masks) {

@@ -155,17 +155,11 @@ BOOST_AUTO_TEST_CASE(MaskedQueryRegions) {
     BOOST_REQUIRE_EQUAL(kClientId, rmt_blast.GetClientId());
 
     BOOST_REQUIRE(rmt_blast.GetErrors().empty());
-    BOOST_REQUIRE(!rmt_blast.GetWarningVector().empty());
-    BOOST_REQUIRE(rmt_blast.GetWarnings().find("negative strand") !=
-                   string::npos);
 
     vector<string> warnings;
     const CBlast4_get_search_results_reply::TMasks& network_masks =
         CRemoteBlast::ConvertToRemoteMasks(query_masks, prog, &warnings);
     BOOST_REQUIRE_EQUAL(kNumQueries, network_masks.size());
-    BOOST_REQUIRE( !warnings.empty() );
-    BOOST_REQUIRE(warnings.front().find("Ignoring masked locations on negative")
-                                        != NPOS);
 
     CRef<CBlast4_mask> mask = network_masks.front();
     BOOST_REQUIRE_EQUAL((size_t)1, mask->GetLocations().size());
@@ -395,7 +389,6 @@ BOOST_AUTO_TEST_CASE(CheckBlastxMasks) {
         CRemoteBlast::ConvertToRemoteMasks(masks, prog, &warnings);
     BOOST_REQUIRE(!masks.empty());
     BOOST_REQUIRE(!network_masks.empty());
-    BOOST_REQUIRE(!warnings.empty());
     const size_t kNumQueries = 2;
     const size_t kNumNetMasks = 8;
     BOOST_REQUIRE_EQUAL(kNumQueries, masks.size());
