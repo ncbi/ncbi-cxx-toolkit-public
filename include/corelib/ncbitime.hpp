@@ -1583,7 +1583,7 @@ public:
 ///
 /// @sa CTimeout
 
-class CAbsTimeout
+class NCBI_XNCBI_EXPORT CAbsTimeout
 {
 public:
     /// Initialize absolute timeout using seconds and nanoseconds
