@@ -1403,6 +1403,7 @@ CBlastOptions::SetQueryGeneticCode(int gc)
 {
     if (m_Local) {
         m_Local->SetQueryGeneticCode(gc);
+        m_GenCodeSingletonVar.AddGeneticCode(gc);
     }
     if (m_Remote) {
         m_Remote->SetValue(eBlastOpt_QueryGeneticCode, gc);
@@ -2117,6 +2118,7 @@ CBlastOptions::SetDbGeneticCode(int gc)
 {
     if (m_Local) {
         m_Local->SetDbGeneticCode(gc);
+        m_GenCodeSingletonVar.AddGeneticCode(gc);
     }
     if (m_Remote) {
         m_Remote->SetValue(eBlastOpt_DbGeneticCode, gc);

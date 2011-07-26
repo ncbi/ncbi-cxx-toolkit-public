@@ -40,7 +40,6 @@ static char const rcsid[] =
 #include <algo/blast/api/prelim_stage.hpp>
 #include <algo/blast/api/uniform_search.hpp>    // for CSearchDatabase
 #include <algo/blast/api/blast_mtlock.hpp>
-#include <algo/blast/core/gencode_singleton.h>
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/blast_stat.h>
 
@@ -209,15 +208,6 @@ CBlastPrelimSearch::Run()
     BlastInitialWordOptions * word_options = opts_memento->m_InitWordOpts;
 
     GetDbIndexSetNumThreadsFn()( seqsrc, GetNumberOfThreads() );
-
-    int db_genetic_code = 0;
-    if ( (db_genetic_code = m_Options->GetDbGeneticCode()) > 0) {
-        CFastMutex mutex;
-        if (GenCodeSingletonFind(db_genetic_code) == NULL) {
-            TAutoUint1ArrayPtr gc = FindGeneticCode(db_genetic_code);
-            GenCodeSingletonAdd(db_genetic_code, gc.get());
-        }
-    }
 
     // Query splitting data structure (used only if applicable)
     CRef<SBlastSetupData> setup_data(new SBlastSetupData(m_QueryFactory, m_Options));

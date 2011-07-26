@@ -644,6 +644,15 @@ CAutomaticGenCodeSingleton::~CAutomaticGenCodeSingleton()
     }
 }
 
+void CAutomaticGenCodeSingleton::AddGeneticCode(int genetic_code)
+{
+    CFastMutexGuard LOCK(sm_Mutex);
+    if (GenCodeSingletonFind(genetic_code) == NULL) {
+        TAutoUint1ArrayPtr gc = FindGeneticCode(genetic_code);
+        GenCodeSingletonAdd(genetic_code, gc.get());
+    }
+}
+
 void ThrowIfInvalidTask(const string& task)
 {
     static set<string> valid_tasks;

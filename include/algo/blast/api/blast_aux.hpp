@@ -194,11 +194,18 @@ Blast_GetSeqLocInfoVector(EBlastProgramType program,
                           TSeqLocInfoVector& mask_v);
 
 /** Initializes and uninitializes the genetic code singleton as if it was an
- * automatic variable. It also provides MT-safety.*/
+ * automatic variable (to facilitate use in our unit tests and in the
+ * CBlastOptions object). It also provides MT-safety. */
 class NCBI_XBLAST_EXPORT CAutomaticGenCodeSingleton {
 public:
     /// Default constructor
+    /// @param genetic_code Integer representing the genetic code, if 0 is
+    /// passed the default BLAST_GENETIC_CODE will be used [in]
+    /// @sa BLAST_GENETIC_CODE
     CAutomaticGenCodeSingleton(int genetic_code = 0);
+    /// Add the genetic code to the genetic code singleton
+    /// @param genetic_code Integer representing the genetic code [in]
+    void AddGeneticCode(int genetic_code);
     /// destructor
     ~CAutomaticGenCodeSingleton();
 private:
