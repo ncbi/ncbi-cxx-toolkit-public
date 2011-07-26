@@ -2,14 +2,15 @@
 
 SRC_CXX = igblast
 
-SRC  = $(SRC_CXX)
+SRC = $(SRC_CXX)
 
 LIB = igblast
 
 # DLL_LIB = $(BLAST_INPUT_LIBS) $(BLAST_LIBS) $(OBJMGR_LIBS)
-
 # should be redundant, given the above :-/
 # ASN_DEP = seqset xnetblast
+
+ASN_DEP = blastdb xnetblast
 
 CFLAGS   = $(FAST_CFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)
