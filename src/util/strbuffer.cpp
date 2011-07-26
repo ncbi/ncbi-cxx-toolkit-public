@@ -554,7 +554,7 @@ Int4 CIStreamBuffer::GetInt4(void)
         SkipChar();
         
         // check multiplication overflow
-        if ( n > kMaxBeforeMul || n == kMaxBeforeMul && d > kMaxLimitAdd )
+        if ( n > kMaxBeforeMul || (n == kMaxBeforeMul && d > kMaxLimitAdd) )
             NumberOverflow();
         
         n = n * 10 + d;
@@ -587,7 +587,7 @@ Uint4 CIStreamBuffer::GetUint4(void)
         SkipChar();
 
         // check multiplication overflow
-        if ( n > kMaxBeforeMul || n == kMaxBeforeMul && d > kMaxLimitAdd )
+        if ( n > kMaxBeforeMul || (n == kMaxBeforeMul && d > kMaxLimitAdd) )
             NumberOverflow();
 
         n = n * 10 + d;
@@ -629,7 +629,7 @@ Int8 CIStreamBuffer::GetInt8(void)
         SkipChar();
 
         // check multiplication overflow
-        if ( n > kMaxBeforeMul || n == kMaxBeforeMul && d > kMaxLimitAdd )
+        if ( n > kMaxBeforeMul || (n == kMaxBeforeMul && d > kMaxLimitAdd) )
             NumberOverflow();
 
         n = n * 10 + d;
