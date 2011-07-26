@@ -4867,9 +4867,15 @@ void CValidError_feat::ValidateCommonCDSProduct
                     nuc.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
 
                 if ( ! prod_nps || ! nuc_nps || prod_nps != nuc_nps ) {
-                    PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSproductPackagingProblem,
-                        "Protein product not packaged in nuc-prot set with nucleotide", 
-                        feat);
+                    if (m_Imp.IsSmallGenomeSet()) {
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSproductPackagingProblem,
+                            "Protein product not packaged in nuc-prot set with nucleotide in small genome set", 
+                            feat);
+                    } else {
+                        PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSproductPackagingProblem,
+                            "Protein product not packaged in nuc-prot set with nucleotide", 
+                            feat);
+                    }
                 }
             }
         }
