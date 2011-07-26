@@ -1563,7 +1563,7 @@ private:
 /// @note Throw exception of type CTimeException on errors.
 
 
-class CNanoTimeout : public CTimeout
+class NCBI_XNCBI_EXPORT CNanoTimeout : public CTimeout
 {
 public:
     CNanoTimeout(unsigned int seconds, unsigned int nanoseconds)
