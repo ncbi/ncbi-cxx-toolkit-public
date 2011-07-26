@@ -784,6 +784,7 @@ Sequence-constraint ::= SEQUENCE {
     seqtype Sequence-constraint-mol-type-constraint OPTIONAL ,
     id String-constraint OPTIONAL ,
     feature Macro-feature-type ,
+    num-type-features Quantity-constraint OPTIONAL ,
     num-features Quantity-constraint OPTIONAL ,
     length Quantity-constraint OPTIONAL ,
     strandedness Feature-strandedness-constraint DEFAULT any }
