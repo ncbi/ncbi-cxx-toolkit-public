@@ -2,32 +2,50 @@
 
 digraph NetScheduleNew {
 
-  None [label="None", shape="box"];
-  Timeout [label="Timeout", shape="ellipse", style="dashed"];
-  ReadTimeout [label="ReadTimeout", shape="ellipse", style="dashed"];
+    None        [ label = "None",        shape = "box" ];
+    Canceled    [ label = "Canceled",    shape = "box" ];
+    Timeout     [ label = "Timeout",     shape = "diamond", style = "dashed" ];
+    ReadTimeout [ label = "ReadTimeout", shape = "diamond", style = "dashed" ];
+    Tries       [ label = "Tries",       shape = "diamond", style = "dashed" ];
+    ReadTries   [ label = "ReadTries",   shape = "diamond", style = "dashed" ];
 
-  None -> Pending [label="SUBMIT"];
+    None        -> Pending          [ label = "SUBMIT" ];
 
-  Pending -> Running [label="GET"];
-  Running -> Pending [label="RETURN"];
-  Pending -> Canceled [label="CANCEL"];
+    Pending     -> Running          [ label = "GET\nWGET\nJXCG" ];
+    Pending     -> Canceled         [ label = "CANCEL" ];
 
-  Running -> Canceled [label="CANCEL"];
-  Running -> Failed [label="FPUT"];
-  Running -> Done [label="PUT"];
-  Running -> Timeout [label="timeout"];
+    Running     -> Pending          [ label = "RETURN" ];
+    Running     -> Canceled         [ label = "CANCEL" ];
+    Running     -> Done             [ label = "PUT\nJXCG" ];
+    Running     -> Timeout          [ label = "timeout" ];
+    Running     -> Tries            [ label = "FPUT" ];
 
-  Timeout -> Pending;
-  Timeout -> Failed;
+    Tries       -> Failed;
+    Tries       -> Pending;
 
-  Done -> Reading [label="READ"];
+    Timeout     -> Pending;
+    Timeout     -> Failed;
 
-  Reading -> Done [label="RDRB"];
-  Reading -> ReadTimeout [label="timeout"];
-  Reading -> Confirmed [label="CFRM"];
+    Failed      -> Canceled         [ label = "CANCEL" ];
 
-  ReadTimeout -> Done;
-  ReadTimeout -> ReadFailed;
+    Done        -> Reading          [ label = "READ" ];
+    Done        -> Canceled         [ label = "CANCEL" ];
+
+    Reading     -> Canceled         [ label = "CANCEL" ];
+    Reading     -> Confirmed        [ label = "CFRM" ];
+    Reading     -> Done             [ label = "RDRB" ];
+    Reading     -> ReadTimeout      [ label = "timeout" ];
+    Reading     -> ReadTries        [ label = "FRED" ];
+
+    ReadTries   -> ReadFailed;
+    ReadTries   -> Done;
+
+    ReadTimeout -> Done;
+    ReadTimeout -> ReadFailed;
+
+    ReadFailed  -> Canceled         [ label = "CANCEL" ];
+
+    Confirmed   -> Canceled         [ label = "CANCEL" ];
 }
 
 # Old diagrams
