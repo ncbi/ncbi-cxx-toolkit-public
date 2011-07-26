@@ -112,6 +112,10 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
     struct DomainInfo : public CObject {
         CConstRef < objects::CSeq_loc > seqloc; //seqloc int only. use seq coodindate 
         string domain_name;               //domain string to show
+        CConstRef < objects::CSeq_loc > subject_seqloc; //used only when master has
+        //gaps at domain junctions
+        bool is_subject_start_valid;
+        bool is_subject_stop_valid;
     };
 
     ///option for alignment display
