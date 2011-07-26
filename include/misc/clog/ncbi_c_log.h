@@ -185,6 +185,7 @@ typedef enum {
     eNcbiLog_Default,         /**< Try /log/<appname>.log,  fallback to STDERR */
     eNcbiLog_Stdlog,          /**< Try /log/<appname>.log,
                                    fallback to ./<appname>.log, then to STDERR */
+    eNcbiLog_Cwd,             /**< Try ./<appname>.log, fallback to to STDERR */
     eNcbiLog_Stdout,          /**< To standard output stream */
     eNcbiLog_Stderr,          /**< To standard error stream  */
     eNcbiLog_Disable          /**< Don't write it anywhere   */
@@ -329,8 +330,8 @@ extern void NcbiLog_SetDestination(ENcbiLog_Destination ds);
 
 
 /** Set PID/TID values */
-extern void             NcbiLog_SetProcessId (TNcbiLog_PID pid);
-extern void             NcbiLog_SetThreadId  (TNcbiLog_TID tid);
+extern void NcbiLog_SetProcessId(TNcbiLog_PID pid);
+extern void NcbiLog_SetThreadId (TNcbiLog_TID tid);
 
 
 /** Set/get request ID. 

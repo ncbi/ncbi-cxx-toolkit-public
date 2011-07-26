@@ -245,10 +245,25 @@ struct TNcbiLog_MTLock_tag {
 };
 static const unsigned int kMTLock_magic_number = 0x4C0E681F;
 
-
 /* Check the validity of the MT locker */
 #define MT_LOCK_VALID \
     if (sx_MTLock) assert(sx_MTLock->magic_number == kMTLock_magic_number)
+
+static int/*bool*/ s_MTLock_Do(ENcbiLog_MTLock_Action action)
+{
+    MT_LOCK_VALID;
+    return sx_MTLock->handler ? sx_MTLock->handler(sx_MTLock->user_data, action)
+        : -1 /* rightful non-doing */;
+}
+
+#define MT_LOCK_Do(action) (sx_MTLock ? s_MTLock_Do((action)) : -1)
+
+/* Init/Lock/unlock/destroy the MT logger lock 
+ */
+#define MT_INIT    verify(MT_LOCK_Do(eNcbiLog_MT_Init))
+#define MT_LOCK    verify(MT_LOCK_Do(eNcbiLog_MT_Lock))
+#define MT_UNLOCK  verify(MT_LOCK_Do(eNcbiLog_MT_Unlock))
+#define MT_DESTROY verify(MT_LOCK_Do(eNcbiLog_MT_Destroy))
 
 
 extern TNcbiLog_MTLock NcbiLog_MTLock_Create
@@ -271,29 +286,12 @@ extern void NcbiLog_MTLock_Delete(TNcbiLog_MTLock lock)
 {
     if (lock) {
         MT_LOCK_VALID;
-        verify(lock->handler(lock->user_data, eNcbiLog_MT_Destroy));
+        MT_DESTROY;
         lock->magic_number = 0;
         free(lock);
         lock = NULL;
     }
 }
-
-
-static int/*bool*/ s_MTLock_Do(ENcbiLog_MTLock_Action action)
-{
-    MT_LOCK_VALID;
-    return sx_MTLock->handler ? sx_MTLock->handler(sx_MTLock->user_data, action)
-                              : -1 /* rightful non-doing */;
-}
-#define MT_LOCK_Do(action) (sx_MTLock ? s_MTLock_Do((action)) : -1)
-
-
-/* Init/Lock/unlock/destroy the MT logger lock 
- */
-#define MT_INIT    verify(MT_LOCK_Do(eNcbiLog_MT_Init))
-#define MT_LOCK    verify(MT_LOCK_Do(eNcbiLog_MT_Lock))
-#define MT_UNLOCK  verify(MT_LOCK_Do(eNcbiLog_MT_Unlock))
-#define MT_DESTROY verify(MT_LOCK_Do(eNcbiLog_MT_Destroy))
 
 
 /* Define default MT handler */
@@ -365,8 +363,6 @@ static int /*bool*/ sx_TlsIsInit = 0;
 static pthread_key_t sx_Tls;
 #elif defined(NCBI_WIN32_THREADS)
 static DWORD         sx_Tls;
-#else
-static int           sx_Tls;
 #endif
 
 
@@ -1072,6 +1068,7 @@ static void s_CloseLogFiles(int/*bool*/ cleanup)
     switch (sx_Info->destination) {
         case eNcbiLog_Default:
         case eNcbiLog_Stdlog:
+        case eNcbiLog_Cwd:
             /* Close files, see below */
             break;
         case eNcbiLog_Stdout:
@@ -1079,6 +1076,8 @@ static void s_CloseLogFiles(int/*bool*/ cleanup)
         case eNcbiLog_Disable:
             /* Nothing to do here */
             return;
+        default:
+            TROUBLE;
     }
     if (sx_Info->file_trace) {
         fclose(sx_Info->file_trace);
@@ -1199,7 +1198,8 @@ static void s_InitDestination()
 
     /* Try to open files */
     if (sx_Info->destination == eNcbiLog_Default  ||
-        sx_Info->destination == eNcbiLog_Stdlog) {
+        sx_Info->destination == eNcbiLog_Stdlog   ||
+        sx_Info->destination == eNcbiLog_Cwd) {
 
         /* Destination and file names didn't changed, just reopen files */
         if (sx_Info->reuse_file_names) {
@@ -1227,16 +1227,18 @@ static void s_InitDestination()
         {{
             const char* dir;
 
-            /* eNcbiLog_Default */
-            dir = s_GetDefaultLogLocation();
-            if (dir) {
-                if (s_SetLogFiles(dir)) {
-                    sx_Info->reuse_file_names = 1;
-                    return;
+            /* /log */
+            if (sx_Info->destination != eNcbiLog_Cwd) {
+                dir = s_GetDefaultLogLocation();
+                if (dir) {
+                    if (s_SetLogFiles(dir)) {
+                        sx_Info->reuse_file_names = 1;
+                        return;
+                    }
                 }
             }
-            /* eNcbiLog_Stdlog -- try current directory */
-            if (sx_Info->destination == eNcbiLog_Stdlog) {
+            /* Try current directory -- eNcbiLog_Stdlog, eNcbiLog_Cwd */
+            if (sx_Info->destination != eNcbiLog_Default) {
                 char* cwd;
                 #if defined(NCBI_OS_UNIX)
                     cwd = getcwd(NULL, 0);
@@ -1704,7 +1706,10 @@ extern void NcbiLog_Destroy(void)
         s_TlsDestroy();
     }
     /* Destroy MT support */
-    MT_DESTROY;
+    if (sx_MTLock_Own) {
+        NcbiLog_MTLock_Delete(sx_MTLock);
+        sx_MTLock = NULL;
+    }
 }
 
 

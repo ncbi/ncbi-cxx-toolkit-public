@@ -56,10 +56,7 @@ static int Test_MT_Handler(void* user_data, ENcbiLog_MTLock_Action action)
 
 int main(int argc, const char* argv[] /*, const char* envp[]*/)
 {
-    TNcbiLog_MTLock mt_lock = NcbiLog_MTLock_Create(NULL, NcbiLog_Default_MTLock_Handler);
-    /* Or,
-       TNcbiLog_MTLock mt_lock = NcbiLog_MTLock_Create(NULL, Test_MT_Handler); 
-    */
+    TNcbiLog_MTLock mt_lock = NcbiLog_MTLock_Create(NULL, Test_MT_Handler); 
     
     /* Initialize logging API 
     */
