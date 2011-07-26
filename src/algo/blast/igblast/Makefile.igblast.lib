@@ -6,7 +6,7 @@ SRC  = $(SRC_CXX)
 
 LIB = igblast
 
-DLL_LIB = xblast $(OBJMGR_LIBS)
+# DLL_LIB = $(BLAST_INPUT_LIBS) $(BLAST_LIBS) $(OBJMGR_LIBS)
 
 # should be redundant, given the above :-/
 # ASN_DEP = seqset xnetblast

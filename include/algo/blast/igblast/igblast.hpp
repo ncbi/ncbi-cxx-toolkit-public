@@ -49,7 +49,7 @@ BEGIN_SCOPE(blast)
 
 class IQueryFactory;
 
-class NCBI_XBLAST_EXPORT CIgBlastOptions : public CObject
+class CIgBlastOptions : public CObject
 {
 public:
     // the germline database search must be carried out locally
@@ -64,7 +64,7 @@ public:
     bool m_Translate;                // should translation be displayed
 };
 
-class NCBI_XBLAST_EXPORT CIgAnnotation : public CObject
+class CIgAnnotation : public CObject
 {
 public:
     bool m_MinusStrand;              // hit is on minus strand of the query
@@ -133,7 +133,7 @@ private:
     map<string, int> m_FrameOffset;
 };
 
-class NCBI_XBLAST_EXPORT CIgBlastResults : public CSearchResults 
+class CIgBlastResults : public CSearchResults 
 {
 public:
 
@@ -171,7 +171,7 @@ private:
     CRef<CIgAnnotation> m_Annotation;
 };
 
-class NCBI_XBLAST_EXPORT CIgBlast : public CObject
+class CIgBlast : public CObject
 {
 public:
     /// Local Igblast search API
