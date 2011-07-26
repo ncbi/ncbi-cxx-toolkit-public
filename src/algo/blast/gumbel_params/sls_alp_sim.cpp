@@ -474,8 +474,9 @@ alp_data *alp_data_)
                 }
                 while(!loop_break_flag);
 
+#ifdef DEBUG_GUMBEL_PARAMS
                 double memory_after2=d_alp_data->d_memory_size_in_MB;
-
+#endif
 
                 Int4 k;
                 for(k=0;k<=number_of_realizations_with_killing;k++)
@@ -721,13 +722,17 @@ alp_data *alp_data_)
                 d_n_alp_obj=final_realizations_number_lambda;
 
 
+#ifdef DEBUG_GUMBEL_PARAMS
                 double memory_after3=d_alp_data->d_memory_size_in_MB;
+#endif
 
                 double time_after100;
                 alp_data::get_current_time(time_after100);
-                //cout<<"\nActual calculation time is "<<time_after100-time_before1<<" seconds\n";
-                //cout<<"Actual memory usage is "<<d_alp_data->Tmax(memory_after2,memory_after3)<<" MBs\n\n";
 
+#ifdef DEBUG_GUMBEL_PARAMS
+                cout<<"\nActual calculation time is "<<time_after100-time_before1<<" seconds\n";
+                cout<<"Actual memory usage is "<<d_alp_data->Tmax(memory_after2,memory_after3)<<" MBs\n\n";
+#endif
                 if(!d_alp_data->d_rand_flag)
                 {
                         d_alp_data->d_rand_all->d_total_realizations_number_with_ALP=final_realizations_number_lambda-1;

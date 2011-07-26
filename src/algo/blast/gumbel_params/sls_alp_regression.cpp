@@ -386,10 +386,6 @@ bool &res_was_calculated_)
         double y1=0;
         double y2=0;
 
-        double a11_error=0;
-        double a12_error=0;
-        double a21_error=0;
-        double a22_error=0;
         double y1_error=0;
         double y2_error=0;
 
@@ -592,9 +588,6 @@ bool &res_was_calculated_)
         double a11=0;
         double y1=0;
 
-
-        double a11_error=0;
-        double a12_error=0;
         double y1_error=0;
 
 

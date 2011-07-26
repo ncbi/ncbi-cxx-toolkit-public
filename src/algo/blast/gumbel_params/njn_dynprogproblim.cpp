@@ -154,7 +154,6 @@ void DynProgProbLim::update () // updates dynamic prog probs
     Int4 value = 0;
     Int4 valueLower = 0;
     Int4 valueUpper = 0;
-    size_t arrayPos = 0;
     double prob = 0.0;
 
     oldArray = getArray () [getStep () % 2];

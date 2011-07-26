@@ -211,7 +211,6 @@ void DynProgProb::update () // updates dynamic prog probs
     Int4 valueBegin = 0;
     Int4 valueLower = 0;
     Int4 valueUpper = 0;
-    size_t arrayPos = 0;
 
     oldArray = d_array_p [d_step % 2];
     array = d_array_p [(d_step + 1) % 2];

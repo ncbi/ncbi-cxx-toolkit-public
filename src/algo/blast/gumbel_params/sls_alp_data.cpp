@@ -457,7 +457,7 @@ string out_file_name_)//output file name
                 Uint4 random_factor=rand_;
 
 
-                if(random_factor<0)
+                if((Int4)random_factor<0)
                 {
                         random_factor=(Uint4)time(NULL);
                         #ifndef NCBI_OS_MSWIN //UNIX program

@@ -151,9 +151,6 @@ const double *prob_) // corresponding probabilities
     }
 
     size_t i = 0;
-    size_t j = 0;
-    Int4 iter = 0;
-    Int4 value = 0;
 
     free ();
     init (dimension_);

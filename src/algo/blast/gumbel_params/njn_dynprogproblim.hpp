@@ -40,6 +40,7 @@ Contents:
 #include <corelib/ncbi_limits.h>
 
 #include "njn_dynprogprob.hpp"
+#include "sls_alp_data.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -98,6 +99,13 @@ BEGIN_SCOPE(Njn)
             return *this;
         }
 
+        // added to eliminate compiler warning
+        virtual inline DynProgProbLim &operator= (const DynProgProb &dynProgProb_)
+        {
+            throw Sls::error("Assignment operator not implemented", 4);
+            return *this;
+        }
+
         virtual inline void copy (const DynProgProbLim &dynProgProbLim_)
         {
             copy (dynProgProbLim_, dynProgProbLim_.getProbLost ());
@@ -110,6 +118,28 @@ BEGIN_SCOPE(Njn)
             DynProgProb::copy (dynProgProb_);
             d_probLost = probLost_;
         }
+
+        // added to eliminate compiler warning
+        virtual inline void copy (const DynProgProb &dynProgProb_)
+        {
+            throw Sls::error("Virtual function not implemented", 4);
+        }
+
+        // added to eliminate compiler warning
+        virtual void copy (
+            size_t step_, // current index : starts at 0 
+            const double *const *array_, // two corresponding arrays of probabilities 
+        size_t arrayCapacity_, // present capacity of the array
+        Int4 valueBegin_ = 0, // lower limit for Int4 values in the array (an offset)
+        Int4 valueLower_ = 0, // present lower Int4 value in the array
+        Int4 valueUpper_ = 0, // one beyond present upper Int4 value in the array
+        ValueFct *valueFct_ = 0, // function for updating dynamic programming values
+        size_t dimInputProb_ = 0, 
+        const double *inputProb_ = 0) // array of input states : d_inputProb_p [0...dimInputProb - 1]
+        {
+            throw Sls::error("Virtual function not implemented", 4);
+        }
+
 
         virtual void setLimits ( 
         Int4 valueBegin_ = 0, // Range for values is [valueBegin_, valueEnd_).
@@ -130,6 +160,14 @@ BEGIN_SCOPE(Njn)
         {
             DynProgProb::clear (valueLower_, valueUpper_, prob_);
             d_probLost = 0.0;
+        }
+
+        // added to eliminate icc compiler warning about partial overriding
+        virtual void clear (
+        Int4 valueBegin_, // lower limit for Int4 values in the array (an offset)
+        size_t arrayCapacity_)  // new array capacity 
+        {
+            DynProgProb::clear (valueBegin_, arrayCapacity_);
         }
 
         virtual inline void clear () {clear (0);}

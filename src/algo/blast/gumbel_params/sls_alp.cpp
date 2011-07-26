@@ -1432,8 +1432,6 @@ void alp::increment_H_weights_with_sentinels(
         Int4 d_H_matr_len_2=d_H_matr_len-2;
 
         //boundary conditions
-        Int4 gap_tmp=-d_alp_data->d_open-d_H_matr_len_1*d_alp_data->d_epen;
-
 
         Int4 sentinel_i_boundary=alp_data::Tmin(d_sentinel_i_pred+(Int4)2,d_H_matr_len_1);
         Int4 sentinel_j_boundary=alp_data::Tmin(d_sentinel_j_pred+(Int4)2,d_H_matr_len_1);

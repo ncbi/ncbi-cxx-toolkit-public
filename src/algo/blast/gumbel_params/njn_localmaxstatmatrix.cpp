@@ -144,7 +144,6 @@ size_t dimMatrix2_) // #(distinct letters) in the second alphabet
     init (dimMatrix_);
 
     size_t i = 0;
-    size_t j = 0;
 
     d_dimMatrix = dimMatrix_;
     d_dimMatrix2 = dimMatrix2_;

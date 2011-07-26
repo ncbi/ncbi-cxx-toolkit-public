@@ -79,8 +79,10 @@ size_t dimension2_) // dimension2 of equilProb_
       }
     }
 
+#ifdef _DEBUG /* to eliminate compiler warning in release mode */
     const double FUDGE = 20.0;
-    assert (Approx::relApprox (sum, 1.0, FUDGE * REL_TOL));
+#endif
+    _ASSERT(Approx::relApprox (sum, 1.0, FUDGE * REL_TOL));
 
     Int4 s = 0;
     Int4 min = kMax_I4;
@@ -395,23 +397,27 @@ bool *terminated_) // ? Was the dynamic programming computation terminated prema
     // This program uses departure into (-Inf, 0] not (-Inf, 0)
 
     // avoid recomputation
+#ifdef _DEBUG /* to eliminate compiler warning in release mode */
     double mu0 = 0.0 == mu0_ ? mu (dimension_, score_, prob_) : mu0_;
-    assert (mu0 < 0.0);
+#endif
+    _ASSERT(mu0 < 0.0);
     double lambda0 = 0.0 == lambda0_ ? lambda (dimension_, score_, prob_) : lambda0_;
-    assert (0.0 < lambda0);
+    _ASSERT (0.0 < lambda0);
     if (lambda_ == 0.0) lambda_ = lambda0;
-    assert (0.0 < lambda_);
+    _ASSERT (0.0 < lambda_);
+#ifdef _DEBUG /* to eliminate compiler warning in release mode */
     double muAssoc0 = 0.0 == muAssoc0_ ? muAssoc (dimension_, score_, prob_, lambda0) : muAssoc0_;
-    assert (0.0 < muAssoc0);
+#endif
+    _ASSERT (0.0 < muAssoc0);
     double thetaMin0 = 0.0 == thetaMin0_ ? thetaMin (dimension_, score_, prob_, lambda0) : thetaMin0_;
-    assert (0.0 < thetaMin0);
+    _ASSERT (0.0 < thetaMin0);
     double rMin0 = 0.0 == rMin0_ ? rMin (dimension_, score_, prob_, lambda0, thetaMin0) : rMin0_;
-    assert (0.0 < rMin0 && rMin0 < 1.0);
+    _ASSERT (0.0 < rMin0 && rMin0 < 1.0);
 
     const Int4 ITER_MIN = static_cast <Int4> ((log (REL_TOL * (1.0 - rMin0)) / log (rMin0)));
-    assert (0 < ITER_MIN);
+    _ASSERT (0 < ITER_MIN);
     const Int4 ITER = static_cast <Int4> (endW_) < ITER_MIN ? ITER_MIN : static_cast <Int4> (endW_);
-    assert (0 < ITER);
+    _ASSERT (0 < ITER);
     const Int4 Y_MAX = static_cast <Int4> (-log (REL_TOL) / lambda0);
 
     Int4 entry = isStrict_ ? -1 : 0;
@@ -486,8 +492,10 @@ bool *terminated_) // ? Was the dynamic programming computation terminated prema
     }
     prob += dynProgProb.getProbLost ();
 
+#ifdef _DEBUG /* to eliminate compiler warning in release mode */
     const double FUDGE = 2.0;
-    assert (prob <= FUDGE * static_cast <double> (dimension_) * REL_TOL);
+#endif
+    _ASSERT (prob <= FUDGE * static_cast <double> (dimension_) * REL_TOL);
 }
 
 void LocalMaxStatUtil::descendingLadderEpoch (
@@ -537,8 +545,8 @@ size_t dimension_, // #(distinct values) of scores & probabilities (which are pa
 const Int4 *score_, // scores in increasing order
 const double *prob_) // corresponding probabilities
 {
-   assert (score_);
-   assert (prob_);
+   _ASSERT (score_);
+   _ASSERT (prob_);
    if (! isScoreIncreasing (dimension_, score_)) return false;
    if (! isProbDist (dimension_, prob_)) return false;
    if (0.0 <= mu (dimension_, score_, prob_)) return false;

@@ -179,7 +179,7 @@ void StringUtil::eraseWhiteSpace (char *symbols_, bool eraseBlankOnly_)
     char *j = '\0';
 
     for (i = j = symbols_; *i; i++) {
-        if (! isspace (*i) || *i != ' ' && eraseBlankOnly_) { // copy unless white space
+        if (!isspace(*i) || (*i != ' ' && eraseBlankOnly_)) { // copy unless white space
             *j = *i; 
             j++;
         }
@@ -301,7 +301,6 @@ void StringUtil::eraseChar (std::string &symbols_, const std::string &c_) // rem
 void StringUtil::substituteChar (char *symbols_, char cOut_, const char cIn_) // replaces all occurrences of cIn_ with cOut_
 { 
     char *i = '\0';
-    const char *s = '\0';
 
     for (i = symbols_; *i; i++) 
     {
