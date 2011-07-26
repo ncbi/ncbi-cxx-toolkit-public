@@ -1426,8 +1426,8 @@ static void s_TestTimeout(void)
         // Nanoseconds truncates to 0 here
         ts = t.GetAsTimeSpan();
         assert(ts.GetCompleteSeconds() == 1);
-        assert(ts.GetNanoSecondsAfterSecond() == 0); 
-        assert(ts != ts1);
+        assert(ts.GetNanoSecondsAfterSecond() == 200); 
+        assert(ts == ts1);
 
         // Microseconds correcly converts to nanoseconds
         t = ts2;
