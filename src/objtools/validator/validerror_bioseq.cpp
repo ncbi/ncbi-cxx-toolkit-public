@@ -877,6 +877,12 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
                             }
                         }
                     }
+                    if (! found) {
+                        if (m_Imp.IsSmallGenomeSet()) {
+                            m_Imp.IncrementSmallGenomeSetMisplacedCount();
+                            break;
+                        }
+                    }
                 }
                 if (!found) {
                     m_Imp.IncrementMisplacedFeatureCount();

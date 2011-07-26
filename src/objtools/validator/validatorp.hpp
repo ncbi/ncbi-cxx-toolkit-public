@@ -459,6 +459,7 @@ public:
     inline bool IsGI(void) const { return m_IsGI; }
     inline bool IsGpipe(void) const { return m_IsGpipe; }
     inline bool IsGenomic(void) const { return m_IsGenomic; }
+    inline bool IsSmallGenomeSet(void) const { return m_IsSmallGenomeSet; }
     bool IsNoncuratedRefSeq(const CBioseq& seq, EDiagSev& sev);
     inline bool IsGenbank(void) const { return m_IsGB; }
     inline bool DoesAnyFeatLocHaveGI(void) const { return m_FeatLocHasGI; }
@@ -471,6 +472,11 @@ public:
     inline void ResetMisplacedFeatureCount (void) { m_NumMisplacedFeatures = 0; }
     inline void IncrementMisplacedFeatureCount (void) { m_NumMisplacedFeatures++; }
     inline void AddToMisplacedFeatureCount (SIZE_TYPE num) { m_NumMisplacedFeatures += num; }
+
+    // counting number of small genome set misplaced features
+    inline void ResetSmallGenomeSetMisplacedCount (void) { m_NumSmallGenomeSetMisplaced = 0; }
+    inline void IncrementSmallGenomeSetMisplacedCount (void) { m_NumSmallGenomeSetMisplaced++; }
+    inline void AddToSmallGenomeSetMisplacedCount (SIZE_TYPE num) { m_NumSmallGenomeSetMisplaced += num; }
 
     // counting number of misplaced graphs
     inline void ResetMisplacedGraphCount (void) { m_NumMisplacedGraphs = 0; }
@@ -622,6 +628,7 @@ private:
     bool m_IsGB;
     bool m_IsGpipe;
     bool m_IsGenomic;
+    bool m_IsSmallGenomeSet;
     bool m_FeatLocHasGI;
     bool m_ProductLocHasGI;
     bool m_GeneHasLocusTag;
@@ -660,6 +667,7 @@ private:
     SIZE_TYPE   m_NumGraph;
 
     SIZE_TYPE   m_NumMisplacedFeatures;
+    SIZE_TYPE   m_NumSmallGenomeSetMisplaced;
     SIZE_TYPE   m_NumMisplacedGraphs;
     SIZE_TYPE   m_NumGenes;
     SIZE_TYPE   m_NumGeneXrefs;

@@ -223,6 +223,7 @@ void CValidError_imp::Reset(void)
     m_IsGB = false;
     m_IsGpipe = false;
     m_IsGenomic = false;
+    m_IsSmallGenomeSet = false;
     m_FeatLocHasGI = false;
     m_ProductLocHasGI = false;
     m_GeneHasLocusTag = false;
@@ -238,6 +239,7 @@ void CValidError_imp::Reset(void)
     m_NumFeat = 0;
     m_NumGraph = 0;
     m_NumMisplacedFeatures = 0;
+    m_NumSmallGenomeSetMisplaced = 0;
     m_NumMisplacedGraphs = 0;
     m_NumGenes = 0;
     m_NumGeneXrefs = 0;
@@ -1396,6 +1398,15 @@ bool CValidError_imp::Validate
                  "There is 1 mispackaged feature in this record.",
                  *(seh.GetCompleteSeq_entry()));
     }
+    if (m_NumSmallGenomeSetMisplaced > 1) {
+        PostErr (eDiag_Warning, eErr_SEQ_PKG_FeaturePackagingProblem, 
+                 "There are " + NStr::IntToString (m_NumSmallGenomeSetMisplaced) + " mispackaged features in this small genome set record.",
+                 *(seh.GetCompleteSeq_entry()));
+    } else if (m_NumSmallGenomeSetMisplaced == 1) {
+        PostErr (eDiag_Warning, eErr_SEQ_PKG_FeaturePackagingProblem,
+                 "There is 1 mispackaged feature in this small genome set record.",
+                 *(seh.GetCompleteSeq_entry()));
+    }
     if ( m_NumGenes == 0  &&  
          m_NumGeneXrefs > 0 ) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_OnlyGeneXrefs,
@@ -2448,6 +2459,9 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
         if (si->IsSetClass ()) {
             if (si->GetClass () == CBioseq_set::eClass_gen_prod_set) {
                 m_IsGPS = true;
+            }
+            if (si->GetClass () == CBioseq_set::eClass_small_genome_set) {
+                m_IsSmallGenomeSet = true;
             }
         }
     }
