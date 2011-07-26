@@ -437,6 +437,7 @@ private:
     friend class CMappedFeat;
     friend class CMappedGraph;
     friend class CAnnot_CI;
+    friend class CFeat_CI;
 };
 
 

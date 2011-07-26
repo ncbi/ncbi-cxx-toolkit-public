@@ -1306,6 +1306,13 @@ void CTSE_Info::x_AddFeaturesById(TAnnotObjects& objects,
 }
 
 
+bool CTSE_Info::x_HasFeaturesWithId(CSeqFeatData::ESubtype subtype) const
+{
+    TFeatIdIndex::const_iterator iter = m_FeatIdIndex.find(subtype);
+    return iter != m_FeatIdIndex.end();
+}
+
+
 void CTSE_Info::x_AddFeaturesById(TAnnotObjects& objects,
                                   CSeqFeatData::ESubtype subtype,
                                   TFeatIdInt id,

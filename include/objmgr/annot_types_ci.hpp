@@ -51,6 +51,8 @@ public:
 
     CAnnotTypes_CI(void);
 
+    CAnnotTypes_CI(CScope& scope);
+
     // Search on the part of bioseq
     CAnnotTypes_CI(TAnnotType type,
                    const CBioseq_Handle& bioseq,

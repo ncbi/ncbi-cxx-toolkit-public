@@ -38,9 +38,12 @@
 #include <objmgr/impl/annot_object.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
+#include <objmgr/impl/annot_type_index.hpp>
+#include <objmgr/impl/tse_info.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/general/Dbtag.hpp>
+#include <objects/general/Object_id.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -194,6 +197,84 @@ CFeat_CI::CFeat_CI(const CSeq_entry_Handle& entry,
                      &sel)
 {
     Update();
+}
+
+
+CFeat_CI::CFeat_CI(const CTSE_Handle& tse,
+                   const SAnnotSelector& sel,
+                   const TFeatureId& feat_id)
+    : CAnnotTypes_CI(tse.GetScope())
+{
+    x_AddFeaturesWithId(tse, sel, feat_id);
+}
+
+
+CFeat_CI::CFeat_CI(const CTSE_Handle& tse,
+                   const SAnnotSelector& sel,
+                   const TFeatureIdInt& int_id)
+    : CAnnotTypes_CI(tse.GetScope())
+{
+    CObject_id feat_id;
+    feat_id.SetId(int_id);
+    x_AddFeaturesWithId(tse, sel, feat_id);
+}
+
+
+CFeat_CI::CFeat_CI(const CTSE_Handle& tse,
+                   const SAnnotSelector& sel,
+                   const TFeatureIdStr& str_id)
+    : CAnnotTypes_CI(tse.GetScope())
+{
+    CObject_id feat_id;
+    feat_id.SetStr(str_id);
+    x_AddFeaturesWithId(tse, sel, feat_id);
+}
+
+
+void CFeat_CI::x_AddFeaturesWithId(const CTSE_Handle& tse,
+                                   const SAnnotSelector& sel,
+                                   const TFeatureId& feat_id)
+{
+    CSeqFeatData::ESubtype subtype = sel.GetFeatSubtype();
+    if ( subtype == CSeqFeatData::eSubtype_any ) {
+        if ( sel.GetFeatProduct() ) {
+            x_AddFeatures(sel, tse.GetFeaturesWithXref(subtype, feat_id));
+        }
+        else {
+            x_AddFeatures(sel, tse.GetFeaturesWithId(subtype, feat_id));
+        }
+    }
+    else {
+        pair<size_t, size_t> range = CAnnotType_Index::GetIndexRange(sel);
+        for ( size_t i = range.first; i < range.second; ++i ) {
+            subtype = CAnnotType_Index::GetSubtypeForIndex(i);
+            if ( !tse.x_GetTSE_Info().x_HasFeaturesWithId(subtype) ) {
+                continue;
+            }
+            if ( sel.GetFeatProduct() ) {
+                x_AddFeatures(sel, tse.GetFeaturesWithXref(subtype, feat_id));
+            }
+            else {
+                x_AddFeatures(sel, tse.GetFeaturesWithId(subtype, feat_id));
+            }
+        }
+    }
+    Rewind();
+}
+
+
+void CFeat_CI::x_AddFeatures(const SAnnotSelector& sel,
+                             const TSeq_feat_Handles& feats)
+{
+    CAnnot_Collector& collector = GetCollector();
+    collector.m_Selector = &sel;
+    ITERATE ( TSeq_feat_Handles, it, feats ) {
+        const CAnnotObject_Info& info = it->x_GetAnnotObject_Info();
+        if ( !collector.x_MatchLimitObject(info) ) {
+            CAnnotObject_Ref feat_ref(info, it->GetAnnot());
+            collector.x_AddObject(feat_ref);
+        }
+    }
 }
 
 

@@ -123,6 +123,20 @@ public:
     CFeat_CI(const CSeq_entry_Handle& entry,
              const SAnnotSelector& sel);
 
+    /// Search features with specified id
+    typedef CObject_id TFeatureId;
+    typedef int TFeatureIdInt;
+    typedef string TFeatureIdStr;
+    CFeat_CI(const CTSE_Handle& tse,
+             const SAnnotSelector& sel,
+             const TFeatureId& id);
+    CFeat_CI(const CTSE_Handle& tse,
+             const SAnnotSelector& sel,
+             const TFeatureIdInt& int_id);
+    CFeat_CI(const CTSE_Handle& tse,
+             const SAnnotSelector& sel,
+             const TFeatureIdStr& str_id);
+
     CFeat_CI(const CFeat_CI& iter);
     virtual ~CFeat_CI(void);
     CFeat_CI& operator= (const CFeat_CI& iter);
@@ -145,6 +159,13 @@ public:
 private:
     CFeat_CI& operator++ (int);
     CFeat_CI& operator-- (int);
+
+    void x_AddFeaturesWithId(const CTSE_Handle& tse,
+                             const SAnnotSelector& sel,
+                             const TFeatureId& feat_id);
+    typedef vector<CSeq_feat_Handle> TSeq_feat_Handles;
+    void x_AddFeatures(const SAnnotSelector& sel,
+                       const TSeq_feat_Handles& feats);
 
     CMappedFeat m_MappedFeat;// current feature object returned by operator->()
 };

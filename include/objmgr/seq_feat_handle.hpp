@@ -210,6 +210,7 @@ public:
 
 protected:
     friend class CMappedFeat;
+    friend class CFeat_CI;
     friend class CCreatedFeat_Ref;
     friend class CSeq_annot_Info;
     friend class CSeq_annot_Handle;

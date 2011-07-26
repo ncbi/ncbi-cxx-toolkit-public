@@ -371,6 +371,8 @@ public:
     SFeatIdIndex::TIndexInt& x_GetFeatIdIndexInt(CSeqFeatData::ESubtype type);
     SFeatIdIndex::TIndexStr& x_GetFeatIdIndexStr(CSeqFeatData::ESubtype type);
 
+    bool x_HasFeaturesWithId(CSeqFeatData::ESubtype subtype) const;
+
     typedef vector<CAnnotObject_Info*> TAnnotObjects;
     void x_AddFeaturesById(TAnnotObjects& objects,
                            const SFeatIdIndex& index,

@@ -1671,7 +1671,6 @@ struct SLessByInfo
 };
 
 
-inline
 void CAnnot_Collector::x_AddObject(CAnnotObject_Ref& ref)
 {
     m_AnnotSet.push_back(ref);

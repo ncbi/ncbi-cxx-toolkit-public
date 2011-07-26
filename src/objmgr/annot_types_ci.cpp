@@ -56,6 +56,13 @@ CAnnotTypes_CI::CAnnotTypes_CI(void)
     return;
 }
 
+
+CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope)
+    : m_DataCollector(new CAnnot_Collector(scope))
+{
+    return;
+}
+
 /*
 CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
                                const CBioseq_Handle& bioseq,
