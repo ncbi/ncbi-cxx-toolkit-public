@@ -201,16 +201,12 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetConstraint(kArgEffSearchSpace, 
                            new CArgAllowValuesGreaterThanOrEqual(0));
 
-#if 0
     arg_desc.AddDefaultKey(kArgMaxHSPsPerSubject, "int_value",
-                           "Maximum number of HPSs per subject to save "
-                           "( " + NStr::IntToString(kDfltArgMaxHSPsPerSubject)
-                           + " means infinite)",
+                           "Override maximum number of HSPs per subject to save for ungapped searches (0 means do not override)",
                            CArgDescriptions::eInteger,
                            NStr::IntToString(kDfltArgMaxHSPsPerSubject));
     arg_desc.SetConstraint(kArgMaxHSPsPerSubject,
                            new CArgAllowValuesGreaterThanOrEqual(0));
-#endif
 
     arg_desc.SetCurrentGroup("");
 }
@@ -270,14 +266,12 @@ CGenericSearchArgs::ExtractAlgorithmOptions(const CArgs& args,
         opt.SetPercentIdentity(args[kArgPercentIdentity].AsDouble());
     }
 
-#if 0
     if (args[kArgMaxHSPsPerSubject]) {
         const int value = args[kArgMaxHSPsPerSubject].AsInteger();
         if (value != kDfltArgMaxHSPsPerSubject) {
             opt.SetMaxNumHspPerSequence(value);
         }
     }
-#endif
 }
 
 void

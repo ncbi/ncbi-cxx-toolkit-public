@@ -178,10 +178,8 @@ const string kArgGLDomainSystem("domain_system");
 const string kArgGLFocusV("focus_on_V_segment");
 const string kArgTranslate("show_translation");
 
-#if 0
 const string kArgMaxHSPsPerSubject("max_hsps_per_subject");
-const int kDfltArgMaxHSPsPerSubject = 0;
-#endif
+const int    kDfltArgMaxHSPsPerSubject = 0;
 const string kArgPercentIdentity("perc_identity");
 const string kArgNoGreedyExtension("no_greedy");
 const string kArgDMBTemplateType("template_type");

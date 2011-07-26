@@ -287,12 +287,10 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgDMBTemplateType;
 /// Argument to specify the discontinuous megablast template length
 NCBI_BLASTINPUT_EXPORT extern const string kArgDMBTemplateLength;
 
-#if 0
 /// Argument to specify the maximum number of HPSs to save per subject
 NCBI_BLASTINPUT_EXPORT extern const string kArgMaxHSPsPerSubject;
 /// Default value for specifying the maximum number of HPSs to save per subject
 NCBI_BLASTINPUT_EXPORT extern const int kDfltArgMaxHSPsPerSubject;
-#endif
 
 /// Argument to specify the target percent identity
 NCBI_BLASTINPUT_EXPORT extern const string kArgPercentIdentity;
