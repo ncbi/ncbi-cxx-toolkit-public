@@ -361,6 +361,7 @@ static const char* const kBuiltInGuide[] = {
     "2+6  HU  ddbj_tpa_chromosome",
     "2+6  HV  gb_patent",
     "2+6  HW  gb_patent",
+    "2+6  HX  ddbj_est",
     "2+6  JA  embl_patent",
     "2+6  JB  embl_patent",
     "2+6  JC  embl_patent",
