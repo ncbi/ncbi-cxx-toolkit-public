@@ -937,12 +937,14 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
     for (int i=0; i<9; i = i + 2) {
         if (annots->m_DomainInfo[i] >= 0){            CRef<CDisplaySeqalign::DomainInfo> temp(new CDisplaySeqalign::DomainInfo);
             int start = annots->m_DomainInfo[i];
+            int subject_start = annots->m_DomainInfo_S[i];
             if (first_annotated_domain && annots->m_FirstExt > 0) {
                 start = max (0, start - annots->m_FirstExt);
             }
             first_annotated_domain = false;
 
             int stop = annots->m_DomainInfo[i+1];
+            int subject_stop = annots->m_DomainInfo_S[i+1];
             //extend the last domain
             if (i < 9 && annots->m_DomainInfo[i + 2] < 0 &&
                 annots->m_LastExt > 0){
@@ -951,6 +953,11 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
             temp->seqloc = new CSeq_loc((CSeq_loc::TId &) aln_set->Get().front()->GetSeq_id(0),
                                         (CSeq_loc::TPoint) start,
                                         (CSeq_loc::TPoint) stop);
+            temp->subject_seqloc = new CSeq_loc((CSeq_loc::TId &) aln_set->Get().front()->GetSeq_id(1),
+                                                (CSeq_loc::TPoint) subject_start,
+                                                (CSeq_loc::TPoint) subject_stop);
+            temp->is_subject_start_valid = subject_start > 0 ? true:false;
+            temp->is_subject_stop_valid = subject_stop > 0 ? true:false;
             temp->domain_name = domain_name[i/2];
             domain.push_back(temp); 
         }
