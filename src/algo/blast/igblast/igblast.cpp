@@ -40,9 +40,9 @@ static char const rcsid[] =
 #include <algo/blast/api/bl2seq.hpp>
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
-#include <algo/blast/blastinput/blast_scope_src.hpp>
 #include <objtools/alnmgr/alnmap.hpp>
 #include <algo/blast/composition_adjustment/composition_constants.h>
+#include <objmgr/object_manager.hpp>
 
 
 /** @addtogroup AlgoBlast
@@ -541,17 +541,21 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
                                 CRef<CSearchResultSet>        &dm_results, 
                                 vector<CRef <CIgAnnotation> > &annots)
 {
-    CRef<CScope> scope;
+    CRef<CObjectManager> mgr = CObjectManager::GetInstance();
+    CScope scope_q(*mgr), scope_s(*mgr);
+    CRef<CSeqDB> db_V, db_domain;
     bool annotate_subject = false;
     if (m_IgOptions->m_Db[0]->IsBlastDb()) {
-        CRef<CSeqDB> db_domain(new CSeqDB(m_IgOptions->m_Db[0]->GetDatabaseName(), 
-                  ((m_IgOptions->m_IsProtein)? CSeqDB::eProtein : CSeqDB::eNucleotide)));
-        CBlastScopeSource scope_src_domain(db_domain);
-        scope = scope_src_domain.NewScope();
-        CRef<CSeqDB> db_V(new CSeqDB(m_IgOptions->m_Db[3]->GetDatabaseName(), 
-                  ((m_IgOptions->m_IsProtein)? CSeqDB::eProtein : CSeqDB::eNucleotide)));
-        CBlastScopeSource scope_src_V(db_domain);
-        scope_src_V.AddDataLoaders(scope);
+        string db_name_V = m_IgOptions->m_Db[0]->GetDatabaseName(); 
+        string db_name_domain = m_IgOptions->m_Db[3]->GetDatabaseName(); 
+        CSeqDB::ESeqType db_type = (m_IgOptions->m_IsProtein)? 
+                                   CSeqDB::eProtein : CSeqDB::eNucleotide;
+        db_V.Reset(new CSeqDB(db_name_V, db_type));
+        if (db_name_V == db_name_domain) {
+            db_domain.Reset(&(*db_V));
+        } else {
+            db_domain.Reset(new CSeqDB(db_name_domain, db_type));
+        }
         annotate_subject = true;
     }
 
@@ -618,13 +622,17 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
                     int start, stop;
 
                     if (annotate_subject) {
+                        CRef<CBioseq> seq_q = db_domain->SeqidToBioseq((*it)->GetSeq_id(1));
+                        CBioseq_Handle hdl_q = scope_q.AddBioseq(*seq_q);
+                        CRef<CBioseq> seq_s = db_V->SeqidToBioseq(master_align->GetSeq_id(1));
+                        CBioseq_Handle hdl_s = scope_s.AddBioseq(*seq_s);
                         CSeq_loc query, subject;
                         query.SetWhole();
                         query.SetId((*it)->GetSeq_id(1));
                         subject.SetWhole();
                         subject.SetId(master_align->GetSeq_id(1));
-                        SSeqLoc q_loc(&query, &(*scope));
-                        SSeqLoc s_loc(&subject, &(*scope));
+                        SSeqLoc q_loc(&query, &scope_q);
+                        SSeqLoc s_loc(&subject, &scope_s);
                         CBl2Seq bl2seq(q_loc, s_loc, (m_IgOptions->m_IsProtein)? eBlastp: eBlastn);
                         const CSearchResults& result = (*(bl2seq.RunEx()))[0];
                         if (result.HasAlignments()) {
@@ -633,6 +641,8 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
                             d_start = subject_align->GetSeqStart(0);
                             d_stop = subject_align->GetSeqStop(0);
                         }
+                        scope_q.RemoveBioseq(hdl_q);
+                        scope_s.RemoveBioseq(hdl_s);
                     }
 
                     for (int i =0; i<10; i+=2) {
