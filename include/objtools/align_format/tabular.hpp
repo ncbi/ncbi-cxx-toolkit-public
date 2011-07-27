@@ -263,6 +263,9 @@ protected:
     int m_QueryStart;        ///< Starting offset in query
     int m_QueryEnd;          ///< Ending offset in query
     int m_QueryFrame;        ///< query frame
+    int m_SubjectStart;      ///< Starting offset in subject
+    int m_SubjectEnd;        ///< Ending offset in subject 
+    int m_SubjectFrame;      ///< subject frame
 
 private:
 
@@ -279,9 +282,6 @@ private:
     int m_NumGapOpens;       ///< Number of gap openings in this HSP
     int m_NumIdent;          ///< Number of identities in this HSP
     int m_NumPositives;      ///< Number of positives in this HSP
-    int m_SubjectStart;      ///< Starting offset in subject
-    int m_SubjectEnd;        ///< Ending offset in subject 
-    int m_SubjectFrame;      ///< subject frame
     /// Map of field enum values to field names.
     map<string, ETabularField> m_FieldMap; 
     list<ETabularField> m_FieldsToShow; ///< Which fields to show?
@@ -425,12 +425,15 @@ public:
 
     /// struct containing annotated domain information
     struct SIgDomain {
-        SIgDomain(const string& n, int s, int e):
-            name(n), start(s), end(e), length(0),
+        SIgDomain(const string& n, int s, int e, int ss, int se):
+            name(n), start(s), end(e), 
+            s_start(ss), s_end(se), length(0),
             num_match(0), num_mismatch(0), num_gap(0) {};
         const string name;
         int start;
-        int end;
+        int end;  // actual end + 1
+        int s_start;
+        int s_end;  // actual end + 1
         int length;
         int num_match;
         int num_mismatch;
@@ -520,9 +523,10 @@ public:
     };
 
     /// Set domain info
-    void AddIgDomain(const string &name, int start, int end) {
+    void AddIgDomain(const string &name, int start, int end, 
+                     int s_start=-1, int s_end=-1) {
         if (start <0 || end <= start) return;
-        SIgDomain * domain = new SIgDomain(name, start, end);
+        SIgDomain * domain = new SIgDomain(name, start, end, s_start, s_end);
         x_ComputeIgDomain(*domain);
         m_IgDomains.push_back(domain);
     };

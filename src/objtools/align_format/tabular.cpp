@@ -1010,11 +1010,16 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
     }
 
     // Domain info coordinates are inclusive (and always on positive strand)
-    AddIgDomain("FWR1", annot->m_DomainInfo[0], annot->m_DomainInfo[1]+1);
-    AddIgDomain("CDR1", annot->m_DomainInfo[2], annot->m_DomainInfo[3]+1);
-    AddIgDomain("FWR2", annot->m_DomainInfo[4], annot->m_DomainInfo[5]+1);
-    AddIgDomain("CDR2", annot->m_DomainInfo[6], annot->m_DomainInfo[7]+1);
-    AddIgDomain("FWR3", annot->m_DomainInfo[8], annot->m_DomainInfo[9]+1);
+    AddIgDomain("FWR1", annot->m_DomainInfo[0], annot->m_DomainInfo[1]+1,
+                        annot->m_DomainInfo_S[0], annot->m_DomainInfo_S[1]+1);
+    AddIgDomain("CDR1", annot->m_DomainInfo[2], annot->m_DomainInfo[3]+1,
+                        annot->m_DomainInfo_S[2], annot->m_DomainInfo_S[3]+1);
+    AddIgDomain("FWR2", annot->m_DomainInfo[4], annot->m_DomainInfo[5]+1,
+                        annot->m_DomainInfo_S[4], annot->m_DomainInfo_S[5]+1);
+    AddIgDomain("CDR2", annot->m_DomainInfo[6], annot->m_DomainInfo[7]+1,
+                        annot->m_DomainInfo_S[6], annot->m_DomainInfo_S[7]+1);
+    AddIgDomain("FWR3", annot->m_DomainInfo[8], annot->m_DomainInfo[9]+1,
+                        annot->m_DomainInfo_S[8], annot->m_DomainInfo_S[9]+1);
     AddIgDomain("CDR3 (V region only)", annot->m_DomainInfo[10], annot->m_DomainInfo[11]+1);
 };
 
@@ -1273,30 +1278,36 @@ void CIgBlastTabularInfo::x_PrintIgGenes(bool isHtml, const string& header) cons
 
 void CIgBlastTabularInfo::x_ComputeIgDomain(SIgDomain &domain)
 {
-    int pos = 0;
-    unsigned int i = 0;
-    while (pos < domain.start - m_QueryStart +1 && i < m_QuerySeq.size()) {
-        if (m_QuerySeq[i] != '-') ++pos;
+    int q_pos = 0, s_pos = 0;  // query and subject co-ordinate (translated)
+    unsigned int i = 0;  // i is the alignment co-ordinate
+    // m_QueryStart and m_SubjectStart are 1-based
+    while ( (q_pos < domain.start - m_QueryStart +1 
+          || s_pos < domain.s_start - m_SubjectStart +1)
+          && i < m_QuerySeq.size()) {
+        if (m_QuerySeq[i] != '-') ++q_pos;
+        if (m_SubjectSeq[i] != '-') ++s_pos;
         ++i;
     }
-    while (pos < domain.end - m_QueryStart +1 && i < m_QuerySeq.size()) {
+    while ( (q_pos < domain.end - m_QueryStart +1 
+          || s_pos < domain.s_end - m_SubjectStart +1)
+          && i < m_QuerySeq.size()) {
         if (m_QuerySeq[i] != '-') {
-            ++pos;
+            ++q_pos;
             if (m_QuerySeq[i] == m_SubjectSeq[i]) {
+                ++s_pos;
                 ++domain.num_match;
             } else if (m_SubjectSeq[i] != '-') {
+                ++s_pos;
                 ++domain.num_mismatch;
             } else {
                 ++domain.num_gap;
             }
         } else {
+            ++s_pos;
             ++domain.num_gap;
         }
         ++domain.length;
         ++i;
-    }
-    if (domain.start + domain.length < domain.end) {
-        domain.end = domain.start + domain.length;
     }
 };
 
