@@ -4178,7 +4178,12 @@ void CDisplaySeqalign::x_GetDomainInfo(int row_num, int aln_stop,
                                                               (int)(*iter)->subject_seqloc->GetInt().GetTo());  
                         }   
                     }
-                    s_MakeDomainString(min(alnFrom,last_aln_to +1), alnTo, (*iter)->domain_name, final_domain);
+                    int actual_aln_from = min(alnFrom,last_aln_to +1);
+                    if (actual_aln_from > alnTo) {
+                        //domain is not correct, no showing
+                        return;
+                    }
+                    s_MakeDomainString(actual_aln_from, alnTo, (*iter)->domain_name, final_domain);
                     
                     last_aln_to = alnTo;
                     
