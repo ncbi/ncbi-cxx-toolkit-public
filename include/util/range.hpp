@@ -333,6 +333,14 @@ public:
             return IntersectionWith(r).NotEmpty();
         }
 
+    bool AbuttingWith(const TThisType& r) const
+        {
+            if (Empty()  ||  IsWhole()  ||  r.Empty()  ||  r.IsWhole()) {
+                return false;
+            }
+            return GetToOpen() == r.GetFrom()  ||  GetFrom() == r.GetToOpen();
+        }
+
     // combine ranges
     TThisType& CombineWith(const TThisType& r)
         {
