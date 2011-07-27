@@ -429,18 +429,6 @@ public:
     ///   SetFlags
     void Test(void);
 
-    /// Return archive size as if all specified input entries were put in it.
-    /// Note that the return value is not the exact but the upper bound of
-    /// what the archive size can be expected.  This call does not recurse
-    /// into any subdirectries but relies solely upon the information as
-    /// passed via the parameter.
-    ///
-    /// The returned size includes all necessary alignments and padding.
-    /// @return
-    ///   An upper estimate of archive size given that all specified files
-    ///   were stored in it (the actual size may turn out to be smaller).
-    Uint8 EstimateArchiveSize(const TFiles& files) const;
-
 
     //------------------------------------------------------------------------
     // Utility functions
@@ -488,6 +476,20 @@ public:
     ///   GetBaseDir
     void SetBaseDir(const string& dirname);
 
+    /// Return archive size as if all specified input entries were put in it.
+    /// Note that the return value is not the exact but the upper bound of
+    /// what the archive size can be expected.  This call does not recurse
+    /// into any subdirectries but relies solely upon the information as
+    /// passed via the parameter.
+    ///
+    /// The returned size includes all necessary alignments and padding.
+    /// @return
+    ///   An upper estimate of archive size given that all specified files
+    ///   were stored in it (the actual size may turn out to be smaller).
+    static Uint8 EstimateArchiveSize(const TFiles& files,
+                                     size_t blocking_factor = 20,
+                                     const string& base_dir = kEmptyStr);
+
 
     //------------------------------------------------------------------------
     // Streaming
@@ -519,8 +521,8 @@ public:
     /// (even of size 0).  The ownership of the pointer is passed to the caller
     /// (so it has to be explicitly deleted when no longer needed).
     /// The IReader may be used to read all or part of data out of the entry
-    /// without affecting GetNextEntryInfo()'s ability to find any succeeding
-    /// entry.
+    /// without affecting GetNextEntryInfo()'s ability to find the next entry
+    /// in the archive.
     /// See test suite (in test/test_tar.cpp) for a usage example.
     /// @return
     ///   Pointer to IReader, or 0 if the current entry is not a file.
@@ -551,7 +553,7 @@ protected:
     //------------------------------------------------------------------------
 
     /// Return false to skip the current entry when reading;
-    /// return code gets ignored when writing.
+    /// the return code gets ignored when writing.
     ///
     /// Note that this callback can prescreen multiple copies of the same
     /// entry in case the archive has been updated (so only the last copy is
@@ -561,7 +563,7 @@ protected:
     { return true; }
 
 private:
-    /// Archive action
+    /// Archive open mode and action
     enum EOpenMode {
         eNone = 0,
         eWO   = 1,
@@ -636,13 +638,7 @@ private:
     const char* x_ReadArchive (size_t& n);
     void        x_WriteArchive(size_t  n, const char* buffer = 0);
 
-    // Check path and convert it to an archive name.
-    string x_ToArchiveName(const string& path) const;
-
-    // Convert from entry name to path in file system.
-    string x_ToFilesystemPath(const string& name) const;
-
-    // Append an entry from file system to the archive.
+    // Append an entry from the file system to the archive.
     auto_ptr<TEntries> x_Append(const string& name, const TEntries* toc = 0);
 
     // Append an entry from istream to the archive.
@@ -651,7 +647,7 @@ private:
     // Append data from istream to the archive.
     void x_AppendStream(const string& name, istream& is);
 
-    // Append a regular file (current entry) to the archive.
+    // Append a regular file to the archive.
     void x_AppendFile(const string& file);
 
 private:
@@ -697,6 +693,7 @@ void CTar::Close(void)
 {
     x_Flush();
     x_Close();
+    m_Bad = false;
 }
 
 inline
@@ -748,7 +745,7 @@ void CTar::SetFlags(TFlags flags)
 }
 
 inline
-void CTar::SetMask(CMask *mask, EOwnership own)
+void CTar::SetMask(CMask* mask, EOwnership own)
 {
     UnsetMask();
     m_Mask      = mask;

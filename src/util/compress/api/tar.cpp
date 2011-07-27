@@ -1238,7 +1238,7 @@ CTar::CTar(const string& filename, size_t blocking_factor)
     : m_FileName(filename),
       m_FileStream(new CNcbiFstream),
       m_OpenMode(eNone),
-      m_Stream(0),
+      m_Stream(m_FileStream),
       m_BufferSize(SIZE_OF(blocking_factor)),
       m_BufferPos(0),
       m_StreamPos(0),
@@ -1326,9 +1326,10 @@ void CTar::x_Init(void)
 void CTar::x_Flush(bool no_throw)
 {
     m_Current.m_Name.erase();
-    if (!m_Stream  ||  !m_OpenMode  ||  !m_Modified) {
+    if (m_Bad  ||  !m_OpenMode  ||  !m_Modified) {
         return;
     }
+    _ASSERT(m_Stream);
     _ASSERT(m_OpenMode == eRW);
     _ASSERT(m_BufferSize >= m_BufferPos);
     size_t pad = m_BufferSize - m_BufferPos;
@@ -1338,7 +1339,7 @@ void CTar::x_Flush(bool no_throw)
     _ASSERT(!(m_BufferPos % m_BufferSize)); // m_BufferSize if write error
     _ASSERT(!m_Bad == !m_BufferPos);
     if (!m_Bad
-        &&  (pad < BLOCK_SIZE || pad - OFFSET_OF(pad) < (BLOCK_SIZE << 1))) {
+        &&  (pad < BLOCK_SIZE  ||  pad - OFFSET_OF(pad) < (BLOCK_SIZE << 1))) {
         // Write EOT (two zero blocks), if have not already done so by padding
         memset(m_Buffer, 0, m_BufferSize - pad);
         x_WriteArchive(m_BufferSize, no_throw ? (const char*)(-1L) : 0);
@@ -1363,17 +1364,13 @@ void CTar::x_Flush(bool no_throw)
 
 void CTar::x_Close(void)
 {
-    if (!m_OpenMode) {
-        return;
-    }
     if (m_FileStream  &&  m_FileStream->is_open()) {
         m_FileStream->close();
-        m_Stream = 0;
-        m_Bad = false;
     }
     m_OpenMode  = eNone;
     m_BufferPos = 0;
     m_StreamPos = 0;
+    m_Bad = false;
 }
 
 
@@ -1398,7 +1395,7 @@ void CTar::x_Open(EAction action)
         if (m_Bad || !m_Stream || !m_Stream->good() || !m_Stream->rdbuf()) {
             m_OpenMode = eNone;
             TAR_THROW(this, eOpen,
-                      "Bad IO stream provided for archive");
+                      "Archive IO stream is in bad state");
         } else {
             m_OpenMode = EOpenMode(int(action) & eRW);
         }
@@ -1411,6 +1408,7 @@ void CTar::x_Open(EAction action)
         }
 #endif // NCBI_OS_MSWIN
     } else {
+        _ASSERT(m_Stream == m_FileStream);
         EOpenMode mode = EOpenMode(int(action) & eRW);
         _ASSERT(mode != eNone);
         if (mode != eWO  &&  action != eAppend) {
@@ -1419,7 +1417,7 @@ void CTar::x_Open(EAction action)
             m_Current.m_Name.erase();
         }
         if (mode == eWO  ||  m_OpenMode < mode) {
-            x_Close();
+            x_Close();  // NB: m_OpenMode = eNone
             switch (mode) {
             case eWO:
                 // WO access
@@ -1449,10 +1447,11 @@ void CTar::x_Open(EAction action)
                           "Cannot open archive '" + m_FileName + '\''
                           + s_OSReason(x_errno));
             }
-            m_Stream = m_FileStream;
-            m_Bad = false;
+        } else if (m_Bad) {
+            _ASSERT(m_OpenMode);
+            TAR_THROW(this, eOpen,
+                      "Archive '" + m_FileName + "' is in bad state");
         }
-
         if (m_OpenMode) {
             _ASSERT(action != eCreate);
             if (action != eAppend  &&  action != eInternal) {
@@ -1472,6 +1471,7 @@ void CTar::x_Open(EAction action)
         }
     }
     _ASSERT(m_Stream);
+    _ASSERT(m_Stream->good());
     _ASSERT(m_Stream->rdbuf());
 }
 
@@ -1510,44 +1510,6 @@ const CTarEntryInfo* CTar::GetNextEntryInfo(void)
 
     _ASSERT(m_Current == *temp->begin());
     return &m_Current;
-}
-
-
-Uint8 CTar::EstimateArchiveSize(const TFiles& files) const
-{
-    Uint8 result = 0;
-
-    ITERATE(TFiles, f, files) {
-        // Count in the file size
-        result += BLOCK_SIZE/*header*/ + ALIGN_SIZE(f->second);
-
-        // Count in the long name (if any)
-        string path = x_ToFilesystemPath(f->first);
-        string name = x_ToArchiveName(path);
-        size_t namelen = name.length() + 1;
-        if (namelen > sizeof(((SHeader*) 0)->name)) {
-            result += BLOCK_SIZE/*long name header*/ + ALIGN_SIZE(namelen);
-        }
-    }
-    if (result) {
-        result += BLOCK_SIZE << 1; // EOT
-        Uint8 incomplete = result % m_BufferSize;
-        if (incomplete) {
-            result += m_BufferSize - incomplete;
-        }
-    }
-
-    return result;
-}
-
-
-void CTar::SetBaseDir(const string& dirname)
-{
-    m_BaseDir = CDirEntry::AddTrailingPathSeparator(dirname);
-#ifdef NCBI_OS_MSWIN
-    // Replace backslashes with forward slashes
-    NStr::ReplaceInPlace(m_BaseDir, "\\", "/");
-#endif // NCBI_OS_MSWIN
 }
 
 
@@ -3231,15 +3193,26 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
 }
 
 
-string CTar::x_ToFilesystemPath(const string& name) const
+static string s_BaseDir(const string& dirname)
 {
-    string path(CDirEntry::IsAbsolutePath(name)  ||  m_BaseDir.empty()
-                ? name : CDirEntry::ConcatPath(m_BaseDir, name));
+    string retval = CDirEntry::AddTrailingPathSeparator(dirname);
+#ifdef NCBI_OS_MSWIN
+    // Replace backslashes with forward slashes
+    NStr::ReplaceInPlace(retval, "\\", "/");
+#endif // NCBI_OS_MSWIN
+    return retval;
+}
+
+
+static string s_ToFilesystemPath(const string& base_dir, const string& name)
+{
+    string path(CDirEntry::IsAbsolutePath(name)  ||  base_dir.empty()
+                ? name : CDirEntry::ConcatPath(base_dir, name));
     return CDirEntry::NormalizePath(path);
 }
 
 
-string CTar::x_ToArchiveName(const string& path) const
+static string s_ToArchiveName(const string& base_dir, const string& path)
 {
     // NB: Path assumed to have been normalized
     string retval = CDirEntry::AddTrailingPathSeparator(path);
@@ -3254,9 +3227,9 @@ string CTar::x_ToArchiveName(const string& path) const
 
     bool absolute;
     // Remove leading base dir from the path
-    if (!m_BaseDir.empty()  &&  NStr::StartsWith(retval, m_BaseDir, how)) {
-        if (retval.length() > m_BaseDir.length()) {
-            retval.erase(0, m_BaseDir.length()/*separator too*/);
+    if (!base_dir.empty()  &&  NStr::StartsWith(retval, base_dir, how)) {
+        if (retval.length() > base_dir.length()) {
+            retval.erase(0, base_dir.length()/*separator too*/);
         } else {
             retval.assign(".", 1);
         }
@@ -3269,7 +3242,7 @@ string CTar::x_ToArchiveName(const string& path) const
 
 #ifdef NCBI_OS_MSWIN
     _ASSERT(!retval.empty());
-    // Remove disk name if present
+    // Remove a disk name if present
     if (isalpha((unsigned char) retval[0])  &&  retval.find(":") == 1) {
         pos = 2;
     }
@@ -3290,13 +3263,6 @@ string CTar::x_ToArchiveName(const string& path) const
         retval.erase(pos);
     }
 
-    // Check on '..'
-    if (retval == ".."  ||  NStr::StartsWith(retval, "../")  ||
-        NStr::EndsWith(retval, "/..")  ||  retval.find("/../") != NPOS) {
-        TAR_THROW(this, eBadName,
-                  "Name '" + retval + "' embeds parent directory ('..')");
-    }
-
     if (absolute) {
         retval.insert((SIZE_TYPE) 0, 1, '/');
     }
@@ -3313,7 +3279,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
                                        eFollowLinks : eIgnoreLinks);
 
     // Compose entry name for relative names
-    string path = x_ToFilesystemPath(name);
+    string path = s_ToFilesystemPath(m_BaseDir, name);
 
     // Get direntry information
     CDirEntry entry(path);
@@ -3328,11 +3294,18 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
     // Create the entry info
     m_Current = CTarEntryInfo(m_StreamPos);
 
-    m_Current.m_Name = x_ToArchiveName(path);
+    string temp = s_ToArchiveName(m_BaseDir, path);
+    list<CTempString> elems;
+    NStr::Split(name, "/", elems);
+    if (find(elems.begin(), elems.end(), "..") != elems.end()) {
+        TAR_THROW(this, eBadName,
+                  "Name '" + temp + "' embeds parent directory ('..')");
+    }
+    elems.clear();
+    m_Current.m_Name.swap(temp);
     if (type == CDirEntry::eDir  &&  m_Current.m_Name != "/") {
         m_Current.m_Name += '/';
-    }
-    if (m_Current.GetName().empty()) {
+    } else if (m_Current.GetName().empty()) {
         TAR_THROW(this, eBadName,
                   "Empty entry name not allowed");
     }
@@ -3379,14 +3352,14 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
             string temp;
             REVERSE_ITERATE(TEntries, e, *toc) {
                 if (!temp.empty()) {
-                    if (e->GetType() == CTarEntryInfo::eHardLink
-                        ||  temp != x_ToFilesystemPath(e->GetName())) {
+                    if (e->GetType() == CTarEntryInfo::eHardLink  ||
+                        temp != s_ToFilesystemPath(m_BaseDir, e->GetName())) {
                         continue;
                     }
-                } else if (path == x_ToFilesystemPath(e->GetName())) {
+                } else if (path == s_ToFilesystemPath(m_BaseDir,e->GetName())){
                     found = true;
                     if (e->GetType() == CTarEntryInfo::eHardLink) {
-                        temp = x_ToFilesystemPath(e->GetLinkName());
+                        temp = s_ToFilesystemPath(m_BaseDir, e->GetLinkName());
                         continue;
                     }
                 } else {
@@ -3605,6 +3578,44 @@ void CTar::x_AppendFile(const string& file)
     }
 
     x_AppendStream(file, ifs);
+}
+
+
+void CTar::SetBaseDir(const string& dirname)
+{
+    s_BaseDir(dirname).swap(m_BaseDir);
+}
+
+
+Uint8 CTar::EstimateArchiveSize(const TFiles& files,
+                                size_t blocking_factor,
+                                const string& base_dir)
+{
+    const size_t buffer_size = SIZE_OF(blocking_factor);
+    string basedir = s_BaseDir(base_dir);
+    Uint8 result = 0;
+
+    ITERATE(TFiles, f, files) {
+        // Count in the file size
+        result += BLOCK_SIZE/*header*/ + ALIGN_SIZE(f->second);
+
+        // Count in the long name (if any)
+        string path = s_ToFilesystemPath(basedir, f->first);
+        string name = s_ToArchiveName(basedir, path);
+        size_t namelen = name.length() + 1;
+        if (namelen > sizeof(((SHeader*) 0)->name)) {
+            result += BLOCK_SIZE/*long name header*/ + ALIGN_SIZE(namelen);
+        }
+    }
+    if (result) {
+        result += BLOCK_SIZE << 1; // EOT
+        Uint8 incomplete = result % buffer_size;
+        if (incomplete) {
+            result += buffer_size - incomplete;
+        }
+    }
+
+    return result;
 }
 
 
