@@ -819,27 +819,20 @@ s_GetTestApp(void)
 void
 CNcbiTestApplication::Init(void)
 {
-    if (m_UserFuncs[eTestUserFuncCmdLine].empty()) {
-        // No user function - no parameter parsing.
-        // Now this call is not conforming to parameter type but conforming to
-        // the implemented behavior.
-        DisableArgDescriptions(true);
-    }
-    else {
-        m_ArgDescrs = new CArgDescriptions();
-        m_ArgDescrs->AddFlag("-help",
-             "Print test framework related command line arguments");
-        m_ArgDescrs->AddOptionalKey("-run_test", "Filter",
-             "Allows to filter which test units to run",
-             CArgDescriptions::eString, CArgDescriptions::fMandatorySeparator);
-        m_ArgDescrs->AddFlag("dryrun",
-                             "Do not actually run tests, "
-                             "just print list of all available tests.");
-        m_ArgDescrs->SetUsageContext(GetArguments().GetProgramBasename(),
-                                     "NCBI unit test");
+    m_ArgDescrs = new CArgDescriptions();
+    m_ArgDescrs->AddFlag("-help",
+         "Print test framework related command line arguments");
+    m_ArgDescrs->AddOptionalKey("-run_test", "Filter",
+         "Allows to filter which test units to run",
+         CArgDescriptions::eString, CArgDescriptions::fMandatorySeparator);
+    m_ArgDescrs->AddFlag("dryrun",
+                         "Do not actually run tests, "
+                         "just print list of all available tests.");
+    m_ArgDescrs->SetUsageContext(GetArguments().GetProgramBasename(),
+                                 "NCBI unit test");
+    if (m_UserFuncs[eTestUserFuncCmdLine].empty())
         x_CallUserFuncs(eTestUserFuncCmdLine);
-        SetupArgDescriptions(m_ArgDescrs.release());
-    }
+    SetupArgDescriptions(m_ArgDescrs.release());
 }
 
 int
