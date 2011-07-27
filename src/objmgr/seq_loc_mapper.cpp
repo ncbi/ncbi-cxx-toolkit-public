@@ -521,6 +521,8 @@ public:
                                  TSynonyms&            synonyms)
         {
             m_PrevInfo->CollectSynonyms(id, synonyms);
+            // Add this set of synonyms only if they match the requested id.
+            if (m_Synonyms.find(id) == m_Synonyms.end()) return;
             ITERATE(TSynonymsSet, it, m_Synonyms) {
                 synonyms.insert(*it);
             }
