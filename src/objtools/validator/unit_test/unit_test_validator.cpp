@@ -143,15 +143,22 @@ void CExpectedError::Test(const CValidErrItem& err_item)
     BOOST_CHECK_EQUAL(msg, m_ErrMsg);
 }
 
+static bool s_debugMode = false;
 
-void WriteErrors(const CValidError& eval)
+void WriteErrors(const CValidError& eval, bool debug_mode)
 {
+    if (debug_mode) {
+        printf ("\n-\n");
+    }
     for ( CValidError_CI vit(eval); vit; ++vit) {
         string description =  vit->GetAccession() + ":"
                 + CValidErrItem::ConvertSeverity(vit->GetSeverity()) + ":"
                 + vit->GetErrCode() + ":"
                 + vit->GetMsg();
         printf ("%s\n", description.c_str());
+    }
+    if (debug_mode) {
+        printf ("\n\n");
     }
 }
 
@@ -161,6 +168,11 @@ void CheckErrors(const CValidError& eval,
 {
     size_t err_pos = 0;
     bool   problem_found = false;
+
+    if (s_debugMode) {
+        WriteErrors (eval, true);
+        return;
+    }
 
     for ( CValidError_CI vit(eval); vit; ++vit) {
         while (err_pos < expected_errors.size() && !expected_errors[err_pos]) {
@@ -186,7 +198,7 @@ void CheckErrors(const CValidError& eval,
         ++err_pos;
     }
     if (problem_found) {
-        WriteErrors (eval);
+        WriteErrors (eval, false);
     }
 }
 
@@ -1939,6 +1951,25 @@ static void SetErrorsAccessions (vector< CExpectedError *> & expected_errors, st
     size_t i, len = expected_errors.size();
     for (i = 0; i < len; i++) {
         expected_errors[i]->SetAccession(accession);
+    }
+}
+
+NCBITEST_INIT_CMDLINE(arg_desc)
+{
+    // Here we make descriptions of command line parameters that we are
+    // going to use.
+
+    arg_desc->AddFlag( "debug_mode",
+        "Debugging mode writes errors seen for each test" );
+}
+
+NCBITEST_AUTO_INIT()
+{
+    // initialization function body
+
+    const CArgs& args = CNcbiApplication::Instance()->GetArgs();
+    if (args["debug_mode"]) {
+        s_debugMode = true;
     }
 }
 
@@ -4480,10 +4511,6 @@ BOOST_AUTO_TEST_CASE(Test_SeqLitGapLength0)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    CLEAR_ERRORS
-    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "SeqLitGapLength0", "Gap of length 0 in delta chain"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "SeqLitGapFuzzNot100", "Gap of unknown length should have length 100"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDeltaSeq", "Last delta seq component is a gap"));
     // some kinds of fuzz don't trigger other kind of error
     delta_seq->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_gt);
     eval = validator.Validate(seh, options);
@@ -4508,7 +4535,6 @@ BOOST_AUTO_TEST_CASE(Test_SeqLitGapLength0)
     expected_errors[0]->SetSeverity(eDiag_Warning);
     expected_errors[0]->SetAccession("AY123456");
     expected_errors[1]->SetAccession("AY123456");
-    expected_errors[2]->SetAccession("AY123456");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -4522,12 +4548,6 @@ BOOST_AUTO_TEST_CASE(Test_SeqLitGapLength0)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    CLEAR_ERRORS
-    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "SeqLitGapLength0", "Gap of length 0 in delta chain"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDeltaSeq", "Last delta seq component is a gap"));
-    expected_errors[0]->SetSeverity(eDiag_Warning);
-    expected_errors[0]->SetAccession("AY123456");
-    expected_errors[1]->SetAccession("AY123456");
     delta_seq->SetLiteral().ResetFuzz();
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -17901,7 +17921,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_DensegLenStart)
     align->SetSegs().SetDenseg().SetNumseg(2);
 
     int dim = 0;
-    int len = 0;
 
     FOR_EACH_SEQENTRY_ON_SEQSET (s, entry->GetSet()) {
         dim++;
