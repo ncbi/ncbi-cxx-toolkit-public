@@ -13,6 +13,7 @@ digraph NetScheduleNew {
 
     Pending     -> Running          [ label = "GET\nWGET\nJXCG" ];
     Pending     -> Canceled         [ label = "CANCEL" ];
+    Pending     -> Done             [ label = "PUT\nJXCG" ];
 
     Running     -> Pending          [ label = "RETURN" ];
     Running     -> Canceled         [ label = "CANCEL" ];
