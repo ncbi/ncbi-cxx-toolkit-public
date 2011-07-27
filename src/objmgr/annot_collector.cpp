@@ -1750,7 +1750,6 @@ void CAnnot_Collector::x_Sort(void)
 }
 
 
-inline
 bool
 CAnnot_Collector::x_MatchLimitObject(const CAnnotObject_Info& object) const
 {
