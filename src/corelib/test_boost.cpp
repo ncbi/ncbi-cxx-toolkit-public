@@ -830,7 +830,7 @@ CNcbiTestApplication::Init(void)
                          "just print list of all available tests.");
     m_ArgDescrs->SetUsageContext(GetArguments().GetProgramBasename(),
                                  "NCBI unit test");
-    if (m_UserFuncs[eTestUserFuncCmdLine].empty())
+    if (!m_UserFuncs[eTestUserFuncCmdLine].empty())
         x_CallUserFuncs(eTestUserFuncCmdLine);
     SetupArgDescriptions(m_ArgDescrs.release());
 }
