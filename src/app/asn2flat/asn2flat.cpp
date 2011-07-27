@@ -532,7 +532,7 @@ bool CAsn2FlatApp::HandleSeqEntry(CRef<CSeq_entry>& se)
     // Needed because we can really accumulate a lot of junk otherwise,
     // and we end up with significant slowdown due to repeatedly doing
     // linear scans on a growing CScope.
-    m_Scope->RemoveTopLevelSeqEntry( entry );
+    m_Scope->ResetDataAndHistory();
     return ret;
 }
 
