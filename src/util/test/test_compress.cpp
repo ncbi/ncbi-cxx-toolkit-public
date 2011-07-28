@@ -119,11 +119,11 @@ void CTestCompressor<TCompression, TCompressionFile,
            << ((last_errcode == kUnknownErr) ? 
                   "?" : NStr::IntToString(last_errcode)) << ", "
            << ((src_len == kUnknown) ? 
-                  "?" : NStr::UIntToString((unsigned long)src_len)) << " -> "
+                  "?" : NStr::SizetToString(src_len)) << " -> "
            << ((out_len == kUnknown) ? 
-                  "?" : NStr::UIntToString((unsigned long)out_len)) << ", limit "
+                  "?" : NStr::SizetToString(out_len)) << ", limit "
            << ((dst_len == kUnknown) ? 
-                  "?" : NStr::UIntToString((unsigned long)dst_len))
+                  "?" : NStr::SizetToString(dst_len))
     );
 }
 

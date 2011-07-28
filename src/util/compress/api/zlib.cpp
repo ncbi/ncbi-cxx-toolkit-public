@@ -647,7 +647,7 @@ string CZipCompression::FormatErrorMessage(string where,
         pos = STREAM->total_in;
     }
     str += ";  error code = " + NStr::IntToString(GetErrorCode()) +
-           ", number of processed bytes = " + NStr::UIntToString(pos);
+           ", number of processed bytes = " + NStr::ULongToString(pos);
     return str + ".";
 }
 
