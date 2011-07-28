@@ -397,7 +397,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_AppendUserHeader
  * delete existing tags from the old user header, e.g. "My-Tag:\r\n" deletes
  * a first appearence (if any) of "My-Tag: [<value>]" from the user header.
  * Unmatched tags with non-empty values are simply added to the existing user
- * header (as with "Append" above).
+ * header (as with "Append" above).  Noop if "header" is an empty string ("").
  * Return non-zero if successful, otherwise return 0 to indicate an error.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_OverrideUserHeader

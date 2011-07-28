@@ -84,7 +84,7 @@ protected:
 
     virtual int          sync(void);
 
-    // declared setbuf here to only throw an exception at run-time
+    // declare setbuf here to only throw an exception at run-time
     virtual streambuf*   setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
 
 private:
@@ -305,7 +305,7 @@ void CPushback_Streambuf::x_FillBuffer(streamsize max_size)
             bp = new CT_CHAR_TYPE[buf_size];
         }
         streamsize n = m_Sb->sgetn(bp ? bp : (CT_CHAR_TYPE*) m_DelPtr,
-                                   min(buf_size, max_size));
+                                   buf_size < max_size ? buf_size : max_size);
         if (n <= 0) {
             // NB: For unknown reasons WorkShop6 can return -1 from sgetn :-/
             delete[] bp;
