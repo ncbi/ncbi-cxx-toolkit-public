@@ -53,7 +53,11 @@ BEGIN_NCBI_SCOPE
 /// on an immediate request, version or access time
 /// based replacement (or another implementation specific depreciation rule).
 ///
-/// Cache elements are accessed by key-subkey pair, and are versioned.
+/// Cache elements are accessed by key-subkey pair, and there can exist more
+/// than one version of the "same" (that correspond to the same
+/// key-subkey pair) element.
+/// @note  Not all of the cache implementations are actually capable of
+///        storing more than one version of the same element.
 ///
 
 class ICache
@@ -166,7 +170,7 @@ public:
                        const void*    data,
                        size_t         size,
                        unsigned int   time_to_live = 0,
-                       const string&  owner = kEmptyStr) = 0;
+                       const string&  owner        = kEmptyStr) = 0;
 
     /// Check if BLOB exists, return BLOB size.
     ///
