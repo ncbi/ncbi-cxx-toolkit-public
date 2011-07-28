@@ -580,7 +580,7 @@ TTypeInfo CStdTypeInfo<bool>::GetTypeInfoNullBool(void)
 
 CTypeInfo* CStdTypeInfo<bool>::CreateTypeInfoNullBool(void)
 {
-    CPrimitiveTypeInfo* info = new CPrimitiveTypeInfoBool;
+    CNullTypeInfo* info = new CNullTypeInfo();
     typedef CNullBoolFunctions TFunctions;
     info->SetMemFunctions(&TFunctions::Create, &TFunctions::IsDefault,
                           &TFunctions::SetDefault,&TFunctions::Equals,
