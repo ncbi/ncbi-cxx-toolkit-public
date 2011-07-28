@@ -139,6 +139,11 @@ public:
     /// Get row index
     unsigned int RowIdx(const TRow& row) const;
 
+    /// Get column name
+    const TColumn& Column(unsigned int idx) const;
+    /// Get row name
+    const TRow& Row(unsigned int idx) const;
+
     /// Access table element by index
     const TValueType& GetCell(unsigned int row_idx, unsigned int col_idx) const;
 
@@ -428,6 +433,32 @@ CNcbiTable<TValue, TRow, TColumn>::RowIdx(const TRow& row) const
           eRowNotFound, "Row not found.");
     }
     return it->second;
+}
+
+template<class TValue, class TRow, class TColumn>
+const TColumn&
+CNcbiTable<TValue, TRow, TColumn>::Column(unsigned int idx) const
+{
+    typename TColumnMap::const_iterator it = m_ColumnMap.begin();
+    for(it=m_ColumnMap.begin(); it!=m_ColumnMap.end(); ++it) {
+        if ( (*it).second == idx )
+            return (*it).first;
+    }
+
+    NCBI_THROW(CNcbiTable_Exception, eColumnNotFound, "Column not found.");   
+}
+
+template<class TValue, class TRow, class TColumn>
+const TRow&
+CNcbiTable<TValue, TRow, TColumn>::Row(unsigned int idx) const
+{
+    typename TRowMap::const_iterator it = m_RowMap.begin();
+    for(it=m_RowMap.begin(); it!=m_RowMap.end(); ++it) {
+        if ( (*it).second == idx )
+            return (*it).first;
+    }
+
+    NCBI_THROW(CNcbiTable_Exception, eRowNotFound, "Row not found.");  
 }
 
 template<class TValue, class TRow, class TColumn>
