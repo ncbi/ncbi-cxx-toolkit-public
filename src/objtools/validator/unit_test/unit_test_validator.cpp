@@ -9783,8 +9783,11 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubInfo)
         CheckErrors (*eval, expected_errors);
         pub->SetArticle().SetFrom().SetJournal().SetImp().SetPubstatus(ePubStatus_aheadofprint);
         pub->SetArticle().SetFrom().SetJournal().SetImp().SetPrepub(CImprint::ePrepub_in_press);
+        expected_errors.push_back(new CExpectedError(*id_it, eDiag_Warning, "PublicationInconsistency",
+                                  "In-press is not expected to have page numbers"));
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
+        CLEAR_ERRORS
 
         entry->SetDescr().Set().pop_back();
     }
@@ -10094,18 +10097,24 @@ BOOST_AUTO_TEST_CASE(Test_Generic_PublicationInconsistency)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
     pub->SetArticle().SetFrom().SetJournal().SetImp().SetPubstatus(ePubStatus_epublish);
     pub->SetArticle().SetFrom().SetJournal().SetImp().SetPrepub(CImprint::ePrepub_in_press);
-    expected_errors[0]->SetErrMsg("Electronic-only publication should not also be in-press");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "PublicationInconsistency",
+                                                 "In-press is not expected to have page numbers"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "PublicationInconsistency",
+                                                 "Electronic-only publication should not also be in-press"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     pub->SetArticle().SetFrom().SetJournal().SetImp().ResetPubstatus();
     pub->SetArticle().SetFrom().SetJournal().SetImp().ResetPrepub();
     
+    CLEAR_ERRORS
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "PublicationInconsistency",
+                                                 "Empty consortium"));
     CRef<CAuthor> consortium(new CAuthor());
     consortium->SetName().SetConsortium("");
     pub->SetArticle().SetAuthors().SetNames().SetStd().push_back(consortium);
-    expected_errors[0]->SetErrMsg("Empty consortium");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -10369,6 +10378,12 @@ BOOST_AUTO_TEST_CASE(Test_Generic_UnexpectedPubStatusComment)
     pub->SetArticle().SetFrom().SetJournal().SetImp().SetPubstatus(ePubStatus_ppublish);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "PublicationInconsistency",
+                              "In-press is not expected to have page numbers"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "UnexpectedPubStatusComment",
+                                                 "Publication status is in comment for pmid 0"));
     
     pub->SetArticle().SetFrom().SetJournal().SetImp().SetPubstatus(ePubStatus_aheadofprint);
     pub->SetArticle().SetFrom().SetJournal().SetImp().SetPrepub(CImprint::ePrepub_in_press);
