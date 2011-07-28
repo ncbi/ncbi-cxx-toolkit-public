@@ -4250,7 +4250,7 @@ NTLN	s	County Record Office, County Archives Department
 NTM<FRA>	s	Museum d'Histoire Naturelle de Nantes
 NTN	s	Central Museum and Art Gallery
 NTNU	s	National Taiwan Normal University
-NTOU	c	Institute of Marine Biology, National Taiwan Ocean University
+NTOU	sc	Institute of Marine Biology, National Taiwan Ocean University
 NTS	s	Nevada Operations Office, U.S. Department of Energy
 NTSC	s	University of North Texas, Biological Sciences Department
 NTUC	s	National Taiwan University
