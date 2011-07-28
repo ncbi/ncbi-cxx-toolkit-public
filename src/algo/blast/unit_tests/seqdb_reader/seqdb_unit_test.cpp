@@ -4008,7 +4008,8 @@ BOOST_AUTO_TEST_CASE(TestOidNotFoundWithUserAliasFileAndGiList)
 BOOST_AUTO_TEST_CASE(TestSpaceInDbName)
 {
 	// SVN does not allow filename with space, so we need to make one up on the fly
-	system("cp data/swiss_cheese.pal 'data/test space.pal'");
+	int rv = system("cp data/swiss_cheese.pal 'data/test space.pal'");
+    BOOST_REQUIRE_EQUAL(0, rv);
 	string db_name = "\"data/test space\"";
     CSeqDB dbs(db_name, CSeqDB::eProtein);
 
