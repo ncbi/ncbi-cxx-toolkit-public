@@ -265,7 +265,7 @@ TJobStatus CJobStatusTracker::ChangeStatus(unsigned   job_id,
         ReportInvalidStatus(job_id, status, old_status);
         break;
 
-    case CNetScheduleAPI::eReturned:
+    case STemporaryEventCodes::eReturned:
         _ASSERT(0);
         break;
 

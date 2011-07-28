@@ -421,9 +421,6 @@ int CTestNetScheduleStress::Run(void)
         case CNetScheduleAPI::ePending:
             NcbiCout << "Job pending: " << jk << NcbiEndl;
             break;
-        case CNetScheduleAPI::eReturned:
-            NcbiCout << "Job returned: " << jk << NcbiEndl;
-            break;
         default:
             break;
         }

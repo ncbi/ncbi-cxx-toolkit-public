@@ -53,6 +53,13 @@ typedef bm::bvector<TMemAlloc>                              TNSBitVector;
 
 typedef Uint4                                               TNSJobId;
 
+struct STemporaryEventCodes {
+    enum {
+        eReturned = 2,
+        eTimeout = 9,
+        eReadTimeout = 10
+    };
+};
 
 END_NCBI_SCOPE
 

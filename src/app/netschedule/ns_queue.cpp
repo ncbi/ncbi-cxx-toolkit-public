@@ -917,7 +917,7 @@ TJobStatus  CQueue::ReturnJob(unsigned int  job_id, unsigned int  peer_addr)
 
         event = &job.AppendEvent();
         event->SetNodeAddr(peer_addr);
-        event->SetStatus(CNetScheduleAPI::eReturned);
+        event->SetStatus((TJobStatus) STemporaryEventCodes::eReturned);
         event->SetTimestamp(time(0));
 
         if (run_count)
@@ -932,7 +932,7 @@ TJobStatus  CQueue::ReturnJob(unsigned int  job_id, unsigned int  peer_addr)
     trans.Commit();
     RemoveJobFromWorkerNode(job, eNSCReturned);
     TimeLineRemove(job_id);
-    return CNetScheduleAPI::eReturned;
+    return (TJobStatus) STemporaryEventCodes::eReturned;
 }
 
 
@@ -2650,10 +2650,10 @@ void CQueue::x_CheckExecutionTimeout(unsigned   queue_run_timeout,
         status = GetJobStatus(job_id);
         if (status == CNetScheduleAPI::eRunning) {
             new_status = CNetScheduleAPI::ePending;
-            event_status = CNetScheduleAPI::eTimeout;
+            event_status = (TJobStatus) STemporaryEventCodes::eTimeout;
         } else if (status == CNetScheduleAPI::eReading) {
             new_status = CNetScheduleAPI::eDone;
-            event_status = CNetScheduleAPI::eReadTimeout;
+            event_status = (TJobStatus) STemporaryEventCodes::eReadTimeout;
         } else
             return; // Execution timeout is for Running and Reading jobs only
 
