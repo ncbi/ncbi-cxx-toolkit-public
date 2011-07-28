@@ -310,18 +310,18 @@ int/*bool*/ NcbiLog_Default_MTLock_Handler
 #if defined(NCBI_POSIX_THREADS)
     switch (action) {
         case eNcbiLog_MT_Init:
-            assert(pthread_mutex_init(&sx_MT_handle, 0) == 0);
+            verify(pthread_mutex_init(&sx_MT_handle, 0) == 0);
             break;
         case eNcbiLog_MT_Destroy:
             /* Mutex should be unlocked before destroying */
-            verify(pthread_mutex_unlock(&sx_MT_handle) == 0);
-            assert(pthread_mutex_destroy(&sx_MT_handle) == 0);
+            assert(pthread_mutex_unlock(&sx_MT_handle) == 0);
+            verify(pthread_mutex_destroy(&sx_MT_handle) == 0);
             break;
         case eNcbiLog_MT_Lock:
-            assert(pthread_mutex_lock(&sx_MT_handle) == 0);
+            verify(pthread_mutex_lock(&sx_MT_handle) == 0);
             break;
         case eNcbiLog_MT_Unlock:
-            assert(pthread_mutex_unlock(&sx_MT_handle) == 0);
+            verify(pthread_mutex_unlock(&sx_MT_handle) == 0);
             break;
     }
     return 1;
@@ -369,17 +369,17 @@ static DWORD         sx_Tls;
 
 static void s_TlsInit(void)
 {
-    verify(!sx_TlsIsInit);
+    assert(!sx_TlsIsInit);
     /* Create platform-dependent TLS key (index) */
 #if defined(NCBI_POSIX_THREADS)
-    assert(pthread_key_create(&sx_Tls, NULL) == 0);
+    verify(pthread_key_create(&sx_Tls, NULL) == 0);
     /* pthread_key_create does not reset the value to 0 if the key */
     /* has been used and deleted. */
-    assert(pthread_setspecific(sx_Tls, 0) == 0);
+    verify(pthread_setspecific(sx_Tls, 0) == 0);
     sx_TlsIsInit = 1;
 #elif defined(NCBI_WIN32_THREADS)
     sx_Tls = TlsAlloc();
-    assert(sx_Tls != TLS_OUT_OF_INDEXES);
+    verify(sx_Tls != TLS_OUT_OF_INDEXES);
     sx_TlsIsInit = 1 /*true*/;
 #else
     /* Do not use TLS */
@@ -389,9 +389,9 @@ static void s_TlsInit(void)
 
 static void s_TlsDestroy(void)
 {
-    verify(sx_TlsIsInit);
+    assert(sx_TlsIsInit);
 #if defined(NCBI_POSIX_THREADS)
-    assert(pthread_key_delete(sx_Tls) == 0);
+    verify(pthread_key_delete(sx_Tls) == 0);
 #elif defined(NCBI_WIN32_THREADS)
     TlsFree(sx_Tls);
 #else
@@ -404,7 +404,7 @@ static void s_TlsDestroy(void)
 static void* s_TlsGetValue(void)
 {
     void* ptr = NULL;
-    verify(sx_TlsIsInit);
+    assert(sx_TlsIsInit);
 #if defined(NCBI_POSIX_THREADS)
     ptr = pthread_getspecific(sx_Tls);
 #elif defined(NCBI_WIN32_THREADS)
@@ -421,11 +421,11 @@ static void* s_TlsGetValue(void)
 
 static void s_TlsSetValue(void* ptr)
 {
-    verify(sx_TlsIsInit);
+    assert(sx_TlsIsInit);
 #if defined(NCBI_POSIX_THREADS)
-    assert(pthread_setspecific(sx_Tls, ptr) == 0);
+    verify(pthread_setspecific(sx_Tls, ptr) == 0);
 #elif defined(NCBI_WIN32_THREADS)
-    assert(TlsSetValue(sx_Tls, ptr));
+    verify(TlsSetValue(sx_Tls, ptr));
 #else
     TROUBLE;
 #endif
@@ -439,8 +439,8 @@ static void s_TlsSetValue(void* ptr)
 
 /* Check initialization */
 #define CHECK_INIT           \
-    verify(sx_IsInit);       \
-    verify(sx_Info)
+    assert(sx_IsInit);       \
+    assert(sx_Info)
 
 
 /* Check initialization and acquire MT lock */
@@ -477,7 +477,7 @@ void s_AppStart(const char* argv[]);
 #define VERIFY(expr)         \
     if (!expr) {             \
         /* error */          \
-        verify(expr);        \
+        assert(expr);        \
         MT_UNLOCK;           \
         return;              \
     }
@@ -1125,7 +1125,7 @@ static int /*bool*/ s_SetLogFiles(const char* dir)
     char path[FILENAME_MAX + 1];
     int  n, nlen;
 
-    verify(dir);
+    assert(dir);
     n = strlen(dir);
     nlen = strlen(sx_Info->app_base_name);
 
@@ -1182,7 +1182,7 @@ static void s_InitDestination()
 {
     time_t now;
 
-    verify(sx_Info->destination != eNcbiLog_Disable);
+    assert(sx_Info->destination != eNcbiLog_Disable);
     if (sx_Info->file_log == stdin  ||  sx_Info->file_log == stdout) {
         /* We already have destination set to stdout/stderr -- don't need to reopen it */
         return;
@@ -1204,7 +1204,7 @@ static void s_InitDestination()
 
         /* Destination and file names didn't changed, just reopen files */
         if (sx_Info->reuse_file_names) {
-            verify(sx_Info->file_trace_name &&
+            assert(sx_Info->file_trace_name &&
                    sx_Info->file_log_name   &&
                    sx_Info->file_err_name   &&
                    sx_Info->file_perf_name);
@@ -1317,7 +1317,7 @@ static void s_GetContext(void)
         return;
     }
     /* Special case, context for current thread was already destroyed */
-    verify(sx_IsInit != 2);
+    assert(sx_IsInit != 2);
     /* Allocate memory for context */
     sx_Context = (TNcbiLog_Context*) malloc(sizeof(TNcbiLog_Context));
     assert(sx_Context);
@@ -1364,7 +1364,7 @@ static void s_Post(ENcbiLog_DiagFile diag)
         default:
             TROUBLE;
     }
-    verify(f);
+    assert(f);
 
     /* Write */
     fprintf(f, "%s\n", sx_Info->message);
@@ -1580,7 +1580,7 @@ extern void NcbiLog_Init(const char*               appname,
     if (sx_IsInit) {
         /* NcbiLog_Init() is already in progress or done */
         /* This function can be called only once         */
-        verify(!sx_IsInit);
+        assert(!sx_IsInit);
         /* error */
         return;
     }
@@ -1608,7 +1608,7 @@ extern void NcbiLog_Init(const char*               appname,
     s_GetContext();
 
     /* Create info structure */
-    verify(!sx_Info);
+    assert(!sx_Info);
     sx_Info = (TNcbiLog_Info*) malloc(sizeof(TNcbiLog_Info));
     assert(sx_Info);
     memset((char*)sx_Info, 0, sizeof(TNcbiLog_Info));
@@ -1702,8 +1702,8 @@ extern void NcbiLog_Destroy(void)
         sx_Info = NULL;
     }
     /* Destroy thread-specific context and TLS */
+    s_Destroy_Context();
     if (sx_TlsIsInit) {
-        s_Destroy_Context();
         s_TlsDestroy();
     }
     /* Destroy MT support */
@@ -1728,32 +1728,32 @@ static void s_SetState(ENcbiLog_AppState state)
                           : sx_Context->state;
     switch ( state ) {
         case eNcbiLog_AppBegin:
-            verify(sx_Info->state == eNcbiLog_NotSet);
+            assert(sx_Info->state == eNcbiLog_NotSet);
             sx_Info->state = state;
             sx_Context->state = state;
             break;
         case eNcbiLog_AppRun:
-            verify(sx_Info->state == eNcbiLog_AppBegin);
+            assert(sx_Info->state == eNcbiLog_AppBegin);
             sx_Info->state = state;
             sx_Context->state = state;
             break;
         case eNcbiLog_AppEnd:
-            verify(sx_Info->state != eNcbiLog_AppEnd);
+            assert(sx_Info->state != eNcbiLog_AppEnd);
             sx_Info->state = state;
             sx_Context->state = state;
             break;
         case eNcbiLog_RequestBegin:
-            verify(s == eNcbiLog_AppBegin  ||
+            assert(s == eNcbiLog_AppBegin  ||
                    s == eNcbiLog_AppRun    ||
                    s == eNcbiLog_RequestEnd);
             sx_Context->state = state;
             break;
         case eNcbiLog_Request:
-            verify(s == eNcbiLog_RequestBegin);
+            assert(s == eNcbiLog_RequestBegin);
             sx_Context->state = state;
             break;
         case eNcbiLog_RequestEnd:
-            verify(s == eNcbiLog_Request  ||
+            assert(s == eNcbiLog_Request  ||
                    s == eNcbiLog_RequestBegin);
             sx_Context->state = state;
             break;
