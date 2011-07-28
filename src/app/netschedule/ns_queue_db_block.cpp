@@ -72,11 +72,11 @@ void SQueueDbBlock::Open(CBDB_Env& env, const string& path, int pos_)
         job_info_db.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
 
         if (group_tables_for_queue)
-            tname = "runs";
+            tname = "events";
         else
-            fname = prefix + "_runs.db";
-        runs_db.SetEnv(env);
-        runs_db.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
+            fname = prefix + "_events.db";
+        events_db.SetEnv(env);
+        events_db.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
 
         if (group_tables_for_queue)
             tname = "deleted";
@@ -150,7 +150,7 @@ void SQueueDbBlock::Close()
     aff_dict_db.Close();
     affinity_idx.Close();
     deleted_jobs_db.Close();
-    runs_db.Close();
+    events_db.Close();
     job_info_db.Close();
     job_db.Close();
 }
@@ -164,7 +164,7 @@ void SQueueDbBlock::Truncate()
     aff_dict_db.SafeTruncate();
     affinity_idx.SafeTruncate();
     deleted_jobs_db.SafeTruncate();
-    runs_db.SafeTruncate();
+    events_db.SafeTruncate();
     job_info_db.SafeTruncate();
     job_db.SafeTruncate();
 

@@ -59,81 +59,71 @@ static string FormatTime(time_t t)
 
 
 //////////////////////////////////////////////////////////////////////////
-// CJobRun implementation
+// CJobEvent implementation
 
-CJobRun::CJobRun() :
+CJobEvent::CJobEvent() :
     m_Dirty(false),
     m_Status(CNetScheduleAPI::eJobNotFound),
-    m_TimeStart(0),
-    m_TimeDone(0),
+    m_Timestamp(0),
     m_NodeAddr(0),
     m_NodePort(0),
     m_RetCode(0)
 {}
 
 
-void CJobRun::SetStatus(TJobStatus status)
+void CJobEvent::SetStatus(TJobStatus status)
 {
     m_Dirty = true;
     m_Status = status;
 }
 
 
-void CJobRun::SetTimeStart(time_t  t)
+void CJobEvent::SetTimestamp(time_t  t)
 {
     m_Dirty = true;
     // Will suffice until 2038
-    m_TimeStart = (unsigned) t;
+    m_Timestamp = (unsigned) t;
 }
 
 
-void CJobRun::SetTimeDone(time_t  t)
-{
-    m_Dirty = true;
-    // Will suffice until 2038
-    m_TimeDone = (unsigned) t;
-}
-
-
-void CJobRun::SetNodeAddr(unsigned  node_ip)
+void CJobEvent::SetNodeAddr(unsigned  node_ip)
 {
     m_Dirty = true;
     m_NodeAddr = node_ip;
 }
 
 
-void CJobRun::SetNodePort(unsigned short  port)
+void CJobEvent::SetNodePort(unsigned short  port)
 {
     m_Dirty = true;
     m_NodePort = port;
 }
 
 
-void CJobRun::SetRetCode(int  retcode)
+void CJobEvent::SetRetCode(int  retcode)
 {
     m_Dirty = true;
     m_RetCode = retcode;
 }
 
 
-void CJobRun::SetNodeId(const string &  node_id)
+void CJobEvent::SetNodeId(const string &  node_id)
 {
     m_Dirty = true;
     m_NodeId = node_id.substr(0, kMaxWorkerNodeIdSize);
 }
 
 
-void CJobRun::SetErrorMsg(const string &  msg)
+void CJobEvent::SetErrorMsg(const string &  msg)
 {
     m_Dirty = true;
     m_ErrorMsg = msg.substr(0, kNetScheduleMaxDBErrSize);
 }
 
 
-static string  s_RunFieldNames[] = {
-    "run_status",
-    "time_start",
-    "time_done",
+static string  s_EventFieldNames[] = {
+    "event_status",
+    "timestamp",
     "node_addr",
     "node_port",
     "ret_code",
@@ -141,35 +131,33 @@ static string  s_RunFieldNames[] = {
     "err_msg"
 };
 
-int CJobRun::GetFieldIndex(const string &  name)
+int CJobEvent::GetFieldIndex(const string &  name)
 {
-    for (unsigned n = 0; n < sizeof(s_RunFieldNames) /
-                             sizeof(*s_RunFieldNames); ++n) {
-        if (name == s_RunFieldNames[n])
+    for (unsigned n = 0; n < sizeof(s_EventFieldNames) /
+                             sizeof(*s_EventFieldNames); ++n) {
+        if (name == s_EventFieldNames[n])
             return n;
     }
     return -1;
 }
 
 
-string CJobRun::GetField(int  index) const
+string CJobEvent::GetField(int  index) const
 {
     switch (index) {
-    case 0: // run_status
+    case 0: // event_status
         return CNetScheduleAPI::StatusToString(m_Status);
-    case 1: // time_start
-        return FormatTime(m_TimeStart);
-    case 2: // time_done
-        return FormatTime(m_TimeDone);
-    case 3: // node_addr
+    case 1: // timestamp
+        return FormatTime(m_Timestamp);
+    case 2: // node_addr
         return NStr::IntToString(m_NodeAddr);
-    case 4: // node_port
+    case 3: // node_port
         return NStr::IntToString(m_NodePort);
-    case 5: // ret_code
+    case 4: // ret_code
         return NStr::IntToString(m_RetCode);
-    case 6: // node_id
+    case 5: // node_id
         return m_NodeId;
-    case 7: // err_msg
+    case 6: // err_msg
         return m_ErrorMsg;
     }
     return "NULL";
@@ -190,6 +178,7 @@ CJob::CJob() :
     m_SubmPort(0),
     m_SubmTimeout(0),
     m_RunCount(0),
+    m_ReadCount(0),
     m_ReadGroup(0),
     m_AffinityId(0),
     m_Mask(0)
@@ -207,6 +196,7 @@ CJob::CJob(const SJS_Request&  request, unsigned submAddr) :
     m_SubmPort(request.port),
     m_SubmTimeout(request.timeout),
     m_RunCount(0),
+    m_ReadCount(0),
     m_ReadGroup(0),
     m_ProgressMsg(request.param1),
     m_AffinityId(0),
@@ -285,6 +275,13 @@ void CJob::SetRunCount(unsigned  count)
 }
 
 
+void CJob::SetReadCount(unsigned  count)
+{
+    m_ReadCount = count;
+    m_Dirty |= fJobPart;
+}
+
+
 void CJob::SetReadGroup(unsigned  group)
 {
     m_ReadGroup = group;
@@ -335,10 +332,10 @@ void CJob::SetClientSID(const string &  client_sid)
 }
 
 
-void CJob::SetRuns(const vector<CJobRun> &  runs)
+void CJob::SetEvents(const vector<CJobEvent> &  events)
 {
-    m_Runs = runs;
-    m_Dirty |= fRunsPart;
+    m_Events = events;
+    m_Dirty |= fEventsPart;
 }
 
 
@@ -405,12 +402,13 @@ static string  s_JobFieldNames[] = {
     "subm_port",
     "subm_timeout",
     "run_count",
+    "read_count",
     "read_group",
     "affinity",
     "mask",
     "client_ip",
     "client_sid",
-    "runs",
+    "events",
     "input",
     "output",
     "progress_msg"
@@ -447,68 +445,66 @@ string CJob::GetField(int index) const
         return NStr::IntToString(m_SubmTimeout);
     case 8:  // run_count
         return NStr::IntToString(m_RunCount);
-    case 9:  // read_group
+    case 9:  // read-count
+        return NStr::IntToString(m_ReadCount);
+    case 10:  // read_group
         return NStr::IntToString(m_ReadGroup);
-    case 10: // affinity
+    case 11: // affinity
         return m_AffinityToken;
-    case 11: // mask
+    case 12: // mask
         return NStr::IntToString(m_Mask);
-    case 12: // client_ip
+    case 13: // client_ip
         return m_ClientIP;
-    case 13: // client_sid
+    case 14: // client_sid
         return m_ClientSID;
-    case 14: // runs
-        return NStr::IntToString(m_Runs.size());
-    case 15: // input
+    case 15: // events
+        return NStr::IntToString(m_Events.size());
+    case 16: // input
         return m_Input;
-    case 16: // output
+    case 17: // output
         return m_Output;
-    case 17: // progress_msg
+    case 18: // progress_msg
         return m_ProgressMsg;
     }
     return "NULL";
 }
 
 
-CJobRun& CJob::AppendRun()
+CJobEvent &  CJob::AppendEvent()
 {
-    m_Runs.push_back(CJobRun());
-    m_Dirty |= fRunsPart;
-    return m_Runs[m_Runs.size()-1];
+    m_Events.push_back(CJobEvent());
+    m_Dirty |= fEventsPart;
+    return m_Events[m_Events.size()-1];
 }
 
 
-const CJobRun* CJob::GetLastRun() const
+const CJobEvent *  CJob::GetLastEvent() const
 {
-    if (m_Runs.empty())
+    if (m_Events.empty())
         return NULL;
 
-    return &(m_Runs[m_Runs.size()-1]);
+    return &(m_Events[m_Events.size()-1]);
 }
 
 
-CJobRun* CJob::GetLastRun()
+CJobEvent *  CJob::GetLastEvent()
 {
-    if (m_Runs.empty())
+    if (m_Events.empty())
         return NULL;
 
-    m_Dirty |= fRunsPart;
-    return &(m_Runs[m_Runs.size()-1]);
+    m_Dirty |= fEventsPart;
+    return &(m_Events[m_Events.size()-1]);
 }
+
 
 time_t  CJob::GetLastUpdateTime(void) const
 {
-    if (m_Runs.empty())
+    if (m_Events.empty())
         return m_TimeSubmit;    // The job had no attempts to be executed
 
-    vector<CJobRun>::const_reverse_iterator     last_run = m_Runs.rbegin();
-    if (m_Status == CNetScheduleAPI::eRunning ||
-        m_Status == CNetScheduleAPI::eReading)
-        return last_run->GetTimeStart();
-
-    // Done, Failed, Canceled, Returned, Confirmed, ReadFailed
-    return last_run->GetTimeDone();
+    return m_Events[m_Events.size()-1].GetTimestamp();
 }
+
 
 time_t  CJob::GetJobExpirationTime(time_t  queue_timeout,
                                    time_t  queue_run_timeout) const
@@ -550,9 +546,9 @@ void CJob::Delete()
 
 CJob::EJobFetchResult CJob::Fetch(CQueue* queue)
 {
-    SQueueDB&       job_db      = queue->m_QueueDbBlock->job_db;
-    SJobInfoDB&     job_info_db = queue->m_QueueDbBlock->job_info_db;
-    SRunsDB&        runs_db     = queue->m_QueueDbBlock->runs_db;
+    SQueueDB &      job_db      = queue->m_QueueDbBlock->job_db;
+    SJobInfoDB &    job_info_db = queue->m_QueueDbBlock->job_info_db;
+    SEventsDB &     events_db   = queue->m_QueueDbBlock->events_db;
 
     m_Id          = job_db.id;
 
@@ -566,6 +562,7 @@ CJob::EJobFetchResult CJob::Fetch(CQueue* queue)
     m_SubmTimeout = job_db.subm_timeout;
 
     m_RunCount    = job_db.run_counter;
+    m_ReadCount   = job_db.read_counter;
     m_ReadGroup   = job_db.read_group;
     m_AffinityId  = job_db.aff_id;
     // TODO: May be it is safe (from the locking viewpoint) and easy
@@ -583,7 +580,8 @@ CJob::EJobFetchResult CJob::Fetch(CQueue* queue)
     m_ProgressMsg = job_db.progress_msg;
 
     // JobInfoDB, can be optimized by adding lazy load
-    EBDB_ErrCode    res;
+    EBDB_ErrCode        res;
+
     job_info_db.id = m_Id;
     if ((res = job_info_db.Fetch()) != eBDB_Ok) {
         if (res != eBDB_NotFound) {
@@ -599,29 +597,28 @@ CJob::EJobFetchResult CJob::Fetch(CQueue* queue)
             job_info_db.output.ToString(m_Output);
     }
 
-    // RunsDB
-    m_Runs.clear();
-    CBDB_FileCursor&        cur = queue->GetRunsCursor();
+    // EventsDB
+    m_Events.clear();
+    CBDB_FileCursor &       cur = queue->GetEventsCursor();
     CBDB_CursorGuard        cg(cur);
 
     cur.SetCondition(CBDB_FileCursor::eEQ);
     cur.From << m_Id;
 
     for (unsigned n = 0; (res = cur.Fetch()) == eBDB_Ok; ++n) {
-        CJobRun&        run = AppendRun();
+        CJobEvent &       event = AppendEvent();
 
-        run.m_Status     = TJobStatus(int(runs_db.status));
-        run.m_TimeStart  = runs_db.time_start;
-        run.m_TimeDone   = runs_db.time_done;
-        run.m_NodeAddr   = runs_db.node_addr;
-        run.m_NodePort   = runs_db.node_port;
-        run.m_RetCode    = runs_db.ret_code;
-        runs_db.node_id.ToString(run.m_NodeId);
-        runs_db.err_msg.ToString(run.m_ErrorMsg);
-        run.m_Dirty = false;
+        event.m_Status     = TJobStatus(int(events_db.status));
+        event.m_Timestamp  = events_db.timestamp;
+        event.m_NodeAddr   = events_db.node_addr;
+        event.m_NodePort   = events_db.node_port;
+        event.m_RetCode    = events_db.ret_code;
+        events_db.node_id.ToString(event.m_NodeId);
+        events_db.err_msg.ToString(event.m_ErrorMsg);
+        event.m_Dirty = false;
     }
     if (res != eBDB_NotFound) {
-        ERR_POST("Error reading queue runs db, job_key " <<
+        ERR_POST("Error reading queue events db, job_key " <<
                  queue->MakeKey(m_Id));
         return eJF_DBErr;
     }
@@ -632,9 +629,10 @@ CJob::EJobFetchResult CJob::Fetch(CQueue* queue)
 }
 
 
-CJob::EJobFetchResult CJob::Fetch(CQueue* queue, unsigned id)
+CJob::EJobFetchResult  CJob::Fetch(CQueue *  queue, unsigned  id)
 {
-    SQueueDB&       job_db = queue->m_QueueDbBlock->job_db;
+    SQueueDB &      job_db = queue->m_QueueDbBlock->job_db;
+
     job_db.id = id;
 
     EBDB_ErrCode    res = job_db.Fetch();
@@ -668,9 +666,9 @@ bool CJob::Flush(CQueue* queue)
     }
     _ASSERT(!m_AffinityToken.size() || m_AffinityId);
 
-    SQueueDB&       job_db      = queue->m_QueueDbBlock->job_db;
-    SJobInfoDB&     job_info_db = queue->m_QueueDbBlock->job_info_db;
-    SRunsDB&        runs_db     = queue->m_QueueDbBlock->runs_db;
+    SQueueDB &      job_db      = queue->m_QueueDbBlock->job_db;
+    SJobInfoDB &    job_info_db = queue->m_QueueDbBlock->job_info_db;
+    SEventsDB &     events_db   = queue->m_QueueDbBlock->events_db;
 
     bool            flush_job = (m_Dirty & fJobPart) || m_New;
     bool            input_overflow = m_Input.size() > kNetScheduleSplitSize;
@@ -690,6 +688,7 @@ bool CJob::Flush(CQueue* queue)
         job_db.subm_timeout = m_SubmTimeout;
 
         job_db.run_counter  = m_RunCount;
+        job_db.read_counter = m_ReadCount;
         job_db.read_group   = m_ReadGroup;
         job_db.aff_id       = m_AffinityId;
         job_db.mask         = m_Mask;
@@ -742,24 +741,23 @@ bool CJob::Flush(CQueue* queue)
             job_info_db.Delete(CBDB_File::eIgnoreError);
     }
 
-    // RunsDB
+    // EventsDB
     unsigned n = 0;
-    NON_CONST_ITERATE(vector<CJobRun>, it, m_Runs) {
-        CJobRun&        run = *it;
+    NON_CONST_ITERATE(vector<CJobEvent>, it, m_Events) {
+        CJobEvent &         event = *it;
 
-        if (run.m_Dirty) {
-            runs_db.id          = m_Id;
-            runs_db.run         = n;
-            runs_db.status      = int(run.m_Status);
-            runs_db.time_start  = run.m_TimeStart;
-            runs_db.time_done   = run.m_TimeDone;
-            runs_db.node_addr   = run.m_NodeAddr;
-            runs_db.node_port   = run.m_NodePort;
-            runs_db.ret_code    = run.m_RetCode;
-            runs_db.node_id     = run.m_NodeId;
-            runs_db.err_msg     = run.m_ErrorMsg;
-            runs_db.UpdateInsert();
-            run.m_Dirty = false;
+        if (event.m_Dirty) {
+            events_db.id          = m_Id;
+            events_db.event       = n;
+            events_db.status      = int(event.m_Status);
+            events_db.timestamp   = event.m_Timestamp;
+            events_db.node_addr   = event.m_NodeAddr;
+            events_db.node_port   = event.m_NodePort;
+            events_db.ret_code    = event.m_RetCode;
+            events_db.node_id     = event.m_NodeId;
+            events_db.err_msg     = event.m_ErrorMsg;
+            events_db.UpdateInsert();
+            event.m_Dirty = false;
         }
         ++n;
     }

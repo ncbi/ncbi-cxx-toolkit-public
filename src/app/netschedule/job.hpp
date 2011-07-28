@@ -44,24 +44,22 @@ BEGIN_NCBI_SCOPE
 typedef pair<string, string> TNSTag;
 typedef list<TNSTag> TNSTagList;
 
-// Forward for CJob/CJobRun friendship
+// Forward for CJob/CJobEvent friendship
 class CQueue;
 class CAffinityDictGuard;
 struct SJS_Request;
 
 // Instantiation of a Job on a Worker Node
 class CJob;
-class CJobRun
+class CJobEvent
 {
 public:
-    CJobRun();
+    CJobEvent();
     // setters/getters
     TJobStatus GetStatus() const
     { return m_Status; }
-    unsigned GetTimeStart() const
-    { return m_TimeStart; }
-    unsigned GetTimeDone() const
-    { return m_TimeDone; }
+    unsigned GetTimestamp() const
+    { return m_Timestamp; }
     unsigned GetNodeAddr() const
     { return m_NodeAddr; }
     unsigned short GetNodePort() const
@@ -76,8 +74,7 @@ public:
     { return "'" + NStr::PrintableString(m_ErrorMsg) + "'"; }
 
     void SetStatus(TJobStatus status);
-    void SetTimeStart(time_t t);
-    void SetTimeDone(time_t t);
+    void SetTimestamp(time_t t);
     void SetNodeAddr(unsigned node_ip);
     void SetNodePort(unsigned short port);
     void SetRetCode(int retcode);
@@ -93,11 +90,10 @@ private:
     // Service fields
     bool            m_Dirty;
 
-    // SRunsDB fields
-    // id, run - implicit
-    TJobStatus      m_Status;      ///< final job status for this run
-    unsigned        m_TimeStart;   ///< job start time
-    unsigned        m_TimeDone;    ///< job result submission time
+    // SEventDB fields
+    // id, event - implicit
+    TJobStatus      m_Status;      ///< Job status for this event
+    unsigned        m_Timestamp;   ///< event timestamp
     unsigned        m_NodeAddr;    ///< IP of a client (typically, worker node)
     unsigned short  m_NodePort;    ///< Notification port of a client
     int             m_RetCode;     ///< Return code
@@ -108,7 +104,7 @@ private:
 class CBDB_Transaction;
 
 // Internal representation of a Job
-// mirrors database tables SQueueDB, SJobInfoDB, and SRunsDB
+// mirrors database tables SQueueDB, SJobInfoDB, and SEventsDB
 class CJob
 {
 public:
@@ -116,7 +112,7 @@ public:
     enum EPart {
         fJobPart     = 1 << 0, ///< SQueueDB part
         fJobInfoPart = 1 << 1, ///< SJobInfoDB part
-        fRunsPart    = 1 << 2  ///< SRunsDB part
+        fEventsPart  = 1 << 2  ///< SEventsDB part
     };
     enum EJobFetchResult {
         eJF_Ok       = 0,
@@ -147,6 +143,8 @@ public:
 
     unsigned       GetRunCount() const
     { return m_RunCount; }
+    unsigned       GetReadCount() const
+    { return m_ReadCount; }
     unsigned       GetReadGroup() const
     { return m_ReadGroup; }
     const string&  GetProgressMsg() const
@@ -166,8 +164,8 @@ public:
     const string&  GetClientSID() const
     { return m_ClientSID; }
 
-    const vector<CJobRun>& GetRuns() const
-    { return m_Runs; }
+    const vector<CJobEvent>& GetEvents() const
+    { return m_Events; }
     const TNSTagList& GetTags() const
     { return m_Tags; }
     const string&  GetInput() const
@@ -190,6 +188,7 @@ public:
     void           SetSubmTimeout(unsigned t);
 
     void           SetRunCount(unsigned count);
+    void           SetReadCount(unsigned count);
     void           SetReadGroup(unsigned group);
     void           SetProgressMsg(const string& msg);
     void           SetAffinityId(unsigned aff_id);
@@ -199,7 +198,7 @@ public:
     void           SetClientIP(const string& client_ip);
     void           SetClientSID(const string& client_sid);
 
-    void           SetRuns(const vector<CJobRun>& runs);
+    void           SetEvents(const vector<CJobEvent>& events);
     void           SetTags(const TNSTagList& tags);
     void           SetTags(const string& strtags);
     void           SetInput(const string& input);
@@ -210,9 +209,9 @@ public:
     string         GetField(int index) const;
 
     // manipulators
-    CJobRun&        AppendRun();
-    const CJobRun * GetLastRun() const;
-    CJobRun*        GetLastRun();
+    CJobEvent &         AppendEvent();
+    const CJobEvent *   GetLastEvent() const;
+    CJobEvent *         GetLastEvent();
 
     // Time related helpers
     time_t          GetLastUpdateTime(void) const;
@@ -244,42 +243,43 @@ public:
 private:
     void x_ParseTags(const string& strtags, TNSTagList& tags);
     // Service flags
-    bool            m_New;     ///< Object should be inserted, not updated
-    bool            m_Deleted; ///< Object with this id should be deleted
-    unsigned        m_Dirty;
+    bool                m_New;     ///< Object should be inserted, not updated
+    bool                m_Deleted; ///< Object with this id should be deleted
+    unsigned            m_Dirty;
 
     // Reflection of database structures
 
     // Reside in SQueueDB table
-    unsigned        m_Id;
-    TJobStatus      m_Status;
-    unsigned        m_TimeSubmit;    ///< Job submit time
-    unsigned        m_Timeout;       ///<     individual timeout
-    unsigned        m_RunTimeout;    ///<     job run timeout
+    unsigned            m_Id;
+    TJobStatus          m_Status;
+    unsigned            m_TimeSubmit;    ///< Job submit time
+    unsigned            m_Timeout;       ///<     individual timeout
+    unsigned            m_RunTimeout;    ///<     job run timeout
 
-    unsigned        m_SubmAddr;      ///< netw BO (for notification)
-    unsigned short  m_SubmPort;      ///< notification port
-    unsigned        m_SubmTimeout;   ///< notification timeout
+    unsigned            m_SubmAddr;      ///< netw BO (for notification)
+    unsigned short      m_SubmPort;      ///< notification port
+    unsigned            m_SubmTimeout;   ///< notification timeout
 
-    unsigned        m_RunCount;      ///< since last reschedule
-    unsigned        m_ReadGroup;
-    string          m_ProgressMsg;
+    unsigned            m_RunCount;      ///< since last reschedule
+    unsigned            m_ReadCount;
+    unsigned            m_ReadGroup;
+    string              m_ProgressMsg;
 
-    unsigned        m_AffinityId;
-    string          m_AffinityToken;
+    unsigned            m_AffinityId;
+    string              m_AffinityToken;
 
-    unsigned        m_Mask;
+    unsigned            m_Mask;
 
-    string          m_ClientIP;
-    string          m_ClientSID;
+    string              m_ClientIP;
+    string              m_ClientSID;
 
-    // Resides in SRunsDB table
-    vector<CJobRun> m_Runs;
+    // Resides in SEventsDB table
+    vector<CJobEvent>   m_Events;
 
     // Reside in SJobInfoDB table (input and output - if over limit)
-    TNSTagList      m_Tags;
-    string          m_Input;
-    string          m_Output;
+    TNSTagList          m_Tags;
+    string              m_Input;
+    string              m_Output;
 };
 
 

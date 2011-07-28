@@ -366,7 +366,7 @@ void CNetScheduleHandler::OnOpen(void)
 
     // Log the fact of opened connection
     m_ConnContext.Reset(new CRequestContext());
-    m_ConnContext->SetRequestID();
+    m_ConnReqId = NStr::UInt8ToString(m_ConnContext->SetRequestID());
 
     CDiagnosticsGuard   guard(this);
     if (m_Server->IsLog()) {
@@ -1114,7 +1114,7 @@ void CNetScheduleHandler::x_ProcessBatchSequenceEnd(CQueue*)
 
 void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
 {
-    switch (q->Cancel(m_JobReq.job_id)) {
+    switch (q->Cancel(m_JobReq.job_id, m_PeerAddr)) {
         case CNetScheduleAPI::eJobNotFound:
             WriteMessage("OK:WARNING:Job not found;");
             break;
@@ -1177,7 +1177,7 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
                 "\t,", aff_list, NStr::eNoMergeDelims);
 
     CJob            job;
-    q->PutResultGetJob(m_WorkerNode, 0, 0, 0, &aff_list, &job);
+    q->PutResultGetJob(m_WorkerNode, m_PeerAddr, 0, 0, 0, &aff_list, &job);
 
     if (job.GetId())
         WriteMessage("OK:", x_FormGetJobResponse(q, job));
@@ -1201,7 +1201,7 @@ void CNetScheduleHandler::x_ProcessWaitGet(CQueue* q)
                 "\t,", aff_list, NStr::eNoMergeDelims);
 
     CJob                job;
-    q->PutResultGetJob(m_WorkerNode, 0,0,0, &aff_list, &job);
+    q->PutResultGetJob(m_WorkerNode, m_PeerAddr, 0,0,0, &aff_list, &job);
 
     if (job.GetId()) {
         WriteMessage("OK:", x_FormGetJobResponse(q, job));
@@ -1221,7 +1221,7 @@ void CNetScheduleHandler::x_ProcessWaitGet(CQueue* q)
 void CNetScheduleHandler::x_ProcessPut(CQueue* q)
 {
     string      output = NStr::ParseEscapes(m_JobReq.output);
-    q->PutResultGetJob(m_WorkerNode, m_JobReq.job_id,
+    q->PutResultGetJob(m_WorkerNode, m_PeerAddr, m_JobReq.job_id,
                        m_JobReq.job_return_code, &output, 0, 0);
     WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
@@ -1236,7 +1236,7 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
 
     CJob                job;
     string output = NStr::ParseEscapes(m_JobReq.output);
-    q->PutResultGetJob(m_WorkerNode, m_JobReq.job_id,
+    q->PutResultGetJob(m_WorkerNode, m_PeerAddr, m_JobReq.job_id,
                        m_JobReq.job_return_code, &output,
                        // GetJob params
                        &aff_list, &job);
@@ -1278,7 +1278,7 @@ void CNetScheduleHandler::x_ProcessGetMessage(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessPutFailure(CQueue* q)
 {
-    q->FailJob(m_WorkerNode, m_JobReq.job_id,
+    q->FailJob(m_WorkerNode, m_PeerAddr, m_JobReq.job_id,
                NStr::ParseEscapes(m_JobReq.err_msg),
                NStr::ParseEscapes(m_JobReq.output),
                m_JobReq.job_return_code);
@@ -1297,7 +1297,7 @@ void CNetScheduleHandler::x_ProcessDropQueue(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessReturn(CQueue* q)
 {
-    if (q->ReturnJob(m_JobReq.job_id) == CNetScheduleAPI::eReturned)
+    if (q->ReturnJob(m_JobReq.job_id, m_PeerAddr) == CNetScheduleAPI::eReturned)
         WriteMessage("OK:");
     else
         WriteMessage("ERR:Job not found");
@@ -1570,7 +1570,7 @@ void CNetScheduleHandler::x_ProcessRegisterClient(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessUnRegisterClient(CQueue* q)
 {
-    q->UnRegisterNotificationListener(m_WorkerNode);
+    q->UnRegisterNotificationListener(m_WorkerNode, m_PeerAddr);
     WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
 }
@@ -1765,7 +1765,7 @@ void CNetScheduleHandler::x_ProcessReading(CQueue* q)
 void CNetScheduleHandler::x_ProcessConfirm(CQueue* q)
 {
     TNSBitVector    jobs = NS_DecodeBitVector(m_JobReq.output);
-    q->ConfirmJobs(m_JobReq.count, jobs);
+    q->ConfirmJobs(m_JobReq.count, jobs, m_PeerAddr);
     WriteMessage("OK:");
 
     if (m_Server->IsLog()) {
@@ -1784,7 +1784,7 @@ void CNetScheduleHandler::x_ProcessReadFailed(CQueue* q)
 {
     TNSBitVector        jobs = NS_DecodeBitVector(m_JobReq.output);
 //    m_JobReq.err_msg; we still don't (and probably, won't) use this
-    q->FailReadingJobs(m_JobReq.count, jobs);
+    q->FailReadingJobs(m_JobReq.count, jobs, m_PeerAddr);
     WriteMessage("OK:");
 
     if (m_Server->IsLog()) {
@@ -1802,7 +1802,7 @@ void CNetScheduleHandler::x_ProcessReadFailed(CQueue* q)
 void CNetScheduleHandler::x_ProcessReadRollback(CQueue* q)
 {
     TNSBitVector        jobs = NS_DecodeBitVector(m_JobReq.output);
-    q->ReturnReadingJobs(m_JobReq.count, jobs);
+    q->ReturnReadingJobs(m_JobReq.count, jobs, m_PeerAddr);
     WriteMessage("OK:");
 
     if (m_Server->IsLog()) {
@@ -1831,7 +1831,7 @@ void CNetScheduleHandler::x_ProcessInitWorkerNode(CQueue* q)
 
     if (old_id != new_id) {
         if (!old_id.empty())
-            q->ClearWorkerNode(m_WorkerNode, "replaced by new node");
+            q->ClearWorkerNode(m_WorkerNode, m_PeerAddr, "replaced by new node");
 
         q->GetWorkerNodeList().SetId(m_WorkerNode, new_id);
     }
@@ -1843,8 +1843,8 @@ void CNetScheduleHandler::x_ProcessInitWorkerNode(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessClearWorkerNode(CQueue* q)
 {
-    q->ClearWorkerNode(
-        m_JobReq.param1.substr(0, kMaxWorkerNodeIdSize), "cleared");
+    q->ClearWorkerNode(m_JobReq.param1.substr(0, kMaxWorkerNodeIdSize),
+                       m_PeerAddr, "cleared");
 
     WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
@@ -2047,6 +2047,7 @@ void CNetScheduleHandler::x_PrintRequestStart(const SParsedCmd& cmd)
         ctxt_extra.Print("_type", "cmd");
         ctxt_extra.Print("cmd", cmd.command->cmd);
         ctxt_extra.Print("peer", GetSocket().GetPeerAddress(eSAF_IP));
+        ctxt_extra.Print("conn", m_ConnReqId);
 
         // SUMBIT parameters should not be logged. The new job attributes will
         // be logged when a new job is actually submitted.

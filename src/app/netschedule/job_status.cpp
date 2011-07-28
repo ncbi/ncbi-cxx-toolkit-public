@@ -245,6 +245,7 @@ TJobStatus CJobStatusTracker::ChangeStatus(unsigned   job_id,
             status_updated = true;
             break;
         }
+
         ReportInvalidStatus(job_id, status, old_status);
         break;
 
@@ -275,14 +276,13 @@ TJobStatus CJobStatusTracker::ChangeStatus(unsigned   job_id,
             old_status = CNetScheduleAPI::eCanceled;
             break;
         }
-        if (old_status == CNetScheduleAPI::eJobNotFound) {
-            // The job has not been found
+        if (old_status != CNetScheduleAPI::eJobNotFound) {
+            x_SetClearStatusNoLock(job_id, status, old_status);
+            status_updated = true;
             break;
         }
 
-        // All the other states allow canceling
-        x_SetClearStatusNoLock(job_id, status, old_status);
-        status_updated = true;
+        // Job not found - do nothing
         break;
 
     case CNetScheduleAPI::eFailed:
@@ -310,6 +310,14 @@ TJobStatus CJobStatusTracker::ChangeStatus(unsigned   job_id,
         }
 
         old_status = IsStatusNoLock(job_id,
+                                   CNetScheduleAPI::eReading);
+        if (old_status != CNetScheduleAPI::eJobNotFound) {
+            x_SetClearStatusNoLock(job_id, status, old_status);
+            status_updated = true;
+            break;
+        }
+
+        old_status = IsStatusNoLock(job_id,
                                     CNetScheduleAPI::eCanceled,
                                     CNetScheduleAPI::eFailed);
         if (IsCancelCode(old_status)) {
@@ -324,7 +332,21 @@ TJobStatus CJobStatusTracker::ChangeStatus(unsigned   job_id,
         ReportInvalidStatus(job_id, status, old_status);
         break;
 
+    case CNetScheduleAPI::eReadFailed:
+
+        old_status = IsStatusNoLock(job_id,
+                                    CNetScheduleAPI::eReading);
+        if (old_status != CNetScheduleAPI::eJobNotFound) {
+            x_SetClearStatusNoLock(job_id, status, old_status);
+            status_updated = true;
+            break;
+        }
+
+        old_status = CNetScheduleAPI::eReadFailed;
+        break;
+
     default:
+        ERR_POST("Unexpected target state: " << (int)status);
         _ASSERT(0);
     }
 

@@ -56,7 +56,7 @@ struct SQueueDbBlock
     int                     pos;       // My own pos in array
     SQueueDB                job_db;
     SJobInfoDB              job_info_db;
-    SRunsDB                 runs_db;
+    SEventsDB               events_db;
     SDeletedJobsDB          deleted_jobs_db;
     SAffinityIdx            affinity_idx;
     SAffinityDictDB         aff_dict_db;

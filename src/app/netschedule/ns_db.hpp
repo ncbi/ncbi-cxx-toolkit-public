@@ -76,9 +76,10 @@ struct SQueueDB : public CBDB_File
     CBDB_FieldUint4        subm_timeout;    ///< notification timeout
 
     // This field shows the number of attempts from submission or last
-    // reschedule, so the number of actual attempts in SRunsDB can be more
+    // reschedule, so the number of actual attempts in SEventsDB can be more
     // than this number
     CBDB_FieldUint4        run_counter;     ///< Number of execution attempts
+    CBDB_FieldUint4        read_counter;    ///< Number if reading attempts
 
     // When job is in Reading state, its read group id is here.
     CBDB_FieldUint4        read_group;
@@ -112,6 +113,7 @@ struct SQueueDB : public CBDB_File
         BindData("subm_timeout", &subm_timeout);
 
         BindData("run_counter",  &run_counter);
+        BindData("read_counter", &read_counter);
         BindData("read_group",   &read_group);
 
         BindData("aff_id",       &aff_id);
@@ -152,31 +154,29 @@ struct SJobInfoDB : public CBDB_File
 
 
 const unsigned kMaxWorkerNodeIdSize = 64;
-/// BDB table to store run information
+/// BDB table to store events information
 /// Every instantiation of a job is reflected in this table under
-/// corresponding (id, run) key. In particular, this table stores
+/// corresponding (id, event) key. In particular, this table stores
 /// ALL run attempts, so if the job was rescheduled, the number of
 /// actual attempts can be more than run_count.
-struct SRunsDB : public CBDB_File
+struct SEventsDB : public CBDB_File
 {
     CBDB_FieldUint4   id;           ///< Job id
-    CBDB_FieldUint4   run;          ///< Job run
-    CBDB_FieldInt4    status;       ///< Final job status for this run
-    CBDB_FieldUint4   time_start;   ///< Start time (former time_run)
-    CBDB_FieldUint4   time_done;    ///< Result submission time
+    CBDB_FieldUint4   event;        ///< Job event
+    CBDB_FieldInt4    status;       ///< Job status for this event
+    CBDB_FieldUint4   timestamp;    ///< The event timestamp
     CBDB_FieldUint4   node_addr;    ///< IP of the worker node (net byte order)
     CBDB_FieldUint2   node_port;    ///< Node's port
     CBDB_FieldInt4    ret_code;     ///< Return code
     CBDB_FieldLString node_id;      ///< worker node id
     CBDB_FieldLString err_msg;      ///< Error message (exception::what())
 
-    SRunsDB()
+    SEventsDB()
     {
         BindKey("id",           &id);
-        BindKey("run",          &run);
+        BindKey("event",        &event);
         BindData("status",      &status);
-        BindData("time_start",  &time_start);
-        BindData("time_done",   &time_done);
+        BindData("timestamp",   &timestamp);
         BindData("node_addr",   &node_addr);
         BindData("node_port",   &node_port);
         BindData("ret_code",    &ret_code);

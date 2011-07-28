@@ -207,14 +207,15 @@ public:
     /// @return ID of the first job, second is first_id+1 etc.
     unsigned SubmitBatch(vector<CJob> &  batch);
 
-    void PutResultGetJob(CWorkerNode*               worker_node,
+    void PutResultGetJob(CWorkerNode *              worker_node,
+                         unsigned int               peer_addr,
                          // PutResult parameters
                          unsigned                   done_job_id,
                          int                        ret_code,
-                         const string*              output,
+                         const string *             output,
                          // GetJob parameters
-                         const list<string>*        aff_list,
-                         CJob*                      new_job);
+                         const list<string> *       aff_list,
+                         CJob *                     new_job);
 
     /// Extend job expiration timeout
     /// @param tm
@@ -230,7 +231,7 @@ public:
     /// Can return the following states:
     /// eReturned    => everything is fine
     /// eJobNotFound => job not found
-    TJobStatus  ReturnJob(unsigned job_id);
+    TJobStatus  ReturnJob(unsigned job_id, unsigned int  peer_addr);
 
     /// @param expected_status
     ///    If current status is different from expected try to
@@ -250,7 +251,7 @@ public:
 
     /// Cancel job execution (job stays in special Canceled state)
     /// Returns the previous job status
-    TJobStatus  Cancel(unsigned job_id);
+    TJobStatus  Cancel(unsigned job_id, unsigned int  peer_addr);
 
     TJobStatus GetJobStatus(unsigned job_id) const;
 
@@ -276,11 +277,17 @@ public:
                   unsigned count, unsigned timeout,
                   unsigned& read_id, TNSBitVector& jobs);
     /// Confirm reading of these jobs
-    void ConfirmJobs(unsigned read_id, const TNSBitVector& jobs);
+    void ConfirmJobs(unsigned               read_id,
+                     const TNSBitVector &   jobs,
+                     unsigned int           peer_addr);
     /// Fail (negative acknowledge) reading of these jobs
-    void FailReadingJobs(unsigned read_id, const TNSBitVector& jobs);
+    void FailReadingJobs(unsigned               read_id,
+                         const TNSBitVector &   jobs,
+                         unsigned int           peer_addr);
     /// Return jobs to unread state without reservation
-    void ReturnReadingJobs(unsigned read_id, const TNSBitVector& jobs);
+    void ReturnReadingJobs(unsigned                 read_id,
+                           const TNSBitVector &     jobs,
+                           unsigned int             peer_addr);
 
 
     /// Erase job from all structures, request delayed db deletion
@@ -362,11 +369,12 @@ public:
     CQueueWorkerNodeList& GetWorkerNodeList() {return m_WorkerNodeList;}
 
     /// @return is job modified
-    bool FailJob(CWorkerNode*  worker_node,
-                 unsigned      job_id,
-                 const string& err_msg,
-                 const string& output,
-                 int           ret_code);
+    bool FailJob(CWorkerNode *      worker_node,
+                 unsigned int       peer_addr,
+                 unsigned           job_id,
+                 const string &     err_msg,
+                 const string &     output,
+                 int                ret_code);
 
 
     void x_ReadAffIdx_NoLock(unsigned      aff_id,
@@ -399,14 +407,19 @@ public:
     /// Clear all jobs, still running for node.
     /// Fails all such jobs, called by external node watcher, can safely
     /// clean out node's record
-    void ClearWorkerNode(CWorkerNode* worker_node, const string& reason);
-    void ClearWorkerNode(const string& node_id, const string& reason);
+    void ClearWorkerNode(CWorkerNode *      worker_node,
+                         unsigned int       peer_addr,
+                         const string &     reason);
+    void ClearWorkerNode(const string &     node_id,
+                         unsigned int       peer_addr,
+                         const string &     reason);
 
     void NotifyListeners(bool unconditional, unsigned aff_id);
     void PrintWorkerNodeStat(CNetScheduleHandler &  handler,
                              time_t                 curr,
                              EWNodeFormat           fmt = eWNF_Old) const;
-    void UnRegisterNotificationListener(CWorkerNode* worker_node);
+    void UnRegisterNotificationListener(CWorkerNode *       worker_node,
+                                        unsigned int        peer_addr);
     void AddJobToWorkerNode(CWorkerNode *   worker_node,
                             const CJob &    job,
                             time_t          exp_time);
@@ -462,7 +475,7 @@ public:
 
     unsigned DeleteBatch(unsigned batch_size);
 
-    CBDB_FileCursor& GetRunsCursor();
+    CBDB_FileCursor& GetEventsCursor();
 
     void PrintSubmHosts(CNetScheduleHandler &  handler) const;
     void PrintWNodeHosts(CNetScheduleHandler &  handler) const;
@@ -522,9 +535,10 @@ private:
     friend class CNS_Transaction;
     CBDB_Env& GetEnv() { return *m_QueueDbBlock->job_db.GetEnv(); }
 
-    void x_ChangeGroupStatus(unsigned            group_id,
-                             const TNSBitVector& bv_jobs,
-                             TJobStatus          status);
+    void x_ChangeGroupStatus(unsigned               group_id,
+                             const TNSBitVector &   bv_jobs,
+                             TJobStatus             status,
+                             unsigned int           peer_addr);
 
     // Add job to group, creating it if necessary. Used during queue
     // loading, so guaranteed no concurrent queue access.
@@ -535,8 +549,10 @@ private:
     // Remove from group, and if group is empty delete it
     void x_RemoveFromReadGroup(unsigned group_id, unsigned job_id);
 
-    void x_FailJobs(const TJobList& jobs,
-                    CWorkerNode* worker_node, const string& err_msg);
+    void x_FailJobs(const TJobList &    jobs,
+                    CWorkerNode *       worker_node,
+                    unsigned int        peer_addr,
+                    const string &      err_msg);
 
     /// @return TRUE if job record has been found and updated
     bool x_UpdateDB_PutResultNoLock(unsigned        job_id,
@@ -544,7 +560,8 @@ private:
                                     bool            delete_done,
                                     int             ret_code,
                                     const string &  output,
-                                    CJob&           job);
+                                    CJob &          job,
+                                    unsigned int    peer_addr);
 
     enum EGetJobUpdateStatus {
         eGetJobUpdate_Ok,
@@ -562,7 +579,7 @@ private:
                       const SFieldsDescription &    field_descr,
                       const CJob &                  job,
                       map<string, string> &         tags,
-                      const CJobRun *               run,
+                      const CJobEvent *             event,
                       int                           run_num);
     void x_PrintJobStat(CNetScheduleHandler &   handler,
                         const CJob&             job,
@@ -574,7 +591,7 @@ private:
                      bool           separate_request);
     void x_UpdateStartFromCounter(void);
     unsigned int x_ReadStartFromCounter(void);
-    void x_DeleteJobRuns(unsigned int  job_id);
+    void x_DeleteJobEvents(unsigned int  job_id);
 
 private:
     friend class CQueueGuard;
@@ -611,7 +628,7 @@ private:
 
     SQueueDbBlock*              m_QueueDbBlock;
 
-    auto_ptr<CBDB_FileCursor>   m_RunsCursor;      ///< DB cursor for RunsDB
+    auto_ptr<CBDB_FileCursor>   m_EventsCursor;    ///< DB cursor for EventsDB
 
     CFastMutex                  m_DbLock;          ///< db, cursor lock
     CFastMutex                  m_AffinityIdxLock;
@@ -896,7 +913,7 @@ public:
         Guard(q);
         q->m_QueueDbBlock->job_db.SetTransaction(trans);
         q->m_QueueDbBlock->job_info_db.SetTransaction(trans);
-        q->m_QueueDbBlock->runs_db.SetTransaction(trans);
+        q->m_QueueDbBlock->events_db.SetTransaction(trans);
     }
 
     ~CQueueGuard()
