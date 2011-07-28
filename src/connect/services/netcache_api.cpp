@@ -114,15 +114,8 @@ void CNetCacheServerListener::OnInit(CObject* api_impl,
         nc_impl->m_CacheOutput = config->GetBool(config_section,
             "cache_output", CConfig::eErr_NoThrow, false);
 
-        if (config->GetBool(config_section,
-                "enable_mirroring", CConfig::eErr_NoThrow, false)) {
-            if (!(nc_impl->m_EnableMirroring =
-                    nc_impl->m_Service.IsLoadBalanced())) {
-                ERR_POST("Mirroring support is requested but a service "
-                    "name is not specified; mirroring is disabled");
-            }
-        } else
-            nc_impl->m_EnableMirroring = false;
+        nc_impl->m_EnableMirroring = config->GetBool(config_section,
+            "enable_mirroring", CConfig::eErr_NoThrow, false);
     } else {
         nc_impl->m_TempDir = default_temp_dir;
         nc_impl->m_CacheInput = false;
