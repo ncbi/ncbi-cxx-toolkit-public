@@ -3993,18 +3993,6 @@ void CValidError_bioseq::ValidateCDSAndProtPartials (const CMappedFeat& feat)
     }  
 }
 
-static bool s_CodingRegionDisruptedBySequencingGap (const CMappedFeat& feat)
-
-{
-    if (! feat.IsSetComment()) return false;
-
-    const string& curr_comment = feat.GetComment();
-    if (NStr::Find (curr_comment, "coding region disrupted by sequencing gap") != string::npos) return true;
-
-    return false;
-}
-
-
 void CValidError_bioseq::ValidateFeatPartialInContext (const CMappedFeat& feat)
 {
 
@@ -4176,7 +4164,7 @@ void CValidError_bioseq::ValidateFeatPartialInContext (const CMappedFeat& feat)
                     if (no_nonconsensus_except) {
                         if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
                             // suppress
-                        } else if (s_CodingRegionDisruptedBySequencingGap (feat)) {
+                        } else if (s_PartialAtGapOrNs (m_Scope, feat.GetLocation(), errtype)) {
                             // suppress
                         } else {
                             PostErr (eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
@@ -4189,7 +4177,7 @@ void CValidError_bioseq::ValidateFeatPartialInContext (const CMappedFeat& feat)
                     if (no_nonconsensus_except) {
                         if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
                             // suppress
-                        } else if (s_CodingRegionDisruptedBySequencingGap (feat)) {
+                        } else if (s_PartialAtGapOrNs (m_Scope, feat.GetLocation(), errtype)) {
                             // suppress
                         } else {
                             PostErr (eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,

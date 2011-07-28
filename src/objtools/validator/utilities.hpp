@@ -141,6 +141,7 @@ string GetAuthorsString (const CAuth_list& auth_list);
 bool SeqIsPatent (const CBioseq& seq);
 bool SeqIsPatent (CBioseq_Handle seq);
 
+bool s_PartialAtGapOrNs (CScope* scope, const CSeq_loc& loc, unsigned int tag);
 
 END_SCOPE(validator)
 END_SCOPE(objects)

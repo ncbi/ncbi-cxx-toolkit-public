@@ -5736,15 +5736,19 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
                          "Suspicious CDS location - frame > 1 but not 5' partial", feat);
             }
         } else if ((part_loc & eSeqlocPartial_Start) && !Is5AtEndSpliceSiteOrGap (location)) {
-            EDiagSev sev = eDiag_Info;
-            if (s_LocIsNmAccession (location, *m_Scope)) {
-                sev = eDiag_Error;
-            }
-            has_errors = true;
-            other_than_mismatch = true;
-            if (report_errors) {
-                PostErr (sev, eErr_SEQ_FEAT_SuspiciousFrame, 
-                         "Suspicious CDS location - frame > 1 and not at consensus splice site", feat);
+            if (s_PartialAtGapOrNs(m_Scope, location, eSeqlocPartial_Nostart)) {
+                // suppress
+            } else {
+                EDiagSev sev = eDiag_Info;
+                if (s_LocIsNmAccession (location, *m_Scope)) {
+                    sev = eDiag_Error;
+                }
+                has_errors = true;
+                other_than_mismatch = true;
+                if (report_errors) {
+                    PostErr (sev, eErr_SEQ_FEAT_SuspiciousFrame, 
+                             "Suspicious CDS location - frame > 1 and not at consensus splice site", feat);
+                }
             }
         }
     }

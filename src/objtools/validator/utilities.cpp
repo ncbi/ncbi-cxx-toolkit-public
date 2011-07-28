@@ -1170,6 +1170,97 @@ bool SeqIsPatent (CBioseq_Handle seq)
 }
 
 
+bool s_PartialAtGapOrNs (
+    CScope* scope,
+    const CSeq_loc& loc,
+    unsigned int tag
+)
+
+{
+    if ( tag != sequence::eSeqlocPartial_Nostart && tag != sequence::eSeqlocPartial_Nostop ) {
+        return false;
+    }
+
+    CSeq_loc_CI first, last;
+    for ( CSeq_loc_CI sl_iter(loc); sl_iter; ++sl_iter ) { // EQUIV_IS_ONE not supported
+        if ( !first ) {
+            first = sl_iter;
+        }
+        last = sl_iter;
+    }
+
+    if ( first.GetStrand() != last.GetStrand() ) {
+        return false;
+    }
+    CSeq_loc_CI temp = (tag == sequence::eSeqlocPartial_Nostart) ? first : last;
+
+    if (!scope) {
+        return false;
+    }
+
+    CBioseq_Handle bsh = scope->GetBioseqHandle(*temp.GetRangeAsSeq_loc());
+    if (!bsh) {
+        return false;
+    }
+    
+    TSeqPos acceptor = temp.GetRange().GetFrom();
+    TSeqPos donor = temp.GetRange().GetTo();
+    TSeqPos start = acceptor;
+    TSeqPos stop = donor;
+
+    CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac,
+        temp.GetStrand());
+    TSeqPos len = vec.size();
+
+    if ( temp.GetStrand() == eNa_strand_minus ) {
+        swap(acceptor, donor);
+        stop = len - donor - 1;
+        start = len - acceptor - 1;
+    }
+
+    bool result = false;
+
+    try {
+        if (tag == sequence::eSeqlocPartial_Nostop && stop < len - 1 && vec.IsInGap(stop + 1)) {
+            return true;
+        } else if (tag == sequence::eSeqlocPartial_Nostart && start > 0 && vec.IsInGap(start - 1)) {
+            return true;
+        }
+    } catch ( exception& ) {
+        
+        return false;
+    }
+
+    if ( (tag == sequence::eSeqlocPartial_Nostop)  &&  (stop < len - 2) ) {
+        try {
+            CSeqVector::TResidue res = vec[stop + 1];
+
+            if ( IsResidue(res)  &&  isalpha (res)) {
+                if ( res == 'N' ) {
+                    result = true;
+                }
+            }
+        } catch ( exception& ) {
+            return false;
+        }
+    } else if ( (tag == sequence::eSeqlocPartial_Nostart)  &&  (start > 1) ) {
+        try {
+            CSeqVector::TResidue res = vec[start - 1];
+        
+            if ( IsResidue(res)  &&  isalpha (res)) {
+                if ( res == 'N' ) {
+                    result = true;
+                }
+            }
+        } catch ( exception& ) {
+            return false;
+        }
+    }
+
+    return result;    
+}
+
+
 
 END_SCOPE(validator)
 END_SCOPE(objects)
