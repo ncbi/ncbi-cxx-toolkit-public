@@ -469,11 +469,19 @@ class NCBI_XCONNECT_EXPORT CConn_ServiceStream : public CConn_IOStream
 public:
     CConn_ServiceStream
     (const string&         service,
-     TSERV_Type            types    = fSERV_Any,
-     const SConnNetInfo*   net_info = 0,
-     const SSERVICE_Extra* params   = 0,
-     const STimeout*       timeout  = kDefaultTimeout,
-     streamsize            buf_size = kConn_DefaultBufSize);
+     TSERV_Type            types       = fSERV_Any,
+     const SConnNetInfo*   net_info    = 0,
+     const SSERVICE_Extra* params      = 0,
+     const STimeout*       timeout     = kDefaultTimeout,
+     streamsize            buf_size    = kConn_DefaultBufSize);
+
+    CConn_ServiceStream
+    (const string&         service,
+     const string&         user_header,
+     TSERV_Type            types       = fSERV_Any,
+     const SSERVICE_Extra* params      = 0,
+     const STimeout*       timeout     = kDefaultTimeout,
+     streamsize            buf_size    = kConn_DefaultBufSize);
 
 private:
     // Disable copy constructor and assignment.

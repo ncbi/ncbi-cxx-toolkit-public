@@ -347,7 +347,7 @@ static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo* x_net_info,
         }
         memcpy(net_info->args, args, ++len);
     }
-    if (user_header)
+    if (user_header  &&  *user_header)
         ConnNetInfo_OverrideUserHeader(net_info.get(), user_header);
     x_SetupUserAgent(net_info.get());
     if (timeout  &&  timeout != kDefaultTimeout) {
@@ -466,6 +466,7 @@ CConn_HttpStream::CConn_HttpStream(const SConnNetInfo* net_info,
 static CONNECTOR s_ServiceConnectorBuilder(const char*           service,
                                            TSERV_Type            types,
                                            const SConnNetInfo*   x_net_info,
+                                           const char*           user_header,
                                            const SSERVICE_Extra* params,
                                            const STimeout*       timeout)
 {
@@ -477,6 +478,8 @@ static CONNECTOR s_ServiceConnectorBuilder(const char*           service,
                    "CConn_ServiceStream::CConn_ServiceStream(): "
                    " Out of memory");
     }
+    if (user_header  &&  *user_header)
+        ConnNetInfo_OverrideUserHeader(net_info.get(), user_header);
     x_SetupUserAgent(net_info.get());
     if (timeout  &&  timeout != kDefaultTimeout) {
         net_info->tmo     = *timeout;
@@ -502,6 +505,25 @@ CConn_ServiceStream::CConn_ServiceStream(const string&         service,
     : CConn_IOStream(s_ServiceConnectorBuilder(service.c_str(),
                                                types,
                                                net_info,
+                                               0,
+                                               params,
+                                               timeout),
+                     timeout, buf_size)
+{
+    return;
+}
+
+
+CConn_ServiceStream::CConn_ServiceStream(const string&         service,
+                                         const string&         user_header,
+                                         TSERV_Type            types,
+                                         const SSERVICE_Extra* params,
+                                         const STimeout*       timeout,
+                                         streamsize            buf_size)
+    : CConn_IOStream(s_ServiceConnectorBuilder(service.c_str(),
+                                               types,
+                                               0,
+                                               user_header.c_str(),
                                                params,
                                                timeout),
                      timeout, buf_size)
