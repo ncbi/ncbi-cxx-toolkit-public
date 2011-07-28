@@ -1,3 +1,4 @@
+# -*- makefile-gmake -*-
 #################################
 # $Id$
 # Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
@@ -58,45 +59,66 @@ XDLL_LIBS     = @DLL_LIB_SETTING@
 XDLL_LIB      = $(runpath) @f_libpath@$(libdir) $(XDLL_LIBS:%=@lib_l_pre@%@lib_l_ext@)
 XDLL_LIBDEP   = $(XDLL_LIBS:%=$(status_dir)/.%.dep)
 
+# This definition loses any trailing #, and is only useful in conditionals.
+has_dll_loadable = @has_dll_loadable@
+
+ifeq "$(LIB_OR_DLL)$(DLL)" "dll-dll"
+  # 1: path, 2: target
+  make_dll_link = cd $(libdir) && $(RM) $(2) && $(LN_S) $(1) $(2)
+  $(status_dir)/$(XDLLDEP_LINK): $(status_dir)/$(XDLLDEP)
+	@cd $(status_dir) && \
+	    $(RM) $(XDLLDEP_LINK) && \
+	    $(LN_S) $(XDLLDEP) $(XDLLDEP_LINK)
+else
+  make_dll_link = :
+endif
+
 $(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
 	-$(RM) $(XDLL) .$(XDLL).stamp
 	@has_dll_loadable@-$(RM) $(XDLL_LOADABLE)
 	$(LINK_WRAPPER) $(LINK_DLL) $(XDLL) $(LDFLAGS_DLL) $(DLL_LDFLAGS) $(XDLLOBJ) $(XOBJ) $(XDLL_LIB) $(LIBS) $(LINK_FILTER)
 	@has_dll_loadable@$(LINK_WRAPPER) $(LINK_LOADABLE) $(XDLL_LOADABLE) $(LDFLAGS_DLL) $(DLL_LDFLAGS) $(XDLLOBJ) $(XOBJ) $(XDLL_LIB) $(LIBS) $(LINK_FILTER)
-	@if [ ! -r $(XDLLDEP) ]; then \
-	    echo $(srcdir) `pwd` $(TMPL) > $(XDLLDEP) && \
-	    $(TOUCH) -r $(XDLL) $(XDLLDEP); \
-	fi
-	@if [ '$(BINCOPY)' != '@:' -a -d $(libdir) -a -w $(libdir) -a $(srcdir) != . ]; then \
+ifeq "$(wildcard $(XDLLDEP))" ""
+	@echo $(srcdir) $(CURDIR) $(TMPL) > $(XDLLDEP)
+	@$(TOUCH) -r $(XDLL) $(XDLLDEP)
+endif
+ifneq "$(BINCOPY)" "@:"
+  ifneq "$(srcdir)" "."
+    ifneq "$(filter-out /.,$(wildcard $(libdir)/.))" ""
+	@if [ -w $(libdir) ]; then \
 	    echo $(BINCOPY) $(XDLL) $(libdir) && \
 	    $(BINCOPY) $(XDLL) $(libdir) && \
-	    if [ $(XDLL_LINK) != $(XDLL) ]; then \
-	        cd $(libdir) && \
-	        $(RM) $(XDLL_LINK) && \
-	        $(LN_S) $(XDLL) $(XDLL_LINK); \
-	    fi; \
+	    $(call make_dll_link,$(XDLL),$(XDLL_LINK)) ; \
 	fi
-	@if [ '@has_dll_loadable@' != '@# ' -a '$(BINCOPY)' != '@:' -a -d $(libdir) -a -w $(libdir) -a $(srcdir) != . ]; then \
+      ifneq "$(has_dll_loadable)" "@"
+	@if [ -w $(libdir) ]; then \
 	    echo $(BINCOPY) $(XDLL_LOADABLE) $(libdir) && \
 	    $(BINCOPY) $(XDLL_LOADABLE) $(libdir) && \
-	    if [ $(XDLL_LOADABLE_LINK) != $(XDLL_LOADABLE) ]; then \
-	        cd $(libdir) && \
-	        $(RM) $(XDLL_LOADABLE_LINK) && \
-	        $(LN_S) $(XDLL_LOADABLE) $(XDLL_LOADABLE_LINK); \
-	    fi; \
+	    $(call make_dll_link,$(XDLL_LOADABLE),$(XDLL_LOADABLE_LINK)) ; \
 	fi
+      endif
+    endif
+  endif
+endif
 
-export-dlldep: $(XDLL)
-	@if [ '$(BINCOPY)' != '@:' -a -w $(status_dir) -a ! -r $(status_dir)/$(XDLLDEP) ]; then \
-	    $(BINCOPY) $(XDLLDEP) $(status_dir) && \
-	    $(BINTOUCH) -r $(libdir)/$(XDLL) $(status_dir)/$(XDLLDEP) && \
-	    if [ $(XDLLDEP_LINK) != $(XDLLDEP) ]; then \
-	        cd $(status_dir) && \
-	        $(RM) $(XDLLDEP_LINK) && \
-	        $(LN_S) $(XDLLDEP) $(XDLLDEP_LINK); \
-	    fi; \
-	fi
+EXPORTED_DLLDEP = $(XDLL)
+ifneq "$(BINCOPY)" "@:"
+  ifneq "$(filter-out /.,$(wildcard $(status_dir)/.))" ""
+    ifeq "$(wildcard $(status_dir)/$(XDLLDEP))" ""
+      ifeq "$(make_dll_link)" ":"
+        EXPORTED_DLLDEP = $(status_dir)/$(XDLLDEP)
+      else
+        EXPORTED_DLLDEP = $(status_dir)/$(XDLLDEP_LINK)
+      endif
+    endif
+  endif
+endif
 
+$(status_dir)/$(XDLLDEP): $(XDLL)
+	@$(BINCOPY) $(XDLLDEP) $(status_dir)
+	@$(BINTOUCH) -r $(libdir)/$(XDLL) $(status_dir)/$(XDLLDEP)
+
+export-dlldep: $(EXPORTED_DLLDEP)
 
 ### Standard targets
 
@@ -118,12 +140,14 @@ purge: clean purge-headers deactivate
 deactivate: deactivate-dll
 
 deactivate-dll: unlink-dll
-	-if [ '$(BINCOPY)' != '@:' -a -d $(status_dir) -a -w $(status_dir) -a $(srcdir) != . ]; then \
-	    $(RM) $(libdir)/$(XDLL) $(libdir)/$(XDLL_LINK) \
-	       $(status_dir)/$(XDLLDEP) $(status_dir)/$(XDLLDEP_LINK); \
-	    [ '@has_dll_loadable@' = '@# ' ]  ||  \
-	     $(RM) $(libdir)/$(XDLL_LOADABLE) $(libdir)/$(XDLL_LOADABLE_LINK); \
-	fi
+ifeq "$(EXPORTED_DLLDEP)" "$(status_dir)/$(XDLLDEP_LINK)"
+	-$(RM) $(libdir)/$(XDLL) $(status_dir)/$(XDLLDEP)
+	@has_dll_loadable@-$(RM) $(libdir)/$(XDLL_LOADABLE)
+  ifneq "$(DLL)" ""
+	-$(RM) $(libdir)/$(XDLLLINK) $(status_dir)/$(XDLLDEP_LINK)
+	@has_dll_loadable@-$(RM) $(libdir)/$(XDLL_LOADABLE_LINK)
+  endif
+endif
 
 .PHONY: default_rule all unlink unlink-dll clean clean-dll purge 
 .PHONY: deactivate deactivate-dll export-dlldep

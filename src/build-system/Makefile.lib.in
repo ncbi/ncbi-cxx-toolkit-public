@@ -1,3 +1,4 @@
+# -*- makefile-gmake -*-
 #################################
 # $Id$
 # Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
@@ -44,25 +45,46 @@ $(XLIB): $(XLIBOBJ)
 	-$(RM) $(XLIB) .$(XLIB).stamp
 	$(AR) @f_outlib@$(XLIB) $(XLIBOBJ) $(XOBJ) $(AR_FILTER)
 	@$(RANLIB) $(XLIB)
-	@echo $(srcdir) `pwd` $(TMPL) > $(XLIBDEP)
+	@echo $(srcdir) $(CURDIR) $(TMPL) > $(XLIBDEP)
 	@$(TOUCH) -r $(XLIB) $(XLIBDEP)
-	@if [ '$(BINCOPY)' != '@:' -a -d $(libdir) -a -w $(libdir) -a $(srcdir) != . ]; then \
+ifneq "$(BINCOPY)" "@:"
+  ifneq "$(srcdir)" "."
+    ifneq "$(filter-out /.,$(wildcard $(libdir)/.))" ""
+	@if [ -w $(libdir) ]; then \
 	    echo $(BINCOPY) $(XLIB) $(libdir) && \
 	    $(BINCOPY) $(XLIB) $(libdir) && \
 	    cd $(libdir) && $(RM) $(XLIBLINK) $(XOLD_DLLS) && \
 	    $(LN_S) $(XLIB) $(XLIBLINK); \
 	fi
+    endif
+  endif
+endif
 
-export-libdep: $(XLIB)
-	@if [ '$(BINCOPY)' != '@:' -a -d $(status_dir) -a -w $(status_dir) -a $(srcdir) != . ]; then \
-	    $(BINCOPY) $(XLIBDEP) $(status_dir) && \
-	    $(BINTOUCH) -r $(libdir)/$(XLIB) $(status_dir)/$(XLIBDEP) && \
-	    if [ $(XLIBDEP) != $(XLIBDEPLINK) ]; then \
-	        cd $(status_dir) && \
-	        $(RM) $(XLIBDEPLINK) && \
-	        $(LN_S) $(XLIBDEP) $(XLIBDEPLINK); \
-	    fi; \
-	fi
+EXPORTED_LIBDEP = $(XLIB)
+ifneq "$(BINCOPY)" "@:"
+  ifneq "$(srcdir)" "."
+    ifneq "$(filter-out /.,$(wildcard $(status_dir)/.))" ""
+      EXPORTED_LIBDEP = $(status_dir)/$(XLIBDEPLINK)
+    endif
+  endif
+endif
+
+ifeq "$(LIB_OR_DLL)$(DLL)" "both"
+  $(status_dir)/$(XLIBDEPLINK): $(XLIB)
+	@$(BINCOPY) $(XLIBDEPLINK) $(status_dir)
+	@$(BINTOUCH) -r $(libdir)/$(XLIB) $(status_dir)/$(XLIBDEPLINK)
+else
+  $(status_dir)/$(XLIBDEP): $(XLIB)
+	@$(BINCOPY) $(XLIBDEP) $(status_dir)
+	@$(BINTOUCH) -r $(libdir)/$(XLIB) $(status_dir)/$(XLIBDEP)
+
+  $(status_dir)/$(XLIBDEPLINK): $(status_dir)/$(XLIBDEP)
+	@cd $(status_dir) && \
+	    $(RM) $(XLIBDEPLINK) && \
+	    $(LN_S) $(XLIBDEP) $(XLIBDEPLINK)
+endif
+
+export-libdep: $(EXPORTED_LIBDEP)
 
 ### Standard targets
 
@@ -83,10 +105,10 @@ purge: clean purge-headers deactivate
 deactivate: deactivate-lib
 
 deactivate-lib: unlink-lib
-	-if [ '$(BINCOPY)' != '@:' -a -d $(status_dir) -a -w $(status_dir) -a $(srcdir) != . ]; then \
-	    $(RM) $(libdir)/$(XLIB) $(status_dir)/$(XLIBDEP) \
-	        $(libdir)/$(XLIBLINK) $(status_dir)/$(XLIBDEPLINK); \
-	fi
+ifeq "$(EXPORTED_LIBDEP)" "$(status_dir)/$(XLIBDEPLINK)"
+	-$(RM) $(libdir)/$(XLIB) $(status_dir)/$(XLIBDEP) \
+	    $(libdir)/$(XLIBLINK) $(status_dir)/$(XLIBDEPLINK)
+endif
 
 .PHONY: default_rule all unlink unlink-lib clean clean-lib purge
 .PHONY: deactivate deactivate-lib export-libdep

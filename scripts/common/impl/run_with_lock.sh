@@ -1,16 +1,22 @@
 #!/bin/sh
 # $Id$
 
+orig_PATH=$PATH
+PATH=/bin:/usr/bin
+export PATH
+
 base=
 logfile=
 map=
 mydir=`dirname $0`
+error_status=1
 
 while :; do
     case "$1" in
         -base ) base=$2; shift 2 ;;
         -log  ) logfile=$2; shift 2 ;;
         -map  ) map=$2; shift 2 ;;
+        \!    ) error_status=0; shift ;;
         *     ) break ;;
     esac
 done
@@ -36,13 +42,14 @@ if [ -f "$map" ]; then
 fi
 
 if "$get_lock" "$base" $$; then
-    trap 'clean_up; exit 1' 1 2 15
+    trap "clean_up; exit $error_status" 1 2 15
     if [ -n "$logfile" ]; then
         status_file=$base.lock/status
-        ("$@"; echo $? > "$status_file") 2>&1 | tee "$logfile.new"
+        (PATH=$orig_PATH; export PATH; "$@"; echo $? > "$status_file") 2>&1 \
+            | tee "$logfile.new"
         # Emulate egrep -q to avoid having to move from under scripts.
         if [ ! -f "$logfile" ]  \
-	  ||  $mydir/is_log_interesting.awk "$logfile.new"; then
+          ||  $mydir/is_log_interesting.awk "$logfile.new"; then
             mv "$logfile.new" "$logfile"
         fi
         if [ -s "$status_file" ]; then
@@ -55,7 +62,11 @@ if "$get_lock" "$base" $$; then
         status=$?
     fi
     clean_up
-    exit $status
+    case "$status:$error_status" in
+        0:0 ) exit 1 ;;
+        *:0 ) exit 0 ;;
+        *   ) exit $status ;;
+    esac
 else
-    exit 1
+    exit $error_status
 fi

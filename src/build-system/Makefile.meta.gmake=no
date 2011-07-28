@@ -1,2 +1,16 @@
 # $Id$
-# Deliberately empty for now.
+
+GMAKE = gmake
+
+more_shims_ = $(top_srcdir)/src/build-system/Makefile.flat_shims
+more_shims_recursive = /dev/null
+more_shims = more_shims_$(abs_top_srcdir:%=recursive)
+
+include $(more_shims)
+
+%:
+	@echo "Falling back to GNU Make ($(GMAKE))"
+	@+$(GMAKE) --version >/dev/null 2>&1
+	+$(GMAKE) $(MFLAGS) $@
+
+.INIT .DONE: ;

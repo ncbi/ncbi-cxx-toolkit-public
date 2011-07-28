@@ -1,3 +1,4 @@
+# -*- makefile-gmake -*-
 #################################
 # $Id$
 # Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
@@ -57,23 +58,32 @@ ALL          = $(XAPP)
 @IF_REBUILDING_CONDITIONALLY@ SKIP_REBUILD = ($(ASK_REBUILD))
 @IF_REBUILDING_CONDITIONALLY@ ALL          = rebuild-libs
 
+# 1: dep file
+define rebuild_lib
+read srcdir builddir tmpl < "$(1)" ; \
+test -z "$$builddir" || $(SKIP_REBUILD) || \
+(cd "$$builddir" && $(MAKE) $(MFLAGS) libs srcdir="$$srcdir")
+
+endef
+
 rebuild-libs:
-	@for l in $(XLIBDEP) /dev/null ; do \
-	   test "$$l" = "/dev/null"  &&  break ; \
-	   read srcdir builddir tmpl < "$$l" ; \
-	   test -z "$$builddir" || $(SKIP_REBUILD) || \
-	   (cd "$$builddir" && $(MAKE) $(MFLAGS) libs srcdir="$$srcdir") ; \
-	done
+	$(foreach l,$(XLIBDEP),$(call rebuild_lib,$(l)))
 
 $(XAPP): $(XOBJ) $(XLIBDEP)
 	@-$(RM) .$(XAPP).stamp
 	$(LINK_WRAPPER) $(LINK) $(LDFLAGS) $(APP_LDFLAGS) $(XOBJ) $(XOBJ2) $(PRE_LIBS) $(XLIB) $(XAPP_LIBS) @f_outexe@$(XAPP) $(LINK_FILTER)
 	$(STRIP) $(XAPP)
 	$(POST_LINK) $(XAPP)
-	@if [ '$(BINCOPY)' != '@:' -a -d $(bindir) -a -w $(bindir) -a $(srcdir) != . ]; then \
+ifneq "$(BINCOPY)" "@:"
+  ifneq "$(srcdir)" "."
+    ifneq "$(filter-out /.,$(wildcard $(bindir)/.))" ""
+	@if [ -w $(bindir) ]; then \
 	    echo $(BINCOPY) $(XAPP) $(bindir) && \
 	    $(BINCOPY) $(XAPP) $(bindir); \
 	fi
+    endif
+  endif
+endif
 
 
 ### Standard targets (non-recursive)
@@ -81,8 +91,17 @@ $(XAPP): $(XOBJ) $(XLIBDEP)
 # Kludge: done this way to force proper serialization
 MAKEFILE = $(builddir)/Makefile.app.tmpl
 
+ifdef import_root
+  ifeq "$(ALL)" "rm-if-outdated"
+    override ALL = $(XAPP)
+    $(XAPP): $(wildcard $(LIB:%=$(import_root)/../lib/lib%.*))
+  endif
+endif
+
 all: $(ALL)
-	@test "$(ALL)" = "$(XAPP)"  ||  $(MAKE) -f $(MAKEFILE) $(MFLAGS) $(XAPP)
+ifneq "$(ALL)" "$(XAPP)"
+	@$(MAKE) -f $(MAKEFILE) $(MFLAGS) $(XAPP)
+endif
 
 unlink:
 	-$(RM) $(XAPP) .$(XAPP).stamp
@@ -92,9 +111,13 @@ clean: clean-common unlink
 	-$(RM) core
 
 purge: clean
-	-if [ '$(BINCOPY)' != '@:' -a -d $(bindir) -a -w $(bindir) -a $(srcdir) != . ]; then \
-	    $(RM) $(bindir)/$(XAPP); \
-	fi
+ifneq "$(BINCOPY)" "@:"
+  ifneq "$(srcdir)" "."
+    ifneq "$(filter-out /.,$(wildcard $(bindir)/.))" ""
+	-$(RM) $(bindir)/$(XAPP)
+    endif
+  endif
+endif
 
 
 # Guard against invalid PTB-oriented settings.

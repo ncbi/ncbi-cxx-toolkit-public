@@ -1,4 +1,8 @@
 #!/bin/sh
+
+PATH=/bin:/usr/bin
+export PATH
+
 dir=$1.lock
 
 host=$HOSTNAME

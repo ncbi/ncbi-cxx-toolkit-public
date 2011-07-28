@@ -1,0 +1,68 @@
+# -*- makefile-gmake -*-
+# $Id$
+
+all: ptb_all
+
+ifndef builddir
+  builddir = $(CURDIR)
+
+  CREATE_TUNEUPS = $(top_srcdir)/scripts/common/impl/create_flat_tuneups.sh
+  auto_flat_tuneups.mk: $(CREATE_TUNEUPS) Makefile.flat
+	$<
+
+  DO_MAKE := $(MAKE)
+  expendable_dirs =
+  spec_bearing_dirs =
+  plain_dirs =
+  -include auto_flat_tuneups.mk
+endif
+
+# Some projects cannot be built in parallel due to sharing object files.
+# The build system's locking mechanism keeps attempts to do so from
+# interfering with each other, but can introduce delays, so it would be
+# best to avoid intra-build contention altogether.  However, make's
+# limitations make that easier said than done; the only way to keep it from
+# building a pair of targets in parallel is to claim that one depends on
+# the other, which is effective but can result in overbuilding and
+# potentially introduce bottlenecks in the case of suboptimal ordering.
+# (GNU Make's concept of order-only prerequisites is not as useful as it
+# sounds, as make still insists on updating those targets, just not on
+# updating whatever lists them as OOPs unless it otherwise has cause to.)
+#
+# To address these issues, the build system takes a two-pronged approach.
+# First, the script (scripts/common/impl/make_lock_map.sh) that produces
+# the relevant .hints files attempts to sort targets in decreasing order of
+# utility, as gauged by frequency as a prerequisite in Makefile.flat.  In
+# addition, this makefile includes the hints only when building high-level
+# targets corresponding to multiple leaf targets and their prerequisites,
+# as a single application or library and its prerequisites should not
+# normally have any object files in common.  Those heuristics are somewhat
+# crude, but should keep intra-build contention to a minimum while still
+# largely avoiding overbuilding and bottlenecks.
+
+ifneq "" "$(filter-out %.dll.real %.exe.real %.lib.real,$(MAKECMDGOALS))"
+  -include $(builddir)/build-system/*.hints
+endif
+
+ORIG_MTARGET := $(MTARGET)
+QUICK_MTARGET = $(ORIG_MTARGET) sources= configurables=configurables.null
+%.dll.real %.exe.real %.lib.real: override MTARGET = $(QUICK_MTARGET)
+
+all_dirs = $(expendable_dirs) $(spec_bearing_dirs) $(plain_dirs)
+
+# all_files.real : $(all_dirs:%=%.files.real) ;
+
+$(all_dirs:%=%.files): %.files:
+	$(MAKE) $(MFLAGS) -f $(MINPUT) $@.real
+
+ifneq "$(plain_dirs)" ""
+  $(plain_dirs:%=%.files.real): %.files.real:
+	+cd ./$*; $(MAKE) $(MFLAGS) sources
+endif
+
+ifneq "$(expendable_dirs)" ""
+  $(expendable_dirs:%=%.files.real): %.files.real:
+	+-cd ./$*; $(MAKE) $(MFLAGS) sources
+endif
+
+.PHONY: $(all_dirs:%=%.files) $(all_dirs:%=%.files.real)

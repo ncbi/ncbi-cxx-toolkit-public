@@ -1,3 +1,4 @@
+# -*- makefile-gmake -*-
 # $Id$
 
 # Work around GNU Make's tendency to double its automatic
@@ -9,25 +10,21 @@
 MFLAGS_NR = $(filter-out -,$(filter-out --jobserver-fds=%,$(MFLAGS))) \
             $(word 1,$(filter --jobserver-fds=%,$(MFLAGS)))
 
-# Interpret command-line specifications of APP_PROJ or LIB_PROJ as a
-# cue to clear out all other *_PROJ settings not also provided there.
-ORIG_APP_PROJ     := $(APP_PROJ)
-ORIG_LIB_PROJ     := $(LIB_PROJ)
-ORIG_ASN_PROJ     := $(ASN_PROJ)
-ORIG_DTD_PROJ     := $(DTD_PROJ)
-ORIG_XML_PROJ     := $(XML_PROJ)
-ORIG_EXP_APP_PROJ := $(EXPENDABLE_APP_PROJ)
-ORIG_EXP_LIB_PROJ := $(EXPENDABLE_LIB_PROJ)
-ORIG_EXPENDABLE_APP_PROJ := $(EXPENDABLE_APP_PROJ)
-ORIG_EXPENDABLE_LIB_PROJ := $(EXPENDABLE_LIB_PROJ)
-ifneq "$(filter command, $(origin APP_PROJ) $(origin LIB_PROJ))" ""
-  APP_PROJ=
-  LIB_PROJ=
-  EXPENDABLE_APP_PROJ=
-  EXPENDABLE_LIB_PROJ=
-  ifeq "$(origin APP_PROJ):$(LIB_PROJ)" "command line:"
-    ASN_PROJ=
-    DTD_PROJ=
-    XML_PROJ=
+#ifeq "" "$(filter Makefile.flat %/Makefile.flat,$(MAKEFILE_LIST))"
+ifdef abs_top_srcdir
+  include $(top_srcdir)/src/build-system/Makefile.meta_l
+  ifneq "" "$(filter %_r %_p,$(MAKECMDGOALS))"
+    include $(top_srcdir)/src/build-system/Makefile.meta_r
+    ifneq "" "$(filter %_p,$(MAKECMDGOALS))"
+      include $(top_srcdir)/src/build-system/Makefile.meta_p
+    endif
+  endif
+  ifneq "" "$(filter %_f %_fd,$(MAKECMDGOALS))"
+    include $(top_srcdir)/src/build-system/Makefile.meta_f
+  endif
+  include $(top_srcdir)/src/build-system/Makefile.requirements
+else
+  ifndef builddir
+    include $(top_srcdir)/src/build-system/Makefile.flat_tuneups
   endif
 endif

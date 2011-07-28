@@ -34,15 +34,26 @@ BEGIN                        { stage = 0; target = ""; in_all_projects = 0 }
 (length(target)  &&  /^\t/)  { rules = rules "\n" $0; next }
 (length(target)  &&  !/^\t/) {
     if (gsub("cd " subdir "/", "cd ./", rules)) {
+        split(rules, split_rules, /[ \t;]/)
+        if (split_rules[2] ~ /^[+-]*cd$/) {
+            dir = split_rules[3]
+            all_dirs[dir] = 1
+        }
         all_rules[target] = rules
         all_targets = all_targets " " target
         if (target ~ /\.files$/ && target in orig_all_dataspec) {
             all_dataspec = all_dataspec " " target
+            if (! (dir in spec_bearing_dirs) ) {
+                spec_bearing_dirs[dir] = target
+            }
         } else if (target in orig_all_projects) {
             all_projects = all_projects " " target
             if (target ~ /\.(lib|dll)$/) {
                 all_libraries = all_libraries " " target
             }
+        }
+        if (rules ~ /\t\+?cd /) {
+            non_expendable_dirs[dir] = 1
         }
     } else if (sub("^" subdir "/", "", target)  &&  target != "") {
         all_rules[target] = rules
@@ -80,12 +91,34 @@ END {
         print p[i] " :"
         print "\t" make " " p[i] ".real MTARGET=$(MTARGET)\n"
         printf "%s.real :", p[i]
+        rules = all_rules[p[i]]
+        if (match(rules, /cd [^ ;]+/)) {
+            dir = substr(rules, RSTART + 3, RLENGTH - 3)
+            printf " %s.files.real", dir
+        } else {
+            dir = ""
+        }
         nd = split(all_deps[p[i]], d, " ")
         for (j = 1;  j <= np;  ++j) {
             if (d[j] in all_rules) {
                 printf " %s.real", d[j]
             }
         }
-        print all_rules[p[i]] "\n"
+        gsub("cd \\./; ", "", rules)
+        print rules
+        if (dir != "" && ! (dir in seen_dirs)) {
+            print
+            if (dir in spec_bearing_dirs) {
+                print dir ".files.real: " spec_bearing_dirs[dir] ".real ;"
+                print "spec_bearing_dirs += " dir
+            } else if (dir in non_expendable_dirs) {
+                print "plain_dirs += " dir
+            } else {
+                print "expendable_dirs += " dir
+            }
+            seen_dirs[dir] = 1
+        }
+        print ""
     }
+    print "include $(top_srcdir)/src/build-system/Makefile.flat_tuneups"
 }

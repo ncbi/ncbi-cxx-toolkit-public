@@ -1,0 +1,52 @@
+# -*- makefile-gmake -*-
+# $Id$
+
+### Full recursive build -- in the [SUB_PROJ] directories
+
+ifeq "$(IS_CHECK)" "Y"
+  SUB_PROJ := $(filter-out check,$(SUB_PROJ))
+endif
+
+# 1: name
+warn_one_sub_proj = echo 'Warning: non-existent sub-project "$(1)"'
+
+# 1: name, 2: target, 3: is_expendable?
+define make_one_sub_proj_r_nonl
+$(if $(3),NCBI_BUT_EXPENDABLE=$(butexp) ,) \
+$(MAKE) -C $(1) $(MFLAGS_NR) $(2)  ||  exit 5
+endef
+
+# 1: name, 2: target, 3: is_expendable?
+define make_one_sub_proj_r
++$(call make_one_sub_proj_r_nonl,$(1),$(2),$(3))
+endef
+
+# 1: name, 2: mode, 3: target, 4: is_expendable?
+define make_one_sub_proj_x
+$(if $(wildcard $(1)/.),$(call make_one_sub_proj$(2),$(1),$(3),$(4)),$(call warn_one_sub_proj,$(1)))
+
+endef
+
+# 1: target
+define make_each_sub_proj_r
+$(foreach p,$(SUB_PROJ),$(call make_one_sub_proj_x,$(p),_r,$(1),))
+$(foreach p,$(EXPENDABLE_SUB_PROJ),-$(call make_one_sub_proj_x,$(p),_r,$(1),1))
+endef
+
+rec_targets_r = $(base_targets:%=%_r)
+$(rec_targets_r): %_r: %_r.needs-reqs
+all_r.real: all_l.real
+	@-$(RM) -f .built_r
+	@-echo "`date`: building in subdirectories of $(CURDIR)" > .building
+	$(call make_each_sub_proj_r,all_r)
+	@-$(RM) -f .building
+	@-echo "`date`: recursive build succeeded in $(CURDIR)" > .built_r
+
+check_r.real:
+	$(call make_check,check_add_r)
+
+$(addsuffix _r.real,$(generic_targets)): %_r.real: %_l.real
+	$(call make_each_sub_proj_r,$*_r)
+
+base_req_needers += $(rec_targets_r)
+.PHONY: $(rec_targets_r) $(rec_targets_r:%=%.real)

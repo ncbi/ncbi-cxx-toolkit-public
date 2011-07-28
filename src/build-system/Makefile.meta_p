@@ -1,0 +1,112 @@
+# -*- makefile-gmake -*-
+# $Id$
+
+### Project-list-based recursive builds
+
+PROJECTS = $(builddir)/projects.pseudo.i
+
+# Some preprocessors only accept files with appropriate extensions....
+$(builddir)/projects.pseudo.c: $(PROJECTS_)
+	$(RM) -f $@
+	$(if $(wildcard $(PROJECTS_)),$(LN_S) "$(PROJECTS_)",echo ".*" >) $@
+
+$(PROJECTS): $(builddir)/projects.pseudo.c
+	$(CPP) $(if $(PROJECTS_),-I$(dir $(PROJECTS_)),) \
+            -I$(top_srcdir)/scripts/projects \
+	    -I$(top_srcdir)/scripts/internal/projects \
+            $(builddir)/projects.pseudo.c | sed -e '/#/d' > $@
+
+# This file contains the actual patterns to grep for, formed by
+# prepending "build/" to each original pattern as an anchor.
+RELEVANT_FILE = $(builddir)/relevant.patterns
+$(RELEVANT_FILE): $(PROJECTS) $(top_srcdir)/src/build-system/Makefile.meta.in
+	@if test -s "$(PROJECTS)"; then \
+	    sed -e '/ update-only$$/d; /^$$/d; /^-/d; s@^@build/@' \
+	        -e 's:\([^$$/\\]\)\(\$$*\)$$:\1/\2:' \
+	      $(PROJECTS); \
+	else \
+	    echo '.*'; \
+	fi > $@
+
+IRRELEVANT_FILE = $(builddir)/irrelevant.patterns
+$(IRRELEVANT_FILE): $(PROJECTS) $(top_srcdir)/src/build-system/Makefile.meta.in
+	echo '^$$' > $@
+ifneq "$(wildcard $(PROJECTS_))" ""
+	sed -ne 's:\([^$$/\\]\)\(\$$*\)$$:\1/\2:; s@^-@build/@p' $(PROJECTS) \
+	    >> $@
+endif
+
+# Commands to see whether project directories are relevant.
+# 1: dir, 2: sub?
+define is_relevant
+echo $(CURDIR)/$(1) | $(EGREP) -f $(RELEVANT$(2)_FILE) | \
+    $(EGREP_Q) -v -f $(IRRELEVANT$(2)_FILE)
+endef
+
+RELEVANT_SUB_FILE = $(builddir)/relevant.prefixes
+$(RELEVANT_SUB_FILE): $(RELEVANT_FILE)
+	@while read path; do \
+	    echo $$path; \
+	    while [ "$$path" != build ]; do \
+	        path=`dirname $$path` ; \
+	        echo "$$path/\$$"; \
+	    done; \
+	done < $(RELEVANT_FILE) | sort -u > $(RELEVANT_SUB_FILE)
+
+IRRELEVANT_SUB_FILE = $(builddir)/irrelevant.prefixes
+$(IRRELEVANT_SUB_FILE): $(IRRELEVANT_FILE)
+	-grep -v '\$$$$' $(IRRELEVANT_FILE) > $(IRRELEVANT_SUB_FILE)
+
+auto-relevance.mk: $(RELEVANT_SUB_FILE) $(IRRELEVANT_SUB_FILE)
+	@(if $(call is_relevant,,_SUB) ; then echo "RELEVANT_SUB = 1" ; fi ; \
+	    if $(call is_relevant,,) ; then echo "RELEVANT = 1" ; fi) > $@
+
+# 1: name, 2: target, 3: is_expendable?
+define make_one_sub_proj_p
++@if $(call is_relevant,$(1)/,)  ||  $(call is_relevant,$(1)/,_SUB) ; then \
+    echo $(MAKE) -C $(1) $(MFLAGS_NR) $(2) ; \
+    $(call make_one_sub_proj_r_nonl,$(1),$(2),$(3)) ; \
+fi
+endef
+
+# 1: target
+define make_each_sub_proj_p
+$(foreach p,$(SUB_PROJ) $(POTENTIAL_SUB_PROJ),$(call make_one_sub_proj_x,$(p),_p,$(1)))
+$(foreach p,$(EXPENDABLE_SUB_PROJ),$(call make_one_sub_proj_x,$(p),_p,$(1),1))
+endef
+
+deps_p=
+cmds_p=
+rec_targets_p = $(base_targets:%=%_p)
+$(rec_targets_p): %_p: %_p.needs-reqs
+
+-include auto-relevance.mk
+
+ifeq "$(RELEVANT)" "1"
+  # 1: target
+  deps_p=$(1)
+endif
+
+ifeq "$(RELEVANT_SUB)" "1"
+  # 1: target
+  cmds_p=$(call make_each_sub_proj_p,$(1)_p)
+endif
+
+# .SECONDEXPANSION:
+
+all_p.real: $(call deps_p,all_l) configurables
+	@-$(RM) -f .built_p
+	@-echo "`date`: building in subdirectories of $(CURDIR)" > .building
+	$(call cmds_p,all)
+	@-$(RM) -f .building
+	@-echo "`date`: recursive build succeeded in $(CURDIR)" > .built_p
+
+check_p.real:
+	$(call make_check,check_add_p)
+
+# $$* is new in 3.81, and may be overkill
+$(addsuffix _p.real,$(generic_targets)): %_p.real: $(call deps_p,%_l)
+	$(call cmds_p,$*)
+
+base_req_needers += $(rec_targets_p)
+.PHONY: $(rec_targets_p) $(rec_targets_p:%=%.real)

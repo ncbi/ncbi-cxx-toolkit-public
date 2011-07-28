@@ -36,6 +36,7 @@ ifdef GCCPCH
 endif
 
 
+ifeq "" "$(findstring q,$(MAKEFLAGS))"
 ### Dependencies (GNU make only)
 DEPFLAGS_ALL = $(DEPFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 D_TAIL = $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
@@ -76,6 +77,7 @@ D_TAIL_PCH = -x c++-header -DNCBI_USE_PCH -DNCBI_PCH__HPP= \
                   "$< $(DEPFLAGS_POST) | sed ..."; exit 1)
 $(builddir)/corelib/ncbi_pch_impl.hpp.d.$(PCHMODE): $(pchsrc)
 	$(CXX_WRAPPER) $(CXX) $(D_TAIL_PCH)
+endif
 
 .d .o:
 	@echo "*** $(TMPL): Illegal whitespace detected at the end of"
@@ -84,9 +86,7 @@ $(builddir)/corelib/ncbi_pch_impl.hpp.d.$(PCHMODE): $(pchsrc)
 
 
 NODEPGOALS = clean purge requirements deactivate src-stamp export-headers
-GOALS := $(MAKECMDGOALS)
-GOALS ?= all
-ifneq (,$(filter-out $(NODEPGOALS),$(GOALS)))
+ifneq (,$(filter-out $(NODEPGOALS),$(if $(MAKECMDGOALS),$(MAKECMDGOALS),all)))
 ifdef SOURCES
  -include $(SOURCES:=.d)
 endif

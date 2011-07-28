@@ -1,0 +1,40 @@
+# -*- makefile-gmake -*-
+# $Id$
+
+### Flat-makefile-based recursive builds
+
+ifneq "" "$(filter-out $(CURDIR),$(builddir))"
+  CREATE_FSMF     = $(top_srcdir)/scripts/common/impl/create_flat_submakefile.sh
+  CREATE_FSMF_AWK = $(CREATE_FSMF:.sh=.awk)
+
+  Makefile.flat: $(CREATE_FSMF) $(CREATE_FSMF_AWK) $(builddir)/Makefile.flat
+	+$< $(builddir) $(subdir)
+endif
+MAKE_FLAT = $(MAKE) $(MFLAGS_NR) -f Makefile.flat
+
+# *_f targets build from local flat makefiles (produced on demand)
+# that disregard dependencies beyond the current subtree.
+
+all_f: Makefile.flat
+	+$(MAKE_FLAT)
+clean_f: Makefile.flat
+	+$(MAKE_FLAT) MTARGET=clean
+purge_f: Makefile.flat
+	+$(MAKE_FLAT) MTARGET=purge
+libs_f: Makefile.flat
+	+$(MAKE_FLAT) all_libs
+sources_f: Makefile.flat
+	+$(MAKE_FLAT) all_files
+
+# *_fd targets build the local subtree in parallel according to the
+# top-level flat makefile, which may entail visiting dependencies
+# beyond the current subtree.
+
+all_fd:
+	+cd $(builddir)  &&  $(MAKE_FLAT) $(subdir)/
+clean_fd:
+	+cd $(builddir)  &&  $(MAKE_FLAT) $(subdir)/ MTARGET=clean
+purge_fd:
+	+cd $(builddir)  &&  $(MAKE_FLAT) $(subdir)/ MTARGET=purge
+
+.PHONY: all_f clean_f purge_f libs_f sources_f all_fd clean_fd purge_fd

@@ -1,0 +1,244 @@
+# -*- makefile-gmake -*-
+# $Id$
+
+### Rules for building within a single directory
+
+# Interpret command-line specifications of APP_PROJ or LIB_PROJ as a
+# cue to clear out all other *_PROJ settings not also provided there.
+ifneq "$(filter command, $(origin APP_PROJ) $(origin LIB_PROJ))" ""
+  APP_PROJ=
+  LIB_PROJ=
+  EXPENDABLE_APP_PROJ=
+  EXPENDABLE_LIB_PROJ=
+  ifeq "$(origin APP_PROJ):$(LIB_PROJ)" "command line:"
+    ASN_PROJ=
+    DTD_PROJ=
+    XML_PROJ=
+  endif
+endif
+
+### Protect against two MAKE processes running in the same dir
+
+RWL = $(abs_top_srcdir)/scripts/common/impl/run_with_lock.sh
+
+### Tests config variables
+
+check_run = $(abs_top_srcdir)/scripts/common/check/check_run.sh
+check_add = $(abs_top_srcdir)/scripts/common/check/check_add.sh
+
+sources = sources
+
+ifeq "" "$(filter 0 1,$(words $(wildcard $(srcdir)/Makefile.*.???)))"
+  MAKE_LOCK_MAP = @cd $(abs_srcdir)  &&  $(RWL) \
+    $(top_srcdir)/scripts/common/impl/make_lock_map.sh \
+    -bd $(builddir) -sd $(rel_srcdir:src/%=%)
+  w_lock_map = -map $(srcdir)/.\#lock-map
+endif
+
+but_exp = ' (but expendable)'
+make_tag = $(word 1,$(MAKE))$(patsubst %,[%],$(filter-out 0,$(MAKELEVEL)))
+# 1: proj_name, 2: lock_map?, 3: command, 4: target, 5: ext, 6: cleanup,
+# 7: error_status, 8: is_expendable?
+define make_one_leaf_proj
+$(if $(8),NCBI_BUT_EXPENDABLE=$(but_exp);,) \
+if NCBICXX_TESTING_REQS=1 $(3) -q requirements; then \
+    if $(3) -q $(4); then \
+	echo "$(make_tag) (Makefile.$(1)$(5)): Nothing to be done for \`$(4)'."; \
+    elif echo $(3) $(4) && \
+      $(RWL) -base "make_$(1)" -log "make_$(1).log" $(2) ! $(3) $(4) ; then \
+        echo "FAILED$$NCBI_BUT_EXPENDABLE: $(rel_srcdir)/Makefile.$(1)$(5)" ; \
+	$(6) ; \
+        exit $(7) ; \
+    fi ; \
+else \
+    echo "NOTE:  skipping project \"$(1)\" due to unmet requirements"; \
+fi
+
+endef
+# The blank line before endef keeps foreach from running commands together.
+
+MAKE_USR = $(MAKE) -f "$$x_mfile" builddir="$(builddir)" \
+           srcdir="$(abs_srcdir)" $(MFLAGS_NR)
+ANY_USR_PROJ = $(USR_PROJ)$(XUNIX_USR_PROJ)$(EXPENDABLE_USR_PROJ)
+ifneq "$(ANY_USR_PROJ)" ""
+  # 1: proj_name, 2: target, 3: is_expendable
+  define make_one_usr_proj
++@x_mfile=$(if $(wildcard Makefile.$(1)),,$(srcdir)/)Makefile.$(1) ; \
+$(call make_one_leaf_proj,$(1),,$(MAKE_USR),$(2),,:,1,$(3))
+  endef
+  # 1: target
+  define make_each_usr_proj
+@test -f requirements  ||  $(TOUCH) -t 197607040000 requirements
+$(foreach p,$(USR_PROJ) $(XUNIX_USR_PROJ),$(call make_one_usr_proj,$(p),$(1),))
+-$(foreach p,$(EXPENDABLE_USR_PROJ),$(call make_one_usr_proj,$(p),$(1),1))
+@test -s requirements  ||  $(RM) -f requirements
+  endef
+endif
+
+SPEC_TYPES = ASN DTD XSD
+MAKE_ASN = $(builddir)/new_module.sh "$$i"
+MAKE_DTD = $(builddir)/new_module.sh --dtd "$$i"
+MAKE_XSD = $(builddir)/new_module.sh --xsd "$$i"
+
+# 1: proj_name, 2: proj_type, 3: target
+define make_one_spec_proj
++@i=$(1) ; \
+echo "cd $(abs_srcdir)  &&  $(MAKE_$(2)) $(3)" ; \
+cd $(abs_srcdir) && \
+if MAKE="$(MAKE) $(MFLAGS_NR)" \
+     $(RWL) -base make_asn -log "$(CURDIR)/make_$(1).log" $(MAKE_$(2)) $(3) \
+   &&  $(MAKE_LIB) src-stamp; then \
+    : ; \
+else \
+   echo "FAILED$$NCBI_BUT_EXPENDABLE: $(rel_srcdir)/Makefile.$$i.lib" ; \
+   exit 6 ; \
+fi
+
+endef
+# 1: proj_type, 2: target
+define make_spec_type
+$(foreach p,$($(1)_PROJ),$(call make_one_spec_proj,$(p),$(1),$(2)))
+endef
+# 1: target
+define make_each_spec
+$(foreach t,$(SPEC_TYPES),$(call make_spec_type,$(t),$(1)))
+endef
+
+### The i shell variable is a legacy of the previous approach,
+### retained for compatibility with new_project and import_project.
+MAKE_LIB = $(MAKE) -f "$(builddir)/Makefile.lib.tmpl" srcdir="$(srcdir)" \
+           TMPL="$$i" $(MFLAGS_NR)
+ifeq "" "$(filter $(LIB_PROJ),$(foreach t,$(SPEC_TYPES),$($(t)_PROJ)))"
+  LIB_TYPES = $(SPEC_TYPES) LIB
+else
+  LIB_TYPES = LIB
+endif
+
+# 1: proj_name, 2: command, 3: target, 4: ext, 5: cleanup_target,
+# 6: error_status, 7: is_expendable?
+define make_one_cxx_proj
++@i=$(1) ; \
+$(call make_one_leaf_proj,$(1),$(w_lock_map),$(2),$(3),$(4),$(2) $(5),$(6),$(7))
+endef
+
+# 1: proj_name, 2: target, 3: is_expendable
+define make_one_lib_proj
+$(call make_one_cxx_proj,$(1),$(MAKE_LIB),$(2),.lib,$(deactivate),2,$(3))
+endef
+# 1: proj_type, 2: target, 3: is_expendable
+define make_lib_proj_type
+$(foreach p,$($(1)_PROJ),$(call make_one_lib_proj,$(p),$(2),$(3)))
+endef
+# 1: target
+define make_each_lib_proj
+$(foreach t,$(LIB_TYPES),$(call make_lib_proj_type,$(t),$(1),))
+-$(call make_lib_proj_type,EXPENDABLE_LIB,$(1),1)
+endef
+
+MAKE_APP = $(MAKE) -f "$(builddir)/Makefile.app.tmpl" srcdir="$(srcdir)" \
+           TMPL="$$i" $(APP_NOCOPY) $(MFLAGS_NR)
+
+# 1: proj_name, 2: target, 3: is_expendable
+define make_one_app_proj
+$(call make_one_cxx_proj,$(1),$(MAKE_APP),$(2),.app,unlink,2,$(3))
+endef
+# 1: target
+define make_each_app_proj
+$(foreach p,$(APP_PROJ),$(call make_one_app_proj,$(p),$(1),))
+-$(foreach p,$(EXPENDABLE_APP_PROJ),$(call make_one_app_proj,$(p),$(1),1))
+endef
+
+ifneq "$(wildcard $(check_run))" ""
+# 1: target
+define make_check
++@$(RWL) -base check $(check_run) $(signature) $(builddir) $(abs_top_srcdir) \
+    $(MAKE) $(MFLAGS_NR) IS_CHECK=Y $(1)  ||  exit 7
+endef
+endif
+
+# 1: proj_name
+define add_one_check
++@$(check_add) $(abs_srcdir) $(1) $(signature) $(subdir)  ||  exit 5
+
+endef
+define add_each_check
+$(foreach p,$(APP_PROJ) $(EXPENDABLE_APP_PROJ),$(call add_one_check,$(p)))
+endef
+
+generic_targets = libs clean purge check_add
+base_targets = all check $(generic_targets)
+local_targets = $(base_targets:%=%_l) sources_l
+$(local_targets): %: %.needs-reqs
+
+$(base_targets) sources: %: %_l ;
+
+has_usr        = all_l sources_l clean_l purge_l
+has_usr_l_real = $(has_usr:%=%.real)
+has_usr_real   = $(has_usr:%_l=%.real)
+has_usr_nonusr = $(has_usr:%_l=%.nonusr)
+has_usr_usr    = $(has_usr:%_l=%.usr)
+has_usr_locked = $(has_usr:%_l=%.usr.locked)
+
+$(has_usr_l_real): %_l.real: %.nonusr ;
+
+$(has_usr_real): %.real: %_l.real ;
+
+$(has_usr_usr_locked) $(has_usr_nonusr): configurables
+
+ifeq "$(sources:%=$(ANY_USR_PROJ))" ""
+  $(has_usr_usr): ;
+else
+  all.usr: sources.usr ;
+
+  sources.usr:
+	@-$(RM) -f .built .built_r
+	@-echo "`date`: starting to build in $(CURDIR)" > .building
+	$(call make_each_usr_proj,all)
+	@-$(RM) -f .building
+	@-echo "`date`: local build succeeded in $(CURDIR)" > .built
+
+  clean.usr purge.usr: %.usr:
+	@-$(RM) -f .building .built .built_r
+	$(call make_each_usr_proj,$*)
+
+  all.usr.locked: sources.usr.locked ;
+
+  $(filter-out all.usr.locked,$(has_usr_locked)): %.usr.locked:
+	@$(RWL) $(MAKE) $(MFLAGS_NR) $*.usr
+
+  $(has_usr_nonusr): %.nonusr: %.usr.locked
+endif
+
+sources.nonusr:
+	$(call make_each_spec,all)
+	$(call make_each_lib_proj,export-headers)
+	$(MAKE_LOCK_MAP)
+
+all.nonusr: $(sources:%=%.nonusr)
+	@-$(RM) -f .built .built_r
+	@-echo "`date`: starting to build in $(CURDIR)" > .building
+	$(call make_each_lib_proj,all)
+	$(call make_each_app_proj,all)
+	@-$(RM) -f .building
+	@-echo "`date`: local build succeeded in $(CURDIR)" > .built
+
+clean.nonusr purge.nonusr: %.nonusr: # %_sources
+	$(call make_each_lib_proj,$*)
+	$(call make_each_app_proj,$*)
+
+clean_sources purge_sources:
+	$(call make_each_spec_proj,$@)
+
+libs_l.real: $(sources)
+	$(call make_each_lib_proj,all)
+
+check_l.real:
+	$(call make_check,check_add_l)
+check_add_l.real:
+	$(add_each_check)
+
+base_req_needers = $(local_targets)
+.PHONY: $(base_targets) $(has_usr_nonusr) $(has_usr_usr)
+.PHONY: $(has_usr_locked) $(has_usr_l_real) $(has_usr_real)
+.PHONY: sources clean_sources purge_sources
+.PHONY: libs_l.real check_l.real check_add_l.real

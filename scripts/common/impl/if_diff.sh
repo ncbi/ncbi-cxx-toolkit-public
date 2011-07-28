@@ -10,6 +10,9 @@ script_args="$*"
 action="$1"
 shift 1
 
+orig_PATH=$PATH
+PATH=/bin:/usr/bin
+
 case "`basename \"$action\"`" in
   cp | cp\ * | ln | ln\ * ) rm="rm -f" ;;
   * ) rm=: ;;
@@ -49,7 +52,9 @@ ExecHelper()
   shift
   cmd="$* $dest_file"
   test "$quiet" = yes || echo "$cmd"
+  PATH=$orig_PATH
   "$@" "$dest"
+  PATH=/bin:/usr/bin
 }
 
 ExecAction()
