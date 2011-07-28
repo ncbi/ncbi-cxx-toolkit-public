@@ -195,7 +195,7 @@ typedef enum {
 /** Severity level for the posted diagnostics
  */
 typedef enum {
-    eNcbiLog_Trace = 0,       /**< Trace message         */
+    eNcbiLog_Trace = 0,       /**< Trace message          */
     eNcbiLog_Info,            /**< Informational message  */
     eNcbiLog_Warning,         /**< Warning message        */
     eNcbiLog_Error,           /**< Error message          */

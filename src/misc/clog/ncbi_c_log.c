@@ -344,10 +344,11 @@ int/*bool*/ NcbiLog_Default_MTLock_Handler
     }
     return 1;
 
-#endif
+#else
     /* Not implemented -- not an MT build or current platform
        doesn't support MT-threading */
     return 0;
+#endif
 }
 
 
@@ -557,7 +558,7 @@ static TNcbiLog_TID s_GetTID(void)
 #if defined(NCBI_NO_THREADS)
     tid = 0;
 #elif defined(NCBI_POSIX_THREADS)
-    tid = pthread_self();
+    tid = (TNcbiLog_TID)pthread_self();
 #elif defined(NCBI_WIN32_THREADS)
     tid = GetCurrentThreadId();
 #endif
@@ -2032,8 +2033,9 @@ void NcbiLog_ReqStop(int status, size_t bytes_rd, size_t bytes_wr)
     VERIFY(pos > 0);
     /* We already have current time in sx_Info->post_time */
     timespan = s_DiffTime(sx_Context->req_start_time, sx_Info->post_time);
-    n = sprintf(sx_Info->message + pos, "%-13s %d %.3f %u %u",
-                "request-stop", status, timespan, bytes_rd, bytes_wr);
+    n = sprintf(sx_Info->message + pos, "%-13s %d %.3f %lu %lu",
+                "request-stop", status, timespan,
+                (unsigned long)bytes_rd, (unsigned long)bytes_wr);
     VERIFY(n > 0);
     /* Post a message */
     s_Post(eDiag_Log);
