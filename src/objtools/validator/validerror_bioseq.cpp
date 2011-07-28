@@ -3382,6 +3382,10 @@ void CValidError_bioseq::ValidateMultiIntervalGene(const CBioseq& seq)
                  && s_LocIntervalsSpanOrigin (loc, m_CurrentHandle)) {            
                 // spans origin
                 continue;
+            } else if (m_Imp.IsSmallGenomeSet()) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_MultiIntervalGene,
+                    "Multiple interval gene feature in small genome set - "
+                    "set trans-splicing exception if appropriate", fi->GetOriginalFeature());
             } else {
                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_MultiIntervalGene,
                     "Gene feature on non-segmented sequence should not "

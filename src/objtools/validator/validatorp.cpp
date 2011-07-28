@@ -1901,18 +1901,30 @@ void CValidError_imp::ValidateSeqLoc
             loc.GetLabel(&loc_lbl);
         }
         if (mixed_strand) {
-            PostErr(eDiag_Error, eErr_SEQ_FEAT_MixedStrand,
-                prefix + ": Mixed strands in SeqLoc ["
-                + loc_lbl + "]", obj);
+            if (IsSmallGenomeSet()) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_MixedStrand,
+                    prefix + ": Mixed strands in SeqLoc ["
+                    + loc_lbl + "] in small genome set - set trans-splicing exception if appropriate", obj);
+            } else {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_MixedStrand,
+                    prefix + ": Mixed strands in SeqLoc ["
+                    + loc_lbl + "]", obj);
+            }
         } else if (unmarked_strand) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_MixedStrand,
                 prefix + ": Mixed plus and unknown strands in SeqLoc ["
                 + loc_lbl + "]", obj);
         }
         if (!ordered) {
-            PostErr(eDiag_Error, eErr_SEQ_FEAT_SeqLocOrder,
-                prefix + ": Intervals out of order in SeqLoc [" +
-                loc_lbl + "]", obj);
+            if (IsSmallGenomeSet()) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_SeqLocOrder,
+                    prefix + ": Intervals out of order in SeqLoc [" +
+                    loc_lbl + "]", obj);
+            } else {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_SeqLocOrder,
+                    prefix + ": Intervals out of order in SeqLoc [" +
+                    loc_lbl + "]", obj);
+            }
         }
         return;
     }
