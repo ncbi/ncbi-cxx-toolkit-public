@@ -23,7 +23,7 @@ done
 : ${base:=`basename "$1"`}
 
 clean_up () {
-    rm -rf "$base.lock"
+    /bin/rm -rf "$base.lock"
 }
 
 case $0 in
@@ -58,6 +58,8 @@ if "$get_lock" "$base" $$; then
             status=1
         fi
     else
+        PATH=$orig_PATH
+        export PATH
         "$@"
         status=$?
     fi
