@@ -4,7 +4,7 @@ GMAKE = gmake
 
 more_shims_ = $(top_srcdir)/src/build-system/Makefile.flat_shims
 more_shims_recursive = /dev/null
-more_shims = more_shims_$(abs_top_srcdir:%=recursive)
+more_shims = $(more_shims_$(abs_top_srcdir:%=recursive))
 
 include $(more_shims)
 
