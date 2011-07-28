@@ -211,7 +211,7 @@ void CTest::Server(int n_cycle)
         size_t  n_read, n_written;
         char    buf[kBufferSize];
 
-        ERR_POST(Info << "n_cycle = " + NStr::UIntToString(n_cycle));
+        ERR_POST(Info << "n_cycle = " + NStr::IntToString(n_cycle));
 
         // Listening pipe
         status = pipe.Listen();
@@ -225,7 +225,7 @@ void CTest::Server(int n_cycle)
 
                 // Report received data
                 ERR_POST(Info <<
-                         NStr::UIntToString(n_read) + " byte(s) read: " +
+                         NStr::SizetToString(n_read) + " byte(s) read: " +
                          (n_read ? "" : IO_StatusStr(status)));
 
                 // Write data back to the pipe
@@ -242,16 +242,16 @@ void CTest::Server(int n_cycle)
                     if (!n_written) {
                         assert(status != eIO_Success);
                         ERR_POST(Warning << "Failed to write "
-                                 + NStr::UIntToString(n_read - n_done)
+                                 + NStr::SizetToString(n_read - n_done)
                                  + " byte(s): "
                                  + IO_StatusStr(status));
                         break;
                     }
                     n_done += n_written;
                     ERR_POST(Info <<
-                             NStr::UIntToString(n_written)
+                             NStr::SizetToString(n_written)
                              + " byte(s) written, "
-                             + NStr::UIntToString(n_read - n_done)
+                             + NStr::SizetToString(n_read - n_done)
                              + " remaining (status: "
                              + IO_StatusStr(status)
                              + ')');
