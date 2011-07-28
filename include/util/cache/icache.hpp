@@ -26,17 +26,13 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov
- *
- * File Description: cache interface specs.
+ * Authors:  Anatoliy Kuznetsov, Dmitry Kazimirov,
+ *           Eugene Vasilchenko, Denis Vakatov
  *
  */
 
 /// @file icache.hpp
-/// Cache interface specs.
-///
-/// File describes interfaces used to create local cache of
-/// binary large objects (BLOBS).
+/// Interfaces for a local cache of versioned binary large objects (BLOBS).
 
 
 #include <corelib/plugin_manager_impl.hpp>
@@ -57,11 +53,14 @@ BEGIN_NCBI_SCOPE
 /// on an immediate request, version or access time
 /// based replacement (or another implementation specific depreciation rule).
 ///
-/// Cache elements are accessed by key-subkey pair.
+/// Cache elements are accessed by key-subkey pair, and are versioned.
 ///
+
 class ICache
 {
 public:
+    // Version of blob
+    typedef int TBlobVersion;
 
     /// ICache keeps timestamps of every cache entry.
     /// This enum defines the policy how it is managed.
@@ -70,34 +69,28 @@ public:
     /// @sa SetTimeStampPolicy, TTimeStampFlags
     ///
     enum ETimeStampFlags {
-
         /// Timestamp management disabled
-        fNoTimeStamp               = 0,
-
+        fNoTimeStamp                = 0,
         /// Cache element is created with a certain timestamp (default)
-        fTimeStampOnCreate         = (1 << 0),
-
+        fTimeStampOnCreate          = (1 << 0),
         /// Timestamp is updated every on every access (read or write)
         fTimeStampOnRead            = (1 << 1),
-
         /// Timestamp full key-subkey pair. By default only key is taken
         /// into account
         fTrackSubKey                = (1 << 2),
-
         /// Expire objects older than a certain time frame
         /// Example: If object is not accessed within a week it is
         ///          dropped from the cache.
         fExpireLeastFrequentlyUsed  = (1 << 3),
-
         /// Expired objects should be deleted on cache mount (Open)
         fPurgeOnStartup             = (1 << 4),
-
         /// Expiration timeout is checked on any access to cache element
         fCheckExpirationAlways      = (1 << 5)
     };
 
     typedef ETimeStampFlags ETimeStampPolicy;
 
+    /// Holds a bitwise OR of "ETimeStampFlags"
     /// @sa ETimeStampFlags
     typedef int TTimeStampFlags;
 
@@ -168,7 +161,7 @@ public:
     /// @param time_to_live
     ///    Individual timeout. Cannot exceed max timeout.
     virtual void Store(const string&  key,
-                       int            version,
+                       TBlobVersion   version,
                        const string&  subkey,
                        const void*    data,
                        size_t         size,
@@ -186,7 +179,7 @@ public:
     /// @return
     ///    BLOB size or 0 if it doesn't exist or expired
     virtual size_t GetSize(const string&  key,
-                           int            version,
+                           TBlobVersion   version,
                            const string&  subkey) = 0;
 
     /// Retrieve BLOB owner
@@ -196,7 +189,7 @@ public:
     ///
     /// @sa Store, GetWriteStream
     virtual void GetBlobOwner(const string&  key,
-                              int            version,
+                              TBlobVersion   version,
                               const string&  subkey,
                               string*        owner) = 0;
 
@@ -218,7 +211,7 @@ public:
     /// @note Throws an exception if provided memory buffer is insufficient
     /// to read the BLOB
     virtual bool Read(const string& key,
-                      int           version,
+                      TBlobVersion  version,
                       const string& subkey,
                       void*         buf,
                       size_t        buf_size) = 0;
@@ -233,7 +226,7 @@ public:
     ///    BLOB version
     /// @return Interface pointer or NULL if BLOB does not exist
     virtual IReader* GetReadStream(const string&  key,
-                                   int            version,
+                                   TBlobVersion   version,
                                    const string&  subkey) = 0;
 
     /// Whether a BLOB is valid from the point of view of underlying cache.
@@ -264,7 +257,7 @@ public:
     /// @sa  SetBlobVersionAsValid()
     virtual IReader* GetReadStream(const string&  key,
                                    const string&  subkey,
-                                   int*           version,
+                                   TBlobVersion*  version,
                                    EBlobValidity* validity) = 0;
 
     /// Set current version for a BLOB.
@@ -281,7 +274,7 @@ public:
     /// @sa  GetReadStream()
     virtual void SetBlobVersionAsValid(const string&  key,
                                        const string&  subkey,
-                                       int            version) = 0;
+                                       TBlobVersion   version) = 0;
 
     /// BLOB access descriptor
     struct SBlobAccessDescr
@@ -291,11 +284,11 @@ public:
             {
             }
 
-        auto_ptr<IReader> reader;
-        char*      buf;
-        size_t     buf_size;
-        size_t     blob_size;
-        bool       blob_found;
+        auto_ptr<IReader>  reader;
+        char*              buf;
+        size_t             buf_size;
+        size_t             blob_size;
+        bool               blob_found;
     };
 
     /// Get BLOB access using BlobAccessDescr.
@@ -307,7 +300,7 @@ public:
     /// @note
     ///  Method supposed to provide fast access to relatively small BLOBs
     virtual void GetBlobAccess(const string&     key,
-                               int               version,
+                               TBlobVersion      version,
                                const string&     subkey,
                                SBlobAccessDescr* blob_descr) = 0;
 
@@ -322,11 +315,11 @@ public:
     /// @param time_to_live
     ///    Individual timeout
     /// @return Interface pointer or NULL if BLOB does not exist
-    virtual IWriter* GetWriteStream(const string&    key,
-                                    int              version,
-                                    const string&    subkey,
-                                    unsigned int     time_to_live = 0,
-                                    const string&    owner = kEmptyStr) = 0;
+    virtual IWriter* GetWriteStream(const string&  key,
+                                    TBlobVersion   version,
+                                    const string&  subkey,
+                                    unsigned int   time_to_live = 0,
+                                    const string&  owner = kEmptyStr) = 0;
 
     /// Remove specific cache entry
     ///
@@ -336,9 +329,9 @@ public:
     ///    BLOB identification subkey
     /// @param version
     ///    BLOB version
-    virtual void Remove(const string&    key,
-                        int              version,
-                        const string&    subkey) = 0;
+    virtual void Remove(const string&  key,
+                        TBlobVersion   version,
+                        const string&  subkey) = 0;
 
     /// Return last access time for the specified cache entry
     ///
@@ -356,21 +349,22 @@ public:
     ///    last access time
     /// @sa TimeStampUpdatePolicy
     virtual time_t GetAccessTime(const string&  key,
-                                 int            version,
+                                 TBlobVersion   version,
                                  const string&  subkey) = 0;
 
     /// Check if any BLOB exists (any version)
     ///
     virtual bool HasBlobs(const string&  key,
                           const string&  subkey) = 0;
+
     /// Delete all BLOBs older than specified
     ///
     /// @param access_timeout
     ///    Time in seconds. All objects older than this are deleted.
     /// @param keep_last_version
     ///    type of cleaning action
-    virtual void Purge(time_t           access_timeout,
-                       EKeepVersions    keep_last_version = eDropAll) = 0;
+    virtual void Purge(time_t         access_timeout,
+                       EKeepVersions  keep_last_version = eDropAll) = 0;
 
     /// Delete BLOBs with access time older than specified
     ///
@@ -384,10 +378,10 @@ public:
     ///    Time in seconds. All objects older than this are deleted.
     /// @param keep_last_version
     ///    type of cleaning action
-    virtual void Purge(const string&    key,
-                       const string&    subkey,
-                       time_t           access_timeout,
-                       EKeepVersions    keep_last_version = eDropAll) = 0;
+    virtual void Purge(const string&  key,
+                       const string&  subkey,
+                       time_t         access_timeout,
+                       EKeepVersions  keep_last_version = eDropAll) = 0;
 
 
     virtual ~ICache() {}
@@ -399,6 +393,13 @@ public:
     virtual string GetCacheName(void) const = 0;
 };
 
+
+
+
+///////////////////////////////////////////////////////////
+//
+//  ICache version and definition for the NCBI PluginManager API
+//
 
 NCBI_DECLARE_INTERFACE_VERSION(ICache,  "xcache", 4, 0, 0);
 
