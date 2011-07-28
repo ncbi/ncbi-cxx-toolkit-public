@@ -366,6 +366,14 @@ void CValidError_imp::ValidatePubArticle
 
             if ( imp.CanGetPrepub() ) {
                 in_press =  imp.GetPrepub() == CImprint::ePrepub_in_press;
+                if ( in_press ) {
+                    if ( imp.IsSetPages() ) {
+                        if (! NStr::IsBlank(imp.GetPages()) ) {
+                            PostObjErr (eDiag_Warning, eErr_GENERIC_PublicationInconsistency, 
+                                     "In-press is not expected to have page numbers", obj, ctx);
+                        }
+                    }
+                }
             }
 
             if (imp.IsSetPubstatus() 
