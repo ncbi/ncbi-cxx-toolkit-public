@@ -10127,6 +10127,18 @@ BOOST_AUTO_TEST_CASE(Test_Generic_PublicationInconsistency)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "PublicationInconsistency",
+                                                 "In-press is not expected to have page numbers"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "PublicationInconsistency",
+                                                 "Duplicate consortium 'duplicate'"));
+    pub->SetArticle().SetFrom().SetJournal().SetImp().SetPrepub(CImprint::ePrepub_in_press);
+    pub->SetArticle().SetFrom().SetJournal().SetImp().SetPages("75-84");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    pub->SetArticle().SetFrom().SetJournal().SetImp().ResetPrepub();
+    pub->SetArticle().SetFrom().SetJournal().SetImp().ResetPages();
+    
+    CLEAR_ERRORS
 }
 
 
