@@ -5,9 +5,15 @@ BEGIN                        { stage = 0; target = ""; in_all_projects = 0 }
 (stage == 1  &&  /^all_/)    { stage = 2 }
 (stage == 1)                 { print; next }
 /^all_projects[ \t]*=/       { in_all_projects = 1; next }
+/^all_dataspec[ \t]*=/       { in_all_dataspec = 1; next }
 (in_all_projects == 1)       {
     orig_all_projects[$1] = 1
     in_all_projects = ($NF == "\\")
+    next
+}
+(in_all_dataspec == 1)       {
+    orig_all_dataspec[$1] = 1
+    in_all_dataspec = ($NF == "\\")
     next
 }
 /\.real[ \t]*:/              {
@@ -30,12 +36,12 @@ BEGIN                        { stage = 0; target = ""; in_all_projects = 0 }
     if (gsub("cd " subdir "/", "cd ./", rules)) {
         all_rules[target] = rules
         all_targets = all_targets " " target
-        if (target in orig_all_projects) {
+        if (target ~ /\.files$/ && target in orig_all_dataspec) {
+            all_dataspec = all_dataspec " " target
+        } else if (target in orig_all_projects) {
             all_projects = all_projects " " target
             if (target ~ /\.(lib|dll)$/) {
                 all_libraries = all_libraries " " target
-            } else if (target ~ /\.files$/) {
-                all_dataspec = all_dataspec " " target
             }
         }
     } else if (sub("^" subdir "/", "", target)  &&  target != "") {
