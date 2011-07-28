@@ -158,22 +158,19 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
     // -----------------------------------------------------------------
 
     /// Job status codes
-    /// NB: eReturned, eTimeout and eReadTimeout states are visible only
-    /// in job history, and ePending cannot be there.
     enum EJobStatus
     {
         eJobNotFound = -1, ///< No such job
         ePending     = 0,  ///< Waiting for execution
-        eRunning,          ///< Running on a worker node
-        eReturned,         ///< Returned back to the queue (to be rescheduled)
-        eCanceled,         ///< Explicitly canceled
-        eFailed,           ///< Failed to run (execution timeout)
-        eDone,             ///< Job is ready (computed successfully)
-        eReading,          ///< Job has its output been reading
-        eConfirmed,        ///< Final state - read confirmed
-        eReadFailed,       ///< Final state - read failed
-        eTimeout,          ///< Execution canceled due to timeout
-        eReadTimeout,      ///< Reading timed out
+        eRunning     = 1,  ///< Running on a worker node
+        // One deprecated job state is omitted here.
+        // It had the numeric value of 2.
+        eCanceled    = 3,  ///< Explicitly canceled
+        eFailed      = 4,  ///< Failed to run (execution timeout)
+        eDone        = 5,  ///< Job is ready (computed successfully)
+        eReading     = 6,  ///< Job has its output been reading
+        eConfirmed   = 7,  ///< Final state - read confirmed
+        eReadFailed  = 8,  ///< Final state - read failed
 
         eLastStatus        ///< Fake status (do not use)
     };
@@ -185,8 +182,8 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
     /// Parse status string into enumerator value
     ///
     /// Acceptable string values:
-    ///   Pending, Running, Returned, Canceled, Failed, Done, Reading,
-    ///   Confirmed, ReadFailed, Timeout, ReadTimeout
+    ///   Pending, Running, Canceled, Failed, Done, Reading,
+    ///   Confirmed, ReadFailed,
     /// Abbreviated
     ///   Pend, Run, Return, Cancel, Fail
     ///

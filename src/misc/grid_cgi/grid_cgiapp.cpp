@@ -405,7 +405,6 @@ bool CGridCgiApplication::x_CheckJobStatus(CGridCgiContext& grid_ctx)
         break;
                 
     case CNetScheduleAPI::ePending :
-    case CNetScheduleAPI::eReturned:
         // A job is in the Netscheduler's Queue
         OnJobPending(grid_ctx);
         break;

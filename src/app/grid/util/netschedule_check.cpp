@@ -211,11 +211,6 @@ int CNetScheduleCheck::Run(CNetScheduleAPI& nc)
             ret = 210;
             err = "Job (" + job.job_id +") is lost.";
             break;
-        case CNetScheduleAPI::eReturned:
-            ret = 211;
-            submitter.CancelJob(job.job_id);
-            err = "Job (" + job.job_id +") is returned.";
-            break;
         case CNetScheduleAPI::eCanceled:
             ret = 212;
             err = "Job (" + job.job_id +") is canceled.";

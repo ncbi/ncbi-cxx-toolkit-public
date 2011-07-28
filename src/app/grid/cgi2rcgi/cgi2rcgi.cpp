@@ -873,7 +873,6 @@ CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
         break;
 
     case CNetScheduleAPI::ePending:
-    case CNetScheduleAPI::eReturned:
         // The job is in the NetSchedule queue and
         // is waiting for a worker node.
         // Render a status report page

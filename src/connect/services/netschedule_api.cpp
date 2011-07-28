@@ -221,15 +221,12 @@ string CNetScheduleAPI::StatusToString(EJobStatus status)
     case eJobNotFound: return "NotFound";
     case ePending:     return "Pending";
     case eRunning:     return "Running";
-    case eReturned:    return "Returned";
     case eCanceled:    return "Canceled";
     case eFailed:      return "Failed";
     case eDone:        return "Done";
     case eReading:     return "Reading";
     case eConfirmed:   return "Confirmed";
     case eReadFailed:  return "ReadFailed";
-    case eTimeout:     return "Timeout";
-    case eReadTimeout: return "ReadTimeout";
 
     default: _ASSERT(0);
     }
@@ -244,9 +241,6 @@ CNetScheduleAPI::StringToStatus(const string& status_str)
     }
     if (NStr::CompareNocase(status_str, "Running") == 0) {
         return eRunning;
-    }
-    if (NStr::CompareNocase(status_str, "Returned") == 0) {
-        return eReturned;
     }
     if (NStr::CompareNocase(status_str, "Canceled") == 0) {
         return eCanceled;
@@ -266,12 +260,6 @@ CNetScheduleAPI::StringToStatus(const string& status_str)
     if (NStr::CompareNocase(status_str, "ReadFailed") == 0) {
         return eReadFailed;
     }
-    if (NStr::CompareNocase(status_str, "Timeout") == 0) {
-        return eTimeout;
-    }
-    if (NStr::CompareNocase(status_str, "ReadTimeout") == 0) {
-        return eReadTimeout;
-    }
 
 
     // check acceptable synonyms
@@ -281,9 +269,6 @@ CNetScheduleAPI::StringToStatus(const string& status_str)
     }
     if (NStr::CompareNocase(status_str, "Run") == 0) {
         return eRunning;
-    }
-    if (NStr::CompareNocase(status_str, "Return") == 0) {
-        return eReturned;
     }
     if (NStr::CompareNocase(status_str, "Cancel") == 0) {
         return eCanceled;
@@ -336,7 +321,7 @@ CNetScheduleAPI::EJobStatus
 
     if (status == eDone || status == eFailed
         || status == eRunning || status == ePending
-        || status == eCanceled || status == eReturned
+        || status == eCanceled
         || status == eReading || status == eConfirmed
         || status == eReadFailed) {
         for ( ;*str && !isspace((unsigned char)(*str)); ++str) {}
