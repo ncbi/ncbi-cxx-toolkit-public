@@ -168,7 +168,7 @@ CLocalPssmSearch::Run()
     }
 
     CConstRef<CBioseq> query(&m_Pssm->GetPssm().GetQuery().GetSeq());
-    CRef<IQueryFactory> query_factory(new CObjMgrFree_QueryFactory(query));
+    CRef<IQueryFactory> query_factory(new CObjMgrFree_QueryFactory(query)); /* NCBI_FAKE_WARNING */
 
     CRef<CLocalDbAdapter> dbadapter(new CLocalDbAdapter(*m_Subject));
     CPsiBlast psiblast(query_factory, dbadapter, psi_opts);

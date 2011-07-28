@@ -119,7 +119,7 @@ void
 CPsiBlastImpl::x_ExtractQueryFromPssm()
 {
     CConstRef<CBioseq> query_bioseq(&m_Pssm->GetPssm().GetQuery().GetSeq());
-    m_Query.Reset(new CObjMgrFree_QueryFactory(query_bioseq));
+    m_Query.Reset(new CObjMgrFree_QueryFactory(query_bioseq)); /* NCBI_FAKE_WARNING */
 }
 
 CRef<CSearchResultSet>

@@ -469,7 +469,7 @@ void PsiBlastComputePssmScores(CRef<objects::CPssmWithParameters> pssm,
                                const CBlastOptions& opts)
 {
     CConstRef<CBioseq> query(&pssm->GetQuery().GetSeq());
-    CRef<IQueryFactory> seq_fetcher(new CObjMgrFree_QueryFactory(query));
+    CRef<IQueryFactory> seq_fetcher(new CObjMgrFree_QueryFactory(query)); /* NCBI_FAKE_WARNING */
 
     CRef<ILocalQueryData> query_data(seq_fetcher->MakeLocalQueryData(&opts));
     BLAST_SequenceBlk* seqblk = query_data->GetSequenceBlk();
