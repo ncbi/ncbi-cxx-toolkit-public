@@ -1090,6 +1090,7 @@ void CNewCleanup_imp::BiosourceBC (
                     SET_FIELD (sbs, Name, "");
                     ChangeMade(CCleanupChange::eCleanSubsource);
                 }
+                x_RemoveFlankingQuotes( GET_MUTABLE(sbs, Name) );
                 CLEAN_STRING_MEMBER(sbs, Attrib);
             }
 
@@ -1513,6 +1514,8 @@ void CNewCleanup_imp::OrgnameBC (
         UNIQUE_ORGMOD_ON_ORGNAME (onm, s_OrgModEqual);
         ChangeMade (CCleanupChange::eCleanOrgmod);
     }
+
+    REMOVE_IF_EMPTY_ORGMOD_ON_ORGNAME(onm);
 }
 
 static bool RemoveSpaceBeforeAndAfterColon (
@@ -1530,6 +1533,10 @@ void CNewCleanup_imp::OrgmodBC (
 )
 {
     CLEAN_AND_COMPRESS_STRING_MEMBER (omd, Subname);
+    if (FIELD_IS_SET (omd, Subname)) {
+        x_RemoveFlankingQuotes( GET_MUTABLE(omd, Subname) );
+    }
+
     CLEAN_AND_COMPRESS_STRING_MEMBER (omd, Attrib);
 
     TORGMOD_SUBTYPE subtype = GET_FIELD (omd, Subtype);

@@ -2398,10 +2398,11 @@ SWITCH_ON (ORGNAME_CHOICE, Var)
 
 /// ORGMOD_ON_ORGNAME macros
 
-#define ORGMOD_ON_ORGNAME_Type      COrgName::TMod
-#define ORGMOD_ON_ORGNAME_Test(Var) (Var).IsSetMod()
-#define ORGMOD_ON_ORGNAME_Get(Var)  (Var).GetMod()
-#define ORGMOD_ON_ORGNAME_Set(Var)  (Var).SetMod()
+#define ORGMOD_ON_ORGNAME_Type       COrgName::TMod
+#define ORGMOD_ON_ORGNAME_Test(Var)  (Var).IsSetMod()
+#define ORGMOD_ON_ORGNAME_Get(Var)   (Var).GetMod()
+#define ORGMOD_ON_ORGNAME_Set(Var)   (Var).SetMod()
+#define ORGMOD_ON_ORGNAME_Reset(Var) (Var).ResetMod()
 
 /// ORGNAME_HAS_ORGMOD
 
@@ -2448,6 +2449,8 @@ IS_UNIQUE (ORGMOD_ON_ORGNAME, Var, Func)
 #define UNIQUE_ORGMOD_ON_ORGNAME(Var, Func) \
 DO_UNIQUE (ORGMOD_ON_ORGNAME, Var, Func)
 
+#define REMOVE_IF_EMPTY_ORGMOD_ON_ORGNAME(Var) \
+REMOVE_IF_EMPTY_FIELD(ORGMOD_ON_ORGNAME, Var)
 
 ///
 /// CSubSource macros
