@@ -44,7 +44,14 @@
 
 BEGIN_NCBI_SCOPE
 
-/// Container iterator
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CConstObjectInfoEI --
+///
+///   Container iterator
+///   Provides read access to elements of container
+///   @sa CConstObjectInfo::BeginElements
+
 class NCBI_XSERIAL_EXPORT CConstObjectInfoEI
 {
 public:
@@ -53,7 +60,9 @@ public:
 
     CConstObjectInfoEI& operator=(const CConstObjectInfo& object);
 
+    /// Is iterator valid
     bool Valid(void) const;
+    /// Is iterator valid
     DECLARE_OPERATOR_BOOL(Valid());
 
     bool operator==(const CConstObjectInfoEI& obj) const
@@ -64,15 +73,23 @@ public:
     {
         return GetElement() != obj.GetElement();
     }
+    
+    /// Get index of the element in the container
     TMemberIndex GetIndex(void) const
     {
         return m_Iterator.GetIndex();
     }
 
+    /// Advance to next element
     void Next(void);
+
+    /// Advance to next element
     CConstObjectInfoEI& operator++(void);
 
+    /// Get element data and type information
     CConstObjectInfo GetElement(void) const;
+
+    /// Get element data and type information
     CConstObjectInfo operator*(void) const;
 
     bool CanGet(void) const
@@ -91,7 +108,14 @@ private:
     CConstContainerElementIterator m_Iterator;
 };
 
-/// Container iterator
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CObjectInfoEI --
+///
+///   Container iterator
+///   Provides read/write access to elements of container
+///   @sa CObjectInfo::BeginElements
+
 class NCBI_XSERIAL_EXPORT CObjectInfoEI
 {
 public:
@@ -100,7 +124,9 @@ public:
 
     CObjectInfoEI& operator=(const CObjectInfo& object);
 
+    /// Is iterator valid
     bool Valid(void) const;
+    /// Is iterator valid
     DECLARE_OPERATOR_BOOL(Valid());
 
     bool operator==(const CObjectInfoEI& obj) const
@@ -111,15 +137,23 @@ public:
     {
         return GetElement() != obj.GetElement();
     }
+
+    /// Get index of the element in the container
     TMemberIndex GetIndex(void) const
     {
         return m_Iterator.GetIndex();
     }
 
+    /// Advance to next element
     void Next(void);
+
+    /// Advance to next element
     CObjectInfoEI& operator++(void);
 
+    /// Get element data and type information
     CObjectInfo GetElement(void) const;
+
+    /// Get element data and type information
     CObjectInfo operator*(void) const;
 
     void Erase(void);
@@ -140,21 +174,32 @@ private:
     CContainerElementIterator m_Iterator;
 };
 
-/// Item iterator (either member or variant)
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CObjectTypeInfoII --
+///
+/// Item iterator (either class member or choice variant)
+/// provides access to the data type information.
+
 class NCBI_XSERIAL_EXPORT CObjectTypeInfoII 
 {
 public:
     const string& GetAlias(void) const;
     
+    /// Is iterator valid
     bool Valid(void) const;
+    /// Is iterator valid
     DECLARE_OPERATOR_BOOL(Valid());
     
     bool operator==(const CObjectTypeInfoII& iter) const;
     bool operator!=(const CObjectTypeInfoII& iter) const;
     
+    /// Advance to next element
     void Next(void);
 
     const CItemInfo* GetItemInfo(void) const;
+
+    /// Get index of the element in the container (class or choice)
     TMemberIndex GetIndex(void) const
     {
         return GetItemIndex();
@@ -185,7 +230,13 @@ private:
     TMemberIndex m_LastItemIndex;
 };
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CObjectTypeInfoMI --
+///
 /// Class member iterator
+/// provides access to the data type information.
+
 class NCBI_XSERIAL_EXPORT CObjectTypeInfoMI : public CObjectTypeInfoII
 {
     typedef CObjectTypeInfoII CParent;
@@ -194,15 +245,22 @@ public:
     CObjectTypeInfoMI(const CObjectTypeInfo& info);
     CObjectTypeInfoMI(const CObjectTypeInfo& info, TMemberIndex index);
 
+    /// Get index of the member in the class
     TMemberIndex GetMemberIndex(void) const;
 
+    /// Advance to next element
     CObjectTypeInfoMI& operator++(void);
+
     CObjectTypeInfoMI& operator=(const CObjectTypeInfo& info);
 
+    /// Get containing class type
     CObjectTypeInfo GetClassType(void) const;
 
+    /// Get data type information
     operator CObjectTypeInfo(void) const;
+    /// Get data type information
     CObjectTypeInfo GetMemberType(void) const;
+    /// Get data type information
     CObjectTypeInfo operator*(void) const;
 
     void SetLocalReadHook(CObjectIStream& stream,
@@ -256,7 +314,13 @@ private:
     CMemberInfo* GetNCMemberInfo(void) const;
 };
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CObjectTypeInfoVI --
+///
 /// Choice variant iterator
+/// provides access to the data type information.
+
 class NCBI_XSERIAL_EXPORT CObjectTypeInfoVI : public CObjectTypeInfoII
 {
     typedef CObjectTypeInfoII CParent;
@@ -264,14 +328,20 @@ public:
     CObjectTypeInfoVI(const CObjectTypeInfo& info);
     CObjectTypeInfoVI(const CObjectTypeInfo& info, TMemberIndex index);
 
+    /// Get index of the variant in the choice
     TMemberIndex GetVariantIndex(void) const;
 
+    /// Advance to next element
     CObjectTypeInfoVI& operator++(void);
+
     CObjectTypeInfoVI& operator=(const CObjectTypeInfo& info);
 
+    /// Get containing choice type
     CObjectTypeInfo GetChoiceType(void) const;
 
+    /// Get data type information
     CObjectTypeInfo GetVariantType(void) const;
+    /// Get data type information
     CObjectTypeInfo operator*(void) const;
 
     void SetLocalReadHook(CObjectIStream& stream,
@@ -323,7 +393,13 @@ private:
     CVariantInfo* GetNCVariantInfo(void) const;
 };
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CConstObjectInfoMI --
+///
 /// Class member iterator
+/// provides read access to class member data.
+
 class NCBI_XSERIAL_EXPORT CConstObjectInfoMI : public CObjectTypeInfoMI
 {
     typedef CObjectTypeInfoMI CParent;
@@ -332,13 +408,17 @@ public:
     CConstObjectInfoMI(const CConstObjectInfo& object);
     CConstObjectInfoMI(const CConstObjectInfo& object, TMemberIndex index);
     
+    /// Get containing class data
     const CConstObjectInfo& GetClassObject(void) const;
     
     CConstObjectInfoMI& operator=(const CConstObjectInfo& object);
     
+    /// Is member assigned a value
     bool IsSet(void) const;
 
+    /// Get class member data
     CConstObjectInfo GetMember(void) const;
+    /// Get class member data
     CConstObjectInfo operator*(void) const;
 
     bool CanGet(void) const;
@@ -348,7 +428,13 @@ private:
     CConstObjectInfo m_Object;
 };
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CObjectInfoMI --
+///
 /// Class member iterator
+/// provides read/write access to class member data.
+
 class NCBI_XSERIAL_EXPORT CObjectInfoMI : public CObjectTypeInfoMI
 {
     typedef CObjectTypeInfoMI CParent;
@@ -357,21 +443,27 @@ public:
     CObjectInfoMI(const CObjectInfo& object);
     CObjectInfoMI(const CObjectInfo& object, TMemberIndex index);
     
+    /// Get containing class data
     const CObjectInfo& GetClassObject(void) const;
     
     CObjectInfoMI& operator=(const CObjectInfo& object);
     
+    /// Is member assigned a value
     bool IsSet(void) const;
 
+    /// Get class member data
     CObjectInfo GetMember(void) const;
+    /// Get class member data
     CObjectInfo operator*(void) const;
 
-    // reset value of member to default state
+    /// Erase types
     enum EEraseFlag {
-        eErase_Optional, // default - erase optional member only
-        eErase_Mandatory // allow erasing mandatory members, may be dangerous!
+        eErase_Optional, ///< default - erase optional member only
+        eErase_Mandatory ///< allow erasing mandatory members, may be dangerous!
     };
+    /// Erase member value
     void Erase(EEraseFlag flag = eErase_Optional);
+    /// Reset value of member to default state
     void Reset(void);
 
     bool CanGet(void) const;
@@ -381,7 +473,13 @@ private:
     CObjectInfo m_Object;
 };
 
-/// Choice variant iterator
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CObjectTypeInfoCV --
+///
+/// Choice variant
+/// provides access to the data type information.
+
 class NCBI_XSERIAL_EXPORT CObjectTypeInfoCV
 {
 public:
@@ -390,6 +488,7 @@ public:
     CObjectTypeInfoCV(const CObjectTypeInfo& info, TMemberIndex index);
     CObjectTypeInfoCV(const CConstObjectInfo& object);
 
+    /// Get index of the variant in the choice
     TMemberIndex GetVariantIndex(void) const;
 
     const string& GetAlias(void) const;
@@ -403,9 +502,12 @@ public:
     CObjectTypeInfoCV& operator=(const CObjectTypeInfo& info);
     CObjectTypeInfoCV& operator=(const CConstObjectInfo& object);
 
+    /// Get containing choice
     CObjectTypeInfo GetChoiceType(void) const;
 
+    /// Get variant data type
     CObjectTypeInfo GetVariantType(void) const;
+    /// Get variant data type
     CObjectTypeInfo operator*(void) const;
 
     void SetLocalReadHook(CObjectIStream& stream,
@@ -453,7 +555,13 @@ private:
     CVariantInfo* GetNCVariantInfo(void) const;
 };
 
-/// Choice variant iterator
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CConstObjectInfoCV --
+///
+/// Choice variant
+/// provides read access to the variant data.
+
 class NCBI_XSERIAL_EXPORT CConstObjectInfoCV : public CObjectTypeInfoCV
 {
     typedef CObjectTypeInfoCV CParent;
@@ -462,11 +570,14 @@ public:
     CConstObjectInfoCV(const CConstObjectInfo& object);
     CConstObjectInfoCV(const CConstObjectInfo& object, TMemberIndex index);
 
+    /// Get containing choice
     const CConstObjectInfo& GetChoiceObject(void) const;
     
     CConstObjectInfoCV& operator=(const CConstObjectInfo& object);
     
+    /// Get variant data
     CConstObjectInfo GetVariant(void) const;
+    /// Get variant data
     CConstObjectInfo operator*(void) const;
 
 private:
@@ -476,7 +587,13 @@ private:
     TMemberIndex m_VariantIndex;
 };
 
-/// Choice variant iterator
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CObjectInfoCV --
+///
+/// Choice variant
+/// provides read/write access to the variant data.
+
 class NCBI_XSERIAL_EXPORT CObjectInfoCV : public CObjectTypeInfoCV
 {
     typedef CObjectTypeInfoCV CParent;
@@ -485,11 +602,14 @@ public:
     CObjectInfoCV(const CObjectInfo& object);
     CObjectInfoCV(const CObjectInfo& object, TMemberIndex index);
 
+    /// Get containing choice
     const CObjectInfo& GetChoiceObject(void) const;
     
     CObjectInfoCV& operator=(const CObjectInfo& object);
     
+    /// Get variant data
     CObjectInfo GetVariant(void) const;
+    /// Get variant data
     CObjectInfo operator*(void) const;
 
 private:

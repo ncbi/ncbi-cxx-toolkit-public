@@ -81,8 +81,14 @@ class CObjectInfoMI;
 class CObjectInfoCV;
 class CObjectInfoEI;
 
-/// Facilitate access to the data type information.
-/// No concrete object is referenced.
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CObjectTypeInfo --
+///
+///   Facilitate access to the data type information.
+///   No concrete object is referenced.
+
 class NCBI_XSERIAL_EXPORT CObjectTypeInfo
 {
 public:
@@ -93,14 +99,21 @@ public:
     CObjectTypeInfo(TTypeInfo typeinfo = 0);
 
     /// Get type name
+    ///
+    /// @return
+    ///   Type name string
     const string& GetName(void) const
         {
             return GetTypeInfo()->GetName();
         }
 
     /// Get data type family
+    ///
+    /// @return
+    ///   Type family enumerator
     ETypeFamily GetTypeFamily(void) const;
 
+    /// Check if object is valid
     bool Valid(void) const
         {
             return m_TypeInfo != 0;
@@ -110,32 +123,137 @@ public:
     bool operator==(const CObjectTypeInfo& type) const;
     bool operator!=(const CObjectTypeInfo& type) const;
 
+    // --------------------------------------------------
     // primitive type interface
     // only when GetTypeFamily() == eTypeFamilyPrimitive
+    
+    /// Get type of primitive value
+    ///
+    /// @return
+    ///   Primitive value type enumerator
+    /// @note
+    ///   May be used only when type family is eTypeFamilyPrimitive
     EPrimitiveValueType GetPrimitiveValueType(void) const;
+
+    /// Is primitive value signed
+    ///
+    /// @return
+    ///   TRUE when value is signed; FALSE otherwise
+    /// @note
+    ///   May be used only when type family is eTypeFamilyPrimitive
     bool IsPrimitiveValueSigned(void) const;
-    // only when GetPrimitiveValueType() == ePrimitiveValueEnum
+
+    /// Get a set of possible values of enumeration
+    ///
+    /// @return
+    ///   object that describes enumeration values
+    /// @sa CEnumeratedTypeValues
+    /// @note
+    ///   May be used only when value type is ePrimitiveValueEnum
     const CEnumeratedTypeValues& GetEnumeratedTypeValues(void) const;
 
+    // --------------------------------------------------
     // container interface
     // only when GetTypeFamily() == eTypeFamilyContainer
+    
+    /// Get type information of an element of container
+    ///
+    /// @return
+    ///   Object that provides access to element data type
+    /// @note
+    ///   May be used only when type family is eTypeFamilyContainer
     CObjectTypeInfo GetElementType(void) const;
 
+    // --------------------------------------------------
     // class interface
     // only when GetTypeFamily() == eTypeFamilyClass
+
+    /// Create class member iterator
+    ///
+    /// @sa CObjectTypeInfoMI
+    /// @note
+    ///   May be used only when type family is eTypeFamilyClass
     CMemberIterator BeginMembers(void) const;
+
+    /// Find class member by its name
+    ///
+    /// @sa CObjectTypeInfoMI
+    /// @note
+    ///   May be used only when type family is eTypeFamilyClass
     CMemberIterator FindMember(const string& memberName) const;
+
+    /// Find class member index by its name
+    ///
+    /// @sa CObjectTypeInfoMI
+    /// @note
+    ///   May be used only when type family is eTypeFamilyClass
+    TMemberIndex FindMemberIndex(const string& name) const;
+
+    /// Find class member by its numerical tag
+    ///
+    /// @sa CObjectTypeInfoMI
+    /// @note
+    ///   May be used only when type family is eTypeFamilyClass
     CMemberIterator FindMemberByTag(int memberTag) const;
 
+    /// Find class member index by its numerical tag
+    ///
+    /// @sa CObjectTypeInfoMI
+    /// @note
+    ///   May be used only when type family is eTypeFamilyClass
+    TMemberIndex FindMemberIndex(int tag) const;
+
+    // --------------------------------------------------
     // choice interface
     // only when GetTypeFamily() == eTypeFamilyChoice
+    
+    /// Create choice variant iterator
+    ///
+    /// @sa CObjectTypeInfoVI
+    /// @note
+    ///   May be used only when type family is eTypeFamilyChoice
     CVariantIterator BeginVariants(void) const;
+
+    /// Find choice variant by its name
+    ///
+    /// @sa CObjectTypeInfoVI
+    /// @note
+    ///   May be used only when type family is eTypeFamilyChoice
     CVariantIterator FindVariant(const string& memberName) const;
+
+    /// Find choice variant index by its name
+    ///
+    /// @sa CObjectTypeInfoVI
+    /// @note
+    ///   May be used only when type family is eTypeFamilyChoice
+    TMemberIndex FindVariantIndex(const string& name) const;
+
+    /// Find choice variant by its numerical tag
+    ///
+    /// @sa CObjectTypeInfoVI
+    /// @note
+    ///   May be used only when type family is eTypeFamilyChoice
     CVariantIterator FindVariantByTag(int memberTag) const;
 
+    /// Find choice variant index by its numerical tag
+    ///
+    /// @sa CObjectTypeInfoVI
+    /// @note
+    ///   May be used only when type family is eTypeFamilyChoice
+    TMemberIndex FindVariantIndex(int tag) const;
+
+    // --------------------------------------------------
     // pointer interface
     // only when GetTypeFamily() == eTypeFamilyPointer
+    
+    /// Get type information of data to which this type refers
+    ///
+    /// @note
+    ///   May be used only when tyep family is eTypeFamilyPointer
     CObjectTypeInfo GetPointedType(void) const;
+
+    // --------------------------------------------------
+    // hooks
 
     /// Set local (for the specified stream) read hook
     /// @param stream
@@ -272,7 +390,8 @@ public:
     void SetPathCopyHook(CObjectStreamCopier* stream, const string& path,
                          CCopyObjectHook* hook) const;
 
-public: // mostly for internal use
+public:
+// mostly for internal use
     TTypeInfo GetTypeInfo(void) const;
     const CPrimitiveTypeInfo* GetPrimitiveTypeInfo(void) const;
     const CEnumeratedTypeInfo* GetEnumeratedTypeInfo(void) const;
@@ -280,11 +399,6 @@ public: // mostly for internal use
     const CChoiceTypeInfo* GetChoiceTypeInfo(void) const;
     const CContainerTypeInfo* GetContainerTypeInfo(void) const;
     const CPointerTypeInfo* GetPointerTypeInfo(void) const;
-
-    TMemberIndex FindMemberIndex(const string& name) const;
-    TMemberIndex FindMemberIndex(int tag) const;
-    TMemberIndex FindVariantIndex(const string& name) const;
-    TMemberIndex FindVariantIndex(int tag) const;
 
     CMemberIterator GetMemberIterator(TMemberIndex index) const;
     CVariantIterator GetVariantIterator(TMemberIndex index) const;
@@ -304,8 +418,13 @@ private:
 };
 
 
-/// Facilitate read access to a particular instance of an object
-/// of the specified type.
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CConstObjectInfo --
+///
+///   Facilitate read access to a particular instance of an object
+///   of the specified type.
+
 class NCBI_XSERIAL_EXPORT CConstObjectInfo : public CObjectTypeInfo
 {
 public:
@@ -357,45 +476,122 @@ public:
     TConstObjectPtr GetObjectPtr(void) const;
     pair<TConstObjectPtr, TTypeInfo> GetPair(void) const;
 
+    // --------------------------------------------------
     // primitive type interface
+    
+    /// Get boolean data
+    /// @note
+    ///   Value type must be compatible with the request
     bool GetPrimitiveValueBool(void) const;
+    /// Get char data
     char GetPrimitiveValueChar(void) const;
 
+    /// Get data as Int4
     Int4 GetPrimitiveValueInt4(void) const;
+    /// Get data as Uint4
     Uint4 GetPrimitiveValueUint4(void) const;
+    /// Get data as Int8
     Int8 GetPrimitiveValueInt8(void) const;
+    /// Get data as Uint8
     Uint8 GetPrimitiveValueUint8(void) const;
+    /// Get data as int
     int GetPrimitiveValueInt(void) const;
+    /// Get data as unsigned int
     unsigned GetPrimitiveValueUInt(void) const;
+    /// Get data as long
     long GetPrimitiveValueLong(void) const;
+    /// Get data as unsigned loch
     unsigned long GetPrimitiveValueULong(void) const;
 
+    /// Get data as double
     double GetPrimitiveValueDouble(void) const;
 
+    /// Get string data
     void GetPrimitiveValueString(string& value) const;
+    /// Get string data
     string GetPrimitiveValueString(void) const;
 
+    /// Get octet string data
     void GetPrimitiveValueOctetString(vector<char>& value) const;
 
+    /// Get bit string data
     void GetPrimitiveValueBitString(CBitString& value) const;
 
+    /// Get data as CAnyContentObject
+    /// @sa CAnyContentObject
     void GetPrimitiveValueAnyContent(CAnyContentObject& value) const;
 
+    // --------------------------------------------------
     // class interface
-    CMemberIterator GetMember(CObjectTypeInfo::CMemberIterator m) const;
+
+    /// Create class member iterator
+    ///
+    /// @sa CConstObjectInfoMI
+    /// @note
+    ///   May be used only when type family is eTypeFamilyClass
     CMemberIterator BeginMembers(void) const;
+
+    /// Create class member iterator that initially points to specified member
+    ///
+    /// @param index
+    ///   Index of the member
+    /// @sa CConstObjectInfoMI
+    /// @note
+    ///   May be used only when type family is eTypeFamilyClass
     CMemberIterator GetClassMemberIterator(TMemberIndex index) const;
+
+    /// Find class member by its name
+    ///
+    /// @sa CConstObjectInfoMI
+    /// @note
+    ///   May be used only when type family is eTypeFamilyClass
     CMemberIterator FindClassMember(const string& memberName) const;
+
+    /// Find class member by its numerical tag
+    ///
+    /// @sa CConstObjectInfoMI
+    /// @note
+    ///   May be used only when type family is eTypeFamilyClass
     CMemberIterator FindClassMemberByTag(int memberTag) const;
 
+    /// Find class member by type iterator
+    ///
+    /// @sa CConstObjectInfoMI, CObjectTypeInfoMI
+    /// @note
+    ///   May be used only when type family is eTypeFamilyClass
+    CMemberIterator GetMember(CObjectTypeInfo::CMemberIterator m) const;
+
+    // --------------------------------------------------
     // choice interface
+    
+    /// Get index of currently selected choice variant
+    ///
+    /// @note
+    ///   May be used only when type family is eTypeFamilyChoice
     TMemberIndex GetCurrentChoiceVariantIndex(void) const;
+
+    /// Get data and type information of selected choice variant
+    ///
+    /// @sa CConstObjectInfoCV
     CChoiceVariant GetCurrentChoiceVariant(void) const;
 
+    // --------------------------------------------------
     // pointer interface
+
+    /// Get data and type information of object to which this type refers
+    ///
+    /// @note
+    ///   May be used only when type family is eTypeFamilyPointer
     CConstObjectInfo GetPointedObject(void) const;
     
+    // --------------------------------------------------
     // container interface
+    
+    /// Create container elements iterator
+    ///
+    /// @sa CConstObjectInfoEI
+    /// @note
+    ///   May be used only when type family is eTypeFamilyContainer
     CElementIterator BeginElements(void) const;
 
 protected:
@@ -406,8 +602,13 @@ private:
     CConstRef<CObject> m_Ref; // hold reference to CObject for correct removal
 };
 
-/// Facilitate read/write access to a particular instance of an object
-/// of the specified type.
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CObjectInfo --
+///
+///   Facilitate read/write access to a particular instance of an object
+///   of the specified type.
+
 class NCBI_XSERIAL_EXPORT CObjectInfo : public CConstObjectInfo
 {
     typedef CConstObjectInfo CParent;
@@ -419,13 +620,16 @@ public:
 
     /// Create empty CObjectInfo
     CObjectInfo(void);
+
     /// Initialize CObjectInfo
     CObjectInfo(TObjectPtr objectPtr, TTypeInfo typeInfo);
     CObjectInfo(pair<TObjectPtr, TTypeInfo> object);
+
     /// Initialize CObjectInfo when we are sure that object 
     /// is not inherited from CObject (for efficiency)
     CObjectInfo(TObjectPtr objectPtr, TTypeInfo typeInfo,
                 ENonCObject nonCObject);
+
     /// Create CObjectInfo with new object
     explicit CObjectInfo(TTypeInfo typeInfo);
     explicit CObjectInfo(const CObjectTypeInfo& type);
@@ -437,7 +641,12 @@ public:
     TObjectPtr GetObjectPtr(void) const;
     pair<TObjectPtr, TTypeInfo> GetPair(void) const;
 
+    // --------------------------------------------------
     // primitive type interface
+
+    /// Set boolean data
+    /// @note
+    ///   Value type must be compatible with the request
     void SetPrimitiveValueBool(bool value);
     void SetPrimitiveValueChar(char value);
 
@@ -460,31 +669,99 @@ public:
 
     void SetPrimitiveValueAnyContent(const CAnyContentObject& value);
 
+
+    // --------------------------------------------------
     // class interface
+
+    /// Find class member by type iterator
+    ///
+    /// @sa CObjectInfoMI, CObjectTypeInfoMI
+    /// @note
+    ///   May be used only when type family is eTypeFamilyClass
     CMemberIterator GetMember(CObjectTypeInfo::CMemberIterator m) const;
+
+    /// Create class member iterator
+    ///
+    /// @sa CObjectInfoMI
+    /// @note
+    ///   May be used only when type family is eTypeFamilyClass
     CMemberIterator BeginMembers(void) const;
+
+    /// Create class member iterator that initially points to specified member
+    ///
+    /// @param index
+    ///   Index of the member
+    /// @sa CObjectInfoMI
+    /// @note
+    ///   May be used only when type family is eTypeFamilyClass
     CMemberIterator GetClassMemberIterator(TMemberIndex index) const;
+
+    /// Find class member by its name
+    ///
+    /// @sa CObjectInfoMI
+    /// @note
+    ///   May be used only when type family is eTypeFamilyClass
     CMemberIterator FindClassMember(const string& memberName) const;
+
+    /// Find class member by its numerical tag
+    ///
+    /// @sa CObjectInfoMI
+    /// @note
+    ///   May be used only when type family is eTypeFamilyClass
     CMemberIterator FindClassMemberByTag(int memberTag) const;
-    // create if necessary and return member object
+    
+    /// Create member if necessary and return member object
     CObjectInfo SetClassMember(TMemberIndex index) const;
 
+
+    // --------------------------------------------------
     // choice interface
+
+    /// Get data and type information of selected choice variant
+    ///
+    /// @sa CObjectInfoCV
+    /// @note
+    ///   May be used only when type family is eTypeFamilyChoice
     CChoiceVariant GetCurrentChoiceVariant(void) const;
-    // select if necessary and return variant object
+
+    /// Select choice variant, if necessary, and return variant object
+    ///
+    /// @note
+    ///   May be used only when type family is eTypeFamilyChoice
     CObjectInfo SetChoiceVariant(TMemberIndex index) const;
 
+    // --------------------------------------------------
     // pointer interface
+
+    /// Get data and type information of object to which this type refers
+    ///
+    /// @note
+    ///   May be used only when type family is eTypeFamilyPointer
     CObjectInfo GetPointedObject(void) const;
-    // create if necessary and return pointed object
+    
+    /// Create if necessary and return pointed object
+    ///
+    /// @note
+    ///   May be used only when type family is eTypeFamilyPointer
     CObjectInfo SetPointedObject(void) const;
 
+    // --------------------------------------------------
     // container interface
+
+    /// Create container elements iterator
+    ///
+    /// @sa CObjectInfoEI
+    /// @note
+    ///   May be used only when type family is eTypeFamilyContainer
     CElementIterator BeginElements(void) const;
+
+    /// Read element data from stream
     void ReadContainer(CObjectIStream& in, CReadContainerElementHook& hook);
-    // add and return new element object
+    
+    /// Add and return new element object
     CObjectInfo AddNewElement(void) const;
-    // add new pointer element, create new pointed object and return it
+
+    /// add new pointer element, create new pointed object and return it
     CObjectInfo AddNewPointedElement(void) const;
 };
 
