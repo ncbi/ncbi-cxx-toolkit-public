@@ -84,6 +84,12 @@ if [ "${rel_srcdir:-.}" != . -a -n "$builddir" -a -w "$builddir" ]; then
         if $test "$hintfile" -nt "$lock_map"; then
             exit 0 # Already up to date
         fi
+        exec > "$hintfile.$$"
+cat <<EOF
+ifneq "" "\$(wildcard \$(top_srcdir)/src/$rel_srcdir/flat-hints.mk)"
+  include \$(top_srcdir)/src/$rel_srcdir/flat-hints.mk
+else
+EOF
         d=`echo $rel_srcdir/ | sed -e 's,/,\\\\/,g'`
         mff=$builddir/Makefile.flat
         set _
@@ -94,9 +100,11 @@ if [ "${rel_srcdir:-.}" != . -a -n "$builddir" -a -w "$builddir" ]; then
         done < "$lock_map" | \
         sort -rn | \
         while read n x; do
-            [ $# = 0 ]  ||  echo "$x: $*"
+            [ $# = 0 ]  ||  echo "  $x: $*"
             set "$@" "$x"
-        done > "$hintfile"
+        done
+        echo 'endif'
+        mv "$hintfile.$$" "$hintfile"
     else
         rm -f "$hintfile"
     fi
