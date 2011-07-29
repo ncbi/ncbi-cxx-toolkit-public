@@ -340,6 +340,7 @@ BCC<THA>	c	BIOTEC Culture Collection
 BCCM/IHEM	c	BCCM/IHEM
 BCCM/LMBP	c	Belgian Coordinated Collections of Microorganisms / LMBP Plasmid Collection
 BCCM/MUCL	c	The Belgian Co-ordinated Collections of Micro-organisms /BCCM/MUCL (Agro)Industrial Fungi & Yeasts Collection
+BCCM/ULC	c	The Belgian Co-ordinated Collections of Micro-organisms /BCCM/ULC Polar cyanobacteria
 BCCN	c	Brucella Culture Collection
 BCCUSP	c	Brazilian Cyanobacteria Collection - University of Sao Paulo
 BCF	s	Universitat de Barcelona, Laboratori de Botanica
