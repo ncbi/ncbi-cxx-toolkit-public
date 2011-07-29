@@ -1261,91 +1261,107 @@ void CQueue::x_ChangeGroupStatus(unsigned               group_id,
                                  TJobStatus             status,
                                  unsigned int           peer_addr)
 {
-    time_t      curr = time(0);
+    time_t                  curr = time(0);
+    TNSBitVector *          group_jobs = NULL;
+
+
+    // Check input parameters
     {{
         CFastMutexGuard         guard(m_GroupMapLock);
+        TGroupMap::iterator     reading_group = m_GroupMap.find(group_id);
+
         // Check that the group is valid
-        TGroupMap::iterator     i = m_GroupMap.find(group_id);
-        if (i == m_GroupMap.end())
+        if (reading_group == m_GroupMap.end())
             NCBI_THROW(CNetScheduleException, eInvalidParameter,
                         "No such read group");
 
-        TNSBitVector&           bv = (*i).second;
+        group_jobs = & reading_group->second;
 
         // Check that all jobs are in read group
-        TNSBitVector            check(jobs);
-        check -= bv;
+        TNSBitVector        check(jobs);
+        check -= (*group_jobs);
         if (check.any())
             NCBI_THROW(CNetScheduleException, eInvalidParameter,
                        "Jobs do not belong to group");
-
-        // Remove jobs from read group, remove group if empty
-        bv -= jobs;
-        if (!bv.any())
-            m_GroupMap.erase(i);
     }}
 
 
+    // Make changes in the database and in memory status tracker
+    {{
+        CJob                            job;
+        map<unsigned int, TJobStatus>   new_job_statuses;
+        TNSBitVector::enumerator        en(jobs.first());
 
-    CJob                            job;
-    map<unsigned int, TJobStatus>   new_job_statuses;
-    TNSBitVector::enumerator        en(jobs.first());
+        CNS_Transaction                 trans(this);
+        CQueueGuard                     guard(this, &trans);
 
-    CNS_Transaction                 trans(this);
-    CQueueGuard                     guard(this, &trans);
+        for (; en.valid(); ++en) {
+            unsigned                job_id = *en;
+            TJobStatus              new_status = status;
 
-    for (; en.valid(); ++en) {
-        unsigned                job_id = *en;
-        TJobStatus              new_status = status;
+            if (job.Fetch(this, job_id) != CJob::eJF_Ok) {
+                // TODO: check for db error here
+                ERR_POST("Error fetching job while changing reading group "
+                         "status. Job " << DecorateJobId(job_id));
+                continue;
+            }
 
-        if (job.Fetch(this, job_id) != CJob::eJF_Ok) {
-            // TODO: check for db error here
-            ERR_POST("Error fetching job while changing reading group "
-                     "status. Job " << DecorateJobId(job_id));
-            continue;
-        }
+            CJobEvent *     event = job.GetLastEvent();
+            if (!event)
+                ERR_POST("No JobEvent for reading job " << DecorateJobId(job_id));
 
-        CJobEvent *     event = job.GetLastEvent();
-        if (!event)
-            ERR_POST("No JobEvent for reading job " << DecorateJobId(job_id));
+            event = &job.AppendEvent();
+            event->SetStatus(status);
+            event->SetTimestamp(curr);
+            event->SetNodeAddr(peer_addr);
 
-        event = &job.AppendEvent();
-        event->SetStatus(status);
-        event->SetTimestamp(curr);
-        event->SetNodeAddr(peer_addr);
-
-        if (status == CNetScheduleAPI::eDone) {
-            // The job is returned so the read counter needs to be clicked down
+            if (status == CNetScheduleAPI::eDone) {
+                // The job is returned so the read counter needs to be clicked down
                 job.SetReadCount(job.GetReadCount() - 1);
                 event->SetErrorMsg("Moved to Done due to read rollback");
-        }
-        else if (status == CNetScheduleAPI::eReadFailed) {
-            // Check the number of tries first
-            if (job.GetReadCount() <= m_FailedRetries) {
-                // The job needs to be re-scheduled for reading
-                new_status = CNetScheduleAPI::eDone;
+            }
+            else if (status == CNetScheduleAPI::eReadFailed) {
+                // Check the number of tries first
+                if (job.GetReadCount() <= m_FailedRetries) {
+                    // The job needs to be re-scheduled for reading
+                    new_status = CNetScheduleAPI::eDone;
+                }
+            }
+            job.SetStatus(new_status);
+            new_job_statuses[ job_id ] = new_status;
+
+            job.Flush(this);
+            if (m_RunTimeLine) {
+                // TODO: Optimize locking of rtl lock for every object
+                // hoist it out of the loop
+                CWriteLockGuard     rtl_guard(m_RunTimeLineLock);
+                // TODO: Ineffective, better learn expiration time from
+                // object, then remove it with another method
+                m_RunTimeLine->RemoveObject(job_id);
             }
         }
-        job.SetStatus(new_status);
-        new_job_statuses[ job_id ] = new_status;
+        trans.Commit();
 
-        job.Flush(this);
-        if (m_RunTimeLine) {
-            // TODO: Optimize locking of rtl lock for every object
-            // hoist it out of the loop
-            CWriteLockGuard     rtl_guard(m_RunTimeLineLock);
-            // TODO: Ineffective, better learn expiration time from
-            // object, then remove it with another method
-            m_RunTimeLine->RemoveObject(job_id);
+        // The DB has been updated, so update the memory cache with new job
+        // statuses
+        map<unsigned int, TJobStatus>::const_iterator  k = new_job_statuses.begin();
+        for (; k != new_job_statuses.end(); ++k)
+            m_StatusTracker.ChangeStatus(k->first, k->second);
+    }}
+
+    // Update the reading group and destroy it if there are no more jobs in it
+    {{
+        CFastMutexGuard         guard(m_GroupMapLock);
+        TGroupMap::iterator     reading_group = m_GroupMap.find(group_id);
+
+        // Remove jobs from read group, remove group if empty
+        if (reading_group != m_GroupMap.end()) {
+            // The group is still there
+            (*group_jobs) -= jobs;
+            if (!group_jobs->any())
+                m_GroupMap.erase(reading_group);
         }
-    }
-    trans.Commit();
-
-    // The DB has been updated, so update the memory cache with new job
-    // statuses
-    map<unsigned int, TJobStatus>::const_iterator  k = new_job_statuses.begin();
-    for (; k != new_job_statuses.end(); ++k)
-        m_StatusTracker.ChangeStatus(k->first, k->second);
+    }}
 
     return;
 }
