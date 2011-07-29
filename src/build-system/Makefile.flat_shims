@@ -1,8 +1,8 @@
 # $Id$
-GMAKE += -f Makefile.flat
+# GMAKE += -f Makefile.flat
 MAKE = $(GMAKE)
 
 all:
 	@echo "Falling back to GNU Make ($(GMAKE))"
 	@+$(GMAKE) --version >/dev/null 2>&1
-	+$(GMAKE) $(MFLAGS) ptb_all
+	+$(GMAKE) $(MFLAGS) -f Makefile.flat ptb_all
