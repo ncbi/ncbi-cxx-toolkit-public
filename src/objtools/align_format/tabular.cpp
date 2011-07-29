@@ -297,11 +297,11 @@ void CBlastTabularInfo::SetSubjectId(const CBioseq_Handle& bh)
     // its destruction; then extract the list of CBlast_def_line objects.
     const CRef<CBlast_def_line_set> bdlRef = 
         CSeqDB::ExtractBlastDefline(bh);
-    const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
-    
-    vector< CConstRef<CSeq_id> > original_seqids;
-    if (!bdl.empty()) {        
-        ITERATE(CBlast_def_line_set::Tdata, itr, bdl) {
+
+    if (bdlRef && bdlRef->CanGet() && bdlRef->IsSet() && !bdlRef->Get().empty()){
+        vector< CConstRef<CSeq_id> > original_seqids;
+        
+        ITERATE(CBlast_def_line_set::Tdata, itr, bdlRef->Get()) {
             original_seqids.clear();
             ITERATE(CBlast_def_line::TSeqid, id, (*itr)->GetSeqid()) {
                 original_seqids.push_back(*id);
@@ -311,8 +311,7 @@ void CBlastTabularInfo::SetSubjectId(const CBioseq_Handle& bh)
             CShowBlastDefline::GetSeqIdList(bh,original_seqids,next_seqid_list);
             m_SubjectIds.push_back(next_seqid_list);
         }
-    } 
-    else {
+    } else {
         // Blast-def-line is not filled, hence retrieve all Seq-ids directly 
         // from the Bioseq handle's Seq-id.
         list<CRef<objects::CSeq_id> > subject_id_list;
@@ -322,6 +321,7 @@ void CBlastTabularInfo::SetSubjectId(const CBioseq_Handle& bh)
         }
         m_SubjectIds.push_back(subject_id_list);
     }
+    
 }
 
 
