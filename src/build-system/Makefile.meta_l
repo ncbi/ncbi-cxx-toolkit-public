@@ -35,6 +35,12 @@ ifeq "" "$(filter 0 1,$(words $(wildcard $(srcdir)/Makefile.*.???)))"
   w_lock_map = -map $(srcdir)/.\#lock-map
 endif
 
+ifneq "" "$(filter 3.7%,$(MAKE_VERSION))"
+# Work around extra expansion of $(call ...) arguments prior to version 3.80
+x = $$x
+i = $$i
+endif
+
 but_exp = ' (but expendable)'
 make_tag = $(word 1,$(MAKE))$(patsubst %,[%],$(filter-out 0,$(MAKELEVEL)))
 # 1: proj_name, 2: lock_map?, 3: command, 4: target, 5: ext, 6: cleanup,
