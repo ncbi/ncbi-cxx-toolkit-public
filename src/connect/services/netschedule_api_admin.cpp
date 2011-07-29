@@ -65,11 +65,6 @@ void CNetScheduleAdmin::ShutdownServer(
 }
 
 
-void CNetScheduleAdmin::ForceReschedule(const string& job_key)
-{
-    m_Impl->m_API->x_SendJobCmdWaitResponse("FRES", job_key);
-}
-
 void CNetScheduleAdmin::ReloadServerConfig()
 {
     string cmd("RECO");

@@ -677,10 +677,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
     void DumpJob(CNcbiOstream& out, const string& job_key);
     CNetServerMultilineCmdOutput DumpJob(const string& job_key);
 
-    /// Reschedule a job
-    ///
-    void ForceReschedule(const string& job_key);
-
     void ReloadServerConfig();
 
     //////////////////////////////////////////////////////
