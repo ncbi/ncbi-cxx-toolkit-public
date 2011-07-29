@@ -848,9 +848,7 @@ int CGridCommandLineInterfaceApp::Cmd_UpdateJob()
 {
     SetUp_NetScheduleCmd(eNetScheduleAdmin);
 
-    if (IsOptionSet(eForceReschedule))
-        m_NetScheduleAdmin.ForceReschedule(m_Opts.id);
-    else if (IsOptionSet(eExtendLifetime))
+    if (IsOptionSet(eExtendLifetime))
         m_NetScheduleAPI.GetExecuter().JobDelayExpiration(
             m_Opts.id, (unsigned) m_Opts.extend_lifetime_by);
 

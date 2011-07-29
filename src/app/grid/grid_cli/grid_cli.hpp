@@ -115,7 +115,6 @@ enum EOption {
     eStatusOnly,
     eProgressMessageOnly,
     eDeferExpiration,
-    eForceReschedule,
     eExtendLifetime,
     eProgressMessage,
     eAllJobs,

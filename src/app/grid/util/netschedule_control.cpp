@@ -216,11 +216,6 @@ void CNetScheduleControl::Init(void)
 
     arg_desc->AddFlag("dump", "Print queue dump or job dump if -jid parameter is specified");
 
-    arg_desc->AddOptionalKey("reschedule",
-                             "job_key",
-                             "Reschedule a job",
-                             CArgDescriptions::eString);
-
     arg_desc->AddOptionalKey("cancel",
                              "job_key",
                              "Cancel a job",
@@ -388,12 +383,6 @@ int CNetScheduleControl::Run(void)
         } else {
             ctl.GetAdmin().DumpQueue(os);
         }
-    }
-    else if (args["reschedule"]) {
-        ctl = x_CreateNewClient(true);
-        string jid = args["reschedule"].AsString();
-        ctl.GetAdmin().ForceReschedule(jid);
-        os << "Job " << jid << " has been rescheduled." << endl;
     }
     else if (args["cancel"]) {
         ctl = x_CreateNewClient(true);

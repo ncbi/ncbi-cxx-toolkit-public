@@ -210,10 +210,6 @@ struct SOptionDefinition {
         "defer-expiration", "Prolong job lifetime by "
             "updating its last access timestamp."},
 
-    {CCommandLineParser::eSwitch, eForceReschedule,
-        "force-reschedule", "Reset job submission time, set the state "
-            "to 'Pending', and discard information about job runs."},
-
     {CCommandLineParser::eOptionWithParameter, eExtendLifetime,
         "extend-lifetime", "Extend job lifetime by "
             "the specified number of seconds."},
@@ -502,7 +498,7 @@ struct SCommandDefinition {
         "Change one or more job properties. The outcome depends "
         "on the current state of the job.",
         {eID, eNetSchedule, eQueue, eWNodePort, eWNodeGUID,
-            eForceReschedule, eExtendLifetime, eProgressMessage, eAuth, -1}},
+            eExtendLifetime, eProgressMessage, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_NetScheduleQuery,
         "nsquery", "Send a custom query to a NetSchedule server.",
