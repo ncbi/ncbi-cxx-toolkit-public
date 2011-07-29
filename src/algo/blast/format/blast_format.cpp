@@ -933,23 +933,14 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
     string domain_name[] = {"FWR1", "CDR1", "FWR2", "CDR2", "FWR3"};
     const CRef<CIgAnnotation> & annots = results.GetIgAnnotation();
     
-    bool first_annotated_domain = true;
     for (int i=0; i<9; i = i + 2) {
         if (annots->m_DomainInfo[i] >= 0){            CRef<CDisplaySeqalign::DomainInfo> temp(new CDisplaySeqalign::DomainInfo);
             int start = annots->m_DomainInfo[i];
             int subject_start = annots->m_DomainInfo_S[i];
-            if (first_annotated_domain && annots->m_FirstExt > 0) {
-                start = max (0, start - annots->m_FirstExt);
-            }
-            first_annotated_domain = false;
 
             int stop = annots->m_DomainInfo[i+1];
             int subject_stop = annots->m_DomainInfo_S[i+1];
-            //extend the last domain
-            if (i < 9 && annots->m_DomainInfo[i + 2] < 0 &&
-                annots->m_LastExt > 0){
-                stop += annots->m_LastExt;
-            }
+
             temp->seqloc = new CSeq_loc((CSeq_loc::TId &) aln_set->Get().front()->GetSeq_id(0),
                                         (CSeq_loc::TPoint) start,
                                         (CSeq_loc::TPoint) stop);
@@ -1049,7 +1040,7 @@ CBlastFormat::x_ReverseQuery(blast::CIgBlastResults& results)
     for (int i=0; i<12; ++i) {
         int pos = annots->m_DomainInfo[i];
         if (pos >= 0) {
-            annots->m_DomainInfo[i] = len - 1 - pos;
+            annots->m_DomainInfo[i] = max(0, len - 1 - pos);
         }
     }
 

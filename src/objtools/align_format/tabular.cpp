@@ -1281,6 +1281,7 @@ void CIgBlastTabularInfo::x_ComputeIgDomain(SIgDomain &domain)
     int q_pos = 0, s_pos = 0;  // query and subject co-ordinate (translated)
     unsigned int i = 0;  // i is the alignment co-ordinate
     // m_QueryStart and m_SubjectStart are 1-based
+    if (domain.start < m_QueryStart-1) domain.start = m_QueryStart-1;
     while ( (q_pos < domain.start - m_QueryStart +1 
           || s_pos < domain.s_start - m_SubjectStart +1)
           && i < m_QuerySeq.size()) {
@@ -1309,6 +1310,7 @@ void CIgBlastTabularInfo::x_ComputeIgDomain(SIgDomain &domain)
         ++domain.length;
         ++i;
     }
+    if (domain.end > m_QueryEnd) domain.end = m_QueryEnd;
 };
 
 void CIgBlastTabularInfo::x_PrintIgDomain(const SIgDomain &domain) const

@@ -75,11 +75,9 @@ public:
                                      // J start, and topV start
     int m_DomainInfo[12];            // The (start) and (end offset) for FWR1, 
                                      // CDR1, FWR2, CDR2, FWR3, CDR3 domains
+                                     // note: the first and last domains are be extended
     int m_DomainInfo_S[10];          // The (start) and (end offset) for FWR1, 
                                      // CDR1, FWR2, CDR2, FWR3, CDR3 domains on topV sequence
-    int m_FirstExt;                  // the extension of the first annotated domain
-    int m_LastExt;                   // the extension of the last annotated domain
-                                
 
     /// Constructor
     CIgAnnotation() 
@@ -90,8 +88,6 @@ public:
         for (int i=0; i<3; i++) m_FrameInfo[i] = -1;
         for (int i=0; i<12; i++) m_DomainInfo[i] = -1;
         for (int i=0; i<10; i++) m_DomainInfo_S[i] = -1;
-        m_FirstExt = -1;
-        m_LastExt = -1;
     }
 
 };

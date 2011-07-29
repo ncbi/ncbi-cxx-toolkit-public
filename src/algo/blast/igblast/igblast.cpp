@@ -709,15 +709,16 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
                     // extension of the first and last annotated domain (if any)
                     int i = 0;
                     while (i<10 && annot->m_DomainInfo[i] < 0) i+=2;
-                    start = s_map.GetSeqPosFromSeqPos(1, 0, annot->m_DomainInfo[i],
-                                                          IAlnExplorer::eBackwards);
-                    annot->m_FirstExt = start - domain_info[i] + 1; 
+                    annot->m_DomainInfo[i] += (domain_info[i] - 1 -
+                                       s_map.GetSeqPosFromSeqPos(1, 0, annot->m_DomainInfo[i],
+                                                                 IAlnExplorer::eBackwards))*q_dir;
+                    if (annot->m_DomainInfo[i] < 0) annot->m_DomainInfo[i] = 0;
                     i = 9;
                     while (i>0 && annot->m_DomainInfo[i] < 0) i-=2;
-                    stop = s_map.GetSeqPosFromSeqPos(1, 0, annot->m_DomainInfo[i],
-                                                         IAlnExplorer::eForward);
-                    annot->m_LastExt = domain_info[i] -1 - stop;
-
+                    annot->m_DomainInfo[i] += (domain_info[i] - 1 -
+                                       s_map.GetSeqPosFromSeqPos(1, 0, annot->m_DomainInfo[i],
+                                                                 IAlnExplorer::eForward))*q_dir;
+                    if (annot->m_DomainInfo[i] < 0) annot->m_DomainInfo[i] = 0;
                     break;
                 }
             }
