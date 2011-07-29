@@ -524,7 +524,7 @@ done
 
 
 if test "$with_gbench" = "yes" ; then
-   m4_foreach(OPT, [dll,mt,gui,exe,serial,objects,algo,glew,glew_mx],
+   m4_foreach(OPT, [dll,mt,gui,exe,serial,objects,algo,glew_mx],
      [if test "$[with_]OPT" = "no"; then
          AC_MSG_ERROR([incompatible options: --without-]OPT[ but --with-gbench])
       else
@@ -4851,6 +4851,7 @@ else
       if test "$ac_cv_search_glewGetExtension" = no; then
          GLEW_LIBS=
          NCBI_MISSING_PACKAGE(glew)
+         NCBI_MISSING_PACKAGE(glew-mx)
       else
          NCBI_RPATHIFY_OUTPUT_COND(tmp_LIBS, [echo $GLEW_LDFLAGS $GLEW_LIBS])
          GLEW_LIBS=$tmp_LIBS
@@ -6173,6 +6174,10 @@ if test "$with_gbench" != "no"  -a  -d "$real_srcdir/src/app/gbench"; then
    fi
    if test "$with_sqlite3" = "no"; then
      reason="$reason${sep}SQLite 3.x"
+     sep=", "
+   fi
+   if test "$with_bdb" = "no"; then
+     reason="$reason${sep}Berkeley DB"
      sep=", "
    fi
    if test "$with_mt" = "no"; then

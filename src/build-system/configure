@@ -2939,13 +2939,6 @@ echo "$as_me: error: incompatible options: --without-algo but --with-gbench" >&2
       else
          with_algo=yes
       fi
-     if test "$with_glew" = "no"; then
-         { { echo "$as_me:$LINENO: error: incompatible options: --without-glew but --with-gbench" >&5
-echo "$as_me: error: incompatible options: --without-glew but --with-gbench" >&2;}
-   { (exit 1); exit 1; }; }
-      else
-         with_glew=yes
-      fi
      if test "$with_glew_mx" = "no"; then
          { { echo "$as_me:$LINENO: error: incompatible options: --without-glew_mx but --with-gbench" >&5
 echo "$as_me: error: incompatible options: --without-glew_mx but --with-gbench" >&2;}
@@ -27141,6 +27134,11 @@ fi
 echo "$as_me: error: --with-glew explicitly specified, but no usable version found." >&2;}
    { (exit 1); exit 1; }; }
     fi
+         if test "${with_glew_mx:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-glew-mx explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-glew-mx explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
       else
          if test -z "${tmp_LIBS+set}"; then
     if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
@@ -32707,6 +32705,10 @@ if test "$with_gbench" != "no"  -a  -d "$real_srcdir/src/app/gbench"; then
    fi
    if test "$with_sqlite3" = "no"; then
      reason="$reason${sep}SQLite 3.x"
+     sep=", "
+   fi
+   if test "$with_bdb" = "no"; then
+     reason="$reason${sep}Berkeley DB"
      sep=", "
    fi
    if test "$with_mt" = "no"; then
