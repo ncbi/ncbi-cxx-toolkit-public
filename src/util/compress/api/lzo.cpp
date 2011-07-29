@@ -151,10 +151,10 @@ void CLZOCompression::InitCompression(ELevel level)
     if ( level == CCompression::eLevel_Best ) {
         param.compress = &lzo1x_999_compress;
         param.workmem  = LZO1X_999_MEM_COMPRESS;
+    } else {
+        param.compress = &lzo1x_1_compress;
+        param.workmem  = LZO1X_1_MEM_COMPRESS;
     }
-    param.compress = &lzo1x_1_compress;
-    param.workmem  = LZO1X_1_MEM_COMPRESS;
-
     // Reallocate compressor working memory buffer if needed
     if (m_Param.workmem != param.workmem) {
         m_WorkMem.reset(new char[param.workmem]);
