@@ -1,5 +1,6 @@
 # $Id$
 GMAKE += -f Makefile.flat
+MAKE = $(GMAKE)
 
 all:
 	@echo "Falling back to GNU Make ($(GMAKE))"
