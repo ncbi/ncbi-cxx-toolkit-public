@@ -78,7 +78,8 @@ print_rdep_count()
     fi
 }
 
-if [ "${rel_srcdir:-.}" != . -a -n "$builddir" -a -w "$builddir" ]; then
+if [ "${rel_srcdir:-.}" != . -a -n "$builddir" -a \
+     -w "$builddir/build-system" ]; then
     hintfile=$builddir/build-system/`echo "$rel_srcdir" | tr / _`.hints
     if [ -f "$lock_map" ]; then
         if $test "$hintfile" -nt "$lock_map"; then
