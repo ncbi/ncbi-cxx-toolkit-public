@@ -1297,7 +1297,7 @@ void CNetScheduleHandler::x_ProcessDropQueue(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessReturn(CQueue* q)
 {
-    if (q->ReturnJob(m_JobReq.job_id, m_PeerAddr) == STemporaryEventCodes::eReturned)
+    if (q->ReturnJob(m_JobReq.job_id, m_PeerAddr))
         WriteMessage("OK:");
     else
         WriteMessage("ERR:Job not found");

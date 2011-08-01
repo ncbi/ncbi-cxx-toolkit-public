@@ -162,8 +162,10 @@ const unsigned kMaxWorkerNodeIdSize = 64;
 struct SEventsDB : public CBDB_File
 {
     CBDB_FieldUint4   id;           ///< Job id
-    CBDB_FieldUint4   event;        ///< Job event
-    CBDB_FieldInt4    status;       ///< Job status for this event
+    CBDB_FieldUint4   event_id;     ///< Job event id
+    CBDB_FieldUint4   event;        ///< Event which caused the record
+    CBDB_FieldInt4    status;       ///< Status to which the job moved to after
+                                    ///< processing the event
     CBDB_FieldUint4   timestamp;    ///< The event timestamp
     CBDB_FieldUint4   node_addr;    ///< IP of the worker node (net byte order)
     CBDB_FieldUint2   node_port;    ///< Node's port
@@ -174,7 +176,8 @@ struct SEventsDB : public CBDB_File
     SEventsDB()
     {
         BindKey("id",           &id);
-        BindKey("event",        &event);
+        BindKey("event_id",     &event_id);
+        BindData("event",       &event);
         BindData("status",      &status);
         BindData("timestamp",   &timestamp);
         BindData("node_addr",   &node_addr);

@@ -228,10 +228,9 @@ public:
     bool PutProgressMessage(unsigned      job_id,
                             const string& msg);
 
-    /// Can return the following states:
-    /// eReturned    => everything is fine
-    /// eJobNotFound => job not found
-    TJobStatus  ReturnJob(unsigned job_id, unsigned int  peer_addr);
+    /// true - job was returned
+    /// false - job not found
+    bool  ReturnJob(unsigned job_id, unsigned int  peer_addr);
 
     /// @param expected_status
     ///    If current status is different from expected try to

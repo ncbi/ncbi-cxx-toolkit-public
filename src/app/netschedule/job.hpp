@@ -35,7 +35,7 @@
 
 #include <connect/services/netschedule_api.hpp>
 
-//#include "ns_types.hpp"
+#include "ns_types.hpp"
 #include "job_status.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -54,10 +54,34 @@ class CJob;
 class CJobEvent
 {
 public:
+    // Events which can trigger state change
+    enum EJobEvent {
+        eUnknown = -1,  // Used for initialisation
+
+        eRequest = 0,   // GET, WGET, JXCG
+        eDone,          // PUT, JXCG
+        eReturn,        // RETURN
+        eFail,          // FPUT
+        eRead,          // READ
+        eReadFail,      // FRED
+        eReadDone,      // CFRM
+        eReadRollback,  // RDRB
+
+        eCancel,        // CANCEL
+        eTimeout,       // exec timeout
+        eReadTimeout    // read timeout
+    };
+
+    // Converts event code into its string representation
+    static std::string EventToString(EJobEvent  event);
+
+public:
     CJobEvent();
     // setters/getters
     TJobStatus GetStatus() const
     { return m_Status; }
+    EJobEvent GetEvent() const
+    { return m_Event; }
     unsigned GetTimestamp() const
     { return m_Timestamp; }
     unsigned GetNodeAddr() const
@@ -74,6 +98,7 @@ public:
     { return "'" + NStr::PrintableString(m_ErrorMsg) + "'"; }
 
     void SetStatus(TJobStatus status);
+    void SetEvent(EJobEvent  event);
     void SetTimestamp(time_t t);
     void SetNodeAddr(unsigned node_ip);
     void SetNodePort(unsigned short port);
@@ -91,14 +116,15 @@ private:
     bool            m_Dirty;
 
     // SEventDB fields
-    // id, event - implicit
-    TJobStatus      m_Status;      ///< Job status for this event
-    unsigned        m_Timestamp;   ///< event timestamp
-    unsigned        m_NodeAddr;    ///< IP of a client (typically, worker node)
-    unsigned short  m_NodePort;    ///< Notification port of a client
-    int             m_RetCode;     ///< Return code
-    string          m_NodeId;      //
-    string          m_ErrorMsg;    ///< Error message (exception::what())
+    // id, event id - implicit
+    TJobStatus      m_Status;     ///< Job status after the event
+    EJobEvent       m_Event;      ///< Event
+    unsigned        m_Timestamp;  ///< event timestamp
+    unsigned        m_NodeAddr;   ///< IP of a client (typically, worker node)
+    unsigned short  m_NodePort;   ///< Notification port of a client
+    int             m_RetCode;    ///< Return code
+    string          m_NodeId;     //
+    string          m_ErrorMsg;   ///< Error message (exception::what())
 };
 
 class CBDB_Transaction;

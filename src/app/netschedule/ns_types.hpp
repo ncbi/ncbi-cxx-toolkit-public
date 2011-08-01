@@ -40,6 +40,8 @@
 ///
 /// @internal
 
+#include <string>
+
 #include <util/bitset/bmalgo.h>
 #include <util/bitset/ncbi_bitset.hpp>
 #include <util/bitset/ncbi_bitset_alloc.hpp>
@@ -52,14 +54,6 @@ typedef bm::bvector<TMemAlloc>                              TNSBitVector;
 //typedef bm::bvector<>                                       TNSBitVector;
 
 typedef Uint4                                               TNSJobId;
-
-struct STemporaryEventCodes {
-    enum {
-        eReturned = 2,
-        eTimeout = 9,
-        eReadTimeout = 10
-    };
-};
 
 END_NCBI_SCOPE
 

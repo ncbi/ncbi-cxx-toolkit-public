@@ -61,9 +61,34 @@ static string FormatTime(time_t t)
 //////////////////////////////////////////////////////////////////////////
 // CJobEvent implementation
 
+static string   s_EventAsString[] = {
+    "Request",      // eRequest
+    "Done",         // eDone
+    "Return",       // eReturn
+    "Fail",         // eFail
+    "Read",         // eRead
+    "ReadFail",     // eReadFail
+    "ReadDone",     // eReadDone
+    "ReadRollback", // eReadRollback
+    "Cancel",       // eCancel
+    "Timeout",      // eTimeout
+    "ReadTimeout"   // eReadTimeout
+};
+
+
+string CJobEvent::EventToString(EJobEvent  event)
+{
+    if (event < eRequest || event > eReadTimeout)
+        return "UNKNOWN";
+
+    return s_EventAsString[ event ];
+}
+
+
 CJobEvent::CJobEvent() :
     m_Dirty(false),
     m_Status(CNetScheduleAPI::eJobNotFound),
+    m_Event(eUnknown),
     m_Timestamp(0),
     m_NodeAddr(0),
     m_NodePort(0),
@@ -75,6 +100,13 @@ void CJobEvent::SetStatus(TJobStatus status)
 {
     m_Dirty = true;
     m_Status = status;
+}
+
+
+void CJobEvent::SetEvent(EJobEvent  event)
+{
+    m_Dirty = true;
+    m_Event = event;
 }
 
 
@@ -122,6 +154,7 @@ void CJobEvent::SetErrorMsg(const string &  msg)
 
 
 static string  s_EventFieldNames[] = {
+    "event",
     "event_status",
     "timestamp",
     "node_addr",
@@ -145,19 +178,21 @@ int CJobEvent::GetFieldIndex(const string &  name)
 string CJobEvent::GetField(int  index) const
 {
     switch (index) {
-    case 0: // event_status
+    case 0: // event
+        return EventToString(m_Event);
+    case 1: // event_status
         return CNetScheduleAPI::StatusToString(m_Status);
-    case 1: // timestamp
+    case 2: // timestamp
         return FormatTime(m_Timestamp);
-    case 2: // node_addr
+    case 3: // node_addr
         return NStr::IntToString(m_NodeAddr);
-    case 3: // node_port
+    case 4: // node_port
         return NStr::IntToString(m_NodePort);
-    case 4: // ret_code
+    case 5: // ret_code
         return NStr::IntToString(m_RetCode);
-    case 5: // node_id
+    case 6: // node_id
         return m_NodeId;
-    case 6: // err_msg
+    case 7: // err_msg
         return m_ErrorMsg;
     }
     return "NULL";
@@ -609,6 +644,7 @@ CJob::EJobFetchResult CJob::Fetch(CQueue* queue)
         CJobEvent &       event = AppendEvent();
 
         event.m_Status     = TJobStatus(int(events_db.status));
+        event.m_Event      = CJobEvent::EJobEvent(int(events_db.event));
         event.m_Timestamp  = events_db.timestamp;
         event.m_NodeAddr   = events_db.node_addr;
         event.m_NodePort   = events_db.node_port;
@@ -748,8 +784,9 @@ bool CJob::Flush(CQueue* queue)
 
         if (event.m_Dirty) {
             events_db.id          = m_Id;
-            events_db.event       = n;
+            events_db.event_id    = n;
             events_db.status      = int(event.m_Status);
+            events_db.event       = int(event.m_Event);
             events_db.timestamp   = event.m_Timestamp;
             events_db.node_addr   = event.m_NodeAddr;
             events_db.node_port   = event.m_NodePort;

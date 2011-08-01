@@ -890,12 +890,12 @@ bool CQueue::PutProgressMessage(unsigned      job_id,
 }
 
 
-TJobStatus  CQueue::ReturnJob(unsigned int  job_id, unsigned int  peer_addr)
+bool  CQueue::ReturnJob(unsigned int  job_id, unsigned int  peer_addr)
 {
     // FIXME: Provide fallback to
     // RegisterWorkerNodeVisit if unsuccessful
     if (!job_id)
-        return CNetScheduleAPI::eJobNotFound;
+        NCBI_THROW(CNetScheduleException, eInvalidParameter, "Invalid job ID");
 
     CJob                job;
     CNS_Transaction     trans(this);
@@ -906,7 +906,7 @@ TJobStatus  CQueue::ReturnJob(unsigned int  job_id, unsigned int  peer_addr)
 
 
         if (job.Fetch(this, job_id) != CJob::eJF_Ok)
-            return CNetScheduleAPI::eJobNotFound;
+            return false;   // Job not found
 
 
         unsigned        run_count = job.GetRunCount();
@@ -917,7 +917,8 @@ TJobStatus  CQueue::ReturnJob(unsigned int  job_id, unsigned int  peer_addr)
 
         event = &job.AppendEvent();
         event->SetNodeAddr(peer_addr);
-        event->SetStatus((TJobStatus) STemporaryEventCodes::eReturned);
+        event->SetStatus(CNetScheduleAPI::ePending);
+        event->SetEvent(CJobEvent::eReturn);
         event->SetTimestamp(time(0));
 
         if (run_count)
@@ -932,7 +933,7 @@ TJobStatus  CQueue::ReturnJob(unsigned int  job_id, unsigned int  peer_addr)
     trans.Commit();
     RemoveJobFromWorkerNode(job, eNSCReturned);
     TimeLineRemove(job_id);
-    return (TJobStatus) STemporaryEventCodes::eReturned;
+    return true;
 }
 
 
@@ -1029,6 +1030,7 @@ TJobStatus  CQueue::Cancel(unsigned int  job_id, unsigned int  peer_addr)
 
         event->SetNodeAddr(peer_addr);
         event->SetStatus(CNetScheduleAPI::eCanceled);
+        event->SetEvent(CJobEvent::eCancel);
         event->SetTimestamp(time(0));
         event->SetErrorMsg("Job canceled from " +
                            CNetScheduleAPI::StatusToString(old_status) +
@@ -1224,6 +1226,7 @@ void CQueue::ReadJobs(unsigned          peer_addr,
             CJobEvent &     event = job.AppendEvent();
 
             event.SetStatus(CNetScheduleAPI::eReading);
+            event.SetEvent(CJobEvent::eRead);
             event.SetTimestamp(curr);
             event.SetNodeAddr(peer_addr);
 
@@ -1311,22 +1314,32 @@ void CQueue::x_ChangeGroupStatus(unsigned               group_id,
                 ERR_POST("No JobEvent for reading job " << DecorateJobId(job_id));
 
             event = &job.AppendEvent();
-            event->SetStatus(status);
             event->SetTimestamp(curr);
             event->SetNodeAddr(peer_addr);
 
-            if (status == CNetScheduleAPI::eDone) {
-                // The job is returned so the read counter needs to be clicked down
-                job.SetReadCount(job.GetReadCount() - 1);
-                event->SetErrorMsg("Moved to Done due to read rollback");
+            switch (status) {
+                case CNetScheduleAPI::eDone:
+                    event->SetEvent(CJobEvent::eReadRollback);
+                    // The job is returned so the read counter needs to be
+                    // ticked down
+                    job.SetReadCount(job.GetReadCount() - 1);
+                    break;
+                case CNetScheduleAPI::eReadFailed:
+                    event->SetEvent(CJobEvent::eReadFail);
+                    // Check the number of tries first
+                    if (job.GetReadCount() <= m_FailedRetries)
+                        // The job needs to be re-scheduled for reading
+                        new_status = CNetScheduleAPI::eDone;
+                    break;
+                case CNetScheduleAPI::eConfirmed:
+                    event->SetEvent(CJobEvent::eReadDone);
+                    break;
+                default:
+                    _ASSERT(0);
+                    break;  // No other possible target states here
             }
-            else if (status == CNetScheduleAPI::eReadFailed) {
-                // Check the number of tries first
-                if (job.GetReadCount() <= m_FailedRetries) {
-                    // The job needs to be re-scheduled for reading
-                    new_status = CNetScheduleAPI::eDone;
-                }
-            }
+
+            event->SetStatus(new_status);
             job.SetStatus(new_status);
             new_job_statuses[ job_id ] = new_status;
 
@@ -1956,11 +1969,25 @@ bool CQueue::FailJob(CWorkerNode *      worker_node,
             return false;
         }
 
+        CJobEvent *     event = job.GetLastEvent();
+        if (!event)
+            ERR_POST("No JobEvent for running job " << DecorateJobId(job_id));
+
+        event = &job.AppendEvent();
+        event->SetEvent(CJobEvent::eFail);
+        event->SetStatus(CNetScheduleAPI::eFailed);
+        event->SetTimestamp(curr);
+        event->SetErrorMsg(err_msg);
+        event->SetRetCode(ret_code);
+        event->SetNodeAddr(peer_addr);
+
         unsigned                run_count = job.GetRunCount();
         if (run_count <= failed_retries) {
             time_t  exp_time = blacklist_time ? curr + blacklist_time : 0;
+
             BlacklistJob(worker_node, job_id, exp_time);
             job.SetStatus(CNetScheduleAPI::ePending);
+            event->SetStatus(CNetScheduleAPI::ePending);
             js_guard.SetStatus(CNetScheduleAPI::ePending);
             rescheduled = true;
             if (m_Log)
@@ -1970,25 +1997,14 @@ bool CQueue::FailJob(CWorkerNode *      worker_node,
                                << " retries left");
         } else {
             job.SetStatus(CNetScheduleAPI::eFailed);
+            event->SetStatus(CNetScheduleAPI::eFailed);
             rescheduled = false;
             if (m_Log)
                 LOG_POST(Error << "Job " << DecorateJobId(job_id)
                                << " failed");
         }
 
-        CJobEvent *     event = job.GetLastEvent();
-        if (!event) {
-            ERR_POST("No JobEvent for running job " << DecorateJobId(job_id));
-        }
-
-        event = &job.AppendEvent();
-        event->SetStatus(CNetScheduleAPI::eFailed);
-        event->SetTimestamp(curr);
-        event->SetErrorMsg(err_msg);
-        event->SetRetCode(ret_code);
-        event->SetNodeAddr(peer_addr);
         job.SetOutput(output);
-
         job.Flush(this);
     }}
     RemoveJobFromWorkerNode(job, eNSCFailed);
@@ -2660,16 +2676,17 @@ void CQueue::x_CheckExecutionTimeout(unsigned   queue_run_timeout,
     CNS_Transaction     trans(this);
 
     {{
-        CQueueGuard     guard(this, &trans);
-        TJobStatus      new_status, event_status;
+        CQueueGuard             guard(this, &trans);
+        TJobStatus              new_status;
+        CJobEvent::EJobEvent    event_type;
 
         status = GetJobStatus(job_id);
         if (status == CNetScheduleAPI::eRunning) {
             new_status = CNetScheduleAPI::ePending;
-            event_status = (TJobStatus) STemporaryEventCodes::eTimeout;
+            event_type = CJobEvent::eTimeout;
         } else if (status == CNetScheduleAPI::eReading) {
             new_status = CNetScheduleAPI::eDone;
-            event_status = (TJobStatus) STemporaryEventCodes::eReadTimeout;
+            event_type = CJobEvent::eReadTimeout;
         } else
             return; // Execution timeout is for Running and Reading jobs only
 
@@ -2710,7 +2727,8 @@ void CQueue::x_CheckExecutionTimeout(unsigned   queue_run_timeout,
         job.SetStatus(new_status);
 
         event = &job.AppendEvent();
-        event->SetStatus(event_status);
+        event->SetStatus(new_status);
+        event->SetEvent(event_type);
         event->SetTimestamp(curr_time);
 
         m_StatusTracker.SetStatus(job_id, new_status);
@@ -2953,7 +2971,7 @@ void CQueue::x_DeleteJobEvents(unsigned int  job_id)
     try {
         for (unsigned int  event_number = 0; ; ++event_number) {
             m_QueueDbBlock->events_db.id = job_id;
-            m_QueueDbBlock->events_db.event = event_number;
+            m_QueueDbBlock->events_db.event_id = event_number;
             if (m_QueueDbBlock->events_db.Delete() == eBDB_NotFound)
                 break;
         }
@@ -3064,7 +3082,8 @@ void CQueue::x_PrintJobStat(CNetScheduleHandler &   handler,
         //     message += NStr::IntToString(it->GetNodePort());
         // message += " ";
 
-        message += "status=" +
+        message += "event=" + CJobEvent::EventToString(it->GetEvent()) + " "
+                   "status=" +
                    CNetScheduleAPI::StatusToString(it->GetStatus()) + " "
                    "ret_code=" + NStr::IntToString(it->GetRetCode()) + " ";
 
@@ -3362,6 +3381,7 @@ bool CQueue::x_UpdateDB_PutResultNoLock(unsigned             job_id,
     // Append the event
     event = &job.AppendEvent();
     event->SetStatus(CNetScheduleAPI::eDone);
+    event->SetEvent(CJobEvent::eDone);
     event->SetTimestamp(curr);
     event->SetRetCode(ret_code);
     event->SetNodeAddr(peer_addr);
@@ -3422,6 +3442,7 @@ CQueue::EGetJobUpdateStatus CQueue::x_UpdateDB_GetJobNoLock(
             CJobEvent &     event = job.AppendEvent();
 
             event.SetStatus(CNetScheduleAPI::eFailed);
+            event.SetEvent(CJobEvent::eTimeout);
             event.SetTimestamp(curr);
             event.SetErrorMsg("Job expired and cannot be scheduled.");
             job.SetStatus(CNetScheduleAPI::eFailed);
@@ -3442,6 +3463,7 @@ CQueue::EGetJobUpdateStatus CQueue::x_UpdateDB_GetJobNoLock(
         CJobEvent &     event = job.AppendEvent();
 
         event.SetStatus(CNetScheduleAPI::eRunning);
+        event.SetEvent(CJobEvent::eRequest);
         event.SetTimestamp(curr);
 
         // We're setting host:port here using worker_node. It is faster
