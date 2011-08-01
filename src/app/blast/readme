@@ -1,0 +1,15 @@
+Igblastn is the command line igblast (for nucleotide sequence only).
+
+Required files (examples are for use with human germline gene searches which are all supplied with igblastn program):
+1.	 Blast database files for germline V (Human_gl_V.*), D (Human_gl_D.*), and J genes (Human_gl_J.*).
+2.	 Ig domain annotation files for germline V genes (Human_gl_V.n.dm.kabat and Human_gl_V.n.dm.imgt ).
+3.	File to indicate germline V gene coding frame start position (Human_gl_V.nfm, position is 0-based).
+4.	File to indicate the chain type of germline genes (Human_gl.ct).
+
+Example command to run searches against NCBI human germline gene database  (you can type ?./igblastn  ?help? to see details on all input parameters and the default setting):
+./igblastn -germline_db_V Human_gl_V -germline_db_J Human_gl_J -germline_db_D Human_gl_D -origin Human -domain_system kabat -query igblastntestcase -show_translation -outfmt 3
+
+Example command to run searches against custom database such as Andew Collins IGH repertoire database:
+./igblastn -germline_db_V UNSWIgVRepertoire_fasta.txt -germline_db_J UNSWIgJRepertoire_fasta.txt -germline_db_D UNSWIgDRepertoire_fasta.txt -origin Human -domain_system kabat -query igblastntestcase -show_translation -outfmt 3
+Note that the V gene coding frame start file contains only information for NCBI germline database.   If you search your own database and if it contains different sequences or sequence identifiers, then you need to edit that file to reflect that or you won?t get frame information or amino acid translation (other results will still be shown).
+
