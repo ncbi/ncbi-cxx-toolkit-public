@@ -55,7 +55,7 @@ BEGIN_SCOPE(objects)
 END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
-    class SSeqLoc;
+    struct SSeqLoc;
 END_SCOPE(blast)
 
 
