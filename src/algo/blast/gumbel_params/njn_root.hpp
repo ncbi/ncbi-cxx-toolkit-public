@@ -179,18 +179,14 @@ END_SCOPE(Njn)
 BEGIN_SCOPE(Njn)
 BEGIN_SCOPE(Root)
 
-BEGIN_SCOPE()
+      typedef double DoubleFct (double);
 
-         typedef double DoubleFct (double);
+      DoubleFct *s_f = 0;
+      DoubleFct *s_df = 0;
+      const double ZERO = 0.0;
 
-         DoubleFct *s_f = 0;
-         DoubleFct *s_df = 0;
-         const double ZERO = 0.0;
-
-         double f (double x_, const double &y_) {return (*s_f) (x_);}
-         double df (double x_, const double &y_) {return (*s_df) (x_);}
-
-END_SCOPE()
+      double f (double x_, const double &y_) {return (*s_f) (x_);}
+      double df (double x_, const double &y_) {return (*s_df) (x_);}
 
       double newtonRaphson ( // finds root f_(x_) = y_ in [p_, q_] with derivative y_'
       double y_, // f_ (x_) = y_

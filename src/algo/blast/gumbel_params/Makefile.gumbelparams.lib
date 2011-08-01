@@ -3,7 +3,8 @@ LIB = gumbelparams
 SRC = gumbel_params pvalues general_score_matrix sls_alp sls_alp_data \
       sls_alp_regression sls_alp_sim sls_pvalues njn_localmaxstatmatrix \
       njn_localmaxstat njn_localmaxstatutil njn_ioutil njn_matrix \
-      njn_stringutil njn_dynprogprob njn_dynprogproblim njn_dynprogprobproto
+      njn_stringutil njn_dynprogprob njn_dynprogproblim njn_dynprogprobproto \
+      sls_normal_distr_array
 
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)

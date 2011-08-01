@@ -976,7 +976,7 @@ pvalues::pvalues()
                 b_normal=10;
                 N_normal=NORMAL_DISTR_ARRAY_DIM;
                 h_normal=(b_normal-a_normal)/(double)N_normal;
-                p_normal=normal_distr_array_for_P_values_calculation;
+                p_normal=GetNormalDistrArrayForPvaluesCalculation();
 
         }
         catch (error er)

@@ -94,7 +94,7 @@ Int4 valueUpper_, // one beyond present upper Int4 value corresponding to the "p
 const double *prob_) // "probabilities" prob [valueLower_, valueUpper_) corresponding to the Int4s
 {
     assert ((! prob_ && valueLower_ <= 0 && 0 <= valueUpper_) || 
-                prob_ && valueLower_ < valueUpper_);
+            (prob_ && valueLower_ < valueUpper_));
 
     if (prob_) 
     {
