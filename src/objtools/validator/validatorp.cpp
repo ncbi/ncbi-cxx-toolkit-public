@@ -1583,8 +1583,6 @@ void CValidError_imp::ValidateDbxref
             obj, ctx);
     }
 
-    CDbtag::EDbtagType db_type = xref.GetType();
-
     bool refseq = IsRefSeq();
 
     bool src_db = false;

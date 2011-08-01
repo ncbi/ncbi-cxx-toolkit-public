@@ -4041,12 +4041,16 @@ void CValidError_bioseq::ValidateFeatPartialInContext (const CMappedFeat& feat)
         }
     }
 
+    string comment_text = "";
+    if (feat.IsSetComment()) {
+        comment_text = feat.GetComment();
+    }
+
     // partial product
     unsigned int errtype = eSeqlocPartial_Nostart;
     for ( int j = 0; j < 4; ++j ) {
         int i = 0;
         if (partial_prod & errtype) {
-            bool bad_seq = false;
             bool is_gap = false;
 
             if (feat.GetLocation().GetStop(eExtreme_Biological) == 2647) {
@@ -4082,7 +4086,6 @@ void CValidError_bioseq::ValidateFeatPartialInContext (const CMappedFeat& feat)
             } else {
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
                     parterr[i] + ": " + parterrs[j], *(feat.GetSeq_feat()));
-                TSeqPos stop = feat.GetLocation().GetStop (eExtreme_Biological);
             }
         }
         errtype <<= 1;
@@ -4123,7 +4126,6 @@ void CValidError_bioseq::ValidateFeatPartialInContext (const CMappedFeat& feat)
                 } else {
                     PostErr (eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
                         "PartialLocation: Internal partial intervals do not include first/last residue of sequence", *(feat.GetSeq_feat()));
-                    TSeqPos stop = feat.GetLocation().GetStop (eExtreme_Biological);
                 }
             } else {
                 if ( s_IsCDDFeat(feat) ) {
@@ -4168,7 +4170,9 @@ void CValidError_bioseq::ValidateFeatPartialInContext (const CMappedFeat& feat)
                     if (no_nonconsensus_except) {
                         if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
                             // suppress
-                        } else if (s_PartialAtGapOrNs (m_Scope, feat.GetLocation(), errtype)) {
+                        } else if (s_PartialAtGapOrNs (m_Scope, feat.GetLocation(), errtype)
+                                   && feat.IsSetComment()
+                                   && NStr::Find(comment_text, "coding region disrupted by sequencing gap") != string::npos) {
                             // suppress
                         } else {
                             PostErr (eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
@@ -4181,7 +4185,9 @@ void CValidError_bioseq::ValidateFeatPartialInContext (const CMappedFeat& feat)
                     if (no_nonconsensus_except) {
                         if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
                             // suppress
-                        } else if (s_PartialAtGapOrNs (m_Scope, feat.GetLocation(), errtype)) {
+                        } else if (s_PartialAtGapOrNs (m_Scope, feat.GetLocation(), errtype)
+                                   && feat.IsSetComment()
+                                   && NStr::Find(comment_text, "coding region disrupted by sequencing gap") != string::npos) {
                             // suppress
                         } else {
                             PostErr (eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
@@ -4227,9 +4233,6 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
         } else if ((*it)->IsGi()) {
             accession = NStr::IntToString((*it)->GetGi());
         }
-    }
-    if (NStr::Equal(accession, "AB083212")) {
-        bool mm = true;
     }
 
     try {
@@ -5222,7 +5225,6 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, int n
 {
     // skip this step if this is a genbank record for a bacteria or a virus
     bool is_genbank = false;
-    bool do_mrna_cds_count = true;
     FOR_EACH_SEQID_ON_BIOSEQ (it, *(seq.GetCompleteBioseq())) {
         if ((*it)->IsGenbank()) {
             is_genbank = true;
@@ -5360,7 +5362,6 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, int n
                          *(seq.GetCompleteBioseq()));
             } else {
                 cds_it = cds_list.begin();
-                int num_cds_without_mrna = 0;
                 while (cds_it != cds_list.end()) {
                     bool unique_products = false;
                     int num_mrna = (*cds_it)->GetNummRNA(unique_products);
@@ -8219,7 +8220,7 @@ void CValidError_bioseq::ValidateGraphOnDeltaBioseq
         next = curr,
         end = delta.Get().end();
 
-    SIZE_TYPE   num_delta_seq = 0, num_grp = 0;
+    SIZE_TYPE   num_delta_seq = 0;
     TSeqPos offset = 0;
 
     CGraph_CI grp(m_CurrentHandle);

@@ -157,7 +157,11 @@ void CValidError_annot::ValidateSeqAnnotContext (const CSeq_annot& annot, const 
             if ((*feat_it)->IsSetLocation()) {
                 for ( CSeq_loc_CI loc_it((*feat_it)->GetLocation()); loc_it; ++loc_it ) {
                     if (!IsBioseqWithIdInSet(loc_it.GetSeq_id(), bssh)) {
-                        m_Imp.IncrementMisplacedFeatureCount();
+                        if (m_Imp.IsSmallGenomeSet()) {
+                            m_Imp.IncrementSmallGenomeSetMisplacedCount();
+                        } else {
+                            m_Imp.IncrementMisplacedFeatureCount();
+                        }
                         break;
                     }
                 }

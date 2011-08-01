@@ -5716,6 +5716,11 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
         }
     }
 
+    string comment_text = "";
+    if (feat.IsSetComment()) {
+        comment_text = feat.GetComment();
+    }
+
     const CCdregion& cdregion = feat.GetData().GetCdregion();
     const CSeq_loc& location = feat.GetLocation();
     unsigned int part_loc = SeqLocPartialCheck(location, m_Scope);
@@ -5736,7 +5741,9 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
                          "Suspicious CDS location - frame > 1 but not 5' partial", feat);
             }
         } else if ((part_loc & eSeqlocPartial_Start) && !Is5AtEndSpliceSiteOrGap (location)) {
-            if (s_PartialAtGapOrNs(m_Scope, location, eSeqlocPartial_Nostart)) {
+            if (s_PartialAtGapOrNs(m_Scope, location, eSeqlocPartial_Nostart)
+                && feat.IsSetComment()
+                && NStr::Find(comment_text, "coding region disrupted by sequencing gap") != string::npos) {
                 // suppress
             } else {
                 EDiagSev sev = eDiag_Info;
@@ -6857,7 +6864,9 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
         CBioseq_Handle bsh;
         for (CSeq_loc_CI it(loc) ;it; ++it) {
             CBioseq_Handle seq = m_Scope->GetBioseqHandleFromTSE(it.GetSeq_id(), tse);
-            if (seq  &&  !seq.GetExactComplexityLevel(CBioseq_set::eClass_parts)) {
+            if (seq  &&
+                (!seq.GetExactComplexityLevel(CBioseq_set::eClass_parts)) &&
+                (!seq.GetExactComplexityLevel(CBioseq_set::eClass_small_genome_set))) {
                 if (bsh  &&  seq != bsh) {
                     PostErr(eDiag_Error, eErr_SEQ_FEAT_MultipleBioseqs,
                         "Feature location refers to multiple near bioseqs.", feat);
