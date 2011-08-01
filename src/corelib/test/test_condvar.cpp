@@ -325,6 +325,19 @@ bool CTestCondVarApp::Thread_Run(int idx)
 
 bool CTestCondVarApp::TestApp_Init(void)
 {
+    if (!CConditionVariable::IsSupported()) {
+        NcbiCout
+            << NcbiEndl
+            << "===================================================="
+            << NcbiEndl
+            << "Condition variable is NOT SUPPORTED on this platform"
+            << NcbiEndl
+            << "===================================================="
+            << NcbiEndl;
+        s_NumThreads = 0;
+        return true;
+    }
+    
 //    s_NumThreads = 5;
 //    s_NumThreads = 100;
     NcbiCout

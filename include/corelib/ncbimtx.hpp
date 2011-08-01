@@ -1387,6 +1387,8 @@ class NCBI_XNCBI_EXPORT CConditionVariable
 public:
     CConditionVariable(void);
     ~CConditionVariable(void);
+    
+    static bool IsSupported(void);
 
     /// Release mutex and lock the calling thread until the condition
     /// variable is signalled.
@@ -1476,7 +1478,9 @@ public:
         eMutexOwner,
         ///< Different mutexes were supplied for concurrent WaitForSignal
         ///< operations on this condition variable
-        eMutexDifferent
+        eMutexDifferent,
+        ///< Condition variable is not supported on this platform
+        eUnsupported
     };
 
     /// Translate from the error code value to its string representation.
