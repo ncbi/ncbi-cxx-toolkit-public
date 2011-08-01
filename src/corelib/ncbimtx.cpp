@@ -1704,8 +1704,8 @@ CSpinLock::Unlock(void)
 #if defined(NCBI_HAVE_CONDITIONAL_VARIABLE)
 
 
-#if defined(NCBI_OS_MSWIN)
-#if (_WIN32_WINNT < 0x0600)
+#  if defined(NCBI_OS_MSWIN)
+#    if (_WIN32_WINNT < 0x0600)
 class CCV_Dynlink
 {
 public:
@@ -1769,24 +1769,24 @@ public:
     }
 };
 
-#define CCV_Dynlink_IsSupported                 CCV_Dynlink::IsSupported
-#define CCV_Dynlink_InitializeConditionVariable CCV_Dynlink::InitializeConditionVariable
-#define CCV_Dynlink_WakeConditionVariable       CCV_Dynlink::WakeConditionVariable
-#define CCV_Dynlink_WakeAllConditionVariable    CCV_Dynlink::WakeAllConditionVariable
-#define CCV_Dynlink_SleepConditionVariableCS    CCV_Dynlink::SleepConditionVariableCS 
+#      define CCV_Dynlink_IsSupported                 CCV_Dynlink::IsSupported
+#      define CCV_Dynlink_InitializeConditionVariable CCV_Dynlink::InitializeConditionVariable
+#      define CCV_Dynlink_WakeConditionVariable       CCV_Dynlink::WakeConditionVariable
+#      define CCV_Dynlink_WakeAllConditionVariable    CCV_Dynlink::WakeAllConditionVariable
+#      define CCV_Dynlink_SleepConditionVariableCS    CCV_Dynlink::SleepConditionVariableCS 
 
-#else // _WIN32_WINNT < 0x0600
+#    else // _WIN32_WINNT < 0x0600
 
-#error "Now it is time to get rid of this ugly workaround above and below"
+#      error "Now it is time to get rid of this ugly workaround above and below"
 
-#define CCV_Dynlink_IsSupported()               true
-#define CCV_Dynlink_InitializeConditionVariable InitializeConditionVariable
-#define CCV_Dynlink_WakeConditionVariable       WakeConditionVariable
-#define CCV_Dynlink_WakeAllConditionVariable    WakeAllConditionVariable
-#define CCV_Dynlink_SleepConditionVariableCS    SleepConditionVariableCS 
+#      define CCV_Dynlink_IsSupported()               true
+#      define CCV_Dynlink_InitializeConditionVariable InitializeConditionVariable
+#      define CCV_Dynlink_WakeConditionVariable       WakeConditionVariable
+#      define CCV_Dynlink_WakeAllConditionVariable    WakeAllConditionVariable
+#      define CCV_Dynlink_SleepConditionVariableCS    SleepConditionVariableCS 
 
-#endif // _WIN32_WINNT < 0x0600
-#endif // NCBI_OS_MSWIN
+#    endif // _WIN32_WINNT < 0x0600
+#  endif // NCBI_OS_MSWIN
 
 
 
