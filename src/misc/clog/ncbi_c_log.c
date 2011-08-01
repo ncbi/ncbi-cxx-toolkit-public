@@ -558,7 +558,7 @@ static TNcbiLog_TID s_GetTID(void)
 #if defined(NCBI_NO_THREADS)
     tid = 0;
 #elif defined(NCBI_POSIX_THREADS)
-    tid = (TNcbiLog_TID)pthread_self();
+    tid = (TNcbiLog_TID)pthread_self(); /* NCBI_FAKE_WARNING */
 #elif defined(NCBI_WIN32_THREADS)
     tid = GetCurrentThreadId();
 #endif
@@ -1723,9 +1723,11 @@ extern void NcbiLog_Destroy(void)
  */
 static void s_SetState(ENcbiLog_AppState state)
 {
+#if !defined(NDEBUG)
     ENcbiLog_AppState s = (sx_Context->state == eNcbiLog_NotSet)
                           ? sx_Info->state
                           : sx_Context->state;
+#endif
     switch ( state ) {
         case eNcbiLog_AppBegin:
             assert(sx_Info->state == eNcbiLog_NotSet);
