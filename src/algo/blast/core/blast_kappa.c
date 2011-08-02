@@ -2201,10 +2201,13 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
             
             Int4 oid = thisMatch->oid;
             Int4 i;
-            BlastHSPRangeList *range_list = NULL;
             BlastSeqSrcSetRangesArg *arg = NULL;
 
             ASSERT(Blast_SubjectIsTranslated(program_number));
+
+            arg = BlastSeqSrcSetRangesArgNew(thisMatch->hspcnt);
+            arg->oid = oid;
+
             for (i=0; i<thisMatch->hspcnt; i++) {
                 BlastHSP *hsp = thisMatch->hsp_array[i];
                 Int4 begin = (hsp->subject.offset - 2) * CODON_LENGTH;
@@ -2215,14 +2218,11 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
                     end = len - begin;
                     begin = begin_new;
                 }
-                range_list = BlastHSPRangeListAddRange(range_list, begin, end);
+                BlastSeqSrcSetRangesArgAddRange(arg, begin, end);
             }
-            arg = BlastSeqSrcSetRangesArgNew(thisMatch->hspcnt);
-            arg->oid = oid;
             
-            BlastHSPRangeBuildSetRangesArg(range_list, arg);
+            BlastSeqSrcSetRangesArgBuild(arg);
             BlastSeqSrcSetSeqRanges(seqSrc, arg);
-            BlastHSPRangeListFree(range_list);
             BlastSeqSrcSetRangesArgFree(arg);
         }
 

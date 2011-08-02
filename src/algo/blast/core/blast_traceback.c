@@ -1271,14 +1271,18 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
 
                 Int4 oid = batch->hsplist_array[0]->oid;
                 Int4 num_hsps = 0;
-                BlastHSPRangeList *range_list = NULL;
                 BlastSeqSrcSetRangesArg *arg = NULL;
     
+                /* pre-allocate space for ranges */
+                for (i = 0; i < batch->num_hsplists; i++) {
+                    num_hsps += batch->hsplist_array[i]->hspcnt;
+                }
+                arg = BlastSeqSrcSetRangesArgNew(num_hsps);
+                arg->oid = oid;
+
                 /* iterate through the hsps and add ranges */
                 for (i = 0; i < batch->num_hsplists; i++) {
                     hsp_list = batch->hsplist_array[i];
-                    num_hsps += hsp_list->hspcnt;
-
                     for (j = 0; j < hsp_list->hspcnt; j++) {
                         BlastHSP *hsp = hsp_list->hsp_array[j];
                         Int4 begin = hsp->subject.offset;
@@ -1295,17 +1299,12 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
                                 begin = begin_new;
                             }
                         }
-
-                        range_list = BlastHSPRangeListAddRange(range_list, begin, end);
+                        BlastSeqSrcSetRangesArgAddRange(arg, begin, end);
                     }
                 }
 
-                arg = BlastSeqSrcSetRangesArgNew(num_hsps);
-                arg->oid = oid;
-                
-                BlastHSPRangeBuildSetRangesArg(range_list, arg);
+                BlastSeqSrcSetRangesArgBuild(arg);
                 BlastSeqSrcSetSeqRanges(seq_src, arg);
-                BlastHSPRangeListFree(range_list);
                 BlastSeqSrcSetRangesArgFree(arg);
             }
 

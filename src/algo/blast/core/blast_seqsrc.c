@@ -441,7 +441,8 @@ BlastSeqSrcSetRangesArgNew(Int4 num_ranges)
 {
     BlastSeqSrcSetRangesArg * retv = (BlastSeqSrcSetRangesArg *)
                           malloc(sizeof(BlastSeqSrcSetRangesArg));
-    retv->num_ranges = num_ranges;
+    retv->capacity = num_ranges;
+    retv->num_ranges = 0;
     retv->ranges = (Int4 *) malloc(2*num_ranges*sizeof(Int4));
     return retv;
 }
@@ -453,74 +454,50 @@ BlastSeqSrcSetRangesArgFree(BlastSeqSrcSetRangesArg *arg)
     sfree(arg);
 }
 
-BlastHSPRangeList *
-BlastHSPRangeListNew(Int4 begin, Int4 end, BlastHSPRangeList *next) 
+void
+BlastSeqSrcSetRangesArgAddRange(BlastSeqSrcSetRangesArg *arg,
+                                Int4 begin, Int4 end)
 {
-    BlastHSPRangeList *retv = (BlastHSPRangeList *)
-                          malloc(sizeof(BlastHSPRangeList));
-    retv->begin = begin;
-    retv->end = end;
-    retv->next = next;
-    return retv;
-}
-
-BlastHSPRangeList *
-BlastHSPRangeListAddRange(BlastHSPRangeList *list,
-                          Int4 begin, Int4 end) 
-{
-    BlastHSPRangeList *q, *p;
+    ASSERT(arg);
+    ASSERT(arg->num_ranges +2 <= arg->capacity);
     begin = MAX(0, begin - BLAST_SEQSRC_OVERHANG);
     end += BLAST_SEQSRC_OVERHANG;
+    arg->ranges[arg->num_ranges++] = begin;
+    arg->ranges[arg->num_ranges++] = end;
+}
 
-    /* special case: an empty list, or insert from front */
-    if (!list  || begin <= list->begin) {
-        return BlastHSPRangeListNew(begin, end, list);
-    }
-
-    p = list;
-    q = p;
-    /* sorting in begin order */
-    while (p && begin > p->begin) {
-        q = p;
-        p = p->next;
-    }
-    q->next = BlastHSPRangeListNew(begin, end, p);
-    return list;
+static int
+BeginCompareHSPs(const void* x, const void* y)
+{
+    Int4 *r1 = (Int4 *)x;
+    Int4 *r2 = (Int4 *)y;
+    return (*r1)-(*r2);
 }
 
 void
-BlastHSPRangeBuildSetRangesArg(BlastHSPRangeList *list,
-                               BlastSeqSrcSetRangesArg *arg)
+BlastSeqSrcSetRangesArgBuild(BlastSeqSrcSetRangesArg *arg)
 {
-    BlastHSPRangeList *p = list->next;
-    Int4 i=0;
+    Int4 i, j;
     ASSERT(arg);
-    arg->ranges[0] = list->begin;
-    arg->ranges[1] = list->end;
-    while (p) {
-        ASSERT(p->begin >= arg->ranges[2*i]);
-        if (p->begin > arg->ranges[2*i+1] + BLAST_SEQSRC_MINGAP) {
+    arg->num_ranges /= 2;
+    if (arg->num_ranges <= 1) return;
+    qsort(arg->ranges, arg->num_ranges, 2*sizeof(Int4), BeginCompareHSPs);
+    i=0;
+    for (j=1; j<arg->num_ranges; ++j) {
+        Int4 begin = arg->ranges[j*2];
+        Int4 end = arg->ranges[j*2+1];
+        ASSERT(begin >= arg->ranges[2*i]);
+        if (begin > arg->ranges[2*i+1] + BLAST_SEQSRC_MINGAP) {
             /* insert as a new range */
             ++i;
-            arg->ranges[i*2] = p->begin;
-            arg->ranges[i*2+1] = p->end;
-        } else if (p->end > arg->ranges[2*i+1]) {
+            arg->ranges[i*2] = begin;
+            arg->ranges[i*2+1] = end;
+        } else if (end > arg->ranges[2*i+1]) {
             /* merge into the previous range */
-            arg->ranges[i*2+1] = p->end;
+            arg->ranges[i*2+1] = end;
         }
-        p = p->next;
     }
     arg->num_ranges = i+1;
-}
-
-void BlastHSPRangeListFree(BlastHSPRangeList *list)
-{
-    BlastHSPRangeList *p = list;
-    while(p) {
-        list = p->next;
-        sfree(p);
-        p = list;
-    }
 }
 
 /*****************************************************************************/
