@@ -523,7 +523,8 @@ void CVecscreen::x_BuildNonOverlappingRange(vector<CRef<CSeq_align_set> >
             //merge if previous range intersect with current range
             if(j > 0){ 
                 prev_range = &(aln_info_vec[i].back()->range);
-                if(prev_range->IntersectingWith(cur_aln_info->range)){
+                if(prev_range->IntersectingWith(cur_aln_info->range) ||
+                   prev_range->AbuttingWith(cur_aln_info->range)){
                     aln_info_vec[i].back()->range = 
                         aln_info_vec[i].back()->range.CombinationWith(cur_aln_info->range);
                     delete cur_aln_info;
