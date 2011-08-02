@@ -192,6 +192,11 @@ bool CGff3WriteRecordFeature::x_AssignAttributesFromAsnCore(
     // gb ID tags (feature ids and ID tags should agree in the first place, but
     // if not, feature ids must trump ID tags).
     //
+
+    // Actually, I might be doing more harm that good. Disabling this logic 
+    // pending further investigation...
+    return true;
+
     bool bIdAssigned = false;
 
     if ( mapped_feat.IsSetId() ) {

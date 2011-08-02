@@ -404,7 +404,6 @@ bool CGff3Writer::x_WriteFeatureCds(
     if ( pPackedInt->IsPacked_int() && pPackedInt->GetPacked_int().CanGet() ) {
         const list< CRef< CSeq_interval > >& sublocs = pPackedInt->GetPacked_int().Get();
         list< CRef< CSeq_interval > >::const_iterator it;
-        unsigned int uSequenceNumber = 1;
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
             CRef<CGff3WriteRecordFeature> pExon( new CGff3WriteRecordFeature( *pCds ) );
@@ -412,7 +411,6 @@ bool CGff3Writer::x_WriteFeatureCds(
             pExon->CorrectLocation( subint );
             pExon->CorrectPhase( uTotSize );
             pExon->ForceAttributeID( string( "cds" ) + NStr::UIntToString( m_uPendingCdsId ) );
-            pExon->AssignSequenceNumber( uSequenceNumber++, "C" );
             if ( ! x_WriteRecord( pExon ) ) {
                 return false;
             }
