@@ -40,7 +40,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ============================================================================
-class NCBI_XOBJWRITE_EXPORT CWriterBase
+class NCBI_XOBJWRITE_EXPORT CWriterBase:
+    public CObject
 //  ============================================================================
 {
 public:

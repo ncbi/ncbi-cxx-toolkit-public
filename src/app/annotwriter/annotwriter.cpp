@@ -131,6 +131,8 @@ private:
 
     CGff2Writer::TFlags GffFlags( 
         const CArgs& );
+
+    CRef<CWriterBase> m_pWriter;
 };
 
 //  ----------------------------------------------------------------------------
@@ -221,6 +223,13 @@ int CAnnotWriterApp::Run()
     CRef< CScope > pScope( new CScope( *pObjMngr ) );
     pScope->AddDefaults();
 
+    m_pWriter.Reset( x_CreateWriter( *pScope, *pOs, GetArgs() ) );
+    if ( ! m_pWriter ) {
+        cerr << "annotwriter: Cannot create suitable writer!" << endl;
+        string msg = "Cannot create suitable writer!";
+        NCBI_THROW(CFlatException, eInternal, msg);
+    }
+
     while ( true ) {
         if ( TrySeqAnnot( *pScope, *pIs, *pOs ) ) {
             continue;
@@ -243,7 +252,6 @@ int CAnnotWriterApp::Run()
         break;
     } 
     pOs->flush();
-
     pIs.reset();
     return 0;
 }
@@ -260,15 +268,9 @@ bool CAnnotWriterApp::TrySeqAnnot(
         CRef<CSeq_annot> pAnnot(new CSeq_annot);
         istr >> *pAnnot;
 
-        CWriterBase* pWriter = x_CreateWriter( scope, ostr, GetArgs() );
-        if ( ! pWriter ) {
-            cerr << "annotwriter: Cannot create suitable writer!" << endl;
-            return false;
-        }
-        pWriter->WriteHeader();
-        pWriter->WriteAnnot( *pAnnot );
-        pWriter->WriteFooter();
-        delete pWriter;
+        m_pWriter->WriteHeader();
+        m_pWriter->WriteAnnot( *pAnnot );
+        m_pWriter->WriteFooter();
         return true;
     }
     catch ( ... ) {
@@ -290,22 +292,16 @@ bool CAnnotWriterApp::TryBioseqSet(
         CRef<CBioseq_set> pBioset(new CBioseq_set);
         istr >> *pBioset;
 
-        CWriterBase* pWriter = x_CreateWriter( scope, ostr, GetArgs() );
-        if ( ! pWriter ) {
-            cerr << "annotwriter: Cannot create suitable writer!" << endl;
-            return false;
-        }
-        pWriter->WriteHeader();
+        m_pWriter->WriteHeader();
 
         const CBioseq_set::TSeq_set& bss = pBioset->GetSeq_set();
         for ( CBioseq_set::TSeq_set::const_iterator it = bss.begin(); it != bss.end(); ++it ) {
             const CSeq_entry& se = **it;
             const CBioseq& bs = se.GetSeq();
             scope.AddBioseq( bs );
-            pWriter->WriteBioseqHandle( scope.GetBioseqHandle( bs ) );
+            m_pWriter->WriteBioseqHandle( scope.GetBioseqHandle( bs ) );
         }
-        pWriter->WriteFooter();
-        delete pWriter;
+        m_pWriter->WriteFooter();
         return true;
     }
     catch ( ... ) {
@@ -326,21 +322,15 @@ bool CAnnotWriterApp::TryBioseq(
         CRef<CBioseq> pBioseq(new CBioseq);
         istr >> *pBioseq;
 
-        CWriterBase* pWriter = x_CreateWriter( scope, ostr, GetArgs() );
-        if ( ! pWriter ) {
-            cerr << "annotwriter: Cannot create suitable writer!" << endl;
-            return false;
-        }
-        pWriter->WriteHeader();
+        m_pWriter->WriteHeader();
         CTypeIterator<CSeq_annot> annot_iter( *pBioseq );
         for ( ;  annot_iter;  ++annot_iter ) {
             CRef< CSeq_annot > annot( annot_iter.operator->() );
-            if ( ! pWriter->WriteAnnot( *annot ) ) {
+            if ( ! m_pWriter->WriteAnnot( *annot ) ) {
                 return false;
             }
         }
-        pWriter->WriteFooter();
-        delete pWriter;
+        m_pWriter->WriteFooter();
         return true;
     }
     catch ( ... ) {
@@ -362,19 +352,13 @@ bool CAnnotWriterApp::TrySeqEntry(
         istr >> *pEntry;
 
         CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry( *pEntry );
-        CWriterBase* pWriter = x_CreateWriter( scope, ostr, GetArgs() );
-        if ( ! pWriter ) {
-            cerr << "annotwriter: Cannot create suitable writer!" << endl;
-            return false;
-        }
-        pWriter->WriteHeader();
+        m_pWriter->WriteHeader();
         for ( CBioseq_CI bci( seh ); bci; ++bci ) {
-            if ( ! pWriter->WriteBioseqHandle( *bci ) ) {
+            if ( ! m_pWriter->WriteBioseqHandle( *bci ) ) {
                 return false;
             }
         }
-        pWriter->WriteFooter();
-        delete pWriter;
+        m_pWriter->WriteFooter();
         return true;
 
     }
@@ -396,15 +380,9 @@ bool CAnnotWriterApp::TrySeqAlign(
         CRef<CSeq_align> pAlign(new CSeq_align);
         istr >> *pAlign;
 
-        CWriterBase* pWriter = x_CreateWriter( scope, ostr, GetArgs() );
-        if ( ! pWriter ) {
-            cerr << "annotwriter: Cannot create suitable writer!" << endl;
-            return false;
-        }
-        pWriter->WriteHeader();
-        pWriter->WriteAlign( *pAlign );
-        pWriter->WriteFooter();
-        delete pWriter;
+        m_pWriter->WriteHeader();
+        m_pWriter->WriteAlign( *pAlign );
+        m_pWriter->WriteFooter();
         return true;
     }
     catch ( ... ) {
