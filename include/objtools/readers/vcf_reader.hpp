@@ -47,6 +47,95 @@ BEGIN_SCOPE(objects) // namespace ncbi::objects::
 class CVcfData;
 
 //  ----------------------------------------------------------------------------
+enum ESpecType
+//  ----------------------------------------------------------------------------
+{
+    eType_Integer,
+    eType_Float,
+    eType_Flag,
+    eType_Character,
+    eType_String
+};
+ESpecType SpecType( const string& );
+
+//  ----------------------------------------------------------------------------
+enum ESpecNumber
+//  ----------------------------------------------------------------------------
+{
+    eNumber_CountAlleles = -1,
+    eNumber_CountGenotypes = -2,
+    eNumber_CountUnknown = -3
+};
+ESpecNumber SpecNumber( const string& );
+
+//  ----------------------------------------------------------------------------
+class CVcfInfoSpec
+//  ----------------------------------------------------------------------------
+{
+public:
+    CVcfInfoSpec(){};
+
+    CVcfInfoSpec(
+        string id,
+        string numvals,
+        string type,
+        string description ) :
+        m_id( id ),
+        m_numvals( SpecNumber( numvals ) ),
+        m_type( SpecType( type ) ),
+        m_description( description )
+    {};
+
+    string m_id;
+    int m_numvals;
+    ESpecType m_type;
+    string m_description;
+};
+
+//  ----------------------------------------------------------------------------
+class CVcfFilterSpec
+//  ----------------------------------------------------------------------------
+{
+public:
+    CVcfFilterSpec(){};
+
+    CVcfFilterSpec(
+        string id,
+        string description ) :
+        m_id( id ),
+        m_description( description )
+    {};
+
+    string m_id;
+    string m_description;
+};
+
+//  ----------------------------------------------------------------------------
+class CVcfFormatSpec
+//  ----------------------------------------------------------------------------
+{
+public:
+    CVcfFormatSpec(){};
+
+    CVcfFormatSpec(
+        string id,
+        string numvals,
+        string type,
+        string description ) :
+        m_id( id ),
+        m_numvals( SpecNumber( numvals ) ),
+        m_type( SpecType( type ) ),
+        m_description( description )
+    {};
+        
+    string m_id;
+    int m_numvals;
+    ESpecType m_type;
+    string m_description;
+};
+
+
+//  ----------------------------------------------------------------------------
 class NCBI_XOBJREAD_EXPORT CVcfReader
 //  ----------------------------------------------------------------------------
     : public CReaderBase
@@ -95,6 +184,21 @@ protected:
         CRef<CSeq_annot> );
 
     virtual bool
+    x_ProcessMetaLineInfo(
+        const string&,
+        CRef<CSeq_annot> );
+
+    virtual bool
+    x_ProcessMetaLineFilter(
+        const string&,
+        CRef<CSeq_annot> );
+
+    virtual bool
+    x_ProcessMetaLineFormat(
+        const string&,
+        CRef<CSeq_annot> );
+
+    virtual bool
     x_ProcessHeaderLine(
         const string&,
         CRef<CSeq_annot> );
@@ -139,6 +243,10 @@ protected:
     //
 protected:
     CRef< CAnnotdesc > m_Meta;
+    unsigned int m_metacount;
+    map<string,CVcfInfoSpec> m_InfoSpecs;
+    map<string,CVcfFormatSpec> m_FormatSpecs;
+    map<string,CVcfFilterSpec> m_FilterSpecs;
     CErrorContainerLenient m_ErrorsPrivate;
 };
 

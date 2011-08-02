@@ -81,6 +81,7 @@
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqfeat/Variation_ref.hpp>
 #include <objects/seqfeat/Variation_inst.hpp>
+#include <objects/seqfeat/VariantProperties.hpp>
 
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
@@ -89,7 +90,6 @@
 #include <objtools/error_codes.hpp>
 
 #include <algorithm>
-
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_RepMask
 
@@ -102,6 +102,8 @@ class CVcfData
 //  ============================================================================
 {
 public:
+    typedef map<string,vector<string> > INFOS;
+
     CVcfData() { m_pdQual = 0; };
     ~CVcfData() { delete m_pdQual; };
 
@@ -115,7 +117,7 @@ public:
     vector<string> m_Alt;
     double* m_pdQual;
     string m_strFilter;
-    map<string,string> m_Info;
+    INFOS m_Info;
     vector<string> m_FormatKeys;
     vector< vector<string> > m_FormatValues;
 };
@@ -153,7 +155,8 @@ CVcfData::ParseData(
             {
                 string key, value;
                 NStr::SplitInTwo( *it, "=", key, value );
-                m_Info[key] = value;
+                m_Info[key] = vector<string>();
+                NStr::Tokenize( value, ",", m_Info[key] );
             }
         }
         if ( columns.size() > 8 ) {
@@ -172,11 +175,59 @@ CVcfData::ParseData(
 }
 
 //  ----------------------------------------------------------------------------
-CVcfReader::CVcfReader(
-    int flags )
+ESpecType SpecType( 
+    const string& spectype )
 //  ----------------------------------------------------------------------------
 {
+    static map<string, ESpecType> typemap;
+    if ( typemap.empty() ) {
+        typemap["Integer"] = eType_Integer;
+        typemap["Float"] = eType_Float;
+        typemap["Flag"] = eType_Flag;
+        typemap["Character"] = eType_Character;
+        typemap["String"] = eType_String;
+    }
+    try {
+        return typemap[spectype];
+    }
+    catch( ... ) {
+        throw "Unexpected --- ##: bad type specifier!";
+        return eType_String;
+    }
+};
+
+//  ----------------------------------------------------------------------------
+ESpecNumber SpecNumber(
+    const string& specnumber )
+//  ----------------------------------------------------------------------------
+{
+    if ( specnumber == "A" ) {
+        return eNumber_CountAlleles;
+    }
+    if ( specnumber == "G" ) {
+        return eNumber_CountGenotypes;
+    }
+    if ( specnumber == "." ) {
+        return eNumber_CountUnknown;
+    }
+    try {
+        return ESpecNumber( NStr::StringToInt( specnumber ) );
+    }
+    catch( ... ) {
+        throw "Unexpected --- ##: bad number specifier!";
+        return ESpecNumber( 0 );
+    }    
+};
+
+//  ----------------------------------------------------------------------------
+CVcfReader::CVcfReader(
+    int flags ) :
+//  ----------------------------------------------------------------------------
+    m_metacount( 0 )
+{
     m_iFlags = flags;
+    //  Preinitialize m_InfoSpecs with all the infos predefined in the VCF spec.
+    //  Add all the infos that are used by annotwriter.
 }
 
 
@@ -197,9 +248,12 @@ CVcfReader::ReadSeqAnnot(
     CRef< CAnnot_descr > desc( new CAnnot_descr );
     annot->SetDesc( *desc );
     annot->SetData().SetFtable();
+    m_Meta.Reset( new CAnnotdesc );
+    m_Meta->SetUser().SetType().SetStr( "vcf-meta-info" );
 
     while ( ! lr.AtEOF() ) {
         string line = *(++lr);
+        NStr::TruncateSpacesInPlace( line );
         if ( x_ProcessMetaLine( line, annot ) ) {
             continue;
         }
@@ -262,18 +316,151 @@ CVcfReader::x_ProcessMetaLine(
     CRef<CSeq_annot> pAnnot )
 //  ----------------------------------------------------------------------------
 {
-    static unsigned int uMetaCount = 0;
-
     if ( ! NStr::StartsWith( line, "##" ) ) {
         return false;
     }
-    if ( ! m_Meta ) {
-        m_Meta.Reset( new CAnnotdesc );
-        m_Meta->SetUser().SetType().SetStr( "vcf-meta-info" );
+    if ( x_ProcessMetaLineInfo( line, pAnnot ) ) {
+        return true;
+    }
+    if ( x_ProcessMetaLineFilter( line, pAnnot ) ) {
+        return true;
+    }
+    if ( x_ProcessMetaLineFormat( line, pAnnot ) ) {
+        return true;
     }
 
     m_Meta->SetUser().AddField( 
-        NStr::UIntToString( ++uMetaCount ), line.substr( 2 ) );
+        NStr::UIntToString( ++m_metacount ), line.substr( 2 ) );
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CVcfReader::x_ProcessMetaLineInfo(
+    const string& line,
+    CRef<CSeq_annot> pAnnot )
+//  ----------------------------------------------------------------------------
+{
+    const string prefix = "##INFO=<";
+    const string postfix = ">";
+
+    if ( ! NStr::StartsWith( line, prefix ) || ! NStr::EndsWith( line, postfix ) ) {
+        return false;
+    }
+    
+    try {
+        vector<string> fields;
+        string key, id, numcount, type, description;
+        string info = line.substr( 
+            prefix.length(), line.length() - prefix.length() - postfix.length() );
+        NStr::Tokenize( info, ",", fields );
+        NStr::SplitInTwo( fields[0], "=", key, id );
+        if ( key != "ID" ) {
+            throw "Unexpected --- ##INFO: bad ID key!";
+        }
+        NStr::SplitInTwo( fields[1], "=", key, numcount );
+        if ( key != "Number" ) {
+            throw "Unexpected --- ##INFO: bad number key!";
+        }
+        NStr::SplitInTwo( fields[2], "=", key, type );
+        if ( key != "Type" ) {
+            throw "Unexpected --- ##INFO: bad type key!";
+        }
+        NStr::SplitInTwo( fields[3], "=", key, description );
+        if ( key != "Description" ) {
+            throw "Unexpected --- ##INFO: bad description key!";
+        }
+        m_InfoSpecs[id] = CVcfInfoSpec( id, numcount, type, description );        
+    }
+    catch ( ... ) {
+        return true;
+    }
+    m_Meta->SetUser().AddField( 
+        NStr::UIntToString( ++m_metacount ), line.substr( 2 ) );
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CVcfReader::x_ProcessMetaLineFilter(
+    const string& line,
+    CRef<CSeq_annot> pAnnot )
+//  ----------------------------------------------------------------------------
+{
+    const string prefix = "##FILTER=<";
+    const string postfix = ">";
+
+    if ( ! NStr::StartsWith( line, prefix ) || ! NStr::EndsWith( line, postfix ) ) {
+        return false;
+    }
+    
+    try {
+        vector<string> fields;
+        string key, id, description;
+        string info = line.substr( 
+            prefix.length(), line.length() - prefix.length() - postfix.length() );
+        NStr::Tokenize( info, ",", fields );
+        NStr::SplitInTwo( fields[0], "=", key, id );
+        if ( key != "ID" ) {
+            throw "Unexpected --- ##FILTER: bad ID key!";
+        }
+        NStr::SplitInTwo( fields[1], "=", key, description );
+        if ( key != "Description" ) {
+            throw "Unexpected --- ##FILTER: bad description key!";
+        }
+        m_FilterSpecs[id] = CVcfFilterSpec( id, description );        
+    }
+    catch ( ... ) {
+        return true;
+    }
+    m_Meta->SetUser().AddField( 
+        NStr::UIntToString( ++m_metacount ), line.substr( 2 ) );
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CVcfReader::x_ProcessMetaLineFormat(
+    const string& line,
+    CRef<CSeq_annot> pAnnot )
+//  ----------------------------------------------------------------------------
+{
+    const string prefix = "##FORMAT=<";
+    const string postfix = ">";
+
+    if ( ! NStr::StartsWith( line, prefix ) || ! NStr::EndsWith( line, postfix ) ) {
+        return false;
+    }
+    
+    try {
+        vector<string> fields;
+        string key, id, numcount, type, description;
+        string info = line.substr( 
+            prefix.length(), line.length() - prefix.length() - postfix.length() );
+        NStr::Tokenize( info, ",", fields );
+        NStr::SplitInTwo( fields[0], "=", key, id );
+        if ( key != "ID" ) {
+            throw "Unexpected --- ##FORMAT: bad ID key!";
+        }
+        NStr::SplitInTwo( fields[1], "=", key, numcount );
+        if ( key != "Number" ) {
+            throw "Unexpected --- ##FORMAT: bad number key!";
+        }
+        NStr::SplitInTwo( fields[2], "=", key, type );
+        if ( key != "Type" ) {
+            throw "Unexpected --- ##FORMAT: bad type key!";
+        }
+        NStr::SplitInTwo( fields[3], "=", key, description );
+        if ( key != "Description" ) {
+            throw "Unexpected --- ##FORMAT: bad description key!";
+        }
+        m_FormatSpecs[id] = CVcfFormatSpec( id, numcount, type, description );        
+    }
+    catch ( ... ) {
+        return true;
+    }
+    m_Meta->SetUser().AddField( 
+        NStr::UIntToString( ++m_metacount ), line.substr( 2 ) );
     return true;
 }
 
@@ -313,6 +500,7 @@ CVcfReader::x_ProcessDataLine(
     CRef<CSeq_feat> pFeat( new CSeq_feat );
     pFeat->SetData().SetVariation().SetData().SetSet().SetType(
         CVariation_ref::C_Data::C_Set::eData_set_type_alleles );
+    pFeat->SetData().SetVariation().SetVariant_prop().SetVersion( 5 );
     CSeq_feat::TExt& ext = pFeat->SetExt();
     ext.SetType().SetStr( "VcfAttributes" );
 
@@ -395,16 +583,17 @@ CVcfReader::x_ProcessInfo(
     CSeq_feat::TExt& ext = pFeature->SetExt();
     if ( ! data.m_Info.empty() ) {
         vector<string> infos;
-        for ( map<string,string>::const_iterator cit = data.m_Info.begin();
+        for ( map<string,vector<string> >::const_iterator cit = data.m_Info.begin();
             cit != data.m_Info.end(); cit++ )
         {
-            string key = cit->first;
-            string value = cit->second;
+            const string& key = cit->first;
+            vector<string> value = cit->second;
             if ( value.empty() ) {
                 infos.push_back( key );
             }
             else {
-                infos.push_back( key + "=" + value );
+                string joined = NStr::Join( list<string>( value.begin(), value.end() ), ";" );
+                infos.push_back( key + "=" + joined );
             }
         }
         ext.AddField( "info", NStr::Join( infos, ";" ) );
@@ -423,6 +612,8 @@ CVcfReader::x_AssignVariationIds(
         return true;
     }
     CVariation_ref& variation = pFeature->SetData().SetVariation();
+//    CVariation_ref::TVariant_prop& var_prop = variation.SetVariant_prop();
+//    var_prop.SetVersion( 5 );
     if ( data.m_Info.find( "DB" ) != data.m_Info.end() ) {
         variation.SetId().SetDb( "dbVar" );
     }
@@ -461,21 +652,43 @@ CVcfReader::x_AssignVariationAlleles(
     vector<string> reference;
     reference.push_back( data.m_strRef );
     CRef<CVariation_ref> pReference( new CVariation_ref );
+    pReference->SetVariant_prop().SetVersion( 5 );
     pReference->SetSNV( reference, CVariation_ref::eSeqType_na );
     pReference->SetData().SetInstance().SetObservation( 
         CVariation_inst::eObservation_reference );
     alleles.push_back( pReference );
 
+    size_t altcount = 0;
     for ( vector<string>::const_iterator cit = data.m_Alt.begin(); 
         cit != data.m_Alt.end(); ++cit )
     {
         vector<string> alternative;
         alternative.push_back( *cit );
         CRef<CVariation_ref> pAllele( new CVariation_ref );
+        pAllele->SetVariant_prop().SetVersion( 5 );
         pAllele->SetSNV( alternative, CVariation_ref::eSeqType_na );
         pAllele->SetData().SetInstance().SetObservation( 
             CVariation_inst::eObservation_variant );
+
+        //  allele frequency:
+        CVcfData::INFOS::const_iterator af = data.m_Info.find( "AF" );
+        if ( af != data.m_Info.end() ) {
+            const vector<string>& info = af->second;
+            double freq = NStr::StringToDouble( info[altcount] );
+            pAllele->SetVariant_prop().SetAllele_frequency( freq );
+        }
+
+        //  ancestral allele:
+        CVcfData::INFOS::const_iterator aa = data.m_Info.find( "AA" );
+        if ( aa != data.m_Info.end() ) {
+            string ancestral = aa->second[0];
+            if ( ancestral == *cit ) {
+                pAllele->SetVariant_prop().SetIs_ancestral_allele( true );
+            }
+        }
+
         alleles.push_back( pAllele );
+        ++altcount;
     }
     return true;
 }
