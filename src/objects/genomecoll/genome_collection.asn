@@ -14,7 +14,7 @@ BEGIN
 
 EXPORTS GC-Assembly, GC-Genome, GC-Project, GC-GenomicPart, GC-Replicon,
         GC-Sequence, GC-SequenceStats, GC-Scaf-stats, GC-SeqIdAlias,
-        GC-TypedSeqId, GC-DbTagAlias;
+        GC-TypedSeqId, GC-DbTagAlias, GC-SequenceRole;
 
 IMPORTS Dbtag, Date FROM NCBI-General
         MolInfo, Seqdesc, Seq-descr, Delta-ext, Seq-annot, Seq-gap FROM NCBI-Sequence
@@ -257,6 +257,18 @@ GC-AssemblyDesc ::= SEQUENCE {
 
     -- Various attributes assigned at this level:
     -- biosrc, comments, publications...
+    --
+    -- Special user-objects:
+    -- Internal identifiers (GCOL-1178):  type  str ="gencoll-misc"
+    --              data : 2 user fields :
+    --              label  str "asm-name" str <contents of asm_name field>
+    --              label  str "asm-id" int <contents of asm_id field>
+    -- ftp-sites:  type  str ="ftp-sites"
+    --              data : one or 2 fields, depending if both GB and RS have ftp-sites
+    --              label  str : "genbank" or "refseq" str : path to ftp-site
+    -- diffs between GB / RS assemblies: type str "diff-from-synonym",
+    --         data label id <incrementing int> str <description of diff>
+
     descr Seq-descr OPTIONAL ,
 
     -- flag: is this assembly partial?
