@@ -2679,7 +2679,7 @@ CDiagHandler* CreateDefaultDiagHandler(void);
 // another handler will normally delete it.
 CDiagHandler*      s_DefaultHandler = CreateDefaultDiagHandler();
 CDiagHandler*      CDiagBuffer::sm_Handler = s_DefaultHandler;
-bool               CDiagBuffer::sm_CanDeleteHandler = true;
+bool               CDiagBuffer::sm_CanDeleteHandler = false;
 CDiagErrCodeInfo*  CDiagBuffer::sm_ErrCodeInfo = 0;
 bool               CDiagBuffer::sm_CanDeleteErrCodeInfo = false;
 
@@ -2692,10 +2692,11 @@ CDiagHandler* CreateDefaultDiagHandler(void)
     CDiagLock lock(CDiagLock::eWrite);
     static bool s_DefaultDiagHandlerInitialized = false;
     if ( !s_DefaultDiagHandlerInitialized ) {
+        static void* s_PreallocatedDefaultHandler
+            [sizeof(CStreamDiagHandler) / sizeof(void*) + 1];
         s_DefaultDiagHandlerInitialized = true;
-        return new CStreamDiagHandler(&NcbiCerr,
-                                      true,
-                                      kLogName_Stderr);
+        return new (s_PreallocatedDefaultHandler)
+            CStreamDiagHandler(&NcbiCerr, true, kLogName_Stderr);
     }
     return s_DefaultHandler;
 }
@@ -4730,14 +4731,22 @@ string CDiagHandler::GetLogName(void)
 
 
 CStreamDiagHandler_Base::CStreamDiagHandler_Base(void)
-    : m_LogName(kLogName_Stream)
 {
+    SetLogName(kLogName_Stream);
 }
 
 
 string CStreamDiagHandler_Base::GetLogName(void)
 {
     return m_LogName;
+}
+
+
+void CStreamDiagHandler_Base::SetLogName(const string& log_name)
+{
+    size_t len = min(log_name.length(), sizeof(m_LogName) - 1);
+    memcpy(m_LogName, log_name.data(), len);
+    m_LogName[len] = '\0';
 }
 
 

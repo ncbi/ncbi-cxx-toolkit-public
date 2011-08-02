@@ -2318,10 +2318,10 @@ public:
     virtual CNcbiOstream* GetStream(void) { return 0; }
 
 protected:
-    void SetLogName(const string& log_name) { m_LogName = log_name; }
+    void SetLogName(const string& log_name);
 
 private:
-    string m_LogName;
+    char m_LogName[2048];
 };
 
 
