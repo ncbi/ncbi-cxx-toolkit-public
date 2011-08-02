@@ -1237,17 +1237,13 @@ void CQueue::ReadJobs(unsigned          peer_addr,
 
             job.Flush(this);
 
-            if (m_RunTimeLine) {
-                // TODO: Optimize locking of rtl lock for every object
-                // hoist it out of the loop
-                if (read_timeout == 0)
-                    read_timeout = m_RunTimeout;
+            if (read_timeout == 0)
+                read_timeout = m_RunTimeout;
 
-                if (read_timeout != 0) {
-                    CWriteLockGuard rtl_guard(m_RunTimeLineLock);
-                    m_RunTimeLine->AddObject(read_timeout, job_id);
-                }
-            }
+            // TODO: Optimize locking of rtl lock for every object
+            // hoist it out of the loop
+            if (read_timeout != 0)
+                TimeLineAdd(job_id, curr + read_timeout);
         }
     }}
     trans.Commit();
@@ -1344,14 +1340,12 @@ void CQueue::x_ChangeGroupStatus(unsigned               group_id,
             new_job_statuses[ job_id ] = new_status;
 
             job.Flush(this);
-            if (m_RunTimeLine) {
-                // TODO: Optimize locking of rtl lock for every object
-                // hoist it out of the loop
-                CWriteLockGuard     rtl_guard(m_RunTimeLineLock);
-                // TODO: Ineffective, better learn expiration time from
-                // object, then remove it with another method
-                m_RunTimeLine->RemoveObject(job_id);
-            }
+
+            // TODO: Optimize locking of rtl lock for every object
+            // hoist it out of the loop
+            // TODO: Ineffective, better learn expiration time from
+            // object, then remove it with another method
+            TimeLineRemove(job_id);
         }
         trans.Commit();
 
@@ -2013,10 +2007,7 @@ bool CQueue::FailJob(CWorkerNode *      worker_node,
     trans.Commit();
     js_guard.Commit();
 
-    if (m_RunTimeLine) {
-        CWriteLockGuard guard(m_RunTimeLineLock);
-        m_RunTimeLine->RemoveObject(job_id);
-    }
+    TimeLineRemove(job_id);
 
     if (!rescheduled  &&  job.ShouldNotify(curr)) {
         Notify(job.GetSubmAddr(), job.GetSubmPort(), job_id);
@@ -2691,9 +2682,8 @@ void CQueue::x_CheckExecutionTimeout(unsigned   queue_run_timeout,
             return; // Execution timeout is for Running and Reading jobs only
 
 
-        if (job.Fetch(this, job_id) != CJob::eJF_Ok) {
+        if (job.Fetch(this, job_id) != CJob::eJF_Ok)
             return;
-        }
 
         if (job.GetStatus() != status) {
             ERR_POST("Job status mismatch between status tracker" <<
@@ -2720,6 +2710,19 @@ void CQueue::x_CheckExecutionTimeout(unsigned   queue_run_timeout,
             TimeLineAdd(job_id, exp_time);
             return;
         }
+
+        // The job timeout (running or reading) is expired.
+        // Check the try counter, we may need to fail the job.
+        if (status == CNetScheduleAPI::eRunning) {
+            // Running state
+            if (job.GetRunCount() > m_FailedRetries)
+                new_status = CNetScheduleAPI::eFailed;
+        } else {
+            // Reading state
+            if (job.GetReadCount() > m_FailedRetries)
+                new_status = CNetScheduleAPI::eReadFailed;
+        }
+
 
         if (status == CNetScheduleAPI::eReading)
             x_RemoveFromReadGroup(job.GetReadGroup(), job_id);
@@ -2847,18 +2850,21 @@ unsigned CQueue::CheckJobsExpiry(unsigned batch_size, TJobStatus status)
 
 void CQueue::TimeLineMove(unsigned job_id, time_t old_time, time_t new_time)
 {
+    if (!job_id || !m_RunTimeLine)
+        return;
+
     CWriteLockGuard guard(m_RunTimeLineLock);
     m_RunTimeLine->MoveObject(old_time, new_time, job_id);
 }
 
 
-void CQueue::TimeLineAdd(unsigned job_id, time_t timeout)
+void CQueue::TimeLineAdd(unsigned job_id, time_t job_time)
 {
-    if (!job_id  ||  !m_RunTimeLine  ||  !timeout)
+    if (!job_id  ||  !m_RunTimeLine  ||  !job_time)
         return;
 
     CWriteLockGuard guard(m_RunTimeLineLock);
-    m_RunTimeLine->AddObject(timeout, job_id);
+    m_RunTimeLine->AddObject(job_time, job_id);
 }
 
 
@@ -2869,17 +2875,12 @@ void CQueue::TimeLineRemove(unsigned job_id)
 
     CWriteLockGuard guard(m_RunTimeLineLock);
     m_RunTimeLine->RemoveObject(job_id);
-
-    // I think it is extra
-    // if (m_Log)
-    //     LOG_POST(Error << "Job removed from time line, job: "
-    //                    << DecorateJobId(job_id));
 }
 
 
-void CQueue::TimeLineExchange(unsigned remove_job_id,
-                              unsigned add_job_id,
-                              time_t   timeout)
+void CQueue::TimeLineExchange(unsigned  remove_job_id,
+                              unsigned  add_job_id,
+                              time_t    new_time)
 {
     if (!m_RunTimeLine)
         return;
@@ -2888,18 +2889,7 @@ void CQueue::TimeLineExchange(unsigned remove_job_id,
     if (remove_job_id)
         m_RunTimeLine->RemoveObject(remove_job_id);
     if (add_job_id)
-        m_RunTimeLine->AddObject(timeout, add_job_id);
-
-
-    // I think it is extra
-    // if (m_Log) {
-    //     if (remove_job_id)
-    //         LOG_POST(Error << "Job removed from time line, job: "
-    //                        << DecorateJobId(remove_job_id));
-    //     if (add_job_id)
-    //         LOG_POST(Error << "Job added to time line, job: "
-    //                        << DecorateJobId(add_job_id));
-    // }
+        m_RunTimeLine->AddObject(new_time, add_job_id);
 }
 
 

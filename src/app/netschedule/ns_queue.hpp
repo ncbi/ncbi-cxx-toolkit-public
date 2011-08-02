@@ -466,11 +466,11 @@ public:
     unsigned CheckJobsExpiry(unsigned batch_size, TJobStatus status);
 
     void TimeLineMove(unsigned job_id, time_t old_time, time_t new_time);
-    void TimeLineAdd(unsigned job_id, time_t timeout);
+    void TimeLineAdd(unsigned job_id, time_t job_time);
     void TimeLineRemove(unsigned job_id);
     void TimeLineExchange(unsigned remove_job_id,
                           unsigned add_job_id,
-                          time_t   timeout);
+                          time_t   new_time);
 
     unsigned DeleteBatch(unsigned batch_size);
 
