@@ -1117,6 +1117,7 @@ CPZ	c	Centro Panamericano de Zoonosis
 CQBG	s	Chongqing Botanical Garden
 CQNM	s	Chongqing Natural History Museum
 CR	s	Museo Nacional de Costa Rica
+CRA-COLMIA<ITA>	c	Collezione Nazionale di Microrganismi di interesse Agrario ed Industriale ed Ambientale - COL.MIA
 CRA-OLI	b	Centro di Ricerca per l'Olivicoltura e l'Industria Olearia
 CRA-PAV<ITA>	c	Centro di Ricerca per la Patologia Vegetale
 CRAF	s	University of Craiova, Phytopathology Department
