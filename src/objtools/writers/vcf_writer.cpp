@@ -39,8 +39,10 @@
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
 #include <objects/general/Dbtag.hpp>
+#include <objects/general/Date.hpp>
 #include <objects/seqfeat/Variation_ref.hpp>
 #include <objects/seqfeat/Variation_inst.hpp>
+#include <objects/seqfeat/VariantProperties.hpp>
 #include <objects/seqfeat/Delta_item.hpp>
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/Seq_data.hpp>
@@ -50,6 +52,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/mapped_feat.hpp>
 #include <objmgr/util/feature.hpp>
+#include <objmgr/seq_vector.hpp>
 
 #include <objtools/writers/vcf_writer.hpp>
 
@@ -146,7 +149,40 @@ bool CVcfWriter::x_WriteMetaCreateNew(
     const CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
-    m_Os << "##fileformat=VCFv4.1" << endl;
+    string datestr;
+    if ( annot.IsSetDesc() ) {
+        const CAnnot_descr& desc = annot.GetDesc();
+        for ( list< CRef< CAnnotdesc > >::const_iterator cit = desc.Get().begin();
+            cit != desc.Get().end(); ++cit ) 
+        {
+            if ( (*cit)->IsCreate_date() ) {
+                const CDate& date = (*cit)->GetCreate_date();
+                if ( date.IsStd() ) {
+                    date.GetDate( &datestr, "%4Y%2M%2D" );
+                }
+            }
+        }
+    }
+
+    m_Os << "##fileformat=VCFv4.1" 
+         << endl;
+    if ( ! datestr.empty() ) {
+        m_Os << "##filedate=" << datestr << endl;
+    }
+    m_Os << "##INFO=<ID=DB,Number=0,Type=Flag,Description=\"dbSNP Membership\">"
+         << endl;
+    m_Os << "##INFO=<ID=H2,Number=0,Type=Flag,Description=\"Hapmap2 Membership\">"
+         << endl;
+    m_Os << "##INFO=<ID=H3,Number=0,Type=Flag,Description=\"Hapmap3 Membership\">"
+         << endl;
+    m_Os << "##INFO=<ID=RL,Number=1,Type=String,Description=\"Resource Link\">"
+         << endl;
+    m_Os << "##INFO=<ID=FBV,Number=1,Type=String,Description=\"Frequency Based Validation\">"
+         << endl;
+    m_Os << "##INFO=<ID=GTP,Number=1,Type=String,Description=\"Genotype\">"
+         << endl;
+    m_Os << "##INFO=<ID=QC,Number=1,Type=String,Description=\"Quality Check\">"
+         << endl;
     return true;
 }
 
@@ -239,12 +275,10 @@ bool CVcfWriter::x_WriteFeaturePos(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    if ( mf.GetLocation().IsInt() ) {
-        size_t from = mf.GetLocation().GetInt().GetFrom();
-        m_Os << NStr::UIntToString( from + 1 );
-        return true;
-    }
-    m_Os << ".";    
+    const CSeq_loc& loc = mf.GetLocation();
+    size_t start = loc.GetStart(eExtreme_Positional);
+    m_Os << NStr::UIntToString( start + 1 );
+//    m_Os << ".";    
     return true;
 }
 
@@ -275,32 +309,17 @@ bool CVcfWriter::x_WriteFeatureRef(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    typedef CVariation_ref::TData::TSet::TVariations TVARS;
-
     try {
-        const TVARS& variations =
-            mf.GetData().GetVariation().GetData().GetSet().GetVariations();
-        for ( TVARS::const_iterator cit = variations.begin(); 
-            cit != variations.end(); ++cit )
-        {
-            if ( ! (**cit).GetData().IsInstance() ) {
-                continue;
-            }
-            const CVariation_inst& inst = (**cit).GetData().GetInstance();
-            if ( ! inst.IsSetObservation() ) {
-                continue;
-            }
-            if ( inst.GetObservation()  == CVariation_inst::eObservation_reference )
-            {
-                const CDelta_item& delta = **( inst.GetDelta().begin() );
-                m_Os << delta.GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
-                return true;
-            }
-        }
+
+        CSeqVector v(mf.GetLocation(), mf.GetScope(), CBioseq_Handle::eCoding_Iupac);
+        string seqstr;
+        v.GetSeqData( v.begin(), v.end(), seqstr );
+        m_Os << seqstr;
+        return true;
     }
     catch( ... ) {
+        m_Os << "?";
     }
-    m_Os << ".";
     return true;
 }
 
@@ -323,14 +342,54 @@ bool CVcfWriter::x_WriteFeatureAlt(
                 continue;
             }
             const CVariation_inst& inst = (**cit).GetData().GetInstance();
-            if ( ! inst.IsSetObservation() ) {
-                continue;
-            }
-            if ( inst.GetObservation()  == CVariation_inst::eObservation_variant )
-            {
-                const CDelta_item& delta = **( inst.GetDelta().begin() );
-                alternatives.push_back( 
-                    delta.GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get() );
+            switch( inst.GetType() ) {
+
+                default: {
+                    alternatives.push_back( "?" );
+                    break;
+                }
+                case CVariation_inst::eType_snv: {
+                    const CDelta_item& delta = **( inst.GetDelta().begin() );   
+                    if ( delta.GetSeq().IsLiteral() ) {
+                        alternatives.push_back( 
+                            delta.GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get() );
+                    }
+                    break;
+                }
+                case CVariation_inst::eType_ins: {
+                    CSeqVector v(mf.GetLocation(), mf.GetScope(), CBioseq_Handle::eCoding_Iupac);
+                    string seqstr;
+                    v.GetSeqData( v.begin(), v.end(), seqstr );
+                    CVariation_inst::TDelta::const_iterator cit = inst.GetDelta().begin();
+                    while( cit != inst.GetDelta().end()  &&  (**cit).GetSeq().IsThis()  ) {
+                        ++cit;
+                    }
+                    if ( cit == inst.GetDelta().end() ) {
+                        alternatives.push_back( seqstr );
+                    }
+                    else {
+                        alternatives.push_back( 
+                            (*cit)->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get() + seqstr );
+                    }
+                    break;
+                }
+                case CVariation_inst::eType_del: {
+                    CSeq_loc loc;
+                    loc.Add( mf.GetLocation() );
+                    CSeqVector v(loc, mf.GetScope(), CBioseq_Handle::eCoding_Iupac);
+                    string seqstr;
+                    v.GetSeqData( v.begin(), v.end(), seqstr );
+                    CVariation_inst::TDelta::const_iterator cit = inst.GetDelta().begin();
+                    if ( cit == inst.GetDelta().end() ) {
+                    }
+                    while( cit != inst.GetDelta().end()  &&  (**cit).GetSeq().IsThis()  ) {
+                        ++cit;
+                    }
+                    if ( cit == inst.GetDelta().end() ) {
+                        alternatives.push_back( seqstr );
+                    }
+                    break;
+                }
             }
         }
     }
@@ -375,18 +434,23 @@ bool CVcfWriter::x_WriteFeatureFilter(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    string filter = "<FIX ME>";
+    vector<string> filters;
     if ( mf.IsSetExt() ) {
         const CSeq_feat::TExt& ext = mf.GetExt();
         if ( ext.IsSetType() && ext.GetType().IsStr() && 
             ext.GetType().GetStr() == "VcfAttributes" ) 
         {
             if ( ext.HasField( "filter" ) ) {
-                filter = ext.GetField( "filter" ).GetData().GetStr();
+                filters.push_back( ext.GetField( "filter" ).GetData().GetStr() );
             }
         }
     }
-    m_Os << filter;
+    if ( ! filters.empty() ) {
+        m_Os << NStr::Join( filters, ":" );
+    }
+    else {
+        m_Os << "PASS";
+    }
     return true;
 }
 
@@ -396,7 +460,6 @@ bool CVcfWriter::x_WriteFeatureInfo(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-
     if ( mf.IsSetExt() ) {
         string info = ".";
         const CSeq_feat::TExt& ext = mf.GetExt();
@@ -412,15 +475,114 @@ bool CVcfWriter::x_WriteFeatureInfo(
     }
    
     vector<string> infos;
+
     const CVariation_ref& var = mf.GetData().GetVariation();
     if ( var.IsSetId() ) {
         string db = var.GetId().GetDb();
         NStr::ToLower( db );
-        if ( db == "dbvar" ) {
+        if ( db == "dbsnp" ) {
             infos.push_back( "DB" );
         }
         if ( db == "hapmap2" ) {
             infos.push_back( "H2" );
+        }
+        if ( db == "hapmap3" ) {
+            infos.push_back( "H3" );
+        }
+    }
+
+    bool bAF = false;
+    vector<string> values; 
+
+    if ( var.IsSetVariant_prop() ) {
+        const CVariantProperties& props = var.GetVariant_prop();
+        if ( props.IsSetAllele_frequency() ) {
+            infos.push_back( string("AF=") + 
+                NStr::DoubleToString( props.GetAllele_frequency(), 4 ) );
+            bAF = true;
+        }
+        if ( props.IsSetResource_link() ) {
+            int rl = props.GetResource_link();
+            values.clear();
+            if ( rl & CVariantProperties::eResource_link_preserved ) {
+                values.push_back( "preserved" );
+            }
+            if ( rl & CVariantProperties::eResource_link_provisional ) {
+                values.push_back( "provisional" );
+            }
+            if ( rl & CVariantProperties::eResource_link_has3D ) {
+                values.push_back( "has3D" );
+            }
+            if ( rl & CVariantProperties::eResource_link_submitterLinkout ) {
+                values.push_back( "submitterLinkout" );
+            }
+            if ( rl & CVariantProperties::eResource_link_clinical ) {
+                values.push_back( "clinical" );
+            }
+            if ( rl & CVariantProperties::eResource_link_genotypeKit ) {
+                values.push_back( "genotypeKit" );
+            }
+            infos.push_back( string("RL=\"") + NStr::Join( values, "," ) + string("\"") );
+        }
+        if ( props.IsSetFrequency_based_validation() ) {
+            int fbv = props.GetFrequency_based_validation();
+            values.clear();
+            if ( fbv & CVariantProperties::eFrequency_based_validation_is_mutation ) {
+                values.push_back( "is-mutation" );
+            }
+            if ( fbv & CVariantProperties::eFrequency_based_validation_above_5pct_all ) {
+                values.push_back( "above-5pct-all" );
+            }
+            if ( fbv & CVariantProperties::eFrequency_based_validation_above_5pct_1plus ) {
+                values.push_back( "above-5pct-1plus" );
+            }
+            if ( fbv & CVariantProperties::eFrequency_based_validation_validated ) {
+                values.push_back( "validated" );
+            }
+            if ( fbv & CVariantProperties::eFrequency_based_validation_above_1pct_all ) {
+                values.push_back( "above-1pct-all" );
+            }
+            if ( fbv & CVariantProperties::eFrequency_based_validation_above_1pct_1plus ) {
+                values.push_back( "above-1pct-1plus" );
+            }
+            infos.push_back( string("FBV=\"") + NStr::Join( values, "," ) + string("\"") );
+        }
+        if ( props.IsSetGenotype() ) {
+            int gt = props.GetGenotype();
+            values.clear();
+            if ( gt & CVariantProperties::eGenotype_in_haplotype_set ) {
+                values.push_back( "in_haplotype_set" );
+            }
+            if ( gt & CVariantProperties::eGenotype_has_genotypes ) {
+                values.push_back( "has_genotypes" );
+            }
+            infos.push_back( string("GTP=\"") + NStr::Join( values, "," ) + string("\"") );
+        }
+        if ( props.IsSetQuality_check() ) {
+            int qc = props.GetQuality_check();
+            values.clear();
+            if ( qc & CVariantProperties::eQuality_check_contig_allele_missing ) {
+                values.push_back( "contig_allele_missing" );
+            }
+            if ( qc & CVariantProperties::eQuality_check_withdrawn_by_submitter ) {
+                values.push_back( "withdrawn_by_submitter" );
+            }
+            if ( qc & CVariantProperties::eQuality_check_non_overlapping_alleles ) {
+                values.push_back( "non_overlapping_alleles" );
+            }
+            if ( qc & CVariantProperties::eQuality_check_strain_specific ) {
+                values.push_back( "strain_specific" );
+            }
+            if ( qc & CVariantProperties::eQuality_check_genotype_conflict ) {
+                values.push_back( "genotype_conflict" );
+            }
+            infos.push_back( string("QC=\"") + NStr::Join( values, "," ) + string("\"") );
+        }
+    }
+    else {
+        if ( ! bAF  &&  var.IsSetAllele_frequency() ) {
+            infos.push_back( string("AF=")
+                + NStr::DoubleToString( var.GetAllele_frequency(), 4 ) );
         }
     }
 
