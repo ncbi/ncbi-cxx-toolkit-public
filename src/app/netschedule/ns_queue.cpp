@@ -3049,8 +3049,6 @@ void CQueue::x_PrintJobStat(CNetScheduleHandler &   handler,
     const vector<CJobEvent> &   events = job.GetEvents();
     int                         event = 1;
 
-    handler.WriteMessage("OK:", "event_counter: " +
-                                NStr::IntToString(events.size()) );
     ITERATE(vector<CJobEvent>, it, events) {
         string          message("event" + NStr::IntToString(event++) + ": ");
         unsigned int    addr = it->GetNodeAddr();
