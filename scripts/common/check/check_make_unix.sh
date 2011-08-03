@@ -296,6 +296,10 @@ esac
 if test -z "\$NCBI_CHECK_TOOLS"; then
    NCBI_CHECK_TOOLS="regular"
 fi
+# Check timeout multiplier (increase default check timeout in x times)
+if test -z "\$NCBI_CHECK_TIMEOUT_MULT"; then
+   NCBI_CHECK_TIMEOUT_MULT=1
+fi
 
 # Valgrind configuration
 VALGRIND_SUP="\${root_dir}/scripts/common/check/valgrind.supp"
@@ -425,8 +429,6 @@ RunTest()
             # Run test if it exist
             if test -f "\$x_app"; then
 
-                CHECK_TIMEOUT="\$x_timeout"
-                export CHECK_TIMEOUT
                 _RLD_ARGS="-log \$x_log"
                 export _RLD_ARGS
 
@@ -449,9 +451,14 @@ RunTest()
                     fi
                     case "\$tool_lo" in
                     regular  ) ;;
-                    valgrind ) NCBI_CHECK_TOOL="\$NCBI_CHECK_TOOL \$VALGRIND_CMD" ;;
+                    valgrind ) NCBI_CHECK_TOOL="\$NCBI_CHECK_TOOL \$VALGRIND_CMD" 
+                               NCBI_CHECK_TIMEOUT_MULT=10
+                               ;;
                            * ) NCBI_CHECK_TOOL="?" ;;
                     esac
+
+                    CHECK_TIMEOUT=\`expr \$x_timeout \* \$NCBI_CHECK_TIMEOUT_MULT\`
+                    export CHECK_TIMEOUT
 
                     # Just need to report errors to authors?
                     if \$is_report_err; then
