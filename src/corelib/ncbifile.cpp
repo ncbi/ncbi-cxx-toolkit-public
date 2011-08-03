@@ -141,6 +141,21 @@ NCBI_PARAM_DEF_EX(bool, NCBI, DeleteReadOnlyFiles, false,
     eParam_NoThread, NCBI_CONFIG__DeleteReadOnlyFiles);
 
 
+// Declare how umask settings on Unix affect creating files/directories 
+// in the File API.
+// Registry file:
+//     [NCBI]
+//     FileAPIHonorUmask = true/false
+// Environment variable:
+//     NCBI_CONFIG__FileAPIHonorUmask
+//
+#define DEFAULT_HONOR_UMASK_VALUE false
+
+NCBI_PARAM_DECL(bool, NCBI, FileAPIHonorUmask);
+NCBI_PARAM_DEF_EX(bool, NCBI, FileAPIHonorUmask, DEFAULT_HONOR_UMASK_VALUE,
+                  eParam_NoThread, NCBI_CONFIG__FileAPIHonorUmask);
+
+
 // Declare the parameter to turn on logging from CFile,
 // CDirEntry, etc. classes.
 // Registry file:
@@ -154,6 +169,7 @@ NCBI_PARAM_DEF_EX(bool, NCBI, DeleteReadOnlyFiles, false,
 NCBI_PARAM_DECL(bool, NCBI, FileAPILogging);
 NCBI_PARAM_DEF_EX(bool, NCBI, FileAPILogging, DEFAULT_LOGGING_VALUE,
     eParam_NoThread, NCBI_CONFIG__FileAPILogging);
+
 
 #define LOG_ERROR(log_message) \
     { \
@@ -2792,6 +2808,8 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
     }
 
     // Preserve attributes
+    // s_CopyFile() preserve permissions on Unix, MS-Windows don't need it at all.
+
 #if defined(NCBI_OS_MSWIN)
     // On MS Windows ::CopyFile() already preserved file attributes
     // and all date/times.
@@ -2803,13 +2821,6 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
             return false;
         }
     }
-/*    
-    //  This code don't need anymore.
-    //  s_CopyFile() preserve permissions on Unix, MS-Windows don't need it at all.
-    if ( !dst.SetMode(fDefault, fDefault, fDefault) ) {
-        return false;
-    }
-*/
     return true;
 }
 
@@ -3384,10 +3395,12 @@ bool CDir::Create(void) const
     }
     // so we need to call chmod() directly
 #endif
-    if ( NcbiSys_chmod(_T_XCSTRING(GetPath()), mode) != 0 ) {
-        LOG_ERROR_AND_RETURN_ERRNO("CDir::Create():"
-                                   " Cannot set mode for directory "
-                                   << GetPath());
+    if (! NCBI_PARAM_TYPE(NCBI, FileAPIHonorUmask)::GetDefault()) {
+        if ( NcbiSys_chmod(_T_XCSTRING(GetPath()), mode) != 0 ) {
+            LOG_ERROR_AND_RETURN_ERRNO("CDir::Create():"
+                                       " Cannot set mode for directory "
+                                       << GetPath());
+        }
     }
     return true;
 }
@@ -3527,8 +3540,12 @@ bool CDir::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
             return false;
         }
     } else {
-        if ( !dst.SetMode(fDefault, fDefault, fDefault) ) {
-            return false;
+        // Set default permissions for directory, if we should not
+        // honor umask settings.
+        if (! NCBI_PARAM_TYPE(NCBI, FileAPIHonorUmask)::GetDefault()) {
+            if ( !dst.SetMode(fDefault, fDefault, fDefault) ) {
+                return false;
+            }
         }
     }
     return true;
@@ -5992,6 +6009,13 @@ void CFileAPI::SetLogging(ESwitch on_off_default)
     NCBI_PARAM_TYPE(NCBI, FileAPILogging)::SetDefault(
         on_off_default != eDefault ?
             on_off_default != eOff : DEFAULT_LOGGING_VALUE);
+}
+
+void CFileAPI::SetHonorUmask(ESwitch on_off_default)
+{
+    NCBI_PARAM_TYPE(NCBI, FileAPIHonorUmask)::SetDefault(
+        on_off_default != eDefault ?
+        on_off_default != eOff : DEFAULT_HONOR_UMASK_VALUE);
 }
 
 void CFileAPI::SetDeleteReadOnlyFiles(ESwitch on_off_default)

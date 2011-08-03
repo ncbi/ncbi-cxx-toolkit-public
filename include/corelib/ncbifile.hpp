@@ -196,6 +196,17 @@ public:
     ///   or reset to the default state (currently disabled).
     static void SetLogging(ESwitch on_off_default);
 
+    /// Enable or disable honoring umask settings on Unix for
+    /// newly created files/directories in the File API.
+    ///
+    /// @param on_off_default
+    ///   When set to eOn, allows read-only files to be deleted.
+    ///   Otherwise, an attempt to delete a read-only files will
+    ///   return an error (EACCES).
+    /// @note
+    ///   Unix only.
+    static void SetHonorUmask(ESwitch on_off_default);
+
     /// Specify whether read-only files can be deleted via
     /// CDirEntry::Remove() on Windows.
     ///
@@ -203,6 +214,8 @@ public:
     ///   When set to eOn, allows read-only files to be deleted.
     ///   Otherwise, an attempt to delete a read-only files will
     ///   return an error (EACCES).
+    /// @note
+    ///   Windows only.
     static void SetDeleteReadOnlyFiles(ESwitch on_off_default);
 };
 
