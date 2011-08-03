@@ -105,7 +105,8 @@ public:
         fShowFtableRefs        = 1 << 26,
         fOldFeaturesOrder      = 1 << 27,
         fHideGapFeatures       = 1 << 28,
-        fNeverTranslateCDS     = 1 << 29
+        fNeverTranslateCDS     = 1 << 29,
+        fShowSeqSpans          = 1 << 30
     };
 
     enum EView {
@@ -244,6 +245,7 @@ public:
     bool OldFeaturesOrder      (void) const;
     bool HideGapFeatures       (void) const;
     bool NeverTranslateCDS     (void) const;
+    bool ShowSeqSpans          (void) const;
     // mode dependant flags
     bool SuppressLocalId     (void) const;
     bool ValidateFeatures    (void) const;
@@ -310,6 +312,7 @@ public:
     CFlatFileConfig& SetOldFeaturesOrder     (bool val = true);
     CFlatFileConfig& SetHideGapFeatures      (bool val = true);
     CFlatFileConfig& SetNeverTranslateCDS    (bool val = true);
+    CFlatFileConfig& SetShowSeqSpans         (bool val = true);
     
     // -- GffOptions
     // getters
@@ -439,6 +442,7 @@ CUSTOM_FLAG_IMP(ShowFtableRefs)
 CUSTOM_FLAG_IMP(OldFeaturesOrder)
 CUSTOM_FLAG_IMP(HideGapFeatures)
 CUSTOM_FLAG_IMP(NeverTranslateCDS)
+CUSTOM_FLAG_IMP(ShowSeqSpans)
 
 #undef CUSTOM_FLAG_IMP
 #undef CUSTOM_FLAG_GET

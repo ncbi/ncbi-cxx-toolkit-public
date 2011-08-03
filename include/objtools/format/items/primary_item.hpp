@@ -68,12 +68,13 @@ private:
     // types
     typedef CConstRef<CSeq_align>            TAln;
     typedef list< CRef< CSeq_align > >       TAlnList;
+    typedef list< CConstRef< CSeq_align > >  TAlnConstList;
     typedef multimap<CAlnMap::TRange,  TAln> TAlnMap;
 
     void x_GatherInfo(CBioseqContext& ctx);
     void x_GetStrForPrimary(CBioseqContext& ctx);
-    void x_CollectSegments(TAlnMap&, const TAlnList& aln_list);
-    void x_CollectSegments(TAlnMap&, const CSeq_align& aln);
+    void x_CollectSegments(TAlnConstList&, const TAlnList& aln_list);
+    void x_CollectSegments(TAlnConstList&, const CSeq_align& aln);
 
     string m_Str;
 };

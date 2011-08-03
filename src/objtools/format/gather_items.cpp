@@ -1276,6 +1276,74 @@ void CFlatGatherer::x_CollectBioSources(TSourceFeatSet& srcs) const
     }
 }
 
+// If the loc contains NULLs between any parts, put NULLs between
+// *every* part.
+// If no normalization occurred, we return the original loc.
+static
+CConstRef<CSeq_loc> s_NormalizeNullsBetween( CConstRef<CSeq_loc> loc, bool force_adding_nulls = false )
+{
+    if( ! loc ) {
+        return loc;
+    }
+
+    if( ! loc->IsMix() || ! loc->GetMix().IsSet() ) {
+        return loc;
+    }
+
+    if( loc->GetMix().Get().size() < 2 ) {
+        return loc;
+    }
+
+    bool need_to_normalize = false;
+    if( force_adding_nulls ) {
+        // user forces us to add NULLs
+        need_to_normalize = true;
+    } else {
+        // first check for the common cases of not having to normalize anything
+        CSeq_loc_CI loc_ci( *loc, CSeq_loc_CI::eEmpty_Allow );
+        bool saw_multiple_non_nulls_in_a_row = false;
+        bool last_was_null = true; // edges considered NULL for our purposes here
+        bool any_null_seen = false; // edges don't count here, though
+        for ( ; loc_ci ; ++loc_ci ) {
+            if( loc_ci.IsEmpty() ) {
+                last_was_null = true;
+                any_null_seen = true;
+            } else {
+                if( last_was_null ) {
+                    last_was_null = false;
+                } else {
+                    // two non-nulls in a row
+                    saw_multiple_non_nulls_in_a_row = true;
+                }
+            }
+        }
+
+        need_to_normalize = ( any_null_seen && saw_multiple_non_nulls_in_a_row );
+    }
+
+    if( ! need_to_normalize ) {
+        return loc;
+    }
+
+    // normalization is needed
+    // it's very rare that we actually have to do the normalization.
+    CRef<CSeq_loc> null_loc( new CSeq_loc );
+    null_loc->SetNull();
+
+    CRef<CSeq_loc> new_loc( new CSeq_loc );
+    CSeq_loc_mix::Tdata &mix_data = new_loc->SetMix().Set();
+    CSeq_loc_CI loc_ci( *loc, CSeq_loc_CI::eEmpty_Skip );
+    for( ; loc_ci ; ++loc_ci ) {
+        if( ! mix_data.empty() ) {
+            mix_data.push_back( null_loc );
+        }
+        CRef<CSeq_loc> loc_piece( new CSeq_loc );
+        loc_piece->Assign( *loc_ci.GetRangeAsSeq_loc() );
+        mix_data.push_back( loc_piece );
+    }
+
+    return new_loc;
+}
 
 // assumes focus is first one in srcs
 void CFlatGatherer::x_SubtractFromFocus(TSourceFeatSet& srcs ) const
@@ -1314,6 +1382,18 @@ void CFlatGatherer::x_SubtractFromFocus(TSourceFeatSet& srcs ) const
     if( focus->GetLoc().GetTotalRange().GetLength() == 0 ) {
         focus->SetLoc( *copyOfOriginalSeqLocOfFocus );
         copyOfOriginalSeqLocOfFocus.release();
+    }
+
+    // if remainder is multi-interval, make it "order()" instead of "join()".
+    // (We don't just test for "IsMix" because it could be a mix of one interval.
+    CSeq_loc_CI focus_loc_iter = focus->GetLoc().begin();
+    if( focus_loc_iter != focus->GetLoc().end() ) {
+        ++focus_loc_iter;
+        if( focus_loc_iter != focus->GetLoc().end() ) {
+            // okay, so convert it into an order by inserting NULLs between
+            CConstRef<CSeq_loc> new_focus = s_NormalizeNullsBetween( CConstRef<CSeq_loc>(&focus->GetLoc()), true );
+            focus->SetLoc( *new_focus );
+        }
     }
 }
 
@@ -1832,73 +1912,6 @@ static string s_GetFeatDesc(const CSeq_feat_Handle& feat)
     desc += loc_label;
     return desc.c_str();
 }
-
-// If the loc contains NULLs between any parts, put NULLs between
-// *every* part.
-// If no normalization occurred, we return the original loc.
-static
-CConstRef<CSeq_loc> s_NormalizeNullsBetween( CConstRef<CSeq_loc> loc )
-{
-    if( ! loc ) {
-        return loc;
-    }
-
-    if( ! loc->IsMix() || ! loc->GetMix().IsSet() ) {
-        return loc;
-    }
-
-    if( loc->GetMix().Get().size() < 2 ) {
-        return loc;
-    }
-
-    // first check for the common cases of not having to normalize anything
-    bool need_to_normalize = false;
-    {{
-        CSeq_loc_CI loc_ci( *loc, CSeq_loc_CI::eEmpty_Allow );
-        bool saw_multiple_non_nulls_in_a_row = false;
-        bool last_was_null = true; // edges considered NULL for our purposes here
-        bool any_null_seen = false; // edges don't count here, though
-        for ( ; loc_ci ; ++loc_ci ) {
-            if( loc_ci.IsEmpty() ) {
-                last_was_null = true;
-                any_null_seen = true;
-            } else {
-                if( last_was_null ) {
-                    last_was_null = false;
-                } else {
-                    // two non-nulls in a row
-                    saw_multiple_non_nulls_in_a_row = true;
-                }
-            }
-        }
-
-        need_to_normalize = ( any_null_seen && saw_multiple_non_nulls_in_a_row );
-    }}
-
-    if( ! need_to_normalize ) {
-        return loc;
-    }
-
-    // normalization is needed
-    // it's very rare that we actually have to do the normalization.
-    CRef<CSeq_loc> null_loc( new CSeq_loc );
-    null_loc->SetNull();
-
-    CRef<CSeq_loc> new_loc( new CSeq_loc );
-    CSeq_loc_mix::Tdata &mix_data = new_loc->SetMix().Set();
-    CSeq_loc_CI loc_ci( *loc, CSeq_loc_CI::eEmpty_Skip );
-    for( ; loc_ci ; ++loc_ci ) {
-        if( ! mix_data.empty() ) {
-            mix_data.push_back( null_loc );
-        }
-        CRef<CSeq_loc> loc_piece( new CSeq_loc );
-        loc_piece->Assign( *loc_ci.GetRangeAsSeq_loc() );
-        mix_data.push_back( loc_piece );
-    }
-
-    return new_loc;
-}
-
 
 static void s_CleanCDDFeature(const CSeq_feat& feat)
 {

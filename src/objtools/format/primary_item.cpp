@@ -137,11 +137,15 @@ void CPrimaryItem::x_GatherInfo(CBioseqContext& ctx)
 }
 
 
-static const char* s_PrimaryHeader(bool is_refseq)
+static const char* s_PrimaryHeader( CBioseqContext &ctx )
 {
-    return is_refseq ?
-        "REFSEQ_SPAN         PRIMARY_IDENTIFIER PRIMARY_SPAN        COMP" :
-        "TPA_SPAN            PRIMARY_IDENTIFIER PRIMARY_SPAN        COMP";
+    if( ctx.IsRefSeq() ) {
+        return "REFSEQ_SPAN         PRIMARY_IDENTIFIER PRIMARY_SPAN        COMP" ;
+    } else if( ctx.GetTech() == CMolInfo::eTech_tsa ) {
+        return "TSA_SPAN            PRIMARY_IDENTIFIER PRIMARY_SPAN        COMP";
+    } else {
+        return "TPA_SPAN            PRIMARY_IDENTIFIER PRIMARY_SPAN        COMP";
+    }        
 }
 
 
@@ -150,8 +154,9 @@ void CPrimaryItem::x_GetStrForPrimary(CBioseqContext& ctx)
 {
     CBioseq_Handle& seq = ctx.GetHandle();
 
-    TAlnMap segmap;
-    x_CollectSegments(segmap, seq.GetInst_Hist().GetAssembly());
+
+    TAlnConstList seglist;
+    x_CollectSegments(seglist, seq.GetInst_Hist().GetAssembly());
     
     string str;
     string s;
@@ -160,53 +165,51 @@ void CPrimaryItem::x_GetStrForPrimary(CBioseqContext& ctx)
 
     TSignedSeqPos last_stop = -1;
 
-    ITERATE (TAlnMap, it, segmap) {
+    ITERATE( TAlnConstList, it, seglist ) {
         s.erase();
-        const CSeq_align& align = *it->second;
+        const CSeq_align& align = **it;
 
         TSeqPos this_start = align.GetSeqStart(0);
         TSeqPos this_stop = align.GetSeqStop(0);
 
-        if (last_stop != -1) {
-            if (this_start - last_stop > 1) {
-                if (this_start - last_stop < 15) {
-                    s += NStr::IntToString(last_stop + 2) + '-' +
-                        NStr::IntToString(this_start);
-                    s.resize(20, ' ');
-                    s += '"';
+        if ( ctx.IsRefSeq() && last_stop > -1 && (this_start - last_stop) > 1 ) {
+            if (this_start - last_stop < 15) {
+                s += NStr::IntToString(last_stop + 2) + '-' +
+                    NStr::IntToString(this_start);
+                s.resize(20, ' ');
+                s += '"';
 
-                    string ss;
-                    CSeqVector v(seq, CBioseq_Handle::eCoding_Iupac);
-                    v.GetSeqData(last_stop + 1, this_start, ss);
-                    s += ss;
-                    s += '"';
-                    s.resize(39, ' ');
+                string ss;
+                CSeqVector v(seq, CBioseq_Handle::eCoding_Iupac);
+                v.GetSeqData(last_stop + 1, this_start, ss);
+                s += ss;
+                s += '"';
+                s.resize(39, ' ');
 
-                    s += "1-" + NStr::IntToString(this_start - last_stop - 1);
-                } else {
-                    s += NStr::IntToString(last_stop + 2) + '-' +
-                        NStr::IntToString(this_start);
-                    s.resize(20, ' ');
-                    s += '"';
+                s += "1-" + NStr::IntToString(this_start - last_stop - 1);
+            } else {
+                s += NStr::IntToString(last_stop + 2) + '-' +
+                    NStr::IntToString(this_start);
+                s.resize(20, ' ');
+                s += '"';
 
-                    string ss;
-                    CSeqVector v(seq, CBioseq_Handle::eCoding_Iupac);
-                    v.GetSeqData(last_stop + 1, last_stop + 4, ss);
-                    s += ss;
-                    s += "...";
+                string ss;
+                CSeqVector v(seq, CBioseq_Handle::eCoding_Iupac);
+                v.GetSeqData(last_stop + 1, last_stop + 4, ss);
+                s += ss;
+                s += "...";
 
-                    v.GetSeqData(this_start - 3, this_start, ss);
-                    s += ss;
-                    s += '"';
-                    s.resize(39, ' ');
+                v.GetSeqData(this_start - 3, this_start, ss);
+                s += ss;
+                s += '"';
+                s.resize(39, ' ');
 
-                    s += "1-" + NStr::IntToString(this_start - last_stop - 1);
-                }
-
-                str += '\n';
-                str += s;
-                s.erase();
+                s += "1-" + NStr::IntToString(this_start - last_stop - 1);
             }
+
+            str += '\n';
+            str += s;
+            s.erase();
         }
         last_stop = this_stop;
 
@@ -255,33 +258,33 @@ void CPrimaryItem::x_GetStrForPrimary(CBioseqContext& ctx)
     }
 
     if (!str.empty()) {
-        m_Str = s_PrimaryHeader(ctx.IsRefSeq());
+        m_Str = s_PrimaryHeader(ctx);
         m_Str += str;
     }
 }
 
 
 void CPrimaryItem::x_CollectSegments
-(TAlnMap& segmap,
+(TAlnConstList& seglist,
  const TAlnList& aln_list)
 {
     ITERATE (TAlnList, it, aln_list) {
-        x_CollectSegments(segmap, **it);
+        x_CollectSegments(seglist, **it);
     }
 }
 
 
 void CPrimaryItem::x_CollectSegments
-(TAlnMap& segmap, const CSeq_align& aln)
+(TAlnConstList& seglist, const CSeq_align& aln)
 {
     if ( !aln.CanGetSegs() ) {
         return;
     }
 
     if ( aln.GetSegs().IsDenseg() ) {
-        segmap.insert(TAlnMap::value_type(aln.GetSeqRange(0), TAln(&aln)));
+        seglist.push_back( TAln(&aln) );
     } else if ( aln.GetSegs().IsDisc() ) {
-        x_CollectSegments(segmap, aln.GetSegs().GetDisc().Get());
+        x_CollectSegments(seglist, aln.GetSegs().GetDisc().Get());
     }
 }
 

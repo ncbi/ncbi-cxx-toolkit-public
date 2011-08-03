@@ -663,9 +663,18 @@ static bool s_IsLegalECNumber(const string& ec_number)
     if ( isdigit(*ec_iter) ) {
       numdigits++;
       if (is_ambig) return false;
-    } else if (*ec_iter == '-' || *ec_iter == 'n') {
+    } else if (*ec_iter == '-' ) {
       numdashes++;
       is_ambig = true;
+    } else if( *ec_iter == 'n') {
+        string::const_iterator ec_iter_next = ec_iter;
+        ++ec_iter_next;
+        if( ec_iter_next != ec_number.end() && numperiods == 3 && numdigits == 0 && isdigit(*ec_iter_next) ) {
+            // allow/ignore n in first position of fourth number to not mean ambiguous, if followed by digit
+        } else {
+            numdashes++;
+            is_ambig = true;
+        }
     } else if (*ec_iter == '.') {
       numperiods++;
       if (numdigits > 0 && numdashes > 0) return false;

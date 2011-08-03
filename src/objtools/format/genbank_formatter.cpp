@@ -1034,7 +1034,7 @@ CGenbankFormatter::x_GetFeatureSpanAndScriptStart(
             pre_feature_html << "<script>if (typeof(oData) == \"undefined\") oData = []; oData.push ({gi:" << ctx.GetGI() << ",acc:\"" << s_GetAccessionWithoutPeriod(ctx) << "\",features: {}});</script>";
             m_bHavePrintedSourceFeatureJavascript = true;
         }
-       
+
     } else {
         pre_feature_html << "<script type=\"text/javascript\">"
             << "if (!oData[oData.length - 1].features." << strKey << ") oData[oData.length - 1].features." << strKey << " = [];"
@@ -1304,7 +1304,7 @@ void CGenbankFormatter::FormatFeature
     }
 
     // write <span...> and <script...> in HTML mode
-    if( bHtml && f.GetContext()->Config().IsModeEntrez() ) {
+    if( bHtml && f.GetContext()->Config().IsModeEntrez() && f.GetContext()->Config().ShowSeqSpans() ) {
         *l.begin() = x_GetFeatureSpanAndScriptStart(strKey.c_str(), f.GetLoc(),  *f.GetContext() ) + *l.begin();
     }
 
@@ -1358,7 +1358,7 @@ void CGenbankFormatter::FormatFeature
         
     text_os.AddParagraph(l, f.GetObject());
 
-    if( bHtml && f.GetContext()->Config().IsModeEntrez() ) {
+    if( bHtml && f.GetContext()->Config().IsModeEntrez() && f.GetContext()->Config().ShowSeqSpans() ) {
         // close the <span...>, without an endline
         text_os.AddLine("</span>", 0, IFlatTextOStream::eAddNewline_No );
     }
@@ -1500,7 +1500,7 @@ s_FormatRegularSequencePiece
  TSeqPos &total,
  TSeqPos &base_count )
 {
-    const bool bHtml = seq.GetContext()->Config().DoHTML();
+    const bool bHtml = seq.GetContext()->Config().DoHTML() && seq.GetContext()->Config().ShowSeqSpans();
     const int gi = seq.GetContext()->GetGI();
 
     // format of sequence position
