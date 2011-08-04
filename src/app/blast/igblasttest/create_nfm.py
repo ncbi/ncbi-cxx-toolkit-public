@@ -3,12 +3,12 @@
 # This script determines the frame offset of J gene for Human and Mouse
 # It uses the chain type and sequence length for J genes
 
-offset_table = {'Human': {'JH': 1, 'JK': 1, 'JL': 1},
-                'Mouse': {'JH': 3, 'JK': 3, 'JL': 1}}
+offset_table = {'human': {'JH': 1, 'JK': 1, 'JL': 1},
+                'mouse': {'JH': 3, 'JK': 3, 'JL': 1}}
 
 import subprocess
 
-for origin in ['Human', 'Mouse']:
+for origin in ['human', 'mouse']:
 
     # read and parse chain type info
     chain_type = {}

@@ -1248,16 +1248,16 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             CArgDescriptions::eString);
 
     arg_desc.AddDefaultKey(kArgGLOrigin, "germline_origin",
-                            "Origin of the species for domain and chain type annotation",
-                            CArgDescriptions::eString, "Human");
-    arg_desc.SetConstraint(kArgGLOrigin, &(*new CArgAllow_Strings, "Human", "Mouse"));
+                            "The organism for your query sequence (i.e., human, mouse, etc.)",
+                            CArgDescriptions::eString, "human");
+    //arg_desc.SetConstraint(kArgGLOrigin, &(*new CArgAllow_Strings, "human", "mouse"));
 
     arg_desc.AddDefaultKey(kArgGLDomainSystem, "domain_system",
                             "Domain system to be used for segment annotation",
                             CArgDescriptions::eString, "kabat");
     arg_desc.SetConstraint(kArgGLDomainSystem, &(*new CArgAllow_Strings, "kabat", "imgt"));
 
-    arg_desc.AddFlag(kArgGLFocusV, "Should the alignments focus only on V segment?", true);
+    arg_desc.AddFlag(kArgGLFocusV, "Should the search only be for V segment (effective only for non-germline database search using -db option)?", true);
 
     if (! m_IsProtein) {
         arg_desc.AddFlag(kArgTranslate, "Show translated alignments", true);
