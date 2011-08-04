@@ -2643,7 +2643,6 @@ static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
     }
 
     struct stat st;
-    // NB:  Use extra "fd = 0;" to distinguish the failures, when necessary.
     if (fstat(fs, &st) != 0  ||
         (fd = open(dst, O_WRONLY|O_CREAT|O_TRUNC, st.st_mode & 0777)) == -1) {
         int x_errno = errno;
