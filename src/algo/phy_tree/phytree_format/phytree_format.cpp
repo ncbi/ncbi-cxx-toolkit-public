@@ -688,7 +688,7 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
                 blast_names[i] = s_kUnknown;
             }
         }
-        catch(CException& e) {            
+        catch(CException&) {            
             organisms[i] = s_kUnknown;
             blast_names[i]= s_kUnknown;
         }
@@ -696,7 +696,7 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
         try{
             titles[i] = sequence::GetTitle(bio_seq_handles[i]);
         }
-        catch(CException& e) {
+        catch(CException&) {
             titles[i] = s_kUnknown;
         }
                    
