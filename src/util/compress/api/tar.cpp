@@ -189,50 +189,86 @@ static int s_DecodeUint8(Uint8& val, const char* ptr, size_t len)
 }
 
 
-static mode_t s_TarToMode(TTarMode value)
+static void s_TarToMode(TTarMode                     perm,
+                        CDirEntry::TMode*            usr_mode,
+                        CDirEntry::TMode*            grp_mode,
+                        CDirEntry::TMode*            oth_mode,
+                        CDirEntry::TSpecialModeBits* special_bits)
+{
+    // User
+    if (usr_mode) {
+        *usr_mode = ((perm & fTarURead    ? CDirEntry::fRead    : 0) |
+                     (perm & fTarUWrite   ? CDirEntry::fWrite   : 0) |
+                     (perm & fTarUExecute ? CDirEntry::fExecute : 0));
+    }
+
+    // Group
+    if (grp_mode) {
+        *grp_mode = ((perm & fTarGRead    ? CDirEntry::fRead    : 0) |
+                     (perm & fTarGWrite   ? CDirEntry::fWrite   : 0) |
+                     (perm & fTarGExecute ? CDirEntry::fExecute : 0));
+    }
+
+    // Others
+    if (oth_mode) {
+        *oth_mode = ((perm & fTarORead    ? CDirEntry::fRead    : 0) |
+                     (perm & fTarOWrite   ? CDirEntry::fWrite   : 0) |
+                     (perm & fTarOExecute ? CDirEntry::fExecute : 0));
+    }
+
+    // Special bits
+    if (special_bits) {
+        *special_bits = ((perm & fTarSetUID ? CDirEntry::fSetUID : 0) |
+                         (perm & fTarSetGID ? CDirEntry::fSetGID : 0) |
+                         (perm & fTarSticky ? CDirEntry::fSticky : 0));
+    }
+}
+
+
+static mode_t s_TarToMode(TTarMode perm)
 {
     mode_t mode = (
 #ifdef S_ISUID
-                   (value & fTarSetUID   ? S_ISUID  : 0) |
+                   (perm & fTarSetUID   ? S_ISUID  : 0) |
 #endif
 #ifdef S_ISGID
-                   (value & fTarSetGID   ? S_ISGID  : 0) |
+                   (perm & fTarSetGID   ? S_ISGID  : 0) |
 #endif
 #ifdef S_ISVTX
-                   (value & fTarSticky   ? S_ISVTX  : 0) |
+                   (perm & fTarSticky   ? S_ISVTX  : 0) |
 #endif
 #if   defined(S_IRUSR)
-                   (value & fTarURead    ? S_IRUSR  : 0) |
+                   (perm & fTarURead    ? S_IRUSR  : 0) |
 #elif defined(S_IREAD)
-                   (value & fTarURead    ? S_IREAD  : 0) |
+                   (perm & fTarURead    ? S_IREAD  : 0) |
 #endif
 #if   defined(S_IWUSR)
-                   (value & fTarUWrite   ? S_IWUSR  : 0) |
+                   (perm & fTarUWrite   ? S_IWUSR  : 0) |
 #elif defined(S_IWRITE)
-                   (value & fTarUWrite   ? S_IWRITE : 0) |
+                   (perm & fTarUWrite   ? S_IWRITE : 0) |
 #endif
 #if   defined(S_IWUSR)
-                   (value & fTarUExecute ? S_IXUSR  : 0) |
+                   (perm & fTarUExecute ? S_IXUSR  : 0) |
 #elif defined(S_IEXEC)
-                   (value & fTarUExecute ? S_IEXEC  : 0) |
+                   (perm & fTarUExecute ? S_IEXEC  : 0) |
 #endif
 #ifdef S_IRGRP
-                   (value & fTarGRead    ? S_IRGRP  : 0) |
+                   (perm & fTarGRead    ? S_IRGRP  : 0) |
 #endif
 #ifdef S_IWGRP
-                   (value & fTarGWrite   ? S_IWGRP  : 0) |
+                   (perm & fTarGWrite   ? S_IWGRP  : 0) |
 #endif
 #ifdef S_IXGRP
-                   (value & fTarGExecute ? S_IXGRP  : 0) |
+                   (perm & fTarGExecute ? S_IXGRP  : 0) |
 #endif
 #ifdef S_IROTH
-                   (value & fTarORead    ? S_IROTH  : 0) |
+                   (perm & fTarORead    ? S_IROTH  : 0) |
 #endif
 #ifdef S_IWOTH
-                   (value & fTarOWrite   ? S_IWOTH  : 0) |
+                   (perm & fTarOWrite   ? S_IWOTH  : 0) |
 #endif
 #ifdef S_IXOTH
-                   (value & fTarOExecute ? S_IXOTH  : 0) |
+                   (perm & fTarOExecute ? S_IXOTH  : 0) |
 #endif
                    0);
     return mode;
@@ -242,56 +278,56 @@ static mode_t s_TarToMode(TTarMode value)
 static TTarMode s_ModeToTar(mode_t mode)
 {
     // Keep in mind that the mode may be extracted on a different platform
-    TTarMode value = (
+    TTarMode perm = (
 #ifdef S_ISUID
-                      (mode & S_ISUID  ? fTarSetUID   : 0) |
+                     (mode & S_ISUID  ? fTarSetUID   : 0) |
 #endif
 #ifdef S_ISGID
-                      (mode & S_ISGID  ? fTarSetGID   : 0) |
+                     (mode & S_ISGID  ? fTarSetGID   : 0) |
 #endif
 #ifdef S_ISVTX
-                      (mode & S_ISVTX  ? fTarSticky   : 0) |
+                     (mode & S_ISVTX  ? fTarSticky   : 0) |
 #endif
 #if   defined(S_IRUSR)
-                      (mode & S_IRUSR  ? fTarURead    : 0) |
+                     (mode & S_IRUSR  ? fTarURead    : 0) |
 #elif defined(S_IREAD)
-                      (mode & S_IREAD  ? fTarURead    : 0) |
+                     (mode & S_IREAD  ? fTarURead    : 0) |
 #endif
 #if   defined(S_IWUSR)
-                      (mode & S_IWUSR  ? fTarUWrite   : 0) |
+                     (mode & S_IWUSR  ? fTarUWrite   : 0) |
 #elif defined(S_IWRITE)
-                      (mode & S_IWRITE ? fTarUWrite   : 0) |
+                     (mode & S_IWRITE ? fTarUWrite   : 0) |
 #endif
 #if   defined(S_IXUSR)
-                      (mode & S_IXUSR  ? fTarUExecute : 0) |
+                     (mode & S_IXUSR  ? fTarUExecute : 0) |
 #elif defined(S_IEXEC)
-                      (mode & S_IEXEC  ? fTarUExecute : 0) |
+                     (mode & S_IEXEC  ? fTarUExecute : 0) |
 #endif
 #if   defined(S_IRGRP)
-                      (mode & S_IRGRP  ? fTarGRead    : 0) |
+                     (mode & S_IRGRP  ? fTarGRead    : 0) |
 #elif defined(S_IREAD)
-                      // emulate read permission when file is readable
-                      (mode & S_IREAD  ? fTarGRead    : 0) |
+                     // emulate read permission when file is readable
+                     (mode & S_IREAD  ? fTarGRead    : 0) |
 #endif
 #ifdef S_IWGRP
-                      (mode & S_IWGRP  ? fTarGWrite   : 0) |
+                     (mode & S_IWGRP  ? fTarGWrite   : 0) |
 #endif
 #ifdef S_IXGRP
-                      (mode & S_IXGRP  ? fTarGExecute : 0) |
+                     (mode & S_IXGRP  ? fTarGExecute : 0) |
 #endif
 #if   defined(S_IROTH)
-                      (mode & S_IROTH  ? fTarORead    : 0) |
+                     (mode & S_IROTH  ? fTarORead    : 0) |
 #elif defined(S_IREAD)
-                      // emulate read permission when file is readable
-                      (mode & S_IREAD  ? fTarORead    : 0) |
+                     // emulate read permission when file is readable
+                     (mode & S_IREAD  ? fTarORead    : 0) |
 #endif
 #ifdef S_IWOTH
-                      (mode & S_IWOTH  ? fTarOWrite   : 0) |
+                     (mode & S_IWOTH  ? fTarOWrite   : 0) |
 #endif
 #ifdef S_IXOTH
-                      (mode & S_IXOTH  ? fTarOExecute : 0) |
+                     (mode & S_IXOTH  ? fTarOExecute : 0) |
 #endif
-                      0);
+                     0);
 #if defined(S_IFMT)  ||  defined(_S_IFMT)
     TTarMode mask = (TTarMode) mode;
 #  ifdef S_IFMT
@@ -300,10 +336,10 @@ static TTarMode s_ModeToTar(mode_t mode)
     mask &= _S_IFMT;
 #  endif
     if (!(mask & 07777)) {
-        value |= mask;
+        perm |= mask;
     }
 #endif
-    return value;
+    return perm;
 }
 
 
@@ -430,37 +466,7 @@ void CTarEntryInfo::GetMode(CDirEntry::TMode*            usr_mode,
                             CDirEntry::TMode*            oth_mode,
                             CDirEntry::TSpecialModeBits* special_bits) const
 {
-    TTarMode mode = GetMode();
-
-    // User
-    if (usr_mode) {
-        *usr_mode = ((mode & fTarURead    ? CDirEntry::fRead    : 0) |
-                     (mode & fTarUWrite   ? CDirEntry::fWrite   : 0) |
-                     (mode & fTarUExecute ? CDirEntry::fExecute : 0));
-    }
-
-    // Group
-    if (grp_mode) {
-        *grp_mode = ((mode & fTarGRead    ? CDirEntry::fRead    : 0) |
-                     (mode & fTarGWrite   ? CDirEntry::fWrite   : 0) |
-                     (mode & fTarGExecute ? CDirEntry::fExecute : 0));
-    }
-
-    // Others
-    if (oth_mode) {
-        *oth_mode = ((mode & fTarORead    ? CDirEntry::fRead    : 0) |
-                     (mode & fTarOWrite   ? CDirEntry::fWrite   : 0) |
-                     (mode & fTarOExecute ? CDirEntry::fExecute : 0));
-    }
-
-    // Special bits
-    if (special_bits) {
-        *special_bits = ((mode & fTarSetUID ? CDirEntry::fSetUID : 0) |
-                         (mode & fTarSetGID ? CDirEntry::fSetGID : 0) |
-                         (mode & fTarSticky ? CDirEntry::fSticky : 0));
-    }
-
-    return;
+    s_TarToMode(GetMode(), usr_mode, grp_mode, oth_mode, special_bits);
 }
 
 
@@ -494,7 +500,7 @@ unsigned int CTarEntryInfo::GetMinor(void) const
 }
 
 
-bool CTarEntryInfo::operator==(const CTarEntryInfo& info) const
+bool CTarEntryInfo::operator == (const CTarEntryInfo& info) const
 {
     return (m_Type       == info.m_Type                        &&
             m_Name       == info.m_Name                        &&
@@ -1485,7 +1491,7 @@ auto_ptr<CTar::TEntries> CTar::Extract(void)
     if (m_Flags & fPreserveAll) {
         ITERATE(TEntries, e, *entries) {
             if (e->GetType() == CTarEntryInfo::eDir) {
-                x_RestoreAttrs(*e);
+                x_RestoreAttrs(*e, m_Flags);
             }
         }
     }
@@ -2952,6 +2958,10 @@ bool CTar::x_ExtractEntry(Uint8& size,
                               "Cannot create file '" + dst->GetPath() + '\''
                               + s_OSReason(x_errno));
                 }
+                if (m_Flags & fPreserveMode) {  // NB: secure
+                    x_RestoreAttrs(m_Current, fPreserveMode,
+                                   dst, fTarURead | fTarUWrite);
+                }
 
                 while (size) {
                     // Read from the archive
@@ -2966,7 +2976,7 @@ bool CTar::x_ExtractEntry(Uint8& size,
                     if (!ofs.write(xbuf, (streamsize) nread)) {
                         int x_errno = errno;
                         TAR_THROW(this, eWrite,
-                                  "Error writing file '" +dst->GetPath()+ '\''
+                                  "Error writing file '" + dst->GetPath()+ '\''
                                   + s_OSReason(x_errno));
                     }
                     m_StreamPos += ALIGN_SIZE(nread);
@@ -2981,7 +2991,7 @@ bool CTar::x_ExtractEntry(Uint8& size,
                 if (link(src->GetPath().c_str(),
                          dst->GetPath().c_str()) == 0) {
                     if (m_Flags & fPreserveAll) {
-                        x_RestoreAttrs(m_Current, dst);
+                        x_RestoreAttrs(m_Current, m_Flags, dst);
                     }
                     break;
                 }
@@ -3004,7 +3014,7 @@ bool CTar::x_ExtractEntry(Uint8& size,
 
             // Restore attributes
             if (m_Flags & fPreserveAll) {
-                x_RestoreAttrs(m_Current, dst);
+                x_RestoreAttrs(m_Current, m_Flags, dst);
             }
         }}
         break;
@@ -3110,29 +3120,31 @@ bool CTar::x_ExtractEntry(Uint8& size,
 
 
 void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
-                          const CDirEntry*     dst) const
+                          TFlags               what,
+                          const CDirEntry*     path,
+                          TTarMode             perm) const
 {
-    auto_ptr<CDirEntry> dst_ptr;  // deleter
-    if (!dst) {
-        dst_ptr.reset(CDirEntry::CreateObject
-                      (CDirEntry::EType(info.GetType()),
-                       CDirEntry::NormalizePath
-                       (CDirEntry::ConcatPath
-                        (m_BaseDir, info.GetName()))));
-        dst = dst_ptr.get();
+    auto_ptr<CDirEntry> path_ptr;  // deleter
+    if (!path) {
+        path_ptr.reset(CDirEntry::CreateObject
+                       (CDirEntry::EType(info.GetType()),
+                        CDirEntry::NormalizePath
+                        (CDirEntry::ConcatPath
+                         (m_BaseDir, info.GetName()))));
+        path = path_ptr.get();
     }
 
     // Date/time.
     // Set the time before permissions because on some platforms
     // this setting can also affect file permissions.
-    if (m_Flags & fPreserveTime) {
+    if (what & fPreserveTime) {
         time_t modification(info.GetModificationTime());
         time_t last_access(info.GetLastAccessTime());
         time_t creation(info.GetCreationTime());
-        if (!dst->SetTimeT(&modification, &last_access, &creation)) {
+        if (!path->SetTimeT(&modification, &last_access, &creation)) {
             int x_errno = errno;
             TAR_THROW(this, eRestoreAttrs,
-                      "Cannot restore date/time for '" + dst->GetPath() + '\''
+                      "Cannot restore date/time for '" + path->GetPath() + '\''
                       + s_OSReason(x_errno));
         }
     }
@@ -3141,22 +3153,22 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
     // This must precede changing permissions because on some
     // systems chown() clears the set[ug]id bits for non-superusers
     // thus resulting in incorrect permissions.
-    if (m_Flags & fPreserveOwner) {
+    if (what & fPreserveOwner) {
         // 2-tier trial:  first using the names, then using numeric IDs.
         // Note that it is often impossible to restore the original owner
         // without super-user rights so no error checking is done here.
-        if (!dst->SetOwner(info.GetUserName(),
-                           info.GetGroupName(),
-                           eIgnoreLinks)) {
-            dst->SetOwner(NStr::UIntToString(info.GetUserId()),
-                          NStr::UIntToString(info.GetGroupId()),
-                          eIgnoreLinks);
+        if (!path->SetOwner(info.GetUserName(),
+                            info.GetGroupName(),
+                            eIgnoreLinks)) {
+            path->SetOwner(NStr::UIntToString(info.GetUserId()),
+                           NStr::UIntToString(info.GetGroupId()),
+                           eIgnoreLinks);
         }
     }
 
     // Mode.
     // Set them last.
-    if ((m_Flags & fPreserveMode)
+    if ((what & fPreserveMode)
         &&  info.GetType() != CTarEntryInfo::ePipe
         &&  info.GetType() != CTarEntryInfo::eCharDev
         &&  info.GetType() != CTarEntryInfo::eBlockDev) {
@@ -3166,12 +3178,12 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
         // is not portable and is not implemented on majority of platforms.
         if (info.GetType() != CTarEntryInfo::eSymLink) {
             // Use raw mode here to restore most of the bits
-            mode_t mode = s_TarToMode(info.m_Stat.st_mode);
-            if (chmod(dst->GetPath().c_str(), mode) != 0) {
+            mode_t mode = s_TarToMode(perm ? perm : info.m_Stat.st_mode);
+            if (chmod(path->GetPath().c_str(), mode) != 0) {
                 // May fail due to setuid/setgid bits -- strip'em and try again
                 if (mode &   (S_ISUID | S_ISGID)) {
                     mode &= ~(S_ISUID | S_ISGID);
-                    failed = chmod(dst->GetPath().c_str(), mode) != 0;
+                    failed = chmod(path->GetPath().c_str(), mode) != 0;
                 } else {
                     failed = true;
                 }
@@ -3180,13 +3192,18 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
 #else
         CDirEntry::TMode user, group, other;
         CDirEntry::TSpecialModeBits special_bits;
-        info.GetMode(&user, &group, &other, &special_bits);
-        failed = !dst->SetMode(user, group, other, special_bits);
+        if (perm) {
+            s_TarToMode(perm, &user, &group, &other, &special_bits);
+        } else {
+            info.GetMode(&user, &group, &other, &special_bits);
+        }
+        failed = !path->SetMode(user, group, other, special_bits);
 #endif // NCBI_OS_UNIX
         if (failed) {
             int x_errno = errno;
             TAR_THROW(this, eRestoreAttrs,
-                      "Cannot restore mode bits for '" + dst->GetPath() + '\''
+                      "Cannot " + string(perm ? "change" : "restore")
+                      + " mode bits for '" + path->GetPath() + '\''
                       + s_OSReason(x_errno));
         }
     }

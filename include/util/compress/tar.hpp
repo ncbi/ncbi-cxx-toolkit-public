@@ -628,11 +628,13 @@ private:
                         const CDirEntry* dst, const CDirEntry* src);
 
     // Restore attributes of an entry in the file system.
-    // If 'dst' not specified, then the destination path will be constructed
-    // from 'info', and the base directory (if any).  Otherwise, 'dst' will
+    // If 'path' not specified, then the destination path will be constructed
+    // from 'info', and the base directory (if any).  Otherwise, 'path' will
     // be used "as is", assuming it corresponds to the specified 'info'.
     void x_RestoreAttrs(const CTarEntryInfo& info,
-                        const CDirEntry* dst = 0) const;
+                        TFlags               what,
+                        const CDirEntry*     path = 0,
+                        TTarMode             perm = 0/*override*/) const;
 
     // Read/write specified number of bytes from/to the archive.
     const char* x_ReadArchive (size_t& n);
