@@ -94,20 +94,20 @@ extern "C" {
 
 
 typedef enum {
+    eReqMethod_Any = 0,
+    eReqMethod_Get,
+    eReqMethod_Post,
+    eReqMethod_Connect
+} EReqMethod;
+
+
+typedef enum {
     eURL_Unspec = 0,
     eURL_Https,
     eURL_File,
     eURL_Http,
     eURL_Ftp
 } EURLScheme;
-
-
-typedef enum {
-    eReqMethod_Any = 0,
-    eReqMethod_Get,
-    eReqMethod_Post,
-    eReqMethod_Connect
-} EReqMethod;
 
 
 typedef enum {
@@ -130,8 +130,8 @@ typedef enum {
  */
 typedef struct {
     char            client_host[256]; /* effective client hostname ('\0'=def)*/
-    EURLScheme      scheme;           /* only pre-defined types (limited)    */
     EReqMethod      req_method;       /* method to use in the request (HTTP) */
+    EURLScheme      scheme;           /* only pre-defined types (limited)    */
     char            user[64];         /* username (if specified)             */
     char            pass[64];         /* password (if any)                   */
     char            host[256];        /* host to connect to                  */

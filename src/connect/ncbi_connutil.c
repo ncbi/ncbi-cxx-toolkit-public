@@ -202,25 +202,30 @@ static EURLScheme x_ParseScheme(const char* str, size_t len)
 }
 
 
+static const char* x_Num(unsigned int num, char buf[])
+{
+    sprintf(buf, "(#%u)", num);
+    return buf;
+}
+
+
 static const char* x_Scheme(EURLScheme scheme, char buf[])
 {
     switch (scheme) {
     case eURL_Unspec:
         return 0;
     case eURL_Https:
-        return "https";
+        return "HTTPS";
     case eURL_Http:
-        return "http";
+        return "HTTP";
     case eURL_File:
-        return "file";
+        return "FILE";
     case eURL_Ftp:
-        return "ftp";
-        break;
+        return "FTP";
     default:
         break;
     }
-    sprintf(buf, "(%u)", (unsigned int) scheme);
-    return buf;
+    return x_Num(scheme, buf);
 }
 
 
@@ -1143,7 +1148,6 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
         s_SaveString(s, "client_host",     info->client_host);
     else
         s_SaveKeyval(s, "client_host",     "(default)");
-    s_SaveString    (s, "scheme",          x_Scheme(info->scheme, buf));
     s_SaveKeyval    (s, "req_method",     (info->req_method
                                            == eReqMethod_Connect
                                            ? "CONNECT"
@@ -1155,7 +1159,10 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
                                                  ? "GET"
                                                  : (info->req_method
                                                     == eReqMethod_Any
-                                                    ? "ANY" : "(unknown)")))));
+                                                    ? "ANY"
+                                                    : x_Num(info->req_method,
+                                                            buf))))));
+    s_SaveKeyval    (s, "scheme",          x_Scheme(info->scheme, buf));
     s_SaveString    (s, "user",            info->user);
     if (*info->pass)
         s_SaveKeyval(s, "pass",           *info->user ? "(set)" : "(ignored)");
@@ -1190,7 +1197,9 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
                                               ? "SOME"
                                               : (info->debug_printout
                                                  == eDebugPrintout_Data
-                                                 ? "DATA" : "(unknown)"))));
+                                                 ? "DATA"
+                                                 : x_Num(info->debug_printout,
+                                                         buf)))));
     s_SaveUserHeader(s, "http_user_header",info->http_user_header, uhlen);
     s_SaveString    (s, "http_referer",    info->http_referer);
     strcat(s, "#################### [END] SConnNetInfo\n");
@@ -1206,6 +1215,7 @@ extern char* ConnNetInfo_URL(const SConnNetInfo* info)
     const char* scheme;
     const char* path;
     const char* args;
+    size_t      temp;
     size_t      len;
     char*       url;
     char        buf[40];
@@ -1223,22 +1233,24 @@ extern char* ConnNetInfo_URL(const SConnNetInfo* info)
         scheme = "";
         path = 0;
         args = "";
+        temp = 0;
         len = 0;
     } else {
         assert(scheme);
         path = info->path;
         args = info->args;
-        len = strlen(scheme) + 3/*"://"*/
-            + strlen(path)
-            + (*args ? strlen(args) + 2 : 1);
+        temp = strlen(scheme);
+        len = temp + 3/*"://"*/
+            + strlen(path) + (*args ? strlen(args) + 2 : 1);
     }
     len += strlen(info->host) + 7/*:port\0*/;
 
     url = (char*) malloc(len);
     if (url) {
         assert(scheme  &&  args);
-        len = (size_t) sprintf(url, "%s%s%s", scheme,
-                               *scheme ? "://" : "", info->host);
+        strlwr(memcpy(url, scheme, temp + 1));
+        len = temp;
+        len += sprintf(url + len, "://%s" + (temp ? 0 : 3), info->host);
         if (info->port)
             len += sprintf(url + len, ":%hu", info->port);
         sprintf(url + len, "%s%s%s%s",
