@@ -7252,7 +7252,7 @@ extern int/*bool*/ SOCK_isipEx(const char* host, int/*bool*/ fullquad)
             return 0/*false*/;
         errno = 0;
         val = strtoul(c, &e, fullquad ? 10 : 0);
-        if (c == e  ||  errno)
+        if (errno  ||  c == e)
             return 0/*false*/;
         c = e;
         if (*c != '.')
