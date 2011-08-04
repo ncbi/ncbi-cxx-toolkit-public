@@ -1706,6 +1706,7 @@ CSpinLock::Unlock(void)
 
 #  if defined(NCBI_OS_MSWIN)
 #    if (_WIN32_WINNT < 0x0600)
+#    pragma warning (disable : 4191)
 class CCV_Dynlink
 {
 public:
