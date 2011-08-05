@@ -73,29 +73,67 @@ void CPrimaryItem::Format
 }
 
 
-static bool s_IsTPA(CBioseqContext& ctx, bool has_tpa_assembly)
+static bool s_IsTPA(CBioseqContext& ctx, bool has_tpa_assembly )
 {
+    bool has_bankit = false;
+    bool has_genbank = false;
+    bool has_gi = false;
+    bool has_local = false;
+    bool has_refseq = false;
+    bool has_smart = false;
+    bool has_tpa = false;
+    bool is_tsa = false;
+
     ITERATE (CBioseq::TId, it, ctx.GetBioseqIds()) {
-        const CSeq_id& id = **it;
-        switch ( id.Which() ) {
-        case CSeq_id::e_Tpg:
-        case CSeq_id::e_Tpe:
-        case CSeq_id::e_Tpd:
-            return true;
-        case CSeq_id::e_Local:
-            return has_tpa_assembly;
-        case CSeq_id::e_General:
-            if ( id.GetGeneral().CanGetDb() ) {
-                const string& db = id.GetGeneral().GetDb();
-                if ( db == "BankIt"  ||  db == "TMSMART" ) {
-                    return has_tpa_assembly;
-                }
-            }
-            break;
-        default:
-            break;
+        switch ( (*it)->Which() ) {
+      case CSeq_id::e_Local:
+          has_local = true;
+          break;
+      case CSeq_id::e_Genbank:
+      case CSeq_id::e_Embl:
+      case CSeq_id::e_Ddbj:
+          has_genbank = true;
+          break;
+      case CSeq_id::e_Other:
+          has_refseq = true;
+          break;
+      case CSeq_id::e_Gi:
+          has_gi = true;
+          break;
+      case CSeq_id::e_Tpg:
+      case CSeq_id::e_Tpe:
+      case CSeq_id::e_Tpd:
+          has_tpa = true;
+          break;
+      case CSeq_id::e_General:
+          if ( (*it)->GetGeneral().CanGetDb() ) {
+              const string& db = (*it)->GetGeneral().GetDb();
+              if ( NStr::EqualNocase(db, "BankIt") ) {
+                  has_bankit = true;
+              }
+              if ( NStr::EqualNocase(db, "TMSMART") ) {
+                  has_smart = true;
+              }
+          }
+          break;
+      default :
+          break;
         }
     }
+
+    if( ctx.GetTech() == CMolInfo::eTech_tsa ) {
+        is_tsa = true;
+    }
+
+    if (is_tsa) return true;
+    if (has_genbank) return false;
+    if (has_tpa) return true;
+    if (has_refseq) return true;
+    if (has_bankit && has_tpa_assembly) return true;
+    if (has_smart && has_tpa_assembly) return true;
+    if (has_gi) return false;
+    if (has_local && has_tpa_assembly) return true;
+
     return false;
 }
 
@@ -128,7 +166,7 @@ void CPrimaryItem::x_GatherInfo(CBioseqContext& ctx)
     bool has_hist_assembly =
         seq.IsSetInst_Hist()  &&  !seq.GetInst_Hist().GetAssembly().empty();
 
-    if ( !s_IsTPA(ctx, has_tpa_assembly)  &&  !has_hist_assembly ) {
+    if ( !s_IsTPA(ctx, has_tpa_assembly) || !has_hist_assembly ) {
         return;
     }
     if ( seq.IsSetInst_Hist()  &&  !seq.GetInst_Hist().GetAssembly().empty() ) {
