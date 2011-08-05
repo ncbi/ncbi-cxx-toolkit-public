@@ -3211,6 +3211,12 @@ LZU	s	Lanzhou University
 LZUH	s	Laboratoire de Zoologie, Universite de Hanoi
 M	s	Botanische Staatssammlung Muenchen
 MA	s	Real Jardin Botanico
+MA:Algae	s	Real Jardin Botanico, Algae collection
+MA:Fungi	s	Real Jardin Botanico, Fungi collection
+MA:FunHist	s	Real Jardin Botanico, Historical fungi colleciton
+MA:Hepat	s	Real Jardin Botanico, Liverwort collection
+MA:Lichen	s	Real Jardin Botanico, Lichen collection
+MA:Musci	s	Real Jardin Botanico, Bryophyte collection
 MAA	s	Escuela Tecnica Superior de Ingenieros Agronomos, Departamento de Produccion Vegetal
 MAAS	s	Natuurhistorisch Museum Maastricht, Botany Department
 MAC	s	Instituto do Meio Ambiente
