@@ -533,7 +533,7 @@ CConn_ServiceStream::CConn_ServiceStream(const string&         service,
 
 
 CConn_MemoryStream::CConn_MemoryStream(streamsize  buf_size)
-    : CConn_IOStream(MEMORY_CreateConnector(), 0, buf_size, false),
+    : CConn_IOStream(MEMORY_CreateConnector(), 0, buf_size, true),
       m_Buf(0), m_Ptr(0)
 {
     return;
@@ -543,7 +543,7 @@ CConn_MemoryStream::CConn_MemoryStream(streamsize  buf_size)
 CConn_MemoryStream::CConn_MemoryStream(BUF         buf,
                                        EOwnership  owner,
                                        streamsize  buf_size)
-    : CConn_IOStream(MEMORY_CreateConnectorEx(buf), 0, buf_size, false,
+    : CConn_IOStream(MEMORY_CreateConnectorEx(buf), 0, buf_size, true,
                      0, BUF_Size(buf)),
       m_Buf(owner == eTakeOwnership ? buf : 0), m_Ptr(0)
 {
@@ -555,7 +555,7 @@ CConn_MemoryStream::CConn_MemoryStream(const void* ptr,
                                        size_t      size,
                                        EOwnership  owner,
                                        streamsize  buf_size)
-    : CConn_IOStream(MEMORY_CreateConnector(), 0, buf_size, false,
+    : CConn_IOStream(MEMORY_CreateConnector(), 0, buf_size, true,
                      (CT_CHAR_TYPE*) ptr, size),
       m_Buf(0), m_Ptr(owner == eTakeOwnership ? ptr : 0)
 {
@@ -574,7 +574,6 @@ CConn_MemoryStream::~CConn_MemoryStream()
 
 void CConn_MemoryStream::ToString(string* str)
 {
-    flush();
     if (!str) {
         NCBI_THROW(CIO_Exception, eInvalidArg,
                    "CConn_MemoryStream::ToString(NULL) is not allowed");
@@ -592,7 +591,6 @@ void CConn_MemoryStream::ToString(string* str)
 
 char* CConn_MemoryStream::ToCStr(void)
 {
-    flush();
     CConn_Streambuf* sb = dynamic_cast<CConn_Streambuf*>(rdbuf());
     streamsize size = sb ? (size_t)(tellp() - tellg()) : 0;
     char* str = new char[size + 1];
@@ -612,7 +610,6 @@ char* CConn_MemoryStream::ToCStr(void)
 
 void CConn_MemoryStream::ToVector(vector<char>* vec)
 {
-    flush();
     if (!vec) {
         NCBI_THROW(CIO_Exception, eInvalidArg,
                    "CConn_MemoryStream::ToVector(NULL) is not allowed");
