@@ -112,7 +112,7 @@ const streamsize kConn_DefaultBufSize = 4096;
 /// @sa
 ///    CONN_SetCallback, eCONN_OnClose
 
-class NCBI_XCONNECT_EXPORT CConn_IOStream : virtual public CConnIniter,
+class NCBI_XCONNECT_EXPORT CConn_IOStream : public virtual CConnIniter,
                                             public         CNcbiIostream
 {
 public:
@@ -534,10 +534,11 @@ public:
 
     void    ToString(string*); ///< fill in the data, NULL is not accepted
     void    ToVector(vector<char>*);///< fill in the data, NULL is not accepted
-    char*   ToCStr(void);      ///< '\0'-terminated; delete when done using it 
+    NCBI_DEPRECATED
+    char*   ToCStr(void);      ///< '\0'-terminated; free() when done using it 
 
 protected:
-    BUF         m_Buf;         ///< Underlying buffer (if owned)
+    BUF         m_Buf;         ///< Underlying buffer           (if owned)
     const void* m_Ptr;         ///< Pointer to read memory area (if owned)
 
 private:
