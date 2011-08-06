@@ -99,7 +99,7 @@ public:
     /// both eRW_Success and zero *count, or return eRW_NotImplemented alone.
     virtual ERW_Result PendingCount(size_t* count) = 0;
 
-    virtual ~IReader() {}
+    virtual ~IReader() { }
 };
 
 
@@ -123,17 +123,18 @@ public:
     /// Flush pending data (if any) down to the output device.
     virtual ERW_Result Flush(void) = 0;
 
-    virtual ~IWriter() {}
+    virtual ~IWriter() { }
 };
 
 
 
 /// A very basic data-read/write interface.
 
-class IReaderWriter : public IReader, public IWriter
+class IReaderWriter : public virtual IReader,
+                      public virtual IWriter
 {
 public:
-    virtual ~IReaderWriter() {}
+    virtual ~IReaderWriter() { }
 };
 
 
