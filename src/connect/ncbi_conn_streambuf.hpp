@@ -80,6 +80,10 @@ protected:
     virtual CT_POS_TYPE seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
                                 IOS_BASE::openmode which =
                                 IOS_BASE::in | IOS_BASE::out);
+protected:
+    int                 x_sync(void)
+    { return pbase()  &&  pptr() > pbase() ? sync() : 0; }
+
 private:
     CONN                m_Conn;      // underlying connection handle
 
