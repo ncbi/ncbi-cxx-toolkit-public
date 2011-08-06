@@ -548,6 +548,25 @@ streamsize CStreamUtils::Readsome(CNcbiIstream& is,
 }
 
 
+ERW_Result CStreamReader::Read(void*   buf,
+                               size_t  count,
+                               size_t* bytes_read)
+{
+    streamsize r = m_Stream->rdbuf()->sgetn(static_cast<char*>(buf), count);
+    if ( bytes_read ) {
+        *bytes_read = (size_t) r;
+    }
+    return r ? eRW_Success : eRW_Eof;
+}
+
+
+ERW_Result CStreamReader::PendingCount(size_t* count)
+{
+    *count = m_Stream->rdbuf()->in_avail();
+    return eRW_Success;
+}
+
+
 void ExtractReaderContents(IReader& reader, string& s)
 {
     size_t     n      = 0;

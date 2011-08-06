@@ -29,13 +29,15 @@
  * Authors:  Anton Lavrentiev, Denis Vakatov
  *
  * File Description:
+ *
  *   Stream utilities:
- *   1. Push an arbitrary block of data back to C++ input stream.
+ *   1. Push an arbitrary block of data back to C++ input stream;
  *   2. Non-blocking read from a stream.
  *
  *   Reader-writer utilities:
- *   1. Append an IReader's contents into a string.
- *   2. Construct an IReader object from a string.
+ *   1. Construct an IReader object from an istream;
+ *   2. Append an IReader's contents into a string;
+ *   3. Construct an IReader object from a string.
  *
  */
 
@@ -131,6 +133,26 @@ private:
 };
 
 
+/// istream-based IReader
+class NCBI_XNCBI_EXPORT CStreamReader : public IReader
+{
+public:
+    CStreamReader(CNcbiIstream& is, EOwnership own = eNoOwnership)
+        : m_Stream(&is, own)
+    { }
+
+    virtual ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0);
+    virtual ERW_Result PendingCount(size_t* count);
+
+private:
+    AutoPtr<CNcbiIstream> m_Stream;
+
+private: // prevent copy
+    CStreamReader(const CStreamReader&);
+    void operator=(const CStreamReader&);
+};
+
+
 /// Appends to the given string.
 void NCBI_XNCBI_EXPORT ExtractReaderContents(IReader& reader, string& s);
 
@@ -139,7 +161,7 @@ class NCBI_XNCBI_EXPORT CStringReader : public IReader
 public:
     explicit CStringReader(const string& s)
         : m_String(s), m_Position(0)
-        { }
+    { }
 
     ERW_Result Read(void* buf, size_t count, size_t* bytes_read);
     ERW_Result PendingCount(size_t* count);
