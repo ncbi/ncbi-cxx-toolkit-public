@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Anton Lavrentiev,  Denis Vakatov
+ * Authors:  Anton Lavrentiev, Denis Vakatov
  *
  * File Description:
  *   CONN-based C++ streams
@@ -40,6 +40,7 @@
 #include <connect/ncbi_socket.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/stream_utils.hpp>
+#include <stdlib.h>
 
 
 #define NCBI_USE_ERRCODE_X   Connect_Stream
@@ -565,6 +566,7 @@ CConn_MemoryStream::CConn_MemoryStream(const void* ptr,
 
 CConn_MemoryStream::~CConn_MemoryStream()
 {
+    // Explicitly call x_Cleanup() to avoid using dead m_Buf otherwise.
     x_Cleanup();
     rdbuf(0);
     BUF_Destroy(m_Buf);
@@ -584,27 +586,8 @@ void CConn_MemoryStream::ToString(string* str)
     if (sb) {
         streamsize s = sb->sgetn(&(*str)[0], size);
         _ASSERT(size == s);
-        str->resize(s);  // NB: this is essentially a NOP when size == s
+        str->resize(s);  // NB: this is essentially a NOOP when size == s
     }
-}
-
-
-char* CConn_MemoryStream::ToCStr(void)
-{
-    CConn_Streambuf* sb = dynamic_cast<CConn_Streambuf*>(rdbuf());
-    streamsize size = sb ? (size_t)(tellp() - tellg()) : 0;
-    char* str = new char[size + 1];
-    if (!str) {
-        NCBI_THROW(CIO_Exception, eUnknown,
-                   "CConn_MemoryStream::ToCStr():  Out of memory");
-    }
-    if (sb) {
-        streamsize s = sb->sgetn(str, size);
-        _ASSERT(size == s);
-        size = s;
-    }
-    str[size] = '\0';
-    return str;
 }
 
 
@@ -620,8 +603,28 @@ void CConn_MemoryStream::ToVector(vector<char>* vec)
     if (sb) {
         streamsize s = sb->sgetn(&(*vec)[0], size);
         _ASSERT(size == s);
-        vec->resize(s);  // NB: this is essentially a NOP when size == s
+        vec->resize(s);  // NB: this is essentially a NOOP when size == s
     }
+}
+
+
+NCBI_DEPRECATED
+char* CConn_MemoryStream::ToCStr(void)
+{
+    CConn_Streambuf* sb = dynamic_cast<CConn_Streambuf*>(rdbuf());
+    streamsize size = sb ? (size_t)(tellp() - tellg()) : 0;
+    char* str = (char*) malloc(size + 1);
+    if (!str) {
+        NCBI_THROW(CIO_Exception, eUnknown,
+                   "CConn_MemoryStream::ToCStr():  Out of memory");
+    }
+    if (sb) {
+        streamsize s = sb->sgetn(str, size);
+        _ASSERT(size == s);
+        size = s;
+    }
+    str[size] = '\0';
+    return str;
 }
 
 
@@ -639,7 +642,7 @@ CConn_PipeStream::CConn_PipeStream(const string&         cmd,
 
 CConn_PipeStream::~CConn_PipeStream()
 {
-    // Explicitly call Cleanup() to avoid using dead m_Pipe otherwise.
+    // Explicitly call x_Cleanup() to avoid using dead m_Pipe otherwise.
     x_Cleanup();
     rdbuf(0);
 }
@@ -667,7 +670,7 @@ CConn_FtpStream::CConn_FtpStream(const string&        host,
     : CConn_IOStream(FTP_CreateConnectorSimple(host.c_str(), port,
                                                user.c_str(), pass.c_str(),
                                                path.c_str(), flag, cmcb),
-                     timeout, 0/*must be unbuffered*/, false/*untied*/)
+                     timeout, 0/*must be unbuffered*/, false/*thus,untied*/)
 {
     return;
 }
