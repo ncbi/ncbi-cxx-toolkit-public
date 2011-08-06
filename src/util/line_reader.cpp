@@ -35,7 +35,6 @@
 #include <ncbi_pch.hpp>
 #include <util/line_reader.hpp>
 #include <util/util_exception.hpp>
-#include <corelib/rwstream.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/stream_utils.hpp>
 
