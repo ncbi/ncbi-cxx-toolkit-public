@@ -67,6 +67,7 @@ public:
         fOwnReader      = 1 << 1,    // own the underlying reader
         fOwnWriter      = 1 << 2,    // own the underlying writer
         fOwnAll         = fOwnReader + fOwnWriter,
+        fUntie          = 1 << 5,    // do not flush before reading
         fLogExceptions  = 1 << 8,
         fLeakExceptions = 1 << 9
     };
@@ -108,6 +109,8 @@ protected:
     { return x_GPos - (CT_OFF_TYPE)(gptr() ? egptr() - gptr() : 0); }
     CT_POS_TYPE    x_GetPPos(void)
     { return x_PPos + (CT_OFF_TYPE)(pptr() ? pbase() - pptr() : 0); }
+    int               x_sync(void)
+    { return pbase()  &&  pptr() > pbase() ? sync() : 0; }
 
 protected:
     TFlags         m_Flags;

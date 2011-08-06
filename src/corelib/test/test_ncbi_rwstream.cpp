@@ -49,7 +49,7 @@ const size_t kWriteBufsize = 5000;
 const size_t kMaxIOSize    = 7000;
 
 
-class CMyReader : public IReader {
+class CMyReader : public virtual IReader {
 public:
     CMyReader(const unsigned char* base, size_t size)
         : m_Base(base), m_Size(size), m_Pos(0), m_Eof(false) { }
@@ -64,7 +64,7 @@ public:
 
     virtual ~CMyReader() { /*noop*/ }
 
-private:
+protected:
     const unsigned char* m_Base;
     size_t               m_Size;
     size_t               m_Pos;
@@ -72,14 +72,14 @@ private:
 };
 
 
-class CMyWriter : public IWriter {
+class CMyWriter : public virtual IWriter {
 public:
     CMyWriter(unsigned char* base, size_t size)
         : m_Base(base), m_Size(size), m_Pos(0), m_Err(false) { }
 
     virtual ERW_Result Write(const void* buf, size_t count,
                              size_t*     bytes_written = 0);
-    
+
     virtual ERW_Result Flush(void) { return m_Err ? eRW_Error : eRW_Success; }
 
     size_t GetPosition(void) const { return m_Pos;  }
@@ -87,11 +87,35 @@ public:
 
     virtual ~CMyWriter() { /*noop*/ }
 
-private:
+protected:
     unsigned char* m_Base;
     size_t         m_Size;
     size_t         m_Pos;
     bool           m_Err;
+};
+
+
+class CMyReaderWriter : public IReaderWriter,
+                        public CMyReader,
+                        public CMyWriter
+{
+public:
+    CMyReaderWriter(unsigned char* base, size_t size)
+        : CMyReader(base, 0), CMyWriter(base, size)
+    { }
+
+    virtual ERW_Result Read(void* buf, size_t count,
+                            size_t* bytes_read = 0);
+
+    virtual ERW_Result Write(const void* buf, size_t count,
+                             size_t*     bytes_written = 0);
+
+    virtual ERW_Result Flush(void);
+
+    size_t GetRPosition(void) const { return CMyReader::GetPosition(); }
+    size_t GetWPosition(void) const { return CMyWriter::GetPosition(); }
+    size_t GetRSize(void)     const { return CMyReader::GetSize();     }
+    size_t GetWSize(void)     const { return CMyWriter::GetSize();     }
 };
 
 
@@ -102,7 +126,6 @@ ERW_Result CMyReader::Read(void* buf, size_t count,
     size_t     n_read;
 
     _ASSERT(!count  ||  buf);
-    _ASSERT(!count  ||  count >= kReadBufsize);
     if (!m_Eof  &&  !count) {
         n_read = 0;
         result = eRW_Success;
@@ -129,7 +152,9 @@ ERW_Result CMyReader::Read(void* buf, size_t count,
     }
     if ( bytes_read )
         *bytes_read = n_read;
-    ERR_POST(Info << "Read  @" << setw(8) << m_Pos << '/' << m_Size << ": "
+    ERR_POST(Info << "Read  @"
+             << setw(8) << m_Pos << '/'
+             << setw(7) << m_Size << ": "
              << setw(5) << n_read << "/%"[n_read != count] << left
              << setw(5) << count  << " byte" << " s"[n_read != 1]
              << " -> " << g_RW_ResultToString(result));
@@ -183,12 +208,48 @@ ERW_Result CMyWriter::Write(const void* buf, size_t count,
     }
     if ( bytes_written )
         *bytes_written = n_written;
-    ERR_POST(Info << "Write @" << setw(8) << m_Pos << '/' << m_Size << ": "
+    ERR_POST(Info << "Write @"
+             << setw(8) << m_Pos << '/'
+             << setw(7) << m_Size << ": "
              << setw(5) << n_written << "/%"[n_written != count] << left
              << setw(5) << count     << " byte" << " s"[n_written != 1]
              << " -> " << g_RW_ResultToString(result));
     m_Pos += n_written;
     return result;
+}
+
+
+ERW_Result CMyReaderWriter::Read(void* buf, size_t count,
+                                 size_t* bytes_read)
+{
+    ERW_Result result = CMyReader::Read(buf, count, bytes_read);
+    if (result == eRW_Eof  &&  !m_Err)
+        result = eRW_Error;
+    return result;
+}
+
+
+ERW_Result CMyReaderWriter::Write(const void* buf, size_t count,
+                                  size_t* bytes_written)
+{
+    size_t x_written;
+    ERW_Result result = CMyWriter::Write(buf, count, &x_written);
+    if (x_written) {
+        CMyReader::m_Size = CMyWriter::m_Pos;
+        m_Eof = false;
+    }
+    if ( bytes_written )
+        *bytes_written = x_written;
+    return result;
+}
+
+
+ERW_Result CMyReaderWriter::Flush(void)
+{
+    ERR_POST(Info << "Flush @"
+             << setw(8) << CMyReader::m_Pos << '/'
+             << setw(7) << CMyWriter::m_Pos);
+    return CMyWriter::Flush();
 }
 
 
@@ -217,15 +278,17 @@ int main(int argc, char* argv[])
     }
     srand(seed);
 
-    unsigned char* hugedata = new unsigned char[kHugeBufsize * 2];
+    unsigned char* hugedata = new unsigned char[kHugeBufsize * 3];
 
     ERR_POST(Info << "Generating data: " << kHugeBufsize << " random bytes");
 
     for (size_t n = 0;  n < kHugeBufsize;  n += 2) {
-        hugedata[n]                    = (unsigned char)(rand() & 0xFF);
-        hugedata[n + 1]                = (unsigned char)(rand() & 0xFF);
-        hugedata[n + kHugeBufsize]     = (unsigned char) 0xDE;
-        hugedata[n + kHugeBufsize + 1] = (unsigned char) 0xAD;
+        hugedata[n]                      = (unsigned char)(rand() & 0xFF);
+        hugedata[n + 1]                  = (unsigned char)(rand() & 0xFF);
+        hugedata[n + kHugeBufsize]       = (unsigned char) 0xDE;
+        hugedata[n + kHugeBufsize   + 1] = (unsigned char) 0xAD;
+        hugedata[n + kHugeBufsize*2]     = (unsigned char) 0xBE;
+        hugedata[n + kHugeBufsize*2 + 1] = (unsigned char) 0xEF;
     }
 
     ERR_POST(Info << "Pumping data with random I/O");
@@ -277,6 +340,65 @@ int main(int argc, char* argv[])
 
     for (size_t n = 0;  n < kHugeBufsize;  n++) {
         if (hugedata[n] != hugedata[n + kHugeBufsize]) {
+            ERR_POST(Fatal << "Mismatch @ " << n);
+        }
+    }
+
+    ERR_POST(Info << "Checking tied I/O");
+
+    buf = (char*) hugedata + kHugeBufsize;
+    memset(buf, kHugeBufsize, '\xFF');
+
+    CMyReaderWriter* rw = new CMyReaderWriter(hugedata + kHugeBufsize,
+                                              kHugeBufsize);
+    CRWStream io(rw, 2*(kReadBufsize + kWriteBufsize),
+                 0, CRWStreambuf::fOwnReader);
+
+    n_out = n_in = 0;
+    do {
+        if (rand() % 10 == 2  &&  n_out < kHugeBufsize) {
+            size_t x_out = rand() % kMaxIOSize + 1;
+            if (x_out + n_out > kHugeBufsize)
+                x_out = kHugeBufsize - n_out;
+            ERR_POST(Info
+                     << "Write: " << setw(8) << x_out);
+            if (!io.write(buf - kHugeBufsize + n_out, x_out))
+                break;
+            n_out += x_out;
+        }
+        if (rand() % 10 == 4  &&  n_out > n_in) {
+            size_t x_in = (rand() & 1
+                           ? n_out - n_in
+                           : rand() % (n_out - n_in) + 1);
+            ERR_POST(Info
+                     << "Read:  " << setw(8) << x_in);
+            if (!io.read(buf + kHugeBufsize + n_in, x_in))
+                break;
+            n_in += x_in;
+        }
+        if (n_out >= kHugeBufsize  &&  n_in >= kHugeBufsize)
+            break;
+    } while (io.good());
+
+    ERR_POST(Info
+             << "Read:  " << setw(8) << n_in  << '/' << kHugeBufsize << ";  "
+             << "position: " << rw->GetRPosition() << '/' << rw->GetRSize());
+    ERR_POST(Info
+             << "Write: " << setw(8) << n_out << '/' << kHugeBufsize << ";  "
+             << "position: " << rw->GetWPosition() << '/' << rw->GetWSize());
+
+    _ASSERT(kHugeBufsize == n_in            &&
+            kHugeBufsize == rw->GetRSize()  &&
+            kHugeBufsize == rw->GetRPosition());
+    _ASSERT(kHugeBufsize == n_out           &&
+            kHugeBufsize == rw->GetWSize()  &&
+            kHugeBufsize == rw->GetWPosition());
+
+    ERR_POST(Info << "Comparing original with collected data");
+
+    for (size_t n = 0;  n < kHugeBufsize;  n++) {
+        if (hugedata[n] != hugedata[n + kHugeBufsize]  ||
+            hugedata[n] != hugedata[n + kHugeBufsize*2]) {
             ERR_POST(Fatal << "Mismatch @ " << n);
         }
     }

@@ -93,8 +93,6 @@ BEGIN_NCBI_SCOPE
 
 const char* g_RW_ResultToString(ERW_Result res)
 {
-    _ASSERT(res >= eRW_NotImplemented && res <= eRW_Eof);
-
     static const char* const res_str[eRW_Eof - eRW_NotImplemented + 1] = {
         "eRW_NotImplemented",
         "eRW_Success",
@@ -103,6 +101,7 @@ const char* g_RW_ResultToString(ERW_Result res)
         "eRW_Eof"
     };
 
+    _ASSERT(eRW_NotImplemented <= res  &&  res <= eRW_Eof);
     return res_str[res - eRW_NotImplemented];
 }
 
@@ -130,20 +129,17 @@ CRWStreambuf::CRWStreambuf(IReader*             r,
       x_GPos((CT_OFF_TYPE) 0), x_PPos((CT_OFF_TYPE) 0),
       x_Err(false), x_ErrPos((CT_OFF_TYPE) 0)
 {
-    setbuf(s  &&  n ? s : 0,
-           n ? n : kDefaultBufSize << (m_Reader  &&  m_Writer ? 1 : 0));
+    setbuf(n  &&  s ? s : 0,
+           n        ? n : kDefaultBufSize << (m_Reader  &&  m_Writer ? 1 : 0));
 }
 
 
 CRWStreambuf::~CRWStreambuf()
 {
     try {
-        // Flush only if data pending
-        if (pbase()  &&  pptr() > pbase()) {
-            if (!x_Err  ||  x_ErrPos != x_GetPPos()) {
-                sync();
-            }
-        }
+        // Flush only if data pending and no error
+        if (!x_Err  ||  x_ErrPos != x_GetPPos())
+            x_sync();
         setg(0, 0, 0);
         setp(0, 0);
 
@@ -373,6 +369,8 @@ CT_INT_TYPE CRWStreambuf::underflow(void)
 {
     if ( !m_Reader )
         return CT_EOF;
+    if (m_Writer  &&  !(m_Flags & fUntie)  &&  x_sync() != 0)
+        return CT_EOF;
 
     _ASSERT(!gptr()  ||  gptr() >= egptr());
 
@@ -403,6 +401,8 @@ CT_INT_TYPE CRWStreambuf::underflow(void)
 streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 {
     if ( !m_Reader )
+        return 0;
+    if (m_Writer  &&  !(m_Flags & fUntie)  &&  x_sync() != 0)
         return 0;
 
     if (m <= 0)
@@ -462,6 +462,11 @@ streamsize CRWStreambuf::showmanyc(void)
     if ( !m_Reader )
         return -1;
 
+    _ASSERT(!gptr()  ||  gptr() >= egptr());
+
+    if (m_Writer  &&  !(m_Flags & fUntie))
+        x_sync();
+
     ERW_Result res = eRW_Error;
     size_t count;
     RWSTREAMBUF_HANDLE_EXCEPTIONS(
@@ -503,30 +508,6 @@ CT_POS_TYPE CRWStreambuf::seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
         }
     }
     return (CT_POS_TYPE)((CT_OFF_TYPE)(-1));
-}
-
-
-CStreamReader::~CStreamReader()
-{
-}
-
-
-ERW_Result CStreamReader::Read(void*   buf,
-                               size_t  count,
-                               size_t* bytes_read)
-{
-    streamsize r = m_Stream->rdbuf()->sgetn(static_cast<char*>(buf), count);
-    if ( bytes_read ) {
-        *bytes_read = (size_t) r;
-    }
-    return r ? eRW_Success : eRW_Eof;
-}
-
-
-ERW_Result CStreamReader::PendingCount(size_t* count)
-{
-    *count = m_Stream->rdbuf()->in_avail();
-    return eRW_Success;
 }
 
 
