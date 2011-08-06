@@ -82,24 +82,12 @@ public:
 /// Check EIO_Status, throw an exception if something is wrong
 ///
 /// @sa EIO_Status
-#define NCBI_IO_CHECK(errnum) \
-    do { \
-        if ( errnum != eIO_Success) { \
-            throw CIO_Exception(DIAG_COMPILE_INFO, \
-               0, (CIO_Exception::EErrCode)errnum, "IO error."); \
-        } \
-    } while (0)
-
-
-/// Check ERW_Result, throw an exception if something is wrong
-///
-/// @sa ERW_Result
-#define NCBI_IO_CHECK_RW(errnum) \
-    do { \
-        if ( errnum != eRW_Success) { \
-            throw CIO_Exception(DIAG_COMPILE_INFO, \
-               0, (CIO_Exception::EErrCode)errnum, "IO error."); \
-        } \
+#define NCBI_IO_CHECK(errnum)                                           \
+    do {                                                                \
+        if ((errnum) != eIO_Success) {                                  \
+            throw CIO_Exception(DIAG_COMPILE_INFO,                      \
+                  0, (CIO_Exception::EErrCode)(errnum), "IO error.");   \
+        }                                                               \
     } while (0)
 
 
