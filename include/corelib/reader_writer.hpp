@@ -1,7 +1,7 @@
 #ifndef CORELIB___READER_WRITER__HPP
 #define CORELIB___READER_WRITER__HPP
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Anton Lavrentiev
+ * Author:  Anton Lavrentiev
  *
  * File Description:
  *   Abstract reader-writer interface classes
@@ -42,14 +42,13 @@
 #include <corelib/ncbistl.hpp>
 #include <stddef.h>
 
-
-BEGIN_NCBI_SCOPE
-
-
 /** @addtogroup Stream
  *
  * @{
  */
+
+
+BEGIN_NCBI_SCOPE
 
 
 /// Result codes for I/O operations
@@ -63,6 +62,7 @@ enum ERW_Result {
 };
 
 NCBI_XNCBI_EXPORT const char* g_RW_ResultToString(ERW_Result res);
+
 
 /// A very basic data-read interface.
 
@@ -103,7 +103,6 @@ public:
 };
 
 
-
 /// A very basic data-write interface.
 
 class IWriter
@@ -127,7 +126,6 @@ public:
 };
 
 
-
 /// A very basic data-read/write interface.
 
 class IReaderWriter : public virtual IReader,
@@ -138,9 +136,9 @@ public:
 };
 
 
-/* @} */
-
-
 END_NCBI_SCOPE
+
+
+/* @} */
 
 #endif  /* CORELIB___READER_WRITER__HPP */

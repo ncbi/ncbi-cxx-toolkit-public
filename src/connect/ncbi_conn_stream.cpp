@@ -39,7 +39,6 @@
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <corelib/stream_utils.hpp>
 #include <stdlib.h>
 
 
@@ -608,7 +607,6 @@ void CConn_MemoryStream::ToVector(vector<char>* vec)
 }
 
 
-NCBI_DEPRECATED
 char* CConn_MemoryStream::ToCStr(void)
 {
     CConn_Streambuf* sb = dynamic_cast<CConn_Streambuf*>(rdbuf());

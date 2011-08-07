@@ -37,13 +37,8 @@
 /// Reader-writer based streams
 /// @sa IReader, IWriter, IReaderWriter, CRWStreambuf
 
-
 #include <corelib/ncbimisc.hpp>
 #include <corelib/impl/rwstreambuf.hpp>
-
-
-BEGIN_NCBI_SCOPE
-
 
 /** @addtogroup Stream
  *
@@ -51,30 +46,34 @@ BEGIN_NCBI_SCOPE
  */
 
 
-/// Note about the "buf_size" parameter for the streams in this API.
+BEGIN_NCBI_SCOPE
+
+
+/// Note about the "buf_size" parameter for streams in this API.
 ///
 /// CRWStream implementation is targeted at minimizing in-memory data
 /// copy operations associated with I/O for intermediate buffering.
 /// For that, the following policies apply:
 ///
-/// 1.  No read operation from the output device shall be requested less than
-///     the specified stream buffer size.  In cases when the user code requests
-///     more than the internal stream buffer size, the request may be passed
-///     through to the input device to read directly into the user provided
-///     buffer.  In that case, the read request can only be larger than the
-///     the size of the internal stream buffer.
+/// 1.  No read operation from the input device shall request less than the
+///     internal stream buffer size.  In cases when the user code requests more
+///     than the internal stream buffer size, the request may be passed through
+///     to the input device to read directly into the buffer provided by user.
+///     In that case, the read request can only be larger than the the size of
+///     the internal stream buffer.
 ///
-/// 2.  Write operations from an input device are done in full buffers, unless:
+/// 2.  Write operations to the output device are done in full buffers, unless:
 ///  a. An incoming user write request is larger than the internal buffer,
-///     then the contents of the internal buffer gets flushed first
-///     (which may comprise of fewer than the buffer size bytes) followed
-///     by the direct write request of the user's block (larger than the
-///     internal stream buffer);
-///  b. Flushing of an internal buffer (including 2a above) resulted in a
-///     short write on the device (fewer bytes actually written), then the
-///     successive write attempt may contain fewer bytes than the size of
-///     the internal stream buffer (namely, the remainder of what has been
-///     left behind by the preceding write attempt).
+///     then the contents of the internal buffer gets flushed first (which may
+///     comprise of fewer than the intrernal buffer size bytes) followed by
+///     the direct write request of the user's block (larger than the internal
+///     stream buffer);
+///  b. Flushing of an internal buffer (including 2a above) resulted in a short
+///     write to the device (fewer bytes actually written), then the successive
+///     write attempt may contain fewer bytes than the size of the internal
+///     stream buffer (namely, the remainder of what has been left behind by
+///     the preceding write attempt).  This case also applies when the flushing
+///     has been done internally in a tied stream prior to reading.
 ///
 /// However, any portable implementation should *not* rely on how data chunks
 /// are being flushed or requested by the stream implementations.  If further
@@ -86,7 +85,7 @@ BEGIN_NCBI_SCOPE
 /// Reader-based stream; @sa IReader
 ///
 /// @param buf_size
-///     specifies the number bytes for internal I/O buffer, entirely used
+///     specifies the number of bytes for internal I/O buffer, entirely used
 ///     for reading by the underlying stream buffer CRWStreambuf;
 ///     0 causes to create the buffer of some default size.
 ///
@@ -96,11 +95,11 @@ BEGIN_NCBI_SCOPE
 ///
 /// @param flags
 ///     controls whether IReader is destroyed upon stream destruction,
-///     and whether exceptions cause logging (or leaked, or caught silently).
+///     whether exceptions cause logging (or leaked, or caught silently), etc.
 ///
 /// Special case of "buf_size" == 1 and "buf" == 0 creates unbuffered stream.
 ///
-/// @sa IWStream, IRWStream
+/// @sa CRWStreambuf::TFlags, IWStream, IRWStream
 
 class NCBI_XNCBI_EXPORT CRStream : public CNcbiIstream
 {
@@ -108,8 +107,8 @@ public:
     CRStream(IReader*             r,
              streamsize           buf_size = 0,
              CT_CHAR_TYPE*        buf      = 0,
-             CRWStreambuf::TFlags flags    = 0) :
-        CNcbiIstream(0), m_Sb(r, 0, buf_size, buf, flags)
+             CRWStreambuf::TFlags flags    = 0)
+        : CNcbiIstream(0), m_Sb(r, 0, buf_size, buf, flags)
     {
         init(&m_Sb);
     }
@@ -122,7 +121,7 @@ private:
 /// Writer-based stream; @sa IWriter
 ///
 /// @param buf_size
-///     specifies the number bytes for internal I/O buffer, entirely used
+///     specifies the number of bytes for internal I/O buffer, entirely used
 ///     for writing by the underlying stream buffer CRWStreambuf;
 ///     0 causes to create the buffer of some default size.
 ///
@@ -132,11 +131,11 @@ private:
 ///
 /// @param flags
 ///     controls whether IWriter is destroyed upon stream destruction,
-///     and whether exceptions cause logging (or leaked, or caught silently).
+///     whether exceptions cause logging (or leaked, or caught silently), etc.
 ///
 /// Special case of "buf_size" == 1 and "buf" == 0 creates unbuffered stream.
 ///
-/// @sa IRStream, IRWStream
+/// @sa CRWStreambuf::TFlags, IRStream, IRWStream
 
 class NCBI_XNCBI_EXPORT CWStream : public CNcbiOstream
 {
@@ -144,8 +143,8 @@ public:
     CWStream(IWriter*             w,
              streamsize           buf_size = 0,
              CT_CHAR_TYPE*        buf      = 0,
-             CRWStreambuf::TFlags flags    = 0) :
-        CNcbiOstream(0), m_Sb(0, w, buf_size, buf, flags)
+             CRWStreambuf::TFlags flags    = 0)
+        : CNcbiOstream(0), m_Sb(0, w, buf_size, buf, flags)
     {
         init(&m_Sb);
     }
@@ -158,7 +157,7 @@ private:
 /// Reader-writer based stream; @sa IReaderWriter
 ///
 /// @param buf_size
-///     specifies the number bytes for internal I/O buffer,
+///     specifies the number of bytes for internal I/O buffer,
 ///     with half used for reading and the other half for writing
 ///     by underlying stream buffer CRWStreambuf;
 ///     0 causes to create the buffer of some default size.
@@ -169,11 +168,11 @@ private:
 ///
 /// @param flags
 ///     controls whether IReaderWriter is destroyed upon stream destruction,
-///     and whether exceptions cause logging (or leaked, or caught silently).
+///     whether exceptions cause logging (or leaked, or caught silently), etc.
 ///
 /// Special case of "buf_size" == 1 and "buf" == 0 creates unbuffered stream.
 ///
-/// @sa IRStream, IWStream
+/// @sa CRWStreambuf::TFlags, IRStream, IWStream
 
 class NCBI_XNCBI_EXPORT CRWStream : public CNcbiIostream
 {
@@ -192,9 +191,9 @@ private:
 };
 
 
-/* @} */
-
-
 END_NCBI_SCOPE
+
+
+/* @} */
 
 #endif /* CORELIB___RWSTREAM__HPP */

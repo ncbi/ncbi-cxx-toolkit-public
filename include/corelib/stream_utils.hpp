@@ -1,7 +1,7 @@
 #ifndef CORELIB___STREAM_UTILS__HPP
 #define CORELIB___STREAM_UTILS__HPP
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -36,7 +36,7 @@
  *
  *   Reader-writer utilities:
  *   1. Construct an IReader object from an istream;
- *   2. Append an IReader's contents into a string;
+ *   2. Append entire IReader's contents into a string;
  *   3. Construct an IReader object from a string.
  *
  */
@@ -45,14 +45,13 @@
 #include <corelib/ncbistre.hpp>
 #include <corelib/reader_writer.hpp>
 
-
-BEGIN_NCBI_SCOPE
-
-
 /** @addtogroup Stream
  *
  * @{
  */
+
+
+BEGIN_NCBI_SCOPE
 
 
 struct NCBI_XNCBI_EXPORT CStreamUtils
@@ -141,7 +140,7 @@ public:
         : m_Stream(&is, own)
     { }
 
-    virtual ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0);
+    virtual ERW_Result Read(void* buf, size_t count, size_t* bytes_read);
     virtual ERW_Result PendingCount(size_t* count);
 
 private:
@@ -163,8 +162,8 @@ public:
         : m_String(s), m_Position(0)
     { }
 
-    ERW_Result Read(void* buf, size_t count, size_t* bytes_read);
-    ERW_Result PendingCount(size_t* count);
+    virtual ERW_Result Read(void* buf, size_t count, size_t* bytes_read);
+    virtual ERW_Result PendingCount(size_t* count);
 
 private:
     string    m_String;
@@ -172,9 +171,9 @@ private:
 };
 
 
-/* @} */
-
-
 END_NCBI_SCOPE
+
+
+/* @} */
 
 #endif  /* CORELIB___STREAM_UTILS__HPP */
