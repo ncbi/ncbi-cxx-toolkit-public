@@ -590,6 +590,7 @@ private:
     Uint8                     m_LatestSrvId;
     SNCBlobSummary            m_LatestBlobSum;
     bool                      m_ForceLocal;
+    bool                      m_ConfirmPut;
     bool                      m_GotInitialAnswer;
     bool                      m_NeedFlushBuff;
     Uint1                     m_SrvsIndex;

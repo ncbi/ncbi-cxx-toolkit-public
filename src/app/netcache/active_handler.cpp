@@ -515,6 +515,8 @@ void
 CNCActiveHandler::ProxyReadLast(CRequestContext* cmd_ctx,
                                 const string& raw_key,
                                 const string& password,
+                                Uint8 start_pos,
+                                Uint8 size,
                                 Uint1 quorum,
                                 bool search,
                                 bool force_local)
@@ -533,6 +535,10 @@ CNCActiveHandler::ProxyReadLast(CRequestContext* cmd_ctx,
     m_CmdToSend += "\" \"";
     m_CmdToSend += subkey;
     m_CmdToSend += "\" ";
+    m_CmdToSend += NStr::UInt8ToString(start_pos);
+    m_CmdToSend.append(1, ' ');
+    m_CmdToSend += NStr::Int8ToString(Int8(size));
+    m_CmdToSend.append(1, ' ');
     m_CmdToSend += NStr::UIntToString(quorum);
     m_CmdToSend.append(1, ' ');
     m_CmdToSend += NStr::UIntToString(Uint1(search));

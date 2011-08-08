@@ -134,6 +134,8 @@ public:
     void ProxyReadLast(CRequestContext* cmd_ctx,
                        const string& key,
                        const string& password,
+                       Uint8 start_pos,
+                       Uint8 size,
                        Uint1 quorum,
                        bool search,
                        bool force_local);

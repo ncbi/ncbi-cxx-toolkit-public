@@ -92,6 +92,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "key",     eNSPT_Str,  eNSPA_Required },
           { "version", eNSPT_Int,  eNSPA_Required },
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          { "confirm", eNSPT_Int,  eNSPA_Optional },
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional },
@@ -115,6 +116,8 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
           { "key",     eNSPT_Str,  eNSPA_Required },
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          { "start",   eNSPT_Int,  eNSPA_Optional },
+          { "size",    eNSPT_Int,  eNSPA_Optional },
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional },
@@ -317,6 +320,8 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
         { { "cache",   eNSPT_Str,   eNSPA_Required },
           { "key",     eNSPT_Str,  eNSPA_Required },
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          { "start",   eNSPT_Int,  eNSPA_Required },
+          { "size",    eNSPT_Int,  eNSPA_Required },
           { "qrum",    eNSPT_Int,  eNSPA_Required },
           { "srch",    eNSPT_Int,  eNSPA_Required },
           { "local",   eNSPT_Int,  eNSPA_Required },
@@ -1192,6 +1197,7 @@ CNCMessageHandler::x_AssignCmdParams(TNSProtoParams& params)
     m_OrigTime = 0;
     m_Quorum = 1;
     m_ForceLocal = false;
+    m_ConfirmPut = false;
     bool quorum_was_set = false;
     bool search_was_set = false;
 
@@ -1205,6 +1211,9 @@ CNCMessageHandler::x_AssignCmdParams(TNSProtoParams& params)
         case 'c':
             if (key == "cache") {
                 cache_name = val;
+            }
+            else if (key == "confirm") {
+                m_ConfirmPut = val == "1";
             }
             else if (key == "cr_time") {
                 m_CopyBlobInfo.create_time = NStr::StringToUInt8(val);
@@ -1250,7 +1259,7 @@ CNCMessageHandler::x_AssignCmdParams(TNSProtoParams& params)
                 m_OrigTime = NStr::StringToUInt8(val);
             }
             else if (key == "local") {
-                m_ForceLocal = val != "0";
+                m_ForceLocal = val == "1";
             }
             break;
         case 'm':
@@ -1304,7 +1313,7 @@ CNCMessageHandler::x_AssignCmdParams(TNSProtoParams& params)
                     m_SrvId = NStr::StringToUInt8(val);
                 }
                 else if (key == "srch") {
-                    m_SearchOnRead = NStr::StringToUInt(val) != 0;
+                    m_SearchOnRead = val != "0";
                     search_was_set = true;
                 }
                 break;
@@ -2236,7 +2245,7 @@ CNCMessageHandler::x_SendCmdAsProxy(void)
         m_ActiveHub->GetHandler()->ProxyWrite(m_CmdCtx, m_BlobKey, m_RawBlobPass,
                                               m_BlobVersion, m_BlobTTL, m_Quorum);
         need_writer = true;
-        if (NStr::CompareCase(m_CurCmd, "PUT3") == 0)
+        if (NStr::CompareCase(m_CurCmd, "PUT3") == 0  ||  m_ConfirmPut)
             x_SetFlag(fConfirmBlobPut);
     }
     else if (NStr::CompareCase(m_CurCmd, "IC_HASB") == 0
@@ -2254,7 +2263,8 @@ CNCMessageHandler::x_SendCmdAsProxy(void)
     }
     else if (NStr::CompareCase(m_CurCmd, "IC_READLAST") == 0) {
         m_ActiveHub->GetHandler()->ProxyReadLast(m_CmdCtx, m_BlobKey, m_RawBlobPass,
-                                                 m_Quorum, m_SearchOnRead, m_ForceLocal);
+                                                 m_StartPos, m_Size, m_Quorum,
+                                                 m_SearchOnRead, m_ForceLocal);
         need_reader = true;
     }
     else if (NStr::CompareCase(m_CurCmd, "IC_SETVALID") == 0) {
@@ -2886,8 +2896,16 @@ CNCMessageHandler::x_DoCmd_GetLast(void)
     }
 
     x_ProlongBlobDeadTime();
+    Uint8 blob_size = m_BlobAccess->GetCurBlobSize();
+    if (blob_size < m_StartPos)
+        blob_size = 0;
+    else
+        blob_size -= m_StartPos;
+    if (m_Size != Uint8(-1)  &&  m_Size < blob_size) {
+        blob_size = m_Size;
+    }
+
     string result("BLOB found. SIZE=");
-    Int8 blob_size = m_BlobAccess->GetCurBlobSize();
     result += NStr::Int8ToString(blob_size);
     result += ", VER=";
     result += NStr::UIntToString(m_BlobAccess->GetCurBlobVersion());
@@ -3013,6 +3031,8 @@ CNCMessageHandler::x_DoCmd_IC_Store(void)
             x_SetFlag(fReadExactBlobSize);
             x_SetFlag(fSkipBlobEOF);
         }
+        if (m_ConfirmPut)
+            x_SetFlag(fConfirmBlobPut);
         x_StartReadingBlob();
     }
     return true;
