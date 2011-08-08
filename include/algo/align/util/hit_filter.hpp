@@ -278,17 +278,19 @@ public:
             const typename THitRefs::iterator all_beg = all.begin();
 
             // compile ordered set of hit ends
-            typename THitRefs::iterator ii = all_beg;
             THitEnds hit_ends;
-            for(size_t i = 0; i < dim0; ++i, ++ii) {
+            {
+                typename THitRefs::iterator ii = all_beg;
+                for(size_t i = 0; i < dim0; ++i, ++ii) {
 
-                THitRef& h = *ii;
-                for(Uint1 point = 0; point < 4; ++point) {
-                    THitEnd he;
-                    he.m_Point = point;
-                    he.m_Ptr = &h;
-                    he.m_X = h->GetBox()[point];
-                    hit_ends.insert(he);
+                    THitRef& h = *ii;
+                    for(Uint1 point = 0; point < 4; ++point) {
+                        THitEnd he;
+                        he.m_Point = point;
+                        he.m_Ptr = &h;
+                        he.m_X = h->GetBox()[point];
+                        hit_ends.insert(he);
+                    }
                 }
             }
 
