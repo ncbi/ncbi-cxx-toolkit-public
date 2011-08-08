@@ -267,6 +267,8 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgPSIInclusionEThreshold;
 NCBI_BLASTINPUT_EXPORT extern const string kArgGLSubject;
 /// Argument to specify the germline database name for igblast
 NCBI_BLASTINPUT_EXPORT extern const string kArgGLDatabase;
+/// Argument to specify the germline database chaintype name for igblast
+NCBI_BLASTINPUT_EXPORT extern const string kArgGLChainType;
 /// Argument to specify the number of alignments for germline database
 NCBI_BLASTINPUT_EXPORT extern const string kArgGLNumAlign;
 /// Argument to specify the germline origin for igblast

@@ -90,11 +90,12 @@ CIgAnnotationInfo::CIgAnnotationInfo(CConstRef<CIgBlastOptions> &ig_opt)
                 m_DomainData.push_back(NStr::StringToInt(tokens[i]));
             }
             index += 10;
+            m_DomainChainType[tokens[0]] = tokens[11];
         } 
     }
 
     // read chain type info from ct files
-    fn = ig_opt->m_Origin + "_gl.ct";
+    fn = ig_opt->m_ChainType;
     s_ReadLinesFromFile(fn, lines);
     ITERATE(vector<string>, l, lines) {
         vector<string> tokens;
@@ -604,7 +605,7 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
 
                 string sid = (*it)->GetSeq_id(1).AsFastaString();
                 if (sid.substr(0, 4) == "lcl|") sid = sid.substr(4, sid.length());
-                annot->m_ChainType[0] = m_AnnotationInfo.GetChainType(sid);
+                annot->m_ChainType[0] = m_AnnotationInfo.GetDomainChainType(sid);
 
                 int domain_info[10];
 

@@ -1247,6 +1247,10 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             "Restrict search of germline database to list of SeqIds's",
                             CArgDescriptions::eString);
 
+    arg_desc.AddOptionalKey(kArgGLChainType, "filename",
+                            "Specify the chain types (VH, VK, VL, DH, JH, JK or JL) for germline database sequences",
+                            CArgDescriptions::eString);
+
     arg_desc.AddDefaultKey(kArgGLOrigin, "germline_origin",
                             "The organism for your query sequence (i.e., human, mouse, etc.)",
                             CArgDescriptions::eString, "human");
@@ -1295,6 +1299,9 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
     m_IgOptions->m_DomainSystem = args[kArgGLDomainSystem].AsString();
     m_IgOptions->m_FocusV = args.Exist(kArgGLFocusV) ? args[kArgGLFocusV] : false;
     m_IgOptions->m_Translate = args.Exist(kArgTranslate) ? args[kArgTranslate] : false;
+    m_IgOptions->m_ChainType = (args.Exist(kArgGLChainType) && args[kArgGLChainType])
+                             ? args[kArgGLChainType].AsString()
+                             : m_IgOptions->m_Origin + "_gl.ct";
 
     _ASSERT(m_IsProtein == m_IgOptions->m_IsProtein);
 
