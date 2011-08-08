@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Denis Vakatov, Anton Lavrentiev
+ * Authors:  Denis Vakatov, Anton Lavrentiev
  *
  * File Description:
  *   Generic API to open and handle connection to an abstract service.
