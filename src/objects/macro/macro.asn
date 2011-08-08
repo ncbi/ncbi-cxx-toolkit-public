@@ -1272,6 +1272,11 @@ Author-fix-action ::= SEQUENCE {
   fix-type Author-fix-type ,
   constraint Constraint-choice-set OPTIONAL }  
 
+Update-sequences-action ::= SEQUENCE {
+  filename VisibleString ,
+  add-cit-subs BOOLEAN DEFAULT FALSE }
+
+
 Macro-action-choice ::= CHOICE {
   aecr AECR-action ,
   parse Parse-action ,
@@ -1299,7 +1304,8 @@ Macro-action-choice ::= CHOICE {
   remove-xrefs Remove-xrefs-action ,
   make-gene-xrefs Make-gene-xref-action ,
   make-bold-xrefs NULL ,
-  fix-author Author-fix-action }
+  fix-author Author-fix-action ,
+  update-sequences Update-sequences-action }
 
 
 Macro-action-list ::= SET OF Macro-action-choice
