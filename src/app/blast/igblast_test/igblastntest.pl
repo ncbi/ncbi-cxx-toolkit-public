@@ -7,7 +7,7 @@ use strict;
 my $new_program = "./igblastn";
 my $old_program = "/export/home/jianye/igblast/trunk/c++/src/app/blast/igblastn";
 my $testcasefile = "igblastntestcase";
-my $base_parameters = " -germline_db_V human_gl_V -germline_db_J human_gl_J -germline_db_D human_gl_D -query $testcasefile -show_translation  -chain_type human_gl.ct -outfmt "; 
+my $base_parameters = " -germline_db_V human_gl_V -germline_db_J human_gl_J -germline_db_D human_gl_D -query $testcasefile -show_translation   -outfmt "; 
 my @format = ("3", "4", "7");
 
 
