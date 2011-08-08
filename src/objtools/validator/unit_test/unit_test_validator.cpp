@@ -13160,6 +13160,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BothStrands)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
+
     scope.RemoveTopLevelSeqEntry(seh);
     entry = BuildGoodSeq();
     feat = AddMiscFeature (entry);
@@ -13176,10 +13178,18 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BothStrands)
     feat->SetExcept(true);
     feat->SetExcept_text("trans-splicing");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetSeverity(eDiag_Error);
-    expected_errors[0]->SetErrMsg("mRNA may not be on both (forward and reverse) strands");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "mRNAgeneRange", 
+                      "gene overlaps mRNA but does not completely contain it"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NotSpliceConsensusDonor", 
+                      "Splice donor consensus (GT) not found after exon ending at position 16 of lcl|good"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NotSpliceConsensusAcceptor", 
+                      "Splice acceptor consensus (AG) not found before exon starting at position 47 of lcl|good"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BothStrands", 
+                      "mRNA may not be on both (forward and reverse) strands"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry = BuildGoodSeq();
@@ -13190,7 +13200,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BothStrands)
     feat->SetPseudo(true);
     feat->SetData().SetCdregion();
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetErrMsg("CDS may not be on both (reverse) strands");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BothStrands", 
+                      "CDS may not be on both (reverse) strands"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
