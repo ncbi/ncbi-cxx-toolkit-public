@@ -77,7 +77,7 @@ CIgAnnotationInfo::CIgAnnotationInfo(CConstRef<CIgBlastOptions> &ig_opt)
     vector<string> lines;
 
     // read domain info from pdm or ndm file
-    const string suffix = (ig_opt->m_IsProtein) ? "_gl_V.p.dm." : "_gl_V.n.dm.";
+    const string suffix = (ig_opt->m_IsProtein) ? "_gl.p.dm." : "_gl.n.dm.";
     string fn = ig_opt->m_Origin + suffix + ig_opt->m_DomainSystem;
     s_ReadLinesFromFile(fn, lines);
     int index = 0;
@@ -94,42 +94,20 @@ CIgAnnotationInfo::CIgAnnotationInfo(CConstRef<CIgBlastOptions> &ig_opt)
         } 
     }
 
-    // read chain type info from ct files
+    // read chain type info and frame info from aux files
     fn = ig_opt->m_ChainType;
     s_ReadLinesFromFile(fn, lines);
     ITERATE(vector<string>, l, lines) {
         vector<string> tokens;
         NStr::Tokenize(*l, " \t\n\r", tokens, NStr::eMergeDelims);
         if (!tokens.empty()) {
-            m_ChainType[tokens[0]] = tokens[1];
-        }
-    }
-
-    if (ig_opt->m_IsProtein) return; 
-
-    // read frame info for V
-    fn = (ig_opt->m_Db[0]->IsBlastDb()) ? 
-         ig_opt->m_Db[0]->GetDatabaseName() + ".nfm" :
-         ig_opt->m_Origin + "_gl_V.nfm";
-    s_ReadLinesFromFile(fn, lines);
-    ITERATE(vector<string>, l, lines) {
-        vector<string> tokens;
-        NStr::Tokenize(*l, " \t\n\r", tokens, NStr::eMergeDelims);
-        if (!tokens.empty()) {
-            m_FrameOffset[tokens[0]] = NStr::StringToInt(tokens[1]);
-        }
-    }
-
-    // read frame info for J
-    fn = (ig_opt->m_Db[2]->IsBlastDb()) ? 
-         ig_opt->m_Db[2]->GetDatabaseName() + ".nfm" :
-         ig_opt->m_Origin + "_gl_J.nfm";
-    s_ReadLinesFromFile(fn, lines);
-    ITERATE(vector<string>, l, lines) {
-        vector<string> tokens;
-        NStr::Tokenize(*l, " \t\n\r", tokens, NStr::eMergeDelims);
-        if (!tokens.empty()) {
-            m_FrameOffset[tokens[0]] = NStr::StringToInt(tokens[1]);
+            if (tokens[1] != "N/A") {
+                m_ChainType[tokens[0]] = tokens[1];
+            }
+            int frame = NStr::StringToInt(tokens[2]);
+            if (frame != -1) {
+                m_FrameOffset[tokens[0]] = frame;
+            }
         }
     }
 };

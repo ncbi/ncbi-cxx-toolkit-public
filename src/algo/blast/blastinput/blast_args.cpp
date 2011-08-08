@@ -1248,7 +1248,7 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             CArgDescriptions::eString);
 
     arg_desc.AddOptionalKey(kArgGLChainType, "filename",
-                            "Specify the chain types (VH, VK, VL, DH, JH, JK or JL) for germline database sequences",
+                            "File containing chain type of each sequence in germline database and coding frame start position for V and J sequence",
                             CArgDescriptions::eString);
 
     arg_desc.AddDefaultKey(kArgGLOrigin, "germline_origin",
@@ -1301,7 +1301,7 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
     m_IgOptions->m_Translate = args.Exist(kArgTranslate) ? args[kArgTranslate] : false;
     m_IgOptions->m_ChainType = (args.Exist(kArgGLChainType) && args[kArgGLChainType])
                              ? args[kArgGLChainType].AsString()
-                             : m_IgOptions->m_Origin + "_gl.ct";
+                             : m_IgOptions->m_Origin + "_gl.aux";
 
     _ASSERT(m_IsProtein == m_IgOptions->m_IsProtein);
 
