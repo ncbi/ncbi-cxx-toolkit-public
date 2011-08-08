@@ -36,4 +36,5 @@ for origin in ['human', 'mouse']:
     	f.write('%s\t%s\t0\n' %(id, chain_type[id]))
         del chain_type[id]
     f.close()
-    print len(chain_type)
+    for id in chain_type.keys():
+    	f.write('%s\t%s\t-1\n' %(id, chain_type[id]))
