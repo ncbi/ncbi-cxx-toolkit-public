@@ -1435,7 +1435,7 @@ void g_GZip_ScanForChunks(CNcbiIstream& is, IChunkHandler& handler)
                 }
                 // We don't need uncompressed data -- discard it
                 strm.next_out  = out_buf;
-                strm.avail_out = out_size;
+                strm.avail_out = (unsigned int)out_size;
 
                 // Decompress
                 ret = inflate(&strm, Z_SYNC_FLUSH);

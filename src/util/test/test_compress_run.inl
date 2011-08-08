@@ -886,6 +886,7 @@
         // Compare original and decompressed data
         assert(out_len == kDataLen);
         assert(memcmp(src_buf, os_cmp.str(), out_len) == 0);
+        is.close();
 
         // Done
         os_cmp.rdbuf()->freeze(0);
