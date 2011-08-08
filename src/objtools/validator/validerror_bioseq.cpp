@@ -7240,6 +7240,14 @@ void CValidError_bioseq::ValidateMolInfoContext
                 seq.GetInst().GetMol() != CSeq_inst::eMol_na) {
                 PostErr(eDiag_Error, eErr_SEQ_INST_ConflictingBiomolTech,
                     "HTGS/STS/GSS/WGS sequence should not be RNA", seq);
+            } 
+            break;
+        case CMolInfo::eTech_est:
+            if (tech == CMolInfo::eTech_est  &&
+                 ((! minfo.IsSetBiomol())  ||
+                minfo.GetBiomol() != CMolInfo::eBiomol_mRNA)) {
+                PostErr(eDiag_Warning, eErr_SEQ_INST_ConflictingBiomolTech,
+                    "EST sequence should be mRNA", seq);
             }
             break;
         case CMolInfo::eTech_tsa:

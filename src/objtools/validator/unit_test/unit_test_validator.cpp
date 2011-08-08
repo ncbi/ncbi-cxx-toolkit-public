@@ -3329,6 +3329,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadDeltaSeq)
                      delete expected_errors[1];
                      expected_errors.pop_back();
                  }
+                 if (i == CMolInfo::eTech_est) {
+                     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ConflictingBiomolTech", "EST sequence should be mRNA"));
+                 }
              }
              expected_errors[0]->SetErrMsg("Delta seq technique should not be [" + NStr::UIntToString(i) + "]");
              eval = validator.Validate(seh, options);
@@ -3575,6 +3578,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ConflictingBiomolTech)
         entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_dna);
         SetTech (entry, i);
         SetBiomol (entry, CMolInfo::eBiomol_cRNA);
+        if (i == CMolInfo::eTech_est) {
+            expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ConflictingBiomolTech", "EST sequence should be mRNA"));
+        }
         if (i == CMolInfo::eTech_htgs_2) {
             expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadHTGSeq", "HTGS 2 raw seq has no gaps and no graphs"));
         }
@@ -5585,11 +5591,17 @@ BOOST_AUTO_TEST_CASE(Test_Descr_InvalidForType)
     entry = BuildGoodProtSeq();
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors[0]->SetErrMsg("Protein with nucleic acid sequence method");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ConflictingBiomolTech",
+                                                 "EST sequence should be mRNA"));
 
     SetTech(entry, CMolInfo::eTech_est);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "InvalidForType",
+                                                 "Protein with nucleic acid sequence method"));
     SetTech(entry, CMolInfo::eTech_genemap);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
