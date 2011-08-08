@@ -1053,7 +1053,155 @@ CSeq_align::CreateDensegFromDisc(SSeqIdChooser* SeqIdChooser) const
     return new_sa;
 }
 
+static TSeqPos s_Distance(const TSeqRange &range1,
+                          const TSeqRange &range2)
+{
+    if (range1.IntersectingWith(range2)) {
+        return 0;
+    }
+    return max(range1,range2).GetFrom() - min(range1,range2).GetTo();
+}
 
+/// Join the alignments in the set into one alignment.
+static CRef<CSeq_align> s_GetJoinedAlignment(const CSeq_align_set &aligns)
+{
+    if (aligns.Get().size() == 1) {
+        return aligns.Get().front();
+    }
+
+    /// There's more than one, so create a disc alignment
+    CRef<CSeq_align> align(new CSeq_align);
+    align->SetDim(2);
+    align->SetType(CSeq_align::eType_partial);
+    align->SetSegs().SetDisc().Set() = aligns.Get();
+
+    try {
+        align->Validate(true);
+    }
+    catch (CException& e) {
+        ERR_POST(Error << e);
+        cerr << MSerial_AsnText << aligns;
+        cerr << MSerial_AsnText << *align;
+        throw;
+    }
+    return align;
+}
+
+void CSeq_align::SplitOnLongDiscontinuity(list< CRef<CSeq_align> >& aligns,
+                                          TSeqPos discontinuity_threshold) const
+{
+    if (IsSetDim() && GetDim() > 2) {
+        NCBI_THROW(CException, eUnknown,
+            "SplitOnLongDiscontinuity() only implemented for pairwise alignments");
+    }
+
+    size_t num_splits = 0;
+    switch (GetSegs().Which()) {
+    case TSegs::e_Denseg:
+    {{
+        // determine if we can extract any slice based on a discontinuity
+        const CDense_seg& seg = GetSegs().GetDenseg();
+        CDense_seg::TNumseg last_seg = 0;
+        CDense_seg::TNumseg curr_seg = 0;
+        TSeqRange curr_range0;
+        TSeqRange curr_range1;
+        for ( ;  curr_seg < seg.GetNumseg();  ++curr_seg) {
+            TSignedSeqPos p0_curr = seg.GetStarts()[ curr_seg * 2 ];
+            TSignedSeqPos p1_curr = seg.GetStarts()[ curr_seg * 2 + 1];
+            if (p0_curr < 0 || p1_curr < 0) {
+                continue;
+            }
+
+            TSeqPos curr_seg_len = seg.GetLens()[curr_seg];
+
+            TSeqRange prev_range0 = curr_range0;
+            TSeqRange prev_range1 = curr_range1;
+            curr_range0 = TSeqRange(p0_curr, p0_curr+curr_seg_len);
+            curr_range1 = TSeqRange(p1_curr, p1_curr+curr_seg_len);
+
+            if (prev_range0.Empty()) {
+                /// We're at start of alignment, so there's no gap to check for
+                continue;
+            }
+    
+            if (prev_range0.NotEmpty() &&
+                (s_Distance(curr_range0, prev_range0) > discontinuity_threshold ||
+                 s_Distance(curr_range1, prev_range1) > discontinuity_threshold))
+            {
+                aligns.push_back(x_CreateSubsegAlignment(last_seg, curr_seg - 1));
+                ++num_splits;
+                last_seg = curr_seg;
+            }
+        }
+        if (num_splits) {
+            /// We had to split the alignment; create a final subseg alignment
+            aligns.push_back(x_CreateSubsegAlignment(last_seg, curr_seg - 1));
+            ++num_splits;
+        }
+    }}
+    break;
+
+    case TSegs::e_Disc:
+    {{
+        const CSeq_align_set &segs = GetSegs().GetDisc();
+        CSeq_align_set curr_disc;
+        TSeqRange curr_range0;
+        TSeqRange curr_range1;
+        ITERATE (list< CRef<CSeq_align> >, seg_it, segs.Get()) {
+            TSeqRange prev_range0 = curr_range0;
+            TSeqRange prev_range1 = curr_range1;
+            curr_range0 = (*seg_it)->GetSeqRange(0);
+            curr_range1 = (*seg_it)->GetSeqRange(1);
+            list< CRef<CSeq_align> > seg_splits;
+            (*seg_it)->SplitOnLongDiscontinuity(seg_splits,
+                                                discontinuity_threshold);
+
+            if (prev_range0.Empty() ||
+                s_Distance(curr_range0, prev_range0) <= discontinuity_threshold &&
+                s_Distance(curr_range1, prev_range1) <= discontinuity_threshold)
+            {
+                /// distance between this alignment and previous one is less than
+                /// threshold; first split section of this alignment should be joined
+                /// to previous one
+                curr_disc.Set().push_back(seg_splits.front());
+                seg_splits.pop_front();
+                if (seg_splits.empty()) {
+                    continue;
+                }
+            }
+
+            /// Put current contents of curr_disc in aligns
+            aligns.push_back(s_GetJoinedAlignment(curr_disc));
+            ++num_splits;
+
+            /// Put results of current section's split in aligns except for last
+            /// section; place last section in curr_disc, since it may have to be
+            /// joined with next one
+            num_splits += seg_splits.size();
+            curr_disc.Set().clear();
+            curr_disc.Set().push_back(seg_splits.back());
+            seg_splits.pop_back();
+
+            aligns.splice(aligns.end(), seg_splits);
+        }
+        if (num_splits) {
+            /// We had to split the alignment; create a final alignment from
+            /// the contents of curr_disc
+            aligns.push_back(s_GetJoinedAlignment(curr_disc));
+            ++num_splits;
+        }
+    }}
+    break;
+
+    default:
+    break;
+    }
+
+    if (!num_splits) {
+        aligns.push_back(CRef<CSeq_align>(const_cast<CSeq_align *>(this)));
+    }
+}
+    
 void CSeq_align::OffsetRow(TDim row,
                           TSignedSeqPos offset)
 {
@@ -1618,12 +1766,7 @@ CSeq_align::TLengthRange CSeq_align::GapLengthRange() const
                      /// If this is not first segment, include gaps between last
                      /// segment and this one
                      if (!last_seg_ranges.empty()) {
-                         bool minus_strand = last_seg_ranges[i] > seg_ranges[i];
-                         const TSeqRange &lower_seg =
-                             (minus_strand ? seg_ranges : last_seg_ranges)[i];
-                         const TSeqRange &upper_seg =
-                             (minus_strand ? last_seg_ranges : seg_ranges)[i];
-                         TSignedSeqPos gap = upper_seg.GetFrom() - lower_seg.GetToOpen();
+                         TSeqPos gap = s_Distance(seg_ranges[i], last_seg_ranges[i]);
                          if (gap > 0) {
                              length_range.AddLength(gap);
                          }
@@ -1705,6 +1848,44 @@ CSeq_align::TLengthRange CSeq_align::ExonLengthRange() const
             exon->GetGenomic_end() - exon->GetGenomic_start() + 1);
     }
     return length_range.range;
+}
+
+CRef<CSeq_align>  CSeq_align::x_CreateSubsegAlignment(int from, int to) const
+{
+    // break at this segment
+    CRef<CSeq_align> align(new CSeq_align);
+    align->SetDim(2);
+    align->SetType(CSeq_align::eType_partial);
+    const CDense_seg& seg = GetSegs().GetDenseg();
+    CDense_seg& subseg = align->SetSegs().SetDenseg();
+    
+    subseg.SetIds() = seg.GetIds();
+    subseg.SetDim(2);
+    subseg.SetNumseg(to - from + 1);
+    if (seg.IsSetStrands()) {
+        subseg.SetStrands() = seg.GetStrands();
+        subseg.SetStrands().resize(subseg.GetNumseg() * 2);
+    }
+    
+    int i;
+    
+    for (i = from;  i <= to;  ++i) {
+        subseg.SetLens().push_back(seg.GetLens()[i]);
+        subseg.SetStarts().push_back(seg.GetStarts()[i * 2]);
+        subseg.SetStarts().push_back(seg.GetStarts()[i * 2 + 1]);
+    }
+    
+    subseg.TrimEndGaps();
+    try {
+        align->Validate(true);
+    }
+    catch (CException& e) {
+        ERR_POST(Error << e);
+        cerr << MSerial_AsnText << seg;
+        cerr << MSerial_AsnText << *align;
+        throw;
+    }
+    return align;
 }
 
 

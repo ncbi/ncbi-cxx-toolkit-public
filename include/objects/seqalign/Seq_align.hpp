@@ -279,6 +279,17 @@ public:
     ///                 the code will not check for this
     CRef<CSeq_align> CreateTranslatedDensegFromNADenseg(void) const;
 
+    /// Split the alignment at any discontinuity greater than threshold;
+    /// populate aligns list with new alignments. If alignment contains no long
+    /// discontinuities, populate aligns list with a singleton reference
+    /// to self.
+    /// Splitting works only for Denseg and Disc; for all other segment types, this
+    /// function simply populates aligns with a singleton reference to self.
+    /// This function is only implemented for pairwise alignments; it throws an
+    /// exception if Dim is more than 2.
+    void SplitOnLongDiscontinuity(list< CRef<CSeq_align> >& aligns,
+                                  TSeqPos discontinuity_threshold) const;
+
 
     /// Offset row's coords
     void OffsetRow(TDim row, TSignedSeqPos offset);
@@ -307,6 +318,9 @@ private:
     CSeq_align(const CSeq_align& value);
     CSeq_align& operator=(const CSeq_align& value);
 
+    /// Create a partial alignment containing the specified range of segments.
+    /// Can only be called for Denseg alignments.
+    CRef<CSeq_align>  x_CreateSubsegAlignment(int from, int to) const;
 };
 
 
