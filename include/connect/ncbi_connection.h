@@ -112,7 +112,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_ReInit
  * the connection.  Return value NULL denotes unknown connection type.
  */
 extern NCBI_XCONNECT_EXPORT const char* CONN_GetType
-(CONN conn  /* [in]  connection handle */ 
+(CONN conn  /* [in] connection handle */ 
  );
 
 
@@ -125,8 +125,8 @@ extern NCBI_XCONNECT_EXPORT const char* CONN_GetType
  * with 0, and to return 0.
  */
 extern NCBI_XCONNECT_EXPORT TNCBI_BigCount CONN_GetPosition
-(CONN      conn,  /* [in]  connection handle */ 
- EIO_Event event  /* [in]  see description   */
+(CONN      conn,  /* [in] connection handle */ 
+ EIO_Event event  /* [in] see description   */
  );
 
 
@@ -139,20 +139,20 @@ extern NCBI_XCONNECT_EXPORT TNCBI_BigCount CONN_GetPosition
  * by the returned string when the description is no longer needed.
  */
 extern NCBI_XCONNECT_EXPORT char* CONN_Description
-(CONN conn  /* [in]  connection handle */
+(CONN conn  /* [in] connection handle */
  );
 
 
 /* Specify timeout for the connection I/O, including "Connect" (aka "Open")
  * and "Close".  May be called at any time during the connection lifetime.
- * NOTE1:  if "new_timeout" is NULL then set the timeout to be infinite.
- * NOTE2:  if "new_timeout" is kDefaultTimeout then an underlying,
+ * NOTE1:  if "timeout" is NULL then set the timeout to be infinite.
+ * NOTE2:  if "timeout" is kDefaultTimeout then an underlying,
  *         connector-specific value is used (this is the default).
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_SetTimeout
-(CONN            conn,        /* [in] connection handle */
- EIO_Event       event,       /* [in] I/O direction     */
- const STimeout* new_timeout  /* [in] new timeout       */
+(CONN            conn,    /* [in] connection handle */
+ EIO_Event       event,   /* [in] I/O direction     */
+ const STimeout* timeout  /* [in] new timeout       */
  );
 
 
@@ -167,8 +167,8 @@ extern NCBI_XCONNECT_EXPORT const STimeout* CONN_GetTimeout
  );
 
 
-/* Block on the connection until it becomes available for either read or
- * write (dep. on "event"), until timeout expires, or until any error.
+/* Block on the connection until it becomes available for either reading or
+ * writing (depending on "event"), until timeout expires, or until any error.
  * NOTE:  "timeout" can also be one of two special values:
  *         NULL (means infinite), kDefaultTimeout (connector-defined).
  */
@@ -181,22 +181,27 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Wait
 
 /* Write up to "size" bytes from the buffer "buf" to the connection.
  * Return the number of actually written bytes in "*n_written".
- * It may not return eIO_Success if no data at all can be written before
- * the write timeout expired or an error occurred.
+ * May not return eIO_Success if no data at all can be written before
+ * the write timeout expires or an error occurs.
  * Parameter "how" modifies the write behavior:
- * eIO_WritePlain   -- return immediately after having written as little
- *                     as 1 byte of data, or if an error has occurred;
- * eIO_WritePersist -- return only after having written all of the data from
- *                     "buf" (eIO_Success), or if an error has occurred
- *                     (fewer bytes written, non-eIO_Success).
+ * eIO_WritePlain      -- return immediately after having written as little
+ *                        as 1 byte of data (return eIO_Success), or if an
+ *                        error has occurred (and "*n_written == 0");
+ * eIO_WritePersist    -- return only after having written all of the data from
+ *                        "buf" (return eIO_Success), or if an error has
+ *                        occurred (fewer bytes written, non-eIO_Success).
+ * eIO_WriteSupplement -- same as eIO_WritePlain but can return non-eIO_Success
+ *                        even with some data written (as indicated by
+ *                        "*n_written"), to signify that an error has occurred
+ *                        past the just written block of data.
  * NOTE:  See CONN_SetTimeout() for how to set the write timeout.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Write
-(CONN            conn,      /* [in]  connection handle                     */ 
- const void*     buf,       /* [in]  pointer to the data buffer to write   */ 
- size_t          size,      /* [in]  # of bytes to write                   */ 
- size_t*         n_written, /* [out, non-NULL] # of actually written bytes */
- EIO_WriteMethod how        /* [in]  eIO_WritePlain or eIO_WritePersist    */
+(CONN            conn,       /* [in]  connection handle                     */ 
+ const void*     buf,        /* [in]  pointer to the data buffer to write   */ 
+ size_t          size,       /* [in]  # of bytes to write                   */ 
+ size_t*         n_written,  /* [out, non-NULL] # of actually written bytes */
+ EIO_WriteMethod how         /* [in]  eIO_WritePlain or eIO_WritePersist    */
  );
 
 
@@ -208,9 +213,9 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Write
  *         taken out first.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_PushBack
-(CONN        conn,  /* [in]  connection handle                     */
- const void* buf,   /* [in]  pointer to the data being pushed back */
- size_t      size   /* [in]  # of bytes to push back               */
+(CONN        conn,  /* [in] connection handle                     */
+ const void* buf,   /* [in] pointer to the data being pushed back */
+ size_t      size   /* [in] # of bytes to push back               */
  );
 
 
@@ -218,33 +223,39 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_PushBack
  * NOTE1:  CONN_Flush() effectively opens connection (if it wasn't open yet).
  * NOTE2:  Connection considered open if underlying connector's "Open" method
  *         has successfully executed;  an actual data link may not yet exist.
- * NOTE3:  CONN_Read() always calls CONN_Flush() before proceeding;  so does
- *         CONN_Close() but only if the connection is already open.
+ * NOTE3:  CONN_Read() always calls CONN_Flush() before proceeding (unless the
+ *         connection created with fCONN_Untie);  so does CONN_Close() but
+ *         only if the connection has been already open.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Flush
-(CONN        conn   /* [in] connection handle                      */
+(CONN        conn  /* [in] connection handle */
  );
 
 
 /* Read up to "size" bytes from connection to the buffer pointed to by "buf".
  * Return the number of actually read bytes in "*n_read".
  * May not return eIO_Success if no data at all can be read before
- * the read timeout expired or an error occurred.
+ * the read timeout expires or an error occurs.
  * Parameter "how" modifies the read behavior:
- *   eIO_ReadPlain   -- return immediately after having read as many as
- *                      1 byte from connection, or if an error has occurred;
- *   eIO_ReadPeek    -- eIO_ReadPlain but don't discard read data from CONN;
- *   eIO_ReadPersist -- return only after having filled full "buf" with data
- *                      (exactly "size" bytes, eIO_Success), or if an error
- *                      has occurred (fewer bytes, non-eIO_Success).
+ *   eIO_ReadPlain      -- return immediately after having read as many as
+ *                         1 byte from connection (return eIO_Success), or
+ *                         if an error has occurred (and "*n_read == 0");
+ *   eIO_ReadPeek       -- eIO_ReadPlain but don't discard data read from CONN;
+ *   eIO_ReadPersist    -- return only after having filled full "buf" with data
+ *                         (exactly "size" bytes, eIO_Success), or if an error
+ *                         has occurred (fewer bytes, non-eIO_Success).
+ *   eIO_ReadSupplement -- same as eIO_ReadPlain but can return non-eIO_Success
+ *                         even with some read data (as indicated by
+ *                         "*n_read"), to show that an error has been following
+ *                         the just read block of data (eg eIO_Closed for EOF).
  * NOTE:  See CONN_SetTimeout() for how to set the read timeout.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Read
-(CONN           conn,   /* [in]  connection handle                  */
- void*          buf,    /* [out] memory buffer to read to           */
- size_t         size,   /* [in]  max. # of bytes to read            */
- size_t*        n_read, /* [out, non-NULL] # of actually read bytes */
- EIO_ReadMethod how     /* [in]  read/peek | persist                */
+(CONN           conn,    /* [in]  connection handle                  */
+ void*          buf,     /* [out] memory buffer to read to           */
+ size_t         size,    /* [in]  max. # of bytes to read            */
+ size_t*        n_read,  /* [out, non-NULL] # of actually read bytes */
+ EIO_ReadMethod how      /* [in]  read/peek | persist                */
  );
 
 
@@ -257,15 +268,15 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Read
  * upon return - this is the only case when "line" will not be '\0'-terminated.
  * Return code advises the caller whether another read can be attempted:
  *   eIO_Success -- read completed successfully, keep reading;
- *   other code  -- an error occurred, and further attempt may fail.
+ *   other code  -- an error occurred, and further read attempt may fail.
  *
  * This call utilizes eIO_Read timeout as set by CONN_SetTimeout().
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_ReadLine
-(CONN    conn,
- char*   line,
- size_t  size,
- size_t* n_read
+(CONN    conn,   /* [in]  connection handle */
+ char*   line,   /* [out] buffer to read to */
+ size_t  size,   /* [in]  buffer size       */
+ size_t* n_read  /* [out] line length       */
  );
 
 
@@ -274,8 +285,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_ReadLine
  * connector's layer.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Status
-(CONN      conn,   /* [in]  connection handle       */
- EIO_Event dir     /* [in] = {eIO_Read | eIO_Write} */
+(CONN      conn,  /* [in] connection handle     */
+ EIO_Event dir    /* [in] eIO_Read or eIO_Write */
  );
 
 
@@ -283,6 +294,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Status
  * This is *not* connection closure, but any data extraction or
  * insertion (Read/Write) will be effectively rejected after this call
  * (and eIO_Interrupt will result, same for CONN_Status()).
+ * If an eCONN_Cancel callback is set and returns non-eIO_Success, the return
+ * code gets passed as a result and the cancellation does not take effect.
  * CONN_Close() is still required to release internal connection structures.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Cancel
@@ -310,9 +323,12 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Close
  * been actually called), so the code that wants to get callbacks repeatedly
  * must reinstate them as necessary with CONN_SetCallback() calls
  * (e.g. from inside the callbacks themselves).
- * Normally, callback would return eIO_Success;  non-eIO_Success return
- * value causes return to the caller level (with possibly some processing
- * already completed by then, e.g. such as a partial read for eCONN_OnRead).
+ * Normally, callback would return eIO_Success and let the operation continue;
+ * non-eIO_Success return value causes it to be returned to the caller level
+ * (but possibly with some processing already completed by then, e.g. such as
+ * a partial read for eCONN_OnRead from an internal connection buffer).
+ * NOTE:  non-eIO_Success from an eCONN_OnClose callback cannot postpone the
+ * connection closure (but the error code is still passed through to the user).
  */
 typedef enum {
     eCONN_OnClose  = 0,  /* NB: connection has been flushed prior to the call*/

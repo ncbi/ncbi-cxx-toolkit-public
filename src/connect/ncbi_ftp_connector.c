@@ -1235,7 +1235,7 @@ static EIO_Status x_FTPParseMdtm(SFTPConnector* xxx, char* timestamp)
      * 1. Only GNU implementation is documented not to require spaces
      *    between input format specifiers in the format string (%-based);
      * 2. None to any spaces are allowed to match a space in the format,
-     *    whilst the MDTM response must contain absolutely none. */
+     *    whilst an MDTM response must not contain even a single space. */
     for (n = 0;  n < 6;  n++) {
         size_t len = n ? 2 : 4/*year*/;
         if (len != strlen(strncpy0(buf, timestamp, len))  ||
