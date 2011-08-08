@@ -222,7 +222,6 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
          ++seg, pos += m_NumRows, anchor_pos += m_NumRows) {
         
         const TSeqPos& seg_len = m_Lens[seg];
-
         start = m_Starts[pos];
         len = seg_len * width;
 
@@ -258,9 +257,28 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
 
                 // add regular sequence to buffer
                 GetSeqString(buff, row, start, stop);
-                memcpy(c_buff_ptr, buff.c_str(), seg_len);
-                c_buff_ptr += seg_len;
-                
+                TSeqPos buf_len = min<TSeqPos>(buff.size(), seg_len);
+                memcpy(c_buff_ptr, buff.c_str(), buf_len);
+                c_buff_ptr += buf_len;
+                if (buf_len < seg_len) {
+                    // Not enough chars in the sequence, add gap
+                    buf_len = seg_len - buf_len;
+                    char* ch_buff = new char[buf_len + 1];
+                    char fill_ch;
+
+                    if (seg < left_seg  ||  seg > right_seg) {
+                        fill_ch = GetEndChar();
+                    } else {
+                        fill_ch = GetGapChar(row);
+                    }
+
+                    memset(ch_buff, fill_ch, buf_len);
+                    ch_buff[buf_len] = 0;
+                    memcpy(c_buff_ptr, ch_buff, buf_len);
+                    c_buff_ptr += buf_len;
+                    delete[] ch_buff;
+                }
+
                 // take care of coords if necessary
                 if (record_coords) {
                     if (scrn_lft_seq_pos < 0) {
@@ -341,7 +359,7 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
         }
 
     }
-    
+
     // take care of the remaining coords if necessary
     if (record_coords) {
         // previous scrns
