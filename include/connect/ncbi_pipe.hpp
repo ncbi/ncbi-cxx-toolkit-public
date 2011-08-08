@@ -26,19 +26,18 @@
  *
  * ===========================================================================
  *
- * Author:  Anton Lavrentiev, Vladimir Ivanov
+ * Authors:  Anton Lavrentiev, Vladimir Ivanov
  *
  *
  */
 
 /// @file ncbi_pipe.hpp
-/// Portable class for work with process pipes.
+/// Portable class to work with process pipes.
 ///
 /// Defines classes: 
-///     CPipe -  class for work with pipes
+///    CPipe - class to work with pipes
 ///
 /// Implemented for: UNIX, MS-Windows
-
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_process.hpp>

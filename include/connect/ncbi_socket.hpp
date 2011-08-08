@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Author:  Denis Vakatov, Anton Lavrentiev
+ * Authors:  Denis Vakatov, Anton Lavrentiev
  *
  * File Description:
  *   C++ wrapper for the C "SOCK" API (UNIX, MS-Win, MacOS, Darwin)

@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Author:  Anton Lavrentiev, Denis Vakatov
+ * Authors:  Anton Lavrentiev, Denis Vakatov
  *
  * File Description:
  *   NCBI server meta-address info

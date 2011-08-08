@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Pavel Ivanov
+ * Author:  Pavel Ivanov
  *
  */
 
@@ -34,7 +34,6 @@
 /// Definition of all error codes used in connect library
 /// (xconnect.lib, xconnext.lib etc).
 ///
-
 
 #include <corelib/ncbidiag.hpp>
 

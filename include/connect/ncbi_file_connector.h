@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Author:  Vladimir Alekseyev, Denis Vakatov
+ * Authors:  Vladimir Alekseyev, Denis Vakatov
  *
  * File Description:
  *   Implement CONNECTOR for a FILE stream

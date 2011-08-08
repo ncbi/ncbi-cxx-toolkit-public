@@ -26,8 +26,7 @@
  *
  * ===========================================================================
  *
- * Author:  Anton Lavrentiev, Mike DiCuccio, Vladimir Ivanov
- *
+ * Authors:  Anton Lavrentiev, Mike DiCuccio, Vladimir Ivanov
  *
  */
 
@@ -38,7 +37,6 @@
 ///     CNamedPipe        -  base (abstract) class to work with named pipes
 ///     CNamedPipeClient  -  class for client-side named pipes
 ///     CNamedPipeServer  -  class for server-side named pipes
-
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>

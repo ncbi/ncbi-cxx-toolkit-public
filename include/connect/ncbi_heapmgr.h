@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Author:  Anton Lavrentiev, Denis Vakatov
+ * Authors:  Anton Lavrentiev, Denis Vakatov
  *
  * File Description:
  *   Simple heap manager with a primitive garbage collection
