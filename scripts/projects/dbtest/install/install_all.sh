@@ -53,15 +53,8 @@ PLATF_NCBI_BIN_DIRS=("/net/napme02/vol/ncbi_tools/lnx64_netopt/ncbi_tools/bin/_p
                      "/net/snowman/vol/projects/ncbi_tools.solaris/i386-5.10/bin/_production/CPPCORE"
                      "/net/snowman/vol/projects/ncbi_tools.solaris/sparc-5.10/bin/_production/CPPCORE")
 
-CGI_BIN_DIR="/net/snowman/vol/export2/iweb/ieb/ToolBox/STAT/test_stat"
+CGI_BIN_DIR="/net/iwebdev2/export/home/web/public/htdocs/ieb/ToolBox/STAT/test_stat"
 
-
-VERSION=$1
-shift
-if [[ -z "$VERSION" ]]; then
-    echo "Usage: install_all.sh <version>"
-    exit 1
-fi
 
 
 PREPARE_DIR="$(find . -type d -name "prepare_release*build*")"
@@ -104,9 +97,9 @@ for ((i = 0; i < 7; ++i)); do
     if [[ "${PLATF_FILE_MASKS[$i]}" == *"Linux64"* ]]; then
         echo "Deploying cgi interface"
 
-        cp "${PLATF_DIR}/bin/test_stat_ext.cgi" "${CGI_BIN_DIR}/" || exit 9
-        cp -R "${PLATF_DIR}/bin/xsl/" "${CGI_BIN_DIR}/" || exit 11
-        cp -R "${PLATF_DIR}/bin/overlib/" "${CGI_BIN_DIR}/" || exit 13
+        cp -p "${PLATF_DIR}/bin/test_stat_ext.cgi" "${CGI_BIN_DIR}/" || exit 9
+        cp -Rp "${PLATF_DIR}/bin/xsl/" "${CGI_BIN_DIR}/" || exit 11
+        cp -Rp "${PLATF_DIR}/bin/overlib/" "${CGI_BIN_DIR}/" || exit 13
 
         touch "${CGI_BIN_DIR}/.sink_subtree"
     fi
