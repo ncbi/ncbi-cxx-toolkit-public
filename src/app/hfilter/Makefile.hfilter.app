@@ -1,6 +1,6 @@
 # $Id$
 
-WATCHERS = kapustin
+WATCHERS = badrazat
 
 APP = hfilter
 SRC = hitfilter_app
