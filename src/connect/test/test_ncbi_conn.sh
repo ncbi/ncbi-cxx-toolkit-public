@@ -24,7 +24,7 @@ trap 'echo "`date`."' 0 1 2 3 15
 
 if [ -r /am/ncbiapdata/test_data/proxy/test_ncbi_proxy ]; then
   . /am/ncbiapdata/test_data/proxy/test_ncbi_proxy
-  export CONN_HTTP_USER_HEADER="Client-Host: 0"
+  export CONN_HTTP_USER_HEADER="Client-Host: 1.1.1.1"
   export CONN_LB_DISABLE=1
 fi
 
