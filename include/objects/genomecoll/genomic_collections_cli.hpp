@@ -60,6 +60,10 @@ public:
     // destructor
     ~CGenomicCollectionsService(void);
 
+    virtual void x_Connect();
+
+    // Override this to supply your own URL.
+    virtual string CGenomicCollectionsService::x_GetURL();
 
     typedef CGCClient_GetAssemblyRequest::ELevel ELevel;
 

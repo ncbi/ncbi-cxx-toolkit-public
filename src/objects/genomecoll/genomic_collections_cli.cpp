@@ -52,10 +52,30 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+const string GENCOLL_URL("https://mweb11.ncbi.nlm.nih.gov/projects/gencoll/access/genomic_collections_svc.cgi");
+
+//  Alternatively Use http://mweb11.ncbi.nlm.nih.gov/projects/r_gencoll/asm4portal/asm4portal.cgi
 
 // destructor
 CGenomicCollectionsService::~CGenomicCollectionsService(void)
 {
+}
+
+
+string CGenomicCollectionsService::x_GetURL()
+{
+    return GENCOLL_URL;
+}
+
+void CGenomicCollectionsService::x_Connect()
+{
+    LOG_POST("Connecting to url:" << x_GetURL().c_str());
+    STimeout to5Min;
+    to5Min.sec=600;
+    to5Min.usec=0;
+    SetTimeout(&to5Min);
+
+    x_ConnectURL(x_GetURL());
 }
 
 
@@ -66,7 +86,6 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(string acc,
                                             int scafAttrFlags, 
                                             int compAttrFlags)
 {
-    //-- CGCClientRequest req;
     CGCClient_GetAssemblyRequest req;
     CGCClientResponse reply;
     
