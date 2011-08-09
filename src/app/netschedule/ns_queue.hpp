@@ -301,7 +301,6 @@ public:
                            const TNSBitVector &     jobs,
                            unsigned int             peer_addr);
 
-
     /// Erase job from all structures, request delayed db deletion
     void EraseJob(unsigned job_id);
 

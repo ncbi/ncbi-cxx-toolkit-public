@@ -1317,9 +1317,7 @@ void CNetScheduleHandler::x_ProcessJobDelayExpiration(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessDropJob(CQueue* q)
 {
-    q->EraseJob(m_JobReq.job_id);
-    WriteMessage("OK:");
-    x_PrintRequestStop(eStatus_OK);
+    x_ProcessCancel(q);
 }
 
 
