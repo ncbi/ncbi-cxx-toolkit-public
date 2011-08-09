@@ -269,7 +269,6 @@ TJobStatus CJobStatusTracker::ChangeStatus(unsigned   job_id,
         old_status = x_GetStatusNoLock(job_id);
         if (old_status == CNetScheduleAPI::eCanceled) {
             // There is nothing to do, the job has already been canceled
-            old_status = CNetScheduleAPI::eCanceled;
             break;
         }
         if (old_status != CNetScheduleAPI::eJobNotFound) {
@@ -306,26 +305,15 @@ TJobStatus CJobStatusTracker::ChangeStatus(unsigned   job_id,
         }
 
         old_status = IsStatusNoLock(job_id,
-                                   CNetScheduleAPI::eReading);
+                                    CNetScheduleAPI::eReading);
         if (old_status != CNetScheduleAPI::eJobNotFound) {
             x_SetClearStatusNoLock(job_id, status, old_status);
             status_updated = true;
             break;
         }
 
-        old_status = IsStatusNoLock(job_id,
-                                    CNetScheduleAPI::eCanceled,
-                                    CNetScheduleAPI::eFailed);
-        if (IsCancelCode(old_status)) {
-            break;
-        }
-
+        // For all other states the job results are just ignored
         old_status = x_GetStatusNoLock(job_id);
-        if (old_status == CNetScheduleAPI::eDone) {
-            break;
-        }
-
-        ReportInvalidStatus(job_id, status, old_status);
         break;
 
     case CNetScheduleAPI::eReadFailed:
@@ -339,6 +327,22 @@ TJobStatus CJobStatusTracker::ChangeStatus(unsigned   job_id,
         }
 
         old_status = CNetScheduleAPI::eReadFailed;
+        break;
+
+    case CNetScheduleAPI::eConfirmed:
+
+        old_status = x_GetStatusNoLock(job_id);
+        if (old_status == CNetScheduleAPI::eConfirmed) {
+            // There is nothing to do, the job has already been confirmed
+            break;
+        }
+        if (old_status == CNetScheduleAPI::eReading) {
+            x_SetClearStatusNoLock(job_id, status, old_status);
+            status_updated = true;
+            break;
+        }
+
+        ReportInvalidStatus(job_id, status, old_status);
         break;
 
     default:

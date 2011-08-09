@@ -617,7 +617,6 @@ unsigned CQueue::SubmitBatch(vector<CJob>& batch)
 }
 
 
-static const unsigned k_max_dead_locks = 100;  // max. dead lock repeats
 
 void CQueue::PutResultGetJob(CWorkerNode *              worker_node,
                              unsigned int               peer_addr,
@@ -631,135 +630,79 @@ void CQueue::PutResultGetJob(CWorkerNode *              worker_node,
                              // out
                              CJob *                     new_job)
 {
-    // PutResult parameter check
-    _ASSERT(!done_job_id || output);
-    _ASSERT(!new_job || aff_list);
+    time_t  curr = time(0);
 
-    bool        delete_done, keep_node_affinity;
-    unsigned    max_output_size;
-    unsigned    run_timeout;
+    PutResult(peer_addr, curr, done_job_id, ret_code, output);
+    GetJob(worker_node, peer_addr, curr, aff_list, new_job, true);
+}
+
+
+static const size_t     k_max_dead_locks = 10;  // max. dead lock repeats
+
+void CQueue::PutResult(unsigned int     peer_addr,
+                       time_t           curr,
+                       unsigned         job_id,
+                       int              ret_code,
+                       const string *   output)
+{
+    _ASSERT(job_id && output);
+
+    bool            delete_done;
+    unsigned int    max_output_size;
+
     {{
         CQueueParamAccessor     qp(*this);
 
         delete_done = qp.GetDeleteDone();
-        keep_node_affinity = qp.GetKeepAffinity() && done_job_id;
         max_output_size = qp.GetMaxOutputSize();
-        run_timeout = qp.GetRunTimeout();
     }}
 
-    if (done_job_id && output->size() > max_output_size)
+    if (output->size() > max_output_size)
         NCBI_THROW(CNetScheduleException, eDataTooLong,
                    "Output is too long");
 
-    unsigned        dead_locks = 0; // dead lock counter
-    time_t          curr = time(0);
+    CJob                job;
+    bool                need_update = false;
+    size_t              dead_locks = 0; // dead lock counter
 
-    //
-    bool            need_update = false;
-    CQueueJSGuard   js_guard(this, done_job_id,
-                             CNetScheduleAPI::eDone, &need_update);
-
-    // FIXME: This code detects a case when a node reports results for the job
-    // which already timeouted for the node and is being executed by another
-    // node. This attempt succeeds, but the second legitimate result leads to
-    // this error. It is not correct (but may be useful) to accept results from
-    // the first node and we should better handle this case.
-    // I commented out the code to reduce Error log output, but it needs to be
-    // FIXED for real.
-    // if (done_job_id  &&  ! need_update) {
-    //    ERR_POST("Attempt to PUT already Done job "
-    //             << q->DecorateJobId(done_job_id));
-    //}
-
-    // This is a HACK - if js_guard is not committed, it will rollback
-    // to previous state, so it is safe to change status after the guard.
-    //    if (delete_done) {
-    //        q->Erase(done_job_id);
-    //    }
-    // TODO: implement transaction wrapper (a la js_guard above)
-    // for FindPendingJob
-    // TODO: move affinity assignment there as well
-
-    // We request to not switch node affinity only if it is job exchange.
-    // After node comes for a job second time, we satisfy this request
-    // disregarding existing affinities so the queue is not to grow.
-    unsigned        pending_job_id = 0;
-    if (new_job)
-        pending_job_id = FindPendingJob(worker_node, *aff_list,
-                                        curr, keep_node_affinity);
-
-    bool            done_rec_updated = false;
-    CJob            job;
-
-    // When working with the same database file concurrently there is
-    // chance of internal Berkeley DB deadlock. (They say it's legal)
-    // In this case Berkeley DB returns an error code(DB_LOCK_DEADLOCK)
-    // and recovery is up to the application.
-    // If it happens I repeat the transaction several times.
-    //
     for (;;) {
         try {
             CNS_Transaction     trans(this);
-            EGetJobUpdateStatus upd_status = eGetJobUpdate_Ok;
+            CQueueGuard         guard(this, &trans);
 
-            {{
-                CQueueGuard     guard(this, &trans);
+            CQueueJSGuard       js_guard(this, job_id, CNetScheduleAPI::eDone,
+                                         &need_update);
 
-                if (need_update) {
-                    done_rec_updated = x_UpdateDB_PutResultNoLock(
-                                            done_job_id, curr, delete_done,
+            if (!need_update)
+                return;
+
+            bool    updated = x_UpdateDB_PutResultNoLock(
+                                            job_id, curr, delete_done,
                                             ret_code, *output, job,
                                             peer_addr);
-                }
-
-                if (pending_job_id) {
-                    // NB Synchronized access to worker_node is required inside,
-                    // and it's under queue lock already. Take out this access
-                    // it is host, port, node_id read.
-                    upd_status = x_UpdateDB_GetJobNoLock(worker_node,
-                                                         curr, pending_job_id,
-                                                         *new_job);
-                }
-            }}
-
             trans.Commit();
             js_guard.Commit();
 
-            // TODO: commit FindPendingJob guard here
-            switch (upd_status) {
-                case eGetJobUpdate_JobFailed:
-                    m_StatusTracker.ChangeStatus(pending_job_id,
-                                                 CNetScheduleAPI::eFailed);
-                    /* FALLTHROUGH */
-                case eGetJobUpdate_JobStopped:
-                case eGetJobUpdate_NotFound:
-                    pending_job_id = 0;
-                    break;
-                case eGetJobUpdate_Ok:
-                    break;
-                default:
-                    _ASSERT(0);
-            }
-
-            // NB BOTH Remove and Add lock worker node list
-            if (done_rec_updated)
+            if (updated)
                 RemoveJobFromWorkerNode(job, eNSCDone);
-            if (pending_job_id)
-                AddJobToWorkerNode(worker_node, *new_job, curr + run_timeout);
-            break;
+            TimeLineRemove(job_id);
+
+            if (updated && job.ShouldNotify(curr))
+                Notify(job.GetSubmAddr(), job.GetSubmPort(), job_id);
+            return;
         }
-        catch (CBDB_ErrnoException& ex) {
+        catch (CBDB_ErrnoException &  ex) {
             if (ex.IsDeadLock()) {
                 if (++dead_locks < k_max_dead_locks) {
                     ERR_POST("DeadLock repeat in CQueue::JobExchange");
-                    SleepMilliSec(250);
+                    SleepMilliSec(100);
                     continue;
                 }
                 ERR_POST("Too many transaction repeats in CQueue::JobExchange.");
             } else if (ex.IsNoMem()) {
                 if (++dead_locks < k_max_dead_locks) {
                     ERR_POST("No resource repeat in CQueue::JobExchange");
-                    SleepMilliSec(250);
+                    SleepMilliSec(100);
                     continue;
                 }
                 ERR_POST("Too many transaction repeats in CQueue::JobExchange.");
@@ -767,27 +710,88 @@ void CQueue::PutResultGetJob(CWorkerNode *              worker_node,
             throw;
         }
     }
+}
 
-    if (new_job) {
-        unsigned int    job_aff_id = new_job->GetAffinityId();
-        if (job_aff_id) {
-            // CStopWatch      sw(CStopWatch::eStart);
-            time_t          exp_time = run_timeout ? curr + 2*run_timeout : 0;
 
-            AddAffinity(worker_node, job_aff_id, exp_time);
-            // LOG_POST(Warning << "Added affinity: " << sw.Elapsed() * 1000 << "ms");
+void CQueue::GetJob(CWorkerNode *           worker_node,
+                    unsigned int            peer_addr,
+                    time_t                  curr,
+                    const list<string> *    aff_list,
+                    CJob *                  new_job,
+                    bool                    job_exchange)
+{
+    bool        keep_node_affinity;
+    unsigned    run_timeout;
+    size_t      dead_locks = 0; // dead lock counter
+
+    {{
+        CQueueParamAccessor     qp(*this);
+
+        keep_node_affinity = qp.GetKeepAffinity() && job_exchange;
+        run_timeout = qp.GetRunTimeout();
+    }}
+
+    for (;;) {
+        try {
+            CNS_Transaction         trans(this);
+            CQueueGuard             guard(this, &trans);
+
+            unsigned int            job_id = FindPendingJob(worker_node, *aff_list,
+                                                            curr, keep_node_affinity);
+            EGetJobUpdateStatus     upd_status = x_UpdateDB_GetJobNoLock(worker_node,
+                                                                         curr, job_id,
+                                                                         *new_job);
+            switch (upd_status) {
+                case eGetJobUpdate_JobFailed:
+                    m_StatusTracker.ChangeStatus(job_id,
+                                                 CNetScheduleAPI::eFailed);
+                    /* FALLTHROUGH */
+                case eGetJobUpdate_JobStopped:
+                case eGetJobUpdate_NotFound:
+                    job_id = 0;
+                    break;
+                case eGetJobUpdate_Ok:
+                    break;
+                default:
+                    _ASSERT(0);
+            }
+
+            trans.Commit();
+
+            if (job_id)
+                AddJobToWorkerNode(worker_node, *new_job, curr + run_timeout);
+
+            unsigned int    job_aff_id = new_job->GetAffinityId();
+            if (job_aff_id) {
+                // CStopWatch      sw(CStopWatch::eStart);
+                time_t          exp_time = run_timeout ? curr + 2*run_timeout : 0;
+
+                AddAffinity(worker_node, job_aff_id, exp_time);
+                // LOG_POST(Warning << "Added affinity: " << sw.Elapsed() * 1000 << "ms");
+            }
+
+            TimeLineAdd(job_id, curr + run_timeout);
+            return;
+        }
+        catch (CBDB_ErrnoException &  ex) {
+            if (ex.IsDeadLock()) {
+                if (++dead_locks < k_max_dead_locks) {
+                    ERR_POST("DeadLock repeat in CQueue::JobExchange");
+                    SleepMilliSec(100);
+                    continue;
+                }
+                ERR_POST("Too many transaction repeats in CQueue::JobExchange.");
+            } else if (ex.IsNoMem()) {
+                if (++dead_locks < k_max_dead_locks) {
+                    ERR_POST("No resource repeat in CQueue::JobExchange");
+                    SleepMilliSec(100);
+                    continue;
+                }
+                ERR_POST("Too many transaction repeats in CQueue::JobExchange.");
+            }
+            throw;
         }
     }
-
-
-    TimeLineExchange(done_job_id, pending_job_id, curr + run_timeout);
-
-    if (done_rec_updated  &&  job.ShouldNotify(curr))
-        Notify(job.GetSubmAddr(), job.GetSubmPort(), done_job_id);
-
-    // There is no need to throw exception here in case if there is no such a
-    // job with the given affinity. Without exception it will be consistent
-    // with GET command output which simply gives no key if there are no jobs.
 }
 
 
@@ -2776,37 +2780,35 @@ void CQueue::x_CheckExecutionTimeout(unsigned   queue_run_timeout,
 
 unsigned CQueue::CheckJobsExpiry(unsigned batch_size, TJobStatus status)
 {
-    unsigned queue_timeout, queue_run_timeout;
+    unsigned int    queue_timeout;
+    unsigned int    queue_run_timeout;
+
     {{
-        CQueueParamAccessor qp(*this);
+        CQueueParamAccessor     qp(*this);
+
         queue_timeout = qp.GetTimeout();
         queue_run_timeout = qp.GetRunTimeout();
     }}
 
-    TNSBitVector job_ids;
-    TNSBitVector not_found_jobs;
-    time_t curr = time(0);
-    CJob job;
-    unsigned del_count = 0;
-    bool has_db_error = false;
-#ifdef _DEBUG
-    static bool debug_job_discrepancy = false;
-#endif
+    TNSBitVector        job_ids;
+    TNSBitVector        not_found_jobs;
+    time_t              curr = time(0);
+    CJob                job;
+    unsigned            del_count = 0;
+    bool                has_db_error = false;
     {{
-        CQueueGuard guard(this);
-        unsigned job_id = 0;
+        CQueueGuard         guard(this);
+        unsigned            job_id = 0;
+
         for (unsigned n = 0; n < batch_size; ++n) {
             job_id = m_StatusTracker.GetNext(status, job_id);
             if (job_id == 0)
                 break;
+
             // FIXME: should fetch only main part of the job and event info,
             // does not need potentially huge tags and input/output
-            CJob::EJobFetchResult res = job.Fetch(this, job_id);
-            if (res != CJob::eJF_Ok
-#ifdef _DEBUG
-                || debug_job_discrepancy
-#endif
-            ) {
+            CJob::EJobFetchResult       res = job.Fetch(this, job_id);
+            if (res != CJob::eJF_Ok) {
                 if (res != CJob::eJF_NotFound)
                     has_db_error = true;
                 // ? already deleted - report as a batch later
@@ -3355,19 +3357,13 @@ bool CQueue::x_UpdateDB_PutResultNoLock(unsigned             job_id,
         return false;
     }
 
-    CJobEvent *     event = job.GetLastEvent();
-    if (!event) {
-        ERR_POST("Put results for a job without runs " << DecorateJobId(job_id));
-        NCBI_THROW(CNetScheduleException, eInvalidJobStatus, "Job never ran");
-    }
-
     if (delete_done) {
         job.Delete();
         return true;
     }
 
     // Append the event
-    event = &job.AppendEvent();
+    CJobEvent *     event = &job.AppendEvent();
     event->SetStatus(CNetScheduleAPI::eDone);
     event->SetEvent(CJobEvent::eDone);
     event->SetTimestamp(curr);
@@ -3388,23 +3384,21 @@ CQueue::EGetJobUpdateStatus CQueue::x_UpdateDB_GetJobNoLock(
                                             unsigned          job_id,
                                             CJob&             job)
 {
-    unsigned        queue_timeout = GetTimeout();
-    const unsigned  kMaxGetAttempts = 100;
-
-
-    for (unsigned fetch_attempts = 0; fetch_attempts < kMaxGetAttempts;
-        ++fetch_attempts)
+    static const size_t     kMaxGetAttempts = 10;
+    for (size_t fetch_attempts = 0; fetch_attempts < kMaxGetAttempts;
+         ++fetch_attempts)
     {
-        CJob::EJobFetchResult res;
-        if ((res = job.Fetch(this, job_id)) != CJob::eJF_Ok) {
+        CJob::EJobFetchResult       res = job.Fetch(this, job_id);
+        if (res != CJob::eJF_Ok) {
             if (res == CJob::eJF_NotFound)
                 return eGetJobUpdate_NotFound;
             // FIXME: does it make sense to retry right after DB error?
             continue;
         }
-        TJobStatus status = job.GetStatus();
 
-        // integrity check
+
+        // Paranoid integrity check, it does not trust itself
+        TJobStatus      status = job.GetStatus();
         if (status != CNetScheduleAPI::ePending) {
             if (CJobStatusTracker::IsCancelCode(status)) {
                 // this job has been canceled while I was fetching it
@@ -3417,34 +3411,6 @@ CQueue::EGetJobUpdateStatus CQueue::x_UpdateDB_GetJobNoLock(
             return eGetJobUpdate_JobStopped;
         }
 
-        time_t      time_submit = job.GetTimeSubmit();
-        time_t      timeout = job.GetTimeout();
-
-        if (timeout == 0)
-            timeout = queue_timeout;
-
-        _ASSERT(timeout);
-        // check if job already expired
-        if (timeout && (time_submit + timeout < curr)) {
-            // Job expired, fail it
-            CJobEvent &     event = job.AppendEvent();
-
-            event.SetStatus(CNetScheduleAPI::eFailed);
-            event.SetEvent(CJobEvent::eTimeout);
-            event.SetTimestamp(curr);
-            event.SetErrorMsg("Job expired and cannot be scheduled.");
-            job.SetStatus(CNetScheduleAPI::eFailed);
-            m_StatusTracker.ChangeStatus(job_id, CNetScheduleAPI::eFailed);
-            job.Flush(this);
-
-            if (m_Log)
-                LOG_POST(Error << "Job timeout expired, job: "
-                               << DecorateJobId(job_id));
-
-            return eGetJobUpdate_JobFailed;
-        }
-
-        // job not expired
         job.FetchAffinityToken(this);
 
         unsigned        run_count = job.GetRunCount() + 1;
@@ -3469,6 +3435,10 @@ CQueue::EGetJobUpdateStatus CQueue::x_UpdateDB_GetJobNoLock(
         return eGetJobUpdate_Ok;
     }
 
+    // Here: it is kMaxGetAttempts times database error of fetching the job.
+    // Log it and tell the client that there are no jobs for it.
+    ERR_POST("x_UpdateDB_GetJobNoLock: cannot fetch job (" <<
+             job_id << ") info after " << kMaxGetAttempts << "tries.");
     return eGetJobUpdate_NotFound;
 }
 

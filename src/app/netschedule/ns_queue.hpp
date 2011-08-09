@@ -217,6 +217,19 @@ public:
                          const list<string> *       aff_list,
                          CJob *                     new_job);
 
+    void PutResult(unsigned int     peer_addr,
+                   time_t           curr,
+                   unsigned         job_id,
+                   int              ret_code,
+                   const string *   output);
+
+    void GetJob(CWorkerNode *           worker_node,
+                unsigned int            peer_addr,
+                time_t                  curr,
+                const list<string> *    aff_list,
+                CJob *                  new_job,
+                bool                    job_exchange);
+
     /// Extend job expiration timeout
     /// @param tm
     ///    Time worker node needs to execute the job (in seconds)

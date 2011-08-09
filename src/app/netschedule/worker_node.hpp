@@ -78,7 +78,6 @@ typedef list<TNSJobId>                  TJobList;
 
 
 class CWorkerNode;
-class CRequestContext;
 struct SJobInfo
 {
     SJobInfo(TNSJobId id, time_t t, CWorkerNode* node) :

@@ -1177,7 +1177,7 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
                 "\t,", aff_list, NStr::eNoMergeDelims);
 
     CJob            job;
-    q->PutResultGetJob(m_WorkerNode, m_PeerAddr, 0, 0, 0, &aff_list, &job);
+    q->GetJob(m_WorkerNode, m_PeerAddr, time(0), &aff_list, &job, false);
 
     if (job.GetId())
         WriteMessage("OK:", x_FormGetJobResponse(q, job));
@@ -1201,7 +1201,7 @@ void CNetScheduleHandler::x_ProcessWaitGet(CQueue* q)
                 "\t,", aff_list, NStr::eNoMergeDelims);
 
     CJob                job;
-    q->PutResultGetJob(m_WorkerNode, m_PeerAddr, 0,0,0, &aff_list, &job);
+    q->GetJob(m_WorkerNode, m_PeerAddr, time(0), &aff_list, &job, false);
 
     if (job.GetId()) {
         WriteMessage("OK:", x_FormGetJobResponse(q, job));
@@ -1221,8 +1221,9 @@ void CNetScheduleHandler::x_ProcessWaitGet(CQueue* q)
 void CNetScheduleHandler::x_ProcessPut(CQueue* q)
 {
     string      output = NStr::ParseEscapes(m_JobReq.output);
-    q->PutResultGetJob(m_WorkerNode, m_PeerAddr, m_JobReq.job_id,
-                       m_JobReq.job_return_code, &output, 0, 0);
+
+    q->PutResult(m_PeerAddr, time(0), m_JobReq.job_id,
+                 m_JobReq.job_return_code, &output);
     WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
 }
