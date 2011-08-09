@@ -84,10 +84,8 @@ static Uint2    s_MaxPeerTotalConns = 100;
 static Uint2    s_MaxPeerBGConns = 50;
 static Uint1    s_CntErrorsToThrottle = 10;
 static Uint8    s_PeerThrottlePeriod = 10 * kNCTimeTicksInSec;
+static double   s_PeerConnTimeout = 0.1;
 static Uint1    s_PeerTimeout = 10;
-static Uint1    s_CntMirroringThreads = 0;
-static Uint1    s_MirrorSmallExclusive = 2;
-static Uint1    s_MirrorSmallPreferred = 2;
 static Uint8    s_SmallBlobBoundary = 65535;
 static Uint2    s_MaxMirrorQueueSize = 10000;
 static string   s_SyncLogFileName;
@@ -231,25 +229,11 @@ CNCDistributionConf::Initialize(Uint2 control_port)
         s_CntErrorsToThrottle = reg.GetInt(kNCReg_NCPoolSection, "peer_errors_for_throttle", 10);
         s_PeerThrottlePeriod = reg.GetInt(kNCReg_NCPoolSection, "peer_throttle_period", 10);
         s_PeerThrottlePeriod *= kNCTimeTicksInSec;
+        s_PeerConnTimeout = reg.GetDouble(kNCReg_NCPoolSection, "peer_connection_timeout", 0.1);
         s_PeerTimeout = reg.GetInt(kNCReg_NCPoolSection, "peer_communication_timeout", 10);
-        s_CntMirroringThreads = reg.GetInt(kNCReg_NCPoolSection, "threads_instant", 6);
         s_SmallBlobBoundary = reg.GetInt(kNCReg_NCPoolSection, "small_blob_max_size", 100);
         s_SmallBlobBoundary *= 1024;
         s_MaxMirrorQueueSize = reg.GetInt(kNCReg_NCPoolSection, "max_instant_queue_size", 10000);
-        s_MirrorSmallPreferred = reg.GetInt(kNCReg_NCPoolSection, "small_blob_preferred_threads_pct", 33);
-        if (s_MirrorSmallPreferred > 100)
-            s_MirrorSmallPreferred = 100;
-        s_MirrorSmallPreferred = s_MirrorSmallPreferred * s_CntMirroringThreads / 100;
-        if (s_MirrorSmallPreferred == 0)
-            s_MirrorSmallPreferred = 1;
-        s_MirrorSmallExclusive = reg.GetInt(kNCReg_NCPoolSection, "small_blob_exclusive_threads_pct", 33);
-        if (s_MirrorSmallExclusive > 100)
-            s_MirrorSmallExclusive = 100;
-        s_MirrorSmallExclusive = s_MirrorSmallExclusive * s_CntMirroringThreads / 100;
-        if (s_MirrorSmallExclusive == 0)
-            s_MirrorSmallExclusive = 1;
-        if (s_MirrorSmallExclusive > s_CntMirroringThreads - s_MirrorSmallPreferred)
-            s_MirrorSmallExclusive = s_CntMirroringThreads - s_MirrorSmallPreferred;
 
         s_SyncLogFileName = reg.GetString(kNCReg_NCPoolSection, "sync_log_file", "sync_events.log");
         s_MaxSlotLogEvents = reg.GetInt(kNCReg_NCPoolSection, "max_slot_log_records", 100000);
@@ -458,28 +442,16 @@ CNCDistributionConf::GetPeerThrottlePeriod(void)
     return s_PeerThrottlePeriod;
 }
 
+double
+CNCDistributionConf::GetPeerConnTimeout(void)
+{
+    return s_PeerConnTimeout;
+}
+
 Uint1
 CNCDistributionConf::GetPeerTimeout(void)
 {
     return s_PeerTimeout;
-}
-
-Uint1
-CNCDistributionConf::GetCntMirroringThreads(void)
-{
-    return s_CntMirroringThreads;
-}
-
-Uint1
-CNCDistributionConf::GetMirrorSmallPrefered(void)
-{
-    return s_MirrorSmallPreferred;
-}
-
-Uint1
-CNCDistributionConf::GetMirrorSmallExclusive(void)
-{
-    return s_MirrorSmallExclusive;
 }
 
 Uint8

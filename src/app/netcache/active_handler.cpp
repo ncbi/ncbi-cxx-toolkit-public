@@ -34,6 +34,7 @@
 #include "active_handler.hpp"
 #include "peer_control.hpp"
 #include "periodic_sync.hpp"
+#include "nc_storage.hpp"
 
 
 #ifndef NCBI_OS_MSWIN
@@ -52,7 +53,8 @@ static string s_PeerAuthString;
 
 
 CNCActiveHandler_Proxy::CNCActiveHandler_Proxy(CNCActiveHandler* handler)
-    : m_Handler(handler)
+    : m_Handler(handler),
+      m_Socket(NULL)
 {}
 
 CNCActiveHandler_Proxy::~CNCActiveHandler_Proxy(void)
@@ -83,6 +85,8 @@ CNCActiveHandler_Proxy::OnRead(void)
 {
     if (m_Handler)
         m_Handler->OnRead();
+    else
+        abort();
 }
 
 void
@@ -90,6 +94,8 @@ CNCActiveHandler_Proxy::OnWrite(void)
 {
     if (m_Handler)
         m_Handler->OnWrite();
+    else
+        g_NetcacheServer->CloseConnection(m_Socket);
 }
 
 EIO_Event
@@ -112,6 +118,14 @@ CNCActiveClientHub::Create(Uint8 srv_id, CNCMessageHandler* client)
     CNCPeerControl* peer = CNCPeerControl::Peer(srv_id);
     peer->AssignClientConn(hub);
     return hub;
+}
+
+void
+CNCActiveClientHub::Release(void)
+{
+    if (m_Handler)
+        m_Handler->ClientReleased();
+    delete this;
 }
 
 
@@ -177,23 +191,6 @@ CNCActiveHandler::ResetDiagnostics(void)
     CDiagContext::SetRequestContext(NULL);
 }
 
-
-
-inline
-CNCActiveHandler::CDiagnosticsGuard
-    ::CDiagnosticsGuard(CNCActiveHandler* handler)
-    : m_Handler(handler)
-{
-    m_Handler->InitDiagnostics();
-}
-
-inline
-CNCActiveHandler::CDiagnosticsGuard::~CDiagnosticsGuard(void)
-{
-    m_Handler->ResetDiagnostics();
-}
-
-
 CNCActiveHandler::CNCActiveHandler(Uint8 srv_id, CNCPeerControl* peer)
     : m_SrvId(srv_id),
       m_Peer(peer),
@@ -202,10 +199,13 @@ CNCActiveHandler::CNCActiveHandler(Uint8 srv_id, CNCPeerControl* peer)
       m_CntCmds(0),
       m_BlobAccess(NULL),
       m_State(eConnIdle),
+      m_ReservedForBG(false),
+      m_InCmdPipeline(false),
       m_AddedToPool(false),
       m_GotAnyAnswer(false),
       m_NeedFlushBuff(false),
-      m_WaitForThrottle(false)
+      m_WaitForThrottle(false),
+      m_NeedDelete(false)
 {}
 
 CNCActiveHandler::~CNCActiveHandler(void)
@@ -222,8 +222,30 @@ CNCActiveHandler::Initialize(void)
 void
 CNCActiveHandler::ClientReleased(void)
 {
-    CMutexGuard guard(m_ObjLock);
-    x_DetachFromClient();
+    m_ObjLock.Lock();
+    m_CmdCtx.Reset();
+    m_Client->SetHandler(NULL);
+    m_Client = NULL;
+    if (m_NeedDelete) {
+        m_ObjLock.Unlock();
+        delete this;
+    }
+    else {
+        m_ObjLock.Unlock();
+    }
+}
+
+void
+CNCActiveHandler::x_MayDeleteThis(void)
+{
+    if (m_Client) {
+        m_NeedDelete = true;
+        m_ObjLock.Unlock();
+    }
+    else {
+        m_ObjLock.Unlock();
+        delete this;
+    }
 }
 
 void
@@ -250,14 +272,15 @@ CNCActiveHandler::x_CloseConnection(void)
 bool
 CNCActiveHandler::x_ReplaceServerConn(void)
 {
+    m_Proxy->SetHandler(NULL);
+    m_Proxy = NULL;
+
     CNCActiveHandler* src_handler = m_Peer->GetPooledConn();
     if (src_handler) {
         if (!src_handler->m_AddedToPool)
             abort();
         m_AddedToPool = true;
         m_GotAnyAnswer = src_handler->m_GotAnyAnswer;
-        m_GotCmdAnswer = src_handler->m_GotCmdAnswer;
-        m_Proxy->SetHandler(NULL);
         m_Proxy = src_handler->m_Proxy;
         m_Proxy->SetHandler(this);
         m_SrvConn = src_handler->m_SrvConn;
@@ -305,7 +328,8 @@ CNCActiveHandler::CopyPut(CRequestContext* cmd_ctx,
     m_BlobKey = key;
     m_BlobSlot = slot;
     m_OrigRecNo = orig_rec_no;
-    m_Client->SetStatus(eNCHubCmdInProgress);
+    if (m_Client)
+        m_Client->SetStatus(eNCHubCmdInProgress);
     x_DoCopyPut();
 }
 
@@ -864,19 +888,26 @@ CNCActiveHandler::SyncCommit(CNCActiveSyncControl* ctrl,
 void
 CNCActiveHandler::OnTimeout(void)
 {
-    CDiagnosticsGuard guard(this);
+    InitDiagnostics();
     ERR_POST("Peer doesn't respond for too long");
     m_ErrMsg = "ERR:Peer doesn't respond";
+    ResetDiagnostics();
 }
 
 void
 CNCActiveHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
 {
+    EStates was_state = x_GetState();
+    if (was_state == eConnClosed)
+        return;
+
     x_SetState(eConnClosed);
     if (m_DidFirstWrite  &&  !m_GotAnyAnswer) {
         m_Peer->RegisterConnError();
     }
-    else if (x_ReplaceServerConn()) {
+    else if (!m_GotCmdAnswer  &&  !g_NetcacheServer->ShutdownRequested()
+             &&  x_ReplaceServerConn())
+    {
         if (x_GetState() == eWaitForMetaInfo) {
             if (!m_AddedToPool)
                 x_AddConnToPool();
@@ -891,30 +922,32 @@ CNCActiveHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
     }
     x_FinishCommand(false);
 
-    m_Peer->ReleaseConn(this);
-    if (m_ObjLock.TryLock()) {
-        m_ObjLock.Unlock();
-        delete this;
+    if (was_state != eConnIdle)
+        m_Peer->ReleaseConn(this);
+    if (!m_InCmdPipeline) {
+        m_ObjLock.Lock();
+        x_MayDeleteThis();
     }
 }
 
 void
 CNCActiveHandler::OnRead(void)
 {
-    CMutexGuard guard(m_ObjLock);
     x_ManageCmdPipeline();
 }
 
 void
 CNCActiveHandler::OnWrite(void)
 {
-    CMutexGuard guard(m_ObjLock);
     x_ManageCmdPipeline();
 }
 
 EIO_Event
 CNCActiveHandler::GetEventsToPollFor(const CTime** alarm_time)
 {
+    if (!m_DidFirstWrite)
+        return eIO_Write;
+
     EStates state = x_GetState();
     switch (state) {
     case eWaitOneLineAnswer:
@@ -922,7 +955,9 @@ CNCActiveHandler::GetEventsToPollFor(const CTime** alarm_time)
     case eReadEventsList:
     case eReadBlobsList:
     case eReadBlobData:
-        return eIO_Read;
+        if (!m_SockBuffer.IsWriteDataPending())
+            return eIO_Read;
+        // fall through
     default:
         return eIO_Write;
     }
@@ -931,8 +966,11 @@ CNCActiveHandler::GetEventsToPollFor(const CTime** alarm_time)
 bool
 CNCActiveHandler::IsReadyToProcess(void)
 {
-    if (x_GetState() == eConnIdle)
+    EStates state = x_GetState();
+    if (state == eConnIdle)
         return false;
+    else if (state == eWaitClientRelease  ||  state == eConnClosed)
+        return !m_Client;
     else if (m_WaitForThrottle)
         return CNetCacheServer::GetPreciseTime() >= m_ThrottleTime;
     else if (x_IsFlagSet(fWaitForClient)) {
@@ -943,7 +981,7 @@ CNCActiveHandler::IsReadyToProcess(void)
             return m_Client->GetClient()->IsBufferFlushed();
         else if (x_GetState() == eWriteDataForClient)
             return m_NeedFlushBuff;
-        else
+        else if (x_IsFlagSet(fWaitForClient))
             abort();
     }
     else if (x_IsFlagSet(fWaitForBlockedOp))
@@ -955,8 +993,10 @@ CNCActiveHandler::IsReadyToProcess(void)
 void
 CNCActiveHandler::OnBlockedOpFinish(void)
 {
-    CMutexGuard guard(m_ObjLock);
+    m_ObjLock.Lock();
     x_UnsetFlag(fWaitForBlockedOp);
+    m_ObjLock.Unlock();
+
     g_NetcacheServer->WakeUpPollCycle();
 }
 
@@ -982,9 +1022,12 @@ CNCActiveHandler::IsBufferFlushed(void)
 void
 CNCActiveHandler::FinishBlobFromClient(void)
 {
-    CMutexGuard guard(m_ObjLock);
+    m_ObjLock.Lock();
     x_FinishWritingBlob();
     x_UnsetFlag(fWaitForClient);
+    m_ObjLock.Unlock();
+
+    g_NetcacheServer->WakeUpPollCycle();
 }
 
 void
@@ -1020,7 +1063,7 @@ void
 CNCActiveHandler::x_AddConnToPool(void)
 {
     try {
-        m_SockBuffer.SetTimeout(0.1);
+        m_SockBuffer.SetTimeout(CNCDistributionConf::GetPeerConnTimeout());
         m_DidFirstWrite = false;
         m_AddedToPool = true;
         g_NetcacheServer->AddConnectionToPool(m_SrvConn);
@@ -1042,34 +1085,18 @@ CNCActiveHandler::x_SendCmdToExecute(void)
     if (m_Client)
         m_Client->SetStatus(eNCHubCmdInProgress);
 
-retry_cmd:
     m_SockBuffer.WriteMessage("", m_CmdToSend);
     m_GotCmdAnswer = false;
     if (m_AddedToPool) {
-        m_SockBuffer.Flush();
-        if (m_SockBuffer.HasError()) {
-            if (!m_GotAnyAnswer)
-                m_Peer->RegisterConnError();
-            else if (x_ReplaceServerConn())
-                goto retry_cmd;
-            m_ErrMsg = "ERR:Cannot connect to peer";
-            x_CloseConnection();
-        }
-        else {
-            x_SetState(eWaitOneLineAnswer);
-        }
+        x_SetState(eWaitOneLineAnswer);
+        // We really shouldn't read anything from the object at this point.
+        // Thus x_SetState() above cannot be before if.
+        g_NetcacheServer->WakeUpPollCycle();
     }
     else {
         x_SetState(eWaitOneLineAnswer);
         x_AddConnToPool();
     }
-}
-
-void
-CNCActiveHandler::x_SetConnIdle(void)
-{
-    x_SetState(eConnIdle);
-    x_DeferConnection();
 }
 
 void
@@ -1081,13 +1108,10 @@ CNCActiveHandler::x_FinishCommand(bool success)
     }
     if (m_Client) {
         m_Client->SetErrMsg(m_ErrMsg);
-        if (success) {
-            m_Client->SetStatus(eNCHubSuccess);
-        }
-        else {
-            m_Client->SetStatus(eNCHubError);
-            x_DetachFromClient();
-        }
+        m_Client->SetStatus(success? eNCHubSuccess: eNCHubError);
+        x_UnsetFlag(fWaitForClient);
+        if (x_GetState() != eConnClosed)
+            x_SetState(eWaitClientRelease);
     }
     else {
         if (m_SyncCtrl) {
@@ -1095,18 +1119,6 @@ CNCActiveHandler::x_FinishCommand(bool success)
                 m_SyncCtrl->CmdFinished(eSynNetworkError, m_SyncAction);
             m_SyncCtrl = NULL;
         }
-        if (x_GetState() != eConnClosed)
-            x_SetState(eReadyForPool);
-    }
-}
-
-void
-CNCActiveHandler::x_DetachFromClient(void)
-{
-    if (m_Client) {
-        m_CmdCtx.Reset();
-        m_Client->SetHandler(NULL);
-        m_Client = NULL;
         if (x_GetState() != eConnClosed)
             x_SetState(eReadyForPool);
     }
@@ -1134,7 +1146,7 @@ void
 CNCActiveHandler::x_StartWritingBlob(void)
 {
     Uint4 start_word = 0x01020304;
-    m_SockBuffer.Write((const char*)&start_word, sizeof(start_word));
+    m_SockBuffer.WriteNoFail(&start_word, sizeof(start_word));
     m_ChunkSize = 0;
 }
 
@@ -1142,7 +1154,7 @@ void
 CNCActiveHandler::x_FinishWritingBlob(void)
 {
     Uint4 finish_word = 0xFFFFFFFF;
-    m_SockBuffer.Write((const char*)&finish_word, sizeof(finish_word));
+    m_SockBuffer.WriteNoFail(&finish_word, sizeof(finish_word));
     m_SockBuffer.Flush();
     // HasError() is processed in ManageCmdPipeline()
     m_CurCmd = eNeedOnlyConfirm;
@@ -1173,6 +1185,10 @@ CNCActiveHandler::x_ReadFoundMeta(void)
                 m_BlobSum.create_id = NStr::StringToUInt(*param_it);
                 ++param_it;
                 m_BlobSum.dead_time = NStr::StringToInt(*param_it);
+                ++param_it;
+                m_BlobSum.expire = NStr::StringToInt(*param_it);
+                ++param_it;
+                m_BlobSum.ver_expire = NStr::StringToInt(*param_it);
                 m_BlobExists = true;
             }
             catch (CStringException&) {
@@ -1181,7 +1197,6 @@ CNCActiveHandler::x_ReadFoundMeta(void)
             }
         }
     }
-    x_SetConnIdle();
     x_FinishCommand(true);
     return true;
 }
@@ -1193,11 +1208,12 @@ CNCActiveHandler::x_SendCopyPutCmd(void)
         x_FinishCommand(false);
         return true;
     }
-    if (!m_BlobAccess->IsBlobExists()  ||  m_BlobAccess->IsCurBlobExpired()) {
+    if (!m_BlobAccess->IsBlobExists()
+        ||  m_BlobAccess->GetCurBlobDeadTime() < int(time(NULL)))
+    {
         if (m_SyncCtrl)
             m_SyncCtrl->CmdFinished(eSynOK, m_SyncAction);
         x_FinishCommand(true);
-        x_DetachFromClient();
         return true;
     }
 
@@ -1267,7 +1283,6 @@ CNCActiveHandler::x_ReadCopyPut(void)
         if (m_SyncCtrl)
             m_SyncCtrl->CmdFinished(eSynOK, m_SyncAction);
         x_FinishCommand(true);
-        x_DetachFromClient();
     }
     else {
         m_BlobAccess->SetPosition(0);
@@ -1372,7 +1387,6 @@ CNCActiveHandler::x_ReadConfirm(void)
     if (m_SyncCtrl)
         m_SyncCtrl->CmdFinished(eSynOK, m_SyncAction);
     x_FinishCommand(true);
-    x_DetachFromClient();
     return true;
 }
 
@@ -1436,7 +1450,7 @@ CNCActiveHandler::x_ReadDataForClient(void)
             x_CloseConnection();
             return true;
         }
-        if (clnt_buf.IsWriteDataPending()) {
+        if (clnt_buf.IsWriteDataPending()  ||  m_SockBuffer.HasDataToRead()) {
             x_SetFlag(fWaitForClient);
             client->ForceBufferFlush();
             x_DeferConnection();
@@ -1446,7 +1460,6 @@ CNCActiveHandler::x_ReadDataForClient(void)
             return false;
     }
     x_FinishCommand(true);
-    x_DetachFromClient();
     return true;
 }
 
@@ -1456,7 +1469,6 @@ CNCActiveHandler::x_ReadWritePrefix(void)
     x_StartWritingBlob();
     m_Client->GetClient()->WriteInitWriteResponse(m_Response);
     x_SetState(eWriteDataForClient);
-    x_DeferConnection();
     return false;
 }
 
@@ -1520,30 +1532,34 @@ bool
 CNCActiveHandler::x_ReadEventsList(void)
 {
     while (m_SizeToRead != 0) {
-        if (m_SockBuffer.GetReadSize() < 2) {
-            m_SockBuffer.Read();
-            if (m_SockBuffer.GetReadSize() < 2)
+        if (m_SockBuffer.GetReadReadySize() < 2) {
+            if (!m_SockBuffer.ReadToBuf()
+                ||  m_SockBuffer.GetReadReadySize() < 2)
+            {
                 return false;
+            }
         }
 
-        Uint2 key_size = *(const Uint2*)m_SockBuffer.GetReadData();
+        Uint2 key_size = *(const Uint2*)m_SockBuffer.GetReadBufData();
         SNCSyncEvent* evt;
-        Uint2 rec_size = key_size + sizeof(key_size) + 1
-                         + sizeof(evt->rec_no) + sizeof(evt->local_time)
+        Uint2 rec_size = sizeof(key_size) + key_size + 1
+                         + sizeof(evt->rec_no)
+                         + sizeof(evt->local_time)
                          + sizeof(evt->orig_rec_no)
                          + sizeof(evt->orig_server)
                          + sizeof(evt->orig_time);
-        if (m_SockBuffer.GetReadSize() < rec_size) {
-            m_SockBuffer.Read();
-            if (m_SockBuffer.GetReadSize() < rec_size)
+        if (m_SockBuffer.GetReadReadySize() < rec_size) {
+            if (!m_SockBuffer.ReadToBuf()
+                ||  m_SockBuffer.GetReadReadySize() < rec_size)
+            {
                 return false;
+            }
         }
 
         evt = new SNCSyncEvent;
-        const char* data = (const char*)m_SockBuffer.GetReadData()
+        const char* data = (const char*)m_SockBuffer.GetReadBufData()
                                         + sizeof(key_size);
-        evt->key.resize(key_size);
-        memcpy(&evt->key[0], data, key_size);
+        evt->key.assign(data, key_size);
         data += key_size;
         evt->event_type = ENCSyncEvent(*data);
         ++data;
@@ -1556,8 +1572,9 @@ CNCActiveHandler::x_ReadEventsList(void)
         memcpy(&evt->orig_server, data, sizeof(evt->orig_server));
         data += sizeof(evt->orig_server);
         memcpy(&evt->orig_time, data, sizeof(evt->orig_time));
-        m_SockBuffer.EraseReadData(rec_size);
+        m_SockBuffer.EraseReadBufData(rec_size);
 
+        m_SizeToRead -= rec_size;
         m_SyncCtrl->AddStartEvent(evt);
     }
 
@@ -1570,13 +1587,15 @@ bool
 CNCActiveHandler::x_ReadBlobsList(void)
 {
     while (m_SizeToRead != 0) {
-        if (m_SockBuffer.GetReadSize() < 2) {
-            m_SockBuffer.Read();
-            if (m_SockBuffer.GetReadSize() < 2)
+        if (m_SockBuffer.GetReadReadySize() < 2) {
+            if (!m_SockBuffer.ReadToBuf()
+                ||  m_SockBuffer.GetReadReadySize() < 2)
+            {
                 return false;
+            }
         }
 
-        Uint2 key_size = *(const Uint2*)m_SockBuffer.GetReadData();
+        Uint2 key_size = *(const Uint2*)m_SockBuffer.GetReadBufData();
         SNCCacheData* blob_sum;
         Uint2 rec_size = key_size + sizeof(key_size)
                          + sizeof(blob_sum->create_time)
@@ -1585,14 +1604,16 @@ CNCActiveHandler::x_ReadBlobsList(void)
                          + sizeof(blob_sum->dead_time)
                          + sizeof(blob_sum->expire)
                          + sizeof(blob_sum->ver_expire);
-        if (m_SockBuffer.GetReadSize() < rec_size) {
-            m_SockBuffer.Read();
-            if (m_SockBuffer.GetReadSize() < rec_size)
+        if (m_SockBuffer.GetReadReadySize() < rec_size) {
+            if (!m_SockBuffer.ReadToBuf()
+                ||  m_SockBuffer.GetReadReadySize() < rec_size)
+            {
                 return false;
+            }
         }
 
         blob_sum = new SNCCacheData();
-        const char* data = (const char*)m_SockBuffer.GetReadData()
+        const char* data = (const char*)m_SockBuffer.GetReadBufData()
                                         + sizeof(key_size);
         string key(key_size, '\0');
         memcpy(&key[0], data, key_size);
@@ -1608,8 +1629,9 @@ CNCActiveHandler::x_ReadBlobsList(void)
         memcpy(&blob_sum->expire, data, sizeof(blob_sum->expire));
         data += sizeof(blob_sum->expire);
         memcpy(&blob_sum->ver_expire, data, sizeof(blob_sum->ver_expire));
-        m_SockBuffer.EraseReadData(rec_size);
+        m_SockBuffer.EraseReadBufData(rec_size);
 
+        m_SizeToRead -= rec_size;
         m_SyncCtrl->AddStartBlob(key, blob_sum);
     }
 
@@ -1707,7 +1729,7 @@ CNCActiveHandler::x_ReadSyncGetAnswer(void)
             ++it_tok;
             Uint8 create_server = NStr::StringToUInt8(*it_tok);
             ++it_tok;
-            TNCBlobId create_id = NStr::StringToUInt(*it_tok);
+            Uint4 create_id = NStr::StringToUInt(*it_tok);
             m_BlobAccess->SetCreateServer(create_server, create_id, m_BlobSlot);
         }
         catch (CStringException&) {
@@ -1723,16 +1745,15 @@ bool
 CNCActiveHandler::x_ReadBlobData(void)
 {
     while (m_SizeToRead != 0) {
-        if (!m_SockBuffer.Read())
-            return false;
-        size_t n_read = m_SockBuffer.GetReadSize();
-        m_BlobAccess->WriteData(m_SockBuffer.GetReadData(), n_read);
-        m_SizeToRead -= n_read;
-        m_SockBuffer.EraseReadData(n_read);
+        Uint4 read_len = Uint4(m_BlobAccess->GetWriteMemSize());
         if (m_BlobAccess->HasError()) {
             x_CloseConnection();
             return true;
         }
+        size_t n_read = m_SockBuffer.Read(m_BlobAccess->GetWriteMemPtr(), read_len);
+        if (n_read == 0)
+            return false;
+        m_SizeToRead -= n_read;
     }
     m_BlobAccess->Finalize();
     if (m_BlobAccess->HasError()) {
@@ -1976,6 +1997,7 @@ CNCActiveHandler::x_WaitForFirstData(void)
 bool
 CNCActiveHandler::x_WriteBlobData(void)
 {
+    size_t n_written;
     do {
         if (m_ChunkSize == 0) {
             m_ChunkSize = Uint4(min(m_BlobAccess->GetCurBlobSize()
@@ -1985,26 +2007,26 @@ CNCActiveHandler::x_WriteBlobData(void)
                 x_FinishWritingBlob();
                 return true;
             }
-            m_SockBuffer.Write((const char*)&m_ChunkSize, sizeof(m_ChunkSize));
+            m_SockBuffer.WriteNoFail(&m_ChunkSize, sizeof(m_ChunkSize));
         }
 
-        void* write_buf  = m_SockBuffer.PrepareDirectWrite();
-        size_t want_read = m_SockBuffer.GetDirectWriteSize();
+        size_t want_read = m_BlobAccess->GetDataSize();
         if (m_ChunkSize < want_read)
             want_read = m_ChunkSize;
-        size_t n_read = 0;
-        n_read = m_BlobAccess->ReadData(write_buf, want_read);
         if (m_BlobAccess->HasError()) {
             m_ErrMsg = "ERR:Blob data is corrupted";
             x_CloseConnection();
             return true;
         }
-        m_SockBuffer.AddDirectWritten(n_read);
-        m_SockBuffer.Flush();
+        if (want_read == 0)
+            abort();
+
+        n_written = m_SockBuffer.Write(m_BlobAccess->GetDataPtr(), want_read);
         // HasError is processed in ManageCmdPipeline
-        m_ChunkSize -= Uint4(n_read);
+        m_ChunkSize -= Uint4(n_written);
+        m_BlobAccess->MoveCurPos(n_written);
     }
-    while (!m_SockBuffer.HasError()  &&  !m_SockBuffer.IsWriteDataPending());
+    while (!m_SockBuffer.HasError()  &&  n_written != 0);
 
     return false;
 }
@@ -2012,7 +2034,8 @@ CNCActiveHandler::x_WriteBlobData(void)
 void
 CNCActiveHandler::x_ManageCmdPipeline(void)
 {
-    CDiagnosticsGuard guard(this);
+    m_ObjLock.Lock();
+    InitDiagnostics();
 
     if (m_SyncCtrl) {
         Uint4 to_wait = CNCPeriodicSync::BeginTimeEvent(m_SrvId);
@@ -2025,6 +2048,8 @@ CNCActiveHandler::x_ManageCmdPipeline(void)
             }
             m_WaitForThrottle = true;
             x_DeferConnection();
+            ResetDiagnostics();
+            m_ObjLock.Unlock();
             return;
         }
         else {
@@ -2032,6 +2057,7 @@ CNCActiveHandler::x_ManageCmdPipeline(void)
         }
     }
 
+    m_InCmdPipeline = true;
     m_SockBuffer.Flush();
     if (!m_DidFirstWrite) {
         m_DidFirstWrite = true;
@@ -2046,6 +2072,7 @@ CNCActiveHandler::x_ManageCmdPipeline(void)
     {
         switch (x_GetState()) {
         case eConnIdle:
+        case eWaitClientRelease:
         case eReadyForPool:
         case eConnClosed:
             goto out_of_cycle;
@@ -2069,6 +2096,12 @@ CNCActiveHandler::x_ManageCmdPipeline(void)
             break;
         case eReadDataForClient:
             do_next_step = x_ReadDataForClient();
+            break;
+        case eReadWritePrefix:
+            do_next_step = x_ReadWritePrefix();
+            break;
+        case eWriteDataForClient:
+            do_next_step = x_WriteDataForClient();
             break;
         case eWaitOneLineAnswer:
             do_next_step = x_WaitOneLineAnswer();
@@ -2135,14 +2168,29 @@ out_of_cycle:
     if (m_SyncCtrl) {
         CNCPeriodicSync::EndTimeEvent(m_SrvId, 0);
     }
+    m_InCmdPipeline = false;
 
-    if (x_GetState() == eReadyForPool) {
-        x_DeferConnection();
-        x_SetState(eConnIdle);
-        m_Peer->PutConnToPool(this);
+    ResetDiagnostics();
+    EStates state = x_GetState();
+    if (state == eConnClosed) {
+        x_MayDeleteThis();
     }
-    else if (x_GetState() == eConnClosed) {
-        delete this;
+    else  {
+        if (state == eWaitClientRelease) {
+            if (m_Client)
+                x_DeferConnection();
+            else
+                state = eReadyForPool;
+        }
+        if (state == eReadyForPool) {
+            x_SetState(eConnIdle);
+            x_DeferConnection();
+            m_ObjLock.Unlock();
+            m_Peer->PutConnToPool(this);
+        }
+        else {
+            m_ObjLock.Unlock();
+        }
     }
 }
 

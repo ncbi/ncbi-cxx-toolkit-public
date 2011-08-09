@@ -29,11 +29,13 @@
 
 #include <ncbi_pch.hpp>
 
+#include <util/random_gen.hpp>
 #include <connect/impl/server_connection.hpp>
 
 #include "peer_control.hpp"
 #include "active_handler.hpp"
 #include "periodic_sync.hpp"
+#include "nc_storage_blob.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -50,6 +52,18 @@ static FILE* s_MirrorLogFile = NULL;
 CAtomicCounter CNCPeerControl::sm_TotalCopyRequests;
 CAtomicCounter CNCPeerControl::sm_CopyReqsRejected;
 
+
+
+static CRandom s_Rnd(CRandom::TValue(time(NULL)));
+
+static void
+s_SetNextTime(Uint8& next_time, Uint8 value, bool add_random)
+{
+    if (add_random)
+        value += s_Rnd.GetRand(0, kNCTimeTicksInSec);
+    if (next_time < value)
+        next_time = value;
+}
 
 
 SNCMirrorProlong::SNCMirrorProlong(ENCSyncEvent typ,
@@ -125,7 +139,9 @@ CNCPeerControl::CNCPeerControl(Uint8 srv_id)
       m_InThrottle(false),
       m_HasBGTasks(false),
       m_InitiallySynced(false)
-{}
+{
+    m_NextTaskSync = m_SyncList.end();
+}
 
 void
 CNCPeerControl::RegisterConnError(void)
@@ -171,11 +187,12 @@ CNCPeerControl::CreateNewSocket(CNCActiveHandler* conn)
 
     CNCActiveHandler_Proxy* proxy = new CNCActiveHandler_Proxy(conn);
     CServer_Connection* srv_conn = new CServer_Connection(proxy);
+    proxy->SetSocket(srv_conn);
     conn->SetServerConn(srv_conn, proxy);
     STimeout timeout = {0, 0};
     EIO_Status conn_res = srv_conn->Connect(CSocketAPI::ntoa(Uint4(m_SrvId >> 32)),
                                             Uint2(m_SrvId), &timeout,
-                                            fSOCK_LogOff | fSOCK_KeepAlive);
+                                            fSOCK_LogOn | fSOCK_KeepAlive);
     if (conn_res != eIO_Success) {
         delete srv_conn;
         // proxy is deleted inside srv_conn
@@ -202,40 +219,6 @@ CNCPeerControl::GetPooledConn(void)
     return x_GetPooledConnImpl();
 }
 
-void
-CNCPeerControl::AssignClientConn(CNCActiveClientHub* hub)
-{
-    m_ObjLock.Lock();
-    if (m_ActiveConns >= CNCDistributionConf::GetMaxPeerTotalConns()) {
-        hub->SetStatus(eNCHubWaitForConn);
-        m_Clients.push_back(hub);
-        m_ObjLock.Unlock();
-        return;
-    }
-    ++m_ActiveConns;
-    CNCActiveHandler* conn = x_GetPooledConnImpl();
-    m_ObjLock.Unlock();
-
-    if (!conn) {
-        conn = new CNCActiveHandler(m_SrvId, this);
-        if (!CreateNewSocket(conn)) {
-            delete conn;
-            m_ObjLock.Lock();
-            if (m_ActiveConns == 0)
-                abort();
-            --m_ActiveConns;
-            m_ObjLock.Unlock();
-            hub->SetErrMsg("Cannot connect to peer");
-            hub->SetStatus(eNCHubError);
-            return;
-        }
-    }
-    hub->SetStatus(eNCHubConnReady);
-    hub->SetHandler(conn);
-    conn->SetClientHub(hub);
-    conn->SetReservedForBG(false);
-}
-
 inline void
 CNCPeerControl::x_UpdateHasTasks(void)
 {
@@ -256,25 +239,93 @@ CNCPeerControl::x_ReserveBGConn(void)
     return true;
 }
 
+inline void
+CNCPeerControl::x_IncBGConns(void)
+{
+    if (++m_BGConns > m_ActiveConns)
+        abort();
+}
+
+inline void
+CNCPeerControl::x_DecBGConns(CNCActiveHandler* conn)
+{
+    if (!conn  ||  conn->IsReservedForBG()) {
+        if (m_BGConns == 0)
+            abort();
+        --m_BGConns;
+        if (conn)
+            conn->SetReservedForBG(false);
+    }
+}
+
+inline void
+CNCPeerControl::x_DecActiveConns(void)
+{
+    if (m_ActiveConns == 0  ||  --m_ActiveConns < m_BGConns)
+        abort();
+}
+
+CNCActiveHandler*
+CNCPeerControl::x_CreateNewConn(bool for_bg)
+{
+    CNCActiveHandler* conn = new CNCActiveHandler(m_SrvId, this);
+    conn->SetReservedForBG(for_bg);
+    if (!CreateNewSocket(conn)) {
+        m_ObjLock.Lock();
+        x_DecBGConns(conn);
+        x_DecActiveConns();
+        m_ObjLock.Unlock();
+        delete conn;
+        conn = NULL;
+    }
+    return conn;
+}
+
+void
+CNCPeerControl::x_AssignClientConn(CNCActiveClientHub* hub,
+                                   CNCActiveHandler* conn)
+{
+    if (!conn)
+        conn = x_GetPooledConnImpl();
+    m_ObjLock.Unlock();
+
+    if (!conn) {
+        conn = x_CreateNewConn(false);
+        if (!conn) {
+            hub->SetErrMsg(m_InThrottle? "Connection is throttled"
+                                       : "Cannot connect to peer");
+            hub->SetStatus(eNCHubError);
+            return;
+        }
+    }
+    hub->SetStatus(eNCHubConnReady);
+    hub->SetHandler(conn);
+    conn->SetClientHub(hub);
+}
+
+void
+CNCPeerControl::AssignClientConn(CNCActiveClientHub* hub)
+{
+    m_ObjLock.Lock();
+    if (m_ActiveConns >= CNCDistributionConf::GetMaxPeerTotalConns()) {
+        hub->SetStatus(eNCHubWaitForConn);
+        m_Clients.push_back(hub);
+        m_ObjLock.Unlock();
+        return;
+    }
+    ++m_ActiveConns;
+    x_AssignClientConn(hub, NULL);
+}
+
 CNCActiveHandler*
 CNCPeerControl::x_GetBGConnImpl(void)
 {
     CNCActiveHandler* conn = x_GetPooledConnImpl();
     m_ObjLock.Unlock();
-    if (!conn) {
-        conn = new CNCActiveHandler(m_SrvId, this);
-        if (!CreateNewSocket(conn)) {
-            delete conn;
-            m_ObjLock.Lock();
-            if (m_BGConns == 0  ||  m_ActiveConns == 0)
-                abort();
-            --m_BGConns;
-            --m_ActiveConns;
-            m_ObjLock.Unlock();
-            return NULL;
-        }
-    }
-    conn->SetReservedForBG(true);
+    if (conn)
+        conn->SetReservedForBG(true);
+    else
+        conn = x_CreateNewConn(true);
     return conn;
 }
 
@@ -286,36 +337,26 @@ CNCPeerControl::GetBGConn(void)
         m_ObjLock.Unlock();
         return NULL;
     }
-    // x_GetBGConn() releases m_ObjLock
+    // x_GetBGConnImpl() releases m_ObjLock
     return x_GetBGConnImpl();
 }
 
-void
-CNCPeerControl::PutConnToPool(CNCActiveHandler* conn)
+bool
+CNCPeerControl::x_DoReleaseConn(CNCActiveHandler* conn)
 {
-    CFastMutexGuard guard(m_ObjLock);
+    bool result = true;
     if (!m_Clients.empty()) {
         CNCActiveClientHub* hub = m_Clients.front();
         m_Clients.pop_front();
-        hub->SetHandler(conn);
-        conn->SetClientHub(hub);
-        if (conn->IsReservedForBG()) {
-            if (m_BGConns == 0)
-                abort();
-            --m_BGConns;
-            conn->SetReservedForBG(false);
-        }
-        hub->SetStatus(eNCHubConnReady);
+        x_AssignClientConn(hub, conn);
+
+        g_NetcacheServer->WakeUpPollCycle();
+        result = false;
     }
     else if (m_HasBGTasks
-             &&  (conn->IsReservedForBG()
-                  ||  m_BGConns < CNCDistributionConf::GetMaxPeerBGConns()))
+             &&  m_BGConns < CNCDistributionConf::GetMaxPeerBGConns())
     {
-        if (!conn->IsReservedForBG()) {
-            ++m_BGConns;
-            conn->SetReservedForBG(true);
-        }
-
+        x_IncBGConns();
         if (!m_SmallMirror.empty()  ||  !m_BigMirror.empty()) {
             SNCMirrorEvent* event;
             if (!m_SmallMirror.empty()) {
@@ -327,9 +368,16 @@ CNCPeerControl::PutConnToPool(CNCActiveHandler* conn)
                 m_BigMirror.pop_back();
             }
             x_UpdateHasTasks();
-            guard.Release();
+            m_ObjLock.Unlock();
 
-            x_ProcessMirrorEvent(conn, event);
+            if (conn)
+                conn->SetReservedForBG(true);
+            else
+                conn = x_CreateNewConn(true);
+            if (conn)
+                x_ProcessMirrorEvent(conn, event);
+            else
+                x_DeleteMirrorEvent(event);
         }
         else if (!m_SyncList.empty()) {
             CNCActiveSyncControl* sync_ctrl = *m_NextTaskSync;
@@ -344,33 +392,46 @@ CNCPeerControl::PutConnToPool(CNCActiveHandler* conn)
             else if (++m_NextTaskSync == m_SyncList.end())
                 m_NextTaskSync = m_SyncList.begin();
             x_UpdateHasTasks();
-            guard.Release();
+            m_ObjLock.Unlock();
 
-            sync_ctrl->ExecuteSyncTask(task_info, conn);
+            if (conn)
+                conn->SetReservedForBG(true);
+            else
+                conn = x_CreateNewConn(true);
+            if (conn)
+                sync_ctrl->ExecuteSyncTask(task_info, conn);
+            else
+                sync_ctrl->CmdFinished(eSynNetworkError, eSynActionNone);
         }
         else
             abort();
+
+        result = false;
     }
     else {
-        if (m_ActiveConns == 0)
-            abort();
-        --m_ActiveConns;
+        x_DecActiveConns();
+    }
+    return result;
+}
+
+void
+CNCPeerControl::PutConnToPool(CNCActiveHandler* conn)
+{
+    m_ObjLock.Lock();
+    x_DecBGConns(conn);
+    if (x_DoReleaseConn(conn)) {
         m_PooledConns.push_back(conn);
+        m_ObjLock.Unlock();
     }
 }
 
 void
 CNCPeerControl::ReleaseConn(CNCActiveHandler* conn)
 {
-    CFastMutexGuard guard(m_ObjLock);
-    if (conn->IsReservedForBG()) {
-        if (m_BGConns == 0)
-            abort();
-        --m_BGConns;
-    }
-    if (m_ActiveConns == 0)
-        abort();
-    --m_ActiveConns;
+    m_ObjLock.Lock();
+    x_DecBGConns(conn);
+    if (x_DoReleaseConn(NULL))
+        m_ObjLock.Unlock();
 }
 
 void
@@ -523,7 +584,7 @@ CNCPeerControl::x_SlotsInitiallySynced(Uint2 cnt_slots)
 {
     if (cnt_slots != 0  &&  m_SlotsToInitSync != 0) {
         if (cnt_slots != 1) {
-            LOG_POST("Server " << m_SrvId << " is out of reach");
+            INFO_POST("Server " << m_SrvId << " is out of reach");
         }
         m_SlotsToInitSync -= cnt_slots;
         if (m_SlotsToInitSync == 0) {
@@ -542,16 +603,19 @@ CNCPeerControl::AddInitiallySyncedSlot(void)
 }
 
 void
-CNCPeerControl::RegisterSyncStop(bool is_passive, Uint8 next_sync_delay)
+CNCPeerControl::RegisterSyncStop(bool is_passive,
+                                 Uint8& next_sync_time,
+                                 Uint8 next_sync_delay)
 {
     CFastMutexGuard guard(m_ObjLock);
     Uint8 now = CNetCacheServer::GetPreciseTime();
     Uint8 next_time = now + next_sync_delay;
+    s_SetNextTime(next_sync_time, next_time, true);
     if (m_FirstNWErrTime == 0) {
-        g_SetNextTime(m_NextSyncTime, now, false);
+        s_SetNextTime(m_NextSyncTime, now, false);
     }
     else {
-        g_SetNextTime(m_NextSyncTime, next_time, true);
+        s_SetNextTime(m_NextSyncTime, next_time, true);
         if (m_InThrottle)
             x_SrvInitiallySynced();
         if (now - m_FirstNWErrTime >= CNCDistributionConf::GetNetworkErrorTimeout())
@@ -582,6 +646,8 @@ CNCPeerControl::AddSyncControl(CNCActiveSyncControl* sync_ctrl)
     }
     if (has_more) {
         m_SyncList.push_back(sync_ctrl);
+        if (m_NextTaskSync == m_SyncList.end())
+            m_NextTaskSync = m_SyncList.begin();
         m_HasBGTasks = true;
     }
     m_ObjLock.Unlock();
@@ -605,6 +671,8 @@ CNCPeerControl::FinishSync(CNCActiveSyncControl* sync_ctrl)
     }
     else {
         m_SyncList.push_back(sync_ctrl);
+        if (m_NextTaskSync == m_SyncList.end())
+            m_NextTaskSync = m_SyncList.begin();
         m_HasBGTasks = true;
         m_ObjLock.Unlock();
     }

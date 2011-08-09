@@ -49,6 +49,8 @@
 #include "distribution_conf.hpp"
 #include "sync_log.hpp"
 #include "peer_control.hpp"
+#include "nc_storage.hpp"
+#include "active_handler.hpp"
 
 
 
@@ -398,6 +400,7 @@ CNetCacheServer::Initialize(bool do_reinit)
 
     if (!CNCDistributionConf::Initialize(m_CtrlPort))
         return false;
+    CNCActiveHandler::Initialize();
 
     CFastMutexGuard guard(s_CachingLock);
 
@@ -407,7 +410,6 @@ CNetCacheServer::Initialize(bool do_reinit)
     g_NCStorage = new CNCBlobStorage();
     if (!g_NCStorage->Initialize(do_reinit))
         return false;
-    CNCFileSystem::SetDiskInitialized();
 
     Uint8 max_rec_no = g_NCStorage->GetMaxSyncLogRecNo();
     CNCSyncLog::Initialize(g_NCStorage->IsCleanStart(), max_rec_no);
@@ -467,7 +469,7 @@ CNetCacheServer::Finalize(void)
     CNCSyncLog::Finalize();
     CNCDistributionConf::Finalize();
 
-    g_NetcacheServer = NULL;
+    //g_NetcacheServer = NULL;
 }
 
 const SNCSpecificParams*
@@ -515,7 +517,7 @@ CNetCacheServer::x_PrintServerStats(CPrintTextProxy& proxy)
         g_NCStorage->PrintStat(proxy);
     proxy << endl
           << "Copy queue - " << CNCPeerControl::GetMirrorQueueSize() << endl
-          << "Sync log queue - " << CNCSyncLog::GetLogSize() << endl;
+          << "Sync log queue - " << g_ToSmartStr(CNCSyncLog::GetLogSize()) << endl;
     CNCStat::Print(proxy);
 }
 
@@ -543,8 +545,7 @@ CNetCacheServer::InitialSyncComplete(void)
 void
 CNetCacheServer::UpdateLastRecNo(void)
 {
-    Uint8 last_rec_no = CNCSyncLog::GetLastRecNo();
-    g_NCStorage->SetMaxSyncLogRecNo(last_rec_no);
+    g_NCStorage->SaveMaxSyncLogRecNo();
 }
 
 void
@@ -572,6 +573,18 @@ bool
 CNetCacheServer::IsDebugMode(void)
 {
     return g_NetcacheServer  &&  g_NetcacheServer->m_DebugMode;
+}
+
+Uint8
+CNetCacheServer::GetDiskFree(void)
+{
+    try {
+        return CFileUtil::GetFreeDiskSpace(g_NCStorage->GetPath());
+    }
+    catch (CFileErrnoException& ex) {
+        ERR_POST(Critical << "Cannot read free disk space: " << ex);
+        return 0;
+    }
 }
 
 
@@ -651,8 +664,6 @@ CNetCacheDApp::Run(void)
     if (!CNCMemManager::InitializeApp())
         goto fin_mem;
     CSQLITE_Global::Initialize();
-    if (!CNCFileSystem::Initialize())
-        goto fin_fs;
     server = new CNetCacheServer();
     if (server->Initialize(args["reinit"])) {
         server->Run();
@@ -662,8 +673,6 @@ CNetCacheDApp::Run(void)
     }
     server->Finalize();
     //delete server;
-fin_fs:
-    CNCFileSystem::Finalize();
     CSQLITE_Global::Finalize();
 fin_mem:
     CNCMemManager::FinalizeApp();

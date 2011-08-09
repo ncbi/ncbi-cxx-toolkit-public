@@ -157,35 +157,16 @@ public:
     /// Get amount of data written during last 5 second
     Uint8 GetWrittenSize5Sec(void);
 
-    ///
-    static void AddBlockedOperation(void);
-
-    /// Add measurement for number of blobs in the database
-    static void AddCacheMeasurement (unsigned int num_blobs,
-                                     unsigned int num_nodes,
-                                     unsigned int tree_height);
     /// Add measurement for number of database parts and difference between
     /// highest and lowest ids of database parts.
-    static void AddDBMeasurement    (unsigned int num_meta,
-                                     unsigned int num_data,
-                                     Int8         size_meta,
-                                     Int8         size_data,
-                                     Uint8        useful_cnt_meta,
-                                     Uint8        garbage_cnt_meta,
-                                     Uint8        useful_cnt_data,
-                                     Uint8        garbage_cnt_data,
-                                     Int8         useful_size_data,
-                                     Int8         garbage_size_data);
-    /// 
-    static void AddMetaFileMeasurement(Int8  size,
-                                       Uint8 useful_cnt,
-                                       Uint8 garbage_cnt);
-    /// 
-    static void AddDataFileMeasurement(Int8  size,
-                                       Uint8 useful_cnt,
-                                       Uint8 garbage_cnt,
-                                       Int8  useful_size,
-                                       Int8  garbage_size);
+    static void AddDBMeasurement(Uint4 num_files,
+                                 Uint8 db_size,
+                                 Uint8 garbage,
+                                 size_t cache_size,
+                                 size_t cache_cnt,
+                                 Uint8 cnt_blobs,
+                                 Uint8 unfinished_blobs,
+                                 Uint4 write_tasks);
 
     /// Add read blob of given size
     static void AddBlobRead         (Uint8 blob_size, Uint8 read_size);
@@ -202,14 +183,13 @@ public:
     static void CollectAllStats(CNCStat& stat);
     /// Print statistics to the given proxy object
     static void Print(CPrintTextProxy& proxy);
-    static void PrintCntConnections(void);
 
 private:
     friend class CNCStat_Getter;
 
 
     enum {
-        kMinSizeInChart = 32, ///< Minimum blob size that will be counted for
+        kMinSizeInChart = 8,  ///< Minimum blob size that will be counted for
                               ///< the statistics chart showing distribution
                               ///< of blobs sizes. Should be a power of 2.
         kCntHistoryValues = 7
@@ -276,52 +256,16 @@ private:
     Uint8                 m_HistReadSize[kCntHistoryValues];
     /// Size of data written to database in each second
     Uint8                 m_HistWriteSize[kCntHistoryValues];
-    ///
-    Uint8                           m_BlockedOps;
     /// Number of blobs in the database
-    CNCStatFigure<unsigned int>     m_CountBlobs;
-    ///
-    CNCStatFigure<unsigned int>     m_CountCacheNodes;
-    ///
-    CNCStatFigure<unsigned int>     m_CacheTreeHeight;
-    /// 
-    CNCStatFigure<Uint8>            m_NumOfMetaFiles;
-    /// 
-    CNCStatFigure<Uint8>            m_NumOfDataFiles;
-    /// Total size of all meta files in database
-    CNCStatFigure<Int8>             m_TotalMetaSize;
-    /// Total size of all data files in database
-    CNCStatFigure<Int8>             m_TotalDataSize;
+    CNCStatFigure<Uint8>  m_CntBlobs;
+    CNCStatFigure<Uint8>  m_UnfinishedBlobs;
+    CNCStatFigure<Uint4>  m_NumOfFiles;
     /// Total size of database
-    CNCStatFigure<Int8>             m_TotalDBSize;
-    ///
-    CNCStatFigure<Uint8>            m_TotalUsefulCntMeta;
-    ///
-    CNCStatFigure<Uint8>            m_TotalGarbageCntMeta;
-    ///
-    CNCStatFigure<Uint8>            m_TotalUsefulCntData;
-    ///
-    CNCStatFigure<Uint8>            m_TotalGarbageCntData;
-    ///
-    CNCStatFigure<Uint8>            m_TotalUsefulSizeData;
-    ///
-    CNCStatFigure<Uint8>            m_TotalGarbageSizeData;
-    /// Size of individual meta file in database part
-    CNCStatFigure<Int8>             m_MetaFileSize;
-    ///
-    CNCStatFigure<Uint8>            m_MetaFileUsefulCnt;
-    ///
-    CNCStatFigure<Uint8>            m_MetaFileGarbageCnt;
-    /// Size of individual data file in database part
-    CNCStatFigure<Int8>             m_DataFileSize;
-    ///
-    CNCStatFigure<Uint8>            m_DataFileUsefulCnt;
-    ///
-    CNCStatFigure<Uint8>            m_DataFileGarbageCnt;
-    ///
-    CNCStatFigure<Uint8>            m_DataFileUsefulSize;
-    ///
-    CNCStatFigure<Uint8>            m_DataFileGarbageSize;
+    CNCStatFigure<Uint8>  m_DBSize;
+    CNCStatFigure<Uint8>  m_GarbageSize;
+    CNCStatFigure<size_t> m_CacheSize;
+    CNCStatFigure<size_t> m_CacheCnt;
+    CNCStatFigure<Uint4>  m_CntWriteTasks;
     /// Maximum size of blob operated at any moment by storage
     Uint8                           m_MaxBlobSize;
     /// Maximum size of blob chunk operated at any moment by storage
@@ -502,80 +446,25 @@ CNCStat::GetWrittenSize5Sec(void)
 }
 
 inline void
-CNCStat::AddBlockedOperation(void)
+CNCStat::AddDBMeasurement(Uint4 num_files,
+                          Uint8 db_size,
+                          Uint8 garbage,
+                          size_t cache_size,
+                          size_t cache_cnt,
+                          Uint8 cnt_blobs,
+                          Uint8 unfinished_blobs,
+                          Uint4 write_tasks)
 {
     CNCStat* stat = sm_Getter.GetObjPtr();
     stat->m_ObjLock.Lock();
-    ++stat->m_BlockedOps;
-    stat->m_ObjLock.Unlock();
-}
-
-inline void
-CNCStat::AddCacheMeasurement(unsigned int num_blobs,
-                             unsigned int num_nodes,
-                             unsigned int tree_height)
-{
-    CNCStat* stat = sm_Getter.GetObjPtr();
-    stat->m_ObjLock.Lock();
-    stat->m_CountBlobs.AddValue(num_blobs);
-    stat->m_CountCacheNodes.AddValue(num_nodes);
-    stat->m_CacheTreeHeight.AddValue(tree_height);
-    stat->m_ObjLock.Unlock();
-}
-
-inline void
-CNCStat::AddDBMeasurement(unsigned int  num_meta,
-                          unsigned int  num_data,
-                          Int8          size_meta,
-                          Int8          size_data,
-                          Uint8         useful_cnt_meta,
-                          Uint8         garbage_cnt_meta,
-                          Uint8         useful_cnt_data,
-                          Uint8         garbage_cnt_data,
-                          Int8          useful_size_data,
-                          Int8          garbage_size_data)
-{
-    CNCStat* stat = sm_Getter.GetObjPtr();
-    stat->m_ObjLock.Lock();
-    stat->m_NumOfMetaFiles.AddValue(num_meta);
-    stat->m_NumOfDataFiles.AddValue(num_data);
-    stat->m_TotalMetaSize.AddValue(size_meta);
-    stat->m_TotalDataSize.AddValue(size_data);
-    stat->m_TotalDBSize.AddValue(size_meta + size_data);
-    stat->m_TotalUsefulCntMeta.AddValue(useful_cnt_meta);
-    stat->m_TotalGarbageCntMeta.AddValue(garbage_cnt_meta);
-    stat->m_TotalUsefulCntData.AddValue(useful_cnt_data);
-    stat->m_TotalGarbageCntData.AddValue(garbage_cnt_data);
-    stat->m_TotalUsefulSizeData.AddValue(useful_size_data);
-    stat->m_TotalGarbageSizeData.AddValue(garbage_size_data);
-    stat->m_ObjLock.Unlock();
-}
-
-inline void
-CNCStat::AddMetaFileMeasurement(Int8 size, Uint8 useful_cnt, Uint8 garbage_cnt)
-{
-    CNCStat* stat = sm_Getter.GetObjPtr();
-    stat->m_ObjLock.Lock();
-    stat->m_MetaFileSize.AddValue(size);
-    stat->m_MetaFileUsefulCnt.AddValue(useful_cnt);
-    stat->m_MetaFileGarbageCnt.AddValue(garbage_cnt);
-    stat->m_ObjLock.Unlock();
-}
-
-inline void
-CNCStat::AddDataFileMeasurement(Int8  size,
-                                Uint8 useful_cnt,
-                                Uint8 garbage_cnt,
-                                Int8  useful_size,
-                                Int8  garbage_size)
-{
-    CNCStat* stat = sm_Getter.GetObjPtr();
-    stat->m_ObjLock.Lock();
-    stat->m_DataFileSize.AddValue(size);
-    stat->m_DataFileUsefulCnt.AddValue(useful_cnt);
-    stat->m_DataFileGarbageCnt.AddValue(garbage_cnt);
-    stat->m_DataFileUsefulSize.AddValue(useful_size);
-    stat->m_DataFileGarbageSize.AddValue(garbage_size);
+    stat->m_NumOfFiles.AddValue(num_files);
+    stat->m_DBSize.AddValue(db_size);
+    stat->m_GarbageSize.AddValue(garbage);
+    stat->m_CacheSize.AddValue(cache_size);
+    stat->m_CacheCnt.AddValue(cache_cnt);
+    stat->m_CntBlobs.AddValue(cnt_blobs);
+    stat->m_UnfinishedBlobs.AddValue(unfinished_blobs);
+    stat->m_CntWriteTasks.AddValue(write_tasks);
     stat->m_ObjLock.Unlock();
 }
 

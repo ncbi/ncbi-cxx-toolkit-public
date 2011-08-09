@@ -112,7 +112,9 @@ public:
 
     void SetSlotsForInitSync(Uint2 cnt_slots);
     void AddInitiallySyncedSlot(void);
-    void RegisterSyncStop(bool is_passive, Uint8 next_sync_delay);
+    void RegisterSyncStop(bool is_passive,
+                          Uint8& next_sync_time,
+                          Uint8 next_sync_delay);
     Uint8 GetNextSyncTime(void);
 
     Uint8 GetSrvId(void);
@@ -143,7 +145,13 @@ private:
     void x_SlotsInitiallySynced(Uint2 cnt_slots);
     CNCActiveHandler* x_GetPooledConnImpl(void);
     bool x_ReserveBGConn(void);
+    void x_IncBGConns(void);
+    void x_DecBGConns(CNCActiveHandler* conn);
+    void x_DecActiveConns(void);
+    CNCActiveHandler* x_CreateNewConn(bool for_bg);
+    void x_AssignClientConn(CNCActiveClientHub* hub, CNCActiveHandler* conn);
     CNCActiveHandler* x_GetBGConnImpl(void);
+    bool x_DoReleaseConn(CNCActiveHandler* conn);
     void x_DeleteMirrorEvent(SNCMirrorEvent* event);
     void x_ProcessMirrorEvent(CNCActiveHandler* conn, SNCMirrorEvent* event);
     void x_AddMirrorEvent(SNCMirrorEvent* event, Uint8 size);

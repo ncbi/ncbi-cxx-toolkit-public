@@ -59,6 +59,7 @@ BEGIN_NCBI_SCOPE
 
 class CNCPeerControl;
 class CNCActiveHandler;
+struct SNCCacheData;
 
 
 enum ESyncInitiateResult {
@@ -305,10 +306,6 @@ public:
     static CNCTimeThrottler* CreateTlsObject(void);
     static void DeleteTlsObject(void* obj);
 };
-
-
-
-void g_SetNextTime(Uint8& next_time, Uint8 value, bool add_random);
 
 
 

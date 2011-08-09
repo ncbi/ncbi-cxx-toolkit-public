@@ -205,6 +205,7 @@ private:
 
     enum EStates {
         eConnIdle,
+        eWaitClientRelease,
         eReadyForPool,
         eReadFoundMeta,
         eSendCopyPutCmd,
@@ -267,12 +268,10 @@ private:
 
     /// Main dispatcher of state machine
     void x_ManageCmdPipeline(void);
-
+    void x_MayDeleteThis(void);
     bool x_ReplaceServerConn(void);
-    void x_DetachFromClient(void);
     void x_DeferConnection(void);
     void x_CloseConnection(void);
-    void x_SetConnIdle(void);
     void x_WaitForWouldBlock(void);
     void x_AddConnToPool(void);
     void x_SendCmdToExecute(void);
@@ -312,18 +311,6 @@ private:
     bool x_ExecuteProInfoCmd(void);
 
 
-    /// Special guard to properly initialize and de-initialize diagnostics
-    class CDiagnosticsGuard
-    {
-    public:
-        CDiagnosticsGuard(CNCActiveHandler* handler);
-        ~CDiagnosticsGuard(void);
-
-    private:
-        CNCActiveHandler* m_Handler;
-    };
-
-
     CMutex  m_ObjLock;
     Uint8   m_SrvId;
     string  m_CmdToSend;
@@ -352,6 +339,7 @@ private:
     Uint2 m_BlobSlot;
     ESynActionType m_SyncAction;
     bool m_ReservedForBG;
+    bool m_InCmdPipeline;
     bool m_AddedToPool;
     bool m_DidFirstWrite;
     bool m_GotAnyAnswer;
@@ -359,6 +347,7 @@ private:
     bool m_NeedFlushBuff;
     bool m_BlobExists;
     bool m_WaitForThrottle;
+    bool m_NeedDelete;
     string m_ErrMsg;
 };
 
@@ -368,6 +357,7 @@ class CNCActiveHandler_Proxy : public IServer_ConnectionHandler
 public:
     CNCActiveHandler_Proxy(CNCActiveHandler* handler);
     virtual ~CNCActiveHandler_Proxy(void);
+    void SetSocket(CSocket* sock);
     void SetHandler(CNCActiveHandler* handler);
 
     virtual void OnOpen(void);
@@ -384,6 +374,7 @@ private:
 
 
     CNCActiveHandler* m_Handler;
+    CSocket* m_Socket;
 };
 
 
@@ -398,14 +389,6 @@ CNCActiveClientHub::CNCActiveClientHub(CNCMessageHandler* client)
       m_Handler(NULL),
       m_Status(eNCHubSuccess)
 {}
-
-inline void
-CNCActiveClientHub::Release(void)
-{
-    if (m_Handler)
-        m_Handler->ClientReleased();
-    delete this;
-}
 
 inline void
 CNCActiveClientHub::SetStatus(ENCClientHubStatus status)
@@ -480,6 +463,12 @@ CNCActiveHandler::GetBlobSummary(void)
     return m_BlobSum;
 }
 
+
+inline void
+CNCActiveHandler_Proxy::SetSocket(CSocket* sock)
+{
+    m_Socket = sock;
+}
 
 inline void
 CNCActiveHandler_Proxy::SetHandler(CNCActiveHandler* handler)

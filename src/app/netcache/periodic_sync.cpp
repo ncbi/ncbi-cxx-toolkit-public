@@ -40,6 +40,7 @@
 #include "message_handler.hpp"
 #include "peer_control.hpp"
 #include "active_handler.hpp"
+#include "nc_storage.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -86,15 +87,6 @@ s_FindServerSlot(Uint8 server_id,
     }
 }
 
-void
-g_SetNextTime(Uint8& next_time, Uint8 value, bool add_random)
-{
-    if (add_random)
-        value += s_Rnd.GetRand(0, kNCTimeTicksInSec);
-    if (next_time < value)
-        next_time = value;
-}
-
 static ESyncInitiateResult
 s_StartSync(SSyncSlotData* slot_data, SSyncSlotSrv* slot_srv, bool is_passive)
 {
@@ -122,7 +114,9 @@ s_StartSync(SSyncSlotData* slot_data, SSyncSlotSrv* slot_srv, bool is_passive)
 static void
 s_StopSync(SSyncSlotData* slot_data, SSyncSlotSrv* slot_srv, Uint8 next_delay)
 {
-    slot_srv->peer->RegisterSyncStop(slot_srv->is_passive, next_delay);
+    slot_srv->peer->RegisterSyncStop(slot_srv->is_passive,
+                                     slot_srv->next_sync_time,
+                                     next_delay);
     slot_srv->sync_started = false;
     if (slot_data->cnt_sync_started == 0)
         abort();
@@ -293,21 +287,19 @@ CNCPeriodicSync::Initialize(void)
 void
 CNCPeriodicSync::Finalize(void)
 {
-    if (s_LogCleaner.IsNull()) {
-        // Didn't have a chance to initialize
-        return;
-    }
-
     s_NeedFinish = true;
     s_CleanerSem.Post();
     try {
-        s_LogCleaner->Join();
+        if (s_LogCleaner.NotNull())
+            s_LogCleaner->Join();
         NON_CONST_ITERATE(TSyncControls, it, s_SyncControls) {
-            (*it)->WakeUp();
+            if (*it)
+                (*it)->WakeUp();
         }
         s_MainsSem.Post(CNCDistributionConf::GetCntActiveSyncs());
         NON_CONST_ITERATE(TSyncControls, it, s_SyncControls) {
-            (*it)->Join();
+            if (*it)
+                (*it)->Join();
         }
     }
     catch (CThreadException& ex) {
@@ -595,6 +587,7 @@ CNCActiveSyncControl::x_DoPeriodicSync(SSyncSlotData* slot_data,
         extra.Print("_type", "sync");
         extra.Print("srv_id", NStr::UInt8ToString(m_SrvId));
         extra.Print("slot", NStr::UIntToString(m_Slot));
+        extra.Print("self_id", NStr::UInt8ToString(CNCDistributionConf::GetSelfID()));
         extra.Flush();
     }
     m_DiagCtx->SetRequestStatus(CNCMessageHandler::eStatus_OK);
@@ -607,6 +600,8 @@ CNCActiveSyncControl::x_DoPeriodicSync(SSyncSlotData* slot_data,
         m_StartedCmds = 1;
         conn->SyncStart(this, m_LocalStartRecNo, m_RemoteStartRecNo);
         m_WaitSem.Wait();
+        if (s_NeedFinish)
+            m_Result = eSynAborted;
     }
     else {
         m_Result = eSynNetworkError;
@@ -630,22 +625,18 @@ CNCActiveSyncControl::x_DoPeriodicSync(SSyncSlotData* slot_data,
                     m_Result = eSynNetworkError;
                 }
             }
+            else if (m_SlotSrv->peer->FinishSync(this)) {
+                m_WaitSem.Wait();
+            }
             else {
-                m_StartedCmds = 1;
-                if (m_SlotSrv->peer->FinishSync(this)) {
-                    m_WaitSem.Wait();
-                }
-                else {
-                    m_StartedCmds = 0;
-                    m_NextTask = eSynNoTask;
-                    m_Result = eSynNetworkError;
-                }
+                m_StartedCmds = 0;
+                m_NextTask = eSynNoTask;
+                m_Result = eSynNetworkError;
             }
             m_Lock.Lock();
             if (m_NextTask != eSynNoTask) {
                 if (!s_NeedFinish)
                     abort();
-                m_NextTask = eSynNoTask;
                 m_Result = eSynAborted;
             }
             m_Lock.Unlock();
@@ -737,7 +728,9 @@ CNCActiveSyncControl::x_PrepareSyncByEvents(void)
             m_StartedCmds = 1;
             conn->SyncBlobsList(this);
             m_WaitSem.Wait();
-            if (m_Result == eSynOK)
+            if (s_NeedFinish)
+                m_Result = eSynAborted;
+            else if (m_Result == eSynOK)
                 x_PrepareSyncByBlobs();
         }
         else {
@@ -1029,7 +1022,6 @@ CNCActiveSyncControl::CmdFinished(ESyncResult res, ESynActionType action)
 
     if (--m_StartedCmds == 0) {
         if (m_NextTask == eSynNeedFinalize) {
-            m_StartedCmds = 1;
             m_Lock.Unlock();
             if (m_Result == eSynNetworkError
                 ||  !m_SlotSrv->peer->FinishSync(this))
@@ -1040,11 +1032,12 @@ CNCActiveSyncControl::CmdFinished(ESyncResult res, ESynActionType action)
                 m_WaitSem.Post();
             }
         }
-        else {
-            if (m_NextTask != eSynNoTask)
-                abort();
+        else if (m_NextTask == eSynNoTask) {
             m_Lock.Unlock();
             m_WaitSem.Post();
+        }
+        else {
+            m_Lock.Unlock();
         }
     }
     else {

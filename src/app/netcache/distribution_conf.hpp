@@ -94,10 +94,8 @@ public:
     static Uint2 GetMaxPeerBGConns(void);
     static Uint1 GetCntErrorsToThrottle(void);
     static Uint8 GetPeerThrottlePeriod(void);
+    static double GetPeerConnTimeout(void);
     static Uint1 GetPeerTimeout(void);
-    static Uint1 GetCntMirroringThreads(void);
-    static Uint1 GetMirrorSmallPrefered(void);
-    static Uint1 GetMirrorSmallExclusive(void);
     static Uint8 GetSmallBlobBoundary(void);
     static Uint2 GetMaxMirrorQueueSize(void);
     static const string& GetSyncLogFileName(void);

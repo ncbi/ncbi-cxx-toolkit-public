@@ -37,7 +37,6 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_config.hpp>
 
-#include "nc_storage.hpp"
 #include "nc_utils.hpp"
 #include "periodic_sync.hpp"
 
@@ -288,18 +287,6 @@ inline int
 CNetCacheServer::GetUpTime(void)
 {
     return int(CTime(CTime::eCurrent).GetTimeT() - m_StartTime.GetTimeT());
-}
-
-inline Uint8
-CNetCacheServer::GetDiskFree(void)
-{
-    try {
-        return CFileUtil::GetFreeDiskSpace(g_NCStorage->GetMainPath());
-    }
-    catch (CFileErrnoException& ex) {
-        ERR_POST(Critical << "Cannot read free disk space: " << ex);
-        return 0;
-    }
 }
 
 inline Uint8

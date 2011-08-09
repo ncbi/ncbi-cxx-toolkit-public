@@ -39,7 +39,6 @@
 #include <connect/services/netservice_protocol_parser.hpp>
 
 #include "netcached.hpp"
-#include "nc_storage.hpp"
 #include "sync_log.hpp"
 #include "distribution_conf.hpp"
 
@@ -48,13 +47,16 @@ BEGIN_NCBI_SCOPE
 
 
 class CNCActiveClientHub;
+class CNCBlobAccessor;
 
 
 enum {
     /// Initial size of the buffer used for reading/writing from socket.
     /// Reading buffer never changes its size from the initial, writing buffer
     /// can grow if there's need to.
-    kInitNetworkBufferSize = 5 * 1024
+    kReadNWBufSize = 4 * 1024,
+    kWriteNWMinSize = 1000,
+    kWriteNWBufSize = 2 * kWriteNWMinSize
 };
 
 typedef CSimpleBufferT<char> TNCBufferType;
@@ -83,11 +85,8 @@ public:
     bool IsWriteDataPending(void) const;
     bool HasError(void) const;
 
-    /// Read data from socket to the buffer.
-    ///
-    /// @return
-    ///   TRUE if some data is available in buffer, FALSE otherwise
-    bool Read(void);
+    bool ReadToBuf(void);
+    size_t Read(void* buf, size_t size);
     /// Read one line from socket (or buffer). After reading this line will
     /// be erased from the reading buffer.
     ///
@@ -97,12 +96,12 @@ public:
     bool ReadLine(CTempString* line);
 
     /// Get pointer to buffered data read from socket
-    const void* GetReadData(void) const;
+    const void* GetReadBufData(void) const;
     /// Get size of buffered data available
-    size_t      GetReadSize(void) const;
+    size_t GetReadReadySize(void) const;
     /// Erase first amount bytes from reading buffer - they're processed and
     /// no longer necessary.
-    void        EraseReadData(size_t amount);
+    void EraseReadBufData(size_t amount);
 
     /// Write message to the writing buffer. Message is created by
     /// concatenating prefix and msg texts. Nothing is written directly to
@@ -110,22 +109,13 @@ public:
     ///
     /// @sa Flush
     void   WriteMessage(CTempString prefix, CTempString msg);
-    void   Write(CTempString msg);
-    void   Write(const char* buf, size_t size);
-    /// Prepare writing buffer for external writing and return pointer to it
-    void*  PrepareDirectWrite(void);
-    /// Get number of bytes that can be written into writing buffer via
-    /// external writing.
-    size_t GetDirectWriteSize(void) const;
-    /// Grow writing buffer by amount bytes because they were written directly
-    /// to the buffer.
-    void   AddDirectWritten(size_t amount);
+    size_t Write(const void* buf, size_t size);
+    void   WriteNoFail(const void* buf, size_t size);
     /// Write all data residing in writing buffer to the socket.
     /// If socket cannot accept all data immediately then leave what has left
     /// in the buffer as is until next call and return without waiting.
     void Flush(void);
 
-    size_t WriteToSocket(const void* buff, size_t size);
     size_t WriteFromBuffer(CBufferedSockReaderWriter& buf, size_t max_size);
 
 public:
@@ -137,6 +127,8 @@ public:
     void ResetSocketTimeout(void);
 
 private:
+    size_t x_ReadFromSocket(void* buf, size_t size);
+    size_t x_ReadFromBuf(void* dest, size_t size);
     /// Read end-of-line from buffer, advance buffer pointer to pass read
     /// characters. Method supports all possible variants of CRLF including
     /// CR, LF, CRLF, LFCR and 0 byte.
@@ -153,19 +145,10 @@ private:
     /// @param pos
     ///   Variable with buffer position that will be reseted
     void x_CompactBuffer(TNCBufferType& buffer, size_t& pos);
+    void x_CopyData(const void* buf, size_t size);
+    size_t x_WriteToSocket(const void* buf, size_t size);
+    size_t x_WriteNoPending(const void* buf, size_t size);
 
-
-    /// Special guard for setting and resetting value of read/write timeout
-    /// on the socket.
-    class CReadWriteTimeoutGuard
-    {
-    public:
-        CReadWriteTimeoutGuard(CBufferedSockReaderWriter* parent);
-        ~CReadWriteTimeoutGuard(void);
-
-    private:
-        CBufferedSockReaderWriter* m_Parent;
-    };
 
     /// Type of end-of-line bytes that can be read from buffer
     enum ECRLF_Byte {
@@ -278,9 +261,7 @@ public:
     bool x_DoCmd_GetConfig(void);
     bool x_DoCmd_GetServerStats(void);
     bool x_DoCmd_Reinit(void);
-    //bool x_DoCmd_ReinitImpl(void);
     bool x_DoCmd_Reconf(void);
-    //bool x_DoCmd_ReconfImpl(void);
     bool x_DoCmd_Put2(void);
     bool x_DoCmd_Put3(void);
     bool x_DoCmd_Get(void);
@@ -350,8 +331,6 @@ private:
         eWaitForBlobAccess,    ///< Locking of blob needed for command is in
                                ///< progress
         ePasswordFailed,       ///< Processing of bad password is needed
-        //eWaitForStorageBlock,  ///< Locking of all storages in the server is
-                               ///< in progress
         eReadBlobSignature,    ///< Reading of signature in blob transfer
                                ///< protocol
         eReadBlobChunkLength,  ///< Reading chunk length in blob transfer
@@ -434,8 +413,6 @@ private:
     bool x_WaitForBlobAccess(void);
     /// Process the situation when password provided to access blob is incorrect
     bool x_ProcessBadPassword(void);
-    /// Process "waiting" for blocking of all storages in the server
-    //bool x_WaitForStorageBlock(void);
     /// Read signature in blob transfer protocol
     bool x_ReadBlobSignature(void);
     /// Read length of chunk in blob transfer protocol
@@ -487,7 +464,6 @@ private:
 
     void x_ProlongBlobDeadTime(void);
     void x_ProlongVersionLife(void);
-    void x_QuickFinishSyncCommand(void);
     bool x_CanStartSyncCommand(bool can_abort = true);
     void x_ReadFullBlobsList(void);
     void x_GetCurSlotServers(void);
@@ -710,47 +686,27 @@ CBufferedSockReaderWriter::HasError(void) const
 }
 
 inline const void*
-CBufferedSockReaderWriter::GetReadData(void) const
+CBufferedSockReaderWriter::GetReadBufData(void) const
 {
     return m_ReadBuff.data() + m_ReadDataPos;
 }
 
 inline size_t
-CBufferedSockReaderWriter::GetReadSize(void) const
+CBufferedSockReaderWriter::GetReadReadySize(void) const
 {
     return m_ReadBuff.size() - m_ReadDataPos;
 }
 
 inline void
-CBufferedSockReaderWriter::EraseReadData(size_t amount)
+CBufferedSockReaderWriter::EraseReadBufData(size_t amount)
 {
     m_ReadDataPos = min(m_ReadDataPos + amount, m_ReadBuff.size());
 }
 
-inline void*
-CBufferedSockReaderWriter::PrepareDirectWrite(void)
-{
-    return m_WriteBuff.data() + m_WriteBuff.size();
-}
-
-inline size_t
-CBufferedSockReaderWriter::GetDirectWriteSize(void) const
-{
-    return m_WriteBuff.capacity() - m_WriteBuff.size();
-}
-
 inline void
-CBufferedSockReaderWriter::AddDirectWritten(size_t amount)
+CBufferedSockReaderWriter::WriteNoFail(const void* buf, size_t size)
 {
-    _ASSERT(amount <= m_WriteBuff.capacity() - m_WriteBuff.size());
-
-    m_WriteBuff.resize(m_WriteBuff.size() + amount);
-}
-
-inline void
-CBufferedSockReaderWriter::Write(const char* buf, size_t size)
-{
-    Write(CTempString(buf, size));
+    x_CopyData(buf, size);
 }
 
 inline void

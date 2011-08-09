@@ -133,6 +133,8 @@ bool CServer_ConnectionPool::Add(TConnBase* conn, EConnType type)
     SPerConnInfo& info = data[conn];
     info.type = type;
     info.UpdateExpiration(conn);
+
+    PingControlConnection();
     return true;
 }
 
@@ -157,13 +159,14 @@ void CServer_ConnectionPool::SetConnType(TConnBase* conn,
     }
     SPerConnInfo& info = it->second;
     if (info.type != eClosedSocket) {
+        EConnType new_type = type;
         if (type == eInactiveSocket) {
             if (info.type == ePreDeferredSocket)
-                type = eDeferredSocket;
+                new_type = eDeferredSocket;
             else if (info.type == ePreClosedSocket)
-                type = eClosedSocket;
+                new_type = eClosedSocket;
         }
-        info.type = type;
+        info.type = new_type;
         info.UpdateExpiration(conn);
     }
     // Signal poll cycle to re-read poll vector by sending
@@ -227,7 +230,6 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
         // server.cpp: CServer_Connection::CreateRequest() and
         // CServerConnectionRequest::Process()
         TConnBase* conn_base = it->first;
-        CServer_Connection* conn = dynamic_cast<CServer_Connection*>(conn_base);
         SPerConnInfo& info = it->second;
         if (info.type == eInactiveSocket  &&  info.expiration <= now) {
             to_close_conns.push_back(conn_base);

@@ -412,9 +412,8 @@ void CServer::x_DoRun(void)
                                            revived_conns, to_close_conns);
 
         ITERATE(TConnsList, it, revived_conns) {
-            CreateRequest(*it,
-                          IOEventToServIOEvent((*it)->GetEventsToPollFor(NULL)),
-                          m_Parameters->idle_timeout);
+            EIO_Event evt = (*it)->GetEventsToPollFor(NULL);
+            CreateRequest(*it, IOEventToServIOEvent(evt), m_Parameters->idle_timeout);
         }
         ITERATE(TConnsList, it, to_close_conns) {
             CreateRequest(*it, eServIO_Inactivity, m_Parameters->idle_timeout);

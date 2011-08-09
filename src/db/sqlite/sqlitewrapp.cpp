@@ -222,7 +222,7 @@ s_ProcessErrorCode(sqlite3*                    handle,
                 retry;                                                   \
             }                                                            \
         }                                                                \
-        catch (CException& ex) {                                         \
+        catch (CSQLITE_Exception& ex) {                                  \
             CNcbiOstrstream ostr;                                        \
             ostr << err_msg;                                             \
             NCBI_RETHROW_SAME(ex, CNcbiOstrstreamToString(ostr));        \
