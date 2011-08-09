@@ -218,10 +218,9 @@ struct SOptionDefinition {
         "progress-message", "Set job progress message."},
 
     {CCommandLineParser::eSwitch, eDropJobs,
-        "drop-jobs", "Delete all job records from the queue. "
-            "All information about the jobs and their lifecycle "
-            "events will be lost, but the queue itself will be "
-            "preserved."},
+        "drop-jobs", "Delete all job records from the queue, "
+            "but preserve the queue itself. This option is "
+            "required for static queues."},
 
     {CCommandLineParser::eOptionWithParameter, eRegisterWNode,
         "register-wnode", "Generate and print a new GUID "
@@ -533,8 +532,12 @@ struct SCommandDefinition {
         {eNetSchedule, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_DeleteQueue,
-        "deletequeue", "Delete a dynamic NetSchedule queue.",
-        "All jobs in the specified queues will be lost. "
+        "deletequeue", "Delete a queue or all jobs from a queue.",
+        "Delete a dynamic NetSchedule queue or delete all jobs "
+        "from any kind of queue. Static queues cannot be deleted, "
+        "only their jobs can be deleted.\n\n"
+        "Information about all jobs and their lifecycle events "
+        "will be lost. "
         WN_NOT_NOTIFIED_DISCLAIMER,
         {eQueueArg, eNetSchedule, eDropJobs, eAuth, -1}},
 
