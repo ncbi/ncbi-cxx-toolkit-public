@@ -266,7 +266,7 @@ protected:
 ///
 
 template <class TPrim>
-class NCBI_XSERIAL_EXPORT CAliasBase : public CSerialObject
+class NCBI_XSERIAL_EXPORT CAliasBase //see CXX-2567: public CSerialObject
 {
 public:
     typedef CAliasBase<TPrim> TThis;
@@ -589,7 +589,9 @@ void NCBISERSetPostWrite(const Class* /*object*/, CInfo* info) \
 #define DECLARE_INTERNAL_ENUM_INFO(EnumName) \
     static DECLARE_ENUM_INFO(EnumName)
 
-#define DECLARE_STD_ALIAS_TYPE_INFO() DECLARE_INTERNAL_TYPE_INFO()
+//#define DECLARE_STD_ALIAS_TYPE_INFO() DECLARE_INTERNAL_TYPE_INFO()
+#define DECLARE_STD_ALIAS_TYPE_INFO() \
+    static const NCBI_NS_NCBI::CTypeInfo* GetTypeInfo(void)
 
 #if HAVE_NCBI_C
 
