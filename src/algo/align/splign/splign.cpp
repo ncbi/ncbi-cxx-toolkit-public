@@ -1346,7 +1346,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         }
 
         // cut low identity flank region in extention
-        const double kMinExonFlankIdty (0.5);
+        const double kMinExonFlankIdty (0.65);
         _ASSERT( kMinExonFlankIdty < GetMinExonIdentity() );
         if(sh) {
             p = p0+(sh-1);
