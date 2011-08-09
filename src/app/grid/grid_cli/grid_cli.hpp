@@ -117,7 +117,7 @@ enum EOption {
     eDeferExpiration,
     eExtendLifetime,
     eProgressMessage,
-    eAllJobs,
+    eDropJobs,
     eRegisterWNode,
     eUnregisterWNode,
     eWNodePort,
@@ -245,7 +245,6 @@ public:
     int Cmd_GetJobOutput();
     int Cmd_ReadJobs();
     int Cmd_CancelJob();
-    int Cmd_Kill();
     int Cmd_RegWNode();
     int Cmd_RequestJob();
     int Cmd_CommitJob();

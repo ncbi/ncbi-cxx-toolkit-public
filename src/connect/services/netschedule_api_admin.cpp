@@ -39,11 +39,6 @@
 
 BEGIN_NCBI_SCOPE
 
-void CNetScheduleAdmin::DropJob(const string& job_key)
-{
-    m_Impl->m_API->x_SendJobCmdWaitResponse("DROJ", job_key);
-}
-
 void CNetScheduleAdmin::ShutdownServer(
     CNetScheduleAdmin::EShutdownLevel level)
 {

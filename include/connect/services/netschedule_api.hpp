@@ -632,9 +632,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
     ///    Map of affinity tokens to job number counters.
     void AffinitySnapshot(TAffinityMap& affinity_map);
 
-    /// Delete job
-    void DropJob(const string& job_key);
-
     enum ECreateQueueFlags {
         eIgnoreDuplicateName = 0,
         eErrorOnDuplicateName

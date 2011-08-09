@@ -265,12 +265,10 @@ int CTestNetScheduleStress::Run(void)
     }
     //< ?????????? How should it really work??????????????
 
-    CNetScheduleAdmin admin = cl.GetAdmin();
-    
-    admin.DropJob(job.job_id);
+    submitter.CancelJob(job.job_id);
     status = executer.GetJobStatus(job.job_id);
 
-    _ASSERT(status == CNetScheduleAPI::eJobNotFound);
+    _ASSERT(status == CNetScheduleAPI::eCanceled);
 
     vector<string> jobs;
     jobs.reserve(jcount);

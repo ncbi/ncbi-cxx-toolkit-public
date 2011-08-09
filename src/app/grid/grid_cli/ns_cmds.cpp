@@ -706,23 +706,6 @@ int CGridCommandLineInterfaceApp::Cmd_CancelJob()
     return 0;
 }
 
-int CGridCommandLineInterfaceApp::Cmd_Kill()
-{
-    SetUp_NetScheduleCmd(eNetScheduleAdmin);
-
-    if (IsOptionSet(eAllJobs))
-        m_NetScheduleAdmin.DropQueue();
-    else {
-        if (!IsOptionSet(eOptionalID)) {
-            fprintf(stderr, "kill: job ID required\n");
-            return 1;
-        }
-        m_NetScheduleAdmin.DropJob(m_Opts.id);
-    }
-
-    return 0;
-}
-
 int CGridCommandLineInterfaceApp::Cmd_RegWNode()
 {
     SetUp_NetScheduleCmd(eNetScheduleExecutor);
@@ -959,7 +942,10 @@ int CGridCommandLineInterfaceApp::Cmd_DeleteQueue()
 {
     SetUp_NetScheduleCmd(eNetScheduleAdmin);
 
-    m_NetScheduleAdmin.DeleteQueue(m_Opts.id);
+    if (IsOptionSet(eDropJobs))
+        m_NetScheduleAdmin.DropQueue();
+    else
+        m_NetScheduleAdmin.DeleteQueue(m_Opts.id);
 
     return 0;
 }

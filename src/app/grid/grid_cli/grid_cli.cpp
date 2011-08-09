@@ -217,8 +217,11 @@ struct SOptionDefinition {
     {CCommandLineParser::eOptionWithParameter, eProgressMessage,
         "progress-message", "Set job progress message."},
 
-    {CCommandLineParser::eSwitch, eAllJobs,
-        "all-jobs", "Apply to all jobs in the queue."},
+    {CCommandLineParser::eSwitch, eDropJobs,
+        "drop-jobs", "Delete all job records from the queue. "
+            "All information about the jobs and their lifecycle "
+            "events will be lost, but the queue itself will be "
+            "preserved."},
 
     {CCommandLineParser::eOptionWithParameter, eRegisterWNode,
         "register-wnode", "Generate and print a new GUID "
@@ -431,14 +434,6 @@ struct SCommandDefinition {
         "node that may be processing this job to stop the processing.",
         {eID, eNetSchedule, eQueue, eAuth, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_Kill,
-        "kill", "Delete NetSchedule job(s).",
-        "Delete one or all job records from the specified NetSchedule "
-        "queue. Information about the jobs is completely wiped out as "
-        "if the jobs never existed. "
-        WN_NOT_NOTIFIED_DISCLAIMER,
-        {eOptionalID, eNetSchedule, eQueue, eAllJobs, eCompatMode, eAuth, -1}},
-
     {&CGridCommandLineInterfaceApp::Cmd_RegWNode,
         "regwnode", "Register or unregister a worker node.",
         "This command initiates and terminates worker node sessions "
@@ -541,7 +536,7 @@ struct SCommandDefinition {
         "deletequeue", "Delete a dynamic NetSchedule queue.",
         "All jobs in the specified queues will be lost. "
         WN_NOT_NOTIFIED_DISCLAIMER,
-        {eQueueArg, eNetSchedule, eAuth, -1}},
+        {eQueueArg, eNetSchedule, eDropJobs, eAuth, -1}},
 
     {&CGridCommandLineInterfaceApp::Cmd_ServerInfo,
         "serverinfo|si", "Print information about a Grid server.",
