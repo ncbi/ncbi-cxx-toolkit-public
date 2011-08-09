@@ -694,11 +694,13 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
                     if (annot->m_DomainInfo[i] < 0) annot->m_DomainInfo[i] = 0;
                     i = 9;
                     while (i>0 && annot->m_DomainInfo[i] < 0) i-=2;
-                    annot->m_DomainInfo[i] += (domain_info[i] - 1 -
-                                       s_map.GetSeqPosFromSeqPos(1, 0, annot->m_DomainInfo[i],
-                                                                 IAlnExplorer::eForward))*q_dir;
-                    if (annot->m_DomainInfo[i] < 0) annot->m_DomainInfo[i] = 0;
-                    break;
+                    if (i >= 0) {
+                        annot->m_DomainInfo[i] += (domain_info[i] - 1 -
+                                                   s_map.GetSeqPosFromSeqPos(1, 0, annot->m_DomainInfo[i],
+                                                                             IAlnExplorer::eForward))*q_dir;
+                        if (annot->m_DomainInfo[i] < 0) annot->m_DomainInfo[i] = 0;
+                        break;
+                    }
                 }
             }
         }
