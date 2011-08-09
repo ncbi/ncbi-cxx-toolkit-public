@@ -323,19 +323,16 @@ bool CGffWriteRecord::CorrectLocation(
 
 //  ----------------------------------------------------------------------------
 bool CGffWriteRecord::CorrectPhase(
-    int iShift )
+    unsigned int iShift,
+    unsigned int iInitFrame )
 //  ----------------------------------------------------------------------------
 {
     if ( 0 == m_puPhase ) {
-        cerr << "CorrctPhase ???" << endl;
         return false;
     }
-    else {
-        *m_puPhase = (*m_puPhase+iShift)%3;
-        if ( *m_puPhase ) {
-            *m_puPhase = 3 - *m_puPhase;
-        }
-    }
+    *m_puPhase = (*m_puPhase+iShift+iInitFrame + 1)%3;
+    *m_puPhase = 2 - *m_puPhase;
+    
     return true;
 }
 

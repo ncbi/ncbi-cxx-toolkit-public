@@ -400,7 +400,16 @@ bool CGff3Writer::x_WriteFeatureCds(
     pPackedInt->Add( mf.GetLocation() );
     pPackedInt->ChangeToPackedInt();
 
+//  test code:
+//    if (pCds->StrId() == "NW_003565870.1"  &&  pCds->StrType() == "CDS" ) {
+//        cerr << "";
+//    }
+//
     unsigned int uTotSize = 0;
+    unsigned int /*CCdregion::EFrame*/ uInitFrame = 0;
+    if (mf.GetData().GetCdregion().IsSetFrame()) {
+        uInitFrame = mf.GetData().GetCdregion().GetFrame();
+    }
     if ( pPackedInt->IsPacked_int() && pPackedInt->GetPacked_int().CanGet() ) {
         const list< CRef< CSeq_interval > >& sublocs = pPackedInt->GetPacked_int().Get();
         list< CRef< CSeq_interval > >::const_iterator it;
@@ -409,7 +418,7 @@ bool CGff3Writer::x_WriteFeatureCds(
             CRef<CGff3WriteRecordFeature> pExon( new CGff3WriteRecordFeature( *pCds ) );
             pExon->CorrectType( "CDS" );
             pExon->CorrectLocation( subint );
-            pExon->CorrectPhase( uTotSize );
+            pExon->CorrectPhase( uTotSize, uInitFrame );
             pExon->ForceAttributeID( string( "cds" ) + NStr::UIntToString( m_uPendingCdsId ) );
             if ( ! x_WriteRecord( pExon ) ) {
                 return false;

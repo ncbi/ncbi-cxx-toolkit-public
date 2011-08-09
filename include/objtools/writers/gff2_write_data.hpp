@@ -70,7 +70,8 @@ public:
     };
 
     bool CorrectPhase(
-        int );
+        unsigned int,
+        unsigned int );
 
     bool AssignSequenceNumber(
         unsigned int,
