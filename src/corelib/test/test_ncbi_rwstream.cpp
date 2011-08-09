@@ -347,7 +347,7 @@ int main(int argc, char* argv[])
     ERR_POST(Info << "Checking tied I/O");
 
     buf = (char*) hugedata + kHugeBufsize;
-    memset(buf, kHugeBufsize, '\xFF');
+    memset(buf, '\xFF', kHugeBufsize);
 
     CMyReaderWriter* rw = new CMyReaderWriter(hugedata + kHugeBufsize,
                                               kHugeBufsize);
