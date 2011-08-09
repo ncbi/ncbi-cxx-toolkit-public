@@ -101,7 +101,7 @@ bool CAliasTypeInfo::IsDefault(TConstObjectPtr object) const
 bool CAliasTypeInfo::Equals(TConstObjectPtr object1, TConstObjectPtr object2,
                             ESerialRecursionMode how) const
 {
-    return GetPointedType()->Equals(object1, object2, how);
+    return CParent::Equals(object1,object2,how);
 }
 
 
@@ -114,7 +114,10 @@ void CAliasTypeInfo::SetDefault(TObjectPtr dst) const
 void CAliasTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src,
                             ESerialRecursionMode how) const
 {
-    GetPointedType()->Assign(dst, src, how);
+    TConstObjectPtr data = GetObjectPointer(src);
+    TTypeInfo type = GetRealDataTypeInfo(data);
+    TObjectPtr object = GetObjectPointer(dst);
+    type->Assign(object, data, how);
 }
 
 
@@ -152,7 +155,10 @@ bool CAliasTypeInfo::IsParentClassOf(const CClassTypeInfo* classInfo) const
 void CAliasTypeInfo::SetDataOffset(TPointerOffsetType offset)
 {
 // it seems a lot of code here won't work correctly if the offset is not zero
-    _ASSERT(offset == 0);
+// 08/08/2011: removed, because 
+//   1. offset is not 0 anymore (after CAliasBase was derived from CSerialObject)
+//   2. everything looks fine so far
+//    _ASSERT(offset == 0);
     m_DataOffset = offset;
 }
 
