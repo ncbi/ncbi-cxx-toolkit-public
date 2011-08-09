@@ -2282,7 +2282,6 @@ START_SUBTYPE(oriT)
     ADD_QUAL(map);
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
-    ADD_QUAL(rpt_family);
     ADD_QUAL(rpt_type);
     ADD_QUAL(rpt_unit);
     ADD_QUAL(rpt_unit_range);
@@ -2680,7 +2679,7 @@ const string& CSeqFeatData::GetQualifierAsString(EQualifier qual)
 }
 
 
-const CSeqFeatData::EQualifier CSeqFeatData::GetQualifierType(const string& qual)
+CSeqFeatData::EQualifier CSeqFeatData::GetQualifierType(const string& qual)
 {
     CSeqFeatData::EQualifier type = CSeqFeatData::eQual_bad;;
 

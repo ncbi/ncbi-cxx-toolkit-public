@@ -427,7 +427,7 @@ public:
     static const string& GetQualifierAsString(EQualifier qual);
 
     // convert string to enumerated value
-    static const EQualifier GetQualifierType(const string& qual);
+    static EQualifier GetQualifierType(const string& qual);
 
     NCBI_DEPRECATED
     static const string& GetQulifierAsString(EQualifier qual)
