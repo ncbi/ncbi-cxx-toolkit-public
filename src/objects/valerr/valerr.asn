@@ -24,7 +24,22 @@ ValidErrItem ::= SEQUENCE {
     msg         VisibleString,
     objDesc     VisibleString,
     accession   VisibleString,
-    featureId   VisibleString OPTIONAL
+    featureId   VisibleString OPTIONAL,
+    seqOffset   INTEGER OPTIONAL,
+    objectType  INTEGER {
+        seqentry (1),
+        bioseq (2),
+        bioseqset (3),
+        seqdesc (4),
+        seqannot (5),
+        annotdesc (6),
+        seqfeat (7),
+        seqalign (8),
+        seqgraph (9),
+        seqsub (10),
+        submitblock (11)
+    } OPTIONAL,
+    errorName   VisibleString OPTIONAL
 }
 
 
