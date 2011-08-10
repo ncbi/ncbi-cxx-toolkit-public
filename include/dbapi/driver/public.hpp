@@ -112,7 +112,7 @@ public:
     virtual CDB_SendDataCmd* SendDataCmd(I_ITDescriptor& desc,
                                          size_t          data_size,
                                          bool            log_it = true,
-                                         bool            dump_results = true);
+                                         bool            discard_results = true);
 
     /// @brief 
     ///   Shortcut to send text and image to the server without using the
@@ -805,7 +805,7 @@ public:
                                  bool log_it = true);
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
                                          bool log_it = true,
-                                         bool dump_results = true);
+                                         bool discard_results = true);
 
     /// Delete the last fetched row.
     /// NOTE: the cursor must be declared for delete in CDB_Connection::Cursor()
