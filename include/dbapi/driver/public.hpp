@@ -104,6 +104,9 @@ public:
     ///   Maximal data size.
     /// @param log_it 
     ///   Log LOB operation if this value is set to true.
+    /// @param discard_results
+    ///   Discard all resultsets that might be returned from server
+    ///   if this value is set to true.
     /// 
     /// @return 
     ///   Newly created send-data object.
@@ -803,6 +806,22 @@ public:
     virtual bool Update(const string& table_name, const string& upd_query);
     virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
                                  bool log_it = true);
+    /// Make "send-data" command
+    /// @brief 
+    ///   Create send-data command.
+    /// 
+    /// @param item_num 
+    ///   Column number to rewrite.
+    /// @param size 
+    ///   Maximal data size.
+    /// @param log_it 
+    ///   Log LOB operation if this value is set to true.
+    /// @param discard_results
+    ///   Discard all resultsets that might be returned from server
+    ///   if this value is set to true.
+    /// 
+    /// @return 
+    ///   Newly created send-data object.
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
                                          bool log_it = true,
                                          bool discard_results = true);

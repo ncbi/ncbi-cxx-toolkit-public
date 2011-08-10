@@ -535,9 +535,24 @@ protected:
     virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
                                  bool log_it = true) = 0;
 
+    /// @brief 
+    ///   Create send-data command.
+    /// 
+    /// @param item_num 
+    ///   Column number to rewrite.
+    /// @param size 
+    ///   Maximal data size.
+    /// @param log_it 
+    ///   Log LOB operation if this value is set to true.
+    /// @param discard_results
+    ///   Discard all resultsets that might be returned from server
+    ///   if this value is set to true.
+    /// 
+    /// @return 
+    ///   Newly created send-data object.
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
                                          bool log_it = true,
-                                         bool dump_results = true) = 0;
+                                         bool discard_results = true) = 0;
     /// Delete the last fetched row.
     /// NOTE: the cursor must be declared for delete in CDB_Connection::Cursor()
     virtual bool Delete(const string& table_name) = 0;
@@ -1140,6 +1155,9 @@ protected:
     ///   Maximal data size.
     /// @param log_it 
     ///   Log LOB operation if this value is set to true.
+    /// @param discard_results
+    ///   Discard all resultsets that might be returned from server
+    ///   if this value is set to true.
     /// 
     /// @return 
     ///   Newly created send-data object.
@@ -1148,7 +1166,7 @@ protected:
     virtual CDB_SendDataCmd* SendDataCmd(I_ITDescriptor& desc,
                                          size_t          data_size,
                                          bool            log_it = true,
-                                         bool            dump_results = true) = 0;
+                                         bool            discard_results = true) = 0;
 
     /// @brief 
     ///   Shortcut to send text and image to the server without using the
