@@ -208,7 +208,8 @@ protected:
                                     unsigned int         batch_size = 1);
     virtual CDB_SendDataCmd* SendDataCmd(I_ITDescriptor& desc,
                                          size_t          data_size,
-                                         bool            log_it = true);
+                                         bool            log_it = true,
+                                         bool            dump_results = true);
 
     virtual bool SendData(I_ITDescriptor& desc, CDB_Stream& lob,
                           bool log_it = true);
@@ -444,7 +445,8 @@ protected:
     virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
                  bool log_it = true);
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
-                     bool log_it = true);
+                                         bool log_it = true,
+                                         bool dump_results = true);
     virtual bool Delete(const string& table_name);
     virtual int  RowCount(void) const;
     virtual bool CloseCursor(void);

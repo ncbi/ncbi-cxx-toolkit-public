@@ -52,8 +52,7 @@ CODBC_LangCmd::CODBC_LangCmd(
     CODBC_Connection& conn,
     const string& lang_query
     ) :
-    CStatementBase(conn),
-    impl::CBaseCmd(conn, lang_query),
+    CStatementBase(conn, lang_query),
     m_Res(NULL)
 {
 /* This logic is not working for some reason

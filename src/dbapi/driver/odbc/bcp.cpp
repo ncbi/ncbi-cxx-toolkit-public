@@ -58,8 +58,7 @@ BEGIN_NCBI_SCOPE
 CODBC_BCPInCmd::CODBC_BCPInCmd(CODBC_Connection& conn,
                                SQLHDBC           cmd,
                                const string&     table_name) :
-    CStatementBase(conn),
-    impl::CBaseCmd(conn, table_name),
+    CStatementBase(conn, table_name),
     m_Cmd(cmd),
     m_HasTextImage(false),
     m_WasBound(false)

@@ -95,7 +95,8 @@ CMySQL_Connection::SetTimeout(size_t nof_secs)
 
 CDB_SendDataCmd* CMySQL_Connection::SendDataCmd(I_ITDescriptor& /*descr_in*/,
                                                 size_t          /*data_size*/,
-                                                bool            /*log_it*/)
+                                                bool            /*log_it*/,
+                                                bool            /*dump_results*/)
 {
     return 0;
 }

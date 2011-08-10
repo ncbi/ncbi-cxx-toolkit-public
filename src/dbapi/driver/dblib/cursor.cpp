@@ -210,7 +210,8 @@ bool CDBL_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
 }
 
 CDB_SendDataCmd* CDBL_CursorCmd::SendDataCmd(unsigned int item_num, size_t size,
-                                             bool log_it)
+                                             bool log_it,
+                                             bool /*dump_results*/)
 {
     I_ITDescriptor* desc= x_GetITDescriptor(item_num);
     auto_ptr<I_ITDescriptor> d_guard(desc);

@@ -287,10 +287,12 @@ CDB_CursorCmd* CDB_Connection::Cursor(const string& cursor_name,
 }
 
 CDB_SendDataCmd* CDB_Connection::SendDataCmd(I_ITDescriptor& desc,
-                                             size_t data_size, bool log_it)
+                                             size_t data_size,
+                                             bool log_it,
+                                             bool dump_results)
 {
     CHECK_CONNECTION(m_ConnImpl);
-    return m_ConnImpl->SendDataCmd(desc, data_size, log_it);
+    return m_ConnImpl->SendDataCmd(desc, data_size, log_it, dump_results);
 }
 
 bool CDB_Connection::SendData(I_ITDescriptor& desc, CDB_Stream& lob, bool log_it)
@@ -898,10 +900,12 @@ bool CDB_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data, boo
 }
 
 CDB_SendDataCmd* CDB_CursorCmd::SendDataCmd(unsigned int item_num,
-                                            size_t size, bool log_it)
+                                            size_t size,
+                                            bool log_it,
+                                            bool dump_results)
 {
     CHECK_COMMAND( m_CmdImpl );
-    return m_CmdImpl->SendDataCmd(item_num, size, log_it);
+    return m_CmdImpl->SendDataCmd(item_num, size, log_it, dump_results);
 }
 
 
@@ -962,6 +966,24 @@ bool CDB_SendDataCmd::Cancel(void)
     CHECK_DRIVER_WARNING( !m_CmdImpl, "This command cannot be used anymore", 200005 );
 
     return m_CmdImpl->Cancel();
+}
+
+CDB_Result* CDB_SendDataCmd::Result()
+{
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->Result();
+}
+
+bool CDB_SendDataCmd::HasMoreResults() const
+{
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->HasMoreResults();
+}
+
+void CDB_SendDataCmd::DumpResults()
+{
+    CHECK_COMMAND( m_CmdImpl );
+    m_CmdImpl->DumpResults();
 }
 
 CDB_SendDataCmd::~CDB_SendDataCmd()

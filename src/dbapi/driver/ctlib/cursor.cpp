@@ -337,12 +337,13 @@ bool CTL_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
 }
 
 CDB_SendDataCmd* CTL_CursorCmd::SendDataCmd(unsigned int item_num, size_t size,
-                        bool log_it)
+                                            bool log_it,
+                                            bool dump_results)
 {
     I_ITDescriptor* desc= x_GetITDescriptor(item_num);
     auto_ptr<I_ITDescriptor> d_guard(desc);
 
-    return (desc) ? ConnSendDataCmd(*desc, size, log_it) : 0;
+    return (desc) ? ConnSendDataCmd(*desc, size, log_it, dump_results) : 0;
 }
 
 bool CTL_CursorCmd::Delete(const string& table_name)
@@ -679,7 +680,8 @@ bool CTL_CursorCmdExpl::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
 }
 
 CDB_SendDataCmd* CTL_CursorCmdExpl::SendDataCmd(unsigned int item_num, size_t size,
-                        bool log_it)
+                                                bool log_it,
+                                                bool dump_results)
 {
     I_ITDescriptor* desc= x_GetITDescriptor(item_num);
     auto_ptr<I_ITDescriptor> d_guard(desc);
@@ -693,7 +695,7 @@ CDB_SendDataCmd* CTL_CursorCmdExpl::SendDataCmd(unsigned int item_num, size_t si
         }
 #endif
 
-        return GetConnection().SendDataCmd(*desc, size, log_it);
+        return GetConnection().SendDataCmd(*desc, size, log_it, dump_results);
     }
     return 0;
 }

@@ -218,7 +218,9 @@ CDB_CursorCmd* CDBL_Connection::Cursor(const string& cursor_name,
 
 
 CDB_SendDataCmd* CDBL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
-                                              size_t data_size, bool log_it)
+                                              size_t data_size,
+                                              bool log_it,
+                                              bool /*dump_results*/)
 {
     CHECK_DRIVER_ERROR( data_size < 1, "Wrong (zero) data size." + GetDbgInfo(), 210092 );
 
@@ -650,7 +652,7 @@ bool CDBL_SendDataCmd::Cancel(void)
 CDBL_SendDataCmd::~CDBL_SendDataCmd()
 {
     try {
-        DetachInterface();
+        DetachSendDataIntf();
 
         GetConnection().DropCmd(*this);
 

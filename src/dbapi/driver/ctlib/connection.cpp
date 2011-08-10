@@ -464,12 +464,14 @@ CDB_CursorCmd* CTL_Connection::Cursor(const string& cursor_name,
 
 CDB_SendDataCmd* CTL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
                                              size_t data_size,
-                                             bool log_it)
+                                             bool log_it,
+                                             bool dump_results)
 {
     CTL_SendDataCmd* sd_cmd = new CTL_SendDataCmd(*this,
                                                   descr_in,
                                                   data_size,
-                                                  log_it
+                                                  log_it,
+                                                  dump_results
                                                   );
     return Create_SendDataCmd(*sd_cmd);
 }
@@ -919,10 +921,12 @@ CTL_Connection::x_ProcessResultInternal(CS_COMMAND* cmd, CS_INT res_type)
 CTL_SendDataCmd::CTL_SendDataCmd(CTL_Connection& conn,
                                  I_ITDescriptor& descr_in,
                                  size_t nof_bytes,
-                                 bool log_it)
-: CTL_Cmd(conn)
+                                 bool log_it,
+                                 bool dump_results)
+: CTL_LRCmd(conn, kEmptyStr)
 , impl::CSendDataCmd(conn, nof_bytes)
 , m_DescrType(CDB_ITDescriptor::eUnknown)
+, m_DumpResults(dump_results)
 {
     CHECK_DRIVER_ERROR(!nof_bytes, "Wrong (zero) data size." + GetDbgInfo(), 110092);
 
@@ -1021,64 +1025,25 @@ size_t CTL_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
     if ( bytes2go )
         return nof_bytes;
 
+    CTL_LRCmd::SetWasSent();
     if (Check(ct_send(x_GetSybaseCmd())) != CS_SUCCEED) {
         Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_CURRENT));
+        CTL_LRCmd::SetWasSent(false);
         DATABASE_DRIVER_ERROR( "ct_send failed." + GetDbgInfo(), 190004 );
     }
 
-    for (;;) {
-        CS_INT res_type;
-        switch ( Check(ct_results(x_GetSybaseCmd(), &res_type)) ) {
-        case CS_SUCCEED: {
-            if (ProcessResultInternal(res_type)) {
-                continue;
-            }
-
-            switch ( res_type ) {
-            case CS_COMPUTE_RESULT:
-            case CS_CURSOR_RESULT:
-            case CS_PARAM_RESULT:
-            case CS_ROW_RESULT:
-            case CS_STATUS_RESULT:
-                {
-                    CS_RETCODE ret_code;
-                    while ((ret_code = Check(ct_fetch(x_GetSybaseCmd(),
-                                                      CS_UNUSED,
-                                                      CS_UNUSED,
-                                                      CS_UNUSED, 0))) ==
-                           CS_SUCCEED);
-                    if (ret_code != CS_END_DATA) {
-                        DATABASE_DRIVER_ERROR( "ct_fetch failed." + GetDbgInfo(), 190006 );
-                    }
-                    break;
-                }
-            case CS_CMD_FAIL:
-                Check(ct_cancel(NULL, x_GetSybaseCmd(), CS_CANCEL_ALL));
-                DATABASE_DRIVER_ERROR( "Command failed." + GetDbgInfo(), 190007 );
-            default:
-                break;
-            }
-            continue;
-        }
-        case CS_END_RESULTS:
-            return nof_bytes;
-        default:
-            if (Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL)) != CS_SUCCEED) {
-                DATABASE_DRIVER_ERROR("Unrecoverable crash of ct_result. "
-                                      "Connection must be closed." +
-                                       GetDbgInfo(), 190002 );
-            }
-            DATABASE_DRIVER_ERROR( "ct_result failed." + GetDbgInfo(), 190003 );
-        }
-    }
+    if (m_DumpResults)
+        CTL_LRCmd::DumpResults();
+    return nof_bytes;
 }
 
 
 bool CTL_SendDataCmd::Cancel(void)
 {
-    if ( GetBytes2Go()  &&  !IsDead() ) {
+    if (!IsDead()  &&  (GetBytes2Go()  ||  CTL_LRCmd::WasSent())) {
         Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL));
         SetBytes2Go(0);
+        CTL_LRCmd::SetWasSent(false);
         return true;
     }
 
@@ -1089,11 +1054,11 @@ bool CTL_SendDataCmd::Cancel(void)
 CTL_SendDataCmd::~CTL_SendDataCmd()
 {
     try {
-        DetachInterface();
+        DetachSendDataIntf();
 
         Cancel();
 
-        DropCmd(*this);
+        DropCmd(*(impl::CSendDataCmd*)this);
 
         Close();
     }
@@ -1105,8 +1070,9 @@ void
 CTL_SendDataCmd::Close(void)
 {
     if (x_GetSybaseCmd()) {
-        // ????
-        DetachInterface();
+        CTL_LRCmd::DumpResults();
+
+        DetachSendDataIntf();
 
         Cancel();
 
@@ -1114,6 +1080,24 @@ CTL_SendDataCmd::Close(void)
 
         SetSybaseCmd(NULL);
     }
+}
+
+CDB_Result*
+CTL_SendDataCmd::Result()
+{
+    return CTL_LRCmd::MakeResult();
+}
+
+bool
+CTL_SendDataCmd::HasMoreResults() const
+{
+    return CTL_LRCmd::WasSent();
+}
+
+int
+CTL_SendDataCmd::RowCount() const
+{
+    return m_RowCount;
 }
 
 #ifdef FTDS_IN_USE

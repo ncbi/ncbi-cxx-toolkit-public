@@ -98,7 +98,8 @@ protected:
     virtual CDB_LangCmd*     LangCmd(const string& lang_query);
     virtual CDB_SendDataCmd* SendDataCmd(I_ITDescriptor& desc,
                                          size_t          data_size,
-                                         bool            log_it = true);
+                                         bool            log_it = true,
+                                         bool            dump_results = true);
     virtual CDB_RPCCmd*      RPC(const string& rpc_name);
     virtual CDB_BCPInCmd*    BCPIn(const string& table_name);
     virtual CDB_CursorCmd* Cursor(const string& cursor_name,

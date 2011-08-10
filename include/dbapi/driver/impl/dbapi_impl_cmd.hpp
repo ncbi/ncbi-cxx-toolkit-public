@@ -252,7 +252,8 @@ protected:
                                  bool log_it = true);
 
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
-                                         bool log_it = true);
+                                         bool log_it = true,
+                                         bool dump_results = true);
     /// Delete the last fetched row.
     /// NOTE: the cursor must be declared for delete in CDB_Connection::Cursor()
     virtual bool Delete(const string& table_name);
@@ -334,7 +335,19 @@ protected:
     virtual size_t SendChunk(const void* pChunk, size_t nofBytes) = 0;
     virtual bool Cancel(void) = 0;
 
-    void DetachInterface(void);
+    /// Get result set
+    virtual CDB_Result* Result(void);
+
+    // There are two different strategy to implement this method ...
+    // They should be eliminated some day ...
+    virtual bool HasMoreResults(void) const;
+
+    /// Dump the results of the command
+    /// if result processor is installed for this connection, it will be called for
+    /// each result set
+    void DumpResults(void);
+
+    void DetachSendDataIntf(void);
 
     //
     void SetBytes2Go(size_t value)

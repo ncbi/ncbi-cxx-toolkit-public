@@ -388,20 +388,23 @@ CDB_CursorCmd* CODBC_Connection::Cursor(const string& cursor_name,
 
 
 CDB_SendDataCmd* CODBC_Connection::SendDataCmd(I_ITDescriptor& descr_in,
-                                               size_t data_size, bool log_it)
+                                               size_t data_size,
+                                               bool log_it,
+                                               bool dump_results)
 {
     CODBC_SendDataCmd* sd_cmd =
         new CODBC_SendDataCmd(*this,
                               (CDB_ITDescriptor&)descr_in,
                               data_size,
-                              log_it);
+                              log_it,
+                              dump_results);
     return Create_SendDataCmd(*sd_cmd);
 }
 
 
 bool CODBC_Connection::SendData(I_ITDescriptor& desc, CDB_Stream& lob, bool log_it)
 {
-    CStatementBase stmt(*this);
+    CStatementBase stmt(*this, kEmptyStr);
 
     SQLPOINTER  p = (SQLPOINTER)2;
     SQLLEN      s = lob.Size();
@@ -786,19 +789,37 @@ bool CODBC_Connection::x_SendData(CDB_ITDescriptor::ETDescriptorType descr_type,
 
 
 /////////////////////////////////////////////////////////////////////////////
-CStatementBase::CStatementBase(CODBC_Connection& conn) :
+CStatementBase::CStatementBase(CODBC_Connection& conn, const string& query) :
+    impl::CBaseCmd(conn, query),
     m_RowCount(-1),
     m_ConnectPtr(&conn),
     m_Reporter(&conn.GetMsgHandlers(), SQL_HANDLE_STMT, NULL, &conn.m_Reporter)
 {
-    SQLRETURN rc = SQLAllocHandle(SQL_HANDLE_STMT, conn.m_Link, &m_Cmd);
+    x_Init();
+}
+
+CStatementBase::CStatementBase(CODBC_Connection& conn,
+                               const string& cursor_name,
+                               const string& query) :
+    impl::CBaseCmd(conn, cursor_name, query),
+    m_RowCount(-1),
+    m_ConnectPtr(&conn),
+    m_Reporter(&conn.GetMsgHandlers(), SQL_HANDLE_STMT, NULL, &conn.m_Reporter)
+{
+    x_Init();
+}
+
+void
+CStatementBase::x_Init(void)
+{
+    SQLRETURN rc = SQLAllocHandle(SQL_HANDLE_STMT, m_ConnectPtr->m_Link, &m_Cmd);
 
     if(rc == SQL_ERROR) {
-        conn.ReportErrors();
+        m_ConnectPtr->ReportErrors();
     }
     m_Reporter.SetHandle(m_Cmd);
 
-    SQLUINTEGER query_timeout = static_cast<SQLUINTEGER>(conn.GetTimeout());
+    SQLUINTEGER query_timeout = static_cast<SQLUINTEGER>(m_ConnectPtr->GetTimeout());
     switch(SQLSetStmtAttr(GetHandle(),
                        SQL_ATTR_QUERY_TIMEOUT,
                        (SQLPOINTER)static_cast<uintptr_t>(query_timeout),
@@ -1386,6 +1407,13 @@ CStatementBase::x_GetData(const CDB_Object& param,
 }
 
 
+int
+CStatementBase::RowCount() const
+{
+    return static_cast<int>(m_RowCount);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CODBC_SendDataCmd::
@@ -1394,11 +1422,15 @@ CStatementBase::x_GetData(const CDB_Object& param,
 CODBC_SendDataCmd::CODBC_SendDataCmd(CODBC_Connection& conn,
                                      CDB_ITDescriptor& descr,
                                      size_t nof_bytes,
-                                     bool logit) :
-    CStatementBase(conn),
+                                     bool logit,
+                                     bool dump_results) :
+    CStatementBase(conn, kEmptyStr),
     impl::CSendDataCmd(conn, nof_bytes),
     m_DescrType(descr.GetColumnType() == CDB_ITDescriptor::eText ?
-                CDB_ITDescriptor::eText : CDB_ITDescriptor::eBinary)
+                CDB_ITDescriptor::eText : CDB_ITDescriptor::eBinary),
+    m_Res(NULL),
+    m_HasMoreResults(false),
+    m_DumpResults(dump_results)
 {
     SQLPOINTER p = (SQLPOINTER)1;
     if((!ODBC_xSendDataPrepare(*this, descr, (SQLINTEGER)nof_bytes,
@@ -1554,9 +1586,9 @@ bool CODBC_SendDataCmd::Cancel(void)
 CODBC_SendDataCmd::~CODBC_SendDataCmd()
 {
     try {
-        DetachInterface();
+        DetachSendDataIntf();
 
-        GetConnection().DropCmd(*this);
+        GetConnection().DropCmd(*(impl::CSendDataCmd*)this);
 
         Cancel();
     }
@@ -1569,6 +1601,78 @@ void CODBC_SendDataCmd::xCancel()
         return;
     }
     ResetParams();
+}
+
+CDB_Result* CODBC_SendDataCmd::Result()
+{
+    if (m_Res) {
+        delete m_Res;
+        m_Res = 0;
+        m_HasMoreResults = xCheck4MoreResults();
+    }
+
+    if ( !CStatementBase::WasSent() ) {
+        string err_message = "A command has to be sent first." + GetDbgInfo();
+        DATABASE_DRIVER_ERROR( err_message, 420010 );
+    }
+
+    if(!m_HasMoreResults) {
+        CStatementBase::SetWasSent(false);
+        return 0;
+    }
+
+    while(m_HasMoreResults) {
+        SQLSMALLINT nof_cols= 0;
+        CheckSIE(SQLNumResultCols(GetHandle(), &nof_cols),
+                 "SQLNumResultCols failed", 420011);
+
+        if(nof_cols < 1) { // no data in this result set
+            SQLLEN rc;
+
+            CheckSIE(SQLRowCount(GetHandle(), &rc),
+                     "SQLRowCount failed", 420013);
+
+            m_RowCount = rc;
+            m_HasMoreResults = xCheck4MoreResults();
+            continue;
+        }
+
+        m_Res = new CODBC_RowResult(*this, nof_cols, &m_RowCount);
+        return Create_Result(*m_Res);
+    }
+
+    CStatementBase::SetWasSent(false);
+    return 0;
+}
+
+bool CODBC_SendDataCmd::HasMoreResults() const
+{
+    return m_HasMoreResults;
+}
+
+bool CODBC_SendDataCmd::xCheck4MoreResults()
+{
+    //     int rc = CheckSIE(SQLMoreResults(GetHandle()), "SQLBindParameter failed", 420066);
+    //
+    //     return (rc == SQL_SUCCESS_WITH_INFO || rc == SQL_SUCCESS);
+
+    switch(SQLMoreResults(GetHandle())) {
+    case SQL_SUCCESS_WITH_INFO: ReportErrors();
+    case SQL_SUCCESS:           return true;
+    case SQL_NO_DATA:           return false;
+    case SQL_ERROR:
+        {
+            ReportErrors();
+
+            string err_message = "SQLMoreResults failed." + GetDbgInfo();
+            DATABASE_DRIVER_ERROR( err_message, 420014 );
+        }
+    default:
+        {
+            string err_message = "SQLMoreResults failed (memory corruption suspected)." + GetDbgInfo();
+            DATABASE_DRIVER_ERROR( err_message, 420015 );
+        }
+    }
 }
 
 END_NCBI_SCOPE

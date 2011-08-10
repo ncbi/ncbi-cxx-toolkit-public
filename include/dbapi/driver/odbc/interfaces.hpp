@@ -249,7 +249,8 @@ protected:
                                           unsigned int    batch_size = 1);
     virtual CDB_SendDataCmd* SendDataCmd (I_ITDescriptor& desc,
                                           size_t          data_size,
-                                          bool            log_it = true);
+                                          bool            log_it = true,
+                                          bool            dump_results = true);
 
     virtual bool SendData(I_ITDescriptor& desc, CDB_Stream& lob,
                           bool log_it = true);
@@ -308,10 +309,11 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-class CStatementBase
+class CStatementBase : public impl::CBaseCmd
 {
 public:
-    CStatementBase(CODBC_Connection& conn);
+    CStatementBase(CODBC_Connection& conn, const string& query);
+    CStatementBase(CODBC_Connection& conn, const string& cursor_name, const string& query);
     ~CStatementBase(void);
 
 public:
@@ -373,6 +375,8 @@ public:
     }
 
 protected:
+    virtual int    RowCount(void) const;
+
     string Type2String(const CDB_Object& param) const;
     bool x_BindParam_ODBC(const CDB_Object& param,
                           CMemPot& bind_guard,
@@ -390,6 +394,8 @@ protected:
 //     bool    m_HasFailed;
 
 private:
+    void x_Init(void);
+
     CODBC_Connection*   m_ConnectPtr;
     SQLHSTMT            m_Cmd;
     CODBC_Reporter      m_Reporter;
@@ -401,8 +407,7 @@ private:
 //
 
 class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_LangCmd :
-    public CStatementBase,
-    public impl::CBaseCmd
+    public CStatementBase
 {
     friend class CODBC_Connection;
     friend class CODBC_CursorCmdBase;
@@ -446,8 +451,7 @@ private:
 //
 
 class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_RPCCmd :
-    public CStatementBase,
-    public impl::CBaseCmd
+    public CStatementBase
 {
     friend class CODBC_Connection;
 
@@ -484,8 +488,7 @@ private:
 //
 
 class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_CursorCmdBase :
-    public CStatementBase,
-    public impl::CBaseCmd
+    public CStatementBase
 {
 protected:
     CODBC_CursorCmdBase(CODBC_Connection& conn,
@@ -524,7 +527,8 @@ protected:
     virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
                  bool log_it = true);
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
-                     bool log_it = true);
+                                         bool log_it = true,
+                                         bool dump_results = true);
     virtual bool Delete(const string& table_name);
     virtual bool CloseCursor(void);
 
@@ -551,7 +555,8 @@ protected:
     virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
                  bool log_it = true);
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
-                     bool log_it = true);
+                                         bool log_it = true,
+                                         bool dump_results = true);
     virtual bool Delete(const string& table_name);
     virtual bool CloseCursor(void);
 
@@ -577,8 +582,7 @@ protected:
 // This class is not implemented yet ...
 
 class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_BCPInCmd :
-    public CStatementBase,
-    public impl::CBaseCmd
+    public CStatementBase
 {
     friend class CODBC_Connection;
 
@@ -629,19 +633,25 @@ protected:
     CODBC_SendDataCmd(CODBC_Connection& conn,
                       CDB_ITDescriptor& descr,
                       size_t nof_bytes,
-                      bool logit);
+                      bool logit,
+                      bool dump_results);
     virtual ~CODBC_SendDataCmd(void);
 
 protected:
     virtual size_t SendChunk(const void* chunk_ptr, size_t nof_bytes);
     virtual bool   Cancel(void);
-
+    virtual CDB_Result* Result(void);
+    virtual bool HasMoreResults(void) const;
 
 private:
     void xCancel(void);
+    bool xCheck4MoreResults(void);
 
     SQLLEN  m_ParamPH;
     const CDB_ITDescriptor::ETDescriptorType m_DescrType;
+    CODBC_RowResult*  m_Res;
+    bool m_HasMoreResults;
+    bool m_DumpResults;
 };
 
 
@@ -657,6 +667,7 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_RowResult : public impl::CResult
     friend class CODBC_CursorCmd;
     friend class CODBC_Connection;
     friend class CODBC_CursorCmdExpl;
+    friend class CODBC_SendDataCmd;
 
 public:
     CStatementBase& GetStatementBase(void)

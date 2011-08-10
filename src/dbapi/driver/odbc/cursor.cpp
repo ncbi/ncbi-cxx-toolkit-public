@@ -48,8 +48,7 @@ BEGIN_NCBI_SCOPE
 CODBC_CursorCmdBase::CODBC_CursorCmdBase(CODBC_Connection& conn,
                                          const string& cursor_name,
                                          const string& query)
-: CStatementBase(conn)
-, impl::CBaseCmd(conn, cursor_name, query)
+: CStatementBase(conn, cursor_name, query)
 , m_CursCmd(conn, query)
 {
 }
@@ -156,13 +155,14 @@ bool CODBC_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
 }
 
 CDB_SendDataCmd* CODBC_CursorCmd::SendDataCmd(unsigned int item_num, size_t size,
-                        bool log_it)
+                                              bool log_it,
+                                              bool dump_results)
 {
     CDB_ITDescriptor* desc= x_GetITDescriptor(item_num);
     if(desc == 0) return 0;
     auto_ptr<I_ITDescriptor> g((I_ITDescriptor*)desc);
 
-    return GetConnection().SendDataCmd((I_ITDescriptor&)*desc, size, log_it);
+    return GetConnection().SendDataCmd((I_ITDescriptor&)*desc, size, log_it, dump_results);
 }
 
 bool CODBC_CursorCmd::Delete(const string& table_name)
@@ -325,7 +325,8 @@ bool CODBC_CursorCmdExpl::UpdateTextImage(unsigned int item_num, CDB_Stream& dat
 }
 
 CDB_SendDataCmd* CODBC_CursorCmdExpl::SendDataCmd(unsigned int item_num, size_t size,
-                        bool log_it)
+                                                  bool log_it,
+                                                  bool dump_results)
 {
     CDB_ITDescriptor* desc= x_GetITDescriptor(item_num);
     if(desc == 0) return 0;
@@ -333,7 +334,7 @@ CDB_SendDataCmd* CODBC_CursorCmdExpl::SendDataCmd(unsigned int item_num, size_t 
 
     m_LCmd->Cancel();
 
-    return GetConnection().SendDataCmd((I_ITDescriptor&)*desc, size, log_it);
+    return GetConnection().SendDataCmd((I_ITDescriptor&)*desc, size, log_it, dump_results);
 }
 
 bool CODBC_CursorCmdExpl::Delete(const string& table_name)

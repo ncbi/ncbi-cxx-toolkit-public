@@ -382,7 +382,8 @@ protected:
                                           unsigned int    batch_size = 1);
     virtual CDB_SendDataCmd* SendDataCmd (I_ITDescriptor& desc,
                                           size_t          data_size,
-                                          bool            log_it = true);
+                                          bool            log_it = true,
+                                          bool            dump_results = true);
 
     virtual bool SendData(I_ITDescriptor& desc, CDB_Stream& lob,
                           bool log_it = true);
@@ -464,7 +465,8 @@ protected:
                            bool log_it = true);
     inline CDB_SendDataCmd* ConnSendDataCmd (I_ITDescriptor& desc,
                                              size_t          data_size,
-                                             bool            log_it = true);
+                                             bool            log_it = true,
+                                             bool            dump_results = true);
 
     bool IsMultibyteClientEncoding(void) const
     {
@@ -690,7 +692,8 @@ protected:
     virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
                  bool log_it = true);
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
-                     bool log_it = true);
+                                         bool log_it = true,
+                                         bool dump_results = true);
     virtual bool Delete(const string& table_name);
     virtual int  RowCount(void) const;
     virtual bool CloseCursor(void);
@@ -733,7 +736,8 @@ protected:
     virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
                  bool log_it = true);
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
-                     bool log_it = true);
+                                         bool log_it = true,
+                                         bool dump_results = true);
     virtual bool Delete(const string& table_name);
     virtual int  RowCount(void) const;
     virtual bool CloseCursor(void);
@@ -837,7 +841,7 @@ private:
 //  CTL_SendDataCmd::
 //
 
-class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_SendDataCmd : CTL_Cmd, public impl::CSendDataCmd
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_SendDataCmd : CTL_LRCmd, public impl::CSendDataCmd
 {
     friend class CTL_Connection;
 
@@ -845,7 +849,8 @@ protected:
     CTL_SendDataCmd(CTL_Connection& conn,
                     I_ITDescriptor& descr_in,
                     size_t nof_bytes,
-                    bool log_it);
+                    bool log_it,
+                    bool dump_results);
     virtual ~CTL_SendDataCmd(void);
 
     void Close(void);
@@ -853,9 +858,13 @@ protected:
 
 protected:
     virtual size_t SendChunk(const void* chunk_ptr, size_t nof_bytes);
+    virtual CDB_Result* Result(void);
+    virtual bool HasMoreResults(void) const;
+    virtual int  RowCount(void) const;
 
 private:
     CDB_ITDescriptor::ETDescriptorType m_DescrType;
+    bool m_DumpResults;
 };
 
 
@@ -1153,9 +1162,10 @@ inline
 CDB_SendDataCmd*
 CTL_CmdBase::ConnSendDataCmd (I_ITDescriptor& desc,
                               size_t          data_size,
-                              bool            log_it)
+                              bool            log_it,
+                              bool            dump_results)
 {
-    return GetConnection().SendDataCmd(desc, data_size, log_it);
+    return GetConnection().SendDataCmd(desc, data_size, log_it, dump_results);
 }
 
 

@@ -154,7 +154,8 @@ public:
     /// "Send-data" command
     virtual CDB_SendDataCmd* SendDataCmd(I_ITDescriptor& desc,
                                          size_t          data_size,
-                                         bool            log_it = true) = 0;
+                                         bool            log_it = true,
+                                         bool            dump_results = true) = 0;
 
     /// Shortcut to send text and image to the server without using the
     /// "Send-data" command (SendDataCmd)

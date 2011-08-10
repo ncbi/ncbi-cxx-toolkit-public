@@ -111,7 +111,8 @@ public:
     /// @sa SendData
     virtual CDB_SendDataCmd* SendDataCmd(I_ITDescriptor& desc,
                                          size_t          data_size,
-                                         bool            log_it = true);
+                                         bool            log_it = true,
+                                         bool            dump_results = true);
 
     /// @brief 
     ///   Shortcut to send text and image to the server without using the
@@ -803,7 +804,8 @@ public:
     virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
                                  bool log_it = true);
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
-                                         bool log_it = true);
+                                         bool log_it = true,
+                                         bool dump_results = true);
 
     /// Delete the last fetched row.
     /// NOTE: the cursor must be declared for delete in CDB_Connection::Cursor()
@@ -850,6 +852,15 @@ public:
     /// Return number of bytes actually transferred to server.
     virtual size_t SendChunk(const void* data, size_t size);
     virtual bool Cancel(void);
+
+    /// Get result set
+    virtual CDB_Result* Result();
+    virtual bool HasMoreResults() const;
+
+    /// Dump the results of the command
+    /// If result processor is installed for this connection, then it will be
+    /// called for each result set
+    virtual void DumpResults();
 
     // Destructor
     virtual ~CDB_SendDataCmd();

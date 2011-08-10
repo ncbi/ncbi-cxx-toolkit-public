@@ -231,7 +231,8 @@ CBaseCmd::UpdateTextImage(unsigned int /* item_num */,
 CDB_SendDataCmd*
 CBaseCmd::SendDataCmd(unsigned int /* item_num */,
                       size_t /* size */,
-                      bool /* log_it */
+                      bool /* log_it */,
+                      bool /* dump_results */
                       )
 {
     _ASSERT(false);
@@ -305,17 +306,51 @@ CSendDataCmd::~CSendDataCmd(void)
     return;
 }
 
-void CSendDataCmd::DetachInterface(void)
+void
+CSendDataCmd::DetachSendDataIntf(void)
 {
     m_Interface.DetachInterface();
 }
 
-void CSendDataCmd::AttachTo(CDB_SendDataCmd* interface)
+void
+CSendDataCmd::AttachTo(CDB_SendDataCmd* interface)
 {
     m_Interface = interface;
 }
 
+CDB_Result*
+CSendDataCmd::Result(void)
+{
+    return NULL;
+}
 
+
+bool
+CSendDataCmd::HasMoreResults(void) const
+{
+    return false;
+}
+
+void
+CSendDataCmd::DumpResults(void)
+{
+    // Experimental ...
+    while(HasMoreResults()) {
+        auto_ptr<CDB_Result> dbres(Result());
+
+        if( dbres.get() ) {
+            CDB_ResultProcessor* res_proc = GetConnImpl().GetResultProcessor();
+            if(res_proc) {
+                res_proc->ProcessResult(*dbres);
+            }
+            else {
+                while(dbres->Fetch()) {
+                    continue;
+                }
+            }
+        }
+    }
+}
 
 } // namespace impl
 

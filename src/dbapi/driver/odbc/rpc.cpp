@@ -51,8 +51,7 @@ BEGIN_NCBI_SCOPE
 
 CODBC_RPCCmd::CODBC_RPCCmd(CODBC_Connection& conn,
                            const string& proc_name) :
-    CStatementBase(conn),
-    impl::CBaseCmd(conn, proc_name),
+    CStatementBase(conn, proc_name),
     m_Res(0)
 {
     string extra_msg = "Procedure Name: " + proc_name;
@@ -341,6 +340,7 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
             q_select += p_name;
         }
     }
+    GetBindParamsImpl().LockBinding();
     return true;
 }
 
