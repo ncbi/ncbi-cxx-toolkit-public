@@ -5240,7 +5240,7 @@ SMKM	s	Selangor Museum
 SMM	s	Science Museum of Minnesota
 SMMC	s	Second Military Medical College
 SMN	s	Simao District National Medical and Pharmaceutical Institute
-SMNG	s	Staatliches Museum fuer Naturkunde
+SMNG	s	Senckenberg Museum fuer Naturkunde Goerlitz
 SMNH<CAN>	s	Saskatchewan Museum of Natural History
 SMNH<SWE>	s	Department of Paleozoology, Swedish Museum of Natural History
 SMNH<USA-KS>	s	Schmidt Museum of Natural History, Emporia State University
