@@ -2844,6 +2844,13 @@ const char *s_FindKeyFromFeatDefType( const CSeq_feat &feat )
     return kFeatBad;
 }
 
+static
+bool s_IsAllDigits( const string &str )
+{
+    static CRegexp all_digits_regex("^[0-9]+$");
+    return all_digits_regex.IsMatch(str);
+}
+
 CNewCleanup_imp::EAction CNewCleanup_imp::GBQualSeqFeatBC(CGb_qual& gb_qual, CSeq_feat& feat)
 {
     if( ! FIELD_IS_SET(feat, Data) ) {
@@ -2995,6 +3002,14 @@ CNewCleanup_imp::EAction CNewCleanup_imp::GBQualSeqFeatBC(CGb_qual& gb_qual, CSe
         if( data.IsImp() && STRING_FIELD_MATCH( data.GetImp(), Key, "repeat_region" ) && ! val.empty() ) {
             qual = "mobile_element_type";
             data.SetImp().SetKey( "mobile_element" );
+            ChangeMade(CCleanupChange::eCleanQualifiers);
+        }
+    }
+
+    // estimated_length must be a number or "unknown"
+    if( NStr::EqualNocase( qual, "estimated_length" ) ) {
+        if( ! s_IsAllDigits(val) && ! NStr::EqualNocase(val, "unknown") ) {
+            val = "unknown";
             ChangeMade(CCleanupChange::eCleanQualifiers);
         }
     }
@@ -6380,10 +6395,9 @@ CRef<CDbtag> s_DbtagParse( const string &dbtag_str )
     }
 
     // checks if a string is all digits
-    static CRegexp all_digits_regex("^[0-9]+$");
     int id = 0;
     // Note: assignment in "if"
-    if( all_digits_regex.IsMatch(id_str) && 
+    if( s_IsAllDigits(id_str) && 
         (id = NStr::StringToInt(id_str, NStr::fConvErr_NoThrow)) > 0 )
     {
         result->SetTag().SetId( id );
