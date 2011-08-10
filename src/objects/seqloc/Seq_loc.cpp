@@ -51,6 +51,7 @@
 #include <objects/misc/error_codes.hpp>
 #include <util/range_coll.hpp>
 #include <objects/seq/seq_id_handle.hpp>
+#include <objmgr/bioseq_handle.hpp>
 #include <algorithm>
 
 
@@ -583,6 +584,22 @@ CRange<TSeqPos> s_LocToRange(const CSeq_interval& interval )
     return CRange<TSeqPos>(interval.GetFrom(), interval.GetTo());
 };
 
+static inline
+bool s_CheckIfMatchesBioseq( const CSeq_loc &loc, 
+    const CSeq_loc::ISubLocFilter *filter )
+{
+    if( NULL == filter ) {
+        return true;
+    }
+    return (*filter)( loc.GetId() );
+}
+
+static inline
+bool s_CheckIfMatchesBioseq( const CSeq_interval &loc, 
+    const CSeq_loc::ISubLocFilter *filter )
+{
+    return true;
+}
 
 // Compare two ranges (reversed on minus strand)
 static inline
@@ -621,13 +638,28 @@ int s_CompareRanges(const COpenRange<TSeqPos> &x_rng,
 template< class Container1, class Container2 >
 int s_CompareIntervals(const Container1& container1,
                        const Container2& container2,
-                       bool minus_strand)
+                       bool minus_strand,
+                       const CSeq_loc::ISubLocFilter *filter )
 {
     typename Container1::const_iterator iter1 = container1.begin();
     typename Container1::const_iterator iter1end = container1.end();
     typename Container2::const_iterator iter2 = container2.begin();
     typename Container2::const_iterator iter2end = container2.end();
     for( ; iter1 != iter1end && iter2 != iter2end ; ++iter1, ++iter2 ) {
+
+        // If specified, skip far location pieces
+        if( NULL != filter ) {
+            while( iter1 != iter1end && ! s_CheckIfMatchesBioseq(**iter1, filter) ) {
+                ++iter1;
+            }
+            while( iter2 != iter2end && ! s_CheckIfMatchesBioseq(**iter2, filter) ) {
+                ++iter2;
+            }
+            if( iter1 == iter1end || iter2 == iter2end ) {
+                break;
+            }
+        }
+
         if ( int diff = s_CompareRanges(s_LocToRange(**iter1),
                                         s_LocToRange(**iter2),
                                         minus_strand) ) {
@@ -652,19 +684,22 @@ int s_CompareIntervals(const Container1& container1,
 END_LOCAL_NAMESPACE;
 
 
-int CSeq_loc::CompareSubLoc(const CSeq_loc& loc2, ENa_strand strand) const
+int CSeq_loc::CompareSubLoc(const CSeq_loc& loc2, ENa_strand strand, 
+    const CSeq_loc::ISubLocFilter *filter) const
 {
     bool minus_strand = IsReverse(strand);
     if ( IsMix() ) {
         if ( loc2.IsMix() ) {
             return s_CompareIntervals(GetMix().Get(),
                                       loc2.GetMix().Get(),
-                                      minus_strand);
+                                      minus_strand,
+                                      filter );
         }
         else if ( loc2.IsPacked_int() ) {
             return s_CompareIntervals(GetMix().Get(),
                                       loc2.GetPacked_int().Get(),
-                                      minus_strand);
+                                      minus_strand,
+                                      filter );
         }
         else {
             // complex loc1 is last on plus strand and first on minus strand
@@ -675,12 +710,14 @@ int CSeq_loc::CompareSubLoc(const CSeq_loc& loc2, ENa_strand strand) const
         if ( loc2.IsMix() ) {
             return -s_CompareIntervals(loc2.GetMix().Get(),
                                        GetPacked_int().Get(),
-                                       minus_strand);
+                                       minus_strand,
+                                       filter );
         }
         else if ( loc2.IsPacked_int() ) {
             return s_CompareIntervals(GetPacked_int().Get(),
                                       loc2.GetPacked_int().Get(),
-                                      minus_strand);
+                                      minus_strand,
+                                      filter );
         }
         else {
             // complex loc1 is last on plus strand and first on minus strand

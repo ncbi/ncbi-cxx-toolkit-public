@@ -1744,6 +1744,7 @@ void s_SetSelection(SAnnotSelector& sel, CBioseqContext& ctx)
     }
     /// make sure we are sorting correctly
     sel.SetFeatComparator(new feature::CFeatComparatorByLabel);
+    sel.SetIgnoreFarLocationsForSorting( ctx.GetHandle() );
 }
 
 enum EEndsOnBioseqOpt {

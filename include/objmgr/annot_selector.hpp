@@ -37,6 +37,7 @@
 #include <objmgr/annot_name.hpp>
 #include <objmgr/annot_type_selector.hpp>
 #include <objmgr/tse_handle.hpp>
+#include <objmgr/bioseq_handle.hpp>
 
 #include <bitset>
 #include <vector>
@@ -678,6 +679,19 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     /// Reset filter for source location of annotations
     SAnnotSelector& ResetSourceLoc(void);
 
+    /// Set handle used for determining what locations are "near".
+    /// You can set it to an "unset" or "blank" CBioseq_Handle to effectively unset this.
+    SAnnotSelector& SetIgnoreFarLocationsForSorting( const CBioseq_Handle &handle )
+    {
+        m_IgnoreFarLocationsForSorting = handle;
+        return *this;
+    }
+
+    const CBioseq_Handle &GetIgnoreFarLocationsForSorting( void ) const
+    {
+        return m_IgnoreFarLocationsForSorting;
+    }
+
 protected:
     friend class CAnnot_Collector;
 
@@ -722,6 +736,7 @@ protected:
     TTSE_Limits           m_ExcludedTSE;
     TAnnotTypesBitset     m_AnnotTypesBitset;
     AutoPtr<CHandleRangeMap> m_SourceLoc;
+    CBioseq_Handle        m_IgnoreFarLocationsForSorting;
 };
 
 

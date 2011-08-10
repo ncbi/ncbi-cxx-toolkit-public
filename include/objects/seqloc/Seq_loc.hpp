@@ -68,7 +68,6 @@ class ISynonymMapper;
 class ILengthGetter;
 class CSeq_loc_CI;
 
-
 class NCBI_SEQLOC_EXPORT CSeq_loc : public CSeq_loc_Base
 {
 public:
@@ -215,12 +214,23 @@ public:
     /// or throw exception.
     int Compare(const CSeq_loc& loc) const;
 
+    /// Used as a helper for determining which pieces of a
+    /// CSeq_loc to compare.
+    class ISubLocFilter {
+    public:
+        // Returns true for pieces we should use.
+        // Must be able to handle "NULL" input
+        virtual bool operator()( const CSeq_id *id ) const = 0;
+    };
+
     /// Compare first-level sub-locations sequentially to order them
     /// by biological "complexity". More "complex" location will come last.
     /// Sub-locations are checked in Seq-loc-mix and Packed-seqint.
     /// Minus strand locations' order is reversed.
-    /// Seq-ids are not checked in this method.
-    int CompareSubLoc(const CSeq_loc& loc, ENa_strand strand) const;
+    /// Seq-ids are not checked in this method, unless you set
+    /// filter, which will allow the user to pick which parts to skip.
+    int CompareSubLoc(const CSeq_loc& loc, ENa_strand strand, 
+        const ISubLocFilter *filter = NULL) const;
 
     /// Simple adding of seq-locs.
     void Add(const CSeq_loc& other);

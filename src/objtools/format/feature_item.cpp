@@ -1672,6 +1672,7 @@ public:
     void processSAnnotSelector( SAnnotSelector &sel ) 
     {
         sel.SetIgnoreStrand();
+        sel.SetIgnoreFarLocationsForSorting( m_BioseqHandle );
     }
 
     void setUpFeatureIterator ( 

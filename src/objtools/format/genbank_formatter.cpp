@@ -1214,12 +1214,15 @@ string s_GetLinkFeatureKey(
 {
     CConstRef<CFlatFeature> feat = item.Format();
     string strRawKey = feat->GetKey();
-    if ( strRawKey == "source" || strRawKey == "gap" ) {
+    if ( strRawKey == "gap" ) {
         return strRawKey;
     }
 
     unsigned int iGi = 0, iFrom = 0, iTo = 0;
     s_GetFeatureKeyLinkLocation( item.GetFeat(), iGi, iFrom, iTo );
+    if( 0 == iGi ) {
+        iGi = item.GetContext()->GetGI();
+    }
     CSeqFeatData::E_Choice type = item.GetFeat().GetFeatType();
     if ( iFrom == 0 && iFrom == iTo ) {
         return strRawKey;

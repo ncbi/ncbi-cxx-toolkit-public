@@ -518,13 +518,37 @@ struct CAnnotObjectType_Less
     bool m_ByProduct;
     IFeatComparator* m_FeatComparator;
     CScope* m_Scope;
+    bool m_DoWeIgnoreFarLocationsForSorting;
+    
+    class CNearnessTester : public CSeq_loc::ISubLocFilter {
+    public:
+        CNearnessTester( const CBioseq_Handle &handle ) 
+            : m_BioseqHandle(handle) 
+        {
+
+        }
+
+        bool operator()( const CSeq_id *id ) const {
+            if( NULL == id ) {
+                return false;
+            }
+            return m_BioseqHandle.IsSynonym(*id);
+        }
+    private:
+        const CBioseq_Handle &m_BioseqHandle;
+    };
+
+    CNearnessTester m_TesterForIgnoreFarLocationsForSorting;
     explicit CAnnotObjectType_Less(const SAnnotSelector* sel = 0,
                                    CScope* scope = 0)
         : m_ByProduct(sel && sel->GetFeatProduct()),
           m_FeatComparator(sel? sel->GetFeatComparator(): 0),
-          m_Scope(scope)
+          m_Scope(scope),
+          m_TesterForIgnoreFarLocationsForSorting( sel->GetIgnoreFarLocationsForSorting() )
         {
+            m_DoWeIgnoreFarLocationsForSorting = (!! sel->GetIgnoreFarLocationsForSorting() );
         }
+
     bool operator()(const CAnnotObject_Ref& x,
                     const CAnnotObject_Ref& y) const;
 
@@ -808,8 +832,15 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
             // simple loc before complex on plus strand, after on minus strand
             return x_minus ^ y_complex;
         }
+
         if ( x_complex ) {
-            if ( int diff = x_loc->CompareSubLoc(*y_loc, x_strand) ) {
+            int diff = 0;
+            if( m_DoWeIgnoreFarLocationsForSorting ) {
+                diff = x_loc->CompareSubLoc(*y_loc, x_strand, &m_TesterForIgnoreFarLocationsForSorting);
+            } else {
+                diff = x_loc->CompareSubLoc(*y_loc, x_strand);
+            }
+            if ( diff != 0 ) {
                 return diff < 0;
             }
         }
