@@ -989,24 +989,34 @@ public:
     /// You should have administrative rights to change an owner.
     /// WINDOWS:
     ///   Only administrative privileges (Backup, Restore and Take Ownership)
-    ///   grant rights to change ownership. Without one of the privileges, an
-    ///   administrator cannot take ownership of any file or give ownership
-    ///   back to the original owner. Also, we cannot change user group here,
+    ///   grant rights to change ownership.  Without one of the privileges,
+    ///   an administrator cannot take ownership of any file or give ownership
+    ///   back to the original owner.  Also, we cannot change user group here,
     ///   so it will be ignored.
     /// UNIX:
     ///   The owner of an entry can change the group to any group of which
-    ///   that owner is a member of. The super-user may assign the group
+    ///   that owner is a member of.  The super-user may assign the group
     ///   arbitrarily.
     /// @param owner
     ///   New owner name to set.
     /// @param group
     ///   New group name to set.
+    /// @param uid
+    ///   Pointer to an unsigned int to receive numeric user id of the
+    ///   prospective owner (this information is purely supplemental).
+    /// @param gid
+    ///   Pointer to an unsigned int to receive numeric group id of the
+    ///   prospective owner (this information is purely supplemental).
+    /// @note
+    ///   Numeric uid/gid can be returned even if the call was unsuccessful;
+    ///   they may be the fake ones on Windows (and may be 0).
     /// @return
     ///   TRUE if successful, FALSE otherwise.
     /// @sa
     ///   GetOwner
     bool SetOwner(const string& owner, const string& group = kEmptyStr,
-                  EFollowLinks follow = eFollowLinks) const;
+                  EFollowLinks follow = eFollowLinks,
+                  unsigned int* uid = 0, unsigned int* gid = 0) const;
 
     //
     // Access permissions.
@@ -1014,7 +1024,7 @@ public:
 
     /// Directory entry access permissions.
     enum EMode {
-        fExecute = 1,       ///< Execute permission
+        fExecute = 1,       ///< Execute / List(directory) permission
         fWrite   = 2,       ///< Write permission
         fRead    = 4,       ///< Read permission
         // initial defaults for directories
@@ -1034,7 +1044,7 @@ public:
         fDefault = 8        ///< Special flag:  ignore all other flags,
                             ///< use current default mode
     };
-    typedef unsigned int TMode;  ///< Binary OR of "EMode"
+    typedef unsigned int TMode;  ///< Bitwise OR of "EMode"
 
     enum ESpecialModeBits {
         fSticky = 1,

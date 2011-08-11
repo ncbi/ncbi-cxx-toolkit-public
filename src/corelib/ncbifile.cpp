@@ -2017,26 +2017,25 @@ bool CDirEntry::Remove(EDirRemoveMode mode) const
         return dir.Remove(mode);
     }
     // Other entries
-    if ( NcbiSys_remove(_T_XCSTRING(GetPath())) != 0) {
+    if ( NcbiSys_remove(_T_XCSTRING(GetPath())) != 0 ) {
         switch (errno) {
         case ENOENT:
-            if (mode == eRecursiveIgnoreMissing)
+            if ( mode == eRecursiveIgnoreMissing )
                 return true;
             break;
 
 #if defined(NCBI_OS_MSWIN)
         case EACCES:
-            if (NCBI_PARAM_TYPE(NCBI, DeleteReadOnlyFiles)::GetDefault()) {
-                if (!SetMode(eDefault))
+            if ( NCBI_PARAM_TYPE(NCBI, DeleteReadOnlyFiles)::GetDefault() ) {
+                if ( !SetMode(eDefault) )
                     return false;
-                if (NcbiSys_remove(_T_XCSTRING(GetPath())) == 0)
+                if ( NcbiSys_remove(_T_XCSTRING(GetPath())) == 0 )
                     return true;
             }
 #endif
         }
-        LOG_ERROR_AND_RETURN_ERRNO(
-            "CDirEntry::Remove():"
-            " remove() failed for " << GetPath());
+        LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::Remove():"
+                                   " remove() failed for " << GetPath());
     }
     return true;
 }
@@ -2197,9 +2196,9 @@ bool CDirEntry::GetOwner(string* owner, string* group,
     if ( uid )
         *uid = st.st_uid;
     if ( owner ) {
-        struct passwd *pw = getpwuid(st.st_uid);
-        if (pw) {
-            owner->assign(pw->pw_name);
+        struct passwd* pwd = getpwuid(st.st_uid);
+        if ( pwd ) {
+            owner->assign(pwd->pw_name);
         } else {
             NStr::UIntToString(*owner, st.st_uid);
         }
@@ -2208,9 +2207,9 @@ bool CDirEntry::GetOwner(string* owner, string* group,
     if ( gid )
         *gid = st.st_gid;
     if ( group ) {
-        struct group *gr = getgrgid(st.st_gid);
-        if ( gr ) {
-            group->assign(gr->gr_name);
+        struct group* grp = getgrgid(st.st_gid);
+        if ( grp ) {
+            group->assign(grp->gr_name);
         } else {
             NStr::UIntToString(*group, st.st_gid);
         }
@@ -2223,75 +2222,79 @@ bool CDirEntry::GetOwner(string* owner, string* group,
 
 
 bool CDirEntry::SetOwner(const string& owner, const string& group,
-                         EFollowLinks follow) const
+                         EFollowLinks follow,
+                         unsigned int* uid, unsigned int* gid) const
 {
 #if defined(NCBI_OS_MSWIN)
 
     // On MS Windows we can change file owner only
-    return CWinSecurity::SetFileOwner(GetPath(), owner);
+    if ( gid )
+        *gid = 0;
+
+    return CWinSecurity::SetFileOwner(GetPath(), owner, uid);
 
 #elif defined(NCBI_OS_UNIX)
 
+    if ( uid )
+        *uid = 0;
+    if ( gid )
+        *gid = 0;
+       
     if ( owner.empty()  &&  group.empty() ) {
         return false;
     }
 
-    struct stat st;
-    int errcode;
+    uid_t temp_uid = (uid_t)(-1);
+    gid_t temp_gid = (gid_t)(-1);
 
-    if ( follow == eFollowLinks ) {
-        errcode = stat (GetPath().c_str(), &st);
-    } else {
-        errcode = lstat(GetPath().c_str(), &st);
-    }
-    if ( errcode != 0 ) {
-        LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::GetOwner():"
-                                   " stat() failed for " << GetPath());
-    }
-    
-    uid_t uid = uid_t(-1);
-    gid_t gid = gid_t(-1);
-    
     if ( !owner.empty() ) {
-        struct passwd *pw = getpwnam(owner.c_str());
-        if ( !pw ) {
-            uid = (uid_t) NStr::StringToUInt(owner.c_str(),
-                                             NStr::fConvErr_NoThrow, 0);
-            if ( errno )
+        struct passwd* pwd = getpwnam(owner.c_str());
+        if ( !pwd ) {
+            temp_uid = (uid_t) NStr::StringToUInt(owner.c_str(),
+                                                  NStr::fConvErr_NoThrow, 0);
+            if ( errno ) {
                 LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::SetOwner():"
                                            " Invalid owner name " << owner);
+            }
         } else {
-            uid = pw->pw_uid;
+            temp_uid = pwd->pw_uid;
         }
-    }
-    if ( !group.empty() ) {
-        struct group *gr = getgrnam(group.c_str());
-        if ( !gr ) {
-            gid = (gid_t) NStr::StringToUInt(group.c_str(),
-                                             NStr::fConvErr_NoThrow, 0);
-            if ( errno )
-                LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::SetOwner():"
-                                           " Invalid group name " << group);
-        } else {
-            gid = gr->gr_gid;
-        }
+        if ( uid )
+            *uid = temp_uid;
     }
 
-    if ( follow == eFollowLinks ) {
-        if ( chown(GetPath().c_str(), uid, gid) ) {
+    if ( !group.empty() ) {
+        struct group* grp = getgrnam(group.c_str());
+        if ( !grp ) {
+            temp_gid = (gid_t) NStr::StringToUInt(group.c_str(),
+                                                  NStr::fConvErr_NoThrow, 0);
+            if ( errno ) {
+                LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::SetOwner():"
+                                           " Invalid group name " << group);
+            }
+        } else {
+            temp_gid = grp->gr_gid;
+        }
+        if ( gid )
+            *gid = temp_gid;
+    }
+
+    if (follow == eFollowLinks  ||  GetType(eIgnoreLinks) != eLink) {
+        if ( chown(GetPath().c_str(), temp_uid, temp_gid) ) {
             LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::SetOwner():"
                                        " Cannot change owner for "
                                        << GetPath());
         }
     } else {
 #  if defined(HAVE_LCHOWN)
-        if ( lchown(GetPath().c_str(), uid, gid) ) {
+        if ( lchown(GetPath().c_str(), temp_uid, temp_gid) ) {
             LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::SetOwner():"
-                                       " Cannot change owner for "
+                                       " Cannot change symlink owner for "
                                        << GetPath());
         }
 #  endif
     }
+
     return true;
 
 #endif

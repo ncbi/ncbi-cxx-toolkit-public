@@ -72,13 +72,13 @@ PSID CWinSecurity::GetUserSID(const string& username)
         if ( !ret  &&  GetLastError() != ERROR_INSUFFICIENT_BUFFER ) {
             return NULL;
         }
-        // Reallocate memory for the buffers
+        // Allocate buffers
         sid    = (PSID) LocalAlloc(LMEM_FIXED, sid_size);
         domain = (TXChar*) malloc(domain_size * sizeof(TXChar));
         if ( !sid  ||  !domain ) {
             throw(0);
         }
-        // Second call to LookupAccountName to get the account info
+        // Second call to LookupAccountName to get the actual account info
         ret = LookupAccountName(NULL, x_username.c_str(),
                                 sid, &sid_size,
                                 domain, &domain_size, &use);
@@ -126,9 +126,9 @@ bool s_LookupAccountSid(PSID sid, string* account, string* domain = 0)
     }
     // Save account information
     if (account)
-        account->assign( _T_STDSTRING(account_name) );
+        account->assign(_T_STDSTRING(account_name));
     if (domain)
-        domain->assign( _T_STDSTRING(domain_name) );
+        domain->assign(_T_STDSTRING(domain_name));
 
     return true;
 }
@@ -201,7 +201,7 @@ static bool s_GetOwnerGroupFromSIDs(PSID sid_owner, PSID sid_group,
     // Get group
     if ( group  &&  !s_LookupAccountSid(sid_group, group) ) {
         // This is not an error, because the group name on Windows
-        // is an auxiliary information. Sometimes accounts cannot
+        // is an auxiliary information.  Sometimes accounts cannot
         // belong to groups, or we don't have permissions to get
         // such information.
         group->clear();
@@ -258,8 +258,12 @@ bool CWinSecurity::GetObjectOwner(const string&  objname,
 }
 
 
-bool CWinSecurity::SetFileOwner(const string& filename, const string& owner)
+bool CWinSecurity::SetFileOwner(const string& filename,
+                                const string& owner, unsigned int* uid)
 {
+    if ( uid ) {
+        *uid = 0;
+    }
     if ( owner.empty() ) {
         return false;
     }
@@ -294,40 +298,41 @@ bool CWinSecurity::SetFileOwner(const string& filename, const string& owner)
         BOOL res = LookupAccountName(NULL, _T_XCSTRING(owner),
                                      NULL, &sid_size, 
                                      NULL, &domain_size, &use);
-        if ( !res  &&  GetLastError() != ERROR_INSUFFICIENT_BUFFER )
+        if ( !res  &&  GetLastError() != ERROR_INSUFFICIENT_BUFFER ) {
             throw(0);
-
-        // Reallocate memory for the buffers
-        sid    = (PSID) LocalAlloc(LMEM_FIXED, sid_size);
+        }
+        // Allocate buffers
+        sid = (PSID) LocalAlloc(LMEM_FIXED, sid_size);
         domain = (TXChar*) malloc(domain_size * sizeof(TXChar));
-        if ( !sid  || !domain ) {
+        if ( !sid  ||  ! domain ) {
             throw(0);
         }
 
-        // Second call to LookupAccountName to get the account info
+        // Second call to LookupAccountName to get the actual account info
         if ( !LookupAccountName(NULL, _T_XCSTRING(owner),
                                 sid, &sid_size, 
                                 domain, &domain_size, &use) ) {
             // Unknown local user
             throw(0);
         }
+        s_GetOwnerGroupFromSIDs(sid, NULL, NULL, NULL, uid, NULL);
 
         //
         // Change owner
         //
 
         // Security descriptor (absolute format)
-        UCHAR sd_abs_buf [SECURITY_DESCRIPTOR_MIN_LENGTH];
-        PSECURITY_DESCRIPTOR sd = (PSECURITY_DESCRIPTOR)&sd_abs_buf;
+        UCHAR sd_abs_buf[SECURITY_DESCRIPTOR_MIN_LENGTH];
+        PSECURITY_DESCRIPTOR sd = (PSECURITY_DESCRIPTOR) &sd_abs_buf;
 
         // Build security descriptor in absolute format
-        if ( !InitializeSecurityDescriptor(
-                sd, SECURITY_DESCRIPTOR_REVISION)) {
+        if ( !InitializeSecurityDescriptor
+             (sd, SECURITY_DESCRIPTOR_REVISION) ) {
             throw(0);
         }
         // Modify security descriptor owner.
         // FALSE - because new owner was explicitly specified.
-        if ( !SetSecurityDescriptorOwner(sd, sid, FALSE)) {
+        if ( !SetSecurityDescriptorOwner(sd, sid, FALSE) ) {
             throw(0);
         }
         // Check security descriptor
@@ -335,8 +340,9 @@ bool CWinSecurity::SetFileOwner(const string& filename, const string& owner)
             throw(0);
         }
         // Set new security information for the file object
-        if ( !SetFileSecurity( _T_XCSTRING(filename),
-                (SECURITY_INFORMATION)(OWNER_SECURITY_INFORMATION), sd) ) {
+        if ( !SetFileSecurity
+             (_T_XCSTRING(filename),
+              (SECURITY_INFORMATION)(OWNER_SECURITY_INFORMATION), sd) ) {
             throw(0);
         }
     }
@@ -414,9 +420,9 @@ void CWinSecurity::FreeFileSD(PSECURITY_DESCRIPTOR sd)
 }
 
 
-// We don't use GetEffectiveRightsFromAcl() here, because it is very limited
-// and very often works incorrect. Microsoft don't recommend to use it.
-// So, permission can be taken for the current process thread owner only :(
+// We don't use GetEffectiveRightsFromAcl() here because it is very limited
+// and very often works incorrectly.  Microsoft doesn't recommend to use it.
+// So, permissions can be taken for the current process thread owner only :(
 
 bool CWinSecurity::GetFilePermissions(const string& path,
                                       ACCESS_MASK*  permissions)
@@ -462,8 +468,8 @@ bool CWinSecurity::GetFilePermissions(const string& path,
         BOOL           status = true;
 
         if ( !AccessCheck(sd, token, access, &mapping,
-                        &privileges, &privileges_size, permissions,
-                        &status)  ||  !status ) {
+                          &privileges, &privileges_size, permissions,
+                          &status)  ||  !status ) {
             throw(0);
         }
     }

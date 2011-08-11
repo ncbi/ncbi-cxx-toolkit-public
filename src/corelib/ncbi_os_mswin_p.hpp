@@ -145,19 +145,22 @@ public:
     ///
     /// You should have administrative rights to change an owner.
     /// Only administrative privileges (Backup, Restore and Take Ownership)
-    /// grant rights to change ownership. Without one of the privileges, an
-    /// administrator cannot take ownership of any file or give ownership
-    /// back to the original owner. Also, we cannot change user group here,
-    /// so it will be ignored.
+    /// grant rights to change ownership.  Without one of the privileges,
+    /// an administrator cannot take ownership of any file or give ownership
+    /// back to the original owner.
     /// @param filename
-    ///   New owner name to set.
+    ///   Filename to change the owner of.
     /// @param owner
     ///   New owner name to set.
+    /// @param uid
+    ///   To receive (fake) numeric user id of the prospective owner
+    ///   (even if the ownership change was unsuccessful), or 0 if unknown.
     /// @return
     ///   TRUE if successful, FALSE otherwise.
     /// @sa
     ///   GetFileOwner
-    static bool SetFileOwner(const string& filename, const string& owner);
+    static bool SetFileOwner(const string& filename, const string& owner,
+                             unsigned int* uid = 0);
 
 
     /// Get the file security descriptor.
