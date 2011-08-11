@@ -70,7 +70,7 @@ public:
         eType_ID2,                 // Any ID2 reply data
         eType_ID2AndSkel,          // Two ID2 reply data objects, Split&Skel
         eType_ID2_SE,              // ID2 reply data with Seq-entry
-        eType_ID2_Split,           // ID2 reply data with Split-info
+        eType_ID2_Split,           // ID2 reply data with Split-info (+version)
         eType_ID2_Chunk,           // ID2 reply data with Chunk
         eType_ID2_SNP,             // ID2 reply data with SNP Seq-entry
         eType_ExtAnnot,            // Special kind of external annotations

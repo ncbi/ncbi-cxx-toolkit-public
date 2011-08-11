@@ -234,6 +234,9 @@ void CCacheWriter::SaveStringGi(CReaderRequestResult& result,
         CStoreBuffer str;
         str.StoreInt4(ids->GetGi());
         try {
+            if ( GetDebugLevel() ) {
+                LOG_POST(Info<<"CCache:Write: "<<seq_id<<","<<GetGiSubkey());
+            }
             m_IdCache->Store(seq_id, 0, GetGiSubkey(),
                              str.data(), str.size());
         }
@@ -267,6 +270,9 @@ void CCacheWriter::SaveSeq_idGi(CReaderRequestResult& result,
         CStoreBuffer str;
         str.StoreInt4(ids->GetGi());
         try {
+            if ( GetDebugLevel() ) {
+                LOG_POST(Info<<"CCache:Write: "<<GetIdKey(seq_id)<<","<<GetGiSubkey());
+            }
             m_IdCache->Store(GetIdKey(seq_id), 0, GetGiSubkey(),
                              str.data(), str.size());
         }
@@ -290,6 +296,9 @@ void CCacheWriter::SaveSeq_idAccVer(CReaderRequestResult& result,
             str = acc.AsString();
         }
         try {
+            if ( GetDebugLevel() ) {
+                LOG_POST(Info<<"CCache:Write: "<<GetIdKey(seq_id)<<","<<GetAccVerSubkey());
+            }
             m_IdCache->Store(GetIdKey(seq_id), 0, GetAccVerSubkey(),
                              str.data(), str.size());
         }
@@ -310,6 +319,9 @@ void CCacheWriter::SaveSeq_idLabel(CReaderRequestResult& result,
     if ( ids->IsLoadedLabel() ) {
         const string& str = ids->GetLabel();
         try {
+            if ( GetDebugLevel() ) {
+                LOG_POST(Info<<"CCache:Write: "<<GetIdKey(seq_id)<<","<<GetLabelSubkey());
+            }
             m_IdCache->Store(GetIdKey(seq_id), 0, GetLabelSubkey(),
                              str.data(), str.size());
         }
@@ -331,6 +343,9 @@ void CCacheWriter::SaveSeq_idTaxId(CReaderRequestResult& result,
         CStoreBuffer str;
         str.StoreInt4(ids->GetTaxId());
         try {
+            if ( GetDebugLevel() ) {
+                LOG_POST(Info<<"CCache:Write: "<<GetIdKey(seq_id)<<","<<GetTaxIdSubkey());
+            }
             m_IdCache->Store(GetIdKey(seq_id), 0, GetTaxIdSubkey(),
                              str.data(), str.size());
         }
@@ -384,22 +399,21 @@ void CCacheWriter::WriteSeq_ids(const string& key,
     }
 
     try {
+        if ( GetDebugLevel() ) {
+            LOG_POST(Info<<"CCache:Write: "<<key<<","<<GetSeq_idsSubkey());
+        }
         auto_ptr<IWriter> writer
             (m_IdCache->GetWriteStream(key, 0, GetSeq_idsSubkey()));
         if ( !writer.get() ) {
             return;
         }
 
-        {{
-            CWStream w_stream(writer.get());
-            CObjectOStreamAsnBinary obj_stream(w_stream);
-            static_cast<CObjectOStream&>(obj_stream).WriteUint4(ids->size());
-            ITERATE ( CLoadInfoSeq_ids, it, *ids ) {
-                obj_stream << *it->GetSeqId();
-            }
-        }}
-
-        writer.reset();
+        CWStream w_stream(writer.release(), 0, 0, CRWStreambuf::fOwnAll);
+        CObjectOStreamAsnBinary obj_stream(w_stream);
+        static_cast<CObjectOStream&>(obj_stream).WriteUint4(ids->size());
+        ITERATE ( CLoadInfoSeq_ids, it, *ids ) {
+            obj_stream << *it->GetSeqId();
+        }
     }
     catch ( exception& ) {
         // In case of an error we need to remove incomplete data
@@ -449,6 +463,9 @@ void CCacheWriter::SaveSeq_idBlob_ids(CReaderRequestResult& result,
         str.StoreString(true_subkey);
     }
     try {
+        if ( GetDebugLevel() ) {
+            LOG_POST(Info<<"CCache:Write: "<<GetIdKey(seq_id)<<","<<subkey);
+        }
         m_IdCache->Store(GetIdKey(seq_id), 0, subkey, str.data(), str.size());
     }
     catch ( exception& ) { // ignored
@@ -467,6 +484,9 @@ void CCacheWriter::SaveBlobVersion(CReaderRequestResult& /*result*/,
     CStoreBuffer str;
     str.StoreInt4(version);
     try {
+        if ( GetDebugLevel() ) {
+            LOG_POST(Info<<"CCache:Write: "<<GetBlobKey(blob_id)<<","<<GetBlobVersionSubkey());
+        }
         m_IdCache->Store(GetBlobKey(blob_id), 0, GetBlobVersionSubkey(),
                          str.data(), str.size());
     }
@@ -485,6 +505,12 @@ public:
         : m_Cache(cache), m_Key(key), m_Version(version), m_Subkey(subkey),
           m_Writer(cache->GetWriteStream(key, version, subkey))
         {
+            if ( SCacheInfo::GetDebugLevel() ) {
+                LOG_POST(Info<<"CCache:Write: "<<key<<","<<subkey<<","<<version);
+            }
+            if ( version == -1 ) {
+                ERR_POST("CCache:Write: "<<key<<","<<subkey<<","<<version);
+            }
             if ( m_Writer.get() ) {
                 m_Stream.reset(new CWStream(m_Writer.get()));
             }

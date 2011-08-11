@@ -548,7 +548,7 @@ namespace {
             }
         string GetErrMsg(void) const
             {
-                return "LoadAccVers("+NStr::UIntToString(m_Key.size())+": "+
+                return "LoadAccVers("+NStr::SizetToString(m_Key.size())+": "+
                     m_Key[0].AsString()+", ...): "
                     "data not found";
             }
@@ -558,7 +558,7 @@ namespace {
             }
         string GetStatisticsDescription(void) const
             {
-                return "accs("+NStr::UIntToString(m_Key.size())+": "+
+                return "accs("+NStr::SizetToString(m_Key.size())+": "+
                     m_Key[0].AsString()+", ...)";
             }
         
@@ -592,7 +592,7 @@ namespace {
             }
         string GetErrMsg(void) const
             {
-                return "LoadGis("+NStr::UIntToString(m_Key.size())+": "+
+                return "LoadGis("+NStr::SizetToString(m_Key.size())+": "+
                     m_Key[0].AsString()+", ...): "
                     "data not found";
             }
@@ -602,7 +602,7 @@ namespace {
             }
         string GetStatisticsDescription(void) const
             {
-                return "gis("+NStr::UIntToString(m_Key.size())+": "+
+                return "gis("+NStr::SizetToString(m_Key.size())+": "+
                     m_Key[0].AsString()+", ...)";
             }
         
@@ -636,7 +636,7 @@ namespace {
             }
         string GetErrMsg(void) const
             {
-                return "LoadLabels("+NStr::UIntToString(m_Key.size())+": "+
+                return "LoadLabels("+NStr::SizetToString(m_Key.size())+": "+
                     m_Key[0].AsString()+", ...): "
                     "data not found";
             }
@@ -646,7 +646,7 @@ namespace {
             }
         string GetStatisticsDescription(void) const
             {
-                return "labels("+NStr::UIntToString(m_Key.size())+": "+
+                return "labels("+NStr::SizetToString(m_Key.size())+": "+
                     m_Key[0].AsString()+", ...)";
             }
         
@@ -680,7 +680,7 @@ namespace {
             }
         string GetErrMsg(void) const
             {
-                return "LoadTaxIds("+NStr::UIntToString(m_Key.size())+": "+
+                return "LoadTaxIds("+NStr::SizetToString(m_Key.size())+": "+
                     m_Key[0].AsString()+", ...): "
                     "data not found";
             }
@@ -690,7 +690,7 @@ namespace {
             }
         string GetStatisticsDescription(void) const
             {
-                return "taxids("+NStr::UIntToString(m_Key.size())+": "+
+                return "taxids("+NStr::SizetToString(m_Key.size())+": "+
                     m_Key[0].AsString()+", ...)";
             }
         
@@ -1060,7 +1060,7 @@ namespace {
         string GetErrMsg(void) const
             {
                 return "LoadBlobSet(" +
-                    NStr::IntToString(m_Ids.size()) + " ids): "
+                    NStr::SizetToString(m_Ids.size()) + " ids): "
                     "data not found";
             }
         CGBRequestStatistics::EStatType GetStatistics(void) const
@@ -1070,7 +1070,7 @@ namespace {
         string GetStatisticsDescription(void) const
             {
                 return "blobs(" +
-                    NStr::IntToString(m_Ids.size()) + " ids)";
+                    NStr::SizetToString(m_Ids.size()) + " ids)";
             }
         
     private:
@@ -1078,8 +1078,30 @@ namespace {
     };
 }
 
+BEGIN_LOCAL_NAMESPACE;
 
-void CReadDispatcher::Process(CReadDispatcherCommand& command)
+struct SSaveResultLevel
+{
+    SSaveResultLevel(CReadDispatcherCommand& command)
+        : m_Command(command),
+          m_SavedLevel(command.GetResult().GetLevel())
+        {
+        }
+    
+    ~SSaveResultLevel(void)
+        {
+            m_Command.GetResult().SetLevel(m_SavedLevel);
+        }
+    
+    CReadDispatcherCommand& m_Command;
+    int m_SavedLevel;
+};
+
+END_LOCAL_NAMESPACE;
+
+
+void CReadDispatcher::Process(CReadDispatcherCommand& command,
+                              const CReader* asking_reader)
 {
     CheckReaders();
 
@@ -1087,7 +1109,16 @@ void CReadDispatcher::Process(CReadDispatcherCommand& command)
         return;
     }
 
+    SSaveResultLevel save_level(command);
     NON_CONST_ITERATE ( TReaders, rdr, m_Readers ) {
+        if ( asking_reader ) {
+            // skip all readers before the asking one
+            if ( rdr->second == asking_reader ) {
+                // found the asking reader, start processing next readers
+                asking_reader = 0;
+            }
+            continue;
+        }
         CReader& reader = *rdr->second;
         command.GetResult().SetLevel(rdr->first);
         int retry_count = 0;
@@ -1248,10 +1279,11 @@ void CReadDispatcher::LoadSeq_idBlob_ids(CReaderRequestResult& result,
 
 
 void CReadDispatcher::LoadBlobVersion(CReaderRequestResult& result,
-                                     const TBlobId& blob_id)
+                                      const TBlobId& blob_id,
+                                      const CReader* asking_reader)
 {
     CCommandLoadBlobVersion command(result, blob_id);
-    Process(command);
+    Process(command, asking_reader);
 }
 
 void CReadDispatcher::LoadBlobs(CReaderRequestResult& result,

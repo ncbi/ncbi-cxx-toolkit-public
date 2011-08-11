@@ -95,6 +95,8 @@ struct NCBI_XREADER_CACHE_EXPORT SCacheInfo
     static string GetBlobSubkey(CLoadLockBlob& blob,
                                 int chunk_id = kMain_ChunkId);
 
+    static int GetDebugLevel(void);
+
     typedef CTreePair<string, string> TParamPair;
     typedef TParamPair::TPairTreeNode TParams;
 
@@ -146,6 +148,8 @@ class NCBI_XREADER_CACHE_EXPORT CCacheReader : public CReader,
 {
 public:
     CCacheReader(void);
+    CCacheReader(const TPluginManagerParamTree* params,
+                 const string& driver_name);
 
     //////////////////////////////////////////////////////////////////
     // Overloaded loading methods:
@@ -198,6 +202,12 @@ protected:
     void x_RemoveConnectionSlot(TConn conn);
     void x_DisconnectAtSlot(TConn conn, bool failed);
     void x_ConnectAtSlot(TConn conn);
+    void x_ProcessBlob(CReaderRequestResult& result,
+                       const TBlobId& blob_id,
+                       TChunkId chunk_id,
+                       CNcbiIstream& stream);
+
+    bool m_JoinedBlobVersion;
 };
 
 

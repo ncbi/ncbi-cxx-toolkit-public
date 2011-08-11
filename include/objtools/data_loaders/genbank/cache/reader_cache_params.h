@@ -43,6 +43,9 @@
 #define NCBI_GBLOADER_READER_CACHE_PARAM_BLOB_SECTION "blob_cache"
 /* Name of ICache driver to be used in cache */
 #define NCBI_GBLOADER_READER_CACHE_PARAM_DRIVER "driver"
+/* Use more efficient but not always available option to store blob version
+   together with the blob, true by default */
+#define NCBI_GBLOADER_READER_CACHE_PARAM_JOINED_BLOB_VERSION "joined_blob_version"
 
 /* Name of cache writer driver */
 #define NCBI_GBLOADER_WRITER_CACHE_DRIVER_NAME "cache"

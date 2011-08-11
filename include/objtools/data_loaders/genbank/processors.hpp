@@ -256,6 +256,34 @@ public:
 };
 
 
+class NCBI_XREADER_EXPORT CProcessor_ID2_Split : public CProcessor_ID2
+{
+public:
+    CProcessor_ID2_Split(CReadDispatcher& dispatcher);
+    ~CProcessor_ID2_Split(void);
+
+    EType GetType(void) const;
+    TMagic GetMagic(void) const;
+
+    void ProcessObjStream(CReaderRequestResult& result,
+                          const TBlobId& blob_id,
+                          TChunkId chunk_id,
+                          CObjectIStream& obj_stream) const;
+
+    void SaveSplitData(CReaderRequestResult& result,
+                       const TBlobId& blob_id,
+                       TBlobState blob_state,
+                       TChunkId chunk_id,
+                       CWriter* writer,
+                       TSplitVersion split_version,
+                       const CID2_Reply_Data& split_data) const;
+    void SaveSplitData(CObjectOStream& obj_stream,
+                       TBlobState blob_state,
+                       TSplitVersion split_version,
+                       const CID2_Reply_Data& split_data) const;
+};
+
+
 class NCBI_XREADER_EXPORT CProcessor_ID2AndSkel : public CProcessor_ID2
 {
 public:

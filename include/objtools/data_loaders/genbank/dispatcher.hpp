@@ -110,7 +110,8 @@ public:
                     const TIds ids, TLoaded& loaded, TTaxIds& ret);
  
     void LoadBlobVersion(CReaderRequestResult& result,
-                         const TBlobId& blob_id);
+                         const TBlobId& blob_id,
+                         const CReader* asking_reader = 0);
     void LoadBlobs(CReaderRequestResult& result,
                    const CSeq_id_Handle& seq_id,
                    TContentsMask mask,
@@ -148,7 +149,8 @@ public:
                                TBlobVersion version) const;
 
     void CheckReaders(void) const;
-    void Process(CReadDispatcherCommand& command);
+    void Process(CReadDispatcherCommand& command,
+                 const CReader* asking_reader = 0);
     void ResetCaches(void);
 
     static int CollectStatistics(void); // 0 - no stats, >1 - verbose

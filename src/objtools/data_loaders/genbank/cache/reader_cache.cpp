@@ -41,6 +41,7 @@
 #include <corelib/plugin_manager_store.hpp>
 
 #include <util/cache/icache.hpp>
+#include <connect/ncbi_conn_stream.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/tse_split_info.hpp>
@@ -55,6 +56,17 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+NCBI_PARAM_DECL(int, GENBANK, CACHE_DEBUG);
+
+NCBI_PARAM_DEF_EX(int, GENBANK, CACHE_DEBUG, 0,
+                  eParam_NoThread, GENBANK_CACHE_DEBUG);
+
+int SCacheInfo::GetDebugLevel(void)
+{
+    static NCBI_PARAM_TYPE(GENBANK, CACHE_DEBUG) s_Value;
+    return s_Value.Get();
+}
 
 const int    SCacheInfo::IDS_MAGIC = 0x32fd0105;
 
@@ -221,7 +233,22 @@ void CCacheHolder::SetBlobCache(ICache* blob_cache)
 
 
 CCacheReader::CCacheReader(void)
+    : m_JoinedBlobVersion(true)
 {
+    SetMaximumConnections(1);
+}
+
+
+CCacheReader::CCacheReader(const TPluginManagerParamTree* params,
+                           const string& driver_name)
+    : m_JoinedBlobVersion(true)
+{
+    CConfig conf(params);
+    m_JoinedBlobVersion = conf.GetBool(
+        driver_name,
+        NCBI_GBLOADER_READER_CACHE_PARAM_JOINED_BLOB_VERSION,
+        CConfig::eErr_NoThrow,
+        true);
     SetMaximumConnections(1);
 }
 
@@ -322,6 +349,9 @@ namespace {
                                const string& subkey)
         : m_Descr(m_Buffer, sizeof(m_Buffer)), m_Ptr(0), m_Size(0)
     {
+        if ( SCacheInfo::GetDebugLevel() ) {
+            LOG_POST(Info<<"CCache:Read: "<<key<<","<<subkey<<","<<version);
+        }
         cache->GetBlobAccess(key, version, subkey, &m_Descr);
         if ( !m_Descr.reader.get() ) {
             m_Ptr = m_Descr.buf;
@@ -653,13 +683,16 @@ bool CCacheReader::ReadSeq_ids(CReaderRequestResult& result,
     CLoadInfoSeq_ids::TSeq_ids seq_ids;
     {{
         CConn conn(result, this);
+        if ( GetDebugLevel() ) {
+            LOG_POST(Info<<"CCache:Read: "<<key<<","<<GetSeq_idsSubkey());
+        }
         auto_ptr<IReader> reader
             (m_IdCache->GetReadStream(key, 0, GetSeq_idsSubkey()));
         if ( !reader.get() ) {
             conn.Release();
             return false;
         }
-        CRStream r_stream(reader.get());
+        CRStream r_stream(reader.release(), 0, 0, CRWStreambuf::fOwnAll);
         CObjectIStreamAsnBinary obj_stream(r_stream);
         size_t count = static_cast<CObjectIStream&>(obj_stream).ReadUint4();
         for ( size_t i = 0; i < count; ++i ) {
@@ -766,6 +799,74 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
     string key = GetBlobKey(blob_id);
     string subkey = GetBlobSubkey(blob, chunk_id);
     if ( !blob.IsSetBlobVersion() ) {
+        if ( m_JoinedBlobVersion ) {
+            do { // artificial one-time cycle to allow breaking
+                CConn conn(result, this);
+                TBlobVersion version;
+                ICache::EBlobValidity validity;
+                auto_ptr<IReader> reader;
+                try {
+                    if ( GetDebugLevel() ) {
+                        LOG_POST(Info<<"CCache:ReadV: "<<key<<","<<subkey);
+                    }
+                    reader.reset(m_BlobCache->GetReadStream(key, subkey,
+                                                            &version,
+                                                            &validity));
+                }
+                catch ( CException& /*ignored*/ ) {
+                    // joined blob version is not supported by ICache
+                    m_JoinedBlobVersion = false;
+                    conn.Release();
+                    break; // continue with separate blob version
+                }
+                if ( !reader.get() ) {
+                    // no any blob data
+                    conn.Release();
+                    return false;
+                }
+                if ( validity != ICache::eValid ) {
+                    // check if blob version is still the same
+
+                    // read the blob to allow next ICache command
+                    CConn_MemoryStream data;
+                    {{
+                        CRStream stream(reader.release(),
+                                        0, 0, CRWStreambuf::fOwnAll);
+                        data << stream.rdbuf();
+                    }}
+                    conn.Release();
+
+                    // get blob version from other readers (e.g. ID2)
+                    m_Dispatcher->LoadBlobVersion(result, blob_id, this);
+                    if ( !blob.IsSetBlobVersion() ||
+                         blob.GetBlobVersion() != version ) {
+                        // Cannot determine the blob verion or
+                        // cached blob version is outdated ->
+                        // pass the request to the next reader.
+                        return false;
+                    }
+                    // current blob version is still valid
+                    if ( GetDebugLevel() ) {
+                        LOG_POST(Info<<"SetBlobVersionAsValid("<<key<<", "<<subkey<<", "<<version<<")");
+                    }
+                    m_BlobCache->SetBlobVersionAsValid(key, subkey, version);
+                    x_ProcessBlob(result, blob_id, chunk_id, data);
+                    return true;
+                }
+                else {
+                    // current blob version is valid
+                    blob.SetBlobVersion(version);
+                    {{
+                        CRStream stream(reader.release(),
+                                        0, 0, CRWStreambuf::fOwnAll);
+                        x_ProcessBlob(result, blob_id, chunk_id, stream);
+                    }}
+                    conn.Release();
+                    return true;
+                }
+            } while ( false );
+            // failed, continue with old-style version
+        }
         {{
             CConn conn(result, this);
             if ( !m_BlobCache->HasBlobs(key, subkey) ) {
@@ -781,13 +882,27 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
     TBlobVersion version = blob.GetBlobVersion();
 
     CConn conn(result, this);
+    if ( GetDebugLevel() ) {
+        LOG_POST(Info<<"CCache:Read: "<<key<<","<<subkey<<","<<version);
+    }
     auto_ptr<IReader> reader(m_BlobCache->GetReadStream(key, version, subkey));
     if ( !reader.get() ) {
         conn.Release();
         return false;
     }
 
-    CRStream stream(reader.get());
+    CRStream stream(reader.release(), 0, 0, CRWStreambuf::fOwnAll);
+    x_ProcessBlob(result, blob_id, chunk_id, stream);
+    conn.Release();
+    return true;
+}
+
+
+void CCacheReader::x_ProcessBlob(CReaderRequestResult& result,
+                                 const TBlobId& blob_id,
+                                 TChunkId chunk_id,
+                                 CNcbiIstream& stream)
+{
     int processor_type = ReadInt(stream);
     const CProcessor& processor =
         m_Dispatcher->GetProcessor(CProcessor::EType(processor_type));
@@ -803,8 +918,6 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
                        "invalid processor magic number: "<<processor_magic);
     }
     processor.ProcessStream(result, blob_id, chunk_id, stream);
-    conn.Release();
-    return true;
 }
 
 
@@ -1133,7 +1246,7 @@ public:
         if ( !version.Match(NCBI_INTERFACE_VERSION(CReader)) ) {
             return 0;
         }
-        return new CCacheReader;
+        return new CCacheReader(params, driver);
     }
 };
 
