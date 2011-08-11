@@ -3154,15 +3154,21 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
     // systems chown() clears the set[ug]id bits for non-superusers
     // thus resulting in incorrect permissions.
     if (what & fPreserveOwner) {
+        unsigned int uid, gid;
         // 2-tier trial:  first using the names, then using numeric IDs.
         // Note that it is often impossible to restore the original owner
-        // without super-user rights so no error checking is done here.
+        // without the super-user rights so no error checking is done here.
         if (!path->SetOwner(info.GetUserName(),
                             info.GetGroupName(),
-                            eIgnoreLinks)) {
-            path->SetOwner(NStr::UIntToString(info.GetUserId()),
-                           NStr::UIntToString(info.GetGroupId()),
-                           eIgnoreLinks);
+                            eIgnoreLinks, &uid, &gid)  &&
+            !path->SetOwner(kEmptyStr, info.GetGroupName(), eIgnoreLinks)) {
+            if (uid != info.GetUserId()  ||  gid != info.GetGroupId()) {
+                string user = NStr::UIntToString(info.GetUserId());
+                string group = NStr::UIntToString(info.GetGroupId());
+                if (!path->SetOwner(user, group, eIgnoreLinks)) {
+                    path->SetOwner(kEmptyStr, group, eIgnoreLinks);
+                }
+            }
         }
     }
 

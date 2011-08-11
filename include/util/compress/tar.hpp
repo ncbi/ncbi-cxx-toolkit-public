@@ -533,11 +533,11 @@ public:
     /// Create and return an IReader, which can extract contents of one named
     /// file (which can be requested by a name mask).
     ///
-    /// Tar archive is deemed to be in the specified stream "is", properly
+    /// The tar archive is deemed to be in the specified stream "is", properly
     /// positioned (either at the beginning of the archive, or at any
     /// CTarEntryInfo::GetPosition(ePos_Header)'s result possibly off-set
     /// with some fixed archive base position, e.g. if there is any preamble).
-    /// The extraction is done at the first matching entry only, then stopped.
+    /// The extraction is done at the first matching entry only, then stops.
     /// See test suite (in test/test_tar.cpp) for a usage example.
     /// @return
     ///   IReader interface to read the file contents with;  0 on error.
@@ -555,9 +555,9 @@ protected:
     /// Return false to skip the current entry when reading;
     /// the return code gets ignored when writing.
     ///
-    /// Note that this callback can prescreen multiple copies of the same
-    /// entry in case the archive has been updated (so only the last copy is
-    /// the actual file when extracted).
+    /// Note that the callback can encounter multiple entries of the same file
+    /// in case the archive has been updated (so only the last occurrence is
+    /// the actual copy of the file when extracted).
     virtual bool Checkpoint(const CTarEntryInfo& /*current*/,
                             bool /*ifwrite: write==true, read==false*/) const
     { return true; }
