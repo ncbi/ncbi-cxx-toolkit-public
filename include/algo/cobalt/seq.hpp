@@ -40,6 +40,7 @@ Contents: Interface for CSequence class
 /// Interface for CSequence class
 
 #include <util/math/matrix.hpp>
+#include <objects/seqalign/Seq_align.hpp>
 #include <algo/blast/api/sseqloc.hpp>
 #include <algo/align/nw/nw_aligner.hpp>
 #include <algo/cobalt/base.hpp>
@@ -154,6 +155,16 @@ public:
     ///
     static void CompressSequences(vector<CSequence>& seq, 
                                   vector<int> index_list);
+
+    /// Create a vector of CSequence objects that represents the alignment in
+    /// given Seq_align
+    /// @param seq_align Alignment in ASN.1 format [in]
+    /// @param scope Scope [in]
+    /// @param msa Alignment as strings of residues and gaps [out]
+    ///
+    static void CreateMsa(const objects::CSeq_align& seq_align,
+                          objects::CScope& scope,
+                          vector<CSequence>& msa);
 
 private:
     vector<unsigned char> m_Sequence;  ///< The sequence (ncbistdaa format)

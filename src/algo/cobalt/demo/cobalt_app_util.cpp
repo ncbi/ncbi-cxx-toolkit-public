@@ -48,14 +48,12 @@ BEGIN_NCBI_SCOPE;
 BEGIN_SCOPE(cobalt);
 
 
-void GetSeqLocFromStream(CNcbiIstream& instream, CObjectManager& objmgr,
+void GetSeqLocFromStream(CNcbiIstream& instream,
                          vector< CRef<objects::CSeq_loc> >& seqs,
                          CRef<objects::CScope>& scope,
                          objects::CFastaReader::TFlags flags)
 {
     seqs.clear();
-    scope.Reset(new CScope(objmgr));
-    scope->AddDefaults();
 
     // read one query at a time, and use a separate seq_entry,
     // scope, and lowercase mask for each query. This lets different
@@ -80,6 +78,37 @@ void GetSeqLocFromStream(CNcbiIstream& instream, CObjectManager& objmgr,
         seqs.push_back(seqloc);
     }
 }
+
+
+CRef<objects::CSeq_align> GetAlignmentFromStream(CNcbiIstream& instream,
+                                     CRef<objects::CScope>& scope,
+                                     objects::CFastaReader::TFlags flags)
+{
+    // read all sequences as a multiple sequence alignment and put
+    // the alignment in a single seq_entry
+
+    CStreamLineReader line_reader(instream);
+    CFastaReader fasta_reader(line_reader, flags);
+
+    CRef<CSeq_entry> entry = fasta_reader.ReadAlignedSet(-1);
+
+    if (entry == 0) {
+        NCBI_THROW(CObjReaderException, eInvalid, 
+                   "Could not retrieve seq entry");
+    }
+    scope->AddTopLevelSeqEntry(*entry);
+
+    // notify of a problem if the whole file was not read
+    if (!line_reader.AtEOF()) {
+        NCBI_THROW(CObjReaderException, eInvalid, "Problem reading MSA");
+    }
+
+    CRef<objects::CSeq_align> align
+        = entry->GetAnnot().front()->GetData().GetAlign().front();
+
+    return align;
+}
+
 
 END_SCOPE(cobalt);
 END_NCBI_SCOPE;

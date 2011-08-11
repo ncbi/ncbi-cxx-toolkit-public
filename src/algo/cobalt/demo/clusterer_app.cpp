@@ -135,9 +135,10 @@ int CClustererApplication::x_RunBinary(const CArgs& args)
     typedef TKmerMethods<TKmerCounts> TKMethods;
 
     m_ObjMgr = CObjectManager::GetInstance();
-    CRef<CScope> scope;
+    CRef<CScope> scope(new CScope(*m_ObjMgr));
+    scope->AddDefaults();
     vector< CRef<CSeq_loc> > queries;
-    GetSeqLocFromStream(args["i"].AsInputFile(), *m_ObjMgr, queries, scope,
+    GetSeqLocFromStream(args["i"].AsInputFile(), queries, scope,
                         CFastaReader::fAssumeProt | 
                         CFastaReader::fForceType);
 
@@ -219,9 +220,10 @@ int CClustererApplication::x_RunSparse(const CArgs& args)
     typedef TKmerMethods<TKmerCounts> TKMethods;
 
     m_ObjMgr = CObjectManager::GetInstance();
-    CRef<CScope> scope;
+    CRef<CScope> scope(new CScope(*m_ObjMgr));
+    scope->AddDefaults();
     vector< CRef<CSeq_loc> > queries;
-    GetSeqLocFromStream(args["i"].AsInputFile(), *m_ObjMgr, queries, scope,
+    GetSeqLocFromStream(args["i"].AsInputFile(), queries, scope,
                         CFastaReader::fAssumeProt | 
                         CFastaReader::fForceType);
 

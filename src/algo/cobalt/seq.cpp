@@ -37,6 +37,7 @@ Contents: implementation of CSequence class
 
 #include <ncbi_pch.hpp>
 #include <objmgr/seq_vector.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
 #include <algo/cobalt/seq.hpp>
 
 /// @file seq.cpp
@@ -270,6 +271,75 @@ void CSequence::CompressSequences(vector<CSequence>& seq,
             seq[index_list[i]].m_Freqs.Resize(new_length, kAlphabetSize);
         }
     }
+}
+
+void CSequence::CreateMsa(const objects::CSeq_align& seq_align,
+                          objects::CScope& scope,
+                          vector<CSequence>& msa)
+{
+    const objects::CDense_seg& denseg = seq_align.GetSegs().GetDenseg();
+    const objects::CDense_seg::TStarts& starts = denseg.GetStarts();
+    const objects::CDense_seg::TLens& lens = denseg.GetLens();
+
+    int num_seqs = denseg.GetDim();
+    int seq_length = 0;
+    ITERATE (objects::CDense_seg::TLens, it, lens) {
+        seq_length += *it;
+    }
+
+    // reserve memory for MSA
+    msa.resize(num_seqs);
+    NON_CONST_ITERATE (vector<CSequence>, it, msa) {
+        it->m_Sequence.resize(seq_length);
+        it->m_Freqs.Resize(seq_length, kAlphabetSize);
+        it->m_Freqs.Set(0.0);
+    }
+
+    // get sequences
+    vector< CRef<objects::CSeqVector> > seq_vectors;
+    seq_vectors.reserve(num_seqs);
+    ITERATE (objects::CDense_seg::TIds, it, denseg.GetIds()) {
+        seq_vectors.push_back(CRef<objects::CSeqVector>(
+                                     new objects::CSeqVector(
+                                             scope.GetBioseqHandle(**it))));
+    }
+
+    // convert Seq_align to strings of residues and gaps
+    // start column in MSA
+    int from = 0;
+    size_t seg_index = 0;
+
+    // for each alignment segment
+    while (seg_index < lens.size()) {
+
+        TSeqPos seg_len = lens[seg_index];
+
+        _ASSERT(from + seg_len - 1 < (int)seq_length);
+
+        // for each sequence start position
+        for (int i=0;i < num_seqs;i++) {
+
+            // if gap in sequence then put gaps
+            if (starts[seg_index * num_seqs + i] < 0) {
+                for (TSeqPos k=0;k < seg_len;k++) {
+                    msa[i].m_Sequence[from + k] = kGapChar;
+                }
+            }
+            else {
+
+                // else copy residues from seq_vector
+                for (TSeqPos k=0;k < seg_len;k++) {
+                    msa[i].m_Sequence[from + k] =
+                        (*seq_vectors[i])[starts[seg_index * num_seqs + i] + k];
+                }
+            }
+        }
+
+        // move to the next segment
+        from += seg_len;
+        seg_index++;
+    }
+    
 }
 
 END_SCOPE(cobalt)

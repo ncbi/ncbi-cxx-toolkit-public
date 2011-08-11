@@ -36,7 +36,7 @@ Contents: Utility functions for COBALT command line applications
 
 ******************************************************************************/
 
-
+#include <objects/seqalign/Seq_align.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objtools/readers/fasta.hpp>
@@ -44,12 +44,26 @@ Contents: Utility functions for COBALT command line applications
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)
 
+/// Reads fasta sequences from stream, adds them to scope,
+/// and returns them as the list of Seq_locs
+/// @param instream Input Stream [in|out]
+/// @param seqs List of the read sequences [out]
+/// @param scope Scope that contains the read sequences [in|out]
+/// @param flags Fasta Reader flags [in]
 void GetSeqLocFromStream(CNcbiIstream& instream,
-                         objects::CObjectManager& objmgr,
                          vector< CRef<objects::CSeq_loc> >& seqs,
                          CRef<objects::CScope>& scope,
                          objects::CFastaReader::TFlags flags);
 
+
+/// Reads fasta sequences as multiple sequence alignment
+/// @param instream Input stream [in|out]
+/// @param scope Scope that contains the read sequences [in|out]
+/// @param flags Fasta Reader flags [in]
+/// @return Alignment in ASN.1 format
+CRef<objects::CSeq_align> GetAlignmentFromStream(CNcbiIstream& instream,
+                                        CRef<objects::CScope>& scope,
+                                        objects::CFastaReader::TFlags flags);
 
 
 END_SCOPE(cobalt)

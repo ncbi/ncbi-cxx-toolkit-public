@@ -85,9 +85,38 @@ void CMultiApplication::Init(void)
                              "COBALT multiple sequence alignment utility");
 
     // Input sequences
-    arg_desc->AddKey("i", "infile", "File containing input sequences in FASTA"
-                     " format", CArgDescriptions::eInputFile);
+    arg_desc->SetCurrentGroup("Input");
+    arg_desc->AddOptionalKey("i", "infile", "File containing input sequences "
+                             "in FASTA format", CArgDescriptions::eInputFile);
 
+    arg_desc->AddOptionalKey("in_msa1", "infile", "File containing input "
+                             "alignment in FASTA format",
+                             CArgDescriptions::eInputFile);
+
+    arg_desc->AddOptionalKey("in_msa2", "infile", "File containing input "
+                             "alignment in FASTA format",
+                             CArgDescriptions::eInputFile);
+
+    arg_desc->AddOptionalKey("ind1", "numbers", "Coma separated list of "
+                             "sequence indices in MSA1 to be used for "
+                             "constraints generation",
+                             CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey("ind2", "numbers", "Coma separated list of "
+                             "sequence indices in MSA2 to be used for "
+                             "constraints generation",
+                             CArgDescriptions::eString);
+
+    arg_desc->SetDependency("i", CArgDescriptions::eExcludes, "in_msa1");
+    arg_desc->SetDependency("i", CArgDescriptions::eExcludes, "in_msa2");
+    arg_desc->SetDependency("i", CArgDescriptions::eExcludes, "ind1");
+    arg_desc->SetDependency("i", CArgDescriptions::eExcludes, "ind2");
+
+    arg_desc->SetDependency("in_msa1", CArgDescriptions::eRequires, "in_msa2");
+    arg_desc->SetDependency("in_msa2", CArgDescriptions::eRequires, "in_msa1");
+
+    arg_desc->SetDependency("ind1", CArgDescriptions::eRequires, "in_msa1");
+    arg_desc->SetDependency("ind2", CArgDescriptions::eRequires, "in_msa2");
 
     // Conserved domain options
     arg_desc->SetCurrentGroup("Conserved domain options");
@@ -409,15 +438,58 @@ int CMultiApplication::Run(void)
     CMultiAligner aligner(opts);
 
     vector< CRef<objects::CSeq_loc> > queries;
-    CRef<objects::CScope> scope;
-    GetSeqLocFromStream(args["i"].AsInputFile(), *m_ObjMgr, queries, scope,
-                        CFastaReader::fAssumeProt | 
-                        CFastaReader::fForceType |
-                        CFastaReader::fNoParseID);
+    CRef<objects::CScope> scope(new CScope(*m_ObjMgr));
+    scope->AddDefaults();
 
-    _ASSERT(!scope.Empty());
+    // if aligning a set of sequences
+    if (args["i"]) {
+        GetSeqLocFromStream(args["i"].AsInputFile(), queries, scope,
+                            CFastaReader::fAssumeProt | 
+                            CFastaReader::fForceType |
+                            CFastaReader::fNoParseID);
 
-    aligner.SetQueries(queries, scope);
+        _ASSERT(!scope.Empty());
+        aligner.SetQueries(queries, scope);
+    }
+    else {
+
+        // aligning two MSAs
+
+        CRef<CSeq_align> msa1 = GetAlignmentFromStream(
+                                              args["in_msa1"].AsInputFile(),
+                                              scope,
+                                              CFastaReader::fAssumeProt | 
+                                              CFastaReader::fForceType |
+                                              CFastaReader::fNoParseID);
+
+        CRef<CSeq_align> msa2 = GetAlignmentFromStream(
+                                              args["in_msa2"].AsInputFile(),
+                                              scope,
+                                              CFastaReader::fAssumeProt | 
+                                              CFastaReader::fForceType |
+                                              CFastaReader::fNoParseID);
+
+        _ASSERT(!scope.Empty());
+
+        vector<int> repr1, repr2;
+        if (args["ind1"]) {
+            list<string> tokens;
+            NStr::Split(args["ind1"].AsString(), ",", tokens);
+            ITERATE (list<string>, it, tokens) {
+                repr1.push_back(NStr::StringToInt(*it));
+            }            
+        }
+        if (args["ind2"]) {
+            list<string> tokens;
+            NStr::Split(args["ind2"].AsString(), ",", tokens);
+            ITERATE (list<string>, it, tokens) {
+                repr2.push_back(NStr::StringToInt(*it));
+            }
+        }
+
+        aligner.SetInputMSAs(*msa1, *msa2, repr1, repr2, scope);
+    }
+
     CMultiAligner::TStatus status = aligner.Run();
 
     // If aligner returns with error status then write messages and exit
@@ -459,10 +531,11 @@ int CMultiApplication::Run(void)
     else {
         // default format is fasta with one sequence per line
         const vector<CSequence>& results(aligner.GetSeqResults());
+        CRef<CSeq_align> align = aligner.GetResults();
         for (int i = 0; i < (int)results.size(); i++) {
             CBioseq_Handle bhandle = scope->GetBioseqHandle(
-                                                queries[i]->GetWhole(),
-                                                CScope::eGetBioseq_All);
+                                                    align->GetSeq_id(i),
+                                                    CScope::eGetBioseq_All);
 
             printf(">%s\n", sequence::GetTitle(bhandle).c_str());
             for (int j = 0; j < results[i].GetLength(); j++) {

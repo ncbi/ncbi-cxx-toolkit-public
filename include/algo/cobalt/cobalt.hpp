@@ -157,6 +157,22 @@ public:
     ///
     void SetQueries(const blast::TSeqLocVector& queries);
 
+    /// Set input alignments
+    /// @param msa1 The first input alignment [in]
+    /// @param msa2 The second input alignment [in]
+    /// @param representatives1 List of sequence indices in msa1
+    /// to be used for computing constraints [in]
+    /// @param representatives2 List of sequence indices in msa2
+    /// to be used for computing constraints [in]
+    /// @param scope Scope [in]
+    ///
+    void SetInputMSAs(const objects::CSeq_align& msa1,
+                      const objects::CSeq_align& msa2,
+                      const vector<int>& representatives1,
+                      const vector<int>& representatives2,
+                      CRef<objects::CScope> scope);
+
+
     /// Get query sequences
     /// @return List of seq-ids and locations [in]
     ///
@@ -284,6 +300,11 @@ protected:
     /// @return True if validation passed
     ///
     bool x_ValidateQueries(void) const;
+
+    /// Validate input alignments. Throws if alignments do not pass validation.
+    /// @param True if validation passed
+    //
+    bool x_ValidateInputMSAs(void) const;
 
     /// Validate user constraints with queries. Throws if constraints do not
     /// pass validation.
@@ -426,6 +447,10 @@ protected:
     /// only want a final answer without tweaking internal state.
     ///
     virtual void x_Run(void);
+
+    /// Align multiple sequence alignments
+    ///
+    void x_AlignMSAs(void);
 
 protected:
 
@@ -623,6 +648,17 @@ protected:
     CRef<objects::CScope> m_Scope;
 
     vector<CSequence> m_QueryData;
+
+    /// Input alignment
+    vector<CSequence> m_InMSA1;
+    /// Input alignment
+    vector<CSequence> m_InMSA2;
+
+    /// Indices of sequence representatives in input alignment 1
+    vector<int> m_Msa1Repr; 
+    /// Indices of sequence representatives in input alignment 2
+    vector<int> m_Msa2Repr;
+
     vector<CSequence> m_Results;
 
     // Server classes

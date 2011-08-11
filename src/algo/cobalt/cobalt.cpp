@@ -128,6 +128,36 @@ bool CMultiAligner::x_ValidateQueries(void) const
     return true;
 }
 
+bool CMultiAligner::x_ValidateInputMSAs(void) const
+{
+    // check that both input alignments are set
+    if (m_InMSA1.empty() || m_InMSA2.empty()) {
+        NCBI_THROW(CMultiAlignerException, eInvalidInput,
+                   "Empty input alignment");
+    }
+
+    // check that indices of representative sequences are not out of bounds
+    // validate indices for MSA1
+    ITERATE (vector<int>, it, m_Msa1Repr) {
+        if (*it >= (int)m_InMSA1.size() || *it < 0) {
+            NCBI_THROW(CMultiAlignerException, eInvalidInput,
+                       (string)"Sequence index " + NStr::IntToString(*it) +
+                       " for MSA 1 out of bounds");
+        }
+    }
+
+    // validate indices for MSA2
+    ITERATE (vector<int>, it, m_Msa2Repr) {
+        if (*it >= (int)m_InMSA2.size() || *it < 0) {
+            NCBI_THROW(CMultiAlignerException, eInvalidInput,
+                       (string)"Sequence index " + NStr::IntToString(*it) +
+                       " for MSA 2 out of bounds");
+        }
+    }
+
+    return true;
+}
+
 bool CMultiAligner::x_ValidateUserHits(void)
 {
     for (int i = 0; i < m_UserHits.Size(); i++) {
@@ -261,6 +291,67 @@ void CMultiAligner::SetQueries(const blast::TSeqLocVector& queries)
     }
 
     x_ValidateQueries();
+    x_ValidateUserHits();
+    Reset();
+}
+
+void 
+CMultiAligner::SetInputMSAs(const objects::CSeq_align& msa1,
+                            const objects::CSeq_align& msa2,
+                            const vector<int>& repr1,
+                            const vector<int>& repr2,
+                            CRef<objects::CScope> scope)
+{
+    m_Scope = scope;
+
+    m_InMSA1.clear();
+    m_InMSA2.clear();
+    m_tQueries.clear();
+
+    // get MSA data
+    CSequence::CreateMsa(msa1, *scope, m_InMSA1);
+    CSequence::CreateMsa(msa2, *scope, m_InMSA2);
+
+    // get MSA sequences as Seq_locs
+    ITERATE (objects::CDense_seg::TIds, it,
+             msa1.GetSegs().GetDenseg().GetIds()) {
+
+        m_tQueries.push_back(CRef<objects::CSeq_loc>(
+                          new objects::CSeq_loc(objects::CSeq_loc::e_Whole)));
+        m_tQueries.back()->SetId(**it);
+    }
+    ITERATE (objects::CDense_seg::TIds, it,
+             msa2.GetSegs().GetDenseg().GetIds()) {
+
+        m_tQueries.push_back(CRef<objects::CSeq_loc>(
+                          new objects::CSeq_loc(objects::CSeq_loc::e_Whole)));
+        m_tQueries.back()->SetId(**it);
+    }
+
+    // process indices of representative sequences
+    if (!repr1.empty()) {
+        m_Msa1Repr.resize(repr1.size());
+        copy(repr1.begin(), repr1.end(), m_Msa1Repr.begin());
+    }
+    else {
+        m_Msa1Repr.reserve(m_InMSA1.size());
+        for (int i=0;i < (int)m_InMSA1.size();i++) {
+            m_Msa1Repr.push_back(i);
+        }
+    }
+
+    if (!repr2.empty()) {
+        m_Msa2Repr.resize(repr2.size());
+        copy(repr2.begin(), repr2.end(), m_Msa2Repr.begin());
+    }
+    else {
+        m_Msa1Repr.reserve(m_InMSA2.size());
+        for (int i=0;i < (int)m_InMSA2.size();i++) {
+            m_Msa2Repr.push_back(i);
+        }
+    }
+
+    x_ValidateInputMSAs();
     x_ValidateUserHits();
     Reset();
 }
@@ -420,8 +511,93 @@ CMultiAligner::x_ComputeTree(void)
 }
 
 
+void CMultiAligner::x_AlignMSAs(void)
+{
+    // put sequences with gaps in structures used by the alignment methods
+    ITERATE (vector<CSequence>, it, m_InMSA1) {
+        m_QueryData.push_back(*it);
+    }
+    ITERATE (vector<CSequence>, it, m_InMSA2) {
+        m_QueryData.push_back(*it);
+    }
+
+    // create a dummy progressive alignment tree
+    vector<CTree::STreeLeaf> node_list1;
+    vector<CTree::STreeLeaf> node_list2;
+    int i = 0;
+    for (;i < (int)m_InMSA1.size();i++) {
+        node_list1.push_back(CTree::STreeLeaf(i, 1.0));
+    }
+    _ASSERT(node_list1.back().query_idx == (int)m_InMSA1.size() - 1);
+    for (;i < (int)(m_InMSA1.size() + m_InMSA2.size());i++) {
+        node_list2.push_back(CTree::STreeLeaf(i, 1.0));
+    }
+    _ASSERT(node_list2.back().query_idx == (int)(m_InMSA1.size()
+                                                 + m_InMSA2.size() - 1));
+
+    // remove gap-only columns in the input alignments
+    vector<int> compress_inds;
+    for (i=0;i < (int)m_InMSA1.size();i++) {
+        compress_inds.push_back(i);
+    }
+    CSequence::CompressSequences(m_QueryData, compress_inds);
+    compress_inds.clear();
+    for (;i < (int)m_QueryData.size();i++) {
+        compress_inds.push_back(i);
+    }
+    CSequence::CompressSequences(m_QueryData, compress_inds);
+
+    // make sure that no clustering of input sequences is done
+    m_ClustAlnMethod = CMultiAlignerOptions::eNone;
+
+    // find constraints
+    blast::TSeqLocVector blast_queries;
+    vector<int> indices;
+    x_CreateBlastQueries(blast_queries, indices);
+    x_FindDomainHits(blast_queries, indices);
+    x_FindLocalHits(blast_queries, indices);
+
+    vector<const CSequence*> pattern_queries;
+    x_CreatePatternQueries(pattern_queries, indices);
+    x_FindPatternHits(pattern_queries, indices);
+    x_FindConsistentHitSubset();
+
+    // index constraints by sequence pairs
+    CNcbiMatrix<CHitList> pair_info(m_QueryData.size(), m_QueryData.size(),
+                                    CHitList());
+
+    for (int i = 0; i < m_CombinedHits.Size(); i++) {
+        CHit *hit = m_CombinedHits.GetHit(i);
+        pair_info(hit->m_SeqIndex1, hit->m_SeqIndex2).AddToHitList(hit);
+        pair_info(hit->m_SeqIndex2, hit->m_SeqIndex1).AddToHitList(hit);
+    }
+
+    // do alignment
+    int iteration = 0;
+    x_AlignProfileProfile(node_list1, node_list2, m_QueryData, pair_info,
+                          iteration);
+
+    // clear pair-wise constraints to aoid double memory release
+    for (unsigned int i = 0; i < pair_info.GetRows(); i++) {
+        for (unsigned int j = 0; j < pair_info.GetCols(); j++) {
+            pair_info(i, j).ResetList();
+        }
+    }
+
+    // save result
+    m_QueryData.swap(m_Results);
+}
+
 void CMultiAligner::x_Run(void)
 {
+    // if aligning MSAs
+    if (!m_InMSA1.empty()) {
+        x_AlignMSAs();
+        return;
+    }
+
+    // otherwise aligning sequences
+
     if ((int)m_tQueries.size() >= kClusterNodeId) {
         NCBI_THROW(CMultiAlignerException, eInvalidInput,
                    (string)"Number of queries exceeds maximum of "
@@ -1252,6 +1428,29 @@ void CMultiAligner::x_CreateBlastQueries(blast::TSeqLocVector& queries,
 {
     queries.clear();
     indices.clear();
+
+    // if aligning MSAs
+    if (!m_InMSA1.empty()) {
+        ITERATE (vector<int>, it, m_Msa1Repr) {
+            _ASSERT(*it < (int)m_InMSA1.size());
+
+            blast::SSeqLoc sl(*m_tQueries[*it], *m_Scope);
+            queries.push_back(sl);
+            indices.push_back(*it);
+        }
+        ITERATE (vector<int>, it, m_Msa2Repr) {
+            _ASSERT(*it < (int)m_InMSA2.size());
+            _ASSERT(m_InMSA1.size() + *it < m_tQueries.size());
+
+            blast::SSeqLoc sl(*m_tQueries[m_InMSA1.size() + *it], *m_Scope);
+            queries.push_back(sl);
+            indices.push_back(m_InMSA1.size() + *it);
+        }
+
+        return;
+    }
+
+    // if aligning sequences
 
     switch (m_ClustAlnMethod) {
 
