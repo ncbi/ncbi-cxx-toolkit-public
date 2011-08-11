@@ -1,10 +1,13 @@
+# $Id$
 #
 # Makefile:  Makefile.hgvs_parser.lib
-#
-#
+
 
 LIB = hgvs
-SRC = hgvs_parser variation_util hgvs_parser2 hgvs_writer2 variation_util2 seq_id_resolver
+SRC = hgvs_parser variation_util hgvs_parser2 hgvs_writer2 variation_util2 \
+      seq_id_resolver
+
+ASN_DEP = seq
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 LIBS = $(CMPRS_LIBS) $(ORIG_LIBS)
