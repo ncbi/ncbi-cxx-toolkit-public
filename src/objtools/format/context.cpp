@@ -110,8 +110,8 @@ CBioseqContext::CBioseqContext
     m_IsGenomeAssembly(false),
     m_FFCtx(ffctx),
     m_Master(mctx),
-    m_TLSeqEntryCtx(tlsec),
-    m_IsUnverified(false)
+    m_IsUnverified(false),
+    m_TLSeqEntryCtx(tlsec)
 {
     x_Init(seq, m_FFCtx.GetLocation());
 }
@@ -161,8 +161,8 @@ CBioseqContext::CBioseqContext
     m_IsGenomeAssembly(false),
     m_FFCtx(ffctx),
     m_Master(mctx),
-    m_TLSeqEntryCtx(tlsec),
-    m_IsUnverified(false)
+    m_IsUnverified(false),
+    m_TLSeqEntryCtx(tlsec)
 {
     x_Init(seq, m_FFCtx.GetLocation());
 }

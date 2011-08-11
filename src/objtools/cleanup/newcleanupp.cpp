@@ -982,7 +982,7 @@ static CSubSource* s_StringToSubSource (
 )
 
 {
-    string::size_type val_start_pos = -1;
+    string::size_type val_start_pos;
     TSUBSOURCE_SUBTYPE subtype = -1;
     if( ! s_StringHasSubSourcePrefix( str, val_start_pos, subtype ) ) {
         return NULL;
@@ -1277,7 +1277,7 @@ static COrgMod* s_StringToOrgMod (
 )
 
 {
-    string::size_type val_start_pos = -1;
+    string::size_type val_start_pos;
     TORGMOD_SUBTYPE subtype = -1;
     if( ! s_StringHasOrgModPrefix( str, val_start_pos, subtype) ) {
         return NULL;
@@ -4559,56 +4559,6 @@ void CNewCleanup_imp::x_FixEtAl(CName_std& name)
     }
 }
 
-static bool s_ShouldWeFixInitials(string& initials)
-{
-    string fixed;
-
-    string::iterator it = initials.begin();
-    while (it != initials.end()  &&  !isalpha((unsigned char)(*it))) {  // skip junk
-        ++it;
-    }
-    char prev = '\0';
-    while (it != initials.end()) {
-        char c = *it;
-    
-        // commas become periods
-        if (c == ',') {
-            c = '.';
-        }
-
-        if (isalpha((unsigned char) c)) {
-            if (prev != '\0'  &&  isupper((unsigned char) c)  &&  isupper((unsigned char) prev)) {
-                fixed += '.';
-            }
-        } else if (c == '-') {
-            if (prev != '\0'  &&  prev != '.') {
-                fixed += '.';
-            }
-        } else if (c == '.') {
-            if (prev == '-'  ||  prev == '.') {
-                ++it;
-                continue;
-            }
-        } else {
-            ++it;
-            continue;
-        }
-        fixed += c;
-
-        prev = c;
-        ++it;
-    }
-    // cut off extraneous dash at end
-    if ( NStr::EndsWith( fixed, '-') ) {
-        fixed.resize(fixed.length() - 1);
-    }
-    if (initials != fixed) {
-        initials = fixed;
-        return true;
-    }
-    return false;
-}
-
 void CNewCleanup_imp::x_AddReplaceQual(CSeq_feat& feat, const string& str)
 {
     if (!NStr::EndsWith(str, ')')) {
@@ -6064,15 +6014,6 @@ void CNewCleanup_imp::Except_textBC (
     }
 
     except_text = NStr::Join (exceptions, ", ");
-}
-
-static
-bool s_SeqLocAllEmpty( const CSeq_loc & loc )
-{
-    CSeq_loc_CI completeIter( loc, CSeq_loc_CI::eEmpty_Allow);
-    CSeq_loc_CI gapSkippingIter( loc, CSeq_loc_CI::eEmpty_Skip);
-
-    return ( completeIter && ! gapSkippingIter );
 }
 
 static

@@ -75,8 +75,9 @@ static const string kRefSeqInformationLink = "<a href=\"http://www.ncbi.nlm.nih.
 //  CCommentItem
 
 CCommentItem::CCommentItem(CBioseqContext& ctx, bool need_period) :
-    CFlatItem(&ctx), m_First(false), m_NeedPeriod(need_period),
-    m_CommentInternalIndent(0)
+    CFlatItem(&ctx), m_First(false),
+    m_CommentInternalIndent(0),
+    m_NeedPeriod(need_period)
 {
     swap(m_First, sm_FirstComment);
 }
@@ -87,8 +88,9 @@ CCommentItem::CCommentItem
  CBioseqContext& ctx,
  const CSerialObject* obj) :
     CFlatItem(&ctx),
-    m_First(false), m_NeedPeriod(true),
-    m_CommentInternalIndent(0)
+    m_First(false), 
+    m_CommentInternalIndent(0),
+    m_NeedPeriod(true)
 {
     m_Comment.push_back( comment );
     ExpandTildes(m_Comment.back(), eTilde_comment);
@@ -100,8 +102,9 @@ CCommentItem::CCommentItem
 
     
 CCommentItem::CCommentItem(const CSeqdesc&  desc, CBioseqContext& ctx) :
-    CFlatItem(&ctx), m_First(false), m_NeedPeriod(true),
-    m_CommentInternalIndent(0)
+    CFlatItem(&ctx), m_First(false), 
+    m_CommentInternalIndent(0),
+    m_NeedPeriod(true)
 {
     swap(m_First, sm_FirstComment);
     x_SetObject(desc);
@@ -113,8 +116,9 @@ CCommentItem::CCommentItem(const CSeqdesc&  desc, CBioseqContext& ctx) :
 
 
 CCommentItem::CCommentItem(const CSeq_feat& feat, CBioseqContext& ctx) :
-    CFlatItem(&ctx), m_First(false), m_NeedPeriod(true),
-    m_CommentInternalIndent(0)
+    CFlatItem(&ctx), m_First(false), 
+    m_CommentInternalIndent(0),
+    m_NeedPeriod(true)
 {
     swap(m_First, sm_FirstComment);
     x_SetObject(feat);

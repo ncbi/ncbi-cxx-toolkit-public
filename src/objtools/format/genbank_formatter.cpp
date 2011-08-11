@@ -873,17 +873,6 @@ void CGenbankFormatter::x_Remark
     }
 }
 
-static bool
-s_GiInCSeq_hist_ids( const int gi, const CSeq_hist_rec_Base::TIds & ids )
-{
-    ITERATE( CSeq_hist_rec_Base::TIds, hist_iter, ids ) {
-        if( (*hist_iter) && (*hist_iter)->IsGi() && (*hist_iter)->GetGi() == gi ) {
-            return true;
-        }
-    }
-    return false;
-}
-
 // This will change first_line to prepend HTML-relevant stuff.
 void 
 CGenbankFormatter::x_LocusHtmlPrefix( string &first_line, CBioseqContext& ctx )
@@ -1449,8 +1438,6 @@ s_CalcDistanceUntilNextSignificantGapOrEnd(
         return 0;
     }
 
-    const CSeqMap &seq_map = seq.GetSequence().GetSeqMap();
-
     TSeqPos dist_to_gap_or_end = 0;
     while( iter ) {
         if( ! iter.IsInGap() ) {
@@ -1482,17 +1469,6 @@ s_CalcDistanceUntilNextSignificantGapOrEnd(
     }
 
     return dist_to_gap_or_end;
-}
-
-static bool
-s_NextPieceIsAlsoGap( 
-    CSeqVector_CI iter // yes, COPY not reference
-)
-{
-    _ASSERT( iter.IsInGap() );
-
-    iter += iter.GetBufferSize();
-    return iter.IsInGap();
 }
 
 static void
@@ -1528,9 +1504,11 @@ s_FormatRegularSequencePiece
     // if base-count is offset, we indent the initial line
     TSeqPos initial_indent = 0;
     if( (base_count % s_kFullLineSize) != 1 ) {
-        initial_indent = (base_count % s_kFullLineSize) - 1;
-        if( -1 == initial_indent ) {
+        initial_indent = (base_count % s_kFullLineSize);
+        if( 0 == initial_indent ) {
             initial_indent = (s_kFullLineSize - 1);
+        } else {
+            --initial_indent;
         }
     }
 

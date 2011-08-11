@@ -1705,8 +1705,8 @@ static bool s_FindWholeName (string taxname, string value)
     size_t pos = NStr::Find (taxname, value);
     size_t value_len = value.length();
     while (pos != string::npos 
-           && ((pos != 0 && isalpha (taxname.c_str()[pos - 1])
-               || isalpha (taxname.c_str()[pos + value_len])))) {
+           && ( ( (pos != 0 && isalpha (taxname.c_str()[pos - 1]))
+                || isalpha (taxname.c_str()[pos + value_len])))) {
         pos = NStr::Find(taxname, value, pos + value_len);
     }
     if (pos == string::npos) {

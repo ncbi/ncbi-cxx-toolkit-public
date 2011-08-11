@@ -362,7 +362,7 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqAnnot(void)
             *m_Out << (*sa);
         }
     }
-    return changes; CBioseq foo;
+    return changes;
 }
 
 CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqFeat(void)

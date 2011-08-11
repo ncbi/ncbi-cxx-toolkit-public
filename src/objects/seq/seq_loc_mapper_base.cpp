@@ -293,7 +293,6 @@ CMappingRange::TRange CMappingRange::Map_Range(TSeqPos           from,
 
         // extend to beginning if necessary (Note: reverse strand implies "beginning" is a higher number )
         if( m_Dst_len != kInvalidSeqPos ) {
-            const TSeqPos dst_total_to = m_Dst_from + (m_Src_to - m_Src_from);
             const TSeqPos new_dst_end  = m_Dst_from + m_Dst_len - 1;    
             if ( (frame_shift > 0) && partial_from && (from == 0) && (m_Src_from == 0) ) {
                 ret.SetTo( new_dst_end + frame_shift );

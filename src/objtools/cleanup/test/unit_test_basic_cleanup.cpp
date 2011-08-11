@@ -181,8 +181,6 @@ typedef vector< CRef<CSeq_entry> > TSeqEntryVec;
 static
 CObjectIStreamAsn *s_OpenCompressedFile( const string &file_name )
 {
-    const static ESerialDataFormat kFormat = eSerial_AsnText;
-
     // owned by pUnzipStream
     CZipStreamDecompressor* pDecompressor = 
         new CZipStreamDecompressor(512, 512, kZlibDefaultWbits, CZipCompression::fGZip );

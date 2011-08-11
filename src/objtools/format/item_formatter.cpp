@@ -215,7 +215,6 @@ string  CFlatItemFormatter::x_FormatAccession
     if ( ctx.IsWGS() && ! acc.GetWGSAccession().empty() ) {
         const bool is_html = ctx.Config().DoHTML();
         if( is_html ) {
-            strLinkBaseNucSearch;
             acc_line << separator << "<a href=\"" << strLinkBaseNucSearch << acc.GetWGSAccession() << 
                 "\">" << acc.GetWGSAccession() << "</a>";
         } else {
