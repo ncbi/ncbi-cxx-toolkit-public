@@ -303,6 +303,8 @@ int main(int argc, char* argv[])
     size_t n_in = 0, n_out = 0;
     do {
         size_t x_in = rand() % kMaxIOSize + 1;
+        ERR_POST(Info
+                 << "Read:  " << setw(8) << x_in);
         is.read(buf, x_in);
         if (!(x_in = is.gcount()))
             break;
@@ -310,6 +312,9 @@ int main(int argc, char* argv[])
         size_t x_out = 0;
         while (x_out < x_in) {
             size_t xx_out = rand() % (x_in - x_out) + 1;
+            ERR_POST(Info
+                     << "Write: " << setw(8) << xx_out << '/'
+                     << x_out << '+' << (x_in - x_out));
             if (!os.write(buf + x_out, xx_out))
                 break;
             x_out += xx_out;
@@ -339,9 +344,8 @@ int main(int argc, char* argv[])
     ERR_POST(Info << "Comparing original with collected data");
 
     for (size_t n = 0;  n < kHugeBufsize;  n++) {
-        if (hugedata[n] != hugedata[n + kHugeBufsize]) {
+        if (hugedata[n] != hugedata[n + kHugeBufsize])
             ERR_POST(Fatal << "Mismatch @ " << n);
-        }
     }
 
     ERR_POST(Info << "Checking tied I/O");
@@ -356,7 +360,7 @@ int main(int argc, char* argv[])
 
     n_out = n_in = 0;
     do {
-        if (rand() % 10 == 2  &&  n_out < kHugeBufsize) {
+        if ((rand() % 10 == 2  ||  n_out == n_in)  &&  n_out < kHugeBufsize) {
             size_t x_out = rand() % kMaxIOSize + 1;
             if (x_out + n_out > kHugeBufsize)
                 x_out = kHugeBufsize - n_out;
@@ -379,6 +383,7 @@ int main(int argc, char* argv[])
         if (n_out >= kHugeBufsize  &&  n_in >= kHugeBufsize)
             break;
     } while (io.good());
+    // io.flush(); // not needed as everything should have been read out
 
     ERR_POST(Info
              << "Read:  " << setw(8) << n_in  << '/' << kHugeBufsize << ";  "
