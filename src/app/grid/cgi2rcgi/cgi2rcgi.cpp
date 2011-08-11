@@ -673,7 +673,8 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
                             // Render a report page
                             CTime time(GetFastLocalTime());
                             grid_ctx.DefinePersistentEntry(kSinceTime,
-                                NStr::IntToString((long) time.GetTimeT()));
+                                NStr::ULongToString(
+                                    (unsigned long) time.GetTimeT()));
                             grid_ctx.SelectView("JOB_SUBMITTED");
                             DefineRefreshTags(grid_ctx.GetSelfURL(),
                                 m_RefreshDelay);
