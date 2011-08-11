@@ -462,7 +462,7 @@ string CHgvsParser::s_SeqIdToHgvsStr(const CVariantPlacement& vp)
     } else if(vp.GetMol() == CVariantPlacement::eMol_cdna) {
         moltype = "c.";
     } else if(vp.GetMol() == CVariantPlacement::eMol_rna) {
-        moltype = "r.";
+        moltype = "n.";
     } else if(vp.GetMol() == CVariantPlacement::eMol_protein) {
         moltype = "p.";
     } else if(vp.GetMol() == CVariantPlacement::eMol_mitochondrion) {

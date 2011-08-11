@@ -648,6 +648,7 @@ CHgvsParser::CContext CHgvsParser::x_header(TIterator const& i, const CContext& 
                        mol == "c" ? CVariantPlacement::eMol_cdna
                      : mol == "g" ? CVariantPlacement::eMol_genomic
                      : mol == "r" ? CVariantPlacement::eMol_rna
+                     : mol == "n" ? CVariantPlacement::eMol_rna
                      : mol == "p" ? CVariantPlacement::eMol_protein
                      : mol == "m" ? CVariantPlacement::eMol_mitochondrion
                      : mol == "mt" ? CVariantPlacement::eMol_mitochondrion

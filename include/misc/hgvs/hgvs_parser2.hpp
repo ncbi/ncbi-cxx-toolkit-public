@@ -606,7 +606,8 @@ protected:
                  */
                 seq_id          = leaf_node_d[alpha_p >> +(alnum_p | chset<>("._-|"))];
 
-                mol             = str_p("mt") | chset<>("gcrpm"); //note: for 'mt.' also supporting 'm.'
+                mol             = str_p("mt") | chset<>("gcnrpm"); //note: for 'mt.' also supporting 'm.'
+                //Genomic, Coding (CDS-relative), Noncoding, Rna-based, Protein, Mitochondrion
 
                 header          = seq_id
                                   >> !(discard_node_d[ch_p('{')]
