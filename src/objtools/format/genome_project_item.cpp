@@ -135,16 +135,27 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
     }
 
     // process DBLink
+    // ( we have these temporary vectors because we can't push straight to m_DBLinkLines
+    //  because, e.g., SRA must be before BioProject even if out of order in ASN.1 )
+    vector<string> sraLines;
+    vector<string> bioprojectLines;
     if( dblink_user_obj != NULL ) {
         ITERATE (CUser_object::TData, uf_it, dblink_user_obj->GetData()) {
             const CUser_field& field = **uf_it;
             if ( field.IsSetLabel()  &&  field.GetLabel().IsStr() && 
                 field.CanGetData() && field.GetData().IsStrs() ) {
                     const string& label = field.GetLabel().GetStr();
+                    const CUser_field_Base::C_Data::TStrs &strs = field.GetData().GetStrs();
+
                     if ( NStr::EqualNocase(label, "Sequence Read Archive") ) {
-                        const CUser_field_Base::C_Data::TStrs &strs = field.GetData().GetStrs();
-                        m_DBLinkLines.push_back( "Sequence Read Archive: " + 
+                        sraLines.push_back( "Sequence Read Archive: " + 
                             s_JoinSRAStrs( strs, bHtml ) );
+                        if( bHtml ) {
+                            TryToSanitizeHtml( m_DBLinkLines.back() );
+                        }
+                    } else if( NStr::EqualNocase(label, "BioProject") ) {
+                        bioprojectLines.push_back( "BioProject: " + 
+                            NStr::Join( strs, ", " ) );
                         if( bHtml ) {
                             TryToSanitizeHtml( m_DBLinkLines.back() );
                         }
@@ -152,6 +163,8 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
             }
         }
     }
+    copy( sraLines.begin(), sraLines.end(), back_inserter(m_DBLinkLines) );
+    copy( bioprojectLines.begin(), bioprojectLines.end(), back_inserter(m_DBLinkLines) );
 }
 
 
