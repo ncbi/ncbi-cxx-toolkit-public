@@ -6682,6 +6682,21 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                               }
                           }
                           if (report_fasta_brackets) {
+                              IF_EXISTS_CLOSEST_BIOSOURCE (bs_ref, seq, NULL) {
+                                  const CBioSource& bsrc = (*bs_ref).GetSource();
+                                  if (! bsrc.IsSetOrg()) continue;
+                                  const COrg_ref& orgref = bsrc.GetOrg();
+                                  if (! orgref.IsSetTaxname()) continue;
+                                  string taxname = orgref.GetTaxname();
+                                  size_t pos = NStr::Find (taxname, "=");
+                                  if (pos == string::npos) continue;
+                                  pos = NStr::Find (title, taxname);
+                                  if (pos == string::npos) continue;
+                                  report_fasta_brackets = false;
+                                  break;
+                              }
+                          }
+                          if (report_fasta_brackets) {
                               PostErr(eDiag_Warning, eErr_SEQ_DESCR_FastaBracketTitle, 
                                       "Title may have unparsed [...=...] construct",
                                       ctx, desc);
