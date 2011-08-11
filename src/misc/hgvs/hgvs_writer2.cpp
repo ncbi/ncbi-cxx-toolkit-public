@@ -68,8 +68,8 @@
 #include <serial/iterator.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/seq_vector.hpp>
-#include <objtools/hgvs/hgvs_parser2.hpp>
-#include <objtools/hgvs/variation_util2.hpp>
+#include <misc/hgvs/hgvs_parser2.hpp>
+#include <misc/hgvs/variation_util2.hpp>
 
 BEGIN_NCBI_SCOPE
 

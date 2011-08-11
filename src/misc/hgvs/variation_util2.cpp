@@ -72,7 +72,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_vector.hpp>
-#include <objtools/hgvs/variation_util2.hpp>
+#include <misc/hgvs/variation_util2.hpp>
 
 #include <objects/seqloc/Na_strand.hpp>
 

@@ -70,7 +70,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_vector.hpp>
-#include <objtools/hgvs/variation_util.hpp>
+#include <misc/hgvs/variation_util.hpp>
 
 
 BEGIN_NCBI_SCOPE

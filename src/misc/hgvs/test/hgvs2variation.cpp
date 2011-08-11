@@ -56,8 +56,8 @@
 #include <objmgr/align_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
-#include <objtools/hgvs/hgvs_parser2.hpp>
-#include <objtools/hgvs/variation_util2.hpp>
+#include <misc/hgvs/hgvs_parser2.hpp>
+#include <misc/hgvs/variation_util2.hpp>
 #include <objects/variation/Variation.hpp>
 #include <objects/seqfeat/VariantProperties.hpp>
 #include <objmgr/util/sequence.hpp>

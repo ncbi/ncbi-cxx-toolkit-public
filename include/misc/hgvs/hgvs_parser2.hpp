@@ -71,7 +71,7 @@ using namespace boost::spirit;
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seq_vector.hpp>
 
-#include <objtools/hgvs/seq_id_resolver.hpp>
+#include <misc/hgvs/seq_id_resolver.hpp>
 
 BEGIN_NCBI_SCOPE
 

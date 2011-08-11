@@ -38,8 +38,8 @@
 
 #include <dbapi/simple/sdbapi.hpp>
 #include <objmgr/util/sequence.hpp>
-#include <objtools/hgvs/hgvs_parser2.hpp>
-#include <objtools/hgvs/seq_id_resolver.hpp>
+#include <misc/hgvs/hgvs_parser2.hpp>
+#include <misc/hgvs/seq_id_resolver.hpp>
 
 #include <util/xregexp/regexp.hpp>
 #include <objects/entrez2/entrez2_client.hpp>

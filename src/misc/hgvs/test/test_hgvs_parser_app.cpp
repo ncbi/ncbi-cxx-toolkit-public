@@ -36,8 +36,8 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objtools/hgvs/hgvs_parser2.hpp>
-#include <objtools/hgvs/variation_util2.hpp>
+#include <misc/hgvs/hgvs_parser2.hpp>
+#include <misc/hgvs/variation_util2.hpp>
 #include <objects/variation/Variation.hpp>
 
 #include <boost/test/parameterized_test.hpp>
