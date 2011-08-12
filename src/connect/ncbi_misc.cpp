@@ -142,8 +142,8 @@ double CRateMonitor::GetTimeRemaining(void) const
         return -1.0;
     if (pos < m_Size) {
         double time = m_Data.front().second;
-        // NB: Essentially, this is the same formula as in GetETA(),
-        //     if to note that rate = pos / time in this case.
+        // NB: Essentially, there is the same formula as in GetETA(),
+        //     if to notice that rate = pos / time in this case.
         time = time * m_Size / pos - time;
         if (time < kMinSpan)
             time = 0.0;
