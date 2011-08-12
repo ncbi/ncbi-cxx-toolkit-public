@@ -24,14 +24,26 @@ Organism_name_gl.aux (i.e., human_gl.aux if you don?t specify that file and your
 The entry format has tab-delimited fields for sequence id, chain type and coding frame start position.  See human_gl.aux or mouse_gl.aux for examples.  Enter -1 if the frame information is unknown.  You need to use -auxilary_data option to specify your file.
  
 3.  Some examples.
-1).  To query one or more human Ig sequences (contained in myseq) against NCBI human germline gene database with standard text alignment result format (you can type "./igblastn -help" to see details on all input parameters and the default setting, particularly those under IgBLAST options):
+1).  Searching germline gene database
+a).  To query one or more human Ig sequences (contained in myseq) against NCBI human germline gene database with standard text alignment result format (you can type "./igblastn -help" to see details on all input parameters and the default setting, particularly those under IgBLAST options):
 ./igblastn -germline_db_V human_gl_V -germline_db_J human_gl_J -germline_db_D human_gl_D -organism human -domain_system kabat -query myseq -show_translation -outfmt 3
 
-2).  To query one or more human Ig sequences (contained in myseq) against NCBI human germline gene database with tabular result:
+b).  To query one or more human Ig sequences (contained in myseq) against NCBI human germline gene database with tabular result:
 ./igblastn -germline_db_V human_gl_V -germline_db_J human_gl_J -germline_db_D human_gl_D -organism human -domain_system kabat -query myseq -show_translation -outfmt 7
 
-3).  To query one or more human Ig sequences (contained in myseq) against custom database such as Andew Collins IGH repertoire database:
+c).  To query one or more human Ig sequences (contained in myseq) against custom database such as Andew Collins IGH repertoire database:
 ./igblastn -germline_db_V UNSWIgVRepertoire_fasta.txt -germline_db_J UNSWIgJRepertoire_fasta.txt -germline_db_D UNSWIgDRepertoire_fasta.txt -organism human -domain_system kabat -query myseq  -show_translation
 Please be aware that you need to specify your own coding frame start and chain_type information (see details on optional files above) if your custom database has different sequence entries from NCBI database.  
 
+2).  Searching other databases in addition to germline database.
+Igblast allows you to search any other databases (such as NCBI IG V gene sequence database or NCBI nr database) as well as the germline database at the same time.  You?ll get top hits from germline sequences followed by hits from non-germline database.
+You MUST use ?db option to specify the non-germline database which may not contain any sequences identifiers that exist in germline databases.  Note this option is ONLY for non-germline database (germline databases MUST be used with -germline_db_V, -germline_db_D or -germline_db_J option).  
+
+a).  To query one or more human Ig sequences (contained in myseq) against NCBI  IG V gene sequence database:
+./igblastn -germline_db_V human_gl_V -germline_db_J human_gl_J -germline_db_D human_gl_D -query myseq -show_translation -db igSeqNt -num_alignments 10 -outfmt 3
+
+b).  To query one or more human Ig sequences (contained in myseq) against NCBI  nr database:
+./igblastn -germline_db_V human_gl_V -germline_db_J human_gl_J -germline_db_D human_gl_D -query myseq -show_translation -db nr -num_alignments 10 -remote -outfmt 3
+Note the ?remote option used with this search?-remote option directs igblast to send nr database searching to NCBI server which typically is much faster.
+ 
 
