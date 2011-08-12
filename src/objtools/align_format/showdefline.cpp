@@ -218,16 +218,16 @@ CShowBlastDefline::GetBioseqHandleDeflineAndId(const CBioseq_Handle& handle,
     // Retrieve the CBlast_def_line_set object and save in a CRef, preventing
     // its destruction; then extract the list of CBlast_def_line objects.
     CRef<CBlast_def_line_set> bdlRef = 
-        CSeqDB::ExtractBlastDefline(handle);
-    bdlRef->PutTargetGiFirst(this_gi_first);
-    const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
+        CSeqDB::ExtractBlastDefline(handle);       
 
-    if (bdl.empty()){
+    if(bdlRef.Empty()){    
         list<CRef<objects::CSeq_id> > ids;
         GetSeqIdList(handle, ids);
         seqid = GetSeqIdListString(ids, show_gi);
         defline = GetTitle(handle);
     } else { 
+        bdlRef->PutTargetGiFirst(this_gi_first);
+        const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
         bool is_first = true;
         ITERATE(list<CRef<CBlast_def_line> >, iter, bdl) {
             const CBioseq::TId& cur_id = (*iter)->GetSeqid();
@@ -275,7 +275,8 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
 {
 
     const CRef<CBlast_def_line_set> bdlRef = CSeqDB::ExtractBlastDefline(handle);
-    const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
+    const list< CRef< CBlast_def_line > > &bdl = (bdlRef.Empty()) ? list< CRef< CBlast_def_line > >() : bdlRef->Get();
+       
     const CBioseq::TId* ids = &handle.GetBioseqCore()->GetId();
     CRef<CSeq_id> wid;    
     sdl->defline = NcbiEmptyString;
@@ -567,8 +568,8 @@ bool CShowBlastDefline::x_CheckForStructureLink()
 
       ITERATE(vector<SScoreInfo*>, iter, m_ScoreList) {
           const CBioseq_Handle& handle = m_ScopeRef->GetBioseqHandle(*(*iter)->id);
-          const CRef<CBlast_def_line_set> bdlRef = CSeqDB::ExtractBlastDefline(handle);
-          const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
+          const CRef<CBlast_def_line_set> bdlRef = CSeqDB::ExtractBlastDefline(handle);          
+          const list< CRef< CBlast_def_line > > &bdl = (bdlRef.Empty()) ? list< CRef< CBlast_def_line > >() : bdlRef->Get();
           for(list< CRef< CBlast_def_line > >::const_iterator bdl_iter = bdl.begin();
               bdl_iter != bdl.end() && struct_linkout == false; bdl_iter++){
               if ((*bdl_iter)->IsSetLinks())

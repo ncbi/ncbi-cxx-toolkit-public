@@ -1124,8 +1124,8 @@ string CDisplaySeqalign::x_GetUrl(const CBioseq_Handle& bsp_handle,int giToUse,s
     
         list<string>  linkoutStr;
         if(m_AlignOption&eLinkout && (seqUrlInfo->gi > 0)){     			                    
-            const CRef<CBlast_def_line_set> bdlRef =  CSeqDB::ExtractBlastDefline(bsp_handle);
-            const list< CRef< CBlast_def_line > >& bdl_list = bdlRef->Get();
+            const CRef<CBlast_def_line_set> bdlRef =  CSeqDB::ExtractBlastDefline(bsp_handle);            
+            const list< CRef< CBlast_def_line > > &bdl_list = (bdlRef.Empty()) ? list< CRef< CBlast_def_line > >() : bdlRef->Get();
             linkoutStr = CAlignFormatUtil::GetFullLinkoutUrl(bdl_list,
                                            m_Rid, 
                                            m_CddRid, 
@@ -2251,8 +2251,8 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
                            CSeq_id::WorstRank);
     
         const CRef<CBlast_def_line_set> bdlRef 
-            =  CSeqDB::ExtractBlastDefline(bsp_handle);
-        const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
+            =  CSeqDB::ExtractBlastDefline(bsp_handle);        
+        const list< CRef< CBlast_def_line > > &bdl = (bdlRef.Empty()) ? list< CRef< CBlast_def_line > >() : bdlRef->Get();
         bool isFirst = true;
         int firstGi = 0;
 
@@ -3109,8 +3109,8 @@ bool CDisplaySeqalign::x_IsGeneInfoAvailable(SAlnInfo* aln_vec_info)
         }
 
         const CRef<CBlast_def_line_set> bdlRef 
-            =  CSeqDB::ExtractBlastDefline(bsp_handle);
-        const CBlast_def_line_set::Tdata& bdl = bdlRef->Get();
+            =  CSeqDB::ExtractBlastDefline(bsp_handle);        
+        const list< CRef< CBlast_def_line > > &bdl = (bdlRef.Empty()) ? list< CRef< CBlast_def_line > >() : bdlRef->Get();
 
         ITERATE(CBlast_def_line_set::Tdata, iter, bdl)
         {
@@ -3522,8 +3522,8 @@ CDisplaySeqalign::x_FormatDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnIn
     string linksStr;
     list<string> linkoutStr;
     if(bsp_handle){        
-        const CRef<CBlast_def_line_set> bdlRef =  CSeqDB::ExtractBlastDefline(bsp_handle);
-        const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
+        const CRef<CBlast_def_line_set> bdlRef =  CSeqDB::ExtractBlastDefline(bsp_handle);        
+        const list< CRef< CBlast_def_line > > &bdl = (bdlRef.Empty()) ? list< CRef< CBlast_def_line > >() : bdlRef->Get();
         bool isFirst = true;
         int firstGi = 0;
 		m_NumBlastDefLines = 0;
