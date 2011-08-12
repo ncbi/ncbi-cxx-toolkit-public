@@ -118,12 +118,12 @@ double CRateMonitor::GetRate(void) const
 
 double CRateMonitor::GetETA(void) const
 {
-    if (m_Size)
+    if (!m_Size)
         return  0.0;
     Uint8 pos = GetPos();
     if (!pos)  // NB: This check ensures rate != 0.0 later
         return -1.0;
-    if (m_Size < pos) {
+    if (pos < m_Size) {
         double eta = (m_Size - pos) / GetRate();
         if (eta < kMinSpan)
             eta = 0.0;
@@ -140,7 +140,7 @@ double CRateMonitor::GetTimeRemaining(void) const
     Uint8 pos = GetPos();
     if (!pos)
         return -1.0;
-    if (m_Size < pos) {
+    if (pos < m_Size) {
         double time = m_Data.front().second;
         // NB: Essentially, this is the same formula as in GetETA(),
         //     if to note that rate = pos / time in this case.
