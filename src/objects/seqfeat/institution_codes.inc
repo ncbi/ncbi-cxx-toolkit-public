@@ -1641,6 +1641,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "EVMU	s	Everhart Museum, Natural History Department",
 "EWH	s	Ewha Womans University",
 "EWNHM	s	Ewha Womens University, Natural History Museum",
+"EX<SVN>	c	The Culture Collection of Extremophilic Fungi",
 "EXN	s	Exton Hall",
 "EXR	s	University of Exeter, Biological Sciences Department",
 "F	s	Field Museum of Natural History, Botany Department",
