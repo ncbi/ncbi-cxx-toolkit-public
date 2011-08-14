@@ -4549,6 +4549,7 @@ else
    BOOST_LIBPATH=
    BOOST_TAG=
    ncbi_cv_lib_boost_regex=no
+   ncbi_cv_lib_boost_spirit=no
    ncbi_cv_lib_boost_test=no
    ncbi_cv_lib_boost_thread=no
 fi
