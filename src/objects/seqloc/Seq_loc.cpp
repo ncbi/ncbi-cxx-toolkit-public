@@ -51,7 +51,6 @@
 #include <objects/misc/error_codes.hpp>
 #include <util/range_coll.hpp>
 #include <objects/seq/seq_id_handle.hpp>
-#include <objmgr/bioseq_handle.hpp>
 #include <algorithm>
 
 

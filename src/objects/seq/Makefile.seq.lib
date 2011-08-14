@@ -2,7 +2,7 @@
 
 ASN = seq seqalign seqblock seqfeat seqloc seqres seqtable
 
-ASN_DEP = seqcode seqset
+ASN_DEP = seqcode
 
 CPPFLAGS = -I$(srcdir) -I$(top_srcdir)/src/objects/seq $(ORIG_CPPFLAGS)
 
