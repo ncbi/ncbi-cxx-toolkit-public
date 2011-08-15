@@ -94,6 +94,10 @@ protected:
 
     virtual bool x_AssignAttributeGene(
         CMappedFeat );
+    virtual bool x_AssignAttributeGeneDesc(
+        CMappedFeat );
+    virtual bool x_AssignAttributeMapLoc(
+        CMappedFeat );
     virtual bool x_AssignAttributeNote(
         CMappedFeat );
     virtual bool x_AssignAttributePartial(

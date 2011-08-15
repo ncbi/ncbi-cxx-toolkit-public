@@ -318,10 +318,16 @@ bool CGff3WriteRecordFeature::x_AssignAttributesGene(
 //  ----------------------------------------------------------------------------
 {
     return (
+        x_AssignAttributeGene( mapped_feat )  &&
         x_AssignAttributeGeneSynonym( mapped_feat )  &&
         x_AssignAttributeLocusTag( mapped_feat )  &&
-//        x_AssignAttributeDbXref( mapped_feat )  &&
-        x_AssignAttributeProduct( mapped_feat ) );
+        x_AssignAttributeDbXref( mapped_feat )  &&
+        x_AssignAttributePseudo( mapped_feat )  &&
+        x_AssignAttributePartial( mapped_feat )  &&
+//        x_AssignAttributeProduct( mapped_feat )  &&
+        x_AssignAttributeGeneDesc( mapped_feat )  &&
+        x_AssignAttributeMapLoc( mapped_feat )  &&
+        x_AssignAttributeNote( mapped_feat ) );
 }
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecordFeature::x_AssignAttributesMrna(
@@ -356,6 +362,9 @@ bool CGff3WriteRecordFeature::x_AssignAttributeGene(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
+//    if ( mapped_feat.GetData().Which() == CSeq_feat::TData::e_Gene ) {
+//        cerr << "";
+//    }
     string strGene;
     if ( StrType() == "gene" ) {
         const CGene_ref& gene_ref = mapped_feat.GetData().GetGene();
@@ -396,9 +405,13 @@ bool CGff3WriteRecordFeature::x_AssignAttributeNote(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
-    if ( mapped_feat.IsSetComment() ) {
-        m_Attributes[ "note" ] = mapped_feat.GetComment();
+    if ( ! mapped_feat.IsSetComment() ) {
+        return true;
     }
+    if ( mapped_feat.GetData().Which() == CSeq_feat::TData::e_Gene ) {
+        cerr << "";
+    }
+    m_Attributes[ "note" ] = mapped_feat.GetComment();
     return true;
 }
 
@@ -407,7 +420,13 @@ bool CGff3WriteRecordFeature::x_AssignAttributePartial(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
-    if ( mapped_feat.IsSetPartial() && mapped_feat.GetPartial() == true ) {
+    if ( ! mapped_feat.IsSetPartial() ) {
+        return true;
+    }
+//    if ( mapped_feat.GetData().Which() == CSeq_feat::TData::e_Gene ) {
+//        cerr << "";
+//    }
+    if ( mapped_feat.GetPartial() == true ) {
         m_Attributes[ "partial" ] = "";
     }
     return true;
@@ -418,7 +437,13 @@ bool CGff3WriteRecordFeature::x_AssignAttributePseudo(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
-    if ( mapped_feat.IsSetPseudo() && mapped_feat.GetPseudo() == true ) {
+    if ( ! mapped_feat.IsSetPseudo() ) {
+        return true;
+    }
+//    if ( mapped_feat.GetData().Which() == CSeq_feat::TData::e_Gene ) {
+//        cerr << "";
+//    }
+    if ( mapped_feat.GetPseudo() == true ) {
         m_Attributes[ "pseudo" ] = "";
     }
     return true;
@@ -432,6 +457,10 @@ bool CGff3WriteRecordFeature::x_AssignAttributeDbXref(
     if ( ! mapped_feat.IsSetDbxref() ) {
         return true;
     }
+
+//    if ( mapped_feat.GetData().Which() == CSeq_feat::TData::e_Gene ) {
+//        cerr << "";
+//    }
 
     vector<string> values;
     if ( mapped_feat.GetData().Which() == CSeq_feat::TData::e_Cdregion  &&
@@ -470,6 +499,9 @@ bool CGff3WriteRecordFeature::x_AssignAttributeGeneSynonym(
         return true;
     }
 
+//    if ( mapped_feat.GetData().Which() == CSeq_feat::TData::e_Gene ) {
+//        cerr << "";
+//    }
     const list<string>& syns = gene_ref.GetSyn();
     list<string>::const_iterator it = syns.begin();
     if ( ! gene_ref.IsSetLocus() && ! gene_ref.IsSetLocus_tag() ) {
@@ -491,6 +523,32 @@ bool CGff3WriteRecordFeature::x_AssignAttributeGeneSynonym(
 }
 
 //  ----------------------------------------------------------------------------
+bool CGff3WriteRecordFeature::x_AssignAttributeGeneDesc(
+    CMappedFeat mapped_feat )
+//  ----------------------------------------------------------------------------
+{
+    const CGene_ref& gene_ref = mapped_feat.GetData().GetGene();
+    if ( ! gene_ref.IsSetDesc() ) {
+        return true;
+    }
+    m_Attributes[ "description" ] = gene_ref.GetDesc();
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3WriteRecordFeature::x_AssignAttributeMapLoc(
+    CMappedFeat mapped_feat )
+//  ----------------------------------------------------------------------------
+{
+    const CGene_ref& gene_ref = mapped_feat.GetData().GetGene();
+    if ( ! gene_ref.IsSetMaploc() ) {
+        return true;
+    }
+    m_Attributes[ "map" ] = gene_ref.GetMaploc();
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGff3WriteRecordFeature::x_AssignAttributeLocusTag(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
@@ -499,6 +557,9 @@ bool CGff3WriteRecordFeature::x_AssignAttributeLocusTag(
     if ( ! gene_ref.IsSetLocus() || ! gene_ref.IsSetLocus_tag() ) {
         return true;
     }
+//    if ( mapped_feat.GetData().Which() == CSeq_feat::TData::e_Gene ) {
+//        cerr << "";
+//    }
     m_Attributes[ "locus_tag" ] = gene_ref.GetLocus_tag();
     return true;
 }
