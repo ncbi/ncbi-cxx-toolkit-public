@@ -580,6 +580,12 @@ void CValidError_imp::PostErr
     string content_label = s_GetFeatureContentLabel(ft, m_Scope);
     desc += content_label;
 
+    // Calculate sequence offset
+    TSeqPos offset = 0;
+    if (ft.IsSetLocation()) {
+        offset = ft.GetLocation().GetStart(eExtreme_Positional);
+    }
+
     // Add feature ID part of label (if present)
     string feature_id = "";
     if (ft.IsSetId()) {
@@ -654,9 +660,9 @@ void CValidError_imp::PostErr
 
     // if feature ID, add with feature id, otherwise without
     if (NStr::IsBlank(feature_id)) {
-        m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ft, GetAccessionFromObjects(&ft, NULL, *m_Scope));
+        m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ft, GetAccessionFromObjects(&ft, NULL, *m_Scope), offset);
     } else {
-        m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ft, GetAccessionFromObjects(&ft, NULL, *m_Scope), feature_id);
+        m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ft, GetAccessionFromObjects(&ft, NULL, *m_Scope), feature_id, offset);
     }
 }
 
