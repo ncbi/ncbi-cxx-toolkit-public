@@ -5,7 +5,7 @@
 
 USR_PROJ = sources
 
-SUB_PROJ = general biblio medline pub seqcode seq seqset submit \
+SUB_PROJ = general biblio medline pub seqcode seqset seq submit \
            seqedit seqsplit id1 id2 entrez2 pubmed medlars mla proj \
            scoremat blast blastdb blastxml mmdb cn3d cdd ncbimime \
            pcsubstance pcassay gbseq insdseq tinyseq biotree entrezgene \
