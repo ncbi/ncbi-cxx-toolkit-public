@@ -3,7 +3,7 @@
 # Meta-makefile
 ##################################
 
-APP_PROJ = hgvs2variation 
+APP_PROJ = hgvs2variation test_hgvs_parser
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
