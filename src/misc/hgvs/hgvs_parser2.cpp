@@ -830,7 +830,7 @@ CRef<CVariantPlacement> CHgvsParser::x_location(TIterator const& i, const CConte
     } else if(it->value.id() == SGrammar::eID_nuc_range || it->value.id() == SGrammar::eID_prot_range) {
         placement = x_range(it, context);
     } else {
-        HGVS_ASSERT_RULE(it, SGrammar::eID_NONE);
+        HGVS_ASSERT_RULE(it, eID_NONE);
     }
 
     if(placement->GetLoc().IsPnt() && placement->GetLoc().GetPnt().GetPoint() == kInvalidSeqPos) {
@@ -1039,7 +1039,7 @@ CRef<CVariation> CHgvsParser::x_delins(TIterator const& i, const CContext& conte
 
 CRef<CVariation> CHgvsParser::x_deletion(TIterator const& i, const CContext& context)
 {
-    HGVS_ASSERT_RULE(i,  SGrammar::eID_deletion);
+    HGVS_ASSERT_RULE(i, eID_deletion);
     TIterator it = i->children.begin();
     CRef<CVariation> vr(new CVariation);
     CVariation_inst& var_inst = vr->SetData().SetInstance();

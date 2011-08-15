@@ -181,7 +181,7 @@ string CHgvsParser::x_AsHgvsExpression(
             }
         }
         if(!placement) {
-            NCBI_THROW(CArgException, CArgException::eInvalidArg, "Variations.placements is set, but could not find requested one");
+            NCBI_THROW(CArgException, eInvalidArg, "Variations.placements is set, but could not find requested one");
         }
     }
 
@@ -653,7 +653,7 @@ string CHgvsParser::x_AsHgvsInstExpression(
          || inst.GetType() == CVariation_inst::eType_prot_other
          || inst.GetType() == CVariation_inst::eType_prot_silent;
     if(is_prot_inst && placement && placement->GetMol() != CVariantPlacement::eMol_protein) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Can't make protein HGVS expression for nucleotide placement");
+        NCBI_THROW(CArgException, eInvalidArg, "Can't make protein HGVS expression for nucleotide placement");
     }
     bool is_prot = is_prot_inst || placement && placement->GetMol() == CVariantPlacement::eMol_protein;
 

@@ -154,7 +154,7 @@ void CVariationUtil::s_ResolveIntronicOffsets(CVariantPlacement& p)
     }
 
     if(!loc->IsInt() && (p.IsSetStart_offset() || p.IsSetStop_offset())) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Complex location");
+        NCBI_THROW(CArgException, eInvalidArg, "Complex location");
     }
 
     if(p.IsSetStart_offset()) {
@@ -183,15 +183,15 @@ void CVariationUtil::s_ResolveIntronicOffsets(CVariantPlacement& p)
 void CVariationUtil::s_AddIntronicOffsets(CVariantPlacement& p, const CSpliced_seg& ss, CScope* scope)
 {
     if(!p.GetLoc().IsPnt() && !p.GetLoc().IsInt()) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected simple loc (int or pnt)");
+        NCBI_THROW(CArgException, eInvalidArg, "Expected simple loc (int or pnt)");
     }
 
     if(p.IsSetStart_offset() || p.IsSetStop_offset() || p.IsSetStart_offset_fuzz() || p.IsSetStop_offset_fuzz()) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected offset-free placement");
+        NCBI_THROW(CArgException, eInvalidArg, "Expected offset-free placement");
     }
 
     if(!p.GetLoc().GetId() || !sequence::IsSameBioseq(*p.GetLoc().GetId(), ss.GetGenomic_id(), scope)) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected genomic_id in the variation to be the same as in spliced-seg");
+        NCBI_THROW(CArgException, eInvalidArg, "Expected genomic_id in the variation to be the same as in spliced-seg");
     }
 
     long start = p.GetLoc().GetStart(eExtreme_Positional);
@@ -264,7 +264,7 @@ void CVariationUtil::s_AddIntronicOffsets(CVariantPlacement& p, const CSpliced_s
 CRef<CVariantPlacement> CVariationUtil::Remap(const CVariantPlacement& p, const CSeq_align& aln)
 {
     if(!p.GetLoc().GetId()) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Can't get seq-id");
+        NCBI_THROW(CArgException, eInvalidArg, "Can't get seq-id");
     }
 
     CRef<CVariantPlacement> p2(new CVariantPlacement);
@@ -315,7 +315,7 @@ CRef<CVariantPlacement> CVariationUtil::Remap(const CVariantPlacement& p, CSeq_l
         //When mapping an offset-placement to a genomic placement, may need to resolve offsets.
         //or, when mapping from genomic to a product coordinates, may need to add offsets. In above cases
         //we need to use the seq-align-based mapping.
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Cannot use this method to remap between genomic and cdna coordinates");
+        NCBI_THROW(CArgException, eInvalidArg, "Cannot use this method to remap between genomic and cdna coordinates");
     }
 
     return p2;
@@ -595,16 +595,16 @@ void CVariationUtil::x_InferNAfromAA(CVariation& v, TAA2NAFlags flags)
     }
 
     if(!v.GetData().GetInstance().GetDelta().size() == 1) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected single-element delta");
+        NCBI_THROW(CArgException, eInvalidArg, "Expected single-element delta");
     }
 
     const CDelta_item& delta = *v.GetData().GetInstance().GetDelta().front();
     if(delta.IsSetAction() && delta.GetAction() != CDelta_item::eAction_morph) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected morph action");
+        NCBI_THROW(CArgException, eInvalidArg, "Expected morph action");
     }
 
     if(!delta.IsSetSeq() || !delta.GetSeq().IsLiteral() || delta.GetSeq().GetLiteral().GetLength() != 1) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected literal of length 1 in inst.");
+        NCBI_THROW(CArgException, eInvalidArg, "Expected literal of length 1 in inst.");
     }
 
     CSeq_data variant_prot_seq;
@@ -612,21 +612,21 @@ void CVariationUtil::x_InferNAfromAA(CVariation& v, TAA2NAFlags flags)
 
     const CVariation::TPlacements* placements = s_GetPlacements(v);
     if(!placements || placements->size() == 0) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected a placement");
+        NCBI_THROW(CArgException, eInvalidArg, "Expected a placement");
     }
 
     const CVariantPlacement& placement = *placements->front();
 
     if(placement.IsSetStart_offset() || placement.IsSetStop_offset()) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected offset-free placement");
+        NCBI_THROW(CArgException, eInvalidArg, "Expected offset-free placement");
     }
 
     if(placement.IsSetMol() && placement.GetMol() != CVariantPlacement::eMol_protein) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected a protein-type placement");
+        NCBI_THROW(CArgException, eInvalidArg, "Expected a protein-type placement");
     }
 
     if(sequence::GetLength(placement.GetLoc(), NULL) != 1) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected single-aa location");
+        NCBI_THROW(CArgException, eInvalidArg, "Expected single-aa location");
     }
 
     SAnnotSelector sel(CSeqFeatData::e_Cdregion, true);
@@ -809,7 +809,7 @@ void CVariationUtil::ChangeToDelins(CVariation& v)
             di->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set("");
             inst.SetDelta().push_back(di);
         } else if(inst.GetDelta().size() > 1) {
-            NCBI_THROW(CArgException, CArgException::eInvalidArg, "Deltas of length >1 are not supported");
+            NCBI_THROW(CArgException, eInvalidArg, "Deltas of length >1 are not supported");
         } else {
             CDelta_item& di = *inst.SetDelta().front();
 
@@ -827,7 +827,7 @@ void CVariationUtil::ChangeToDelins(CVariation& v)
             } else if(di.GetSeq().IsThis()) {
                 CConstRef<CSeq_literal> this_literal = s_FindFirstLiteral(v);
                 if(!this_literal) {
-                    NCBI_THROW(CArgException, CArgException::eInvalidArg, "Could not find literal for 'this' location in placements");
+                    NCBI_THROW(CArgException, eInvalidArg, "Could not find literal for 'this' location in placements");
                 } else {
                     di.SetSeq().SetLiteral().Assign(*this_literal);
                 }
@@ -836,12 +836,12 @@ void CVariationUtil::ChangeToDelins(CVariation& v)
             //expand multipliers.
             if(di.IsSetMultiplier()) {
                 if(di.GetMultiplier() < 0) {
-                    NCBI_THROW(CArgException, CArgException::eInvalidArg, "Encountered negative multiplier");
+                    NCBI_THROW(CArgException, eInvalidArg, "Encountered negative multiplier");
                 } else {
                     CSeq_literal& literal = di.SetSeq().SetLiteral();
 
                     if(!literal.IsSetSeq_data() || !literal.GetSeq_data().IsIupacna()) {
-                        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected IUPACNA-type seq-literal");
+                        NCBI_THROW(CArgException, eInvalidArg, "Expected IUPACNA-type seq-literal");
                     }
                     string str_kernel =  literal.GetSeq_data().GetIupacna().Get();
                     literal.SetSeq_data().SetIupacna().Set("");
@@ -867,7 +867,7 @@ void CVariationUtil::ChangeToDelins(CVariation& v)
                 di.ResetAction();
                 CConstRef<CSeq_literal> this_literal = s_FindFirstLiteral(v);
                 if(!this_literal) {
-                    NCBI_THROW(CArgException, CArgException::eInvalidArg, "Could not find literal for 'this' location in placements");
+                    NCBI_THROW(CArgException, eInvalidArg, "Could not find literal for 'this' location in placements");
                 } else {
                     CRef<CSeq_literal> cat_literal = s_CatLiterals(di.GetSeq().GetLiteral(), *this_literal);
                 }
@@ -1077,11 +1077,11 @@ void CVariationUtil::FlipStrand(CVariation_inst& inst) const
 void CVariationUtil::x_AdjustDelinsToInterval(CVariation& v, const CSeq_loc& loc)
 {
     if(!loc.IsInt()) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected Int location");
+        NCBI_THROW(CArgException, eInvalidArg, "Expected Int location");
     }
 
     if(!v.IsSetPlacements() || v.GetPlacements().size() != 1) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected single placement");
+        NCBI_THROW(CArgException, eInvalidArg, "Expected single placement");
     }
 
     const CSeq_loc& orig_loc = v.GetPlacements().front()->GetLoc();
@@ -1089,7 +1089,7 @@ void CVariationUtil::x_AdjustDelinsToInterval(CVariation& v, const CSeq_loc& loc
     if(sub_loc->Which() && sequence::GetLength(*sub_loc, NULL) > 0) {
         //NcbiCerr << MSerial_AsnText << v;
         //NcbiCerr << MSerial_AsnText << loc;
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Location must be a superset of the variation's loc");
+        NCBI_THROW(CArgException, eInvalidArg, "Location must be a superset of the variation's loc");
     }
 
     CRef<CSeq_loc> suffix_loc(new CSeq_loc);
@@ -1110,13 +1110,13 @@ void CVariationUtil::x_AdjustDelinsToInterval(CVariation& v, const CSeq_loc& loc
     for(CTypeIterator<CVariation_inst> it(Begin(v)); it; ++it) {
         CVariation_inst& inst = *it;
         if(inst.GetDelta().size() != 1) {
-            NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected single-element delta");
+            NCBI_THROW(CArgException, eInvalidArg, "Expected single-element delta");
         }
 
         CDelta_item& delta = *inst.SetDelta().front();
 
         if(!delta.IsSetSeq() || !delta.GetSeq().IsLiteral()) {
-            NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected literal");
+            NCBI_THROW(CArgException, eInvalidArg, "Expected literal");
         }
 
         CRef<CSeq_literal> tmp_literal1 = s_CatLiterals(*prefix_literal, delta.SetSeq().SetLiteral());
@@ -1151,7 +1151,7 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
                                sequence::GetId(cds_feat.GetLocation(), NULL),
                                m_scope))
     {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Placement and CDS are on different seqs");
+        NCBI_THROW(CArgException, eInvalidArg, "Placement and CDS are on different seqs");
     }
 
 

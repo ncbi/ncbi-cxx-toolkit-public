@@ -759,7 +759,7 @@ CHgvsParser::SOffsetLoc CHgvsParser::x_location(TIterator const& i, const CConte
     } else if(it->value.id() == SGrammar::eID_nuc_range || it->value.id() == SGrammar::eID_prot_range) {
         ofloc = x_range(it, context);
     } else {
-        HGVS_ASSERT_RULE(it, SGrammar::eID_NONE);
+        HGVS_ASSERT_RULE(it, eID_NONE);
     }
 
     if(ofloc.loc->IsPnt() && ofloc.loc->GetPnt().GetPoint() == kInvalidSeqPos) {
@@ -953,7 +953,7 @@ CRef<CVariation_ref> CHgvsParser::x_delins(TIterator const& i, const CContext& c
 
 CRef<CVariation_ref> CHgvsParser::x_deletion(TIterator const& i, const CContext& context)
 {
-    HGVS_ASSERT_RULE(i,  SGrammar::eID_deletion);
+    HGVS_ASSERT_RULE(i,  eID_deletion);
     TIterator it = i->children.begin();
     CRef<CVariation_ref> vr(new CVariation_ref);
     CVariation_inst& var_inst = vr->SetData().SetInstance();

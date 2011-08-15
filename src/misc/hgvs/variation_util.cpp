@@ -328,7 +328,7 @@ void CVariationUtil::s_AddIntronicOffsets(CVariation_ref& v, const CSpliced_seg&
     } else if(v.GetData().IsInstance()) {
         if(!vloc.GetId() || !vloc.GetId()->Equals(ss.GetGenomic_id()))
         {
-            NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected genomic_id in the variation to be the same as in spliced-seg");
+            NCBI_THROW(CArgException, eInvalidArg, "Expected genomic_id in the variation to be the same as in spliced-seg");
         }
 
         long start = vloc.GetStart(eExtreme_Positional);
@@ -459,7 +459,7 @@ CRef<CSeq_feat> CVariationUtil::Remap(const CSeq_feat& variation_feat, const CSe
     feat->Assign(variation_feat);
 
     if(!feat->GetData().IsVariation()) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "feature must be of variation-feat type");
+        NCBI_THROW(CArgException, eInvalidArg, "feature must be of variation-feat type");
     }
 
     CVariation_ref& vr = feat->SetData().SetVariation();
@@ -467,7 +467,7 @@ CRef<CSeq_feat> CVariationUtil::Remap(const CSeq_feat& variation_feat, const CSe
     //copy the feature's location to root variation's for remapping (will move back when done)
     vr.SetLocation().Assign(feat->GetLocation());
     if(!vr.GetLocation().GetId()) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Can't get unique seq-id for location");
+        NCBI_THROW(CArgException, eInvalidArg, "Can't get unique seq-id for location");
     }
 
     //todo: propagation and factoring of locs later in this method is required for
@@ -680,23 +680,23 @@ void CVariationUtil::x_ProtToPrecursor(CVariation_ref& v)
         }
     } else if(v.GetData().IsInstance()) {
         if(!v.GetData().GetInstance().GetDelta().size() == 1) {
-            NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected single-element delta");
+            NCBI_THROW(CArgException, eInvalidArg, "Expected single-element delta");
         }
 
         const CDelta_item& delta = *v.GetData().GetInstance().GetDelta().front();
         if(delta.IsSetAction() && delta.GetAction() != CDelta_item::eAction_morph) {
-            NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected morph action");
+            NCBI_THROW(CArgException, eInvalidArg, "Expected morph action");
         }
 
         if(!delta.IsSetSeq() || !delta.GetSeq().IsLiteral() || delta.GetSeq().GetLiteral().GetLength() != 1) {
-            NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected literal of length 1 in inst.");
+            NCBI_THROW(CArgException, eInvalidArg, "Expected literal of length 1 in inst.");
         }
 
         CSeq_data variant_prot_seq;
         CSeqportUtil::Convert(delta.GetSeq().GetLiteral().GetSeq_data(), &variant_prot_seq, CSeq_data::e_Iupacaa);
 
         if(sequence::GetLength(v.GetLocation(), NULL) != 1) {
-            NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected single-aa location");
+            NCBI_THROW(CArgException, eInvalidArg, "Expected single-aa location");
         }
 
         SAnnotSelector sel(CSeqFeatData::e_Cdregion, true);
@@ -774,7 +774,7 @@ void CVariationUtil::x_ProtToPrecursor(CVariation_ref& v)
 CRef<CSeq_feat> CVariationUtil::ProtToPrecursor(const CSeq_feat& prot_variation_feat)
 {
     if(!prot_variation_feat.GetData().IsVariation()) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected variation-feature");
+        NCBI_THROW(CArgException, eInvalidArg, "Expected variation-feature");
     }
 
     CRef<CSeq_feat> nuc_feat(new CSeq_feat);
@@ -851,7 +851,7 @@ void CVariationUtil::ChangeToDelins(CVariation_ref& v)
             di->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set("");
             inst.SetDelta().push_back(di);
         } else if(inst.GetDelta().size() > 1) {
-            NCBI_THROW(CArgException, CArgException::eInvalidArg, "Deltas of length >1 are not supported");
+            NCBI_THROW(CArgException, eInvalidArg, "Deltas of length >1 are not supported");
         } else {
             CDelta_item& di = *inst.SetDelta().front();
 
@@ -875,7 +875,7 @@ void CVariationUtil::ChangeToDelins(CVariation_ref& v)
             //expand multipliers.
             if(di.IsSetMultiplier()) {
                 if(di.GetMultiplier() < 0) {
-                    NCBI_THROW(CArgException, CArgException::eInvalidArg, "Encountered negative multiplier");
+                    NCBI_THROW(CArgException, eInvalidArg, "Encountered negative multiplier");
                 } else {
                     CSeq_literal& literal = di.SetSeq().SetLiteral();
                     string str_kernel = literal.GetSeq_data().GetIupacna().Get();
@@ -921,7 +921,7 @@ void CVariationUtil::ChangeToDelins(CVariation_ref& v)
 void CVariationUtil::AdjustDelinsToInterval(CVariation_ref& v, const CSeq_loc& loc)
 {
     if(!loc.IsInt()) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected Int location");
+        NCBI_THROW(CArgException, eInvalidArg, "Expected Int location");
     }
 
     if(v.GetData().IsSet()) {
@@ -934,17 +934,17 @@ void CVariationUtil::AdjustDelinsToInterval(CVariation_ref& v, const CSeq_loc& l
 
         CRef<CSeq_loc> sub_loc = v.GetLocation().Subtract(loc, 0, NULL, NULL);
         if(sub_loc->Which() && sequence::GetLength(*sub_loc, NULL) > 0) {
-            NCBI_THROW(CArgException, CArgException::eInvalidArg, "Location must be a superset of the variation's loc");
+            NCBI_THROW(CArgException, eInvalidArg, "Location must be a superset of the variation's loc");
         }
 
         if(!inst.GetDelta().size() == 1) {
-            NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected single-element delta");
+            NCBI_THROW(CArgException, eInvalidArg, "Expected single-element delta");
         }
 
         CDelta_item& delta = *inst.SetDelta().front();
 
         if(!delta.IsSetSeq() || !delta.GetSeq().IsLiteral()) {
-            NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected literal");
+            NCBI_THROW(CArgException, eInvalidArg, "Expected literal");
         }
 
         CRef<CSeq_loc> tmp_loc = sequence::Seq_loc_Merge(loc, CSeq_loc::fMerge_SingleRange, NULL);
@@ -1005,18 +1005,18 @@ CRef<CSeq_feat> CVariationUtil::PrecursorToProt(const CSeq_feat& nuc_variation_f
     if(verbose) NcbiCerr << "Original variation: " << MSerial_AsnText << nuc_variation_feat;
 
     if(!nuc_variation_feat.GetData().IsVariation()) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected variation-feature");
+        NCBI_THROW(CArgException, eInvalidArg, "Expected variation-feature");
     }
 
     const CVariation_ref& nuc_v = nuc_variation_feat.GetData().GetVariation();
 
     if(!nuc_v.GetData().IsInstance()) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected variation.inst");
+        NCBI_THROW(CArgException, eInvalidArg, "Expected variation.inst");
     }
 
     if(!nuc_v.GetData().GetInstance().GetDelta().size() == 1) {
         //can't process intronic, etc.
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected single-element delta");
+        NCBI_THROW(CArgException, eInvalidArg, "Expected single-element delta");
     }
 
     CRef<CSeq_loc_Mapper> nuc2prot_mapper;
@@ -1038,7 +1038,7 @@ CRef<CSeq_feat> CVariationUtil::PrecursorToProt(const CSeq_feat& nuc_variation_f
     if(!v->IsSetLocation()) {
         v->SetLocation().Assign(nuc_variation_feat.GetLocation());
         if(!v->GetLocation().GetId()) {
-            NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected variation's location to have unique seq-id");
+            NCBI_THROW(CArgException, eInvalidArg, "Expected variation's location to have unique seq-id");
         }
     }
 
@@ -1172,7 +1172,7 @@ bool CVariationUtil::SetReferenceSequence(CVariation_ref& v, const CSeq_loc& par
     bool ret = true; //True iff not enconutered a case with offsets that could not have a refrence loc computed
 
     if(!v.GetData().IsSet()) {
-        NCBI_THROW(CArgException, CArgException::eInvalidArg, "Expected variation-set");
+        NCBI_THROW(CArgException, eInvalidArg, "Expected variation-set");
     }
 
     if(v.GetData().GetSet().GetType() == CVariation_ref::TData::TSet::eData_set_type_package) {
