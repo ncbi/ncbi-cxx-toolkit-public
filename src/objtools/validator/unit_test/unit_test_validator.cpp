@@ -11578,6 +11578,9 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     expected_errors[0]->SetErrMsg("PartialLocation: Start does not include first/last residue of sequence (but is at consensus splice site)");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    for ( CValidError_CI vit(*eval); vit; ++vit) {
+        BOOST_CHECK_EQUAL(vit->GetSeqOffset(), 46);
+    }
 
     scope.RemoveTopLevelSeqEntry(seh);
     // take misc_feat away
