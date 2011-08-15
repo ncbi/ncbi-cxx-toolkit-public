@@ -306,7 +306,7 @@ void CHgvsParser::CContext::SetId(const CSeq_id& id, CVariantPlacement::TMol mol
 }
 
 
-const string& CHgvsParser::SGrammar::s_GetRuleName(boost::spirit::classic::parser_id id)
+const string& CHgvsParser::SGrammar::s_GetRuleName(parser_id id)
 {
     TRuleNames::const_iterator it = s_GetRuleNames().find(id);
     if(it == s_GetRuleNames().end()) {

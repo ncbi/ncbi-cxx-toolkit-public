@@ -37,7 +37,8 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbistd.hpp>
 
-#if 1
+#include <boost/version.hpp>
+#if BOOST_VERSION >= 103800
 #include <boost/spirit/include/classic.hpp>
 #include <boost/spirit/include/classic_core.hpp>
 #include <boost/spirit/include/classic_ast.hpp>
@@ -430,7 +431,7 @@ protected:
             return s_rule_names;
         }
 
-        static const string& s_GetRuleName(boost::spirit::classic::parser_id id);
+        static const string& s_GetRuleName(parser_id id);
 
         template <typename ScannerT>
         struct definition
@@ -752,7 +753,7 @@ protected:
             }
         };
 
-        static bool s_is_list(boost::spirit::classic::parser_id id)
+        static bool s_is_list(parser_id id)
         {
             return id == SGrammar::eID_list1a
                 || id == SGrammar::eID_list2a
