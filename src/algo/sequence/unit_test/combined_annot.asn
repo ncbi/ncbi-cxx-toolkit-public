@@ -5,9 +5,7 @@ Seq-annot ::= {
         locus "COPG2",
         desc "coatomer protein complex, subunit gamma 2",
         syn {
-          "2-COP",
-          "DKFZp761N09121",
-          "FLJ11781"
+          "2-COP"
         }
       },
       partial TRUE,

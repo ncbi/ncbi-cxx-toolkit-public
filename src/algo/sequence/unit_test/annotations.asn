@@ -6,7 +6,6 @@ Seq-annot ::= {
         desc "solute carrier family 37 (glycerol-3-phosphate transporter),
  member 1",
         syn {
-          "FLJ22340",
           "G3PP"
         }
       },
@@ -437,12 +436,9 @@ Seq-annot ::= {
         locus "COL18A1",
         desc "collagen, type XVIII, alpha 1",
         syn {
-          "FLJ27325",
-          "FLJ34914",
           "KNO",
           "KNO1",
-          "KS",
-          "MGC74745"
+          "KS"
         }
       },
       location int {
@@ -1887,12 +1883,9 @@ Seq-annot ::= {
         locus "COL18A1",
         desc "collagen, type XVIII, alpha 1",
         syn {
-          "FLJ27325",
-          "FLJ34914",
           "KNO",
           "KNO1",
-          "KS",
-          "MGC74745"
+          "KS"
         }
       },
       partial TRUE,
@@ -4397,9 +4390,7 @@ Seq-annot ::= {
         locus "COPG2",
         desc "coatomer protein complex, subunit gamma 2",
         syn {
-          "2-COP",
-          "DKFZp761N09121",
-          "FLJ11781"
+          "2-COP"
         }
       },
       location int {
@@ -4894,9 +4885,7 @@ Seq-annot ::= {
         locus "COPG2",
         desc "coatomer protein complex, subunit gamma 2",
         syn {
-          "2-COP",
-          "DKFZp761N09121",
-          "FLJ11781"
+          "2-COP"
         }
       },
       partial TRUE,
@@ -5360,9 +5349,7 @@ Seq-annot ::= {
         locus "COPG2",
         desc "coatomer protein complex, subunit gamma 2",
         syn {
-          "2-COP",
-          "DKFZp761N09121",
-          "FLJ11781"
+          "2-COP"
         }
       },
       partial TRUE,
@@ -5826,9 +5813,7 @@ Seq-annot ::= {
         locus "COPG2",
         desc "coatomer protein complex, subunit gamma 2",
         syn {
-          "2-COP",
-          "DKFZp761N09121",
-          "FLJ11781"
+          "2-COP"
         }
       },
       partial TRUE,
