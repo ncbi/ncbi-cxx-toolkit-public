@@ -1775,23 +1775,38 @@ public:
             }
         }
 
-        if( candidate_feat_bad_order || candidate_feat_is_mixed ) {
-            if( feat.IsSetExcept_text() && feat.GetExcept_text() == "trans-splicing" ) {
-                // force strand matching
-                candidate_feat_original_strand = m_Loc_original_strand;
-            }
-        }
-
-        if( candidate_feat_original_strand == m_Loc_original_strand
-            || ( candidate_feat_original_strand == eNa_strand_both && m_Loc_original_strand != eNa_strand_minus )
-            || m_Loc_original_strand            == eNa_strand_both
-            || (candidate_feat_original_strand == eNa_strand_unknown  && m_Loc_original_strand  != eNa_strand_minus)
-            || (m_Loc_original_strand == eNa_strand_unknown             && candidate_feat_original_strand != eNa_strand_minus) ) 
+        if( (candidate_feat_bad_order || candidate_feat_is_mixed) && 
+            feat.IsSetExcept_text() && feat.GetExcept_text() == "trans-splicing" )
         {
-            // okay; do nothing
-        } else {
-            // mismatched strands; skip this feature
+            // strand matching is done piecewise if we're trans-spliced
             shouldContinueToNextIteration = true;
+
+            CSeq_loc_CI candidate_feat_loc_iter( feat.GetLocation() );
+            for( ; candidate_feat_loc_iter; ++candidate_feat_loc_iter ) {
+                // any piece that's in cleaned_loc_this_iteration, must have a matching strand
+                sequence::ECompare piece_comparison = sequence::Compare(
+                    *candidate_feat_loc_iter.GetRangeAsSeq_loc(),
+                    *cleaned_loc_this_iteration,
+                    &m_BioseqHandle.GetScope() );
+                if( piece_comparison != sequence::eNoOverlap ) 
+                {
+                    if( x_StrandsMatch( m_Loc_original_strand, candidate_feat_loc_iter.GetStrand() ) ) {
+                        // mismatched strands; skip this feature
+                        shouldContinueToNextIteration = false;
+                        break;
+                    }
+                }
+            }
+
+            if( x_StrandsMatch( m_Loc_original_strand, candidate_feat_original_strand ) ) {
+                // mismatched strands; skip this feature
+                shouldContinueToNextIteration = false;
+            }
+        } else {
+            if( ! x_StrandsMatch( m_Loc_original_strand, candidate_feat_original_strand ) ) {
+                // mismatched strands; skip this feature
+                shouldContinueToNextIteration = true;
+            }
         }
     }
 
@@ -1821,6 +1836,15 @@ private:
     ENa_strand m_Loc_original_strand;
     CBioseq_Handle m_BioseqHandle;
     CConstRef<CGene_ref> m_Filtering_gene_xref;
+
+    bool x_StrandsMatch( ENa_strand feat_strand, ENa_strand candidate_feat_original_strand )
+    {
+        return ( candidate_feat_original_strand == feat_strand
+            || ( candidate_feat_original_strand == eNa_strand_both    && feat_strand != eNa_strand_minus )
+            || feat_strand == eNa_strand_both
+            || (candidate_feat_original_strand == eNa_strand_unknown  && feat_strand  != eNa_strand_minus)
+            || (feat_strand == eNa_strand_unknown                     && candidate_feat_original_strand != eNa_strand_minus) );
+    }
 };
 
 
@@ -2264,12 +2288,12 @@ void CFeatureItem::x_AddQuals(
 {
 //    /**fl**/
     // leaving this here since it's so useful for debugging purposes.
-    //2419700..2435351
+    //77147..77260
     /* if( 
-        (GetLoc().GetStart(eExtreme_Biological) == 2419699 &&
-        GetLoc().GetStop(eExtreme_Biological) == 2435350) ||
-        (GetLoc().GetStop(eExtreme_Biological) == 2419699 &&
-        GetLoc().GetStart(eExtreme_Biological) == 2435350)
+        (GetLoc().GetStart(eExtreme_Biological) == 88448 &&
+        GetLoc().GetStop(eExtreme_Biological) == 88448) ||
+        (GetLoc().GetStop(eExtreme_Biological) == 88448 &&
+        GetLoc().GetStart(eExtreme_Biological) == 88448)
         ) {
         cerr << "";
         } */

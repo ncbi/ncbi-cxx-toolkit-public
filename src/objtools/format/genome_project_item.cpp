@@ -77,10 +77,9 @@ const CGenomeProjectItem::TDBLinkLineVec & CGenomeProjectItem::GetDBLinkLines() 
 /***************************************************************************/
 
 static string
-s_JoinSRAStrs(const CUser_field_Base::C_Data::TStrs &strs, const bool is_html )
+s_JoinLinkableStrs(const CUser_field_Base::C_Data::TStrs &strs, 
+                   const string &url_prefix, const bool is_html )
 {
-    const static string kStrLinkBaseSRA = "http://www.ncbi.nlm.nih.gov/sites/entrez?db=sra&term=";
-
     CNcbiOstrstream result;
     ITERATE( CUser_field_Base::C_Data::TStrs, str_iter, strs ) {
         if( str_iter != strs.begin() ) {
@@ -88,7 +87,7 @@ s_JoinSRAStrs(const CUser_field_Base::C_Data::TStrs &strs, const bool is_html )
         }
         const string &id = *str_iter;
         if( is_html ) {
-            result << "<a href=\"" << kStrLinkBaseSRA << id << "\">";
+            result << "<a href=\"" << url_prefix << id << "\">";
         }
         result << id;
         if( is_html ) {
@@ -134,6 +133,9 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
         }
     }
 
+    const static string kStrLinkBaseSRA = "http://www.ncbi.nlm.nih.gov/sites/entrez?db=sra&term=";
+    const static string kStrLinkBaseBioProj = "http://www.ncbi.nlm.nih.gov/bioproject?term=";
+
     // process DBLink
     // ( we have these temporary vectors because we can't push straight to m_DBLinkLines
     //  because, e.g., SRA must be before BioProject even if out of order in ASN.1 )
@@ -149,15 +151,15 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
 
                     if ( NStr::EqualNocase(label, "Sequence Read Archive") ) {
                         sraLines.push_back( "Sequence Read Archive: " + 
-                            s_JoinSRAStrs( strs, bHtml ) );
+                            s_JoinLinkableStrs( strs, kStrLinkBaseSRA, bHtml ) );
                         if( bHtml ) {
-                            TryToSanitizeHtml( m_DBLinkLines.back() );
+                            TryToSanitizeHtml( sraLines.back() );
                         }
                     } else if( NStr::EqualNocase(label, "BioProject") ) {
                         bioprojectLines.push_back( "BioProject: " + 
-                            NStr::Join( strs, ", " ) );
+                            s_JoinLinkableStrs( strs, kStrLinkBaseBioProj, bHtml ) );
                         if( bHtml ) {
-                            TryToSanitizeHtml( m_DBLinkLines.back() );
+                            TryToSanitizeHtml( bioprojectLines.back() );
                         }
                     }
             }
