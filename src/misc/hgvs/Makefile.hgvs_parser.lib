@@ -1,6 +1,4 @@
 # $Id$
-#
-# Makefile:  Makefile.hgvs_parser.lib
 
 
 LIB = hgvs
