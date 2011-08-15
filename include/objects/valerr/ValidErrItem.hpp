@@ -43,6 +43,8 @@
 #include <corelib/ncbidiag.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
+#include <objmgr/scope.hpp>
+
 // generated includes
 #include <objects/valerr/ValidErrItem_.hpp>
 
@@ -569,7 +571,8 @@ private:
                   const string&        msg,       // message
                   const string&        obj_desc,  // object description
                   const CSerialObject& obj,       // offending object
-                  const string&        acc);      // accession
+                  const string&        acc,       // accession
+                  const int            seq_offset = 0); // sequence offset
 
     CValidErrItem(EDiagSev             sev,       // severity
                   unsigned int         ec,        // error code
@@ -577,7 +580,8 @@ private:
                   const string&        obj_desc,  // object description
                   const CSerialObject& obj,       // offending object
                   const string&        acc,       // accession
-                  const string&        feature_id); // feature ID
+                  const string&        feature_id, // feature ID
+                  const int            seq_offset = 0); // sequence offset
 
     // constructor
     CValidErrItem(EDiagSev             sev,       // severity
@@ -586,7 +590,8 @@ private:
                   const string&        obj_desc,  // object description
                   const CSerialObject& obj,       // offending object
                   const CSeq_entry&    context,   // desc's context.
-                  const string&        acc);      // accession
+                  const string&        acc,       // accession
+                  const int            seq_offset = 0); // sequence offset
 
     // Prohibit default & copy constructor and assignment operator
     CValidErrItem(const CValidErrItem& value);
