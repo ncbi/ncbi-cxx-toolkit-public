@@ -383,6 +383,37 @@ private:
 
 //////////////////////////////////////////////////////////////////////////////
 
+class CScore_SymmetricOverlap : public CAlignFilter::IScore
+{
+public:
+    virtual void PrintHelp(CNcbiOstream& ostr) const
+    {
+        ostr <<
+            "Symmetric overlap, as a percent (0-100).  This is similar to "
+            "coverage, except that it takes into account both query and "
+            "subject sequence lengths";
+    }
+
+    virtual double Get(const CSeq_align& align, CScope* scope) const
+    {
+        double pct_overlap = 0;
+        try {
+            TSeqPos length = align.GetAlignLength(false);
+            CBioseq_Handle q = scope->GetBioseqHandle(align.GetSeq_id(0));
+            CBioseq_Handle s = scope->GetBioseqHandle(align.GetSeq_id(1));
+
+            pct_overlap = 2 * length;
+            pct_overlap /= (q.GetBioseqLength() + s.GetBioseqLength());
+            pct_overlap *= 100;
+        }
+        catch (CException &e) {
+        }
+        return pct_overlap;
+    }
+};
+
+//////////////////////////////////////////////////////////////////////////////
+
 class CScore_MinExonLength : public CAlignFilter::IScore
 {
 public:
@@ -677,6 +708,10 @@ void CAlignFilter::x_Init()
         (TScoreDictionary::value_type
          ("align_length_ungap",
           CIRef<IScore>(new CScore_AlignLength(false /* include gaps */))));
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("symmetric_overlap",
+          CIRef<IScore>(new CScore_SymmetricOverlap)));
     m_Scores.insert
         (TScoreDictionary::value_type
          ("3prime_unaligned",
