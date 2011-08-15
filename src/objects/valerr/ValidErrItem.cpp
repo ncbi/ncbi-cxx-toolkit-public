@@ -1622,7 +1622,8 @@ CValidErrItem::CValidErrItem
  const string&        msg,
  const string&        desc,
  const CSerialObject& obj,
- const string&        acc)
+ const string&        acc,
+ const int            seq_offset)
   : m_Object(&obj)
 {
     SetSev(sev);
@@ -1630,6 +1631,7 @@ CValidErrItem::CValidErrItem
     SetMsg(msg);
     SetObjDesc(desc);
     SetAccession(acc);
+    SetSeqOffset(seq_offset);
 }
 
 CValidErrItem::CValidErrItem
@@ -1639,7 +1641,8 @@ CValidErrItem::CValidErrItem
  const string&        desc,
  const CSerialObject& obj,
  const string&        acc,
- const string&        feature_id)
+ const string&        feature_id,
+ const int            seq_offset)
   : m_Object(&obj)
 {
     SetSev(sev);
@@ -1648,6 +1651,7 @@ CValidErrItem::CValidErrItem
     SetObjDesc(desc);
     SetAccession(acc);
     SetFeatureId(feature_id);
+    SetSeqOffset(seq_offset);
 }
 
 CValidErrItem::CValidErrItem
@@ -1657,7 +1661,8 @@ CValidErrItem::CValidErrItem
  const string&        desc,
  const CSerialObject& obj,
  const CSeq_entry&    ctx,
- const string&        acc)
+ const string&        acc,
+ const int            seq_offset)
   : m_Object(&obj),
     m_Ctx(&ctx)
 {
@@ -1666,6 +1671,7 @@ CValidErrItem::CValidErrItem
     SetMsg(msg);
     SetObjDesc(desc);
     SetAccession(acc);
+    SetSeqOffset(seq_offset);
 }
 
 
