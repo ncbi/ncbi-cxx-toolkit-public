@@ -155,6 +155,7 @@ def main():
         print "Using grid_cli path: " + options.pathGridCli
         print "Using DB path: " + options.pathDB
         print "Starting tests from: " + options.start_from
+        print "NS version to test: " + options.version
 
     netschedule = None
     if options.verbose:
