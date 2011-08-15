@@ -1839,48 +1839,6 @@ void CId2ReaderBase::x_ProcessGetBlobId(
     SId2BlobInfo& blob_info = ids.second[blob_id];
     if ( reply.IsSetAnnot_info() && mask == fBlobHasExtAnnot ) {
         blob_info.m_AnnotInfo = reply.GetAnnot_info();
-#if 1
-        // Artificially add information about Seq-tables.
-        // Remove this code after fixing annot-info in data from ID2.
-        if ( blob_info.m_AnnotInfo.size() == 1 ) {
-            const CID2S_Seq_annot_Info& info = *blob_info.m_AnnotInfo.front();
-            if ( info.IsSetName() && NStr::StartsWith(info.GetName(), "NA") &&
-                 !info.IsSetGraph() &&
-                 !info.IsSetFeat() &&
-                 !info.IsSetAlign() &&
-                 info.IsSetSeq_loc() ) {
-                LOG_POST(Warning << "CId2ReaderBase: " << info.GetName() <<
-                         ": Adding Seq-table annot-info");
-                CID2S_Seq_annot_Info& finfo =
-                    const_cast<CID2S_Seq_annot_Info&>(info);
-                CRef<CID2S_Feat_type_Info> type(new CID2S_Feat_type_Info);
-                type->SetType(0);
-                finfo.SetFeat().push_back(type);
-            }
-        }
-        // Add artificial zoom annot-info describing zoom graphs.
-        // Remove this code after fixing annot-info in data from ID2.
-        if ( blob_info.m_AnnotInfo.size() == 1 ) {
-            const CID2S_Seq_annot_Info& info = *blob_info.m_AnnotInfo.front();
-            if ( info.IsSetName() && NStr::StartsWith(info.GetName(), "NA") &&
-                 info.IsSetGraph() &&
-                 (info.IsSetFeat() || info.IsSetAlign()) &&
-                 info.IsSetSeq_loc() ) {
-                LOG_POST(Warning << "CId2ReaderBase: " << info.GetName() <<
-                         ": Adding zoom graphs annot-info");
-                CID2S_Seq_annot_Info& finfo =
-                    const_cast<CID2S_Seq_annot_Info&>(info);
-                for ( int zoom = 10; zoom <= 1000000; zoom *= 10 ) {
-                    CRef<CID2S_Seq_annot_Info> zinfo(new CID2S_Seq_annot_Info);
-                    zinfo->SetName(CombineWithZoomLevel(info.GetName(), zoom));
-                    zinfo->SetGraph();
-                    zinfo->SetSeq_loc(finfo.SetSeq_loc());
-                    blob_info.m_AnnotInfo.push_back(zinfo);
-                }
-                finfo.ResetGraph();
-            }
-        }
-#endif
         ITERATE ( SId2BlobInfo::TAnnotInfo, it, blob_info.m_AnnotInfo ) {
             const CID2S_Seq_annot_Info& info = **it;
             if ( info.IsSetName() && NStr::StartsWith(info.GetName(), "NA") ) {
