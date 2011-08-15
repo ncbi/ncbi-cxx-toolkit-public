@@ -69,7 +69,7 @@ class Scenario00( TestBase ):
     @staticmethod
     def getScenario():
         " Should return a textual description of the test "
-        return "Start NS, kill NS (00)"
+        return "Start NS, kill NS"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -94,7 +94,7 @@ class Scenario01( TestBase ):
     @staticmethod
     def getScenario():
         " Should return a textual description of the test "
-        return "Start NS, shutdown NS (01)"
+        return "Start NS, shutdown NS"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -119,7 +119,7 @@ class Scenario02( TestBase ):
     @staticmethod
     def getScenario():
         " Should return a textual description of the test "
-        return "Start NS, kill -9 NS, start NS (02)"
+        return "Start NS, kill -9 NS, start NS"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -146,7 +146,7 @@ class Scenario03( TestBase ):
     @staticmethod
     def getScenario():
         " Should return a textual description of the test "
-        return "Start NS, shutdown NS with the 'nobody' account (03)"
+        return "Start NS, shutdown NS with the 'nobody' account"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -176,7 +176,7 @@ class Scenario04( TestBase ):
     @staticmethod
     def getScenario():
         " Should return a textual description of the test "
-        return "Getting netschedule version (04)"
+        return "Getting netschedule version"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -199,7 +199,7 @@ class Scenario05( TestBase ):
     @staticmethod
     def getScenario():
         " Should return a textual description of the test "
-        return "Getting the number of active jobs (05)"
+        return "Getting the number of active jobs"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -222,7 +222,7 @@ class Scenario06( TestBase ):
     @staticmethod
     def getScenario():
         " Should return a textual description of the test "
-        return "Getting the list of the configured queues (06)"
+        return "Getting the list of the configured queues"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -246,7 +246,7 @@ class Scenario07( TestBase ):
     @staticmethod
     def getScenario():
         " Should return a textual description of the test "
-        return "Getting the list of the configured queues (07)"
+        return "Getting the list of the configured queues"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -280,7 +280,7 @@ class Scenario08( TestBase ):
     @staticmethod
     def getScenario():
         " Should return a textual description of the test "
-        return "Getting non existed queue (08)"
+        return "Getting non existed queue"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -310,7 +310,7 @@ class Scenario09( TestBase ):
     @staticmethod
     def getScenario():
         " Should return a textual description of the test "
-        return "Getting existing queue info (09)"
+        return "Getting existing queue info"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -334,7 +334,7 @@ class Scenario10( TestBase ):
     @staticmethod
     def getScenario():
         " Should return a textual description of the test "
-        return "Creating a dynamic queue and then delete it (10)"
+        return "Creating a dynamic queue and then delete it"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -375,7 +375,7 @@ class Scenario11( TestBase ):
     def getScenario():
         " Should return a textual description of the test "
         return "Submitting a single job and checking the number of " \
-               "active jobs and the job status (11)"
+               "active jobs and the job status"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -406,7 +406,7 @@ class Scenario12( TestBase ):
     @staticmethod
     def getScenario():
         " Should return a textual description of the test "
-        return "submit a job, drop all the jobs, get the job fast status (12)"
+        return "submit a job, drop all the jobs, get the job fast status"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -437,7 +437,7 @@ class Scenario13( TestBase ):
     @staticmethod
     def getScenario():
         " Should return a textual description of the test "
-        return "submit a job, cancel it (13)"
+        return "submit a job, cancel it"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -471,7 +471,7 @@ class Scenario14( TestBase ):
     @staticmethod
     def getScenario():
         " Should return a textual description of the test "
-        return "Submit a job, drop the job (14)"
+        return "Submit a job, drop the job"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -505,7 +505,7 @@ class Scenario15( TestBase ):
     @staticmethod
     def getScenario():
         " Should return a textual description of the test "
-        return "Submit a job, cancel the job, reschedule the job (15)"
+        return "Submit a job, cancel the job, reschedule the job"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -545,7 +545,7 @@ class Scenario16( TestBase ):
     @staticmethod
     def getScenario():
         " Should return a textual description of the test "
-        return "Getting a queue configuration (16)"
+        return "Getting a queue configuration"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -572,7 +572,7 @@ class Scenario17( TestBase ):
     @staticmethod
     def getScenario():
         " Should return a textual description of the test "
-        return "Submit a job, stop NS, start NS, check the job status (17)"
+        return "Submit a job, stop NS, start NS, check the job status"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -611,7 +611,7 @@ class Scenario18( TestBase ):
     def getScenario():
         " Should return a textual description of the test "
         return "Submit a job, get the job info. " \
-               "It will fail until NS is fixed. (18)"
+               "It will fail until NS is fixed."
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -646,7 +646,7 @@ class Scenario19( TestBase ):
     def getScenario():
         " Should return a textual description of the test "
         return "Submit a job, make a pause, touch the job lifetime. " \
-               "It will fail until NS is fixed. (19)"
+               "It will fail until NS is fixed."
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -684,7 +684,7 @@ class Scenario20( TestBase ):
         " Should return a textual description of the test "
         return "Submit a job, make a pause, " \
                "touch the job without changing the lifetime. " \
-               "It will fail until NS is fixed. (20)"
+               "It will fail until NS is fixed."
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -722,7 +722,7 @@ class Scenario21( TestBase ):
     @staticmethod
     def getScenario():
         " Should return a textual description of the test "
-        return "Submit a job, change the job id slightly, get the job info (21)"
+        return "Submit a job, change the job id slightly, get the job info"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -767,7 +767,7 @@ class Scenario22( TestBase ):
     @staticmethod
     def getScenario():
         " Should return a textual description of the test "
-        return "Submit a job, get statistics (22)"
+        return "Submit a job, get statistics"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -807,7 +807,7 @@ class Scenario23( TestBase ):
     def getScenario():
         " Should return a textual description of the test "
         return "Submit a job, get the job, check the active job number, " \
-               "get the job status, get the job dump (23)"
+               "get the job status, get the job dump"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -856,7 +856,7 @@ class Scenario24( TestBase ):
         return "Submit a job, get the job, take a break till run-time is " \
                "expired, get the job dump and check the run counter, get " \
                "the job again, put the job and check the return code. " \
-               "It will fail until NS is fixed. (24)"
+               "It will fail until NS is fixed."
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -907,7 +907,7 @@ class Scenario25( TestBase ):
     def getScenario():
         " Should return a textual description of the test "
         return "Submit a job, get the job for execution, " \
-               "return the job, check status (25)"
+               "return the job, check status"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -947,7 +947,7 @@ class Scenario26( TestBase ):
     @staticmethod
     def getScenario():
         " Should return a textual description of the test "
-        return "Getting server info (26)"
+        return "Getting server info"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -978,7 +978,7 @@ class Scenario27( TestBase ):
     def getScenario():
         " Should return a textual description of the test "
         return "Get queue info, submit a job, get queue info, " \
-               "get the job, get queue info (27)"
+               "get the job, get queue info"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -1029,7 +1029,7 @@ class Scenario28( TestBase ):
     @staticmethod
     def getScenario():
         " Should return a textual description of the test "
-        return "Submit a job, get a job, check the status (28)"
+        return "Submit a job, get a job, check the status"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -1074,7 +1074,7 @@ class Scenario29( TestBase ):
     @staticmethod
     def getScenario():
         " Should return a textual description of the test "
-        return "Getting a job whene there are none (29)"
+        return "Getting a job whene there are none"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -1101,7 +1101,7 @@ class Scenario30( TestBase ):
     @staticmethod
     def getScenario():
         " Should return a textual description of the test "
-        return "Getting a job progress message when there is no such job (30)"
+        return "Getting a job progress message when there is no such job"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -1135,7 +1135,7 @@ class Scenario31( TestBase ):
     @staticmethod
     def getScenario():
         " Should return a textual description of the test "
-        return "Setting a job progress message when there is no such job (31)"
+        return "Setting a job progress message when there is no such job"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -1171,7 +1171,7 @@ class Scenario32( TestBase ):
         " Should return a textual description of the test "
         return "Submit a job, check its progress message, " \
                "update the job progress message, check the progress " \
-               "message (32)"
+               "message"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -1211,7 +1211,7 @@ class Scenario33( TestBase ):
         " Should return a textual description of the test "
         return "Submit a job, check its progress message, get the job, " \
                "update the job progress message, check the progress " \
-               "message (33)"
+               "message"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -1254,7 +1254,7 @@ class Scenario34( TestBase ):
         " Should return a textual description of the test "
         return "Submit a job, get the job, " \
                "fail the job, check the job info. " \
-               "It will fail until NS is fixed. (34)"
+               "It will fail until NS is fixed."
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -1295,7 +1295,7 @@ class Scenario35( TestBase ):
         " Should return a textual description of the test "
         return "Submit a job, get the job for execution, " \
                "get the worker node statistics, extend the job expiration, " \
-               "get the worker node statistics (35)"
+               "get the worker node statistics"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -1356,7 +1356,7 @@ class Scenario36( TestBase ):
     def getScenario():
         " Should return a textual description of the test "
         return "Submit first job, submit second job, get the job, " \
-               "exchange the job for another one, get jobs status (36)"
+               "exchange the job for another one, get jobs status"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -1402,7 +1402,7 @@ class Scenario37( TestBase ):
     @staticmethod
     def getScenario():
         " Should return a textual description of the test "
-        return "Get status of non-existing affinity (37)"
+        return "Get status of non-existing affinity"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -1431,7 +1431,7 @@ class Scenario38( TestBase ):
     @staticmethod
     def getScenario():
         " Should return a textual description of the test "
-        return "Submit a job with affinity, get status of the affinity (38)"
+        return "Submit a job with affinity, get status of the affinity"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -1462,7 +1462,7 @@ class Scenario39( TestBase ):
         " Should return a textual description of the test "
         return "Submit a job with one affinity, " \
                "submit a job with another affinity, " \
-               "get the list of affinities (39)"
+               "get the list of affinities"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -1494,7 +1494,7 @@ class Scenario40( TestBase ):
         " Should return a textual description of the test "
         return "Submit a job without affinity, " \
                "submit a job with an affinity, " \
-               "get the job with affinity (40)"
+               "get the job with affinity"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -1531,7 +1531,7 @@ class Scenario41( TestBase ):
     def getScenario():
         " Should return a textual description of the test "
         return "Submit a job with an affinity, " \
-               "get a job with another affinity (41)"
+               "get a job with another affinity"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -1567,7 +1567,7 @@ class Scenario42( TestBase ):
         " Should return a textual description of the test "
         return "Submit two jobs with an affinity aff0, " \
                "get a job with aff0, exchage it to a job with affinity aff1. " \
-               "It will fail till NS is fixed. (42)"
+               "It will fail till NS is fixed."
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -1607,7 +1607,7 @@ class Scenario43( TestBase ):
     def getScenario():
         " Should return a textual description of the test "
         return "init worker node, init another worker node, " \
-               "wait till registration is exceeded (43)"
+               "wait till registration is exceeded"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -1667,7 +1667,7 @@ class Scenario44( TestBase ):
     def getScenario():
         " Should return a textual description of the test "
         return "Submit a job, init a worker node, get the job, " \
-               "clear worker node registration, get the job info (44)"
+               "clear worker node registration, get the job info"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -1706,7 +1706,7 @@ class Scenario45( TestBase ):
         " Should return a textual description of the test "
         return "Init a worker node, " \
                "init another worker node with the same guid but the other " \
-               "port. It will fail until NS is fixed. (45)"
+               "port. It will fail until NS is fixed."
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -1738,7 +1738,7 @@ class Scenario46( TestBase ):
     def getScenario():
         " Should return a textual description of the test "
         return "Dump the queue, submit 2 jobs, get one job for execution, " \
-               "dump the queue (46)"
+               "dump the queue"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -1787,7 +1787,7 @@ class Scenario47( TestBase ):
         " Should return a textual description of the test "
         return "submit 3 jobs, get all of them for execution, " \
                "complete all of them, get jobs for reading, " \
-               "confirm reading for the first and third jobs (47)"
+               "confirm reading for the first and third jobs"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -1852,7 +1852,7 @@ class Scenario48( TestBase ):
         " Should return a textual description of the test "
         return "Submit a job, get the job for execution, " \
                "commit the job, get the job for reading, " \
-               "rollback the job reading (48)"
+               "rollback the job reading"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -1894,7 +1894,7 @@ class Scenario49( TestBase ):
         " Should return a textual description of the test "
         return "Submit a job, get job for execution, " \
                "commit the job, get the job for reading with timeout, " \
-               "wait till the timeout is over, get the job info (49)"
+               "wait till the timeout is over, get the job info"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -1953,7 +1953,7 @@ class Scenario50( TestBase ):
         return "Submit a job, get job for execution, " \
                "commit the job, get the job for reading, " \
                "check the job run counter. " \
-               "It will fail until NS is fixed. (50)"
+               "It will fail until NS is fixed."
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -1993,7 +1993,7 @@ class Scenario51( TestBase ):
         " Should return a textual description of the test "
         return "Submit a job, get the job for execution, " \
                "commit the job, get the job for reading, " \
-               "fail reading (51)"
+               "fail reading"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -2031,7 +2031,7 @@ class Scenario52( TestBase ):
     @staticmethod
     def getScenario():
         " Should return a textual description of the test "
-        return "Start batch submit, submit two jobs (52)"
+        return "Start batch submit, submit two jobs"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -2072,7 +2072,7 @@ class Scenario53( TestBase ):
     def getScenario():
         " Should return a textual description of the test "
         return "Start batch submit, tell that there will be 2 jobs but " \
-               "submit one job (53)"
+               "submit one job"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -2116,7 +2116,7 @@ class Scenario54( TestBase ):
     def getScenario():
         " Should return a textual description of the test "
         return "Start batch submit, tell that there will be 1 job but " \
-               "submit two jobs (54)"
+               "submit two jobs"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -2158,7 +2158,7 @@ class Scenario55( TestBase ):
         " Should return a textual description of the test "
         return "Submit a job, get the job for execution, fail the job, " \
                "get the job fast status. " \
-               "It will fail until NS is fixed. (55)"
+               "It will fail until NS is fixed."
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -2189,7 +2189,7 @@ class Scenario56( TestBase ):
         " Should return a textual description of the test "
         return "Submit a job, get the job for execution, cancel the job, " \
                "reschedule the job, check the job status. " \
-               "It will fail until NS is fixed. (56)"
+               "It will fail until NS is fixed."
 
     def execute( self ):
         " Should return True if the execution completed successfully "
