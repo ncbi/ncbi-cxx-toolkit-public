@@ -1,3 +1,23 @@
+July 15, 2011
+* 2.2.26 release.
+
+Improvements:
+* Added bl2seq support to blast_formatter application.
+* Added new PSI-BLAST options that work with multiple-sequence alignments:
+  ignore_msa_master and msa_master_idx.
+* Extended applicability of partial subject fetching functionality.
+* mkmbindex can now create masked indices from a BLAST database and ASN.1
+  masking data.
+* rpsblast now supports multi-threaded execution.
+* Finite size correction is used to compute E-values.
+* blastdbcmd supports end-of-sequence syntax to extract specific ranges of 
+  sequence data.
+
+Bug fixes: 
+* blastn problem with subject_loc and lcase_masking were used in conjunction.
+* Multi-threaded problem with blastx.
+* Percent identity calculation when best-hit algorithm is used.
+
 March 15, 2011
 * 2.2.25 release
 * Enhanced documentation, includes simplified setup instructions, available at
