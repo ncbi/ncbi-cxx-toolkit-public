@@ -8,5 +8,7 @@ SUB_PROJ = test
 
 REQUIRES = Boost.Spirit
 
+WATCHERS = astashya
+
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
