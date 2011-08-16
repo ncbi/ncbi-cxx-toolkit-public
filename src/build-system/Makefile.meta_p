@@ -71,8 +71,8 @@ endef
 
 # 1: target
 define make_each_sub_proj_p
-$(foreach p,$(SUB_PROJ) $(POTENTIAL_SUB_PROJ),$(call make_one_sub_proj_x,$(p),_p,$(1)))
-$(foreach p,$(EXPENDABLE_SUB_PROJ),-$(call make_one_sub_proj_x,$(p),_p,$(1),1))
+$(ign)$(foreach p,$(SUB_PROJ) $(POTENTIAL_SUB_PROJ),$(call make_one_sub_proj_x,$(p),_p,$(1)))
+-$(foreach p,$(EXPENDABLE_SUB_PROJ),$(call make_one_sub_proj_x,$(p),_p,$(1),1))
 endef
 
 deps_p=
