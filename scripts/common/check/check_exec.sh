@@ -30,7 +30,7 @@ script_dir=`dirname $0`
 script_dir=`(cd "$script_dir"; pwd)`
 
 # Make timestamp
-timestamp_file="/tmp/check_exec_timestamp.$$"
+timestamp_file=`mktemp`
 touch $timestamp_file
 
 # Reinforce timeout
