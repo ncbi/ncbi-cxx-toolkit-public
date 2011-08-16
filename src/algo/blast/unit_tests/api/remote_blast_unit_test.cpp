@@ -569,7 +569,7 @@ BOOST_AUTO_TEST_CASE(CheckColoRID) {
 
 BOOST_AUTO_TEST_CASE(GetErrorsFromFailedRID) {
     // Uncomment to redirect to test system
-    CAutoEnvironmentVariable tmp_env("BLAST4_CONN_SERVICE_NAME", "blast4_test");
+    //CAutoEnvironmentVariable tmp_env("BLAST4_CONN_SERVICE_NAME", "blast4_test");
     const string rid("1214512158-10611-186074495131.BLASTQ23"); // Permanent RID
     CRemoteBlast rmt_blaster(rid);
     //rmt_blaster.SetVerbose();
