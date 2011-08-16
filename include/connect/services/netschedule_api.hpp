@@ -632,11 +632,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
     ///    Map of affinity tokens to job number counters.
     void AffinitySnapshot(TAffinityMap& affinity_map);
 
-    enum ECreateQueueFlags {
-        eIgnoreDuplicateName = 0,
-        eErrorOnDuplicateName
-    };
-
     /// Create queue of given queue class
     /// @param qname
     ///    Name of the queue to create
