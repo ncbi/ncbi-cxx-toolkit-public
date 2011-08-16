@@ -11,6 +11,9 @@ cat <<EOF
 # by $id
 EOF
 
+LC_ALL=C
+export LC_ALL
+
 IFS="$IFS;"
 while read l; do
     case "$l" in
