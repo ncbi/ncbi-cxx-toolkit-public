@@ -2,8 +2,8 @@
 
 REQUIRES = serial
 
-APP = asnwalk_read
-SRC = asnwalk_read
+APP = bss_info
+SRC = bss_info
 
 # new_project.sh will copy everything in the following block to any
 # Makefile.*_app generated from this sample project.  Do not change
