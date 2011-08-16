@@ -6139,7 +6139,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "USLH	s	University of Louisiana Lafayette, Department of Renewable Resources",
 "USM<MYS>	s	Universiti Sains Malaysia",
 "USM<MYS>:VCRU	s	Universiti Sains Malaysia, Vector Control Research Unit",
-"USM<PER>	s	Universidad Nacional Mayor de San Marcos, Division de Botanica",
+"USM<PER>	s	Universidad Nacional Mayor de San Marcos, Museo de Historia Natural, Herbario",
 "USMS	s	University of Southern Mississippi, Department of Biological Sciences",
 "USNC	s	Smithsonian Institution, Paleobiology Department",
 "USNM	s	National Museum of Natural History, Smithsonian Institution",
