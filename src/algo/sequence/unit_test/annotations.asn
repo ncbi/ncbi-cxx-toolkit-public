@@ -1290,7 +1290,6 @@ Seq-annot ::= {
         locus "ctnnbl1",
         desc "catenin, beta like 1",
         syn {
-          "MGC77673",
           "zgc:77673"
         }
       },
@@ -2478,7 +2477,6 @@ Seq-annot ::= {
         syn {
           "fla",
           "im:7139126",
-          "MGC152688",
           "zgc:152688"
         }
       },
