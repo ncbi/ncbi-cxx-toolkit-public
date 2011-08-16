@@ -2,6 +2,7 @@ July 15, 2011
 * 2.2.26 release.
 
 Improvements:
+* Mac executables are now Universal Binaries for 32- and 64-bit architectures.
 * Added bl2seq support to blast_formatter application.
 * Added new PSI-BLAST options that work with multiple-sequence alignments:
   ignore_msa_master and msa_master_idx.
