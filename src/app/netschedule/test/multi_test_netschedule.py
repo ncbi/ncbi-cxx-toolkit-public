@@ -79,7 +79,7 @@ def main():
 
     parser = OptionParser(
     """
-    %prog  <port>
+    %prog
     Note #1: netschedule server will be running on the same host
     """ )
     parser.add_option( "-v", "--verbose",
@@ -268,10 +268,11 @@ def testOneCombination( sandboxPath, nsPath, gcPath, port, verbose ):
                 "--db-path=/dev/shm/data",
                 "--header='" + combination + "'",
                 "--all-to-stderr",
-                "--version=" + nsVersion ]
+                "--ns-version=" + nsVersion ]
 
     if verbose:
         cmdLine += [ "--verbose" ]
+        print "Executing command: " + " ".join( cmdLine )
 
     errTmp = tempfile.mkstemp()
     errStream = os.fdopen( errTmp[ 0 ] )

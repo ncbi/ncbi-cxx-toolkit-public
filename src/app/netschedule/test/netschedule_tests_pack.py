@@ -1375,7 +1375,7 @@ class Scenario36( TestBase ):
 
         receivedJobID2 = self.ns.exchangeJob( 'TEST', receivedJobID1, 12,
                                               'Test output' )
-        if jobID2 != receivedJobID2:
+        if not receivedJobID2.startswith( jobID2 ):
             return False
 
         info1 = self.ns.getJobInfo( 'TEST', jobID1 )

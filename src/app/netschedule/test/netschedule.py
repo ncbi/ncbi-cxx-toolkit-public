@@ -1185,5 +1185,11 @@ class NetSchedule:
             raise
 
         os.unlink( filename )
-        return jobids
 
+        result = []
+        parts = jobids.split( '\n' )
+        for item in parts:
+            item = item.strip()
+            if item != "":
+                result.append( item )
+        return result

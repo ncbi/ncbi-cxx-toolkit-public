@@ -242,6 +242,7 @@ def main():
     while startIndex < len( tests ):
         if tests[ startIndex ].getScenarioID() >= startID:
             break
+        startIndex += 1
 
     successCount = 0
     failureCount = 0
