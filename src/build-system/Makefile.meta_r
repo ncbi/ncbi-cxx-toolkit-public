@@ -29,8 +29,8 @@ endef
 
 # 1: target
 define make_each_sub_proj_r
-$(ign)$(foreach p,$(SUB_PROJ),$(call make_one_sub_proj_x,$(p),_r,$(1),))
--$(foreach p,$(EXPENDABLE_SUB_PROJ),$(call make_one_sub_proj_x,$(p),_r,$(1),1))
+$(foreach p,$(SUB_PROJ),$(ign)$(call make_one_sub_proj_x,$(p),_r,$(1),))
+$(foreach p,$(EXPENDABLE_SUB_PROJ),-$(call make_one_sub_proj_x,$(p),_r,$(1),1))
 endef
 
 rec_targets_r = $(base_targets:%=%_r)

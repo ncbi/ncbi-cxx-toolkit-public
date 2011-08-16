@@ -79,8 +79,8 @@ $(call make_one_leaf_proj,$(1),,$(MAKE_USR),$(2),,:,1,$(3))
   # 1: target
   define make_each_usr_proj
 @test -f requirements  ||  $(TOUCH) -t 197607040000 requirements
-$(ign)$(foreach p,$(USR_PROJ) $(XUNIX_USR_PROJ),$(call make_one_usr_proj,$(p),$(1),))
--$(foreach p,$(EXPENDABLE_USR_PROJ),$(call make_one_usr_proj,$(p),$(1),1))
+$(foreach p,$(USR_PROJ) $(XUNIX_USR_PROJ),$(ign)$(call make_one_usr_proj,$(p),$(1),))
+$(foreach p,$(EXPENDABLE_USR_PROJ),-$(call make_one_usr_proj,$(p),$(1),1))
 @test -s requirements  ||  $(RM) -f requirements
   endef
 endif
@@ -135,14 +135,14 @@ endef
 define make_one_lib_proj
 $(call make_one_cxx_proj,$(1),$(MAKE_LIB),$(2),.lib,$(deactivate),2,$(3))
 endef
-# 1: proj_type, 2: target, 3: is_expendable
+# 1: proj_type, 2: target, 3: is_expendable?, 4: ignore errors?
 define make_lib_proj_type
-$(foreach p,$($(1)_PROJ),$(call make_one_lib_proj,$(p),$(2),$(3)))
+$(foreach p,$($(1)_PROJ),$(4)$(call make_one_lib_proj,$(p),$(2),$(3)))
 endef
 # 1: target
 define make_each_lib_proj
-$(ign)$(foreach t,$(LIB_TYPES),$(call make_lib_proj_type,$(t),$(1),))
--$(call make_lib_proj_type,EXPENDABLE_LIB,$(1),1)
+$(foreach t,$(LIB_TYPES),$(ign)$(call make_lib_proj_type,$(t),$(1),,$(ign)))
+$(call make_lib_proj_type,EXPENDABLE_LIB,$(1),1,-)
 endef
 
 MAKE_APP = $(MAKE) -f "$(builddir)/Makefile.app.tmpl" srcdir="$(srcdir)" \
@@ -154,8 +154,8 @@ $(call make_one_cxx_proj,$(1),$(MAKE_APP),$(2),.app,unlink,2,$(3))
 endef
 # 1: target
 define make_each_app_proj
-$(ign)$(foreach p,$(APP_PROJ),$(call make_one_app_proj,$(p),$(1),))
--$(foreach p,$(EXPENDABLE_APP_PROJ),$(call make_one_app_proj,$(p),$(1),1))
+$(foreach p,$(APP_PROJ),$(ign)$(call make_one_app_proj,$(p),$(1),))
+$(foreach p,$(EXPENDABLE_APP_PROJ),-$(call make_one_app_proj,$(p),$(1),1))
 endef
 
 ifneq "$(wildcard $(check_run))" ""
