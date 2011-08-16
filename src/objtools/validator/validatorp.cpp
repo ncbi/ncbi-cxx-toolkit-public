@@ -1716,18 +1716,17 @@ void CValidError_imp::ValidateSeqLoc
                     int_cur->GetStrand() : eNa_strand_unknown;
                 id_cur = &int_cur->GetId();
                 chk = IsValid(*int_cur, m_Scope);
-                if (chk  &&  int_prv  && ordered  &&
-                    !circular  && id_prv) {
+                if (chk  &&  int_prv  && id_prv) {
                     if (IsSameBioseq(*id_prv, *id_cur, m_Scope)) {
                         if (strand_cur == eNa_strand_minus) {
-                            if (int_prv->GetTo() < int_cur->GetTo()) {
+                            if (int_prv->GetTo() < int_cur->GetTo() && !circular) {
                                 ordered = false;
                             }
                             if (int_cur->GetTo() + 1 == int_prv->GetFrom()) {
                                 adjacent = true;
                             }
                         } else {
-                            if (int_prv->GetTo() > int_cur->GetTo()) {
+                            if (int_prv->GetTo() > int_cur->GetTo() && !circular) {
                                 ordered = false;
                             }
                             if (int_prv->GetTo() + 1 == int_cur->GetFrom()) {
