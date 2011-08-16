@@ -1988,6 +1988,11 @@ static void s_ClearHeap(BlastCompo_Heap * self)
     }
 }
 
+extern void
+BLAST_SetupPartialFetching(EBlastProgramType program_number,
+                           BlastSeqSrc* seq_src, 
+                           const BlastHSPList** hsp_list,
+                           Int4 num_hsplists);
 
 /**
  *  Recompute alignments for each match found by the gapped BLAST
@@ -2198,32 +2203,7 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
         }
         /* Get the sequence for this match */
         if (perform_partial_fetch) {
-            
-            Int4 oid = thisMatch->oid;
-            Int4 i;
-            BlastSeqSrcSetRangesArg *arg = NULL;
-
-            ASSERT(Blast_SubjectIsTranslated(program_number));
-
-            arg = BlastSeqSrcSetRangesArgNew(thisMatch->hspcnt);
-            arg->oid = oid;
-
-            for (i=0; i<thisMatch->hspcnt; i++) {
-                BlastHSP *hsp = thisMatch->hsp_array[i];
-                Int4 begin = (hsp->subject.offset - 2) * CODON_LENGTH;
-                Int4 end = (hsp->subject.end + 2) * CODON_LENGTH;
-                if (hsp->subject.frame < 0) {
-                    Int4 len = BlastSeqSrcGetSeqLen(seqSrc, &oid);
-                    Int4 begin_new = len - end;
-                    end = len - begin;
-                    begin = begin_new;
-                }
-                BlastSeqSrcSetRangesArgAddRange(arg, begin, end);
-            }
-            
-            BlastSeqSrcSetRangesArgBuild(arg);
-            BlastSeqSrcSetSeqRanges(seqSrc, arg);
-            BlastSeqSrcSetRangesArgFree(arg);
+            BLAST_SetupPartialFetching(program_number, seqSrc, &thisMatch, 1);
         }
 
         status_code =

@@ -1184,6 +1184,52 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
    return status;
 }
 
+void
+BLAST_SetupPartialFetching(EBlastProgramType program_number,
+                           BlastSeqSrc* seq_src, 
+                           const BlastHSPList** hsplist_array,
+                           Int4 num_hsplists)
+{
+    Int4 oid = hsplist_array[0]->oid;
+    Int4 num_hsps = 0, i = 0, j = 0;
+    BlastSeqSrcSetRangesArg *arg = NULL;
+    ASSERT(BlastSeqSrcGetSupportsPartialFetching(seq_src));
+
+    /* pre-allocate space for ranges */
+    for (i = 0; i < num_hsplists; i++) {
+        num_hsps += hsplist_array[i]->hspcnt;
+    }
+    arg = BlastSeqSrcSetRangesArgNew(num_hsps);
+    arg->oid = oid;
+
+    /* iterate through the hsps and add ranges */
+    for (i = 0; i < num_hsplists; i++) {
+       BlastHSPList* hsp_list = hsplist_array[i];
+        for (j = 0; j < hsp_list->hspcnt; j++) {
+            BlastHSP *hsp = hsp_list->hsp_array[j];
+            Int4 begin = hsp->subject.offset;
+            Int4 end = hsp->subject.end;
+
+            if (Blast_SubjectIsTranslated(program_number)) {
+                // increase the range to offset frame shift approximations
+                begin = (begin -2) *CODON_LENGTH;
+                end   = (end +2) *CODON_LENGTH;
+                if (hsp->subject.frame < 0) {
+                    Int4 len = BlastSeqSrcGetSeqLen(seq_src, &oid);
+                    Int4 begin_new = len - end;
+                    end  = len - begin;
+                    begin = begin_new;
+                }
+            }
+            BlastSeqSrcSetRangesArgAddRange(arg, begin, end);
+        }
+    }
+
+    BlastSeqSrcSetRangesArgBuild(arg);
+    BlastSeqSrcSetSeqRanges(seq_src, arg);
+    BlastSeqSrcSetRangesArgFree(arg);
+}
+
 Int2 
 BLAST_ComputeTraceback(EBlastProgramType program_number, 
                        BlastHSPStream* hsp_stream, BLAST_SequenceBlk* query, 
@@ -1239,7 +1285,7 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
                                   score_params, ext_params, hit_params, 
                                   psi_options, results);
    } else {
-      Int4 i, j;
+      Int4 i;
       BlastSeqSrcGetSeqArg seq_arg;
       EBlastEncoding encoding = Blast_TracebackGetEncoding(program_number);
       Boolean perform_traceback = score_params->options->gapped_calculation;
@@ -1268,44 +1314,9 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
 
              /* set up partial fetching */
              if (perform_partial_fetch) {
-
-                Int4 oid = batch->hsplist_array[0]->oid;
-                Int4 num_hsps = 0;
-                BlastSeqSrcSetRangesArg *arg = NULL;
-    
-                /* pre-allocate space for ranges */
-                for (i = 0; i < batch->num_hsplists; i++) {
-                    num_hsps += batch->hsplist_array[i]->hspcnt;
-                }
-                arg = BlastSeqSrcSetRangesArgNew(num_hsps);
-                arg->oid = oid;
-
-                /* iterate through the hsps and add ranges */
-                for (i = 0; i < batch->num_hsplists; i++) {
-                    hsp_list = batch->hsplist_array[i];
-                    for (j = 0; j < hsp_list->hspcnt; j++) {
-                        BlastHSP *hsp = hsp_list->hsp_array[j];
-                        Int4 begin = hsp->subject.offset;
-                        Int4 end = hsp->subject.end;
-
-                        if (Blast_SubjectIsTranslated(program_number)) {
-                            // increase the range to offset frame shift approximations
-                            begin = (begin -2) *CODON_LENGTH;
-                            end   = (end +2) *CODON_LENGTH;
-                            if (hsp->subject.frame < 0) {
-                                Int4 len = BlastSeqSrcGetSeqLen(seq_src, &oid);
-                                Int4 begin_new = len - end;
-                                end  = len - begin;
-                                begin = begin_new;
-                            }
-                        }
-                        BlastSeqSrcSetRangesArgAddRange(arg, begin, end);
-                    }
-                }
-
-                BlastSeqSrcSetRangesArgBuild(arg);
-                BlastSeqSrcSetSeqRanges(seq_src, arg);
-                BlastSeqSrcSetRangesArgFree(arg);
+                 BLAST_SetupPartialFetching(program_number, seq_src,
+                                            batch->hsplist_array,
+                                            batch->num_hsplists);
             }
 
             seq_arg.oid = batch->hsplist_array[0]->oid;

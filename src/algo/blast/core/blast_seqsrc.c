@@ -459,7 +459,15 @@ BlastSeqSrcSetRangesArgAddRange(BlastSeqSrcSetRangesArg *arg,
                                 Int4 begin, Int4 end)
 {
     ASSERT(arg);
-    ASSERT(arg->num_ranges +2 <= arg->capacity);
+    if (arg->num_ranges +2 <= arg->capacity) {
+        Int4 new_size = arg->capacity*2;
+        arg->ranges = (Int4*)realloc((void*)arg->ranges, 
+                                     (sizeof(Int4)*new_size));
+        if (!arg->ranges) {
+            return; /* ignore memory allocation errors, as they are not fatal */
+        }
+        arg->capacity = new_size;
+    }
     begin = MAX(0, begin - BLAST_SEQSRC_OVERHANG);
     end += BLAST_SEQSRC_OVERHANG;
     arg->ranges[arg->num_ranges++] = begin;
