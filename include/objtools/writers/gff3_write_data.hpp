@@ -116,6 +116,8 @@ protected:
         CMappedFeat );
     virtual bool x_AssignAttributeEvidence(
         CMappedFeat );
+    virtual bool x_AssignAttributeException(
+        CMappedFeat );
     virtual bool x_AssignAttributeModelEvidence(
         CMappedFeat );
     virtual bool x_AssignAttributeGbKey(
