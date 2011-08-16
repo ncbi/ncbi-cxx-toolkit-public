@@ -121,6 +121,24 @@ CSeq_align::TDim CSeq_align::CheckNumRows(void) const
             return numrows;
         }}
 
+    case C_Segs::e_Dendiag:
+        {
+            TDim numrows = 0;
+            ITERATE (C_Segs::TDendiag, it, GetSegs().GetDendiag()) {
+                TDim seg_numrows = (*it)->CheckNumRows();
+                if (numrows) {
+                    if ( seg_numrows != numrows ) {
+                        NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                                   "CSeq_align::CheckNumRows(): Number of rows "
+                                   "is not the same for each dendiag seg.");
+                    }
+                } else {
+                    numrows = seg_numrows;
+                }
+            }
+            return numrows;
+        }
+
     default:
         NCBI_THROW(CSeqalignException, eUnsupported,
                    "CSeq_align::CheckNumRows() currently does not handle "

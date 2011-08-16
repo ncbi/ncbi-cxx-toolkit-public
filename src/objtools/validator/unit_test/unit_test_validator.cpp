@@ -18295,8 +18295,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_UnexpectedAlignmentType)
 
     expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "UnexpectedAlignmentType", 
                               "UnexpectedAlignmentType: This is not a DenseSeg alignment."));
-    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "PercentIdentity", 
-                              "PercentIdentity: This alignment has a percent identity of 0%"));
     options |= CValidator::eVal_val_align | CValidator::eVal_remote_fetch;
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
