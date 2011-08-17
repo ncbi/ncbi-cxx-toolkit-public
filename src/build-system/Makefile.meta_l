@@ -37,8 +37,8 @@ endif
 
 ifneq "" "$(filter 3.7%,$(MAKE_VERSION))"
 # Work around extra expansion of $(call ...) arguments prior to version 3.80
-x = $$x
-i = $$i
+  x = $${x}
+  i = $${i}
 endif
 
 but_exp = ' (but expendable)'
