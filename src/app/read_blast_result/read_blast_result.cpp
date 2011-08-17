@@ -276,7 +276,7 @@ int CReadBlastApp::Run(void)
           }
         else
           {
-          NcbiCerr << "FATAL: only tbl, Seq-submit or Seq-entry formats are accepted at this time" << NcbiEndl;
+          NcbiCerr << "FATAL: only tbl, Seq-submit or Seq-entry formats are accepted at this time. Seq-set has to be present as well" << NcbiEndl;
           throw;
           }
         GetGenomeLen();
