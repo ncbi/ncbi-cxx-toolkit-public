@@ -12,7 +12,7 @@ warn_one_sub_proj = echo 'Warning: non-existent sub-project "$(1)"'
 
 # 1: name, 2: target, 3: is_expendable?
 define make_one_sub_proj_r_nonl
-$(if $(3),NCBI_BUT_EXPENDABLE=$(butexp) ,) \
+$(if $(3),NCBI_BUT_EXPENDABLE=$(but_exp) ,) \
 $(MAKE) -C $(1) $(MFLAGS_NR) $(2)  ||  exit 5
 endef
 
