@@ -1627,7 +1627,7 @@ void CVariationUtil::CVariantPropertiesIndex::GetLocationProperties(
     }
 
     ITERATE(TMap, it, m) {
-        v.push_back(*it);
+        v.push_back(TGeneIDAndProp(it->first, it->second));
     }
 }
 
