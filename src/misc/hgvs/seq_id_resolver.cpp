@@ -36,7 +36,6 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/feat_ci.hpp>
 
-#include <dbapi/simple/sdbapi.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <misc/hgvs/hgvs_parser2.hpp>
 #include <misc/hgvs/seq_id_resolver.hpp>

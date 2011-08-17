@@ -45,19 +45,19 @@
 
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Variation_ref.hpp>
+#include <objects/seqfeat/VariantProperties.hpp>
 
 #include <objects/variation/Variation.hpp>
 #include <objects/variation/VariantPlacement.hpp>
 #include <objects/seqfeat/Variation_inst.hpp>
 
+#include <util/rangemap.hpp>
+
 #include <objmgr/scope.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seq_vector.hpp>
-
-#include <dbapi/dbapi.hpp>
-#include <dbapi/driver/drivers.hpp>
-#include <dbapi/driver/dbapi_driver_conn_params.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
+#include <objmgr/util/feature.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -69,6 +69,7 @@ class CVariationUtil : public CObject
 public:
     CVariationUtil(CScope& scope)
        : m_scope(&scope)
+       , m_variant_properties_index(scope)
     {}
 
     static TSeqPos s_GetLength(const CVariantPlacement& p, CScope* scope);
@@ -232,6 +233,8 @@ private:
 
     static CRef<CSeq_literal> s_CatLiterals(const CSeq_literal& a, const CSeq_literal& b);
 
+    static void s_AttachGeneIDdbxref(CVariantPlacement& p, int gene_id);
+
     static void s_UntranslateProt(const string& prot_str, vector<string>& codons);
 
     static size_t s_CountMatches(const string& a, const string& b);
@@ -273,8 +276,48 @@ private:
      */
     static const CConstRef<CSeq_literal> s_FindFirstLiteral(const CVariation& v);
 
+
+private:
+
+    /// Given a seq-loc, compute CVariantProperties::TGene_location from annotation.
+    /// Precompute for the whole sequence and keep the cache to avoid objmgr annotation
+    /// lookups on every call.
+    class CVariantPropertiesIndex
+    {
+    public:
+        typedef pair<int, CVariantProperties::TGene_location> TGeneIDAndProp;
+        typedef vector<TGeneIDAndProp> TGeneIDAndPropVector;
+
+        CVariantPropertiesIndex(CScope& scope)
+          : m_scope(&scope)
+        {}
+
+        void GetLocationProperties(const CSeq_loc& loc, TGeneIDAndPropVector& v);
+
+    private:
+        void x_Index(const CSeq_id_Handle& idh);
+        void x_Index(feature::CFeatTree& ft);
+        void x_Add(const CSeq_loc& loc, int gene_id, CVariantProperties::TGene_location prop);
+
+
+        typedef pair<CRef<CSeq_loc>, CRef<CSeq_loc> > TLocsPair; //5' and 3' respectively
+        static TLocsPair s_GetStartAndStopCodonsLocs(const CSeq_loc& cds_loc);
+        static TLocsPair s_GetUTRLocs(const CSeq_loc& cds_loc, const CSeq_loc& parent_loc);
+        static TLocsPair s_GetNeighborhoodLocs(const CSeq_loc& gene_loc, TSeqPos max_pos);
+        static TLocsPair s_GetIntronsAndSpliceSiteLocs(const CSeq_loc& rna_loc);
+        static int s_GetGeneID(const CMappedFeat& mf, feature::CFeatTree& ft);
+
+    private:
+        typedef CRangeMap<TGeneIDAndPropVector, TSeqPos> TRangeMap;
+        typedef map<CSeq_id_Handle, TRangeMap> TIdRangeMap;
+
+        CRef<CScope> m_scope;
+        TIdRangeMap m_loc2prop;
+    };
+
 private:
     CRef<CScope> m_scope;
+    CVariantPropertiesIndex m_variant_properties_index;
 };
 
 };
