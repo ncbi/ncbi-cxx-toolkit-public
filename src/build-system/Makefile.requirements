@@ -13,8 +13,8 @@ ifdef base_req_needers
     $(req_needers): %.needs-reqs: %.real ;
   else
     $(req_needers): %.needs-reqs:
-	echo 'NOTE: Skipping project $(notdir $(CURDIR)) due to unmet requirements:'
-	$(foreach r,$(missing_reqs),echo $(r:$(status_dir)/%.enabled=%))
+	@echo 'NOTE: Skipping project $(notdir $(CURDIR)) due to unmet requirements:'
+	@$(foreach r,$(missing_reqs),echo $(r:$(status_dir)/%.enabled=%))
   endif
   .PHONY: $(base_req_needers) $(req_needers)
 endif
