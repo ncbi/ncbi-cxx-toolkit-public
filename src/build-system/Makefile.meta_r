@@ -23,7 +23,7 @@ endef
 
 # 1: name, 2: mode, 3: target, 4: is_expendable?
 define make_one_sub_proj_x
-$(if $(wildcard $(1)/.),$(call make_one_sub_proj$(2),$(1),$(3),$(4)),$(call warn_one_sub_proj,$(1)))
+$(if $(wildcard $(1)/Makefile),$(call make_one_sub_proj$(2),$(1),$(3),$(4)),$(call warn_one_sub_proj,$(1)))
 
 endef
 
