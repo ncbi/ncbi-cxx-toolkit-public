@@ -36,9 +36,12 @@ ifeq "" "$(filter 0 1,$(words $(wildcard $(srcdir)/Makefile.*.???)))"
 endif
 
 ifneq "" "$(filter 3.7%,$(MAKE_VERSION))"
-# Work around extra expansion of $(call ...) arguments prior to version 3.80
-  x = $${x}
+# Work around extra expansion of $(call ...) arguments prior to version 3.80.
+# i's expansion sports braces for compatibility with out-of-tree metamakefiles
+# that delegate to Makefile.$${i}_???; x's lacks them to avoid breaking
+# $$x_mfile.
   i = $${i}
+  x = $$x
 endif
 
 but_exp = ' (but expendable)'
