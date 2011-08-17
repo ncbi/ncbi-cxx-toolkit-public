@@ -215,8 +215,10 @@ typedef struct BlastSeqSrcSetRangesArg {
 BlastSeqSrcSetRangesArg *
 BlastSeqSrcSetRangesArgNew(Int4 num_ranges);
 
-/** add new range */
-void
+/** add new range 
+ * @return 0 in case of success, otherwise 1
+ */
+Int2
 BlastSeqSrcSetRangesArgAddRange(BlastSeqSrcSetRangesArg *arg, 
                                 Int4 begin, Int4 end);
 

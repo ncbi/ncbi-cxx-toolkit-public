@@ -454,17 +454,17 @@ BlastSeqSrcSetRangesArgFree(BlastSeqSrcSetRangesArg *arg)
     sfree(arg);
 }
 
-void
+Int2
 BlastSeqSrcSetRangesArgAddRange(BlastSeqSrcSetRangesArg *arg,
                                 Int4 begin, Int4 end)
 {
     ASSERT(arg);
-    if (arg->num_ranges +2 <= arg->capacity) {
+    if ((arg->num_ranges+2) > arg->capacity) {
         Int4 new_size = arg->capacity*2;
         arg->ranges = (Int4*)realloc((void*)arg->ranges, 
-                                     (sizeof(Int4)*new_size));
+                                     (sizeof(Int4)*new_size*2));
         if (!arg->ranges) {
-            return; /* ignore memory allocation errors, as they are not fatal */
+            return 1;
         }
         arg->capacity = new_size;
     }
@@ -472,6 +472,7 @@ BlastSeqSrcSetRangesArgAddRange(BlastSeqSrcSetRangesArg *arg,
     end += BLAST_SEQSRC_OVERHANG;
     arg->ranges[arg->num_ranges++] = begin;
     arg->ranges[arg->num_ranges++] = end;
+    return 0;
 }
 
 static int

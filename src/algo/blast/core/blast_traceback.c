@@ -1184,6 +1184,9 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
    return status;
 }
 
+/** Attempts to set up partial fetching, if it fails (e.g.: due to memory
+ * allocation failure), it cleans up and exits silently.
+ */
 void
 BLAST_SetupPartialFetching(EBlastProgramType program_number,
                            BlastSeqSrc* seq_src, 
@@ -1194,6 +1197,7 @@ BLAST_SetupPartialFetching(EBlastProgramType program_number,
     Int4 num_hsps = 0, i = 0, j = 0;
     BlastSeqSrcSetRangesArg *arg = NULL;
     ASSERT(BlastSeqSrcGetSupportsPartialFetching(seq_src));
+    Boolean succeeded = TRUE;
 
     /* pre-allocate space for ranges */
     for (i = 0; i < num_hsplists; i++) {
@@ -1221,12 +1225,17 @@ BLAST_SetupPartialFetching(EBlastProgramType program_number,
                     begin = begin_new;
                 }
             }
-            BlastSeqSrcSetRangesArgAddRange(arg, begin, end);
+            if (BlastSeqSrcSetRangesArgAddRange(arg, begin, end)) {
+                succeeded = FALSE;
+                break;
+            }
         }
     }
 
-    BlastSeqSrcSetRangesArgBuild(arg);
-    BlastSeqSrcSetSeqRanges(seq_src, arg);
+    if (succeeded) {
+        BlastSeqSrcSetRangesArgBuild(arg);
+        BlastSeqSrcSetSeqRanges(seq_src, arg);
+    }
     BlastSeqSrcSetRangesArgFree(arg);
 }
 
