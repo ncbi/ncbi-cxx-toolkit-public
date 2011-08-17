@@ -104,18 +104,34 @@ string s_MakeGffDbtag(
         
 //  ----------------------------------------------------------------------------
 string s_MakeGffDbtag( 
-    const CSeq_id& id )
+    const CSeq_id_Handle& idh,
+    CScope& scope )
 //  ----------------------------------------------------------------------------
 {
-    string strGffTag;
-    switch( id.Which() ) {
-        case CSeq_id::e_Gi:
-            return string( "GI:" ) + NStr::IntToString( id.GetGi() );
-        default:
-            return "???";
+    CSeq_id_Handle gi_idh = sequence::GetId( idh, scope, sequence::eGetId_ForceGi );
+    if ( !gi_idh ) {
+        return idh.AsString();
     }
+    string strGffTag("GI:");
+    gi_idh.GetSeqId()->GetLabel( &strGffTag, CSeq_id::eContent );
+    return strGffTag;
 }
         
+//  ----------------------------------------------------------------------------
+string s_BestIdString(
+    CSeq_id_Handle idh,
+    CScope& scope )
+//  ----------------------------------------------------------------------------
+{
+    CSeq_id_Handle best_idh = sequence::GetId( idh, scope, sequence::eGetId_Best );
+    if ( !best_idh ) {
+        best_idh = idh;
+    }
+    string strId("GB:");
+    best_idh.GetSeqId()->GetLabel( &strId, CSeq_id::eContent );
+    return strId;
+}
+    
 //  ----------------------------------------------------------------------------
 CConstRef<CUser_object> s_GetUserObjectByType(
     const CUser_object& uo,
@@ -445,18 +461,18 @@ bool CGff3WriteRecordFeature::x_AssignAttributePseudo(
 
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecordFeature::x_AssignAttributeDbXref(
-    CMappedFeat mapped_feat )
+    CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
     vector<string> values;
-    CSeqFeatData::E_Choice choice = mapped_feat.GetData().Which();
+    CSeqFeatData::E_Choice choice = mf.GetData().Which();
 
-    if ( choice == CSeq_feat::TData::e_Rna  ||  choice == CSeq_feat::TData::e_Cdregion ) {
-        if ( mapped_feat.IsSetProduct() ) {
-            const CSeq_id* pProdId = mapped_feat.GetProduct().GetId();
-            values.push_back( s_MakeGffDbtag( *pProdId ) );
+    if ( choice == CSeq_feat::TData::e_Rna || choice == CSeq_feat::TData::e_Cdregion ) {
+        if ( mf.IsSetProduct() ) {
+            values.push_back( 
+                s_MakeGffDbtag( mf.GetProductId(), mf.GetScope() ) );
         }
-        CMappedFeat gene_feat = m_feat_tree.GetParent( mapped_feat, CSeqFeatData::e_Gene );
+        CMappedFeat gene_feat = m_feat_tree.GetParent( mf, CSeqFeatData::e_Gene );
         if ( gene_feat  &&  gene_feat.IsSetDbxref() ) {
             const CSeq_feat::TDbxref& dbxrefs = gene_feat.GetDbxref();
             for ( size_t i=0; i < dbxrefs.size(); ++i ) {
@@ -465,14 +481,14 @@ bool CGff3WriteRecordFeature::x_AssignAttributeDbXref(
         }
     }
 
-    if ( mapped_feat.IsSetDbxref() ) {
-        const CSeq_feat::TDbxref& dbxrefs = mapped_feat.GetDbxref();
+    if ( mf.IsSetDbxref() ) {
+        const CSeq_feat::TDbxref& dbxrefs = mf.GetDbxref();
         for ( size_t i=0; i < dbxrefs.size(); ++i ) {
             values.push_back( s_MakeGffDbtag( *dbxrefs[ i ] ) );
         }
-        if ( m_feat_tree.GetParent( mapped_feat ) ) {
+        if ( m_feat_tree.GetParent( mf ) ) {
             const CSeq_feat::TDbxref& more_dbxrefs = 
-                m_feat_tree.GetParent( mapped_feat ).GetDbxref();
+                m_feat_tree.GetParent( mf ).GetDbxref();
             for ( size_t i=0; i < more_dbxrefs.size(); ++i ) {
                 string str = s_MakeGffDbtag( *more_dbxrefs[ i ] );
                 if ( values.end() == find( values.begin(), values.end(), str ) ) {
@@ -594,25 +610,19 @@ bool CGff3WriteRecordFeature::x_AssignAttributeCodonStart(
 
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecordFeature::x_AssignAttributeProduct(
-    CMappedFeat mapped_feat )
+    CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    const CProt_ref* pProtRef = mapped_feat.GetProtXref();
+    const CProt_ref* pProtRef = mf.GetProtXref();
     if ( pProtRef && pProtRef->IsSetName() ) {
         const list<string>& names = pProtRef->GetName();
         m_Attributes[ "product" ] = x_Encode( *names.begin() );
         return true;
     }
-    if ( ! mapped_feat.IsSetProduct() ) {
+    if ( ! mf.IsSetProduct() ) {
         return true;
     }
-    const CSeq_id* pProductId = mapped_feat.GetProduct().GetId();
-    if ( pProductId ) {
-        string strProduct;
-        pProductId->GetLabel( &strProduct );
-        m_Attributes[ "product" ] = x_Encode( strProduct );
-        return true;
-    }
+    m_Attributes[ "product" ] = s_BestIdString( mf.GetProductId(), mf.GetScope() );
     return true;
 }
 
@@ -762,8 +772,8 @@ bool CGff3WriteRecordFeature::x_AssignAttributeTranscriptId(
     }
 
     if ( mapped_feat.IsSetProduct() ) {
-        CSeq_id_Handle  id = mapped_feat.GetProductId();
-        m_Attributes[ "transcript_id" ] = id.AsString();
+        m_Attributes[ "transcript_id" ] = s_BestIdString( 
+            mapped_feat.GetProductId(), mapped_feat.GetScope() );
         return true;
     }
     return true;
@@ -777,18 +787,8 @@ bool CGff3WriteRecordFeature::x_AssignAttributeProteinId(
     if ( ! mapped_feat.IsSetProduct() ) {
         return true;
     }
-    const CSeq_id* pProductId = mapped_feat.GetProduct().GetId();
-    if ( pProductId ) {
-        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle( *pProductId );
-        CSeq_id_Handle best_idh = 
-            sequence::GetId(idh, mapped_feat.GetScope(), sequence::eGetId_Best); 
-        if ( !best_idh ) {
-            best_idh = idh;
-        }
-        string strProduct;
-        best_idh.GetSeqId()->GetLabel(&strProduct, CSeq_id::eContent);
-        m_Attributes[ "protein_id" ] = x_Encode( strProduct );
-    }
+    m_Attributes[ "protein_id" ] = s_BestIdString(
+        mapped_feat.GetProductId(), mapped_feat.GetScope() );
     return true;
 }
 
