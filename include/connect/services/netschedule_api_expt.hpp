@@ -83,6 +83,7 @@ public:
         eQuerySyntaxError,
         eObsoleteCommand,
         eInvalidParameter,
+        eInvalidAuthToken,
         eNoJobsWithAffinity
     };
 
@@ -105,6 +106,7 @@ public:
         case eQuerySyntaxError:    return "eQuerySyntaxError";
         case eObsoleteCommand:     return "eObsoleteCommand";
         case eInvalidParameter:    return "eInvalidParameter";
+        case eInvalidAuthToken:    return "eInvalidAuthToken";
         case eNoJobsWithAffinity:  return "eNoJobsWithAffinity";
         default:                   return CNetServiceException::GetErrCodeString();
         }
