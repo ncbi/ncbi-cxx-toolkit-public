@@ -70,6 +70,7 @@ typedef enum {
     fFTP_BypassProxy  = 0x80,  /* do not use HTTP proxy even if provided     */
     fFTP_NoSizeChecks = 0x100, /* do not check sizes of data transfers       */
     fFTP_UncorkUpload = 0x200, /* do not use TCP_CORK for uploads            */
+    fFTP_NoExtensions = 0x400  /* do not use EPSV/EPRT protocol extensions   */
 } EFTP_Flags;
 typedef unsigned int TFTP_Flags;  /* bitwise OR of ECONN_Flags               */
 
