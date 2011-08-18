@@ -131,6 +131,8 @@ private:
 
     CGff2Writer::TFlags GffFlags( 
         const CArgs& );
+    string AssemblyName() const;
+    string AssemblyAccession() const;
 
     CRef<CWriterBase> m_pWriter;
 };
@@ -170,6 +172,23 @@ void CAnnotWriterApp::Init()
             "bed",
             "vcf" ) );
     }}
+
+    // parameters
+    {{
+    arg_desc->AddDefaultKey(
+        "assembly-name",
+        "STRING",
+        "Assembly name",
+        CArgDescriptions::eString,
+        "" );
+    arg_desc->AddDefaultKey(
+        "assembly-accn",
+        "STRING",
+        "Assembly accession",
+        CArgDescriptions::eString,
+        "" );
+    }}
+    
 
     // output
     {{ 
@@ -213,8 +232,9 @@ int CAnnotWriterApp::Run()
     auto_ptr<CObjectIStream> pIs;
     pIs.reset( x_OpenIStream( args ) );
     if ( pIs.get() == NULL ) {
-        string msg = args["i"]? "Unable to open input file" + args["i"].AsString() :
-                        "Unable to read data from stdin";
+        string msg = args["i"] ? 
+            "Unable to open input file" + args["i"].AsString() :
+            "Unable to read data from stdin";
         NCBI_THROW(CFlatException, eInternal, msg);
     }
 
@@ -269,7 +289,7 @@ bool CAnnotWriterApp::TrySeqAnnot(
         istr >> *pAnnot;
 
         m_pWriter->WriteHeader();
-        m_pWriter->WriteAnnot( *pAnnot );
+        m_pWriter->WriteAnnot( *pAnnot, AssemblyName(), AssemblyAccession() );
         m_pWriter->WriteFooter();
         return true;
     }
@@ -299,7 +319,8 @@ bool CAnnotWriterApp::TryBioseqSet(
             const CSeq_entry& se = **it;
             const CBioseq& bs = se.GetSeq();
             scope.AddBioseq( bs );
-            m_pWriter->WriteBioseqHandle( scope.GetBioseqHandle( bs ) );
+            m_pWriter->WriteBioseqHandle( 
+                scope.GetBioseqHandle( bs ), AssemblyName(), AssemblyAccession() );
         }
         m_pWriter->WriteFooter();
         return true;
@@ -326,7 +347,8 @@ bool CAnnotWriterApp::TryBioseq(
         CTypeIterator<CSeq_annot> annot_iter( *pBioseq );
         for ( ;  annot_iter;  ++annot_iter ) {
             CRef< CSeq_annot > annot( annot_iter.operator->() );
-            if ( ! m_pWriter->WriteAnnot( *annot ) ) {
+            if ( ! m_pWriter->WriteAnnot( 
+                    *annot, AssemblyName(), AssemblyAccession() ) ) {
                 return false;
             }
         }
@@ -353,11 +375,8 @@ bool CAnnotWriterApp::TrySeqEntry(
 
         CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry( *pEntry );
         m_pWriter->WriteHeader();
-        for ( CBioseq_CI bci( seh ); bci; ++bci ) {
-            if ( ! m_pWriter->WriteBioseqHandle( *bci ) ) {
-                return false;
-            }
-        }
+        m_pWriter->WriteSeqEntryHandle( 
+            seh, AssemblyName(), AssemblyAccession() );
         m_pWriter->WriteFooter();
         return true;
 
@@ -381,7 +400,8 @@ bool CAnnotWriterApp::TrySeqAlign(
         istr >> *pAlign;
 
         m_pWriter->WriteHeader();
-        m_pWriter->WriteAlign( *pAlign );
+        m_pWriter->WriteAlign( 
+            *pAlign, AssemblyName(), AssemblyAccession() );
         m_pWriter->WriteFooter();
         return true;
     }
@@ -457,6 +477,20 @@ CWriterBase* CAnnotWriterApp::x_CreateWriter(
         return new CVcfWriter( scope, ostr );
     }
     return 0;
+}
+
+//  ----------------------------------------------------------------------------
+string CAnnotWriterApp::AssemblyName() const
+//  ----------------------------------------------------------------------------
+{
+    return GetArgs()["assembly-name"].AsString();
+}
+
+//  ----------------------------------------------------------------------------
+string CAnnotWriterApp::AssemblyAccession() const
+//  ----------------------------------------------------------------------------
+{
+    return GetArgs()["assembly-accn"].AsString();
 }
 
 END_NCBI_SCOPE

@@ -53,6 +53,7 @@
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/mapped_feat.hpp>
 #include <objmgr/util/feature.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include <objtools/writers/gff3_write_data.hpp>
 #include <objtools/writers/gff_writer.hpp>
@@ -95,8 +96,59 @@ bool CGff2Writer::WriteAnnot(
     const string& strAssemblyAccession )
 //  ----------------------------------------------------------------------------
 {
+    if ( ! x_WriteAssemblyInfo( strAssemblyName, strAssemblyAccession ) ) {
+        return false;
+    }
     if ( ! x_WriteAnnot( annot ) ) {
         return false;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::x_WriteAnnot( 
+    const CSeq_annot& annot )
+//  ----------------------------------------------------------------------------
+{
+    CRef< CUser_object > pBrowserInfo = x_GetDescriptor( annot, "browser" );
+    if ( pBrowserInfo ) {
+        x_WriteBrowserLine( pBrowserInfo );
+    }
+    CRef< CUser_object > pTrackInfo = x_GetDescriptor( annot, "track" );
+    if ( pTrackInfo ) {
+        x_WriteTrackLine( pTrackInfo );
+    }
+    CSeq_annot_Handle sah = m_pScope->AddSeq_annot( annot );
+    bool bWrite = x_WriteSeqAnnotHandle( sah );
+    m_pScope->RemoveSeq_annot( sah );
+    return bWrite;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::WriteSeqEntryHandle(
+    CSeq_entry_Handle seh,
+    const string& strAssemblyName,
+    const string& strAssemblyAccession )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! x_WriteAssemblyInfo( strAssemblyName, strAssemblyAccession ) ) {
+        return false;
+    }
+    if ( ! x_WriteSeqEntryHandle( seh ) ) {
+        return false;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::x_WriteSeqEntryHandle(
+    CSeq_entry_Handle seh )
+//  ----------------------------------------------------------------------------
+{
+    for ( CBioseq_CI bci( seh ); bci; ++bci ) {
+        if ( ! x_WriteBioseqHandle( *bci ) ) {
+            return false;
+        }
     }
     return true;
 }
@@ -122,18 +174,14 @@ bool CGff2Writer::x_WriteBioseqHandle(
     CBioseq_Handle bsh )
 //  ----------------------------------------------------------------------------
 {
-    if ( bsh.CanGetDescr() ) {
-        const CSeq_descr& descr = bsh.GetDescr();
-        if ( descr.IsSet() ) {
-            const list< CRef< CSeqdesc > >& desc = descr.Get();
-            for ( list< CRef< CSeqdesc > >::const_iterator it = desc.begin(); 
-                    it != desc.end(); ++it ) {
-                CGffWriteRecordFeature src_feat;
-                if ( src_feat.AssignSource( bsh, **it ) ) {
-                    x_WriteRecord( &src_feat );
-                }
-            }
-        }
+    bool bGotSource = false;
+
+    CConstRef<CSeqdesc> pDesc = bsh.GetBioseqCore()->GetClosestDescriptor( 
+        CSeqdesc::e_Source );
+    if (pDesc ) {
+        CGffWriteRecordFeature src_feat;
+        src_feat.AssignSource( bsh, *pDesc );
+        x_WriteRecord( &src_feat );
     }
     SAnnotSelector sel = x_GetAnnotSelector();
     feature::CFeatTree feat_tree( CFeat_CI( bsh, sel ) );
@@ -253,25 +301,6 @@ bool CGff2Writer::WriteAlign(
         return false;
     }
     return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff2Writer::x_WriteAnnot( 
-    const CSeq_annot& annot )
-//  ----------------------------------------------------------------------------
-{
-    CRef< CUser_object > pBrowserInfo = x_GetDescriptor( annot, "browser" );
-    if ( pBrowserInfo ) {
-        x_WriteBrowserLine( pBrowserInfo );
-    }
-    CRef< CUser_object > pTrackInfo = x_GetDescriptor( annot, "track" );
-    if ( pTrackInfo ) {
-        x_WriteTrackLine( pTrackInfo );
-    }
-    CSeq_annot_Handle sah = m_pScope->AddSeq_annot( annot );
-    bool bWrite = x_WriteSeqAnnotHandle( sah );
-    m_pScope->RemoveSeq_annot( sah );
-    return bWrite;
 }
 
 //  ----------------------------------------------------------------------------

@@ -424,9 +424,6 @@ bool CGff3WriteRecordFeature::x_AssignAttributeNote(
     if ( ! mapped_feat.IsSetComment() ) {
         return true;
     }
-    if ( mapped_feat.GetData().Which() == CSeq_feat::TData::e_Cdregion ) {
-        cerr << "";
-    }
     m_Attributes[ "note" ] = mapped_feat.GetComment();
     return true;
 }

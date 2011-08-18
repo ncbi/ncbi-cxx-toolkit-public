@@ -34,6 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objmgr/bioseq_handle.hpp>
+#include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/seq_annot_handle.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -80,6 +81,14 @@ public:
     //  ------------------------------------------------------------------------
     //  Supported handle types:
     //  ------------------------------------------------------------------------
+    virtual bool WriteSeqEntryHandle(
+        CSeq_entry_Handle,
+        const string& = "",
+        const string& = "" )
+    {
+        cerr << "Object type not supported!" << endl;
+        return false;
+    };
     virtual bool WriteBioseqHandle(
         CBioseq_Handle,
         const string& = "",

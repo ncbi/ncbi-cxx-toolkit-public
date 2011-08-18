@@ -88,6 +88,11 @@ public:
     //  ------------------------------------------------------------------------
     //  Supported handle types:
     //  ------------------------------------------------------------------------
+    virtual bool WriteSeqEntryHandle(
+        CSeq_entry_Handle,
+        const string& = "",
+        const string& = "" );
+
     virtual bool WriteBioseqHandle(
         CBioseq_Handle,
         const string& = "",
@@ -104,6 +109,8 @@ protected:
     virtual bool x_WriteAlign( 
         const CSeq_align&,
         bool=false );
+    virtual bool x_WriteSeqEntryHandle(
+        CSeq_entry_Handle );
     virtual bool x_WriteBioseqHandle(
         CBioseq_Handle );
     virtual bool x_WriteSeqAnnotHandle(
