@@ -3,6 +3,10 @@
 # Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
 #################################
 
+# Done here rather than from Makefile.lib.tmpl(.in) for compatibility
+# with out-of-tree builds that bypass the latter.
+-include $(srcdir)/Makefile.$(TMPL).lib.unix
+
 # If (and only if) DLLs are not buildable on this platform, then enforce
 # building of all libs as static by overriding $(LIB_OR_DLL) variable by "lib".
 #

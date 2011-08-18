@@ -20,6 +20,7 @@
 
 default_rule: all
 
+-include $(srcdir)/Makefile.$(TMPL).app.unix
 
 ### C/C++ source file compilation (and maybe auto-dependencies) build rules
 
