@@ -270,7 +270,7 @@ void CFeat_CI::x_AddFeatures(const SAnnotSelector& sel,
     collector.m_Selector = &sel;
     ITERATE ( TSeq_feat_Handles, it, feats ) {
         const CAnnotObject_Info& info = it->x_GetAnnotObject_Info();
-        if ( !collector.x_MatchLimitObject(info) ) {
+        if ( collector.x_MatchLimitObject(info) ) {
             CAnnotObject_Ref feat_ref(info, it->GetAnnot());
             collector.x_AddObject(feat_ref);
         }
