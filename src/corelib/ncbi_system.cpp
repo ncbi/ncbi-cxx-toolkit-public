@@ -653,12 +653,14 @@ void SleepMicroSec(unsigned long mc_sec, EInterruptOnSignal onsignal)
 
 #  if defined(HAVE_NANOSLEEP)
     struct timespec delay, unslept;
+    memset(&unslept, 0, sizeof(unslept));
     delay.tv_sec  =  mc_sec / kMicroSecondsPerSecond;
     delay.tv_nsec = (mc_sec % kMicroSecondsPerSecond) * 1000;
     while (nanosleep(&delay, &unslept) < 0) {
         if (errno != EINTR  ||  onsignal == eInterruptOnSignal)
             break;
         delay = unslept;
+        memset(&unslept, 0, sizeof(unslept));
     }
 #  elif defined(HAVE_USLEEP)
     unsigned int sec  = mc_sec / kMicroSecondsPerSecond;
