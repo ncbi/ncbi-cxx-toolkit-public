@@ -375,7 +375,7 @@ string CVariant::GetString(void) const
                     break;
                 }
             case eDB_TinyInt:
-                s = NStr::IntToString((long)GetByte());
+                s = NStr::IntToString(GetByte());
                 break;
             case eDB_SmallInt:
                 s = NStr::IntToString(GetInt2());
