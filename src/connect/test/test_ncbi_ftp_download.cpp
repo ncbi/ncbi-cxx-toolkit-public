@@ -479,6 +479,7 @@ static EIO_Status x_ConnectionCallback(CONN conn,
 
     double time = dlcbdata->GetElapsed(update);
     if (!time) {
+        _ASSERT(!update);
         return status;
     }
 
@@ -588,7 +589,7 @@ int main(int argc, const char* argv[])
         s_Throttler = NStr::StringToInt(argv[2]);
     }
 
-    SConnNetInfo* net_info = ConnNetInfo_Create("_FTP");
+    SConnNetInfo* net_info = ConnNetInfo_Create(0);
     net_info->path[0] = '\0';
     net_info->args[0] = '\0';
     net_info->http_referer = 0;
@@ -628,8 +629,7 @@ int main(int argc, const char* argv[])
         flags |= fFTP_UseActive;
     }
     char val[40];
-    ConnNetInfo_GetValue("_FTP", DEF_CONN_REG_SECTION "_" "USEFEAT",
-                         val, sizeof(val), "");
+    ConnNetInfo_GetValue(0, "USEFEAT", val, sizeof(val), "");
     if (ConnNetInfo_Boolean(val)) {
         flags |= fFTP_UseFeatures;
     }
