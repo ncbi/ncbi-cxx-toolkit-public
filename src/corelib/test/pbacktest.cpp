@@ -74,7 +74,7 @@ static const size_t kBufferSize = 512*1024;
  *
  * So, if you plan to do a portable backup, which can possibly follow
  * an unformatted read, do so by using CStreamUtils::Pushback() instead of
- * standard means, as the latter may be broken.
+ * the standard means, as the latter may be broken.
  */
 
 
@@ -164,6 +164,8 @@ static int s_StreamPushback(iostream&   ios,
             _ASSERT(nread + j <= size);
             if (!ios.good()) {
                 _ASSERT(ios.rdstate() & NcbiEofbit);
+                if (nread + j != size)
+                    ERR_POST("Got only " << j << " byte" << &"s"[j == 1]);
                 _ASSERT(nread + j == size);
                 ios.clear();
             }
@@ -184,6 +186,8 @@ static int s_StreamPushback(iostream&   ios,
             } else {
                 if (!ios.good()) {
                     _ASSERT(ios.rdstate() == NcbiEofbit);
+                    if (nread + j != size)
+                        ERR_POST("Got only " << j << " byte" << &"s"[j == 1]);
                     _ASSERT(nread + j == size);
                     ios.clear();
                 } else if (j < i)
