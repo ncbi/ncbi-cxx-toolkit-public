@@ -2926,6 +2926,7 @@ KUO	s	Kuopio Natural History Museum
 KURS	s	Kursk State University, Department of Botany
 KUS	s	Korea University, Biology Department
 KUU	s	University of Science and Technology
+KUZ<JPN>	s	Zoological Collection of the Kyoto University
 KUZC	s	Kyushu University, Zoological Collection
 KVCH	s	Kivach Nature Reserve
 KW	s	National Academy of Sciences of Ukraine
@@ -5988,6 +5989,7 @@ UNEVR	s	University of Nevada, Museum of Biology
 UNEX	s	Universidad de Extremadura, Departamento de Botanica
 UNH	s	University of New Hampshire
 UNI	s	University of Northern Iowa
+UNIMAS<MYS>	s	Universiti Malaysia Sarawak
 UNIN	s	University of the North, Botany Department
 UNIP	s	Universidade Paulista, Laboratorio de Botanica
 UNIQEM	c	Institute of Microbiology, Russian Academy of Sciences
