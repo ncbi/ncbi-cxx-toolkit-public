@@ -1842,7 +1842,7 @@ static EIO_Status s_VT_Close
             SOCK_SetTimeout(xxx->cntl, eIO_ReadWrite, timeout);
             /* all implementations MUST support QUIT */
             status = s_FTPCommand(xxx, "QUIT", 0);
-            if (!data  &&  status == eIO_Success) {
+            if (status == eIO_Success) {
                 status  = s_FTPDrainReply(xxx, &code, code);
                 if (status == eIO_Success)
                     status  = eIO_Unknown;
