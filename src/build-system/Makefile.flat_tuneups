@@ -50,7 +50,36 @@ QUICK_MTARGET = $(ORIG_MTARGET) sources= configurables=configurables.null
 
 all_dirs = $(expendable_dirs) $(spec_bearing_dirs) $(plain_dirs)
 
+# Lists of directories in any branch which can benefit from the
+# aforementioned hints because some of their projects have files in common.
+
+main_hintees = algo/cobalt/demo app/grid/remote_app cgi \
+    connect connect/daemons connect/ext dbapi/driver/ctlib/samples \
+    dbapi/driver/ftds64/ctlib/samples dbapi/test dbapi/test/driver \
+    objmgr/test sample/app/cgi sample/app/cgires
+
+sra_hintees_ = libs/align libs/axf libs/kdb libx/sra libs/sraxf libs/vdb \
+    libs/vxf tools/sra-dump tools/sra-load
+sra_hintees = $(sra_hintees_:%=sra/sdk/%)
+
+gpipe_hintees_ = action_nodes/src/altloci_load align_db/user_if/AnnotAlignsDb \
+    align_db/user_if/GenomeAlignsDb app/action_nodes app/aligndb app/gbench \
+    app/gencoll/gc_update_complete_genomes app/gnomon app/remap app/repeats \
+    app/validation app/worker_nodes/blast app/worker_nodes/genemark \
+    gencoll/src/gcaccess/get_assembly gpinit/src/gui_build_output \
+    objects/genomecoll
+gpipe_hintees = $(gpipe_hintees_:%=gpipe/%)
+
+internal_hintees_ = asn_cache/lib gench/app/sviewer/seqgraphic gnomon \
+    $(gpipe_hintees) portal/backend/HTB pubmedxml/Libs/PubmedServer \
+    snp/qa/snp_validate $(sra_hintees) txserver
+internal_hintees = $(internal_hintees_:%=internal/%)
+
+potential_hintees = $(main_hintees) $(sra_hintees) $(internal_hintees)
+hintees = $(filter $(potential_hintees:%=%/),$(all_dirs))
+
 # all_files.real : $(all_dirs:%=%.files.real) ;
+all_files.real : $(hintees:%=%.files.real) ;
 
 $(all_dirs:%=%.files): %.files:
 	$(MAKE) $(MFLAGS) -f $(MINPUT) $@.real
