@@ -80,7 +80,7 @@ public:
     /// Get current time (time 0.0 when job starts)
     double GetTime(void) const;
 
-    /// Make a mark of the job progress
+    /// Submit a mark of the job progress
     /// @param pos
     ///   current position (0-based)
     /// @param time
@@ -92,7 +92,7 @@ public:
     ///   zero if cannot estimate
     double GetRate(void) const;
 
-    /// How fast the rate has been so far, in positions per time unit
+    /// How fast the average pace has been so far, in positions per time unit
     /// @return
     ///   zero if cannot estimate
     double GetPace(void) const;

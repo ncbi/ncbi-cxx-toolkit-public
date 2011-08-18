@@ -45,11 +45,12 @@ void CRateMonitor::Mark(Uint8 pos, double time)
             m_Data.front().second > time) {
             return;  // invalid input silently ignored
         }
-        while (m_Data.front().second > m_Data.back().second + kMaxSpan)
+        while (m_Data.front().second > m_Data.back().second + kMaxSpan) {
             m_Data.pop_back();
+        }
         if (m_Data.size() > 1) {
-            list<TMark>::const_iterator it = m_Data.begin();
-            if ((++it)->second + kMinSpan < time) {
+            list<TMark>::const_iterator it = ++m_Data.begin();
+            if (it->first == pos  ||  it->second + kMinSpan >= time) {
                 // update only
                 m_Data.front().first  = pos;
                 m_Data.front().second = time;
@@ -74,13 +75,7 @@ double CRateMonitor::GetRate(void) const
 
     list<TMark> gaps;
 
-    if (n == 2) {
-        double dt = m_Data.front().second - m_Data.back().second;
-        if (dt < kMinSpan)
-            return GetPace();
-        gaps.push_back(make_pair(m_Data.front().first -
-                                 m_Data.back ().first, dt));
-    } else {
+    if (n > 2) {
         TMark prev = m_Data.front();
         _ASSERT(prev.first - m_Data.back().first > kMinSpan);
         for (list<TMark>::const_iterator it = ++m_Data.begin();
@@ -94,24 +89,33 @@ double CRateMonitor::GetRate(void) const
             gaps.push_back(make_pair(prev.first - next.first, dt));
             prev = next;
         }
+    } else {
+        double dt = m_Data.front().second - m_Data.back().second;
+        if (dt < kMinSpan)
+            return GetPace();
+        gaps.push_back(make_pair(m_Data.front().first -
+                                 m_Data.back ().first, dt));
     }
 
     _ASSERT(!gaps.empty()  &&  !m_Rate);
 
-    double weight = 1.0;
-    for (;;) {
-        double rate = gaps.front().first / gaps.front().second;
-        gaps.pop_front();
-        if (gaps.empty()) {
-            m_Rate += rate * weight;
-            break;
+    if (gaps.size() > 1) {
+        double weight = 1.0;
+        for (;;) {
+            double rate = gaps.front().first / gaps.front().second;
+            gaps.pop_front();
+            if (gaps.empty()) {
+                m_Rate += rate * weight;
+                break;
+            }
+            double w = weight * 0.9;
+            m_Rate  += rate * w;
+            weight  -= w;
         }
-        double w = weight * 0.9;
-        m_Rate  += rate * w;
-        weight  -= w;
+    } else {
+        m_Rate = gaps.front().first / gaps.front().second;
     }
 
-    _ASSERT(m_Rate);
     return m_Rate;
 }
 
@@ -121,10 +125,11 @@ double CRateMonitor::GetETA(void) const
     if (!m_Size)
         return  0.0;
     Uint8 pos = GetPos();
-    if (!pos)  // NB: This check ensures rate != 0.0 later
-        return -1.0;
     if (pos < m_Size) {
-        double eta = (m_Size - pos) / GetRate();
+        double rate = GetRate();
+        if (!rate)
+            return -1.0;
+        double eta = (m_Size - pos) / rate;
         if (eta < kMinSpan)
             eta = 0.0;
         return eta;
