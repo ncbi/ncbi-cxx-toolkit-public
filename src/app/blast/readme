@@ -5,7 +5,7 @@ Igblastn is the command line igblast (for nucleotide sequence only).
 Organism_name_gl_V
 Organism_name_gl_D
 Organism_name_gl_J
-For example, if you specify human as organism, then the database is human_gl_V.  All NCBI database files are supplied with igblastn program (see http://mweb11.be-md.ncbi.nlm.nih.gov/projects/igblast/ about database details).  You can make your own blast database using NCBI's makeblastdb such as:
+For example, if you specify human as organism, then the database is human_gl_V.  All NCBI database files are supplied with igblastn program (see http://www.ncbi.nlm.nih.gov/igblast/ about database details).  You can make your own blast database using NCBI's makeblastdb such as:
 makeblastdb -parse_seqids -dbtype nucl -in my_database
 
 
