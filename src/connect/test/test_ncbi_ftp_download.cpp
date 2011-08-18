@@ -119,16 +119,16 @@ public:
     const CTar::TFiles& Filelist(void) const { return m_Filelist;          }
 
 private:
-    CStopWatch      m_Sw;
-    SCONN_Callback  m_Cb;
-    double          m_Last;
-    double          m_LastIO;
-    bool            x_LastIO;
-    unsigned long   m_Timeout;
-    CRateMonitor    m_Monitor;
-    CTar::TFile     m_Current;
-    const string    m_Filename;
-    CTar::TFiles    m_Filelist;
+    CStopWatch     m_Sw;
+    SCONN_Callback m_Cb;
+    double         m_Last;
+    double         m_LastIO;
+    bool           x_LastIO;
+    unsigned long  m_Timeout;
+    CRateMonitor   m_Monitor;
+    CTar::TFile    m_Current;
+    const string   m_Filename;
+    CTar::TFiles   m_Filelist;
 };
 
 
@@ -203,6 +203,7 @@ private:
 };
 
 
+// Stream processor interface to consume stream data
 class CProcessor
 {
 public:
@@ -443,13 +444,13 @@ static EIO_Status x_ConnectionCallback(CONN conn,
 {
     bool update;
 
+    // NB: callbacks are always one-shot
     if (type != eCONN_OnClose  &&  !s_Signaled) {
         // Reinstate the callback right away
-        SCONN_Callback cb = { x_ConnectionCallback, data };
+        const SCONN_Callback cb = { x_ConnectionCallback, data };
         CONN_SetCallback(conn, type, &cb, 0);
         update = false;
     } else {
-        // NB: callbacks are always one-shot
         update = true;
     }
 
@@ -524,8 +525,8 @@ static EIO_Status x_ConnectionCallback(CONN conn,
     } else if (s_Signaled) {
         cerr << endl << "Canceled" << endl;
     } else if (status == eIO_Timeout) {
-        cerr << endl << "Timed out in "
-             << setprecision(1) << dlcbdata->GetTimeout() << 's' << endl;
+        cerr << endl << "Timed out in " << fixed << setprecision(1)
+             << dlcbdata->GetTimeout() << 's' << endl;
     }
     return status;
 }
@@ -582,13 +583,25 @@ int main(int argc, const char* argv[])
     UnsetDiagPostFlag(eDPF_LongFilename);
     SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
 
+    // Setup signal handling
+#if   defined(NCBI_OS_MSWIN)
+	SetConsoleCtrlHandler(s_Interrupt, TRUE);
+#elif defined(NCBI_OS_UNIX)
+    signal(SIGINT,  s_Interrupt);
+    signal(SIGTERM, s_Interrupt);
+    signal(SIGQUIT, s_Interrupt);
+#endif // NCBI_OS
+
+    // Init the library explicitly (this sets up the log)
     CONNECT_Init(0);
 
+    // Process command line parameters (up to 2)
     const char* url = argc > 1  &&  *argv[1] ? argv[1] : kDefaultTestURL;
     if (argc > 2) {
         s_Throttler = NStr::StringToInt(argv[2]);
     }
 
+    // Initialize all connection parameters for FTP and log them out
     SConnNetInfo* net_info = ConnNetInfo_Create(0);
     net_info->path[0] = '\0';
     net_info->args[0] = '\0';
@@ -611,22 +624,23 @@ int main(int argc, const char* argv[])
         ERR_POST(Warning << "Username not provided, defaulted to `ftp'");
         strcpy(net_info->user, "ftp");
     }
-
     ConnNetInfo_LogEx(net_info, eLOG_Note, CORE_GetLOG());
 
+    // Reassemble the URL from the connection parameters
     url = ConnNetInfo_URL(net_info);
     _ASSERT(url);
 
+    // Figure out what FTP flags to use
     TFTP_Flags flags = 0;
-    if        (net_info->debug_printout == eDebugPrintout_Some) {
-        flags |= fFTP_LogControl;
-    } else if (net_info->debug_printout == eDebugPrintout_Data) {
+    if        (net_info->debug_printout == eDebugPrintout_Data) {
         flags |= fFTP_LogAll;
+    } else if (net_info->debug_printout == eDebugPrintout_Some) {
+        flags |= fFTP_LogControl;
     }
-    if        (net_info->req_method == eReqMethod_Get) {
-        flags |= fFTP_UsePassive;
-    } else if (net_info->req_method == eReqMethod_Post) {
+    if        (net_info->req_method == eReqMethod_Post) {
         flags |= fFTP_UseActive;
+    } else if (net_info->req_method == eReqMethod_Get) {
+        flags |= fFTP_UsePassive;
     }
     char val[40];
     ConnNetInfo_GetValue(0, "USEFEAT", val, sizeof(val), "");
@@ -635,14 +649,18 @@ int main(int argc, const char* argv[])
     }
     flags     |= fFTP_NotifySize;
 
+    // For disply purposes do not use absolute paths except for "/"
     const char* filename = net_info->path;
     if (filename[0] == '/'  &&  filename[1]) {
         filename++;
     }
 
+    // Create callback data block ...
     CDownloadCallbackData dlcbdata(filename, net_info->timeout);
+    // ... and FTP callback parameters
     SFTP_Callback ftpcb = { x_FtpCallback, &dlcbdata };
 
+    // Create FTP stream
     CConn_FtpStream ftp(net_info->host,
                         net_info->user,
                         net_info->pass,
@@ -652,9 +670,10 @@ int main(int argc, const char* argv[])
                         &ftpcb,
                         net_info->timeout);
 
+    // Look at the file extension and figure out what stream processors to use
     TProcessor proc = fProcessor_Null;
-    if        (NStr::EndsWith(filename, ".tgz",    NStr::eNocase)  ||
-               NStr::EndsWith(filename, ".tar.gz", NStr::eNocase)) {
+    if        (NStr::EndsWith(filename, ".tar.gz", NStr::eNocase)  ||
+               NStr::EndsWith(filename, ".tgz",    NStr::eNocase)) {
         proc |= fProcessor_Gunzip | fProcessor_Untar;
     } else if (NStr::EndsWith(filename, ".gz",     NStr::eNocase)) {
         proc |= fProcessor_Gunzip;
@@ -664,6 +683,7 @@ int main(int argc, const char* argv[])
         proc |= fProcessor_List;
     }
 
+    // Inquire about file size and begin retrieval
     s_TryAskFtpFilesize(ftp, net_info->path);
     Uint8 size = dlcbdata.GetSize();
     if (size) {
@@ -676,27 +696,22 @@ int main(int argc, const char* argv[])
     }
     s_InitiateFtpRetrieval(ftp, net_info->path, net_info->timeout);
 
+    // Some intermediate cleanup (NB: invalidates "filename")
     ConnNetInfo_Destroy(net_info);
     free((void*) url);
 
-#if   defined(NCBI_OS_MSWIN)
-	SetConsoleCtrlHandler(s_Interrupt, TRUE);
-#elif defined(NCBI_OS_UNIX)
-    signal(SIGINT,  s_Interrupt);
-    signal(SIGTERM, s_Interrupt);
-    signal(SIGQUIT, s_Interrupt);
-#endif // NCBI_OS
-
-    // NB: Can use "CONN_GetPosition(ftp.GetCONN(), eIO_Open)" to clear
+    // NB: Can use "CONN_GetPosition(ftp.GetCONN(), eIO_Open)" to clear again
     _ASSERT(!CONN_GetPosition(ftp.GetCONN(), eIO_Read));
-    // Set both read and close callbacks
-    SCONN_Callback conncb = { x_ConnectionCallback, &dlcbdata };
+    // Set a fine read timeout and handle the actual timeout in callbacks
     const STimeout second = {1, 0};
     ftp.SetTimeout(eIO_Read, &second);
+    // Set all relevant CONN callbacks
+    const SCONN_Callback conncb = { x_ConnectionCallback, &dlcbdata };
     CONN_SetCallback(ftp.GetCONN(), eCONN_OnRead,    &conncb, 0/*dontcare*/);
     CONN_SetCallback(ftp.GetCONN(), eCONN_OnTimeout, &conncb, 0/*dontcare*/);
     CONN_SetCallback(ftp.GetCONN(), eCONN_OnClose,   &conncb, dlcbdata.CB());
 
+    // Stack up all necessary stream processors to drive up the stream
     CProcessor* processor = new CNullProcessor(ftp, &dlcbdata);
     if (proc & fProcessor_Gunzip) {
         processor = new CGunzipProcessor(*processor);
@@ -716,7 +731,7 @@ int main(int argc, const char* argv[])
     _VERIFY(ftp.Close() == eIO_Success);
     delete processor;
 
-    // Conclude the test
+    // Conclude the test and print out summary
     Uint8 totalsize = 0;
     ITERATE(CTar::TFiles, it, dlcbdata.Filelist()) {
         totalsize += it->second;
