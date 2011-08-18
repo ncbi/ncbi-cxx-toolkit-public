@@ -77,20 +77,21 @@ CBDB_Env::CBDB_Env()
       m_ErrFile(0),
       m_LogInMemory(false),
       m_TransSync(CBDB_Transaction::eTransSync),
+      m_MaxLocks(0),
+      m_MaxLockers(0),
+      m_MaxLockObjects(0),
       m_DirectDB(false),
       m_DirectLOG(false),
       m_CheckPointEnable(true),
       m_CheckPointKB(0),
       m_CheckPointMin(0),
       m_DeadLockMode(eDeadLock_Disable),
-      m_MaxLocks(0),
-      m_MaxLockers(0),
-      m_MaxLockObjects(0),
       m_Monitor(0)
 {
     int ret = db_env_create(&m_Env, 0);
     BDB_CHECK(ret, "DB_ENV");
 }
+
 
 CBDB_Env::CBDB_Env(DB_ENV* env)
     : m_Env(env),
@@ -98,15 +99,15 @@ CBDB_Env::CBDB_Env(DB_ENV* env)
       m_ErrFile(0),
       m_LogInMemory(false),
       m_TransSync(CBDB_Transaction::eTransSync),
+      m_MaxLocks(0),
+      m_MaxLockers(0),
+      m_MaxLockObjects(0),
       m_DirectDB(false),
       m_DirectLOG(false),
       m_CheckPointEnable(true),
       m_CheckPointKB(0),
       m_CheckPointMin(0),
       m_DeadLockMode(eDeadLock_Disable),
-      m_MaxLocks(0),
-      m_MaxLockers(0),
-      m_MaxLockObjects(0),
       m_Monitor(0)
 {
 }
