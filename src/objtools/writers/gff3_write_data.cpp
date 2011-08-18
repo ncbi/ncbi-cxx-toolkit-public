@@ -340,6 +340,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributesGene(
         x_AssignAttributeDbXref( mapped_feat )  &&
         x_AssignAttributePseudo( mapped_feat )  &&
         x_AssignAttributePartial( mapped_feat )  &&
+        x_AssignAttributeException( mapped_feat )  &&
         x_AssignAttributeGeneDesc( mapped_feat )  &&
         x_AssignAttributeMapLoc( mapped_feat )  &&
         x_AssignAttributeNote( mapped_feat ) );
@@ -386,7 +387,8 @@ bool CGff3WriteRecordFeature::x_AssignAttributesMiscFeature(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
-    return true;
+    return (
+        x_AssignAttributeException( mapped_feat ) );
 }
 
 //  ----------------------------------------------------------------------------
