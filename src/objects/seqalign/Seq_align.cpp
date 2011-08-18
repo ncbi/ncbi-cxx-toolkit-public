@@ -1175,8 +1175,8 @@ void CSeq_align::SplitOnLongDiscontinuity(list< CRef<CSeq_align> >& aligns,
                                                 discontinuity_threshold);
 
             if (prev_range0.Empty() ||
-                s_Distance(curr_range0, prev_range0) <= discontinuity_threshold &&
-                s_Distance(curr_range1, prev_range1) <= discontinuity_threshold)
+                (s_Distance(curr_range0, prev_range0) <= discontinuity_threshold &&
+                 s_Distance(curr_range1, prev_range1) <= discontinuity_threshold))
             {
                 /// distance between this alignment and previous one is less than
                 /// threshold; first split section of this alignment should be joined
