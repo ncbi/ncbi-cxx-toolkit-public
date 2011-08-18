@@ -175,7 +175,7 @@ typedef struct {
 #define DEF_CONN_HOST             "www.ncbi.nlm.nih.gov"
 
 #define REG_CONN_PORT             "PORT"
-#define DEF_CONN_PORT             0
+#define DEF_CONN_PORT             0/*default*/
 
 #define REG_CONN_PATH             "PATH"
 #define DEF_CONN_PATH             "/Service/dispd.cgi"
@@ -230,7 +230,7 @@ typedef struct {
 
 /* Local service dispatcher */
 #define REG_CONN_LOCAL_SERVICES   "LOCAL_SERVICES"
-#define REG_CONN_LOCAL_SERVER     DEF_CONN_REG_SECTION "_LOCAL_SERVER"
+#define REG_CONN_LOCAL_SERVER     DEF_CONN_REG_SECTION "_" "LOCAL_SERVER"
 
 
 /* Lookup "param" in the registry / environment.
