@@ -329,14 +329,17 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Close
  * a partial read for eCONN_OnRead from an internal connection buffer).
  * NOTE:  non-eIO_Success from an eCONN_OnClose callback cannot postpone the
  * connection closure (but the error code is still passed through to the user).
+ * NOTE:  eCONN_OnTimeout can restart I/O that has timed out by returning
+ * eIO_Success.
  */
 typedef enum {
     eCONN_OnClose  = 0,  /* NB: connection has been flushed prior to the call*/
     eCONN_OnRead   = 1,  /* Read from connector is about to occur            */
     eCONN_OnWrite  = 2,  /* Write to connector is about to occur             */
-    eCONN_OnCancel = 3   /* CONN_Cancel() is about to take effect            */
+    eCONN_OnCancel = 3,  /* CONN_Cancel() is about to take effect            */
+    eCONN_OnTimeout= 4   /* Connection read or write has timed out           */
 } ECONN_Callback;
-#define CONN_N_CALLBACKS 4
+#define CONN_N_CALLBACKS 5
 
 typedef EIO_Status (*FCONN_Callback)(CONN conn,ECONN_Callback type,void* data);
 
