@@ -1067,11 +1067,6 @@ static EIO_Status x_FTPXfer(SFTPConnector*  xxx,
                     }
                     return eIO_Success;
                 }
-            } else if (parser  &&  code == 450/*no files*/
-                       &&  (*cmd == 'N'/*NLST*/  ||  *cmd == 'L'/*LIST*/)) {
-                /* NB: w/o data connection, user gets eIO_Closed on read */
-                assert(status == eIO_Success);
-                code = 1/*quick*/;
             } else if (code == 450  ||  code == 550) {
                 /* file processing errors: not a file, not a dir, etc */
                 status = eIO_Closed;
