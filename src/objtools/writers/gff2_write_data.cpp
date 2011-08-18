@@ -412,7 +412,7 @@ bool CGffWriteRecordFeature::AssignSource(
     }
 
     // type
-    m_strType = "source";
+    m_strType = "region";
 
     // source
     const CSeq_id* pBigId = sequence::GetId( bsh, sequence::eGetId_Best).GetSeqId();
@@ -454,7 +454,6 @@ bool CGffWriteRecordFeature::AssignSource(
     m_uSeqStop = bsh.GetBioseqLength() - 1;
 
     //score
-    0;
 
     // strand
     if ( bsh.CanGetInst_Strand() ) {
@@ -462,7 +461,6 @@ bool CGffWriteRecordFeature::AssignSource(
     }
 
     // phase
-    0;
 
     //  attributes:
     if ( bs.IsSetTaxname() ) {
@@ -482,7 +480,9 @@ bool CGffWriteRecordFeature::AssignSource(
             m_Attributes["Dbxref"] = strTag;
         }       
     }
-    CBioseq_Handle::TMol mol = bsh.GetBioseqMolType();
+    if ( bsh.IsSetInst_Topology() && bsh.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
+        m_Attributes["Is_circular"] = "true";
+    }
 
     return true;
 }
