@@ -311,18 +311,16 @@ bool CAnnotWriterApp::TryBioseqSet(
     try {
         CRef<CBioseq_set> pBioset(new CBioseq_set);
         istr >> *pBioset;
+        CSeq_entry se;
+        se.SetSet( *pBioset );
+        scope.AddTopLevelSeqEntry( se );
 
         m_pWriter->WriteHeader();
-
-        const CBioseq_set::TSeq_set& bss = pBioset->GetSeq_set();
-        for ( CBioseq_set::TSeq_set::const_iterator it = bss.begin(); it != bss.end(); ++it ) {
-            const CSeq_entry& se = **it;
-            const CBioseq& bs = se.GetSeq();
-            scope.AddBioseq( bs );
-            m_pWriter->WriteBioseqHandle( 
-                scope.GetBioseqHandle( bs ), AssemblyName(), AssemblyAccession() );
-        }
+        m_pWriter->WriteSeqEntryHandle( 
+            scope.GetSeq_entryHandle( se ), AssemblyName(), AssemblyAccession() );
         m_pWriter->WriteFooter();
+
+        scope.RemoveEntry( se );
         return true;
     }
     catch ( ... ) {

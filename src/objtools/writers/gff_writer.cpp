@@ -174,24 +174,21 @@ bool CGff2Writer::x_WriteBioseqHandle(
     CBioseq_Handle bsh )
 //  ----------------------------------------------------------------------------
 {
-    bool bGotSource = false;
-
-    CConstRef<CSeqdesc> pDesc = bsh.GetBioseqCore()->GetClosestDescriptor( 
-        CSeqdesc::e_Source );
-    if (pDesc ) {
+    CSeqdesc_CI sdi( bsh.GetParentEntry(), CSeqdesc::e_Source, 0 );
+    if ( sdi ) {
         CGffWriteRecordFeature src_feat;
-        src_feat.AssignSource( bsh, *pDesc );
+        src_feat.AssignSource( bsh, *sdi );
         x_WriteRecord( &src_feat );
     }
+
     SAnnotSelector sel = x_GetAnnotSelector();
-    feature::CFeatTree feat_tree( CFeat_CI( bsh, sel ) );
-    for ( CAnnot_CI aci( bsh ); aci; ++aci ) {
-        for ( CFeat_CI mf( *aci, sel ); mf; ++mf ) {
-            if ( ! x_WriteFeature( feat_tree, *mf ) ) {
-                return false;
-            }
+    CFeat_CI feat_iter(bsh, sel);
+    feature::CFeatTree feat_tree( feat_iter );
+    for ( ;  feat_iter;  ++feat_iter ) {
+        if ( ! x_WriteFeature( feat_tree, *feat_iter ) ) {
+            return false;
         }
-    }
+    }    
     return true;
 }
 
@@ -228,9 +225,10 @@ bool CGff2Writer::x_WriteSeqAnnotHandle(
     }
     
     SAnnotSelector sel = x_GetAnnotSelector();
-    feature::CFeatTree feat_tree( CFeat_CI( sah, sel) );
-    for ( CFeat_CI mf( sah, sel ); mf; ++mf ) {
-        if ( ! x_WriteFeature( feat_tree, *mf ) ) {
+    CFeat_CI feat_iter(sah, sel);
+    feature::CFeatTree feat_tree( feat_iter );
+    for ( /*0*/; feat_iter; ++feat_iter ) {
+        if ( ! x_WriteFeature( feat_tree, *feat_iter ) ) {
             return false;
         }
     }
