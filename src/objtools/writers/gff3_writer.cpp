@@ -90,6 +90,7 @@ CGff3Writer::CGff3Writer(
     m_uRecordId = 1;
     m_uPendingGeneId = 0;
     m_uPendingMrnaId = 0;
+    m_uPendingTrnaId = 0;
     m_uPendingExonId = 0;
     m_uPendingCdsId = 0;
 };
@@ -297,6 +298,8 @@ bool CGff3Writer::x_WriteFeature(
             return x_WriteFeatureGene( ftree, mf );
         case CSeqFeatData::eSubtype_mRNA:
             return x_WriteFeatureMrna( ftree, mf );
+        case CSeqFeatData::eSubtype_tRNA:
+            return x_WriteFeatureTrna( ftree, mf );
         case CSeqFeatData::eSubtype_cdregion:
             return x_WriteFeatureCds( ftree, mf );
     }
@@ -428,6 +431,50 @@ bool CGff3Writer::x_WriteFeatureCds(
     }
     ++m_uPendingCdsId;
     return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::x_WriteFeatureTrna(
+    feature::CFeatTree& ftree,
+    CMappedFeat mf )
+//  ----------------------------------------------------------------------------
+{
+    CRef<CGff3WriteRecordFeature> pTrna( new CGff3WriteRecordFeature( ftree ) );
+    if ( ! pTrna->AssignFromAsn( mf ) ) {
+        return false;
+    }
+    CMappedFeat gene = feature::GetBestGeneForFeat( mf, &ftree );
+    TGeneMap::iterator it = m_GeneMap.find( gene );
+    if ( it != m_GeneMap.end() ) {
+        pTrna->AssignParent( *( it->second ) );
+    }
+    string strId;
+    if ( ! pTrna->GetAttribute( "ID", strId ) ) {
+        pTrna->ForceAttributeID( 
+            string( "trna" ) + NStr::UIntToString( m_uPendingTrnaId++ ) );
+    }
+
+    CRef< CSeq_loc > pPackedInt( new CSeq_loc( CSeq_loc::e_Mix ) );
+    pPackedInt->Add( mf.GetLocation() );
+    pPackedInt->ChangeToPackedInt();
+
+    if ( pPackedInt->IsPacked_int() && pPackedInt->GetPacked_int().CanGet() ) {
+        const list< CRef< CSeq_interval > >& sublocs = pPackedInt->GetPacked_int().Get();
+        list< CRef< CSeq_interval > >::const_iterator it;
+        for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
+            const CSeq_interval& subint = **it;
+            CRef<CGff3WriteRecordFeature> pChild( 
+                new CGff3WriteRecordFeature( *pTrna ) );
+            pChild->CorrectLocation( subint );
+            if ( ! x_WriteRecord( pChild ) ) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    // default behavior:
+    return x_WriteRecord( pTrna );    
 }
 
 //  ----------------------------------------------------------------------------

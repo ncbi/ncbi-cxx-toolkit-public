@@ -304,26 +304,28 @@ string CGff3WriteRecordFeature::StrAttributes() const
 
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecordFeature::x_AssignAttributes(
-    CMappedFeat mapped_feat )
+    CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! x_AssignAttributesFromAsnCore( mapped_feat ) ) {
+    if ( ! x_AssignAttributesFromAsnCore( mf ) ) {
         return false;
     }
-    if ( ! x_AssignAttributesFromAsnExtended( mapped_feat ) ) {
+    if ( ! x_AssignAttributesFromAsnExtended( mf ) ) {
         return false;
     }
 
-    if ( StrType() == "gene" ) {
-        return x_AssignAttributesGene( mapped_feat );
+    switch( mf.GetData().GetSubtype() ) {
+        default:
+            return x_AssignAttributesMiscFeature( mf );
+        case CSeqFeatData::eSubtype_gene:
+            return x_AssignAttributesGene( mf );
+        case CSeqFeatData::eSubtype_mRNA:
+            return x_AssignAttributesMrna( mf );
+        case CSeqFeatData::eSubtype_tRNA:
+            return x_AssignAttributesTrna( mf );
+        case CSeqFeatData::eSubtype_cdregion:
+            return x_AssignAttributesCds( mf );
     }
-    if ( StrType() == "mRNA" ) {
-        return x_AssignAttributesMrna( mapped_feat );
-    }
-    if ( StrType() == "CDS" ) {
-        return x_AssignAttributesCds( mapped_feat );
-    }
-    return x_AssignAttributesMiscFeature( mapped_feat );
 }
 
 //  ----------------------------------------------------------------------------
@@ -350,6 +352,17 @@ bool CGff3WriteRecordFeature::x_AssignAttributesMrna(
     return (
         x_AssignAttributeProduct( mapped_feat )  &&
         x_AssignAttributeTranscriptId( mapped_feat )  &&
+        x_AssignAttributeException( mapped_feat )  &&
+        x_AssignAttributeDbXref( mapped_feat )  &&
+        x_AssignAttributeNote( mapped_feat ) );
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3WriteRecordFeature::x_AssignAttributesTrna(
+    CMappedFeat mapped_feat )
+//  ----------------------------------------------------------------------------
+{
+    return (
         x_AssignAttributeException( mapped_feat )  &&
         x_AssignAttributeDbXref( mapped_feat )  &&
         x_AssignAttributeNote( mapped_feat ) );

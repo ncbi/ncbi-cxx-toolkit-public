@@ -84,7 +84,8 @@ protected:
 
     virtual bool x_AssignAttributesMrna(
         CMappedFeat );
-
+    virtual bool x_AssignAttributesTrna(
+        CMappedFeat );
     virtual bool x_AssignAttributesCds(
         CMappedFeat );
     virtual bool x_AssignAttributesMiscFeature(

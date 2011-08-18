@@ -88,6 +88,9 @@ protected:
     virtual bool x_WriteFeatureMrna(
         feature::CFeatTree&,
         CMappedFeat );
+    virtual bool x_WriteFeatureTrna(
+        feature::CFeatTree&,
+        CMappedFeat );
     virtual bool x_WriteFeatureCds(
         feature::CFeatTree&,
         CMappedFeat );
@@ -111,6 +114,7 @@ protected:
     typedef map< CMappedFeat, CRef<CGff3WriteRecordFeature> > TMrnaMap;
     TMrnaMap m_MrnaMap;
     unsigned int m_uPendingMrnaId;
+    unsigned int m_uPendingTrnaId;
     unsigned int m_uPendingExonId;
     unsigned int m_uPendingCdsId;
 };
