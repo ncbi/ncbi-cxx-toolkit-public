@@ -2424,9 +2424,9 @@ void CBDB_FieldString::Set(const char* str, EOverflowAction if_overflow)
             string msg("String field '");
             msg += GetName();
             msg += "' overflow: max size = ";
-            msg += NStr::IntToString(GetBufferSize());
+            msg += NStr::SizetToString(GetBufferSize());
             msg += ", assignee size = ";
-            msg += NStr::IntToString(new_len);
+            msg += NStr::SizetToString(new_len);
             BDB_THROW(eOverflow, msg);
             break;
         }

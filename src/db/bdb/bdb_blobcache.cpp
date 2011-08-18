@@ -1957,7 +1957,7 @@ void CBDB_Cache::x_Store(unsigned       blob_id,
         }
 
         string msg("BLOB larger than allowed. size=");
-        msg.append(NStr::UIntToString(size));
+        msg.append(NStr::SizetToString(size));
         msg.append(" quota=");
         msg.append(NStr::UIntToString(GetMaxBlobSize()));
         BDB_THROW(eQuotaLimit, msg);
@@ -3473,7 +3473,7 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
             if (m_Monitor && m_Monitor->IsActive()) {
                 string msg = "Purge: Timeline evaluation skiped ";
                 msg += "(early wakeup for this precision) remains=";
-                msg += NStr::UIntToString(
+                msg += NStr::ULongToString(
                         (unsigned long)(m_TimeLine->GetDiscrFactor() -
                                         (curr - m_LastTimeLineCheck)));
                 msg += " precision=";
@@ -4104,7 +4104,7 @@ purge_start:
             if (m_Monitor && m_Monitor->IsActive()) {
                 string msg =
                     "Purge: deleted " +
-                    NStr::UIntToString(cache_entries.size()) +
+                    NStr::SizetToString(cache_entries.size()) +
                     " BLOBs\n";
                 m_Monitor->Send(msg);
             }
