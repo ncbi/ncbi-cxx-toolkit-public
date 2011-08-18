@@ -20,7 +20,7 @@ for origin in ['human', 'mouse']:
 
     # write out frame info
     f = open(origin + '_gl.aux', 'w')
-    f.write('# The chain type and the first coding frame position.\n\n')
+    f.write('# The chain type and the first coding frame start position.\n\n')
     items = subprocess.Popen('blastdbcmd -entry all -db ' + origin + '_gl_J -dbtype nucl -outfmt "%a=%l"', 
                              shell=True, stdout=subprocess.PIPE).communicate()[0].split()
     for item in items:
