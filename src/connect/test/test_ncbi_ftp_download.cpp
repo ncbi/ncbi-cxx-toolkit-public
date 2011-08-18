@@ -38,6 +38,7 @@
 #include <connect/ncbi_util.h>
 #include <util/compress/stream_util.hpp>
 #include <util/compress/tar.hpp>
+#include <stdlib.h>
 #include <string.h>
 #if   defined(NCBI_OS_UNIX)
 #  include <signal.h>
@@ -91,8 +92,10 @@ static void s_Interrupt(int /*signo*/)
 
 class CDownloadCallbackData {
 public:
-    CDownloadCallbackData(const char* filename, Uint8 size = 0)
-        : m_Sw(CStopWatch::eStart), m_Last(0.0), m_Filename(filename)
+    CDownloadCallbackData(const char* filename, const STimeout* timeout,
+                          Uint8 size = 0)
+        : m_Sw(CStopWatch::eStart), m_Last(0.0), m_LastIO(0.0), x_LastIO(true),
+          m_Timeout(NcbiTimeoutToMs(timeout)), m_Filename(filename)
     {
         SetSize(size);
         memset(&m_Cb, 0, sizeof(m_Cb));
@@ -101,9 +104,11 @@ public:
 
     SCONN_Callback*        CB(void)          { return &m_Cb;               }
 
+    EIO_Status        Timeout(bool);
     Uint8             GetSize(void)    const { return m_Monitor.GetSize(); }
     void              SetSize(Uint8 size)    { m_Monitor.SetSize(size);    }
     double         GetElapsed(bool update = true);
+    double         GetTimeout(void)    const { return m_Timeout / 1000.0;  }
     const string& GetFilename(void)    const { return m_Filename;          }
 
     void   Mark(Uint8 size, double time)     { m_Monitor.Mark(size, time); }
@@ -114,14 +119,32 @@ public:
     const CTar::TFiles& Filelist(void) const { return m_Filelist;          }
 
 private:
-    CStopWatch     m_Sw;
-    SCONN_Callback m_Cb;
-    double         m_Last;
-    CRateMonitor   m_Monitor;
-    CTar::TFile    m_Current;
-    const string   m_Filename;
-    CTar::TFiles   m_Filelist;
+    CStopWatch      m_Sw;
+    SCONN_Callback  m_Cb;
+    double          m_Last;
+    double          m_LastIO;
+    bool            x_LastIO;
+    unsigned long   m_Timeout;
+    CRateMonitor    m_Monitor;
+    CTar::TFile     m_Current;
+    const string    m_Filename;
+    CTar::TFiles    m_Filelist;
 };
+
+
+EIO_Status CDownloadCallbackData::Timeout(bool io)
+{
+    if (m_Timeout != (unsigned long)(-1L)) {
+        if (x_LastIO ^ io) {
+            x_LastIO = io;
+            return m_Sw.Elapsed() - m_LastIO < GetTimeout()
+                ? eIO_Success
+                : eIO_Timeout;
+        }
+        m_LastIO = m_Sw.Elapsed();
+    }
+    return eIO_Success;
+}
 
 
 double CDownloadCallbackData::GetElapsed(bool update)
@@ -131,7 +154,7 @@ double CDownloadCallbackData::GetElapsed(bool update)
         return 0.0;
     }
     m_Last = next;
-    return next;
+    return next ? next : 0.001;
 }
 
 
@@ -362,13 +385,19 @@ void CUntarProcessor::Stop(void)
 
 static bool s_IsATTY(void)
 {
+    static int x_IsATTY = -1/*uninited*/;
+    if (x_IsATTY < 0) {
+        x_IsATTY =
 #if   defined(NCBI_OS_UNIX)
-    return  isatty(STDERR_FILENO)   ? true : false;
+             isatty(STDERR_FILENO)   ? 1 : 0
 #elif defined(NCBI_OS_MSWIN)
-    return _isatty(_fileno(stdout)) ? true : false;
+            _isatty(_fileno(stdout)) ? 1 : 0
 #else
-    return false/*safe choice*/;
+            0/*safe choice*/
 #endif // NCBI_OS
+            ;
+    }
+    return x_IsATTY ? true : false;
 }
 
 
@@ -427,6 +456,8 @@ static EIO_Status x_ConnectionCallback(CONN conn,
     CDownloadCallbackData* dlcbdata
         = reinterpret_cast<CDownloadCallbackData*>(data);
 
+    EIO_Status status = eIO_Success;
+
     if (type == eCONN_OnClose) {
         // Call back up the chain
         if (dlcbdata->CB()->func) {
@@ -436,14 +467,19 @@ static EIO_Status x_ConnectionCallback(CONN conn,
         dlcbdata->Append();
     } else if (s_Signaled) {
         CONN_Cancel(conn);
-    } else if (s_Throttler) {
-        SleepMilliSec(s_Throttler);
+        _ASSERT(update);
+    } else if (type == eCONN_OnTimeout) {
+        status = dlcbdata->Timeout(false);
+        update = true;
+    } else if ((status = dlcbdata->Timeout(true)) == eIO_Success
+               &&  s_Throttler) {
+        int delay = s_Throttler > 0 ? s_Throttler : rand() % -s_Throttler + 1;
+        SleepMilliSec(delay);
     }
 
     double time = dlcbdata->GetElapsed(update);
-
-    if (!update  &&  !time) {
-        return eIO_Success;
+    if (!time) {
+        return status;
     }
 
     if (s_IsATTY()) {
@@ -461,19 +497,17 @@ static EIO_Status x_ConnectionCallback(CONN conn,
                << "/unknown"
                   " in " << fixed << setprecision(1) << time << 's';
         }
-        if (time) {
-            dlcbdata->Mark(pos, time);
-            double rate = dlcbdata->GetRate();
-            os << " (" << fixed << setprecision(2) << rate / 1024.0 << "KB/s)";
-            double eta = dlcbdata->GetETA();
-            if (eta > 0.5  &&  type != eCONN_OnClose) {
-                os << " ETA: "
-                   << (eta > 24 * 3600.0
-                       ? CTimeSpan(eta).AsString("d") + "+ day(s)"
-                       : CTimeSpan(eta).AsString("h:m:s"));
-            } else
-                os << "              ";
-        }
+        dlcbdata->Mark(pos, time);
+        double rate = dlcbdata->GetRate();
+        os << " (" << fixed << setprecision(2) << rate / 1024.0 << "KB/s)";
+        double eta = dlcbdata->GetETA();
+        if (eta >= 1.0  &&  type != eCONN_OnClose) {
+            os << " ETA: "
+               << (eta > 24 * 3600.0
+                   ? CTimeSpan(eta).AsString("d") + "+ day(s)"
+                   : CTimeSpan(eta).AsString("h:m:s"));
+        } else
+            os << "              ";
 		string line = CNcbiOstrstreamToString(os);
 		size_t linelen = line.size();
         cout.flush();
@@ -488,8 +522,11 @@ static EIO_Status x_ConnectionCallback(CONN conn,
         cerr << endl << "Connection closed" << endl;
     } else if (s_Signaled) {
         cerr << endl << "Canceled" << endl;
+    } else if (status == eIO_Timeout) {
+        cerr << endl << "Timed out in "
+             << setprecision(1) << dlcbdata->GetTimeout() << 's' << endl;
     }
-    return eIO_Success;
+    return status;
 }
 }
 
@@ -516,11 +553,6 @@ static void s_InitiateFtpRetrieval(CConn_IOStream& s,
     ///     one can use SIZE and MDTM on each entry to get details about it)
     const char* cmd = NStr::EndsWith(name, '/') ? "LIST " : "RETR ";
     s << cmd << name << endl;
-    EIO_Status status = CONN_Wait(s.GetCONN(), eIO_Read, timeout);
-    _ASSERT(status != eIO_InvalidArg);
-    if (status != eIO_Success) {
-        s.clear(IOS_BASE::badbit);
-    }
 }
 
 
@@ -556,7 +588,7 @@ int main(int argc, const char* argv[])
         s_Throttler = NStr::StringToInt(argv[2]);
     }
 
-    SConnNetInfo* net_info = ConnNetInfo_Create(0);
+    SConnNetInfo* net_info = ConnNetInfo_Create("_FTP");
     net_info->path[0] = '\0';
     net_info->args[0] = '\0';
     net_info->http_referer = 0;
@@ -595,14 +627,20 @@ int main(int argc, const char* argv[])
     } else if (net_info->req_method == eReqMethod_Post) {
         flags |= fFTP_UseActive;
     }
-    flags     |= fFTP_UseFeatures | fFTP_NotifySize;
+    char val[40];
+    ConnNetInfo_GetValue("_FTP", DEF_CONN_REG_SECTION "_" "USEFEAT",
+                         val, sizeof(val), "");
+    if (ConnNetInfo_Boolean(val)) {
+        flags |= fFTP_UseFeatures;
+    }
+    flags     |= fFTP_NotifySize;
 
     const char* filename = net_info->path;
     if (filename[0] == '/'  &&  filename[1]) {
         filename++;
     }
 
-    CDownloadCallbackData dlcbdata(filename);
+    CDownloadCallbackData dlcbdata(filename, net_info->timeout);
     SFTP_Callback ftpcb = { x_FtpCallback, &dlcbdata };
 
     CConn_FtpStream ftp(net_info->host,
@@ -653,8 +691,11 @@ int main(int argc, const char* argv[])
     _ASSERT(!CONN_GetPosition(ftp.GetCONN(), eIO_Read));
     // Set both read and close callbacks
     SCONN_Callback conncb = { x_ConnectionCallback, &dlcbdata };
-    CONN_SetCallback(ftp.GetCONN(), eCONN_OnRead,  &conncb, 0/*dontcare*/);
-    CONN_SetCallback(ftp.GetCONN(), eCONN_OnClose, &conncb, dlcbdata.CB());
+    const STimeout second = {1, 0};
+    ftp.SetTimeout(eIO_Read, &second);
+    CONN_SetCallback(ftp.GetCONN(), eCONN_OnRead,    &conncb, 0/*dontcare*/);
+    CONN_SetCallback(ftp.GetCONN(), eCONN_OnTimeout, &conncb, 0/*dontcare*/);
+    CONN_SetCallback(ftp.GetCONN(), eCONN_OnClose,   &conncb, dlcbdata.CB());
 
     CProcessor* processor = new CNullProcessor(ftp, &dlcbdata);
     if (proc & fProcessor_Gunzip) {
