@@ -657,6 +657,13 @@ CConn_NamedPipeStream::CConn_NamedPipeStream(const string&   pipename,
 }
 
 
+/* For data integrity and unambigous interpretation, FTP streams are not
+ * buffered at the level of C++ STL streambuf because of the way they execute
+ * read / write operations on the mix of FTP commands and data.
+ * There should be a little impact on performace for byte-by-byte I/O (such as
+ * formatted input, which is not expected very often for this kind of streams,
+ * anyways), and almost none for block I/O (such as read / readsome / write).
+ */
 CConn_FtpStream::CConn_FtpStream(const string&        host,
                                  const string&        user,
                                  const string&        pass,
