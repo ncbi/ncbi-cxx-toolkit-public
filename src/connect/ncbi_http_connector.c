@@ -1164,13 +1164,33 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
     }
 
     if (uuu->expected) {
-        if (uuu->received > uuu->expected)
-            return eIO_Unknown/*received too much*/;
-        if (uuu->expected != (TNCBI_BigCount)(-1L)) {
-            if (status == eIO_Closed  &&  uuu->expected > uuu->received)
-                return eIO_Unknown/*received too little*/;
-        } else if (uuu->received)
-            return eIO_Unknown/*received too much*/;
+        const char* how = 0;
+        if (uuu->received > uuu->expected) {
+             status = eIO_Unknown/*received too much*/;
+             how = "too much";
+        } else if (uuu->expected != (TNCBI_BigCount)(-1L)) {
+            if (status == eIO_Closed  &&  uuu->expected > uuu->received) {
+                status  = eIO_Unknown/*received too little*/;
+                how = "premature EOF in";
+            }
+        } else if (uuu->received) {
+            status = eIO_Unknown/*received too much*/;
+            how = "too much";
+        }
+        if (how) {
+            char* url = ConnNetInfo_URL(uuu->net_info);
+            CORE_LOGF(eLOG_Trace,
+                      ("[HTTP%s%s]  Got %s data (received "
+                       "%" NCBI_BIGCOUNT_FORMAT_SPEC " vs. "
+                       "%" NCBI_BIGCOUNT_FORMAT_SPEC " expected)",
+                       url  &&  *url ? "; " : "",
+                       url           ? url  : "", how,
+                       uuu->received,
+                       uuu->expected != (TNCBI_BigCount)(-1L) ?
+                       uuu->expected : 0));
+            if (url)
+                free(url);
+        }
     }
     return status;
 }
