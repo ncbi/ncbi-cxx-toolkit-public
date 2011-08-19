@@ -1,3 +1,4 @@
+# $Id$
 #
 # Valgrind suppression file (version 3.5.0).
 #
@@ -31,6 +32,17 @@
 #
 ################################################################################
 
+{
+    I think this is glibc's ultra optimised getenv doing 2 byte reads
+    Memcheck:Addr2
+    fun:getenv
+}
+
+{
+    I think this is glibc's ultra optimised getenv doing 2 byte reads
+    Memcheck:Cond
+    fun:getenv
+}
 
 {
     corelib/CObject/InitCounter
@@ -41,7 +53,6 @@
 {
     corelib/Diag/CreateDefaultHandler
     Memcheck:Leak
-    fun:_Znwj
     ...
     fun:_ZN4ncbi24CreateDefaultDiagHandlerEv
 }
