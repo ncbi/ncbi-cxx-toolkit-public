@@ -649,7 +649,7 @@ int main(int argc, const char* argv[])
     }
     flags     |= fFTP_NotifySize;
 
-    // For disply purposes do not use absolute paths except for "/"
+    // For display purposes do not use absolute paths except for "/"
     const char* filename = net_info->path;
     if (filename[0] == '/'  &&  filename[1]) {
         filename++;
