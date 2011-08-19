@@ -197,7 +197,7 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of ECONN_Flags               */
  * impossible to abort an upload by writing any FTP commands (since writing in
  * SEND mode goes to file), but it is reading that will do the cancel.  So if
  * a connection is in undetermined state, the recovery would be to do a small
- * quick read (e.g. for just 1 byte with zero timeout), then write the "NOOP"
+ * quick read (e.g. for just 1 byte with small timeout), then write the "NOOP"
  * command and cause an execution (e.g. writing "NOOP\n" does that), then
  * drain the connection by reading again until eIO_Closed.
  *
