@@ -1196,8 +1196,8 @@ BLAST_SetupPartialFetching(EBlastProgramType program_number,
     Int4 oid = hsplist_array[0]->oid;
     Int4 num_hsps = 0, i = 0, j = 0;
     BlastSeqSrcSetRangesArg *arg = NULL;
-    ASSERT(BlastSeqSrcGetSupportsPartialFetching(seq_src));
     Boolean succeeded = TRUE;
+    ASSERT(BlastSeqSrcGetSupportsPartialFetching(seq_src));
 
     /* pre-allocate space for ranges */
     for (i = 0; i < num_hsplists; i++) {
