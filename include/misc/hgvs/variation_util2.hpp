@@ -152,8 +152,10 @@ public:
     /// Reverse-complement seq-literals, flip strand on the seq-locs.
     void FlipStrand(CDelta_item& di) const;
 
-    /// If have offsets (intronic) - return false; else set seq field on the placement and return true.
-    bool AttachSeq(CVariantPlacement& p, TSeqPos max_len = 50);
+    /// If have offsets (intronic) or too long, return false;
+    /// else set seq field on the placement and return true.
+    bool AttachSeq(CVariantPlacement& p, TSeqPos max_len = 1000);
+
 
     CVariantPlacement::TMol GetMolType(const CSeq_id& id);
 
@@ -249,6 +251,8 @@ private:
     void x_InferNAfromAA(CVariation& v, TAA2NAFlags flags);
 
     void x_TranslateNAtoAA(CVariation& prot_variation);
+
+    CRef<CVariation> x_CreateUnknownVariation(const CSeq_id& id, CVariantPlacement::TMol mol);
 
     //return iupacna or ncbieaa literals
     CRef<CSeq_literal> x_GetLiteralAtLoc(const CSeq_loc& loc);

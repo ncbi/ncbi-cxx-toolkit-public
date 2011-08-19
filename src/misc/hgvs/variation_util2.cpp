@@ -756,15 +756,20 @@ CRef<CSeq_literal> CVariationUtil::x_GetLiteralAtLoc(const CSeq_loc& loc)
         if(cached_literal) {
             literal = cached_literal;
         } else {
-            CSeqVector v(loc, *m_scope, CBioseq_Handle::eCoding_Iupac);
             string seq;
-            v.GetSeqData(v.begin(), v.end(), seq);
-
-            literal->SetLength(seq.size());
-            if(v.IsProtein()) {
-                literal->SetSeq_data().SetNcbieaa().Set(seq);
-            } else if (v.IsNucleotide()) {
-                literal->SetSeq_data().SetIupacna().Set(seq);
+            try {
+                CSeqVector v(loc, *m_scope, CBioseq_Handle::eCoding_Iupac);
+                v.GetSeqData(v.begin(), v.end(), seq);
+                literal->SetLength(seq.size());
+                if(v.IsProtein()) {
+                    literal->SetSeq_data().SetNcbieaa().Set(seq);
+                } else if (v.IsNucleotide()) {
+                    literal->SetSeq_data().SetIupacna().Set(seq);
+                }
+            } catch(CException& e) {
+                string loc_label;
+                loc.GetLabel(&loc_label);
+                NCBI_RETHROW_SAME(e, "Can't get literal for " + loc_label);
             }
         }
     }
@@ -781,14 +786,16 @@ CRef<CSeq_literal> CVariationUtil::s_CatLiterals(const CSeq_literal& a, const CS
     } else if(a.GetLength() == 0) {
         c->Assign(b);
     } else {
-        CSeqportUtil::Append(&(c->SetSeq_data()),
-                             a.GetSeq_data(), 0, a.GetLength(),
-                             b.GetSeq_data(), 0, b.GetLength());
-
         c->SetLength(a.GetLength() + b.GetLength());
 
         if(a.IsSetFuzz() || b.IsSetFuzz()) {
             c->SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+        }
+
+        if(a.IsSetSeq_data() && b.IsSetSeq_data()) {
+            CSeqportUtil::Append(&(c->SetSeq_data()),
+                                 a.GetSeq_data(), 0, a.GetLength(),
+                                 b.GetSeq_data(), 0, b.GetLength());
         }
     }
     return c;
@@ -1211,6 +1218,18 @@ bool Contains(const CSeq_loc& a, const CSeq_loc& b, CScope* scope)
     return sequence::Compare(*a1, *b1, scope) == sequence::eContains;
 }
 
+CRef<CVariation> CVariationUtil::x_CreateUnknownVariation(const CSeq_id& id, CVariantPlacement::TMol mol)
+{
+    CRef<CVariantPlacement> p(new CVariantPlacement);
+    p->SetLoc().SetWhole().Assign(id);
+    p->SetMol(mol);
+    CRef<CVariation> v(new CVariation);
+    v->SetData().SetUnknown();
+    v->SetPlacements().push_back(p);
+    ChangeIdsInPlace(*v, sequence::eGetId_ForceAcc, *m_scope);
+    return v;
+}
+
 CRef<CVariation> CVariationUtil::TranslateNAtoAA(
         const CVariation_inst& nuc_inst,
         const CVariantPlacement& nuc_p,
@@ -1231,14 +1250,7 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
       || nuc_p.IsSetStop_offset()
       || !Contains(cds_feat.GetLocation(), nuc_p.GetLoc(), m_scope))
     {
-        CRef<CVariantPlacement> p(new CVariantPlacement);
-        p->SetLoc().Assign(cds_feat.GetProduct());
-        p->SetMol(CVariantPlacement::eMol_protein);
-        CRef<CVariation> v(new CVariation);
-        v->SetData().SetUnknown();
-        v->SetPlacements().push_back(p);
-        ChangeIdsInPlace(*v, sequence::eGetId_ForceAcc, *m_scope);
-        return v;
+        return x_CreateUnknownVariation(sequence::GetId(cds_feat.GetProduct(), NULL), CVariantPlacement::eMol_protein);
     }
 
     //create an inst-variation from the provided inst with the single specified placement
@@ -1253,8 +1265,9 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
     //normalize to delins form so we can deal with it uniformly
     ChangeToDelins(*v);
 
-    //detect frameshift before we start extending codon locs, etc.
     const CDelta_item& nuc_delta = *v->GetData().GetInstance().GetDelta().front();
+
+    //detect frameshift before we start extending codon locs, etc.
     int frameshift_phase = ((long)sequence::GetLength(p->GetLoc(), NULL) - (long)nuc_delta.GetSeq().GetLiteral().GetLength()) % 3;
     if(frameshift_phase < 0) {
         frameshift_phase += 3;
@@ -1269,6 +1282,10 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
     }
 
     if(verbose) NcbiCerr << "Normalized variation: " << MSerial_AsnText << *v;
+
+    if(!nuc_delta.GetSeq().IsLiteral() || !nuc_delta.GetSeq().GetLiteral().IsSetSeq_data()) {
+        return x_CreateUnknownVariation(sequence::GetId(cds_feat.GetProduct(), NULL), CVariantPlacement::eMol_protein);
+    }
 
     //Map to protein and back to get the affected codons.
     //Note: need the scope because the cds_feat is probably gi-based, while our locs are probably accver-based
@@ -1304,19 +1321,30 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
 
     if(verbose) NcbiCerr << "Adjusted-for-codons " << MSerial_AsnText << *v;
 
-    AttachSeq(*p);
+    bool attached = AttachSeq(*p);
+    if(!attached) {
+        return x_CreateUnknownVariation(sequence::GetId(cds_feat.GetProduct(), NULL), CVariantPlacement::eMol_protein);
+    }
+
     string prot_ref_str = Translate(p->GetSeq().GetSeq_data());
     string prot_delta_str = Translate(extended_variant_codons_literal.GetSeq_data());
 
     //Constructing protein-variation
+
     CRef<CVariation> prot_v(new CVariation);
 
     //will have two placements: one describing the AA, and the other describing codons
     CRef<CVariantPlacement> prot_p(new CVariantPlacement);
     prot_p->SetLoc(*prot_loc);
     prot_p->SetMol(GetMolType(sequence::GetId(prot_p->GetLoc(), NULL)));
-    AttachSeq(*prot_p);
+    if(NStr::Find(prot_ref_str, "*") == NPOS) {
+        //make sure that we're not in stop-codon,
+        //as if we are, the location extends past the end of the prot and
+        //fetching sequence wolud throw
+        AttachSeq(*prot_p);
+    }
     prot_v->SetPlacements().push_back(prot_p);
+
 
     CRef<CVariantPlacement> codons_p(new CVariantPlacement);
     codons_p->SetLoc(*codons_loc);
@@ -2033,6 +2061,8 @@ void CVariationUtil::CCdregionIndex::x_Index(const CSeq_id_Handle& idh)
         if(mf.GetData().IsRna()) {
             all_rna_loc->Add(mf.GetLocation());
         } else {
+            all_rna_loc->Add(mf.GetLocation()); //if on mRNA seq, there's no annotated mRNA feature - will just index cds
+
             SCdregion s;
             s.cdregion_feat.Reset(mf.GetSeq_feat());
             for(CSeq_loc_CI ci(mf.GetLocation()); ci; ++ci) {
@@ -2051,9 +2081,7 @@ void CVariationUtil::CCdregionIndex::x_Index(const CSeq_id_Handle& idh)
     all_rna_loc = sequence::Seq_loc_Merge(*all_rna_loc, CSeq_loc::fSortAndMerge_All, NULL);
 
     if(m_options && CVariationUtil::fOpt_cache_exon_sequence) {
-        LOG_POST("Indexing CDSes");
         x_CacheSeqData(*all_rna_loc, idh);
-        LOG_POST("Finished Indexing CDSes");
     }
 }
 
@@ -2061,6 +2089,10 @@ void CVariationUtil::CCdregionIndex::x_CacheSeqData(const CSeq_loc& loc, const C
 {
     CSeq_id_Handle idh2 = sequence::GetId(idh, *m_scope, sequence::eGetId_Canonical);
     SSeqData& d = m_seq_data_map[idh2];
+
+    if(loc.IsNull() || loc.IsEmpty()) {
+        return;
+    }
 
     CRef<CSeq_loc> loc2(new CSeq_loc);
     loc2->Assign(loc);
@@ -2089,6 +2121,7 @@ void CVariationUtil::CCdregionIndex::x_CacheSeqData(const CSeq_loc& loc, const C
     target_loc->SetInt().SetFrom(0);
     target_loc->SetInt().SetTo(d.seq_data.size() - 1);
     target_loc->SetInt().SetStrand(eNa_strand_plus);
+
     d.mapper.Reset(new CSeq_loc_Mapper(*loc2, *target_loc, NULL));
 }
 
