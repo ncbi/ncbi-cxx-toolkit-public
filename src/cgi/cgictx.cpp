@@ -273,14 +273,10 @@ const string& CCgiContext::GetSelfURL(void) const
         return m_SelfURL;
 
     // First check forwarded URLs
-    string caf = GetRequest().GetRandomProperty("CAF");
-    int caf_ver = caf.empty() ? 0 : atoi(caf.c_str());
-    if ( caf_ver >= 150994 ) {
-        string caf_url = GetRequest().GetRandomProperty("CAF_URL");
-        if ( !caf_url.empty() ) {
-            m_SelfURL = caf_url;
-            return m_SelfURL;
-        }
+    string caf_url = GetRequest().GetRandomProperty("CAF_URL");
+    if ( !caf_url.empty() ) {
+        m_SelfURL = caf_url;
+        return m_SelfURL;
     }
 
     // Compose self URL
@@ -306,15 +302,9 @@ const string& CCgiContext::GetSelfURL(void) const
     //  it should not hurt, and may help with similar proxies outside NCBI)
     string script_uri;
     bool have_script_uri = false;
-    if ( caf_ver >= 119289 ) {
-        script_uri = GetRequest().GetRandomProperty("X_FORWARDED_URI");
-        have_script_uri = !script_uri.empty();
-    }
-    if ( !have_script_uri ) {
-        script_uri = GetRequest().GetRandomProperty("SCRIPT_URL", false);
-        if ( script_uri.empty() ) {
-            script_uri = GetRequest().GetProperty(eCgi_ScriptName);
-        }
+    script_uri = GetRequest().GetRandomProperty("SCRIPT_URL", false);
+    if ( script_uri.empty() ) {
+        script_uri = GetRequest().GetProperty(eCgi_ScriptName);
     }
     // Remove args if any
     size_t arg_pos = script_uri.find('?');

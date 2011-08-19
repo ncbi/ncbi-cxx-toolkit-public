@@ -339,34 +339,44 @@ void CCgiApplication::LogRequest(void) const
     string str;
     if ( s_PrintSelfUrlParam.Get() ) {
         // Print script URL
-        str = ctx.GetSelfURL();
-        if ( !str.empty() ) {
+        string self_url = ctx.GetSelfURL();
+        if ( !self_url.empty() ) {
             string args =
-                ctx.GetRequest().GetProperty(eCgi_QueryString);
-            if ( !args.empty() ) {
-                str += "?" + args;
+                ctx.GetRequest().GetRandomProperty("REDIRECT_QUERY_STRING", false);
+            if ( args.empty() ) {
+                args = ctx.GetRequest().GetProperty(eCgi_QueryString);
             }
-            GetDiagContext().Extra().
-                //SetType(kExtraType_CGI).
-                Print("SELF_URL", str);
+            if ( !args.empty() ) {
+                self_url += "?" + args;
+            }
+        }
+        // Add target url
+        string target_url = ctx.GetRequest().GetProperty(eCgi_ScriptName);
+        if ( !target_url.empty() ) {
+            string host = "http://" + GetDiagContext().GetHost();
+            string port = ctx.GetRequest().GetProperty(eCgi_ServerPort);
+            if (!port.empty()  &&  port != "80") {
+                host += ":" + port;
+            }
+            target_url = host + target_url;
+        }
+        if ( !self_url.empty()  ||  !target_url.empty() ) {
+            GetDiagContext().Extra().Print("SELF_URL", self_url).
+                Print("TARGET_URL", target_url);
         }
     }
     // Print HTTP_REFERER
     if ( s_PrintRefererParam.Get() ) {
         str = ctx.GetRequest().GetProperty(eCgi_HttpReferer);
         if ( !str.empty() ) {
-            GetDiagContext().Extra().
-                //SetType(kExtraType_CGI).
-                Print("HTTP_REFERER", str);
+            GetDiagContext().Extra().Print("HTTP_REFERER", str);
         }
     }
     // Print USER_AGENT
     if ( s_PrintUserAgentParam.Get() ) {
         str = ctx.GetRequest().GetProperty(eCgi_HttpUserAgent);
         if ( !str.empty() ) {
-            GetDiagContext().Extra().
-                //SetType(kExtraType_CGI).
-                Print("USER_AGENT", str);
+            GetDiagContext().Extra().Print("USER_AGENT", str);
         }
     }
 }
@@ -917,15 +927,19 @@ CCgiStatistics* CCgiApplication::CreateStat()
     return new CCgiStatistics(*this);
 }
 
+
 ICgiSessionStorage* 
 CCgiApplication::GetSessionStorage(CCgiSessionParameters&) const 
 {
     return 0;
 }
+
+
 bool CCgiApplication::IsCachingNeeded(const CCgiRequest& request) const
 {
     return true;
 }
+
 
 ICache* CCgiApplication::GetCacheStorage() const
 { 
@@ -963,6 +977,8 @@ void CCgiApplication::SetRequestId(const string& rid, bool is_done)
     m_RID = rid;
     m_IsResultReady = is_done;
 }
+
+
 bool CCgiApplication::GetResultFromCache(const CCgiRequest& request, CNcbiOstream& os)
 {
     string checksum, content;
@@ -982,6 +998,8 @@ bool CCgiApplication::GetResultFromCache(const CCgiRequest& request, CNcbiOstrea
     }
     return false;
 }
+
+
 void CCgiApplication::SaveResultToCache(const CCgiRequest& request, CNcbiIstream& is)
 {
     string checksum, content;
@@ -1000,6 +1018,7 @@ void CCgiApplication::SaveResultToCache(const CCgiRequest& request, CNcbiIstream
     } 
 }
 
+
 void CCgiApplication::SaveRequest(const string& rid, const CCgiRequest& request)
 {    
     if (rid.empty())
@@ -1014,6 +1033,8 @@ void CCgiApplication::SaveRequest(const string& rid, const CCgiRequest& request)
         ERR_POST_X(7, "Couldn't save request : " << ex.what());
     } 
 }
+
+
 CCgiRequest* CCgiApplication::GetSavedRequest(const string& rid)
 {
     if (rid.empty())
@@ -1031,6 +1052,7 @@ CCgiRequest* CCgiApplication::GetSavedRequest(const string& rid)
     } 
     return NULL;
 }
+
 
 void CCgiApplication::x_AddLBCookie()
 {
