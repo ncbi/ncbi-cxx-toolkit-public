@@ -93,7 +93,9 @@ VariantPlacement ::= SEQUENCE
 
     dbxrefs SET OF Dbtag OPTIONAL, --e.g. rs#, that are placement-specific
 
-    ext SET OF User-object OPTIONAL --for process-specific placement tags/labels
+    ext SET OF User-object OPTIONAL, --for process-specific placement tags/labels
+
+    gene-location INTEGER OPTIONAL --Same semantics as VariantProperties.gene-location, except placement-specific
 }
 
 VariationMethod ::= SEQUENCE
