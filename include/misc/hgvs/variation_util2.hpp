@@ -67,12 +67,26 @@ namespace variation {
 class CVariationUtil : public CObject
 {
 public:
-    CVariationUtil(CScope& scope)
-       : m_scope(&scope)
-       , m_variant_properties_index(scope)
+    enum EOptions
+    {
+        fOpt_cache_exon_sequence = 1, ///< Use when there will be many calls to calculate protein consequnece per sequence
+        fOpt_default = 0
+    };
+    typedef int TOptions;
+
+    CVariationUtil(CScope& scope, TOptions options = fOpt_default)
+      : m_scope(&scope)
+      , m_variant_properties_index(scope)
+      , m_cdregion_index(scope, options)
     {}
 
-    static TSeqPos s_GetLength(const CVariantPlacement& p, CScope* scope);
+    void ClearCache()
+    {
+        m_variant_properties_index.Clear();
+        m_cdregion_index.Clear();
+    }
+
+
 
 /// Methods to remap a VariantPlacement
 
@@ -167,10 +181,21 @@ public:
 
 /// Methods to compute properties
 
+    /*!
+     * Fill location-specific variant-properties for a placement.
+     * Attach related GeneID(s) to placement with respect to which the properties are defined.
+     */
+    void SetPlacementProperties(CVariantPlacement& placement);
 
-    /// Set location-specific variant properties for a variation by applying
-    /// x_SetVariantProperties(...) on each found placement + its variation
+    /*
+     * Set placement-specific variant properties for a variation by applying
+     * x_SetVariantProperties(...) on each found placement and collapse those
+     * onto parent VariationProperties
+     */
     void SetVariantProperties(CVariation& v);
+
+
+
 
     /// Supported SO-terms
     enum ESOTerm
@@ -197,6 +222,7 @@ public:
     void AsSOTerms(const CVariantProperties& p, TSOTerms& terms);
     static string AsString(ESOTerm term);
 
+    static TSeqPos s_GetLength(const CVariantPlacement& p, CScope* scope);
 
     /// If at any level in variation-set all variations have all same placements, move them to the parent level.
     static void s_FactorOutPlacements(CVariation& v);
@@ -208,19 +234,15 @@ public:
      */
     static const CVariation::TPlacements* s_GetPlacements(const CVariation& v);
 
-
 private:
-    /// Fill location-specific variant-properties for a placement.
-    /// Attach related GeneID(s) to placement with respect to which the properties are defined.
-    /// Note: This may include
-    void x_SetVariantProperties(CVariantProperties& prop, CVariantPlacement& placement);
+
 
     CRef<CVariantPlacement> x_Remap(const CVariantPlacement& p, CSeq_loc_Mapper& mapper);
 
     void ChangeToDelins(CVariation& v);
 
     void x_SetVariantProperties(CVariantProperties& p, const CVariation_inst& vi, const CSeq_loc& loc);
-    void x_SetVariantPropertiesForIntronic(CVariantProperties& p, int offset, const CSeq_loc& loc, CBioseq_Handle& bsh);
+    void x_SetVariantPropertiesForIntronic(CVariantPlacement& p, int offset, const CSeq_loc& loc, CBioseq_Handle& bsh);
 
     void x_ChangeToDelins(CVariation& v);
 
@@ -231,7 +253,13 @@ private:
     //return iupacna or ncbieaa literals
     CRef<CSeq_literal> x_GetLiteralAtLoc(const CSeq_loc& loc);
 
+    CConstRef<CSeq_literal> x_FindOrCreateLiteral(const CVariation& v);
+
+    /// join two seq-literals
     static CRef<CSeq_literal> s_CatLiterals(const CSeq_literal& a, const CSeq_literal& b);
+
+    /// insert seq-literal payload into ref before pos (pos=0 -> prepend; pos=ref.len -> append)
+    static CRef<CSeq_literal> s_SpliceLiterals(const CSeq_literal& payload, const CSeq_literal& ref, TSeqPos pos);
 
     static void s_AttachGeneIDdbxref(CVariantPlacement& p, int gene_id);
 
@@ -276,8 +304,69 @@ private:
      */
     static const CConstRef<CSeq_literal> s_FindFirstLiteral(const CVariation& v);
 
+    /*
+     * Find a sibling variation with with observation=asserted;
+     * if not found, recursively try parent, or return null if root.
+     * Note: Assumes CVariation::Index has been called.
+     */
+    static const CConstRef<CSeq_literal> s_FindAssertedLiteral(const CVariation& v);
+
 
 private:
+
+    /// Cache seq-data in the CDS regions and the cds features by location
+    class CCdregionIndex
+    {
+    public:
+        struct SCdregion
+        {
+            CConstRef<CSeq_feat> cdregion_feat;
+
+            //for now will create mappers on the fly
+            //CRef<CSeq_loc_Mapper> prot2parent_mapper;
+            //CRef<CSeq_loc_Mapper> parent2prot_mapper;
+
+            bool operator<(const SCdregion& other) const
+            {
+                return this->cdregion_feat < other.cdregion_feat;
+            }
+        };
+        typedef vector<SCdregion> TCdregions;
+
+        CCdregionIndex(CScope& scope, TOptions options)
+          : m_scope(&scope)
+          , m_options(options)
+        {}
+
+        void Get(const CSeq_loc& loc, TCdregions& cdregions);
+
+        //return NULL if not cached in its entirety
+        CRef<CSeq_literal> GetCachedLiteralAtLoc(const CSeq_loc& loc);
+
+        void Clear()
+        {
+            m_data.clear();
+            m_seq_data_map.clear();
+        }
+    private:
+
+        struct SSeqData
+        {
+            mutable CRef<CSeq_loc_Mapper> mapper; //will map original location consisting of merged exon locations on the seq_data coordinate system
+            string seq_data;
+        };
+        typedef map<CSeq_id_Handle, SSeqData> TSeqDataMap;
+        typedef CRangeMap<TCdregions, TSeqPos> TRangeMap;
+        typedef map<CSeq_id_Handle, TRangeMap> TIdRangeMap;
+
+        void x_Index(const CSeq_id_Handle& idh);
+        void x_CacheSeqData(const CSeq_loc& loc, const CSeq_id_Handle& idh);
+
+        CRef<CScope> m_scope;
+        TIdRangeMap m_data;
+        TSeqDataMap m_seq_data_map;
+        TOptions m_options;
+    };
 
     /// Given a seq-loc, compute CVariantProperties::TGene_location from annotation.
     /// Precompute for the whole sequence and keep the cache to avoid objmgr annotation
@@ -293,12 +382,13 @@ private:
         {}
 
         void GetLocationProperties(const CSeq_loc& loc, TGeneIDAndPropVector& v);
-
+        void Clear()
+        {
+            m_loc2prop.clear();
+        }
     private:
         void x_Index(const CSeq_id_Handle& idh);
-        void x_Index(feature::CFeatTree& ft);
         void x_Add(const CSeq_loc& loc, int gene_id, CVariantProperties::TGene_location prop);
-
 
         typedef pair<CRef<CSeq_loc>, CRef<CSeq_loc> > TLocsPair; //5' and 3' respectively
         static TLocsPair s_GetStartAndStopCodonsLocs(const CSeq_loc& cds_loc);
@@ -315,9 +405,11 @@ private:
         TIdRangeMap m_loc2prop;
     };
 
+
 private:
     CRef<CScope> m_scope;
     CVariantPropertiesIndex m_variant_properties_index;
+    CCdregionIndex m_cdregion_index;
 };
 
 };
