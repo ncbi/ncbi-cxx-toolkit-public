@@ -171,16 +171,9 @@ bool CGff2Writer::WriteBioseqHandle(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::x_WriteBioseqHandle(
-    CBioseq_Handle bsh )
+    CBioseq_Handle bsh ) 
 //  ----------------------------------------------------------------------------
 {
-    CSeqdesc_CI sdi( bsh.GetParentEntry(), CSeqdesc::e_Source, 0 );
-    if ( sdi ) {
-        CGffWriteRecordFeature src_feat;
-        src_feat.AssignSource( bsh, *sdi );
-        x_WriteRecord( &src_feat );
-    }
-
     SAnnotSelector sel = x_GetAnnotSelector();
     CFeat_CI feat_iter(bsh, sel);
     feature::CFeatTree feat_tree( feat_iter );

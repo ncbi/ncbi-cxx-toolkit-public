@@ -64,6 +64,8 @@ public:
     virtual bool WriteHeader();
 
 protected:
+    virtual bool x_WriteBioseqHandle(
+        CBioseq_Handle );
     bool x_WriteAlign( 
         const CSeq_align&,
         bool=false );                   // invert width 
@@ -117,6 +119,7 @@ protected:
     unsigned int m_uPendingTrnaId;
     unsigned int m_uPendingExonId;
     unsigned int m_uPendingCdsId;
+    unsigned int m_uPendingGenericId;
 };
 
 END_objects_SCOPE

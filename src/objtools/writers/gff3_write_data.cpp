@@ -163,9 +163,10 @@ CConstRef<CUser_object> s_GetUserObjectByType(
     
 //  ----------------------------------------------------------------------------
 CGff3WriteRecordFeature::CGff3WriteRecordFeature(
-    feature::CFeatTree& feat_tree )
+    feature::CFeatTree& feat_tree,
+    const string& id )
 //  ----------------------------------------------------------------------------
-    : m_feat_tree( feat_tree )
+    : CGffWriteRecordFeature(id), m_feat_tree( feat_tree )
 {
 };
 
@@ -235,24 +236,6 @@ bool CGff3WriteRecordFeature::x_AssignAttributesFromAsnExtended(
     if ( ! x_AssignAttributeGbKey( mapped_feat ) ) {
         return false;
     }
-//    if ( ! x_AssignAttributePseudo( mapped_feat ) ) {
-//        return false;
-//    }
-//    if ( ! x_AssignAttributeEvidence( mapped_feat ) ) {
-//        return false;
-//    }
-//    if ( ! x_AssignAttributeModelEvidence( mapped_feat ) ) {
-//        return false;
-//    }
-//    if ( ! x_AssignAttributeNote( mapped_feat ) ) {
-//        return false;
-//    }
-//    if ( ! x_AssignAttributeDbXref( mapped_feat ) ) {
-//        return false;
-//    }
-//    if ( ! x_AssignAttributeTranscriptId( mapped_feat ) ) {
-//        return false;
-//    }
     return true;
 }
 
@@ -452,7 +435,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributePartial(
         return true;
     }
     if ( mapped_feat.GetPartial() == true ) {
-        m_Attributes[ "partial" ] = "";
+        m_Attributes[ "partial" ] = "true";
     }
     return true;
 }
@@ -466,7 +449,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributePseudo(
         return true;
     }
     if ( mapped_feat.GetPseudo() == true ) {
-        m_Attributes[ "pseudo" ] = "";
+        m_Attributes[ "pseudo" ] = "true";
     }
     return true;
 }
@@ -762,9 +745,6 @@ bool CGff3WriteRecordFeature::x_AssignAttributeGbKey(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! mapped_feat.GetData().IsRna() ) {
-        return true;
-    }
     m_Attributes[ "gbkey" ] = mapped_feat.GetData().GetKey();
     return true;
 }

@@ -54,7 +54,8 @@ public:
 
 public:
     CGff3WriteRecordFeature(
-        feature::CFeatTree&
+        feature::CFeatTree&,
+        const string& id=""
     );
 
     CGff3WriteRecordFeature(

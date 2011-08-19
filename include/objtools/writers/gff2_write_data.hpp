@@ -52,7 +52,8 @@ public:
     typedef TAttributes::const_iterator TAttrCit;
 
 public:
-    CGffWriteRecord();
+    CGffWriteRecord( 
+        const string& id="" );
     CGffWriteRecord(
         const CGffWriteRecord& );
     virtual ~CGffWriteRecord();
@@ -122,6 +123,9 @@ class CGffWriteRecordFeature
     : public CGffWriteRecord
 {
 public:
+    CGffWriteRecordFeature( 
+        const string& id="" ): CGffWriteRecord(id){};
+
     virtual bool AssignFromAsn(
         CMappedFeat );
     virtual bool AssignSource(

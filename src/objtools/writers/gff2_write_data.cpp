@@ -72,7 +72,9 @@ string CGffWriteRecord::StrSource() const
 }
 
 //  ----------------------------------------------------------------------------
-CGffWriteRecord::CGffWriteRecord():
+CGffWriteRecord::CGffWriteRecord(
+    const string& id ):
+
     m_strId( "" ),
     m_uSeqStart( 0 ),
     m_uSeqStop( 0 ),
@@ -83,6 +85,9 @@ CGffWriteRecord::CGffWriteRecord():
     m_puPhase( 0 )
 //  ----------------------------------------------------------------------------
 {
+    if (!id.empty()) {
+        m_Attributes["ID"] = id;
+    }
 };
 
 //  ----------------------------------------------------------------------------
