@@ -98,6 +98,7 @@ for ((i = 0; i < 7; ++i)); do
         echo "Deploying cgi interface"
 
         cp -p "${PLATF_DIR}/bin/test_stat_ext.cgi" "${CGI_BIN_DIR}/" || exit 9
+        cp -p "${PLATF_DIR}/bin/svn_logs.cgi" "${CGI_BIN_DIR}/" || exit 10
         cp -Rp "${PLATF_DIR}/bin/xsl/" "${CGI_BIN_DIR}/" || exit 11
         cp -Rp "${PLATF_DIR}/bin/overlib/" "${CGI_BIN_DIR}/" || exit 13
 
