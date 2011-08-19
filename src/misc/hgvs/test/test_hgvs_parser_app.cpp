@@ -52,21 +52,21 @@ USING_NCBI_SCOPE;
 using namespace variation;
 
 /**
- * Either test that an hgvs expression is parsed with no exception, or
- * or check that the hgvs-name of an existing variation-feature, when parsed,
+ * Check check that the hgvs-name of an existing variation-feature, when parsed,
  * results in exact same variation-feature.
  */
 class CTestCase
 {
 public:
 
+    //todo: reuse variation-util
     CTestCase(const CVariation& v, CRef<CHgvsParser> parser, CNcbiOstream& out)
       : m_expr("")
       , m_variation(&v)
       , m_parser(parser)
       , m_out(out)
     {
-        m_expr = m_variation->GetPlacements().front()->GetHgvs_name();
+        m_expr = m_variation->GetName();
     }
 
     void operator()()
@@ -75,20 +75,15 @@ public:
         string exception_str;
         string err_code;
 
-        try {
-            CVariationUtil variation_util(m_parser->SetScope());
-            variation = m_parser->AsVariation(m_expr);
+        CVariationUtil variation_util(m_parser->SetScope());
+        variation = m_parser->AsVariation(m_expr);
 
-            for(CTypeIterator<CVariantPlacement> it(Begin(*variation)); it; ++it) {
-                variation_util.AttachSeq(*it);
-            }
-
-            variation_util.SetVariantProperties(*variation);
-
-        } catch(CHgvsParser::CHgvsParserException& e) {
-            e.GetStackTrace()->Write(NcbiCerr);
-            BOOST_REQUIRE_NO_THROW(NCBI_RETHROW_SAME(e, ""));
+        for(CTypeIterator<CVariantPlacement> it(Begin(*variation)); it; ++it) {
+            variation_util.AttachSeq(*it);
         }
+
+        variation_util.SetVariantProperties(*variation);
+        variation_util.AttachProteinConsequences(*variation);
 
         if(!variation.IsNull() && m_variation->IsSetDescription()) {
             variation->SetDescription(m_variation->GetDescription());
@@ -134,6 +129,8 @@ NCBITEST_INIT_TREE()
         } catch (CEofException e) {
             break;
         }
+
+        LOG_POST("Adding test-case");
         boost::unit_test::framework::master_test_suite().add(
                 BOOST_TEST_CASE(CTestCase(*variation, parser, ostr)));
 

@@ -1,0 +1,111 @@
+Variation ::= {
+  name "NM_000138:c.8412_8417delTAAAAT",
+  description "",
+  placements {
+    {
+      loc int {
+        from 8806,
+        to 8811,
+        strand plus,
+        id other {
+          accession "NM_000138",
+          version 4
+        }
+      },
+      mol cdna,
+      seq {
+        length 6,
+        seq-data iupacna "TAAAAT"
+      },
+      gene-location 0
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location 0
+  },
+  data set {
+    type package,
+    variations {
+      {
+        data instance {
+          type del,
+          delta {
+            {
+              seq this NULL,
+              action del-at
+            }
+          }
+        },
+        consequence {
+          variation {
+            placements {
+              {
+                loc int {
+                  from 2803,
+                  to 2805,
+                  strand plus,
+                  id other {
+                    accession "NP_000129",
+                    version 3
+                  }
+                },
+                mol protein,
+                seq {
+                  length 3,
+                  seq-data ncbieaa "FKI"
+                }
+              },
+              {
+                loc int {
+                  from 8804,
+                  to 8812,
+                  strand plus,
+                  id other {
+                    accession "NM_000138",
+                    version 4
+                  }
+                },
+                mol cdna,
+                frame 2,
+                seq {
+                  length 9,
+                  seq-data iupacna "TTTAAAATC"
+                }
+              }
+            },
+            variant-prop {
+              version 5,
+              effect synonymous
+            },
+            data instance {
+              type prot-other,
+              delta {
+                {
+                  seq literal {
+                    length 3,
+                    seq-data iupacna "TTC"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        data instance {
+          type identity,
+          delta {
+            {
+              seq literal {
+                length 6,
+                seq-data iupacna "TAAAAT"
+              }
+            }
+          },
+          observation asserted
+        }
+      }
+    }
+  }
+}
