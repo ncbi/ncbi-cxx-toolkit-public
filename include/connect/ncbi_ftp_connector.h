@@ -189,6 +189,7 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of ECONN_Flags               */
  * representing the size of the uploaded file data (or an empty read in case
  * of an upload error) as a sequence of decimal digits.  Once all digits are
  * extracted (eIO_Closed seen) the connection returns to READ mode.
+ * CONN_Wait(eIO_Read) will also cause the upload to finalize.
  *
  * Unfinalized uploads (such as when a connection gets closed before the final
  * read) get reported to the log, and also cause CONN_Close() to return an
