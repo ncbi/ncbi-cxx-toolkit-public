@@ -22,7 +22,10 @@ clean_up() {
 seconds=0
 while [ "$seconds" -lt 900 ]; do
     if mkdir $dir >/dev/null 2>&1; then
-        [ "$seconds" = 0 ] || echo
+        [ "$seconds" = 0 ] || cat >&2 <<EOF
+
+Acquired `pwd`/$dir for PID $2 ($1)
+EOF
         touch "$dir/for-$user@$host"
         echo $1    > "$dir/command"
         echo $host > "$dir/hostname"
@@ -50,12 +53,16 @@ while [ "$seconds" -lt 900 ]; do
             clean_up
             exit 1
         fi
-    elif [ -f "$dir/for-$user@$host" -a -f "$dir/pid" ]; then
+    elif [ -f "$dir/for-$user@$host" -a -s "$dir/pid" ]; then
         read old_pid < $dir/pid
         if kill -0 "$old_pid" >/dev/null 2>&1; then
             : # Keep waiting; evidently still alive
         else
             # Stale
+cat >&2 <<EOF
+
+Clearing stale lock `pwd`/$dir from PID $old_pid for PID $2 ($1)
+EOF
             rm -rf "$dir"
             continue
         fi
@@ -66,6 +73,10 @@ while [ "$seconds" -lt 900 ]; do
         # hence the use of ls and head.
         if [ $seconds = 60 ] \
            &&  [ `ls -dt $dir $testfile | head -n1` = $testfile ]; then
+cat >&2 <<EOF
+
+Clearing old incomplete lock `pwd`/$dir for PID $2 ($1)
+EOF
             rm -rf "$dir"
             continue
         fi
