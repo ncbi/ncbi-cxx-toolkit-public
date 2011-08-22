@@ -141,7 +141,7 @@ public:
     {
         try {
             return align.GapLengthRange().second;
-        } catch (CSeqalignException &e) {
+        } catch (CSeqalignException &) {
             return numeric_limits<double>::quiet_NaN();
         }
     }
@@ -429,7 +429,7 @@ public:
     {
         try {
             return align.ExonLengthRange().first;
-        } catch (CSeqalignException &e) {
+        } catch (CSeqalignException &) {
             return numeric_limits<double>::quiet_NaN();
         }
     }
@@ -452,7 +452,7 @@ public:
     {
         try {
             return align.IntronLengthRange().second;
-        } catch (CSeqalignException &e) {
+        } catch (CSeqalignException &) {
             return numeric_limits<double>::quiet_NaN();
         }
     }
