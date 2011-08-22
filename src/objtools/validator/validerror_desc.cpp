@@ -318,9 +318,6 @@ bool CValidError_desc::ValidateStructuredComment
             } else {
                 // find rule for this field
                 try {
-                    const CField_rule& tmp_rule = rule.FindFieldRule (label);
-                    // found rule for this field
-
                     // find field for this rule and validate it
                     try {
                         const CUser_field& other_field = usr.GetField(expected_field);
@@ -493,7 +490,6 @@ bool CValidError_desc::ValidateStructuredComment
                 ITERATE (CField_set::Tdata, other_rule, (*depend_rule)->GetDisallowed_fields().Get()) {
                     try {
                         string other_field_name = (*other_rule)->GetField_name();
-                        const CUser_field& other_field = usr.GetField(other_field_name);
                         // found field that should not be present
                         if (report) {
                             PostErr (s_ErrorLevelFromFieldRuleSev((*other_rule)->GetSeverity()),

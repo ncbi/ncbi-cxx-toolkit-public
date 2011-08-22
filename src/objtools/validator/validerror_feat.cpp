@@ -4587,9 +4587,9 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
                     if (count_a < (19 * count_no_a)) { // less then 5%
                         if (report_errors || rna_editing) {
                             PostErr(sev, eErr_SEQ_FEAT_TranscriptLen,
-                                "Transcript length [" + NStr::IntToString(nuc_len) + 
+                                "Transcript length [" + NStr::SizetToString(nuc_len) + 
                                 "] less than " + farstr + "product length [" +
-                                NStr::IntToString(rna_len) + "], and tail < 95% polyA",
+                                NStr::SizetToString(rna_len) + "], and tail < 95% polyA",
                                 feat);
                         }
                     } else if (count_a > 0 && count_no_a == 0) {
@@ -4600,18 +4600,18 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
                                 // suppress
                             } else {
                                 PostErr (eDiag_Info, eErr_SEQ_FEAT_PolyATail, 
-                                         "Transcript length [" + NStr::IntToString(nuc_len)
+                                         "Transcript length [" + NStr::SizetToString(nuc_len)
                                          + "] less than " + farstr + "product length ["
-                                         + NStr::IntToString (rna_len) + "], but tail is 100% polyA",
+                                         + NStr::SizetToString (rna_len) + "], but tail is 100% polyA",
                                          feat);
                             }
                         }
                     } else {
                         if (report_errors) {
                             PostErr(eDiag_Info, eErr_SEQ_FEAT_PolyATail,
-                                "Transcript length [" + NStr::IntToString(nuc_len) + 
+                                "Transcript length [" + NStr::SizetToString(nuc_len) + 
                                 "] less than " + farstr + "product length [" +
-                                NStr::IntToString(rna_len) + "], but tail >= 95% polyA",
+                                NStr::SizetToString(rna_len) + "], but tail >= 95% polyA",
                                 feat);
                         }
                     }  
@@ -4645,8 +4645,8 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
                     has_errors = true;
                     if (report_errors  &&  !mismatch_except) {
                         PostErr(eDiag_Error, eErr_SEQ_FEAT_TranscriptMismatches,
-                            "There are " + NStr::IntToString(mismatches) + 
-                            " mismatches out of " + NStr::IntToString(nuc_len) +
+                            "There are " + NStr::SizetToString(mismatches) + 
+                            " mismatches out of " + NStr::SizetToString(nuc_len) +
                             " bases between the transcript and " + farstr + "product sequence",
                             feat);
                     }
@@ -4664,8 +4664,8 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
         } else if (unclassified_except && ! other_than_mismatch) {
             if (mismatches * 50 <= total) {
                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_ErroneousException,
-                  "mRNA has unclassified exception but only difference is " + NStr::IntToString (mismatches) 
-                  + " mismatches out of " + NStr::IntToString (total) + " bases", feat);
+                  "mRNA has unclassified exception but only difference is " + NStr::SizetToString (mismatches) 
+                  + " mismatches out of " + NStr::SizetToString (total) + " bases", feat);
             }
         } else if (product_replaced) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnqualifiedException,
@@ -5609,7 +5609,7 @@ bool CValidError_feat::ValidateCdRegionTranslation
                 } else {                
                     PostErr(sev, eErr_SEQ_FEAT_StartCodon,
                         codon_desc + " start codon (and " + 
-                        NStr::IntToString(internal_stop_count) +
+                        NStr::SizetToString(internal_stop_count) +
                         " internal stops). Probably wrong genetic code [" +
                         gccode + "]", feat);
                     reported_bad_start_codon = true;
@@ -5619,7 +5619,7 @@ bool CValidError_feat::ValidateCdRegionTranslation
                     // suppress if gpipe genomic
                 } else {
                     PostErr(sev, eErr_SEQ_FEAT_InternalStop, 
-                        NStr::IntToString(internal_stop_count) + 
+                        NStr::SizetToString(internal_stop_count) + 
                         " internal stops (and " + codon_desc + " start codon). Genetic code [" + gccode + "]", feat);
                 }
             }
@@ -5628,7 +5628,7 @@ bool CValidError_feat::ValidateCdRegionTranslation
                 // suppress if gpipe genomic
             } else {
                 PostErr(eDiag_Error, eErr_SEQ_FEAT_InternalStop, 
-                    NStr::IntToString(internal_stop_count) + 
+                    NStr::SizetToString(internal_stop_count) + 
                     " internal stops. Genetic code [" + gccode + "]", feat);
             }
         }
@@ -5969,9 +5969,9 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
             && feat.IsSetExcept_text() 
             && NStr::Find(feat.GetExcept_text(), "annotated by transcript or proteomic data") != string::npos) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_TransLen,
-                    "Protein product length [" + NStr::IntToString(prot_len) + 
+                    "Protein product length [" + NStr::SizetToString(prot_len) + 
                     "] is more than 120% of the " + farstr + "translation length [" + 
-                    NStr::IntToString(len) + "]", feat);
+                    NStr::SizetToString(len) + "]", feat);
         }
 
         num_total = len;
@@ -6014,9 +6014,9 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
             other_than_mismatch = true;
             if (report_errors || (rna_editing && (prot_len < len - 1 || prot_len > len))) {
                 PostErr(rna_editing ? eDiag_Warning : eDiag_Error, eErr_SEQ_FEAT_TransLen,
-                    "Given protein length [" + NStr::IntToString(prot_len) + 
+                    "Given protein length [" + NStr::SizetToString(prot_len) + 
                     "] does not match " + farstr + "translation length [" + 
-                    NStr::IntToString(len) + "]", feat);
+                    NStr::SizetToString(len) + "]", feat);
             }
         }
         
@@ -6050,7 +6050,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
             prot_res = prot_vec[mismatches.front()];
             transl_res = Residue(transl_prot[mismatches.front()]);
             msg = 
-                NStr::IntToString(mismatches.size()) + " mismatches found. " +
+                NStr::SizetToString(mismatches.size()) + " mismatches found. " +
                 "First mismatch at " + NStr::IntToString(mismatches.front() + 1) +
                 ", residue in protein [" + prot_res + "]" +
                 " != translation [" + transl_res + "]";
@@ -6146,8 +6146,8 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
             }
             if (transl_terminal_x != prod_terminal_x) {
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_TerminalXDiscrepancy,
-                         "Terminal X count for CDS translation (" + NStr::IntToString (transl_terminal_x)
-                         + ") and protein product sequence (" + NStr::IntToString (prod_terminal_x)
+                         "Terminal X count for CDS translation (" + NStr::SizetToString (transl_terminal_x)
+                         + ") and protein product sequence (" + NStr::SizetToString (prod_terminal_x)
                          + ") are not equal", feat);
             }
         }
@@ -6187,8 +6187,8 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
             if (num_mismatches * 50 <= len) {
                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_ErroneousException,
                     "CDS has unclassified exception but only difference is "
-                    + NStr::IntToString (num_mismatches) + " mismatches out of " 
-                    + NStr::IntToString (len) + " residues", feat);
+                    + NStr::SizetToString (num_mismatches) + " mismatches out of " 
+                    + NStr::SizetToString (len) + " residues", feat);
             }
         } else if (product_replaced) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnqualifiedException,
@@ -6304,7 +6304,7 @@ bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
                             string msg = "Unnecessary transl_except ";
                             msg += ex;
                             msg += " at position ";
-                            msg += NStr::IntToString (prot_pos + 1);
+                            msg += NStr::SizetToString (prot_pos + 1);
                             PostErr (eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryTranslExcept,
                                      msg,
                                      feat);
@@ -6313,7 +6313,7 @@ bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
                         if (!NStr::Equal (except_char, "*")) {
                             PostErr (eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryTranslExcept,
                                      "Unexpected transl_except " + except_char
-                                     + " at position " + NStr::IntToString (prot_pos + 1),
+                                     + " at position " + NStr::SizetToString (prot_pos + 1),
                                      feat);
                         }
                     }
@@ -6444,13 +6444,13 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
             if (equivalent) {
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_GeneXrefNeeded,
                          "Feature overlapped by "
-                         + NStr::IntToString(num_genes)
+                         + NStr::SizetToString(num_genes)
                          + " identical-length equivalent genes but has no cross-reference",
                          feat);
             } else {
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_MissingGeneXref,
                          "Feature overlapped by "
-                         + NStr::IntToString(num_genes)
+                         + NStr::SizetToString(num_genes)
                          + " identical-length genes but has no cross-reference",
                          feat);
             }

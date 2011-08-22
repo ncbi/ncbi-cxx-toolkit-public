@@ -1331,8 +1331,8 @@ bool CValidError_imp::Validate
         if (num_inferences > 1000 || num_accessions > 1000) {
             // warn about too many inferences
             PostErr (eDiag_Info, eErr_SEQ_FEAT_TooManyInferenceAccessions,
-                     "Skipping validation of " + NStr::IntToString (num_inferences) + " /inference qualifiers with "
-                     + NStr::IntToString (num_accessions) + " accessions",
+                     "Skipping validation of " + NStr::SizetToString (num_inferences) + " /inference qualifiers with "
+                     + NStr::SizetToString (num_accessions) + " accessions",
                      *m_TSE);
 
             // disable inference checking
@@ -1374,15 +1374,15 @@ bool CValidError_imp::Validate
          m_NumTpaWithoutHistory > 0 ) {
         PostErr(eDiag_Error, eErr_SEQ_INST_TpaAssmeblyProblem,
             "There are " +
-            NStr::IntToString(m_NumTpaWithHistory) +
+            NStr::SizetToString(m_NumTpaWithHistory) +
             " TPAs with history and " + 
-            NStr::IntToString(m_NumTpaWithoutHistory) +
+            NStr::SizetToString(m_NumTpaWithoutHistory) +
             " without history in this record.", *seq);
     }
     if ( m_NumTpaWithoutHistory > 0 && has_gi) {
         PostErr (eDiag_Warning, eErr_SEQ_INST_TpaAssmeblyProblem,
             "There are " +
-            NStr::IntToString(m_NumTpaWithoutHistory) +
+            NStr::SizetToString(m_NumTpaWithoutHistory) +
             " TPAs without history in this record, but the record has a gi number assignment.", *m_TSE);
     }
     if (IsIndexerVersion() && DoesAnyProteinHaveGeneralID() && !IsRefSeq() && has_nucleotide_sequence) {
@@ -1397,7 +1397,7 @@ bool CValidError_imp::Validate
 
     if (m_NumMisplacedFeatures > 1) {
         PostErr (eDiag_Critical, eErr_SEQ_PKG_FeaturePackagingProblem, 
-                 "There are " + NStr::IntToString (m_NumMisplacedFeatures) + " mispackaged features in this record.",
+                 "There are " + NStr::SizetToString (m_NumMisplacedFeatures) + " mispackaged features in this record.",
                  *(seh.GetCompleteSeq_entry()));
     } else if (m_NumMisplacedFeatures == 1) {
         PostErr (eDiag_Critical, eErr_SEQ_PKG_FeaturePackagingProblem,
@@ -1406,7 +1406,7 @@ bool CValidError_imp::Validate
     }
     if (m_NumSmallGenomeSetMisplaced > 1) {
         PostErr (eDiag_Warning, eErr_SEQ_PKG_FeaturePackagingProblem, 
-                 "There are " + NStr::IntToString (m_NumSmallGenomeSetMisplaced) + " mispackaged features in this small genome set record.",
+                 "There are " + NStr::SizetToString (m_NumSmallGenomeSetMisplaced) + " mispackaged features in this small genome set record.",
                  *(seh.GetCompleteSeq_entry()));
     } else if (m_NumSmallGenomeSetMisplaced == 1) {
         PostErr (eDiag_Warning, eErr_SEQ_PKG_FeaturePackagingProblem,
@@ -1416,14 +1416,14 @@ bool CValidError_imp::Validate
     if ( m_NumGenes == 0  &&  
          m_NumGeneXrefs > 0 ) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_OnlyGeneXrefs,
-            "There are " + NStr::IntToString(m_NumGeneXrefs) +
+            "There are " + NStr::SizetToString(m_NumGeneXrefs) +
             " gene xrefs and no gene features in this record.", *m_TSE);
     }
     ValidateCitations (seh);
 
 
     if ( m_NumMisplacedGraphs > 0 ) {
-        string num = NStr::IntToString(m_NumMisplacedGraphs);
+        string num = NStr::SizetToString(m_NumMisplacedGraphs);
         PostErr(eDiag_Critical, eErr_SEQ_PKG_GraphPackagingProblem,
             string("There ") + ((m_NumMisplacedGraphs > 1) ? "are " : "is ") + num + 
             " mispackaged graph" + ((m_NumMisplacedGraphs > 1) ? "s" : "") + " in this record.",

@@ -474,9 +474,9 @@ void CValidError_align::x_ValidateDenseg
     if ( numseg != denseg.GetLens().size() ) {
         PostErr(eDiag_Error, eErr_SEQ_ALIGN_SegsNumsegMismatch,
                 "Mismatch between specified numseg (" +
-                NStr::UIntToString(numseg) + 
+                NStr::SizetToString(numseg) + 
                 ") and number of Lens (" + 
-                NStr::UIntToString(denseg.GetLens().size()) + ")",
+                NStr::SizetToString(denseg.GetLens().size()) + ")",
                 align);
     }
 
@@ -484,9 +484,9 @@ void CValidError_align::x_ValidateDenseg
     if ( dim * numseg != denseg.GetStarts().size() ) {
         PostErr(eDiag_Error, eErr_SEQ_ALIGN_SegsStartsMismatch,
                 "The number of Starts (" + 
-                NStr::UIntToString(denseg.GetStarts().size()) +
+                NStr::SizetToString(denseg.GetStarts().size()) +
                 ") does not match the expected size of dim * numseg (" +
-                NStr::UIntToString(dim * numseg) + ")", align);
+                NStr::SizetToString(dim * numseg) + ")", align);
     } 
 
     x_ValidateStrand(denseg, align);
@@ -545,9 +545,9 @@ void CValidError_align::x_ValidatePacked
     if ( numseg != packed.GetLens().size() ) {
         PostErr(eDiag_Error, eErr_SEQ_ALIGN_SegsDimMismatch,
             "Mismatch between specified numseg (" +
-            NStr::UIntToString(numseg) + 
+            NStr::SizetToString(numseg) + 
             ") and number of Lens (" + 
-            NStr::UIntToString(packed.GetLens().size()) + ")",
+            NStr::SizetToString(packed.GetLens().size()) + ")",
             align);
     }
     
@@ -555,17 +555,17 @@ void CValidError_align::x_ValidatePacked
     if ( dim * numseg != packed.GetPresent().size() ) {
         PostErr(eDiag_Error, eErr_SEQ_ALIGN_SegsPresentMismatch,
                 "The number of Present (" + 
-                NStr::UIntToString(packed.GetPresent().size()) +
+                NStr::SizetToString(packed.GetPresent().size()) +
                 ") does not match the expected size of dim * numseg (" +
-                NStr::UIntToString(dim * numseg) + ")", align);
+                NStr::SizetToString(dim * numseg) + ")", align);
     } else {
         // assert # of '1' bits in present == Starts.size()
         size_t bits = x_CountBits(packed.GetPresent());
         if ( bits != packed.GetStarts().size() ) {
             PostErr(eDiag_Error, eErr_SEQ_ALIGN_SegsPresentStartsMismatch,
                 "Starts does not have the same number of elements (" +
-                NStr::UIntToString(packed.GetStarts().size()) + 
-                ") as specified by Present (" + NStr::UIntToString(bits) +
+                NStr::SizetToString(packed.GetStarts().size()) + 
+                ") as specified by Present (" + NStr::SizetToString(bits) +
                 ")", align);
         }
 
@@ -574,9 +574,9 @@ void CValidError_align::x_ValidatePacked
             if ( bits != packed.GetStarts().size() ) {
                 PostErr(eDiag_Error, eErr_SEQ_ALIGN_SegsPresentStrandsMismatch,
                     "Strands does not have the same number of elements (" +
-                    NStr::UIntToString(packed.GetStrands().size()) +
+                    NStr::SizetToString(packed.GetStrands().size()) +
                     ") as specified by Present (" +
-                    NStr::UIntToString(bits) + ")", align);
+                    NStr::SizetToString(bits) + ")", align);
             }
         }
     }
@@ -629,7 +629,7 @@ void CValidError_align::x_ValidateDendiag
         // assert dim == Ids.size()
         if ( dim != dendiag.GetIds().size() ) {
             PostErr(eDiag_Error, eErr_SEQ_ALIGN_SegsDimSeqIdNotMatch,
-                    "SeqId: In segment " + NStr::IntToString (num_dendiag) 
+                    "SeqId: In segment " + NStr::SizetToString (num_dendiag) 
                     + ", there are more or fewer rows than there are seqids (context "
                     + label + ").  Look for possible formatting errors in the ids.", align);
         }
@@ -638,10 +638,10 @@ void CValidError_align::x_ValidateDendiag
         if ( dim != dendiag.GetStarts().size() ) {
             PostErr(eDiag_Error, eErr_SEQ_ALIGN_SegsDimMismatch,
                 "Mismatch between specified dimension (" +
-                NStr::UIntToString(dim) + 
+                NStr::SizetToString(dim) + 
                 ") and number ofStarts (" + 
-                NStr::UIntToString(dendiag.GetStarts().size()) + 
-                ") in dendiag " + NStr::UIntToString(num_dendiag), align);
+                NStr::SizetToString(dendiag.GetStarts().size()) + 
+                ") in dendiag " + NStr::SizetToString(num_dendiag), align);
         } 
 
         // assert dim == Strands.size() (if exist)
@@ -649,10 +649,10 @@ void CValidError_align::x_ValidateDendiag
             if ( dim != dendiag.GetStrands().size() ) {
                 PostErr(eDiag_Error, eErr_SEQ_ALIGN_SegsDimMismatch,
                     "Mismatch between specified dimension (" +
-                    NStr::UIntToString(dim) + 
+                    NStr::SizetToString(dim) + 
                     ") and number of Strands (" + 
-                    NStr::UIntToString(dendiag.GetStrands().size()) + 
-                    ") in dendiag " + NStr::UIntToString(num_dendiag), align);
+                    NStr::SizetToString(dendiag.GetStrands().size()) + 
+                    ") in dendiag " + NStr::SizetToString(num_dendiag), align);
             } 
         }
 
@@ -687,7 +687,7 @@ void CValidError_align::x_ValidateStd
             string label;
             stdseg.GetLoc()[0]->GetLabel(&label);
             PostErr(eDiag_Error, eErr_SEQ_ALIGN_SegsDimSeqIdNotMatch,
-                    "SeqId: In segment " + NStr::IntToString (num_stdseg) 
+                    "SeqId: In segment " + NStr::SizetToString (num_stdseg) 
                     + ", there are more or fewer rows than there are seqids (context "
                     + label + ").  Look for possible formatting errors in the ids.", align);
         }
@@ -697,9 +697,9 @@ void CValidError_align::x_ValidateStd
             if ( dim != stdseg.GetIds().size() ) {
                 PostErr(eDiag_Error, eErr_SEQ_ALIGN_SegsDimMismatch,
                     "Mismatch between specified dimension (" +
-                    NStr::UIntToString(dim) + 
+                    NStr::SizetToString(dim) + 
                     ") and number of Seq-ids (" + 
-                    NStr::UIntToString(stdseg.GetIds().size()) + ")",
+                    NStr::SizetToString(stdseg.GetIds().size()) + ")",
                     align);
             }
         }
@@ -726,7 +726,7 @@ bool CValidError_align::x_ValidateDim
     if ( !obj.IsSetDim() || obj.GetDim() == 0) {
         if (part > 0) {
             PostErr (eDiag_Error, eErr_SEQ_ALIGN_SegsDimOne,
-                     "Segs: Segment " + NStr::IntToString (part) + "has dimension zero", align);
+                     "Segs: Segment " + NStr::SizetToString (part) + "has dimension zero", align);
         } else {
             PostErr (eDiag_Error, eErr_SEQ_ALIGN_AlignDimOne,
                      "Dim: This alignment has dimension zero", align);
@@ -734,7 +734,7 @@ bool CValidError_align::x_ValidateDim
     } else if (obj.GetDim() == 1) {
         if (part > 0) {
             PostErr (eDiag_Error, eErr_SEQ_ALIGN_SegsDimOne,
-                     "Segs: Segment " + NStr::IntToString (part) + "apparently has only one sequence.  Each portion of the alignment must have at least two sequences.", align);
+                     "Segs: Segment " + NStr::SizetToString (part) + "apparently has only one sequence.  Each portion of the alignment must have at least two sequences.", align);
         } else {
             PostErr (eDiag_Error, eErr_SEQ_ALIGN_AlignDimOne,
                      "Dim: This seqalign apparently has only one sequence.  Each alignment must have at least two sequences.", align);
@@ -792,8 +792,8 @@ void CValidError_align::x_ValidateStrand
                     denseg.GetIds()[id]->AsFastaString() +
                     " are inconsistent across the alignment. "
                     "The first inconsistent region is the " + 
-                    NStr::UIntToString(seg + 1) + "(th) region, near sequence position "
-                    + NStr::IntToString(denseg.GetStarts()[id + (seg * dim)]), align);
+                    NStr::SizetToString(seg + 1) + "(th) region, near sequence position "
+                    + NStr::SizetToString(denseg.GetStarts()[id + (seg * dim)]), align);
                     break;
             }
         }
@@ -1044,8 +1044,8 @@ void CValidError_align::x_ValidateSegmentGap
                 label = "unknown";
             }
             PostErr (eDiag_Error, eErr_SEQ_ALIGN_SegmentGap,
-                     "Segs: Segment " + NStr::IntToString (seg + 1) + " (near alignment position "
-                     + NStr::IntToString(align_pos) + ") in the context of "
+                     "Segs: Segment " + NStr::SizetToString (seg + 1) + " (near alignment position "
+                     + NStr::SizetToString(align_pos) + ") in the context of "
                      + label + " contains only gaps.  Each segment must contain at least one actual sequence -- look for columns with all gaps and delete them.",
                      align);
         }
@@ -1082,8 +1082,8 @@ void CValidError_align::x_ValidateSegmentGap
                 packed.GetIds()[0]->GetLabel(&label);
             }
             PostErr (eDiag_Error, eErr_SEQ_ALIGN_SegmentGap,
-                     "Segs: Segment " + NStr::IntToString (seg + 1) + " (near alignment position "
-                     + NStr::IntToString(align_pos) + ") in the context of "
+                     "Segs: Segment " + NStr::SizetToString (seg + 1) + " (near alignment position "
+                     + NStr::SizetToString(align_pos) + ") in the context of "
                      + label + " contains only gaps.  Each segment must contain at least one actual sequence -- look for columns with all gaps and delete them.",
                      align);
         }
@@ -1116,8 +1116,8 @@ void CValidError_align::x_ValidateSegmentGap
         if ( gap ) {
             // no sequence is present in this segment
             PostErr (eDiag_Error, eErr_SEQ_ALIGN_SegmentGap,
-                     "Segs: Segment " + NStr::IntToString (seg + 1) + " (near alignment position "
-                     + NStr::IntToString(align_pos) + ") in the context of "
+                     "Segs: Segment " + NStr::SizetToString (seg + 1) + " (near alignment position "
+                     + NStr::SizetToString(align_pos) + ") in the context of "
                      + label + " contains only gaps.  Each segment must contain at least one actual sequence -- look for columns with all gaps and delete them.",
                      align);
         }
@@ -1140,7 +1140,7 @@ void CValidError_align::x_ValidateSegmentGap
                 (*diag_seg)->GetIds().front()->GetLabel(&label);
             }
             PostErr (eDiag_Error, eErr_SEQ_ALIGN_SegmentGap,
-                     "Segs: Segment " + NStr::IntToString (seg + 1) + " (near alignment position "
+                     "Segs: Segment " + NStr::SizetToString (seg + 1) + " (near alignment position "
                      + NStr::IntToString(align_pos) + ") in the context of "
                      + label + " contains only gaps.  Each segment must contain at least one actual sequence -- look for columns with all gaps and delete them.",
                      align);
@@ -1331,7 +1331,7 @@ void CValidError_align::x_ValidateSeqLength
                 starts[next_index] ) {
                 PostErr(eDiag_Error, eErr_SEQ_ALIGN_DensegLenStart,
                         "Start/Length: There is a problem with sequence " + label + 
-                        ", in segment " + NStr::IntToString (curr_index + 1)
+                        ", in segment " + NStr::SizetToString (curr_index + 1)
                         + " (near sequence position " + NStr::IntToString (starts[curr_index])
                         + "), context " + label + ": the segment is too long or short or the next segment has an incorrect start position", align);
             }
@@ -1374,7 +1374,7 @@ void CValidError_align::x_ValidateSeqLength
                     seg_start += packed.GetLens()[seg];
                     if (seg_start > bsh.GetBioseqLength()) {                    
                         PostErr(eDiag_Error, eErr_SEQ_ALIGN_SumLenStart,
-                                "Start: In sequence " + label + ", segment " + NStr::IntToString (seg + 1)
+                                "Start: In sequence " + label + ", segment " + NStr::SizetToString (seg + 1)
                                 + " (near sequence position " + NStr::IntToString (seg_start)
                                 + "), the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment",
                                 align);

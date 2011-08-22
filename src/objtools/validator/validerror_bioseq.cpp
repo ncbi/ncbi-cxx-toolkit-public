@@ -2426,7 +2426,7 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
                 } catch (std::exception ) {
                 }
 
-                string msg = "[" + NStr::IntToString(terminations) + "] termination symbols in protein sequence";
+                string msg = "[" + NStr::SizetToString(terminations) + "] termination symbols in protein sequence";
 
                 if (NStr::IsBlank(gene_label)) {
                     gene_label = "gene?";
@@ -2446,11 +2446,11 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
                                "gap symbol at start of protein sequence (" + gene_label + " - " + protein_label + ")",
                                seq);
                       PostErr (eDiag_Error, eErr_SEQ_INST_GapInProtein, 
-                               "[" + NStr::IntToString (dashes - 1) + "] internal gap symbols in protein sequence (" + gene_label + " - " + protein_label + ")",
+                               "[" + NStr::SizetToString (dashes - 1) + "] internal gap symbols in protein sequence (" + gene_label + " - " + protein_label + ")",
                                seq);
                     } else {
                       PostErr (eDiag_Error, eErr_SEQ_INST_GapInProtein, 
-                               "[" + NStr::IntToString (dashes) + "] internal gap symbols in protein sequence (" + gene_label + " - " + protein_label + ")",
+                               "[" + NStr::SizetToString (dashes) + "] internal gap symbols in protein sequence (" + gene_label + " - " + protein_label + ")",
                                seq);
                     }
                 }
@@ -2486,7 +2486,7 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
                     if (run_len > 0 && start_pos > 1
                         && ((is_wgs && run_len >= 20) || run_len >= 100)) {
                         PostErr (eDiag_Warning, eErr_SEQ_INST_InternalNsInSeqRaw, 
-                                 "Run of " + NStr::IntToString (run_len) + " Ns in raw sequence starting at base "
+                                 "Run of " + NStr::SizetToString (run_len) + " Ns in raw sequence starting at base "
                                  + NStr::IntToString (start_pos),
                                  seq);
                     }
@@ -2760,7 +2760,7 @@ void CValidError_bioseq::ValidateDeltaLoc
                 loc_str = "?";
             }
             PostErr(eDiag_Warning, eErr_SEQ_INST_SeqLocLength,
-                "Short length (" + NStr::IntToString(loc_len) + 
+                "Short length (" + NStr::SizetToString(loc_len) + 
                 ") on seq-loc (" + loc_str + ") of delta seq_ext", seq);
         }
 
@@ -3022,7 +3022,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
     if ( num_adjacent_gaps >= 1 ) {
         string msg = (num_adjacent_gaps == 1) ?
             "There is one adjacent gap in delta seq" :
-            "There are " + NStr::IntToString(num_adjacent_gaps) +
+            "There are " + NStr::SizetToString(num_adjacent_gaps) +
             " adjacent gaps in delta seq";
         PostErr(eDiag_Error, eErr_SEQ_INST_BadDeltaSeq, msg, seq);
     }
@@ -3085,7 +3085,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                         CSeqVector::TResidue res = *sv_iter;
                         if (res == 'N') {
                             PostErr (eDiag_Error, eErr_SEQ_INST_InternalNsAdjacentToGap,
-                                     "Ambiguous residue N is adjacent to a gap around position " + NStr::IntToString (pos + 1),
+                                     "Ambiguous residue N is adjacent to a gap around position " + NStr::SizetToString (pos + 1),
                                      seq);
                         }
                     } 
@@ -3095,7 +3095,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                         CSeqVector::TResidue res = *sv_iter;
                         if (res == 'N') {
                             PostErr (eDiag_Error, eErr_SEQ_INST_InternalNsAdjacentToGap,
-                                     "Ambiguous residue N is adjacent to a gap around position " + NStr::IntToString (pos + delta_len + 1),
+                                     "Ambiguous residue N is adjacent to a gap around position " + NStr::SizetToString (pos + delta_len + 1),
                                      seq);
                         }
                     }
@@ -4528,8 +4528,8 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
         if (numcds > 0 && nummrna > 1) {
             if (cds_products.size() > 0 && cds_products.size() + num_pseudocds + num_rearrangedcds != numcds) {
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureProductInconsistency, 
-                         NStr::IntToString (numcds) + " CDS features have "
-                         + NStr::IntToString (cds_products.size()) + " product references",
+                         NStr::SizetToString (numcds) + " CDS features have "
+                         + NStr::SizetToString (cds_products.size()) + " product references",
                         seq);
             }
             if (cds_products.size() > 0 && (! cds_products_unique)) {
@@ -4538,8 +4538,8 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
             }
             if (mrna_products.size() > 0 && mrna_products.size() + num_pseudomrna != nummrna) {
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureProductInconsistency, 
-                         NStr::IntToString (nummrna) + " mRNA features have "
-                         + NStr::IntToString (mrna_products.size()) + " product references",
+                         NStr::SizetToString (nummrna) + " mRNA features have "
+                         + NStr::SizetToString (mrna_products.size()) + " product references",
                          seq);
             }
             if (mrna_products.size() > 0 && (! mrna_products_unique)) {
@@ -5211,8 +5211,8 @@ void CValidError_bioseq::x_ValidateGeneCDSmRNACounts (const CBioseq_Handle& seq)
                           mrna_num = mrna_count[it->first];
                 if (cds_num > 0 && mrna_num > 1 && cds_num != mrna_num) {
                     PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAmismatch,
-                        "mRNA count (" + NStr::IntToString(mrna_num) + 
-                        ") does not match CDS (" + NStr::IntToString(cds_num) +
+                        "mRNA count (" + NStr::SizetToString(mrna_num) + 
+                        ") does not match CDS (" + NStr::SizetToString(cds_num) +
                         ") count for gene", *it->first);
                 }
             }
@@ -7976,13 +7976,13 @@ void CValidError_bioseq::ValidateGraphsOnBioseq(const CBioseq& seq)
         if (ACGTs_without_score * 10 > num_bases) {
             double pct = (double) (ACGTs_without_score) * 100.0 / (double) num_bases;
             PostErr(eDiag_Warning, eErr_SEQ_GRAPH_GraphACGTScoreMany, 
-                    NStr::IntToString (ACGTs_without_score) + " ACGT bases ("
+                    NStr::SizetToString (ACGTs_without_score) + " ACGT bases ("
                     + NStr::DoubleToString (pct, 2) + "%) have zero score value - first one at position "
                     + NStr::IntToString (first_ACGT + 1),
                     seq);
         } else {            
             PostErr(eDiag_Warning, eErr_SEQ_GRAPH_GraphACGTScore, 
-                NStr::IntToString(ACGTs_without_score) + 
+                NStr::SizetToString(ACGTs_without_score) + 
                 " ACGT bases have zero score value - first one at position " +
                 NStr::IntToString(first_ACGT + 1), seq);
         }
@@ -7991,32 +7991,32 @@ void CValidError_bioseq::ValidateGraphsOnBioseq(const CBioseq& seq)
         if (Ns_with_score * 10 > num_bases) {
             double pct = (double) (Ns_with_score) * 100.0 / (double) num_bases;
             PostErr(eDiag_Warning, eErr_SEQ_GRAPH_GraphNScoreMany,
-                    NStr::IntToString(Ns_with_score) + " N bases ("
+                    NStr::SizetToString(Ns_with_score) + " N bases ("
                     + NStr::DoubleToString(pct, 2) + "%) have positive score value - first one at position "
                     + NStr::IntToString(first_N + 1),
                     seq);
         } else {
             PostErr(eDiag_Warning, eErr_SEQ_GRAPH_GraphNScore,
-                NStr::IntToString(Ns_with_score) +
+                NStr::SizetToString(Ns_with_score) +
                 " N bases have positive score value - first one at position " + 
                 NStr::IntToString(first_N + 1), seq);
         }
     }
     if ( gaps_with_score > 0 ) {
         PostErr(eDiag_Error, eErr_SEQ_GRAPH_GraphGapScore,
-            NStr::IntToString(gaps_with_score) + 
+            NStr::SizetToString(gaps_with_score) + 
             " gap bases have positive score value", 
             seq);
     }
     if ( vals_below_min > 0 ) {
         PostErr(eDiag_Warning, eErr_SEQ_GRAPH_GraphBelow,
-            NStr::IntToString(vals_below_min) + 
+            NStr::SizetToString(vals_below_min) + 
             " quality scores have values below the reported minimum or 0", 
             seq);
     }
     if ( vals_above_max > 0 ) {
         PostErr(eDiag_Warning, eErr_SEQ_GRAPH_GraphAbove,
-            NStr::IntToString(vals_above_max) + 
+            NStr::SizetToString(vals_above_max) + 
             " quality scores have values above the reported maximum or 100", 
             seq);
     }
@@ -8030,8 +8030,8 @@ void CValidError_bioseq::ValidateGraphsOnBioseq(const CBioseq& seq)
     SIZE_TYPE seq_len = GetSeqLen(seq);
     if ( (seq_len != graphs_len)  &&  (inst.GetLength() != graphs_len) ) {
         PostErr(eDiag_Error, eErr_SEQ_GRAPH_GraphBioseqLen,
-            "SeqGraph (" + NStr::IntToString(graphs_len) + ") and Bioseq (" +
-            NStr::IntToString(seq_len) + ") length mismatch", seq);
+            "SeqGraph (" + NStr::SizetToString(graphs_len) + ") and Bioseq (" +
+            NStr::SizetToString(seq_len) + ") length mismatch", seq);
     }
     
     if ( inst.GetRepr() == CSeq_inst::eRepr_delta  &&  num_graphs > 1 ) {
@@ -8058,8 +8058,8 @@ void CValidError_bioseq::ValidateByteGraphOnBioseq
     TSeqPos numval = graph.GetNumval();
     if ( numval != bg.GetValues().size() ) {
         PostErr(eDiag_Error, eErr_SEQ_GRAPH_GraphByteLen,
-            "SeqGraph (" + NStr::IntToString(numval) + ") " + 
-            "and ByteStore (" + NStr::IntToString(bg.GetValues().size()) +
+            "SeqGraph (" + NStr::SizetToString(numval) + ") " + 
+            "and ByteStore (" + NStr::SizetToString(bg.GetValues().size()) +
             ") length mismatch", seq, graph);
     }
 }
@@ -8378,8 +8378,8 @@ void CValidError_bioseq::ValidateGraphOnDeltaBioseq
     if ( num_delta_seq != num_graphs ) {
         PostErr(eDiag_Error, eErr_SEQ_GRAPH_GraphDiffNumber,
             "Different number of SeqGraph (" + 
-            NStr::IntToString(num_graphs) + ") and SeqLit (" +
-            NStr::IntToString(num_delta_seq) + ") components",
+            NStr::SizetToString(num_graphs) + ") and SeqLit (" +
+            NStr::SizetToString(num_delta_seq) + ") components",
             seq);
     }
 }
