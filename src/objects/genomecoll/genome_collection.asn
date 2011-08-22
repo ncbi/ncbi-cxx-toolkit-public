@@ -285,7 +285,11 @@ GC-AssemblyDesc ::= SEQUENCE {
         patch(1),
         -- stopper
         other(255)
-    } DEFAULT major
+    } DEFAULT major,
+
+    -- organization which submitted this assembly.
+    -- populated from BioProject
+    submitter-organization  VisibleString OPTIONAL
 }
 
 GC-Replicon ::= SEQUENCE
