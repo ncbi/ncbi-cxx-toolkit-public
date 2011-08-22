@@ -3958,7 +3958,8 @@ CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInferenceAccessi
                 if (dot_pos == string::npos || NStr::IsBlank(remainder.substr(dot_pos + 1))) {
                     acc_code = -5;
                 } else {
-                    const char *cp = remainder.substr(dot_pos + 1).c_str();
+                    const string& cps = remainder.substr(dot_pos + 1);
+                    const char *cp = cps.c_str();
                     while (*cp != 0 && isdigit (*cp)) {
                         ++cp;
                     }
