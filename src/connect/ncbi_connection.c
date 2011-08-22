@@ -560,14 +560,13 @@ static EIO_Status s_CONN_Write
  const size_t size,
  size_t*      n_written)
 {
-    const STimeout* timeout;
+    const STimeout* timeout = 0/*dummy*/;
     EIO_Status status;
 
     assert(*n_written == 0);
 
     /* check if the write method is specified at all */
     if (!conn->meta.write) {
-        timeout = 0/*dummy*/;
         status = eIO_NotSupported;
         CONN_LOG(16, Write, eLOG_Critical, "Cannot write data");
         return status;
@@ -753,14 +752,13 @@ static EIO_Status s_CONN_Read
  size_t*      n_read,
  int/*bool*/  peek)
 {
-    const STimeout* timeout;
+    const STimeout* timeout = 0/*dummy*/;
     EIO_Status status;
 
     assert(*n_read == 0);
 
     /* check if the read method is specified at all */
     if (!conn->meta.read) {
-        timeout = 0/*dummy*/;
         status = eIO_NotSupported;
         CONN_LOG(22, Read, eLOG_Critical, "Cannot read data");
         return status;
