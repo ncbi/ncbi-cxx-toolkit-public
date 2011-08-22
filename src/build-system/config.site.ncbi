@@ -106,10 +106,7 @@ esac
 
 : ${LIBXML_PATH=$NCBI/libxml-2.7.3}
 
-case "$ncbi_platform" in
-    FreeBSD32 ) ;;
-    * ) : ${LZO_PATH=$NCBI/lzo-2.02} ;;
-esac
+: ${LZO_PATH=$NCBI/lzo-2.05}
 
 case "$ncbi_platform" in
     SunOS* ) : ${MUPARSER_PATH=$NCBI/muParser-1.30-ncbi1} ;;
