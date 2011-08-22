@@ -128,6 +128,8 @@ protected:
         CMappedFeat );
     virtual bool x_AssignAttributeProteinId(
         CMappedFeat );
+    virtual bool x_AssignAttributeExonNumber(
+        CMappedFeat );
 
     //
     //  Helper functions:

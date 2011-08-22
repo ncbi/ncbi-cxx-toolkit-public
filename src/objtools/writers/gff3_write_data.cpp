@@ -371,7 +371,9 @@ bool CGff3WriteRecordFeature::x_AssignAttributesMiscFeature(
 //  ----------------------------------------------------------------------------
 {
     return (
-        x_AssignAttributeException( mapped_feat ) );
+        x_AssignAttributeException( mapped_feat )  &&
+        x_AssignAttributeExonNumber( mapped_feat )  &&
+        x_AssignAttributePseudo( mapped_feat ) );
 }
 
 //  ----------------------------------------------------------------------------
@@ -789,10 +791,6 @@ bool CGff3WriteRecordFeature::x_AssignAttributeException(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
-//    CSeqFeatData::E_Choice choice = mapped_feat.GetData().Which();
-//    if ( choice == CSeq_feat::TData::e_Cdregion ) {
-//        cerr << "";
-//    }
     if ( mapped_feat.IsSetExcept_text() ) {
         m_Attributes["exception"] = mapped_feat.GetExcept_text();
         return true;
@@ -800,6 +798,26 @@ bool CGff3WriteRecordFeature::x_AssignAttributeException(
     if ( mapped_feat.IsSetExcept() ) {
         // what should I do?
         return true;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3WriteRecordFeature::x_AssignAttributeExonNumber(
+    CMappedFeat mf )
+//  ----------------------------------------------------------------------------
+{
+    if (mf.IsSetQual()) {
+        const CSeq_feat::TQual& quals = mf.GetQual();
+        for ( CSeq_feat::TQual::const_iterator cit = quals.begin(); 
+            cit != quals.end(); 
+            ++cit ) {
+            const CGb_qual& qual = **cit;
+            if (qual.IsSetQual()  &&  qual.GetQual() == "number") {
+                m_Attributes["exon_number"] = qual.GetVal();
+                return true;
+            }
+        }
     }
     return true;
 }

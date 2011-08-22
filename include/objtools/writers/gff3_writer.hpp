@@ -87,10 +87,7 @@ protected:
     virtual bool x_WriteFeatureGene(
         feature::CFeatTree&,
         CMappedFeat );
-    virtual bool x_WriteFeatureMrna(
-        feature::CFeatTree&,
-        CMappedFeat );
-    virtual bool x_WriteFeatureTrna(
+    virtual bool x_WriteFeatureRna(
         feature::CFeatTree&,
         CMappedFeat );
     virtual bool x_WriteFeatureCds(
