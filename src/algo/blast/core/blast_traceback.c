@@ -1208,7 +1208,7 @@ BLAST_SetupPartialFetching(EBlastProgramType program_number,
 
     /* iterate through the hsps and add ranges */
     for (i = 0; i < num_hsplists; i++) {
-       BlastHSPList* hsp_list = hsplist_array[i];
+       const BlastHSPList* hsp_list = hsplist_array[i];
         for (j = 0; j < hsp_list->hspcnt; j++) {
             BlastHSP *hsp = hsp_list->hsp_array[j];
             Int4 begin = hsp->subject.offset;
