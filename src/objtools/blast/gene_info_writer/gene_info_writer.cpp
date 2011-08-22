@@ -49,30 +49,16 @@ void CGeneFileWriter::x_ReadAndProcessFile
     CNcbiIfstream& in,
     CLineProcessor* pLineProcessor,
     TTwoIntRecordVec& vecRecords,
-    int nMinLineLength,
-    int nMaxLineLength
+    int nMinLineLength
 )
 {
-    int nBufSize = nMaxLineLength;
-    char* pBuf = new char[nBufSize + 1];
-    try
+    string buffer;
+    while (getline(in, buffer))
     {
-        while (in)
+        if (int(buffer.length()) >= nMinLineLength)
         {
-            in.getline(pBuf, nBufSize);
-            string strBuf = string(pBuf);
-
-            if (int(strBuf.length()) >= nMinLineLength)
-            {
-                pLineProcessor->Process(strBuf, vecRecords);
-            }
+            pLineProcessor->Process(buffer, vecRecords);
         }
-        delete [] pBuf;
-    }
-    catch (...)
-    {
-        delete [] pBuf;
-        throw;
     }
 }
 
@@ -380,8 +366,7 @@ void CGeneFileWriter::x_Gene2Accn_ProcessFile(bool bOverwrite)
                 (inGene2Accn,
                  proc.get(),
                  vecRecords,
-                 GENE_2_ACCN_LINE_MIN,
-                 GENE_2_ACCN_LINE_MAX);
+                 GENE_2_ACCN_LINE_MIN);
 
     // sort the records, remove all those Gis linking to multiple Gene Ids
 
@@ -587,8 +572,7 @@ void CGeneFileWriter::x_GeneInfo_ProcessFile(bool bOverwrite)
                 (inGeneInfo,
                  proc.get(),
                  vecRecords,
-                 GENE_INFO_LINE_MIN,
-                 GENE_INFO_LINE_MAX);
+                 GENE_INFO_LINE_MIN);
 
     // sort the vector of records and output them to the file
 
@@ -690,8 +674,7 @@ void CGeneFileWriter::
                 (inGene2PM,
                  proc.get(),
                  vecRecords,
-                 GENE_2_PM_LINE_MIN,
-                 GENE_2_PM_LINE_MAX);
+                 GENE_2_PM_LINE_MIN);
 
     if (vecRecords.size() == 0)
         return;     // no PubMed data

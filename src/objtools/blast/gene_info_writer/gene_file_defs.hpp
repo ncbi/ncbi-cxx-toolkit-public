@@ -43,8 +43,6 @@
 
 /// Minimum valid length of a Gene->Accession line.
 #define GENE_2_ACCN_LINE_MIN                30
-/// Maximum valid length of a Gene->Accession line.
-#define GENE_2_ACCN_LINE_MAX                20000
 /// Number of items on a valid Gene->Accession line.
 #define GENE_2_ACCN_NUM_ITEMS               13
 /// Index of the taxonomy ID item on a Gene->Accession line.
@@ -62,8 +60,6 @@
 
 /// Minimum valid length of a Gene Info line.
 #define GENE_INFO_LINE_MIN                  50
-/// Maximum valid length of a Gene Info line.
-#define GENE_INFO_LINE_MAX                  20000
 /// Number of items on a valid Gene Info line.
 #define GENE_INFO_NUM_ITEMS                 15
 /// Index of the taxonomy ID item on a Gene Info line.
@@ -77,8 +73,6 @@
 
 /// Minimum valid length of a Gene->PubMed line.
 #define GENE_2_PM_LINE_MIN                  5
-/// Maximum valid length of a Gene->PubMed line.
-#define GENE_2_PM_LINE_MAX                  500
 /// Number of items on a valid Gene->PubMed line.
 #define GENE_2_PM_NUM_ITEMS                 3
 /// Index of the Gene ID item on a Gene->PubMed line.

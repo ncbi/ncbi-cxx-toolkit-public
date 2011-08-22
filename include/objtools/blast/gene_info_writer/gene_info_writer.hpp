@@ -251,15 +251,12 @@ private:
     ///     Vector of records to populate with data from the file.
     /// @param nMinLineLength
     ///     Minimum length of a valid line in the input file.
-    /// @param nMaxLineLength
-    ///     Maximum length of a valid line in the input file.
     void x_ReadAndProcessFile
     (
         CNcbiIfstream& in,
         CLineProcessor* pLineProcessor,
         TTwoIntRecordVec& vecRecords,
-        int nMinLineLength,
-        int nMaxLineLength
+        int nMinLineLength
     );
 
     // =================================================================== //
