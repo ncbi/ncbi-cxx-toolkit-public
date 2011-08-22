@@ -106,8 +106,8 @@ protected:
         string& ) const;
 
     string m_strId;
-    size_t m_uSeqStart;
-    size_t m_uSeqStop;
+    unsigned int m_uSeqStart;
+    unsigned int m_uSeqStop;
     string m_strSource;
     string m_strType;
     double* m_pdScore;

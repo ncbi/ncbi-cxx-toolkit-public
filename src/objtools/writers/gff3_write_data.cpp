@@ -127,7 +127,7 @@ string s_BestIdString(
     if ( !best_idh ) {
         best_idh = idh;
     }
-    string strId("GB:");
+    string strId("");
     best_idh.GetSeqId()->GetLabel( &strId, CSeq_id::eContent );
     return strId;
 }
