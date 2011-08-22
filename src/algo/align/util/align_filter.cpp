@@ -58,46 +58,6 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-//////////////////////////////////////////////////////////////////////////////
-
-class CMD5StreamWriter : public IWriter
-{
-public:
-    CMD5StreamWriter()
-        : m_Checksum(CChecksum::eMD5)
-        {
-        }
-
-    virtual ERW_Result Write(const void* buf,
-                             size_t count,
-                             size_t* bytes_written = 0)
-    {
-        if (bytes_written) {
-            *bytes_written = count;
-        }
-
-        m_Checksum.AddChars((const char*)buf, count);
-        return eRW_Success;
-    }
-
-    virtual ERW_Result Flush()
-    {
-        return eRW_Success;
-    }
-
-    void GetMD5Sum(string& s) const
-    {
-        unsigned char buf[16];
-        m_Checksum.GetMD5Digest(buf);
-
-        s.clear();
-        s.insert(s.end(), (const char*)buf, (const char*)buf + 16);
-    }
-
-private:
-    CChecksum m_Checksum;
-};
-
 /////////////////////////////////////////////////////////////////////////////
 
 class CScore_AlignLength : public CAlignFilter::IScore
@@ -107,6 +67,8 @@ public:
         : m_Gaps(include_gaps)
     {
     }
+
+    virtual EComplexity GetComplexity() const { return eEasy; };
 
     virtual double Get(const CSeq_align& align, CScope*) const
     {
@@ -137,6 +99,8 @@ public:
         ostr << "Length of the longest gap observed in either query or subject";
     }
 
+    virtual EComplexity GetComplexity() const { return eEasy; };
+
     virtual double Get(const CSeq_align& align, CScope* s) const
     {
         try {
@@ -157,6 +121,8 @@ public:
     {
         ostr << "Length of unaligned sequence 3' of alignment end";
     }
+
+    virtual EComplexity GetComplexity() const { return eEasy; };
 
     virtual double Get(const CSeq_align& align, CScope* scope) const
     {
@@ -194,6 +160,8 @@ public:
             "the length of all missing, unaligned sequence bounded by the "
             "aligned range";
     }
+
+    virtual EComplexity GetComplexity() const { return eEasy; };
 
     virtual double Get(const CSeq_align& align, CScope* scope) const
     {
@@ -288,6 +256,8 @@ public:
     {
     }
 
+    virtual EComplexity GetComplexity() const { return eEasy; };
+
     virtual void PrintHelp(CNcbiOstream& ostr) const
     {
         if (m_Start) {
@@ -333,6 +303,9 @@ public:
         ostr << "Ratio of subject aligned range length to query aligned "
             "range length";
     }
+
+    virtual EComplexity GetComplexity() const { return eEasy; };
+
     virtual double Get(const CSeq_align& align, CScope*) const
     {
         return align.AlignLengthRatio();
@@ -358,6 +331,8 @@ public:
             ostr << "Length of subject sequence";
         }
     }
+
+    virtual EComplexity GetComplexity() const { return eHard; };
 
     virtual double Get(const CSeq_align& align, CScope* scope) const
     {
@@ -394,6 +369,8 @@ public:
             "subject sequence lengths";
     }
 
+    virtual EComplexity GetComplexity() const { return eHard; };
+
     virtual double Get(const CSeq_align& align, CScope* scope) const
     {
         double pct_overlap = 0;
@@ -425,6 +402,8 @@ public:
             "by Splign or ProSplign.";
     }
 
+    virtual EComplexity GetComplexity() const { return eEasy; };
+
     virtual double Get(const CSeq_align& align, CScope*) const
     {
         try {
@@ -448,6 +427,8 @@ public:
             "by Splign or ProSplign.";
     }
 
+    virtual EComplexity GetComplexity() const { return eEasy; };
+
     virtual double Get(const CSeq_align& align, CScope*) const
     {
         try {
@@ -455,6 +436,37 @@ public:
         } catch (CSeqalignException &) {
             return numeric_limits<double>::quiet_NaN();
         }
+    }
+};
+
+//////////////////////////////////////////////////////////////////////////////
+
+class CScore_ExonCount : public CAlignFilter::IScore
+{
+public:
+    virtual void PrintHelp(CNcbiOstream& ostr) const
+    {
+        ostr <<
+            "Count of the number of exons.  Note that this score has "
+            "meaning only for Spliced-seg alignments, as would be generated "
+            "by Splign or ProSplign.";
+    }
+
+    virtual EComplexity GetComplexity() const { return eEasy; };
+
+    virtual double Get(const CSeq_align& align, CScope*) const
+    {
+        if (align.GetSegs().IsSpliced()) {
+            const CSpliced_seg& seg = align.GetSegs().GetSpliced();
+            if (seg.IsSetExons()) {
+                return seg.GetExons().size();
+            }
+            return 0;
+        }
+
+        NCBI_THROW(CException, eUnknown,
+                   "'exon_count' score is valid only for "
+                   "Spliced-seg alignments");
     }
 };
 
@@ -471,6 +483,8 @@ public:
             "transcript.  Note that this has meaning only for Spliced-seg "
             "transcript alignments.";
     }
+
+    virtual EComplexity GetComplexity() const { return eHard; };
 
     virtual double Get(const CSeq_align& align, CScope* scope) const
     {
@@ -536,6 +550,8 @@ public:
     CScore_CdsScore(EScoreType type)
     : m_ScoreType(type)
     {}
+
+    virtual EComplexity GetComplexity() const { return eHard; };
 
     virtual void PrintHelp(CNcbiOstream& ostr) const
     {
@@ -614,6 +630,8 @@ public:
     {
     }
 
+    virtual EComplexity GetComplexity() const { return eHard; };
+
     virtual void PrintHelp(CNcbiOstream& ostr) const
     {
         if (m_Row == 0) {
@@ -651,6 +669,8 @@ public:
             "has at least two exons.";
     }
 
+    virtual EComplexity GetComplexity() const { return eEasy; };
+
     virtual double Get(const CSeq_align& align, CScope* scope) const
     {
         double score = numeric_limits<double>::quiet_NaN();
@@ -678,6 +698,71 @@ public:
 private:
     int m_Row;
 };
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+static inline void s_ParseTree_Flatten(CQueryParseTree& tree,
+                                       CQueryParseTree::TNode& node)
+{
+    CQueryParseNode::EType type = node->GetType();
+    switch (type) {
+    case CQueryParseNode::eAnd:
+    case CQueryParseNode::eOr:
+        {{
+             CQueryParseTree::TNode::TNodeList_I iter;
+             size_t hoisted = 0;
+             do {
+                 hoisted = 0;
+                 for (iter = node.SubNodeBegin();
+                      iter != node.SubNodeEnd();  ) {
+                     CQueryParseTree::TNode& sub_node = **iter;
+                     if (sub_node->GetType() == type) {
+                         /// hoist this node's children
+                         CQueryParseTree::TNode::TNodeList_I sub_iter =
+                             sub_node.SubNodeBegin();
+                         for ( ;  sub_iter != sub_node.SubNodeEnd(); ) {
+                             node.AddNode(sub_node.DetachNode(*sub_iter++));
+                         }
+
+                         node.RemoveNode(iter++);
+                         ++hoisted;
+                     } else {
+                         ++iter;
+                     }
+                 }
+             }
+             while (hoisted != 0);
+
+             // check for SESSION_HIT(a) OR SESSION_HIT(b) - convert
+             // to SESSION_HIT(a OR b)
+             if (type == CQueryParseNode::eOr) {
+                 size_t count = 0;
+                 for (iter = node.SubNodeBegin();
+                      iter != node.SubNodeEnd();  ++iter) {
+                     if ((*iter)->GetValue().GetStrValue() == "SESSION_HIT") {
+                         ++count;
+                     }
+                 }
+                 if (count > 1) {
+                     LOG_POST(Error << "woo hoo!");
+                 }
+             }
+         }}
+        break;
+
+    default:
+        break;
+    }
+
+    CQueryParseTree::TNode::TNodeList_I iter;
+    for (iter = node.SubNodeBegin();
+         iter != node.SubNodeEnd();  ++iter) {
+        s_ParseTree_Flatten(tree, **iter);
+    }
+}
+
+
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -813,6 +898,11 @@ void CAlignFilter::x_Init()
         (TScoreDictionary::value_type
          ("last_splice_site",
           CIRef<IScore>(new CScore_LastSpliceSite)));
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("exon_count",
+          CIRef<IScore>(new CScore_ExonCount)));
 }
 
 
@@ -840,6 +930,11 @@ void CAlignFilter::SetFilter(const string& filter)
                        CQueryParseTree::eCaseInsensitive,
                        CQueryParseTree::eSyntaxCheck, false,
                        func_vec);
+
+    // flatten the tree
+    // this transforms the tree so that equivalent nodes are grouped more
+    // effectively.  this grouping permist easier tree evaluation
+    s_ParseTree_Flatten(*m_ParseTree, *m_ParseTree->GetQueryTree());
 
     m_Scope.Reset(new CScope(*CObjectManager::GetInstance()));
     m_Scope->AddDefaults();
@@ -1014,14 +1109,14 @@ void CAlignFilter::DryRun(CNcbiOstream &ostr) {
 
 bool CAlignFilter::x_IsUnique(const CSeq_align& align)
 {
-    CMD5StreamWriter md5;
+    CChecksumStreamWriter md5(CChecksum::eMD5);
     {{
         CWStream wstr(&md5);
         wstr << MSerial_AsnBinary << align;
      }}
 
     string md5_str;
-    md5.GetMD5Sum(md5_str);
+    md5.GetChecksum().GetMD5Digest(md5_str);
     return m_UniqueAligns.insert(md5_str).second;
 }
 

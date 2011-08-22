@@ -159,11 +159,16 @@ public:
     class IScore : public CObject
     {
     public:
+        enum EComplexity {
+            eEasy,
+            eHard
+        };
+
         virtual ~IScore() {}
         virtual double Get(const objects::CSeq_align& align,
                            objects::CScope* scope) const = 0;
-        virtual void PrintHelp(CNcbiOstream &ostr) const
-        { ostr << "Explanation TBA"; }
+        virtual void PrintHelp(CNcbiOstream &ostr) const = 0;
+        virtual EComplexity GetComplexity() const { return eEasy; };
     };
 
 public:
