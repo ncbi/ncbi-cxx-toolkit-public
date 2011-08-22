@@ -63,7 +63,7 @@ public:
                 512, 512, kZlibDefaultWbits, CZipCompression::fCheckFileHeader );
             CCompressionIStream* pUnzipStream = new CCompressionIStream(
                 *pInputStream, pDecompressor, CCompressionIStream::fOwnProcessor );
-            m_is.reset(CObjectIStream::Open( args["binary"] ? eSerial_AsnBinary : eSerial_AsnText, *pUnzipStream, true ));
+            m_is.reset(CObjectIStream::Open( args["binary"] ? eSerial_AsnBinary : eSerial_AsnText, *pUnzipStream, eTakeOwnership ));
         } else {
             m_is.reset( 
                 CObjectIStream::Open(
