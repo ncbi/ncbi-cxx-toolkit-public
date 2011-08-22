@@ -536,7 +536,7 @@ string CDeflineGenerator::x_DescribeClones (void)
         ++count;
     }
     if (count > 3) {
-        return ", " + NStr::IntToString(count) + " clones";
+        return ", " + NStr::SizetToString(count) + " clones";
     } else {
         return " clone " + m_Clone;
     }
