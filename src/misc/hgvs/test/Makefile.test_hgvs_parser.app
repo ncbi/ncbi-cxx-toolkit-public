@@ -15,6 +15,6 @@ LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 REQUIRES = Boost.Spirit Boost.Test.Included
 
 CHECK_COPY = test_variations.asn
-CHECK_CMD  = ./test_hgvs_parser -in test_variations.asn
+CHECK_CMD  = test_hgvs_parser -in test_variations.asn
 
 WATCHERS = astashya
