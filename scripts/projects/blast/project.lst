@@ -29,7 +29,8 @@ util/compress$
 util/compress/bzip2$
 util/compress/zlib$
 util/compress/api$
-util/xregexp$
+util/regexp$
+util/xregexp
 util/sequtil$
 util/bitset$
 util/math$
