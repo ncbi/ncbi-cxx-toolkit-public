@@ -5749,6 +5749,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "TZM	s	National Science Museum",
 "U	s	Nationaal Herbarium Nederland, Utrecht University branch",
 "UA<GRC>	s	Department of Historical Geology and Paleontology",
+"UA<USA-AL>	s	University of Alabama Collection",
 "UA<USA-AZ>	s	University of Arizona",
 "UAAAC	s	University of Alaska Anchorage Avian Collection",
 "UAAH	s	University of Alaska Anchorage, Department of Biological Sciences",
