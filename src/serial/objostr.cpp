@@ -480,7 +480,7 @@ void CObjectOStream::ThrowError1(const CDiagCompileInfo& diag_info,
     case fNotImplemented: err = CSerialException::eNotImplemented; break;
     case fUnassigned:
         throw CUnassignedMember(diag_info,exc,CUnassignedMember::eWrite,
-                                GetPosition()+": "+message);
+                                GetPosition()+": cannot write unassigned member "+message);
     }
     throw CSerialException(diag_info,exc,err,GetPosition()+": "+message);
 }

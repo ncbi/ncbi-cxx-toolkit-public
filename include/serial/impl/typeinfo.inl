@@ -39,12 +39,6 @@ ETypeFamily CTypeInfo::GetTypeFamily(void) const
 }
 
 inline
-const string& CTypeInfo::GetName(void) const
-{
-    return m_Name;
-}
-
-inline
 size_t CTypeInfo::GetSize(void) const
 {
     return m_Size;
@@ -125,5 +119,10 @@ bool CTypeInfo::IsCObject(void) const
     return m_IsCObject;
 }
 
+inline
+bool CTypeInfo::IsInternal(void) const
+{
+    return m_IsInternal;
+}
 
 #endif /* def TYPEINFO__HPP  &&  ndef TYPEINFO__INL */

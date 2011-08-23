@@ -422,6 +422,9 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 #define SET_CLASS_MODULE(ModuleName) \
     NCBI_NS_NCBI::SetModuleName(info, ModuleName)
 
+#define SET_INTERNAL_NAME(OwnerName, MemberName) \
+    NCBI_NS_NCBI::SetInternalName(info, OwnerName, MemberName)
+
 #define SET_NAMESPACE(name) \
     info->SetNamespaceName(name)
 
@@ -518,6 +521,9 @@ const NCBI_NS_NCBI::CEnumeratedTypeValues* MethodName(void) \
 #define SET_ENUM_MODULE(ModuleName) \
     NCBI_NS_NCBI::SetModuleName(enumInfo, ModuleName)
 
+#define SET_ENUM_INTERNAL_NAME(OwnerName, MemberName) \
+    NCBI_NS_NCBI::SetInternalName(enumInfo, OwnerName, MemberName)
+
 #define ADD_ENUM_VALUE(EnumValueName, EnumValueValue) \
     enumInfo->AddValue(EnumValueName, enumValue = EnumValueValue)
 
@@ -590,6 +596,14 @@ void SetModuleName(CTypeInfo* info, const char* name);
 
 NCBI_XSERIAL_EXPORT
 void SetModuleName(CEnumeratedTypeValues* info, const char* name);
+
+NCBI_XSERIAL_EXPORT
+void SetInternalName(CTypeInfo* info,
+                     const char* owner_name, const char* member_name = 0);
+
+NCBI_XSERIAL_EXPORT
+void SetInternalName(CEnumeratedTypeValues* info,
+                     const char* owner_name, const char* member_name = 0);
 
 // internal methods
 // add member

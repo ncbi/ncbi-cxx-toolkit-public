@@ -146,6 +146,20 @@ public:
     // return true CTypeInfo of object (redefined in polymorphic classes)
     virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const;
 
+    /// Check if this TypeInfo describes internal unnamed type
+    bool IsInternal(void) const;
+    /// Return internal type access string e.g. Int-fuzz.range
+    const string& GetInternalName(void) const;
+    /// Return internal type's owner module name
+    const string& GetInternalModuleName(void) const;
+    /// Mark this type as internal
+    void SetInternalName(const string& name);
+
+    /// Return internal or regular name
+    const string& GetAccessName(void) const;
+    /// Return internal or regular module name
+    const string& GetAccessModuleName(void) const;
+
     // I/O interface:
     void ReadData(CObjectIStream& in, TObjectPtr object) const;
     void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
@@ -241,6 +255,7 @@ protected:
     void SetSkipFunction(TTypeSkipFunction func);
 
     bool m_IsCObject;
+    bool m_IsInternal;
 
 private:
     // type specific function pointers

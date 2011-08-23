@@ -51,6 +51,7 @@ public:
                      const string& packedType,
                      const string& cType, bool isInteger,
                      const TValues& values, const string& valuesPrefix,
+                     const string& namespaceName, const CDataType* dataType,
                      const CComments& comments);
 
     const string& GetExternalName(void) const

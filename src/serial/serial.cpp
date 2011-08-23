@@ -98,6 +98,28 @@ void SetModuleName(CEnumeratedTypeValues* info, const char* moduleName)
     info->SetModuleName(GetModuleName(moduleName));
 }
 
+void SetInternalName(CTypeInfo* info,
+                     const char* owner_name, const char* member_name)
+{
+    string name = owner_name;
+    if ( member_name && *member_name ) {
+        name += '.';
+        name += member_name;
+    }
+    info->SetInternalName(name);
+}
+
+void SetInternalName(CEnumeratedTypeValues* info,
+                     const char* owner_name, const char* member_name)
+{
+    string name = owner_name;
+    if ( member_name && *member_name ) {
+        name += '.';
+        name += member_name;
+    }
+    info->SetInternalName(name);
+}
+
 // add member functions
 CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,

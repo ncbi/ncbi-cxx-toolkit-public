@@ -490,7 +490,23 @@ void CDataType::x_SetMemberAndClassName(const string& memberName)
 
     if ( GetParentType() ) {
         // local type
-        m_ClassName = "C_"+Identifier(m_MemberName);
+        if ( m_MemberName == "E" ) {
+            m_ClassName = "E";
+            for ( const CDataType* type = GetParentType(); type; type = type->GetParentType() ) {
+                const CDataType* parent = type->GetParentType();
+                if ( !parent )
+                    break;
+                if ( dynamic_cast<const CDataMemberContainerType*>(parent) ) {
+                    m_ClassName += "_";
+                    m_ClassName += Identifier(type->m_MemberName);
+                    break;
+                }
+            }
+            m_ClassName = "C_" + m_ClassName;
+        }
+        else {
+            m_ClassName = "C_"+Identifier(m_MemberName);
+        }
 
         const CDataType* parent = GetParentType();
         if (parent->IsUniSeq()) {

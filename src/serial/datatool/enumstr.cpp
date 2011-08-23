@@ -35,6 +35,7 @@
 #include "srcutil.hpp"
 #include "enumtype.hpp"
 #include "code.hpp"
+#include "module.hpp"
 #include <corelib/ncbiutil.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -45,8 +46,10 @@ CEnumTypeStrings::CEnumTypeStrings(const string& externalName,
                                    const string& cType, bool isInteger,
                                    const TValues& values,
                                    const string& valuePrefix,
+                                   const string& namespaceName,
+                                   const CDataType* dataType,
                                    const CComments& comments)
-    : CParent(comments),
+    : CParent(namespaceName, dataType, comments),
       m_ExternalName(externalName), m_EnumName(enumName),
       m_PackedType(packedType),
       m_CType(cType), m_IsInteger(isInteger),
@@ -168,9 +171,35 @@ void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
         }
         cpp <<", "<<m_EnumName<<", "<<(m_IsInteger?"true":"false")<<")\n"
             "{\n";
-        if ( !GetModuleName().empty() ) {
+        string owner_name, member_name;
+        string module_name = GetModuleName();
+#if 1
+        if ( module_name.empty() ) {
+            // internal type
+            const CDataType* this_type = DataType();
+            if ( this_type ) {
+                owner_name = this_type->IdName();
+                SIZE_TYPE dot = owner_name.rfind('.');
+                if ( dot != NPOS ) {
+                    member_name = owner_name.substr(dot+1);
+                    owner_name.resize(dot);
+                }
+                module_name = this_type->GetModule()->GetName();
+            }
+        }
+#endif
+        if ( !owner_name.empty() ) {
             cpp <<
-                "    SET_ENUM_MODULE(\""<<GetModuleName()<<"\");\n";
+                "    SET_ENUM_INTERNAL_NAME(\""<<owner_name<<"\", ";
+            if ( !member_name.empty() )
+                cpp << "\""<<member_name<<"\"";
+            else
+                cpp << "0";
+            cpp << ");\n";
+        }
+        if ( !module_name.empty() ) {
+            cpp <<
+                "    SET_ENUM_MODULE(\""<<module_name<<"\");\n";
         }
         ITERATE ( TValues, i, m_Values ) {
             string id = Identifier(i->GetName(), false);

@@ -873,7 +873,7 @@ void CMemberInfoFunctions::WriteWithSetFlagMember(CObjectOStream& out,
         ESerialVerifyData verify = out.GetVerifyData();
         if (verify == eSerialVerifyData_Yes) {
             out.ThrowError(CObjectOStream::fUnassigned,
-                string("Unassigned member: ")+memberInfo->GetId().GetName());
+                           memberInfo->GetId().GetName());
         } else if (verify == eSerialVerifyData_No) {
             return;
         }
@@ -889,7 +889,7 @@ void CMemberInfoFunctions::WriteWithSetFlagMember(CObjectOStream& out,
         CConstObjectInfo::CElementIterator ei = objinfo.BeginElements();
         if (!ei.Valid()) {
             out.ThrowError(CObjectOStream::fUnassigned,
-                string("Unassigned member: ")+memberInfo->GetId().GetName());
+                           memberInfo->GetId().GetName());
         }
     }
 #ifdef _DEBUG

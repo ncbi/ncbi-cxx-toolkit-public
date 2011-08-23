@@ -413,7 +413,8 @@ AutoPtr<CTypeStrings> CEnumDataType::GetFullCType(void) const
         e(new CEnumTypeStrings(GlobalName(), enumInfo.enumName,
                                GetVar("_packedtype"),
                                enumInfo.cType, IsInteger(),
-                               m_Values, enumInfo.valuePrefix, Comments()));
+                               m_Values, enumInfo.valuePrefix,
+                               GetNamespaceName(), this, Comments()));
     return AutoPtr<CTypeStrings>(e.release());
 }
 

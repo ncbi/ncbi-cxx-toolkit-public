@@ -44,13 +44,17 @@ BEGIN_NCBI_SCOPE
 
 CEnumeratedTypeValues::CEnumeratedTypeValues(const char* name,
                                              bool isInteger)
-    : m_Name(name), m_Integer(isInteger)
+    : m_Name(name),
+      m_Integer(isInteger),
+      m_IsInternal(false)
 {
 }
 
 CEnumeratedTypeValues::CEnumeratedTypeValues(const string& name,
                                              bool isInteger)
-    : m_Name(name), m_Integer(isInteger)
+    : m_Name(name),
+      m_Integer(isInteger),
+      m_IsInternal(false)
 {
 }
 
@@ -58,11 +62,49 @@ CEnumeratedTypeValues::~CEnumeratedTypeValues(void)
 {
 }
 
+const string& CEnumeratedTypeValues::GetName(void) const
+{
+    return IsInternal()? kEmptyStr: m_Name;
+}
+
+const string& CEnumeratedTypeValues::GetModuleName(void) const
+{
+    return IsInternal()? kEmptyStr: m_ModuleName;
+}
+
 void CEnumeratedTypeValues::SetModuleName(const string& name)
 {
     if ( !m_ModuleName.empty() )
         NCBI_THROW(CSerialException,eFail,"cannot change module name");
     m_ModuleName = name;
+}
+
+const string& CEnumeratedTypeValues::GetInternalName(void) const
+{
+    return !IsInternal()? kEmptyStr: m_Name;
+}
+
+const string& CEnumeratedTypeValues::GetInternalModuleName(void) const
+{
+    return !IsInternal()? kEmptyStr: m_ModuleName;
+}
+
+void CEnumeratedTypeValues::SetInternalName(const string& name)
+{
+    if ( IsInternal() || !m_Name.empty() || !m_ModuleName.empty() )
+        NCBI_THROW(CSerialException,eFail, "cannot change (internal) name");
+    m_IsInternal = true;
+    m_Name = name;
+}
+
+const string& CEnumeratedTypeValues::GetAccessName(void) const
+{
+    return m_Name;
+}
+
+const string& CEnumeratedTypeValues::GetAccessModuleName(void) const
+{
+    return m_ModuleName;
 }
 
 TEnumValueType CEnumeratedTypeValues::FindValue(const CTempString& name) const
@@ -167,8 +209,11 @@ CEnumeratedTypeInfo::CEnumeratedTypeInfo(size_t size,
       m_Values(*values)
 {
     _ASSERT(m_ValueType->GetPrimitiveValueType() == ePrimitiveValueInteger);
-    if ( !values->GetModuleName().empty() )
-        SetModuleName(values->GetModuleName());
+    if ( values->IsInternal() )
+        SetInternalName(values->GetInternalName());
+    const string& module_name = values->GetAccessModuleName();
+    if ( !module_name.empty() )
+        SetModuleName(module_name);
     SetCreateFunction(&CreateEnum);
     SetReadFunction(&ReadEnum);
     SetWriteFunction(&WriteEnum);

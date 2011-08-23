@@ -140,6 +140,9 @@ public:
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
     void ThrowUnassigned(TMemberIndex index) const;
+    void ThrowUnassigned(TMemberIndex index,
+                         const char* file_name,
+                         int file_line) const;
     // for all GetX() methods called in the current thread
     static  void SetVerifyDataThread(ESerialVerifyData verify);
     // for all GetX() methods called in the current process

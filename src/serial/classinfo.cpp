@@ -333,7 +333,7 @@ void CClassTypeInfo::WriteImplicitMember(CObjectOStream& out,
             ESerialVerifyData verify = out.GetVerifyData();
             if (verify == eSerialVerifyData_Yes) {
                 out.ThrowError(CObjectOStream::fUnassigned,
-                    string("Unassigned member: ")+classType->GetName());
+                               "implicit "+classType->GetName());
             } else if (verify == eSerialVerifyData_No) {
                 return;
             }

@@ -59,15 +59,9 @@ public:
     CEnumeratedTypeValues(const string& name, bool isInteger);
     ~CEnumeratedTypeValues(void);
 
-    const string& GetName(void) const
-        {
-            return m_Name;
-        }
+    const string& GetName(void) const;
     /// Get ASN.1 module name
-    const string& GetModuleName(void) const
-        {
-            return m_ModuleName;
-        }
+    const string& GetModuleName(void) const;
     /// Set ASN.1 module name
     void SetModuleName(const string& name);
 
@@ -76,6 +70,24 @@ public:
         {
             return m_Integer;
         }
+
+    /// Check if this enum describes internal unnamed type
+    bool IsInternal(void) const
+        {
+            return m_IsInternal;
+        }
+    /// Return internal type access string e.g. Int-fuzz.lim
+    const string& GetInternalName(void) const;
+    /// Return internal type's owner module name
+    const string& GetInternalModuleName(void) const;
+    /// Mark this enum as internal
+    void SetInternalName(const string& name);
+
+    /// Return internal or regular name
+    const string& GetAccessName(void) const;
+    /// Return internal or regular module name
+    const string& GetAccessModuleName(void) const;
+
     /// Get the list of name-value pairs
     const TValues& GetValues(void) const
         {
@@ -124,6 +136,7 @@ private:
     string m_ModuleName;
 
     bool m_Integer;
+    bool m_IsInternal;
     TValues m_Values;
     mutable auto_ptr<TNameToValue> m_NameToValue;
     mutable auto_ptr<TValueToName> m_ValueToName;

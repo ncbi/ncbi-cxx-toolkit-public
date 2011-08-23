@@ -360,23 +360,7 @@ void CUniSequenceDataType::PrintDTDExtra(CNcbiOstream& out) const
 void CUniSequenceDataType::FixTypeTree(void) const
 {
     CParent::FixTypeTree();
-    string name("E");
-    const CDataMemberContainerType* elem =
-        dynamic_cast<const CDataMemberContainerType*>(m_ElementType.get());
-    if (elem) {
-        const CDataMemberContainerType* par =
-            dynamic_cast<const CDataMemberContainerType*>(GetParentType());
-        if (par) {
-#if 1
-            name = string("E_") + Identifier(GetMemberName());
-#else
-            if (par->UniElementNameExists(name)) {
-                name = string("E_") + Identifier(GetMemberName());
-            }
-#endif
-        }
-    }
-    m_ElementType->SetParent(this, name, "E");
+    m_ElementType->SetParent(this, "E", "E");
     m_ElementType->SetInSet(this);
 }
 

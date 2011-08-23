@@ -43,6 +43,7 @@
 #include "stlstr.hpp"
 #include "ptrstr.hpp"
 #include "reftype.hpp"
+#include "module.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -360,12 +361,12 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 if (mem != 0) {
                     const CDataMemberContainerType* elem =
                         dynamic_cast<const CDataMemberContainerType*>(mem->GetElementType());
-                    if (elem != 0 && NStr::StartsWith(elem->GetMemberName(),"E_")) {
+                    if (elem && elem->GetMemberName() == "E") {
                         string name;
                         if (elem->GetTypeStr()) {
                             name = elem->GetTypeStr()->GetClassNameDT();
                         } else {
-                            name = "C_" + elem->GetMemberName();
+                            name = elem->ClassName();
                         }
                         code.ClassPublic() <<
                             "    typedef "<< name <<" "<< "C_E;\n";
@@ -711,7 +712,11 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                          !isNullWithAtt) {
                     code.Methods(inl) <<
                         "    if (!CanGet"<< i->cName<<"()) {\n"
-                        "        ThrowUnassigned("<<member_index<<");\n"
+                        "        ThrowUnassigned("<<member_index;
+#if 0
+                    code.Methods(inl) << ", __FILE__, __LINE__";
+#endif
+                    code.Methods(inl) << ");\n"
                         "    }\n";
                 }
                 code.Methods(inl) <<
@@ -1177,9 +1182,38 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     methods <<
         "CLASS_INFO(\""<<GetExternalName()<<"\", "<<classPrefix<<GetClassNameDT()<<")\n"
         "{\n";
-    if ( !GetModuleName().empty() ) {
+    
+    string owner_name, member_name;
+    string module_name = GetModuleName();
+#if 1
+    if ( module_name.empty() ) {
+        // internal type
+        const CDataType* this_type = DataType();
+        if ( this_type ) {
+            owner_name = this_type->IdName();
+            if ( owner_name.find("E_") != NPOS )
+                owner_name = this_type->IdName();
+            SIZE_TYPE dot = owner_name.rfind('.');
+            if ( dot != NPOS ) {
+                member_name = owner_name.substr(dot+1);
+                owner_name.resize(dot);
+            }
+            module_name = this_type->GetModule()->GetName();
+        }
+    }
+#endif
+    if ( !owner_name.empty() ) {
         methods <<
-            "    SET_CLASS_MODULE(\""<<GetModuleName()<<"\");\n";
+            "    SET_INTERNAL_NAME(\""<<owner_name<<"\", ";
+        if ( !member_name.empty() )
+            methods << "\""<<member_name<<"\"";
+        else
+            methods << "0";
+        methods << ");\n";
+    }
+    if ( !module_name.empty() ) {
+        methods <<
+            "    SET_CLASS_MODULE(\""<<module_name<<"\");\n";
     }
 
     ENsQualifiedMode defNsqMode = eNSQNotSet;

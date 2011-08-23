@@ -96,6 +96,7 @@ CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size)
     : m_TypeFamily(typeFamily), m_Size(size), m_Name(),
       m_InfoItem(0),
       m_IsCObject(false),
+      m_IsInternal(false),
       m_CreateFunction(&CVoidTypeFunctions::Create),
       m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
       m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
@@ -110,6 +111,7 @@ CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size, const char* name)
     : m_TypeFamily(typeFamily), m_Size(size), m_Name(name),
       m_InfoItem(0),
       m_IsCObject(false),
+      m_IsInternal(false),
       m_CreateFunction(&CVoidTypeFunctions::Create),
       m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
       m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
@@ -124,6 +126,7 @@ CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size, const string& name)
     : m_TypeFamily(typeFamily), m_Size(size), m_Name(name),
       m_InfoItem(0),
       m_IsCObject(false),
+      m_IsInternal(false),
       m_CreateFunction(&CVoidTypeFunctions::Create),
       m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
       m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
@@ -194,9 +197,14 @@ void CTypeInfo::x_CreateInfoItemIfNeeded(void) const
     }
 }
 
+const string& CTypeInfo::GetName(void) const
+{
+    return IsInternal()? kEmptyStr: m_Name;
+}
+
 const string& CTypeInfo::GetModuleName(void) const
 {
-    return m_ModuleName;
+    return IsInternal()? kEmptyStr: m_ModuleName;
 }
 
 void CTypeInfo::SetModuleName(const string& name)
@@ -209,6 +217,34 @@ void CTypeInfo::SetModuleName(const string& name)
 void CTypeInfo::SetModuleName(const char* name)
 {
     SetModuleName(string(name));
+}
+
+const string& CTypeInfo::GetInternalName(void) const
+{
+    return !IsInternal()? kEmptyStr: m_Name;
+}
+
+const string& CTypeInfo::GetInternalModuleName(void) const
+{
+    return !IsInternal()? kEmptyStr: m_ModuleName;
+}
+
+void CTypeInfo::SetInternalName(const string& name)
+{
+    if ( IsInternal() || !m_Name.empty() || !m_ModuleName.empty() )
+        NCBI_THROW(CSerialException,eFail, "cannot change (internal) name");
+    m_IsInternal = true;
+    m_Name = name;
+}
+
+const string& CTypeInfo::GetAccessName(void) const
+{
+    return m_Name;
+}
+
+const string& CTypeInfo::GetAccessModuleName(void) const
+{
+    return m_ModuleName;
 }
 
 void CTypeInfo::Delete(TObjectPtr /*object*/) const

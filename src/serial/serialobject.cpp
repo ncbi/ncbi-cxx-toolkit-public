@@ -208,25 +208,92 @@ ESerialVerifyData CSerialObject::x_GetVerifyData(void)
     }
 }
 
-void CSerialObject::ThrowUnassigned(TMemberIndex index) const
+BEGIN_LOCAL_NAMESPACE;
+
+struct SPrintIdentifier
+{
+    SPrintIdentifier(const CTempString& s) : m_String(s) { }
+    CTempString m_String;
+};
+CNcbiOstream& operator<<(CNcbiOstream& out, SPrintIdentifier s)
+{
+    bool capitalize = true;
+    for ( size_t i = 0; i < s.m_String.size(); ++i ) {
+        char c = s.m_String[i];
+        if ( c == '.' ) {
+            out << "::C_";
+            capitalize = true;
+        }
+        else {
+            if ( c == '-' ) {
+                c = '_';
+            }
+            if ( capitalize ) {
+                c = toupper((unsigned char)c);
+                capitalize = false;
+            }
+            out << c;
+        }
+    }
+    return out;
+}
+
+END_LOCAL_NAMESPACE;
+
+void CSerialObject::ThrowUnassigned(TMemberIndex index,
+                                    const char* file_name,
+                                    int file_line) const
 {
     if (x_GetVerifyData() == eSerialVerifyData_Yes) {
         const CTypeInfo* type = GetThisTypeInfo();
-        CNcbiOstrstream s;
-        s << type->GetModuleName() << "::" << type->GetName() << ".";
         const CClassTypeInfoBase* classtype =
             dynamic_cast<const CClassTypeInfoBase*>(type);
         // offset index as the argument is zero based but items are 1 based
-        index += classtype->GetItems().FirstIndex();
-        if ( classtype &&
-             index >= classtype->GetItems().FirstIndex() &&
-             index <= classtype->GetItems().LastIndex() ) {
-            s << classtype->GetItems().GetItemInfo(index)->GetId().GetName();
+        string member_name;
+        if ( classtype ) {
+            index += classtype->GetItems().FirstIndex();
+            if ( index >= classtype->GetItems().FirstIndex() &&
+                 index <= classtype->GetItems().LastIndex() ) {
+                member_name = classtype->GetItems().GetItemInfo(index)->GetId().GetName();
+            }
+        }
+        CNcbiOstrstream s;
+        if ( true ) {
+            // make class name
+            s << "C" << SPrintIdentifier(type->GetAccessName());
+        }
+        if ( !member_name.empty() ) {
+            // make method name
+            s << "::Get" << SPrintIdentifier(member_name) << "()";
+        }
+        s << ": Attempt to get unassigned member "
+          << type->GetAccessModuleName() <<"::"<< type->GetAccessName() << '.';
+        if ( !member_name.empty() ) {
+            s << member_name;
         } else {
             s << '[' << index << ']';
         }
+// set temporary diag compile info to use argument file name and line
+#undef DIAG_COMPILE_INFO
+#define DIAG_COMPILE_INFO                                               \
+        NCBI_NS_NCBI::CDiagCompileInfo(file_name? file_name: __FILE__,  \
+                                       file_line? file_line: __LINE__,  \
+                                       NCBI_CURRENT_FUNCTION,           \
+                                       NCBI_MAKE_MODULE(NCBI_MODULE))
         NCBI_THROW(CUnassignedMember,eGet,CNcbiOstrstreamToString(s));
+// restore original diag compile info definition
+#undef DIAG_COMPILE_INFO
+#define DIAG_COMPILE_INFO                                               \
+        NCBI_NS_NCBI::CDiagCompileInfo(__FILE__,                        \
+                                       __LINE__,                        \
+                                       NCBI_CURRENT_FUNCTION,           \
+                                       NCBI_MAKE_MODULE(NCBI_MODULE))
     }
+}
+
+void CSerialObject::ThrowUnassigned(TMemberIndex index) const
+{
+    ThrowUnassigned(index, 0, 0);
 }
 
 bool CSerialObject::HasNamespaceName(void) const
