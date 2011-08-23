@@ -468,6 +468,8 @@ bool CGffWriteRecordFeature::AssignSource(
     // phase
 
     //  attributes:
+    m_Attributes["gbkey"] = "Source";
+
     if ( bs.IsSetTaxname() ) {
         m_Attributes["organism"] = bs.GetTaxname();
     }
