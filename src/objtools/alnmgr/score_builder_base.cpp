@@ -533,7 +533,21 @@ static void s_GetPercentCoverage(CScope& scope, const CSeq_align& align,
     
         if ( !seq_len ) {
             CBioseq_Handle bsh = scope.GetBioseqHandle(align.GetSeq_id(0));
+            if (!bsh) {
+                 NCBI_THROW(CException, eUnknown,
+                            "s_GetPercentCoverage: "
+                            "The alignment query bioseq handle could not be "
+                            "loaded by the object managerfor seq ID: "
+                            + align.GetSeq_id(0).AsFastaString());
+            }
             CBioseq_Handle subject_bsh = scope.GetBioseqHandle(align.GetSeq_id(1));
+            if (!subject_bsh) {
+                 NCBI_THROW(CException, eUnknown,
+                            "s_GetPercentCoverage: "
+                            "The alignment subject bioseq handle could not be "
+                            "loaded by the object managerfor seq ID: "
+                            + align.GetSeq_id(1).AsFastaString());
+            }
             seq_len = bsh.GetBioseqLength();
             if (bsh.IsAa() &&  !subject_bsh.IsAa() ) {
                 /// NOTE: alignment length is always reported in nucleotide
