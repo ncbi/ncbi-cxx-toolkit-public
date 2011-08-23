@@ -1203,7 +1203,7 @@ string s_GetLinkFeatureKey(
 {
     CConstRef<CFlatFeature> feat = item.Format();
     string strRawKey = feat->GetKey();
-    if ( strRawKey == "gap" ) {
+    if ( strRawKey == "gap" || strRawKey == "source" ) {
         return strRawKey;
     }
 

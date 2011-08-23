@@ -819,6 +819,14 @@ bool CFeatComparatorByLabel::Less(const CSeq_feat& f1,
         return d < 0;
     }
 
+    // TODO: To make C and C++ match better, we stop comparing CDS's at this point.
+    // This can be removed once we have gone completely to C++.
+    if( f1.IsSetData() && f1.GetData().IsCdregion() &&
+        f2.IsSetData() && f2.GetData().IsCdregion() ) 
+    {
+        return false;
+    }
+
     if ( f1.IsSetComment() != f2.IsSetComment() ) {
         return !f1.IsSetComment();
     }

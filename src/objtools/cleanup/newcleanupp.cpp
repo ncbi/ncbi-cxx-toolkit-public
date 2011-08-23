@@ -513,6 +513,7 @@ DEFINE_STATIC_ARRAY_MAP(TOrgModMap, sc_OrgModMap, sc_orgmod_map);
 static const TOrgModElem sc_orgmodalias_map[] = {
     TOrgModElem("nat-host",      NCBI_ORGMOD(nat_host)),
     TOrgModElem("specific-host", NCBI_ORGMOD(nat_host)),
+    TOrgModElem("sub-strain",     NCBI_ORGMOD(substrain)),
     TOrgModElem("subspecies",    NCBI_ORGMOD(sub_species))
 };
 DEFINE_STATIC_ARRAY_MAP(TOrgModMap, sc_OrgModAliasMap, sc_orgmodalias_map);
