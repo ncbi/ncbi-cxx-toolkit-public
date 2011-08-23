@@ -1,0 +1,48 @@
+
+1:chrLG <<<SPACE!B01	1	38153	1	W	AELG01004295.1	1	38153	-
+	WARNING: space in object name chrLG B01
+
+3:chrLG B01	38255	38256	3	W	 <<<SPACE!AELG01004297.1	1	2	-
+	ERROR, line skipped: expecting 9 tab-separated columns, found space characters
+
+6:chrLG_B01	38255	38256	3	W	 <<<SPACE!AELG02004297.1	1	2	-
+	ERROR, line skipped: expecting 9 tab-separated columns, found space characters
+
+7:chr <<<SPACE!LG B01	1	38153	1	W	AELG03004295.1	1	38153	-
+	WARNING: space in object name chr LG B01
+
+9:chr LG B01	38255	38256	3	W	AEL <<<SPACE!G03004297.1	1	2	-
+	ERROR, line skipped: expecting 9 tab-separated columns, found space characters
+
+10: <<<SPACE!chr LG B01	38255	38256	3	W	AEL G03004297.1	1	2	-
+	ERROR, line skipped: expecting 9 tab-separated columns, found space characters
+
+4 errors, 2 warnings.
+  Count Code  Description
+      4  e01  expecting 9 tab-separated columns
+      2  w43  space in object name 
+
+NOTE: 4 invalid lines were skipped (not subjected to all the checks, not included in most of the counts below).
+
+
+Objects                : 3
+- with single component: 0
+
+Scaffolds              : 3
+- with single component: 0
+
+Components             : 6 (W)
+	orientation +  : 0
+	orientation -  : 6
+	orientation 0  : 0
+	orientation na : 0
+
+Gaps                   : 0
+
+Object names:  3
+  chrLG_B01 :  1
+  chrLG B01 :  1
+  chr LG B01:  1
+
+Component names             :  6
+  AELG[01004295..03004296].1:  6

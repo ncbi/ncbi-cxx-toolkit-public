@@ -106,7 +106,7 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
 
     "in unplaced singleton scaffold, component orientation is not \"+\"",
     "gap shorter than 10 bp",
-    kEmptyCStr,
+    "space in object name ",
     kEmptyCStr,
     kEmptyCStr,
 
@@ -293,9 +293,11 @@ int CAgpRow::FromString(const string& line)
         return CAgpErr::E_ColumnCount;
     }
 
-    // No spaces allowed (except in comments)
-    SIZE_TYPE p_space=line.find(' ');
-    if( NPOS != p_space && p_space<pcomment ) {
+    // No spaces allowed (except in comments, or inside the object name)
+    // JIRA: GCOL-1236
+    //   agp_validate generates a warning inside OnObjectChange(), once per each object name
+    SIZE_TYPE p_space=line.find(' ', cols[0].size()+1);
+    if( (NPOS != p_space && p_space<pcomment) || line[0]==' ' || line[cols[0].size()-1]==' ' ) {
         m_AgpErr->Msg( CAgpErr::E_ColumnCount, ", found space characters" );
         return CAgpErr::E_ColumnCount;
     }
@@ -846,6 +848,13 @@ void CAgpErrEx::PrintLine(CNcbiOstream& ostr,
     SIZE_TYPE posComment = NStr::Find(line, "#");
     SIZE_TYPE posSpace   = NStr::Find(line, " ", 0, posComment);
     if(posSpace!=NPOS) {
+        SIZE_TYPE posTab     = NStr::Find(line, "\t", 0, posComment);
+        if(posTab!=NPOS && posTab>posSpace+1 && posSpace!=0 ) {
+            // GCOL-1236: allow spaces in object names, emit a WARNING instead of an ERROR
+            // => if there is ANOTHER space not inside the object name, then mark that another space
+            posTab = NStr::Find(line, " ", posTab+1, posComment);
+            if(posTab!=NPOS) posSpace = posTab;
+        }
         posSpace++;
         line = line.substr(0, posSpace) + "<<<SPACE!" + line.substr(posSpace);
     }

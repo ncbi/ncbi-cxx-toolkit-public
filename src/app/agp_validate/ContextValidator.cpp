@@ -341,6 +341,12 @@ void CAgpValidateReader::OnObjectChange()
         CAgpErr::fAtThisLine);
     }
     else {
+      // GCOL-1236: allow spaces in object names, emit a WARNING instead of an ERROR
+      SIZE_TYPE p_space = m_this_row->GetObject().find(' ');
+      if(NPOS != p_space) {
+        agpErr.Msg(CAgpErrEx::W_SpaceInObjName, m_this_row->GetObject());
+      }
+
       // m_objNamePatterns report + W_ObjOrderNotNumerical (JIRA: GP-773)
 
       // swap pointers: m_prev_id_digits <-> m_obj_id_digits
