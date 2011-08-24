@@ -1610,7 +1610,7 @@ void CTar::x_WriteArchive(size_t nwrite, const char* src)
             m_BufferPos = 0;
         }
         m_StreamPos += advance;
-        nwrite -= avail;
+        nwrite      -= avail;
     } while (nwrite);
 }
 
@@ -2153,7 +2153,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
                                      m_Current.GetName(), h, extend);
                     }
                     m_Current.m_HeaderSize += BLOCK_SIZE;
-                    m_StreamPos += BLOCK_SIZE;  // NB: nread
+                    m_StreamPos            += BLOCK_SIZE;  // NB: nread
                 }
                 m_Current.m_Pos = val;  // NB: real file size
                 return eContinue;
@@ -2177,7 +2177,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
                 }
                 buffer.append(xbuf, nread);
                 m_StreamPos += ALIGN_SIZE(nread);
-                hsize -= nread;
+                hsize       -=            nread;
             }
             if (m_Current.GetType() != CTarEntryInfo::ePAXHeader) {
                 // Make sure there's no embedded '\0'(s)
@@ -2553,7 +2553,11 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
         case eSuccess:
         case eContinue:
             if (zeroblock_count  &&  !(m_Flags & fIgnoreZeroBlocks)) {
+                Uint8 save_pos = m_StreamPos;
+                m_StreamPos   -= m_Current.m_HeaderSize;
+                m_StreamPos   -= SIZE_OF(zeroblock_count);
                 TAR_POST(5, Error, "Interspersing single zero block ignored");
+                m_StreamPos    = save_pos;
             }
             break;
 
@@ -2980,7 +2984,7 @@ bool CTar::x_ExtractEntry(Uint8& size,
                                   + s_OSReason(x_errno));
                     }
                     m_StreamPos += ALIGN_SIZE(nread);
-                    size -= nread;
+                    size        -=            nread;
                 }
 
                 _ASSERT(ofs.good());
