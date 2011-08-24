@@ -6245,7 +6245,11 @@ if test -n "$with_check"  -a  "$with_check" != "no" ; then
    NCBI_FEATURE(check)
 fi
 CHECK_TOOLS=$with_check_tools
+case "$CHECK_TOOLS" in
+   [*[Vv][Aa][Ll][Gg][Rr][Ii][Nn][Dd]*] ) NCBI_FEATURE(Valgrind) ;;
+esac
 CHECK_OS_NAME=
+CHECK_TIMEOUT_MULT=1
 case "$host_os" in
    linux* )
       if test -x /usr/bin/lsb_release; then
@@ -6257,6 +6261,9 @@ case "$host_os" in
       elif test -d /usr/share/doc/ubuntu-keyring; then
          CHECK_OS_NAME=ubuntu
       fi
+      ;;
+   solaris*|*bsd* )
+      CHECK_TIMEOUT_MULT=2
       ;;
 esac
 

@@ -32778,7 +32778,11 @@ if test -n "$with_check"  -a  "$with_check" != "no" ; then
              WithFeatures="$WithFeatures${WithFeaturesSep}check"; WithFeaturesSep=" "
 fi
 CHECK_TOOLS=$with_check_tools
+case "$CHECK_TOOLS" in
+   *[Vv][Aa][Ll][Gg][Rr][Ii][Nn][Dd]* )           WithFeatures="$WithFeatures${WithFeaturesSep}Valgrind"; WithFeaturesSep=" " ;;
+esac
 CHECK_OS_NAME=
+CHECK_TIMEOUT_MULT=1
 case "$host_os" in
    linux* )
       if test -x /usr/bin/lsb_release; then
@@ -32791,11 +32795,14 @@ case "$host_os" in
          CHECK_OS_NAME=ubuntu
       fi
       ;;
+   solaris*|*bsd* )
+      CHECK_TIMEOUT_MULT=2
+      ;;
 esac
 
 ### Compute Without{Features,Packages,Projects}.  Takes quadratic time,
 ### but that's life.
-for x in GCC KCC ICC VisualAge CompaqCompiler WorkShop MIPSpro MSVC MT DLL DLL_BUILD MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources PubSeqOS JDK Ncbi-JNI check; do
+for x in GCC KCC ICC VisualAge CompaqCompiler WorkShop MIPSpro MSVC MT DLL DLL_BUILD MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources PubSeqOS JDK Ncbi-JNI check Valgrind; do
       case " $WithFeatures " in
          *" $x "*) ;;
          *) WithoutFeatures="$WithoutFeatures$WithoutFeaturesSep$x"
