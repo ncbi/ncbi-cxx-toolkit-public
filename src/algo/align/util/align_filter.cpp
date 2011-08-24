@@ -733,21 +733,6 @@ static inline void s_ParseTree_Flatten(CQueryParseTree& tree,
                  }
              }
              while (hoisted != 0);
-
-             // check for SESSION_HIT(a) OR SESSION_HIT(b) - convert
-             // to SESSION_HIT(a OR b)
-             if (type == CQueryParseNode::eOr) {
-                 size_t count = 0;
-                 for (iter = node.SubNodeBegin();
-                      iter != node.SubNodeEnd();  ++iter) {
-                     if ((*iter)->GetValue().GetStrValue() == "SESSION_HIT") {
-                         ++count;
-                     }
-                 }
-                 if (count > 1) {
-                     LOG_POST(Error << "woo hoo!");
-                 }
-             }
          }}
         break;
 
