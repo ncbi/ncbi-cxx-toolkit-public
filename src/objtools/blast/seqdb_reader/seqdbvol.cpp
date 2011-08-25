@@ -1790,6 +1790,9 @@ CSeqDBVol::x_GetFilteredHeader(int                    oid,
                 iter++;
             }
         }
+    }
+
+    if (asn_changed) {
         cached.first = BDLS;
         cached.second = asn_changed;
     } else {
