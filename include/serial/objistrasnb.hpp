@@ -271,6 +271,7 @@ private:
     string PeekClassTag(void);
     TByte PeekAnyTagFirstByte(void);
     void ExpectSysTagByte(TByte byte);
+    string TagToString(TByte byte);
     void UnexpectedSysTagByte(TByte byte);
     void ExpectSysTag(ETagClass tag_class,
                       ETagConstructed tag_constructed,
@@ -302,7 +303,7 @@ private:
     void ReadStringValue(size_t length, string& s, EFixNonPrint fix_type);
     void SkipTagData(void);
     bool HaveMoreElements(void);
-    void UnexpectedMember(TLongTag tag);
+    void UnexpectedMember(TLongTag tag, const CItemsInfo& items);
     void UnexpectedByte(TByte byte);
 
     friend class CObjectOStreamAsnBinary;

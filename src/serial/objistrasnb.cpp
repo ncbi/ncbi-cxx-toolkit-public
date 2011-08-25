@@ -174,16 +174,16 @@ CObjectIStreamAsnBinary::PeekTag(TByte first_tag_byte)
 void CObjectIStreamAsnBinary::UnexpectedTagClassByte(TByte first_tag_byte,
                                                      TByte expected_class_byte)
 {
-    ThrowError(fFormatError, "unexpected tag class/constructed: #"
-               + NStr::UIntToString((unsigned int)first_tag_byte) + ", should be #"
-               + NStr::UIntToString((unsigned int)expected_class_byte));
+    ThrowError(fFormatError, "unexpected tag class/constructed: " +
+                             TagToString(first_tag_byte) + ", should be " +
+                             TagToString(expected_class_byte));
 }
 
 string CObjectIStreamAsnBinary::PeekClassTag(void)
 {
     TByte byte = StartTag(PeekTagByte());
     if ( GetTagValue(byte) != eLongTag ) {
-        ThrowError(fFormatError, "long tag expected");
+        ThrowError(fFormatError, "LongTag expected");
     }
     string name;
     size_t i = 1;
@@ -228,12 +228,58 @@ CObjectIStreamAsnBinary::PeekAnyTagFirstByte(void)
     m_CurrentTagLength = i;
     return fByte;
 }
+string CObjectIStreamAsnBinary::TagToString(TByte byte)
+{
+    const char *cls, *con, *v;
+
+    switch (byte & eTagClassMask) {
+    default:
+    case eUniversal:       cls = "";                break;
+    case eApplication:     cls = "application/";    break;
+    case eContextSpecific: cls = "contextspecific/";break;
+    case ePrivate:         cls = "private/";        break;
+    }
+    switch (byte & eTagConstructedMask) {
+    default:
+    case ePrimitive:         con = "";              break;
+    case eConstructed:       con = "constructed/";  break;
+    }
+    switch (byte & eTagValueMask) {
+    case eNone:              v= "None";             break;
+    case eBoolean:           v= "Boolean";          break;
+    case eInteger:           v= "Integer";          break;
+    case eBitString:         v= "BitString";        break;
+    case eOctetString:       v= "OctetString";      break;
+    case eNull:              v= "Null";             break;
+    case eObjectIdentifier:  v= "ObjectIdentifier"; break;
+    case eObjectDescriptor:  v= "ObjectDescriptor"; break;
+    case eExternal:          v= "External";         break;
+    case eReal:              v= "Real";             break;
+    case eEnumerated:        v= "Enumerated";       break;
+    case eSequence:          v= "Sequence";         break;
+    case eSet:               v= "Set";              break;
+    case eNumericString:     v= "NumericString";    break;
+    case ePrintableString:   v= "PrintableString";  break;
+    case eTeletextString:    v= "TeletextString";   break;
+    case eVideotextString:   v= "VideotextString";  break;
+    case eIA5String:         v= "IA5String";        break;
+    case eUTCTime:           v= "UTCTime";          break;
+    case eGeneralizedTime:   v= "GeneralizedTime";  break;
+    case eGraphicString:     v= "GraphicString";    break;
+    case eVisibleString:     v= "VisibleString";    break;
+    case eGeneralString:     v= "GeneralString";    break;
+    case eMemberReference:   v= "MemberReference";  break;
+    case eObjectReference:   v= "ObjectReference";  break;
+    default:                 v= "unknown";          break;
+    }
+    return string(cls) + con + v + " (" + NStr::IntToString(byte) + ")";
+}
 
 void CObjectIStreamAsnBinary::UnexpectedSysTagByte(TByte tag_byte)
 {
-    ThrowError(fFormatError,
-               "unexpected tag: " + NStr::IntToString(PeekTagByte()) +
-               ", should be: " + NStr::IntToString(tag_byte));
+    TByte got = PeekTagByte();
+    ThrowError(fFormatError, "unexpected tag: " + TagToString(got) +
+                             ", should be: "    + TagToString(tag_byte));
 }
 
 void CObjectIStreamAsnBinary::UnexpectedByte(TByte byte)
@@ -280,7 +326,7 @@ void CObjectIStreamAsnBinary::ExpectIndefiniteLength(void)
     }
 #endif
     if ( FlushTag() != eIndefiniteLengthByte ) {
-        ThrowError(fFormatError, "indefinite length is expected");
+        ThrowError(fFormatError, "IndefiniteLengthByte is expected");
     }
 #if CHECK_INSTREAM_STATE
     m_CurrentTagState = eTagStart;
@@ -316,7 +362,7 @@ size_t CObjectIStreamAsnBinary::ReadShortLength(void)
 {
     TByte byte = FlushTag();
     if ( byte >= 0x80 ) {
-        ThrowError(fFormatError, "short length expected");
+        ThrowError(fFormatError, "ShortLength expected");
     }
     return StartTagData(byte);
 }
@@ -360,9 +406,11 @@ size_t CObjectIStreamAsnBinary::ReadLengthLong(TByte byte)
 inline
 void CObjectIStreamAsnBinary::ExpectShortLength(size_t length)
 {
-    if ( ReadShortLength() != length ) {
+    size_t got = ReadShortLength();
+    if ( got != length ) {
         ThrowError(fFormatError,
-                   "length expected: "+NStr::SizetToString(length));
+            "unexpected length: " + NStr::SizetToString(got) +
+            ", should be: "       + NStr::SizetToString(length));
     }
 }
 
@@ -375,7 +423,7 @@ void CObjectIStreamAsnBinary::ExpectEndOfContent(void)
 #endif
     if ( !m_Input.SkipExpectedChars(char(eEndOfContentsByte),
                                     char(eZeroLengthByte)) ) {
-        ThrowError(eFormatError, "end of content expected");
+        ThrowError(eFormatError, "EndOfContentsByte expected");
     }
 #if CHECK_INSTREAM_LIMITS
     // restore tag limit from stack
@@ -870,10 +918,15 @@ void CObjectIStreamAsnBinary::EndClass(void)
     ExpectEndOfContent();
 }
 
-void CObjectIStreamAsnBinary::UnexpectedMember(TLongTag tag)
+void CObjectIStreamAsnBinary::UnexpectedMember(TLongTag tag, const CItemsInfo& items)
 {
-    ThrowError(fFormatError,
-               "unexpected member: ["+NStr::IntToString(tag)+"]");
+    string message ="unexpected member: ["+NStr::IntToString(tag)+
+                    "], should be one of: ";
+    for ( CItemsInfo::CIterator i(items); i.Valid(); ++i ) {
+        message += items.GetItemInfo(i)->GetId().GetName()+ "[" +
+            NStr::IntToString(items.GetItemInfo(i)->GetId().GetTag()) + "] ";
+    }
+    ThrowError(fFormatError, message);
 }
 
 TMemberIndex
@@ -894,7 +947,7 @@ CObjectIStreamAsnBinary::BeginClassMember(const CClassTypeInfo* classType)
             return BeginClassMember(classType);
         }
         else {
-            UnexpectedMember(tag);
+            UnexpectedMember(tag, classType->GetItems());
         }
     }
     return index;
@@ -919,7 +972,7 @@ CObjectIStreamAsnBinary::BeginClassMember(const CClassTypeInfo* classType,
             return BeginClassMember(classType, pos);
         }
         else {
-            UnexpectedMember(tag);
+            UnexpectedMember(tag, classType->GetItems());
         }
     }
     return index;
@@ -1032,13 +1085,13 @@ CObjectIStreamAsnBinary::BeginChoiceVariant(const CChoiceTypeInfo* choiceType)
         if (CanSkipUnknownVariants()) {
             SetFailFlags(fUnknownValue);
         } else {
-            UnexpectedMember(tag);
+            UnexpectedMember(tag, choiceType->GetItems());
         }
         return index;
     }
     if (index != kFirstMemberIndex && FetchFrameFromTop(1).GetNotag()) {
         if (index != kFirstMemberIndex+1) {
-            UnexpectedMember(tag);
+            UnexpectedMember(tag, choiceType->GetItems());
         }
         tag = PeekTag(PeekTagByte(), eContextSpecific, eConstructed);
         ExpectIndefiniteLength();
