@@ -116,11 +116,6 @@ public:
         const string&,
         string& ) const;
 
-    void AddAttribute(
-        const string&,
-        const string&,
-        bool = false );
-
 protected:
     static bool x_NeedsQuoting(
         const string& );
@@ -129,6 +124,9 @@ protected:
         const string&,
         map<string, string >&,
         string& ) const;
+
+    static string x_Encode( 
+        const string& );
 
     string m_strId;
     unsigned int m_uSeqStart;

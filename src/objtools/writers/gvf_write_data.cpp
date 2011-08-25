@@ -241,7 +241,7 @@ bool CGvfWriteRecord::x_AssignAttributesCustom(
             continue;
         }
         key = key.substr( string("custom-").length() );
-        AddAttribute(key, value);
+        m_Attributes[key] = value;
     } 
     return true;
 }
@@ -257,25 +257,25 @@ bool CGvfWriteRecord::x_AssignAttributeID(
             ext.GetType().GetStr() == "GvfAttributes" ) 
         {
             if ( ext.HasField( "id" ) ) {
-                AddAttribute("ID", ext.GetField( "id" ).GetData().GetStr());
+                m_Attributes["ID"] = ext.GetField( "id" ).GetData().GetStr();
                 return true;
             }
         }
     }
 
     if ( CSeqFeatData::eSubtype_variation_ref != mf.GetData().GetSubtype() ) {
-        AddAttribute("ID", s_UniqueId());
+        m_Attributes["ID"] = s_UniqueId();
         return true;
     }
     const CVariation_ref& var_ref = mf.GetData().GetVariation();
     if ( ! var_ref.IsSetId() ) {
-       AddAttribute("ID", s_UniqueId());
+       m_Attributes["ID"] = s_UniqueId();
         return true;
     }
     const CVariation_ref::TId& id = var_ref.GetId();
     string strId;
     id.GetLabel( &strId );
-    AddAttribute("ID", strId);
+    m_Attributes["ID"] = strId;
     return true;
 }
 
@@ -290,7 +290,7 @@ bool CGvfWriteRecord::x_AssignAttributeParent(
             ext.GetType().GetStr() == "GvfAttributes" ) 
         {
             if ( ext.HasField( "parent" ) ) {
-                AddAttribute("Parent", ext.GetField( "parent" ).GetData().GetStr());
+                m_Attributes["Parent"] = ext.GetField( "parent" ).GetData().GetStr();
                 return true;
             }
         }
@@ -306,7 +306,7 @@ bool CGvfWriteRecord::x_AssignAttributeParent(
     const CVariation_ref::TId& id = var_ref.GetParent_id();
     string strId;
     id.GetLabel( &strId );
-    AddAttribute("Parent", strId);
+    m_Attributes["Parent"] = strId;
     return true;
 }
 
@@ -322,7 +322,7 @@ bool CGvfWriteRecord::x_AssignAttributeName(
     if ( ! var_ref.IsSetName() ) {
         return true;
     }
-    AddAttribute("Name", var_ref.GetName());
+    m_Attributes["Name"] = var_ref.GetName();
     return true;
 }
 
@@ -337,8 +337,8 @@ bool CGvfWriteRecord::x_AssignAttributeVarType(
             ext.GetType().GetStr() == "GvfAttributes" ) 
         {
             if ( ext.HasField( "custom-var_type" ) ) {
-                AddAttribute("var_type", 
-                    ext.GetField( "custom-var_type" ).GetData().GetStr());
+                m_Attributes["var_type"] = 
+                    ext.GetField( "custom-var_type" ).GetData().GetStr();
                 return true;
             }
         }
@@ -369,17 +369,17 @@ bool CGvfWriteRecord::x_AssignAttributeStartRange(
         case CInt_fuzz::e_Range: {
             int min = fuzz.GetRange().GetMin() + 1;
             int max = fuzz.GetRange().GetMax() + 1;
-            AddAttribute("Start_range", NStr::IntToString( min ) + "," +
-                NStr::IntToString( max ));
+            m_Attributes["Start_range"] = NStr::IntToString( min ) + "," +
+                NStr::IntToString( max );
             return true;
         }
         case CInt_fuzz::e_Lim: {
             string min = NStr::IntToString( intv.GetFrom() + 1 );
             if ( fuzz.GetLim() == CInt_fuzz::eLim_gt ) {
-                AddAttribute("Start_range", min + string(",."));
+                m_Attributes["Start_range"] = min + string(",.");
             }
             else if ( fuzz.GetLim() == CInt_fuzz::eLim_lt ) {
-                AddAttribute("Start_range", string(".,") + min);
+                m_Attributes["Start_range"] = string(".,") + min;
             }
             return true;
         }
@@ -410,17 +410,17 @@ bool CGvfWriteRecord::x_AssignAttributeEndRange(
         case CInt_fuzz::e_Range: {
             int min = fuzz.GetRange().GetMin() + 1;
             int max = fuzz.GetRange().GetMax() + 1;
-            AddAttribute("End_range", NStr::IntToString( min ) + "," +
-                NStr::IntToString( max ));
+            m_Attributes["End_range"] = NStr::IntToString( min ) + "," +
+                NStr::IntToString( max );
             return true;
         }
         case CInt_fuzz::e_Lim: {
             string max = NStr::IntToString( intv.GetTo() + 1 );
             if ( fuzz.GetLim() == CInt_fuzz::eLim_gt ) {
-                AddAttribute("End_range", max + string(",."));
+                m_Attributes["End_range"] = max + string(",.");
             }
             else if ( fuzz.GetLim() == CInt_fuzz::eLim_lt ) {
-                AddAttribute("End_range", string(".,") + max);
+                m_Attributes["End_range"] = string(".,") + max;
             }
             return true;
         }

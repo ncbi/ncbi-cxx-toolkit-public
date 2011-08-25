@@ -107,7 +107,7 @@ bool CGtfRecord::MakeChildRecord(
 
     m_Attributes.insert( parent.m_Attributes.begin(), parent.m_Attributes.end() );
     if ( 0 != uExonNumber ) {
-        AddAttribute("exon_number", NStr::UIntToString( uExonNumber ));
+        m_Attributes["exon_number"] = NStr::UIntToString( uExonNumber );
     }
     return true;
 };
@@ -211,7 +211,7 @@ bool CGtfRecord::x_AssignAttributesFromAsnCore(
                 if ( (*it)->GetQual() == "gene_id" ) {
                     continue;
                 }
-                AddAttribute((*it)->GetQual(), (*it)->GetVal());
+                m_Attributes[(*it)->GetQual()] = (*it)->GetVal();
             }
         }
     }
@@ -228,20 +228,20 @@ bool CGtfRecord::x_AssignAttributesFromAsnExtended(
 
     string strDbxref = x_FeatureToDbxref( mapped_feature );
     if ( ! strDbxref.empty() ) {
-        AddAttribute("db_xref", strDbxref);
+        m_Attributes["db_xref"] = strDbxref;
     }
 
     string strNote = x_FeatureToNote( mapped_feature );
     if ( ! strNote.empty() ) {
-        AddAttribute("note", strNote);
+        m_Attributes["note"] = strNote;
     }
     
     if ( x_FeatureToPseudo( mapped_feature ) ) {    
-        AddAttribute("pseudo", "");
+        m_Attributes["pseudo"] = "";
     }
 
     if ( x_FeatureToPartial( mapped_feature ) ) {    
-        AddAttribute("partial", "");
+        m_Attributes["partial"] = "";
     }
 
     switch ( feature.GetData().GetSubtype() ) {
@@ -255,21 +255,21 @@ bool CGtfRecord::x_AssignAttributesFromAsnExtended(
 
             string strProteinId = x_CdsToProteinId( mapped_feature );
             if ( ! strProteinId.empty() ) {
-                AddAttribute("protein_id", strProteinId);
+                m_Attributes["protein_id"] = strProteinId;
             }
 
             if ( x_CdsToRibosomalSlippage( mapped_feature ) ) {
-                AddAttribute("ribosomal_slippage", "");
+                m_Attributes["ribosomal_slippage"] = "";
             }
 
             string strProduct = x_CdsToProduct( mapped_feature );
             if ( ! strProduct.empty() ) {
-                AddAttribute("product", strProduct); 
+                m_Attributes["product"] = strProduct; 
             }
 
             string strCode = x_CdsToCode( mapped_feature );
             if ( ! strCode.empty() ) {
-                AddAttribute("transl_table", strCode);
+                m_Attributes["transl_table"] = strCode;
             }
          }
         break;
@@ -281,7 +281,7 @@ bool CGtfRecord::x_AssignAttributesFromAsnExtended(
 
             string strProduct = x_MrnaToProduct( mapped_feature );
             if ( ! strProduct.empty() ) {
-                AddAttribute("product", strProduct); 
+                m_Attributes["product"] = strProduct; 
             }
          }
         break;
@@ -292,7 +292,7 @@ bool CGtfRecord::x_AssignAttributesFromAsnExtended(
 
             string strGeneSyn = x_GeneToGeneSyn( mapped_feature );
             if ( ! strGeneSyn.empty() ) {
-                AddAttribute("gene_synonym", strGeneSyn);
+                m_Attributes["gene_synonym"] = strGeneSyn;
             }                             
         }
         break;

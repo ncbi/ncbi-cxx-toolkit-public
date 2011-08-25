@@ -140,15 +140,6 @@ protected:
     virtual bool x_AssignAttributeExonNumber(
         CMappedFeat );
 
-    //
-    //  Helper functions:
-    //
-    static string x_Encode( 
-        const string& );
-
-//    static string x_MakeGffDbtag( 
-//        const CDbtag& dbtag );
-
 protected:
     CGffFeatureContext& m_fc;
     CRef<CSeq_loc> m_pLoc;
