@@ -512,6 +512,46 @@ void CDense_seg::Compact()
 }
 
 
+void CDense_seg::OrderAdjacentGaps()
+{
+	#define IDX(_x,_y) (((_x)*GetDim())+(_y))
+	bool swaps_made = false;
+	do {
+		swaps_made = false;
+		for(int i=0; i < GetNumseg()-1; ++i) {
+			
+			bool curr_gap = false, next_gap = false;
+			int curr_seq_row = GetDim()+1, next_seq_row = GetDim()+1;
+			for (int j=0; j < GetDim(); ++j) {
+				if (GetStarts()[IDX(i,j)] == -1) 
+					curr_gap = true;
+				else
+					curr_seq_row = min(curr_seq_row, j);
+				if (GetStarts()[IDX(i+1,j)] == -1)
+					next_gap = true;
+				else
+					next_seq_row = min(next_seq_row, j);
+			}
+			if(!(curr_gap & next_gap))
+				continue;
+
+			// if this Seg and next Seg are both gaps,
+			// and the first row with sequence is not curr
+			// swap the two Segs
+			if(next_seq_row < curr_seq_row) {
+				for(int j=0; j < GetDim(); ++j) {
+					swap(SetStarts()[IDX(i,j)], SetStarts()[IDX(i+1,j)]);
+					swap(SetLens()[i], SetLens()[i+1]);
+					if (GetStrands().size() > IDX(i+1,j)) 
+						swap(SetStrands()[IDX(i,j)], SetStrands()[IDX(i+1,j)]);
+				}
+				swaps_made = true;
+			}
+		}
+	} while(swaps_made);
+}
+
+
 void CDense_seg::RemovePureGapSegs()
 {
     _ASSERT(GetNumseg() == static_cast<TNumseg>(GetLens().size()));

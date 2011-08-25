@@ -123,6 +123,10 @@ public:
     /// alignment
     void Compact();
 
+	/// Order adjacent gaps, so that the side with sequence is 
+	/// in row-decending order
+	void OrderAdjacentGaps();
+
     /// Remove any segments in which every row has a gap
     /// (these can arise when ExtractRows is used)
     /// @sa ExtractRows
