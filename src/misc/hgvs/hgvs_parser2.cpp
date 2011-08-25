@@ -516,6 +516,32 @@ CHgvsParser::SOffsetPoint CHgvsParser::x_general_pos(TIterator const& i, const C
         }
     }
 
+    //We could be dealing with improper HGVS expression (that we need to support anyway)
+    //where the coordinate extends beyond the range of sequence
+    //e.g. NM_000518:c.-78A>G, where codon-start is at 51. In this case the resulting
+    //coordinate will be negative; we'll convert it to offset-format (27 bases upstream of pos 0)
+    if(static_cast<TSignedSeqPos>(ofpnt.pnt->GetPoint()) < 0) {
+        ofpnt.offset.value += static_cast<TSignedSeqPos>(ofpnt.pnt->GetPoint());
+        ofpnt.pnt->SetPoint(0);
+    } else if(ofpnt.pnt->GetPoint() >= context.GetBioseqHandle().GetInst_Length()) {
+        //in case there's overrun past the end of the sequence, set the anchor as
+        //last position of the last point of the last exon (NOT last point of the sequence,
+        //as we could end up in polyA).
+
+        TSeqPos anchor_pos = 0;
+        SAnnotSelector sel;
+        sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_exon);
+        for(CFeat_CI ci(context.GetBioseqHandle(), sel); ci; ++ci) {
+            const CMappedFeat& mf = *ci;
+            anchor_pos = max(anchor_pos, mf.GetLocation().GetStop(eExtreme_Positional));
+        }
+
+        TSeqPos overrun = ofpnt.pnt->GetPoint() - anchor_pos;
+        ofpnt.offset.value += overrun;
+        ofpnt.pnt->SetPoint(anchor_pos);
+    }
+
+
     return ofpnt;
 }
 
@@ -827,6 +853,9 @@ CRef<CVariantPlacement> CHgvsParser::x_location(TIterator const& i, const CConte
                     : placement->SetSeq().SetSeq_data().SetIupacna().Set();
             seq_str = pnt.asserted_sequence;
         }
+        
+        //todo point with pos=0 and fuzz=unk -> unknown pos ->set loc to empty
+
     } else if(it->value.id() == SGrammar::eID_nuc_range || it->value.id() == SGrammar::eID_prot_range) {
         placement = x_range(it, context);
     } else {
