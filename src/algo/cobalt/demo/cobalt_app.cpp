@@ -455,19 +455,25 @@ int CMultiApplication::Run(void)
 
         // aligning two MSAs
 
+        objects::CSeqIdGenerator id_generator;
+
         CRef<CSeq_align> msa1 = GetAlignmentFromStream(
                                               args["in_msa1"].AsInputFile(),
                                               scope,
                                               CFastaReader::fAssumeProt | 
                                               CFastaReader::fForceType |
-                                              CFastaReader::fNoParseID);
+                                              CFastaReader::fNoParseID |
+                                              CFastaReader::fValidate,
+                                              id_generator);
 
         CRef<CSeq_align> msa2 = GetAlignmentFromStream(
                                               args["in_msa2"].AsInputFile(),
                                               scope,
                                               CFastaReader::fAssumeProt | 
                                               CFastaReader::fForceType |
-                                              CFastaReader::fNoParseID);
+                                              CFastaReader::fNoParseID |
+                                              CFastaReader::fValidate,
+                                              id_generator);
 
         _ASSERT(!scope.Empty());
 

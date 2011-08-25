@@ -60,10 +60,12 @@ void GetSeqLocFromStream(CNcbiIstream& instream,
 /// @param instream Input stream [in|out]
 /// @param scope Scope that contains the read sequences [in|out]
 /// @param flags Fasta Reader flags [in]
+/// @param id_generator Generator for sequece ids [in|out]
 /// @return Alignment in ASN.1 format
 CRef<objects::CSeq_align> GetAlignmentFromStream(CNcbiIstream& instream,
                                         CRef<objects::CScope>& scope,
-                                        objects::CFastaReader::TFlags flags);
+                                        objects::CFastaReader::TFlags flags,
+                                        objects::CSeqIdGenerator& id_generator);
 
 
 END_SCOPE(cobalt)

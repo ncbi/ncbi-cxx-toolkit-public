@@ -48,6 +48,35 @@ BEGIN_NCBI_SCOPE;
 BEGIN_SCOPE(cobalt);
 
 
+/// Modification of the CFastaReader class that allows for reading a single
+/// sequence as a degenarate multiple sequence alignment
+class CFastaReaderEx : public CFastaReader
+{
+public:
+    /// Constructor
+    CFastaReaderEx(ILineReader& reader, CFastaReader::TFlags flags=0)
+        : CFastaReader(reader, flags) {}
+
+    /// Read alignment
+    /// Modified parent class function that allows reading one sequence as
+    /// aligned set
+    CRef<CSeq_entry> ReadAlignedSet(void) {
+        CFastaReader::TIds ids;
+        CRef<CSeq_entry> entry = x_ReadSeqsToAlign(ids);
+        CRef<CSeq_annot> annot(new CSeq_annot);
+
+        x_AddMultiwayAlignment(*annot, ids);
+        entry->SetSet().SetAnnot().push_back(annot);
+
+        if(TestFlag(fAddMods)) {
+            entry->Parentize();
+            x_RecursiveApplyAllMods(*entry);
+        }
+
+        return entry;
+    }
+};
+
 void GetSeqLocFromStream(CNcbiIstream& instream,
                          vector< CRef<objects::CSeq_loc> >& seqs,
                          CRef<objects::CScope>& scope,
@@ -82,15 +111,17 @@ void GetSeqLocFromStream(CNcbiIstream& instream,
 
 CRef<objects::CSeq_align> GetAlignmentFromStream(CNcbiIstream& instream,
                                      CRef<objects::CScope>& scope,
-                                     objects::CFastaReader::TFlags flags)
+                                     objects::CFastaReader::TFlags flags,
+                                     objects::CSeqIdGenerator& id_generator)
 {
     // read all sequences as a multiple sequence alignment and put
     // the alignment in a single seq_entry
 
     CStreamLineReader line_reader(instream);
-    CFastaReader fasta_reader(line_reader, flags);
+    CFastaReaderEx fasta_reader(line_reader, flags);
+    fasta_reader.SetIDGenerator(id_generator);
 
-    CRef<CSeq_entry> entry = fasta_reader.ReadAlignedSet(-1);
+    CRef<CSeq_entry> entry = fasta_reader.ReadAlignedSet();
 
     if (entry == 0) {
         NCBI_THROW(CObjReaderException, eInvalid, 
