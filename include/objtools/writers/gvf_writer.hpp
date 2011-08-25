@@ -67,10 +67,10 @@ public:
 
 protected:
     virtual bool x_WriteFeature(
-        feature::CFeatTree&,
+        CGffFeatureContext&,
         CMappedFeat );
     virtual bool x_WriteFeatureVariationRef(
-        feature::CFeatTree&,
+        CGffFeatureContext&,
         CMappedFeat );
 };
 

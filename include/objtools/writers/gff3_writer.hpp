@@ -82,19 +82,19 @@ protected:
 //    TFlags m_uFlags;
 
     virtual bool x_WriteFeature(
-        feature::CFeatTree&,
+        CGffFeatureContext&,
         CMappedFeat );
     virtual bool x_WriteFeatureGene(
-        feature::CFeatTree&,
+        CGffFeatureContext&,
         CMappedFeat );
     virtual bool x_WriteFeatureRna(
-        feature::CFeatTree&,
+        CGffFeatureContext&,
         CMappedFeat );
     virtual bool x_WriteFeatureCds(
-        feature::CFeatTree&,
+        CGffFeatureContext&,
         CMappedFeat );
     virtual bool x_WriteFeatureGeneric(
-        feature::CFeatTree&,
+        CGffFeatureContext&,
         CMappedFeat );
 
     void x_WriteAlignment( 

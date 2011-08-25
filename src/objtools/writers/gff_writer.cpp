@@ -216,7 +216,7 @@ bool CGff2Writer::x_WriteSeqAnnotHandle(
         }
         return true;
     }
-    
+
     SAnnotSelector sel = x_GetAnnotSelector();
     CFeat_CI feat_iter(sah, sel);
     feature::CFeatTree feat_tree( feat_iter );
@@ -259,6 +259,15 @@ bool CGff2Writer::x_WriteFeature(
     
     // default behavior:
     return x_WriteRecord( pParent );    
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::x_WriteFeature(
+    CGffFeatureContext& context,
+    CMappedFeat mf )
+//  ----------------------------------------------------------------------------
+{
+    return x_WriteFeature(context.FeatTree(), mf);
 }
 
 //  ----------------------------------------------------------------------------
@@ -488,9 +497,7 @@ void CGff2Writer::x_PriorityProcess(
                 strAttributes += "; ";
             }
             strAttributes += strKeyMod;
-            strAttributes += "=\""; // quoted in all samples I have seen
             strAttributes += *pTag;
-            strAttributes += "\"";
 		    if ( m_uFlags & fSoQuirks ) {
                 strAttributes += "; ";
             }

@@ -182,7 +182,7 @@ bool CGvfWriter::WriteHeader()
 
 //  ----------------------------------------------------------------------------
 bool CGvfWriter::x_WriteFeature(
-    feature::CFeatTree& ftree,
+    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -192,17 +192,17 @@ bool CGvfWriter::x_WriteFeature(
         return true;
 
     case CSeqFeatData::eSubtype_variation_ref:
-        return x_WriteFeatureVariationRef( ftree, mf );
+        return x_WriteFeatureVariationRef( fc, mf );
     }
 }
 
 //  ----------------------------------------------------------------------------
 bool CGvfWriter::x_WriteFeatureVariationRef(
-    feature::CFeatTree& ftree,
+    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CGvfWriteRecord> pRecord( new CGvfWriteRecord( ftree ) );
+    CRef<CGvfWriteRecord> pRecord( new CGvfWriteRecord( fc ) );
 
     if ( ! pRecord->AssignFromAsn( mf ) ) {
         return false;

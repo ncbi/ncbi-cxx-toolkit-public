@@ -48,7 +48,7 @@ class CGvfWriteRecord
 {
 public:
     CGvfWriteRecord(
-        feature::CFeatTree&
+        CGffFeatureContext&
     );
     CGvfWriteRecord(
         const CGff3WriteRecordFeature&

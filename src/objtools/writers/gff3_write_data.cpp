@@ -163,10 +163,10 @@ CConstRef<CUser_object> s_GetUserObjectByType(
     
 //  ----------------------------------------------------------------------------
 CGff3WriteRecordFeature::CGff3WriteRecordFeature(
-    feature::CFeatTree& feat_tree,
+    CGffFeatureContext& fc,
     const string& id )
 //  ----------------------------------------------------------------------------
-    : CGffWriteRecordFeature(id), m_feat_tree( feat_tree )
+    : CGffWriteRecordFeature(id), m_fc( fc )
 {
 };
 
@@ -175,7 +175,7 @@ CGff3WriteRecordFeature::CGff3WriteRecordFeature(
     const CGff3WriteRecordFeature& other )
 //  ----------------------------------------------------------------------------
     : CGffWriteRecordFeature( other ),
-      m_feat_tree( other.m_feat_tree )
+      m_fc( other.m_fc )
 {
 };
 
@@ -185,6 +185,52 @@ CGff3WriteRecordFeature::~CGff3WriteRecordFeature()
 {
 };
 
+//  ----------------------------------------------------------------------------
+bool CGff3WriteRecordFeature::AssignFromAsn(
+    CMappedFeat mf )
+//  ----------------------------------------------------------------------------
+{
+    m_pLoc.Reset( new CSeq_loc( CSeq_loc::e_Mix ) );
+    m_pLoc->Add( mf.GetLocation() );
+    m_pLoc->ChangeToPackedInt();
+
+    CBioseq_Handle bsh = m_fc.BioseqHandle();
+    if (!bsh  ||  !bsh.IsSetInst_Topology()  
+              ||  bsh.GetInst_Topology() != CSeq_inst::eTopology_circular) {
+        return CGffWriteRecordFeature::AssignFromAsn(mf);
+    }
+
+    //  intervals wrapping around the origin extend beyond the sequence length
+    //  instead of breaking and restarting at the origin.
+    //
+    unsigned int len = bsh.GetInst().GetLength();
+    list< CRef< CSeq_interval > >& sublocs = m_pLoc->SetPacked_int().Set();
+    if (sublocs.size() < 2) {
+        return CGffWriteRecordFeature::AssignFromAsn(mf);
+    }
+
+    list< CRef< CSeq_interval > >::iterator it, it_ceil=sublocs.end(), 
+        it_floor=sublocs.end();
+    for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
+        CSeq_interval& subint = **it;
+        if (subint.IsSetFrom()  &&  subint.GetFrom() == 0) {
+            it_floor = it;
+        }
+        if (subint.IsSetTo()  &&  subint.GetTo() == len-1) {
+            it_ceil = it;
+        }
+        if (it_floor != sublocs.end()  &&  it_ceil != sublocs.end()) {
+            break;
+        } 
+    }
+    if ( it_ceil != sublocs.end()  &&  it_floor != sublocs.end() ) {
+        (*it_ceil)->SetTo( (*it_ceil)->GetTo() + (*it_floor)->GetTo() );
+        sublocs.erase(it_floor);
+    }
+
+    return CGffWriteRecordFeature::AssignFromAsn(mf);
+};
+    
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecordFeature::x_AssignType(
     CMappedFeat mf )
@@ -198,6 +244,28 @@ bool CGff3WriteRecordFeature::x_AssignType(
     m_strType = SOFAMAP.MappedName( mf.GetFeatType(), mf.GetFeatSubtype() );
     return true;
 };
+
+//  ----------------------------------------------------------------------------
+bool CGff3WriteRecordFeature::x_AssignStart(
+    CMappedFeat mapped_feat )
+//  ----------------------------------------------------------------------------
+{
+    if ( m_pLoc ) {
+        m_uSeqStart = m_pLoc->GetStart( eExtreme_Positional );;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3WriteRecordFeature::x_AssignStop(
+    CMappedFeat mapped_feat )
+//  ----------------------------------------------------------------------------
+{
+    if ( m_pLoc ) {
+        m_uSeqStop = m_pLoc->GetStop( eExtreme_Positional );;
+    }
+    return true;
+}
 
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecordFeature::x_AssignAttributesFromAsnCore(
@@ -219,7 +287,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributesFromAsnCore(
     if ( mapped_feat.IsSetId() ) {
         const CSeq_feat::TId& id = mapped_feat.GetId();
         string value = CGffWriteRecordFeature::x_FeatIdString( id );
-        m_Attributes[ "ID" ] = value;
+        AddAttribute("ID", value);
         bIdAssigned = true;
     }
     return true;
@@ -334,6 +402,8 @@ bool CGff3WriteRecordFeature::x_AssignAttributesMrna(
 //  ----------------------------------------------------------------------------
 {
     return (
+        x_AssignAttributeGene( mapped_feat )  &&
+
         x_AssignAttributeProduct( mapped_feat )  &&
         x_AssignAttributeTranscriptId( mapped_feat )  &&
         x_AssignAttributeException( mapped_feat )  &&
@@ -379,17 +449,17 @@ bool CGff3WriteRecordFeature::x_AssignAttributesMiscFeature(
 
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecordFeature::x_AssignAttributeGene(
-    CMappedFeat mapped_feat )
+    CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
     string strGene;
-    if ( mapped_feat.GetData().Which() == CSeq_feat::TData::e_Gene ) {
-        const CGene_ref& gene_ref = mapped_feat.GetData().GetGene();
+    if ( mf.GetData().Which() == CSeq_feat::TData::e_Gene ) {
+        const CGene_ref& gene_ref = mf.GetData().GetGene();
         strGene = s_GeneRefToGene( gene_ref );
     }
 
-    if ( strGene.empty() && mapped_feat.IsSetXref() ) {
-        const vector< CRef< CSeqFeatXref > > xrefs = mapped_feat.GetXref();
+    if ( strGene.empty() && mf.IsSetXref() ) {
+        const vector< CRef< CSeqFeatXref > > xrefs = mf.GetXref();
         for ( vector< CRef< CSeqFeatXref > >::const_iterator it = xrefs.begin();
             it != xrefs.end();
             ++it ) {
@@ -402,17 +472,14 @@ bool CGff3WriteRecordFeature::x_AssignAttributeGene(
     }
 
     if ( strGene.empty() ) {
-        CMappedFeat gene = 
-            mapped_feat.GetFeatSubtype() == CSeq_feat::TData::eSubtype_mRNA ?
-            feature::GetBestGeneForMrna( mapped_feat, &m_feat_tree ) :
-            feature::GetBestGeneForFeat( mapped_feat, &m_feat_tree );
+        CMappedFeat gene = feature::GetBestGeneForFeat( mf, &m_fc.FeatTree() );
         if ( gene.IsSetData()  &&  gene.GetData().IsGene() ) {
             strGene = s_GeneRefToGene( gene.GetData().GetGene() );
         }
     }
 
     if ( ! strGene.empty() ) {
-        m_Attributes[ "gene" ] = strGene;
+        AddAttribute("gene", strGene);
     }
     return true;
 }
@@ -425,7 +492,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeNote(
     if ( ! mapped_feat.IsSetComment() ) {
         return true;
     }
-    m_Attributes[ "note" ] = mapped_feat.GetComment();
+    AddAttribute("Note", mapped_feat.GetComment());
     return true;
 }
 
@@ -438,7 +505,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributePartial(
         return true;
     }
     if ( mapped_feat.GetPartial() == true ) {
-        m_Attributes[ "partial" ] = "true";
+        AddAttribute("partial", "true");
     }
     return true;
 }
@@ -452,7 +519,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributePseudo(
         return true;
     }
     if ( mapped_feat.GetPseudo() == true ) {
-        m_Attributes[ "pseudo" ] = "true";
+        AddAttribute("pseudo", "true");
     }
     return true;
 }
@@ -470,7 +537,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeDbXref(
             values.push_back( 
                 s_MakeGffDbtag( mf.GetProductId(), mf.GetScope() ) );
         }
-        CMappedFeat gene_feat = m_feat_tree.GetParent( mf, CSeqFeatData::e_Gene );
+        CMappedFeat gene_feat = m_fc.FeatTree().GetParent( mf, CSeqFeatData::e_Gene );
         if ( gene_feat  &&  gene_feat.IsSetDbxref() ) {
             const CSeq_feat::TDbxref& dbxrefs = gene_feat.GetDbxref();
             for ( size_t i=0; i < dbxrefs.size(); ++i ) {
@@ -484,9 +551,9 @@ bool CGff3WriteRecordFeature::x_AssignAttributeDbXref(
         for ( size_t i=0; i < dbxrefs.size(); ++i ) {
             values.push_back( s_MakeGffDbtag( *dbxrefs[ i ] ) );
         }
-        if ( m_feat_tree.GetParent( mf ) ) {
+        if ( m_fc.FeatTree().GetParent( mf ) ) {
             const CSeq_feat::TDbxref& more_dbxrefs = 
-                m_feat_tree.GetParent( mf ).GetDbxref();
+                m_fc.FeatTree().GetParent( mf ).GetDbxref();
             for ( size_t i=0; i < more_dbxrefs.size(); ++i ) {
                 string str = s_MakeGffDbtag( *more_dbxrefs[ i ] );
                 if ( values.end() == find( values.begin(), values.end(), str ) ) {
@@ -497,7 +564,8 @@ bool CGff3WriteRecordFeature::x_AssignAttributeDbXref(
     }
 
     if ( ! values.empty() ) {
-        m_Attributes[ "Dbxref" ] = NStr::Join( values, ";" );
+        // will see more processing before final output, so don't quote just yet.
+        m_Attributes["Dbxref"] = NStr::Join( values, ";" );
     }
     return true;
 }
@@ -527,7 +595,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeGeneSynonym(
     }
 
     if ( ! strGeneSyn.empty() ) {
-        m_Attributes[ "gene_synonym" ] = strGeneSyn;
+        AddAttribute("gene_synonym", strGeneSyn);
     }
     return true;
 }
@@ -541,7 +609,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeGeneDesc(
     if ( ! gene_ref.IsSetDesc() ) {
         return true;
     }
-    m_Attributes[ "description" ] = gene_ref.GetDesc();
+    AddAttribute("description", gene_ref.GetDesc());
     return true;
 }
 
@@ -554,7 +622,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeMapLoc(
     if ( ! gene_ref.IsSetMaploc() ) {
         return true;
     }
-    m_Attributes[ "map" ] = gene_ref.GetMaploc();
+    AddAttribute("map", gene_ref.GetMaploc());
     return true;
 }
 
@@ -567,10 +635,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeLocusTag(
     if ( ! gene_ref.IsSetLocus() || ! gene_ref.IsSetLocus_tag() ) {
         return true;
     }
-//    if ( mapped_feat.GetData().Which() == CSeq_feat::TData::e_Gene ) {
-//        cerr << "";
-//    }
-    m_Attributes[ "locus_tag" ] = gene_ref.GetLocus_tag();
+    AddAttribute("locus_tag", gene_ref.GetLocus_tag());
     return true;
 }
 
@@ -601,7 +666,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeCodonStart(
         break;
     }
     if ( ! strFrame.empty() ) {
-        m_Attributes[ "codon_start" ] = strFrame;
+        AddAttribute("codon_start", strFrame);
     }
     return true;
 }
@@ -614,13 +679,13 @@ bool CGff3WriteRecordFeature::x_AssignAttributeProduct(
     const CProt_ref* pProtRef = mf.GetProtXref();
     if ( pProtRef && pProtRef->IsSetName() ) {
         const list<string>& names = pProtRef->GetName();
-        m_Attributes[ "product" ] = x_Encode( *names.begin() );
+        AddAttribute("product", x_Encode(*names.begin()));
         return true;
     }
     if ( ! mf.IsSetProduct() ) {
         return true;
     }
-    m_Attributes[ "product" ] = s_BestIdString( mf.GetProductId(), mf.GetScope() );
+    AddAttribute("product", s_BestIdString( mf.GetProductId(), mf.GetScope()));
     return true;
 }
 
@@ -645,11 +710,11 @@ bool CGff3WriteRecordFeature::x_AssignAttributeEvidence(
         }
         string strKey = (*it)->GetQual();
         if ( strKey == "experiment" ) {
-            m_Attributes[ "experiment" ] = (*it)->GetVal();
+            AddAttribute("experiment", (*it)->GetVal());
             bExperiment = true;
         }
         if ( strKey == "inference" ) {
-            m_Attributes[ "inference" ] = (*it)->GetVal();
+            AddAttribute("inference", (*it)->GetVal());
             bInference = true;
         }
     }
@@ -659,10 +724,10 @@ bool CGff3WriteRecordFeature::x_AssignAttributeEvidence(
     if ( !bExperiment && !bInference ) {
         if ( mapped_feat.IsSetExp_ev() ) {
             if ( mapped_feat.GetExp_ev() == CSeq_feat::eExp_ev_not_experimental ) {
-                m_Attributes[ "inference" ] = strInferenceDefault;
+                AddAttribute("inference", strInferenceDefault);
             }
             else if ( mapped_feat.GetExp_ev() == CSeq_feat::eExp_ev_experimental ) {
-                m_Attributes[ "experiment" ] = strExperimentDefault;
+                AddAttribute("experiment", strExperimentDefault);
             }
         }
     }
@@ -736,7 +801,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeModelEvidence(
                 }
             }
             if ( ! strNote.empty() ) {
-                m_Attributes[ "Note" ] = strNote;
+                AddAttribute("Note", strNote);
             }
         }
     }
@@ -748,7 +813,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeGbKey(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
-    m_Attributes[ "gbkey" ] = mapped_feat.GetData().GetKey();
+    AddAttribute("gbkey", mapped_feat.GetData().GetKey());
     return true;
 }
 
@@ -761,14 +826,14 @@ bool CGff3WriteRecordFeature::x_AssignAttributeTranscriptId(
     for ( CSeq_feat::TQual::const_iterator cit = quals.begin(); 
       cit != quals.end(); ++cit ) {
         if ( (*cit)->GetQual() == "transcript_id" ) {
-            m_Attributes[ "transcript_id" ] = (*cit)->GetVal();
+            AddAttribute("transcript_id", (*cit)->GetVal());
             return true;
         }
     }
 
     if ( mapped_feat.IsSetProduct() ) {
-        m_Attributes[ "transcript_id" ] = s_BestIdString( 
-            mapped_feat.GetProductId(), mapped_feat.GetScope() );
+        AddAttribute("transcript_id", 
+            s_BestIdString(mapped_feat.GetProductId(), mapped_feat.GetScope()));
         return true;
     }
     return true;
@@ -782,8 +847,8 @@ bool CGff3WriteRecordFeature::x_AssignAttributeProteinId(
     if ( ! mapped_feat.IsSetProduct() ) {
         return true;
     }
-    m_Attributes[ "protein_id" ] = s_BestIdString(
-        mapped_feat.GetProductId(), mapped_feat.GetScope() );
+    AddAttribute("protein_id", 
+        s_BestIdString(mapped_feat.GetProductId(), mapped_feat.GetScope()));
     return true;
 }
 
@@ -793,7 +858,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeException(
 //  ----------------------------------------------------------------------------
 {
     if ( mapped_feat.IsSetExcept_text() ) {
-        m_Attributes["exception"] = mapped_feat.GetExcept_text();
+        AddAttribute("exception", mapped_feat.GetExcept_text());
         return true;
     }
     if ( mapped_feat.IsSetExcept() ) {
@@ -815,7 +880,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeExonNumber(
             ++cit ) {
             const CGb_qual& qual = **cit;
             if (qual.IsSetQual()  &&  qual.GetQual() == "number") {
-                m_Attributes["exon_number"] = qual.GetVal();
+                AddAttribute("exon_number", qual.GetVal());
                 return true;
             }
         }
@@ -833,7 +898,7 @@ bool CGff3WriteRecordFeature::AssignParent(
         cerr << "Fix me: Parent record without GFF3 ID tag!" << endl;
         return false;
     }
-    m_Attributes[ "Parent" ] = strParentId;
+    AddAttribute("Parent", strParentId);
     return true;
 }
 
@@ -842,7 +907,7 @@ void CGff3WriteRecordFeature::ForceAttributeID(
     const string& strId )
 //  ----------------------------------------------------------------------------
 {
-    m_Attributes[ "ID" ] = strId;
+    AddAttribute("ID", strId);
 }  
 
 //  ----------------------------------------------------------------------------

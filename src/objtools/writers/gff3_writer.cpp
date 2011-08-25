@@ -298,17 +298,20 @@ bool CGff3Writer::x_WriteBioseqHandle(
     CFeat_CI feat_iter(bsh, sel);
     feature::CFeatTree feat_tree( feat_iter );
 
+    CGffFeatureContext fc(feature::CFeatTree(feat_iter), bsh);
+
     CSeqdesc_CI sdi( bsh.GetParentEntry(), CSeqdesc::e_Source, 0 );
     if ( sdi ) {
         CGff3WriteRecordFeature src_feat( 
-            feat_tree, 
+            fc, 
             string( "id" ) + NStr::UIntToString( m_uPendingGenericId++ ) );
         src_feat.AssignSource( bsh, *sdi );
         x_WriteRecord( &src_feat );
     }
 
     for ( ;  feat_iter;  ++feat_iter ) {
-        if ( ! x_WriteFeature( feat_tree, *feat_iter ) ) {
+        
+        if ( ! x_WriteFeature( fc, *feat_iter ) ) {
             return false;
         }
     }    
@@ -317,33 +320,33 @@ bool CGff3Writer::x_WriteBioseqHandle(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteFeature(
-    feature::CFeatTree& ftree,
+    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
     if (mf.GetFeatType() == CSeqFeatData::e_Rna) {
-        return x_WriteFeatureRna( ftree, mf );
+        return x_WriteFeatureRna( fc, mf );
     }
     switch( mf.GetFeatSubtype() ) {
         default:
-            return x_WriteFeatureGeneric( ftree, mf );
+            return x_WriteFeatureGeneric( fc, mf );
         case CSeqFeatData::eSubtype_gene: 
-            return x_WriteFeatureGene( ftree, mf );
+            return x_WriteFeatureGene( fc, mf );
         case CSeqFeatData::eSubtype_cdregion:
-            return x_WriteFeatureCds( ftree, mf );
+            return x_WriteFeatureCds( fc, mf );
     }
     return false;
 }
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteFeatureGene(
-    feature::CFeatTree& ftree,
+    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
     CRef<CGff3WriteRecordFeature> pRecord( 
         new CGff3WriteRecordFeature( 
-            ftree,
+            fc,
             string( "gene" ) + NStr::UIntToString( m_uPendingGeneId++ ) ) );
 
     if ( ! pRecord->AssignFromAsn( mf ) ) {
@@ -355,32 +358,30 @@ bool CGff3Writer::x_WriteFeatureGene(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteFeatureCds(
-    feature::CFeatTree& ftree,
+    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    CRef< CGff3WriteRecordFeature > pCds( new CGff3WriteRecordFeature( ftree ) );
+    CRef< CGff3WriteRecordFeature > pCds( new CGff3WriteRecordFeature( fc ) );
 
     if ( ! pCds->AssignFromAsn( mf ) ) {
         return false;
     }
-    CMappedFeat mrna = feature::GetBestMrnaForCds( mf, &ftree );
+    CMappedFeat mrna = feature::GetBestMrnaForCds( mf, &fc.FeatTree() );
     TMrnaMap::iterator it = m_MrnaMap.find( mrna );
     if ( it != m_MrnaMap.end() ) {
         pCds->AssignParent( *(it->second) );
     }
 
-    CRef< CSeq_loc > pPackedInt( new CSeq_loc( CSeq_loc::e_Mix ) );
-    pPackedInt->Add( mf.GetLocation() );
-    pPackedInt->ChangeToPackedInt();
+    const CSeq_loc& PackedInt = *pCds->GetCircularLocation();
 
     unsigned int uTotSize = 0;
     unsigned int /*CCdregion::EFrame*/ uInitFrame = 0;
     if (mf.GetData().GetCdregion().IsSetFrame()) {
         uInitFrame = mf.GetData().GetCdregion().GetFrame();
     }
-    if ( pPackedInt->IsPacked_int() && pPackedInt->GetPacked_int().CanGet() ) {
-        const list< CRef< CSeq_interval > >& sublocs = pPackedInt->GetPacked_int().Get();
+    if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
+        const list< CRef< CSeq_interval > >& sublocs = PackedInt.GetPacked_int().Get();
         list< CRef< CSeq_interval > >::const_iterator it;
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
@@ -401,18 +402,18 @@ bool CGff3Writer::x_WriteFeatureCds(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteFeatureRna(
-    feature::CFeatTree& ftree,
+    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
     CRef<CGff3WriteRecordFeature> pRna( 
         new CGff3WriteRecordFeature( 
-            ftree,
+            fc,
             string( "rna" ) + NStr::UIntToString( m_uPendingTrnaId++ ) ) );
     if ( ! pRna->AssignFromAsn( mf ) ) {
         return false;
     }
-    CMappedFeat gene = feature::GetBestGeneForFeat( mf, &ftree );
+    CMappedFeat gene = feature::GetBestGeneForFeat( mf, &fc.FeatTree() );
     TGeneMap::iterator it = m_GeneMap.find( gene );
     if ( it != m_GeneMap.end() ) {
         pRna->AssignParent( *( it->second ) );
@@ -424,13 +425,11 @@ bool CGff3Writer::x_WriteFeatureRna(
         m_MrnaMap[ mf ] = pRna;
     }    
 
-    CRef< CSeq_loc > pPackedInt( new CSeq_loc( CSeq_loc::e_Mix ) );
-    pPackedInt->Add( mf.GetLocation() );
-    pPackedInt->ChangeToPackedInt();
+    const CSeq_loc& PackedInt = *pRna->GetCircularLocation();
 
     string strExonId = string("id") + NStr::UIntToString(m_uPendingGenericId++);
-    if ( pPackedInt->IsPacked_int() && pPackedInt->GetPacked_int().CanGet() ) {
-        const list< CRef< CSeq_interval > >& sublocs = pPackedInt->GetPacked_int().Get();
+    if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
+        const list< CRef< CSeq_interval > >& sublocs = PackedInt.GetPacked_int().Get();
         list< CRef< CSeq_interval > >::const_iterator it;
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
@@ -451,11 +450,11 @@ bool CGff3Writer::x_WriteFeatureRna(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteFeatureGeneric(
-    feature::CFeatTree& ftree,
+    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CGff3WriteRecordFeature> pParent( new CGff3WriteRecordFeature( ftree ) );
+    CRef<CGff3WriteRecordFeature> pParent( new CGff3WriteRecordFeature( fc ) );
     if ( ! pParent->AssignFromAsn( mf ) ) {
         return false;
     }
@@ -471,7 +470,7 @@ bool CGff3Writer::x_WriteFeatureGeneric(
     //  Even for generic features, there are special case to consider ...
     //
     if (mf.GetData().GetSubtype() == CSeqFeatData::eSubtype_exon) {
-        CMappedFeat gene = feature::GetBestGeneForFeat( mf, &ftree );
+        CMappedFeat gene = feature::GetBestGeneForFeat( mf, &fc.FeatTree() );
         TGeneMap::iterator it = m_GeneMap.find( gene );
         if ( it != m_GeneMap.end() ) {
             pParent->AssignParent( *( it->second ) );

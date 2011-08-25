@@ -86,7 +86,7 @@ CGffWriteRecord::CGffWriteRecord(
 //  ----------------------------------------------------------------------------
 {
     if (!id.empty()) {
-        m_Attributes["ID"] = id;
+        AddAttribute("ID", id);
     }
 };
 
@@ -140,6 +140,21 @@ bool CGffWriteRecord::GetAttribute(
     return true;
 }
 
+//  ----------------------------------------------------------------------------
+void CGffWriteRecord::AddAttribute(
+    const string& strKey,
+    const string& strValue,
+    bool bEncode )
+//  ----------------------------------------------------------------------------
+{
+    if (x_NeedsQuoting(strValue)) {
+        m_Attributes[strKey] = string("\"") + strValue + string("\"");
+    }
+    else {
+        m_Attributes[strKey] = strValue;
+    }
+}
+        
 //  ----------------------------------------------------------------------------
 string CGffWriteRecord::StrType() const
 //  ----------------------------------------------------------------------------
@@ -246,7 +261,7 @@ bool CGffWriteRecord::x_NeedsQuoting(
 	for ( size_t u=0; u < str.length(); ++u ) {
         if ( str[u] == '\"' )
 			return false;
-		if ( str[u] == ' ' || str[u] == ';' ) {
+		if ( str[u] == ' ' || str[u] == ';' || str[u] == ':' || str[u] == '=' ) {
             return true;
         }
     }
@@ -273,15 +288,17 @@ void CGffWriteRecord::x_PriorityProcess(
     if ( strKey == "Dbxref" ) {
         vector<string> tags;
         NStr::Tokenize( it->second, ";", tags );
-        for ( vector<string>::iterator pTag = tags.begin(); 
-            pTag != tags.end(); pTag++ ) {
+        for ( vector<string>::iterator pTag = tags.begin(); pTag != tags.end(); pTag++ ) {
             if ( ! strAttributes.empty() ) {
                 strAttributes += "; ";
             }
             strAttributes += strKeyMod;
-            strAttributes += "=\""; // quoted in all samples I have seen
-            strAttributes += *pTag;
-            strAttributes += "\"";
+            strAttributes += "=";
+            string strValue = *pTag;
+            if (x_NeedsQuoting(*pTag)) {
+                strValue = (string("\"") + strValue + string("\""));
+            }
+            strAttributes += strValue;
         }
 		attrs.erase(it);
         return;
@@ -468,10 +485,10 @@ bool CGffWriteRecordFeature::AssignSource(
     // phase
 
     //  attributes:
-    m_Attributes["gbkey"] = "Source";
+    AddAttribute("gbkey", "Source");
 
     if ( bs.IsSetTaxname() ) {
-        m_Attributes["organism"] = bs.GetTaxname();
+        AddAttribute("organism", bs.GetTaxname());
     }
     if ( bs.IsSetOrg() ) {
         const CBioSource::TOrg& org = bs.GetOrg();
@@ -484,11 +501,11 @@ bool CGffWriteRecordFeature::AssignSource(
                 }
                 (**it).GetLabel( &strTag );
             }
-            m_Attributes["Dbxref"] = strTag;
+            AddAttribute("Dbxref", strTag);
         }       
     }
     if ( bsh.IsSetInst_Topology() && bsh.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
-        m_Attributes["Is_circular"] = "true";
+        AddAttribute("Is_circular", "true");
     }
 
     return true;

@@ -119,6 +119,9 @@ protected:
     virtual bool x_WriteFeature(
         feature::CFeatTree&,
         CMappedFeat );
+    virtual bool x_WriteFeature(
+        CGffFeatureContext&,
+        CMappedFeat );
     virtual bool x_WriteAssemblyInfo(
         const string&,
         const string& );

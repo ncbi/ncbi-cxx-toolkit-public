@@ -54,7 +54,7 @@ public:
 
 public:
     CGff3WriteRecordFeature(
-        feature::CFeatTree&,
+        CGffFeatureContext&,
         const string& id=""
     );
 
@@ -66,14 +66,23 @@ public:
 
     virtual string StrAttributes() const;
 
+    virtual bool AssignFromAsn(
+        CMappedFeat );
+
     bool AssignParent(
         const CGff3WriteRecordFeature& );
 
     void ForceAttributeID(
         const string& );
 
+    CRef<CSeq_loc> GetCircularLocation() const { return m_pLoc; };
+
 protected:
     virtual bool x_AssignType(
+        CMappedFeat );
+    virtual bool x_AssignStart(
+        CMappedFeat );
+    virtual bool x_AssignStop(
         CMappedFeat );
 
     virtual bool x_AssignAttributes(
@@ -141,7 +150,8 @@ protected:
 //        const CDbtag& dbtag );
 
 protected:
-    feature::CFeatTree& m_feat_tree;
+    CGffFeatureContext& m_fc;
+    CRef<CSeq_loc> m_pLoc;
 };
 
 END_objects_SCOPE

@@ -40,6 +40,26 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+//  ----------------------------------------------------------------------------
+class CGffFeatureContext
+//  ----------------------------------------------------------------------------
+{
+public:
+    CGffFeatureContext(
+        feature::CFeatTree ft=feature::CFeatTree(), 
+        CBioseq_Handle bsh=CBioseq_Handle(), 
+        CSeq_annot_Handle sah=CSeq_annot_Handle()) :
+        m_ft(ft), m_bsh(bsh), m_sah(sah)
+    {};
+    feature::CFeatTree& FeatTree() { return m_ft; };
+    CBioseq_Handle BioseqHandle() const { return m_bsh; };
+    CSeq_annot_Handle AnnotHandle() const { return m_sah; };
+
+protected:
+    feature::CFeatTree m_ft;
+    CBioseq_Handle m_bsh;
+    CSeq_annot_Handle m_sah;
+};
 
 //  ----------------------------------------------------------------------------
 class CGffWriteRecord
@@ -95,6 +115,11 @@ public:
     bool GetAttribute(
         const string&,
         string& ) const;
+
+    void AddAttribute(
+        const string&,
+        const string&,
+        bool = false );
 
 protected:
     static bool x_NeedsQuoting(
