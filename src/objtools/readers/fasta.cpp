@@ -909,7 +909,19 @@ CRef<CSeq_entry> CFastaReader::x_ReadSeqsToAlign(TIds& ids)
             }
         }
     }
-    // check whether lengths are all equal, and warn if they differ?
+    // check whether lengths are all equal, and warn if they differ
+    if (lengths.size() > 1 && TestFlag(fValidate)) {
+        vector<TSeqPos>::const_iterator it(lengths.begin());
+        const TSeqPos len = *it;
+        for (++it; it != lengths.end(); ++it) {
+            if (*it != len) {
+                NCBI_THROW2(CObjReaderParseException, eFormat,
+                            "CFastaReader::ReadAlignedSet: Rows have different "
+                            "lengths", LineNumber());
+            }
+        }
+    }
+
     return entry;
 }
 
