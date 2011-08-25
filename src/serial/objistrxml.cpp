@@ -477,7 +477,7 @@ void CObjectIStreamXml::SkipQDecl(void)
             } else if (NStr::CompareNocase(value.c_str(),"Windows-1252") == 0) {
                 m_Encoding = eEncoding_Windows_1252;
             } else {
-                ThrowError(fFormatError, "unknown encoding: " + value);
+                ThrowError(fFormatError, "unsupported encoding: " + value);
             }
             break;
         }
@@ -1274,7 +1274,7 @@ CObjectIStream::EPointerType CObjectIStreamXml::ReadPointerType(void)
 
 CObjectIStreamXml::TObjectIndex CObjectIStreamXml::ReadObjectPointer(void)
 {
-    ThrowError(fNotImplemented, "unimplemented");
+    ThrowError(fNotImplemented, "Not Implemented");
     return 0;
 /*
     CTempString attr = ReadAttributeName();
@@ -1289,7 +1289,7 @@ CObjectIStreamXml::TObjectIndex CObjectIStreamXml::ReadObjectPointer(void)
 
 string CObjectIStreamXml::ReadOtherPointer(void)
 {
-    ThrowError(fNotImplemented, "unimplemented");
+    ThrowError(fNotImplemented, "Not Implemented");
     return NcbiEmptyString;
 }
 

@@ -841,7 +841,7 @@ void CObjectOStreamAsnBinary::WriteObjectReference(TObjectIndex index)
         WriteNumberValue(Int8(index));
     else
         ThrowError(fIllegalCall, "invalid size of TObjectIndex"
-            "must be either sizeof(Int4) or sizeof(Int4)");
+            "must be either sizeof(Int4) or sizeof(Int8)");
 }
 
 void CObjectOStreamAsnBinary::WriteNullPointer(void)
