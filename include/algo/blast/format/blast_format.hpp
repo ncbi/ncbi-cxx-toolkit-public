@@ -229,6 +229,7 @@ private:
     CNcbiOstream& m_Outfile;    ///< stream to receive output
     int m_NumSummary;        ///< number of 1-line summaries
     int m_NumAlignments;        ///< number of database sequences to present alignments for.
+    int m_HitlistSize;		///< number of database sequences to save results for
     string m_Program;           ///< blast program
     string m_DbName;            ///< name of blast database
     int m_QueryGenCode;         ///< query genetic code

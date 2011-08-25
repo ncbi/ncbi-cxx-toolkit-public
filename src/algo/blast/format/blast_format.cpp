@@ -82,7 +82,7 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
         : m_FormatType(format_type), m_IsHTML(is_html), 
           m_DbIsAA(db_adapter.IsProtein()), m_BelieveQuery(believe_query),
           m_Outfile(outfile), m_NumSummary(num_summary),
-          m_NumAlignments(num_alignments),
+          m_NumAlignments(num_alignments), m_HitlistSize(options.GetHitlistSize()),
           m_Program(Blast_ProgramNameFromType(options.GetProgramType())), 
           m_DbName(kEmptyStr),
           m_QueryGenCode(qgencode), m_DbGenCode(dbgencode),
@@ -148,6 +148,7 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts,
           m_Outfile(outfile),
           m_NumSummary(num_summary),
           m_NumAlignments(num_alignments),
+          m_HitlistSize(opts.GetHitlistSize()),
           m_Program(Blast_ProgramNameFromType(opts.GetProgramType())), 
           m_DbName(kEmptyStr),
           m_QueryGenCode(opts.GetQueryGeneticCode()),
@@ -527,7 +528,7 @@ CBlastFormat::x_PrintTabularReport(const blast::CSearchResults& results,
 
         if (results.HasAlignments()) {
     	    CSeq_align_set copy_aln_set;
-            CBlastFormatUtil::PruneSeqalign(*aln_set, copy_aln_set, MIN(m_NumSummary, m_NumAlignments));
+            CBlastFormatUtil::PruneSeqalign(*aln_set, copy_aln_set, m_HitlistSize);
             ITERATE(CSeq_align_set::Tdata, itr, copy_aln_set.Get()) {
                     const CSeq_align& s = **itr;
                     tabinfo.SetFields(s, *m_Scope, &m_ScoringMatrix);
