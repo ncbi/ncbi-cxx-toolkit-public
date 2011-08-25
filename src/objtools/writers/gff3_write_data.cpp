@@ -64,9 +64,6 @@ string s_GeneRefToGene(
     if ( gene_ref.IsSetLocus() ) {
         return gene_ref.GetLocus();
     }
-    if ( gene_ref.IsSetLocus_tag() ) {
-        return gene_ref.GetLocus_tag();
-    }
     if ( gene_ref.IsSetSyn()  && gene_ref.GetSyn().size() > 0 ) {
         return *( gene_ref.GetSyn().begin() );
     }
@@ -386,6 +383,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributesGene(
 {
     return (
         x_AssignAttributeGene( mapped_feat )  &&
+        x_AssignAttributeLocusTag( mapped_feat )  &&
         x_AssignAttributeGeneSynonym( mapped_feat )  &&
         x_AssignAttributeLocusTag( mapped_feat )  &&
         x_AssignAttributeDbXref( mapped_feat )  &&
@@ -403,7 +401,6 @@ bool CGff3WriteRecordFeature::x_AssignAttributesMrna(
 {
     return (
         x_AssignAttributeGene( mapped_feat )  &&
-
         x_AssignAttributeProduct( mapped_feat )  &&
         x_AssignAttributeTranscriptId( mapped_feat )  &&
         x_AssignAttributeException( mapped_feat )  &&
@@ -637,7 +634,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeLocusTag(
 //  ----------------------------------------------------------------------------
 {
     const CGene_ref& gene_ref = mapped_feat.GetData().GetGene();
-    if ( ! gene_ref.IsSetLocus() || ! gene_ref.IsSetLocus_tag() ) {
+    if ( ! gene_ref.IsSetLocus_tag() ) {
         return true;
     }
     m_Attributes["locus_tag"] = gene_ref.GetLocus_tag();
