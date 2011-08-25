@@ -399,7 +399,7 @@ void CWiggleTrack::MakeTable(
         CRef<CSeqTable_column> col_loc( new CSeqTable_column );
         table.SetColumns().push_back( col_loc );
         col_loc->SetHeader().SetField_name( "Seq-table location" );
-        col_loc->SetDefault().SetLoc().SetInt().SetId().Set( CSeq_id::e_Local, m_strChrom );
+        col_loc->SetDefault().SetLoc().SetInt().SetId().Set( m_strChrom );
         col_loc->SetDefault().SetLoc().SetInt().SetFrom( m_uSeqStart );
         col_loc->SetDefault().SetLoc().SetInt().SetTo( m_uSeqStop );
     }
@@ -408,7 +408,7 @@ void CWiggleTrack::MakeTable(
         CRef<CSeqTable_column> col_id(new CSeqTable_column);
         table.SetColumns().push_back(col_id);
         col_id->SetHeader().SetField_id(CSeqTable_column_info::eField_id_location_id);
-        col_id->SetDefault().SetId().Set(CSeq_id::e_Local, m_strChrom);
+        col_id->SetDefault().SetId().Set(m_strChrom);
     }
 
     { // Table minimum
