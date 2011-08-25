@@ -82,61 +82,17 @@ void s_InsertPatchSequence(CDelta_ext::Tdata &patched_contents,
                            CBioseq_Handle patch_sequence,
                            bool complete_patch)
 {
-    const CDelta_ext::Tdata &patch_contents =
-        patch_sequence.GetInst().GetExt().GetDelta().Get();
-    CDelta_ext::Tdata inserted_contents;
-    if (complete_patch)
-    {
-        inserted_contents = patch_contents;
-    } else {
-        /// fill inserted_contents with the aligned region of the patch contents
-        TSeqRange aligned_range = patch->GetSeqRange(0);
-        TSeqPos current_pos = 0, next_pos = 0;
-        ITERATE (CDelta_ext::Tdata, patch_contents_it, patch_contents) {
-            if (next_pos > aligned_range.GetTo()) {
-                break;
-            }
-            if (!(*patch_contents_it)->IsLoc()) {
-                NCBI_THROW(CException, eUnknown, "patch contains gaps");
-            }
-            const CSeq_loc &patch_loc = (*patch_contents_it)->GetLoc();
-            current_pos = next_pos;
-            next_pos += patch_loc.GetTotalRange().GetLength();
-            TSeqRange patched_range = TSeqRange(current_pos, next_pos-1)
-                                    . IntersectionWith(aligned_range);
-            if (patched_range.GetFrom() == current_pos &&
-                patched_range.GetToOpen() == next_pos)
-            {
-                /// patch_loc is entirely within the aligned range
-                inserted_contents.insert(
-                    inserted_contents.end(), *patch_contents_it);
-            } else if (!patched_range.Empty()) {
-                inserted_contents.insert(
-                    inserted_contents.end(),
-                    s_SubLocDeltaSeq(patch_loc,
-                                     patched_range.GetFrom() - current_pos,
-                                     patched_range.GetLength()));
-            }
-        }
-    }
- 
-    if (patch->GetSeqStrand(0) == eNa_strand_minus) {
-        /// Alignment is to reverse strand, so we need to insert the
-        /// contents in reverse
-        REVERSE_ITERATE (CDelta_ext::Tdata,
-                         inserted_contents_it, inserted_contents)
-        {
-            if (!(*inserted_contents_it)->IsLoc()) {
-                NCBI_THROW(CException, eUnknown, "patch contains gaps");
-            }
-            CRef<CDelta_seq> reversed_loc(new CDelta_seq);
-            reversed_loc->SetLoc().Assign((*inserted_contents_it)->GetLoc());
-            reversed_loc->SetLoc().FlipStrand();
-            patched_contents.insert(patched_contents_it, reversed_loc);
-        }
-    } else {
-        patched_contents.splice(patched_contents_it, inserted_contents);
-    }
+    TSeqRange aligned_range =
+        complete_patch ? TSeqRange(0, patch_sequence.GetBioseqLength()-1)
+                       : patch->GetSeqRange(0);
+    CRef<CSeq_id> patch_id(new CSeq_id);
+    patch_id->Assign(patch->GetSeq_id(0));
+    CRef<CSeq_loc> patch_loc(new CSeq_loc(*patch_id, aligned_range.GetFrom(),
+                                          aligned_range.GetTo(),
+                                          patch->GetSeqStrand(0)));
+    CRef<CDelta_seq> inserted_patch(new CDelta_seq);
+    inserted_patch->SetLoc(*patch_loc);
+    patched_contents.insert(patched_contents_it, inserted_patch);
 }
 
 CRef<CSeq_inst> PatchTargetSequence(const list< CRef<CSeq_align> > &alignments,
@@ -219,13 +175,6 @@ CRef<CSeq_inst> PatchTargetSequence(const list< CRef<CSeq_align> > &alignments,
             if (!patch_sequence) {
                 NCBI_THROW(CException, eUnknown, "Can't get patch sequence");
             }
-            if(!patch_sequence.CanGetInst_Repr() ||
-               patch_sequence.GetInst_Repr() != CSeq_inst::eRepr_delta)
-            {
-                NCBI_THROW(CException, eUnknown,
-                           "PatchTargetSequence() implemented only for "
-			   "sequences with delta representation");
-	    }
 
             TSeqPos patch_length = patch_sequence.GetBioseqLength();
             TSeqRange aligned_patch_range = next_patch->second->GetSeqRange(0);
