@@ -47,8 +47,6 @@ BEGIN_objects_SCOPE
 
 class CGtfRecord;
 
-class feature::CFeatTree;
-
 //  ============================================================================
 class NCBI_XOBJWRITE_EXPORT CGtfWriter:
     public CGff2Writer

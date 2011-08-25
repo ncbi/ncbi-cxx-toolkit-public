@@ -458,8 +458,6 @@ bool CGff3Writer::x_WriteFeatureGeneric(
     if ( ! pParent->AssignFromAsn( mf ) ) {
         return false;
     }
-    const CSeq_feat& sf = *mf.GetSeq_feat();
-
     string strId;
     if ( ! pParent->GetAttribute( "ID", strId ) ) {
         pParent->ForceAttributeID( 

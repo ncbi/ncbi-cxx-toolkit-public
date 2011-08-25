@@ -195,12 +195,10 @@ string CGffWriteRecord::StrStrand() const
 //  ----------------------------------------------------------------------------
 {
     if ( ! m_peStrand ) {
-        return ".";
+        return "+";
     }
     switch ( *m_peStrand ) {
     default:
-        return ".";
-    case eNa_strand_plus:
         return "+";
     case eNa_strand_minus:
         return "-";
