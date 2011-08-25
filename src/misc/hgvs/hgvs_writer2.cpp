@@ -396,7 +396,8 @@ string CHgvsParser::x_SeqLiteralToStr(const CSeq_literal& literal, bool translat
         }
 
     } else {
-        if(translate) {
+        if(translate && literal.GetLength() > 0) {
+            NcbiCerr << MSerial_AsnText << literal;
             NCBI_THROW(CException, eUnknown, "Not supported");
         }
         out = s_IntWithFuzzToStr(literal.GetLength(), NULL, false, literal.IsSetFuzz() ? &literal.GetFuzz() : NULL);
@@ -516,6 +517,16 @@ string CHgvsParser::x_PlacementCoordsToStr(const CVariantPlacement& vp)
     string loc_str = "";
     if(vp.GetLoc().IsEmpty() || vp.GetLoc().IsNull()) {
         loc_str = "?";
+
+        //Note: it is possible that the location is not known, but the sequence is known, e.g. if 
+        //protein variation was derived from a variation on a partial CDS.
+
+        if(vp.GetMol() == CVariantPlacement::eMol_protein && vp.IsSetSeq() && vp.GetSeq().IsSetSeq_data()) {
+            //prepend first AA of asserted sequence
+            string aa = vp.GetSeq().GetSeq_data().GetNcbieaa().Get().substr(0,1);
+            loc_str = Ncbistdaa2HgvsAA(aa) + loc_str;
+        }
+
     } else if(vp.GetLoc().IsWhole()) {
         ; //E.g. "NG_12345.6:g.=" represents no-change ("=") on the whole "NG_12345.6:g."
     } else if(vp.GetLoc().IsPnt()) {
