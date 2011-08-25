@@ -232,6 +232,19 @@ TField B4Param_Web_DBSubgroup        ("Web_DBSubgroup",       CBlast4_value::e_S
 TField B4Param_Web_ExclModels        ("Web_ExclModels",       CBlast4_value::e_Boolean);
 TField B4Param_Web_ExclSeqUncult     ("Web_SeqUncult",        CBlast4_value::e_Boolean);
 
+string kBlast4SearchInfoReqName_Search("search");
+string kBlast4SearchInfoReqName_Alignment("alignment");
+string kBlast4SearchInfoReqValue_Status("status");
+string kBlast4SearchInfoReqValue_Title("title");
+string kBlast4SearchInfoReqValue_Subjects("subjects");
+
+/// Auxiliary function to consistently build the Blast4-get-search-info-reply
+/// names
+string Blast4SearchInfo_BuildReplyName(const string& name, const string& value)
+{
+    return name + string("-") + value;
+}
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

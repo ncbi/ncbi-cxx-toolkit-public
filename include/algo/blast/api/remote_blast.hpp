@@ -682,7 +682,9 @@ private:
     EProgram x_AdjustProgram(const TValueList & L,
                              const string     & pstr,
                              EProgram           program);
-    
+
+    // Retrieve the subject sequences using the get-search-info functionality
+    void   x_GetSubjects(void);
     
     /// Prohibit copy construction.
     CRemoteBlast(const CRemoteBlast &);

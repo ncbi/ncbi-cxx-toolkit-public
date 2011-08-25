@@ -1578,11 +1578,12 @@ static const string
 void
 CRemoteBlast::x_GetRequestInfo()
 {
-    if(m_ReadFile == true)
+    if(m_ReadFile == true){
         x_GetRequestInfoFromFile();
-    else
+    }
+    else{
         x_GetRequestInfoFromRID();
-    
+    }
 }
 
 bool 
@@ -1700,13 +1701,7 @@ CRemoteBlast::x_GetRequestInfoFromRID()
             if (grir->GetDatabase().GetName() != "n/a") {
                 m_Dbs.Reset( & grir->SetDatabase() );
             } else {
-                _ASSERT(grir->IsSetSubjects());
-                CBlast4_subject& s = grir->SetSubjects();
-                if (s.IsSeq_loc_list()) {
-                    m_SubjectSeqLocs = s.SetSeq_loc_list();
-                } else {
-                    x_SetSubjectSequences(s.SetSequences());
-                }
+                x_GetSubjects();
             }
             
             m_Program   = grir->GetProgram();
@@ -2193,20 +2188,12 @@ ExtractBlast4Request(CNcbiIstream& in)
 string CRemoteBlast::GetTitle(void)
 {
     string return_title;
-    bool l_unknown_search = true;
     
     // Build the request
     CRef<CBlast4_get_search_info_request> info_request( new CBlast4_get_search_info_request );
-
-    info_request->ResetRequest_id();
     info_request->SetRequest_id( m_RID );
-
-    CRef< CBlast4_parameter > one_param( new CBlast4_parameter());
-    one_param->SetName( "search" );
-    one_param->SetValue().SetString( "title" );
-
-    info_request->ResetInfo();
-    info_request->SetInfo().Set().push_back( one_param ); 
+    info_request->SetInfo().Add(kBlast4SearchInfoReqName_Search,
+                                kBlast4SearchInfoReqValue_Title);
 
     CRef<CBlast4_request_body> body(new CBlast4_request_body);
     body->SetGet_search_info( *info_request );
@@ -2244,41 +2231,25 @@ string CRemoteBlast::GetTitle(void)
     }
   
     // get reply. it will be status and title if set
-    if (reply->CanGetBody()) {
-       if (reply->GetBody().IsGet_search_info()) {
-         const CBlast4_get_search_info_reply &info_reply = 
-		reply->GetBody().GetGet_search_info();
-	 if( info_reply.CanGetRequest_id() && 
-	     ( info_reply.GetRequest_id() == m_RID ) ){
-	     if( info_reply.CanGetInfo() ){
-	       const CBlast4_parameters &params = info_reply.GetInfo();
-	       // get title first
-	       {
-	          CRef< CBlast4_parameter > search_param = 
-			  params.GetParamByName ( "search-title" );
-		  if( search_param.NotEmpty() && search_param->GetValue().IsString())
-		  {
-		      return_title = search_param->GetValue().GetString();
-		  }
-
-	       }
-	       // get search status if no title
-	       {
-	          CRef< CBlast4_parameter > search_param = 
-			  params.GetParamByName ( "search-status" );
-		  if( search_param.NotEmpty() && search_param->GetValue().IsString())
-		  {
-		      string search_status = search_param->GetValue().GetString();
-		      if( NStr::CompareNocase(search_status,"UNKNOWN" ) ){
-			l_unknown_search = false;
-		      }
-		  }
-
-	       }
-	    } // get info
+    if (!reply->CanGetBody()) {
+        return kEmptyStr;
+    }
+    if (reply->GetBody().IsGet_search_info()) {
+        const CBlast4_get_search_info_reply &info_reply = reply->GetBody().GetGet_search_info();
+        if (info_reply.CanGetRequest_id() && (info_reply.GetRequest_id() == m_RID)) {
+            if( info_reply.CanGetInfo() ){
+                const CBlast4_parameters &params = info_reply.GetInfo();
+                string reply_name =
+                    Blast4SearchInfo_BuildReplyName(kBlast4SearchInfoReqName_Search,
+                                                    kBlast4SearchInfoReqValue_Title);
+                CRef< CBlast4_parameter > search_param =
+                    params.GetParamByName(reply_name);
+                if( search_param.NotEmpty() && search_param->GetValue().IsString()) {
+                    return_title = search_param->GetValue().GetString();
+                }
+            } // get info
         } // request id == m_RID
     } // search info reply
-  } // get body
 
     return return_title;
 }
@@ -2455,6 +2426,91 @@ CRemoteBlast::x_GetSearchResultsHTTP(void)
 	
     return one_reply ;
 }
+//
+// Get search subject and set 
+// m_SubjectSeqLocs or m_SubjectSequences 
+//
+void CRemoteBlast::x_GetSubjects(void)
+{
+    if( !m_SubjectSequences.empty() && !m_SubjectSeqLocs.empty() )
+        return; // already got data
+
+    // Build the request
+    CRef<CBlast4_get_search_info_request> info_request( new CBlast4_get_search_info_request );
+    info_request->SetRequest_id( m_RID );
+    info_request->SetInfo().Add(kBlast4SearchInfoReqName_Search, 
+                                kBlast4SearchInfoReqValue_Subjects);
+
+    CRef<CBlast4_request_body> body(new CBlast4_request_body);
+    body->SetGet_search_info( *info_request );
+
+    CRef<CBlast4_request> request(new CBlast4_request);
+    request->SetBody(*body);
+    
+    CRef<CBlast4_reply> reply(new CBlast4_reply);
+    
+    if (eDebug == m_Verbose) {
+        NcbiCout << MSerial_AsnText << *request << endl;
+    }
+    
+    try {
+        CStopWatch sw(CStopWatch::eStart);
+        
+        if (eDebug == m_Verbose) {
+            NcbiCout << "Starting network transaction (" << sw.Elapsed() << ")" << endl;
+        }
+        
+        // Send request.
+        CBlast4Client().Ask(*request, *reply);
+        
+        if (eDebug == m_Verbose) {
+            NcbiCout << "Done network transaction (" << sw.Elapsed() << ")" << endl;
+        }
+    }
+    catch(const CEofException&) {
+        NCBI_THROW(CRemoteBlastException, eServiceNotAvailable,
+                   "No response from server, cannot complete request.");
+    }
+
+    if (eDebug == m_Verbose) {
+        NcbiCout << MSerial_AsnText << *reply << endl;
+    }
+  
+    // get reply. it will be status and subjects 
+    if (reply->CanGetBody()) {
+        if (reply->GetBody().IsGet_search_info()) {
+            const CBlast4_get_search_info_reply &info_reply = reply->GetBody().GetGet_search_info();
+            if( info_reply.CanGetRequest_id() && ( info_reply.GetRequest_id() == m_RID ) ){
+                if( info_reply.CanGetInfo() ){
+                    const CBlast4_parameters &params = info_reply.GetInfo();
+                    string reply_name =
+                          Blast4SearchInfo_BuildReplyName(kBlast4SearchInfoReqName_Search,
+                                                          kBlast4SearchInfoReqValue_Subjects);
+                    CRef< CBlast4_parameter > search_param = params.GetParamByName (reply_name);
+                    // reply could have string, seq-loc-list or 
+                    // bioseq-list, but we don't care about string result for bl2seq
+                    if( search_param.NotEmpty() && search_param->GetValue().IsSeq_loc_list())
+                    {
+                        m_SubjectSeqLocs  = search_param->GetValue().GetSeq_loc_list();
+                    }
+                    // bioseq-list  // SEQUENCE OF Bioseq 
+                    else if( search_param.NotEmpty() && search_param->GetValue().IsBioseq_list())
+                    {
+                        x_SetSubjectSequences( search_param->GetValue().GetBioseq_list() );
+
+                    }
+                    else 
+                    {
+                        NCBI_THROW(CRemoteBlastException, eIncompleteConfig,
+                                   "Obtained database name for remote bl2seq search");
+                    }
+
+	            } // get info
+            } // request id == m_RID
+       } // search info reply
+   } // get body
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

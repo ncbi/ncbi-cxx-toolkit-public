@@ -201,6 +201,27 @@ NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_DBSubgroup;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_ExclModels;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_ExclSeqUncult;
 
+/*****************************************************************************/
+// String pairs used to support for get-search-info request
+
+/// Used to retrieve information about the BLAST search
+NCBI_BLAST_EXPORT extern  string kBlast4SearchInfoReqName_Search;
+/// Used to retrieve information about the BLAST alignments
+NCBI_BLAST_EXPORT extern  string kBlast4SearchInfoReqName_Alignment;
+
+/// Used to retrieve the BLAST search status
+NCBI_BLAST_EXPORT extern  string kBlast4SearchInfoReqValue_Status;
+/// Used to retrieve the BLAST search title
+NCBI_BLAST_EXPORT extern  string kBlast4SearchInfoReqValue_Title;
+/// Used to retrieve the BLAST search subjects
+NCBI_BLAST_EXPORT extern  string kBlast4SearchInfoReqValue_Subjects;
+
+/// This function builds the reply name token in the get-search-info reply
+/// objects, provided a pair of strings such as those defined above
+/// (i.e.: kBlast4SearchInfoReq{Name,Value})
+NCBI_BLAST_EXPORT
+string Blast4SearchInfo_BuildReplyName(const string& name, const string& value);
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 
