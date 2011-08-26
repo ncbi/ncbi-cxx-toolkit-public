@@ -441,6 +441,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributesMiscFeature(
         x_AssignAttributeException( mapped_feat )  &&
         x_AssignAttributeExonNumber( mapped_feat )  &&
         x_AssignAttributePseudo( mapped_feat )  &&
+        x_AssignAttributeDbXref( mapped_feat )  &&
         x_AssignAttributeNote( mapped_feat ) );
 }
 
