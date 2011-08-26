@@ -70,7 +70,7 @@ enum ESeqAnnotChoiceMaskFlags {
     fSAMF_Ids               = (1 <<  3),    ///< used for communication between tools
     fSAMF_Locs              = (1 <<  4),    ///< used for communication between tools
     fSAMF_Seq_table         = (1 <<  5),
-    fSAMF_All               = ~0,
+    fSAMF_All               = (1 <<  6) - 1,
     fSAMF_AllButSeq_table   = fSAMF_All & ~fSAMF_Seq_table,
     fSAMF_Default           = fSAMF_AllButSeq_table
 };
@@ -108,7 +108,7 @@ enum ESeqIdChoiceMaskFlags {
     fSIMF_Tpd               = (1 << 17),    ///< Third Party Annot/Seq DDBJ
     fSIMF_Gpipe             = (1 << 18),    ///< Internal NCBI genome pipeline processing ID
     fSIMF_Named_annot_track = (1 << 19),    ///< Internal named annotation tracking ID
-    fSIMF_All               = ~0,
+    fSIMF_All               = (1 << 20) - 1,
     fSIMF_AllButLocal       = fSIMF_All & ~fSIMF_Local,
     fSIMF_Default           = fSIMF_All
 };
