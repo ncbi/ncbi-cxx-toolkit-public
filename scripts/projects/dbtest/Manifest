@@ -37,6 +37,6 @@ SunOSx86   : plain : WorkShop.sh 32   --without-debug --without-mt --with-static
 
 SunOSSparc : plain : WorkShop.sh 32   --without-debug --without-mt --with-static --with-flat-makefile
 
-IntelMAC   : plain : GCC.sh           --without-debug --without-mt --with-static --with-flat-makefile --with-universal
+IntelMAC   : plain : GCC.sh           --without-debug --without-mt --with-static --with-flat-makefile --with-universal=i386,x86_64
 
 Win32_9    : plain : static  32  ReleaseDLL
