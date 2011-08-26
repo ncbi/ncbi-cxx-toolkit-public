@@ -2204,7 +2204,7 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
         /* Get the sequence for this match */
         if (perform_partial_fetch) {
             BLAST_SetupPartialFetching(program_number, (BlastSeqSrc*)seqSrc, 
-                                       &thisMatch, 1);
+                                       (const BlastHSPList**)&thisMatch, 1);
         }
 
         status_code =

@@ -1325,7 +1325,7 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
              if (perform_partial_fetch) {
                  BLAST_SetupPartialFetching(program_number, 
                                             (BlastSeqSrc*)seq_src,
-                                            batch->hsplist_array,
+                                            (const BlastHSPList**)batch->hsplist_array,
                                             batch->num_hsplists);
             }
 

@@ -5221,4 +5221,4 @@ BLAST_SpougeStoE(Int4 y_,
     area = MAX(p1_p2 + c_y_P_m_F_P_n_F, 0.0);
 
     return area * k_ * exp(-lambda_ * y_) * db_scale_factor;
-};
+}
