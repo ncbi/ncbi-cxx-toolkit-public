@@ -94,11 +94,7 @@ typedef struct SContext_tag {
 
 static void s_DeleteContext(TContextPtr context);
 
-static void s_DumpAnnotMap(void);
-
 static void s_DumpContext(TContextPtr context);
-
-static void s_DumpSeqMap(void);
 
 static TSeqAnnotChoiceMaskFlags s_GetSeqAnnotChoiceMask(const CSeq_annot* annot);
 
@@ -513,21 +509,6 @@ static void s_DeleteContext(TContextPtr context)
 }
 
 
-// This function prints out the mapping from Seq-annot to Seq-id.
-static void s_DumpAnnotMap(void)
-{
-    NcbiCout << "s_AnnotToSeqIdMap:" << NcbiEndl;
-    ITERATE (TAnnotToSeqIdMap, iter, s_AnnotToSeqIdMap) {
-        NcbiCout << "    offset: " << iter->first << " seqs:";
-        const TSeqRefCont& seqs(iter->second->GetData());
-        ITERATE (TSeqRefCont, iter2, seqs) {
-            NcbiCout << " " << (*iter2)->GetSeqIdString(true);
-        }
-        NcbiCout << NcbiEndl;
-    }
-}
-
-
 // This function prints out the context tree.
 static void s_DumpContext(TContextPtr context)
 {
@@ -555,21 +536,6 @@ static void s_DumpContext(TContextPtr context)
     --indent;
 
     NcbiCout << s1 << "}" << NcbiEndl;
-}
-
-
-// This function prints out the mapping from Seq-id to Seq-annot.
-static void s_DumpSeqMap(void)
-{
-    NcbiCout << "s_SeqIdToAnnotMap:" << NcbiEndl;
-    ITERATE (TSeqIdToAnnotMap, iter, s_SeqIdToAnnotMap) {
-        NcbiCout << "    seq: " << iter->first->GetSeqIdString(true) << " offsets:";
-        const TPosCont& offsets(iter->second->GetData());
-        ITERATE (TPosCont, iter2, offsets) {
-            NcbiCout << " " << *iter2;
-        }
-        NcbiCout << NcbiEndl;
-    }
 }
 
 
