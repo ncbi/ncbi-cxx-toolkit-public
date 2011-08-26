@@ -1,5 +1,5 @@
-#ifndef SEQANNOT_SPLICE_UTIL__HPP
-#define SEQANNOT_SPLICE_UTIL__HPP
+#ifndef SEQANNOT_SPLICER_UTIL__HPP
+#define SEQANNOT_SPLICER_UTIL__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -37,10 +37,6 @@
 #include <list>
 
 #include <corelib/ncbiobj.hpp>
-
-class ncbi::CObjectIStream;
-class ncbi::objects::CSeq_annot;
-class ncbi::objects::CSeq_id;
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -158,4 +154,4 @@ extern void SetSeqIdChoiceMask(const std::string& mask);
 extern void SetSeqIdChoiceMask(const TSeqIdChoiceMaskFlags mask = fSIMF_Default);
 
 
-#endif  /* SEQANNOT_SPLICE_UTIL__HPP */
+#endif  /* SEQANNOT_SPLICER_UTIL__HPP */
