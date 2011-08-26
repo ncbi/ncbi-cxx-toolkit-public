@@ -38,6 +38,7 @@
 #include "choicestr.hpp"
 #include "stdstr.hpp"
 #include "code.hpp"
+#include "module.hpp"
 #include "srcutil.hpp"
 #include <serial/serialdef.hpp>
 #include "statictype.hpp"
@@ -872,7 +873,11 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "\n"
             "void "<<methodPrefix<<"ThrowInvalidSelection("STATE_ENUM" index) const\n"
             "{\n"
-            "    throw NCBI_NS_NCBI::CInvalidChoiceSelection(DIAG_COMPILE_INFO, m_choice, index, sm_SelectionNames, sizeof(sm_SelectionNames)/sizeof(sm_SelectionNames[0]));\n"
+            "    throw NCBI_NS_NCBI::CInvalidChoiceSelection(DIAG_COMPILE_INFO";
+        if ( 1 ) { // add extra argument for better error message
+            methods << ", this";
+        }
+        methods << ", m_choice, index, sm_SelectionNames, sizeof(sm_SelectionNames)/sizeof(sm_SelectionNames[0]));\n"
             "}\n"
             "\n";
     }
@@ -1364,10 +1369,38 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     methods <<
         "(\""<<GetExternalName()<<"\", "<<classPrefix<<GetClassNameDT()<<")\n"
         "{\n";
-    if ( !GetModuleName().empty() ) {
-        methods <<
-            "    SET_CHOICE_MODULE(\""<<GetModuleName()<<"\");\n";
+
+    string owner_name, member_name;
+    string module_name = GetModuleName();
+#if 1
+    if ( module_name.empty() ) {
+        // internal type
+        const CDataType* this_type = DataType();
+        if ( this_type ) {
+            owner_name = this_type->IdName();
+            SIZE_TYPE dot = owner_name.rfind('.');
+            if ( dot != NPOS ) {
+                member_name = owner_name.substr(dot+1);
+                owner_name.resize(dot);
+            }
+            module_name = this_type->GetModule()->GetName();
+        }
     }
+#endif
+    if ( !owner_name.empty() ) {
+        methods <<
+            "    SET_INTERNAL_NAME(\""<<owner_name<<"\", ";
+        if ( !member_name.empty() )
+            methods << "\""<<member_name<<"\"";
+        else
+            methods << "0";
+        methods << ");\n";
+    }
+    if ( !module_name.empty() ) {
+        methods <<
+            "    SET_CHOICE_MODULE(\""<<module_name<<"\");\n";
+    }
+
     ENsQualifiedMode defNsqMode = eNSQNotSet;
     if (DataType()) {
         defNsqMode = DataType()->IsNsQualified();

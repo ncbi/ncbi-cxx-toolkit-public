@@ -217,11 +217,22 @@ struct SPrintIdentifier
 };
 CNcbiOstream& operator<<(CNcbiOstream& out, SPrintIdentifier s)
 {
+    SIZE_TYPE size = s.m_String.size();
+    SIZE_TYPE e_pos = NPOS;
+    if ( size > 2 && NStr::EndsWith(s.m_String, ".E") ) {
+        e_pos = s.m_String.rfind('.', size-3);
+        if ( e_pos != NPOS ) {
+            size -= 2;
+        }
+    }
     bool capitalize = true;
-    for ( size_t i = 0; i < s.m_String.size(); ++i ) {
+    for ( SIZE_TYPE i = 0; i < size; ++i ) {
         char c = s.m_String[i];
         if ( c == '.' ) {
             out << "::C_";
+            if ( i == e_pos ) {
+                out << "E_";
+            }
             capitalize = true;
         }
         else {

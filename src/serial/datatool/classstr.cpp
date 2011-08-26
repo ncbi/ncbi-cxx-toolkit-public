@@ -1191,8 +1191,6 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
         const CDataType* this_type = DataType();
         if ( this_type ) {
             owner_name = this_type->IdName();
-            if ( owner_name.find("E_") != NPOS )
-                owner_name = this_type->IdName();
             SIZE_TYPE dot = owner_name.rfind('.');
             if ( dot != NPOS ) {
                 member_name = owner_name.substr(dot+1);

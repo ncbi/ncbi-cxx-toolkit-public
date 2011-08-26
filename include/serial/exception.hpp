@@ -43,6 +43,8 @@
 
 BEGIN_NCBI_SCOPE
 
+class CSerialObject;
+
 /// Root class for all serialization exceptions
 class NCBI_XSERIAL_EXPORT CSerialException : public CException
 {
@@ -102,6 +104,12 @@ public:
                                const char* const names[], 
                                size_t namesCount);
 
+    CInvalidChoiceSelection(const CDiagCompileInfo& diag_info,
+                            const CSerialObject* object,
+                            size_t currentIndex, size_t mustBeIndex,
+                            const char* const names[], size_t namesCount, 
+                            EDiagSev severity = eDiag_Error);
+    // for backward compatibility
     CInvalidChoiceSelection(const CDiagCompileInfo& diag_info,
                             size_t currentIndex, size_t mustBeIndex,
                             const char* const names[], size_t namesCount, 

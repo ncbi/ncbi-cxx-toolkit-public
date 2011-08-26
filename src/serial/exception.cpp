@@ -31,6 +31,8 @@
 
 #include <ncbi_pch.hpp>
 #include <serial/exception.hpp>
+#include <serial/impl/choice.hpp>
+#include <serial/serialbase.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -61,6 +63,80 @@ const char* CInvalidChoiceSelection::GetName(
         return "?unknown?";
     return names[index];
     
+}
+
+BEGIN_LOCAL_NAMESPACE;
+
+struct SPrintIdentifier
+{
+    SPrintIdentifier(const CTempString& s) : m_String(s) {}
+    CTempString m_String;
+};
+CNcbiOstream& operator<<(CNcbiOstream& out, SPrintIdentifier s)
+{
+    SIZE_TYPE size = s.m_String.size();
+    SIZE_TYPE e_pos = NPOS;
+    if ( size > 2 && NStr::EndsWith(s.m_String, ".E") ) {
+        e_pos = s.m_String.rfind('.', size-3);
+        if ( e_pos != NPOS ) {
+            size -= 2;
+        }
+    }
+    bool capitalize = true;
+    for ( SIZE_TYPE i = 0; i < size; ++i ) {
+        char c = s.m_String[i];
+        if ( c == '.' ) {
+            out << "::C_";
+            if ( i == e_pos ) {
+                out << "E_";
+            }
+            capitalize = true;
+        }
+        else {
+            if ( c == '-' ) {
+                c = '_';
+            }
+            if ( capitalize ) {
+                c = toupper((unsigned char)c);
+                capitalize = false;
+            }
+            out << c;
+        }
+    }
+    return out;
+}
+
+END_LOCAL_NAMESPACE;
+
+CInvalidChoiceSelection::CInvalidChoiceSelection(
+    const CDiagCompileInfo& diag_info,
+    const CSerialObject* object,
+    size_t currentIndex, size_t mustBeIndex,
+    const char* const names[], size_t namesCount, 
+    EDiagSev severity)
+        : CSerialException(diag_info, 0,
+          (CSerialException::EErrCode) CException::eInvalid,"")
+{
+    CNcbiOstrstream msg;
+    const CChoiceTypeInfo* type = 0;
+    if ( object ) {
+        type = dynamic_cast<const CChoiceTypeInfo*>(object->GetThisTypeInfo());
+    }
+    const char* cur_name = GetName(currentIndex, names, namesCount);
+    const char* req_name = GetName(mustBeIndex, names, namesCount);
+    if ( type ) {
+        msg << "C" << SPrintIdentifier(type->GetAccessName())
+            << "::Get" << SPrintIdentifier(req_name) << "()";
+        msg << ": Invalid choice selection: "
+            << type->GetAccessModuleName() <<"::"<< type->GetAccessName()
+            << '.' << cur_name;
+    }
+    else {
+        msg << "Invalid choice selection: "
+            << cur_name << ". Expected: " << req_name;
+    }
+    x_Init(diag_info, CNcbiOstrstreamToString(msg), 0, severity);
+    x_InitErrCode((CException::EErrCode)(CInvalidChoiceSelection::eFail));
 }
 
 CInvalidChoiceSelection::CInvalidChoiceSelection(
