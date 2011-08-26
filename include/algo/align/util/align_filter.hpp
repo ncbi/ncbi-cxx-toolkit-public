@@ -169,6 +169,11 @@ public:
                            objects::CScope* scope) const = 0;
         virtual void PrintHelp(CNcbiOstream &ostr) const = 0;
         virtual EComplexity GetComplexity() const { return eEasy; };
+
+        /// For any IScore subclasses that have an internal state, this
+        /// function will be called to update it for any alignment that
+        /// matches the filter
+        virtual void UpdateState(const objects::CSeq_align& align) {}
     };
 
 public:
@@ -261,6 +266,8 @@ private:
                        const CQueryParseTree::TNode& val1_node,
                        const CQueryParseTree::TNode& val2_node,
                        const objects::CSeq_align& align);
+
+    void x_UpdateDictionaryStates(const objects::CSeq_align& align);
 
 private:
     bool m_RemoveDuplicates;
