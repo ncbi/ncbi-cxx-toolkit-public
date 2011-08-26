@@ -186,6 +186,14 @@ public:
     /// Return one of eIntConst, eBoolConst, eFloatConst, eString, or eNotSet.
     virtual CQueryParseNode::EType IdentifierType(const std::string& identifier)
         { return CQueryParseNode::eNotSet; }
+
+    virtual void EvalStart() {}
+    /// Move to the next row for eval, return false if table size < m_EvalRow+1
+    virtual bool EvalNext(CQueryParseTree& qtree) {return false;}
+    virtual bool EvalComplete() {return true;}
+
+    int GetQueriedCount() const { return  m_QueriedCount; }
+    int GetExceptionCount() const { return m_ExceptionCount; }
     
 protected:
     friend class CQueryFunctionBase;
@@ -201,6 +209,9 @@ protected:
     TFuncReg                       m_FuncReg;
     auto_ptr<CQueryFunctionBase>   m_ImplicitSearchFunc;
     CQueryParseTree*               m_QTree;
+
+    int                            m_ExceptionCount;
+    int                            m_QueriedCount;
 };
 
 

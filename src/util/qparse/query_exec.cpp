@@ -77,7 +77,9 @@ CQueryParseTree& CQueryFunctionBase::GetQueryTree()
 
 CQueryExec::CQueryExec()
 : m_FuncReg(CQueryParseNode::eMaxType),
-  m_QTree(0)
+  m_QTree(0),
+  m_ExceptionCount(0),
+  m_QueriedCount(0)
 {
     for (size_t i = 0; i < m_FuncReg.size(); ++i) {
         m_FuncReg[i] = 0;
