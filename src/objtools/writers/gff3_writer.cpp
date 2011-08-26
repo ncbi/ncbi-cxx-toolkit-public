@@ -372,6 +372,13 @@ bool CGff3Writer::x_WriteFeatureCds(
     if ( it != m_MrnaMap.end() ) {
         pCds->AssignParent( *(it->second) );
     }
+    else {
+        CMappedFeat gene = feature::GetBestGeneForFeat( mf, &fc.FeatTree() );
+        TGeneMap::iterator it = m_GeneMap.find( gene );
+        if ( it != m_GeneMap.end() ) {
+            pCds->AssignParent( *( it->second ) );
+        }
+    }
 
     const CSeq_loc& PackedInt = *pCds->GetCircularLocation();
 
