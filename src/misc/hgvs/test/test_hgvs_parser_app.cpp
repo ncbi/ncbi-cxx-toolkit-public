@@ -60,9 +60,9 @@ class CTestCase
 public:
 
     //todo: reuse variation-util
-    CTestCase(const CVariation& v, CRef<CHgvsParser> parser, CNcbiOstream& out)
+    CTestCase(CConstRef<CVariation> v, CRef<CHgvsParser> parser, CNcbiOstream& out)
       : m_expr("")
-      , m_variation(&v)
+      , m_variation(v)
       , m_parser(parser)
       , m_out(out)
     {
@@ -132,7 +132,7 @@ NCBITEST_INIT_TREE()
 
         LOG_POST("Adding test-case");
         boost::unit_test::framework::master_test_suite().add(
-                BOOST_TEST_CASE(CTestCase(*variation, parser, ostr)));
+                BOOST_TEST_CASE(CTestCase(variation, parser, ostr)));
 
     }
 }
