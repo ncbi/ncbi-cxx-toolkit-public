@@ -580,7 +580,7 @@ public:
 
     virtual double Get(const CSeq_align& align, CScope* scope) const
     {
-        double score = numeric_limits<double>::quiet_NaN();
+        double score = -1;
         if (align.GetSegs().IsStd()) {
             return score;
         }
