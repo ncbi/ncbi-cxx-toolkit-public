@@ -12,6 +12,6 @@ REQUIRES = Boost.Test.Included
 
 CHECK_CMD =
 CHECK_COPY = test_cases
-CHECK_TIMEOUT = 900
+CHECK_TIMEOUT = 1200
 
 WATCHERS = bollin kornbluh
