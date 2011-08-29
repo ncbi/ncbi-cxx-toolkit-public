@@ -61,6 +61,7 @@ public:
         eBadLocation,    ///< Attempt to map from/to invalid seq-loc
         eUnknownLength,  ///< Can not resolve sequence length
         eBadAlignment,   ///< Unsuported or invalid alignment
+        eBadFeature,     ///< Feature can not be used for mapping
         eOtherError
     };
     virtual const char* GetErrCodeString(void) const;

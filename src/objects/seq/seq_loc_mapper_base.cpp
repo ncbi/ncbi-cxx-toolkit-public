@@ -56,6 +56,7 @@ const char* CAnnotMapperException::GetErrCodeString(void) const
     case eBadLocation:      return "eBadLocation";
     case eUnknownLength:    return "eUnknownLength";
     case eBadAlignment:     return "eBadAlignment";
+    case eBadFeature:       return "eBadFeature";
     case eOtherError:       return "eOtherError";
     default:                return CException::GetErrCodeString();
     }
@@ -270,7 +271,7 @@ CMappingRange::TRange CMappingRange::Map_Range(TSeqPos           from,
         // extend to beginning if necessary
         // example accession that triggers this "if": AJ237662.1
         if( (frame_shift > 0) && partial_from && (from == 0) && (m_Src_from == 0) ) {
-            if( m_Dst_from >= frame_shift ) {
+            if( m_Dst_from >= static_cast<TSeqPos>(frame_shift) ) {
                 ret.SetFrom( m_Dst_from - frame_shift );
             } else {
                 ret.SetFrom( m_Dst_from );
@@ -645,6 +646,22 @@ void CSeq_loc_Mapper_Base::x_InitializeFeat(const CSeq_feat&  map_feat,
     // Make sure product is set
     _ASSERT(map_feat.IsSetProduct());
 
+    // Check for features with exceptions.
+    bool benign_feat_exception = map_feat.IsSetExcept_text()  &&
+        (map_feat.GetExcept_text() == "mismatches in translation"  ||
+        map_feat.GetExcept_text() == "mismatches in transcription");
+    bool severe_feat_exception = 
+        ((map_feat.IsSetExcept() && map_feat.GetExcept())  ||
+        map_feat.IsSetExcept_text())  && !benign_feat_exception;
+
+    if (severe_feat_exception  ||
+        map_feat.GetLocation().IsTruncatedStart(eExtreme_Biological)  ||
+        map_feat.GetLocation().IsPartialStart(eExtreme_Biological)) {
+        NCBI_THROW(CAnnotMapperException, eBadFeature,
+                   "Features with exceptions and partial locations "
+                   "can not be used for mapping.");
+    }
+
     // Sometimes sequence types can be detected based on the feature type.
     ESeqType loc_type = eSeq_unknown;
     ESeqType prod_type = eSeq_unknown;
@@ -877,13 +894,15 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
 
     if ( frame ) {
         const int shift = frame - 1;
-        if (dst_type == eSeq_prot  &&  src_start != kInvalidSeqPos && shift < src_len ) {
+        if (dst_type == eSeq_prot  &&  src_start != kInvalidSeqPos &&
+            static_cast<TSeqPos>(shift) < src_len ) {
             if( ! source.IsReverseStrand() ) {
                 src_start += shift;
             }
             src_len -= shift;
         }
-        if (src_type == eSeq_prot  &&  dst_start != kInvalidSeqPos && shift < dst_len ) {
+        if (src_type == eSeq_prot  &&  dst_start != kInvalidSeqPos &&
+            static_cast<TSeqPos>(shift) < dst_len ) {
             if( ! target.IsReverseStrand() ) {
                 dst_start += shift;
             }
@@ -2628,7 +2647,7 @@ bool CSeq_loc_Mapper_Base::x_MapInterval(const CSeq_id&   src_id,
             const CMappingRange &mapping = *rg_it->second;
             // try to detect if we hit the case where we couldn't do a frame-shift
             if( ! mapping.m_Reverse && mapping.m_Frame > 1 && mapping.m_Dst_from == 0 &&
-                mapping.m_Dst_len <= (mapping.m_Frame - 1)  )
+                mapping.m_Dst_len <= static_cast<TSeqPos>(mapping.m_Frame - 1)  )
             {
                 const int shift = ( mappings[0]->m_Frame - 1 );
                 if( src_rg.GetFrom() != 0 ) {
