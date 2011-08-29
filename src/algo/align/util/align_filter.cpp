@@ -705,18 +705,20 @@ private:
 class CScore_Overlap : public CAlignFilter::IScore
 {
 public:
-    CScore_Overlap(int row)
+    CScore_Overlap(int row, bool include_gaps)
     : m_Row(row)
+    , m_IncludeGaps(include_gaps)
     {
     }
 
     virtual void PrintHelp(CNcbiOstream& ostr) const
     {
         string row_name = m_Row == 0 ? "query" : "subject";
+        string range_type = m_IncludeGaps ? "total aligned range" : "aligned bases";
         ostr <<
-            "size of overlap of total aligned range with any alignments "
+            "size of overlap of " + range_type + " with any alignments "
             "over the same " + row_name + " sequence that have previously "
-            "passed this filter; 0 otherwise. Assumes that input alignments "
+            "passed this filter. Assumes that input alignments "
             "are collated by " + row_name + ", and then sorted by priority for "
             "inclusion in the output.";
     }
@@ -728,7 +730,11 @@ public:
         CRangeCollection<TSeqPos> overlap;
         if (align.GetSeq_id(m_Row).Match(m_CurrentSeq)) {
             overlap = m_CoveredRanges;
-            overlap &= align.GetSeqRange(m_Row);
+            if (m_IncludeGaps) {
+                overlap &= align.GetSeqRange(m_Row);
+            } else {
+                overlap &= align.GetAlignedBases(m_Row);
+            }
         }
         return overlap.GetCoveredLength();
     }
@@ -740,11 +746,16 @@ public:
             m_CurrentSeq.Assign(aligned_id);
             m_CoveredRanges.clear();
         }
-        m_CoveredRanges += align.GetSeqRange(m_Row);
+        if (m_IncludeGaps) {
+            m_CoveredRanges += align.GetSeqRange(m_Row);
+        } else {
+            m_CoveredRanges += align.GetAlignedBases(m_Row);
+        }
     }
 
 private:
     int m_Row;
+    bool m_IncludeGaps;
     CSeq_id m_CurrentSeq;
     CRangeCollection<TSeqPos> m_CoveredRanges;
 };
@@ -942,12 +953,22 @@ void CAlignFilter::x_Init()
     m_Scores.insert
         (TScoreDictionary::value_type
          ("query_overlap",
-          CIRef<IScore>(new CScore_Overlap(0))));
+          CIRef<IScore>(new CScore_Overlap(0, true))));
 
     m_Scores.insert
         (TScoreDictionary::value_type
          ("subject_overlap",
-          CIRef<IScore>(new CScore_Overlap(1))));
+          CIRef<IScore>(new CScore_Overlap(1, true))));
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("query_overlap_nogaps",
+          CIRef<IScore>(new CScore_Overlap(0, false))));
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("subject_overlap_nogaps",
+          CIRef<IScore>(new CScore_Overlap(1, false))));
 }
 
 

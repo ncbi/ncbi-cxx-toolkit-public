@@ -200,14 +200,20 @@ public:
     /// Throw exception if row is invalid.
     const CSeq_id&  GetSeq_id(TDim row) const;
 
-    /// Retrieves the total number of gaps in an alignment
+    /// Retrieves the total number of gaps in the given row an alignment;
+    /// all gaps by default
     /// @throws CSeqalignException if alignment type is not supported
-    TSeqPos         GetTotalGapCount() const;
+    TSeqPos         GetTotalGapCount(TDim row = -1) const;
 
-    /// Retrieves the number of gap openings in an alignment (ignoring how many
-    /// gaps are in the gapped region)
+    /// Retrieves the number of gap openings in a given row in an alignment
+    /// (ignoring how many gaps are in the gapped region); all gaps by default
     /// @throws CSeqalignException if alignment type is not supported
-    TSeqPos         GetNumGapOpenings() const;
+    TSeqPos         GetNumGapOpenings(TDim row = -1) const;
+
+    /// Retrieves the locations of aligned bases in the given row, excluding
+    /// gaps and incontinuities
+    /// @throws CSeqalignException if alignment type is not supported
+    CRangeCollection<TSeqPos> GetAlignedBases(TDim row) const;
 
     /// Get the length of this alignment.  This length corresponds to the score
     /// 'align_length'.  By default, this function computes an alignment length

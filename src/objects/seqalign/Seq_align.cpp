@@ -231,7 +231,6 @@ CRange<TSeqPos> CSeq_align::GetSeqRange(TDim row) const
     }
 }
 
-
 TSeqPos CSeq_align::GetSeqStart(TDim row) const
 {
     switch (GetSegs().Which()) {
@@ -1332,7 +1331,8 @@ CRef<CSeq_align> RemapAlignToLoc(const CSeq_align& align,
 /// otherwise only the number of gap openings is retrieved
 /// @throws CSeqalignException if alignment type is not supported
 static TSeqPos 
-s_GetGapCount(const CSeq_align& align, bool get_total_count)
+s_GetGapCount(const CSeq_align& align, CSeq_align::TDim row,
+              bool get_total_count)
 {
     TSeqPos retval = 0;
     switch (align.GetSegs().Which()) {
@@ -1342,7 +1342,9 @@ s_GetGapCount(const CSeq_align& align, bool get_total_count)
             for (CDense_seg::TNumseg i = 0;  i < ds.GetNumseg();  ++i) {
                 bool is_gapped = false;
                 for (CDense_seg::TDim j = 0;  j < ds.GetDim();  ++j) {
-                    if (ds.GetStarts()[i * ds.GetDim() + j] == -1) {
+                    if (ds.GetStarts()[i * ds.GetDim() + j] == -1 &&
+                        (row < 0 || row == j))
+                    {
                         is_gapped = true;
                         break;
                     }
@@ -1358,7 +1360,7 @@ s_GetGapCount(const CSeq_align& align, bool get_total_count)
         {{
             ITERATE(CSeq_align::TSegs::TDisc::Tdata, iter, 
                     align.GetSegs().GetDisc().Get()) {
-                retval += s_GetGapCount(**iter, get_total_count);
+                retval += s_GetGapCount(**iter, row, get_total_count);
             }
         }}
         break;
@@ -1372,13 +1374,17 @@ s_GetGapCount(const CSeq_align& align, bool get_total_count)
                         const CSpliced_exon_chunk& chunk = **it;
                         switch (chunk.Which()) {
                         case CSpliced_exon_chunk::e_Product_ins:
-                            retval +=
-                                (get_total_count ? chunk.GetProduct_ins() : 1);
+                            if (row != 0) {
+                                retval +=
+                                    (get_total_count ? chunk.GetProduct_ins() : 1);
+                            }
                             break;
 
                         case CSpliced_exon_chunk::e_Genomic_ins:
-                            retval +=
-                                (get_total_count ? chunk.GetGenomic_ins() : 1);
+                            if (row != 1) {
+                                retval +=
+                                    (get_total_count ? chunk.GetGenomic_ins() : 1);
+                            }
                             break;
 
                         default:
@@ -1391,17 +1397,19 @@ s_GetGapCount(const CSeq_align& align, bool get_total_count)
         break;
 
     case CSeq_align::TSegs::e_Std:
-        ITERATE (CSeq_align::TSegs::TStd, iter, align.GetSegs().GetStd()) {
-            const CStd_seg& seg = **iter;
-            ITERATE (CStd_seg::TLoc, it, seg.GetLoc()) {
-                const CSeq_loc& loc = **it;
-                if (loc.IsEmpty()) {
-                    ++retval;
-                    break;
+        if (row < 0 && !get_total_count) {
+            ITERATE (CSeq_align::TSegs::TStd, iter, align.GetSegs().GetStd()) {
+                const CStd_seg& seg = **iter;
+                ITERATE (CStd_seg::TLoc, it, seg.GetLoc()) {
+                    const CSeq_loc& loc = **it;
+                    if (loc.IsEmpty()) {
+                        ++retval;
+                        break;
+                    }
                 }
             }
+            break;
         }
-        break;
 
     default:
         NCBI_THROW(CSeqalignException, eUnsupported,
@@ -1412,15 +1420,121 @@ s_GetGapCount(const CSeq_align& align, bool get_total_count)
     return retval;
 }
 
-TSeqPos CSeq_align::GetTotalGapCount() const
+TSeqPos CSeq_align::GetTotalGapCount(TDim row) const
 {
-    return s_GetGapCount(*this, true);
+    return s_GetGapCount(*this, row, true);
 }
 
-TSeqPos CSeq_align::GetNumGapOpenings() const
+TSeqPos CSeq_align::GetNumGapOpenings(TDim row) const
 {
-    return s_GetGapCount(*this, false);
+    return s_GetGapCount(*this, row, false);
 }
+
+CRangeCollection<TSeqPos> CSeq_align::GetAlignedBases(TDim row) const
+{
+    CRangeCollection<TSeqPos> ranges;
+    switch (GetSegs().Which()) {
+    case CSeq_align::TSegs::e_Denseg:
+        {{
+            const CDense_seg& ds = GetSegs().GetDenseg();
+            for (CDense_seg::TNumseg i = 0;  i < ds.GetNumseg();  ++i) {
+                bool is_gapped = false;
+                for (CDense_seg::TDim j = 0;  j < ds.GetDim();  ++j) {
+                    if (ds.GetStarts()[i * ds.GetDim() + j] == -1)
+                    {
+                        is_gapped = true;
+                        break;
+                    }
+                }
+                if (!is_gapped) {
+                    TSignedSeqPos start = ds.GetStarts()[i * ds.GetDim() + row];
+                    ranges += TSeqRange(start, start + ds.GetLens()[i] - 1);
+                }
+            }
+        }}
+        break;
+
+    case CSeq_align::TSegs::e_Disc:
+        {{
+            ITERATE(CSeq_align::TSegs::TDisc::Tdata, iter, 
+                    GetSegs().GetDisc().Get()) {
+                ranges += (*iter)->GetAlignedBases(row);
+            }
+        }}
+        break;
+
+    case CSeq_align::TSegs::e_Spliced:
+        {{
+            ITERATE (CSpliced_seg::TExons, iter, GetSegs().GetSpliced().GetExons()) {
+                const CSpliced_exon& exon = **iter;
+                if (exon.IsSetParts()) {
+                    TSeqPos current_pos;
+                    if (row == 1) {
+                        current_pos = exon.GetGenomic_start();
+                    } else if (exon.GetProduct_start().IsNucpos()) {
+                        current_pos = exon.GetProduct_start().GetNucpos();
+                    } else if (exon.GetProduct_start().IsProtpos()) {
+                        TSeqPos start_frame =
+                            exon.GetProduct_start().GetProtpos().GetFrame();
+                        if(start_frame > 0)
+                            --start_frame;
+                        current_pos =
+                            exon.GetProduct_start().GetProtpos().GetAmin()*3 + start_frame;
+                    } else {
+                        NCBI_THROW(CException, eUnknown,
+                                   "Spliced-exon is neither nuc nor prot");
+                    }
+                    ITERATE (CSpliced_exon::TParts, it, exon.GetParts()) {
+                        const CSpliced_exon_chunk& chunk = **it;
+                        bool is_gapped = false;
+                        TSeqPos part_length;
+                        switch (chunk.Which()) {
+                        case CSpliced_exon_chunk::e_Match:
+                            part_length = chunk.GetMatch();
+                            break;
+
+                        case CSpliced_exon_chunk::e_Mismatch:
+                            part_length = chunk.GetMismatch();
+                            break;
+
+                        case CSpliced_exon_chunk::e_Diag:
+                            part_length = chunk.GetDiag();
+                            break;
+
+                        case CSpliced_exon_chunk::e_Product_ins:
+                            part_length = row == 0 ?  chunk.GetProduct_ins() : 0;
+                            is_gapped = true;
+                            break;
+
+                        case CSpliced_exon_chunk::e_Genomic_ins:
+                            part_length = row == 1 ?  chunk.GetGenomic_ins() : 0;
+                            is_gapped = true;
+                            break;
+
+                        default:
+                            NCBI_ASSERT(false, "Unknown chunk type");
+                        }
+                        if (!is_gapped) {
+                            ranges +=
+                                TSeqRange(current_pos,
+                                          current_pos + part_length - 1);
+                        }
+                        current_pos += part_length;
+                    }
+                }
+            }
+        }}
+        break;
+
+    default:
+        NCBI_THROW(CSeqalignException, eUnsupported,
+                   "CSeq_align::GetInsertedRanges() currently does not handle "
+                   "this type of alignment.");
+    }
+
+    return ranges;
+}
+
 
 /// Get length of intersection between a range and a range collection
 static inline TSeqPos s_IntersectionLength(const CRangeCollection<TSeqPos> &ranges,
