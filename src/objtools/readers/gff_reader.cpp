@@ -1282,7 +1282,11 @@ CRef<CSeq_id> CGFFReader::x_ResolveNewSeqName(const string& name)
         }
     }
     try {
-        return CRef<CSeq_id>(new CSeq_id(name));
+        CRef<CSeq_id> pId(new CSeq_id(name));
+        if (!pId || (pId->IsGi() && pId->GetGi() < 500) ) {
+            pId = new CSeq_id(CSeq_id::e_Local, name);
+        }
+        return pId;
     }
     catch (CSeqIdException&) {
         return CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Local, name));

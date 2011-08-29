@@ -63,6 +63,25 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ===========================================================================
+CRef<CSeq_id> s_ResolveId(
+    const string& str)
+//  ===========================================================================
+{
+    CRef< CSeq_id > pId;
+
+    try {
+        pId.Reset( new CSeq_id(str));
+        if (!pId || (pId->IsGi() && pId->GetGi() < 500) ) {
+            pId = new CSeq_id(CSeq_id::e_Local, str);
+        }
+    }
+    catch (CException&) {
+        pId.Reset(new CSeq_id(CSeq_id::e_Local, str));
+    }
+    return pId;
+}
+
+//  ===========================================================================
 CWiggleData::CWiggleData(
     unsigned int seq_start,
     unsigned int seq_span,
@@ -399,7 +418,7 @@ void CWiggleTrack::MakeTable(
         CRef<CSeqTable_column> col_loc( new CSeqTable_column );
         table.SetColumns().push_back( col_loc );
         col_loc->SetHeader().SetField_name( "Seq-table location" );
-        col_loc->SetDefault().SetLoc().SetInt().SetId().Set( m_strChrom );
+        col_loc->SetDefault().SetLoc().SetInt().SetId(*s_ResolveId(m_strChrom));
         col_loc->SetDefault().SetLoc().SetInt().SetFrom( m_uSeqStart );
         col_loc->SetDefault().SetLoc().SetInt().SetTo( m_uSeqStop );
     }
@@ -584,7 +603,7 @@ void CWiggleTrack::MakeGraph(
         graph->SetTitle( m_strName );
         
         CSeq_interval& loc = graph->SetLoc().SetInt();
-        loc.SetId().Set( CSeq_id::e_Local, m_strChrom );
+        loc.SetId( *s_ResolveId( m_strChrom ) );
         loc.SetFrom( SeqStart() );
         loc.SetTo( SeqStop() );
             
@@ -719,7 +738,7 @@ void CWiggleData::FillGraphsByte(
 //  ===========================================================================
 {
     CSeq_interval& loc = graph.SetLoc().SetInt();
-    loc.SetId().Set( CSeq_id::e_Local, track.Chrom() );
+    loc.SetId(*s_ResolveId(track.Chrom()) );
     loc.SetFrom( SeqStart() );
     loc.SetTo( SeqStart() + SeqSpan() );
 
@@ -822,6 +841,7 @@ void CWiggleData::Dump(
 {
     Out << "  data start=" << SeqStart() << " value=" << Value() << endl;
 }
+
 
 END_objects_SCOPE
 END_NCBI_SCOPE

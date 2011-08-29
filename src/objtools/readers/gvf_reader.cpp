@@ -270,6 +270,9 @@ bool CGvfReader::x_FeatureSetLocation(
         else {
             try {
                 pId.Reset( new CSeq_id(id_str));
+                if (!pId || (pId->IsGi() && pId->GetGi() < 500) ) {
+                    pId = new CSeq_id(CSeq_id::e_Local, id_str);
+                }
             }
             catch (CException&) {
                 pId.Reset(new CSeq_id(CSeq_id::e_Local, id_str));

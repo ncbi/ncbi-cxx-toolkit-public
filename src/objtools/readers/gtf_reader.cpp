@@ -128,14 +128,11 @@ CRef< CSeq_id > s_RecordIdToSeqId(
         return pId;
     }
 
-    bool is_numeric = strId.find_first_not_of("0123456789") == string::npos;
-    if ( is_numeric ) {
-        pId.Reset( new CSeq_id( CSeq_id::e_Local, strId ) );
-        return pId;
-    }
-
     try {
         pId.Reset( new CSeq_id( strId ) );
+        if (!pId || (pId->IsGi() && pId->GetGi() < 500) ) {
+            pId = new CSeq_id(CSeq_id::e_Local, strId);
+        }
     }
     catch (CException&) {
         pId.Reset(new CSeq_id( CSeq_id::e_Local, strId ) );

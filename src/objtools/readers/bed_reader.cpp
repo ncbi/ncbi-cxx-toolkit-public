@@ -424,7 +424,11 @@ CRef<CSeq_id> CBedReader::x_ResolvedId(
         }
     }
     try {
-        return CRef<CSeq_id>( new CSeq_id( strRawId ) );
+        CRef< CSeq_id > pId( new CSeq_id( strRawId ) );
+        if (!pId || (pId->IsGi() && pId->GetGi() < 500) ) {
+            pId = new CSeq_id(CSeq_id::e_Local, strRawId);
+        }
+        return pId;
     }
     catch (CSeqIdException&) {
         return CRef<CSeq_id>( new CSeq_id( CSeq_id::e_Local, strRawId ) );

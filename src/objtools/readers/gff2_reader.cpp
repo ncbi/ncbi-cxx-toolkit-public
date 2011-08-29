@@ -199,7 +199,9 @@ CGff2Reader::ReadSeqAnnotsNew(
             if ( x_ParseTrackLineGff( line, m_CurrentTrackInfo ) ) {
                 continue;
             }
-            x_ParseFeatureGff( line, annots );
+            if ( ! x_ParseFeatureGff( line, annots ) ) {
+                continue;
+            }
         }
         catch( CObjReaderLineException& err ) {
             err.SetLineNumber( linecount );
@@ -700,12 +702,15 @@ bool CGff2Reader::x_FeatureSetLocation(
         bool is_numeric =
             id_str.find_first_not_of("0123456789") == string::npos;
 
-        if (is_numeric  &&  !!(m_uFlags & fNumericIdsAsLocal)) {
+        if (is_numeric && (m_uFlags & fNumericIdsAsLocal)) {
             pId.Reset(new CSeq_id(CSeq_id::e_Local, id_str));
         }
         else {
             try {
                 pId.Reset( new CSeq_id(id_str));
+                if (!pId || (pId->IsGi() && pId->GetGi() < 500) ) {
+                    pId = new CSeq_id(CSeq_id::e_Local, id_str);
+                }
             }
             catch (CException&) {
                 pId.Reset(new CSeq_id(CSeq_id::e_Local, id_str));
