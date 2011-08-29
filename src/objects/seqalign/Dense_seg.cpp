@@ -569,7 +569,7 @@ void CDense_seg::RemovePureGapSegs()
     int j;
     vector<bool> remove(numseg, true);  // start out with all true
     unsigned int remove_count = 0;
-    for (i = 0;  i < numseg - 1;  ++i) {
+    for (i = 0;  i < numseg;  ++i) {
 
         for (j = 0;  j < dim;  ++j) {
             if (GetStarts()[i * dim + j] != -1) {
