@@ -270,11 +270,14 @@ CAlnMixSequences::BuildRows()
     int count = 0;
     NON_CONST_ITERATE (TSeqs, i, m_Seqs) {
         CRef<CAlnMixSeq>& seq = *i;
-        m_Rows.push_back(seq);
-        seq->m_RowIdx = count++;
-        while ((seq = seq->m_ExtraRow) != NULL ) {
-            seq->m_RowIdx = count++;
+
+        if ( !seq->GetStarts().empty() ) {
             m_Rows.push_back(seq);
+            seq->m_RowIdx = count++;
+            while ((seq = seq->m_ExtraRow) != NULL ) {
+                seq->m_RowIdx = count++;
+                m_Rows.push_back(seq);
+            }
         }
     }
 }

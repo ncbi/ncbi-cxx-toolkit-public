@@ -103,6 +103,10 @@ test1 slave_repeated_insert "-noobjmgr t" "slave repeated insert"
 ## leading and trailing gaps
 test2 leadtrailgaps "-rmleadtrailgaps t -noobjmgr t" "remove leading and trailing gaps"
 
+# Test alignments that don't share a single sequence (which also happen to contain a self-aligned seq that is not a repeat) 
+# Jira tickets: GB-1290, CXX-2291 and CXX-2594
+test2 self_aligned_and_no_refseq_share_0 "-sortseqsbyscore t" "no single refseq"
+test2 self_aligned_and_no_refseq_share_1 "" "no single refseq and a self aligned seq"
 
 # clean
 rm $tmp_out
