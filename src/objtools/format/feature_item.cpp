@@ -1575,7 +1575,7 @@ ENa_strand s_GeneSearchNormalizeLoc( CBioseq_Handle top_bioseq_handle,
 
     ENa_strand original_strand = eNa_strand_other;
 
-    CSeq_loc_CI loc_iter( *loc, CSeq_loc_CI::eEmpty_Skip, CSeq_loc_CI::eOrder_Biological );
+    CSeq_loc_CI loc_iter( *loc, CSeq_loc_CI::eEmpty_Skip, CSeq_loc_CI::eOrder_Positional );
     for( ; loc_iter; ++loc_iter ) {
         // parts that are on far bioseqs don't count as part of strandedness (e.g. as in X17229)
         // ( CR956646 is another good test case since its near parts 
@@ -1934,6 +1934,51 @@ CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible_Helper(
     return feat;
 }
 
+static
+CConstRef<CSeq_feat> 
+s_ResolveGeneObjectId( CBioseqContext& ctx, 
+                       const CMappedFeat &feat,
+                       int recursion_depth = 0 )
+{
+    const CConstRef<CSeq_feat> kNullRef;
+
+    // prevent infinite loop due to circular references
+    if( recursion_depth > 10 ) {
+        return kNullRef;
+    }
+
+    if (feat.IsSetXref()) {
+        ITERATE (CSeq_feat::TXref, it, feat.GetXref()) {
+            const CSeqFeatXref& xref = **it;
+            if (xref.IsSetData() && xref.GetData().IsGene() ) {
+                if( xref.GetData().GetGene().IsSuppressed()) {
+                    return kNullRef;
+                }
+                // TODO: in the future, we should handle non-local references, too
+                if( xref.IsSetId() ) {
+                    if( xref.GetId().IsLocal() ) {
+                        const CObject_id &obj_id = xref.GetId().GetLocal();
+                        SAnnotSelector sel;
+                        sel.SetLimitTSE( ctx.GetHandle().GetTSE_Handle() );
+                        CFeat_CI feat_ci( ctx.GetHandle().GetTSE_Handle(), sel, obj_id );
+                        if( feat_ci ) {
+                            const CSeq_feat &feat = feat_ci->GetOriginalFeature();
+                            if( feat.IsSetData() && feat.GetData().IsGene() ) {
+                                return CConstRef<CSeq_feat>( &feat );
+                            } else {
+                                // we resolved to a non-gene, so try to resolve to that feature's gene
+                                return s_ResolveGeneObjectId( ctx, *feat_ci, recursion_depth+1 );
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return kNullRef;
+}
+
 //  ----------------------------------------------------------------------------
 void CFeatureItem::x_GetAssociatedGeneInfo(
     CBioseqContext& ctx,
@@ -1964,6 +2009,15 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
         }
     }
 
+    // Try to resolve the gene directly
+    CConstRef<CSeq_feat> resolved_feat = 
+        s_ResolveGeneObjectId( ctx, m_Feat );
+    if( resolved_feat ) {
+        s_feat = resolved_feat;
+        g_ref = &s_feat->GetData().GetGene();
+        return;
+    }
+
     // this will point to the gene xref inside the feature, if any
     const CGene_ref *xref_g_ref = m_Feat.GetGeneXref();
     string xref_label;
@@ -1992,8 +2046,19 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
             break;
     }
 
+    // always use CDS's ref if xref_g_ref directly if it's set (e.g. AB280922)
+    if( also_look_at_parent_CDS &&
+        parentFeatureItem &&
+        (NULL != parentFeatureItem->m_GeneRef) &&
+        (! parentFeatureItem->m_GeneRef->IsSuppressed()) )
+    {
+        g_ref = parentFeatureItem->m_GeneRef;
+        s_feat.ReleaseOrNull();
+        return;
+    }
+
+    // always use xref_g_ref directly if it's set, but CDS's xref isn't (e.g. NP_041400)
     if( also_look_at_parent_CDS && NULL != xref_g_ref ) {
-        // always use xref_g_ref directly if it's set (e.g. NP_041400)
         g_ref = xref_g_ref;
         s_feat.ReleaseOrNull();
         return;
@@ -2288,14 +2353,14 @@ void CFeatureItem::x_AddQuals(
 {
 //    /**fl**/
     // leaving this here since it's so useful for debugging purposes.
-    //77147..77260
+    //97649..97654
     /* if( 
-        (GetLoc().GetStart(eExtreme_Biological) == 88448 &&
-        GetLoc().GetStop(eExtreme_Biological) == 88448) ||
-        (GetLoc().GetStop(eExtreme_Biological) == 88448 &&
-        GetLoc().GetStart(eExtreme_Biological) == 88448)
+        (GetLoc().GetStart(eExtreme_Biological) == 97648 &&
+        GetLoc().GetStop(eExtreme_Biological) == 97653) ||
+        (GetLoc().GetStop(eExtreme_Biological) == 97648 &&
+        GetLoc().GetStart(eExtreme_Biological) == 97653)
         ) {
-        cerr << "";
+        cerr << ""; // a do-nothing statement in case we forget to comment it out
         } */
 //    /**fl**/
 

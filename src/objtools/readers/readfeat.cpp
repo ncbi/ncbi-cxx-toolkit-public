@@ -749,7 +749,7 @@ static const char * const single_key_list [] = {
     "pseudo",
     "rearranged",
     "ribosomal_slippage",
-    "trans_splicing"
+    "trans_splicing",
     "transgenic"
 };
 
