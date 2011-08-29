@@ -5497,8 +5497,6 @@ static const string sc_BypassCdsTransCheckText[] = {
   "adjusted for low-quality genome",
   "annotated by transcript or proteomic data",
   "artificial frameshift",
-  "heterogeneous population sequenced",
-  "low-quality sequence region",
   "mismatches in translation",
   "rearrangement required for product",
   "reasons given in citation",
