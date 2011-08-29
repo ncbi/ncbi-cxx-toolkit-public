@@ -101,6 +101,7 @@ public:
     };
     typedef int TFlags;
 
+    CGFFReader() { m_Flags = 0; };
     virtual ~CGFFReader() { }
 
     CRef<CSeq_entry> Read(CNcbiIstream& in, TFlags flags = fDefaults);
