@@ -233,13 +233,13 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
          }}
 
         /// check gap base length (= sum of lengths of all gaps)
-        {{
+        if ( !alignment.GetSegs().IsStd() ) {
              int actual =
                  score_builder.GetGapBaseCount(alignment);
              LOG_POST(Error << "Verifying score: gap_bases: "
                       << kExpectedGaps << " == " << actual);
              BOOST_CHECK_EQUAL(kExpectedGaps, actual);
-         }}
+        }
 
         /// check percent identity (gapped)
         if ( !alignment.GetSegs().IsStd() ) {

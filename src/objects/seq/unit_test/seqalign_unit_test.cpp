@@ -111,8 +111,6 @@ static void s_TestStdSegGaps(void)
     ITERATE(CSeq_align_set::Tdata, alignment, alignments.Get()) {
         TSeqPos test_value = (*alignment)->GetNumGapOpenings();
         BOOST_REQUIRE_EQUAL(gap_data[index].first, test_value);
-        test_value = (*alignment)->GetTotalGapCount();
-        BOOST_REQUIRE_EQUAL(gap_data[index].second, test_value);
         index++;
     }
 }
