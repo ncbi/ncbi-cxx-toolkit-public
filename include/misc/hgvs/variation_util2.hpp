@@ -86,6 +86,7 @@ public:
         m_cdregion_index.Clear();
     }
 
+    CRef<CVariation> AsVariation(const CSeq_feat& variation_ref);
 
 
 /// Methods to remap a VariantPlacement
@@ -259,6 +260,14 @@ private:
 
     CConstRef<CSeq_literal> x_FindOrCreateLiteral(const CVariation& v);
 
+    /*
+     * If we are flipping an insertion, we must verify that the location is a multinucleotide (normally dinucleotide)
+     * (in this case insertion is interpreted as "insert-between", and can be strand-flipped).
+     * It is impossible, however, to correctly flip the strand of insert-before-a-point variation, because
+     * "before" would become "after".
+     */
+    static bool s_IsInstStrandFlippable(const CVariation& v, const CVariation_inst& inst);
+
     /// join two seq-literals
     static CRef<CSeq_literal> s_CatLiterals(const CSeq_literal& a, const CSeq_literal& b);
 
@@ -315,6 +324,16 @@ private:
      */
     static const CConstRef<CSeq_literal> s_FindAssertedLiteral(const CVariation& v);
 
+
+    CRef<CVariation> CVariationUtil::x_AsVariation(const CVariation_ref& vr);
+
+
+    /*
+     * In variation-ref the intronic offsets are encoded as last and/or first inst delta-items.
+     * In Variation the intronic offsets are part of the placement. After creating a variation
+     * from a variation-ref we need to migrate the offsets from inst into placement.
+     */
+    static void s_ConvertInstOffsetsToPlacementOffsets(CVariation& v, CVariantPlacement& p);
 
 private:
 

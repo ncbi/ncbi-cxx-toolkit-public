@@ -45,24 +45,32 @@
 
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Variation_ref.hpp>
+#include <objects/seqfeat/Phenotype.hpp>
 #include <objects/seqfeat/Variation_inst.hpp>
 #include <objects/seqfeat/VariantProperties.hpp>
 #include <objects/seqfeat/Delta_item.hpp>
 #include <objects/seqfeat/Ext_loc.hpp>
-
-
+#include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/SubSource.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
+
+#include <objects/pub/Pub_set.hpp>
+#include <objects/pub/Pub.hpp>
+#include <objects/biblio/Cit_art.hpp>
+#include <objects/biblio/Cit_book.hpp>
+#include <objects/biblio/Cit_jour.hpp>
+
+
+#include <objects/variation/VariationMethod.hpp>
 
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/Seq_data.hpp>
-#include <objects/seq/Numbering.hpp>
-#include <objects/seq/Num_ref.hpp>
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seqdesc.hpp>
-#include <objects/seqfeat/BioSource.hpp>
+
 #include <objects/general/User_object.hpp>
 #include <objects/general/Object_id.hpp>
 
@@ -85,8 +93,14 @@ void ChangeIdsInPlace(T& container, sequence::EGetIdType id_type, CScope& scope)
 {
     for(CTypeIterator<CSeq_id> it = Begin(container); it; ++it) {
         CSeq_id& id = *it;
-        CSeq_id_Handle idh = sequence::GetId(id, scope, id_type);
-        id.Assign(*idh.GetSeqId());
+        if(    id_type == sequence::eGetId_ForceAcc && id.GetTextseq_Id()
+            || id_type == sequence::eGetId_ForceGi && id.IsGi())
+        {
+            continue;
+        } else {
+            CSeq_id_Handle idh = sequence::GetId(id, scope, id_type);
+            id.Assign(*idh.GetSeqId());
+        }
     }
 }
 
@@ -342,6 +356,7 @@ CRef<CVariantPlacement> CVariationUtil::x_Remap(const CVariantPlacement& p, CSeq
     CRef<CSeq_loc> mapped_loc = mapper.Map(p.GetLoc());
     p2->SetLoc(*mapped_loc);
     p2->SetPlacement_method(CVariantPlacement::ePlacement_method_projected);
+
     AttachSeq(*p2);
 
     if(p2->GetLoc().GetId()) {
@@ -373,44 +388,85 @@ bool CVariationUtil::AttachSeq(CVariantPlacement& p, TSeqPos max_len)
 
 CVariantPlacement::TMol CVariationUtil::GetMolType(const CSeq_id& id)
 {
-    CBioseq_Handle bsh = m_scope->GetBioseqHandle(id);
-    if(!bsh) {
-        return CVariantPlacement::eMol_unknown;
-    }
+    //Most of the time can figure out from seq-id. Must be careful not to
+    //automatically treat NC as "genomic", as we need to differentiate from
+    //mitochondrion.
+    CSeq_id::EAccessionInfo acinf = id.IdentifyAccession();
+    CVariantPlacement::TMol moltype = CVariantPlacement::eMol_unknown;
 
-    if(bsh.IsSetDescr()) {
-        ITERATE(CBioseq_Handle::TDescr::Tdata, it, bsh.GetDescr().Get()) {
-            const CSeqdesc& desc = **it;
-            if(!desc.IsSource()) {
-                continue;
+    if(acinf == CSeq_id::eAcc_refseq_prot || acinf == CSeq_id::eAcc_refseq_prot_predicted) {
+        moltype = CVariantPlacement::eMol_protein;
+    } else if(acinf == CSeq_id::eAcc_refseq_mrna || acinf == CSeq_id::eAcc_refseq_mrna_predicted) {
+        moltype = CVariantPlacement::eMol_cdna;
+    } else if(acinf == CSeq_id::eAcc_refseq_ncrna || acinf == CSeq_id::eAcc_refseq_ncrna_predicted) {
+        moltype = CVariantPlacement::eMol_rna;
+    } else if(acinf == CSeq_id::eAcc_refseq_genomic
+              || acinf == CSeq_id::eAcc_refseq_contig
+              || acinf == CSeq_id::eAcc_refseq_wgs_intermed)
+    {
+        moltype = CVariantPlacement::eMol_genomic;
+    } else if(id.IdentifyAccession() == CSeq_id::eAcc_refseq_chromosome
+              && NStr::StartsWith(id.GetTextseq_Id()->GetAccession(), "AC_"))
+    {
+        moltype = CVariantPlacement::eMol_genomic;
+    } else if(id.IdentifyAccession() == CSeq_id::eAcc_refseq_chromosome
+              && (   (id.GetTextseq_Id()->GetAccession() >= "NC_000001" && id.GetTextseq_Id()->GetAccession() <= "NC_000024")
+                  || (id.GetTextseq_Id()->GetAccession() >= "NC_000067" && id.GetTextseq_Id()->GetAccession() <= "NC_000087")))
+    {
+        //hardcode most "popular" chromosomes that are not mitochondrions.
+        moltype = CVariantPlacement::eMol_genomic;
+    } else {
+        CBioseq_Handle bsh = m_scope->GetBioseqHandle(id);
+        if(!bsh) {
+            moltype = CVariantPlacement::eMol_unknown;
+        } else {
+            //check if mitochondrion
+            if(bsh.IsSetDescr()) {
+                ITERATE(CBioseq_Handle::TDescr::Tdata, it, bsh.GetDescr().Get()) {
+                    const CSeqdesc& desc = **it;
+                    if(!desc.IsSource()) {
+                        continue;
+                    }
+                    if(desc.GetSource().IsSetGenome() && desc.GetSource().GetGenome() == CBioSource::eGenome_mitochondrion) {
+                        moltype = CVariantPlacement::eMol_mitochondrion;
+                    }
+                }
             }
-            if(desc.GetSource().IsSetGenome() && desc.GetSource().GetGenome() == CBioSource::eGenome_mitochondrion) {
-                return CVariantPlacement::eMol_mitochondrion;
+
+            //check molinfo
+            if(moltype == CVariantPlacement::eMol_unknown) {
+                const CMolInfo* m = sequence::GetMolInfo(bsh);
+                if(!m) {
+                    moltype = CVariantPlacement::eMol_unknown;
+                } else if(m->GetBiomol() == CMolInfo::eBiomol_genomic
+                       || m->GetBiomol() == CMolInfo::eBiomol_other_genetic)
+                {
+                    moltype = CVariantPlacement::eMol_genomic;
+                } else if(m->GetBiomol() == CMolInfo::eBiomol_mRNA
+                       || m->GetBiomol() == CMolInfo::eBiomol_genomic_mRNA)
+                {
+                    moltype = CVariantPlacement::eMol_cdna;
+                } else if(m->GetBiomol() == CMolInfo::eBiomol_ncRNA
+                       || m->GetBiomol() == CMolInfo::eBiomol_rRNA
+                       || m->GetBiomol() == CMolInfo::eBiomol_scRNA
+                       || m->GetBiomol() == CMolInfo::eBiomol_snRNA
+                       || m->GetBiomol() == CMolInfo::eBiomol_snoRNA
+                       || m->GetBiomol() == CMolInfo::eBiomol_pre_RNA
+                       || m->GetBiomol() == CMolInfo::eBiomol_tmRNA
+                       || m->GetBiomol() == CMolInfo::eBiomol_cRNA
+                       || m->GetBiomol() == CMolInfo::eBiomol_tRNA
+                       || m->GetBiomol() == CMolInfo::eBiomol_transcribed_RNA)
+                {
+                    moltype = CVariantPlacement::eMol_rna;
+                } else if(m->GetBiomol() == CMolInfo::eBiomol_peptide) {
+                    moltype = CVariantPlacement::eMol_protein;
+                } else {
+                    moltype = CVariantPlacement::eMol_unknown;
+                }
             }
         }
     }
-
-    const CMolInfo* m = sequence::GetMolInfo(bsh);
-    if(!m) {
-        return CVariantPlacement::eMol_unknown;
-    }
-
-    if(   m->GetBiomol() == CMolInfo::eBiomol_genomic
-       || m->GetBiomol() == CMolInfo::eBiomol_other_genetic)
-    {
-        return CVariantPlacement::eMol_genomic;
-    } else if(m->GetBiomol() == CMolInfo::eBiomol_mRNA
-          || m->GetBiomol() == CMolInfo::eBiomol_ncRNA
-          || m->GetBiomol() == CMolInfo::eBiomol_cRNA
-          || m->GetBiomol() == CMolInfo::eBiomol_transcribed_RNA)
-    {
-        return CVariantPlacement::eMol_cdna;
-    } else if(m->GetBiomol() == CMolInfo::eBiomol_peptide) {
-        return CVariantPlacement::eMol_protein;
-    } else {
-        return CVariantPlacement::eMol_unknown;
-    }
-
+    return moltype;
 }
 
 
@@ -632,7 +688,11 @@ void CVariationUtil::x_InferNAfromAA(CVariation& v, TAA2NAFlags flags)
        //note: sel by product; location is prot; found feature is mrna having this prot as product
     CRef<CSeq_loc_Mapper> prot2precursor_mapper;
     for(CFeat_CI ci(*m_scope, placement.GetLoc(), sel); ci; ++ci) {
-        prot2precursor_mapper.Reset(new CSeq_loc_Mapper(ci->GetMappedFeature(), CSeq_loc_Mapper::eProductToLocation, m_scope));
+        try {
+            prot2precursor_mapper.Reset(new CSeq_loc_Mapper(ci->GetMappedFeature(), CSeq_loc_Mapper::eProductToLocation, m_scope));
+        } catch(CException& e) {
+            ;// may legitimately throw if feature is not good for mapping
+        }
         break;
     }
 
@@ -1095,6 +1155,25 @@ void CVariationUtil::FlipStrand(CVariantPlacement& vp) const
 }
 
 
+bool CVariationUtil::s_IsInstStrandFlippable(const CVariation& v, const CVariation_inst& inst)
+{
+    bool ret = true;
+    ITERATE(CVariation_inst::TDelta, it, v.GetData().GetInstance().GetDelta()) {
+        const CDelta_item& di = **it;
+        if(di.IsSetAction() && di.GetAction() == CDelta_item::eAction_ins_before) {
+            const CVariation::TPlacements* p = s_GetPlacements(v);
+            if(p) {
+                ITERATE(CVariation::TPlacements, it, *p) {
+                    if(s_GetLength(**it, NULL) < 2 ) {
+                        ret = false;
+                    }
+                }
+            }
+        }
+    }
+    return ret;
+}
+
 void CVariationUtil::FlipStrand(CVariation& v) const
 {
     if(v.IsSetPlacements()) {
@@ -1108,7 +1187,11 @@ void CVariationUtil::FlipStrand(CVariation& v) const
             FlipStrand(**it);
         }
     } else if(v.GetData().IsInstance()) {
-        FlipStrand(v.SetData().SetInstance());
+        if(!s_IsInstStrandFlippable(v, v.GetData().GetInstance())) {
+            NCBI_THROW(CException, eUnknown, "Variation is not strand-flippable");
+        } else {
+            FlipStrand(v.SetData().SetInstance());
+        }
     }
 }
 
@@ -1290,9 +1373,15 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
     //Map to protein and back to get the affected codons.
     //Note: need the scope because the cds_feat is probably gi-based, while our locs are probably accver-based
 
-    CRef<CSeq_loc_Mapper> nuc2prot_mapper(new CSeq_loc_Mapper(cds_feat, CSeq_loc_Mapper::eLocationToProduct, m_scope));
-    CRef<CSeq_loc_Mapper> prot2nuc_mapper(new CSeq_loc_Mapper(cds_feat, CSeq_loc_Mapper::eProductToLocation, m_scope));
-
+    CRef<CSeq_loc_Mapper> nuc2prot_mapper;
+    CRef<CSeq_loc_Mapper> prot2nuc_mapper;
+    try {
+        nuc2prot_mapper.Reset(new CSeq_loc_Mapper(cds_feat, CSeq_loc_Mapper::eLocationToProduct, m_scope));
+        prot2nuc_mapper.Reset(new CSeq_loc_Mapper(cds_feat, CSeq_loc_Mapper::eProductToLocation, m_scope));
+    } catch (CException& e) {
+        //may legitimately throw if feature is not good for mapping (e.g. partial).
+        return x_CreateUnknownVariation(sequence::GetId(cds_feat.GetProduct(), NULL), CVariantPlacement::eMol_protein);
+    }
 
     CRef<CSeq_loc> prot_loc = nuc2prot_mapper->Map(p->GetLoc());
     CRef<CSeq_loc> codons_loc = prot2nuc_mapper->Map(*prot_loc);
@@ -1335,13 +1424,23 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
 
     //will have two placements: one describing the AA, and the other describing codons
     CRef<CVariantPlacement> prot_p(new CVariantPlacement);
-    prot_p->SetLoc(*prot_loc);
-    prot_p->SetMol(GetMolType(sequence::GetId(prot_p->GetLoc(), NULL)));
-    if(NStr::Find(prot_ref_str, "*") == NPOS) {
-        //make sure that we're not in stop-codon,
-        //as if we are, the location extends past the end of the prot and
-        //fetching sequence wolud throw
-        AttachSeq(*prot_p);
+    if(cds_feat.IsSetExcept() && cds_feat.GetExcept()
+       && !(cds_feat.IsSetExcept_text() && cds_feat.GetExcept_text() == "mismatches in translation"))
+    {
+        //mapped protein position is bogus, as cds is either partial or there are indels.
+        prot_p->SetLoc().SetEmpty().Assign(sequence::GetId(*prot_loc, NULL));
+        prot_p->SetMol(GetMolType(sequence::GetId(prot_p->GetLoc(), NULL)));
+        prot_p->SetSeq().SetLength(prot_ref_str.size());
+        prot_p->SetSeq().SetSeq_data().SetNcbieaa().Set(prot_ref_str);
+    } else {
+        prot_p->SetLoc(*prot_loc);
+        prot_p->SetMol(GetMolType(sequence::GetId(prot_p->GetLoc(), NULL)));
+       if(NStr::Find(prot_ref_str, "*") == NPOS) {
+            //make sure that we're not in stop-codon,
+            //as if we are, the location extends past the end of the prot and
+            //fetching sequence wolud throw
+             AttachSeq(*prot_p);
+        }
     }
     prot_v->SetPlacements().push_back(prot_p);
 
@@ -2194,6 +2293,254 @@ void CVariationUtil::CCdregionIndex::Get(const CSeq_loc& loc, TCdregions& cdregi
         }
     }
 }
+
+
+
+//
+//
+//  Methods to suuport Variation / Variation_ref conversions.
+//
+//
+
+CRef<CVariation> CVariationUtil::AsVariation(const CSeq_feat& variation_feat)
+{
+    if(!variation_feat.GetData().IsVariation()) {
+        NCBI_THROW(CException, eUnknown, "Expected variation-ref feature");
+    }
+
+    CRef<CVariation> v = x_AsVariation(variation_feat.GetData().GetVariation());
+
+    CRef<CVariantPlacement> p(new CVariantPlacement);
+    p->SetLoc().Assign(variation_feat.GetLocation());
+    v->SetPlacements().push_back(p);
+
+    if(variation_feat.IsSetCit()) {
+       v->SetPub().Assign(variation_feat.GetCit());
+    }
+    if(variation_feat.IsSetExt()) {
+        v->SetExt();
+        CRef<CUser_object> uo(new CUser_object);
+        uo->Assign(variation_feat.GetExt());
+        v->SetExt().push_back(uo);
+    }
+    if(variation_feat.IsSetExts()) {
+        v->SetExt();
+        ITERATE(CSeq_feat::TExts, it, variation_feat.GetExts()) {
+            CRef<CUser_object> uo(new CUser_object);
+            uo->Assign(**it);
+            v->SetExt().push_back(uo);
+        }
+    }
+
+    s_ConvertInstOffsetsToPlacementOffsets(*v, *p);
+
+    return v;
+}
+
+CRef<CVariation> CVariationUtil::x_AsVariation(const CVariation_ref& vr)
+{
+    CRef<CVariation> v(new CVariation);
+    if(vr.IsSetId()) {
+        v->SetId().Assign(vr.GetId());
+    }
+
+    if(vr.IsSetParent_id()) {
+        v->SetId().Assign(vr.GetParent_id());
+    }
+
+    if(vr.IsSetSample_id()) {
+        v->SetId().Assign(vr.GetSample_id());
+    }
+
+    if(vr.IsSetOther_ids()) {
+        ITERATE(CVariation_ref::TOther_ids, it, vr.GetOther_ids()) {
+            CRef<CDbtag> dbtag(new CDbtag);
+            dbtag->Assign(**it);
+            v->SetOther_ids().push_back(dbtag);
+        }
+    }
+
+    if(vr.IsSetName()) {
+        v->SetName(vr.GetName());
+    }
+
+    if(vr.IsSetSynonyms()) {
+        v->SetSynonyms() = vr.GetSynonyms();
+    }
+
+    if(vr.IsSetDescription()) {
+        v->SetName(vr.GetDescription());
+    }
+
+    if(vr.IsSetPhenotype()) {
+        ITERATE(CVariation_ref::TPhenotype, it, vr.GetPhenotype()) {
+            CRef<CPhenotype> p(new CPhenotype);
+            p->Assign(**it);
+            v->SetPhenotype().push_back(p);
+        }
+    }
+
+    if(vr.IsSetMethod()) {
+        v->SetMethod().SetMethod() = vr.GetMethod(); //todo: verify 1:1 enum correspondence
+    }
+
+    if(vr.IsSetVariant_prop()) {
+        v->SetVariant_prop().Assign(vr.GetVariant_prop());
+    }
+
+    if(vr.GetData().IsComplex()) {
+        v->SetData().SetComplex();
+    } else if(vr.GetData().IsInstance()) {
+        v->SetData().SetInstance().Assign(vr.GetData().GetInstance());
+        //todo: transfer the offsets to placement
+    } else if(vr.GetData().IsNote()) {
+        v->SetData().SetNote() = vr.GetData().GetNote();
+    } else if(vr.GetData().IsUniparental_disomy()) {
+        v->SetData().SetUniparental_disomy();
+    } else if(vr.GetData().IsUnknown()) {
+        v->SetData().SetUnknown();
+    } else if(vr.GetData().IsSet()) {
+        const CVariation_ref::TData::TSet& vr_set = vr.GetData().GetSet();
+        CVariation::TData::TSet& v_set = v->SetData().SetSet();
+        v_set.SetType(vr_set.GetType()); //todo: verify 1:1 enum correspondnece
+        if(vr_set.IsSetName()) {
+            v_set.SetName(vr_set.GetName());
+        }
+        ITERATE(CVariation_ref::TData::TSet::TVariations, it, vr_set.GetVariations()) {
+            v_set.SetVariations().push_back(x_AsVariation(**it));
+        }
+    } else {
+        NCBI_THROW(CException, eUnknown, "Unhandled Variation_ref::TData::E_CChoice");
+    }
+
+    if(vr.IsSetConsequence()) {
+        v->SetConsequence();
+        ITERATE(CVariation_ref::TConsequence, it, vr.GetConsequence()) {
+            const CVariation_ref::TConsequence::value_type::TObjectType& vr_cons = **it;
+            CVariation::TConsequence::value_type v_cons(new CVariation::TConsequence::value_type::TObjectType);
+
+            if(vr_cons.IsUnknown()) {
+                v_cons->SetUnknown();
+            } else if(vr_cons.IsSplicing()) {
+                v_cons->SetSplicing();
+            } else if(vr_cons.IsNote()) {
+                v_cons->SetNote(vr_cons.GetNote());
+            } else if(vr_cons.IsVariation()) {
+                CRef<CVariation> cons_variation = x_AsVariation(vr_cons.GetVariation());
+                v_cons->SetVariation(*cons_variation);
+            } else if(vr_cons.IsFrameshift()) {
+                //expecting previous consequnece to be a protein variation.
+                if(v->GetConsequence().size() == 0 || !v->GetConsequence().back()->IsVariation()) {
+                    NCBI_THROW(CException, eUnknown, "Did not find target variation to attach frameshift");
+                }
+                CVariation& cons_variation = v->SetConsequence().back()->SetVariation();
+                cons_variation.SetFrameshift();
+                if(vr_cons.GetFrameshift().IsSetPhase()) {
+                    cons_variation.SetFrameshift().SetPhase(vr_cons.GetFrameshift().GetPhase());
+                }
+                if(vr_cons.GetFrameshift().IsSetX_length()) {
+                    cons_variation.SetFrameshift().SetX_length(vr_cons.GetFrameshift().GetPhase());
+                }
+            } else if(vr_cons.IsLoss_of_heterozygosity()) {
+                v_cons->SetLoss_of_heterozygosity();
+                if(vr_cons.GetLoss_of_heterozygosity().IsSetReference()) {
+                    v_cons->SetLoss_of_heterozygosity().SetReference(vr_cons.GetLoss_of_heterozygosity().GetReference());
+                }
+                if(vr_cons.GetLoss_of_heterozygosity().IsSetTest()) {
+                    v_cons->SetLoss_of_heterozygosity().SetTest(vr_cons.GetLoss_of_heterozygosity().GetTest());
+                }
+            }
+
+            v->SetConsequence().push_back(v_cons);
+        }
+    }
+
+    if(vr.IsSetSomatic_origin()) {
+        v->SetSomatic_origin();
+        ITERATE(CVariation_ref::TSomatic_origin, it, vr.GetSomatic_origin()) {
+            const CVariation_ref::TSomatic_origin::value_type::TObjectType& vr_so = **it;
+            CVariation::TSomatic_origin::value_type v_so(new CVariation::TSomatic_origin::value_type::TObjectType);
+
+            if(vr_so.IsSetSource()) {
+                v_so->SetSource().Assign(vr_so.GetSource());
+            }
+
+            if(vr_so.IsSetCondition()) {
+                v_so->SetCondition();
+                if(vr_so.GetCondition().IsSetDescription()) {
+                    v_so->SetCondition().SetDescription(vr_so.GetCondition().GetDescription());
+                }
+                if(vr_so.GetCondition().IsSetObject_id()) {
+                    v_so->SetCondition().SetObject_id();
+                    ITERATE(CVariation_ref::TSomatic_origin::value_type::TObjectType::TCondition::TObject_id,
+                            it,
+                            vr_so.GetCondition().GetObject_id())
+                    {
+                        CRef<CDbtag> dbtag(new CDbtag);
+                        dbtag->Assign(**it);
+                        v_so->SetCondition().SetObject_id().push_back(dbtag);
+                    }
+                }
+            }
+
+            v->SetSomatic_origin().push_back(v_so);
+        }
+    }
+
+    return v;
+}
+
+
+void CVariationUtil::s_ConvertInstOffsetsToPlacementOffsets(CVariation& v, CVariantPlacement& p)
+{
+    if(v.GetData().IsSet()) {
+        NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
+            s_ConvertInstOffsetsToPlacementOffsets(**it, p);
+        }
+    } else if(v.GetData().IsInstance()) {
+        const CDelta_item& delta_first = *v.GetData().GetInstance().GetDelta().front();
+
+        if(p.GetLoc().IsPnt() && delta_first.IsSetAction() && delta_first.GetAction() == CDelta_item::eAction_offset) {
+            int offset = delta_first.GetSeq().GetLiteral().GetLength()
+                       * (delta_first.IsSetMultiplier() ? delta_first.GetMultiplier() : 1)
+                       * (p.GetLoc().GetStrand() == eNa_strand_minus ? -1 : 1);
+            if(!p.IsSetStart_offset() || offset == p.GetStart_offset()) {
+                p.SetStart_offset(offset);
+                v.SetData().SetInstance().SetDelta().pop_front();
+            }
+        } else {
+            //If the location is not a point, then the offset(s) apply to start and/or stop individually
+            if(delta_first.IsSetAction() && delta_first.GetAction() == CDelta_item::eAction_offset) {
+                CRef<CSeq_loc> range_loc = sequence::Seq_loc_Merge(p.GetLoc(), CSeq_loc::fMerge_SingleRange, NULL);
+                int offset = delta_first.GetSeq().GetLiteral().GetLength()
+                           * (delta_first.IsSetMultiplier() ? delta_first.GetMultiplier() : 1)
+                           * (range_loc->GetStrand() == eNa_strand_minus ? -1 : 1);
+                if(!p.IsSetStart_offset() || offset == p.GetStart_offset()) {
+                    p.SetStart_offset(offset);
+                    v.SetData().SetInstance().SetDelta().pop_front();
+                }
+            }
+
+            const CDelta_item& delta_last = *v.GetData().GetInstance().GetDelta().back();
+            if(delta_last.IsSetAction() && delta_last.GetAction() == CDelta_item::eAction_offset) {
+                CRef<CSeq_loc> range_loc = sequence::Seq_loc_Merge(p.GetLoc(), CSeq_loc::fMerge_SingleRange, NULL);
+                int offset = delta_last.GetSeq().GetLiteral().GetLength()
+                           * (delta_last.IsSetMultiplier() ? delta_last.GetMultiplier() : 1)
+                           * (range_loc->GetStrand() == eNa_strand_minus ? -1 : 1);
+                if(!p.IsSetStop_offset() || offset == p.GetStop_offset()) {
+                    p.SetStop_offset(offset);
+                    v.SetData().SetInstance().SetDelta().pop_front();
+                }
+            }
+        }
+    }
+}
+
+
+
+
+
+
 
 #if 0
 /// Flatten variation to a collection of variation-ref features
