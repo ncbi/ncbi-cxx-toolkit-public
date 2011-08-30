@@ -500,8 +500,8 @@ GC-Scaf-stats ::= SEQUENCE {
         count-par-regions (99),    -- # of PAR regions
         count-genomic-regions (100), -- # of genomic regions
         count-chromosome-replicons (101), -- # of chromosomal replicons
-        assembly-status (102), -- Assembly status 1 - Contig only;2 - Scaffolds only; 3 - Some chromosomes assembled;
-                               -- 4 - all chromosomes assembled; 5 - complete sequence genome.
+        assembly-status (102), -- Assembly status 1 - Contig only;2 - Unplaced scaffolds only; 3 - Some chromosomes assembled;
+                    -- 4 - all chromosomes assembled; 5 - complete sequence genome; 6-unlocalized and unplaced scaffolds.
         other (255) -- catch all
     },
     value INTEGER
