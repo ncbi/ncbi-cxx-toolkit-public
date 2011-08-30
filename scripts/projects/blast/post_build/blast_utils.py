@@ -92,5 +92,7 @@ def determine_platform():
             return "Win32"
         else:
             return "Win64"
+    elif p.find("darwin") != -1:
+        return "IntelMAC"
     else:
         raise RuntimeError("Unknown platform: " + p)
