@@ -36,6 +36,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
 
+#include <serial/objistrasn.hpp>
 #include <serial/objostrasn.hpp>
 #include <serial/serial.hpp>
 
@@ -48,9 +49,14 @@
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/readfeat.hpp>
 #include <objtools/readers/source_mod_parser.hpp>
+#include <objtools/readers/source_mod_parser_wrapper.hpp>
 #include <objtools/readers/table_filter.hpp>
 
 #include <common/test_assert.h>
+
+#include <objmgr/scope.hpp>
+#include <objmgr/object_manager.hpp>
+#include <objmgr/bioseq_ci.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -67,13 +73,13 @@ void CSourceModParserTestApp::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Simple test of CSourceModParser");
 
-    arg_desc->AddDefaultKey
+    arg_desc->AddOptionalKey
         ("fasta", "InputFile", "Location of (FASTA-format) input",
-         CArgDescriptions::eInputFile, "-");
+         CArgDescriptions::eInputFile );
 
-    arg_desc->AddDefaultKey
+    arg_desc->AddOptionalKey
         ("feattbl", "InputFile", "Location of (5-column feature table) input",
-         CArgDescriptions::eInputFile, "-");
+         CArgDescriptions::eInputFile );
 
     arg_desc->AddDefaultKey
         ("out", "OutputFile", "Where to write (text ASN.1) output",
@@ -82,6 +88,12 @@ void CSourceModParserTestApp::Init(void)
     arg_desc->AddDefaultKey
         ("org", "Organism", "Organism name to use by default",
          CArgDescriptions::eString, "");
+
+    arg_desc->AddOptionalKey("tbsq", "TitleBioseq", 
+        "If you specify this input file, which should contain a CBioseq in "
+            "text ASN.1 format, then the program will output that bioseq with its"
+            "title processed like in FASTA and turned into features, etc.", 
+        CArgDescriptions::eInputFile );
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -125,27 +137,62 @@ void s_Visit(CSeq_entry& entry, CObjectOStream& oos /*, const string& org */ )
 int CSourceModParserTestApp::Run(void)
 {
     const CArgs&      args = GetArgs();
-    CFastaReader      reader( args["fasta"].AsString(), CFastaReader::fAddMods );
-    CRef<CSeq_entry>  entry(reader.ReadSet());
+
     CObjectOStreamAsn oos(args["out"].AsOutputFile());
 
-    CSimpleTableFilter tbl_filter;
-    tbl_filter.AddDisallowedFeatureName("source", ITableFilter::eResult_Disallowed );
+    // See if we should do fasta parsing
+    if( args["fasta"] )
+    {
+        CFastaReader      reader( args["fasta"].AsString(), CFastaReader::fAddMods );
+        CRef<CSeq_entry>  entry(reader.ReadSet());
 
-    CErrorContainerLenient err_container;
-    CFeature_table_reader::ReadSequinFeatureTables( args["feattbl"].AsInputFile(), *entry, 
-        CFeature_table_reader::fReportBadKey, 
-        &err_container, &tbl_filter );
+        CSimpleTableFilter tbl_filter;
+        tbl_filter.AddDisallowedFeatureName("source", ITableFilter::eResult_Disallowed );
 
-    // print out result
-    s_Visit(*entry, oos /*, args["org"].AsString() */ ); 
+        CErrorContainerLenient err_container;
+        CFeature_table_reader::ReadSequinFeatureTables( args["feattbl"].AsInputFile(), *entry, 
+            CFeature_table_reader::fReportBadKey, 
+            &err_container, &tbl_filter );
 
-    // print out any errors found:
-    size_t idx = 0;
-    for( ; idx < err_container.Count(); ++idx ) {
-        const ILineError &err = err_container.GetError(idx);
-        cerr << "Error in seq-id " << err.SeqId() << " on line " << err.Line() << " of severity " << err.SeverityStr() << ": \"" 
-             << err.Message() << "\"" << endl;
+        // print out result
+        s_Visit(*entry, oos /*, args["org"].AsString() */ ); 
+
+        // print out any errors found:
+        size_t idx = 0;
+        for( ; idx < err_container.Count(); ++idx ) {
+            const ILineError &err = err_container.GetError(idx);
+            cerr << "Error in seq-id " << err.SeqId() << " on line " << err.Line() << " of severity " << err.SeverityStr() << ": \"" 
+                << err.Message() << "\"" << endl;
+        }
+    }
+
+    // see if we should do bioseq parsing
+    if( args["tbsq"] )
+    {
+        CRef<CScope> scope( new CScope(*CObjectManager::GetInstance()) );
+
+        CObjectIStreamAsn asn_in_strm(args["tbsq"].AsInputFile());
+        // CRef<CBioseq> bioseq( new CBioseq );
+        CRef<CSeq_entry> seqentry( new CSeq_entry );
+        asn_in_strm >> *seqentry;
+
+        // scope->AddBioseq( *bioseq );
+        CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry( *seqentry );
+
+        typedef vector<CBioseq_Handle> TBshVec;
+        vector<CBioseq_Handle> bsh_vec;
+        CBioseq_CI bsh_ci( seh );
+        for( ; bsh_ci; ++bsh_ci ) {
+            bsh_vec.push_back( *bsh_ci );
+        }
+
+        TBshVec::iterator bsh_vec_iter = bsh_vec.begin();
+        for( ; bsh_vec_iter != bsh_vec.end(); ++bsh_vec_iter ) {
+            CSourceModParserWrapper::ExtractTitleAndApplyAllMods( 
+                *bsh_vec_iter, 
+                args["org"].AsString() );
+            oos << *bsh_vec_iter->GetCompleteBioseq();
+        }
     }
 
     return 0;
