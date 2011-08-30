@@ -218,6 +218,7 @@ public:
     /// CSeq_loc to compare.
     class ISubLocFilter {
     public:
+        virtual ~ISubLocFilter() {}
         // Returns true for pieces we should use.
         // Must be able to handle "NULL" input
         virtual bool operator()( const CSeq_id *id ) const = 0;
