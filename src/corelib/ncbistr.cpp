@@ -1867,21 +1867,17 @@ TStr s_TruncateSpaces(const TStr& str, NStr::ETrunc where,
     }
     SIZE_TYPE end = length;
     if ( where == NStr::eTrunc_End  ||  where == NStr::eTrunc_Both ) {
-        _ASSERT(end > beg);
-        for (--end;  isspace((unsigned char)str[end]);  --end) {
-            if (end == beg) {
+        _ASSERT(beg < end);
+        while (isspace((unsigned char) str[--end])) {
+            if (beg == end) {
                 return empty_str;
             }
         }
-        _ASSERT(end >= beg && !isspace((unsigned char) str[end]));
+        _ASSERT(beg <= end  &&  !isspace((unsigned char) str[end]));
         ++end;
     }
-    _ASSERT(beg <= end);
-    if (beg == end) {
-        return empty_str;
-    }
-    else if ( beg  ||  (end - length) ) {
-        // if either beg != 0 or end != length
+    _ASSERT(beg < end  &&  end <= length);
+    if ( beg | (end - length) ) { // if either beg != 0 or end != length
         return str.substr(beg, end - beg);
     }
     else {
@@ -1906,9 +1902,7 @@ CTempString NStr::TruncateSpaces(const char* str, ETrunc where)
 
 void NStr::TruncateSpacesInPlace(CTempString& str, ETrunc where)
 {
-    CTempString new_str;
-    new_str = s_TruncateSpaces(str, where, CTempString());
-    str.assign(new_str);
+    str = s_TruncateSpaces(str, where, CTempString());
 }
 
 void NStr::TruncateSpacesInPlace(string& str, ETrunc where)
@@ -1934,24 +1928,24 @@ void NStr::TruncateSpacesInPlace(string& str, ETrunc where)
     if ( where == eTrunc_End  ||  where == eTrunc_Both ) {
         // It's better to use str.data()[] to check string characters
         // to avoid implicit modification of the string by non-const operator[]
-        _ASSERT(end > beg);
+        _ASSERT(beg < end);
         while (isspace((unsigned char) str.data()[--end])) {
-            if (end == beg) {
+            if (beg == end) {
                 str.erase();
                 return;
             }
         }
-        _ASSERT(end >= beg  &&  !isspace((unsigned char) str.data()[end]));
+        _ASSERT(beg <= end  &&  !isspace((unsigned char) str.data()[end]));
         ++end;
     }
-    _ASSERT(beg < end);
+    _ASSERT(beg < end  &&  end <= length);
 
 #if defined(NCBI_COMPILER_GCC)  &&  (NCBI_COMPILER_VERSION == 304)
     // work around a library bug
     str.replace(end, length, kEmptyStr);
     str.replace(0, beg, kEmptyStr);
 #else
-    if ( (beg - 0) | (end - length) ) { // if either beg != 0 or end != length
+    if ( beg | (end - length) ) { // if either beg != 0 or end != length
         str.replace(0, length, str, beg, end - beg);
     }
 #endif
