@@ -1904,6 +1904,12 @@ CTempString NStr::TruncateSpaces(const char* str, ETrunc where)
     return s_TruncateSpaces(CTempString(str), where, CTempString());
 }
 
+void NStr::TruncateSpacesInPlace(CTempString& str, ETrunc where)
+{
+    CTempString new_str;
+    new_str = s_TruncateSpaces(str, where, CTempString());
+    str.assign(new_str);
+}
 
 void NStr::TruncateSpacesInPlace(string& str, ETrunc where)
 {

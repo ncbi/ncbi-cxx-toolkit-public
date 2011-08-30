@@ -1617,7 +1617,8 @@ public:
     /// @param where
     ///   Which end of the string to truncate space from. Default is to
     ///   truncate space from both ends (eTrunc_Both).
-    static void TruncateSpacesInPlace(string& str, ETrunc where = eTrunc_Both);
+    static void TruncateSpacesInPlace(string& str,  ETrunc where = eTrunc_Both);
+    static void TruncateSpacesInPlace(CTempString&, ETrunc where = eTrunc_Both);
     
     /// Replace occurrences of a substring within a string.
     ///
