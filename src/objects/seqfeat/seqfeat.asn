@@ -285,6 +285,9 @@ Clone-ref ::= SEQUENCE {
         sts (2),               -- Clone placed by STS
         fish (3),
         fingerprint (4),
+        end-seq-insert-alignment (5), -- combined end-seq and insert align
+        external (253),           -- Placement provided externally
+        curated (254),            -- Human placed or approved
         other (255)
     } OPTIONAL,
     clone-seq Clone-seq-set OPTIONAL
@@ -300,18 +303,27 @@ Clone-seq ::= SEQUENCE {
         other (255)
     },
     confidence INTEGER {
-        multiple (0),     -- Multiple hits
-        na (1),           -- Unspecified
-        nohit-rep (2),    -- No hits, repetitive
-        nohitnorep (3),   -- No hits, not repetitive
-        other-chrm (4),   -- Hit on different chromosome
+        multiple (0),        -- Multiple hits
+        na (1),              -- Unspecified
+        nohit-rep (2),       -- No hits, end flagged repetitive
+        nohitnorep (3),      -- No hits, end not flagged repetitive
+        other-chrm (4),      -- Hit on different chromosome
         unique (5),
-        virtual (6),      -- Virtual (hasn't been sequenced)
+        virtual (6),         -- Virtual (hasn't been sequenced)
+        multiple-rep (7),    -- Multiple hits, end flagged repetitive
+        multiplenorep (8),   -- Multiple hits, end not flagged repetitive
+        no-hit (9),          -- No hits
         other (255)
     } OPTIONAL,
-    location Seq-loc,     -- location on sequence
-    seq Seq-loc OPTIONAL, -- clone sequence location
-    align-id Dbtag OPTIONAL
+    location Seq-loc,        -- location on sequence
+    seq Seq-loc OPTIONAL,    -- clone sequence location
+    align-id Dbtag OPTIONAL, -- internal alignment identifier
+    support INTEGER {
+        prototype (0),       -- sequence used to place clone
+        supporting (1),      -- sequence supports placement
+        supports-other(2),   -- supports a different placement
+        non-supporting (3)   -- does not support any placement
+    } OPTIONAL
 }
 
 END
