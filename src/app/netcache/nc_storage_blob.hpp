@@ -41,7 +41,6 @@ BEGIN_NCBI_SCOPE
 
 class CNCBlobStorage;
 class CNCBlobAccessor;
-struct SNCCacheData;
 
 
 ///
@@ -81,15 +80,23 @@ private:
     ///
     virtual void OnBlockedOpFinish(void);
 
+    ///
     unsigned int x_IncRef(void);
+    ///
     unsigned int x_DecRef(void);
+    ///
     unsigned int x_GetRef(void);
+    ///
     void x_SetFlag(unsigned int flag, bool value);
+    ///
     bool x_IsFlagSet(unsigned int flag);
 
+    ///
     void x_ReadCurVersion(void);
+    ///
+    void x_DeleteBlobKey(void);
+    ///
     void x_RestoreBlobKey(void);
-    void x_DeleteCurVersion(void);
 
 
     ///
@@ -117,6 +124,16 @@ private:
 };
 
 
+/// Type of access to NetCache blob
+enum ENCAccessType {
+    eNCRead,        ///< Read meta information only
+    eNCReadData,    ///< Read blob data
+    eNCCreate,      ///< Create blob or re-write its contents
+    eNCCopyCreate,
+    eNCGCDelete
+};
+
+
 /// Object holding lock on NetCache blob.
 /// Object takes care of blob creation when necessary. When it is destroyed
 /// lock for the blob is released. Lock can also be released by explicit call
@@ -132,6 +149,7 @@ public:
     /// Check if password provided for accessing the blob was correct
     bool IsAuthorized(void) const;
     bool HasError(void) const;
+    TNCBlobId GetNewBlobId(void) const;
     /// Get key of the blob.
     /// Method can be called only after lock is acquired.
     const string& GetBlobKey       (void) const;
@@ -152,11 +170,8 @@ public:
 
     /// Initially set current position in the blob to start reading from
     void SetPosition(Uint8 pos);
-    Uint8 GetPosition(void);
     ENCBlockingOpResult ObtainFirstData(INCBlockedOpListener* listener);
-    size_t GetDataSize(void);
-    const void* GetDataPtr(void);
-    void MoveCurPos(size_t move_size);
+    size_t ReadData(void* buffer, size_t buf_size);
     int GetCurBlobTTL(void) const;
     int GetNewBlobTTL(void) const;
     /// Set blob's timeout after last access before it will be deleted.
@@ -181,15 +196,13 @@ public:
     void SetNewVerExpire(int dead_time);
     Uint8 GetCurCreateServer(void) const;
     Uint8 GetNewCreateServer(void) const;
-    Uint4 GetCurCreateId(void) const;
-    void SetCreateServer(Uint8 create_server, Uint4 create_id, Uint2 slot);
+    TNCBlobId GetCurCreateId(void) const;
+    void SetCreateServer(Uint8 create_server, TNCBlobId create_id, Uint2 slot);
     void SetBlobSlot(Uint2 slot);
-    string GetCurPassword(void) const;
+    const string& GetCurPassword(void) const;
     void SetPassword(CTempString password);
     bool ReplaceBlobInfo(const SNCBlobVerData& new_info);
-    size_t GetWriteMemSize(void);
-    void* GetWriteMemPtr(void);
-    void MoveWritePos(size_t move_size);
+    void WriteData(const void* data, size_t size);
     void Finalize(void);
     /// Delete the blob.
     /// Method can be called only after lock is acquired and
@@ -245,9 +258,11 @@ private:
     ///
     void x_DelCorruptedVersion(void);
     ///
-    void x_ReadChunkData(CNCBlobBuffer* buffer);
+    void x_ReadChunkData(TNCChunkId chunk_id, CNCBlobBuffer* buffer);
     ///
     void x_ReadSingleChunk(void);
+    ///
+    void x_ReadChunkIds(void);
     ///
     void x_ReadNextChunk(void);
 
@@ -275,14 +290,13 @@ private:
     ///
     INCBlockedOpListener*   m_InitListener;
     ///
-    Uint8                   m_CurChunk;
+    Uint4                   m_CurChunk;
     /// Current position of reading/writing inside blob's chunk
     size_t                  m_ChunkPos;
     ///
     Uint8                   m_SizeRead;
     ///
     CRef<CNCBlobBuffer>     m_Buffer;
-    SNCChunkMapInfo         m_ChunkMap;
 };
 
 
@@ -394,7 +408,7 @@ CNCBlobAccessor::GetNewBlobTTL(void) const
 inline bool
 CNCBlobAccessor::IsCurBlobExpired(void) const
 {
-    return m_CurData->expire <= int(time(NULL));
+    return m_CurData->expire < int(time(NULL));
 }
 
 inline bool
@@ -507,9 +521,9 @@ CNCBlobAccessor::SetNewVerExpire(int expire)
 }
 
 inline void
-CNCBlobAccessor::SetCreateServer(Uint8 create_server,
-                                 Uint4 create_id,
-                                 Uint2 slot)
+CNCBlobAccessor::SetCreateServer(Uint8      create_server,
+                                 TNCBlobId  create_id,
+                                 Uint2      slot)
 {
     m_NewData->create_server = create_server;
     m_NewData->create_id = create_id;
@@ -528,7 +542,7 @@ CNCBlobAccessor::GetNewCreateServer(void) const
     return m_NewData->create_server;
 }
 
-inline Uint4
+inline TNCBlobId
 CNCBlobAccessor::GetCurCreateId(void) const
 {
     return m_CurData.NotNull()? m_CurData->create_id: 0;
@@ -538,6 +552,12 @@ inline void
 CNCBlobAccessor::SetBlobSlot(Uint2 slot)
 {
     m_NewData->slot = slot;
+}
+
+inline const string&
+CNCBlobAccessor::GetCurPassword(void) const
+{
+    return m_CurData->password;
 }
 
 inline void
@@ -555,40 +575,14 @@ CNCBlobAccessor::GetAccessType(void) const
 inline void
 CNCBlobAccessor::SetPosition(Uint8 pos)
 {
-    m_CurChunk = pos / kNCMaxBlobChunkSize;
+    m_CurChunk = Uint4(pos / kNCMaxBlobChunkSize);
     m_ChunkPos = size_t(pos % kNCMaxBlobChunkSize);
 }
 
-inline Uint8
-CNCBlobAccessor::GetPosition(void)
+inline TNCBlobId
+CNCBlobAccessor::GetNewBlobId(void) const
 {
-    return m_CurChunk * kNCMaxBlobChunkSize + m_ChunkPos;
-}
-
-inline const void*
-CNCBlobAccessor::GetDataPtr(void)
-{
-    return m_Buffer->GetData() + m_ChunkPos;
-}
-
-inline void
-CNCBlobAccessor::MoveCurPos(size_t move_size)
-{
-    m_ChunkPos += move_size;
-    m_SizeRead += move_size;
-}
-
-inline void*
-CNCBlobAccessor::GetWriteMemPtr(void)
-{
-    return m_Buffer->GetData() + m_Buffer->GetSize();
-}
-
-inline void
-CNCBlobAccessor::MoveWritePos(size_t move_size)
-{
-    m_Buffer->Resize(m_Buffer->GetSize() + move_size);
-    m_NewData->size += move_size;
+    return m_NewData->coords.blob_id;
 }
 
 END_NCBI_SCOPE

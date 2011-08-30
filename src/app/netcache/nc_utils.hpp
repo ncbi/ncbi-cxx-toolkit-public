@@ -70,16 +70,6 @@ enum ENCPeerFailure {
     ePeerBadNetwork
 };
 
-/// Type of access to NetCache blob
-enum ENCAccessType {
-    eNCRead,        ///< Read meta information only
-    eNCReadData,    ///< Read blob data
-    eNCCreate,      ///< Create blob or re-write its contents
-    eNCCopyCreate,
-    eNCGCDelete
-};
-
-
 
 class CSpinRWLock;
 
@@ -682,14 +672,6 @@ TNCThreadIndex
 g_GetNCThreadIndex(void);
 
 
-string g_ToSizeStr(Uint8 size);
-
-inline string
-g_ToSmartStr(Uint8 num)
-{
-    return NStr::UInt8ToString(num, NStr::fWithCommas);
-}
-
 
 /// Utility function to safely do division even if divisor is 0
 template <class TLeft, class TRight>
@@ -1172,9 +1154,7 @@ inline void
 CNCBitMaskBase<1>::InvertBits(unsigned int start_bit,
                               unsigned int bits_cnt)
 {
-    TNCBitMaskElem inv_mask = (bits_cnt == kNCMaskElemSize? 0:
-                                           (TNCBitMaskElem(1) << bits_cnt));
-    --inv_mask;
+    TNCBitMaskElem inv_mask = (TNCBitMaskElem(1) << bits_cnt) - 1;
     m_Mask ^= inv_mask << start_bit;
 }
 

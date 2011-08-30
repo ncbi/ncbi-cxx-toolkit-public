@@ -64,29 +64,6 @@ g_GetNCThreadIndex(void)
 }
 
 
-string
-g_ToSizeStr(Uint8 size)
-{
-    static const char* const posts[] = {" B", " KB", " MB", " GB", " PB"};
-
-    string res = NStr::UInt8ToString(size);
-    size_t dot_pos = res.size();
-    int post_idx = 0;
-    while (dot_pos > 3  &&  post_idx < sizeof(posts) / sizeof(posts[0])) {
-        dot_pos -= 3;
-        ++post_idx;
-    }
-    if (dot_pos >= 3  ||  res.size() <= 3) {
-        res.resize(dot_pos);
-    }
-    else {
-        res.resize(3);
-        res.insert(dot_pos, 1, '.');
-    }
-    return res + posts[post_idx];
-}
-
-
 ///
 struct SNCBlockedOpListeners
 {

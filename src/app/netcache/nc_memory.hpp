@@ -67,6 +67,22 @@ public:
     /// Print memory usage statistics
     static void PrintStats(CPrintTextProxy& proxy);
 
+    /// Lock page from database cache which given pointer falls into.
+    /// The database page will be locked from reusing in another cache until
+    /// UnlockDBPage() is called.
+    static void LockDBPage(const void* data_ptr);
+    /// Unlock page from database cache which given pointer falls into.
+    /// The database page should be unlocked as many times as many calls to
+    /// LockDBPage() was made. After last unlocking page will be allowed to be
+    /// reused for other cache.
+    static void UnlockDBPage(const void* data_ptr);
+    /// Mark DB page as dirty
+    static void SetDBPageDirty(const void* data_ptr);
+    /// Mark DB page as clean and written to disk
+    static void SetDBPageClean(const void* data_ptr);
+    /// Check if DB page is dirty and needs writing to disk
+    static bool IsDBPageDirty(const void* data_ptr);
+
 private:
     CNCMemManager(void);
 };
@@ -97,6 +113,9 @@ public:
 typedef CGuard<CNCMMMutex>  CNCMMMutexGuard;
 
 
+/// Size of memory necessary for data in each page in database cache.
+/// This is a size of memory allocated for each page in SQLite.
+static const size_t kNCMMDBPageDataSize      = 32976;
 /// Alignment boundary to which manager will align all memory allocated from
 /// system. 2 Mb is not the most optimal value if amount of lost memory is
 /// taken into consideration (4 Mb will be the most optimal) but it's good
@@ -112,6 +131,146 @@ static const size_t kNCMMAlignMask           = ~(kNCMMAlignSize - 1);
 static const unsigned int kNCMMMaxThreadsCnt = 25;
 
 
+/// Object with one page from database. It contains page data managed by
+/// SQLite along with meta-information to support LRU list of database cache
+/// and hash list of pages inside one CNCMMDBCache object.
+///
+/// @sa CNCMMDBCache, CNCMMDBPagesHash
+class CNCMMDBPage
+{
+public:
+    /// Get pointer to the object from pointer to page data
+    static CNCMMDBPage* FromDataPtr(void* data);
+    /// Get page from LRU list with intention to destroy it and use its memory
+    /// for other database page.
+    static CNCMMDBPage* PeekLRUForDestroy(void);
+
+    /// Special new and delete operators to obtain memory from centralized
+    /// pool of memory chunks.
+    void* operator new(size_t size);
+    void operator delete(void* mem_ptr);
+
+    CNCMMDBPage(void);
+    ~CNCMMDBPage(void);
+
+    /// Get pointer to page data
+    void* GetData(void);
+    /// Get cache instance this page belongs to
+    CNCMMDBCache* GetCache(void);
+    /// Set cache instance owning this page. Either page should be detached
+    /// from any cache or this call should be to detach it (set cache to
+    /// NULL).
+    void SetCache(CNCMMDBCache* cache);
+    /// Check if page is now in LRU list i.e. it's not in use by SQLite at the
+    /// moment.
+    bool IsInLRU(void);
+    /// Put page to LRU list's tail i.e. it was just used and released.
+    /// Method should be called under corresponding cache's mutex.
+    void AddToLRU(void);
+    /// Remove page from LRU list i.e. it becomes locked and will not be
+    /// reused by some other cache instance until it's returned to LRU list.
+    /// Method should be called under corresponding cache's mutex.
+    void RemoveFromLRU(void);
+    /// Notify that page was removed from cache's hash-table and so can be
+    /// deleted at any time it is allowed to. It wouldn't be allowed to delete
+    /// page right away only in two cases: when page is locked from outside
+    /// and when page is already peeked for destruction in another thread.
+    /// In the latter case page will be destroyed and re-used in the thread
+    /// that picked it, in the former case page will be deleted when it is
+    /// unlocked.
+    /// Method should be called under corresponding cache's mutex.
+    ///
+    /// @sa PeekLRUForDestroy
+    void DeletedFromHash(void);
+    /// Destroy this page after peeking it by PeekLRUForDestroy().
+    /// Page will be destroyed only if it's in the LRU list, i.e. it's not
+    /// used by SQLite at the moment. Method returns TRUE if page was indeed
+    /// destroyed, FALSE if it was discovered that page is used by SQLite and
+    /// so it was left untouched.
+    /// Method should be called under corresponding cache's mutex.
+    ///
+    /// @sa PeekLRUForDestroy
+    bool DoPeekedDestruction(void);
+
+    /// Lock page and disallow its deletion or placement into LRU list where
+    /// it could be picked from and re-used in another cache.
+    /// Locking is done solely from CNCFileSystem to avoid reusing its memory
+    /// while data is not yet written to disk.
+    void Lock(void);
+    /// Unlock page and allow any reusing of its memory.
+    /// Unlocking should be done as many times as many calls to Lock() were
+    /// made. After last call to Unlock() page will be either placed to LRU
+    /// list or deleted if no cache owns it already.
+    void Unlock(void);
+    /// Set/unset dirty flag for the page
+    void SetDirtyFlag(bool value);
+    /// Check if dirty flag is set
+    bool IsDirty(void) const;
+
+private:
+    friend class CNCMMDBPagesHash;
+
+    /// Prohibit accidental calls to unimplemented functions
+    CNCMMDBPage(const CNCMMDBPage&);
+    CNCMMDBPage& operator= (const CNCMMDBPage&);
+    void* operator new(size_t, void*);
+
+    /// Check if page is in LRU and wasn't peeked with PeekLRUForDestroy().
+    /// If it was peeked IsInLRU() still returns TRUE but this method returns
+    /// FALSE.
+    /// Method should be called under sm_LRULock.
+    bool x_IsReallyInLRU(void);
+    /// Implementation of removing page from LRU list when it's actually
+    /// there (should be called only when x_IsReallyInLRU() returns TRUE).
+    /// Method should be called under sm_LRULock.
+    void x_RemoveFromLRUImpl(void);
+    /// Implementation of adding page to LRU list.
+    /// Method should be called under sm_LRULock.
+    void x_AddToLRUImpl(void);
+
+
+    /// Flags representing state of database page
+    enum EStateFlags {
+        fInLRU       = 1, ///< Page is in LRU list, i.e. it's not used now by
+                          ///< SQLite.
+        fPeeked      = 2, ///< Page is extracted from LRU for destruction,
+                          ///< i.e. if page is not needed anymore then only
+                          ///< thread that extracted it can delete it.
+        fDirty       = 4, ///< Page is dirty and needs to be written on disk
+        fCounterStep = 8  ///< The incrementing/decrementing step in counting
+                          ///< number of locks made on the page. Value should
+                          ///< be greater than all other flags.
+    };
+    /// Bit mask of EStateFlags
+    typedef int  TStateFlags;
+
+
+    /// Instance of database cache this page belongs to.
+    CNCMMDBCache* m_Cache;
+    /// Key of the page assigned by SQLite.
+    unsigned int  m_Key;
+    /// Next page in the hash-table inside cache instance (not NULL only if
+    /// there's other page with the same hash-code in this cache instance)
+    CNCMMDBPage*  m_NextInHash;
+    /// Flags showing page's current state.
+    TStateFlags   m_StateFlags;
+    /// Previous page in LRU list
+    CNCMMDBPage*  m_PrevInLRU;
+    /// Next page in LRU-list
+    CNCMMDBPage*  m_NextInLRU;
+    /// Actual data of database page
+    char          m_Data[kNCMMDBPageDataSize];
+
+    /// Mutex for working with LRU list
+    static CFastMutex   sm_LRULock;
+    /// Head of LRU list of database pages (i.e. the least recently used page
+    /// and the first candidate for reuse).
+    static CNCMMDBPage* sm_LRUHead;
+    /// Tail of LRU list of database pages (i.e. the most recently used page
+    /// and the last candidate for reuse).
+    static CNCMMDBPage* sm_LRUTail;
+};
+
 /// Size of memory chunks - minimum piece of memory operated by manager.
 /// In ideal world manager would get memory from system only by this amount.
 /// But it's just a bit more than power of 2 and thus if manager always did
@@ -120,7 +279,7 @@ static const unsigned int kNCMMMaxThreadsCnt = 25;
 /// slabs.
 ///
 /// @sa CNCMMSlab
-static const size_t kNCMMChunkSize = 33280;
+static const size_t kNCMMChunkSize = sizeof(CNCMMDBPage);
 
 
 /// Base class for CNCMMFreeChunk.
@@ -1016,6 +1175,144 @@ private:
 };
 
 
+/// Hash-table of pages belonging to one instance of CNCMMDBCache.
+/// Hashing is made by page's key - simple masking out some amount of least
+/// significant bits from it. The goal of the table is to have about
+/// kNCMMDBHashSizeFactor elements for each hash value when size of table is
+/// optimal.
+///
+/// @sa CNCMMDBCache, kNCMMDBHashSizeFactor
+class CNCMMDBPagesHash
+{
+public:
+    CNCMMDBPagesHash(void);
+    ~CNCMMDBPagesHash(void);
+
+    /// Set optimal number of pages that should be stored in the table
+    void SetOptimalSize(int size);
+    /// Put page with given key into the table
+    void PutPage(unsigned int key, CNCMMDBPage* page);
+    /// Get page from table by its key
+    CNCMMDBPage* GetPage(unsigned int key);
+    /// Remove page from hash table.
+    /// Return TRUE if page was indeed in the table and was removed, FALSE if
+    /// there wasn't entry for the page in the table.
+    bool RemovePage(CNCMMDBPage* page);
+    /// Clean hash table by removing all pages with key equal or greater than
+    /// given min_key.
+    int RemoveAllPages(unsigned int min_key);
+
+private:
+    /// Prohibit accidental call to non-implemented methods.
+    CNCMMDBPagesHash(const CNCMMDBPagesHash&);
+    CNCMMDBPagesHash& operator= (const CNCMMDBPagesHash&);
+    void* operator new(size_t);
+    void* operator new(size_t, void*);
+
+    /// Allocate array of pointers to database pages with size elements in it.
+    CNCMMDBPage** x_AllocHash(int size);
+    /// Deallocate array of pointers to database pages with size elements
+    /// in it.
+    void x_FreeHash(CNCMMDBPage** hash, int size);
+
+    /// Array of pointers to database pages
+    CNCMMDBPage** m_Hash;
+    /// Size of the array with pages
+    int           m_Size;
+};
+
+
+/// Instance of database cache which will cache pages from one database file.
+/// According to SQLite logic with shared cache turned on only one instance
+/// of this class will be created for each database file.
+class CNCMMDBCache
+{
+public:
+    /// Destroy one database page in any cache instance for use in
+    /// another database page. Least recently used page is destroyed here
+    /// with regards to possible fact that this page can be re-used
+    /// in other thread while method is working.
+    static void* DestroyOnePage(void);
+
+    /// The only allowed form of allocation and deallocation of memory for
+    /// the cache.
+    void* operator new(size_t size);
+    void operator delete(void* mem_ptr);
+
+    /// Create new cache instance
+    ///
+    /// @param page_size
+    ///   Size of pages that will be requested from this cache instance
+    /// @param purgeable
+    ///   TRUE if pages in this cache instance can be deleted at any time
+    ///   after they're unpinned by SQLite. FALSE if pages must never be
+    ///   deleted unless SQLite explicitly said so.
+    CNCMMDBCache(int page_size, bool purgeable);
+    ~CNCMMDBCache(void);
+
+    /// Set soft limit on maximum number of pages kept in memory by this
+    /// cache instance.
+    void SetOptimalSize(int num_pages);
+    /// Get number of pages in the cache instance
+    int GetSize(void);
+
+    /// Flag for page creation requirement (values are the same as
+    /// SQLite gives).
+    enum EPageCreate {
+        eDoNotCreate      = 0,  ///< Do not create page if it's not in cache
+        eCreateIfPossible = 1,  ///< Try to create page but can fail if soft
+                                ///< limit was reached.
+        eMustCreate       = 2   ///< Page must be created under any
+                                ///< circumstances
+    };
+    /// Get page from cache
+    ///
+    /// @param key
+    ///   Key of the page to get
+    /// @param create_flag
+    ///   Flag for page creation requirement
+    /// @return
+    ///   Pointer to actual page data (without internal information)
+    void* PinPage(unsigned int key, EPageCreate create_flag);
+    /// Release the page
+    ///
+    /// @param data
+    ///   Pointer to page data
+    /// @param must_delete
+    ///   TRUE if page must not exist anymore, FALSE if page should be kept
+    ///   until cache decides that it should be reused for other purposes.
+    void UnpinPage(void* data, bool must_delete);
+    /// Delete from cache all pages with keys greater or equal to min_key
+    void DeleteAllPages(unsigned int min_key);
+
+    /// Remove page from cache without deleting it.
+    void DetachPage(CNCMMDBPage* page);
+
+private:
+    /// Prohibit accidental call to non-implemented methods.
+    CNCMMDBCache(const CNCMMDBCache&);
+    CNCMMDBCache& operator=(const CNCMMDBCache&);
+    void* operator new(size_t, void*);
+
+    /// Add page with given key to hash-table.
+    void x_AttachPage(unsigned int key, CNCMMDBPage* page);
+
+
+    /// Mutex protecting access to the object
+    CFastMutex       m_ObjLock;
+    /// TRUE if pages in this cache instance can be deleted at any time
+    /// after they're unpinned by SQLite. FALSE if pages must never be
+    /// deleted unless SQLite explicitly said so.
+    bool             m_Purgable;
+    /// Number of pages stored in this cache instance
+    int              m_CacheSize;
+    /// Maximum value of key among pages stored in the cache
+    unsigned int     m_MaxKey;
+    /// Hash-table of key->page bindings
+    CNCMMDBPagesHash m_Pages;
+};
+
+
 /// Number of distinct sizes (below size of memory chunk) that memory manager
 /// can allocate. Number should correspond to number of elements in
 /// kNCMMSmallSize.
@@ -1073,6 +1370,8 @@ public:
     size_t GetSystemMem(void) const;
     /// Get amount of free memory not used by anything
     size_t GetFreeMem(void) const;
+    /// Get amount of memory used by database cache
+    size_t GetDBCacheMem(void) const;
     /// Print all memory statistics.
     void Print(CPrintTextProxy& proxy);
 
@@ -1110,6 +1409,10 @@ public:
     /// Register releasing of chunks_cnt chunks from CNCMMChunksPool to the
     /// central reserve.
     static void ChunksPoolCleaned(unsigned int chunks_cnt);
+    /// Register creation of new storage for page in database cache.
+    static void DBPageCreated(void);
+    /// Register deletion of storage for page in database cache.
+    static void DBPageDeleted(void);
     /// Register creation of new set of blocks with given size index.
     static void BlocksSetCreated(unsigned int size_index);
     /// Register deletion of set of blocks with given size index.
@@ -1140,6 +1443,10 @@ public:
     /// Register deallocation of big block - block that doesn't fit into
     /// one memory slab.
     static void BigBlockFreed  (size_t block_size);
+    /// Register request of database page that exist in cache.
+    static void DBPageHitInCache(void);
+    /// Register request of database page that doesn't exist in cache.
+    static void DBPageNotInCache(void);
 
     /// Register measurement of memory usage summary for the purpose of
     /// calculating average usage values.
@@ -1179,6 +1486,8 @@ private:
     size_t                m_OverheadMem;
     /// Amount of lost memory that won't be used by anything ever.
     size_t                m_LostMem;
+    /// Amount of memory used by database cache.
+    size_t                m_DBCacheMem;
     /// Amount of memory used by data blocks requested by user.
     size_t                m_DataMem;
     /// Aggregate values of memory allocated from OS over time.
@@ -1191,6 +1500,8 @@ private:
     CNCStatFigure<size_t> m_OvrhdMemAggr;
     /// Aggregate values of lost memory over time.
     CNCStatFigure<size_t> m_LostMemAggr;
+    /// Aggregate values of memory used by database cache over time.
+    CNCStatFigure<size_t> m_DBCacheMemAggr;
     /// Aggregate values of memory used by data allocated by program over time.
     CNCStatFigure<size_t> m_DataMemAggr;
 
@@ -1219,6 +1530,11 @@ private:
     /// Number of big memory blocks (not fitting into memory slab)
     /// deallocated.
     Uint8        m_BigFreed;
+    /// Number of database pages requested by SQLite.
+    Uint8        m_DBPagesRequested;
+    /// Number of database pages that were in database cache when they were
+    /// requested.
+    Uint8        m_DBPagesHit;
     /// Number of memory blocks allocated distributed by their size.
     Uint8        m_BlocksAlloced[kNCMMCntSmallSizes];
     /// Number of memory blocks deallocated distributed by their size.
@@ -1305,6 +1621,14 @@ public:
 
     /// Get statistics collected for centrally managed operations.
     static CNCMMStats& GetStats(void);
+    /// Register allocation of memory for new database page.
+    /// Method calculates how many more pages can be allocated and adjusts
+    /// mode of operation accordingly.
+    static void DBPageCreated(void);
+    /// Register deallocation of memory used by database page.
+    /// Method calculates how many more pages should be deallocated and
+    /// adjusts mode of operation accordingly.
+    static void DBPageDeleted(void);
 
 private:
     /// Class will never be instantiated.
