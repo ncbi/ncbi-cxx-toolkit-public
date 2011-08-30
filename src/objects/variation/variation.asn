@@ -21,7 +21,7 @@ IMPORTS Int-fuzz, Dbtag, User-object, Object-id FROM NCBI-General
         Seq-loc FROM NCBI-Seqloc
         SubSource FROM NCBI-BioSource
         Seq-literal FROM NCBI-Sequence
-        Pub FROM NCBI-Pub;
+        Pub-set FROM NCBI-Pub;
 
  
 VariationException ::= SEQUENCE
@@ -186,11 +186,8 @@ Variation ::= SEQUENCE
     -- variant properties bit fields
     variant-prop VariantProperties OPTIONAL,
 
-    -- publication support.
-    -- Note: made this pub instead of pub-equiv, since
-    -- Pub can be pub-equiv and pub-equiv is a set of pubs, but it looks like
-    -- Pub is more often used as top-level container
-    pub SET OF Pub OPTIONAL,
+    -- publication support; same type as in seq-feat
+    pub Pub-set OPTIONAL,
 
     -- References to external 
     clinical-test Dbtag OPTIONAL,
