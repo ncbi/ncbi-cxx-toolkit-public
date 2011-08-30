@@ -98,6 +98,7 @@ public:
     CTempString& assign(const CTempString& src_str,
                         size_type          off, 
                         size_type          count);
+    CTempString& operator=(const CTempString& str);
     
 
     /// Return an iterator to the string's starting position
@@ -177,7 +178,7 @@ public:
     /// Index into the current string and provide its character in a read-
     /// only fashion.  If the index is beyond the length of the string,
     /// a NULL character is returned.
-    char operator[] (size_type pos) const;
+    char operator[](size_type pos) const;
 
     /// operator== for C-style strings
     bool operator==(const char* str) const;
@@ -301,7 +302,7 @@ bool CTempString::empty(void) const
 
 
 inline
-char CTempString::operator[] (size_type pos) const
+char CTempString::operator[](size_type pos) const
 {
     if ( pos < m_Length ) {
         return m_String[pos];
@@ -700,7 +701,8 @@ inline
 CTempString& CTempString::assign(const CTempString& src_str)
 {
     NCBI_TEMPSTR_DESTROY_COPY();
-    *this = src_str;
+    m_String = src_str.m_String;
+    m_Length = src_str.m_Length;
     NCBI_TEMPSTR_MAKE_COPY();
     return *this;
 }
@@ -715,6 +717,13 @@ CTempString& CTempString::assign(const CTempString& src_str,
     x_Init(src_str.data(), src_str.size(), off, count);
     NCBI_TEMPSTR_MAKE_COPY();
     return *this;
+}
+
+
+inline
+CTempString& CTempString::operator=(const CTempString& src_str)
+{
+    return assign(src_str);
 }
 
 
@@ -901,15 +910,21 @@ public:
         }
     CTempStringEx& assign(const CTempStringEx& str)
         {
-            return *this = str;
+            m_ZeroAtEnd = str.m_ZeroAtEnd;
+            CTempString::assign(str);
+            return *this;
         }
     CTempStringEx& assign(const CTempString& str,
-                        size_type          off, 
-                        size_type          count)
+                          size_type          off, 
+                          size_type          count)
         {
             m_ZeroAtEnd = eNoZeroAtEnd;
             CTempString::assign(str, off, count);
             return *this;
+        }
+    CTempStringEx& operator=(const CTempString& str)
+        {
+            return assign(str);
         }
 
     /// Clear value to an empty string
