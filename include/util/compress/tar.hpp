@@ -283,13 +283,13 @@ public:
         fBackup             = (1<<5) | fOverwrite,
         /// If destination entry exists, it must have the same type as source
         fEqualTypes         = (1<<6),
-        /// Create extracted files with the same ownership
+        /// Create extracted files with the original ownership
         fPreserveOwner      = (1<<7),
-        /// Create extracted files with the same permissions
+        /// Create extracted files with the original permissions
         fPreserveMode       = (1<<8),
         /// Preserve date/times for extracted files
         fPreserveTime       = (1<<9),
-        /// Preserve all attributes
+        /// Preserve all file attributes
         fPreserveAll        = fPreserveOwner | fPreserveMode | fPreserveTime,
 
         // --- Extract/List ---
@@ -340,7 +340,7 @@ public:
 
     /// Create a new empty archive.
     ///
-    /// If a file with such a name already exists it will be rewritten.
+    /// If a file with such a name already exists it will be overwritten.
     /// @sa
     ///   Append
     void Create(void);

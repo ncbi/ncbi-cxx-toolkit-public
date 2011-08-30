@@ -2554,9 +2554,9 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
         case eContinue:
             if (zeroblock_count  &&  !(m_Flags & fIgnoreZeroBlocks)) {
                 Uint8 save_pos = m_StreamPos;
-                m_StreamPos   -= m_Current.m_HeaderSize;
+                m_StreamPos   -= xinfo.m_HeaderSize + m_Current.m_HeaderSize;
                 m_StreamPos   -= SIZE_OF(zeroblock_count);
-                TAR_POST(5, Error, "Interspersing single zero block ignored");
+                TAR_POST(5, Error, "Interspersing zero block ignored");
                 m_StreamPos    = save_pos;
             }
             break;
