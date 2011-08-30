@@ -146,7 +146,9 @@ AC_ARG_WITH(universal2,
 AC_ARG_WITH(exe,
    [ --without-exe           do not build executables])
 AC_ARG_WITH(runpath,
-   [ --with-runpath=         hard-code the runtime path to DLLs])
+   [ --with-runpath=PATH     hard-code the runtime path to DLLs])
+AC_ARG_WITH(relative-runpath,
+   [ --with-relative-runpath=P specify an executable-relative DLL search path])
 AC_ARG_WITH(lfs,
    [ --with-lfs              enable large file support to the extent possible])
 
@@ -486,7 +488,7 @@ for x_arg in "$@" ; do
    case "$x_arg" in
       --with-extra-action= | --exec-prefix= | --with-projects= | --srcdir= \
       | --cache-file= | --build= | --host= | --target= | --with-runpath= \
-      | --x-includes= | --x-libraries= )
+      | --with-relative-runpath= | --x-includes= | --x-libraries= )
       AC_MSG_ERROR([$x_arg:  requires value;  use --help to show usage])
       ;;
 
@@ -513,7 +515,8 @@ for x_arg in "$@" ; do
       | --with-boost=* | --with-boost-tag=* | --with-orbacus=* | --with-sge=* \
       | --with-muparser=* | --with-hdf5=* | --with-jni=* | --with-magic=* \
       | --x-includes=* | --x-libraries=* | --with-3psw=* \
-      | --target=* | --with-runpath=* | --no-create | --no-recursion)
+      | --target=* | --with-runpath=* | --with-relative-runpath=* \
+      | --no-create | --no-recursion)
       ;;
 
       * )
@@ -1484,9 +1487,18 @@ if test -z "$CONF_f_runpath" ; then
    esac
 fi
 case "$host_os:$ncbi_cv_prog_cc_wl_rpath" in
-    linux*|solaris* ) RUNPATH_ORIGIN="$CONF_f_runpath'\$\$ORIGIN'" ;;
-    darwin*:yes     ) RUNPATH_ORIGIN="$CONF_f_runpath@executable_path" ;;
-    * )               RUNPATH_ORIGIN="-DNCBI_RPO_SUFFIX_EATER=" ;;
+    linux*|solaris* )
+        origin="'\$\$ORIGIN'"
+        RUNPATH_ORIGIN="$CONF_f_runpath$origin"
+        ;;
+    darwin*:yes )
+        origin='@executable_path'
+        RUNPATH_ORIGIN="$CONF_f_runpath$origin"
+        ;;
+    * )
+        origin=
+        RUNPATH_ORIGIN="-DNCBI_RPO_SUFFIX_EATER="
+        ;;
 esac
 
 case "$compiler:$compiler_version:$with_bin_release" in
@@ -2124,6 +2136,18 @@ fi
 
 
 #### Set runpath (may depend on build root)
+if test -n "$with_relative_runpath"; then
+   if test "$with_runpath" = "no"; then
+      AC_MSG_ERROR([incompatible options: --without-runpath and --with-relative-runpath=$with_relative_runpath])
+   elif test -z "$origin"; then
+      AC_MSG_ERROR([Do not know how to specify relative runpaths on $host])
+   else
+      rp=`echo "$origin/$with_relative_runpath" | \
+          sed "s,:,:$origin/,g; s,/.:,:,g; s,/.\$,,"`
+      with_runpath="$rp${with_runpath+:$with_runpath}"
+   fi
+fi
+
 if test -z "$with_runpath"; then
    # Don't allow libdir values containing variable expansions,
    # including in particular the default "${exec_prefix}/lib"
