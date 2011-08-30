@@ -307,7 +307,6 @@ public:
     /// Reopen stderr/cerr in the daemon thread if "logfile" specified as
     /// non-NULL (stderr will open to "/dev/null" if "logfile" has been passed
     /// as ""), otherwise stderr is closed in the daemon thread.
-    /// NB: Always check stderr for errors of failed redirection!
     ///
     /// Unless instructed by the "flags" parameter, the daemon thread has its
     /// stdin/cin and stdout/cout closed, and the current working directory
