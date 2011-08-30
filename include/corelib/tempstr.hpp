@@ -700,10 +700,12 @@ CTempString& CTempString::assign(const char* src, size_type len)
 inline
 CTempString& CTempString::assign(const CTempString& src_str)
 {
-    NCBI_TEMPSTR_DESTROY_COPY();
-    m_String = src_str.m_String;
-    m_Length = src_str.m_Length;
-    NCBI_TEMPSTR_MAKE_COPY();
+    if (this != &src_str) {
+        NCBI_TEMPSTR_DESTROY_COPY();
+        m_String = src_str.m_String;
+        m_Length = src_str.m_Length;
+        NCBI_TEMPSTR_MAKE_COPY();
+    }
     return *this;
 }
 
@@ -910,9 +912,7 @@ public:
         }
     CTempStringEx& assign(const CTempStringEx& str)
         {
-            m_ZeroAtEnd = str.m_ZeroAtEnd;
-            CTempString::assign(str);
-            return *this;
+            return *this = str;
         }
     CTempStringEx& assign(const CTempString& str,
                           size_type          off, 
@@ -921,10 +921,6 @@ public:
             m_ZeroAtEnd = eNoZeroAtEnd;
             CTempString::assign(str, off, count);
             return *this;
-        }
-    CTempStringEx& operator=(const CTempString& str)
-        {
-            return assign(str);
         }
 
     /// Clear value to an empty string
