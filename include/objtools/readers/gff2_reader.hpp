@@ -54,7 +54,7 @@ class SRecord;
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJREAD_EXPORT CGff2Reader
 //  ----------------------------------------------------------------------------
-    : protected CGFFReader, public CReaderBase
+    : public CReaderBase
 {
 public:
     typedef enum {
@@ -72,7 +72,7 @@ public:
     //
 public:
     CGff2Reader(
-        unsigned int uFlags,
+        int iFlags,
         const string& name = "",
         const string& title = "" );
 
@@ -266,7 +266,7 @@ protected:
     //  data:
     //
 protected:
-    TFlags             m_uFlags;
+//    TFlags             m_uFlags;
     IErrorContainer*   m_pErrors;
     CRef< CAnnotdesc > m_CurrentTrackInfo;
     CRef< CAnnotdesc > m_CurrentBrowserInfo;

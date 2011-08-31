@@ -122,8 +122,10 @@ CReaderBase::GetReader(
 }
 
 //  ----------------------------------------------------------------------------
-CReaderBase::CReaderBase()
+CReaderBase::CReaderBase(
+    int flags) :
 //  ----------------------------------------------------------------------------
+    m_iFlags(flags)
 {
     m_pTrackDefaults = new CTrackData;
 }
@@ -423,6 +425,50 @@ void CReaderBase::Tokenize(
         }
     }
 }
+
+//  ----------------------------------------------------------------------------
+void 
+CReaderBase::x_Warn(
+    const string& message, 
+    unsigned int line)
+//  ----------------------------------------------------------------------------
+{
+    if (line) {
+        ERR_POST_X(2, Warning << message << " [GFF input, line " << line << ']');
+    } else {
+        ERR_POST_X(3, Warning << message << " [GFF input]");
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void 
+CReaderBase::x_Error(
+    const string& message, 
+    unsigned int line)
+//  ----------------------------------------------------------------------------
+{
+    if (line) {
+        ERR_POST_X(2, Error << message << " [GFF input, line " << line << ']');
+    } else {
+        ERR_POST_X(3, Error << message << " [GFF input]");
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void 
+CReaderBase::x_Info(
+    const string& message, 
+    unsigned int line)
+//  ----------------------------------------------------------------------------
+{
+    if (line) {
+        ERR_POST_X(2, Info << message << " [GFF input, line " << line << ']');
+    } else {
+        ERR_POST_X(3, Info << message << " [GFF input]");
+    }
+}
+
+
 
 END_objects_SCOPE
 END_NCBI_SCOPE

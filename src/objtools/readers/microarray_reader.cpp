@@ -99,8 +99,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 CMicroArrayReader::CMicroArrayReader(
     int flags )
 //  ----------------------------------------------------------------------------
-    : m_usescore(false)
-    , m_flags( flags )
+    : CReaderBase(flags), m_usescore(false)
 {
 }
 
@@ -242,7 +241,7 @@ void CMicroArrayReader::x_SetFeatureDisplayData(
     display_data->AddField( "blockSizes", fields[10] );
     display_data->AddField( "blockStarts", fields[11] );
 
-    if ( !(m_flags & fReadAsBed) ) {
+    if ( !(m_iFlags & fReadAsBed) ) {
         if ( fields.size() >= 13 ) {
             display_data->AddField( "expCount", NStr::StringToInt(fields[12]) );
         }
@@ -270,7 +269,7 @@ bool CMicroArrayReader::x_ParseTrackLine(
     if ( ! CReaderBase::x_ParseTrackLine( strLine, annot ) ) {
         return false;
     }
-    if ( m_flags & fReadAsBed ) {
+    if ( m_iFlags & fReadAsBed ) {
         return true;
     }
     

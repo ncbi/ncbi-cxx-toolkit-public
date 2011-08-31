@@ -61,6 +61,7 @@
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Seq_inst.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
 
@@ -121,11 +122,11 @@ bool CGff2Reader::s_GetAnnotId(
 
 //  ----------------------------------------------------------------------------
 CGff2Reader::CGff2Reader(
-    unsigned int uFlags,
+    int iFlags,
     const string& name,
     const string& title ):
 //  ----------------------------------------------------------------------------
-    m_uFlags( TFlags( uFlags ) ),
+    CReaderBase( iFlags ),
     m_pErrors( 0 ),
     m_AnnotName( name ),
     m_AnnotTitle( title )
@@ -159,7 +160,7 @@ CGff2Reader::ReadSeqAnnots(
     IErrorContainer* pErrorContainer )
 //  ----------------------------------------------------------------------------
 {
-    if ( m_uFlags & fNewCode ) {
+    if ( m_iFlags & fNewCode ) {
         return ReadSeqAnnotsNew( annots, lr, pErrorContainer );
     }
     CRef< CSeq_entry > entry = ReadSeqEntry( lr, pErrorContainer );
@@ -205,12 +206,8 @@ CGff2Reader::ReadSeqAnnotsNew(
         }
         catch( CObjReaderLineException& err ) {
             err.SetLineNumber( linecount );
-//            x_ProcessError( err, pErrorContainer );
         }
     }
-//    if ( m_iFlags & fDumpStats ) {
-//        x_DumpStats( cerr );
-//    }
     x_AddConversionInfoGff( annots, &m_ErrorsPrivate );
 }
 
@@ -221,107 +218,28 @@ CGff2Reader::ReadSeqEntry(
     IErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
 { 
-    m_pErrors = pErrorContainer;
-//    CRef< CSeq_entry > entry = CGFFReader::Read( lr, m_iReaderFlags );
-//    m_pErrors = 0;
-//    return entry;
-
-    x_Reset();
-    m_TSE->SetSet();
+    vector<CRef<CSeq_annot> > annots;
+    ReadSeqAnnotsNew( annots, lr, pErrorContainer );
     
-    string strLine;
-    while( x_ReadLine( lr, strLine ) ) {
-    
-        try {
-            if ( x_ParseStructuredComment( strLine ) ) {
-                continue;
-            }
-            if ( x_ParseBrowserLineGff( strLine, m_CurrentBrowserInfo ) ) {
-                continue;
-            }
-            if ( x_ParseTrackLineGff( strLine, m_CurrentTrackInfo ) ) {
-                continue;
-            }
-            // -->
-            CRef<SRecord> record = x_ParseFeatureInterval(strLine);
-            if (record) {
-                
-                record->line_no = m_LineNumber;
-                string id = x_FeatureID(*record);
-                record->id = id;
+    CRef<CSeq_entry> pSeqEntry(new CSeq_entry());
+    pSeqEntry->SetSet();
 
-                if (id.empty()) {
-                    x_ParseAndPlace(*record);
-                } else {
-                    CRef<SRecord>& match = m_DelayedRecords[id];
-                    // _TRACE(id << " -> " << match.GetPointer());
-                    if (match) {
-                        x_MergeRecords(*match, *record);
-                    } else {
-                        match.Reset(record);
-                    }
-                }
-            }
-        }
-        catch( CObjReaderLineException& err ) {
-            ProcessError( err, pErrorContainer );
-        }
-        // <--
+    for (vector<CRef<CSeq_annot> >::iterator it = annots.begin(); 
+            it != annots.end(); ++it) {
+        CRef<CBioseq> pSeq( new CBioseq() );
+        pSeq->SetAnnot().push_back(*it);
+        pSeq->SetId().push_back( CRef<CSeq_id>( 
+            new CSeq_id(CSeq_id::e_Local, "gff-import") ) );
+        pSeq->SetInst().SetRepr(CSeq_inst::eRepr_not_set);
+        pSeq->SetInst().SetMol(CSeq_inst::eMol_not_set);
+
+        CRef<CSeq_entry> pEntry(new CSeq_entry());
+        pEntry->SetSeq(*pSeq);
+        pSeqEntry->SetSet().SetSeq_set().push_back( pEntry );
     }
-    // -->
-    NON_CONST_ITERATE (TDelayedRecords, it, m_DelayedRecords) {
-        SRecord& rec = *it->second;
-        /// merge mergeable ranges
-        NON_CONST_ITERATE (SRecord::TLoc, loc_iter, rec.loc) {
-            ITERATE (set<TSeqRange>, src_iter, loc_iter->merge_ranges) {
-                TSeqRange range(*src_iter);
-                set<TSeqRange>::iterator dst_iter =
-                    loc_iter->ranges.begin();
-                for ( ;  dst_iter != loc_iter->ranges.end();  ) {
-                    TSeqRange r(range);
-                    r += *dst_iter;
-                    if (r.GetLength() <=
-                        range.GetLength() + dst_iter->GetLength()) {
-                        range += *dst_iter;
-                        _TRACE("merging overlapping ranges: "
-                               << range.GetFrom() << " - "
-                               << range.GetTo() << " <-> "
-                               << dst_iter->GetFrom() << " - "
-                               << dst_iter->GetTo());
-                        loc_iter->ranges.erase(dst_iter++);
-                        break;
-                    } else {
-                        ++dst_iter;
-                    }
-                }
-                loc_iter->ranges.insert(range);
-            }
-        }
-
-        if (rec.key == "exon") {
-            rec.key = "mRNA";
-        }
-        x_ParseAndPlace(rec);
-    }
-
-    x_RemapGeneRefs( m_TSE, m_GeneRefs );
-
-    CRef<CSeq_entry> tse(m_TSE); // need to save before resetting.
-    x_Reset();
-    
-    // promote transcript_id and protein_id to products
-    if ( m_uFlags & fSetProducts ) {
-        x_SetProducts( tse );
-    }
-
-    if ( m_uFlags & fCreateGeneFeats ) {
-        x_CreateGeneFeatures( tse );
-    }
-    // <--
-    x_AddConversionInfo( tse, pErrorContainer );
-    return tse;
+    return pSeqEntry;
 }
-    
+
 //  ----------------------------------------------------------------------------                
 CRef< CSerialObject >
 CGff2Reader::ReadObject(
@@ -329,10 +247,6 @@ CGff2Reader::ReadObject(
     IErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
 { 
-//    m_pErrors = pErrorContainer;
-//    CRef< CSeq_entry > entry = CGFFReader::Read( lr, m_iReaderFlags );
-//    m_pErrors = 0;
-//    CRef<CSerialObject> object( entry.ReleaseOrNull() );
     CRef<CSerialObject> object( 
         ReadSeqEntry( lr, pErrorContainer ).ReleaseOrNull() );
     return object;
@@ -346,7 +260,7 @@ CGff2Reader::x_Info(
 //  ----------------------------------------------------------------------------                
 {
     if ( !m_pErrors ) {
-        return CGFFReader::x_Info( message, line );
+        return x_Info( message, line );
     }
     CObjReaderLineException err( eDiag_Info, line, message );
     CReaderBase::m_uLineNumber = line;
@@ -361,7 +275,7 @@ CGff2Reader::x_Warn(
 //  ----------------------------------------------------------------------------                
 {
     if ( !m_pErrors ) {
-        return CGFFReader::x_Warn( message, line );
+        return x_Warn( message, line );
     }
     CObjReaderLineException err( eDiag_Warning, line, message );
     CReaderBase::m_uLineNumber = line;
@@ -376,7 +290,7 @@ CGff2Reader::x_Error(
 //  ----------------------------------------------------------------------------                
 {
     if ( !m_pErrors ) {
-        return CGFFReader::x_Error( message, line );
+        return x_Error( message, line );
     }
     CObjReaderLineException err( eDiag_Error, line, message );
     CReaderBase::m_uLineNumber = line;
@@ -696,13 +610,13 @@ bool CGff2Reader::x_FeatureSetLocation(
     CRef< CSeq_id > pId;
 
     const string& id_str = record.Id();
-    if (m_uFlags & fAllIdsAsLocal) {
+    if (m_iFlags & fAllIdsAsLocal) {
         pId.Reset(new CSeq_id(CSeq_id::e_Local, id_str));
     } else {
         bool is_numeric =
             id_str.find_first_not_of("0123456789") == string::npos;
 
-        if (is_numeric && (m_uFlags & fNumericIdsAsLocal)) {
+        if (is_numeric && (m_iFlags & fNumericIdsAsLocal)) {
             pId.Reset(new CSeq_id(CSeq_id::e_Local, id_str));
         }
         else {
@@ -1035,47 +949,6 @@ bool CGff2Reader::x_FeatureMergeExon(
     return true;
 }
                                 
-//  ---------------------------------------------------------------------------
-void CGff2Reader::x_PlaceFeature(
-    CSeq_feat& feat, 
-    const SRecord& )
-//  ---------------------------------------------------------------------------
-{
-    CRef<CBioseq> seq;
-    if ( !feat.IsSetProduct() ) {
-        for (CTypeConstIterator<CSeq_id> it(feat.GetLocation());  it;  ++it) {
-            CRef<CBioseq> seq2 = x_ResolveID(*it, kEmptyStr);
-            if ( !seq ) {
-                seq.Reset(seq2);
-            } else if ( seq2.NotEmpty()  &&  seq != seq2) {
-                seq.Reset();
-                BREAK(it);
-            }
-        }
-    }
-
-    CBioseq::TAnnot& annots
-        = seq ? seq->SetAnnot() : m_TSE->SetSet().SetAnnot();
-    NON_CONST_ITERATE (CBioseq::TAnnot, it, annots) {
-        if ((*it)->GetData().IsFtable()) {
-            (*it)->SetData().SetFtable().push_back(CRef<CSeq_feat>(&feat));
-            return;
-        }
-    }
-    CRef<CSeq_annot> annot(new CSeq_annot);
-    annot->SetData().SetFtable().push_back(CRef<CSeq_feat>(&feat));
-    // if available, add current browser information
-    if ( m_CurrentBrowserInfo ) {
-        annot->SetDesc().Set().push_back( m_CurrentBrowserInfo );
-    }
-
-    // if available, add current track information
-    if ( m_CurrentTrackInfo ) {
-        annot->SetDesc().Set().push_back( m_CurrentTrackInfo );
-    }
-    annots.push_back(annot);
-}
-
 //  ============================================================================
 CRef< CDbtag >
 CGff2Reader::x_ParseDbtag(

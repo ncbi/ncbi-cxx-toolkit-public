@@ -106,7 +106,7 @@ protected:
     //
 protected:
     bool m_usescore;
-    int m_flags;
+//    int m_flags;
     string m_strExpNames;
     int m_iExpScale;
     int m_iExpStep;

@@ -50,13 +50,23 @@ class NCBI_XOBJREAD_EXPORT CReaderBase
 //  ----------------------------------------------------------------------------
 {
 public:
+    enum EFlags {
+        ///< numeric identifiers are local IDs
+        fNumericIdsAsLocal  = 0x40,
+
+        ///< all identifiers are local IDs
+        fAllIdsAsLocal      = 0x80,
+
+        fFlagDefaults = 0
+    };
     enum ObjectType {
         OT_UNKNOWN,
         OT_SEQANNOT,
         OT_SEQENTRY
     };
 protected:
-    CReaderBase();
+    CReaderBase(
+        int =0);    //flags
 public:
     virtual ~CReaderBase();
 
@@ -112,6 +122,18 @@ public:
     //  Class helper functions:
     //
 protected:
+    virtual void x_Info(
+        const string&,
+        unsigned int = 0);
+
+    virtual void x_Warn(
+        const string&,
+        unsigned int = 0);
+
+    virtual void x_Error(
+        const string&,
+        unsigned int = 0);
+
     virtual void x_AssignTrackData(
         CRef<CSeq_annot>& );
                 

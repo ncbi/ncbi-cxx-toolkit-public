@@ -146,7 +146,7 @@ protected:
     //
 protected:
     static const string s_WiggleDelim;
-    TFlags m_Flags;
+//    TFlags m_Flags;
     unsigned int m_uCurrentRecordType;
     CWiggleRecord* m_pControlData;
 };

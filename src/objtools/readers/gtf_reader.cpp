@@ -685,7 +685,7 @@ bool CGtfReader::x_CreateFeatureLocation(
 //  ----------------------------------------------------------------------------
 {
     CRef< CSeq_id > pId = 
-        s_RecordIdToSeqId( record.Id(), m_uFlags & fAllIdsAsLocal );
+        s_RecordIdToSeqId( record.Id(), m_iFlags & fAllIdsAsLocal );
 
     CSeq_interval& location = pFeature->SetLocation().SetInt();
     location.SetId( *pId );
@@ -738,7 +738,7 @@ bool CGtfReader::x_MergeFeatureLocationMultiInterval(
 //  ----------------------------------------------------------------------------
 {
     CRef< CSeq_id > pId = 
-        s_RecordIdToSeqId( record.Id(), m_uFlags & fAllIdsAsLocal );
+        s_RecordIdToSeqId( record.Id(), m_iFlags & fAllIdsAsLocal );
 
     CRef< CSeq_loc > pLocation( new CSeq_loc );
     pLocation->SetInt().SetId( *pId );
@@ -962,7 +962,7 @@ bool CGtfReader::x_FeatureSetDataMRNA(
     }
     if ( record.GetAttribute( "transcript_id", strValue ) ) {
         pFeature->SetProduct().SetWhole(
-            * s_RecordIdToSeqId( strValue, m_uFlags & fAllIdsAsLocal ) );
+            * s_RecordIdToSeqId( strValue, m_iFlags & fAllIdsAsLocal ) );
     }
 
     return true;
@@ -983,7 +983,7 @@ bool CGtfReader::x_FeatureSetDataCDS(
     string strValue;
     if ( record.GetAttribute( "protein_id", strValue ) ) {
         pFeature->SetProduct().SetWhole(
-            * s_RecordIdToSeqId( strValue, m_uFlags & fAllIdsAsLocal ) );
+            * s_RecordIdToSeqId( strValue, m_iFlags & fAllIdsAsLocal ) );
     }
     if ( record.GetAttribute( "ribosomal_slippage", strValue ) ) {
         pFeature->SetExcept( true );

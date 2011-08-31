@@ -144,7 +144,7 @@ protected:
     
     vector<string>::size_type m_columncount;
     bool m_usescore;
-    int m_iFlags;
+//    int m_iFlags;
     map< string, unsigned int > m_RecordCounts;
 };
 

@@ -258,13 +258,13 @@ bool CGvfReader::x_FeatureSetLocation(
     CRef< CSeq_id > pId;
 
     const string& id_str = record.Id();
-    if (m_uFlags & fAllIdsAsLocal) {
+    if (m_iFlags & fAllIdsAsLocal) {
         pId.Reset(new CSeq_id(CSeq_id::e_Local, id_str));
     } else {
         bool is_numeric =
             id_str.find_first_not_of("0123456789") == string::npos;
 
-        if (is_numeric  &&  !!(m_uFlags & fNumericIdsAsLocal)) {
+        if (is_numeric  &&  !!(m_iFlags & fNumericIdsAsLocal)) {
             pId.Reset(new CSeq_id(CSeq_id::e_Local, id_str));
         }
         else {

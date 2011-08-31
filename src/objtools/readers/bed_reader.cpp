@@ -99,9 +99,9 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 CBedReader::CBedReader(
     int flags )
 //  ----------------------------------------------------------------------------
-    : m_columncount( 0 )
+    : CReaderBase(flags)
+    , m_columncount( 0 )
     , m_usescore( false )
-    , m_iFlags( flags )
 {
 }
 

@@ -105,8 +105,7 @@ const string CWiggleReader::s_WiggleDelim = " \t";
 CWiggleReader::CWiggleReader(
     TFlags flags ) :
 //  ----------------------------------------------------------------------------
-    CReaderBase(),
-    m_Flags( flags ),
+    CReaderBase(flags),
     m_uCurrentRecordType( TYPE_DATA_BED )
 {
     m_pControlData = new CWiggleRecord;
@@ -150,7 +149,7 @@ CWiggleReader::ReadSeqAnnot(
     try {
         x_AssignBrowserData( annot );
         x_AssignTrackData( annot );
-        pTrack->MakeAsn( m_Flags,
+        pTrack->MakeAsn( m_iFlags,
             m_pTrackDefaults->Name(), m_pTrackDefaults->Description(), *annot );
     }
     catch( CObjReaderLineException& err ) {
