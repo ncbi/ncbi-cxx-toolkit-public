@@ -36,6 +36,8 @@
 #include "classctx.hpp"
 #include "ptrstr.hpp"
 #include "namespace.hpp"
+#include "type.hpp"
+#include "module.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -79,6 +81,29 @@ const CNamespace& CTypeStrings::GetNamespace(void) const
 const string& CTypeStrings::GetEnumName(void) const
 {
     NCBI_THROW(CDatatoolException,eIllegalCall,"illegal call");
+}
+
+string CTypeStrings::GetModuleName(SInternalNames* names) const
+{
+    string module_name = GetModuleName();
+    names->m_OwnerName.erase();
+    names->m_MemberName.erase();
+#if 1
+    if ( module_name.empty() ) {
+        // internal type
+        const CDataType* this_type = DataType();
+        if ( this_type ) {
+            names->m_OwnerName = this_type->IdName();
+            SIZE_TYPE dot = names->m_OwnerName.rfind('.');
+            if ( dot != NPOS ) {
+                names->m_MemberName = names->m_OwnerName.substr(dot+1);
+                names->m_OwnerName.resize(dot);
+            }
+            module_name = this_type->GetModule()->GetName();
+        }
+    }
+#endif
+    return module_name;
 }
 
 string CTypeStrings::GetInitializer(void) const

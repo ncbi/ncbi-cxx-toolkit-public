@@ -38,7 +38,6 @@
 #include "choicestr.hpp"
 #include "stdstr.hpp"
 #include "code.hpp"
-#include "module.hpp"
 #include "srcutil.hpp"
 #include <serial/serialdef.hpp>
 #include "statictype.hpp"
@@ -1370,28 +1369,13 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         "(\""<<GetExternalName()<<"\", "<<classPrefix<<GetClassNameDT()<<")\n"
         "{\n";
 
-    string owner_name, member_name;
-    string module_name = GetModuleName();
-#if 1
-    if ( module_name.empty() ) {
-        // internal type
-        const CDataType* this_type = DataType();
-        if ( this_type ) {
-            owner_name = this_type->IdName();
-            SIZE_TYPE dot = owner_name.rfind('.');
-            if ( dot != NPOS ) {
-                member_name = owner_name.substr(dot+1);
-                owner_name.resize(dot);
-            }
-            module_name = this_type->GetModule()->GetName();
-        }
-    }
-#endif
-    if ( !owner_name.empty() ) {
+    SInternalNames names;
+    string module_name = GetModuleName(&names);
+    if ( !names.m_OwnerName.empty() ) {
         methods <<
-            "    SET_INTERNAL_NAME(\""<<owner_name<<"\", ";
-        if ( !member_name.empty() )
-            methods << "\""<<member_name<<"\"";
+            "    SET_INTERNAL_NAME(\""<<names.m_OwnerName<<"\", ";
+        if ( !names.m_MemberName.empty() )
+            methods << "\""<<names.m_MemberName<<"\"";
         else
             methods << "0";
         methods << ");\n";

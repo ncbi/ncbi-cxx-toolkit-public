@@ -35,7 +35,6 @@
 #include "srcutil.hpp"
 #include "enumtype.hpp"
 #include "code.hpp"
-#include "module.hpp"
 #include <corelib/ncbiutil.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -171,28 +170,13 @@ void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
         }
         cpp <<", "<<m_EnumName<<", "<<(m_IsInteger?"true":"false")<<")\n"
             "{\n";
-        string owner_name, member_name;
-        string module_name = GetModuleName();
-#if 1
-        if ( module_name.empty() ) {
-            // internal type
-            const CDataType* this_type = DataType();
-            if ( this_type ) {
-                owner_name = this_type->IdName();
-                SIZE_TYPE dot = owner_name.rfind('.');
-                if ( dot != NPOS ) {
-                    member_name = owner_name.substr(dot+1);
-                    owner_name.resize(dot);
-                }
-                module_name = this_type->GetModule()->GetName();
-            }
-        }
-#endif
-        if ( !owner_name.empty() ) {
+        SInternalNames names;
+        string module_name = GetModuleName(&names);
+        if ( !names.m_OwnerName.empty() ) {
             cpp <<
-                "    SET_ENUM_INTERNAL_NAME(\""<<owner_name<<"\", ";
-            if ( !member_name.empty() )
-                cpp << "\""<<member_name<<"\"";
+                "    SET_ENUM_INTERNAL_NAME(\""<<names.m_OwnerName<<"\", ";
+            if ( !names.m_MemberName.empty() )
+                cpp << "\""<<names.m_MemberName<<"\"";
             else
                 cpp << "0";
             cpp << ");\n";

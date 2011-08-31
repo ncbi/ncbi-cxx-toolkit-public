@@ -55,6 +55,11 @@ public:
         {
             return m_ModuleName;
         }
+    struct SInternalNames {
+        string m_OwnerName; // null if global type
+        string m_MemberName;
+    };
+    string GetModuleName(SInternalNames* names) const;
     string GetDoxygenModuleName(void) const
         {
             return NStr::Replace(m_ModuleName,"-","_");
