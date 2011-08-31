@@ -222,18 +222,20 @@ xslt::impl::result *  xslt::impl::make_copy (xslt::impl::result *  pattern)
 
 xslt::stylesheet::stylesheet(const char *filename)
 {
-    std::auto_ptr<pimpl> ap(pimpl_ = new pimpl);
-
+    std::auto_ptr<pimpl>    ap(pimpl_ = new pimpl);
     xml::error_messages     msgs;
     xml::document           doc(filename, &msgs, xml::type_warnings_not_errors);
-    xmlDocPtr xmldoc = static_cast<xmlDocPtr>(doc.get_doc_data());
+    xmlDocPtr               xmldoc = static_cast<xmlDocPtr>(doc.get_doc_data());
 
     if ( (pimpl_->ss_ = xsltParseStylesheetDoc(xmldoc)) == 0)
     {
         // TODO error_ can't get set yet. Need changes from libxslt first
         if (pimpl_->error_.empty())
             pimpl_->error_ = "unknown XSLT parser error";
-        throw xml::exception(pimpl_->error_);
+
+        msgs.get_messages().push_back(xml::error_message(pimpl_->error_,
+                                                         xml::error_message::type_error));
+        throw xml::parser_exception(msgs);
     }
 
     // if we got this far, the xmldoc we gave to xsltParseStylesheetDoc is
@@ -243,17 +245,72 @@ xslt::stylesheet::stylesheet(const char *filename)
 }
 
 
-xslt::stylesheet::stylesheet(xml::document doc)
+xslt::stylesheet::stylesheet(const xml::document &  doc)
 {
-    xmlDocPtr xmldoc = static_cast<xmlDocPtr>(doc.get_doc_data());
-    std::auto_ptr<pimpl> ap(pimpl_ = new pimpl);
+    xml::document           doc_copy(doc);
+    xmlDocPtr               xmldoc = static_cast<xmlDocPtr>(doc_copy.get_doc_data());
+    std::auto_ptr<pimpl>    ap(pimpl_ = new pimpl);
 
     if ( (pimpl_->ss_ = xsltParseStylesheetDoc(xmldoc)) == 0)
     {
         // TODO error_ can't get set yet. Need changes from libxslt first
         if (pimpl_->error_.empty())
             pimpl_->error_ = "unknown XSLT parser error";
-        throw xml::exception(pimpl_->error_);
+
+        xml::error_messages     messages;
+        messages.get_messages().push_back(xml::error_message(pimpl_->error_,
+                                                             xml::error_message::type_error));
+        throw xml::parser_exception(messages);
+    }
+
+    // if we got this far, the xmldoc we gave to xsltParseStylesheetDoc is
+    // now owned by the stylesheet and will be cleaned up in our destructor.
+    doc_copy.release_doc_data();
+    ap.release();
+}
+
+
+xslt::stylesheet::stylesheet (const char* data, size_t size)
+{
+    std::auto_ptr<pimpl>    ap(pimpl_ = new pimpl);
+    xml::error_messages     msgs;
+    xml::document           doc(data, size, &msgs, xml::type_warnings_not_errors);
+    xmlDocPtr               xmldoc = static_cast<xmlDocPtr>(doc.get_doc_data());
+
+    if ( (pimpl_->ss_ = xsltParseStylesheetDoc(xmldoc)) == 0)
+    {
+        // TODO error_ can't get set yet. Need changes from libxslt first
+        if (pimpl_->error_.empty())
+            pimpl_->error_ = "unknown XSLT parser error";
+
+        msgs.get_messages().push_back(xml::error_message(pimpl_->error_,
+                                                         xml::error_message::type_error));
+        throw xml::parser_exception(msgs);
+    }
+
+    // if we got this far, the xmldoc we gave to xsltParseStylesheetDoc is
+    // now owned by the stylesheet and will be cleaned up in our destructor.
+    doc.release_doc_data();
+    ap.release();
+}
+
+
+xslt::stylesheet::stylesheet (std::istream & stream)
+{
+    std::auto_ptr<pimpl>    ap(pimpl_ = new pimpl);
+    xml::error_messages     msgs;
+    xml::document           doc(stream, &msgs, xml::type_warnings_not_errors);
+    xmlDocPtr               xmldoc = static_cast<xmlDocPtr>(doc.get_doc_data());
+
+    if ( (pimpl_->ss_ = xsltParseStylesheetDoc(xmldoc)) == 0)
+    {
+        // TODO error_ can't get set yet. Need changes from libxslt first
+        if (pimpl_->error_.empty())
+            pimpl_->error_ = "unknown XSLT parser error";
+
+        msgs.get_messages().push_back(xml::error_message(pimpl_->error_,
+                                                         xml::error_message::type_error));
+        throw xml::parser_exception(msgs);
     }
 
     // if we got this far, the xmldoc we gave to xsltParseStylesheetDoc is

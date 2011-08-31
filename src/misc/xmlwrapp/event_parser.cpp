@@ -686,6 +686,8 @@ epimpl::epimpl (event_parser &parent, event_parser::sax_handlers_mask mask)
 }
 //####################################################################
 epimpl::~epimpl (void) {
+    /* Do I need this?                     */
+    /* xmlFreeDoc(parser_context_->myDoc); */
     xmlFreeParserCtxt(parser_context_);
 }
 //####################################################################

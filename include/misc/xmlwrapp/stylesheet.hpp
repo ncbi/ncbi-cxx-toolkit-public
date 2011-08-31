@@ -82,14 +82,35 @@ public:
     /**
      * Create a new xslt::stylesheet object from an xml::document object
      * that contains the parsed stylesheet. The given xml::document is
-     * passed by value. This is needed because the stylesheet will own the
+     * copied. This is needed because the stylesheet will own the
      * document and free it.
      *
      * @param doc The parsed stylesheet.
      * @author Peter Jones
     **/
     //####################################################################
-    explicit stylesheet (xml::document doc);
+    explicit stylesheet (const xml::document &  doc);
+
+    //####################################################################
+    /**
+     * Create a new xslt::stylesheet object by parsing the given XML from a
+     * memory buffer.
+     *
+     * @param data The XML memory buffer.
+     * @param size Size of the memory buffer.
+     * @author Denis Vakatov
+    **/
+    stylesheet (const char* data, size_t size);
+
+    //####################################################################
+    /**
+     * Create a new xslt::stylesheet object by parsing the given XML from a
+     * stream.
+     *
+     * @param stream Stream to read from
+     * @author Denis Vakatov
+    **/
+    stylesheet (std::istream & stream);
 
     //####################################################################
     /**

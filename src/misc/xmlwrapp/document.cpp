@@ -225,6 +225,81 @@ xml::document::document (const document_proxy &  doc_proxy) :
     doc_proxy.release();
 }
 //####################################################################
+static const std::size_t   const_buffer_size = 4096;
+
+xml::document::document (std::istream &           stream,
+                         error_messages *         messages,
+                         warnings_as_errors_type  how) :
+    pimpl_(new doc_impl)
+{
+    /* Deal with the SAX handler first */
+    xmlSAXHandler       sax;
+
+    memset(&sax, 0, sizeof(sax));
+    initxmlDefaultSAXHandler(&sax, 0);
+
+    sax.warning     = cb_tree_parser_warning;
+    sax.error       = cb_tree_parser_error;
+    sax.fatalError  = cb_tree_parser_fatal_error;
+
+
+    if (xmlKeepBlanksDefaultValue == 0)
+        sax.ignorableWhitespace =  cb_tree_parser_ignore;
+
+    /* Make sure we have where to collect messages */
+    error_messages *                temp(messages);
+    std::auto_ptr<error_messages>   msgs;
+    if (!messages)
+        msgs.reset(temp = new error_messages);
+    else
+        messages->get_messages().clear();
+
+    /* Make sure that the stream is not empty */
+    if (stream && (stream.eof() || stream.peek() == std::istream::traits_type::eof()))
+    {
+        temp->get_messages().push_back(error_message("empty xml document",
+                                                     error_message::type_error));
+        throw parser_exception(*temp);
+    }
+
+    /* Create the context to parse the stream */
+    xmlParserCtxtPtr    ctxt = xmlCreatePushParserCtxt(&sax, 0, 0, 0, 0);
+    if (ctxt == 0)
+        throw std::bad_alloc();
+    ctxt->_private = temp;
+
+    /* Parse the document chunk by chunk */
+    char                buffer[const_buffer_size];
+
+    while (stream.read(buffer, const_buffer_size) || stream.gcount())
+    {
+        if (xmlParseChunk(ctxt, buffer, static_cast<int>(stream.gcount()), 0) != 0)
+            break;
+    }
+    xmlParseChunk(ctxt, 0, 0, 1);
+
+
+    /* The parsing has been finished, check the results */
+    if (!ctxt->wellFormed || ctxt->myDoc == NULL || is_failure(temp, how))
+    {
+        if (ctxt->myDoc)
+            xmlFreeDoc(ctxt->myDoc);
+        ctxt->myDoc = 0;
+        ctxt->sax = 0;
+        xmlFreeParserCtxt(ctxt);
+
+        throw parser_exception(*temp);
+    }
+
+    /* Fine, the doc is OK */
+
+    set_doc_data(ctxt->myDoc);
+    ctxt->myDoc = 0;
+    ctxt->sax = 0;
+
+    xmlFreeParserCtxt(ctxt);
+}
+//####################################################################
 xml::document::document (const document &other) :
     pimpl_(new doc_impl(*(other.pimpl_)))
 {} /* NCBI_FAKE_WARNING */

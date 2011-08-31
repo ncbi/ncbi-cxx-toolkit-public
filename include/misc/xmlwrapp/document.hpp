@@ -173,6 +173,27 @@ public:
 
     //####################################################################
     /**
+     * Creates a new XML document by parsing the given XML from a stream.
+     *
+     * @param stream The stream to read XML document from.
+     * @param messages A pointer to the object where all the warnings are
+     *                 collected. If NULL then no messages will be collected.
+     * @param how How to treat warnings (default: warnings are not treated as
+     *            errors). If warnings are treated as errors then an exception
+     *            is thrown in case of both errors and/or warnings. If warnings
+     *            are not treated as errors then an exception will be thrown
+     *            only when there are errors.
+     * @exception Throws xml::parser_exception in case of parsing errors
+     *            and std::exception in case of other problems.
+     * @author Denis Vakatov
+    **/
+    //####################################################################
+    document (std::istream &  stream,
+              error_messages *  messages,
+              warnings_as_errors_type  how = type_warnings_not_errors);
+
+    //####################################################################
+    /**
      * Swap one xml::document object for another.
      *
      * @param other The other document to swap
