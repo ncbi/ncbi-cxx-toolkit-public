@@ -5396,9 +5396,18 @@ extern bool SetLogFile(const string& file_name,
 
 extern string GetLogFile(EDiagFileType file_type)
 {
+    CDiagHandler* handler = GetDiagHandler();
     CFileDiagHandler* fhandler =
-        dynamic_cast<CFileDiagHandler*>(GetDiagHandler());
-    return fhandler ? fhandler->GetLogFile(file_type) : GetLogFile();
+        dynamic_cast<CFileDiagHandler*>(handler);
+    if ( fhandler ) {
+        return fhandler->GetLogFile(file_type);
+    }
+    CFileHandleDiagHandler* fhhandler =
+        dynamic_cast<CFileHandleDiagHandler*>(handler);
+    if ( fhhandler ) {
+        return fhhandler->GetLogName();
+    }
+    return kEmptyStr;
 }
 
 
