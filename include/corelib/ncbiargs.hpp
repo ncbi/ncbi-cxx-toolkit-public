@@ -268,6 +268,14 @@ public:
 
     /// Get reference on value list for further modification
     virtual TStringArray& SetStringList();
+    
+    /// Get ordinal position of the value.
+    /// NOTE: this is not the position in command line, rather
+    /// this reflects the order in which values were added to the list.
+    size_t GetOrdinalPosition(void) const
+    {
+        return m_Ordinal;
+    }
 
 protected:
     friend class CArgs;
@@ -277,8 +285,14 @@ protected:
     /// Prohibit explicit instantiation of CArgValue with name.
     CArgValue(const string& name);
     virtual ~CArgValue(void);
+    
+    void SetOrdinalPosition(size_t pos)
+    {
+        m_Ordinal = pos;
+    }
 
     string m_Name;          ///< Argument name
+    size_t m_Ordinal;
 };
 
 

@@ -118,7 +118,7 @@ void s_WriteXmlLine(CNcbiOstream& out, const string& tag, const string& data)
 //  CArgValue::
 
 CArgValue::CArgValue(const string& name)
-    : m_Name(name)
+    : m_Name(name), m_Ordinal(0)
 {
     if ( !CArgDescriptions::VerifyName(m_Name, true) ) {
         NCBI_THROW(CArgException,eInvalidArg,
@@ -1660,6 +1660,7 @@ void CArgs::Add(CArgValue* arg, bool update, bool add_value)
     }
 
     // add
+    arg->SetOrdinalPosition(m_Args.size()+1);
     m_Args.insert(CRef<CArgValue>(arg));
 
     if ( is_extra ) {
