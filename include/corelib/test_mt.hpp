@@ -130,6 +130,14 @@ public:
 
 protected:
 
+    /// Thread group description parameters.
+    struct SThreadGroup {
+        /// Number of threads in the group.
+        unsigned int number_of_threads;
+        /// TRUE, if the group has intra-group sync point.
+        bool has_sync_point;
+    };
+
     /// Override this method to add your custom arguments.
     /// @return
     ///   TRUE on success, and FALSE on failure.
@@ -145,6 +153,27 @@ protected:
     ///   TRUE on success, and FALSE on failure.
     virtual bool TestApp_Exit(void);
 
+    /////////////////////////////////////////////////////////////////////////
+    // The following API has to do with thread groups synchronization
+
+    /// Wait until other threads in group reach the same sync point
+    /// The call may be ignored by the application
+    void TestApp_IntraGroupSyncPoint(void);
+
+    /// Set allowed range of delayed-start sync points.
+    /// The real number will be chosen randomly.
+    void SetNumberOfDelayedStartSyncPoints(unsigned int num_min,
+                                           unsigned int num_max);
+    
+    /// Report that the calling thread has reached some point in execution
+    /// The call can trigger start of other threads, or be ignored.
+    ///
+    /// @param name
+    ///   Name can be anything you like, providing other
+    ///   threads use the same name. The test application distinguishes
+    ///   delayed-start sync points by name.
+    void TestApp_DelayedStartSyncPoint(const string& name);
+
 private:
 
     /// Initialize the thread.
@@ -152,6 +181,21 @@ private:
 
     /// Run the thread.
     int Run(void);
+
+    void x_InitializeThreadGroups(void);
+    void x_PrintThreadGroups(void);
+    unsigned int x_InitializeDelayedStart(void);
+    void x_StartThreadGroup(unsigned int count);
+
+    CFastMutex m_AppMutex;
+    set<string> m_Reached;
+    unsigned int m_Min, m_Max;
+    volatile unsigned int m_NextGroup;
+    vector<unsigned int> m_Delayed;
+    vector<SThreadGroup> m_ThreadGroups;
+
+protected:
+    unsigned int m_LogMsgCount;
 };
 
 

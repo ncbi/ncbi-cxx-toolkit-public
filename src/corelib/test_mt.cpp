@@ -1,3 +1,4 @@
+
 /*  $Id$
  * ===========================================================================
  *
@@ -33,6 +34,9 @@
 #include <ncbi_pch.hpp>
 #include <corelib/test_mt.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/ncbi_system.hpp>
+#include <corelib/ncbi_param.hpp>
+#include <math.h>
 #include <common/test_assert.h>  /* This header must go last */
 
 
@@ -52,7 +56,26 @@ int           s_SpawnBy       = 6;
 // Next test thread index
 static volatile unsigned int  s_NextIndex = 0;
 
+#define TESTAPP_LOG_POST(x)  do { ++m_LogMsgCount; LOG_POST(x); } while (0)
 
+/////////////////////////////////////////////////////////////////////////////
+// Randomization paramaters
+
+// if (rand() % 100 < threshold) then use cascading threads
+NCBI_PARAM_DECL(unsigned int, TEST_MT, Cascading);
+NCBI_PARAM_DEF(unsigned int, TEST_MT, Cascading, 25);
+
+// calculate # of thread groups
+static string s_GroupsCount(void)
+{
+    return NStr::UIntToString( (unsigned int)sqrt((double)s_NumThreads));
+}
+NCBI_PARAM_DECL(string, TEST_MT, GroupsCount);
+NCBI_PARAM_DEF_WITH_INIT (string, TEST_MT, GroupsCount, kEmptyStr, s_GroupsCount);
+
+// group.has_sync_point = (rand() % 100) < threshold;
+NCBI_PARAM_DECL(unsigned int, TEST_MT, IntragroupSyncPoint);
+NCBI_PARAM_DEF(unsigned int, TEST_MT, IntragroupSyncPoint, 75);
 
 /////////////////////////////////////////////////////////////////////////////
 // Test thread
@@ -61,14 +84,17 @@ static volatile unsigned int  s_NextIndex = 0;
 class CTestThread : public CThread
 {
 public:
+    static void StartCascadingThreads(void);
+
     CTestThread(int id);
+    virtual void SyncPoint(void) {
+    }
 
 protected:
     ~CTestThread(void);
     virtual void* Main(void);
     virtual void  OnExit(void);
 
-private:
     int m_Idx;
 
 #ifdef USE_NATIVE_THREADS
@@ -191,7 +217,7 @@ void CTestThread::JoinNative(void** result)
 
 CRef<CTestThread> thr[k_NumThreadsMax];
 
-void* CTestThread::Main(void)
+void CTestThread::StartCascadingThreads(void)
 {
     int spawn_max;
     int first_idx;
@@ -214,7 +240,11 @@ void* CTestThread::Main(void)
         thr[i]->Run(CThread::fRunAllowST);
 #endif
     }
+}
 
+void* CTestThread::Main(void)
+{
+    StartCascadingThreads();
     // Run the test
     if ( s_Application != 0 && s_Application->Thread_Run(m_Idx) ) {
         return this;
@@ -223,6 +253,135 @@ void* CTestThread::Main(void)
     return 0;
 }
 
+/////////////////////////////////////////////////////////////////////////////
+//  Thread group
+
+class CThreadGroup;
+class CInGroupThread : public CTestThread
+{
+public:
+    CInGroupThread(CThreadGroup& group, int id);
+    virtual void SyncPoint(void);
+
+protected:
+    ~CInGroupThread(void);
+    virtual void* Main(void);
+    CThreadGroup& m_Group;
+};
+
+class CThreadGroup : public CObject
+{
+public:
+    CThreadGroup(
+        unsigned int number_of_threads,
+        bool has_sync_point);
+    ~CThreadGroup(void);
+
+    void Go(void);
+    void SyncPoint(void);
+
+    void ThreadWait(void);
+    void ThreadComplete(void);
+
+private:
+    unsigned int m_Number_of_threads;
+    bool m_Has_sync_point;
+    CSemaphore m_Semaphore;
+    CFastMutex m_Mutex;
+    unsigned int m_SyncCounter;
+};
+static CRef<CThreadGroup> thr_group[k_NumThreadsMax];
+static CStaticTls<int> s_ThreadIdxTLS;
+
+
+CInGroupThread::CInGroupThread(CThreadGroup& group, int id)
+    : CTestThread(id), m_Group(group)
+{
+}
+
+CInGroupThread::~CInGroupThread(void)
+{
+}
+
+void CInGroupThread::SyncPoint(void)
+{
+    m_Group.SyncPoint();
+}
+
+void* CInGroupThread::Main(void)
+{
+    m_Group.ThreadWait();
+    s_ThreadIdxTLS.SetValue(reinterpret_cast<int*>(m_Idx));
+    // Run the test
+    if ( s_Application != 0 && s_Application->Thread_Run(m_Idx) ) {
+        m_Group.ThreadComplete();
+        return this;
+    }
+    return 0;
+}
+
+CThreadGroup::CThreadGroup(
+        unsigned int number_of_threads,
+        bool has_sync_point)
+    : m_Number_of_threads(number_of_threads), m_Has_sync_point(has_sync_point),
+      m_Semaphore(0,number_of_threads), m_SyncCounter(0)
+{
+    for (unsigned int t =0; t < m_Number_of_threads; ++t) {
+        thr[s_NextIndex] = new CInGroupThread(*this, s_NextIndex);
+#ifdef USE_NATIVE_THREADS
+        thr[s_NextIndex]->RunNative();
+#else
+        thr[s_NextIndex]->Run();
+#endif
+        ++s_NextIndex;
+    }
+}
+
+CThreadGroup::~CThreadGroup(void)
+{
+}
+
+inline
+void CThreadGroup::Go(void)
+{
+    m_Semaphore.Post(m_Number_of_threads);
+}
+
+void CThreadGroup::SyncPoint(void)
+{
+    if (m_Has_sync_point) {
+        bool reached = false;
+        m_Mutex.Lock();
+        ++m_SyncCounter;
+        if (m_SyncCounter == m_Number_of_threads) {
+            m_SyncCounter = 0;
+            reached = true;
+        }
+        m_Mutex.Unlock();
+        if (reached) {
+            if (m_Number_of_threads > 1) {
+                m_Semaphore.Post(m_Number_of_threads-1);
+                SleepMilliSec(0);
+            }
+        } else {
+            m_Semaphore.Wait();
+        }
+    }
+}
+
+inline
+void CThreadGroup::ThreadWait(void)
+{
+    m_Semaphore.Wait();
+}
+
+inline
+void CThreadGroup::ThreadComplete(void)
+{
+    if (m_Has_sync_point) {
+        m_Semaphore.Post();
+    }
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -231,6 +390,9 @@ void* CTestThread::Main(void)
 
 CThreadedApp::CThreadedApp(void)
 {
+    m_Min = m_Max = 0;
+    m_NextGroup   = 0;
+    m_LogMsgCount = 0;
     s_Application = this;
     CThread::InitializeMainThreadId();
 }
@@ -272,6 +434,9 @@ void CThreadedApp::Init(void)
     arg_desc->SetConstraint
         ("spawnby", new CArgAllow_Integers(k_SpawnByMin, k_SpawnByMax));
 
+    arg_desc->AddOptionalKey("seed", "Randomization",
+        "Randomization seed value", CArgDescriptions::eInteger);
+
     // Let test application add its own arguments
     TestApp_Args(*arg_desc);
 
@@ -311,47 +476,74 @@ int CThreadedApp::Run(void)
     //
     assert(TestApp_Init());
 
+    unsigned int seed = GetArgs()["seed"] ?
+        (unsigned int)GetArgs()["seed"].AsInteger() :
+        (unsigned int)(time( NULL )%1000000);
+    TESTAPP_LOG_POST( "Randomization seed value: " << seed);
+    srand(seed);
+
+    unsigned int threshold = NCBI_PARAM_TYPE(TEST_MT, Cascading)::GetDefault();
+    if (threshold > 100) {
+        ERR_POST(Fatal << "Cascading threshold must be less than 100");
+    }
+    bool cascading = ((unsigned int)(rand() % 100)) < threshold;
+#if !defined(_MT)
+    cascading = true;
+#endif
+
+    if ( !cascading ) {
+        x_InitializeThreadGroups();
+        x_PrintThreadGroups();
+    }
+    cascading = cascading || (m_ThreadGroups.size() == 0);
+
 #if defined(_MT)
-    LOG_POST("Running " << s_NumThreads << " threads");
+    TESTAPP_LOG_POST("Running " << s_NumThreads << " threads");
 #else
-    LOG_POST("Simulating " << s_NumThreads << " threads in ST mode");
+    TESTAPP_LOG_POST("Simulating " << s_NumThreads << " threads in ST mode");
 #endif
 
-    int spawn_max;
-    int first_idx;
-    {{
-        CFastMutexGuard spawn_guard(s_GlobalLock);
-        spawn_max = s_NumThreads - s_NextIndex;
-        if (spawn_max > s_SpawnBy) {
-            spawn_max = s_SpawnBy;
+    if (cascading) {
+        CTestThread::StartCascadingThreads();
+    } else {
+        unsigned int start_now = x_InitializeDelayedStart();
+
+        for (unsigned int g = 0;  g < m_ThreadGroups.size();  ++g) {
+            thr_group[g] = new CThreadGroup(
+                m_ThreadGroups[g].number_of_threads,
+                m_ThreadGroups[g].has_sync_point);
         }
-        first_idx = s_NextIndex;
-        s_NextIndex += s_SpawnBy;
-    }}
-
-    // Create and run threads
-    for (int i = first_idx; i < first_idx + spawn_max; i++) {
-        thr[i] = new CTestThread(i);
-        // Allow threads to run even in single thread environment
-#ifdef USE_NATIVE_THREADS
-        thr[i]->RunNative();
-#else
-        thr[i]->Run(CThread::fRunAllowST);
-#endif
+        x_StartThreadGroup(start_now);
     }
 
     // Wait for all threads
-    for (unsigned int i=0; i<s_NumThreads; i++) {
-        void* ok;
+    if ( cascading ) {
+        for (unsigned int i=0; i<s_NumThreads; i++) {
+            void* ok;
+            // make sure all threads have started
+            assert( thr[i].NotEmpty());
 #ifdef USE_NATIVE_THREADS
-        if (thr[i]) {
-            thr[i]->JoinNative(&ok);
-            assert(ok);
-        }
+            if (thr[i]) {
+                thr[i]->JoinNative(&ok);
+                assert(ok);
+            }
 #else
-        thr[i]->Join(&ok);
-        assert(ok);
+            thr[i]->Join(&ok);
+            assert(ok);
 #endif
+        }
+    } else {
+        // join only those that started
+        unsigned int i=0;
+        for (unsigned int g = 0; g < m_NextGroup; ++g) {
+            for (unsigned int t= 0;
+                t < m_ThreadGroups[g].number_of_threads; ++t, ++i) {
+                void* ok;
+                thr[i]->Join(&ok);
+                assert(ok);
+            }
+        }
+        assert( m_Reached.size() >= m_Min);
     }
 
     assert(TestApp_Exit());
@@ -360,10 +552,122 @@ int CThreadedApp::Run(void)
     for (unsigned int i=0; i<s_NumThreads; i++) {
         thr[i].Reset();
     }
+    // Destroy all groups
+    for (unsigned int i=0; i<m_ThreadGroups.size(); i++) {
+        thr_group[i].Reset();
+    }
 
     return 0;
 }
 
+
+void CThreadedApp::x_InitializeThreadGroups(void)
+{
+    unsigned int count = NStr::StringToUInt(
+        NCBI_PARAM_TYPE(TEST_MT, GroupsCount)::GetDefault());
+    if (count == 0) {
+        return;
+    }
+
+    if(count > s_NumThreads) {
+        ERR_POST(Fatal << "Thread groups with no threads are not allowed");
+    }
+
+    unsigned int threshold =
+        NCBI_PARAM_TYPE(TEST_MT, IntragroupSyncPoint)::GetDefault();
+    if (threshold > 100) {
+        ERR_POST(Fatal << "IntragroupSyncPoint threshold must be less than 100");
+    }
+
+    unsigned int threads_left = s_NumThreads;
+    for (unsigned int g = 0;  g < count;  ++g) {
+        SThreadGroup group;
+        // randomize intra-group sync points
+        group.has_sync_point = ((unsigned int)(rand() % 100)) < threshold;
+        group.number_of_threads = 1; // mio
+        m_ThreadGroups.push_back(group);
+    }
+    
+    if (s_NumThreads > count) {
+        threads_left = s_NumThreads - count;
+        for (unsigned int t = 0;  t < threads_left;  ++t) {
+            // randomize # of threads
+            m_ThreadGroups[ rand() % count ].number_of_threads += 1;
+        }
+    }
+}
+
+
+void CThreadedApp::x_PrintThreadGroups( void)
+{
+    size_t count = m_ThreadGroups.size();
+    if (count != 0) {
+        TESTAPP_LOG_POST("Thread groups: " << count);
+        TESTAPP_LOG_POST("Number of delayed thread groups: from "
+                         << m_Min << " to " << m_Max);
+        TESTAPP_LOG_POST("------------------------");
+        TESTAPP_LOG_POST("group threads sync_point");
+        for (unsigned int g = 0;  g < count;  ++g) {
+            CNcbiOstrstream os;
+            os.width(6);
+            os << left << g;
+            os.width(8);
+            os << left << m_ThreadGroups[g].number_of_threads;
+            if (m_ThreadGroups[g].has_sync_point) {
+                os << "yes";
+            } else {
+                os << "no ";
+            }
+            TESTAPP_LOG_POST(string(CNcbiOstrstreamToString(os)));
+        }
+        TESTAPP_LOG_POST("------------------------");
+    }
+}
+
+
+unsigned int CThreadedApp::x_InitializeDelayedStart(void)
+{
+    const unsigned int count = m_ThreadGroups.size();
+    unsigned int start_now = count;
+    unsigned int g;
+    if (m_Max == 0)
+        return start_now;
+
+    for (g = 0;  g < m_Max;  ++g) {
+        m_Delayed.push_back(0);
+    }
+
+    for (g = 1;  g < count;  ++g) {
+        unsigned int dest = rand() % (m_Max+1);
+        if (dest != 0) {
+            m_Delayed[dest - 1] += 1;
+            --start_now;
+        }
+    }
+
+    CNcbiOstrstream os;
+    os << "Delayed thread groups: " << (count - start_now)
+       << ", starting order: " << start_now;
+    for (g = 0; g < m_Max; ++g) {
+        os << '+' << m_Delayed[g];
+    }
+    TESTAPP_LOG_POST(string(CNcbiOstrstreamToString(os)));
+
+    return start_now;
+}
+
+
+void CThreadedApp::x_StartThreadGroup(unsigned int count)
+{
+    CFastMutexGuard LOCK(m_AppMutex);
+    while (count--) {
+        thr_group[m_NextGroup++]->Go();
+    }
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
 
 bool CThreadedApp::Thread_Init(int /*idx*/)
 {
@@ -396,6 +700,33 @@ bool CThreadedApp::TestApp_Args(CArgDescriptions& /*args*/)
 bool CThreadedApp::TestApp_Init(void)
 {
     return true;
+}
+
+
+void CThreadedApp::TestApp_IntraGroupSyncPoint(void)
+{
+    int idx = (int)(intptr_t(s_ThreadIdxTLS.GetValue()));
+    thr[idx]->SyncPoint();
+}
+
+
+void CThreadedApp::SetNumberOfDelayedStartSyncPoints(
+    unsigned int num_min, unsigned int num_max)
+{
+    m_Min = num_min;
+    m_Max = num_max;
+}
+
+
+void CThreadedApp::TestApp_DelayedStartSyncPoint(const string& name)
+{
+    CFastMutexGuard LOCK(m_AppMutex);
+    if (!m_Delayed.empty()  &&  m_Reached.find(name) == m_Reached.end()) {
+        m_Reached.insert(name);
+        if (m_Reached.size() <= m_Delayed.size()) {
+            x_StartThreadGroup(m_Delayed[m_Reached.size() - 1]);
+        }
+    }
 }
 
 

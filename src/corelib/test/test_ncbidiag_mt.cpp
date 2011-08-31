@@ -126,7 +126,7 @@ bool CTestDiagApp::TestApp_Exit(void)
     // Get the list of messages and check the size
     NStr::Split(test_res, "\r\n", messages);
 
-    assert(messages.size() == s_NumThreads*3+1);
+    assert(messages.size() == s_NumThreads*3+m_LogMsgCount);
 
     if (GetDiagContext().IsSetOldPostFormat()) {
         x_TestOldFormat(messages);
@@ -155,7 +155,7 @@ void CTestDiagApp::x_TestOldFormat(TStringList& messages)
         assert(it != messages.end());
         messages.erase(it);
     }
-    assert(messages.size() == s_NumThreads*2+1);
+    assert(messages.size() == s_NumThreads*2+m_LogMsgCount);
 
     // Verify "Error" messages
     for (unsigned int i=0; i<s_NumThreads; i++) {
@@ -166,7 +166,7 @@ void CTestDiagApp::x_TestOldFormat(TStringList& messages)
         assert(it != messages.end());
         messages.erase(it);
     }
-    assert(messages.size() == s_NumThreads+1);
+    assert(messages.size() == s_NumThreads+m_LogMsgCount);
 
     // Verify "Log" messages
     for (unsigned int i=0; i<s_NumThreads; i++) {
@@ -177,7 +177,7 @@ void CTestDiagApp::x_TestOldFormat(TStringList& messages)
         assert(it != messages.end());
         messages.erase(it);
     }
-    assert(messages.size() == 1);
+    assert(messages.size() == m_LogMsgCount);
 }
 
 
@@ -254,7 +254,7 @@ void CTestDiagApp::x_TestNewFormat(TStringList& messages)
 #ifdef _DEBUG
     assert(create_msg_count == s_NumThreads);
     assert(log_msg_count == s_NumThreads);
-    assert(other_msg_count == 1);
+    assert(other_msg_count == m_LogMsgCount);
 #endif
 }
 
