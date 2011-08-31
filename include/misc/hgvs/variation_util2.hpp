@@ -325,7 +325,7 @@ private:
     static const CConstRef<CSeq_literal> s_FindAssertedLiteral(const CVariation& v);
 
 
-    CRef<CVariation> CVariationUtil::x_AsVariation(const CVariation_ref& vr);
+    CRef<CVariation> x_AsVariation(const CVariation_ref& vr);
 
 
     /*
