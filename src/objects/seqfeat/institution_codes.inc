@@ -3228,6 +3228,8 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "LWD	s	Museum Dzieduszyckich",
 "LWG	s	National Botanical Research Institute",
 "LWKS	s	Institute of Ecology of the Carpathians",
+"LWL<DEU>	s	LWL-Museum fuer Naturkunde",
+"LWL<DEU>:DNA	b	LWL-Museum fuer Naturkunde, LWL-DNA- und Gewebearchiv",
 "LWS	s	Museum of Natural History",
 "LWSM	s	Lewes Museum, Ann of Cleves House",
 "LWU	s	University of Lucknow, Botany Department",
