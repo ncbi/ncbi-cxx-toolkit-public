@@ -168,8 +168,8 @@ public:
     ///
     void SetInputMSAs(const objects::CSeq_align& msa1,
                       const objects::CSeq_align& msa2,
-                      const vector<int>& representatives1,
-                      const vector<int>& representatives2,
+                      const set<int>& representatives1,
+                      const set<int>& representatives2,
                       CRef<objects::CScope> scope);
 
 

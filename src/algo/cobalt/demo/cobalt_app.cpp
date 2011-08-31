@@ -477,20 +477,32 @@ int CMultiApplication::Run(void)
 
         _ASSERT(!scope.Empty());
 
-        vector<int> repr1, repr2;
+        set<int> repr1, repr2;
+        size_t num1 = 0, num2 = 0;
         if (args["ind1"]) {
             list<string> tokens;
             NStr::Split(args["ind1"].AsString(), ",", tokens);
             ITERATE (list<string>, it, tokens) {
-                repr1.push_back(NStr::StringToInt(*it));
+                repr1.insert(NStr::StringToInt(*it));
+                num1++;
             }            
         }
         if (args["ind2"]) {
             list<string> tokens;
             NStr::Split(args["ind2"].AsString(), ",", tokens);
             ITERATE (list<string>, it, tokens) {
-                repr2.push_back(NStr::StringToInt(*it));
+                repr2.insert(NStr::StringToInt(*it));
+                num2++;
             }
+        }
+
+        // indeces of sequence representatives in MSAs must be unique
+        if (num1 != repr1.size() || num2 != repr2.size()) {
+            NcbiCerr << "Error: Non-unique indeces of input sequence "
+                     << "representatives"
+                     << NcbiEndl;
+
+            return 1;
         }
 
         aligner.SetInputMSAs(*msa1, *msa2, repr1, repr2, scope);

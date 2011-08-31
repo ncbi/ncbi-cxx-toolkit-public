@@ -298,8 +298,8 @@ void CMultiAligner::SetQueries(const blast::TSeqLocVector& queries)
 void 
 CMultiAligner::SetInputMSAs(const objects::CSeq_align& msa1,
                             const objects::CSeq_align& msa2,
-                            const vector<int>& repr1,
-                            const vector<int>& repr2,
+                            const set<int>& repr1,
+                            const set<int>& repr2,
                             CRef<objects::CScope> scope)
 {
     m_Scope = scope;
