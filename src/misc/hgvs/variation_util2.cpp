@@ -157,8 +157,6 @@ void CVariationUtil::s_ResolveIntronicOffsets(CVariantPlacement& p)
     CRef<CSeq_loc> loc(new CSeq_loc);
     loc->Assign(p.GetLoc());
     if(loc->IsPnt()) {
-        //convert to interval
-        loc = sequence::Seq_loc_Merge(*loc, CSeq_loc::fMerge_SingleRange, NULL);
         if(!p.IsSetStop_offset() && p.IsSetStart_offset()) {
             //In case of point, only start-offset may be specified. In this case
             //temporarily set stop-offset to be the same (it will be reset below),
@@ -167,7 +165,15 @@ void CVariationUtil::s_ResolveIntronicOffsets(CVariantPlacement& p)
         }
     }
 
+    //convert to interval.
+    //Need to do for a point so that we can deal with start and stop independently.
+    //Another scenario is when start/stop in CDNA coords lie in different exons, so
+    //the mapping is across one or more intron - we want to collapse the genomic loc
+    //(do we want to preselve the gaps caused by indels rather than introns?)
+    loc = sequence::Seq_loc_Merge(*loc, CSeq_loc::fMerge_SingleRange, NULL);
+
     if(!loc->IsInt() && (p.IsSetStart_offset() || p.IsSetStop_offset())) {
+        NcbiCerr << MSerial_AsnText << p;
         NCBI_THROW(CException, eUnknown, "Complex location");
     }
 
@@ -819,6 +825,23 @@ CRef<CSeq_literal> CVariationUtil::x_GetLiteralAtLoc(const CSeq_loc& loc)
             string seq;
             try {
                 CSeqVector v(loc, *m_scope, CBioseq_Handle::eCoding_Iupac);
+
+                if(v.IsProtein()) {
+                    //if loc extends by 1 past the end protein - we'll need to
+                    //truncate the loc to the boundaries of prot, and then add "*" manually,
+                    //as otherwise fetching seq will throw.
+                    CBioseq_Handle bsh = m_scope->GetBioseqHandle(loc);
+                    if(bsh.GetInst_Length() == loc.GetStop(eExtreme_Positional)) {
+                        CRef<CSeq_loc> range_loc = sequence::Seq_loc_Merge(loc, CSeq_loc::fMerge_SingleRange, NULL);
+                        range_loc->SetInt().SetTo(bsh.GetInst_Length() - 1);
+                        CRef<CSeq_loc> truncated_loc = range_loc->Intersect(loc, 0, NULL);
+                        CRef<CSeq_literal>  literal = x_GetLiteralAtLoc(*truncated_loc);
+                        literal->SetLength() += 1;
+                        literal->SetSeq_data().SetNcbieaa().Set().push_back('*');
+                        return literal;
+                    }
+                }
+
                 v.GetSeqData(v.begin(), v.end(), seq);
                 literal->SetLength(seq.size());
                 if(v.IsProtein()) {
@@ -1435,12 +1458,7 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
     } else {
         prot_p->SetLoc(*prot_loc);
         prot_p->SetMol(GetMolType(sequence::GetId(prot_p->GetLoc(), NULL)));
-       if(NStr::Find(prot_ref_str, "*") == NPOS) {
-            //make sure that we're not in stop-codon,
-            //as if we are, the location extends past the end of the prot and
-            //fetching sequence wolud throw
-             AttachSeq(*prot_p);
-        }
+        AttachSeq(*prot_p);
     }
     prot_v->SetPlacements().push_back(prot_p);
 
