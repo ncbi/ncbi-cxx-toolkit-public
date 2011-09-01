@@ -78,7 +78,7 @@ void CSeq_annot::AddName(const string &name)
 
 void CSeq_annot::SetTitle(const string& title)
 {
-    SetTitle(title);
+    AddTitle(title);
 }
 
 
