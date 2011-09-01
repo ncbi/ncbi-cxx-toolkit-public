@@ -247,7 +247,7 @@ xslt::stylesheet::stylesheet(const char *filename)
 
 xslt::stylesheet::stylesheet(const xml::document &  doc)
 {
-    xml::document           doc_copy(doc);
+    xml::document           doc_copy(doc);  /* NCBI_FAKE_WARNING */
     xmlDocPtr               xmldoc = static_cast<xmlDocPtr>(doc_copy.get_doc_data());
     std::auto_ptr<pimpl>    ap(pimpl_ = new pimpl);
 
