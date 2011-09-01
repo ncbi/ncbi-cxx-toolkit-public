@@ -835,6 +835,7 @@ private:
     friend class xslt::stylesheet;
     friend class schema;
     friend class dtd;
+    friend class libxml2_document;
 }; // end xml::document class
 
 } // end xml namespace

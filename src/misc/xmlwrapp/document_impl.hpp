@@ -68,6 +68,7 @@ struct doc_impl {
     doc_impl (const doc_impl &other);
     void set_doc_data (xmlDocPtr newdoc, bool root_is_okay);
     void set_root_node (const node &n);
+    void set_ownership (bool owe);
     ~doc_impl (void);
     xmlDocPtr doc_;
 
@@ -79,6 +80,7 @@ struct doc_impl {
     mutable std::string encoding_;
     xml::dtd internal_subset_;
     xml::dtd external_subset_;
+    bool owe_;
 };
 
 } // namespace impl

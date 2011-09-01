@@ -49,19 +49,19 @@ using namespace xml;
 using namespace xml::impl;
 
 
-doc_impl::doc_impl (void) : doc_(0), xslt_result_(0) { /* NCBI_FAKE_WARNING */
+doc_impl::doc_impl (void) : doc_(0), xslt_result_(0), owe_(true) { /* NCBI_FAKE_WARNING */
     xmlDocPtr tmpdoc;
     if ( (tmpdoc = xmlNewDoc(0)) == 0) throw std::bad_alloc();
     set_doc_data(tmpdoc, true);
 }
 
-doc_impl::doc_impl (const char *root_name) : doc_(0), xslt_result_(0), root_(root_name) { /* NCBI_FAKE_WARNING */
+doc_impl::doc_impl (const char *root_name) : doc_(0), xslt_result_(0), root_(root_name), owe_(true) { /* NCBI_FAKE_WARNING */
     xmlDocPtr tmpdoc;
     if ( (tmpdoc = xmlNewDoc(0)) == 0) throw std::bad_alloc();
     set_doc_data(tmpdoc, true);
 }
 
-doc_impl::doc_impl (const doc_impl &other) : doc_(0), xslt_result_(0) { /* NCBI_FAKE_WARNING */
+doc_impl::doc_impl (const doc_impl &other) : doc_(0), xslt_result_(0), owe_(true) { /* NCBI_FAKE_WARNING */
     xmlDocPtr tmpdoc;
     if ( (tmpdoc = xmlCopyDoc(other.doc_, 1)) == 0) throw std::bad_alloc();
     set_doc_data(tmpdoc, false);
@@ -102,8 +102,15 @@ void doc_impl::set_root_node (const node &n) {
     xslt_result_ = 0;
 }
 
+void doc_impl::set_ownership (bool owe) {
+    owe_ = owe;
+}
+
 doc_impl::~doc_impl (void) {
-    if (doc_) xmlFreeDoc(doc_);
+    if (owe_) {
+        if (doc_)
+            xmlFreeDoc(doc_);
+    }
     delete xslt_result_;
 }
 
