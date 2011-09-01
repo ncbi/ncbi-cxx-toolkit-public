@@ -585,6 +585,9 @@ bio_material/culture_collection/specimen_voucher type.")),
    TErrTypStrs ( eErr_SEQ_DESCR_MissingPersonalCollectionName,
    TErrStrs ( "MissingPersonalCollectionName",
 "The personal collection does not indicate the name of the collector.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_LatLonPrecision,
+   TErrStrs( "LatLonPrecision",
+"The precision of lat_lon should be dd.dd N|S ddd.dd E|W.")),
 
 /* SEQ_GENERIC */
 

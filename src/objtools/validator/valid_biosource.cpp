@@ -303,12 +303,14 @@ static bool s_IsValidPrimerSequence (string str, char& bad_ch)
 }
 
 
-static void s_IsCorrectLatLonFormat (string lat_lon, bool& format_correct, bool& lat_in_range, bool& lon_in_range,
+static void s_IsCorrectLatLonFormat (string lat_lon, bool& format_correct, bool& precision_correct,
+                                     bool& lat_in_range, bool& lon_in_range,
                                      double& lat_value, double& lon_value)
 {
     format_correct = false;
     lat_in_range = false;
     lon_in_range = false;
+    precision_correct = false;
     double ns, ew;
     char lon, lat;
     int processed;
@@ -366,6 +368,9 @@ static void s_IsCorrectLatLonFormat (string lat_lon, bool& format_correct, bool&
                 }
                 if (ew <= 180 && ew >= 0) {
                     lon_in_range = true;
+                }
+                if (precision_lat < 3 && precision_lon < 3) {
+                    precision_correct = true;
                 }
             }
         }
@@ -619,9 +624,9 @@ void CValidError_imp::ValidateLatLonCountry
     }
 
     // only do these checks if the latlon format is good
-    bool format_correct, lat_in_range, lon_in_range;
+    bool format_correct, lat_in_range, lon_in_range, precision_correct;
     double lat_value = 0.0, lon_value = 0.0;
-    s_IsCorrectLatLonFormat (lat_lon, format_correct, 
+    s_IsCorrectLatLonFormat (lat_lon, format_correct, precision_correct,
                                lat_in_range, lon_in_range,
                                lat_value, lon_value);
     if (!format_correct) {
@@ -629,7 +634,7 @@ void CValidError_imp::ValidateLatLonCountry
         size_t pos = NStr::Find(lat_lon, ",", 0, string::npos, NStr::eLast);
         if (pos != string::npos) {
             lat_lon = lat_lon.substr(0, pos);
-            s_IsCorrectLatLonFormat (lat_lon, format_correct, 
+            s_IsCorrectLatLonFormat (lat_lon, format_correct, precision_correct,
                                        lat_in_range, lon_in_range,
                                        lat_value, lon_value);
         }
@@ -1013,8 +1018,8 @@ void CValidError_imp::ValidateBioSource
         case CSubSource::eSubtype_lat_lon:
             if ((*ssit)->IsSetName()) {
                 lat_lon = (*ssit)->GetName();
-                bool format_correct = false, lat_in_range = false, lon_in_range = false;
-                s_IsCorrectLatLonFormat (lat_lon, format_correct, 
+                bool format_correct = false, lat_in_range = false, lon_in_range = false, precision_correct = false;
+                s_IsCorrectLatLonFormat (lat_lon, format_correct, precision_correct,
                          lat_in_range, lon_in_range,
                          lat_value, lon_value);
             }
@@ -1413,16 +1418,16 @@ void CValidError_imp::ValidateSubSource
 
     case CSubSource::eSubtype_lat_lon:
         if (subsrc.IsSetName()) {
-            bool format_correct = false, lat_in_range = false, lon_in_range = false;
+            bool format_correct = false, lat_in_range = false, lon_in_range = false, precision_correct = false;
             double lat_value = 0.0, lon_value = 0.0;
             string lat_lon = subsrc.GetName();
-            s_IsCorrectLatLonFormat (lat_lon, format_correct, 
+            s_IsCorrectLatLonFormat (lat_lon, format_correct, precision_correct,
                                      lat_in_range, lon_in_range,
                                      lat_value, lon_value);
             if (!format_correct) {
                 size_t pos = NStr::Find(lat_lon, ",");
                 if (pos != string::npos) {
-                    s_IsCorrectLatLonFormat (lat_lon.substr(0, pos), format_correct, lat_in_range, lon_in_range, lat_value, lon_value);
+                    s_IsCorrectLatLonFormat (lat_lon.substr(0, pos), format_correct, precision_correct, lat_in_range, lon_in_range, lat_value, lon_value);
                     if (format_correct) {
                         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_LatLonFormat, 
                                    "lat_lon format has extra text after correct dd.dd N|S ddd.dd E|W format",
@@ -1444,6 +1449,11 @@ void CValidError_imp::ValidateSubSource
                 if (!lon_in_range) {
                     PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_LatLonRange, 
                                 "longitude value is out of range - should be between 180.00 E and 180.00 W",
+                                obj, ctx);
+                }
+                if (!precision_correct) {
+                    PostObjErr (eDiag_Info, eErr_SEQ_DESCR_LatLonPrecision, 
+                                "lat_lon precision is incorrect - should only have two digits to the right of the decimal point",
                                 obj, ctx);
                 }
             }
