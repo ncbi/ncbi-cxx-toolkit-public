@@ -190,7 +190,15 @@ public:
 
     const string &GetFinishingStatus(void) const;
     bool IsGenomeAssembly(void) const;
-    bool IsUnverified(void) const;
+
+    NCBI_DEPRECATED bool IsUnverified(void) const;
+    enum EUnverified {
+        eUnverified_None = 1,
+        eUnverified_SequenceOrAnnotation,
+        eUnverified_Organism
+    };
+    EUnverified GetUnverifiedType(void) const;
+
 
     bool IsHup(void) const { return m_IsHup; }  // !!! should move to global?
 
@@ -278,7 +286,7 @@ private:
     bool m_HasOperon;
     bool m_HasMultiIntervalGenes;
     bool m_IsGenomeAssembly;
-    bool m_IsUnverified;
+    EUnverified m_eUnverified;
 
     CConstRef<CUser_object> m_Encode;
     
@@ -516,7 +524,13 @@ bool CBioseqContext::IsGenomeAssembly(void) const
 inline
 bool CBioseqContext::IsUnverified(void) const
 {
-    return m_IsUnverified;
+    return ( m_eUnverified != eUnverified_None );
+}
+
+inline
+CBioseqContext::EUnverified CBioseqContext::GetUnverifiedType(void) const
+{
+    return m_eUnverified;
 }
 
 inline

@@ -348,6 +348,7 @@ void CFlatGatherer::x_GatherBioseq(
          !cfg.IsFormatFTable() ) {
          x_DoMultipleSections(seq);
     } else {
+
         // display as a single bioseq (single section)
         m_Current.Reset(new CBioseqContext(prev_seq, seq, next_seq, *m_Context, 0, 
             (topLevelSeqEntryContext ? &*topLevelSeqEntryContext : NULL)));
@@ -811,11 +812,26 @@ bool s_HasRefTrackStatus(const CBioseq_Handle& bsh) {
 
 void CFlatGatherer::x_UnverifiedComment(CBioseqContext& ctx) const
 {
-    static const string kUnverifiedNote = 
+    static const string kUnverifiedSequenceOrAnnotationNote = 
         "GenBank staff is unable to verify sequence and/or annotation provided by the submitter.";
+    static const string kUnverifiedOrganism = 
+        "GenBank staff is unable to verify source organism provided by the submitter.";
+    static const string kUnverifiedUnknown = 
+        "GenBank staff is unable to verify something [ERROR:what?] provided by the submitter.";
 
-    if( ctx.IsUnverified() ) {
-        x_AddComment( new CCommentItem(kUnverifiedNote, ctx) );
+    switch( ctx.GetUnverifiedType() ) {
+        case CBioseqContext::eUnverified_None:
+            // nothing to do
+            break;
+        case CBioseqContext::eUnverified_SequenceOrAnnotation:
+            x_AddComment( new CCommentItem(kUnverifiedSequenceOrAnnotationNote, ctx) );
+            break;
+        case CBioseqContext::eUnverified_Organism:
+            x_AddComment( new CCommentItem(kUnverifiedOrganism, ctx) );
+            break;
+        default:
+            x_AddComment( new CCommentItem(kUnverifiedUnknown, ctx) );
+            break;
     }
 }
 

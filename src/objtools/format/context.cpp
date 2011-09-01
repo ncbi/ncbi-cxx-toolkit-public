@@ -110,7 +110,7 @@ CBioseqContext::CBioseqContext
     m_IsGenomeAssembly(false),
     m_FFCtx(ffctx),
     m_Master(mctx),
-    m_IsUnverified(false),
+    m_eUnverified(eUnverified_None),
     m_TLSeqEntryCtx(tlsec)
 {
     x_Init(seq, m_FFCtx.GetLocation());
@@ -161,7 +161,7 @@ CBioseqContext::CBioseqContext
     m_IsGenomeAssembly(false),
     m_FFCtx(ffctx),
     m_Master(mctx),
-    m_IsUnverified(false),
+    m_eUnverified(eUnverified_None),
     m_TLSeqEntryCtx(tlsec)
 {
     x_Init(seq, m_FFCtx.GetLocation());
@@ -363,7 +363,25 @@ void CBioseqContext::x_SetDataFromUserObjects(void)
                     }
                 }
             } else if(NStr::EqualNocase(uo.GetType().GetStr(), "Unverified")) {
-                m_IsUnverified = true;
+                m_eUnverified = eUnverified_SequenceOrAnnotation;
+                // see if it's an alternate kind of unverified
+                if( uo.IsSetData() ) {
+                    ITERATE( CUser_object::TData, field_iter, uo.GetData() ) {
+                        const CUser_field &field = **field_iter;
+                        if( ! field.IsSetLabel() || ! field.GetLabel().IsStr() ||
+                            field.GetLabel().GetStr() != "Type" ) 
+                        {
+                                continue;
+                        }
+                        if( ! field.IsSetData() || ! field.GetData().IsStr() )
+                        {
+                            continue;
+                        }
+                        if( NStr::EqualNocase( field.GetData().GetStr(), "Organism") ) {
+                            m_eUnverified = eUnverified_Organism;
+                        }
+                    }
+                }
             }
         }
     }
