@@ -1599,6 +1599,9 @@ _blk_build_bcp_record(CS_BLKDESC *blkdesc, CS_INT offset)
          */
         row_pos = 2;
 
+        blkdesc->bit_field_pos = 0;
+        blkdesc->cur_bit_num = 0;
+
         if ((row_pos = _blk_add_fixed_columns(blkdesc, offset, record, row_pos)) == CS_FAIL)
             return CS_FAIL;
 
@@ -1770,7 +1773,25 @@ _blk_add_fixed_columns(CS_BLKDESC * blkdesc, int offset, unsigned char * rowbuff
                 num = (TDS_NUMERIC *) bcpcol->bcp_column_data->data;
                 cpbytes = tds_numeric_bytes_per_prec[num->precision];
                 memcpy(&rowbuffer[row_pos], num->array, cpbytes);
-            } else {
+            }
+            else if (bcpcol->on_server.column_type == SYBBIT) {
+                if (blkdesc->bit_field_pos == 0) {
+                    memcpy(&rowbuffer[row_pos], bcpcol->bcp_column_data->data, 1);
+                    blkdesc->bit_field_pos = row_pos;
+                }
+                else {
+                    if (*bcpcol->bcp_column_data->data)
+                        rowbuffer[blkdesc->bit_field_pos] |= (1 << blkdesc->cur_bit_num);
+                    /* row_pos shouldn't change, but it's increased below */
+                    --row_pos;
+                }
+
+                if (++blkdesc->cur_bit_num == 8) {
+                    blkdesc->cur_bit_num = 0;
+                    blkdesc->bit_field_pos = 0;
+                }
+            }
+            else {
                 cpbytes = bcpcol->bcp_column_data->datalen > bcpcol->column_size ? bcpcol->column_size : bcpcol->bcp_column_data->datalen;
                 memcpy(&rowbuffer[row_pos], bcpcol->bcp_column_data->data, cpbytes);
 

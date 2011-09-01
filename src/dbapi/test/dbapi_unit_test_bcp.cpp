@@ -2253,6 +2253,157 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing6)
     }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(Test_Bulk_Writing7)
+{
+    string sql;
+    string table_name("#blk_table7");
+    const int test_num = 10;
+    const string str1 = "Test, test, tEST.";
+    const string str2 = "asdfghjkl";
+    const string str3 = "Test 1234567890";
+    const int i1 = int(0xdeadbeaf);
+    const int i2 = int(0xcac0ffee);
+    const int i3 = int(0xba1c0c0a);
+    const short s1 = short(0xfade);
+    const short s2 = short(0x0ec0);
+    const Uint1 t1 = char(0x42);
+    const Uint1 b_vals[test_num][11] = {
+          {1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1},
+          {1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1},
+          {0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1},
+          {0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0},
+          {1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1},
+          {0, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0},
+          {0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1},
+          {0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0},
+          {0, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1},
+          {1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0},
+        };
+
+    try {
+        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+
+        // Create table ...
+        {
+            sql =
+                "CREATE TABLE " + table_name + " ( \n"
+                "    id int, \n"
+                "    i1 int, \n"
+                "    str1 varchar(100), \n"
+                "    b1 bit, \n"
+                "    b2 bit, \n"
+                "    i2 int, \n"
+                "    b3 bit, \n"
+                "    s1 smallint, \n"
+                "    b4 bit, \n"
+                "    b5 bit, \n"
+                "    i3 int, \n"
+                "    b6 bit, \n"
+                "    str2 varchar(100), \n"
+                "    b7 bit, \n"
+                "    s2 smallint, \n"
+                "    b8 bit, \n"
+                "    b9 bit, \n"
+                "    t1 tinyint, \n"
+                "    b10 bit, \n"
+                "    str3 varchar(100), \n"
+                "    b11 bit \n"
+                ")"
+                ;
+
+            auto_stmt->ExecuteUpdate(sql);
+        }
+
+        // Insert data ...
+        {
+            //
+            auto_ptr<IBulkInsert> bi(
+                GetConnection().CreateBulkInsert(table_name)
+                );
+
+            CVariant b_id(eDB_Int);
+            CVariant b_i1(eDB_Int);
+            CVariant b_str1(eDB_VarChar);
+            CVariant b_b1(eDB_TinyInt);
+            CVariant b_b2(eDB_TinyInt);
+            CVariant b_i2(eDB_Int);
+            CVariant b_b3(eDB_TinyInt);
+            CVariant b_s1(eDB_SmallInt);
+            CVariant b_b4(eDB_TinyInt);
+            CVariant b_b5(eDB_TinyInt);
+            CVariant b_i3(eDB_Int);
+            CVariant b_b6(eDB_TinyInt);
+            CVariant b_str2(eDB_VarChar);
+            CVariant b_b7(eDB_TinyInt);
+            CVariant b_s2(eDB_SmallInt);
+            CVariant b_b8(eDB_TinyInt);
+            CVariant b_b9(eDB_TinyInt);
+            CVariant b_t1(eDB_TinyInt);
+            CVariant b_b10(eDB_TinyInt);
+            CVariant b_str3(eDB_VarChar);
+            CVariant b_b11(eDB_TinyInt);
+
+            Uint2 pos = 0;
+            bi->Bind(++pos, &b_id);
+            bi->Bind(++pos, &b_i1);
+            bi->Bind(++pos, &b_str1);
+            bi->Bind(++pos, &b_b1);
+            bi->Bind(++pos, &b_b2);
+            bi->Bind(++pos, &b_i2);
+            bi->Bind(++pos, &b_b3);
+            bi->Bind(++pos, &b_s1);
+            bi->Bind(++pos, &b_b4);
+            bi->Bind(++pos, &b_b5);
+            bi->Bind(++pos, &b_i3);
+            bi->Bind(++pos, &b_b6);
+            bi->Bind(++pos, &b_str2);
+            bi->Bind(++pos, &b_b7);
+            bi->Bind(++pos, &b_s2);
+            bi->Bind(++pos, &b_b8);
+            bi->Bind(++pos, &b_b9);
+            bi->Bind(++pos, &b_t1);
+            bi->Bind(++pos, &b_b10);
+            bi->Bind(++pos, &b_str3);
+            bi->Bind(++pos, &b_b11);
+
+            b_i1 = i1;
+            b_str1 = str1;
+            b_i2 = i2;
+            b_s1 = s1;
+            b_i3 = i3;
+            b_str2 = str2;
+            b_s2 = s2;
+            b_t1 = t1;
+            b_str3 = str3;
+
+            for (int j = 0; j < test_num; ++j) {
+
+                b_id = j;
+                b_b1 = b_vals[j][0];
+                b_b2 = b_vals[j][1];
+                b_b3 = b_vals[j][2];
+                b_b4 = b_vals[j][3];
+                b_b5 = b_vals[j][4];
+                b_b6 = b_vals[j][5];
+                b_b7 = b_vals[j][6];
+                b_b8 = b_vals[j][7];
+                b_b9 = b_vals[j][8];
+                b_b10 = b_vals[j][9];
+                b_b11 = b_vals[j][10];
+
+                bi->AddRow();
+            }
+
+            bi->Complete();
+        }
+
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_CASE(Test_Bulk_Late_Bind)

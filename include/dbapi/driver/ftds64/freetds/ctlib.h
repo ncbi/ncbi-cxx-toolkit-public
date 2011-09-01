@@ -251,6 +251,8 @@ struct _cs_blkdesc
     CS_INT text_sent;
     CS_INT current_col;
     CS_INT blob_cols;
+    CS_INT bit_field_pos;
+    CS_INT cur_bit_num;
     DSTR hints;
 };
 

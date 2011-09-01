@@ -802,6 +802,159 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing4)
     }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(Test_Bulk_Writing7)
+{
+    string sql;
+    string table_name("#blk_table7");
+    const int test_num = 10;
+    const string str1 = "Test, test, tEST.";
+    const string str2 = "asdfghjkl";
+    const string str3 = "Test 1234567890";
+    const int i1 = int(0xdeadbeaf);
+    const int i2 = int(0xcac0ffee);
+    const int i3 = int(0xba1c0c0a);
+    const short s1 = short(0xfade);
+    const short s2 = short(0x0ec0);
+    const Uint1 t1 = char(0x42);
+    const Uint1 b_vals[test_num][11] = {
+          {1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1},
+          {1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1},
+          {0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1},
+          {0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0},
+          {1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1},
+          {0, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0},
+          {0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1},
+          {0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0},
+          {0, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1},
+          {1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0},
+        };
+
+    try {
+        CQuery query = GetDatabase().NewQuery();
+
+        // Create table ...
+        {
+            sql =
+                "CREATE TABLE " + table_name + " ( \n"
+                "    id int, \n"
+                "    i1 int, \n"
+                "    str1 varchar(100), \n"
+                "    b1 bit, \n"
+                "    b2 bit, \n"
+                "    i2 int, \n"
+                "    b3 bit, \n"
+                "    s1 smallint, \n"
+                "    b4 bit, \n"
+                "    b5 bit, \n"
+                "    i3 int, \n"
+                "    b6 bit, \n"
+                "    str2 varchar(100), \n"
+                "    b7 bit, \n"
+                "    s2 smallint, \n"
+                "    b8 bit, \n"
+                "    b9 bit, \n"
+                "    t1 tinyint, \n"
+                "    b10 bit, \n"
+                "    str3 varchar(100), \n"
+                "    b11 bit \n"
+                ")"
+                ;
+
+            query.SetSql(sql);
+            query.Execute();
+        }
+
+        // Insert data ...
+        {
+            //
+            CBulkInsert bi = GetDatabase().NewBulkInsert(table_name, 1);
+
+            Uint2 pos = 0;
+            bi.Bind(++pos, eSDB_Int4);
+            bi.Bind(++pos, eSDB_Int4);
+            bi.Bind(++pos, eSDB_String);
+            bi.Bind(++pos, eSDB_Byte);
+            bi.Bind(++pos, eSDB_Byte);
+            bi.Bind(++pos, eSDB_Int4);
+            bi.Bind(++pos, eSDB_Byte);
+            bi.Bind(++pos, eSDB_Short);
+            bi.Bind(++pos, eSDB_Byte);
+            bi.Bind(++pos, eSDB_Byte);
+            bi.Bind(++pos, eSDB_Int4);
+            bi.Bind(++pos, eSDB_Byte);
+            bi.Bind(++pos, eSDB_String);
+            bi.Bind(++pos, eSDB_Byte);
+            bi.Bind(++pos, eSDB_Short);
+            bi.Bind(++pos, eSDB_Byte);
+            bi.Bind(++pos, eSDB_Byte);
+            bi.Bind(++pos, eSDB_Byte);
+            bi.Bind(++pos, eSDB_Byte);
+            bi.Bind(++pos, eSDB_String);
+            bi.Bind(++pos, eSDB_Byte);
+
+            for (int j = 0; j < test_num; ++j) {
+                bi << j
+                   << i1
+                   << str1
+                   << b_vals[j][0]
+                   << b_vals[j][1]
+                   << i2
+                   << b_vals[j][2]
+                   << s1
+                   << b_vals[j][3]
+                   << b_vals[j][4]
+                   << i3
+                   << b_vals[j][5]
+                   << str2
+                   << b_vals[j][6]
+                   << s2
+                   << b_vals[j][7]
+                   << b_vals[j][8]
+                   << t1
+                   << b_vals[j][9]
+                   << str3
+                   << b_vals[j][10];
+                bi << EndRow;
+            }
+            bi.Complete();
+        }
+
+        // Check correctness
+        {
+            query.SetSql("select * from " + table_name + " order by id");
+            query.Execute();
+            int j = 0;
+            ITERATE(CQuery, it, query) {
+                BOOST_CHECK_EQUAL(it["i1"].AsInt4(), i1);
+                BOOST_CHECK_EQUAL(it["str1"].AsString(), str1);
+                BOOST_CHECK_EQUAL(it["b1"].AsByte(), b_vals[j][0]);
+                BOOST_CHECK_EQUAL(it["b2"].AsByte(), b_vals[j][1]);
+                BOOST_CHECK_EQUAL(it["i2"].AsInt4(), i2);
+                BOOST_CHECK_EQUAL(it["b3"].AsByte(), b_vals[j][2]);
+                BOOST_CHECK_EQUAL(it["s1"].AsShort(), s1);
+                BOOST_CHECK_EQUAL(it["b4"].AsByte(), b_vals[j][3]);
+                BOOST_CHECK_EQUAL(it["b5"].AsByte(), b_vals[j][4]);
+                BOOST_CHECK_EQUAL(it["i3"].AsInt4(), i3);
+                BOOST_CHECK_EQUAL(it["b6"].AsByte(), b_vals[j][5]);
+                BOOST_CHECK_EQUAL(it["str2"].AsString(), str2);
+                BOOST_CHECK_EQUAL(it["b7"].AsByte(), b_vals[j][6]);
+                BOOST_CHECK_EQUAL(it["s2"].AsShort(), s2);
+                BOOST_CHECK_EQUAL(it["b8"].AsByte(), b_vals[j][7]);
+                BOOST_CHECK_EQUAL(it["b9"].AsByte(), b_vals[j][8]);
+                BOOST_CHECK_EQUAL(it["t1"].AsByte(), t1);
+                BOOST_CHECK_EQUAL(it["b10"].AsByte(), b_vals[j][9]);
+                BOOST_CHECK_EQUAL(it["str3"].AsString(), str3);
+                BOOST_CHECK_EQUAL(it["b11"].AsByte(), b_vals[j][10]);
+                ++j;
+            }
+            BOOST_CHECK_EQUAL(j, test_num);
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_CASE(Test_Bulk_Late_Bind)
