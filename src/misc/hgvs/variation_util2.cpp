@@ -1185,10 +1185,11 @@ bool CVariationUtil::s_IsInstStrandFlippable(const CVariation& v, const CVariati
         const CDelta_item& di = **it;
         if(di.IsSetAction() && di.GetAction() == CDelta_item::eAction_ins_before) {
             const CVariation::TPlacements* p = s_GetPlacements(v);
+            ret = false; //will set back to true if found acceptable placement
             if(p) {
                 ITERATE(CVariation::TPlacements, it, *p) {
-                    if(s_GetLength(**it, NULL) < 2 ) {
-                        ret = false;
+                    if(s_GetLength(**it, NULL) >= 2 ) {
+                        ret = true;
                     }
                 }
             }
