@@ -76,17 +76,13 @@ void CSeq_annot::AddName(const string &name)
 }
 
 
-void CSeq_annot::AddTitle(const string& title)
+void CSeq_annot::SetTitle(const string& title)
 {
-    LOG_POST_X(1, Warning
-        << "CSeq_annot::AddTitle(): AddTitle() is deprecated, "
-           "use SetTitle() instead");
-
     SetTitle(title);
 }
 
 
-void CSeq_annot::SetTitle(const string &title)
+void CSeq_annot::AddTitle(const string &title)
 {
     TDesc::Tdata::iterator iter = SetDesc().Set().begin();
     for ( ;  iter != SetDesc().Set().end();  ) {
