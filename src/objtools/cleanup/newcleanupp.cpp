@@ -5657,7 +5657,8 @@ void CNewCleanup_imp::x_CleanupECNumber( string &ec_num )
     ec_num.resize( last_non_period + 1 );
 
     // remove any unnecessary "EC " prefix
-    s_RemoveInitial( ec_num, "EC ", NStr::eCase );
+    s_RemoveInitial( ec_num, "EC ", NStr::eNocase );
+    s_RemoveInitial( ec_num, "EC:", NStr::eNocase );
 
     if( ec_num.length() != original_ec_num_length ) {
         ChangeMade(CCleanupChange::eCleanECNumber);
