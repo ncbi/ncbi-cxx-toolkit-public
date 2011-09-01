@@ -743,15 +743,13 @@ void CNcbiApplication::SetupArgDescriptions(CArgDescriptions* arg_desc)
     if ( arg_desc ) {
         if ( !m_DisableArgDesc ) {
             // Add logfile and conffile arguments
-            if ((m_HideArgs & fHideLogfile) == 0  &&
-                !m_ArgDesc->Exist(s_ArgLogFile + 1) ) {
+            if (!m_ArgDesc->Exist(s_ArgLogFile + 1) ) {
                 m_ArgDesc->AddOptionalKey
                     (s_ArgLogFile+1, "File_Name",
                         "File to which the program log should be redirected",
                         CArgDescriptions::eOutputFile);
             }
-            if ((m_HideArgs & fHideConffile) == 0  &&
-                !m_ArgDesc->Exist(s_ArgCfgFile + 1) ) {
+            if (!m_ArgDesc->Exist(s_ArgCfgFile + 1) ) {
                 if (m_DefaultConfig.empty()) {
                     m_ArgDesc->AddOptionalKey
                         (s_ArgCfgFile + 1, "File_Name",
@@ -944,37 +942,62 @@ void CNcbiApplication::x_AddDefaultArgs(void)
                 m_ArgDesc->Delete("xmlhelp");
             }
         }
-        if ((m_HideArgs & fHideLogfile) == 0  &&
-            !m_ArgDesc->Exist(s_ArgLogFile + 1)) {
-            m_ArgDesc->AddOptionalKey
-                (s_ArgLogFile+1, "File_Name",
-                    "File to which the program log should be redirected",
-                    CArgDescriptions::eOutputFile);
+        if ((m_HideArgs & fHideLogfile) != 0) {
+            if (m_ArgDesc->Exist(s_ArgLogFile + 1)) {
+                m_ArgDesc->Delete(s_ArgLogFile + 1);
+            }
+        } else {
+            if (!m_ArgDesc->Exist(s_ArgLogFile + 1)) {
+                m_ArgDesc->AddOptionalKey
+                    (s_ArgLogFile+1, "File_Name",
+                        "File to which the program log should be redirected",
+                        CArgDescriptions::eOutputFile);
+            }
         }
-        if ((m_HideArgs & fHideConffile) == 0  &&
-            !m_ArgDesc->Exist(s_ArgCfgFile + 1)) {
-            m_ArgDesc->AddOptionalKey
-                (s_ArgCfgFile + 1, "File_Name",
-                    "Program's configuration (registry) data file",
-                    CArgDescriptions::eInputFile);
+        if ((m_HideArgs & fHideConffile) != 0) {
+            if (m_ArgDesc->Exist(s_ArgCfgFile + 1)) {
+                m_ArgDesc->Delete(s_ArgCfgFile + 1);
+            }
+        } else {
+            if (!m_ArgDesc->Exist(s_ArgCfgFile + 1)) {
+                m_ArgDesc->AddOptionalKey
+                    (s_ArgCfgFile + 1, "File_Name",
+                        "Program's configuration (registry) data file",
+                        CArgDescriptions::eInputFile);
+            }
         }
-        if ((m_HideArgs & fHideVersion) == 0  &&
-            !m_ArgDesc->Exist(s_ArgVersion + 1)) {
-            m_ArgDesc->AddFlag
-                (s_ArgVersion + 1,
-                    "Print version number;  ignore other arguments");
+        if ((m_HideArgs & fHideVersion) != 0) {
+            if (m_ArgDesc->Exist(s_ArgVersion + 1)) {
+                m_ArgDesc->Delete(s_ArgVersion + 1);
+            }
+        } else {
+            if (!m_ArgDesc->Exist(s_ArgVersion + 1)) {
+                m_ArgDesc->AddFlag
+                    (s_ArgVersion + 1,
+                        "Print version number;  ignore other arguments");
+            }
         }
-        if ((m_HideArgs & fHideFullVersion) == 0  &&
-            !m_ArgDesc->Exist(s_ArgFullVersion + 1)) {
-            m_ArgDesc->AddFlag
-                (s_ArgFullVersion + 1,
-                    "Print extended version data;  ignore other arguments");
+        if ((m_HideArgs & fHideFullVersion) != 0) {
+            if (m_ArgDesc->Exist(s_ArgFullVersion + 1)) {
+                m_ArgDesc->Delete(s_ArgFullVersion + 1);
+            }
+        } else {
+            if (!m_ArgDesc->Exist(s_ArgFullVersion + 1)) {
+                m_ArgDesc->AddFlag
+                    (s_ArgFullVersion + 1,
+                        "Print extended version data;  ignore other arguments");
+            }
         }
-        if ((m_HideArgs & fHideDryRun) == 0  &&
-            !m_ArgDesc->Exist(s_ArgDryRun + 1)) {
-            m_ArgDesc->AddFlag
-                (s_ArgDryRun + 1,
-                    "Dry run the application: do nothing, only test all preconditions");
+        if ((m_HideArgs & fHideDryRun) != 0) {
+            if (m_ArgDesc->Exist(s_ArgDryRun + 1)) {
+                m_ArgDesc->Delete(s_ArgDryRun + 1);
+            }
+        } else {
+            if (!m_ArgDesc->Exist(s_ArgDryRun + 1)) {
+                m_ArgDesc->AddFlag
+                    (s_ArgDryRun + 1,
+                        "Dry run the application: do nothing, only test all preconditions");
+            }
         }
     }
 }
