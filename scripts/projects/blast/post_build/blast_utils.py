@@ -87,8 +87,8 @@ def determine_platform():
             return "SunOSSparc"
         else:
             return "SunOSx86"
-    elif p.find("microsoft") != -1 or p.find("cygwin") != -1:
-        if p.find("64") != -1:
+    elif p.find("windows") != -1 or p.find("cygwin") != -1:
+        if p.find("64") != -1 or p.find("server") != -1:
             return "Win64"
         else:
             return "Win32"
