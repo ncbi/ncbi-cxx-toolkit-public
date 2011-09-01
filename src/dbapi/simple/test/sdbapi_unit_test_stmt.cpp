@@ -165,7 +165,7 @@ BOOST_AUTO_TEST_CASE(Test_SelectStmt)
 BOOST_AUTO_TEST_CASE(Test_SelectStmt2)
 {
     string sql;
-    string table_name("#blk_table7");
+    string table_name("#select_stmt2");
 
     try {
         CQuery query = GetDatabase().NewQuery();
