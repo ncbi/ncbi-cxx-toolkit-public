@@ -70,6 +70,9 @@ public:
     // Adds a CAnnotdesc of type title.  This will replace any previous
     // title fields.
     void AddTitle(const string &title);
+    
+    // SetTitle() is deprecated; use AddTitle() instead
+    // @deprecated
     NCBI_DEPRECATED void SetTitle(const string &title);
 
     // Adds a CAnnotdesc of type comment
