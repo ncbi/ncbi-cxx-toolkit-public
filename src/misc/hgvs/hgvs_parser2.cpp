@@ -288,7 +288,9 @@ void CHgvsParser::CContext::SetId(const CSeq_id& id, CVariantPlacement::TMol mol
     }
 
     if(mol == CVariantPlacement::eMol_cdna) {
-        for(CFeat_CI ci(m_bsh); ci; ++ci) {
+        SAnnotSelector sel;
+        sel.SetResolveTSE();
+        for(CFeat_CI ci(m_bsh, sel); ci; ++ci) {
             const CMappedFeat& mf = *ci;
             if(mf.GetData().IsCdregion()) {
                 if(m_cds.IsNull()) {
@@ -971,8 +973,12 @@ bool CHgvsParser::s_hgvsaa2ncbieaa(const string& hgvsaa, string& out)
 bool CHgvsParser::s_hgvs_iupacaa2ncbieaa(const string& hgvsaa, string& out)
 {
     out = hgvsaa;
+
+    //"X" used to mean "Ter" in HGVS; now it means "unknown aminoacid"
+    //Still, we'll interpret it as Ter, simply beacuse it is more likely
+    //that the submitter is using legacy representation.
     NStr::ReplaceInPlace(out, "X", "*");
-    NStr::ReplaceInPlace(out, "?", "-");
+    NStr::ReplaceInPlace(out, "?", "X");
     return true;
 }
 
@@ -981,30 +987,23 @@ bool CHgvsParser::s_hgvsaa2ncbieaa(const string& hgvsaa, bool uplow, string& out
     string in = hgvsaa;
     out = "";
     while(in != "") {
-        if(       NStr::StartsWith(in, uplow ? "Gly" : "GLY")) { out.push_back('G'); in = in.substr(3);
-        } else if(NStr::StartsWith(in, uplow ? "Pro" : "PRO")) { out.push_back('P'); in = in.substr(3);
-        } else if(NStr::StartsWith(in, uplow ? "Ala" : "ALA")) { out.push_back('A'); in = in.substr(3);
-        } else if(NStr::StartsWith(in, uplow ? "Val" : "VAL")) { out.push_back('V'); in = in.substr(3);
-        } else if(NStr::StartsWith(in, uplow ? "Leu" : "LEU")) { out.push_back('L'); in = in.substr(3);
-        } else if(NStr::StartsWith(in, uplow ? "Ile" : "ILE")) { out.push_back('I'); in = in.substr(3);
-        } else if(NStr::StartsWith(in, uplow ? "Met" : "MET")) { out.push_back('M'); in = in.substr(3);
-        } else if(NStr::StartsWith(in, uplow ? "Cys" : "CYS")) { out.push_back('C'); in = in.substr(3);
-        } else if(NStr::StartsWith(in, uplow ? "Phe" : "PHE")) { out.push_back('F'); in = in.substr(3);
-        } else if(NStr::StartsWith(in, uplow ? "Tyr" : "TYR")) { out.push_back('Y'); in = in.substr(3);
-        } else if(NStr::StartsWith(in, uplow ? "Trp" : "TRP")) { out.push_back('W'); in = in.substr(3);
-        } else if(NStr::StartsWith(in, uplow ? "His" : "HIS")) { out.push_back('H'); in = in.substr(3);
-        } else if(NStr::StartsWith(in, uplow ? "Lys" : "LYS")) { out.push_back('K'); in = in.substr(3);
-        } else if(NStr::StartsWith(in, uplow ? "Arg" : "ARG")) { out.push_back('R'); in = in.substr(3);
-        } else if(NStr::StartsWith(in, uplow ? "Gln" : "GLN")) { out.push_back('Q'); in = in.substr(3);
-        } else if(NStr::StartsWith(in, uplow ? "Asn" : "ASN")) { out.push_back('N'); in = in.substr(3);
-        } else if(NStr::StartsWith(in, uplow ? "Glu" : "GLU")) { out.push_back('E'); in = in.substr(3);
-        } else if(NStr::StartsWith(in, uplow ? "Asp" : "ASP")) { out.push_back('D'); in = in.substr(3);
-        } else if(NStr::StartsWith(in, uplow ? "Ser" : "SER")) { out.push_back('S'); in = in.substr(3);
-        } else if(NStr::StartsWith(in, uplow ? "Thr" : "THR")) { out.push_back('T'); in = in.substr(3);
-        } else if(NStr::StartsWith(in, uplow ? "Ter" : "TER")) { out.push_back('*'); in = in.substr(3);
+        bool found = false;
+        for(size_t i_ncbistdaa = 0; i_ncbistdaa < 28; i_ncbistdaa++) {
+            string iupac3 = CSeqportUtil::GetIupacaa3(i_ncbistdaa);
+            if(NStr::StartsWith(in, uplow ? iupac3 : NStr::ToUpper(iupac3))) {
+                size_t i_ncbieaa = CSeqportUtil::GetMapToIndex(CSeq_data::e_Ncbistdaa,
+                                                               CSeq_data::e_Ncbieaa,
+                                                               i_ncbistdaa);
+                out += CSeqportUtil::GetCode(CSeq_data::e_Ncbieaa, i_ncbieaa);
+                found = true;
+                break;
+            }
+        }
+        if(found) {
+            in = in.substr(3);
         } else if(NStr::StartsWith(in, "*")) { out.push_back('*'); in = in.substr(1);
         } else if(NStr::StartsWith(in, "X")) { out.push_back('*'); in = in.substr(1);
-        } else if(NStr::StartsWith(in, "?")) { out.push_back('-'); in = in.substr(1);
+        } else if(NStr::StartsWith(in, "?")) { out.push_back('X'); in = in.substr(1);
         } else {
             out = hgvsaa;
             return false;
@@ -1053,7 +1052,8 @@ CRef<CVariation> CHgvsParser::x_delins(TIterator const& i, const CContext& conte
     TIterator it = i->children.begin();
     CRef<CVariation> del_vr = x_deletion(it, context);
     ++it;
-    CRef<CVariation> ins_vr = x_insertion(it, context);
+    CRef<CVariation> ins_vr = x_insertion(it, context, false);
+        //note: don't verify location, as it must be len=2 for pure-insertion only
 
     //The resulting delins variation has deletion's placement (with asserted seq, if any),
     //and insertion's inst, except action type is "replace" (default) rather than "ins-before",
@@ -1094,7 +1094,7 @@ CRef<CVariation> CHgvsParser::x_deletion(TIterator const& i, const CContext& con
 }
 
 
-CRef<CVariation> CHgvsParser::x_insertion(TIterator const& i, const CContext& context)
+CRef<CVariation> CHgvsParser::x_insertion(TIterator const& i, const CContext& context, bool check_loc)
 {
     HGVS_ASSERT_RULE(i, eID_insertion);
     TIterator it = i->children.begin();
@@ -1106,7 +1106,10 @@ CRef<CVariation> CHgvsParser::x_insertion(TIterator const& i, const CContext& co
 
     SetFirstPlacement(*vr).Assign(context.GetPlacement());
 
-    //The delta consists of the self-location followed by the insertion sequence
+    if(check_loc && CVariationUtil::s_GetLength(*vr->GetPlacements().front(), NULL) != 2) {
+        HGVS_THROW(eSemantic, "Location must be a dinucleotide");
+    }
+
     TDelta delta_ins = x_seq_ref(it, context);
 
     //todo:
@@ -1393,7 +1396,7 @@ CRef<CVariation> CHgvsParser::x_prot_ext(TIterator const& i, const CContext& con
         SetFirstPlacement(*vr).SetLoc().SetPnt().SetPoint(0);
         //extension precedes first AA
         var_inst.SetDelta().push_back(delta);
-    } else if(ext_type_str == "extX") {
+    } else if(ext_type_str == "extX" || ext_type_str == "ext*") {
         if(ext_len < 0) {
             HGVS_THROW(eSemantic, "exX must be followed by a non-negative integer");
         }
@@ -1485,7 +1488,7 @@ CRef<CVariation> CHgvsParser::x_mut_inst(TIterator const& i, const CContext& con
         vr =
             it->value.id() == SGrammar::eID_delins        ? x_delins(it, context)
           : it->value.id() == SGrammar::eID_deletion      ? x_deletion(it, context)
-          : it->value.id() == SGrammar::eID_insertion     ? x_insertion(it, context)
+          : it->value.id() == SGrammar::eID_insertion     ? x_insertion(it, context, true)
           : it->value.id() == SGrammar::eID_duplication   ? x_duplication(it, context)
           : it->value.id() == SGrammar::eID_nuc_subst     ? x_nuc_subst(it, context)
           : it->value.id() == SGrammar::eID_nuc_inv       ? x_nuc_inv(it, context)
@@ -1625,6 +1628,23 @@ CRef<CVariation> CHgvsParser::x_expr3(TIterator const& i, const CContext& contex
     return vr;
 }
 
+
+CVariation::TData::TSet::EData_set_type CHgvsParser::x_list_delimiter(TIterator const& i, const CContext& context)
+{
+    HGVS_ASSERT_RULE(i, eID_list_delimiter);
+    TIterator it = i->children.begin();
+    string s(it->value.begin(), it->value.end());
+
+    return s == "//" ? CVariation::TData::TSet::eData_set_type_other //chimeric - not represented in the schema
+         : s == "/"  ? CVariation::TData::TSet::eData_set_type_mosaic
+         : s == "+"  ? CVariation::TData::TSet::eData_set_type_genotype
+         : s == ","  ? CVariation::TData::TSet::eData_set_type_products
+         : s == ";"  ? CVariation::TData::TSet::eData_set_type_haplotype //note that within context of list#a, ";" delimits genotype
+         : s == "(+)" || s == "(;)" ? CVariation::TData::TSet::eData_set_type_individual
+         : CVariation::TData::TSet::eData_set_type_unknown;
+}
+
+
 CRef<CVariation> CHgvsParser::x_list(TIterator const& i, const CContext& context)
 {
     if(!SGrammar::s_is_list(i->value.id())) {
@@ -1634,19 +1654,28 @@ CRef<CVariation> CHgvsParser::x_list(TIterator const& i, const CContext& context
     CRef<CVariation> vr(new CVariation);
     TVariationSet& varset = vr->SetData().SetSet();
     varset.SetType(CVariation::TData::TSet::eData_set_type_unknown);
-    string delimiter = "";
+
 
     for(TIterator it = i->children.begin(); it != i->children.end(); ++it) {
-        //will process two elements from the children list: delimiter and following expression; the first one does not have the delimiter.
+        //will process two elements from the children list: delimiter and following expression.
+        //The first one does not have the delimiter. The delimiter determines the set-type.
         if(it != i->children.begin()) {
-            string delim(it->value.begin(), it->value.end());
-            if(it->value.id() != i->value.id()) {
-                HGVS_THROW(eGrammatic, "Expected terminal");
-            } else if(delimiter == "") {
-                //first time
-                delimiter = delim;
-            } else if(delimiter != delim) {
-                HGVS_THROW(eSemantic, "Non-unique delimiters within a list");
+            if(SGrammar::s_is_list_a(i->value.id())) {
+                /*
+                 * list#a is delimited by either ";"(HGVS-2.0) or "+"(HGVS_1.0);
+                 * Both represent alleles within genotype.
+                 * Note: the delimiter rule in the context is chset_p<>("+;"), i.e.
+                 * a terminal, not a rule like list_delimiter; so calling
+                 * x_list_delimiter(...) parser here would throw
+                 */
+                varset.SetType(CVariation::TData::TSet::eData_set_type_genotype);
+            } else {
+                CVariation::TData::TSet::EData_set_type set_type = x_list_delimiter(it, context);
+                if(varset.GetType() == CVariation::TData::TSet::eData_set_type_unknown) {
+                    varset.SetType(set_type);
+                } else if(set_type != varset.GetType()) {
+                    HGVS_THROW(eSemantic, "Non-unique delimiters within a list");
+                }
             }
             ++it;
         } 
@@ -1667,31 +1696,6 @@ CRef<CVariation> CHgvsParser::x_list(TIterator const& i, const CContext& context
         varset.SetVariations().push_back(vr);
     }
 
-    if(delimiter == ";") {
-        varset.SetType(CVariation::TData::TSet::eData_set_type_haplotype);
-    } else if(delimiter == "+") { 
-        varset.SetType(CVariation::TData::TSet::eData_set_type_genotype);
-    } else if(delimiter == "(+)") {
-        varset.SetType(CVariation::TData::TSet::eData_set_type_individual);
-    } else if(delimiter == ",") { 
-        //if the context is rna (r.) then this describes multiple products from the same precursor;
-        //otherwise this describes mosaic cases.
-        //Note: placement may not be in context yet, if placements defined at subvariations
-        //e.g. [NM_004004.2:c.35delG,NM_006783.1:c.689_690insT]
-
-        if(context.IsSetPlacement()
-           && context.GetPlacement().GetMol() == CVariantPlacement::eMol_rna)
-        {
-            varset.SetType(CVariation::TData::TSet::eData_set_type_products);
-        } else {
-            varset.SetType(CVariation::TData::TSet::eData_set_type_mosaic);
-        }
-    } else if(delimiter == "") {
-        ;//single-element list
-    } else {
-        HGVS_THROW(eGrammatic, "Unexpected delimiter " + delimiter);
-    }
-
     vr = x_unwrap_iff_singleton(*vr);
     return vr;
 }
@@ -1703,12 +1707,8 @@ CRef<CVariation> CHgvsParser::x_root(TIterator const& i, const CContext& context
 
     CRef<CVariation> vr = x_list(i, context);
 
-
     RepackageAssertedSequence(*vr);
-
-
     CVariationUtil::s_FactorOutPlacements(*vr);
-
 
     vr->Index();
     return vr;

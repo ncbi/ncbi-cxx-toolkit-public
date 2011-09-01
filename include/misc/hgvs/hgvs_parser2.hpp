@@ -331,6 +331,7 @@ protected:
         enum E_NodeIds {
             eID_NONE = 0,
             eID_root,
+            eID_list_delimiter,
             eID_list1a,
             eID_list2a,
             eID_list3a,
@@ -384,6 +385,7 @@ protected:
             if(s_rule_names.size() == 0) {
                 s_rule_names[eID_NONE]              = "NONE";
                 s_rule_names[eID_root]              = "root";
+                s_rule_names[eID_list_delimiter]    = "list_delimiter";
                 s_rule_names[eID_list1a]            = "list1a";
                 s_rule_names[eID_list2a]            = "list2a";
                 s_rule_names[eID_list3a]            = "list3a";
@@ -437,6 +439,7 @@ protected:
         struct definition
         {
             rule<ScannerT, parser_context<>, parser_tag<eID_root> >             root;
+            rule<ScannerT, parser_context<>, parser_tag<eID_list_delimiter> >   list_delimiter;
             rule<ScannerT, parser_context<>, parser_tag<eID_list1a> >           list1a;
             rule<ScannerT, parser_context<>, parser_tag<eID_list2a> >           list2a;
             rule<ScannerT, parser_context<>, parser_tag<eID_list3a> >           list3a;
@@ -492,6 +495,7 @@ protected:
                 //      leaf_node_d[...] is a directive to treat pattern in ... as leaf parse-tree node.
 
 
+                //>>> for i in range(27): sys.stdout.write(" | str_p(\"" + ncbi.CSeqportUtil.GetIupacaa3(i) + "\")\n")
                 aminoacid1      = str_p("Ala")
                                 | str_p("Asx")
                                 | str_p("Cys")
@@ -512,10 +516,14 @@ protected:
                                 | str_p("Thr")
                                 | str_p("Val")
                                 | str_p("Trp")
+                                | str_p("Xaa") //HGVS flavor
+                                | str_p("Xxx") //IUPAC flavor
                                 | str_p("Tyr")
                                 | str_p("Glx")
+                                | str_p("Sec")
                                 | str_p("Ter")
-                                | chset<>("*X");
+                                | str_p("Pyl")
+                                | chset<>("*X"); //To support legacy HGVS spec, "X" will be interpreted as Ter, not as unknown-AA
 
                 aminoacid2      = str_p("ALA")
                                 | str_p("ASX")
@@ -537,12 +545,16 @@ protected:
                                 | str_p("THR")
                                 | str_p("VAL")
                                 | str_p("TRP")
+                                | str_p("XXX") //HGVS flavor
+                                | str_p("XAA") //IUPAC flavor
                                 | str_p("TYR")
                                 | str_p("GLX")
+                                | str_p("SEC")
                                 | str_p("TER")
+                                | str_p("PYL")
                                 | chset<>("*"); //no 'X' because it is part of other tokens, e.g GLX, ASX
 
-                aminoacid3      = chset<>("*XARNDCEQGHILKMFPSTWYV");
+                aminoacid3      = chset<>("ABCDEFGHIKLMNPQRSTVWXYZU*O");
                     //Note: in HGVS X=stop as in p.X110GlnextX17, whereas in IUPAC X=any
 
                 raw_seq         = leaf_node_d[
@@ -669,9 +681,12 @@ protected:
                      */
 
 
-                prot_fs         = str_p("fs") >> !(ch_p('X') >> !int_p);
+                //note: frameshift is optionally followed by new translation length,
+                //e.g. fs, fsX, fsX10, fs*, fs*10 ("X" in HGVS-1.0; "*" in HGVS-2.0)
+                prot_fs         = str_p("fs") >> !(chset<>("*X") >> !int_p);
 
-                prot_ext        = (str_p("extMet") | str_p("extX")) >> int_p;
+                //note: stop-loss is extX in HGVS-1.0 and ext* in HGVS 2.0
+                prot_ext        = (str_p("extMet") | str_p("extX") | str_p("ext*")) >> int_p;
 
                 prot_missense   = aminoacid1 | aminoacid2 | aminoacid3;
 
@@ -705,18 +720,32 @@ protected:
                     //additionally, prot_ext may exist as expr2 (outside of location context) as well.
 
 
-                root            = list_p(expr1, ch_p('+'));
+                root            = list_p(expr1, chset<>("+;"));
                     //At the root level the '+'-delimited expressions are not required to be bracketed, i.e.
                     //NM_004004.2:c.[35delG]+NM_006783.1:c.[689_690insT] instead of
                     //[NM_004004.2:c.35delG]+[NM_006783.1:c.689_690insT]
 
 
+                list_delimiter  = leaf_node_d[
+                                      str_p("//")     //chimeric
+                                    | chset<>(",;/")  //products, same-allele, mosaic respectively
+                                    | str_p("(;)")    //uncertain allele relationship; HGVS 2.0
+                                    | str_p("(+)")    //uncertain allele relationship; HGVS 1.0
+                                ];
+
+
+                //Note: the list#a version of a list (see is_list_a(..)
+                //represents "top-level" set of alleles
+                //[...]+[...] - HGVS-1.0 representation
+                //[...];[...] - HGVS-2.0 representation of the same thing
+                //where "..." is the list_delimiter -delimited list of allele-specific subexpressions
+
                 expr1           = ch_p('(') >> expr1 >> ch_p(')')
                                 | list1a
                                 | header >> expr2
                                 | translocation;
-                list1a          = list_p(discard_node_d[ch_p('[')] >> list1b >> discard_node_d[ch_p(']')], ch_p('+'));
-                list1b          = list_p(expr1, chset<>(",;") | str_p("(+)"));
+                list1a          = list_p(discard_node_d[ch_p('[')] >> list1b >> discard_node_d[ch_p(']')], chset<>(";+"));
+                list1b          = list_p(expr1, list_delimiter);
 
 
                 expr2           = ch_p('(') >> expr2 >> ch_p(')')
@@ -727,8 +756,8 @@ protected:
                                 | prot_ext    //can also exist within location context (mut_inst)
                                 | ch_p('?')   //note: follows location>>expr3 such that variation at unknown pos is not partially-matched as unknown variation
                                 | ch_p('=');
-                list2a          = list_p(discard_node_d[ch_p('[')] >> list2b >> discard_node_d[ch_p(']')], ch_p('+'));
-                list2b          = list_p(expr2, chset<>(",;") | str_p("(+)"));
+                list2a          = list_p(discard_node_d[ch_p('[')] >> list2b >> discard_node_d[ch_p(']')], chset<>(";+"));
+                list2b          = list_p(expr2, list_delimiter);
 
 
                 expr3           = ch_p('(') >> expr3 >> ch_p(')')
@@ -741,8 +770,8 @@ protected:
                      * a) p.X110GlnextX17
                      * b) NM_012345.3:c.123+45_123+51dupinsAB012345.3:g.393_1295
                      */
-                list3a          = list_p(discard_node_d[ch_p('[')] >> list3b >> discard_node_d[ch_p(']')], ch_p('+'));
-                list3b          = list_p(expr3, chset<>(",;") | str_p("(+)"));
+                list3a          = list_p(discard_node_d[ch_p('[')] >> list3b >> discard_node_d[ch_p(']')], chset<>(";+"));
+                list3b          = list_p(expr3, list_delimiter);
 
                 //BOOST_SPIRIT_DEBUG_RULE(expr1);
             }
@@ -753,15 +782,24 @@ protected:
             }
         };
 
-        static bool s_is_list(parser_id id)
+        static bool s_is_list_a(parser_id id)
         {
             return id == SGrammar::eID_list1a
                 || id == SGrammar::eID_list2a
                 || id == SGrammar::eID_list3a
-                || id == SGrammar::eID_list1b
-                || id == SGrammar::eID_list2b
-                || id == SGrammar::eID_list3b
                 || id == SGrammar::eID_root;
+        }
+
+        static bool s_is_list_b(parser_id id)
+        {
+            return id == SGrammar::eID_list1b
+                || id == SGrammar::eID_list2b
+                || id == SGrammar::eID_list3b;
+        }
+
+        static bool s_is_list(parser_id id)
+        {
+            return s_is_list_a(id) || s_is_list_b(id);
         }
     };
     static SGrammar s_grammar;
@@ -794,7 +832,7 @@ private:
     static CRef<CVariation>  x_identity        (const CContext& context);
     static CRef<CVariation>  x_delins          (TIterator const& i, const CContext& context);
     static CRef<CVariation>  x_deletion        (TIterator const& i, const CContext& context);
-    static CRef<CVariation>  x_insertion       (TIterator const& i, const CContext& context);
+    static CRef<CVariation>  x_insertion       (TIterator const& i, const CContext& context, bool check_loc);
     static CRef<CVariation>  x_duplication     (TIterator const& i, const CContext& context);
     static CRef<CVariation>  x_nuc_subst       (TIterator const& i, const CContext& context);
     static CRef<CVariation>  x_nuc_inv         (TIterator const& i, const CContext& context);
@@ -811,11 +849,12 @@ private:
     static CRef<CVariation>  x_list            (TIterator const& i, const CContext& context);
     static CContext          x_header          (TIterator const& i, const CContext& context);
     static CRef<CVariation>  x_root            (TIterator const& i, const CContext& context);
+    static CVariation::TData::TSet::EData_set_type x_list_delimiter(TIterator const& i, const CContext& context);
 
     static CRef<CVariation>  x_unwrap_iff_singleton(CVariation& v);
 
 
-    ///Convert HGVS amino-acid code to ncbieaa.
+    ///Convert HGVS amino-acid code to ncbi code.
     ///Return true iff success; otherwise false and out = in.
     static bool s_hgvsaa2ncbieaa(const string& hgvsaa, string& out);
     static bool s_hgvs_iupacaa2ncbieaa(const string& hgvsaa, string& out);
