@@ -38,17 +38,15 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
-#include <objtools/readers/fasta.hpp>
-#include <objtools/readers/reader_exception.hpp>
-#include <objtools/data_loaders/blastdb/bdbloader.hpp>
 #include <serial/iterator.hpp>
 
 #include <objects/biotree/NodeSet.hpp>
 
 #include <algo/cobalt/cobalt.hpp>
-#include "cobalt_unit_test.hpp"
+#include "cobalt_test_util.hpp"
 
 #include <corelib/hash_set.hpp>
+
 
 // This macro should be defined before inclusion of test_boost.hpp in all
 // "*.cpp" files inside executable except one. It is like function main() for
@@ -73,43 +71,6 @@ USING_NCBI_SCOPE;
 USING_SCOPE(cobalt);
 
 
-void ReadFastaQueries(const string& filename, CObjectManager& objmgr,
-                      vector< CRef<objects::CSeq_loc> >& seqs,
-                      CRef<objects::CScope>& scope)
-{
-    seqs.clear();
-    scope.Reset(new CScope(objmgr));
-
-    CNcbiIfstream instream(filename.c_str());
-    BOOST_REQUIRE(instream);
-
-    // read one query at a time, and use a separate seq_entry,
-    // scope, and lowercase mask for each query. This lets different
-    // query sequences have the same ID. Later code will distinguish
-    // between queries by using different elements of retval[]
-
-    CStreamLineReader line_reader(instream);
-    CFastaReader fasta_reader(line_reader, 
-                              CFastaReader::fAssumeProt |
-                              CFastaReader::fForceType |
-                              CFastaReader::fNoParseID);
-
-    while (!line_reader.AtEOF()) {
-
-        scope->AddDefaults();
-        CRef<CSeq_entry> entry = fasta_reader.ReadOneSeq();
-
-        if (entry == 0) {
-            NCBI_THROW(CObjReaderException, eInvalid, 
-                        "Could not retrieve seq entry");
-        }
-        scope->AddTopLevelSeqEntry(*entry);
-        CTypeConstIterator<CBioseq> itr(ConstBegin(*entry));
-        CRef<CSeq_loc> seqloc(new CSeq_loc());
-        seqloc->SetWhole().Assign(*itr->GetId().front());
-        seqs.push_back(seqloc);
-    }
-}
 
 
 // Queries returned by aligner must be in the same order as
@@ -170,7 +131,8 @@ BOOST_AUTO_TEST_CASE(TestSetQueries)
     vector< CRef<CBioseq> > bioseqs;
 
     // Test for fasta input
-    ReadFastaQueries("data/small.fa", *objmgr, seqlocs, scope);
+    int status = ReadFastaQueries("data/small.fa", seqlocs, scope);
+    BOOST_REQUIRE_EQUAL(status, 0);
     s_MakeBioseqs(seqlocs, scope, bioseqs);
     s_TestQueriesAsSeq_locs(seqlocs, scope);
     s_TestQueriesAsBioseqs(bioseqs);
@@ -201,7 +163,6 @@ BOOST_AUTO_TEST_CASE(TestBadQueries)
 
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     CRef<CScope> scope(new CScope(*objmgr));
-    scope->AddDefaults();
 
     vector< CRef<CSeq_loc> > seqlocs;
     vector< CRef<CBioseq> > bioseqs;
@@ -222,7 +183,10 @@ BOOST_AUTO_TEST_CASE(TestBadQueries)
     bioseqs.push_back(CRef<CBioseq>(new CBioseq()));
     BOOST_CHECK_THROW(aligner.SetQueries(bioseqs), CMultiAlignerException);
 
-    ReadFastaQueries("data/small.fa", *objmgr, seqlocs, scope);
+    scope.Reset(new CScope(*objmgr));
+    scope->AddDefaults();
+    int status = ReadFastaQueries("data/small.fa", seqlocs, scope);
+    BOOST_REQUIRE_EQUAL(status, 0);
 
     // Single input sequence causes exception
     seqlocs.resize(1);
@@ -234,7 +198,10 @@ BOOST_AUTO_TEST_CASE(TestBadQueries)
     BOOST_CHECK_THROW(aligner.SetQueries(bioseqs), CMultiAlignerException);
 
     // A gap in input sequence causes exception
-    ReadFastaQueries("data/queries_with_gaps.fa", *objmgr, seqlocs, scope);
+    scope.Reset(new CScope(*objmgr));
+    scope->AddDefaults();
+    status = ReadFastaQueries("data/queries_with_gaps.fa", seqlocs, scope);
+    BOOST_REQUIRE_EQUAL(status, 0);
     BOOST_CHECK_THROW(aligner.SetQueries(seqlocs, scope),
                       CMultiAlignerException);
 
@@ -250,7 +217,8 @@ BOOST_AUTO_TEST_CASE(TestBadUserConstraints)
     CRef<CScope> scope(new CScope(*objmgr));
 
     vector< CRef<CSeq_loc> > seqlocs;
-    ReadFastaQueries("data/small.fa", *objmgr, seqlocs, scope);
+    int status = ReadFastaQueries("data/small.fa", seqlocs, scope);
+    BOOST_REQUIRE_EQUAL(status, 0);
 
     vector< CRef<CBioseq> > bioseqs;
     s_MakeBioseqs(seqlocs, scope, bioseqs);
@@ -327,8 +295,9 @@ BOOST_AUTO_TEST_CASE(TestInterrupt)
 
     CMultiAligner aligner;
     vector< CRef<CSeq_loc> > queries;
-    CRef<CScope> scope;
-    ReadFastaQueries("data/small.fa", *objmgr, queries, scope);
+    CRef<CScope> scope(new CScope(*objmgr));
+    int st = ReadFastaQueries("data/small.fa", queries, scope);
+    BOOST_REQUIRE_EQUAL(st, 0);
     aligner.SetQueries(queries, scope);
     aligner.SetInterruptCallback(s_Interrupt);
     CMultiAligner::TStatus status = aligner.Run();
@@ -627,8 +596,9 @@ BOOST_AUTO_TEST_CASE(TestResultsForDefaultOpts)
 
     CMultiAligner aligner(opts);
     vector< CRef<CSeq_loc> > queries;
-    CRef<CScope> scope;
-    ReadFastaQueries("data/small.fa", *objmgr, queries, scope);
+    CRef<CScope> scope(new CScope(*objmgr));
+    int st = ReadFastaQueries("data/small.fa", queries, scope);
+    BOOST_REQUIRE_EQUAL(st, 0);
     aligner.SetQueries(queries, scope);
 
     CMultiAligner::TStatus status = aligner.Run();
@@ -651,8 +621,9 @@ BOOST_AUTO_TEST_CASE(TestResultsForZeroClusterDiam)
 
     CMultiAligner aligner(opts);
     vector< CRef<CSeq_loc> > queries;
-    CRef<CScope> scope;
-    ReadFastaQueries("data/small.fa", *objmgr, queries, scope);
+    CRef<CScope> scope(new CScope(*objmgr));
+    int st = ReadFastaQueries("data/small.fa", queries, scope);
+    BOOST_REQUIRE_EQUAL(st, 0);
     aligner.SetQueries(queries, scope);
 
     CMultiAligner::TStatus status = aligner.Run();
@@ -677,8 +648,9 @@ BOOST_AUTO_TEST_CASE(TestResultsForMaxClusterDiam)
 
     CMultiAligner aligner(opts);
     vector< CRef<CSeq_loc> > queries;
-    CRef<CScope> scope;
-    ReadFastaQueries("data/small.fa", *objmgr, queries, scope);
+    CRef<CScope> scope(new CScope(*objmgr));
+    int st = ReadFastaQueries("data/small.fa", queries, scope);
+    BOOST_REQUIRE_EQUAL(st, 0);
     aligner.SetQueries(queries, scope);
 
     CMultiAligner::TStatus status = aligner.Run();
@@ -703,8 +675,9 @@ BOOST_AUTO_TEST_CASE(TestResultsForNoClusters)
 
     CMultiAligner aligner(opts);
     vector< CRef<CSeq_loc> > queries;
-    CRef<CScope> scope;
-    ReadFastaQueries("data/small.fa", *objmgr, queries, scope);
+    CRef<CScope> scope(new CScope(*objmgr));
+    int st = ReadFastaQueries("data/small.fa", queries, scope);
+    BOOST_REQUIRE_EQUAL(st, 0);
     aligner.SetQueries(queries, scope);
 
     CMultiAligner::TStatus status = aligner.Run();
@@ -746,8 +719,9 @@ BOOST_AUTO_TEST_CASE(TestResultsForClustersAndUserConstraints)
 
     CMultiAligner aligner(opts);
     vector< CRef<CSeq_loc> > queries;
-    CRef<CScope> scope;
-    ReadFastaQueries("data/small.fa", *objmgr, queries, scope);
+    CRef<CScope> scope(new CScope(*objmgr));
+    int st = ReadFastaQueries("data/small.fa", queries, scope);
+    BOOST_REQUIRE_EQUAL(st, 0);
     aligner.SetQueries(queries, scope);
 
     CMultiAligner::TStatus status = aligner.Run();
@@ -770,8 +744,9 @@ BOOST_AUTO_TEST_CASE(TestTwoSequences)
     CMultiAligner aligner(opts);
 
     vector< CRef<CSeq_loc> > queries;
-    CRef<CScope> scope;
-    ReadFastaQueries("data/small.fa", *objmgr, queries, scope);
+    CRef<CScope> scope(new CScope(*objmgr));
+    int st = ReadFastaQueries("data/small.fa", queries, scope);
+    BOOST_REQUIRE_EQUAL(st, 0);
     queries.resize(2);
     aligner.SetQueries(queries, scope);
     
@@ -788,6 +763,220 @@ BOOST_AUTO_TEST_CASE(TestTwoSequences)
                 || status == CMultiAligner::eWarnings);
     s_TestResults(aligner);
     
+}
+
+
+
+void s_TestAlignmentFromMSAs(CRef<CSeq_align> result, CRef<CSeq_align> in_first,
+                              CRef<CSeq_align> in_second)
+{
+    // alignment must be of type global
+    BOOST_REQUIRE_EQUAL(result->GetType(), CSeq_align::eType_global);
+
+    BOOST_REQUIRE(result->GetSegs().IsDenseg());
+    BOOST_REQUIRE(in_first->GetSegs().IsDenseg());
+    BOOST_REQUIRE(in_second->GetSegs().IsDenseg());
+
+    const CDense_seg& first_denseg = in_first->GetSegs().GetDenseg();
+    const CDense_seg& second_denseg = in_second->GetSegs().GetDenseg();
+
+    int num_input_sequences = (int)first_denseg.GetDim()
+        + second_denseg.GetDim();
+
+    // dim must be equal to number of input sequences
+    BOOST_REQUIRE_EQUAL(result->GetDim(), num_input_sequences);
+
+    vector<int> first_rows, second_rows;
+
+    // all sequence ids in input alignments must be present in the result
+    for (size_t i=0;i < first_denseg.GetIds().size();i++) {
+        const CSeq_id& id = *first_denseg.GetIds()[i];
+        int j = 0;
+        for (;j < result->GetDim();j++) {
+            if (id.Match(*result->GetSegs().GetDenseg().GetIds()[j])) {
+                first_rows.push_back(j);
+                break;
+            }
+        }
+        BOOST_REQUIRE(j < result->GetDim());
+    }
+
+    for (size_t i=0;i < second_denseg.GetIds().size();i++) {
+        const CSeq_id& id = *second_denseg.GetIds()[i];
+        int j = 0;
+        for (;j < result->GetDim();j++) {
+            if (id.Match(*result->GetSegs().GetDenseg().GetIds()[j])) {
+                second_rows.push_back(j);
+                break;
+            }
+        }
+        BOOST_REQUIRE(j < result->GetDim());
+    }
+
+    // if one extracts input alignments from the result, they should be the
+    // same as the input alignments
+
+    // compare the first input alignment
+    CRef<CDense_seg> f = result->GetSegs().GetDenseg().ExtractRows(first_rows);
+    f->RemovePureGapSegs();
+    f->Compact();
+    BOOST_REQUIRE_EQUAL(first_denseg.GetStarts().size(), f->GetStarts().size());
+    BOOST_REQUIRE_EQUAL(first_denseg.GetLens().size(), f->GetLens().size());
+    for (size_t i=0;i < first_denseg.GetStarts().size();i++) {
+        BOOST_REQUIRE_EQUAL(first_denseg.GetStarts()[i], f->GetStarts()[i]);
+    }
+    for (size_t i=0;i < first_denseg.GetLens().size();i++) {
+        BOOST_REQUIRE_EQUAL(first_denseg.GetLens()[i], f->GetLens()[i]);
+    }
+
+    CRef<CDense_seg> s = result->GetSegs().GetDenseg().ExtractRows(second_rows);
+
+    // compare the second input alignment
+    s->RemovePureGapSegs();
+    s->Compact();
+    BOOST_REQUIRE_EQUAL(second_denseg.GetStarts().size(), s->GetStarts().size());
+    BOOST_REQUIRE_EQUAL(second_denseg.GetLens().size(), s->GetLens().size());
+    for (size_t i=0;i < second_denseg.GetStarts().size();i++) {
+        BOOST_REQUIRE_EQUAL(second_denseg.GetStarts()[i], s->GetStarts()[i]);
+    }
+    for (size_t i=0;i < second_denseg.GetLens().size();i++) {
+        BOOST_REQUIRE_EQUAL(second_denseg.GetLens()[i], s->GetLens()[i]);
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(TestAlignMSAs)
+{
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CRef<objects::CScope> scope(new objects::CScope(*objmgr));
+
+    CRef<CSeq_align> align1, align2;
+
+    CRef<objects::CSeqIdGenerator> id_generator(new objects::CSeqIdGenerator());
+
+    // read input MSAs
+    int st = ReadMsa("data/msa1.fa", align1, scope, id_generator);
+    BOOST_REQUIRE_EQUAL(st, 0);
+    st = ReadMsa("data/msa2.fa", align2, scope, id_generator);
+    BOOST_REQUIRE_EQUAL(st, 0);
+
+    set<int> repr;
+
+    // align input MSAs
+    CMultiAligner aligner;
+    aligner.SetInputMSAs(*align1, *align2, repr, repr, scope);
+    aligner.Run();
+
+    // test result
+    s_TestAlignmentFromMSAs(aligner.GetResults(), align1, align2);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestAlignMSAWithSequence)
+{
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CRef<objects::CScope> scope(new objects::CScope(*objmgr));
+    CRef<CSeq_align> align1, align2;
+    vector< CRef< objects::CSeq_loc> > seq_loc;
+    set<int> repr;
+
+    CRef<objects::CSeqIdGenerator> id_generator(new objects::CSeqIdGenerator());
+
+    // read input alignment
+    int status = ReadMsa("data/msa1.fa", align1, scope, id_generator);
+    BOOST_REQUIRE_EQUAL(status, 0);
+
+    // read sequence
+    status = ReadFastaQueries("data/single_seq.fa", seq_loc, scope,
+                              id_generator);
+    BOOST_REQUIRE_EQUAL(status, 0);
+
+    // create a one-sequence Seq_align from the input sequence
+    align2.Reset(new objects::CSeq_align());
+    align2->SetType(objects::CSeq_align::eType_global);
+    align2->SetDim(1);
+    objects::CDense_seg& denseg = align2->SetSegs().SetDenseg();
+    denseg.SetDim(1);
+    denseg.SetNumseg(1);
+    denseg.SetIds().push_back(CRef<objects::CSeq_id>(
+                   const_cast<objects::CSeq_id*>(seq_loc.front()->GetId())));
+    denseg.SetStarts().push_back(0);
+    objects::CSeqVector v(*seq_loc.front(), *scope);
+    denseg.SetLens().push_back(v.size());
+    
+    // align MSA and sequence
+    CMultiAligner aligner;
+    aligner.SetInputMSAs(*align1, *align2, repr, repr, scope);
+    aligner.Run();
+
+    // test result
+    s_TestAlignmentFromMSAs(aligner.GetResults(), align1, align2);
+}
+
+BOOST_AUTO_TEST_CASE(TestAlignMSAsWithRepresentatives)
+{
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CRef<objects::CScope> scope(new objects::CScope(*objmgr));
+
+    CRef<CSeq_align> align1, align2;
+
+    CRef<objects::CSeqIdGenerator> id_generator(new objects::CSeqIdGenerator());
+
+    // read input MSAs
+    int status = ReadMsa("data/msa1.fa", align1, scope, id_generator);
+    BOOST_REQUIRE_EQUAL(status, 0);
+    status = ReadMsa("data/msa2.fa", align2, scope, id_generator);
+    BOOST_REQUIRE_EQUAL(status, 0);
+
+    // set representatives
+    BOOST_REQUIRE(align1->CheckNumRows() > 3);
+    BOOST_REQUIRE(align2->CheckNumRows() > 3);    
+    set<int> repr;
+    repr.insert(2);
+    repr.insert(3);
+
+    // align input MSAs
+    CMultiAligner aligner;
+    aligner.SetInputMSAs(*align1, *align2, repr, repr, scope);
+    aligner.Run();
+
+    // test result
+    s_TestAlignmentFromMSAs(aligner.GetResults(), align1, align2);
+}
+
+BOOST_AUTO_TEST_CASE(TestAlignMSAsWithWrongRepresentatives)
+{
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CRef<objects::CScope> scope(new objects::CScope(*objmgr));
+
+    CRef<CSeq_align> align1, align2;
+
+    CRef<objects::CSeqIdGenerator> id_generator(new objects::CSeqIdGenerator());
+
+    // read input MSAs
+    int status = ReadMsa("data/msa1.fa", align1, scope, id_generator);
+    BOOST_REQUIRE_EQUAL(status, 0);
+    status = ReadMsa("data/msa2.fa", align2, scope, id_generator);
+    BOOST_REQUIRE_EQUAL(status, 0);
+
+    // set representatives
+    set<int> repr;
+
+    CMultiAligner aligner;
+
+    // indeces of representatives must be non-negative
+    repr.insert(-1);
+
+    BOOST_CHECK_THROW(aligner.SetInputMSAs(*align1, *align2, repr, repr, scope),
+                     CMultiAlignerException);
+
+
+    // indeces of representatives must be smaller than number of sequences
+    // in MSA
+    repr.clear();
+    repr.insert(align1->CheckNumRows());
+    BOOST_CHECK_THROW(aligner.SetInputMSAs(*align1, *align2, repr, repr, scope),
+                     CMultiAlignerException);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

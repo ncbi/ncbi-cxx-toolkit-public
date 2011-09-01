@@ -39,7 +39,7 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <algo/cobalt/kmercounts.hpp>
-#include "cobalt_unit_test.hpp"
+#include "cobalt_test_util.hpp"
 
 // This macro should be defined before inclusion of test_boost.hpp in all
 // "*.cpp" files inside executable except one. It is like function main() for
@@ -196,12 +196,13 @@ BOOST_AUTO_TEST_CASE(TestKmerMethods)
     const int kAlphabetSize = 28;
 
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CRef<CScope> scope;
+    CRef<CScope> scope(new CScope(*objmgr));
     vector< CRef<CSeq_loc> > seqs;
     vector<CSparseKmerCounts> counts_vect;
     TKMethods::TDistMatrix dmat;
 
-    ReadFastaQueries("data/small.fa", *objmgr, seqs, scope);
+    int status = ReadFastaQueries("data/small.fa", seqs, scope);
+    BOOST_REQUIRE_EQUAL(status, 0);
     BOOST_REQUIRE(seqs.size() > 0);
     BOOST_REQUIRE(!scope.Empty());
 

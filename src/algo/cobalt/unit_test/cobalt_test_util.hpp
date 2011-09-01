@@ -26,22 +26,41 @@
 * Author:  Greg Boratyn
 *
 * File Description:
-*   Unit tests for CMultiAligner
+*   Utilities for Cobalt unit tests
 *
 *
 * ===========================================================================
 */
 
-#include <corelib/ncbi_system.hpp>
-#include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objtools/readers/fasta.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+#include <algo/cobalt/cobalt.hpp>
 
 #include <vector>
 
 USING_NCBI_SCOPE;
-USING_SCOPE(cobalt);
 USING_SCOPE(objects);
 
-void ReadFastaQueries(const string& filename, CObjectManager& objmgr,
-                      vector< CRef<CSeq_loc> >& seqs, CRef<CScope>& scope);
+/// Read fasta sequences from a file
+/// @param filename File name [in]
+/// @param seqs The read sequences [out]
+/// @param scope The sequences read are added to this scope [in|out]
+/// @param id_generator Sequence id generator, must be used when reading more
+/// than one set of sequences, so that unique sequence ids are assigned [in|out]
+/// @return 0 on success, -1 on error
+int ReadFastaQueries(const string& filename, vector< CRef<CSeq_loc> >& seqs,
+                      CRef<CScope>& scope,
+                      CSeqIdGenerator* id_generator = NULL);
+
+/// Read multiple sequence alignment from a file
+/// @param filename File name [in]
+/// @param align The alignment read [out]
+/// @param scope The sequences in the alignment are added to this scope [in|out]
+/// @param id_generator Sequence id generator, must be used when reading more
+/// than one set of sequences, so that unique sequence ids are assigned [in|out]
+/// @return 0 on success, -1 on error
+int ReadMsa(const string& filename, CRef<CSeq_align>& align,
+            CRef<CScope> scope, CSeqIdGenerator* id_generator = NULL);
+
