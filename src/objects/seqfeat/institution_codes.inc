@@ -38,6 +38,8 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "AAR	s	Reliquae Aaronsohnianae",
 "AAS	s	British Antarctic Survey",
 "AAU	s	University of Aarhus, Institute of Biological Sciences",
+"AAU<ETH>	s	Addis Ababa University, Department of Biology",
+"AAU<ETH>:A	s	Addis Ababa University, Department of Biology, Amphibian collection",
 "AAUB	s	Anhui Agricultural University, Department of Basic Courses",
 "AAUF	s	Anhui Agricultural University, Forest Utilization Faculty",
 "ABB	c	Asian Bacterial Bank",
