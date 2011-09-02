@@ -185,6 +185,15 @@ extern NCBI_XCONNECT_EXPORT char* SERV_Print
  );
 
 
+/* Same as SERV_Penalize() but can specify penalty hold time.
+ */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_PenalizeEx
+(SERV_ITER            iter,          /* handle obtained via 'SERV_Open*' call*/
+ double               fine,          /* fine from range [0=min..100=max] (%%)*/
+ TNCBI_Time           time           /* for how long to keep the penalty, sec*/
+ );
+
+
 /* Get name of underlying service mapper.
  */
 extern NCBI_XCONNECT_EXPORT const char* SERV_MapperName(SERV_ITER iter);
