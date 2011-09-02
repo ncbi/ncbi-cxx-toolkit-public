@@ -856,7 +856,7 @@ public:
     virtual void SetTimeout(size_t nof_secs) = 0;
 
     /// Set timeout for command cancellation and connection closing
-    virtual void SetCancelTimeout(size_t nof_secs) = 0;
+    virtual void SetCancelTimeout(size_t nof_secs) {}
 
     /// If enabled, redirects all error messages
     /// to CDB_MultiEx object (see below).
