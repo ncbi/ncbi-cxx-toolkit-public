@@ -376,16 +376,13 @@ bool CGffWriteRecord::CorrectLocation(
 
 //  ----------------------------------------------------------------------------
 bool CGffWriteRecord::CorrectPhase(
-    unsigned int iShift,
-    unsigned int iInitFrame )
+    int iPhase )
 //  ----------------------------------------------------------------------------
 {
     if ( 0 == m_puPhase ) {
         return false;
     }
-    *m_puPhase = (*m_puPhase+iShift+iInitFrame + 1)%3;
-    *m_puPhase = 2 - *m_puPhase;
-    
+    *m_puPhase = iPhase;
     return true;
 }
 
@@ -766,20 +763,11 @@ bool CGffWriteRecordFeature::x_AssignStrand(
 
 //  ----------------------------------------------------------------------------
 bool CGffWriteRecordFeature::x_AssignPhase(
-    CMappedFeat mapped_feat )
+    CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    const CSeq_feat& feature = mapped_feat.GetOriginalFeature();
-
-    if ( ! feature.CanGetData() ) {
-        return true;
-    }
-    const CSeq_feat::TData& data = feature.GetData();
-    if ( data.GetSubtype() == CSeq_feat::TData::eSubtype_cdregion ) {
-        const CCdregion& cds = data.GetCdregion();
-        int frame = max( int(cds.GetFrame())-1, 0 );
-        m_puPhase = new unsigned int( frame );
-        return true;
+    if ( mf.GetFeatSubtype() == CSeq_feat::TData::eSubtype_cdregion ) {
+        m_puPhase = new unsigned int( 0 ); // will be corrected by external code
     }
     return true;
 }

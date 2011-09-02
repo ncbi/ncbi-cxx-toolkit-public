@@ -91,8 +91,7 @@ public:
     };
 
     bool CorrectPhase(
-        unsigned int,
-        unsigned int );
+        int );
 
     bool AssignSequenceNumber(
         unsigned int,

@@ -381,26 +381,36 @@ bool CGff3Writer::x_WriteFeatureCds(
     }
 
     const CSeq_loc& PackedInt = *pCds->GetCircularLocation();
-
-    unsigned int uTotSize = 0;
-    unsigned int /*CCdregion::EFrame*/ uInitFrame = 0;
+    bool bStrandAdjust = PackedInt.IsSetStrand()  
+        &&  (PackedInt.GetStrand()  ==  eNa_strand_minus);
+    int /*CCdregion::EFrame*/ iPhase = 0;
     if (mf.GetData().GetCdregion().IsSetFrame()) {
-        uInitFrame = mf.GetData().GetCdregion().GetFrame();
+        iPhase = max(mf.GetData().GetCdregion().GetFrame()-1, 0);
+    }
+    int iTotSize = -iPhase;
+    if (bStrandAdjust && iPhase) {
+        iTotSize = iPhase-3;
     }
     if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
-        const list< CRef< CSeq_interval > >& sublocs = PackedInt.GetPacked_int().Get();
+        list< CRef< CSeq_interval > > sublocs( PackedInt.GetPacked_int().Get() );
         list< CRef< CSeq_interval > >::const_iterator it;
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
             CRef<CGff3WriteRecordFeature> pExon( new CGff3WriteRecordFeature( *pCds ) );
             pExon->CorrectType( "CDS" );
             pExon->CorrectLocation( subint );
-            pExon->CorrectPhase( uTotSize, uInitFrame );
+            pExon->CorrectPhase( iPhase );
             pExon->ForceAttributeID( string( "cds" ) + NStr::UIntToString( m_uPendingCdsId ) );
             if ( ! x_WriteRecord( pExon ) ) {
                 return false;
             }
-            uTotSize += subint.GetLength();
+            iTotSize = (iTotSize + subint.GetLength())%3;
+            if (!bStrandAdjust) {
+                iPhase = (3-iTotSize)%3; 
+            }
+            else {
+                iPhase = iTotSize%3;
+            }
         }
     }
     ++m_uPendingCdsId;
