@@ -490,11 +490,17 @@ const char* SERV_CurrentName(SERV_ITER iter)
 }
 
 
-int/*bool*/ SERV_Penalize(SERV_ITER iter, double fine)
+int/*bool*/ SERV_PenalizeEx(SERV_ITER iter, double fine, TNCBI_Time time)
 {
     if (!iter  ||  !iter->op  ||  !iter->op->Feedback  ||  !iter->last)
         return 0/*false*/;
-    return iter->op->Feedback(iter, fine, 1/*i.e.fine*/);
+    return iter->op->Feedback(iter, fine, time ? time : 1/*NB: always != 0*/);
+}
+
+
+int/*bool*/ SERV_Penalize(SERV_ITER iter, double fine)
+{
+    return SERV_PenalizeEx(iter, fine, 0);
 }
 
 
