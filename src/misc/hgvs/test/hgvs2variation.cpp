@@ -23,10 +23,9 @@
  *
  * ===========================================================================
  *
- * Author:  Aleksey Grichenko
+ * Author:
  *
  * File Description:
- *   Demo of using the C++ Object Manager (OM)
  *
  */
 
@@ -62,6 +61,8 @@
 #include <objects/seqfeat/VariantProperties.hpp>
 #include <objmgr/util/sequence.hpp>
 
+#include <objects/genomecoll/GC_Assembly.hpp>
+
 #include <serial/iterator.hpp>
 #include <common/test_assert.h>
 
@@ -95,7 +96,6 @@ void CHgvs2variationApplication::Init(void)
          "-",
          CArgDescriptions::fPreOpen);
 
-
     arg_desc->AddDefaultKey
         ("out",
          "output",
@@ -110,6 +110,20 @@ void CHgvs2variationApplication::Init(void)
          "Text seq-align to remap placement to",
          CArgDescriptions::eInputFile,
          CArgDescriptions::fPreOpen);
+
+    arg_desc->AddOptionalKey
+            ("gc_for_chr_names",
+             "assembly",
+             "GC-assembly for interpreting chromosome names, e.g. chr12.",
+             CArgDescriptions::eInputFile,
+             CArgDescriptions::fPreOpen);
+
+    arg_desc->AddDefaultKey(
+            "vu_options",
+            "bitmask",
+            "CVariationUtil options",
+            CArgDescriptions::eInteger,
+            "0");
 
     arg_desc->AddFlag("loc_prop", "attach location properties");
     arg_desc->AddFlag("prot_effect", "attach effect on the protein");
@@ -127,6 +141,7 @@ void CHgvs2variationApplication::Init(void)
 
     SetupArgDescriptions(arg_desc.release());
     CException::SetStackTraceLevel(eDiag_Warning);
+    SetDiagPostLevel(eDiag_Info);
 }
 
 using namespace variation;
@@ -180,7 +195,9 @@ void AttachHgvs(CVariation& v, CHgvsParser& parser)
         }
         NON_CONST_ITERATE(CVariation::TPlacements, it2, v2.SetPlacements()) {
             CVariantPlacement& p2 = **it2;
-            util.AttachSeq(p2);
+            if(!p2.IsSetSeq()) {
+                util.AttachSeq(p2);
+            }
 
             if(!p2.GetLoc().GetId()) {
                 continue;
@@ -206,10 +223,9 @@ void AttachHgvs(CVariation& v, CHgvsParser& parser)
     }
 }
 
-void ProcessVariation(CVariation& v, const CArgs& args, CScope& scope, CConstRef<CSeq_align> aln)
+void ProcessVariation(CVariation& v, const CArgs& args, CScope& scope, CConstRef<CSeq_align> aln, CVariationUtil& variation_util)
 {
     CHgvsParser parser(scope);
-    CVariationUtil variation_util(scope);
 
     if(aln) {
         for(CTypeIterator<CVariation> it(Begin(v)); it; ++it) {
@@ -232,16 +248,12 @@ void ProcessVariation(CVariation& v, const CArgs& args, CScope& scope, CConstRef
         }
     }
 
-
-
     if(args["loc_prop"]) {
         variation_util.SetVariantProperties(v);
     }
 
     if(args["prot_effect"]) {
-#if 0
-        CRef<CSeq_id> id(NULL);
-#else
+        //calculate consequence based on cdna placements only, if available; otherwise on any
         set<CSeq_id_Handle> ids;
         for(CTypeConstIterator<CVariantPlacement> it(Begin(v)); it; ++it) {
             const CVariantPlacement& p = *it;
@@ -249,10 +261,17 @@ void ProcessVariation(CVariation& v, const CArgs& args, CScope& scope, CConstRef
                 ids.insert(CSeq_id_Handle::GetHandle(*p.GetLoc().GetId()));
             }
         }
+
+        if(ids.size() == 0) {
+            for(CTypeConstIterator<CVariantPlacement> it(Begin(v)); it; ++it) {
+                const CVariantPlacement& p = *it;
+                 ids.insert(CSeq_id_Handle::GetHandle(*p.GetLoc().GetId()));
+            }
+        }
+
         ITERATE(set<CSeq_id_Handle>, it, ids) {
             variation_util.AttachProteinConsequences(v, it->GetSeqId());
         }
-#endif
     }
 
     if(args["precursor"] || args["tr_precursor"]) {
@@ -268,7 +287,6 @@ void ProcessVariation(CVariation& v, const CArgs& args, CScope& scope, CConstRef
     if(args["compute_hgvs"]) {
         AttachHgvs(v, parser);
     }
-
 }
 
 
@@ -282,23 +300,30 @@ int CHgvs2variationApplication::Run(void)
     const CArgs& args = GetArgs();
 
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager(*object_manager);
+
+    CGBDataLoader::RegisterInObjectManager(*object_manager, NULL, CObjectManager::eDefault, 2);
+
     CRef<CScope> scope(new CScope(*object_manager));
     scope->AddDefaults();
 
     CRef<CHgvsParser> parser(new CHgvsParser(*scope));
-    CRef<CVariationUtil> variation_util(new CVariationUtil(*scope));
+    if(args["gc_for_chr_names"]) {
+        CRef<CGC_Assembly> gc_asm(new CGC_Assembly);
+        args["gc_for_chr_names"].AsInputFile() >> MSerial_AsnText >> *gc_asm;
+        CRef<CSeq_id_Resolver> resolver(new CSeq_id_Resolver__ChrNamesFromGC(*gc_asm, *scope));
+        parser->SetSeq_id_Resolvers().push_front(resolver);
+    }
+
+    CRef<CVariationUtil> variation_util(new CVariationUtil(*scope, args["vu_options"].AsInteger()));
 
     CNcbiIstream& istr = args["in"].AsInputFile();
     CNcbiOstream& ostr = args["out"].AsOutputFile();
-
 
     CRef<CSeq_align> aln;
     if(args["aln"]) {
         aln.Reset(new CSeq_align);
         args["aln"].AsInputFile() >> MSerial_AsnText >> *aln;
     }
-
 
     if(args["asn_in"]) {
         while(true) {
@@ -308,13 +333,14 @@ int CHgvs2variationApplication::Run(void)
             } catch(CEofException& e) {
                 break;
             }
-            ProcessVariation(*v, args, *scope, aln);
+            ProcessVariation(*v, args, *scope, aln, *variation_util);
             ostr << MSerial_AsnText << *v;
         }
     } else {
 
         string line_str("");
         while(NcbiGetlineEOL(istr, line_str)) {
+
             //expected line format: input_hgvs, optionally followed by "|" and
             //expected output expression, optionally followed by "#" and comment
             if(NStr::StartsWith(line_str, "#") || line_str.empty()) {
@@ -323,6 +349,13 @@ int CHgvs2variationApplication::Run(void)
                 }
                 continue;
             }
+
+#if 0
+            CBioseq_Handle bsh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle(line_str));
+            NcbiCout << objects::sequence::GetAccessionForId(*bsh.GetSeqId(), *scope) << "\t" << bsh.GetInst_Length() << endl;
+            continue;
+#endif
+
 
             string test_expr, comment;
             NStr::SplitInTwo(line_str, "#", test_expr, comment);
@@ -338,12 +371,24 @@ int CHgvs2variationApplication::Run(void)
             string input_hgvs, other_synonyms;
             NStr::SplitInTwo(test_expr, "|", input_hgvs, other_synonyms);
 
-            CRef<CVariation> v = parser->AsVariation(input_hgvs);
+            CRef<CVariation> v;
+            try {
+                v = parser->AsVariation(input_hgvs);
+            } catch (CException& e) {
+                NCBI_REPORT_EXCEPTION("Can't parse", e);
+                //can't parse
+                v.Reset(new CVariation);
+                v->SetData().SetUnknown();
+                v->SetName(input_hgvs);
+            }
             v->SetDescription(comment);
 
-            ProcessVariation(*v, args, *scope, aln);
-
-            ostr << MSerial_AsnText << *v;
+            try {
+                ProcessVariation(*v, args, *scope, aln, *variation_util);
+                ostr << MSerial_AsnText << *v;
+            } catch(CException& e) {
+                NCBI_RETHROW_SAME(e, "Can't process " + line_str);
+            }
         }
 
     }

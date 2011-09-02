@@ -43,6 +43,9 @@
 #include <util/xregexp/regexp.hpp>
 #include <objects/entrez2/entrez2_client.hpp>
 
+#include <objects/genomecoll/GC_Sequence.hpp>
+#include <objects/genomecoll/GC_TypedSeqId.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -68,7 +71,7 @@ CSeq_id_Resolver::~CSeq_id_Resolver()
 CSeq_id_Resolver__LRG::CSeq_id_Resolver__LRG(CScope& scope)
   : CSeq_id_Resolver(scope)
 {
-   m_regexp = new CRegexp("^(LRG_\\d+)[-_\\.]?([pt]\\d+)?$");
+    m_regexp = new CRegexp("^(LRG_\\d+)[-_\\.]?([pt]\\d+)?$");
 }
 
 CSeq_id_Handle CSeq_id_Resolver__LRG::x_Create(const string& s)
@@ -141,4 +144,43 @@ CSeq_id_Resolver__CCDS::~CSeq_id_Resolver__CCDS()
     delete m_entrez;
 }
 
+
+CSeq_id_Resolver__ChrNamesFromGC::CSeq_id_Resolver__ChrNamesFromGC(const CGC_Assembly& assembly, CScope& scope)
+  : CSeq_id_Resolver(scope)
+{
+    m_regexp = new CRegexp("^(Chr|CHR|chr)\\w+$");
+
+    CGC_Assembly::TSequenceList tls;
+    assembly.GetMolecules(tls, CGC_Assembly::eTopLevel);
+    ITERATE(CGC_Assembly::TSequenceList, it, tls) {
+        const CGC_Sequence& seq= **it;
+        if(!seq.IsSetSeq_id_synonyms()) {
+            continue;
+        }
+        CConstRef<CSeq_id> syn_seq_id = seq.GetSynonymSeq_id(CGC_TypedSeqId::e_Private, CGC_SeqIdAlias::e_None);
+        if(!syn_seq_id) {
+            continue;
+        }
+        string syn = syn_seq_id->GetSeqIdString(false);
+        if(!NStr::StartsWith(syn, "chr")) {
+            syn = "chr" + syn;
+        }
+        if(m_data.find(syn) != m_data.end()) {
+            NCBI_THROW(CException, eUnknown, "Non-unique chromosome names: " + syn);
+        } else {
+            m_data[syn] = sequence::GetId(seq.GetSeq_id(), m_scope, sequence::eGetId_ForceAcc);
+        }
+    }
+}
+
+CSeq_id_Handle CSeq_id_Resolver__ChrNamesFromGC::x_Create(const string& s)
+{
+    CSeq_id_Handle idh;
+    string s2 = NStr::Replace(s, "Chr", "chr", 0, 1);
+    NStr::ReplaceInPlace(s2, "CHR", "chr", 0, 1);
+    if(m_data.find(s2) != m_data.end()) {
+        idh = m_data.find(s2)->second;
+    }
+    return idh;
+}
 END_NCBI_SCOPE

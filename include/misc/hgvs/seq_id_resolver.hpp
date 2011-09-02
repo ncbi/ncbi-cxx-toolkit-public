@@ -36,6 +36,7 @@
 
 
 #include <objects/seq/seq_id_handle.hpp>
+#include <objects/genomecoll/GC_Assembly.hpp>
 #include <objmgr/scope.hpp>
 
 
@@ -99,9 +100,8 @@ class CSeq_id_Resolver__LRG : public CSeq_id_Resolver
 public:
     CSeq_id_Resolver__LRG(CScope& scope);
     virtual ~CSeq_id_Resolver__LRG() {}
-    virtual CSeq_id_Handle x_Create(const string& s);
-
 private:
+    virtual CSeq_id_Handle x_Create(const string& s);
 };
 
 /// Resolve CCDS-id to an NM
@@ -110,10 +110,23 @@ class CSeq_id_Resolver__CCDS : public CSeq_id_Resolver
 public:
     CSeq_id_Resolver__CCDS(CScope& scope);
     virtual ~CSeq_id_Resolver__CCDS();
-    virtual CSeq_id_Handle x_Create(const string& s);
 
 private:
+    virtual CSeq_id_Handle x_Create(const string& s);
     objects::CEntrez2Client* m_entrez;
+};
+
+/// Resolve chromosome names based on GC_Assembly
+class CSeq_id_Resolver__ChrNamesFromGC : public CSeq_id_Resolver
+{
+public:
+    CSeq_id_Resolver__ChrNamesFromGC(const CGC_Assembly& assembly, CScope& scope);
+    virtual ~CSeq_id_Resolver__ChrNamesFromGC() {}
+
+private:
+    virtual CSeq_id_Handle x_Create(const string& s);
+    typedef map<string, CSeq_id_Handle> TData;
+    TData m_data;
 };
 
 END_NCBI_SCOPE;
