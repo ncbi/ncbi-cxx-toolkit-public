@@ -74,7 +74,8 @@ CODBC_Connection::CODBC_Connection(CODBCContext& cntx,
         ),
     m_Link(NULL),
     m_Reporter(0, SQL_HANDLE_DBC, NULL, &cntx.GetReporter()),
-    m_query_timeout(cntx.GetTimeout())
+    m_query_timeout(cntx.GetTimeout()),
+    m_cancel_timeout(cntx.GetCancelTimeout())
 {
     SetServerType(CDBConnParams::eMSSqlServer);
 
@@ -506,6 +507,11 @@ bool CODBC_Connection::Close(void)
 void CODBC_Connection::SetTimeout(size_t nof_secs)
 {
     m_query_timeout = nof_secs;
+}
+
+void CODBC_Connection::SetCancelTimeout(size_t nof_secs)
+{
+    m_cancel_timeout = nof_secs;
 }
 
 static
@@ -1411,6 +1417,33 @@ int
 CStatementBase::RowCount() const
 {
     return static_cast<int>(m_RowCount);
+}
+
+bool
+CStatementBase::Close(void) const
+{
+    SQLUINTEGER cancel_timeout = static_cast<SQLUINTEGER>(m_ConnectPtr->GetCancelTimeout());
+    SQLSetStmtAttr(GetHandle(),
+                   SQL_ATTR_QUERY_TIMEOUT,
+                   (SQLPOINTER)static_cast<uintptr_t>(cancel_timeout),
+                   0);
+    try {
+        bool result = CheckRC( SQLFreeStmt(m_Cmd, SQL_CLOSE) );
+        SQLUINTEGER query_timeout = static_cast<SQLUINTEGER>(m_ConnectPtr->GetTimeout());
+        SQLSetStmtAttr(GetHandle(),
+                       SQL_ATTR_QUERY_TIMEOUT,
+                       (SQLPOINTER)static_cast<uintptr_t>(query_timeout),
+                       0);
+        return result;
+    }
+    catch (CDB_Exception&) {
+        SQLUINTEGER query_timeout = static_cast<SQLUINTEGER>(m_ConnectPtr->GetTimeout());
+        SQLSetStmtAttr(GetHandle(),
+                       SQL_ATTR_QUERY_TIMEOUT,
+                       (SQLPOINTER)static_cast<uintptr_t>(query_timeout),
+                       0);
+        throw;
+    }
 }
 
 

@@ -93,6 +93,14 @@ CMySQL_Connection::SetTimeout(size_t nof_secs)
 }
 
 
+void 
+CMySQL_Connection::SetCancelTimeout(size_t nof_secs)
+{
+    // DATABASE_DRIVER_ERROR( "SetCancelTimeout is not supported.", 100011 );
+    _TRACE("SetCancelTimeout is not supported.");
+}
+
+
 CDB_SendDataCmd* CMySQL_Connection::SendDataCmd(I_ITDescriptor& /*descr_in*/,
                                                 size_t          /*data_size*/,
                                                 bool            /*log_it*/,

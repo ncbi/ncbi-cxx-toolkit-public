@@ -623,18 +623,28 @@ CTL_LRCmd::Cancel(void)
         DeleteResultInternal();
 
         if (!IsDead()  &&  GetConnection().IsAlive()) {
-            switch (Check(ct_cancel(NULL, x_GetSybaseCmd(), CS_CANCEL_ALL))) {
-            case CS_SUCCEED:
-                SetWasSent(false);
-                return true;
-            case CS_FAIL:
-                DATABASE_DRIVER_ERROR( "ct_cancel failed." + GetDbgInfo(), 120008 );
+            size_t was_timeout = GetConnection().PrepareToCancel();
+            try {
+                CS_RETCODE retcode = Check(ct_cancel(NULL, x_GetSybaseCmd(), CS_CANCEL_ALL));
+                GetConnection().CancelFinished(was_timeout);
+
+                switch (retcode) {
+                case CS_SUCCEED:
+                    SetWasSent(false);
+                    return true;
+                case CS_FAIL:
+                    DATABASE_DRIVER_ERROR( "ct_cancel failed." + GetDbgInfo(), 120008 );
 #ifdef CS_BUSY
-            case CS_BUSY:
-                DATABASE_DRIVER_ERROR( "Connection has another request pending." + GetDbgInfo(), 120009 );
+                case CS_BUSY:
+                    DATABASE_DRIVER_ERROR( "Connection has another request pending." + GetDbgInfo(), 120009 );
 #endif
-            default:
-                return false;
+                default:
+                    return false;
+                }
+            }
+            catch (CDB_Exception&) {
+                GetConnection().CancelFinished(was_timeout);
+                throw;
             }
         } else {
             return false;

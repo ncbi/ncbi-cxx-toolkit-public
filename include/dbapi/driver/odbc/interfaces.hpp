@@ -278,6 +278,11 @@ protected:
     {
         return m_query_timeout;
     }
+    virtual void SetCancelTimeout(size_t nof_secs);
+    size_t GetCancelTimeout() const
+    {
+        return m_cancel_timeout;
+    }
 
 protected:
     string GetDbgInfo(void) const
@@ -305,6 +310,7 @@ private:
 
     CODBC_Reporter  m_Reporter;
     size_t          m_query_timeout;
+    size_t          m_cancel_timeout;
 };
 
 
@@ -352,10 +358,7 @@ public:
     int CheckSIE(int rc, const char* msg, unsigned int msg_num) const;
     int CheckSIENd(int rc, const char* msg, unsigned int msg_num) const;
 
-    bool Close(void) const
-    {
-        return CheckRC( SQLFreeStmt(m_Cmd, SQL_CLOSE) );
-    }
+    bool Close(void) const;
     bool Unbind(void) const
     {
         return CheckRC( SQLFreeStmt(m_Cmd, SQL_UNBIND) );

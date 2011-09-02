@@ -333,7 +333,9 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_Connection : public impl::CConnection
     friend class ncbi::CDB_Connection;
     friend class CTL_Cmd;
     friend class CTL_CmdBase;
+    friend class CTL_LRCmd;
     friend class CTL_SendDataCmd;
+    friend class CTL_BCPInCmd;
     friend class CTL_CursorCmdExpl;
     friend class CTL_RowResult;
 
@@ -424,6 +426,10 @@ protected:
     }
 
     virtual void SetTimeout(size_t nof_secs);
+    virtual void SetCancelTimeout(size_t nof_secs);
+
+    size_t PrepareToCancel(void);
+    void CancelFinished(size_t was_timeout);
 
     virtual TSockHandle GetLowLevelHandle(void) const;
 

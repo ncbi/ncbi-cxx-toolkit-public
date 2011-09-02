@@ -618,8 +618,17 @@ bool CTL_BCPInCmd::Cancel()
 
         CS_INT outrow = 0;
 
-        return (CheckSentSFB(blk_done(x_GetSybaseCmd(), CS_BLK_CANCEL, &outrow),
-                             "blk_done failed", 123020) == CS_SUCCEED);
+        size_t was_timeout = GetConnection().PrepareToCancel();
+        try {
+            bool result = (CheckSentSFB(blk_done(x_GetSybaseCmd(), CS_BLK_CANCEL, &outrow),
+                                        "blk_done failed", 123020) == CS_SUCCEED);
+            GetConnection().CancelFinished(was_timeout);
+            return result;
+        }
+        catch (CDB_Exception&) {
+            GetConnection().CancelFinished(was_timeout);
+            throw;
+        }
     }
 
     return true;

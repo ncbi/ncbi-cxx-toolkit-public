@@ -299,6 +299,11 @@ void CConnection::SetTimeout(size_t nof_secs)
     GetCDB_Connection()->SetTimeout(nof_secs);
 }
 
+void CConnection::SetCancelTimeout(size_t nof_secs)
+{
+    GetCDB_Connection()->SetCancelTimeout(nof_secs);
+}
+
 void CConnection::FreeResources()
 {
     delete m_connection;

@@ -855,6 +855,9 @@ public:
     ///        DB API), then set the timeout to infinite.
     virtual void SetTimeout(size_t nof_secs) = 0;
 
+    /// Set timeout for command cancellation and connection closing
+    virtual void SetCancelTimeout(size_t nof_secs) = 0;
+
     /// If enabled, redirects all error messages
     /// to CDB_MultiEx object (see below).
     virtual void MsgToEx(bool v) = 0;

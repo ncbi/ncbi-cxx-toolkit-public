@@ -231,6 +231,7 @@ protected:
     virtual bool Close(void);
 
     virtual void SetTimeout(size_t nof_secs);
+    virtual void SetCancelTimeout(size_t nof_secs);
 
 private:
     bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);

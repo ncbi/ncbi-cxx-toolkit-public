@@ -213,6 +213,7 @@ public:
     virtual bool Close(void) = 0;
 
     virtual void SetTimeout(size_t nof_secs) = 0;
+    virtual void SetCancelTimeout(size_t nof_secs) = 0;
     virtual void SetTextImageSize(size_t nof_bytes);
 
     virtual TSockHandle GetLowLevelHandle(void) const;

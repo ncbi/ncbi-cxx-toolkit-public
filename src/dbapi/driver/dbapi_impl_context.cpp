@@ -132,7 +132,6 @@ unsigned int CDriverContext::GetTimeout(void) const
     return m_Timeout; 
 }
 
-
 bool CDriverContext::SetTimeout(unsigned int nof_secs)
 {
     bool success = true;
@@ -144,6 +143,27 @@ bool CDriverContext::SetTimeout(unsigned int nof_secs)
         // We do not have to update query/connection timeout in context
         // any more. Each connection can be updated explicitly now.
         // UpdateConnTimeout();
+    } catch (...) {
+        success = false;
+    }
+
+    return success;
+}
+
+unsigned int CDriverContext::GetCancelTimeout(void) const 
+{ 
+    CMutexGuard mg(m_CtxMtx);
+
+    return m_CancelTimeout;
+}
+
+bool CDriverContext::SetCancelTimeout(unsigned int nof_secs)
+{
+    bool success = true;
+    CMutexGuard mg(m_CtxMtx);
+
+    try {
+        m_CancelTimeout = nof_secs;
     } catch (...) {
         success = false;
     }
@@ -685,6 +705,10 @@ CDriverContext::ReadDBConfParams(const string&  service_name,
         params->flags += SDBConfParams::fIOTimeoutSet;
         params->io_timeout = reg.Get(section_name, "io_timeout");
     }
+    if (reg.HasEntry(section_name, "cancel_timeout", IRegistry::fCountCleared)) {
+        params->flags += SDBConfParams::fCancelTimeoutSet;
+        params->cancel_timeout = reg.Get(section_name, "cancel_timeout");
+    }
     if (reg.HasEntry(section_name, "exclusive_server", IRegistry::fCountCleared)) {
         params->flags += SDBConfParams::fSingleServerSet;
         params->single_server = reg.Get(section_name, "exclusive_server");
@@ -809,6 +833,23 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
             }
             else if (!value.empty()) {
                 SetTimeout(NStr::StringToInt(value));
+            }
+        }
+        if (conf_params.IsCancelTimeoutSet()) {
+            if (conf_params.cancel_timeout.empty()) {
+                SetCancelTimeout(0);
+            }
+            else {
+                SetCancelTimeout(NStr::StringToInt(conf_params.cancel_timeout));
+            }
+        }
+        else {
+            string value(params.GetParam("cancel_timeout"));
+            if (value == "default") {
+                SetCancelTimeout(10);
+            }
+            else if (!value.empty()) {
+                SetCancelTimeout(NStr::StringToInt(value));
             }
         }
         if (conf_params.IsSingleServerSet()) {

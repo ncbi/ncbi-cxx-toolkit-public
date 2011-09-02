@@ -292,6 +292,9 @@ public:
     ///   (depends on the underlying DB API), then set the timeout to infinite.
     virtual void SetTimeout(size_t nof_secs);
 
+    /// Set timeout for command cancellation and connection closing
+    virtual void SetCancelTimeout(size_t nof_secs);
+
     /// Get interface for extra features that could be implemented in the driver.
     virtual I_ConnectionExtra& GetExtraFeatures(void);
 

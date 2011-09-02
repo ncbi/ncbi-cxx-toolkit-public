@@ -381,6 +381,35 @@ CTL_Connection::SetTimeout(size_t nof_secs)
 }
 
 
+void
+CTL_Connection::SetCancelTimeout(size_t nof_secs)
+{
+    GetCTLibContext().SetCancelTimeout(nof_secs);
+}
+
+
+size_t
+CTL_Connection::PrepareToCancel(void)
+{
+#ifdef FTDS_IN_USE
+    size_t was_timeout = x_GetSybaseConn()->tds_socket->query_timeout;
+    x_GetSybaseConn()->tds_socket->query_timeout = GetCTLibContext().GetCancelTimeout();
+    return was_timeout;
+#else
+    return 0;
+#endif
+}
+
+
+void
+CTL_Connection::CancelFinished(size_t was_timeout)
+{
+#ifdef FTDS_IN_USE
+    x_GetSybaseConn()->tds_socket->query_timeout = was_timeout;
+#endif
+}
+
+
 I_ConnectionExtra::TSockHandle
 CTL_Connection::GetLowLevelHandle(void) const
 {
@@ -1041,10 +1070,18 @@ size_t CTL_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
 bool CTL_SendDataCmd::Cancel(void)
 {
     if (!IsDead()  &&  (GetBytes2Go()  ||  CTL_LRCmd::WasSent())) {
-        Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL));
-        SetBytes2Go(0);
-        CTL_LRCmd::SetWasSent(false);
-        return true;
+        size_t was_timeout = GetConnection().PrepareToCancel();
+        try {
+            Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL));
+            GetConnection().CancelFinished(was_timeout);
+            SetBytes2Go(0);
+            CTL_LRCmd::SetWasSent(false);
+            return true;
+        }
+        catch (CDB_Exception&) {
+            GetConnection().CancelFinished(was_timeout);
+            throw;
+        }
     }
 
     return false;

@@ -59,18 +59,19 @@ class CConnection;
 struct NCBI_DBAPIDRIVER_EXPORT SDBConfParams
 {
     enum EFlags {
-        fServerSet       = 0x001,
-        fPortSet         = 0x002,
-        fDatabaseSet     = 0x004,
-        fUsernameSet     = 0x008,
-        fPasswordSet     = 0x010,
-        fLoginTimeoutSet = 0x020,
-        fIOTimeoutSet    = 0x040,
-        fSingleServerSet = 0x080,
-        fIsPooledSet     = 0x100,
-        fPoolMinSizeSet  = 0x200,
-        fPoolMaxSizeSet  = 0x400,
-        fArgsSet         = 0x800
+        fServerSet       = 0x0001,
+        fPortSet         = 0x0002,
+        fDatabaseSet     = 0x0004,
+        fUsernameSet     = 0x0008,
+        fPasswordSet     = 0x0010,
+        fLoginTimeoutSet = 0x0020,
+        fIOTimeoutSet    = 0x0040,
+        fCancelTimeoutSet= 0x0080,
+        fSingleServerSet = 0x0100,
+        fIsPooledSet     = 0x0200,
+        fPoolMinSizeSet  = 0x0400,
+        fPoolMaxSizeSet  = 0x0800,
+        fArgsSet         = 0x1000
     };
     typedef unsigned int  TFlags;
 
@@ -82,6 +83,7 @@ struct NCBI_DBAPIDRIVER_EXPORT SDBConfParams
     string  password;
     string  login_timeout;
     string  io_timeout;
+    string  cancel_timeout;
     string  single_server;
     string  is_pooled;
     string  pool_name;
@@ -97,8 +99,9 @@ struct NCBI_DBAPIDRIVER_EXPORT SDBConfParams
     bool IsDatabaseSet(void)     { return IsFlagSet(fDatabaseSet);      }
     bool IsUsernameSet(void)     { return IsFlagSet(fUsernameSet);      }
     bool IsPasswordSet(void)     { return IsFlagSet(fPasswordSet);      }
-    bool IsLoginTimeoutSet(void)  { return IsFlagSet(fLoginTimeoutSet);  }
+    bool IsLoginTimeoutSet(void) { return IsFlagSet(fLoginTimeoutSet);  }
     bool IsIOTimeoutSet(void)    { return IsFlagSet(fIOTimeoutSet);     }
+    bool IsCancelTimeoutSet(void){ return IsFlagSet(fCancelTimeoutSet); }
     bool IsSingleServerSet(void) { return IsFlagSet(fSingleServerSet);  }
     bool IsPooledSet(void)       { return IsFlagSet(fIsPooledSet);      }
     bool IsPoolMinSizeSet(void)  { return IsFlagSet(fPoolMinSizeSet);   }
@@ -132,6 +135,9 @@ public:
 
     virtual bool SetTimeout(unsigned int nof_secs = 0);
     virtual unsigned int GetTimeout(void) const;
+
+    virtual bool SetCancelTimeout(unsigned int nof_secs);
+    virtual unsigned int GetCancelTimeout(void) const;
 
     virtual void SetApplicationName(const string& app_name);
     virtual string GetApplicationName(void) const;
@@ -236,6 +242,7 @@ protected:
 private:
     unsigned int    m_LoginTimeout; //< Login timeout.
     unsigned int    m_Timeout;      //< Connection timeout.
+    unsigned int    m_CancelTimeout;//< Canceling timeout.
 
     string          m_AppName;  //< Application name.
     string          m_HostName; //< Host name

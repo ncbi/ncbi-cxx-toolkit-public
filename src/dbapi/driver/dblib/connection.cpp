@@ -171,6 +171,14 @@ CDBL_Connection::SetTimeout(size_t nof_secs)
 }
 
 
+void
+CDBL_Connection::SetCancelTimeout(size_t nof_secs)
+{
+    // DATABASE_DRIVER_ERROR( "SetCancelTimeout is not supported.", 100011 );
+    _TRACE("SetCancelTimeout is not supported.");
+}
+
+
 CDB_LangCmd* CDBL_Connection::LangCmd(const string& lang_query)
 {
     string extra_msg = "SQL Command: \"" + lang_query + "\"";
