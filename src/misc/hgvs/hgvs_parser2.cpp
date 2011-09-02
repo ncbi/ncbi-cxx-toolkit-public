@@ -1459,6 +1459,16 @@ CRef<CVariation> CHgvsParser::x_identity(const CContext& context)
     return vr;
 }
 
+CRef<CVariation>  CHgvsParser::x_string_content(TIterator const& i, const CContext& context)
+{
+    CRef<CVariation> vr(new CVariation);
+    string s(i->value.begin(), i->value.end());
+    s = s.substr(1); //truncate the leading pipe
+    SetFirstPlacement(*vr).Assign(context.GetPlacement());
+    vr->SetData().SetNote(s);
+    return vr;
+}
+
 
 CRef<CVariation> CHgvsParser::x_mut_inst(TIterator const& i, const CContext& context)
 {
@@ -1475,14 +1485,7 @@ CRef<CVariation> CHgvsParser::x_mut_inst(TIterator const& i, const CContext& con
         } else if(s == "=") {
             vr = x_identity(context);
         } else {
-#if 0
-            //can represent unparseable catch-all as a variation
-            string content(it->value.begin(), it->value.end());
-            vr->SetData().SetNote(content);
-            SetFirstPlacement(*vr).Assign(context.GetPlacement());
-#else
-            HGVS_THROW(eGrammatic, "Unexpected inst terminal: " + s);
-#endif
+            vr = x_string_content(it, context);
         }
     } else {
         vr =

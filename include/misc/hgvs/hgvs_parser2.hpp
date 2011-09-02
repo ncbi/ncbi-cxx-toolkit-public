@@ -111,6 +111,8 @@ public:
         return *m_scope;
     }
 
+    /// In order of decreasing priority. Last resolver is default catch-all, so
+    /// when adding a custom one don't push_back.
     CSeq_id_Resolver::TResolvers& SetSeq_id_Resolvers()
     {
         return m_seq_id_resolvers;
@@ -712,7 +714,7 @@ protected:
                                 | prot_fs
                                 | prot_missense
                                 | prot_ext //this may occur inside location context, e.g. p.Met1ValextMet-12
-//                                | leaf_node_d[+print_p] //catch-all
+                                | leaf_node_d[ch_p(':') >> +(alnum_p)] //catch-all
                                 ;
 
                     //Note: '?' and '=' can exist both within a location context
@@ -804,8 +806,6 @@ protected:
     };
     static SGrammar s_grammar;
 
-
-
 private:
     typedef tree_match<char const*> TParseTreeMatch;
     typedef TParseTreeMatch::const_tree_iterator TIterator;
@@ -849,6 +849,7 @@ private:
     static CRef<CVariation>  x_list            (TIterator const& i, const CContext& context);
     static CContext          x_header          (TIterator const& i, const CContext& context);
     static CRef<CVariation>  x_root            (TIterator const& i, const CContext& context);
+    static CRef<CVariation>  x_string_content  (TIterator const& i, const CContext& context);
     static CVariation::TData::TSet::EData_set_type x_list_delimiter(TIterator const& i, const CContext& context);
 
     static CRef<CVariation>  x_unwrap_iff_singleton(CVariation& v);

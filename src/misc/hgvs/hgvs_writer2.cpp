@@ -257,6 +257,10 @@ string CHgvsParser::x_AsHgvsExpression(
         hgvs_data_str = x_AsHgvsInstExpression(variation, placement, asserted_seq);
     } else if(variation.GetData().IsUnknown()) {
         hgvs_data_str = "?";
+    } else if(variation.GetData().IsNote()) {
+        hgvs_data_str = ":" + variation.GetData().GetNote();
+    } else {
+        hgvs_data_str = ":OTHER";
     }
 
     if(variation.IsSetFrameshift()) {
