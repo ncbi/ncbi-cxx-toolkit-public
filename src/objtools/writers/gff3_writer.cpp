@@ -399,7 +399,7 @@ bool CGff3Writer::x_WriteFeatureCds(
             CRef<CGff3WriteRecordFeature> pExon( new CGff3WriteRecordFeature( *pCds ) );
             pExon->CorrectType( "CDS" );
             pExon->CorrectLocation( subint );
-            pExon->CorrectPhase( iPhase );
+            pExon->CorrectPhase( bStrandAdjust ? (3-iPhase) : iPhase );
             pExon->ForceAttributeID( string( "cds" ) + NStr::UIntToString( m_uPendingCdsId ) );
             if ( ! x_WriteRecord( pExon ) ) {
                 return false;
