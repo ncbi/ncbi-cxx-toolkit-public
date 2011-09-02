@@ -78,7 +78,7 @@ static EIO_Status s_ReadPipe(CNamedPipe& pipe, void* buf, size_t size,
     } while (status == eIO_Success  &&  n_read_total < size);
     
     if (status == eIO_Timeout) {
-    	status = eIO_Success;
+        status = eIO_Success;
     }
     *n_read = n_read_total;
     return status;
@@ -103,7 +103,7 @@ static EIO_Status s_WritePipe(CNamedPipe& pipe, const void* buf, size_t size,
     } while (status == eIO_Success  &&  n_written_total < size);
     
     if (status == eIO_Timeout) {
-    	status = eIO_Success;
+        status = eIO_Success;
     }
     *n_written = n_written_total;
     return status;

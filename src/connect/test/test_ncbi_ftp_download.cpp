@@ -67,18 +67,18 @@ static int  s_Throttler = 0;
 #if   defined(NCBI_OS_MSWIN)
 static BOOL WINAPI s_Interrupt(DWORD type)
 {
-	switch (type) {
-	case CTRL_C_EVENT:
-	case CTRL_BREAK_EVENT:
-		s_Signaled = true;
-		return TRUE;  // handled
-	case CTRL_CLOSE_EVENT:
-	case CTRL_LOGOFF_EVENT:
-	case CTRL_SHUTDOWN_EVENT:
-	default:
-		break;
-	}
-	return FALSE;  // unhandled
+    switch (type) {
+    case CTRL_C_EVENT:
+    case CTRL_BREAK_EVENT:
+        s_Signaled = true;
+        return TRUE;  // handled
+    case CTRL_CLOSE_EVENT:
+    case CTRL_LOGOFF_EVENT:
+    case CTRL_SHUTDOWN_EVENT:
+    default:
+        break;
+    }
+    return FALSE;  // unhandled
 }
 #elif defined(NCBI_OS_UNIX)
 extern "C" {
@@ -183,16 +183,16 @@ protected:
             return false;
         }
 
-		CNcbiOstrstream os;
-		os << current;
-		string line = CNcbiOstrstreamToString(os);
-		size_t linelen = line.size();
+        CNcbiOstrstream os;
+        os << current;
+        string line = CNcbiOstrstreamToString(os);
+        size_t linelen = line.size();
         cerr.flush();
         cout << line;
-		if (linelen < SCREEN_COLS) {
-		    cout << setw((streamsize)(SCREEN_COLS - linelen)) << ' ';
-		}
-		cout << endl;
+        if (linelen < SCREEN_COLS) {
+            cout << setw((streamsize)(SCREEN_COLS - linelen)) << ' ';
+        }
+        cout << endl;
         TFile file(current.GetName(), current.GetSize());
         m_Dlcbdata->Append(&file);
         return true;
@@ -312,17 +312,17 @@ size_t CListProcessor::Run(void)
     do {
         string line;
         getline(*m_Stream, line);
-	    size_t linelen = line.size();
+        size_t linelen = line.size();
         if (linelen /*!line.empty()*/  &&  NStr::EndsWith(line, '\r')) {
             line.resize(--linelen);
         }
         if (linelen /*!line.empty()*/) {
             cerr.flush();
-			cout << line;
-			if (linelen < SCREEN_COLS) {
+            cout << line;
+            if (linelen < SCREEN_COLS) {
                 cout << setw((streamsize)(SCREEN_COLS - linelen)) << ' ';
-			}
-			cout << endl;
+            }
+            cout << endl;
             CTar::TFile file = make_pair(line, (Uint8) 0);
             m_Dlcbdata->Append(&file);
             n++;
@@ -487,7 +487,7 @@ static EIO_Status x_ConnectionCallback(CONN conn,
     if (s_IsATTY()) {
         Uint8 pos  = CONN_GetPosition(conn, eIO_Read);
         Uint8 size = dlcbdata->GetSize();
-		CNcbiOstrstream os;
+        CNcbiOstrstream os;
         if (size) {
             double percent = (pos * 100.0) / size;
             os << "Downloaded " << NStr::UInt8ToString(pos)
@@ -510,14 +510,14 @@ static EIO_Status x_ConnectionCallback(CONN conn,
                    : CTimeSpan(eta).AsString("h:m:s"));
         } else
             os << "              ";
-		string line = CNcbiOstrstreamToString(os);
-		size_t linelen = line.size();
+        string line = CNcbiOstrstreamToString(os);
+        size_t linelen = line.size();
         cout.flush();
-		cerr << line;
-		if (linelen < SCREEN_COLS) {
+        cerr << line;
+        if (linelen < SCREEN_COLS) {
             cerr << setw((streamsize)(SCREEN_COLS - linelen)) << ' ';
-		}
-		cerr << '\r' << flush;
+        }
+        cerr << '\r' << flush;
     }
 
     if (type == eCONN_OnClose) {
@@ -538,7 +538,7 @@ static void s_TryAskFtpFilesize(iostream& ios, const char* filename)
     size_t testval;
     ios << "SIZE " << filename << endl;
     // If SIZE command is not understood, the file size can be captured
-	// later when the download (RETR) starts if it is reported by the server
+    // later when the download (RETR) starts if it is reported by the server
     // in a compatible format (there's the callback set for that, too).
     _ASSERT(!(ios >> testval));  //  NB: we're getting a callback instead
     ios.clear();
@@ -585,7 +585,7 @@ int main(int argc, const char* argv[])
 
     // Setup signal handling
 #if   defined(NCBI_OS_MSWIN)
-	SetConsoleCtrlHandler(s_Interrupt, TRUE);
+    SetConsoleCtrlHandler(s_Interrupt, TRUE);
 #elif defined(NCBI_OS_UNIX)
     signal(SIGINT,  s_Interrupt);
     signal(SIGTERM, s_Interrupt);

@@ -104,18 +104,18 @@ void CTest::Cancel(void)
 #if   defined(NCBI_OS_MSWIN)
 static BOOL WINAPI s_Interrupt(DWORD type)
 {
-	switch (type) {
-	case CTRL_C_EVENT:
-	case CTRL_BREAK_EVENT:
+    switch (type) {
+    case CTRL_C_EVENT:
+    case CTRL_BREAK_EVENT:
         CTest::Cancel();
-		return TRUE;  // handled
-	case CTRL_CLOSE_EVENT:
-	case CTRL_LOGOFF_EVENT:
-	case CTRL_SHUTDOWN_EVENT:
-	default:
-		break;
-	}
-	return FALSE;  // unhandled
+        return TRUE;  // handled
+    case CTRL_CLOSE_EVENT:
+    case CTRL_LOGOFF_EVENT:
+    case CTRL_SHUTDOWN_EVENT:
+    default:
+        break;
+    }
+    return FALSE;  // unhandled
 }
 #elif defined(NCBI_OS_UNIX)
 extern "C" {
@@ -243,7 +243,7 @@ int main(int argc, const char* argv[])
     SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
 
 #if   defined(NCBI_OS_MSWIN)
-	SetConsoleCtrlHandler(s_Interrupt, TRUE);
+    SetConsoleCtrlHandler(s_Interrupt, TRUE);
 #elif defined(NCBI_OS_UNIX)
     signal(SIGINT,  s_Interrupt);
     signal(SIGTERM, s_Interrupt);

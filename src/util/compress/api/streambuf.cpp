@@ -152,7 +152,7 @@ int CCompressionStreambuf::sync()
     if ( !IsOkay() ) {
         return -1;
     }
-	int status = 0;
+    int status = 0;
     // Sync write processor buffers
     CSP* sp = GetStreamProcessor(CCompressionStream::eWrite);
     if ( sp  &&  

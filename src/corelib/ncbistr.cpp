@@ -1270,7 +1270,7 @@ size_t NStr::StringToSizet(const CTempString& str,
 /// @internal
 static void s_SignedToString(string&                 out_str,
                              unsigned long           value,
-			     long                    svalue,
+                             long                    svalue,
                              NStr::TNumToStringFlags flags,
                              int                     base)
 {
@@ -1323,7 +1323,7 @@ static void s_SignedToString(string&                 out_str,
 
     out_str.assign(pos, buffer + kBufSize - pos);
 }
-			  
+
 
 void NStr::IntToString(string& out_str, int svalue,
                        TNumToStringFlags flags, int base)

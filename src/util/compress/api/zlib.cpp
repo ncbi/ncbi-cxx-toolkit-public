@@ -469,10 +469,9 @@ bool CZipCompression::DecompressBuffer(
     // Decompression results processing
     SetError(errcode, zError(errcode));
     if ( errcode != Z_OK ) {
-        ERR_COMPRESS(59, 
-			FormatErrorMessage("CZipCompression::DecompressBuffer",
-                               (unsigned long)(
-                                STREAM->next_in - (unsigned char*)src_buf)));
+        ERR_COMPRESS(59, FormatErrorMessage
+                     ("CZipCompression::DecompressBuffer", (unsigned long)
+                      (STREAM->next_in - (unsigned char*) src_buf)));
         return false;
     }
     return true;

@@ -235,7 +235,7 @@ void s_AddInt(string& str, long value)
         buf[--pos] = char(value % 10) + '0';
         value /= 10;
     } while (value);
-	str.append(buf + pos, size - pos);
+    str.append(buf + pos, size - pos);
 }
 
 
@@ -256,7 +256,7 @@ void s_AddZeroPadInt(string& str, long value, size_t len)
     if (len > (size - pos)) {
         str.append(len - (size - pos), '0');
     }
-	str.append(buf + pos, size - pos);
+    str.append(buf + pos, size - pos);
 }
 
 
@@ -268,7 +268,7 @@ void s_AddZeroPadInt2(string& str, long value)
     char buf[2];
     buf[1] = char(value % 10) + '0';
     buf[0] = char(value / 10) + '0'; 
-	str.append(buf, 2);
+    str.append(buf, 2);
 }
 
 

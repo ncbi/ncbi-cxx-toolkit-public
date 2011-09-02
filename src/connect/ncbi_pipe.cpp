@@ -166,20 +166,22 @@ static EIO_Status s_Close(const CProcess& process, CPipe::TCreateFlags flags,
 static string s_WinError(DWORD error, string& message)
 {
     TXChar* errstr = NULL;
-	DWORD rv = ::FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+    DWORD rv = ::FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
                                FORMAT_MESSAGE_FROM_SYSTEM     |
                                FORMAT_MESSAGE_MAX_WIDTH_MASK  |
                                FORMAT_MESSAGE_IGNORE_INSERTS,
                                NULL, error,
                                MAKELANGID(LANG_NEUTRAL,SUBLANG_DEFAULT),
                                (TXChar*) &errstr, 0, NULL);
-	if (!rv  &&  errstr) {
-		::LocalFree(errstr);
-		errstr = NULL;
-	}
+    if (!rv  &&  errstr) {
+        ::LocalFree(errstr);
+        errstr = NULL;
+    }
     int dynamic = 0/*false*/;
-    const char* result = ::NcbiMessagePlusError(&dynamic, message.c_str(),
-                                                (int) error, _T_CSTRING(errstr));
+    const char* result = ::NcbiMessagePlusError(&dynamic,
+                                                message.c_str(),
+                                                (int) error,
+                                                _T_CSTRING(errstr));
     if (errstr) {
         ::LocalFree(errstr);
     }

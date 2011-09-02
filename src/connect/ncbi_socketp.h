@@ -212,7 +212,7 @@ typedef struct LSOCK_tag {
     unsigned        readable:1; /* =1 if known to have a pending accept      */
     unsigned          unused:2; /* MBZ                                       */
 
-	WSAEVENT         event;     /* event bound to I/O                        */
+    WSAEVENT         event;     /* event bound to I/O                        */
 #endif /*!NCBI_OS_MSWIN*/
 
     void*            context;   /* per-server credentials                    */
@@ -267,12 +267,12 @@ typedef struct SOCK_tag {
     unsigned        writable:1; /* =1 if known to be writeable               */
     unsigned         closing:1; /* =1 if FD_CLOSE posted                     */
 
-	WSAEVENT         event;     /* event bound to I/O                        */
+    WSAEVENT         event;     /* event bound to I/O                        */
 #endif /*!NCBI_OS_MSWIN*/
 
     void*            session;   /* secure session id if secure, else 0       */
 
-	/* timeouts */
+    /* timeouts */
     const struct timeval* r_timeout;/* NULL if infinite, or points to "r_tv" */
     struct timeval   r_tv;      /* finite read  timeout value                */
     STimeout         r_to;      /* finite read  timeout value (aux., temp.)  */
