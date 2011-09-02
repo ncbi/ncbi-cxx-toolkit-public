@@ -301,7 +301,7 @@ public:
     /// Go daemon.
     ///
     /// Return TPid(-1) in the daemon thread (the parent thread doesn't return
-    /// unless fKeepParent is set, or TPid(daemon) in the parent thread).
+    /// unless fKeepParent is set), or TPid(daemon) in the parent thread.
     /// On error return 0 in the parent thread (no daemon created), see errno.
     ///
     /// Reopen stderr/cerr in the daemon thread if "logfile" specified as
@@ -317,12 +317,12 @@ public:
     /// fImmuneTTY is specified in the flags, which then causes a second
     /// fork() so that the resultant process won't be allowed to open a TTY as
     /// its controlling TTY (but only with an explicit O_NOCTTY, see open(2)),
-    /// thus protecting the process from any blocking via TTY signalling.
+    /// thus protecting the process from any blocking via TTY signaling.
     ///
     /// Note that this call is somewhat destructive and may not be able
     /// to restore the process that called it to a state prior to the call
     /// in case of an error.  So that calling process can find the standard
-    //  file pointers (and sometimes descriptors) screwed up.
+    //  file pointers (and sometimes descriptors) clobbered up.
     static TPid Daemonize(const char* logfile = 0, TDaemonFlags flags = 0);
 
 private:
