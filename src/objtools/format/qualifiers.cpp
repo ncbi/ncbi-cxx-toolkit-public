@@ -469,10 +469,6 @@ void CFlatGeneQVal::Format
  CBioseqContext& ctx,
  TFlags flags) const
 {
-    if (ctx.IsJournalScan()) {
-        s_StripTags(m_Value);
-        Sgml2Ascii(m_Value);
-    }
     CFlatStringQVal::Format(quals, name, ctx, flags);
 }
 
