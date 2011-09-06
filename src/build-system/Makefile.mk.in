@@ -193,6 +193,9 @@ LINK_LOADABLE = @LINK_LOADABLE@
 CFLAGS_DLL    = @CFLAGS_DLL@
 CXXFLAGS_DLL  = @CXXFLAGS_DLL@
 
+dll_ext      = @dll_ext@
+loadable_ext = @loadable_ext@
+
 # For various reasons, we traditionally allow shared libraries to have
 # undefined symbols; however, it's also possible to ask the linker to
 # be stricter by switching DLL_UNDEF_FLAGS to $(FORBID_UNDEF).
