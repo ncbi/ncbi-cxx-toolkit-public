@@ -45,16 +45,18 @@
 
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
+#include <objmgr/util/sequence.hpp>
 
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-CRef<CSeq_inst> PatchTargetSequence(CRef<CSeq_align> alignment, CScope &scope)
+CRef<CSeq_inst> PatchTargetSequence(CRef<CSeq_align> alignment, CScope &scope,
+                                    TSeqPos max_ignored_tail)
 {
     list< CRef<CSeq_align> > singleton_list;
     singleton_list.push_back(alignment);
-    return PatchTargetSequence(singleton_list, scope);
+    return PatchTargetSequence(singleton_list, scope, max_ignored_tail);
 }
 
 CRef<CDelta_seq> s_SubLocDeltaSeq(const CSeq_loc &loc, 
@@ -76,27 +78,9 @@ CRef<CDelta_seq> s_SubLocDeltaSeq(const CSeq_loc &loc,
     return result;
 }
 
-void s_InsertPatchSequence(CDelta_ext::Tdata &patched_contents,
-                           CDelta_ext::Tdata::iterator patched_contents_it,
-                           CRef<CSeq_align> patch,
-                           CBioseq_Handle patch_sequence,
-                           bool complete_patch)
-{
-    TSeqRange aligned_range =
-        complete_patch ? TSeqRange(0, patch_sequence.GetBioseqLength()-1)
-                       : patch->GetSeqRange(0);
-    CRef<CSeq_id> patch_id(new CSeq_id);
-    patch_id->Assign(patch->GetSeq_id(0));
-    CRef<CSeq_loc> patch_loc(new CSeq_loc(*patch_id, aligned_range.GetFrom(),
-                                          aligned_range.GetTo(),
-                                          patch->GetSeqStrand(0)));
-    CRef<CDelta_seq> inserted_patch(new CDelta_seq);
-    inserted_patch->SetLoc(*patch_loc);
-    patched_contents.insert(patched_contents_it, inserted_patch);
-}
-
 CRef<CSeq_inst> PatchTargetSequence(const list< CRef<CSeq_align> > &alignments,
-                                    CScope &scope)
+                                    CScope &scope,
+                                    TSeqPos max_ignored_tail)
 {
     CBioseq_Handle target =
         scope.GetBioseqHandle(alignments.front()->GetSeq_id(1));
@@ -127,19 +111,33 @@ CRef<CSeq_inst> PatchTargetSequence(const list< CRef<CSeq_align> > &alignments,
             NCBI_THROW(CException, eUnknown,
                 "Alignments in list are patching different sequences");
         }
-        if (alignment->GetSegs().IsDisc() &&
-            alignment->GetSegs().GetDisc().Get().size() != 2)
+        TSeqRange covered_range = alignment->GetSeqRange(1);
+        CRef<CSeq_align> &old_alignment = cover_map[covered_range];
+        if (!old_alignment) {
+            old_alignment = alignment;
+            if (total_covered.IntersectingWith(covered_range)) {
+                ITERATE (list< CRef<CSeq_align> >, it2, alignments) {
+                    LOG_POST(Error << "Patches on "
+                                   << target.GetSeq_id_Handle().AsString());
+                    LOG_POST(Error << (*it2)->GetSeq_id(0).AsFastaString()
+                                   << " covers " << (*it2)->GetSeqStart(1)
+                                   << " - " << (*it2)->GetSeqStop(1));
+                }
+                NCBI_THROW(CException, eUnknown, "fix patches on intersecting regions");
+            }
+            total_covered += covered_range;
+        } else if (!old_alignment->GetSeq_id(0).IsGi() ||
+                   !alignment->GetSeq_id(0).IsGi())
         {
             NCBI_THROW(CException, eUnknown,
-                "Not implemented for Disc alignments of more than two segs");
-        }
-        TSeqRange covered_range = alignment->GetSeqRange(1);
-        cover_map[covered_range] = alignment;
-        total_covered += covered_range;
-        /// Covered ranges should all be separa5te from each other, so the number of ranges
-        /// in total_covered should be equal to the number of ranges we put in
-        if (total_covered.size() < ++range_count) {
-            NCBI_THROW(CException, eUnknown, "fix patches on intersecting regions");
+                       "Several patches on same range; need gis to choose newest");
+
+        } else if (old_alignment->GetSeq_id(0).GetGi() <
+                   alignment->GetSeq_id(0).GetGi())
+        {
+            /// Several alignments on same range; take the one with the higher-gi
+            /// patch sequence, which is assumed to be newer
+            old_alignment = alignment;
         }
     }
     TCoverMap::const_iterator next_patch = cover_map.begin();
@@ -149,14 +147,18 @@ CRef<CSeq_inst> PatchTargetSequence(const list< CRef<CSeq_align> > &alignments,
     CDelta_ext::Tdata &patched_contents = patched_seq->SetExt().SetDelta().Set();
     TSignedSeqPos length_change = 0;
     TSeqPos current_pos = 0, next_pos = 0;
+    TSignedSeqPos next_gap_change = 0;
 
     NON_CONST_ITERATE (CDelta_ext::Tdata, it, patched_contents) {
         if ((*it)->IsLiteral()) {
-            next_pos += (*it)->GetLiteral().GetLength();
+            next_pos += (*it)->GetLiteral().GetLength() + next_gap_change;
+            next_gap_change = 0;
             LOG_POST(Info << "Literal end at " << next_pos);
             if (next_pos > next_patch->first.GetFrom()) {
                 NCBI_THROW(CException, eUnknown,
-                           "Patch on location " +
+                           target.GetSeq_id_Handle().AsString() + ": Patch "
+                           + next_patch->second->GetSeq_id(0).AsFastaString()
+                           + " on location " +
                            NStr::UIntToString(next_patch->first.GetFrom()) +
                            " which is in sequence gap");
             }
@@ -170,6 +172,7 @@ CRef<CSeq_inst> PatchTargetSequence(const list< CRef<CSeq_align> > &alignments,
         for (; next_patch != cover_map.end() &&
                next_pos > next_patch->first.GetFrom(); ++next_patch)
         {
+        try {
             CBioseq_Handle patch_sequence =
                 scope.GetBioseqHandle(next_patch->second->GetSeq_id(0));
             if (!patch_sequence) {
@@ -178,72 +181,100 @@ CRef<CSeq_inst> PatchTargetSequence(const list< CRef<CSeq_align> > &alignments,
 
             TSeqPos patch_length = patch_sequence.GetBioseqLength();
             TSeqRange aligned_patch_range = next_patch->second->GetSeqRange(0);
-            CRef<CSeq_align> patch, left_patch, right_patch;
-            if (next_patch->second->GetSegs().IsDisc()) {
+            CRef<CSeq_align> patch = next_patch->second;
+            if (patch->GetSeqStrand(1) != eNa_strand_plus) {
+                NCBI_THROW(CException, eUnknown,
+                           "Expect all patch alignments to align to target's "
+                           "plus strand");
+            }
+            ENa_strand patch_strand = patch->GetSeqStrand(0);
+            if (patch->GetSegs().IsDisc()) {
                 if (aligned_patch_range.GetLength() < patch_length)
                 {
                     NCBI_THROW(CException, eUnknown,
                                "Disc-seg patch alignments require that the "
                                "patch sequence by fully aligned");
                 }
-                left_patch = next_patch->second->GetSegs().GetDisc().Get().front();
-                right_patch = next_patch->second->GetSegs().GetDisc().Get().back();
-                if (left_patch->GetSeqRange(1) > right_patch->GetSeqRange(1)) {
-                    CRef<CSeq_align> temp = left_patch;
-                    left_patch = right_patch;
-                    right_patch = temp;
+                ITERATE (CSeq_align_set::Tdata, seg_it,
+                         patch->GetSegs().GetDisc().Get())
+                {
+                    if ((*seg_it)->GetSeqStrand(1) != eNa_strand_plus) {
+                        NCBI_THROW(CException, eUnknown,
+                                   "Expect all patch alignments to align to "
+                                   "target's plus strand");
+                    }
+                    if ((*seg_it)->GetSeqStrand(1) != patch_strand) {
+                        // If not all segments have the same strand, use plus
+                        patch_strand = eNa_strand_plus;
+                    }
                 }
-            } else {
-                patch = left_patch = right_patch = next_patch->second;
-            }
-            if (left_patch->GetSeqStrand(1) != eNa_strand_plus ||
-                right_patch->GetSeqStrand(1) != eNa_strand_plus)
-            {
-                NCBI_THROW(CException, eUnknown,
-                           "Expect all patch alignments to align to target's "
-                           "plus strand");
             }
 
-            pair<bool,bool> must_abut_gap(false, false);
+            pair<TSeqPos,TSeqPos> patch_tail(
+                aligned_patch_range.GetFrom(),
+                patch_length - aligned_patch_range.GetToOpen());
             bool gap_abut_problem = false;
-            if (aligned_patch_range.GetFrom() > 0) {
-                (patch->GetSeqStrand(0) == eNa_strand_minus
-                    ? must_abut_gap.second : must_abut_gap.first)
-                    = true;
+            if(patch_strand == eNa_strand_minus)
+            {
+                TSeqPos temp = patch_tail.first;
+                patch_tail.first = patch_tail.second;
+                patch_tail.second = temp;
             }
-            if (aligned_patch_range.GetToOpen() < patch_length) {
-                (patch->GetSeqStrand(0) == eNa_strand_minus
-                    ? must_abut_gap.first : must_abut_gap.second)
-                    = true;
-            }
-            if (must_abut_gap.first) {
-                if (current_pos < next_patch->first.GetFrom()) {
+            if (patch_tail.first > max_ignored_tail) {
+                if (current_pos != next_patch->first.GetFrom() ||
+                    it == patched_contents.begin())
+                {
                     gap_abut_problem = true;
-                } else if (it != patched_contents.begin()) {
+                } else {
                     if (!(*--it)->IsLiteral() || 
                         !(*it)->GetLiteral().GetSeq_data().IsGap())
                     {
                         gap_abut_problem = true;
+                    } else {
+                        CSeq_literal &gap = (*it)->SetLiteral();
+                        TSignedSeqPos new_gap_size =
+                            gap.GetLength() - patch_tail.first;
+                        if (new_gap_size <= 0) {
+                            new_gap_size = 50000;
+                        }
+                        length_change -= gap.GetLength() - new_gap_size;
+                        gap.SetLength(new_gap_size);
                     }
                     ++it;
                 }
             }
-            if (must_abut_gap.second) {
-                if (next_pos > next_patch->first.GetToOpen()) {
+            if (patch_tail.second > max_ignored_tail) {
+                if (next_pos != next_patch->first.GetToOpen()) {
                     gap_abut_problem = true;
                 } else {
-                    if (++it != patched_contents.end() &&
-                        (!(*it)->IsLiteral() || 
-                        !(*it)->GetLiteral().GetSeq_data().IsGap()))
+                    if (++it == patched_contents.end() ||
+                        !(*it)->IsLiteral() || 
+                        !(*it)->GetLiteral().GetSeq_data().IsGap())
                     {
                         gap_abut_problem = true;
+                    } else {
+                        CSeq_literal &gap = (*it)->SetLiteral();
+                        TSignedSeqPos new_gap_size =
+                            gap.GetLength() - patch_tail.second;
+                        if (new_gap_size <= 0) {
+                            new_gap_size = 50000;
+                        }
+                        length_change -= next_gap_change
+                                       = gap.GetLength() - new_gap_size;
+                        gap.SetLength(new_gap_size);
                     }
                     --it;
                 }
 	    }
             if (gap_abut_problem) {
-                NCBI_THROW(CException, eUnknown,
-                    "patch has unaligned tail but does not abut gap");
+                LOG_POST(Warning << "patch "
+                    << sequence::GetId(patch_sequence, sequence::eGetId_Best)
+                    << " on "
+                    << sequence::GetId(target, sequence::eGetId_Best)
+                    << " has unaligned tail of length "
+                    << NStr::UIntToString(max(patch_tail.first,patch_tail.second))
+                    << " but does not abut gap; skipping");
+                continue;
             }
 
             /// Remove aligned region from target sequence
@@ -272,18 +303,14 @@ CRef<CSeq_inst> PatchTargetSequence(const list< CRef<CSeq_align> > &alignments,
             length_change -= next_patch->first.GetLength();
 
             /// Add aligned fix patch in place of the region we removed
-            if (patch) {
-                s_InsertPatchSequence(patched_contents, it,
-                                      patch, patch_sequence, true);
-                length_change += patch_length;
-            } else {
-                s_InsertPatchSequence(patched_contents, it,
-                                      left_patch, patch_sequence, false);
-                s_InsertPatchSequence(patched_contents, it,
-                                      right_patch, patch_sequence, false);
-                length_change += left_patch->GetSeqRange(0).GetLength()
-                               + right_patch->GetSeqRange(0).GetLength();
-            }
+            CRef<CSeq_id> patch_id(new CSeq_id);
+            patch_id->Assign(patch->GetSeq_id(0));
+            CRef<CSeq_loc> patch_loc(
+                new CSeq_loc(*patch_id, 0, patch_length-1, patch_strand));
+            CRef<CDelta_seq> inserted_patch(new CDelta_seq);
+            inserted_patch->SetLoc(*patch_loc);
+            patched_contents.insert(it, inserted_patch);
+            length_change += patch_length;
 
             unsigned aligned_length =
                 next_patch->first.GetToOpen() - current_pos;
@@ -301,6 +328,13 @@ CRef<CSeq_inst> PatchTargetSequence(const list< CRef<CSeq_align> > &alignments,
                 it = patched_contents.insert(it,
                     s_SubLocDeltaSeq(target_loc, aligned_length));
             }
+        } catch (exception &e) {
+            LOG_POST(Error << "While applying patch "
+                           << next_patch->second->GetSeq_id(0).AsFastaString()
+                           << " on "
+                           << next_patch->second->GetSeq_id(1).AsFastaString());
+            throw;
+        }
         }
         if (next_patch == cover_map.end()) {
             /// no more patches to apply, so we're done
