@@ -38,6 +38,7 @@
 #include <algo/blast/api/blast_options_builder.hpp>
 #include <algo/blast/api/blast_results.hpp>
 #include <objects/blast/blast__.hpp>
+#include <objects/scoremat/PssmWithParameters.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -65,11 +66,13 @@ BEGIN_SCOPE(blast)
 /// @param options_handle BLAST options
 /// @param results set of BLAST results
 /// @param dbname name of the database
+/// @param num_iters psi iteration number
 NCBI_XBLASTFORMAT_EXPORT
 CRef<objects::CBlast4_archive> BlastBuildArchive(blast::IQueryFactory& queries, 
                           blast::CBlastOptionsHandle& options_handle,
                           const CSearchResultSet& results,
-                          const string& dbname);
+                          const string& dbname,
+                          unsigned int num_iters = 0);
 
 /// Returns a blast archive object.
 /// @param queries factory to provide queries
@@ -81,6 +84,19 @@ CRef<objects::CBlast4_archive> BlastBuildArchive(blast::IQueryFactory& queries,
                           blast::CBlastOptionsHandle& options_handle,
                           const CSearchResultSet& results,
                           blast::IQueryFactory& subjects);
+
+/// Returns a blast archive object.
+/// @param queries factory to provide queries
+/// @param options_handle BLAST options
+/// @param results set of BLAST results
+/// @param dbname name of the database
+/// @param num_iters psi iteration number
+NCBI_XBLASTFORMAT_EXPORT
+CRef<objects::CBlast4_archive> BlastBuildArchive(objects::CPssmWithParameters & pssm,
+                  	  	  	  	  	  	  	     blast::CBlastOptionsHandle& options_handle,
+                  	  	  	  	  	  	  	     const CSearchResultSet& results,
+                  	  	  	  	  	  	  	     const string& dbname,
+                  	  	  	  	  	  	  	     unsigned int num_iters = 0);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

@@ -73,6 +73,8 @@ struct CImportStrategyData {
 
     /// Task, such as megablast, blastn, blastp, etc.
     string m_Task;
+
+    unsigned int m_PsiNumOfIterations;
 };
 
 
@@ -119,6 +121,9 @@ public:
     /// Options for controlling program execution and database filtering.
     objects::CBlast4_parameters& GetProgramOptions();
 
+    // Get number of iteration for psi blast, return 0 if num of iterations not available
+    unsigned int GetPsiNumOfIterations();
+
 private:
 
     void FetchData() const; /// Fills in CImportStrategyData;
@@ -153,7 +158,8 @@ public:
     CExportStrategy(CRef<IQueryFactory>         query,
                  	CRef<CBlastOptionsHandle>  	opts_handle,
                  	CRef<CSearchDatabase> 		db,
-    			    const string & 				client_id = kEmptyStr);
+    			    const string & 				client_id = kEmptyStr,
+    			    unsigned int				psi_num_iterations = 0);
 
     /// Construct search strategy with :-.
     /// @param queries Queries corresponding to Seq-loc-list or Bioseq-set.
@@ -173,7 +179,8 @@ public:
     CExportStrategy(CRef<CPssmWithParameters>	pssm,
                  	CRef<CBlastOptionsHandle>   opts_handle,
                  	CRef<CSearchDatabase> 		db,
-    			    const string & 				client_id = kEmptyStr);
+    			    const string & 				client_id = kEmptyStr,
+    			    unsigned int				psi_num_iterations = 0);
 
     // Return Search Strategy constructed by calling one of the constructors above
     CRef<objects::CBlast4_request> GetSearchStrategy(void);
@@ -196,6 +203,8 @@ private:
 	                   	 	    		const int int_value);
 	void x_AddParameterToProgramOptions(objects::CBlast4Field & field,
 										const vector<int> & int_list);
+
+	void x_AddPsiNumOfIterationsToFormatOptions(unsigned int num_iters);
 
 	CRef<CBlast4_queue_search_request>   	m_QueueSearchRequest;
 	string									m_ClientId;

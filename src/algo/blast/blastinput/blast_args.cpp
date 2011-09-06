@@ -1107,7 +1107,8 @@ CPsiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
 {
     if (m_DbTarget == eProteinDb) {
         if (args[kArgPSINumIterations]) {
-            m_NumIterations = args[kArgPSINumIterations].AsInteger();
+        	if(m_NumIterations == 1)
+        		m_NumIterations = args[kArgPSINumIterations].AsInteger();
         }
         if (args.Exist(kArgPSIOutputChkPntFile) &&
             args[kArgPSIOutputChkPntFile]) {

@@ -90,6 +90,12 @@ s_BuildArchiveAll(CRef<CExportStrategy>  export_strategy,
         net_request->SetIdent("");
 
         archive->SetRequest(*net_request);
+        bool isPsiblast = false;
+        if(net_request->CanGetBody() && net_request->GetBody().IsQueue_search())
+        {
+        	if(net_request->GetBody().GetQueue_search().GetService() == "psi")
+        		isPsiblast=true;
+        }
 
         CRef<CSeq_align_set> seqalign_set(new CSeq_align_set);
          _ASSERT(seqalign_set.NotEmpty());
@@ -114,8 +120,11 @@ s_BuildArchiveAll(CRef<CExportStrategy>  export_strategy,
              {
                     CRef<CBlastAncillaryData> ancill_data = (*result)->GetAncillaryData();
                     list<CRef<CBlast4_ka_block> >& ka_list = net_results->SetKa_blocks();
-                    ka_list.push_back(s_Convert_to_CBlast_ka_block(ancill_data->GetUngappedKarlinBlk(), false));
-                    ka_list.push_back(s_Convert_to_CBlast_ka_block(ancill_data->GetGappedKarlinBlk(), true));
+
+                    ka_list.push_back(s_Convert_to_CBlast_ka_block(isPsiblast? ancill_data->GetPsiUngappedKarlinBlk():
+                    														   ancill_data->GetUngappedKarlinBlk(), false));
+                    ka_list.push_back(s_Convert_to_CBlast_ka_block(isPsiblast? ancill_data->GetPsiGappedKarlinBlk() :
+                    		    											   ancill_data->GetGappedKarlinBlk(), true));
                     effective_search_space = ancill_data->GetSearchSpace();
                     first_time = false;
              }
@@ -142,7 +151,8 @@ CRef<objects::CBlast4_archive>
 BlastBuildArchive(blast::IQueryFactory& queries,
                      blast::CBlastOptionsHandle& options_handle,
                      const CSearchResultSet& results,
-                     const string& dbname)
+                     const string& dbname,
+                     unsigned int num_iters)
 {
         CSearchDatabase::EMoleculeType mol_type = CSearchDatabase::eBlastDbIsNucleotide;
         if (Blast_SubjectIsNucleotide(options_handle.GetOptions().GetProgramType()))
@@ -155,7 +165,11 @@ BlastBuildArchive(blast::IQueryFactory& queries,
         CRef<blast::IQueryFactory> iquery_ref(&queries);
         CRef<blast::CBlastOptionsHandle> options_ref(&options_handle);
         CRef<blast::CSearchDatabase> search_db(&db);
-        CRef<CExportStrategy> export_strategy(new CExportStrategy(iquery_ref, options_ref, search_db));
+       	CRef<CExportStrategy> export_strategy;
+        if(num_iters != 0)
+        	export_strategy.Reset(new CExportStrategy(iquery_ref, options_ref, search_db, kEmptyStr, num_iters));
+        else
+        	export_strategy.Reset(new CExportStrategy(iquery_ref, options_ref, search_db));
 
         CRef<objects::CBlast4_archive> archive = s_BuildArchiveAll(export_strategy, options_handle, results);
         return archive;
@@ -182,6 +196,24 @@ BlastBuildArchive(blast::IQueryFactory& queries,
         return s_BuildArchiveAll(export_strategy, options_handle, results);
 }
 
+CRef<objects::CBlast4_archive>
+BlastBuildArchive(objects::CPssmWithParameters & pssm,
+                  blast::CBlastOptionsHandle& options_handle,
+                  const CSearchResultSet& results,
+                  const string& dbname,
+                  unsigned int num_iters)
+{
+       	CSearchDatabase db(dbname, CSearchDatabase::eBlastDbIsProtein);
+
+        CRef<objects::CPssmWithParameters> pssm_ref(&pssm);
+        CRef<blast::CBlastOptionsHandle> options_ref(&options_handle);
+        CRef<blast::CSearchDatabase> search_db(&db);
+        CRef<CExportStrategy> export_strategy(new CExportStrategy(pssm_ref, options_ref, search_db, kEmptyStr, num_iters));
+
+        CRef<objects::CBlast4_archive> archive = s_BuildArchiveAll(export_strategy, options_handle, results);
+        return archive;
+
+}
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

@@ -237,6 +237,7 @@ string kBlast4SearchInfoReqName_Alignment("alignment");
 string kBlast4SearchInfoReqValue_Status("status");
 string kBlast4SearchInfoReqValue_Title("title");
 string kBlast4SearchInfoReqValue_Subjects("subjects");
+string kBlast4SearchInfoReqValue_PsiIterationNum("psi_iteration_number");
 
 /// Auxiliary function to consistently build the Blast4-get-search-info-reply
 /// names

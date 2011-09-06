@@ -199,7 +199,8 @@ SaveSearchStrategy(const CArgs& args,
                    CRef<blast::IQueryFactory> queries,
                    CRef<blast::CBlastOptionsHandle> opts_hndl,
                    CRef<objects::CPssmWithParameters> pssm 
-                     = CRef<objects::CPssmWithParameters>());
+                     = CRef<objects::CPssmWithParameters>(),
+                   unsigned int num_iters = 0);
 
 /// This method needs to be invoked for optimizing the retrieval of
 /// sequence data from the remote BLAST database data loader (exercised

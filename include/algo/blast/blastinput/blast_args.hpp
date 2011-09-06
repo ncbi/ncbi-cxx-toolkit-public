@@ -494,6 +494,11 @@ public:
     size_t GetNumberOfIterations() const { 
         return m_NumIterations; 
     }
+
+    /// Retrieve the number of iterations to perform
+    void SetNumberOfIterations(unsigned int num_iters) {
+            m_NumIterations = num_iters;
+    }
     /// Returns true if checkpoint PSSM is required to be printed
     bool RequiresCheckPointOutput() const {
         return m_CheckPointOutput != NULL;

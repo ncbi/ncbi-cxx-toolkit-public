@@ -1625,6 +1625,13 @@ CRemoteBlast::x_GetRequestInfoFromFile()
         else
             m_SubjectSequences = strategy.GetSubject()->SetSequences();
 
+        if(m_Service == "psi")
+        {
+        	// Would have errored out in CImportStrategy if we can't get queue search
+        	 CBlast4_queue_search_request& qs = request->SetBody().SetQueue_search();
+        	 if(qs.CanGetFormat_options())
+        	        	m_FormatOpts.Reset(&qs.SetFormat_options());
+        }
         // Ignore return value, want side effect of setting fields.
         GetSearchOptions();
         return;
@@ -2095,7 +2102,7 @@ CRef<CSearchResultSet> CRemoteBlast::GetResultSet()
         // Altschul parameters, so we don't set the is_psiblast
         // CBlastAncillaryData constructor argument
         CRef<CBlastAncillaryData> ancillary_data
-            (new CBlastAncillaryData(lambdas, Ks, Hs, effective_search_space));
+            (new CBlastAncillaryData(lambdas, Ks, Hs, effective_search_space, m_Task == "psiblast"));
         ancill_vector.insert(ancill_vector.end(), alignments.size(),
                              ancillary_data);
     }
@@ -2182,76 +2189,62 @@ ExtractBlast4Request(CNcbiIstream& in)
 
     return retval;
 }
-//
-// based on a new request 
-//
-string CRemoteBlast::GetTitle(void)
+
+static CRef<CBlast4_request_body>
+s_BuildSearchInfoRequest(const string& rid,
+                         const string& name,
+                         const string& value)
 {
-    string return_title;
-    
-    // Build the request
     CRef<CBlast4_get_search_info_request> info_request( new CBlast4_get_search_info_request );
-    info_request->SetRequest_id( m_RID );
-    info_request->SetInfo().Add(kBlast4SearchInfoReqName_Search,
-                                kBlast4SearchInfoReqValue_Title);
+    info_request->SetRequest_id(rid);
+    info_request->SetInfo().Add(name, value);
+    CRef<CBlast4_request_body> retval(new CBlast4_request_body);
+    retval->SetGet_search_info(*info_request);
+    return retval;
+}
 
-    CRef<CBlast4_request_body> body(new CBlast4_request_body);
-    body->SetGet_search_info( *info_request );
-
-    CRef<CBlast4_request> request(new CBlast4_request);
-    request->SetBody(*body);
-    
-    CRef<CBlast4_reply> reply(new CBlast4_reply);
-    
-    if (eDebug == m_Verbose) {
-        NcbiCout << MSerial_AsnText << *request << endl;
-    }
-    
-    try {
-        CStopWatch sw(CStopWatch::eStart);
-        
-        if (eDebug == m_Verbose) {
-            NcbiCout << "Starting network transaction (" << sw.Elapsed() << ")" << endl;
-        }
-        
-        // Send request.
-        CBlast4Client().Ask(*request, *reply);
-        
-        if (eDebug == m_Verbose) {
-            NcbiCout << "Done network transaction (" << sw.Elapsed() << ")" << endl;
-        }
-    }
-    catch(const CEofException&) {
-        NCBI_THROW(CRemoteBlastException, eServiceNotAvailable,
-                   "No response from server, cannot complete request.");
-    }
-
-    if (eDebug == m_Verbose) {
-        NcbiCout << MSerial_AsnText << *reply << endl;
-    }
-  
-    // get reply. it will be status and title if set
-    if (!reply->CanGetBody()) {
-        return kEmptyStr;
+string
+CRemoteBlast::x_GetStringFromSearchInfoReply(CRef<CBlast4_reply> reply,
+                                             const string& name,
+                                             const string& value)
+{
+    string retval;
+    if (reply.Empty() || !reply->CanGetBody()) {
+        return retval;
     }
     if (reply->GetBody().IsGet_search_info()) {
         const CBlast4_get_search_info_reply &info_reply = reply->GetBody().GetGet_search_info();
         if (info_reply.CanGetRequest_id() && (info_reply.GetRequest_id() == m_RID)) {
             if( info_reply.CanGetInfo() ){
                 const CBlast4_parameters &params = info_reply.GetInfo();
-                string reply_name =
-                    Blast4SearchInfo_BuildReplyName(kBlast4SearchInfoReqName_Search,
-                                                    kBlast4SearchInfoReqValue_Title);
+                const string reply_name =
+                    Blast4SearchInfo_BuildReplyName(name, value);
                 CRef< CBlast4_parameter > search_param =
                     params.GetParamByName(reply_name);
                 if( search_param.NotEmpty() && search_param->GetValue().IsString()) {
-                    return_title = search_param->GetValue().GetString();
+                    retval = search_param->GetValue().GetString();
                 }
             } // get info
         } // request id == m_RID
     } // search info reply
+    return retval;
+}
 
-    return return_title;
+
+//
+// based on a new request 
+//
+string CRemoteBlast::GetTitle(void)
+{
+	    // Build the request
+	    CRef<CBlast4_request_body> request_body =
+	        s_BuildSearchInfoRequest(m_RID, kBlast4SearchInfoReqName_Search,
+	                                 kBlast4SearchInfoReqValue_Title);
+	    CRef<CBlast4_reply> reply = x_SendRequest(request_body);
+	    return x_GetStringFromSearchInfoReply(reply,
+	                                          kBlast4SearchInfoReqName_Search,
+	                                          kBlast4SearchInfoReqValue_Title);
+
 }
 // Disk Cache version: x_CheckResults
 // only difference is that if search finished,
@@ -2510,6 +2503,44 @@ void CRemoteBlast::x_GetSubjects(void)
        } // search info reply
    } // get body
 }
+
+unsigned int CRemoteBlast::GetPsiNumberOfIterations(void)
+{
+	unsigned int iter_num = 0;
+	if(!m_FormatOpts.Empty())
+	{
+		CRef< CBlast4_parameter > param = m_FormatOpts->GetParamByName (B4Param_Web_StepNumber.GetName());
+        if( param.NotEmpty())
+        {
+        	iter_num  = param->GetValue().GetInteger();
+        }
+	}
+	else if(!m_RID.empty())
+	{
+		iter_num = x_GetPsiIterationsFromServer();
+	}
+
+	return iter_num;
+}
+
+unsigned int CRemoteBlast::x_GetPsiIterationsFromServer()
+{
+	unsigned int retval=0;
+
+     CRef<CBlast4_request_body> request_body =
+         s_BuildSearchInfoRequest(m_RID, kBlast4SearchInfoReqName_Search,
+                                  kBlast4SearchInfoReqValue_PsiIterationNum);
+     CRef<CBlast4_reply> reply = x_SendRequest(request_body);
+     string num = x_GetStringFromSearchInfoReply(reply,
+                                                 kBlast4SearchInfoReqName_Search,
+                                                 kBlast4SearchInfoReqValue_PsiIterationNum);
+      if ( !num.empty() ) {
+         try { retval = NStr::StringToUInt(num); }
+         catch (...) {}  // ignore errors and leave as unset
+     }
+     return retval;
+}
+
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

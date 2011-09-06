@@ -627,7 +627,8 @@ CConstRef<objects::CBioseq> CBlastFormat::x_CreateSubjectBioseq()
 void 
 CBlastFormat::WriteArchive(blast::IQueryFactory& queries,
                            blast::CBlastOptionsHandle& options_handle,
-                           const CSearchResultSet& results)
+                           const CSearchResultSet& results,
+                           unsigned int num_iters)
 {
     if (m_IsBl2Seq)
     {
@@ -646,8 +647,27 @@ CBlastFormat::WriteArchive(blast::IQueryFactory& queries,
         
     }
     else
-       m_Outfile << MSerial_AsnText << *(BlastBuildArchive(queries, options_handle, results,  m_DbName));
+    {
+   		CRef<objects::CBlast4_archive>  archive;
+    	// Use only by psi blast
+    	if(num_iters != 0)
+    		archive = BlastBuildArchive(queries, options_handle, results,  m_DbName, num_iters);
+    	else
+    		archive = BlastBuildArchive(queries, options_handle, results,  m_DbName);
+
+    	m_Outfile << MSerial_AsnText << *archive;
+    }
 }
+
+void
+CBlastFormat::WriteArchive(objects::CPssmWithParameters & pssm,
+                           blast::CBlastOptionsHandle& options_handle,
+                           const CSearchResultSet& results,
+                           unsigned int num_iters)
+{
+       m_Outfile << MSerial_AsnText << *(BlastBuildArchive(pssm, options_handle, results,  m_DbName, num_iters));
+}
+
 
 void
 CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,

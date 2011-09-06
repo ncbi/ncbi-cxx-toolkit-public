@@ -152,6 +152,12 @@ CPsiBlastAppArgs::SetInputPssm(CRef<objects::CPssmWithParameters> pssm)
     m_PsiBlastArgs->SetInputPssm(pssm);
 }
 
+void
+CPsiBlastAppArgs::SetNumberOfIterations(unsigned int num_iters)
+{
+    m_PsiBlastArgs->SetNumberOfIterations(num_iters);
+}
+
 int 
 CPsiBlastAppArgs::GetQueryBatchSize() const
 {

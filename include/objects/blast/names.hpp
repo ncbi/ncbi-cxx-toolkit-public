@@ -216,6 +216,9 @@ NCBI_BLAST_EXPORT extern  string kBlast4SearchInfoReqValue_Title;
 /// Used to retrieve the BLAST search subjects
 NCBI_BLAST_EXPORT extern  string kBlast4SearchInfoReqValue_Subjects;
 
+/// Used to retrieve the PSI-BLAST iteration number
+NCBI_BLAST_EXPORT extern  string kBlast4SearchInfoReqValue_PsiIterationNum;
+
 /// This function builds the reply name token in the get-search-info reply
 /// objects, provided a pair of strings such as those defined above
 /// (i.e.: kBlast4SearchInfoReq{Name,Value})

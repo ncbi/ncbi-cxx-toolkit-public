@@ -91,6 +91,7 @@ private:
 
     /// The source of CScope objects for queries
     CRef<CBlastScopeSource> m_QueryScopeSource;
+
 };
 
 void CBlastFormatterApp::Init()
@@ -309,14 +310,38 @@ int CBlastFormatterApp::PrintFormattedOutput(void)
                            opts.GetMBIndexLoaded());
     CRef<CSearchResultSet> results = m_RmtBlast->GetResultSet();
     formatter.PrintProlog();
+    bool isPsiBlast = ("psiblast" == kTask);
     if (fmt_args.ArchiveFormatRequested(args))
     {
-        CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(*queries));
-        formatter.WriteArchive(*query_factory, *opts_handle, *results);
+    	if(isPsiBlast)
+    	{
+    		CRef<objects::CPssmWithParameters> pssm = m_RmtBlast->GetPSSM();
+    		if(!pssm.Empty())
+    		{
+    			formatter.WriteArchive(*pssm, *opts_handle, *results, m_RmtBlast->GetPsiNumberOfIterations());
+    		}
+    		else
+    		{
+    			CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(*queries));
+    			formatter.WriteArchive(*query_factory, *opts_handle, *results, m_RmtBlast->GetPsiNumberOfIterations());
+    		}
+    	}
+    	else
+    	{
+    		CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(*queries));
+    		formatter.WriteArchive(*query_factory, *opts_handle, *results);
+    	}
     } else {
         BlastFormatter_PreFetchSequenceData(*results, scope);
     	ITERATE(CSearchResultSet, result, *results) {
-       	   formatter.PrintOneResultSet(**result, queries);
+    		if(isPsiBlast)
+    		{
+    			formatter.PrintOneResultSet(**result, queries, m_RmtBlast->GetPsiNumberOfIterations());
+    		}
+    		else
+    		{
+    			formatter.PrintOneResultSet(**result, queries);
+    		}
     	}
     }
     formatter.PrintEpilog(opts);

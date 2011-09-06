@@ -201,9 +201,21 @@ public:
     /// @param queries Query factory to provide queries
     /// @param options_handle BLAST options
     /// @param results the search results
+    /// @param num_iters number of iterations for psiblast
     void WriteArchive(blast::IQueryFactory& queries,
                            blast::CBlastOptionsHandle& options_handle,
-                           const blast::CSearchResultSet& results);
+                           const blast::CSearchResultSet& results,
+                           unsigned int num_iters = 0);
+
+    /// Writes out the pssm and results as an "archive" format
+    /// @param pssm 	psiblast pssm
+    /// @param options_handle BLAST options
+    /// @param results the search results
+    /// @param num_iter number of iterations for psiblast
+    void WriteArchive(objects::CPssmWithParameters & pssm,
+                      blast::CBlastOptionsHandle& options_handle,
+                      const blast::CSearchResultSet& results,
+                      unsigned int num_iters = 0);
 
     /// Print the footer of the blast report
     /// @param options Options used for performing the blast search [in]

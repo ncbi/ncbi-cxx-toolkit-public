@@ -59,6 +59,9 @@ public:
     /// Set the PSSM from the saved search strategy 
     void SetInputPssm(CRef<objects::CPssmWithParameters> pssm);
 
+    /// Set number of iterations from the saved search strategy
+    void SetNumberOfIterations(unsigned int num_iters);
+
     /// Get the query batch size
     virtual int GetQueryBatchSize() const;
 

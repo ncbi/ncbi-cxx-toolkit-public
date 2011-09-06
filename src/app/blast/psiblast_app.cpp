@@ -196,9 +196,9 @@ CPsiBlastApp::DoIterations(CRef<CBlastOptionsHandle> opts_hndl,
         if (pssm.Empty() && !query.Empty())
        		query_factory.Reset(new CObjMgr_QueryFactory(*query));
 
-        SaveSearchStrategy(args, m_CmdLineArgs, query_factory, opts_hndl, pssm);
-
         const size_t kNumIterations = m_CmdLineArgs->GetNumberOfIterations();
+        SaveSearchStrategy(args, m_CmdLineArgs, query_factory, opts_hndl, pssm, kNumIterations);
+
 
         if (m_CmdLineArgs->ExecuteRemotely()) {
 
@@ -213,7 +213,14 @@ CPsiBlastApp::DoIterations(CRef<CBlastOptionsHandle> opts_hndl,
             if(CFormattingArgs::eArchiveFormat ==
                m_CmdLineArgs->GetFormattingArgs()->GetFormattedOutputChoice())
             {
-            	formatter.WriteArchive(*query_factory, *opts_hndl, *results);
+            	if (pssm.Empty() && !query.Empty())
+            	{
+            		formatter.WriteArchive(*query_factory, *opts_hndl, *results );
+            	}
+            	else if (!pssm.Empty())
+            	{
+            		formatter.WriteArchive(*pssm, *opts_hndl, *results);
+            	}
             }
             else
             {
@@ -283,14 +290,22 @@ CPsiBlastApp::DoIterations(CRef<CBlastOptionsHandle> opts_hndl,
                 else
                 {
                    results = psiblast->Run();
+                   BlastFormatter_PreFetchSequenceData(*results, scope);
                    if(CFormattingArgs::eArchiveFormat ==
                 	  m_CmdLineArgs->GetFormattingArgs()->GetFormattedOutputChoice())
                    {
-                	   formatter.WriteArchive(*query_factory, *opts_hndl, *results);
+                	   if (pssm.Empty() && !query.Empty())
+                	   {
+                		   formatter.WriteArchive(*query_factory, *opts_hndl, *results, itr.GetIterationNumber());
+                	   }
+                	   else if (!pssm.Empty())
+                	   {
+                		   formatter.WriteArchive(*pssm, *opts_hndl, *results, itr.GetIterationNumber());
+                	   }
                    }
                    else
                    {
-                	   BlastFormatter_PreFetchSequenceData(*results, scope);
+                	   //BlastFormatter_PreFetchSequenceData(*results, scope);
 	                   ITERATE(CSearchResultSet, result, *results) {
  	                      formatter.PrintOneResultSet(**result, query,
 	                                                itr.GetIterationNumber(),
@@ -428,7 +443,6 @@ int CPsiBlastApp::Run(void)
 
         formatter.PrintProlog();
 
-
         if (pssm.Empty())
         {   // Value may be modified for 2nd (PSSM) iteration, so save to reset for next query.
             ECompoAdjustModes comp_stats_original = opts_hndl->GetOptions().GetCompositionBasedStats();
@@ -446,7 +460,8 @@ int CPsiBlastApp::Run(void)
                            scope,
                            formatter);
 
-                if (retval && !fmt_args->HasStructuredOutputFormat()) {
+                if (retval && !fmt_args->HasStructuredOutputFormat() &&
+                	fmt_args->GetFormattedOutputChoice() != CFormattingArgs::eArchiveFormat) {
                 	out_stream << NcbiEndl << "Search has CONVERGED!" << NcbiEndl;
             	}
             	// Reset for next query sequence.
@@ -479,7 +494,8 @@ int CPsiBlastApp::Run(void)
                            scope,
                            formatter);
 
-                if (retval && !fmt_args->HasStructuredOutputFormat())
+                if (retval && !fmt_args->HasStructuredOutputFormat() &&
+                	fmt_args->GetFormattedOutputChoice() != CFormattingArgs::eArchiveFormat)
                 	out_stream << NcbiEndl << "Search has CONVERGED!" << NcbiEndl;
         }
 

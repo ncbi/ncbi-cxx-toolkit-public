@@ -472,6 +472,9 @@ public:
     // actual code to get results using disk cache intermediate storage
     CRef<objects::CBlast4_reply> x_GetSearchResultsHTTP(void);
 
+    // For Psiblast
+    unsigned int GetPsiNumberOfIterations(void);
+
 private:
 
     bool x_HasRetrievedSubjects() const {
@@ -686,6 +689,12 @@ private:
     // Retrieve the subject sequences using the get-search-info functionality
     void   x_GetSubjects(void);
     
+    string x_GetStringFromSearchInfoReply(CRef<CBlast4_reply> reply,
+                                          const string& name,
+                                          const string& value);
+
+    // Get psi iterations for an RID
+    unsigned int x_GetPsiIterationsFromServer(void);
     /// Prohibit copy construction.
     CRemoteBlast(const CRemoteBlast &);
     

@@ -220,7 +220,9 @@ s_InitializeExportStrategy(CRef<blast::IQueryFactory> queries,
                       	 CRef<blast::CBlastOptionsHandle> opts_hndl,
                       	 const string& client_id /* = kEmptyStr */,
                       	 CRef<objects::CPssmWithParameters> pssm
-                         /* = CRef<objects::CPssmWithParameters>() */)
+                         /* = CRef<objects::CPssmWithParameters>() */,
+                         unsigned int num_iters
+                         /* = 0 */)
 {
     _ASSERT(queries || pssm);
     _ASSERT(db_args);
@@ -234,11 +236,17 @@ s_InitializeExportStrategy(CRef<blast::IQueryFactory> queries,
         if (pssm.NotEmpty())
         {
             _ASSERT(queries.Empty());
-            retval.Reset(new blast::CExportStrategy(pssm, opts_hndl, search_db, client_id));
+            if(num_iters != 0)
+            	retval.Reset(new blast::CExportStrategy(pssm, opts_hndl, search_db, client_id, num_iters));
+            else
+            	retval.Reset(new blast::CExportStrategy(pssm, opts_hndl, search_db, client_id));
         }
         else
         {
-            retval.Reset(new blast::CExportStrategy(queries, opts_hndl, search_db, client_id));
+            if(num_iters != 0)
+            	retval.Reset(new blast::CExportStrategy(queries, opts_hndl, search_db, client_id, num_iters));
+            else
+            	retval.Reset(new blast::CExportStrategy(queries, opts_hndl, search_db, client_id));
         }
     }
     else
@@ -266,8 +274,9 @@ s_ExportSearchStrategy(CNcbiOstream* out,
                      CRef<blast::IQueryFactory> queries,
                      CRef<blast::CBlastOptionsHandle> options_handle,
                      CRef<blast::CBlastDatabaseArgs> db_args,
-                     CRef<objects::CPssmWithParameters> pssm 
-                       /* = CRef<objects::CPssmWithParameters>() */)
+                     CRef<objects::CPssmWithParameters> pssm,
+                       /* = CRef<objects::CPssmWithParameters>() */
+                     unsigned int num_iters /* = 0 */)
 {
     if ( !out )
         return;
@@ -279,7 +288,7 @@ s_ExportSearchStrategy(CNcbiOstream* out,
     {
         CRef<CExportStrategy> export_strategy =
         			s_InitializeExportStrategy(queries, db_args, options_handle,
-                                  	 	 	   kEmptyStr, pssm);
+                                  	 	 	   kEmptyStr, pssm, num_iters);
         export_strategy->ExportSearchStrategy_ASN1(out);
     }
     catch (const CBlastException& e)
@@ -505,6 +514,10 @@ s_ImportSearchStrategy(CNcbiIstream* in,
         }
     }
 
+    if ( CPsiBlastAppArgs* psi_args = dynamic_cast<CPsiBlastAppArgs*>(cmdline_args) )
+    {
+            psi_args->SetNumberOfIterations(strategy.GetPsiNumOfIterations());
+    }
 }
 
 void
@@ -536,7 +549,8 @@ SaveSearchStrategy(const CArgs& args,
                    CRef<blast::IQueryFactory> queries,
                    CRef<blast::CBlastOptionsHandle> opts_hndl,
                    CRef<objects::CPssmWithParameters> pssm 
-                     /* = CRef<objects::CPssmWithParameters>() */)
+                     /* = CRef<objects::CPssmWithParameters>() */,
+                    unsigned int num_iters /* =0 */)
 {
     CNcbiOstream* out = cmdline_args->GetExportSearchStrategyStream(args);
     if ( !out ) {
@@ -545,7 +559,7 @@ SaveSearchStrategy(const CArgs& args,
 
     s_ExportSearchStrategy(out, queries, opts_hndl, 
                            cmdline_args->GetBlastDatabaseArgs(), 
-                           pssm);
+                           pssm, num_iters);
 }
 
 struct CConstRefCSeqId_LessThan

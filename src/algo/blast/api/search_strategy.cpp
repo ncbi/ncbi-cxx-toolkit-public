@@ -99,6 +99,18 @@ CImportStrategy::FetchData() const
         m_Data->m_OptionsHandle = bob.GetSearchOptions(algo_opts, prog_opts, &m_Data->m_Task);
         m_Data->m_QueryRange = bob.GetRestrictedQueryRange();
         m_Data->m_FilteringID = bob.GetDbFilteringAlgorithmId();
+
+        m_Data->m_PsiNumOfIterations = 0;
+        if(req.CanGetFormat_options())
+        {
+        	const CBlast4_queue_search_request::TFormat_options	& format_options = req.GetFormat_options();
+        	CRef<CBlast4_parameter> p = format_options.GetParamByName(B4Param_Web_StepNumber.GetName());
+        	if(p.NotEmpty())
+        	{
+        		if(p->CanGetValue())
+        			m_Data->m_PsiNumOfIterations = p->GetValue().GetInteger();
+        	}
+        }
         m_Data->valid = true;
     }
 }
@@ -110,6 +122,15 @@ CImportStrategy::GetOptionsHandle() const
            FetchData();
     
     return m_Data->m_OptionsHandle;
+}
+
+unsigned int
+CImportStrategy::GetPsiNumOfIterations()
+{
+    if (!m_Data->valid)
+           FetchData();
+
+    return m_Data->m_PsiNumOfIterations;
 }
 
 string 
@@ -203,13 +224,16 @@ CExportStrategy::CExportStrategy(CRef<CBlastOptionsHandle> opts_handle, const st
 CExportStrategy::CExportStrategy(CRef<IQueryFactory>         query,
              					CRef<CBlastOptionsHandle>  	opts_handle,
              					CRef<CSearchDatabase> 		db,
-             					const string & 				client_id)
+             					const string & 				client_id,
+             					unsigned int				psi_num_iterations)
 								:m_QueueSearchRequest(new CBlast4_queue_search_request),
 								 m_ClientId(client_id)
 {
 	x_Process_BlastOptions(opts_handle);
 	x_Process_Query(query);
 	x_Process_SearchDb(db);
+	if(psi_num_iterations != 0)
+		x_AddPsiNumOfIterationsToFormatOptions(psi_num_iterations);
 }
 
 CExportStrategy::CExportStrategy(CRef<IQueryFactory>       	query,
@@ -227,13 +251,16 @@ CExportStrategy::CExportStrategy(CRef<IQueryFactory>       	query,
 CExportStrategy::CExportStrategy(CRef<CPssmWithParameters>	pssm,
              					 CRef<CBlastOptionsHandle>  opts_handle,
              					 CRef<CSearchDatabase> 		db,
-             					 const string & 			client_id)
+             					 const string & 			client_id,
+             					 unsigned int				psi_num_iterations)
 								:m_QueueSearchRequest(new CBlast4_queue_search_request),
 								 m_ClientId(client_id)
 {
 	x_Process_BlastOptions(opts_handle);
 	x_Process_Pssm(pssm);
 	x_Process_SearchDb(db);
+	if(psi_num_iterations != 0)
+		x_AddPsiNumOfIterationsToFormatOptions(psi_num_iterations);
 }
 
 CRef<objects::CBlast4_request> CExportStrategy::GetSearchStrategy(void)
@@ -538,6 +565,17 @@ void CExportStrategy::x_AddParameterToProgramOptions(objects::CBlast4Field & fie
     m_QueueSearchRequest->SetProgram_options().Set().push_back(p);
 }
 
+void CExportStrategy::x_AddPsiNumOfIterationsToFormatOptions(unsigned int num_iters)
+{
+	CRef<CBlast4_parameter> p(new CBlast4_parameter);
+	p->SetName(B4Param_Web_StepNumber.GetName());
+
+	CRef<CBlast4_value> v(new CBlast4_value);
+	v->SetInteger(num_iters);
+	p->SetValue(*v);
+
+	m_QueueSearchRequest->SetFormat_options().Set().push_back(p);
+}
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
