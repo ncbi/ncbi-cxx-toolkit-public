@@ -646,22 +646,6 @@ void CSeq_loc_Mapper_Base::x_InitializeFeat(const CSeq_feat&  map_feat,
     // Make sure product is set
     _ASSERT(map_feat.IsSetProduct());
 
-    // Check for features with exceptions.
-    bool benign_feat_exception = map_feat.IsSetExcept_text()  &&
-        (map_feat.GetExcept_text() == "mismatches in translation"  ||
-        map_feat.GetExcept_text() == "mismatches in transcription");
-    bool severe_feat_exception = 
-        ((map_feat.IsSetExcept() && map_feat.GetExcept())  ||
-        map_feat.IsSetExcept_text())  && !benign_feat_exception;
-
-    if (severe_feat_exception  ||
-        map_feat.GetLocation().IsTruncatedStart(eExtreme_Biological)  ||
-        map_feat.GetLocation().IsPartialStart(eExtreme_Biological)) {
-        NCBI_THROW(CAnnotMapperException, eBadFeature,
-                   "Features with exceptions and partial locations "
-                   "can not be used for mapping.");
-    }
-
     // Sometimes sequence types can be detected based on the feature type.
     ESeqType loc_type = eSeq_unknown;
     ESeqType prod_type = eSeq_unknown;
