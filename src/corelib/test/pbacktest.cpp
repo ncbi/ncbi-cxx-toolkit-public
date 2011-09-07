@@ -458,9 +458,8 @@ static int s_StreamPushback(iostream&   ios,
 }
 
 
-extern int TEST_StreamPushback(iostream&    ios,
-                               unsigned int seed_in,
-                               bool         rewind)
+extern int TEST_StreamPushback(iostream& ios,
+                               bool      rewind)
 {
     // Warnings, errors, etc
     GetDiagContext().SetLogRate_Limit(CDiagContext::eLogRate_Err,
@@ -468,10 +467,6 @@ extern int TEST_StreamPushback(iostream&    ios,
     // Infos and traces only
     GetDiagContext().SetLogRate_Limit(CDiagContext::eLogRate_Trace,
                                       CRequestRateControl::kNoLimit);
-
-    unsigned int seed = seed_in ? seed_in : (unsigned int) time(0);
-    ERR_POST(Info << "Seed = " << seed);
-    srand(seed);
 
     ERR_POST(Info << "Generating array of random data");
     char* orig = new char[kBufferSize + 1];

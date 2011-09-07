@@ -38,9 +38,7 @@
 BEGIN_NCBI_SCOPE
 
 
-int TEST_StreamPushback(iostream&    ios,
-                        unsigned int seed_in,
-                        bool         rewind);
+int TEST_StreamPushback(iostream& ios, bool rewind);
 
 
 END_NCBI_SCOPE

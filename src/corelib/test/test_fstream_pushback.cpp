@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -33,16 +33,59 @@
 #include <ncbi_pch.hpp>
 #include "pbacktest.hpp"
 #include <corelib/ncbidiag.hpp>
+#include <corelib/test_mt.hpp>
 #include <stdio.h>                 // remove()
 #include <stdlib.h>                // atoi()
 
 #include <common/test_assert.h>  /* This header must go last */
 
 
+BEGIN_NCBI_SCOPE
+
+
+class CTestApp : public CThreadedApp
+{
+public:
+    virtual bool Thread_Run(int idx);
+
+private:
+    static const char sm_Filename[];
+};
+
+
+const char CTestApp::sm_Filename[] = "test_fstream_pushback.data";
+
+
+bool CTestApp::Thread_Run(int idx)
+{
+    string id = NStr::IntToString(idx);
+
+    string filename = sm_Filename + string('.', 1) + id;
+
+    PushDiagPostPrefix(("@" + id).c_str());
+
+    CNcbiFstream fs(filename.c_str(),
+                    IOS_BASE::in    | IOS_BASE::out   |
+                    IOS_BASE::trunc | IOS_BASE::binary);
+
+    int ret = TEST_StreamPushback(fs, true/*rewind*/);
+
+    PopDiagPostPrefix();
+
+    if (ret == 0) {
+        remove(filename.c_str());
+        return true;
+    }
+    return false;
+}
+
+
+END_NCBI_SCOPE
+
+
 int main(int argc, char* argv[])
 {
     USING_NCBI_SCOPE;
-    static const char filename[] = "test_fstream_pushback.data";
 
     SetDiagTrace(eDT_Enable);
     SetDiagPostLevel(eDiag_Info);
@@ -50,14 +93,7 @@ int main(int argc, char* argv[])
                         eDPF_OmitInfoSev | eDPF_ErrorID  |
                         eDPF_Prefix);
 
-    CNcbiFstream fs(filename,
-                    IOS_BASE::in    | IOS_BASE::out   |
-                    IOS_BASE::trunc | IOS_BASE::binary);
+    s_NumThreads = 2; // default is small
 
-    int ret = TEST_StreamPushback(fs,
-                                  argc > 1 ? (unsigned int) atoi(argv[1]) : 0,
-                                  true/*rewind*/);
-    if (ret == 0)
-        remove(filename);
-    return ret;
+    return CTestApp().AppMain(argc, argv);
 }
