@@ -57,12 +57,15 @@ int main(int argc, char* argv[])
     string args = kEmptyStr;
     string uhdr = kEmptyStr;
 
+    unsigned int seed =
+        argc > 1 ? (unsigned int) atoi(argv[1]) : (unsigned int) time(0);
+    ERR_POST(Info << "Seed = " << seed);
+    srand(seed);
+
     ERR_POST(Info << "Creating HTTP connection to http://" + host+path+args);
     CConn_HttpStream ios(host, path, args, uhdr);
 
-    int n = TEST_StreamPushback(ios,
-                                argc > 1 ? (unsigned int) atoi(argv[1]) : 0,
-                                false/*no rewind*/);
+    int n = TEST_StreamPushback(ios, false/*no rewind*/);
 
     // Manual CONNECT_UnInit (for implicit CONNECT_Init() by HTTP stream ctor)
     CORE_SetREG(0);

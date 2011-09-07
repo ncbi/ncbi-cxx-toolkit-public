@@ -36,8 +36,8 @@
 #include <corelib/test_mt.hpp>
 #include <stdio.h>                 // remove()
 #include <stdlib.h>                // atoi()
-
-#include <common/test_assert.h>  /* This header must go last */
+/* This header must go last */
+#include <common/test_assert.h>
 
 
 BEGIN_NCBI_SCOPE
