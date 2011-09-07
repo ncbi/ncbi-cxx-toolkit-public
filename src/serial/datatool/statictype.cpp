@@ -507,6 +507,8 @@ TTypeInfo CStringDataType::GetRealTypeInfo(void)
 {
     if ( HaveModuleName() )
         return UpdateModuleName(CStdTypeInfo<string>::CreateTypeInfo());
+    if ( m_Type == eStringTypeUTF8 )
+        return CStdTypeInfo<CStringUTF8>::GetTypeInfo();
     return CStdTypeInfo<string>::GetTypeInfo();
 }
 

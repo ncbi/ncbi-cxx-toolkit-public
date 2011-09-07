@@ -177,11 +177,12 @@ void CObjectOStreamJson::WriteStringStore(const string& s)
     WriteString(s);
 }
 
-void CObjectOStreamJson::CopyString(CObjectIStream& in)
+void CObjectOStreamJson::CopyString(CObjectIStream& in,
+                                    EStringType type)
 {
     string s;
-    in.ReadStd(s);
-    WriteString(s);
+    in.ReadString(s, type);
+    WriteString(s, type);
 }
 
 void CObjectOStreamJson::CopyStringStore(CObjectIStream& in)

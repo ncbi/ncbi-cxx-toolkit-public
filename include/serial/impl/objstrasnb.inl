@@ -58,6 +58,13 @@ CAsnBinaryDefs::MakeContainerTagByte(bool random_order)
 
 inline
 CAsnBinaryDefs::ETagValue
+CAsnBinaryDefs::StringTag(EStringType type)
+{
+    return type == eStringTypeVisible? eVisibleString: eUTF8String;
+}
+
+inline
+CAsnBinaryDefs::ETagValue
 CAsnBinaryDefs::GetTagValue(TByte tag_byte)
 {
     return ETagValue(tag_byte & eTagValueMask);

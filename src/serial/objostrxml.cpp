@@ -790,11 +790,12 @@ void CObjectOStreamXml::WriteStringStore(const string& str)
     }
 }
 
-void CObjectOStreamXml::CopyString(CObjectIStream& in)
+void CObjectOStreamXml::CopyString(CObjectIStream& in,
+                                   EStringType type)
 {
-    CStringUTF8 str;
-    in.ReadStd(str);
-    WriteString(str, eStringTypeUTF8);
+    string str;
+    in.ReadString(str, type);
+    WriteString(str, type);
 }
 
 void CObjectOStreamXml::CopyStringStore(CObjectIStream& in)

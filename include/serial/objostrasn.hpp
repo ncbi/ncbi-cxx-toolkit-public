@@ -114,7 +114,8 @@ protected:
     virtual void WriteString(const string& str,
                              EStringType type = eStringTypeVisible);
     virtual void WriteStringStore(const string& str);
-    virtual void CopyString(CObjectIStream& in);
+    virtual void CopyString(CObjectIStream& in,
+                            EStringType type = eStringTypeVisible);
     virtual void CopyStringStore(CObjectIStream& in);
 
     virtual void WriteNullPointer(void);

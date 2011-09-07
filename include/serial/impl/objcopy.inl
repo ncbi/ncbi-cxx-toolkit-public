@@ -94,9 +94,9 @@ void CObjectStreamCopier::CopyExternalObject(TTypeInfo type)
 }
 
 inline
-void CObjectStreamCopier::CopyString(void)
+void CObjectStreamCopier::CopyString(EStringType type)
 {
-    Out().CopyString(In());
+    Out().CopyString(In(), type);
 }
 
 inline

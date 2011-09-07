@@ -1095,6 +1095,19 @@ public:
         }
 };
 
+EMPTY_TEMPLATE
+void CStringFunctions<CStringUTF8>::Copy(CObjectStreamCopier& copier,
+                                         TTypeInfo )
+{
+    copier.CopyString(eStringTypeUTF8);
+}
+
+EMPTY_TEMPLATE
+void CStringFunctions<CStringUTF8>::Skip(CObjectIStream& in, TTypeInfo )
+{
+    in.SkipString(eStringTypeUTF8);
+}
+
 CPrimitiveTypeInfoString::CPrimitiveTypeInfoString(EType type)
     : CParent(sizeof(string), ePrimitiveValueString), m_Type(type)
 {

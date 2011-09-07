@@ -678,7 +678,7 @@ void CObjectOStreamAsnBinary::WriteFloat(float data)
 void CObjectOStreamAsnBinary::WriteString(const string& str, EStringType type)
 {
     size_t length = str.size();
-    WriteSysTag(eVisibleString);
+    WriteSysTag(StringTag(type));
     WriteLength(length);
     if ( type == eStringTypeVisible && m_FixMethod != eFNP_Allow ) {
         size_t done = 0;
@@ -731,20 +731,22 @@ void CObjectOStreamAsnBinary::CopyStringValue(CObjectIStreamAsnBinary& in,
     in.EndOfTag();
 }
 
-void CObjectOStreamAsnBinary::CopyString(CObjectIStream& in)
+void CObjectOStreamAsnBinary::CopyString(CObjectIStream& in,
+                                         EStringType type)
 {
     // do we need to check symbols while copying?
-    bool checkVisible = false; // m_FixMethod != eFNP_Allow
-    WriteSysTag(eVisibleString);
+    // m_FixMethod != eFNP_Allow, type == eStringTypeVisible
+    const bool checkVisible = false;
+    WriteSysTag(StringTag(type));
     if ( in.GetDataFormat() == eSerial_AsnBinary ) {
         CObjectIStreamAsnBinary& bIn =
             *CTypeConverter<CObjectIStreamAsnBinary>::SafeCast(&in);
-        bIn.ExpectSysTag(eVisibleString);
+        bIn.ExpectSysTag(StringTag(type));
         CopyStringValue(bIn, checkVisible);
     }
     else {
         string str;
-        in.ReadStd(str);
+        in.ReadString(str, type);
         size_t length = str.size();
         if ( checkVisible ) {
             // Check the string for non-printable characters

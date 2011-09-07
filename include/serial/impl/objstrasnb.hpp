@@ -85,6 +85,8 @@ public:
         eExternal           = 8,
         eReal               = 9,
         eEnumerated         = 10,
+        
+        eUTF8String         = 12,
 
         eSequence           = 16,
         eSequenceOf         = eSequence,
@@ -135,6 +137,7 @@ public:
                                             ETagConstructed tag_constructed);
     static TByte MakeContainerTagByte(bool random_order);
     static ETagValue GetTagValue(TByte byte);
+    static ETagValue StringTag(EStringType type);
     static ETagConstructed GetTagConstructed(TByte byte);
     static TByte GetTagClassAndConstructed(TByte byte);
 };

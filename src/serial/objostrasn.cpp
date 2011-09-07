@@ -357,11 +357,12 @@ void CObjectOStreamAsn::WriteStringStore(const string& str)
     WriteString(str.data(), str.size());
 }
 
-void CObjectOStreamAsn::CopyString(CObjectIStream& in)
+void CObjectOStreamAsn::CopyString(CObjectIStream& in,
+                                   EStringType type)
 {
     string s;
-    in.ReadStd(s);
-    WriteString(s.data(), s.size());
+    in.ReadString(s, type);
+    WriteString(s, type);
 }
 
 void CObjectOStreamAsn::CopyStringStore(CObjectIStream& in)

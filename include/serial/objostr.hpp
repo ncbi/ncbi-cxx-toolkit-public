@@ -474,7 +474,8 @@ public:
     // string
     virtual void WriteString(const string& str,
                              EStringType type = eStringTypeVisible) = 0;
-    virtual void CopyString(CObjectIStream& in) = 0;
+    virtual void CopyString(CObjectIStream& in,
+                            EStringType type = eStringTypeVisible) = 0;
 
     // StringStore
     virtual void WriteStringStore(const string& data) = 0;

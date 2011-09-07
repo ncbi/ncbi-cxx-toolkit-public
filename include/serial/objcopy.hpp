@@ -113,7 +113,7 @@ public:
     void CopyExternalObject(TTypeInfo type);
 
     // primitive types copy
-    void CopyString(void);
+    void CopyString(EStringType type = eStringTypeVisible);
     void CopyStringStore(void);
     void CopyByteBlock(void);
 

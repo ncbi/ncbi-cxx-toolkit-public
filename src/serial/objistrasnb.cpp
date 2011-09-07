@@ -267,6 +267,7 @@ string CObjectIStreamAsnBinary::TagToString(TByte byte)
     case eGeneralizedTime:   v= "GeneralizedTime";  break;
     case eGraphicString:     v= "GraphicString";    break;
     case eVisibleString:     v= "VisibleString";    break;
+    case eUTF8String:        v= "UTF8String";       break;
     case eGeneralString:     v= "GeneralString";    break;
     case eMemberReference:   v= "MemberReference";  break;
     case eObjectReference:   v= "ObjectReference";  break;
@@ -770,7 +771,7 @@ void CObjectIStreamAsnBinary::ReadPackedString(string& s,
                                                CPackString& pack_string,
                                                EStringType type)
 {
-    ExpectSysTag(eVisibleString);
+    ExpectSysTag(StringTag(type));
     size_t length = ReadLength();
     static const size_t BUFFER_SIZE = 1024;
     char buffer[BUFFER_SIZE];
@@ -801,7 +802,7 @@ void CObjectIStreamAsnBinary::ReadPackedString(string& s,
 
 void CObjectIStreamAsnBinary::ReadString(string& s, EStringType type)
 {
-    ExpectSysTag(eVisibleString);
+    ExpectSysTag(StringTag(type));
     ReadStringValue(ReadLength(), s,
                     type == eStringTypeVisible? m_FixMethod: eFNP_Allow);
 }
@@ -1436,9 +1437,9 @@ void CObjectIStreamAsnBinary::SkipFNumber(void)
     EndOfTag();
 }
 
-void CObjectIStreamAsnBinary::SkipString(EStringType /*type*/)
+void CObjectIStreamAsnBinary::SkipString(EStringType type)
 {
-    ExpectSysTag(eVisibleString);
+    ExpectSysTag(StringTag(type));
     SkipTagData();
 }
 
