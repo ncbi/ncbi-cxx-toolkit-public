@@ -487,6 +487,14 @@ void CValidError_feat::ValidateSeqFeatData
         ValidateGeneXRef(feat);
 
         // check old locus tag on feature and overlapping gene
+        string feat_old_locus_tag;
+        FOR_EACH_GBQUAL_ON_SEQFEAT (it, feat) {
+            if ((*it)->IsSetQual() && NStr::Equal ((*it)->GetQual(), "old_locus_tag")
+                && (*it)->IsSetVal() && !NStr::IsBlank((*it)->GetVal())) {
+                feat_old_locus_tag = (*it)->GetVal();
+                break;
+            }
+        }
         const CGene_ref* grp = feat.GetGeneXref();
         if ( !grp) {
             // check overlapping gene
@@ -494,15 +502,7 @@ void CValidError_feat::ValidateSeqFeatData
                 GetOverlappingGene(feat.GetLocation(), *m_Scope);
             if ( overlap ) {
                 string gene_old_locus_tag;
-                string feat_old_locus_tag;
 
-                FOR_EACH_GBQUAL_ON_SEQFEAT (it, feat) {
-                    if ((*it)->IsSetQual() && NStr::Equal ((*it)->GetQual(), "old_locus_tag")
-                        && (*it)->IsSetVal() && !NStr::IsBlank((*it)->GetVal())) {
-                        feat_old_locus_tag = (*it)->GetVal();
-                        break;
-                    }
-                }
                 FOR_EACH_GBQUAL_ON_SEQFEAT (it, *overlap) {
                     if ((*it)->IsSetQual() && NStr::Equal ((*it)->GetQual(), "old_locus_tag")
                         && (*it)->IsSetVal() && !NStr::IsBlank((*it)->GetVal())) {
@@ -517,6 +517,18 @@ void CValidError_feat::ValidateSeqFeatData
                              "Old locus tag on feature (" + feat_old_locus_tag
                              + ") does not match that on gene (" + gene_old_locus_tag + ")",
                              feat);
+                }
+            }
+            if (! NStr::IsBlank (feat_old_locus_tag)) {
+                if ( grp == 0 ) {
+                    const CSeq_feat* gene = GetOverlappingGene(feat.GetLocation(), *m_Scope);
+                    if ( gene != 0 ) {
+                        grp = &gene->GetData().GetGene();
+                    }
+                }
+                if (grp == 0 || ! grp->IsSetLocus_tag() || NStr::IsBlank (grp->GetLocus_tag())) {
+                    PostErr(eDiag_Error, eErr_SEQ_FEAT_LocusTagProblem,
+                            "old_locus_tag without inherited locus_tag", feat);
                 }
             }
         }

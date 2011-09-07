@@ -1452,9 +1452,11 @@ void CValidError_imp::ValidateSubSource
                                 obj, ctx);
                 }
                 if (!precision_correct) {
+                    /*
                     PostObjErr (eDiag_Info, eErr_SEQ_DESCR_LatLonPrecision, 
                                 "lat_lon precision is incorrect - should only have two digits to the right of the decimal point",
                                 obj, ctx);
+                    */
                 }
             }
         }
