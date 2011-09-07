@@ -1826,8 +1826,15 @@ public:
         if( sel.GetOverlapType() == SAnnotSelector::eOverlap_Intervals ) {
             cur_diff = sequence::GetLength( *candidate_feat_loc, &scope );
         } else {
-            cur_diff = abs( (int)sequence::GetStart(*candidate_feat_loc, &scope, eExtreme_Biological) - 
-                (int)sequence::GetStop(*candidate_feat_loc, &scope, eExtreme_Biological) );
+            const int start = (int)sequence::GetStart(*candidate_feat_loc, &scope, eExtreme_Positional);
+            const int stop  = (int)sequence::GetStop(*candidate_feat_loc, &scope, eExtreme_Positional);
+            if( (start > stop) && (circular_length > 0) &&
+                (circular_length != kInvalidSeqPos) ) 
+            {
+                cur_diff = circular_length - abs( start - stop );
+            } else {
+                cur_diff = abs( start - stop );
+            }
         }
     }
 
