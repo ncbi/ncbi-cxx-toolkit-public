@@ -1004,6 +1004,8 @@ void CAlignFilter::SetFilter(const string& filter)
 
     m_Scope.Reset(new CScope(*CObjectManager::GetInstance()));
     m_Scope->AddDefaults();
+
+    m_ScoresUsed.clear();
 }
 
 void CAlignFilter::SetScope(CScope& scope)
@@ -1152,10 +1154,8 @@ bool CAlignFilter::Match(const CSeq_align& align)
 
 void CAlignFilter::x_UpdateDictionaryStates(const objects::CSeq_align& align)
 {
-    if (m_ParseTree.get()) {
-        NON_CONST_ITERATE (TScoreDictionary, it, m_Scores) {
-            it->second->UpdateState(align);
-        }
+    ITERATE (set<string>, it, m_ScoresUsed) {
+        m_Scores[*it]->UpdateState(align);
     }
 }
 
@@ -1222,6 +1222,7 @@ double CAlignFilter::x_GetAlignmentScore(const string& score_name,
     }
 
     if (it != m_Scores.end()) {
+        m_ScoresUsed.insert(score_name);
         return it->second->Get(align, m_Scope);
     }
     else {

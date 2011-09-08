@@ -292,6 +292,8 @@ private:
 
     typedef map<string, CIRef<IScore> > TScoreDictionary;
     TScoreDictionary m_Scores;
+
+    set<string> m_ScoresUsed;
 };
 
 
