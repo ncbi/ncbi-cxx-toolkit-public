@@ -265,7 +265,6 @@ int CTestNetScheduleCrash::Run(void)
     }
 
 
-    CNetScheduleAPI::EJobStatus         status;
     CNetScheduleAPI                     cl(service, "crash_test", queue);
 
     cl.SetProgramVersion("test wn 1.0.1");
