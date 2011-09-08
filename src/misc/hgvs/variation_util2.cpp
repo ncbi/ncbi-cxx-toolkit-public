@@ -287,19 +287,23 @@ CRef<CVariantPlacement> CVariationUtil::Remap(const CVariantPlacement& p, const 
         NCBI_THROW(CException, eUnknown, "Can't get seq-id");
     }
 
+    //note: the operations here are scope-free (i.e. seq-id types in aln must be consistent with p,
+    //or else will throw; using a scope will impose major slowdown, which is problematic if we're
+    //dealing with tens or hundreds of thousands of remappings.
+
     CRef<CVariantPlacement> p2(new CVariantPlacement);
     p2->Assign(p);
 
     if(aln.GetSegs().IsSpliced()
        && sequence::IsSameBioseq(aln.GetSegs().GetSpliced().GetGenomic_id(),
-                                 *p2->GetLoc().GetId(), m_scope))
+                                 *p2->GetLoc().GetId(), NULL))
     {
-        s_AddIntronicOffsets(*p2, aln.GetSegs().GetSpliced(), m_scope);
+        s_AddIntronicOffsets(*p2, aln.GetSegs().GetSpliced(), NULL);
     }
 
     CSeq_align::TDim target_row = -1;
     for(int i = 0; i < 2; i++) {
-        if(sequence::IsSameBioseq(*p2->GetLoc().GetId(), aln.GetSeq_id(i), m_scope )) {
+        if(sequence::IsSameBioseq(*p2->GetLoc().GetId(), aln.GetSeq_id(i), NULL )) {
             target_row = 1 - i;
         }
     }
@@ -307,14 +311,15 @@ CRef<CVariantPlacement> CVariationUtil::Remap(const CVariantPlacement& p, const 
         NCBI_THROW(CException, eUnknown, "The alignment has no row for seq-id " + p2->GetLoc().GetId()->AsFastaString());
     }
 
-    CRef<CSeq_loc_Mapper> mapper(new CSeq_loc_Mapper(aln, target_row, m_scope));
+    CRef<CSeq_loc_Mapper> mapper(new CSeq_loc_Mapper(aln, target_row, NULL));
     mapper->SetMergeAll();
 
     CRef<CVariantPlacement> p3 = x_Remap(*p2, *mapper);
 
     if(p3->GetLoc().GetId()
        && aln.GetSegs().IsSpliced()
-       && sequence::IsSameBioseq(aln.GetSegs().GetSpliced().GetGenomic_id(), *p3->GetLoc().GetId(), m_scope))
+       && sequence::IsSameBioseq(aln.GetSegs().GetSpliced().GetGenomic_id(),
+                                 *p3->GetLoc().GetId(), NULL))
     {
         s_ResolveIntronicOffsets(*p3);
     }
@@ -1846,7 +1851,11 @@ void CVariationUtil::CVariantPropertiesIndex::GetLocationProperties(
 
         if(m_loc2prop.find(idh) == m_loc2prop.end()) {
             //first time seeing this seq-id - index it
-            x_Index(idh);
+            try {
+                x_Index(idh);
+            } catch (CException& e) {
+                NCBI_RETHROW_SAME(e, "Can't Index " + idh.AsString());
+            }
         }
 
         TIdRangeMap::const_iterator it = m_loc2prop.find(idh);
@@ -1960,14 +1969,19 @@ void CVariationUtil::CVariantPropertiesIndex::x_Index(const CSeq_id_Handle& idh)
 
         int gene_id = s_GetGeneID(mf, ft);
 
-        if(!parent_mf) {
+        //compute neighbborhood locations.
+        //Normally for gene features, or rna features lacking a parent gene feature.
+        //Applicable for dna context only.
+        if((mf.GetData().IsGene() || (!parent_mf && mf.GetData().IsRna()))
+            && bsh.GetBioseqMolType() == CSeq_inst::eMol_dna
+        ) {
             TLocsPair p = s_GetNeighborhoodLocs(mf.GetLocation(), bsh.GetInst_Length() - 1);
 
             //exclude any gene overlap from neighborhood (i.e. we don't care if location is in
             //neighborhood of gene-A if it is within gene-B.
 
             //First, reset strands (as we did with gene_ranges), as we need to do this in strand-agnostic
-            //manner. Note, a smart thing to do would be to set all-gene-ranges strand to "both", with an
+            //manner. Note: a reasonable thing to do would be to set all-gene-ranges strand to "both", with an
             //expectation that subtracting such a loc from either plus or minus loc would work, but unfortunately
             //it doesn't. Resetting strand, however, is fine, because our indexing is strand-agnostic.
             p.first->ResetStrand();
@@ -1996,7 +2010,19 @@ void CVariationUtil::CVariantPropertiesIndex::x_Index(const CSeq_id_Handle& idh)
             x_Add(*p.first, gene_id, CVariantProperties::eGene_location_in_start_codon);
             x_Add(*p.second, gene_id, CVariantProperties::eGene_location_in_stop_codon);
 
-            p = s_GetUTRLocs(mf.GetLocation(), parent_mf.GetLocation());
+            CRef<CSeq_loc> rna_loc(new CSeq_loc(CSeq_loc::e_Null));
+            {{
+                if(parent_mf) {
+                    rna_loc->Assign(parent_mf.GetLocation());
+                } else if(bsh.GetBioseqMolType() == CSeq_inst::eMol_rna) {
+                    //refseqs have gene feature annotated on rnas spanning the whole sequence,
+                    //but in general there may be free-floating CDS on an rna, in which case
+                    //parent loc is the whole seq.
+                    rna_loc = bsh.GetRangeSeq_loc(0, bsh.GetInst_Length() - 1, mf.GetLocation().GetStrand());
+                }
+            }}
+
+            p = s_GetUTRLocs(mf.GetLocation(), *rna_loc);
             x_Add(*p.first, gene_id, CVariantProperties::eGene_location_utr_5);
             x_Add(*p.second, gene_id, CVariantProperties::eGene_location_utr_3);
 
