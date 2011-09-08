@@ -260,7 +260,7 @@ int main(int argc, const char* argv[])
             SetDiagStream(&log);
 
             // Execute main application function
-            int rv = CTest(log).AppMain(argc, argv, 0, eDS_User, 0);
+            int rv = CTest(log).AppMain(argc, argv, 0, eDS_User);
 
             log.flush();
             // Make sure CNcbiDiag remains valid when main() returns
