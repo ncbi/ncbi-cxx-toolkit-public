@@ -74,10 +74,12 @@ static list<CNcbiOstream*> s_MakeList(CNcbiOstream& os1,
 // Test application
 //
 
-class CTest : public CNcbiApplication
+class CTestApp : public CNcbiApplication
 {
 public:
-    CTest(CNcbiOstream& log);
+    CTestApp(CNcbiOstream& log);
+
+    virtual bool LoadConfig(CNcbiRegistry& reg, const string* conf);
 
     virtual void Init  (void);
     virtual int  Run   (void);
@@ -92,10 +94,10 @@ private:
 };
 
 
-CConnTest CTest::m_Test;
+CConnTest CTestApp::m_Test;
 
 
-void CTest::Cancel(void)
+void CTestApp::Cancel(void)
 {
     m_Test.Cancel();
 }
@@ -107,7 +109,7 @@ static BOOL WINAPI s_Interrupt(DWORD type)
     switch (type) {
     case CTRL_C_EVENT:
     case CTRL_BREAK_EVENT:
-        CTest::Cancel();
+        CTestApp::Cancel();
         return TRUE;  // handled
     case CTRL_CLOSE_EVENT:
     case CTRL_LOGOFF_EVENT:
@@ -121,13 +123,13 @@ static BOOL WINAPI s_Interrupt(DWORD type)
 extern "C" {
 static void s_Interrupt(int /*signo*/)
 {
-    CTest::Cancel();
+    CTestApp::Cancel();
 }
 }
 #endif // NCBI_OS_
 
 
-CTest::CTest(CNcbiOstream& log)
+CTestApp::CTestApp(CNcbiOstream& log)
     : m_Tee(new CMultiWriter(s_MakeList(NcbiCout, log)),
             0, 0, CRWStreambuf::fOwnWriter)
 {
@@ -135,7 +137,18 @@ CTest::CTest(CNcbiOstream& log)
 }
 
 
-void CTest::Init(void)
+bool CTestApp::LoadConfig(CNcbiRegistry& reg, const string* conf)
+{
+    string dir;
+    const string& path = GetProgramExecutablePath();
+    CDirEntry::SplitPath(path, &dir, NULL, NULL);
+    CMetaRegistry::SetSearchPath().clear();
+    CMetaRegistry::SetSearchPath().push_back(dir);
+    return CNcbiApplication::LoadConfig(reg, conf, 0);
+}
+
+
+void CTestApp::Init(void)
 {
     auto_ptr<CArgDescriptions> args(new CArgDescriptions);
     if (args->Exist ("h"))
@@ -156,7 +169,7 @@ void CTest::Init(void)
 }
 
 
-int CTest::Run(void)
+int CTestApp::Run(void)
 {
     IRWRegistry& reg = GetConfig();
     reg.Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "DATA");
@@ -260,7 +273,7 @@ int main(int argc, const char* argv[])
             SetDiagStream(&log);
 
             // Execute main application function
-            int rv = CTest(log).AppMain(argc, argv, 0, eDS_User);
+            int rv = CTestApp(log).AppMain(argc, argv, 0, eDS_User);
 
             log.flush();
             // Make sure CNcbiDiag remains valid when main() returns
