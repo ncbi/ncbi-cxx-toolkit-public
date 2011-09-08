@@ -15624,6 +15624,8 @@ BOOST_AUTO_TEST_CASE (Test_SEQ_FEAT_OldLocusTagMismtach)
 
     expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "OldLocusTagMismtach",
                                 "Old locus tag on feature (one value) does not match that on gene (another value)"));
+    expected_errors.push_back (new CExpectedError("good", eDiag_Error, "LocusTagProblem",
+                                "old_locus_tag without inherited locus_tag"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
