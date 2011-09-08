@@ -151,6 +151,8 @@ string CHgvsParser::AsHgvsExpression(const CVariation& variation,  CConstRef<CSe
     v->Assign(variation);
     v->Index();
 
+#if 0
+    //sometimes we don't need it, and creating it is slow
     CVariationUtil util(*m_scope);
     for(CTypeIterator<CVariantPlacement> it(Begin(*v)); it; ++it) {
         CVariantPlacement& p = *it;
@@ -158,6 +160,7 @@ string CHgvsParser::AsHgvsExpression(const CVariation& variation,  CConstRef<CSe
             util.AttachSeq(p);
         }
     }
+#endif
 
     return x_AsHgvsExpression(*v, seq_id, CConstRef<CSeq_literal>(NULL));
 }
@@ -668,19 +671,32 @@ string CHgvsParser::x_AsHgvsInstExpression(
     bool is_prot = is_prot_inst || placement && placement->GetMol() == CVariantPlacement::eMol_protein;
 
 
-    /*
-     * Cannot use explicit asserted seq to construct prot inst, as it could be partially-specified: e.g.
-     * "NP_079142.2:p.C11_G21delinsGlnSerLys - the asserted seq is C..G, so we cannot construct
-     * del??ins representation that asserts the sequence being deleted within a delins.
-     */
-    bool is_usable_asserted_seq =
-            explicit_asserted_seq
-            && !(placement && placement->GetMol() == CVariantPlacement::eMol_protein);
-
-    const CSeq_literal* asserted_seq =
-            (placement && placement->IsSetSeq()) ? &placement->GetSeq()
-          : is_usable_asserted_seq               ? explicit_asserted_seq.GetPointer()
-          : NULL;
+    const CSeq_literal* asserted_seq(NULL);
+    {{
+        //Priority for using asserted-sequence:
+        //use from placement (instantiate if necessary); otherwise use explicit packaged asserted-observation
+        //seq-literal passed from above.
+        if(placement) {
+            if(!placement->IsSetSeq()) {
+                CRef<CVariantPlacement> p2(new CVariantPlacement);
+                p2->Assign(*placement);
+                CVariationUtil util(*m_scope);
+                util.AttachSeq(*p2);
+                asserted_seq = &p2->GetSeq();
+            } else {
+                asserted_seq = &placement->GetSeq();
+            }
+        } else if(explicit_asserted_seq
+                 && !(placement && placement->GetMol() == CVariantPlacement::eMol_protein))
+        {
+            /*
+             * Cannot use explicit asserted seq to construct prot inst, as it could be partially-specified: e.g.
+             * "NP_079142.2:p.C11_G21delinsGlnSerLys - the asserted seq is C..G, so we cannot construct
+             * del??ins representation that asserts the sequence being deleted within a delins.
+             */
+            asserted_seq = explicit_asserted_seq.GetPointer();
+        }
+    }}
 
     string asserted_seq_str =
            !asserted_seq                  ? ""
