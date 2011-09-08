@@ -26,7 +26,7 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
- *   Test UTIL_PushbackStream() interface.
+ *   Test CStreamUtils::Pushback() interface.
  *
  */
 

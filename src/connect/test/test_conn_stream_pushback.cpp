@@ -26,7 +26,7 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
- *   Test UTIL_PushbackStream() interface.
+ *   Test CStreamUtils::Pushback() interface.
  *
  */
 
@@ -62,7 +62,8 @@ int main(int argc, char* argv[])
     ERR_POST(Info << "Seed = " << seed);
     srand(seed);
 
-    ERR_POST(Info << "Creating HTTP connection to http://" + host+path+args);
+    ERR_POST(Info << "Creating HTTP connection to "
+             "http://" + host+path+&"?"[!args.empty()]+args);
     CConn_HttpStream ios(host, path, args, uhdr);
 
     int n = TEST_StreamPushback(ios, false/*no rewind*/);

@@ -1,7 +1,7 @@
 #ifndef PBACKTEST__HPP
 #define PBACKTEST__HPP
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -29,7 +29,7 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
- *   Test UTIL_PushbackStream() interface.
+ *   Test CStreamUtils::Pushback() interface.
  *
  */
 
