@@ -99,7 +99,6 @@ CRef<CSeq_inst> PatchTargetSequence(const list< CRef<CSeq_align> > &alignments,
     TCoverMap cover_map;
 
     CRangeCollection<TSeqPos> total_covered;
-    unsigned range_count = 0;
 
     ITERATE (list< CRef<CSeq_align> >, it, alignments) {
         CRef<CSeq_align> alignment = *it;
@@ -327,8 +326,9 @@ CRef<CSeq_inst> PatchTargetSequence(const list< CRef<CSeq_align> > &alignments,
                 /// it in the inner loop, to check if there are further patches to it
                 it = patched_contents.insert(it,
                     s_SubLocDeltaSeq(target_loc, aligned_length));
+                target_loc.Assign((*it)->GetLoc());
             }
-        } catch (exception &e) {
+        } catch (exception &) {
             LOG_POST(Error << "While applying patch "
                            << next_patch->second->GetSeq_id(0).AsFastaString()
                            << " on "

@@ -1513,6 +1513,7 @@ CRangeCollection<TSeqPos> CSeq_align::GetAlignedBases(TDim row) const
 
                         default:
                             NCBI_ASSERT(false, "Unknown chunk type");
+                            part_length = 0;
                         }
                         if (!is_gapped) {
                             ranges +=
