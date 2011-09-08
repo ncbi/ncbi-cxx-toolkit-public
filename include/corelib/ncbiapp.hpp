@@ -447,7 +447,8 @@ protected:
     /// settings from the configuration file specified as the "conf" arg
     /// passed to AppMain(). The "conf" argument has the following special
     /// meanings:
-    ///  - NULL      -- dont even try to load registry from any file at all;
+    ///  - NULL      -- don't try to load an application-specific registry
+    ///                 from any file at all.
     ///  - non-empty -- if "conf" contains a path, then try to load from the
     ///                 conf.file of name "conf" (only!). Else - see NOTE.
     ///                 TIP: if the path is not fully qualified then:
@@ -458,6 +459,10 @@ protected:
     ///                 file, then try to strip file extensions, e.g. for
     ///                 "my_app.cgi.exe" -- try subsequently:
     ///                   "my_app.cgi.exe.ini", "my_app.cgi.ini", "my_app.ini".
+    ///
+    /// Regardless, this method normally loads global settings
+    /// from .ncbirc or ncbi.ini when reg_flags contains fWithNcbirc
+    /// (as it typically does), even if conf is NULL.
     ///
     /// NOTE:
     /// If "conf" arg is empty or non-empty, but without path, then
