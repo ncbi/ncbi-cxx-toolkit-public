@@ -307,6 +307,7 @@ bool CMetaRegistry::x_Reload(const string& path, IRWRegistry& reg,
 
 void CMetaRegistry::GetDefaultSearchPath(CMetaRegistry::TSearchPath& path)
 {
+    path.clear();
 
     const TXChar* cfg_path = NcbiSys_getenv(_TX("NCBI_CONFIG_PATH"));
     if (cfg_path) {
