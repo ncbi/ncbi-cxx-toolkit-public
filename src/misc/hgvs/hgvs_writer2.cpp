@@ -671,30 +671,37 @@ string CHgvsParser::x_AsHgvsInstExpression(
     bool is_prot = is_prot_inst || placement && placement->GetMol() == CVariantPlacement::eMol_protein;
 
 
-    const CSeq_literal* asserted_seq(NULL);
+    CConstRef<CSeq_literal> asserted_seq(NULL);
     {{
         //Priority for using asserted-sequence:
         //use from placement (instantiate if necessary); otherwise use explicit packaged asserted-observation
         //seq-literal passed from above.
-        if(placement) {
-            if(!placement->IsSetSeq()) {
+        if(placement && placement->IsSetSeq()) {
+            asserted_seq.Reset(&placement->GetSeq());
+        } else {
+            if(placement) {
+                //have placement but no sequence, see if we can fetch it
                 CRef<CVariantPlacement> p2(new CVariantPlacement);
                 p2->Assign(*placement);
                 CVariationUtil util(*m_scope);
-                util.AttachSeq(*p2);
-                asserted_seq = &p2->GetSeq();
-            } else {
-                asserted_seq = &placement->GetSeq();
+                if(util.AttachSeq(*p2)) {
+                    asserted_seq.Reset(&p2->GetSeq());
+                }
             }
-        } else if(explicit_asserted_seq
-                 && !(placement && placement->GetMol() == CVariantPlacement::eMol_protein))
-        {
-            /*
-             * Cannot use explicit asserted seq to construct prot inst, as it could be partially-specified: e.g.
-             * "NP_079142.2:p.C11_G21delinsGlnSerLys - the asserted seq is C..G, so we cannot construct
-             * del??ins representation that asserts the sequence being deleted within a delins.
-             */
-            asserted_seq = explicit_asserted_seq.GetPointer();
+
+            if(!asserted_seq
+               && explicit_asserted_seq
+               && !(placement && placement->GetMol() == CVariantPlacement::eMol_protein))
+            {
+                /*
+                 * Getting seq from placement might or might not have worked (e.g. can't get for intronic case).
+                 * If asserted sequence is not filled out, see if we have apriori asserted sequence, except
+                 * cannot use explicit asserted seq to construct prot inst, as it could be partially-specified: e.g.
+                 * "NP_079142.2:p.C11_G21delinsGlnSerLys - the asserted seq is C..G, so we cannot construct
+                 * del??ins representation that asserts the sequence being deleted within a delins.
+                 */
+                asserted_seq = explicit_asserted_seq.GetPointer();
+            }
         }
     }}
 
