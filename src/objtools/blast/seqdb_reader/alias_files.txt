@@ -109,7 +109,9 @@ Type:  special
   versions of the alias files.  This can be done by rebuilding the
   group alias file each time another alias file changes, or on a fixed
   schedule (once a day for example).  Currently, the Group Alias File
-  feature is only applied to the Microbial directory.
+  feature is only applied to the Microbial directory. This file is produced by
+  the script build-alias-index, which can be found in
+  trunk/c++/src/objtools/blast/seqdb_writer.
 
 Key:   DBLIST
 Usage: universal
