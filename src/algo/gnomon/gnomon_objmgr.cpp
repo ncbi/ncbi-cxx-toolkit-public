@@ -87,7 +87,7 @@ void debug()
 {
 }
 
-int GetModelId(const CSeq_align& seq_align)
+Int8 GetModelId(const CSeq_align& seq_align)
 {
     return seq_align.GetId().back()->GetId();
 }
@@ -298,6 +298,24 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
             Status() |= CGeneModel::ePolyA;
         }
     }
+
+
+    const CSeq_align::TScore& score = seq_align.GetScore();
+    ITERATE(CSeq_align::TScore, it, score) {
+        if((*it)->CanGetId() && (*it)->GetId().IsStr()) {
+            string scr = (*it)->GetId().GetStr();
+            if((scr == "N of matches") || (scr == "num_ident") || (scr == "matches")) {
+                double ident = (*it)->GetValue().GetInt()*100;
+                ident /= seq_align.GetAlignLength();
+                SetIdent(ident);
+            } else if(scr == "rank" && (*it)->GetValue().GetInt() == 1) {
+                Status() |= CGeneModel::eBestPlacement;
+            } else if(scr == "ambiguous_orientation") {
+                Status() |= CGeneModel::eUnknownOrientation;
+            }
+        }
+    }
+
 }
 
 string CGeneModel::GetProtein (const CResidueVec& contig_sequence) const

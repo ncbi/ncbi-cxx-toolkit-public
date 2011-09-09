@@ -103,8 +103,8 @@ public:
 
     bool GnomonNeeded() const { return do_gnomon; }
 
-    void Predict(TGeneModelList& models,
-                 TGeneModelList& bad_aligns);
+    void Predict(TGeneModelList& models, TGeneModelList& bad_aligns);
+    void Predict(TGeneModelList& models, TGeneModelList& bad_aligns, TSignedSeqPos left, TSignedSeqPos right);
 
 public:
     int mincontig;

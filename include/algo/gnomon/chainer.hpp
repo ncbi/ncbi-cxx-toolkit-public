@@ -133,6 +133,7 @@ public:
     map<string, pair<bool,bool> >& SetProtComplet();
     map<string,TSignedSeqRange>& SetMrnaCDS();
     void SetGenomicRange(const TAlignModelList& alignments);
+    void SetOnlyBestFs(bool onlybestfs);
 
     TransformFunction* TrimAlignment();
     TransformFunction* DoNotBelieveShortPolyATail();
@@ -145,7 +146,7 @@ public:
     void ScoreCDSes_FilterOutPoorAlignments(TGeneModelList& clust);
     void FilterOutInferiorProtAlignmentsWithIncompatibleFShifts(TGeneModelList& clust);
     void ReplicateFrameShifts(TGeneModelList& models);
-    void ScoreCdnas(TGeneModelList& clust);
+    void CutParts(TGeneModelList& models);
 
     TGeneModelList MakeChains(TGeneModelList& models);
 

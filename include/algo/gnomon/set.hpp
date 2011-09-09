@@ -58,18 +58,21 @@ public:
         return true;
     }
 
-    void insert(const T& element)
+    bool insert(const T& element)
     {
         if (empty() || m_elements.back()<element) {
             m_elements.push_back(element);
+            return true;
         } else {
             iterator i = m_elements.begin();
             while (*i<element)
                 ++i;
             if (!(*i==element)) {
                 m_elements.insert(i,element);
+                return true;
             }
         }
+        return false;
     }
     
     template <typename iterator>

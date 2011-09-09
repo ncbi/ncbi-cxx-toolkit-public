@@ -561,7 +561,7 @@ int CGeneModel::isCompatible(const CGeneModel& a) const
 {
     const CGeneModel& b = *this;  // shortcut to this alignment
 
-    _ASSERT( b.Strand() == a.Strand() );
+    _ASSERT( b.Strand() == a.Strand() || ((a.Status()&CGeneModel::eUnknownOrientation) != 0 && (b.Status()&CGeneModel::eUnknownOrientation) != 0));
 
     /*     this code creates clatter of similr chains 
     if((a.Status()&CGeneModel::ePolyA) != (b.Status()&CGeneModel::ePolyA)) {   // one has PolyA another doesn't
@@ -801,7 +801,7 @@ void CGeneModel::Extend(const CGeneModel& align, bool ensure_cds_invariant)
     }
     RemoveExtraFShifts();
 
-    SetType(Type() | ((CGeneModel::eProt|CGeneModel::eEST|CGeneModel::emRNA)&align.Type()));
+    SetType(Type() | ((CGeneModel::eProt|CGeneModel::eSR|CGeneModel::eEST|CGeneModel::emRNA)&align.Type()));
     if(align.ReadingFrame().NotEmpty())
         CombineCdsInfo(align, ensure_cds_invariant);
 }
@@ -1023,7 +1023,7 @@ struct SGFFrec {
     double score;
     char strand;
     int phase;
-    int model;
+    Int8 model;
     int tstart;
     int tend;
     char tstrand;
@@ -1096,7 +1096,7 @@ CNcbiIstream& operator>>(CNcbiIstream& is, SGFFrec& res)
         string key, value;
         if (NStr::SplitInTwo(attributes[i], "=", key, value) && !value.empty()) {
             if (key == "model") {
-                rec.model = NStr::StringToInt(value);
+                rec.model = NStr::StringToInt8(value);
                 model_id_present = true;
             } else if(key == "Target") {
                 vector<string> tt;
@@ -1177,13 +1177,13 @@ string CGeneModel::TypeToString(int type)
     if ((type & eGnomon)!=0) return "Gnomon";
     if ((type & eChain)!=0) return  "Chainer";
     if ((type & eProt)!=0) return  "ProSplign";
-    if ((type & (eEST|emRNA))!=0) return  "Splign";
+    if ((type & (eSR|eEST|emRNA))!=0) return  "Splign";
     return "Unknown";
 }
 
 void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
 {
-    attributes["ID"] = NStr::IntToString(a.ID());
+    attributes["ID"] = NStr::Int8ToString(a.ID());
     if (a.GeneID()!=0)
         attributes["Parent"] = "gene"+NStr::IntToString(a.GeneID());
     if (a.RankInGene()!=0)
@@ -1194,7 +1194,7 @@ void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
         if(i->IsCore()) 
             attributes["support"] += "*";
         
-        attributes["support"] += NStr::IntToString(i->GetId());
+        attributes["support"] += NStr::Int8ToString(i->GetId());
     }
     attributes["support"].erase(0,1);
 
@@ -1213,11 +1213,18 @@ void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
     if(a.TargetLen() > 0)
         attributes["TargetLen"] = NStr::IntToString(a.TargetLen());  
 
+    if(a.Ident() > 0)
+        attributes["Ident"] = NStr::DoubleToString(a.Ident());  
+
+    if(a.Weight() > 1)
+        attributes["Weight"] = NStr::DoubleToString(a.Weight());  
+
     if (!a.ProteinHit().empty())
         attributes["protein_hit"] = a.ProteinHit();
 
     if ((a.Type()  &CGeneModel::eWall)!=0)       attributes["flags"] += ",Wall";
     if ((a.Type()  &CGeneModel::eNested)!=0)     attributes["flags"] += ",Nested";
+    if ((a.Type()  &CGeneModel::eSR)!=0)         attributes["flags"] += ",SR";
     if ((a.Type()  &CGeneModel::eEST)!=0)        attributes["flags"] += ",EST";
     if ((a.Type()  &CGeneModel::emRNA)!=0)       attributes["flags"] += ",mRNA";
     if ((a.Type()  &CGeneModel::eProt)!=0)       attributes["flags"] += ",Prot";
@@ -1225,6 +1232,8 @@ void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
     if ((a.Status()&CGeneModel::eCap)!=0)      attributes["flags"] += ",Cap";
     if ((a.Status()&CGeneModel::ePolyA)!=0)      attributes["flags"] += ",PolyA";
     if ((a.Status()&CGeneModel::eSkipped)!=0)    attributes["flags"] += ",Skip";
+    if ((a.Status()&CGeneModel::eBestPlacement)!=0)    attributes["flags"] += ",BestPlacement";
+    if ((a.Status()&CGeneModel::eUnknownOrientation)!=0)    attributes["flags"] += ",UnknownOrientation";
 
     if (a.ReadingFrame().NotEmpty()) {
         _ASSERT( a.FShiftedLen(a.GetCdsInfo().Start()+a.ReadingFrame()+a.GetCdsInfo().Stop(), false)%3==0 );
@@ -1284,6 +1293,29 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
     bool has_start = false;
     bool has_stop = false;
     int target_len = 0;
+    
+    vector<string> flags;
+    NStr::Tokenize(attributes["flags"], ",", flags);
+    ITERATE(vector<string>, f, flags) {
+        if (*f == "Wall")       a.SetType(a.Type()|  CGeneModel::eWall);
+        else if (*f == "Nested")     a.SetType(a.Type()|  CGeneModel::eNested);
+        else if (*f == "SR")         a.SetType(a.Type()|  CGeneModel::eSR);
+        else if (*f == "EST")        a.SetType(a.Type()|  CGeneModel::eEST);
+        else if (*f == "mRNA")       a.SetType(a.Type()|  CGeneModel::emRNA);
+        else if (*f == "Prot")       a.SetType(a.Type()|  CGeneModel::eProt);
+        else if (*f == "Skip")       a.Status()        |= CGeneModel::eSkipped;
+        else if (*f == "FullSupCDS") a.Status()        |= CGeneModel::eFullSupCDS;
+        else if (*f == "Pseudo")     a.Status()        |= CGeneModel::ePseudo;
+        else if (*f == "PolyA")      a.Status()        |= CGeneModel::ePolyA;
+        else if (*f == "Cap")        a.Status()        |= CGeneModel::eCap;
+        else if (*f == "BestPlacement") a.Status()     |= CGeneModel::eBestPlacement;
+        else if (*f == "UnknownOrientation") a.Status()|= CGeneModel::eUnknownOrientation;
+        else if (*f == "ConfirmedStart")   { confirmed_start = true; has_start = true; }
+        else if (*f == "PutativeStart")   { open_cds = true; has_start = true; }
+        else if (*f == "Start") has_start = true;
+        else if (*f == "ConfirmedStop")   { confirmed_stop = true; has_stop = true; }
+        else if (*f == "Stop")  has_stop = true;
+    }
 
     if (NStr::StartsWith(attributes["Parent"],"gene"))
         a.SetGeneID(NStr::StringToInt(attributes["Parent"],NStr::fConvErr_NoThrow|NStr::fAllowLeadingSymbols));
@@ -1293,16 +1325,29 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
 
     if (!attributes["Target"].empty()) {
         string target = NStr::Replace(attributes["Target"], "%20", " ");
-        CRef<CSeq_id> target_id = CIdHandler::ToSeq_id(target);
+
+        CRef<CSeq_id> target_id;
+        try {
+            target_id = CIdHandler::ToSeq_id(target);
+        } catch(CException) {
+            if(((a.Type() & CGeneModel::eGnomon) != 0 || (a.Type() & CGeneModel::eChain) != 0) && target.substr(0,4) == "hmm.") { // handles legacy files
+                target = "gnl|GNOMON|"+target.substr(4);
+            } else if((a.Type() & CGeneModel::eProt) != 0 && target.length() == 6 && isalpha(target[0])) {    // probably PIR
+                target = "pir||"+target;
+            }
+            target_id = CIdHandler::ToSeq_id(target);
+        }
         a.SetTargetId(*target_id);
     }
 
-    vector<string> support;
-    NStr::Tokenize(attributes["support"], ",", support);
-    ITERATE(vector<string>, s, support) {
-        bool core = (*s)[0] == '*';
-        int id = NStr::StringToInt(core ? s->substr(1) : *s);
-        a.AddSupport(CSupportInfo(id, core));
+    if((a.Type() & CGeneModel::eGnomon) != 0 || (a.Type() & CGeneModel::eChain) != 0) { // handles legacy files
+        vector<string> support;
+        NStr::Tokenize(attributes["support"], ",", support);
+        ITERATE(vector<string>, s, support) {
+            bool core = (*s)[0] == '*';
+            Int8 id = NStr::StringToInt8(core ? s->substr(1) : *s);
+            a.AddSupport(CSupportInfo(id, core));
+        }
     }
     
     vector<string> trustedmrna;
@@ -1317,30 +1362,16 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
         a.InsertTrustedProt(CIdHandler::ToSeq_id(*s));
     }
     
-    vector<string> flags;
-    NStr::Tokenize(attributes["flags"], ",", flags);
-    ITERATE(vector<string>, f, flags) {
-        if (*f == "Wall")       a.SetType(a.Type()|  CGeneModel::eWall);
-        else if (*f == "Nested")     a.SetType(a.Type()|  CGeneModel::eNested);
-        else if (*f == "EST")        a.SetType(a.Type()|  CGeneModel::eEST);
-        else if (*f == "mRNA")       a.SetType(a.Type()|  CGeneModel::emRNA);
-        else if (*f == "Prot")       a.SetType(a.Type()|  CGeneModel::eProt);
-        else if (*f == "Skip")       a.Status()        |= CGeneModel::eSkipped;
-        else if (*f == "FullSupCDS") a.Status()        |= CGeneModel::eFullSupCDS;
-        else if (*f == "Pseudo")     a.Status()        |= CGeneModel::ePseudo;
-        else if (*f == "PolyA")      a.Status()        |= CGeneModel::ePolyA;
-        else if (*f == "Cap")        a.Status()        |= CGeneModel::eCap;
-        else if (*f == "ConfirmedStart")   { confirmed_start = true; has_start = true; }
-        else if (*f == "PutativeStart")   { open_cds = true; has_start = true; }
-        else if (*f == "Start") has_start = true;
-        else if (*f == "ConfirmedStop")   { confirmed_stop = true; has_stop = true; }
-        else if (*f == "Stop")  has_stop = true;
-    }
-    
     a.SetComment(attributes["note"]);
     
     if (!attributes["TargetLen"].empty())
         target_len = NStr::StringToInt(attributes["TargetLen"]);
+    
+    if (!attributes["Ident"].empty())
+        a.SetIdent(NStr::StringToDouble(attributes["Ident"]));
+    
+    if (!attributes["Weight"].empty())
+        a.SetWeight(NStr::StringToDouble(attributes["Weight"]));
     
     if (!attributes["protein_hit"].empty())
         a.ProteinHit() = attributes["protein_hit"];
@@ -1419,7 +1450,11 @@ CNcbiOstream& printGFF3(CNcbiOstream& os, const CAlignModel& a)
     templ.seqid = contig_stream_state.slot(os);
 
     templ.source = CGeneModel::TypeToString(a.Type());
-    templ.strand = a.Strand() == eMinus ? '-' : '+';
+
+    if(a.Strand() == ePlus)
+        templ.strand = '+';
+    else if(a.Strand() == eMinus)
+        templ.strand = '-';
 
     SGFFrec mrna = templ;
     mrna.type = "mRNA";
@@ -1434,7 +1469,7 @@ CNcbiOstream& printGFF3(CNcbiOstream& os, const CAlignModel& a)
     int part = 0;
     vector<SGFFrec> exons,cdss;
 
-    templ.attributes["Parent"] = NStr::IntToString(a.ID());
+    templ.attributes["Parent"] = NStr::Int8ToString(a.ID());
     SGFFrec exon = templ;
     exon.type = "exon";
     SGFFrec cds = templ;
@@ -1549,7 +1584,7 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
          return is;
     }
 
-    int id = rec.model;
+    Int8 id = rec.model;
 
     if (id==0)
         return InputError(is);
@@ -1580,7 +1615,11 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
 
     if (rec.source == "Gnomon") a.SetType(a.Type() | CGeneModel::eGnomon);
     else if (rec.source == "Chainer") a.SetType(a.Type() | CGeneModel::eChain);
-    a.SetStrand(rec.strand=='-'?eMinus:ePlus);
+    
+    if(rec.strand=='+')
+        a.SetStrand(ePlus);
+    else if(rec.strand=='-')
+        a.SetStrand(eMinus);
 
     double score = BadScore();
     map<string, string> attributes;
@@ -1601,6 +1640,9 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
             if(!r->attributes["Target"].empty())
                 attributes["Target"] = r->attributes["Target"];
         } else if (r->type == "CDS") {
+
+            _ASSERT((a.Status()&CGeneModel::eUnknownOrientation) == 0);
+
             TSignedSeqRange cds_exon(r->start,r->end);
             if (r->strand=='+') {
                 if (cds.Empty() || r->start < cds.GetFrom())
@@ -1619,7 +1661,7 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
     sort(exons.begin(),exons.end());
     sort(transcript_exons.begin(),transcript_exons.end());
     bool notreversed = (a.Status()&CGeneModel::eReversed) == 0;
-    bool plusstrand = a.Strand() == ePlus;
+    bool plusstrand = a.Strand() != eMinus;
     EStrand orientation = (notreversed == plusstrand) ? ePlus : eMinus;
     if(orientation == eMinus)
        reverse(transcript_exons.begin(),transcript_exons.end());
@@ -1737,12 +1779,12 @@ CNcbiIstream& operator>>(CNcbiIstream& is, CAlignModel& align)
 }
 
 
-CSupportInfo::CSupportInfo(int model_id, bool core)
+CSupportInfo::CSupportInfo(Int8 model_id, bool core)
     : m_id( model_id), m_core_align(core)
 {
 }
 
-int CSupportInfo::GetId() const
+Int8 CSupportInfo::GetId() const
 {
     return m_id;
 }

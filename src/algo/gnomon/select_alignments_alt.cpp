@@ -50,7 +50,7 @@ void CModelFilters::FilterOutSingleExonEST(TGeneModelList& chains)
 {
       for (TGeneModelList::iterator it = chains.begin(); it != chains.end();) {
         const CGeneModel& chain(*it);
-        if (chain.Exons().size() == 1 && (chain.Type()&(CGeneModel::eProt|CGeneModel::eEST|CGeneModel::emRNA))==CGeneModel::eEST) {
+        if (chain.Exons().size() == 1 && (chain.Type() & (CAlignModel::eProt|CAlignModel::emRNA))==0) {
             it = chains.erase(it);
         } else {
             ++it;
@@ -149,6 +149,7 @@ bool CAltSplice::IsAllowedAlternative(const CGeneModel& a, int maxcomposite) con
     if(front().PStop() || !front().FrameShifts().empty())
         return false;
 
+    /*
     ITERATE(CAltSplice, it, *this) {
         const CGeneModel& b = *it;
         if (HasRetainedIntron(a, b) || HasRetainedIntron(b, a))
@@ -180,6 +181,7 @@ bool CAltSplice::IsAllowedAlternative(const CGeneModel& a, int maxcomposite) con
             }
         }
     }
+    */
 
     return true;
 }
@@ -196,6 +198,7 @@ bool CAltSplice::IsAlternative(const CGeneModel& a) const
             return true;
     }
 
+    /*
     int la = 0;
     int lg = 0;
     int lc = 0;
@@ -211,6 +214,7 @@ bool CAltSplice::IsAlternative(const CGeneModel& a) const
         
     if(lc > 0.5*min(la,lg))        // has common mrna
         return true;
+    */
 
     if(a.ReadingFrame().NotEmpty() && RealCdsLimits().NotEmpty()) {    
         TIVec acds_map;
@@ -462,7 +466,7 @@ CGeneSelector::ECompat CGeneSelector::CheckCompatibility(const CAltSplice& gene,
             return eNotCompatible;
     }
 
-    if(gene.IsAlternative(algn)) {   // has common splice or common CDS or shares enough mrna
+    if(gene.IsAlternative(algn)) {   // has common splice or common CDS
         if (gene.IsAllowedAlternative(algn, composite) &&
             ( !algn.TrustedmRNA().empty() || !algn.TrustedProt().empty()    // trusted gene
               || (algn.AlignLen() > altfrac/100*gene.front().AlignLen() && (algn.ReadingFrame().Empty() || algn.Score() > altfrac/100*gene.front().Score())) // long enough and noncoding or good score
@@ -678,7 +682,7 @@ void CModelFilters::FilterOutTandemOverlap(TGeneModelList&cls, double fraction, 
         vector<const CGeneModel*> candidates;
         for(TGeneModelList::iterator jt = cls.begin(); jt != cls.end(); ++jt) {
             const CGeneModel& aj(*jt);
-            if(aj.Score() < fraction/100*ai.Score() || aj.RealCdsLen() < fraction/100*cds_len || !CModelCompare::HaveCommonExonOrIntron(ai,aj)) 
+            if(!aj.HasStart() || !aj.HasStop() || aj.Score() < fraction/100*ai.Score() || aj.RealCdsLen() < fraction/100*cds_len || !CModelCompare::HaveCommonExonOrIntron(ai,aj)) 
                 continue;
             candidates.push_back(&aj);
         }

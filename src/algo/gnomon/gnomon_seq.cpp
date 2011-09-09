@@ -198,10 +198,15 @@ void FindStartsStops(const CGeneModel& model, const CEResidueVec& contig_seq, co
     EStrand strand = model.Strand();
 
     if (!model.ReadingFrame().Empty()) {
-        left_cds_limit = mrnamap.MapOrigToEdited(model.GetCdsInfo().MaxCdsLimits().GetFrom());
-        _ASSERT(left_cds_limit >= 0 || model.GetCdsInfo().MaxCdsLimits().GetFrom() == TSignedSeqRange::GetWholeFrom());
-        right_cds_limit = mrnamap.MapOrigToEdited(model.GetCdsInfo().MaxCdsLimits().GetTo());
-        _ASSERT(right_cds_limit >= 0 || model.GetCdsInfo().MaxCdsLimits().GetTo() == TSignedSeqRange::GetWholeTo());
+        //        left_cds_limit = mrnamap.MapOrigToEdited(model.GetCdsInfo().MaxCdsLimits().GetFrom());
+        //        _ASSERT(left_cds_limit >= 0 || model.GetCdsInfo().MaxCdsLimits().GetFrom() == TSignedSeqRange::GetWholeFrom());
+        //        right_cds_limit = mrnamap.MapOrigToEdited(model.GetCdsInfo().MaxCdsLimits().GetTo());
+        //        _ASSERT(right_cds_limit >= 0 || model.GetCdsInfo().MaxCdsLimits().GetTo() == TSignedSeqRange::GetWholeTo());
+
+        //        if(strand == eMinus) {
+        //            std::swap(left_cds_limit,right_cds_limit);
+        //        }
+        //        if(right_cds_limit < 0) right_cds_limit = mrna.size();
 
         TSignedSeqRange rf = mrnamap.MapRangeOrigToEdited(model.ReadingFrame(),true);
         reading_frame_start = rf.GetFrom();
@@ -209,12 +214,7 @@ void FindStartsStops(const CGeneModel& model, const CEResidueVec& contig_seq, co
         reading_frame_stop = rf.GetTo();
         _ASSERT(reading_frame_stop >= 0);
 
-        if(strand == eMinus) {
-            std::swap(left_cds_limit,right_cds_limit);
-        }
-        if(right_cds_limit < 0) right_cds_limit = mrna.size();
-
-        if (reading_frame_start == 0 && IsStartCodon(&mrna[reading_frame_start]))
+        if (reading_frame_start == 0 && IsStartCodon(&mrna[reading_frame_start]) && reading_frame_start+3 < reading_frame_stop)
             reading_frame_start += 3;
 
         _ASSERT( -1 <= left_cds_limit && left_cds_limit <= reading_frame_start );
@@ -233,6 +233,12 @@ void FindStartsStops(const CGeneModel& model, const CEResidueVec& contig_seq, co
         } else {
             FindAllStops(stops,mrna,mrnamap,TSignedSeqRange(0,left_cds_limit),frame);
         }
+
+        reading_frame_start = reading_frame_stop-5;              // allow starts inside reading frame if not protein
+        if(model.GetCdsInfo().ProtReadingFrame().NotEmpty()) {
+            TSignedSeqRange protrf = mrnamap.MapRangeOrigToEdited(model.GetCdsInfo().ProtReadingFrame(),true);
+            reading_frame_start = min(protrf.GetFrom(),reading_frame_start);
+        }
     }
 
     if (left_cds_limit<0) {
@@ -245,10 +251,15 @@ void FindStartsStops(const CGeneModel& model, const CEResidueVec& contig_seq, co
                 model_start = contig_seq.size()-1-model_start; 
             for (int i = 0; i<3; ++i) {
                 if (frame == -1 || frame == i) {
+
+                    starts[i].push_back(i-3);
+
+                    /*
                     if (UpstreamStartOrSplice(contig_seq,model_start,i))
                         starts[i].push_back(i-3);
                     else 
-                        stops[i].push_back(i-3); // bogus stop to limit MaxCds      
+                        stops[i].push_back(i-3); // bogus stop to limit MaxCds 
+                    */
                 }
             }
         }

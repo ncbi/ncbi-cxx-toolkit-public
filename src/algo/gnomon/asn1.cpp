@@ -64,7 +64,7 @@ void CollectAttributes(const CAlignModel& a, TAttributes& attributes);
 void ParseAttributes(TAttributes& attributes, CAlignModel& a);
 
 // defined in gnomon_objmgr.cpp
-int GetModelId(const CSeq_align& seq_align);
+Int8 GetModelId(const CSeq_align& seq_align);
 
 
 const string kGnomonConstructed = "Is [re]constructed alignment";
@@ -221,7 +221,7 @@ void CAnnotationASN1::CImplementationData::CreateModelProducts(SModelData& md)
 
 void CAnnotationASN1::CImplementationData::AddInternalFeature(const SModelData& md)
 {
-    int id = md.model.ID();
+    Int8 id = md.model.ID();
     if (models_in_internal_feature_table.find(id) == models_in_internal_feature_table.end()) {
         CRef<CSeq_feat> internal_feat = create_internal_feature(md);
         internal_feature_table->push_back(internal_feat);
@@ -267,7 +267,7 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_cdregion_feature(SM
 
     if (where==eOnGenome) {
         CRef<CObject_id> obj_id( new CObject_id() );
-        obj_id->SetStr("cds." + NStr::IntToString(model.ID()));
+        obj_id->SetStr("cds." + NStr::Int8ToString(model.ID()));
         CRef<CFeat_id> feat_id( new CFeat_id() );
         feat_id->SetLocal(*obj_id);
         cdregion_feature->SetIds().push_back(feat_id);
@@ -440,7 +440,7 @@ void CAnnotationASN1::CImplementationData::DumpEvidence(const SModelData& md)
     
     
     ITERATE(CSupportInfoSet, s, model.Support()) {
-        int id = s->GetId();
+        Int8 id = s->GetId();
 
         const CAlignModel* m = evidence.GetModel(id);
         auto_ptr<SModelData> smd;
@@ -525,7 +525,7 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
 
         ITERATE(CSupportInfoSet, s, support) {
             
-            int id = s->GetId();
+            Int8 id = s->GetId();
             
             const CAlignModel* m = evidence.GetModel(id);
 
@@ -562,7 +562,7 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
             }
             vector<string> collected_cores;
             ITERATE(CSupportInfoSet, s, support) {
-                int id = s->GetId();
+                Int8 id = s->GetId();
                 const CGeneModel* m = (id == model.ID()) ? &model : evidence.GetModel(id);
                 if (m != NULL && (m->Type()&CGeneModel::eChain)) {
                     CRef<CUser_object> uo = evidence.GetModelEvidenceUserObject(id);
@@ -942,7 +942,7 @@ CAlignModel* RestoreModelFromPublicMrnaFeature(const CSeq_feat_Handle& feat)
 
     const CSeq_align& align = *mrna->GetInst().GetHist().GetAssembly().front();
 
-    int id = GetModelId(align);
+    Int8 id = GetModelId(align);
 
     CFeat_CI cds_feat(mrna_handle);
     while (cds_feat && !cds_feat->GetOriginalFeature().GetData().IsCdregion())
@@ -1027,7 +1027,7 @@ string CAnnotationASN1::ExtractModels(objects::CSeq_entry& seq_entry,
                                       TAlignModelList& model_list,
                                       TAlignModelList& evidence_models,
                                       list<CRef<CSeq_align> >& evidence_alignments,
-                                      map<int, CRef<CUser_object> >& model_evidence_uo)
+                                      map<Int8, CRef<CUser_object> >& model_evidence_uo)
 {
     CScope scope(*CObjectManager::GetInstance());
     CSeq_entry_Handle seq_entry_handle = scope.AddTopLevelSeqEntry(seq_entry);

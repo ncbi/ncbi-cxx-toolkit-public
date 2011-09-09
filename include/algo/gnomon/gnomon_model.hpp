@@ -61,7 +61,7 @@ class CGnomonEngine;
 inline
 double BadScore() { return -numeric_limits<double>::max(); }
 
-enum EStrand { ePlus, eMinus };
+enum EStrand { ePlus, eMinus};
 
 typedef objects::CSeqVectorTypes::TResidue TResidue; // unsigned char
 
@@ -77,17 +77,17 @@ inline bool Enclosed(TSignedSeqRange big, TSignedSeqRange small) { return (big !
 class CSupportInfo
 {
 public:
-    CSupportInfo(int model_id, bool core=false);
+    CSupportInfo(Int8 model_id, bool core=false);
 
 
-    int GetId() const;
+    Int8 GetId() const;
     void SetCore(bool core);
     bool IsCore() const;
     bool operator==(const CSupportInfo& s) const;
     bool operator<(const CSupportInfo& s) const;
 
 private:
-    int m_id;
+    Int8 m_id;
     bool m_core_align;
 }; 
 
@@ -283,11 +283,12 @@ public:
     enum EType {
         eWall = 1,
         eNested = 2,
-        eEST = 4,
-        emRNA = 8,
-        eProt = 16,
-        eChain = 32,
-        eGnomon = 64
+        eSR = 4,
+        eEST = 8,
+        emRNA = 16,
+        eProt = 32,
+        eChain = 64,
+        eGnomon = 128
     };
     static string TypeToString(int type);
 
@@ -299,11 +300,13 @@ public:
         eFullSupCDS = 32,
         ePseudo = 64,
         ePolyA = 128,
-        eCap = 256
+        eCap = 256,
+        eBestPlacement = 512,
+        eUnknownOrientation = 1024 
     };
 
     CGeneModel(EStrand s = ePlus, int id = 0, int type = 0) :
-        m_type(type), m_id(id), m_status(0), m_expecting_hole(false), m_strand(s), m_geneid(0), m_rank_in_gene(0) {}
+        m_type(type), m_id(id), m_status(0), m_ident(0), m_weight(1), m_expecting_hole(false), m_strand(s), m_geneid(0), m_rank_in_gene(0) {}
     virtual ~CGeneModel() {}
 
     void AddExon(TSignedSeqRange exon);
@@ -352,6 +355,13 @@ public:
     {
         return Limits().IntersectingWith(a.Limits()); 
     }
+
+    double Ident() const { return m_ident; }
+    void SetIdent(double i) { m_ident = i; }
+
+    double Weight() const { return m_weight; }
+    void SetWeight(double w) { m_weight = w; }
+
     void SetStrand(EStrand s) { m_strand = s; }
     EStrand Strand() const { return m_strand; }
     void SetType(int t) { m_type = t; }
@@ -360,10 +370,10 @@ public:
     void SetGeneID(int id) { m_geneid = id; }
     int RankInGene() const { return m_rank_in_gene; }
     void SetRankInGene(int rank) { m_rank_in_gene = rank; }
-    int ID() const { return m_id; }
-    void SetID(int id) { m_id = id; }
+    Int8 ID() const { return m_id; }
+    void SetID(Int8 id) { m_id = id; }
     const CSupportInfoSet& Support() const { return m_support; }
-    void AddSupport(const CSupportInfo& support) { m_support.insert(support); }
+    bool AddSupport(const CSupportInfo& support) { return m_support.insert(support); }
     void ReplaceSupport(const CSupportInfoSet& support_set) {  m_support = support_set; }
     const string& ProteinHit() const { return  m_protein_hit; }
           string& ProteinHit()       { return  m_protein_hit; }
@@ -467,14 +477,21 @@ public:
     void InsertTrustedProt(CRef<CSeq_id> g) { m_trusted_prot.push_back(g); };
     void ClearTrustedProt() { m_trusted_prot.clear(); };
 
+    const vector<CCDSInfo>* GetEdgeReadingFrames() const { return &m_edge_reading_frames; }
+    vector<CCDSInfo>* SetEdgeReadingFrames() { return &m_edge_reading_frames; }
+
+
 #ifdef _DEBUG
     int oid;
 #endif
 
 private:
     int m_type;
-    int m_id;
+    Int8 m_id;
     unsigned int m_status;
+
+    double m_ident;
+    double m_weight;
 
     TExons m_exons;
     TExons& MyExons() { return m_exons; }
@@ -494,6 +511,9 @@ private:
     string m_comment;
     list< CRef<CSeq_id> > m_trusted_prot;
     list< CRef<CSeq_id> > m_trusted_mrna;
+
+
+    vector<CCDSInfo> m_edge_reading_frames;
 };
 
 

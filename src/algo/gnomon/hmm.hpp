@@ -577,6 +577,9 @@ private:
     void StoreParam( const string& type, CInputModel* input_model, int low, int high );
 };
 
+
+
+
 END_SCOPE(gnomon)
 END_NCBI_SCOPE
 

@@ -220,8 +220,8 @@ struct CIndelMapper: public CRangeMapper {
 };
 
 struct Is_ID_equal {
-    int m_id;
-    Is_ID_equal(int id): m_id(id) {}
+    Int8 m_id;
+    Is_ID_equal(Int8 id): m_id(id) {}
     bool operator()(const CGeneModel& a)
     {
         return a.ID()==m_id;
@@ -316,17 +316,28 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
         NCBI_THROW(CGnomonException, eMemoryLimit, "Not enough memory in CSeqScores");
     } 
 
-    for(TSignedSeqPos i = 0; i < len; ++i) {  // masking rpeats
-        char c = sequence[i];
-        if(repeats && c != toupper((unsigned char) c)) {
-            m_laststop[ePlus][0][i] = i;
-            m_laststop[ePlus][1][i] = i;
-            m_laststop[ePlus][2][i] = i;
-            m_laststop[eMinus][0][i] = i;
-            m_laststop[eMinus][1][i] = i;
-            m_laststop[eMinus][2][i] = i;
+    const int RepeatMargin = 25;
+    for(int rpta = 0; rpta < len; ) {
+        while(rpta < len && isupper(sequence[rpta]))
+            ++rpta;
+        int rptb = rpta;
+        while(rptb+1 < len && islower(sequence[rptb+1]))
+            ++rptb;
+        if(rptb-rpta+1 > 2*RepeatMargin) {
+            for(TSignedSeqPos i = rpta+RepeatMargin; i <= rptb-RepeatMargin; ++i) {  // masking repeats
+                m_laststop[ePlus][0][i] = i;
+                m_laststop[ePlus][1][i] = i;
+                m_laststop[ePlus][2][i] = i;
+                m_laststop[eMinus][0][i] = i;
+                m_laststop[eMinus][1][i] = i;
+                m_laststop[eMinus][2][i] = i;
+            }
         }
+        rpta = rptb+1;
+    }
 
+    for(TSignedSeqPos i = 0; i < len; ++i) {
+        char c = sequence[i];
         EResidue l = fromACGT(c);
         m_seq[ePlus][i] = l;
         m_seq[eMinus][len-1-i] = k_toMinus[l];
@@ -503,6 +514,7 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
                 m_laststop[eMinus][2][i] = -1;
             }
         }
+
         
         if((align.Type() & CGeneModel::eProt)!=0)
             m_protnum[align.ReadingFrame().GetFrom()] = 1;
@@ -673,41 +685,7 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
                 m_notining[i] = i;
         }
     }
-    
-    const int RepeatMargin = 25;
-    for(TSignedSeqPos i = 0; i < len-1; ++i)  // repeat trimming
-    {
-        bool rpta = m_laststop[ePlus][0][i] >= 0;
-        bool rptb = m_laststop[ePlus][0][i+1] >= 0;
-        
-        if(!rpta && rptb)  // b - first repeat
-        {
-            TSignedSeqPos j = i+1;
-            for(; j <= min(i+RepeatMargin,len-1);  ++j) 
-            {
-                m_laststop[ePlus][0][j] = -1;
-                m_laststop[ePlus][1][j] = -1;
-                m_laststop[ePlus][2][j] = -1;
-                m_laststop[eMinus][0][j] = -1;
-                m_laststop[eMinus][1][j] = -1;
-                m_laststop[eMinus][2][j] = -1;
-            }
-            i = j-1;
-        }
-        else if(rpta && !rptb) // a - last repeat
-        {
-            TSignedSeqPos j = max(0,int(i)-RepeatMargin+1);
-            for(; j <= i; ++j)
-            {
-                m_laststop[ePlus][0][j] = -1;
-                m_laststop[ePlus][1][j] = -1;
-                m_laststop[ePlus][2][j] = -1;
-                m_laststop[eMinus][0][j] = -1;
-                m_laststop[eMinus][1][j] = -1;
-                m_laststop[eMinus][2][j] = -1;
-            }
-        }
-    }
+
     
     if(leftwall) m_notinintron[ePlus][0] = m_notinintron[eMinus][0] = 0;                  // no partials
     if(rightwall) m_notinintron[ePlus][len-1] = m_notinintron[eMinus][len-1] = len-1;
@@ -1200,7 +1178,6 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
             }
         }
     }
-    
 }
 
 double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CEResidueVec& mrna, const CAlignMap& mrnamap, TIVec starts[3],  TIVec stops[3], int& best_frame, int& best_start, int& best_stop) const
@@ -1322,71 +1299,75 @@ double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CERe
     best_stop = -1;
     CCDSInfo cds_info = model.GetCdsInfo();
 
+    int best_frame_initial = best_frame;
+
     for(int frame = 0; frame < 3; ++frame) {
-        for(int i = 0; i < (int)stops[frame].size(); i++) {
-            int stop = stops[frame][i];
-            if(stop < 0)        // bogus stop
-                continue;
-
-            int prev_stop = -6;
-            if(i > 0)
-                prev_stop = stops[frame][i-1];
-            TIVec::iterator it_a = lower_bound(starts[frame].begin(),starts[frame].end(),prev_stop+3);
-            if(it_a == starts[frame].end() || *it_a >= stop)    // no start
-                continue;
-            TIVec::iterator it_b = it_a+1;
-            if(*it_a < 0 && it_b != starts[frame].end() && *it_b < stop)   // open rf and there is apropriate start at right
-                ++it_b;
-            for(TIVec::iterator it = it_a; it != it_b; it++) {             // this loop includes only open rf (if exists) and one real start
-                int start = *it;
-
-                if (stop-start-(start>=0?0:3) < 75)
+        if (frame==best_frame_initial || best_frame_initial==-1) {
+            for(int i = 0; i < (int)stops[frame].size(); i++) {
+                int stop = stops[frame][i];
+                if(stop < 0)        // bogus stop
                     continue;
+
+                int prev_stop = -6;
+                if(i > 0)
+                    prev_stop = stops[frame][i-1];
+                TIVec::iterator it_a = lower_bound(starts[frame].begin(),starts[frame].end(),prev_stop+3);
+                if(it_a == starts[frame].end() || *it_a >= stop)    // no start 
+                    continue;
+                TIVec::iterator it_b = it_a+1;
+                if(*it_a < 0 && it_b != starts[frame].end() && *it_b < stop)   // open rf and there is apropriate start at right    
+                    ++it_b;
+                for(TIVec::iterator it = it_a; it != it_b; it++) {             // this loop includes only open rf (if exists) and one real start    
+                    int start = *it;
+                    
+                    if (stop-start-(start>=0?0:3) < 75)
+                        continue;
             
-                double s = cdrscr[frame][stop-1]-cdrscr[frame][start+2+(start>=0?0:3)];
+                    double s = cdrscr[frame][stop-1]-cdrscr[frame][start+2+(start>=0?0:3)];
+                    
+                    double stt_score = BadScore();
+                    if(start >= stt.Left()+2) {    // 5 extra bases for ncdr    
+                        int pnt = start+2;
+                        stt_score = stt.Score(mrna,pnt);
+                        if(stt_score != BadScore()) {
+                            for(int k = pnt-stt.Left()+1; k <= pnt+stt.Right(); ++k) {
+                                double sn = ncdr.Score(mrna,k);
+                                if(sn != BadScore())
+                                    stt_score -= sn;
+                            }
+                        }
+                    } else {
+                        int pnt = mrnamap.MapEditedToOrig(start+(start>=0?0:3));
+                        if(strand == eMinus) pnt = contig_len-1-pnt;
+                        pnt += 2;
+                        stt_score = stt.Score(ds[strand],pnt);
+                        if(stt_score != BadScore()) {
+                            for(int k = pnt-stt.Left()+1; k <= pnt+stt.Right(); ++k) {
+                                double sn = ncdr.Score(ds[strand],k);
+                                if(sn != BadScore())
+                                    stt_score -= sn;
+                            }
+                        }
+                    }
+                    if(stt_score != BadScore())
+                        s += stt_score;
             
-                double stt_score = BadScore();
-                if(start >= stt.Left()+2) {    // 5 extra bases for ncdr
-                    int pnt = start+2;
-                    stt_score = stt.Score(mrna,pnt);
-                    if(stt_score != BadScore()) {
-                        for(int k = pnt-stt.Left()+1; k <= pnt+stt.Right(); ++k) {
+                    double stp_score = stp.Score(mrna,stop-1);
+                    if(stp_score != BadScore()) {
+                        for(int k = stop-stp.Left(); k < stop+stp.Right(); ++k) {
                             double sn = ncdr.Score(mrna,k);
                             if(sn != BadScore())
-                                stt_score -= sn;
+                                stp_score -= sn;
                         }
+                        s += stp_score;
                     }
-                } else {
-                    int pnt = mrnamap.MapEditedToOrig(start+(start>=0?0:3));
-                    if(strand == eMinus) pnt = contig_len-1-pnt;
-                    pnt += 2;
-                    stt_score = stt.Score(ds[strand],pnt);
-                    if(stt_score != BadScore()) {
-                        for(int k = pnt-stt.Left()+1; k <= pnt+stt.Right(); ++k) {
-                            double sn = ncdr.Score(ds[strand],k);
-                            if(sn != BadScore())
-                                stt_score -= sn;
-                        }
-                    }
-                }
-                if(stt_score != BadScore())
-                    s += stt_score;
             
-                double stp_score = stp.Score(mrna,stop-1);
-                if(stp_score != BadScore()) {
-                    for(int k = stop-stp.Left(); k < stop+stp.Right(); ++k) {
-                        double sn = ncdr.Score(mrna,k);
-                        if(sn != BadScore())
-                            stp_score -= sn;
+                    if(s >= best_score) {
+                        best_frame = frame;
+                        best_score = s;
+                        best_start = start;
+                        best_stop = stop;
                     }
-                    s += stp_score;
-                }
-            
-                if(s >= best_score) {
-                    best_frame = frame;
-                    best_score = s;
-                    best_start = start;
-                    best_stop = stop;
                 }
             }
         }
@@ -1410,10 +1391,94 @@ void CGnomonEngine::GetScore(CGeneModel& model) const
 
     FindStartsStops(model, m_data->m_ds[model.Strand()], mrna, mrnamap, starts, stops, frame);
 
+    if(model.GetCdsInfo().ReadingFrame().Empty()) {   // we didn't know the frame before
+        int mrna_len = (int)mrna.size();
+
+        for(int fr = 0; fr < 3; ++fr) {
+
+            int first_stop = stops[fr][0];
+            if(first_stop < 0)  // bogus stop for maxcds
+                first_stop = stops[fr][1];
+
+            if(first_stop >= 3) {   // we have 5' reading frame
+                TSignedSeqRange rframe, stt, stp;                
+
+                if(first_stop < mrna_len-2) {
+                    stp = mrnamap.MapRangeEditedToOrig(TSignedSeqRange(first_stop,first_stop+2), false);
+                }
+
+                int first_start = -1;
+                if(!starts[fr].empty()) {
+                    first_start = starts[fr][0];
+                    if(first_start < 0 && starts[fr].size() > 1)
+                        first_start = starts[fr][1];
+                }
+                int fivep_rf = fr;
+                if(first_start >= 0 && first_start <= first_stop-6) {
+                    stt = mrnamap.MapRangeEditedToOrig(TSignedSeqRange(first_start,first_start+2), false);
+                    fivep_rf = first_start+3;
+                }
+
+                if(stt.NotEmpty() || stops[fr][0] >= 0) {    // there is a start or no upstream stop
+                    int threep_rf = first_stop-1;
+                    rframe = mrnamap.MapRangeEditedToOrig(TSignedSeqRange(fivep_rf,threep_rf), true);
+
+                    _ASSERT(rframe.NotEmpty());
+
+                    CCDSInfo ci;
+                    ci.SetReadingFrame(rframe);
+                    if(stt.NotEmpty()) {
+                        ci.SetStart(stt);
+                        if(stops[fr][0] < 0) {
+                            int bs  = mrnamap.MapEditedToOrig(first_start);
+                            _ASSERT( bs >= 0 );
+                            ci.Set5PrimeCdsLimit(bs);
+                        }
+                    }
+                    if(stp.NotEmpty())
+                        ci.SetStop(stp);
+                    ci.SetScore(0, stt.NotEmpty());
+                    model.SetEdgeReadingFrames()->push_back(ci);
+                }
+            }
+
+            if(first_stop < mrna_len-2) {   //there is a stop and possibly 3' reading frame
+                TSignedSeqRange rframe, stt;                
+                int last_stop = stops[fr][(int)stops[fr].size()-1];
+                if(last_stop >= mrna_len-2)
+                    last_stop = stops[fr][(int)stops[fr].size()-2]; //garanteed to be present
+                int start;
+                ITERATE(TIVec, it, starts[fr]) {
+                    start = *it;
+                    if(start > last_stop && start <= mrna_len-6) {
+                        stt = mrnamap.MapRangeEditedToOrig(TSignedSeqRange(start,start+2), false);
+                        break;
+                    }
+                }
+                if(stt.NotEmpty()) {    // there is 3' reading frame
+                    int fivep_rf = start+3;
+                    int threep_rf = mrna_len-(mrna_len-fr)%3-1;
+                    rframe = mrnamap.MapRangeEditedToOrig(TSignedSeqRange(fivep_rf,threep_rf), true);
+
+                    _ASSERT(rframe.NotEmpty());
+
+                    CCDSInfo ci;
+                    ci.SetReadingFrame(rframe);
+                    ci.SetStart(stt);
+                    ci.Set5PrimeCdsLimit(model.Strand() == ePlus ? stt.GetFrom():stt.GetTo());
+                    ci.SetScore(0,false);
+                    model.SetEdgeReadingFrames()->push_back(ci);
+                }
+            }
+        }
+    }
+
     int best_start, best_stop;
     double best_score = SelectBestReadingFrame(model, mrna, mrnamap, starts, stops, frame, best_start, best_stop);
 
     CCDSInfo cds_info = model.GetCdsInfo();
+    if(cds_info.MaxCdsLimits().NotEmpty())
+        cds_info.Clear5PrimeCdsLimit();
 
     if (best_score == BadScore()) {
         cds_info.Clear();
@@ -1427,7 +1492,7 @@ void CGnomonEngine::GetScore(CGeneModel& model) const
     } else if(best_start<0 && starts[frame].size() > 1) {
         int new_start = starts[frame][1];
         int newlen = best_stop-new_start;
-        if(newlen > 75 || cds_info.ConfirmedStart()) {
+        if(newlen >= 6 || cds_info.ConfirmedStart()) {
             is_open = !cds_info.ConfirmedStart();
             best_start = new_start;
         }

@@ -99,6 +99,11 @@ int CGnomonEngine::GetMinIntronLen() const
     return m_data->m_intron_params->m_intronlen.MinLen();
 }
 
+int CGnomonEngine::GetMinIntergenicLen() const
+{
+    return m_data->m_intergenic_params->m_intergeniclen.MinLen();
+}
+
 int CGnomonEngine::GetMaxIntronLen() const
 {
     return m_data->m_intron_params->m_intronlen.MaxLen();

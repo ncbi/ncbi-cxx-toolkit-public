@@ -43,9 +43,9 @@ class IEvidence
 {
 public:
     virtual ~IEvidence() {};
-    virtual const CAlignModel* GetModel(int id) = 0;
-    virtual CConstRef<objects::CSeq_align> GetSeq_align(int id) const = 0;
-    virtual CRef<CUser_object> GetModelEvidenceUserObject(int id) = 0;
+    virtual const CAlignModel* GetModel(Int8 id) = 0;
+    virtual CConstRef<objects::CSeq_align> GetSeq_align(Int8 id) const = 0;
+    virtual CRef<CUser_object> GetModelEvidenceUserObject(Int8 id) = 0;
 
     class iterator {
     public:
@@ -68,7 +68,7 @@ public:
                                 TAlignModelList& model_list,
                                 TAlignModelList& evidence_models,
                                 list<CRef<objects::CSeq_align> >& evidence_alignments,
-                                map<int, CRef<CUser_object> >& model_evidence_uo);
+                                map<Int8, CRef<CUser_object> >& model_evidence_uo);
 private:
     class CImplementationData;
     auto_ptr<CImplementationData> m_data;

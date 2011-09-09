@@ -71,14 +71,14 @@ CRef<CSeq_id> CIdHandler::ToSeq_id(const string& str)
     return CRef<CSeq_id>(new CSeq_id(str));
 }
 
-CRef<CSeq_id> CIdHandler::GnomonMRNA(int id)
+CRef<CSeq_id> CIdHandler::GnomonMRNA(Int8 id)
 {
-    return CRef<CSeq_id>(new CSeq_id("gnl|GNOMON|" + NStr::IntToString(id) + ".m"));
+    return CRef<CSeq_id>(new CSeq_id("gnl|GNOMON|" + NStr::Int8ToString(id) + ".m"));
 }
 
-CRef<CSeq_id> CIdHandler::GnomonProtein(int id)
+CRef<CSeq_id> CIdHandler::GnomonProtein(Int8 id)
 {
-    return CRef<CSeq_id>(new CSeq_id("gnl|GNOMON|" + NStr::IntToString(id) + ".p"));
+    return CRef<CSeq_id>(new CSeq_id("gnl|GNOMON|" + NStr::Int8ToString(id) + ".p"));
 }
 
 END_SCOPE(gnomon)

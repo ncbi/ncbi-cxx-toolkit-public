@@ -52,8 +52,8 @@ public:
 
     static CRef<CSeq_id> ToSeq_id(const string& str);
 
-    static CRef<CSeq_id> GnomonMRNA(int id);
-    static CRef<CSeq_id> GnomonProtein(int id);
+    static CRef<CSeq_id> GnomonMRNA(Int8 id);
+    static CRef<CSeq_id> GnomonProtein(Int8 id);
 
     CConstRef<CSeq_id> ToCanonical(const CSeq_id& id) const;
 
