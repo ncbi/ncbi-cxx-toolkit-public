@@ -310,7 +310,9 @@ int CCgiApplication::Run(void)
     x_OnEvent(eEndRequest, 120);
     x_OnEvent(eExit, result);
 
-    m_Context->GetResponse().SetOutput(NULL);
+    if (m_Context.get()) {
+        m_Context->GetResponse().SetOutput(NULL);
+    }
     return result;
 }
 
