@@ -1112,7 +1112,7 @@ void CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, list<CChain>& cha
         }
     }
    
-    pointers.erase(remove_if(pointers.begin(),pointers.end(),MemberIsMarkedForDeletion),pointers.end());  // wrong orientaition/UTR/frames are removed
+    pointers.erase(std::remove_if(pointers.begin(),pointers.end(),MemberIsMarkedForDeletion),pointers.end());  // wrong orientaition/UTR/frames are removed
 
 
     LeftRight(pointers);
@@ -1166,7 +1166,7 @@ void CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, list<CChain>& cha
         }
     }
 
-    pointers.erase(remove_if(pointers.begin(),pointers.end(),MemberIsCoding),pointers.end());  // only noncoding left
+    pointers.erase(std::remove_if(pointers.begin(),pointers.end(),MemberIsCoding),pointers.end());  // only noncoding left
 
     LeftRight(pointers);
     RightLeft(pointers);
