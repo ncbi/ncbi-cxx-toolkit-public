@@ -3,7 +3,7 @@
 # Meta-makefile
 #################################
 
-APP_PROJ = asnwalk_read asnwalk_type asnwalk_write bss_info \
+APP_PROJ = asn_assign asnwalk_read asnwalk_type asnwalk_write bss_info \
            hooks_commented \
            hooks_copy_member hooks_copy_object hooks_copy_variant \
            hooks_read_member hooks_read_object hooks_read_variant \
