@@ -284,13 +284,6 @@ CCgiEntryReaderContext::x_DelimitedRead(string& s, SIZE_TYPE n)
         _TROUBLE;
     }
 
-    // Add 1 to n when not up against the content length to compensate
-    // for get()'s insistence on producing (and counting) a trailing
-    // NUL.  (When up against the content length, the last byte may
-    // require more finesse.)
-    if (n != NPOS) {
-        ++n;
-    }
     if (m_ContentLength != CCgiRequest::kContentLengthUnknown) {
         n = min(n, m_ContentLength - m_BytePos);
     }
@@ -307,20 +300,10 @@ CCgiEntryReaderContext::x_DelimitedRead(string& s, SIZE_TYPE n)
             ++m_BytePos;
         }
     } else {
-        AutoArray<char> buffer(n);
+        AutoArray<char> buffer(++n); // allow for a trailing NUL
         m_In.get(buffer.get(), n, delim);
         s.assign(buffer.get(), m_In.gcount());
         m_BytePos += m_In.gcount();
-        if (m_ContentLength != CCgiRequest::kContentLengthUnknown
-            &&  m_BytePos == m_ContentLength - 1  &&  !m_In.eof() ) {
-            CT_INT_TYPE next = m_In.peek();
-            if ( !CT_EQ_INT_TYPE(next, CT_EOF)
-                &&  !CT_EQ_INT_TYPE(next, CT_TO_INT_TYPE(delim))) {
-                _VERIFY(next == m_In.get());
-                s += CT_TO_CHAR_TYPE(next);
-                ++m_BytePos;
-            }
-        }
         if (m_In.eof()  ||  m_BytePos >= m_ContentLength) {
             reason = eRT_EOF;
         } else {
