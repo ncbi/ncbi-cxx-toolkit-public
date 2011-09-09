@@ -339,6 +339,7 @@ CBlastFormat::x_SplitSeqAlign(CConstRef<CSeq_align_set> full_alignment,
     _ASSERT(repeated_seqs.IsEmpty());
     _ASSERT(new_seqs.IsEmpty());
 
+    unsigned int count = 0;
     ITERATE(CSeq_align_set::Tdata, alignment, full_alignment->Get()) {
         CSeq_id_Handle subj_id =
             CSeq_id_Handle::GetHandle((*alignment)->GetSeq_id(kSubjRow));
@@ -349,6 +350,9 @@ CBlastFormat::x_SplitSeqAlign(CConstRef<CSeq_align_set> full_alignment,
             // ... else add them as new
             new_seqs.Set().push_back(*alignment);
         }
+        count++;
+        if(count >= m_NumSummary)
+        	break;
     }
 }
 
@@ -381,7 +385,7 @@ CBlastFormat::x_DisplayDeflines(CConstRef<CSeq_align_set> aln_set,
         {{
             CShowBlastDefline showdef(repeated_seqs, *m_Scope, 
                                       kFormatLineLength,
-                                  min(m_NumSummary, (int)prev_seqids.size()));
+                                  	  repeated_seqs.Size());
             x_ConfigCShowBlastDefline(showdef);
             showdef.SetupPsiblast(NULL, CShowBlastDefline::eRepeatPass);
             showdef.DisplayBlastDefline(m_Outfile);
@@ -391,7 +395,7 @@ CBlastFormat::x_DisplayDeflines(CConstRef<CSeq_align_set> aln_set,
         // Show deflines for 'new' sequences
         {{
             CShowBlastDefline showdef(new_seqs, *m_Scope, kFormatLineLength,
-                              max(0, m_NumSummary-(int)prev_seqids.size()));
+                              	  	  new_seqs.Size());
             x_ConfigCShowBlastDefline(showdef);
             showdef.SetupPsiblast(NULL, CShowBlastDefline::eNewPass);
             showdef.DisplayBlastDefline(m_Outfile);
