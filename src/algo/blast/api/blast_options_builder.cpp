@@ -54,6 +54,7 @@ CBlastOptionsBuilder(const string                & program,
       m_HspRangeMax    (0),
       m_QueryRange     (TSeqRange::GetEmpty()),
       m_Locality       (locality),
+      m_IgnoreUnsupportedOptions(false),
       m_ForceMbIndex   (false)
 {
 }
@@ -259,6 +260,8 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
     case 'I':
         if (B4Param_InclusionThreshold.Match(p)) {
             bo.SetInclusionThreshold(v.GetReal());
+        } else if (B4Param_IgnoreMsaMaster.Match(p)) {
+            bo.SetIgnoreMsaMaster(v.GetBoolean());
         } else {
             found = false;
         }
