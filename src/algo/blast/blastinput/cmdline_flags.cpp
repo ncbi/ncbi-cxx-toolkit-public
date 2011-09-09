@@ -174,7 +174,6 @@ const string kArgGLDatabase("germline_db_");
 const string kArgGLNumAlign("num_alignments_");
 const string kArgGLChainType("auxilary_data");
 const string kArgGLOrigin("organism");
-const string kArgGLFuncClass("germline_db_seqidlist");
 const string kArgGLDomainSystem("domain_system");
 const string kArgGLFocusV("focus_on_V_segment");
 const string kArgTranslate("show_translation");

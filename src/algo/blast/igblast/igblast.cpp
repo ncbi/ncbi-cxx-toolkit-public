@@ -78,7 +78,11 @@ CIgAnnotationInfo::CIgAnnotationInfo(CConstRef<CIgBlastOptions> &ig_opt)
 
     // read domain info from pdm or ndm file
     const string suffix = (ig_opt->m_IsProtein) ? "_gl.p.dm." : "_gl.n.dm.";
-    string fn = ig_opt->m_Origin + suffix + ig_opt->m_DomainSystem;
+    string fn(SeqDB_ResolveDbPath("internal_data/" + ig_opt->m_Origin + suffix + ig_opt->m_DomainSystem));
+    if (fn == "") {
+        NCBI_THROW(CBlastException,  eInvalidArgument, 
+              "Domain annotation data file could not be found in [internal_data] directory");
+    }
     s_ReadLinesFromFile(fn, lines);
     int index = 0;
     ITERATE(vector<string>, l, lines) {
@@ -97,6 +101,9 @@ CIgAnnotationInfo::CIgAnnotationInfo(CConstRef<CIgBlastOptions> &ig_opt)
     // read chain type info and frame info from aux files
     fn = ig_opt->m_ChainType;
     s_ReadLinesFromFile(fn, lines);
+    if (lines.size() == 0) {
+        ERR_POST(Warning << "Auxilary data file could not be found");
+    }
     ITERATE(vector<string>, l, lines) {
         vector<string> tokens;
         NStr::Tokenize(*l, " \t\n\r", tokens, NStr::eMergeDelims);

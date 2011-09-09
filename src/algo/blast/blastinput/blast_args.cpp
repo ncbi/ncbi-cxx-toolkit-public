@@ -1242,11 +1242,11 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             NStr::IntToString(df_num_align[gene]));
         arg_desc.SetConstraint(arg_na,
                             new CArgAllowValuesBetween(0, 4));
-    }
-
-    arg_desc.AddOptionalKey(kArgGLFuncClass, "filename",
+        // Seqidlist
+        arg_desc.AddOptionalKey(arg_db + "_seqidlist", "filename",
                             "Restrict search of germline database to list of SeqIds's",
                             CArgDescriptions::eString);
+    }
 
     arg_desc.AddOptionalKey(kArgGLChainType, "filename",
                             "File containing chain type of each sequence in germline database and coding frame start position for V and J sequence",
@@ -1309,9 +1309,15 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
     m_Scope.Reset(new CScope(*CObjectManager::GetInstance()));
 
     // default germline database name for annotation
-    string df_db_name = m_IgOptions->m_Origin + "_gl_V";
+    string df_db_name = "internal_data/" + m_IgOptions->m_Origin + "_gl_V";
     CRef<CSearchDatabase> db(new CSearchDatabase(df_db_name, mol_type));
     m_IgOptions->m_Db[3].Reset(new CLocalDbAdapter(*db));
+    try {
+        db->GetSeqDb();
+    } catch(...) {
+        NCBI_THROW(CInputException, eInvalidInput,
+           "Germline annotation database " + df_db_name + " could not be found in [internal_data] directory");
+    }
 
     CRef<CBlastOptionsHandle> opts_hndl;
     if (m_IgOptions->m_IsProtein) {
@@ -1361,8 +1367,8 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
                        ?  args[arg_db].AsString() :  gl_db_name;
             db.Reset(new CSearchDatabase(db_name, mol_type));
 
-            if (gene==0 && args.Exist(kArgGLFuncClass) && args[kArgGLFuncClass]) {
-                string fn(SeqDB_ResolveDbPath(args[kArgGLFuncClass].AsString()));
+            if (args.Exist(arg_db + "_seqidlist") && args[arg_db + "_seqidlist"]) {
+                string fn(SeqDB_ResolveDbPath(args[arg_db + "_seqidlist"].AsString()));
                 db->SetGiList(CRef<CSeqDBGiList> (new CSeqDBFileGiList(fn,
                              CSeqDBFileGiList::eSiList)));
             }
