@@ -49,7 +49,7 @@ Bug fixes:
 * Rpstblastn might crash if searching many sequences.
 * Indexed megablast would not run in multi-threaded mode.
 * Query title in the PSSM saved by psiblast was not being stored.
-* Possbile failure to run in multi-threaded mode with multiple queries or large database sequences.
+* Possible failure to run in multi-threaded mode with multiple queries or large database sequences.
 * Tblastn runs with database masking might miss matches.
 
 October 30, 2010
