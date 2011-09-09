@@ -69,14 +69,12 @@
  */
 
 #include <corelib/ncbistd.hpp>
-#include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_ftp_connector.h>
 #include <connect/ncbi_namedpipe_connector.hpp>
 #include <connect/ncbi_memory_connector.h>
 #include <connect/ncbi_pipe_connector.hpp>
 #include <connect/ncbi_service_connector.h>
 #include <connect/ncbi_socket_connector.h>
-#include <vector>
 
 /** @addtogroup ConnStreams
  *

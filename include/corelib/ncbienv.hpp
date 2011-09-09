@@ -39,7 +39,6 @@
 
 #include <corelib/ncbimtx.hpp>
 #include <map>
-#include <deque>
 #include <iterator>
 
 /// Avoid name clash with the NCBI C Toolkit.

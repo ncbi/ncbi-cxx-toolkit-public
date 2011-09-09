@@ -1,7 +1,7 @@
 #ifndef CORELIB___NCBIMTX__HPP
 #define CORELIB___NCBIMTX__HPP
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -60,7 +60,6 @@
 
 
 #include <corelib/ncbithr_conf.hpp>
-#include <corelib/ncbicntr.hpp>
 #include <corelib/guard.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbitime.hpp>

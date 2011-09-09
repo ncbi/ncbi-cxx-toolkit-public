@@ -39,9 +39,8 @@
 ///
 /// Implemented for: UNIX, MS-Windows
 
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbi_process.hpp>
 #include <corelib/ncbistre.hpp>
+#include <corelib/ncbi_process.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <vector>
 

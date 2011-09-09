@@ -184,7 +184,7 @@ template<typename Iter>
 inline
 void iter_swap( Iter it1, Iter it2 )
 {
-    swap( *it1, * it2 );
+    swap( *it1, *it2 );
 }
 
 END_STD_SCOPE

@@ -38,10 +38,7 @@
 ///     CNamedPipeClient  -  class for client-side named pipes
 ///     CNamedPipeServer  -  class for server-side named pipes
 
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbi_limits.h>
 #include <connect/ncbi_core_cxx.hpp>
-#include <vector>
 
 #if defined(NCBI_OS_MSWIN)
 #elif defined(NCBI_OS_UNIX)

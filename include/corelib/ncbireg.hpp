@@ -48,7 +48,6 @@
 
 #include <corelib/ncbi_limits.h>
 #include <corelib/ncbimtx.hpp>
-#include <corelib/ncbiobj.hpp>
 #include <map>
 #include <set>
 

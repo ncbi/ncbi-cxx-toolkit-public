@@ -43,13 +43,10 @@
 ///   CFileException.
 ///   Defines different file finding algorithms.
 
-#include <corelib/ncbiobj.hpp>
-#include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_mask.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <corelib/reader_writer.hpp>
-#include <memory>
 
 #include <sys/types.h>
 #if defined(HAVE_SYS_STAT_H)

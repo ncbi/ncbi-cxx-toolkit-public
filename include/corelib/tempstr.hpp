@@ -35,7 +35,6 @@
  *
  */
 
-#include <corelib/ncbitype.h>
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbidbg.hpp>

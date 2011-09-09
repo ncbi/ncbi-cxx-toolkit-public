@@ -34,9 +34,7 @@
  *
  */
 
-#include <corelib/ncbistr.hpp>
 #include <connect/ncbi_conn_stream.hpp>
-#include <string>
 
 
 /** @addtogroup Utility

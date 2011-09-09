@@ -36,8 +36,6 @@
  *
  */
 
-#include <connect/ncbi_buffer.h>
-#include <connect/ncbi_connector.h>
 #include <connect/ncbi_connutil.h>
 
 #ifndef NCBI_DEPRECATED

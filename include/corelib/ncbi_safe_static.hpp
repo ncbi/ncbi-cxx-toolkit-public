@@ -45,7 +45,6 @@
 /// Static variables safety - create on demand, destroy on application
 /// termination.
 
-#include <corelib/ncbistl.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_limits.h>
