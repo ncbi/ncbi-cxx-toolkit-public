@@ -96,5 +96,5 @@ int main(int argc, char* argv[])
 
     s_NumThreads = 2; // default is small
 
-    return CTestApp().AppMain(argc, argv, 0, eDS_ToStderr);
+    return CTestApp().AppMain(argc, argv, 0, eDS_ToStderr, 0);
 }
