@@ -60,7 +60,7 @@ bool CTestApp::Thread_Run(int idx)
 {
     string id = NStr::IntToString(idx);
 
-    string filename = sm_Filename + string('.', 1) + id;
+    string filename = sm_Filename + string(1, '.') + id;
 
     PushDiagPostPrefix(("@" + id).c_str());
 
@@ -92,8 +92,9 @@ int main(int argc, char* argv[])
     SetDiagPostAllFlags(eDPF_DateTime    | eDPF_Severity |
                         eDPF_OmitInfoSev | eDPF_ErrorID  |
                         eDPF_Prefix);
+    SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
 
     s_NumThreads = 2; // default is small
 
-    return CTestApp().AppMain(argc, argv);
+    return CTestApp().AppMain(argc, argv, 0, eDS_ToStderr);
 }
