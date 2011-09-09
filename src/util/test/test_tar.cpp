@@ -496,5 +496,5 @@ int CTarTest::Run(void)
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CTarTest().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTarTest().AppMain(argc, argv, 0, eDS_ToStderr, 0);
 }
