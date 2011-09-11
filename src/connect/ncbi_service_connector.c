@@ -450,28 +450,60 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
 }
 
 
+/* Until r294766, this code used to send a ticket along with building the
+ * tunnel, but for buggy proxies that ignore HTTP body as connection data
+ * (and thus violate the standard), this shortcut could not be utilized;
+ * so the longer multi-step sequence was introduced below, instead.
+ * Cf. ncbi_conn_stream.cpp: s_TunneledSocketConnector().
+ */
 static CONNECTOR s_CreateSocketConnector(const SConnNetInfo* net_info,
                                          const void*         init_data,
                                          size_t              init_size)
 {
+    CONNECTOR   c;
+    char*       hostport;
+    EIO_Status  status;
+    SOCK        sock  = 0;
+    TSOCK_Flags flags = (net_info->debug_printout == eDebugPrintout_Data
+                         ? fSOCK_LogOn : fSOCK_LogDefault);
     if (*net_info->http_proxy_host) {
-        SOCK sock = 0;
-        EIO_Status status = HTTP_CreateTunnelEx(net_info, fHTTP_NoAutoRetry,
-                                                init_data, init_size, &sock);
+        SOCK s = 0;
+        status = HTTP_CreateTunnel(net_info, fHTTP_DetachableTunnel
+                                   | fHTTP_NoAutoRetry, &s);
         if (status == eIO_Success) {
-            assert(sock);
-            return SOCK_CreateConnectorOnTop(sock, 1/*pass ownership*/);
-        }
-        assert(!sock);
+            size_t handle_size = SOCK_OSHandleSize();
+            char*  handle      = malloc(handle_size);
+            status = SOCK_GetOSHandle(s, handle, handle_size);
+            if (status == eIO_Success) {
+                status  = SOCK_CreateOnTopEx(handle, handle_size, &sock,
+                                             init_data, init_size, flags);
+            }
+            if (handle)
+                free(handle);
+            if (status != eIO_Success) {
+                SOCK_Abort(s);
+                assert(!sock);
+            } else
+                assert(sock);
+            SOCK_Close(s);
+        } else
+            assert(!s);
     }
-    return SOCK_CreateConnectorEx(net_info->firewall
-                                  &&  *net_info->proxy_host
-                                  ? net_info->proxy_host
-                                  : net_info->host, net_info->port,
-                                  1/*max.try*/, init_data, init_size,
-                                  net_info->debug_printout
-                                  == eDebugPrintout_Data
-                                  ? fSOCK_LogOn : fSOCK_LogDefault);
+    if (!sock) {
+        const char* host = (net_info->firewall  &&  *net_info->proxy_host
+                            ? net_info->proxy_host : net_info->host);
+        status = SOCK_CreateEx(host, net_info->port, net_info->timeout, &sock,
+                               init_data, init_size, flags);
+        assert(!sock ^ !(status != eIO_Success));
+    }
+    hostport = (char*) malloc(strlen(net_info->host + 16));
+    if (hostport)
+        sprintf(hostport, "%s:%hu", net_info->host, net_info->port);
+    // NB: if the following is unsuccessful, "sock" will be leaked
+    c = SOCK_CreateConnectorOnTopEx(sock, 1/*own*/, hostport);
+    if (hostport)
+        free(hostport);
+    return c;
 }
 
 
@@ -884,8 +916,15 @@ extern CONNECTOR SERVICE_CreateConnectorEx
     if (!service  ||  !*service  ||  !(x_service = SERV_ServiceName(service)))
         return 0;
 
-    ccc = (SConnector*)        malloc(sizeof(SConnector));
-    xxx = (SServiceConnector*) calloc(1, sizeof(*xxx) + strlen(service));
+    if (!(ccc = (SConnector*) malloc(sizeof(SConnector)))) {
+        free(x_service);
+        return 0;
+    }
+    if (!(xxx = (SServiceConnector*)calloc(1,sizeof(*xxx) + strlen(service)))){
+        free(x_service);
+        free(ccc);
+        return 0;
+    }
 
     /* initialize connector structures */
     ccc->handle   = xxx;
