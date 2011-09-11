@@ -263,11 +263,18 @@ static CONNECTOR s_Init
  size_t         init_size,
  TSOCK_Flags    flags)
 {
-    CONNECTOR       ccc = (SConnector    *) malloc(sizeof(SConnector));
-    SSockConnector* xxx = (SSockConnector*) malloc(sizeof(*xxx)
-                                                   + (host
-                                                      ? strlen(host) + 1
-                                                      : MAX_IP_ADDR_LEN));
+    CONNECTOR       ccc;
+    SSockConnector* xxx;
+
+    if (!(ccc = (SConnector*) malloc(sizeof(SConnector))))
+        return 0;
+
+    if (!(xxx = (SSockConnector*) malloc(sizeof(*xxx) + (host
+                                                         ? strlen(host) + 1
+                                                         : MAX_IP_ADDR_LEN)))){
+        free(ccc);
+        return 0;
+    }
 
     /* some sanity checks */
     assert(!sock  ||  !(init_size || init_data || flags));

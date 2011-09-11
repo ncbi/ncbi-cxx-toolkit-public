@@ -211,11 +211,15 @@ extern CONNECTOR NAMEDPIPE_CreateConnector
 (const string& pipename,
  size_t        pipebufsize) 
 {
-    CONNECTOR            ccc = (SConnector*) malloc(sizeof(SConnector));
-    SNamedPipeConnector* xxx =               new SNamedPipeConnector();
+    CONNECTOR            ccc;
+    SNamedPipeConnector* xxx;
+
+    if (!(ccc = (SConnector*) malloc(sizeof(SConnector))))
+        return 0;
 
     // Initialize internal data structures
-    xxx->pipe        = new CNamedPipeClient();
+    xxx              = new SNamedPipeConnector;
+    xxx->pipe        = new CNamedPipeClient;
     xxx->pipename    = pipename;
     xxx->pipebufsize = pipebufsize;
     xxx->is_open     = false;
