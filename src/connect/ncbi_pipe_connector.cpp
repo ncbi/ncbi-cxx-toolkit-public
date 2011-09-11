@@ -47,12 +47,12 @@ USING_NCBI_SCOPE;
 
 // All internal data necessary to perform the (re)connect and i/o
 typedef struct {
-    CPipe*              pipe;        // pipe handle; NULL if not connected yet
-    string              cmd;         // program to execute
-    vector<string>      args;        // program arguments
-    CPipe::TCreateFlags flags;       // pipe create flags
-    bool                is_open;     // true if pipe is open
-    bool                is_own_pipe; // true if pipe was created in constructor
+    CPipe*              pipe;      // pipe handle; NULL if not connected yet
+    string              cmd;       // program to execute
+    vector<string>      args;      // program arguments
+    CPipe::TCreateFlags flags;     // pipe create flags
+    bool                is_open;   // true if pipe is open
+    bool                own_pipe;  // true if pipe is owned
 } SPipeConnector;
 
 
@@ -205,7 +205,7 @@ static void s_Destroy(CONNECTOR connector)
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
     connector->handle = 0;
 
-    if (xxx->is_own_pipe) {
+    if (xxx->own_pipe) {
         delete xxx->pipe;
     }
     xxx->pipe = 0;
@@ -228,18 +228,23 @@ extern CONNECTOR PIPE_CreateConnector
 (const string&         cmd,
  const vector<string>& args,
  CPipe::TCreateFlags   create_flags,
- CPipe*                pipe)
+ CPipe*                pipe,
+ EOwnership            own_pipe)
 {
-    CONNECTOR       ccc = (SConnector*) malloc(sizeof(SConnector));
-    SPipeConnector* xxx =               new SPipeConnector();
+    CONNECTOR       ccc;
+    SPipeConnector* xxx;
+
+    if (!(ccc = (SConnector*) malloc(sizeof(SConnector))))
+        return 0;
 
     // Initialize internal data structures
-    xxx->pipe        = pipe ? pipe  : new CPipe();
-    xxx->cmd         = cmd;
-    xxx->args        = args;
-    xxx->flags       = create_flags;
-    xxx->is_open     = false;
-    xxx->is_own_pipe = pipe ? false : true;
+    xxx           = new SPipeConnector;
+    xxx->pipe     = pipe ? pipe                       : new CPipe;
+    xxx->cmd      = cmd;
+    xxx->args     = args;
+    xxx->flags    = create_flags;
+    xxx->is_open  = false;
+    xxx->own_pipe = pipe ? own_pipe == eTakeOwnership : true;
 
     // Initialize connector data
     ccc->handle  = xxx;

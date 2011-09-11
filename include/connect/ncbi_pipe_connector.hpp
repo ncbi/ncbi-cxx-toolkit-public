@@ -60,7 +60,8 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR PIPE_CreateConnector
 (const string&         cmd,
  const vector<string>& args,
  CPipe::TCreateFlags   create_flags = 0,
- CPipe*                pipe = 0
+ CPipe*                pipe         = 0,
+ EOwnership            own_pipe     = eTakeOwnership
 );
 
 
