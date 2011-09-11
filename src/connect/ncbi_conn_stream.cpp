@@ -201,8 +201,8 @@ static CONNECTOR s_TunneledSocketConnector(const SConnNetInfo* net_info,
                                            size_t              init_size,
                                            TSOCK_Flags         flags)
 {
-    SOCK sock = 0;
     EIO_Status status;
+    SOCK       sock = 0;
 
     _ASSERT(net_info);
     if (*net_info->http_proxy_host) {
@@ -232,8 +232,10 @@ static CONNECTOR s_TunneledSocketConnector(const SConnNetInfo* net_info,
                                init_data, init_size, flags);
         _ASSERT(!sock ^ !(status != eIO_Success));
     }
-    string hostport(net_info->host + string(":")
-                    + NStr::UIntToString(net_info->port));
+    string hostport(net_info->host);
+    hostport += ':';
+    hostport += NStr::UIntToString(net_info->port);
+    // NB: if the following is unsuccessful, "sock" will be leaked
     return SOCK_CreateConnectorOnTopEx(sock, 1/*own*/, hostport.c_str());
 }
 
@@ -534,7 +536,7 @@ CConn_ServiceStream::CConn_ServiceStream(const string&         service,
 
 CConn_MemoryStream::CConn_MemoryStream(streamsize  buf_size)
     : CConn_IOStream(MEMORY_CreateConnector(), 0, buf_size, true),
-      m_Buf(0), m_Ptr(0)
+      m_Ptr(0)
 {
     return;
 }
@@ -543,9 +545,11 @@ CConn_MemoryStream::CConn_MemoryStream(streamsize  buf_size)
 CConn_MemoryStream::CConn_MemoryStream(BUF         buf,
                                        EOwnership  owner,
                                        streamsize  buf_size)
-    : CConn_IOStream(MEMORY_CreateConnectorEx(buf), 0, buf_size, true,
+    : CConn_IOStream(MEMORY_CreateConnectorEx(buf, owner == eTakeOwnership
+                                              ? 1/*true*/
+                                              : 0/*false*/), 0, buf_size, true,
                      0, BUF_Size(buf)),
-      m_Buf(owner == eTakeOwnership ? buf : 0), m_Ptr(0)
+      m_Ptr(0)
 {
     return;
 }
@@ -557,7 +561,7 @@ CConn_MemoryStream::CConn_MemoryStream(const void* ptr,
                                        streamsize  buf_size)
     : CConn_IOStream(MEMORY_CreateConnector(), 0, buf_size, true,
                      (CT_CHAR_TYPE*) ptr, size),
-      m_Buf(0), m_Ptr(owner == eTakeOwnership ? ptr : 0)
+      m_Ptr(owner == eTakeOwnership ? ptr : 0)
 {
     return;
 }
@@ -565,10 +569,9 @@ CConn_MemoryStream::CConn_MemoryStream(const void* ptr,
 
 CConn_MemoryStream::~CConn_MemoryStream()
 {
-    // Explicitly call x_Cleanup() to avoid using dead m_Buf otherwise.
+    // Explicitly call x_Cleanup() to avoid using deleted m_Ptr otherwise.
     x_Cleanup();
     rdbuf(0);
-    BUF_Destroy(m_Buf);
     delete[] (char*) m_Ptr;
 }
 
@@ -631,8 +634,9 @@ CConn_PipeStream::CConn_PipeStream(const string&         cmd,
                                    CPipe::TCreateFlags   create_flags,
                                    const STimeout*       timeout,
                                    streamsize            buf_size)
-    : CConn_IOStream(PIPE_CreateConnector(cmd, args, create_flags, &m_Pipe),
-                     timeout, buf_size), m_Pipe()
+    : CConn_IOStream(PIPE_CreateConnector(cmd, args, create_flags,
+                                          &m_Pipe, eNoOwnership),
+                     timeout, buf_size)
 {
     return;
 }

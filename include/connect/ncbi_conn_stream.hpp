@@ -536,7 +536,6 @@ public:
     char*   ToCStr(void);      ///< '\0'-terminated; free() when done using it 
 
 protected:
-    BUF         m_Buf;         ///< Underlying buffer           (if owned)
     const void* m_Ptr;         ///< Pointer to read memory area (if owned)
 
 private:
