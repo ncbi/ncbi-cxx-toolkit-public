@@ -54,7 +54,7 @@ int main(void)
     connector = MEMORY_CreateConnector();
     CONN_TestConnector(connector, &timeout, data_file, fTC_SingleBounceCheck);
 
-    connector = MEMORY_CreateConnectorEx(0);
+    connector = MEMORY_CreateConnectorEx(0, 0);
     CONN_TestConnector(connector, &timeout, data_file, fTC_Everything);
 
     /* Cleanup and Exit */
