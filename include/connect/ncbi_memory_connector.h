@@ -52,13 +52,16 @@ extern "C" {
 
 
 /* Create new CONNECTOR structure to handle a data transfer in-memory.
- * Onwership of "buf" (if passed non-NULL) is not assumed by the connector.
  * Return NULL on error.
  */
 extern NCBI_XCONNECT_EXPORT CONNECTOR MEMORY_CreateConnector(void);
 
 
-extern NCBI_XCONNECT_EXPORT CONNECTOR MEMORY_CreateConnectorEx(BUF buf);
+/* Onwership of "buf" (if passed non-NULL) controlled by the 2nd parameter */
+extern NCBI_XCONNECT_EXPORT CONNECTOR MEMORY_CreateConnectorEx
+(BUF                  buf,    /* may be NULL;  see param-less ctor above */
+ unsigned int/*bool*/ own_buf /* non-zero if connector is to own "buf"   */
+ );
 
 
 #ifdef __cplusplus

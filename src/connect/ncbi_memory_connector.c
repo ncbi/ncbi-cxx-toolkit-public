@@ -45,10 +45,10 @@
 /* All internal data necessary to perform the (re)connect and i/o
  */
 typedef struct {
-    BUF         buf;
-    int/*bool*/ own_buf;
-    EIO_Status  r_status;
-    EIO_Status  w_status;
+    BUF                  buf;
+    unsigned int/*bool*/ own_buf;
+    EIO_Status           r_status;
+    EIO_Status           w_status;
 } SMemoryConnector;
 
 
@@ -240,18 +240,26 @@ static void s_Destroy
 
 extern CONNECTOR MEMORY_CreateConnector(void)
 {
-    return MEMORY_CreateConnectorEx(0);
+    return MEMORY_CreateConnectorEx(0, 0);
 }
 
 
-extern CONNECTOR MEMORY_CreateConnectorEx(BUF buf)
+extern CONNECTOR MEMORY_CreateConnectorEx(BUF                  buf,
+                                          unsigned int/*bool*/ own_buf)
 {
-    CONNECTOR         ccc = (SConnector*)       malloc(sizeof(SConnector));
-    SMemoryConnector* xxx = (SMemoryConnector*) malloc(sizeof(*xxx));
+    CONNECTOR         ccc;
+    SMemoryConnector* xxx;
+
+    if (!(ccc = (SConnector*) malloc(sizeof(SConnector))))
+        return 0;
+    if (!(xxx = (SMemoryConnector*) malloc(sizeof(*xxx)))) {
+        free(ccc);
+        return 0;
+    }
 
     /* initialize internal data structures */
     xxx->buf     = buf;
-    xxx->own_buf = buf ? 0/*false*/ : 1/*true*/;
+    xxx->own_buf = buf ? own_buf : 1/*true*/;
 
     /* initialize connector data */
     ccc->handle  = xxx;
