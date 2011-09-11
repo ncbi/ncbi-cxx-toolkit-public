@@ -34,7 +34,6 @@
 /// Parameters initialization model
 
 #include <corelib/ncbi_tree.hpp>
-#include <corelib/ncbimisc.hpp>
 
 BEGIN_NCBI_SCOPE
 

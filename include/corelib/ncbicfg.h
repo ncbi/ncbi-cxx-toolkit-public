@@ -38,7 +38,6 @@
  *
  */
 
-#include <ncbiconf.h>
 #include <common/ncbi_export.h>
 
 #ifdef __cplusplus
