@@ -744,7 +744,7 @@ private:
 
 /// Deprecated, old API for loading RepeatMasker output.
 ///
-class NCBI_DEPRECATED NCBI_XOBJREAD_EXPORT CRmReader : public IRmReaderFlags
+class NCBI_XOBJREAD_EXPORT CRmReader : public IRmReaderFlags
 {
 public:
     NCBI_DEPRECATED static CRmReader* OpenReader(CNcbiIstream& istr);
