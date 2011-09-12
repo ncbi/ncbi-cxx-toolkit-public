@@ -6,7 +6,7 @@ __all__ = [ "safe_exec", "update_blast_version" ]
 import os
 from subprocess import call
 from shutil import move
-from platform import platform
+import platform
         
 def safe_exec(cmd):
     """ Executes a command and checks its return value, throwing an
@@ -76,7 +76,8 @@ def determine_platform():
     hostname 
     """
 
-    p = platform().lower()
+    p = platform.platform().lower()
+    print "PLATFORM = " + p
     if p.find("linux") != -1:
         if p.find("x86_64") != -1:
             return "Linux64"
@@ -88,7 +89,7 @@ def determine_platform():
         else:
             return "SunOSx86"
     elif p.find("windows") != -1 or p.find("cygwin") != -1:
-        if p.find("64") != -1 or p.find("server") != -1:
+        if platform.architecture()[0].find("64") != -1:
             return "Win64"
         else:
             return "Win32"
