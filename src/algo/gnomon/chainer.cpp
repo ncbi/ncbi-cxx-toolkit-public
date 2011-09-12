@@ -2165,8 +2165,12 @@ void ProjectCDS::transform_align(CAlignModel& align)
         mrna.SetWhole(*target_id);
         CFeat_CI feat_ci(*scope, mrna, sel);
         if (feat_ci && !feat_ci->IsSetPartial()) {
-            TSeqRange feat_range = feat_ci->GetRange();
-            cds_on_mrna = TSignedSeqRange(feat_range.GetFrom(), feat_range.GetTo());
+            const CSeq_loc& cds_loc = feat_ci->GetMappedFeature().GetLocation();
+            const CSeq_id* cds_loc_seq_id  = cds_loc.GetId();
+            if (cds_loc_seq_id != NULL && sequence::IsSameBioseq(*cds_loc_seq_id, *target_id, scope)) {
+                TSeqRange feat_range = cds_loc.GetTotalRange();
+                cds_on_mrna = TSignedSeqRange(feat_range.GetFrom(), feat_range.GetTo());
+            }
         }
     } else {
         string accession = align.TargetAccession();

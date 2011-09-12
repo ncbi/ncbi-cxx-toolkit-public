@@ -14664,3 +14664,186 @@ Bioseq-set ::= {
     }
   }
 }
+Bioseq-set ::= {
+  class nuc-prot,
+  seq-set {
+    seq {
+      id {
+        gi 164885
+      },
+      descr {
+        molinfo {
+          biomol ncRNA,
+          completeness unknown
+        }
+      },
+      inst {
+        repr raw,
+        mol rna,
+        length 297,
+        seq-data ncbi2na 'BDC4E6A40D5C71D20BE2743F4DDEFF7A5137970E87D09E7CE0BE
+54C88E03DEFFD02B042C7A1EE4AA48389C528C550A13D1275FE9F5720BB834CF8679EFDE28A31E
+8004C7DFEF9C10B1E880'H,
+        hist {
+          assembly {
+            {
+              type global,
+              dim 2,
+              score {
+                {
+                  id str "matches",
+                  value int 297
+                },
+                {
+                  id str "identity",
+                  value real { 1, 10, 0 }
+                },
+                {
+                  id str "splices",
+                  value int 2
+                },
+                {
+                  id str "consensus_splices",
+                  value int 2
+                },
+                {
+                  id str "product_coverage",
+                  value real { 1, 10, 0 }
+                },
+                {
+                  id str "exon_identity",
+                  value real { 1, 10, 0 }
+                },
+                {
+                  id str "pct_identity_gap",
+                  value real { 1, 10, 2 }
+                },
+                {
+                  id str "num_ident",
+                  value int 297
+                },
+                {
+                  id str "num_mismatch",
+                  value int 0
+                },
+                {
+                  id str "pct_identity_ungap",
+                  value real { 1, 10, 2 }
+                },
+                {
+                  id str "gap_count",
+                  value int 0
+                },
+                {
+                  id str "pct_coverage",
+                  value real { 1, 10, 2 }
+                },
+                {
+                  id str "pct_coverage_hiqual",
+                  value real { 1, 10, 2 }
+                },
+                {
+                  id str "weighted_identity",
+                  value real { 1, 10, 0 }
+                },
+                {
+                  id str "rank",
+                  value int 1
+                },
+                {
+                  id str "for_remapping",
+                  value int 2
+                }
+              },
+              segs spliced {
+                product-id gi 164885,
+                genomic-id gi 283557965,
+                product-strand plus,
+                genomic-strand plus,
+                product-type transcript,
+                exons {
+                  {
+                    product-start nucpos 0,
+                    product-end nucpos 133,
+                    genomic-start 30889859,
+                    genomic-end 30889992,
+                    parts {
+                      match 134
+                    },
+                    scores {
+                      {
+                        id str "splign",
+                        value real { 134, 10, 0 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 134,
+                    product-end nucpos 296,
+                    genomic-start 30891763,
+                    genomic-end 30891925,
+                    parts {
+                      match 163
+                    },
+                    scores {
+                      {
+                        id str "splign",
+                        value real { 163, 10, 0 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    }
+                  }
+                },
+                product-length 297
+              },
+              id {
+                str "ed539070-9e02-42d4-84a7-73624ef26918"
+              },
+              ext {
+                {
+                  type str "origin",
+                  data {
+                    {
+                      label str "algo",
+                      data str "Splign:1.39.8"
+                    }
+                  }
+                },
+                {
+                  type str "placement_data",
+                  data {
+                    {
+                      label str "gc_asm_id",
+                      data str "GCF_000003625.2"
+                    },
+                    {
+                      label str "gc_asm_chain_id",
+                      data int 3635
+                    },
+                    {
+                      label str "placement_id",
+                      data str "ed539070-9e02-42d4-84a7-73624ef26918"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

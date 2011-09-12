@@ -37,6 +37,7 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include "feature_generator.hpp"
 
@@ -302,14 +303,33 @@ void CFeatureGenerator::SImplementation::TrimHolesToCodons(CSeq_align& align)
     }
 }
 
+const CSeq_feat* CFeatureGenerator::SImplementation::GetCdsOnMrna(const objects::CSeq_id& rna_id)
+{
+    const CSeq_feat* cdregion = NULL;
+    CBioseq_Handle handle = m_scope->GetBioseqHandle(rna_id);
+    if (handle) {
+        CFeat_CI feat_iter(handle, CSeqFeatData::eSubtype_cdregion);
+        if (feat_iter  &&  feat_iter.GetSize()) {
+            CMappedFeat cdregion_handle = *feat_iter;
+            cdregion = &cdregion_handle.GetMappedFeature();
+            const CSeq_loc& cds_loc = cdregion->GetLocation();
+            const CSeq_id* cds_loc_seq_id  = cds_loc.GetId();
+            if (cds_loc_seq_id == NULL || !sequence::IsSameBioseq(*cds_loc_seq_id, rna_id, m_scope)) {
+                cdregion = NULL;
+            }
+        }
+    }
+    return cdregion;
+}
+
 TSignedSeqPos CFeatureGenerator::SImplementation::GetCdsStart(const objects::CSeq_id& rna_id)
 {
     TSignedSeqPos cds_start = -1;
 
-    CBioseq_Handle handle = m_scope->GetBioseqHandle(rna_id);
-    CFeat_CI feat_iter(handle, CSeqFeatData::eSubtype_cdregion);
-    if (feat_iter  &&  feat_iter.GetSize()) {
-        cds_start = feat_iter->GetTotalRange().GetFrom();
+    const CSeq_feat* cdregion = GetCdsOnMrna(rna_id);
+
+    if (cdregion) {
+        cds_start = cdregion->GetLocation().GetTotalRange().GetFrom();
     }
 
     return cds_start;

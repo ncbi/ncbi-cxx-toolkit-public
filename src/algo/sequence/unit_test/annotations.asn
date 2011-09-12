@@ -7055,3 +7055,41 @@ Seq-annot ::= {
     }
   }
 }
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+        locus "MMP-1"
+      },
+      partial TRUE,
+      location int {
+        from 30889859,
+        to 30891925,
+        strand plus,
+        id gi 283557965
+      }
+    },
+    {
+      data rna {
+        type mRNA,
+        ext name "Oryctolagus cuniculus collagenase-1 precursor (MMP-1) gene,
+ exons 7 and 8"
+      },
+      product whole gi 164885,
+      location packed-int {
+        {
+          from 30889859,
+          to 30889992,
+          strand plus,
+          id gi 283557965
+        },
+        {
+          from 30891763,
+          to 30891925,
+          strand plus,
+          id gi 283557965
+        }
+      }
+    }
+  }
+}
