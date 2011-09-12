@@ -240,8 +240,11 @@ s_SeqAlignSetToXMLHsps(list<CRef<CHsp> >& xhsp_list,
         }
         else
         {
-        	num_gaps = kAlign.GetTotalGapCount();
-        	align_length = kAlign.GetAlignLength();
+        	if(!kTranslated)
+        	{
+        		num_gaps = kAlign.GetTotalGapCount();
+        		align_length = kAlign.GetAlignLength();
+        	}
         	q_start = kAlign.GetSeqStart(0) + 1;
         	q_end = kAlign.GetSeqStop(0) + 1;
         	s_start = kAlign.GetSeqStart(1) + 1;
