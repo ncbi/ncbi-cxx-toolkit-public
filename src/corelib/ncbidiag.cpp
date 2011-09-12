@@ -2672,14 +2672,14 @@ void* InitDiagHandler(void)
 
 
 // MT-safe initialization of the default handler
-CDiagHandler* CreateDefaultDiagHandler(void);
+static CDiagHandler* s_CreateDefaultDiagHandler(void);
 
 
 // Use s_DefaultHandler only for purposes of comparison, as installing
 // another handler will normally delete it.
-CDiagHandler*      s_DefaultHandler = CreateDefaultDiagHandler();
+CDiagHandler*      s_DefaultHandler = s_CreateDefaultDiagHandler();
 CDiagHandler*      CDiagBuffer::sm_Handler = s_DefaultHandler;
-bool               CDiagBuffer::sm_CanDeleteHandler = false;
+bool               CDiagBuffer::sm_CanDeleteHandler = true;
 CDiagErrCodeInfo*  CDiagBuffer::sm_ErrCodeInfo = 0;
 bool               CDiagBuffer::sm_CanDeleteErrCodeInfo = false;
 
@@ -2687,19 +2687,17 @@ bool               CDiagBuffer::sm_CanDeleteErrCodeInfo = false;
 void* s_DiagHandlerInitializer = InitDiagHandler();
 
 
-CDiagHandler* CreateDefaultDiagHandler(void)
+static CDiagHandler* s_CreateDefaultDiagHandler(void)
 {
     CDiagLock lock(CDiagLock::eWrite);
     static bool s_DefaultDiagHandlerInitialized = false;
     if ( !s_DefaultDiagHandlerInitialized ) {
-        static void* s_PreallocatedDefaultHandler
-            [sizeof(CStreamDiagHandler) / sizeof(void*) + 1];
         s_DefaultDiagHandlerInitialized = true;
-        return new (s_PreallocatedDefaultHandler)
-            CStreamDiagHandler(&NcbiCerr, true, kLogName_Stderr);
+        return new CStreamDiagHandler(&NcbiCerr, true, kLogName_Stderr);
     }
     return s_DefaultHandler;
 }
+
 
 
 // Note: Intel Thread Checker detects a memory leak at the line:

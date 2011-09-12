@@ -51,6 +51,12 @@
     fun:*
 }
 {
+    corelib/Diag/s_CreateDefaultHandler
+    Memcheck:Leak
+    ...
+    fun:_ZN4ncbiL26s_CreateDefaultDiagHandlerEv
+}
+{
     corelib/Diag/CreateDefaultHandler
     Memcheck:Leak
     ...
