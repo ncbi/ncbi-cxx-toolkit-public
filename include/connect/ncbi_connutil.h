@@ -507,7 +507,7 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Destroy(SConnNetInfo* info);
  *
  * Request method "eReqMethod_Any" selects an appropriate method depending on
  * the value of "content_length":  results in GET when no content is expected
- * (content_length==0), and POST when "content_length" provided non-zero. 
+ * ("content_length"==0), and POST when "content_length" provided non-zero. 
  *
  * For GET/POST(or ANY) methods the call attempts to provide the "Host:" HTTP
  * tag using information from the "host" and "port" parameters if the tag is
@@ -518,20 +518,20 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Destroy(SConnNetInfo* info);
  * to the proxy connection point, not the actual resource as it should have).
  * Which is why the "Host:" tag courtesy is to be discontinued in the future.
  *
- * If "port" is not specified (0) it will be assigned automatically
- * to a well-known standard value depending on the "fSOCK_Secure" bit
- * in the "flags" parameter, when connecting to an HTTP server.
+ * If "port" is not specified (0) it will be assigned automatically to a
+ * well-known standard value depending on the "fSOCK_Secure" bit in the
+ * "flags" parameter, when connecting to an HTTP server.
  *
- * The "content_length" must specify an exact(!) amount of data that
- * is going to POST (or be sent with CONNECT) to HTTPD (0 if none).
- * "Content-Length" header gets always added in all POST requests,
- * yet it is always omitted in all other requests.
+ * The "content_length" must specify the exact(!) amount of data that is going
+ * to POST (or be sent with CONNECT request) to HTTPD (0 if none).
+ * The "Content-Length" header gets always added in all POST requests, yet it
+ * is always omitted in all other requests.
  *
- * If string "user_header" is not NULL/empty, then it *must* be terminated
- * by a single(!) '\r\n'.
+ * If string "user_header" is not NULL/empty, then it *must* be terminated with
+ * a single(!) '\r\n'.
  *
- * If the actual request is going to be either GET or POST, "encode_args"
- * set to TRUE will cause "args" to be URL-encoded (ignored otherwise).
+ * If the actual request is going to be either GET or POST, "encode_args" set
+ * to TRUE will cause "args" to be URL-encoded (ignored otherwise).
  *
  * If the request method is "eReqMethod_Connect", then the connection is
  * assumed to be tunneled via a proxy, so "path" must specify a "host:port"
@@ -539,13 +539,13 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Destroy(SConnNetInfo* info);
  * been tunneled, in which case "args" must be a pointer to such data, but the
  * "Content-Length" header does not get added, and "encode_args" is ignored.
  *
- * If *sock is non-NULL, the call _does not_ create a new socket, but builds
+ * If "*sock" is non-NULL, the call _does not_ create a new socket, but builds
  * the HTTP data stream on top of the passed socket.  If the result is
- * successful, the original SOCK handle will be closed (SOCK_Close), which
- * means that in order for this to work, the passed *sock should have been
- * created with fSOCK_KeepOnClose set, and a new handle will be returned via
- * the same last parameter.  In case of errors, the original *sock will be left
- * intact yet the last parameter may be updated to return as NULL.
+ * successful, the original SOCK handle will be closed by SOCK_Close(), which
+ * means that in order for this to work, the passed "*sock" should have been
+ * created with "fSOCK_KeepOnClose" set, and a new handle will be returned via
+ * the same last parameter.  In case of errors, the original "*sock" will be
+ * left alone yet the last parameter may be updated to return as NULL.
  *
  * On success, return eIO_Success and non-NULL handle of a socket via the last
  * parameter.
