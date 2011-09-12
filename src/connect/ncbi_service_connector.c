@@ -496,11 +496,13 @@ static CONNECTOR s_CreateSocketConnector(const SConnNetInfo* net_info,
                                init_data, init_size, flags);
         assert(!sock ^ !(status != eIO_Success));
     }
-    hostport = (char*) malloc(strlen(net_info->host + 16));
+    hostport = (char*) malloc(strlen(net_info->host) + 16);
     if (hostport)
         sprintf(hostport, "%s:%hu", net_info->host, net_info->port);
-    // NB: if the following is unsuccessful, "sock" will be leaked
-    c = SOCK_CreateConnectorOnTopEx(sock, 1/*own*/, hostport);
+    if (!(c = SOCK_CreateConnectorOnTopEx(sock, 1/*own*/, hostport))) {
+        SOCK_Abort(sock);
+        SOCK_Close(sock);
+    }
     if (hostport)
         free(hostport);
     return c;
