@@ -52,6 +52,8 @@
 
 #include <memory>
 
+#include<common/test_assert.h>   /* This header must go last */
+
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
