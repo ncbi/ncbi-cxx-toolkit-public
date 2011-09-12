@@ -2200,7 +2200,7 @@ Seq-align ::= {
   score {
     {
       id str "num_ident",
-      value int 8535
+      value int 8532
     },
     {
       id str "num_mismatch",
@@ -2208,7 +2208,7 @@ Seq-align ::= {
     },
     {
       id str "length",
-      value int 8705
+      value int 8702
     },
     {
       id str "num_positives",
@@ -2228,23 +2228,23 @@ Seq-align ::= {
     },
     {
       id str "pct_identity_gap",
-      value real { 980470993681792, 10, -13 }
+      value real { 980464261089405, 10, -13 }
     },
     {
       id str "pct_identity_ungap",
-      value real { 983068417415342, 10, -13 }
+      value real { 983062564811614, 10, -13 }
     },
     {
       id str "pct_identity_gapopen_only",
-      value real { 982050396962375, 10, -13 }
+      value real { 982044198895028, 10, -13 }
     },
     {
       id str "pct_coverage",
-      value real { 999654576856649, 10, -13 }
+      value real { 999309153713299, 10, -13 }
     },
     {
       id str "pct_coverage_hiqual",
-      value real { 999654576856649, 10, -13 }
+      value real { 999309153713299, 10, -13 }
     }
   },
   segs spliced {
@@ -2629,7 +2629,7 @@ Seq-align ::= {
       },
       {
         product-start protpos {
-          amin 2825,
+          amin 2826,
           frame 1
         },
         product-end protpos {
@@ -2637,9 +2637,9 @@ Seq-align ::= {
           frame 3
         },
         genomic-start 5540676,
-        genomic-end 5540885,
+        genomic-end 5540882,
         parts {
-          diag 210
+          diag 207
         },
         acceptor-before-exon {
           bases "AG"
