@@ -48,7 +48,7 @@
 #include <corelib/ncbi_process.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <list>
-
+#include <set>
 
 
 BEGIN_NCBI_SCOPE
