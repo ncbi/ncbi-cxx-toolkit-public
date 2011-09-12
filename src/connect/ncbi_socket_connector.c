@@ -54,9 +54,9 @@ typedef struct {
     const char*    host;      /* server:  host                            */
     unsigned short port;      /* server:  service port                    */
     unsigned short try_own;   /* max.number of attempts to establish conn */
-    const void*    init_data; /* data to send to the server on connect    */
-    size_t         init_size; /* size of the "init_data" buffer           */
     TSOCK_Flags    flags;     /* see socket flags in ncbi_socket.h        */
+    size_t         init_size; /* size of the "init_data" buffer           */
+    const void*    init_data; /* data to send to the server on connect    */
 } SSockConnector;
 
 
@@ -243,12 +243,9 @@ static void s_Destroy
     SSockConnector* xxx = (SSockConnector*) connector->handle;
     connector->handle = 0;
 
+    xxx->init_data = 0;
+    xxx->init_size = 0;
     xxx->host = 0;
-    if (xxx->init_data) {
-        assert(xxx->init_size);
-        free((void*) xxx->init_data);
-        xxx->init_data = 0;
-    }
     free(xxx);
     free(connector);
 }
@@ -266,23 +263,26 @@ static CONNECTOR s_Init
     CONNECTOR       ccc;
     SSockConnector* xxx;
 
-    if (!(ccc = (SConnector*) malloc(sizeof(SConnector))))
-        return 0;
-
-    if (!(xxx = (SSockConnector*) malloc(sizeof(*xxx) + (host
-                                                         ? strlen(host) + 1
-                                                         : MAX_IP_ADDR_LEN)))){
-        free(ccc);
-        return 0;
-    }
-
     /* some sanity checks */
     assert(!sock  ||  !(init_size || init_data || flags));
     assert(!init_size  ||  init_data);
 
+    if (!(ccc = (SConnector*) malloc(sizeof(SConnector))))
+        return 0;
+    if (!(xxx = (SSockConnector*) malloc(sizeof(*xxx)
+                                         + (init_data ? init_size : 0)
+                                         + (host
+                                            ? strlen(host) + 1
+                                            : MAX_IP_ADDR_LEN)))) {
+        free(ccc);
+        return 0;
+    }
+
     /* initialize internal data structures */
     if (sock  ||  !host  ||  !port) {
         xxx->sock      = sock;
+        xxx->init_size = 0;
+        xxx->init_data = 0;
         if (host) {
             xxx->host  = strcpy((char*) xxx + sizeof(*xxx), host);
             xxx->port  = 0;
@@ -299,19 +299,15 @@ static CONNECTOR s_Init
             xxx->port  = 0;
         }
         xxx->try_own   = try_own   ? 1                                  : 0;
-        xxx->init_data = 0;
     } else {
+        void* data     = (char*) xxx + sizeof(*xxx);
         xxx->sock      = 0;
-        xxx->host      = strcpy((char*) xxx + sizeof(*xxx), host);
+        xxx->init_size = init_data ? init_size                          : 0;
+        xxx->init_data = memcpy(data, init_data, xxx->init_size);
+        xxx->host      = strcpy((char*) data + xxx->init_size, host);
         xxx->port      = port;
         xxx->try_own   = try_own   ? try_own                            : 1;
         xxx->flags     = flags;
-        xxx->init_size = init_data ? init_size                          : 0;
-        if (xxx->init_size) {
-            void* data     = malloc(init_size);
-            xxx->init_data = data  ? memcpy(data, init_data, init_size) : 0;
-        } else
-            xxx->init_data = 0;
     }
 
     /* initialize connector data */
