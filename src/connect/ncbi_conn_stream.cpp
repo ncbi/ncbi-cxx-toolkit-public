@@ -235,8 +235,12 @@ static CONNECTOR s_TunneledSocketConnector(const SConnNetInfo* net_info,
     string hostport(net_info->host);
     hostport += ':';
     hostport += NStr::UIntToString(net_info->port);
-    // NB: if the following is unsuccessful, "sock" will be leaked
-    return SOCK_CreateConnectorOnTopEx(sock, 1/*own*/, hostport.c_str());
+    CONNECTOR c;
+    if (!(c = SOCK_CreateConnectorOnTopEx(sock, 1/*own*/, hostport.c_str()))) {
+        SOCK_Abort(sock);
+        SOCK_Close(sock);
+    }
+    return c;
 }
 
 
