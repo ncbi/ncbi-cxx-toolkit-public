@@ -79,7 +79,7 @@ foreach my $fmt (@format){
 
 #test seqid list
 $testcasefile = "igblastntestcase.idlist";
-$base_parameters = " -germline_db_V human_gl_V -germline_db_J human_gl_J -germline_db_D human_gl_D -query $testcasefile -show_translation  -germline_db_seqidlist human_gl_V.n.functional.seqid -outfmt "; 
+$base_parameters = " -germline_db_V human_gl_V -germline_db_J human_gl_J -germline_db_D human_gl_D -query $testcasefile -show_translation  -germline_db_V_seqidlist seqid.v  -germline_db_D_seqidlist seqid.dlist -germline_db_J_seqidlist seqid.j -outfmt "; 
 
 
 
