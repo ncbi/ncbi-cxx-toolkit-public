@@ -623,6 +623,13 @@ void CValidError_imp::ValidateLatLonCountry
         return;
     }
 
+    if ( m_LatLonCountryMap.get() == 0 ) {
+        m_LatLonCountryMap.reset (new CLatLonCountryMap(false));
+    }
+    if ( m_LatLonWaterMap.get() == 0 ) {
+        m_LatLonWaterMap.reset (new CLatLonCountryMap(true));
+    }
+
     // only do these checks if the latlon format is good
     bool format_correct, lat_in_range, lon_in_range, precision_correct;
     double lat_value = 0.0, lon_value = 0.0;

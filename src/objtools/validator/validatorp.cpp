@@ -150,12 +150,14 @@ CValidError_imp::CValidError_imp
     if ( m_SourceQualTags.get() == 0 ) {
         InitializeSourceQualTags();
     }
+    /*
     if ( m_LatLonCountryMap.get() == 0 ) {
         m_LatLonCountryMap.reset (new CLatLonCountryMap(false));
     }
     if ( m_LatLonWaterMap.get() == 0 ) {
         m_LatLonWaterMap.reset (new CLatLonCountryMap(true));
     }
+    */
 }
 
 
