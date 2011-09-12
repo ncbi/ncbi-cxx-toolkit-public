@@ -35,7 +35,6 @@
 /// Define CVersionInfo, a version info storage class.
 
 
-#include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
 

@@ -44,12 +44,9 @@
 
 
 #include <corelib/ncbiobj.hpp>
-#include <corelib/ncbithr_conf.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_process.hpp>
 #include <corelib/ncbi_safe_static.hpp>
-#include <memory>
-#include <set>
 #include <list>
 
 

@@ -35,11 +35,8 @@
 ///   Wrapper for testing modules in MT environment
 
 
-#include <corelib/ncbistd.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbithr.hpp>
-#include <corelib/ncbienv.hpp>
-#include <corelib/ncbiargs.hpp>
 
 
 

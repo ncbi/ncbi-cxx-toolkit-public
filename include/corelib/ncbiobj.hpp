@@ -39,7 +39,6 @@
 #include <corelib/ncbicntr.hpp>
 #include <corelib/ncbiatomic.hpp>
 #include <corelib/ddumpable.hpp>
-#include <typeinfo>
 
 /// this relieves us of some nastiness with Win32's version of GetObject(),
 /// which prevents us from using CRef<>::GetObject in lots of places

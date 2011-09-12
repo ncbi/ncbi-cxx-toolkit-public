@@ -81,7 +81,6 @@
 /// {arg_extra***} arguments.
 
 
-#include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbi_limits.h>
 #include <memory>
