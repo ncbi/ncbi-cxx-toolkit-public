@@ -6613,6 +6613,24 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
                     ++f;
                 }
             }
+            if (!found && bsh.IsAa()) {
+                const CSeq_feat* cds = GetCDSForProduct(bsh);
+                if ( cds != 0 ) {
+                    CBioseq_Handle nbsh = m_Scope->GetBioseqHandle(cds->GetLocation());
+                    if (nbsh) {
+                        CFeat_CI nf (nbsh, sel);
+                        while (nf && !found) {
+                            string label;
+                            nf->GetData().GetGene().GetLabel(&label);
+                            if (NStr::Equal(label, gene_xref->GetLocus())) {
+                                found = true;
+                            } else {
+                                ++nf;
+                            }
+                        }
+                    }
+                }
+            }
             if (!found) {
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_GeneXrefWithoutGene,
                          "Feature has gene locus cross-reference but no equivalent gene feature exists", feat);
@@ -6633,6 +6651,24 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
 					}
                 } else {
                     ++f;
+                }
+            }
+            if (!found && bsh.IsAa()) {
+                const CSeq_feat* cds = GetCDSForProduct(bsh);
+                if ( cds != 0 ) {
+                    CBioseq_Handle nbsh = m_Scope->GetBioseqHandle(cds->GetLocation());
+                    if (nbsh) {
+                        CFeat_CI nf (nbsh, sel);
+                        while (nf && !found) {
+                            string label;
+                            nf->GetData().GetGene().GetLabel(&label);
+                            if (NStr::Equal(label, gene_xref->GetLocus())) {
+                                found = true;
+                            } else {
+                                ++nf;
+                            }
+                        }
+                    }
                 }
             }
             if (!found) {
