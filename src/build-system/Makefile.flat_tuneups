@@ -3,8 +3,8 @@
 
 all: ptb_all
 
-ifndef builddir
-  builddir = $(CURDIR)
+ifeq "" "$(builddir)$(SKIP_PRELIMINARIES)"
+  builddir ?= $(CURDIR)
 
   CREATE_TUNEUPS = $(top_srcdir)/scripts/common/impl/create_flat_tuneups.sh
   auto_flat_tuneups.mk: $(CREATE_TUNEUPS) Makefile.flat
@@ -44,11 +44,13 @@ ifneq "" "$(filter-out %.dll.real %.exe.real %.lib.real,$(MAKECMDGOALS))"
   -include $(builddir)/build-system/*.hints
 endif
 
-ORIG_MTARGET := $(MTARGET)
-QUICK_MTARGET = $(ORIG_MTARGET) sources= configurables=configurables.null
-%.dll.real %.exe.real %.lib.real: override MTARGET = $(QUICK_MTARGET)
+ifndef SKIP_PRELIMINARIES
+  ORIG_MTARGET := $(MTARGET)
+  QUICK_MTARGET = $(ORIG_MTARGET) sources= configurables=configurables.null
+  %.dll.real %.exe.real %.lib.real: override MTARGET = $(QUICK_MTARGET)
+endif
 
-all_dirs = $(expendable_dirs) $(spec_bearing_dirs) $(plain_dirs)
+all_dirs ?= $(expendable_dirs) $(spec_bearing_dirs) $(plain_dirs)
 
 # Lists of directories in any branch which can benefit from the
 # aforementioned hints because some of their projects have files in common.
@@ -81,17 +83,19 @@ hintees = $(filter $(potential_hintees:%=%/),$(all_dirs))
 # all_files.real : $(all_dirs:%=%.files.real) ;
 all_files.real : $(hintees:%=%.files.real) ;
 
-$(all_dirs:%=%.files): %.files:
+ifndef SKIP_PRELIMINARIES
+  $(all_dirs:%=%.files): %.files:
 	$(MAKE) $(MFLAGS) -f $(MINPUT) $@.real
 
-ifneq "$(plain_dirs)" ""
-  $(plain_dirs:%=%.files.real): %.files.real:
+  ifneq "$(plain_dirs)" ""
+    $(plain_dirs:%=%.files.real): %.files.real:
 	+cd ./$*; $(MAKE) $(MFLAGS) sources
-endif
+  endif
 
-ifneq "$(expendable_dirs)" ""
-  $(expendable_dirs:%=%.files.real): %.files.real:
+  ifneq "$(expendable_dirs)" ""
+    $(expendable_dirs:%=%.files.real): %.files.real:
 	+-cd ./$*; $(MAKE) $(MFLAGS) sources
-endif
+  endif
 
-.PHONY: $(all_dirs:%=%.files) $(all_dirs:%=%.files.real)
+  .PHONY: $(all_dirs:%=%.files) $(all_dirs:%=%.files.real)
+endif
