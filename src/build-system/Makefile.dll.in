@@ -104,6 +104,7 @@ endif
 EXPORTED_DLLDEP = $(XDLL)
 ifneq "$(BINCOPY)" "@:"
   ifneq "$(filter-out /.,$(wildcard $(status_dir)/.))" ""
+    can_deactivate_dll = yes
     ifeq "$(wildcard $(status_dir)/$(XDLLDEP))" ""
       ifeq "$(make_dll_link)" ":"
         EXPORTED_DLLDEP = $(status_dir)/$(XDLLDEP)
@@ -140,7 +141,7 @@ purge: clean purge-headers deactivate
 deactivate: deactivate-dll
 
 deactivate-dll: unlink-dll
-ifeq "$(EXPORTED_DLLDEP)" "$(status_dir)/$(XDLLDEP_LINK)"
+ifeq "$(can_deactivate_dll)" "yes"
 	-$(RM) $(libdir)/$(XDLL) $(status_dir)/$(XDLLDEP)
 	@has_dll_loadable@-$(RM) $(libdir)/$(XDLL_LOADABLE)
   ifneq "$(DLL)" ""
