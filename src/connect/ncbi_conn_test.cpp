@@ -511,22 +511,47 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
             _STR(CONN_FWD_PORT_MIN) ".." _STR(CONN_FWD_PORT_MAX)
             "] (inclusive) at the two fixed NCBI hosts, 130.14.29.112"
             " and 165.112.7.12\n"
-            "In order to set that up that correctly, please have your network"
+            "In order to set that up correctly, please have your network"
             " administrator read the following (if they have not yet done so):"
-            " " NCBI_FW_URL "\n"
-            "There are also fallback connection ports 22 and 443 at"
-            " 130.14.29.112. They will be tried if connections to the"
-            " ports in the range described above have failed";
+            " " NCBI_FW_URL "\n";
     } else {
         temp += "This is an obsolescent mode that requires to keep a wide port"
             " range [4444..4544] (inclusive) open to let through connections"
             " to any NCBI host (130.14.2x.xxx/165.112.xx.xxx) -- this mode was"
             " designed for unrestricted networks when firewall port blocking"
-            " was not an issue\n"
-            "You may not be able to use this mode if your site has a firewall"
-            " that controls to which hosts and ports the outbound connections"
-            " are allowed to go\n";
+            " was not an issue\n";
     }
+    if (*net_info->http_proxy_host  &&  net_info->http_proxy_port) {
+        temp += "An HTTP proxy \"";
+        temp += net_info->http_proxy_host;
+        temp += ':';
+        temp += NStr::UIntToString(net_info->http_proxy_port);
+        temp += "\" will first be tried to establish connections to the"
+            " aforementioned ports;  and if unsuccessful, a link bypassing"
+            " the proxy will then be attempted";
+        if (*net_info->proxy_host) {
+            temp += ": your configuration specifies that instead of connecting"
+                " directly to NCBI, a forwarder host \"";
+            temp += net_info->proxy_host;
+            temp += "\" should be used for such links";
+        }
+        temp += '\n';
+    }
+    if (m_Firewall) {
+        temp += "There are also fallback connection ports such as 22 and 443"
+            " at 130.14.29.112.  They will be used if connections to the ports"
+            " in the range described above have failed";
+        if (*net_info->http_proxy_host  &&  net_info->http_proxy_port) {
+            temp += ", and will be tried with the HTTP proxy first, then ";
+            temp += *net_info->proxy_host ? "via the forwarder" : "directly";
+            temp += " if failed\n";
+        }
+    } else {
+        temp += "You may not be able to use this mode if your site has a"
+            " restrictive firewall that has a very fine control over which"
+            " hosts and ports the outbound connections are allowed to go to\n";
+    }
+
     PreCheck(eFirewallConnPoints, 0/*main*/, temp);
 
     PreCheck(eFirewallConnPoints, 1/*sub*/,
