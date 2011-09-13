@@ -2,8 +2,8 @@ query = AC144835.3
 0
 subject = NT_011515.12
 1 2
-pct_coverage_hiqual > 99.99
-2
+coalesce(pct_coverage_hiqual,100) > 99.99
+2 5
 5prime_unaligned > 50
 6
 3prime_unaligned > 3
@@ -14,19 +14,39 @@ align_length = align_length_ungap
 1 3 5
 align_length_ratio < .999
 7 8
+align_length_ratio between .97 and .99
+8
 cds_start > 300
 1
+ADD(cds_start,200) > 500
+1
 cds_end > 4000
+2
+SUB(cds_end, 1000) > 3000
 2
 cds_pct_coverage = 100
 1 2
 cds_pct_identity = 100
 1
+is_seg_type(spliced) = 0
+0 1 5
 exon_count > 1
 2 4
+not exon_count > 1
+3 6 7 8
+exon_count >= 1
+2 3 4 6 7 8
+exon_count != 1
+2 4
+exon_count <= 1
+3 6 7 8
 last_splice_site > 3000
 2
 internal_unaligned > 2
+4
+(internal_unaligned > 2 or last_splice_site > 3000) and cds_pct_coverage = 100
+2
+(internal_unaligned > 2 or last_splice_site > 3000) and cds_pct_coverage < 100
 4
 longest_gap > 1000
 1
@@ -54,3 +74,7 @@ query_length < 500
 5 7 8
 subject_length < 4000000
 0 5 6
+MUL(subject_length,product_length) < 2000000000
+5
+DIV(query_length,subject_length) < .0001
+3 7 8
