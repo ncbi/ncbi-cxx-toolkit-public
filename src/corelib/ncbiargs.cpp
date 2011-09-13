@@ -890,6 +890,12 @@ string CArgDesc::PrintXml(CNcbiOstream& out) const
         if (flags & CArgDescriptions::fMandatorySeparator) {
             out << "<" << "mandatorySeparator" << "/>";
         }
+        if (flags & CArgDescriptions::fCreatePath) {
+            out << "<" << "createPath" << "/>";
+        }
+        if (flags & CArgDescriptions::fOptionalSeparatorAllowConflict) {
+            out << "<" << "optionalSeparatorAllowConflict" << "/>";
+        }
         out << "</" << "flags" << ">" << endl;
     }
     const CArgDescDefault* def = dynamic_cast<const CArgDescDefault*>(this);
@@ -2149,10 +2155,23 @@ void CArgDescriptions::x_PreCheck(void) const
 
         const string& name = arg.GetName();
         if (name.length() > 1  &&  m_NoSeparator.find(name[0]) != NPOS) {
-            NCBI_THROW(CArgException, eInvalidArg,
-                string("'") + name[0] +
-                "' argument allowed to contain no separator conflicts with '" +
-                name + "' argument");
+            // find the argument with optional separator and check its flags
+            for (TArgsCI i = m_Args.begin();  i != m_Args.end();  ++i) {
+                CArgDesc& a = **i;
+                const string& n = a.GetName();
+                if (n.length() == 1 && n[0] == name[0] &&
+                    (a.GetFlags() & CArgDescriptions::fOptionalSeparator)) {
+                    if ((a.GetFlags() & CArgDescriptions::fOptionalSeparatorAllowConflict) == 0) {
+                        NCBI_THROW(CArgException, eInvalidArg,
+                            string("'") + name[0] +
+                            "' argument allowed to contain no separator conflicts with '" +
+                            name + "' argument. To allow such conflicts, add" +
+                            " CArgDescriptions::fOptionalSeparatorAllowConflict flag into" +
+                            " description of '" + name[0] + "'.");
+                    }
+                    break;
+                }
+            }
         }
 
         if (dynamic_cast<CArgDescDefault*> (&arg) == 0) {
