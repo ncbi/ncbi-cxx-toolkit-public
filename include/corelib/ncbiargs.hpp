@@ -533,8 +533,12 @@ public:
         /// The following restrictions apply to a no-separator argument:
         ///   - the argument must be a key (including optional or default);
         ///   - the argument's name must be a single char;
-        ///   - no other argument's name can start with the same char.
+        ///   - no other argument's name can start with the same char,
+        ///     unless fOptionalSeparatorAllowConflict is also specified.
         fOptionalSeparator = (1 << 6),
+        /// For arguments with fOptionalSeparator flag, allow
+        /// other arguments which names begin with the same char.
+        fOptionalSeparatorAllowConflict = (1 << 9),
         
         /// Require '=' separator
         fMandatorySeparator = (1 << 7)
