@@ -51,6 +51,14 @@ class NCBI_ALIGN_FORMAT_EXPORT CMultiAlnPrinter
 {
 public:
 
+    /// Alignment display type for showing nucleotice or protein-related
+    /// information
+    enum EAlignType {
+        eNotSet = 0,
+        eNucleotide,
+        eProtein
+    };
+
     /// Multiple alignmnet text formats
     enum EFormat {
         eFastaPlusGaps = 0,
@@ -67,7 +75,8 @@ public:
     /// @param seqalign Alignment
     /// @param scope Scope
     ///
-    CMultiAlnPrinter(const CSeq_align& seqalign, CScope& scope);
+    CMultiAlnPrinter(const CSeq_align& seqalign, CScope& scope,
+                     EAlignType type = eNotSet);
 
     /// Set text width (number of columns) for alignment output
     /// @param width Width
@@ -126,6 +135,9 @@ protected:
 protected:
     /// Alignment manager
     CRef<CAlnVec> m_AlnVec;
+
+    /// Alignment type
+    EAlignType m_AlignType;
 
     /// Selected alignment format
     EFormat m_Format;

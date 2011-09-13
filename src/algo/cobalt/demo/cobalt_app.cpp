@@ -527,7 +527,8 @@ int CMultiApplication::Run(void)
     }
 
     if (args["outfmt"]) {
-        CMultiAlnPrinter printer(*aligner.GetResults(), *aligner.GetScope());
+        CMultiAlnPrinter printer(*aligner.GetResults(), *aligner.GetScope(),
+                                 CMultiAlnPrinter::eProtein);
         printer.SetWidth(80);
         printer.SetGapChar('-');
         printer.SetEndGapChar('-');

@@ -55,8 +55,11 @@ static void s_ReplaceNonAlphaNum(string& str)
 }
 
 CMultiAlnPrinter::CMultiAlnPrinter(const CSeq_align& seqalign,
-                                   CScope& scope)
+                                   CScope& scope,
+                                   CMultiAlnPrinter::EAlignType type
+                                   /* = eNotSet */)
     : m_AlnVec(new CAlnVec(seqalign.GetSegs().GetDenseg(), scope)),
+      m_AlignType(type),
       m_Format(CMultiAlnPrinter::eFastaPlusGaps),
       m_Width(60)
 {
@@ -224,8 +227,13 @@ void CMultiAlnPrinter::x_PrintPhylipInterleaved(CNcbiOstream& ostr)
 
 void CMultiAlnPrinter::x_PrintNexus(CNcbiOstream& ostr)
 {
+    if (m_AlignType == eNotSet) {
+        NCBI_THROW(CException, eInvalid, "Alignment type must be set for the "
+                   "Nexus format");
+    }
+
     int num_sequences = m_AlnVec->GetNumRows();
-    int aln_width = m_AlnVec->GetAlnStop();
+    int last_pos = m_AlnVec->GetAlnStop(); /* alignment width - 1 */
     vector<string> seqids(num_sequences);
     int max_id_length = 0;
     for (int i=0;i < num_sequences;i++) {
@@ -239,15 +247,20 @@ void CMultiAlnPrinter::x_PrintNexus(CNcbiOstream& ostr)
     ostr << "#NEXUS" << NcbiEndl << NcbiEndl
          << "BEGIN DATA;" << NcbiEndl
          << "DIMENSIONS ntax=" << num_sequences << " nchar="
-         << aln_width << ";" << NcbiEndl
+         << last_pos + 1 << ";"
+         << NcbiEndl
+         << "FORMAT datatype="
+         << (m_AlignType == eNucleotide ? "dna" : "protein")
+         << " gap=" << (char)m_AlnVec->GetGapChar(0)
+         << " interleave;"
          << NcbiEndl
          << "MATRIX" << NcbiEndl;
 
 
     int from = 0;
     int seqid_width = max_id_length + 2;
-    while (from < aln_width) {
-        int to = min(from + m_Width, aln_width);
+    while (from < last_pos) {
+        int to = min(from + m_Width, last_pos);
         for (int i=0;i < num_sequences;i++) {
 
             ostr << seqids[i];
@@ -265,6 +278,6 @@ void CMultiAlnPrinter::x_PrintNexus(CNcbiOstream& ostr)
         ostr << NcbiEndl;
         from = to + 1;
     }
-    ostr << "END;" << NcbiEndl;
+    ostr << ";" << NcbiEndl << "END;" << NcbiEndl;
 }
 

@@ -71,7 +71,9 @@ const string nucleotide_seqs = "data/nucleotide.fa";
 
 string PrintAlignment(CMultiAlnPrinter::EFormat format,
                       const string& seqalign_file,
-                      const string& fasta_file = "")
+                      const string& fasta_file = "",
+                      CMultiAlnPrinter::EAlignType type
+                      = CMultiAlnPrinter::eNotSet)
 {
     CRef<CScope> scope = CreateScope(fasta_file);
     
@@ -79,7 +81,7 @@ string PrintAlignment(CMultiAlnPrinter::EFormat format,
     CNcbiIfstream istr(seqalign_file.c_str());
     istr >> MSerial_AsnText >> seqalign;
 
-    CMultiAlnPrinter printer(seqalign, *scope);
+    CMultiAlnPrinter printer(seqalign, *scope, type);
     printer.SetWidth(80);
     printer.SetFormat(format);
 
@@ -227,11 +229,14 @@ BOOST_AUTO_TEST_CASE(TestNexus)
 {
     // Test protein
     string output = PrintAlignment(CMultiAlnPrinter::eNexus,
-                                   protein_seqalign);
+                                   protein_seqalign, "",
+                                   CMultiAlnPrinter::eProtein);
 
     BOOST_REQUIRE(output.find("#NEXUS") != NPOS);
     BOOST_REQUIRE(output.find("BEGIN DATA;") != NPOS);
-    BOOST_REQUIRE(output.find("DIMENSIONS ntax=100 nchar=748;") != NPOS);
+    BOOST_REQUIRE(output.find("DIMENSIONS ntax=100 nchar=749;") != NPOS);
+    BOOST_REQUIRE(output.find("FORMAT datatype=protein gap=- interleave;")
+                  != NPOS);
     BOOST_REQUIRE(output.find("MATRIX") != NPOS);
 
 
@@ -244,18 +249,25 @@ BOOST_AUTO_TEST_CASE(TestNexus)
                               "ANPVPAIA--GAAPVVITSARAAISAGVDEA---GALGTSAAVPG")
                   != NPOS);
 
-    // last line
-    BOOST_REQUIRE(output.find("241667095  LLLAAGLIGDPLLAGE----") != NPOS);
+    // last alignment line
+    // verify that a ';' follows the alignment
+    BOOST_REQUIRE(output.find("241667095  LLLAAGLIGDPLLAGE----\n\n;") != NPOS
+                  || 
+                  // for Windows end of line
+                  output.find("241667095  LLLAAGLIGDPLLAGE----\r\n\r\n;")
+                  != NPOS);
     BOOST_REQUIRE(output.find("END;") != NPOS);
 
 
     // Test nucleotide
     output = PrintAlignment(CMultiAlnPrinter::eNexus,
-                            nucleotide_seqalign, nucleotide_seqs);
+                            nucleotide_seqalign, nucleotide_seqs,
+                            CMultiAlnPrinter::eNucleotide);
 
     BOOST_REQUIRE(output.find("#NEXUS") != NPOS);
     BOOST_REQUIRE(output.find("BEGIN DATA;") != NPOS);
-    BOOST_REQUIRE(output.find("DIMENSIONS ntax=10 nchar=2633;") != NPOS);
+    BOOST_REQUIRE(output.find("DIMENSIONS ntax=10 nchar=2634;") != NPOS);
+    BOOST_REQUIRE(output.find("FORMAT datatype=dna gap=- interleave;") != NPOS);
     BOOST_REQUIRE(output.find("MATRIX") != NPOS);
 
     BOOST_REQUIRE(output.find("2   ------CCGCTACAGGGGGGGCCTGAGGCACTGCAGAAAGTG"
@@ -265,9 +277,23 @@ BOOST_AUTO_TEST_CASE(TestNexus)
                       "AGATGCGGTTTTCCTCGCAGAACGCCTTTATGCAGAAGT") != NPOS);
 
     // last line
-    BOOST_REQUIRE(output.find("10  ACAACTGGATGTGTGACTAGTGCTGACATGTTTCT-------")
+    // verify that a ';' follows the alignment
+    BOOST_REQUIRE(output.find("10  ACAACTGGATGTGTGACTAGTGCTGACATGTTTCT-------\n\n;")
+                  ||
+                  // for Windows end of line
+                  output.find("10  ACAACTGGATGTGTGACTAGTGCTGACATGTTTCT-------\r\n\r\n;")
                   != NPOS);
     BOOST_REQUIRE(output.find("END;") != NPOS);
+}
+
+BOOST_AUTO_TEST_CASE(TestRejectNexusWithNoAlignType)
+{
+    // verify that formatting nexus alignment with m_AlignType == eNotSet
+    // throws the exception
+    BOOST_REQUIRE_THROW(PrintAlignment(CMultiAlnPrinter::eNexus,
+                                       protein_seqalign, "",
+                                       CMultiAlnPrinter::eNotSet),
+                        CException);    
 }
 
 BOOST_AUTO_TEST_SUITE_END()
