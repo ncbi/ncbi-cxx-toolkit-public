@@ -400,7 +400,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(3,5,0) );
+    SetVersion( CVersionInfo(3,6,0) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -986,6 +986,32 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
     ofs << "# Non-redundant flags (will be overridden for GNU Make to avoid" << endl;
     ofs << "# --jobserver-fds=* proliferation)" << endl;
     ofs << "MFLAGS_NR = $(MFLAGS)" << endl;
+    ofs << "SKIP_PRELIMINARIES= sources= configurables=configurables.null" << endl;
+
+// all dirs -------------------------------------------------------------
+    list<string> all_dirs;
+    ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
+        if (p->second.m_MakeType == eMakeType_Excluded ||
+            p->second.m_MakeType == eMakeType_ExcludedByReq) {
+            LOG_POST(Info << "For reference only: " << CreateProjectName(p->first));
+            continue;
+        }
+        if (p->first.Type() == CProjKey::eMsvc ||
+            p->first.Type() == CProjKey::eDataSpec) {
+            continue;
+        }
+	all_dirs.push_back(
+	    CDirEntry::DeleteTrailingPathSeparator( CDirEntry::CreateRelativePath(
+	        GetProjectTreeInfo().m_Src,p->second.m_SourcesBaseDir)));
+    }
+    all_dirs.sort();
+    all_dirs.unique();
+    ofs << "all_dirs =";
+    ITERATE(list<string>, p, all_dirs) {
+        ofs << " \\" <<endl << "    " << *p;
+    }
+    ofs << endl << endl;
+
     ofs << "include $(top_srcdir)/src/build-system/Makefile.is_gmake" << endl;
     ofs << "include $(top_srcdir)/src/build-system/Makefile.meta.$(is_gmake)" << endl;
     ofs << endl;
@@ -1065,6 +1091,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
 // --------------------------------------------------------------------------
     string datatool_key;
     string datatool( GetDatatoolId() );
+    set<string> dataspec_dirs;
     if (!datatool.empty()) {
         CProjKey t(CProjKey::eApp, datatool);
         if (projects_tree.m_Projects.find(t) != projects_tree.m_Projects.end()) {
@@ -1209,7 +1236,8 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
             ofs << target << " : " << rel_path << "$(s)." << target << ".real";
         ofs << endl << endl;
         ofs << rel_path << "$(s)." << target << ".real" << " :" << endl
-            << "\t$(MAKE) $(MFLAGS_NR) -f $(MINPUT) " << target << ".real" << " MTARGET=$(MTARGET) MARK=$(MARK)";
+            << "\t$(MAKE) $(MFLAGS_NR) -f $(MINPUT) " << target << ".real"
+            << " MTARGET=$(MTARGET) MARK=$(MARK)";
         ofs << endl << endl;
         ofs << target << ".real" << " :";
         ITERATE(list<string>, d, dependencies) {
@@ -1235,14 +1263,20 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
             << " MTARGET=$(MTARGET)";
         ofs << endl << endl;
         ofs << target << dotreal << " :";
+
         if (hasDataspec) {
-            if (m_Dtdep && !datatool_key.empty()) {
-                ofs << " " << datatool_key << dotreal;
-            }
-    }
-        ITERATE(list<string>, d, dependencies) {
-            ofs << " " << *d << dotreal;
+            dataspec_dirs.insert(rel_path);
         }
+        ITERATE(list<string>, d, dependencies) {
+            if (*d == datatool_key) {
+                dataspec_dirs.insert(rel_path);
+            } else {
+                ofs << " " << *d << dotreal;
+            }
+        }
+        ofs << " " << rel_path << dotfiles << dotreal;
+
+
         ofs << endl << "\t";
         if (!error.empty()) {
             ofs << error << endl << "\t@exit 1" << endl << "\t";
@@ -1251,26 +1285,22 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
         if (p->second.m_MakeType >= eMakeType_Expendable) {
             ofs << "-";
         }
-        ofs << "cd " << rel_path << ";";
+        ofs << "cd " << rel_path << " && ";
         if (p->second.m_MakeType == eMakeType_Expendable) {
             ofs << " NCBI_BUT_EXPENDABLE=' (but expendable)'";
         }
         ofs << " $(MAKE) $(MFLAGS)"
             << " APP_PROJ=" << target_app
             << " LIB_PROJ=" << target_lib
-            << " $(MTARGET)" << endl << endl;
+            << " $(MTARGET) $(SKIP_PRELIMINARIES)" << endl << endl;
  #endif
         if (hasDataspec) {
             ofs << target << dotfiles << " :" << endl
-                << "\t$(MAKE) $(MFLAGS) -f $(MINPUT) " << target << dotfiles << dotreal;
+                << "\t$(MAKE) $(MFLAGS) -f $(MINPUT) $(SKIP_PRELIMINARIES) "
+                << target << dotfiles << dotreal;
             ofs << endl << endl;
             ofs << target << dotfiles << dotreal << " :";
-            if (m_Dtdep && !datatool_key.empty()) {
-                ofs << " " << datatool_key << dotreal;
-            }
-            ofs << endl << "\t";
-            ofs << "-";
-            ofs << "cd " << rel_path << "; $(MAKE) $(MFLAGS) sources";
+            ofs << " " << rel_path << dotfiles << dotreal;
             ofs << endl << endl;
         }
     }
@@ -1278,7 +1308,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
 // folder targets -----------------------------------------------------------
     map< string, list< string > >::const_iterator pt;
     for ( pt = path_to_target.begin(); pt != path_to_target.end(); ++pt) {
-    string target(pt->first);
+        string target(pt->first);
         ofs << ".PHONY : " << target << endl << endl;
         ofs << target << " :" << endl
             << "\t$(MAKE) $(MFLAGS_NR) -f $(MINPUT) " << target << dotreal
@@ -1295,8 +1325,22 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
 #else
             ofs << " " << NStr::Join( tt, dotreal + " ") << dotreal;
 #endif
-    ofs << endl << endl;
+            ofs << endl << endl;
         }
+
+        ofs << target << dotfiles << " :" << endl
+            << "\t$(MAKE) $(MFLAGS_NR) -f $(MINPUT) " << target << dotfiles << dotreal
+            << " MTARGET=$(MTARGET)";
+        ofs << endl << endl;
+        ofs << target << dotfiles << dotreal << " :";
+        if (m_Dtdep && !datatool_key.empty() &&
+            dataspec_dirs.find(target) != dataspec_dirs.end()) {
+            ofs << " " << datatool_key << dotreal;
+        }
+        ofs << endl << "\t";
+        ofs << "-";
+        ofs << "cd " << target << " && $(MAKE) $(MFLAGS) sources";
+        ofs << endl << endl;
     }
 }
 
