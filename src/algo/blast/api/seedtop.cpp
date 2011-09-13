@@ -33,6 +33,10 @@
 #include <ncbi_pch.hpp>
 
 #include <algo/blast/api/seedtop.hpp>
+#include <algo/blast/api/objmgr_query_data.hpp>
+#include <algo/blast/api/seqsrc_multiseq.hpp>
+#include <algo/blast/api/seqinfosrc_seqvec.hpp>
+#include <algo/blast/api/blast_options_handle.hpp>
 #include <algo/blast/api/blast_seqinfosrc_aux.hpp>
 #include <algo/blast/core/blast_setup.h>
 #include <algo/blast/core/phi_lookup.h>
@@ -47,12 +51,12 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-CSeedTop::CSeedTop(const string & pattern,
-                   CRef<CLocalDbAdapter> db)
-         : m_Pattern(pattern),
-           m_SeqSrc(db->MakeSeqSrc()),
-           m_SeqInfoSrc(db->MakeSeqInfoSrc())
-{}
+CSeedTop::CSeedTop(const string & pattern)
+         : m_Pattern(pattern)
+{
+    x_MakeScoreBlk();
+    x_MakeLookupTable();
+}
 
 void CSeedTop::x_MakeLookupTable()
 {
@@ -75,32 +79,31 @@ void CSeedTop::x_MakeScoreBlk()
                             &m_ScoreBlk, 1.0, &msg, &BlastFindMatrixPath);
 }
 
-vector< CConstRef <CSeq_loc> > 
-CSeedTop::Run()
+CSeedTop::TSeedTopResults CSeedTop::Run(CRef<CLocalDbAdapter> db)
 {
-    x_MakeScoreBlk();
-    x_MakeLookupTable();
     BlastOffsetPair* offset_pairs = (BlastOffsetPair*)
          calloc(GetOffsetArraySize(m_Lookup), sizeof(BlastOffsetPair));
 
     CRef<CSeq_id> sid;
     TSeqPos slen;
-    vector< CConstRef <CSeq_loc> > retv;
+    TSeedTopResults retv;
     
     BlastSeqSrcGetSeqArg seq_arg;
     memset((void*) &seq_arg, 0, sizeof(seq_arg));
     seq_arg.encoding = eBlastEncodingProtein;
 
+    BlastSeqSrc *seq_src = db->MakeSeqSrc();
+    IBlastSeqInfoSrc *seq_info_src = db->MakeSeqInfoSrc();
     BlastSeqSrcIterator* itr = BlastSeqSrcIteratorNewEx
-         (MAX(BlastSeqSrcGetNumSeqs(m_SeqSrc)/100, 1));
+         (MAX(BlastSeqSrcGetNumSeqs(seq_src)/100, 1));
 
-    while( (seq_arg.oid = BlastSeqSrcIteratorNext(m_SeqSrc, itr))
+    while( (seq_arg.oid = BlastSeqSrcIteratorNext(seq_src, itr))
            != BLAST_SEQSRC_EOF) {
         if (seq_arg.oid == BLAST_SEQSRC_ERROR) break;
-        if (BlastSeqSrcGetSequence(m_SeqSrc, &seq_arg) < 0) continue;
+        if (BlastSeqSrcGetSequence(seq_src, &seq_arg) < 0) continue;
 
         Int4 start_offset = 0;
-        GetSequenceLengthAndId(m_SeqInfoSrc, seq_arg.oid, sid, &slen);
+        GetSequenceLengthAndId(seq_info_src, seq_arg.oid, sid, &slen);
 
         while (start_offset < seq_arg.seq->length) {
             // Query block and array size arguments are not used when scanning 
@@ -119,13 +122,29 @@ CSeedTop::Run()
             }
         }
  
-        BlastSeqSrcReleaseSequence(m_SeqSrc, &seq_arg);
+        BlastSeqSrcReleaseSequence(seq_src, &seq_arg);
     }
 
     BlastSequenceBlkFree(seq_arg.seq);
     itr = BlastSeqSrcIteratorFree(itr);
     sfree(offset_pairs);
     return retv;
+}
+
+CSeedTop::TSeedTopResults CSeedTop::Run(CBioseq_Handle & bhl)
+{
+    CConstRef<CSeq_id> sid = bhl.GetSeqId();
+    CSeq_loc sl;
+    sl.SetWhole();
+    sl.SetId(*sid);
+    SSeqLoc subject(sl, bhl.GetScope());
+    TSeqLocVector subjects;
+    subjects.push_back(subject);
+    CRef<IQueryFactory> qf(new CObjMgr_QueryFactory(subjects));
+    CRef<CBlastOptionsHandle> opt_handle 
+                 (CBlastOptionsFactory::Create(eBlastp));
+    CRef<CLocalDbAdapter> db(new CLocalDbAdapter(qf, opt_handle));
+    return Run(db);
 }
 
 END_SCOPE(blast)

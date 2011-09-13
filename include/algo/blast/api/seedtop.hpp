@@ -49,28 +49,27 @@ BEGIN_SCOPE(blast)
 
 class CSeedTop : public CObject {
 public:
-
-    // constructor to search pattern in database or subject sequences
-    CSeedTop(const string & pattern,       // seedtop pattern
-             CRef<CLocalDbAdapter> db);    // the database or subject sequences
-
-    // constructor to search pattern in a bioseq
-    //CSeedTop(const string & pattern,       // seedtop pattern
-    //        CConstRef<CBioseq> bioseq);   // the bioseq to be searched
-             
-    // returns a vector of results (matches) as seq_loc on each subject
+    // the return type for seedtop search
+    // a vector of results (matches) as seq_loc on each subject
     // the results will be sorted first by subject oid (if multiple subject
     // sequences or database is supplied during construction), then by the first
     // posotion of the match
-    vector< CConstRef <CSeq_loc> > Run();
+    typedef vector < CConstRef <CSeq_loc> > TSeedTopResults;
+
+    // constructor 
+    CSeedTop(const string & pattern);       // seedtop pattern
+
+    // search a database or a set of subject sequences
+    TSeedTopResults Run(CRef<CLocalDbAdapter> db);  
+
+    // search a bioseq
+    TSeedTopResults Run(CBioseq_Handle & b_hdl);
     
 private:
     const static EBlastProgramType m_Program = eBlastTypePhiBlastp;
     string m_Pattern; 
     CLookupTableWrap m_Lookup;
     CBlastScoreBlk m_ScoreBlk;
-    BlastSeqSrc* m_SeqSrc;
-    IBlastSeqInfoSrc* m_SeqInfoSrc;
 
     void x_MakeLookupTable();
     void x_MakeScoreBlk();

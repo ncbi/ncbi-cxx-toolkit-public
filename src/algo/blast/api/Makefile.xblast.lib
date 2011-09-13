@@ -68,7 +68,8 @@ split_query_aux_priv \
 split_query_blk \
 winmask_filter \
 subj_ranges_set \
-rpsblast_local
+rpsblast_local \
+seedtop
 
 SRC  = $(SRC_C:%=.core_%) $(SRC_CXX)
 
