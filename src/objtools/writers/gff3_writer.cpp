@@ -268,6 +268,13 @@ bool CGff3Writer::x_WriteAlignDenseg(
         record.SetTargetLocation( *pTargetId, targetStrand );
 
         // Add scores, if available:
+        if (align.IsSetScore()) {
+            const vector<CRef<CScore> >& scores = align.GetScore();
+            for (vector<CRef<CScore> >::const_iterator cit = scores.begin(); 
+                    cit != scores.end(); ++cit) {
+                record.SetScore(**cit);
+            }
+        }
         if ( ds.IsSetScores() ) {
             ITERATE ( CDense_seg::TScores, score_it, ds.GetScores() ) {
                 record.SetScore( **score_it );
