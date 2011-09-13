@@ -157,11 +157,38 @@ CGff3Reader::~CGff3Reader()
 }
 
 //  ----------------------------------------------------------------------------
+bool CGff3Reader::x_UpdateFeatureCds(
+    const CGff2Record& gff,
+    CRef<CSeq_feat> pFeature)
+//  ----------------------------------------------------------------------------
+{
+    CRef<CSeq_feat> pAdd = CRef<CSeq_feat>(new CSeq_feat);
+    if (!x_FeatureSetLocation(gff, pAdd)) {
+        return false;
+    }
+    pFeature->SetLocation().Add(pAdd->GetLocation());
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGff3Reader::x_UpdateAnnot(
     const CGff2Record& gff,
     CRef< CSeq_annot > pAnnot )
 //  ----------------------------------------------------------------------------
 {
+    CSeqFeatData::ESubtype iGenbankType = SofaTypes().MapSofaTermToGenbankType(
+        gff.Type() );
+
+    if (iGenbankType == CSeqFeatData::e_Cdregion) {
+        string strId;
+        if ( gff.GetAttribute( "ID", strId ) ) {
+            IdToFeatureMap::iterator it = m_MapIdToFeature.find(strId);
+            if (it != m_MapIdToFeature.end()) {
+                return x_UpdateFeatureCds(gff, it->second);
+            }
+        }
+    }
+
     CRef< CSeq_feat > pFeature( new CSeq_feat );
 
     if ( ! x_FeatureSetId( gff, pFeature ) ) {

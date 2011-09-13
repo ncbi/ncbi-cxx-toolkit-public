@@ -61,7 +61,9 @@ public:
         fNormal =       0,
         fNewCode =      0x1000, // for now don't clobber CGFFReader flags
     } TFlags;
-    
+
+    typedef map< string, CRef< CSeq_feat > > IdToFeatureMap;
+   
 public:
     typedef vector< CRef< CSeq_annot > > TAnnots;
     typedef TAnnots::iterator TAnnotIt;
@@ -213,7 +215,7 @@ public:
         const string& );
 
     CErrorContainerLenient m_ErrorsPrivate;
-    map< string, CRef< CSeq_feat > > m_MapIdToFeature;
+    IdToFeatureMap m_MapIdToFeature;
 
     static string GenbankKey(
         CSeqFeatData::ESubtype );

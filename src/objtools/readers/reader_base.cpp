@@ -118,6 +118,8 @@ CReaderBase::GetReader(
         return new CWiggleReader( flags );
     case CFormatGuess::eGtf:
         return new CGff3Reader( flags );
+    case CFormatGuess::eGff3:
+        return new CGff3Reader( flags );
     }
 }
 

@@ -210,6 +210,7 @@ bool CGff2Record::x_AssignAttributesFromGff(
 bool CGff2Record::x_SplitGffAttributes(
     const string& strRawAttributes,
 	vector< string >& attributes) const
+//  ----------------------------------------------------------------------------
 {
 	string strCurrAttrib;
 	bool inQuotes = false;

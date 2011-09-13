@@ -862,34 +862,34 @@ bool CGff2Reader::x_AddFeatureToAnnot(
     CRef< CSeq_annot > pAnnot )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! IsExon( pFeature ) ) {
-        pAnnot->SetData().SetFtable().push_back( pFeature ) ;
-        return true;
-    }
-
-    CRef< CSeq_feat > pParent;    
-    if ( ! x_GetParentFeature( *pFeature, pParent ) ) {
-        pAnnot->SetData().SetFtable().push_back( pFeature ) ;
-        return true;
-    }
-
-    bool bHasInterestingAttributes = false;
-    if ( pFeature->CanGetQual() ) {
-        const vector< CRef< CGb_qual > >& quals = pFeature->GetQual();
-        vector< CRef< CGb_qual > >::const_iterator it;
-        for ( it = quals.begin(); it != quals.end(); ++it ) {
-            if ( (*it)->CanGetQual() && (*it)->CanGetVal() ) {
-                if ( (*it)->GetQual() != "Parent" ) {
-                    bHasInterestingAttributes = true;
-                    break;
-                }
-            }
+    if (IsExon(pFeature)) {
+        CRef< CSeq_feat > pParent;    
+        if ( ! x_GetParentFeature( *pFeature, pParent ) ) {
+            pAnnot->SetData().SetFtable().push_back( pFeature ) ;
+            return true;
         }
+
+        //bool bHasInterestingAttributes = false;
+        //if ( pFeature->CanGetQual() ) {
+        //    const vector< CRef< CGb_qual > >& quals = pFeature->GetQual();
+        //    vector< CRef< CGb_qual > >::const_iterator it;
+        //    for ( it = quals.begin(); it != quals.end(); ++it ) {
+        //        if ( (*it)->CanGetQual() && (*it)->CanGetVal() ) {
+        //            if ( (*it)->GetQual() != "Parent" ) {
+        //                bHasInterestingAttributes = true;
+        //                break;
+        //            }
+        //        }
+        //    }
+        //}
+        //if ( bHasInterestingAttributes ) {
+        //    pAnnot->SetData().SetFtable().push_back( pFeature ) ;
+        //}
+        return x_FeatureMergeExon( pFeature, pParent );
     }
-    if ( bHasInterestingAttributes ) {
-        pAnnot->SetData().SetFtable().push_back( pFeature ) ;
-    }
-    return x_FeatureMergeExon( pFeature, pParent );
+
+    pAnnot->SetData().SetFtable().push_back( pFeature ) ;
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
