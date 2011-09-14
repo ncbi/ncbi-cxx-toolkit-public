@@ -79,12 +79,14 @@ class CTestApp : public CNcbiApplication
 public:
     CTestApp(CNcbiOstream& log);
 
-    virtual bool LoadConfig(CNcbiRegistry& reg, const string* conf);
-
     virtual void Init  (void);
     virtual int  Run   (void);
 
     static  void Cancel(void);
+
+protected:
+    virtual bool LoadConfig(CNcbiRegistry& reg, const string* conf);
+    using CNcbiApplication::LoadConfig;
 
 protected:
     static CConnTest m_Test;
@@ -144,7 +146,7 @@ bool CTestApp::LoadConfig(CNcbiRegistry& reg, const string* conf)
     CDirEntry::SplitPath(path, &dir, NULL, NULL);
     CMetaRegistry::SetSearchPath().clear();
     CMetaRegistry::SetSearchPath().push_back(dir);
-    return CNcbiApplication::LoadConfig(reg, conf, 0);
+    return LoadConfig(reg, conf, 0);
 }
 
 

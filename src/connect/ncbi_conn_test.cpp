@@ -266,9 +266,9 @@ EIO_Status CConnTest::HttpOkay(string* reason)
             " check that appropriate [CONN]HTTP_PROXY_{USER|PASS} have been"
             " specified\n";
         if (net_info  &&  (*net_info->user  ||  *net_info->pass)) {
-            temp += "Make sure there are no stray [CONN]{USER|PASS}"
-                " appear in your configuration -- NCBI services"
-                " neither require nor use them\n";
+            temp += "Make sure there are no stray [CONN]{USER|PASS} appear in"
+                " your configuration -- NCBI services neither require nor use"
+                " them\n";
         }
     }
 
@@ -333,9 +333,8 @@ EIO_Status CConnTest::DispatcherOkay(string* reason)
         } else
             temp += x_TimeoutMsg();
         if (!(okay & 1)) {
-            temp += "Check with your network administrator that your"
-                " network neither filters out nor blocks non-standard"
-                " HTTP headers\n";
+            temp += "Check with your network administrator that your network"
+                " neither filters out nor blocks non-standard HTTP headers\n";
         }
     }
 
@@ -414,7 +413,7 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
             const char* mapper = SERV_MapperName(iter);
             if (!mapper  ||  NStr::strcasecmp(mapper, "DISPD") != 0) {
                 temp += "Network dispatcher is not enabled as a service"
-                    " locator; please review your configuration to purge any"
+                    " locator;  please review your configuration to purge any"
                     " occurrences of [CONN]DISPD_DISABLE off your settings\n";
             }
         } else
@@ -506,30 +505,30 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
     string temp(m_Firewall ? "FIREWALL" : "RELAY (legacy)");
     temp += " connection mode has been detected for stateful services\n";
     if (m_Firewall) {
-        temp += "This mode requires to have your firewall configured such a"
+        temp += "This mode requires your firewall to be configured in such a"
             " way that it allows outbound connections to the port range ["
             _STR(CONN_FWD_PORT_MIN) ".." _STR(CONN_FWD_PORT_MAX)
             "] (inclusive) at the two fixed NCBI hosts, 130.14.29.112"
             " and 165.112.7.12\n"
-            "In order to set that up correctly, please have your network"
-            " administrator read the following (if they have not yet done so):"
+            "To set that up correctly, please have your network administrator"
+            " read the following (if they have not already done so):"
             " " NCBI_FW_URL "\n";
     } else {
-        temp += "This is an obsolescent mode that requires to keep a wide port"
+        temp += "This is an obsolescent mode that requires keeping a wide port"
             " range [4444..4544] (inclusive) open to let through connections"
             " to any NCBI host (130.14.2x.xxx/165.112.xx.xxx) -- this mode was"
             " designed for unrestricted networks when firewall port blocking"
             " was not an issue\n";
     }
     if (*net_info->http_proxy_host  &&  net_info->http_proxy_port) {
-        temp += "An HTTP proxy \"";
+        temp += "The first attempt to establish connections to the"
+            " aforemention ports will be made with an HTTP proxy \"";
         temp += net_info->http_proxy_host;
         temp += ':';
         temp += NStr::UIntToString(net_info->http_proxy_port);
-        temp += "\" will first be tried to establish connections to the"
-            " aforementioned ports;  and if unsuccessful, a link bypassing"
-            " the proxy will then be attempted";
-        if (*net_info->proxy_host) {
+        temp += "\".  If that is unsuccessful, a link bypassing the proxy will"
+            " then be attempted";
+        if (m_Firewall  &&  *net_info->proxy_host) {
             temp += ": your configuration specifies that instead of connecting"
                 " directly to NCBI, a forwarder host \"";
             temp += net_info->proxy_host;
@@ -547,9 +546,9 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
             temp += " if failed\n";
         }
     } else {
-        temp += "You may not be able to use this mode if your site has a"
-            " restrictive firewall that has a very fine control over which"
-            " hosts and ports the outbound connections are allowed to go to\n";
+        temp += "This mode may not be reliable if your site has a restrictive"
+            " firewall imposing fine-grained control over which hosts and"
+            " ports the outbound connections are allowed to use\n";
     }
 
     PreCheck(eFirewallConnPoints, 0/*main*/, temp);
@@ -575,8 +574,7 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
             temp += m_Fwd.size() + m_FwdFB.size() == 1 ? " port" : " ports";
         } else {
             status = eIO_Unknown;
-            temp = "No connection ports found,"
-                " please contact " NCBI_HELP_DESK;
+            temp = "No connection ports found, please contact " NCBI_HELP_DESK;
         }
     } else if (status == eIO_Timeout) {
         temp = x_TimeoutMsg();
@@ -644,8 +642,8 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
              "Checking individual connection points..\n"
              "NOTE that even though that not the entire port range may"
              " currently be utilized and checked, in order for NCBI services"
-             " to work correctly and seamlessly, your network must support"
-             " all ports in the range as documented above\n");
+             " to work correctly and seamlessly, your network must support all"
+             " ports in the range as documented above\n");
 
     vector<CFWConnPoint>* fwd[] = { &m_Fwd, &m_FwdFB };
 
@@ -920,7 +918,7 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
                     temp += "The most likely reason for the failure is that"
                         " your ";
                     temp += (net_info  &&  *net_info->proxy_host
-                             ? "proxy" : "firewall");
+                             ? "forwarding proxy" : "firewall");
                     temp += " is still blocking ports as reported above\n";
                 } else if (status != eIO_Timeout  ||  m_Timeout > kTimeout)
                     temp += "Please contact " NCBI_HELP_DESK "\n";
