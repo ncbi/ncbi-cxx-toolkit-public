@@ -601,6 +601,7 @@ const SBrowser s_Browsers[] = {
     { CCgiUserAgent::eNetNewsWire,  "NetNewsWire",              "NetNewsWire",              CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fAny },
     { CCgiUserAgent::eOmniWeb,      "OmniWeb",                  "OmniWeb",                  CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
     { CCgiUserAgent::eQtWeb,        "QtWeb",                    "QtWeb Internet Browser",   CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
+    { CCgiUserAgent::eSafari,       "Safari",                   "Mobile Safari",            CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_MobileDevice, fVendorProduct },
     { CCgiUserAgent::eSafari,       "Safari",                   "Safari",                   CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
     { CCgiUserAgent::eShiira,       "Shiira",                   "Shiira",                   CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
     { CCgiUserAgent::eStainless,    "Stainless",                "Stainless",                CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },

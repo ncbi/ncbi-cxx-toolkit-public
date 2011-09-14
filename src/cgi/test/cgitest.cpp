@@ -885,6 +885,12 @@ const SUserAgent s_UserAgentTests[] = {
         {-1, -1, -1},
         CCgiUserAgent::ePlatform_MobileDevice
     },
+    { "Mozilla/5.0 (Linux; U; Android 1.6; en-fr; T-Mobile G1 Build/DRC83) AppleWebKit/528.5+ (KHTML, like Gecko) Version/3.1.2 Mobile Safari/525.20.1",
+        CCgiUserAgent::eSafari,         {  3, 1,  2},
+        CCgiUserAgent::eEngine_KHTML,   {528, 5, -1},
+        { 5, 0, -1},
+        CCgiUserAgent::ePlatform_MobileDevice
+    },
     { "Mozilla/5.0 (iPhone; U; CPU iPhone OS2_2 like Mac OS X;fr-fr) AppleWebKit/525.18.1 (KHTML, like Gecko) Version/3.1.1 Mobile/5G77 Safari/525.20",
         CCgiUserAgent::eSafari,         {  3,  1, 1},
         CCgiUserAgent::eEngine_KHTML,   {525, 18, 1},
@@ -1085,7 +1091,7 @@ void TestUserAgent(void)
         assert(agent.GetBrowser() == CCgiUserAgent::eNetscape);
         assert(agent.GetEngine()  == CCgiUserAgent::eEngine_Unknown);
         assert(!agent.IsBot());
-        assert( agent.IsBot(CCgiUserAgent::fBotAll, "SomeNewCrawler SomeNewBot SomeOtherBot"));
+        assert(agent.IsBot(CCgiUserAgent::fBotAll, "SomeNewCrawler SomeNewBot SomeOtherBot"));
     }}
 
     // IsMobileDevice() -- simple test
@@ -1093,23 +1099,23 @@ void TestUserAgent(void)
         agent.Reset("Mozilla/5.0 (compatible; AvantGo 3.2; ProxiNet; Danger hiptop 1.0)");
         assert(agent.GetBrowser() == CCgiUserAgent::eAvantGo);
         assert(agent.GetPlatform()== CCgiUserAgent::ePlatform_MobileDevice);
-        assert( agent.IsMobileDevice());
+        assert(agent.IsMobileDevice());
 
         agent.Reset("Mozilla/5.0 (Windows; U; Windows CE 5.1; rv:1.8.1a3) Gecko/20060610 Minimo/0.016");
         assert(agent.GetBrowser() == CCgiUserAgent::eMinimo);
         assert(agent.GetPlatform()== CCgiUserAgent::ePlatform_WindowsCE);
-        assert( agent.IsMobileDevice());
+        assert(agent.IsMobileDevice());
 
         agent.Reset("Mozilla/4.0 (PDA; PalmOS/sony/model prmr/Revision:1.1.54 (en))");
         assert(agent.GetBrowser() == CCgiUserAgent::eNetscape);
         assert(agent.GetPlatform()== CCgiUserAgent::ePlatform_Palm);
-        assert( agent.IsMobileDevice());
+        assert(agent.IsMobileDevice());
 
         agent.Reset("Mozilla/5.0 (SomeNewSmartphone/1.2.3)");
         assert(agent.GetBrowser() == CCgiUserAgent::eMozilla);
         assert(agent.GetPlatform()== CCgiUserAgent::ePlatform_Unknown);
         assert(!agent.IsMobileDevice());
-        assert( agent.IsMobileDevice("SomePDA SomeNewSmartphone iAnything"));
+        assert(agent.IsMobileDevice("SomePDA SomeNewSmartphone iAnything"));
     }}
 }
 
