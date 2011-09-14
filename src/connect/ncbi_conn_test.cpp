@@ -51,6 +51,16 @@
 BEGIN_NCBI_SCOPE
 
 
+static const char kTest[] = "test";
+static const char kCanceled[] = "Check canceled";
+
+static const char kFWSign[] =
+    "NCBI Firewall Daemon:  Invalid ticket.  Connection closed.";
+
+
+const STimeout CConnTest::kTimeout = { 30, 0 };
+
+
 class CIOGuard
 {
     friend class CConnTest;
@@ -64,13 +74,6 @@ protected:
 private:
     CConn_IOStream*& m_Ptr;
 };
-
-
-static const char kTest[] = "test";
-static const char kCanceled[] = "Check canceled";
-
-
-const STimeout CConnTest::kTimeout = { 30, 0 };
 
 
 inline bool operator > (const STimeout* t1, const STimeout& t2)
@@ -197,7 +200,7 @@ EIO_Status CConnTest::HttpOkay(string* reason)
 {
     SConnNetInfo* net_info = ConnNetInfo_Create(0);
     if (net_info) {
-        if (*net_info->http_proxy_host)
+        if (net_info->http_proxy_port)
             m_HttpProxy = true;
         // Make sure there are no extras
         ConnNetInfo_SetUserHeader(net_info, 0);
@@ -228,7 +231,7 @@ EIO_Status CConnTest::HttpOkay(string* reason)
             temp = x_TimeoutMsg();
         else
             temp.clear();
-        if (host != DEF_CONN_HOST  ||  !port.empty()) {
+        if (NStr::CompareNocase(host, DEF_CONN_HOST) != 0  ||  !port.empty()) {
             int n = 0;
             temp += "Make sure that ";
             if (host != DEF_CONN_HOST) {
@@ -250,10 +253,8 @@ EIO_Status CConnTest::HttpOkay(string* reason)
         if (m_HttpProxy) {
             temp += "Make sure that the HTTP proxy server \'";
             temp += net_info->http_proxy_host;
-            if (net_info->http_proxy_port) {
-                temp += ':';
-                temp += NStr::UIntToString(net_info->http_proxy_port);
-            }
+            temp += ':';
+            temp += NStr::UIntToString(net_info->http_proxy_port);
             temp += "' specified with [CONN]HTTP_PROXY_{HOST|PORT}"
                 " is correct";
         } else {
@@ -365,7 +366,7 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
     string temp;
     svc >> temp;
     bool responded = temp.size() > 0;
-    EIO_Status status = ConnStatus(NStr::CompareCase(temp, kTest) != 0, &svc);
+    EIO_Status status = ConnStatus(NStr::Compare(temp, kTest) != 0, &svc);
 
     if (status == eIO_Interrupt)
         temp = kCanceled;
@@ -373,7 +374,7 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
         temp = "OK";
     else {
         char* str = net_info ? SERV_ServiceName(kService) : 0;
-        if (str  &&  NStr::strcasecmp(str, kService) == 0) {
+        if (str  &&  NStr::CompareNocase(str, kService) == 0) {
             free(str);
             str = 0;
         }
@@ -383,7 +384,7 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
             SERV_Close(iter);
             iter = SERV_OpenSimple(kTest);
             if (!iter  ||  !SERV_GetNextInfo(iter)
-                ||  NStr::strcasecmp(SERV_MapperName(iter), "DISPD") != 0) {
+                ||  NStr::CompareNocase(SERV_MapperName(iter), "DISPD") != 0) {
                 // Make sure there will be a mapper error printed
                 SERV_Close(iter);
                 temp.clear();
@@ -403,15 +404,15 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
                 temp += "; please remove [";
                 string upper(kService);
                 temp += NStr::ToUpper(upper);
-                temp += "]CONN_SERVICE_NAME=";
+                temp += "]CONN_SERVICE_NAME=\"";
                 temp += str;
-                temp += " from your configuration\n";
+                temp += "\" from your configuration\n";
             } else if (status != eIO_Timeout  ||  m_Timeout > kTimeout)
                 temp += "; please contact " NCBI_HELP_DESK "\n";
         }
         if (status != eIO_Timeout) {
             const char* mapper = SERV_MapperName(iter);
-            if (!mapper  ||  NStr::strcasecmp(mapper, "DISPD") != 0) {
+            if (!mapper  ||  NStr::CompareNocase(mapper, "DISPD") != 0) {
                 temp += "Network dispatcher is not enabled as a service"
                     " locator;  please review your configuration to purge any"
                     " occurrences of [CONN]DISPD_DISABLE off your settings\n";
@@ -453,7 +454,7 @@ EIO_Status CConnTest::x_GetFirewallConfiguration(const SConnNetInfo* net_info)
         if (!NStr::SplitInTwo(line, "\t", hostport, state, NStr::eMergeDelims))
             continue;
         bool fb;
-        if (NStr::CompareCase(state, 0, 3, "FB-") == 0) {
+        if (NStr::Compare(state, 0, 3, "FB-") == 0) {
             state = state.substr(3);
             fb = true;
         } else
@@ -520,19 +521,19 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
             " designed for unrestricted networks when firewall port blocking"
             " was not an issue\n";
     }
-    if (*net_info->http_proxy_host  &&  net_info->http_proxy_port) {
+    if (m_HttpProxy) {
         temp += "The first attempt to establish connections to the"
-            " aforemention ports will be made with an HTTP proxy \"";
+            " aforementioned ports will be made with an HTTP proxy '";
         temp += net_info->http_proxy_host;
         temp += ':';
         temp += NStr::UIntToString(net_info->http_proxy_port);
-        temp += "\".  If that is unsuccessful, a link bypassing the proxy will"
+        temp += "'.  If that is unsuccessful, a link bypassing the proxy will"
             " then be attempted";
         if (m_Firewall  &&  *net_info->proxy_host) {
             temp += ": your configuration specifies that instead of connecting"
-                " directly to NCBI, a forwarder host \"";
+                " directly to NCBI, a forwarding non-transparent proxy host '";
             temp += net_info->proxy_host;
-            temp += "\" should be used for such links";
+            temp += "' should be used for such links";
         }
         temp += '\n';
     }
@@ -540,7 +541,7 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
         temp += "There are also fallback connection ports such as 22 and 443"
             " at 130.14.29.112.  They will be used if connections to the ports"
             " in the range described above have failed";
-        if (*net_info->http_proxy_host  &&  net_info->http_proxy_port) {
+        if (m_HttpProxy  &&  *net_info->proxy_host) {
             temp += ", and will be tried with the HTTP proxy first, then ";
             temp += *net_info->proxy_host ? "via the forwarder" : "directly";
             temp += " if failed\n";
@@ -628,8 +629,6 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
 
 EIO_Status CConnTest::CheckFWConnections(string* reason)
 {
-    static const char kFWSign[] =
-        "NCBI Firewall Daemon:  Invalid ticket.  Connection closed.";
     static const STimeout kZeroTimeout = { 0, 0 };
 
     SConnNetInfo* net_info = ConnNetInfo_Create(0);
@@ -739,13 +738,11 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                 else if  (n  ||  m_FwdFB.empty()) {
                     if (status == eIO_Timeout)
                         temp = x_TimeoutMsg();
-                    if (*net_info->http_proxy_host) {
+                    if (m_HttpProxy) {
                         temp += "Your HTTP proxy '";
                         temp += net_info->http_proxy_host;
-                        if (net_info->http_proxy_port) {
-                            temp += ':' +
-                                NStr::UIntToString(net_info->http_proxy_port);
-                        }
+                        temp += ':';
+                        temp += NStr::UIntToString(net_info->http_proxy_port);
                         temp += "' may not allow connections relayed to"
                             " non-conventional ports; please see your network"
                             " administrator";
@@ -756,7 +753,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                         temp += '\n';
                     }
                     if (m_Firewall  &&  *net_info->proxy_host) {
-                        temp += "Your non-transparent proxy server '";
+                        temp += "Your non-transparent proxy '";
                         temp += net_info->proxy_host;
                         temp += "' may not be forwarding connections properly,"
                             " please check with your network administrator"
@@ -861,7 +858,7 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
     static const char kId2Init[] =
         "0\2000\200\242\200\240\200\5\0\0\0\0\0\0\0\0\0";
     static const char kId2[] = "ID2";
-    char ry[80];
+    char ry[sizeof(kFWSign)];
 
     SConnNetInfo* net_info = ConnNetInfo_Create(kId2);
 
@@ -873,9 +870,10 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
 
     streamsize n = 0;
     bool iofail = !id2.write(kId2Init, sizeof(kId2Init) - 1)  ||  !id2.flush()
-        ||  !(n = CStreamUtils::Readsome(id2, ry, sizeof(ry)));
+        ||  !(n = CStreamUtils::Readsome(id2, ry, sizeof(ry)-1));
     EIO_Status status = ConnStatus
         (iofail  ||  n < 4  ||  memcmp(ry, "0\200\240\200", 4) != 0, &id2);
+    ry[n] = '\0';
 
     string temp;
     if (status == eIO_Interrupt)
@@ -884,16 +882,16 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
         temp = "OK";
     else {
         char* str = SERV_ServiceName(kId2);
-        if (str  &&  NStr::strcasecmp(str, kId2) != 0) {
+        if (str  &&  NStr::CompareNocase(str, kId2) != 0) {
             temp = n ? "Unrecognized" : "No";
             temp += " response received from substituted service;"
                 " please remove [";
             string upper(kId2);
             temp += NStr::ToUpper(upper);
-            temp += "]CONN_SERVICE_NAME=";
+            temp += "]CONN_SERVICE_NAME=\"";
             temp += str;
-            temp += " from your configuration\n";
-            free(str);
+            temp += "\" from your configuration\n";
+            free(str); // NB: still, str != NULL
         } else if (str) {
             free(str);
             str = 0;
@@ -927,8 +925,28 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
             if (status == eIO_Timeout)
                 temp += x_TimeoutMsg();
         } else if (!str) {
-            temp += "Unrecognized response from service;"
-                " please contact " NCBI_HELP_DESK "\n";
+            if (n  &&  net_info  &&  net_info->http_proxy_port
+                &&  NStr::strncasecmp(ry, kFWSign, n) == 0) {
+                temp += "NCBI Firewall";
+                if (!net_info->firewall)
+                    temp += " (Connection Relay)";
+                temp += " Daemon reports negotitation error, which usually"
+                    " means that an intermediate HTTP proxy '";
+                temp += net_info->http_proxy_host;
+                temp += ':';
+                temp += NStr::UIntToString(net_info->http_proxy_port);
+                if ((m_Firewall  ||  net_info->firewall)
+                    &&  *net_info->proxy_host) {
+                    temp += "' and/or connection forwarder '";
+                    temp += net_info->proxy_host;
+                }
+                temp += "' may be buggy."
+                    " Please see your network administrator\n";
+            } else {
+                temp += n ? "Unrecognized" : "No";
+                temp += " response from service;"
+                    " please contact " NCBI_HELP_DESK "\n";
+            }
         }
     }
 
