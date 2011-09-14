@@ -991,18 +991,13 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
 // all dirs -------------------------------------------------------------
     list<string> all_dirs;
     ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
-        if (p->second.m_MakeType == eMakeType_Excluded ||
-            p->second.m_MakeType == eMakeType_ExcludedByReq) {
-            LOG_POST(Info << "For reference only: " << CreateProjectName(p->first));
-            continue;
-        }
         if (p->first.Type() == CProjKey::eMsvc ||
             p->first.Type() == CProjKey::eDataSpec) {
             continue;
         }
-	all_dirs.push_back(
-	    CDirEntry::DeleteTrailingPathSeparator( CDirEntry::CreateRelativePath(
-	        GetProjectTreeInfo().m_Src,p->second.m_SourcesBaseDir)));
+        all_dirs.push_back(
+            CDirEntry::DeleteTrailingPathSeparator( CDirEntry::CreateRelativePath(
+                GetProjectTreeInfo().m_Src,p->second.m_SourcesBaseDir)));
     }
     all_dirs.sort();
     all_dirs.unique();
@@ -1204,9 +1199,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
         }
 
 // collect paths ------------------------------------------------------------
-        if (p->second.m_MakeType != eMakeType_Excluded &&
-            p->second.m_MakeType != eMakeType_ExcludedByReq &&
-            p->first.Type() != CProjKey::eMsvc &&
+        if (p->first.Type() != CProjKey::eMsvc &&
             p->first.Type() != CProjKey::eDataSpec) {
 
             path_to_target[rel_path].push_back(target);
