@@ -349,48 +349,49 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
 }
 
 
-static int/*bool*/ s_MakeHostTag(SConnNetInfo* net_info)
+static char* s_HostPort(size_t slack, const char* host, unsigned short aport)
 {
-    char*  temp, port[10];
-    int    retval;
-    size_t len;
+    size_t hostlen = strlen(host), portlen;
+    char*  hostport, port[16];
+ 
+    if (!aport) {
+        portlen = 1;
+        port[0] = '\0';
+    } else
+        portlen = (size_t) sprintf(port, ":%hu", aport) + 1;
+    hostport = (char*) malloc(slack + hostlen + portlen);
+    if (hostport) {
+        memcpy(hostport + slack,   host, hostlen);
+        hostlen        += slack;
+        memcpy(hostport + hostlen, port, portlen);
+    }
+    return hostport;
+}
 
-    len = strlen(net_info->host);
-    if (!(temp = (char*) malloc(sizeof(kHttpHostTag) + sizeof(port) + len)))
-        return 0/*failure*/;
-    if (net_info->port)
-        sprintf(port, ":%hu", net_info->port);
-    else
-        *port = '\0';
-    memcpy(temp, kHttpHostTag, sizeof(kHttpHostTag)-1);
-    memcpy(temp + sizeof(kHttpHostTag) - 1, net_info->host, len);
-    len += sizeof(kHttpHostTag)-1;
-    strcpy(temp + len, port);
-    retval = ConnNetInfo_OverrideUserHeader(net_info, temp);
-    free(temp);
+
+static int/*bool*/ s_SetHttpHostTag(SConnNetInfo* net_info)
+{
+    char*       tag;
+    int/*bool*/ retval;
+
+    tag = s_HostPort(sizeof(kHttpHostTag)-1, net_info->host, net_info->port);
+    if (tag) {
+        memcpy(tag, kHttpHostTag, sizeof(kHttpHostTag)-1);
+        retval = ConnNetInfo_OverrideUserHeader(net_info, tag);
+        free(tag);
+    } else
+        retval = 0/*failure*/;
     return retval;
 }
 
 
 static const char* s_MakePath(const SConnNetInfo* net_info)
 {
-    char* path;
     if (net_info->req_method == eReqMethod_Connect
         &&  net_info->firewall  &&  *net_info->proxy_host) {
-        size_t hostlen = strlen(net_info->proxy_host), portlen;
-        char   port[16];
-        if (!net_info->port) {
-            portlen = 1;
-            port[0] = '\0';
-        } else
-            portlen = (size_t) sprintf(port, ":%hu", net_info->port) + 1;
-        if (!(path = (char*) malloc(hostlen + portlen)))
-            return 0;
-        memcpy(path,           net_info->proxy_host, hostlen);
-        memcpy(path + hostlen, port,                 portlen);
-    } else
-        path = ConnNetInfo_URL(net_info);
-    return path;
+        return s_HostPort(0, net_info->proxy_host, net_info->port);
+    }
+    return ConnNetInfo_URL(net_info);
 }
 
 
@@ -434,15 +435,15 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                     status = eIO_InvalidArg;
                     break;
                 }
-            } else if (*uuu->net_info->http_proxy_host) {
+            } else if (uuu->net_info->http_proxy_port) {
                 SConnNetInfo* net_info = ConnNetInfo_Clone(uuu->net_info);
                 if (!net_info) {
                     status = eIO_Unknown;
                     break;
                 }
-                net_info->scheme = eURL_Http;
-                net_info->user[0] = '\0';
-                net_info->pass[0] = '\0';
+                net_info->scheme   = eURL_Http;
+                net_info->user[0]  = '\0';
+                net_info->pass[0]  = '\0';
                 if (!net_info->port)
                     net_info->port = 443/*HTTPS*/;
                 net_info->firewall = 0/*false*/;
@@ -467,7 +468,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
 
             len = BUF_Size(uuu->w_buf);
             if (uuu->net_info->req_method == eReqMethod_Connect
-                ||  (!sock  &&  *uuu->net_info->http_proxy_host)) {
+                ||  (!sock  &&  uuu->net_info->http_proxy_port)) {
                 char* temp;
                 host = uuu->net_info->http_proxy_host;
                 port = uuu->net_info->http_proxy_port;
@@ -486,12 +487,14 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                         if (temp)
                             free(temp);
                         status = eIO_Unknown;
+                        free((void*) path);
                         break;
                     } else
                         args = temp;
                 } else {
-                    if (!s_MakeHostTag(uuu->net_info)) {
+                    if (!s_SetHttpHostTag(uuu->net_info)) {
                         status = eIO_Unknown;
+                        free((void*) path);
                         assert(!sock);
                         break;
                     }
@@ -503,7 +506,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                         args = 0;
                 }
             } else {
-                if (!s_MakeHostTag(uuu->net_info)) {
+                if (!s_SetHttpHostTag(uuu->net_info)) {
                     status = eIO_Unknown;
                     break;
                 }

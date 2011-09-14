@@ -450,6 +450,25 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
 }
 
 
+static char* s_HostPort(const char* host, unsigned short aport)
+{
+    size_t hostlen = strlen(host), portlen;
+    char*  hostport, port[16];
+ 
+    if (!aport) {
+        portlen = 1;
+        port[0] = '\0';
+    } else
+        portlen = (size_t) sprintf(port, ":%hu", aport) + 1;
+    hostport = (char*) malloc(hostlen + portlen);
+    if (hostport) {
+        memcpy(hostport,           host, hostlen);
+        memcpy(hostport + hostlen, port, portlen);
+    }
+    return hostport;
+}
+
+
 /* Until r294766, this code used to send a ticket along with building the
  * tunnel, but for buggy proxies that ignore HTTP body as connection data
  * (and thus violate the standard), this shortcut could not be utilized;
@@ -461,8 +480,8 @@ static CONNECTOR s_CreateSocketConnector(const SConnNetInfo* net_info,
                                          size_t              init_size)
 {
     CONNECTOR   c;
-    char*       hostport;
     EIO_Status  status;
+    char*       hostport;
     SOCK        sock  = 0;
     TSOCK_Flags flags = (net_info->debug_printout == eDebugPrintout_Data
                          ? fSOCK_LogOn : fSOCK_LogDefault);
@@ -496,9 +515,7 @@ static CONNECTOR s_CreateSocketConnector(const SConnNetInfo* net_info,
                                init_data, init_size, flags);
         assert(!sock ^ !(status != eIO_Success));
     }
-    hostport = (char*) malloc(strlen(net_info->host) + 16);
-    if (hostport)
-        sprintf(hostport, "%s:%hu", net_info->host, net_info->port);
+    hostport = s_HostPort(net_info->host, net_info->port);
     if (!(c = SOCK_CreateConnectorOnTopEx(sock, 1/*own*/, hostport))) {
         SOCK_Abort(sock);
         SOCK_Close(sock);

@@ -303,7 +303,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
             &&  !errno  &&  !*e  &&  val < (1 << 16)) {
             info->http_proxy_port = val;
         } else
-            info->http_proxy_port = 0/*default*/;
+            info->http_proxy_port = 0/*none*/;
         /* HTTP proxy username */
         REG_VALUE(REG_CONN_HTTP_PROXY_USER, info->http_proxy_user,
                   DEF_CONN_HTTP_PROXY_USER);
@@ -1057,11 +1057,9 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
 
 static const char* x_Port(unsigned short port, char buf[])
 {
-    if (port) {
-        sprintf(buf, "%hu", port);
-        return buf;
-    }
-    return "(default)";
+    assert(port);
+    sprintf(buf, "%hu", port);
+    return buf;
 }
 
 static void s_SaveStringQuot(char* s, const char* name,
@@ -1169,11 +1167,15 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
     else
         s_SaveString(s, "pass",            info->pass);
     s_SaveString    (s, "host",            info->host);
-    s_SaveKeyval    (s, "port",            x_Port(info->port, buf));
+    s_SaveKeyval    (s, "port",           (info->port
+                                           ? x_Port(info->port, buf)
+                                           : "(default"));
     s_SaveString    (s, "path",            info->path);
     s_SaveString    (s, "args",            info->args);
     s_SaveString    (s, "http_proxy_host", info->http_proxy_host);
-    s_SaveKeyval    (s, "http_proxy_port", x_Port(info->http_proxy_port, buf));
+    s_SaveKeyval    (s, "http_proxy_port",(info->http_proxy_port
+                                           ? x_Port(info->http_proxy_port, buf)
+                                           : "(none"));
     s_SaveString    (s, "http_proxy_user", info->http_proxy_user);
     if (*info->http_proxy_pass)
         s_SaveKeyval(s, "http_proxy_pass", "(set)");
@@ -1213,9 +1215,9 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
 extern char* ConnNetInfo_URL(const SConnNetInfo* info)
 {
     const char* scheme;
+    size_t      schlen;
     const char* path;
     const char* args;
-    size_t      temp;
     size_t      len;
     char*       url;
     char        buf[40];
@@ -1231,27 +1233,26 @@ extern char* ConnNetInfo_URL(const SConnNetInfo* info)
 
     if (info->req_method == eReqMethod_Connect) {
         scheme = "";
+        schlen = 0;
         path = 0;
         args = "";
-        temp = 0;
         len = 0;
     } else {
         assert(scheme);
+        schlen = strlen(scheme);
         path = info->path;
         args = info->args;
-        temp = strlen(scheme);
-        len = temp + 3/*"://"*/
-            + strlen(path) + (*args ? strlen(args) + 2 : 1);
+        len = schlen+3/*://*/ + strlen(path) + (*args ? strlen(args) + 2 : 1);
     }
     len += strlen(info->host) + 7/*:port\0*/;
 
     url = (char*) malloc(len);
     if (url) {
         assert(scheme  &&  args);
-        strlwr(memcpy(url, scheme, temp + 1));
-        len = temp;
-        len += sprintf(url + len, "://%s" + (temp ? 0 : 3), info->host);
-        if (info->port)
+        strlwr(memcpy(url, scheme, schlen + 1));
+        len  = schlen;
+        len += sprintf(url + len, "://%s" + (schlen ? 0 : 3), info->host);
+        if (info->port  ||  !path/*info->req_method == eReqMethod_Connect*/)
             len += sprintf(url + len, ":%hu", info->port);
         sprintf(url + len, "%s%s%s%s",
                 &"/"[! path  ||  *path == '/'], path ? path : "",
