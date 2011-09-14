@@ -87,27 +87,28 @@ static CRef<CDelta_seq> s_SubLocDeltaSeq(const CSeq_loc &loc,
 
 static void s_SubtractTail(CSeq_literal &gap, TSeqPos tail)
 {
-    TSeqPos gap_size = gap.GetLength();
-    if (gap_size > tail) {
-        gap_size -= tail;
-    } else {
-        switch (gap.GetSeq_data().GetGap().GetType()) {
-        case CSeq_gap::eType_centromere:
-            gap_size = 3000000;
-            break;
-        case CSeq_gap::eType_telomere:
-            gap_size = 10000;
-            break;
-        case CSeq_gap::eType_contig:
-        case CSeq_gap::eType_clone:
-            gap_size = 50000;
-            break;
-        default:
-            NCBI_THROW(CException, eUnknown, "Unsupported gap type");
-        }
-    }
-    if (gap_size < gap.GetLength()) {
-        gap.SetLength(gap_size);
+    switch (gap.GetSeq_data().GetGap().GetType()) {
+    case CSeq_gap::eType_centromere:
+    case CSeq_gap::eType_telomere:
+        break;
+
+    case CSeq_gap::eType_contig:
+    case CSeq_gap::eType_clone:
+        {{
+            TSeqPos gap_size = gap.GetLength();
+            if (gap_size > tail) {
+                gap_size -= tail;
+            } else {
+                gap_size = 50000;
+            }
+            if (gap_size < gap.GetLength()) {
+                gap.SetLength(gap_size);
+            }
+        }}
+        break;
+
+    default:
+        NCBI_THROW(CException, eUnknown, "Unsupported gap type");
     }
 }
 
