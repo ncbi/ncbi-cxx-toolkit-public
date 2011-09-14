@@ -219,9 +219,9 @@ bool CGff2Writer::x_WriteSeqAnnotHandle(
 
     SAnnotSelector sel = x_GetAnnotSelector();
     CFeat_CI feat_iter(sah, sel);
-    feature::CFeatTree feat_tree( feat_iter );
+    CGffFeatureContext fc(feature::CFeatTree(feat_iter), CBioseq_Handle(), sah);
     for ( /*0*/; feat_iter; ++feat_iter ) {
-        if ( ! x_WriteFeature( feat_tree, *feat_iter ) ) {
+        if ( ! x_WriteFeature( fc, *feat_iter ) ) {
             return false;
         }
     }
@@ -379,6 +379,7 @@ bool CGff2Writer::x_WriteRecord(
     m_Os << pRecord->StrStrand() << '\t';
     m_Os << pRecord->StrPhase() << '\t';
     m_Os << pRecord->StrAttributes() << endl;
+//    m_Os << "" << endl;
     return true;
 }
 
