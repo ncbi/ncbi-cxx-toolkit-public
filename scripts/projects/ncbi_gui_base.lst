@@ -38,7 +38,6 @@ util
 -algo/blast/dbindex/makeindex
 -corelib/.*test_mt
 -dbapi/cache/admintool
--dbapi/driver/ftds64/freetds/ctlib
 -dbapi/driver/util
 -dbapi/lang_bind
 -objtools/align
