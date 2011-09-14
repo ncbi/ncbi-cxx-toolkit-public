@@ -4045,6 +4045,7 @@ if test "$with_bdb" != "no" ; then
       done
    fi
    if test -d "$BERKELEYDB_LIBPATH"; then
+      NCBI_FIX_DIR(BERKELEYDB_LIBPATH)
       NCBI_RPATHIFY_COND(BERKELEYDB_LIBS:, ${BERKELEYDB_LIBPATH}, [ -ldb])
    else
       : ${BERKELEYDB_LIBS:="-ldb"}
