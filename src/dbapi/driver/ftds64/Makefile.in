@@ -1,8 +1,6 @@
 # $Id$
 
-USR_PROJ = @freetds@
-POTENTIAL_SUB_PROJ = freetds
-SUB_PROJ = ctlib
+SUB_PROJ = freetds ctlib
 
 REQUIRES = FreeTDS
 
