@@ -98,4 +98,11 @@ ifndef SKIP_PRELIMINARIES
   endif
 
   .PHONY: $(all_dirs:%=%.files) $(all_dirs:%=%.files.real)
+else
+  ifeq "1" "$(length $(filter dbapi/driver/f%/ctlib,$(all_dirs)))"
+    # Under some circumstances, PTB fails to define these targets.
+    ftds_dirs = $(wildcard src/dbapi/driver/ftds64/freetds/*/)
+    $(ftds_dirs:src/%/=%/.files.real): %:
+	+-cd ./$*; $(MAKE) $(MFLAGS) sources
+  endif
 endif
