@@ -442,9 +442,13 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& align,
     size_t model_num = counter.Add(1);
 
     vector<CMappedFeat> ncRNAs;
+    CMappedFeat cdregion_handle;
 
     if (!cdregion) {
-        cdregion = GetCdsOnMrna(rna_id);
+        cdregion_handle = GetCdsOnMrna(rna_id);
+        if (cdregion_handle) {
+            cdregion = &cdregion_handle.GetMappedFeature();
+        }
     }
 
     CBioseq_Handle handle = m_scope->GetBioseqHandle(rna_id);

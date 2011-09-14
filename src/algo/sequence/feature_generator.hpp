@@ -194,7 +194,7 @@ private:
     void x_SetExceptText(CSeq_feat& feat,
                          const string &except_text);
 
-    const CSeq_feat* GetCdsOnMrna(const objects::CSeq_id& rna_id);
+    CMappedFeat GetCdsOnMrna(const objects::CSeq_id& rna_id);
 };
 
 END_NCBI_SCOPE
