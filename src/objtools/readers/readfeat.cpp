@@ -1151,6 +1151,60 @@ s_IsFeatureLineAndFix (
     return false;
 }
 
+static bool
+s_LineIndicatesOrder( const string & line )
+{
+    // basically, this is true if the line starts with "order" (whitespaces disregarded)
+
+    const static string kOrder("ORDER");
+
+    // find first non-whitespace character
+    string::size_type pos = 0;
+    for( ; pos < line.length() && isspace(line[pos]); ++pos) {
+        // nothing to do here
+    }
+
+    // line is all whitespace
+    if( pos >= line.length() ) {
+        return false;
+    }
+
+    // check if starts with "order" after whitespace
+    return ( 0 == NStr::CompareNocase( line, pos, kOrder.length(), kOrder ) );
+}
+
+// Turns a "join" location into an "order" by putting nulls between it
+// Returns an unset CRef if the loc doesn't need nulls (e.g. if it's just an interval)
+static CRef<CSeq_loc>
+s_LocationJoinToOrder( const CSeq_loc & loc )
+{
+    // create result we're returning
+    CRef<CSeq_loc> result( new CSeq_loc );
+    CSeq_loc_mix::Tdata & mix_pieces  = result->SetMix().Set();
+
+    // keep this around for whenever we need a "null" piece
+    CRef<CSeq_loc> loc_piece_null( new CSeq_loc );
+    loc_piece_null->SetNull();
+
+    // push pieces of source, with NULLs between
+    CSeq_loc_CI loc_iter( loc );
+    for( ; loc_iter; ++loc_iter ) {
+        if( ! mix_pieces.empty() ) {
+            mix_pieces.push_back( loc_piece_null );
+        }
+        CRef<CSeq_loc> new_piece( new CSeq_loc );
+        new_piece->Assign( loc_iter.GetEmbeddingSeq_loc() );
+        mix_pieces.push_back( new_piece );
+    }
+
+    // Only wrap in "mix" if there was more than one piece
+    if( mix_pieces.size() > 1 ) {
+        return result;
+    } else {
+        return CRef<CSeq_loc>();
+    }
+}
+
 int CFeature_table_reader_imp::x_ParseTrnaString (
     const string& val
 )
@@ -2040,9 +2094,14 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
                 // set offset !!!!!!!!
 
-            } else if (NStr::StartsWith (line, "ORDER")) {
+            } else if ( s_LineIndicatesOrder(line) ) {
 
-                // put nulls between feature intervals !!!!!!!!
+                // put nulls between feature intervals
+                CRef<CSeq_loc> loc_with_nulls = s_LocationJoinToOrder( sfp->GetLocation() );
+                // loc_with_nulls is unset if no change was needed
+                if( loc_with_nulls ) {
+                    sfp->SetLocation( *loc_with_nulls );
+                }
 
             } else if (x_ParseFeatureTableLine (line, &start, &stop, &partial5, &partial3,
                                                 &ispoint, &isminus, feat, qual, val, offset,
