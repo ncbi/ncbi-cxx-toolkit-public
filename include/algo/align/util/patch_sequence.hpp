@@ -36,6 +36,7 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+    class CSeq_id_Handle;
     class CSeq_align;
     class CSeq_inst;
     class CScope;
@@ -46,17 +47,17 @@ END_SCOPE(objects)
 /// query sequence.
 CRef<objects::CSeq_inst> NCBI_XALGOALIGN_EXPORT
 PatchTargetSequence(CRef<objects::CSeq_align> alignment,
-                    objects::CScope &scope,
-                    TSeqPos max_ignored_tail = 0);
+                    objects::CScope &scope);
 
 /// Patch the Seq-inst of alignment's target sequence by substituting
 /// all query sequences. All alignments on the list must have the same
 /// target sequence.
 CRef<objects::CSeq_inst> NCBI_XALGOALIGN_EXPORT
 PatchTargetSequence(const list< CRef<objects::CSeq_align> > &alignments,
-                    objects::CScope &scope,
-                    TSeqPos max_ignored_tail = 0);
+                    objects::CScope &scope);
 
+void NCBI_XALGOALIGN_EXPORT
+AddNovelPatch(const objects::CSeq_id_Handle &idh);
 
 END_NCBI_SCOPE
 

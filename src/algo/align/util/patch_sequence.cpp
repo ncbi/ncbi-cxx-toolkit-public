@@ -39,6 +39,7 @@
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Seq_literal.hpp>
+#include <objects/seq/Seq_gap.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
@@ -51,16 +52,22 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-CRef<CSeq_inst> PatchTargetSequence(CRef<CSeq_align> alignment, CScope &scope,
-                                    TSeqPos max_ignored_tail)
+static set<CSeq_id_Handle> s_NovelPatches;
+
+void AddNovelPatch(const CSeq_id_Handle &idh)
+{
+    s_NovelPatches.insert(idh);
+}
+
+CRef<CSeq_inst> PatchTargetSequence(CRef<CSeq_align> alignment, CScope &scope)
 {
     list< CRef<CSeq_align> > singleton_list;
     singleton_list.push_back(alignment);
-    return PatchTargetSequence(singleton_list, scope, max_ignored_tail);
+    return PatchTargetSequence(singleton_list, scope);
 }
 
-CRef<CDelta_seq> s_SubLocDeltaSeq(const CSeq_loc &loc, 
-                                  TSeqPos start, TSeqPos length = 0)
+static CRef<CDelta_seq> s_SubLocDeltaSeq(const CSeq_loc &loc, 
+                                         TSeqPos start, TSeqPos length = 0)
 {
     if (!loc.IsInt()) {
         NCBI_THROW(CException, eUnknown,
@@ -78,9 +85,123 @@ CRef<CDelta_seq> s_SubLocDeltaSeq(const CSeq_loc &loc,
     return result;
 }
 
+static void s_SubtractTail(CSeq_literal &gap, TSeqPos tail)
+{
+    TSeqPos gap_size = gap.GetLength();
+    if (gap_size > tail) {
+        gap_size -= tail;
+    } else {
+        switch (gap.GetSeq_data().GetGap().GetType()) {
+        case CSeq_gap::eType_centromere:
+            gap_size = 3000000;
+            break;
+        case CSeq_gap::eType_telomere:
+            gap_size = 10000;
+            break;
+        case CSeq_gap::eType_contig:
+        case CSeq_gap::eType_clone:
+            gap_size = 50000;
+            break;
+        default:
+            NCBI_THROW(CException, eUnknown, "Unsupported gap type");
+        }
+    }
+    if (gap_size < gap.GetLength()) {
+        gap.SetLength(gap_size);
+    }
+}
+
+static void s_ProcessIntraScaffoldTail(CBioseq_Handle patch_sequence,
+                                       CBioseq_Handle scaffold,
+                                       TSeqPos loc_start,
+                                       TSeqPos &patch_boundary,
+                                       TSeqPos tail_length,
+                                       CRef<CDelta_seq> &inserted_gap,
+                                       TSignedSeqPos &length_change,
+                                       bool is_right_tail)
+{
+    if (!scaffold) {
+        NCBI_THROW(CException, eUnknown, "Can't get scaffold");
+    }
+    if(!scaffold.CanGetInst_Repr() ||
+       scaffold.GetInst_Repr() != CSeq_inst::eRepr_delta)
+    {
+        NCBI_THROW(CException, eUnknown,
+                   "Scaffold does not have delta representation");
+    }
+
+    TSeqPos current_pos = 0;
+
+    CDelta_ext::Tdata::const_iterator delta_it =
+        scaffold.GetInst().GetExt().GetDelta().Get().begin();
+    for (; current_pos < loc_start+patch_boundary; ++delta_it) {
+        current_pos += (*delta_it)->IsLiteral()
+                     ? (*delta_it)->GetLiteral().GetLength()
+                     : (*delta_it)->GetLoc().GetTotalRange().GetLength();
+    }
+    /// If alignment ends in the middle of a delta-seq, we're now pointing
+    /// one ahead of it, so move it back. If alignment ends on the boundary
+    /// between two delta-seqs, make sure delta_it points to the one
+    /// unaligned tail is on
+    if (!is_right_tail || current_pos > loc_start+patch_boundary) {
+        --delta_it;
+    }
+    if ((*delta_it)->IsLiteral()
+        && (*delta_it)->GetLiteral().GetSeq_data().IsGap())
+    {
+        if (current_pos == loc_start+patch_boundary) {
+            /// alignment abuts an intra-scaffold gap
+            inserted_gap = *delta_it;
+            TSeqPos previous_gap_size =
+                inserted_gap->GetLiteral().GetLength();
+            if (is_right_tail) {
+                patch_boundary += previous_gap_size;
+            } else {
+                patch_boundary -= previous_gap_size;
+            }
+            s_SubtractTail(inserted_gap->SetLiteral(), tail_length);
+            length_change -= previous_gap_size
+                           - inserted_gap->GetLiteral().GetLength();
+            return;
+       } else {
+           NCBI_THROW(CException, eUnknown,
+               "patch alignment boundary in the middle of intra-scaffold gap");
+       }
+    }
+
+    /// alignment does not abut a gap; only allowed for NOVEL patches
+    if (!s_NovelPatches.count(
+        sequence::GetId(patch_sequence, sequence::eGetId_Canonical)))
+    {
+        NCBI_THROW(CException, eUnknown,
+                 "non-NOVEL patch has unaligned tail of length " +
+                 NStr::UIntToString(tail_length) + " that does not abut a gap");
+    }
+
+    /// If boundary is in the middle of a location, eliminate the remainder 
+    /// of that location
+    if (current_pos > loc_start+patch_boundary) {
+        if (is_right_tail) {
+            length_change -= current_pos - loc_start - patch_boundary;
+        } else {
+            current_pos -= (*delta_it)->GetLoc().GetTotalRange().GetLength();
+            length_change -= loc_start + patch_boundary - current_pos;
+        }
+        patch_boundary = current_pos-loc_start;
+    }
+
+    /// insert new gap
+    inserted_gap.Reset(new CDelta_seq);
+    inserted_gap->SetLiteral().SetLength(50000);
+    inserted_gap->SetLiteral().SetSeq_data().SetGap()
+        .SetType(CSeq_gap::eType_clone);
+    inserted_gap->SetLiteral().SetSeq_data().SetGap()
+        .SetLinkage(CSeq_gap::eLinkage_linked);
+    length_change += 50000;
+}
+
 CRef<CSeq_inst> PatchTargetSequence(const list< CRef<CSeq_align> > &alignments,
-                                    CScope &scope,
-                                    TSeqPos max_ignored_tail)
+                                    CScope &scope)
 {
     CBioseq_Handle target =
         scope.GetBioseqHandle(alignments.front()->GetSeq_id(1));
@@ -168,11 +289,12 @@ CRef<CSeq_inst> PatchTargetSequence(const list< CRef<CSeq_align> > &alignments,
         current_pos = next_pos;
         next_pos += target_loc.GetTotalRange().GetLength();
         LOG_POST(Info << "Loc end at " << next_pos);
+        CBioseq_Handle patch_sequence;
         for (; next_patch != cover_map.end() &&
                next_pos > next_patch->first.GetFrom(); ++next_patch)
         {
         try {
-            CBioseq_Handle patch_sequence =
+            patch_sequence =
                 scope.GetBioseqHandle(next_patch->second->GetSeq_id(0));
             if (!patch_sequence) {
                 NCBI_THROW(CException, eUnknown, "Can't get patch sequence");
@@ -212,77 +334,54 @@ CRef<CSeq_inst> PatchTargetSequence(const list< CRef<CSeq_align> > &alignments,
             pair<TSeqPos,TSeqPos> patch_tail(
                 aligned_patch_range.GetFrom(),
                 patch_length - aligned_patch_range.GetToOpen());
-            bool gap_abut_problem = false;
             if(patch_strand == eNa_strand_minus)
             {
                 TSeqPos temp = patch_tail.first;
                 patch_tail.first = patch_tail.second;
                 patch_tail.second = temp;
             }
-            if (patch_tail.first > max_ignored_tail) {
-                if (current_pos != next_patch->first.GetFrom() ||
-                    it == patched_contents.begin())
-                {
-                    gap_abut_problem = true;
-                } else {
-                    if (!(*--it)->IsLiteral() || 
-                        !(*it)->GetLiteral().GetSeq_data().IsGap())
-                    {
-                        gap_abut_problem = true;
-                    } else {
-                        CSeq_literal &gap = (*it)->SetLiteral();
-                        TSignedSeqPos new_gap_size =
-                            gap.GetLength() - patch_tail.first;
-                        if (new_gap_size <= 0) {
-                            new_gap_size = 50000;
-                        }
-                        length_change -= gap.GetLength() - new_gap_size;
-                        gap.SetLength(new_gap_size);
-                    }
-                    ++it;
-                }
-            }
-            if (patch_tail.second > max_ignored_tail) {
-                if (next_pos != next_patch->first.GetToOpen()) {
-                    gap_abut_problem = true;
-                } else {
-                    if (++it == patched_contents.end() ||
-                        !(*it)->IsLiteral() || 
-                        !(*it)->GetLiteral().GetSeq_data().IsGap())
-                    {
-                        gap_abut_problem = true;
-                    } else {
-                        CSeq_literal &gap = (*it)->SetLiteral();
-                        TSignedSeqPos new_gap_size =
-                            gap.GetLength() - patch_tail.second;
-                        if (new_gap_size <= 0) {
-                            new_gap_size = 50000;
-                        }
-                        length_change -= next_gap_change
-                                       = gap.GetLength() - new_gap_size;
-                        gap.SetLength(new_gap_size);
-                    }
-                    --it;
-                }
-	    }
-            if (gap_abut_problem) {
-                LOG_POST(Warning << "patch "
-                    << sequence::GetId(patch_sequence, sequence::eGetId_Best)
-                    << " on "
-                    << sequence::GetId(target, sequence::eGetId_Best)
-                    << " has unaligned tail of length "
-                    << NStr::UIntToString(max(patch_tail.first,patch_tail.second))
-                    << " but does not abut gap; skipping");
-                continue;
-            }
 
             /// Remove aligned region from target sequence
-            unsigned int unaligned_left_length =
+            TSeqPos unaligned_left_length =
                 next_patch->first.GetFrom() - current_pos;
             if (unaligned_left_length) {
+                CRef<CDelta_seq> inserted_gap;
+                if (patch_tail.first) {
+                    if (target_loc.GetStrand() != eNa_strand_plus) {
+                        NCBI_THROW(CException, eUnknown,
+                                   "Scaffold locations expected to always "
+                                   "be on plus strand");
+                    }
+                    CBioseq_Handle scaffold =
+                        scope.GetBioseqHandle(*target_loc.GetId());
+                    s_ProcessIntraScaffoldTail(patch_sequence, scaffold,
+                                               target_loc.GetStart(eExtreme_Positional),
+                                               unaligned_left_length,
+                                               patch_tail.first, inserted_gap,
+                                               length_change, false);
+                }
                 /// we have an unaligned area in the target loc to the left of the patch
                 patched_contents.insert(it,
                     s_SubLocDeltaSeq(target_loc, 0, unaligned_left_length));
+                if (inserted_gap) {
+                    patched_contents.insert(it, inserted_gap);
+                }
+            } else if(patch_tail.first) {
+                if (it == patched_contents.begin() ||
+                    !(*--it)->IsLiteral() || 
+                    !(*it)->GetLiteral().GetSeq_data().IsGap())
+                {
+                    NCBI_THROW(CException, eUnknown,
+                        "unaligned tail of length "
+                        + NStr::UIntToString(patch_tail.first)
+                        + " not abutting a gap");
+                }
+                TSeqPos previous_gap_size =
+                    (*it)->GetLiteral().GetLength();
+                s_SubtractTail((*it)->SetLiteral(), patch_tail.first);
+                length_change -= previous_gap_size
+                               - (*it)->GetLiteral().GetLength();
+                ++it;
             }
             while (next_pos < next_patch->first.GetToOpen()) {
                 it = patched_contents.erase(it);
@@ -311,29 +410,70 @@ CRef<CSeq_inst> PatchTargetSequence(const list< CRef<CSeq_align> > &alignments,
             patched_contents.insert(it, inserted_patch);
             length_change += patch_length;
 
-            unsigned aligned_length =
+            TSeqPos length_to_replace =
                 next_patch->first.GetToOpen() - current_pos;
-            current_pos += aligned_length;
-            if (current_pos == next_pos) {
-                /// We're done with target loc, so we know we will exit from inner
-                /// loop in this iteration. Iterator "it" now points to the next
-                /// CDelta_seq we need to process in outer loop. Decrement it, so
-                /// after it is incremented in the outer loop it will point here again
-                --it;
-            } else {
+            if(current_pos + length_to_replace < next_pos) {
+                CRef<CDelta_seq> inserted_gap;
+                if (patch_tail.second) {
+                    CBioseq_Handle scaffold =
+                        scope.GetBioseqHandle(*target_loc.GetId());
+                    if (target_loc.GetStrand() != eNa_strand_plus) {
+                        NCBI_THROW(CException, eUnknown,
+                                   "Scaffold locations expected to always "
+                                   "be on plus strand");
+                    }
+                    s_ProcessIntraScaffoldTail(patch_sequence, scaffold,
+                                               target_loc.GetStart(eExtreme_Positional),
+                                               length_to_replace,
+                                               patch_tail.second, inserted_gap,
+                                               length_change, true);
+                    if (inserted_gap) {
+                        patched_contents.insert(it, inserted_gap);
+                    }
+                }
                 /// we have an unaligned area in the last target loc to the
-                /// right of the patch; insert it, and then continue to process
-                /// it in the inner loop, to check if there are further patches to it
-                it = patched_contents.insert(it,
-                    s_SubLocDeltaSeq(target_loc, aligned_length));
-                target_loc.Assign((*it)->GetLoc());
+                /// right of the patch; insert it
+                CRef<CDelta_seq> scaffold_remainder =
+                    s_SubLocDeltaSeq(target_loc, length_to_replace);
+                target_loc.Assign(scaffold_remainder->GetLoc());
+                patched_contents.insert(it, scaffold_remainder);
+            } else if(patch_tail.second) {
+                if (it == patched_contents.end() ||
+                    !(*it)->IsLiteral() || 
+                    !(*it)->GetLiteral().GetSeq_data().IsGap())
+                {
+                    NCBI_THROW(CException, eUnknown,
+                        "unaligned tail of length "
+                        + NStr::UIntToString(patch_tail.second)
+                        + " not abutting a gap");
+                }
+                TSeqPos previous_gap_size =
+                    (*it)->GetLiteral().GetLength();
+                s_SubtractTail((*it)->SetLiteral(), patch_tail.second);
+                length_change -= next_gap_change =
+                    previous_gap_size - (*it)->GetLiteral().GetLength();
             }
-        } catch (exception &) {
+            current_pos += length_to_replace;
+            --it;
+        } catch (exception &e) {
             LOG_POST(Error << "While applying patch "
-                           << next_patch->second->GetSeq_id(0).AsFastaString()
-                           << " on "
-                           << next_patch->second->GetSeq_id(1).AsFastaString());
-            throw;
+                           << sequence::GetId(patch_sequence,
+                                              sequence::eGetId_Best)
+                           << " on " << sequence::GetId(target,
+                                              sequence::eGetId_Best)
+                           << ": " << e.what() << "; skipping");
+            /// Re-run without patch that caused problem
+            list< CRef<CSeq_align> > new_alignments;
+            ITERATE (list< CRef<CSeq_align> >, align_it, alignments) {
+                if (*align_it != next_patch->second) {
+                    new_alignments.push_back(*align_it);
+                }
+                if (new_alignments.empty()) {
+                    patched_seq->Assign(target.GetInst());
+                    return patched_seq;
+                }
+                return PatchTargetSequence(new_alignments, scope);
+            }
         }
         }
         if (next_patch == cover_map.end()) {
