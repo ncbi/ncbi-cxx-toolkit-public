@@ -41,6 +41,7 @@ BEGIN_SCOPE(cd_utils)
 class NCBI_CDUTILS_EXPORT SeqTreeLayout
 {
 public:
+    virtual ~SeqTreeLayout() {};
 	virtual void calculateNodePositions(SeqTree& treeData, int maxX, int maxY)=0;
 	virtual SeqTree::iterator findEdgeEnd(SeqTree& treeData, int x, int y, int edgeWidth)=0;
 	virtual void getSize(int& x, int& y)=0;

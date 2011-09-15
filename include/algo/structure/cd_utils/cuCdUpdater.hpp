@@ -100,6 +100,7 @@ private:
 class NCBI_CDUTILS_EXPORT UpdaterInterface
 {
 public:
+    virtual ~UpdaterInterface() {};
 	virtual int  submitBlast(bool wait=false, int row = 0) = 0;
 	virtual bool getBlastHits() = 0;
 	virtual bool processBlastHits() = 0; //true: new sequences recruited.

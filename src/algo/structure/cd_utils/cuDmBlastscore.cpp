@@ -119,7 +119,7 @@ bool DM_BlastScore::ComputeMatrix(pProgressFunction pFunc) {
 bool DM_BlastScore::CalcPairwiseScoresOnTheFly(pProgressFunction pFunc) {
     int i, j, k;
 	int nrows = 0;
-	double maxScore, minScore, offset = 0;
+	double maxScore, minScore;
 
     vector<double> AllScores;
     nrows = m_aligns->GetNumRows();

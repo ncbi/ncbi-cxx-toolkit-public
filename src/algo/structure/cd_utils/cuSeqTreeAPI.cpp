@@ -42,9 +42,9 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
 
 SeqTreeAPI::SeqTreeAPI(vector<CCdCore*>& cds, bool loadExistingTreeOnly)
-	: m_ma(), m_seqTree(0), m_useMembership(true),
-	m_taxLevel(BySuperkingdom), m_taxTree(0), m_treeOptions(), m_triedTreeMaking(false),
-	m_loadOnly(loadExistingTreeOnly), m_cd(0), m_taxClient(0), m_family(0)
+	: m_ma(), m_cd(0), m_family(0), m_seqTree(0), m_taxTree(0), m_taxClient(0), 
+	m_useMembership(true), m_taxLevel(BySuperkingdom), m_treeOptions(), m_triedTreeMaking(false),
+	m_loadOnly(loadExistingTreeOnly)
 {
 	vector<CDFamily*> families;
 	CDFamily::createFamilies(cds, families);
@@ -59,16 +59,16 @@ SeqTreeAPI::SeqTreeAPI(vector<CCdCore*>& cds, bool loadExistingTreeOnly)
 }
 
 SeqTreeAPI::SeqTreeAPI(CCdCore* cd)
-	: m_ma(), m_seqTree(0), m_useMembership(true),
-	m_taxLevel(BySuperkingdom), m_taxTree(0), m_treeOptions(), m_triedTreeMaking(false),
-	m_loadOnly(true), m_cd(cd), m_taxClient(0), m_family(0)
+	: m_ma(), m_cd(cd), m_family(0), m_seqTree(0), m_taxTree(0), m_taxClient(0), 
+	m_useMembership(true), m_taxLevel(BySuperkingdom), m_treeOptions(), m_triedTreeMaking(false),
+	m_loadOnly(true)
 {
 }
 
 SeqTreeAPI::SeqTreeAPI(CDFamily& cdfam, TreeOptions& option)
-: m_ma(), m_seqTree(0), m_useMembership(true),
-	m_taxLevel(BySuperkingdom), m_taxTree(0), m_treeOptions(option), m_triedTreeMaking(false),
-	m_loadOnly(false), m_cd(0), m_taxClient(0), m_family(&cdfam)
+    : m_ma(), m_cd(0), m_family(&cdfam), m_seqTree(0), m_taxTree(0), m_taxClient(0),
+	m_useMembership(true), m_taxLevel(BySuperkingdom), m_treeOptions(option), m_triedTreeMaking(false),
+	m_loadOnly(false)
 {
 	m_family = new CDFamily(cdfam);
 }

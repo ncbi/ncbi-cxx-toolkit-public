@@ -440,7 +440,7 @@ bool CDUpdater::blast(bool wait, int row)
 {
 	blast::CRemoteBlast* rblast;
 	blast::CBlastProteinOptionsHandle* blastopt;
-	CPSIBlastOptionsHandle * psiopt;
+	CPSIBlastOptionsHandle * psiopt = NULL;
 	if (m_config.blastType == eBLAST)
 	{
 		blastopt = new blast::CBlastProteinOptionsHandle(blast::CBlastOptions::eRemote);
