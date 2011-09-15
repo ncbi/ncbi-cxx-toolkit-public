@@ -58,7 +58,7 @@ class CTranslationTable;
 // protein    :  D  E  Q  S  F --- T  G  K  E  Y  S  K  Y y.....intron.....yy L  H  D  T  S  T  E  G 
 //
 // there are no "<skip>", "intron", or "bad part" in actual values
-class CProteinAlignText {
+class NCBI_XALNMGR_EXPORT CProteinAlignText {
 public:
     static const char GAP_CHAR; // used in dna and protein text
     static const char SPACE_CHAR; // translation and protein

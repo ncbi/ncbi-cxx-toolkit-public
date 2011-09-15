@@ -42,7 +42,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class CTranslationTable : public CObject {
+class NCBI_XALNMGR_EXPORT CTranslationTable : public CObject {
 public:
     CTranslationTable(int gcode);
 
@@ -70,7 +70,7 @@ private:
 };
 
 /// Substitution Matrix for Scoring Amino-Acid Alignments
-class CSubstMatrix {
+class NCBI_XALNMGR_EXPORT CSubstMatrix {
 public:
     CSubstMatrix(const string& name, int scaling);
 
