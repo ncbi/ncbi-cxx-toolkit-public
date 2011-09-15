@@ -2212,7 +2212,7 @@ Seq-align ::= {
     },
     {
       id str "num_positives",
-      value int 8568
+      value int 8565
     },
     {
       id str "num_negatives",

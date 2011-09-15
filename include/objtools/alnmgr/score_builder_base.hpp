@@ -124,6 +124,12 @@ public:
     void GetMismatchCount  (CScope& scope, const CSeq_align& align,
                             int& identities, int& mismatches);
 
+    /// counts based on substitution matrix for protein alignments
+    int GetPositiveCount (CScope& scope, const CSeq_align& align);
+    int GetNegativeCount (CScope& scope, const CSeq_align& align);
+    void GetMatrixCounts (CScope& scope, const CSeq_align& align,
+                            int& positives, int& negatives);
+
     /// Compute the number of gaps in the alignment
     int GetGapCount       (const CSeq_align& align);
 
@@ -135,8 +141,16 @@ public:
     /// aligned)
     TSeqPos GetAlignLength(const CSeq_align& align, bool ungapped=false);
 
+    void SetSubstMatrix(const string &name);
+
     /// @}
 
+private:
+    string m_SubstMatrixName;
+
+    void x_GetMatrixCounts(CScope& scope,
+                           const CSeq_align& align,
+                           int* positives, int* negatives);
 };
 
 

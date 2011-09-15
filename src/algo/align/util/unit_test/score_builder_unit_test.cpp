@@ -54,6 +54,7 @@
 // This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
 #include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Spliced_seg.hpp>
 #include <objects/seqalign/Score.hpp>
 #include <objects/general/Object_id.hpp>
 #include <algo/align/util/score_builder.hpp>
@@ -180,6 +181,14 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
         double kExpectedHighQualityPctCoverage = 0;
         alignment.GetNamedScore(CSeq_align::eScore_HighQualityPercentCoverage,
                                 kExpectedHighQualityPctCoverage);
+
+        int kExpectedPositiveCount = 0;
+        alignment.GetNamedScore(CSeq_align::eScore_PositiveCount,
+                                kExpectedPositiveCount);
+
+        int kExpectedNegativeCount = 0;
+        alignment.GetNamedScore(CSeq_align::eScore_NegativeCount,
+                                kExpectedNegativeCount);
 
         /// reset scores to avoid any taint in score generation
         alignment.ResetScore();
@@ -360,6 +369,25 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
             LOG_POST(Error << "Verifying score: score: "
                      << kExpectedScore << " == " << actual);
             BOOST_CHECK_EQUAL(kExpectedScore, actual);
+        }
+
+        if (alignment.GetSegs().IsSpliced() &&
+            alignment.GetSegs().GetSpliced().GetProduct_type() ==
+                CSpliced_seg::eProduct_type_protein)
+        {
+            int actual;
+            score_builder.AddScore(*scope, alignment,
+                                   CSeq_align::eScore_PositiveCount);
+            alignment.GetNamedScore(CSeq_align::eScore_PositiveCount, actual);
+            LOG_POST(Error << "Verifying score: num_positives: "
+                     << kExpectedPositiveCount << " == " << actual);
+            BOOST_CHECK_EQUAL(kExpectedPositiveCount, actual);
+            score_builder.AddScore(*scope, alignment,
+                                   CSeq_align::eScore_NegativeCount);
+            alignment.GetNamedScore(CSeq_align::eScore_NegativeCount, actual);
+            LOG_POST(Error << "Verifying score: num_negatives: "
+                     << kExpectedNegativeCount << " == " << actual);
+            BOOST_CHECK_EQUAL(kExpectedNegativeCount, actual);
         }
     }
 }

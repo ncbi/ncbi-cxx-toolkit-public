@@ -46,6 +46,8 @@
 #include <objects/seqfeat/seqfeat__.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objtools/alnmgr/nucprot.hpp>
+#include <objtools/alnmgr/alntext.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(ncbi::objects);
@@ -947,7 +949,7 @@ CRef<objects::CSeq_align> CProSplign::RefineAlignment(CScope& scope, const CSeq_
     if (output_options.IsPassThrough())
         return refined_align;
 
-    CProSplignText alignment_text(scope, seq_align, output_options.GetScoreMatrix());
+    CProteinAlignText alignment_text(scope, seq_align, output_options.GetScoreMatrix());
     list<CNPiece> good_parts = FindGoodParts( alignment_text.GetMatch(), alignment_text.GetProtein(), output_options);
 
     prosplign::RefineAlignment(scope, *refined_align, good_parts/*, output_options.GetCutFlankPartialCodons()*/);
@@ -967,7 +969,7 @@ CRef<objects::CSeq_align> CProSplign::BlastAlignment(CScope& scope, const CSeq_a
     CRef<CSeq_align> refined_align(new CSeq_align);
     refined_align->Assign(seq_align);
 
-    CProSplignText alignment_text(scope, seq_align, m_implementation->GetScaleScoring().GetScoreMatrix());
+    CProteinAlignText alignment_text(scope, seq_align, m_implementation->GetScaleScoring().GetScoreMatrix());
     list<CNPiece> good_parts = BlastGoodParts( alignment_text, m_implementation->GetScaleScoring(), score_cutoff, score_dropoff );
 
     prosplign::RefineAlignment(scope, *refined_align, good_parts);

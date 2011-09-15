@@ -308,11 +308,6 @@ private:
     CProSplign& operator=(const CProSplign&);
 };
 
-BEGIN_SCOPE(prosplign)
-class CSubstMatrix;
-class CTranslationTable;
-END_SCOPE(prosplign)
-
 /// Text representation of ProSplign alignment
 // dna        : GATGAAACAGCACTAGTGACAGGTAAA----GATCTAAATATCGTTGA<skip>GGAAGACATCCATTGGCAATGGCAATGGCAT
 // translation:  D  E  T  A  L  V  T  G  K        S  K  Y h                hh I  H       
@@ -324,33 +319,6 @@ class CProSplignText {
 public:
     /// Outputs formatted text
     static void Output(const objects::CSeq_align& seqalign, objects::CScope& scope, ostream& out, int width, const string& matrix_name = "BLOSUM62");
-
-    CProSplignText(objects::CScope& scope, const objects::CSeq_align& seqalign, const string& matrix_name = "BLOSUM62");
-    ~CProSplignText();
-
-    const string& GetDNA() const { return m_dna; }
-    const string& GetTranslation() const { return m_translation; }
-    const string& GetMatch() const { return m_match; }
-    const string& GetProtein() const { return m_protein; }
-
-private:
-    string m_dna;
-    string m_translation;
-    string m_match;
-    string m_protein;
-    auto_ptr<prosplign::CSubstMatrix> m_matrix;
-    CRef<prosplign::CTranslationTable> m_trans_table;
-
-    void AddDNAText(objects::CSeqVector_CI& genomic_ci, int& nuc_prev, size_t len);
-    void TranslateDNA(int phase, size_t len, bool is_insertion);
-    void AddProtText(objects::CSeqVector_CI& protein_ci, int& prot_prev, size_t len);
-    void MatchText(size_t len, bool is_match=false);
-    char MatchChar(size_t i);
-    void AddHoleText(bool prev_3_prime_splice, bool cur_5_prime_splice,
-                     objects::CSeqVector_CI& genomic_ci, objects::CSeqVector_CI& protein_ci,
-                     int& nuc_prev, int& prot_prev,
-                     int nuc_cur_start, int prot_cur_start);
-    void AddSpliceText(objects::CSeqVector_CI& genomic_ci, int& nuc_prev, char match);
 };
 
 END_NCBI_SCOPE

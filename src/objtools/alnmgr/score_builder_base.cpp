@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objtools/alnmgr/score_builder_base.hpp>
+#include <objtools/alnmgr/alntext.hpp>
 
 #include <util/sequtil/sequtil_manip.hpp>
 
@@ -59,6 +60,7 @@ USING_SCOPE(objects);
 
 /// Default constructor
 CScoreBuilderBase::CScoreBuilderBase()
+: m_SubstMatrixName("BLOSUM62")
 {
 }
 
@@ -447,8 +449,6 @@ static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
     }
 }
 
-
-
 ///
 /// calculate the percent identity
 /// we also return the count of identities and mismatches
@@ -570,7 +570,47 @@ static void s_GetPercentCoverage(CScope& scope, const CSeq_align& align,
 }
 
 /////////////////////////////////////////////////////////////////////////////
+void CScoreBuilderBase::x_GetMatrixCounts(CScope& scope,
+                       const CSeq_align& align,
+                       int* positives, int* negatives)
+{
+    if (!align.GetSegs().IsSpliced() ||
+         align.GetSegs().GetSpliced().GetProduct_type() !=
+                CSpliced_seg::eProduct_type_protein)
+    {
+        NCBI_THROW(CException, eUnknown,
+                   "num_positives and num_negatives scores only defined "
+                   "for protein alignment");
+    }
+    CProteinAlignText pro_text(scope, align, m_SubstMatrixName);
+    const string& prot = pro_text.GetProtein();
+    const string& dna = pro_text.GetDNA();
+    const string& match = pro_text.GetMatch();
+    for(string::size_type i=0;i<match.size(); ++i) {
+        if( isalpha(prot[i]) && (dna[i] != '-')) {
+            int increment = isupper(prot[i]) ? 3 : 1;
+            switch(match[i]) {
+            case '|':
+            case '+':
+                *positives += increment;
+                break;
+            case 'X': /// skip introns and bad parts
+                break;
+            default://mismatch
+                *negatives += increment;
+                break;
+            }
+        }
+    }
+}
 
+
+
+
+void CScoreBuilderBase::SetSubstMatrix(const string &name)
+{
+    m_SubstMatrixName = name;
+}
 
 double CScoreBuilderBase::GetPercentIdentity(CScope& scope,
                                          const CSeq_align& align,
@@ -669,6 +709,33 @@ void CScoreBuilderBase::GetMismatchCount(CScope& scope, const CSeq_align& align,
 }
 
 
+int CScoreBuilderBase::GetPositiveCount(CScope& scope, const CSeq_align& align)
+{
+    int positives = 0;
+    int negatives = 0;
+    x_GetMatrixCounts(scope, align, &positives, &negatives);
+    return positives;
+}
+
+
+int CScoreBuilderBase::GetNegativeCount(CScope& scope, const CSeq_align& align)
+{
+    int positives = 0;
+    int negatives = 0;
+    x_GetMatrixCounts(scope, align, &positives, &negatives);
+    return negatives;
+}
+
+
+void CScoreBuilderBase::GetMatrixCounts(CScope& scope, const CSeq_align& align,
+                                     int& positives, int& negatives)
+{
+    positives = 0;
+    negatives = 0;
+    x_GetMatrixCounts(scope, align, &positives, &negatives);
+}
+
+
 int CScoreBuilderBase::GetGapBaseCount(const CSeq_align& align)
 {
     return align.GetTotalGapCount();
@@ -733,19 +800,13 @@ void CScoreBuilderBase::AddScore(CScope& scope, CSeq_align& align,
         break;
 
     case CSeq_align::eScore_PositiveCount:
-        {{
-             NCBI_THROW(CException, eUnknown,
-                        "CScoreBuilderBase::AddScore(): "
-                        "positive count algorithm not implemented");
-         }}
+        align.SetNamedScore(CSeq_align::eScore_PositiveCount,
+                            GetPositiveCount(scope, align));
         break;
 
     case CSeq_align::eScore_NegativeCount:
-        {{
-             NCBI_THROW(CException, eUnknown,
-                        "CScoreBuilderBase::AddScore(): "
-                        "negative count algorithm not implemented");
-         }}
+        align.SetNamedScore(CSeq_align::eScore_NegativeCount,
+                            GetNegativeCount(scope, align));
         break;
 
     case CSeq_align::eScore_MismatchCount:
