@@ -153,6 +153,7 @@ public:
         ePocketLink,            ///< PocketLink   (www.mobilefan.net)
         ePolaris,               ///< Polaris Browser (www.infraware.co.kr)
         eReqwireless,           ///< Reqwireless Webviewer
+        eSafariMobile,          ///< Mobile Safari (www.apple.com/safari)
         eSEMCBrowser,           ///< Sony Ericsson SEMC-Browser (www.sonyericsson.com)
         eTelecaObigo,           ///< Teleca/Obigo  (www.teleca.com / www.obigo.com)
         euZardWeb,              ///< uZard Web     (www.uzard.com)
