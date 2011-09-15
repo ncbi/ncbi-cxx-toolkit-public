@@ -851,7 +851,7 @@ static string s_DescribeClones(const string& clone, bool pooled)
     if (pooled) {
         return ", pooled multiple clones";
     } else if (count > 3) {
-        return ", " + NStr::IntToString(count) + " clones,";
+        return ", " + NStr::SizetToString(count) + " clones,";
     } else {
         return " clone " + clone;
     }
