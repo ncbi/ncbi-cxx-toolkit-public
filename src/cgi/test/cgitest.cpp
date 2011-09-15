@@ -647,7 +647,6 @@ struct SUserAgent {
 const SUserAgent s_UserAgentTests[] = {
 
     // VendorProduct tests
-
     { "SomeUnknownBrowser",
         CCgiUserAgent::eUnknown,        {-1, -1, -1},
         CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
@@ -886,13 +885,19 @@ const SUserAgent s_UserAgentTests[] = {
         CCgiUserAgent::ePlatform_MobileDevice
     },
     { "Mozilla/5.0 (Linux; U; Android 1.6; en-fr; T-Mobile G1 Build/DRC83) AppleWebKit/528.5+ (KHTML, like Gecko) Version/3.1.2 Mobile Safari/525.20.1",
-        CCgiUserAgent::eSafari,         {  3, 1,  2},
+        CCgiUserAgent::eSafariMobile,   {  3, 1,  2},
         CCgiUserAgent::eEngine_KHTML,   {528, 5, -1},
         { 5, 0, -1},
         CCgiUserAgent::ePlatform_MobileDevice
     },
+    { "Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10",
+        CCgiUserAgent::eSafariMobile,   {   4, 0,  4},
+        CCgiUserAgent::eEngine_KHTML,   {531, 21, 10},
+        { 5, 0, -1},
+        CCgiUserAgent::ePlatform_MobileDevice
+    },
     { "Mozilla/5.0 (iPhone; U; CPU iPhone OS2_2 like Mac OS X;fr-fr) AppleWebKit/525.18.1 (KHTML, like Gecko) Version/3.1.1 Mobile/5G77 Safari/525.20",
-        CCgiUserAgent::eSafari,         {  3,  1, 1},
+        CCgiUserAgent::eSafariMobile,   {  3,  1, 1},
         CCgiUserAgent::eEngine_KHTML,   {525, 18, 1},
         { 5, 0, -1},
         CCgiUserAgent::ePlatform_MobileDevice
@@ -952,7 +957,7 @@ const SUserAgent s_UserAgentTests[] = {
         CCgiUserAgent::ePlatform_WindowsCE
     },
     { "Mozilla/5.0 (iPhone; U; CPU iPhone OS 3_0 like Mac OS X; en-us) AppleWebKit/420.1 (KHTML, like Gecko) Version/3.0 Mobile/1A542a Safari/419.3",
-        CCgiUserAgent::eSafari,         {  3,  0, -1},
+        CCgiUserAgent::eSafariMobile,   {  3,  0, -1},
         CCgiUserAgent::eEngine_KHTML,   {420,  1, -1},
         { 5, 0, -1},
         CCgiUserAgent::ePlatform_MobileDevice

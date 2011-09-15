@@ -596,12 +596,12 @@ const SBrowser s_Browsers[] = {
 
     { CCgiUserAgent::eChrome,       "Google Chrome",            "Chrome",                   CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
     { CCgiUserAgent::eFluid,        "Fluid",                    "Fluid",                    CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
+    { CCgiUserAgent::eSafariMobile, "Mobile Safari",            "Mobile Safari",            CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_MobileDevice, fVendorProduct },
     { CCgiUserAgent::eMidori,       "Midori",                   "Midori",                   CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fAny },
     { CCgiUserAgent::eMidori,       "Midori",                   "midori",                   CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fAppComment },
     { CCgiUserAgent::eNetNewsWire,  "NetNewsWire",              "NetNewsWire",              CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fAny },
     { CCgiUserAgent::eOmniWeb,      "OmniWeb",                  "OmniWeb",                  CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
     { CCgiUserAgent::eQtWeb,        "QtWeb",                    "QtWeb Internet Browser",   CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
-    { CCgiUserAgent::eSafari,       "Safari",                   "Mobile Safari",            CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_MobileDevice, fVendorProduct },
     { CCgiUserAgent::eSafari,       "Safari",                   "Safari",                   CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
     { CCgiUserAgent::eShiira,       "Shiira",                   "Shiira",                   CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
     { CCgiUserAgent::eStainless,    "Stainless",                "Stainless",                CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
@@ -703,8 +703,17 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
             }
         }
         // Possible, we already have browser name and version, but
-        // try to determine Mozilla and engine versions (below),
-        // and only than return.
+        // try to tune up it, and detect Mozilla and engine versions (below).
+    }
+
+    // eSafariMobile -- special case.
+    // Sometimes Mobile Safari can be specified as "... Version/x.x.x Mobile/xxxxxx Safari/x.x.x".
+    if ( m_Browser == eSafari ) {
+        search = " Mobile/";
+        if (m_UserAgent.find(search) != NPOS) {
+            m_Browser  = eSafariMobile;
+            m_Platform = ePlatform_MobileDevice;
+        }
     }
 
     // Handles browsers declaring Mozilla-compatible
@@ -842,6 +851,7 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
     // Hack for some browsers (like Safari) that use Version/x.x.x rather than
     // Safari/x.x.x for real browser version (for Safari, numbers after browser
     // name represent a build version).
+
     if ( m_Browser != eUnknown ) {
         search = " Version/";
         pos = m_UserAgent.find(search);
