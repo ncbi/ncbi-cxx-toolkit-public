@@ -9037,13 +9037,15 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     // should complain about missing required fields
     prefix_field->SetData().SetStr("##Genome-Assembly-Data-START##");
     vector<string> required_fields;
+    /*
     required_fields.push_back("Finishing Goal");
     required_fields.push_back("Current Finishing Status");
+    */
     required_fields.push_back("Assembly Method");
     required_fields.push_back("Genome Coverage");
     required_fields.push_back("Sequencing Technology");
 
-    EDiagSev levels[] = { eDiag_Info, eDiag_Info, eDiag_Warning, eDiag_Warning, eDiag_Warning };
+    EDiagSev levels[] = { eDiag_Warning, eDiag_Warning, eDiag_Warning, eDiag_Warning, eDiag_Warning };
 
     int i = 0;
     ITERATE(vector<string>, it, required_fields) {
