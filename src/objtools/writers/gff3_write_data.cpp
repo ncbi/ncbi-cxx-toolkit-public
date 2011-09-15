@@ -512,7 +512,8 @@ bool CGff3WriteRecordFeature::x_AssignAttributesMiscFeature(
         x_AssignAttributeExonNumber( mapped_feat )  &&
         x_AssignAttributePseudo( mapped_feat )  &&
         x_AssignAttributeDbXref( mapped_feat )  &&
-        x_AssignAttributeNote( mapped_feat ) );
+        x_AssignAttributeNote( mapped_feat )  &&
+        x_AssignAttributeOldLocusTag( mapped_feat ) );
 }
 
 //  ----------------------------------------------------------------------------
@@ -1003,6 +1004,35 @@ bool CGff3WriteRecordFeature::x_AssignAttributeCodeBreak(
         code_break_str += s_CodeBreakString(**it);
     }
     m_Attributes["transl_except"] = code_break_str;
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3WriteRecordFeature::x_AssignAttributeOldLocusTag(
+    CMappedFeat mf )
+//  ----------------------------------------------------------------------------
+{
+    if ( !mf.IsSetQual() ) {
+        return true;
+    }
+    string old_locus_tags;
+    vector<CRef<CGb_qual> > quals = mf.GetQual();
+    for ( vector<CRef<CGb_qual> >::const_iterator it = quals.begin(); 
+            it != quals.end(); ++it ) {
+        if ( (**it).IsSetQual()  &&  (**it).IsSetVal() ) {
+            string qual = (**it).GetQual();
+            if ( qual != "old_locus_tag" ) {
+                continue;
+            }
+            if ( !old_locus_tags.empty() ) {
+                old_locus_tags += ",";
+            }
+            old_locus_tags += (**it).GetVal();
+        }
+    }
+    if ( !old_locus_tags.empty() ) {
+        m_Attributes["old_locus_tag"] = old_locus_tags;
+    }
     return true;
 }
 

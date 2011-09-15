@@ -147,6 +147,8 @@ protected:
         CMappedFeat );
     virtual bool x_AssignAttributeCodeBreak(
         CMappedFeat );
+    virtual bool x_AssignAttributeOldLocusTag(
+        CMappedFeat );
 
 protected:
     CGffFeatureContext& m_fc;
