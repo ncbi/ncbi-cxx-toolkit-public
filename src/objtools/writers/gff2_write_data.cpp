@@ -46,6 +46,8 @@
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
+#include <objects/seqfeat/OrgName.hpp>
+#include <objects/seqfeat/OrgMod.hpp>
 
 #include <objtools/writers/gff2_write_data.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
@@ -56,6 +58,54 @@
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
+
+//  ----------------------------------------------------------------------------
+static const string s_GetSubtypeString(const COrgMod::TSubtype& subtype)
+//  ----------------------------------------------------------------------------
+{
+    switch ( subtype ) {
+        case COrgMod::eSubtype_strain:           return "strain";
+        case COrgMod::eSubtype_substrain:        return "substrain";
+        case COrgMod::eSubtype_type:             return "type";
+        case COrgMod::eSubtype_subtype:          return "subtype";
+        case COrgMod::eSubtype_variety:          return "variety";
+        case COrgMod::eSubtype_serotype:         return "serotype";
+        case COrgMod::eSubtype_serogroup:        return "serogroup";
+        case COrgMod::eSubtype_serovar:          return "serovar";
+        case COrgMod::eSubtype_cultivar:         return "cultivar";
+        case COrgMod::eSubtype_pathovar:         return "pathovar";
+        case COrgMod::eSubtype_chemovar:         return "chemovar";
+        case COrgMod::eSubtype_biovar:           return "biovar";
+        case COrgMod::eSubtype_biotype:          return "biotype";
+        case COrgMod::eSubtype_group:            return "group";
+        case COrgMod::eSubtype_subgroup:         return "subgroup";
+        case COrgMod::eSubtype_isolate:          return "isolate";
+        case COrgMod::eSubtype_common:           return "common";
+        case COrgMod::eSubtype_acronym:          return "acronym";
+        case COrgMod::eSubtype_dosage:           return "dosage";
+        case COrgMod::eSubtype_nat_host:         return "nat_host";
+        case COrgMod::eSubtype_sub_species:      return "sub_species";
+        case COrgMod::eSubtype_specimen_voucher: return "specimen_voucher";
+        case COrgMod::eSubtype_authority:        return "authority";
+        case COrgMod::eSubtype_forma:            return "forma";
+        case COrgMod::eSubtype_forma_specialis:  return "dosage";
+        case COrgMod::eSubtype_ecotype:          return "ecotype";
+        case COrgMod::eSubtype_synonym:          return "synonym";
+        case COrgMod::eSubtype_anamorph:         return "anamorph";
+        case COrgMod::eSubtype_teleomorph:       return "teleomorph";
+        case COrgMod::eSubtype_breed:            return "breed";
+        case COrgMod::eSubtype_gb_acronym:       return "gb_acronym";
+        case COrgMod::eSubtype_gb_anamorph:      return "gb_anamorph";
+        case COrgMod::eSubtype_gb_synonym:       return "gb_synonym";
+        case COrgMod::eSubtype_old_lineage:      return "old_lineage";
+        case COrgMod::eSubtype_old_name:         return "old_name";
+        case COrgMod::eSubtype_culture_collection: return "culture_collection";
+        case COrgMod::eSubtype_bio_material:     return "bio_material";
+        case COrgMod::eSubtype_other:            return "note";
+        default:                                 return "";
+    }
+    return "";
+}
 
 //  ----------------------------------------------------------------------------
 string CGffWriteRecord::StrId() const
@@ -538,7 +588,22 @@ bool CGffWriteRecordFeature::AssignSource(
                 }
             }
             m_Attributes["Dbxref"] = strAttr;
-        }       
+        }
+        if ( org.IsSetOrgname() && org.GetOrgname().IsSetMod() ) {
+            const list<CRef<COrgMod> >& orgmods = org.GetOrgname().GetMod();
+            for ( list<CRef<COrgMod> >::const_iterator it = orgmods.begin();
+                    it != orgmods.end(); ++it ) {
+                const COrgMod& mod = **it;
+                if ( !mod.IsSetSubtype() || !mod.IsSetSubname() ) {
+                    continue;
+                }
+                string key = s_GetSubtypeString( mod.GetSubtype() );
+                if ( !key.empty() ) {
+                    m_Attributes[ key ] = mod.GetSubname();
+                }
+                cerr << "";
+            }
+        }
     }
     if ( bsh.IsSetInst_Topology() && 
             bsh.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
