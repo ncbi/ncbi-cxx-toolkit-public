@@ -7,7 +7,7 @@ SUB_PROJ = util
 APP_PROJ = \
 	test_objmgr_data test_objmgr_data_mt \
 	test_objmgr_mem test_seqvector_ci seqvec_bench test_annot_ci \
-	test_edit_saver
+	test_edit_saver id_unit_test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
