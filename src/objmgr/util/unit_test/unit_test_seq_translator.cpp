@@ -280,14 +280,14 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_loc_1)
 
             /// use CSeqTranslator::Translate()
             tmp.clear();
-            CSeqTranslator::Translate(feat_iter->GetLocation(), *bs_iter, tmp,
+            CSeqTranslator::Translate(feat_iter->GetLocation(), bs_iter->GetScope(), tmp,
                                       NULL, false, true);
             BOOST_CHECK_EQUAL(real_prot_seq, tmp);
 
             /// use CSeqTranslator::Translate()
             real_prot_seq += '*';
             tmp.clear();
-            CSeqTranslator::Translate(feat_iter->GetLocation(), *bs_iter, tmp,
+            CSeqTranslator::Translate(feat_iter->GetLocation(), bs_iter->GetScope(), tmp,
                                       NULL, true, true);
             BOOST_CHECK_EQUAL(real_prot_seq, tmp);
         }
@@ -828,8 +828,8 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon)
     tmp.clear();
     CSeqVector vec(feat->GetLocation(), scope);
     // default value for 5' complete is true
-    CSeqTranslator::Translate(vec, tmp,
-                              NULL, false, true);
+    CSeqTranslator::Translate(vec, tmp, (CSeqTranslator::fNoStop|
+                                         CSeqTranslator::fRemoveTrailingX));
     BOOST_CHECK_EQUAL(complete_trans, tmp);
     // try it with flag version
     tmp.clear();
@@ -1306,7 +1306,7 @@ BOOST_AUTO_TEST_CASE(Test_FindOverlappingFeatureForMinusStrandCrossingOrigin)
             ITERATE (sequence::TFeatScores, s, cds) {
                 num_cds++;
             }
-            BOOST_CHECK_EQUAL(num_cds, 1);
+            BOOST_CHECK_EQUAL(num_cds, 1u);
             num_cds = 0;
             cds.clear();
             GetOverlappingFeatures (feat_iter->GetLocation(), CSeqFeatData::e_Cdregion,
@@ -1314,7 +1314,7 @@ BOOST_AUTO_TEST_CASE(Test_FindOverlappingFeatureForMinusStrandCrossingOrigin)
             ITERATE (sequence::TFeatScores, s, cds) {
                 num_cds++;
             }
-            BOOST_CHECK_EQUAL(num_cds, 1);
+            BOOST_CHECK_EQUAL(num_cds, 1u);
         }
     }
 }
@@ -1388,7 +1388,7 @@ BOOST_AUTO_TEST_CASE(Test_FindOverlappingFeaturesOnMultipleSeqs)
                     sequence::TFeatScores gene;
                     GetOverlappingFeatures ((*feat)->GetLocation(), CSeqFeatData::e_Gene,
                         CSeqFeatData::eSubtype_gene, sequence::eOverlap_Contained, gene, scope);
-                    BOOST_CHECK_EQUAL(gene.size(), 1);
+                    BOOST_CHECK_EQUAL(gene.size(), 1u);
                 } else if ((*feat)->GetData().IsGene()) {
                     BOOST_CHECK_EQUAL((*feat)->IsSetPartial(), false);
                 }
@@ -1407,7 +1407,7 @@ BOOST_AUTO_TEST_CASE(Test_FindOverlappingFeaturesOnMultipleSeqs)
             sequence::TFeatScores gene;
             GetOverlappingFeatures (mrna_iter->GetLocation(), CSeqFeatData::e_Gene,
                 CSeqFeatData::eSubtype_gene, sequence::eOverlap_Contained, gene, scope);
-            BOOST_CHECK_EQUAL(gene.size(), 1);
+            BOOST_CHECK_EQUAL(gene.size(), 1u);
         }
 
         CFeat_CI gene_iter(*bs_iter,
