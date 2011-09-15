@@ -143,6 +143,8 @@ protected:
         CMappedFeat );
     virtual bool x_AssignAttributeNcrnaClass(
         CMappedFeat );
+    virtual bool x_AssignAttributeTranslationTable(
+        CMappedFeat );
 
 protected:
     CGffFeatureContext& m_fc;

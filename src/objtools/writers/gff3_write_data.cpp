@@ -41,9 +41,11 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
+#include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqfeat/RNA_gen.hpp>
+#include <objects/seqfeat/Genetic_code.hpp>
 
 #include <objtools/writers/gff3_write_data.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
@@ -433,7 +435,8 @@ bool CGff3WriteRecordFeature::x_AssignAttributesCds(
 {
     return (
         x_AssignAttributeProteinId( mapped_feat )  &&
-        x_AssignAttributeProduct( mapped_feat ) );
+        x_AssignAttributeProduct( mapped_feat )   &&
+        x_AssignAttributeTranslationTable( mapped_feat ) );
 }
 
 //  ----------------------------------------------------------------------------
@@ -893,6 +896,26 @@ bool CGff3WriteRecordFeature::x_AssignAttributeNcrnaClass(
         return true;
     }
     m_Attributes["ncrna_class"] = ext.GetGen().GetClass();
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3WriteRecordFeature::x_AssignAttributeTranslationTable(
+    CMappedFeat mf )
+//  ----------------------------------------------------------------------------
+{
+    if ( !mf.IsSetData()  ||  
+            mf.GetFeatSubtype() != CSeqFeatData::eSubtype_cdregion ) {
+        return true;
+    }
+    const CSeqFeatData::TCdregion& cds = mf.GetData().GetCdregion();
+    if ( !cds.IsSetCode() ) {
+        return true;
+    }
+    int id = cds.GetCode().GetId();
+    if ( id != 1  &&  id != 255 ) {
+        m_Attributes["transl_table"] = NStr::IntToString( id );
+    }
     return true;
 }
 
