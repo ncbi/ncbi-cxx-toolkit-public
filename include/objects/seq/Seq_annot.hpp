@@ -65,11 +65,13 @@ public:
 
     // Removes any existing CAnnotdesc(s) of type name and adds
     // new CAnnotdesc of type name
-    void AddName(const string &name);
+    NCBI_DEPRECATED void AddName(const string &name);
+    void SetNameDesc(const string &name);
 
     // Adds a CAnnotdesc of type title.  This will replace any previous
     // title fields.
-    void AddTitle(const string &title);
+    void SetTitleDesc(const string &title);
+    NCBI_DEPRECATED void AddTitle(const string &title);
     
     // SetTitle() is deprecated; use AddTitle() instead
     // @deprecated

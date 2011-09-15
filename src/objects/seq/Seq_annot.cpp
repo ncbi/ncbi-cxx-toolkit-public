@@ -60,6 +60,11 @@ CSeq_annot::~CSeq_annot(void)
 
 void CSeq_annot::AddName(const string &name)
 {
+    SetNameDesc(name);
+}
+
+void CSeq_annot::SetNameDesc(const string &name)
+{
     //NB: this used list::remove_if(), which is not portable to Windows
     TDesc::Tdata::iterator iter = SetDesc().Set().begin();
     for ( ;  iter != SetDesc().Set().end();  ) {
@@ -78,11 +83,17 @@ void CSeq_annot::AddName(const string &name)
 
 void CSeq_annot::SetTitle(const string& title)
 {
-    AddTitle(title);
+    SetTitleDesc(title);
 }
 
 
-void CSeq_annot::AddTitle(const string &title)
+void CSeq_annot::AddTitle(const string& title)
+{
+    SetTitleDesc(title);
+}
+
+
+void CSeq_annot::SetTitleDesc(const string &title)
 {
     TDesc::Tdata::iterator iter = SetDesc().Set().begin();
     for ( ;  iter != SetDesc().Set().end();  ) {
