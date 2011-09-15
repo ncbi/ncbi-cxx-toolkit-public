@@ -46,6 +46,7 @@
 #include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqfeat/RNA_gen.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
+#include <objects/seqfeat/Code_break.hpp>
 
 #include <objtools/writers/gff3_write_data.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
@@ -133,6 +134,67 @@ string s_BestIdString(
     return strId;
 }
     
+
+
+//  ----------------------------------------------------------------------------
+const char* s_GetAAName(unsigned char aa)
+//  ----------------------------------------------------------------------------
+{
+    static const char* kAANames[] = {
+        "---", "Ala", "Asx", "Cys", "Asp", "Glu", "Phe", "Gly", "His", "Ile",
+        "Lys", "Leu", "Met", "Asn", "Pro", "Gln", "Arg", "Ser", "Thr", "Val",
+        "Trp", "OTHER", "Tyr", "Glx", "Sec", "TERM", "Pyl"
+    };
+
+    return (aa < sizeof(kAANames)/sizeof(*kAANames)) ? kAANames[aa] : "OTHER";
+}
+
+//  ----------------------------------------------------------------------------
+string s_CodeBreakString( const CCode_break& cb )
+//  ----------------------------------------------------------------------------
+{
+    string cb_str = ("(pos:");
+    if ( cb.IsSetLoc() ) {
+        const CCode_break::TLoc& loc = cb.GetLoc();
+        switch( loc.Which() ) {
+            default: {
+                cb_str += NStr::IntToString( loc.GetStart(eExtreme_Positional)+1 );
+                cb_str += "..";
+                cb_str += NStr::IntToString( loc.GetStop(eExtreme_Positional)+1 );
+                break;
+            }
+            case CSeq_loc::e_Int: {
+                const CSeq_interval& intv = loc.GetInt();
+                string intv_str = "";
+                intv_str += NStr::IntToString( intv.GetFrom()+1 );
+                intv_str += "..";
+                intv_str += NStr::IntToString( intv.GetTo()+1 );
+                if ( intv.IsSetStrand()  &&  intv.GetStrand() == eNa_strand_minus ) {
+                    intv_str = "complement(" + intv_str + ")";
+                }
+                cb_str += intv_str;
+                break;
+            }
+        }
+    }
+    cb_str += ",aa=";
+    switch( cb.GetAa().Which() ) {
+    default:
+        return "";
+    case CCode_break::C_Aa::e_Ncbieaa:
+        cb_str += s_GetAAName(cb.GetAa().GetNcbieaa());
+        break;
+    case CCode_break::C_Aa::e_Ncbi8aa:
+        cb_str += s_GetAAName(cb.GetAa().GetNcbi8aa());
+        break;
+    case CCode_break::C_Aa::e_Ncbistdaa:
+        cb_str += s_GetAAName(cb.GetAa().GetNcbistdaa());
+        break;
+    }
+    cb_str += ")";
+    return cb_str;
+}
+
 //  ----------------------------------------------------------------------------
 CConstRef<CUser_object> s_GetUserObjectByType(
     const CUser_object& uo,
@@ -436,7 +498,8 @@ bool CGff3WriteRecordFeature::x_AssignAttributesCds(
     return (
         x_AssignAttributeProteinId( mapped_feat )  &&
         x_AssignAttributeProduct( mapped_feat )   &&
-        x_AssignAttributeTranslationTable( mapped_feat ) );
+        x_AssignAttributeTranslationTable( mapped_feat )  &&
+        x_AssignAttributeCodeBreak( mapped_feat ) );
 }
 
 //  ----------------------------------------------------------------------------
@@ -916,6 +979,30 @@ bool CGff3WriteRecordFeature::x_AssignAttributeTranslationTable(
     if ( id != 1  &&  id != 255 ) {
         m_Attributes["transl_table"] = NStr::IntToString( id );
     }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3WriteRecordFeature::x_AssignAttributeCodeBreak(
+    CMappedFeat mf )
+//  ----------------------------------------------------------------------------
+{
+    if ( !mf.IsSetData()  ||  
+            mf.GetFeatSubtype() != CSeqFeatData::eSubtype_cdregion ) {
+        return true;
+    }
+    const CSeqFeatData::TCdregion& cds = mf.GetData().GetCdregion();
+    if ( !cds.IsSetCode_break() ) {
+        return true;
+    }
+    const list<CRef<CCode_break> >& code_breaks = cds.GetCode_break();
+    list<CRef<CCode_break> >::const_iterator it = code_breaks.begin();
+    string code_break_str = s_CodeBreakString(**it);
+    for ( ++it; it != code_breaks.end(); ++it ) {
+        code_break_str += ",";
+        code_break_str += s_CodeBreakString(**it);
+    }
+    m_Attributes["transl_except"] = code_break_str;
     return true;
 }
 

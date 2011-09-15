@@ -145,6 +145,8 @@ protected:
         CMappedFeat );
     virtual bool x_AssignAttributeTranslationTable(
         CMappedFeat );
+    virtual bool x_AssignAttributeCodeBreak(
+        CMappedFeat );
 
 protected:
     CGffFeatureContext& m_fc;
