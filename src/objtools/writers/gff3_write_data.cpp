@@ -42,6 +42,8 @@
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
+#include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/seqfeat/RNA_gen.hpp>
 
 #include <objtools/writers/gff3_write_data.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
@@ -362,9 +364,12 @@ bool CGff3WriteRecordFeature::x_AssignAttributes(
         return false;
     }
 
+    if ( !x_AssignAttributesMiscFeature( mf ) ) {
+        return false;
+    }
     switch( mf.GetData().GetSubtype() ) {
         default:
-            return x_AssignAttributesMiscFeature( mf );
+            return true;
         case CSeqFeatData::eSubtype_gene:
             return x_AssignAttributesGene( mf );
         case CSeqFeatData::eSubtype_mRNA:
@@ -373,6 +378,8 @@ bool CGff3WriteRecordFeature::x_AssignAttributes(
             return x_AssignAttributesTrna( mf );
         case CSeqFeatData::eSubtype_cdregion:
             return x_AssignAttributesCds( mf );
+        case CSeqFeatData::eSubtype_ncRNA:
+            return x_AssignAttributesNcrna( mf );
     }
 }
 
@@ -386,14 +393,11 @@ bool CGff3WriteRecordFeature::x_AssignAttributesGene(
         x_AssignAttributeLocusTag( mapped_feat )  &&
         x_AssignAttributeGeneSynonym( mapped_feat )  &&
         x_AssignAttributeLocusTag( mapped_feat )  &&
-        x_AssignAttributeDbXref( mapped_feat )  &&
-        x_AssignAttributePseudo( mapped_feat )  &&
         x_AssignAttributePartial( mapped_feat )  &&
-        x_AssignAttributeException( mapped_feat )  &&
         x_AssignAttributeGeneDesc( mapped_feat )  &&
-        x_AssignAttributeMapLoc( mapped_feat )  &&
-        x_AssignAttributeNote( mapped_feat ) );
+        x_AssignAttributeMapLoc( mapped_feat ) );
 }
+
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecordFeature::x_AssignAttributesMrna(
     CMappedFeat mapped_feat )
@@ -402,10 +406,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributesMrna(
     return (
         x_AssignAttributeGene( mapped_feat )  &&
         x_AssignAttributeProduct( mapped_feat )  &&
-        x_AssignAttributeTranscriptId( mapped_feat )  &&
-        x_AssignAttributeException( mapped_feat )  &&
-        x_AssignAttributeDbXref( mapped_feat )  &&
-        x_AssignAttributeNote( mapped_feat ) );
+        x_AssignAttributeTranscriptId( mapped_feat ) );
 }
 
 //  ----------------------------------------------------------------------------
@@ -413,10 +414,16 @@ bool CGff3WriteRecordFeature::x_AssignAttributesTrna(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
+    return ( true );
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3WriteRecordFeature::x_AssignAttributesNcrna(
+    CMappedFeat mapped_feat )
+//  ----------------------------------------------------------------------------
+{
     return (
-        x_AssignAttributeException( mapped_feat )  &&
-        x_AssignAttributeDbXref( mapped_feat )  &&
-        x_AssignAttributeNote( mapped_feat ) );
+        x_AssignAttributeNcrnaClass( mapped_feat) );
 }
 
 //  ----------------------------------------------------------------------------
@@ -426,10 +433,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributesCds(
 {
     return (
         x_AssignAttributeProteinId( mapped_feat )  &&
-        x_AssignAttributeProduct( mapped_feat )  &&
-        x_AssignAttributeException( mapped_feat )  &&
-        x_AssignAttributeDbXref( mapped_feat )  &&
-        x_AssignAttributeNote( mapped_feat ) );
+        x_AssignAttributeProduct( mapped_feat ) );
 }
 
 //  ----------------------------------------------------------------------------
@@ -868,6 +872,27 @@ bool CGff3WriteRecordFeature::x_AssignAttributeException(
         // what should I do?
         return true;
     }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3WriteRecordFeature::x_AssignAttributeNcrnaClass(
+    CMappedFeat mf )
+//  ----------------------------------------------------------------------------
+{
+    if ( !mf.IsSetData()  ||  
+            (mf.GetData().GetSubtype() != CSeqFeatData::eSubtype_ncRNA) ) {
+        return true;
+    }
+    const CSeqFeatData::TRna& rna = mf.GetData().GetRna();
+    if ( !rna.IsSetExt() ) {
+        return true;
+    }
+    const CRNA_ref::TExt& ext = rna.GetExt();
+    if ( !ext.IsGen()  ||  !ext.GetGen().IsSetClass()) {
+        return true;
+    }
+    m_Attributes["ncrna_class"] = ext.GetGen().GetClass();
     return true;
 }
 
