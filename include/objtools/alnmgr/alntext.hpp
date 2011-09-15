@@ -38,6 +38,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <objects/seqalign/seqalign__.hpp>
+#include <objtools/alnmgr/nucprot.hpp>
 
 #include <list>
 
@@ -47,9 +48,6 @@ BEGIN_SCOPE(objects)
     class CScope;
     class CSeqVector_CI;
 END_SCOPE(objects)
-
-class CSubstMatrix;
-class CTranslationTable;
 
 /// Text representation of ProSplign alignment
 // dna        : GATGAAACAGCACTAGTGACAGGTAAA----GATCTAAATATCGTTGA<skip>GGAAGACATCCATTGGCAATGGCAATGGCAT
