@@ -8,8 +8,8 @@
 
 APP = streamtest
 SRC = streamtest
-LIB = xformat xobjutil submit gbseq xalnmgr xcleanup xregexp prosplign xalgoalignutil \
-      xqueryparse xobjwrite tables $(COMPRESS_LIBS) $(OBJMGR_LIBS) $(PCRE_LIB)
+LIB = prosplign xalgoalignutil xcleanup xobjwrite xformat xalnmgr xobjutil \
+      submit gbseq xregexp xqueryparse tables $(PCRE_LIB) $(OBJMGR_LIBS)
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(PCRE_LIBS) $(ORIG_LIBS)
 
