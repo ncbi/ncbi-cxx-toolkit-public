@@ -48,6 +48,7 @@
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
+#include <objects/seqfeat/SubSource.hpp>
 
 #include <objtools/writers/gff2_write_data.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
@@ -60,7 +61,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-static const string s_GetSubtypeString(const COrgMod::TSubtype& subtype)
+static const string s_GetSubtypeString( const COrgMod::TSubtype& subtype )
 //  ----------------------------------------------------------------------------
 {
     switch ( subtype ) {
@@ -107,6 +108,45 @@ static const string s_GetSubtypeString(const COrgMod::TSubtype& subtype)
     return "";
 }
 
+//  ----------------------------------------------------------------------------
+static const string s_GetSubsourceString( const CSubSource::TSubtype& subtype )
+//  ----------------------------------------------------------------------------
+{
+    switch ( subtype ) {
+        case CSubSource::eSubtype_chromosome: return "chromosome";
+        case CSubSource::eSubtype_map: return "map";
+        case CSubSource::eSubtype_clone: return "clone";
+        case CSubSource::eSubtype_subclone: return "subclone";
+        case CSubSource::eSubtype_haplogroup: return "haplogroup";
+        case CSubSource::eSubtype_haplotype: return "haplotype";
+        case CSubSource::eSubtype_genotype: return "genotype";
+        case CSubSource::eSubtype_sex: return "sex";
+        case CSubSource::eSubtype_cell_line: return "cell_line";
+        case CSubSource::eSubtype_cell_type: return "cell_type";
+        case CSubSource::eSubtype_tissue_type: return "tissue_type";
+        case CSubSource::eSubtype_clone_lib: return "clone_lib";
+        case CSubSource::eSubtype_dev_stage: return "dev_stage";
+        case CSubSource::eSubtype_frequency: return "frequency";
+        case CSubSource::eSubtype_germline: return "germline";
+        case CSubSource::eSubtype_rearranged: return "rearranged";
+        case CSubSource::eSubtype_lab_host: return "lab_host";
+        case CSubSource::eSubtype_pop_variant: return "pop_variant";
+        case CSubSource::eSubtype_tissue_lib: return "tissue_lib";
+        case CSubSource::eSubtype_plasmid_name: return "plasmid_name";
+        case CSubSource::eSubtype_transposon_name: return "transposon_name";
+        case CSubSource::eSubtype_insertion_seq_name: return "insertion_seq_name";
+        case CSubSource::eSubtype_plastid_name: return "plastid_name";
+        case CSubSource::eSubtype_country: return "country";
+        case CSubSource::eSubtype_segment: return "segment";
+        case CSubSource::eSubtype_endogenous_virus_name: return "endogenous_virus_name";
+        case CSubSource::eSubtype_transgenic: return "transgenic";
+        case CSubSource::eSubtype_environmental_sample: return "environmental_sample";
+        case CSubSource::eSubtype_isolation_source: return "isolation_source";
+        case CSubSource::eSubtype_other: return "note";
+        default: return "";
+    }
+    return "";
+}
 //  ----------------------------------------------------------------------------
 string CGffWriteRecord::StrId() const
 //  ----------------------------------------------------------------------------
@@ -605,6 +645,22 @@ bool CGffWriteRecordFeature::AssignSource(
             }
         }
     }
+    if ( bs.IsSetSubtype() ) {
+        const list<CRef<CSubSource> >& subsources = bs.GetSubtype();
+        for ( list<CRef<CSubSource> >::const_iterator it = subsources.begin();
+                it != subsources.end(); ++it ) {
+            const CSubSource& subsource = **it;
+            if ( !subsource.IsSetSubtype() || !subsource.IsSetName() ) {
+                continue;
+            }
+            string key = s_GetSubsourceString( subsource.GetSubtype() );
+            if ( !key.empty() ) {
+                m_Attributes[ key ] = subsource.GetName();
+            }
+            cerr << "";
+        }
+    }
+
     if ( bsh.IsSetInst_Topology() && 
             bsh.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
        m_Attributes["Is_circular"] = "true";
