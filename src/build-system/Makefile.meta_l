@@ -196,7 +196,7 @@ $(has_usr_l_real): %_l.real: %.nonusr ;
 
 $(has_usr_real): %.real: %_l.real ;
 
-$(has_usr_usr_locked) $(has_usr_nonusr): configurables
+$(has_usr_locked) $(has_usr_nonusr): configurables
 
 ifeq "$(sources:%=$(ANY_USR_PROJ))" ""
   $(has_usr_usr): ;
