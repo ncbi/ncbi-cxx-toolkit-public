@@ -1025,7 +1025,7 @@ inline bool STypeLink::CanHaveGeneParent(void) const
 
 inline bool STypeLink::CanHaveCommonGene(void) const
 {
-    return *this;
+    return CanHaveGeneParent();
 }
 
 
@@ -1520,7 +1520,7 @@ namespace {
             for ( size_t ind = m_IndexedParents; ind < feats.size(); ++ind ) {
                 CFeatTree::CFeatInfo& feat_info = *feats[ind];
                 if ( feat_info.m_AddIndex < m_IndexedParents ||
-                     feat_info.m_Feat.GetFeatSubtype() != m_Type ||
+                     feat_info.GetSubtype() != m_Type ||
                      (m_ByProduct && !feat_info.m_Feat.IsSetProduct()) ) {
                     continue;
                 }
@@ -1738,8 +1738,8 @@ CFeatTree::x_LookupParentByRef(CFeatInfo& info,
                 continue;
             }
             int quality =
-                sx_GetParentTypeQuality(parent->m_Feat.GetFeatSubtype(),
-                                        info.m_Feat.GetFeatSubtype());
+                sx_GetParentTypeQuality(parent->GetSubtype(),
+                                        info.GetSubtype());
             if ( quality > ret.first ) {
                 ret.first = quality;
                 ret.second = parent;
@@ -1752,7 +1752,7 @@ CFeatTree::x_LookupParentByRef(CFeatInfo& info,
     if ( (parent_type == CSeqFeatData::eSubtype_gene ||
           parent_type == CSeqFeatData::eSubtype_any) &&
          sx_IsParentType(CSeqFeatData::eSubtype_gene,
-                         info.m_Feat.GetFeatSubtype()) ) {
+                         info.GetSubtype()) ) {
         // assign non-genes to genes by Gene-ref
         ITERATE ( CSeq_feat::TXref, xit, xrefs ) {
             const CSeqFeatXref& xref = **xit;
@@ -1809,13 +1809,13 @@ bool CFeatTree::x_AssignParentByRef(CFeatInfo& info)
         }
     }
     // check if gene is found over possible intemediate parents
-    if ( parent.second->m_Feat.GetFeatSubtype() == CSeqFeatData::eSubtype_gene ) {
+    if ( parent.second->IsGene() ) {
         // the gene link may be turned off
         if ( m_BestGeneFeatIdMode == eBestGeneFeatId_ignore ) {
             return false;
         }
         // if intermediate parents are possible
-        if ( STypeLink(info.m_Feat.GetFeatSubtype()).m_ParentType!=CSeqFeatData::eSubtype_gene ) {
+        if ( STypeLink(info.GetSubtype()).m_ParentType!=CSeqFeatData::eSubtype_gene ) {
             // then assign gene only
             info.m_Gene = parent.second;
             return false;
@@ -1823,31 +1823,6 @@ bool CFeatTree::x_AssignParentByRef(CFeatInfo& info)
     }
     x_SetParent(info, *parent.second);
     return true;
-}
-
-
-void CFeatTree::x_AssignParentsByRef(TFeatArray& features,
-                                     const STypeLink& link)
-{
-    if ( features.empty() || !link ) {
-        return;
-    }
-    TFeatArray::iterator dst = features.begin();
-    ITERATE ( TFeatArray, it, features ) {
-        CFeatInfo& info = **it;
-        if ( info.IsSetParent() ) {
-            continue;
-        }
-        CFeatInfo* parent =
-            x_LookupParentByRef(info, link.m_ParentType).second;
-        if ( parent ) {
-            x_SetParent(info, *parent);
-        }
-        else {
-            *dst++ = *it;
-        }
-    }
-    features.erase(dst, features.end());
 }
 
 
@@ -2012,6 +1987,26 @@ void CFeatTree::x_AssignParentsByOverlap(TFeatArray& features,
     if ( features.empty() ) {
         return;
     }
+    if ( GetGeneCheckMode() == eGeneCheck_match &&
+         link.m_ParentType == CSeqFeatData::eSubtype_gene ) {
+        bool unassigned = false;
+        // assign gene as parent
+        ITERATE ( TFeatArray, it, features ) {
+            CFeatInfo& info = **it;
+            if ( !info.IsSetParent() ) {
+                if ( info.m_Gene ) {
+                    x_SetParent(info, *info.m_Gene);
+                }
+                else {
+                    unassigned = true;
+                }
+            }
+        }
+        if ( !unassigned ) {
+            features.clear();
+            return;
+        }
+    }
     if ( !m_Index ) {
         m_Index = new CFeatTreeIndex;
     }
@@ -2076,13 +2071,14 @@ void CFeatTree::x_AssignGenesByOverlap(TFeatArray& features)
 }
 
 
-void CFeatTree::x_AssignGeneToChildren(CFeatInfo& parent_feat,
-                                       CFeatInfo& gene_feat)
+void CFeatTree::x_SetGeneRecursive(CFeatInfo& info, CFeatInfo& gene)
 {
-    ITERATE ( CFeatInfo::TChildren, it, parent_feat.m_Children ) {
-        CFeatInfo* child_feat = *it;
-        child_feat->m_Gene = &gene_feat;
-        x_AssignGeneToChildren(*child_feat, gene_feat);
+    info.m_Gene = &gene;
+    ITERATE ( CFeatInfo::TChildren, it, info.m_Children ) {
+        CFeatInfo& child = **it;
+        if ( child.m_Gene != &gene ) {
+            x_SetGeneRecursive(child, gene);
+        }
     }
 }
 
@@ -2093,13 +2089,29 @@ void CFeatTree::x_AssignGenes(void)
         return;
     }
 
+    for ( size_t ind = m_AssignedGenes; ind < m_InfoArray.size(); ++ind ) {
+        CFeatInfo& info = *m_InfoArray[ind];
+        if ( info.m_Gene ) {
+            continue;
+        }
+        if ( CFeatInfo* parent = info.m_Parent ) {
+            CFeatInfo* gene = parent->m_Gene;
+            if ( !gene && parent->IsGene() ) {
+                gene = parent;
+            }
+            if ( gene ) {
+                x_SetGeneRecursive(info, *gene);
+            }
+        }
+    }
+
     bool has_genes = false;
     TFeatArray old_feats, new_feats;
     // collect genes and other features
     for ( size_t ind = m_AssignedGenes; ind < m_InfoArray.size(); ++ind ) {
         CFeatInfo& info = *m_InfoArray[ind];
         TFeatArray* arr = 0;
-        CSeqFeatData::ESubtype feat_type = info.m_Feat.GetFeatSubtype();
+        CSeqFeatData::ESubtype feat_type = info.GetSubtype();
         if ( feat_type == CSeqFeatData::eSubtype_gene ) {
             has_genes = true;
             continue;
@@ -2152,7 +2164,7 @@ void CFeatTree::x_AssignParents(void)
         if ( m_FeatIdMode != eFeatId_ignore && x_AssignParentByRef(info) ) {
             continue;
         }
-        CSeqFeatData::ESubtype feat_type = info.m_Feat.GetFeatSubtype();
+        CSeqFeatData::ESubtype feat_type = info.GetSubtype();
         STypeLink link(feat_type);
         if ( !link ) {
             // no parent

@@ -294,6 +294,14 @@ public:
     /// If the feat argument is null then all the features without parent
     /// are returned.
     void GetChildrenTo(const CMappedFeat& feat, vector<CMappedFeat>& children);
+    /// Return all root features (w/o parent).
+    vector<CMappedFeat> GetRootFeatures(void) {
+        return GetChildren(CMappedFeat());
+    }
+    /// Store all root features (w/o parent) into a vector.
+    void GetRootFeaturesTo(vector<CMappedFeat>& children) {
+        GetChildrenTo(CMappedFeat(), children);
+    }
 
     enum EBestGeneType {
         eBestGene_TreeOnly,        // determined by feature position in tree
@@ -315,6 +323,12 @@ public:
         bool IsSetParent(void) const {
             return m_IsSetParent;
         }
+        CSeqFeatData::ESubtype GetSubtype(void) const {
+            return m_Feat.GetFeatSubtype();
+        }
+        bool IsGene(void) const {
+            return GetSubtype() == CSeqFeatData::eSubtype_gene;
+        }
 
         typedef vector<CFeatInfo*> TChildren;
         
@@ -323,12 +337,12 @@ public:
         CRange<TSeqPos> m_MasterRange;
         CConstRef<CGb_qual> m_TranscriptId;
         bool m_IsSetParent, m_IsSetChildren;
-        enum EIsLinkedToRoot {
+        enum EIsLinkedToRoot NCBI_PACKED_ENUM_TYPE(Int1) {
             eIsLinkedToRoot_unknown,
             eIsLinkedToRoot_linked,
             eIsLinkedToRoot_linking
-        };
-        Int1 m_IsLinkedToRoot;
+        } NCBI_PACKED_ENUM_END();
+        EIsLinkedToRoot m_IsLinkedToRoot;
         CFeatInfo* m_Parent;
         CFeatInfo* m_Gene;
         TChildren m_Children;
@@ -345,14 +359,10 @@ protected:
     CFeatInfo* x_FindInfo(const CSeq_feat_Handle& feat);
 
     void x_AssignParents(void);
-    void x_AssignParentsByRef(TFeatArray& features,
-                              const STypeLink& link);
     void x_AssignParentsByOverlap(TFeatArray& features,
                                   const STypeLink& link);
     bool x_AssignParentByRef(CFeatInfo& info);
 
-    void x_AssignGeneToChildren(CFeatInfo& parent_feat,
-                                CFeatInfo& gene_feat);
     void x_AssignGenesByOverlap(TFeatArray& features);
     void x_AssignGenes(void);
 
@@ -365,6 +375,7 @@ protected:
     void x_SetNoParent(CFeatInfo& info);
     CFeatInfo* x_GetParent(CFeatInfo& info);
     const TChildren& x_GetChildren(CFeatInfo& info);
+    void x_SetGeneRecursive(CFeatInfo& info, CFeatInfo& gene);
 
     typedef map<CSeq_feat_Handle, CFeatInfo> TInfoMap;
     typedef vector<CFeatInfo*> TInfoArray;
