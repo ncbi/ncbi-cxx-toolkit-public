@@ -60,7 +60,8 @@ inline
 CAsnBinaryDefs::ETagValue
 CAsnBinaryDefs::StringTag(EStringType type)
 {
-    return type == eStringTypeVisible? eVisibleString: eUTF8String;
+    return eVisibleString;
+    //return type == eStringTypeVisible? eVisibleString: eUTF8String;
 }
 
 inline
