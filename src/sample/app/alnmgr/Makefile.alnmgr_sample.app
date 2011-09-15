@@ -12,7 +12,7 @@ SRC = alnmgr_sample
 # the lines reading "### BEGIN/END COPIED SETTINGS" in any way.
 
 ### BEGIN COPIED SETTINGS
-LIB = xalnmgr tables $(OBJMGR_LIBS)
+LIB = xalnmgr xobjutil tables $(OBJMGR_LIBS)
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 ### END COPIED SETTINGS
