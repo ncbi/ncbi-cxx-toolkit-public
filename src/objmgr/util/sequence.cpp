@@ -3229,7 +3229,7 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
         }
     }
 
-    int prot_len = 0;
+    size_t prot_len = 0;
     ITERATE (CDelta_ext::Tdata, seg_it, prot->SetInst().SetExt().SetDelta().Set()) {
         prot_len += (*seg_it)->GetLiteral().GetLength();
     }
