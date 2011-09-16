@@ -38,6 +38,7 @@
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Annot_descr.hpp>
+#include <objects/seq/MolInfo.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
@@ -51,6 +52,7 @@
 #include <objects/seqfeat/SubSource.hpp>
 
 #include <objtools/writers/gff2_write_data.hpp>
+#include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/mapped_feat.hpp>
 #include <objmgr/util/feature.hpp>
@@ -147,6 +149,50 @@ static const string s_GetSubsourceString( const CSubSource::TSubtype& subtype )
     }
     return "";
 }
+
+//  ----------------------------------------------------------------------------
+static const string s_GetBiomolString( const CMolInfo::TBiomol& biomol )
+//  ----------------------------------------------------------------------------
+{
+    switch( biomol ) {
+    default:
+        return "";
+    case CMolInfo::eBiomol_unknown:
+        return "unassigned DNA";
+    case CMolInfo::eBiomol_genomic:
+        return "genomic DNA";
+    case CMolInfo::eBiomol_pre_RNA:
+        return "transcribed RNA";
+    case CMolInfo::eBiomol_mRNA:
+        return "mRNA";
+    case CMolInfo::eBiomol_rRNA:
+        return "rRNA";
+    case CMolInfo::eBiomol_tRNA:
+        return "tRNA";
+    case CMolInfo::eBiomol_snRNA:
+        return "transcribed RNA";
+    case CMolInfo::eBiomol_scRNA:
+        return "transcribed RNA";
+    case CMolInfo::eBiomol_other_genetic:
+        return "other DNA";
+    case CMolInfo::eBiomol_genomic_mRNA:
+        return "unassigned DNA";
+    case CMolInfo::eBiomol_cRNA:
+        return "viral cRNA";
+    case CMolInfo::eBiomol_snoRNA:
+        return "transcribed RNA";
+    case CMolInfo::eBiomol_transcribed_RNA:
+        return "transcribed RNA";
+    case CMolInfo::eBiomol_ncRNA:
+        return "transcribed RNA";
+    case CMolInfo::eBiomol_tmRNA:
+        return "unassigned RNA";
+    case CMolInfo::eBiomol_other:
+        return "other DNA";
+    }
+    return "";
+}
+
 //  ----------------------------------------------------------------------------
 string CGffWriteRecord::StrId() const
 //  ----------------------------------------------------------------------------
@@ -605,6 +651,15 @@ bool CGffWriteRecordFeature::AssignSource(
     //  attributes:
     m_Attributes["gbkey"] = "Source";
 
+
+    CSeqdesc_CI md( bsh.GetParentEntry(), CSeqdesc::e_Molinfo, 0 );
+    if ( md ) {
+        const CMolInfo& molinfo = (*md).GetMolinfo();
+        if ( molinfo.IsSetBiomol() ) {
+            m_Attributes["mol_type"] = s_GetBiomolString( molinfo.GetBiomol() );
+        }
+    }
+
     if ( bs.IsSetTaxname() ) {
         m_Attributes["organism"] = bs.GetTaxname();
     }
@@ -657,7 +712,6 @@ bool CGffWriteRecordFeature::AssignSource(
             if ( !key.empty() ) {
                 m_Attributes[ key ] = subsource.GetName();
             }
-            cerr << "";
         }
     }
 
