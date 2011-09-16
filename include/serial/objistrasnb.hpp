@@ -271,6 +271,7 @@ private:
     string PeekClassTag(void);
     TByte PeekAnyTagFirstByte(void);
     void ExpectSysTagByte(TByte byte);
+    void ExpectStringTag(EStringType type);
     string TagToString(TByte byte);
     void UnexpectedSysTagByte(TByte byte);
     void ExpectSysTag(ETagClass tag_class,

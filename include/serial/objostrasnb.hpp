@@ -126,6 +126,9 @@ protected:
                        ETagConstructed tag_constructed,
                        ETagValue tag_value);
     void WriteSysTag(ETagValue tag);
+    static TByte GetUTF8StringTag(void);
+    static TByte MakeUTF8StringTag(void);
+    void WriteStringTag(EStringType type);
     void WriteTag(ETagClass tag_class,
                   ETagConstructed tag_constructed,
                   TLongTag tag_value);

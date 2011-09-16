@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.hpp>
+#include <corelib/ncbi_param.hpp>
 
 #include <serial/objostrasnb.hpp>
 #include <serial/objistr.hpp>
@@ -247,6 +248,35 @@ inline
 void CObjectOStreamAsnBinary::WriteSysTag(ETagValue tag_value)
 {
     WriteShortTag(eUniversal, ePrimitive, tag_value);
+}
+
+NCBI_PARAM_DECL(bool, SERIAL, WRITE_UTF8STRING_TAG);
+NCBI_PARAM_DEF_EX(bool, SERIAL, WRITE_UTF8STRING_TAG, false,
+                  eParam_NoThread, SERIAL_WRITE_UTF8STRING_TAG);
+
+CObjectOStreamAsnBinary::TByte CObjectOStreamAsnBinary::MakeUTF8StringTag(void)
+{
+    static NCBI_PARAM_TYPE(SERIAL, WRITE_UTF8STRING_TAG) s_WriteUTF8StringTag;
+    ETagValue value = s_WriteUTF8StringTag.Get()? eUTF8String: eVisibleString;
+    return MakeTagByte(eUniversal, ePrimitive, value);
+}
+
+inline
+CObjectOStreamAsnBinary::TByte CObjectOStreamAsnBinary::GetUTF8StringTag(void)
+{
+    static TByte s_UTF8StringTag = 0;
+    if ( !s_UTF8StringTag ) {
+        s_UTF8StringTag = MakeUTF8StringTag();
+    }
+    return s_UTF8StringTag;
+}
+
+inline
+void CObjectOStreamAsnBinary::WriteStringTag(EStringType type)
+{
+    WriteByte(type == eStringTypeUTF8?
+              GetUTF8StringTag():
+              MakeTagByte(eUniversal, ePrimitive, eVisibleString));
 }
 
 void CObjectOStreamAsnBinary::WriteLongTag(ETagClass tag_class,
@@ -678,7 +708,7 @@ void CObjectOStreamAsnBinary::WriteFloat(float data)
 void CObjectOStreamAsnBinary::WriteString(const string& str, EStringType type)
 {
     size_t length = str.size();
-    WriteSysTag(StringTag(type));
+    WriteStringTag(type);
     WriteLength(length);
     if ( type == eStringTypeVisible && m_FixMethod != eFNP_Allow ) {
         size_t done = 0;
@@ -737,11 +767,11 @@ void CObjectOStreamAsnBinary::CopyString(CObjectIStream& in,
     // do we need to check symbols while copying?
     // m_FixMethod != eFNP_Allow, type == eStringTypeVisible
     const bool checkVisible = false;
-    WriteSysTag(StringTag(type));
+    WriteStringTag(type);
     if ( in.GetDataFormat() == eSerial_AsnBinary ) {
         CObjectIStreamAsnBinary& bIn =
             *CTypeConverter<CObjectIStreamAsnBinary>::SafeCast(&in);
-        bIn.ExpectSysTag(StringTag(type));
+        bIn.ExpectStringTag(type);
         CopyStringValue(bIn, checkVisible);
     }
     else {

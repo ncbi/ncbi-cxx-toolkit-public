@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.hpp>
+#include <corelib/ncbi_param.hpp>
 
 #include <serial/objistrasnb.hpp>
 #include <serial/impl/member.hpp>
@@ -228,6 +229,25 @@ CObjectIStreamAsnBinary::PeekAnyTagFirstByte(void)
     m_CurrentTagLength = i;
     return fByte;
 }
+
+NCBI_PARAM_DECL(bool, SERIAL, READ_ANY_UTF8STRING_TAG);
+NCBI_PARAM_DEF_EX(bool, SERIAL, READ_ANY_UTF8STRING_TAG, true,
+                  eParam_NoThread, SERIAL_READ_ANY_UTF8STRING_TAG);
+
+void CObjectIStreamAsnBinary::ExpectStringTag(EStringType type)
+{
+    if ( type == eStringTypeUTF8 ) {
+        static NCBI_PARAM_TYPE(SERIAL, READ_ANY_UTF8STRING_TAG) sx_ReadAny;
+        if ( !sx_ReadAny.Get() ||
+             PeekTagByte()==MakeTagByte(eUniversal,ePrimitive,eUTF8String) ) {
+            // allow only UTF8String tag
+            ExpectSysTag(eUniversal, ePrimitive, eUTF8String);
+            return;
+        }
+    }
+    ExpectSysTag(eUniversal, ePrimitive, eVisibleString);
+}
+
 string CObjectIStreamAsnBinary::TagToString(TByte byte)
 {
     const char *cls, *con, *v;
@@ -771,7 +791,7 @@ void CObjectIStreamAsnBinary::ReadPackedString(string& s,
                                                CPackString& pack_string,
                                                EStringType type)
 {
-    ExpectSysTag(StringTag(type));
+    ExpectStringTag(type);
     size_t length = ReadLength();
     static const size_t BUFFER_SIZE = 1024;
     char buffer[BUFFER_SIZE];
@@ -802,7 +822,7 @@ void CObjectIStreamAsnBinary::ReadPackedString(string& s,
 
 void CObjectIStreamAsnBinary::ReadString(string& s, EStringType type)
 {
-    ExpectSysTag(StringTag(type));
+    ExpectStringTag(type);
     ReadStringValue(ReadLength(), s,
                     type == eStringTypeVisible? m_FixMethod: eFNP_Allow);
 }
@@ -1439,7 +1459,7 @@ void CObjectIStreamAsnBinary::SkipFNumber(void)
 
 void CObjectIStreamAsnBinary::SkipString(EStringType type)
 {
-    ExpectSysTag(StringTag(type));
+    ExpectStringTag(type);
     SkipTagData();
 }
 
