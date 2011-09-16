@@ -623,19 +623,21 @@ static void s_Extract(const CGC_AssemblyUnit& unit,
                       list< CConstRef<CGC_Sequence> >& molecules,
                       CGC_Assembly::ESubset subset)
 {
-    bool no_roles_set = true;
+    bool invalid_data = false;
     CTypeConstIterator<CGC_Sequence> sequence_it(unit);
     size_t count = 0;
     for ( ;  sequence_it;  ++sequence_it, ++count) {
+        if (sequence_it->GetSeq_id().IsGi()  &&  !sequence_it->IsSetRoles() ) {
+            invalid_data = true;
+        }
+
         // Include this sequence if it has the correct role, or if
         // all sequences are requested
         bool fits_role = false;
         if (subset == CGC_Assembly::eAll) {
-            no_roles_set = false;
             fits_role = true;
         }
         else if (sequence_it->IsSetRoles()) {
-            no_roles_set = false;
             ITERATE (CGC_Sequence::TRoles, it, sequence_it->GetRoles()) {
                 if (s_RoleFitsSubset(*it, subset)) {
                     fits_role = true;
@@ -648,7 +650,7 @@ static void s_Extract(const CGC_AssemblyUnit& unit,
         }
     }
 
-    if (no_roles_set  &&  count) {
+    if (invalid_data) {
         NCBI_THROW(CException, eUnknown,
                    "GC-Sequence.roles is not set in the current assembly; "
                    "please re-extract GC-Assembly");
