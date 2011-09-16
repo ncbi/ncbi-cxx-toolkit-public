@@ -1376,7 +1376,11 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
         DEF_FAST_FLAGS="-O2"
         ;;
       GCC:* )
-        DEF_FAST_FLAGS="-O9 -finline-functions -ffast-math -fstrict-aliasing"
+        DEF_FAST_FLAGS="-O9 -finline-functions -fstrict-aliasing"
+        case "$host_os" in
+           freebsd* ) ;;
+           * )        DEF_FAST_FLAGS="$DEF_FAST_FLAGS -ffast-math" ;;
+        esac
         if test "$with_profiling" != "yes"; then
            # incompatible with -pg
            DEF_FAST_FLAGS="$DEF_FAST_FLAGS -fomit-frame-pointer"
