@@ -5,7 +5,7 @@
 # Author: Christiam camacho
 
 import os, sys, os.path
-from shutil import copy
+import shutil
 from optparse import OptionParser
 SCRIPT_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
 sys.path.append(os.path.join(SCRIPT_DIR, ".."))
@@ -66,14 +66,14 @@ def main():
         app = os.path.join(installdir, "bin", app)
         if VERBOSE: 
             print "Copying", app, "to", cwd
-        copy(app, cwd)
+        shutil.copy(app, cwd)
     
     
     update_blast_version(NSIS_CONFIG, blast_version)
     # Copy necessary files to the current working directory
-    copy(NSIS_CONFIG, cwd)
+    shutil.copy(NSIS_CONFIG, cwd)
     license_file = os.path.join(SCRIPT_DIR, "..", "..", "LICENSE")
-    copy(license_file, cwd)
+    shutil.copy(license_file, cwd)
 
     # User manual PDF is replaced by README.txt
     f = open("README.txt", "w")
@@ -84,7 +84,7 @@ def main():
         src = os.path.join(SCRIPT_DIR, aux_file)
         if VERBOSE:
             print "Copying", src, "to", cwd
-        copy(src, cwd)
+        shutil.copy(src, cwd)
         
     # makensis is in the path of the script courtesy of the release framework
     cmd = "makensis " + os.path.basename(NSIS_CONFIG)
@@ -95,7 +95,7 @@ def main():
         os.makedirs(installer_dir)
 
     installer = extract_installer()
-    copy(installer, installer_dir)
+    shutil.copy(installer, installer_dir)
 
 if __name__ == "__main__":
     sys.exit(main())

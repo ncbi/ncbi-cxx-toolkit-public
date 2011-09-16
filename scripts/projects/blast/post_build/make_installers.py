@@ -7,7 +7,7 @@
 
 import os, sys, os.path
 from optparse import OptionParser
-from blast_utils import safe_exec
+import blast_utils
 
 VERBOSE = False
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
@@ -52,7 +52,7 @@ def launch_win_installer_build(installdir, blast_version):
     cmd += blast_version + " " + installdir
     if VERBOSE: 
         cmd += " -v"
-    safe_exec(cmd)
+    blast_utils.safe_exec(cmd)
     return 0
 
 def launch_rpm_build(installdir, blast_version):
@@ -63,7 +63,7 @@ def launch_rpm_build(installdir, blast_version):
     cmd += blast_version + " " + installdir
     if VERBOSE: 
         cmd += " -v"
-    safe_exec(cmd)
+    blast_utils.safe_exec(cmd)
     return 0
 
 def mac_post_build(installdir, blast_version):
@@ -73,7 +73,7 @@ def mac_post_build(installdir, blast_version):
     script_dir = os.path.join(SCRIPTS_DIR, "macosx")
     cmd = os.path.join(script_dir, "ncbi-blast.sh") + " "
     cmd += installdir + " " + script_dir + " " + blast_version
-    safe_exec(cmd)
+    blast_utils.safe_exec(cmd)
     return 0
 
 def do_nothing(platform):

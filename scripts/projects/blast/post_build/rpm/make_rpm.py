@@ -9,7 +9,7 @@ http://docs.fedoraproject.org/drafts/rpm-guide-en/ch10s05.html)
 
 import sys, os, shutil
 from optparse import OptionParser
-from subprocess import Popen, PIPE
+import subprocess
 SCRIPT_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
 sys.path.append(os.path.join(SCRIPT_DIR, ".."))
 from blast_utils import *   #IGNORE:W0401
@@ -137,7 +137,7 @@ def move_rpms_to_installdir(installdir):
         os.makedirs(installer_dir)
         
     args = [ "find", RPMBUILD_HOME, "-name", "*.rpm" ]
-    output = Popen(args, stdout=PIPE).communicate()[0]
+    output = subprocess.Popen(args, stdout=subprocess.PIPE).communicate()[0]
     for rpm in output.split():
         if VERBOSE: 
             print "mv", rpm, installer_dir

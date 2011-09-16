@@ -4,8 +4,8 @@
 __all__ = [ "safe_exec", "update_blast_version" ]
 
 import os
-from subprocess import call
-from shutil import move
+import subprocess
+import shutil
 import platform
         
 def safe_exec(cmd):
@@ -14,7 +14,7 @@ def safe_exec(cmd):
     """   
     try:
         msg = "Command: '" + cmd + "' "
-        retcode = call(cmd, shell=True)
+        retcode = subprocess.call(cmd, shell=True)
         if retcode < 0:
             msg += "Termined by signal " + str(-retcode)
             raise RuntimeError(msg)
@@ -33,7 +33,7 @@ def update_blast_version(config_file, blast_version):
     """
     import re
     temp_fname = os.tmpnam()
-    move(config_file, temp_fname)
+    shutil.move(config_file, temp_fname)
     try:
         out = open(config_file, "w")
         infile = open(temp_fname, "r")
