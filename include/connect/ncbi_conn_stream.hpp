@@ -28,7 +28,7 @@
  *
  * Authors:  Denis Vakatov, Anton Lavrentiev
  *
- * @file
+/// @file
  * File Description:
  *   CONN-based C++ streams
  *
