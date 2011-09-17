@@ -2858,6 +2858,9 @@ KNP	s	South African National Parks, Scientific Services
 KNU	s	Kyungpook National University, Biology Department
 KNUC	s	Kangweon National University
 KNUH	s	Kyung-Nam University, Biology Department
+KNWR	s	Kenai National Wildlife Refuge
+KNWR:Ento	s	Kenai National Wildlife Refuge, Entomology Collection
+KNWR:Herb	s	Kenai National Wildlife Refuge, Herbarium
 KNY	s	Literary and Scientific Institution of Kilkenny
 KNYA	s	Selcuk Ueniversitesi, Biyoloji Boeluemue
 KO	s	P. J. Safarik University
