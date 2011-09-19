@@ -516,10 +516,14 @@ BOOST_AUTO_TEST_CASE(TestPrintTreeNexus)
     string output = CNcbiOstrstreamToString(*ostr);
 
     BOOST_REQUIRE(output.find("#NEXUS") != NPOS);
-    BOOST_REQUIRE(output.find("BEGIN") != NPOS);
-    BOOST_REQUIRE(output.find("(serpin_B9__Homo_sapiens_:4.73586, (hypothetical_protein__Homo_sapiens_:0, ((serpin_peptidase_inhibitor__clade_B__ovalbumin___member_11__Homo_sapiens_:0.0646582, unnamed_protein_product__Homo_sapiens_:0):0.368709, (((antithrombin_III_precursor__Homo_sapiens_:0, antithrombin_III__Homo_sapiens_:0.00969429):0.00807382, antithrombin_III_variant__Homo_sapiens_:0):0.0311961, unnamed_protein_product__Homo_sapiens_:0):0.560057):0.656712):0);") 
+    BOOST_REQUIRE(output.find("BEGIN TAXA;") != NPOS);
+    BOOST_REQUIRE(output.find("DIMENSIONS ntax=8;") != NPOS);
+    BOOST_REQUIRE(output.find("TAXLABELS serpin_B9__Homo_sapiens_ hypothetical_protein__Homo_sapiens_ serpin_peptidase_inhibitor__clade_B__ovalbumin___member_11__Homo_sapiens_ unnamed_protein_product__Homo_sapiens_ antithrombin_III_precursor__Homo_sapiens_ antithrombin_III__Homo_sapiens_ antithrombin_III_variant__Homo_sapiens_ unnamed_protein_product__Homo_sapiens_;")
                   != NPOS);
-    BOOST_REQUIRE(output.find("END") != NPOS);
+    BOOST_REQUIRE(output.find("BEGIN TREES;") != NPOS);
+    BOOST_REQUIRE(output.find("TREE Blast_guide_tree = (serpin_B9__Homo_sapiens_:4.73586, (hypothetical_protein__Homo_sapiens_:0, ((serpin_peptidase_inhibitor__clade_B__ovalbumin___member_11__Homo_sapiens_:0.0646582, unnamed_protein_product__Homo_sapiens_:0):0.368709, (((antithrombin_III_precursor__Homo_sapiens_:0, antithrombin_III__Homo_sapiens_:0.00969429):0.00807382, antithrombin_III_variant__Homo_sapiens_:0):0.0311961, unnamed_protein_product__Homo_sapiens_:0):0.560057):0.656712):0);") 
+                  != NPOS);
+    BOOST_REQUIRE(output.find("ENDBLOCK;") != NPOS);
 
 
     ostr.reset(new ostrstream());
@@ -528,10 +532,14 @@ BOOST_AUTO_TEST_CASE(TestPrintTreeNexus)
     output = CNcbiOstrstreamToString(*ostr);
 
     BOOST_REQUIRE(output.find("#NEXUS") != NPOS);
-    BOOST_REQUIRE(output.find("BEGIN") != NPOS);
-    BOOST_REQUIRE(output.find("(Homo_sapiens:4.73586, (Homo_sapiens:0, ((Homo_sapiens:0.0646582, Homo_sapiens:0):0.368709, (((Homo_sapiens:0, Homo_sapiens:0.00969429):0.00807382, Homo_sapiens:0):0.0311961, Homo_sapiens:0):0.560057):0.656712):0);")
+    BOOST_REQUIRE(output.find("BEGIN TAXA;") != NPOS);
+    BOOST_REQUIRE(output.find("DIMENSIONS ntax=8;") != NPOS);
+    BOOST_REQUIRE(output.find("TAXLABELS Homo_sapiens Homo_sapiens Homo_sapiens Homo_sapiens Homo_sapiens Homo_sapiens Homo_sapiens Homo_sapiens;")
                   != NPOS);
-    BOOST_REQUIRE(output.find("END") != NPOS);
+    BOOST_REQUIRE(output.find("BEGIN TREES;") != NPOS);
+    BOOST_REQUIRE(output.find("TREE Blast_guide_tree = (Homo_sapiens:4.73586, (Homo_sapiens:0, ((Homo_sapiens:0.0646582, Homo_sapiens:0):0.368709, (((Homo_sapiens:0, Homo_sapiens:0.00969429):0.00807382, Homo_sapiens:0):0.0311961, Homo_sapiens:0):0.560057):0.656712):0);")
+                  != NPOS);
+    BOOST_REQUIRE(output.find("ENDBLOCK;") != NPOS);
 
 
     ostr.reset(new ostrstream());
@@ -540,10 +548,14 @@ BOOST_AUTO_TEST_CASE(TestPrintTreeNexus)
     output = CNcbiOstrstreamToString(*ostr);
 
     BOOST_REQUIRE(output.find("#NEXUS") != NPOS);
-    BOOST_REQUIRE(output.find("BEGIN") != NPOS);
-    BOOST_REQUIRE(output.find("(primates:4.73586, (primates:0, ((primates:0.0646582, primates:0):0.368709, (((primates:0, primates:0.00969429):0.00807382, primates:0):0.0311961, primates:0):0.560057):0.656712):0);\n")
+    BOOST_REQUIRE(output.find("BEGIN TAXA;") != NPOS);
+    BOOST_REQUIRE(output.find("DIMENSIONS ntax=8;") != NPOS);
+    BOOST_REQUIRE(output.find("TAXLABELS primates primates primates primates primates primates primates primates;")
                   != NPOS);
-    BOOST_REQUIRE(output.find("END") != NPOS);
+    BOOST_REQUIRE(output.find("BEGIN TREES;") != NPOS);
+    BOOST_REQUIRE(output.find("TREE Blast_guide_tree = (primates:4.73586, (primates:0, ((primates:0.0646582, primates:0):0.368709, (((primates:0, primates:0.00969429):0.00807382, primates:0):0.0311961, primates:0):0.560057):0.656712):0);\n")
+                  != NPOS);
+    BOOST_REQUIRE(output.find("ENDBLOCK;") != NPOS);
 
 
     ostr.reset(new ostrstream());
@@ -552,10 +564,14 @@ BOOST_AUTO_TEST_CASE(TestPrintTreeNexus)
     output = CNcbiOstrstreamToString(*ostr);
 
     BOOST_REQUIRE(output.find("#NEXUS") != NPOS);
-    BOOST_REQUIRE(output.find("BEGIN") != NPOS);
-    BOOST_REQUIRE(output.find("(ref_NP_004146_1:4.73586, (emb_CAE45712_1:0, ((gb_EAW63158_1:0.0646582, dbj_BAG59299_1:0):0.368709, (((ref_NP_000479_1:0, gb_AAA51796_1:0.00969429):0.00807382, dbj_BAA06212_1:0):0.0311961, dbj_BAG35537_1:0):0.560057):0.656712):0);")
+    BOOST_REQUIRE(output.find("BEGIN TAXA;") != NPOS);
+    BOOST_REQUIRE(output.find("DIMENSIONS ntax=8;") != NPOS);
+    BOOST_REQUIRE(output.find("TAXLABELS ref_NP_004146_1 emb_CAE45712_1 gb_EAW63158_1 dbj_BAG59299_1 ref_NP_000479_1 gb_AAA51796_1 dbj_BAA06212_1 dbj_BAG35537_1;")
                   != NPOS);
-    BOOST_REQUIRE(output.find("END") != NPOS);
+    BOOST_REQUIRE(output.find("BEGIN TREES;") != NPOS);
+    BOOST_REQUIRE(output.find("TREE Blast_guide_tree = (ref_NP_004146_1:4.73586, (emb_CAE45712_1:0, ((gb_EAW63158_1:0.0646582, dbj_BAG59299_1:0):0.368709, (((ref_NP_000479_1:0, gb_AAA51796_1:0.00969429):0.00807382, dbj_BAA06212_1:0):0.0311961, dbj_BAG35537_1:0):0.560057):0.656712):0);")
+                  != NPOS);
+    BOOST_REQUIRE(output.find("ENDBLOCK;") != NPOS);
 
 
     ostr.reset(new ostrstream());
@@ -566,10 +582,14 @@ BOOST_AUTO_TEST_CASE(TestPrintTreeNexus)
     output = CNcbiOstrstreamToString(*ostr);
 
     BOOST_REQUIRE(output.find("#NEXUS") != NPOS);
-    BOOST_REQUIRE(output.find("BEGIN") != NPOS);
-    BOOST_REQUIRE(output.find("(ref_NP_004146_1_primates_:4.73586, (emb_CAE45712_1_primates_:0, ((gb_EAW63158_1_primates_:0.0646582, dbj_BAG59299_1_primates_:0):0.368709, (((ref_NP_000479_1_primates_:0, gb_AAA51796_1_primates_:0.00969429):0.00807382, dbj_BAA06212_1_primates_:0):0.0311961, dbj_BAG35537_1_primates_:0):0.560057):0.656712):0);")
+    BOOST_REQUIRE(output.find("BEGIN TAXA;") != NPOS);
+    BOOST_REQUIRE(output.find("DIMENSIONS ntax=8;") != NPOS);
+    BOOST_REQUIRE(output.find("TAXLABELS ref_NP_004146_1_primates_ emb_CAE45712_1_primates_ gb_EAW63158_1_primates_ dbj_BAG59299_1_primates_ ref_NP_000479_1_primates_ gb_AAA51796_1_primates_ dbj_BAA06212_1_primates_ dbj_BAG35537_1_primates_;")
                   != NPOS);
-    BOOST_REQUIRE(output.find("END") != NPOS);
+    BOOST_REQUIRE(output.find("BEGIN TREES;") != NPOS);
+    BOOST_REQUIRE(output.find("TREE Blast_guide_tree = (ref_NP_004146_1_primates_:4.73586, (emb_CAE45712_1_primates_:0, ((gb_EAW63158_1_primates_:0.0646582, dbj_BAG59299_1_primates_:0):0.368709, (((ref_NP_000479_1_primates_:0, gb_AAA51796_1_primates_:0.00969429):0.00807382, dbj_BAA06212_1_primates_:0):0.0311961, dbj_BAG35537_1_primates_:0):0.560057):0.656712):0);")
+                  != NPOS);
+    BOOST_REQUIRE(output.find("ENDBLOCK") != NPOS);
 }
 
 

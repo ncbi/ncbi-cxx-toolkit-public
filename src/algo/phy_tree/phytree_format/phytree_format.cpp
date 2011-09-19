@@ -125,44 +125,41 @@ bool CPhyTreeFormatter::WriteTree(CNcbiOstream& out)
 
 bool CPhyTreeFormatter::PrintNewickTree(CNcbiOstream& ostr)
 {
-    x_PrintNewickTree(ostr, *m_Dyntree.GetTreeNode());
+    // an array of labels is needed for Nexus format, here it is discarded
+    vector<string> labels;
+    x_PrintNewickTree(ostr, *m_Dyntree.GetTreeNode(), labels);
     ostr << NcbiEndl;
     return true;
 }
 
-bool CPhyTreeFormatter::PrintNexusTree(CNcbiOstream& ostr, const string& tree_name,
-                                bool force_win_eol)
+bool CPhyTreeFormatter::PrintNexusTree(CNcbiOstream& ostr,
+                                       const string& tree_name)
 {
-    ostr << "#NEXUS";
-    // Nedded when used for downloading from web
-    if (force_win_eol) {
-        ostr << "\r\n";
+    // generate tree in Newick format and collect leaf labels
+    vector<string> labels; // tree leaf labels
+    ostrstream buff;
+    x_PrintNewickTree(buff, *m_Dyntree.GetTreeNode(), labels, false);
+
+    CNcbiOstrstreamToString s(buff);
+    string tree(s);
+
+    // print tree in nexus format using the labels and tree generated above
+    ostr << "#NEXUS"
+         << NcbiEndl << NcbiEndl;
+
+    ostr << "BEGIN TAXA;" << NcbiEndl
+         << "  DIMENSIONS ntax=" << labels.size() << ";" << NcbiEndl
+         << "  TAXLABELS";
+    ITERATE (vector<string>, it, labels) {
+        ostr << " " << *it;
     }
-    else {
-        ostr << NcbiEndl;
-    }
-    ostr << "BEGIN TREES;";
-    if (force_win_eol) {
-        ostr << "\r\n";
-    }
-    else {
-        ostr << NcbiEndl;
-    }
-    ostr <<  "TREE " << tree_name << " = ";
-    x_PrintNewickTree(ostr, *m_Dyntree.GetTreeNode());
-    if (force_win_eol) {
-        ostr << "\r\n";
-    }
-    else {
-        ostr << NcbiEndl;
-    }
-    ostr << "END";
-    if (force_win_eol) {
-        ostr << "\r\n";
-    }
-    else {
-        ostr << NcbiEndl;
-    }
+    ostr << ";" << NcbiEndl;
+    ostr << "ENDBLOCK;" << NcbiEndl << NcbiEndl;
+
+    ostr << "BEGIN TREES;" << NcbiEndl
+         <<  "  TREE " << tree_name << " = " << tree
+         << NcbiEndl
+         << "ENDBLOCK;" << NcbiEndl;
 
     return true;
 }
@@ -458,7 +455,9 @@ void CPhyTreeFormatter::x_MarkCollapsedQueryNode(CBioTreeDynamic::CBioNode* node
 //Recusrive
 void CPhyTreeFormatter::x_PrintNewickTree(CNcbiOstream& ostr,
                                    const CBioTreeDynamic::CBioNode& node,
-                                   bool is_outer_node)
+                                          vector<string>& labels,
+                                          bool name_subtrees /* = true */,
+                                          bool is_outer_node /* = true */)
 {
 
     string label;
@@ -468,7 +467,8 @@ void CPhyTreeFormatter::x_PrintNewickTree(CNcbiOstream& ostr,
         for (CBioTreeDynamic::CBioNode::TNodeList_CI it = node.SubNodeBegin(); it != node.SubNodeEnd(); ++it) {
             if (it != node.SubNodeBegin())
                 ostr << ", ";
-            x_PrintNewickTree(ostr, (CBioTreeDynamic::CBioNode&)**it, false);
+            x_PrintNewickTree(ostr, (CBioTreeDynamic::CBioNode&)**it, labels,
+                              name_subtrees, false);
         }
         ostr << ')';
     }
@@ -479,7 +479,10 @@ void CPhyTreeFormatter::x_PrintNewickTree(CNcbiOstream& ostr,
             for (size_t i=0;i < label.length();i++)
                 if (!isalpha(label.at(i)) && !isdigit(label.at(i)))
                     label.at(i) = '_';
-            ostr << label;
+            if (node.IsLeaf() || name_subtrees) {
+                ostr << label;
+                labels.push_back(label);
+            }
         }
         ostr << ':' << node.GetFeature(GetFeatureTag(eDistId));
     }

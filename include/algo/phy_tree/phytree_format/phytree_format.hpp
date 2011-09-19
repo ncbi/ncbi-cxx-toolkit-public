@@ -254,12 +254,10 @@ public:
     /// Write tree in Nexus format to stream
     /// @param ostr Output stream [in|out]
     /// @param tree_name Name of the tree field in Nexus output [in]
-    /// @param force_win_eol If true end of lines will be always "\r\n" [in]
     /// @return True on success, false on failure
     ///
     bool PrintNexusTree(CNcbiOstream& ostr,
-                        const string& tree_name = "Blast_guide_tree",
-                        bool force_win_eol = false);
+                        const string& tree_name = "Blast_guide_tree");
 
 
 
@@ -344,6 +342,8 @@ protected:
     ///
     void x_PrintNewickTree(CNcbiOstream& ostr, 
                            const CBioTreeDynamic::CBioNode& node, 
+                           vector<string>& labels,
+                           bool name_subtrees = true,
                            bool is_outer_node = true);
         
 
