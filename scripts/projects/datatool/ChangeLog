@@ -53,3 +53,12 @@ November 15, 2010
 version 2.3.1
 Optimized working with program registry when parsing data specification.
 
+September 19, 2011
+version 2.4.0
+Added traversal code generation.
+Added support of pseudo namespace prefixes in DTD.
+Added support of namespace qualified elements and attributes in XML.
+Fixed problem with parsing recursive element definitions in Schema.
+Modified code generation to make serialization error messages more informative.
+Corrected processing of UTF8 strings.
+

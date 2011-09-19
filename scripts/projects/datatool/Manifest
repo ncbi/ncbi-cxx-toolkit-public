@@ -39,6 +39,6 @@ IntelMAC   : plain  : GCC.sh           --without-debug --without-mt --with-stati
 
 Win32_9    : 900 : static  32  ReleaseMT
 
-XCode      : plain  : Xcode.sh 30 --with-universal
+XCode      : plain  : Xcode.sh 30 --without-debug --with-universal
 
 #USE_COMPONENTS
