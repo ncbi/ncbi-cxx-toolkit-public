@@ -29,7 +29,7 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
- *   FTP CONNECTOR
+ *   FTP CONNECTOR implements FTP client side API
  *
  *   See <connect/ncbi_connector.h> for the detailed specification of
  *   the connector's methods and structures.
