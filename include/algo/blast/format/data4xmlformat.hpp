@@ -152,12 +152,12 @@ public:
 
     /// @inheritDoc
     int GetDbNumSeqs(void) const {
-        return m_DbInfo.front().number_seqs;
+        return m_NumSequences;
     }
 
     /// @inheritDoc
     Int8 GetDbLength(void) const {
-        return m_DbInfo.front().total_length;
+        return m_NumBases;
     }
 
     /// @inheritDoc
@@ -244,8 +244,10 @@ private:
     /// Score matrix used to determine neighboring protein residues
     int *m_Matrix[kMatrixCols];
 
-    /// internal representation of database information
-    vector<CBlastFormatUtil::SDbInfo> m_DbInfo;
+    /// Number of sequences in all BLAST databases involved in this search
+    int m_NumSequences;
+    /// Number of bases in all BLAST databases involved in this search
+    Int8 m_NumBases;
 
     /// Initialize the score matrix to be used for formatting
     /// (if applicable)

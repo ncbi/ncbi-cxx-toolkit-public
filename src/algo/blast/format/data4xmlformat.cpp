@@ -59,29 +59,33 @@ CCmdLineBlastXMLReportData::CCmdLineBlastXMLReportData
   m_DbName(dbname),
   m_QueryGeneticCode(qgencode), 
   m_DbGeneticCode(dbgencode),
-  m_NoHitsFound(false)
+  m_NoHitsFound(false),
+  m_NumSequences(0),
+  m_NumBases(0)
 {
     _ASSERT( !m_Queries->Empty() );
 
     x_FillScoreMatrix(m_Options.GetMatrixName());
 
-    if (m_DbName.empty()){
-    	CBlastFormatUtil::SDbInfo dummy;
-    	m_DbInfo.push_back(dummy);
-    }
-    else {
-    	CBlastFormatUtil::GetBlastDbInfo(m_DbInfo, m_DbName, db_is_aa,
+    vector<CBlastFormatUtil::SDbInfo> dbinformation;
+    if ( !m_DbName.empty() ){
+    	CBlastFormatUtil::GetBlastDbInfo(dbinformation, m_DbName, db_is_aa,
     									dbfilt_algorithm, is_remote);
+        ITERATE(vector<CBlastFormatUtil::SDbInfo>, i, dbinformation) {
+            m_NumSequences += i->number_seqs;
+        }
+        ITERATE(vector<CBlastFormatUtil::SDbInfo>, i, dbinformation) {
+            m_NumBases += i->total_length;
+        }
     }
-
     /// @todo FIXME add means to specify masked database (SB-343)
     // Is this appropriate? What if it breaks parsers?
     //if (dbfilt_algorithm != -1) {
     //    int x = 0; // should be the index of the masked DB
-    //    _ASSERT(!m_DbInfo[x].filt_algorithm_name.empty());
-    //    m_DbName += ", masked using: '" + m_DbInfo[x].filt_algorithm_name + "'";
-    //    if ( !m_DbInfo[x].filt_algorithm_options.empty() ) {
-    //        m_DbName += ", options: '" + m_DbInfo[x].filt_algorithm_options + "'";
+    //    _ASSERT(!dbinformation[x].filt_algorithm_name.empty());
+    //    m_DbName += ", masked using: '" + dbinformation[x].filt_algorithm_name + "'";
+    //    if ( !dbinformation[x].filt_algorithm_options.empty() ) {
+    //        m_DbName += ", options: '" + dbinformation[x].filt_algorithm_options + "'";
     //    }
     //}
 
