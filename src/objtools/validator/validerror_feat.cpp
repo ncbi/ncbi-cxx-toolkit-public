@@ -253,7 +253,7 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue, 
                          "Qualifier other than replace has just quotation marks", feat);
                 if (NStr::EqualNocase ((*it)->GetQual(), "EC_number")) {
-	                  PostErr (eDiag_Warning, eErr_SEQ_FEAT_EcNumberProblem, "EC number should not be empty", feat);
+                      PostErr (eDiag_Warning, eErr_SEQ_FEAT_EcNumberProblem, "EC number should not be empty", feat);
                 }
             }
         } else if (NStr::EqualNocase ((*it)->GetQual(), "EC_number")) {
@@ -261,36 +261,36 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberFormat,
                         (*it)->GetVal() + " is not in proper EC_number format", feat);
             } else {
-	              string ec_number = (*it)->GetVal();
+                  string ec_number = (*it)->GetVal();
                 CProt_ref::EECNumberStatus status = CProt_ref::GetECNumberStatus (ec_number);
-	              switch (status) {
-		              case CProt_ref::eEC_deleted:
-			              PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
-				                   "EC_number " + ec_number + " was deleted",
-					               feat);
-		                  break;
-		              case CProt_ref::eEC_replaced:
-			              PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
-				                   "EC_number " + ec_number + " was replaced",
-					               feat);
-			              break;
-		              case CProt_ref::eEC_unknown:
+                  switch (status) {
+                      case CProt_ref::eEC_deleted:
+                          PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
+                                   "EC_number " + ec_number + " was deleted",
+                                   feat);
+                          break;
+                      case CProt_ref::eEC_replaced:
+                          PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
+                                   "EC_number " + ec_number + " was replaced",
+                                   feat);
+                          break;
+                      case CProt_ref::eEC_unknown:
                     {
                         size_t pos = NStr::Find (ec_number, "n");
                         if (pos == string::npos || !isdigit (ec_number.c_str()[pos + 1])) {
-			                      PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
-				                             ec_number + " is not a legal value for qualifier EC_number",
-					                           feat);
+                                  PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
+                                             ec_number + " is not a legal value for qualifier EC_number",
+                                               feat);
                         } else {
-			                      PostErr (eDiag_Info, eErr_SEQ_FEAT_BadEcNumberValue, 
-				                             ec_number + " is not a legal preliminary value for qualifier EC_number",
-					                           feat);
+                                  PostErr (eDiag_Info, eErr_SEQ_FEAT_BadEcNumberValue, 
+                                             ec_number + " is not a legal preliminary value for qualifier EC_number",
+                                               feat);
                         }
                     }
-			              break;
-		              default:
-			              break;
-	              }
+                          break;
+                      default:
+                          break;
+                  }
             }
         } else if (NStr::EqualNocase ((*it)->GetQual(), "inference")) {
             /* TODO: Validate inference */
@@ -308,11 +308,11 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
                          + val + ")", feat);
             }
         }
-		if ((*it)->IsSetVal() && ContainsSgml ((*it)->GetVal())) {
-			PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
-				     "feature qualifier " + (*it)->GetVal() + " has SGML",
-					 feat);
-		}
+        if ((*it)->IsSetVal() && ContainsSgml ((*it)->GetVal())) {
+            PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+                     "feature qualifier " + (*it)->GetVal() + " has SGML",
+                     feat);
+        }
     }
 
     if (feat.IsSetExt()) {
@@ -1159,8 +1159,8 @@ static int s_GetStrictGenCode(const CBioSource& src)
                     break;
             }
         }
-	} catch (CException ) {
-	} catch (std::exception ) {
+    } catch (CException ) {
+    } catch (std::exception ) {
     }
     return gencode;
 }
@@ -1283,7 +1283,7 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
     }
 
     if ( gene.IsSetLocus_tag()  &&  !NStr::IsBlank (gene.GetLocus_tag()) ) {
-		    const string& locus_tag = gene.GetLocus_tag();
+            const string& locus_tag = gene.GetLocus_tag();
 
         ITERATE (string, it, locus_tag ) {
             if ( isspace((unsigned char)(*it)) != 0 ) {
@@ -1294,12 +1294,12 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
             }
         }
 
-		    if (gene.IsSetLocus() && !NStr::IsBlank(gene.GetLocus())
-			      && NStr::EqualNocase(locus_tag, gene.GetLocus())) {
-			      PostErr (eDiag_Error, eErr_SEQ_FEAT_LocusTagProblem, 
-				             "Gene locus and locus_tag '" + gene.GetLocus() + "' match",
-					           feat);
-		    }
+            if (gene.IsSetLocus() && !NStr::IsBlank(gene.GetLocus())
+                  && NStr::EqualNocase(locus_tag, gene.GetLocus())) {
+                  PostErr (eDiag_Error, eErr_SEQ_FEAT_LocusTagProblem, 
+                             "Gene locus and locus_tag '" + gene.GetLocus() + "' match",
+                               feat);
+            }
         if (feat.IsSetComment() && NStr::EqualCase (feat.GetComment(), locus_tag)) {
             PostErr (eDiag_Warning, eErr_SEQ_FEAT_RedundantFields, 
                      "Comment has same value as gene locus_tag", feat);
@@ -1357,32 +1357,32 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
         ValidateCharactersInField (gene.GetLocus(), "Gene locus", feat);
     }
 
-	  // check for SGML
-	  if (gene.IsSetLocus() && ContainsSgml(gene.GetLocus())) {
+      // check for SGML
+      if (gene.IsSetLocus() && ContainsSgml(gene.GetLocus())) {
           PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
-			       "gene locus " + gene.GetLocus() + " has SGML", feat);
-	  }
-	  if (gene.IsSetLocus_tag() && ContainsSgml(gene.GetLocus_tag())) {
+                   "gene locus " + gene.GetLocus() + " has SGML", feat);
+      }
+      if (gene.IsSetLocus_tag() && ContainsSgml(gene.GetLocus_tag())) {
           PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
-			       "gene locus_tag " + gene.GetLocus_tag() + " has SGML", feat);
-	  }
-	  if (gene.IsSetDesc()) {
-		    string desc = gene.GetDesc();
-		    if (ContainsSgml(desc)) {
-			      PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
-					       "gene description " + gene.GetDesc() + " has SGML", feat);
-		    }
-		    if (NStr::Find(desc, "..") != string::npos) {
-			      PostErr (eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature, 
-				           "Possible location text (" + desc + ") on gene description", feat);
-		    }
-	  }
-	  FOR_EACH_SYNONYM_ON_GENEREF (it, gene) {
-		    if (ContainsSgml(*it)) {
-			      PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
-					       "gene synonym " + *it + " has SGML", feat);
-		    }
-	  }
+                   "gene locus_tag " + gene.GetLocus_tag() + " has SGML", feat);
+      }
+      if (gene.IsSetDesc()) {
+            string desc = gene.GetDesc();
+            if (ContainsSgml(desc)) {
+                  PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+                           "gene description " + gene.GetDesc() + " has SGML", feat);
+            }
+            if (NStr::Find(desc, "..") != string::npos) {
+                  PostErr (eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature, 
+                           "Possible location text (" + desc + ") on gene description", feat);
+            }
+      }
+      FOR_EACH_SYNONYM_ON_GENEREF (it, gene) {
+            if (ContainsSgml(*it)) {
+                  PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+                           "gene synonym " + *it + " has SGML", feat);
+            }
+      }
 
 }
 
@@ -2214,8 +2214,8 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
                                        label, report_errors, relax_to_warning, has_errors, feat);
                     }
                 }
-			      } catch (CException ) {
-			      } catch (std::exception ) {
+                  } catch (CException ) {
+                  } catch (std::exception ) {
                 // could get errors from CSeqVector
             }
         }
@@ -2513,17 +2513,17 @@ void CValidError_feat::ValidateProt(const CProt_ref& prot, const CSeq_feat& feat
 
 
         ValidateCharactersInField (*it, "Protein name", feat);
-	    if (ContainsSgml(*it)) {
-		    PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
-			         "protein name " + *it + " has SGML",
-				     feat);
-	    }
+        if (ContainsSgml(*it)) {
+            PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+                     "protein name " + *it + " has SGML",
+                     feat);
+        }
     }
 
     if (prot.IsSetDesc() && ContainsSgml(prot.GetDesc())) {
-	    PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
-		         "protein description " + prot.GetDesc() + " has SGML",
-			     feat);
+        PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+                 "protein description " + prot.GetDesc() + " has SGML",
+                 feat);
     }
 
     if (prot.IsSetDesc() && feat.IsSetComment() 
@@ -2587,43 +2587,43 @@ void CValidError_feat::x_ReportUninformativeNames(const CProt_ref& prot, const C
 void CValidError_feat::x_ValidateProtECNumbers(const CProt_ref& prot, const CSeq_feat& feat) 
 {
     FOR_EACH_ECNUMBER_ON_PROTREF (it, prot) {
-		if (NStr::IsBlank (*it)) {
-		    PostErr (eDiag_Warning, eErr_SEQ_FEAT_EcNumberProblem, "EC number should not be empty", feat);
-		} else if (!s_IsValidECNumberFormat(*it)) {
+        if (NStr::IsBlank (*it)) {
+            PostErr (eDiag_Warning, eErr_SEQ_FEAT_EcNumberProblem, "EC number should not be empty", feat);
+        } else if (!s_IsValidECNumberFormat(*it)) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberFormat,
                     (*it) + " is not in proper EC_number format", feat);
-		} else {
-			string ec_number = *it;
-		    CProt_ref::EECNumberStatus status = CProt_ref::GetECNumberStatus (ec_number);
-			switch (status) {
-				case CProt_ref::eEC_deleted:
-					PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
-						     "EC_number " + ec_number + " was deleted",
-							 feat);
-				    break;
-				case CProt_ref::eEC_replaced:
-					PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
-						     "EC_number " + ec_number + " was transferred and is no longer valid",
-							 feat);
-					break;
-				case CProt_ref::eEC_unknown:
+        } else {
+            string ec_number = *it;
+            CProt_ref::EECNumberStatus status = CProt_ref::GetECNumberStatus (ec_number);
+            switch (status) {
+                case CProt_ref::eEC_deleted:
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
+                             "EC_number " + ec_number + " was deleted",
+                             feat);
+                    break;
+                case CProt_ref::eEC_replaced:
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
+                             "EC_number " + ec_number + " was transferred and is no longer valid",
+                             feat);
+                    break;
+                case CProt_ref::eEC_unknown:
           {
               size_t pos = NStr::Find (ec_number, "n");
               if (pos == string::npos || !isdigit (ec_number.c_str()[pos + 1])) {
-					        PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
-						               ec_number + " is not a legal value for qualifier EC_number",
-							             feat);
+                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
+                                       ec_number + " is not a legal value for qualifier EC_number",
+                                         feat);
               } else {
-					        PostErr (eDiag_Info, eErr_SEQ_FEAT_BadEcNumberValue, 
-						               ec_number + " is not a legal preliminary value for qualifier EC_number",
-							             feat);
+                            PostErr (eDiag_Info, eErr_SEQ_FEAT_BadEcNumberValue, 
+                                       ec_number + " is not a legal preliminary value for qualifier EC_number",
+                                         feat);
               }
           }
-					break;
-				default:
-					break;
-			}
-		}
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 
 }
@@ -2681,12 +2681,12 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
         }
         
         if (rna.CanGetExt() && rna.GetExt().IsName()) {
-			const string& rna_name = rna.GetExt().GetName();
+            const string& rna_name = rna.GetExt().GetName();
             ValidateCharactersInField (rna_name, "mRNA name", feat);
-			if (ContainsSgml(rna_name)) {
-				PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
-					"mRNA name " + rna_name + " has SGML", feat);
-			}
+            if (ContainsSgml(rna_name)) {
+                PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+                    "mRNA name " + rna_name + " has SGML", feat);
+            }
         }
     }
 
@@ -2740,12 +2740,12 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
 
     if (rna_type == CRNA_ref::eType_rRNA) {
         if (rna.CanGetExt() && rna.GetExt().IsName()) {
-			const string& rna_name = rna.GetExt().GetName();
+            const string& rna_name = rna.GetExt().GetName();
             ValidateCharactersInField (rna_name, "rRNA name", feat);
-			if (ContainsSgml(rna_name)) {
-				PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
-					"rRNA name " + rna_name + " has SGML", feat);
-			}
+            if (ContainsSgml(rna_name)) {
+                PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+                    "rRNA name " + rna_name + " has SGML", feat);
+            }
         }
     }
 
@@ -2756,7 +2756,7 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
         if (!rna.IsSetExt() || !rna.GetExt().IsName() || NStr::IsBlank(rna.GetExt().GetName())) {
             if (!pseudo) {
                 string rna_typename = CRNA_ref::GetRnaTypeName(rna_type);
-				PostErr (eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue, 
+                PostErr (eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue, 
                          rna_typename + " has no name", feat);
             }
         }
@@ -2951,9 +2951,9 @@ const char* GetAAName(unsigned char aa, bool is_ascii)
                 (CSeq_data::e_Ncbieaa, CSeq_data::e_Ncbistdaa, aa);
         }
         return (aa < sizeof(kAANames)/sizeof(*kAANames)) ? kAANames[aa] : "OTHER";
-	} catch (CException ) {
+    } catch (CException ) {
         return "OTHER";
-	} catch (std::exception ) {
+    } catch (std::exception ) {
         return "OTHER";
     }
 }
@@ -3148,8 +3148,8 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
             if (anticodon.length() > 3) {
                 anticodon = anticodon.substr(0, 3);
             }
-		    } catch (CException ) {
-		    } catch (std::exception ) {
+            } catch (CException ) {
+            } catch (std::exception ) {
         }
 
         if (codon_values.size() > 0) {
@@ -3231,8 +3231,8 @@ void CValidError_feat::ValidateGapFeature (const CSeq_feat& feat)
                              feat);
                     return;
                 }
-			} catch (CException ) {
-			} catch (std::exception ) {
+            } catch (CException ) {
+            } catch (std::exception ) {
             }
         }
     }
@@ -3282,8 +3282,8 @@ void CValidError_feat::ValidateGapFeature (const CSeq_feat& feat)
             }
         }
 
-	} catch (CException ) {
-	} catch (std::exception ) {
+    } catch (CException ) {
+    } catch (std::exception ) {
     }
 
 }
@@ -3609,9 +3609,9 @@ static bool s_RptUnitIsBaseRange (string str, TSeqPos& from, TSeqPos& to)
         from = tmp_from;
         tmp_to = NStr::StringToInt (str.substr (pos + 2));
         to = tmp_to;
-	  } catch (CException ) {
+      } catch (CException ) {
           return false;
-	  } catch (std::exception ) {
+      } catch (std::exception ) {
         return false;
     }
     if (tmp_from < 0 || tmp_to < 0) {
@@ -3819,8 +3819,8 @@ int CValidError_feat::x_SeqIdToGiNumber(
         }
         CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*id);
         gi = m_Scope->GetGi (idh);
-	} catch (CException ) {
-	} catch (std::exception ) {
+    } catch (CException ) {
+    } catch (std::exception ) {
     }
     return gi;
 };
@@ -3837,73 +3837,73 @@ Return values are:
 
 static int ValidateAccessionFormat (string accession) 
 {
-	if (NStr::IsBlank (accession)) {
-		return -3;
-	}
-	if (accession.length() >= 16) {
-		return -4;
-	}
-	if (accession.c_str()[0] < 'A' || accession.c_str()[0] > 'Z') {
-		return -1;
-	}
+    if (NStr::IsBlank (accession)) {
+        return -3;
+    }
+    if (accession.length() >= 16) {
+        return -4;
+    }
+    if (accession.c_str()[0] < 'A' || accession.c_str()[0] > 'Z') {
+        return -1;
+    }
 
-	if (NStr::StartsWith(accession, "NZ_")) {
-		accession = accession.substr(3);
-	}
+    if (NStr::StartsWith(accession, "NZ_")) {
+        accession = accession.substr(3);
+    }
 
-	const char *cp = accession.c_str();
-	int num_alpha = 0;
-	int num_underscore = 0;
-	int num_digits = 0;
+    const char *cp = accession.c_str();
+    int num_alpha = 0;
+    int num_underscore = 0;
+    int num_digits = 0;
 
-	while (isalpha (*cp)) {
-		num_alpha++;
-	    cp++;
-	}
-	while (*cp == '_') {
-		num_underscore++;
-		cp++;
-	}
-	while (isdigit (*cp)) {
-		num_digits ++;
-		cp++;
-	}
+    while (isalpha (*cp)) {
+        num_alpha++;
+        cp++;
+    }
+    while (*cp == '_') {
+        num_underscore++;
+        cp++;
+    }
+    while (isdigit (*cp)) {
+        num_digits ++;
+        cp++;
+    }
 
-	if (*cp != 0 && *cp != ' ' && *cp != '.') {
-		return -2;
-	}
+    if (*cp != 0 && *cp != ' ' && *cp != '.') {
+        return -2;
+    }
 
-	if (num_underscore > 1) {
-		return -2;
-	}
+    if (num_underscore > 1) {
+        return -2;
+    }
 
-	if (num_underscore == 0) {
-		if (num_alpha == 1 && num_digits == 5) return 0;
-		if (num_alpha == 2 && num_digits == 6) return 0;
-		if (num_alpha == 3 && num_digits == 5) return 0;
-		if (num_alpha == 4 && num_digits == 8) return 0;
-		if (num_alpha == 5 && num_digits == 7) return 0;
-	} else if (num_underscore == 1) {
-		if (num_alpha != 2 || (num_digits != 6 && num_digits != 8 && num_digits != 9)) return -2;
-		char first_char = accession.c_str()[0];
-		char second_char = accession.c_str()[1];
-		if (first_char == 'N' || first_char == 'X' || first_char == 'Z') {
-		  if (second_char == 'M' ||
-			  accession [1] == 'C' ||
-			  accession [1] == 'T' ||
-			  accession [1] == 'P' ||
-			  accession [1] == 'G' ||
-			  accession [1] == 'R' ||
-			  accession [1] == 'S' ||
-			  accession [1] == 'W' ||
-			  accession [1] == 'Z') {
-			return 0;
-		  }
-		}
-		if (accession [0] == 'A' || accession [0] == 'Y') {
-		  if (accession [1] == 'P') return 0;
-		}
-	  }
+    if (num_underscore == 0) {
+        if (num_alpha == 1 && num_digits == 5) return 0;
+        if (num_alpha == 2 && num_digits == 6) return 0;
+        if (num_alpha == 3 && num_digits == 5) return 0;
+        if (num_alpha == 4 && num_digits == 8) return 0;
+        if (num_alpha == 5 && num_digits == 7) return 0;
+    } else if (num_underscore == 1) {
+        if (num_alpha != 2 || (num_digits != 6 && num_digits != 8 && num_digits != 9)) return -2;
+        char first_char = accession.c_str()[0];
+        char second_char = accession.c_str()[1];
+        if (first_char == 'N' || first_char == 'X' || first_char == 'Z') {
+          if (second_char == 'M' ||
+              accession [1] == 'C' ||
+              accession [1] == 'T' ||
+              accession [1] == 'P' ||
+              accession [1] == 'G' ||
+              accession [1] == 'R' ||
+              accession [1] == 'S' ||
+              accession [1] == 'W' ||
+              accession [1] == 'Z') {
+            return 0;
+          }
+        }
+        if (accession [0] == 'A' || accession [0] == 'Y') {
+          if (accession [1] == 'P') return 0;
+        }
+      }
 
   return -2;
 }
@@ -4203,8 +4203,8 @@ void CValidError_feat::ValidateImpGbquals
                                              "/replace already matches underlying sequence (" + val + ")",
                                              feat);
                                 }
-							} catch (CException ) {
-							} catch (std::exception ) {
+                            } catch (CException ) {
+                            } catch (std::exception ) {
                             }
                         }
                     }
@@ -4260,8 +4260,8 @@ void CValidError_feat::ValidateImpGbquals
                 }}
                 break;
 
-	        default:
-	            break;
+            default:
+                break;
             } // end of switch statement
             if ( error ) {
                 PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
@@ -4352,8 +4352,8 @@ void CValidError_feat::ValidateNonImpFeatGbquals (const CSeq_feat& feat)
                     }}
                     break;
 
-	              default:
-	                  break;
+                  default:
+                      break;
                 }
             }
         }
@@ -4665,8 +4665,8 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
                 }
             }
         }
-	} catch (CException ) {
-	} catch (std::exception ) {
+    } catch (CException ) {
+    } catch (std::exception ) {
     }
 
     if (!report_errors) {
@@ -5439,13 +5439,13 @@ void CValidError_feat::ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq
                             PostErr (eDiag_Warning, eErr_SEQ_FEAT_SeqFeatXrefProblem, 
                                      "Cross-references are not between CDS and mRNA pair",
                                      feat);
-						} else if (feat.GetData().IsCdregion()) {
-							ECompare comp = Compare(feat.GetLocation(), far_feat.GetLocation(), m_Scope);
+                        } else if (feat.GetData().IsCdregion()) {
+                            ECompare comp = Compare(feat.GetLocation(), far_feat.GetLocation(), m_Scope);
                             if ( (comp != eContained) && (comp != eSame)) {
-								PostErr (eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAXrefLocationProblem, 
-									     "CDS not contained within cross-referenced mRNA", feat);
-							}
-						}
+                                PostErr (eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAXrefLocationProblem, 
+                                         "CDS not contained within cross-referenced mRNA", feat);
+                            }
+                        }
                     }
                 }
                 if (!has_xref) {
@@ -6244,7 +6244,7 @@ bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
             continue;
         }
         // if the code break is outside the coding region, skip
-		ECompare comp = Compare((*cbr)->GetLoc(), feat.GetLocation(), m_Scope);
+        ECompare comp = Compare((*cbr)->GetLoc(), feat.GetLocation(), m_Scope);
         if ( (comp != eContained) && (comp != eSame)) {
             continue;
         }
@@ -6352,16 +6352,31 @@ vector < CConstRef <CSeq_feat> > GetFeaturesWithLabel (CBioseq_Handle bsh, strin
 }
 
 
-static bool s_LocationStrandsIncompatible (const CSeq_loc& loc1, const CSeq_loc& loc2)
+static bool s_LocationStrandsIncompatible (const CSeq_loc& loc1, const CSeq_loc& loc2, CScope * scope)
 {
-	ENa_strand strand1 = loc1.GetStrand();
-	ENa_strand strand2 = loc2.GetStrand();
+    ENa_strand strand1 = loc1.GetStrand();
+    ENa_strand strand2 = loc2.GetStrand();
 
-	if (strand1 == strand2) {
-		return false;
-	} else {
-		return true;
-	}
+    if (strand1 == strand2) {
+        return false;
+    }
+    if ((strand1 == eNa_strand_unknown || strand1 == eNa_strand_plus) &&
+        (strand2 == eNa_strand_unknown || strand2 == eNa_strand_plus)) {
+            return false;
+    }
+    if (strand1 == eNa_strand_other) {
+        ECompare comp = Compare(loc1, loc2, scope);
+        if (comp == eContains) {
+            return false;
+        }
+    } else if (strand2 == eNa_strand_other) {
+        ECompare comp = Compare(loc1, loc2, scope);
+        if (comp == eContained) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 
@@ -6605,10 +6620,10 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
                 f->GetData().GetGene().GetLabel(&label);
                 if (NStr::Equal(label, gene_xref->GetLocus())) {
                     found = true;
-					          if (s_LocationStrandsIncompatible(f->GetLocation(), feat.GetLocation())) {
-						          PostErr (eDiag_Warning, eErr_SEQ_FEAT_GeneXrefStrandProblem,
-							          "Gene cross-reference is not on expected strand", feat);
-					          }
+                    if (s_LocationStrandsIncompatible(f->GetLocation(), feat.GetLocation(), m_Scope)) {
+                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_GeneXrefStrandProblem,
+                            "Gene cross-reference is not on expected strand", feat);
+                    }
                 } else {
                     ++f;
                 }
@@ -6645,10 +6660,10 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
                 if (f->GetData().GetGene().IsSetLocus_tag() 
                     && NStr::EqualCase (f->GetData().GetGene().GetLocus_tag(), gene_xref->GetLocus_tag())) {
                     found = true;
-					if (s_LocationStrandsIncompatible(f->GetLocation(), feat.GetLocation())) {
-						PostErr (eDiag_Warning, eErr_SEQ_FEAT_GeneXrefStrandProblem,
-							"Gene cross-reference is not on expected strand", feat);
-					}
+                    if (s_LocationStrandsIncompatible(f->GetLocation(), feat.GetLocation(), m_Scope)) {
+                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_GeneXrefStrandProblem,
+                            "Gene cross-reference is not on expected strand", feat);
+                    }
                 } else {
                     ++f;
                 }
@@ -6811,11 +6826,11 @@ void CValidError_feat::ValidateFeatComment
             "attach reference specific comments to the reference "
             "REMARK instead.", feat);
     }
-	if (ContainsSgml(comment)) {
-		PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
-			     "feature comment " + comment + " has SGML",
-				 feat);
-	}
+    if (ContainsSgml(comment)) {
+        PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+                 "feature comment " + comment + " has SGML",
+                 feat);
+    }
 }
 
 
@@ -7052,8 +7067,8 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureCrossesGap, 
                                  "Feature crosses gap of unknown length", feat);
                     }            
-		        } catch (CException ) {
-		        } catch (std::exception ) {
+                } catch (CException ) {
+                } catch (std::exception ) {
                 }
             }
         }
