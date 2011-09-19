@@ -47,21 +47,6 @@
 #include <algo/phy_tree/phytree_calc.hpp>
 #include <algo/phy_tree/phytree_format/phytree_format.hpp>
 
-#include <util/image/image.hpp>
-#include <util/image/image_util.hpp>
-#include <util/image/image_io.hpp>
-
-#include <gui/opengl/mesa/glcgi_image.hpp>
-#include <gui/opengl/mesa/gloscontext.hpp>
-#include <gui/opengl/glutils.hpp>
-#include <gui/opengl/glpane.hpp>
-
-#include <gui/widgets/phylo_tree/phylo_tree_rect_cladogram.hpp>
-#include <gui/widgets/phylo_tree/phylo_tree_slanted_cladogram.hpp>
-#include <gui/widgets/phylo_tree/phylo_tree_radial.hpp>
-#include <gui/widgets/phylo_tree/phylo_tree_force.hpp>
-
-
 USING_NCBI_SCOPE;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -70,22 +55,11 @@ USING_NCBI_SCOPE;
 
 class CGuideTreeApplication : public CNcbiApplication
 {
-private:
-
-    /// Tree rendering modes
-    enum ERenderFormat {
-        eRect, eSlanted, eRadial, eForce
-    };
 
 private:
     virtual void Init(void);
     virtual int  Run(void);
     virtual void Exit(void);
-
-    bool x_RenderTree(const CPhyTreeFormatter& tree, ERenderFormat format,
-                      bool dist_mode);
-
-    CRef<CGlOsContext> m_Context;
 };
 
 
@@ -103,11 +77,11 @@ void CGuideTreeApplication::Init(void)
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "Application for computing, printing, "
-                              "and rendering phylogenetic trees");
+                              "Application for computing and printing, "
+                              "phylogenetic trees");
 
 
-    arg_desc->AddKey("i", "filename", "File with Seq-annot ortree in ASN format",
+    arg_desc->AddKey("i", "filename", "File with Seq-annot or tree in ASN format",
                             CArgDescriptions::eInputFile);
 
     arg_desc->AddKey("o", "filename", "File name",
@@ -170,9 +144,9 @@ void CGuideTreeApplication::Init(void)
     arg_desc->SetCurrentGroup("Output options");
 
     arg_desc->AddDefaultKey("outfmt", "format", "Format for saving tree",
-                            CArgDescriptions::eString, "image");
+                            CArgDescriptions::eString, "newick");
                               
-    arg_desc->SetConstraint("outfmt", &(*new CArgAllow_Strings, "image", "asn",
+    arg_desc->SetConstraint("outfmt", &(*new CArgAllow_Strings, "asn",
                                      "newick", "nexus"));
 
     arg_desc->AddDefaultKey("labels", "labels", "Sequence labels in the tree",
@@ -185,30 +159,6 @@ void CGuideTreeApplication::Init(void)
     arg_desc->AddOptionalKey("seqalign", "filename", "Write seq_align "
                              "correspoinding to the tree to a file",
                              CArgDescriptions::eOutputFile);
-
-
-    // rendering options
-    arg_desc->SetCurrentGroup("Rendering options");
-                              
-    arg_desc->AddDefaultKey("render", "method", "Tree rendering method",
-                            CArgDescriptions::eString, "rect");
-
-    arg_desc->SetConstraint("render", &(*new CArgAllow_Strings, "rect",
-                                       "slanted", "radial", "force"));
-
-    arg_desc->AddFlag("no_dist", "Edge lengths of the rendered tree will not be"
-                      " proportional to tree edge lengths");
-
-
-    arg_desc->AddDefaultKey("width", "num", "Image width",
-                            CArgDescriptions::eInteger, "800");
-
-    arg_desc->AddDefaultKey("height", "num", "Image height",
-                            CArgDescriptions::eInteger, "600");
-
-    arg_desc->AddFlag("best_height", "Use minimal image height so that tree is"
-                      " visible");
-
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -367,174 +317,26 @@ int CGuideTreeApplication::Run(void)
         gtree->ShowSubtree(args["subtree"].AsInteger());
     }
 
-    if (args["outfmt"].AsString() == "image") {
-        
-        // render tree image
-        
-        ERenderFormat render_format = eRect;
+    // print tree in text format
 
-        // Select tree rendering
-        if (args["render"].AsString() == "rect") {
-            render_format = eRect;
-        } else if (args["render"].AsString() == "slanted") {
-            render_format = eSlanted;
-        } else if (args["render"].AsString() == "radial") {
-            render_format = eRadial;
-        } else if (args["render"].AsString() == "force") {
-            render_format = eForce;
-        }
-
-        bool dist_mode = !args["no_dist"];
-
-        x_RenderTree(*gtree, render_format, dist_mode);
-        CImageIO::WriteImage(m_Context->GetBuffer(), args["o"].AsOutputFile(),
-                             CImageIO::ePng);
-
+    CPhyTreeFormatter::ETreeFormat tree_format;
+    if (args["outfmt"].AsString() == "asn") {
+        tree_format = CPhyTreeFormatter::eASN;
+    } else if (args["outfmt"].AsString() == "newick") {
+        tree_format = CPhyTreeFormatter::eNewick;
+    } else if (args["outfmt"].AsString() == "nexus") {
+        tree_format = CPhyTreeFormatter::eNexus;
+    } else {
+        NcbiCerr << "Error: Unrecognised tree output format." << NcbiEndl;
+        return 1;
     }
-    else {
 
-        // print tree in text format
-
-        CPhyTreeFormatter::ETreeFormat tree_format;
-        if (args["outfmt"].AsString() == "asn") {
-            tree_format = CPhyTreeFormatter::eASN;
-        } else if (args["outfmt"].AsString() == "newick") {
-            tree_format = CPhyTreeFormatter::eNewick;
-        } else if (args["outfmt"].AsString() == "nexus") {
-            tree_format = CPhyTreeFormatter::eNexus;
-        } else {
-            NcbiCerr << "Error: Unrecognised tree output format." << NcbiEndl;
-            return 1;
-        }
-
-        gtree->WriteTreeAs(args["o"].AsOutputFile(), tree_format);
-    }
+    gtree->WriteTreeAs(args["o"].AsOutputFile(), tree_format);
 
     return 0;
 }
 
 
-
-bool CGuideTreeApplication::x_RenderTree(const CPhyTreeFormatter& tree,
-                                 CGuideTreeApplication::ERenderFormat format,
-                                 bool dist_mode)
-{
-    // Get arguments
-    const CArgs& args = GetArgs();
-
-    CRef<CPhyloTreeDataSource> data_source(
-                               new CPhyloTreeDataSource(tree.GetTree()));
-
-    // init
-    int width = args["width"].AsInteger();
-    int height = args["height"].AsInteger();
-    int node_size = 3;
-    int line_width = 1;
-    data_source->Relabel("$(label)");
-    
-    // extend root
-    // Often the edge starting in root has zero length which
-    // does not render well. By setting very small distance this is
-    // avoided.
-    CPhyloTreeNode::TNodeList_I it = data_source->GetTree()->SubNodeBegin();
-    while (it != data_source->GetTree()->SubNodeEnd()) {
-        if ((*it)->GetValue().GetDistance() == 0.0) {
-            (*it)->GetValue().SetDistance(
-                 data_source->GetNormDistance() * 0.005);
-            (*it)->GetValue().Sync();
-        }
-        ++it;
-    }
-    data_source->Refresh();
-
-    // pre-compute image dimensions
-    CRef<CPhyloTreeScheme> phylo_tree_scheme(new CPhyloTreeScheme());
-
-    phylo_tree_scheme->SetSize(CPhyloTreeScheme::eNodeSize) = node_size;
-    phylo_tree_scheme->SetSize(CPhyloTreeScheme::eLineWidth) = line_width;
-    phylo_tree_scheme->SetLabelStyle(CPhyloTreeScheme::eSimpleLabels);
-
-    GLdouble mleft = 10;
-    GLdouble mtop = 10;
-    GLdouble mright = 140;
-    GLdouble mbottom = 10;
-    phylo_tree_scheme->SetMargins(mleft, mtop, mright, mbottom);
-
-    // min dimensions check
-    // The minimum width and height which should be acceptable to output 
-    // image to display all data without information loss.
-    auto_ptr<IPhyloTreeRenderer> calc_render;       
-    //use recatngle for calulations of all min sizes
-    calc_render.reset(new CPhyloRectCladogram());      
-    TVPRect min_dim_rect = IPhyloTreeRenderer::GetMinDimensions(*data_source,
-                                                        *calc_render,
-                                                        *phylo_tree_scheme);
-
-
-    if (args["best_height"]) {
-        height = min_dim_rect.Height();
-    }
-
-    // render image
-    m_Context.Reset(new CGlOsContext(width, height));
-    m_Context->MakeCurrent();
-
-    // create pane
-    auto_ptr<CGlPane> pane(new CGlPane());
-    auto_ptr<IPhyloTreeRenderer> renderer;
-
-    switch (format) {
-    case eSlanted : 
-        renderer.reset(new CPhyloSlantedCladogram());
-        break;
-
-    case eRadial : 
-        renderer.reset(new CPhyloRadial());
-        break;
-
-    case eForce : 
-        renderer.reset(new CPhyloForce());
-        break;
-
-    default:
-    case eRect : 
-        renderer.reset(new CPhyloRectCladogram());
-    }
-
-    renderer->SetDistRendering(dist_mode);
- 
-    // create layout
-    renderer->SetFont(new CGlBitmapFont(CGlBitmapFont::eHelvetica10));
-    renderer->SetModelDimensions(width, height);
-
-    // set variable sized collapsed nodes
-    phylo_tree_scheme->SetBoaNodes(true);
-
-    renderer->SetScheme(*phylo_tree_scheme);
-    renderer->SetZoomablePrimitives(false);
-    renderer->Layout(*data_source);
-
-    // modify pane to reflect layout changes
-    pane->SetAdjustmentPolicy(CGlPane::fAdjustAll, CGlPane::fAdjustAll);
-    pane->SetMinScaleX(1 / 30.0);  pane->SetMinScaleY(1 / 30.0);
-    pane->SetOriginType(CGlPane::eOriginLeft, CGlPane::eOriginBottom);
-    pane->EnableZoom(true, true);
-    pane->SetViewport(TVPRect(0, 0, width, height));
-    pane->SetModelLimitsRect(renderer->GetRasterRect());
-    pane->SetVisibleRect(renderer->GetRasterRect());
-    pane->ZoomAll();
-
-    // render image
-    glClearColor(0.95f, 1.0f, 0.95f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    renderer->Render(*pane.get(), *data_source); 
-    
-    glFinish();
-    m_Context->SetBuffer().SetDepth(3);
-    CImageUtil::FlipY(m_Context->SetBuffer());
-
-    return true;
-}
 
 
 /////////////////////////////////////////////////////////////////////////////
