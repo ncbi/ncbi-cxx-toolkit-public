@@ -402,8 +402,15 @@ int main(int argc, const char* argv[])
         if (!ftp  ||  ftp.Status(eIO_Write) != eIO_Success)
             ERR_POST(Fatal << "Test 4 failed in XCUP");
         ftp << "RETR \377\377 special file downloadable" << NcbiEndl;
-        if (!ftp  ||  ftp.Status(eIO_Write) != eIO_Success)
-            ERR_POST(Fatal << "Test 4 failed in RETR IAC");
+        if (!ftp  ||  ftp.Status(eIO_Write) != eIO_Success) {
+            ftp.clear();
+            ftp << "RETR \377 special file downloadable" << NcbiEndl;
+            if (!ftp  ||  ftp.Status(eIO_Write) != eIO_Success)
+                ERR_POST(Fatal << "Test 4 failed in RETR IAC");
+            ERR_POST(Critical << "\n\n***"
+                     " BUGGY FTP (UNCLEAN IAC) SERVER DETECTED!!! "
+                     "***\n");
+        }
         ftp << "RETR \357\273\277\320\237\321\200\320"
             << "\270\320\262\320\265\321\202" << NcbiEndl;
         if (!ftp  ||  ftp.Status (eIO_Write) != eIO_Success)
