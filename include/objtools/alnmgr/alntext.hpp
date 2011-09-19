@@ -38,7 +38,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <objects/seqalign/seqalign__.hpp>
-#include <objtools/alnmgr/nucprot.hpp>
+#include <util/tables/raw_scoremat.h>
 
 #include <list>
 
@@ -47,6 +47,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
     class CScope;
     class CSeqVector_CI;
+    class CTrans_table;
 END_SCOPE(objects)
 
 /// Text representation of ProSplign alignment
@@ -83,13 +84,17 @@ public:
 
     static int GetProdPosInBases(const objects::CProduct_pos& product_pos);
 
+    static char TranslateTriplet(const objects::CTrans_table& table,
+                                 const string& triplet);
+
 private:
     string m_dna;
     string m_translation;
     string m_match;
     string m_protein;
-    auto_ptr<CSubstMatrix> m_matrix;
-    CRef<CTranslationTable> m_trans_table;
+
+    const objects::CTrans_table* m_trans_table;
+    SNCBIFullScoreMatrix m_matrix;
 
     void AddDNAText(objects::CSeqVector_CI& genomic_ci, int& nuc_prev, size_t len);
     void TranslateDNA(int phase, size_t len, bool is_insertion);

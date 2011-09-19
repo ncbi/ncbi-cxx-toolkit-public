@@ -36,11 +36,10 @@
 #include <algo/align/prosplign/prosplign_exception.hpp>
 
 #include "NSeq.hpp"
+#include "nucprot.hpp"
 
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/seq_vector.hpp>
-
-#include <objtools/alnmgr/nucprot.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(prosplign)

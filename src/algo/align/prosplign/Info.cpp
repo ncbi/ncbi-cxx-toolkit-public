@@ -49,7 +49,6 @@
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/seq_vector.hpp>
-#include <objtools/alnmgr/nucprot.hpp>
 #include <objtools/alnmgr/alntext.hpp>
 
 BEGIN_NCBI_SCOPE

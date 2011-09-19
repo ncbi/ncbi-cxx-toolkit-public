@@ -36,10 +36,10 @@
 #include <objects/general/general__.hpp>
 #include <objects/seqloc/seqloc__.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
+#include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/seq_vector.hpp>
-#include <objtools/alnmgr/nucprot.hpp>
 #include <objtools/alnmgr/alntext.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -134,7 +134,7 @@ void CProteinAlignText::TranslateDNA(int phase, size_t len, bool is_insertion)
              m_dna[start_pos]==GAP_CHAR) &&
             m_match[prev_exon_pos]!=BAD_PIECE_CHAR) {
             string codon = m_dna.substr(prev_exon_pos-phase+1,phase)+m_dna.substr(start_pos,3-phase);
-            char aa = (codon[0]!=GAP_CHAR && codon[1]!=GAP_CHAR) ? m_trans_table->TranslateTriplet(codon) : SPACE_CHAR;
+            char aa = (codon[0]!=GAP_CHAR && codon[1]!=GAP_CHAR) ? TranslateTriplet(*m_trans_table, codon) : SPACE_CHAR;
             for( size_t i = prev_exon_pos-phase+1; i<=prev_exon_pos;++i) {
                 m_translation[i] = tolower(aa);
                 m_match[i] = MatchChar(i);
@@ -149,7 +149,7 @@ void CProteinAlignText::TranslateDNA(int phase, size_t len, bool is_insertion)
     if (m_dna[start_pos]!=GAP_CHAR) {
         char aa[] = "   ";
         for ( ; start_pos+3 <= m_dna.size(); start_pos += 3) {
-            aa[1] = m_trans_table->TranslateTriplet(m_dna.substr(start_pos,3));
+            aa[1] = TranslateTriplet(*m_trans_table, m_dna.substr(start_pos,3));
             m_translation += aa;
         }
     }
@@ -165,11 +165,12 @@ char CProteinAlignText::MatchChar(size_t i)
 {
     char m = SPACE_CHAR;
     if (m_translation[i] != SPACE_CHAR && m_protein[i] != SPACE_CHAR) {
-        if(m_matrix->ScaledScore(m_protein[i],m_translation[i]) > 0) {
-            if (m_translation[i] == m_protein[i])
-                m = MATCH_CHAR;
-            else
-                m = POSIT_CHAR;
+        if (m_translation[i] == m_protein[i]) {
+            m = MATCH_CHAR;
+        } else if(m_matrix.s[(int)toupper(m_protein[i])]
+                            [(int)toupper(m_translation[i])] > 0)
+        {
+            m = POSIT_CHAR;
         }
     }
     return m;
@@ -194,6 +195,13 @@ int CProteinAlignText::GetProdPosInBases(const CProduct_pos& product_pos)
 
     const CProt_pos&  prot_pos = product_pos.GetProtpos();
     return prot_pos.GetAmin()*3+ prot_pos.GetFrame()-1;
+}
+
+char CProteinAlignText::TranslateTriplet(const CTrans_table& table,
+                                         const string& triplet)
+{
+    return table.GetCodonResidue(
+        table.SetCodonState(triplet[0], triplet[1], triplet[2]));
 }
 
 void CProteinAlignText::AddHoleText(
@@ -275,9 +283,14 @@ CProteinAlignText::CProteinAlignText(objects::CScope& scope, const objects::CSeq
     try {
         gcode = sequence::GetOrg_ref(sequence::GetBioseqFromSeqLoc(*genomic_seqloc, scope)).GetGcode();
     } catch (...) {}
-    m_trans_table.Reset(new CTranslationTable(gcode));
-    m_matrix.reset(new CSubstMatrix(matrix_name, 1));
-    m_matrix->SetTranslationTable(m_trans_table.GetNonNullPointer());
+
+    m_trans_table = &CGen_code_table::GetTransTable(gcode);
+
+    const SNCBIPackedScoreMatrix* packed_mtx =
+        NCBISM_GetStandardMatrix(matrix_name.c_str());
+    if (packed_mtx == NULL)
+        NCBI_THROW(CException, eUnknown, "unknown scoring matrix: "+matrix_name);
+    NCBISM_Unpack(packed_mtx, &m_matrix);
 
     int nuc_from = genomic_seqloc->GetTotalRange().GetFrom();
     int nuc_to = genomic_seqloc->GetTotalRange().GetTo();

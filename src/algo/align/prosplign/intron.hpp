@@ -41,8 +41,6 @@
 #include <vector>
 #include <fstream>
 
-#include <objtools/alnmgr/nucprot.hpp>
-
 #include "AlignInfo.hpp"
 #include "nucprot.hpp"
 #include "NSeq.hpp"
