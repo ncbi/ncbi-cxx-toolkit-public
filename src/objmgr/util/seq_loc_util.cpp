@@ -1256,7 +1256,7 @@ ECompare Compare(const CSeq_loc& me,
 //  Implementation of TestForOverlap()
 //
 
-bool TestForStrands(ENa_strand strand1, ENa_strand strand2)
+bool s_Test_Strands(ENa_strand strand1, ENa_strand strand2)
 {
     // Check strands. Overlapping rules for strand:
     //   - equal strands overlap
@@ -1271,66 +1271,6 @@ bool TestForStrands(ENa_strand strand1, ENa_strand strand2)
         || strand2 == eNa_strand_both
         || (strand1 == eNa_strand_unknown  && strand2 != eNa_strand_minus)
         || (strand2 == eNa_strand_unknown  && strand1 != eNa_strand_minus);
-}
-
-
-bool TestForIntervals(CSeq_loc_CI it1,
-                      CSeq_loc_CI it2,
-                      bool minus_strand,
-                      CScope* scope,
-                      bool checked_same_id)
-{
-    // Check intervals one by one
-    while ( it1  &&  it2 ) {
-        bool same_it_id = checked_same_id;
-        if ( !same_it_id ) {
-            same_it_id = IsSameBioseq(it1.GetSeq_id(), it2.GetSeq_id(), scope);
-        }
-        if ( !TestForStrands(it1.GetStrand(), it2.GetStrand())  ||
-             !same_it_id) {
-            return false;
-        }
-        if ( minus_strand ) {
-            if (it1.GetRange().GetFrom()  !=  it2.GetRange().GetFrom() ) {
-                // The last interval from loc2 may be shorter than the
-                // current interval from loc1
-                if (it1.GetRange().GetFrom() > it2.GetRange().GetFrom()  ||
-                    ++it2) {
-                    return false;
-                }
-                break;
-            }
-        }
-        else {
-            if (it1.GetRange().GetTo()  !=  it2.GetRange().GetTo() ) {
-                // The last interval from loc2 may be shorter than the
-                // current interval from loc1
-                if (it1.GetRange().GetTo() < it2.GetRange().GetTo()  ||
-                    ++it2) {
-                    return false;
-                }
-                break;
-            }
-        }
-        // Go to the next interval start
-        if ( !(++it2) ) {
-            break;
-        }
-        if ( !(++it1) ) {
-            return false; // loc1 has not enough intervals
-        }
-        if ( minus_strand ) {
-            if (it1.GetRange().GetTo() != it2.GetRange().GetTo()) {
-                return false;
-            }
-        }
-        else {
-            if (it1.GetRange().GetFrom() != it2.GetRange().GetFrom()) {
-                return false;
-            }
-        }
-    }
-    return true;
 }
 
 
@@ -1369,162 +1309,6 @@ void s_SeqLocToTotalRangeInfoMap(const CSeq_loc&     loc,
             infos[id].first.CombineWith(rg);
         }
     }
-}
-
-
-Int8 x_TestForOverlap_MultiSeq(const CSeq_loc& loc1,
-                              const CSeq_loc& loc2,
-                              EOverlapType type,
-                              CScope* scope)
-{
-    // Special case of TestForOverlap() - multi-sequences locations
-    const CSeq_loc* ploc1 = &loc1;
-    const CSeq_loc* ploc2 = &loc2;
-    typedef CRange<Int8> TRange8;
-    switch (type) {
-    case eOverlap_Simple:
-        {
-            TTotalRangeInfoMap trm1, trm2;
-            TSynMap syns;
-            s_SeqLocToTotalRangeInfoMap(loc1, trm1, syns, scope);
-            s_SeqLocToTotalRangeInfoMap(loc2, trm2, syns, scope);
-            Int8 diff = 0;
-            bool overlap = false;
-            ITERATE(TTotalRangeInfoMap, id_it1, trm1) {
-                // For each id from loc1 find an entry in loc2.
-                const TRangeInfo& rg1_plus = id_it1->second.first;
-                const TRangeInfo& rg1_minus = id_it1->second.second;
-                TTotalRangeInfoMap::iterator id_it2 = trm2.find(id_it1->first);
-                if (id_it2 == trm2.end()) {
-                    diff += rg1_plus.GetLength() + rg1_minus.GetLength();
-                    continue;
-                }
-                TRangeInfo& rg2_plus = id_it2->second.first;
-                TRangeInfo& rg2_minus = id_it2->second.second;
-                if ( rg1_plus.IntersectingWith(rg2_plus)  ||
-                    rg1_minus.IntersectingWith(rg2_minus)) {
-                    overlap = true;
-                }
-                diff += rg1_plus.CombinationWith(rg2_plus).GetLength() -
-                    rg1_plus.IntersectionWith(rg2_plus).GetLength();
-                diff += rg1_minus.CombinationWith(rg2_minus).GetLength() -
-                    rg1_minus.IntersectionWith(rg2_minus).GetLength();
-                trm2.erase(id_it2);
-            }
-            // Count any remaining ranges in loc2
-            ITERATE(TTotalRangeInfoMap, id_it2, trm2) {
-                if ( !id_it2->second.first.Empty() ) {
-                    diff += id_it2->second.first.GetLength();
-                }
-                if ( !id_it2->second.second.Empty() ) {
-                    diff += id_it2->second.second.GetLength();
-                }
-            }
-            return overlap ? diff : -1;
-        }
-    case eOverlap_Contains:
-        swap(ploc1, ploc2);
-    case eOverlap_Contained:
-        {
-            TTotalRangeInfoMap trm1, trm2;
-            TSynMap syns;
-            s_SeqLocToTotalRangeInfoMap(*ploc1, trm1, syns, scope);
-            s_SeqLocToTotalRangeInfoMap(*ploc2, trm2, syns, scope);
-            Int8 diff = 0;
-            ITERATE(TTotalRangeInfoMap, id_it2, trm2) {
-                // For each id from loc2 find an entry in loc1.
-                const TRangeInfo& rg2_plus = id_it2->second.first;
-                const TRangeInfo& rg2_minus = id_it2->second.second;
-                TTotalRangeInfoMap::iterator id_it1 = trm1.find(id_it2->first);
-                if (id_it1 == trm1.end()) {
-                    return -1;
-                }
-                TRangeInfo& rg1_plus = id_it1->second.first;
-                TRangeInfo& rg1_minus = id_it1->second.second;
-                if ( rg2_plus.Empty() ) {
-                    diff += rg1_plus.GetLength();
-                }
-                else {
-                    if (rg1_plus.Empty()  ||
-                        rg1_plus.GetFrom() > rg2_plus.GetFrom()  ||
-                        rg1_plus.GetTo() < rg2_plus.GetTo()) {
-                        return -1;
-                    }
-                    diff += rg2_plus.GetFrom() - rg1_plus.GetFrom() +
-                        rg1_plus.GetTo() - rg2_plus.GetTo();
-                }
-                rg1_plus = TRangeInfo::GetEmpty();
-                if ( rg2_minus.Empty() ) {
-                    diff += rg1_minus.GetLength();
-                }
-                else {
-                    if (rg1_minus.Empty()  ||
-                        rg1_minus.GetFrom() > rg2_minus.GetFrom()  ||
-                        rg1_minus.GetTo() < rg2_minus.GetTo()) {
-                        return -1;
-                    }
-                    diff += rg2_minus.GetFrom() - rg1_minus.GetFrom() +
-                        rg1_minus.GetTo() - rg2_minus.GetTo();
-                }
-                rg1_minus = TRangeInfo::GetEmpty();
-                if (rg1_plus.Empty()  &&  rg1_minus.Empty()) {
-                    trm1.erase(id_it1);
-                }
-            }
-            // Collect remaining ranges from loc1
-            ITERATE(TTotalRangeInfoMap, id_it1, trm1) {
-                diff += id_it1->second.first.GetLength() +
-                    id_it1->second.second.GetLength();
-            }
-            return diff;
-        }
-    case eOverlap_Subset:
-    case eOverlap_SubsetRev:
-    case eOverlap_CheckIntervals:
-    case eOverlap_CheckIntRev:
-    case eOverlap_Interval:
-        {
-            // For this types the function should not be called
-            NCBI_THROW(CObjmgrUtilException, eNotImplemented,
-                "TestForOverlap() -- error processing multi-ID seq-loc");
-        }
-    }
-    return -1;
-}
-
-
-Int8 x_TestForOverlap_MultiStrand(const CSeq_loc& loc1,
-                                  const CSeq_loc& loc2,
-                                  EOverlapType type,
-                                  CScope* scope)
-{
-    switch (type) {
-    case eOverlap_Interval:
-        {
-            if (Compare(loc1, loc2, scope) == eNoOverlap) {
-                return -1;
-            }
-            // Change overlap type since eOverlap_Interval is not implemented
-            // in MultiSeq.
-            type = eOverlap_Simple;
-            // Proceed to other cases using MultiSeq.
-        }
-    case eOverlap_Simple:
-    case eOverlap_Contained:
-    case eOverlap_Contains:
-        {
-            return x_TestForOverlap_MultiSeq(loc1, loc2, type, scope);
-        }
-    case eOverlap_CheckIntervals:
-    case eOverlap_CheckIntRev:
-    default:
-        {
-            // For this types the function should not be called
-            NCBI_THROW(CObjmgrUtilException, eNotImplemented,
-                "TestForOverlap() -- error processing multi-strand seq-loc");
-        }
-    }
-    return -1;
 }
 
 
@@ -1574,421 +1358,626 @@ void s_SeqLocToRangeInfoMapByStrand(const CSeq_loc&         loc,
 }
 
 
-Int8 TestForOverlap64(const CSeq_loc& loc1,
-                      const CSeq_loc& loc2,
-                      EOverlapType type,
-                      TSeqPos circular_len,
-                      CScope* scope)
+struct STopologyInfo
 {
+    bool    circular;
+    TSeqPos length;
+};
+
+typedef map<CSeq_id_Handle, STopologyInfo> TTopologyMap;
+
+STopologyInfo s_GetTopology(CSeq_id_Handle idh,
+                            TTopologyMap&  topologies,
+                            EOverlapFlags flags,
+                            CScope*       scope)
+{
+    TTopologyMap::const_iterator found = topologies.find(idh);
+    if (found != topologies.end()) {
+        return found->second;
+    }
+    STopologyInfo info;
+    info.circular = false;
+    info.length = kInvalidSeqPos;
+    if ( scope ) {
+        CBioseq_Handle bh = scope->GetBioseqHandle(idh);
+        if ( bh ) {
+            if ((flags & fOverlap_IgnoreTopology) == 0) {
+                info.circular = (bh.IsSetInst_Topology()  &&
+                    bh.GetInst_Topology() == CSeq_inst::eTopology_circular);
+            }
+            info.length = bh.GetBioseqLength();
+        }
+    }
+    topologies[idh] = info;
+    return info;
+}
+
+
+// Convert the seq-loc to TRangeInfos using extremes for each bioseq,
+// strand and ordered set of ranges. The id map is used to normalize ids.
+void s_SeqLocToTotalRangesInfoMapByStrand(const CSeq_loc&         loc,
+                                          TRangeInfoMapByStrand&  infos,
+                                          TSynMap&                syns,
+                                          TTopologyMap&           topologies,
+                                          EOverlapFlags           flags,
+                                          CScope*                 scope)
+{
+    CSeq_loc_CI it(loc,
+        CSeq_loc_CI::eEmpty_Skip, CSeq_loc_CI::eOrder_Biological);
+    if ( !it ) return;
+
+    CSeq_id_Handle last_id = s_GetSynHandle(it.GetSeq_id_Handle(), syns, scope);
+    TRangeInfo last_rg;
+    bool last_reverse = it.IsSetStrand()  &&  IsReverse(it.GetStrand());
+    // In case of circular bioseq allow to cross zero only once.
+    bool crossed_zero = false;
+
+    TRangeInfo total_range;
+    for ( ; it; ++it) {
+        CSeq_id_Handle id = s_GetSynHandle(it.GetSeq_id_Handle(), syns, scope);
+        TRangeInfo rg = it.GetRange();
+        STopologyInfo topo =
+            s_GetTopology(id, topologies, flags, scope);
+        bool reverse = it.IsSetStrand()  &&  IsReverse(it.GetStrand());
+        bool break_range = reverse != last_reverse  ||  id != last_id;
+
+        bool bad_order = false;
+        // Don't try to check the order if id or strand have just changed.
+        // Also don't check it for the first range.
+        if ( !break_range  &&  !last_rg.Empty() ) {
+            if ( reverse ) {
+                if (rg.GetFrom() > last_rg.GetFrom()) {
+                    bad_order = true;
+                    if ( topo.circular ) {
+                        if ( !crossed_zero ) {
+                            total_range.SetFrom(0);
+                        }
+                        crossed_zero = true;
+                    }
+                }
+            }
+            else {
+                if (rg.GetFrom() < last_rg.GetFrom()) {
+                    bad_order = true;
+                    if ( topo.circular ) {
+                        if ( !crossed_zero ) {
+                            total_range.SetToOpen(topo.length != kInvalidSeqPos ?
+                                topo.length : TRangeInfo::GetWholeToOpen());
+                            crossed_zero = true;
+                        }
+                    }
+                }
+            }
+        }
+        if (break_range  ||  bad_order) {
+            // Push the next total range, start the new one
+            if ( last_reverse ) {
+                infos[last_id].second.push_back(total_range);
+            }
+            else {
+                infos[last_id].first.push_back(total_range);
+            }
+            total_range = TRangeInfo::GetEmpty();
+            if ( crossed_zero ) {
+                if ( reverse ) {
+                    rg.SetToOpen(topo.length != kInvalidSeqPos ?
+                        topo.length : TRangeInfo::GetWholeToOpen());
+                }
+                else {
+                    rg.SetFrom(0);
+                }
+            }
+            crossed_zero = false;
+        }
+        last_rg = rg;
+        total_range.CombineWith(rg);
+        last_id = id;
+        last_reverse = reverse;
+    }
+    if ( !total_range.Empty() ) {
+        if ( last_reverse ) {
+            infos[last_id].second.push_back(total_range);
+        }
+        else {
+            infos[last_id].first.push_back(total_range);
+        }
+    }
+    NON_CONST_ITERATE(TRangeInfoMapByStrand, it, infos) {
+        it->second.first.sort();
+        it->second.second.sort();
+    }
+}
+
+
+Int8 s_GetUncoveredLength(const TRangeInfoList& ranges1,
+                          const TRangeInfoList& ranges2)
+{
+    Int8 diff = 0;
+    ITERATE(TRangeInfoList, rg_it1, ranges1) {
+        TRangeInfo rg = *rg_it1;
+        ITERATE(TRangeInfoList, rg_it2, ranges2) {
+            if (rg_it2->GetFrom() > rg.GetTo()) break;
+            if ( !rg.IntersectingWith(*rg_it2) ) continue;
+            if (rg_it2->GetFrom() > rg.GetFrom()) {
+                diff += static_cast<Int8>(rg_it2->GetFrom() - rg.GetFrom());
+            }
+            if (rg_it2->GetTo() < rg.GetTo()) {
+                rg.SetFrom(rg_it2->GetToOpen());
+            }
+            else {
+                rg = TRangeInfo::GetEmpty();
+                break;
+            }
+        }
+        if (rg.IsWhole()) return numeric_limits<Int8>::max();
+        diff += rg.GetLength();
+    }
+    return diff;
+}
+
+
+// Calculate sum of all subranges from ranges1 not covered by ranges2.
+Int8 s_GetUncoveredLength(const TRangeInfoMapByStrand& ranges1,
+                          const TRangeInfoMapByStrand& ranges2)
+{
+    Int8 diff = 0;
+    ITERATE(TRangeInfoMapByStrand, id_it1, ranges1) {
+        TRangeInfoMapByStrand::const_iterator id_it2 = ranges2.find(id_it1->first);
+        if (id_it2 != ranges2.end()) {
+            Int8 diff_plus = s_GetUncoveredLength(id_it1->second.first, id_it2->second.first);
+            Int8 diff_minus = s_GetUncoveredLength(id_it1->second.second, id_it2->second.second);
+            if (diff_plus == numeric_limits<Int8>::max()) return diff_plus;
+            if (diff_minus == numeric_limits<Int8>::max()) return diff_minus;
+            diff += diff_plus + diff_minus;
+        }
+        else {
+            ITERATE(TRangeInfoList, rg_it, id_it1->second.first) {
+                if (rg_it->IsWhole()) return numeric_limits<Int8>::max();
+                diff += rg_it->GetLength();
+            }
+            ITERATE(TRangeInfoList, rg_it, id_it1->second.second) {
+                if (rg_it->IsWhole()) return numeric_limits<Int8>::max();
+                diff += rg_it->GetLength();
+            }
+        }
+    }
+    return diff;
+}
+
+
+bool s_Test_Subset(const CSeq_loc& loc1,
+                   const CSeq_loc& loc2,
+                   CScope*         scope)
+{
+    TSynMap syns;
+    TRangeInfoMapByStrand rm1, rm2;
+    s_SeqLocToRangeInfoMapByStrand(loc1, rm1, syns, scope);
+    s_SeqLocToRangeInfoMapByStrand(loc2, rm2, syns, scope);
+    ITERATE(TRangeInfoMapByStrand, id_it2, rm2) {
+        // For each id from loc2 find an entry in loc1.
+        TRangeInfoMapByStrand::iterator id_it1 = rm1.find(id_it2->first);
+        if (id_it1 == rm1.end()) {
+            return false; // unmatched id in loc2
+        }
+        const TRangeInfoList& rglist1_plus = id_it1->second.first;
+        const TRangeInfoList& rglist1_minus = id_it1->second.second;
+        const TRangeInfoList& rglist2_plus = id_it2->second.first;
+        const TRangeInfoList& rglist2_minus = id_it2->second.second;
+        ITERATE(TRangeInfoList, it2, rglist2_plus) {
+            bool contained = false;
+            ITERATE(TRangeInfoList, it1, rglist1_plus) {
+                // Already missed the rage on loc2?
+                if (!contained  &&  it1->GetFrom() > it2->GetFrom()) {
+                    return false;
+                }
+                // found a contaning range?
+                if (it1->IsWhole()  ||
+                    (it1->GetFrom() <= it2->GetFrom()  &&
+                    it1->GetTo() >= it2->GetTo())) {
+                    contained = true;
+                    break;
+                }
+            }
+            if ( !contained ) return false;
+        }
+        ITERATE(TRangeInfoList, it2, rglist2_minus) {
+            bool contained = false;
+            ITERATE(TRangeInfoList, it1, rglist1_minus) {
+                // Already missed the rage on loc2?
+                if (!contained  &&  it1->GetFrom() > it2->GetFrom()) {
+                    return false;
+                }
+                // found a contaning range?
+                if (it1->IsWhole()  ||
+                    (it1->GetFrom() <= it2->GetFrom()  &&
+                    it1->GetTo() >= it2->GetTo())) {
+                    contained = true;
+                    break;
+                }
+            }
+            if ( !contained ) return false;
+        }
+    }
+    return true;
+}
+
+
+bool s_Test_CheckIntervals(CSeq_loc_CI it1,
+                           CSeq_loc_CI it2,
+                           bool minus_strand,
+                           CScope* scope,
+                           bool single_id)
+{
+    // Check intervals one by one
+    while ( it1  &&  it2 ) {
+        bool same_it_id = single_id;
+        if ( !same_it_id ) {
+            if ( !IsSameBioseq(it1.GetSeq_id(), it2.GetSeq_id(), scope) ) {
+                return false;
+            }
+        }
+        if ( !s_Test_Strands(it1.GetStrand(), it2.GetStrand()) ) {
+            return false;
+        }
+        if ( minus_strand ) {
+            if (it1.GetRange().GetFrom()  !=  it2.GetRange().GetFrom() ) {
+                // The last interval from loc2 may be shorter than the
+                // current interval from loc1
+                if (it1.GetRange().GetFrom() > it2.GetRange().GetFrom()  ||
+                    ++it2) {
+                    return false;
+                }
+                break;
+            }
+        }
+        else {
+            if (it1.GetRange().GetTo()  !=  it2.GetRange().GetTo() ) {
+                // The last interval from loc2 may be shorter than the
+                // current interval from loc1
+                if (it1.GetRange().GetTo() < it2.GetRange().GetTo()  ||
+                    ++it2) {
+                    return false;
+                }
+                break;
+            }
+        }
+        // Go to the next interval start
+        if ( !(++it2) ) {
+            break;
+        }
+        if ( !(++it1) ) {
+            return false; // loc1 has not enough intervals
+        }
+        if ( minus_strand ) {
+            if (it1.GetRange().GetTo() != it2.GetRange().GetTo()) {
+                return false;
+            }
+        }
+        else {
+            if (it1.GetRange().GetFrom() != it2.GetRange().GetFrom()) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+
+// Test for overlap using extremes rather than ranges (simple, contained).
+// Used for multi-id, multi-strand and out-of-order locations.
+Int8 s_Test_Extremes(const CSeq_loc& loc1,
+                     const CSeq_loc& loc2,
+                     EOverlapType    type,
+                     TSynMap&        syns,
+                     TTopologyMap&   topologies,
+                     EOverlapFlags   flags,
+                     CScope*         scope)
+{
+    // Here we accept only two overlap types.
+    _ASSERT(type == eOverlap_Simple  ||  type == eOverlap_Contained);
+
+    TRangeInfoMapByStrand ranges1, ranges2;
+
+    s_SeqLocToTotalRangesInfoMapByStrand(loc1, ranges1, syns, topologies, flags, scope);
+    s_SeqLocToTotalRangesInfoMapByStrand(loc2, ranges2, syns, topologies, flags, scope);
+
+    bool overlap = false;
+    ITERATE(TRangeInfoMapByStrand, id_it2, ranges2) {
+        TRangeInfoMapByStrand::const_iterator id_it1 = ranges1.find(id_it2->first);
+        if (id_it1 == ranges1.end()) {
+            if (type == eOverlap_Contained) {
+                // loc2 has parts not contained in loc1
+                return -1;
+            }
+            else { // eOverlap_Simple
+                continue; // next id_it2
+            }
+        }
+        // Found the same id in loc1 - check ranges.
+        // Plus strand
+        ITERATE(TRangeInfoList, rg_it2, id_it2->second.first) {
+            bool contained = false;
+            ITERATE(TRangeInfoList, rg_it1, id_it1->second.first) {
+                if ( !rg_it2->IntersectingWith(*rg_it1) ) {
+                    // Ranges are sorted, we can stop as soon as
+                    // we go beyond the right end of rg2.
+                    if (rg_it2->GetTo() < rg_it1->GetFrom()) break;
+                    continue;
+                }
+                overlap = true;
+                if (type == eOverlap_Contained) {
+                    if (rg_it2->GetFrom() >= rg_it1->GetFrom()  &&
+                        rg_it2->GetTo() <= rg_it1->GetTo()) {
+                        contained = true;
+                        break;
+                    }
+                }
+                else { // eOverlap_Simple
+                    break; // found overlap, go to next range from loc2
+                }
+            }
+            if (type == eOverlap_Contained) {
+                if ( !contained ) return -1;
+            }
+            else if ( overlap ) break;
+        }
+        // Munis strand
+        ITERATE(TRangeInfoList, rg_it2, id_it2->second.second) {
+            bool contained = false;
+            ITERATE(TRangeInfoList, rg_it1, id_it1->second.second) {
+                if ( !rg_it2->IntersectingWith(*rg_it1) ) {
+                    // Ranges are sorted, we can stop as soon as
+                    // we go beyond the right end of rg2.
+                    if (rg_it2->GetTo() < rg_it1->GetFrom()) break;
+                    continue;
+                }
+                overlap = true;
+                if (type == eOverlap_Contained) {
+                    if (rg_it2->GetFrom() >= rg_it1->GetFrom()  &&
+                        rg_it2->GetTo() <= rg_it1->GetTo()) {
+                        contained = true;
+                        break;
+                    }
+                }
+                else { // eOverlap_Simple
+                    break; // found overlap, go to next range from loc2
+                }
+            }
+            if (type == eOverlap_Contained) {
+                if ( !contained ) return -1;
+            }
+            else if ( overlap ) break;
+        }
+    }
+
+    // Now it's time to calculate quality of the overlap. Take into
+    // account that a single range from one location may contain/overlap
+    // multiple ranges from another location.
+    if (type == eOverlap_Contained) {
+        // There should be no subranges in ranges2 not covered by ranges1.
+        return s_GetUncoveredLength(ranges1, ranges2);
+    }
+    if (type == eOverlap_Simple  &&  overlap) {
+        Int8 diff1 = s_GetUncoveredLength(ranges1, ranges2);
+        Int8 diff2 = s_GetUncoveredLength(ranges2, ranges1);
+        if (diff1 == numeric_limits<Int8>::max()) return diff1;
+        if (diff2 == numeric_limits<Int8>::max()) return diff2;
+        return diff1 + diff2;
+    }
+    return -1;
+}
+
+
+Int8 s_Test_Interval(const CSeq_loc& loc1,
+                     const CSeq_loc& loc2,
+                     TSynMap&        syns,
+                     TTopologyMap&   topologies,
+                     EOverlapFlags   flags,
+                     CScope*         scope)
+{
+    TRangeInfoMapByStrand ranges1, ranges2;
+
+    s_SeqLocToRangeInfoMapByStrand(loc1, ranges1, syns, scope);
+    s_SeqLocToRangeInfoMapByStrand(loc2, ranges2, syns, scope);
+
+    bool overlap = false;
+    ITERATE(TRangeInfoMapByStrand, id_it1, ranges1) {
+        TRangeInfoMapByStrand::const_iterator id_it2 = ranges2.find(id_it1->first);
+        if (id_it2 == ranges2.end()) continue;
+        // Plus strand ranges
+        ITERATE(TRangeInfoList, rg_it1, id_it1->second.first) {
+            ITERATE(TRangeInfoList, rg_it2, id_it2->second.first) {
+                if ( rg_it1->IntersectingWith(*rg_it2) ) {
+                    overlap = true;
+                    break;
+                }
+            }
+            if ( overlap ) break;
+        }
+        if ( overlap ) break;
+        // Minus strand ranges
+        ITERATE(TRangeInfoList, rg_it1, id_it1->second.second) {
+            ITERATE(TRangeInfoList, rg_it2, id_it2->second.second) {
+                if ( rg_it1->IntersectingWith(*rg_it2) ) {
+                    overlap = true;
+                    break;
+                }
+            }
+            if ( overlap ) break;
+        }
+        if ( overlap ) break;
+    }
+
+    if ( !overlap ) return -1;
+
+    ranges1.clear();
+    ranges2.clear();
+    s_SeqLocToTotalRangesInfoMapByStrand(loc1, ranges1,
+        syns, topologies, flags, scope);
+    s_SeqLocToTotalRangesInfoMapByStrand(loc2, ranges2,
+        syns, topologies, flags, scope);
+
+    Int8 diff1 = s_GetUncoveredLength(ranges1, ranges2);
+    Int8 diff2 = s_GetUncoveredLength(ranges2, ranges1);
+    if (diff1 == numeric_limits<Int8>::max()) return diff1;
+    if (diff2 == numeric_limits<Int8>::max()) return diff2;
+    return diff1 + diff2;
+}
+
+
+Int8 s_TestForOverlapEx(const CSeq_loc& loc1,
+                        const CSeq_loc& loc2,
+                        EOverlapType    type,
+                        EOverlapFlags   flags,
+                        TSeqPos         circular_len,
+                        CScope*         scope)
+{
+    if (circular_len == 0) {
+        circular_len = kInvalidSeqPos;
+    }
+    // Do not allow conflicting values.
+    if (circular_len != kInvalidSeqPos  &&  (flags & fOverlap_IgnoreTopology)) {
+        NCBI_THROW(CObjmgrUtilException, eBadSequenceType,
+            "Circular length can not be combined with no-topology flag.");
+    }
+
     const CSeq_loc* ploc1 = &loc1;
     const CSeq_loc* ploc2 = &loc2;
     typedef CRange<Int8> TRange8;
-    CRange<TSeqPos> int_rg1, int_rg2;
-    TRange8 rg1, rg2;
-    bool multi_seq = false;
-    try {
-        int_rg1 = ploc1->GetTotalRange();
-        int_rg2 = ploc2->GetTotalRange();
-    }
-    catch (exception&) {
-        // Can not use total range for multi-sequence locations
-        if (type == eOverlap_Simple  ||
-            type == eOverlap_Contained  ||
-            type == eOverlap_Contains) {
-            // Can not process circular multi-id locations
-            if (circular_len != 0  &&  circular_len != kInvalidSeqPos) {
-                throw;
-            }
-            return x_TestForOverlap_MultiSeq(*ploc1, *ploc2, type, scope);
-        }
-        multi_seq = true;
-    }
+    const CSeq_id *id1 = NULL;
+    const CSeq_id *id2 = NULL;
+    id1 = loc1.GetId();
+    id2 = loc2.GetId();
+    TSynMap syns;
+    TTopologyMap topologies;
+    bool single_seq = true;
 
     // Get seq-ids. They should be cached by GetTotalRange() above and should
     // not be null.
-    const CSeq_id *id1 = ploc1->GetId();
-    const CSeq_id *id2 = ploc2->GetId();
-    bool same_id = false;
     if (id1  &&  id2) {
-        same_id = IsSameBioseq(*id1, *id2, scope);
-    }
-
-    if ( scope && ploc1->IsWhole() ) {
-        CBioseq_Handle h1 = scope->GetBioseqHandle(ploc1->GetWhole());
-        if ( h1 ) {
-            int_rg1.Set(0, h1.GetBioseqLength() - 1);
+        if ( !IsSameBioseq(*id1, *id2, scope) ) return -1;
+        // Use known id and topology if there's just one sequence.
+        CSeq_id_Handle idh1 = CSeq_id_Handle::GetHandle(*id1);
+        CSeq_id_Handle idh2 = CSeq_id_Handle::GetHandle(*id2);
+        syns[idh1] = idh1;
+        if (idh2 != idh1) {
+            syns[idh2] = idh1;
+        }
+        if (circular_len != kInvalidSeqPos) {
+            STopologyInfo topo;
+            topo.circular = true;
+            topo.length = circular_len;
+            topologies[idh1] = topo;
         }
     }
-    if ( scope && ploc2->IsWhole() ) {
-        CBioseq_Handle h2 = scope->GetBioseqHandle(ploc2->GetWhole());
-        if ( h2 ) {
-            int_rg2.Set(0, h2.GetBioseqLength() - 1);
+    else {
+        if (flags & fOverlap_NoMultiSeq) {
+            NCBI_THROW(CObjmgrUtilException, eBadLocation,
+                "Multi-bioseq locations are disabled by the flags.");
         }
+        // Multi-id locations - no circular_len allowed
+        if (circular_len != kInvalidSeqPos) {
+            NCBI_THROW(CObjmgrUtilException, eBadLocation,
+                "Circular bioseq length can not be specified "
+                "for multi-bioseq locations.");
+        }
+        single_seq = false;
     }
-    rg1.Set(int_rg1.GetFrom(), int_rg1.GetTo());
-    rg2.Set(int_rg2.GetFrom(), int_rg2.GetTo());
 
-    ENa_strand strand1 = GetStrand(*ploc1);
-    ENa_strand strand2 = GetStrand(*ploc2);
-    if ( !TestForStrands(strand1, strand2) ) {
-        // Subset and CheckIntervals don't use total ranges
-        if (type != eOverlap_Subset  &&
-            type != eOverlap_SubsetRev  &&
-            type != eOverlap_CheckIntervals  &&
-            type != eOverlap_CheckIntRev) {
-            // "other" = mixed, need to check for overlap
-            if ( strand1 == eNa_strand_other  ||
-                strand2 == eNa_strand_other ) {
-                return x_TestForOverlap_MultiStrand(*ploc1, *ploc2, type, scope);
-            }
-            // strands do not overlap
+    // Shortcut - if strands do not intersect, don't even look at the ranges.
+    ENa_strand strand1 = GetStrand(loc1);
+    ENa_strand strand2 = GetStrand(loc2);
+    if ( !s_Test_Strands(strand1, strand2) ) {
+        // For multi-seq strand is unknown rather than other -
+        // can not use this test.
+        if (single_seq  &&
+            strand1 != eNa_strand_other && strand2 != eNa_strand_other ) {
+            // singular but incompatible strands
             return -1;
         }
-        else {
-            if ( strand1 != eNa_strand_other && strand2 != eNa_strand_other ) {
-                // singular but incompatible strands
-                return -1;
-            }
-            // there is a possibility of multiple strands that needs to be
-            // checked too
+        // There is a possibility of multiple strands that needs to be
+        // checked too (if allowed by the flags).
+        if (flags & fOverlap_NoMultiStrand) {
+            NCBI_THROW(CObjmgrUtilException, eBadLocation,
+                "Multi-strand locations are disabled by the flags.");
         }
     }
+
     switch (type) {
     case eOverlap_Simple:
-        {
-            if ( !same_id ) return -1;
-            if (circular_len != kInvalidSeqPos) {
-                Int8 from1 = ploc1->GetStart(eExtreme_Positional);
-                Int8 from2 = ploc2->GetStart(eExtreme_Positional);
-                Int8 to1 = ploc1->GetStop(eExtreme_Positional);
-                Int8 to2 = ploc2->GetStop(eExtreme_Positional);
-                if (from1 > to1) {
-                    if (from2 > to2) {
-                        // Both locations are circular and must intersect at 0
-                        return AbsInt8(from2 - from1) + AbsInt8(to1 - to2);
-                    }
-                    else {
-                        // Only the first location is circular, rg2 may be used
-                        // for the second one.
-                        Int8 loc_len =
-                            rg2.GetLength() +
-                            Int8(ploc1->GetCircularLength(circular_len));
-                        if (from1 < rg2.GetFrom()  ||  to1 > rg2.GetTo()) {
-                            // loc2 is completely in loc1
-                            return loc_len - 2*rg2.GetLength();
-                        }
-                        bool overlap = false;
-                        if (from1 < rg2.GetTo()) {
-                            loc_len -= rg2.GetTo() - from1 + 1;
-                            overlap = true;
-                        }
-                        if (rg2.GetFrom() < to1) {
-                            loc_len -= to1 - rg2.GetFrom() + 1;
-                            overlap = true;
-                        }
-                        return overlap ? loc_len : -1;
-                    }
-                }
-                else if (from2 > to2) {
-                    // Only the second location is circular
-                    Int8 loc_len =
-                        rg1.GetLength() +
-                        Int8(ploc2->GetCircularLength(circular_len));
-                    if (from2 < rg1.GetFrom()  ||  to2 > rg1.GetTo()) {
-                        // loc2 is completely in loc1
-                        return loc_len - 2*rg1.GetLength();
-                    }
-                    bool overlap = false;
-                    if (from2 < rg1.GetTo()) {
-                        loc_len -= rg1.GetTo() - from2 + 1;
-                        overlap = true;
-                    }
-                    if (rg1.GetFrom() < to2) {
-                        loc_len -= to2 - rg1.GetFrom() + 1;
-                        overlap = true;
-                    }
-                    return overlap ? loc_len : -1;
-                }
-                // Locations are not circular, proceed to normal calculations
-            }
-            if ( rg1.GetTo() >= rg2.GetFrom()  &&
-                rg1.GetFrom() <= rg2.GetTo() ) {
-                return AbsInt8(rg2.GetFrom() - rg1.GetFrom()) +
-                    AbsInt8(rg1.GetTo() - rg2.GetTo());
-            }
-            return -1;
-        }
-    case eOverlap_Contained:
-        {
-            if ( !same_id ) return -1;
-            if (circular_len != kInvalidSeqPos) {
-                Int8 from1 = ploc1->GetStart(eExtreme_Positional);
-                Int8 from2 = ploc2->GetStart(eExtreme_Positional);
-                Int8 to1 = ploc1->GetStop(eExtreme_Positional);
-                Int8 to2 = ploc2->GetStop(eExtreme_Positional);
-                if (from1 > to1) {
-                    if (from2 > to2) {
-                        return (from1 <= from2  &&  to1 >= to2) ?
-                            (from2 - from1) + (to1 - to2) : -1;
-                    }
-                    else {
-                        if (rg2.GetFrom() >= from1  ||  rg2.GetTo() <= to1) {
-                            return Int8(ploc1->GetCircularLength(circular_len)) -
-                                rg2.GetLength();
-                        }
-                        return -1;
-                    }
-                }
-                else if (from2 > to2) {
-                    // Non-circular location can not contain a circular one
-                    return -1;
-                }
-            }
-            if ( rg1.GetFrom() <= rg2.GetFrom()  &&
-                rg1.GetTo() >= rg2.GetTo() ) {
-                return (rg2.GetFrom() - rg1.GetFrom()) +
-                    (rg1.GetTo() - rg2.GetTo());
-            }
-            return -1;
-        }
+        return s_Test_Extremes(loc1, loc2, eOverlap_Simple,
+            syns, topologies, flags, scope);
     case eOverlap_Contains:
-        {
-            if ( !same_id ) return -1;
-            if (circular_len != kInvalidSeqPos) {
-                Int8 from1 = ploc1->GetStart(eExtreme_Positional);
-                Int8 from2 = ploc2->GetStart(eExtreme_Positional);
-                Int8 to1 = ploc1->GetStop(eExtreme_Positional);
-                Int8 to2 = ploc2->GetStop(eExtreme_Positional);
-                if (from1 > to1) {
-                    if (from2 > to2) {
-                        return (from2 <= from1  &&  to2 >= to1) ?
-                            (from1 - from2) + (to2 - to1) : -1;
-                    }
-                    else {
-                        // Non-circular location can not contain a circular one
-                        return -1;
-                    }
-                }
-                else if (from2 > to2) {
-                    if (rg1.GetFrom() >= from2  ||  rg1.GetTo() <= to2) {
-                        return Int8(ploc2->GetCircularLength(circular_len)) -
-                            rg1.GetLength();
-                    }
-                    return -1;
-                }
-            }
-            if ( rg2.GetFrom() <= rg1.GetFrom()  &&
-                rg2.GetTo() >= rg1.GetTo()) {
-                return (rg1.GetFrom() - rg2.GetFrom()) + 
-                    (rg2.GetTo() - rg1.GetTo());
-            }
-            return -1;
-        }
+        swap(ploc1, ploc2);
+        // Go on to the next case
+    case eOverlap_Contained:
+        return s_Test_Extremes(*ploc1, *ploc2, eOverlap_Contained,
+            syns, topologies, flags, scope);
     case eOverlap_SubsetRev:
         swap(ploc1, ploc2);
         // continue to eOverlap_Subset case
     case eOverlap_Subset:
-        {
-            TSynMap syns;
-            TRangeInfoMapByStrand rm1, rm2;
-            s_SeqLocToRangeInfoMapByStrand(*ploc1, rm1, syns, scope);
-            s_SeqLocToRangeInfoMapByStrand(*ploc2, rm2, syns, scope);
-            ITERATE(TRangeInfoMapByStrand, id_it2, rm2) {
-                // For each id from loc2 find an entry in loc1.
-                TRangeInfoMapByStrand::iterator id_it1 = rm1.find(id_it2->first);
-                if (id_it1 == rm1.end()) {
-                    return -1; // unmatched id in loc2
-                }
-                const TRangeInfoList& rglist1_plus = id_it1->second.first;
-                const TRangeInfoList& rglist1_minus = id_it1->second.second;
-                const TRangeInfoList& rglist2_plus = id_it2->second.first;
-                const TRangeInfoList& rglist2_minus = id_it2->second.second;
-                ITERATE(TRangeInfoList, it2, rglist2_plus) {
-                    bool contained = false;
-                    ITERATE(TRangeInfoList, it1, rglist1_plus) {
-                        // Already missed the rage on loc2?
-                        if (!contained  &&  it1->GetFrom() > it2->GetFrom()) {
-                            return -1;
-                        }
-                        // found a contaning range?
-                        if (it1->IsWhole()  ||
-                            (it1->GetFrom() <= it2->GetFrom()  &&
-                            it1->GetTo() >= it2->GetTo())) {
-                            contained = true;
-                            break;
-                        }
-                    }
-                    if ( !contained ) return -1;
-                }
-                ITERATE(TRangeInfoList, it2, rglist2_minus) {
-                    bool contained = false;
-                    ITERATE(TRangeInfoList, it1, rglist1_minus) {
-                        // Already missed the rage on loc2?
-                        if (!contained  &&  it1->GetFrom() > it2->GetFrom()) {
-                            return -1;
-                        }
-                        // found a contaning range?
-                        if (it1->IsWhole()  ||
-                            (it1->GetFrom() <= it2->GetFrom()  &&
-                            it1->GetTo() >= it2->GetTo())) {
-                            contained = true;
-                            break;
-                        }
-                    }
-                    if ( !contained ) return -1;
-                }
-            }
-
-            return Int8(GetCoverage(*ploc1, scope)) -
-                Int8(GetCoverage(*ploc2, scope));
-        }
+        if ( !s_Test_Subset(*ploc1, *ploc2, scope) ) return -1;
+        return Int8(GetCoverage(*ploc1, scope)) -
+            Int8(GetCoverage(*ploc2, scope));
     case eOverlap_CheckIntRev:
         swap(ploc1, ploc2);
         // Go on to the next case
     case eOverlap_CheckIntervals:
         {
-            if ( !multi_seq  &&
-                (rg1.GetFrom() > rg2.GetTo()  || rg1.GetTo() < rg2.GetFrom()) ) {
-                return -1;
-            }
-            // Check intervals' boundaries
+            // Check intervals' boundaries.
             CSeq_loc_CI it1(*ploc1);
             CSeq_loc_CI it2(*ploc2);
             if (!it1  ||  !it2) {
-                break;
+                return -1;
             }
-            // check case when strand is minus
-            if (it2.GetStrand() == eNa_strand_minus) {
-                // The first interval should be treated as the last one
-                // for minuns strands.
-                TSeqPos loc2end = it2.GetRange().GetTo();
-                TSeqPos loc2start = it2.GetRange().GetFrom();
-                // Find the first interval in loc1 intersecting with loc2
-                for ( ; it1  &&  it1.GetRange().GetTo() >= loc2start; ++it1) {
-                    if (it1.GetRange().GetTo() >= loc2end  &&
-                        TestForIntervals(it1, it2, true, scope, same_id)) {
-                        return Int8(GetLength(*ploc1, scope)) -
-                            Int8(GetLength(*ploc2, scope));
-                    }
+            TSeqPos loc2start = it2.GetRange().GetFrom();
+            TSeqPos loc2end = it2.GetRange().GetTo();
+            bool loc2rev = it2.GetStrand() == eNa_strand_minus;
+            bool single_id = (id1  &&  id2);
+            for ( ; it1; ++it1) {
+                // If there are multiple ids per seq-loc, check each pair.
+                if ( !single_id ) {
+                    if ( !IsSameBioseq(it1.GetSeq_id(), it2.GetSeq_id(),
+                        scope) ) continue;
                 }
-            }
-            else {
-                TSeqPos loc2start = it2.GetRange().GetFrom();
-                //TSeqPos loc2end = it2.GetRange().GetTo();
-                // Find the first interval in loc1 intersecting with loc2
-                for ( ; it1  /*&&  it1.GetRange().GetFrom() <= loc2end*/; ++it1) {
-                    bool same_it_id = same_id;
-                    // If there are multiple ids per seq-loc, check each pair.
-                    if ( !same_it_id ) {
-                        same_it_id =
-                            IsSameBioseq(it1.GetSeq_id(), it2.GetSeq_id(),
-                            scope);
-                    }
-                    if (same_it_id  &&
-                        it1.GetRange().GetFrom() <= loc2start  &&
-                        TestForIntervals(it1, it2, false, scope, same_id)) {
-                        return Int8(GetLength(*ploc1, scope)) -
-                            Int8(GetLength(*ploc2, scope));
-                    }
+                // Find the first range in loc1 containing the first range
+                // of loc2. s_Test_CheckIntervals will do the rest.
+                if (it1.GetRange().GetFrom() <= loc2start  &&
+                    it1.GetRange().GetTo() >= loc2end  &&
+                    s_Test_CheckIntervals(it1, it2, loc2rev, scope, single_id)) {
+                    // GetLength adds up all strands/seqs, but for this overlap
+                    // type it's ok.
+                    return Int8(GetLength(*ploc1, scope)) -
+                        Int8(GetLength(*ploc2, scope));
                 }
             }
             return -1;
         }
     case eOverlap_Interval:
-        {
-            if (Compare(*ploc1, *ploc2, scope) == eNoOverlap) {
-                return -1;
-            }
-            if ( !multi_seq ) {
-                if (circular_len != kInvalidSeqPos) {
-                    Int8 from1 = ploc1->GetStart(eExtreme_Positional);
-                    Int8 from2 = ploc2->GetStart(eExtreme_Positional);
-                    Int8 to1 = ploc1->GetStop(eExtreme_Positional);
-                    Int8 to2 = ploc2->GetStop(eExtreme_Positional);
-                    if (from1 > to1) {
-                        if (from2 > to2) {
-                            // Both locations are circular and must intersect at 0
-                            return AbsInt8(from2 - from1) + AbsInt8(to1 - to2);
-                        }
-                        else {
-                            // Only the first location is circular, rg2 may be used
-                            // for the second one.
-                            Int8 loc_len =
-                                rg2.GetLength() +
-                                Int8(ploc1->GetCircularLength(circular_len));
-                            if (from1 < rg2.GetFrom()  ||  to1 > rg2.GetTo()) {
-                                // loc2 is completely in loc1
-                                return loc_len - 2*rg2.GetLength();
-                            }
-                            if (from1 < rg2.GetTo()) {
-                                loc_len -= rg2.GetTo() - from1 + 1;
-                            }
-                            if (rg2.GetFrom() < to1) {
-                                loc_len -= to1 - rg2.GetFrom() + 1;
-                            }
-                            return loc_len;
-                        }
-                    }
-                    else if (from2 > to2) {
-                        // Only the second location is circular
-                        Int8 loc_len =
-                            rg1.GetLength() +
-                            Int8(ploc2->GetCircularLength(circular_len));
-                        if (from2 < rg1.GetFrom()  ||  to2 > rg1.GetTo()) {
-                            // loc2 is completely in loc1
-                            return loc_len - 2*rg1.GetLength();
-                        }
-                        if (from2 < rg1.GetTo()) {
-                            loc_len -= rg1.GetTo() - from2 + 1;
-                        }
-                        if (rg1.GetFrom() < to2) {
-                            loc_len -= to2 - rg1.GetFrom() + 1;
-                        }
-                        return loc_len;
-                    }
-                }
-                // Not a circular location
-                return AbsInt8(rg2.GetFrom() - rg1.GetFrom()) +
-                    AbsInt8(rg1.GetTo() - rg2.GetTo());
-            }
-            // Calculate overlap for each bioseq - the ranges are empty
-            CHandleRangeMap rm1, rm2;
-            rm1.AddLocation(*ploc1);
-            rm2.AddLocation(*ploc2);
-            Int8 diff = 0;
-            CHandleRangeMap::const_iterator it1 = rm1.begin();
-            for ( ; it1 != rm1.end(); ++it1) {
-                CHandleRangeMap::const_iterator it2 = rm2.find(it1->first);
-                if (it2 == rm2.end()) {
-                    // Try to find an id referencing the same bioseq.
-                    // Only the first matching id is used - this assumes that
-                    // no seq-loc should reference the same bioseq by different
-                    // seq-ids.
-                    for (it2 = rm2.begin(); it2 != rm2.end(); ++it2) {
-                        if (IsSameBioseq(it1->first, it2->first, scope)) {
-                            break;
-                        }
-                    }
-                    if (it2 == rm2.end()) {
-                        // loc1 has region on a sequence not present in loc2
-                        continue;
-                    }
-                }
-                rg1.Set(TRange8::GetEmptyFrom(), TRange8::GetEmptyTo());
-                ITERATE(CHandleRange::TRanges, rg_it1, it1->second) {
-                    rg1.CombineWith(TRange8(rg_it1->first.GetFrom(), rg_it1->first.GetTo()));
-                }
-                rg2.Set(TRange8::GetEmptyFrom(), TRange8::GetEmptyTo());
-                ITERATE(CHandleRange::TRanges, rg_it2, it2->second) {
-                    rg2.CombineWith(TRange8(rg_it2->first.GetFrom(), rg_it2->first.GetTo()));
-                }
-                diff += AbsInt8(rg2.GetFrom() - rg1.GetFrom()) +
-                    AbsInt8(rg1.GetTo() - rg2.GetTo());
-            }
-            return diff;
-        }
+        return s_Test_Interval(loc1, loc2, syns, topologies, flags, scope);
     }
     return -1;
+}
+
+
+Int8 TestForOverlap64(const CSeq_loc& loc1,
+                      const CSeq_loc& loc2,
+                      EOverlapType    type,
+                      TSeqPos         circular_len,
+                      CScope*         scope)
+{
+    return s_TestForOverlapEx(loc1, loc2, type, fOverlap_Default, circular_len, scope);
+}
+
+
+Int8 TestForOverlapEx(const CSeq_loc& loc1,
+                      const CSeq_loc& loc2,
+                      EOverlapType    type,
+                      CScope*         scope,
+                      EOverlapFlags   flags)
+{
+    return s_TestForOverlapEx(loc1, loc2, type, flags, kInvalidSeqPos, scope);
 }
 
 

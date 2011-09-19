@@ -252,6 +252,26 @@ Int8 TestForOverlap64(const CSeq_loc& loc1,
                       TSeqPos         circular_len = kInvalidSeqPos,
                       CScope*         scope = 0);
 
+/// Flags, controlling behavior of TestForOverlapEx().
+enum EOverlapFlags {
+    fOverlap_NoMultiSeq     = 1 << 0, ///< Throw if locations reference multiple bioseqs
+    fOverlap_NoMultiStrand  = 1 << 1, ///< Throw if locations reference multiple strands
+    fOverlap_IgnoreTopology = 1 << 2, ///< Ignore sequence topology (circularity)
+    fOverlap_Default = 0              ///< Enable multi-id, multi-strand, check topology
+};
+
+
+/// Updated version of TestForOverlap64(). Allows more control over
+/// handling multi-id/multi-strand bioseqs.
+/// Return quality of the overlap: lower values mean better overlapping.
+/// 0 = exact match of the ranges, -1 = no overlap.
+NCBI_XOBJUTIL_EXPORT
+Int8 TestForOverlapEx(const CSeq_loc& loc1,
+                      const CSeq_loc& loc2,
+                      EOverlapType    type,
+                      CScope*         scope = 0,
+                      EOverlapFlags   flags = fOverlap_Default);
+
 /// Calls TestForOverlap64() and if the result is greater than kMax_Int
 /// truncates it to kMax_Int. To get the exact value use TestForOverlap64().
 NCBI_XOBJUTIL_EXPORT
