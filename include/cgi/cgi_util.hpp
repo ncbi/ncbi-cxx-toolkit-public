@@ -62,13 +62,19 @@ typedef CVersionInfo TUserAgentVersion;
 class NCBI_XCGI_EXPORT CCgiUserAgent
 {
 public:
+    /// Comparison and parsing flags.
+    enum EFlags {
+        fNoCase  = (1 << 1)       ///< Case insensitive compare, by default it is case sensitive
+    };
+    typedef unsigned int TFlags;  ///< Binary OR of "EFlags"
+
     /// Default constructor.
     /// Parse environment variable HTTP_USER_AGENT.
-    CCgiUserAgent(void);
+    CCgiUserAgent(TFlags flags = 0);
 
     /// Constructor.
     /// Parse the user agent string passed into the constructor.
-    CCgiUserAgent(const string& user_agent);
+    CCgiUserAgent(const string& user_agent, TFlags flags = 0);
 
     /// Parse new user agent string
     void Reset(const string& user_agent);
@@ -293,6 +299,7 @@ protected:
 
 protected:
     string            m_UserAgent;      ///< User-Agent string
+    TFlags            m_Flags;          ///< Comparison and parsing flags
     EBrowser          m_Browser;        ///< Browser type
     string            m_BrowserName;    ///< Browser name
     TUserAgentVersion m_BrowserVersion; ///< Browser version info
