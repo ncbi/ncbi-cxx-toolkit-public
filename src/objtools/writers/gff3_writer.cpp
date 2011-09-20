@@ -396,7 +396,8 @@ bool CGff3Writer::x_WriteFeatureCds(
     }
     int iTotSize = -iPhase;
     if (bStrandAdjust && iPhase) {
-        iTotSize = iPhase-3;
+//        iTotSize = iPhase-3;
+        iPhase = 3-iPhase;
     }
     if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
         list< CRef< CSeq_interval > > sublocs( PackedInt.GetPacked_int().Get() );
@@ -411,7 +412,7 @@ bool CGff3Writer::x_WriteFeatureCds(
             if ( ! x_WriteRecord( pExon ) ) {
                 return false;
             }
-            iTotSize = (iTotSize + subint.GetLength())%3;
+            iTotSize = (iTotSize + subint.GetLength());
             if (!bStrandAdjust) {
                 iPhase = (3-iTotSize)%3; 
             }

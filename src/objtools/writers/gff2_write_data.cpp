@@ -518,7 +518,7 @@ bool CGffWriteRecord::CorrectPhase(
     if ( 0 == m_puPhase ) {
         return false;
     }
-    *m_puPhase = iPhase%3;
+    *m_puPhase = (3+iPhase)%3;
     return true;
 }
 
