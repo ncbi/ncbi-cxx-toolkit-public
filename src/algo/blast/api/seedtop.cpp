@@ -54,8 +54,18 @@ BEGIN_SCOPE(blast)
 CSeedTop::CSeedTop(const string & pattern)
          : m_Pattern(pattern)
 {
+    x_ParsePattern();
     x_MakeScoreBlk();
     x_MakeLookupTable();
+}
+
+void CSeedTop::x_ParsePattern()
+{
+    vector <string> units;
+    NStr::Tokenize(m_Pattern, "-", units);
+    ITERATE(vector<string>, unit, units){
+        m_Units.push_back(SPatternUnit(*unit));
+    }
 }
 
 void CSeedTop::x_MakeLookupTable()
@@ -116,9 +126,37 @@ CSeedTop::TSeedTopResults CSeedTop::Run(CRef<CLocalDbAdapter> db)
             if (hit_count == 0) break;
 
             for (int index = 0; index < hit_count; ++index) {
-                CRef<CSeq_loc> hit(new CSeq_loc(*sid, offset_pairs[index].phi_offsets.s_start,
-                                                  offset_pairs[index].phi_offsets.s_end));
-                retv.push_back(hit);
+                vector<vector<int> > pos_list;
+                vector<int> pos(m_Units.size());
+                int start = offset_pairs[index].phi_offsets.s_start;
+                int end = offset_pairs[index].phi_offsets.s_end + 1;
+                x_GetPatternRanges(pos, 0, seq_arg.seq->sequence + start, end-start, pos_list);
+                ITERATE(vector<vector<int> >, it_pos, pos_list) {
+                    CSeq_loc::TRanges ranges;
+                    int r_start(start);
+                    int r_end(r_start);
+                    int uid(0);
+                    ITERATE(vector<int>, q, *it_pos) {
+                        if (m_Units[uid].is_x) {
+                            ranges.push_back(CRange<TSeqPos>(r_start, r_end));
+                            r_start = r_end + *q;
+                            r_end = r_start;
+                        } else {
+                            r_end += (*q);
+                        }
+                        ++uid;
+                    }
+                    ranges.push_back(CRange<TSeqPos>(r_start, r_end));
+                    CRef<CSeq_loc> hit(new CSeq_loc(*sid, ranges));
+                    retv.push_back(hit);
+                } 
+                // skip the next pos_list.size()-1 hits
+                _ASSERT(index + pos_list.size() - 1 < hit_count);
+                for (int i = 1; i< pos_list.size(); ++i) {
+                    _ASSERT(offset_pairs[index + i].phi_offsets.s_start == start);
+                    _ASSERT(offset_pairs[index + i].phi_offsets.s_end + 1 == end);
+                }
+                index += pos_list.size() - 1;
             }
         }
  
@@ -145,6 +183,36 @@ CSeedTop::TSeedTopResults CSeedTop::Run(CBioseq_Handle & bhl)
                  (CBlastOptionsFactory::Create(eBlastp));
     CRef<CLocalDbAdapter> db(new CLocalDbAdapter(qf, opt_handle));
     return Run(db);
+}
+
+void
+CSeedTop::x_GetPatternRanges(vector<int> &pos, Int4 off, Uint1 *seq, Int4 len, 
+                             vector<vector<int> > &ranges)
+{
+    // Not enough sequence letters
+    if (len + off + m_Units[off].at_least < m_Units.size() + 1) return;
+    // at least test
+    int rep;
+    for (rep =0; rep < m_Units[off].at_least; ++rep) {
+        if (!m_Units[off].test(NCBISTDAA_TO_AMINOACID[seq[rep]])) return;
+    }
+    // at most test
+    while(off < m_Units.size() - 1) {
+        pos[off] = rep;
+        x_GetPatternRanges(pos, off+1, seq+rep, len-rep, ranges);
+        ++rep;
+        if (rep >= m_Units[off].at_most) return;
+        if (len + off + 1 < m_Units.size() + rep) return;
+        if (!m_Units[off].test(NCBISTDAA_TO_AMINOACID[seq[rep]])) return;
+    }
+    // the last unit of the pattern
+    if (m_Units[off].at_most <= len) return;
+    for (; rep < len; ++rep) {
+        if (!m_Units[off].test(NCBISTDAA_TO_AMINOACID[seq[rep]])) return;
+    }   
+    pos[off] = rep;
+    ranges.push_back(pos);
+    return;
 }
 
 END_SCOPE(blast)

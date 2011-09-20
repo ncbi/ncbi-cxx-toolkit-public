@@ -47,6 +47,62 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
+struct SPatternUnit {
+    string allowed_letters;
+    string disallowed_letters;
+    unsigned int at_least;
+    unsigned int at_most;
+    bool is_x;
+    SPatternUnit(const string unit) {
+        unsigned int tail_start = 0;
+        is_x = false;
+        switch(unit[0]) {
+            case '[':
+                tail_start = unit.find(']') + 1;
+                allowed_letters = string(unit, 1, tail_start - 2);
+                break;
+            case '{':
+                tail_start = unit.find('}') + 1;
+                disallowed_letters = string(unit, 1, tail_start - 2);
+                break;
+            case 'x':
+                tail_start = 1;
+                is_x = true;
+                break;
+            default:
+                tail_start = 1;
+                allowed_letters = string(unit, 0, 1);
+                break;
+        }
+        // parse the (x,y) part
+        if (tail_start >= unit.size()) {
+            at_least = 1;
+            at_most = 2;
+        } else {
+            string rep(unit, tail_start + 1, unit.size()-2-tail_start);
+            unsigned int pos_comma = rep.find(',');
+            if (pos_comma == rep.npos) {
+                at_least = NStr::StringToUInt(rep);
+                at_most = at_least + 1;
+            } else if (pos_comma == rep.size() -1) {
+                at_least = NStr::StringToUInt(string(rep, 0, pos_comma));
+                at_most = rep.npos;
+            } else {
+                at_least = NStr::StringToUInt(string(rep, 0, pos_comma));
+                at_most = NStr::StringToUInt(string(rep, 
+                             pos_comma + 1, rep.size()-1-pos_comma)) + 1;
+            }
+        }
+    }
+    bool test(Uint1 letter) {
+        if (allowed_letters != "") {
+            return (allowed_letters.find(letter) != allowed_letters.npos);
+        } else {
+            return (disallowed_letters.find(letter) == disallowed_letters.npos);
+        }
+    }
+};
+
 class CSeedTop : public CObject {
 public:
     // the return type for seedtop search
@@ -70,9 +126,17 @@ private:
     string m_Pattern; 
     CLookupTableWrap m_Lookup;
     CBlastScoreBlk m_ScoreBlk;
+    vector< struct SPatternUnit > m_Units;
 
+    void x_ParsePattern();
     void x_MakeLookupTable();
     void x_MakeScoreBlk();
+    // parsing the result into a list of ranges
+    void x_GetPatternRanges(vector<int> &pos,
+                            Int4 off, 
+                            Uint1 *seq, 
+                            Int4 len, 
+                            vector<vector<int> > &ranges);
 };
 
 END_SCOPE(blast)

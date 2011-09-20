@@ -19,6 +19,7 @@ rpsblast \
 rpstblastn \
 igblastn \
 igblastp \
+seedtop \
 blast_formatter
 
 USR_PROJ = legacy_blast update_blastdb
@@ -54,4 +55,6 @@ blast_formatter: lib
 	make -f Makefile.blast_formatter_app
 rmblastn: lib
 	make -f Makefile.rmblastn_app
+seedtop: lib
+	make -f Makefile.seedtop_app
 
