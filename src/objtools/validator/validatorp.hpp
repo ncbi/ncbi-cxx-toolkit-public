@@ -1188,8 +1188,6 @@ private:
 
     void ValidatemRNAGene (const CBioseq& seq);
 
-    int x_TestForOverlap(const CSeq_loc& loc1, const CSeq_loc& loc2, sequence::EOverlapType type);
-    
     size_t x_CountAdjacentNs(const CSeq_literal& lit);
 
     //internal validators

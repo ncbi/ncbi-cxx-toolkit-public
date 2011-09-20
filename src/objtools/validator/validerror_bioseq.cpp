@@ -3581,18 +3581,6 @@ void CValidError_bioseq::ValidateMultipleGeneOverlap (const CBioseq_Handle& bsh)
 }
 
 
-int CValidError_bioseq::x_TestForOverlap(const CSeq_loc& loc1, const CSeq_loc& loc2, EOverlapType type)
-{
-    TSeqPos circular_len = kInvalidSeqPos;
-    if (m_CurrentHandle && m_CurrentHandle.IsSetInst_Topology()
-        && m_CurrentHandle.GetInst_Topology() == CSeq_inst::eTopology_circular
-        && m_CurrentHandle.IsSetInst_Length()) {
-        circular_len = m_CurrentHandle.GetInst_Length();
-    }
-    return TestForOverlap (loc1, loc2, type, circular_len, m_Scope);
-}
-
-
 void CValidError_bioseq::ValidateBadGeneOverlap(const CSeq_feat& feat)
 {
     const CGene_ref* grp = feat.GetGeneXref();
@@ -3609,7 +3597,7 @@ void CValidError_bioseq::ValidateBadGeneOverlap(const CSeq_feat& feat)
     bool has_containing_gene = false;
 
     while (feat_it) {
-        if (x_TestForOverlap (feat_it->GetLocation(), feat.GetLocation(), eOverlap_Contained) >= 0) {
+        if (TestForOverlapEx (feat_it->GetLocation(), feat.GetLocation(), eOverlap_Contained, m_Scope) >= 0) {
             has_containing_gene = true;
             break;
         }
@@ -3623,7 +3611,7 @@ void CValidError_bioseq::ValidateBadGeneOverlap(const CSeq_feat& feat)
     feat_it.Rewind();
     bool has_simple_overlap = false;
     while (feat_it) {
-        if (x_TestForOverlap (feat_it->GetLocation(), feat.GetLocation(), eOverlap_Simple) >= 0) {
+        if (TestForOverlapEx (feat_it->GetLocation(), feat.GetLocation(), eOverlap_Simple, m_Scope) >= 0) {
             has_simple_overlap = true;
             break;
         }
@@ -3845,7 +3833,7 @@ bool CValidError_bioseq::x_IsSameAsCDS(const CMappedFeat& feat)
         }
 
         if ( cds ) {
-            if ( TestForOverlap(
+            if ( TestForOverlapEx(
                     cds->GetLocation(),
                     feat.GetLocation(),
                     eOverlap_Simple) == 0 ) {
@@ -5073,7 +5061,7 @@ void CmRNAAndCDSIndex::SetBioseq(CFeat_CI * feat_list, CBioseq_Handle bioseq, CS
         while (mrna_it != m_mRNAList.end()) {
             if (!(*mrna_it)->IsAccountedFor()) {
                 CConstRef<CSeq_feat> mrna = (*mrna_it)->m_Mrna;
-                if (TestForOverlap (cds->GetLocation(), mrna->GetLocation(), overlap_type, circular_len, scope) >= 0) {
+                if (TestForOverlapEx (cds->GetLocation(), mrna->GetLocation(), overlap_type, scope) >= 0) {
                     (*cds_it)->AddmRNA(*mrna_it);  
                     (*mrna_it)->AddCDS(*cds_it);
                     if (s_IdXrefsAreReciprocal(*cds, *mrna)) {
@@ -5276,7 +5264,7 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, int n
             while (mrna_it != mrna_list.end()) {
                 if (!(*mrna_it)->IsAccountedFor()) {
                     CConstRef<CSeq_feat> mrna = (*mrna_it)->m_Mrna;
-                    if (x_TestForOverlap (cds->GetLocation(), mrna->GetLocation(), overlap_type) >= 0) {
+                    if (TestForOverlapEx (cds->GetLocation(), mrna->GetLocation(), overlap_type, m_Scope) >= 0) {
                         (*cds_it)->AddmRNA(*mrna_it);                    
                         if (x_IdXrefsAreReciprocal(*cds, *mrna)) {
                             (*cds_it)->SetXrefMatch((*mrna_it));
@@ -8726,7 +8714,7 @@ void CValidError_bioseq::CmRNACDSIndex::SetBioseq(CFeat_CI *feat_list, const CTS
                 overlap_type = eOverlap_SubsetRev;
             }
 
-            if (TestForOverlap (pair_it->first.GetLocation(), pair_it->second.GetLocation(), overlap_type, circular_len, scope) >= 0) {
+            if (TestForOverlapEx (pair_it->first.GetLocation(), pair_it->second.GetLocation(), overlap_type, scope) >= 0) {
                 if (pair_it->first.IsSetId() && pair_it->second.IsSetId()
                     && s_IdXrefsAreReciprocal(pair_it->first, pair_it->second)) {
                     featid_matched = true;

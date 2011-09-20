@@ -6441,8 +6441,8 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
     bool xref_match_same_as_overlap = false;
 
     while (gene_it) {
-        if (TestForOverlap (gene_it->GetLocation(), feat.GetLocation(), 
-          gene_it->GetLocation().IsInt() ? eOverlap_Contained : eOverlap_Subset, circular_len, m_Scope) >= 0) {
+        if (TestForOverlapEx (gene_it->GetLocation(), feat.GetLocation(), 
+          gene_it->GetLocation().IsInt() ? eOverlap_Contained : eOverlap_Subset, m_Scope) >= 0) {
             size_t len = GetLength(gene_it->GetLocation(), m_Scope);
             if (len < max || num_genes == 0) {
                 num_genes = 1;
