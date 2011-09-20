@@ -6221,6 +6221,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UWA	s	University of Western Australia, Botany Department",
 "UWBM	s	University of Washington, Burke Museum",
 "UWC	s	University of the Western Cape, Botany Department",
+"UWCC<USA-WA>	c	University of Washington Culture Collection",
 "UWCP	s	University of Wroclaw",
 "UWEC	s	University of Wisconsin, Department of Biology",
 "UWFP	s	University of West Florida, Department of Biology",
