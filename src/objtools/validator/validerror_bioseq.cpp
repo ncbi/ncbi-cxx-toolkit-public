@@ -7641,7 +7641,19 @@ void CValidError_bioseq::x_CompareStrings
         if (!NStr::IsBlank (message)
             && s_ReportableCollision(feat->GetData().GetGene(), it->second->GetData().GetGene())) {
 
-            if (is_gene_locus && sequence::Compare(feat->GetLocation(),
+            bool suppress_message = false;
+            if (m_Imp.IsSmallGenomeSet()) {
+                if (feat->IsSetExcept() && feat->IsSetExcept_text()
+                    && NStr::FindNoCase (feat->GetExcept_text(), "trans-splicing") != string::npos &&
+                    it->second->IsSetExcept() && it->second->IsSetExcept_text()
+                    && NStr::FindNoCase (it->second->GetExcept_text(), "trans-splicing") != string::npos) {
+                    suppress_message = true;
+                }
+            }
+
+            if (suppress_message) {
+                /* suppress for trans-spliced genes on small genome set */
+            } else if (is_gene_locus && sequence::Compare(feat->GetLocation(),
                                                    (*it->second).GetLocation(),
                                                    m_Scope) == eSame) {
                 PostErr (eDiag_Info, eErr_SEQ_FEAT_MultiplyAnnotatedGenes,

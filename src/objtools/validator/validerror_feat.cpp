@@ -6434,6 +6434,7 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
 
     size_t num_genes = 0;
     size_t max = 0;
+    size_t num_trans_spliced = 0;
     bool equivalent = false;
     CFeat_CI gene_it(bsh, CSeqFeatData::e_Gene);
     CFeat_CI prev_gene;
@@ -6447,6 +6448,11 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
             if (len < max || num_genes == 0) {
                 num_genes = 1;
                 max = len;
+                num_trans_spliced = 0;
+                if (gene_it->IsSetExcept() && gene_it->IsSetExcept_text() &&
+                    NStr::FindNoCase (gene_it->GetExcept_text(), "trans-splicing") != string::npos) {
+                    num_trans_spliced++;
+                }
                 equivalent = false;
                 prev_gene = gene_it;
                 if (gene_xref && s_GeneRefsAreEquivalent(*gene_xref, gene_it->GetData().GetGene(), label)) {
@@ -6457,6 +6463,10 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
             } else if (len == max) {
                 equivalent |= s_GeneRefsAreEquivalent(gene_it->GetData().GetGene(), prev_gene->GetData().GetGene(), label);
                 num_genes++;
+                if (gene_it->IsSetExcept() && gene_it->IsSetExcept_text() &&
+                    NStr::FindNoCase (gene_it->GetExcept_text(), "trans-splicing") != string::npos) {
+                    num_trans_spliced++;
+                }
             }
         }
         ++gene_it;
@@ -6466,7 +6476,9 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
         // if there is no gene xref, then there should be 0 or 1 overlapping genes
         // so that mapping by overlap is unambiguous
         if (num_genes > 1) {
-            if (equivalent) {
+            if (m_Imp.IsSmallGenomeSet() && num_genes == num_trans_spliced) {
+                /* suppress for trans-spliced genes on small genome set */
+            } else if (equivalent) {
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_GeneXrefNeeded,
                          "Feature overlapped by "
                          + NStr::SizetToString(num_genes)
