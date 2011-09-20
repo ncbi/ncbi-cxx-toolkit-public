@@ -20,6 +20,7 @@ Bug fixes:
 * blastn problem with subject_loc and lcase_masking were used in conjunction.
 * Multi-threaded problem with blastx.
 * Percent identity calculation when best-hit algorithm is used.
+* Multiple BLAST database statistics report in XML format.
 
 March 15, 2011
 * 2.2.25 release
