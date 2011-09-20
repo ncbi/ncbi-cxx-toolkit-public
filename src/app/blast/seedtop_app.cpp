@@ -43,6 +43,7 @@ static char const rcsid[] =
 #include <algo/blast/blastinput/blastp_args.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/blast/format/blast_format.hpp>
+#include <objmgr/util/sequence.hpp>
 #include "blast_app_util.hpp"
 
 #ifndef SKIP_DOXYGEN_PROCESSING
@@ -83,7 +84,8 @@ static struct SSeedTopPattern s_ReadPattern(CNcbiIstream & in) {
         len = in.gcount();
         if (len < 4 || line[0]!='P' || line[1]!='A' || line[2]!=' ') return retv;
         while (line[len-2] == ' ') len -= 1;
-        if (line[len-2] == '>' || line[len-2] == '.') len -= 1;
+        if (line[len-2] == '>') line[len-2] = '-';
+        else if (line[len-2] == '.') len -= 1;
         retv.pattern += string(&line[3], len-4);
     }
     return retv;
@@ -156,53 +158,79 @@ int CSeedTopApp::Run(void)
         CNcbiIstream& f_pattern = args[kPattern].AsInputFile();
         CNcbiOstream& f_output  = args[kOutput].AsOutputFile();
 
-        CRef<CBlastOptionsHandle> opts_hndl
-                    (CBlastOptionsFactory::Create(eBlastp));
         CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
         CRef<CLocalDbAdapter> db_adapter;
 
-        vector< struct SSeedTopPattern> patterns;
-        int p_id = 0;
+        if (args.Exist(kSubject) && args[kSubject]) {
+            CNcbiIstream& f_subject = args[kSubject].AsInputFile();
+            //TSeqRange subj_range;
+            SDataLoaderConfig dlconfig(true);
+            dlconfig.OptimizeForWholeLargeSequenceRetrieval();
+            CBlastInputSourceConfig iconfig(dlconfig);
+            iconfig.SetQueryLocalIdMode();
+            CBlastFastaInputSource fasta(f_subject, iconfig);
+            CBlastInput input(&fasta);
+            CRef<blast::CBlastQueryVector> subjects(input.GetAllSeqs(*scope));
+            CRef<IQueryFactory> qf(new blast::CObjMgr_QueryFactory(*subjects));
+            CRef<CBlastOptionsHandle> opts_hndl
+                                  (CBlastOptionsFactory::Create(eBlastp));
+            db_adapter.Reset(new CLocalDbAdapter(qf, opts_hndl));
+    
+        } else if (args.Exist(kDb) && args[kDb]) {
+                
+            CRef<CSearchDatabase> db(new CSearchDatabase(args[kDb].AsString(), 
+                                         CSearchDatabase::eBlastDbIsProtein));
+            CRef<CSeqDB> seqdb = db->GetSeqDb();
+            db_adapter.Reset(new CLocalDbAdapter(*db));
+            scope->AddDataLoader(RegisterOMDataLoader(seqdb));
+    
+        } else {
+            NCBI_THROW(CInputException, eInvalidInput,
+                 "Either a BLAST database or subject sequence(s) must be specified");
+        }
+        _ASSERT(db_adapter);
+    
         while (true) {
 
             struct SSeedTopPattern pattern = s_ReadPattern(f_pattern);
             if (pattern.pattern == "") break;
 
-            if (args.Exist(kSubject) && args[kSubject]) {
-    
-                CNcbiIstream& f_subject = args[kSubject].AsInputFile();
-                //TSeqRange subj_range;
-                SDataLoaderConfig dlconfig(true);
-                dlconfig.OptimizeForWholeLargeSequenceRetrieval();
-                CBlastInputSourceConfig iconfig(dlconfig);
-                iconfig.SetQueryLocalIdMode();
-                CBlastFastaInputSource fasta(f_subject, iconfig);
-                CBlastInput input(&fasta);
-                CRef<blast::CBlastQueryVector> subjects(input.GetAllSeqs(*scope));
-                CRef<IQueryFactory> qf(new blast::CObjMgr_QueryFactory(*subjects));
-                db_adapter.Reset(new CLocalDbAdapter(qf, opts_hndl));
-    
-            } else if (args.Exist(kDb) && args[kDb]) {
-                
-                CRef<CSearchDatabase> db(new CSearchDatabase(args[kDb].AsString(), 
-                                             CSearchDatabase::eBlastDbIsProtein));
-                db_adapter.Reset(new CLocalDbAdapter(*db));
-    
-            } else {
-                NCBI_THROW(CInputException, eInvalidInput,
-                     "Either a BLAST database or subject sequence(s) must be specified");
-            }
-    
-            _ASSERT(db_adapter);
-    
             CSeedTop seed_top(pattern.pattern);
             CSeedTop::TSeedTopResults results = seed_top.Run(db_adapter);
+            CConstRef<CSeq_id> old_id(new CSeq_id());
             ITERATE(CSeedTop::TSeedTopResults, it, results) {
-                cout << MSerial_AsnText << **it << endl;
-            }
+                const CSeq_id *sid = (*it)->GetId();
+                const CBioseq_Handle& bhl = scope->GetBioseqHandle(*sid);
 
-            patterns.push_back(pattern);
-            ++p_id;
+                if (sid->AsFastaString() != old_id->AsFastaString()) {
+                    const CBioseq_Handle::TId ids = bhl.GetId();
+                    f_output << endl << '>';
+                    ITERATE(CBioseq_Handle::TId, id, ids) {
+                        string idst((*id).AsString());
+                        int index = idst.find_last_not_of('|');
+                        f_output << string(idst, 0, index + 1) << "|" ;
+                    }
+                    f_output << sequence::GetTitle(bhl) << endl << endl;
+                    f_output << "ID " << pattern.name << endl;;
+                    f_output << "PA " << pattern.pattern << endl;
+                    old_id.Reset(sid);
+                }
+
+                f_output << "HI";
+                ITERATE(CPacked_seqint_Base::Tdata, range, (*it)->GetPacked_int().Get()) {
+                    static const ESeqLocExtremes ex = eExtreme_Positional;
+                    f_output << " (" << (*range)->GetStart(ex)+1 << " " 
+                                    << (*range)->GetStop(ex)+1 << ")";
+                }
+                f_output << endl;
+                CSeqVector sv = bhl.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+                string sq;
+                CSeq_loc::TRange tot_range = (*it)->GetTotalRange();
+                sv.GetSeqData(tot_range.GetFrom(), tot_range.GetTo()+1, sq);
+                f_output << "SQ " << sq << endl;
+            }
+ 
+            db_adapter->ResetBlastSeqSrcIteration();
        }
 
     } CATCH_ALL(status)

@@ -64,7 +64,9 @@ void CSeedTop::x_ParsePattern()
     vector <string> units;
     NStr::Tokenize(m_Pattern, "-", units);
     ITERATE(vector<string>, unit, units){
-        m_Units.push_back(SPatternUnit(*unit));
+        if (*unit != "") {
+            m_Units.push_back(SPatternUnit(*unit));
+        }
     }
 }
 
@@ -138,7 +140,7 @@ CSeedTop::TSeedTopResults CSeedTop::Run(CRef<CLocalDbAdapter> db)
                     int uid(0);
                     ITERATE(vector<int>, q, *it_pos) {
                         if (m_Units[uid].is_x) {
-                            ranges.push_back(CRange<TSeqPos>(r_start, r_end));
+                            ranges.push_back(CRange<TSeqPos>(r_start, r_end-1));
                             r_start = r_end + *q;
                             r_end = r_start;
                         } else {
@@ -146,7 +148,7 @@ CSeedTop::TSeedTopResults CSeedTop::Run(CRef<CLocalDbAdapter> db)
                         }
                         ++uid;
                     }
-                    ranges.push_back(CRange<TSeqPos>(r_start, r_end));
+                    ranges.push_back(CRange<TSeqPos>(r_start, r_end-1));
                     CRef<CSeq_loc> hit(new CSeq_loc(*sid, ranges));
                     retv.push_back(hit);
                 } 
