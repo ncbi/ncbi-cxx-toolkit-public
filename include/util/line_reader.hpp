@@ -57,6 +57,11 @@ public:
     /// filename, taking "-" (but not "./-") to mean standard input.
     static CRef<ILineReader> New(const string& filename);
 
+    /// Return a new ILineReader object corresponding to the given
+    /// input stream, optionally taking ownership thereof.
+    static CRef<ILineReader> New(CNcbiIstream& is,
+                                 EOwnership ownership = eNoOwnership);
+
     /// Indicates (negatively) whether there is any more input.
     virtual bool AtEOF(void) const = 0;
 

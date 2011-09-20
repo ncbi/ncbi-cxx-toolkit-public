@@ -133,7 +133,7 @@ CFastaReader::CFastaReader(ILineReader& reader, TFlags flags)
 }
 
 CFastaReader::CFastaReader(CNcbiIstream& in, TFlags flags)
-    : m_LineReader(new CStreamLineReader(in)), m_MaskVec(0),
+    : m_LineReader(ILineReader::New(in)), m_MaskVec(0),
       m_IDGenerator(new CSeqIdGenerator)
 {
     m_Flags.push(flags);
@@ -1065,8 +1065,8 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
     TParam_NewImpl new_impl;
 
     if (new_impl.Get()) {
-        CStreamLineReader lr(in);
-        CFastaReader      reader(lr, flags);
+        CRef<ILineReader> lr(ILineReader::New(in));
+        CFastaReader      reader(*lr, flags);
         CCounterManager   counter_manager(reader.SetIDGenerator(), counter);
         if (lcv) {
             reader.SaveMasks(reinterpret_cast<CFastaReader::TMasks*>(lcv));
@@ -1142,8 +1142,8 @@ void ReadFastaFileMap(SFastaFileMap* fasta_map, CNcbiIfstream& input)
         return;
     }
 
-    CStreamLineReader lr(input);
-    CFastaMapper      mapper(lr, fasta_map, kFlags);
+    CRef<ILineReader> lr(ILineReader::New(input));
+    CFastaMapper      mapper(*lr, fasta_map, kFlags);
     mapper.ReadSet();
 }
 
@@ -1156,18 +1156,18 @@ void ScanFastaFile(IFastaEntryScan* scanner,
         return;
     }
 
-    CStreamLineReader lr(input);
-    CFastaReader      reader(lr, fread_flags);
+    CRef<ILineReader> lr(ILineReader::New(input));
+    CFastaReader      reader(*lr, fread_flags);
 
-    while ( !lr.AtEOF() ) {
+    while ( !lr->AtEOF() ) {
         try {
-            CNcbiStreampos   pos = lr.GetPosition();
+            CNcbiStreampos   pos = lr->GetPosition();
             CRef<CSeq_entry> se  = reader.ReadOneSeq();
             if (se->IsSeq()) {
                 scanner->EntryFound(se, pos);
             }
         } catch (CObjReaderParseException&) {
-            if ( !lr.AtEOF() ) {
+            if ( !lr->AtEOF() ) {
                 throw;
             }
         }

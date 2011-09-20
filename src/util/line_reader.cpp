@@ -51,6 +51,14 @@ CRef<ILineReader> ILineReader::New(const string& filename)
 }
 
 
+CRef<ILineReader> ILineReader::New(CNcbiIstream& is, EOwnership ownership)
+{
+    CRef<ILineReader> lr;
+    lr.Reset(new CBufferedLineReader(is, ownership));
+    return lr;
+}
+
+
 CStreamLineReader::CStreamLineReader(CNcbiIstream& is,
                                      EEOLStyle eol_style,
                                      EOwnership ownership)
