@@ -76,10 +76,18 @@ extern string URL_EncodeString(const string& str,
 // CCgiUserAgent
 //
 
-CCgiUserAgent::CCgiUserAgent(void)
+// Macro to check flags bits
+#define F_ISSET(mask) ((m_Flags & (mask)) == (mask))
+
+// Conversion macro for compare/find strings
+#define USTR(str) (F_ISSET(fNoCase) ? NStr::ToLower(string(str)) : (str))
+
+
+CCgiUserAgent::CCgiUserAgent(TFlags flags)
 {
+    m_Flags = flags;
     CNcbiApplication* ncbi_app = CNcbiApplication::Instance();
-    CCgiApplication* cgi_app   = CCgiApplication::Instance();
+    CCgiApplication*  cgi_app  = CCgiApplication::Instance();
     string user_agent;
     if (cgi_app) {
         user_agent = cgi_app->GetContext().GetRequest()
@@ -94,8 +102,9 @@ CCgiUserAgent::CCgiUserAgent(void)
     }
 }
 
-CCgiUserAgent::CCgiUserAgent(const string& user_agent)
+CCgiUserAgent::CCgiUserAgent(const string& user_agent, TFlags flags)
 {
+    m_Flags = flags;
     x_Parse(user_agent);
 }
 
@@ -212,15 +221,14 @@ bool CCgiUserAgent::IsBot(TBotFlags flags, const string& param_patterns) const
     }
 
     // Get additional bots patterns
-    string bots = NCBI_PARAM_TYPE(CGI,Bots)::GetDefault();
-
+    string bots = USTR(NCBI_PARAM_TYPE(CGI,Bots)::GetDefault());
     // Split patterns strings
     list<string> patterns;
     if ( !bots.empty() ) {
         NStr::Split(bots, kDelim, patterns);
     }
     if ( !param_patterns.empty() ) {
-        NStr::Split(param_patterns, kDelim, patterns);
+        NStr::Split(USTR(param_patterns), kDelim, patterns);
     }
     // Search patterns
     ITERATE(list<string>, i, patterns) {
@@ -257,16 +265,15 @@ bool CCgiUserAgent::IsMobileDevice(const string& param_patterns) const
     }
     const char* kDelim = " ;\t|~";
 
-    // Get additional bots patterns
-    string str = NCBI_PARAM_TYPE(CGI,MobileDevices)::GetDefault();
-
+    // Get additional patterns
+    string str = USTR(NCBI_PARAM_TYPE(CGI,MobileDevices)::GetDefault());
     // Split patterns strings
     list<string> patterns;
     if ( !str.empty() ) {
         NStr::Split(str, kDelim, patterns);
     }
     if ( !param_patterns.empty() ) {
-        NStr::Split(param_patterns, kDelim, patterns);
+        NStr::Split(USTR(param_patterns), kDelim, patterns);
     }
     // Search patterns
     ITERATE(list<string>, i, patterns) {
@@ -675,18 +682,18 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
 
     // Initialization
     x_Init();
-    m_UserAgent = NStr::TruncateSpaces(user_agent);
+    m_UserAgent = USTR(NStr::TruncateSpaces(user_agent));
     SIZE_TYPE len = m_UserAgent.length();
 
     // Check VendorProduct token first.
-    // If it matched some browser name, return it.
+    string vendor_product;
 
     SIZE_TYPE pos = m_UserAgent.rfind(")", NPOS);
     if (pos != NPOS) {
         // Have VendorProduct only
         if (pos < len-1) {
-            string token = m_UserAgent.substr(pos+1);
-            x_ParseToken(token, fVendorProduct);
+            vendor_product = m_UserAgent.substr(pos+1);
+            x_ParseToken(vendor_product, fVendorProduct);
         } 
         // Have VendorComment also, cut it off before parsing VendorProduct token
         else if ((pos == len-1)  &&
@@ -697,8 +704,8 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
                 pos++;
                 SIZE_TYPE pos_comment = m_UserAgent.find("(", pos);
                 if (pos_comment != NPOS) {
-                    string token = m_UserAgent.substr(pos, pos_comment - pos);
-                    x_ParseToken(token, fVendorProduct);
+                    vendor_product = m_UserAgent.substr(pos, pos_comment - pos);
+                    x_ParseToken(vendor_product, fVendorProduct);
                 }
             }
         }
@@ -709,7 +716,7 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
     // eSafariMobile -- special case.
     // Sometimes Mobile Safari can be specified as "... Version/x.x.x Mobile/xxxxxx Safari/x.x.x".
     if ( m_Browser == eSafari ) {
-        search = " Mobile/";
+        search = USTR(" Mobile/");
         if (m_UserAgent.find(search) != NPOS) {
             m_Browser  = eSafariMobile;
             m_Platform = ePlatform_MobileDevice;
@@ -717,8 +724,7 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
     }
 
     // Handles browsers declaring Mozilla-compatible
-
-    if ( NStr::MatchesMask(m_UserAgent, "Mozilla/*") ) {
+    if ( NStr::MatchesMask(m_UserAgent, USTR("Mozilla/*")) ) {
         // Get Mozilla version
         search = "Mozilla/";
         s_ParseVersion(m_UserAgent, search.length(), &m_MozillaVersion);
@@ -737,7 +743,7 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
         if ( m_Browser == eUnknown ) {
 
             // Check Mozilla-compatible
-            if ( NStr::MatchesMask(m_UserAgent, "Mozilla/*(compatible;*") ) {
+            if ( NStr::MatchesMask(m_UserAgent, USTR("Mozilla/*(compatible;*")) ) {
                 // Browser.
                 m_Browser = eMozillaCompatible;
                 // Try to determine real browser using second entry
@@ -762,8 +768,8 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
                         x_ParseToken(token, fAppComment);
                     }
                 }
-                // Real browser name not found
-                // Continue below to check product name
+                // Real browser name not found,
+                // continue below to check product name
             } 
             
             // Handles the real Mozilla (or old Netscape if version < 5.0)
@@ -779,8 +785,6 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
                     m_BrowserName = "Mozilla";
                     m_Engine      = eEngine_Gecko;
                 }
-                // Stop
-                // return;
             }
         }
     }
@@ -796,7 +800,7 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
         if ( m_Browser == eIE ) {
             m_EngineVersion = m_BrowserVersion;
         } else {
-            search = " MSIE ";
+            search = USTR(" MSIE ");
             pos = m_UserAgent.find(search);
             if (pos != NPOS) {
                 pos += search.length();
@@ -840,7 +844,7 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
     }
 
     // Try to get engine version for KHTML-based browsers
-    search = " AppleWebKit/";
+    search = USTR(" AppleWebKit/");
     pos = m_UserAgent.find(search);
     if (pos != NPOS) {
         m_Engine = eEngine_KHTML;
@@ -848,16 +852,20 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
         s_ParseVersion(m_UserAgent, pos, &m_EngineVersion);
     }
 
+
     // Hack for some browsers (like Safari) that use Version/x.x.x rather than
     // Safari/x.x.x for real browser version (for Safari, numbers after browser
     // name represent a build version).
+    //
+    // Check it in VendorProduct only!
 
-    if ( m_Browser != eUnknown ) {
-        search = " Version/";
-        pos = m_UserAgent.find(search);
+    if ( m_Browser != eUnknown  &&  !vendor_product.empty() ) {
+        // VendorProduct token is not empty
+        search = USTR(" Version/");
+        pos = vendor_product.find(search);
         if (pos != NPOS) {
             pos += search.length();
-            s_ParseVersion(m_UserAgent, pos, &m_BrowserVersion);
+            s_ParseVersion(vendor_product, pos, &m_BrowserVersion);
         } else {
             // Safari (old version) -- try to get browser version
             // depending on engine (WebKit) version (very approximately).
@@ -892,55 +900,55 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
     // Check mobile devices first (more precise for ePlatform_MobileDevice)
     if ( m_Platform == ePlatform_Unknown  ||
          m_Platform == ePlatform_MobileDevice ) {
-        if (m_UserAgent.find("PalmSource")   != NPOS  ||
-            m_UserAgent.find("PalmOS")       != NPOS  ||
-            m_UserAgent.find("webOS")        != NPOS ) {
+        if (m_UserAgent.find(USTR("PalmSource"))   != NPOS  ||
+            m_UserAgent.find(USTR("PalmOS"))       != NPOS  ||
+            m_UserAgent.find(USTR("webOS"))        != NPOS ) {
             m_Platform = ePlatform_Palm;
         } else
-        if (m_UserAgent.find("Symbian")      != NPOS) {
+        if (m_UserAgent.find(USTR("Symbian"))      != NPOS) {
             m_Platform = ePlatform_Symbian;
         } else
-        if (m_UserAgent.find("Windows CE")   != NPOS  ||
-            m_UserAgent.find("IEMobile")     != NPOS  ||
-            m_UserAgent.find("Window Mobile")!= NPOS) {
+        if (m_UserAgent.find(USTR("Windows CE"))   != NPOS  ||
+            m_UserAgent.find(USTR("IEMobile"))     != NPOS  ||
+            m_UserAgent.find(USTR("Window Mobile"))!= NPOS) {
             m_Platform = ePlatform_WindowsCE;
         }
     }
     // Make additional check if platform is still undefined
     if ( m_Platform == ePlatform_Unknown ) {
-        if (m_UserAgent.find("Nokia")        != NPOS  ||  // Nokia
-            //m_UserAgent.find("HTC-")       != NPOS  ||  // HTC
-            //m_UserAgent.find("HTC_")       != NPOS  ||  // HTC
-            m_UserAgent.find("iPod")         != NPOS  ||  // Apple iPod 
-            m_UserAgent.find("iPhone")       != NPOS  ||  // Apple iPhone
-            m_UserAgent.find("LGE-")         != NPOS  ||  // LG
-            m_UserAgent.find("LG/U")         != NPOS  ||  // LG
-            m_UserAgent.find("MOT-")         != NPOS  ||  // Motorola
-            m_UserAgent.find("Samsung")      != NPOS  ||  // Samsung
-            m_UserAgent.find("SonyEricsson") != NPOS  ||  // SonyEricsson
-            m_UserAgent.find("J-PHONE")      != NPOS  ||  // Ex J-Phone, now Vodafone Live!
-            m_UserAgent.find("HP iPAQ")      != NPOS  ||
-            m_UserAgent.find("UP.Link")      != NPOS  ||
-            m_UserAgent.find("PlayStation Portable") != NPOS) {
+        if (m_UserAgent.find(USTR("Nokia"))        != NPOS  ||  // Nokia
+            //m_UserAgent.find(USTR("HTC-"))       != NPOS  ||  // HTC
+            //m_UserAgent.find(USTR("HTC_"))       != NPOS  ||  // HTC
+            m_UserAgent.find(USTR("iPod"))         != NPOS  ||  // Apple iPod 
+            m_UserAgent.find(USTR("iPhone"))       != NPOS  ||  // Apple iPhone
+            m_UserAgent.find(USTR("LGE-"))         != NPOS  ||  // LG
+            m_UserAgent.find(USTR("LG/U"))         != NPOS  ||  // LG
+            m_UserAgent.find(USTR("MOT-"))         != NPOS  ||  // Motorola
+            m_UserAgent.find(USTR("Samsung"))      != NPOS  ||  // Samsung
+            m_UserAgent.find(USTR("SonyEricsson")) != NPOS  ||  // SonyEricsson
+            m_UserAgent.find(USTR("J-PHONE"))      != NPOS  ||  // Ex J-Phone, now Vodafone Live!
+            m_UserAgent.find(USTR("HP iPAQ"))      != NPOS  ||
+            m_UserAgent.find(USTR("UP.Link"))      != NPOS  ||
+            m_UserAgent.find(USTR("PlayStation Portable")) != NPOS) {
             m_Platform = ePlatform_MobileDevice;
         } else
-        if (m_UserAgent.find("MacOS")        != NPOS  || 
-            m_UserAgent.find("Mac OS")       != NPOS  ||
-            m_UserAgent.find("Macintosh")    != NPOS  ||
-            m_UserAgent.find("Mac_PowerPC")  != NPOS) {
+        if (m_UserAgent.find(USTR("MacOS"))        != NPOS  || 
+            m_UserAgent.find(USTR("Mac OS"))       != NPOS  ||
+            m_UserAgent.find(USTR("Macintosh"))    != NPOS  ||
+            m_UserAgent.find(USTR("Mac_PowerPC"))  != NPOS) {
             m_Platform = ePlatform_Mac;
         } else
-        if (m_UserAgent.find("SunOS")        != NPOS  || 
-            m_UserAgent.find("Linux")        != NPOS  ||
-            m_UserAgent.find("FreeBSD")      != NPOS  ||
-            m_UserAgent.find("NetBSD")       != NPOS  ||
-            m_UserAgent.find("OpenBSD")      != NPOS  ||
-            m_UserAgent.find("IRIX")         != NPOS  ||
-            m_UserAgent.find("nagios-plugins") != NPOS) {
+        if (m_UserAgent.find(USTR("SunOS"))        != NPOS  || 
+            m_UserAgent.find(USTR("Linux"))        != NPOS  ||
+            m_UserAgent.find(USTR("FreeBSD"))      != NPOS  ||
+            m_UserAgent.find(USTR("NetBSD"))       != NPOS  ||
+            m_UserAgent.find(USTR("OpenBSD"))      != NPOS  ||
+            m_UserAgent.find(USTR("IRIX"))         != NPOS  ||
+            m_UserAgent.find(USTR("nagios-plugins")) != NPOS) {
             m_Platform = ePlatform_Unix;
         } else
         // Check Windows last, its signature is too short
-        if (m_UserAgent.find("Win")          != NPOS) {
+        if (m_UserAgent.find(USTR("Win"))          != NPOS) {
             m_Platform = ePlatform_Windows;
         }
     }
@@ -957,7 +965,7 @@ bool CCgiUserAgent::x_ParseToken(const string& token, int where)
         if ( !(s_Browsers[i].flags & where) ) {
             continue;
         }
-        string key = s_Browsers[i].key;
+        string key = USTR(s_Browsers[i].key);
         SIZE_TYPE pos = token.find(key);
         if ( pos != NPOS ) {
             pos += key.length();

@@ -647,6 +647,7 @@ struct SUserAgent {
 const SUserAgent s_UserAgentTests[] = {
 
     // VendorProduct tests
+
     { "SomeUnknownBrowser",
         CCgiUserAgent::eUnknown,        {-1, -1, -1},
         CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
@@ -735,6 +736,12 @@ const SUserAgent s_UserAgentTests[] = {
         CCgiUserAgent::eChrome,         {  0,  2,149},
         CCgiUserAgent::eEngine_KHTML,   {525, 13, -1},
         { 5, 0, -1},
+        CCgiUserAgent::ePlatform_Windows
+    },
+    { "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; WOW64; Trident/4.0; GTB7.1; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; VER#99#80837681486745484888484867; BRI/2; .NET4.0C; 89870769803; Version/11.00284)",
+        CCgiUserAgent::eIE,             {  8,  0, -1},
+        CCgiUserAgent::eEngine_IE,      {  8,  0, -1},
+        { 4, 0, -1},
         CCgiUserAgent::ePlatform_Windows
     },
 
@@ -1033,9 +1040,9 @@ void s_PrintUserAgentVersion(const string& name, TUserAgentVersion& v)
 }
 
 
-void TestUserAgent(void)
+void TestUserAgent(CCgiUserAgent::TFlags flags)
 {
-    CCgiUserAgent agent;
+    CCgiUserAgent agent(flags);
 
     for (size_t i=0; i<sizeof(s_UserAgentTests)/sizeof(s_UserAgentTests[0]); i++) {
         const SUserAgent* a = &s_UserAgentTests[i];
@@ -1088,7 +1095,7 @@ void TestUserAgent(void)
         agent.Reset("Mozilla/4.75 [en] (Win98; U)libwww-perl/5.41");
         assert(agent.GetBrowser() == CCgiUserAgent::eScript);
         assert(agent.GetEngine()  == CCgiUserAgent::eEngine_Bot);
-        assert( agent.IsBot());
+        assert(agent.IsBot());
         // Treat all as bots, except scripts
         assert(!agent.IsBot(CCgiUserAgent::fBotAll & ~CCgiUserAgent::fBotScript));
 
@@ -1141,7 +1148,8 @@ int CTestApplication::Run(void)
 {
     TestCgi( GetArguments() );
     TestCgiResponse( GetArguments() );
-    TestUserAgent();
+    TestUserAgent(0);
+    TestUserAgent(CCgiUserAgent::fNoCase);
     return 0;
 }
 
