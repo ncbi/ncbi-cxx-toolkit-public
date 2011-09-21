@@ -103,8 +103,13 @@ public:
 
     CRef<CVariation> AsVariation(const string& hgvs_expression, TOpFlags = fOpFlags_Default);
 
+
     string AsHgvsExpression(const CVariation& variation, CConstRef<CSeq_id> seq_id = CConstRef<CSeq_id>(NULL));
     string AsHgvsExpression(const CVariantPlacement& p);
+
+    //attach placement-specific HGVS expressions
+    void AttachHgvs(CVariation& v);
+
 
     CScope& SetScope()
     {
@@ -690,7 +695,7 @@ protected:
                 //note: stop-loss is extX in HGVS-1.0 and ext* in HGVS 2.0
                 prot_ext        = (str_p("extMet") | str_p("extX") | str_p("ext*")) >> int_p;
 
-                prot_missense   = aminoacid1 | aminoacid2 | aminoacid3;
+                prot_missense   = raw_seq;
 
                 //ISCN expression followed by a seq-loc. The ISCN is factored to a single leaf node
                 translocation = leaf_node_d[ch_p('t') >>

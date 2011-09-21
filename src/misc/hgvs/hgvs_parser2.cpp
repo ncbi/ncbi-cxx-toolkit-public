@@ -1417,11 +1417,7 @@ CRef<CVariation> CHgvsParser::x_prot_missense(TIterator const& i, const CContext
     HGVS_ASSERT_RULE(i, eID_prot_missense);
     TIterator it = i->children.begin();
 
-//    HGVS_ASSERT_RULE(it, eID_aminoacid);
-    TIterator it2 = it->children.begin();
-
-    string seq_str(it2->value.begin(), it2->value.end());
-    s_hgvsaa2ncbieaa(seq_str, seq_str);
+    CRef<CSeq_literal> prot_literal = x_raw_seq(it, context);
 
     if(context.GetPlacement().GetMol() != CVariantPlacement::eMol_protein) {
         HGVS_THROW(eContext, "Expected protein context");
@@ -1429,13 +1425,12 @@ CRef<CVariation> CHgvsParser::x_prot_missense(TIterator const& i, const CContext
 
     CRef<CVariation> vr(new CVariation);
     CVariation_inst& var_inst = vr->SetData().SetInstance();
-    var_inst.SetType(CVariation_inst::eType_prot_missense);
+    var_inst.SetType(prot_literal->GetLength() == 1 ? CVariation_inst::eType_prot_missense : CVariation_inst::eType_prot_other);
 
     SetFirstPlacement(*vr).Assign(context.GetPlacement());
 
     TDelta delta(new TDelta::TObjectType);
-    delta->SetSeq().SetLiteral().SetSeq_data().SetNcbieaa().Set(seq_str);
-    delta->SetSeq().SetLiteral().SetLength(1);
+    delta->SetSeq().SetLiteral(*prot_literal);
     var_inst.SetDelta().push_back(delta);
 
     return vr;
@@ -1753,6 +1748,50 @@ CRef<CVariation> CHgvsParser::AsVariation(const string& hgvs, TOpFlags flags)
 
     return vr;
 }
+
+
+
+void CHgvsParser::AttachHgvs(CVariation& v)
+{
+    v.Index();
+
+    //compute and attach placement-specific HGVS expressions
+    for(CTypeIterator<CVariation> it(Begin(v)); it; ++it) {
+        CVariation& v2 = *it;
+        if(!v2.IsSetPlacements()) {
+            continue;
+        }
+        NON_CONST_ITERATE(CVariation::TPlacements, it2, v2.SetPlacements()) {
+            CVariantPlacement& p2 = **it2;
+
+            if(!p2.GetLoc().GetId()) {
+                continue;
+            }
+
+            if(p2.GetMol() != CVariantPlacement::eMol_protein && v2.GetConsequenceParent()) {
+                //if this variation is in consequnece, only compute HGVS for protein variations
+                //(as otherwise it will throw - can't have HGVS expression for protein with nuc placement)
+                continue;
+            }
+
+            //compute hgvs-expression specific to the placement and the variation to which it is attached
+            try {
+                string hgvs_expression = AsHgvsExpression(v2, CConstRef<CSeq_id>(p2.GetLoc().GetId()));
+                p2.SetHgvs_name(hgvs_expression);
+            } catch (CException& e) {
+                ;
+            }
+        }
+    }
+
+    //If the root variation does not have placements (e.g. a container for placement-specific subvariations)
+    //then compute the hgvs expression for the root placement and attach it to variation itself as a synonym.
+    if(!v.IsSetPlacements()) {
+        string root_output_hgvs = AsHgvsExpression(v);
+        v.SetSynonyms().push_back(root_output_hgvs);
+    }
+}
+
 
 
 };
