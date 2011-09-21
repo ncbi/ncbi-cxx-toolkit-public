@@ -9,10 +9,6 @@ User-object ::= {
           {
             label str "Method",
             data str "BestRefseq"
-          },
-          {
-            label str "Contig Name",
-            data str "GPS_000552297.1"
           }
         }
       }
@@ -152,10 +148,6 @@ User-object ::= {
                 {
                   label str "Method",
                   data str "BestRefseq"
-                },
-                {
-                  label str "Contig Name",
-                  data str "NW_001837930"
                 }
               }
             }
@@ -196,10 +188,6 @@ User-object ::= {
                 {
                   label str "Source",
                   data str "NG_023403.1"
-                },
-                {
-                  label str "Contig Name",
-                  data str "NW_001837930"
                 }
               }
             }
@@ -220,10 +208,6 @@ User-object ::= {
                 {
                   label str "Method",
                   data str "GenomeScan"
-                },
-                {
-                  label str "Contig Name",
-                  data str "NT_008705"
                 }
               }
             }
@@ -256,10 +240,6 @@ User-object ::= {
                 {
                   label str "Method",
                   data str "BestRefseq,BLAST"
-                },
-                {
-                  label str "Contig Name",
-                  data str "NT_008705"
                 },
                 {
                   label str "mRNA",

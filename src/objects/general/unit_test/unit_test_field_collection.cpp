@@ -78,13 +78,8 @@ BOOST_AUTO_TEST_CASE(s_TestModelEvidence)
     BOOST_CHECK(uo.HasField("Method"));
     BOOST_CHECK(uo.GetFieldRef("Method"));
 
-    BOOST_CHECK(uo.HasField("Contig Name"));
-    BOOST_CHECK(uo.GetFieldRef("Contig Name"));
-
     BOOST_CHECK_EQUAL(uo.GetField("Method")
             .GetData().GetStr(), "BestRefseq");
-    BOOST_CHECK_EQUAL(uo.GetField("Contig Name")
-            .GetData().GetStr(), "GPS_000552297.1");
 }
 
 /// Test that spurious fields aren't found.
