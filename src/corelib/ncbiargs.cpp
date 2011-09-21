@@ -98,6 +98,22 @@ void s_WriteXmlLine(CNcbiOstream& out, const string& tag, const string& data)
     out << "</" << tag << ">" << endl;
 }
 
+// Allow autodetection among decimal and hex, but NOT octal, in case
+// anyone's been relying on leading zeros being meaningless.
+inline
+Int8 s_StringToInt8(const string& value)
+{
+    try {
+        return NStr::StringToInt8(value);
+    } catch (CStringException&) {
+        if (NStr::StartsWith(value, "0x", NStr::eNocase)) {
+            return NStr::StringToInt8(value, 0, 16);
+        } else {
+            throw;
+        }
+    }
+}
+
 /////////////////////////////////////////////////////////////////////////////
 //  CArg_***::   classes representing various types of argument value
 //
@@ -303,7 +319,7 @@ inline CArg_Int8::CArg_Int8(const string& name, const string& value)
     : CArg_String(name, value)
 {
     try {
-        m_Integer = NStr::StringToInt8(value);
+        m_Integer = s_StringToInt8(value);
     } catch (CException& e) {
         NCBI_RETHROW(e, CArgException, eConvert, s_ArgExptMsg(GetName(),
             "Argument cannot be converted", value));
@@ -3371,7 +3387,7 @@ CArgAllow_Int8s::CArgAllow_Int8s(Int8 x_min, Int8 x_max)
 
 bool CArgAllow_Int8s::Verify(const string& value) const
 {
-    Int8 val = NStr::StringToInt8(value);
+    Int8 val = s_StringToInt8(value);
     return (m_Min <= val  &&  val <= m_Max);
 }
 
