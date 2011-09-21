@@ -130,10 +130,12 @@ public:
 
 
     /// Find the CDSes for the first placement; Compute prot consequence using TranslateNAtoAA for each
-    /// and attach results to nuc_variation.consequnece. If seq-id specified, use only the placement with the specified id.
+    /// and attach results to nuc_variation.consequnece.
+    /// If seq-id specified, use only the placement with the specified id.
+    /// If ignore_genomic set to true, then consequences will be evaluated for cDNA or MT placements only.
     /// Note: Alternatively, the API could be "create and return consequence protein variation(s)", rather than attach,
     ///       but that for hierarchical input it would be hard to tell which consequence corresponds to which node.
-    void AttachProteinConsequences(CVariation& nuc_variation, const CSeq_id* = NULL);
+    void AttachProteinConsequences(CVariation& nuc_variation, const CSeq_id* = NULL, bool ignore_genomic = false);
 
 
 ///Other utility methods:
@@ -236,6 +238,11 @@ public:
      * Precondition: root Variation must have been indexed (links to parents defined as necessary)
      */
     static const CVariation::TPlacements* s_GetPlacements(const CVariation& v);
+
+
+    /// Find attached consequence variation in v that corresponds to p (has same seq-id).
+    static CConstRef<CVariation> s_FindConsequenceForPlacement(const CVariation& v, const CVariantPlacement& p);
+
 
 private:
 

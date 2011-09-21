@@ -660,21 +660,8 @@ void CVariationUtil::x_InferNAfromAA(CVariation& v, TAA2NAFlags flags)
         return;
     }
 
-    if(!v.GetData().GetInstance().GetDelta().size() == 1) {
-        NCBI_THROW(CException, eUnknown, "Expected single-element delta");
-    }
 
-    const CDelta_item& delta = *v.GetData().GetInstance().GetDelta().front();
-    if(delta.IsSetAction() && delta.GetAction() != CDelta_item::eAction_morph) {
-        NCBI_THROW(CException, eUnknown, "Expected morph action");
-    }
-
-    if(!delta.IsSetSeq() || !delta.GetSeq().IsLiteral() || delta.GetSeq().GetLiteral().GetLength() != 1) {
-        NCBI_THROW(CException, eUnknown, "Expected literal of length 1 in inst.");
-    }
-
-    CSeq_data variant_prot_seq;
-    CSeqportUtil::Convert(delta.GetSeq().GetLiteral().GetSeq_data(), &variant_prot_seq, CSeq_data::e_Iupacaa);
+    //Remap the placement to nucleotide
 
     const CVariation::TPlacements* placements = s_GetPlacements(v);
     if(!placements || placements->size() == 0) {
@@ -689,10 +676,6 @@ void CVariationUtil::x_InferNAfromAA(CVariation& v, TAA2NAFlags flags)
 
     if(placement.IsSetMol() && placement.GetMol() != CVariantPlacement::eMol_protein) {
         NCBI_THROW(CException, eUnknown, "Expected a protein-type placement");
-    }
-
-    if(sequence::GetLength(placement.GetLoc(), NULL) != 1) {
-        NCBI_THROW(CException, eUnknown, "Expected single-aa location");
     }
 
     SAnnotSelector sel(CSeqFeatData::e_Cdregion, true);
@@ -714,11 +697,32 @@ void CVariationUtil::x_InferNAfromAA(CVariation& v, TAA2NAFlags flags)
     CRef<CSeq_loc> nuc_loc = prot2precursor_mapper->Map(placement.GetLoc());
     ChangeIdsInPlace(*nuc_loc, sequence::eGetId_ForceAcc, *m_scope);
 
-    if(!nuc_loc->IsInt() || sequence::GetLength(*nuc_loc, NULL) != 3) {
-        NCBI_THROW(CException, eUnknown, "AA does not remap to a single codon.");
+    CConstRef<CDelta_item> delta =
+            v.GetData().GetInstance().GetDelta().size() != 1 ? CConstRef<CDelta_item>(NULL)
+          : v.GetData().GetInstance().GetDelta().front();
+
+    //See if the variation is simple-enough to process; if too complex, return "unknown-variation"
+    if(!nuc_loc->IsInt() //complex nucleotide location
+       || sequence::GetLength(*nuc_loc, NULL) != 3 //does not remap to single codon
+       || !delta //delta is not a single-element item
+       || (delta->IsSetAction() && delta->GetAction() != CDelta_item::eAction_morph) //not a replace-at-location delta-type
+       || !delta->IsSetSeq() //don't know what's the variant allele
+       || !delta->GetSeq().IsLiteral()
+       || delta->GetSeq().GetLiteral().GetLength() != 1)  //not single-AA missense
+    {
+        CRef<CVariantPlacement> p(new CVariantPlacement);
+        p->SetLoc(*nuc_loc);
+        p->SetMol(nuc_loc->GetId() ? GetMolType(*nuc_loc->GetId()) : CVariantPlacement::eMol_unknown);
+        CRef<CVariation> v2(new CVariation);
+        v2->SetData().SetUnknown();
+        v2->SetPlacements().push_back(p);
+        v.Assign(*v2);
+        return;
     }
 
 
+    CSeq_data variant_prot_seq;
+    CSeqportUtil::Convert(delta->GetSeq().GetLiteral().GetSeq_data(), &variant_prot_seq, CSeq_data::e_Iupacaa);
 
     CSeqVector seqv(*nuc_loc, m_scope, CBioseq_Handle::eCoding_Iupac);
     string original_allele_codon; //nucleotide allele on the sequence
@@ -1040,7 +1044,7 @@ void CVariationUtil::ChangeToDelins(CVariation& v)
 
 
 
-void CVariationUtil::AttachProteinConsequences(CVariation& v, const CSeq_id* target_id)
+void CVariationUtil::AttachProteinConsequences(CVariation& v, const CSeq_id* target_id, bool ignore_genomic)
 {
     v.Index();
     const CVariation::TPlacements* placements = s_GetPlacements(v);
@@ -1051,7 +1055,7 @@ void CVariationUtil::AttachProteinConsequences(CVariation& v, const CSeq_id* tar
 
     if(v.GetData().IsSet()) {
         NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
-            AttachProteinConsequences(**it, target_id);
+            AttachProteinConsequences(**it, target_id, ignore_genomic);
         }
         return;
     }
@@ -1081,6 +1085,14 @@ void CVariationUtil::AttachProteinConsequences(CVariation& v, const CSeq_id* tar
         if(placement.IsSetStart_offset() && (placement.IsSetStop_offset() || placement.GetLoc().IsPnt())) {
             continue; //intronic.
         }
+
+        if(   placement.GetMol() != CVariantPlacement::eMol_cdna
+           && placement.GetMol() != CVariantPlacement::eMol_mitochondrion
+           && (placement.GetMol() != CVariantPlacement::eMol_genomic || ignore_genomic))
+        {
+            continue;
+        }
+
 
         CCdregionIndex::TCdregions cdregions;
         m_cdregion_index.Get(placement.GetLoc(), cdregions);
@@ -1718,6 +1730,36 @@ void CVariationUtil::s_FactorOutPlacements(CVariation& v)
         }
     }
 }
+
+
+CConstRef<CVariation> CVariationUtil::s_FindConsequenceForPlacement(const CVariation& v, const CVariantPlacement& p)
+{
+    CConstRef<CVariation> cons_v(NULL);
+    if(v.IsSetConsequence() && p.GetLoc().GetId()) {
+        ITERATE(CVariation::TConsequence, it, v.GetConsequence()) {
+            const CVariation::TConsequence::value_type::TObjectType& cons = **it;
+            if(cons.IsVariation() && cons.GetVariation().IsSetPlacements()) {
+                ITERATE(CVariation::TPlacements, it2, cons.GetVariation().GetPlacements()) {
+                    const CVariantPlacement& vp = **it2;
+                    if(vp.GetLoc().GetId() && p.GetLoc().GetId() && vp.GetLoc().GetId()->Equals(*p.GetLoc().GetId())) {
+                        cons_v.Reset(&cons.GetVariation());
+                        break;
+                    }
+                }
+            }
+        }
+    } else if(v.GetData().IsSet()) {
+        ITERATE(CVariation::TData::TSet::TVariations, it, v.GetData().GetSet().GetVariations()) {
+            CConstRef<CVariation> cons_v1 = s_FindConsequenceForPlacement(**it, p);
+            if(cons_v1) {
+                cons_v = cons_v1;
+                break;
+            }
+        }
+    }
+    return cons_v;
+}
+
 
 
 

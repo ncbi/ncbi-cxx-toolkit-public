@@ -254,24 +254,18 @@ void ProcessVariation(CVariation& v, const CArgs& args, CScope& scope, CConstRef
 
     if(args["prot_effect"]) {
         //calculate consequence based on cdna placements only, if available; otherwise on any
-        set<CSeq_id_Handle> ids;
+        bool have_cdna = false;
         for(CTypeConstIterator<CVariantPlacement> it(Begin(v)); it; ++it) {
             const CVariantPlacement& p = *it;
-            if(p.GetLoc().GetId() && p.GetMol() == CVariantPlacement::eMol_cdna) {
-                ids.insert(CSeq_id_Handle::GetHandle(*p.GetLoc().GetId()));
+            if(p.GetLoc().GetId()
+                && (    p.GetMol() == CVariantPlacement::eMol_mitochondrion
+                     || p.GetMol() == CVariantPlacement::eMol_cdna))
+            {
+                have_cdna = true;
+                break;
             }
         }
-
-        if(ids.size() == 0) {
-            for(CTypeConstIterator<CVariantPlacement> it(Begin(v)); it; ++it) {
-                const CVariantPlacement& p = *it;
-                 ids.insert(CSeq_id_Handle::GetHandle(*p.GetLoc().GetId()));
-            }
-        }
-
-        ITERATE(set<CSeq_id_Handle>, it, ids) {
-            variation_util.AttachProteinConsequences(v, it->GetSeqId());
-        }
+        variation_util.AttachProteinConsequences(v, NULL, have_cdna);
     }
 
     if(args["precursor"] || args["tr_precursor"]) {
