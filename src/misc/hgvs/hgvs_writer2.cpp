@@ -531,7 +531,11 @@ string CHgvsParser::x_PlacementCoordsToStr(const CVariantPlacement& vp)
 
     } else if(vp.GetLoc().IsWhole()) {
         ; //E.g. "NG_12345.6:g.=" represents no-change ("=") on the whole "NG_12345.6:g."
-    } else if(vp.GetLoc().IsPnt()) {
+    } else if(vp.GetLoc().IsPnt() && !vp.IsSetStop_offset()) {
+        //Note, if this is a point, but we have stop-offset, we need to treat it as interval
+        //This happens when we have an offset-based placement with start==stop, which gets
+        //collapsed to a single point after remapping instead of remaining a single-base interval.
+
         const CSeq_point& pnt = vp.GetLoc().GetPnt();
 
         long start_offset = 0;
@@ -706,9 +710,9 @@ string CHgvsParser::x_AsHgvsInstExpression(
     }}
 
     string asserted_seq_str =
-           !asserted_seq                  ? ""
-         : asserted_seq->GetLength() < 20 ? x_SeqLiteralToStr(*asserted_seq, is_prot)
-         :                                  NStr::IntToString(asserted_seq->GetLength());
+           !asserted_seq                   ? ""
+         : asserted_seq->GetLength() < 200 ? x_SeqLiteralToStr(*asserted_seq, is_prot)
+         :                                   NStr::IntToString(asserted_seq->GetLength());
 
 
 
