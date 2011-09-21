@@ -2807,9 +2807,9 @@ string CAlignFormatUtil::GetIDUrl(SSeqURLInfo *seqUrlInfo,const CBioseq::TId* id
 {
     string url_link = NcbiEmptyString;
     CConstRef<CSeq_id> wid = FindBestChoice(*ids, CSeq_id::WorstRank);
-    //hit_not_in_mapviewer = true if DbisNa && not genomic sequence
+    //hit_not_in_mapviewer = true if DbisNa && not (genomic+mapviwer sequence)
     bool hit_not_in_mapviewer = (seqUrlInfo->advancedView) ? true :
-                                        (!seqUrlInfo->isDbNa || (seqUrlInfo->linkout != 0 && !(seqUrlInfo->linkout & eGenomicSeq)));
+                                        (!seqUrlInfo->isDbNa || (seqUrlInfo->linkout != 0 && !( (seqUrlInfo->linkout & eGenomicSeq) && (seqUrlInfo->linkout & eMapviewer) )));
     string logstr_location = (seqUrlInfo->isAlignLink) ? "align" : "top";
     string title = "title=\"Show report for " + seqUrlInfo->accession + "\" ";
 
@@ -2920,6 +2920,12 @@ list<string>  CAlignFormatUtil::GetGiLinksList(SSeqURLInfo *seqUrlInfo,
         else {
             linkTitle += " for <@fromHSP@> to <@toHSP@> range";
         }
+        if(m_Reg && !seqUrlInfo->blastType.empty()) {
+            string extraSeqViewParams = m_Reg->Get(seqUrlInfo->blastType, "SEQVIEW_PARAMS");
+            if(!extraSeqViewParams.empty()) {
+                linkUrl += "&" +  extraSeqViewParams;
+            }
+        }        
         string title = (seqUrlInfo->isDbNa) ? "Nucleotide Graphics" : "Protein Graphics";
     
         link = s_MapCustomLink(linkUrl,title,seqUrlInfo->accession, "Graphics",linkTitle,"spr");
