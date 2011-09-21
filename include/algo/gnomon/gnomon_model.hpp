@@ -49,6 +49,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 class CSeq_align;
 class CSeq_id;
+class CGenetic_code;
 END_SCOPE(objects)
 USING_SCOPE(objects);
 BEGIN_SCOPE(gnomon)
@@ -453,7 +454,7 @@ public:
 
     virtual CAlignMap GetAlignMap() const;
 
-    string GetProtein (const CResidueVec& contig_sequence) const;
+    string GetProtein (const CResidueVec& contig_sequence, const CGenetic_code* gencode = NULL) const;
     
     // Below comparisons ignore CDS completely, first 3 assume that alignments are the same strand
     

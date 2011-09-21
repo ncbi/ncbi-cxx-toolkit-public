@@ -96,7 +96,7 @@ SModelData::SModelData(const CAlignModel& m, const CEResidueVec& contig_seq) : m
 
 class CAnnotationASN1::CImplementationData {
 public:
-    CImplementationData(const string& contig_name, const CResidueVec& seq, IEvidence& evdnc);
+    CImplementationData(const string& contig_name, const CResidueVec& seq, IEvidence& evdnc, int genetic_code);
 
     void AddModel(const CAlignModel& model);
     CRef<CSeq_entry> main_seq_entry;
@@ -120,6 +120,8 @@ private:
     const CResidueVec& contig_seq;
     CDoubleStrandSeq  contig_ds_seq;
 
+    int gencode;
+
     CBioseq_set::TSeq_set* nucprots;
     CSeq_annot* gnomon_models_annot;
     CSeq_annot::C_Data::TFtable* feature_table;
@@ -137,10 +139,11 @@ private:
     friend class CAnnotationASN1;
 };
 
-CAnnotationASN1::CImplementationData::CImplementationData(const string& a_contig_name, const CResidueVec& seq, IEvidence& evdnc) :
+CAnnotationASN1::CImplementationData::CImplementationData(const string& a_contig_name, const CResidueVec& seq, IEvidence& evdnc, int genetic_code) :
     main_seq_entry(new CSeq_entry),
     contig_name(a_contig_name),
     contig_sid(CIdHandler::ToSeq_id(a_contig_name)), contig_seq(seq),
+    gencode(genetic_code),
     evidence(evdnc)
 {
     Convert(contig_seq, contig_ds_seq);
@@ -186,8 +189,9 @@ CAnnotationASN1::CImplementationData::CImplementationData(const string& a_contig
     feature_generator->SetAllowedUnaligned(0);
 }
 
-CAnnotationASN1::CAnnotationASN1(const string& contig_name, const CResidueVec& seq, IEvidence& evdnc) :
-    m_data(new CImplementationData(contig_name, seq, evdnc))
+CAnnotationASN1::CAnnotationASN1(const string& contig_name, const CResidueVec& seq, IEvidence& evdnc,
+                    int genetic_code) :
+    m_data(new CImplementationData(contig_name, seq, evdnc, genetic_code))
 {
 }
 
@@ -274,7 +278,7 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_cdregion_feature(SM
     }
 
     CRef<CGenetic_code::C_E> cdrcode(new CGenetic_code::C_E);
-    cdrcode->SetId(1);
+    cdrcode->SetId(gencode);
     cdregion_feature->SetData().SetCdregion().SetCode().Set().push_back(cdrcode);
 
    if(model.PStop() && (where==eOnMrna || model.FrameShifts().empty())) {

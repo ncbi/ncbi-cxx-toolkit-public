@@ -59,7 +59,8 @@ public:
 
 class CAnnotationASN1 {
 public:
-    CAnnotationASN1(const string& contig_name, const CResidueVec& seq, IEvidence& evidence);
+    CAnnotationASN1(const string& contig_name, const CResidueVec& seq, IEvidence& evidence,
+                    int genetic_code = 1);
     ~CAnnotationASN1();
 
     void AddModel(const CAlignModel& model);

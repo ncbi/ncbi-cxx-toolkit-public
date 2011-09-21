@@ -318,7 +318,7 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
 
 }
 
-string CGeneModel::GetProtein (const CResidueVec& contig_sequence) const
+string CGeneModel::GetProtein (const CResidueVec& contig_sequence, const CGenetic_code* gencode) const
 {
     string prot_seq;
     if(ReadingFrame().Empty())
@@ -332,9 +332,14 @@ string CGeneModel::GetProtein (const CResidueVec& contig_sequence) const
     int bshift = ((int)cds.size()-ashift)%3;
 
     string cds_seq((char*)&cds[ashift],cds.size()-ashift-bshift);
-    cds_seq = "ATG"+cds_seq; // workaround '-' in protein if not headed with start codon
-    objects::CSeqTranslator::Translate(cds_seq, prot_seq);
-    return prot_seq.substr(1);
+    objects::CSeqTranslator::Translate(cds_seq, prot_seq, objects::CSeqTranslator::fDefault, gencode );
+    if (prot_seq[0] == '-') {
+        string first_triplet = cds_seq.substr(0, 3);
+        string first_aa;
+        objects::CSeqTranslator::Translate(first_triplet, first_aa, objects::CSeqTranslator::fIs5PrimePartial, gencode );
+        prot_seq = first_aa+prot_seq.substr(1);
+    }
+    return prot_seq;
 }
 
 //
