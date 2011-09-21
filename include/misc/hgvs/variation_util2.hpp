@@ -87,6 +87,7 @@ public:
     }
 
     CRef<CVariation> AsVariation(const CSeq_feat& variation_ref);
+    void AsVariation_feats(const CVariation& v, CSeq_annot::TData::TFtable& feats);
 
 
 /// Methods to remap a VariantPlacement
@@ -333,6 +334,7 @@ private:
 
 
     CRef<CVariation> x_AsVariation(const CVariation_ref& vr);
+    CRef<CVariation_ref> x_AsVariation_ref(const CVariation& v, const CVariantPlacement& p);
 
 
     /*
@@ -341,6 +343,8 @@ private:
      * from a variation-ref we need to migrate the offsets from inst into placement.
      */
     static void s_ConvertInstOffsetsToPlacementOffsets(CVariation& v, CVariantPlacement& p);
+    static void s_AddInstOffsetsFromPlacementOffsets(CVariation_inst& vi, const CVariantPlacement& p);
+
 
 private:
 

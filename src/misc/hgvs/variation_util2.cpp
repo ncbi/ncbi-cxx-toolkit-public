@@ -2389,6 +2389,210 @@ void CVariationUtil::CCdregionIndex::Get(const CSeq_loc& loc, TCdregions& cdregi
 //
 //
 
+void CVariationUtil::AsVariation_feats(const CVariation& v, CSeq_annot::TData::TFtable& feats)
+{
+    if(v.IsSetPlacements()) {
+        ITERATE(CVariation::TPlacements, it, v.GetPlacements()) {
+            const CVariantPlacement& p = **it;
+            CRef<CVariation_ref> vr = x_AsVariation_ref(v, p);
+            CRef<CSeq_feat> feat(new CSeq_feat);
+            feat->SetLocation().Assign(p.GetLoc());
+            feat->SetData().SetVariation(*vr);
+            if(v.IsSetPub()) {
+                feat->SetCit().Assign(v.GetPub());
+            }
+            if(v.IsSetExt()) {
+                ITERATE(CVariation::TExt, it, v.GetExt()) {
+                    CRef<CUser_object> uo(new CUser_object);
+                    uo->Assign(**it);
+                    feat->SetExts().push_back(uo);
+                }
+            }
+
+            feats.push_back(feat);
+        }
+    } else if(v.GetData().IsSet()) {
+        ITERATE(CVariation::TData::TSet::TVariations, it, v.GetData().GetSet().GetVariations()) {
+            AsVariation_feats(**it, feats);
+        }
+    }
+}
+
+CRef<CVariation_ref> CVariationUtil::x_AsVariation_ref(const CVariation& v, const CVariantPlacement& p)
+{
+    CRef<CVariation_ref> vr(new CVariation_ref);
+
+    if(v.IsSetId()) {
+        vr->SetId().Assign(v.GetId());
+    }
+
+    if(v.IsSetParent_id()) {
+        vr->SetId().Assign(v.GetParent_id());
+    }
+
+    if(v.IsSetSample_id() && v.GetSample_id().size() > 0) {
+        vr->SetId().Assign(*v.GetSample_id().front());
+    }
+
+    if(v.IsSetOther_ids()) {
+        ITERATE(CVariation::TOther_ids, it, v.GetOther_ids()) {
+            CRef<CDbtag> dbtag(new CDbtag);
+            dbtag->Assign(**it);
+            vr->SetOther_ids().push_back(dbtag);
+        }
+    }
+
+    if(v.IsSetName()) {
+        vr->SetName(v.GetName());
+    }
+
+    if(v.IsSetSynonyms()) {
+        vr->SetSynonyms() = v.GetSynonyms();
+    }
+
+    if(v.IsSetDescription()) {
+        vr->SetName(v.GetDescription());
+    }
+
+    if(v.IsSetPhenotype()) {
+        ITERATE(CVariation::TPhenotype, it, v.GetPhenotype()) {
+            CRef<CPhenotype> p(new CPhenotype);
+            p->Assign(**it);
+            vr->SetPhenotype().push_back(p);
+        }
+    }
+
+    if(v.IsSetMethod()) {
+        vr->SetMethod() = v.GetMethod().GetMethod();
+    }
+
+    if(v.IsSetVariant_prop()) {
+        vr->SetVariant_prop().Assign(v.GetVariant_prop());
+    }
+
+    if(v.GetData().IsComplex()) {
+        vr->SetData().SetComplex();
+    } else if(v.GetData().IsInstance()) {
+        vr->SetData().SetInstance().Assign(v.GetData().GetInstance());
+        s_AddInstOffsetsFromPlacementOffsets(vr->SetData().SetInstance(), p);
+    } else if(v.GetData().IsNote()) {
+        vr->SetData().SetNote() = v.GetData().GetNote();
+    } else if(v.GetData().IsUniparental_disomy()) {
+        vr->SetData().SetUniparental_disomy();
+    } else if(v.GetData().IsUnknown()) {
+        vr->SetData().SetUnknown();
+    } else if(v.GetData().IsSet()) {
+        const CVariation::TData::TSet& v_set = v.GetData().GetSet();
+        CVariation_ref::TData::TSet& vr_set = vr->SetData().SetSet();
+        vr_set.SetType(v_set.GetType());
+        if(v_set.IsSetName()) {
+            vr_set.SetName(v_set.GetName());
+        }
+        ITERATE(CVariation::TData::TSet::TVariations, it, v_set.GetVariations()) {
+            vr_set.SetVariations().push_back(x_AsVariation_ref(**it, p));
+        }
+    } else {
+        NCBI_THROW(CException, eUnknown, "Unhandled Variation_ref::TData::E_CChoice");
+    }
+
+    if(v.IsSetConsequence()) {
+        vr->SetConsequence();
+        ITERATE(CVariation::TConsequence, it, v.GetConsequence()) {
+            const CVariation::TConsequence::value_type::TObjectType& v_cons = **it;
+            CVariation_ref::TConsequence::value_type vr_cons(new CVariation_ref::TConsequence::value_type::TObjectType);
+            vr->SetConsequence().push_back(vr_cons);
+            vr_cons->SetUnknown();
+
+            if(v_cons.IsSplicing()) {
+                vr_cons->SetSplicing();
+            } else if(v_cons.IsNote()) {
+                vr_cons->SetNote(v_cons.GetNote());
+            } else if(v_cons.IsVariation()) {
+                CRef<CVariation_ref> cons_variation = x_AsVariation_ref(v_cons.GetVariation(), p);
+                vr_cons->SetVariation(*cons_variation);
+
+                if(v_cons.GetVariation().IsSetFrameshift()) {
+                    CVariation_ref::TConsequence::value_type fr_cons(new CVariation_ref::TConsequence::value_type::TObjectType);
+                    vr->SetConsequence().push_back(fr_cons);
+                    fr_cons->SetFrameshift();
+                    if(v_cons.GetVariation().GetFrameshift().IsSetPhase()) {
+                        fr_cons->SetFrameshift().SetPhase(v_cons.GetVariation().GetFrameshift().GetPhase());
+                    }
+                    if(v_cons.GetVariation().GetFrameshift().IsSetX_length()) {
+                        fr_cons->SetFrameshift().SetX_length(v_cons.GetVariation().GetFrameshift().GetPhase());
+                    }
+                }
+            } else if(v_cons.IsLoss_of_heterozygosity()) {
+                vr_cons->SetLoss_of_heterozygosity();
+                if(v_cons.GetLoss_of_heterozygosity().IsSetReference()) {
+                    vr_cons->SetLoss_of_heterozygosity().SetReference(v_cons.GetLoss_of_heterozygosity().GetReference());
+                }
+                if(v_cons.GetLoss_of_heterozygosity().IsSetTest()) {
+                    vr_cons->SetLoss_of_heterozygosity().SetTest(v_cons.GetLoss_of_heterozygosity().GetTest());
+                }
+            }
+        }
+    }
+
+    if(v.IsSetSomatic_origin()) {
+        vr->SetSomatic_origin();
+        ITERATE(CVariation::TSomatic_origin, it, v.GetSomatic_origin()) {
+            const CVariation::TSomatic_origin::value_type::TObjectType& v_so = **it;
+            CVariation_ref::TSomatic_origin::value_type vr_so(new CVariation_ref::TSomatic_origin::value_type::TObjectType);
+
+            if(v_so.IsSetSource()) {
+                vr_so->SetSource().Assign(v_so.GetSource());
+            }
+
+            if(v_so.IsSetCondition()) {
+                vr_so->SetCondition();
+                if(v_so.GetCondition().IsSetDescription()) {
+                    vr_so->SetCondition().SetDescription(v_so.GetCondition().GetDescription());
+                }
+                if(v_so.GetCondition().IsSetObject_id()) {
+                    vr_so->SetCondition().SetObject_id();
+                    ITERATE(CVariation::TSomatic_origin::value_type::TObjectType::TCondition::TObject_id,
+                            it,
+                            v_so.GetCondition().GetObject_id())
+                    {
+                        CRef<CDbtag> dbtag(new CDbtag);
+                        dbtag->Assign(**it);
+                        vr_so->SetCondition().SetObject_id().push_back(dbtag);
+                    }
+                }
+            }
+
+            vr->SetSomatic_origin().push_back(vr_so);
+        }
+    }
+
+
+    return vr;
+}
+
+CRef<CDelta_item> CreateDeltaForOffset(int offset, const CVariantPlacement& p)
+{
+    CRef<CDelta_item> delta(new CDelta_item);
+    delta->SetAction(CDelta_item::eAction_offset);
+    delta->SetSeq().SetLiteral().SetLength(abs(offset));
+    int sign = (p.GetLoc().GetStrand() == eNa_strand_minus ? -1 : 1) * (offset < 0 ? -1 : 1);
+    if(sign < 0) {
+        delta->SetMultiplier(-1);
+    }
+    return delta;
+}
+
+void CVariationUtil::s_AddInstOffsetsFromPlacementOffsets(CVariation_inst& vi, const CVariantPlacement& p)
+{
+    if(p.IsSetStart_offset()) {
+        vi.SetDelta().push_front(CreateDeltaForOffset(p.GetStart_offset(), p));
+    }
+    if(p.IsSetStop_offset()) {
+        vi.SetDelta().push_back(CreateDeltaForOffset(p.GetStop_offset(), p));
+    }
+}
+
+
 CRef<CVariation> CVariationUtil::AsVariation(const CSeq_feat& variation_feat)
 {
     if(!variation_feat.GetData().IsVariation()) {
@@ -2468,7 +2672,7 @@ CRef<CVariation> CVariationUtil::x_AsVariation(const CVariation_ref& vr)
     }
 
     if(vr.IsSetMethod()) {
-        v->SetMethod().SetMethod() = vr.GetMethod(); //todo: verify 1:1 enum correspondence
+        v->SetMethod().SetMethod() = vr.GetMethod();
     }
 
     if(vr.IsSetVariant_prop()) {
@@ -2479,7 +2683,6 @@ CRef<CVariation> CVariationUtil::x_AsVariation(const CVariation_ref& vr)
         v->SetData().SetComplex();
     } else if(vr.GetData().IsInstance()) {
         v->SetData().SetInstance().Assign(vr.GetData().GetInstance());
-        //todo: transfer the offsets to placement
     } else if(vr.GetData().IsNote()) {
         v->SetData().SetNote() = vr.GetData().GetNote();
     } else if(vr.GetData().IsUniparental_disomy()) {
@@ -2489,7 +2692,7 @@ CRef<CVariation> CVariationUtil::x_AsVariation(const CVariation_ref& vr)
     } else if(vr.GetData().IsSet()) {
         const CVariation_ref::TData::TSet& vr_set = vr.GetData().GetSet();
         CVariation::TData::TSet& v_set = v->SetData().SetSet();
-        v_set.SetType(vr_set.GetType()); //todo: verify 1:1 enum correspondnece
+        v_set.SetType(vr_set.GetType());
         if(vr_set.IsSetName()) {
             v_set.SetName(vr_set.GetName());
         }
@@ -2623,61 +2826,6 @@ void CVariationUtil::s_ConvertInstOffsetsToPlacementOffsets(CVariation& v, CVari
     }
 }
 
-
-
-
-
-
-
-#if 0
-/// Flatten variation to a collection of variation-ref features
-/// (note that we use vector of feats, rather than seq-annot, as
-/// we have different seq-ids for different variant-placements).
-///
-///
-typedef vector<CRef<CSeq_feat> > TFeats;
-void ToVariationRefs(const CVariation& v, TFeats& feats) const;
-
-
-void CVariationUtil::ToVariationRefs(const CVariation& v, TFeats& feats) const
-{
-    //if subvariations have their own placements, features will be created at their level - this level is just a container.
-    bool is_container = false;
-    if(v.GetData().IsSet()) {
-        ITERATE(CVariation::TData::TSet::TVariations, it, v.GetData().GetSet().GetVariations()) {
-            const CVariation& subvariation = **it;
-            for(CTypeConstIterator<CVariantPlacement> it2(Begin(subvariation)); it2; ++it2) {
-                is_container = true;
-                break;
-            }
-        }
-    }
-
-    if(is_container) {
-        //recurse
-        ITERATE(CVariation::TData::TSet::TVariations, it, v.GetData().GetSet().GetVariations()) {
-            ToVariationRefs(**it, feats);
-        }
-    } else if(v.IsSetPlacements()) {
-        ITERATE(CVariation::TPlacements, it, v.GetPlacements()) {
-
-        }
-    }
-
-}
-
-
-CRef<CVariation_ref> CVariationUtil::x_AsVariation_ref(const CVariation& v) const
-{
-    CRef<CVariation_ref> vr(new CVariation_ref);
-    vr->SetData().Assign(v.GetData().GetInstance());
-    if(v.IsSetConsequence()) {
-
-    }
-
-    return vr;
-}
-#endif
 
 
 #if 0
