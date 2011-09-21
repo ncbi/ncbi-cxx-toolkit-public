@@ -2767,7 +2767,7 @@ static EIO_Status s_Read(SOCK    sock,
     EIO_Status status;
     int/*bool*/ done;
 
-    if (sock->type != eDatagram) {
+    if (sock->type != eDatagram  &&  peek >= 0) {
         *n_read = 0;
         status = s_WritePending(sock, sock->r_timeout, 0, 0);
         if (sock->pending)
@@ -2787,7 +2787,9 @@ static EIO_Status s_Read(SOCK    sock,
         }
         if (*n_read  &&  (*n_read == size  ||  !peek))
             return eIO_Success;
-    }
+    } else
+        *n_read = 0;
+
     if (sock->r_status == eIO_Closed  ||  sock->eof) {
         if (*n_read)
             return eIO_Success;
