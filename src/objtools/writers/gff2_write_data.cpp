@@ -414,7 +414,6 @@ void CGffWriteRecord::x_PriorityProcess(
             strAttributes += strKeyMod;
             strAttributes += "=";
             string strValue = *pTag;
-            bool needsQuoting = x_NeedsQuoting(strValue);
             strValue = x_Encode(strValue);
             if (x_NeedsQuoting(*pTag)) {
                 strValue = (string("\"") + strValue + string("\""));
@@ -708,9 +707,23 @@ bool CGffWriteRecordFeature::AssignSource(
             if ( !subsource.IsSetSubtype() || !subsource.IsSetName() ) {
                 continue;
             }
+
+            CSubSource::TSubtype subtype = subsource.GetSubtype();
             string key = s_GetSubsourceString( subsource.GetSubtype() );
-            if ( !key.empty() ) {
-                m_Attributes[ key ] = subsource.GetName();
+            if ( key.empty() ) {
+                continue;
+            }
+            switch ( subtype ) {
+                default: {
+                    if ( !key.empty() ) {
+                        m_Attributes[ key ] = subsource.GetName();
+                    }
+                    continue;
+                }
+            case CSubSource::eSubtype_environmental_sample: {
+                    m_Attributes[key] = "true";
+                    continue;
+                }
             }
         }
     }
