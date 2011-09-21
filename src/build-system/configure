@@ -27180,6 +27180,7 @@ fi
  LIBS=$saved_LIBS
 
       if test "$ac_cv_search_glewGetExtension" = no; then
+         GLEW_INCLUDE=
          GLEW_LIBS=
          if test "${with_glew:=no}" != no; then
        { { echo "$as_me:$LINENO: error: --with-glew explicitly specified, but no usable version found." >&5

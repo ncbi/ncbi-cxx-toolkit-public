@@ -4879,6 +4879,7 @@ else
       LIBS="$OPENGL_LIBS $DL_LIBS $orig_LIBS"
       NCBI_CHECK_LIBS(GLEW, [$glew_libname GLEWmx GLEW], glewGetExtension)
       if test "$ac_cv_search_glewGetExtension" = no; then
+         GLEW_INCLUDE=
          GLEW_LIBS=
          NCBI_MISSING_PACKAGE(glew)
          NCBI_MISSING_PACKAGE(glew-mx)
