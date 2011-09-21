@@ -119,7 +119,6 @@ static const string s_GetSubsourceString( const CSubSource::TSubtype& subtype )
         case CSubSource::eSubtype_map: return "map";
         case CSubSource::eSubtype_clone: return "clone";
         case CSubSource::eSubtype_subclone: return "subclone";
-        case CSubSource::eSubtype_haplogroup: return "haplogroup";
         case CSubSource::eSubtype_haplotype: return "haplotype";
         case CSubSource::eSubtype_genotype: return "genotype";
         case CSubSource::eSubtype_sex: return "sex";
@@ -144,6 +143,20 @@ static const string s_GetSubsourceString( const CSubSource::TSubtype& subtype )
         case CSubSource::eSubtype_transgenic: return "transgenic";
         case CSubSource::eSubtype_environmental_sample: return "environmental_sample";
         case CSubSource::eSubtype_isolation_source: return "isolation_source";
+        case CSubSource::eSubtype_lat_lon: return "lat_lon";
+        case CSubSource::eSubtype_collection_date: return "collection_date";
+        case CSubSource::eSubtype_collected_by: return "collected_by";
+        case CSubSource::eSubtype_identified_by: return "identified_by";
+        case CSubSource::eSubtype_fwd_primer_seq: return "fwd_primer_seq";
+        case CSubSource::eSubtype_fwd_primer_name: return "fwd_primer_name";
+        case CSubSource::eSubtype_rev_primer_seq: return "rev_primer_seq";
+        case CSubSource::eSubtype_rev_primer_name: return "rev_primer_name";
+        case CSubSource::eSubtype_metagenomic: return "metagenomic";
+        case CSubSource::eSubtype_mating_type: return "mating_type";
+        case CSubSource::eSubtype_linkage_group: return "linkage_group";
+        case CSubSource::eSubtype_haplogroup: return "haplogroup";
+        case CSubSource::eSubtype_whole_replicon: return "whole_replicon";
+        case CSubSource::eSubtype_phenotype: return "phenotype";
         case CSubSource::eSubtype_other: return "note";
         default: return "";
     }
