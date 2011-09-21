@@ -531,7 +531,7 @@ string CHgvsParser::x_PlacementCoordsToStr(const CVariantPlacement& vp)
 
     } else if(vp.GetLoc().IsWhole()) {
         ; //E.g. "NG_12345.6:g.=" represents no-change ("=") on the whole "NG_12345.6:g."
-    } else if(vp.GetLoc().IsPnt() && !vp.IsSetStop_offset()) {
+    } else if(vp.GetLoc().IsPnt() && CVariationUtil::s_GetLength(vp, NULL) == 1) {
         //Note, if this is a point, but we have stop-offset, we need to treat it as interval
         //This happens when we have an offset-based placement with start==stop, which gets
         //collapsed to a single point after remapping instead of remaining a single-base interval.
