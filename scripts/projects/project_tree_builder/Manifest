@@ -42,10 +42,10 @@ SunOSSparc : plain : GCC.sh           --without-debug --without-mt --with-static
 
 #PowerMAC   : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 IntelMAC   : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-#IntelMAC    : universal : GCC.sh        --without-debug --without-mt  --with-static --with-universal --with-flat-makefile
+#IntelMAC    : universal : GCC.sh        --without-debug --without-mt  --with-static --with-universal=i386,x86_64 --with-flat-makefile
 
 #Win32_8    : 800 : static  32  ReleaseMT
 Win32_9    : 900 : static  32  ReleaseMT
 #Win64_9      : 900 : static  64  ReleaseDLL
 
-XCode      : plain  : Xcode.sh 30 --without-debug --with-universal
+XCode      : plain  : Xcode.sh 30 --without-debug --with-universal=i386,x86_64

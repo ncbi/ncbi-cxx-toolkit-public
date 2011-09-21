@@ -42,5 +42,5 @@ SunOSx86        : WS32  : WorkShop.sh 32 --without-debug --without-mt --with-sta
 SunOSSparc      : WS64  : WorkShop.sh 64 --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 SunOSSparc      : WS32  : WorkShop.sh 32 --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 SunOSSparc      : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-IntelMAC        : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile --with-universal
+IntelMAC        : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile --with-universal=i386,x86_64
 
