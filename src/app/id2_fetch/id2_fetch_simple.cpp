@@ -56,6 +56,7 @@
 #include <objects/id2/ID2_Request_Get_Seq_id.hpp>
 #include <objects/id2/ID2_Get_Blob_Details.hpp>
 #include <objects/id2/ID2_Seq_id.hpp>
+#include <objects/id2/ID2_Blob_Id.hpp>
 #include <objects/id2/ID2_Reply.hpp>
 #include <objects/id2/ID2_Reply_Data.hpp>
 #include <objects/seqsplit/ID2S_Split_Info.hpp>
@@ -129,6 +130,11 @@ void CId2FetchApp::Init(void)
     arg_desc->AddOptionalKey
         ("id", "SeqEntryID",
          "Seq-id of the Seq-Entry to fetch",
+         CArgDescriptions::eString);
+    // Seq-id
+    arg_desc->AddOptionalKey
+        ("blob_id", "BlobID",
+         "Blob id of the Seq-Entry to fetch (sat,sat-key)",
          CArgDescriptions::eString);
     // Request
     arg_desc->AddOptionalKey
@@ -628,11 +634,11 @@ void CId2FetchApp::x_ReadReply(CID2_Reply& reply)
 {
     // Read server response in ASN.1 binary format
     if ( m_ID2Conn ) {
-        CObjectIStreamAsnBinary id2_server_input(*m_ID2Conn, false);
+        CObjectIStreamAsnBinary id2_server_input(*m_ID2Conn);
         id2_server_input >> reply;
     }
     else {
-        CObjectIStreamAsnBinary id2_server_input(*m_PubSeqOSReply, false);
+        CObjectIStreamAsnBinary id2_server_input(*m_PubSeqOSReply);
         id2_server_input >> reply;
     }
 }
@@ -644,11 +650,11 @@ void CId2FetchApp::x_ReadReply(CID2_Reply& reply, CObjectInfo& object)
     CRef<CReadDataObjectHook> hook(new CReadDataObjectHook);
     CObjectHookGuard<CID2_Reply_Data> guard("data", *hook);
     if ( m_ID2Conn ) {
-        CObjectIStreamAsnBinary id2_server_input(*m_ID2Conn, false);
+        CObjectIStreamAsnBinary id2_server_input(*m_ID2Conn);
         id2_server_input >> reply;
     }
     else {
-        CObjectIStreamAsnBinary id2_server_input(*m_PubSeqOSReply, false);
+        CObjectIStreamAsnBinary id2_server_input(*m_PubSeqOSReply);
         id2_server_input >> reply;
     }
     object = hook->m_Object;
@@ -685,16 +691,19 @@ void CId2FetchApp::x_ProcessRequest(CID2_Request_Packet& packet, bool dump)
 
     CID2_Reply reply;
 
+    double time_first = 0;
     while ( remaining_count > 0 ) {
         if ( m_PipeData ) {
             CObjectInfo object;
             x_ReadReply(reply, object);
+            if ( !time_first ) time_first = sw.Elapsed();
             if ( object && m_DataFile ) {
                 x_SaveDataObject(object, *m_DataFile);
             }
         }
         else {
             x_ReadReply(reply);
+            if ( !time_first ) time_first = sw.Elapsed();
             if ( m_ParseData || m_SkipData  ||  m_DataFile ) {
                 CTypeIterator<CID2_Reply_Data> iter = Begin(reply);
                 if ( iter && iter->IsSetData() ) {
@@ -721,7 +730,7 @@ void CId2FetchApp::x_ProcessRequest(CID2_Request_Packet& packet, bool dump)
             --remaining_count;
         }
     }
-    LOG_POST("Packet processed in " << sw.Elapsed());
+    LOG_POST("Packet processed in " << sw.Elapsed()<< " first at "<<time_first);
 }
 
 
@@ -895,6 +904,24 @@ int CId2FetchApp::Run(void)
 
         req->SetRequest().SetGet_blob_info().SetBlob_id().SetResolve().
             SetRequest().SetSeq_id().SetSeq_id().SetSeq_id(*id);
+        req->SetRequest().SetGet_blob_info().SetGet_data();
+    }
+    else if ( args["blob_id"] ) {
+        vector<string> vv;
+        NStr::Tokenize(args["blob_id"].AsString(), ",", vv);
+        if ( vv.size() != 2 ) {
+            ERR_POST(Fatal<<"Bad blob_id format: "<<args["blob_id"]);
+        }
+        int sat = NStr::StringToNumeric(vv[0]);
+        int sat_key = NStr::StringToNumeric(vv[1]);
+        CRef<CID2_Request_Packet> packet(new CID2_Request_Packet);
+        reqs.push_back(packet);
+        CRef<CID2_Request> req(new CID2_Request);
+        packet->Set().push_back(req);
+        CID2_Blob_Id& blob_id = 
+            req->SetRequest().SetGet_blob_info().SetBlob_id().SetBlob_id();
+        blob_id.SetSat(sat);
+        blob_id.SetSat_key(sat_key);
         req->SetRequest().SetGet_blob_info().SetGet_data();
     }
     else if ( args["req"] ) {
