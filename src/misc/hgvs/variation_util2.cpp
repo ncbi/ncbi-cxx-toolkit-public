@@ -2011,6 +2011,14 @@ void CVariationUtil::CVariantPropertiesIndex::x_Index(const CSeq_id_Handle& idh)
 
         int gene_id = s_GetGeneID(mf, ft);
 
+        if(!parent_mf && gene_id) {
+            //Some locations currently may not be covered by any variant-properties values (e.g. in-cds)
+            //and yet we need to index gene_ids at those locations. Since variant-properties is a bitmask,
+            //we can simply use the value 0 for that.
+            //Only need to do that for parent locs.
+            x_Add(mf.GetLocation(), gene_id, 0);
+        }
+
         //compute neighbborhood locations.
         //Normally for gene features, or rna features lacking a parent gene feature.
         //Applicable for dna context only.
