@@ -84,7 +84,6 @@ list<CNPiece> CutFlankPartialCodons(const list<CNPiece>& pc, const string& match
 
 //void RefineAlignment(objects::CScope& scope, objects::CSeq_align& seq_align, const list<CNPiece>& good_parts, bool cut_flank_partial_codons);
 void RefineAlignment(objects::CScope& scope, objects::CSeq_align& seq_align, const list<CNPiece>& good_parts);
-void SeekStartStop(objects::CSeq_align& seq_align, objects::CScope& scope);
 void SetScores(objects::CSeq_align& seq_align, objects::CScope& scope, const string& matrix_name = "BLOSUM62");
 
 // class CAli;

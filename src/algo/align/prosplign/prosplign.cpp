@@ -968,7 +968,7 @@ CRef<objects::CSeq_align> CProSplign::RefineAlignment(CScope& scope, const CSeq_
         refined_align->SetType(CSeq_align::eType_disc);
     }
 
-    prosplign::SeekStartStop(*refined_align, scope);
+    m_implementation->SeekStartStop(*refined_align);
     prosplign::SetScores(*refined_align, scope, output_options.GetScoreMatrix());
 
     return refined_align;
