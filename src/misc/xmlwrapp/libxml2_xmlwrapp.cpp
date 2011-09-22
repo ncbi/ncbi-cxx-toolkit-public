@@ -52,9 +52,71 @@ libxml2_document::libxml2_document(xmlDoc *        raw_doc,
 }
 
 
+libxml2_document::libxml2_document()
+{
+    set_ownership(type_own);
+}
+
+
+libxml2_document::libxml2_document(const char *               filename,
+                                   error_messages *           messages,
+                                   warnings_as_errors_type    how) :
+    document(filename, messages, how)
+{
+    set_ownership(type_own);
+}
+
+
+libxml2_document::libxml2_document(const char* data, size_type size,
+                                   error_messages* messages,
+                                   warnings_as_errors_type how) :
+    document(data, size, messages, how)
+{
+    set_ownership(type_own);
+}
+
+
+libxml2_document::libxml2_document(const char *root_name) :
+    document(root_name)
+{
+    set_ownership(type_own);
+}
+
+
+libxml2_document::libxml2_document(const node &n) :
+    document(n)
+{
+    set_ownership(type_own);
+}
+
+
+libxml2_document::libxml2_document(const document_proxy &  doc_proxy) :
+    document(doc_proxy)
+{
+    set_ownership(type_own);
+}
+
+
+libxml2_document::libxml2_document(std::istream &    stream,
+                                   error_messages *  messages,
+                                   warnings_as_errors_type  how) :
+    document(stream, messages, how)
+{
+    set_ownership(type_own);
+}
+
+
 xmlDoc *  libxml2_document::get_raw_doc()
 {
     return static_cast<xmlDoc *>(get_doc_data());
+}
+
+
+ownership_type libxml2_document::get_ownership(void) const
+{
+    if (pimpl_->get_ownership())
+        return type_own;
+    return type_not_own;
 }
 
 

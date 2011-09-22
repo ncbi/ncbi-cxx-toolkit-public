@@ -69,6 +69,7 @@ struct doc_impl {
     void set_doc_data (xmlDocPtr newdoc, bool root_is_okay);
     void set_root_node (const node &n);
     void set_ownership (bool owe);
+    bool get_ownership (void) const;
     ~doc_impl (void);
     xmlDocPtr doc_;
 

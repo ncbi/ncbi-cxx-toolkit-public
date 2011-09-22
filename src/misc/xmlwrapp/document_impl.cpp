@@ -106,6 +106,10 @@ void doc_impl::set_ownership (bool owe) {
     owe_ = owe;
 }
 
+bool doc_impl::get_ownership (void) const {
+    return owe_;
+}
+
 doc_impl::~doc_impl (void) {
     if (owe_) {
         if (doc_)
