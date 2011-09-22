@@ -13,7 +13,7 @@ LIB  = ncbi_xloader_lds2 lds2 xobjread xobjutil taxon1 entrez2cli \
     entrez2 sqlitewrapp creaders $(OBJMGR_LIBS)
 LIBS = $(SQLITE3_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-REQUIRES = objects -Cygwin
+REQUIRES = objects -Cygwin SQLITE3
 
 
 WATCHERS = bollin kornbluh
