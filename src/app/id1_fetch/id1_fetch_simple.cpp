@@ -187,7 +187,7 @@ int CId1FetchApp::Run(void)
     STimeout tmout;  tmout.sec = 9;  tmout.usec = 0;  
     CConn_ServiceStream id1_server(server_name, fSERV_Any, 0, 0, &tmout);
     CObjectOStreamAsnBinary id1_server_output(id1_server);
-    CObjectIStreamAsnBinary id1_server_input(id1_server, false);
+    CObjectIStreamAsnBinary id1_server_input(id1_server);
 
     CNcbiOstream* datafile =
         args["fmt"].AsString() == "none"? 0: &args["out"].AsOutputFile();
