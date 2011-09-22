@@ -45,7 +45,7 @@ public:
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
 
     const string &GetLabelCore(void) const { return m_LabelCore; }
-    const int     GetGI(void)        const { return m_GI; }
+    int           GetGI(void)        const { return m_GI; }
 
 private:
     void x_GatherInfo(CBioseqContext& ctx);
