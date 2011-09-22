@@ -1371,7 +1371,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
 
     SInternalNames names;
     string module_name = GetModuleName(&names);
-    if ( !names.m_OwnerName.empty() ) {
+    if ( GetExternalName().empty() && !names.m_OwnerName.empty() ) {
         methods <<
             "    SET_INTERNAL_NAME(\""<<names.m_OwnerName<<"\", ";
         if ( !names.m_MemberName.empty() )
