@@ -5478,7 +5478,6 @@ SZMC	c	Szeged Microbiological Collection
 SZMN	s	Siberian Zoological Museum
 SZPT	s	Shenzhen Polytechnic
 SZPT:ENT	s	Shenzhen Polytechnic, Entomology Collection
-SZPT:ENT	s	Shenzhen Polytechnic, Entomology Collection
 SZU	s	University of Salzburg, Department of Organismic Biology
 T	s	Tavera, Department of Geology and Geophysics
 TA	s	Timescale Adventures Research and Interpretive Center
@@ -5800,7 +5799,7 @@ UCC	s	University of Cincinnati
 UCC<IRL>	s	University College Cork
 UCCC	s	Universidad de Concepcion, Museo de Zoologia
 UCCM	c	University of Calabar Collection of Microorganisms
-UCD	sc	University of California, Davis
+UCD	scb	University of California, Davis
 UCDBA	s	University of Chicago
 UCFC	s	University of Central Florida
 UCGC	s	University of Colorado, Geological Museum
