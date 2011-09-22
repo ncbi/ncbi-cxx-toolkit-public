@@ -97,6 +97,17 @@ public:
         return TranslateTriplet(triplet[0],triplet[1],triplet[2]);
     }
 
+
+    char TranslateStartTriplet(char n1, char n2, char n3) const
+    {
+        return m_trans_table.GetStartResidue(m_trans_table.SetCodonState(n1, n2, n3));
+    }
+
+    char TranslateStartTriplet(const string& triplet) const
+    {
+        return TranslateStartTriplet(triplet[0],triplet[1],triplet[2]);
+    }
+
 private:
     const CTrans_table& m_trans_table;
     char aa_table[8*8*8];
@@ -112,6 +123,8 @@ public:
     inline int MultScore(int nuc1, int nuc2, int nuc3, char amin) const { return scaled_subst_matrix[int(amin)][int(m_trans_table->nuc2a(nuc1, nuc2, nuc3))]; }
 
     inline int ScaledScore(char amin1, char amin2) const { return scaled_subst_matrix[int(amin1)][int(amin2)]; }
+
+    const CTranslationTable& GetTranslationTable() const { return *m_trans_table; }
 
     string m_alphabet;
 private:

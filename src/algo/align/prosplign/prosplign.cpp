@@ -47,6 +47,7 @@
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objtools/alnmgr/alntext.hpp>
+#include <objmgr/seq_vector.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(ncbi::objects);
@@ -567,6 +568,10 @@ public:
         return FindGlobalAlignment_stage2();
     }
 
+    bool HasStartOnNuc(const CSpliced_seg& sps);
+    bool HasStopOnNuc(const CSpliced_seg& sps);
+    void SeekStartStop(CSeq_align& seq_align);
+
     const CProSplignScaledScoring& GetScaleScoring() const 
     {
         return m_scoring;
@@ -914,6 +919,12 @@ int CProSplign::CImplementation::FindGlobalAlignment_stage1(CScope& scope, const
     } catch (...) {}
     m_matrix.SetTranslationTable(new CTranslationTable(gcode));
 
+
+    /*
+    cout<<"gcode: "<<gcode<<endl;
+    exit(1);
+    */
+
     m_scope = &scope;
     m_protein = &protein;
     m_genomic.Reset(new CSeq_loc);
@@ -932,7 +943,7 @@ CRef<CSeq_align> CProSplign::CImplementation::FindGlobalAlignment_stage2()
     CAliToSeq_align cpa(ali, *m_scope, *m_protein, *m_genomic);
     CRef<CSeq_align> seq_align = cpa.MakeSeq_align(*m_protseq, *m_cnseq);
 
-    prosplign::SeekStartStop(*seq_align, *m_scope);
+    SeekStartStop(*seq_align);
 
     if (!IsProteinSpanWhole(seq_align->GetSegs().GetSpliced()))
         seq_align->SetType(CSeq_align::eType_disc);
@@ -977,10 +988,135 @@ CRef<objects::CSeq_align> CProSplign::BlastAlignment(CScope& scope, const CSeq_a
         refined_align->SetType(CSeq_align::eType_disc);
     }
 
-    prosplign::SeekStartStop(*refined_align, scope);
+    m_implementation->SeekStartStop(*refined_align);
     prosplign::SetScores(*refined_align, scope, m_implementation->GetScaleScoring().GetScoreMatrix());
 
     return refined_align;
+}
+
+
+namespace {
+bool CProSplign::CImplementation::HasStartOnNuc(const CSpliced_seg& sps)
+{
+    const CSpliced_exon& exon = *sps.GetExons().front();
+    if (exon.GetProduct_start().GetProtpos().GetFrame()!=1)
+        return false;
+    const CSpliced_exon_chunk& chunk = *exon.GetParts().front();
+    if (chunk.IsProduct_ins() || chunk.IsGenomic_ins())
+        return false;
+    int len = 0;
+    if (chunk.IsDiag()) {
+        len = chunk.GetDiag();
+    } else if (chunk.IsMatch()) {
+        len = chunk.GetMatch();
+    } else if (chunk.IsMismatch()) {
+        len = chunk.GetMismatch();
+    }
+    if (len < 3)
+        return false;
+
+    CSeq_id nucid;
+    nucid.Assign(sps.GetGenomic_id());
+    CSeq_loc genomic_seqloc(nucid,exon.GetGenomic_start(), exon.GetGenomic_end(),sps.GetGenomic_strand());
+
+    CSeqVector genomic_seqvec(genomic_seqloc, *m_scope, CBioseq_Handle::eCoding_Iupac);
+    CSeqVector_CI genomic_ci(genomic_seqvec);
+
+    string buf;
+    genomic_ci.GetSeqData(buf, 3);
+    if(buf.size() != 3) return false;
+    
+    return m_matrix.GetTranslationTable().TranslateStartTriplet(buf) == 'M';
+}
+
+bool CProSplign::CImplementation::HasStopOnNuc(const CSpliced_seg& sps)
+{
+    const CSpliced_exon& exon = *sps.GetExons().back();
+    if (exon.GetProduct_end().GetProtpos().GetFrame()!=3)
+        return false;
+
+    if (sps.GetGenomic_strand()==eNa_strand_minus &&
+        exon.GetGenomic_start()<3)
+        return false;
+
+    //need to check before because TSeqPos is unsigned
+    if(sps.GetGenomic_strand()!=eNa_strand_plus && exon.GetGenomic_start()<3) return false;
+
+    TSeqPos stop_codon_start = sps.GetGenomic_strand()==eNa_strand_plus?exon.GetGenomic_end()+1:exon.GetGenomic_start()-3;
+    TSeqPos stop_codon_end = sps.GetGenomic_strand()==eNa_strand_plus?exon.GetGenomic_end()+3:exon.GetGenomic_start()-1;
+
+    CSeq_id nucid;
+    nucid.Assign(sps.GetGenomic_id());
+
+    TSeqPos seq_end = sequence::GetLength(nucid, m_scope)-1;
+    //if (sps.GetGenomic_strand()==eNa_strand_plus?seq_end<stop_codon_end:stop_codon_start<0) //wrong. stop_codon_start is insigned
+    if (sps.GetGenomic_strand()==eNa_strand_plus && seq_end<stop_codon_end)
+        return false;
+
+    CSeq_loc genomic_seqloc(nucid,stop_codon_start, stop_codon_end,sps.GetGenomic_strand());
+
+    CSeqVector genomic_seqvec(genomic_seqloc, *m_scope, CBioseq_Handle::eCoding_Iupac);
+    CSeqVector_CI genomic_ci(genomic_seqvec);
+
+    string buf;
+    genomic_ci.GetSeqData(buf, 3);
+    if(buf.size() != 3) return false;    
+
+    return m_matrix.GetTranslationTable().TranslateTriplet(buf) == '*';
+    //return buf.size()==3 && (buf=="TAA" || buf=="TGA" || buf=="TAG");
+}
+}
+
+
+void CProSplign::CImplementation::SeekStartStop(CSeq_align& seq_align)
+{
+    CSpliced_seg& sps = seq_align.SetSegs().SetSpliced();
+
+    if (sps.IsSetModifiers()) {
+        for (CSpliced_seg::TModifiers::iterator m = sps.SetModifiers().begin(); m != sps.SetModifiers().end(); ) {
+            if ((*m)->IsStart_codon_found() || (*m)->IsStop_codon_found())
+                m = sps.SetModifiers().erase(m);
+            else
+                ++m;
+        }
+        if (sps.GetModifiers().empty())
+            sps.ResetModifiers();
+    }
+
+    if (!sps.SetExons().empty()) {
+        //start, stop
+        if(HasStartOnNuc(sps)) {
+            CRef<CSpliced_seg_modifier> modi(new CSpliced_seg_modifier);
+            modi->SetStart_codon_found(true);
+            sps.SetModifiers().push_back(modi);
+
+            CSpliced_exon& exon = *sps.SetExons().front();
+            if (exon.GetProduct_start().GetProtpos().GetAmin()==0) {
+                CSeq_id protid;
+                protid.Assign(sps.GetProduct_id());
+                CPSeq pseq(*m_scope,protid);
+
+                CRef<CSpliced_exon_chunk> chunk = exon.SetParts().front();
+                _ASSERT( !chunk->IsMatch() || pseq.HasStart() );
+                if (pseq.HasStart() && !chunk->IsMatch()) {
+                    _ASSERT( chunk->IsDiag() );
+                    int len = chunk->GetDiag();
+                    _ASSERT( len >= 3 );
+                    if (len > 3) {
+                        chunk->SetDiag(len-3);
+                        chunk.Reset(new CSpliced_exon_chunk);
+                        exon.SetParts().push_front(chunk);
+                    }
+                    chunk->SetMatch(3);
+                }
+            }
+        }
+        if(HasStopOnNuc(sps)) {
+            CRef<CSpliced_seg_modifier> modi(new CSpliced_seg_modifier);
+            modi->SetStop_codon_found(true);
+            sps.SetModifiers().push_back(modi);
+        }
+    }
 }
 
 
