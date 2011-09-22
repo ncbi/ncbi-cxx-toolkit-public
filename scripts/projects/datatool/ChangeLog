@@ -62,3 +62,7 @@ Fixed problem with parsing recursive element definitions in Schema.
 Modified code generation to make serialization error messages more informative.
 Corrected processing of UTF8 strings.
 
+September 22, 2011
+version 2.4.1
+Bug fix release (related to internal type names).
+
