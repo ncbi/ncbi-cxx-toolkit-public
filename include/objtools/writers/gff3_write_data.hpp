@@ -104,6 +104,8 @@ protected:
         CMappedFeat );
     virtual bool x_AssignAttributesNcrna(
         CMappedFeat );
+    virtual bool x_AssignAttributesBiosrc(
+        CMappedFeat );
 
     virtual bool x_AssignAttributeGene(
         CMappedFeat );
@@ -148,6 +150,8 @@ protected:
     virtual bool x_AssignAttributeCodeBreak(
         CMappedFeat );
     virtual bool x_AssignAttributeOldLocusTag(
+        CMappedFeat );
+    virtual bool x_AssignAttributeGenome(
         CMappedFeat );
 
 protected:
