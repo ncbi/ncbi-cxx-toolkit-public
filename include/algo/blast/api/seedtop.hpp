@@ -103,7 +103,7 @@ struct SPatternUnit {
     }
 };
 
-class CSeedTop : public CObject {
+class NCBI_XBLAST_EXPORT CSeedTop : public CObject {
 public:
     // the return type for seedtop search
     // a vector of results (matches) as seq_loc on each subject
