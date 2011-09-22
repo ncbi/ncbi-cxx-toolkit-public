@@ -196,39 +196,6 @@ string s_CodeBreakString( const CCode_break& cb )
 }
 
 //  ----------------------------------------------------------------------------
-static const string s_GetGenomeString( int genome )
-//  ----------------------------------------------------------------------------
-{
-    switch ( genome ) {
-        default:
-            return "";
-        case CBioSource::eGenome_apicoplast: return "apicoplast";
-        case CBioSource::eGenome_chloroplast: return "chloroplast";
-        case CBioSource::eGenome_chromatophore: return "chromatophore";
-        case CBioSource::eGenome_chromoplast: return "chromoplast";
-        case CBioSource::eGenome_chromosome: return "chromosome";
-        case CBioSource::eGenome_cyanelle: return "cyanelle";
-        case CBioSource::eGenome_endogenous_virus: return "endogenous_virus";
-        case CBioSource::eGenome_extrachrom: return "extrachrom";
-        case CBioSource::eGenome_genomic: return "genomic";
-        case CBioSource::eGenome_hydrogenosome: return "hydrogenosome";
-        case CBioSource::eGenome_insertion_seq: return "insertion_seq";
-        case CBioSource::eGenome_kinetoplast: return "kinetoplast";
-        case CBioSource::eGenome_leucoplast: return "leucoplast";
-        case CBioSource::eGenome_macronuclear: return "macronuclear";
-        case CBioSource::eGenome_mitochondrion: return "mitochondrion";
-        case CBioSource::eGenome_nucleomorph: return "nucleomorph";
-        case CBioSource::eGenome_plasmid: return "plasmid";
-        case CBioSource::eGenome_plastid: return "plastid";
-        case CBioSource::eGenome_proplastid: return "proplastid";
-        case CBioSource::eGenome_proviral: return "proviral";
-        case CBioSource::eGenome_transposon: return "transposon";
-        case CBioSource::eGenome_unknown: return "unknown";
-        case CBioSource::eGenome_virion: return "virion";
-    }
-}
-
-//  ----------------------------------------------------------------------------
 CConstRef<CUser_object> s_GetUserObjectByType(
     const CUser_object& uo,
     const string& strType )
@@ -553,11 +520,17 @@ bool CGff3WriteRecordFeature::x_AssignAttributesMiscFeature(
 
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecordFeature::x_AssignAttributesBiosrc(
-    CMappedFeat mapped_feat )
+    CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    return ( 
-        x_AssignAttributeGenome( mapped_feat ) );
+    //go for everything under biosrc.org...
+    if ( mf.GetFeatSubtype() != CSeqFeatData::eSubtype_biosrc ) {
+        return true;
+    }
+    if ( ! x_AssignBiosrcAttributes( mf.GetData().GetBiosrc() ) ) {
+        return false;
+    }
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -1096,21 +1069,6 @@ bool CGff3WriteRecordFeature::x_AssignAttributeExonNumber(
                 return true;
             }
         }
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff3WriteRecordFeature::x_AssignAttributeGenome(
-    CMappedFeat mf )
-//  ----------------------------------------------------------------------------
-{
-    if ( mf.GetFeatSubtype() != CSeqFeatData::eSubtype_biosrc ) {
-        return true;
-    }
-    const CBioSource& bs = mf.GetData().GetBiosrc();
-    if ( bs.IsSetGenome() ) {
-        m_Attributes["genome"] = s_GetGenomeString( bs.GetGenome() );
     }
     return true;
 }

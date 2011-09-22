@@ -115,6 +115,15 @@ public:
         const string&,
         string& ) const;
 
+    static string s_GetGenomeString(
+        int );
+    static string s_GetBiomolString( 
+        const int );
+    static string s_GetSubsourceString( 
+        int );
+    static string s_GetSubtypeString( 
+        int );
+
 protected:
     static bool x_NeedsQuoting(
         const string& );
@@ -173,6 +182,10 @@ protected:
         CMappedFeat );
     virtual bool x_AssignAttributes(
         CMappedFeat );
+
+    virtual bool x_AssignBiosrcAttributes(
+        const CBioSource& );
+
     static string x_FeatIdString(
         const CFeat_id& id );
 };

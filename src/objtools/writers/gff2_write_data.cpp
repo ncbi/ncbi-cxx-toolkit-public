@@ -63,7 +63,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-static const string s_GetSubtypeString( const COrgMod::TSubtype& subtype )
+string CGffWriteRecord::s_GetSubtypeString( int subtype )
 //  ----------------------------------------------------------------------------
 {
     switch ( subtype ) {
@@ -111,7 +111,8 @@ static const string s_GetSubtypeString( const COrgMod::TSubtype& subtype )
 }
 
 //  ----------------------------------------------------------------------------
-static const string s_GetSubsourceString( const CSubSource::TSubtype& subtype )
+string CGffWriteRecord::s_GetSubsourceString( 
+    int subtype )
 //  ----------------------------------------------------------------------------
 {
     switch ( subtype ) {
@@ -164,7 +165,8 @@ static const string s_GetSubsourceString( const CSubSource::TSubtype& subtype )
 }
 
 //  ----------------------------------------------------------------------------
-static const string s_GetBiomolString( const CMolInfo::TBiomol& biomol )
+string CGffWriteRecord::s_GetBiomolString( 
+    int biomol )
 //  ----------------------------------------------------------------------------
 {
     switch( biomol ) {
@@ -204,6 +206,39 @@ static const string s_GetBiomolString( const CMolInfo::TBiomol& biomol )
         return "other DNA";
     }
     return "";
+}
+
+//  ----------------------------------------------------------------------------
+string CGffWriteRecord::s_GetGenomeString( int genome )
+//  ----------------------------------------------------------------------------
+{
+    switch ( genome ) {
+        default:
+            return "";
+        case CBioSource::eGenome_apicoplast: return "apicoplast";
+        case CBioSource::eGenome_chloroplast: return "chloroplast";
+        case CBioSource::eGenome_chromatophore: return "chromatophore";
+        case CBioSource::eGenome_chromoplast: return "chromoplast";
+        case CBioSource::eGenome_chromosome: return "chromosome";
+        case CBioSource::eGenome_cyanelle: return "cyanelle";
+        case CBioSource::eGenome_endogenous_virus: return "endogenous_virus";
+        case CBioSource::eGenome_extrachrom: return "extrachrom";
+        case CBioSource::eGenome_genomic: return "genomic";
+        case CBioSource::eGenome_hydrogenosome: return "hydrogenosome";
+        case CBioSource::eGenome_insertion_seq: return "insertion_seq";
+        case CBioSource::eGenome_kinetoplast: return "kinetoplast";
+        case CBioSource::eGenome_leucoplast: return "leucoplast";
+        case CBioSource::eGenome_macronuclear: return "macronuclear";
+        case CBioSource::eGenome_mitochondrion: return "mitochondrion";
+        case CBioSource::eGenome_nucleomorph: return "nucleomorph";
+        case CBioSource::eGenome_plasmid: return "plasmid";
+        case CBioSource::eGenome_plastid: return "plastid";
+        case CBioSource::eGenome_proplastid: return "proplastid";
+        case CBioSource::eGenome_proviral: return "proviral";
+        case CBioSource::eGenome_transposon: return "transposon";
+        case CBioSource::eGenome_unknown: return "unknown";
+        case CBioSource::eGenome_virion: return "virion";
+    }
 }
 
 //  ----------------------------------------------------------------------------
@@ -584,6 +619,85 @@ bool CGffWriteRecordFeature::AssignFromAsn(
 }
 
 //  ----------------------------------------------------------------------------
+bool CGffWriteRecordFeature::x_AssignBiosrcAttributes(
+    const CBioSource& bs )
+//  ----------------------------------------------------------------------------
+{
+    if ( bs.IsSetTaxname() ) {
+        m_Attributes["organism"] = bs.GetTaxname();
+    }
+    if ( bs.IsSetGenome() ) {
+        m_Attributes["genome"] = s_GetGenomeString( bs.GetGenome() );
+    }
+    if ( bs.IsSetOrg() ) {
+        const CBioSource::TOrg& org = bs.GetOrg();
+        if ( org.IsSetDb() ) {
+            const vector< CRef< CDbtag > >& tags = org.GetDb();
+            string strAttr, strDb, strTag;
+            for ( vector< CRef< CDbtag > >::const_iterator it = tags.begin(); 
+                    it != tags.end(); ++it ) {
+                if ( ! strAttr.empty() ) {
+                    strAttr += ';';
+                }
+                if ((*it)->IsSetDb()) {
+                    strAttr += ((*it)->GetDb() + ":");
+                }
+                if ((*it)->IsSetTag()) {
+                    const CDbtag::TTag& tag = (*it)->GetTag();
+                    strAttr +=
+                        (tag.IsStr()) ? tag.GetStr() : NStr::UIntToString(tag.GetId());
+                }
+            }
+            m_Attributes["Dbxref"] = strAttr;
+        }
+        if ( org.IsSetOrgname() && org.GetOrgname().IsSetMod() ) {
+            const list<CRef<COrgMod> >& orgmods = org.GetOrgname().GetMod();
+            for ( list<CRef<COrgMod> >::const_iterator it = orgmods.begin();
+                    it != orgmods.end(); ++it ) {
+                const COrgMod& mod = **it;
+                if ( !mod.IsSetSubtype() || !mod.IsSetSubname() ) {
+                    continue;
+                }
+                string key = s_GetSubtypeString( mod.GetSubtype() );
+                if ( !key.empty() ) {
+                    m_Attributes[ key ] = mod.GetSubname();
+                }
+                cerr << "";
+            }
+        }
+    }
+    if ( bs.IsSetSubtype() ) {
+        const list<CRef<CSubSource> >& subsources = bs.GetSubtype();
+        for ( list<CRef<CSubSource> >::const_iterator it = subsources.begin();
+                it != subsources.end(); ++it ) {
+            const CSubSource& subsource = **it;
+            if ( !subsource.IsSetSubtype() || !subsource.IsSetName() ) {
+                continue;
+            }
+
+            CSubSource::TSubtype subtype = subsource.GetSubtype();
+            string key = s_GetSubsourceString( subsource.GetSubtype() );
+            if ( key.empty() ) {
+                continue;
+            }
+            switch ( subtype ) {
+                default: {
+                    if ( !key.empty() ) {
+                        m_Attributes[ key ] = subsource.GetName();
+                    }
+                    continue;
+                }
+            case CSubSource::eSubtype_environmental_sample: {
+                    m_Attributes[key] = "true";
+                    continue;
+                }
+            }
+        }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGffWriteRecordFeature::AssignSource(
     CBioseq_Handle bsh,
     const CSeqdesc& desc )
@@ -592,7 +706,6 @@ bool CGffWriteRecordFeature::AssignSource(
     if ( ! desc.IsSource() ) {
         return false;
     }
-    const CBioSource& bs = desc.GetSource();
 
     // id
     CConstRef<CSeq_id> pId = bsh.GetNonLocalIdOrNull();
@@ -672,75 +785,10 @@ bool CGffWriteRecordFeature::AssignSource(
         }
     }
 
-    if ( bs.IsSetTaxname() ) {
-        m_Attributes["organism"] = bs.GetTaxname();
+    const CBioSource& bs = desc.GetSource();
+    if ( ! x_AssignBiosrcAttributes( bs ) ) {
+        return false;
     }
-    if ( bs.IsSetOrg() ) {
-        const CBioSource::TOrg& org = bs.GetOrg();
-        if ( org.IsSetDb() ) {
-            const vector< CRef< CDbtag > >& tags = org.GetDb();
-            string strAttr, strDb, strTag;
-            for ( vector< CRef< CDbtag > >::const_iterator it = tags.begin(); 
-                    it != tags.end(); ++it ) {
-                if ( ! strAttr.empty() ) {
-                    strAttr += ';';
-                }
-                if ((*it)->IsSetDb()) {
-                    strAttr += ((*it)->GetDb() + ":");
-                }
-                if ((*it)->IsSetTag()) {
-                    const CDbtag::TTag& tag = (*it)->GetTag();
-                    strAttr +=
-                        (tag.IsStr()) ? tag.GetStr() : NStr::UIntToString(tag.GetId());
-                }
-            }
-            m_Attributes["Dbxref"] = strAttr;
-        }
-        if ( org.IsSetOrgname() && org.GetOrgname().IsSetMod() ) {
-            const list<CRef<COrgMod> >& orgmods = org.GetOrgname().GetMod();
-            for ( list<CRef<COrgMod> >::const_iterator it = orgmods.begin();
-                    it != orgmods.end(); ++it ) {
-                const COrgMod& mod = **it;
-                if ( !mod.IsSetSubtype() || !mod.IsSetSubname() ) {
-                    continue;
-                }
-                string key = s_GetSubtypeString( mod.GetSubtype() );
-                if ( !key.empty() ) {
-                    m_Attributes[ key ] = mod.GetSubname();
-                }
-                cerr << "";
-            }
-        }
-    }
-    if ( bs.IsSetSubtype() ) {
-        const list<CRef<CSubSource> >& subsources = bs.GetSubtype();
-        for ( list<CRef<CSubSource> >::const_iterator it = subsources.begin();
-                it != subsources.end(); ++it ) {
-            const CSubSource& subsource = **it;
-            if ( !subsource.IsSetSubtype() || !subsource.IsSetName() ) {
-                continue;
-            }
-
-            CSubSource::TSubtype subtype = subsource.GetSubtype();
-            string key = s_GetSubsourceString( subsource.GetSubtype() );
-            if ( key.empty() ) {
-                continue;
-            }
-            switch ( subtype ) {
-                default: {
-                    if ( !key.empty() ) {
-                        m_Attributes[ key ] = subsource.GetName();
-                    }
-                    continue;
-                }
-            case CSubSource::eSubtype_environmental_sample: {
-                    m_Attributes[key] = "true";
-                    continue;
-                }
-            }
-        }
-    }
-
     if ( bsh.IsSetInst_Topology() && 
             bsh.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
        m_Attributes["Is_circular"] = "true";
