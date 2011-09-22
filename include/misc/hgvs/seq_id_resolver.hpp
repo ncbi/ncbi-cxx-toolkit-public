@@ -56,7 +56,7 @@ class CSeq_id_Resolver : public CObject
 {
 public:
     CSeq_id_Resolver(CScope& scope)
-      : m_scope(scope)
+      : m_scope(&scope)
       , m_regexp(NULL)
     {}
 
@@ -88,7 +88,7 @@ public:
 
 protected:
     virtual CSeq_id_Handle x_Create(const string& s);
-    CScope& m_scope;
+    CRef<CScope> m_scope;
     typedef map<string, CSeq_id_Handle> TCache;
     TCache m_cache;
     CRegexp* m_regexp;

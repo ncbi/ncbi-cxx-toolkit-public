@@ -56,7 +56,7 @@ bool CSeq_id_Resolver::CanCreate(const string& s)
 
 CSeq_id_Handle CSeq_id_Resolver::x_Create(const string& s)
 {
-    return sequence::GetId(CSeq_id_Handle::GetHandle(s), m_scope, sequence::eGetId_ForceAcc);
+    return sequence::GetId(CSeq_id_Handle::GetHandle(s), *m_scope, sequence::eGetId_ForceAcc);
 }
 
 CSeq_id_Resolver::~CSeq_id_Resolver()
@@ -81,7 +81,7 @@ CSeq_id_Handle CSeq_id_Resolver__LRG::x_Create(const string& s)
 
 
     CRef<CSeq_id> lrg_seq_id(new CSeq_id("gnl|LRG|" + lrg_id_str));
-    CSeq_id_Handle ng_idh = sequence::GetId(*lrg_seq_id, m_scope, sequence::eGetId_ForceAcc);
+    CSeq_id_Handle ng_idh = sequence::GetId(*lrg_seq_id, *m_scope, sequence::eGetId_ForceAcc);
     if(lrg_product_id_str == "") {
         //bare LRG_# with no product
         return ng_idh;
@@ -90,7 +90,7 @@ CSeq_id_Handle CSeq_id_Resolver__LRG::x_Create(const string& s)
     CSeq_id_Handle product_idh;
     SAnnotSelector sel;
     sel.SetResolveTSE();
-    for(CFeat_CI ci(m_scope.GetBioseqHandle(ng_idh)); ci; ++ci) {
+    for(CFeat_CI ci(m_scope->GetBioseqHandle(ng_idh)); ci; ++ci) {
         const CMappedFeat& mf = *ci;
         if(!mf.IsSetDbxref()) {
             continue;
@@ -103,7 +103,7 @@ CSeq_id_Handle CSeq_id_Resolver__LRG::x_Create(const string& s)
                && mf.IsSetProduct()
                && mf.GetProduct().GetId())
             {
-                product_idh = sequence::GetId(*mf.GetProduct().GetId(), m_scope, sequence::eGetId_ForceAcc);
+                product_idh = sequence::GetId(*mf.GetProduct().GetId(), *m_scope, sequence::eGetId_ForceAcc);
                 break;
             }
         }
@@ -127,6 +127,9 @@ CSeq_id_Resolver__CCDS::CSeq_id_Resolver__CCDS(CScope& scope)
 
 CSeq_id_Handle CSeq_id_Resolver__CCDS::x_Create(const string& s)
 {
+    //todo: include several versions forward in the query.
+    //Get gis back; sort desc; walk bioseqs and look for the CCDS of interest.
+
     string query_str = "srcdb_refseq[prop] AND biomol_mRNA[prop] AND dbxref_ccds[prop] AND \"CCDS:" + s + "\"";
     vector<int> gis;
     m_entrez->Query(query_str, "nuccore", gis, 0, 5);
@@ -135,7 +138,7 @@ CSeq_id_Handle CSeq_id_Resolver__CCDS::x_Create(const string& s)
         NCBI_THROW(CException, eUnknown, "Could not resolve " + s + " to a unique gi");
     }
     CSeq_id_Handle gi_handle = CSeq_id_Handle::GetHandle(gis.front());
-    CSeq_id_Handle idh = sequence::GetId(gi_handle, m_scope, sequence::eGetId_ForceAcc);
+    CSeq_id_Handle idh = sequence::GetId(gi_handle, *m_scope, sequence::eGetId_ForceAcc);
     return idh;
 }
 
@@ -168,7 +171,7 @@ CSeq_id_Resolver__ChrNamesFromGC::CSeq_id_Resolver__ChrNamesFromGC(const CGC_Ass
         if(m_data.find(syn) != m_data.end()) {
             NCBI_THROW(CException, eUnknown, "Non-unique chromosome names: " + syn);
         } else {
-            m_data[syn] = sequence::GetId(seq.GetSeq_id(), m_scope, sequence::eGetId_ForceAcc);
+            m_data[syn] = sequence::GetId(seq.GetSeq_id(), *m_scope, sequence::eGetId_ForceAcc);
         }
     }
 }

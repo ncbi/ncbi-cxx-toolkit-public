@@ -17,6 +17,12 @@ Variation ::= {
         length 6,
         seq-data iupacna "TAAAAT"
       },
+      dbxrefs {
+        {
+          db "GeneID",
+          tag id 2200
+        }
+      },
       gene-location 0
     }
   },
