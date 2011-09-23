@@ -100,6 +100,10 @@ protected:
     void x_WriteAlignment( 
         const CGffAlignmentRecord& record );
 
+    virtual bool x_WriteFeatureRecords(
+        const CGff3WriteRecordFeature&,
+        const CSeq_loc& );
+
     string x_GetParentId(
         CMappedFeat );
 

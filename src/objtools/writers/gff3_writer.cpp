@@ -360,7 +360,7 @@ bool CGff3Writer::x_WriteFeatureGene(
         return false;
     }
     m_GeneMap[ mf ] = pRecord;
-    return x_WriteRecord( pRecord );
+    return x_WriteFeatureRecords( *pRecord, mf.GetLocation() );
 }
 
 //  ----------------------------------------------------------------------------
@@ -521,6 +521,35 @@ bool CGff3Writer::x_WriteFeatureGeneric(
     
     // default behavior:
     return x_WriteRecord( pParent );    
+}
+
+//  ============================================================================
+bool CGff3Writer::x_WriteFeatureRecords(
+    const CGff3WriteRecordFeature& record,
+    const CSeq_loc& location )
+//  ============================================================================
+{
+    CRef< CSeq_loc > pPackedInt( new CSeq_loc( CSeq_loc::e_Mix ) );
+    pPackedInt->Add( location );
+    pPackedInt->ChangeToPackedInt();
+
+    if ( pPackedInt->IsPacked_int() && pPackedInt->GetPacked_int().CanGet() ) {
+        const list< CRef< CSeq_interval > >& sublocs = pPackedInt->GetPacked_int().Get();
+        list< CRef< CSeq_interval > >::const_iterator it;
+        for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
+            const CSeq_interval& subint = **it;
+            CRef<CGff3WriteRecordFeature> pChild( 
+                new CGff3WriteRecordFeature( record ) );
+            pChild->CorrectLocation( subint );
+            if ( ! x_WriteRecord( pChild ) ) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    // default behavior:
+    return x_WriteRecord( &record );    
 }
 
 //  ============================================================================
