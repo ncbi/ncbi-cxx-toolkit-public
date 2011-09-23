@@ -34,7 +34,7 @@
 
 
 /*ARGSUSED*/
-const SSERV_VTable *SERV_LBSMD_Open(SERV_ITER    iter,
+const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER    iter,
                                     SSERV_Info** info,
                                     HOST_INFO*   host_info,
                                     int/*bool*/  dispd_to_follow)
