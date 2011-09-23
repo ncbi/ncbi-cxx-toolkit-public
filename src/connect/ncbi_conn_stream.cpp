@@ -337,8 +337,9 @@ static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo* x_net_info,
                        "CConn_HttpStream::CConn_HttpStream():  Host too long");
         }
         memcpy(net_info->host, host, ++len);
-        net_info->port = port;
     }
+    if (port)
+        net_info->port = port;
     if (path) {
         if ((len = *path ? strlen(path) : 0) >= sizeof(net_info->path)) {
             NCBI_THROW(CIO_Exception, eInvalidArg,
@@ -366,14 +367,14 @@ static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo* x_net_info,
 }
 
 
-CConn_HttpStream::CConn_HttpStream(const string&       host,
-                                   const string&       path,
-                                   const string&       args,
-                                   const string&       user_header,
-                                   unsigned short      port,
-                                   THTTP_Flags         flags,
-                                   const STimeout*     timeout,
-                                   streamsize          buf_size)
+CConn_HttpStream::CConn_HttpStream(const string&   host,
+                                   const string&   path,
+                                   const string&   args,
+                                   const string&   user_header,
+                                   unsigned short  port,
+                                   THTTP_Flags     flags,
+                                   const STimeout* timeout,
+                                   streamsize      buf_size)
     : CConn_IOStream(s_HttpConnectorBuilder(0,
                                             0,
                                             host.c_str(),
@@ -393,10 +394,10 @@ CConn_HttpStream::CConn_HttpStream(const string&       host,
 }
 
 
-CConn_HttpStream::CConn_HttpStream(const string&       url,
-                                   THTTP_Flags         flags,
-                                   const STimeout*     timeout,
-                                   streamsize          buf_size)
+CConn_HttpStream::CConn_HttpStream(const string&   url,
+                                   THTTP_Flags     flags,
+                                   const STimeout* timeout,
+                                   streamsize      buf_size)
     : CConn_IOStream(s_HttpConnectorBuilder(0,
                                             url.c_str(),
                                             0,
@@ -538,7 +539,7 @@ CConn_ServiceStream::CConn_ServiceStream(const string&         service,
 }
 
 
-CConn_MemoryStream::CConn_MemoryStream(streamsize  buf_size)
+CConn_MemoryStream::CConn_MemoryStream(streamsize buf_size)
     : CConn_IOStream(MEMORY_CreateConnector(), 0, buf_size, true),
       m_Ptr(0)
 {
@@ -546,9 +547,9 @@ CConn_MemoryStream::CConn_MemoryStream(streamsize  buf_size)
 }
 
 
-CConn_MemoryStream::CConn_MemoryStream(BUF         buf,
-                                       EOwnership  owner,
-                                       streamsize  buf_size)
+CConn_MemoryStream::CConn_MemoryStream(BUF        buf,
+                                       EOwnership owner,
+                                       streamsize buf_size)
     : CConn_IOStream(MEMORY_CreateConnectorEx(buf, owner == eTakeOwnership
                                               ? 1/*true*/
                                               : 0/*false*/), 0, buf_size, true,
@@ -731,19 +732,19 @@ CConn_FTPDownloadStream::CConn_FTPDownloadStream(const string&        host,
                                                  unsigned short       port,
                                                  TFTP_Flags           flag,
                                                  const SFTP_Callback* cmcb,
-                                                 streamsize           offset,
+                                                 Uint8                offset,
                                                  const STimeout*      timeout)
     : CConn_FtpStream(host, user, pass, path, port, flag, cmcb, timeout)
 {
-    if (file != kEmptyStr) {
+    if (!file.empty()) {
         EIO_Status status;
-        if (offset != 0) {
-            write("REST ", 5) << offset << endl;
+        if (offset) {
+            write("REST ", 5) << NStr::UInt8ToString(offset) << NcbiFlush;
             status = Status(eIO_Write);
         } else
             status = eIO_Success;
         if (good()  &&  status == eIO_Success) {
-            write("RETR ", 5) << file   << endl;
+            write("RETR ", 5) << file << NcbiFlush;
         }
     }
 }
@@ -756,19 +757,19 @@ CConn_FTPUploadStream::CConn_FTPUploadStream(const string&   host,
                                              const string&   path,
                                              unsigned short  port,
                                              TFTP_Flags      flag,
-                                             streamsize      offset,
+                                             Uint8           offset,
                                              const STimeout* timeout)
     : CConn_FtpStream(host, user, pass, path, port, flag, 0/*cmcb*/, timeout)
 {
-    if (file != kEmptyStr) {
+    if (!file.empty()) {
         EIO_Status status;
-        if (offset != 0) {
-            write("REST ", 5) << offset << endl;
+        if (offset) {
+            write("REST ", 5) << NStr::UInt8ToString(offset) << NcbiFlush;
             status = Status(eIO_Write);
         } else
             status = eIO_Success;
         if (good()  &&  status == eIO_Success) {
-            write("STOR ", 5) << file   << endl;
+            write("STOR ", 5) << file << NcbiFlush;
         }
     }
 }
