@@ -114,14 +114,17 @@ int main(int argc, char* argv[])
     timeout.usec = 123456;
 
     if (argc > 1) {
-        /* make it fail! */
+        /* Generate user header and check graceful failure with
+         * bad request status if the header ends up too large. */
         static const char kHttpHeader[] = "My-Header: ";
-        size_t n, header_size = 1 << 20;
+        size_t n, header_size = (size_t) atoi(argv[1]);
         user_header = (char*) malloc(sizeof(kHttpHeader) + header_size);
         if (user_header) {
+            header_size += sizeof(kHttpHeader)-1;
             memcpy(user_header, kHttpHeader, sizeof(kHttpHeader)-1);
-            for (n = 0;  n < header_size;  n++)
-                user_header[sizeof(kHttpHeader)-1 + n] = '.';
+            for (n = sizeof(kHttpHeader)-1;  n < header_size;  n++)
+                user_header[n] = '.';
+            user_header[n] = '\0';
         }
     }
 
