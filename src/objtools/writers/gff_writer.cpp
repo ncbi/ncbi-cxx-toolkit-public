@@ -145,9 +145,19 @@ bool CGff2Writer::x_WriteSeqEntryHandle(
     CSeq_entry_Handle seh )
 //  ----------------------------------------------------------------------------
 {
-    for ( CBioseq_CI bci( seh, CSeq_inst::eMol_dna ); bci; ++bci ) {
-        if ( ! x_WriteBioseqHandle( *bci ) ) {
-            return false;
+    if (seh.IsSet()  &&  seh.GetSet().IsSetClass()  
+            &&  seh.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot) {
+        for ( CBioseq_CI bci( seh, CSeq_inst::eMol_dna ); bci; ++bci ) {
+            if ( ! x_WriteBioseqHandle( *bci ) ) {
+                return false;
+            }
+        }
+    }
+    else {
+        for ( CBioseq_CI bci( seh, CSeq_inst::eMol_dna ); bci; ++bci ) {
+            if ( ! x_WriteBioseqHandle( *bci ) ) {
+                return false;
+            }
         }
     }
     return true;
