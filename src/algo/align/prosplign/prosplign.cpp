@@ -995,7 +995,6 @@ CRef<objects::CSeq_align> CProSplign::BlastAlignment(CScope& scope, const CSeq_a
 }
 
 
-namespace {
 bool CProSplign::CImplementation::HasStartOnNuc(const CSpliced_seg& sps)
 {
     const CSpliced_exon& exon = *sps.GetExons().front();
@@ -1064,7 +1063,6 @@ bool CProSplign::CImplementation::HasStopOnNuc(const CSpliced_seg& sps)
 
     return m_matrix.GetTranslationTable().TranslateTriplet(buf) == '*';
     //return buf.size()==3 && (buf=="TAA" || buf=="TGA" || buf=="TAG");
-}
 }
 
 
