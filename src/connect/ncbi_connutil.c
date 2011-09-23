@@ -1169,13 +1169,13 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
     s_SaveString    (s, "host",            info->host);
     s_SaveKeyval    (s, "port",           (info->port
                                            ? x_Port(info->port, buf)
-                                           : "(default"));
+                                           : "(default)"));
     s_SaveString    (s, "path",            info->path);
     s_SaveString    (s, "args",            info->args);
     s_SaveString    (s, "http_proxy_host", info->http_proxy_host);
     s_SaveKeyval    (s, "http_proxy_port",(info->http_proxy_port
                                            ? x_Port(info->http_proxy_port, buf)
-                                           : "(none"));
+                                           : "(none)"));
     s_SaveString    (s, "http_proxy_user", info->http_proxy_user);
     if (*info->http_proxy_pass)
         s_SaveKeyval(s, "http_proxy_pass", "(set)");
