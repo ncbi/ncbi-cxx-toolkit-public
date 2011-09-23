@@ -428,7 +428,7 @@ static EIO_Status x_FtpCallback(void* data, const char* cmd, const char* arg)
                  << NStr::UInt8ToString(size) << " byte" << &"s"[size == 1]);
         dlcbdata->SetSize(size);
     } else if (size != val) {
-        ERR_POST(Fatal << "File size " << arg << " in "
+        ERR_POST(Warning << "File size " << arg << " in "
                  << CTempString(cmd, 4) << " command mismatches "
                  << NStr::UInt8ToString(size));
     } else {
@@ -545,16 +545,18 @@ static void s_TryAskFtpFilesize(iostream& ios, const char* filename)
 }
 
 
-static void s_InitiateFtpRetrieval(CConn_IOStream& s,
-                                   const char*     name,
-                                   const STimeout* timeout)
+static void s_InitiateFtpRetrieval(CConn_IOStream& ftp,
+                                   const char*     name)
 {
     // RETR must be understood by all FTP implementations
     // LIST command obtains non-machine readable output
     // NLST command obtains a filename per line output (having the filelist,
     ///     one can use SIZE and MDTM on each entry to get details about it)
     const char* cmd = NStr::EndsWith(name, '/') ? "LIST " : "RETR ";
-    s << cmd << name << endl;
+    ftp << cmd << name << endl;
+    if (CONN_Status(ftp.GetCONN(), eIO_Write) != eIO_Success) {
+        ftp.clear(IOS_BASE::badbit);
+    }
 }
 
 
@@ -596,9 +598,12 @@ int main(int argc, const char* argv[])
     CONNECT_Init(0);
 
     // Process command line parameters (up to 2)
+    Uint8 offset = 0;
     const char* url = argc > 1  &&  *argv[1] ? argv[1] : kDefaultTestURL;
     if (argc > 2) {
         s_Throttler = NStr::StringToInt(argv[2]);
+        if (argc > 3)
+            offset = NStr::StringToUInt8(argv[3]);
     }
 
     // Initialize all connection parameters for FTP and log them out
@@ -643,6 +648,10 @@ int main(int argc, const char* argv[])
         flags |= fFTP_UsePassive;
     }
     char val[40];
+    ConnNetInfo_GetValue(0, "DELAYRESTART", val, sizeof(val), 0);
+    if (offset  &&  ConnNetInfo_Boolean(val)) {
+        flags |= fFTP_DelayRestart;
+    }
     ConnNetInfo_GetValue(0, "USEFEAT", val, sizeof(val), "");
     if (ConnNetInfo_Boolean(val)) {
         flags |= fFTP_UseFeatures;
@@ -670,6 +679,35 @@ int main(int argc, const char* argv[])
                         &ftpcb,
                         net_info->timeout);
 
+    // Print out some server info
+    if (!(ftp << "STAT" << flush)) {
+        ERR_POST(Fatal << "Cannot connect to ftp server");
+    }
+    string status;
+    do {
+        string line;
+        getline(ftp, line);
+        size_t linelen = line.size();
+        if (linelen /*!line.empty()*/  &&  NStr::EndsWith(line, '\r')) {
+            line.resize(--linelen);
+        }
+        NStr::TruncateSpacesInPlace(line);
+        if (line.empty()) {
+            continue;
+        }
+        if (status.empty()) {
+            status  = "Server status:\n\t" + line;
+        } else {
+            status += "\n\t";
+            status += line;
+        }
+    } while (ftp);
+    if (!status.empty()) {
+        ERR_POST(Info << status);
+    }
+    _ASSERT(!CONN_GetPosition(ftp.GetCONN(), eIO_Open));  // NB: clears pos
+    ftp.clear();
+
     // Look at the file extension and figure out what stream processors to use
     TProcessor proc = fProcessor_Null;
     if        (NStr::EndsWith(filename, ".tar.gz", NStr::eNocase)  ||
@@ -694,7 +732,10 @@ int main(int argc, const char* argv[])
         ERR_POST(Info << "Downloading " << url
                  << ", processor 0x" << hex << proc);
     }
-    s_InitiateFtpRetrieval(ftp, net_info->path, net_info->timeout);
+    if (offset) {
+        ftp << "REST " << NStr::UInt8ToString(offset) << flush;
+    }
+    s_InitiateFtpRetrieval(ftp, net_info->path);
 
     // Some intermediate cleanup (NB: invalidates "filename")
     ConnNetInfo_Destroy(net_info);
@@ -703,8 +744,9 @@ int main(int argc, const char* argv[])
     // NB: Can use "CONN_GetPosition(ftp.GetCONN(), eIO_Open)" to clear again
     _ASSERT(!CONN_GetPosition(ftp.GetCONN(), eIO_Read));
     // Set a fine read timeout and handle the actual timeout in callbacks
-    const STimeout second = {1, 0};
-    ftp.SetTimeout(eIO_Read, &second);
+    static const STimeout second = {1, 0};
+    // NB: also "ftp.SetTimeout(eIO_Read, &second)"
+    ftp >> SetReadTimeout(&second);
     // Set all relevant CONN callbacks
     const SCONN_Callback conncb = { x_ConnectionCallback, &dlcbdata };
     CONN_SetCallback(ftp.GetCONN(), eCONN_OnRead,    &conncb, 0/*dontcare*/);
