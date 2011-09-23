@@ -67,45 +67,45 @@ string CGffWriteRecord::s_GetSubtypeString( int subtype )
 //  ----------------------------------------------------------------------------
 {
     switch ( subtype ) {
-        case COrgMod::eSubtype_strain:           return "strain";
-        case COrgMod::eSubtype_substrain:        return "substrain";
-        case COrgMod::eSubtype_type:             return "type";
-        case COrgMod::eSubtype_subtype:          return "subtype";
-        case COrgMod::eSubtype_variety:          return "variety";
-        case COrgMod::eSubtype_serotype:         return "serotype";
-        case COrgMod::eSubtype_serogroup:        return "serogroup";
-        case COrgMod::eSubtype_serovar:          return "serovar";
-        case COrgMod::eSubtype_cultivar:         return "cultivar";
-        case COrgMod::eSubtype_pathovar:         return "pathovar";
-        case COrgMod::eSubtype_chemovar:         return "chemovar";
-        case COrgMod::eSubtype_biovar:           return "biovar";
-        case COrgMod::eSubtype_biotype:          return "biotype";
-        case COrgMod::eSubtype_group:            return "group";
-        case COrgMod::eSubtype_subgroup:         return "subgroup";
-        case COrgMod::eSubtype_isolate:          return "isolate";
-        case COrgMod::eSubtype_common:           return "common";
-        case COrgMod::eSubtype_acronym:          return "acronym";
-        case COrgMod::eSubtype_dosage:           return "dosage";
-        case COrgMod::eSubtype_nat_host:         return "nat_host";
-        case COrgMod::eSubtype_sub_species:      return "sub_species";
+        default: return "";
+        case COrgMod::eSubtype_strain: return "strain";
+        case COrgMod::eSubtype_substrain: return "substrain";
+        case COrgMod::eSubtype_type: return "type";
+        case COrgMod::eSubtype_subtype: return "subtype";
+        case COrgMod::eSubtype_variety: return "variety";
+        case COrgMod::eSubtype_serotype: return "serotype";
+        case COrgMod::eSubtype_serogroup: return "serogroup";
+        case COrgMod::eSubtype_serovar: return "serovar";
+        case COrgMod::eSubtype_cultivar: return "cultivar";
+        case COrgMod::eSubtype_pathovar: return "pathovar";
+        case COrgMod::eSubtype_chemovar: return "chemovar";
+        case COrgMod::eSubtype_biovar: return "biovar";
+        case COrgMod::eSubtype_biotype: return "biotype";
+        case COrgMod::eSubtype_group: return "group";
+        case COrgMod::eSubtype_subgroup: return "subgroup";
+        case COrgMod::eSubtype_isolate: return "isolate";
+        case COrgMod::eSubtype_common: return "common";
+        case COrgMod::eSubtype_acronym: return "acronym";
+        case COrgMod::eSubtype_dosage: return "dosage";
+        case COrgMod::eSubtype_nat_host: return "nat_host";
+        case COrgMod::eSubtype_sub_species: return "sub_species";
         case COrgMod::eSubtype_specimen_voucher: return "specimen_voucher";
-        case COrgMod::eSubtype_authority:        return "authority";
-        case COrgMod::eSubtype_forma:            return "forma";
-        case COrgMod::eSubtype_forma_specialis:  return "dosage";
-        case COrgMod::eSubtype_ecotype:          return "ecotype";
-        case COrgMod::eSubtype_synonym:          return "synonym";
-        case COrgMod::eSubtype_anamorph:         return "anamorph";
-        case COrgMod::eSubtype_teleomorph:       return "teleomorph";
-        case COrgMod::eSubtype_breed:            return "breed";
-        case COrgMod::eSubtype_gb_acronym:       return "gb_acronym";
-        case COrgMod::eSubtype_gb_anamorph:      return "gb_anamorph";
-        case COrgMod::eSubtype_gb_synonym:       return "gb_synonym";
-        case COrgMod::eSubtype_old_lineage:      return "old_lineage";
-        case COrgMod::eSubtype_old_name:         return "old_name";
+        case COrgMod::eSubtype_authority: return "authority";
+        case COrgMod::eSubtype_forma: return "forma";
+        case COrgMod::eSubtype_forma_specialis: return "dosage";
+        case COrgMod::eSubtype_ecotype: return "ecotype";
+        case COrgMod::eSubtype_synonym: return "synonym";
+        case COrgMod::eSubtype_anamorph: return "anamorph";
+        case COrgMod::eSubtype_teleomorph: return "teleomorph";
+        case COrgMod::eSubtype_breed: return "breed";
+        case COrgMod::eSubtype_gb_acronym: return "gb_acronym";
+        case COrgMod::eSubtype_gb_anamorph: return "gb_anamorph";
+        case COrgMod::eSubtype_gb_synonym: return "gb_synonym";
+        case COrgMod::eSubtype_old_lineage: return "old_lineage";
+        case COrgMod::eSubtype_old_name: return "old_name";
         case COrgMod::eSubtype_culture_collection: return "culture_collection";
-        case COrgMod::eSubtype_bio_material:     return "bio_material";
-        case COrgMod::eSubtype_other:            return "note";
-        default:                                 return "";
+        case COrgMod::eSubtype_bio_material: return "bio_material";
+        case COrgMod::eSubtype_other: return "note";
     }
     return "";
 }
@@ -170,40 +170,24 @@ string CGffWriteRecord::s_GetBiomolString(
 //  ----------------------------------------------------------------------------
 {
     switch( biomol ) {
-    default:
-        return "";
-    case CMolInfo::eBiomol_unknown:
-        return "unassigned DNA";
-    case CMolInfo::eBiomol_genomic:
-        return "genomic DNA";
-    case CMolInfo::eBiomol_pre_RNA:
-        return "transcribed RNA";
-    case CMolInfo::eBiomol_mRNA:
-        return "mRNA";
-    case CMolInfo::eBiomol_rRNA:
-        return "rRNA";
-    case CMolInfo::eBiomol_tRNA:
-        return "tRNA";
-    case CMolInfo::eBiomol_snRNA:
-        return "transcribed RNA";
-    case CMolInfo::eBiomol_scRNA:
-        return "transcribed RNA";
-    case CMolInfo::eBiomol_other_genetic:
-        return "other DNA";
-    case CMolInfo::eBiomol_genomic_mRNA:
-        return "unassigned DNA";
-    case CMolInfo::eBiomol_cRNA:
-        return "viral cRNA";
-    case CMolInfo::eBiomol_snoRNA:
-        return "transcribed RNA";
-    case CMolInfo::eBiomol_transcribed_RNA:
-        return "transcribed RNA";
-    case CMolInfo::eBiomol_ncRNA:
-        return "transcribed RNA";
-    case CMolInfo::eBiomol_tmRNA:
-        return "unassigned RNA";
-    case CMolInfo::eBiomol_other:
-        return "other DNA";
+        default: return "";
+        case CMolInfo::eBiomol_peptide: return "peptide";
+        case CMolInfo::eBiomol_unknown: return "unassigned DNA";
+        case CMolInfo::eBiomol_genomic: return "genomic DNA";
+        case CMolInfo::eBiomol_pre_RNA: return "transcribed RNA";
+        case CMolInfo::eBiomol_mRNA: return "mRNA";
+        case CMolInfo::eBiomol_rRNA: return "rRNA";
+        case CMolInfo::eBiomol_tRNA: return "tRNA";
+        case CMolInfo::eBiomol_snRNA: return "transcribed RNA";
+        case CMolInfo::eBiomol_scRNA: return "transcribed RNA";
+        case CMolInfo::eBiomol_other_genetic: return "other DNA";
+        case CMolInfo::eBiomol_genomic_mRNA: return "unassigned DNA";
+        case CMolInfo::eBiomol_cRNA: return "viral cRNA";
+        case CMolInfo::eBiomol_snoRNA: return "transcribed RNA";
+        case CMolInfo::eBiomol_transcribed_RNA: return "transcribed RNA";
+        case CMolInfo::eBiomol_ncRNA: return "transcribed RNA";
+        case CMolInfo::eBiomol_tmRNA: return "unassigned RNA";
+        case CMolInfo::eBiomol_other: return "other DNA";
     }
     return "";
 }
@@ -239,6 +223,40 @@ string CGffWriteRecord::s_GetGenomeString( int genome )
         case CBioSource::eGenome_unknown: return "unknown";
         case CBioSource::eGenome_virion: return "virion";
     }
+}
+
+//  ----------------------------------------------------------------------------
+string CGffWriteRecord::s_GetGffSourceString(
+    CBioseq_Handle bsh )
+//  ----------------------------------------------------------------------------
+{
+    const CSeq_id* pBigId = sequence::GetId( 
+        bsh, sequence::eGetId_Best).GetSeqId();
+
+    switch ( pBigId->Which() ) {
+        default:
+            break;
+        case CSeq_id::e_Local:
+            return "Local";
+        case CSeq_id::e_Gibbsq:
+        case CSeq_id::e_Gibbmt:
+        case CSeq_id::e_Giim:
+        case CSeq_id::e_Gi:
+            return "GenInfo";
+        case CSeq_id::e_Genbank:
+            return "Genbank";
+        case CSeq_id::e_Swissprot:
+            return "SwissProt";
+        case CSeq_id::e_Patent:
+            return "Patent";
+        case CSeq_id::e_Other:
+            return "RefSeq";
+        case CSeq_id::e_General:
+            return pBigId->GetGeneral().GetDb();
+    }
+    string source = CSeq_id::SelectionName( pBigId->Which() );
+    NStr::ToUpper( source );
+    return source;
 }
 
 //  ----------------------------------------------------------------------------
@@ -495,38 +513,32 @@ string CGffWriteRecord::x_Encode(
 //  ----------------------------------------------------------------------------
 {
     static const char s_Table[256][4] = {
-        "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07",
-        "%08", "%09", "%0A", "%0B", "%0C", "%0D", "%0E", "%0F",
-        "%10", "%11", "%12", "%13", "%14", "%15", "%16", "%17",
-        "%18", "%19", "%1A", "%1B", "%1C", "%1D", "%1E", "%1F",
-        " ",   "!",   "%22", "%23", "$",   "%25", "%26", "%27",
-        "%28", "%29", "%2A", "%2B", "%2C", "-",   ".",   "%2F",
-        "0",   "1",   "2",   "3",   "4",   "5",   "6",   "7",
-        "8",   "9",   ":",   "%3B", "%3C", "%3D", "%3E", "%3F",
-        "@",   "A",   "B",   "C",   "D",   "E",   "F",   "G",
-        "H",   "I",   "J",   "K",   "L",   "M",   "N",   "O",
-        "P",   "Q",   "R",   "S",   "T",   "U",   "V",   "W",
-        "X",   "Y",   "Z",   "%5B", "%5C", "%5D", "^",   "_",
-        "%60", "a",   "b",   "c",   "d",   "e",   "f",   "g",
-        "h",   "i",   "j",   "k",   "l",   "m",   "n",   "o",
-        "p",   "q",   "r",   "s",   "t",   "u",   "v",   "w",
-        "x",   "y",   "z",   "%7B", "%7C", "%7D", "%7E", "%7F",
-        "%80", "%81", "%82", "%83", "%84", "%85", "%86", "%87",
-        "%88", "%89", "%8A", "%8B", "%8C", "%8D", "%8E", "%8F",
-        "%90", "%91", "%92", "%93", "%94", "%95", "%96", "%97",
-        "%98", "%99", "%9A", "%9B", "%9C", "%9D", "%9E", "%9F",
-        "%A0", "%A1", "%A2", "%A3", "%A4", "%A5", "%A6", "%A7",
-        "%A8", "%A9", "%AA", "%AB", "%AC", "%AD", "%AE", "%AF",
-        "%B0", "%B1", "%B2", "%B3", "%B4", "%B5", "%B6", "%B7",
-        "%B8", "%B9", "%BA", "%BB", "%BC", "%BD", "%BE", "%BF",
-        "%C0", "%C1", "%C2", "%C3", "%C4", "%C5", "%C6", "%C7",
-        "%C8", "%C9", "%CA", "%CB", "%CC", "%CD", "%CE", "%CF",
-        "%D0", "%D1", "%D2", "%D3", "%D4", "%D5", "%D6", "%D7",
-        "%D8", "%D9", "%DA", "%DB", "%DC", "%DD", "%DE", "%DF",
-        "%E0", "%E1", "%E2", "%E3", "%E4", "%E5", "%E6", "%E7",
-        "%E8", "%E9", "%EA", "%EB", "%EC", "%ED", "%EE", "%EF",
-        "%F0", "%F1", "%F2", "%F3", "%F4", "%F5", "%F6", "%F7",
-        "%F8", "%F9", "%FA", "%FB", "|", "%FD", "%FE", "%FF"
+        "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07", "%08", "%09", 
+        "%0A", "%0B", "%0C", "%0D", "%0E", "%0F", "%10", "%11", "%12", "%13", 
+        "%14", "%15", "%16", "%17", "%18", "%19", "%1A", "%1B", "%1C", "%1D", 
+        "%1E", "%1F", " ",   "!",   "%22", "%23", "$",   "%25", "%26", "%27",
+        "%28", "%29", "%2A", "%2B", "%2C", "-",   ".",   "%2F", "0",   "1",   
+        "2",   "3",   "4",   "5",   "6",   "7",   "8",   "9",   ":",   "%3B", 
+        "%3C", "%3D", "%3E", "%3F", "@",   "A",   "B",   "C",   "D",   "E",   
+        "F",   "G",   "H",   "I",   "J",   "K",   "L",   "M",   "N",   "O",
+        "P",   "Q",   "R",   "S",   "T",   "U",   "V",   "W",   "X",   "Y",   
+        "Z",   "%5B", "%5C", "%5D", "^",   "_",   "%60", "a",   "b",   "c",   
+        "d",   "e",   "f",   "g",   "h",   "i",   "j",   "k",   "l",   "m",   
+        "n",   "o",   "p",   "q",   "r",   "s",   "t",   "u",   "v",   "w",
+        "x",   "y",   "z",   "%7B", "%7C", "%7D", "%7E", "%7F", "%80", "%81", 
+        "%82", "%83", "%84", "%85", "%86", "%87", "%88", "%89", "%8A", "%8B", 
+        "%8C", "%8D", "%8E", "%8F", "%90", "%91", "%92", "%93", "%94", "%95", 
+        "%96", "%97", "%98", "%99", "%9A", "%9B", "%9C", "%9D", "%9E", "%9F",
+        "%A0", "%A1", "%A2", "%A3", "%A4", "%A5", "%A6", "%A7", "%A8", "%A9", 
+        "%AA", "%AB", "%AC", "%AD", "%AE", "%AF", "%B0", "%B1", "%B2", "%B3", 
+        "%B4", "%B5", "%B6", "%B7", "%B8", "%B9", "%BA", "%BB", "%BC", "%BD", 
+        "%BE", "%BF", "%C0", "%C1", "%C2", "%C3", "%C4", "%C5", "%C6", "%C7",
+        "%C8", "%C9", "%CA", "%CB", "%CC", "%CD", "%CE", "%CF", "%D0", "%D1", 
+        "%D2", "%D3", "%D4", "%D5", "%D6", "%D7", "%D8", "%D9", "%DA", "%DB", 
+        "%DC", "%DD", "%DE", "%DF", "%E0", "%E1", "%E2", "%E3", "%E4", "%E5", 
+        "%E6", "%E7", "%E8", "%E9", "%EA", "%EB", "%EC", "%ED", "%EE", "%EF",
+        "%F0", "%F1", "%F2", "%F3", "%F4", "%F5", "%F6", "%F7", "%F8", "%F9", 
+        "%FA", "%FB", "|", "%FD", "%FE", "%FF"
     };
     string strEncoded;
     for ( size_t i = 0;  i < strRaw.size();  ++i ) {
@@ -623,9 +635,6 @@ bool CGffWriteRecordFeature::x_AssignBiosrcAttributes(
     const CBioSource& bs )
 //  ----------------------------------------------------------------------------
 {
-    if ( bs.IsSetTaxname() ) {
-        m_Attributes["organism"] = bs.GetTaxname();
-    }
     if ( bs.IsSetGenome() ) {
         m_Attributes["genome"] = s_GetGenomeString( bs.GetGenome() );
     }
@@ -703,10 +712,6 @@ bool CGffWriteRecordFeature::AssignSource(
     const CSeqdesc& desc )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! desc.IsSource() ) {
-        return false;
-    }
-
     // id
     CConstRef<CSeq_id> pId = bsh.GetNonLocalIdOrNull();
     if ( pId ) {
@@ -722,59 +727,18 @@ bool CGffWriteRecordFeature::AssignSource(
         m_strId = "<unknown>";
     }
 
-    // type
     m_strType = "region";
-
-    // source
-    const CSeq_id* pBigId = sequence::GetId( bsh, sequence::eGetId_Best).GetSeqId();
-    switch ( pBigId->Which() ) {
-        default:
-            m_strSource = CSeq_id::SelectionName( pBigId->Which() );
-            NStr::ToUpper( m_strSource );
-            break;
-        case CSeq_id::e_Local:
-            m_strSource = "Local";
-            break;
-        case CSeq_id::e_Gibbsq:
-        case CSeq_id::e_Gibbmt:
-        case CSeq_id::e_Giim:
-        case CSeq_id::e_Gi:
-            m_strSource = "GenInfo";
-            break;
-        case CSeq_id::e_Genbank:
-            m_strSource = "Genbank";
-            break;
-        case CSeq_id::e_Swissprot:
-            m_strSource = "SwissProt";
-            break;
-        case CSeq_id::e_Patent:
-            m_strSource = "Patent";
-            break;
-        case CSeq_id::e_Other:
-            m_strSource = "RefSeq";
-            break;
-        case CSeq_id::e_General:
-            m_strSource = pBigId->GetGeneral().GetDb();
-            break;
-    }
-
-    // start
+    m_strSource = s_GetGffSourceString( bsh );
     m_uSeqStart = 0;
-
-    // stop
     m_uSeqStop = bsh.GetBioseqLength() - 1;
-
     //score
-
-    // strand
     if ( bsh.CanGetInst_Strand() ) {
         m_peStrand = new ENa_strand( eNa_strand_plus );
     }
-
     // phase
 
     //  attributes:
-    m_Attributes["gbkey"] = "Source";
+    m_Attributes["gbkey"] = "Src";
 
 
     CSeqdesc_CI md( bsh.GetParentEntry(), CSeqdesc::e_Molinfo, 0 );
@@ -802,25 +766,18 @@ bool CGffWriteRecordFeature::x_AssignSeqId(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    const CSeq_feat& feature = mf.GetOriginalFeature();
-    CSeq_annot_Handle ah = mf.GetAnnot();
-    CConstRef<CSeq_annot> pA = ah.GetCompleteSeq_annot();
-    if ( pA->IsSetDesc() ) {
-    }
+	const CSeq_loc& loc = mf.GetLocation();
+    CConstRef<CSeq_id> id(loc.GetId());
+	if (id) {
+        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle( *id ); 
+        CSeq_id_Handle best_idh = 
+            sequence::GetId(idh, mf.GetScope(), sequence::eGetId_Best); 
+        if ( !best_idh ) {
+            best_idh = idh;
+        }
+        best_idh.GetSeqId()->GetLabel(&m_strId, CSeq_id::eContent);
+	}
 
-    if ( feature.CanGetLocation() ) {
-    	const CSeq_loc& loc = feature.GetLocation();
-	    CConstRef<CSeq_id> id(loc.GetId());
-		if (id) {
-            CSeq_id_Handle idh = CSeq_id_Handle::GetHandle( *id ); 
-            CSeq_id_Handle best_idh = 
-                sequence::GetId(idh, mf.GetScope(), sequence::eGetId_Best); 
-            if ( !best_idh ) {
-                best_idh = idh;
-            }
-            best_idh.GetSeqId()->GetLabel(&m_strId, CSeq_id::eContent);
-		}
-    }
     if (m_strId.empty() ) {
         m_strId = "<unknown>";
     }
@@ -829,55 +786,43 @@ bool CGffWriteRecordFeature::x_AssignSeqId(
 
 //  ----------------------------------------------------------------------------
 bool CGffWriteRecordFeature::x_AssignType(
-    CMappedFeat mapped_feat )
+    CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    const CSeq_feat& feature = mapped_feat.GetOriginalFeature();
-
     m_strType = "region";
 
-    if ( feature.CanGetQual() ) {
-        const vector< CRef< CGb_qual > >& quals = feature.GetQual();
+    if ( mf.IsSetQual() ) {
+        const vector< CRef< CGb_qual > >& quals = mf.GetQual();
         vector< CRef< CGb_qual > >::const_iterator it = quals.begin();
-        while ( it != quals.end() ) {
-            if ( (*it)->CanGetQual() && (*it)->CanGetVal() ) {
-                if ( (*it)->GetQual() == "standard_name" ) {
-                    m_strType = (*it)->GetVal();
-                    return true;
-                }
+        for( ; it != quals.end(); ++it) {
+            if ( !(*it)->CanGetQual() || !(*it)->CanGetVal() ) {
+                continue;
             }
-            ++it;
+            if ( (*it)->GetQual() == "standard_name" ) {
+                m_strType = (*it)->GetVal();
+                return true;
+            }
         }
     }
 
-    if ( ! feature.CanGetData() ) {
-        return true;
-    }
-
-    switch ( feature.GetData().GetSubtype() ) {
+    switch ( mf.GetFeatSubtype() ) {
     default:
         break;
-
     case CSeq_feat::TData::eSubtype_cdregion:
         m_strType = "CDS";
         break;
-
     case CSeq_feat::TData::eSubtype_exon:
         m_strType = "exon";
         break;
-
     case CSeq_feat::TData::eSubtype_misc_RNA:
         m_strType = "transcript";
         break;
-
     case CSeq_feat::TData::eSubtype_gene:
         m_strType = "gene";
         break;
-
     case CSeq_feat::TData::eSubtype_mRNA:
         m_strType = "mRNA";
         break;
-
     case CSeq_feat::TData::eSubtype_scRNA:
         m_strType = "scRNA";
         break;
@@ -887,111 +832,65 @@ bool CGffWriteRecordFeature::x_AssignType(
 
 //  ----------------------------------------------------------------------------
 bool CGffWriteRecordFeature::x_AssignStart(
-    CMappedFeat mapped_feat )
+    CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    const CSeq_feat& feature = mapped_feat.GetOriginalFeature();
-
-    if ( feature.CanGetLocation() ) {
-        const CSeq_loc& location = feature.GetLocation();
-        unsigned int uStart = location.GetStart( eExtreme_Positional );
-        m_uSeqStart = uStart;
-    }
+    m_uSeqStart = mf.GetLocation().GetStart( eExtreme_Positional );;
     return true;
 }
 
 //  ----------------------------------------------------------------------------
 bool CGffWriteRecordFeature::x_AssignStop(
-    CMappedFeat mapped_feat )
+    CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    const CSeq_feat& feature = mapped_feat.GetOriginalFeature();
-
-    if ( feature.CanGetLocation() ) {
-        const CSeq_loc& location = feature.GetLocation();
-        unsigned int uEnd = location.GetStop( eExtreme_Positional );
-        m_uSeqStop = uEnd;
-    }
+    m_uSeqStop = mf.GetLocation().GetStop( eExtreme_Positional );;
     return true;
 }
 
 //  ----------------------------------------------------------------------------
 bool CGffWriteRecordFeature::x_AssignSource(
-    CMappedFeat mapped_feat )
+    CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    const CSeq_feat& feature = mapped_feat.GetOriginalFeature();
-
     m_strSource = ".";
 
-    if ( feature.CanGetQual() ) {
-        const vector< CRef< CGb_qual > >& quals = feature.GetQual();
+    if ( mf.IsSetQual() ) {
+        const vector< CRef< CGb_qual > >& quals = mf.GetQual();
         vector< CRef< CGb_qual > >::const_iterator it = quals.begin();
-        while ( it != quals.end() ) {
-            if ( (*it)->CanGetQual() && (*it)->CanGetVal() ) {
-                if ( (*it)->GetQual() == "gff_source" ) {
-                    m_strSource = (*it)->GetVal();
-                    return true;
-                }
+        for ( ; it != quals.end(); ++it ) {
+            if ( !(*it)->CanGetQual() || !(*it)->CanGetVal() ) {
+                continue;
             }
-            ++it;
+            if ( (*it)->GetQual() == "gff_source" ) {
+                m_strSource = (*it)->GetVal();
+                return true;
+            }
         }
     }
-    const CSeq_id* pBigId = sequence::GetId( mapped_feat.GetScope().GetBioseqHandle(
-            mapped_feat.GetLocationId()), sequence::eGetId_Best).GetSeqId();
 
-    switch ( pBigId->Which() ) {
-        default:
-            m_strSource = CSeq_id::SelectionName( pBigId->Which() );
-            NStr::ToUpper( m_strSource );
-            return true;
-        case CSeq_id::e_Local:
-            m_strSource = "Local";
-            return true;
-        case CSeq_id::e_Gibbsq:
-        case CSeq_id::e_Gibbmt:
-        case CSeq_id::e_Giim:
-        case CSeq_id::e_Gi:
-            m_strSource = "GenInfo";
-            return true;
-        case CSeq_id::e_Genbank:
-            m_strSource = "Genbank";
-            return true;
-        case CSeq_id::e_Swissprot:
-            m_strSource = "SwissProt";
-            return true;
-        case CSeq_id::e_Patent:
-            m_strSource = "Patent";
-            return true;
-        case CSeq_id::e_Other:
-            m_strSource = "RefSeq";
-            return true;
-        case CSeq_id::e_General:
-            m_strSource = pBigId->GetGeneral().GetDb();
-            return true;
-    }
+    CBioseq_Handle bsh = mf.GetScope().GetBioseqHandle( mf.GetLocationId() );
+    m_strSource = s_GetGffSourceString( bsh );
     return true;
 }
 
 //  ----------------------------------------------------------------------------
 bool CGffWriteRecordFeature::x_AssignScore(
-    CMappedFeat mapped_feat )
+    CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    const CSeq_feat& feature = mapped_feat.GetOriginalFeature();
-
-    if ( feature.CanGetQual() ) {
-        const vector< CRef< CGb_qual > >& quals = feature.GetQual();
-        vector< CRef< CGb_qual > >::const_iterator it = quals.begin();
-        while ( it != quals.end() ) {
-            if ( (*it)->CanGetQual() && (*it)->CanGetVal() ) {
-                if ( (*it)->GetQual() == "gff_score" ) {
-                    m_pdScore = new double( NStr::StringToDouble( 
-                        (*it)->GetVal() ) );
-                    return true;
-                }
-            }
-            ++it;
+    if ( !mf.IsSetQual() ) {
+        return true;
+    }
+    const vector< CRef< CGb_qual > >& quals = mf.GetQual();
+    vector< CRef< CGb_qual > >::const_iterator it = quals.begin();
+    for ( ; it != quals.end(); ++it ) {
+        if ( !(*it)->CanGetQual() || !(*it)->CanGetVal() ) {
+            continue;
+        }
+        if ( (*it)->GetQual() == "gff_score" ) {
+            m_pdScore = new double( NStr::StringToDouble( (*it)->GetVal() ) );
+            return true;
         }
     }
     return true;
@@ -999,14 +898,10 @@ bool CGffWriteRecordFeature::x_AssignScore(
 
 //  ----------------------------------------------------------------------------
 bool CGffWriteRecordFeature::x_AssignStrand(
-    CMappedFeat mapped_feat )
+    CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    const CSeq_feat& feature = mapped_feat.GetOriginalFeature();
-
-    if ( feature.CanGetLocation() ) {
-        m_peStrand = new ENa_strand( feature.GetLocation().GetStrand() );
-    }
+    m_peStrand = new ENa_strand( mf.GetLocation().GetStrand() );
     return true;
 }
 

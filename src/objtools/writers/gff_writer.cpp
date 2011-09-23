@@ -145,7 +145,7 @@ bool CGff2Writer::x_WriteSeqEntryHandle(
     CSeq_entry_Handle seh )
 //  ----------------------------------------------------------------------------
 {
-    for ( CBioseq_CI bci( seh ); bci; ++bci ) {
+    for ( CBioseq_CI bci( seh, CSeq_inst::eMol_dna ); bci; ++bci ) {
         if ( ! x_WriteBioseqHandle( *bci ) ) {
             return false;
         }

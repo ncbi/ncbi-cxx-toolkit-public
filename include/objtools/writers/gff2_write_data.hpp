@@ -35,6 +35,7 @@
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/bioseq_handle.hpp>
 #include <objmgr/util/feature.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -123,6 +124,8 @@ public:
         int );
     static string s_GetSubtypeString( 
         int );
+    static string s_GetGffSourceString(
+        CBioseq_Handle );
 
 protected:
     static bool x_NeedsQuoting(
