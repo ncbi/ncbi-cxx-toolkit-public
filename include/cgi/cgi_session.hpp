@@ -203,7 +203,7 @@ public:
     /// @return
     ///  Session CGI cookie; 
     ///  NULL if no session is loaded or if cookie support is disabled.
-    const CCgiCookie* const GetSessionCookie(void) const;
+    const CCgiCookie* GetSessionCookie(void) const;
 
     /// Retrieve a session id from a query string or a session cookie
     string RetrieveSessionId() const;

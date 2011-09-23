@@ -190,7 +190,7 @@ void CCgiSession::DeleteSession()
 }
 
 
-const CCgiCookie * const CCgiSession::GetSessionCookie() const
+const CCgiCookie * CCgiSession::GetSessionCookie() const
 {
     if (m_CookieSupport == eNoCookie ||
         (!Exists() && m_Status != eDeleted))
