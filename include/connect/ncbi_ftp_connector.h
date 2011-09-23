@@ -77,7 +77,7 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flags */
 
 /* FTP protocol implies the use of both control connection (to pass commands
  * and responses) and data connection (to pass file contents), so is a 4-way
- * commmunication scheme.
+ * communication scheme.
  * CONN API supports only a two way scheme, which is why for FTP a special
  * discipline is required to communicate with the server.
  * User code interacts with FTP server by means of writing commands (most of
