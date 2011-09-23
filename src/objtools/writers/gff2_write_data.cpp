@@ -63,6 +63,11 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
+const string CGffWriteRecord::ATTR_SEPARATOR
+//  ----------------------------------------------------------------------------
+    = "; ";
+
+//  ----------------------------------------------------------------------------
 string CGffWriteRecord::s_GetSubtypeString( int subtype )
 //  ----------------------------------------------------------------------------
 {
@@ -453,50 +458,54 @@ bool CGffWriteRecord::x_NeedsQuoting(
     return false;
 }
 
+
 //  ----------------------------------------------------------------------------
-void CGffWriteRecord::x_PriorityProcess(
+void CGffWriteRecord::x_StrAttributesAppendMultiValue(
     const string& strKey,
+    const string& SEPARATOR,
     map<string, string >& attrs,
     string& strAttributes ) const
 //  ----------------------------------------------------------------------------
 {
-    string strKeyMod( strKey );
-
-    map< string, string >::iterator it = attrs.find( strKeyMod );
+    map< string, string >::iterator it = attrs.find( strKey );
     if ( it == attrs.end() ) {
         return;
     }
 
-    // Some of the attributes are multivalue translating into multiple gff attributes
-    //  all carrying the same key. These are special cased here:
-    //
-    if ( strKey == "Dbxref" ) {
-        vector<string> tags;
-        NStr::Tokenize( it->second, ";", tags );
-        for ( vector<string>::iterator pTag = tags.begin(); pTag != tags.end(); pTag++ ) {
-            if ( ! strAttributes.empty() ) {
-                strAttributes += "; ";
-            }
-            strAttributes += strKeyMod;
-            strAttributes += "=";
-            string strValue = *pTag;
-            strValue = x_Encode(strValue);
-            if (x_NeedsQuoting(*pTag)) {
-                strValue = (string("\"") + strValue + string("\""));
-            }
-            strAttributes += strValue;
+    vector<string> tags;
+    NStr::Tokenize( it->second, ";", tags );
+    for ( vector<string>::iterator pTag = tags.begin(); pTag != tags.end(); pTag++ ) {
+        if ( ! strAttributes.empty() ) {
+            strAttributes += SEPARATOR;
         }
-		attrs.erase(it);
+        strAttributes += strKey;
+        strAttributes += "=";
+        string strValue = *pTag;
+        strValue = x_Encode(strValue);
+        if (x_NeedsQuoting(*pTag)) {
+            strValue = (string("\"") + strValue + string("\""));
+        }
+        strAttributes += strValue;
+    }
+	attrs.erase(it);
+}
+
+//  ----------------------------------------------------------------------------
+void CGffWriteRecord::x_StrAttributesAppendSingleValue(
+    const string& strKey,
+    const string& SEPARATOR,
+    map<string, string >& attrs,
+    string& strAttributes ) const
+//  ----------------------------------------------------------------------------
+{
+    map< string, string >::iterator it = attrs.find( strKey );
+    if ( it == attrs.end() ) {
         return;
     }
-
-    // General case: Single value, make straight forward gff attribute:
-    //
     if ( ! strAttributes.empty() ) {
-        strAttributes += "; ";
+        strAttributes += SEPARATOR;
     }
-
-    strAttributes += strKeyMod;
+    strAttributes += strKey;
     strAttributes += "=";
    	bool quote = x_NeedsQuoting(it->second);
 	if ( quote )

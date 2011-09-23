@@ -131,7 +131,14 @@ protected:
     static bool x_NeedsQuoting(
         const string& );
 
-    virtual void x_PriorityProcess(
+    virtual void x_StrAttributesAppendSingleValue(
+        const string&,
+        const string&,
+        map<string, string >&,
+        string& ) const;
+
+    virtual void x_StrAttributesAppendMultiValue(
+        const string&,
         const string&,
         map<string, string >&,
         string& ) const;
@@ -149,6 +156,8 @@ protected:
     unsigned int* m_puPhase;
     string m_strAttributes;    
     TAttributes m_Attributes;
+
+    static const string ATTR_SEPARATOR;
 };
 
 //  ----------------------------------------------------------------------------

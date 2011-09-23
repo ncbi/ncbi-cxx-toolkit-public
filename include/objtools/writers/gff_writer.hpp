@@ -133,11 +133,6 @@ protected:
     virtual bool x_WriteRecord( 
         const CGffWriteRecord* );
 
-    virtual void x_PriorityProcess(
-        const string&,
-        map<string, string >&,
-        string& ) const;
-
     CRef< CUser_object > x_GetDescriptor(
         const CSeq_annot&,
         const string& ) const;

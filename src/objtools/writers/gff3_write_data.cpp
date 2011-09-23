@@ -62,6 +62,11 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
+const string CGff3WriteRecordFeature::ATTR_SEPARATOR
+//  ----------------------------------------------------------------------------
+    = ";";
+
+//  ----------------------------------------------------------------------------
 string s_GeneRefToGene(
     const CGene_ref& gene_ref )
 //  ----------------------------------------------------------------------------
@@ -380,35 +385,30 @@ string CGff3WriteRecordFeature::StrAttributes() const
     attrs.insert( Attributes().begin(), Attributes().end() );
     CGffWriteRecord::TAttrIt it;
 
-    x_PriorityProcess( "ID", attrs, strAttributes );
-    x_PriorityProcess( "Name", attrs, strAttributes );
-    x_PriorityProcess( "Alias", attrs, strAttributes );
-    x_PriorityProcess( "Parent", attrs, strAttributes );
-    x_PriorityProcess( "Target", attrs, strAttributes );
-    x_PriorityProcess( "Gap", attrs, strAttributes );
-    x_PriorityProcess( "Derives_from", attrs, strAttributes );
-    x_PriorityProcess( "Note", attrs, strAttributes );
-    x_PriorityProcess( "Dbxref", attrs, strAttributes );
-    x_PriorityProcess( "Ontology_term", attrs, strAttributes );
+    x_StrAttributesAppendSingleValue( 
+        "ID", ATTR_SEPARATOR, attrs, strAttributes );
+    x_StrAttributesAppendSingleValue( 
+        "Name", ATTR_SEPARATOR, attrs, strAttributes );
+    x_StrAttributesAppendSingleValue( 
+        "Alias", ATTR_SEPARATOR, attrs, strAttributes );
+    x_StrAttributesAppendSingleValue( 
+        "Parent", ATTR_SEPARATOR, attrs, strAttributes );
+    x_StrAttributesAppendSingleValue( 
+        "Target", ATTR_SEPARATOR, attrs, strAttributes );
+    x_StrAttributesAppendSingleValue( 
+        "Gap", ATTR_SEPARATOR, attrs, strAttributes );
+    x_StrAttributesAppendSingleValue( 
+        "Derives_from", ATTR_SEPARATOR, attrs, strAttributes );
+    x_StrAttributesAppendSingleValue( 
+        "Note", ATTR_SEPARATOR, attrs, strAttributes );
+    x_StrAttributesAppendMultiValue( 
+        "Dbxref", ATTR_SEPARATOR, attrs, strAttributes );
+    x_StrAttributesAppendSingleValue( 
+        "Ontology_term", ATTR_SEPARATOR, attrs, strAttributes );
 
-    for ( it = attrs.begin(); it != attrs.end(); ++it ) {
-        string strKey = it->first;
-        if ( NStr::StartsWith( strKey, "gff_" ) ) {
-            continue;
-        }
-
-        if ( ! strAttributes.empty() ) {
-            strAttributes += "; ";
-        }
-        strAttributes += strKey;
-        strAttributes += "=";
-        
-        bool quote = x_NeedsQuoting(it->second);
-        if ( quote )
-            strAttributes += '\"';        
-        strAttributes += x_Encode(it->second);
-        if ( quote )
-            strAttributes += '\"';
+    while ( !attrs.empty() ) {
+        x_StrAttributesAppendSingleValue( 
+            attrs.begin()->first, ATTR_SEPARATOR, attrs, strAttributes );
     }
     if ( strAttributes.empty() ) {
         strAttributes = ".";

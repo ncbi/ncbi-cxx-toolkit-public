@@ -155,6 +155,8 @@ protected:
 protected:
     CGffFeatureContext& m_fc;
     CRef<CSeq_loc> m_pLoc;
+
+    static const string ATTR_SEPARATOR;
 };
 
 END_objects_SCOPE
