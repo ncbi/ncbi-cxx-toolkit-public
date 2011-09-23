@@ -28,7 +28,7 @@
  *
  * Authors:  Denis Vakatov, Anton Lavrentiev
  *
-/// @file
+ * @file
  * File Description:
  *   CONN-based C++ streams
  *
@@ -108,7 +108,7 @@ const streamsize kConn_DefaultBufSize = 4096;
 ///       on the underlying CONN object.  Care must be taken when intercepting
 ///       the callback using the native CONN API.
 /// @sa
-///    CONN_SetCallback, eCONN_OnClose
+///   CONN_SetCallback, eCONN_OnClose
 
 class NCBI_XCONNECT_EXPORT CConn_IOStream : public virtual CConnIniter,
                                             public         CNcbiIostream
@@ -127,7 +127,7 @@ public:
     /// @param buf_size
     ///  Default size of underlying stream buffer's I/O arena
     /// @param tie
-    ///  Specifies whether to tie output to input -- a tied stream flushes
+    ///  Specifies whether to tie input and output -- a tied stream flushes
     ///  all pending output prior to doing any input.
     /// @sa
     ///  CONN, ncbi_connection.h
@@ -154,7 +154,7 @@ protected:
     /// @param buf_size
     ///  Default size of underlying stream buffer's I/O arena
     /// @param tie
-    ///  Specifies whether to tie output to input -- a tied stream flushes
+    ///  Specifies whether to tie input and output -- a tied stream flushes
     ///  all pending output prior to doing any input.
     /// @sa
     ///  CONNECTOR, ncbi_connector.h
@@ -183,7 +183,7 @@ public:
 
     /// Set connection timeout for "direction"
     /// @sa
-    ///   CONN_SetTimeout
+    ///   CONN_SetTimeout, SetReadTimeout, SetWriteTimeout
     EIO_Status      SetTimeout(EIO_Event       direction,
                                const STimeout* timeout= kDefaultTimeout) const;
 
@@ -204,7 +204,7 @@ public:
 
     /// Cancel stream connection
     /// @sa
-    ///   CONN_Cancel
+    ///   CONN_Cancel, NcbiCancel
     EIO_Status      Cancel(void) const;
 
     /// Close CONNection, free all internal buffers and underlying structures,
@@ -233,14 +233,118 @@ private:
 };
 
 
+/// Parameterless manipulators
+typedef CConn_IOStream& (*FConn_IOManip)(CConn_IOStream& ios);
+
+
+/// Output manipulator
+inline CConn_IOStream& operator<< (CConn_IOStream& os, FConn_IOManip manip)
+{
+    return manip(os);
+}
+
+
+/// Input manipulator
+inline CConn_IOStream& operator>> (CConn_IOStream& is, FConn_IOManip manip)
+{
+    return manip(is);
+}
+
+
+/// Cancellation manipulator "ios << NcbiCancel" or "ios >> NcbiCancel"
+inline CConn_IOStream& NcbiCancel(CConn_IOStream& ios)
+{
+    if (ios.good()  &&  ios.Cancel() != eIO_Success) {
+        ios.clear(IOS_BASE::badbit);
+    }
+    return ios;
+}
+
+
+class CConn_IOStreamSetTimeout {
+public:
+    const STimeout* GetTimeout(void) const { return m_Timeout; }
+
+protected:
+    CConn_IOStreamSetTimeout(const STimeout* timeout)
+        : m_Timeout(timeout)
+    { }
+
+private:
+    const STimeout* m_Timeout;
+};
+
+
+class CConn_IOStreamSetReadTimeout : protected CConn_IOStreamSetTimeout
+{
+public:
+    CConn_IOStreamSetTimeout::GetTimeout;
+
+protected:
+    CConn_IOStreamSetReadTimeout(const STimeout* timeout)
+        : CConn_IOStreamSetTimeout(timeout)
+    { }
+    friend CConn_IOStreamSetReadTimeout SetReadTimeout(const STimeout*);
+};
+
+
+inline CConn_IOStreamSetReadTimeout SetReadTimeout(const STimeout* timeout)
+{
+    return CConn_IOStreamSetReadTimeout(timeout);
+}
+
+
+/// Stream manipulator "is >> SetReadTimeout(timeout)"
+inline CConn_IOStream& operator>> (CConn_IOStream& is,
+                                   const CConn_IOStreamSetReadTimeout& s)
+{
+    if (is.good() && is.SetTimeout(eIO_Read, s.GetTimeout()) != eIO_Success) {
+        is.clear(IOS_BASE::badbit);
+    }
+    return is;
+}
+
+
+class CConn_IOStreamSetWriteTimeout : protected CConn_IOStreamSetTimeout
+{
+public:
+    CConn_IOStreamSetTimeout::GetTimeout;
+
+protected:
+    CConn_IOStreamSetWriteTimeout(const STimeout* timeout)
+        : CConn_IOStreamSetTimeout(timeout)
+    { }
+    friend CConn_IOStreamSetWriteTimeout SetWriteTimeout(const STimeout*);
+};
+
+
+inline CConn_IOStreamSetWriteTimeout SetWriteTimeout(const STimeout* timeout)
+{
+    return CConn_IOStreamSetWriteTimeout(timeout);
+}
+
+
+/// Stream manipulator "os << SetWriteTimeout(timeout)"
+inline CConn_IOStream& operator<< (CConn_IOStream& os,
+                                   const CConn_IOStreamSetWriteTimeout& s)
+{
+    if (os.good() && os.SetTimeout(eIO_Write, s.GetTimeout()) != eIO_Success) {
+        os.clear(IOS_BASE::badbit);
+    }
+    return os;
+}
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// This stream exchanges data in a TCP channel, using socket interface.
-/// The endpoint is specified as host/port pair.  The maximal
-/// number of connection attempts is given as 'max_try'.
+/// The endpoint is specified as "host:port" pair.  The maximal
+/// number of connection attempts is given via "max_try".
 /// More details on that: <connect/ncbi_socket_connector.h>.
 ///
+/// @sa
+///   SOCK_Create
 ///
 
 class NCBI_XCONNECT_EXPORT CConn_SocketStream : public CConn_IOStream
@@ -267,7 +371,8 @@ public:
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize);
 
-    /// Create a direct connection to host:port and pass initial data.
+    /// Create a direct connection to "host:port" and pass an initial "data"
+    /// block of the specified "size".
     ///
     /// @param host
     ///  Host to connect to
@@ -286,12 +391,12 @@ public:
     /// @sa
     ///  CConn_IOStream
     CConn_SocketStream
-    (const string&   host,                        /* host to connect to      */
-     unsigned short  port,                        /* ... and port number     */
-     const void*     data     = 0,                /* initial data block      */
-     size_t          size     = 0,                /* size of the data block  */
-     TSOCK_Flags     flags    = fSOCK_LogDefault, /* see ncbi_socket.h       */
-     unsigned short  max_try  = 3,                /* number of attempts      */
+    (const string&   host,                        ///< host to connect to
+     unsigned short  port,                        ///< ... and port number
+     const void*     data     = 0,                ///< initial data block
+     size_t          size     = 0,                ///< size of the data block
+     TSOCK_Flags     flags    = fSOCK_LogDefault, ///< see ncbi_socket.h
+     unsigned short  max_try  = 3,                ///< number of attempts
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize);
 
@@ -340,8 +445,8 @@ public:
     /// @sa
     ///  SOCK, ncbi_socket.h
     CConn_SocketStream
-    (SOCK            sock,         /* socket                             */
-     EOwnership      if_to_own,    /* whether stream to own "sock" param */
+    (SOCK            sock,         ///< socket
+     EOwnership      if_to_own,    ///< whether stream to own "sock" param
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize);
 
@@ -356,7 +461,7 @@ public:
     /// @sa
     ///  CSocket, ncbi_socket.hpp
     CConn_SocketStream
-    (CSocket&        socket,       /* socket, underlying SOCK always grabbed */
+    (CSocket&        socket,       ///< socket, underlying SOCK always grabbed
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize);
 
@@ -370,14 +475,14 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// This stream exchanges data with an HTTP server found by URL:
+/// This stream exchanges data with an HTTP server located at the URL:
 /// http://host[:port]/path[?args]
 ///
-/// Note that "path" must include a leading slash,
-/// "args" can be empty, in which case the '?' is not appended to the path.
+/// Note that "path" must include a leading slash, "args" can be empty,
+/// in which case the '?' is not appended to the path.
 ///
 /// "User_header" (if not empty) should be a sequence of lines in the form
-/// `HTTP-tag: Tag value`, with each line separated by a CR LF sequence
+/// 'HTTP-tag: Tag value', with each line separated by a CR LF sequence,
 /// and the last line terminated by a CR LF sequence.  For example:
 /// Content-Encoding: gzip\r\nContent-Length: 123\r\n
 /// It is included in the HTTP-header of each transaction.
@@ -405,7 +510,7 @@ public:
      const string&       path,
      const string&       args         = kEmptyStr,
      const string&       user_header  = kEmptyStr,
-     unsigned short      port         = 80/*HTTP*/,
+     unsigned short      port         = 0, ///< 0 means default (80 for HTTP)
      THTTP_Flags         flags        = fHCC_AutoReconnect,
      const STimeout*     timeout      = kDefaultTimeout,
      streamsize          buf_size     = kConn_DefaultBufSize
@@ -451,13 +556,13 @@ private:
 ///
 /// This stream exchanges the data with a named service, in a
 /// constraint that the service is implemented as one of the specified
-/// server 'types' (details: <connect/ncbi_server_info.h>).
+/// server "types" (details: <connect/ncbi_server_info.h>).
 ///
 /// Additional specifications can be passed in the SConnNetInfo structure,
 /// otherwise created by using service name as a registry section
 /// to obtain the information from (details: <connect/ncbi_connutil.h>).
 ///
-/// Provided 'timeout' is set at connection level, and if different from
+/// Provided "timeout" is set at connection level, and if different from
 /// kDefaultTimeout, it overrides the value supplied by underlying connector
 /// (the latter value is kept in SConnNetInfo::timeout).
 ///
@@ -491,7 +596,7 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// In-memory stream
+/// In-memory stream (a la strstream or stringstream)
 ///
 
 class NCBI_XCONNECT_EXPORT CConn_MemoryStream : public CConn_IOStream
@@ -519,7 +624,7 @@ public:
     /// while it is still holding the data yet to be read from the stream.
     CConn_MemoryStream(const void* ptr,
                        size_t      size,
-                       EOwnership  owner/*no default for satefy*/,
+                       EOwnership  owner/**no default for satefy*/,
                        streamsize  buf_size = kConn_DefaultBufSize);
 
     virtual ~CConn_MemoryStream();
@@ -536,7 +641,7 @@ public:
     char*   ToCStr(void);      ///< '\0'-terminated; free() when done using it 
 
 protected:
-    const void* m_Ptr;         ///< Pointer to read memory area (if owned)
+    const void* m_Ptr;         ///< pointer to read memory area (if owned)
 
 private:
     // Disable copy constructor and assignment.
@@ -548,7 +653,10 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// CConn_PipeStream
+/// CConn_PipeStream for command piping
+///
+/// @sa
+///   CPipe
 ///
 
 class NCBI_XCONNECT_EXPORT CConn_PipeStream : public CConn_IOStream
@@ -578,7 +686,10 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// CConn_NamedPipeStream
+/// CConn_NamedPipeStream for inter-process communication
+///
+/// @sa
+///   CNamedPipe
 ///
 
 class NCBI_XCONNECT_EXPORT CConn_NamedPipeStream : public CConn_IOStream
@@ -601,7 +712,10 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// CConn_FtpStream and its specializations
+/// CConn_FtpStream is an elaborate FTP client, can be used for both
+/// data downloading and/or uploading to and from an FTP server.
+/// See <connect/ncbi_ftp_connector.h> for detailed explanations
+/// of supported features.
 ///
 
 class NCBI_XCONNECT_EXPORT CConn_FtpStream : public CConn_IOStream
@@ -618,10 +732,19 @@ public:
      const STimeout*      timeout = kDefaultTimeout
      );
 
-    // Abort any command in progress, read and discard all input data,
-    // clear stream error state when successful (eIO_Success returns).
-    // NB:  The call empties both the stream and the underlying CONN.
+    /// Abort any command in progress, read and discard all input data,
+    /// clear stream error state when successful (eIO_Success returns).
+    /// @note The call empties both the stream and the underlying CONN.
     virtual EIO_Status Drain(const STimeout* timeout = kDefaultTimeout);
+
+protected:
+    // Reserved for future extension
+    CConn_FtpStream
+    (const SConnNetInfo*  net_info = 0,
+     TFTP_Flags           flag     = 0,
+     const SFTP_Callback* cmcb     = 0,
+     const STimeout*      timeout  = kDefaultTimeout
+     );
 
 private:
     // Disable copy constructor and assignment.
@@ -630,7 +753,11 @@ private:
 };
 
 
-/* Note the order of parameters vs generic CConn_FtpStream ctor above */
+/// CConn_FtpStream specialization (ctor) for download
+///
+/// @note
+///   the order of parameters vs generic CConn_FtpStream ctor
+///
 class NCBI_XCONNECT_EXPORT CConn_FTPDownloadStream : public CConn_FtpStream
 {
 public:
@@ -638,12 +765,12 @@ public:
     (const string&        host,
      const string&        file    = kEmptyStr,
      const string&        user    = "ftp",
-     const string&        pass    = "-none",  // "-" helps make login quieter
+     const string&        pass    = "-none@", // "-" helps make login quieter
      const string&        path    = kEmptyStr,
-     unsigned short       port    = 0,
+     unsigned short       port    = 0, ///< 0 means default (21 for FTP)
      TFTP_Flags           flag    = 0,
      const SFTP_Callback* cmcb    = 0,
-     streamsize           offset  = 0,
+     Uint8                offset  = 0, ///< file offset to begin download from
      const STimeout*      timeout = kDefaultTimeout
      );
 
@@ -654,6 +781,8 @@ private:
 };
 
 
+/// CConn_FtpStream specialization (ctor) for upload
+///
 class NCBI_XCONNECT_EXPORT CConn_FTPUploadStream : public CConn_FtpStream
 {
 public:
@@ -663,9 +792,9 @@ public:
      const string&   pass,
      const string&   file    = kEmptyStr,
      const string&   path    = kEmptyStr,
-     unsigned short  port    = 0,
+     unsigned short  port    = 0, ///< 0 means default (21 for FTP)
      TFTP_Flags      flag    = 0,
-     streamsize      offset  = 0,
+     Uint8           offset  = 0, ///< file offset to start upload at
      const STimeout* timeout = kDefaultTimeout
      );
 
@@ -674,6 +803,19 @@ private:
     CConn_FTPUploadStream(const CConn_FTPUploadStream&);
     CConn_FTPUploadStream& operator= (const CConn_FTPUploadStream&);
 };
+
+
+#if 0 // Future extension of API
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// Given the URL, open the data source (see <connect/ncbi_connutil.h>
+/// for supported schemes) and make it available for reading.
+/// Writing to the stream is undefined.
+///
+CConn_IOStream NcbiOpenURL(const string& url);
+
+#endif //0
 
 
 END_NCBI_SCOPE
