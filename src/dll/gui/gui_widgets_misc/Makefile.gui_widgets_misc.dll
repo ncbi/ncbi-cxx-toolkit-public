@@ -4,7 +4,9 @@ DLL = gui_widgets_misc
 
 HOSTED_LIBS    = w_phylo_tree \
                  w_object_list \
-                 w_text_widget
+                 w_text_widget \
+                 w_grid_widget \
+                 w_macro_edit
 
 DEPENDENCIES   = ncbi_algo ncbi_core ncbi_seq ncbi_seqext ncbi_general \
                  ncbi_image \

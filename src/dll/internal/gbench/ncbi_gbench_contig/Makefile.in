@@ -1,8 +1,0 @@
-#################################
-# $Id$
-#################################
-
-DLL_PROJ = ncbi_gbench_contig
-
-srcdir = @srcdir@
-include @builddir@/Makefile.meta
