@@ -758,16 +758,18 @@ static EIO_Status x_FTPAbort(SFTPConnector*  xxx,
     status = x_FTPTelnetSynch(xxx);
     if (status == eIO_Success)
         status  = s_FTPCommand(xxx, "ABOR", 0);
-    if (status == eIO_Success  &&  xxx->data  &&  !xxx->send) {
-        /* this is not "data" per se, so go silent */
-        if (xxx->flag & fFTP_LogData)
-            SOCK_SetDataLogging(xxx->data, eDefault);
-        SOCK_SetTimeout(xxx->data, eIO_ReadWrite, timeout);
-        /* drain up the data connection by discarding 1MB blocks repeatedly */
-        while (SOCK_Read(xxx->data, 0, 1<<20, 0, eIO_ReadPlain) == eIO_Success)
-            continue;
-    }
     if (xxx->data) {
+        if (status == eIO_Success  &&  !xxx->send) {
+            /* this is not "data" per se, so go silent */
+            if (xxx->flag & fFTP_LogData)
+                SOCK_SetDataLogging(xxx->data, eDefault);
+            SOCK_SetTimeout(xxx->data, eIO_ReadWrite, timeout);
+            /* drain up data connection by discarding 1MB blocks repeatedly */
+            while (SOCK_Read(xxx->data, 0, 1<<20, 0, eIO_ReadPlain)
+                   == eIO_Success) {
+                continue;
+            }
+        }
         x_FTPCloseData(xxx, how == 3
                        ||  SOCK_Status(xxx->data, eIO_Read) != eIO_Closed
                        ? eIO_Open/*warning*/ : eIO_Close/*silent*/, 0);
@@ -1995,13 +1997,14 @@ static EIO_Status s_VT_Close
     BUF_Erase(xxx->rbuf);
     if (data) {
         EIO_Event how;
+        assert(!xxx->send  ||  xxx->open);
         if (!xxx->cntl  ||  (xxx->r_status | xxx->w_status))
             how = eIO_Close/*silent close*/;
         else
             how = eIO_Open/*warning close*/;
         status = x_FTPCloseData(xxx, how, 0);
         if (status == eIO_Success  &&  how == eIO_Open)
-            status  = xxx->send  &&  xxx->open ? eIO_Unknown : eIO_Closed;
+            status  = xxx->send ? eIO_Unknown : eIO_Closed;
     } else
         status = eIO_Success;
     assert(!xxx->data);
