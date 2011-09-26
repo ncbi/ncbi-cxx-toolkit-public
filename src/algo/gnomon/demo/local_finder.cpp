@@ -111,7 +111,7 @@ int CLocalFinderApp::Run(void)
     if(masked_regions) {
         CBioseq& bioseq = se->SetSeq();     // assumes that reader gets only one sequence per fasta id (no [] in file)
         CRef<CSeq_annot> seq_annot(new CSeq_annot);
-        seq_annot->AddName("NCBI-FASTA-Lowercase");
+        seq_annot->SetNameDesc("NCBI-FASTA-Lowercase");
         bioseq.SetAnnot().push_back(seq_annot);
         CSeq_annot::C_Data::TFtable* feature_table = &seq_annot->SetData().SetFtable();
         for(CSeq_loc_CI i(*masked_regions); i; ++i) {

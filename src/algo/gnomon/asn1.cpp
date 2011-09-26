@@ -139,6 +139,12 @@ private:
     friend class CAnnotationASN1;
 };
 
+void NameAnnot(CSeq_annot& annot, const string& name)
+{
+    annot.SetNameDesc(name);
+    annot.SetTitleDesc(name);
+}
+
 CAnnotationASN1::CImplementationData::CImplementationData(const string& a_contig_name, const CResidueVec& seq, IEvidence& evdnc, int genetic_code) :
     main_seq_entry(new CSeq_entry),
     contig_name(a_contig_name),
@@ -153,8 +159,7 @@ CAnnotationASN1::CImplementationData::CImplementationData(const string& a_contig
     nucprots = &bioseq_set.SetSeq_set();
 
     gnomon_models_annot = new CSeq_annot;
-    gnomon_models_annot->AddName("Gnomon models");
-    gnomon_models_annot->SetTitle("Gnomon models");
+    NameAnnot(*gnomon_models_annot, "Gnomon models");
     CRef<CAnnotdesc> desc(new CAnnotdesc());
     CRef<CSeq_loc> genomic_seqloc(new CSeq_loc());
     genomic_seqloc->SetWhole(*contig_sid);
@@ -166,8 +171,7 @@ CAnnotationASN1::CImplementationData::CImplementationData(const string& a_contig
     feature_table = &gnomon_models_annot->SetData().SetFtable();
 
     CRef<CSeq_annot> seq_annot(new CSeq_annot);
-    seq_annot->AddName("Gnomon internal attributes");
-    seq_annot->SetTitle("Gnomon internal attributes");
+    NameAnnot(*seq_annot, "Gnomon internal attributes");
     bioseq_set.SetAnnot().push_back(seq_annot);
     internal_feature_table = &seq_annot->SetData().SetFtable();
 
@@ -176,8 +180,7 @@ CAnnotationASN1::CImplementationData::CImplementationData(const string& a_contig
     seq_annot.Reset(new CSeq_annot);
     bioseq_set.SetAnnot().push_back(seq_annot);
     model_alignments = &seq_annot->SetData().SetAlign();
-    seq_annot->AddName("Model Alignments");
-    seq_annot->SetTitle("Model Alignments");
+    NameAnnot(*seq_annot, "Model Alignments");
 #endif
 
     CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
@@ -433,8 +436,7 @@ void CAnnotationASN1::CImplementationData::DumpEvidence(const SModelData& md)
     {{
          string id_str = CIdHandler::ToString(*md.mrna_sid);
 
-         seq_annot->AddName("Evidence for " + id_str);
-         seq_annot->SetTitle("Evidence for " + id_str);
+         NameAnnot(*seq_annot, "Evidence for " + id_str);
 
          CRef<CAnnot_id> annot_id(new CAnnot_id);
          annot_id->SetGeneral().SetDb("GNOMON");
@@ -477,8 +479,7 @@ void CAnnotationASN1::CImplementationData::DumpUnusedChains()
     CRef<CSeq_annot> seq_annot(new CSeq_annot);
     main_seq_entry->SetSet().SetAnnot().push_back(seq_annot);
     CSeq_annot::C_Data::TAlign* aligns = &seq_annot->SetData().SetAlign();
-    seq_annot->AddName("Unused chains");
-    seq_annot->SetTitle("Unused chains");
+    NameAnnot(*seq_annot, "Unused chains");
 
     auto_ptr<IEvidence::iterator> it( evidence.GetUnusedModels(contig_name) );
     const CAlignModel* m;
