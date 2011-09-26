@@ -93,7 +93,7 @@ MolInfo ::= SEQUENCE {
     biomol INTEGER {
         unknown (0) ,
         genomic (1) ,
-        pre-RNA (2) ,              -- precursor RNA of any sort really 
+        pre-RNA (2) ,              -- precursor RNA of any sort really
         mRNA (3) ,
         rRNA (4) ,
         tRNA (5) ,
@@ -158,7 +158,7 @@ MolInfo ::= SEQUENCE {
 GIBB-mol ::= ENUMERATED {       -- type of molecule represented
     unknown (0) ,
     genomic (1) ,
-    pre-mRNA (2) ,              -- precursor RNA of any sort really 
+    pre-mRNA (2) ,              -- precursor RNA of any sort really
     mRNA (3) ,
     rRNA (4) ,
     tRNA (5) ,
@@ -168,7 +168,7 @@ GIBB-mol ::= ENUMERATED {       -- type of molecule represented
     other-genetic (9) ,      -- other genetic material
     genomic-mRNA (10) ,      -- reported a mix of genomic and cdna sequence
     other (255) }
-    
+
 GIBB-mod ::= ENUMERATED {        -- GenInfo Backbone modifiers
     dna (0) ,
     rna (1) ,
@@ -207,13 +207,13 @@ GIBB-method ::= ENUMERATED {        -- sequencing methods
     seq-pept-homol (5) ,   -- sequenced peptide, ordered by homology
     concept-trans-a (6) ,  -- conceptual transl. supplied by author
     other (255) }
-    
+
 Numbering ::= CHOICE {           -- any display numbering system
     cont Num-cont ,              -- continuous numbering
     enum Num-enum ,              -- enumerated names for residues
     ref Num-ref ,                -- by reference to another sequence
     real Num-real }              -- supports mapping to a float system
-    
+
 Num-cont ::= SEQUENCE {          -- continuous display numbering system
     refnum INTEGER DEFAULT 1,         -- number assigned to first residue
     has-zero BOOLEAN DEFAULT FALSE ,  -- 0 used?
@@ -338,7 +338,7 @@ Seq-hist ::= SEQUENCE {
 Seq-hist-rec ::= SEQUENCE {
     date Date OPTIONAL ,
     ids SET OF Seq-id }
-    
+
 --*** Various internal sequence representations ************
 --*      all are controlled, fixed length forms
 
@@ -359,8 +359,8 @@ Seq-data ::= CHOICE {              -- sequence representations
 Seq-gap ::= SEQUENCE {
     type INTEGER {
         unknown(0),
-        fragment(1),
-        clone(2),
+        fragment(1),               -- Deprecated. Used only for AGP 1.1
+        clone(2),                  -- Deprecated. Used only for AGP 1.1
         short-arm(3),
         heterochromatin(4),
         centromere(5),
@@ -373,7 +373,23 @@ Seq-gap ::= SEQUENCE {
         unlinked(0),
         linked(1),
         other(255)
-    } OPTIONAL
+    } OPTIONAL,
+    linkage-evidence SET OF Linkage-evidence OPTIONAL
+}
+
+Linkage-evidence ::= SEQUENCE {
+    type INTEGER {
+        paired-ends(0),
+        align-genus(1),
+        align-xgenus(2),
+        align-trnscpt(3),
+        within-clone(4),
+        clone-contig(5),
+        map(6),
+        strobe(7),
+        unspecified(8),
+        other(255)
+    }
 }
 
 IUPACna ::= StringStore       -- IUPAC 1 letter codes, no spaces
@@ -413,7 +429,7 @@ Annot-id ::= CHOICE {
     general Dbtag,
     other Textannot-id
 }
-    
+
 Annot-descr ::= SET OF Annotdesc
 
 Annotdesc ::= CHOICE {
