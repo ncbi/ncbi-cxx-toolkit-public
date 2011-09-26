@@ -11,6 +11,12 @@ ifeq "$(OSTYPE)" "freebsd"
   hgvs_parser.o hgvs_parser2.o: CXXFLAGS = $(ORIG_CXXFLAGS:-O2=-O)
 endif
 
+ifneq "" "$(filter GCC_42%,$(signature))"
+ ifeq "" "$(findstring -apple-darwin,$(signature))"
+  hgvs_parser.o hgvs_parser2.o: CXXFLAGS = $(ORIG_CXXFLAGS:-O2=-O)
+ endif
+endif
+
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 LIBS = $(CMPRS_LIBS) $(ORIG_LIBS)
 REQUIRES = Boost.Spirit
