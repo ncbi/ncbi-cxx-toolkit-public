@@ -915,15 +915,11 @@ int CProSplign::CImplementation::FindGlobalAlignment_stage1(CScope& scope, const
 {
     int gcode = 1;
     try {
-        gcode = sequence::GetOrg_ref(sequence::GetBioseqFromSeqLoc(genomic, scope)).GetGcode();
+        const CSeq_id* sid = genomic.GetId();
+        CBioseq_Handle hp = scope.GetBioseqHandle(*sid);
+        gcode = sequence::GetOrg_ref(hp).GetGcode();
     } catch (...) {}
     m_matrix.SetTranslationTable(new CTranslationTable(gcode));
-
-
-    /*
-    cout<<"gcode: "<<gcode<<endl;
-    exit(1);
-    */
 
     m_scope = &scope;
     m_protein = &protein;
