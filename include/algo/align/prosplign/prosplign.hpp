@@ -62,10 +62,15 @@ public:
     CProSplignOptions_Base& SetScoreMatrix(const string& matrix_name);
     const string& GetScoreMatrix() const;
 
+    CProSplignOptions_Base& SetAltStarts(bool allow_alt_start);
+    bool GetAltStarts() const;
+
     static const string default_score_matrix_name; // BLOSUM62
+    static const bool default_allow_alt_starts;
 
 private:
     string score_matrix_name;
+    bool allow_alt_starts;
 };
 
 class NCBI_XALGOALIGN_EXPORT CProSplignScoring: public CProSplignOptions_Base
