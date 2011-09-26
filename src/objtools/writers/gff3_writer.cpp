@@ -293,6 +293,8 @@ bool CGff3Writer::WriteHeader()
 //  ----------------------------------------------------------------------------
 {
     m_Os << "##gff-version 3" << endl;
+    m_Os << "#!gff-spec-version 1.20" << endl;
+    m_Os << "#!processor NCBI annotwriter" << endl;
     return true;
 }
 
@@ -331,18 +333,60 @@ bool CGff3Writer::x_WriteFeature(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    if (mf.GetFeatType() == CSeqFeatData::e_Rna) {
-        return x_WriteFeatureRna( fc, mf );
-    }
     switch( mf.GetFeatSubtype() ) {
         default:
+            if (mf.GetFeatType() == CSeqFeatData::e_Rna) {
+                return x_WriteFeatureRna( fc, mf );
+            }
             return x_WriteFeatureGeneric( fc, mf );
         case CSeqFeatData::eSubtype_gene: 
             return x_WriteFeatureGene( fc, mf );
         case CSeqFeatData::eSubtype_cdregion:
             return x_WriteFeatureCds( fc, mf );
+        case CSeqFeatData::eSubtype_tRNA:
+            return x_WriteFeatureTrna( fc, mf );
     }
     return false;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::x_WriteFeatureTrna(
+    CGffFeatureContext& fc,
+    CMappedFeat mf )
+//  ----------------------------------------------------------------------------
+{
+    if (!x_WriteFeatureGeneric( fc, mf ) ) {
+        return false;
+    }
+
+    CRef<CGff3WriteRecordFeature> pRna( 
+        new CGff3WriteRecordFeature( 
+            fc,
+            string( "rna" ) + NStr::UIntToString( m_uPendingTrnaId++ ) ) );
+    if ( ! pRna->AssignFromAsn( mf ) ) {
+        return false;
+    }
+    const CSeq_loc& PackedInt = *pRna->GetCircularLocation();
+
+    string strExonId = string("id") + NStr::UIntToString(m_uPendingGenericId++);
+    if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
+        const list< CRef< CSeq_interval > >& sublocs = PackedInt.GetPacked_int().Get();
+        list< CRef< CSeq_interval > >::const_iterator it;
+        for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
+            const CSeq_interval& subint = **it;
+            CRef<CGff3WriteRecordFeature> pChild( 
+                new CGff3WriteRecordFeature( *pRna ) );
+            pChild->CorrectType("exon");
+            pChild->AssignParent(*pRna);
+            pChild->CorrectLocation( subint );
+            pChild->ForceAttributeID(strExonId);
+            if ( ! x_WriteRecord( pChild ) ) {
+                return false;
+            }
+        }
+    }
+    return true;    
+
 }
 
 //  ----------------------------------------------------------------------------
@@ -499,28 +543,7 @@ bool CGff3Writer::x_WriteFeatureGeneric(
             pParent->AssignParent( *( it->second ) );
         }
     }
-
-    CRef< CSeq_loc > pPackedInt( new CSeq_loc( CSeq_loc::e_Mix ) );
-    pPackedInt->Add( mf.GetLocation() );
-    pPackedInt->ChangeToPackedInt();
-
-    if ( pPackedInt->IsPacked_int() && pPackedInt->GetPacked_int().CanGet() ) {
-        const list< CRef< CSeq_interval > >& sublocs = pPackedInt->GetPacked_int().Get();
-        list< CRef< CSeq_interval > >::const_iterator it;
-        for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
-            const CSeq_interval& subint = **it;
-            CRef<CGff3WriteRecordFeature> pChild( 
-                new CGff3WriteRecordFeature( *pParent ) );
-            pChild->CorrectLocation( subint );
-            if ( ! x_WriteRecord( pChild ) ) {
-                return false;
-            }
-        }
-        return true;
-    }
-    
-    // default behavior:
-    return x_WriteRecord( pParent );    
+    return x_WriteFeatureRecords( *pParent, mf.GetLocation() );
 }
 
 //  ============================================================================

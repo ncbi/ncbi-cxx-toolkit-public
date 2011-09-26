@@ -96,6 +96,9 @@ protected:
     virtual bool x_WriteFeatureGeneric(
         CGffFeatureContext&,
         CMappedFeat );
+    virtual bool x_WriteFeatureTrna(
+        CGffFeatureContext&,
+        CMappedFeat );
 
     void x_WriteAlignment( 
         const CGffAlignmentRecord& record );
