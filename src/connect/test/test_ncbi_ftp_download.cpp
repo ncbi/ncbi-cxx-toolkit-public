@@ -177,7 +177,7 @@ public:
     { }
 
 protected:
-    virtual bool Checkpoint(const CTarEntryInfo& current, bool /**/) const
+    virtual bool Checkpoint(const CTarEntryInfo& current, bool /**/)
     {
         if (!m_Dlcbdata) {
             return false;

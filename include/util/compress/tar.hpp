@@ -559,7 +559,7 @@ protected:
     /// in case the archive has been updated (so only the last occurrence is
     /// the actual copy of the file when extracted).
     virtual bool Checkpoint(const CTarEntryInfo& /*current*/,
-                            bool /*ifwrite: write==true, read==false*/) const
+                            bool /*ifwrite: write==true, read==false*/)
     { return true; }
 
 private:
