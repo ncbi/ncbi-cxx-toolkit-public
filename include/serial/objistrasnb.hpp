@@ -123,6 +123,8 @@ public:
                             EFixNonPrint how = eFNP_Default);
 
 
+    virtual set<TTypeInfo> GuessDataType(
+        set<TTypeInfo>& known_types, size_t max_length=16);
     virtual TEnumValueType ReadEnum(const CEnumeratedTypeValues& values);
     virtual void ReadNull(void);
 
@@ -306,6 +308,7 @@ private:
     bool HaveMoreElements(void);
     void UnexpectedMember(TLongTag tag, const CItemsInfo& items);
     void UnexpectedByte(TByte byte);
+    void GetTagPattern(vector<int>& pattern, size_t max_length);
 
     friend class CObjectOStreamAsnBinary;
 };

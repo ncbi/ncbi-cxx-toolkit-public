@@ -593,5 +593,12 @@ string CDataTypeModule::ToAsnId(const string& name)
     return asn;
 }
 
+void CDataTypeModule::CollectAllTypeinfo(set<TTypeInfo>& types) const
+{
+    ITERATE ( TDefinitions, i, m_Definitions ) {
+        types.insert(i->second->GetTypeInfo().Get());
+    }
+}
+
 
 END_NCBI_SCOPE

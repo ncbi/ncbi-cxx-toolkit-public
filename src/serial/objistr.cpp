@@ -849,6 +849,21 @@ void CObjectIStream::EndOfRead(void)
         m_Objects->Clear();
 }
 
+set<TTypeInfo> CObjectIStream::GuessDataType(
+    set<TTypeInfo>& known_types, size_t /*max_length*/)
+{
+    set<TTypeInfo> matching_types;
+    CNcbiStreampos str_pos = GetStreamPos();
+    string name = ReadFileHeader();
+    SetStreamPos(str_pos);
+    ITERATE( set<TTypeInfo>, t, known_types) {
+        if ((*t)->GetName() == name) {
+            matching_types.insert(*t);
+        }
+    }
+    return matching_types;
+}
+
 void CObjectIStream::Read(const CObjectInfo& object, ENoFileHeader)
 {
     // root object

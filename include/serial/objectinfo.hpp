@@ -41,6 +41,7 @@
 #include <serial/impl/classinfo.hpp>
 #include <serial/impl/choice.hpp>
 #include <serial/impl/enumerated.hpp>
+#include <serial/impl/objstrasnb.hpp>
 #include <vector>
 #include <memory>
 
@@ -81,6 +82,7 @@ class CObjectInfoMI;
 class CObjectInfoCV;
 class CObjectInfoEI;
 
+class CObjectIStreamAsnBinary;
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -403,6 +405,8 @@ public:
     CMemberIterator GetMemberIterator(TMemberIndex index) const;
     CVariantIterator GetVariantIterator(TMemberIndex index) const;
 
+    CAsnBinaryDefs::ETagValue GetASNTag() const;
+
 protected:
     void ResetTypeInfo(void);
     void SetTypeInfo(TTypeInfo typeinfo);
@@ -415,6 +419,9 @@ private:
 
 private:
     CTypeInfo* GetNCTypeInfo(void) const;
+
+    bool MatchPattern(vector<int>& pattern, size_t& pos, int depth) const;
+    friend class CObjectIStreamAsnBinary;
 };
 
 

@@ -35,10 +35,12 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
+#include <serial/serialdef.hpp>
 #include "mcontainer.hpp"
 #include "comments.hpp"
 #include <list>
 #include <map>
+#include <set>
 
 BEGIN_NCBI_SCOPE
 
@@ -89,6 +91,7 @@ public:
                                bool allowInternal = false) const;
     CDataType* ResolveInAnyModule(const string& fullName,
                                   bool allowInternal = false) const;
+    void CollectAllTypeinfo(set<TTypeInfo>& types) const;
 
     CComments& LastComments(void)
         {
@@ -139,6 +142,7 @@ public:
     CDataType* ResolveInAnyModule(const string& fullName,
                                   bool allowInternal = false) const;
 
+    void CollectAllTypeinfo(set<TTypeInfo>& types) const;
 private:
     TModuleSets m_ModuleSets;
 };

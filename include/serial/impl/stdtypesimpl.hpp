@@ -218,10 +218,11 @@ public:
     void SetValueChar(TObjectPtr objectPtr, char value) const;
     void GetValueString(TConstObjectPtr objectPtr, string& value) const;
     void SetValueString(TObjectPtr objectPtr, const string& value) const;
-    EType GetStringType(void)
+    EType GetStringType(void) const
     {
         return m_Type;
     }
+    bool IsStringStore(void) const;
 private:
     EType m_Type;
 };

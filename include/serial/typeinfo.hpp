@@ -250,6 +250,7 @@ private:
 protected:
     void SetCreateFunction(TTypeCreate func);
     void SetReadFunction(TTypeReadFunction func);
+    TTypeReadFunction GetReadFunction(void) const;
     void SetWriteFunction(TTypeWriteFunction func);
     void SetCopyFunction(TTypeCopyFunction func);
     void SetSkipFunction(TTypeSkipFunction func);

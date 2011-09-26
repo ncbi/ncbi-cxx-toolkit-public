@@ -502,6 +502,21 @@ public:
 //---------------------------------------------------------------------------
 // User interface
 
+    /// Identify the type of data in the stream.
+    ///
+    /// Method matches each of the supplied known types against
+    /// the stream data. Ideally, only ony type matches.
+    /// Shorter lookup depth can result in mutiple matches;
+    /// longer depth does not necessarily improve the result. 
+    ///
+    /// @param known_types
+    ///   Set of known types.
+    /// @param max_length
+    ///   Maximum depth of the lookup.
+    /// @return
+    ///   Set of matching types.
+    virtual set<TTypeInfo> GuessDataType(
+        set<TTypeInfo>& known_types, size_t max_length=16);
     // root reader
 
     /// Read object of know type

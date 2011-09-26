@@ -34,6 +34,7 @@
 #include <corelib/ncbiargs.hpp>
 
 #include <serial/objistr.hpp>
+#include <serial/objistrasnb.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
 
@@ -80,7 +81,7 @@ int CDataTool::Run(void)
 
 CDataTool::CDataTool(void)
 {
-    SetVersion( CVersionInfo(2,4,1) );
+    SetVersion( CVersionInfo(2,4,2) );
 }
 
 void CDataTool::Init(void)
@@ -380,18 +381,41 @@ bool CDataTool::ProcessData(void)
         is->SetDefaultStringEncoding(eEncoding_Unknown);
     }
 
+    TTypeInfo typeInfo;
     string typeName;
     if ( t ) {
         typeName = t.AsString();
-        in->ReadFileHeader();
+        if (typeName != "?") {
+            in->ReadFileHeader();
+        }
     }
     else {
         typeName = in->ReadFileHeader();
     }
 
-    TTypeInfo typeInfo =
-        generator.GetMainModules().ResolveInAnyModule(typeName, true)->
-        GetTypeInfo().Get();
+    bool type_guessed = false;
+    if (typeName != "?") {
+        typeInfo =
+            generator.GetMainModules().ResolveInAnyModule(typeName, true)->
+            GetTypeInfo().Get();
+    } else {
+        type_guessed = true;
+        set<TTypeInfo> known_types;
+        generator.GetMainModules().CollectAllTypeinfo(known_types);
+        set<TTypeInfo> matching_types = in->GuessDataType(known_types, 16);
+        if (matching_types.size() == 0) {
+            NCBI_THROW(CNotFoundException,eType,"No typeinfo matches");
+        } else if (matching_types.size() == 1) {
+            typeInfo = *matching_types.begin();
+        } else {
+            string msg("Multiple typeinfo matches:");
+            ITERATE(set<TTypeInfo>, ti, matching_types) {
+                msg += " " + (*ti)->GetName();
+            }
+            NCBI_THROW(CNotFoundException,eType,msg);
+        }
+        in->ReadFileHeader();
+    }
     
     // determine output data file
     ESerialDataFormat outFormat;
@@ -420,6 +444,9 @@ bool CDataTool::ProcessData(void)
         outFileName = e.AsString();
     }
     else {
+        if (typeName == "?") {
+            ERR_POST_X(4, "Data type: " << typeInfo->GetName());
+        }
         // no input data
         outFormat = eSerial_None;
     }
@@ -504,7 +531,9 @@ bool CDataTool::ProcessData(void)
         }
         else {
             // skip
-            in->Skip(typeInfo, CObjectIStream::eNoFileHeader);
+            if (!type_guessed) {
+                in->Skip(typeInfo, CObjectIStream::eNoFileHeader);
+            }
         }
     }
     return true;

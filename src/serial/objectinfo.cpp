@@ -33,6 +33,7 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/exception.hpp>
 #include <serial/objectinfo.hpp>
+#include <serial/impl/stdtypesimpl.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -466,6 +467,205 @@ void CObjectTypeInfo::SetPathCopyHook(CObjectStreamCopier* stream, const string&
                          CCopyObjectHook* hook) const
 {
     GetNCTypeInfo()->SetPathCopyHook(stream,path,hook);
+}
+
+CAsnBinaryDefs::ETagValue CObjectTypeInfo::GetASNTag() const
+{
+    switch (GetTypeFamily()) {
+    default:
+        break;
+    case eTypeFamilyPrimitive:
+
+        switch (GetPrimitiveValueType()) {
+        case ePrimitiveValueSpecial:     return CAsnBinaryDefs::eNull;
+        case ePrimitiveValueBool:        return CAsnBinaryDefs::eBoolean;
+        case ePrimitiveValueChar:        return CAsnBinaryDefs::eGeneralString;
+        case ePrimitiveValueInteger:     return CAsnBinaryDefs::eInteger;
+        case ePrimitiveValueReal:        return CAsnBinaryDefs::eReal;
+        case ePrimitiveValueOctetString: return CAsnBinaryDefs::eOctetString;
+        case ePrimitiveValueBitString:   return CAsnBinaryDefs::eBitString;
+        case ePrimitiveValueAny:         return CAsnBinaryDefs::eNone;
+        case ePrimitiveValueOther:       return CAsnBinaryDefs::eNone;
+        case ePrimitiveValueString:
+        {
+            const CPrimitiveTypeInfoString *p =
+                CTypeConverter<CPrimitiveTypeInfoString>::SafeCast(
+                    GetTypeInfo());
+            if (p->GetStringType() ==
+                    CPrimitiveTypeInfoString::eStringTypeUTF8) {
+                return CAsnBinaryDefs::eUTF8String;
+            }
+            if (p->IsStringStore()) {
+               return CAsnBinaryDefs::eStringStore;
+            }
+            return CAsnBinaryDefs::eVisibleString;
+        }
+        case ePrimitiveValueEnum:
+            if (GetEnumeratedTypeValues().IsInteger()) {
+                return CAsnBinaryDefs::eInteger;
+            }
+            return CAsnBinaryDefs::eEnumerated;
+        default:
+            break;
+        }
+        break;
+    case eTypeFamilyClass:
+        if (GetClassTypeInfo()->Implicit()) {
+            break;
+        }
+        if (GetClassTypeInfo()->RandomOrder()) {
+            return CAsnBinaryDefs::eSet;
+        }
+        return CAsnBinaryDefs::eSequence;
+    case eTypeFamilyChoice: return CAsnBinaryDefs::eSequence;
+    case eTypeFamilyContainer:
+        if (GetContainerTypeInfo()->RandomElementsOrder()) {
+            return CAsnBinaryDefs::eSet;
+        }
+        return CAsnBinaryDefs::eSequence;
+    case eTypeFamilyPointer:
+        return CAsnBinaryDefs::eNone;
+    }
+    return CAsnBinaryDefs::eNone;
+}
+
+bool CObjectTypeInfo::MatchPattern(
+    vector<int>& pattern, size_t& pos, int depth) const
+{
+    bool good = false;
+    CAsnBinaryDefs::ETagValue tag = GetASNTag();
+    if (tag != CAsnBinaryDefs::eNone) {
+        good = pattern[pos] == depth && pattern[pos+2] == (int)tag;
+        if (!good) {
+            if (tag == CAsnBinaryDefs::eSequence &&
+                GetTypeFamily() == eTypeFamilyChoice) {
+                depth -= 1;
+                good = true;
+            }
+            if ((tag == CAsnBinaryDefs::eSequence || tag == CAsnBinaryDefs::eSet) &&
+                pattern[pos] == depth && 
+                pattern[pos+2] == (int)CAsnBinaryDefs::eNull) {
+                pos += 3;
+                return true;
+            }
+            // patch for already fixed bug in the toolkit
+            if (tag == CAsnBinaryDefs::eUTF8String) {
+                good = pattern[pos] == depth &&
+                       pattern[pos+2] == (int)CAsnBinaryDefs::eVisibleString;
+            }
+            if (!good) {
+                return good;
+            }
+        }
+        pos += 3;
+        if (pos+2 >= pattern.size()) {
+            return good;
+        }
+    }
+
+    switch (GetTypeFamily()) {
+    case eTypeFamilyClass:
+        if (GetClassTypeInfo()->Implicit()) {
+            if (pattern[pos] == depth) {
+                size_t prev = pos;
+                good = BeginMembers().GetMemberType().MatchPattern(pattern,pos,depth);
+                if (!good) {
+                    pos = prev;
+                }
+            }
+        } else {
+            depth+=2;
+            while (pattern[pos] == depth) {
+                size_t prev = pos;
+                TMemberIndex i = GetClassTypeInfo()->GetItems()
+                    .Find(pattern[pos+1]);
+                good = i != kInvalidMember &&
+                    GetMemberIterator(i).GetMemberType()
+                        .MatchPattern(pattern,pos,depth);
+                if (!good) {
+                    pos = prev;
+                    break;
+                }
+                if (pos+2 >= pattern.size()) {
+                    break;
+                }
+            }
+        }
+        break;
+    case eTypeFamilyChoice:
+        depth+=2;
+        {
+            size_t prev = pos;
+            TMemberIndex i = GetChoiceTypeInfo()->GetItems()
+                .Find(pattern[pos+1]);
+            good = i != kInvalidMember &&
+                GetVariantIterator(i).GetVariantType()
+                    .MatchPattern(pattern,pos,depth);
+            if (!good) {
+                pos = prev;
+            }
+        }
+        break;
+    case eTypeFamilyContainer:
+        {
+            CObjectTypeInfo e(GetElementType());
+            do {
+                while (e.GetTypeFamily() == eTypeFamilyPointer) {
+                    e = e.GetPointedType();
+                }
+                if (e.GetTypeFamily() == eTypeFamilyClass &&
+                    e.GetClassTypeInfo()->Implicit()) {
+                    e = e.BeginMembers().GetMemberType();
+                }
+            } while (e.GetTypeFamily() == eTypeFamilyPointer);
+            size_t elem_count = 0;
+            if (e.GetTypeFamily() == eTypeFamilyChoice) {
+                depth+=2;
+                for (;;) {
+                    size_t prev = pos;
+                    TMemberIndex i = e.GetChoiceTypeInfo()->GetItems()
+                        .Find(pattern[pos+1]);
+                    good = i != kInvalidMember &&
+                        e.GetVariantIterator(i).GetVariantType()
+                            .MatchPattern(pattern,pos,depth);
+                    if (good) {
+                        ++elem_count;
+                    }
+                    if (pos+2 >= pattern.size()) {
+                        break;
+                    }
+                    if (!good) {
+                        pos = prev;
+                        break;
+                    }
+                }
+            } else {
+                depth += 1;
+                for (;;) {
+                    size_t prev = pos;
+                    good = GetElementType().MatchPattern(pattern,pos,depth);
+                    if (good) {
+                        ++elem_count;
+                    }
+                    if (pos+2 >= pattern.size()) {
+                        break;
+                    }
+                    if (!good) {
+                        pos = prev;
+                        break;
+                    }
+                }
+            }
+            good = elem_count != 0;
+        }
+        break;
+    case eTypeFamilyPointer:
+        good = GetPointedType().MatchPattern(pattern, pos, depth);
+        break;
+    default:
+        break;
+    }
+    return good;
 }
 
 END_NCBI_SCOPE

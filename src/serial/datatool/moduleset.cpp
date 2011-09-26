@@ -323,6 +323,13 @@ CDataType* CFileModules::ResolveInAnyModule(const string& typeName,
     return types.GetType();
 }
 
+void CFileModules::CollectAllTypeinfo(set<TTypeInfo>& types) const
+{
+    ITERATE ( TModules, i, m_Modules ) {
+        (*i)->CollectAllTypeinfo(types);
+    }
+}
+
 void CFileSet::AddFile(const AutoPtr<CFileModules>& moduleSet)
 {
     moduleSet->SetModuleContainer(this);
@@ -449,6 +456,13 @@ bool CFileSet::CheckNames(void) const
             ok = false;
     }
     return ok;
+}
+
+void CFileSet::CollectAllTypeinfo(set<TTypeInfo>& types) const
+{
+    ITERATE ( TModuleSets, i, m_ModuleSets ) {
+        (*i)->CollectAllTypeinfo(types);
+    }
 }
 
 END_NCBI_SCOPE

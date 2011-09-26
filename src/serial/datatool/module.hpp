@@ -36,6 +36,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbiutil.hpp>
+#include <serial/serialdef.hpp>
 #include <list>
 #include <map>
 #include <set>
@@ -107,6 +108,7 @@ public:
     // return type visible from outside, or throw CTypeNotFound if none
     CDataType* ExternalResolve(const string& name,
                                bool allowInternal = false) const;
+    void CollectAllTypeinfo(set<TTypeInfo>& types) const;
 
     CComments& Comments(void)
         {

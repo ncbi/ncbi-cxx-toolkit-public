@@ -1218,6 +1218,11 @@ CTypeInfo* CStdTypeInfo<string>::CreateTypeInfoStringStore(void)
     return info;
 }
 
+bool CPrimitiveTypeInfoString::IsStringStore(void) const
+{
+    return GetReadFunction() == &CStringStoreFunctions::Read;
+}
+
 template<typename T>
 class CCharPtrFunctions : public CPrimitiveTypeFunctions<T>
 {

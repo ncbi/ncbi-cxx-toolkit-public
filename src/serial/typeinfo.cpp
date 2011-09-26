@@ -422,6 +422,11 @@ void CTypeInfo::SetReadFunction(TTypeReadFunction func)
     m_ReadHookData.SetDefaultFunction(func);
 }
 
+TTypeReadFunction CTypeInfo::GetReadFunction(void) const
+{
+    return m_ReadHookData.GetDefaultFunction();
+}
+
 void CTypeInfo::SetWriteFunction(TTypeWriteFunction func)
 {
     m_WriteHookData.SetDefaultFunction(func);
