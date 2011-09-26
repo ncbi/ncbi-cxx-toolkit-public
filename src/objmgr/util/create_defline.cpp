@@ -1178,6 +1178,7 @@ string CDeflineGenerator::x_TitleFromProtein (
     CConstRef<CGene_ref>  gene;
     CConstRef<CBioSource> src;
     string                locus_tag;
+    bool                  partial = false;
     string                result;
 
     // gets longest protein on Bioseq, parts set, or seg set, even if not
@@ -1187,6 +1188,17 @@ string CDeflineGenerator::x_TitleFromProtein (
 
     if (prot_feat) {
         prot = &prot_feat->GetData().GetProt();
+    }
+
+    switch (m_MICompleteness) {
+        case NCBI_COMPLETENESS(partial):
+        case NCBI_COMPLETENESS(no_left):
+        case NCBI_COMPLETENESS(no_right):
+        case NCBI_COMPLETENESS(no_ends):
+            partial = true;
+            break;
+        default:
+            break;
     }
 
     const CMappedFeat& mapped_cds = GetMappedCDSForProduct (bsh);
@@ -1301,6 +1313,10 @@ string CDeflineGenerator::x_TitleFromProtein (
         result.erase (result.end() - 1);
     }
     */
+
+    if (partial && result.find(", partial") == NPOS) {
+        result += ", partial";
+    }
 
     string taxname;
     taxname = m_Taxname;
