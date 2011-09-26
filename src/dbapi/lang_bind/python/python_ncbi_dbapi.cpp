@@ -44,6 +44,7 @@
 #if PY_VERSION_HEX >= 0x02040000
 #  include "pythonpp/pythonpp_date.hpp"
 #endif
+#include <structmember.h>
 #include "../../ds_impl.hpp"
 
 #if defined(NCBI_OS_CYGWIN)
@@ -2402,6 +2403,8 @@ CCursor::CCursor(CTransaction* trans)
     }
 
     ROAttr( "__class__", GetTypeObject() );
+    // The following list should reflect exactly members set to CCursor type
+    // in init_common().
     ROAttr( "rowcount", m_RowsNum );
     ROAttr( "messages", m_InfoMessages );
     ROAttr( "description", m_Description );
@@ -4335,7 +4338,16 @@ void init_common(const string& module_name)
     if ( PyModule_AddObject(module, const_cast<char*>("Transaction"), (PyObject*)&python::CTransaction::GetType() ) == -1 ) {
         return;
     }
-    if ( PyType_Ready(&python::CCursor::GetType()) == -1 ) {
+    pythonpp::CExtType* extt = &python::CCursor::GetType();
+    // This list should reflect exactly attributes added in CCursor constructor
+    static PyMemberDef members[] = {
+        {"rowcount", T_LONG, 0, READONLY, NULL},
+        {"messages", T_OBJECT_EX, 0, READONLY, NULL},
+        {"description", T_OBJECT_EX, 0, READONLY, NULL},
+        {NULL}
+    };
+    extt->tp_members = members;
+    if ( PyType_Ready(extt) == -1 ) {
         return;
     }
     if ( PyModule_AddObject(module, const_cast<char*>("Cursor"), (PyObject*)&python::CCursor::GetType() ) == -1 ) {
