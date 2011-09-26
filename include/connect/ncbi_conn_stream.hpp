@@ -737,6 +737,7 @@ public:
     /// @note The call empties both the stream and the underlying CONN.
     virtual EIO_Status Drain(const STimeout* timeout = kDefaultTimeout);
 
+#ifndef NCBI_OS_MSWIN
 protected:
     // Reserved for future extension
     CConn_FtpStream
@@ -745,6 +746,7 @@ protected:
      const SFTP_Callback* cmcb     = 0,
      const STimeout*      timeout  = kDefaultTimeout
      );
+#endif
 
 private:
     // Disable copy constructor and assignment.
