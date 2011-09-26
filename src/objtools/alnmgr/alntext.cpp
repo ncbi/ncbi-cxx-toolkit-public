@@ -281,7 +281,9 @@ CProteinAlignText::CProteinAlignText(objects::CScope& scope, const objects::CSeq
 
     int gcode = 1;
     try {
-        gcode = sequence::GetOrg_ref(sequence::GetBioseqFromSeqLoc(*genomic_seqloc, scope)).GetGcode();
+        const CSeq_id* sid = genomic_seqloc->GetId();
+        CBioseq_Handle hp = scope.GetBioseqHandle(*sid);
+        gcode = sequence::GetOrg_ref(hp).GetGcode();
     } catch (...) {}
 
     m_trans_table = &CGen_code_table::GetTransTable(gcode);
