@@ -34,8 +34,38 @@
 #include <corelib/ncbidbg.hpp>
 #include <connect/ncbi_misc.hpp>
 
+//#define DEBUG_RATE_MONITOR 1
+
+#ifdef DEBUG_RATE_MONITOR
+#  include <iterator>  // distance()
+#endif //DEBUG_RATE_MONITOR
+
 
 BEGIN_NCBI_SCOPE
+
+
+#ifdef DEBUG_RATE_MONITOR
+static void x_PrintList(const list<CRateMonitor::TMark>& data)
+{
+    CRateMonitor::TMark prev;
+    list<CRateMonitor::TMark>::const_iterator it = data.begin();
+    cout << data.size() << ':' << endl;
+    for (size_t n = 0;  n < data.size();  n++) {
+        CRateMonitor::TMark next = *it;
+        cout << n << ":\t"
+            "p = " << next.first << ",\t"
+            "t = " << next.second;
+        if (n) {
+            cout << ",\t"
+                "dp = " << prev.first  - next.first  << ",\t"
+                "dt = " << prev.second - next.second << endl;
+        } else
+            cout << endl;
+        prev = next;
+        ++it;
+    }
+}
+#endif //DEBUG_RATE_MONITOR
 
 
 void CRateMonitor::Mark(Uint8 pos, double time)
@@ -49,11 +79,17 @@ void CRateMonitor::Mark(Uint8 pos, double time)
             m_Data.pop_back();
         }
         if (m_Data.size() > 1) {
-            list<TMark>::const_iterator it = ++m_Data.begin();
-            if (it->first == pos  ||  it->second + kMinSpan >= time) {
+            list<TMark>::const_iterator it;
+            if (m_Data.front().first == pos  ||  m_Data.front().second == time
+                ||  time - (++(it = m_Data.begin()))->second < kSpan
+                ||  m_Data.front().second -       it->second < kSpan) {
                 // update only
                 m_Data.front().first  = pos;
                 m_Data.front().second = time;
+#ifdef DEBUG_RATE_MONITOR
+                cout << "UPDATED" << endl;
+                x_PrintList(m_Data);
+#endif //DEBUG_RATE_MONITOR
                 m_Rate = 0.0;
                 return;
             }
@@ -61,6 +97,10 @@ void CRateMonitor::Mark(Uint8 pos, double time)
     }
     // new mark
     m_Data.push_front(make_pair(pos, time));
+#ifdef DEBUG_RATE_MONITOR
+    cout << "ADDED" << endl;
+    x_PrintList(m_Data);
+#endif //DEBUG_RATE_MONITOR
     m_Rate = 0.0;
 }
 
@@ -77,13 +117,18 @@ double CRateMonitor::GetRate(void) const
 
     if (n > 2) {
         TMark prev = m_Data.front();
+        list<TMark>::const_iterator it = m_Data.begin();
         _ASSERT(prev.first - m_Data.back().first > kMinSpan);
-        for (list<TMark>::const_iterator it = ++m_Data.begin();
-             it != m_Data.end();  ++it) {
+        for (++it;  it != m_Data.end();  ++it) {
             TMark next = *it;
             double dt = prev.second - next.second;
-            if (dt < kMinSpan) {
-                _ASSERT(it == ++m_Data.begin());
+            if (dt < kSpan) {
+#ifdef DEBUG_RATE_MONITOR
+                cout << "dt = " << dt << ",\td =" << (kSpan - dt)
+                     << ",\tn = " << distance(m_Data.begin(), it) << endl;
+#endif //DEBUG_RATE_MONITOR
+                _DEBUG_ARG(list<TMark>::const_iterator beg = m_Data.begin());
+                _ASSERT(it == ++beg);
                 continue;
             }
             gaps.push_back(make_pair(prev.first - next.first, dt));
@@ -91,7 +136,7 @@ double CRateMonitor::GetRate(void) const
         }
     } else {
         double dt = m_Data.front().second - m_Data.back().second;
-        if (dt < kMinSpan)
+        if (dt < kSpan)
             return GetPace();
         gaps.push_back(make_pair(m_Data.front().first -
                                  m_Data.back ().first, dt));
@@ -99,23 +144,18 @@ double CRateMonitor::GetRate(void) const
 
     _ASSERT(!gaps.empty()  &&  !m_Rate);
 
-    if (gaps.size() > 1) {
-        double weight = 1.0;
-        for (;;) {
-            double rate = gaps.front().first / gaps.front().second;
-            gaps.pop_front();
-            if (gaps.empty()) {
-                m_Rate += rate * weight;
-                break;
-            }
-            double w = weight * 0.9;
-            m_Rate  += rate * w;
-            weight  -= w;
+    double weight = 1.0;
+    for (;;) {
+        double rate = gaps.front().first / gaps.front().second;
+        gaps.pop_front();
+        if (gaps.empty()) {
+            m_Rate += rate * weight;
+            break;
         }
-    } else {
-        m_Rate = gaps.front().first / gaps.front().second;
+        double w = weight * kWeight;
+        m_Rate  += rate * w;
+        weight  -= w;
     }
-
     return m_Rate;
 }
 

@@ -55,18 +55,29 @@ BEGIN_NCBI_SCOPE
 
 class NCBI_XCONNECT_EXPORT CRateMonitor {
 public:
+    typedef pair<Uint8, double> TMark;
+
     /// Monitor position progressing in time, calculate speed and
     /// estimate time to complete the job (if the final size is known).
     /// @param minspan
-    ///   minimal time distance between marks
+    ///   minimal time distance between marks (must be greater than 0)
     /// @param maxspan
     ///   maximal time span covered by measurements (older marks popped out)
-    CRateMonitor(double minspan = 0.5, double maxspan = 10.0)
+    /// @param weight
+    ///   for weighted rate calculations (current:remainig ratio),
+    ///   must be within the interval (0, 1) (excluding both ends);
+    ///   a value close to one (e.g. 0.9) makes recent marks more significant
+    /// @precision
+    ///   ratio of minspan to consider sufficient for the next mark addition,
+    ///   must be within the interval (0, 1] (excluding 0 but including 1)
+    CRateMonitor(double minspan = 0.5, double maxspan   = 10.0,
+                 double weight  = 0.5, double precision = 0.95)
         : kMinSpan(minspan), kMaxSpan(minspan > maxspan ?
                                       minspan + maxspan : maxspan),
+          kPrecision(precision), kWeight(weight),
+          kSpan(kMinSpan * kPrecision),
           m_Rate(0.0), m_Size(0)
-    {
-    }
+    { }
 
     /// Set size of the anticipated job, clear all prior measurements
     void   SetSize(Uint8 size);
@@ -87,7 +98,8 @@ public:
     ///   time spent from the beginning of the job (since time 0.0)
     void   Mark(Uint8 pos, double time);
 
-    /// How fast the recent rate has been, in positions per time unit
+    /// How fast the recent rate has been, in positions per time unit,
+    /// using the weighted formula
     /// @return
     ///   zero if cannot estimate
     double GetRate(void) const;
@@ -108,10 +120,11 @@ public:
     double GetTimeRemaining(void) const;
 
 protected:
-    typedef pair<Uint8, double> TMark;
-
     const double kMinSpan;
     const double kMaxSpan;
+    const double kPrecision;
+    const double kWeight;
+    const double kSpan;
 
     mutable double m_Rate;  ///< Cached rate from last calculation
     list<TMark>    m_Data;  ///< Measurements as submitted by Mark()
