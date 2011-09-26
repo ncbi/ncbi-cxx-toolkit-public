@@ -77,7 +77,7 @@ struct CBMode {//back tracking for one stage fast version (AlignFNog, BackAlignF
 
 class CTranslationTable : public CObject {
 public:
-    CTranslationTable(int gcode);
+    CTranslationTable(int gcode, bool allow_alt_starts);
 
     static int CharToNuc(char c);
     static char NucToChar(int n);
@@ -100,7 +100,10 @@ public:
 
     char TranslateStartTriplet(char n1, char n2, char n3) const
     {
-        return m_trans_table.GetStartResidue(m_trans_table.SetCodonState(n1, n2, n3));
+        if(m_allow_alt_starts) {
+            return m_trans_table.GetStartResidue(m_trans_table.SetCodonState(n1, n2, n3));
+        }
+        return m_trans_table.GetCodonResidue(m_trans_table.SetCodonState(n1, n2, n3));
     }
 
     char TranslateStartTriplet(const string& triplet) const
@@ -109,6 +112,7 @@ public:
     }
 
 private:
+    bool m_allow_alt_starts;
     const CTrans_table& m_trans_table;
     char aa_table[8*8*8];
 };

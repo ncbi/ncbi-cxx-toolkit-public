@@ -93,7 +93,8 @@ void CSubstMatrix::SetTranslationTable(const CTranslationTable* trans_table)
     m_trans_table.Reset(trans_table);
 }
 
-CTranslationTable::CTranslationTable(int gcode) : m_trans_table(CGen_code_table::GetTransTable(gcode))
+CTranslationTable::CTranslationTable(int gcode, bool allow_alt_starts) : 
+        m_trans_table(CGen_code_table::GetTransTable(gcode)), m_allow_alt_starts(allow_alt_starts)
 {
     for(int i=0; i<5; ++i)
     for(int j=0; j<5; ++j)

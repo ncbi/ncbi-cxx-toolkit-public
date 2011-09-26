@@ -54,11 +54,13 @@ USING_SCOPE(ncbi::objects);
 USING_SCOPE(ncbi::prosplign);
 
 const string CProSplignOptions_Base::default_score_matrix_name = "BLOSUM62";
+const bool CProSplignOptions_Base::default_allow_alt_starts = false;
 
 void CProSplignOptions_Base::SetupArgDescriptions(CArgDescriptions* arg_desc)
 {
     if (arg_desc->Exist("score_matrix"))
         return;
+    arg_desc->AddFlag("allow_alt_starts", "treat alternative starts same way as ATG for ASN flag 'start-codon-found' (this is an ASN output oprion)");
     arg_desc->AddDefaultKey
         ("score_matrix",
          "score_matrix",
@@ -69,11 +71,13 @@ void CProSplignOptions_Base::SetupArgDescriptions(CArgDescriptions* arg_desc)
 
 CProSplignOptions_Base::CProSplignOptions_Base()
 {
+    SetAltStarts(default_allow_alt_starts);
     SetScoreMatrix(default_score_matrix_name);
 }
 
 CProSplignOptions_Base::CProSplignOptions_Base(const CArgs& args)
 {
+    SetAltStarts(args["allow_alt_starts"]);
     SetScoreMatrix(args["score_matrix"].AsString());
 }
 
@@ -85,6 +89,17 @@ CProSplignOptions_Base& CProSplignOptions_Base::SetScoreMatrix(const string& mat
 const string& CProSplignOptions_Base::GetScoreMatrix() const
 {
     return score_matrix_name;
+}
+
+CProSplignOptions_Base& CProSplignOptions_Base::SetAltStarts(bool allow_alt_start)
+{
+    allow_alt_starts = allow_alt_start;
+    return *this;
+}
+
+bool CProSplignOptions_Base::GetAltStarts() const
+{
+    return allow_alt_starts;
 }
 
 void CProSplignScoring::SetupArgDescriptions(CArgDescriptions* arg_desc)
@@ -919,7 +934,7 @@ int CProSplign::CImplementation::FindGlobalAlignment_stage1(CScope& scope, const
         CBioseq_Handle hp = scope.GetBioseqHandle(*sid);
         gcode = sequence::GetOrg_ref(hp).GetGcode();
     } catch (...) {}
-    m_matrix.SetTranslationTable(new CTranslationTable(gcode));
+    m_matrix.SetTranslationTable(new CTranslationTable(gcode, m_scoring.GetAltStarts()));
 
     m_scope = &scope;
     m_protein = &protein;
