@@ -433,20 +433,42 @@ bool CGff3WriteRecordFeature::x_AssignAttributes(
     }
     switch( mf.GetData().GetSubtype() ) {
         default:
-            return true;
+            break;
         case CSeqFeatData::eSubtype_gene:
-            return x_AssignAttributesGene( mf );
+            if ( !x_AssignAttributesGene( mf ) ) {
+                return false;
+            }
+            break;
         case CSeqFeatData::eSubtype_mRNA:
-            return x_AssignAttributesMrna( mf );
+            if ( !x_AssignAttributesMrna( mf ) ) {
+                return false;
+            }
+            break;
         case CSeqFeatData::eSubtype_tRNA:
-            return x_AssignAttributesTrna( mf );
+            if ( !x_AssignAttributesTrna( mf ) ) {
+                return false;
+            }
+            break;
         case CSeqFeatData::eSubtype_cdregion:
-            return x_AssignAttributesCds( mf );
+            if ( !x_AssignAttributesCds( mf ) ) {
+                return false;
+            }
+            break;
         case CSeqFeatData::eSubtype_ncRNA:
-            return x_AssignAttributesNcrna( mf );
+            if ( !x_AssignAttributesNcrna( mf ) ) {
+                return false;
+            }
+            break;
         case CSeqFeatData::eSubtype_biosrc:
             return x_AssignAttributesBiosrc( mf );
     }
+    
+    //  deriviate attributes --- depend on other attributes. Hence need to be
+    //  done last: 
+    if ( !x_AssignAttributeName( mf ) ) {
+        return false;
+    }
+    return true; 
 }
 
 //  ----------------------------------------------------------------------------
@@ -727,6 +749,33 @@ bool CGff3WriteRecordFeature::x_AssignAttributeLocusTag(
         return true;
     }
     m_Attributes["locus_tag"] = gene_ref.GetLocus_tag();
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3WriteRecordFeature::x_AssignAttributeName(
+    CMappedFeat mf )
+//  ----------------------------------------------------------------------------
+{
+    string strNameKey;
+    switch ( mf.GetFeatSubtype() ) {
+        default:
+            return true;
+        case CSeqFeatData::eSubtype_gene:
+            strNameKey = "gene";
+            break;
+        case CSeqFeatData::eSubtype_mRNA:
+            strNameKey = "transcript_id";
+            break;
+
+        case CSeqFeatData::eSubtype_cdregion:
+            strNameKey = "protein_id";
+            break;
+    }
+    TAttrCit cit = m_Attributes.find(strNameKey);
+    if (cit != m_Attributes.end()) {
+        m_Attributes["Name"] = cit->second;
+    }
     return true;
 }
 
