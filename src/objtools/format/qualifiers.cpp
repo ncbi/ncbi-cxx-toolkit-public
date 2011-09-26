@@ -311,7 +311,7 @@ CFormatQual::CFormatQual
  TStyle style,
  TFlags flags) :
     m_Name(name), m_Value(value), m_Prefix(prefix), m_Suffix(suffix),
-    m_Style(style), m_AddPeriod(false), m_Flags(flags)
+    m_Style(style), m_Flags(flags), m_AddPeriod(false)
 {
     NStr::TruncateSpacesInPlace(m_Value, NStr::eTrunc_End);
 }
@@ -319,7 +319,7 @@ CFormatQual::CFormatQual
 
 CFormatQual::CFormatQual(const string& name, const string& value, TStyle style, TFlags flags) :
     m_Name(name), m_Value(value), m_Prefix(" "), m_Suffix(kEmptyStr),
-    m_Style(style), m_AddPeriod(false), m_Flags(flags)
+    m_Style(style), m_Flags(flags), m_AddPeriod(false)
 {
     NStr::TruncateSpacesInPlace(m_Value, NStr::eTrunc_End);
 }
