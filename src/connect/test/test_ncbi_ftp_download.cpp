@@ -410,8 +410,10 @@ static EIO_Status x_FtpCallback(void* data, const char* cmd, const char* arg)
         return eIO_Success;
     }
 
-    Uint8 val = NStr::StringToUInt8(arg, NStr::fConvErr_NoThrow);
-    if (!val) {
+    Uint8 val;
+    try {
+        val = NStr::StringToUInt8(arg);
+    } catch (...) {
         ERR_POST("Cannot read file size " << arg << " in "
                  << CTempString(cmd, 4) << " command response");
         return eIO_Unknown;
