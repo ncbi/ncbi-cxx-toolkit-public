@@ -7,12 +7,9 @@ SRC = hgvs_parser variation_util hgvs_parser2 hgvs_writer2 variation_util2 \
 
 ASN_DEP = seq variation
 
-ifeq "$(OSTYPE)" "freebsd"
-  hgvs_parser.o hgvs_parser2.o: CXXFLAGS = $(ORIG_CXXFLAGS:-O2=-O)
-endif
 
 ifneq "" "$(filter GCC_42%,$(signature))"
- ifeq "" "$(findstring -apple-darwin,$(signature))"
+ ifeq "" "$(filter darwin solaris,$(OSTYPE))"
   hgvs_parser.o hgvs_parser2.o: CXXFLAGS = $(ORIG_CXXFLAGS:-O2=-O)
  endif
 endif
