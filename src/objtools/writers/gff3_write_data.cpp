@@ -292,7 +292,7 @@ bool CGff3WriteRecordFeature::AssignFromAsn(
         } 
     }
     if ( it_ceil != sublocs.end()  &&  it_floor != sublocs.end() ) {
-        (*it_ceil)->SetTo( (*it_ceil)->GetTo() + (*it_floor)->GetTo() );
+        (*it_ceil)->SetTo( (*it_ceil)->GetTo() + (*it_floor)->GetTo() + 1 );
         sublocs.erase(it_floor);
     }
 
