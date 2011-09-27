@@ -588,6 +588,9 @@ bio_material/culture_collection/specimen_voucher type.")),
    TErrTypStrs ( eErr_SEQ_DESCR_LatLonPrecision,
    TErrStrs( "LatLonPrecision",
 "The precision of lat_lon should be dd.dd N|S ddd.dd E|W.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_DBLinkProblem,
+   TErrStrs( "DBLinkProblem",
+"Only one DBLink user object with approved databases should apply to each Bioseq.")),
 
 /* SEQ_GENERIC */
 
