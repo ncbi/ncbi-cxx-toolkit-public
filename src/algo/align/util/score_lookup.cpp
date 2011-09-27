@@ -949,16 +949,22 @@ double CScoreLookup::GetScore(const objects::CSeq_align& align,
         return score;
     }
 
+    if (m_Scope.IsNull()) {
+        m_Scope.Reset(new CScope(*CObjectManager::GetInstance()));
+        m_Scope->AddDefaults();
+    }
+
     /// Score not found in alignmnet; look for it among built-in scores
     CSeq_align::TScoreNameMap::const_iterator score_it =
         CSeq_align::ScoreNameMap().find(score_name);
     if (score_it != CSeq_align::ScoreNameMap().end()) {
-        return m_ScoreBuilder.ComputeScore(*m_Scope, align, score_it->second);
+        return ComputeScore(*m_Scope, align, score_it->second);
     }
 
     /// Not a built-in score; look for it among computed tokens
     TScoreDictionary::const_iterator token_it = m_Scores.find(score_name);
     if (token_it != m_Scores.end()) {
+        m_ScoresUsed.insert(score_name);
         return token_it->second->Get(align, &*m_Scope);
     }
 

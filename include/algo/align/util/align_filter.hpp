@@ -267,7 +267,7 @@ private:
     typedef set<string> TUniqueAligns;
     TUniqueAligns m_UniqueAligns;
 
-    CScoreLookup m_ScoreLookup;
+    objects::CScoreLookup m_ScoreLookup;
 };
 
 

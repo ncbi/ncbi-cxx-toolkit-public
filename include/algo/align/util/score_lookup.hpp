@@ -40,11 +40,11 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-    class CSeq_align;
-END_SCOPE(objects)
+
+class CSeq_align;
 
 
-class NCBI_XALGOALIGN_EXPORT CScoreLookup : public CObject
+class NCBI_XALGOALIGN_EXPORT CScoreLookup : public CScoreBuilder
 {
 public:
     class IScore : public CObject
@@ -70,21 +70,18 @@ public:
     CScoreLookup() { x_Init(); }
 
     CScoreLookup(enum blast::EProgram program_type)
-        : m_ScoreBuilder(program_type) { x_Init(); }
+        : CScoreBuilder(program_type) { x_Init(); }
 
     CScoreLookup(blast::CBlastOptionsHandle& options)
-        : m_ScoreBuilder(options) { x_Init(); }
-
-    void SetEffectiveSearchSpace(Int8 searchsp) // required for blast e-values
-    { m_ScoreBuilder.SetEffectiveSearchSpace(searchsp); }
-
-    void  SetSubstMatrix (const string &name) 
-    { m_ScoreBuilder.SetSubstMatrix(name); }
+        : CScoreBuilder(options) { x_Init(); }
 
     /// CScoreLookup uses a scope internally.  You can set a scope yourself;
     /// alternatively, the scope used internally will be a default scope
     void SetScope(objects::CScope& scope)
     { m_Scope.Reset(&scope); }
+
+    objects::CScope& GetScope()
+    { return *m_Scope; }
 
     /// Print out the dictionary of recognized score names
     void PrintDictionary(CNcbiOstream&);
@@ -106,8 +103,6 @@ private:
 
     CRef<objects::CScope> m_Scope;
 
-    objects::CScoreBuilder m_ScoreBuilder;
-
     typedef map<string, CIRef<IScore> > TScoreDictionary;
     TScoreDictionary m_Scores;
 
@@ -115,6 +110,7 @@ private:
 };
 
 
+END_SCOPE(objects)
 
 END_NCBI_SCOPE
 
