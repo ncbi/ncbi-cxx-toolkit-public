@@ -116,6 +116,9 @@ public:
         const string&,
         string& ) const;
 
+    bool DropAttribute(
+        const string& );
+
     static string s_GetGenomeString(
         int );
     static string s_GetBiomolString( 

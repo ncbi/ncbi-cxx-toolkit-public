@@ -591,6 +591,19 @@ bool CGffWriteRecord::CorrectPhase(
 }
 
 //  ----------------------------------------------------------------------------
+bool CGffWriteRecord::DropAttribute(
+    const string& strAttr )
+//  ----------------------------------------------------------------------------
+{
+    TAttrIt it = m_Attributes.find( strAttr );
+    if ( it == m_Attributes.end() ) {
+        return false;
+    }
+    m_Attributes.erase( it );
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGffWriteRecord::AssignSequenceNumber(
     unsigned int uSequenceNumber,
     const string& strPrefix ) 

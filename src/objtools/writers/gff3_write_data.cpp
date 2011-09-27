@@ -758,19 +758,21 @@ bool CGff3WriteRecordFeature::x_AssignAttributeName(
 //  ----------------------------------------------------------------------------
 {
     string strNameKey;
-    switch ( mf.GetFeatSubtype() ) {
-        default:
-            return true;
-        case CSeqFeatData::eSubtype_gene:
-            strNameKey = "gene";
-            break;
-        case CSeqFeatData::eSubtype_mRNA:
-            strNameKey = "transcript_id";
-            break;
 
-        case CSeqFeatData::eSubtype_cdregion:
-            strNameKey = "protein_id";
-            break;
+    if ( mf.GetFeatType() == CSeqFeatData::e_Rna ) {
+        strNameKey = "transcript_id";    
+    }
+    else {
+        switch ( mf.GetFeatSubtype() ) {
+            default:
+                return true;
+            case CSeqFeatData::eSubtype_gene:
+                strNameKey = "gene";
+                break;
+            case CSeqFeatData::eSubtype_cdregion:
+                strNameKey = "protein_id";
+                break;
+        }
     }
     TAttrCit cit = m_Attributes.find(strNameKey);
     if (cit != m_Attributes.end()) {

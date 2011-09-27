@@ -508,6 +508,7 @@ bool CGff3Writer::x_WriteFeatureRna(
             pChild->AssignParent(*pRna);
             pChild->CorrectLocation( subint );
             pChild->ForceAttributeID(strExonId);
+            pChild->DropAttribute( "Name" ); //explicitely not inherited
             if ( ! x_WriteRecord( pChild ) ) {
                 return false;
             }
