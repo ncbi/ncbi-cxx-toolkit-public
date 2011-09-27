@@ -317,23 +317,8 @@ double CScoreBuilder::GetBlastEValue(CScope& scope,
 }
 
 
-void CScoreBuilder::AddScore(CScope& scope, list< CRef<CSeq_align> >& aligns,
-                             CSeq_align::EScoreType score)
-{
-    NON_CONST_ITERATE (list< CRef<CSeq_align> >, iter, aligns) {
-        try {
-            AddScore(scope, **iter, score);
-        }
-        catch (CException& e) {
-            LOG_POST(Error
-                << "CScoreBuilder::AddScore(): error computing score: "
-                << e);
-        }
-    }
-}
-
-void CScoreBuilder::AddScore(CScope& scope, CSeq_align& align,
-                             CSeq_align::EScoreType score)
+double CScoreBuilder::ComputeScore(CScope& scope, const CSeq_align& align,
+                                   CSeq_align::EScoreType score)
 {
     switch (score) {
     case CSeq_align::eScore_Score:
@@ -347,13 +332,10 @@ void CScoreBuilder::AddScore(CScope& scope, CSeq_align& align,
     case CSeq_align::eScore_PercentIdentity_GapOpeningOnly:
     case CSeq_align::eScore_PercentCoverage:
     case CSeq_align::eScore_HighQualityPercentCoverage:
-        CScoreBuilderBase::AddScore(scope, align, score);
-        break;
+        return CScoreBuilderBase::ComputeScore(scope, align, score);
 
     case CSeq_align::eScore_Blast:
-        align.SetNamedScore(CSeq_align::eScore_Score,
-                            GetBlastScore(scope, align));
-        break;
+        return GetBlastScore(scope, align);
 
     case CSeq_align::eScore_BitScore:
         {{
@@ -365,9 +347,8 @@ void CScoreBuilder::AddScore(CScope& scope, CSeq_align& align,
              if (d > 1e35  ||  d < -1e35) {
                  d = 0;
              }
-             align.SetNamedScore(CSeq_align::eScore_BitScore, d);
+             return d;
          }}
-        break;
 
     case CSeq_align::eScore_EValue:
         {{
@@ -379,9 +360,8 @@ void CScoreBuilder::AddScore(CScope& scope, CSeq_align& align,
              if (d > 1e35  ||  d < -1e35) {
                  d = 0;
              }
-             align.SetNamedScore(CSeq_align::eScore_EValue, d);
+             return d;
          }}
-        break;
 
     case CSeq_align::eScore_SumEValue:
         {{
@@ -389,7 +369,6 @@ void CScoreBuilder::AddScore(CScope& scope, CSeq_align& align,
                         "CScoreBuilder::AddScore(): "
                         "sum_e not implemented");
          }}
-        break;
 
     case CSeq_align::eScore_CompAdjMethod:
         {{
@@ -397,7 +376,14 @@ void CScoreBuilder::AddScore(CScope& scope, CSeq_align& align,
                         "CScoreBuilder::AddScore(): "
                         "comp_adj_method not implemented");
          }}
-        break;
+
+    default:
+        {{
+             NCBI_THROW(CException, eUnknown,
+                        "CScoreBuilder::AddScore(): "
+                        "unrecognized score");
+             return 0;
+         }}
     }
 }
 

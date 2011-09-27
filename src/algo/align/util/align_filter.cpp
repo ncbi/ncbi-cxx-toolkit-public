@@ -30,9 +30,9 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <algo/align/util/algo_align_util_exceptions.hpp>
 #include <algo/align/util/align_filter.hpp>
 #include <algo/align/util/score_builder.hpp>
-#include <algo/sequence/gene_model.hpp>
 #include <corelib/rwstream.hpp>
 
 #include <objects/seqalign/Seq_align_set.hpp>
@@ -56,709 +56,6 @@
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
-
-
-/////////////////////////////////////////////////////////////////////////////
-
-class CScore_AlignLength : public CAlignFilter::IScore
-{
-public:
-    CScore_AlignLength(bool include_gaps)
-        : m_Gaps(include_gaps)
-    {
-    }
-
-    virtual EComplexity GetComplexity() const { return eEasy; };
-
-    virtual double Get(const CSeq_align& align, CScope*) const
-    {
-        return align.GetAlignLength(m_Gaps);
-    }
-
-    virtual void PrintHelp(CNcbiOstream& ostr) const
-    {
-        if (m_Gaps) {
-            ostr << "Length of the aligned segments, including the length of all gap segments";
-        }
-        else {
-            ostr << "Length of the aligned segments, excluding all gap segments; thus, this is the length of all actually aligned (i.e., match or mismatch) bases";
-        }
-    }
-
-private:
-    bool m_Gaps;
-};
-
-/////////////////////////////////////////////////////////////////////////////
-
-class CScore_LongestGapLength : public CAlignFilter::IScore
-{
-public:
-    virtual void PrintHelp(CNcbiOstream& ostr) const
-    {
-        ostr << "Length of the longest gap observed in either query or subject";
-    }
-
-    virtual EComplexity GetComplexity() const { return eEasy; };
-
-    virtual double Get(const CSeq_align& align, CScope* s) const
-    {
-        try {
-            return align.GapLengthRange().second;
-        } catch (CSeqalignException &) {
-            return numeric_limits<double>::quiet_NaN();
-        }
-    }
-};
-
-/////////////////////////////////////////////////////////////////////////////
-
-class CScore_3PrimeUnaligned : public CAlignFilter::IScore
-{
-public:
-
-    virtual void PrintHelp(CNcbiOstream& ostr) const
-    {
-        ostr << "Length of unaligned sequence 3' of alignment end";
-    }
-
-    virtual EComplexity GetComplexity() const { return eEasy; };
-
-    virtual double Get(const CSeq_align& align, CScope* scope) const
-    {
-        double score_value = 0;
-        if (align.GetSegs().IsSpliced()) {
-            score_value = align.GetSegs().GetSpliced().GetProduct_length();
-            if (align.GetSegs().GetSpliced().IsSetPoly_a()) {
-                score_value = align.GetSegs().GetSpliced().GetPoly_a();
-            }
-        } else {
-            if (scope) {
-                CBioseq_Handle bsh = scope->GetBioseqHandle(align.GetSeq_id(0));
-                if (bsh) {
-                    score_value = bsh.GetBioseqLength();
-                }
-            }
-        }
-        if (score_value) {
-            score_value -= align.GetSeqStop(0) + 1;
-        }
-        return score_value;
-    }
-};
-
-/////////////////////////////////////////////////////////////////////////////
-
-class CScore_InternalUnaligned : public CAlignFilter::IScore
-{
-public:
-
-    virtual void PrintHelp(CNcbiOstream& ostr) const
-    {
-        ostr << "Length of unaligned sequence contained within the aligned "
-            "range.  Note that this does not count gaps; rather, it computes "
-            "the length of all missing, unaligned sequence bounded by the "
-            "aligned range";
-    }
-
-    virtual EComplexity GetComplexity() const { return eEasy; };
-
-    virtual double Get(const CSeq_align& align, CScope* scope) const
-    {
-        double score_value = 0;
-        switch (align.GetSegs().Which()) {
-        case CSeq_align::TSegs::e_Spliced:
-            {{
-                 const CSpliced_seg& seg = align.GetSegs().GetSpliced();
-                 if (seg.IsSetProduct_strand()  &&
-                     seg.GetProduct_strand() == eNa_strand_minus) {
-                     CSpliced_seg::TExons::const_reverse_iterator it =
-                         seg.GetExons().rbegin();
-                     CSpliced_seg::TExons::const_reverse_iterator prev =
-                         seg.GetExons().rbegin();
-                     CSpliced_seg::TExons::const_reverse_iterator end =
-                         seg.GetExons().rend();
-                     if (seg.GetProduct_type() ==
-                         CSpliced_seg::eProduct_type_transcript) {
-                         for (++it;  it != end;  ++it, ++prev) {
-                             score_value += (*it)->GetProduct_start().GetNucpos() -
-                                 (*prev)->GetProduct_end().GetNucpos() - 1;
-                         }
-                     } else {
-                         for (++it;  it != end;  ++it, ++prev) {
-                             const CProt_pos& curr =
-                                 (*it)->GetProduct_start().GetProtpos();
-                             const CProt_pos& last =
-                                 (*prev)->GetProduct_end().GetProtpos();
-                             TSeqPos curr_nuc = curr.GetAmin() * 3;
-                             if (curr.GetFrame()) {
-                                 curr_nuc += curr.GetFrame() - 1;
-                             }
-                             TSeqPos last_nuc = last.GetAmin() * 3;
-                             if (last.GetFrame()) {
-                                 last_nuc += last.GetFrame() - 1;
-                             }
-                             score_value += curr_nuc - last_nuc - 1;
-                         }
-                     }
-                 }
-                 else {
-                     CSpliced_seg::TExons::const_iterator it =
-                         seg.GetExons().begin();
-                     CSpliced_seg::TExons::const_iterator prev =
-                         seg.GetExons().begin();
-                     CSpliced_seg::TExons::const_iterator end =
-                         seg.GetExons().end();
-                     if (seg.GetProduct_type() ==
-                         CSpliced_seg::eProduct_type_transcript) {
-                         for (++it;  it != end;  ++it, ++prev) {
-                             score_value += (*it)->GetProduct_start().GetNucpos() -
-                                 (*prev)->GetProduct_end().GetNucpos() - 1;
-                         }
-                     } else {
-                         for (++it;  it != end;  ++it, ++prev) {
-                             const CProt_pos& curr =
-                                 (*it)->GetProduct_start().GetProtpos();
-                             const CProt_pos& last =
-                                 (*prev)->GetProduct_end().GetProtpos();
-                             TSeqPos curr_nuc = curr.GetAmin() * 3;
-                             if (curr.GetFrame()) {
-                                 curr_nuc += curr.GetFrame() - 1;
-                             }
-                             TSeqPos last_nuc = last.GetAmin() * 3;
-                             if (last.GetFrame()) {
-                                 last_nuc += last.GetFrame() - 1;
-                             }
-                             score_value += curr_nuc - last_nuc - 1;
-                         }
-                     }
-                 }
-             }}
-            break;
-
-        default:
-            NCBI_THROW(CException, eUnknown,
-                       "internal_unaligned not implemented for this "
-                       "type of alignment");
-        }
-        return score_value;
-    }
-};
-
-/////////////////////////////////////////////////////////////////////////////
-
-class CScore_AlignStartStop : public CAlignFilter::IScore
-{
-public:
-    CScore_AlignStartStop(int row, bool start)
-        : m_Row(row)
-        , m_Start(start)
-    {
-    }
-
-    virtual EComplexity GetComplexity() const { return eEasy; };
-
-    virtual void PrintHelp(CNcbiOstream& ostr) const
-    {
-        if (m_Start) {
-            if (m_Row == 0) {
-                ostr << "Start of query sequence (0-based coordinates)";
-            }
-            else if (m_Row == 1) {
-                ostr << "Start of subject sequence (0-based coordinates)";
-            }
-        }
-        else {
-            if (m_Row == 0) {
-                ostr << "End of query sequence (0-based coordinates)";
-            }
-            else if (m_Row == 1) {
-                ostr << "End of subject sequence (0-based coordinates)";
-            }
-        }
-    }
-
-    virtual double Get(const CSeq_align& align, CScope*) const
-    {
-        if (m_Start) {
-            return align.GetSeqStart(m_Row);
-        } else {
-            return align.GetSeqStop(m_Row);
-        }
-    }
-
-private:
-    int m_Row;
-    bool m_Start;
-};
-
-/////////////////////////////////////////////////////////////////////////////
-
-class CScore_AlignLengthRatio : public CAlignFilter::IScore
-{
-public:
-
-    virtual void PrintHelp(CNcbiOstream& ostr) const
-    {
-        ostr << "Ratio of subject aligned range length to query aligned "
-            "range length";
-    }
-
-    virtual EComplexity GetComplexity() const { return eEasy; };
-
-    virtual double Get(const CSeq_align& align, CScope*) const
-    {
-        return align.AlignLengthRatio();
-    }
-};
-
-//////////////////////////////////////////////////////////////////////////////
-
-class CScore_SequenceLength : public CAlignFilter::IScore
-{
-public:
-    CScore_SequenceLength(int row)
-        : m_Row(row)
-    {
-    }
-
-    virtual void PrintHelp(CNcbiOstream& ostr) const
-    {
-        if (m_Row == 0) {
-            ostr << "Length of query sequence";
-        }
-        else if (m_Row == 1) {
-            ostr << "Length of subject sequence";
-        }
-    }
-
-    virtual EComplexity GetComplexity() const { return eHard; };
-
-    virtual double Get(const CSeq_align& align, CScope* scope) const
-    {
-        double score = numeric_limits<double>::quiet_NaN();
-        if (m_Row == 0  &&  align.GetSegs().IsSpliced()) {
-            score = align.GetSegs().GetSpliced().GetProduct_length();
-        } else {
-            if (scope) {
-                CBioseq_Handle bsh =
-                    scope->GetBioseqHandle(align.GetSeq_id(m_Row));
-                if (bsh) {
-                    score = bsh.GetBioseqLength();
-                }
-            }
-        }
-        return score;
-    }
-
-private:
-    int m_Row;
-    bool m_Start;
-};
-
-//////////////////////////////////////////////////////////////////////////////
-
-class CScore_SymmetricOverlap : public CAlignFilter::IScore
-{
-public:
-    virtual void PrintHelp(CNcbiOstream& ostr) const
-    {
-        ostr <<
-            "Symmetric overlap, as a percent (0-100).  This is similar to "
-            "coverage, except that it takes into account both query and "
-            "subject sequence lengths";
-    }
-
-    virtual EComplexity GetComplexity() const { return eHard; };
-
-    virtual double Get(const CSeq_align& align, CScope* scope) const
-    {
-        double pct_overlap = 0;
-        try {
-            TSeqPos length = align.GetAlignLength(false);
-            CBioseq_Handle q = scope->GetBioseqHandle(align.GetSeq_id(0));
-            CBioseq_Handle s = scope->GetBioseqHandle(align.GetSeq_id(1));
-
-            pct_overlap = 2 * length;
-            pct_overlap /= (q.GetBioseqLength() + s.GetBioseqLength());
-            pct_overlap *= 100;
-        }
-        catch (CException &e) {
-        }
-        return pct_overlap;
-    }
-};
-
-//////////////////////////////////////////////////////////////////////////////
-
-class CScore_MinExonLength : public CAlignFilter::IScore
-{
-public:
-    virtual void PrintHelp(CNcbiOstream& ostr) const
-    {
-        ostr <<
-            "Length of the shortest exon.  Note that this score has "
-            "meaning only for Spliced-seg alignments, as would be generated "
-            "by Splign or ProSplign.";
-    }
-
-    virtual EComplexity GetComplexity() const { return eEasy; };
-
-    virtual double Get(const CSeq_align& align, CScope*) const
-    {
-        try {
-            return align.ExonLengthRange().first;
-        } catch (CSeqalignException &) {
-            return numeric_limits<double>::quiet_NaN();
-        }
-    }
-};
-
-//////////////////////////////////////////////////////////////////////////////
-
-class CScore_MaxIntronLength : public CAlignFilter::IScore
-{
-public:
-    virtual void PrintHelp(CNcbiOstream& ostr) const
-    {
-        ostr <<
-            "Length of the longest intron.  Note that this score has "
-            "meaning only for Spliced-seg alignments, as would be generated "
-            "by Splign or ProSplign.";
-    }
-
-    virtual EComplexity GetComplexity() const { return eEasy; };
-
-    virtual double Get(const CSeq_align& align, CScope*) const
-    {
-        try {
-            return align.IntronLengthRange().second;
-        } catch (CSeqalignException &) {
-            return numeric_limits<double>::quiet_NaN();
-        }
-    }
-};
-
-//////////////////////////////////////////////////////////////////////////////
-
-class CScore_ExonCount : public CAlignFilter::IScore
-{
-public:
-    virtual void PrintHelp(CNcbiOstream& ostr) const
-    {
-        ostr <<
-            "Count of the number of exons.  Note that this score has "
-            "meaning only for Spliced-seg alignments, as would be generated "
-            "by Splign or ProSplign.";
-    }
-
-    virtual EComplexity GetComplexity() const { return eEasy; };
-
-    virtual double Get(const CSeq_align& align, CScope*) const
-    {
-        if (align.GetSegs().IsSpliced()) {
-            const CSpliced_seg& seg = align.GetSegs().GetSpliced();
-            if (seg.IsSetExons()) {
-                return seg.GetExons().size();
-            }
-            return 0;
-        }
-
-        NCBI_THROW(CException, eUnknown,
-                   "'exon_count' score is valid only for "
-                   "Spliced-seg alignments");
-    }
-};
-
-//////////////////////////////////////////////////////////////////////////////
-
-class CScore_CdsInternalStops : public CAlignFilter::IScore
-{
-public:
-    virtual void PrintHelp(CNcbiOstream& ostr) const
-    {
-        ostr <<
-            "Count of the number of internal stop codons encountered when "
-            "translating the coding region associated with the aligned "
-            "transcript.  Note that this has meaning only for Spliced-seg "
-            "transcript alignments.";
-    }
-
-    virtual EComplexity GetComplexity() const { return eHard; };
-
-    virtual double Get(const CSeq_align& align, CScope* scope) const
-    {
-        double score = 0;
-
-        try {
-            ///
-            /// complicated
-            ///
-
-            /// first, generate a gene model
-            CFeatureGenerator generator(*scope);
-            generator.SetFlags(CFeatureGenerator::fDefaults |
-                               CFeatureGenerator::fGenerateLocalIds);
-            generator.SetAllowedUnaligned(10);
-
-            CConstRef<CSeq_align> clean_align = generator.CleanAlignment(align);
-            CSeq_annot annot;
-            CBioseq_set bset;
-            generator.ConvertAlignToAnnot(*clean_align, annot, bset);
-
-            /// extract the CDS and translate it
-            CRef<CSeq_feat> cds;
-            ITERATE (CSeq_annot::TData::TFtable, it, annot.GetData().GetFtable()) {
-                if ((*it)->GetData().Which() == CSeqFeatData::e_Cdregion) {
-                    cds = *it;
-                    break;
-                }
-            }
-
-            if (cds) {
-                string trans;
-                CSeqTranslator::Translate(*cds, *scope, trans);
-                if ( !cds->GetLocation().IsPartialStop(eExtreme_Biological)  &&
-                     NStr::EndsWith(trans, "*")) {
-                    trans.resize(trans.size() - 1);
-                }
-
-                ITERATE (string, i, trans) {
-                    score += (*i == '*');
-                }
-            }
-        }
-        catch (CException& e) {
-            CNcbiOstrstream os;
-            os << MSerial_AsnText << align;
-            ERR_POST(Error << "error computing internal stops: " << e);
-            ERR_POST(Error << "source alignment: "
-                     << string(CNcbiOstrstreamToString(os)));
-            ERR_POST(Error << "proceeding with " << score << " internal stops");
-        }
-        return score;
-    }
-};
-
-/////////////////////////////////////////////////////////////////////////////
-
-class CScore_CdsScore : public CAlignFilter::IScore
-{
-public:
-    enum EScoreType {ePercentIdentity, ePercentCoverage, eStart, eEnd};
-
-    CScore_CdsScore(EScoreType type)
-    : m_ScoreType(type)
-    {}
-
-    virtual EComplexity GetComplexity() const { return eHard; };
-
-    virtual void PrintHelp(CNcbiOstream& ostr) const
-    {
-        switch (m_ScoreType) {
-        case ePercentIdentity:
-            ostr <<
-                "Percent-identity score confined to the coding region "
-                "associated with the align transcipt. Not supported "
-                "for standard-seg alignments.";
-            break;
-        case ePercentCoverage:
-            ostr <<
-                "Percent-coverage score confined to the coding region "
-                "associated with the align transcipt.";
-            break;
-        case eStart:
-            ostr << "Start position of product's coding region.";
-            break; 
-        case eEnd:
-            ostr << "End position of product's coding region.";
-            break; 
-        }
-        ostr << " Note that this has meaning only if product has a coding "
-                "region annotation.";
-    }
-
-    virtual double Get(const CSeq_align& align, CScope* scope) const
-    {
-        double score = -1;
-        if (align.GetSegs().IsStd()) {
-            return score;
-        }
-
-        CBioseq_Handle product = scope->GetBioseqHandle(align.GetSeq_id(0));
-        CFeat_CI cds(product, CSeqFeatData::eSubtype_cdregion);
-
-        if (cds) {
-            switch (m_ScoreType) {
-            case eStart:
-                score = cds->GetLocation().GetStart(eExtreme_Positional);
-                break;
-
-            case eEnd:
-                score = cds->GetLocation().GetStop(eExtreme_Positional);
-                break;
-
-            default:
-            {{
-                CRangeCollection<TSeqPos> cds_ranges;
-                for (CSeq_loc_CI it(cds->GetLocation()); it; ++it) {
-                    cds_ranges += it.GetRange();
-                }
-                score = m_ScoreType == ePercentIdentity
-                        ? CScoreBuilder().GetPercentIdentity(*scope, align,
-                                                            cds_ranges)
-                        : CScoreBuilder().GetPercentCoverage(*scope, align,
-                                                            cds_ranges);
-                break;
-            }}
-            }
-        }
-        return score;
-    }
-
-private:
-    const EScoreType m_ScoreType;
-};
-
-//////////////////////////////////////////////////////////////////////////////
-
-class CScore_Taxid : public CAlignFilter::IScore
-{
-public:
-    CScore_Taxid(int row)
-        : m_Row(row)
-    {
-    }
-
-    virtual EComplexity GetComplexity() const { return eHard; };
-
-    virtual void PrintHelp(CNcbiOstream& ostr) const
-    {
-        if (m_Row == 0) {
-            ostr << "Taxid of query sequence";
-        }
-        else if (m_Row == 1) {
-            ostr << "Taxid of subject sequence";
-        }
-    }
-
-    virtual double Get(const CSeq_align& align, CScope* scope) const
-    {
-        return sequence::GetTaxId(
-                   scope->GetBioseqHandle(align.GetSeq_id(m_Row)));
-    }
-
-private:
-    int m_Row;
-};
-
-//////////////////////////////////////////////////////////////////////////////
-
-class CScore_LastSpliceSite : public CAlignFilter::IScore
-{
-public:
-    CScore_LastSpliceSite()
-    {
-    }
-
-    virtual void PrintHelp(CNcbiOstream& ostr) const
-    {
-        ostr <<
-            "Position of last splice site.  Note that this has meaning only "
-            "for Spliced-seg transcript alignments, and only if the alignment "
-            "has at least two exons.";
-    }
-
-    virtual EComplexity GetComplexity() const { return eEasy; };
-
-    virtual double Get(const CSeq_align& align, CScope* scope) const
-    {
-        double score = numeric_limits<double>::quiet_NaN();
-        if (align.GetSegs().IsSpliced())
-        {
-            const CSpliced_seg &seg = align.GetSegs().GetSpliced();
-            if (seg.CanGetExons() && seg.GetExons().size() > 1 &&
-                seg.CanGetProduct_type() &&
-                seg.GetProduct_type() == CSpliced_seg::eProduct_type_transcript &&
-                seg.CanGetProduct_strand() &&
-                seg.GetProduct_strand() != eNa_strand_unknown)
-            {
-                const CSpliced_exon &last_spliced_exon =
-                    seg.GetProduct_strand() == eNa_strand_minus
-                        ? **++align.GetSegs().GetSpliced().GetExons().begin()
-                        : **++align.GetSegs().GetSpliced().GetExons().rbegin();
-                if (last_spliced_exon.CanGetProduct_end()) {
-                    score = last_spliced_exon.GetProduct_end().GetNucpos();
-                }
-            }
-        }
-        return score;
-    }
-
-private:
-    int m_Row;
-};
-
-
-//////////////////////////////////////////////////////////////////////////////
-
-class CScore_Overlap : public CAlignFilter::IScore
-{
-public:
-    CScore_Overlap(int row, bool include_gaps)
-    : m_Row(row)
-    , m_IncludeGaps(include_gaps)
-    {
-    }
-
-    virtual void PrintHelp(CNcbiOstream& ostr) const
-    {
-        string row_name = m_Row == 0 ? "query" : "subject";
-        string range_type = m_IncludeGaps ? "total aligned range" : "aligned bases";
-        ostr <<
-            "size of overlap of " + range_type + " with any alignments "
-            "over the same " + row_name + " sequence that have previously "
-            "passed this filter. Assumes that input alignments "
-            "are collated by " + row_name + ", and then sorted by priority for "
-            "inclusion in the output.";
-    }
-
-    virtual EComplexity GetComplexity() const { return eEasy; };
-
-    virtual double Get(const CSeq_align& align, CScope* ) const
-    {
-        CRangeCollection<TSeqPos> overlap;
-        if (align.GetSeq_id(m_Row).Match(m_CurrentSeq)) {
-            overlap = m_CoveredRanges;
-            if (m_IncludeGaps) {
-                overlap &= align.GetSeqRange(m_Row);
-            } else {
-                overlap &= align.GetAlignedBases(m_Row);
-            }
-        }
-        return overlap.GetCoveredLength();
-    }
-
-    virtual void UpdateState(const objects::CSeq_align& align)
-    {
-        const CSeq_id &aligned_id = align.GetSeq_id(m_Row);
-        if (!aligned_id.Match(m_CurrentSeq)) {
-            m_CurrentSeq.Assign(aligned_id);
-            m_CoveredRanges.clear();
-        }
-        if (m_IncludeGaps) {
-            m_CoveredRanges += align.GetSeqRange(m_Row);
-        } else {
-            m_CoveredRanges += align.GetAlignedBases(m_Row);
-        }
-    }
-
-private:
-    int m_Row;
-    bool m_IncludeGaps;
-    CSeq_id m_CurrentSeq;
-    CRangeCollection<TSeqPos> m_CoveredRanges;
-};
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -816,7 +113,6 @@ CAlignFilter::CAlignFilter()
     : m_RemoveDuplicates(false)
     , m_IsDryRun(false)
 {
-    x_Init();
 }
 
 
@@ -824,151 +120,7 @@ CAlignFilter::CAlignFilter(const string& query)
     : m_RemoveDuplicates(false)
     , m_IsDryRun(false)
 {
-    x_Init();
     SetFilter(query);
-}
-
-
-void CAlignFilter::x_Init()
-{
-    m_Scores.insert
-        (TScoreDictionary::value_type
-         ("align_length",
-          CIRef<IScore>(new CScore_AlignLength(true /* include gaps */))));
-    m_Scores.insert
-        (TScoreDictionary::value_type
-         ("align_length_ungap",
-          CIRef<IScore>(new CScore_AlignLength(false /* include gaps */))));
-    m_Scores.insert
-        (TScoreDictionary::value_type
-         ("symmetric_overlap",
-          CIRef<IScore>(new CScore_SymmetricOverlap)));
-    m_Scores.insert
-        (TScoreDictionary::value_type
-         ("3prime_unaligned",
-          CIRef<IScore>(new CScore_3PrimeUnaligned)));
-
-    m_Scores.insert
-        (TScoreDictionary::value_type
-         ("min_exon_len",
-          CIRef<IScore>(new CScore_MinExonLength)));
-
-    m_Scores.insert
-        (TScoreDictionary::value_type
-         ("max_intron_len",
-          CIRef<IScore>(new CScore_MaxIntronLength)));
-
-    m_Scores.insert
-        (TScoreDictionary::value_type
-         ("longest_gap",
-          CIRef<IScore>(new CScore_LongestGapLength)));
-
-    {{
-         CIRef<IScore> score(new CScore_AlignStartStop(0, true));
-         m_Scores.insert
-             (TScoreDictionary::value_type
-              ("query_start", score));
-         m_Scores.insert
-             (TScoreDictionary::value_type
-              ("5prime_unaligned", score));
-         m_Scores.insert
-             (TScoreDictionary::value_type
-              ("query_end",
-               CIRef<IScore>(new CScore_AlignStartStop(0, false))));
-     }}
-
-    m_Scores.insert
-        (TScoreDictionary::value_type
-         ("internal_unaligned",
-          CIRef<IScore>(new CScore_InternalUnaligned)));
-
-    m_Scores.insert
-        (TScoreDictionary::value_type
-         ("cds_internal_stops",
-          CIRef<IScore>(new CScore_CdsInternalStops)));
-    m_Scores.insert
-        (TScoreDictionary::value_type
-         ("cds_start",
-          CIRef<IScore>(new CScore_CdsScore(CScore_CdsScore::eStart))));
-    m_Scores.insert
-        (TScoreDictionary::value_type
-         ("cds_end",
-          CIRef<IScore>(new CScore_CdsScore(CScore_CdsScore::eEnd))));
-    m_Scores.insert
-        (TScoreDictionary::value_type
-         ("cds_pct_identity",
-          CIRef<IScore>(new CScore_CdsScore(CScore_CdsScore::ePercentIdentity))));
-    m_Scores.insert
-        (TScoreDictionary::value_type
-         ("cds_pct_coverage",
-          CIRef<IScore>(new CScore_CdsScore(CScore_CdsScore::ePercentCoverage))));
-
-    m_Scores.insert
-        (TScoreDictionary::value_type
-         ("align_length_ratio",
-          CIRef<IScore>(new CScore_AlignLengthRatio)));
-
-    m_Scores.insert
-        (TScoreDictionary::value_type
-         ("subject_start",
-          CIRef<IScore>(new CScore_AlignStartStop(1, true))));
-    m_Scores.insert
-        (TScoreDictionary::value_type
-         ("subject_end",
-          CIRef<IScore>(new CScore_AlignStartStop(1, false))));
-
-    {{
-         CIRef<IScore> score(new CScore_SequenceLength(0));
-         m_Scores.insert
-             (TScoreDictionary::value_type
-              ("query_length", score));
-         m_Scores.insert
-             (TScoreDictionary::value_type
-              ("product_length", score));
-         m_Scores.insert
-             (TScoreDictionary::value_type
-              ("subject_length",
-               CIRef<IScore>(new CScore_SequenceLength(1))));
-     }}
-
-    m_Scores.insert
-        (TScoreDictionary::value_type
-         ("query_taxid",
-          CIRef<IScore>(new CScore_Taxid(0))));
-    m_Scores.insert
-        (TScoreDictionary::value_type
-         ("subject_taxid",
-          CIRef<IScore>(new CScore_Taxid(1))));
-
-    m_Scores.insert
-        (TScoreDictionary::value_type
-         ("last_splice_site",
-          CIRef<IScore>(new CScore_LastSpliceSite)));
-
-    m_Scores.insert
-        (TScoreDictionary::value_type
-         ("exon_count",
-          CIRef<IScore>(new CScore_ExonCount)));
-
-    m_Scores.insert
-        (TScoreDictionary::value_type
-         ("query_overlap",
-          CIRef<IScore>(new CScore_Overlap(0, true))));
-
-    m_Scores.insert
-        (TScoreDictionary::value_type
-         ("subject_overlap",
-          CIRef<IScore>(new CScore_Overlap(1, true))));
-
-    m_Scores.insert
-        (TScoreDictionary::value_type
-         ("query_overlap_nogaps",
-          CIRef<IScore>(new CScore_Overlap(0, false))));
-
-    m_Scores.insert
-        (TScoreDictionary::value_type
-         ("subject_overlap_nogaps",
-          CIRef<IScore>(new CScore_Overlap(1, false))));
 }
 
 
@@ -1005,19 +157,22 @@ void CAlignFilter::SetFilter(const string& filter)
     m_Scope.Reset(new CScope(*CObjectManager::GetInstance()));
     m_Scope->AddDefaults();
 
-    m_ScoresUsed.clear();
+    /// Dry run to null output, to get set of computed tokens in filter
+#ifdef NCBI_OS_UNIX
+    CNcbiOfstream null_output("/dev/null");
+#else
+    string scratch_file = CFile::GetTmpName(CFile::eTmpFileCreate);
+    CNcbiOfstream null_output(scratch_file.c_str());
+#endif
+    DryRun(null_output);
 }
 
 void CAlignFilter::SetScope(CScope& scope)
 {
     m_Scope.Reset(&scope);
+    m_ScoreLookup.SetScope(scope);
 }
 
-
-CScope& CAlignFilter::SetScope()
-{
-    return *m_Scope;
-}
 
 void CAlignFilter::AddBlacklistQueryId(const CSeq_id_Handle& idh)
 {
@@ -1098,7 +253,7 @@ bool CAlignFilter::Match(const CSeq_align& align)
             if (m_QueryWhitelist.size()  &&
                 m_QueryWhitelist.find(query) != m_QueryWhitelist.end()) {
                 /// accept: query sequence found in white list
-                x_UpdateDictionaryStates(align);
+                m_ScoreLookup.UpdateState(align);
                 return true;
             }
         }
@@ -1123,7 +278,7 @@ bool CAlignFilter::Match(const CSeq_align& align)
             if (m_SubjectWhitelist.size()  &&
                 m_SubjectWhitelist.find(subject) != m_SubjectWhitelist.end()) {
                 /// accept: subject sequence found in white list
-                x_UpdateDictionaryStates(align);
+                m_ScoreLookup.UpdateState(align);
                 return true;
             }
         }
@@ -1134,7 +289,7 @@ bool CAlignFilter::Match(const CSeq_align& align)
     if (m_ParseTree.get()) {
         match = x_Match(*m_ParseTree->GetQueryTree(), align);
         if (match) {
-            x_UpdateDictionaryStates(align);
+            m_ScoreLookup.UpdateState(align);
         }
     } else {
         if (m_QueryWhitelist.size()  ||  m_SubjectWhitelist.size()) {
@@ -1152,28 +307,9 @@ bool CAlignFilter::Match(const CSeq_align& align)
     return (match  &&  ( !m_RemoveDuplicates  ||  x_IsUnique(align) ) );
 }
 
-void CAlignFilter::x_UpdateDictionaryStates(const objects::CSeq_align& align)
-{
-    ITERATE (set<string>, it, m_ScoresUsed) {
-        m_Scores[*it]->UpdateState(align);
-    }
-}
-
 void CAlignFilter::PrintDictionary(CNcbiOstream &ostr)
 {
-    ITERATE (TScoreDictionary, it, m_Scores) {
-        ostr << "  * " << it->first << endl;
-
-        CNcbiOstrstream os;
-        it->second->PrintHelp(os);
-
-        string s = string(CNcbiOstrstreamToString(os));
-        list<string> tmp;
-        NStr::Wrap(s, 72, tmp);
-        ITERATE (list<string>, i, tmp) {
-            ostr << "      " << *i << endl;
-        }
-    }
+    m_ScoreLookup.PrintDictionary(ostr);
 }
 
 void CAlignFilter::DryRun(CNcbiOstream &ostr) {
@@ -1185,6 +321,7 @@ void CAlignFilter::DryRun(CNcbiOstream &ostr) {
     m_DryRunOutput = &ostr;
     CSeq_align dummy_alignment;
     x_Match(*m_ParseTree->GetQueryTree(), dummy_alignment);
+    m_IsDryRun = false;
 }
 
 bool CAlignFilter::x_IsUnique(const CSeq_align& align)
@@ -1207,58 +344,23 @@ double CAlignFilter::x_GetAlignmentScore(const string& score_name,
     ///
     /// see if we have this score
     ///
-    double score_value = numeric_limits<double>::quiet_NaN();
-
-    TScoreDictionary::const_iterator it = m_Scores.find(score_name);
     if (m_IsDryRun) {
-        (*m_DryRunOutput) << score_name << ": ";
-        if (it != m_Scores.end()) {
-            it->second->PrintHelp(*m_DryRunOutput);
-        } else {
-            (*m_DryRunOutput) << "assumed to be a score on the Seq-align";
-        }
-        (*m_DryRunOutput) << endl;
-        return score_value;
+        (*m_DryRunOutput) << score_name << ": "
+                          << m_ScoreLookup.HelpText(score_name) << endl;
+        return 0;
     }
 
-    if (it != m_Scores.end()) {
-        m_ScoresUsed.insert(score_name);
-        return it->second->Get(align, m_Scope);
-    }
-    else {
-        bool found = false;
-        if (align.IsSetScore()) {
-            ITERATE (CSeq_align::TScore, iter, align.GetScore()) {
-                const CScore& score = **iter;
-                if ( !score.IsSetId()  ||
-                     !score.GetId().IsStr() ) {
-                    continue;
-                }
-
-                if (score.GetId().GetStr() != score_name) {
-                    continue;
-                }
-
-                if (score.GetValue().IsInt()) {
-                    score_value = score.GetValue().GetInt();
-                } else {
-                    score_value = score.GetValue().GetReal();
-                }
-
-                found = true;
-                break;
-            }
+    try {
+        return m_ScoreLookup.GetScore(align, score_name);
+    } catch (CAlgoAlignUtilException &e) {
+        if( throw_if_not_found ||
+            e.GetErrCode() != CAlgoAlignUtilException::eScoreNotFound)
+        {
+            throw;
         }
-        if ( !found ) {
-            if( throw_if_not_found ) {
-                NCBI_THROW(CException, eUnknown,
-                           "failed to find score: " + score_name);
-            } else {
-                LOG_POST(Warning << "failed to find score: " << score_name);
-            }
-        }
+        LOG_POST(Warning << e);
+        return numeric_limits<double>::quiet_NaN();
     }
-    return score_value;
 }
 
 double CAlignFilter::x_FuncCall(const CQueryParseTree::TNode& node, const CSeq_align& align)

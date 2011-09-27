@@ -37,6 +37,8 @@
 
 #include <objects/seq/seq_id_handle.hpp>
 
+#include <algo/align/util/score_lookup.hpp>
+
 #include <set>
 
 BEGIN_NCBI_SCOPE
@@ -156,27 +158,6 @@ END_SCOPE(objects)
 class NCBI_XALGOALIGN_EXPORT CAlignFilter : public CObject
 {
 public:
-    class IScore : public CObject
-    {
-    public:
-        enum EComplexity {
-            eEasy,
-            eHard
-        };
-
-        virtual ~IScore() {}
-        virtual double Get(const objects::CSeq_align& align,
-                           objects::CScope* scope) const = 0;
-        virtual void PrintHelp(CNcbiOstream &ostr) const = 0;
-        virtual EComplexity GetComplexity() const { return eEasy; };
-
-        /// For any IScore subclasses that have an internal state, this
-        /// function will be called to update it for any alignment that
-        /// matches the filter
-        virtual void UpdateState(const objects::CSeq_align& align) {}
-    };
-
-public:
     CAlignFilter();
     CAlignFilter(const string& filter_string);
 
@@ -238,8 +219,6 @@ public:
     void DryRun(CNcbiOstream&);
 
 private:
-    void x_Init();
-
     bool x_Match(const CQueryParseTree::TNode& node,
                  const objects::CSeq_align& align);
 
@@ -267,8 +246,6 @@ private:
                        const CQueryParseTree::TNode& val2_node,
                        const objects::CSeq_align& align);
 
-    void x_UpdateDictionaryStates(const objects::CSeq_align& align);
-
 private:
     bool m_RemoveDuplicates;
     string m_Query;
@@ -290,10 +267,7 @@ private:
     typedef set<string> TUniqueAligns;
     TUniqueAligns m_UniqueAligns;
 
-    typedef map<string, CIRef<IScore> > TScoreDictionary;
-    TScoreDictionary m_Scores;
-
-    set<string> m_ScoresUsed;
+    CScoreLookup m_ScoreLookup;
 };
 
 

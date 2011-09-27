@@ -72,10 +72,20 @@ public:
     void AddScore(CScope& scope, list< CRef<CSeq_align> >& aligns,
                   EScoreType score);
 
+    double ComputeScore(CScope& scope, const CSeq_align& align,
+                        CSeq_align::EScoreType score);
     void AddScore(CScope& scope, CSeq_align& align,
-                  CSeq_align::EScoreType score);
+                  CSeq_align::EScoreType score)
+    {
+        CScoreBuilderBase::AddScore(scope, align, score);
+    }
+
     void AddScore(CScope& scope, list< CRef<CSeq_align> >& aligns,
-                  CSeq_align::EScoreType score);
+                  CSeq_align::EScoreType score)
+    {
+        CScoreBuilderBase::AddScore(scope, aligns, score);
+    }
+
 
     /// @}
 

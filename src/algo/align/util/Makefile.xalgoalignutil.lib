@@ -2,7 +2,8 @@
 
 WATCHERS = kapustin dicuccio
 
-SRC = align_shadow blast_tabular score_builder align_filter genomic_compart patch_sequence
+SRC = align_shadow blast_tabular score_builder score_lookup align_filter \
+      genomic_compart patch_sequence
 
 LIB = xalgoalignutil
 

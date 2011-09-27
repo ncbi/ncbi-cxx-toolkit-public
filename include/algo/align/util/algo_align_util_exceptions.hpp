@@ -45,7 +45,8 @@ public:
     enum EErrCode {
         eInternal,
         eBadParameter,
-        eFormat
+        eFormat,
+        eScoreNotFound
     };
     virtual const char* GetErrCodeString(void) const {
         switch ( GetErrCode() ) {
@@ -55,6 +56,8 @@ public:
             return "One or more parameters passed are invalid";
         case eFormat:
             return "Incorrect format";
+        case eScoreNotFound:
+            return "Score not found";
         default:
             return CException::GetErrCodeString();
         }
