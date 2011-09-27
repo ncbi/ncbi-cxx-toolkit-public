@@ -400,6 +400,71 @@ static TScoreNamePair sc_ScoreNames[] = {
     TScoreNamePair(CSeq_align::eScore_HighQualityPercentCoverage, "pct_coverage_hiqual")
 };
 
+static string sc_ScoreHelpText[] = {
+    "Blast score",
+    "Blast score",
+    "Blast-style bit score",
+    "Blast-style e-value",
+    "Length of the aligned segments, including the length of all gap segments",
+    "Count of identities",
+    "Count of positives; protein-to-DNA score",
+    "Count of negatives; protein-to-DNA score",
+    "Count of mismatches",
+    "Percent identity (0.0-100.0); count each base in a gap as a mismatch",
+    "Percent identity (0.0-100.0); don't count gaps",
+    "Percent identity (0.0-100.0); count a gap of any length as a mismatch of length 1",
+    "Percentage of query sequence aligned to subject (0.0-100.0)",
+    "Blast-style sum_e",
+    "Composition-adjustment method from BLAST",
+    "Percent coverage (0.0-100.0) of high quality region"
+};
+
+static bool sc_IsInteger[] = {
+    true,
+    true,
+    false,
+    false,
+    true,
+    true,
+    true,
+    true,
+    true,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+};
+
+CSeq_align::TScoreNameMap CSeq_align::m_ScoreNameMap;
+
+const CSeq_align::TScoreNameMap &CSeq_align::ScoreNameMap()
+{
+    if (m_ScoreNameMap.empty()) {
+        /// initialize map
+        for(unsigned score = eScore_Blast;
+            score <= eScore_HighQualityPercentCoverage; ++score)
+        {
+            m_ScoreNameMap[sc_ScoreNames[score].second] =
+                sc_ScoreNames[score].first;
+        }
+    }
+
+    return m_ScoreNameMap;
+}
+
+string CSeq_align::HelpText(const string &score_name)
+{
+    return sc_ScoreHelpText[ScoreNameMap().find(score_name)->second];
+}
+
+bool CSeq_align::IsIntegerScore(EScoreType score)
+{
+    return sc_IsInteger[score];
+}
+
 
 /// retrieve a named score object
 CConstRef<CScore> CSeq_align::x_GetNamedScore(const string& name) const

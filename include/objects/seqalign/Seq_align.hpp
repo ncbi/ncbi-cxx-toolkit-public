@@ -176,6 +176,8 @@ public:
 
     typedef pair<TSeqPos, TSeqPos> TLengthRange;
 
+    typedef map<string, EScoreType> TScoreNameMap;
+
     /// constructor
     CSeq_align(void);
     /// destructor
@@ -314,12 +316,20 @@ public:
 
     TLengthRange ExonLengthRange() const;
 
+    static const TScoreNameMap &ScoreNameMap();
+
+    static string HelpText(const string &score_name);
+
+    static bool IsIntegerScore(EScoreType score);
+
 protected:
     /// retrieve a named score object
     CConstRef<CScore> x_GetNamedScore(const string& name) const;
     CRef<CScore>      x_SetNamedScore(const string& name);
 
 private:
+    static TScoreNameMap m_ScoreNameMap;
+
     /// Prohibit copy constructor and assignment operator
     CSeq_align(const CSeq_align& value);
     CSeq_align& operator=(const CSeq_align& value);
