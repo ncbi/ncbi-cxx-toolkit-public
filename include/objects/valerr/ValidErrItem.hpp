@@ -227,6 +227,7 @@ enum EErrType {
     eErr_SEQ_DESCR_LatLonOffshore,
     eErr_SEQ_DESCR_MissingPersonalCollectionName,
     eErr_SEQ_DESCR_LatLonPrecision,
+    eErr_SEQ_DESCR_DBLinkProblem,
     ERR_CODE_END(SEQ_DESCR),
 
     ERR_CODE_BEGIN(GENERIC) = 2000,
