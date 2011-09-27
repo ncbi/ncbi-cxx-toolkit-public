@@ -1159,26 +1159,27 @@ CRef<CVariation> CHgvsParser::x_nuc_subst(TIterator const& i, const CContext& co
     CVariation_inst& var_inst = vr->SetData().SetInstance();
 
     SetFirstPlacement(*vr).Assign(context.GetPlacement());
-    var_inst.SetType(CVariation_inst::eType_snv);
 
-    CRef<CSeq_literal> seq_from = x_raw_seq(it, context);
-    if(seq_from->GetLength() != 1) {
-        HGVS_THROW(eSemantic, "Expected literal of length 1 left of '>'");
+    if(it->value.id() == SGrammar::eID_raw_seq) {
+        CRef<CSeq_literal> seq_from = x_raw_seq(it, context);
+        SetFirstPlacement(*vr).SetSeq(*seq_from);
+        ++it;
     }
 
-    //context.Validate(*seq_from);
-    SetFirstPlacement(*vr).SetSeq(*seq_from);
+    ++it;//skip ">"
 
-    ++it;//skip to ">"
-    ++it;//skip to next
-    CRef<CSeq_literal> seq_to = x_raw_seq(it, context);
-    if(seq_to->GetLength() != 1) {
-        HGVS_THROW(eSemantic, "Expected literal of length 1 right of '>'");
-    }
-
+    CRef<CSeq_literal> seq_to = x_raw_seq_or_len(it, context);
     TDelta delta(new TDelta::TObjectType);
     delta->SetSeq().SetLiteral(*seq_to);
     var_inst.SetDelta().push_back(delta);
+
+    if(seq_to->GetLength() == 1 && CVariationUtil::s_GetLength(SetFirstPlacement(*vr), NULL) == 1) {
+        var_inst.SetType(CVariation_inst::eType_snv);
+    } else if(seq_to->GetLength() == CVariationUtil::s_GetLength(SetFirstPlacement(*vr), NULL)) {
+        var_inst.SetType(CVariation_inst::eType_mnp);
+    } else {
+        var_inst.SetType(CVariation_inst::eType_delins);
+    }
 
     return vr;
 }

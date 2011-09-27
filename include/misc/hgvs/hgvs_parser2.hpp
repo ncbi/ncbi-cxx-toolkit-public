@@ -656,7 +656,10 @@ protected:
                                                 //  e.g. p.Glu5Valins2fsX3 - 2 in ins2 indicates sequence of length two, NOT the sequence at position 2.
                                                 //  Hence, the local-locs above must be specified via range-types only.
 
-                nuc_subst       = raw_seq >> ch_p('>') >> raw_seq; //semantic check: must be of length 1
+                nuc_subst       = (!raw_seq) >> ch_p('>') >> raw_seq_or_len;
+                    //According to the spec, substitution is exactly one base to the left and to the right of ">" (otherwise a delins)
+                    //In reality, the submitters don't follow the spec and express delins as substitution,
+                    //e.g. NM_000051:c.2077_2098>G or NM_000051:c.2077_2098AC>GTA.
 
                 deletion        = str_p("del") >> !raw_seq_or_len;
 

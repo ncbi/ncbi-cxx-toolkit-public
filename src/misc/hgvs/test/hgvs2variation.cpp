@@ -182,46 +182,6 @@ string TestRoundTrip(const string& hgvs_synonyms, CHgvsParser& parser)
     return all_ok ? "OK" : result;
 }
 
-void AttachHgvs(CVariation& v, CHgvsParser& parser)
-{
-    v.Index();
-    CVariationUtil util(parser.SetScope());
-
-    //compute and attach placement-specific HGVS expressions
-    for(CTypeIterator<CVariation> it(Begin(v)); it; ++it) {
-        CVariation& v2 = *it;
-        if(!v2.IsSetPlacements()) {
-            continue;
-        }
-        NON_CONST_ITERATE(CVariation::TPlacements, it2, v2.SetPlacements()) {
-            CVariantPlacement& p2 = **it2;
-            if(!p2.IsSetSeq()) {
-                util.AttachSeq(p2);
-            }
-
-            if(!p2.GetLoc().GetId()) {
-                continue;
-            }
-
-            if(p2.GetMol() != CVariantPlacement::eMol_protein && v2.GetConsequenceParent()) {
-                //if this variation is in consequnece, only compute HGVS for protein variations
-                //(as otherwise it will throw - can't have HGVS expression for protein with nuc placement)
-                continue;
-            }
-
-            //compute hgvs-expression specific to the placement and the variation to which it is attached
-            string hgvs_expression = parser.AsHgvsExpression(v2, CConstRef<CSeq_id>(p2.GetLoc().GetId()));
-            p2.SetHgvs_name(hgvs_expression);
-        }
-    }
-
-    //If the root variation does not have placements (e.g. a container for placement-specific subvariations)
-    //then compute the hgvs expression for the root placement and attach it to variation itself as a synonym.
-    if(!v.IsSetPlacements()) {
-        string root_output_hgvs = parser.AsHgvsExpression(v);
-        v.SetSynonyms().push_back(root_output_hgvs);
-    }
-}
 
 void ProcessVariation(CVariation& v, const CArgs& args, CScope& scope, CConstRef<CSeq_align> aln, CVariationUtil& variation_util)
 {
@@ -279,7 +239,7 @@ void ProcessVariation(CVariation& v, const CArgs& args, CScope& scope, CConstRef
 
     }
     if(args["compute_hgvs"]) {
-        AttachHgvs(v, parser);
+        parser.AttachHgvs(v);
     }
 }
 
@@ -369,7 +329,7 @@ int CHgvs2variationApplication::Run(void)
             try {
                 v = parser->AsVariation(input_hgvs);
             } catch (CException& e) {
-                NCBI_REPORT_EXCEPTION("Can't parse", e);
+                NCBI_REPORT_EXCEPTION("Can't parse " + input_hgvs, e);
                 //can't parse
                 v.Reset(new CVariation);
                 v->SetData().SetUnknown();
