@@ -197,7 +197,15 @@ void CValidError_bioseqset::ValidateBioseqSet(const CBioseq_set& seqset)
         CheckForImproperlyNestedSets(seqset);
     }
 
-
+    if (seqset.IsSetClass() 
+        && (seqset.GetClass() == CBioseq_set::eClass_genbank
+            || seqset.GetClass() == CBioseq_set::eClass_pop_set
+            || seqset.GetClass() == CBioseq_set::eClass_mut_set
+            || seqset.GetClass() == CBioseq_set::eClass_phy_set
+            || seqset.GetClass() == CBioseq_set::eClass_eco_set
+            || seqset.GetClass() == CBioseq_set::eClass_wgs_set)) {
+        ShouldHaveNoDblink(seqset);
+    }
 
     // validate annots
     FOR_EACH_SEQANNOT_ON_SEQSET (annot_it, seqset) {
@@ -788,6 +796,22 @@ void CValidError_bioseqset::CheckForImproperlyNestedSets (const CBioseq_set& seq
             }
             CheckForImproperlyNestedSets((*it)->GetSet());
         }
+    }
+}
+
+void CValidError_bioseqset::ShouldHaveNoDblink (const CBioseq_set& seqset)
+{
+    FOR_EACH_SEQDESC_ON_BIOSEQ (it, seqset) {
+        const CSeqdesc& desc = **it;
+        if (! SEQDESC_CHOICE_IS (desc, NCBI_SEQDESC(User))) continue;
+        const CUser_object& usr = desc.GetUser();
+        if (! usr.IsSetType()) continue;
+        const CObject_id& oi = usr.GetType();
+        if (! !oi.IsStr()) continue;
+        if (! NStr::EqualNocase(oi.GetStr(), "DBLink")) continue;
+        PostErr(eDiag_Warning,
+                eErr_SEQ_DESCR_DBLinkProblem,
+                "DBLink user object should not be on this set", seqset);
     }
 }
 

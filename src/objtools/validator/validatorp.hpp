@@ -1255,6 +1255,7 @@ private:
     void CheckForInconsistentBiomols (const CBioseq_set& seqset);
     void SetShouldNotHaveMolInfo(const CBioseq_set& seqset);
     void CheckForImproperlyNestedSets (const CBioseq_set& seqset);
+    void ShouldHaveNoDblink (const CBioseq_set& seqset);
 
     bool IsMrnaProductInGPS(const CBioseq& seq); 
     bool IsCDSProductInGPS(const CBioseq& seq, const CBioseq_set& gps); 

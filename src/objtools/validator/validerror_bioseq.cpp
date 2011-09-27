@@ -46,6 +46,7 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -6094,6 +6095,8 @@ EDiagSev CValidError_bioseq::x_DupFeatSeverity
             && curr.IsSetPseudo() && curr.GetPseudo()
             && prev.IsSetPseudo() && prev.GetPseudo()) {
             severity = eDiag_Warning;
+        } else if (curr_subtype == CSeqFeatData::eSubtype_gene && is_viral) {
+            severity = eDiag_Warning;
         } else if (curr_subtype == CSeqFeatData::eSubtype_cdregion && is_htgs) {
             severity = eDiag_Warning;
         }
@@ -6638,6 +6641,13 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
     bool has_chromosome = false;
     bool is_prokaryote = false;
     bool is_organelle = false;
+    int dblink_count = 0,
+        taa_count = 0,
+        bs_count = 0,
+        pdb_count = 0,
+        sra_count = 0,
+        bp_count = 0,
+        unknown_count = 0;
 
     // some validation is for descriptors that affect a bioseq, 
     // other validation is only for descriptors _on_ a bioseq
@@ -6841,7 +6851,8 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
 
         case CSeqdesc::e_User:
             if (desc.GetUser().IsSetType()) {
-                const CObject_id& oi = desc.GetUser().GetType();
+                const CUser_object& usr = desc.GetUser();
+                const CObject_id& oi = usr.GetType();
                 if (oi.IsStr() && NStr::CompareNocase(oi.GetStr(), "TpaAssembly") == 0 
                     && !s_IsTPAAssemblyOkForBioseq(seq)) {
                     string id_str;
@@ -6882,6 +6893,27 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                         }
                     }
                     x_ValidateStructuredCommentContext(desc, seq);
+                } else if (oi.IsStr() && NStr::EqualCase(oi.GetStr(), "DBLink")) {
+                    dblink_count++;
+                    FOR_EACH_USERFIELD_ON_USEROBJECT (ufd_it, usr) {
+                        const CUser_field& fld = **ufd_it;
+                        if (FIELD_IS_SET_AND_IS(fld, Label, Str)) {
+                            const string &label_str = GET_FIELD(fld.GetLabel(), Str);
+                            if (NStr::EqualNocase(label_str, "Trace Assembly Archive")) {
+                                taa_count++;
+                            } else if (NStr::EqualNocase(label_str, "BioSample")) {
+                                bs_count++;
+                            } else if (NStr::EqualNocase(label_str, "ProbeDB")) {
+                                pdb_count++;
+                            } else if (NStr::EqualNocase(label_str, "Sequence Read Archive")) {
+                                sra_count++;
+                            } else if (NStr::EqualNocase(label_str, "BioProject")) {
+                                bp_count++;
+                            } else {
+                                unknown_count++;
+                            }
+                        }
+                    }
                 }
             }
             break;
@@ -7037,6 +7069,41 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
     if ( num_sp > 1 ) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
             "Multiple SWISS-PROT blocks", ctx, *last_sp);
+    }
+
+    if (dblink_count > 1) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+            "Multiple DBLink user objects apply to a Bioseq", ctx);
+    }
+
+    if (taa_count > 1) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+            "DBLink user object has multiple Trace Assembly Archive entries", ctx);
+    }
+
+    if (bs_count > 1) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+            "DBLink user object has multiple BioSample entries", ctx);
+    }
+
+    if (pdb_count > 1) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+            "DBLink user object has multiple ProbeDB entries", ctx);
+    }
+
+    if (sra_count > 1) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+            "DBLink user object has multiple Sequence Read Archive entries", ctx);
+    }
+
+    if (bp_count > 1) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+            "DBLink user object has multiple BioProject entries", ctx);
+    }
+
+    if (unknown_count > 0) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+            "DBLink user object has unrecognized entries", ctx);
     }
 
     ValidateModifDescriptors (seq);
