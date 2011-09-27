@@ -91,10 +91,9 @@ void CValidError_bioseqset::ValidateBioseqSet(const CBioseq_set& seqset)
     
     // Validate Set Contents
     FOR_EACH_SEQENTRY_ON_SEQSET (se_list_it, seqset) {
-        if ( (*se_list_it)->IsSet() ) {
-            const CBioseq_set& set = (*se_list_it)->GetSet();
-            // validate member set
-            ValidateBioseqSet (set);
+        const CSeq_entry& se = **se_list_it;
+        if ( se.IsSet() ) {
+            const CBioseq_set& set = se.GetSet();
 
             // look for internal genbank sets
             if ( set.IsSetClass() 
@@ -104,8 +103,11 @@ void CValidError_bioseqset::ValidateBioseqSet(const CBioseq_set& seqset)
                          "Bioseq-set contains internal GenBank Bioseq-set",
                          seqset);
             }
-        } else if ((*se_list_it)->IsSeq()) {
-            const CBioseq& seq = (*se_list_it)->GetSeq();
+
+            // validate member set
+            ValidateBioseqSet (set);
+        } else if (se.IsSeq()) {
+            const CBioseq& seq = se.GetSeq();
 
             // Validate Member Seq
             m_BioseqValidator.ValidateBioseq(seq);
@@ -807,7 +809,7 @@ void CValidError_bioseqset::ShouldHaveNoDblink (const CBioseq_set& seqset)
         const CUser_object& usr = desc.GetUser();
         if (! usr.IsSetType()) continue;
         const CObject_id& oi = usr.GetType();
-        if (! !oi.IsStr()) continue;
+        if (! oi.IsStr()) continue;
         if (! NStr::EqualNocase(oi.GetStr(), "DBLink")) continue;
         PostErr(eDiag_Warning,
                 eErr_SEQ_DESCR_DBLinkProblem,

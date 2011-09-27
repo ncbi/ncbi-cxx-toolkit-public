@@ -1342,6 +1342,14 @@ bool CValidError_imp::Validate
         }
     }
 
+    m_dblink_count = 0;
+    m_taa_count = 0;
+    m_bs_count = 0;
+    m_pdb_count = 0;
+    m_sra_count = 0;
+    m_bp_count = 0;
+    m_unknown_count = 0;
+
     // validate the main data
     if (seh.IsSeq()) {
         const CBioseq& seq = seh.GetCompleteSeq_entry()->GetSeq();
@@ -1430,6 +1438,41 @@ bool CValidError_imp::Validate
             string("There ") + ((m_NumMisplacedGraphs > 1) ? "are " : "is ") + num + 
             " mispackaged graph" + ((m_NumMisplacedGraphs > 1) ? "s" : "") + " in this record.",
             *m_TSE);
+    }
+
+    if (m_dblink_count > 1) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+            "Multiple DBLink user objects apply to a Bioseq", *m_TSE);
+    }
+
+    if (m_taa_count > 1) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+            "DBLink user object has multiple Trace Assembly Archive entries", *m_TSE);
+    }
+
+    if (m_bs_count > 1) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+            "DBLink user object has multiple BioSample entries", *m_TSE);
+    }
+
+    if (m_pdb_count > 1) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+            "DBLink user object has multiple ProbeDB entries", *m_TSE);
+    }
+
+    if (m_sra_count > 1) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+            "DBLink user object has multiple Sequence Read Archive entries", *m_TSE);
+    }
+
+    if (m_bp_count > 1) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+            "DBLink user object has multiple BioProject entries", *m_TSE);
+    }
+
+    if (m_unknown_count > 0) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+            "DBLink user object has unrecognized entries", *m_TSE);
     }
 
 
