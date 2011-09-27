@@ -79,10 +79,12 @@ public:
     /// @name Functions to add scores directly to Seq-aligns
     /// @{
 
-    virtual void AddScore(CScope& scope, CSeq_align& align,
-                          CSeq_align::EScoreType score);
-    virtual void AddScore(CScope& scope, list< CRef<CSeq_align> >& aligns,
-                          CSeq_align::EScoreType score);
+    virtual double ComputeScore(CScope& scope, const CSeq_align& align,
+                                CSeq_align::EScoreType score);
+    void AddScore(CScope& scope, CSeq_align& align,
+                  CSeq_align::EScoreType score);
+    void AddScore(CScope& scope, list< CRef<CSeq_align> >& aligns,
+                  CSeq_align::EScoreType score);
 
     /// @}
 
