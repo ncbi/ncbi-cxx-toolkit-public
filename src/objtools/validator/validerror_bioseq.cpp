@@ -3535,12 +3535,13 @@ void CValidError_bioseq::ValidateMultipleGeneOverlap (const CBioseq_Handle& bsh)
             TSeqPos left = fi->GetLocation().GetStart(eExtreme_Positional);
             vector< CConstRef < CSeq_feat > >::iterator cit = containing_genes.begin();
             vector< int >::iterator nit = num_contained.begin();
-            while (cit != containing_genes.end() && nit != num_contained.end()) {
+            bool go_on = true;
+            while (go_on && cit != containing_genes.end() && nit != num_contained.end()) {
                 ECompare comp = Compare(fi->GetLocation(), (*cit)->GetLocation(), m_Scope);
                 if (comp == eContained  ||  comp == eSame) {
                     (*nit)++;
                 }
-                if (!is_circular && (*cit)->GetLocation().GetStop(eExtreme_Positional) < left) {
+                if (/* !is_circular && */ (*cit)->GetLocation().GetStop(eExtreme_Positional) < left) {
                     // report if necessary
                     if (*nit > 1) {
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_MultipleGeneOverlap, 
@@ -3550,6 +3551,7 @@ void CValidError_bioseq::ValidateMultipleGeneOverlap (const CBioseq_Handle& bsh)
                     // remove from list
                     cit = containing_genes.erase(cit);
                     nit = num_contained.erase(nit);
+                    go_on = false;
                 } else {
                     ++cit;
                     ++nit;
@@ -3589,6 +3591,15 @@ void CValidError_bioseq::ValidateBadGeneOverlap(const CSeq_feat& feat)
         return;
     }
 
+    const CSeq_loc& loc = feat.GetLocation();
+
+    CConstRef<CSeq_feat> gene = GetOverlappingGene(loc, *m_Scope);
+    if (gene) return;
+
+    gene = GetBestOverlappingFeat(loc, CSeqFeatData::eSubtype_gene, eOverlap_Simple, *m_Scope);
+    if (! gene) return;
+
+    /*
     if (!m_GeneIt) {
         return;
     }
@@ -3621,6 +3632,7 @@ void CValidError_bioseq::ValidateBadGeneOverlap(const CSeq_feat& feat)
     if (!has_simple_overlap) {
         return;
     }
+    */
 
     // found an intersecting (but not overlapping) gene
     // set severity level

@@ -6436,7 +6436,10 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
     size_t max = 0;
     size_t num_trans_spliced = 0;
     bool equivalent = false;
+    /*
     CFeat_CI gene_it(bsh, CSeqFeatData::e_Gene);
+    */
+    CFeat_CI gene_it(*m_Scope, feat.GetLocation(), SAnnotSelector (CSeqFeatData::e_Gene));
     CFeat_CI prev_gene;
     string label = "?";
     bool xref_match_same_as_overlap = false;

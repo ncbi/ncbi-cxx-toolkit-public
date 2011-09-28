@@ -811,7 +811,7 @@ void CValidError_bioseqset::ShouldHaveNoDblink (const CBioseq_set& seqset)
         const CObject_id& oi = usr.GetType();
         if (! oi.IsStr()) continue;
         if (! NStr::EqualNocase(oi.GetStr(), "DBLink")) continue;
-        PostErr(eDiag_Warning,
+        PostErr(eDiag_Critical,
                 eErr_SEQ_DESCR_DBLinkProblem,
                 "DBLink user object should not be on this set", seqset);
     }

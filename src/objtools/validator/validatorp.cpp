@@ -1441,37 +1441,37 @@ bool CValidError_imp::Validate
     }
 
     if (m_dblink_count > 1) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+        PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
             "Multiple DBLink user objects apply to a Bioseq", *m_TSE);
     }
 
     if (m_taa_count > 1) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+        PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
             "DBLink user object has multiple Trace Assembly Archive entries", *m_TSE);
     }
 
     if (m_bs_count > 1) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+        PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
             "DBLink user object has multiple BioSample entries", *m_TSE);
     }
 
     if (m_pdb_count > 1) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+        PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
             "DBLink user object has multiple ProbeDB entries", *m_TSE);
     }
 
     if (m_sra_count > 1) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+        PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
             "DBLink user object has multiple Sequence Read Archive entries", *m_TSE);
     }
 
     if (m_bp_count > 1) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+        PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
             "DBLink user object has multiple BioProject entries", *m_TSE);
     }
 
     if (m_unknown_count > 0) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
+        PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
             "DBLink user object has unrecognized entries", *m_TSE);
     }
 
