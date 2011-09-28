@@ -24,7 +24,12 @@ done
 
 common=_`basename $PWD`_common
 
-[ -d "$cache_dir" ]  ||  mkdir "$cache_dir"
+if [ -d "$cache_dir" ]; then
+    (cd $cache_dir; for x in *; do test -f ../$x || rm -f $x; done)
+else
+    mkdir "$cache_dir"
+fi
+
 (test Makefile.in -ef Makefile.in) 2>/dev/null  ||  test=/usr/bin/test
 if nawk 'BEGIN { exit 0 }' 2>/dev/null; then
     awk=nawk
