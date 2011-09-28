@@ -134,13 +134,8 @@ protected:
     static bool x_NeedsQuoting(
         const string& );
 
-    virtual void x_StrAttributesAppendSingleValue(
+    virtual void x_StrAttributesAppendValue(
         const string&,
-        const string&,
-        map<string, string >&,
-        string& ) const;
-
-    virtual void x_StrAttributesAppendMultiValue(
         const string&,
         const string&,
         map<string, string >&,
@@ -161,6 +156,7 @@ protected:
     TAttributes m_Attributes;
 
     static const string ATTR_SEPARATOR;
+    static const string INTERNAL_SEPARATOR;
 };
 
 //  ----------------------------------------------------------------------------

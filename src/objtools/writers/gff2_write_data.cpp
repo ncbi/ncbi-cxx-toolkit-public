@@ -68,6 +68,11 @@ const string CGffWriteRecord::ATTR_SEPARATOR
     = "; ";
 
 //  ----------------------------------------------------------------------------
+const string CGffWriteRecord::INTERNAL_SEPARATOR
+//  ----------------------------------------------------------------------------
+    = "###";
+
+//  ----------------------------------------------------------------------------
 string CGffWriteRecord::s_GetSubtypeString( int subtype )
 //  ----------------------------------------------------------------------------
 {
@@ -458,7 +463,7 @@ bool CGffWriteRecord::x_NeedsQuoting(
     return false;
 }
 
-
+/*
 //  ----------------------------------------------------------------------------
 void CGffWriteRecord::x_StrAttributesAppendMultiValue(
     const string& strKey,
@@ -489,11 +494,12 @@ void CGffWriteRecord::x_StrAttributesAppendMultiValue(
     }
 	attrs.erase(it);
 }
-
+*/
 //  ----------------------------------------------------------------------------
-void CGffWriteRecord::x_StrAttributesAppendSingleValue(
+void CGffWriteRecord::x_StrAttributesAppendValue(
     const string& strKey,
-    const string& SEPARATOR,
+    const string& attr_separator,
+    const string& multivalue_separator,
     map<string, string >& attrs,
     string& strAttributes ) const
 //  ----------------------------------------------------------------------------
@@ -502,18 +508,28 @@ void CGffWriteRecord::x_StrAttributesAppendSingleValue(
     if ( it == attrs.end() ) {
         return;
     }
+    string strValue;
+    vector<string> tags;
+    NStr::Tokenize( it->second, INTERNAL_SEPARATOR, tags, NStr::eMergeDelims );
+    for ( vector<string>::iterator pTag = tags.begin(); pTag != tags.end(); pTag++ ) {
+        if ( !strValue.empty() ) {
+            strValue += multivalue_separator;
+        }
+        string strTag = x_Encode( *pTag );
+        if (x_NeedsQuoting(strTag)) {
+            strTag = string("\"") + strTag + string("\"");
+        }
+        strValue += strTag;
+    }
+
     if ( ! strAttributes.empty() ) {
-        strAttributes += SEPARATOR;
+        strAttributes += attr_separator;
     }
     strAttributes += strKey;
     strAttributes += "=";
-   	bool quote = x_NeedsQuoting(it->second);
-	if ( quote )
-		strAttributes += '\"';		
-	strAttributes += x_Encode(it->second);
+    strAttributes += strValue;
+
 	attrs.erase(it);
-	if ( quote )
-		strAttributes += '\"';
 }
 
 //  ----------------------------------------------------------------------------

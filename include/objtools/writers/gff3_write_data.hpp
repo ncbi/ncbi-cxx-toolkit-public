@@ -154,11 +154,17 @@ protected:
     virtual bool x_AssignAttributeName(
         CMappedFeat );
 
+    virtual void x_StrAttributesAppendValue(
+        const string&,
+        map<string, string >&,
+        string& ) const;
+
 protected:
     CGffFeatureContext& m_fc;
     CRef<CSeq_loc> m_pLoc;
 
     static const string ATTR_SEPARATOR;
+    static const string MULTIVALUE_SEPARATOR;
 };
 
 END_objects_SCOPE

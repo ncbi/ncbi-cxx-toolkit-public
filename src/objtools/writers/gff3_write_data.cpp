@@ -67,6 +67,11 @@ const string CGff3WriteRecordFeature::ATTR_SEPARATOR
     = ";";
 
 //  ----------------------------------------------------------------------------
+const string CGff3WriteRecordFeature::MULTIVALUE_SEPARATOR
+//  ----------------------------------------------------------------------------
+    = ",";
+
+//  ----------------------------------------------------------------------------
 string s_GeneRefToGene(
     const CGene_ref& gene_ref )
 //  ----------------------------------------------------------------------------
@@ -385,35 +390,35 @@ string CGff3WriteRecordFeature::StrAttributes() const
     attrs.insert( Attributes().begin(), Attributes().end() );
     CGffWriteRecord::TAttrIt it;
 
-    x_StrAttributesAppendSingleValue( 
-        "ID", ATTR_SEPARATOR, attrs, strAttributes );
-    x_StrAttributesAppendSingleValue( 
-        "Name", ATTR_SEPARATOR, attrs, strAttributes );
-    x_StrAttributesAppendSingleValue( 
-        "Alias", ATTR_SEPARATOR, attrs, strAttributes );
-    x_StrAttributesAppendSingleValue( 
-        "Parent", ATTR_SEPARATOR, attrs, strAttributes );
-    x_StrAttributesAppendSingleValue( 
-        "Target", ATTR_SEPARATOR, attrs, strAttributes );
-    x_StrAttributesAppendSingleValue( 
-        "Gap", ATTR_SEPARATOR, attrs, strAttributes );
-    x_StrAttributesAppendSingleValue( 
-        "Derives_from", ATTR_SEPARATOR, attrs, strAttributes );
-    x_StrAttributesAppendSingleValue( 
-        "Note", ATTR_SEPARATOR, attrs, strAttributes );
-    x_StrAttributesAppendMultiValue( 
-        "Dbxref", ATTR_SEPARATOR, attrs, strAttributes );
-    x_StrAttributesAppendSingleValue( 
-        "Ontology_term", ATTR_SEPARATOR, attrs, strAttributes );
+    x_StrAttributesAppendValue( "ID", attrs, strAttributes );
+    x_StrAttributesAppendValue( "Name", attrs, strAttributes );
+    x_StrAttributesAppendValue( "Alias", attrs, strAttributes );
+    x_StrAttributesAppendValue( "Parent", attrs, strAttributes );
+    x_StrAttributesAppendValue( "Target", attrs, strAttributes );
+    x_StrAttributesAppendValue( "Gap", attrs, strAttributes );
+    x_StrAttributesAppendValue( "Derives_from", attrs, strAttributes );
+    x_StrAttributesAppendValue( "Note", attrs, strAttributes );
+    x_StrAttributesAppendValue( "Dbxref", attrs, strAttributes );
+    x_StrAttributesAppendValue( "Ontology_term", attrs, strAttributes );
 
     while ( !attrs.empty() ) {
-        x_StrAttributesAppendSingleValue( 
-            attrs.begin()->first, ATTR_SEPARATOR, attrs, strAttributes );
+        x_StrAttributesAppendValue( attrs.begin()->first, attrs, strAttributes );
     }
     if ( strAttributes.empty() ) {
         strAttributes = ".";
     }
     return strAttributes;
+}
+
+//  ----------------------------------------------------------------------------
+void CGff3WriteRecordFeature::x_StrAttributesAppendValue(
+    const string& strKey,
+    map<string, string >& attrs,
+    string& strAttributes ) const
+//  ----------------------------------------------------------------------------
+{
+    CGffWriteRecord::x_StrAttributesAppendValue( strKey, ATTR_SEPARATOR,
+        MULTIVALUE_SEPARATOR, attrs, strAttributes );
 }
 
 //  ----------------------------------------------------------------------------
@@ -678,7 +683,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeDbXref(
 
     if ( ! values.empty() ) {
         // will see more processing before final output, so don't quote just yet.
-        m_Attributes["Dbxref"] = NStr::Join( values, ";" );
+        m_Attributes["Dbxref"] = NStr::Join( values, INTERNAL_SEPARATOR );
     }
     return true;
 }
@@ -703,7 +708,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeGeneSynonym(
     }
     string strGeneSyn = *( it++ );
     while ( it != syns.end() ) {
-        strGeneSyn += ",";
+        strGeneSyn += INTERNAL_SEPARATOR;
         strGeneSyn += * (it++ );
     }
 
