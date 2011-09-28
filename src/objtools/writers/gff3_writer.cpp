@@ -333,6 +333,8 @@ bool CGff3Writer::x_WriteFeature(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
+//    CSeqFeatData::ESubtype st = mf.GetFeatSubtype();
+
     switch( mf.GetFeatSubtype() ) {
         default:
             if (mf.GetFeatType() == CSeqFeatData::e_Rna) {
@@ -355,7 +357,16 @@ bool CGff3Writer::x_WriteFeatureTrna(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    if (!x_WriteFeatureGeneric( fc, mf ) ) {
+    CRef<CGff3WriteRecordFeature> pParent( new CGff3WriteRecordFeature( fc ) );
+    if ( ! pParent->AssignFromAsn( mf ) ) {
+        return false;
+    }
+    string strId;
+    if ( ! pParent->GetAttribute( "ID", strId ) ) {
+        pParent->ForceAttributeID( 
+            string( "rna" ) + NStr::UIntToString( m_uPendingTrnaId ) );
+    }
+    if (!x_WriteFeatureRecords( *pParent, mf.GetLocation() ) ) {
         return false;
     }
 
