@@ -179,8 +179,8 @@ string CMD5::GetHexSum(unsigned char digest[16])
 
 // #define F1(x, y, z) (x & y | ~x & z)
 #define F1(x, y, z) (z ^ (x & (y ^ z)))
-#define F2(x, y, z) F1(z, x, y)
-#define F3(x, y, z) (x ^ y ^ z)
+#define F2(x, y, z) ((z & x) | (~z & y))
+#define F3(x, y, z) (x ^ (y ^ z))
 #define F4(x, y, z) (y ^ (x | ~z))
 
 // This is the central step in the MD5 algorithm.
