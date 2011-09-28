@@ -37,8 +37,11 @@
 #include <util/util_exception.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/stream_utils.hpp>
+#include <util/error_codes.hpp>
 
 #include <string.h>
+
+#define NCBI_USE_ERRCODE_X   Util_LineReader
 
 BEGIN_NCBI_SCOPE
 
@@ -46,7 +49,19 @@ BEGIN_NCBI_SCOPE
 CRef<ILineReader> ILineReader::New(const string& filename)
 {
     CRef<ILineReader> lr;
-    lr.Reset(new CBufferedLineReader(filename));
+    if (filename != "-") {
+        try {
+            lr.Reset(new CMemoryLineReader(new CMemoryFile(filename),
+                                           eTakeOwnership));
+        } catch (exception& e) { // CFileException is the main concern
+            ERR_POST_X(1, Info << "ILineReader::New: falling back from"
+                       " CMemoryLineReader to CBufferedLineReader for "
+                       << filename << " due to exception: " << e.what());
+        }
+    }
+    if (lr.Empty()) {
+        lr.Reset(new CBufferedLineReader(filename));
+    }
     return lr;
 }
 
