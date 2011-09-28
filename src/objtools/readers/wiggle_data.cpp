@@ -427,7 +427,7 @@ void CWiggleTrack::MakeTable(
         CRef<CSeqTable_column> col_id(new CSeqTable_column);
         table.SetColumns().push_back(col_id);
         col_id->SetHeader().SetField_id(CSeqTable_column_info::eField_id_location_id);
-        col_id->SetDefault().SetId().Set(m_strChrom);
+        col_id->SetDefault().SetId(*s_ResolveId(m_strChrom));
     }
 
     { // Table minimum
