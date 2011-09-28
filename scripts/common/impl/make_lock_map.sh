@@ -25,7 +25,14 @@ done
 common=_`basename $PWD`_common
 
 if [ -d "$cache_dir" ]; then
-    (cd $cache_dir; for x in *; do test -f ../$x || rm -f $x; done)
+    cd $cache_dir
+    for x in *; do
+        if test \! -f ../$x; then
+            rm -f $x
+            act=true
+        fi
+    done
+    cd ..
 else
     mkdir "$cache_dir"
 fi
@@ -75,9 +82,10 @@ fi
 
 print_rdep_count()
 {
-    target=`awk "/\.$3\.real :/ { x=\\$1 } /cd $d;.* $2_PROJ=$1 / { print x; exit }" $mff`
+    test -f Makefile.$1.$2  ||  return
+    target=`awk "/\.$4\.real :/ { x=\\$1 } /cd $d;.* $3_PROJ=$1 / { print x; exit }" $mff`
     if [ -n "$target" ]; then
-        echo `grep -c " $target" $mff` $target
+        echo `grep -c " $target" $mff` $target Makefile.$1.$2
     else
         echo "WARNING: couldn't find $rel_srcdir/$x in $mff" >&2
     fi
@@ -101,13 +109,17 @@ EOF
         set _
         shift
         while read x y; do
-            test -f "Makefile.$x.app"  &&  print_rdep_count $x APP exe
-            test -f "Makefile.$x.lib"  &&  print_rdep_count $x LIB '(lib|dll)'
+            print_rdep_count $x app APP exe
+            print_rdep_count $x lib LIB '(lib|dll)'
         done < "$lock_map" | \
         sort -rn | \
-        while read n x; do
-            [ $# = 0 ]  ||  echo "  $x: $*"
-            set "$@" "$x"
+        while read n x mf; do
+            v=`echo $x | tr .- __`
+            echo "  ifneq '' '\$(wildcard \$(top_srcdir)/src/$rel_srcdir/$mf)'"
+            echo "    $v = $x"
+            [ $# = 0 ]  ||  echo "    $x: $*"
+            echo "  endif"
+            set "$@" "\$($v)"
         done
         echo 'endif'
         mv "$hintfile.$$" "$hintfile"
