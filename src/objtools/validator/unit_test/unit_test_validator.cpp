@@ -3043,7 +3043,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ShortSeq)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    // don't report if partial
+    // new test if no coding region
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "PartialsInconsistent", "Molinfo completeness and protein feature partials conflict"));
+
     entry->SetSeq().SetId().front()->SetLocal().SetStr("good");
     entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
     scope.RemoveTopLevelSeqEntry(seh);
@@ -3061,6 +3063,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ShortSeq)
     SetCompleteness (entry, CMolInfo::eCompleteness_no_ends);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
 
     // for all other completeness, report
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ShortSeq", "Sequence only 3 residues"));
