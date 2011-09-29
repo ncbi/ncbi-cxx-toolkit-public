@@ -494,7 +494,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         argslen = strlen(args);
         if (*args == '#')
             frag = args;
-        else if (!(frag = strchr(++args/*NB: *args=='?'*/, '#')))
+        else if (!(frag = strchr(++args/*NB: args[0]=='?'*/, '#')))
             frag = args + --argslen;
         else
             argslen--;
@@ -502,17 +502,21 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
 
         if (*frag) {
             /* if there is a new fragment, the entire args get overridden */
-            len = 0;
             if (!frag[1])
                 argslen--; /* don't store the empty fragment # */
             if (argslen >= sizeof(info->args))
                 return 0/*failure*/;
+            len = 0;
         } else if ((s = strchr(info->args, '#')) != 0) {
             /* there is no new fragment, but there was the old one: keep it */
             len = strlen(s);
             if (argslen + len >= sizeof(info->args))
                 return 0/*failure*/;
             memmove(info->args + argslen, s, len);
+        } else {
+            if (argslen >= sizeof(info->args))
+                return 0/*failure*/;
+            len = 0;
         }
         memcpy(info->args, args, argslen);
         info->args[argslen + len] = '\0';
