@@ -86,6 +86,59 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 
+class CScore_GapCount : public CScoreLookup::IScore
+{
+public:
+    CScore_GapCount(bool count_bases, int row = -1,
+                    bool exon_specific = false)
+        : m_CountBases(count_bases), m_Row(row), m_ExonSpecific(exon_specific)
+    {
+    }
+
+    virtual EComplexity GetComplexity() const { return eEasy; };
+
+    virtual double Get(const CSeq_align& align, CScope*) const
+    {
+        if (m_ExonSpecific && !align.GetSegs().IsSpliced()) {
+            NCBI_THROW(CException, eUnknown,
+                       "'product_gap_length' and 'genomic_gap_length' scores "
+                       "valid only for Spliced-seg alignments");
+        }
+        return m_CountBases ? align.GetTotalGapCount(m_Row)
+                            : align.GetNumGapOpenings(m_Row);
+    }
+
+    virtual void PrintHelp(CNcbiOstream& ostr) const
+    {
+        if (m_CountBases) {
+            ostr << "Total number of gap bases";
+        }
+        else {
+            ostr << "Number of gap openings";
+        }
+        if (m_ExonSpecific) {
+            if (m_Row == 0) {
+                ostr << " in product exons";
+            } else if(m_Row == 1) {
+                ostr << " in genomic exons";
+            }
+        } else {
+            if (m_Row == 0) {
+                ostr << " in query";
+            } else if(m_Row == 1) {
+                ostr << " in subject";
+            }
+        }
+    }
+
+private:
+    bool m_CountBases;
+    int m_Row;
+    bool m_ExonSpecific;
+};
+
+/////////////////////////////////////////////////////////////////////////////
+
 class CScore_LongestGapLength : public CScoreLookup::IScore
 {
 public:
@@ -756,12 +809,89 @@ private:
 };
 
 
+//////////////////////////////////////////////////////////////////////////////
+
+class CScore_BlastRatio : public CScoreLookup::IScore
+{
+public:
+    CScore_BlastRatio(CScoreLookup &lookup)
+    : m_ScoreLookup(lookup)
+    {
+    }
+
+    virtual void PrintHelp(CNcbiOstream& ostr) const
+    {
+        ostr <<
+            "Adjusted protein score (ratio of actual score to perfect score)";
+    }
+
+    virtual EComplexity GetComplexity() const { return eHard; };
+
+    virtual double Get(const CSeq_align& align, CScope* scope) const
+    {
+        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(align.GetSeq_id(0));
+        CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    
+        ///
+        /// compute the BLAST score
+        ///
+        int score = m_ScoreLookup.GetBlastScore(*scope, align);
+    
+        ///
+        /// compute the BLAST score for a degenerate perfect alignment for
+        /// this sequence
+        ///
+        CSeq_align perfect_align;
+        CDense_seg& seg = perfect_align.SetSegs().SetDenseg();
+        CRef<CSeq_id> id(new CSeq_id);
+        id->Assign(*idh.GetSeqId());
+        seg.SetIds().push_back(id);
+        seg.SetIds().push_back(id);
+        seg.SetNumseg(1);
+        seg.SetStarts().push_back(0);
+        seg.SetStarts().push_back(0);
+        seg.SetLens().push_back(bsh.GetBioseqLength());
+    
+        double perfect_score =
+            m_ScoreLookup.GetBlastScore(*scope, perfect_align);
+        return perfect_score ? score / perfect_score : 0;
+    }
+
+private:
+    CScoreLookup &m_ScoreLookup;
+};
+
+
 void CScoreLookup::x_Init()
 {
     m_Scores.insert
         (TScoreDictionary::value_type
          ("align_length_ungap",
           CIRef<IScore>(new CScore_AlignLength(false /* include gaps */))));
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("gap_count",
+          CIRef<IScore>(new CScore_GapCount(false))));
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("gap_basecount",
+          CIRef<IScore>(new CScore_GapCount(true))));
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("query_gap_length",
+          CIRef<IScore>(new CScore_GapCount(true, 0))));
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("subject_gap_length",
+          CIRef<IScore>(new CScore_GapCount(true, 1))));
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("product_gap_length",
+          CIRef<IScore>(new CScore_GapCount(true, 0, true))));
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("genomic_gap_length",
+          CIRef<IScore>(new CScore_GapCount(true, 1, true))));
     m_Scores.insert
         (TScoreDictionary::value_type
          ("symmetric_overlap",
@@ -892,6 +1022,11 @@ void CScoreLookup::x_Init()
         (TScoreDictionary::value_type
          ("subject_overlap_nogaps",
           CIRef<IScore>(new CScore_Overlap(1, false))));
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("blast_score_ratio",
+          CIRef<IScore>(new CScore_BlastRatio(*this))));
 }
 
 
@@ -930,15 +1065,21 @@ void CScoreLookup::PrintDictionary(CNcbiOstream &ostr)
 
 string CScoreLookup::HelpText(const string &score_name)
 {
-    TScoreDictionary::const_iterator it = m_Scores.find(score_name);
-    if (it != m_Scores.end()) {
+    CSeq_align::TScoreNameMap::const_iterator score_it =
+        CSeq_align::ScoreNameMap().find(score_name);
+    if (score_it != CSeq_align::ScoreNameMap().end()) {
+        return CSeq_align::HelpText(score_it->second);
+    }
+
+    TScoreDictionary::const_iterator token_it = m_Scores.find(score_name);
+    if (token_it != m_Scores.end()) {
         m_ScoresUsed.insert(score_name);
         CNcbiOstrstream os;
-        it->second->PrintHelp(os);
+        token_it->second->PrintHelp(os);
         return string(CNcbiOstrstreamToString(os));
-    } else {
-        return CSeq_align::HelpText(score_name);
     }
+    
+    return "assumed to be a score on the Seq-align";
 }
 
 double CScoreLookup::GetScore(const objects::CSeq_align& align,

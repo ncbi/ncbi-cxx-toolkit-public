@@ -318,7 +318,7 @@ public:
 
     static const TScoreNameMap &ScoreNameMap();
 
-    static string HelpText(const string &score_name);
+    static string HelpText(EScoreType score);
 
     static bool IsIntegerScore(EScoreType score);
 

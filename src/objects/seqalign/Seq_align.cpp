@@ -455,9 +455,9 @@ const CSeq_align::TScoreNameMap &CSeq_align::ScoreNameMap()
     return m_ScoreNameMap;
 }
 
-string CSeq_align::HelpText(const string &score_name)
+string CSeq_align::HelpText(EScoreType score)
 {
-    return sc_ScoreHelpText[ScoreNameMap().find(score_name)->second];
+    return sc_ScoreHelpText[score];
 }
 
 bool CSeq_align::IsIntegerScore(EScoreType score)
