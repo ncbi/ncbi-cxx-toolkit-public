@@ -103,12 +103,13 @@ class CVcfData
 {
 public:
     typedef map<string,vector<string> > INFOS;
+    typedef map<string, map<string,string> > GTDATA;
 
     CVcfData() { m_pdQual = 0; };
     ~CVcfData() { delete m_pdQual; };
 
-    bool ParseData(
-        const string& );
+//    bool ParseData(
+//        const string& );
 
     string m_strChrom;
     int m_iPos;
@@ -119,60 +120,9 @@ public:
     string m_strFilter;
     INFOS m_Info;
     vector<string> m_FormatKeys;
-    vector< vector<string> > m_FormatValues;
+//    vector< vector<string> > m_GenotypeData;
+    GTDATA m_GenotypeData;
 };
-
-//  ----------------------------------------------------------------------------
-bool
-CVcfData::ParseData(
-    const string& line )
-//  ----------------------------------------------------------------------------
-{
-    vector<string> columns;
-    NStr::Tokenize( line, " \t", columns, NStr::eMergeDelims );
-    if ( columns.size() < 8 ) {
-        return false;
-    }
-    try {
-        m_strChrom = columns[0];
-        m_iPos = NStr::StringToInt( columns[1] );
-        NStr::Tokenize( columns[2], ";", m_Ids, NStr::eNoMergeDelims );
-        if ( (m_Ids.size() == 1)  &&  (m_Ids[0] == ".") ) {
-            m_Ids.clear();
-        }
-        m_strRef = columns[3];
-        NStr::Tokenize( columns[4], ",", m_Alt, NStr::eNoMergeDelims );
-        if ( columns[5] != "." ) {
-            m_pdQual = new double( NStr::StringToDouble( columns[5] ) );
-        }
-        m_strFilter = columns[6];
-
-        vector<string> infos;
-        if ( columns[7] != "." ) {
-            NStr::Tokenize( columns[7], ";", infos, NStr::eMergeDelims );
-            for ( vector<string>::iterator it = infos.begin(); 
-                it != infos.end(); ++it ) 
-            {
-                string key, value;
-                NStr::SplitInTwo( *it, "=", key, value );
-                m_Info[key] = vector<string>();
-                NStr::Tokenize( value, ",", m_Info[key] );
-            }
-        }
-        if ( columns.size() > 8 ) {
-            NStr::Tokenize( columns[8], ":", m_FormatKeys, NStr::eMergeDelims );
-            for ( size_t u=9; u < columns.size(); ++u ) {
-                vector<string> values;
-                NStr::Tokenize( columns[u], ":", values, NStr::eMergeDelims );
-                m_FormatValues.push_back( values );
-            }
-        }
-    }
-    catch ( ... ) {
-        return false;
-    }
-    return true;
-}
 
 //  ----------------------------------------------------------------------------
 ESpecType SpecType( 
@@ -477,9 +427,34 @@ CVcfReader::x_ProcessHeaderLine(
     if ( ! NStr::StartsWith( line, "#" ) ) {
         return false;
     }
+
+    //
+    //  Per spec:
+    //  The header line provides the column headers for the data records that follow.
+    //  the first few are fixed and mandatory: CHROM .. FILTER.
+    //  If genotype data is present this is followed by the FORMAT header.
+    //  After that come the various headers for the genotype information, and these
+    //  need to be preserved:
+    //
+    NStr::Tokenize(line, " \t", m_GenotypeHeaders, NStr::eMergeDelims);
+    vector<string>::iterator pos_format = find(
+        m_GenotypeHeaders.begin(), m_GenotypeHeaders.end(), "FORMAT");
+    if ( pos_format == m_GenotypeHeaders.end() ) {
+        m_GenotypeHeaders.clear();
+    }
+    else {
+        m_GenotypeHeaders.erase( m_GenotypeHeaders.begin(), pos_format+1 );
+        m_Meta->SetUser().AddField("genotype-headers", m_GenotypeHeaders);
+    }
+    
+    //
+    //  The header line signals the end of meta information, so migrate the
+    //  accumulated meta information into the seq descriptor:
+    //
     if ( m_Meta ) {
         pAnnot->SetDesc().Set().push_back( m_Meta );
     }
+
     return true;
 }
 
@@ -494,7 +469,7 @@ CVcfReader::x_ProcessDataLine(
         return false;
     }
     CVcfData data;
-    if ( ! data.ParseData( line ) ) {
+    if ( ! x_ParseData( line, data ) ) {
         return false;
     }
     CRef<CSeq_feat> pFeat( new CSeq_feat );
@@ -523,11 +498,72 @@ CVcfReader::x_ProcessDataLine(
     if ( ! x_ProcessInfo( data, pFeat ) ) {
         return false;
     }
+    if ( ! x_ProcessFormat( data, pFeat ) ) {
+        return false;
+    }
 
     if ( pFeat->GetExt().GetData().empty() ) {
         pFeat->ResetExt();
     }
     pAnnot->SetData().SetFtable().push_back( pFeat );
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CVcfReader::x_ParseData(
+    const string& line,
+    CVcfData& data )
+//  ----------------------------------------------------------------------------
+{
+    vector<string> columns;
+    NStr::Tokenize( line, " \t", columns, NStr::eMergeDelims );
+    if ( columns.size() < 8 ) {
+        return false;
+    }
+    try {
+        data.m_strChrom = columns[0];
+        data.m_iPos = NStr::StringToInt( columns[1] );
+        NStr::Tokenize( columns[2], ";", data.m_Ids, NStr::eNoMergeDelims );
+        if ( (data.m_Ids.size() == 1)  &&  (data.m_Ids[0] == ".") ) {
+            data.m_Ids.clear();
+        }
+        data.m_strRef = columns[3];
+        NStr::Tokenize( columns[4], ",", data.m_Alt, NStr::eNoMergeDelims );
+        if ( columns[5] != "." ) {
+            data.m_pdQual = new double( NStr::StringToDouble( columns[5] ) );
+        }
+        data.m_strFilter = columns[6];
+
+        vector<string> infos;
+        if ( columns[7] != "." ) {
+            NStr::Tokenize( columns[7], ";", infos, NStr::eMergeDelims );
+            for ( vector<string>::iterator it = infos.begin(); 
+                it != infos.end(); ++it ) 
+            {
+                string key, value;
+                NStr::SplitInTwo( *it, "=", key, value );
+                data.m_Info[key] = vector<string>();
+                NStr::Tokenize( value, ",", data.m_Info[key] );
+            }
+        }
+        if ( columns.size() > 8 ) {
+            NStr::Tokenize( columns[8], ":", data.m_FormatKeys, NStr::eMergeDelims );
+
+            for ( size_t u=9; u < columns.size(); ++u ) {
+                vector<string> values;
+                NStr::Tokenize( columns[u], ":", values, NStr::eMergeDelims );
+                map<string, string> value_map;
+                for ( size_t uu=0; uu < data.m_FormatKeys.size(); ++uu ) {
+                    value_map[ data.m_FormatKeys[uu] ] = values[uu];
+                }
+                data.m_GenotypeData[ m_GenotypeHeaders[u-9] ] = value_map;
+            }
+        }
+    }
+    catch ( ... ) {
+        return false;
+    }
     return true;
 }
 
@@ -598,6 +634,47 @@ CVcfReader::x_ProcessInfo(
         }
         ext.AddField( "info", NStr::Join( infos, ";" ) );
     }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CVcfReader::x_ProcessFormat(
+    const CVcfData& data,
+    CRef<CSeq_feat> pFeature )
+//  ----------------------------------------------------------------------------
+{
+    if (data.m_FormatKeys.empty()) {
+        return true;
+    }
+
+    CSeq_feat::TExt& ext = pFeature->SetExt();
+    ext.AddField("format", data.m_FormatKeys);
+
+    //
+    //  Genotype data:
+    //  Top level user object, contains one child user object for every column
+    //    of genotype data
+    //  
+    CRef<CUser_field> pGenotypeData( new CUser_field );
+    pGenotypeData->SetLabel().SetStr("genotype-data");
+
+    for ( CVcfData::GTDATA::const_iterator cit = data.m_GenotypeData.begin();
+            cit != data.m_GenotypeData.end(); ++cit) {
+
+        CRef<CUser_field> col( new CUser_field );
+        col->SetLabel().SetStr(cit->first);
+
+        for ( map<string,string>::const_iterator cc = cit->second.begin();
+                cc != cit->second.end(); ++cc) {
+            CRef<CUser_field> value( new CUser_field );
+            value->SetLabel().SetStr(cc->first);
+            value->SetData().SetStr(cc->second);
+            col->SetData().SetFields().push_back(value);
+        }
+        pGenotypeData->SetData().SetFields().push_back(col);
+    }
+    ext.SetData().push_back(pGenotypeData);
     return true;
 }
 

@@ -238,6 +238,16 @@ protected:
         const CVcfData&,
         CRef<CSeq_feat> );
 
+    virtual bool
+    x_ProcessFormat(
+        const CVcfData&,
+        CRef<CSeq_feat> );
+
+    virtual bool
+    x_ParseData(
+        const string&,
+        CVcfData& );
+
     //
     //  data:
     //
@@ -247,6 +257,7 @@ protected:
     map<string,CVcfInfoSpec> m_InfoSpecs;
     map<string,CVcfFormatSpec> m_FormatSpecs;
     map<string,CVcfFilterSpec> m_FilterSpecs;
+    vector<string> m_GenotypeHeaders;
     CErrorContainerLenient m_ErrorsPrivate;
 };
 
