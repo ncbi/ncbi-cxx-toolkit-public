@@ -47,8 +47,10 @@ namespace xml {
 
 /// Used to specify if xmlwrapp should grab the ownership of a libxml2 object
 enum ownership_type {
-    type_own,      ///< Grab the ownership, i.e. the object will be freed by xmlwrapp
-    type_not_own   ///< Do not grab the ownership, i.e. the object will not be freed by xmlwrapp
+    type_own,       ///< Grab the ownership, i.e. the object
+                    ///< will be freed by xmlwrapp.
+    type_not_own    ///< Do not grab the ownership, i.e. the object
+                    ///< will not be freed by xmlwrapp.
 };
 
 
@@ -63,7 +65,8 @@ class libxml2_document : public document
          * Use it at your own risk.
          *
          * @param raw_doc
-         *  Raw libxml2 document
+         *  Raw libxml2 document.
+         *  If passed NULL, then an exception will be thrown.
          * @param ownership
          *  Whether to grab the libxml2 document ownership or not. If the
          *  ownership is grabbed then the object will be freed in the
@@ -73,8 +76,8 @@ class libxml2_document : public document
         libxml2_document(xmlDoc *  raw_doc, ownership_type  ownership);
 
         /**
-         * Create a new XML document with the default settings. The new document
-         * will contain a root node with a name of "blank".
+         * Create a new XML document with the default settings. The new
+         * document will contain a root node with a name of "blank".
          * The document ownership is set to type_own.
          *
          * @author Peter Jones
@@ -85,14 +88,17 @@ class libxml2_document : public document
          * Create a new XML document object by parsing the given XML file.
          * The document ownership is set to type_own.
          *
-         * @param filename The XML file name.
-         * @param messages A pointer to the object where all the warnings are
-         *                 collected. If NULL then no messages will be collected.
-         * @param how How to treat warnings (default: warnings are not treated as
-         *            errors). If warnings are treated as errors then an exception
-         *            is thrown in case of both errors and/or warnings. If warnings
-         *            are not treated as errors then an exception will be thrown
-         *            only when there are errors.
+         * @param filename
+         *  The XML file name.
+         * @param messages
+         *  A pointer to the object where all the warnings are collected.
+         *  If NULL then no messages will be collected.
+         * @param how
+         *  How to treat warnings (default: warnings are not treated as
+         *  errors). If warnings are treated as errors then an exception
+         *  is thrown in case of both errors and/or warnings. If warnings
+         *  are not treated as errors then an exception will be thrown
+         *  only when there are errors.
          * @exception Throws xml::parser_exception in case of parsing errors
          *            and std::exception in case of other problems.
          * @author Sergey Satskiy, NCBI
@@ -106,15 +112,19 @@ class libxml2_document : public document
          * memory buffer.
          * The document ownership is set to type_own.
          *
-         * @param data The XML memory buffer.
-         * @param size Size of the memory buffer.
-         * @param messages A pointer to the object where all the warnings are
-         *                 collected. If NULL then no messages will be collected.
-         * @param how How to treat warnings (default: warnings are not treated as
-         *            errors). If warnings are treated as errors then an exception
-         *            is thrown in case of both errors and/or warnings. If warnings
-         *            are not treated as errors then an exception will be thrown
-         *            only when there are errors.
+         * @param data
+         *  The XML memory buffer.
+         * @param size
+         *  Size of the memory buffer.
+         * @param messages
+         *  A pointer to the object where all the warnings are collected.
+         *  If NULL then no messages will be collected.
+         * @param how
+         *  How to treat warnings (default: warnings are not treated as
+         *  errors). If warnings are treated as errors then an exception
+         *  is thrown in case of both errors and/or warnings. If warnings
+         *  are not treated as errors then an exception will be thrown
+         *  only when there are errors.
          * @exception Throws xml::parser_exception in case of parsing errors
          *            and std::exception in case of other problems.
          * @author Sergey Satskiy, NCBI
@@ -125,11 +135,12 @@ class libxml2_document : public document
                                              type_warnings_not_errors);
 
         /**
-         * Create a new XML document and set the name of the root element to the
-         * given text.
+         * Create a new XML document and set the name of the root element
+         * to the given text.
          * The document ownership is set to type_own.
          *
-         * @param root_name What to set the name of the root element to.
+         * @param root_name
+         *  What to set the name of the root element to.
          * @author Peter Jones
         **/
         explicit libxml2_document(const char *root_name);
@@ -138,17 +149,19 @@ class libxml2_document : public document
          * Create a new XML document and set the root node.
          * The document ownership is set to type_own.
          *
-         * @param n The node to use as the root node. n will be copied.
+         * @param n
+         *  The node to use as the root node. n will be copied.
          * @author Peter Jones
         **/
         explicit libxml2_document(const node &n);
 
         /**
-         * Creates a new XML document using the document_proxy, i.e. essentially
-         * xslt results. (see CXX-2458)
+         * Creates a new XML document using the document_proxy,
+         * i.e. essentially xslt results. (see CXX-2458).
          * The document ownership is set to type_own.
          *
-         * @param doc_proxy XSLT results
+         * @param doc_proxy
+         *  XSLT results
          * @author Denis Vakatov
         **/
         libxml2_document(const document_proxy &  doc_proxy);
@@ -157,14 +170,17 @@ class libxml2_document : public document
          * Creates a new XML document by parsing the given XML from a stream.
          * The document ownership is set to type_own.
          *
-         * @param stream The stream to read XML document from.
-         * @param messages A pointer to the object where all the warnings are
-         *                 collected. If NULL then no messages will be collected.
-         * @param how How to treat warnings (default: warnings are not treated as
-         *            errors). If warnings are treated as errors then an exception
-         *            is thrown in case of both errors and/or warnings. If warnings
-         *            are not treated as errors then an exception will be thrown
-         *            only when there are errors.
+         * @param stream
+         *  The stream to read XML document from.
+         * @param messages
+         *  A pointer to the object where all the warnings are collected.
+         *  If NULL then no messages will be collected.
+         * @param how
+         *  How to treat warnings (default: warnings are not treated as
+         *  errors). If warnings are treated as errors then an exception
+         *  is thrown in case of both errors and/or warnings. If warnings
+         *  are not treated as errors then an exception will be thrown
+         *  only when there are errors.
          * @exception Throws xml::parser_exception in case of parsing errors
          *            and std::exception in case of other problems.
          * @author Denis Vakatov
@@ -181,7 +197,23 @@ class libxml2_document : public document
          *  Raw libxml2 document
          * @author Denis Vakatov, NCBI
         **/
-        xmlDoc *  get_raw_doc();
+        xmlDoc *  get_raw_doc(void);
+
+        /**
+         * Set a raw libxml2 document.
+         * If the previous document was owned by the object, then it 'll be
+         * destroyed.
+         *
+         * @param raw_doc
+         *  Raw libxml2 document to manage from now on.
+         *  If passed NULL, then an exception will be thrown.
+         *  If passed the same libxml2 document as the object has then this
+         *  method behaves as set_ownership(...).
+         * @param ownersip
+         *  Whether to take the ownersip over the 'raw_doc'
+         * @author Greg Schuler, NCBI
+        **/
+        void  set_raw_doc(xmlDoc *  raw_doc, ownership_type  ownership);
 
         /**
          * Provides the document ownership type.
@@ -199,7 +231,7 @@ class libxml2_document : public document
          *  The new ownership. If it is 'type_own' then the libxml2 document
          *  will be freed in the destructor.
         **/
-        void set_ownership(ownership_type ownership);
+        void set_ownership(ownership_type  ownership);
 
     private:
         libxml2_document(const libxml2_document &);

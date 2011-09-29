@@ -34,6 +34,7 @@
 **/
 
 #include <misc/xmlwrapp/libxml2_xmlwrapp.hpp>
+#include <misc/xmlwrapp/exception.hpp>
 #include "document_impl.hpp"
 
 
@@ -47,6 +48,9 @@ namespace xml {
 libxml2_document::libxml2_document(xmlDoc *        raw_doc,
                                    ownership_type  ownership)
 {
+    if (raw_doc == NULL)
+        throw xml::exception("invalid raw libxml2 document (NULL)");
+
     set_doc_data(raw_doc);
     set_ownership(ownership);
 }
@@ -106,9 +110,26 @@ libxml2_document::libxml2_document(std::istream &    stream,
 }
 
 
-xmlDoc *  libxml2_document::get_raw_doc()
+xmlDoc *  libxml2_document::get_raw_doc(void)
 {
     return static_cast<xmlDoc *>(get_doc_data());
+}
+
+
+void  libxml2_document::set_raw_doc(xmlDoc *        raw_doc,
+                                    ownership_type  ownership)
+{
+    if (raw_doc == NULL)
+        throw xml::exception("invalid raw libxml2 document (NULL)");
+
+    if (raw_doc == get_raw_doc()) {
+        set_ownership(ownership);
+        return;
+    }
+
+    // set_doc_data(...) will free the document if we owe it.
+    set_doc_data(raw_doc);
+    set_ownership(ownership);
 }
 
 

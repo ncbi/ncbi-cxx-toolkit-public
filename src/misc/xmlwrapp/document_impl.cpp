@@ -68,7 +68,8 @@ doc_impl::doc_impl (const doc_impl &other) : doc_(0), xslt_result_(0), owe_(true
 }
 
 void doc_impl::set_doc_data (xmlDocPtr newdoc, bool root_is_okay) {
-    if (doc_) xmlFreeDoc(doc_);
+    if (doc_ && owe_)
+       xmlFreeDoc(doc_);
     doc_ = newdoc;
 
     if (doc_->version)  version_  = reinterpret_cast<const char*>(doc_->version);
