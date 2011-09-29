@@ -112,8 +112,8 @@ public:
     }
 
 private:
-    bool m_allow_alt_starts;
     const CTrans_table& m_trans_table;
+    bool m_allow_alt_starts;
     char aa_table[8*8*8];
 };
 
