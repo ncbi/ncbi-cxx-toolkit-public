@@ -3980,22 +3980,70 @@ static bool s_PartialsSame (const CSeq_loc& loc1, const CSeq_loc& loc2)
 
 void CValidError_bioseq::ValidateCDSAndProtPartials (const CMappedFeat& feat)
 {
-    if (!feat.IsSetData() || feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_cdregion || !feat.IsSetProduct()) {
-        return;
+    if (! feat.IsSetData()) return;
+
+    SWITCH_ON_SEQFEAT_CHOICE(feat) {
+        case NCBI_SEQFEAT(Cdregion):
+            {
+                if (! feat.IsSetProduct()) return;
+                CBioseq_Handle prot_bsh = m_Scope->GetBioseqHandle(feat.GetProduct());
+                if (!prot_bsh) {
+                    return;
+                }
+                CFeat_CI prot(prot_bsh, CSeqFeatData::eSubtype_prot);
+                if (!prot) {
+                    return;
+                }
+                if (!s_PartialsSame(feat.GetLocation(), prot->GetLocation())) {
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_PartialsInconsistent,
+                        "Coding region and protein feature partials conflict",
+                        *(feat.GetSeq_feat()));
+                }  
+            }
+            break;
+        case NCBI_SEQFEAT(Prot):
+            {
+                CBioseq_Handle prot_bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
+                if (! prot_bsh) return;
+                const CBioseq& pbioseq = *(prot_bsh.GetCompleteBioseq());
+                const CSeq_feat* cds = m_Imp.GetCDSGivenProduct(pbioseq);
+                if (cds) return;
+                CFeat_CI prot(prot_bsh, CSeqFeatData::eSubtype_prot);
+                if (! prot) return;
+        
+                CSeqdesc_CI mi_i(prot_bsh, CSeqdesc::e_Molinfo);
+                if (! mi_i) return;
+                const CMolInfo& mi = mi_i->GetMolinfo();
+                if (! mi.IsSetCompleteness()) return;
+                int completeness = mi.GetCompleteness();
+        
+                const CSeq_loc& prot_loc = prot->GetLocation();
+                bool prot_partial5 = prot_loc.IsPartialStart(eExtreme_Biological);
+                bool prot_partial3 = prot_loc.IsPartialStop(eExtreme_Biological);
+        
+                bool conflict = false;
+                if (completeness == CMolInfo::eCompleteness_partial && ((! prot_partial5) && (! prot_partial3))) {
+                  conflict = true;
+                } else if (completeness == CMolInfo::eCompleteness_no_left && ((! prot_partial5) || prot_partial3)) {
+                  conflict = true;
+                } else if (completeness == CMolInfo::eCompleteness_no_right && (prot_partial5 || (! prot_partial3))) {
+                  conflict = true;
+                } else if (completeness == CMolInfo::eCompleteness_no_ends && ((! prot_partial5) || (! prot_partial3))) {
+                  conflict = true;
+                } else if ((completeness < CMolInfo::eCompleteness_partial || completeness > CMolInfo::eCompleteness_no_ends) && (prot_partial5 || prot_partial3)) {
+                  conflict = true;
+                }
+        
+                if (conflict) {
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_PartialsInconsistent,
+                        "Molinfo completeness and protein feature partials conflict",
+                        *(feat.GetSeq_feat()));
+                }
+            }
+            break;
+        default:
+            break;
     }
-    CBioseq_Handle prot_bsh = m_Scope->GetBioseqHandle(feat.GetProduct());
-    if (!prot_bsh) {
-        return;
-    }
-    CFeat_CI prot(prot_bsh, CSeqFeatData::eSubtype_prot);
-    if (!prot) {
-        return;
-    }
-    if (!s_PartialsSame(feat.GetLocation(), prot->GetLocation())) {
-        PostErr (eDiag_Warning, eErr_SEQ_FEAT_PartialsInconsistent,
-            "Coding region and protein feature partials conflict",
-            *(feat.GetSeq_feat()));
-    }  
 }
 
 void CValidError_bioseq::ValidateFeatPartialInContext (const CMappedFeat& feat)
