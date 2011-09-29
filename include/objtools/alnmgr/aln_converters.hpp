@@ -142,7 +142,7 @@ CreateAnchoredAlnFromAln(const _TAlnStats& aln_stats,      ///< input
         }
         anchor_row = explicit_anchor_row;
     } else {
-        size_t anchor_id_idx;
+        size_t anchor_id_idx = 0; // Prevent warning
         if (aln_stats.CanBeAnchored()) {
             if (options.GetAnchorId()) {
                 // if anchor was chosen by the user

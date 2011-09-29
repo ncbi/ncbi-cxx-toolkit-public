@@ -301,7 +301,6 @@ const string& CCgiContext::GetSelfURL(void) const
     // (replace adjacent '//' to work around a bug in the "www.ncbi" proxy;
     //  it should not hurt, and may help with similar proxies outside NCBI)
     string script_uri;
-    bool have_script_uri = false;
     script_uri = GetRequest().GetRandomProperty("SCRIPT_URL", false);
     if ( script_uri.empty() ) {
         script_uri = GetRequest().GetProperty(eCgi_ScriptName);
