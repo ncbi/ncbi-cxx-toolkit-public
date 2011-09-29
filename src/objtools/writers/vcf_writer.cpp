@@ -318,6 +318,32 @@ bool CVcfWriter::x_WriteFeatureRef(
         return true;
     }
     catch( ... ) {
+//        m_Os << "?";
+    }
+    try {
+        typedef CVariation_ref::TData::TSet::TVariations TVARS;
+        const TVARS& variations =
+            mf.GetData().GetVariation().GetData().GetSet().GetVariations();
+        for (TVARS::const_iterator cit = variations.begin(); cit != variations.end();
+                ++cit) {
+            if ( !(**cit).GetData().IsInstance() ) {
+                continue;
+            }
+            const CVariation_inst& instance = (**cit).GetData().GetInstance();
+            if ( !instance.IsSetObservation() ) {
+                continue;
+            }
+            if ( instance.GetObservation() 
+                    == CVariation_inst::eObservation_reference ) {
+                const CDelta_item& delta = **( instance.GetDelta().begin() );   
+                if ( delta.GetSeq().IsLiteral() ) {
+                    m_Os << delta.GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
+                    return true;
+                }
+            }
+        }
+    }
+    catch( ... ) {
         m_Os << "?";
     }
     return true;
@@ -342,6 +368,10 @@ bool CVcfWriter::x_WriteFeatureAlt(
                 continue;
             }
             const CVariation_inst& inst = (**cit).GetData().GetInstance();
+            if (inst.IsSetObservation()  &&  
+                    inst.GetObservation() == CVariation_inst::eObservation_reference) {
+                continue;
+            }
             switch( inst.GetType() ) {
 
                 default: {
