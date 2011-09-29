@@ -1205,6 +1205,12 @@ CConnection::DestroyTransaction(CTransaction* trans)
 }
 
 pythonpp::CObject
+CConnection::__enter__(const pythonpp::CTuple& args)
+{
+    return pythonpp::CObject(this);
+}
+
+pythonpp::CObject
 CConnection::close(const pythonpp::CTuple& args)
 {
     TTransList::const_iterator citer;
@@ -1432,6 +1438,12 @@ CTransaction::~CTransaction(void)
         GetParentConnection().DestroyTransaction(this);
     }
     NCBI_CATCH_ALL_X( 2, NCBI_CURRENT_FUNCTION )
+}
+
+pythonpp::CObject
+CTransaction::__enter__(const pythonpp::CTuple& args)
+{
+    return pythonpp::CObject(this);
 }
 
 pythonpp::CObject
@@ -2397,6 +2409,7 @@ CCursor::CCursor(CTransaction* trans)
 , m_CallableStmtHelper( trans )
 , m_AllDataFetched( false )
 , m_AllSetsFetched( false )
+, m_Closed( false )
 {
     if ( trans == NULL ) {
         throw CInternalError("Invalid CTransaction object");
@@ -2436,6 +2449,7 @@ CCursor::CloseInternal(void)
     m_RowsNum = -1;                     // As required by the specification ...
     m_AllDataFetched = false;
     m_AllSetsFetched = false;
+    m_Closed = true;
 }
 
 void
@@ -2447,6 +2461,10 @@ CCursor::AddInfoMessage(const string& message)
 pythonpp::CObject
 CCursor::callproc(const pythonpp::CTuple& args)
 {
+    if (m_Closed) {
+        throw CProgrammingError("Cursor is closed");
+    }
+
     try {
         const size_t args_size = args.size();
 
@@ -2551,6 +2569,12 @@ CCursor::callproc(const pythonpp::CTuple& args)
 }
 
 pythonpp::CObject
+CCursor::__enter__(const pythonpp::CTuple& args)
+{
+    return pythonpp::CObject(this);
+}
+
+pythonpp::CObject
 CCursor::close(const pythonpp::CTuple& args)
 {
     try {
@@ -2572,6 +2596,10 @@ CCursor::close(const pythonpp::CTuple& args)
 pythonpp::CObject
 CCursor::execute(const pythonpp::CTuple& args)
 {
+    if (m_Closed) {
+        throw CProgrammingError("Cursor is closed");
+    }
+
     try {
         const size_t args_size = args.size();
 
@@ -2631,7 +2659,14 @@ CCursor::execute(const pythonpp::CTuple& args)
         throw CDatabaseError(e.what());
     }
 
-    return pythonpp::CNone();
+    return pythonpp::CObject(this);
+}
+
+pythonpp::CObject
+CCursor::CreateIter(void)
+{
+    CCursorIter* iter = new CCursorIter(this);
+    return pythonpp::CObject(iter);
 }
 
 void
@@ -2757,6 +2792,10 @@ CCursor::GetCVariant(const pythonpp::CObject& obj) const
 pythonpp::CObject
 CCursor::executemany(const pythonpp::CTuple& args)
 {
+    if (m_Closed) {
+        throw CProgrammingError("Cursor is closed");
+    }
+
     try {
         const size_t args_size = args.size();
 
@@ -3049,6 +3088,10 @@ CCursor::setoutputsize(const pythonpp::CTuple& args)
 pythonpp::CObject
 CCursor::get_proc_return_status(const pythonpp::CTuple& args)
 {
+    if (m_Closed) {
+        throw CProgrammingError("Cursor is closed");
+    }
+
     try {
         if ( !m_AllDataFetched ) {
             throw CDatabaseError("Call get_proc_return_status after you retrieve all data.");
@@ -3074,6 +3117,56 @@ CCursor::get_proc_return_status(const pythonpp::CTuple& args)
     }
 
     return pythonpp::CNone();
+}
+
+
+extern "C"
+PyObject*
+s_GetCursorIter(PyObject* curs_obj)
+{
+    CCursor* cursor = (CCursor*)curs_obj;
+    return IncRefCount(cursor->CreateIter());
+}
+
+
+CCursorIter::CCursorIter(CCursor* cursor)
+    : m_PythonCursor(cursor),
+      m_Cursor(cursor),
+      m_StopIter(false)
+{
+    PrepareForPython(this);
+}
+
+CCursorIter::~CCursorIter(void)
+{}
+
+PyObject*
+CCursorIter::GetNext(void)
+{
+    if (!m_StopIter) {
+        pythonpp::CObject row = m_Cursor->fetchone(pythonpp::CTuple());
+        if (!pythonpp::CNone::HasExactSameType(row))
+            return IncRefCount(row);
+        m_StopIter = true;
+    }
+    return NULL;
+}
+
+
+extern "C"
+PyObject*
+s_GetCursorIterFromIter(PyObject* iter_obj)
+{
+    Py_INCREF(iter_obj);
+    return iter_obj;
+}
+
+extern "C"
+PyObject*
+s_CursorIterNext(PyObject* iter_obj)
+{
+    CCursorIter* iter = (CCursorIter*)iter_obj;
+    return iter->GetNext();
 }
 
 
@@ -4251,6 +4344,8 @@ void init_common(const string& module_name)
     // Declare CConnection
     static const string connection_name(module_name + ".Connection");
     python::CConnection::
+        Def("__enter__",    &python::CConnection::__enter__,    "__enter__").
+        Def("__exit__",     &python::CConnection::close,        "__exit__").
         Def("close",        &python::CConnection::close,        "close").
         Def("commit",       &python::CConnection::commit,       "commit").
         Def("rollback",     &python::CConnection::rollback,     "rollback").
@@ -4261,6 +4356,8 @@ void init_common(const string& module_name)
     // Declare CTransaction
     static const string transaction_name(module_name + ".Transaction");
     python::CTransaction::
+        Def("__enter__",    &python::CTransaction::__enter__,    "__enter__").
+        Def("__exit__",     &python::CTransaction::close,        "__exit__").
         Def("close",        &python::CTransaction::close,        "close").
         Def("cursor",       &python::CTransaction::cursor,       "cursor").
         Def("commit",       &python::CTransaction::commit,       "commit").
@@ -4271,6 +4368,8 @@ void init_common(const string& module_name)
     static const string cursor_name(module_name + ".Cursor");
     python::CCursor::
         Def("callproc",     &python::CCursor::callproc,     "callproc").
+        Def("__enter__",    &python::CCursor::__enter__,    "__enter__").
+        Def("__exit__",     &python::CCursor::close,        "__exit__").
         Def("close",        &python::CCursor::close,        "close").
         Def("execute",      &python::CCursor::execute,      "execute").
         Def("executemany",  &python::CCursor::executemany,  "executemany").
@@ -4282,6 +4381,10 @@ void init_common(const string& module_name)
         Def("setoutputsize", &python::CCursor::setoutputsize, "setoutputsize").
         Def("get_proc_return_status", &python::CCursor::get_proc_return_status, "get_proc_return_status");
     python::CCursor::Declare(cursor_name.c_str());
+
+    // Declare CCursorIter
+    static const string cursor_iter_name(module_name + ".__CursorIterator__");
+    python::CCursorIter::Declare(cursor_iter_name.c_str());
 
     ///////////////////////////////////
     // Declare types ...
@@ -4347,10 +4450,20 @@ void init_common(const string& module_name)
         {NULL}
     };
     extt->tp_members = members;
+    extt->tp_iter = &python::s_GetCursorIter;
     if ( PyType_Ready(extt) == -1 ) {
         return;
     }
     if ( PyModule_AddObject(module, const_cast<char*>("Cursor"), (PyObject*)&python::CCursor::GetType() ) == -1 ) {
+        return;
+    }
+    extt = &python::CCursorIter::GetType();
+    extt->tp_iter = &python::s_GetCursorIterFromIter;
+    extt->tp_iternext = &python::s_CursorIterNext;
+    if ( PyType_Ready(extt) == -1 ) {
+        return;
+    }
+    if ( PyModule_AddObject(module, const_cast<char*>("__CursorIterator__"), (PyObject*)&python::CCursorIter::GetType() ) == -1 ) {
         return;
     }
 

@@ -346,6 +346,7 @@ public:
     /// input/output parameters replaced with possibly new values.
     /// callproc(procname[,parameters]);
     pythonpp::CObject callproc(const pythonpp::CTuple& args);
+    pythonpp::CObject __enter__(const pythonpp::CTuple& args);
     /// Close the cursor now (rather than whenever __del__ is
     /// called).  The cursor will be unusable from this point
     /// forward; an Error (or subclass) exception will be raised
@@ -359,6 +360,7 @@ public:
     /// (see the module's paramstyle attribute for details). [5]
     /// execute(operation[,parameters]);
     pythonpp::CObject execute(const pythonpp::CTuple& args);
+    pythonpp::CObject CreateIter(void);
     /// Prepare a database operation (query or command) and then
     /// execute it against all parameter sequences or mappings
     /// found in the sequence seq_of_parameters.
@@ -482,6 +484,26 @@ private:
     CCallableStmtHelper        m_CallableStmtHelper;
     bool                       m_AllDataFetched;
     bool                       m_AllSetsFetched;
+    bool                       m_Closed;
+};
+
+class CCursorIter : public pythonpp::CExtObject<CCursorIter>
+{
+    friend class CCursor;
+
+protected:
+    CCursorIter(CCursor* cursor);
+
+public:
+    ~CCursorIter(void);
+
+public:
+    PyObject* GetNext(void);
+
+public:
+    pythonpp::CObject m_PythonCursor;
+    CCursor* m_Cursor;
+    bool m_StopIter;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -576,6 +598,7 @@ public:
     ~CTransaction(void);
 
 public:
+    pythonpp::CObject __enter__(const pythonpp::CTuple& args);
     pythonpp::CObject close(const pythonpp::CTuple& args);
     pythonpp::CObject cursor(const pythonpp::CTuple& args);
     pythonpp::CObject commit(const pythonpp::CTuple& args);
@@ -655,6 +678,7 @@ public:
 
 public:
     // Python Interface ...
+    pythonpp::CObject __enter__(const pythonpp::CTuple& args);
     pythonpp::CObject close(const pythonpp::CTuple& args);
     pythonpp::CObject cursor(const pythonpp::CTuple& args);
     pythonpp::CObject commit(const pythonpp::CTuple& args);
