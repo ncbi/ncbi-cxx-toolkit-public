@@ -62,6 +62,8 @@ public:
         const string& = "" );
 
 protected:
+    bool x_WriteInit(
+        const CSeq_annot& );
     bool x_WriteMeta(
         const CSeq_annot& );
     bool x_WriteHeader(
@@ -107,8 +109,12 @@ protected:
         feature::CFeatTree&,
         CMappedFeat );
         
-
+    bool x_WriteFeatureGenotypeData(
+        feature::CFeatTree&,
+        CMappedFeat );
+    
     CScope& m_Scope;
+    vector<string> m_GenotypeHeaders;
 };
 
 END_objects_SCOPE

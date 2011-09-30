@@ -60,6 +60,39 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 //  ----------------------------------------------------------------------------
+CConstRef<CUser_object> s_GetVcfMetaInfo(const CSeq_annot& annot)
+//  ----------------------------------------------------------------------------
+{
+    if ( ! annot.IsSetDesc()  || ! annot.GetDesc().IsSet() ) {
+        return CConstRef<CUser_object>();
+    }
+    const list< CRef< CAnnotdesc > > descrs = annot.GetDesc().Get();
+    list< CRef< CAnnotdesc > >::const_iterator cit = descrs.begin();
+    CConstRef<CAnnotdesc> pDescMeta;
+    while ( cit != descrs.end() ) {
+        CConstRef<CAnnotdesc> pDesc = *cit;
+        cit++;
+        if ( ! pDesc->IsUser() ) {
+            continue;
+        }
+        if ( ! pDesc->GetUser().IsSetType() ) {
+            continue;
+        }
+        if ( ! pDesc->GetUser().GetType().IsStr() ) {
+            continue;
+        }
+        if ( pDesc->GetUser().GetType().GetStr() == "vcf-meta-info" ) {
+            pDescMeta = pDesc;
+            break;
+        }
+    }
+    if ( ! pDescMeta ) {
+        return CConstRef<CUser_object>();
+    }
+    return CConstRef<CUser_object>( &pDescMeta->GetUser() );
+}
+
+//  ----------------------------------------------------------------------------
 CVcfWriter::CVcfWriter(
     CScope& scope,
     CNcbiOstream& ostr,
@@ -83,6 +116,9 @@ bool CVcfWriter::WriteAnnot(
     const string& )
 //  ----------------------------------------------------------------------------
 {
+    if ( ! x_WriteInit( annot ) ) {
+        return false;
+    }
     if ( ! x_WriteMeta( annot ) ) {
         return false;
     }
@@ -96,41 +132,30 @@ bool CVcfWriter::WriteAnnot(
 }
 
 //  ----------------------------------------------------------------------------
+bool CVcfWriter::x_WriteInit(
+    const CSeq_annot& annot )
+//  ----------------------------------------------------------------------------
+{
+    CConstRef<CUser_object> pVcfMetaInfo = s_GetVcfMetaInfo( annot );
+    if ( !pVcfMetaInfo  ||  !pVcfMetaInfo->HasField("genotype-headers") ) {
+        return true;
+    }
+    m_GenotypeHeaders = 
+        pVcfMetaInfo->GetField("genotype-headers").GetData().GetStrs();
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteMeta(
     const CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! annot.IsSetDesc()  || ! annot.GetDesc().IsSet() ) {
+    CConstRef<CUser_object> pVcfMetaInfo = s_GetVcfMetaInfo( annot );
+    if ( !pVcfMetaInfo ) {
         return x_WriteMetaCreateNew( annot );
     }
-    const list< CRef< CAnnotdesc > > descrs = annot.GetDesc().Get();
-    list< CRef< CAnnotdesc > >::const_iterator cit = descrs.begin();
-    CConstRef<CAnnotdesc> pDescMeta;
-    while ( cit != descrs.end() ) {
-        CConstRef<CAnnotdesc> pDesc = *cit;
-        cit++;
-        if ( ! pDesc->IsUser() ) {
-            continue;
-        }
-        if ( ! pDesc->GetUser().IsSetType() ) {
-            continue;
-        }
-        if ( ! pDesc->GetUser().GetType().IsStr() ) {
-            continue;
-        }
-        if ( pDesc->GetUser().GetType().GetStr() == "vcf-meta-info" ) {
-            pDescMeta = pDesc;
-            break;
-        }
-    }
-    if ( ! pDescMeta ) {
-        return x_WriteMetaCreateNew( annot );
-    }
-
     unsigned int pos = 1;
-    const CAnnotdesc::TUser& meta = pDescMeta->GetUser();
-    const CUser_object::TData& data = meta.GetData();
-
+    const CAnnotdesc::TUser& meta = *pVcfMetaInfo;
     while ( true ) {
         string key = NStr::UIntToString( pos++ );
         if ( meta.HasField( key ) ) {
@@ -192,7 +217,18 @@ bool CVcfWriter::x_WriteHeader(
 //  ----------------------------------------------------------------------------
 {
     m_Os << "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO";
-    //maybe add format header
+
+    
+    CConstRef<CUser_object> pVcfMetaInfo = s_GetVcfMetaInfo( annot );
+    if (m_GenotypeHeaders.empty()) {
+        m_Os << endl;
+        return true;
+    }
+    m_Os << "\tFORMAT";
+    for ( vector<string>::const_iterator cit = m_GenotypeHeaders.begin(); 
+            cit != m_GenotypeHeaders.end(); ++cit ) {
+        m_Os << '\t' << *cit;
+    }
     m_Os << endl;
     return true;
 }
@@ -224,32 +260,28 @@ bool CVcfWriter::x_WriteFeature(
     if ( ! x_WriteFeatureChrom( ftree, mf ) ) {
         return false;
     }
-    m_Os << "\t";
     if ( ! x_WriteFeaturePos( ftree, mf ) ) {
         return false;
     }
-    m_Os << "\t";
     if ( ! x_WriteFeatureId( ftree, mf ) ) {
         return false;
     }
-    m_Os << "\t";
     if ( ! x_WriteFeatureRef( ftree, mf ) ) {
         return false;
     }
-    m_Os << "\t";
     if ( ! x_WriteFeatureAlt( ftree, mf ) ) {
         return false;
     }
-    m_Os << "\t";
     if ( ! x_WriteFeatureQual( ftree, mf ) ) {
         return false;
     }
-    m_Os << "\t";
     if ( ! x_WriteFeatureFilter( ftree, mf ) ) {
         return false;
     }
-    m_Os << "\t";
     if ( ! x_WriteFeatureInfo( ftree, mf ) ) {
+        return false;
+    }
+    if ( ! x_WriteFeatureGenotypeData( ftree, mf ) ) {
         return false;
     }
     m_Os << endl;
@@ -275,8 +307,9 @@ bool CVcfWriter::x_WriteFeaturePos(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
+    m_Os << "\t";
     const CSeq_loc& loc = mf.GetLocation();
-    size_t start = loc.GetStart(eExtreme_Positional);
+    unsigned int start = loc.GetStart(eExtreme_Positional);
     m_Os << NStr::UIntToString( start + 1 );
 //    m_Os << ".";    
     return true;
@@ -288,6 +321,8 @@ bool CVcfWriter::x_WriteFeatureId(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
+    m_Os << "\t";
+
     vector<string> ids;
     const CVariation_ref& var = mf.GetData().GetVariation();
     if ( var.IsSetId()  &&  var.GetId().GetTag().IsStr() ) {
@@ -309,6 +344,8 @@ bool CVcfWriter::x_WriteFeatureRef(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
+    m_Os << "\t";
+
     try {
 
         CSeqVector v(mf.GetLocation(), mf.GetScope(), CBioseq_Handle::eCoding_Iupac);
@@ -356,6 +393,8 @@ bool CVcfWriter::x_WriteFeatureAlt(
 //  ----------------------------------------------------------------------------
 {
     typedef CVariation_ref::TData::TSet::TVariations TVARS;
+
+    m_Os << "\t";
 
     vector<string> alternatives;
     try {
@@ -443,6 +482,8 @@ bool CVcfWriter::x_WriteFeatureQual(
 {
     string score = ".";
 
+    m_Os << "\t";
+
     if ( mf.IsSetExt() ) {
         const CSeq_feat::TExt& ext = mf.GetExt();
         if ( ext.IsSetType() && ext.GetType().IsStr() && 
@@ -464,6 +505,8 @@ bool CVcfWriter::x_WriteFeatureFilter(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
+    m_Os << "\t";
+
     vector<string> filters;
     if ( mf.IsSetExt() ) {
         const CSeq_feat::TExt& ext = mf.GetExt();
@@ -490,6 +533,8 @@ bool CVcfWriter::x_WriteFeatureInfo(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
+    m_Os << "\t";
+
     if ( mf.IsSetExt() ) {
         string info = ".";
         const CSeq_feat::TExt& ext = mf.GetExt();
@@ -623,6 +668,41 @@ bool CVcfWriter::x_WriteFeatureInfo(
         m_Os << NStr::Join( infos, ";" );
     }
     return true;     
+}
+
+//  ----------------------------------------------------------------------------
+bool CVcfWriter::x_WriteFeatureGenotypeData(
+    feature::CFeatTree& ftree,
+    CMappedFeat mf )
+//  ----------------------------------------------------------------------------
+{
+    if (m_GenotypeHeaders.empty()) {
+        return true;
+    }
+
+    CConstRef<CUser_field> pFormat = mf.GetExt().GetFieldRef("format");
+    const vector<string>& labels = pFormat->GetData().GetStrs();
+    m_Os << "\t" << NStr::Join(labels, ":");
+
+    CConstRef<CUser_field> pGenotypeData = mf.GetExt().GetFieldRef("genotype-data");
+    const vector<CRef<CUser_field> > columns = pGenotypeData->GetData().GetFields(); 
+
+    for ( size_t hpos = 0; hpos < m_GenotypeHeaders.size(); ++hpos ) {
+        if ( m_GenotypeHeaders[hpos] != columns[hpos]->GetLabel().GetStr() ) {
+            m_Os << "\t" << "**** LOGICAL ERROR ****";
+            continue;
+        }
+        //const vector<CRef<CUser_field> >& colvalues = columns[hpos]->GetData().GetFields();
+        //string values = (*colvalues.begin())->GetData().GetStr();
+        //for ( vector<CRef<CUser_field> >::const_iterator cit = colvalues.begin()+1;
+        //        cit != colvalues.end(); ++cit ) {
+        //    values += ":",
+        //    values += (*cit)->GetData().GetStr();
+        //}
+        string values = NStr::Join( columns[hpos]->GetData().GetStrs(), ":" );
+        m_Os << "\t" << values;
+    }
+    return true;
 }
 
 END_NCBI_SCOPE
