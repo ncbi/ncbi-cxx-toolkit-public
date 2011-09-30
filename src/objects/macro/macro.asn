@@ -1306,7 +1306,9 @@ Macro-action-choice ::= CHOICE {
   make-gene-xrefs Make-gene-xref-action ,
   make-bold-xrefs NULL ,
   fix-author Author-fix-action ,
-  update-sequences Update-sequences-action }
+  update-sequences Update-sequences-action ,
+  add-trans-splicing NULL ,
+  remove-invalid-ecnumbers NULL }
 
 
 Macro-action-list ::= SET OF Macro-action-choice
