@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbistd.hpp>
 
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
@@ -156,15 +157,11 @@ bool CVcfWriter::x_WriteMeta(
     }
     unsigned int pos = 1;
     const CAnnotdesc::TUser& meta = *pVcfMetaInfo;
-    while ( true ) {
-        string key = NStr::UIntToString( pos++ );
-        if ( meta.HasField( key ) ) {
-            string value = meta.GetField( key ).GetData().GetStr();
-            m_Os << "##" << value << endl;
-        }
-        else {
-            break;
-        }
+    const vector<string>& directives = 
+        meta.GetFieldRef("meta-information")->GetData().GetStrs();
+    for (vector<string>::const_iterator cit = directives.begin();
+            cit != directives.end(); ++cit ) {
+        m_Os << "##" << *cit << endl;
     }
     return true;
 }
@@ -311,7 +308,6 @@ bool CVcfWriter::x_WriteFeaturePos(
     const CSeq_loc& loc = mf.GetLocation();
     unsigned int start = loc.GetStart(eExtreme_Positional);
     m_Os << NStr::UIntToString( start + 1 );
-//    m_Os << ".";    
     return true;
 }
 
@@ -688,17 +684,9 @@ bool CVcfWriter::x_WriteFeatureGenotypeData(
     const vector<CRef<CUser_field> > columns = pGenotypeData->GetData().GetFields(); 
 
     for ( size_t hpos = 0; hpos < m_GenotypeHeaders.size(); ++hpos ) {
-        if ( m_GenotypeHeaders[hpos] != columns[hpos]->GetLabel().GetStr() ) {
-            m_Os << "\t" << "**** LOGICAL ERROR ****";
-            continue;
-        }
-        //const vector<CRef<CUser_field> >& colvalues = columns[hpos]->GetData().GetFields();
-        //string values = (*colvalues.begin())->GetData().GetStr();
-        //for ( vector<CRef<CUser_field> >::const_iterator cit = colvalues.begin()+1;
-        //        cit != colvalues.end(); ++cit ) {
-        //    values += ":",
-        //    values += (*cit)->GetData().GetStr();
-        //}
+
+        _ASSERT(m_GenotypeHeaders[hpos] == columns[hpos]->GetLabel().GetStr());
+
         string values = NStr::Join( columns[hpos]->GetData().GetStrs(), ":" );
         m_Os << "\t" << values;
     }

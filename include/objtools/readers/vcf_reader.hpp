@@ -253,10 +253,10 @@ protected:
     //
 protected:
     CRef< CAnnotdesc > m_Meta;
-    unsigned int m_metacount;
     map<string,CVcfInfoSpec> m_InfoSpecs;
     map<string,CVcfFormatSpec> m_FormatSpecs;
     map<string,CVcfFilterSpec> m_FilterSpecs;
+    vector<string> m_MetaDirectives;
     vector<string> m_GenotypeHeaders;
     CErrorContainerLenient m_ErrorsPrivate;
 };

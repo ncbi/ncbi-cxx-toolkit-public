@@ -171,13 +171,10 @@ ESpecNumber SpecNumber(
 
 //  ----------------------------------------------------------------------------
 CVcfReader::CVcfReader(
-    int flags ) :
+    int flags )
 //  ----------------------------------------------------------------------------
-    m_metacount( 0 )
 {
     m_iFlags = flags;
-    //  Preinitialize m_InfoSpecs with all the infos predefined in the VCF spec.
-    //  Add all the infos that are used by annotwriter.
 }
 
 
@@ -269,6 +266,8 @@ CVcfReader::x_ProcessMetaLine(
     if ( ! NStr::StartsWith( line, "##" ) ) {
         return false;
     }
+    m_MetaDirectives.push_back(line.substr(2));
+
     if ( x_ProcessMetaLineInfo( line, pAnnot ) ) {
         return true;
     }
@@ -278,9 +277,6 @@ CVcfReader::x_ProcessMetaLine(
     if ( x_ProcessMetaLineFormat( line, pAnnot ) ) {
         return true;
     }
-
-    m_Meta->SetUser().AddField( 
-        NStr::UIntToString( ++m_metacount ), line.substr( 2 ) );
     return true;
 }
 
@@ -325,8 +321,6 @@ CVcfReader::x_ProcessMetaLineInfo(
     catch ( ... ) {
         return true;
     }
-    m_Meta->SetUser().AddField( 
-        NStr::UIntToString( ++m_metacount ), line.substr( 2 ) );
     return true;
 }
 
@@ -363,8 +357,6 @@ CVcfReader::x_ProcessMetaLineFilter(
     catch ( ... ) {
         return true;
     }
-    m_Meta->SetUser().AddField( 
-        NStr::UIntToString( ++m_metacount ), line.substr( 2 ) );
     return true;
 }
 
@@ -409,8 +401,6 @@ CVcfReader::x_ProcessMetaLineFormat(
     catch ( ... ) {
         return true;
     }
-    m_Meta->SetUser().AddField( 
-        NStr::UIntToString( ++m_metacount ), line.substr( 2 ) );
     return true;
 }
 
@@ -427,6 +417,8 @@ CVcfReader::x_ProcessHeaderLine(
     if ( ! NStr::StartsWith( line, "#" ) ) {
         return false;
     }
+
+    m_Meta->SetUser().AddField("meta-information", m_MetaDirectives);
 
     //
     //  Per spec:
