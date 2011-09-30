@@ -103,7 +103,7 @@ class CVcfData
 {
 public:
     typedef map<string,vector<string> > INFOS;
-    typedef map<string, map<string,string> > GTDATA;
+    typedef map<string, vector<string> > GTDATA;
 
     CVcfData() { m_pdQual = 0; };
     ~CVcfData() { delete m_pdQual; };
@@ -553,11 +553,7 @@ CVcfReader::x_ParseData(
             for ( size_t u=9; u < columns.size(); ++u ) {
                 vector<string> values;
                 NStr::Tokenize( columns[u], ":", values, NStr::eMergeDelims );
-                map<string, string> value_map;
-                for ( size_t uu=0; uu < data.m_FormatKeys.size(); ++uu ) {
-                    value_map[ data.m_FormatKeys[uu] ] = values[uu];
-                }
-                data.m_GenotypeData[ m_GenotypeHeaders[u-9] ] = value_map;
+                data.m_GenotypeData[ m_GenotypeHeaders[u-9] ] = values;
             }
         }
     }
@@ -651,28 +647,24 @@ CVcfReader::x_ProcessFormat(
     CSeq_feat::TExt& ext = pFeature->SetExt();
     ext.AddField("format", data.m_FormatKeys);
 
-    //
-    //  Genotype data:
-    //  Top level user object, contains one child user object for every column
-    //    of genotype data
-    //  
     CRef<CUser_field> pGenotypeData( new CUser_field );
     pGenotypeData->SetLabel().SetStr("genotype-data");
 
     for ( CVcfData::GTDATA::const_iterator cit = data.m_GenotypeData.begin();
             cit != data.m_GenotypeData.end(); ++cit) {
 
-        CRef<CUser_field> col( new CUser_field );
-        col->SetLabel().SetStr(cit->first);
+        CRef<CUser_field> pCol( new CUser_field );
+        pCol->SetLabel().SetStr(cit->first);
 
-        for ( map<string,string>::const_iterator cc = cit->second.begin();
-                cc != cit->second.end(); ++cc) {
-            CRef<CUser_field> value( new CUser_field );
-            value->SetLabel().SetStr(cc->first);
-            value->SetData().SetStr(cc->second);
-            col->SetData().SetFields().push_back(value);
-        }
-        pGenotypeData->SetData().SetFields().push_back(col);
+        //for ( map<string,string>::const_iterator cc = cit->second.begin();
+        //        cc != cit->second.end(); ++cc) {
+        //    CRef<CUser_field> value( new CUser_field );
+        //    value->SetLabel().SetStr(cc->first);
+        //    value->SetData().SetStr(cc->second);
+        //    col->SetData().SetFields().push_back(value);
+        //}
+        pCol->SetData().SetStrs() = cit->second;
+        pGenotypeData->SetData().SetFields().push_back(pCol);
     }
     ext.SetData().push_back(pGenotypeData);
     return true;
