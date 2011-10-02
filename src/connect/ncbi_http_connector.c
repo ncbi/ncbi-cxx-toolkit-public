@@ -1123,6 +1123,10 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
     EIO_Status status;
 
     assert(uuu->sock);
+
+    if (SOCK_Status(uuu->sock, eIO_Read) == eIO_Closed)
+        return eIO_Closed;
+
     if (uuu->flags & fHTTP_UrlDecodeInput) {
         /* read and URL-decode */
         size_t n_peeked, n_decoded;
@@ -1165,6 +1169,9 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
         status = SOCK_Read(uuu->sock, buf, size, n_read, eIO_ReadPlain);
         uuu->received += *n_read;
     }
+
+    if (status == eIO_Closed)
+        SOCK_CloseEx(uuu->sock, 0/*retain*/);
 
     if (uuu->expected) {
         const char* how = 0;
