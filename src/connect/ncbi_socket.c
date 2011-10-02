@@ -6052,7 +6052,7 @@ extern void SOCK_GetPeerAddress(SOCK            sock,
                                 unsigned short* port,
                                 ENH_ByteOrder   byte_order)
 {
-    if (!sock  ||  sock->sock == SOCK_INVALID) {
+    if (!sock) {
         if ( host )
             *host = 0;
         if ( port )
@@ -6097,7 +6097,8 @@ extern char* SOCK_GetPeerAddressStringEx(SOCK                sock,
 
     if (!sock  ||  !buf  ||  !buflen)
         return 0/*error*/;
-    if (format == eSAF_Full) {
+    switch (format) {
+    case eSAF_Full:
 #ifdef NCBI_OS_UNIX
         if (*sock->path) {
             size_t len = strlen(sock->path);
@@ -6110,9 +6111,7 @@ extern char* SOCK_GetPeerAddressStringEx(SOCK                sock,
 #endif /*NCBI_OS_UNIX*/
             if (!SOCK_HostPortToString(sock->host, sock->port, buf, buflen))
                 return 0/*error*/;
-        return buf;
-    }
-    switch (format) {
+        break;
     case eSAF_Port:
 #ifdef NCBI_OS_UNIX
         if (sock->path[0]) 
