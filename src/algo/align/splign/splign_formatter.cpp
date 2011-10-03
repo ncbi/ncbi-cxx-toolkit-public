@@ -212,7 +212,7 @@ string CSplignFormatter::AsExonTable(
 void MakeLeftHeader(size_t x, string* ps) 
 {
     string & s (*ps);
-    const string strx (NStr::IntToString(x));
+    const string strx (NStr::SizetToString(x));
     copy(strx.begin(), strx.end(), s.begin() + 9 - strx.size());
 }
 

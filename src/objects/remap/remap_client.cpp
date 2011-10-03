@@ -85,7 +85,7 @@ CRef<CSeq_loc> CRemapClient::Remap(const CSeq_loc& loc,
     Remap(locs, from_build, to_build, result);
     if (result.size() != 1) {
         throw runtime_error("Remap produced "
-                            + NStr::IntToString(result.size())
+                            + NStr::SizetToString(result.size())
                             + " result locations for a single query");
     }
     return result[0];

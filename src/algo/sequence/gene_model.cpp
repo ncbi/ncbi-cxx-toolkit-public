@@ -827,7 +827,7 @@ SImplementation::x_CreateMrnaBioseq(const CSeq_align& align,
         string str("lcl|CDNA_");
         str += time.AsString("YMD");
         str += "_";
-        str += NStr::IntToString(model_num);
+        str += NStr::SizetToString(model_num);
         id.Reset(new CSeq_id(str));
     } else {
         id.Reset(new CSeq_id());
@@ -900,7 +900,7 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
         string str("lcl|PROT_");
         str += time.AsString("YMD");
         str += "_";
-        str += NStr::IntToString(model_num);
+        str += NStr::SizetToString(model_num);
         id.Reset(new CSeq_id(str));
     } else {
         id.Reset(new CSeq_id());

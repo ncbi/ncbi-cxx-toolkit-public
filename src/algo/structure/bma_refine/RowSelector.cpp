@@ -79,7 +79,7 @@ unsigned int  CRowSelector::GetNext(void) {
 }
 
 string CRowSelector::PrintSequence(unsigned int first, unsigned int last, bool sorted) const {
-    string s = "Number of Selectable Rows = " + NStr::IntToString(m_sequence.size()) + "\n";
+    string s = "Number of Selectable Rows = " + NStr::SizetToString(m_sequence.size()) + "\n";
     vector<unsigned int> sortedSequence;
     unsigned int n = m_sequence.size();
 

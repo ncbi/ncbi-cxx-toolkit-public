@@ -274,8 +274,8 @@ void CDense_seg::Validate(bool full_test) const
                     if (start < min_start) {
                         string errstr = string("CDense_seg::Validate():")
                             + " Starts are not consistent!"
-                            + " Row=" + NStr::IntToString(numrow) +
-                            " Seg=" + NStr::IntToString(plus ? numseg :
+                            + " Row=" + NStr::SizetToString(numrow) +
+                            " Seg=" + NStr::SizetToString(plus ? numseg :
                                                         numsegs - 1 - numseg) +
                             " MinStart=" + NStr::IntToString(min_start) +
                             " Start=" + NStr::IntToString(start);
@@ -296,7 +296,7 @@ void CDense_seg::Validate(bool full_test) const
             }
             if (min_start == -1) {
                 string errstr = string("CDense_seg::Validate():")
-                    + " Row " + NStr::IntToString(numrow) +
+                    + " Row " + NStr::SizetToString(numrow) +
                     " is empty.";
                 NCBI_THROW(CSeqalignException, eInvalidAlignment,
                            errstr);
@@ -930,7 +930,7 @@ void CDense_seg::RemapToLoc(TDim row, const CSeq_loc& loc,
                       " Maximum row seq pos is ");
         errstr += NStr::IntToString(row_stop);
         errstr += ". The total seq-loc len is only ";
-        errstr += NStr::IntToString(ttl_loc_len);
+        errstr += NStr::SizetToString(ttl_loc_len);
         errstr += ", it should be at least ";
         errstr += NStr::IntToString(row_stop+1);
         errstr += " (= max seq pos + 1).";
@@ -1177,9 +1177,9 @@ CRef<CDense_seg> CDense_seg::FillUnaligned() const
                     if (extra_len < 0) {
                         string errstr("CDense_seg::AddUnalignedSegments():"
                                       " Illegal overlap at Row ");
-                        errstr += NStr::IntToString(row);
+                        errstr += NStr::SizetToString(row);
                         errstr += " Segment ";
-                        errstr += NStr::IntToString(seg);
+                        errstr += NStr::SizetToString(seg);
                         errstr += ".";
                         NCBI_THROW(CSeqalignException, eInvalidAlignment,
                                    errstr);
