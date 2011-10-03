@@ -600,35 +600,37 @@ extern NCBI_XCONNECT_EXPORT SOCK URL_Connect
 
 
 /* Discard all input data before(and including) the first occurrence of
- * "pattern". If "buf" is not NULL then add the discarded data(including
- * the "pattern") to it. If "n_discarded" is not NULL then "*n_discarded"
- * will return # of discarded bytes.
+ * "pattern".  If "discard" is not NULL then add the discarded data(including
+ * the "pattern") to it.  If "n_discarded" is not NULL then "*n_discarded"
+ * will return the number of discarded bytes.  If there was some excess read,
+ * push it back to the original source.
  * NOTE: "pattern" == NULL causes stripping to the EOF.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_StripToPattern
 (CONN        conn,
  const void* pattern,
  size_t      pattern_size,
- BUF*        buf,
+ BUF*        discard,
  size_t*     n_discarded
  );
+
 
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_StripToPattern
 (SOCK        sock,
  const void* pattern,
  size_t      pattern_size,
- BUF*        buf,
+ BUF*        discard,
  size_t*     n_discarded
  );
+
 
 extern NCBI_XCONNECT_EXPORT EIO_Status BUF_StripToPattern
 (BUF         buffer,
  const void* pattern,
  size_t      pattern_size,
- BUF*        buf,
+ BUF*        discard,
  size_t*     n_discarded
  );
-
 
 
 /* URL-encode up to "src_size" symbols(bytes) from buffer "src_buf".

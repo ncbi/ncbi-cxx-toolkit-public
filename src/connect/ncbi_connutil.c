@@ -1533,25 +1533,26 @@ extern SOCK URL_Connect
 
 
 typedef EIO_Status (*FDoIO)
-     (void*     stream,
-      void*     buf,
-      size_t    size,
-      size_t*   n_read,
-      EIO_Event what     /* eIO_Read | eIO_Write (to pushback) */
-      );
+(void*     stream,
+ void*     buf,
+ size_t    size,
+ size_t*   n_read,
+ EIO_Event what     /* eIO_Read | eIO_Write (to pushback) */
+ );
 
 static EIO_Status s_StripToPattern
 (void*       stream,
  FDoIO       io_func,
  const void* pattern,
  size_t      pattern_size,
- BUF*        buf,
+ BUF*        discard,
  size_t*     n_discarded)
 {
+    char*      buf;
     EIO_Status status;
-    char*      buffer;
-    size_t     buffer_size;
-    size_t     n_read = 0;
+    size_t     n_read;
+    size_t     buf_size;
+    char       x_buf[4096];
 
     /* check args */
     if ( n_discarded )
@@ -1560,28 +1561,30 @@ static EIO_Status s_StripToPattern
         return eIO_InvalidArg;
 
     /* allocate a temporary read buffer */
-    buffer_size = 2 * pattern_size;
-    if (buffer_size < 4096)
-        buffer_size = 4096;
-    if ( !(buffer = (char*) malloc(buffer_size)) )
+    buf_size = pattern_size << 1;
+    if (buf_size <= sizeof(x_buf)) {
+        buf_size  = sizeof(x_buf);
+        buf = x_buf;
+    } else if ( !(buf = (char*) malloc(buf_size)) )
         return eIO_Unknown;
 
     if ( !pattern ) {
         /* read/discard until EOF */
         do {
-            status = io_func(stream, buffer, buffer_size, &n_read, eIO_Read);
-            if ( buf )
-                BUF_Write(buf, buffer, n_read);
+            status = io_func(stream, buf, buf_size, &n_read, eIO_Read);
+            if ( discard )
+                BUF_Write(discard, buf, n_read);
             if ( n_discarded )
                 *n_discarded += n_read;
         } while (status == eIO_Success);
     } else {
+        n_read = 0;
         for (;;) {
             /* read; search for the pattern; store the discarded data */
             size_t x_read, n_stored;
 
             assert(n_read < pattern_size);
-            status = io_func(stream, buffer + n_read, buffer_size - n_read,
+            status = io_func(stream, buf + n_read, buf_size - n_read,
                              &x_read, eIO_Read);
             if ( !x_read ) {
                 assert(status != eIO_Success);
@@ -1593,7 +1596,7 @@ static EIO_Status s_StripToPattern
                 /* search for the pattern */
                 size_t n_check = n_stored - pattern_size + 1;
                 const char* b;
-                for (b = buffer;  n_check;  b++, n_check--) {
+                for (b = buf;  n_check;  b++, n_check--) {
                     if (*b != *((const char*) pattern))
                         continue;
                     if (memcmp(b, pattern, pattern_size) == 0)
@@ -1601,21 +1604,21 @@ static EIO_Status s_StripToPattern
                 }
                 /* pattern found */
                 if ( n_check ) {
-                    size_t x_discarded = (size_t)(b - buffer) + pattern_size;
+                    size_t x_discarded = (size_t)(b - buf) + pattern_size;
                     if ( buf )
-                        BUF_Write(buf, buffer + n_read, x_discarded - n_read);
+                        BUF_Write(discard, buf + n_read, x_discarded - n_read);
                     if ( n_discarded )
                         *n_discarded += x_discarded;
                     /* return unused portion to the stream */
-                    status = io_func(stream, buffer + x_discarded,
+                    status = io_func(stream, buf + x_discarded,
                                      n_stored - x_discarded, 0, eIO_Write);
                     break; /*finished*/
                 }
             }
 
             /* pattern not found yet */
-            if ( buf )
-                BUF_Write(buf, buffer + n_read, x_read);
+            if ( discard )
+                BUF_Write(discard, buf + n_read, x_read);
             if ( n_discarded )
                 *n_discarded += x_read;
             n_read = n_stored;
@@ -1623,13 +1626,14 @@ static EIO_Status s_StripToPattern
             if (n_read > pattern_size) {
                 size_t n_cut = n_read - pattern_size + 1;
                 n_read = pattern_size - 1;
-                memmove(buffer, buffer + n_cut, n_read);
+                memmove(buf, buf + n_cut, n_read);
             }
         }
     }
 
     /* cleanup & exit */
-    free(buffer);
+    if (buf != x_buf)
+        free(buf);
     return status;
 }
 
@@ -1657,13 +1661,12 @@ extern EIO_Status CONN_StripToPattern
 (CONN        conn,
  const void* pattern,
  size_t      pattern_size,
- BUF*        buf,
+ BUF*        discard,
  size_t*     n_discarded)
 {
     return s_StripToPattern
-        (conn, s_CONN_IO, pattern, pattern_size, buf, n_discarded);
+        (conn, s_CONN_IO, pattern, pattern_size, discard, n_discarded);
 }
-
 
 static EIO_Status s_SOCK_IO
 (void*     stream,
@@ -1687,11 +1690,11 @@ extern EIO_Status SOCK_StripToPattern
 (SOCK        sock,
  const void* pattern,
  size_t      pattern_size,
- BUF*        buf,
+ BUF*        discard,
  size_t*     n_discarded)
 {
     return s_StripToPattern
-        (sock, s_SOCK_IO, pattern, pattern_size, buf, n_discarded);
+        (sock, s_SOCK_IO, pattern, pattern_size, discard, n_discarded);
 }
 
 
@@ -1721,13 +1724,12 @@ extern EIO_Status BUF_StripToPattern
 (BUF         buffer,
  const void* pattern,
  size_t      pattern_size,
- BUF*        buf,
+ BUF*        discard,
  size_t*     n_discarded)
 {
     return s_StripToPattern
-        (buffer, s_BUF_IO, pattern, pattern_size, buf, n_discarded);
+        (buffer, s_BUF_IO, pattern, pattern_size, discard, n_discarded);
 }
-
 
 
 
