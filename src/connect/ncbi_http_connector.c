@@ -49,6 +49,18 @@
  *  INTERNAL -- Auxiliary types and static functions
  ***********************************************************************/
 
+
+/* "READ" mode states, see table below
+ */
+enum {
+    eRS_RequestWrite = 0,
+    eRS_HeaderRead   = 1,
+    eRS_BodyRead     = 2,
+    eRS_BodyDone     = 3
+} EReadState;
+typedef unsigned       EBReadState;  /* packed EReadState */
+
+
 /* Whether the connector is allowed to connect
  */
 typedef enum {
@@ -56,25 +68,41 @@ typedef enum {
     eCC_Once,
     eCC_Unlimited
 } ECanConnect;
-
 typedef unsigned       EBCanConnect;  /* packed ECanConnect */
+
 typedef unsigned short TBHTTP_Flags;  /* packed THTTP_Flags */
 
+
 typedef enum {
-    eRM_Regular    = 0,
-    eRM_DropUnread = 1,
-    eRM_WaitCalled = 2
-} EReadMode;
+    eEM_Read = 0,
+    eEM_Drop = 1,
+    eEM_Wait = 2
+} EExtractMode;
+
+
+typedef enum {
+    eRetry_None = 0,
+    eRetry_Redirect,
+    eRetry_Authenticate,
+    eRetry_ProxyAuthenticate
+} ERetry;
+
+typedef struct {
+    ERetry      mode;
+    const char* data;
+} SRetry;
 
 
 /* All internal data necessary to perform the (re)connect and I/O
  *
  * The following states are defined:
- *  "sock"  | "read_header" | State description
+ *  "sock"  | "read_state"  | State description
  * ---------+---------------+--------------------------------------------------
  *   NULL   |  <whatever>   | User "WRITE" mode: accumulate data in buffer
- * non-NULL |   non-zero    | HTTP header is being read
- * non-NULL |     zero      | HTTP body is being read (user "READ" mode)
+ * non-NULL | Request_Write | HTTP request body is being written ("READ" mode)
+ * non-NULL |  Header_Read  | HTTP response header is being read ("READ" mode)
+ * non-NULL |   Body_Read   | HTTP response body is being read   ("READ" mode)
+ * non-NULL |   Body_Done   | HTTP body is finishing (EOF seen)  ("READ" mode)
  * ---------+---------------+--------------------------------------------------
  */
 typedef struct {
@@ -87,12 +115,10 @@ typedef struct {
     TBHTTP_Flags      flags;          /* as passed to constructor            */
     unsigned          error_header:1; /* only err.HTTP header on SOME debug  */
     EBCanConnect      can_connect:2;  /* whether more connections permitted  */
-    unsigned          read_header:1;  /* whether reading header              */
-    unsigned          shut_down:1;    /* whether shut down for write         */
+    EBReadState       read_state:2;   /* "READ" mode state per table above   */
     unsigned          auth_done:1;    /* website authorization sent          */
     unsigned    proxy_auth_done:1;    /* proxy authorization sent            */
-    unsigned          closed:1;       /* EOF seen, no further reads          */
-    unsigned          reserved:5;     /* MBZ                                 */
+    unsigned          reserved:6;     /* MBZ                                 */
     unsigned          minor_fault:3;  /* incr each minor failure since majo  */
     unsigned short    major_fault;    /* incr each major failure since open  */
     unsigned short    code;           /* last response code                  */
@@ -119,20 +145,6 @@ static const char kHttpHostTag[] = "Host: ";
 /* NCBI messaging support */
 static int                   s_MessageIssued = 0;
 static FHTTP_NcbiMessageHook s_MessageHook   = 0;
-
-
-typedef enum {
-    eRetry_None = 0,
-    eRetry_Redirect,
-    eRetry_Authenticate,
-    eRetry_ProxyAuthenticate
-} ERetry;
-
-
-typedef struct {
-    ERetry      mode;
-    const char* data;
-} SRetry;
 
 
 static int/*bool tri-state inverted*/ x_Authorize(SHttpConnector* uuu,
@@ -210,7 +222,7 @@ static int/*bool tri-state inverted*/ x_Authorize(SHttpConnector* uuu,
 /* Try to fix connection parameters (called for an unconnected connector) */
 static EIO_Status s_Adjust(SHttpConnector* uuu,
                            const SRetry*   retry,
-                           EReadMode       read_mode)
+                           EExtractMode    extract)
 {
     EIO_Status status;
 
@@ -320,13 +332,13 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
         uuu->minor_fault = 0;
         /* we're here because something is going wrong */
         if (++uuu->major_fault >= uuu->net_info->max_try) {
-            msg = read_mode != eRM_DropUnread  &&  uuu->major_fault > 1
+            msg = extract != eEM_Drop  &&  uuu->major_fault > 1
                 ? "[HTTP%s%s]  Too many failed attempts (%d), giving up" : "";
         } else if (!uuu->adjust
                    ||  !uuu->adjust(uuu->net_info,
                                     uuu->user_data,
                                     uuu->major_fault)) {
-            msg = read_mode != eRM_DropUnread  &&  uuu->major_fault > 1
+            msg = extract != eEM_Drop  &&  uuu->major_fault > 1
                 ? "[HTTP%s%s]  Retry attempts (%d) exhausted, giving up" : "";
         } else
             msg = 0;
@@ -402,14 +414,14 @@ static const char* s_MakePath(const SConnNetInfo* net_info)
  * and then re-try the connection attempt.
  */
 static EIO_Status s_Connect(SHttpConnector* uuu,
-                            EReadMode       read_mode)
+                            EExtractMode    extract)
 {
     EIO_Status status;
     SOCK sock;
 
     assert(!uuu->sock);
     if (uuu->can_connect == eCC_None) {
-        if (read_mode == eRM_Regular) {
+        if (extract == eEM_Read) {
             char* url = ConnNetInfo_URL(uuu->net_info);
             CORE_LOGF_X(5, eLOG_Error,
                         ("[HTTP%s%s]  Connector is no longer usable",
@@ -576,7 +588,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
             assert(!sock);
 
         /* connection failed */
-        if (s_Adjust(uuu, 0, read_mode) != eIO_Success)
+        if (s_Adjust(uuu, 0, extract) != eIO_Success)
             break;
     }
     if (status != eIO_Success) {
@@ -595,9 +607,10 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
 /* Unconditionally drop the connection; timeout may specify time allowance */
 static void s_DropConnection(SHttpConnector* uuu, const STimeout* timeout)
 {
+    /*"READ" mode*/
     assert(uuu->sock);
     BUF_Erase(uuu->http);
-    if (uuu->read_header
+    if (uuu->read_state != eRS_BodyDone
         ||  (uuu->net_info->req_method == eReqMethod_Connect
              &&  (uuu->flags & fHTTP_DetachableTunnel))) {
         SOCK_Abort(uuu->sock);
@@ -614,7 +627,7 @@ static void s_DropConnection(SHttpConnector* uuu, const STimeout* timeout)
  * and send the data again until permitted by s_Adjust().
  */
 static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
-                                   EReadMode       read_mode)
+                                   EExtractMode    extract)
 {
     EIO_Status status;
 
@@ -624,14 +637,12 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
         char*  url;
 
         if (!uuu->sock) {
-            if ((status = s_Connect(uuu, read_mode)) != eIO_Success)
+            uuu->read_state = eRS_RequestWrite;
+            if ((status = s_Connect(uuu, extract)) != eIO_Success)
                 break;
             assert(uuu->sock);
-            uuu->read_header = 1/*true*/;
-            uuu->shut_down = 0/*false*/;
             uuu->expected = 0;
             uuu->received = 0;
-            uuu->closed = 0;
             uuu->code = 0;
         } else
             status = eIO_Success;
@@ -650,12 +661,12 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
                 uuu->w_len -= n_written;
                 off        += n_written;
             } while (uuu->w_len);
-        } else if (!uuu->shut_down)
+        } else if (!uuu->read_state)
             status = SOCK_Write(uuu->sock, 0, 0, 0, eIO_WritePlain);
 
         if (status == eIO_Success) {
             assert(uuu->w_len == 0);
-            if (!uuu->shut_down) {
+            if (!uuu->read_state) {
                 /* 10/07/03: While this call here is perfectly legal, it could
                  * cause connection severed by a buggy CISCO load-balancer. */
                 /* 10/28/03: CISCO's beta patch for their LB shows that the
@@ -663,13 +674,13 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
                  * that shut down for write.  We still leave this commented
                  * out to allow unpatched clients to work seamlessly... */ 
                 /*SOCK_Shutdown(uuu->sock, eIO_Write);*/
-                uuu->shut_down = 1;
+                uuu->read_state = eRS_HeaderRead;
             }
             break;
         }
 
         if (status == eIO_Timeout
-            &&  (read_mode == eRM_WaitCalled
+            &&  (extract == eEM_Wait
                  ||  (uuu->w_timeout
                       &&  !(uuu->w_timeout->sec | uuu->w_timeout->usec)))) {
             break;
@@ -691,7 +702,7 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
 
         /* write failed; close and try to use another server */
         s_DropConnection(uuu, 0/*no wait*/);
-        if ((status = s_Adjust(uuu, 0, read_mode)) != eIO_Success)
+        if ((status = s_Adjust(uuu, 0, extract)) != eIO_Success)
             break/*closed*/;
     }
 
@@ -755,7 +766,7 @@ static int/*bool*/ s_IsValidAuth(const char* challenge, size_t len)
 /* Read and parse HTTP header */
 static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                                SRetry*         retry,
-                               EReadMode       read_mode)
+                               EExtractMode    extract)
 {
     int        server_error = 0;
     int        http_status;
@@ -763,7 +774,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
     char*      header;
     size_t     size;
 
-    assert(uuu->sock  &&  uuu->read_header);
+    assert(uuu->sock  &&  uuu->read_state == eRS_HeaderRead);
     retry->mode = eRetry_None;
     retry->data = 0;
 
@@ -789,6 +800,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
         free(header);
 
         status = SOCK_StripToPattern(uuu->sock, "\r\n", 2, &uuu->http, 0);
+
         if (status != eIO_Success) {
             char* url;
             ELOG_Level level;
@@ -796,7 +808,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                 const STimeout* tmo = SOCK_GetTimeout(uuu->sock, eIO_Read);
                 if (!tmo)
                     level = eLOG_Error;
-                else if (read_mode == eRM_WaitCalled)
+                else if (extract == eEM_Wait)
                     return status;
                 else if (tmo->sec | tmo->usec)
                     level = eLOG_Warning;
@@ -816,7 +828,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
         }
     }
     /* the entire header has been read */
-    uuu->read_header = 0/*false*/;
+    uuu->read_state = eRS_BodyRead;
     status = eIO_Success;
     BUF_Erase(uuu->http);
 
@@ -1062,7 +1074,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
  */
 static EIO_Status s_PreRead(SHttpConnector* uuu,
                             const STimeout* timeout,
-                            EReadMode       read_mode)
+                            EExtractMode    extract)
 {
     EIO_Status status;
 
@@ -1070,7 +1082,7 @@ static EIO_Status s_PreRead(SHttpConnector* uuu,
         EIO_Status adjust_status;
         SRetry     retry;
 
-        status = s_ConnectAndSend(uuu, read_mode);
+        status = s_ConnectAndSend(uuu, extract);
         if (!uuu->sock) {
             assert(status != eIO_Success);
             break;
@@ -1084,19 +1096,19 @@ static EIO_Status s_PreRead(SHttpConnector* uuu,
         /* set timeout */
         verify(SOCK_SetTimeout(uuu->sock, eIO_Read, timeout) == eIO_Success);
 
-        if (!uuu->read_header)
+        if (uuu->read_state & eRS_BodyRead)
             break;
 
-        if ((status = s_ReadHeader(uuu, &retry, read_mode)) == eIO_Success) {
+        if ((status = s_ReadHeader(uuu, &retry, extract)) == eIO_Success) {
+            assert((uuu->read_state & eRS_BodyRead)  &&  !retry.mode);
             /* pending output data no longer needed */
-            assert(!uuu->read_header  &&  !retry.mode);
             BUF_Erase(uuu->w_buf);
             break;
         }
         assert(status != eIO_Timeout  ||  !retry.mode);
         /* if polling then bail out with eIO_Timeout */
         if (status == eIO_Timeout
-            &&  (read_mode == eRM_WaitCalled
+            &&  (extract == eEM_Wait
                  ||  (timeout  &&  !(timeout->sec | timeout->usec)))) {
             assert(!retry.data);
             break;
@@ -1104,7 +1116,7 @@ static EIO_Status s_PreRead(SHttpConnector* uuu,
 
         /* HTTP header read error; disconnect and try to use another server */
         s_DropConnection(uuu, 0/*no wait*/);
-        adjust_status = s_Adjust(uuu, &retry, read_mode);
+        adjust_status = s_Adjust(uuu, &retry, extract);
         if (retry.data)
             free((void*) retry.data);
         if (adjust_status != eIO_Success) {
@@ -1124,9 +1136,9 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
 {
     EIO_Status status;
 
-    assert(uuu->sock  &&  n_read);
+    assert(uuu->sock  &&  n_read  &&  (uuu->read_state & eRS_BodyRead));
 
-    if (uuu->closed) {
+    if (uuu->read_state == eRS_BodyDone) {
         *n_read = 0;
         return eIO_Closed;
     }
@@ -1176,7 +1188,7 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
 
     if (status == eIO_Closed) {
         SOCK_CloseEx(uuu->sock, 0/*retain*/);
-        uuu->closed = 1/*true*/;
+        uuu->read_state = eRS_BodyDone;
     }
 
     if (uuu->expected) {
@@ -1215,13 +1227,13 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
 /* Reset/readout input data and close socket */
 static EIO_Status s_Disconnect(SHttpConnector* uuu,
                                const STimeout* timeout,
-                               EReadMode       read_mode)
+                               EExtractMode    extract)
 {
     EIO_Status status = eIO_Success;
 
-    if (read_mode == eRM_DropUnread)
+    if (extract == eEM_Drop)
         BUF_Erase(uuu->r_buf);
-    else if ((status = s_PreRead(uuu, timeout, read_mode)) == eIO_Success) {
+    else if ((status = s_PreRead(uuu, timeout, extract)) == eIO_Success) {
         do {
             char   buf[4096];
             size_t x_read;
@@ -1251,9 +1263,9 @@ static void s_FlushAndDisconnect(SHttpConnector* uuu,
     if (uuu->can_connect != eCC_None  &&  !uuu->sock
         &&  ((uuu->flags & fHTTP_SureFlush)  ||  BUF_Size(uuu->w_buf))) {
         /* "WRITE" mode and data (or just flag) is still pending */
-        s_PreRead(uuu, timeout, eRM_DropUnread);
+        s_PreRead(uuu, timeout, eEM_Drop);
     }
-    s_Disconnect(uuu, timeout, eRM_DropUnread);
+    s_Disconnect(uuu, timeout, eEM_Drop);
     assert(!uuu->sock);
 
     /* clear pending output data, if any */
@@ -1368,7 +1380,7 @@ static EIO_Status s_VT_Wait
             return eIO_Success;
         if (uuu->can_connect == eCC_None)
             return eIO_Closed;
-        if ((status = s_PreRead(uuu, timeout, eRM_WaitCalled)) != eIO_Success)
+        if ((status = s_PreRead(uuu, timeout, eEM_Wait)) != eIO_Success)
             return status;
         assert(uuu->sock);
         return SOCK_Wait(uuu->sock, eIO_Read, timeout);
@@ -1399,7 +1411,7 @@ static EIO_Status s_VT_Write
     if (uuu->sock) {
         EIO_Status status = s_Disconnect(uuu, timeout,
                                          uuu->flags & fHTTP_DropUnread
-                                         ? eRM_DropUnread : eRM_Regular);
+                                         ? eEM_Drop : eEM_Read);
         if (status != eIO_Success)
             return status;
     }
@@ -1470,7 +1482,7 @@ static EIO_Status s_VT_Read
  const STimeout* timeout)
 {
     SHttpConnector* uuu = (SHttpConnector*) connector->handle;
-    EIO_Status status = s_PreRead(uuu, timeout, eRM_Regular);
+    EIO_Status status = s_PreRead(uuu, timeout, eEM_Read);
     size_t x_read = BUF_Read(uuu->r_buf, buf, size);
 
     if (x_read < size  &&  status == eIO_Success) {
@@ -1773,10 +1785,10 @@ extern EIO_Status HTTP_CreateTunnelEx
     if (!init_size  ||  BUF_Prepend(&uuu->w_buf, init_data, init_size)) {
         if (init_size)
             sprintf(uuu->net_info->args, "[%lu]", (unsigned long) init_size);
-        status = s_PreRead(uuu, net_info->timeout, eRM_WaitCalled);
+        status = s_PreRead(uuu, net_info->timeout, eEM_Wait);
         if (status == eIO_Success) {
+            assert(uuu->read_state == eRS_BodyRead);
             assert(uuu->code / 100 == 2);
-            assert(!uuu->read_header);
             assert(uuu->sock);
             *sock = uuu->sock;
             uuu->sock = 0;
