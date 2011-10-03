@@ -58,6 +58,7 @@ CAlignModel::CAlignModel(const CGeneModel& g, const CAlignMap& a)
 
 void CAlignModel::ResetAlignMap()
 {
+    Status() &= ~CGeneModel::eReversed;
     m_alignmap = CGeneModel::GetAlignMap();
 }
 
