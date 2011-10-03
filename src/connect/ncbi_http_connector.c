@@ -91,7 +91,8 @@ typedef struct {
     unsigned          shut_down:1;    /* whether shut down for write         */
     unsigned          auth_done:1;    /* website authorization sent          */
     unsigned    proxy_auth_done:1;    /* proxy authorization sent            */
-    unsigned          reserved:6;     /* MBZ                                 */
+    unsigned          closed:1;       /* EOF seen, no further reads          */
+    unsigned          reserved:5;     /* MBZ                                 */
     unsigned          minor_fault:3;  /* incr each minor failure since majo  */
     unsigned short    major_fault;    /* incr each major failure since open  */
     unsigned short    code;           /* last response code                  */
@@ -630,6 +631,7 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
             uuu->shut_down = 0/*false*/;
             uuu->expected = 0;
             uuu->received = 0;
+            uuu->closed = 0;
             uuu->code = 0;
         } else
             status = eIO_Success;
@@ -1122,10 +1124,12 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
 {
     EIO_Status status;
 
-    assert(uuu->sock);
+    assert(uuu->sock  &&  n_read);
 
-    if (SOCK_Status(uuu->sock, eIO_Read) == eIO_Closed)
+    if (uuu->closed) {
+        *n_read = 0;
         return eIO_Closed;
+    }
 
     if (uuu->flags & fHTTP_UrlDecodeInput) {
         /* read and URL-decode */
@@ -1170,8 +1174,10 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
         uuu->received += *n_read;
     }
 
-    if (status == eIO_Closed)
+    if (status == eIO_Closed) {
         SOCK_CloseEx(uuu->sock, 0/*retain*/);
+        uuu->closed = 1/*true*/;
+    }
 
     if (uuu->expected) {
         const char* how = 0;
@@ -1467,15 +1473,11 @@ static EIO_Status s_VT_Read
     EIO_Status status = s_PreRead(uuu, timeout, eRM_Regular);
     size_t x_read = BUF_Read(uuu->r_buf, buf, size);
 
-    *n_read = x_read;
-    if (x_read < size) {
-        if (status == eIO_Success) {
-            status = s_Read(uuu, (char*) buf + x_read, size - x_read, n_read);
-            *n_read += x_read;
-        }
+    if (x_read < size  &&  status == eIO_Success) {
+        status = s_Read(uuu, (char*) buf + x_read, size - x_read, n_read);
+        *n_read += x_read;
     } else
-        status = eIO_Success;
-
+        *n_read  = x_read;
     return status;
 }
 
