@@ -498,8 +498,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributesMrna(
 {
     return (
         x_AssignAttributeGene( mapped_feat )  &&
-        x_AssignAttributeProduct( mapped_feat )  &&
-        x_AssignAttributeTranscriptId( mapped_feat ) );
+        x_AssignAttributeProduct( mapped_feat ) );
 }
 
 //  ----------------------------------------------------------------------------
@@ -542,7 +541,8 @@ bool CGff3WriteRecordFeature::x_AssignAttributesMiscFeature(
         x_AssignAttributePseudo( mapped_feat )  &&
         x_AssignAttributeDbXref( mapped_feat )  &&
         x_AssignAttributeNote( mapped_feat )  &&
-        x_AssignAttributeOldLocusTag( mapped_feat ) );
+        x_AssignAttributeOldLocusTag( mapped_feat )  &&
+        x_AssignAttributeTranscriptId( mapped_feat ) );
 }
 
 //  ----------------------------------------------------------------------------
@@ -966,10 +966,13 @@ bool CGff3WriteRecordFeature::x_AssignAttributeGbKey(
 
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecordFeature::x_AssignAttributeTranscriptId(
-    CMappedFeat mapped_feat )
+    CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    const CSeq_feat::TQual& quals = mapped_feat.GetQual();
+    if ( mf.GetFeatType() != CSeqFeatData::e_Rna ) {
+        return true;
+    }
+    const CSeq_feat::TQual& quals = mf.GetQual();
     for ( CSeq_feat::TQual::const_iterator cit = quals.begin(); 
       cit != quals.end(); ++cit ) {
         if ( (*cit)->GetQual() == "transcript_id" ) {
@@ -978,9 +981,9 @@ bool CGff3WriteRecordFeature::x_AssignAttributeTranscriptId(
         }
     }
 
-    if ( mapped_feat.IsSetProduct() ) {
+    if ( mf.IsSetProduct() ) {
         m_Attributes["transcript_id"] = 
-            s_BestIdString(mapped_feat.GetProductId(), mapped_feat.GetScope());
+            s_BestIdString(mf.GetProductId(), mf.GetScope());
         return true;
     }
     return true;
