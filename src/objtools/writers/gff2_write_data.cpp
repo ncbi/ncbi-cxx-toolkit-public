@@ -175,29 +175,62 @@ string CGffWriteRecord::s_GetSubsourceString(
 }
 
 //  ----------------------------------------------------------------------------
-string CGffWriteRecord::s_GetBiomolString( 
+string CGffWriteRecord::s_GetBiomolString(
+    int instmol, 
     int biomol )
 //  ----------------------------------------------------------------------------
 {
     switch( biomol ) {
-        default: return "";
-        case CMolInfo::eBiomol_peptide: return "peptide";
-        case CMolInfo::eBiomol_unknown: return "unassigned DNA";
-        case CMolInfo::eBiomol_genomic: return "genomic DNA";
-        case CMolInfo::eBiomol_pre_RNA: return "transcribed RNA";
-        case CMolInfo::eBiomol_mRNA: return "mRNA";
-        case CMolInfo::eBiomol_rRNA: return "rRNA";
-        case CMolInfo::eBiomol_tRNA: return "tRNA";
-        case CMolInfo::eBiomol_snRNA: return "transcribed RNA";
-        case CMolInfo::eBiomol_scRNA: return "transcribed RNA";
-        case CMolInfo::eBiomol_other_genetic: return "other DNA";
-        case CMolInfo::eBiomol_genomic_mRNA: return "unassigned DNA";
-        case CMolInfo::eBiomol_cRNA: return "viral cRNA";
-        case CMolInfo::eBiomol_snoRNA: return "transcribed RNA";
-        case CMolInfo::eBiomol_transcribed_RNA: return "transcribed RNA";
-        case CMolInfo::eBiomol_ncRNA: return "transcribed RNA";
-        case CMolInfo::eBiomol_tmRNA: return "unassigned RNA";
-        case CMolInfo::eBiomol_other: return "other DNA";
+        default:
+            break;
+        case CMolInfo::eBiomol_genomic: {
+            switch (instmol) {
+                default:
+                    return "genomic";
+                case CSeq_inst::eMol_dna:
+                    return "genomic DNA";
+                case CSeq_inst::eMol_rna:
+                    return "genomic RNA";
+            }
+        }
+        case CMolInfo::eBiomol_mRNA: 
+            return "mRNA";
+        case CMolInfo::eBiomol_rRNA: 
+            return "rRNA";
+        case CMolInfo::eBiomol_tRNA: 
+            return "tRNA";
+        case CMolInfo::eBiomol_pre_RNA:
+        case CMolInfo::eBiomol_snRNA:
+        case CMolInfo::eBiomol_scRNA:
+        case CMolInfo::eBiomol_snoRNA:
+        case CMolInfo::eBiomol_ncRNA:
+        case CMolInfo::eBiomol_tmRNA:
+        case CMolInfo::eBiomol_transcribed_RNA: 
+            return "transcribed RNA";
+        case CMolInfo::eBiomol_other_genetic:
+        case CMolInfo::eBiomol_other: {
+            switch (instmol) {
+                default:
+                    return "other";
+                case CSeq_inst::eMol_dna:
+                    return "other DNA";
+                case CSeq_inst::eMol_rna:
+                    return "other RNA";
+            }
+        }
+        case CMolInfo::eBiomol_cRNA: 
+            return "viral cRNA";
+
+        case CMolInfo::eBiomol_genomic_mRNA: 
+            return "genomic RNA";
+    }
+    switch (instmol) {
+        default:
+            return "unassigned";
+        case CSeq_inst::eMol_dna:
+            return "unassigned DNA";
+        case CSeq_inst::eMol_rna:
+            return "unassigned RNA";
     }
     return "";
 }
@@ -463,38 +496,6 @@ bool CGffWriteRecord::x_NeedsQuoting(
     return false;
 }
 
-/*
-//  ----------------------------------------------------------------------------
-void CGffWriteRecord::x_StrAttributesAppendMultiValue(
-    const string& strKey,
-    const string& SEPARATOR,
-    map<string, string >& attrs,
-    string& strAttributes ) const
-//  ----------------------------------------------------------------------------
-{
-    map< string, string >::iterator it = attrs.find( strKey );
-    if ( it == attrs.end() ) {
-        return;
-    }
-
-    vector<string> tags;
-    NStr::Tokenize( it->second, ";", tags );
-    for ( vector<string>::iterator pTag = tags.begin(); pTag != tags.end(); pTag++ ) {
-        if ( ! strAttributes.empty() ) {
-            strAttributes += SEPARATOR;
-        }
-        strAttributes += strKey;
-        strAttributes += "=";
-        string strValue = *pTag;
-        strValue = x_Encode(strValue);
-        if (x_NeedsQuoting(*pTag)) {
-            strValue = (string("\"") + strValue + string("\""));
-        }
-        strAttributes += strValue;
-    }
-	attrs.erase(it);
-}
-*/
 //  ----------------------------------------------------------------------------
 void CGffWriteRecord::x_StrAttributesAppendValue(
     const string& strKey,
@@ -591,7 +592,7 @@ bool CGffWriteRecord::CorrectLocation(
             *m_peStrand = interval.GetStrand();
         }
     }
-    return true;
+    return true; 
 }
 
 //  ----------------------------------------------------------------------------
@@ -783,7 +784,8 @@ bool CGffWriteRecordFeature::AssignSource(
     if ( md ) {
         const CMolInfo& molinfo = (*md).GetMolinfo();
         if ( molinfo.IsSetBiomol() ) {
-            m_Attributes["mol_type"] = s_GetBiomolString( molinfo.GetBiomol() );
+            m_Attributes["mol_type"] = 
+                s_GetBiomolString( bsh.GetInst_Mol(), molinfo.GetBiomol() );
         }
     }
 

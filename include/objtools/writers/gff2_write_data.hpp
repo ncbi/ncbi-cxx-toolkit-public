@@ -122,7 +122,8 @@ public:
     static string s_GetGenomeString(
         int );
     static string s_GetBiomolString( 
-        const int );
+        int,
+        int );
     static string s_GetSubsourceString( 
         int );
     static string s_GetSubtypeString( 
