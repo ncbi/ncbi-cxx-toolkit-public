@@ -193,7 +193,7 @@ esac
 
 case "$ncbi_platform" in
     FreeBSD32 ) ;;
-    *MAC      ) : ${WXWIDGETS_PATH=$NCBI/wxMac-2.8.10-ncbi1} ;;
+    *MAC      ) : ${WXWIDGETS_PATH=$NCBI/wxMac-2.8.10-ncbi2} ;;
     *         ) : ${WXWIDGETS_PATH=$NCBI/wxGTK-2.8.10} ;;
 esac
 
