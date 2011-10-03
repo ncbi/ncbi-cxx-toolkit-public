@@ -415,7 +415,7 @@ bool CGff3Writer::x_WriteFeatureGene(
         return false;
     }
     m_GeneMap[ mf ] = pRecord;
-    return x_WriteFeatureRecords( *pRecord, mf.GetLocation() );
+    return x_WriteFeatureRecords( *pRecord, *pRecord->GetCircularLocation() );
 }
 
 //  ----------------------------------------------------------------------------
