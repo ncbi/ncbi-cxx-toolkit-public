@@ -127,8 +127,8 @@ static SBufChunk* s_AllocChunk(size_t data_size, size_t chunk_size)
 
 
 /*not yet public*/
-int/*bool*/ BUF_AppendEx(BUF* buf, void* data,
-                         size_t size, size_t alloc_size)
+int/*bool*/ BUF_AppendEx(BUF* buf, void* base, size_t alloc_size,
+                         void* data, size_t size)
 {
     SBufChunk* chunk;
 
@@ -145,9 +145,10 @@ int/*bool*/ BUF_AppendEx(BUF* buf, void* data,
         return 0/*false*/;
 
     assert(!chunk->data);
-    chunk->size   = size;
+    chunk->base   = base;
     chunk->extent = alloc_size;
     chunk->data   = (char*) data;
+    chunk->size   = size;
     chunk->next   = 0;
 
     if ((*buf)->last)
@@ -162,13 +163,13 @@ int/*bool*/ BUF_AppendEx(BUF* buf, void* data,
 
 extern int/*bool*/ BUF_Append(BUF* buf, const void* data, size_t size)
 {
-    return BUF_AppendEx(buf, (void*) data, size, 0);
+    return BUF_AppendEx(buf, 0, 0, (void*) data, size);
 }
 
 
 /*not yet public*/
-int/*bool*/ BUF_PrependEx(BUF* buf, void* data,
-                          size_t size, size_t alloc_size)
+int/*bool*/ BUF_PrependEx(BUF* buf, void* base, size_t alloc_size,
+                          void* data, size_t size)
 {
     SBufChunk* chunk;
 
@@ -185,9 +186,10 @@ int/*bool*/ BUF_PrependEx(BUF* buf, void* data,
         return 0/*false*/;
 
     assert(!chunk->data);
-    chunk->size   = size;
+    chunk->base   = base;
     chunk->extent = alloc_size;
     chunk->data   = (char*) data;
+    chunk->size   = size;
     chunk->next   = (*buf)->list;
 
     if (!(*buf)->last) {
@@ -202,7 +204,7 @@ int/*bool*/ BUF_PrependEx(BUF* buf, void* data,
 
 extern int/*bool*/ BUF_Prepend(BUF* buf, const void* data, size_t size)
 {
-    return BUF_PrependEx(buf, (void*) data, size, 0);
+    return BUF_PrependEx(buf, 0, 0, (void*) data, size);
 }
 
 
@@ -391,6 +393,8 @@ extern size_t BUF_Read(BUF buf, void* dst, size_t size)
         /* discard the whole chunk */
         if (!(buf->list = head->next))
             buf->last = 0;
+        if (head->base)
+            free(head->base);
         free(head);
         buf->size -= avail;
         todo      -= avail;
@@ -407,6 +411,8 @@ extern void BUF_Erase(BUF buf)
         while (buf->list) {
             SBufChunk* head = buf->list;
             buf->list = head->next;
+            if (head->base)
+                free(head->base);
             free(head);
         }
         buf->last = 0;
