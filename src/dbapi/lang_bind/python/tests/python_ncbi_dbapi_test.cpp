@@ -1148,6 +1148,17 @@ BOOST_AUTO_TEST_CASE(TestScenario_1)
         //    "raise StandardError('Invalid data type: ') \n");
         //ExecuteStr("if not isinstance(out[0], None.__class__) : "
         //    "raise StandardError('Invalid data type: ') \n");
+        ExecuteStr("with conn_simple.cursor() as cursor: \n"
+                   "  for row in cursor.execute('exec sp_spaceused'): \n"
+                   "    rr = row \n"
+                   "  cursor.nextset() \n"
+                   "  for row in cursor: \n"
+                   "    rr = row \n"
+                   "try: \n"
+                   "  cursor.execute('select * from sysobjects') \n"
+                   "  raise Exception('DatabseError was not thrown') \n"
+                   "except DatabaseError: \n"
+                   "  pass \n");
     }
 }
 
@@ -1202,8 +1213,6 @@ BOOST_AUTO_TEST_CASE(TestScenario_1_ByPos)
 // From example4.py
 BOOST_AUTO_TEST_CASE(TestScenario_2)
 {
-    string sql;
-
     ExecuteStr("conn = None");
 
     ExecuteStr( "def getCon(): \n"

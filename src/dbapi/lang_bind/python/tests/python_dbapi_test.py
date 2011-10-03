@@ -29,6 +29,7 @@
 #
 #
 
+from __future__ import with_statement
 from python_ncbi_dbapi import *
 
 
@@ -151,6 +152,7 @@ try:
 except:
     pass
 cursor.execute("create procedure testing (@p1 int, @p2 int output) as begin\nset @p1 = 123\nset @p2 = 123\nend")
+cursor.execute("grant execute on testing to DBAPI_test")
 out = cursor.callproc('testing', [None, None])
 if isinstance(out[1], str):
     raise Exception('Invalid data type of param2 (string)')
@@ -172,6 +174,7 @@ try:
 except:
     pass
 cursor.execute("create procedure create_testing as begin\nselect 1, 2, 3\nend")
+cursor.execute("grant execute on create_testing to DBAPI_test")
 cursor.callproc('create_testing')
 cursor.fetchall()[0]
 
@@ -193,6 +196,22 @@ conn = connect('ftds', 'MSSQL', 'MSDEV', 'DBAPI_ConnectionTest2', 'anyone', 'all
 cursor = conn.cursor()
 cursor.execute("SELECT @@servername")
 cursor.fetchall()
+
+
+conn = connect('ftds', 'MSSQL', 'DBAPI_MS_TEST', 'DBAPI_Sample', 'DBAPI_test', 'allowed')
+with conn.cursor() as cursor:
+    for row in cursor.execute("exec sp_spaceused"):
+        rr = row
+
+    cursor.nextset()
+    for row in cursor:
+        rr = row
+
+try:
+    cursor.execute("select * from sysobjects")
+    raise Exception("DatabseError was not thrown")
+except DatabaseError:
+    pass
 
 
 print 'All tests completed successfully'
