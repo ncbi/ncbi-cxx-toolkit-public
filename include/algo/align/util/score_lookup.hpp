@@ -59,7 +59,8 @@ public:
         virtual double Get(const objects::CSeq_align& align,
                            objects::CScope* scope) const = 0;
         virtual void PrintHelp(CNcbiOstream &ostr) const = 0;
-        virtual EComplexity GetComplexity() const { return eEasy; };
+        virtual EComplexity GetComplexity() const { return eEasy; }
+        virtual bool IsInteger() const { return false; }
 
         /// For any IScore subclasses that have an internal state, this
         /// function will be called to update it for any alignment that
@@ -88,6 +89,9 @@ public:
 
     /// Help text for score
     string HelpText(const string &score_name);
+
+    bool IsIntegerScore(const objects::CSeq_align& align,
+                        const string &score_name);
 
     /// Get requested score for alignment
     double GetScore(const objects::CSeq_align& align,

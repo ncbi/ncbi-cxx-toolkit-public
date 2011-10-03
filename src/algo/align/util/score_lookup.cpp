@@ -65,6 +65,8 @@ public:
 
     virtual EComplexity GetComplexity() const { return eEasy; };
 
+    virtual bool IsInteger() const { return true; };
+
     virtual double Get(const CSeq_align& align, CScope*) const
     {
         return align.GetAlignLength(m_Gaps);
@@ -96,6 +98,8 @@ public:
     }
 
     virtual EComplexity GetComplexity() const { return eEasy; };
+
+    virtual bool IsInteger() const { return true; };
 
     virtual double Get(const CSeq_align& align, CScope*) const
     {
@@ -149,6 +153,8 @@ public:
 
     virtual EComplexity GetComplexity() const { return eEasy; };
 
+    virtual bool IsInteger() const { return true; };
+
     virtual double Get(const CSeq_align& align, CScope* s) const
     {
         try {
@@ -171,6 +177,8 @@ public:
     }
 
     virtual EComplexity GetComplexity() const { return eEasy; };
+
+    virtual bool IsInteger() const { return true; };
 
     virtual double Get(const CSeq_align& align, CScope* scope) const
     {
@@ -210,6 +218,8 @@ public:
     }
 
     virtual EComplexity GetComplexity() const { return eEasy; };
+
+    virtual bool IsInteger() const { return true; };
 
     virtual double Get(const CSeq_align& align, CScope* scope) const
     {
@@ -306,6 +316,8 @@ public:
 
     virtual EComplexity GetComplexity() const { return eEasy; };
 
+    virtual bool IsInteger() const { return true; };
+
     virtual void PrintHelp(CNcbiOstream& ostr) const
     {
         if (m_Start) {
@@ -382,6 +394,8 @@ public:
 
     virtual EComplexity GetComplexity() const { return eHard; };
 
+    virtual bool IsInteger() const { return true; };
+
     virtual double Get(const CSeq_align& align, CScope* scope) const
     {
         double score = numeric_limits<double>::quiet_NaN();
@@ -452,6 +466,8 @@ public:
 
     virtual EComplexity GetComplexity() const { return eEasy; };
 
+    virtual bool IsInteger() const { return true; };
+
     virtual double Get(const CSeq_align& align, CScope*) const
     {
         try {
@@ -477,6 +493,8 @@ public:
 
     virtual EComplexity GetComplexity() const { return eEasy; };
 
+    virtual bool IsInteger() const { return true; };
+
     virtual double Get(const CSeq_align& align, CScope*) const
     {
         try {
@@ -501,6 +519,8 @@ public:
     }
 
     virtual EComplexity GetComplexity() const { return eEasy; };
+
+    virtual bool IsInteger() const { return true; };
 
     virtual double Get(const CSeq_align& align, CScope*) const
     {
@@ -533,6 +553,8 @@ public:
     }
 
     virtual EComplexity GetComplexity() const { return eHard; };
+
+    virtual bool IsInteger() const { return true; };
 
     virtual double Get(const CSeq_align& align, CScope* scope) const
     {
@@ -600,6 +622,8 @@ public:
     {}
 
     virtual EComplexity GetComplexity() const { return eHard; };
+
+    virtual bool IsInteger() const { return m_ScoreType >= eStart; };
 
     virtual void PrintHelp(CNcbiOstream& ostr) const
     {
@@ -680,6 +704,8 @@ public:
 
     virtual EComplexity GetComplexity() const { return eHard; };
 
+    virtual bool IsInteger() const { return true; };
+
     virtual void PrintHelp(CNcbiOstream& ostr) const
     {
         if (m_Row == 0) {
@@ -718,6 +744,8 @@ public:
     }
 
     virtual EComplexity GetComplexity() const { return eEasy; };
+
+    virtual bool IsInteger() const { return true; };
 
     virtual double Get(const CSeq_align& align, CScope* scope) const
     {
@@ -772,6 +800,8 @@ public:
     }
 
     virtual EComplexity GetComplexity() const { return eEasy; };
+
+    virtual bool IsInteger() const { return true; };
 
     virtual double Get(const CSeq_align& align, CScope* ) const
     {
@@ -1080,6 +1110,32 @@ string CScoreLookup::HelpText(const string &score_name)
     }
     
     return "assumed to be a score on the Seq-align";
+}
+
+bool CScoreLookup::IsIntegerScore(const objects::CSeq_align& align,
+                                  const string &score_name)
+{
+    CSeq_align::TScoreNameMap::const_iterator score_it =
+        CSeq_align::ScoreNameMap().find(score_name);
+    if (score_it != CSeq_align::ScoreNameMap().end()) {
+        return CSeq_align::IsIntegerScore(score_it->second);
+    }
+
+    TScoreDictionary::const_iterator token_it = m_Scores.find(score_name);
+    if (token_it != m_Scores.end()) {
+        token_it->second->IsInteger();
+    }
+    
+    ITERATE (CSeq_align::TScore, stored_score_it, align.GetScore()) {
+        if ((*stored_score_it)->CanGetValue() &&
+            (*stored_score_it)->CanGetId() &&
+            (*stored_score_it)->GetId().IsStr() &&
+            (*stored_score_it)->GetId().GetStr() == score_name)
+        {
+            return (*stored_score_it)->GetValue().IsInt();
+        }
+    }
+    return false;
 }
 
 double CScoreLookup::GetScore(const objects::CSeq_align& align,
