@@ -554,7 +554,7 @@ CAlignMap::CAlignMap(const CGeneModel::TExons& exons, const vector<TSignedSeqRan
     }
 }
 
-CAlignMap::CAlignMap(const CGeneModel::TExons& exons, const TInDels& frameshifts, EStrand strand, TSignedSeqRange lim, int holelen) : m_orientation(strand) { 
+CAlignMap::CAlignMap(const CGeneModel::TExons& exons, const TInDels& frameshifts, EStrand strand, TSignedSeqRange lim, int holelen, int polyalen) : m_orientation(strand) { 
 
     TInDels::const_iterator fsi_begin = frameshifts.begin();
     TInDels::const_iterator fsi_end = frameshifts.end();
@@ -587,7 +587,7 @@ CAlignMap::CAlignMap(const CGeneModel::TExons& exons, const TInDels& frameshifts
     }
 
     if(!m_edited_ranges.empty())
-        m_target_len = m_edited_ranges.back().GetExtendedTo()+1;
+        m_target_len = m_edited_ranges.back().GetExtendedTo()+1+polyalen;
 
     _ASSERT(m_edited_ranges.size() == m_orig_ranges.size());
 }

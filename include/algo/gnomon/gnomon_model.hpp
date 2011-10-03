@@ -536,7 +536,7 @@ public:
         m_target_len = FShiftedLen(orig_a, orig_b);
     }
     CAlignMap(const CGeneModel::TExons& exons, const vector<TSignedSeqRange>& transcript_exons, const TInDels& indels, EStrand orientation, int targetlen );     //orientation == strand if not Reversed
-    CAlignMap(const CGeneModel::TExons& exons, const TInDels& frameshifts, EStrand strand, TSignedSeqRange lim = TSignedSeqRange::GetWhole(), int holelen = 0);
+    CAlignMap(const CGeneModel::TExons& exons, const TInDels& frameshifts, EStrand strand, TSignedSeqRange lim = TSignedSeqRange::GetWhole(), int holelen = 0, int polyalen = 0);
     TSignedSeqPos MapOrigToEdited(TSignedSeqPos orig_pos) const;
     TSignedSeqPos MapEditedToOrig(TSignedSeqPos edited_pos) const;
     TSignedSeqRange MapRangeOrigToEdited(TSignedSeqRange orig_range, ERangeEnd lend, ERangeEnd rend) const;
