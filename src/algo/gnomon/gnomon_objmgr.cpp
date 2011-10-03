@@ -318,11 +318,12 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
 
 }
 
-string CGeneModel::GetProtein (const CResidueVec& contig_sequence, const CGenetic_code* gencode) const
+
+
+string CGeneModel::GetCdsDnaSequence (const CResidueVec& contig_sequence) const
 {
-    string prot_seq;
     if(ReadingFrame().Empty())
-        return prot_seq;
+        return kEmptyStr;
 
     CAlignMap cdsmap(Exons(), FrameShifts(), Strand(), RealCdsLimits());
     CResidueVec cds;
@@ -332,6 +333,24 @@ string CGeneModel::GetProtein (const CResidueVec& contig_sequence, const CGeneti
     int bshift = ((int)cds.size()-ashift)%3;
 
     string cds_seq((char*)&cds[ashift],cds.size()-ashift-bshift);
+    return cds_seq;
+}
+
+string CGeneModel::GetProtein (const CResidueVec& contig_sequence) const
+{
+    string cds_seq = GetCdsDnaSequence(contig_sequence);
+    string prot_seq;
+
+    objects::CSeqTranslator::Translate(cds_seq, prot_seq, objects::CSeqTranslator::fIs5PrimePartial);
+
+    return prot_seq;
+}
+
+string CGeneModel::GetProtein (const CResidueVec& contig_sequence, const CGenetic_code* gencode) const
+{
+    string cds_seq = GetCdsDnaSequence(contig_sequence);
+    string prot_seq;
+
     objects::CSeqTranslator::Translate(cds_seq, prot_seq, objects::CSeqTranslator::fDefault, gencode );
     if (prot_seq[0] == '-') {
         string first_triplet = cds_seq.substr(0, 3);

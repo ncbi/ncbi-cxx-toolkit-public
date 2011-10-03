@@ -454,7 +454,9 @@ public:
 
     virtual CAlignMap GetAlignMap() const;
 
-    string GetProtein (const CResidueVec& contig_sequence, const CGenetic_code* gencode = NULL) const;
+    string GetCdsDnaSequence (const CResidueVec& contig_sequence) const;
+    string GetProtein (const CResidueVec& contig_sequence) const;
+    string GetProtein (const CResidueVec& contig_sequence, const CGenetic_code* gencode) const;
     
     // Below comparisons ignore CDS completely, first 3 assume that alignments are the same strand
     
