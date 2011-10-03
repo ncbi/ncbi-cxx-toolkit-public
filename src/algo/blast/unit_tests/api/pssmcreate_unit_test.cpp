@@ -725,11 +725,14 @@ BOOST_AUTO_TEST_CASE(testFullPssmEngineRunWithDiagnosticsRequest) {
 
         PSIDiagnosticsRequest request;
         memset((void*) &request, 0, sizeof(request));
-        request.information_content = false;        // unsupported
+        request.information_content = true;
         request.residue_frequencies = true;
         request.weighted_residue_frequencies = true;
         request.frequency_ratios = true;
-        request.gapless_column_weights = false; // unsupported
+        request.gapless_column_weights = true;
+        request.sigma = true;
+        request.interval_sizes = true;
+        request.num_matching_seqs = true;
 
         const string kTitle("Test defline");
 
@@ -777,43 +780,6 @@ BOOST_AUTO_TEST_CASE(testFullPssmEngineRunWithDiagnosticsRequest) {
         BOOST_REQUIRE_EQUAL(kNumElements, freq_ratios.size());
 
         //TestUtil::PrintTextAsn1Object("pssm-diags.asn", &*pssm);
-
-        // Test the unsupported diagnostics
-        pssm_strategy.Reset();
-        pssm_engine.Reset();
-        memset((void*) &request, 0, sizeof(request));
-        request.information_content = true;
-
-        pssm_strategy.Reset(
-                new CPsiBlastInputData(seq.data.get(),
-                                       seq.length,
-                                       sas, q->scope, 
-                                       *opts, 
-                                       "BLOSUM80",
-                                       11,
-                                       1,
-                                       &request));
-        pssm_engine.Reset(new CPssmEngine(pssm_strategy));
-        BOOST_CHECK_THROW(pssm_engine->Run(), CBlastException);
-
-        pssm_strategy.Reset();
-        pssm_engine.Reset();
-
-        // Test the unsupported diagnostics
-        memset((void*) &request, 0, sizeof(request));
-        request.gapless_column_weights = true;
-
-        pssm_strategy.Reset(
-                new CPsiBlastInputData(seq.data.get(),
-                                       seq.length,
-                                       sas, q->scope, 
-                                       *opts, 
-                                       "BLOSUM80",
-                                       11,
-                                       1,
-                                       &request));
-        pssm_engine.Reset(new CPssmEngine(pssm_strategy));
-        BOOST_CHECK_THROW(pssm_engine->Run(), CBlastException);
 }
 
 // test sequence alignment convertion to multiple sequence alignment
@@ -990,6 +956,10 @@ BOOST_AUTO_TEST_CASE(testQueryAlignedWithInternalGaps) {
         
         const SNCBIPackedScoreMatrix* score_matrix = &NCBISM_Blosum62;
         const Uint1 kGapResidue = AMINOACID_TO_NCBISTDAA[(int)'-'];
+        const Uint1 kBResidue = AMINOACID_TO_NCBISTDAA[(int)'B'];
+        const Uint1 kZResidue = AMINOACID_TO_NCBISTDAA[(int)'Z'];
+        const Uint1 kUResidue = AMINOACID_TO_NCBISTDAA[(int)'U'];
+        const Uint1 kOResidue = AMINOACID_TO_NCBISTDAA[(int)'O'];	
         stringstream ss;
         BOOST_REQUIRE_EQUAL((size_t)pssm_asn->GetPssm().GetNumColumns(),
                              (size_t)pssm->GetCols());
@@ -998,8 +968,18 @@ BOOST_AUTO_TEST_CASE(testQueryAlignedWithInternalGaps) {
         for (int i = 0; i < pssm_asn->GetPssm().GetNumColumns(); i++) {
             for (int j = 0; j < pssm_asn->GetPssm().GetNumRows(); j++) {
 
+
+                // Query positions aligned to residues in the subject sequence
+                // may have different PSSM scores than in the underlaying
+                // scoring matrix
+                if (pssm_input->GetData()->data[1][i].is_aligned
+                    && pssm_input->GetData()->data[1][i].letter != kGapResidue) {
+                    continue;
+                }
+
                 // Exceptional residues get value of BLAST_SCORE_MIN
-                if (j == kGapResidue) {
+                if (j == kGapResidue || j == kBResidue || j == kZResidue
+                    || j == kUResidue || j >= kOResidue) {
                     ss.str("");
                     ss << "Position " << i << " residue " 
                        << TestUtil::GetResidue(j) << " differ on PSSM";
@@ -1014,7 +994,10 @@ BOOST_AUTO_TEST_CASE(testQueryAlignedWithInternalGaps) {
                        << TestUtil::GetResidue(j) << " differ on PSSM: "
                        << "expected=" << NStr::IntToString(score) 
                        << " actual=" << NStr::IntToString((*pssm)(j, i));
-                    BOOST_REQUIRE_MESSAGE (score-1 <= (*pssm)(j, i) || (*pssm)(j, i) <= score+1, ss.str());
+
+                    // The difference is due to distributing gap frequency
+                    // over all residues
+                    BOOST_REQUIRE_MESSAGE (score - (*pssm)(j, i) <= 3, ss.str());
                 }
             }
         }
@@ -1166,14 +1149,33 @@ BOOST_AUTO_TEST_CASE(testMultiSeqAlignmentHasRegionsUnalignedToQuery) {
            << CPssmCreateTestFixture::x_ErrorCodeToString(rv);
         BOOST_REQUIRE_MESSAGE(PSI_SUCCESS == rv, ss.str());
 
+        BOOST_REQUIRE_EQUAL(msa->dimensions->num_seqs, 3u);
+
         /* Make sure that the resulting PSSM's scores are based on the scores
          * of the underlying scoring matrix and the query sequence (i.e.: the
          * PSSM scores should be within one or two values from those in the
          * underlying scoring matrix) */
         const SNCBIPackedScoreMatrix* score_matrix = &NCBISM_Blosum62;
         const Uint1 kGapResidue = AMINOACID_TO_NCBISTDAA[(int)'-'];
+        const Uint1 kBResidue = AMINOACID_TO_NCBISTDAA[(int)'B'];
+        const Uint1 kZResidue = AMINOACID_TO_NCBISTDAA[(int)'Z'];
+        const Uint1 kUResidue = AMINOACID_TO_NCBISTDAA[(int)'U'];
+        const Uint1 kOResidue = AMINOACID_TO_NCBISTDAA[(int)'O'];	
         for (Uint4 i = 0; i < pssm_input->GetQueryLength(); i++) {
             for (Uint4 j = 0; j < (Uint4) sbp->alphabet_size; j++) {
+
+                // we are not comparing PSSM scores for the aligned positions
+                if (msa->cell[1][i].is_aligned || msa->cell[2][i].is_aligned
+                    || msa->cell[3][i].is_aligned) {
+                    continue;
+                }
+
+                // these residues may have different scores than in the
+                // underlying scoring matrix
+                if (j == kBResidue || j == kZResidue || j == kUResidue
+                    || j >= kOResidue) {
+                    continue;
+                }
 
                 // Exceptional residues get value of BLAST_SCORE_MIN
                 if (j == kGapResidue) {
@@ -1191,7 +1193,7 @@ BOOST_AUTO_TEST_CASE(testMultiSeqAlignmentHasRegionsUnalignedToQuery) {
                        << "expected=" << NStr::IntToString(score) 
                        << " actual=" <<
                        NStr::IntToString(internal_pssm->pssm[i][j]);
-                    BOOST_REQUIRE_MESSAGE(score-1 <= internal_pssm->pssm[i][j] || internal_pssm->pssm[i][j] <= score+1, ss.str());
+                    BOOST_REQUIRE_MESSAGE(score-1 <= internal_pssm->pssm[i][j] && internal_pssm->pssm[i][j] <= score+1, ss.str());
                 }
             }
         }
@@ -1300,11 +1302,16 @@ BOOST_AUTO_TEST_CASE(testQueryIsOnlyAlignedSequenceInMsa) {
          * underlying scoring matrix) */
         const SNCBIPackedScoreMatrix* score_matrix = &NCBISM_Blosum62;
         const Uint1 kGapResidue = AMINOACID_TO_NCBISTDAA[(int)'-'];
+        const Uint1 kBResidue = AMINOACID_TO_NCBISTDAA[(int)'B'];
+        const Uint1 kZResidue = AMINOACID_TO_NCBISTDAA[(int)'Z'];
+        const Uint1 kUResidue = AMINOACID_TO_NCBISTDAA[(int)'U'];
+        const Uint1 kOResidue = AMINOACID_TO_NCBISTDAA[(int)'O'];	
         for (Uint4 i = 0; i < pssm_input->GetQueryLength(); i++) {
             for (Uint4 j = 0; j < (Uint4) sbp->alphabet_size; j++) {
 
                 // Exceptional residues get value of BLAST_SCORE_MIN
-                if (j == kGapResidue) {
+                if (j == kGapResidue || j == kBResidue || j == kZResidue
+                    || j == kUResidue || j >= kOResidue) {
                     ss.str("");
                     ss << "Position " << i << " residue " 
                        << TestUtil::GetResidue(j) << " differ on PSSM";
@@ -1319,7 +1326,7 @@ BOOST_AUTO_TEST_CASE(testQueryIsOnlyAlignedSequenceInMsa) {
                        << "expected=" << NStr::IntToString(score) 
                        << " actual=" <<
                        NStr::IntToString(internal_pssm->pssm[i][j]);
-                    BOOST_REQUIRE_MESSAGE(score-1 <= internal_pssm->pssm[i][j] || internal_pssm->pssm[i][j] <= score+1, ss.str());
+                    BOOST_REQUIRE_MESSAGE(score-1 <= internal_pssm->pssm[i][j] && internal_pssm->pssm[i][j] <= score+1, ss.str());
                 }
             }
         }
