@@ -1123,7 +1123,7 @@ bool CScoreLookup::IsIntegerScore(const objects::CSeq_align& align,
 
     TScoreDictionary::const_iterator token_it = m_Scores.find(score_name);
     if (token_it != m_Scores.end()) {
-        token_it->second->IsInteger();
+        return token_it->second->IsInteger();
     }
     
     ITERATE (CSeq_align::TScore, stored_score_it, align.GetScore()) {
