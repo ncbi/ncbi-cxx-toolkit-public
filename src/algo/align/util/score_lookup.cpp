@@ -431,7 +431,7 @@ public:
             pct_overlap /= (q.GetBioseqLength() + s.GetBioseqLength());
             pct_overlap *= 100;
         }
-        catch (CException &e) {
+        catch (CException &) {
         }
         return pct_overlap;
     }
