@@ -2458,5 +2458,80 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Late_Bind)
     }
 }
 
+BOOST_AUTO_TEST_CASE(Test_Bulk_Writing8)
+{
+    string sql;
+    const string table_name("#blk_table8");
+
+    try {
+        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+
+        // Create table ...
+        {
+            sql =
+                "CREATE TABLE " + table_name + "( \n"
+                "    id int, \n"
+                "    str varchar(100) NOT NULL"
+                ")"
+                ;
+
+            auto_stmt->ExecuteUpdate(sql);
+        }
+
+        // Insert data ...
+        {
+            auto_ptr<IBulkInsert> bi(
+                    GetConnection().GetBulkInsert(table_name)
+                    );
+
+            CVariant col1(eDB_Int);
+            CVariant col2(eDB_VarChar);
+
+            bi->Bind(1, &col1);
+            bi->Bind(2, &col2);
+
+            col1 = 15001;
+            col2 = "";
+
+            bi->AddRow();
+            bi->Complete();
+        }
+
+        // Retrieve data ...
+        {
+            sql  = " SELECT id, str FROM " + table_name;
+
+            auto_stmt->SendSql( sql );
+
+            BOOST_CHECK( auto_stmt->HasMoreResults() );
+            BOOST_CHECK( auto_stmt->HasRows() );
+            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+            BOOST_CHECK( rs.get() != NULL );
+
+            BOOST_CHECK( rs->Next() );
+            BOOST_CHECK( !rs->GetVariant(1).IsNull() );
+            BOOST_CHECK_EQUAL(rs->GetVariant(1).GetInt4(), 15001);
+            BOOST_CHECK( !rs->GetVariant(2).IsNull() );
+            // Old protocol version has this strange feature
+            if (GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer
+                || GetArgs().GetDriverName() == dblib_driver
+                )
+            {
+                BOOST_CHECK_EQUAL(rs->GetVariant(2).GetString(), string(" "));
+            }
+            else {
+                BOOST_CHECK_EQUAL(rs->GetVariant(2).GetString(), string());
+            }
+
+            // Dump results ...
+            DumpResults( auto_stmt.get() );
+        }
+
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
 
 END_NCBI_SCOPE

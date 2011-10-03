@@ -1887,7 +1887,14 @@ _blk_add_variable_columns(CS_BLKDESC * blkdesc, int offset, unsigned char * rowb
                 /* compute the length to copy to the row ** buffer */
                 if (bcpcol->bcp_column_data->null_column) {
                     cpbytes = 0;
-                } else {
+                }
+                else if ((bcpcol->column_type == SYBVARCHAR  ||  bcpcol->column_type == SYBCHAR)
+                        &&  bcpcol->bcp_column_data->datalen == 0)
+                {
+                    cpbytes = 1;
+                    memcpy(&rowbuffer[row_pos], " ", cpbytes);
+                }
+                else {
                     cpbytes = bcpcol->bcp_column_data->datalen > bcpcol->column_size ? bcpcol->column_size : bcpcol->bcp_column_data->datalen;
                     memcpy(&rowbuffer[row_pos], bcpcol->bcp_column_data->data, cpbytes);
                 }
