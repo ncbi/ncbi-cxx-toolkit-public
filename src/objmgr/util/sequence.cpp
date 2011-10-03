@@ -2952,9 +2952,6 @@ void x_Translate(const Container& seq,
     }
 
     if (mod) {
-        LOG_POST_X(7, Info <<
-                   "translation of sequence whose length "
-                   "is not an even number of codons");
         for (k = 0;  k < mod;  ++k, ++start) {
             state = tbl.NextCodonState(state, *start);
         }
@@ -3183,9 +3180,6 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
     }
 
     if (mod) {
-        LOG_POST_X(7, Info <<
-                   "translation of sequence whose length "
-                   "is not an even number of codons");
         bool is_gap = true;
         bool unknown_length = false;
         size_t pos = (length * 3) + frame;
