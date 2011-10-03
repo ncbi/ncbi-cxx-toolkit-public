@@ -20639,7 +20639,8 @@ fi
 
 ### Third-party libraries
 
-no_usr_lib='s,-L[/usr]*/lib/*[amdsprcv]*[23469]* ,,g;'
+usr_lib='[/usr]*/lib/*[amdsprcv]*[23469]*'
+no_usr_lib="s,-L$usr_lib ,,g;"
 
 if test "$with_z" != "no"; then
     case "$with_z" in
@@ -24950,51 +24951,20 @@ _ACEOF
 
 fi
 
-
-## OpenGL
-if test "$with_opengl" != "no"; then
-   if test "${with_opengl-yes}" = yes; then
-      if test -d $NCBI/MesaGL; then
-         : ${OPENGL_PATH=$NCBI/MesaGL}
-      fi
-   else
-      OPENGL_PATH=$with_opengl
-   fi
-   if test -d "$OPENGL_PATH"; then
-      ncbi_fix_dir_tmp=`if cd $OPENGL_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
- case "$ncbi_fix_dir_tmp" in
-    /.*) ncbi_fix_dir_tmp2=`cd $OPENGL_PATH && $smart_pwd 2>/dev/null`
-         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
-            OPENGL_PATH=$ncbi_fix_dir_tmp2
-         else
-            case "$OPENGL_PATH" in
-               /*) ;;
-               * ) OPENGL_PATH=$ncbi_fix_dir_tmp ;;
-            esac
-         fi
-         ;;
-    /*) OPENGL_PATH=$ncbi_fix_dir_tmp ;;
- esac
-   fi
-   case "$OSTYPE" in
-      darwin) # Use native interface
-         OPENGL_LIBS="-framework AGL -framework OpenGL"
-         ;;
-      # cygwin) ... ;;
-      *) # Default -- assume X-based
-         LIBS="$orig_LIBS"
-         CPPFLAGS="$orig_CPPFLAGS"
-         # Look in /usr/X11R6/lib64 if necessary
-         xlib=`ls -d /usr/X11R6/lib$bit64_sfx/libX11.* 2>/dev/null | sed -ne 1p`
-         if test -f "$xlib" -a "${x_libraries-NONE}" = NONE \
-           -a "${x_includes-NONE}" = NONE; then
-            base=`basename $xlib`
-            cmp -s /usr/X11R6/lib/$base $xlib  || \
-               cmp -s /usr/lib/$base $xlib  || \
-               cmp -s /usr/lib$bit64_sfx/$base $xlib  || \
-               x_libraries=/usr/X11R6/lib$bit64_sfx x_includes=/usr/X11R6/include
-         fi
-         echo "$as_me:$LINENO: checking for X" >&5
+# X11
+LIBS="$orig_LIBS"
+CPPFLAGS="$orig_CPPFLAGS"
+# Look in /usr/X11R6/lib64 if necessary
+xlib=`ls -d /usr/X11R6/lib$bit64_sfx/libX11.* 2>/dev/null | sed -ne 1p`
+if test -f "$xlib" -a "${x_libraries-NONE}" = NONE \
+  -a "${x_includes-NONE}" = NONE; then
+   base=`basename $xlib`
+   cmp -s /usr/X11R6/lib/$base $xlib  || \
+      cmp -s /usr/lib/$base $xlib  || \
+      cmp -s /usr/lib$bit64_sfx/$base $xlib  || \
+      x_libraries=/usr/X11R6/lib$bit64_sfx x_includes=/usr/X11R6/include
+fi
+echo "$as_me:$LINENO: checking for X" >&5
 echo $ECHO_N "checking for X... $ECHO_C" >&6
 
 
@@ -26382,8 +26352,9 @@ fi
 
 fi
 
-         LDFLAGS="$orig_LDFLAGS $X_LIBS"
-         echo "$as_me:$LINENO: checking for XextCreateExtension in -lXext" >&5
+x_libraries=`echo "$x_libraries" | sed -e "s,^$usr_lib\$,,"`
+X_LIBS=`echo "$X_LIBS " | sed -e "$no_usr_lib"`
+echo "$as_me:$LINENO: checking for XextCreateExtension in -lXext" >&5
 echo $ECHO_N "checking for XextCreateExtension in -lXext... $ECHO_C" >&6
 if test "${ac_cv_lib_Xext_XextCreateExtension+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -26453,7 +26424,7 @@ else
   Xext=
 fi
 
-         echo "$as_me:$LINENO: checking for XtMainLoop in -lXt" >&5
+echo "$as_me:$LINENO: checking for XtMainLoop in -lXt" >&5
 echo $ECHO_N "checking for XtMainLoop in -lXt... $ECHO_C" >&6
 if test "${ac_cv_lib_Xt_XtMainLoop+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -26523,7 +26494,7 @@ else
   Xt=
 fi
 
-         echo "$as_me:$LINENO: checking for XmuMakeAtom in -lXmu" >&5
+echo "$as_me:$LINENO: checking for XmuMakeAtom in -lXmu" >&5
 echo $ECHO_N "checking for XmuMakeAtom in -lXmu... $ECHO_C" >&6
 if test "${ac_cv_lib_Xmu_XmuMakeAtom+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -26593,8 +26564,43 @@ else
   Xmu=
 fi
 
-         LDFLAGS=$orig_LDFLAGS
-         X_ALL_LIBS="$Xmu $Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
+LDFLAGS=$orig_LDFLAGS
+X_ALL_LIBS="$Xmu $Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
+
+## OpenGL
+if test "$with_opengl" != "no"; then
+   if test "${with_opengl-yes}" = yes; then
+      if test -d $NCBI/MesaGL; then
+         : ${OPENGL_PATH=$NCBI/MesaGL}
+      fi
+   else
+      OPENGL_PATH=$with_opengl
+   fi
+   if test -d "$OPENGL_PATH"; then
+      ncbi_fix_dir_tmp=`if cd $OPENGL_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $OPENGL_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            OPENGL_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$OPENGL_PATH" in
+               /*) ;;
+               * ) OPENGL_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) OPENGL_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+   fi
+   case "$OSTYPE" in
+      darwin) # Use native interface
+         OPENGL_LIBS="-framework AGL -framework OpenGL"
+         ;;
+      # cygwin) ... ;;
+      *) # Default -- assume X-based
+         LIBS="$orig_LIBS"
+         CPPFLAGS="$orig_CPPFLAGS"
+         LDFLAGS="$orig_LDFLAGS $X_LIBS"
          if test -d "$OPENGL_PATH/include/GL"; then
             OPENGL_INCLUDE="-I$OPENGL_PATH/include $X_CFLAGS"
          else

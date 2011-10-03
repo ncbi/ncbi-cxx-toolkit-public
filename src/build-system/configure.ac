@@ -3510,7 +3510,8 @@ fi
 
 ### Third-party libraries
 
-no_usr_lib='s,[-L[/usr]*/lib/*[amdsprcv]*[23469]*] ,,g;'
+usr_lib=['[/usr]*/lib/*[amdsprcv]*[23469]*']
+no_usr_lib="s,-L$usr_lib ,,g;"
 
 NCBI_CHECK_THIRD_PARTY_LIB(z,
  [[AC_LANG_PROGRAM([#include <zlib.h>],
@@ -4679,6 +4680,30 @@ else
    AC_DEFINE(HAVE_NCBI_C, 1, [Define to 1 if the NCBI C toolkit is available.])
 fi
 
+# X11
+LIBS="$orig_LIBS"
+CPPFLAGS="$orig_CPPFLAGS"
+# Look in /usr/X11R6/lib64 if necessary
+xlib=`ls -d /usr/X11R6/lib$bit64_sfx/libX11.* 2>/dev/null | sed -ne 1p`
+if test -f "$xlib" -a "${x_libraries-NONE}" = NONE \
+  -a "${x_includes-NONE}" = NONE; then
+   base=`basename $xlib`
+   cmp -s /usr/X11R6/lib/$base $xlib  || \
+      cmp -s /usr/lib/$base $xlib  || \
+      cmp -s /usr/lib$bit64_sfx/$base $xlib  || \
+      x_libraries=/usr/X11R6/lib$bit64_sfx x_includes=/usr/X11R6/include
+fi
+AC_PATH_XTRA
+x_libraries=`echo "$x_libraries" | sed -e "s,^$usr_lib\$,,"`
+X_LIBS=`echo "$X_LIBS " | sed -e "$no_usr_lib"`
+AC_CHECK_LIB(Xext, XextCreateExtension, Xext="-lXext", Xext=,
+   [$X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
+AC_CHECK_LIB(Xt, XtMainLoop, Xt="-lXt", Xt=,
+   [$Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
+AC_CHECK_LIB(Xmu, XmuMakeAtom, Xmu="-lXmu", Xmu=,
+   [$Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
+LDFLAGS=$orig_LDFLAGS
+X_ALL_LIBS="$Xmu $Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
 
 ## OpenGL
 if test "$with_opengl" != "no"; then
@@ -4700,26 +4725,7 @@ if test "$with_opengl" != "no"; then
       *) # Default -- assume X-based
          LIBS="$orig_LIBS"
          CPPFLAGS="$orig_CPPFLAGS"
-         # Look in /usr/X11R6/lib64 if necessary
-         xlib=`ls -d /usr/X11R6/lib$bit64_sfx/libX11.* 2>/dev/null | sed -ne 1p`
-         if test -f "$xlib" -a "${x_libraries-NONE}" = NONE \
-           -a "${x_includes-NONE}" = NONE; then
-            base=`basename $xlib`
-            cmp -s /usr/X11R6/lib/$base $xlib  || \
-               cmp -s /usr/lib/$base $xlib  || \
-               cmp -s /usr/lib$bit64_sfx/$base $xlib  || \
-               x_libraries=/usr/X11R6/lib$bit64_sfx x_includes=/usr/X11R6/include
-         fi
-         AC_PATH_XTRA
          LDFLAGS="$orig_LDFLAGS $X_LIBS"
-         AC_CHECK_LIB(Xext, XextCreateExtension, Xext="-lXext", Xext=,
-            [$X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
-         AC_CHECK_LIB(Xt, XtMainLoop, Xt="-lXt", Xt=,
-            [$Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
-         AC_CHECK_LIB(Xmu, XmuMakeAtom, Xmu="-lXmu", Xmu=,
-            [$Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
-         LDFLAGS=$orig_LDFLAGS
-         X_ALL_LIBS="$Xmu $Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
          if test -d "$OPENGL_PATH/include/GL"; then
             OPENGL_INCLUDE="-I$OPENGL_PATH/include $X_CFLAGS"
          else
