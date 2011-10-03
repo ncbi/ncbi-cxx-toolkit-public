@@ -74,6 +74,18 @@ query_length < 500
 5 7 8
 subject_length < 4000000
 0 5 6
+gap_count = 0
+1 3 5
+gap_basecount > 100
+0
+query_gap_length < 20
+1 2 3 6 7 8
+subject_gap_length < 20
+1 2 3 4 6 8
+product_gap_length < 20
+2 3 6 7 8
+genomic_gap_length < 20
+2 3 4 6 8
 MUL(subject_length,product_length) < 2000000000
 5
 DIV(query_length,subject_length) < .0001
