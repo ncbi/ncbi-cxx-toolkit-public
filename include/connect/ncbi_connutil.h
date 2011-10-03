@@ -70,7 +70,7 @@
  *       MIME_ComposeContentType()
  *       MIME_ParseContentType()
  *
- *    6.Search for a token in the input stream (either CONN or SOCK):
+ *    6.Search for a token in the input stream (either CONN, SOCK, or BUF):
  *       CONN_StripToPattern()
  *       SOCK_StripToPattern()
  *       BUF_StripToPattern()
