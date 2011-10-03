@@ -240,7 +240,8 @@ void CDeflineGenerator::x_SetFlags (
             case NCBI_SEQID(Embl):
             case NCBI_SEQID(Ddbj):
             {
-                const CTextseq_id& tsid = *sid.GetSeqId()->GetTextseq_Id ();
+                CConstRef<CSeq_id> id = sid.GetSeqId();
+                const CTextseq_id& tsid = *id->GetTextseq_Id ();
                 if (tsid.IsSetAccession()) {
                     const string& acc = tsid.GetAccession ();
                     TACCN_CHOICE type = CSeq_id::IdentifyAccession (acc);
@@ -263,7 +264,8 @@ void CDeflineGenerator::x_SetFlags (
             }
             case NCBI_SEQID(General):
             {
-                const CDbtag& gen_id = sid.GetSeqId()->GetGeneral ();
+                CConstRef<CSeq_id> id = sid.GetSeqId();
+                const CDbtag& gen_id = id->GetGeneral ();
                 if (! gen_id.IsSkippable ()) {
                     if (gen_id.IsSetTag ()) {
                         const CObject_id& oid = gen_id.GetTag();
@@ -282,7 +284,8 @@ void CDeflineGenerator::x_SetFlags (
             case NCBI_SEQID(Pdb):
             {
                 m_IsPDB = true;
-                const CPDB_seq_id& pdb_id = sid.GetSeqId()->GetPdb ();
+                CConstRef<CSeq_id> id = sid.GetSeqId();
+                const CPDB_seq_id& pdb_id = id->GetPdb ();
                 if (pdb_id.IsSetChain()) {
                     m_PDBChain = pdb_id.GetChain();
                 }
@@ -291,7 +294,8 @@ void CDeflineGenerator::x_SetFlags (
             case NCBI_SEQID(Patent):
             {
                 m_IsPatent = true;
-                const CPatent_seq_id& pat_id = sid.GetSeqId()->GetPatent();
+                CConstRef<CSeq_id> id = sid.GetSeqId();
+                const CPatent_seq_id& pat_id = id->GetPatent();
                 if (pat_id.IsSetSeqid()) {
                     m_PatentSequence = pat_id.GetSeqid();
                 }
