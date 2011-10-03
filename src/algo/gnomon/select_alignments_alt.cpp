@@ -149,7 +149,6 @@ bool CAltSplice::IsAllowedAlternative(const CGeneModel& a, int maxcomposite) con
     if(front().PStop() || !front().FrameShifts().empty())
         return false;
 
-    /*
     ITERATE(CAltSplice, it, *this) {
         const CGeneModel& b = *it;
         if (HasRetainedIntron(a, b) || HasRetainedIntron(b, a))
@@ -181,7 +180,6 @@ bool CAltSplice::IsAllowedAlternative(const CGeneModel& a, int maxcomposite) con
             }
         }
     }
-    */
 
     return true;
 }
