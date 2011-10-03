@@ -89,7 +89,7 @@ public:
         fAllowOverlap   = 0x0004, /// allow segments overlapping on the first sequence
         fAllowAbutting  = 0x0008, /// allows segments not separated by gaps
         
-        fDefaultPoicy   = fKeepNormalized,
+        fDefaultPolicy  = fKeepNormalized,
 
         fPolicyMask     = 0x000f,
         
@@ -117,7 +117,7 @@ public:
         eRight
     };
 
-    CAlignRangeCollection(int flags = fDefaultPoicy)   
+    CAlignRangeCollection(int flags = fDefaultPolicy)   
         :   m_Flags(flags)
     { 
     }
@@ -126,7 +126,13 @@ public:
     {
         m_Ranges = c.m_Ranges;
     }
-    
+    CAlignRangeCollection(const TAlignRangeVector& v,
+                          int flags)
+        : m_Flags(flags)
+    {
+        m_Ranges = v;
+    }
+
     /// @name Container Interface
     /// @{
     /// immitating vector, but providing only "const" access to elements
@@ -425,16 +431,22 @@ public:
         return (it_closest == end()) ? -1 : it_closest->GetFirstPosBySecondPos(min_pos);
     }
 
-    // inserts a segment into appropriate position
-    
-    void    Sort()
+    void Sort()
     {
         std::sort(m_Ranges.begin(), m_Ranges.end(),
                   PAlignRangeFromLess<TAlignRange>());
+        SortInsertions();
 
         x_ResetFlags(fUnsorted);
         x_SetFlags(fNotValidated);
     }
+
+    void SortInsertions(void)
+    {
+        std::sort(m_Insertions.begin(), m_Insertions.end(),
+                  PAlignRangeFromLess<TAlignRange>());
+    }
+
     /// merge adjacent segments together, merging changes collection size and invalidates
     /// iterators
     void    CombineAbutting()
@@ -521,7 +533,36 @@ public:
         }
         return flags;
     }
-    
+
+    void AddInsertion(const TAlignRange& r)
+    {
+        m_Insertions.push_back(r);
+    }
+
+    void AddInsertions(const TAlignRangeVector& insertions)
+    {
+        ITERATE(typename TAlignRangeVector, it, insertions) {
+            m_Insertions.push_back(*it);
+        }
+        SortInsertions();
+    }
+
+    void AddInsertions(const TThisType& collection)
+    {
+        ITERATE(typename TAlignRangeVector, it, collection) {
+            m_Insertions.push_back(*it);
+        }
+        SortInsertions();
+    }
+
+    /// Each insertion shows where the 'first' sequence has a gap
+    /// while the 'second' sequence has the insertion of the specified
+    /// length. Direction of the insertion is always 'direct'.
+    const TAlignRangeVector& GetInsertions() const
+    {
+        return m_Insertions;
+    }
+
 protected:   
     void    x_SetFlags(int flags)   
     {   
@@ -575,7 +616,8 @@ protected:
     }
 
 protected:
-    TAlignRangeVector    m_Ranges;  
+    TAlignRangeVector    m_Ranges;
+    TAlignRangeVector    m_Insertions;
     int m_Flags;    /// combination of EFlags
 };
 

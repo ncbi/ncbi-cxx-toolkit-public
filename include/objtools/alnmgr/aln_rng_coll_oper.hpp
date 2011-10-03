@@ -50,7 +50,7 @@ void SubtractAlnRngCollections(const CAlignRangeCollection<TAlnRng>& minuend,
     _ASSERT( !subtrahend.empty() );
 
     /// Calc differece on the first row
-    TAlnRngColl difference_on_first;
+    TAlnRngColl difference_on_first(minuend.GetPolicyFlags());
     {
         typename TAlnRngColl::const_iterator subtrahend_it = subtrahend.begin();
         ITERATE (typename TAlnRngColl, minuend_it, minuend) {
@@ -64,7 +64,6 @@ void SubtractAlnRngCollections(const CAlignRangeCollection<TAlnRng>& minuend,
     /// Second row
     typedef CAlignRangeCollExtender<TAlnRngColl> TAlnRngCollExt;
     TAlnRngCollExt subtrahend_ext(subtrahend);
-    subtrahend_ext.Init(subtrahend); ///< HACK?
     subtrahend_ext.UpdateIndex();
 
     typename TAlnRngCollExt::const_iterator subtrahend_ext_it = subtrahend_ext.begin();
@@ -205,6 +204,11 @@ void SubtractOnSecond(const TAlnRng& minuend,
                       CAlignRangeCollection<TAlnRng>& difference,
                       typename CAlignRangeCollExtender<CAlignRangeCollection<TAlnRng> >::const_iterator& r_it)
 {
+    if (minuend.GetSecondFrom() < 0) {
+        difference.insert(minuend);
+        return;
+    }
+
     PItLess<TAlnRng> p;
 
     r_it = std::lower_bound(r_it,

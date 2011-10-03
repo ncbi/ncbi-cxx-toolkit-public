@@ -69,6 +69,15 @@ ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,       ///< output
 
 NCBI_XALNMGR_EXPORT
 void
+ConvertPackedsegToPairwiseAln(CPairwiseAln& pairwise_aln,       ///< output
+                              const objects::CPacked_seg& ps,   ///< input Packed-seg
+                              objects::CSeq_align::TDim row_1,  ///< which pair of rows
+                              objects::CSeq_align::TDim row_2,
+                              CAlnUserOptions::EDirection direction = CAlnUserOptions::eBothDirections); ///< which direction
+
+
+NCBI_XALNMGR_EXPORT
+void
 ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,                   ///< output
                            const objects::CSeq_align::TSegs::TStd& stds, ///< input Stds
                            objects::CSeq_align::TDim row_1,              ///< which pair of rows 

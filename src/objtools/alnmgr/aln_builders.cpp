@@ -97,6 +97,13 @@ public:
         return m_MergeFlags;
     }
 
+    void SortInsertions(void)
+    {
+        NON_CONST_ITERATE(TPairwiseAlnVector, it, m_PairwiseAlns) {
+            (*it)->SortInsertions();
+        }
+    }
+
 private:
     void x_TruncateOverlaps(CRef<CPairwiseAln>& addition)
     {
@@ -110,6 +117,14 @@ private:
             SubtractAlnRngCollections(*addition,  // minuend
                                       existing,   // subtrahend
                                       *truncated);// difference
+            int gap_flags = CPairwiseAln::TAlnRngColl::fAllowAbutting |
+                CPairwiseAln::TAlnRngColl::fAllowMixedDir |
+                CPairwiseAln::TAlnRngColl::fAllowOverlap;
+            CPairwiseAln::TAlnRngColl gaps_coll(addition->GetInsertions(),
+                gap_flags);
+            CPairwiseAln::TAlnRngColl gaps_truncated(gap_flags);
+            SubtractAlnRngCollections(gaps_coll, existing, gaps_truncated);
+
 #ifdef _TRACE_MergeAlnRngColl
             cerr << endl;
             cerr << "existing:" << endl << existing << endl;
@@ -117,6 +132,7 @@ private:
             cerr << "truncated = addition - existing:" << endl << *truncated << endl;
 #endif
             addition = truncated;
+            addition->AddInsertions(gaps_truncated);
         }
     }
 
@@ -175,6 +191,8 @@ private:
 
     void x_AddPairwise(const CPairwiseAln& addition) {
         TPairwiseAlnVector::iterator aln_it, aln_end;
+        const CPairwiseAln::TAlignRangeVector& gaps = addition.GetInsertions();
+        CPairwiseAln::TAlignRangeVector::const_iterator gap_it = gaps.begin();
         ITERATE(CPairwiseAln, rng_it, addition) {
 
             // What alignments can we possibly insert it to?
@@ -229,6 +247,20 @@ private:
             _ASSERT(m_MergeFlags & CAlnUserOptions::fAllowMixedStrand  ||
                     rng_it->IsDirect() && (*aln_it)->IsSet(CPairwiseAln::fDirect)  ||
                     rng_it->IsReversed() && (*aln_it)->IsSet(CPairwiseAln::fReversed));
+
+            // Add gaps
+            CPairwiseAln::const_iterator next_rng_it = rng_it;
+            ++next_rng_it;
+            CPairwiseAln::TPos next_rng_pos = -1;
+            if (next_rng_it != addition.end()) {
+                next_rng_pos = next_rng_it->GetFirstFrom();
+            }
+            // Add all gaps up to the next non-gap range
+            while (gap_it != gaps.end()  &&
+                (gap_it->GetFirstFrom() <= next_rng_pos  ||  next_rng_pos < 0)) {
+                (*aln_it)->AddInsertion(*gap_it);
+                gap_it++;
+            }
         }
     }
 
@@ -292,6 +324,8 @@ s_TranslateAnchorToAlnCoords(CPairwiseAln& out_anchor_pw, ///< output must be em
                              const CPairwiseAln& anchor_pw)
 {
     CPairwiseAln::TPos aln_pos = 0; /// Start at 0
+    // There should be no gaps on anchor
+    _ASSERT(anchor_pw.GetInsertions().empty());
     ITERATE (CPairwiseAln::TAlnRngColl, it, anchor_pw) {
         CPairwiseAln::TAlnRng ar = *it;
         ar.SetFirstFrom(aln_pos);
@@ -306,10 +340,28 @@ s_TranslatePairwiseToAlnCoords(CPairwiseAln& out_pw,   ///< output pairwise (nee
                                const CPairwiseAln& pw, ///< input pairwise to translate from
                                const CPairwiseAln& tr) ///< translating (aln segments) pairwise
 {
+    // Shift between the old anchor and the alignment.
+    CPairwiseAln::TPos anchor_shift = 0;
+    const CPairwiseAln::TAlignRangeVector& gaps = pw.GetInsertions();
+    CPairwiseAln::TAlignRangeVector::const_iterator gap_it = gaps.begin();
     ITERATE (CPairwiseAln, it, pw) {
         CPairwiseAln::TAlnRng ar = *it;
-        ar.SetFirstFrom(tr.GetFirstPosBySecondPos(ar.GetFirstFrom()));
+        CPairwiseAln::TPos pos = tr.GetFirstPosBySecondPos(ar.GetFirstFrom());
+        anchor_shift = ar.GetFirstFrom() - pos;
+        ar.SetFirstFrom(pos);
         out_pw.insert(ar);
+        while (gap_it != gaps.end()  &&  gap_it->GetFirstFrom() <= pos + anchor_shift) {
+            CPairwiseAln::TAlnRng gap_rg = *gap_it;
+            gap_rg.SetFirstFrom(gap_rg.GetFirstFrom() - anchor_shift);
+            out_pw.AddInsertion(gap_rg);
+            gap_it++;
+        }
+    }
+    while (gap_it != gaps.end()) {
+        CPairwiseAln::TAlnRng gap_rg = *gap_it;
+        gap_rg.SetFirstFrom(gap_rg.GetFirstFrom() + anchor_shift);
+        out_pw.AddInsertion(gap_rg);
+        gap_it++;
     }
 }
 
@@ -478,7 +530,9 @@ BuildAln(TAnchoredAlnVec& in_alns,
             }
             // finally, add the anchor
             merged_vec.push_back(merged_anchor);
-            
+            NON_CONST_ITERATE(TMergedVec, ma, merged_vec) {
+                (*ma)->SortInsertions();
+            }
             BuildAln(merged_vec, out_aln);
         }
         break;

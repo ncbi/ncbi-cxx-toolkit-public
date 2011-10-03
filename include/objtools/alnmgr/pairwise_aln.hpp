@@ -63,7 +63,7 @@ public:
     /// Constructor
     CPairwiseAln(const TAlnSeqIdIRef& first_id,
                  const TAlnSeqIdIRef& second_id,
-                 int flags = fDefaultPoicy)
+                 int flags = fDefaultPolicy)
         : TAlnRngColl(flags),
           m_FirstId(first_id),
           m_SecondId(second_id) {}
