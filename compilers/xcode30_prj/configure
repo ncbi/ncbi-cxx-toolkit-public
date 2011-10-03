@@ -95,6 +95,8 @@ noops="\
  --with-opengl \
  --without-mesa \
  --with-mesa \
+ --without-glew \
+ --with-glew \
  --without-glut \
  --with-glut \
  --without-wxwin \
