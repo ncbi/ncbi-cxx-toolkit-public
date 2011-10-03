@@ -121,7 +121,6 @@ protected:
     TMrnaMap m_MrnaMap;
     unsigned int m_uPendingMrnaId;
     unsigned int m_uPendingTrnaId;
-    unsigned int m_uPendingExonId;
     unsigned int m_uPendingCdsId;
     unsigned int m_uPendingGenericId;
 };

@@ -92,7 +92,6 @@ CGff3Writer::CGff3Writer(
     m_uPendingGeneId = 0;
     m_uPendingMrnaId = 0;
     m_uPendingTrnaId = 0;
-    m_uPendingExonId = 0;
     m_uPendingCdsId = 0;
     m_uPendingGenericId = 0;
 };
@@ -107,7 +106,6 @@ CGff3Writer::CGff3Writer(
     m_uRecordId = 1;
     m_uPendingGeneId = 0;
     m_uPendingMrnaId = 0;
-    m_uPendingExonId = 0;
     m_uPendingCdsId = 0;
     m_uPendingTrnaId = 0;
     m_uPendingGenericId = 0;
@@ -380,7 +378,6 @@ bool CGff3Writer::x_WriteFeatureTrna(
     }
     const CSeq_loc& PackedInt = *pRna->GetCircularLocation();
 
-    string strExonId = string("id") + NStr::UIntToString(m_uPendingGenericId++);
     if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
         const list< CRef< CSeq_interval > >& sublocs = PackedInt.GetPacked_int().Get();
         list< CRef< CSeq_interval > >::const_iterator it;
@@ -391,7 +388,8 @@ bool CGff3Writer::x_WriteFeatureTrna(
             pChild->CorrectType("exon");
             pChild->AssignParent(*pRna);
             pChild->CorrectLocation( subint );
-            pChild->ForceAttributeID(strExonId);
+            pChild->ForceAttributeID(
+                string("id") + NStr::UIntToString(m_uPendingGenericId++));
             if ( ! x_WriteRecord( pChild ) ) {
                 return false;
             }
@@ -508,7 +506,6 @@ bool CGff3Writer::x_WriteFeatureRna(
 
     const CSeq_loc& PackedInt = *pRna->GetCircularLocation();
 
-    string strExonId = string("id") + NStr::UIntToString(m_uPendingGenericId++);
     if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
         const list< CRef< CSeq_interval > >& sublocs = PackedInt.GetPacked_int().Get();
         list< CRef< CSeq_interval > >::const_iterator it;
@@ -519,7 +516,8 @@ bool CGff3Writer::x_WriteFeatureRna(
             pChild->CorrectType("exon");
             pChild->AssignParent(*pRna);
             pChild->CorrectLocation( subint );
-            pChild->ForceAttributeID(strExonId);
+            pChild->ForceAttributeID(
+                string("id") + NStr::UIntToString(m_uPendingGenericId++));
             pChild->DropAttribute( "Name" ); //explicitely not inherited
             if ( ! x_WriteRecord( pChild ) ) {
                 return false;

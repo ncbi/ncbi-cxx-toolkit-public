@@ -92,7 +92,6 @@ CGvfWriter::CGvfWriter(
     m_uRecordId = 1;
     m_uPendingGeneId = 0;
     m_uPendingMrnaId = 0;
-    m_uPendingExonId = 0;
 };
 
 //  ----------------------------------------------------------------------------
@@ -105,7 +104,6 @@ CGvfWriter::CGvfWriter(
     m_uRecordId = 1;
     m_uPendingGeneId = 0;
     m_uPendingMrnaId = 0;
-    m_uPendingExonId = 0;
 };
 
 //  ----------------------------------------------------------------------------
