@@ -273,7 +273,8 @@ string CCleanupChange::GetDescription(EChanges e)
     return sm_ChangeDesc[e];
 }
 
-
+// corresponds to the values in CCleanupChange::EChanges.
+// They must be edited together.
 const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Invalid Change Code",
     // set when strings are changed.
@@ -377,6 +378,7 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Add NcbiCleanupObject",
     "Clean Delta-ext",
     "Trim Flanking Quotes",
+    "Clean Bioseq Title"
 
     // set when any other change is made.
     "Change Other", 

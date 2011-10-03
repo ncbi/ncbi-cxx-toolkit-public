@@ -26,7 +26,7 @@
 *
 * ===========================================================================
 *
-* Author: Robert Smith, Jonathan Kans
+* Author: Robert Smith, Jonathan Kans, Michael Kornbluh
 *
 * File Description:
 *   Basic and Extended Cleanup of CSeq_entries.
@@ -38,8 +38,6 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 
 #include <objtools/cleanup/cleanup_change.hpp>
-
-
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -359,6 +357,8 @@ private:
     void x_OrgnameModBC( COrgName &orgname, const string &org_ref_common );
 
     void x_FixUnsetMolFromBiomol( CMolInfo& molinfo, CBioseq &bioseq );
+
+    void x_AddPartialToProteinTitle( CBioseq &bioseq );
 
     string x_ExtractSatelliteFromComment( string &comment );
 

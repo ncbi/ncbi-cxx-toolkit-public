@@ -233,6 +233,8 @@ use m_NewCleanup.DeltaExtBC { Seq-inst.ext.delta AND Seq-inst }
 use m_NewCleanup.MolInfoBC { MolInfo }
 use m_NewCleanup.x_FixUnsetMolFromBiomol{ Bioseq.descr.E.molinfo AND Bioseq }
 
+use m_NewCleanup.x_AddPartialToProteinTitle { POST Bioseq }
+
 use m_NewCleanup.UserObjectBC { 
     Seq-feat.ext ,
     Seq-feat.data.user ,

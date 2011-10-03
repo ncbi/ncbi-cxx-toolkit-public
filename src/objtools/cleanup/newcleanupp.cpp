@@ -867,7 +867,7 @@ typename TMapType::const_iterator s_FindInMapAsPrefix( const string &str_arg, co
     auto_ptr<string> temp_str;
 
     // chop off characters that can't be in the map, so they don't count
-    int first_bad_char = 0;
+    SIZE_TYPE first_bad_char = 0;
     for( ; first_bad_char < str_arg.length(); ++first_bad_char ) {
         const char ch = str_arg[first_bad_char];
         if( ! isalnum(ch) && ch != '-' && ch != '_' && ch != ' ' ) {
@@ -5449,6 +5449,138 @@ void CNewCleanup_imp::x_FixUnsetMolFromBiomol( CMolInfo& molinfo, CBioseq &biose
                 ChangeMade(CCleanupChange::eChangeBiomol);
             }
         }
+    }
+}
+
+// return position of " [" + sOrganism + "]", but only if it's
+// at the end and there are characters before it.
+static SIZE_TYPE s_TitleEndsInOrganism ( 
+    const string & sTitle, 
+    const string & sOrganism )
+{
+    const string sPattern = " [" + sOrganism + "]";
+    if( NStr::EndsWith(sTitle, sPattern, NStr::eNocase) ) {
+        SIZE_TYPE result = sTitle.length() - sPattern.length();
+        if( result >= 1 ) {
+            return result;
+        } else {
+            // title must have something before the pattern
+            return NPOS;
+        }
+    } else {
+        // pattern not found
+        return NPOS;
+    }
+}
+
+void CNewCleanup_imp::x_AddPartialToProteinTitle( CBioseq &bioseq )
+{
+    // Bail if not protein
+    if( ! FIELD_CHAIN_OF_2_IS_SET(bioseq, Inst, Mol) || 
+        bioseq.GetInst().GetMol() != NCBI_SEQMOL(aa) ) 
+    {
+        return;
+    }
+ 
+    // Bail if record is swissprot
+    FOR_EACH_SEQID_ON_BIOSEQ (seqid_itr, bioseq) {
+            const CSeq_id& seqid = **seqid_itr;
+            if( FIELD_IS(seqid, Swissprot) ) {
+                return;
+            }
+    }
+
+    // gather some info from the Seqdesc's on the bioseq, into
+    // the following variables
+    bool bPartial = false;
+    string sTaxname;
+    string sOldName;
+    string *psTitle = NULL;
+    EDIT_EACH_SEQDESC_ON_BIOSEQ(descr_iter, bioseq) {
+        CSeqdesc &descr = **descr_iter;
+        if( descr.IsMolinfo() && FIELD_IS_SET(descr.GetMolinfo(), Completeness) ) {
+            switch( GET_FIELD(descr.GetMolinfo(), Completeness) ) {
+                case NCBI_COMPLETENESS(partial):
+                case NCBI_COMPLETENESS(no_left):
+                case NCBI_COMPLETENESS(no_right):
+                case NCBI_COMPLETENESS(no_ends):
+                    bPartial = true;
+                    break;
+                default:
+                    break;
+            }
+        } else if( descr.IsSource() && FIELD_IS_SET(descr.GetSource(), Org) ) {
+            const COrg_ref & org = GET_FIELD(descr.GetSource(), Org);
+            if( ! RAW_FIELD_IS_EMPTY_OR_UNSET(org, Taxname) ) {
+                sTaxname = GET_FIELD(org, Taxname);
+            }
+            FOR_EACH_ORGMOD_ON_ORGREF(mod_iter, org) {
+                const COrgMod & orgmod = **mod_iter;
+                if( FIELD_EQUALS(orgmod, Subtype, NCBI_ORGMOD(old_name) ) ) {
+                    sOldName = GET_FIELD(orgmod, Subname);
+                }
+            }
+        } else if( descr.IsTitle() ) {
+            psTitle = & GET_MUTABLE(descr, Title);
+        }
+    }
+
+    // bail if no title
+    if( (NULL == psTitle) || psTitle->empty() ) {
+        return;
+    }
+
+    // put title into a reference, 
+    // just because it's more convenient than a pointer
+    string & sTitle = *psTitle;
+    // remember original so we can see if we changed it
+    const string sOriginalTitle = sTitle;
+
+    // search for partial, must be just before bracketed organism
+    const SIZE_TYPE partialPos = NStr::Find(sTitle, ", partial [");
+
+    // find oldname or taxname in brackets at end of protein title
+    SIZE_TYPE suffixPos = NPOS; // will point to " [${organism name}]" at end
+    if ( ! sOldName.empty() && ! sTaxname.empty() ) {
+        suffixPos = s_TitleEndsInOrganism (sTitle, sOldName);
+    }
+    if ( suffixPos == NPOS && ! sTaxname.empty() ) {
+        suffixPos = s_TitleEndsInOrganism (sTitle, sTaxname);
+        if (suffixPos != NPOS) {
+            // bail if no need to change partial text or [organism name]
+            if ( bPartial && partialPos != NPOS) {
+                return;
+            } else if( ! bPartial && partialPos == NPOS ){
+                return;
+            }
+        }
+    }
+    // do not change unless [genus species] was at the end
+    if (suffixPos == NPOS) {
+        return;
+    }
+
+    // truncate bracketed info from end of title, will replace with current taxname
+    sTitle.resize( suffixPos );
+
+    // if ", partial [" was indeed just before the [genus species], it will now be ", partial"
+    // Note: 9 is length of ", partial"
+    if ( ! bPartial && (partialPos == (sTitle.length() - 9)) ) 
+    {
+        sTitle.resize( partialPos );
+    }
+    NStr::TruncateSpacesInPlace( sTitle );
+
+    //
+    if( bPartial && partialPos == NPOS ) {
+        sTitle += ", partial";
+    }
+    if ( ! sTaxname.empty() ) {
+        sTitle += " [" + sTaxname + "]";
+    }
+
+    if( sTitle != sOriginalTitle ) {
+        ChangeMade(CCleanupChange::eCleanBioseqTitle);
     }
 }
 
