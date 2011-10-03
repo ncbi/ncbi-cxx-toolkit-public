@@ -333,8 +333,6 @@ bool CGff3Writer::x_WriteFeature(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-//    CSeqFeatData::ESubtype st = mf.GetFeatSubtype();
-
     switch( mf.GetFeatSubtype() ) {
         default:
             if (mf.GetFeatType() == CSeqFeatData::e_Rna) {
@@ -347,6 +345,9 @@ bool CGff3Writer::x_WriteFeature(
             return x_WriteFeatureCds( fc, mf );
         case CSeqFeatData::eSubtype_tRNA:
             return x_WriteFeatureTrna( fc, mf );
+
+        case CSeqFeatData::eSubtype_pub:
+            return true; //ignore
     }
     return false;
 }
