@@ -1,3 +1,4 @@
+#define TAGS gbench
 #include "ncbi_gui_base.lst"
 app/blast
 app/blastdb

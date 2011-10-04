@@ -1,3 +1,5 @@
+# $Id$
+
 WATCHERS = camacho madden maning fongah2
 
 APP = tblastn
@@ -14,3 +16,5 @@ CPPFLAGS = $(ORIG_CPPFLAGS)
 LIBS = $(CMPRS_LIBS) $(DL_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects -Cygwin
+
+PROJ_TAG = gbench
