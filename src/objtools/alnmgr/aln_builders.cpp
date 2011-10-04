@@ -350,16 +350,23 @@ s_TranslatePairwiseToAlnCoords(CPairwiseAln& out_pw,   ///< output pairwise (nee
         anchor_shift = ar.GetFirstFrom() - pos;
         ar.SetFirstFrom(pos);
         out_pw.insert(ar);
-        while (gap_it != gaps.end()  &&  gap_it->GetFirstFrom() <= pos + anchor_shift) {
-            CPairwiseAln::TAlnRng gap_rg = *gap_it;
-            gap_rg.SetFirstFrom(gap_rg.GetFirstFrom() - anchor_shift);
-            out_pw.AddInsertion(gap_rg);
-            gap_it++;
+        if (it != pw.end()  &&  gap_it != gaps.end()) {
+            CPairwiseAln::const_iterator next_it = it;
+            ++next_it;
+            if (next_it != pw.end()) {
+                while (gap_it != gaps.end()  &&
+                    gap_it->GetFirstFrom() <= next_it->GetFirstFrom()) {
+                    CPairwiseAln::TAlnRng gap_rg = *gap_it;
+                    gap_rg.SetFirstFrom(gap_rg.GetFirstFrom() - anchor_shift);
+                    out_pw.AddInsertion(gap_rg);
+                    gap_it++;
+                }
+            }
         }
     }
     while (gap_it != gaps.end()) {
         CPairwiseAln::TAlnRng gap_rg = *gap_it;
-        gap_rg.SetFirstFrom(gap_rg.GetFirstFrom() + anchor_shift);
+        gap_rg.SetFirstFrom(gap_rg.GetFirstFrom() - anchor_shift);
         out_pw.AddInsertion(gap_rg);
         gap_it++;
     }
