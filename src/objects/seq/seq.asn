@@ -367,6 +367,7 @@ Seq-gap ::= SEQUENCE {
         telomere(6),
         repeat(7),
         contig(8),
+        scaffold(9),
         other(255)
     },
     linkage INTEGER {
