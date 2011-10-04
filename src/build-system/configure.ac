@@ -146,9 +146,11 @@ AC_ARG_WITH(universal2,
 AC_ARG_WITH(exe,
    [ --without-exe           do not build executables])
 AC_ARG_WITH(runpath,
-   [ --with-runpath=PATH     hard-code the runtime path to DLLs])
+   [ --with-runpath=PATH     specify the usual runtime path to DLLs])
 AC_ARG_WITH(relative-runpath,
    [ --with-relative-runpath=P specify an executable-relative DLL search path])
+AC_ARG_WITH(hard-runpath,
+   [ --with-hard-runpath     hard-code runtime path, ignoring LD_LIBRARY_PATH])
 AC_ARG_WITH(lfs,
    [ --with-lfs              enable large file support to the extent possible])
 
@@ -450,7 +452,7 @@ AC_ARG_WITH(manuals,
 #### Check the passed arguments against the list of available ones
 x_with_list="\
 debug optimization profiling tcheck dll static static-exe plugin-auto-load \
-bundles bin-release mt 64 universal exe runpath lfs \
+bundles bin-release mt 64 universal exe runpath hard-runpath lfs \
 autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
@@ -948,15 +950,20 @@ case "$host_os:$compiler" in
              [ncbi_cv_prog_cc_wl_e=yes], [ncbi_cv_prog_cc_wl_e=no])
           LDFLAGS=$orig_LDFLAGS])
       test "$ncbi_cv_prog_cc_wl_e" = no  ||  APP_LDFLAGS="-Wl,-E $APP_LDFLAGS"
-      AC_CACHE_CHECK([whether $CC supports -Wl,--enable-new-dtags],
+      AC_CACHE_CHECK([whether $CC supports -Wl,--{en,dis}able-new-dtags],
          ncbi_cv_prog_cc_new_dtags,
          [orig_LDFLAGS=$LDFLAGS
           LDFLAGS="-Wl,--enable-new-dtags $LDFLAGS"
           AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
              [ncbi_cv_prog_cc_new_dtags=yes], [ncbi_cv_prog_cc_new_dtags=no])
           LDFLAGS=$orig_LDFLAGS])
-      test "$ncbi_cv_prog_cc_new_dtags" = no \
-          ||  LDFLAGS="-Wl,--enable-new-dtags $LDFLAGS"
+      if test "$ncbi_cv_prog_cc_new_dtags" = yes; then
+          if test "$with_hard_runpath" = yes; then
+             LDFLAGS="-Wl,--disable-new-dtags $LDFLAGS"
+          else
+             LDFLAGS="-Wl,--enable-new-dtags $LDFLAGS"
+          fi
+      fi
       ;;
 esac
 
