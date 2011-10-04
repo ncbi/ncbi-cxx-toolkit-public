@@ -200,6 +200,7 @@ NCBITEST_AUTO_INIT()
                             connection_args +
                             "')\n");
 
+    ExecuteStr("from __future__ import with_statement");
     ExecuteStr("import python_ncbi_dbapi as dbapi\n");
     ExecuteStr( connection_str.c_str() );
     ExecuteStr( conn_simple_str.c_str() );
