@@ -1171,6 +1171,60 @@ bool CDeflineGenerator::x_CDShasLowQualityException (
     return false;
 }
 
+/*
+static const char* s_proteinOrganellePrefix [] = {
+  NULL,
+  NULL,
+  "chloroplast",
+  "chromoplast",
+  "kinetoplast",
+  "mitochondrion",
+  "plastid",
+  "macronuclear",
+  "extrachromosomal",
+  "plasmid",
+  NULL,
+  NULL,
+  "cyanelle",
+  "proviral",
+  "virus",
+  "nucleomorph",
+  "apicoplast",
+  "leucoplast",
+  "protoplast",
+  "endogenous virus",
+  "hydrogenosome",
+  "chromosome",
+  "chromatophore"
+};
+*/
+
+static const char* s_proteinOrganellePrefix [] = {
+  NULL,
+  NULL,
+  "chloroplast",
+  NULL,
+  NULL,
+  "mitochondrion",
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+};
+
 string CDeflineGenerator::x_TitleFromProtein (
     const CBioseq_Handle& bsh
 )
@@ -1324,6 +1378,13 @@ string CDeflineGenerator::x_TitleFromProtein (
 
     string taxname;
     taxname = m_Taxname;
+
+    if (m_Genome >= NCBI_GENOME(chloroplast) && m_Genome <= NCBI_GENOME(chromatophore)) {
+        string organelle = s_proteinOrganellePrefix [m_Genome];
+        if (! organelle.empty() && ! taxname.empty() && taxname.find(organelle) == NPOS) {
+            result += " (" + organelle + ")";
+        }
+    }
 
     // check for special taxname, go to overlapping source feature
     if (taxname.empty() ||
