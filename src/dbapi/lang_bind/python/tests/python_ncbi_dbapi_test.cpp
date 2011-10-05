@@ -200,7 +200,6 @@ NCBITEST_AUTO_INIT()
                             connection_args +
                             "')\n");
 
-    ExecuteStr("from __future__ import with_statement");
     ExecuteStr("import python_ncbi_dbapi as dbapi\n");
     ExecuteStr( connection_str.c_str() );
     ExecuteStr( conn_simple_str.c_str() );
@@ -1149,31 +1148,18 @@ BOOST_AUTO_TEST_CASE(TestScenario_1)
         //    "raise StandardError('Invalid data type: ') \n");
         //ExecuteStr("if not isinstance(out[0], None.__class__) : "
         //    "raise StandardError('Invalid data type: ') \n");
-
-        // For some reason 'with' statement doesn't work here
-        /*ExecuteStr("with conn_simple.cursor() as cursor: \n"
+        ExecuteStr("from __future__ import with_statement \n"
+                   "with conn_simple.cursor() as cursor: \n"
                    "  for row in cursor.execute('exec sp_spaceused'): \n"
-                   "    rr = row \n"
+                   "    print row \n"
                    "  cursor.nextset() \n"
                    "  for row in cursor: \n"
-                   "    rr = row \n"
+                   "    print row \n"
                    "try: \n"
                    "  cursor.execute('select * from sysobjects') \n"
                    "  raise Exception('DatabseError was not thrown') \n"
-                   "except DatabaseError: \n"
-                   "  pass \n");*/
-        ExecuteStr("for row in cursor.execute('exec sp_spaceused'): \n"
-                   "  print row \n"
-                   "cursor.nextset() \n"
-                   "for row in cursor: \n"
-                   "  print row \n");
-        ExecuteStr("cursor.close() \n");
-        ExecuteStr("try: \n"
-                   "  cursor.execute('select * from sysobjects') \n"
-                   "  raise Exception('DatabseError was not thrown') \n"
                    "except dbapi.DatabaseError: \n"
-                   "  pass \n"
-                   );
+                   "  pass \n");
         ExecuteStr("cursor = conn_simple.cursor()\n" );
         ExecuteStr("for row in cursor.execute('exec sp_spaceused'): \n"
                    "  print row \n");
