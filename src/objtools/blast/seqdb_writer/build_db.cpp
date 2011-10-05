@@ -300,7 +300,7 @@ static CConstRef<CBioseq> s_FixBioseqDeltas(CConstRef<objects::CBioseq> bs)
         bs->GetInst().CanGetExt() &&
         bs->GetInst().GetExt().IsDelta() &&
         bs->GetInst().CanGetMol() &&
-        (bs->GetInst().GetMol() != CSeq_inst::eMol_na)) {
+        !CSeq_inst::IsNa(bs->GetInst().GetMol())) {
         
         NCBI_THROW(CMultisourceException, eArg,
                    "Protein delta sequences are not supported.");
@@ -324,6 +324,16 @@ static CConstRef<CBioseq> s_FixBioseqDeltas(CConstRef<objects::CBioseq> bs)
         
         ITERATE(TItems, item, dext.Get()) {
             const CSeq_literal & L = (**item).GetLiteral();
+
+            if (!L.CanGetSeq_data()) {
+                if (L.CanGetLength()){
+                   seq8na.append(L.GetLength(), 0x0f);
+                   continue;
+                } else {
+                   NCBI_THROW(CMultisourceException, eArg,
+                      "Part of the delta sequence, including its length, is un-available.");
+                }
+            }
             
             if (L.GetSeq_data().IsNcbi2na()) {
                 CSeqConvert::Convert(L.GetSeq_data().GetNcbi2na(),
