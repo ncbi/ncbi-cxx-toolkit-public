@@ -117,6 +117,8 @@ AC_ARG_WITH(title2,
 ## Code generation
 AC_ARG_WITH(debug,
    [ --without-debug         build non-debug versions of libs and apps])
+AC_ARG_WITH(symbols,
+   [ --with-symbols          retain debugging symbols in non-debug mode])
 AC_ARG_WITH(optimization,
    [ --without-optimization  turn off optimization flags in non-debug mode])
 AC_ARG_WITH(profiling,
@@ -447,8 +449,8 @@ AC_ARG_WITH(manuals,
 
 #### Check the passed arguments against the list of available ones
 x_with_list="\
-debug optimization profiling tcheck dll static static-exe plugin-auto-load \
-bundles bin-release mt 64 universal exe runpath hard-runpath lfs \
+debug symbols optimization profiling tcheck dll static static-exe bundles \
+plugin-auto-load bin-release mt 64 universal exe runpath hard-runpath lfs \
 autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
@@ -554,6 +556,13 @@ if test "$with_bin_release" = "yes" ; then
              [Define to 1 when building binaries for public release.])
 fi
 
+if test "$with_debug" = no; then
+    : ${with_symbols=no}
+    : ${with_optimization=yes}
+else
+    : ${with_symbols=yes}
+    : ${with_optimization=no}
+fi
 
 #### Check for special options
 if test "$with_extra_action" = "yes" ; then
@@ -995,14 +1004,14 @@ case "$host_os:$compiler" in
    LDFLAGS="-xildoff $LDFLAGS"
    AR=${AR:="$CXX $MT_FLAG -xar -o"}
    STRIP="@:"
-   if test "$with_debug" = "no" -a "$with_profiling" != "yes" \
+   if test "$with_symbols" = "no" -a "$with_profiling" != "yes" \
       -a "$with_strip" = "yes" ; then
       LDFLAGS="-s $LDFLAGS"
    fi
    # Recent versions default to DWARF, yielding much larger executables in
    # debug configurations; insist on STABS when the choice exists, even for
    # versions that already default to it.
-   case "$with_debug:$compiler" in
+   case "$with_symbols:$compiler" in
       no:* | *:WorkShop5[[0-4]] ) ;;
       * )
          CFLAGS="-xdebugformat=stabs $CFLAGS"
@@ -2043,7 +2052,7 @@ fi
 
 
 ### Intel Thread Checker
-if test "${with_tcheck-no}" != "no" ; then
+if test "${with_tcheck=no}" != "no" ; then
    if test "${release_debug}${mt_sfx}" != "DebugMT" ; then
       AC_MSG_WARN([--with-tcheck is most likely to be effective in DebugMT builds.])
    fi
@@ -2479,26 +2488,25 @@ else
 fi
 
 
-#### Manage the debug-vs.-optimization flags ("--*-debug", "--*-optimization")
+#### Manage the debug-vs.-optimization flags ("--with(out)-debug",
+#### "--with(out)-symbols", "--with(out)-optimization")
 changequote(, )dnl
 if test "$compiler" != "MSVC" ; then
-   if test "$with_debug" = "no" ; then
-      with_optimization=${with_optimization:="yes"}
+   if test "$with_debug" = "no" -o "$with_tcheck" != "no"; then
+      CPPFLAGS="-DNDEBUG $CPPFLAGS"
+   else
+      CPPFLAGS="-D_DEBUG $CPPFLAGS"
+   fi
+
+   if test "$with_symbols" = "no" ; then
       CFLAGS=`  echo " $CFLAGS"   | sed 's/[ 	]-g[0-9]*//g'`
       CXXFLAGS=`echo " $CXXFLAGS" | sed 's/[ 	]-g[0-9]*//g'`
       LDFLAGS=` echo " $LDFLAGS"  | sed 's/[ 	]-g[0-9]*//g'`
-      CPPFLAGS="-DNDEBUG $CPPFLAGS"
    else
-      with_optimization=${with_optimization:="no"}
       if echo " $CFLAGS"   |grep -v >/dev/null '[ 	]-g[0-9]*' ; then
          CFLAGS="$CFLAGS -g"     ; fi
       if echo " $CXXFLAGS" |grep -v >/dev/null '[ 	]-g[0-9]*' ; then
          CXXFLAGS="$CXXFLAGS -g" ; fi
-      if test "${with_tcheck=no}" = "no" ; then
-         CPPFLAGS="-D_DEBUG $CPPFLAGS"
-      else
-         CPPFLAGS="-DNDEBUG $CPPFLAGS"
-      fi
       if echo " $LDFLAGS"  |grep -v >/dev/null '[ 	]-g[0-9]*' ;
          then LDFLAGS="$LDFLAGS -g" ; fi
       STRIP="@:"
