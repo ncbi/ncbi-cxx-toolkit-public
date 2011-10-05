@@ -2662,11 +2662,10 @@ CCursor::execute(const pythonpp::CTuple& args)
     return pythonpp::CObject(this);
 }
 
-pythonpp::CObject
+PyObject*
 CCursor::CreateIter(void)
 {
-    CCursorIter* iter = new CCursorIter(this);
-    return pythonpp::CObject(iter);
+    return new CCursorIter(this);
 }
 
 void
@@ -3125,7 +3124,7 @@ PyObject*
 s_GetCursorIter(PyObject* curs_obj)
 {
     CCursor* cursor = (CCursor*)curs_obj;
-    return IncRefCount(cursor->CreateIter());
+    return cursor->CreateIter();
 }
 
 
@@ -3157,7 +3156,6 @@ extern "C"
 PyObject*
 s_GetCursorIterFromIter(PyObject* iter_obj)
 {
-    Py_INCREF(iter_obj);
     return iter_obj;
 }
 

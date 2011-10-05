@@ -213,5 +213,12 @@ try:
 except DatabaseError:
     pass
 
+cursor = conn.cursor()
+for row in cursor.execute("exec sp_spaceused"):
+    rr = row
+cursor = conn.cursor()
+cursor.execute("select * from sysobjects")
+cursor.fetchall()
+
 
 print 'All tests completed successfully'

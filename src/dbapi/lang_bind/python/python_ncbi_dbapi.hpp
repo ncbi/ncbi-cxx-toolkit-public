@@ -360,7 +360,7 @@ public:
     /// (see the module's paramstyle attribute for details). [5]
     /// execute(operation[,parameters]);
     pythonpp::CObject execute(const pythonpp::CTuple& args);
-    pythonpp::CObject CreateIter(void);
+    PyObject* CreateIter(void);
     /// Prepare a database operation (query or command) and then
     /// execute it against all parameter sequences or mappings
     /// found in the sequence seq_of_parameters.
@@ -792,7 +792,7 @@ public:
 
 public:
     static void Declare(
-        const char* name, 
+        const char* name,
         const char* descr = 0,
         PyTypeObject* base = &PyBaseObject_Type
         )
