@@ -126,6 +126,7 @@ public:
     string m_BuildRoot;
     string m_ExtSrcRoot;
     string m_ProjTags;
+    bool m_ProjTagCmnd;
     bool m_ConfirmCfg;
     bool m_AllDllBuild;
     bool m_InteractiveCfg;

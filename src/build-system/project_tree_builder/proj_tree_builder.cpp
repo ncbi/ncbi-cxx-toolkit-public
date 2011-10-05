@@ -1289,6 +1289,7 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
         item_dll.m_HostedLibs.push_back(proj_id);
         item_dll.m_GUID  = IdentifySlnGUID(source_base_dir, proj_dll);
         item_dll.m_IsBundle = isbundle;
+        item_dll.m_External = true;
         tree->m_Projects[proj_dll] = item_dll;
     }
     ITERATE(list<CProjKey>, u,  unconditional_depends_ids) {
@@ -1435,7 +1436,8 @@ CProjKey SDllProjectT::DoCreate(const string& source_base_dir,
                                            defines,
                                            maketype,
         IdentifySlnGUID(source_base_dir, proj_key));
-
+    tree->m_Projects[proj_key].m_External = true;
+    
     k = m->second.m_Contents.find("HOSTED_LIBS");
     if (k != m->second.m_Contents.end()) {
         tree->m_Projects[proj_key].m_HostedLibs = k->second;
@@ -1449,6 +1451,8 @@ CProjKey SDllProjectT::DoCreate(const string& source_base_dir,
         CSimpleMakeFileContents::eSortUnique)) {
         tree->m_Projects[proj_key].m_Watchers = NStr::Join(lst_watchers, " ");
     }
+    m->second.CollectValues("PROJ_TAG", tree->m_Projects[proj_key].m_ProjTags,
+        CSimpleMakeFileContents::eMergePlusMinus);
     return proj_key;
 }
 

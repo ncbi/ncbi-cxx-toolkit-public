@@ -85,8 +85,6 @@ static void s_InitalizeDllProj(const string&                  dll_id,
                                const CProjectItemsTree&       tree_src,
                                CProjectItemsTree*             tree_dst)
 {
-    dll->m_External = true;
-
     list<CProjKey> new_depends;
     ITERATE(list<CProjKey>, p, dll->m_Depends) {
 

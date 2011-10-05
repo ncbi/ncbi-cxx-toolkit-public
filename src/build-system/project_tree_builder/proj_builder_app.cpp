@@ -336,7 +336,7 @@ struct PIsExcludedByTag
         if ( project.m_ProjType != CProjKey::eDataSpec && 
             !GetApp().IsAllowedProjectTag(project.m_ProjTags, unmet) ) {
             PTB_WARNING_EX(project.GetPath(), ePTB_ProjectExcluded,
-                           "Excluded due to proj_tag: " << unmet);
+                           "Excluded due to proj_tag; this project tags: " << unmet);
             return true;
         }
         return false;
@@ -410,6 +410,7 @@ CProjBulderApp::CProjBulderApp(void)
     m_AddUnicode = false;
     m_CurrentBuildTree = 0;
     m_IncompleteBuildTree = 0;
+    m_ProjTagCmnd = false;
     m_ConfirmCfg = false;
     m_AllDllBuild = false;
     m_InteractiveCfg = false;
@@ -588,6 +589,7 @@ int CProjBulderApp::Run(void)
 
     // Get and check arguments
     ParseArguments();
+    LOG_POST(Info << "Project tags filter: " + m_ProjTags);
     if (m_InteractiveCfg && !Gui_ConfirmConfiguration())
     {
         LOG_POST(Info << "Cancelled by request.");
@@ -1647,9 +1649,11 @@ void CProjBulderApp::ParseArguments(void)
         }
         if ( const CArgValue& t = args["projtag"] ) {
             m_ProjTags = t.AsString();
+            m_ProjTagCmnd = true;
         } else {
             m_ProjTags = CProjectsLstFileFilter::GetAllowedTagsInfo(
                 CDirEntry::ConcatPath(m_Root, m_Subtree));
+            m_ProjTagCmnd = false;
         }
 #if defined(NCBI_COMPILER_MSVC) || defined(NCBI_XCODE_BUILD) || defined(PSEUDO_XCODE)
         const CArgValue& ide = args["ide"];
@@ -1716,7 +1720,7 @@ void CProjBulderApp::ParseArguments(void)
             }
         }
     }
-    if (m_ProjTags.empty() || m_ProjTags == "\"\"") {
+    if (m_ProjTags.empty() || m_ProjTags == "\"\"" || m_ProjTags == "#") {
         m_ProjTags = "*";
     }
 
@@ -2234,6 +2238,13 @@ void CProjBulderApp::RegisterProjectWatcher(
 void CProjBulderApp::ExcludeProjectsByTag(CProjectItemsTree& tree) const
 {
     EraseIf(tree.m_Projects, PIsExcludedByTag());
+    if (!m_ProjTags.empty() && m_ProjTags != "*") {
+        NON_CONST_ITERATE(CProjectItemsTree::TProjects, p, tree.m_Projects) {
+            if (p->second.m_ProjType == CProjKey::eDll) {
+                p->second.m_External = false;
+            }
+        }
+    }
 }
 
 void CProjBulderApp::ExcludeUnrequestedProjects(CProjectItemsTree& tree) const

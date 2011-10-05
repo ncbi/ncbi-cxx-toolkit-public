@@ -265,8 +265,12 @@ void CMsvcConfigureProjectGenerator::CreateProjectFileItem(bool with_gui) const
     if (with_gui /*|| GetApp().m_ConfirmCfg*/) {
         ofs << " -cfg";
     }
-    if (GetApp().m_ProjTags != "*") {
-        ofs << " -projtag \"" << GetApp().m_ProjTags << "\"";
+    if (GetApp().m_ProjTagCmnd) {
+        if (GetApp().m_ProjTags != "*") {
+            ofs << " -projtag \"" << GetApp().m_ProjTags << "\"";
+        } else {
+            ofs << " -projtag #";
+        }
     }
     ofs << "\n";
     ofs << "set PTB_PROJECT_REQ=" << m_SubtreeToBuild << "\n";
