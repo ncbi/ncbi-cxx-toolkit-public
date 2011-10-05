@@ -1,10 +1,10 @@
 # $Id$
 
-# Meta-makefile("SEQDB" project)
+# Meta-makefile("seqdb/perf" project)
 #################################
 
-LIB_PROJ = seqdb
-SUB_PROJ = demo test
+EXPENDABLE_APP_PROJ = seqdb_perf
+PROJ_TAG = perf
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
