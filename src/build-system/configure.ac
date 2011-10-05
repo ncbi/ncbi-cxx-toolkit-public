@@ -67,7 +67,7 @@ case "$with_3psw" in
       m4_foreach(X, [sss, sssutils, sssdb, z, bz2, lzo, pcre, gnutls, openssl,
                      sybase, ftds, mysql, fltk, opengl, mesa, glut, glew,
                      wxwidgets, freetype, fastcgi, bdb, sp, orbacus, odbc,
-                     python, jni, cppunit, boost, sqlite3, icu, expat,
+                     python, jni, boost, sqlite3, icu, expat,
                      sablot, libxml, libxslt, xerces, xalan, oechem, sge,
                      muparser, hdf5, gif, jpeg, png, tiff, xpm, magic, curl],
         [if test "${[with_]X-no}" != "no"; then
@@ -323,10 +323,6 @@ AC_ARG_WITH(python2,
    [ --without-python        do not use Python])
 AC_ARG_WITH(jni,
    [ --with-jni(=JDK-DIR)    build Java bindings (against the JDK in JDK-DIR)])
-AC_ARG_WITH(cppunit,
-   [ --with-cppunit=DIR      use CPPUNIT installation in DIR])
-AC_ARG_WITH(cppunit2,
-   [ --without-cppunit       do not use CPPUNIT])
 AC_ARG_WITH(boost,
    [ --with-boost=DIR        use Boost installation in DIR])
 AC_ARG_WITH(boost2,
@@ -460,7 +456,7 @@ ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
 z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
 ftds mysql orbacus freetype fltk opengl mesa glut glew glew-mx \
-bdb python jni sqlite3 icu cppunit boost boost-tag \
+bdb python jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan oechem sge muparser hdf5 \
 gif jpeg tiff png xpm magic curl 3psw \
 local-lbsm ncbi-crypt connext \
@@ -512,8 +508,7 @@ for x_arg in "$@" ; do
       | --with-bdb=* | --with-odbc | --with-odbc=* \
       | --with-python=* | --with-freetype=* | --with-gif=* | --with-jpeg=* \
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
-      | --with-mesa=* | --with-glut=* | --with-glew=* \
-      | --with-oechem=* | --with-cppunit=* \
+      | --with-mesa=* | --with-glut=* | --with-glew=* | --with-oechem=* \
       | --with-boost=* | --with-boost-tag=* | --with-orbacus=* | --with-sge=* \
       | --with-muparser=* | --with-hdf5=* | --with-jni=* | --with-magic=* \
       | --x-includes=* | --x-libraries=* | --with-3psw=* \
@@ -4282,66 +4277,6 @@ if test "${with_jni-no}" != "no"; then
        ncbi_java=''])
 fi
 
-## CPPUNIT
-if test "$with_cppunit" != "no" ; then
-   case "$with_cppunit" in
-      yes | "" ) : ${CPPUNIT_PATH=$NCBI/cppunit} ;;
-      *        ) CPPUNIT_PATH=$with_cppunit ;;
-   esac
-   if test -d "$CPPUNIT_PATH/${compiler_vpfx}Debug${bit64_sfx}/lib" \
-        -a -z "$CPPUNIT_ARCH_PATH"; then
-      CPPUNIT_ARCH_PATH="$CPPUNIT_PATH/${compiler_vpfx}Debug${bit64_sfx}"
-   elif test -d "$CPPUNIT_PATH/${compiler_pfx}Debug${bit64_sfx}/lib" \
-        -a -z "$CPPUNIT_ARCH_PATH"; then
-      CPPUNIT_ARCH_PATH="$CPPUNIT_PATH/${compiler_pfx}Debug${bit64_sfx}"
-   else
-      CPPUNIT_ARCH_PATH="$CPPUNIT_PATH"
-   fi
-   CPPUNIT_BINPATH=${CPPUNIT_BINPATH:="$CPPUNIT_ARCH_PATH/bin"}
-   CPPUNIT_LIBPATH=${CPPUNIT_LIBPATH:="$CPPUNIT_ARCH_PATH/lib"}
-   CPPUNIT_INCLUDE=
-   AC_CACHE_CHECK([for CPPUNIT in $CPPUNIT_ARCH_PATH], ncbi_cv_lib_cppunit,
-      [if test -x "$CPPUNIT_BINPATH/cppunit-config" ; then
-          CPPUNIT_INCLUDE=`$CPPUNIT_BINPATH/cppunit-config --cflags`
-          NCBI_RPATHIFY_OUTPUT(CPPUNIT_LIBS,
-               $CPPUNIT_BINPATH/cppunit-config --libs)
-
-          CPPFLAGS="$CPPUNIT_INCLUDE $orig_CPPFLAGS"
-          LIBS="$CPPUNIT_LIBS $orig_LIBS"
-          AC_LINK_IFELSE([AC_LANG_PROGRAM(
-            [[
-               #include <cppunit/TestResult.h>
-               #include <cppunit/TestResultCollector.h>
-            ]],
-            [[
-               CPPUNIT_NS::TestResult controller;
-               CPPUNIT_NS::TestResultCollector result;
-               controller.addListener( &result );
-            ]])],
-            [ncbi_cv_lib_cppunit=yes], [ncbi_cv_lib_cppunit=no])
-       else
-          ncbi_cv_lib_cppunit=no
-       fi])
-   if test "$ncbi_cv_lib_cppunit" = "no"; then
-      NCBI_MISSING_PACKAGE(cppunit)
-   fi
-fi
-
-if test "$with_cppunit" = "no" ; then
-   CPPUNIT_PATH="No_CPPUNIT"
-   CPPUNIT_INCLUDE=
-   CPPUNIT_LIBS=
-else
-   NCBI_PACKAGE(CPPUNIT)
-   CPPUNIT_CONFIG="$CPPUNIT_BINPATH/cppunit-config"
-   # The "yes" may have been cached; get the actual settings again if needed
-   if test -z "$CPPUNIT_INCLUDE"; then
-      CPPUNIT_INCLUDE=`$CPPUNIT_CONFIG --cflags`
-      NCBI_RPATHIFY_OUTPUT(CPPUNIT_LIBS, $CPPUNIT_CONFIG --libs)
-   fi
-   AC_DEFINE(HAVE_CPPUNIT, 1, [Define to 1 if CPPUNIT libraries are available.])
-fi
-
 
 ## Boost
 if test "$with_boost" != "no"; then
@@ -6537,8 +6472,6 @@ AC_SUBST(BERKELEYDB_CXX_LIBS)
 AC_SUBST(BERKELEYDB_CXX_STATIC_LIBS)
 AC_SUBST(ODBC_INCLUDE)
 AC_SUBST(ODBC_LIBS)
-AC_SUBST(CPPUNIT_INCLUDE)
-AC_SUBST(CPPUNIT_LIBS)
 AC_SUBST(BOOST_INCLUDE)
 AC_SUBST(BOOST_LIBPATH)
 AC_SUBST(BOOST_TAG)

@@ -118,8 +118,6 @@ noops="\
  --with-odbc \
  --with-python \
  --without-python \
- --with-cppunit \
- --without-cppunit \
  --with-boost \
  --without-boost \
  --with-boost-tag \

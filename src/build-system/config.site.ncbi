@@ -13,7 +13,6 @@ if test "$ncbi_favor_std_packages" = yes; then
         test -d "$d"  ||  continue
         test -f "$d/include/db.h"          &&  : ${BERKELEYDB_PATH=$d}
         test -d "$d/include/boost"         &&  : ${BOOST_PATH=$d}
-        test -x "$d/bin/cppunit-config"    &&  : ${CPPUNIT_PATH=$d}
         test -f "$d/include/expat.h"       &&  : ${EXPAT_PATH=$d}
         test -f "$d/include/fastcgi.h"     &&  : ${FASTCGI_PATH=$d}
         test -x "$d/bin/fltk-config"       &&  : ${FLTK_PATH=$d}
@@ -57,12 +56,6 @@ case "$ncbi_platform" in
     Linux32    ) : ${BOOST_PATH=$NCBI/boost-1.41.0} ;;
     Linux64    ) : ${BOOST_PATH=$NCBI/boost-1.45.0-ncbi1} ;;
     *          ) : ${BOOST_PATH=$NCBI/boost-1.35.0} ;;
-esac
-
-case "$ncbi_platform" in
-    Linux*     ) : ${CPPUNIT_PATH=$NCBI/cppunit-1.10}   ;;
-    *MAC       ) : ${CPPUNIT_PATH=$NCBI/cppunit-1.10.2} ;;
-    SunOSSparc ) : ${CPPUNIT_PATH=$NCBI/cppunit-1.10.2} ;;
 esac
 
 case "$ncbi_platform" in
