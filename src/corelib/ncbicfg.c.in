@@ -57,6 +57,7 @@ static const char s_DefaultSybaseNetPath[]   = "@SYBASE_PATH@";
 static const char *s_DefaultSybasePath       = 0;
 static const char *s_SybasePath              = 0;
 
+static const char s_BuildFeatures[] = "@FEATURES@";
 
 const char* NCBI_GetDefaultRunpath(void)
 {
@@ -106,4 +107,10 @@ const char* NCBI_GetSybasePath(void)
 void NCBI_SetSybasePath(const char* sybpath)
 {
     s_SybasePath = sybpath;
+}
+
+
+const char* NCBI_GetBuildFeatures(void)
+{
+    return s_BuildFeatures;
 }

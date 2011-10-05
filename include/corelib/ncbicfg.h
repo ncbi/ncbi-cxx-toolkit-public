@@ -69,6 +69,11 @@ const char* NCBI_GetSybasePath(void);
 NCBI_XNCBI_EXPORT
 void        NCBI_SetSybasePath(const char* sybpath);
 
+
+/** Get list of enabled features and packages, delimited by spaces. */
+NCBI_XNCBI_EXPORT
+const char* NCBI_GetBuildFeatures(void);
+
 #ifdef __cplusplus
 }
 #endif

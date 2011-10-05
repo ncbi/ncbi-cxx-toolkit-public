@@ -6250,6 +6250,8 @@ case "$host_os" in
       ;;
 esac
 
+FEATURES="$WithFeatures $WithPackages $WithProjects"
+
 ### Compute Without{Features,Packages,Projects}.  Takes quadratic time,
 ### but that's life.
 m4_foreach(CATEGORY, [Features,Packages,Projects],
@@ -6258,6 +6260,7 @@ m4_foreach(CATEGORY, [Features,Packages,Projects],
          *" $x "*) ;;
          *) [Without]CATEGORY="[$Without]CATEGORY[$Without]CATEGORY[Sep$x]"
             [Without]CATEGORY[Sep]=" "
+            FEATURES="$FEATURES -$x"
           ;;
       esac
    done
@@ -6418,6 +6421,7 @@ AC_SUBST(CHECK_ARG)
 AC_SUBST(CHECK_TOOLS)
 AC_SUBST(CHECK_TIMEOUT_MULT)
 AC_SUBST(CHECK_OS_NAME)
+AC_SUBST(FEATURES)
 
 AC_SUBST(script_shell)
 AC_SUBST(make_shell)
