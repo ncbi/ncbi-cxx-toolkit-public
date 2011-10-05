@@ -3,3 +3,4 @@ core
 web
 structure_cdtree
 gbench
+perf
