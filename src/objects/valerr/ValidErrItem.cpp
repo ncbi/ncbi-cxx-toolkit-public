@@ -591,6 +591,10 @@ bio_material/culture_collection/specimen_voucher type.")),
    TErrTypStrs ( eErr_SEQ_DESCR_DBLinkProblem,
    TErrStrs( "DBLinkProblem",
 "Only one DBLink user object with approved databases should apply to each Bioseq.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_FinishedStatusForWGS,
+   TErrStrs( "FinishedStatusForWGS",
+"WGS projects should not have the Genome-Assembly-Data structured comment current \
+finishing status set to Finished.")),
 
 /* SEQ_GENERIC */
 

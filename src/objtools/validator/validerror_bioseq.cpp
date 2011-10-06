@@ -6702,6 +6702,9 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
     bool is_prokaryote = false;
     bool is_organelle = false;
 
+    bool is_genome_assembly = false;
+    bool is_finished_status = false;
+
     // some validation is for descriptors that affect a bioseq, 
     // other validation is only for descriptors _on_ a bioseq
     FOR_EACH_DESCRIPTOR_ON_BIOSEQ (it, seq) {
@@ -6920,7 +6923,8 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                                       "RefGeneTracking object should only be in RefSeq record", 
                                       ctx, desc);
                 } else if (oi.IsStr() && NStr::EqualCase(oi.GetStr(), "StructuredComment")) {
-                    string keyword = s_GetKeywordForStructuredComment(desc.GetUser());
+                    const CUser_object& obj = desc.GetUser();
+                    string keyword = s_GetKeywordForStructuredComment(obj);
                     if (!NStr::IsBlank(keyword)) {
                         // does sequence have keyword?
                         bool found = false;
@@ -6942,6 +6946,22 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                             if (found) {
                                 PostErr(eDiag_Info, eErr_SEQ_DESCR_BadKeyword, 
                                         "Structured Comment is non-compliant, keyword should be removed", ctx, desc);
+                            }
+                        }
+                    } else {
+                        ITERATE (CUser_object::TData, field, obj.GetData()) {
+                            if ((*field)->IsSetLabel() && (*field)->GetLabel().IsStr()) {
+                                if (NStr::EqualNocase((*field)->GetLabel().GetStr(), "StructuredCommentPrefix")) {
+                                    const string& prefix = (*field)->GetData().GetStr();
+                                    if (NStr::EqualCase(prefix, "##Genome-Assembly-Data-START##")) {
+                                        is_genome_assembly = true;
+                                    }
+                                } else if (NStr::EqualNocase((*field)->GetLabel().GetStr(), "Current Finishing Status")) {
+                                    const string& prefix = (*field)->GetData().GetStr();
+                                    if (NStr::EqualCase(prefix, "Finished")) {
+                                        is_finished_status = true;
+                                    }
+                                }
                             }
                         }
                     }
@@ -7093,6 +7113,9 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
         }
     }
 
+    if (is_genome_assembly && is_finished_status && tech == CMolInfo::eTech_wgs) {
+        PostErr (eDiag_Warning, eErr_SEQ_DESCR_FinishedStatusForWGS, "WGS record %s should not have Finished status", seq);
+    }
 
     if ( num_gb > 1 ) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
