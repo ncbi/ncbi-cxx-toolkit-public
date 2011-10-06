@@ -4829,7 +4829,7 @@
           <key>GCC_INLINES_ARE_PRIVATE_EXTERN</key>
           <string>NO</string>
           <key>GCC_SYMBOLS_PRIVATE_EXTERN</key>
-          <string>NO</string>
+          <string>YES</string>
           <key>CONFIGURATION_BUILD_DIR</key>
           <string>../lib/$(CONFIGURATION)</string>
           <key>CONFIGURATION_TEMP_DIR</key>
@@ -4876,7 +4876,7 @@
           <key>GCC_INLINES_ARE_PRIVATE_EXTERN</key>
           <string>NO</string>
           <key>GCC_SYMBOLS_PRIVATE_EXTERN</key>
-          <string>NO</string>
+          <string>YES</string>
           <key>CONFIGURATION_BUILD_DIR</key>
           <string>../lib/$(CONFIGURATION)</string>
           <key>CONFIGURATION_TEMP_DIR</key>
@@ -4923,7 +4923,7 @@
           <key>GCC_INLINES_ARE_PRIVATE_EXTERN</key>
           <string>NO</string>
           <key>GCC_SYMBOLS_PRIVATE_EXTERN</key>
-          <string>NO</string>
+          <string>YES</string>
           <key>CONFIGURATION_BUILD_DIR</key>
           <string>../lib/$(CONFIGURATION)</string>
           <key>CONFIGURATION_TEMP_DIR</key>
@@ -4970,7 +4970,7 @@
           <key>GCC_INLINES_ARE_PRIVATE_EXTERN</key>
           <string>NO</string>
           <key>GCC_SYMBOLS_PRIVATE_EXTERN</key>
-          <string>NO</string>
+          <string>YES</string>
           <key>CONFIGURATION_BUILD_DIR</key>
           <string>../lib/$(CONFIGURATION)</string>
           <key>CONFIGURATION_TEMP_DIR</key>
@@ -7376,7 +7376,7 @@
           <key>GCC_INLINES_ARE_PRIVATE_EXTERN</key>
           <string>NO</string>
           <key>GCC_SYMBOLS_PRIVATE_EXTERN</key>
-          <string>NO</string>
+          <string>YES</string>
           <key>CONFIGURATION_BUILD_DIR</key>
           <string>../lib/$(CONFIGURATION)</string>
           <key>CONFIGURATION_TEMP_DIR</key>
@@ -7421,7 +7421,7 @@
           <key>GCC_INLINES_ARE_PRIVATE_EXTERN</key>
           <string>NO</string>
           <key>GCC_SYMBOLS_PRIVATE_EXTERN</key>
-          <string>NO</string>
+          <string>YES</string>
           <key>CONFIGURATION_BUILD_DIR</key>
           <string>../lib/$(CONFIGURATION)</string>
           <key>CONFIGURATION_TEMP_DIR</key>
@@ -7466,7 +7466,7 @@
           <key>GCC_INLINES_ARE_PRIVATE_EXTERN</key>
           <string>NO</string>
           <key>GCC_SYMBOLS_PRIVATE_EXTERN</key>
-          <string>NO</string>
+          <string>YES</string>
           <key>CONFIGURATION_BUILD_DIR</key>
           <string>../lib/$(CONFIGURATION)</string>
           <key>CONFIGURATION_TEMP_DIR</key>
@@ -7511,7 +7511,7 @@
           <key>GCC_INLINES_ARE_PRIVATE_EXTERN</key>
           <string>NO</string>
           <key>GCC_SYMBOLS_PRIVATE_EXTERN</key>
-          <string>NO</string>
+          <string>YES</string>
           <key>CONFIGURATION_BUILD_DIR</key>
           <string>../lib/$(CONFIGURATION)</string>
           <key>CONFIGURATION_TEMP_DIR</key>
@@ -7773,7 +7773,7 @@
           <key>GCC_INLINES_ARE_PRIVATE_EXTERN</key>
           <string>NO</string>
           <key>GCC_SYMBOLS_PRIVATE_EXTERN</key>
-          <string>NO</string>
+          <string>YES</string>
           <key>CONFIGURATION_BUILD_DIR</key>
           <string>../lib/$(CONFIGURATION)</string>
           <key>CONFIGURATION_TEMP_DIR</key>
@@ -7819,7 +7819,7 @@
           <key>GCC_INLINES_ARE_PRIVATE_EXTERN</key>
           <string>NO</string>
           <key>GCC_SYMBOLS_PRIVATE_EXTERN</key>
-          <string>NO</string>
+          <string>YES</string>
           <key>CONFIGURATION_BUILD_DIR</key>
           <string>../lib/$(CONFIGURATION)</string>
           <key>CONFIGURATION_TEMP_DIR</key>
@@ -7865,7 +7865,7 @@
           <key>GCC_INLINES_ARE_PRIVATE_EXTERN</key>
           <string>NO</string>
           <key>GCC_SYMBOLS_PRIVATE_EXTERN</key>
-          <string>NO</string>
+          <string>YES</string>
           <key>CONFIGURATION_BUILD_DIR</key>
           <string>../lib/$(CONFIGURATION)</string>
           <key>CONFIGURATION_TEMP_DIR</key>
@@ -7911,7 +7911,7 @@
           <key>GCC_INLINES_ARE_PRIVATE_EXTERN</key>
           <string>NO</string>
           <key>GCC_SYMBOLS_PRIVATE_EXTERN</key>
-          <string>NO</string>
+          <string>YES</string>
           <key>CONFIGURATION_BUILD_DIR</key>
           <string>../lib/$(CONFIGURATION)</string>
           <key>CONFIGURATION_TEMP_DIR</key>
@@ -10366,7 +10366,7 @@
           <key>GCC_INLINES_ARE_PRIVATE_EXTERN</key>
           <string>NO</string>
           <key>GCC_SYMBOLS_PRIVATE_EXTERN</key>
-          <string>NO</string>
+          <string>YES</string>
           <key>CONFIGURATION_BUILD_DIR</key>
           <string>../lib/$(CONFIGURATION)</string>
           <key>CONFIGURATION_TEMP_DIR</key>
@@ -10411,7 +10411,7 @@
           <key>GCC_INLINES_ARE_PRIVATE_EXTERN</key>
           <string>NO</string>
           <key>GCC_SYMBOLS_PRIVATE_EXTERN</key>
-          <string>NO</string>
+          <string>YES</string>
           <key>CONFIGURATION_BUILD_DIR</key>
           <string>../lib/$(CONFIGURATION)</string>
           <key>CONFIGURATION_TEMP_DIR</key>
@@ -10456,7 +10456,7 @@
           <key>GCC_INLINES_ARE_PRIVATE_EXTERN</key>
           <string>NO</string>
           <key>GCC_SYMBOLS_PRIVATE_EXTERN</key>
-          <string>NO</string>
+          <string>YES</string>
           <key>CONFIGURATION_BUILD_DIR</key>
           <string>../lib/$(CONFIGURATION)</string>
           <key>CONFIGURATION_TEMP_DIR</key>
@@ -10501,7 +10501,7 @@
           <key>GCC_INLINES_ARE_PRIVATE_EXTERN</key>
           <string>NO</string>
           <key>GCC_SYMBOLS_PRIVATE_EXTERN</key>
-          <string>NO</string>
+          <string>YES</string>
           <key>CONFIGURATION_BUILD_DIR</key>
           <string>../lib/$(CONFIGURATION)</string>
           <key>CONFIGURATION_TEMP_DIR</key>
@@ -12383,7 +12383,7 @@
           <key>GCC_INLINES_ARE_PRIVATE_EXTERN</key>
           <string>NO</string>
           <key>GCC_SYMBOLS_PRIVATE_EXTERN</key>
-          <string>NO</string>
+          <string>YES</string>
           <key>CONFIGURATION_BUILD_DIR</key>
           <string>../lib/$(CONFIGURATION)</string>
           <key>CONFIGURATION_TEMP_DIR</key>
@@ -12428,7 +12428,7 @@
           <key>GCC_INLINES_ARE_PRIVATE_EXTERN</key>
           <string>NO</string>
           <key>GCC_SYMBOLS_PRIVATE_EXTERN</key>
-          <string>NO</string>
+          <string>YES</string>
           <key>CONFIGURATION_BUILD_DIR</key>
           <string>../lib/$(CONFIGURATION)</string>
           <key>CONFIGURATION_TEMP_DIR</key>
@@ -12473,7 +12473,7 @@
           <key>GCC_INLINES_ARE_PRIVATE_EXTERN</key>
           <string>NO</string>
           <key>GCC_SYMBOLS_PRIVATE_EXTERN</key>
-          <string>NO</string>
+          <string>YES</string>
           <key>CONFIGURATION_BUILD_DIR</key>
           <string>../lib/$(CONFIGURATION)</string>
           <key>CONFIGURATION_TEMP_DIR</key>
@@ -12518,7 +12518,7 @@
           <key>GCC_INLINES_ARE_PRIVATE_EXTERN</key>
           <string>NO</string>
           <key>GCC_SYMBOLS_PRIVATE_EXTERN</key>
-          <string>NO</string>
+          <string>YES</string>
           <key>CONFIGURATION_BUILD_DIR</key>
           <string>../lib/$(CONFIGURATION)</string>
           <key>CONFIGURATION_TEMP_DIR</key>
