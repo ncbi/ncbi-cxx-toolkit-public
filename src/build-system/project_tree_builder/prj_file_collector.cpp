@@ -171,7 +171,7 @@ void CProjectFileCollector::CollectSources(void)
 // we postpone creation until later
 // here we only create placeholders
                 if (!CFile(dest_file).Exists()) {
-                    CNcbiOfstream os(file_dst_path.c_str(),
+                    CNcbiOfstream os(dest_file.c_str(),
                                      IOS_BASE::out | IOS_BASE::binary | IOS_BASE::trunc);
                 }
 #endif
