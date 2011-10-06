@@ -167,6 +167,21 @@ const string sm_LegalMonths [] = {
 };
 
 
+const int sm_daysPerMonth [] = {
+  31,
+  28,
+  31,
+  30,
+  31,
+  30,
+  31,
+  31,
+  30,
+  31,
+  30,
+  31
+};
+
 CRef<CDate> CSubSource::DateFromCollectionDate (const string& str) THROWS((CException))
 {
     if (NStr::IsBlank(str)) {
@@ -177,6 +192,7 @@ CRef<CDate> CSubSource::DateFromCollectionDate (const string& str) THROWS((CExce
     string year = "";
     string month = "";
     string day = "";
+    int dpm = 0;
 
     if (pos == string::npos) {
         year = str;
@@ -219,6 +235,7 @@ CRef<CDate> CSubSource::DateFromCollectionDate (const string& str) THROWS((CExce
     if (!NStr::IsBlank(month)) {
         for (size_t i = 0; i < sizeof(sm_LegalMonths) / sizeof(string); i++) {
             if (NStr::Equal(month, sm_LegalMonths[i])) {
+                dpm = sm_daysPerMonth [i];
                 month_val = i + 1;
                 break;
             }
@@ -246,6 +263,13 @@ CRef<CDate> CSubSource::DateFromCollectionDate (const string& str) THROWS((CExce
     if (year_val < 1700 || year_val >= 2100) {
         NCBI_THROW (CException, eUnknown,
                         "collection-date year is out of range");
+    }
+
+    if (day_val > 0 && dpm > 0 && day_val > dpm) {
+        if (month_val != 2 || day_val != 29 || (year_val % 4) != 0) {
+            NCBI_THROW (CException, eUnknown,
+                            "collection-date day is greater than monthly maximum");
+        }
     }
 
     CRef<CDate> date(new CDate);
