@@ -181,7 +181,18 @@ typedef int        TSOCK_socklen_t;
 #endif /*MAXIDLEN<SOCK_BUF_CHUNK_SIZE*/
 
 
-#define SOCK_LOOPBACK           (assert(INADDR_LOOPBACK), htonl(INADDR_LOOPBACK))
+#define SOCK_LOOPBACK  (assert(INADDR_LOOPBACK), htonl(INADDR_LOOPBACK))
+
+
+#define _SOCK_CATENATE(x, y)  x##y
+
+#define SOCK_GET_TIMEOUT(s, t)                                          \
+    ((s)->_SOCK_CATENATE(t,_tv_set) ? &(s)->_SOCK_CATENATE(t,_tv) : 0)
+
+#define SOCK_SET_TIMEOUT(s, t, v)                                       \
+    (((s)->_SOCK_CATENATE(t,_tv_set) = (v) ? 1 : 0)                     \
+     ? (void)((s)->_SOCK_CATENATE(t,_tv) = *(v)) : (void) (s))
+
 
 
 /******************************************************************************
@@ -556,7 +567,6 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
     assert(sock  &&  (sock->type & eSocket));
     switch (event) {
     case eIO_Open:
-        assert(sock->type & eSocket);
         if (sock->type != eDatagram) {
             unsigned short port;
             if (sock->side == eSOCK_Client) {
@@ -701,17 +711,22 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
  */
 
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static STimeout*       s_tv2to(const struct timeval* tv, STimeout* to)
 {
-    if (!tv)
-        return 0;
+    assert(tv);
 
+    /* NB: internally tv always kept normalized */
     to->sec  = (unsigned int) tv->tv_sec;
     to->usec = (unsigned int) tv->tv_usec;
     return to;
 }
 
-
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static struct timeval* s_to2tv(const STimeout* to,       struct timeval* tv)
 {
     if (!to)
@@ -754,27 +769,25 @@ static void s_ShowDataLayout(void)
 {
     static const char kLayoutFormat[] = {
         "SOCK data layout:\n"
+        "    Sizeof(TRIGGER_struct) = %u\n"
+        "    Sizeof(LSOCK_struct) = %u\n"
         "    Sizeof(SOCK_struct) = %u, offsets (sizes) follow\n"
         "\tsock:      %3u (%u)\n"
         "\tid:        %3u (%u)\n"
+        "\tisset:     %3u (%u)\n"
         "\thost:      %3u (%u)\n"
         "\tport:      %3u (%u)\n"
         "\tmyport:    %3u (%u)\n"
-        "\tisset:     %3u (%u)\n"
-        "\ttype:      %3u (%u)\n"
-        "\tbitfield:      (3)\n"
+        "\tbitfield:      (4)\n"
 #  ifdef NCBI_OS_MSWIN
         "\tevent:     %3u (%u)\n"
 #  endif /*NCBI_OS_MSWIN*/
         "\tsession:   %3u (%u)\n"
-        "\tr_timeout: %3u (%u)\n"
         "\tr_tv:      %3u (%u)\n"
-        "\tr_to:      %3u (%u)\n"
-        "\tw_timeout: %3u (%u)\n"
         "\tw_tv:      %3u (%u)\n"
-        "\tw_to:      %3u (%u)\n"
-        "\tc_timeout: %3u (%u)\n"
         "\tc_tv:      %3u (%u)\n"
+        "\tr_to:      %3u (%u)\n"
+        "\tw_to:      %3u (%u)\n"
         "\tc_to:      %3u (%u)\n"
         "\tr_buf:     %3u (%u)\n"
         "\tw_buf:     %3u (%u)\n"
@@ -792,21 +805,17 @@ static void s_ShowDataLayout(void)
 #    define SOCK_SHOWDATALAYOUT_PARAMS              \
         infof(SOCK_struct,    sock),                \
         infof(SOCK_struct,    id),                  \
+        infof(TRIGGER_struct, isset),               \
         infof(SOCK_struct,    host),                \
         infof(SOCK_struct,    port),                \
         infof(SOCK_struct,    myport),              \
-        infof(TRIGGER_struct, isset),               \
-        infof(SOCK_struct,    type),                \
         infof(SOCK_struct,    event),               \
         infof(SOCK_struct,    session),             \
-        infof(SOCK_struct,    r_timeout),           \
         infof(SOCK_struct,    r_tv),                \
-        infof(SOCK_struct,    r_to),                \
-        infof(SOCK_struct,    w_timeout),           \
         infof(SOCK_struct,    w_tv),                \
-        infof(SOCK_struct,    w_to),                \
-        infof(SOCK_struct,    c_timeout),           \
         infof(SOCK_struct,    c_tv),                \
+        infof(SOCK_struct,    r_to),                \
+        infof(SOCK_struct,    w_to),                \
         infof(SOCK_struct,    c_to),                \
         infof(SOCK_struct,    r_buf),               \
         infof(SOCK_struct,    w_buf),               \
@@ -820,20 +829,16 @@ static void s_ShowDataLayout(void)
 #    define SOCK_SHOWDATALAYOUT_PARAMS              \
         infof(SOCK_struct,    sock),                \
         infof(SOCK_struct,    id),                  \
+        infof(TRIGGER_struct, isset),               \
         infof(SOCK_struct,    host),                \
         infof(SOCK_struct,    port),                \
         infof(SOCK_struct,    myport),              \
-        infof(TRIGGER_struct, isset),               \
-        infof(SOCK_struct,    type),                \
         infof(SOCK_struct,    session),             \
-        infof(SOCK_struct,    r_timeout),           \
         infof(SOCK_struct,    r_tv),                \
-        infof(SOCK_struct,    r_to),                \
-        infof(SOCK_struct,    w_timeout),           \
         infof(SOCK_struct,    w_tv),                \
-        infof(SOCK_struct,    w_to),                \
-        infof(SOCK_struct,    c_timeout),           \
         infof(SOCK_struct,    c_tv),                \
+        infof(SOCK_struct,    r_to),                \
+        infof(SOCK_struct,    w_to),                \
         infof(SOCK_struct,    c_to),                \
         infof(SOCK_struct,    r_buf),               \
         infof(SOCK_struct,    w_buf),               \
@@ -846,7 +851,10 @@ static void s_ShowDataLayout(void)
         infof(SOCK_struct,    path)
 #  endif /*NCBI_OS_MSWIN*/
     CORE_LOGF_X(2, eLOG_Note,
-                (kLayoutFormat, (unsigned int) sizeof(SOCK_struct),
+                (kLayoutFormat,
+                 (unsigned int) sizeof(TRIGGER_struct),
+                 (unsigned int) sizeof(LSOCK_struct),
+                 (unsigned int) sizeof(SOCK_struct),
                  SOCK_SHOWDATALAYOUT_PARAMS));
 #  undef SOCK_SHOWDATALAYOUT_PARAMS
 }
@@ -873,8 +881,6 @@ extern EIO_Status SOCK_InitializeAPI(void)
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
     /* Layout / alignment sanity check */
     assert(sizeof(TRIGGER_Handle)         == sizeof(TSOCK_Handle));
-    assert(offsetof(SOCK_struct, type)    == offsetof(TRIGGER_struct, type));
-    assert(offsetof(SOCK_struct, type)    == offsetof(LSOCK_struct,   type));
     assert(offsetof(SOCK_struct, session) == offsetof(LSOCK_struct, context));
 #  ifdef NCBI_OS_MSWIN
     assert(offsetof(SOCK_struct, event)   == offsetof(LSOCK_struct, event));
@@ -1031,14 +1037,13 @@ extern size_t SOCK_OSHandleSize(void)
 }
 
 
-
 extern const STimeout* SOCK_SetSelectInternalRestartTimeout(const STimeout* t)
 {
-    static struct timeval s_NewTmo;
-    static STimeout       s_OldTmo;
+    static struct timeval s_New;
+    static STimeout       s_Old;
     const  STimeout*      retval;
-    retval          = s_tv2to(s_SelectTimeout, &s_OldTmo);
-    s_SelectTimeout = s_to2tv(t,               &s_NewTmo);
+    retval          = s_SelectTimeout ? s_tv2to(s_SelectTimeout, &s_Old) : 0;
+    s_SelectTimeout =                   s_to2tv(t,               &s_New);
     return retval;
 }
 
@@ -1525,7 +1530,7 @@ static int/*bool*/ x_TryLowerSockFileno(SOCK sock)
 #ifdef __GNUC__
 inline
 #endif /*__GNUC__*/
-/* compare 2 normalized timeval timeouts: "whether v1 is less than v2" */
+/* compare 2 normalized timeval timeouts: "whether *v1 is less than *v2" */
 static int/*bool*/ s_IsSmallerTimeout(const struct timeval* v1,
                                       const struct timeval* v2)
 {
@@ -1845,8 +1850,7 @@ static unsigned int s_CountPolls(size_t n, SSOCK_Poll polls[])
             assert(!polls[i].revent/*eIO_Open*/);
             continue;
         }
-        if (!polls[i].sock->type
-            ||  (EIO_Event)(polls[i].event | eIO_ReadWrite) != eIO_ReadWrite) {
+        if ((EIO_Event)(polls[i].event | eIO_ReadWrite) != eIO_ReadWrite) {
             good = 0/*false*/;
             continue;
         }
@@ -1929,9 +1933,8 @@ static EIO_Status s_Poll_(size_t                n,
                 continue;
             }
 
-            type = (ESOCK_Type) sock->type;
             event = polls[i].event;
-            if (!type || (EIO_Event)(event | eIO_ReadWrite) != eIO_ReadWrite) {
+            if ((EIO_Event)(event | eIO_ReadWrite) != eIO_ReadWrite) {
                 polls[i].revent = eIO_Close;
                 bad = 1/*true*/;
                 continue;
@@ -1958,6 +1961,7 @@ static EIO_Status s_Poll_(size_t                n,
             }
 
             bitset = 0;
+            type = (ESOCK_Type) sock->type;
             switch (type & eSocket ? event : event & eIO_Read) {
             case eIO_Write:
             case eIO_ReadWrite:
@@ -2179,20 +2183,18 @@ static EIO_Status s_Select(size_t                n,
         size_t      i;
 
         for (i = 0;  i < n;  i++) {
-            long       bitset;
-            EIO_Event  event;
-            ESOCK_Type type;
-            SOCK       sock;
-            HANDLE     ev;
+            long      bitset;
+            EIO_Event event;
+            SOCK      sock;
+            HANDLE    ev;
 
             if (!(sock = polls[i].sock)) {
                 assert(!polls[i].revent/*eIO_Open*/);
                 continue;
             }
 
-            type = (ESOCK_Type) sock->type;
             event = polls[i].event;
-            if (!type || (EIO_Event)(event | eIO_ReadWrite) != eIO_ReadWrite) {
+            if ((EIO_Event)(event | eIO_ReadWrite) != eIO_ReadWrite) {
                 polls[i].revent = eIO_Close;
                 if (!bad) {
                     ready = 0/*false*/;
@@ -2222,7 +2224,8 @@ static EIO_Status s_Select(size_t                n,
             }
 
             bitset = 0;
-            if (type != eTrigger) {
+            if (sock->type != eTrigger) {
+                ESOCK_Type type = (ESOCK_Type) sock->type;
                 EIO_Event readable = sock->readable ? eIO_Read  : eIO_Open;
                 EIO_Event writable = sock->writable ? eIO_Write : eIO_Open;
                 switch (type & eSocket ? event : event & eIO_Read) {
@@ -2589,13 +2592,21 @@ static EIO_Status s_IsConnected(SOCK                  sock,
             FSSLOpen sslopen = s_SSL ? s_SSL->Open : 0;
             assert(sock->session != SESSION_INVALID);
             if (sslopen) {
-                const struct timeval* wtv = sock->w_timeout;
-                const struct timeval* rtv = sock->r_timeout;
-                sock->w_timeout = tv;
-                sock->r_timeout = tv;
+                unsigned int   rtv_set = sock->r_tv_set;
+                unsigned int   wtv_set = sock->w_tv_set;
+                struct timeval rtv;
+                struct timeval wtv;
+                if (rtv_set)
+                    rtv = sock->r_tv;
+                if (wtv_set)
+                    wtv = sock->w_tv;
+                SOCK_SET_TIMEOUT(sock, r, tv);
+                SOCK_SET_TIMEOUT(sock, w, tv);
                 status = sslopen(sock->session, error);
-                sock->w_timeout = wtv;
-                sock->r_timeout = rtv;
+                if ((sock->w_tv_set = wtv_set) != 0)
+                    sock->w_tv = wtv;
+                if ((sock->r_tv_set = rtv_set) != 0)
+                    sock->r_tv = rtv;
                 if (status != eIO_Success) {
                     if (status != eIO_Timeout) {
                         const char* strerr = s_StrError(sock, *error);
@@ -2642,7 +2653,11 @@ static EIO_Status s_Recv(SOCK    sock,
     /* read from the socket */
     readable = 0/*false*/;
     for (;;) { /* optionally auto-resume if interrupted */
-        int x_read = recv(sock->sock, buf, size, 0);
+        int x_read = recv(sock->sock, buf,
+#ifdef NCBI_OS_MSWIN
+                          /*WINSOCK wants it weird*/ (int)
+#endif /*NCBI_OS_MSWIN*/
+                          size, 0/*flags*/);
         int x_error;
 
 #ifdef NCBI_OS_MSWIN
@@ -2677,26 +2692,24 @@ static EIO_Status s_Recv(SOCK    sock,
                 sock->eof = 1/*true*/;
                 if (x_read) {
                     sock->r_status = sock->w_status = eIO_Closed;
-                    break;
-                    /*return eIO_Unknown;*/
+                    break/*closed*/;
                 }
 #ifdef NCBI_OS_MSWIN
                 sock->closing = 1/*true*/;
 #endif /*NCBI_OS_MSWIN*/
             }
             sock->r_status = eIO_Success;
-            break;
+            break/*success*/;
         }
 
         if (x_error == SOCK_EWOULDBLOCK  ||  x_error == SOCK_EAGAIN) {
             /* blocked -- wait for data to come;  return if timeout/error */
-            const struct timeval* tv = sock->r_timeout;
             EIO_Status status;
             SSOCK_Poll poll;
 
-            if (tv  &&  !(tv->tv_sec | tv->tv_usec)) {
+            if (sock->r_tv_set  &&  !(sock->r_tv.tv_sec | sock->r_tv.tv_usec)){
                 sock->r_status = eIO_Timeout;
-                return eIO_Timeout;
+                break/*timeout*/;
             }
             if (readable) {
                 CORE_TRACEF(("%s[SOCK::Recv] "
@@ -2706,11 +2719,11 @@ static EIO_Status s_Recv(SOCK    sock,
             poll.sock   = sock;
             poll.event  = eIO_Read;
             poll.revent = eIO_Open;
-            status = s_Select(1, &poll, tv, 1/*asis*/);
+            status = s_Select(1, &poll, SOCK_GET_TIMEOUT(sock, r), 1/*asis*/);
             assert(poll.event == eIO_Read);
             if (status == eIO_Timeout) {
                 sock->r_status = eIO_Timeout;
-                return status;
+                break/*timeout*/;
             }
             if (status != eIO_Success)
                 return status;
@@ -2763,13 +2776,14 @@ static EIO_Status s_Read(SOCK    sock,
                          int     peek)
 {
     char xx_buf[SOCK_BUF_CHUNK_SIZE];
-    const struct timeval* r_timeout;
+    unsigned int rtv_set;
+    struct timeval rtv;
     EIO_Status status;
     int/*bool*/ done;
 
     if (sock->type != eDatagram  &&  peek >= 0) {
         *n_read = 0;
-        status = s_WritePending(sock, sock->r_timeout, 0, 0);
+        status = s_WritePending(sock, SOCK_GET_TIMEOUT(sock, r), 0, 0);
         if (sock->pending)
             return status;
         if (!size  &&  peek >= 0)
@@ -2802,11 +2816,11 @@ static EIO_Status s_Read(SOCK    sock,
     }
 
     done = 0/*false*/;
-    r_timeout = sock->r_timeout;
+    rtv = sock->r_tv;
+    rtv_set = sock->r_tv_set;
     assert(!*n_read  ||  peek > 0);
     assert((peek >= 0  &&  size)  ||  (peek < 0  &&  !(buf  ||  size)));
     do {
-        static const struct timeval kZeroRTimeout = { 0 };
         size_t x_read;
         size_t n_todo;
         char*  x_buf;
@@ -2886,9 +2900,12 @@ static EIO_Status s_Read(SOCK    sock,
 
         if (status != eIO_Success  ||  done)
             break;
-        sock->r_timeout = &kZeroRTimeout;
+        /*zero timeout*/
+        sock->r_tv_set = 1;
+        memset(&sock->r_tv, 0, sizeof(sock->r_tv));
     } while (peek < 0  ||  (!buf  &&  *n_read < size));
-    sock->r_timeout = r_timeout;
+    sock->r_tv_set = rtv_set;
+    sock->r_tv     = rtv;
 
     return *n_read ? eIO_Success : status;
 }
@@ -3038,8 +3055,11 @@ static EIO_Status s_Send(SOCK        sock,
 
     for (;;) { /* optionally auto-resume if interrupted */
         int x_error = 0;
-        int x_written = send(sock->sock, (void*) data, size,
-                             flag < 0 ? MSG_OOB : 0);
+        int x_written = send(sock->sock, (void*) data,
+#ifdef NCBI_OS_MSWIN
+                             /*WINSOCK wants it weird*/ (int)
+#endif /*NCBI_OS_MSWIN*/
+                             size, flag < 0 ? MSG_OOB : 0);
         if (x_written >= 0  ||
             (x_written < 0  &&  ((x_error= SOCK_ERRNO) == SOCK_EPIPE       ||
                                  x_error               == SOCK_ENOTCONN    ||
@@ -3062,13 +3082,13 @@ static EIO_Status s_Send(SOCK        sock,
                 sock->n_written += (TNCBI_BigCount) x_written;
                 *n_written       = x_written;
                 sock->w_status = eIO_Success;
-                break;
+                break/*success*/;
             }
             if (x_written < 0) {
                 if (x_error != SOCK_EPIPE)
                     sock->r_status = eIO_Closed;
                 sock->w_status = eIO_Closed;
-                break;
+                break/*closed*/;
             }
         }
 
@@ -3095,12 +3115,12 @@ static EIO_Status s_Send(SOCK        sock,
             if (x_error == WSAENOBUFS) {
                 if (size < SOCK_BUF_CHUNK_SIZE) {
                     s_AddTimeout(&waited, wait_buf_ms);
-                    if (s_IsSmallerTimeout(sock->w_timeout, &waited)) {
+                    if (s_IsSmallerTimeout(SOCK_GET_TIMEOUT(sock, w),&waited)){
                         sock->w_status = eIO_Timeout;
                         return eIO_Timeout;
                     }
                     if (wait_buf_ms == 0)
-                        wait_buf_ms = 10;
+                        wait_buf_ms  = 10;
                     else if (wait_buf_ms < 160)
                         wait_buf_ms <<= 1;
                     slice.tv_sec  = 0;
@@ -3115,15 +3135,15 @@ static EIO_Status s_Send(SOCK        sock,
                     wait_buf_ms = 0;
                     memset(&waited, 0, sizeof(waited));
                 }
-                timeout = sock->w_timeout;
+                timeout = SOCK_GET_TIMEOUT(sock, w);
             }
 #else
             {
-                timeout = sock->w_timeout;
-                if (timeout  &&  !(timeout->tv_sec | timeout->tv_usec)) {
+                if (sock->w_tv_set && !(sock->w_tv.tv_sec|sock->w_tv.tv_usec)){
                     sock->w_status = eIO_Timeout;
-                    return eIO_Timeout;
+                    break/*timeout*/;
                 }
+                timeout = SOCK_GET_TIMEOUT(sock, w);
             }
 #endif /*NCBI_OS_MSWIN*/
 
@@ -3143,7 +3163,7 @@ static EIO_Status s_Send(SOCK        sock,
 #endif /*NCBI_OS_MSWIN*/
             if (status == eIO_Timeout) {
                 sock->w_status = eIO_Timeout;
-                return status;
+                break/*timeout*/;
             }
             if (status != eIO_Success)
                 return status;
@@ -3256,8 +3276,10 @@ static EIO_Status s_WritePending(SOCK                  sock,
                                  int/*bool*/           writeable,
                                  int/*bool*/           oob)
 {
-    const struct timeval* x_tv;
+    unsigned int wtv_set;
+    struct timeval wtv;
     EIO_Status status;
+    int restore;
     size_t off;
 
     assert(sock->type == eSocket  &&  sock->sock != SOCK_INVALID);
@@ -3287,8 +3309,13 @@ static EIO_Status s_WritePending(SOCK                  sock,
     if (sock->w_status == eIO_Closed)
         return eIO_Closed;
 
-    x_tv = sock->w_timeout;
-    sock->w_timeout = tv;
+    if (tv != &sock->w_tv) {
+        if ((wtv_set = sock->w_tv_set) != 0)
+            wtv = sock->w_tv;
+        SOCK_SET_TIMEOUT(sock, w, tv);
+        restore = 1;
+    } else
+        restore = wtv_set/*to silence compiler warning*/ = 0;
     off = BUF_Size(sock->w_buf) - sock->w_len;
     do {
         char   buf[SOCK_BUF_CHUNK_SIZE];
@@ -3298,14 +3325,17 @@ static EIO_Status s_WritePending(SOCK                  sock,
         sock->w_len -= n_written;
         off         += n_written;
     } while (sock->w_len  &&  status == eIO_Success);
-    sock->w_timeout = x_tv;
+    if (restore) {
+        if ((sock->w_tv_set = wtv_set) != 0)
+            sock->w_tv = wtv;
+    }
 
     assert((sock->w_len != 0) == (status != eIO_Success));
     return status;
 }
 
 
-/* Write to the socket. Return eIO_Success if some data have been written.
+/* Write to the socket.  Return eIO_Success if some data have been written.
  * Return other (error) code only if nothing at all can be written.
  */
 static EIO_Status s_Write(SOCK        sock,
@@ -3343,7 +3373,7 @@ static EIO_Status s_Write(SOCK        sock,
         return eIO_Closed;
     }
 
-    status = s_WritePending(sock, sock->w_timeout, 0, oob);
+    status = s_WritePending(sock, SOCK_GET_TIMEOUT(sock, w), 0, oob);
     if (status != eIO_Success  ||  !size) {
         *n_written = 0;
         if (status == eIO_Timeout  ||  status == eIO_Closed)
@@ -3403,7 +3433,7 @@ static EIO_Status s_Shutdown(SOCK                  sock,
         if (sock->w_status != eIO_Closed) {
             if ((status = s_WritePending(sock, tv, 0, 0)) != eIO_Success
                 &&  !sock->pending   &&  sock->w_len) {
-                CORE_LOGF_X(dir ? 13 : 20, !tv  ||  (tv->tv_sec | tv->tv_usec)
+                CORE_LOGF_X(13, !tv  ||  (tv->tv_sec | tv->tv_usec)
                             ? eLOG_Warning : eLOG_Trace,
                             ("%s[SOCK::%s] "
                              " %s with output (%lu byte%s) still pending (%s)",
@@ -3419,13 +3449,21 @@ static EIO_Status s_Shutdown(SOCK                  sock,
                 FSSLClose sslclose = s_SSL ? s_SSL->Close : 0;
                 assert(sock->session != SESSION_INVALID);
                 if (sslclose) {
-                    const struct timeval* wtv = sock->w_timeout;
-                    const struct timeval* rtv = sock->r_timeout;
-                    sock->w_timeout = tv;
-                    sock->r_timeout = tv;
+                    unsigned int   rtv_set = sock->r_tv_set;
+                    unsigned int   wtv_set = sock->w_tv_set;
+                    struct timeval rtv;
+                    struct timeval wtv;
+                    if (rtv_set)
+                        rtv = sock->r_tv;
+                    if (wtv_set)
+                        wtv = sock->w_tv;
+                    SOCK_SET_TIMEOUT(sock, r, tv);
+                    SOCK_SET_TIMEOUT(sock, w, tv);
                     status = sslclose(sock->session, how, &x_error);
-                    sock->w_timeout = wtv;
-                    sock->r_timeout = rtv;
+                    if ((sock->w_tv_set = wtv_set) != 0)
+                        sock->w_tv = wtv;
+                    if ((sock->r_tv_set = rtv_set) != 0)
+                        sock->r_tv = rtv;
                     if (status != eIO_Success) {
                         const char* strerr = s_StrError(sock, x_error);
                         CORE_LOGF_ERRNO_EXX(127, eLOG_Trace,
@@ -3527,19 +3565,19 @@ static EIO_Status s_Close(SOCK sock, int abort)
 #  endif /*NCBI_OS_UNIX*/
             ) {
             /* set the close()'s linger period be equal to the close timeout */
-            const struct timeval* tv = sock->c_timeout;
             struct linger lgr;
 
             if (abort) {
                 lgr.l_linger = 0;   /* RFC 793, Abort */
                 lgr.l_onoff  = 1;
-            } else if (!tv) {
+            } else if (!sock->c_tv_set) {
                 lgr.l_linger = 120; /* this is standard TCP TTL, 2 minutes */
                 lgr.l_onoff  = 1;
-            } else if (tv->tv_sec | tv->tv_usec) {
-                unsigned int tmo = tv->tv_sec + (tv->tv_usec + 500000)/1000000;
-                if (tmo) {
-                    lgr.l_linger = tmo;
+            } else if (sock->c_tv.tv_sec | sock->c_tv.tv_usec) {
+                unsigned int seconds = sock->c_tv.tv_sec
+                    + (sock->c_tv.tv_usec + 500000) / 1000000;
+                if (seconds) {
+                    lgr.l_linger = seconds;
                     lgr.l_onoff  = 1;
                 } else
                     lgr.l_onoff  = 0;
@@ -3559,7 +3597,8 @@ static EIO_Status s_Close(SOCK sock, int abort)
                 UTIL_ReleaseBuffer(strerr);
             }
 #  ifdef TCP_LINGER2
-            if (abort  ||  (tv  &&  !(tv->tv_sec | tv->tv_usec))) {
+            if (abort  ||
+                (sock->c_tv_set && !(sock->c_tv.tv_sec | sock->c_tv.tv_usec))){
                 int no = -1;
                 if (setsockopt(sock->sock, IPPROTO_TCP, TCP_LINGER2,
                                (char*) &no, sizeof(no)) != 0
@@ -3580,7 +3619,7 @@ static EIO_Status s_Close(SOCK sock, int abort)
 
         if (!abort) {
             /* orderly shutdown in both directions */
-            s_Shutdown(sock, eIO_ReadWrite, sock->c_timeout);
+            s_Shutdown(sock, eIO_ReadWrite, SOCK_GET_TIMEOUT(sock, c));
             assert(sock->r_status == eIO_Closed  &&
                    sock->w_status == eIO_Closed);
         } else
@@ -3601,7 +3640,7 @@ static EIO_Status s_Close(SOCK sock, int abort)
             UTIL_ReleaseBuffer(strerr);
         }
     } else
-        status = s_Shutdown(sock, eIO_Open, sock->c_timeout);
+        status = s_Shutdown(sock, eIO_Open, SOCK_GET_TIMEOUT(sock, c));
     sock->w_len = 0;
 
     if (sock->session  &&  sock->session != SESSION_INVALID) {
@@ -5283,7 +5322,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
     x_sock->pending   = 1/*have to check at the nearest I/O*/;
     x_sock->crossexec = flags & fSOCK_KeepOnExec  ? 1/*true*/  : 0/*false*/;
     x_sock->keepalive = flags & fSOCK_KeepAlive   ? 1/*true*/  : 0/*false*/;
-    /* all timeouts zeroed - infinite */
+    /* all timeout bits zeroed - infinite */
     BUF_SetChunkSize(&x_sock->r_buf, SOCK_BUF_CHUNK_SIZE);
     x_sock->w_buf     = w_buf;
     x_sock->w_len     = datalen;
@@ -5465,7 +5504,7 @@ extern EIO_Status SOCK_Shutdown(SOCK      sock,
         return eIO_InvalidArg;
     }
 
-    return s_Shutdown(sock, dir, sock->w_timeout);
+    return s_Shutdown(sock, dir, SOCK_GET_TIMEOUT(sock, c));
 }
 
 
@@ -5667,17 +5706,17 @@ extern EIO_Status SOCK_SetTimeout(SOCK            sock,
 
     switch (event) {
     case eIO_Read:
-        sock->r_timeout = s_to2tv(timeout, &sock->r_tv);
+        sock->r_tv_set = s_to2tv(timeout, &sock->r_tv) ? 1 : 0;
         break;
     case eIO_Write:
-        sock->w_timeout = s_to2tv(timeout, &sock->w_tv);
+        sock->w_tv_set = s_to2tv(timeout, &sock->w_tv) ? 1 : 0;
         break;
     case eIO_ReadWrite:
-        sock->r_timeout = s_to2tv(timeout, &sock->r_tv);
-        sock->w_timeout = s_to2tv(timeout, &sock->w_tv);
+        sock->r_tv_set = s_to2tv(timeout, &sock->r_tv) ? 1 : 0;
+        sock->w_tv_set = s_to2tv(timeout, &sock->w_tv) ? 1 : 0;
         break;
     case eIO_Close:
-        sock->c_timeout = s_to2tv(timeout, &sock->c_tv);
+        sock->c_tv_set = s_to2tv(timeout, &sock->c_tv) ? 1 : 0;
         break;
     default:
         CORE_LOGF_X(63, eLOG_Error,
@@ -5694,30 +5733,32 @@ extern EIO_Status SOCK_SetTimeout(SOCK            sock,
 extern const STimeout* SOCK_GetTimeout(SOCK      sock,
                                        EIO_Event event)
 {
-    const STimeout *tr, *tw;
     char _id[MAXIDLEN];
 
+    if (event == eIO_ReadWrite) {
+        if      (!sock->r_tv_set)
+            event = eIO_Write;
+        else if (!sock->w_tv_set)
+            event = eIO_Read;
+        else {
+            /* timeouts stored normalized */
+            if (sock->r_tv.tv_sec > sock->w_tv.tv_sec)
+                return s_tv2to(&sock->w_tv, &sock->w_to);
+            if (sock->w_tv.tv_sec > sock->r_tv.tv_sec)
+                return s_tv2to(&sock->r_tv, &sock->r_to);
+            assert(sock->r_tv.tv_sec == sock->w_tv.tv_sec);
+            return sock->r_tv.tv_usec > sock->w_tv.tv_usec
+                ? s_tv2to(&sock->w_tv, &sock->w_to)
+                : s_tv2to(&sock->r_tv, &sock->r_to);
+        }
+    }
     switch (event) {
     case eIO_Read:
-        return s_tv2to(sock->r_timeout, &sock->r_to);
+        return sock->r_tv_set ? s_tv2to(&sock->r_tv, &sock->r_to) : 0;
     case eIO_Write:
-        return s_tv2to(sock->w_timeout, &sock->w_to);
-    case eIO_ReadWrite:
-        /* both timeouts come out normalized */
-        tr = s_tv2to(sock->r_timeout, &sock->r_to);
-        tw = s_tv2to(sock->w_timeout, &sock->w_to);
-        if (!tr)
-            return tw;
-        if (!tw)
-            return tr;
-        if (tr->sec > tw->sec)
-            return tw;
-        if (tw->sec > tr->sec)
-            return tr;
-        assert(tr->sec == tw->sec);
-        return tr->usec > tw->usec ? tw : tr;
+        return sock->w_tv_set ? s_tv2to(&sock->w_tv, &sock->w_to) : 0;
     case eIO_Close:
-        return s_tv2to(sock->c_timeout, &sock->c_to);
+        return sock->c_tv_set ? s_tv2to(&sock->c_tv, &sock->c_to) : 0;
     default:
         CORE_LOGF_X(64, eLOG_Error,
                     ("%s[SOCK::GetTimeout] "
@@ -6360,7 +6401,7 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
     (*sock)->writable  = 1/*true*/;
 #endif /*NCBI_OS_MSWIN*/
     (*sock)->crossexec = flags & fSOCK_KeepOnExec  ? 1/*true*/ : 0/*false*/;
-    /* all timeouts cleared - infinite */
+    /* all timeout bits cleared - infinite */
     BUF_SetChunkSize(&(*sock)->r_buf, SOCK_BUF_CHUNK_SIZE);
     BUF_SetChunkSize(&(*sock)->w_buf, SOCK_BUF_CHUNK_SIZE);
 
@@ -6657,11 +6698,15 @@ extern EIO_Status DSOCK_SendMsg(SOCK           sock,
     sin.sin_port        = htons(x_port);
 
     for (;;) { /* optionally auto-resume if interrupted */
-        int  x_written;
-        int  x_error;
-        if ((x_written = sendto(sock->sock, x_msg, x_msgsize, 0/*flags*/,
-                                (struct sockaddr*) &sin, sizeof(sin))) >= 0){
+        int x_error;
+        int x_written;
 
+        if ((x_written = sendto(sock->sock, x_msg,
+#ifdef NCBI_OS_MSWIN
+                                /*WINSOCK wants it weird*/ (int)
+#endif /*NCBI_OS_MSWIN*/
+                                x_msgsize, 0/*flags*/,
+                                (struct sockaddr*) &sin, sizeof(sin))) >= 0) {
             /* statistics & logging */
             if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)){
                 s_DoLog(eLOG_Trace, sock, eIO_Write, x_msg,
@@ -6702,7 +6747,7 @@ extern EIO_Status DSOCK_SendMsg(SOCK           sock,
             poll.sock   = sock;
             poll.event  = eIO_Write;
             poll.revent = eIO_Open;
-            status = s_Select(1, &poll, sock->w_timeout, 1/*asis*/);
+            status = s_Select(1, &poll, SOCK_GET_TIMEOUT(sock, w), 1/*asis*/);
             assert(poll.event == eIO_Write);
             if (status != eIO_Success)
                 break;
@@ -6800,9 +6845,12 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
 #ifdef HAVE_SIN_LEN
         sin.sin_len = sinlen;
 #endif
-        x_read = recvfrom(sock->sock, x_msg, x_msgsize, 0,
+        x_read = recvfrom(sock->sock, x_msg,
+#ifdef NCBI_OS_MSWIN
+                          /*WINSOCK wants it weird*/ (int)
+#endif /*NCBI_OS_MSWIN*/
+                          x_msgsize, 0/*flags*/,
                           (struct sockaddr*) &sin, &sinlen);
-
 #ifdef NCBI_OS_MSWIN
         /* recvfrom() resets IO event recording */
         sock->readable = 0/*false*/;
@@ -6810,24 +6858,27 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
 
         if (x_read >= 0) {
             /* got a message */
-            sock->r_status = status = eIO_Success;
-            sock->r_len    = (TNCBI_BigCount) x_read;
-            if (x_read) {
-                if (msglen)
-                    *msglen = x_read;
-                if (sender_addr)
-                    *sender_addr =       sin.sin_addr.s_addr;
-                if (sender_port)
-                    *sender_port = ntohs(sin.sin_port);
-                if ((size_t) x_read > buflen
-                    &&  !BUF_Write(&sock->r_buf,
-                                   (char*) x_msg  + buflen,
-                                   (size_t)x_read - buflen)) {
-                    sock->r_status = eIO_Unknown;
-                }
-                if (buflen  &&  x_msgsize > buflen)
-                    memcpy(buf, x_msg, buflen);
-            }
+            sock->r_status = eIO_Success;
+            sock->r_len = (TNCBI_BigCount) x_read;
+            if (msglen)
+                *msglen = x_read;
+            if (sender_addr)
+                *sender_addr =       sin.sin_addr.s_addr;
+            if (sender_port)
+                *sender_port = ntohs(sin.sin_port);
+            if ((size_t) x_read > buflen
+                &&  !BUF_Write(&sock->r_buf,
+                               (char*) x_msg  + buflen,
+                               (size_t)x_read - buflen)) {
+                CORE_LOGF_X(20, eLOG_Error,
+                            ("%s[DSOCK::RecvMsg] "
+                             " Message truncated: %lu/%u",
+                             s_ID(sock, w), (unsigned long) buflen, x_read));
+                status = eIO_Unknown;
+            } else
+                status = eIO_Success;
+            if (buflen  &&  x_msgsize > buflen)
+                memcpy(buf, x_msg, buflen);
 
             /* statistics & logging */
             if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)){
@@ -6848,7 +6899,7 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
             poll.sock   = sock;
             poll.event  = eIO_Read;
             poll.revent = eIO_Open;
-            status = s_Select(1, &poll, sock->r_timeout, 1/*asis*/);
+            status = s_Select(1, &poll, SOCK_GET_TIMEOUT(sock, r), 1/*asis*/);
             assert(poll.event == eIO_Read);
             if (status != eIO_Success)
                 break;

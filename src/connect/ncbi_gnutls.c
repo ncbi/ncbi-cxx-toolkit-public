@@ -143,7 +143,7 @@ static void x_GnuTlsLogger(int level, const char* message)
 #  ifdef __GNUC__
 inline
 #  endif /*__GNUC__*/
-static int x_GnuTlsStatusToError(EIO_Status status, const struct timeval* to)
+static int x_GnuTlsStatusToError(EIO_Status status, int/*bool*/ timeout)
 {
     assert(status != eIO_Success);
 
@@ -151,7 +151,7 @@ static int x_GnuTlsStatusToError(EIO_Status status, const struct timeval* to)
     case eIO_Closed:
         return SOCK_ENOTCONN;
     case eIO_Timeout:
-        if (!to  ||  (to->tv_sec | to->tv_usec))
+        if (timeout)
             return SOCK_ETIMEDOUT;
 #  ifdef NCBI_OS_MSWIN
         return SOCK_EWOULDBLOCK;
@@ -289,7 +289,9 @@ static ssize_t x_GnuTlsPull(gnutls_transport_ptr_t ptr,
     } else
         status = eIO_NotSupported;
 
-    x_error = x_GnuTlsStatusToError(status, sock->r_timeout);
+    x_error = x_GnuTlsStatusToError(status,  !sock->r_tv_set  ||
+                                    (sock->r_tv.tv_sec | sock->r_tv.tv_usec)
+                                    ? 1 : 0);
     if (x_error)
         x_set_errno((gnutls_session_t) sock->session, x_error);
     return -1;
@@ -313,7 +315,9 @@ static ssize_t x_GnuTlsPush(gnutls_transport_ptr_t ptr,
     } else
         status = eIO_NotSupported;
 
-    x_error = x_GnuTlsStatusToError(status, sock->w_timeout);
+    x_error = x_GnuTlsStatusToError(status, !sock->w_tv_set  ||
+                                    (sock->w_tv.tv_sec | sock->w_tv.tv_usec)
+                                    ? 1 : 0);
     if (x_error)
         x_set_errno((gnutls_session_t) sock->session, x_error);
     return -1;
