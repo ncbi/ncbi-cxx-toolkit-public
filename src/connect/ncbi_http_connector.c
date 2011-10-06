@@ -780,6 +780,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
 
     /* line by line HTTP header input */
     for (;;) {
+        size_t n;
         /* do we have full header yet? */
         size = BUF_Size(uuu->http);
         if (!(header = (char*) malloc(size + 1))) {
@@ -799,9 +800,9 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
             break/*full header captured*/;
         free(header);
 
-        status = SOCK_StripToPattern(uuu->sock, "\r\n", 2, &uuu->http, 0);
+        status = SOCK_StripToPattern(uuu->sock, "\r\n", 2, &uuu->http, &n);
 
-        if (status != eIO_Success) {
+        if (status != eIO_Success  ||  size + n != BUF_Size(uuu->http)) {
             char* url;
             ELOG_Level level;
             if (status == eIO_Timeout) {
@@ -818,13 +819,16 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                 level = eLOG_Error;
             url = ConnNetInfo_URL(uuu->net_info);
             CORE_LOGF_X(8, level,
-                        ("[HTTP%s%s]  Cannot read header (%s)",
+                        ("[HTTP%s%s]  Cannot %s header (%s)",
                          url  &&  *url ? "; " : "",
                          url           ? url  : "",
-                         IO_StatusStr(status)));
+                         status != eIO_Success
+                         ? "read" : "scan",
+                         IO_StatusStr(status != eIO_Success
+                                      ? status : eIO_Unknown)));
             if (url)
                 free(url);
-            return status;
+            return status != eIO_Success ? status : eIO_Unknown;
         }
     }
     /* the entire header has been read */
