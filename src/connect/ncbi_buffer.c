@@ -51,7 +51,7 @@ typedef struct SBufChunkTag {
     size_t extent;      /* total allocated size of "data" (0 if none)        */
     size_t skip;        /* # of bytes already discarded(read) from the chunk */
     size_t size;        /* of data (including the discarded "skip" bytes)    */
-    char*  base;        /* base ptr of the data chunk if to be free()'d      */
+    void*  base;        /* base ptr of the data chunk if to be free()'d      */
     char*  data;        /* data stored in this chunk                         */
 } SBufChunk;
 
@@ -116,7 +116,7 @@ static SBufChunk* s_AllocChunk(size_t data_size, size_t chunk_size)
     if (!chunk)
         return 0;
 
-    /* leave chunk->next uninited */
+    /* NB: leave chunk->next uninited! */
     chunk->extent = alloc_size;
     chunk->skip   = 0;
     chunk->size   = 0;
@@ -210,7 +210,7 @@ extern int/*bool*/ BUF_Prepend(BUF* buf, const void* data, size_t size)
 
 extern int/*bool*/ BUF_Write(BUF* buf, const void* src, size_t size)
 {
-    SBufChunk* chunk, *tail;
+    SBufChunk *next, *tail;
     size_t pending;
 
     if (!size)
@@ -236,21 +236,21 @@ extern int/*bool*/ BUF_Write(BUF* buf, const void* src, size_t size)
 
     /* allocate and write to the new chunk, if necessary */
     if (size) {
-        if (!(chunk = s_AllocChunk(size, (*buf)->unit)))
+        if (!(next = s_AllocChunk(size, (*buf)->unit)))
             return 0/*false*/;
-        memcpy(chunk->data, (const char*) src + pending, size);
-        chunk->size = size;
-        chunk->next = 0;
+        memcpy(next->data, (const char*) src + pending, size);
+        next->size = size;
+        next->next = 0;
 
         /* add the new chunk to the list */
         if (tail) {
-            tail->next   = chunk;
+            tail->next   = next;
             assert( (*buf)->list);
         } else {
             assert(!(*buf)->list);
-            (*buf)->list = chunk;
+            (*buf)->list = next;
         }
-        (*buf)->last = chunk;
+        (*buf)->last = next;
     }
 
     if (pending) {
@@ -279,10 +279,17 @@ extern int/*bool*/ BUF_PushBack(BUF* buf, const void* src, size_t size)
 
     /* allocate and link a new chunk to the beginning of the chunk list */
     if (!head  ||  !head->extent  ||  head->skip < size) {
-        if (!(head = s_AllocChunk(size, (*buf)->unit)))
+        size_t     skip = head  &&  head->extent ? head->skip : 0;
+        SBufChunk* next = head;
+        if (!(head = s_AllocChunk(size -= skip, (*buf)->unit)))
             return 0/*false*/;
+        if (skip) {
+            memcpy(next->data, (const char*) src + size, skip);
+            (*buf)->size += skip;
+            next->skip = 0;
+        }
         head->skip = head->size = head->extent;
-        if (!(head->next = (*buf)->list)) {
+        if (!(head->next = next)) {
             assert(!(*buf)->last);
             (*buf)->last = head;
         } else
