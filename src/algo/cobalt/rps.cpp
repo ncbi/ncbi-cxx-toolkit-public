@@ -672,7 +672,7 @@ CMultiAligner::SetDomainHits(const CBlast4_archive& archive)
     queries.reserve(m_tQueries.size());
     for (size_t i=0;i < m_tQueries.size();i++) {
         _ASSERT(m_tQueries[i]->GetId());
-        queries.push_back(make_pair(m_tQueries[i]->GetId(), i));
+        queries.push_back(make_pair(m_tQueries[i]->GetId(), (int)i));
     }
     sort(queries.begin(), queries.end(), compare_seqids);
 
