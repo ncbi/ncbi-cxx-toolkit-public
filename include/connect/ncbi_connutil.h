@@ -233,6 +233,13 @@ typedef struct {
 #define REG_CONN_LOCAL_SERVER     DEF_CONN_REG_SECTION "_" "LOCAL_SERVER"
 
 
+/* Well-known port values */
+#define CONN_PORT_FTP             21
+#define CONN_PORT_SMTP            25
+#define CONN_PORT_HTTP            80
+#define CONN_PORT_HTTPS           443
+
+
 /* Lookup "param" in the registry / environment.
  * If "param" does not begin with "CONN_", then "CONN_" gets prepended
  * automatically in all lookups listed below, unless otherwise noted.
