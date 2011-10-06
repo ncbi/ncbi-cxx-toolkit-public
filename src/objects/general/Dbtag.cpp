@@ -146,6 +146,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("UniSTS", CDbtag::eDbtagType_UniSTS),
     TDbxrefPair("VBASE2", CDbtag::eDbtagType_VBASE2),
     TDbxrefPair("VectorBase", CDbtag::eDbtagType_VectorBase),
+    TDbxrefPair("ViPR", CDbtag::eDbtagType_ViPR),
     TDbxrefPair("WorfDB", CDbtag::eDbtagType_WorfDB),
     TDbxrefPair("WormBase", CDbtag::eDbtagType_WormBase),
     TDbxrefPair("Xenbase", CDbtag::eDbtagType_Xenbase),
@@ -201,6 +202,7 @@ static const TDbxrefPair kApprovedSrcDbXrefs[] = {
     TDbxrefPair("RZPD", CDbtag::eDbtagType_RZPD),
     TDbxrefPair("UNILIB", CDbtag::eDbtagType_UNILIB),
     TDbxrefPair("UNITE", CDbtag::eDbtagType_UNITE), 
+    TDbxrefPair("ViPR", CDbtag::eDbtagType_ViPR), 
     TDbxrefPair("taxon", CDbtag::eDbtagType_taxon)
 };
 
@@ -580,7 +582,8 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_taxon, "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?"),
     TDbtUrl(CDbtag::eDbtagType_BEEBASE, "http://genomes.arc.georgetown.edu/cgi-bin/gbrowse/bee_genome4/?name="),
     TDbtUrl(CDbtag::eDbtagType_NASONIABASE, "http://genomes.arc.georgetown.edu/cgi-bin/gbrowse/nasonia10_scaffold/?name="),
-    TDbtUrl(CDbtag::eDbtagType_IKMC, "http://www.knockoutmouse.org/martsearch/project/")
+    TDbtUrl(CDbtag::eDbtagType_IKMC, "http://www.knockoutmouse.org/martsearch/project/"),
+    TDbtUrl(CDbtag::eDbtagType_ViPR, "http://www.viprbrc.org/brc/viprStrainDetails.do?viprSubmissionId=")
 };
 
 typedef CStaticArrayMap<CDbtag::EDbtagType, string> TUrlPrefixMap;
@@ -702,6 +705,10 @@ string CDbtag::GetUrl(void) const
 
         case eDbtagType_IRD:
             tag += "&decorator=influenza";
+            break;
+
+        case eDbtagType_ViPR:
+            tag += "&decorator=vipr";
             break;
 
         default:

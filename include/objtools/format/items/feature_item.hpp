@@ -183,10 +183,22 @@ protected:
             CSeqFeatData::ESubtype feat_subtype,
             const CSeq_loc &location, CSeqFeatData::E_Choice sought_type,
             const CGene_ref* filtering_gene_xref ) const ;
+
     CConstRef<CSeq_feat> 
         x_GetFeatViaSubsetThenExtremesIfPossible_Helper(
             CBioseqContext& ctx, CScope *scope, const CSeq_loc &location, CSeqFeatData::E_Choice sought_type,
             const CGene_ref* filtering_gene_xref ) const;
+    // These 2 functions could just be folded into x_GetFeatViaSubsetThenExtremesIfPossible_Helper,
+    // but they're separate to make it easier to profile the different paths.
+    CConstRef<CSeq_feat> 
+        x_GetFeatViaSubsetThenExtremesIfPossible_Helper_subset(
+            CBioseqContext& ctx, CScope *scope, const CSeq_loc &location, CSeqFeatData::E_Choice sought_type,
+            const CGene_ref* filtering_gene_xref ) const;
+    CConstRef<CSeq_feat> 
+        x_GetFeatViaSubsetThenExtremesIfPossible_Helper_extremes(
+            CBioseqContext& ctx, CScope *scope, const CSeq_loc &location, CSeqFeatData::E_Choice sought_type,
+            const CGene_ref* filtering_gene_xref ) const;
+
     void x_GetAssociatedProtInfo( CBioseqContext&, CBioseq_Handle&,
         const CProt_ref*&, CMappedFeat& protFeat, CConstRef<CSeq_id>& );
     void x_AddQualPartial( CBioseqContext& );
@@ -294,6 +306,7 @@ protected:
         return const_cast<const TQuals&>(m_Quals).LowerBound(slot);
     }
     void x_DropIllegalQuals(void) const;
+    bool x_IsSeqFeatDataFeatureLegal( CSeqFeatData::EQualifier qual );
     bool x_GetGbValue(
         const string&,
         string& ) const;

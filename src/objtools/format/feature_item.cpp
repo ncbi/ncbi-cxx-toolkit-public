@@ -1190,6 +1190,11 @@ void CFeatureItem::x_AddQualOperon(
         return;
     }
 
+    // bail if this type of object is not allowed to carry an operon
+    if( ! x_IsSeqFeatDataFeatureLegal( CSeqFeatData::eQual_operon ) ) {
+        return;
+    }
+
     const CGene_ref* gene_ref = m_Feat.GetGeneXref();
     if ( gene_ref == NULL  ||  !gene_ref->IsSuppressed()) {
             const CSeq_loc& operon_loc = ( ctx.IsProt() || !IsMapped() ) ? 
@@ -1919,26 +1924,46 @@ CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible_Helper(
     const CGene_ref* filtering_gene_xref) const
 {
     CConstRef<CSeq_feat> feat;
+    feat = x_GetFeatViaSubsetThenExtremesIfPossible_Helper_subset(
+        ctx, scope, location, sought_type,
+        filtering_gene_xref );
+    if( ! feat && x_CanUseExtremesToFindGene(ctx, location) ) {
+        feat = x_GetFeatViaSubsetThenExtremesIfPossible_Helper_extremes(
+            ctx, scope, location, sought_type,
+            filtering_gene_xref );
+    }
+
+    return feat;
+}
+
+CConstRef<CSeq_feat> 
+CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible_Helper_subset(
+    CBioseqContext& ctx, CScope *scope, const CSeq_loc &location, CSeqFeatData::E_Choice sought_type,
+    const CGene_ref* filtering_gene_xref ) const
+{
     CGeneSearchPlugin plugin( location, ctx, filtering_gene_xref );
-    feat = sequence::GetBestOverlappingFeat
+    return sequence::GetBestOverlappingFeat
                     ( location,
                      sought_type,
                      sequence::eOverlap_SubsetRev,
                      *scope,
                      0,
                      &plugin );
-    if( ! feat && x_CanUseExtremesToFindGene(ctx, location) ) {
-        CGeneSearchPlugin plugin2( location, ctx, filtering_gene_xref );
-        feat = sequence::GetBestOverlappingFeat
-            ( location,
-            sought_type,
-            sequence::eOverlap_Contained,
-            *scope,
-            0,
-            &plugin2 );
-    }
+}
 
-    return feat;
+CConstRef<CSeq_feat> 
+CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible_Helper_extremes(
+    CBioseqContext& ctx, CScope *scope, const CSeq_loc &location, CSeqFeatData::E_Choice sought_type,
+    const CGene_ref* filtering_gene_xref ) const
+{
+    CGeneSearchPlugin plugin( location, ctx, filtering_gene_xref );
+    return sequence::GetBestOverlappingFeat
+        ( location,
+        sought_type,
+        sequence::eOverlap_Contained,
+        *scope,
+        0,
+        &plugin );
 }
 
 static
@@ -5235,6 +5260,12 @@ void CFeatureItem::x_DropIllegalQuals(void) const
             ++it;
         }
     }
+}
+
+bool CFeatureItem::x_IsSeqFeatDataFeatureLegal( CSeqFeatData::EQualifier qual )
+{
+    const CSeqFeatData& data = m_Feat.GetData();
+    return data.IsLegalQualifier(qual);
 }
 
 //  ----------------------------------------------------------------------------

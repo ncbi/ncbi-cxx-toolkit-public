@@ -53,14 +53,28 @@ class NCBI_FORMAT_EXPORT CGapItem : public CFlatItem
 {
 public:
 
+    typedef std::vector<std::string> TEvidence;
+
     // constructors
-    CGapItem(TSeqPos from, TSeqPos to, CBioseqContext& ctx);  // unknown length
-    CGapItem(TSeqPos from, TSeqPos to, TSeqPos estimated_length, CBioseqContext& ctx);
+    CGapItem( TSeqPos from, TSeqPos to, CBioseqContext& ctx, 
+        const string &sFeatureName, // e.g. "gap" or "assembly_gap"
+        const string &sType,
+        const TEvidence &sEvidence,
+        TSeqPos estimated_length = kInvalidSeqPos // unknown length by default
+    );
 
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
     
     TSeqPos GetFrom(void) const;
     TSeqPos GetTo(void) const;
+
+    const std::string & GetFeatureName(void) const;
+
+    bool HasType() const;
+    const std::string & GetType(void) const;
+
+    bool HasEvidence() const;
+    const TEvidence & GetEvidence(void) const;
 
     bool HasEstimatedLength(void) const;
     TSeqPos GetEstimatedLength(void) const;
@@ -71,6 +85,9 @@ private:
     // data
     TSeqPos     m_From, m_To;
     TSeqPos     m_EstimatedLength;
+    std::string m_sFeatureName;
+    std::string m_sType;
+    TEvidence m_sEvidence;
 };
 
 
@@ -91,6 +108,36 @@ TSeqPos CGapItem::GetTo(void) const
 }
 
 inline
+const std::string & CGapItem::GetFeatureName(void) const
+{
+    return m_sFeatureName;
+}
+
+inline
+bool CGapItem::HasType() const
+{
+    return ! m_sType.empty();
+}
+
+inline
+const std::string & CGapItem::GetType(void) const
+{
+    return m_sType;
+}
+
+inline
+bool CGapItem::HasEvidence() const
+{
+    return ! m_sEvidence.empty();
+}
+
+inline
+const CGapItem::TEvidence & CGapItem::GetEvidence(void) const
+{
+    return m_sEvidence;
+}
+
+inline
 bool CGapItem::HasEstimatedLength(void) const
 {
     return m_EstimatedLength != kInvalidSeqPos;
@@ -101,7 +148,6 @@ TSeqPos CGapItem::GetEstimatedLength(void) const
 {
     return m_EstimatedLength;
 }
-
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

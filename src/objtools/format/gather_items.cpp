@@ -46,6 +46,8 @@
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Annot_descr.hpp>
+#include <objects/seq/Seq_gap.hpp>
+#include <objects/seq/Linkage_evidence.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
@@ -1875,12 +1877,120 @@ CSeqMap_CI s_CreateGapMapIter(const CSeq_loc& loc, CBioseqContext& ctx)
 
 static CRef<CGapItem> s_NewGapItem(CSeqMap_CI& gap_it, CBioseqContext& ctx)
 {
+    const static string kRegularGap  = "gap";
+    const static string kAssemblyGap = "assembly_gap";
+
     TSeqPos pos     = gap_it.GetPosition();
     TSeqPos end_pos = gap_it.GetEndPosition();
 
+    const CSeq_gap & gap = gap_it.GetData().GetGap();
+
+    // For /gap_type qual
+    string sType;
+    if( gap.CanGetType() ) {
+        switch( gap.GetType() ) {
+        case CSeq_gap::eType_unknown:
+            // don't show /gap_type
+            break;
+        case CSeq_gap::eType_fragment:
+            sType = "fragment";
+            break;
+        case CSeq_gap::eType_clone:
+            sType = "clone";
+            break;
+        case CSeq_gap::eType_short_arm:
+            sType = "short arm";
+            break;
+        case CSeq_gap::eType_heterochromatin:
+            sType = "heterochromatin";
+            break;
+        case CSeq_gap::eType_centromere:
+            sType = "centromere";
+            break;
+        case CSeq_gap::eType_telomere:
+            sType = "telomere";
+            break;
+        case CSeq_gap::eType_repeat:
+            // This one is a little special as it depends on linkage
+            if( gap.CanGetLinkage() && 
+                gap.GetLinkage() == CSeq_gap::eLinkage_unlinked ) 
+            {
+                sType = "repeat between scaffolds";
+            } else {
+                sType = "repeat within scaffolds";
+            }
+            break;
+        case CSeq_gap::eType_contig:
+            sType = "between scaffolds";
+            break;
+        case CSeq_gap::eType_scaffold:
+            sType = "within scaffold";
+            break;
+        case CSeq_gap::eType_other:
+            sType = "other";
+            break;
+        default:
+            sType = "(ERROR: UNRECOGNIZED TYPE)";
+            break;
+        }
+    }
+
+    // For linkage evidence
+    CGapItem::TEvidence sEvidence;
+    if( gap.CanGetLinkage_evidence() ) {
+        ITERATE( CSeq_gap::TLinkage_evidence, 
+            evidence_iter, 
+            gap.GetLinkage_evidence() ) 
+        {
+            const CLinkage_evidence & evidence = **evidence_iter;
+            if( evidence.CanGetType() ) {
+                switch( evidence.GetType() ) {
+                case CLinkage_evidence::eType_paired_ends:
+                    sEvidence.push_back("paired_ends");
+                    break;
+                case CLinkage_evidence::eType_align_genus:
+                    sEvidence.push_back("align_genus");
+                    break;
+                case CLinkage_evidence::eType_align_xgenus:
+                    sEvidence.push_back("align_xgenus");
+                    break;
+                case CLinkage_evidence::eType_align_trnscpt:
+                    sEvidence.push_back("align_trnscpt");
+                    break;
+                case CLinkage_evidence::eType_within_clone:
+                    sEvidence.push_back("within_clone");
+                    break;
+                case CLinkage_evidence::eType_clone_contig:
+                    sEvidence.push_back("clone_contig");
+                    break;
+                case CLinkage_evidence::eType_map:
+                    sEvidence.push_back("map");
+                    break;
+                case CLinkage_evidence::eType_strobe:
+                    sEvidence.push_back("strobe");
+                    break;
+                case CLinkage_evidence::eType_unspecified:
+                    sEvidence.push_back("unspecified");
+                    break;
+                case CLinkage_evidence::eType_other:
+                    sEvidence.push_back("other");
+                    break;
+                default:
+                    sEvidence.push_back("(UNRECOGNIZED LINKAGE EVIDENCE)");
+                    break;
+                }
+            }
+        }
+    }
+
+    // feature name depends on what quals we use
+    const bool bIsAssemblyGap = ( ! sType.empty() || ! sEvidence.empty() );
+    const string & sFeatName = ( bIsAssemblyGap ? kAssemblyGap : kRegularGap );
+
     CRef<CGapItem> retval(gap_it.IsUnknownLength() ? 
-        new CGapItem(pos, end_pos, ctx) :
-        new CGapItem(pos, end_pos, gap_it.GetLength(), ctx));
+        new CGapItem(pos, end_pos, ctx, sFeatName, sType, sEvidence) :
+        new CGapItem(pos, end_pos, ctx, sFeatName, sType, sEvidence, 
+            gap_it.GetLength() ));
     return retval;
 }
 

@@ -94,7 +94,7 @@ CFlatSeqLoc::CFlatSeqLoc
 {
     CNcbiOstrstream oss;
     x_Add(loc, oss, ctx, type, true);
-    m_String = CNcbiOstrstreamToString(oss);
+    ((string)CNcbiOstrstreamToString(oss)).swap( m_String );
 }
 
 

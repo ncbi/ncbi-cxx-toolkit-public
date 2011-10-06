@@ -180,7 +180,8 @@ public:
         eDbtagType_BEEBASE,
         eDbtagType_NASONIABASE,
         eDbtagType_BioProject,
-        eDbtagType_IKMC
+        eDbtagType_IKMC,
+        eDbtagType_ViPR
     };
 
     enum EDbtagGroup {

@@ -1026,8 +1026,8 @@ CGenbankFormatter::x_GetFeatureSpanAndScriptStart(
 
     } else {
         pre_feature_html << "<script type=\"text/javascript\">"
-            << "if (!oData[oData.length - 1].features." << strKey << ") oData[oData.length - 1].features." << strKey << " = [];"
-            << "oData[oData.length - 1].features." << strKey << ".push(";
+            << "if (!oData[oData.length - 1].features[\"" << strKey << "\"]) oData[oData.length - 1].features[\"" << strKey << "\"] = [];"
+            << "oData[oData.length - 1].features[\"" << strKey << "\"].push(";
         s_PrintLocAsJavascriptArray( ctx, pre_feature_html, feat_loc );
         pre_feature_html << ");</script>";
     }
@@ -1855,12 +1855,12 @@ void CGenbankFormatter::FormatGap(const CGapItem& gap, IFlatTextOStream& text_os
     loc += "..";
     loc += NStr::UIntToString(gapEnd);
 
-    Wrap(l, "gap", loc, eFeat);
+    Wrap(l, gap.GetFeatureName(), loc, eFeat);
     if( bHtml && gap.GetContext()->Config().IsModeEntrez() ) {
         CRef<CSeq_loc> gapLoc( new CSeq_loc );
         gapLoc->SetInt().SetFrom(gapStart - 1);
         gapLoc->SetInt().SetTo(gapEnd - 1);
-        *l.begin() = x_GetFeatureSpanAndScriptStart("gap", *gapLoc, *gap.GetContext()) + *l.begin();
+        *l.begin() = x_GetFeatureSpanAndScriptStart(gap.GetFeatureName().c_str(), *gapLoc, *gap.GetContext()) + *l.begin();
     }
 
     // size zero gaps indicate non-consecutive residues
@@ -1878,6 +1878,20 @@ void CGenbankFormatter::FormatGap(const CGapItem& gap, IFlatTextOStream& text_os
     }
     NStr::Wrap(estimated_length, GetWidth(), l, SetWrapFlags(),
         GetFeatIndent(), GetFeatIndent() + "/estimated_length=");
+
+    // format /gap_type
+    if( gap.HasType() ) {
+        NStr::Wrap(gap.GetType(), GetWidth(), l, SetWrapFlags(),
+            GetFeatIndent(), GetFeatIndent() + "/gap_type=");
+    }
+
+    // format /linkage_evidence
+    if( gap.HasEvidence() ) {
+        ITERATE( CGapItem::TEvidence, evidence_iter, gap.GetEvidence() ) {
+            NStr::Wrap( *evidence_iter, GetWidth(), l, SetWrapFlags(),
+                GetFeatIndent(), GetFeatIndent() + "/linkage_evidence=");
+        }
+    }
 
     text_os.AddParagraph(l, gap.GetObject());
 

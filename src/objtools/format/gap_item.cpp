@@ -40,22 +40,19 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CGapItem::CGapItem(TSeqPos from, TSeqPos to, CBioseqContext& ctx) :
-    CFlatItem(&ctx), m_From(from + 1), m_To(to),
-    m_EstimatedLength(kInvalidSeqPos)
-{
-}
-
-
 CGapItem::CGapItem
-(TSeqPos from,
- TSeqPos to,
- TSeqPos estimated_length,
- CBioseqContext& ctx) :
-    CFlatItem(&ctx), m_From(from + 1), m_To(to), m_EstimatedLength(estimated_length)
+(
+  TSeqPos from, TSeqPos to, CBioseqContext& ctx, 
+  const string &sFeatureName,
+  const string &sType,
+  const CGapItem::TEvidence &sEvidence,
+  TSeqPos estimated_length ) :
+    CFlatItem(&ctx), m_From(from + 1), m_To(to), 
+        m_sFeatureName(sFeatureName),
+        m_sType(sType), m_sEvidence(sEvidence),
+        m_EstimatedLength(estimated_length)
 {
 }
-
 
 void CGapItem::Format(IFormatter& formatter, IFlatTextOStream& text_os) const
 {
