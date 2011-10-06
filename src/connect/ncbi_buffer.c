@@ -210,7 +210,7 @@ extern int/*bool*/ BUF_Prepend(BUF* buf, const void* data, size_t size)
 
 extern int/*bool*/ BUF_Write(BUF* buf, const void* src, size_t size)
 {
-    SBufChunk *next, *tail;
+    SBufChunk* tail;
     size_t pending;
 
     if (!size)
@@ -234,15 +234,16 @@ extern int/*bool*/ BUF_Write(BUF* buf, const void* src, size_t size)
     } else
         pending = 0;
 
-    /* allocate and write to the new chunk, if necessary */
+    /* if necessary, allocate a new chunk and write to it */
     if (size) {
+        SBufChunk* next;
         if (!(next = s_AllocChunk(size, (*buf)->unit)))
             return 0/*false*/;
         memcpy(next->data, (const char*) src + pending, size);
         next->size = size;
         next->next = 0;
 
-        /* add the new chunk to the list */
+        /* append the new chunk to the list */
         if (tail) {
             tail->next   = next;
             assert( (*buf)->list);
@@ -277,7 +278,7 @@ extern int/*bool*/ BUF_PushBack(BUF* buf, const void* src, size_t size)
 
     head = (*buf)->list;
 
-    /* allocate and link a new chunk to the beginning of the chunk list */
+    /* allocate and link a new chunk at the beginning of the chunk list */
     if (!head  ||  !head->extent  ||  head->skip < size) {
         size_t     skip = head  &&  head->extent ? head->skip : 0;
         SBufChunk* next = head;
