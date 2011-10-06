@@ -1605,7 +1605,7 @@ static EIO_Status s_StripToPattern
                 /* pattern found */
                 if ( n_check ) {
                     size_t x_discarded = (size_t)(b - buf) + pattern_size;
-                    if ( buf )
+                    if ( discard )
                         BUF_Write(discard, buf + n_read, x_discarded - n_read);
                     if ( n_discarded )
                         *n_discarded += x_discarded;
