@@ -1385,7 +1385,7 @@ extern EIO_Status URL_ConnectEx
         if (port)
             hdr_len = (size_t)(add_hdr ? sprintf(hdr_buf, ":%hu", port) : 0);
         else
-            port = flags & fSOCK_Secure ? 443 : 80;
+            port = flags & fSOCK_Secure ? CONN_PORT_HTTPS : CONN_PORT_HTTP;
 
         if (args  &&  (args_len = strcspn(args, "#")) > 0) {
             /* URL-encode "args", if any specified */
