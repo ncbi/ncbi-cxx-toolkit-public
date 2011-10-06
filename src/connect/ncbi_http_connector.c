@@ -458,7 +458,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 net_info->user[0]  = '\0';
                 net_info->pass[0]  = '\0';
                 if (!net_info->port)
-                    net_info->port = 443/*HTTPS*/;
+                    net_info->port = CONN_PORT_HTTPS;
                 net_info->firewall = 0/*false*/;
                 net_info->proxy_host[0] = '\0';
                 ConnNetInfo_DeleteUserHeader(net_info, kHttpHostTag);

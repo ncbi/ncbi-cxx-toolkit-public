@@ -2111,7 +2111,7 @@ extern CONNECTOR s_CreateConnector(const SConnNetInfo*  info,
         xxx->info->scheme  = eURL_Ftp;
     if (host  &&  *host)
         strcpy(xxx->info->host, host);
-    xxx->info->port = port ? port : 21/*FTP*/;
+    xxx->info->port = port ? port : CONN_PORT_FTP;
     strcpy(xxx->info->user, user  &&  *user ? user : "ftp");
     strcpy(xxx->info->pass, pass            ? pass : "-none");
     strcpy(xxx->info->path, path            ? path : "");

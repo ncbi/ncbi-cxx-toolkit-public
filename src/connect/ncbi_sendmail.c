@@ -234,7 +234,7 @@ static void x_Sendmail_InitEnv(void)
     }
     if (!ConnNetInfo_GetValue(0, "MX_PORT", buf, sizeof(buf), 0)
         ||  !(port = atoi(buf))  ||  port > 65535) {
-        port = 25;
+        port = CONN_PORT_SMTP;
     }
     if (!ConnNetInfo_GetValue(0, "MX_HOST", buf, sizeof(buf), 0)
         ||  !*buf) {
