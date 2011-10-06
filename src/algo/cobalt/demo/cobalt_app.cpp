@@ -47,6 +47,8 @@ Contents: C++ driver for COBALT multiple alignment algorithm
 #include <objtools/alnmgr/alnvec.hpp>
 #include <objtools/align_format/aln_printer.hpp>
 
+#include <objects/blast/Blast4_archive.hpp>
+
 #include <algo/cobalt/cobalt.hpp>
 #include <algo/cobalt/version.hpp>
 
@@ -118,6 +120,10 @@ void CMultiApplication::Init(void)
     arg_desc->SetDependency("ind1", CArgDescriptions::eRequires, "in_msa1");
     arg_desc->SetDependency("ind2", CArgDescriptions::eRequires, "in_msa2");
 
+    arg_desc->AddFlag("parse_deflines", "Should the sequence deflines be "
+                      "parsed?");
+
+
     // Conserved domain options
     arg_desc->SetCurrentGroup("Conserved domain options");
     arg_desc->AddOptionalKey("rpsdb", "database", "Conserved domain database "
@@ -142,6 +148,14 @@ void CMultiApplication::Init(void)
                      "extra weight (0..1) to give to the actual sequence letter "
                      "at that position",
                      CArgDescriptions::eDouble, "0.5");
+
+    arg_desc->AddOptionalKey("domain_hits", "infile", "Results of pre-computed"
+                             " domain search in BLAST archive format",
+                             CArgDescriptions::eInputFile);
+
+    arg_desc->SetDependency("domain_hits", CArgDescriptions::eRequires, "rpsdb");
+    arg_desc->SetDependency("domain_hits", CArgDescriptions::eRequires,
+                            "parse_deflines");
 
 
     // User conststraints options
@@ -441,12 +455,15 @@ int CMultiApplication::Run(void)
     CRef<objects::CScope> scope(new CScope(*m_ObjMgr));
     scope->AddDefaults();
 
+    CFastaReader::TFlags flags = CFastaReader::fAssumeProt
+        | CFastaReader::fForceType;
+    if (!args["parse_deflines"]) {
+        flags |= CFastaReader::fNoParseID;
+    }
+
     // if aligning a set of sequences
     if (args["i"]) {
-        GetSeqLocFromStream(args["i"].AsInputFile(), queries, scope,
-                            CFastaReader::fAssumeProt | 
-                            CFastaReader::fForceType |
-                            CFastaReader::fNoParseID);
+        GetSeqLocFromStream(args["i"].AsInputFile(), queries, scope, flags);
 
         _ASSERT(!scope.Empty());
         aligner.SetQueries(queries, scope);
@@ -456,23 +473,19 @@ int CMultiApplication::Run(void)
         // aligning two MSAs
 
         objects::CSeqIdGenerator id_generator;
+        // this flag sets validation of the read MSA
+        flags |= CFastaReader::fValidate;
 
         CRef<CSeq_align> msa1 = GetAlignmentFromStream(
                                               args["in_msa1"].AsInputFile(),
                                               scope,
-                                              CFastaReader::fAssumeProt | 
-                                              CFastaReader::fForceType |
-                                              CFastaReader::fNoParseID |
-                                              CFastaReader::fValidate,
+                                              flags,
                                               id_generator);
 
         CRef<CSeq_align> msa2 = GetAlignmentFromStream(
                                               args["in_msa2"].AsInputFile(),
                                               scope,
-                                              CFastaReader::fAssumeProt | 
-                                              CFastaReader::fForceType |
-                                              CFastaReader::fNoParseID |
-                                              CFastaReader::fValidate,
+                                              flags,
                                               id_generator);
 
         _ASSERT(!scope.Empty());
@@ -506,6 +519,13 @@ int CMultiApplication::Run(void)
         }
 
         aligner.SetInputMSAs(*msa1, *msa2, repr1, repr2, scope);
+    }
+
+    // set pre-computed domain hits
+    if (args["domain_hits"]) {
+        CBlast4_archive archive;
+        args["domain_hits"].AsInputFile() >> MSerial_AsnText >> archive;
+        aligner.SetDomainHits(archive);
     }
 
     CMultiAligner::TStatus status = aligner.Run();

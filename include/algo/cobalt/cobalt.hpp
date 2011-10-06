@@ -42,6 +42,7 @@ Contents: Interface for CMultiAligner
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/biotree/BioTreeContainer.hpp>
+#include <objects/blast/Blast4_archive.hpp>
 
 #include <algo/cobalt/base.hpp>
 #include <algo/cobalt/resfreq.hpp>
@@ -172,6 +173,17 @@ public:
                       const set<int>& representatives2,
                       CRef<objects::CScope> scope);
 
+    /// Set pre-computed domain hits using BLAST archive format
+    /// @param archive BLAST archive format [in]
+    ///
+    /// Queries from the archive are matched to COBALT queries by Seq_ids.
+    /// The two sets of queries do not need to be the same. Domain hits for
+    /// the archive queries that do match to any of the COBALT queries are
+    /// ignored. COBALT will do RPS-BLAST search for all of its sequences that
+    /// were not matched to the archive queries. It is the responsibility of
+    /// user to ensure that the pre-computed hits and COBALT refer to the same
+    /// domain database.
+    void SetDomainHits(const objects::CBlast4_archive& archive);
 
     /// Get query sequences
     /// @return List of seq-ids and locations [in]
@@ -675,6 +687,9 @@ protected:
     CHitList m_PatternHits;
     CHitList m_LocalInClusterHits;
     CHitList m_UserHits;
+
+    /// Marks sequences with pre-computed domain hits
+    vector<bool> m_IsDomainSearched;
 
     vector< vector<Uint4> > m_ClusterGapPositions;
     vector< CRef<objects::CSeq_loc> > m_AllQueries;

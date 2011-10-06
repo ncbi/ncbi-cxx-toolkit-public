@@ -42,6 +42,15 @@ Contents: Use RPS blast to find domain hits
 #include <algo/blast/api/local_blast.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/cobalt/cobalt.hpp>
+
+#include <objects/blast/Blast4_request.hpp>
+#include <objects/blast/Blast4_request_body.hpp>
+#include <objects/blast/Blast4_queue_search_reques.hpp>
+#include <objects/blast/Blast4_queries.hpp>
+#include <objects/blast/Blas_get_searc_resul_reply.hpp>
+
+#include <serial/iterator.hpp>
+
 #include <algorithm>
 
 /// @file rps.cpp
@@ -51,6 +60,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)
 
 USING_SCOPE(blast);
+USING_SCOPE(objects);
 
 /// Given an RPS blast database, load a list of block offsets
 /// for each database sequence. The list is resident in a text
@@ -634,6 +644,207 @@ CMultiAligner::x_AssignDefaultResFreqs()
 }
 
 
+bool compare_seqids(const pair<const CSeq_id*, int>& a,
+                       const pair<const CSeq_id*, int>& b)
+{
+    _ASSERT(a.first && b.first);
+    return a.first->CompareOrdered(*b.first) > 0;
+}
+
+void
+CMultiAligner::SetDomainHits(const CBlast4_archive& archive)
+{
+    // This function sets pre-computed alignments with of queries
+    // with conserved domains. Note that the results need not include all
+    // cobalt queries and not all domain queries need to be cobalt sequences
+
+    if (m_tQueries.empty()) {
+        NCBI_THROW(CMultiAlignerException, eInvalidInput, "Sequences to align "
+                   "must be set before domain hits");
+    }
+
+    // initialized all queries as not searched for conserved domains
+    m_IsDomainSearched.resize(m_tQueries.size(), false);
+    m_DomainHits.PurgeAllHits();
+
+    // create a sorted list query seq_ids
+    vector< pair<const CSeq_id*, int> > queries;
+    queries.reserve(m_tQueries.size());
+    for (size_t i=0;i < m_tQueries.size();i++) {
+        _ASSERT(m_tQueries[i]->GetId());
+        queries.push_back(make_pair(m_tQueries[i]->GetId(), i));
+    }
+    sort(queries.begin(), queries.end(), compare_seqids);
+
+    // mark queries for which domain search was done,
+    // we use query list here in case the search retruned no results
+    const CBlast4_queries& b4_queries
+        = archive.GetRequest().GetBody().GetQueue_search().GetQueries();
+
+    if (!b4_queries.IsSeq_loc_list() && !b4_queries.IsBioseq_set()) {
+        NCBI_THROW(CMultiAlignerException, eInvalidInput, "Unsupported BLAST"
+                   " 4 archive format");
+    }
+
+    // if domain queries are seq_locs
+    if (b4_queries.IsSeq_loc_list()) {
+        ITERATE (list< CRef<CSeq_loc> >, it, b4_queries.GetSeq_loc_list()) {
+
+            // iterate over domain queries
+
+            // search for the query in the list of sequence to align
+            pair<const CSeq_id*, int> p((*it)->GetId(), -1);
+            vector< pair<const CSeq_id*, int> >::iterator id_itr
+                = lower_bound(queries.begin(), queries.end(), p,
+                              compare_seqids);
+
+            // if query was found, then mark it as searched
+            if (id_itr != queries.end()
+                && id_itr->first->CompareOrdered(*p.first) == 0) {
+                m_IsDomainSearched[id_itr->second] = true;
+            }
+        }
+    }
+
+    // if domain queries are bioseqs
+    if (b4_queries.IsBioseq_set()) {
+        CTypeConstIterator<CBioseq> itr(ConstBegin(b4_queries.GetBioseq_set(),
+                                                   eDetectLoops));
+        // iterate over domain queries
+        for (; itr; ++itr) {
+
+            // search for the query in the list of sequences to align
+            pair<const CSeq_id*, int> p(itr->GetFirstId(), -1);
+            vector< pair<const CSeq_id*, int> >::iterator id_itr
+                = lower_bound(queries.begin(), queries.end(), p,
+                              compare_seqids);
+
+            // if query was found, then mark it as searched
+            if (id_itr != queries.end()
+                && id_itr->first->CompareOrdered(*p.first) == 0) {
+                m_IsDomainSearched[id_itr->second] = true;
+            }
+        }
+    }
+    //-------------------------------------------------------
+    if (m_Options->GetVerbose()) {
+        printf("Pre-computed RPS queries:\n");
+        for (size_t i=0;i < m_tQueries.size();i++) {
+            if (m_IsDomainSearched[i]) {
+                printf("query: %d\n", (int)i);
+            }
+        }
+        printf("\n");
+    }
+    //-------------------------------------------------------
+
+    // check if at least one domain query matched cobalt query
+    bool is_presearched = false;
+    ITERATE (vector<bool>, it, m_IsDomainSearched) {
+        if (*it) {
+            is_presearched = true;
+        }
+    }
+    // if not, there is no need to analyze domain hits
+    if (!is_presearched) {
+        // empty array indicates that pre-computed domain hits are not set
+        m_IsDomainSearched.clear();
+        return;
+    }
+
+    CSeqDB seqdb(m_Options->GetRpsDb(), CSeqDB::eProtein);
+
+    // get domain hits
+    const CSeq_align_set& aligns = archive.GetResults().GetAlignments();
+    int query_idx = -1;
+    const CSeq_id* last_query_id = NULL;
+    ITERATE (CSeq_align_set::Tdata, it, aligns.Get()) {
+
+        // iterate over hits
+
+        const CSeq_align& s = **it;
+        const CDense_seg& denseg = s.GetSegs().GetDenseg();
+        int align_score = 0;
+        double evalue = 0;
+
+        // find query index in m_tQueries
+        const CSeq_id& query_id = s.GetSeq_id(0);
+
+        // search for query in sequences to align only if the current hit
+        // query is different from the previous one
+        if (!last_query_id || query_id.CompareOrdered(*last_query_id) != 0) {
+
+            // find query seq id
+            pair<const CSeq_id*, int> p(&query_id, -1);
+            vector< pair<const CSeq_id*, int> >::iterator id_itr
+                = lower_bound(queries.begin(), queries.end(), p,
+                              compare_seqids);
+
+            // if the hit query is not to be aligned, then skip processing
+            // this Seq_align
+            if (id_itr == queries.end()
+                || id_itr->first->CompareOrdered(*p.first) != 0) {
+
+                query_idx = -1;
+                continue;
+            }
+            query_idx = id_itr->second;
+            last_query_id = id_itr->first;
+        }
+        if (query_idx < 0) {
+            continue;
+        }
+
+        // compute the score of the hit
+
+        ITERATE(CSeq_align::TScore, score_itr, s.GetScore()) {
+            const CScore& curr_score = **score_itr;
+            if (curr_score.GetId().GetStr() == "score")
+                align_score = curr_score.GetValue().GetInt();
+            else if (curr_score.GetId().GetStr() == "e_value")
+                evalue = curr_score.GetValue().GetReal();
+        }
+
+        // check if the hit is worth saving
+        if (evalue > m_Options->GetRpsEvalue())
+            continue;
+
+        // locate the ID of the database sequence that
+        // produced the hit, and save the hit
+
+        int db_oid;
+        seqdb.SeqidToOid(*denseg.GetIds()[1], db_oid);
+        if (db_oid < 0) {
+            NCBI_THROW(CMultiAlignerException, eInvalidInput, "The pre-computed"
+                       " subject domain " + denseg.GetIds()[1]->AsFastaString()
+                       + " does not exist in the domain database "
+                       + m_Options->GetRpsDb());
+        }
+        m_DomainHits.AddToHitList(new CHit(query_idx, db_oid, 
+                                           align_score, denseg));
+    }
+
+    //-------------------------------------------------------
+    if (m_Options->GetVerbose()) {
+        printf("Pre-computed RPS hits:\n");
+        for (int i = 0; i < m_DomainHits.Size(); i++) {
+            CHit *hit = m_DomainHits.GetHit(i);
+            printf("query %d %4d - %4d db %d %4d - %4d score %d\n",
+                         hit->m_SeqIndex1, 
+                         hit->m_SeqRange1.GetFrom(), 
+                         hit->m_SeqRange1.GetTo(),
+                         hit->m_SeqIndex2,
+                         hit->m_SeqRange2.GetFrom(), 
+                         hit->m_SeqRange2.GetTo(),
+                         hit->m_Score);
+        }
+        printf("\n\n");
+    }
+    //-------------------------------------------------------
+
+
+}
+
 void
 CMultiAligner::x_FindDomainHits(TSeqLocVector& queries,
                                 const vector<int>& indices)
@@ -649,13 +860,48 @@ CMultiAligner::x_FindDomainHits(TSeqLocVector& queries,
     m_ProgressMonitor.stage = eDomainHitsSearch;
 
     // empty previously found hits
-
-    m_DomainHits.PurgeAllHits();
     m_CombinedHits.PurgeAllHits();
 
-    // run RPS blast
+        
+    // if there are no pre-computed domain hits search for domain in all
+    // queries
+    if (m_IsDomainSearched.empty()) {
+        m_DomainHits.PurgeAllHits();
 
-    x_FindRPSHits(queries, indices, m_DomainHits);
+        // run RPS blast
+
+        x_FindRPSHits(queries, indices, m_DomainHits);
+    }
+    else {
+        // otherwise, search only queries that were not searched for 
+        // pre-computed results
+
+        _ASSERT(m_IsDomainSearched.size() == m_tQueries.size());
+
+        // find if there is at least one query that was not pre-searched
+        bool do_search = false;
+        ITERATE (vector<bool>, it, m_IsDomainSearched) {
+            if (!*it) {
+                do_search = true;
+                break;
+            }
+        }
+
+        // search for domains
+        if (do_search) {
+            TSeqLocVector queries_not_searched;
+            vector<int> indices_not_searched;
+            for (size_t i=0;i < queries.size();i++) {
+                if (!m_IsDomainSearched[indices[i]]) {
+                    queries_not_searched.push_back(queries[i]);
+                    indices_not_searched.push_back(indices[i]);
+                }
+            }
+            // run RPS blast
+            x_FindRPSHits(queries_not_searched, indices_not_searched,
+                          m_DomainHits);
+        }
+    }
 
     // check for interrupt
     if (m_Interrupt && (*m_Interrupt)(&m_ProgressMonitor)) {
