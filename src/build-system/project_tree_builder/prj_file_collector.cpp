@@ -159,12 +159,22 @@ void CProjectFileCollector::CollectSources(void)
             CDirEntry ent( NStr::Replace( *p, ".in", ""));
             string dest_path = CDirEntry::ConcatPath( m_OutputDir, m_ProjItem.m_ID);
             dest_path = CDirEntry::ConcatPath( dest_path, ent.GetBase());
+            GetApp().SetConfFileData(*p, dest_path);
             ITERATE(list<SConfigInfo>, cfg, m_Configs) {
                 const SConfigInfo& cfg_info = *cfg;
                 string dest_file = dest_path + "." +
                     ConfigurableFileSuffix(cfg_info.GetConfigFullName())+
                     ent.GetExt();
+#if 0
                 CreateConfigurableFile(*p, dest_file, cfg_info.GetConfigFullName());
+#else
+// we postpone creation until later
+// here we only create placeholders
+                if (!CFile(dest_file).Exists()) {
+                    CNcbiOfstream os(file_dst_path.c_str(),
+                                     IOS_BASE::out | IOS_BASE::binary | IOS_BASE::trunc);
+                }
+#endif
             }
             dest_path += ent.GetExt();
             m_ConfigurableSources.push_back( dest_path );

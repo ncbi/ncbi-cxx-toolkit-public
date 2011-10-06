@@ -41,6 +41,7 @@
 #include "msvc_prj_defines.hpp"
 #include "msvc_configure_prj_generator.hpp"
 #include "proj_projects.hpp"
+#include "configurable_file.hpp"
 #include "ptb_err_codes.hpp"
 #include <corelib/ncbitime.hpp>
 #include <corelib/expr.hpp>
@@ -334,7 +335,7 @@ struct PIsExcludedByTag
         const CProjItem& project = item.second;
         string unmet;
         if ( project.m_ProjType != CProjKey::eDataSpec && 
-            !GetApp().IsAllowedProjectTag(project.m_ProjTags, unmet) ) {
+            !GetApp().IsAllowedProjectTag(project, project.m_ProjTags, unmet) ) {
             PTB_WARNING_EX(project.GetPath(), ePTB_ProjectExcluded,
                            "Excluded due to proj_tag; this project tags: " << unmet);
             return true;
@@ -881,7 +882,7 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
     CreateCheckList(configurations, projects_tree);
     list<string> enabled, disabled;
     CreateFeaturesAndPackagesFiles(configurations, enabled, disabled);
-    GenerateSummary(enabled, disabled);
+    GenerateSummary(*configurations, enabled, disabled);
 #endif //NCBI_COMPILER_MSVC
 }
 
@@ -922,7 +923,7 @@ void CProjBulderApp::GenerateMacProjects(CProjectItemsTree& projects_tree)
     CreateCheckList(configurations, projects_tree);
     list<string> enabled, disabled;
     CreateFeaturesAndPackagesFiles(configurations, enabled, disabled);
-    GenerateSummary(enabled, disabled);
+    GenerateSummary(*configurations, enabled, disabled);
 #endif
 }
 void CProjBulderApp::CollectLibToLibDependencies(
@@ -1412,9 +1413,22 @@ void CProjBulderApp::CreateFeaturesAndPackagesFiles(
     list_disabled.unique();
 }
 
-void CProjBulderApp::GenerateSummary(
+void CProjBulderApp::GenerateSummary(const list<SConfigInfo> configs, 
     const list<string>& enabled, const list<string>& disabled)
 {
+    if (!m_ConfSrc.empty() && !m_ConfDest.empty()) {
+        string orig_ext = CDirEntry( CDirEntry(m_ConfSrc).GetBase() ).GetExt();
+        ITERATE(list<SConfigInfo>, p , configs) {
+            const SConfigInfo& cfg_info = *p;
+            string file_dst_path;
+            file_dst_path = m_ConfDest + "." +
+                            ConfigurableFileSuffix(cfg_info.GetConfigFullName())+
+                            orig_ext;
+            CreateConfigurableFile(m_ConfSrc, file_dst_path,
+                                   cfg_info.GetConfigFullName());
+        }
+    }
+
     string str_config;
     // summary
     SetDiagPostAllFlags(eDPF_Log);
@@ -2133,7 +2147,7 @@ string CProjBulderApp::GetProjectTreeRoot(void) const
     return CDirEntry::AddTrailingPathSeparator(path);
 }
 
-bool CProjBulderApp::IsAllowedProjectTag(
+bool CProjBulderApp::IsAllowedProjectTag(const CProjItem& project,
     const list<string>& tags, string& unmet) const
 {
     // verify that all project tags are registered
@@ -2141,7 +2155,7 @@ bool CProjBulderApp::IsAllowedProjectTag(
     for (i = tags.begin(); i != tags.end(); ++i) {
         if (m_RegisteredProjectTags.find(*i) == m_RegisteredProjectTags.end()) {
             NCBI_THROW(CProjBulderAppException, eUnknownProjectTag,
-                "Unregistered project tag: " + *i);
+                project.GetPath() + ": Unregistered project tag: " + *i);
             return false;
         }
     }
@@ -2275,6 +2289,12 @@ string CProjBulderApp::GetUtilityProjectsSrcDir(void)
     prj = CDirEntry::ConcatPath(prj, "UtilityProjects");
     prj = CDirEntry::AddTrailingPathSeparator(prj);
     return prj;
+}
+
+void CProjBulderApp::SetConfFileData(const string& src, const string& dest)
+{
+    m_ConfSrc = src;
+    m_ConfDest= dest;
 }
 
 CProjBulderApp& GetApp(void)

@@ -31,6 +31,7 @@
 #include "configurable_file.hpp"
 #include "proj_builder_app.hpp"
 #include "msvc_prj_defines.hpp"
+#include "msvc_project_context.hpp"
 #include "ptb_err_codes.hpp"
 #include <corelib/ncbistr.hpp>
 
@@ -75,7 +76,7 @@ bool CreateConfigurableFile(const string& src_path, const string& dst_path,
 
     // Replace some variables:
 
-    // ---------- @ncbi_runpath@ ----------
+    // ---------- @c_ncbi_runpath@ ----------
 
     string run_path = GetApp().GetEnvironment().Get("NCBI_INSTALL_PATH");
     // For installing toolkit the path like to
@@ -94,7 +95,7 @@ bool CreateConfigurableFile(const string& src_path, const string& dst_path,
     }
     run_path = CDirEntry::ConcatPath(run_path, config_name);
     run_path = NStr::Replace(run_path, "\\", "\\\\");
-    str = NStr::Replace(str, "@ncbi_runpath@", run_path);
+    str = NStr::Replace(str, "@c_ncbi_runpath@", run_path);
 
     // ---------- @SYBASE_PATH@ ----------
     string sb_path;
@@ -105,6 +106,40 @@ bool CreateConfigurableFile(const string& src_path, const string& dst_path,
     }
     sb_path = NStr::Replace(sb_path, "\\", "\\\\");
     str = NStr::Replace(str, "@SYBASE_PATH@", sb_path);
+    // ------------------------------------
+
+    // ---------- @FEATURES@ ----------
+    {
+        string features;
+        const set<string>& epackages =
+            CMsvcPrjProjectContext::GetEnabledPackages(config_name);
+        ITERATE(set<string>, e, epackages) {
+            if (!features.empty()) {
+                features += " ";
+            }
+            features += *e;
+        }
+
+        list<string> std_features;
+        GetApp().GetSite().GetStandardFeatures(std_features);
+        ITERATE(list<string>, s, std_features) {
+            if (!features.empty()) {
+                features += " ";
+            }
+            features += *s;
+        }
+
+        const set<string>& dpackages =
+            CMsvcPrjProjectContext::GetDisabledPackages(config_name);
+        ITERATE(set<string>, d, dpackages) {
+            if (!features.empty()) {
+                features += " ";
+            }
+            features += "-";
+            features += *d;
+        }
+        str = NStr::Replace(str, "@FEATURES@", features);
+     }
     // ------------------------------------
 
     // Write result

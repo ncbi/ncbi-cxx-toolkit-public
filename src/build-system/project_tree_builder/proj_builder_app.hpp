@@ -108,6 +108,7 @@ private:
     list<string>  m_ProjWatchers;
     list<string>  m_CustomMetaData;
     list<string>  m_CustomConfH;
+    string m_ConfSrc, m_ConfDest;
 
 public:
 
@@ -183,7 +184,7 @@ public:
     string GetDatatoolCommandLine (void) const;
 
     string GetProjectTreeRoot(void) const;
-    bool   IsAllowedProjectTag(const list<string>& tags,
+    bool   IsAllowedProjectTag(const CProjItem& project, const list<string>& tags,
                                string& unmet) const;
     void   LoadProjectTags(const string& filename);
     string ProcessLocationMacros(string data);
@@ -198,6 +199,7 @@ public:
 
     string GetUtilityProjectsDir(void) const;
     string GetUtilityProjectsSrcDir(void);
+    void SetConfFileData(const string& src, const string& dest);
     
 private:
     void    GetBuildConfigs     (list<SConfigInfo>* configs);
@@ -210,7 +212,8 @@ private:
     void    GenerateUnixProjects(CProjectItemsTree& projects_tree);
     void    CreateFeaturesAndPackagesFiles(const list<SConfigInfo>* configs,
                 list<string>& enabled, list<string>& disabled);
-    void    GenerateSummary(const list<string>& enabled, const list<string>& disabled);
+    void    GenerateSummary(const list<SConfigInfo> configs,
+        const list<string>& enabled, const list<string>& disabled);
     void    CreateCheckList(const list<SConfigInfo>* configs,
                             CProjectItemsTree& projects_tree);
     void    ReportGeneratedFiles(void);

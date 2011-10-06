@@ -254,6 +254,7 @@ CMsvcPrjFilesCollector::CollectSources(void)
                 string dst_path;
                 CDirEntry::SplitPath(abs_path, NULL, &dst_path, NULL);
                 dst_path = CDirEntry::MakePath(m_Context->ProjectDir(), dst_path);
+                GetApp().SetConfFileData(abs_path + ext, dst_path);
 
                 // Create configurable file for each enabled configuration
                 ITERATE(list<SConfigInfo>, p , *m_Configs) {
@@ -262,8 +263,17 @@ CMsvcPrjFilesCollector::CollectSources(void)
                     file_dst_path = dst_path + "." +
                                     ConfigurableFileSuffix(cfg_info.GetConfigFullName())+
                                     orig_ext;
+#if 0
                     CreateConfigurableFile(abs_path + ext, file_dst_path,
                                            cfg_info.GetConfigFullName());
+#else
+// we postpone creation until later
+// here we only create placeholders
+                    if (!CFile(file_dst_path).Exists()) {
+                        CNcbiOfstream os(file_dst_path.c_str(),
+                                         IOS_BASE::out | IOS_BASE::binary | IOS_BASE::trunc);
+                    }
+#endif
                 }
                 dst_path += ".@config@" + orig_ext;
                 m_SourceFiles.push_back(
