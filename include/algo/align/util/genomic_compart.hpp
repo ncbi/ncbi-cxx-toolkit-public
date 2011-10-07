@@ -42,6 +42,7 @@ BEGIN_SCOPE(objects)
 
 enum ECompartOptions {
     fCompart_AllowIntersections = 0x01,
+	fCompart_SortByScore = 0x02,
 
     fCompart_Defaults = 0
 };

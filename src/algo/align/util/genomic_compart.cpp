@@ -170,6 +170,17 @@ struct SRangesBySize
     }
 };
 
+struct SRangesByScore
+{
+    bool operator() (const TAlignRange& r1,
+                     const TAlignRange& r2) const
+    {
+		int scores[2] = {0, 0};
+		r1.second->GetNamedScore(CSeq_align::eScore_Score, scores[0]);
+		r2.second->GetNamedScore(CSeq_align::eScore_Score, scores[1]);
+        return scores[0] > scores[1];
+    }
+};
 
 struct SSeqAlignsBySize
 {
@@ -177,6 +188,18 @@ struct SSeqAlignsBySize
                     const CRef<CSeq_align>& al_ref2) const
     {
         return al_ref1->GetAlignLength() > al_ref2->GetAlignLength();
+    };
+};
+
+struct SSeqAlignsByScore
+{
+    bool operator()(const CRef<CSeq_align>& al_ref1,
+                    const CRef<CSeq_align>& al_ref2) const
+    {
+		int scores[2] = {0, 0};
+		al_ref1->GetNamedScore(CSeq_align::eScore_Score, scores[0]);
+		al_ref2->GetNamedScore(CSeq_align::eScore_Score, scores[1]);
+        return scores[0] > scores[1];
     };
 };
 
@@ -253,7 +276,11 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
         ENa_strand s_strand = id_pair.second.second;
 
         vector< CRef<CSeq_align> >& aligns = align_it->second;
-        std::sort(aligns.begin(), aligns.end(), SSeqAlignsBySize());
+		if(options & fCompart_SortByScore)        
+			std::sort(aligns.begin(), aligns.end(), SSeqAlignsByScore());
+		else
+			std::sort(aligns.begin(), aligns.end(), SSeqAlignsBySize());
+
 #ifdef _VERBOSE_DEBUG
         {{
              cerr << "ids: " << id_pair.first.first << " x "
@@ -319,7 +346,10 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
         // sort by descending hit size
         // fit each new hit into its best compartment compartment
         //
-        std::sort(align_ranges.begin(), align_ranges.end(), SRangesBySize());
+		if(options & fCompart_SortByScore)        
+			std::sort(align_ranges.begin(), align_ranges.end(), SRangesByScore());
+	   	else
+			std::sort(align_ranges.begin(), align_ranges.end(), SRangesBySize());
 
         list< multiset<TAlignRange> > compartments;
 
@@ -423,7 +453,7 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
             }
             else {
                 best_compart->insert(*it);
-            }
+			}
 
 #ifdef _VERBOSE_DEBUG
             {{

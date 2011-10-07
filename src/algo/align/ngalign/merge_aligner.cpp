@@ -104,20 +104,24 @@ CMergeAligner::x_MergeAlignments(CQuerySet& QueryAligns, CScope& Scope)
             CRef<CSeq_align_set> Set = SubjectIter->second;
 
 #if 1
-            list< CRef<CSeq_align_set> > compartments;
-            FindCompartments(Set->Get(), compartments,
-                             fCompart_AllowIntersections);
+           	int options[2] = { fCompart_AllowIntersections,
+						fCompart_AllowIntersections | fCompart_SortByScore };
+			for(int i = 0; i < 1; i++) {
+				list< CRef<CSeq_align_set> > compartments;
+				FindCompartments(Set->Get(), compartments,
+								options[i]);
 
-            ITERATE (list< CRef<CSeq_align_set> >, cit, compartments) {
-                CRef<CSeq_align_set> sas = *cit;
-                x_SortAlignSet(*sas);
-                CRef<CSeq_align_set> out = x_MergeSeqAlignSet(*sas, Scope);
-                if( out  &&  !out->Set().empty() ) {
-                    ITERATE(CSeq_align_set::Tdata, AlignIter, out->Set()) {
-                        Merged->Set().push_back(*AlignIter);
-                    }
-                }
-            }
+				ITERATE (list< CRef<CSeq_align_set> >, cit, compartments) {
+					CRef<CSeq_align_set> sas = *cit;
+					x_SortAlignSet(*sas, options[i]);
+					CRef<CSeq_align_set> out = x_MergeSeqAlignSet(*sas, Scope);
+					if( out  &&  !out->Set().empty() ) {
+						ITERATE(CSeq_align_set::Tdata, AlignIter, out->Set()) {
+							Merged->Set().push_back(*AlignIter);
+						}
+					}
+				}
+			}
 #endif
 
 #if 0
@@ -214,14 +218,29 @@ static bool s_SortByAlignedLength(const CRef<objects::CSeq_align>& A,
 }
 
 
-void CMergeAligner::x_SortAlignSet(CSeq_align_set& AlignSet)
+static bool s_SortByScore(const CRef<objects::CSeq_align>& A,
+                          const CRef<objects::CSeq_align>& B)
+{
+	int Scores[2] = {0, 0};
+	A->GetNamedScore(CSeq_align::eScore_Score, Scores[0]);
+	B->GetNamedScore(CSeq_align::eScore_Score, Scores[1]);
+    return (Scores[0] > Scores[1]);
+}
+
+
+void CMergeAligner::x_SortAlignSet(CSeq_align_set& AlignSet, int CompartFlags)
 {
     vector<CRef<CSeq_align> > TempVec;
     TempVec.reserve(AlignSet.Set().size());
     copy(AlignSet.Set().begin(), AlignSet.Set().end(),
             insert_iterator<vector<CRef<CSeq_align> > >(TempVec, TempVec.end()));
-    sort(TempVec.begin(), TempVec.end(), s_SortByAlignedLength);
-    AlignSet.Set().clear();
+    
+	if(CompartFlags & fCompart_SortByScore)
+		sort(TempVec.begin(), TempVec.end(), s_SortByScore);
+	else
+		sort(TempVec.begin(), TempVec.end(), s_SortByAlignedLength);
+
+	AlignSet.Set().clear();
     copy(TempVec.begin(), TempVec.end(),
         insert_iterator<CSeq_align_set::Tdata>(AlignSet.Set(), AlignSet.Set().end()));
 }
