@@ -111,6 +111,7 @@ TSeqPos CVariationUtil::s_GetLength(const CVariantPlacement& p, CScope* scope)
         - (p.IsSetStart_offset() ? p.GetStart_offset() : 0);
 }
 
+
 CVariationUtil::ETestStatus CVariationUtil::CheckExonBoundary(const CVariantPlacement& p, const CSeq_align& aln)
 {
     const CSeq_id* id = p.GetLoc().GetId();
@@ -1778,8 +1779,6 @@ void CVariationUtil::s_AttachGeneIDdbxref(CVariantPlacement& p, int gene_id)
     p.SetDbxrefs().push_back(dbtag);
 }
 
-
-
 void CVariationUtil::SetPlacementProperties(CVariantPlacement& placement)
 {
     if(!placement.IsSetGene_location()) {
@@ -1792,16 +1791,35 @@ void CVariationUtil::SetPlacementProperties(CVariantPlacement& placement)
     //for offset-style intronic locations (not genomic and have offset), can infer where we are based on offset
     if(!placement.IsSetMol() || placement.GetMol() != CVariantPlacement::eMol_genomic) {
         CBioseq_Handle bsh = m_scope->GetBioseqHandle(placement.GetLoc());
-        if(placement.IsSetStart_offset()) {
+        if(placement.IsSetStart_offset() && placement.GetStart_offset() != 0) {
             x_SetVariantPropertiesForIntronic(placement, placement.GetStart_offset(), placement.GetLoc(), bsh);
         }
-        if(placement.IsSetStop_offset()) {
+        if(placement.IsSetStop_offset() && placement.GetStop_offset() != 0) {
             x_SetVariantPropertiesForIntronic(placement, placement.GetStop_offset(), placement.GetLoc(), bsh);
         }
     }
 
     CVariantPropertiesIndex::TGeneIDAndPropVector v;
     m_variant_properties_index.GetLocationProperties(placement.GetLoc(), v);
+
+    //note: this assumes that the offsets are HGVS-spec compliant: anchor locations are at the exon terminals, and the
+    //offset values point into the intron.
+    bool is_completely_intronic = false;
+    {{
+        bool is_start_offset = placement.IsSetStart_offset() && placement.GetStart_offset() != 0;
+        bool is_stop_offset = placement.IsSetStop_offset() && placement.GetStop_offset() != 0;
+
+        //Single anchor point, and have any offset.
+        bool is_case1 = sequence::GetLength(placement.GetLoc(), NULL) == 1 && (is_start_offset || is_stop_offset);
+
+        //Other possibility is when start and stop are addressed from different exons:
+        //The location length must be 2 (end of one exon and start of the other), and the offsets point inwards.
+        bool is_case2 = sequence::GetLength(placement.GetLoc(), NULL) == 2
+                        && is_start_offset && placement.GetStart_offset() > 0
+                        && is_stop_offset && placement.GetStop_offset() < 0;
+
+        is_completely_intronic = is_case1 || is_case2;
+    }}
 
     //collapse all gene-specific location properties into prop
     ITERATE(CVariantPropertiesIndex::TGeneIDAndPropVector, it, v) {
@@ -1810,7 +1828,11 @@ void CVariationUtil::SetPlacementProperties(CVariantPlacement& placement)
         if(gene_id != 0) {
             s_AttachGeneIDdbxref(placement, gene_id);
         }
-        placement.SetGene_location() |= loc_prop;
+
+        if(!is_completely_intronic) {
+            //we don't want to compute properties for intronic anchor points. VAR-149
+            placement.SetGene_location() |= loc_prop;
+        }
     }
 }
 
