@@ -1391,7 +1391,6 @@ DMUR	c	Department of Mycology
 DMVB	c	Department of Microbiology, Veterinary Branch of National Strain Collection
 DNA	s	Department of Natural Resources, Environment and the Arts
 DNATAX	b	DNA-TAX
-DNHC	s	Denver Museum of Natural History
 DNHM<CHN>	s	Dalian Museum of Natural History
 DNHM<USA-UT>	s	Dinosaur Natural History Museum
 DNPM	s	Setor de Paleontologia do Departamento Nacional de Producao Mineral
@@ -1641,6 +1640,7 @@ FCAB	s	Pontificia Universidade Catolica do Rio de Janeiro, Nucleo Interdisciplin
 FCAP	s	Universidade Federal do Para
 FCBP	c	First Fungal Culture Bank of Pakistan
 FCDA	s	Fresno County Department of Agriculture
+FCL<POL>	c	Fungal Culture Collection of Lublin
 FCLR	s	Fundacion Cientifica Los Roques
 FCM	s	Facultad de Ciencias Marinas
 FCME	s	Universidad Nacional Autonoma de Mexico, Ciudad Universitaria, Departamento de Biologia
