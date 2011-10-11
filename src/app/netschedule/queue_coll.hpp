@@ -48,7 +48,6 @@
 #include "ns_util.hpp"
 #include "ns_format.hpp"
 #include "queue_clean_thread.hpp"
-#include "notif_thread.hpp"
 #include "ns_queue.hpp"
 #include "queue_vc.hpp"
 

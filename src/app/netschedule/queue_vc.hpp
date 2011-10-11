@@ -133,7 +133,7 @@ public:
     {
         string s;
         ITERATE(vector<CQueueClientInfo>, it, m_RegisteredClients) {
-            if (s.size())
+            if (!s.empty())
                 s += sep;
 
             s += it->client_name + ' ' + it->version_info.Print();

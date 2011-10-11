@@ -1,5 +1,5 @@
-#ifndef NETSCHEDULE_JS_REQUEST__HPP
-#define NETSCHEDULE_JS_REQUEST__HPP
+#ifndef NETSCHEDULE_ACCESS__HPP
+#define NETSCHEDULE_ACCESS__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -28,48 +28,41 @@
  *
  * Authors:  Anatoliy Kuznetsov, Victor Joukov
  *
- * File Description: job request parameters
+ * File Description: Access bits to certain commands
  *
  */
-
-#include <connect/services/netservice_protocol_parser.hpp>
-#include <string>
-
-#include "ns_types.hpp"
 
 
 BEGIN_NCBI_SCOPE
 
 
-struct SJS_Request
-{
-    enum EInputStatus {
-        eStatus_OK      = 0,
-        eStatus_TooLong = 1
-    };
+enum ENSAccess {
+    eNSAC_Queue         = 1 << 0,
+    eNSAC_Worker        = 1 << 1,
+    eNSAC_Submitter     = 1 << 2,
+    eNSAC_Admin         = 1 << 3,
+    eNSAC_QueueAdmin    = 1 << 4,
+    eNSAC_Test          = 1 << 5,
+    eNSAC_DynQueueAdmin = 1 << 6,
+    eNSAC_DynClassAdmin = 1 << 7,
+    eNSAC_AnyAdminMask  = eNSAC_Admin | eNSAC_QueueAdmin |
+                          eNSAC_DynQueueAdmin | eNSAC_DynClassAdmin,
 
-    TNSJobId        job_id;
-    int             job_return_code;
-    unsigned        port;
-    unsigned        timeout;
-    unsigned        job_mask;
-    unsigned        count;
-
-    std::string     input;
-    std::string     output;
-    std::string     affinity_token;
-    std::string     job_key;
-    std::string     err_msg;
-    std::string     param1;
-    std::string     param2;
-    std::string     param3;
-    std::string     tags;
-
-    void Init();
-    EInputStatus SetParamFields(TNSProtoParams& params);
+    // Combination of flags for client roles
+    eNSCR_Any           = 0,
+    eNSCR_Queue         = eNSAC_Queue,
+    eNSCR_Worker        = eNSAC_Worker | eNSAC_Queue,
+    eNSCR_Submitter     = eNSAC_Submitter | eNSAC_Queue,
+    eNSCR_Admin         = eNSAC_Admin,
+    eNSCR_QueueAdmin    = eNSAC_QueueAdmin | eNSAC_Queue
 };
+
+
+typedef unsigned int        TNSClientRole;
+
+
 
 END_NCBI_SCOPE
 
-#endif
+#endif  // NETSCHEDULE_ACCESS__HPP
 

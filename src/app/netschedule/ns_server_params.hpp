@@ -45,7 +45,6 @@ struct SNS_Parameters : SServer_Parameters
 {
     bool            reinit;
     unsigned short  port;
-    unsigned short  udp_port;
 
     bool            use_hostname;
     unsigned        network_timeout;

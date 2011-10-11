@@ -58,14 +58,15 @@ const unsigned kNetScheduleSplitSize = 64;
 const unsigned kMaxClientIpSize      = 64;
 const unsigned kMaxSessionIdSize     = 64;
 
-/// BDB table to store queue
+/// BDB table to store frequently used job info
 ///
 /// @internal
 ///
-struct SQueueDB : public CBDB_File
+struct SJobDB : public CBDB_File
 {
     CBDB_FieldUint4        id;              ///< Job id
 
+    CBDB_FieldUint4        passport;        ///< Passport - generated integer
     CBDB_FieldInt4         status;          ///< Current job status
     CBDB_FieldUint4        time_submit;     ///< Job submit time
     CBDB_FieldUint4        timeout;         ///<     individual timeout
@@ -81,9 +82,6 @@ struct SQueueDB : public CBDB_File
     CBDB_FieldUint4        run_counter;     ///< Number of execution attempts
     CBDB_FieldUint4        read_counter;    ///< Number if reading attempts
 
-    // When job is in Reading state, its read group id is here.
-    CBDB_FieldUint4        read_group;
-
     /// Affinity token id (refers to the affinity dictionary DB)
     CBDB_FieldUint4        aff_id;
     CBDB_FieldUint4        mask;
@@ -97,27 +95,27 @@ struct SQueueDB : public CBDB_File
     CBDB_FieldLString      client_sid;      ///< CGI session ID
     CBDB_FieldLString      progress_msg;    ///< Progress report message
 
-    SQueueDB()
+    SJobDB()
     {
         DisableNull();
 
-        BindKey("id", &id);
+        BindKey("id",               &id);
 
-        BindData("status",       &status);
-        BindData("time_submit",  &time_submit);
-        BindData("timeout",      &timeout);
-        BindData("run_timeout",  &run_timeout);
+        BindData("passport",        &passport);
+        BindData("status",          &status);
+        BindData("time_submit",     &time_submit);
+        BindData("timeout",         &timeout);
+        BindData("run_timeout",     &run_timeout);
 
-        BindData("subm_addr",    &subm_addr);
-        BindData("subm_port",    &subm_port);
-        BindData("subm_timeout", &subm_timeout);
+        BindData("subm_addr",       &subm_addr);
+        BindData("subm_port",       &subm_port);
+        BindData("subm_timeout",    &subm_timeout);
 
-        BindData("run_counter",  &run_counter);
-        BindData("read_counter", &read_counter);
-        BindData("read_group",   &read_group);
+        BindData("run_counter",     &run_counter);
+        BindData("read_counter",    &read_counter);
 
-        BindData("aff_id",       &aff_id);
-        BindData("mask",         &mask);
+        BindData("aff_id",          &aff_id);
+        BindData("mask",            &mask);
 
 
         BindData("input_overflow",  &input_overflow);
@@ -139,14 +137,12 @@ const unsigned kNetScheduleMaxOverflowSize = 1024*1024;
 struct SJobInfoDB : public CBDB_File
 {
     CBDB_FieldUint4        id;              ///< Job id
-    CBDB_FieldLString      tags;            ///< Tags for the job
     CBDB_FieldLString      input;           ///< Job input overflow
     CBDB_FieldLString      output;          ///< Job output overflow
 
     SJobInfoDB()
     {
         BindKey("id", &id);
-        BindData("tags",   &tags,   kNetScheduleMaxOverflowSize);
         BindData("input",  &input,  kNetScheduleMaxOverflowSize);
         BindData("output", &output, kNetScheduleMaxOverflowSize);
     }
@@ -161,45 +157,42 @@ const unsigned kMaxWorkerNodeIdSize = 64;
 /// actual attempts can be more than run_count.
 struct SEventsDB : public CBDB_File
 {
-    CBDB_FieldUint4   id;           ///< Job id
-    CBDB_FieldUint4   event_id;     ///< Job event id
-    CBDB_FieldUint4   event;        ///< Event which caused the record
-    CBDB_FieldInt4    status;       ///< Status to which the job moved to after
-                                    ///< processing the event
-    CBDB_FieldUint4   timestamp;    ///< The event timestamp
-    CBDB_FieldUint4   node_addr;    ///< IP of the worker node (net byte order)
-    CBDB_FieldUint2   node_port;    ///< Node's port
-    CBDB_FieldInt4    ret_code;     ///< Return code
-    CBDB_FieldLString node_id;      ///< worker node id
-    CBDB_FieldLString err_msg;      ///< Error message (exception::what())
+    CBDB_FieldUint4   id;               ///< Job id
+    CBDB_FieldUint4   event_id;         ///< Job event id
+    CBDB_FieldUint4   event;            ///< Event which caused the record
+    CBDB_FieldInt4    status;           ///< Status to which the job moved to after
+                                        ///< processing the event
+    CBDB_FieldUint4   timestamp;        ///< The event timestamp
+    CBDB_FieldUint4   node_addr;        ///< IP of the worker node (net byte order)
+    CBDB_FieldInt4    ret_code;         ///< Return code
+    CBDB_FieldLString client_node;      ///< client node identifier
+    CBDB_FieldLString client_session;   ///< client node session
+    CBDB_FieldLString err_msg;          ///< Error message (exception::what())
 
     SEventsDB()
     {
-        BindKey("id",           &id);
-        BindKey("event_id",     &event_id);
-        BindData("event",       &event);
-        BindData("status",      &status);
-        BindData("timestamp",   &timestamp);
-        BindData("node_addr",   &node_addr);
-        BindData("node_port",   &node_port);
-        BindData("ret_code",    &ret_code);
-        BindData("node_id",     &node_id, kMaxWorkerNodeIdSize);
-        BindData("err_msg",     &err_msg, kNetScheduleMaxDBErrSize);
+        BindKey("id",              &id);
+        BindKey("event_id",        &event_id);
+        BindData("event",          &event);
+        BindData("status",         &status);
+        BindData("timestamp",      &timestamp);
+        BindData("node_addr",      &node_addr);
+        BindData("ret_code",       &ret_code);
+        BindData("client_node",    &client_node, kMaxWorkerNodeIdSize);
+        BindData("client_session", &client_session, kMaxWorkerNodeIdSize);
+        BindData("err_msg",        &err_msg, kNetScheduleMaxDBErrSize);
     }
 };
 
 
-/// Database of vectors of jobs to be deleted. Because deletion
-/// occurs in background, with different pace for different tables,
-/// and even in different manner (blocks of jobs from main and aux job
-/// tables, and whole vectors from several records from affinity and tag
-/// tables), we need to maintain several bit vectors with deleted jobs.
+/// Database of a vector of jobs to be deleted. Because deletion
+/// occurs in background we need to maintain a bit vector with deleted jobs.
 ///
 /// @internal
 ///
 struct SDeletedJobsDB : public CBDB_BvStore<TNSBitVector>
 {
-    ///< Vector ID, 0 - job table, 1 - tag table, 2 - affinities
+    ///< Vector ID, 0 - job table
     CBDB_FieldUint4 id;
 
     typedef CBDB_BvStore<TNSBitVector> TParent;
@@ -210,24 +203,6 @@ struct SDeletedJobsDB : public CBDB_BvStore<TNSBitVector>
         BindKey("id", &id);
     }
 };
-
-/// Index of queue database (affinity to jobs)
-///
-/// @internal
-///
-struct SAffinityIdx : public CBDB_BvStore<TNSBitVector>
-{
-    CBDB_FieldUint4 aff_id;
-
-    typedef CBDB_BvStore<TNSBitVector> TParent;
-
-    SAffinityIdx()
-    {
-        DisableNull();
-        BindKey("aff_id", &aff_id);
-    }
-};
-
 
 /// BDB table to store affinity
 ///
@@ -245,44 +220,6 @@ struct SAffinityDictDB : public CBDB_File
         BindData("token", &token, kNetScheduleMaxDBDataSize);
     }
 };
-
-/// BDB affinity token index
-///
-/// @internal
-///
-struct SAffinityDictTokenIdx : public CBDB_File
-{
-    CBDB_FieldLString      token;
-    CBDB_FieldUint4        aff_id;
-
-    SAffinityDictTokenIdx()
-    {
-        DisableNull();
-        BindKey("token",   &token, kNetScheduleMaxDBDataSize);
-        BindData("aff_id", &aff_id);
-    }
-};
-
-
-/// BDB tag storage
-///
-/// @internal
-///
-struct STagDB : public CBDB_BvStore<TNSBitVector>
-{
-    CBDB_FieldLString key;
-    CBDB_FieldLString val;
-
-    typedef CBDB_BvStore<TNSBitVector> TParent;
-
-    STagDB()
-    {
-        DisableNull();
-        BindKey("key", &key);
-        BindKey("val", &val);
-    }
-};
-
 
 /// BDB table for storing queue descriptions
 ///

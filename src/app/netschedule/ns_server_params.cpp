@@ -53,18 +53,6 @@ void SNS_Parameters::Read(const IRegistry& reg, const string& sname)
 
     port = (unsigned short) GetIntNoErr("port", 9100);
 
-    int u_port = GetIntNoErr("udp_port", 0);
-    if (u_port == 0) {
-        u_port = port + 1;
-        LOG_POST(Info << "UDP notification port: " << u_port);
-    }
-    if (u_port < 1024 || u_port > 65535) {
-        LOG_POST(Error << "Invalid UDP notification port value: " << u_port
-                       << ". Notification is disabled.");
-        u_port = -1;
-    }
-    udp_port = u_port > 0 ? (unsigned short) u_port : 0;
-
     use_hostname    = GetBoolNoErr("use_hostname", false);
     network_timeout = GetIntNoErr("network_timeout", 10);
     if (network_timeout == 0) {
@@ -76,7 +64,7 @@ void SNS_Parameters::Read(const IRegistry& reg, const string& sname)
     // Logging parameters
     is_log                       = GetBoolNoErr("log", false);
     log_batch_each_job           = GetBoolNoErr("log_batch_each_job", true);
-    log_notification_thread      = GetBoolNoErr("log_notification_thread", true);
+    log_notification_thread      = GetBoolNoErr("log_notification_thread", false);
     log_cleaning_thread          = GetBoolNoErr("log_cleaning_thread", true);
     log_execution_watcher_thread = GetBoolNoErr("log_execution_watcher_thread", true);
     log_statistics_thread        = GetBoolNoErr("log_statistics_thread", true);
@@ -94,17 +82,16 @@ static string s_NSParameters[] =
     "max_threads",                  // 2
     "init_threads",                 // 3
     "port",                         // 4
-    "udp_port",                     // 5
-    "use_hostname",                 // 6
-    "network_timeout",              // 7
-    "log",                          // 8
-    "daemon",                       // 9
-    "admin_host",                   // 10
-    "log_batch_each_job",           // 11
-    "log_notification_thread",      // 12
-    "log_cleaning_thread",          // 13
-    "log_execution_watcher_thread", // 14
-    "log_statistics_thread"         // 15
+    "use_hostname",                 // 5
+    "network_timeout",              // 6
+    "log",                          // 7
+    "daemon",                       // 8
+    "admin_host",                   // 9
+    "log_batch_each_job",           // 10
+    "log_notification_thread",      // 11
+    "log_cleaning_thread",          // 12
+    "log_execution_watcher_thread", // 13
+    "log_statistics_thread"         // 14
 };
 static unsigned s_NumNSParameters = sizeof(s_NSParameters) / sizeof(string);
 
@@ -131,17 +118,16 @@ string SNS_Parameters::GetParamValue(unsigned n) const
     case 2:  return NStr::UIntToString(max_threads);
     case 3:  return NStr::UIntToString(init_threads);
     case 4:  return NStr::UIntToString(port);
-    case 5:  return NStr::UIntToString(udp_port);
-    case 6:  return NStr::BoolToString(use_hostname);
-    case 7:  return NStr::UIntToString(network_timeout);
-    case 8:  return NStr::BoolToString(is_log);
-    case 9:  return NStr::BoolToString(is_daemon);
-    case 10: return admin_hosts;
-    case 11: return NStr::BoolToString(log_batch_each_job);
-    case 12: return NStr::BoolToString(log_notification_thread);
-    case 13: return NStr::BoolToString(log_cleaning_thread);
-    case 14: return NStr::BoolToString(log_execution_watcher_thread);
-    case 15: return NStr::BoolToString(log_statistics_thread);
+    case 5:  return NStr::BoolToString(use_hostname);
+    case 6:  return NStr::UIntToString(network_timeout);
+    case 7:  return NStr::BoolToString(is_log);
+    case 8:  return NStr::BoolToString(is_daemon);
+    case 9:  return admin_hosts;
+    case 10: return NStr::BoolToString(log_batch_each_job);
+    case 11: return NStr::BoolToString(log_notification_thread);
+    case 12: return NStr::BoolToString(log_cleaning_thread);
+    case 13: return NStr::BoolToString(log_execution_watcher_thread);
+    case 14: return NStr::BoolToString(log_statistics_thread);
     default: return kEmptyStr;
     }
 }

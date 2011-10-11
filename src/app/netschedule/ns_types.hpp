@@ -46,6 +46,9 @@
 #include <util/bitset/ncbi_bitset.hpp>
 #include <util/bitset/ncbi_bitset_alloc.hpp>
 
+#include <connect/services/netschedule_api.hpp>
+
+
 BEGIN_NCBI_SCOPE
 
 typedef CBV_PoolBlockAlloc<bm::block_allocator, CFastMutex> TBlockAlloc;
@@ -53,8 +56,9 @@ typedef bm::mem_alloc<TBlockAlloc, bm::ptr_allocator>       TMemAlloc;
 typedef bm::bvector<TMemAlloc>                              TNSBitVector;
 //typedef bm::bvector<>                                       TNSBitVector;
 
-typedef Uint4                                               TNSJobId;
+typedef CNetScheduleAPI::EJobStatus                         TJobStatus;
 
 END_NCBI_SCOPE
 
 #endif /* NETSCHEDULE_NS_TYPES__HPP */
+

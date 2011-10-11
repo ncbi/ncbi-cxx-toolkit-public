@@ -1,5 +1,5 @@
-#ifndef NS_NOTIF_THREAD__HPP
-#define NS_NOTIF_THREAD__HPP
+#ifndef NETSCHEDULE_JS_COMMAND_ARGUMENTS__HPP
+#define NETSCHEDULE_JS_COMMAND_ARGUMENTS__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -26,46 +26,50 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov
+ * Authors:  Anatoliy Kuznetsov, Victor Joukov
  *
- * File Description: Notification thread
- *
+ * File Description: job request parameters
  *
  */
 
-#include <util/thread_nonstop.hpp>
+#include <connect/services/netservice_protocol_parser.hpp>
+#include <string>
+
+#include "ns_types.hpp"
+
 
 BEGIN_NCBI_SCOPE
 
-class CQueueDataBase;
 
-/// Thread class, notifies listeners
-///
-/// @internal
-class CJobNotificationThread : public CThreadNonStop
+struct SNSCommandArguments
 {
-public:
-    CJobNotificationThread(CQueueDataBase&  qdb,
-                           unsigned         run_delay,
-                           const bool &     logging)
-    : CThreadNonStop(run_delay),
-      m_QueueDB(qdb),
-      m_NotifLogging(logging)
-    {}
+    unsigned int    job_id;
+    int             job_return_code;
+    unsigned int    port;
+    unsigned int    timeout;
+    unsigned int    job_mask;
+    TJobStatus      job_status;
 
-    ~CJobNotificationThread();
+    string          auth_token;
+    string          input;
+    string          output;
+    string          affinity_token;
+    string          job_key;
+    string          err_msg;
+    string          comment;
+    string          ip;                 // ?
+    string          option;
+    string          progress_msg;
+    string          qname;
+    string          qclass;
+    string          sid;
+    string          job_status_string;
 
-    virtual void DoJob(void);
+    void AssignValues(const TNSProtoParams &  params);
 
-private:
-    CJobNotificationThread(const CJobNotificationThread&);
-    CJobNotificationThread& operator=(const CJobNotificationThread&);
-
-private:
-    CQueueDataBase &        m_QueueDB;
-    const bool &            m_NotifLogging;
+    private:
+        void x_Reset();
 };
-
 
 END_NCBI_SCOPE
 

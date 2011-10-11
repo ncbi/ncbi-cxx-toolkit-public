@@ -37,17 +37,27 @@
 
 #include "ns_types.hpp"
 #include "job_status.hpp"
+#include "ns_command_arguments.hpp"
+
 
 BEGIN_NCBI_SCOPE
 
 
-typedef pair<string, string> TNSTag;
-typedef list<TNSTag> TNSTagList;
-
 // Forward for CJob/CJobEvent friendship
 class CQueue;
-class CAffinityDictGuard;
-struct SJS_Request;
+
+
+// Used to specify what to fetch and what to include into a transaction
+enum EQueueJobTable {
+    eJobTable       = 1,
+    eJobInfoTable   = 2,
+    eJobEventsTable = 4,
+    eAffinityTable  = 8,
+    eAllTables      = eJobTable | eJobInfoTable |
+                      eJobEventsTable | eAffinityTable
+};
+
+
 
 // Instantiation of a Job on a Worker Node
 class CJob;
@@ -66,10 +76,12 @@ public:
         eReadFail,      // FRED
         eReadDone,      // CFRM
         eReadRollback,  // RDRB
+        eClear,         // CLRN
 
         eCancel,        // CANCEL
         eTimeout,       // exec timeout
-        eReadTimeout    // read timeout
+        eReadTimeout,   // read timeout
+        eSessionChanged // client has changed session
     };
 
     // Converts event code into its string representation
@@ -86,12 +98,12 @@ public:
     { return m_Timestamp; }
     unsigned GetNodeAddr() const
     { return m_NodeAddr; }
-    unsigned short GetNodePort() const
-    { return m_NodePort; }
     int      GetRetCode() const
     { return m_RetCode; }
-    const string& GetNodeId() const
-    { return m_NodeId; }
+    const string& GetClientNode() const
+    { return m_ClientNode; }
+    const string& GetClientSession() const
+    { return m_ClientSession; }
     const string& GetErrorMsg() const
     { return m_ErrorMsg; }
     const string GetQuotedErrorMsg() const
@@ -101,9 +113,9 @@ public:
     void SetEvent(EJobEvent  event);
     void SetTimestamp(time_t t);
     void SetNodeAddr(unsigned node_ip);
-    void SetNodePort(unsigned short port);
     void SetRetCode(int retcode);
-    void SetNodeId(const string& node_id);
+    void SetClientNode(const string& client_node);
+    void SetClientSession(const string& client_session);
     void SetErrorMsg(const string& msg);
 
     // generic access via field name
@@ -117,17 +129,16 @@ private:
 
     // SEventDB fields
     // id, event id - implicit
-    TJobStatus      m_Status;     ///< Job status after the event
-    EJobEvent       m_Event;      ///< Event
-    unsigned        m_Timestamp;  ///< event timestamp
-    unsigned        m_NodeAddr;   ///< IP of a client (typically, worker node)
-    unsigned short  m_NodePort;   ///< Notification port of a client
-    int             m_RetCode;    ///< Return code
-    string          m_NodeId;     //
-    string          m_ErrorMsg;   ///< Error message (exception::what())
+    TJobStatus      m_Status;           ///< Job status after the event
+    EJobEvent       m_Event;            ///< Event
+    unsigned        m_Timestamp;        ///< event timestamp
+    unsigned        m_NodeAddr;         ///< IP of a client (typically, worker node)
+    int             m_RetCode;          ///< Return code
+    string          m_ClientNode;       ///< Client node id
+    string          m_ClientSession;    ///< Client session
+    string          m_ErrorMsg;         ///< Error message (exception::what())
 };
 
-class CBDB_Transaction;
 
 // Internal representation of a Job
 // mirrors database tables SQueueDB, SJobInfoDB, and SEventsDB
@@ -145,12 +156,26 @@ public:
         eJF_NotFound = 1,
         eJF_DBErr    = 2
     };
+    enum EAuthTokenCompareResult {
+        eCompleteMatch = 0,
+        ePassportOnlyMatch = 1,
+        eNoMatch = 2,
+
+        eInvalidTokenFormat = 3
+    };
+
     CJob();
-    CJob(const SJS_Request&  request, unsigned submAddr);
+    CJob(const SNSCommandArguments &    request,
+         unsigned int                   submAddr);
 
     // Getter/setters
     unsigned       GetId() const
     { return m_Id; }
+    unsigned int   GetPassport() const
+    { return m_Passport; }
+    string         GetAuthToken() const
+    { return NStr::IntToString(m_Passport) + "_" +
+             NStr::SizetToString(m_Events.size()); }
     TJobStatus     GetStatus() const
     { return m_Status; }
     time_t         GetTimeSubmit() const
@@ -171,17 +196,11 @@ public:
     { return m_RunCount; }
     unsigned       GetReadCount() const
     { return m_ReadCount; }
-    unsigned       GetReadGroup() const
-    { return m_ReadGroup; }
-    const string&  GetProgressMsg() const
+    const string &  GetProgressMsg() const
     { return m_ProgressMsg; }
 
     unsigned       GetAffinityId() const
     { return m_AffinityId; }
-    bool           HasAffinityToken() const
-    { return m_AffinityToken.size() != 0; }
-    const string&  GetAffinityToken() const
-    { return m_AffinityToken; }
 
     unsigned       GetMask() const
     { return m_Mask; }
@@ -192,8 +211,6 @@ public:
 
     const vector<CJobEvent>& GetEvents() const
     { return m_Events; }
-    const TNSTagList& GetTags() const
-    { return m_Tags; }
     const string&  GetInput() const
     { return m_Input; }
     const string GetQuotedInput() const
@@ -203,30 +220,66 @@ public:
     const string GetQuotedOutput() const
     { return "'" + NStr::PrintableString(m_Output) + "'"; }
 
-    void           SetId(unsigned id);
-    void           SetStatus(TJobStatus status);
-    void           SetTimeSubmit(time_t t);
-    void           SetTimeout(time_t t);
-    void           SetRunTimeout(time_t t);
+    string GetErrorMsg() const;
+    int    GetRetCode() const;
 
-    void           SetSubmAddr(unsigned addr);
-    void           SetSubmPort(unsigned short port);
-    void           SetSubmTimeout(unsigned t);
+    void           SetId(unsigned id)
+    { m_Id = id;
+      m_Dirty |= fJobPart; }
+    void           SetPassport(unsigned int  passport)
+    { m_Passport = passport;
+      m_Dirty |= fJobPart; }
+    void           SetStatus(TJobStatus status)
+    { m_Status = status;
+      m_Dirty |= fJobPart; }
+    void           SetTimeSubmit(time_t t)
+    { m_TimeSubmit = (unsigned) t;
+      m_Dirty |= fJobPart; }
+    void           SetTimeout(time_t t)
+    { m_Timeout = (unsigned) t;
+      m_Dirty |= fJobPart; }
+    void           SetRunTimeout(time_t t)
+    { m_RunTimeout = (unsigned) t;
+      m_Dirty |= fJobPart; }
 
-    void           SetRunCount(unsigned count);
-    void           SetReadCount(unsigned count);
-    void           SetReadGroup(unsigned group);
-    void           SetProgressMsg(const string& msg);
-    void           SetAffinityId(unsigned aff_id);
-    void           SetAffinityToken(const string& aff_token);
-    void           SetMask(unsigned mask);
+    void           SetSubmAddr(unsigned addr)
+    { m_SubmAddr = addr;
+      m_Dirty |= fJobPart; }
+    void           SetSubmPort(unsigned short port)
+    { m_SubmPort = port;
+      m_Dirty |= fJobPart; }
+    void           SetSubmTimeout(unsigned t)
+    { m_SubmTimeout = t;
+      m_Dirty |= fJobPart; }
 
-    void           SetClientIP(const string& client_ip);
-    void           SetClientSID(const string& client_sid);
+    void           SetRunCount(unsigned count)
+    { m_RunCount = count;
+      m_Dirty |= fJobPart; }
+    void           SetReadCount(unsigned count)
+    { m_ReadCount = count;
+      m_Dirty |= fJobPart;
+    }
+    void           SetProgressMsg(const string& msg)
+    { m_ProgressMsg = msg;
+      m_Dirty |= fJobPart; }
+    void           SetAffinityId(unsigned aff_id)
+    { m_AffinityId = aff_id;
+      m_Dirty |= fJobPart; }
+    void           SetMask(unsigned mask)
+    { m_Mask = mask;
+      m_Dirty |= fJobPart; }
 
-    void           SetEvents(const vector<CJobEvent>& events);
-    void           SetTags(const TNSTagList& tags);
-    void           SetTags(const string& strtags);
+    void           SetClientIP(const string& client_ip)
+    { m_ClientIP = client_ip;
+      m_Dirty |= fJobPart; }
+    void           SetClientSID(const string& client_sid)
+    { m_ClientSID = client_sid;
+      m_Dirty |= fJobPart; }
+
+    void           SetEvents(const vector<CJobEvent>& events)
+    { m_Events = events;
+      m_Dirty |= fEventsPart; }
+
     void           SetInput(const string& input);
     void           SetOutput(const string& output);
 
@@ -244,11 +297,7 @@ public:
     time_t          GetJobExpirationTime(time_t  queue_timeout,
                                          time_t  queue_run_timeout) const;
 
-    // preparatory
-    // Lookup affinity token and fill out affinity id
-    void CheckAffinityToken(CAffinityDictGuard& aff_dict_guard);
-    // Using affinity id fill out affinity token
-    void FetchAffinityToken(CQueue* queue);
+    EAuthTokenCompareResult  CompareAuthToken(const string &  auth_token) const;
 
     // Mark job for deletion
     void Delete();
@@ -267,7 +316,6 @@ public:
     bool ShouldNotify(time_t curr);
 
 private:
-    void x_ParseTags(const string& strtags, TNSTagList& tags);
     // Service flags
     bool                m_New;     ///< Object should be inserted, not updated
     bool                m_Deleted; ///< Object with this id should be deleted
@@ -275,8 +323,9 @@ private:
 
     // Reflection of database structures
 
-    // Reside in SQueueDB table
+    // Reside in SJobDB table
     unsigned            m_Id;
+    unsigned int        m_Passport;
     TJobStatus          m_Status;
     unsigned            m_TimeSubmit;    ///< Job submit time
     unsigned            m_Timeout;       ///<     individual timeout
@@ -288,12 +337,8 @@ private:
 
     unsigned            m_RunCount;      ///< since last reschedule
     unsigned            m_ReadCount;
-    unsigned            m_ReadGroup;
     string              m_ProgressMsg;
-
     unsigned            m_AffinityId;
-    string              m_AffinityToken;
-
     unsigned            m_Mask;
 
     string              m_ClientIP;
@@ -303,7 +348,6 @@ private:
     vector<CJobEvent>   m_Events;
 
     // Reside in SJobInfoDB table (input and output - if over limit)
-    TNSTagList          m_Tags;
     string              m_Input;
     string              m_Output;
 };

@@ -58,7 +58,6 @@ struct SQueueParameters
     unsigned        max_output_size;
     bool            deny_access_violations;
     bool            log_access_violations;
-    bool            keep_affinity;
     string          subm_hosts;
     string          wnode_hosts;
     // This parameter is not reconfigurable

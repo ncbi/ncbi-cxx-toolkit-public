@@ -39,9 +39,11 @@
 #include <connect/services/netservice_protocol_parser.hpp>
 
 #include "ns_queue.hpp"
-#include "ns_js_request.hpp"
+#include "ns_command_arguments.hpp"
 #include "ns_server_misc.hpp"
 #include "netschedule_version.hpp"
+#include "ns_clients.hpp"
+#include "ns_access.hpp"
 
 
 
@@ -67,7 +69,6 @@ public:
     ~CNetScheduleHandler();
 
     // MessageHandler protocol
-    virtual EIO_Event GetEventsToPollFor(const CTime** alarm_time) const;
     virtual void      OnOpen(void);
     virtual void      OnWrite(void);
     virtual void      OnClose(IServer_ConnectionHandler::EClosePeer peer);
@@ -96,6 +97,7 @@ public:
         eStatus_BadAuth             = 401, ///< Operation is not permitted
         eStatus_HTTPProbe           = 402, ///< Routine test from systems
         eStatus_NotFound            = 404, ///< Job is not found
+        eStatus_BadQueue            = 405, ///< Queue not found
         eStatus_CmdTimeout          = 408, ///< Command timeout is exceeded
         eStatus_ServerError         = 500, ///< Internal server error
         eStatus_NoImpl              = 501, ///< Command is not implemented
@@ -107,6 +109,7 @@ public:
 
 private:
     // Message processing phases
+    unsigned int x_GetPeerAddress(void);
     void x_ProcessMsgAuth(BUF buffer);
     void x_ProcessMsgQueue(BUF buffer);
     void x_ProcessMsgRequest(BUF buffer);
@@ -119,26 +122,6 @@ private:
     void x_WriteMessageNoThrow(CTempString  prefix, CTempString msg);
 
 public:
-    enum ENSAccess {
-        eNSAC_Queue         = 1 << 0,
-        eNSAC_Worker        = 1 << 1,
-        eNSAC_Submitter     = 1 << 2,
-        eNSAC_Admin         = 1 << 3,
-        eNSAC_QueueAdmin    = 1 << 4,
-        eNSAC_Test          = 1 << 5,
-        eNSAC_DynQueueAdmin = 1 << 6,
-        eNSAC_DynClassAdmin = 1 << 7,
-        eNSAC_AnyAdminMask  = eNSAC_Admin | eNSAC_QueueAdmin |
-                              eNSAC_DynQueueAdmin | eNSAC_DynClassAdmin,
-        // Combination of flags for client roles
-        eNSCR_Any           = 0,
-        eNSCR_Queue         = eNSAC_Queue,
-        eNSCR_Worker        = eNSAC_Worker + eNSAC_Queue,
-        eNSCR_Submitter     = eNSAC_Submitter + eNSAC_Queue,
-        eNSCR_Admin         = eNSAC_Admin,
-        eNSCR_QueueAdmin    = eNSAC_QueueAdmin + eNSAC_Queue
-    };
-    typedef unsigned TNSClientRole;
 
     typedef void (CNetScheduleHandler::*FProcessor)(CQueue*);
     struct SCommandExtra {
@@ -186,8 +169,6 @@ private:
     void x_ProcessCreateQueue(CQueue*);
     void x_ProcessDeleteQueue(CQueue*);
     void x_ProcessQueueInfo(CQueue*);
-    void x_ProcessQuery(CQueue*);
-    void x_ProcessSelectQuery(CQueue*);
     void x_ProcessGetParam(CQueue*);
     void x_ProcessGetConfiguration(CQueue*);
     void x_ProcessReading(CQueue*);
@@ -199,9 +180,6 @@ private:
     void x_ProcessClearWorkerNode(CQueue*);
     void x_CmdNotImplemented(CQueue*);
 
-    // Delayed output handlers
-    void x_WriteProjection();
-
 private:
     CRef<CQueue> GetQueue(void) {
         CRef<CQueue> ref(m_QueueRef.Lock());
@@ -210,19 +188,13 @@ private:
         NCBI_THROW(CNetScheduleException, eUnknownQueue, "Job queue deleted");
     }
 
-    static void x_ParseTags(const std::string& strtags, TNSTagList& tags);
-    static std::string x_SerializeBitVector(TNSBitVector &  bv);
-    static TNSBitVector x_DeserializeBitVector(const std::string& s);
-
-    bool x_CheckVersion(void);
-    void x_CheckAccess(TNSClientRole role);
-    void x_AccessViolationMessage(unsigned deficit, std::string& msg);
     // Moved from CNetScheduleServer
     void x_StatisticsNew(CQueue* q, const std::string& what, time_t curr);
 
     void x_PrintRequestStart(const SParsedCmd& cmd);
     void x_PrintRequestStart(CTempString  msg);
     void x_PrintRequestStop(EHTTPStatus  status);
+    void x_CloseConnection(void);
 
     std::string  x_FormGetJobResponse(const CQueue* q, const CJob& job) const;
 
@@ -230,42 +202,27 @@ private:
     size_t                          m_MsgBufferSize;
     char*                           m_MsgBuffer;
 
-    unsigned                        m_PeerAddr;
     // CWorkerNode contains duplicates of m_AuthString and m_PeerAddr
-    TWorkerNodeRef                  m_WorkerNode;
     std::string                     m_RawAuthString;
-    std::string                     m_AuthClientName;
-    std::string                     m_AuthProgName;
+    CNSClientId                     m_ClientId;
 
     CNetScheduleServer*             m_Server;
     std::string                     m_QueueName;
     CWeakRef<CQueue>                m_QueueRef;
-    SJS_Request                     m_JobReq;
-
-    // Incapabilities - that is combination of ENSAccess
-    // rights, which can NOT be performed by this connection
-    unsigned                        m_Incaps;
-    unsigned                        m_Unreported;
-    bool                            m_VersionControl;
+    SNSCommandArguments             m_CommandArguments;
 
     // Phase of connection - login, queue, command, batch submit etc.
     void (CNetScheduleHandler::*m_ProcessMessage)(BUF buffer);
-    // Delayed output processor
-    void (CNetScheduleHandler::*m_DelayedOutput)();
 
     // Batch submit data
     unsigned                        m_BatchSize;
     unsigned                        m_BatchPos;
     CStopWatch                      m_BatchStopWatch;
-    vector<CJob>                    m_BatchJobs;
+    vector< pair<CJob, string> >    m_BatchJobs;    // Job + aff_token
     unsigned                        m_BatchSubmPort;
     unsigned                        m_BatchSubmTimeout;
     std::string                     m_BatchClientIP;
     std::string                     m_BatchClientSID;
-
-    // For projection writer
-    auto_ptr<TNSBitVector>          m_SelectedIds;
-    SFieldsDescription              m_FieldDescr;
 
     /// Quick local timer
     CFastLocalTime                  m_LocalTimer;

@@ -209,10 +209,6 @@ int CNetScheduleDApp::Run(void)
         if (qdb->Open(bdb_params, reinit) == false)
             return 1;
 
-        if (params.udp_port > 0) {
-            qdb->SetUdpPort(params.udp_port);
-        }
-
         if (params.is_daemon) {
             LOG_POST("Entering UNIX daemon mode...");
             bool daemon = CProcess::Daemonize(0, CProcess::fDontChroot);

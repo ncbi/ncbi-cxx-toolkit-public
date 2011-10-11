@@ -54,14 +54,11 @@ struct SQueueDbBlock
 
     bool                    allocated; // Am I allocated?
     int                     pos;       // My own pos in array
-    SQueueDB                job_db;
+    SJobDB                  job_db;
     SJobInfoDB              job_info_db;
     SEventsDB               events_db;
     SDeletedJobsDB          deleted_jobs_db;
-    SAffinityIdx            affinity_idx;
     SAffinityDictDB         aff_dict_db;
-    SAffinityDictTokenIdx   aff_dict_token_idx;
-    STagDB                  tag_db;
     SStartCounterDB         start_from_db;
 
 private:

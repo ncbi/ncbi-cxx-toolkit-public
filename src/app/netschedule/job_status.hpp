@@ -38,17 +38,14 @@
 ///
 /// @internal
 
-#include <corelib/ncbimtx.hpp>
-
-#include <connect/services/netschedule_api.hpp>
-
 #include <map>
+
+#include <corelib/ncbimtx.hpp>
 
 #include "ns_types.hpp"
 
 BEGIN_NCBI_SCOPE
 
-typedef CNetScheduleAPI::EJobStatus TJobStatus;
 
 /// In-Memory storage to track status of all jobs
 /// Syncronized thread safe class
@@ -108,15 +105,14 @@ public:
     bool GetPendingJobFromSet(TNSBitVector* candidate_set,
                               unsigned*     job_id);
 
-    /// Get any pending job, but it should NOT be in the unwanted list
-    /// Presumed, that unwanted jobs are speculatively assigned to other
-    /// worker nodes or postponed
-    bool GetPendingJob(const TNSBitVector& unwanted_jobs,
-                       unsigned*           job_id);
+    /// Provides a job id (or 0 if none) which is in the given state and is not
+    /// in the unwanted jobs list
+    unsigned int  GetJobByStatus(TJobStatus            status,
+                                 const TNSBitVector &  unwanted_jobs) const;
 
     /// Logical AND of candidates and pending jobs
     /// (candidate_set &= pending_set)
-    void PendingIntersect(TNSBitVector* candidate_set);
+    void PendingIntersect(TNSBitVector* candidate_set) const;
 
     /// Group switch up to 'count' jobs, not including ones from
     /// 'unwanted_jobs', from old_status to new_status
@@ -131,12 +127,6 @@ public:
 
     /// TRUE if we have pending jobs
     bool AnyPending() const;
-
-    /// Get first job id from DONE status
-    unsigned GetFirstDone() const;
-
-    /// Get first job in the specified status
-    unsigned GetFirst(TJobStatus status) const;
 
      /// Get next job in the specified status, or first if job_id is 0
     unsigned GetNext(TJobStatus status, unsigned job_id) const;
@@ -217,8 +207,6 @@ private:
     CJobStatusTracker& operator=(const CJobStatusTracker&);
 
 private:
-    //friend class CJSGuard;
-    friend class CNetSchedule_JSGroupGuard;
     TStatusStorage          m_StatusStor;
     mutable CRWLock         m_Lock;
     TNSBitVector            m_UsedIds; /// id access lock
@@ -230,188 +218,6 @@ private:
 
 };
 
-
-/// @internal
-class CNetSchedule_JS_Guard
-{
-public:
-    CNetSchedule_JS_Guard(
-        CJobStatusTracker& strack,
-        unsigned           job_id,
-        TJobStatus         status,
-        bool*              updated = 0)
-     : m_Tracker(strack),
-       m_OldStatus(-1),
-       m_JobId(job_id),
-       m_Updated(updated)
-    {
-        if (!job_id)
-            return;
-        m_OldStatus = strack.ChangeStatus(job_id, status, updated);
-    }
-
-    ~CNetSchedule_JS_Guard()
-    {
-        // roll back to the old status
-        if (m_OldStatus >= -1) {
-            m_Tracker.SetStatus(m_JobId, TJobStatus(m_OldStatus));
-        }
-    }
-
-    void Commit()
-    {
-        m_OldStatus = -2;
-    }
-
-    void SetStatus(TJobStatus status)
-    {
-        m_Tracker.SetStatus(m_JobId, status);
-    }
-
-    TJobStatus GetOldStatus() const
-    {
-        return TJobStatus(m_OldStatus);
-    }
-
-
-private:
-    CNetSchedule_JS_Guard(const CNetSchedule_JS_Guard&);
-    CNetSchedule_JS_Guard& operator=(CNetSchedule_JS_Guard&);
-
-private:
-    CJobStatusTracker& m_Tracker;
-    int                m_OldStatus;
-    unsigned           m_JobId;
-    bool*              m_Updated;
-};
-
-
-// External/internal guard for group operations on jobs.
-// Suggested pattern is that you make an undoable change on
-// status tracker yourself, put revert action into this guard
-// immediately after it and when you're happy with results, Commit
-// the guard releaves this undo info.
-// Another way is to supply new_status to the guard, so that it
-// switches status itself in constructor.
-class CNetSchedule_JSGroupGuard
-{
-public:
-    CNetSchedule_JSGroupGuard(
-        CJobStatusTracker&  strack,
-        TJobStatus          old_status,
-        const TNSBitVector& jobs,
-        TJobStatus          new_status = CNetScheduleAPI::eJobNotFound);
-
-    ~CNetSchedule_JSGroupGuard();
-
-    void Commit()
-    {
-        m_Commited = true;
-        m_Jobs.clear();
-    }
-
-private:
-    CJobStatusTracker& m_Tracker;
-    bool               m_Commited;
-    TJobStatus         m_OldStatus;
-    TJobStatus         m_NewStatusHint;
-    TNSBitVector       m_Jobs;
-};
-
-
-/* Not finished yet
-class CJSGuard
-{
-public:
-    CJSGuard(CJobStatusTracker& strack,
-             unsigned           job_id,
-             TJobStatus         status,
-             int                timeout_ms = -1);
-    ~CJSGuard()
-    {
-        Release();
-    }
-
-    void Commit()
-    {
-        CWriteLockGuard guard(m_Tracker.m_Lock);
-    }
-
-    void Release()
-    {
-        CWriteLockGuard guard(m_Tracker.m_Lock);
-        m_Tracker.m_UsedIds.set(m_JobId, false);
-    }
-
-private:
-    CJSGuard(const CJSGuard&);
-    CJSGuard& operator=(const CJSGuard&);
-
-private:
-    CJobStatusTracker& m_Tracker;
-    unsigned int       m_JobId;
-    TJobStatus         m_OldStatus;
-    TJobStatus         m_NewStatus;
-};
-*/
-/*
-/// Mutex to guard vector of busy IDs
-DEFINE_STATIC_FAST_MUTEX(x_NetSchedulerMutex_BusyID);
-
-
-/// Class guards the id, guarantees exclusive access to the object
-///
-/// @internal
-///
-class CIdBusyGuard
-{
-public:
-    CIdBusyGuard(TNSBitVector* id_set,
-                 unsigned int  id,
-                 unsigned      timeout)
-        : m_IdSet(id_set), m_Id(id)
-    {
-        _ASSERT(id);
-        unsigned cnt = 0; unsigned sleep_ms = 10;
-        while (true) {
-            {{
-            CFastMutexGuard guard(x_NetSchedulerMutex_BusyID);
-            if (!(*id_set)[id]) {
-                id_set->set(id);
-                break;
-            }
-            }}
-            cnt += sleep_ms;
-            if (cnt > timeout * 1000) {
-                NCBI_THROW(CNetServiceException,
-                           eTimeout, "Failed to lock object");
-            }
-            SleepMilliSec(sleep_ms);
-        } // while
-    }
-
-    ~CIdBusyGuard()
-    {
-        Release();
-    }
-
-    void Release()
-    {
-        if (m_Id) {
-            CFastMutexGuard guard(x_NetSchedulerMutex_BusyID);
-            m_IdSet->set(m_Id, false);
-            m_Id = 0;
-        }
-    }
-private:
-    CIdBusyGuard(const CIdBusyGuard&);
-    CIdBusyGuard& operator=(const CIdBusyGuard&);
-private:
-    TNSBitVector* m_IdSet;
-    unsigned int  m_Id;
-};
-
-*/
 
 END_NCBI_SCOPE
 

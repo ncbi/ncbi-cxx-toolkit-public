@@ -34,8 +34,8 @@
 #include <common/ncbi_package_ver.h>
 
 #define NETSCHEDULED_VERSION NCBI_PACKAGE_VERSION
-#define NETSCHEDULED_STORAGE_VERSION  "4.0.3"
-#define NETSCHEDULED_PROTOCOL_VERSION "1.3.0"
+#define NETSCHEDULED_STORAGE_VERSION  "4.2.0"
+#define NETSCHEDULED_PROTOCOL_VERSION "1.4.0"
 
 #define NETSCHEDULED_FULL_VERSION \
     "NCBI NetSchedule server Version " NETSCHEDULED_VERSION \
@@ -44,7 +44,7 @@
     " build " __DATE__ " " __TIME__
 
 #define NETSCHEDULED_FEATURES \
-    "fast_status=1;dyn_queues=1;tags=1;read_confirm=1;version=" NETSCHEDULED_VERSION
+    "fast_status=1;dyn_queues=1;read_confirm=1;version=" NETSCHEDULED_VERSION
 
 
 #endif /* NETSCHEDULE_VERSION__HPP */

@@ -171,7 +171,6 @@ CQueueDataBase::CQueueDataBase(CNetScheduleServer *  server)
   m_StopPurge(false),
   m_FreeStatusMemCnt(0),
   m_LastFreeMem(time(0)),
-  m_UdpPort(0),
   m_Server(server)
 {}
 
@@ -503,7 +502,8 @@ unsigned CQueueDataBase::Configure(const IRegistry& reg)
     }
 
     {{
-        CNS_Transaction trans(*m_Env);
+        CBDB_Transaction    trans(*m_Env, CBDB_Transaction::eEnvDefault,
+                                          CBDB_Transaction::eNoAssociation);
         m_QueueDescriptionDB.SetTransaction(&trans);
         // Allocate/deallocate queue db blocks according to merged info,
         // merge this info back into database.
@@ -632,8 +632,6 @@ void CQueueDataBase::MountQueue(const string&               qname,
     CQueue&             queue = m_QueueCollection.AddQueue(qname, q.release());
     unsigned            recs = queue.LoadStatusMatrix();
 
-    queue.SetPort(GetUdpPort());
-
     LOG_POST(Error << "Queue records = " << recs);
 }
 
@@ -656,7 +654,8 @@ void CQueueDataBase::CreateQueue(const string&  qname,
                    "\" for queue \"" + qname + "\"");
 
     // Find vacant position in queue block for new queue
-    CNS_Transaction     trans(*m_Env);
+    CBDB_Transaction    trans(*m_Env, CBDB_Transaction::eEnvDefault,
+                                      CBDB_Transaction::eNoAssociation);
     m_QueueDescriptionDB.SetTransaction(&trans);
 
     int     pos = x_AllocateQueue(qname, qclass,
@@ -677,7 +676,8 @@ void CQueueDataBase::CreateQueue(const string&  qname,
 void CQueueDataBase::DeleteQueue(const string&      qname)
 {
     CFastMutexGuard         guard(m_ConfigureLock);
-    CNS_Transaction         trans(*m_Env);
+    CBDB_Transaction        trans(*m_Env, CBDB_Transaction::eEnvDefault,
+                                          CBDB_Transaction::eNoAssociation);
 
     m_QueueDescriptionDB.SetTransaction(&trans);
     m_QueueDescriptionDB.queue = qname;
@@ -884,13 +884,6 @@ void CQueueDataBase::Purge(void)
 
     global_del_rec += unc_del_rec;
 
-    // TODO: Handle tags here - see below for affinity
-
-    // Remove unused affinity elements
-    NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
-        (*it).ClearAffinityIdx();
-    }
-
     TransactionCheckPoint();
 
     m_FreeStatusMemCnt += global_del_rec;
@@ -986,11 +979,9 @@ void CQueueDataBase::StopPurgeThread(void)
 
 void CQueueDataBase::RunNotifThread(void)
 {
-    if (GetUdpPort() == 0)
-        return;
-
-    m_NotifThread.Reset(new CJobNotificationThread(
-                                *this, 1,
+    // 10 times per second
+    m_NotifThread.Reset(new CGetJobNotificationThread(
+                                *this, 0, 100000000,
                                 m_Server->IsLogNotificationThread()));
     m_NotifThread->Run();
 }

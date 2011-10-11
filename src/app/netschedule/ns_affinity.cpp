@@ -23,9 +23,9 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov, Victor Joukov
+ * Authors:  Sergey Satskiy
  *
- * File Description: Network scheduler affinity.
+ * File Description: NeSchedule affinity registry
  *
  */
 #include <ncbi_pch.hpp>
@@ -38,283 +38,357 @@
 
 BEGIN_NCBI_SCOPE
 
-static const unsigned kMaxDeadLocks = 100;  // max. dead lock repeats
+
+CNSAffinityRegistry::CNSAffinityRegistry() :
+    m_AffDictDB(NULL),
+    m_LastAffinityID(0)
+{}
 
 
-CAffinityDict::CAffinityDict()
-: m_AffDictDB(0),
-  m_CurAffDB(0),
-  m_AffDict_TokenIdx(0),
-  m_CurTokenIdx(0)
-{
-    m_IdCounter.Set(0);
-}
-
-
-CAffinityDict::~CAffinityDict()
-{
-    try {
-        Detach();
-    }
-    catch (exception& ex)
-    {
-        ERR_POST("Error while detaching from affinity dictionary "
-                 << ex.what());
-    }
-}
-/*
-void CAffinityDict::Close()
-{
-    CFastMutexGuard guard(m_DbLock);
-
-    delete m_CurAffDB; m_CurAffDB = 0;
-    delete m_CurTokenIdx; m_CurTokenIdx = 0;
-    delete m_AffDictDB; m_AffDictDB = 0;
-    delete m_AffDict_TokenIdx; m_AffDict_TokenIdx = 0;
-}
-
-
-void CAffinityDict::Open(CBDB_Env& env, const string& queue_name)
-{
-    Close();
-
-    CFastMutexGuard guard(m_DbLock);
-
-    m_AffDictDB = new SAffinityDictDB();
-    m_AffDict_TokenIdx = new SAffinityDictTokenIdx();
-
-    {{
-    string fname = string("jsq_") + queue_name + string("_affdict.db");
-    m_AffDictDB->SetEnv(env);
-    m_AffDictDB->Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
-
-    }}
-
-    {{
-    string fname = string("jsq_") + queue_name + string("_affdict_token.idx");
-    m_AffDict_TokenIdx->SetEnv(env);
-    m_AffDict_TokenIdx->Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
-    }}
-
-    m_CurAffDB    = new CBDB_FileCursor(*m_AffDictDB);
-    m_CurTokenIdx = new CBDB_FileCursor(*m_AffDict_TokenIdx);
-
-    {{
-    m_CurAffDB->SetCondition(CBDB_FileCursor::eLast);
-    if (m_CurAffDB->Fetch() == eBDB_Ok) {
-        unsigned aff_id = m_AffDictDB->aff_id;
-        m_IdCounter.Set(aff_id);
-    }
-    }}
-}
-*/
-
-
-void CAffinityDict::Attach(SAffinityDictDB* aff_dict_db,
-                           SAffinityDictTokenIdx* aff_dict_token_idx)
+CNSAffinityRegistry::~CNSAffinityRegistry()
 {
     Detach();
-    m_AffDictDB        = aff_dict_db;
-    m_AffDict_TokenIdx = aff_dict_token_idx;
-    m_CurAffDB         = new CBDB_FileCursor(*m_AffDictDB);
-    m_CurTokenIdx      = new CBDB_FileCursor(*m_AffDict_TokenIdx);
-    {{
-        CBDB_CursorGuard cg(*m_CurAffDB);
-        m_CurAffDB->SetCondition(CBDB_FileCursor::eLast);
-        if (m_CurAffDB->Fetch() == eBDB_Ok) {
-            unsigned aff_id = m_AffDictDB->aff_id;
-            m_IdCounter.Set(aff_id);
-        }
-    }}
-    m_CurTokenIdx->Close();
+    x_Clear();
+    return;
 }
 
 
-void CAffinityDict::Detach()
+void CNSAffinityRegistry::Attach(SAffinityDictDB *  aff_dict_db)
 {
-    delete m_CurAffDB; m_CurAffDB = 0;
-    delete m_CurTokenIdx; m_CurTokenIdx = 0;
-    m_AffDictDB = 0;
-    m_AffDict_TokenIdx = 0;
+    m_AffDictDB = aff_dict_db;
 }
 
 
-unsigned CAffinityDict::x_CheckToken(const string&     aff_token,
-                                     CBDB_Transaction& trans)
+void CNSAffinityRegistry::Detach(void)
 {
-    unsigned aff_id;
+    m_AffDictDB = NULL;
+}
 
-    unsigned dead_locks = 0; // dead lock counter
-    while (1) {
-        try {
-            // check if affinity token string already registered
-            {{
-                CBDB_CursorGuard cg1(*m_CurTokenIdx);
-                m_CurTokenIdx->ReOpen(&trans);
-                m_CurTokenIdx->SetCondition(CBDB_FileCursor::eEQ);
-                m_CurTokenIdx->From << aff_token;
-                if (m_CurTokenIdx->Fetch() == eBDB_Ok) {
-                    aff_id = m_AffDict_TokenIdx->aff_id;
-                    return aff_id;
-                }
-            }}
 
-            // add new affinity token
+void  CNSAffinityRegistry::InitLastAffinityID(unsigned int  value)
+{
+    CFastMutexGuard     guard(m_LastAffinityIDLock);
+    m_LastAffinityID = value;
+    return;
+}
 
-            while (1) {
-                aff_id = m_IdCounter.Add(1);
 
-                // make sure it is not there yet
+unsigned int
+CNSAffinityRegistry::GetIDByToken(const string &  aff_token) const
+{
+    if (aff_token.empty())
+        return 0;
 
-                {{
-                CBDB_CursorGuard cg2(*m_CurAffDB);
-                m_CurAffDB->ReOpen(&trans);
-                m_CurAffDB->SetCondition(CBDB_FileCursor::eEQ);
-                m_CurAffDB->From << aff_id;
-                if (m_CurAffDB->Fetch() == eBDB_Ok) {
-                    aff_id = m_AffDictDB->aff_id;
-                    if (aff_id > (unsigned)m_IdCounter.Get()) {
-                        m_IdCounter.Set(aff_id);
-                    }
-                    continue;
-                }
-                }}
+    CReadLockGuard                              guard(m_Lock);
+    map< const string *,
+         unsigned int,
+         SNSTokenCompare >::const_iterator      affinity = m_AffinityIDs.find(&aff_token);
 
-                m_AffDictDB->SetTransaction(&trans);
+    if (affinity == m_AffinityIDs.end())
+        return 0;
+    return affinity->second;
+}
 
-                m_AffDictDB->aff_id = aff_id;
-                m_AffDictDB->token = aff_token;
 
-                EBDB_ErrCode err = m_AffDictDB->Insert();
-                if (err == eBDB_KeyDup) {
-                    ERR_POST("Duplicate record (" + aff_token +
-                             ")in affinity dictionary.");
-                    continue;
-                }
+string  CNSAffinityRegistry::GetTokenByID(unsigned int  aff_id) const
+{
+    if (aff_id == 0)
+        return "";
 
-                m_AffDict_TokenIdx->SetTransaction(&trans);
-                m_AffDict_TokenIdx->aff_id = aff_id;
-                m_AffDict_TokenIdx->token = aff_token;
+    CReadLockGuard                              guard(m_Lock);
+    map< unsigned int,
+         SNSJobsAffinity >::const_iterator      found = m_JobsAffinity.find(aff_id);
+    if (found == m_JobsAffinity.end())
+        return "";
+    return *(found->second.m_AffToken);
+}
 
-                m_AffDict_TokenIdx->UpdateInsert();
 
-                break;
-            } // while
-        } catch (CBDB_ErrnoException& ex) {
-            if (ex.IsDeadLock() || ex.IsNoMem()) {
-                if (++dead_locks < kMaxDeadLocks) {
-                    SleepMilliSec(250);
-                    continue;
-                }
-            } else
-                throw;
+// Adds a new record in the database if required
+// and adds the job to the affinity
+unsigned int
+CNSAffinityRegistry::ResolveAffinityToken(const string &     token,
+                                          unsigned int       job_id)
+{
+    CWriteLockGuard         guard(m_Lock);
 
-            ERR_POST("Too many transaction repeats in CAffinityDict::CheckToken.");
-            throw;
-        }
-        break;
+    // Search for this affinity token
+    map< const string *,
+         unsigned int,
+         SNSTokenCompare >::const_iterator      found = m_AffinityIDs.find(&token);
+    if (found != m_AffinityIDs.end()) {
+        // This token is known. Update the jobs vector and finish
+        unsigned int    aff_id = found->second;
+
+        map< unsigned int,
+             SNSJobsAffinity >::iterator        jobs_affinity = m_JobsAffinity.find(aff_id);
+        jobs_affinity->second.m_Jobs.set(job_id, true);
+        return aff_id;
     }
+
+    // Here: this is a new token. The DB and memory structures should be
+    //       created. Let's start with a new identifier.
+    unsigned int    aff_id = x_GetNextAffinityID();
+    for (;;) {
+        if (m_JobsAffinity.find(aff_id) == m_JobsAffinity.end())
+            break;
+        aff_id = x_GetNextAffinityID();
+    }
+
+    // Create a record in the token->id map
+    string *    new_token = new string(token);
+    m_AffinityIDs[new_token] = aff_id;
+
+    // Create a record in the id->attributes map
+    SNSJobsAffinity     new_job_affinity;
+    new_job_affinity.m_AffToken = new_token;
+    new_job_affinity.m_Jobs.set(job_id, true);
+    m_JobsAffinity[aff_id] = new_job_affinity;
+
+    // Update the database. The transaction is created in the outer scope.
+    m_AffDictDB->aff_id = aff_id;
+    m_AffDictDB->token = token;
+    m_AffDictDB->UpdateInsert();
 
     return aff_id;
 }
 
 
-unsigned CAffinityDict::GetTokenId(const string& aff_token)
+TNSBitVector
+CNSAffinityRegistry::GetAffinityIDs(const list< string > &  tokens) const
 {
-    unsigned aff_id;
+    TNSBitVector                                result;
+    CReadLockGuard                              guard(m_Lock);
+    map< const string *,
+         unsigned int,
+         SNSTokenCompare >::const_iterator      found;
 
-    CFastMutexGuard guard(m_DbLock);
+    for (list<string>::const_iterator  k = tokens.begin(); k != tokens.end(); ++k) {
+        const string &      token = *k;
 
-    m_AffDictDB->SetTransaction(0);
-    m_AffDict_TokenIdx->SetTransaction(0);
-
-    CBDB_CursorGuard cg1(*m_CurTokenIdx);
-    m_CurTokenIdx->ReOpen(0);
-    m_CurTokenIdx->SetCondition(CBDB_FileCursor::eEQ);
-    m_CurTokenIdx->From << aff_token;
-    if (m_CurTokenIdx->Fetch() == eBDB_Ok) {
-        aff_id = m_AffDict_TokenIdx->aff_id;
-        return aff_id;
+        if (!token.empty()) {
+            found = m_AffinityIDs.find(&token);
+            if (found != m_AffinityIDs.end())
+                result.set(found->second, true);
+        }
     }
-    return 0;
+    return result;
 }
 
 
-void CAffinityDict::GetTokensIds(const list<string>& tokens, TNSBitVector& ids)
+map< string, unsigned int >
+CNSAffinityRegistry::GetJobsPerToken(void) const
 {
-    CFastMutexGuard guard(m_DbLock);
-    m_AffDict_TokenIdx->SetTransaction(0);
+    map< string, unsigned int >     result;
+    CReadLockGuard                  guard(m_Lock);
 
-    ITERATE(list<string>, it, tokens) {
-        m_AffDict_TokenIdx->token = *it;
-        if (m_AffDict_TokenIdx->Fetch() != eBDB_Ok)
+    for (map< unsigned int,
+              SNSJobsAffinity >::const_iterator  k = m_JobsAffinity.begin();
+         k != m_JobsAffinity.end(); ++k) {
+        unsigned int    count = k->second.m_Jobs.count();
+        if (count > 0)
+            result[ *(k->second.m_AffToken) ] = count;
+    }
+    return result;
+}
+
+
+TNSBitVector
+CNSAffinityRegistry::GetJobsWithAffinity(const TNSBitVector &  aff_ids) const
+{
+    TNSBitVector                            result;
+    TNSBitVector::enumerator                aff_id_en = aff_ids.first();
+    unsigned int                            aff_id;
+    map< unsigned int,
+         SNSJobsAffinity >::const_iterator  found;
+    CReadLockGuard                          guard(m_Lock);
+
+    for (; aff_id_en.valid(); ++aff_id_en) {
+        aff_id = *aff_id_en;
+        if (aff_id == 0)
             continue;
 
-        ids.set(m_AffDict_TokenIdx->aff_id);
+        found = m_JobsAffinity.find(aff_id);
+        if (found != m_JobsAffinity.end())
+            result |= (found->second.m_Jobs);
     }
+    return result;
 }
 
 
-string CAffinityDict::GetAffToken(unsigned aff_id)
+TNSBitVector
+CNSAffinityRegistry::GetJobsWithAffinity(unsigned int  aff_id) const
 {
-    string              token;
-    CFastMutexGuard     guard(m_DbLock);
+    if (aff_id == 0)
+        return TNSBitVector();
 
-    m_AffDictDB->SetTransaction(0);
+    CReadLockGuard                          guard(m_Lock);
+    map< unsigned int,
+         SNSJobsAffinity >::const_iterator  found = m_JobsAffinity.find(aff_id);
+
+    if (found != m_JobsAffinity.end())
+        return found->second.m_Jobs;
+    return TNSBitVector();
+}
+
+
+// Removes the job from affinity and might remove the records if there are no
+// more jobs with this affinity. Deletes a record from the DB if required.
+// The transaction is set in the outer scope.
+void CNSAffinityRegistry::RemoveJobFromAffinity(unsigned int  job_id,
+                                                unsigned int  aff_id)
+{
+    if (job_id == 0 || aff_id == 0)
+        return;
+
+    CWriteLockGuard                     guard(m_Lock);
+    map< unsigned int,
+         SNSJobsAffinity >::iterator    found = m_JobsAffinity.find(aff_id);
+
+    if (found != m_JobsAffinity.end())
+        // The affinity is not known
+        return;
+
+    TNSBitVector &      aff_jobs = found->second.m_Jobs;
+
+    aff_jobs.set(job_id, false);
+    if (aff_jobs.any())
+        // There are still some jobs with this affinity
+        return;
+
+    // No more jobs with this affinity - clean up the data structures
+    map< const string *,
+         unsigned int,
+         SNSTokenCompare >::iterator    aff_tok = m_AffinityIDs.find(found->second.m_AffToken);
+    if (aff_tok != m_AffinityIDs.end())
+        m_AffinityIDs.erase(aff_tok);
+
+    delete found->second.m_AffToken;
+    m_JobsAffinity.erase(found);
+
     m_AffDictDB->aff_id = aff_id;
-
-    if (m_AffDictDB->Fetch() != eBDB_Ok)
-        return kEmptyStr;
-
-    m_AffDictDB->token.ToString(token);
-    return token;
+    m_AffDictDB->Delete(CBDB_File::eIgnoreError);
+    return;
 }
 
 
-void CAffinityDict::x_RemoveToken(unsigned          aff_id,
-                                  CBDB_Transaction& trans)
+// Reads the DB and fills in two maps. The jobs list for a certain affinity is
+// empty at this stage.
+// A set of AddJobToAffinity(...) calls is expected after loading the
+// dictionary.
+// The final step in the loading affinities is to get the
+// FinalizeAffinityDictionaryLoading() call.
+void  CNSAffinityRegistry::LoadAffinityDictionary(void)
 {
-    unsigned        dead_locks = 0; // dead lock counter
-    while (1) {
-        try {
-            {{
-                CBDB_CursorGuard    cg1(*m_CurAffDB);
+    CBDB_FileCursor     cur(*m_AffDictDB);
 
-                m_CurAffDB->ReOpen(&trans);
-                m_CurAffDB->SetCondition(CBDB_FileCursor::eEQ);
-                m_CurAffDB->From << aff_id;
+    cur.InitMultiFetch(1024*1024);
+    cur.SetCondition(CBDB_FileCursor::eGE);
+    cur.From << 0;
+    for (; cur.Fetch() == eBDB_Ok;) {
+        unsigned int        aff_id = m_AffDictDB->aff_id;
+        string *            new_token = new string(m_AffDictDB->token);
+        SNSJobsAffinity     new_record;
 
-                if (m_CurAffDB->Fetch() != eBDB_Ok)
-                    return;
-            }}
+        new_record.m_AffToken = new_token;
 
-            string      token;
-            m_AffDictDB->token.ToString(token);
-
-            m_AffDict_TokenIdx->SetTransaction(&trans);
-            m_AffDictDB->SetTransaction(&trans);
-
-            m_AffDict_TokenIdx->token = token;
-            m_AffDict_TokenIdx->Delete(CBDB_RawFile::eIgnoreError);
-
-            m_AffDictDB->aff_id = aff_id;
-            m_AffDictDB->Delete(CBDB_RawFile::eIgnoreError);
-        } catch (CBDB_ErrnoException& ex) {
-            if (ex.IsDeadLock() || ex.IsNoMem()) {
-                if (++dead_locks < kMaxDeadLocks) {
-                    SleepMilliSec(250);
-                    continue;
-                }
-            } else
-                throw;
-
-            ERR_POST("Too many transaction repeats in CAffinityDict::x_RemoveToken.");
-            throw;
-        }
-        break;
+        m_JobsAffinity[aff_id] = new_record;
+        m_AffinityIDs[new_token] = aff_id;
     }
+    return;
 }
 
+
+// Adds one job to the affinity.
+// The affinity must exist in the dictionary, otherwise it is an internal logic
+// error.
+void  CNSAffinityRegistry::AddJobToAffinity(unsigned int  job_id,
+                                            unsigned int  aff_id)
+{
+    CWriteLockGuard                     guard(m_Lock);
+    map< unsigned int,
+         SNSJobsAffinity >::iterator    found = m_JobsAffinity.find(aff_id);
+
+    if (found == m_JobsAffinity.end())
+        // It is likely an internal error
+        return;
+
+    found->second.m_Jobs.set(job_id, true);
+    return;
+}
+
+
+// Deletes all the records for which there are no jobs. It might happened
+// because the DB reloading might happened after a long delay and some jobs
+// could be expired by that time.
+// After all the initial value of the affinity ID is set as the max value of
+// those which survived.
+void  CNSAffinityRegistry::FinalizeAffinityDictionaryLoading(void)
+{
+    vector< unsigned int >              to_delete;
+    unsigned int                        max_aff_id = 0;
+    CWriteLockGuard                     guard(m_Lock);
+    map< unsigned int,
+         SNSJobsAffinity >::iterator    candidate = m_JobsAffinity.begin();
+    for ( ; candidate != m_JobsAffinity.end(); ++candidate ) {
+        if (!candidate->second.m_Jobs.any())
+            to_delete.push_back(candidate->first);
+        else {
+            if (candidate->first > max_aff_id)
+                max_aff_id = candidate->first;
+        }
+    }
+
+    // Delete those records for which there are no jobs
+    map< const string *,
+         unsigned int,
+         SNSTokenCompare >::iterator        aff_tok;
+    for (vector< unsigned int >::const_iterator  aff_id = to_delete.begin();
+         aff_id != to_delete.end(); ++aff_id) {
+        candidate = m_JobsAffinity.find(*aff_id);
+        if (candidate == m_JobsAffinity.end())
+            // Though it is likely an internal error
+            continue;
+        aff_tok = m_AffinityIDs.find(candidate->second.m_AffToken);
+        if (aff_tok != m_AffinityIDs.end())
+            m_AffinityIDs.erase(aff_tok);
+        delete candidate->second.m_AffToken;
+        m_JobsAffinity.erase(candidate);
+    }
+
+    // Update the affinity id
+    InitLastAffinityID(max_aff_id);
+    return;
+}
+
+
+void CNSAffinityRegistry::x_Clear(void)
+{
+
+    // Delete all the allocated strings
+    CWriteLockGuard                     guard(m_Lock);
+    map< unsigned int,
+         SNSJobsAffinity >::iterator    jobs_affinity = m_JobsAffinity.begin();
+    for (; jobs_affinity != m_JobsAffinity.end(); ++jobs_affinity)
+        delete jobs_affinity->second.m_AffToken;
+
+    // Clear containers
+    m_AffinityIDs.clear();
+    m_JobsAffinity.clear();
+    return;
+}
+
+
+unsigned int
+CNSAffinityRegistry::x_GetNextAffinityID(void)
+{
+    CFastMutexGuard     guard(m_LastAffinityIDLock);
+
+    ++m_LastAffinityID;
+    if (m_LastAffinityID == 0)
+        ++m_LastAffinityID;
+    return m_LastAffinityID;
+}
 
 END_NCBI_SCOPE
 

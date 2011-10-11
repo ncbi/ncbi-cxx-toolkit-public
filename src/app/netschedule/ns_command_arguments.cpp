@@ -33,85 +33,79 @@
 #include <connect/services/netschedule_api.hpp>
 
 
-#include "ns_js_request.hpp"
+#include "ns_command_arguments.hpp"
 
 USING_NCBI_SCOPE;
 
 
-void SJS_Request::Init()
+void SNSCommandArguments::x_Reset()
 {
     job_id          = 0;
     job_return_code = 0;
     port            = 0;
     timeout         = 0;
     job_mask        = 0;
-    count           = 0;
+    job_status      = CNetScheduleAPI::eJobNotFound;
 
+    auth_token.erase();
     input.erase();
     output.erase();
     affinity_token.erase();
     job_key.erase();
     err_msg.erase();
-    param1.erase();
-    param2.erase();
-    param3.erase();
+    comment.erase();
+    ip.erase();
+    option.erase();
+    progress_msg.erase();
+    qname.erase();
+    qclass.erase();
+    sid.erase();
+    job_status_string.erase();
+
     return;
 }
 
 
-SJS_Request::EInputStatus SJS_Request::SetParamFields(TNSProtoParams& params)
+void SNSCommandArguments::AssignValues(const TNSProtoParams &  params)
 {
-    NON_CONST_ITERATE(TNSProtoParams, it, params) {
+    x_Reset();
+
+    ITERATE(TNSProtoParams, it, params) {
         const CTempString &     key = it->first;
-        CTempString &           val = it->second;
+        const CTempString &     val = it->second;
 
         if (key.empty())
             continue;
 
         if (val.size() > kNetScheduleMaxDBDataSize - 1  &&
             key != "input"   &&
-            key != "output"  &&
-            key != "tags"    &&  // These 3 cases are not critical but
-            key != "where"   &&  // input and output sizes are controlled
-            key != "fields")     // in more intelligent manner.
+            key != "output")
         {
-            return eStatus_TooLong;
+            NCBI_THROW(CNetScheduleException, eDataTooLong,
+                       "User input exceeds the limit.");
         }
 
         switch (key[0]) {
         case 'a':
             if (key == "aff")
                 affinity_token = val;
-            else if (key == "affp")
-                param1 = val;
-            else if (key == "action")
-                param2 = val;
+            else if (key == "auth_token") {
+                auth_token = val;
+            }
             break;
         case 'c':
-            if (key == "count")
-                count = NStr::StringToUInt(val, NStr::fConvErr_NoThrow);
-            else if (key == "comment")
-                param3 = val;
+            if (key == "comment")
+                comment = val;
             break;
         case 'e':
             if (key == "err_msg")
                 err_msg = val;
             break;
-        case 'f':
-            if (key == "fields")
-                param3 = val;
-            break;
-        case 'g':
-            if (key == "guid")
-                param1 = val;
-            break;
         case 'i':
             if (key == "input")
                 input = val;
             else if (key == "ip")
-                param3 = val;
-            else if (key == "info")
-                param1 = val;
+                ip = val;
             break;
         case 'j':
             if (key == "job_key") {
@@ -130,43 +124,37 @@ SJS_Request::EInputStatus SJS_Request::SetParamFields(TNSProtoParams& params)
             if (key == "output")
                 output = val;
             else if (key == "option")
-                param1 = val;
+                option = val;
             break;
         case 'p':
             if (key == "port")
                 port = NStr::StringToUInt(val, NStr::fConvErr_NoThrow);
             else if (key == "progress_msg")
-                param1 = val;
+                progress_msg = val;
             break;
         case 'q':
             if (key == "qname")
-                param1 = val;
+                qname = val;
             else if (key == "qclass")
-                param2 = val;
+                qclass = val;
             break;
         case 's':
-            if (key == "status")
-                param1 = val;
-            else if (key == "select")
-                param1 = val;
+            if (key == "status") {
+                job_status = CNetScheduleAPI::StringToStatus(val);
+                job_status_string = val;
+            }
             else if (key == "sid")
-                param2 = val;
+                sid = val;
             break;
         case 't':
             if (key == "timeout")
                 timeout = NStr::StringToUInt(val, NStr::fConvErr_NoThrow);
-            else if (key == "tags")
-                tags = val;
-            break;
-        case 'w':
-            if (key == "where")
-                param1 = val;
             break;
         default:
             break;
         }
     }
 
-    return eStatus_OK;
+    return;
 }
 

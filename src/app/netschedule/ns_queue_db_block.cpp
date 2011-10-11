@@ -86,34 +86,11 @@ void SQueueDbBlock::Open(CBDB_Env& env, const string& path, int pos_)
         deleted_jobs_db.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
 
         if (group_tables_for_queue)
-            tname = "affid";
-        else
-            fname = prefix + "_affid.idx";
-        affinity_idx.SetEnv(env);
-        affinity_idx.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
-
-        if (group_tables_for_queue)
             tname = "affdict";
         else
             fname = prefix + "_affdict.db";
         aff_dict_db.SetEnv(env);
         aff_dict_db.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
-
-        if (group_tables_for_queue)
-            tname = "affdict_token";
-        else
-            fname = prefix + "_affdict_token.idx";
-        aff_dict_token_idx.SetEnv(env);
-        aff_dict_token_idx.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
-
-        if (group_tables_for_queue)
-            tname = "tag";
-        else
-            fname = prefix + "_tag.idx";
-        tag_db.SetEnv(env);
-        tag_db.SetPageSize(32*1024);
-        tag_db.RevSplitOff();
-        tag_db.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
 
         if (group_tables_for_queue)
             tname = "start_from";
@@ -145,10 +122,7 @@ void SQueueDbBlock::x_InitStartCounter(void)
 void SQueueDbBlock::Close()
 {
     start_from_db.Close();
-    tag_db.Close();
-    aff_dict_token_idx.Close();
     aff_dict_db.Close();
-    affinity_idx.Close();
     deleted_jobs_db.Close();
     events_db.Close();
     job_info_db.Close();
@@ -159,10 +133,7 @@ void SQueueDbBlock::Close()
 void SQueueDbBlock::Truncate()
 {
     start_from_db.SafeTruncate();
-    tag_db.SafeTruncate();
-    aff_dict_token_idx.SafeTruncate();
     aff_dict_db.SafeTruncate();
-    affinity_idx.SafeTruncate();
     deleted_jobs_db.SafeTruncate();
     events_db.SafeTruncate();
     job_info_db.SafeTruncate();

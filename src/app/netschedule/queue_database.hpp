@@ -49,11 +49,10 @@
 #include "ns_format.hpp"
 #include "job_status.hpp"
 #include "queue_clean_thread.hpp"
-#include "notif_thread.hpp"
+#include "ns_notifications.hpp"
 #include "ns_queue.hpp"
 #include "queue_vc.hpp"
 #include "background_host.hpp"
-#include "worker_node.hpp"
 #include "queue_coll.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -161,9 +160,6 @@ public:
     void StopExecutionWatcherThread(void);
 
 
-    void SetUdpPort(unsigned short port) { m_UdpPort = port; }
-    unsigned short GetUdpPort(void) const { return m_UdpPort; }
-
     /// Force transaction checkpoint
     void TransactionCheckPoint(bool clean_log=false);
 
@@ -225,9 +221,8 @@ private:
     CFastMutex           m_PurgeLock;
     unsigned             m_FreeStatusMemCnt;  ///< Free memory counter
     time_t               m_LastFreeMem;       ///< time of the last memory opt
-    unsigned short       m_UdpPort;           ///< UDP notification port
 
-    CRef<CJobNotificationThread>             m_NotifThread;
+    CRef<CGetJobNotificationThread>          m_NotifThread;
     CRef<CJobQueueExecutionWatcherThread>    m_ExeWatchThread;
     CNetScheduleServer*                      m_Server;
 
