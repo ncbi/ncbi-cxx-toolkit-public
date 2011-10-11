@@ -458,6 +458,12 @@ _PSIInternalPssmDataNew(Uint4 query_length, Uint4 alphabet_size)
         return _PSIInternalPssmDataFree(retval);
     }
 
+    retval->pseudocounts = (double*) calloc(query_length, sizeof(double));
+
+    if ( !retval->pseudocounts ) {
+        return _PSIInternalPssmDataFree(retval);
+    }
+
     return retval;
 }
 
@@ -483,6 +489,10 @@ _PSIInternalPssmDataFree(_PSIInternalPssmData* pssm_data)
         pssm_data->freq_ratios = (double**) 
             _PSIDeallocateMatrix((void**) pssm_data->freq_ratios, 
                                  pssm_data->ncols);
+    }
+
+    if (pssm_data->pseudocounts) {
+        sfree(pssm_data->pseudocounts);
     }
 
     sfree(pssm_data);
@@ -1965,6 +1975,9 @@ _PSIComputeFreqRatios(const _PSIMsa* msa,
                 double denominator = 0.0;       /* intermediate term */
                 double qOverPEstimate = 0.0;    /* intermediate term */
 
+                /* so that it can be saved in diagnostics */
+                internal_pssm->pseudocounts[p] = kBeta;
+
                 /* As specified in 2001 paper, underlying matrix frequency 
                    ratios are used here */
                 for (i = 0; i < msa->alphabet_size; i++) {
@@ -2523,6 +2536,7 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 {
     Uint4 p = 0;                  /* index on positions */
     Uint4 r = 0;                  /* index on residues */
+    const Uint1 kXResidue = AMINOACID_TO_NCBISTDAA['X'];
 
     if ( !diagnostics || !msa || !aligned_block || !seq_weights ||
          !internal_pssm  || !internal_pssm->freq_ratios ) {
@@ -2573,8 +2587,19 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 
     if (diagnostics->gapless_column_weights) {
         for (p = 0; p < diagnostics->query_length; p++) {
-            diagnostics->gapless_column_weights[p] =
-                seq_weights->gapless_column_weights[p];
+            if (msa->num_matching_seqs[p] > 1
+                && msa->cell[0][p].letter != kXResidue) {
+
+                diagnostics->gapless_column_weights[p] =
+                    seq_weights->gapless_column_weights[p]
+                    / internal_pssm->pseudocounts[p];
+
+                diagnostics->gapless_column_weights[p] *= 
+                    (seq_weights->sigma[p] / aligned_block->size[p] - 1);
+            }
+            else {
+                diagnostics->gapless_column_weights[p] = 0.0;
+            }
         }
     }
 

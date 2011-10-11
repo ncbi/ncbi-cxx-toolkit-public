@@ -249,6 +249,7 @@ typedef struct _PSIInternalPssmData {
     int**       pssm;           /**< PSSM (scores) */
     int**       scaled_pssm;    /**< scaled PSSM (scores) */
     double**    freq_ratios;    /**< frequency ratios */
+    double*     pseudocounts;   /**< pseudocount constant for each column */
 } _PSIInternalPssmData;
 
 /** Allocates a new _PSIInternalPssmData structure.

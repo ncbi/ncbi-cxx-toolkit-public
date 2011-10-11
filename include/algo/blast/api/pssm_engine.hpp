@@ -258,7 +258,8 @@ public:
     GetInformationContent(const objects::CPssmWithParameters& pssm, 
                           vector<double>& retval);
 
-    /// Returns the gapless PSSM column weights for the provided PSSM
+    /// Returns the relative gapless PSSM column weights to pseudocounts
+    /// for the provided PSSM
     /// @param pssm PSSM to extract data from [in]
     /// @param retval vector containing the gapless column weights or an empty
     /// vector if this data is not available [in|out]

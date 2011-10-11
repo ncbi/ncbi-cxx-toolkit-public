@@ -206,10 +206,6 @@ CBlastFormatUtil::PrintAsciiPssm
     const SIZE_TYPE kQueryLength = pssm_with_params.GetPssm().GetQueryLength();
     _ASSERT(kQueryLength == 
             (SIZE_TYPE)pssm_with_params.GetPssm().GetNumColumns());
-    const double kPseudoCount = 
-        (pssm_with_params.CanGetParams() &&
-         pssm_with_params.GetParams().CanGetPseudocount()) 
-        ? pssm_with_params.GetParams().GetPseudocount() : 0.0;
     auto_ptr< TNcbiMatrixInt > pssm
         (blast::CScorematPssmConverter::GetScores(pssm_with_params));
     auto_ptr< TNcbiMatrixDouble > weighted_res_freqs
@@ -258,9 +254,7 @@ CBlastFormatUtil::PrintAsciiPssm
 
             // print the relative weight of gapless real matches to pseudocounts
             if ((num_matching_seqs[i] > 1) && (query_seq[i] != kXResidue)) {
-                double val = gapless_col_weights[i]/kPseudoCount;
-                val *= (sigma[i] / interval_sizes[i] - 1);
-                out << setprecision(2) << val;
+                out << setprecision(2) << gapless_col_weights[i];
             } else {
                 out << "    0.00";
             }

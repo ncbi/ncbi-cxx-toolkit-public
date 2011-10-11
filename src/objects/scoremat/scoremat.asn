@@ -184,7 +184,7 @@ PssmIntermediateData ::= SEQUENCE {
     -- -out_ascii_pssm option in psiblast)
     informationContent          SEQUENCE OF REAL OPTIONAL,
 
-    -- Weights for columns of the PSSM without gaps
+    -- Relative weight for columns of the PSSM without gaps to pseudocounts
     -- NOTE: this is needed for diagnostics information only (i.e.:
     -- -out_ascii_pssm option in psiblast)
     gaplessColumnWeights        SEQUENCE OF REAL OPTIONAL,
