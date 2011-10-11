@@ -579,8 +579,7 @@ int CProjBulderApp::Run(void)
 {
     // Set error posting and tracing on maximum.
 //    SetDiagTrace(eDT_Enable);
-    SetDiagPostAllFlags(eDPF_File | eDPF_LongFilename | eDPF_ErrCodeMessage);
-
+    SetDiagPostAllFlags(eDPF_All & ~eDPF_DateTime);
     SetDiagPostLevel(eDiag_Info);
     LOG_POST(Info << "Started at " + CTime(CTime::eCurrent).AsString());
     LOG_POST(Info << "Project tree builder version " + GetVersion().Print());
@@ -985,7 +984,11 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
     ofs << endl;
 #endif
 
-    ofs << "top_srcdir=" << m_Root << endl;
+    if (m_ExtSrcRoot.empty()) {
+       ofs << "top_srcdir=" << m_Root << endl;
+    } else {
+        ofs << "top_srcdir=" << m_ExtSrcRoot << endl;
+    }
     ofs << "# Non-redundant flags (will be overridden for GNU Make to avoid" << endl;
     ofs << "# --jobserver-fds=* proliferation)" << endl;
     ofs << "MFLAGS_NR = $(MFLAGS)" << endl;
@@ -1719,6 +1722,13 @@ void CProjBulderApp::ParseArguments(void)
 
     if ( extroot ) {
         if (CDirEntry(m_BuildRoot).Exists()) {
+// verify status dir
+            if (!CDirEntry(m_StatusDir).Exists() && !m_BuildRoot.empty()) {
+                m_StatusDir = CDirEntry::NormalizePath(
+                    CDirEntry::ConcatPath( CDirEntry::ConcatPath( 
+                        m_BuildRoot,".."),"status"));
+            }
+
             string t, try_dir;
             string src = GetConfig().Get("ProjectTree", "src");
             for ( t = try_dir = m_BuildRoot; ; try_dir = t) {
@@ -1985,8 +1995,11 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
     const string& tagsfile = CDirEntry::ConvertToOSPath(
         GetConfig().Get("ProjectTree", "ProjectTags"));
     if (!tagsfile.empty()) {
-        LoadProjectTags(
-            CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, tagsfile));
+        string fileloc(CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, tagsfile));
+        if (!CDirEntry(fileloc).Exists() && !m_ExtSrcRoot.empty()) {
+            fileloc = CDirEntry::ConcatPath(m_ExtSrcRoot,tagsfile);
+        }
+        LoadProjectTags(fileloc);
     }
     
     /// <include> branch of tree

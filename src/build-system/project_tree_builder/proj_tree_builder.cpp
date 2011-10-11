@@ -1887,8 +1887,15 @@ CProjectTreeBuilder::BuildOneProjectTree(const IProjectFilter* filter,
     CSymResolver resolver;
     resolver.Append( GetApp().GetSite().GetMacros());
     ITERATE(list<string>, p, metadata_files) {
-	    resolver.Append( CSymResolver( CDirEntry::ConcatPath(
-	               root_src_path, CDirEntry::ConvertToOSPath(*p))), true);;
+	    string fileloc(CDirEntry::ConcatPath(
+	               root_src_path, CDirEntry::ConvertToOSPath(*p)));
+	    if (!CDirEntry(fileloc).Exists() && !GetApp().m_ExtSrcRoot.empty()) {
+	        fileloc = CDirEntry::ConcatPath( CDirEntry::ConcatPath(
+	            GetApp().m_ExtSrcRoot,
+	                GetApp().GetConfig().Get("ProjectTree", "src")),
+	                    CDirEntry::ConvertToOSPath(*p));
+	    }
+	    resolver.Append( CSymResolver(fileloc), true);;
 	}
     ResolveDefs(resolver, subtree_makefiles);
 
