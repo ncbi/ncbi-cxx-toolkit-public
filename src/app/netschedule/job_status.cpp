@@ -362,62 +362,23 @@ void CJobStatusTracker::AddPendingBatch(unsigned  job_id_from,
 }
 
 
-bool CJobStatusTracker::GetPendingJobFromSet(TNSBitVector *  candidate_set,
-                                             unsigned *      job_id)
+unsigned int
+CJobStatusTracker::GetPendingJobFromSet(const TNSBitVector &  candidate_set)
 {
-    *job_id = 0;
+    CReadLockGuard              guard(m_Lock);
+    TNSBitVector &              bv = *m_StatusStor[(int) CNetScheduleAPI::ePending];
+    TNSBitVector::enumerator    en(candidate_set.first());
 
-    TNSBitVector &      bv = *m_StatusStor[(int) CNetScheduleAPI::ePending];
-    unsigned            candidate_id = 0;
+    for (; en.valid(); ++en) {
+        unsigned int    id = *en;
 
-    while ( 0 == candidate_id ) {
-        // STAGE 1: (read lock)
-        // look for the first pending candidate bit
-        {{
-            CReadLockGuard              guard(m_Lock);
-            TNSBitVector::enumerator    en(candidate_set->first());
+        if (bv[id])
+            // The candidate is pending
+            return id;
+    }
 
-            if (!en.valid())
-                return bv.any();    // no more candidates
-
-            for (; en.valid(); ++en) {
-                unsigned        id = *en;
-                if (bv[id]) { // check if candidate is pending
-                    candidate_id = id;
-                    break;
-                }
-            }
-        }}
-
-        // STAGE 2: (write lock)
-        // candidate job goes to running status
-        // set of candidates is corrected to reflect new disposition
-        // (clear all non-pending candidates)
-        //
-        if (candidate_id) {
-            CWriteLockGuard guard(m_Lock);
-            // clean the candidate set, to reflect stage 1 scan
-            candidate_set->set_range(0, candidate_id, false);
-            if (bv[candidate_id]) { // still pending?
-                x_SetClearStatusNoLock(candidate_id,
-                                       CNetScheduleAPI::eRunning,
-                                       CNetScheduleAPI::ePending);
-                *job_id = candidate_id;
-                return true;
-            } else {
-                // somebody picked up this id already
-                candidate_id = 0;
-            }
-        } else {
-            // previous step did not pick up a sutable(pending) candidate
-            // candidate set is dismissed, pending search stopped
-            candidate_set->clear(true); // clear with memfree
-            break;
-        }
-    } // while
-
-    CReadLockGuard guard(m_Lock);
-    return bv.any();
+    // No one matches
+    return 0;
 }
 
 

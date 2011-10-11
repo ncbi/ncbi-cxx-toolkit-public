@@ -1235,9 +1235,7 @@ unsigned CQueue::FindPendingJob(const CNSClientId  &  client,
     if (!candidate_jobs.any())
         return 0;
 
-    unsigned int    job_id = 0;
-    m_StatusTracker.GetPendingJobFromSet(&candidate_jobs, &job_id);
-    return job_id;
+    return m_StatusTracker.GetPendingJobFromSet(candidate_jobs);
 }
 
 
@@ -1586,6 +1584,8 @@ unsigned CQueue::CheckJobsExpiry(unsigned batch_size, TJobStatus status)
         CFastMutexGuard     guard(m_OperationLock);
 
         m_QueueDbBlock->job_db.SetTransaction(NULL);
+        m_QueueDbBlock->events_db.SetTransaction(NULL);
+        m_QueueDbBlock->job_info_db.SetTransaction(NULL);
 
         for (unsigned n = 0; n < batch_size; ++n) {
             job_id = m_StatusTracker.GetNext(status, job_id);

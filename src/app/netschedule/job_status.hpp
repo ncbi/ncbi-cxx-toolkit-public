@@ -91,19 +91,7 @@ public:
     /// Add closed interval of ids to pending status
     void AddPendingBatch(unsigned job_id_from, unsigned job_id_to);
 
-    /// Get pending job out of a certain candidate set
-    /// Method cleans candidates if they are no longer available
-    /// for scheduling (it means job was already dispatched)
-    ///
-    /// @param job_id
-    ///     OUT job id (moved from pending to running)
-    ///     job_id is taken out of candidates
-    ///     When 0 - means no pending candidates
-    /// @return true - if there are any available pending jobs
-    ///         false - queue has no pending jobs whatsoever
-    ///         (not just candidates)
-    bool GetPendingJobFromSet(TNSBitVector* candidate_set,
-                              unsigned*     job_id);
+    unsigned int  GetPendingJobFromSet(const TNSBitVector &  candidate_set);
 
     /// Provides a job id (or 0 if none) which is in the given state and is not
     /// in the unwanted jobs list
