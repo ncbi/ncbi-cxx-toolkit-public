@@ -110,6 +110,9 @@ unsigned int
 CNSAffinityRegistry::ResolveAffinityToken(const string &     token,
                                           unsigned int       job_id)
 {
+    if (token.empty())
+        return 0;
+
     CWriteLockGuard         guard(m_Lock);
 
     // Search for this affinity token
