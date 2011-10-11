@@ -358,7 +358,8 @@ double CAlignFilter::x_GetAlignmentScore(const string& score_name,
         {
             throw;
         }
-        LOG_POST(Warning << e);
+        LOG_POST(Warning << "score " << score_name << " not found");
+        LOG_POST(Info << e);
         return numeric_limits<double>::quiet_NaN();
     }
 }
