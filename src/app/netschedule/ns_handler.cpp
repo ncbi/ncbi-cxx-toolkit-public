@@ -1279,6 +1279,19 @@ void CNetScheduleHandler::x_ProcessDropJob(CQueue* q)
 }
 
 
+static  CNetScheduleAPI::EJobStatus
+            s_StatToPrint[] = { CNetScheduleAPI::ePending,
+                                CNetScheduleAPI::eRunning,
+                                CNetScheduleAPI::eCanceled,
+                                CNetScheduleAPI::eFailed,
+                                CNetScheduleAPI::eDone,
+                                CNetScheduleAPI::eReading,
+                                CNetScheduleAPI::eConfirmed,
+                                CNetScheduleAPI::eReadFailed };
+static size_t
+            s_StatToPrintSize = sizeof(s_StatToPrint) /
+                                sizeof(CNetScheduleAPI::EJobStatus);
+
 void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
 {
     CSocket &           socket = GetSocket();
@@ -1304,9 +1317,8 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
                  NStr::DoubleToString(q->GetAverage(CQueue::eStatDBWriteEvent)) +
                  "/sec");
 
-    for (int i = CNetScheduleAPI::ePending;
-         i < CNetScheduleAPI::eLastStatus; ++i) {
-        TJobStatus      st = TJobStatus(i);
+    for (size_t  k = 0; k < s_StatToPrintSize; ++k) {
+        TJobStatus      st = s_StatToPrint[k];
         unsigned        count = q->CountStatus(st);
 
         WriteMessage("OK:", CNetScheduleAPI::StatusToString(st) +
