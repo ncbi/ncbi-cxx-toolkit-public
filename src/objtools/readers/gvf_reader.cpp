@@ -130,6 +130,43 @@ bool CGvfReadRecord::AssignFromGff(
 }
 
 //  ----------------------------------------------------------------------------
+bool CGvfReadRecord::x_AssignAttributesFromGff(
+    const string& strRawAttributes )
+//  ----------------------------------------------------------------------------
+{
+    vector< string > attributes;
+    x_SplitGffAttributes(strRawAttributes, attributes);
+	for ( size_t u=0; u < attributes.size(); ++u ) {
+        string strKey;
+        string strValue;
+        if ( ! NStr::SplitInTwo( attributes[u], "=", strKey, strValue ) ) {
+            if ( ! NStr::SplitInTwo( attributes[u], " ", strKey, strValue ) ) {
+                return false;
+            }
+        }
+        strKey = x_NormalizedAttributeKey( strKey );
+        strValue = x_NormalizedAttributeValue( strValue );
+
+		if ( strKey.empty() && strValue.empty() ) {
+            // Probably due to trailing "; ". Sequence Ontology generates such
+            // things. 
+            continue;
+        }
+
+        if ( strKey == "Dbxref" ) {
+            TAttrIt it = m_Attributes.find( strKey );
+            if ( it != m_Attributes.end() ) {
+                m_Attributes[ strKey ] += ";";
+                m_Attributes[ strKey ] += strValue;
+                continue;
+            }
+        }
+        m_Attributes[ strKey ] = strValue;        
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGvfReadRecord::SanityCheck() const
 //  ----------------------------------------------------------------------------
 {

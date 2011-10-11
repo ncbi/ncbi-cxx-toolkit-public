@@ -172,49 +172,43 @@ bool CGff3Reader::x_UpdateFeatureCds(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Reader::x_UpdateAnnot(
-    const CGff2Record& gff,
+    const CGff2Record& record,
     CRef< CSeq_annot > pAnnot )
 //  ----------------------------------------------------------------------------
 {
-    CSeqFeatData::ESubtype iGenbankType = SofaTypes().MapSofaTermToGenbankType(
-        gff.Type() );
+    string gbkey;
+    record.GetAttribute("gbkey", gbkey);
+    CRef< CSeq_feat > pFeature(new CSeq_feat);
 
-    if (iGenbankType == CSeqFeatData::e_Cdregion) {
-        string strId;
-        if ( gff.GetAttribute( "ID", strId ) ) {
-            IdToFeatureMap::iterator it = m_MapIdToFeature.find(strId);
+    //  Special case: exon feature belonging to an RNA we have already seen
+    if (record.Type() == "exon") {
+        string parent;
+        if (record.GetAttribute("Parent", parent)) {
+            IdToFeatureMap::iterator it = m_MapIdToFeature.find(parent);
             if (it != m_MapIdToFeature.end()) {
-                return x_UpdateFeatureCds(gff, it->second);
+                return record.UpdateFeature(m_iFlags, it->second);
             }
         }
     }
 
-    CRef< CSeq_feat > pFeature( new CSeq_feat );
+    //  Special case: Piece of another feature we have already seen
+    string id;
+    if (record.GetAttribute("ID", id)) {
+        IdToFeatureMap::iterator it = m_MapIdToFeature.find(id);
+        if (it != m_MapIdToFeature.end()) {
+            return record.UpdateFeature(m_iFlags, it->second);
+        }
+    }
 
-    if ( ! x_FeatureSetId( gff, pFeature ) ) {
+    //  General case: brand new regular feature
+    if (!record.InitializeFeature(m_iFlags, pFeature)) {
         return false;
     }
-    if ( ! x_FeatureSetXref( gff, pFeature ) ) {
-        return false;
-    }
-    if ( ! x_FeatureSetLocation( gff, pFeature ) ) {
-        return false;
-    }
-    if ( ! x_FeatureSetData( gff, pFeature ) ) {
-        return false;
-    }
-    if ( ! x_FeatureSetGffInfo( gff, pFeature ) ) {
-        return false;
-    }
-    if ( ! x_FeatureSetQualifiers( gff, pFeature ) ) {
-        return false;
-    }
-    
+
     string strId;
-    if ( gff.GetAttribute( "ID", strId ) ) {
+    if ( record.GetAttribute( "ID", strId ) ) {
         m_MapIdToFeature[ strId ] = pFeature;
     }
-
     return x_AddFeatureToAnnot( pFeature, pAnnot );
 }
 

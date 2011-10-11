@@ -97,6 +97,11 @@ public:
         return m_pePhase != 0; 
     };
 
+    CRef<CSeq_id> GetSeqId(
+        int ) const;
+    CRef<CSeq_loc> GetSeqLoc(
+        int ) const;
+
     const TAttributes& Attributes() const { 
         return m_Attributes; 
     };
@@ -105,26 +110,64 @@ public:
         const string&,
         string& ) const;
 
-protected:
-    static string x_FeatIdString(
-        const CFeat_id& id );
+    virtual bool InitializeFeature(
+        int,
+        CRef<CSeq_feat> ) const; 
 
+    virtual bool UpdateFeature(
+        int,
+        CRef<CSeq_feat> ) const;
+
+protected:
     virtual bool x_AssignAttributesFromGff(
         const string& );
 
-    virtual string x_NormalizedAttributeKey(
+    static string x_NormalizedAttributeKey(
         const string& );
 
-    virtual string x_NormalizedAttributeValue(
+    static string x_NormalizedAttributeValue(
         const string& );
 
 	bool x_SplitGffAttributes(
 		const string&,
 		vector< string >& ) const;
 
-    static bool x_IsParentOf(
-        CSeq_feat::TData::ESubtype,
-        CSeq_feat::TData::ESubtype );
+    virtual bool x_MigrateId(
+        CRef<CSeq_feat> ) const;
+
+    virtual bool x_MigrateStartStopStrand(
+        CRef<CSeq_feat> ) const;
+
+    virtual bool x_MigrateType(
+        CRef<CSeq_feat> ) const;
+
+    virtual bool x_MigrateScore(
+        CRef<CSeq_feat> ) const;
+
+    virtual bool x_MigratePhase(
+        CRef<CSeq_feat> ) const;
+
+    virtual bool x_MigrateAttributes(
+        int,
+        CRef<CSeq_feat> ) const;
+
+    virtual bool x_InitFeatureLocation(
+        int,
+        CRef<CSeq_feat> ) const;
+
+    virtual bool x_InitFeatureData(
+        int,
+        CRef<CSeq_feat> ) const;
+
+    virtual bool x_MigrateAttributesSubSource(
+        int,
+        CRef<CSeq_feat>,
+        TAttributes& ) const;
+
+    virtual bool x_MigrateAttributesOrgName(
+        int,
+        CRef<CSeq_feat>,
+        TAttributes& ) const;
 
     //
     // Data:

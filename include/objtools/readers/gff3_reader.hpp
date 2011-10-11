@@ -91,10 +91,6 @@ protected:
     virtual bool x_UpdateFeatureCds(
         const CGff2Record&,
         CRef<CSeq_feat>);
-
-//    virtual bool x_ProcessQualifierSpecialCase(
-//        CGff2Record::TAttrCit,
-//        CRef< CSeq_feat > );
 };
 
 END_SCOPE(objects)

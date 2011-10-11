@@ -65,6 +65,8 @@ public:
     bool SanityCheck() const;
 
 protected:
+    virtual bool x_AssignAttributesFromGff(
+        const string& );
 };
 
 //  ----------------------------------------------------------------------------
