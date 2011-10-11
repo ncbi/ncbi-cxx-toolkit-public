@@ -1582,8 +1582,10 @@ unsigned CQueue::CheckJobsExpiry(unsigned batch_size, TJobStatus status)
     unsigned            del_count = 0;
     bool                has_db_error = false;
     {{
-        CFastMutexGuard     guard(m_OperationLock);
         unsigned int        job_id = 0;
+        CFastMutexGuard     guard(m_OperationLock);
+
+        m_QueueDbBlock->job_db.SetTransaction(NULL);
 
         for (unsigned n = 0; n < batch_size; ++n) {
             job_id = m_StatusTracker.GetNext(status, job_id);
@@ -1926,8 +1928,10 @@ size_t CQueue::PrintJobDbStat(CNetScheduleHandler &     handler,
 
     if (status == CNetScheduleAPI::eJobNotFound) {
         CFastMutexGuard         guard(m_OperationLock);
-        CJob::EJobFetchResult   res = job.Fetch(this, job_id);
 
+        m_QueueDbBlock->job_db.SetTransaction(NULL);
+
+        CJob::EJobFetchResult   res = job.Fetch(this, job_id);
         if (res == CJob::eJF_Ok) {
             handler.WriteMessage("");
             x_PrintJobStat(handler, job, queue_run_timeout);
@@ -1938,6 +1942,7 @@ size_t CQueue::PrintJobDbStat(CNetScheduleHandler &     handler,
         CFastMutexGuard     guard(m_OperationLock);
 
         JobsWithStatus(status, &bv);
+        m_QueueDbBlock->job_db.SetTransaction(NULL);
         for (TNSBitVector::enumerator en(bv.first());en.valid(); ++en) {
             CJob::EJobFetchResult   res = job.Fetch(this, *en);
             if (res == CJob::eJF_Ok) {
