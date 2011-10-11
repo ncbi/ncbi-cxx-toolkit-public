@@ -58,8 +58,6 @@
 #include <objtools/readers/gff2_data.hpp>
 #include <objtools/readers/gff2_reader.hpp>
 
-#include <util/xregexp/regexp.hpp>
-
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -102,40 +100,46 @@ CRef<CCode_break> s_StringToCodeBreak(
     int flags)
 //  ----------------------------------------------------------------------------
 {
-    const string pattern_codebreak = "\\(pos:(.*),aa=(.*)\\)";
-    const string pattern_locminus = "complement\\((.*)\\.\\.(.*)\\)";
-    const string pattern_locplus = "(.*)\\.\\.(.*)";
-
+    const string cdstr_start = "(pos:";
+    const string cdstr_div = ",aa=";
+    const string cdstr_end = ")";
+    
     CRef<CCode_break> pCodeBreak;
+    if (!NStr::StartsWith(str, cdstr_start)  ||  !NStr::EndsWith(str, cdstr_end)) {
+        return pCodeBreak;
+    }
+    size_t pos_start = cdstr_start.length();
+    size_t pos_stop = str.find(cdstr_div);
+    string posstr = str.substr(pos_start, pos_stop-pos_start);
+    string aaa = str.substr(pos_stop+cdstr_div.length());
+    aaa = aaa.substr(0, aaa.length()-cdstr_end.length());
 
-    CRegexp parser(pattern_codebreak);
-    parser.GetMatch(str);
-    string loc = parser.GetSub(str, 1);
-    string aa = parser.GetSub(str, 2);
-    if (loc.empty()  ||  aa.empty()) {
+    const string posstr_compl = "complement(";
+    ENa_strand strand = eNa_strand_plus;
+    if (NStr::StartsWith(posstr, posstr_compl)) {
+        posstr = posstr.substr(posstr_compl.length());
+        posstr = posstr.substr(0, posstr.length()-1);
+        strand = eNa_strand_minus;
+    }
+    const string posstr_div = "..";
+    size_t pos_div = posstr.find(posstr_div);
+    if (pos_div == string::npos) {
         return pCodeBreak;
     }
 
-    ENa_strand strand = eNa_strand_plus;
-    unsigned int from;
-    unsigned int to;
-    int aacode;
+    int from, to;
+    try {
+        from = NStr::StringToInt(posstr.substr(0, pos_div))-1;
+        to = NStr::StringToInt(posstr.substr(pos_div + posstr_div.length()))-1;
+    }
+    catch(...) {
+        return pCodeBreak;
+    }
 
-    parser.Set(pattern_locminus);
-    if (parser.IsMatch(loc)) {
-        strand = eNa_strand_minus;
-        from = NStr::StringToInt(parser.GetSub(loc, 1))-1;
-        to = NStr::StringToInt(parser.GetSub(loc, 2))-1;
+    if (strand == eNa_strand_minus) {
+        int temp = from; from = to; to = temp;
     }
-    else {
-        parser.Set(pattern_locplus);
-        if (!parser.IsMatch(loc)) {
-            return pCodeBreak;
-        }
-        from = NStr::StringToInt(parser.GetSub(loc, 1))-1;
-        to = NStr::StringToInt(parser.GetSub(loc, 2))-1;
-    }
-    aacode = 85; //for now
+    int aacode = 85; //for now
 
     pCodeBreak.Reset(new CCode_break);
     pCodeBreak->SetLoc().SetInt().SetId(id);
@@ -911,10 +915,11 @@ bool CGff2Record::x_InitFeatureData(
         default:
             break;
 
-        case CSeqFeatData::eSubtype_cdregion:
+        case CSeqFeatData::eSubtype_cdregion: {
             pFeature->SetData().SetCdregion();
+            pFeature->SetData().SetCdregion().SetFrame(CCdregion::eFrame_one);
             return true;
-
+        }
         case CSeqFeatData::eSubtype_exon:
             pFeature->SetData().SetImp().SetKey( "exon" );
             return true;

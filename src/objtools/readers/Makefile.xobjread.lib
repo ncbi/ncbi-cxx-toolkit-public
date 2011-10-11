@@ -19,5 +19,5 @@ SRC = format_guess_ex \
       best_feat_finder source_mod_parser
 
 
-DLL_LIB = creaders xregexp
+DLL_LIB = creaders
 
