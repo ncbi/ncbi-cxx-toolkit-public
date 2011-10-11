@@ -2236,6 +2236,9 @@ bool CQueue::x_UpdateDB_PutResultNoLock(unsigned             job_id,
     event->SetEvent(CJobEvent::eDone);
     event->SetTimestamp(curr);
     event->SetRetCode(ret_code);
+
+    event->SetClientNode(client.GetNode());
+    event->SetClientSession(client.GetSession());
     event->SetNodeAddr(client.GetAddress());
 
     job.SetStatus(CNetScheduleAPI::eDone);
