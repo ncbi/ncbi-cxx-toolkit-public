@@ -39,7 +39,10 @@ ValidErrItem ::= SEQUENCE {
         seqsub (10),
         submitblock (11)
     } OPTIONAL,
-    errorName   VisibleString OPTIONAL
+    errorName   VisibleString OPTIONAL,
+    errorGroup  VisibleString OPTIONAL,
+    accnver     VisibleString OPTIONAL,
+    version     INTEGER OPTIONAL
 }
 
 
