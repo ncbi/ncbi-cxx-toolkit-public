@@ -1128,7 +1128,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
 
 // check for missing dependencies -------------------------------------------
         string error;
-        if (p->second.m_MakeType != eMakeType_Expendable) {
+        if (p->second.m_MakeType != eMakeType_Expendable && m_BuildRoot.empty()) {
             ITERATE(set<CProjKey>, u, p->second.m_UnconditionalDepends) {
                 CProjKey proj_key = *u;
                 if (projects_tree.m_Projects.find(proj_key) ==
