@@ -1326,6 +1326,15 @@ private:
     void x_CheckVersions(const string         & acc,
                          vector<int>          & oids,
                          CSeqDBLockHold       & locked) const;
+
+    void x_OpenSeqFile(CSeqDBLockHold &locked) const;
+    void x_OpenHdrFile(CSeqDBLockHold &locked) const;
+    void x_OpenPigFile(CSeqDBLockHold &locked) const;
+    void x_OpenGiFile(CSeqDBLockHold &locked) const;
+    void x_OpenStrFile(CSeqDBLockHold &locked) const;
+    void x_OpenTiFile(CSeqDBLockHold &locked) const;
+    void x_OpenHashFile(CSeqDBLockHold &locked) const;
+    void x_OpenOidFile(CSeqDBLockHold &locked) const;
     
     /// The memory management layer.
     CSeqDBAtlas & m_Atlas;
@@ -1340,10 +1349,10 @@ private:
     CRef<CSeqDBIdxFile> m_Idx;
     
     /// Contains sequence data for this volume.
-    CRef<CSeqDBSeqFile> m_Seq;
+    mutable CRef<CSeqDBSeqFile> m_Seq;
     
     /// Contains header (defline) information for this volume.
-    CRef<CSeqDBHdrFile> m_Hdr;
+    mutable CRef<CSeqDBHdrFile> m_Hdr;
     
     // These are mutable because they defer initialization.
     
@@ -1400,6 +1409,16 @@ private:
     
     /// True if we have opened the columns for this volume.
     bool m_HaveColumns;
+
+    /// True if the volume file has been (at least tried to) opened
+    mutable bool m_SeqFileOpened;
+    mutable bool m_HdrFileOpened;
+    mutable bool m_PigFileOpened;
+    mutable bool m_GiFileOpened;
+    mutable bool m_StrFileOpened;
+    mutable bool m_TiFileOpened;
+    mutable bool m_HashFileOpened;
+    mutable bool m_OidFileOpened;
     
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )

@@ -90,7 +90,15 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas        & atlas,
       m_VolStart     (vol_start),
       m_VolEnd       (0),
       m_DeflineCache (256),
-      m_HaveColumns  (false)
+      m_HaveColumns  (false),
+      m_SeqFileOpened(false),
+      m_HdrFileOpened(false),
+      m_PigFileOpened(false),
+      m_GiFileOpened (false),
+      m_StrFileOpened(false),
+      m_TiFileOpened (false),
+      m_HashFileOpened(false),
+      m_OidFileOpened(false)
 {
     if (user_list) {
         m_UserGiList.Reset(user_list);
@@ -105,67 +113,120 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas        & atlas,
     
     // To allow for empty volumes, we must tolerate the absence of all
     // files other than the index file.
+}
     
-    if (m_Idx->GetNumOIDs() == 0) {
-        return;
+void
+CSeqDBVol::x_OpenSeqFile(CSeqDBLockHold & locked) const {
+    m_Atlas.Lock(locked);
+    if (!m_SeqFileOpened && m_Idx->GetNumOIDs() != 0) {
+        m_Seq.Reset(new CSeqDBSeqFile(m_Atlas, m_VolName, (m_IsAA?'p':'n'), locked));
     }
+    m_SeqFileOpened = true;
+}
     
-    m_Seq.Reset(new CSeqDBSeqFile(atlas, name, prot_nucl, locked));
-    m_Hdr.Reset(new CSeqDBHdrFile(atlas, name, prot_nucl, locked));
-    
-    // ISAM files are optional
-    
-    if (CSeqDBIsam::IndexExists(name, prot_nucl, 'p')) {
+void    
+CSeqDBVol::x_OpenHdrFile(CSeqDBLockHold & locked) const {
+    m_Atlas.Lock(locked);
+    if (!m_HdrFileOpened && m_Idx->GetNumOIDs() != 0) {
+        m_Hdr.Reset(new CSeqDBHdrFile(m_Atlas, m_VolName, (m_IsAA?'p':'n'), locked));
+    }
+    m_HdrFileOpened = true;
+}
+
+void
+CSeqDBVol::x_OpenPigFile(CSeqDBLockHold & locked) const{
+    m_Atlas.Lock(locked);
+    if (!m_PigFileOpened && 
+         CSeqDBIsam::IndexExists(m_VolName, (m_IsAA?'p':'n'), 'p') &&
+         m_Idx->GetNumOIDs() != 0) {
         m_IsamPig =
             new CSeqDBIsam(m_Atlas,
-                           name,
-                           prot_nucl,
+                           m_VolName,
+                           (m_IsAA?'p':'n'),
                            'p',
                            ePigId);
     }
+    m_PigFileOpened = true;
+}
     
-    if (CSeqDBIsam::IndexExists(name, prot_nucl, 'n')) {
+void    
+CSeqDBVol::x_OpenGiFile(CSeqDBLockHold & locked) const{
+    m_Atlas.Lock(locked);
+    if (!m_GiFileOpened && 
+         CSeqDBIsam::IndexExists(m_VolName, (m_IsAA?'p':'n'), 'n') &&
+         m_Idx->GetNumOIDs() != 0) {
         m_IsamGi =
             new CSeqDBIsam(m_Atlas,
-                           name,
-                           prot_nucl,
+                           m_VolName,
+                           (m_IsAA?'p':'n'),
                            'n',
                            eGiId);
     }
+    m_GiFileOpened = true;
+}
     
-    if (CSeqDBIsam::IndexExists(name, prot_nucl, 's')) {
+void
+CSeqDBVol::x_OpenStrFile(CSeqDBLockHold & locked) const{
+    m_Atlas.Lock(locked);
+    if (!m_StrFileOpened && 
+         CSeqDBIsam::IndexExists(m_VolName, (m_IsAA?'p':'n'), 's') &&
+         m_Idx->GetNumOIDs() != 0) {
         m_IsamStr =
             new CSeqDBIsam(m_Atlas,
-                           name,
-                           prot_nucl,
+                           m_VolName,
+                           (m_IsAA?'p':'n'),
                            's',
                            eStringId);
     }
+    m_StrFileOpened = true;
+}
     
-    if (CSeqDBIsam::IndexExists(name, prot_nucl, 't')) {
+void
+CSeqDBVol::x_OpenTiFile(CSeqDBLockHold & locked) const{
+    m_Atlas.Lock(locked);
+    if (!m_TiFileOpened && 
+         CSeqDBIsam::IndexExists(m_VolName, (m_IsAA?'p':'n'), 't') &&
+         m_Idx->GetNumOIDs() != 0) {
         m_IsamTi =
             new CSeqDBIsam(m_Atlas,
-                           name,
-                           prot_nucl,
+                           m_VolName,
+                           (m_IsAA?'p':'n'),
                            't',
                            eTiId);
     }
+    m_TiFileOpened = true;
+}
     
-    if (CSeqDBIsam::IndexExists(name, prot_nucl, 'h')) {
+void
+CSeqDBVol::x_OpenHashFile(CSeqDBLockHold & locked) const{
+    m_Atlas.Lock(locked);
+    if (!m_HashFileOpened && 
+         CSeqDBIsam::IndexExists(m_VolName, (m_IsAA?'p':'n'), 'h') &&
+         m_Idx->GetNumOIDs() != 0) {
         m_IsamHash =
             new CSeqDBIsam(m_Atlas,
-                           name,
-                           prot_nucl,
+                           m_VolName,
+                           (m_IsAA?'p':'n'),
                            'h',
                            eHashId);
     }
-
-    if (CSeqDBGiIndex::IndexExists(name, prot_nucl)) {
-        m_GiIndex = 
-            new CSeqDBGiIndex(m_Atlas, name, prot_nucl);
-    }
+    m_HashFileOpened = true;
 }
-
+    
+void
+CSeqDBVol::x_OpenOidFile(CSeqDBLockHold & locked) const{
+    m_Atlas.Lock(locked);
+    if (!m_OidFileOpened && 
+         CSeqDBGiIndex::IndexExists(m_VolName, (m_IsAA?'p':'n')) &&
+         m_Idx->GetNumOIDs() != 0) {
+        m_GiIndex =
+            new CSeqDBGiIndex(m_Atlas,
+                              m_VolName,
+                              (m_IsAA?'p':'n'));
+    }
+    m_OidFileOpened = true;
+}
+    
 char CSeqDBVol::GetSeqType() const
 {
     return x_GetSeqType();
@@ -198,6 +259,7 @@ int CSeqDBVol::GetSeqLengthExact(int oid, CSeqDBLockHold & locked) const
     TIndx end_offset   = 0;
     
     m_Atlas.Lock(locked);
+    if (!m_SeqFileOpened) x_OpenSeqFile(locked);
     m_Idx->GetSeqStartEnd(oid, start_offset, end_offset);
     
     _ASSERT(m_Idx->GetSeqType() == 'n');
@@ -1191,6 +1253,8 @@ CSeqDBVol::GetBioseq(int                    oid,
     CRef<CBlast_def_line>     defline;
     list< CRef< CSeq_id > >   seqids;
     
+    if (!m_SeqFileOpened) x_OpenSeqFile(locked);
+
     // Get the defline set; but do not modify the object returned by
     // GetFilteredHeader, since that object lives in the cache.
     
@@ -1594,6 +1658,7 @@ int CSeqDBVol::x_GetSequence(int              oid,
     int length = -1;
     
     m_Atlas.Lock(locked);
+    if (!m_SeqFileOpened) x_OpenSeqFile(locked);
     
     if (oid >= m_Idx->GetNumOIDs()) return -1;
 
@@ -1692,6 +1757,7 @@ list< CRef<CSeq_id> > CSeqDBVol::GetSeqIDs(int                    oid,
 int CSeqDBVol::GetSeqGI(int              oid, 
                         CSeqDBLockHold & locked) const 
 {
+    if (!m_OidFileOpened) x_OpenOidFile(locked);
     if (!m_GiIndex.Empty()) {
          return m_GiIndex->GetSeqGI(oid, locked);
     }
@@ -1859,6 +1925,8 @@ CSeqDBVol::x_GetHdrAsn1Binary(int oid, CSeqDBLockHold & locked) const
     
     m_Atlas.Lock(locked);
     
+    if (!m_HdrFileOpened) x_OpenHdrFile(locked);
+
     m_Idx->GetHdrStartEnd(oid, hdr_start, hdr_end);
     
     const char * asn_region = m_Hdr->GetRegion(hdr_start, hdr_end, locked);
@@ -1967,6 +2035,7 @@ int CSeqDBVol::GetMaxLength() const
 
 bool CSeqDBVol::PigToOid(int pig, int & oid, CSeqDBLockHold & locked) const
 {
+    if (!m_PigFileOpened) x_OpenPigFile(locked);
     if (m_IsamPig.Empty()) {
         return false;
     }
@@ -1978,6 +2047,7 @@ bool CSeqDBVol::GetPig(int oid, int & pig, CSeqDBLockHold & locked) const
 {
     pig = -1;
     
+    if (!m_PigFileOpened) x_OpenPigFile(locked);
     if (m_IsamPig.Empty()) {
         return false;
     }
@@ -2018,6 +2088,7 @@ bool CSeqDBVol::TiToOid(Int8                   ti,
     // this point (in the call stack) uses int; code above this level,
     // up to the user level, uses Int8.
     
+    if (!m_TiFileOpened) x_OpenTiFile(locked);
     if (m_IsamTi.Empty()) {
         // If the "nti/ntd" files become ubiquitous, this could be
         // removed.  For now, I will look up trace IDs in the string
@@ -2041,6 +2112,7 @@ bool CSeqDBVol::TiToOid(Int8                   ti,
 
 bool CSeqDBVol::GiToOid(int gi, int & oid, CSeqDBLockHold & locked) const
 {
+    if (!m_GiFileOpened) x_OpenGiFile(locked);
     if (m_IsamGi.Empty()) {
         return false;
     }
@@ -2052,6 +2124,7 @@ void CSeqDBVol::IdsToOids(CSeqDBGiList   & ids,
                           CSeqDBLockHold & locked) const
 {
     if (ids.GetNumGis()) {
+        if (!m_GiFileOpened) x_OpenGiFile(locked);
         if (m_IsamGi.NotEmpty()) {
             m_IsamGi->IdsToOids(m_VolStart, m_VolEnd, ids, locked);
         } else {
@@ -2062,6 +2135,7 @@ void CSeqDBVol::IdsToOids(CSeqDBGiList   & ids,
     }
     
     if (ids.GetNumTis()) {
+        if (!m_TiFileOpened) x_OpenTiFile(locked);
         if (m_IsamTi.NotEmpty()) {
             m_IsamTi->IdsToOids(m_VolStart, m_VolEnd, ids, locked);
         } else {
@@ -2072,6 +2146,7 @@ void CSeqDBVol::IdsToOids(CSeqDBGiList   & ids,
     }
     
     if (ids.GetNumSis()) {
+        if (!m_StrFileOpened) x_OpenStrFile(locked);
         if (m_IsamStr.NotEmpty()) {
             m_IsamStr->IdsToOids(m_VolStart, m_VolEnd, ids, locked);
         } else {
@@ -2088,6 +2163,7 @@ void CSeqDBVol::IdsToOids(CSeqDBNegativeList & ids,
     // Numeric translation is done in batch mode.
     
     if (ids.GetNumGis()) {
+        if (!m_GiFileOpened) x_OpenGiFile(locked);
         if (m_IsamGi.NotEmpty()) {
             m_IsamGi->IdsToOids(m_VolStart, m_VolEnd, ids, locked);
         } else {
@@ -2098,6 +2174,7 @@ void CSeqDBVol::IdsToOids(CSeqDBNegativeList & ids,
     }
     
     if (ids.GetNumTis()) {
+        if (!m_TiFileOpened) x_OpenTiFile(locked);
         if (m_IsamTi.NotEmpty()) {
             m_IsamTi->IdsToOids(m_VolStart, m_VolEnd, ids, locked);
         } else {
@@ -2114,6 +2191,7 @@ bool CSeqDBVol::GetGi(int                    oid,
 {
     gi = -1;
     
+    if (!m_GiFileOpened) x_OpenGiFile(locked);
     if (m_IsamGi.Empty()) {
         return false;
     }
@@ -2165,6 +2243,7 @@ void CSeqDBVol::x_StringToOids(const string          & acc,
     
     switch(id_type) {
     case eStringId:
+        if (!m_StrFileOpened) x_OpenStrFile(locked);
         if (! m_IsamStr.Empty()) {
             // Not simplified
             vcheck = true;
@@ -2174,6 +2253,7 @@ void CSeqDBVol::x_StringToOids(const string          & acc,
         
     case ePigId:
         // Converted to PIG type.
+        if (!m_PigFileOpened) x_OpenPigFile(locked);
         if (! m_IsamPig.Empty()) {
             int oid(-1);
             
@@ -2185,6 +2265,7 @@ void CSeqDBVol::x_StringToOids(const string          & acc,
         
     case eGiId:
         // Converted to GI type.
+        if (!m_GiFileOpened) x_OpenGiFile(locked);
         if (! m_IsamGi.Empty()) {
             int oid(-1);
             
@@ -2196,6 +2277,8 @@ void CSeqDBVol::x_StringToOids(const string          & acc,
         
     case eTiId:
         // Converted to TI type.
+        if (!m_TiFileOpened) x_OpenTiFile(locked);
+        if (!m_StrFileOpened) x_OpenStrFile(locked);
         if (! m_IsamTi.Empty()) {
             int oid(-1);
             
@@ -2437,6 +2520,8 @@ CSeqDBVol::GetSeqData(int              oid,
     
     m_Atlas.Lock(locked);
     
+    if (!m_SeqFileOpened) x_OpenSeqFile(locked);
+
     CRef<CSeq_data> seq_data(new CSeq_data);
     
     if (m_IsAA) {
@@ -2522,6 +2607,7 @@ CSeqDBVol::GetRawSeqAndAmbig(int              oid,
     TIndx map_end   = 0;
     
     m_Atlas.Lock(locked);
+    if (!m_SeqFileOpened) x_OpenSeqFile(locked);
     
     m_Idx->GetSeqStartEnd(oid, start_S, end_S);
     bool amb_ok = true;
@@ -2593,6 +2679,7 @@ void CSeqDBVol::GetGiBounds(int            & low_id,
                             CSeqDBLockHold & locked) const
 {
     m_Atlas.Lock(locked);
+    if (!m_GiFileOpened) x_OpenGiFile(locked);
     low_id = high_id = count = 0;
     
     if (m_IsamGi.NotEmpty()) {
@@ -2614,6 +2701,7 @@ void CSeqDBVol::GetPigBounds(int            & low_id,
                              CSeqDBLockHold & locked) const
 {
     m_Atlas.Lock(locked);
+    if (!m_PigFileOpened) x_OpenPigFile(locked);
     low_id = high_id = count = 0;
     
     if (m_IsamPig.NotEmpty()) {
@@ -2635,6 +2723,7 @@ void CSeqDBVol::GetStringBounds(string         & low_id,
                                 CSeqDBLockHold & locked) const
 {
     m_Atlas.Lock(locked);
+    if (!m_StrFileOpened) x_OpenStrFile(locked);
     count = 0;
     low_id.erase();
     high_id.erase();
@@ -2760,6 +2849,7 @@ void CSeqDBVol::HashToOids(unsigned         hash,
     // feature generally does not know if the sequence will be found),
     // the lack of hash indexing is reported by throwing an exception.
     
+    if (!m_HashFileOpened) x_OpenHashFile(locked);
     if (m_IsamHash.Empty()) {
         NCBI_THROW(CSeqDBException,
                    eArgErr,
