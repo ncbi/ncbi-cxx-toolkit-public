@@ -103,6 +103,8 @@ public:
         const string& = "",
         const string& = "" );
 
+    virtual SAnnotSelector& GetAnnotSelector();
+
 protected:
     virtual bool x_WriteAnnot( 
         const CSeq_annot& );
@@ -144,9 +146,8 @@ protected:
     static bool x_NeedsQuoting(
         const string& );
 
-    virtual SAnnotSelector x_GetAnnotSelector();
-
     CRef<CScope> m_pScope;
+    auto_ptr<SAnnotSelector> m_Selector;
 };
 
 END_objects_SCOPE

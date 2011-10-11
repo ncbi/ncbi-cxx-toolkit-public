@@ -301,7 +301,7 @@ bool CGff3Writer::x_WriteBioseqHandle(
     CBioseq_Handle bsh ) 
 //  ----------------------------------------------------------------------------
 {
-    SAnnotSelector sel = x_GetAnnotSelector();
+    SAnnotSelector sel = GetAnnotSelector();
     CFeat_CI feat_iter(bsh, sel);
     feature::CFeatTree feat_tree( feat_iter );
 

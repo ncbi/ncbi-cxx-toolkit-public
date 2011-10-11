@@ -188,7 +188,7 @@ bool CGff2Writer::x_WriteBioseqHandle(
     CBioseq_Handle bsh ) 
 //  ----------------------------------------------------------------------------
 {
-    SAnnotSelector sel = x_GetAnnotSelector();
+    SAnnotSelector sel = GetAnnotSelector();
     CFeat_CI feat_iter(bsh, sel);
     feature::CFeatTree feat_tree( feat_iter );
     for ( ;  feat_iter;  ++feat_iter ) {
@@ -231,7 +231,7 @@ bool CGff2Writer::x_WriteSeqAnnotHandle(
         return true;
     }
 
-    SAnnotSelector sel = x_GetAnnotSelector();
+    SAnnotSelector sel = GetAnnotSelector();
     CFeat_CI feat_iter(sah, sel);
     CGffFeatureContext fc(feature::CFeatTree(feat_iter), CBioseq_Handle(), sah);
     for ( /*0*/; feat_iter; ++feat_iter ) {
@@ -285,12 +285,14 @@ bool CGff2Writer::x_WriteFeature(
 }
 
 //  ----------------------------------------------------------------------------
-SAnnotSelector CGff2Writer::x_GetAnnotSelector()
+SAnnotSelector& CGff2Writer::GetAnnotSelector()
 //  ----------------------------------------------------------------------------
 {
-    SAnnotSelector sel;
-    sel.SetSortOrder( SAnnotSelector::eSortOrder_Normal );
-    return sel;
+    if ( !m_Selector.get() ) {
+        m_Selector.reset(new SAnnotSelector);
+        m_Selector->SetSortOrder( SAnnotSelector::eSortOrder_Normal );
+    }
+    return *m_Selector;
 }
 
 //  ----------------------------------------------------------------------------
