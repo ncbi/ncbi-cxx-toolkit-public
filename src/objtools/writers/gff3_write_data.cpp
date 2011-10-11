@@ -651,9 +651,9 @@ bool CGff3WriteRecordFeature::x_AssignAttributeDbXref(
             values.push_back( s_MakeGffDbtag(*dbxrefs[i]) );
         }
     }
-    if ( m_fc.FeatTree().GetParent( mf ) ) {
-        const CSeq_feat::TDbxref& more_dbxrefs = 
-            m_fc.FeatTree().GetParent( mf ).GetDbxref();
+    CMappedFeat parent = m_fc.FeatTree().GetParent( mf );
+    if ( parent  &&  parent.IsSetDbxref()) {
+        const CSeq_feat::TDbxref& more_dbxrefs = parent.GetDbxref();
         for ( size_t i=0; i < more_dbxrefs.size(); ++i ) {
             string str = s_MakeGffDbtag( *more_dbxrefs[ i ] );
             if ( values.end() == find( values.begin(), values.end(), str ) ) {
