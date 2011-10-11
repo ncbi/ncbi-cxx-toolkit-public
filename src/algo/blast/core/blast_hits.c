@@ -348,13 +348,15 @@ s_UpdateReevaluatedHSP(BlastHSP* hsp, Boolean gapped,
 }
                                
 Boolean Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp, 
-           const Uint1* query_start, const Uint1* subject_start, 
+           const Uint1* q, const Int4 qlen,
+           const Uint1* s, const Int4 slen,
            const BlastHitSavingParameters* hit_params, 
            const BlastScoringParameters* score_params, 
            BlastScoreBlk* sbp)
 {
    Int4 sum, score, gap_open, gap_extend;
    Int4 index; /* loop index */
+   Int4 qp, sp, ext;
 
    int best_start_esp_index = 0;
    int best_end_esp_index = 0;
@@ -394,8 +396,8 @@ Boolean Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp,
       gap_extend = score_params->gap_extend;
    }
 
-   query = query_start + hsp->query.offset; 
-   subject = subject_start + hsp->subject.offset;
+   query = q + hsp->query.offset; 
+   subject = s + hsp->subject.offset;
    score = 0;
    sum = 0;
 
@@ -478,11 +480,37 @@ Boolean Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp,
    } /* loop on edit scripts */
    
    score /= factor;
+
+   /* post processing: try to extend further */
+   ASSERT(esp->op_type[0] == eGapAlignSub);
+   ASSERT(esp->op_type[esp->size - 1] == eGapAlignSub);
+
+   qp = best_q_start - q;
+   sp = best_s_start - s;
+   ext = 0;
+   while(qp > 0 && sp > 0 && (q[--qp] == s[--sp])) ext++;
+   best_q_start -= ext;
+   best_s_start -= ext;
+   esp->num[best_start_esp_index] += ext;
+   if (best_end_esp_index == best_start_esp_index) best_end_esp_num += ext;
+   score += ext * score_params->reward;
+
+   qp = best_q_end - q;
+   sp = best_s_end - s;
+   ext = 0;
+   while(qp < qlen && sp < slen && (q[qp++] == s[sp++])) ext++;
+   best_q_end += ext;
+   best_s_end += ext;
+   esp->num[best_end_esp_index] += ext;
+   best_end_esp_num += ext;
+   score += ext * score_params->reward;
+
+
    
    /* Update HSP data. */
    return
        s_UpdateReevaluatedHSP(hsp, TRUE, cutoff_score,
-                              score, query_start, subject_start, best_q_start, 
+                              score, q, s, best_q_start, 
                               best_q_end, best_s_start, best_s_end, 
                               best_start_esp_index, best_end_esp_index,
                               best_end_esp_num);
@@ -2036,15 +2064,75 @@ s_QueryEndCompareHSPs(const void* v1, const void* v2)
    return 0;
 }
 
+
+/* cut off the GapEditScript according to hsp offset and end */
+static void 
+s_CutOffGapEditScript(BlastHSP* hsp, Int4 q_cut, Int4 s_cut, Boolean cut_begin)
+{   
+   int index, opid, qid, sid;
+   Boolean found = FALSE;
+   GapEditScript *esp = hsp->gap_info;
+   qid = 0;
+   sid = 0;
+   q_cut -= hsp->query.offset;
+   s_cut -= hsp->subject.offset;
+   for (index=0; index < esp->size; index++) {
+       for(opid=0; opid < esp->num[index];){  
+          if (esp->op_type[index] == eGapAlignSub) {
+             qid++;
+             sid++;
+             opid++;
+          } else if (esp->op_type[index] == eGapAlignDel) {
+             sid+=esp->num[index];
+             opid+=esp->num[index]; 
+          } else if (esp->op_type[index] == eGapAlignIns) {
+             qid+=esp->num[index];
+             opid+=esp->num[index];
+          }
+          if (qid >= q_cut && sid >= s_cut) found = TRUE;
+          if (found) break;
+       }
+       if (found) break;
+   }
+   
+   if (cut_begin) {
+       int new_index = 0;
+       if (opid < esp->num[index]) {
+          ASSERT(esp->op_type[index] == eGapAlignSub);
+          esp->op_type[0] = esp->op_type[index];
+          esp->num[0] = esp->num[index] - opid;
+          new_index++;
+       } 
+       ++index;
+       for (; index < esp->size; index++, new_index++) {
+          esp->op_type[new_index] = esp->op_type[index];
+          esp->num[new_index] = esp->num[index];
+       }
+       esp->size = new_index;
+       hsp->query.offset += qid;
+       hsp->subject.offset += sid;
+   } else {
+       if (opid < esp->num[index]) {
+          ASSERT(esp->op_type[index] == eGapAlignSub);
+          esp->num[index] = opid;
+       } 
+       esp->size = index+1;
+       hsp->query.end = hsp->query.offset + qid;
+       hsp->subject.end = hsp->subject.offset + sid;
+   }
+}
+
 Int4
 Blast_HSPListPurgeHSPsWithCommonEndpoints(EBlastProgramType program, 
-                                          BlastHSPList* hsp_list)
+                                          BlastHSPList* hsp_list,
+                                          Boolean purge)
 
 {
    BlastHSP** hsp_array;  /* hsp_array to purge. */
-   Int4 i, j;
-   Int2 retval;
+   BlastHSP* hsp;
+   Int4 i, j, k;
    Int4 hsp_count;
+   purge |= (program != eBlastTypeBlastn);
    
    /* If HSP list is empty, return immediately. */
    if (hsp_list == NULL || hsp_list->hspcnt == 0)
@@ -2067,8 +2155,18 @@ Blast_HSPListPurgeHSPsWithCommonEndpoints(EBlastProgramType program,
              hsp_array[i]->context == hsp_array[i+j]->context &&
              hsp_array[i]->query.offset == hsp_array[i+j]->query.offset &&
              hsp_array[i]->subject.offset == hsp_array[i+j]->subject.offset) {
-         hsp_array[i+j] = Blast_HSPFree(hsp_array[i+j]);
-         j++;
+         hsp_count--;
+         hsp = hsp_array[i+j];
+         if (!purge && (hsp->query.end > hsp_array[i]->query.end)) {
+             s_CutOffGapEditScript(hsp, hsp_array[i]->query.end,
+                                        hsp_array[i]->subject.end, TRUE);
+         } else {
+             hsp = Blast_HSPFree(hsp);
+         }
+         for (k=i+j; k<hsp_count; k++) {
+             hsp_array[k] = hsp_array[k+1];
+         }
+         hsp_array[hsp_count] = hsp;
       }
       i += j;
    }
@@ -2082,17 +2180,27 @@ Blast_HSPListPurgeHSPsWithCommonEndpoints(EBlastProgramType program,
              hsp_array[i]->context == hsp_array[i+j]->context &&
              hsp_array[i]->query.end == hsp_array[i+j]->query.end &&
              hsp_array[i]->subject.end == hsp_array[i+j]->subject.end) {
-         hsp_array[i+j] = Blast_HSPFree(hsp_array[i+j]);
-         j++;
+         hsp_count--;
+         hsp = hsp_array[i+j];
+         if (!purge && (hsp->query.offset < hsp_array[i]->query.offset)) {
+             s_CutOffGapEditScript(hsp, hsp_array[i]->query.offset,
+                                        hsp_array[i]->subject.offset, FALSE);
+         } else {
+             hsp = Blast_HSPFree(hsp);
+         }
+         for (k=i+j; k<hsp_count; k++) {
+             hsp_array[k] = hsp_array[k+1];
+         }
+         hsp_array[hsp_count] = hsp;
       }
       i += j;
    }
 
-   retval = Blast_HSPListPurgeNullHSPs(hsp_list);
-   if (retval < 0)
-      return retval;
+   if (purge) {
+      Blast_HSPListPurgeNullHSPs(hsp_list);
+   }
 
-   return hsp_list->hspcnt;
+   return hsp_count;
 }
 
 Int2 

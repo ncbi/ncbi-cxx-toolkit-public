@@ -500,7 +500,7 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
         if (status) break;
 
         /* Removes redundant HSPs. */
-        Blast_HSPListPurgeHSPsWithCommonEndpoints(program_number, hsp_list);
+        Blast_HSPListPurgeHSPsWithCommonEndpoints(program_number, hsp_list, TRUE);
 
         /* For nucleotide search, if match score is = 2, the odd scores
            are rounded down to the nearest even number. */

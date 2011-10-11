@@ -639,14 +639,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
          
          Blast_HSPUpdateWithTraceback(gap_align, hsp);
 
-         if (kGreedyTraceback) {
-            /* Low level greedy algorithm ignores ambiguities, so the score
-             * needs to be reevaluated. */
-             delete_hsp = 
-                    Blast_HSPReevaluateWithAmbiguitiesGapped(hsp, query, 
-                        adjusted_subject, hit_params, score_params, sbp);
-         }
-         if (!delete_hsp) {
+         if (!delete_hsp && !kGreedyTraceback) {
              /* Calculate number of identities and check if this HSP meets the
                 percent identity and length criteria. */
              delete_hsp = 
@@ -658,8 +651,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
             Blast_HSPAdjustSubjectOffset(hsp, start_shift);
             status = BlastIntervalTreeAddHSP(hsp, tree, query_info, 
                                        eQueryAndSubject);
-         if (status)
-            return status;
+            if (status) return status;
          } else {
             hsp_array[index] = Blast_HSPFree(hsp);
          }
@@ -690,7 +682,36 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
    if (! fence_error) {
        /* Remove any HSPs that share a starting or ending diagonal
           with a higher-scoring HSP. */
-       Blast_HSPListPurgeHSPsWithCommonEndpoints(program_number, hsp_list);
+       Int4 extra_start =
+           Blast_HSPListPurgeHSPsWithCommonEndpoints(program_number, hsp_list, FALSE);
+
+       /* Low level greedy algorithm ignores ambiguities, so the score
+        * needs to be reevaluated. */
+       if (kGreedyTraceback) {
+          extra_start = 0;
+       }
+       /* Try to make use of the remaining part of the longer hsps that
+          get purged otherwise */
+       for (index=extra_start; index < hsp_list->hspcnt; index++) {
+          Boolean delete_hsp = FALSE;
+          hsp = hsp_array[index];
+          if (!hsp) continue;
+          query = query_blk->sequence +
+              query_info->contexts[hsp->context].query_offset;
+          query_nomask = query_blk->sequence_nomask +
+              query_info->contexts[hsp->context].query_offset;
+          query_length = query_info->contexts[hsp->context].query_length;
+          /* the remaining part of the hsp may be extended further */
+          delete_hsp = Blast_HSPReevaluateWithAmbiguitiesGapped(hsp, query,
+                       query_length, subject, subject_length, hit_params, 
+                       score_params, sbp);
+          if (!delete_hsp) 
+              delete_hsp = Blast_HSPTestIdentityAndLength(program_number, hsp, query_nomask, 
+                                                       subject, score_options, hit_options);
+          if (delete_hsp) 
+              hsp_array[index] = Blast_HSPFree(hsp);
+       }
+       Blast_HSPListPurgeNullHSPs(hsp_list);
 
        /* Sort HSPs by score again, as the scores might have changed. */
        Blast_HSPListSortByScore(hsp_list);

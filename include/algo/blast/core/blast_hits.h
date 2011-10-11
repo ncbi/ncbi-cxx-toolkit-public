@@ -232,7 +232,9 @@ Blast_HSPInit(Int4 query_start, Int4 query_end,
  * Traceback is also adjusted in that case.
  * @param hsp The HSP structure [in] [out]
  * @param query_start Pointer to the start of the query sequence [in]
+ * @param query_length Length of the query sequence [in]
  * @param subject_start Pointer to the start of the subject sequence [in]
+ * @param subject_length Length of the subject sequence [in]
  * @param hit_params Hit saving parameters containing score cut-off [in]
  * @param score_params Scoring parameters [in]
  * @param sbp Score block with Karlin-Altschul parameters [in]
@@ -240,8 +242,10 @@ Blast_HSPInit(Int4 query_start, Int4 query_end,
  */
 NCBI_XBLAST_EXPORT
 Boolean 
-Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp, const Uint1* query_start, 
-   const Uint1* subject_start, const BlastHitSavingParameters* hit_params, 
+Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp, 
+   const Uint1* query_start, const Int4 query_length, 
+   const Uint1* subject_start, const Int4 subject_length,
+   const BlastHitSavingParameters* hit_params, 
    const BlastScoringParameters* score_params, BlastScoreBlk* sbp);
 
 /** Reevaluate the HSP's score and percent identity after taking into
@@ -506,12 +510,14 @@ Blast_HSPListPurgeNullHSPs(BlastHSPList* hsp_list);
  * @param program Type of BLAST program. For some programs (PHI BLAST), the
  *                purge should not be performed. [in]
  * @param hsp_list Contains array of pointers to HSPs to purge [in]
+ * @param purge Should the hsp be purged? [in]
  * @return The number of valid alignments remaining. 
 */
 NCBI_XBLAST_EXPORT
 Int4
 Blast_HSPListPurgeHSPsWithCommonEndpoints(EBlastProgramType program, 
-                                          BlastHSPList* hsp_list);
+                                          BlastHSPList* hsp_list,
+                                          Boolean purge);
 
 /** Reevaluate all ungapped HSPs in an HSP list.  
  * This is only done for an ungapped search, or if traceback is 

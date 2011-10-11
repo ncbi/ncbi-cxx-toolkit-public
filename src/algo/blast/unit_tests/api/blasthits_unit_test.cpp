@@ -864,8 +864,8 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         hit_params->cutoffs[0].cutoff_score = hit_params->cutoff_score_min;
 
         s_SetupHSPForGappedReevaluateTest(&hsp);
-        Blast_HSPReevaluateWithAmbiguitiesGapped(hsp, query_blk->sequence, 
-            subject_seq, hit_params, scoring_params, sbp);
+        Blast_HSPReevaluateWithAmbiguitiesGapped(hsp, query_blk->sequence, query_blk->length,
+            subject_seq, subj_length, hit_params, scoring_params, sbp);
 
         // With e-value 1, the low-scoring front piece of the alignment is 
         // cut off.
@@ -879,8 +879,8 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         hit_params->cutoffs[0].cutoff_score = hit_params->cutoff_score_min;
         
         s_SetupHSPForGappedReevaluateTest(&hsp);
-        Blast_HSPReevaluateWithAmbiguitiesGapped(hsp, query_blk->sequence, 
-            subject_seq, hit_params, scoring_params, sbp);
+        Blast_HSPReevaluateWithAmbiguitiesGapped(hsp, query_blk->sequence, query_blk->length,
+            subject_seq, subj_length, hit_params, scoring_params, sbp);
         // With e-value 10, the front piece of the alignment is left, and the 
         // remainder is cut off.
         checkReevaluateResultsGapped(hsp);
@@ -950,7 +950,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         hit_params->cutoffs[0].cutoff_score = hit_params->cutoff_score_min;
 
         Boolean delete_hsp = 
-            Blast_HSPReevaluateWithAmbiguitiesGapped(hsp, query, subject, 
+            Blast_HSPReevaluateWithAmbiguitiesGapped(hsp, query, kLength, subject, kLength,
                                                      hit_params, score_params,
                                                      sbp);
         BOOST_REQUIRE(delete_hsp == TRUE);
@@ -1145,13 +1145,13 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         program = eBlastTypePhiBlastp;
         BOOST_REQUIRE_EQUAL(kHspCountStart, 
                              Blast_HSPListPurgeHSPsWithCommonEndpoints(program, 
-                                                                       hsp_list));
+                                                                       hsp_list, FALSE));
 
         // Now check that for a non-PHI program the routine works properly.
         program = eBlastTypeBlastp;
         BOOST_REQUIRE_EQUAL(kHspCountEnd, 
                              Blast_HSPListPurgeHSPsWithCommonEndpoints(program, 
-                                                                       hsp_list));
+                                                                       hsp_list, FALSE));
 
         BlastHSP** hsp_array = hsp_list->hsp_array;
         for (int index = 0; index < kHspCountEnd; ++index) {
