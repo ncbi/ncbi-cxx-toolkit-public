@@ -273,8 +273,13 @@ string CGffWriteRecord::s_GetGffSourceString(
     CBioseq_Handle bsh )
 //  ----------------------------------------------------------------------------
 {
-    const CSeq_id* pBigId = sequence::GetId( 
-        bsh, sequence::eGetId_Best).GetSeqId();
+    const CSeq_id* pBigId = 0;
+    try {
+        pBigId = sequence::GetId(bsh, sequence::eGetId_Best).GetSeqId();
+    }
+    catch(...) {
+        return "Unknown";
+    }
 
     switch ( pBigId->Which() ) {
         default:

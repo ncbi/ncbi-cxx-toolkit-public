@@ -762,26 +762,36 @@ bool CGff3WriteRecordFeature::x_AssignAttributeName(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    string strNameKey;
+    TAttrCit cit;    
+    switch ( mf.GetFeatSubtype() ) {
 
-    if ( mf.GetFeatType() == CSeqFeatData::e_Rna ) {
-        strNameKey = "transcript_id";    
-    }
-    else {
-        switch ( mf.GetFeatSubtype() ) {
-            default:
+        default:
+            break;
+
+        case CSeqFeatData::eSubtype_gene:
+            cit = m_Attributes.find("gene");
+            if (cit != m_Attributes.end()) {
+                m_Attributes["Name"] = cit->second;
                 return true;
-            case CSeqFeatData::eSubtype_gene:
-                strNameKey = "gene";
-                break;
-            case CSeqFeatData::eSubtype_cdregion:
-                strNameKey = "protein_id";
-                break;
-        }
+            }
+            cit = m_Attributes.find("locus_tag");
+            if (cit != m_Attributes.end()) {
+                m_Attributes["Name"] = cit->second;
+            }
+            return true;
+
+        case CSeqFeatData::eSubtype_cdregion:
+            cit = m_Attributes.find("protein_id");
+            if (cit != m_Attributes.end()) {
+                m_Attributes["Name"] = cit->second;
+            }
+            return true;
     }
-    TAttrCit cit = m_Attributes.find(strNameKey);
+
+    cit = m_Attributes.find("transcript_id");
     if (cit != m_Attributes.end()) {
         m_Attributes["Name"] = cit->second;
+        return true;
     }
     return true;
 }
@@ -892,10 +902,6 @@ bool CGff3WriteRecordFeature::x_AssignAttributeModelEvidence(
         if ( model_evidence ) {
             string strNote;
             if ( model_evidence->HasField( "Method" ) ) {
-                GetAttribute( "Note", strNote );
-                if ( ! strNote.empty() ) {
-                    strNote += "; ";
-                }               
                 strNote += "Derived by automated computational analysis";
                 strNote += " using gene prediction method: ";
                 strNote += model_evidence->GetField( "Method" ).GetData().GetStr();
@@ -948,7 +954,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeModelEvidence(
                 }
             }
             if ( ! strNote.empty() ) {
-                m_Attributes["Note"] = strNote;
+                m_Attributes["model_evidence"] = strNote;
             }
         }
     }
@@ -1076,7 +1082,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeCodeBreak(
     list<CRef<CCode_break> >::const_iterator it = code_breaks.begin();
     string code_break_str = s_CodeBreakString(**it);
     for ( ++it; it != code_breaks.end(); ++it ) {
-        code_break_str += ",";
+        code_break_str += INTERNAL_SEPARATOR;
         code_break_str += s_CodeBreakString(**it);
     }
     m_Attributes["transl_except"] = code_break_str;
