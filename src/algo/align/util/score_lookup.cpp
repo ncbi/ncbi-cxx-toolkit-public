@@ -157,11 +157,7 @@ public:
 
     virtual double Get(const CSeq_align& align, CScope* s) const
     {
-        try {
-            return align.GapLengthRange().second;
-        } catch (CSeqalignException &) {
-            return numeric_limits<double>::quiet_NaN();
-        }
+        return align.GapLengthRange().second;
     }
 };
 
@@ -398,19 +394,22 @@ public:
 
     virtual double Get(const CSeq_align& align, CScope* scope) const
     {
-        double score = numeric_limits<double>::quiet_NaN();
         if (m_Row == 0  &&  align.GetSegs().IsSpliced()) {
-            score = align.GetSegs().GetSpliced().GetProduct_length();
+            return align.GetSegs().GetSpliced().GetProduct_length();
         } else {
             if (scope) {
                 CBioseq_Handle bsh =
                     scope->GetBioseqHandle(align.GetSeq_id(m_Row));
                 if (bsh) {
-                    score = bsh.GetBioseqLength();
+                    return bsh.GetBioseqLength();
+                } else {
+                    NCBI_THROW(CException, eUnknown,
+                               "Can't get length for sequence " +
+                               align.GetSeq_id(m_Row).AsFastaString());
                 }
             }
         }
-        return score;
+        return 0;
     }
 
 private:
@@ -470,11 +469,7 @@ public:
 
     virtual double Get(const CSeq_align& align, CScope*) const
     {
-        try {
-            return align.ExonLengthRange().first;
-        } catch (CSeqalignException &) {
-            return numeric_limits<double>::quiet_NaN();
-        }
+        return align.ExonLengthRange().first;
     }
 };
 
@@ -497,11 +492,7 @@ public:
 
     virtual double Get(const CSeq_align& align, CScope*) const
     {
-        try {
-            return align.IntronLengthRange().second;
-        } catch (CSeqalignException &) {
-            return numeric_limits<double>::quiet_NaN();
-        }
+        return align.IntronLengthRange().second;
     }
 };
 
@@ -560,7 +551,6 @@ public:
     {
         double score = 0;
 
-        try {
             ///
             /// complicated
             ///
@@ -597,15 +587,7 @@ public:
                     score += (*i == '*');
                 }
             }
-        }
-        catch (CException& e) {
-            CNcbiOstrstream os;
-            os << MSerial_AsnText << align;
-            ERR_POST(Error << "error computing internal stops: " << e);
-            ERR_POST(Error << "source alignment: "
-                     << string(CNcbiOstrstreamToString(os)));
-            ERR_POST(Error << "proceeding with " << score << " internal stops");
-        }
+
         return score;
     }
 };
@@ -749,7 +731,6 @@ public:
 
     virtual double Get(const CSeq_align& align, CScope* scope) const
     {
-        double score = numeric_limits<double>::quiet_NaN();
         if (align.GetSegs().IsSpliced())
         {
             const CSpliced_seg &seg = align.GetSegs().GetSpliced();
@@ -764,11 +745,13 @@ public:
                         ? **++align.GetSegs().GetSpliced().GetExons().begin()
                         : **++align.GetSegs().GetSpliced().GetExons().rbegin();
                 if (last_spliced_exon.CanGetProduct_end()) {
-                    score = last_spliced_exon.GetProduct_end().GetNucpos();
+                    return last_spliced_exon.GetProduct_end().GetNucpos();
                 }
             }
         }
-        return score;
+        NCBI_THROW(CAlgoAlignUtilException, eScoreNotFound,
+                   "last_splice_site score inapplicable");
+        return 0;
     }
 
 private:
