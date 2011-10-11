@@ -12,11 +12,19 @@ repos = 'https://svn.ncbi.nlm.nih.gov/repos/'
 viewable = repos
 base = repos + 'toolkit/trunk'
 public = True
-if 'internal' in os.environ['SCRIPT_NAME']:
-    real_vvc = 'http://svn.ncbi.nlm.nih.gov/viewvc/'
-    base += '/internal'
-    public = False
-else:
+
+try:
+    script_name = os.environ['SCRIPT_NAME']
+    server_name = os.environ['SERVER_NAME']
+    if ('internal' in script_name or
+        (server_name[0] == 'i' and not 'public' in script_name)):
+        real_vvc = 'http://svn.ncbi.nlm.nih.gov/viewvc/'
+        base += '/internal'
+        public = False
+except:
+    pass
+
+if public:
     viewable += 'toolkit/'
 base += '/c++'
 
