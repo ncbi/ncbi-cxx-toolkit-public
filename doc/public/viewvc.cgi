@@ -7,13 +7,17 @@ import urllib
 
 # ViewVC proper knows nothing of svn:externals; this wrapper resolves
 # them before handing the user off to it.
-real_vvc = 'http://svn.ncbi.nlm.nih.gov/viewvc/'
+real_vvc = 'http://www.ncbi.nlm.nih.gov/viewvc/v1/'
 repos = 'https://svn.ncbi.nlm.nih.gov/repos/'
+viewable = repos
 base = repos + 'toolkit/trunk'
 public = True
 if 'internal' in os.environ['SCRIPT_NAME']:
+    real_vvc = 'http://svn.ncbi.nlm.nih.gov/viewvc/'
     base += '/internal'
     public = False
+else:
+    viewable += 'toolkit/'
 base += '/c++'
 
 # Use a hard-coded lookup table for public trees, both because
@@ -68,10 +72,16 @@ def resolve(base, path):
 form = cgi.FieldStorage()
 path = form.getfirst('p')
 resolved = resolve(base, path)
-if not resolved.startswith(repos):
+url = real_vvc + urllib.quote(resolved[len(viewable):])
+if not resolved.startswith(viewable):
     print >>sys.stderr, path, "resolved to unsupported URL", resolved
+    if public: # Try redirecting to internal side
+        url = ('http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/internal'
+               + '/viewvc.cgi?p=' + urllib.quote(path))
+    else:
+        print "Status: 500 Internal error"
+        sys.exit(1)
 
-url = real_vvc + urllib.quote(resolved[len(repos):])
 qpath = cgi.escape(path, True)
 qurl = cgi.escape(url, True)
 print "Location:", url
