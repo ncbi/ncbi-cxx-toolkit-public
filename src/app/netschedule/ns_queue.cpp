@@ -377,6 +377,7 @@ unsigned int  CQueue::Submit(const CNSClientId &  client,
     CJobEvent &     event = job.AppendEvent();
 
     job.SetId(job_id);
+    job.SetPassport(rand());
 
     event.SetNodeAddr(client.GetAddress());
     event.SetStatus(CNetScheduleAPI::ePending);
@@ -472,6 +473,7 @@ unsigned int  CQueue::SubmitBatch(const CNSClientId &             client,
                 CJobEvent &         event = job.AppendEvent();
 
                 job.SetId(job_id_cnt);
+                job.SetPassport(rand());
 
                 event.SetNodeAddr(client.GetAddress());
                 event.SetStatus(CNetScheduleAPI::ePending);
@@ -1835,7 +1837,6 @@ void CQueue::x_PrintJobStat(CNetScheduleHandler &   handler,
     handler.WriteMessage("OK:", "status: " +
                                 CNetScheduleAPI::StatusToString(job.GetStatus()));
 
-    NS_PRINT_TIME("time_submit: ", job.GetTimeSubmit());
     handler.WriteMessage("OK:", "timeout: " +
                                 NStr::ULongToString(job.GetTimeout()));
     handler.WriteMessage("OK:", "run_timeout: " +

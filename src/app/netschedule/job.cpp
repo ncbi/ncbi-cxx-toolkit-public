@@ -208,6 +208,7 @@ string CJobEvent::GetField(int  index) const
 CJob::CJob() :
     m_New(true), m_Deleted(false), m_Dirty(0),
     m_Id(0),
+    m_Passport(0),
     m_Status(CNetScheduleAPI::ePending),
     m_Timeout(0),
     m_RunTimeout(0),
@@ -223,6 +224,7 @@ CJob::CJob() :
 CJob::CJob(const SNSCommandArguments &  request) :
     m_New(true), m_Deleted(false), m_Dirty(fJobPart),
     m_Id(0),
+    m_Passport(0),
     m_Status(CNetScheduleAPI::ePending),
     m_Timeout(0),
     m_RunTimeout(0),
