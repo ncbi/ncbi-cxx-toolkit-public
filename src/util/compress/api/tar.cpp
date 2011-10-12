@@ -72,7 +72,7 @@
 typedef unsigned int mode_t;
 typedef unsigned int uid_t;
 typedef unsigned int gid_t;
-#endif // NCBI_OS
+#endif //NCBI_OS
 
 
 #define NCBI_USE_ERRCODE_X  Util_Compress
@@ -867,7 +867,7 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
         tname = "hard link";
 #else
         tname = "hard link - not FULLY supported";
-#endif // NCBI_OS_UNIX
+#endif //NCBI_OS_UNIX
         break;
     case '2':
         ok = true;
@@ -875,18 +875,18 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
         tname = "symbolic link";
 #else
         tname = "symbolic link - not FULLY supported";
-#endif // NCBI_OS_UNIX
+#endif //NCBI_OS_UNIX
         break;
     case '3':
 #ifdef NCBI_OS_UNIX
         ok = true;
-#endif // NCBI_OS_UNIX
+#endif //NCBI_OS_UNIX
         tname = "character device";
         break;
     case '4':
 #ifdef NCBI_OS_UNIX
         ok = true;
-#endif // NCBI_OS_UNIX
+#endif //NCBI_OS_UNIX
         tname = "block device";
         break;
     case '5':
@@ -896,7 +896,7 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
     case '6':
 #ifdef NCBI_OS_UNIX
         ok = true;
-#endif // NCBI_OS_UNIX
+#endif //NCBI_OS_UNIX
         tname = "FIFO";
         break;
     case '7':
@@ -1412,7 +1412,7 @@ void CTar::x_Open(EAction action)
                 m_Flags |= fSlowSkipWithRead;
             }
         }
-#endif // NCBI_OS_MSWIN
+#endif //NCBI_OS_MSWIN
     } else {
         _ASSERT(m_Stream == m_FileStream);
         EOpenMode mode = EOpenMode(int(action) & eRW);
@@ -1541,7 +1541,7 @@ const char* CTar::x_ReadArchive(size_t& n)
             streamsize xread = m_Stream->rdbuf()
                 ->sgetn(             m_Buffer     + nread,
                         (streamsize)(m_BufferSize - nread));
-#endif // NCBI_COMPILER_MIPSPRO
+#endif //NCBI_COMPILER_MIPSPRO
             if (xread <= 0) {
                 break;
             }
@@ -2838,7 +2838,7 @@ bool CTar::x_ProcessEntry(bool extract, Uint8 size,
             mode_t u = umask(0);
             umask(u & 077);
             try {
-#endif // NCBI_OS_UNIX
+#endif //NCBI_OS_UNIX
                 extract = x_ExtractEntry(size, dst.get(), src.get());
 #ifdef NCBI_OS_UNIX
             } catch (...) {
@@ -2846,7 +2846,7 @@ bool CTar::x_ProcessEntry(bool extract, Uint8 size,
                 throw;
             }
             umask(u);
-#endif // NCBI_OS_UNIX
+#endif //NCBI_OS_UNIX
             if (!extract  &&  pending.get()/*NB: not dir*/) {
                 dst->Remove();
                 // Undo delete
@@ -2891,7 +2891,7 @@ void CTar::x_Skip(Uint8 blocks)
             }
             m_Flags |= fSlowSkipWithRead;
         }
-#endif // NCBI_COMPILER_WORKSHOP
+#endif //NCBI_COMPILER_WORKSHOP
         size_t nskip = (blocks < BLOCK_OF(m_BufferSize)
                         ? (size_t) SIZE_OF(blocks)
                         : m_BufferSize);
@@ -3004,7 +3004,7 @@ bool CTar::x_ExtractEntry(Uint8& size,
                          "Cannot hard-link '" + src->GetPath()
                          + "' and '" + dst->GetPath() + '\''
                          + s_OSReason(x_errno) + ", trying to copy");
-#endif // NCBI_OS_UNIX
+#endif //NCBI_OS_UNIX
                 if (!src->Copy(dst->GetPath(),
                                CDirEntry::fCF_Overwrite |
                                CDirEntry::fCF_PreserveAll)) {
@@ -3066,7 +3066,7 @@ bool CTar::x_ExtractEntry(Uint8& size,
 #else
             string reason = ": Feature not supported by host OS";
             result = false;
-#endif // NCBI_OS_UNIX
+#endif //NCBI_OS_UNIX
             TAR_POST(81, Error,
                      "Cannot create FIFO '" + dst->GetPath() + '\'' + reason);
         }}
@@ -3092,7 +3092,7 @@ bool CTar::x_ExtractEntry(Uint8& size,
 #else
             string reason = ": Feature not supported by host OS";
             result = false;
-#endif // NCBI_OS_UNIX
+#endif //NCBI_OS_UNIX
             TAR_POST(82, Error,
                      "Cannot create " +
                      string(type == CTarEntryInfo::eCharDev
@@ -3208,7 +3208,7 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
             info.GetMode(&user, &group, &other, &special_bits);
         }
         failed = !path->SetMode(user, group, other, special_bits);
-#endif // NCBI_OS_UNIX
+#endif //NCBI_OS_UNIX
         if (failed) {
             int x_errno = errno;
             TAR_THROW(this, eRestoreAttrs,
@@ -3226,7 +3226,7 @@ static string s_BaseDir(const string& dirname)
 #ifdef NCBI_OS_MSWIN
     // Replace backslashes with forward slashes
     NStr::ReplaceInPlace(retval, "\\", "/");
-#endif // NCBI_OS_MSWIN
+#endif //NCBI_OS_MSWIN
     return retval;
 }
 
@@ -3250,7 +3250,7 @@ static string s_ToArchiveName(const string& base_dir, const string& path)
     const NStr::ECase how = NStr::eNocase;
 #else
     const NStr::ECase how = NStr::eCase;
-#endif // NCBI_OS_MSWIN
+#endif //NCBI_OS_MSWIN
 
     bool absolute;
     // Remove leading base dir from the path
@@ -3273,7 +3273,7 @@ static string s_ToArchiveName(const string& base_dir, const string& path)
     if (isalpha((unsigned char) retval[0])  &&  retval.find(":") == 1) {
         pos = 2;
     }
-#endif // NCBI_OS_MSWIN
+#endif //NCBI_OS_MSWIN
 
     // Remove any leading and trailing slashes
     while (pos < retval.length()  &&  retval[pos] == '/') {
@@ -3358,11 +3358,11 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
         m_Current.m_GroupName.erase();
     }
 #endif //NCBI_OS_UNIX
-#ifdef NCBI_OS_MWSWIN
+#ifdef NCBI_OS_MSWIN
     /* these are fake but we don't want to leave plain 0 (root) in there */
     st.orig.st_uid = (uid_t) uid;
     st.orig.st_gid = (gid_t) gid;
-#endif //NCBI_OS_MWSWIN
+#endif //NCBI_OS_MSWIN
 
     m_Current.m_Stat = st.orig;
     // Fixup for mode bits
@@ -3539,7 +3539,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
     /* these are fake but we don't want to leave plain 0 (root) in there */
     m_Current.m_Stat.st_uid = (uid_t) uid;
     m_Current.m_Stat.st_gid = (gid_t) gid;
-#endif // NCBI_OS_UNIX
+#endif //NCBI_OS_UNIX
 
     x_AppendStream(entry.GetName(), is);
 
