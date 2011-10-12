@@ -4441,12 +4441,15 @@ void init_common(const string& module_name)
     }
     pythonpp::CExtType* extt = &python::CCursor::GetType();
     // This list should reflect exactly attributes added in CCursor constructor
+    static char str_rowcount[] = "rowcount";
+    static char str_messages[] = "messages";
+    static char str_description[] = "description";
     static PyMemberDef members[] = {
-        {"rowcount", T_LONG, 0, READONLY, NULL},
-        {"messages", T_OBJECT_EX, 0, READONLY, NULL},
-        {"description", T_OBJECT_EX, 0, READONLY, NULL},
+        {str_rowcount, T_LONG, 0, READONLY, NULL},
+        {str_messages, T_OBJECT_EX, 0, READONLY, NULL},
+        {str_description, T_OBJECT_EX, 0, READONLY, NULL},
         {NULL}
-    };
+    };              // NCBI_FAKE_WARNING
     extt->tp_members = members;
     extt->tp_iter = &python::s_GetCursorIter;
     if ( PyType_Ready(extt) == -1 ) {
