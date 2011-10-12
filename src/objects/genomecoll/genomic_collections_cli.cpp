@@ -52,9 +52,8 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-const string GENCOLL_URL("http://www.ncbi.nlm.nih.gov/projects/gencoll/access/genomic_collections_svc.cgi");
+const string GENCOLL_URL("http://www.ncbi.nlm.nih.gov/projects/r_gencoll/access/gc_get_assembly.cgi");
 
-//  Alternatively Use http://mweb11.ncbi.nlm.nih.gov/projects/r_gencoll/asm4portal/asm4portal.cgi
 
 // destructor
 CGenomicCollectionsService::~CGenomicCollectionsService(void)
