@@ -68,7 +68,7 @@ public:
         const TPatternVec & GetArgPatterns(void) const { return m_ArgPatterns; }
         const vector<string> & GetConstantArgs(void) const { return m_ConstantArgs; }
         EWhen GetWhen(void) const { return m_When; }
-        const int GetID(void) const { return m_ID; }
+        int GetID(void) const { return m_ID; }
 
         string ToString(void);
 
