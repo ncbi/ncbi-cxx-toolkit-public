@@ -506,7 +506,8 @@ void CNSClient::Touch(const CNSClientId &  client_id,
 // Prints the client info
 void CNSClient::Print(const string &         node_name,
                       const CQueue *         queue,
-                      CNetScheduleHandler &  handler) const
+                      CNetScheduleHandler &  handler,
+                      bool                   verbose) const
 {
     handler.WriteMessage("OK:CLIENT " + node_name);
     if (m_Cleared)
@@ -527,12 +528,31 @@ void CNSClient::Print(const string &         node_name,
 
     handler.WriteMessage("OK:  TYPE: " + x_TypeAsString());
 
-    if (m_SubmittedJobs.any())
-        handler.WriteMessage("OK:  NUMBER OF SUBMITTED JOBS: " +
-                             NStr::UIntToString(m_SubmittedJobs.count()));
-    if (m_BlacklistedJobs.any())
-        handler.WriteMessage("OK:  NUMBER OF BLACKLISTED JOBS:" +
-                             NStr::UIntToString(m_BlacklistedJobs.count()));
+    if (m_SubmittedJobs.any()) {
+        if (verbose) {
+            handler.WriteMessage("OK:  SUBMITTED JOBS:");
+
+            TNSBitVector::enumerator    en(m_SubmittedJobs.first());
+            for ( ; en.valid(); ++en)
+                handler.WriteMessage("OK:    " + queue->MakeKey(*en));
+        } else {
+            handler.WriteMessage("OK:  NUMBER OF SUBMITTED JOBS: " +
+                                 NStr::UIntToString(m_SubmittedJobs.count()));
+        }
+    }
+
+    if (m_BlacklistedJobs.any()) {
+        if (verbose) {
+            handler.WriteMessage("OK:  BLACKLISTED JOBS:");
+
+            TNSBitVector::enumerator    en(m_BlacklistedJobs.first());
+            for ( ; en.valid(); ++en)
+                handler.WriteMessage("OK:    " + queue->MakeKey(*en));
+        } else {
+            handler.WriteMessage("OK:  NUMBER OF BLACKLISTED JOBS:" +
+                                 NStr::UIntToString(m_BlacklistedJobs.count()));
+        }
+    }
 
     if (m_RunningJobs.any()) {
         handler.WriteMessage("OK:  RUNNING JOBS:");

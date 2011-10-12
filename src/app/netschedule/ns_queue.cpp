@@ -1426,9 +1426,10 @@ void CQueue::NotifyListeners(bool unconditional, unsigned aff_id)
 }
 
 
-void CQueue::PrintClientsList(CNetScheduleHandler &  handler) const
+void CQueue::PrintClientsList(CNetScheduleHandler &  handler,
+                              bool                   verbose) const
 {
-    m_ClientsRegistry.PrintClientsList(this, handler);
+    m_ClientsRegistry.PrintClientsList(this, handler, verbose);
 }
 
 

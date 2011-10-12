@@ -284,7 +284,8 @@ public:
     void ClearWorkerNode(const CNSClientId &  client);
 
     void NotifyListeners(bool unconditional, unsigned aff_id);
-    void PrintClientsList(CNetScheduleHandler &  handler) const;
+    void PrintClientsList(CNetScheduleHandler &  handler,
+                          bool                   verbose) const;
 
     /// Check execution timeout. Now checks reading timeout as well.
     /// All jobs failed to execute, go back to pending

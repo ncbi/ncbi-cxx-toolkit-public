@@ -117,7 +117,8 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     // STAT [ option : id ] -- "ALL"
     { "STAT",     { &CNetScheduleHandler::x_ProcessStatistics,
                     eNSCR_Queue },
-        { { "option", eNSPT_Id, eNSPA_Optional } } },
+        { { "option",  eNSPT_Id, eNSPA_Optional },
+          { "comment", eNSPT_Id, eNSPA_Optional } } },
     // MPUT job_key : id  progress_msg : str
     { "MPUT",     { &CNetScheduleHandler::x_ProcessPutMessage,
                     eNSCR_Queue },
@@ -1773,7 +1774,10 @@ void CNetScheduleHandler::x_StatisticsNew(CQueue *        q,
                                           time_t          curr)
 {
     if (what == "CLIENTS") {
-        q->PrintClientsList(*this);
+        if (m_CommandArguments.comment == "VERBOSE")
+            q->PrintClientsList(*this, true);
+        else
+            q->PrintClientsList(*this, false);
     }
     else if (what == "JOBS") {
         unsigned total = 0;

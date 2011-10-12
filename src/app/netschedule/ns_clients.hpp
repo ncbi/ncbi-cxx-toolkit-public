@@ -145,7 +145,8 @@ class CNSClient
                    CQueue *             queue);
         void Print(const string &         node_name,
                    const CQueue *         queue,
-                   CNetScheduleHandler &  handler) const;
+                   CNetScheduleHandler &  handler,
+                   bool                   verbose) const;
 
     private:
         bool            m_Cleared;        // Set to true when CLRN is received

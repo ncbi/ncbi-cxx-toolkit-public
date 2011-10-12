@@ -82,7 +82,8 @@ class CNSClientsRegistry
         TNSBitVector  GetBlacklistedJobs(const CNSClientId &  client);
 
         void  PrintClientsList(const CQueue *         queue,
-                               CNetScheduleHandler &  handler) const;
+                               CNetScheduleHandler &  handler,
+                               bool                   verbose) const;
 
         void  SetWaitPort(const CNSClientId &  client,
                           unsigned short       port);

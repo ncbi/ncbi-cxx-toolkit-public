@@ -321,13 +321,14 @@ void  CNSClientsRegistry::ClearWorkerNode(const CNSClientId &  client,
 
 
 void CNSClientsRegistry::PrintClientsList(const CQueue *         queue,
-                                          CNetScheduleHandler &  handler) const
+                                          CNetScheduleHandler &  handler,
+                                          bool                   verbose) const
 {
     CReadLockGuard                              guard(m_Lock);
     map< string, CNSClient >::const_iterator    k = m_Clients.begin();
 
     for ( ; k != m_Clients.end(); ++k)
-        k->second.Print(k->first, queue, handler);
+        k->second.Print(k->first, queue, handler, verbose);
 
     return;
 }
