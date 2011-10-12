@@ -68,13 +68,11 @@ struct SJobDB : public CBDB_File
 
     CBDB_FieldUint4        passport;        ///< Passport - generated integer
     CBDB_FieldInt4         status;          ///< Current job status
-    CBDB_FieldUint4        time_submit;     ///< Job submit time
-    CBDB_FieldUint4        timeout;         ///<     individual timeout
-    CBDB_FieldUint4        run_timeout;     ///<     job run timeout
+    CBDB_FieldUint4        timeout;         ///< Individual timeout
+    CBDB_FieldUint4        run_timeout;     ///< Job run timeout
 
-    CBDB_FieldUint4        subm_addr;       ///< netw BO (for notification)
-    CBDB_FieldUint4        subm_port;       ///< notification port
-    CBDB_FieldUint4        subm_timeout;    ///< notification timeout
+    CBDB_FieldUint4        subm_notif_port;    ///< notification port
+    CBDB_FieldUint4        subm_notif_timeout; ///< notification timeout
 
     // This field shows the number of attempts from submission or last
     // reschedule, so the number of actual attempts in SEventsDB can be more
@@ -99,32 +97,30 @@ struct SJobDB : public CBDB_File
     {
         DisableNull();
 
-        BindKey("id",               &id);
+        BindKey("id",                  &id);
 
-        BindData("passport",        &passport);
-        BindData("status",          &status);
-        BindData("time_submit",     &time_submit);
-        BindData("timeout",         &timeout);
-        BindData("run_timeout",     &run_timeout);
+        BindData("passport",           &passport);
+        BindData("status",             &status);
+        BindData("timeout",            &timeout);
+        BindData("run_timeout",        &run_timeout);
 
-        BindData("subm_addr",       &subm_addr);
-        BindData("subm_port",       &subm_port);
-        BindData("subm_timeout",    &subm_timeout);
+        BindData("subm_notif_port",    &subm_notif_port);
+        BindData("subm_notif_timeout", &subm_notif_timeout);
 
-        BindData("run_counter",     &run_counter);
-        BindData("read_counter",    &read_counter);
+        BindData("run_counter",        &run_counter);
+        BindData("read_counter",       &read_counter);
 
-        BindData("aff_id",          &aff_id);
-        BindData("mask",            &mask);
+        BindData("aff_id",             &aff_id);
+        BindData("mask",               &mask);
 
 
-        BindData("input_overflow",  &input_overflow);
-        BindData("output_overflow", &output_overflow);
-        BindData("input",           &input,          kNetScheduleSplitSize);
-        BindData("output",          &output,         kNetScheduleSplitSize);
-        BindData("client_ip",       &client_ip,      kMaxClientIpSize);
-        BindData("client_sid",      &client_sid,     kMaxSessionIdSize);
-        BindData("progress_msg",    &progress_msg,   kNetScheduleMaxDBDataSize);
+        BindData("input_overflow",     &input_overflow);
+        BindData("output_overflow",    &output_overflow);
+        BindData("input",              &input,          kNetScheduleSplitSize);
+        BindData("output",             &output,         kNetScheduleSplitSize);
+        BindData("client_ip",          &client_ip,      kMaxClientIpSize);
+        BindData("client_sid",         &client_sid,     kMaxSessionIdSize);
+        BindData("progress_msg",       &progress_msg,   kNetScheduleMaxDBDataSize);
     }
 };
 

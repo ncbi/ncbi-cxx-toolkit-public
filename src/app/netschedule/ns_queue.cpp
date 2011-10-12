@@ -344,8 +344,8 @@ void CQueue::x_LogSubmit(const CJob &   job,
             .Print("aff", m_AffinityRegistry.GetTokenByID(job.GetAffinityId()))
             .Print("mask", job.GetMask())
             .Print("subm_addr", CSocketAPI::gethostbyaddr(job.GetSubmAddr()))
-            .Print("subm_port", job.GetSubmPort())
-            .Print("subm_timeout", job.GetSubmTimeout())
+            .Print("subm_notif_port", job.GetSubmNotifPort())
+            .Print("subm_notif_timeout", job.GetSubmNotifTimeout())
             .Print("timeout", NStr::ULongToString(job.GetTimeout()))
             .Print("run_timeout", job.GetRunTimeout());
 
@@ -374,9 +374,16 @@ unsigned int  CQueue::Submit(const CNSClientId &  client,
 
     unsigned int    aff_id = 0;
     unsigned int    job_id = GetNextId();
+    CJobEvent &     event = job.AppendEvent();
 
     job.SetId(job_id);
-    job.SetTimeSubmit(time(0));
+
+    event.SetNodeAddr(client.GetAddress());
+    event.SetStatus(CNetScheduleAPI::ePending);
+    event.SetEvent(CJobEvent::eSubmit);
+    event.SetTimestamp(time(0));
+    event.SetClientNode(client.GetNode());
+    event.SetClientSession(client.GetSession());
 
     // Special treatment for system job masks
     if (job.GetMask() & CNetScheduleAPI::eOutOfOrder)
@@ -462,9 +469,16 @@ unsigned int  CQueue::SubmitBatch(const CNSClientId &             client,
 
                 CJob &              job = batch[k].first;
                 const string &      aff_token = batch[k].second;
+                CJobEvent &         event = job.AppendEvent();
 
                 job.SetId(job_id_cnt);
-                job.SetTimeSubmit(curr_time);
+
+                event.SetNodeAddr(client.GetAddress());
+                event.SetStatus(CNetScheduleAPI::ePending);
+                event.SetEvent(CJobEvent::eBatchSubmit);
+                event.SetTimestamp(curr_time);
+                event.SetClientNode(client.GetNode());
+                event.SetClientSession(client.GetSession());
 
                 if (!aff_token.empty()) {
                     job.SetAffinityId(
@@ -570,7 +584,7 @@ void CQueue::PutResult(const CNSClientId &  client,
 
             if (job.ShouldNotify(curr))
                 m_NotificationsList.NotifyJobStatus(job.GetSubmAddr(),
-                                                    job.GetSubmPort(),
+                                                    job.GetSubmNotifPort(),
                                                     MakeKey(job_id));
             return;
         }
@@ -677,13 +691,7 @@ void CQueue::JobDelayExpiration(unsigned int     job_id,
             if (job.Fetch(this, job_id) != CJob::eJF_Ok)
                 return;
 
-            CJobEvent *     event = job.GetLastEvent();
-            if (!event) {
-                ERR_POST("No JobEvent for running job " << DecorateJobId(job_id));
-                // Fix it
-                event = &job.AppendEvent();
-                job_updated = true;
-            }
+            CJobEvent *         event = &job.AppendEvent();
 
             time_start = event->GetTimestamp();
             if (time_start == 0) {
@@ -848,6 +856,8 @@ TJobStatus  CQueue::Cancel(const CNSClientId &  client,
             event->SetStatus(CNetScheduleAPI::eCanceled);
             event->SetEvent(CJobEvent::eCancel);
             event->SetTimestamp(time(0));
+            event->SetClientNode(client.GetNode());
+            event->SetClientSession(client.GetSession());
 
             job.SetStatus(CNetScheduleAPI::eCanceled);
             job.Flush(this);
@@ -868,7 +878,7 @@ TJobStatus  CQueue::Cancel(const CNSClientId &  client,
     if ((old_status == CNetScheduleAPI::eRunning ||
          old_status == CNetScheduleAPI::ePending) && job.ShouldNotify(time(0)))
         m_NotificationsList.NotifyJobStatus(job.GetSubmAddr(),
-                                            job.GetSubmPort(),
+                                            job.GetSubmNotifPort(),
                                             MakeKey(job_id));
 
     return old_status;
@@ -1032,6 +1042,8 @@ void CQueue::GetJobForReading(const CNSClientId &   client,
         event->SetEvent(CJobEvent::eRead);
         event->SetTimestamp(curr);
         event->SetNodeAddr(client.GetAddress());
+        event->SetClientNode(client.GetNode());
+        event->SetClientSession(client.GetSession());
 
         job->SetRunTimeout(read_timeout);
         job->SetStatus(CNetScheduleAPI::eReading);
@@ -1118,6 +1130,8 @@ void CQueue::x_ChangeReadingStatus(const CNSClientId &  client,
         CJobEvent &     event = job.AppendEvent();
         event.SetTimestamp(time(0));
         event.SetNodeAddr(client.GetAddress());
+        event.SetClientNode(client.GetNode());
+        event.SetClientSession(client.GetSession());
 
         switch (target_status) {
             case CNetScheduleAPI::eDone:
@@ -1315,6 +1329,8 @@ bool CQueue::FailJob(const CNSClientId &    client,
             event->SetErrorMsg(err_msg);
             event->SetRetCode(ret_code);
             event->SetNodeAddr(client.GetAddress());
+            event->SetClientNode(client.GetNode());
+            event->SetClientSession(client.GetSession());
 
             unsigned                run_count = job.GetRunCount();
             if (run_count <= failed_retries) {
@@ -1355,7 +1371,7 @@ bool CQueue::FailJob(const CNSClientId &    client,
 
         if (!rescheduled  &&  job.ShouldNotify(curr)) {
             m_NotificationsList.NotifyJobStatus(job.GetSubmAddr(),
-                                                job.GetSubmPort(),
+                                                job.GetSubmNotifPort(),
                                                 MakeKey(job_id));
         }
     }}
@@ -1467,12 +1483,6 @@ void CQueue::x_CheckExecutionTimeout(unsigned   queue_run_timeout,
                 return;
 
             CJobEvent *     event = job.GetLastEvent();
-            if (!event) {
-                ERR_POST("No JobEvent for running/reading job " << DecorateJobId(job_id));
-                // fix it here as well as we can
-                event = &job.AppendEvent();
-                event->SetTimestamp(curr_time);
-            }
             time_start = event->GetTimestamp();
             run_timeout = job.GetRunTimeout();
             if (run_timeout == 0)
@@ -1528,7 +1538,7 @@ void CQueue::x_CheckExecutionTimeout(unsigned   queue_run_timeout,
 
     if (new_status == CNetScheduleAPI::eFailed && job.ShouldNotify(time(0)))
         m_NotificationsList.NotifyJobStatus(job.GetSubmAddr(),
-                                            job.GetSubmPort(),
+                                            job.GetSubmNotifPort(),
                                             MakeKey(job_id));
 
     if (logging)
@@ -1815,7 +1825,6 @@ void CQueue::x_PrintJobStat(CNetScheduleHandler &   handler,
                             unsigned                queue_run_timeout)
 {
     unsigned            run_timeout = job.GetRunTimeout();
-    unsigned            subm_addr = job.GetSubmAddr();
     unsigned            aff_id = job.GetAffinityId();
 
 
@@ -1832,16 +1841,10 @@ void CQueue::x_PrintJobStat(CNetScheduleHandler &   handler,
     NS_PRINT_TIME("expiration_time: ",
                   job.GetJobExpirationTime(GetTimeout(), GetRunTimeout()));
 
-    if (subm_addr == 0)
-        handler.WriteMessage("OK:", "subm_addr: ");
-    else
-        handler.WriteMessage("OK:", "subm_addr: " +
-                                    CSocketAPI::gethostbyaddr(subm_addr));
-
-    handler.WriteMessage("OK:", "subm_port: " +
-                                NStr::IntToString(job.GetSubmPort()));
-    handler.WriteMessage("OK:", "subm_timeout: " +
-                                NStr::IntToString(job.GetSubmTimeout()));
+    handler.WriteMessage("OK:", "subm_notif_port: " +
+                                NStr::IntToString(job.GetSubmNotifPort()));
+    handler.WriteMessage("OK:", "subm_notif_timeout: " +
+                                NStr::IntToString(job.GetSubmNotifTimeout()));
 
     // Print detailed information about the job events
     const vector<CJobEvent> &   events = job.GetEvents();

@@ -906,9 +906,8 @@ void CNetScheduleHandler::x_ProcessMsgBatchJob(BUF buffer)
                     NStr::ParseEscapes(m_CommandArguments.affinity_token);
 
     job.SetMask(m_CommandArguments.job_mask);
-    job.SetSubmAddr(m_ClientId.GetAddress());
-    job.SetSubmPort(m_BatchSubmPort);
-    job.SetSubmTimeout(m_BatchSubmTimeout);
+    job.SetSubmNotifPort(m_BatchSubmPort);
+    job.SetSubmNotifTimeout(m_BatchSubmTimeout);
     job.SetClientIP(m_BatchClientIP);
     job.SetClientSID(m_BatchClientSID);
 
@@ -1024,7 +1023,7 @@ void CNetScheduleHandler::x_ProcessFastStatusW(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessSubmit(CQueue* q)
 {
-    CJob        job(m_CommandArguments, m_ClientId.GetAddress());
+    CJob        job(m_CommandArguments);
 
     // Never leave Client IP empty, if we're not provided with a real one,
     // use peer address as a last resort. See also x_ProcessSubmitBatch.

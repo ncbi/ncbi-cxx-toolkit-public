@@ -68,7 +68,9 @@ public:
     enum EJobEvent {
         eUnknown = -1,  // Used for initialisation
 
-        eRequest = 0,   // GET, WGET, JXCG
+        eSubmit = 0,    // SUBMIT
+        eBatchSubmit,   // Batch submit
+        eRequest,       // GET, WGET, JXCG
         eDone,          // PUT, JXCG
         eReturn,        // RETURN
         eFail,          // FPUT
@@ -165,8 +167,7 @@ public:
     };
 
     CJob();
-    CJob(const SNSCommandArguments &    request,
-         unsigned int                   submAddr);
+    CJob(const SNSCommandArguments &  request);
 
     // Getter/setters
     unsigned       GetId() const
@@ -179,18 +180,20 @@ public:
     TJobStatus     GetStatus() const
     { return m_Status; }
     time_t         GetTimeSubmit() const
-    { return m_TimeSubmit; }
+    { _ASSERT(!m_Events.empty());
+      return m_Events[0].m_Timestamp; }
     time_t         GetTimeout() const
     { return m_Timeout; }
     unsigned       GetRunTimeout() const
     { return m_RunTimeout; }
 
     unsigned       GetSubmAddr() const
-    { return m_SubmAddr; }
-    unsigned short GetSubmPort() const
-    { return m_SubmPort; }
-    unsigned       GetSubmTimeout() const
-    { return m_SubmTimeout; }
+    { _ASSERT(!m_Events.empty());
+      return m_Events[0].m_NodeAddr; }
+    unsigned short GetSubmNotifPort() const
+    { return m_SubmNotifPort; }
+    unsigned       GetSubmNotifTimeout() const
+    { return m_SubmNotifTimeout; }
 
     unsigned       GetRunCount() const
     { return m_RunCount; }
@@ -232,9 +235,6 @@ public:
     void           SetStatus(TJobStatus status)
     { m_Status = status;
       m_Dirty |= fJobPart; }
-    void           SetTimeSubmit(time_t t)
-    { m_TimeSubmit = (unsigned) t;
-      m_Dirty |= fJobPart; }
     void           SetTimeout(time_t t)
     { m_Timeout = (unsigned) t;
       m_Dirty |= fJobPart; }
@@ -242,14 +242,11 @@ public:
     { m_RunTimeout = (unsigned) t;
       m_Dirty |= fJobPart; }
 
-    void           SetSubmAddr(unsigned addr)
-    { m_SubmAddr = addr;
+    void           SetSubmNotifPort(unsigned short port)
+    { m_SubmNotifPort = port;
       m_Dirty |= fJobPart; }
-    void           SetSubmPort(unsigned short port)
-    { m_SubmPort = port;
-      m_Dirty |= fJobPart; }
-    void           SetSubmTimeout(unsigned t)
-    { m_SubmTimeout = t;
+    void           SetSubmNotifTimeout(unsigned t)
+    { m_SubmNotifTimeout = t;
       m_Dirty |= fJobPart; }
 
     void           SetRunCount(unsigned count)
@@ -327,13 +324,11 @@ private:
     unsigned            m_Id;
     unsigned int        m_Passport;
     TJobStatus          m_Status;
-    unsigned            m_TimeSubmit;    ///< Job submit time
-    unsigned            m_Timeout;       ///<     individual timeout
-    unsigned            m_RunTimeout;    ///<     job run timeout
+    unsigned            m_Timeout;       ///< Individual timeout
+    unsigned            m_RunTimeout;    ///< Job run timeout
 
-    unsigned            m_SubmAddr;      ///< netw BO (for notification)
-    unsigned short      m_SubmPort;      ///< notification port
-    unsigned            m_SubmTimeout;   ///< notification timeout
+    unsigned short      m_SubmNotifPort;    ///< Submit notification port
+    unsigned            m_SubmNotifTimeout; ///< Submit notification timeout
 
     unsigned            m_RunCount;      ///< since last reschedule
     unsigned            m_ReadCount;

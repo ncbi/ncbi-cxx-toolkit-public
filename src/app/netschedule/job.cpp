@@ -62,6 +62,8 @@ static string FormatTime(time_t t)
 // CJobEvent implementation
 
 static string   s_EventAsString[] = {
+    "Submit",           // eSubmit
+    "BatchSubmit",      // eBatchSubmit
     "Request",          // eRequest
     "Done",             // eDone
     "Return",           // eReturn
@@ -80,7 +82,7 @@ static string   s_EventAsString[] = {
 
 string CJobEvent::EventToString(EJobEvent  event)
 {
-    if (event < eRequest || event > eSessionChanged)
+    if (event < eSubmit || event > eSessionChanged)
         return "UNKNOWN";
 
     return s_EventAsString[ event ];
@@ -207,12 +209,10 @@ CJob::CJob() :
     m_New(true), m_Deleted(false), m_Dirty(0),
     m_Id(0),
     m_Status(CNetScheduleAPI::ePending),
-    m_TimeSubmit(0),
     m_Timeout(0),
     m_RunTimeout(0),
-    m_SubmAddr(0),
-    m_SubmPort(0),
-    m_SubmTimeout(0),
+    m_SubmNotifPort(0),
+    m_SubmNotifTimeout(0),
     m_RunCount(0),
     m_ReadCount(0),
     m_AffinityId(0),
@@ -220,17 +220,14 @@ CJob::CJob() :
 {}
 
 
-CJob::CJob(const SNSCommandArguments &  request,
-           unsigned int                 submAddr) :
+CJob::CJob(const SNSCommandArguments &  request) :
     m_New(true), m_Deleted(false), m_Dirty(fJobPart),
     m_Id(0),
     m_Status(CNetScheduleAPI::ePending),
-    m_TimeSubmit(0),
     m_Timeout(0),
     m_RunTimeout(0),
-    m_SubmAddr(submAddr),
-    m_SubmPort(request.port),
-    m_SubmTimeout(request.timeout),
+    m_SubmNotifPort(request.port),
+    m_SubmNotifTimeout(request.timeout),
     m_RunCount(0),
     m_ReadCount(0),
     m_ProgressMsg(request.progress_msg),
@@ -301,12 +298,10 @@ static string  s_JobFieldNames[] = {
     "id",
     "passport",
     "status",
-    "time_submit",
     "timeout",
     "run_timeout",
-    "subm_addr",
-    "subm_port",
-    "subm_timeout",
+    "subm_notif_port",
+    "subm_notif_timeout",
     "run_count",
     "read_count",
     "mask",
@@ -337,35 +332,31 @@ string CJob::GetField(int index) const
         return NStr::IntToString(m_Passport);
     case 2:  // status
         return CNetScheduleAPI::StatusToString(m_Status);
-    case 3:  // time_submit
-        return FormatTime(m_TimeSubmit);
-    case 4:  // timeout
+    case 3:  // timeout
         return NStr::IntToString(m_Timeout);
-    case 5:  // run_timeout
+    case 4:  // run_timeout
         return NStr::IntToString(m_RunTimeout);
-    case 6:  // subm_addr
-        return NStr::IntToString(m_SubmAddr);
-    case 7:  // subm_port
-        return NStr::IntToString(m_SubmPort);
-    case 8:  // subm_timeout
-        return NStr::IntToString(m_SubmTimeout);
-    case 9:  // run_count
+    case 5:  // subm_notif_port
+        return NStr::IntToString(m_SubmNotifPort);
+    case 6:  // subm_notif_timeout
+        return NStr::IntToString(m_SubmNotifTimeout);
+    case 7:  // run_count
         return NStr::IntToString(m_RunCount);
-    case 10:  // read-count
+    case 8:  // read-count
         return NStr::IntToString(m_ReadCount);
-    case 11: // mask
+    case 9:  // mask
         return NStr::IntToString(m_Mask);
-    case 12: // client_ip
+    case 10: // client_ip
         return m_ClientIP;
-    case 13: // client_sid
+    case 11: // client_sid
         return m_ClientSID;
-    case 14: // events
+    case 12: // events
         return NStr::SizetToString(m_Events.size());
-    case 15: // input
+    case 13: // input
         return m_Input;
-    case 16: // output
+    case 14: // output
         return m_Output;
-    case 17: // progress_msg
+    case 15: // progress_msg
         return m_ProgressMsg;
     }
     return "NULL";
@@ -401,9 +392,7 @@ CJobEvent *  CJob::GetLastEvent()
 
 time_t  CJob::GetLastUpdateTime(void) const
 {
-    if (m_Events.empty())
-        return m_TimeSubmit;    // The job had no attempts to be executed
-
+    _ASSERT(!m_Events.empty());
     return m_Events[m_Events.size()-1].GetTimestamp();
 }
 
@@ -457,13 +446,11 @@ CJob::EJobFetchResult CJob::Fetch(CQueue* queue)
 
     m_Passport      = job_db.passport;
     m_Status        = TJobStatus(int(job_db.status));
-    m_TimeSubmit    = job_db.time_submit;
     m_Timeout       = job_db.timeout;
     m_RunTimeout    = job_db.run_timeout;
 
-    m_SubmAddr      = job_db.subm_addr;
-    m_SubmPort      = job_db.subm_port;
-    m_SubmTimeout   = job_db.subm_timeout;
+    m_SubmNotifPort    = job_db.subm_notif_port;
+    m_SubmNotifTimeout = job_db.subm_notif_timeout;
 
     m_RunCount      = job_db.run_counter;
     m_ReadCount     = job_db.read_counter;
@@ -572,13 +559,11 @@ bool CJob::Flush(CQueue* queue)
         job_db.passport       = m_Passport;
         job_db.status         = int(m_Status);
 
-        job_db.time_submit    = m_TimeSubmit;
         job_db.timeout        = m_Timeout;
         job_db.run_timeout    = m_RunTimeout;
 
-        job_db.subm_addr      = m_SubmAddr;
-        job_db.subm_port      = m_SubmPort;
-        job_db.subm_timeout   = m_SubmTimeout;
+        job_db.subm_notif_port    = m_SubmNotifPort;
+        job_db.subm_notif_timeout = m_SubmNotifTimeout;
 
         job_db.run_counter    = m_RunCount;
         job_db.read_counter   = m_ReadCount;
@@ -659,8 +644,12 @@ bool CJob::Flush(CQueue* queue)
 
 bool CJob::ShouldNotify(time_t curr)
 {
-    return m_TimeSubmit && m_SubmTimeout && m_SubmAddr && m_SubmPort &&
-        (m_TimeSubmit + m_SubmTimeout >= (unsigned) curr);
+    // The very first event is always a submit
+    _ASSERT(!m_Events.empty());
+
+    if (m_SubmNotifTimeout && m_SubmNotifPort)
+        return m_Events[0].m_Timestamp + m_SubmNotifTimeout >= curr;
+    return false;
 }
 
 
