@@ -46,6 +46,7 @@ enum EAgpRead_IdRule
 };
 
 /// Read an agp file from a stream, constructing delta sequences
+NCBI_DEPRECATED
 NCBI_XOBJREAD_EXPORT
 void AgpRead(CNcbiIstream& is,
              vector<CRef<objects::CBioseq> >& bioseqs,
@@ -54,6 +55,7 @@ void AgpRead(CNcbiIstream& is,
              vector<vector<char> >* component_types = 0);
 
 /// Same thing, but wrap bioseqs in Seq-entry's.
+NCBI_DEPRECATED
 NCBI_XOBJREAD_EXPORT
 void AgpRead(CNcbiIstream& is,
              vector<CRef<objects::CSeq_entry> >& entries,
@@ -62,6 +64,7 @@ void AgpRead(CNcbiIstream& is,
              vector<vector<char> >* component_types = 0);
 
 /// Return a Bioseq-set containing everything.
+NCBI_DEPRECATED
 NCBI_XOBJREAD_EXPORT
 CRef<objects::CBioseq_set>
 AgpRead(CNcbiIstream& is, EAgpRead_IdRule component_id_rule = eAgpRead_ParseId,

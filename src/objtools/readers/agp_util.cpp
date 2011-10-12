@@ -36,6 +36,8 @@
 BEGIN_NCBI_SCOPE
 
 //// class CAgpErr
+
+// When updating s_msg, also update the enum that indexes into this
 const CAgpErr::TStr CAgpErr::s_msg[]= {
     kEmptyCStr,
 
@@ -107,8 +109,8 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "in unplaced singleton scaffold, component orientation is not \"+\"",
     "gap shorter than 10 bp",
     "space in object name ",
-    kEmptyCStr,
-    kEmptyCStr,
+    "comments only allowed at the beginning for AGP v. 2.0",
+    "orientation '0' deprecated for AGP v. 2.0.  Use '?' instead.",
 
     kEmptyCStr,
     kEmptyCStr,
@@ -189,10 +191,12 @@ void CAgpErr::Clear()
 
 
 //// class CAgpRow
+// if you update CAgpRow::gap_types, make sure you update CAgpRow::EGap
 const CAgpRow::TStr CAgpRow::gap_types[CAgpRow::eGapCount] = {
     "clone",
     "fragment",
     "repeat",
+    "scaffold",
 
     "contig",
     "centromere",
@@ -204,7 +208,8 @@ const CAgpRow::TStr CAgpRow::gap_types[CAgpRow::eGapCount] = {
 CAgpRow::TMapStrEGap* CAgpRow::gap_type_codes=NULL;
 DEFINE_CLASS_STATIC_FAST_MUTEX(CAgpRow::init_mutex);
 
-CAgpRow::CAgpRow()
+CAgpRow::CAgpRow(EAgpVersion agp_version) :
+    m_agp_version(agp_version)
 {
     if(gap_type_codes==NULL) {
         // initialize this static map once
@@ -215,7 +220,8 @@ CAgpRow::CAgpRow()
     m_AgpErr = new CAgpErr;
 }
 
-CAgpRow::CAgpRow(CAgpErr* arg)
+CAgpRow::CAgpRow(CAgpErr* arg, EAgpVersion agp_version) :
+    m_agp_version(agp_version)
 {
     if(gap_type_codes==NULL) {
         // initialize this static map once
@@ -383,7 +389,13 @@ int CAgpRow::FromString(const string& line)
             if(cols.size()==8 && tabsStripped==false) {
                 m_AgpErr->Msg(CAgpErr::W_GapLineMissingCol9);
             }
-            if(cols.size()==9 && cols[8].size()>0) {
+            if( m_agp_version == eAgpVersion_2_0 && cols.size()==8 ) {
+                // just to make sure no out-of-bounds array accesses
+                cols.push_back(kEmptyStr);
+            }
+            if(cols.size()==9 && cols[8].size()>0 && 
+                m_agp_version == eAgpVersion_1_1)
+            {
                 m_AgpErr->Msg(CAgpErr::W_GapLineIgnoredCol9);
             }
 
@@ -434,16 +446,31 @@ int CAgpRow::ParseComponentCols(bool log_errors)
 
     // orientation
     if(GetOrientation()=="na") {
-        orientation='n';
+        orientation = eOrientationIrrelevant;
         return 0;
     }
     if(GetOrientation().size()==1) {
-        orientation=GetOrientation()[0];
-        switch( orientation )
+        const char orientation_char = GetOrientation()[0];
+        switch( orientation_char )
         {
             case '+':
+                orientation = eOrientationPlus;
+                return 0;
             case '-':
+                orientation = eOrientationMinus;
+                return 0;
             case '0':
+                if( m_agp_version == eAgpVersion_2_0 ) {
+                    m_AgpErr->Msg(CAgpErr::W_OrientationZeroDeprecated);
+                }
+                orientation = eOrientationUnknown;
+                return 0;
+            case '?':
+                if( m_agp_version == eAgpVersion_1_1 ) {
+                    if(log_errors) m_AgpErr->Msg(CAgpErr::E_InvalidValue, "orientation (column 9)");
+                    return CAgpErr::E_InvalidValue;
+                }
+                orientation = eOrientationUnknown;
                 return 0;
         }
     }
@@ -470,6 +497,20 @@ int CAgpRow::ParseGapCols(bool log_errors)
         return CAgpErr::E_InvalidValue;
     }
     gap_type=it->second;
+    
+    if( m_agp_version == eAgpVersion_2_0 ) {
+        // certain gap-types are removed from AGP 2.0
+        if( gap_type == eGapClone || gap_type == eGapFragment ) {
+            if(log_errors) m_AgpErr->Msg(CAgpErr::E_InvalidValue, "gap_type (column 7)" );
+            return CAgpErr::E_InvalidYes;
+        }
+    } else {
+        // certain gap-types did not exist in AGP 1.1
+        if( gap_type == eGapScaffold ) {
+            if(log_errors) m_AgpErr->Msg(CAgpErr::E_InvalidValue, "gap_type (column 7)");
+            return CAgpErr::E_InvalidValue;
+        }
+    }
 
     if(GetLinkage()=="yes") {
         linkage=true;
@@ -483,9 +524,53 @@ int CAgpRow::ParseGapCols(bool log_errors)
     }
 
     if(linkage) {
-        if( gap_type!=eGapClone && gap_type!=eGapRepeat && gap_type!=eGapFragment ) {
+        if( gap_type != eGapClone && 
+            gap_type != eGapRepeat && 
+            gap_type != eGapFragment &&
+            gap_type != eGapScaffold ) 
+        {
             if(log_errors) m_AgpErr->Msg(CAgpErr::E_InvalidYes, GetGapType() );
             return CAgpErr::E_InvalidYes;
+        }
+    }
+
+    // linkage_evidence
+    linkage_evidences.clear();
+    if( m_agp_version == eAgpVersion_2_0 ) {
+        vector<string> raw_linkage_evidences;
+        if( GetLinkageEvidence() != "na" ) {
+            NStr::Tokenize(GetLinkageEvidence(), ";", raw_linkage_evidences);
+            ITERATE( vector<string>, evid_iter, raw_linkage_evidences ) {
+                if( *evid_iter == "paired-ends" ) {
+                    linkage_evidences.push_back(eLinkageEvidence_paired_ends);
+                } else if( *evid_iter == "align_genus" ) {
+                    linkage_evidences.push_back(eLinkageEvidence_align_genus);
+                } else if( *evid_iter == "align_xgenus" ) {
+                    linkage_evidences.push_back(eLinkageEvidence_align_xgenus);
+                } else if( *evid_iter == "align_trnscpt" ) {
+                    linkage_evidences.push_back(eLinkageEvidence_align_trnscpt);
+                } else if( *evid_iter == "within_clone" ) {
+                    linkage_evidences.push_back(eLinkageEvidence_within_clone);
+                } else if( *evid_iter == "clone_contig" ) {
+                    linkage_evidences.push_back(eLinkageEvidence_clone_contig);
+                } else if( *evid_iter == "map" ) {
+                    linkage_evidences.push_back(eLinkageEvidence_map);
+                } else if( *evid_iter == "strobe" ) {
+                    linkage_evidences.push_back(eLinkageEvidence_strobe);
+                } else if( *evid_iter == "unspecified" ) {
+                    linkage_evidences.push_back(eLinkageEvidence_unspecified);
+                } else {
+                    if(log_errors) m_AgpErr->Msg(CAgpErr::E_InvalidValue, "linkage_evidence (column 9), unknown value: " + *evid_iter);
+                    return CAgpErr::E_InvalidValue;
+                }
+            }
+        }
+        if( linkage_evidences.empty() && linkage ) {
+            if(log_errors) m_AgpErr->Msg(CAgpErr::E_InvalidValue, "linkage_evidence (column 9) should be specified if linkage is yes");
+            return CAgpErr::E_InvalidValue;
+        } else if( ! linkage_evidences.empty() && ! linkage ) {
+            if(log_errors) m_AgpErr->Msg(CAgpErr::E_InvalidValue, "linkage_evidence (column 9) should be empty if no linkage");
+            return CAgpErr::E_InvalidValue;
         }
     }
 
@@ -507,15 +592,15 @@ string CAgpRow::ToString()
         res +=
             NStr::IntToString(gap_length) + "\t" +
             gap_types[gap_type] + "\t" +
-            (linkage?"yes":"no") + "\t";
+            (linkage?"yes":"no") + "\t" +
+            LinkageEvidencesToString();
     }
     else{
         res +=
             GetComponentId  () + "\t" +
             NStr::IntToString(component_beg) + "\t" +
-            NStr::IntToString(component_end) + "\t";
-        if(orientation=='n') res+="na";
-        else res+=orientation;
+            NStr::IntToString(component_end) + "\t" +
+            OrientationToString(orientation);
     }
 
     return res;
@@ -553,15 +638,81 @@ bool CAgpRow::CheckComponentEnd( const string& comp_id, int comp_end, int comp_l
     return true;
 }
 
+string CAgpRow::LinkageEvidencesToString(void)
+{
+    string result;
+
+    ITERATE( vector<ELinkageEvidence>, evid_iter, linkage_evidences ) {
+        if( ! result.empty() ) {
+            result += ';';
+        }
+        switch( *evid_iter ) {
+        case eLinkageEvidence_paired_ends:
+            result += "paired-ends";
+            break;
+        case eLinkageEvidence_align_genus:
+            result += "align_genus";
+            break;
+        case eLinkageEvidence_align_xgenus:
+            result += "align_xgenus";
+            break;
+        case eLinkageEvidence_align_trnscpt:
+            result += "align_trnscpt";
+            break;
+        case eLinkageEvidence_within_clone:
+            result += "within_clone";
+            break;
+        case eLinkageEvidence_clone_contig:
+            result += "clone_contig";
+            break;
+        case eLinkageEvidence_map:
+            result += "map";
+            break;
+        case eLinkageEvidence_strobe:
+            result += "strobe";
+            break;
+        case eLinkageEvidence_unspecified:
+            result += "unspecified";
+            break;
+        default:
+            result += "ERROR:UNKNOWN_LINKAGE_EVIDENCE_TYPE:" + 
+                NStr::IntToString( (int)*evid_iter );
+            break;
+        }
+    }
+
+    return result;
+}
+
+string CAgpRow::OrientationToString( EOrientation orientation )
+{
+    switch( orientation ) {
+        case eOrientationPlus:
+            return "+";
+        case eOrientationMinus:
+            return "-";
+        case eOrientationUnknown:
+            return ( m_agp_version == eAgpVersion_1_1 ? "0" : "?" );
+        case eOrientationIrrelevant:
+            return "na";
+        default:
+            return "ERROR:UNKNOWN_ORIENTATION:" + 
+                NStr::IntToString( (int)orientation );
+    }
+}
+
 //// class CAgpReader
-CAgpReader::CAgpReader()
+CAgpReader::CAgpReader(EAgpVersion agp_version) :
+    m_agp_version(agp_version)
 {
     m_OwnAgpErr=true; // delete in destructor
     m_AgpErr=new CAgpErr();
     Init();
 }
 
-CAgpReader::CAgpReader(CAgpErr* arg, bool ownAgpErr)
+CAgpReader::CAgpReader(CAgpErr* arg, bool ownAgpErr, 
+                       EAgpVersion agp_version ) :
+m_agp_version(agp_version)
 {
     m_OwnAgpErr=ownAgpErr; // delete in destructor (default=false)
     m_AgpErr=arg;
@@ -570,8 +721,8 @@ CAgpReader::CAgpReader(CAgpErr* arg, bool ownAgpErr)
 
 void CAgpReader::Init()
 {
-    m_prev_row=new CAgpRow(m_AgpErr);
-    m_this_row=new CAgpRow(m_AgpErr);
+    m_prev_row=new CAgpRow(m_AgpErr, m_agp_version);
+    m_this_row=new CAgpRow(m_AgpErr, m_agp_version);
     m_at_beg=true;
     m_prev_line_num=-1;
 }
@@ -654,6 +805,7 @@ bool CAgpReader::ProcessThisRow()
 int CAgpReader::ReadStream(CNcbiIstream& is, bool finalize)
 {
     m_at_end=false;
+    m_content_line_seen=false;
     if(m_at_beg) {
         //// The first line
         m_line_num=0;
@@ -673,13 +825,21 @@ int CAgpReader::ReadStream(CNcbiIstream& is, bool finalize)
 
     while( NcbiGetline(is, m_line, "\r\n") ) {
         m_line_num++;
-        m_error_code=m_this_row->FromString(m_line);
+
+        m_error_code = m_this_row->FromString(m_line);
+        if( m_error_code != -1 ) {
+            m_content_line_seen = true;
+        }
+
         m_line_skipped=false;
         if(m_error_code==0) {
             if( !ProcessThisRow() ) return m_error_code;
             if( m_error_code < 0 ) break; // A simulated EOF midstream
         }
         else if(m_error_code==-1) {
+            if( m_agp_version == eAgpVersion_2_0 && m_content_line_seen ) {
+                m_AgpErr->Msg(CAgpErr::W_CommentsAfterStart);
+            }
             OnComment();
             if( m_error_code < -1 ) break; // A simulated EOF midstream
         }

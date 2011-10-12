@@ -50,6 +50,12 @@
 
 BEGIN_NCBI_SCOPE
 
+// As time goes on, we should remove support for older versions.
+enum EAgpVersion {
+    eAgpVersion_1_1, // AGP spec 1.1
+    eAgpVersion_2_0  // AGP spec 2.0
+};
+
 class CAgpErr; // full definition below
 
 /// A container for both the original string column values (Get*() methods)
@@ -59,8 +65,9 @@ class CAgpErr; // full definition below
 class NCBI_XOBJREAD_EXPORT CAgpRow
 {
 public:
-    CAgpRow(CAgpErr* arg);
-    CAgpRow(); // constructs a default error handler
+    CAgpRow(CAgpErr* arg, EAgpVersion agp_version = eAgpVersion_1_1 );
+    // constructs a default error handler
+    CAgpRow(EAgpVersion agp_version = eAgpVersion_1_1);
     ~CAgpRow();
 
     // Returns:
@@ -87,9 +94,10 @@ public:
     string& GetComponentEnd () {return cols[7];}
     string& GetOrientation  () {return cols[8];}
 
-    string& GetGapLength() {return cols[5];}
-    string& GetGapType  () {return cols[6];}
-    string& GetLinkage  () {return cols[7];}
+    string& GetGapLength()        {return cols[5];}
+    string& GetGapType  ()        {return cols[6];}
+    string& GetLinkage  ()        {return cols[7];}
+    string& GetLinkageEvidence () {return cols[8];} // AGP v. 2.0
 
     //// Parsed columns
     int object_beg, object_end, part_number;
@@ -98,13 +106,27 @@ public:
     bool is_gap;
 
     int component_beg, component_end;
-    char orientation; // + - 0 n (instead of na)
+    enum EOrientation {
+        // numeric values of the enum are equal to ASCII values of
+        // AGP 1.1's values for
+        // backward compatibility.  Intentionally obfuscated to discourage
+        // you from using the underlying char representation and because
+        // it doesn't match later versions. (e.g. unknown char is now '?' in
+        // AGP 2.0, etc.)
+        eOrientationPlus =       43,
+        eOrientationMinus =      45,
+        eOrientationUnknown =    48,
+        eOrientationIrrelevant = 110
+    };
+    EOrientation orientation;
 
     int gap_length;
+    // if you update this enum, make sure to update CAgpRow::gap_types
     enum EGap{
-        eGapClone          ,
-        eGapFragment       ,
+        eGapClone          , // AGP 1.1 only
+        eGapFragment       , // AGP 1.1 only
         eGapRepeat         ,
+        eGapScaffold       , // AGP 2.0 only
 
         eGapContig         ,
         eGapCentromere     ,
@@ -113,9 +135,22 @@ public:
         eGapTelomere       ,
 
         eGapCount,
-        eGapYes_count=eGapRepeat+1
+        eGapYes_count=eGapScaffold+1
     } gap_type;
     bool linkage;
+
+    enum ELinkageEvidence {
+        eLinkageEvidence_paired_ends,
+        eLinkageEvidence_align_genus,
+        eLinkageEvidence_align_xgenus,
+        eLinkageEvidence_align_trnscpt,
+        eLinkageEvidence_within_clone,
+        eLinkageEvidence_clone_contig,
+        eLinkageEvidence_map,
+        eLinkageEvidence_strobe,
+        eLinkageEvidence_unspecified
+    };
+    vector<ELinkageEvidence> linkage_evidences;
 
     static bool IsGap(char c)
     {
@@ -144,7 +179,7 @@ public:
 
     bool GapEndsScaffold() const
     {
-        if(gap_type==eGapFragment) return false;
+        if( m_agp_version == eAgpVersion_1_1 && gap_type==eGapFragment) return false;
         return linkage==false;
     }
     bool GapValidAtObjectEnd() const
@@ -160,6 +195,10 @@ public:
         return CheckComponentEnd(GetComponentId(), component_end, comp_len, *m_AgpErr);
     }
 
+    string LinkageEvidencesToString(void);
+
+    string OrientationToString( EOrientation orientation );
+
 protected:
     int ParseComponentCols(bool log_errors=true);
     int ParseGapCols(bool log_errors=true);
@@ -171,6 +210,7 @@ protected:
     static TMapStrEGap* gap_type_codes;
 
 private:
+    const EAgpVersion m_agp_version;
     CAgpErr* m_AgpErr;
     bool m_OwnAgpErr;
     // for initializing gap_type_codes:
@@ -193,8 +233,10 @@ public:
 class NCBI_XOBJREAD_EXPORT CAgpReader
 {
 public:
-    CAgpReader(CAgpErr* arg, bool ownAgpErr=false);
-    CAgpReader(); // constructs a default error handler for this object instance
+    CAgpReader(CAgpErr* arg, bool ownAgpErr=false, 
+        EAgpVersion agp_version = eAgpVersion_1_1 );
+    // constructs a default error handler for this object instance
+    CAgpReader(EAgpVersion agp_version = eAgpVersion_1_1); 
     virtual ~CAgpReader();
 
     virtual int ReadStream(CNcbiIstream& is, bool finalize=true);
@@ -214,6 +256,8 @@ public:
     bool ProcessThisRow();
 
 protected:
+    const EAgpVersion m_agp_version;
+
     bool m_at_beg;  // m_this_row is the first valid component or gap line;
                     // m_prev_row undefined.
     bool m_at_end;  // after the last line; could be true only in OnScaffoldEnd(), OnObjectChange().
@@ -226,6 +270,8 @@ protected:
 
     bool m_new_obj;   // For OnScaffoldEnd(), true if this scaffold ends with an object.
                       // (false if there are scaffold-breaking gaps at object end)
+    bool m_content_line_seen; // True after we see and process a line that is
+                              // not just comment or whitespace
     int m_error_code; // Set to a positive value to trigger OnError().
                       // Set to -1 to graciously stop reading of the stream midway:
                       // void OnGapOrComponent()
@@ -384,6 +430,8 @@ public:
         W_UnSingleOriNotPlus,   // -- agp_validate --
         W_ShortGap          ,   // -- agp_validate --
         W_SpaceInObjName    ,   // -- agp_validate --
+        W_CommentsAfterStart,   // CAgpRow (v. > 2.0)
+        W_OrientationZeroDeprecated, // CAgpRow (v. > 2.0)
         W_Last, W_First = 21,
 
         // "GenBank" checks that rely on information about the sequence

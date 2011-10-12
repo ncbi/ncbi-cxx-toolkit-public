@@ -46,7 +46,8 @@ public:
     int objects1, objects2, scaffolds, components, gaps, comments;
     int singleton_objects, singleton_scaffolds;
     int components_in_object, components_in_scaffold;
-    CAgpCounter()
+    CAgpCounter( EAgpVersion version_arg ) :
+        CAgpReader( version_arg )
     {
         objects1=objects2=scaffolds=components=gaps=comments=0;
         singleton_objects=singleton_scaffolds=0;
@@ -104,7 +105,20 @@ public:
 
 int main(int argc, char* argv[])
 {
-    CAgpCounter reader;
+    EAgpVersion agp_version = eAgpVersion_1_1;
+    // rudimentary argument parsing, too simple to justify
+    // heavyweight classes like CArgDescriptions
+    for( int ii = 1; ii < argc; ++ii ) {
+        const char *arg = argv[ii];
+        if( string("-v2.0") == arg ) {
+            agp_version = eAgpVersion_2_0;
+        } else {
+            cerr << "unknown arg: " << arg << endl;
+            return 1;
+        }
+    }
+
+    CAgpCounter reader( agp_version );
     int code=reader.ReadStream(cin);
     if(code) {
         // cerr << "Code " << code << "\n";
@@ -117,3 +131,4 @@ int main(int argc, char* argv[])
         return 0;
     }
 }
+
