@@ -789,6 +789,8 @@ bool  CQueue::ReturnJob(const CNSClientId &     client,
         event->SetStatus(CNetScheduleAPI::ePending);
         event->SetEvent(CJobEvent::eReturn);
         event->SetTimestamp(time(0));
+        event->SetClientNode(client.GetNode());
+        event->SetClientSession(client.GetSession());
 
         if (run_count)
             job.SetRunCount(run_count-1);
