@@ -916,8 +916,14 @@ bool CGff2Record::x_InitFeatureData(
             break;
 
         case CSeqFeatData::eSubtype_cdregion: {
+            //oh my --- phases again ---
+            CCdregion::EFrame frame = Phase();
+            if (frame != CCdregion::eFrame_not_set  &&  Strand() == eNa_strand_minus) {
+                frame = CCdregion::EFrame((4-frame)%3);
+            } 
+
             pFeature->SetData().SetCdregion();
-            pFeature->SetData().SetCdregion().SetFrame(CCdregion::eFrame_one);
+            pFeature->SetData().SetCdregion().SetFrame(frame);
             return true;
         }
         case CSeqFeatData::eSubtype_exon:
