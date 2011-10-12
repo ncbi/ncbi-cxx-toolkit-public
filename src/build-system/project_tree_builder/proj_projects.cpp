@@ -89,7 +89,8 @@ void CProjectsLstFileFilter::InitFromString(const string& subtree)
         }
         m_listEnabled.push_back( s );
     }
-    m_ExcludePotential = true;
+//    m_ExcludePotential = true;
+    m_ExcludePotential = GetApp().GetBuildRoot().empty();
 }
 
 void CProjectsLstFileFilter::InitFromFile(const string& file_full_path)
