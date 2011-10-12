@@ -68,6 +68,7 @@ public:
                          const string&        desc,    // offending object's description
                          const CSerialObject& obj,     // offending object
                          const string&        acc,     // accession of object.
+                         const int            ver,     // version of object.
                          const int            seq_offset = 0);
 
     void AddValidErrItem(EDiagSev             sev,     // severity
@@ -76,6 +77,7 @@ public:
                          const string&        desc,    // offending object's description
                          const CSerialObject& obj,     // offending object
                          const string&        acc,     // accession of object.
+                         const int            ver,     // version of object.
                          const string&        feature_id,  // feature ID for object
                          const int            seq_offset = 0);
  
@@ -86,6 +88,7 @@ public:
                          const CSeqdesc&      seqdesc, // offending object
                          const CSeq_entry&    ctx,     // place of packaging
                          const string&        acc,     // accession of object or context.
+                         const int            ver,     // version of object.
                          const int            seq_offset = 0);
 
     // Statistics

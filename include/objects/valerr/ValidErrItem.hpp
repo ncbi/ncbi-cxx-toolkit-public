@@ -561,6 +561,7 @@ public:
     // Convert Severity from enum to a string representation
     static const string&    ConvertSeverity(EDiagSev sev);
     static const string&    ConvertErrCode(unsigned int);
+    static const string&    ConvertErrGroup(unsigned int);
 
     bool IsSetContext(void) const;
     const CSeq_entry& GetContext(void) const;
@@ -575,6 +576,7 @@ private:
                   const string&        obj_desc,  // object description
                   const CSerialObject& obj,       // offending object
                   const string&        acc,       // accession
+                  const int            ver,       // version of object.
                   const int            seq_offset = 0); // sequence offset
 
     CValidErrItem(EDiagSev             sev,       // severity
@@ -583,6 +585,7 @@ private:
                   const string&        obj_desc,  // object description
                   const CSerialObject& obj,       // offending object
                   const string&        acc,       // accession
+                  const int            ver,       // version of object.
                   const string&        feature_id, // feature ID
                   const int            seq_offset = 0); // sequence offset
 
@@ -594,6 +597,7 @@ private:
                   const CSerialObject& obj,       // offending object
                   const CSeq_entry&    context,   // desc's context.
                   const string&        acc,       // accession
+                  const int            ver,       // version of object.
                   const int            seq_offset = 0); // sequence offset
 
     // Prohibit default & copy constructor and assignment operator

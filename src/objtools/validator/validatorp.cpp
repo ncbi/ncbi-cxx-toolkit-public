@@ -661,10 +661,12 @@ void CValidError_imp::PostErr
     }
 
     // if feature ID, add with feature id, otherwise without
+    int version = 0;
+    const string& accession = GetAccessionFromObjects(&ft, NULL, *m_Scope, &version);
     if (NStr::IsBlank(feature_id)) {
-        m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ft, GetAccessionFromObjects(&ft, NULL, *m_Scope), offset);
+        m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ft, accession, version, offset);
     } else {
-        m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ft, GetAccessionFromObjects(&ft, NULL, *m_Scope), feature_id, offset);
+        m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ft, accession, version, feature_id, offset);
     }
 }
 
@@ -678,7 +680,9 @@ void CValidError_imp::PostErr
     // Append bioseq label
     string desc;
     AppendBioseqLabel(desc, sq, m_SuppressContext);
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, sq, GetAccessionFromObjects(&sq, NULL, *m_Scope));
+    int version = 0;
+    const string& accession = GetAccessionFromObjects(&sq, NULL, *m_Scope, &version);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, sq, accession, version);
 }
 
 
@@ -732,7 +736,9 @@ void CValidError_imp::PostErr
     // Append Bioseq_set label
     string desc = "";
     s_AppendSetLabel(desc, st, m_SuppressContext);
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, st, GetAccessionFromObjects(&st, NULL, *m_Scope));
+    int version = 0;
+    const string& accession = GetAccessionFromObjects(&st, NULL, *m_Scope, &version);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, st, accession, version);
 }
 
 
@@ -824,7 +830,9 @@ void CValidError_imp::PostErr
     } else {
         s_AppendSetLabel(desc, ctx.GetSet(), m_SuppressContext);
     }
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ds, ctx, GetAccessionFromObjects(&ds, &ctx, *m_Scope));
+    int version = 0;
+    const string& accession = GetAccessionFromObjects(&ds, &ctx, *m_Scope, &version);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ds, ctx, accession, version);
 }
 
 
@@ -872,7 +880,9 @@ void CValidError_imp::PostErr
 
     // !!! need to decide on the message
 
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, an, GetAccessionFromObjects(&an, NULL, *m_Scope));
+    int version = 0;
+    const string& accession = GetAccessionFromObjects(&an, NULL, *m_Scope, &version);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, an, accession, version);
 }
 
 
@@ -892,7 +902,9 @@ void CValidError_imp::PostErr
     desc += " ";
     graph.GetLoc().GetLabel(&desc);
 
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, graph, GetAccessionFromObjects(&graph, NULL, *m_Scope));
+    int version = 0;
+    const string& accession = GetAccessionFromObjects(&graph, NULL, *m_Scope, &version);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, graph, accession, version);
 }
 
 
@@ -913,7 +925,9 @@ void CValidError_imp::PostErr
     desc += " ";
     graph.GetLoc().GetLabel(&desc);
     AppendBioseqLabel(desc, sq, m_SuppressContext);
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, graph, GetAccessionFromObjects(&graph, NULL, *m_Scope));
+    int version = 0;
+    const string& accession = GetAccessionFromObjects(&graph, NULL, *m_Scope, &version);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, graph, accession, version);
 }
 
 
@@ -940,7 +954,9 @@ void CValidError_imp::PostErr
         desc += align.GetSegs().SelectionName(align.GetSegs().Which());
     }
 
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, align, GetAccessionFromObjects(&align, NULL, *m_Scope));
+    int version = 0;
+    const string& accession = GetAccessionFromObjects(&align, NULL, *m_Scope, &version);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, align, accession, version);
 }
 
 
@@ -958,7 +974,9 @@ void CValidError_imp::PostErr
         string desc = "SEQ-ENTRY: ";
         entry.GetLabel(&desc, CSeq_entry::eContent);
 
-        m_ErrRepository->AddValidErrItem(sv, et, msg, desc, entry, GetAccessionFromObjects(&entry, NULL, *m_Scope));
+        int version = 0;
+        const string& accession = GetAccessionFromObjects(&entry, NULL, *m_Scope, &version);
+        m_ErrRepository->AddValidErrItem(sv, et, msg, desc, entry, accession, version);
     }
 }
 
@@ -971,7 +989,7 @@ void CValidError_imp::PostErr
 {
     string desc = "BioSource: ";
     
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, src, "");
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, src, "", 0);
 }
 
 
@@ -983,7 +1001,7 @@ void CValidError_imp::PostErr
 {
     string desc = "Org-ref: ";
     
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, org, "");
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, org, "", 0);
 }
 
 
@@ -995,7 +1013,7 @@ void CValidError_imp::PostErr
 {
     string desc = "Pubdesc: ";
     
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, pd, "");
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, pd, "", 0);
 }
 
 
@@ -1007,7 +1025,7 @@ void CValidError_imp::PostErr
 {
     string desc = "Seq-submit: ";
     
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ss, "");
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ss, "", 0);
 }
 
 

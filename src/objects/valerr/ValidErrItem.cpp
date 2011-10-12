@@ -1633,6 +1633,7 @@ CValidErrItem::CValidErrItem
  const string&        desc,
  const CSerialObject& obj,
  const string&        acc,
+ const int            ver,
  const int            seq_offset)
   : m_Object(&obj)
 {
@@ -1640,8 +1641,20 @@ CValidErrItem::CValidErrItem
     SetErrIndex(ec);
     SetMsg(msg);
     SetObjDesc(desc);
-    SetAccession(acc);
+    if (ver > 0) {
+        SetAccession(acc + "." + NStr::IntToString(ver));
+    } else {
+        SetAccession(acc);
+    }
     SetSeqOffset(seq_offset);
+    if (ver > 0) {
+        SetAccnver(acc + "." + NStr::IntToString(ver));
+    } else {
+        SetAccnver(acc);
+    }
+    SetVersion(ver);
+    SetErrorName(ConvertErrCode(ec));
+    SetErrorGroup(ConvertErrGroup(ec));
 }
 
 CValidErrItem::CValidErrItem
@@ -1651,6 +1664,7 @@ CValidErrItem::CValidErrItem
  const string&        desc,
  const CSerialObject& obj,
  const string&        acc,
+ const int            ver,
  const string&        feature_id,
  const int            seq_offset)
   : m_Object(&obj)
@@ -1659,9 +1673,21 @@ CValidErrItem::CValidErrItem
     SetErrIndex(ec);
     SetMsg(msg);
     SetObjDesc(desc);
-    SetAccession(acc);
+    if (ver > 0) {
+        SetAccession(acc + "." + NStr::IntToString(ver));
+    } else {
+        SetAccession(acc);
+    }
     SetFeatureId(feature_id);
     SetSeqOffset(seq_offset);
+    if (ver > 0) {
+        SetAccnver(acc + "." + NStr::IntToString(ver));
+    } else {
+        SetAccnver(acc);
+    }
+    SetVersion(ver);
+    SetErrorName(ConvertErrCode(ec));
+    SetErrorGroup(ConvertErrGroup(ec));
 }
 
 CValidErrItem::CValidErrItem
@@ -1672,6 +1698,7 @@ CValidErrItem::CValidErrItem
  const CSerialObject& obj,
  const CSeq_entry&    ctx,
  const string&        acc,
+ const int            ver,
  const int            seq_offset)
   : m_Object(&obj),
     m_Ctx(&ctx)
@@ -1680,8 +1707,20 @@ CValidErrItem::CValidErrItem
     SetErrIndex(ec);
     SetMsg(msg);
     SetObjDesc(desc);
-    SetAccession(acc);
+    if (ver > 0) {
+        SetAccession(acc + "." + NStr::IntToString(ver));
+    } else {
+        SetAccession(acc);
+    }
     SetSeqOffset(seq_offset);
+    if (ver > 0) {
+        SetAccnver(acc + "." + NStr::IntToString(ver));
+    } else {
+        SetAccnver(acc);
+    }
+    SetVersion(ver);
+    SetErrorName(ConvertErrCode(ec));
+    SetErrorGroup(ConvertErrGroup(ec));
 }
 
 
@@ -1703,7 +1742,7 @@ unsigned int CValidErrItem::GetErrCount(void)
 }
 
 
-const string& CValidErrItem::GetErrGroup(void) const
+const string& CValidErrItem::ConvertErrGroup(unsigned int err_int)
 {
     static const string kSeqInst  = "SEQ_INST";
     static const string kSeqDescr = "SEQ_DESCR";
@@ -1716,8 +1755,8 @@ const string& CValidErrItem::GetErrGroup(void) const
     static const string kInternal = "INTERNAL";
     static const string kUnknown   = "UNKNOWN";
 
+    TErrIndex errIndex = static_cast<TErrIndex> (err_int);
     
-    TErrIndex errIndex = GetErrIndex();
 #define IS_IN(x) (errIndex > ERR_CODE_BEGIN(x))  &&  (errIndex < ERR_CODE_END(x))
 
     if ((errIndex < eErr_MAX)  &&  (errIndex > 0)) {
@@ -1745,6 +1784,11 @@ const string& CValidErrItem::GetErrGroup(void) const
 #undef IS_IN
 
     return kUnknown;
+}
+
+const string& CValidErrItem::GetErrGroup(void) const
+{
+    return ConvertErrCode(GetErrIndex());
 }
 
 

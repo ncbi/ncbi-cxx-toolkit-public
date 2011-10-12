@@ -408,9 +408,15 @@ public:
     void GetLabel(string*     label,
                   ELabelType  type  = eDefault,
                   TLabelFlags flags = fLabel_Default) const;
+    void GetLabel(string*     label,
+                  int*        version,
+                  ELabelType  type  = eDefault) const;
 
     ///Return seqid string with optional version for text seqid type
     string GetSeqIdString(bool with_version = false) const;
+
+    ///Return seqid string for text seqid type with separate integer version
+    string GetSeqIdString(int* version) const;
 
     /// Get a string representation of the sequence IDs of a given bioseq.  This
     /// function produces strings in a number of possible formats.

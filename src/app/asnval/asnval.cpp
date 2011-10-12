@@ -719,7 +719,7 @@ void CAsnvalApp::PrintValidErrItem
         case eVerbosity_Spaced:
             {
                 string spacer = "                    ";
-                string msg = item.GetAccession() + spacer;
+                string msg = item.GetAccnver() + spacer;
                 msg = msg.substr(0, 15);
                 msg += s_GetSeverityLabel(item.GetSeverity());
                 msg += spacer;
@@ -729,7 +729,7 @@ void CAsnvalApp::PrintValidErrItem
             }
             break;
         case eVerbosity_Tabbed:
-            os << item.GetAccession() << "\t"
+            os << item.GetAccnver() << "\t"
                << s_GetSeverityLabel(item.GetSeverity()) << "\t"
                << item.GetErrGroup() << "_" << item.GetErrCode() << endl;
             break;
@@ -743,13 +743,13 @@ void CAsnvalApp::PrintValidErrItem
                 }
                 if (item.IsSetFeatureId()) {
                     os << "  <message severity=\"" << s_GetSeverityLabel(item.GetSeverity())
-                       << "\" seq-id=\"" << item.GetAccession() 
+                       << "\" seq-id=\"" << item.GetAccnver() 
                        << "\" feat-id=\"" << item.GetFeatureId()
                        << "\" code=\"" << item.GetErrGroup() << "_" << item.GetErrCode()
                        << "\">" << msg << "</message>" << endl;
                 } else {
                     os << "  <message severity=\"" << s_GetSeverityLabel(item.GetSeverity())
-                       << "\" seq-id=\"" << item.GetAccession() 
+                       << "\" seq-id=\"" << item.GetAccnver() 
                        << "\" code=\"" << item.GetErrGroup() << "_" << item.GetErrCode()
                        << "\">" << msg << "</message>" << endl;
                 }

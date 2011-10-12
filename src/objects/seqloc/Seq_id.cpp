@@ -1083,9 +1083,13 @@ void x_GetLabel_Type(const CSeq_id& id, string* label,
 
 static inline
 void x_GetLabel_Content(const CSeq_id& id, string* label,
-                        CSeq_id::TLabelFlags flags)
+                        CSeq_id::TLabelFlags flags, int* version)
 {
     const CTextseq_id* tsid = id.GetTextseq_Id();
+
+    if (version != NULL) {
+        *version = 0;
+    }
 
     //text id
     if (tsid) {
@@ -1097,6 +1101,9 @@ void x_GetLabel_Content(const CSeq_id& id, string* label,
             str = tsid->GetName();
         }
 
+        if (version != NULL && tsid->IsSetVersion()) {
+            *version = tsid->GetVersion();
+        }
         if ( !str.empty() ) {
             if ( (flags & CSeq_id::fLabel_Version)  &&  tsid->IsSetVersion()) {
                 str += "." + NStr::IntToString(tsid->GetVersion());
@@ -1201,7 +1208,7 @@ void CSeq_id::GetLabel(string* label, ELabelType type, TLabelFlags flags) const
     case eBoth:
         x_GetLabel_Type(*this, label, flags);
         *label += "|";
-        x_GetLabel_Content(*this, label, flags);
+        x_GetLabel_Content(*this, label, flags, NULL);
         break;
 
     case eType:
@@ -1209,7 +1216,35 @@ void CSeq_id::GetLabel(string* label, ELabelType type, TLabelFlags flags) const
         break;
 
     case eContent:
-        x_GetLabel_Content(*this, label, flags);
+        x_GetLabel_Content(*this, label, flags, NULL);
+        break;
+    }
+}
+
+
+void CSeq_id::GetLabel(string* label, int* version, ELabelType type) const
+{
+    if ( !label ) {
+        return;
+    }
+
+    switch (type) {
+    case eFasta:
+        *label = AsFastaString();
+        break;
+
+    case eBoth:
+        x_GetLabel_Type(*this, label, 0);
+        *label += "|";
+        x_GetLabel_Content(*this, label, 0, version);
+        break;
+
+    case eType:
+        x_GetLabel_Type(*this, label, 0);
+        break;
+
+    case eContent:
+        x_GetLabel_Content(*this, label, 0, version);
         break;
     }
 }
@@ -1226,6 +1261,13 @@ string CSeq_id::GetSeqIdString(bool with_version) const
         flags |= fLabel_Version;
     }
     GetLabel(&label, eContent, flags);
+    return label;
+}
+
+string CSeq_id::GetSeqIdString(int* version) const
+{
+    string label;
+    GetLabel(&label, version, eContent);
     return label;
 }
 

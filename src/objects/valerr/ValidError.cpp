@@ -62,9 +62,10 @@ void CValidError::AddValidErrItem
  const string&        desc,
  const CSerialObject& obj,
  const string&        acc,
+ const int            ver,
  const int            seq_offset)
 {
-    CRef<CValidErrItem> item(new CValidErrItem(sev, ec, msg, desc, obj, acc, seq_offset));
+    CRef<CValidErrItem> item(new CValidErrItem(sev, ec, msg, desc, obj, acc, ver, seq_offset));
     SetErrs().push_back(item);
     m_Stats[item->GetSeverity()]++;
 }
@@ -77,10 +78,11 @@ void CValidError::AddValidErrItem
  const string&        desc,
  const CSerialObject& obj,
  const string&        acc,
+ const int            ver,
  const string&        feature_id,
  const int            seq_offset)
 {
-    CRef<CValidErrItem> item(new CValidErrItem(sev, ec, msg, desc, obj, acc, feature_id, seq_offset));
+    CRef<CValidErrItem> item(new CValidErrItem(sev, ec, msg, desc, obj, acc, ver, feature_id, seq_offset));
     SetErrs().push_back(item);
     m_Stats[item->GetSeverity()]++;
 }
@@ -94,9 +96,10 @@ void CValidError::AddValidErrItem
  const CSeqdesc&   seqdesc,
  const CSeq_entry& ctx,
  const string&     acc,
+ const int         ver,
  const int         seq_offset)
 {
-    CRef<CValidErrItem> item(new CValidErrItem(sev, ec, msg, desc, seqdesc, ctx, acc, seq_offset));
+    CRef<CValidErrItem> item(new CValidErrItem(sev, ec, msg, desc, seqdesc, ctx, acc, ver, seq_offset));
     SetErrs().push_back(item);
     m_Stats[item->GetSeverity()]++;
 }

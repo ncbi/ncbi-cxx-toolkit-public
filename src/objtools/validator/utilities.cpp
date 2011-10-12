@@ -204,33 +204,29 @@ CSeqVector GetSequenceFromFeature
 /***** Calculate Accession for a given object *****/
 
 
-static string s_GetBioseqAcc(const CSeq_id& id)
+static string s_GetBioseqAcc(const CSeq_id& id, int* version)
 {
     try {
-        bool want_version = true;
-        if (id.IsGenbank() && !id.GetGenbank().IsSetAccession()) {
-            want_version = false;
-        }
-        return id.GetSeqIdString(want_version);
+        return id.GetSeqIdString(version);
     } catch (CException&) {
         return kEmptyStr;
     }
 }
 
 
-static string s_GetBioseqAcc(const CBioseq_Handle& handle)
+static string s_GetBioseqAcc(const CBioseq_Handle& handle, int* version)
 {
     if (handle) {
         CConstRef<CSeq_id> seqid = sequence::GetId(handle, sequence::eGetId_Best).GetSeqId();
         if (seqid) {
-            return s_GetBioseqAcc(*seqid);
+            return s_GetBioseqAcc(*seqid, version);
         }
     }
     return kEmptyStr;
 }
 
 
-static string s_GetSeq_featAcc(const CSeq_feat& feat, CScope& scope)
+static string s_GetSeq_featAcc(const CSeq_feat& feat, CScope& scope, int* version)
 {
     CBioseq_Handle seq = scope.GetBioseqHandle(feat.GetLocation());
     CBioseq_set_Handle parent = seq.GetParentBioseq_set();
@@ -239,19 +235,19 @@ static string s_GetSeq_featAcc(const CSeq_feat& feat, CScope& scope)
         if (parent && parent.IsSetClass() && parent.GetClass() == CBioseq_set::eClass_segset) {
             CBioseq_CI m(parent);
             if (m) {
-                return (s_GetBioseqAcc(*m));
+                return s_GetBioseqAcc(*m, version);
             }
         }
     }
 
-    return s_GetBioseqAcc(seq);
+    return s_GetBioseqAcc(seq, version);
 }
 
 
-static string s_GetBioseqAcc(const CBioseq& seq, CScope& scope)
+static string s_GetBioseqAcc(const CBioseq& seq, CScope& scope, int* version)
 {
     CBioseq_Handle handle = scope.GetBioseqHandle(seq);
-    return s_GetBioseqAcc(handle);
+    return s_GetBioseqAcc(handle, version);
 }
 
 static const CBioseq* s_GetSeqFromSet(const CBioseq_set& bsst, CScope& scope)
@@ -330,37 +326,37 @@ static bool s_IsDescOnSeqEntry (const CSeq_entry& entry, const CSeqdesc& desc)
 
 
 
-static string s_GetAccessionForSeqdesc (CSeq_entry_Handle seh, const CSeqdesc& desc, CScope& scope)
+static string s_GetAccessionForSeqdesc (CSeq_entry_Handle seh, const CSeqdesc& desc, CScope& scope, int* version)
 {
     if (!seh) {
         return kEmptyStr;
     } else if (s_IsDescOnSeqEntry (*(seh.GetCompleteSeq_entry()), desc)) {
         if (seh.IsSeq()) {
-            return s_GetBioseqAcc(*(seh.GetSeq().GetCompleteBioseq()), scope);
+            return s_GetBioseqAcc(*(seh.GetSeq().GetCompleteBioseq()), scope, version);
         } else if (seh.IsSet()) {
             const CBioseq* seq = s_GetSeqFromSet(*(seh.GetSet().GetCompleteBioseq_set()), scope);
             if (seq != NULL) {
-                return s_GetBioseqAcc(*seq, scope);
+                return s_GetBioseqAcc(*seq, scope, version);
             }
         }
     } else {
         CSeq_entry_Handle parent = seh.GetParentEntry();
         if (parent) {
-            return s_GetAccessionForSeqdesc(parent, desc, scope);
+            return s_GetAccessionForSeqdesc(parent, desc, scope, version);
         }
     }
     return kEmptyStr;
 }
 
 
-string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, CScope& scope)
+string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, CScope& scope, int* version)
 {
     string empty_acc = "";
 
     if (obj && obj->GetThisTypeInfo() == CSeqdesc::GetTypeInfo() && ctx) {
         CSeq_entry_Handle seh = scope.GetSeq_entryHandle(*ctx);
         const CSeqdesc& desc = dynamic_cast<const CSeqdesc&>(*obj);
-        string acc = s_GetAccessionForSeqdesc(seh, desc, scope);
+        string acc = s_GetAccessionForSeqdesc(seh, desc, scope, version);
         if (!NStr::IsBlank(acc)) {
             return acc;
         }
@@ -368,34 +364,34 @@ string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, 
 
     if (ctx) {
         if (ctx->IsSeq()) {
-            return s_GetBioseqAcc(ctx->GetSeq(), scope);
+            return s_GetBioseqAcc(ctx->GetSeq(), scope, version);
         } else if (ctx->IsSet()) {
             const CBioseq* seq = s_GetSeqFromSet(ctx->GetSet(), scope);
             if (seq != NULL) {
-                return s_GetBioseqAcc(*seq, scope);
+                return s_GetBioseqAcc(*seq, scope, version);
             }
         }
     } else if (obj) {
         if (obj->GetThisTypeInfo() == CSeq_feat::GetTypeInfo()) {
             const CSeq_feat& feat = dynamic_cast<const CSeq_feat&>(*obj);
-            return s_GetSeq_featAcc(feat, scope);
+            return s_GetSeq_featAcc(feat, scope, version);
         } else if (obj->GetThisTypeInfo() == CBioseq::GetTypeInfo()) {
             const CBioseq& seq = dynamic_cast<const CBioseq&>(*obj);
-            return s_GetBioseqAcc(seq, scope);
+            return s_GetBioseqAcc(seq, scope, version);
         } else if (obj->GetThisTypeInfo() == CBioseq_set::GetTypeInfo()) {
             const CBioseq_set& bsst = dynamic_cast<const CBioseq_set&>(*obj);
             const CBioseq* seq = s_GetSeqFromSet(bsst, scope);
             if (seq != NULL) {
-                return s_GetBioseqAcc(*seq, scope);
+                return s_GetBioseqAcc(*seq, scope, version);
             }
         } else if (obj->GetThisTypeInfo() == CSeq_entry::GetTypeInfo()) {
             const CSeq_entry& entry = dynamic_cast<const CSeq_entry&>(*obj);
             if (entry.IsSeq()) {
-                return s_GetBioseqAcc(entry.GetSeq(), scope);
+                return s_GetBioseqAcc(entry.GetSeq(), scope, version);
             } else if (entry.IsSet()) {
                 const CBioseq* seq = s_GetSeqFromSet(entry.GetSet(), scope);
                 if (seq != NULL) {
-                    return s_GetBioseqAcc(*seq, scope);
+                    return s_GetBioseqAcc(*seq, scope, version);
                 }
             }
         } else if (obj->GetThisTypeInfo() == CSeq_annot::GetTypeInfo()) {
@@ -404,13 +400,13 @@ string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, 
                 CSeq_entry_Handle seh = ah.GetParentEntry();
                 if (seh) {
                     if (seh.IsSeq()) {
-                        return s_GetBioseqAcc(seh.GetSeq());
+                        return s_GetBioseqAcc(seh.GetSeq(), version);
                     } else if (seh.IsSet()) {
                         CBioseq_set_Handle bsh = seh.GetSet();
                         const CBioseq_set& bsst = *(bsh.GetCompleteBioseq_set());
                         const CBioseq* seq = s_GetSeqFromSet(bsst, scope);
                         if (seq != NULL) {
-                            return s_GetBioseqAcc(*seq, scope);
+                            return s_GetBioseqAcc(*seq, scope, version);
                         }
                     }
                 }
@@ -427,15 +423,15 @@ string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, 
                         const CSeq_id& id = align.GetSeq_id(i);
                         CBioseq_Handle bsh = scope.GetBioseqHandle(id);
                         if (bsh) {
-                            return s_GetBioseqAcc(bsh);
+                            return s_GetBioseqAcc(bsh, version);
                         }
                     }
                 } else if (align.IsSetSegs() && align.GetSegs().IsDendiag()) {
                     CBioseq_Handle bsh = scope.GetBioseqHandle(*(align.GetSegs().GetDendiag().front()->GetIds()[0]));
-                    return s_GetBioseqAcc(bsh);
+                    return s_GetBioseqAcc(bsh, version);
                 }
                 // failed to find resolvable ID, use bare ID
-                return s_GetBioseqAcc(align.GetSeq_id(0));               
+                return s_GetBioseqAcc(align.GetSeq_id(0), version);               
             } catch (CException& x) {
             }
         } else if (obj->GetThisTypeInfo() == CSeq_graph::GetTypeInfo()) {
@@ -444,7 +440,7 @@ string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, 
                 const CSeq_loc& loc = graph.GetLoc();
                 const CSeq_id *id = loc.GetId();
                 if (id) {
-                    return s_GetBioseqAcc (*id);
+                    return s_GetBioseqAcc (*id, version);
                 }
             } catch (CException& x) {
             }
