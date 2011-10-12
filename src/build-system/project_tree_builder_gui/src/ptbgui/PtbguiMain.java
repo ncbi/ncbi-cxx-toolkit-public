@@ -131,12 +131,15 @@ public class PtbguiMain extends javax.swing.JFrame {
         setPathText(jTextFieldSolution, m_ArgsParser.getSolutionFile(), false);
         jTextFieldTags.setToolTipText(
             "Expression. For example:  (core || web) && !test");
+        jTextFieldLstTags.setToolTipText(
+            "When 'Use project tags' field above is empty, default tags will be used");
 
         if (m_ArgsParser.getArgsFile().length() > 0) {
             initData(m_ArgsParser.getArgsFile(), true);
             return;
         }
         jTextFieldTags.setText(m_ArgsParser.getProjTag());
+        jTextFieldLstTags.setText("");
         jTextFieldIde.setText(m_ArgsParser.getIde());
 
         String arch = m_ArgsParser.getArch();
@@ -175,7 +178,7 @@ public class PtbguiMain extends javax.swing.JFrame {
         });
         jTextFieldArch.setEditable(arrFile == null || arrFile.length==0);
     }
-    void adjustBuildType() {
+    private void adjustBuildType() {
         m_ArgsParser.setDll( jRadioButtonDLL.isSelected(),true);
         setPathText(jTextFieldSolution, m_ArgsParser.getSolutionFile(), false);
     }
@@ -209,6 +212,7 @@ public class PtbguiMain extends javax.swing.JFrame {
         }
         setPathText(jTextFieldLst, v, getProp(prop,"__arg_subtree"));
         jTextFieldTags.setText(getProp(prop,"__arg_projtag"));
+        jTextFieldLstTags.setText("");
         jTextFieldIde.setText(getProp(prop,"__arg_ide"));
         jTextFieldArch.setText(getProp(prop,"__arg_arch"));
 
@@ -220,6 +224,7 @@ public class PtbguiMain extends javax.swing.JFrame {
         jTextFieldExt.setText(getProp(prop,"__arg_extroot"));
         adjustArch();
         initKnownTags();
+        initTagsFromSubtree();
     }
     private void initKnownTags() {
         String from = jTextFieldRoot.getText()+
@@ -248,8 +253,9 @@ public class PtbguiMain extends javax.swing.JFrame {
         }
     }
     private void initTagsFromSubtree() {
-        String lst = m_ArgsParser.getRoot() +
-            File.separatorChar + m_ArgsParser.getSubtree();
+        jTextFieldLstTags.setText("");
+        String lst = jTextFieldRoot.getText() +
+            File.separatorChar + jTextFieldLst.getText();
         File f = new File(nativeFileSeparator(lst));
         if (f.isFile()) {
             try {
@@ -264,8 +270,8 @@ public class PtbguiMain extends javax.swing.JFrame {
                         line = line.replaceAll("\\[","");
                         line = line.replaceAll("\\]","");
                         line = line.trim();
-                        m_ArgsParser.setProjTagFromLst(line);
-                        jTextFieldTags.setText(m_ArgsParser.getProjTag());
+//                        m_ArgsParser.setProjTagFromLst(line);
+                        jTextFieldLstTags.setText(line);
                         break;
                     }
                 }
@@ -918,6 +924,8 @@ public class PtbguiMain extends javax.swing.JFrame {
         jLabelArgs = new javax.swing.JLabel();
         jButtonArgsReset = new javax.swing.JButton();
         jButtonKTags = new javax.swing.JButton();
+        jLabel10 = new javax.swing.JLabel();
+        jTextFieldLstTags = new javax.swing.JTextField();
         jPanelAdvanced = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         jTextFieldPtb = new javax.swing.JTextField();
@@ -993,9 +1001,14 @@ public class PtbguiMain extends javax.swing.JFrame {
 
         jTextFieldTags.setText("jTextFieldTags");
 
-        jLabel4.setText("Allowed project tags");
+        jLabel4.setText("Use project tags");
 
         jTextFieldLst.setText("jTextFieldLst");
+        jTextFieldLst.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                jTextFieldLstFocusLost(evt);
+            }
+        });
 
         jLabel3.setText("Subtree, or LST file");
 
@@ -1048,6 +1061,11 @@ public class PtbguiMain extends javax.swing.JFrame {
             }
         });
 
+        jLabel10.setText("Default project tags");
+
+        jTextFieldLstTags.setEditable(false);
+        jTextFieldLstTags.setText("jTextFieldLstTags");
+
         org.jdesktop.layout.GroupLayout jPanelCmndLayout = new org.jdesktop.layout.GroupLayout(jPanelCmnd);
         jPanelCmnd.setLayout(jPanelCmndLayout);
         jPanelCmndLayout.setHorizontalGroup(
@@ -1055,36 +1073,43 @@ public class PtbguiMain extends javax.swing.JFrame {
             .add(jPanelCmndLayout.createSequentialGroup()
                 .addContainerGap()
                 .add(jPanelCmndLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanelCmndLayout.createSequentialGroup()
-                        .add(jPanelCmndLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                            .add(org.jdesktop.layout.GroupLayout.LEADING, jPanelCmndLayout.createSequentialGroup()
-                                .add(jLabel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 149, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                .add(jTextFieldTags, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 398, Short.MAX_VALUE))
+                    .add(jPanelCmndLayout.createSequentialGroup()
+                        .add(jPanelCmndLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                             .add(jPanelCmndLayout.createSequentialGroup()
-                                .add(jLabel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 148, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                .add(jLabel14, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 149, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                .add(jTextFieldLst, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 399, Short.MAX_VALUE)))
-                        .add(18, 18, 18)
-                        .add(jPanelCmndLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(jButtonKTags, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 55, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                            .add(jButtonLst, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 55, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
+                                .add(jPanelCmndLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
+                                    .add(org.jdesktop.layout.GroupLayout.LEADING, jRadioButtonDLL, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .add(org.jdesktop.layout.GroupLayout.LEADING, jRadioButtonStatic, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 166, Short.MAX_VALUE)))
+                            .add(jSeparator2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 624, Short.MAX_VALUE)
+                            .add(jPanelCmndLayout.createSequentialGroup()
+                                .add(jPanelCmndLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
+                                    .add(jLabel11, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .add(jButtonArgs, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 167, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                .add(jPanelCmndLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                                    .add(jLabelArgs, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 451, Short.MAX_VALUE)
+                                    .add(jButtonArgsReset, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 87, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)))
+                            .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanelCmndLayout.createSequentialGroup()
+                                .add(jPanelCmndLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                                    .add(org.jdesktop.layout.GroupLayout.LEADING, jPanelCmndLayout.createSequentialGroup()
+                                        .add(jLabel4, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 149, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                        .add(jTextFieldTags, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 398, Short.MAX_VALUE))
+                                    .add(jPanelCmndLayout.createSequentialGroup()
+                                        .add(jLabel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 148, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
+                                        .add(jTextFieldLst, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 399, Short.MAX_VALUE)))
+                                .add(18, 18, 18)
+                                .add(jPanelCmndLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                                    .add(jButtonKTags, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 55, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                                    .add(jButtonLst, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 55, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))))
+                        .addContainerGap())
                     .add(jPanelCmndLayout.createSequentialGroup()
-                        .add(jLabel14, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 149, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                        .add(jLabel10, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 149, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(jPanelCmndLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
-                            .add(org.jdesktop.layout.GroupLayout.LEADING, jRadioButtonDLL, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .add(org.jdesktop.layout.GroupLayout.LEADING, jRadioButtonStatic, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 166, Short.MAX_VALUE)))
-                    .add(jSeparator2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 624, Short.MAX_VALUE)
-                    .add(jPanelCmndLayout.createSequentialGroup()
-                        .add(jPanelCmndLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING, false)
-                            .add(jLabel11, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .add(jButtonArgs, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 167, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(jPanelCmndLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(jLabelArgs, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 451, Short.MAX_VALUE)
-                            .add(jButtonArgsReset, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 87, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))))
-                .addContainerGap())
+                        .add(jTextFieldLstTags, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 398, Short.MAX_VALUE)
+                        .add(83, 83, 83))))
         );
         jPanelCmndLayout.setVerticalGroup(
             jPanelCmndLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -1108,7 +1133,11 @@ public class PtbguiMain extends javax.swing.JFrame {
                     .add(jLabel4)
                     .add(jTextFieldTags, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                     .add(jButtonKTags, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 23, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 58, Short.MAX_VALUE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
+                .add(jPanelCmndLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                    .add(jLabel10)
+                    .add(jTextFieldLstTags, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 27, Short.MAX_VALUE)
                 .add(jSeparator2, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 10, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(jPanelCmndLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
@@ -1160,6 +1189,11 @@ public class PtbguiMain extends javax.swing.JFrame {
         jLabel2.setText("Source root");
 
         jTextFieldRoot.setText("jTextFieldRoot");
+        jTextFieldRoot.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                jTextFieldRootFocusLost(evt);
+            }
+        });
 
         jButtonMore.setText("more >");
         jButtonMore.addActionListener(new java.awt.event.ActionListener() {
@@ -1616,7 +1650,7 @@ public class PtbguiMain extends javax.swing.JFrame {
             }
         });
 
-        jLabel13.setText("  version 1.1");
+        jLabel13.setText("  version 1.2");
         jLabel13.setEnabled(false);
 
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(getContentPane());
@@ -1686,6 +1720,7 @@ public class PtbguiMain extends javax.swing.JFrame {
                     "The file must be in the same tree",
                     "Error", JOptionPane.ERROR_MESSAGE);
             }
+            initTagsFromSubtree();
         }
     }//GEN-LAST:event_jButtonLstActionPerformed
 
@@ -1799,6 +1834,14 @@ public class PtbguiMain extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_jButtonKTagsActionPerformed
 
+    private void jTextFieldLstFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextFieldLstFocusLost
+        initTagsFromSubtree();
+    }//GEN-LAST:event_jTextFieldLstFocusLost
+
+    private void jTextFieldRootFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextFieldRootFocusLost
+        initTagsFromSubtree();
+    }//GEN-LAST:event_jTextFieldRootFocusLost
+
     /**
     * @param args the command line arguments
     */
@@ -1833,6 +1876,7 @@ public class PtbguiMain extends javax.swing.JFrame {
     private javax.swing.JCheckBox jCheckBoxVTuneD;
     private javax.swing.JCheckBox jCheckBoxVTuneR;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
     private javax.swing.JLabel jLabel12;
     private javax.swing.JLabel jLabel13;
@@ -1885,6 +1929,7 @@ public class PtbguiMain extends javax.swing.JFrame {
     private javax.swing.JTextField jTextFieldExt;
     private javax.swing.JTextField jTextFieldIde;
     private javax.swing.JTextField jTextFieldLst;
+    private javax.swing.JTextField jTextFieldLstTags;
     private javax.swing.JTextField jTextFieldPtb;
     private javax.swing.JTextField jTextFieldRoot;
     private javax.swing.JTextField jTextFieldSolution;

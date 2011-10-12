@@ -190,10 +190,10 @@ public class ArgsParser {
             if (m_projtag != null && m_projtag.length() != 0) {
                 vcmd.add("-" + eArg.projtag.toString());
                 vcmd.add(m_projtag);
-            } else if (m_projtagFromLst) {
+            } /*else if (m_projtagFromLst) {
                 vcmd.add("-" + eArg.projtag.toString());
                 vcmd.add("\"\"");
-            }
+            }*/
             if (m_ide != null && m_ide.length() != 0) {
                 vcmd.add("-" + eArg.ide.toString());
                 vcmd.add(m_ide);
@@ -326,11 +326,11 @@ public class ArgsParser {
     }
     public void setProjTag(String tag) {
         String t = tag.trim();
-        m_projtag = t.equals("*") ? "" : tag;
+        m_projtag = (t.equals("*") || t.equals("#")) ? "" : tag;
     }
     public void setProjTagFromLst(String tag) {
         String t = tag.trim();
-        m_projtag = t.equals("*") ? "" : tag;
+        m_projtag = (t.equals("*") || t.equals("#")) ? "" : tag;
         m_projtagFromLst = true;
     }
     public String getIde() {
