@@ -1225,12 +1225,19 @@ CFormatGuess::TestFormatBed(
     }
 
     bool bTrackLineFound( false );    
+	bool bHasStartAndStop ( false );
     size_t columncount = 0;
     ITERATE( list<string>, it, m_TestLines ) {
         string str = NStr::TruncateSpaces( *it );
         if ( str.empty() ) {
             continue;
         }
+		
+		// 'chr 8' fixup, the bedreader does this too
+		if (str.find("chr ") == 0 || 
+			str.find("Chr ") == 0 || 
+			str.find("CHR ") == 0)
+			str.erase(3, 1);
 
         //
         //  while occurrence of the following decorations _is_ a good sign, they could
@@ -1260,8 +1267,15 @@ CFormatGuess::TestFormatBed(
                 return false;
             }
         }
+		if(columns.size() >= 3) {
+			if (s_IsTokenPosInt(columns[1]) &&
+                s_IsTokenPosInt(columns[2])) {
+				bHasStartAndStop = true;
+			}
+		}
     }
-    return bTrackLineFound;
+
+    return (bHasStartAndStop || bTrackLineFound);
 }
 
 //  ----------------------------------------------------------------------------

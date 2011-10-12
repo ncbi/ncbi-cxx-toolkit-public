@@ -270,8 +270,17 @@ bool CBedReader::x_ParseFeature(
     CRef<CSeq_feat> feature;
     vector<string> fields;
 
+	string record_copy = record;
+	NStr::TruncateSpacesInPlace(record_copy);
+
+	// 'chr 8' fixup.
+	if (record_copy.find("chr ") == 0 || 
+		record_copy.find("Chr ") == 0 || 
+		record_copy.find("CHR ") == 0)
+		record_copy.erase(3, 1);
+
     //  parse
-    NStr::Tokenize( record, " \t", fields, NStr::eMergeDelims );
+    NStr::Tokenize( record_copy, " \t", fields, NStr::eMergeDelims );
     if (fields.size() != m_columncount) {
         if ( 0 == m_columncount ) {
             m_columncount = fields.size();
@@ -372,7 +381,9 @@ void CBedReader::x_SetFeatureLocation(
     CRef<CSeq_loc> location( new CSeq_loc );
     CSeq_interval& interval = location->SetInt();
     try {
-        interval.SetFrom( NStr::StringToInt( fields[1] ) - 1);
+		string cleaned;
+		NStr::Replace(fields[1], ",", "", cleaned);
+        interval.SetFrom( NStr::StringToInt( cleaned ) - 1);
     }
     catch ( ... ) {
         CObjReaderLineException err( 
@@ -382,7 +393,9 @@ void CBedReader::x_SetFeatureLocation(
         throw( err );
     }
     try {
-        interval.SetTo( NStr::StringToInt( fields[2] ) - 1 );
+    	string cleaned;
+		NStr::Replace(fields[2], ",", "", cleaned);
+        interval.SetTo( NStr::StringToInt( cleaned ) - 1 );
     }
     catch ( ... ) {
         CObjReaderLineException err( 
