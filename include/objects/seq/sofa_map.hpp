@@ -63,6 +63,11 @@ public:
         return m_default.m_name;
     }
 
+    const map<CFeatListItem, SofaType>& Map() const
+    {
+        return m_Map;
+    }
+
 protected:
     void x_Init();
 

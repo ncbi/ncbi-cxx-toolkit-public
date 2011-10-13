@@ -34,30 +34,38 @@
 #include <corelib/ncbistd.hpp>
 #include <objtools/readers/gff3_sofa.hpp>
 
+#include <objects/seq/sofa_type.hpp>
+#include <objects/seq/sofa_map.hpp>
+#include <objects/seqfeat/SeqFeatData.hpp>
+
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  --------------------------------------------------------------------------
-TLookupSofaToGenbank CGff3SofaTypes::m_MapSofaTermToGenbankType;
+TLookupSofaToGenbank CGff3SofaTypes::m_Lookup;
 //  --------------------------------------------------------------------------
 
 //  --------------------------------------------------------------------------
 CGff3SofaTypes& SofaTypes()
 //  --------------------------------------------------------------------------
 {
-    static CGff3SofaTypes sofaTypes;    
-    return sofaTypes;
+    static CGff3SofaTypes m_Lookup;    
+    return m_Lookup;
 }
 
 //  --------------------------------------------------------------------------
 CGff3SofaTypes::CGff3SofaTypes()
 //  --------------------------------------------------------------------------
 {
-    m_MapSofaTermToGenbankType[ "CDS" ] = CSeqFeatData::eSubtype_cdregion;
-    m_MapSofaTermToGenbankType[ "exon" ] = CSeqFeatData::eSubtype_exon;
-    m_MapSofaTermToGenbankType[ "gene" ] = CSeqFeatData::eSubtype_gene;
-    m_MapSofaTermToGenbankType[ "mRNA" ] = CSeqFeatData::eSubtype_mRNA;
+    typedef map<CFeatListItem, SofaType> SOFAMAP;
+    typedef SOFAMAP::const_iterator SOFAITER;
+
+    CSofaMap SofaMap;
+    const SOFAMAP& entries = SofaMap.Map();
+    for (SOFAITER cit = entries.begin(); cit != entries.end(); ++cit) {
+        m_Lookup[cit->second.m_name] = cit->first;
+    }
 };
 
 //  --------------------------------------------------------------------------
@@ -71,9 +79,22 @@ CSeqFeatData::ESubtype CGff3SofaTypes::MapSofaTermToGenbankType(
     const string& strSofa )
 //  --------------------------------------------------------------------------
 {
-    TLookupSofaToGenbankCit cit = m_MapSofaTermToGenbankType.find( strSofa );
-    if ( cit == m_MapSofaTermToGenbankType.end() ) {
+    TLookupSofaToGenbankCit cit = m_Lookup.find( strSofa );
+    if ( cit == m_Lookup.end() ) {
         return CSeqFeatData::eSubtype_misc_feature;
+    }
+    return CSeqFeatData::ESubtype(cit->second.GetSubtype());
+}
+
+//  --------------------------------------------------------------------------
+CFeatListItem CGff3SofaTypes::MapSofaTermToFeatListItem(
+    const string& strSofa )
+//  --------------------------------------------------------------------------
+{
+    TLookupSofaToGenbankCit cit = m_Lookup.find( strSofa );
+    if ( cit == m_Lookup.end() ) {
+        return CFeatListItem(CSeqFeatData::e_Imp, 
+            CSeqFeatData::eSubtype_misc_feature, "", "");
     }
     return cit->second;
 }

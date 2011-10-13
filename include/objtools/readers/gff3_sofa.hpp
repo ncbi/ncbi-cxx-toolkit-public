@@ -40,7 +40,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
-typedef map< string, CSeqFeatData::ESubtype > TLookupSofaToGenbank;
+typedef map< string, CFeatListItem > TLookupSofaToGenbank;
 typedef TLookupSofaToGenbank::const_iterator TLookupSofaToGenbankCit;
 
 //  ----------------------------------------------------------------------------
@@ -57,8 +57,11 @@ public:
     CSeqFeatData::ESubtype MapSofaTermToGenbankType(
         const string& );
 
+    CFeatListItem MapSofaTermToFeatListItem(
+        const string& );
+
 protected:
-    static TLookupSofaToGenbank m_MapSofaTermToGenbankType;
+    static TLookupSofaToGenbank m_Lookup;
 };
 
 //  ----------------------------------------------------------------------------

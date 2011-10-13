@@ -908,48 +908,64 @@ bool CGff2Record::x_InitFeatureData(
     CRef<CSeq_feat> pFeature ) const
 //  ----------------------------------------------------------------------------
 {
-    CSeqFeatData::ESubtype iGbType = SofaTypes().MapSofaTermToGenbankType(
-        Type() );
-    switch( iGbType ) {
-
-        default:
-            break;
-
-        case CSeqFeatData::eSubtype_cdregion: {
-            //oh my --- phases again ---
-            CCdregion::EFrame frame = Phase();
-            if (frame != CCdregion::eFrame_not_set  &&  Strand() == eNa_strand_minus) {
-                frame = CCdregion::EFrame((4-frame)%3);
-            } 
-
-            pFeature->SetData().SetCdregion();
-            pFeature->SetData().SetCdregion().SetFrame(frame);
-            return true;
-        }
-        case CSeqFeatData::eSubtype_exon:
-            pFeature->SetData().SetImp().SetKey( "exon" );
-            return true;
-
-        case CSeqFeatData::eSubtype_gene:
-            pFeature->SetData().SetGene();
-            return true;
-
-        case CSeqFeatData::eSubtype_mRNA:
-            pFeature->SetData().SetRna().SetType( CRNA_ref::eType_mRNA );
-            return true;
-    }
     string gbkey;
     if (GetAttribute("gbkey", gbkey)) {
         if (gbkey == "Src") {
             pFeature->SetData().SetBiosrc();
             return true;
         }
-        if (gbkey == "ncRNA") {
-            pFeature->SetData().SetRna().SetType(CRNA_ref::eType_ncRNA);
+    }
+
+    CFeatListItem itemtype = SofaTypes().MapSofaTermToFeatListItem( Type());
+    switch( itemtype.GetType() ) {
+        default:
+            break;
+
+        case CSeqFeatData::e_Gene:
+            pFeature->SetData().SetGene();
+            return true;
+
+        case CSeqFeatData::e_Cdregion: {
+            //oh my --- phases again ---
+            CCdregion::EFrame frame = Phase();
+            if (frame != CCdregion::eFrame_not_set  &&  Strand() == eNa_strand_minus) {
+                frame = CCdregion::EFrame((4-frame)%3);
+            } 
+            pFeature->SetData().SetCdregion();
+            pFeature->SetData().SetCdregion().SetFrame(frame);
+            return true;
+        }
+
+        case CSeqFeatData::e_Rna: {
+            CRNA_ref& rnaref = pFeature->SetData().SetRna();
+            switch( itemtype.GetSubtype() ) {
+                default:
+                    rnaref.SetType(CRNA_ref::eType_unknown);
+                    return true;
+               case CSeqFeatData::eSubtype_mRNA:
+                    rnaref.SetType(CRNA_ref::eType_mRNA);
+                    return true;
+               case CSeqFeatData::eSubtype_ncRNA:
+                    rnaref.SetType(CRNA_ref::eType_ncRNA);
+                    return true;
+               case CSeqFeatData::eSubtype_otherRNA:
+                    rnaref.SetType(CRNA_ref::eType_other);
+                    return true;
+               case CSeqFeatData::eSubtype_rRNA:
+                    rnaref.SetType(CRNA_ref::eType_rRNA);
+                    return true;
+               case CSeqFeatData::eSubtype_scRNA:
+                    rnaref.SetType(CRNA_ref::eType_scRNA);
+                    return true;
+               case CSeqFeatData::eSubtype_tRNA:
+                    rnaref.SetType(CRNA_ref::eType_tRNA);
+                    return true;
+            }
             return true;
         }
     }
-    pFeature->SetData().SetImp().SetKey( "misc_feature" );
+    pFeature->SetData().SetImp();  
+    pFeature->SetData().SetImp().SetKey(Type());
     return true;
 }
 
