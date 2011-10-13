@@ -2592,8 +2592,8 @@ static EIO_Status s_IsConnected(SOCK                  sock,
             FSSLOpen sslopen = s_SSL ? s_SSL->Open : 0;
             assert(sock->session != SESSION_INVALID);
             if (sslopen) {
-                unsigned int   rtv_set = sock->r_tv_set;
-                unsigned int   wtv_set = sock->w_tv_set;
+                const unsigned int rtv_set = sock->r_tv_set;
+                const unsigned int wtv_set = sock->w_tv_set;
                 struct timeval rtv;
                 struct timeval wtv;
                 if (rtv_set)
@@ -2604,9 +2604,9 @@ static EIO_Status s_IsConnected(SOCK                  sock,
                 SOCK_SET_TIMEOUT(sock, w, tv);
                 status = sslopen(sock->session, error);
                 if ((sock->w_tv_set = wtv_set) != 0)
-                    sock->w_tv = wtv;
+                    memcpy(&sock->w_tv, &wtv, sizeof(sock->w_tv));
                 if ((sock->r_tv_set = rtv_set) != 0)
-                    sock->r_tv = rtv;
+                    memcpy(&sock->r_tv, &rtv, sizeof(sock->r_tv));
                 if (status != eIO_Success) {
                     if (status != eIO_Timeout) {
                         const char* strerr = s_StrError(sock, *error);
@@ -2816,8 +2816,8 @@ static EIO_Status s_Read(SOCK    sock,
     }
 
     done = 0/*false*/;
-    rtv = sock->r_tv;
-    rtv_set = sock->r_tv_set;
+    if ((rtv_set = sock->r_tv_set) != 0)
+        rtv = sock->r_tv;
     assert(!*n_read  ||  peek > 0);
     assert((peek >= 0  &&  size)  ||  (peek < 0  &&  !(buf  ||  size)));
     do {
@@ -2904,8 +2904,8 @@ static EIO_Status s_Read(SOCK    sock,
         sock->r_tv_set = 1;
         memset(&sock->r_tv, 0, sizeof(sock->r_tv));
     } while (peek < 0  ||  (!buf  &&  *n_read < size));
-    sock->r_tv_set = rtv_set;
-    sock->r_tv     = rtv;
+    if ((sock->r_tv_set = rtv_set) != 0)
+        memcpy(&sock->r_tv, &rtv, sizeof(sock->r_tv));
 
     return *n_read ? eIO_Success : status;
 }
@@ -3327,7 +3327,7 @@ static EIO_Status s_WritePending(SOCK                  sock,
     } while (sock->w_len  &&  status == eIO_Success);
     if (restore) {
         if ((sock->w_tv_set = wtv_set) != 0)
-            sock->w_tv = wtv;
+            memcpy(&sock->w_tv, &wtv, sizeof(sock->w_tv));
     }
 
     assert((sock->w_len != 0) == (status != eIO_Success));
@@ -3449,8 +3449,8 @@ static EIO_Status s_Shutdown(SOCK                  sock,
                 FSSLClose sslclose = s_SSL ? s_SSL->Close : 0;
                 assert(sock->session != SESSION_INVALID);
                 if (sslclose) {
-                    unsigned int   rtv_set = sock->r_tv_set;
-                    unsigned int   wtv_set = sock->w_tv_set;
+                    const unsigned int rtv_set = sock->r_tv_set;
+                    const unsigned int wtv_set = sock->w_tv_set;
                     struct timeval rtv;
                     struct timeval wtv;
                     if (rtv_set)
@@ -3461,9 +3461,9 @@ static EIO_Status s_Shutdown(SOCK                  sock,
                     SOCK_SET_TIMEOUT(sock, w, tv);
                     status = sslclose(sock->session, how, &x_error);
                     if ((sock->w_tv_set = wtv_set) != 0)
-                        sock->w_tv = wtv;
+                        memcpy(&sock->w_tv, &wtv, sizeof(sock->w_tv));
                     if ((sock->r_tv_set = rtv_set) != 0)
-                        sock->r_tv = rtv;
+                        memcpy(&sock->r_tv, &rtv, sizeof(sock->r_tv));
                     if (status != eIO_Success) {
                         const char* strerr = s_StrError(sock, x_error);
                         CORE_LOGF_ERRNO_EXX(127, eLOG_Trace,
