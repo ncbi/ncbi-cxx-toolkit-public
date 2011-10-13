@@ -177,6 +177,7 @@ bool CTSE_Split_Info::x_NeedsDelayedMainChunk(void) const
 // chunk attach
 void CTSE_Split_Info::AddChunk(CTSE_Chunk_Info& chunk_info)
 {
+    CMutexGuard guard(m_SeqIdToChunksMutex);
     _ASSERT(m_Chunks.find(chunk_info.GetChunkId()) == m_Chunks.end());
     _ASSERT(m_Chunks.empty() || chunk_info.GetChunkId() != kMax_Int);
     bool need_update = x_HasDelayedMainChunk();
@@ -325,12 +326,9 @@ CTSE_Split_Info::TSeqIdToChunks::const_iterator
 CTSE_Split_Info::x_FindChunk(const CSeq_id_Handle& id) const
 {
     if ( !m_SeqIdToChunksSorted ) {
-        CMutexGuard guard(m_SeqIdToChunksMutex);
-        if ( !m_SeqIdToChunksSorted ) {
-            TSeqIdToChunks(m_SeqIdToChunks).swap(m_SeqIdToChunks);
-            sort(m_SeqIdToChunks.begin(), m_SeqIdToChunks.end());
-            m_SeqIdToChunksSorted = true;
-        }
+        TSeqIdToChunks(m_SeqIdToChunks).swap(m_SeqIdToChunks);
+        sort(m_SeqIdToChunks.begin(), m_SeqIdToChunks.end());
+        m_SeqIdToChunksSorted = true;
     }
     return lower_bound(m_SeqIdToChunks.begin(),
                        m_SeqIdToChunks.end(),
@@ -340,6 +338,7 @@ CTSE_Split_Info::x_FindChunk(const CSeq_id_Handle& id) const
 // load requests
 void CTSE_Split_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq) const
 {
+    CMutexGuard guard(m_SeqIdToChunksMutex);
     for ( TSeqIdToChunks::const_iterator iter = x_FindChunk(id);
           iter != m_SeqIdToChunks.end() && iter->first == id; ++iter ) {
         GetChunk(iter->second).x_GetRecords(id, bioseq);
@@ -357,6 +356,7 @@ void CTSE_Split_Info::GetBioseqsIds(TSeqIds& ids) const
 
 bool CTSE_Split_Info::ContainsBioseq(const CSeq_id_Handle& id) const
 {
+    CMutexGuard guard(m_SeqIdToChunksMutex);
     for ( TSeqIdToChunks::const_iterator iter = x_FindChunk(id);
           iter != m_SeqIdToChunks.end() && iter->first == id; ++iter ) {
         if ( GetChunk(iter->second).ContainsBioseq(id) ) {
