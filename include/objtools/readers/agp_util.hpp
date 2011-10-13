@@ -65,9 +65,9 @@ class CAgpErr; // full definition below
 class NCBI_XOBJREAD_EXPORT CAgpRow
 {
 public:
-    CAgpRow(CAgpErr* arg, EAgpVersion agp_version = eAgpVersion_1_1 );
+    CAgpRow(CAgpErr* arg, EAgpVersion agp_version = eAgpVersion_2_0 );
     // constructs a default error handler
-    CAgpRow(EAgpVersion agp_version = eAgpVersion_1_1);
+    CAgpRow(EAgpVersion agp_version = eAgpVersion_2_0 );
     ~CAgpRow();
 
     // Returns:
@@ -237,9 +237,9 @@ class NCBI_XOBJREAD_EXPORT CAgpReader
 {
 public:
     CAgpReader(CAgpErr* arg, bool ownAgpErr=false, 
-        EAgpVersion agp_version = eAgpVersion_1_1 );
+        EAgpVersion agp_version = eAgpVersion_2_0 );
     // constructs a default error handler for this object instance
-    CAgpReader(EAgpVersion agp_version = eAgpVersion_1_1); 
+    CAgpReader(EAgpVersion agp_version = eAgpVersion_2_0 );
     virtual ~CAgpReader();
 
     virtual int ReadStream(CNcbiIstream& is, bool finalize=true);
