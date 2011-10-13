@@ -363,10 +363,14 @@ public:
     { return m_KeyGenerator.GenerateV1(job_id); }
 
     void TouchClientsRegistry(const CNSClientId &  client);
-    void ResetRunningDueToClear(const TNSBitVector &  jobs);
-    void ResetReadingDueToClear(const TNSBitVector &  jobs);
-    void ResetRunningDueToNewSession(const TNSBitVector &  jobs);
-    void ResetReadingDueToNewSession(const TNSBitVector &  jobs);
+    void ResetRunningDueToClear(const CNSClientId &   client,
+                                const TNSBitVector &  jobs);
+    void ResetReadingDueToClear(const CNSClientId &   client,
+                                const TNSBitVector &  jobs);
+    void ResetRunningDueToNewSession(const CNSClientId &   client,
+                                     const TNSBitVector &  jobs);
+    void ResetReadingDueToNewSession(const CNSClientId &   client,
+                                     const TNSBitVector &  jobs);
 
     void RegisterGetListener(const CNSClientId &  client,
                              unsigned short       port,
@@ -407,7 +411,8 @@ private:
     void x_UpdateStartFromCounter(void);
     unsigned int x_ReadStartFromCounter(void);
     void x_DeleteJobEvents(unsigned int  job_id);
-    void x_ResetDueTo(unsigned int          job_id,
+    void x_ResetDueTo(const CNSClientId &   client,
+                      unsigned int          job_id,
                       time_t                current_time,
                       TJobStatus            status_from,
                       CJobEvent::EJobEvent  event_type);

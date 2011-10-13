@@ -315,7 +315,7 @@ void  CNSClientsRegistry::ClearWorkerNode(const CNSClientId &  client,
     map< string, CNSClient >::iterator  worker_node = m_Clients.find(client.GetNode());
 
     if (worker_node != m_Clients.end())
-        worker_node->second.Clear(queue);
+        worker_node->second.Clear(client, queue);
     return;
 }
 

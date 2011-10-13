@@ -323,18 +323,19 @@ CNSClient::CNSClient(const CNSClientId &  client_id) :
 }
 
 
-void CNSClient::Clear(CQueue *  queue)
+void CNSClient::Clear(const CNSClientId &   client,
+                      CQueue *              queue)
 {
     m_Cleared = true;
     m_Session = "";
 
     if (m_RunningJobs.any()) {
-        queue->ResetRunningDueToClear(m_RunningJobs);
+        queue->ResetRunningDueToClear(client, m_RunningJobs);
         m_RunningJobs.clear();
     }
 
     if (m_ReadingJobs.any()) {
-        queue->ResetReadingDueToClear(m_ReadingJobs);
+        queue->ResetReadingDueToClear(client, m_ReadingJobs);
         m_ReadingJobs.clear();
     }
 
@@ -485,12 +486,12 @@ void CNSClient::Touch(const CNSClientId &  client_id,
 
     // Here: new session so check if there are running or reading jobs
     if (m_RunningJobs.any()) {
-        queue->ResetRunningDueToNewSession(m_RunningJobs);
+        queue->ResetRunningDueToNewSession(client_id, m_RunningJobs);
         m_RunningJobs.clear();
     }
 
     if (m_ReadingJobs.any()) {
-        queue->ResetReadingDueToNewSession(m_ReadingJobs);
+        queue->ResetReadingDueToNewSession(client_id, m_ReadingJobs);
         m_ReadingJobs.clear();
     }
 

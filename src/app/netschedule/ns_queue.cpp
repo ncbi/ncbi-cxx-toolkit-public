@@ -2074,7 +2074,8 @@ void CQueue::TouchClientsRegistry(const CNSClientId &  client)
 
 // Moves the job to Pending/Failed or to Done/ReadFailed
 // when event event_type has come
-void CQueue::x_ResetDueTo(unsigned int          job_id,
+void CQueue::x_ResetDueTo(const CNSClientId &   client,
+                          unsigned int          job_id,
                           time_t                current_time,
                           TJobStatus            status_from,
                           CJobEvent::EJobEvent  event_type)
@@ -2114,6 +2115,8 @@ void CQueue::x_ResetDueTo(unsigned int          job_id,
         event->SetStatus(new_status);
         event->SetEvent(event_type);
         event->SetTimestamp(current_time);
+        event->SetClientNode(client.GetNode());
+        event->SetClientSession(client.GetSession());
 
         job.Flush(this);
         transaction.Commit();
@@ -2128,12 +2131,13 @@ void CQueue::x_ResetDueTo(unsigned int          job_id,
 }
 
 
-void CQueue::ResetRunningDueToClear(const TNSBitVector &  jobs)
+void CQueue::ResetRunningDueToClear(const CNSClientId &   client,
+                                    const TNSBitVector &  jobs)
 {
     time_t      current_time = time(0);
     for (TNSBitVector::enumerator  en(jobs.first()); en.valid(); ++en) {
         try {
-            x_ResetDueTo(*en, current_time,
+            x_ResetDueTo(client, *en, current_time,
                          CNetScheduleAPI::eRunning, CJobEvent::eClear);
         } catch (...) {
             ERR_POST("Error resetting a running job when worker node is "
@@ -2143,12 +2147,13 @@ void CQueue::ResetRunningDueToClear(const TNSBitVector &  jobs)
 }
 
 
-void CQueue::ResetReadingDueToClear(const TNSBitVector &  jobs)
+void CQueue::ResetReadingDueToClear(const CNSClientId &   client,
+                                    const TNSBitVector &  jobs)
 {
     time_t      current_time = time(0);
     for (TNSBitVector::enumerator  en(jobs.first()); en.valid(); ++en) {
         try {
-            x_ResetDueTo(*en, current_time,
+            x_ResetDueTo(client, *en, current_time,
                          CNetScheduleAPI::eReading, CJobEvent::eClear);
         } catch (...) {
             ERR_POST("Error resetting a reading job when worker node is "
@@ -2158,12 +2163,13 @@ void CQueue::ResetReadingDueToClear(const TNSBitVector &  jobs)
 }
 
 
-void CQueue::ResetRunningDueToNewSession(const TNSBitVector &  jobs)
+void CQueue::ResetRunningDueToNewSession(const CNSClientId &   client,
+                                         const TNSBitVector &  jobs)
 {
     time_t      current_time = time(0);
     for (TNSBitVector::enumerator  en(jobs.first()); en.valid(); ++en) {
         try {
-            x_ResetDueTo(*en, current_time,
+            x_ResetDueTo(client, *en, current_time,
                          CNetScheduleAPI::eRunning, CJobEvent::eSessionChanged);
         } catch (...) {
             ERR_POST("Error resetting a running job when worker node "
@@ -2173,12 +2179,13 @@ void CQueue::ResetRunningDueToNewSession(const TNSBitVector &  jobs)
 }
 
 
-void CQueue::ResetReadingDueToNewSession(const TNSBitVector &  jobs)
+void CQueue::ResetReadingDueToNewSession(const CNSClientId &   client,
+                                         const TNSBitVector &  jobs)
 {
     time_t      current_time = time(0);
     for (TNSBitVector::enumerator  en(jobs.first()); en.valid(); ++en) {
         try {
-            x_ResetDueTo(*en, current_time,
+            x_ResetDueTo(client, *en, current_time,
                          CNetScheduleAPI::eReading, CJobEvent::eSessionChanged);
         } catch (...) {
             ERR_POST("Error resetting a reading job when worker node "

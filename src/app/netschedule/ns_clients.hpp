@@ -122,7 +122,8 @@ class CNSClient
     public:
         CNSClient();
         CNSClient(const CNSClientId &  client_id);
-        void Clear(CQueue *  queue);
+        void Clear(const CNSClientId &  client_id,
+                   CQueue *             queue);
         TNSBitVector GetRunningJobs(void) const;
         TNSBitVector GetReadingJobs(void) const;
         TNSBitVector GetBlacklistedJobs(void) const;
