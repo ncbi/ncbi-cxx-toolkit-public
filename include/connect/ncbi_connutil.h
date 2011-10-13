@@ -82,6 +82,13 @@
 #include <connect/ncbi_socket.h>
 
 
+/* Well-known port values */
+#define CONN_PORT_FTP             21
+#define CONN_PORT_SMTP            25
+#define CONN_PORT_HTTP            80
+#define CONN_PORT_HTTPS           443
+
+
 /** @addtogroup UtilityFunc
  *
  * @{
@@ -100,14 +107,28 @@ typedef enum {
     eReqMethod_Connect
 } EReqMethod;
 
+typedef unsigned EBReqMethod;
+
 
 typedef enum {
     eURL_Unspec = 0,
     eURL_Https,
     eURL_File,
     eURL_Http,
-    eURL_Ftp
+    eURL_Ftp    
 } EURLScheme;
+
+typedef unsigned EBURLScheme;
+
+
+typedef enum {
+    eFWMode_Legacy   = 0,  /** Relay, no firewall                           */
+    eFWMode_Primary  = 1,  /** Primary ports only, no fallback              */
+    eFWMode_Fallback = 2,  /** Fallback ports only (w/o trying any primary) */
+    eFWMode_Flexible = 3   /** Primary ports first, then fallback           */
+} EFWMode;
+
+typedef unsigned EBFWMode;
 
 
 typedef enum {
@@ -115,6 +136,8 @@ typedef enum {
     eDebugPrintout_Some,
     eDebugPrintout_Data
 } EDebugPrintout;
+
+typedef unsigned EBDebugPrintout;
 
 
 /* Network connection related configurable info struct.
@@ -130,8 +153,13 @@ typedef enum {
  */
 typedef struct {
     char            client_host[256]; /* effective client hostname ('\0'=def)*/
-    EReqMethod      req_method;       /* method to use in the request (HTTP) */
-    EURLScheme      scheme;           /* only pre-defined types (limited)    */
+    EBReqMethod     req_method:3;     /* method to use in the request (HTTP) */
+    EBURLScheme     scheme:3;         /* only pre-defined types (limited)    */
+    unsigned        reserved:2;       /* MBZ                                 */
+    unsigned        firewall:2;       /* to use firewall (relay otherwise)   */
+    unsigned        stateless:1;      /* to connect in HTTP-like fashion only*/
+    unsigned        lb_disable:1;     /* to disable local load-balancing     */
+    EBDebugPrintout debug_printout:2; /* switch to printout some debug info  */
     char            user[64];         /* username (if specified)             */
     char            pass[64];         /* password (if any)                   */
     char            host[256];        /* host to connect to                  */
@@ -143,12 +171,8 @@ typedef struct {
     char            http_proxy_user[64];  /* http proxy username (if req'd)  */
     char            http_proxy_pass[64];  /* http proxy password             */
     char            proxy_host[256];  /* CERN-like (non-transp) f/w proxy srv*/
-    const STimeout* timeout;          /* ptr to I/O timeout(infinite if NULL)*/
     unsigned short  max_try;          /* max. # of attempts to connect (>= 1)*/
-    short/*bool*/   firewall;         /* to use firewall/relay in connects   */
-    short/*bool*/   stateless;        /* to connect in HTTP-like fashion only*/
-    short/*bool*/   lb_disable;       /* to disable local load-balancing     */
-    EDebugPrintout  debug_printout;   /* switch to printout some debug info  */
+    const STimeout* timeout;          /* ptr to I/O timeout(infinite if NULL)*/
     const char*     http_user_header; /* user header to add to HTTP request  */
     const char*     http_referer;     /* default referrer (when not spec'd)  */
 
@@ -231,13 +255,6 @@ typedef struct {
 /* Local service dispatcher */
 #define REG_CONN_LOCAL_SERVICES   "LOCAL_SERVICES"
 #define REG_CONN_LOCAL_SERVER     DEF_CONN_REG_SECTION "_" "LOCAL_SERVER"
-
-
-/* Well-known port values */
-#define CONN_PORT_FTP             21
-#define CONN_PORT_SMTP            25
-#define CONN_PORT_HTTP            80
-#define CONN_PORT_HTTPS           443
 
 
 /* Lookup "param" in the registry / environment.

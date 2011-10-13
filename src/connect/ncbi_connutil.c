@@ -184,7 +184,7 @@ int/*bool*/ ConnNetInfo_Boolean(const char* str)
     return str  &&  *str  &&  (strcmp    (str, "1")    == 0  ||
                                strcasecmp(str, "on")   == 0  ||
                                strcasecmp(str, "yes")  == 0  ||
-                               strcasecmp(str, "true") == 0);
+                               strcasecmp(str, "true") == 0) ? 1 : 0;
 }
 
 
@@ -336,9 +336,18 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     val = atoi(str);
     info->max_try = (unsigned short)(val > 0 ? val : DEF_CONN_MAX_TRY);
 
-    /* firewall mode? */
+    /* firewall mode */
     REG_VALUE(REG_CONN_FIREWALL, str, DEF_CONN_FIREWALL);
-    info->firewall = ConnNetInfo_Boolean(str);
+    if (!*str)
+        info->firewall = eFWMode_Legacy;
+    else if (strcasecmp(str, "primary") == 0)
+        info->firewall = eFWMode_Primary;
+    else if (strcasecmp(str, "fallback") == 0)
+        info->firewall = eFWMode_Fallback;
+    else if (strcasecmp(str, "flexible") == 0  ||  ConnNetInfo_Boolean(str))
+        info->firewall = eFWMode_Flexible;
+    else
+        info->firewall = eFWMode_Legacy;
 
     /* stateless client? */
     REG_VALUE(REG_CONN_STATELESS, str, DEF_CONN_STATELESS);
@@ -1066,13 +1075,31 @@ static const char* x_Port(unsigned short port, char buf[])
     return buf;
 }
 
+
+static const char* x_Firewall(unsigned int firewall)
+{
+    switch ((EFWMode) firewall) {
+    case eFWMode_Primary:
+        return "PRIMARY";
+    case eFWMode_Fallback:
+        return "FALLBACK";
+    case eFWMode_Flexible:
+        return "TRUE";
+    default:
+        assert(!firewall);
+        break;
+    }
+    return "NONE";
+}
+
+
 static void s_SaveStringQuot(char* s, const char* name,
                              const char* str, int/*bool*/ quote)
 {
     sprintf(s + strlen(s), "%-16.16s: %s%s%s\n", name,
-            str && quote ? "\"" : "",
-            str          ? str  : "NULL",
-            str && quote ? "\"" : "");
+            str  &&  quote ? "\"" : "",
+            str            ? str  : "NULL",
+            str  &&  quote ? "\"" : "");
 }
 
 static void s_SaveString(char* s, const char* name, const char* str)
@@ -1082,17 +1109,18 @@ static void s_SaveString(char* s, const char* name, const char* str)
 
 static void s_SaveKeyval(char* s, const char* name, const char* str)
 {
+    assert(str);
     s_SaveStringQuot(s, name, str, 0);
+}
+
+static void s_SaveBool(char* s, const char* name, unsigned int/*bool*/ bbb)
+{
+    s_SaveKeyval(s, name, bbb ? "TRUE" : "FALSE");
 }
 
 static void s_SaveULong(char* s, const char* name, unsigned long lll)
 {
     sprintf(s + strlen(s), "%-16.16s: %lu\n", name, lll);
-}
-
-static void s_SaveBool(char* s, const char* name, int/*bool*/ bbb)
-{
-    sprintf(s + strlen(s), "%-16.16s: %s\n", name, bbb ? "TRUE" : "FALSE");
 }
 
 static void s_SaveUserHeader(char* s, const char* name,
@@ -1192,7 +1220,7 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
     } else
         s_SaveKeyval(s, "timeout",         "INFINITE");
     s_SaveULong     (s, "max_try",         info->max_try);
-    s_SaveBool      (s, "firewall",        info->firewall);
+    s_SaveKeyval    (s, "firewall",        x_Firewall(info->firewall));
     s_SaveBool      (s, "stateless",       info->stateless);
     s_SaveBool      (s, "lb_disable",      info->lb_disable);
     s_SaveKeyval    (s, "debug_printout", (info->debug_printout
