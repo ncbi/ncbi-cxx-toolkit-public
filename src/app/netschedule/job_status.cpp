@@ -85,6 +85,20 @@ unsigned CJobStatusTracker::CountStatus(TJobStatus status) const
 }
 
 
+
+static  CNetScheduleAPI::EJobStatus
+            s_StatToCount[] = { CNetScheduleAPI::ePending,
+                                CNetScheduleAPI::eRunning,
+                                CNetScheduleAPI::eCanceled,
+                                CNetScheduleAPI::eFailed,
+                                CNetScheduleAPI::eDone,
+                                CNetScheduleAPI::eReading,
+                                CNetScheduleAPI::eConfirmed,
+                                CNetScheduleAPI::eReadFailed };
+static size_t
+            s_StatToCountSize = sizeof(s_StatToCount) /
+                                sizeof(CNetScheduleAPI::EJobStatus);
+
 void CJobStatusTracker::CountStatus(TStatusSummaryMap *     status_map,
                                     const TNSBitVector *    candidate_set)
 {
@@ -93,8 +107,8 @@ void CJobStatusTracker::CountStatus(TStatusSummaryMap *     status_map,
 
     CReadLockGuard      guard(m_Lock);
 
-    for (int i = 0; i < CNetScheduleAPI::eLastStatus; ++i) {
-        const TNSBitVector &    bv = *m_StatusStor[i];
+    for (size_t  k = 0; k < s_StatToCountSize; ++k) {
+        const TNSBitVector &    bv = *m_StatusStor[s_StatToCount[k]];
         unsigned                cnt;
 
         if (candidate_set)
@@ -102,7 +116,7 @@ void CJobStatusTracker::CountStatus(TStatusSummaryMap *     status_map,
         else
             cnt = bv.count();
 
-        (*status_map)[(TJobStatus) i] = cnt;
+        (*status_map)[s_StatToCount[k]] = cnt;
     }
 }
 
