@@ -108,7 +108,7 @@ static EIO_Status s_Close(const CProcess& process, CPipe::TCreateFlags flags,
             if ( exitinfo.IsSignaled() ) {
                 x_exitcode = -(exitinfo.GetSignal() + 1000);
             }
-#endif // NCBI_OS_UNIX
+#endif //NCBI_OS_UNIX
         } else {
             status = eIO_Timeout;
             if ( !IS_SET(flags, CPipe::fKeepOnClose) ) {
