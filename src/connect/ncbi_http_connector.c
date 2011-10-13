@@ -1635,7 +1635,7 @@ static EIO_Status s_CreateHttpConnector
             return eIO_InvalidArg;
         }
         if (xxx->scheme == eURL_Unspec)
-            xxx->scheme =  eURL_Http;
+            xxx->scheme  = eURL_Http;
         if ((fff = strchr(xxx->args, '#')) != 0)
             *fff = '\0';
         flags &= ~fHTTP_DetachableTunnel;
