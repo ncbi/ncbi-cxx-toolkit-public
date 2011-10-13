@@ -1192,7 +1192,9 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
                                                     ? "ANY"
                                                     : x_Num(info->req_method,
                                                             buf))))));
-    s_SaveKeyval    (s, "scheme",          x_Scheme(info->scheme, buf));
+    s_SaveKeyval    (s, "scheme",         (info->scheme
+                                           ? x_Scheme(info->scheme, buf)
+                                           : "(unspec)"));
     s_SaveString    (s, "user",            info->user);
     if (*info->pass)
         s_SaveKeyval(s, "pass",           *info->user ? "(set)" : "(ignored)");
