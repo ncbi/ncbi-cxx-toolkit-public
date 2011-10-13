@@ -248,7 +248,7 @@ void CNSAffinityRegistry::RemoveJobFromAffinity(unsigned int  job_id,
     map< unsigned int,
          SNSJobsAffinity >::iterator    found = m_JobsAffinity.find(aff_id);
 
-    if (found != m_JobsAffinity.end())
+    if (found == m_JobsAffinity.end())
         // The affinity is not known
         return;
 
