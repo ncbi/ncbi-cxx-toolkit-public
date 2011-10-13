@@ -41,6 +41,11 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/scope.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/seq/Delta_ext.hpp>
+#include <objects/seq/Delta_seq.hpp>
+#include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/Seq_literal.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seq_vector.hpp>
@@ -48,7 +53,7 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/lds2/lds2_dataloader.hpp>
 #include <objtools/lds2/lds2.hpp>
-#include <objtools/readers/agp_read.hpp>
+#include <objtools/readers/agp_util.hpp>
 #include <objtools/readers/fasta.hpp>
 
 USING_NCBI_SCOPE;
@@ -58,7 +63,115 @@ namespace {
     // command-line argument names
     const string kArgnameAgp = "agp";
     const string kArgnameObjFasta = "objfasta";
+    const string kArgnameLoadLog = "loadlog";
 }
+
+/////////////////////////////////////////////////////////////////////////////
+//  CAgpToSeqEntry::
+
+// This class is used to turn an AGP file into a Seq-entry
+class CAgpToSeqEntry : public CAgpReader {
+public:
+
+    // When reading, loads results into "entries"
+    CAgpToSeqEntry( vector< CRef<CSeq_entry> > & entries ) : 
+      CAgpReader( eAgpVersion_2_0 ),
+          m_entries(entries)
+      { }
+
+protected:
+    virtual void OnGapOrComponent() {
+        if( ! m_bioseq || 
+            m_prev_row->GetObject() != m_this_row->GetObject() ) 
+        {
+            x_FinishedBioseq();
+
+            // initialize new bioseq
+            CRef<CSeq_inst> seq_inst( new CSeq_inst );
+            seq_inst->SetRepr(CSeq_inst::eRepr_delta);
+            seq_inst->SetMol(CSeq_inst::eMol_dna);
+            seq_inst->SetLength(0);
+
+            m_bioseq.Reset( new CBioseq );
+            m_bioseq->SetInst(*seq_inst);
+
+            CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Local,
+                m_this_row->GetObject(), m_this_row->GetObject() ));
+            m_bioseq->SetId().push_back(id);
+        }
+
+        CRef<CSeq_inst> seq_inst( & m_bioseq->SetInst() );
+
+        CRef<CDelta_seq> delta_seq( new CDelta_seq );
+        seq_inst->SetExt().SetDelta().Set().push_back(delta_seq);
+
+        if( m_this_row->is_gap ) {
+            delta_seq->SetLiteral().SetLength(m_this_row->gap_length);
+            if( m_this_row->component_type == 'U' ) {
+                delta_seq->SetLiteral().SetFuzz().SetLim();
+            }
+            seq_inst->SetLength() += m_this_row->gap_length;
+        } else {
+            CSeq_loc& loc = delta_seq->SetLoc();
+
+            CRef<CSeq_id> comp_id;
+            try { 
+                comp_id.Reset( new CSeq_id( m_this_row->GetComponentId() ) );
+            } catch(...) {
+                // couldn't create real seq-id.  fall back on local seq-id
+                comp_id.Reset( new CSeq_id );
+                comp_id->SetLocal().SetStr( m_this_row->GetComponentId() );
+            }
+            loc.SetInt().SetId(*comp_id);
+
+            loc.SetInt().SetFrom( m_this_row->component_beg - 1 );
+            loc.SetInt().SetTo(   m_this_row->component_end - 1 );
+            seq_inst->SetLength() += ( m_this_row->component_end - m_this_row->component_beg + 1 );
+            
+            switch( m_this_row->orientation ) {
+            case CAgpRow::eOrientationPlus:
+                loc.SetInt().SetStrand( eNa_strand_plus );
+                break;
+            case CAgpRow::eOrientationMinus:
+                loc.SetInt().SetStrand( eNa_strand_minus );
+                break;
+            case CAgpRow::eOrientationUnknown:
+                loc.SetInt().SetStrand( eNa_strand_unknown );
+                break;
+            case CAgpRow::eOrientationIrrelevant:
+                loc.SetInt().SetStrand( eNa_strand_other );
+                break;
+            default:
+                throw runtime_error("unknown orientation " + NStr::IntToString(m_this_row->orientation));
+            }
+        }
+    }
+
+    virtual int Finalize(void)
+    {
+        // First, do real finalize
+        const int return_val = CAgpReader::Finalize();
+        // Then, our own finalization
+        x_FinishedBioseq();
+
+        return return_val;
+    }
+
+    void x_FinishedBioseq(void)
+    {
+        if( m_bioseq ) {
+            CRef<CSeq_entry> entry( new CSeq_entry );
+            entry->SetSeq(*m_bioseq);
+            m_entries.push_back( entry );
+
+            m_bioseq.Reset();
+        }
+    }
+
+    CRef<CBioseq> m_bioseq;
+    vector< CRef<CSeq_entry> > & m_entries;
+};
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  CAgpFastaCompareApplication::
@@ -72,6 +185,10 @@ public:
 private:
     // after constructor, only set to false
     bool m_bSuccess; 
+
+    // where we write detailed loading logs
+    // This is unset if we're not writing anywhere
+    auto_ptr<CNcbiOfstream> m_pLoadLogFile;
 
     virtual void Init(void);
     virtual int  Run(void);
@@ -90,7 +207,8 @@ private:
 
     void x_Process(const CSeq_entry_Handle seh,
                    TUniqueSeqs& seqs,
-                   CRef<CScope> scope );
+                   int * in_out_pUniqueBioseqsLoaded,
+                   int * in_out_pBioseqsSkipped );
 
     void x_OutputDifferences(
         const TSeqIdSet & vSeqIdFASTAOnly,
@@ -123,6 +241,10 @@ void CAgpFastaCompareApplication::Init(void)
                      "objects we're comparing against the agp file.",
                      CArgDescriptions::eInputFile );
 
+    arg_desc->AddOptionalKey( kArgnameLoadLog, "LoadLog",
+        "This file will receive the detailed list of all loaded sequences",
+        CArgDescriptions::eOutputFile );
+
     arg_desc->AddExtra( 0, kMax_UInt, 
         "Optional Fasta sequences to process, which contains the "
         "components.  This is useful if the components are not yet in genbank",
@@ -142,6 +264,11 @@ int CAgpFastaCompareApplication::Run(void)
 {
     // Get arguments
     const CArgs& args = GetArgs();
+
+    if( args[kArgnameLoadLog] ) {
+        m_pLoadLogFile.reset( 
+            new CNcbiOfstream(args[kArgnameLoadLog].AsString().c_str() ) );
+    }
 
     CRef<CObjectManager> om(CObjectManager::GetInstance());
 
@@ -235,19 +362,31 @@ int CAgpFastaCompareApplication::Run(void)
 
 void CAgpFastaCompareApplication::x_Process(const CSeq_entry_Handle seh,
                                             TUniqueSeqs& seqs,
-                                            CRef<CScope> scope)
+                                            int * in_out_pUniqueBioseqsLoaded,
+                                            int * in_out_pBioseqsSkipped )
 {
-    // scope is currently unused, but I'm leaving it here in case 
+    _ASSERT( 
+        in_out_pUniqueBioseqsLoaded != NULL && 
+        in_out_pBioseqsSkipped != NULL );
+
+    // skipped is total minus loaded.
+    int total = 0;
 
     for (CBioseq_CI bioseq_it(seh);  bioseq_it;  ++bioseq_it) {
+        ++total;
         CSeqVector vec(*bioseq_it, CBioseq_Handle::eCoding_Iupac);
         CSeq_id_Handle idh = sequence::GetId(*bioseq_it,
                                              sequence::eGetId_Best);
         string data;
+        if( ! vec.CanGetRange(0, bioseq_it->GetBioseqLength() - 1) ) {
+            LOG_POST(Error << "  Skipping one: could not load due to error in AGP file (length issue) for " << idh);
+            m_bSuccess = false;
+            continue;
+        }
         try {
             vec.GetSeqData(0, bioseq_it->GetBioseqLength() - 1, data);
-        } catch(...) {
-            LOG_POST(Error << "  Skipping one: Can't get sequence for " << idh );
+        } catch(CSeqVectorException ex) {
+            LOG_POST(Error << "  Skipping one: could not load due to error, probably in AGP file, possibly a length issue, for " << idh);
             m_bSuccess = false;
             continue;
         }
@@ -264,24 +403,37 @@ void CAgpFastaCompareApplication::x_Process(const CSeq_entry_Handle seh,
         if( ! insert_result.second ) {
             LOG_POST(Error << "  Error: duplicate sequence " << idh );
             m_bSuccess = false;
+            continue;
         }
 
-        CNcbiOstrstream os;
-        ITERATE (string, i, key.first) {
-            os << setw(2) << setfill('0') << hex << (int)((unsigned char)*i);
+        if( m_pLoadLogFile.get() != NULL ) {
+            CNcbiOstrstream os;
+            ITERATE (string, i, key.first) {
+                os << setw(2) << setfill('0') << hex << (int)((unsigned char)*i);
+            }
+
+            *m_pLoadLogFile << "  " << idh << ": "
+                << string(CNcbiOstrstreamToString(os))
+                << " / " << key.second << endl;
         }
 
-        LOG_POST(Error << "  " << idh << ": "
-                 << string(CNcbiOstrstreamToString(os))
-                 << " / " << key.second);
+        ++*in_out_pUniqueBioseqsLoaded;
     }
+
+    *in_out_pBioseqsSkipped = ( total -  *in_out_pUniqueBioseqsLoaded);
 }
 
 
 void CAgpFastaCompareApplication::x_ProcessObjectFasta(CNcbiIstream& istr,
                                                  TUniqueSeqs& fasta_ids)
 {
+    int iNumLoaded = 0;
+    int iNumSkipped = 0;
+
     LOG_POST(Error << "Processing FASTA...");
+    if( m_pLoadLogFile.get() != NULL ) {
+        *m_pLoadLogFile << "Processing FASTA..." << endl;
+    }
     CFastaReader reader(istr);
     while (istr) {
         try {
@@ -289,11 +441,16 @@ void CAgpFastaCompareApplication::x_ProcessObjectFasta(CNcbiIstream& istr,
 
             CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
             CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
-            x_Process(seh, fasta_ids, scope);
+            x_Process(seh, fasta_ids, &iNumLoaded, &iNumSkipped );
         }
         catch (CException& ) {
             break;
         }
+    }
+
+    LOG_POST(Error << "Loaded " << iNumLoaded << " FASTA sequence(s).");
+    if( iNumSkipped > 0 ) {
+        LOG_POST(Error << "  Skipped " << iNumSkipped << " FASTA sequence(s).");
     }
 }
 
@@ -301,10 +458,17 @@ void CAgpFastaCompareApplication::x_ProcessObjectFasta(CNcbiIstream& istr,
 void CAgpFastaCompareApplication::x_ProcessAgp(CNcbiIstream& istr,
                                                TUniqueSeqs& agp_ids)
 {
+    int iNumLoaded = 0;
+    int iNumSkipped = 0;
+
     LOG_POST(Error << "Processing AGP...");
+    if( m_pLoadLogFile.get() != NULL ) {
+        *m_pLoadLogFile << "Processing AGP..." << endl;
+    }
     while (istr) {
         vector< CRef<CSeq_entry> > entries;
-        AgpRead(istr, entries);
+        CAgpToSeqEntry agp_reader( entries );
+        agp_reader.ReadStream( istr ); // loads var entries
         ITERATE (vector< CRef<CSeq_entry> >, it, entries) {
             CRef<CSeq_entry> entry = *it;
 
@@ -312,8 +476,13 @@ void CAgpFastaCompareApplication::x_ProcessAgp(CNcbiIstream& istr,
             CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
             scope->AddDefaults();
 
-            x_Process(seh, agp_ids, scope);
+            x_Process(seh, agp_ids, &iNumLoaded, &iNumSkipped );
         }
+    }
+
+    LOG_POST(Error << "Loaded " << iNumLoaded << " AGP sequence(s).");
+    if( iNumSkipped > 0 ) {
+        LOG_POST(Error << "  Skipped " << iNumSkipped << " AGP sequence(s).");
     }
 }
 
