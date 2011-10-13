@@ -190,6 +190,7 @@ if test "$buildptb" = "yes"; then
   COMMON_Exec cd $builddir
   ptb="./build-system/project_tree_builder/$ptbname"
   test -x "$ptb" || Usage "$builddir/$ptb not found"
+  COMMON_AddRunpath $builddir/../lib
 fi
 
 test -x "$ptb" || Usage "$ptbname not found at $ptb"
