@@ -47,6 +47,21 @@
 BEGIN_NCBI_SCOPE
 
 
+const CNetScheduleAPI::EJobStatus
+        g_ValidJobStatuses[] = { CNetScheduleAPI::ePending,
+                                 CNetScheduleAPI::eRunning,
+                                 CNetScheduleAPI::eCanceled,
+                                 CNetScheduleAPI::eFailed,
+                                 CNetScheduleAPI::eDone,
+                                 CNetScheduleAPI::eReading,
+                                 CNetScheduleAPI::eConfirmed,
+                                 CNetScheduleAPI::eReadFailed };
+const size_t
+        g_ValidJobStatusesSize = sizeof(g_ValidJobStatuses) /
+                                 sizeof(CNetScheduleAPI::EJobStatus);
+
+
+
 /// In-Memory storage to track status of all jobs
 /// Syncronized thread safe class
 ///

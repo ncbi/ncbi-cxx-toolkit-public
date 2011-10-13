@@ -43,6 +43,10 @@ CJobStatusTracker::CJobStatusTracker()
  : m_LastPending(0),
    m_DoneCnt(0)
 {
+    // Note: one bit vector is not used - the corresponding job state became
+    // obsolete and was deleted. The matrix though uses job statuses as indexes
+    // for fast access, so that missed status vector is also created. The rest
+    // of the code iterates only through the valid states.
     for (int i = 0; i < CNetScheduleAPI::eLastStatus; ++i) {
         m_StatusStor.push_back(new TNSBitVector(bm::BM_GAP));
     }
@@ -67,11 +71,11 @@ TJobStatus CJobStatusTracker::GetStatus(unsigned job_id) const
 
 TJobStatus CJobStatusTracker::x_GetStatusNoLock(unsigned job_id) const
 {
-    for (int i = 0; i < CNetScheduleAPI::eLastStatus; ++i) {
-        const TNSBitVector &    bv = *m_StatusStor[i];
+    for (size_t  k = 0; k < g_ValidJobStatusesSize; ++k) {
+        const TNSBitVector &    bv = *m_StatusStor[g_ValidJobStatuses[k]];
 
         if (bv[job_id])
-            return TJobStatus(i);
+            return g_ValidJobStatuses[k];
     }
     return CNetScheduleAPI::eJobNotFound;
 }
@@ -85,20 +89,6 @@ unsigned CJobStatusTracker::CountStatus(TJobStatus status) const
 }
 
 
-
-static  CNetScheduleAPI::EJobStatus
-            s_StatToCount[] = { CNetScheduleAPI::ePending,
-                                CNetScheduleAPI::eRunning,
-                                CNetScheduleAPI::eCanceled,
-                                CNetScheduleAPI::eFailed,
-                                CNetScheduleAPI::eDone,
-                                CNetScheduleAPI::eReading,
-                                CNetScheduleAPI::eConfirmed,
-                                CNetScheduleAPI::eReadFailed };
-static size_t
-            s_StatToCountSize = sizeof(s_StatToCount) /
-                                sizeof(CNetScheduleAPI::EJobStatus);
-
 void CJobStatusTracker::CountStatus(TStatusSummaryMap *     status_map,
                                     const TNSBitVector *    candidate_set)
 {
@@ -107,8 +97,8 @@ void CJobStatusTracker::CountStatus(TStatusSummaryMap *     status_map,
 
     CReadLockGuard      guard(m_Lock);
 
-    for (size_t  k = 0; k < s_StatToCountSize; ++k) {
-        const TNSBitVector &    bv = *m_StatusStor[s_StatToCount[k]];
+    for (size_t  k = 0; k < g_ValidJobStatusesSize; ++k) {
+        const TNSBitVector &    bv = *m_StatusStor[g_ValidJobStatuses[k]];
         unsigned                cnt;
 
         if (candidate_set)
@@ -116,21 +106,19 @@ void CJobStatusTracker::CountStatus(TStatusSummaryMap *     status_map,
         else
             cnt = bv.count();
 
-        (*status_map)[s_StatToCount[k]] = cnt;
+        (*status_map)[g_ValidJobStatuses[k]] = cnt;
     }
 }
 
 
-unsigned CJobStatusTracker::Count(void)
+unsigned int  CJobStatusTracker::Count(void)
 {
-    CReadLockGuard guard(m_Lock);
+    CReadLockGuard  guard(m_Lock);
+    unsigned int    cnt = 0;
 
-    unsigned        cnt = 0;
-    for (int i = 0; i < CNetScheduleAPI::eLastStatus; ++i) {
-        const TNSBitVector &    bv = *m_StatusStor[i];
+    for (size_t  k = 0; k < g_ValidJobStatusesSize; ++k)
+        cnt += m_StatusStor[g_ValidJobStatuses[k]]->count();
 
-        cnt += bv.count();
-    }
     return cnt;
 }
 
@@ -163,30 +151,22 @@ void CJobStatusTracker::SetStatus(unsigned    job_id,
     CWriteLockGuard         guard(m_Lock);
     TJobStatus              old_status = TJobStatus(-1);
 
-    for (int i = 0; i < CNetScheduleAPI::eLastStatus; ++i) {
-        TNSBitVector &      bv = *m_StatusStor[i];
+    for (size_t  k = 0; k < g_ValidJobStatusesSize; ++k) {
+        TNSBitVector &      bv = *m_StatusStor[g_ValidJobStatuses[k]];
 
         if (bv[job_id]) {
             if (old_status != TJobStatus(-1))
                 ERR_POST("State matrix was damaged, "
                          "more than one status active for job " << job_id);
-            old_status = TJobStatus(i);
+            old_status = g_ValidJobStatuses[k];
 
-            if ((int)status != (int)i)
+            if (status != g_ValidJobStatuses[k])
                 bv.set(job_id, false);
         } else {
-            if ((int)status == (int)i)
+            if (status == g_ValidJobStatuses[k])
                 bv.set(job_id, true);
         }
     }
-
-    if (old_status == CNetScheduleAPI::eDone &&
-        status     == CNetScheduleAPI::ePending)
-        ERR_POST("Illegal status change from Done to Pending for job " <<
-                 job_id);
-
-    if (status == CNetScheduleAPI::eDone)
-        IncDoneJobs();
 }
 
 
@@ -200,8 +180,8 @@ void CJobStatusTracker::ClearAll(TNSBitVector *  bv)
 {
     CWriteLockGuard         guard(m_Lock);
 
-    for (int i = 0; i < CNetScheduleAPI::eLastStatus; ++i) {
-        TNSBitVector &      bv1 = *m_StatusStor[i];
+    for (size_t  k = 0; k < g_ValidJobStatusesSize; ++k) {
+        TNSBitVector &      bv1 = *m_StatusStor[g_ValidJobStatuses[k]];
 
         if (bv)
             *bv |= bv1;
@@ -213,8 +193,8 @@ void CJobStatusTracker::ClearAll(TNSBitVector *  bv)
 
 void CJobStatusTracker::OptimizeMem()
 {
-    for (int i = 0; i < CNetScheduleAPI::eLastStatus; ++i) {
-        TNSBitVector &      bv = *m_StatusStor[i];
+    for (size_t  k = 0; k < g_ValidJobStatusesSize; ++k) {
+        TNSBitVector &      bv = *m_StatusStor[g_ValidJobStatuses[k]];
         {{
             CWriteLockGuard     guard(m_Lock);
             bv.optimize(0, TNSBitVector::opt_free_0);
@@ -462,8 +442,8 @@ void CJobStatusTracker::GetAliveJobs(TNSBitVector& ids)
 {
     CReadLockGuard      guard(m_Lock);
 
-    for (int i = 0; i < CNetScheduleAPI::eLastStatus; ++i) {
-        TNSBitVector& bv = *m_StatusStor[i];
+    for (size_t  k = 0; k < g_ValidJobStatusesSize; ++k) {
+        TNSBitVector &  bv = *m_StatusStor[g_ValidJobStatuses[k]];
         ids |= bv;
     }
 }

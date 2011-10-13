@@ -1279,19 +1279,6 @@ void CNetScheduleHandler::x_ProcessDropJob(CQueue* q)
 }
 
 
-static  CNetScheduleAPI::EJobStatus
-            s_StatToPrint[] = { CNetScheduleAPI::ePending,
-                                CNetScheduleAPI::eRunning,
-                                CNetScheduleAPI::eCanceled,
-                                CNetScheduleAPI::eFailed,
-                                CNetScheduleAPI::eDone,
-                                CNetScheduleAPI::eReading,
-                                CNetScheduleAPI::eConfirmed,
-                                CNetScheduleAPI::eReadFailed };
-static size_t
-            s_StatToPrintSize = sizeof(s_StatToPrint) /
-                                sizeof(CNetScheduleAPI::EJobStatus);
-
 void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
 {
     CSocket &           socket = GetSocket();
@@ -1317,8 +1304,8 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
                  NStr::DoubleToString(q->GetAverage(CQueue::eStatDBWriteEvent)) +
                  "/sec");
 
-    for (size_t  k = 0; k < s_StatToPrintSize; ++k) {
-        TJobStatus      st = s_StatToPrint[k];
+    for (size_t  k = 0; k < g_ValidJobStatusesSize; ++k) {
+        TJobStatus      st = g_ValidJobStatuses[k];
         unsigned        count = q->CountStatus(st);
 
         WriteMessage("OK:", CNetScheduleAPI::StatusToString(st) +
@@ -1780,17 +1767,16 @@ void CNetScheduleHandler::x_StatisticsNew(CQueue *        q,
             q->PrintClientsList(*this, false);
     }
     else if (what == "JOBS") {
-        unsigned total = 0;
-        for (int i = CNetScheduleAPI::ePending;
-            i < CNetScheduleAPI::eLastStatus; ++i) {
-                TJobStatus      st = TJobStatus(i);
-                unsigned        count = q->CountStatus(st);
+        size_t      total = 0;
+        for (size_t  k = 0; k < g_ValidJobStatusesSize; ++k) {
+                TJobStatus      st = g_ValidJobStatuses[k];
+                size_t          count = q->CountStatus(st);
 
                 total += count;
                 WriteMessage("OK:", CNetScheduleAPI::StatusToString(st) +
-                                    ": " + NStr::UIntToString(count));
+                                    ": " + NStr::SizetToString(count));
         } // for
-        WriteMessage("OK:Total: ", NStr::UIntToString(total));
+        WriteMessage("OK:Total: ", NStr::SizetToString(total));
     }
     else if (what == "WNODE") {
         WriteMessage("OK:WARNING:Obsolete; Use STAT CLIENTS instead.");

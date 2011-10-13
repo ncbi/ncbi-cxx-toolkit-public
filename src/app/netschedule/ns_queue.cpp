@@ -270,17 +270,7 @@ unsigned CQueue::LoadStatusMatrix()
             continue;
         }
 
-        int         i_status = m_QueueDbBlock->job_db.status;
-        if (i_status <  (int) CNetScheduleAPI::ePending ||
-            i_status >= (int) CNetScheduleAPI::eLastStatus)
-        {
-            // Invalid job, skip it
-            ERR_POST("Job " << DecorateJobId(job_id) <<
-                     " has invalid status " << i_status << ", ignored.");
-            x_DeleteJobEvents(job_id);
-            continue;
-        }
-        TJobStatus      status = TJobStatus(i_status);
+        TJobStatus      status = TJobStatus(static_cast<int>(m_QueueDbBlock->job_db.status));
         m_StatusTracker.SetExactStatusNoLock(job_id, status, true);
 
         if ((status == CNetScheduleAPI::eRunning ||
