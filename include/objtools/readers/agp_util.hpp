@@ -113,10 +113,10 @@ public:
         // you from using the underlying char representation and because
         // it doesn't match later versions. (e.g. unknown char is now '?' in
         // AGP 2.0, etc.)
-        eOrientationPlus =       43,
-        eOrientationMinus =      45,
-        eOrientationUnknown =    48,
-        eOrientationIrrelevant = 110
+        eOrientationPlus =         43,
+        eOrientationMinus =        45,
+        eOrientationUnknown =      48,
+        eOrientationIrrelevant =  110
     };
     EOrientation orientation;
 
@@ -148,7 +148,10 @@ public:
         eLinkageEvidence_clone_contig,
         eLinkageEvidence_map,
         eLinkageEvidence_strobe,
-        eLinkageEvidence_unspecified
+        eLinkageEvidence_unspecified,
+
+        eLinkageEvidence_COUNT,
+        eLinkageEvidence_INVALID
     };
     vector<ELinkageEvidence> linkage_evidences;
 
@@ -430,8 +433,10 @@ public:
         W_UnSingleOriNotPlus,   // -- agp_validate --
         W_ShortGap          ,   // -- agp_validate --
         W_SpaceInObjName    ,   // -- agp_validate --
-        W_CommentsAfterStart,   // CAgpRow (v. > 2.0)
-        W_OrientationZeroDeprecated, // CAgpRow (v. > 2.0)
+        W_CommentsAfterStart,   // CAgpRow (v. >= 2.0)
+        W_OrientationZeroDeprecated, // CAgpRow (v. >= 2.0)
+
+        W_ConvertedOldValue,    // CAgpRow (v. >= 2.0 )
         W_Last, W_First = 21,
 
         // "GenBank" checks that rely on information about the sequence

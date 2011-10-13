@@ -112,7 +112,7 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "comments only allowed at the beginning for AGP v. 2.0",
     "orientation '0' deprecated for AGP v. 2.0.  Use '?' instead.",
 
-    kEmptyCStr,
+    "had to convert a value from an older version of the AGP spec.",
     kEmptyCStr,
     kEmptyCStr,
     kEmptyCStr,
@@ -482,6 +482,7 @@ int CAgpRow::ParseComponentCols(bool log_errors)
 
 int CAgpRow::ParseGapCols(bool log_errors)
 {
+    linkage_evidences.clear();
     gap_length = NStr::StringToNumeric( GetGapLength() );
     if(gap_length<=0) {
         if(log_errors) m_AgpErr->Msg(CAgpErr::E_MustBePositive, "gap_length (column 6)" );
@@ -498,20 +499,6 @@ int CAgpRow::ParseGapCols(bool log_errors)
     }
     gap_type=it->second;
     
-    if( m_agp_version == eAgpVersion_2_0 ) {
-        // certain gap-types are removed from AGP 2.0
-        if( gap_type == eGapClone || gap_type == eGapFragment ) {
-            if(log_errors) m_AgpErr->Msg(CAgpErr::E_InvalidValue, "gap_type (column 7)" );
-            return CAgpErr::E_InvalidYes;
-        }
-    } else {
-        // certain gap-types did not exist in AGP 1.1
-        if( gap_type == eGapScaffold ) {
-            if(log_errors) m_AgpErr->Msg(CAgpErr::E_InvalidValue, "gap_type (column 7)");
-            return CAgpErr::E_InvalidValue;
-        }
-    }
-
     if(GetLinkage()=="yes") {
         linkage=true;
     }
@@ -534,8 +521,37 @@ int CAgpRow::ParseGapCols(bool log_errors)
         }
     }
 
+    // check gap_type, but only after we know linkage
+    if( m_agp_version == eAgpVersion_2_0 ) {
+        // certain gap-types are removed from AGP 2.0
+        if( gap_type == eGapClone || gap_type == eGapFragment ) {
+            // try to convert to AGP 2.0 acceptable gap type
+
+            if( gap_type == eGapFragment && ! linkage ) {
+                linkage_evidences.push_back( eLinkageEvidence_within_clone );
+            } else if( gap_type == eGapFragment && linkage ) {
+                linkage_evidences.push_back( eLinkageEvidence_paired_ends );
+            } else if( gap_type == eGapClone && linkage ) {
+                linkage_evidences.push_back( eLinkageEvidence_clone_contig );
+            }
+
+            if( gap_type == eGapClone && ! linkage ) {
+                gap_type = eGapContig;
+            } else {
+                gap_type = eGapScaffold;
+                linkage = true;
+            }
+            m_AgpErr->Msg(CAgpErr::W_ConvertedOldValue, "gap_type (column 7)" );
+        }
+    } else {
+        // certain gap-types did not exist in AGP 1.1
+        if( gap_type == eGapScaffold ) {
+            if(log_errors) m_AgpErr->Msg(CAgpErr::E_InvalidValue, "gap_type (column 7)");
+            return CAgpErr::E_InvalidValue;
+        }
+    }
+
     // linkage_evidence
-    linkage_evidences.clear();
     if( m_agp_version == eAgpVersion_2_0 ) {
         vector<string> raw_linkage_evidences;
         if( GetLinkageEvidence() != "na" ) {
