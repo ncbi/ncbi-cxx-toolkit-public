@@ -113,7 +113,7 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "orientation '0' deprecated for AGP v. 2.0.  Use '?' instead.",
 
     "had to convert a value from an older version of the AGP spec.",
-    kEmptyCStr,
+    "old gap type which is not available in the chosen AGP spec",
     kEmptyCStr,
     kEmptyCStr,
     kEmptyCStr, // W_Last
@@ -525,23 +525,7 @@ int CAgpRow::ParseGapCols(bool log_errors)
     if( m_agp_version == eAgpVersion_2_0 ) {
         // certain gap-types are removed from AGP 2.0
         if( gap_type == eGapClone || gap_type == eGapFragment ) {
-            // try to convert to AGP 2.0 acceptable gap type
-
-            if( gap_type == eGapFragment && ! linkage ) {
-                linkage_evidences.push_back( eLinkageEvidence_within_clone );
-            } else if( gap_type == eGapFragment && linkage ) {
-                linkage_evidences.push_back( eLinkageEvidence_paired_ends );
-            } else if( gap_type == eGapClone && linkage ) {
-                linkage_evidences.push_back( eLinkageEvidence_clone_contig );
-            }
-
-            if( gap_type == eGapClone && ! linkage ) {
-                gap_type = eGapContig;
-            } else {
-                gap_type = eGapScaffold;
-                linkage = true;
-            }
-            m_AgpErr->Msg(CAgpErr::W_ConvertedOldValue, "gap_type (column 7)" );
+            m_AgpErr->Msg(CAgpErr::W_OldGapType);
         }
     } else {
         // certain gap-types did not exist in AGP 1.1

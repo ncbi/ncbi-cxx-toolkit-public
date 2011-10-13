@@ -437,6 +437,7 @@ public:
         W_OrientationZeroDeprecated, // CAgpRow (v. >= 2.0)
 
         W_ConvertedOldValue,    // CAgpRow (v. >= 2.0 )
+        W_OldGapType,
         W_Last, W_First = 21,
 
         // "GenBank" checks that rely on information about the sequence
