@@ -206,7 +206,7 @@ static int x_CheckLFS(const CArgs& args, const string& path)
 
 static string x_DataSize(Uint8 size, bool binary = true)
 {
-    const char* kSfx[] = {"", "K", "M", "G", "T", "P", "E", "Z", "Y", 0};
+    static const char* kSfx[] = {"", "K", "M", "G", "T", "P", "E", "Z", "Y",0};
     if (!size)
         return "0";
     const Uint8 kilo = binary ? 1 << 10 : 1000;
