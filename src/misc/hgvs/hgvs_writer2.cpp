@@ -376,8 +376,7 @@ string CHgvsParser::x_SeqLiteralToStr(const CSeq_literal& literal, bool translat
             const string& nuc_str = sd->GetIupacna().Get();
 
             if(translate) {
-                CSeqTranslator translator;
-                translator.Translate(
+                CSeqTranslator::Translate(
                         nuc_str,
                         out,
                         CSeqTranslator::fIs5PrimePartial);

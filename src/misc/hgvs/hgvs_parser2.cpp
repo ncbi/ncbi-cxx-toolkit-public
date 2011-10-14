@@ -1779,8 +1779,11 @@ void CHgvsParser::AttachHgvs(CVariation& v)
             try {
                 string hgvs_expression = AsHgvsExpression(v2, CConstRef<CSeq_id>(p2.GetLoc().GetId()));
                 p2.SetHgvs_name(hgvs_expression);
-            } catch (CException& e) {
-                ;
+            } catch (CException& e ) {
+                CNcbiOstrstream ostr;
+                ostr << MSerial_AsnText << p2;
+                string s = CNcbiOstrstreamToString(ostr);
+                NCBI_REPORT_EXCEPTION("Can't compute HGVS expression for " + s, e);
             }
         }
     }

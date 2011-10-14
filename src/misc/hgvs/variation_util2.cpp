@@ -533,7 +533,6 @@ void CVariationUtil::s_UntranslateProt(const string& prot_str, vector<string>& c
 
     static const string alphabet = "ACGT";
     string codon = "AAA";
-    CSeqTranslator translator;
     for(size_t i0 = 0; i0 < 4; i0++) {
         codon[0] = alphabet[i0];
         for(size_t i1 = 0; i1 < 4; i1++) {
@@ -541,7 +540,7 @@ void CVariationUtil::s_UntranslateProt(const string& prot_str, vector<string>& c
             for(size_t i2 = 0; i2 < 4; i2++) {
                 codon[2] = alphabet[i2];
                 string prot("");
-                translator.Translate(codon, prot, CSeqTranslator::fIs5PrimePartial);
+                CSeqTranslator::Translate(codon, prot, CSeqTranslator::fIs5PrimePartial);
                 NStr::ReplaceInPlace(prot, "*", "X"); //Conversion to IUPAC produces "X", but Translate produces "*"
 
                 //LOG_POST(">>>" << codon << " " << prot << " " << prot_str);
@@ -685,7 +684,7 @@ void CVariationUtil::x_InferNAfromAA(CVariation& v, TAA2NAFlags flags)
     for(CFeat_CI ci(*m_scope, placement.GetLoc(), sel); ci; ++ci) {
         try {
             prot2precursor_mapper.Reset(new CSeq_loc_Mapper(ci->GetMappedFeature(), CSeq_loc_Mapper::eProductToLocation, m_scope));
-        } catch(CException& e) {
+        } catch(CException&) {
             ;// may legitimately throw if feature is not good for mapping
         }
         break;
@@ -1114,8 +1113,7 @@ string Translate(const CSeq_data& literal)
     string nuc_str = literal.GetIupacna().Get();
     nuc_str.resize(nuc_str.size() - (nuc_str.size() % 3)); //truncate last partial codon, as translator may otherwise still be able to translate it
 
-    CSeqTranslator translator;
-    translator.Translate(
+    CSeqTranslator::Translate(
             nuc_str,
             prot_str,
             CSeqTranslator::fIs5PrimePartial);
@@ -1218,6 +1216,7 @@ bool CVariationUtil::s_IsInstStrandFlippable(const CVariation& v, const CVariati
 
 void CVariationUtil::FlipStrand(CVariation& v) const
 {
+    v.Index(); //required so that can get factored placements from sub-variations.
     if(v.IsSetPlacements()) {
         NON_CONST_ITERATE(CVariation::TPlacements, it, v.SetPlacements()) {
             FlipStrand(**it);
@@ -1420,7 +1419,7 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
     try {
         nuc2prot_mapper.Reset(new CSeq_loc_Mapper(cds_feat, CSeq_loc_Mapper::eLocationToProduct, m_scope));
         prot2nuc_mapper.Reset(new CSeq_loc_Mapper(cds_feat, CSeq_loc_Mapper::eProductToLocation, m_scope));
-    } catch (CException& e) {
+    } catch (CException&) {
         //may legitimately throw if feature is not good for mapping (e.g. partial).
         return x_CreateUnknownVariation(sequence::GetId(cds_feat.GetProduct(), NULL), CVariantPlacement::eMol_protein);
     }
