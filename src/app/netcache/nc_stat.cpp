@@ -113,7 +113,9 @@ CNCStat::CNCStat(void)
       m_WrittenSize(0),
       m_PartialWrites(0),
       m_WrittenBySize(40, 0),
-      m_ChunksWCntBySize(40, 0)
+      m_ChunksWCntBySize(40, 0),
+      m_MovedBlobs(0),
+      m_MovedSize(0)
 {
     m_ConnSpan        .Initialize();
     m_CmdSpan         .Initialize();
@@ -417,6 +419,16 @@ CNCStat::AddChunkWritten(size_t size)
 }
 
 void
+CNCStat::AddBlobMoved(Uint8 blob_size)
+{
+    CNCStat* stat = sm_Getter.GetObjPtr();
+    stat->m_ObjLock.Lock();
+    ++stat->m_MovedBlobs;
+    stat->m_MovedSize += blob_size;
+    stat->m_ObjLock.Unlock();
+}
+
+void
 CNCStat::x_CollectTo(CNCStat* dest)
 {
     CSpinGuard guard(m_ObjLock);
@@ -523,6 +535,8 @@ CNCStat::x_CollectTo(CNCStat* dest)
     for (size_t i = 0; i < m_ChunksWCntBySize.size(); ++i) {
         dest->m_ChunksWCntBySize[i] += m_ChunksWCntBySize[i];
     }
+    dest->m_MovedBlobs      += m_MovedBlobs;
+    dest->m_MovedSize       += m_MovedSize;
 }
 
 void
@@ -580,13 +594,13 @@ CNCStat::Print(CPrintTextProxy& proxy)
     proxy << endl
           << "Specs    - "
                         << stat.m_BlockedOps   << " (blocked ops)" << endl
-          << "Cache    - "
+          /*<< "Cache    - "
                         << stat.m_CountBlobs.GetAverage()      << " avg blobs ("
                         << stat.m_CountBlobs.GetMaximum()      << " max), "
                         << stat.m_CountCacheNodes.GetAverage() << " avg nodes ("
                         << stat.m_CountCacheNodes.GetMaximum() << " max), "
                         << stat.m_CacheTreeHeight.GetAverage() << " avg height ("
-                        << stat.m_CacheTreeHeight.GetMaximum() << " max)" << endl
+                        << stat.m_CacheTreeHeight.GetMaximum() << " max)" << endl*/
           << "DB size  - "
                         << stat.m_TotalDBSize.GetAverage()   << " avg ("
                         << stat.m_TotalMetaSize.GetAverage() << " meta, "
@@ -632,6 +646,8 @@ CNCStat::Print(CPrintTextProxy& proxy)
                         << stat.m_DataFileGarbageSize.GetAverage() << " avg size ("
                         << stat.m_DataFileGarbageSize.GetMaximum() << " max)" << endl
           << endl;
+    proxy << "Moved - " << stat.m_MovedBlobs << " blobs, "
+                        << stat.m_MovedSize << " bytes" << endl;
     if (stat.m_DBReadSize == 0) {
         proxy << "Read    - " << stat.m_ReadBlobs << " blobs" << endl;
     }

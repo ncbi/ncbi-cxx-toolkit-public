@@ -113,6 +113,7 @@ public:
     const SNCSpecificParams* GetAppSetup(const TStringMap& client_params);
     /// Get inactivity timeout for each connection
     unsigned GetDefConnTimeout(void) const;
+    int GetDefBlobTTL(void) const;
     /// Get type of logging all commands starting and stopping
     bool IsLogCmds(void) const;
     /// Get name of client that should be used for administrative commands
@@ -310,6 +311,7 @@ private:
     CRef<SSpecParamsSet>           m_OldSpecParams;
     ///
     unsigned int                   m_DefConnTimeout;
+    int                            m_DefBlobTTL;
     /// Time when this server instance was started
     CTime                          m_StartTime;
     // Some variable that should be here because of CServer requirements
@@ -376,6 +378,12 @@ inline unsigned int
 CNetCacheServer::GetDefConnTimeout(void) const
 {
     return m_DefConnTimeout;
+}
+
+inline int
+CNetCacheServer::GetDefBlobTTL(void) const
+{
+    return m_DefBlobTTL;
 }
 
 inline bool

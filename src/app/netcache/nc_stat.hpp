@@ -195,6 +195,7 @@ public:
     static void AddBlobWritten      (Uint8 written_size, bool completed);
     /// Add written blob chunk of given size
     static void AddChunkWritten     (size_t size);
+    static void AddBlobMoved        (Uint8 blob_size);
 
     /// Constructor initializing all data
     CNCStat(void);
@@ -352,6 +353,8 @@ private:
     vector<Uint8>                   m_WrittenBySize;
     /// Distribution of time spent writing chunks by their size interval
     vector<Uint8>                   m_ChunksWCntBySize;
+    Uint8                           m_MovedBlobs;
+    Uint8                           m_MovedSize;
 
     /// Object differentiating statistics instances over threads
     static CNCStat_Getter sm_Getter;

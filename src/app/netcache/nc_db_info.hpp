@@ -112,6 +112,8 @@ private:
 
 class CNCBlobVerManager;
 
+typedef vector<int> TNCRewritesList;
+
 /// Full information about NetCache blob (excluding key, subkey, version)
 struct SNCBlobVerData : public CObject
 {
@@ -140,6 +142,9 @@ public:
 
     CNCBlobVerManager*  manager;
     CNCLongOpTrigger    data_trigger;
+
+    TNCRewritesList rewrites;
+    int     write_time;
 
     ///
     SNCBlobVerData(void);
@@ -235,6 +240,7 @@ typedef map<string, SNCCacheData*>   TNCBlobSumList;
 
 ///
 typedef AutoPtr<CNCDBFile>  TNCDBFilePtr;
+typedef map<string, Uint4>  TNCKeysSet;
 
 /// Information about database part in NetCache storage
 struct SNCDBFileInfo
@@ -243,6 +249,8 @@ struct SNCDBFileInfo
     int          create_time;    ///< Time when the part was created
     string       file_name;      ///< Name of meta file for the part
     TNCDBFilePtr file_obj;
+    CSpinLock    keys_lock;
+    TNCKeysSet   keys;
     CSpinLock    cnt_lock;
     Uint4        ref_cnt;
     Uint8        useful_blobs;

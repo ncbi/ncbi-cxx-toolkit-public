@@ -160,7 +160,7 @@ protected:
     ///   TRUE if meta-information was found in the database, FALSE otherwise
     bool ReadBlobInfo(SNCBlobVerData* blob_info);
     /// Write full meta-information for blob
-    void WriteBlobInfo(const string& blob_key, const SNCBlobVerData* blob_info);
+    void WriteBlobInfo(const string& blob_key, SNCBlobVerData* blob_info);
     ///
     void UpdateBlobInfo(const SNCBlobVerData* blob_info);
     ///

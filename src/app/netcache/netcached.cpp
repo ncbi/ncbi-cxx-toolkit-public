@@ -233,6 +233,7 @@ CNetCacheServer::x_ReadPerClientConfig(const CNcbiRegistry& reg)
     main_params->quorum          = 1;
     x_ReadSpecificParams(reg, kNCReg_ServerSection, main_params);
     m_DefConnTimeout = main_params->conn_timeout;
+    m_DefBlobTTL = main_params->blob_ttl;
     SSpecParamsSet* params_set = new SSpecParamsSet();
     params_set->entries.push_back(SSpecParamsEntry(kEmptyStr, main_params));
     for (unsigned int i = 0; i < m_SpecPriority.size(); ++i) {

@@ -149,7 +149,8 @@ public:
     /// Check if password provided for accessing the blob was correct
     bool IsAuthorized(void) const;
     bool HasError(void) const;
-    TNCBlobId GetNewBlobId(void) const;
+    TNCDBFileId GetCurDataId(void) const;
+    void ForceBlobMove(void);
     /// Get key of the blob.
     /// Method can be called only after lock is acquired.
     const string& GetBlobKey       (void) const;
@@ -265,6 +266,7 @@ private:
     void x_ReadChunkIds(void);
     ///
     void x_ReadNextChunk(void);
+    void x_ObtainBlobCoords(void);
 
 
     /// Previous holder in double-linked list of holders
@@ -460,14 +462,6 @@ CNCBlobAccessor::GetCurVerExpire(void) const
 }
 
 inline void
-CNCBlobAccessor::SetCurBlobExpire(int expire, int dead_time /* = 0 */)
-{
-    m_CurData->expire = expire;
-    m_CurData->dead_time = max(expire, max(m_CurData->dead_time, dead_time));
-    m_CurData->need_write = true;
-}
-
-inline void
 CNCBlobAccessor::SetNewBlobExpire(int expire, int dead_time /* = 0 */)
 {
     m_NewData->expire = expire;
@@ -505,13 +499,6 @@ inline void
 CNCBlobAccessor::SetBlobVersion(int ver)
 {
     m_NewData->blob_ver = ver;
-}
-
-inline void
-CNCBlobAccessor::SetCurVerExpire(int expire)
-{
-    m_CurData->ver_expire = expire;
-    m_CurData->need_write = true;
 }
 
 inline void
@@ -579,10 +566,17 @@ CNCBlobAccessor::SetPosition(Uint8 pos)
     m_ChunkPos = size_t(pos % kNCMaxBlobChunkSize);
 }
 
-inline TNCBlobId
-CNCBlobAccessor::GetNewBlobId(void) const
+inline TNCDBFileId
+CNCBlobAccessor::GetCurDataId(void) const
 {
-    return m_NewData->coords.blob_id;
+    return m_CurData->coords.data_id;
+}
+
+inline void
+CNCBlobAccessor::ForceBlobMove(void)
+{
+    m_CurData->generation -= 100;
+    m_CurData->need_write = true;
 }
 
 END_NCBI_SCOPE

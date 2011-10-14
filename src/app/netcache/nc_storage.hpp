@@ -138,6 +138,7 @@ public:
     /// Check if blob with given key and (optionally) subkey exists
     /// in database. More than one blob with given key/subkey can exist.
     bool IsBlobExists(Uint2 slot, const string& key);
+    Uint4 GetNewBlobId(void);
 
     /// Get number of files in the database
     int GetNDBFiles(void);
@@ -153,7 +154,8 @@ public:
     // For internal use only
 
     /// Get next blob coordinates that can be used for creating new blob.
-    void GetNewBlobCoords(SNCBlobCoords* coords);
+    void GetNewBlobCoords(SNCBlobVerData* new_ver,
+                          SNCBlobVerData* old_ver);
     /// Get meta information about blob with given coordinates.
     ///
     /// @return
@@ -172,7 +174,7 @@ public:
     ///
     bool UpdateBlobInfo(const string& blob_key, SNCBlobVerData* ver_data);
     /// Delete blob from database.
-    void DeleteBlobInfo(const SNCBlobVerData* ver_data);
+    void DeleteBlobInfo(const string& blob_key, const SNCBlobVerData* ver_data);
 
     ///
     bool ReadChunkData(TNCDBFileId    file_id,
@@ -203,6 +205,9 @@ public:
                     TFile**       file_ptr);
     /// Return blob lock holder to the pool
     void ReturnAccessor(CNCBlobAccessor* holder);
+
+    Uint4 GetBlobGeneration(void);
+    Uint1 GetCntRewrites(void);
 
 private:
     CNCBlobStorage(const CNCBlobStorage&);
@@ -324,11 +329,6 @@ private:
     SSlotCache* x_GetSlotCache(Uint2 slot);
     void x_InitializeAccessor(CNCBlobAccessor* accessor);
 
-    ///
-    void x_IncFilePartNum(TNCDBFileId& file_num);
-    ///
-    TNCDBFileId x_GetNextMetaId(void);
-    ///
     TNCChunkId x_GetNextChunkId(void);
     bool x_UpdBlobInfoNoMove(const string& blob_key, SNCBlobVerData* ver_data);
     bool x_UpdBlobInfoSingleChunk(const string& blob_key, SNCBlobVerData* ver_data);
@@ -346,8 +346,8 @@ private:
     ///
     void x_DeleteDBFile(TNCDBFilesMap::iterator files_it);
 
-    ///
-    bool x_CheckFileAging(TNCDBFileId file_id, CNCDBFile* file);
+    bool x_IsFileCurrent(SNCDBFileInfo* file_info);
+    bool x_CheckFileAging(SNCDBFileInfo* file_info);
 
     ///
     void PrintCacheCounts(CPrintTextProxy& proxy);
@@ -374,6 +374,7 @@ private:
     void x_GC_CleanDBFile(CNCDBFile* metafile, int dead_before);
     /// Collect statistics about number of parts, database files sizes etc.
     void x_GC_CollectFilesStats(void);
+    Uint8 x_MoveAllBlobs(SNCDBFileInfo* file_info, int cur_time);
 
 
     enum EStopCause {
@@ -387,8 +388,6 @@ private:
     string             m_MainPath;
     /// Name of the storage
     string             m_Prefix;
-    /// Directory for all database files of the storage
-    vector<string>     m_PartsPaths;
     /// Delay between GC activations
     int                m_GCRunDelay;
     /// Number of blobs treated by GC and by caching mechanism in one batch
@@ -399,6 +398,12 @@ private:
     Int8               m_MaxFileSize[2];
     ///
     double             m_MinUsefulPct[2];
+    Uint8              m_SmallBlobSize;
+    Uint1              m_SmallParts;
+    Uint1              m_BigParts;
+    Uint1              m_RewriteParts;
+    Uint1              m_CntRewrites;
+    double             m_RewriteWeight;
 
     /// Name of guard file excluding several instances to run on the same
     /// database.
@@ -428,6 +433,8 @@ private:
     TNCDBFileId              m_LastFileId;
     /// Current size of storage database. Kept here for printing statistics.
     Uint8                    m_CurDBSize;
+    Uint8                    m_CurUsefulSize;
+    Uint8                    m_CurGarbageSize;
     /// Minimum expiration time of all blobs remembered now by the storage. 
     /// Variable is used with assumption that reads and writes for int are
     /// always atomic.
@@ -447,7 +454,9 @@ private:
     /// Mutex to work with m_LastBlob
     CSpinLock                m_LastBlobLock;
     /// Coordinates of the latest blob created by the storage
-    SNCBlobCoords            m_LastBlob;
+    TNCBlobId                m_LastBlobId;
+    Uint4                    m_LastMetaNum;
+    Uint4                    m_LastDataNum;
     ///
     Uint4                    m_BlobGeneration;
     ///
@@ -471,12 +480,16 @@ private:
     bool                     m_CleanStart;
     EStopCause               m_IsStopWrite;
     Uint4                    m_ExtraGCStep;
+    CAtomicCounter           m_BlobCounter;
     Uint8                    m_ExtraGCOnSize;
     Uint8                    m_ExtraGCOffSize;
     Uint8                    m_StopWriteOnSize;
     Uint8                    m_StopWriteOffSize;
     Uint8                    m_DiskFreeLimit;
     Uint8                    m_DiskReserveSize;
+    int                      m_LastMoveTime;
+    int                      m_MinMoveDelay;
+    int                      m_MinLifeToMove;
 };
 
 
@@ -608,23 +621,6 @@ CNCBlobStorage::IsBlockActive(void)
     return m_CntLocksToWait == 0;
 }
 */
-inline void
-CNCBlobStorage::x_IncFilePartNum(TNCDBFileId& file_num)
-{
-    if (++file_num == TNCDBFileId(m_CurFiles[0].size()))
-        file_num = 0;
-}
-
-inline TNCDBFileId
-CNCBlobStorage::x_GetNextMetaId(void)
-{
-    m_LastBlobLock.Lock();
-    x_IncFilePartNum(m_LastBlob.meta_id);
-    TNCDBFileId meta_id = m_CurFiles[eNCMeta][m_LastBlob.meta_id];
-    m_LastBlobLock.Unlock();
-    return meta_id;
-}
-
 inline TNCChunkId
 CNCBlobStorage::x_GetNextChunkId(void)
 {
@@ -639,6 +635,24 @@ CNCBlobStorage::WriteSingleChunk(SNCBlobVerData*      ver_data,
                                  const CNCBlobBuffer* data)
 {
     return x_WriteChunkData(ver_data->coords.blob_id, data, ver_data, true);
+}
+
+inline Uint4
+CNCBlobStorage::GetBlobGeneration(void)
+{
+    return m_BlobGeneration;
+}
+
+inline Uint4
+CNCBlobStorage::GetNewBlobId(void)
+{
+    return Uint4(m_BlobCounter.Add(1));
+}
+
+inline Uint1
+CNCBlobStorage::GetCntRewrites(void)
+{
+    return m_CntRewrites;
 }
 
 END_NCBI_SCOPE

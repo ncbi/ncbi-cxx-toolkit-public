@@ -392,8 +392,11 @@ CNCBlobVerManager::CreateNewVersion(void)
     data->need_write    = false;
     data->has_error     = false;
     data->data_trigger.SetState(eNCOpCompleted);
-    g_NCStorage->GetNewBlobCoords(&data->coords);
+    data->coords.blob_id = 0;
+    data->coords.meta_id = 0;
+    data->coords.data_id = 0;
     data->need_meta_blob = data->need_data_blob = true;
+    data->write_time = 0;
     return Ref(data);
 }
 
@@ -435,7 +438,7 @@ inline void
 CNCBlobVerManager::ReleaseVerData(const SNCBlobVerData* ver_data)
 {
     if (!x_IsFlagSet(fCleaningMgr))
-        g_NCStorage->DeleteBlobInfo(ver_data);
+        g_NCStorage->DeleteBlobInfo(m_Key, ver_data);
 }
 
 void
@@ -446,6 +449,7 @@ SNCBlobVerData::DeleteThis(void)
     password.clear();
     data.Reset();
     data_trigger.Reset();
+    rewrites.clear();
     if (CNCMemManager::IsOnAlert())
         delete this;
     else
@@ -541,6 +545,17 @@ CNCBlobAccessor::ObtainMetaInfo(INCBlockedOpListener* listener)
     if (m_AccessType == eNCCreate  ||  m_AccessType == eNCCopyCreate) {
         m_NewData = m_VerManager->CreateNewVersion();
         m_NewData->password = m_Password;
+        if (m_CurData) {
+            m_NewData->rewrites.push_back(m_CurData->write_time);
+            Uint1 cnt_rewrites = g_NCStorage->GetCntRewrites();
+            --cnt_rewrites;
+            NON_CONST_ITERATE(TNCRewritesList, it, m_CurData->rewrites) {
+                if (cnt_rewrites == 0)
+                    break;
+                m_NewData->rewrites.push_back(*it);
+                --cnt_rewrites;
+            }
+        }
     }
     return eNCSuccessNoBlock;
 }
@@ -661,6 +676,13 @@ CNCBlobAccessor::ReadData(void* buffer, size_t buf_size)
     return buf_size;
 }
 
+inline void
+CNCBlobAccessor::x_ObtainBlobCoords(void)
+{
+    if (m_NewData->coords.blob_id == 0)
+        g_NCStorage->GetNewBlobCoords(m_NewData, m_CurData);
+}
+
 void
 CNCBlobAccessor::WriteData(const void* data, size_t size)
 {
@@ -679,6 +701,7 @@ CNCBlobAccessor::WriteData(const void* data, size_t size)
         m_NewData->size += write_size;
 
         if (m_Buffer->GetSize() == kNCMaxBlobChunkSize) {
+            x_ObtainBlobCoords();
             if (!g_NCStorage->WriteNextChunk(m_NewData, m_Buffer)) {
                 m_HasError = true;
                 return;
@@ -691,6 +714,7 @@ CNCBlobAccessor::WriteData(const void* data, size_t size)
 void
 CNCBlobAccessor::Finalize(void)
 {
+    x_ObtainBlobCoords();
     if (m_Buffer  &&  m_Buffer->GetSize() != 0) {
         if (sx_IsOnlyOneChunk(m_NewData)) {
             if (!g_NCStorage->WriteSingleChunk(m_NewData, m_Buffer)) {
@@ -740,6 +764,23 @@ CNCBlobAccessor::DeleteBlob(int dead_time)
         return;
 
     m_VerManager->DeleteVersion(m_CurData);
+}
+
+void
+CNCBlobAccessor::SetCurBlobExpire(int expire, int dead_time /* = 0 */)
+{
+    m_CurData->expire = expire;
+    m_CurData->dead_time = max(expire, max(m_CurData->dead_time, dead_time));
+    m_CurData->generation = g_NCStorage->GetBlobGeneration();
+    m_CurData->need_write = true;
+}
+
+void
+CNCBlobAccessor::SetCurVerExpire(int expire)
+{
+    m_CurData->ver_expire = expire;
+    m_CurData->generation = g_NCStorage->GetBlobGeneration();
+    m_CurData->need_write = true;
 }
 
 END_NCBI_SCOPE

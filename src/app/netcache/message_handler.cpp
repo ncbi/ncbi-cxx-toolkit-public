@@ -1942,7 +1942,7 @@ CNCMessageHandler::x_FinishReadingBlob(void)
             m_BlobAccess->SetNewBlobExpire(cur_secs + m_BlobAccess->GetNewBlobTTL());
         m_BlobAccess->SetNewVerExpire(cur_secs + m_BlobAccess->GetNewVersionTTL());
         m_BlobAccess->SetCreateServer(CNCDistributionConf::GetSelfID(),
-                                      m_BlobAccess->GetNewBlobId(), m_BlobSlot);
+                                      g_NCStorage->GetNewBlobId(), m_BlobSlot);
         write_event->orig_server = CNCDistributionConf::GetSelfID();
         write_event->orig_time = cur_time;
     }

@@ -56,6 +56,8 @@ static const char* kNCBlobInfo_CreateIdCol    = "cid";
 static const char* kNCBlobInfo_SlotCol        = "sl";
 static const char* kNCBlobInfo_DataIdCol      = "di";
 static const char* kNCBlobInfo_ExpireCol      = "exp";
+static const char* kNCBlobInfo_WriteTimeCol   = "wt";
+static const char* kNCBlobInfo_RewritesCol    = "rw";
 
 static const char* kNCBlobChunks_Table        = "NCC";
 static const char* kNCBlobChunks_ChunkIdCol   = "id";
@@ -227,6 +229,8 @@ CNCDBFile::x_CreateMetaDatabase(void)
                << kNCBlobInfo_CreateSrvCol  << " int64 not null,"
                << kNCBlobInfo_CreateIdCol   << " int64 not null,"
                << kNCBlobInfo_SlotCol       << " int not null,"
+               << kNCBlobInfo_WriteTimeCol  << " int not null,"
+               << kNCBlobInfo_RewritesCol   << " varchar,"
                << "unique(" << kNCBlobInfo_DeadTimeCol << ","
                             << kNCBlobInfo_BlobIdCol
                <<       ")"
@@ -338,8 +342,10 @@ CNCDBFile::x_GetStatement(ENCStmtType typ)
                        << kNCBlobInfo_CreateSrvCol  << ","
                        << kNCBlobInfo_CreateIdCol   << ","
                        << kNCBlobInfo_SlotCol       << ","
-                       << kNCBlobInfo_ExpireCol
-                << ")values(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15)";
+                       << kNCBlobInfo_ExpireCol     << ","
+                       << kNCBlobInfo_WriteTimeCol  << ","
+                       << kNCBlobInfo_RewritesCol
+                << ")values(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17)";
             break;
         case eStmt_UpdateBlobInfo:
             sql << "update " << kNCBlobInfo_Table
@@ -361,7 +367,9 @@ CNCDBFile::x_GetStatement(ENCStmtType typ)
                              << kNCBlobInfo_CreateSrvCol  << ","
                              << kNCBlobInfo_CreateIdCol   << ","
                              << kNCBlobInfo_SlotCol       << ","
-                             << kNCBlobInfo_ExpireCol
+                             << kNCBlobInfo_ExpireCol     << ","
+                             << kNCBlobInfo_WriteTimeCol  << ","
+                             << kNCBlobInfo_RewritesCol
                 <<  " from " << kNCBlobInfo_Table
                 << " where " << kNCBlobInfo_BlobIdCol << "=?1";
             break;
@@ -555,9 +563,18 @@ CNCDBFile::GetBlobsList(int&            dead_after,
 }
 
 void
-CNCDBFile::WriteBlobInfo(const string& blob_key, const SNCBlobVerData* blob_info)
+CNCDBFile::WriteBlobInfo(const string& blob_key, SNCBlobVerData* blob_info)
 {
     CSQLITE_StatementLock stmt(x_GetStatement(eStmt_WriteBlobInfo));
+
+    blob_info->write_time = int(time(NULL));
+    string rewrites;
+    NON_CONST_ITERATE(TNCRewritesList, it, blob_info->rewrites) {
+        rewrites += NStr::IntToString(*it);
+        rewrites += ",";
+    }
+    if (rewrites.size() != 0)
+        rewrites.resize(rewrites.size() - 1);
 
     stmt->Bind(1,  blob_info->coords.blob_id);
     stmt->Bind(2,  blob_info->coords.data_id);
@@ -574,6 +591,8 @@ CNCDBFile::WriteBlobInfo(const string& blob_key, const SNCBlobVerData* blob_info
     stmt->Bind(13, blob_info->create_id);
     stmt->Bind(14, blob_info->slot);
     stmt->Bind(15, blob_info->expire);
+    stmt->Bind(16, blob_info->write_time);
+    stmt->Bind(17, rewrites);
     stmt->Execute();
 }
 
@@ -612,6 +631,18 @@ CNCDBFile::ReadBlobInfo(SNCBlobVerData* blob_info)
         blob_info->create_id      = TNCBlobId(stmt->GetInt8(10));
         blob_info->slot           = Uint2(stmt->GetInt(11));
         blob_info->expire         = stmt->GetInt(12);
+        blob_info->write_time     = stmt->GetInt(13);
+        string rewrites           = stmt->GetString(14);
+        list<CTempString> lst;
+        NStr::Split(rewrites, ",", lst);
+        NON_CONST_ITERATE(list<CTempString>, it, lst) {
+            try {
+                blob_info->rewrites.push_back(NStr::StringToInt(*it));
+            }
+            catch (CStringException& ex) {
+                ERR_POST(Critical << "Cannot parse rewrites value: " << ex);
+            }
+        }
         return true;
     }
     return false;
@@ -857,6 +888,15 @@ CNCFileSystem::Initialize(void)
     sm_WaitingOnAlert = 0;
 
     sm_BGThread = NewBGThread(&CNCFileSystem::x_DoBackgroundWork);
+    try {
+        sm_BGThread->Run();
+    }
+    catch (CThreadException& ex) {
+        ERR_POST(Critical << ex);
+        sm_BGThread.Reset();
+        return false;
+    }
+
     return true;
 }
 
@@ -879,20 +919,18 @@ CNCFileSystem::ReserveDiskSpace(void)
                                               kStubFileName);
         s_StubFile.Open(filename, CFileIO::eOpenAlways,
                         CFileIO::eReadWrite, CFileIO::eExclusive);
-        s_StubSize = s_StubFile.GetFileSize();
-        x_ReserveSpace();
+        //s_StubSize = s_StubFile.GetFileSize();
+        //x_ReserveSpace();
+        // Allow initial startup code to use whatever disk space we have.
+        // If it fails to free some space later we will abort.
+        s_StubSize = 0;
+        s_StubFile.SetFileSize(s_StubSize);
     }
     catch (CFileException& ex) {
         ERR_POST(Critical << "Cannot reserve disk space for work: " << ex);
-        return false;
-    }
-
-    try {
-        sm_BGThread->Run();
-    }
-    catch (CThreadException& ex) {
-        ERR_POST(Critical << ex);
-        sm_BGThread.Reset();
+        // Release some to allow to write to index
+        s_StubSize = 0;
+        s_StubFile.SetFileSize(s_StubSize);
         return false;
     }
 
@@ -1088,6 +1126,15 @@ void
 CNCFileSystem::x_DoBackgroundWork(void)
 {
     while (!sm_Stopped) {
+        if (sm_BGSleep.TryWait()) {
+            // Drain semaphore's counter in case if we didn't have a chance
+            // to wait between different batches of events.
+            while (sm_BGSleep.TryWait())
+            {}
+        }
+        else {
+            sm_BGSleep.Wait();
+        }
         for (;;) {
             Uint8 need_stub_size = g_NCStorage->GetDiskReserveSize();
             if (s_StubSize < need_stub_size
@@ -1134,15 +1181,6 @@ CNCFileSystem::x_DoBackgroundWork(void)
                     sm_EventsLock.Unlock();
                 }
             }
-        }
-        if (sm_BGSleep.TryWait()) {
-            // Drain semaphore's counter in case if we didn't have a chance
-            // to wait between different batches of events.
-            while (sm_BGSleep.TryWait())
-            {}
-        }
-        else {
-            sm_BGSleep.Wait();
         }
     }
 }
