@@ -50,7 +50,6 @@ struct SQueueParameters
     int             notif_timeout;
     int             run_timeout;
     string          program_name;
-    bool            delete_done;
     int             failed_retries;
     time_t          blacklist_time;
     time_t          empty_lifetime;

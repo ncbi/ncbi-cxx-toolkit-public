@@ -45,7 +45,6 @@ SQueueParameters::SQueueParameters() :
     timeout(3600),
     notif_timeout(7),
     run_timeout(3600),
-    delete_done(false),
     failed_retries(0),
     empty_lifetime(0),
     max_input_size(kNetScheduleMaxDBDataSize),
@@ -70,9 +69,6 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
     run_timeout           = GetIntNoErr("run_timeout", timeout);
     run_timeout_precision = GetIntNoErr("run_timeout_precision", run_timeout);
     program_name          = reg.GetString(sname, "program", kEmptyStr);
-
-    delete_done = reg.GetBool(sname, "delete_done", false,
-                              0, IRegistry::eReturn);
 
     failed_retries = GetIntNoErr("failed_retries", 0);
     blacklist_time = GetIntNoErr("blacklist_time", 0);

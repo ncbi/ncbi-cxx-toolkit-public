@@ -92,7 +92,6 @@ CQueue::CQueue(CRequestExecutor&     executor,
     m_ParamLock(CRWLock::fFavorWriters),
     m_Timeout(3600),
     m_NotifyTimeout(7),
-    m_DeleteDone(false),
     m_RunTimeout(3600),
     m_RunTimeoutPrecision(-1),
     m_FailedRetries(0),
@@ -193,14 +192,13 @@ void CQueue::Detach()
 }
 
 
-void CQueue::SetParameters(const SQueueParameters& params)
+void CQueue::SetParameters(const SQueueParameters &  params)
 {
     // When modifying this, modify all places marked with PARAMETERS
     CWriteLockGuard     guard(m_ParamLock);
 
     m_Timeout       = params.timeout;
     m_NotifyTimeout = params.notif_timeout;
-    m_DeleteDone    = params.delete_done;
 
     m_RunTimeout = params.run_timeout;
     if (params.run_timeout && !m_RunTimeLine) {
@@ -536,17 +534,10 @@ void CQueue::PutResult(const CNSClientId &  client,
 {
     _ASSERT(job_id && output);
 
-    bool            delete_done;
-    unsigned int    max_output_size;
+    // The only one parameter (max output size) is required for the put
+    // operation so there is no need to use CQueueParamAccessor
 
-    {{
-        CQueueParamAccessor     qp(*this);
-
-        delete_done = qp.GetDeleteDone();
-        max_output_size = qp.GetMaxOutputSize();
-    }}
-
-    if (output->size() > max_output_size)
+    if (output->size() > m_MaxOutputSize)
         NCBI_THROW(CNetScheduleException, eDataTooLong,
                    "Output is too long");
 
@@ -564,7 +555,7 @@ void CQueue::PutResult(const CNSClientId &  client,
 
             {{
                 CNSTransaction      transaction(this);
-                x_UpdateDB_PutResultNoLock(job_id, curr, delete_done,
+                x_UpdateDB_PutResultNoLock(job_id, curr,
                                            ret_code, *output, job,
                                            client);
                 transaction.Commit();
@@ -1163,7 +1154,10 @@ void CQueue::x_ChangeReadingStatus(const CNSClientId &  client,
 
 void CQueue::EraseJob(unsigned int  job_id)
 {
-    m_StatusTracker.Erase(job_id);
+    {{
+        CFastMutexGuard     guard(m_OperationLock);
+        m_StatusTracker.Erase(job_id);
+    }}
 
     {{
         // Request delayed record delete
@@ -1178,7 +1172,7 @@ void CQueue::EraseJob(unsigned int  job_id)
 }
 
 
-void CQueue::Erase(const TNSBitVector& job_ids)
+void CQueue::Erase(const TNSBitVector &  job_ids)
 {
     CFastMutexGuard     jtd_guard(m_JobsToDeleteLock);
 
@@ -1192,9 +1186,11 @@ void CQueue::Clear()
     TNSBitVector bv;
 
     {{
-        CWriteLockGuard rtl_guard(m_RunTimeLineLock);
-        // TODO: interdependency btw m_StatusTracker.lock and m_RunTimeLineLock
+        CFastMutexGuard     guard(m_OperationLock);
+
         m_StatusTracker.ClearAll(&bv);
+
+        CWriteLockGuard     rtl_guard(m_RunTimeLineLock);
         m_RunTimeLine->ReInit(0);
     }}
 
@@ -2218,7 +2214,6 @@ void CQueue::UnregisterGetListener(const CNSClientId &  client)
 
 bool CQueue::x_UpdateDB_PutResultNoLock(unsigned             job_id,
                                         time_t               curr,
-                                        bool                 delete_done,
                                         int                  ret_code,
                                         const string &       output,
                                         CJob &               job,
@@ -2227,11 +2222,6 @@ bool CQueue::x_UpdateDB_PutResultNoLock(unsigned             job_id,
     if (job.Fetch(this, job_id) != CJob::eJF_Ok) {
         ERR_POST("Put results for non-existent job " << DecorateJobId(job_id));
         return false;
-    }
-
-    if (delete_done) {
-        job.Delete();
-        return true;
     }
 
     // Append the event

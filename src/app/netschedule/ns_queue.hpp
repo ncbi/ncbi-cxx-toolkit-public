@@ -114,7 +114,6 @@ public:
     TParameterList GetParameters() const;
     int GetTimeout() const;
     int GetNotifyTimeout() const;
-    bool GetDeleteDone() const;
     int GetRunTimeout() const;
     int GetRunTimeoutPrecision() const;
     unsigned GetFailedRetries() const;
@@ -389,7 +388,6 @@ private:
     /// @return TRUE if job record has been found and updated
     bool x_UpdateDB_PutResultNoLock(unsigned                job_id,
                                     time_t                  curr,
-                                    bool                    delete_done,
                                     int                     ret_code,
                                     const string &          output,
                                     CJob &                  job,
@@ -477,7 +475,6 @@ private:
     mutable CRWLock              m_ParamLock;
     int                          m_Timeout;         ///< Result exp. timeout
     int                          m_NotifyTimeout;   ///< Notification interval
-    bool                         m_DeleteDone;      ///< Delete done jobs
     int                          m_RunTimeout;      ///< Execution timeout
     /// Its precision, set at startup only, not reconfigurable
     int                          m_RunTimeoutPrecision;
@@ -516,10 +513,6 @@ inline int CQueue::GetTimeout() const
 inline int CQueue::GetNotifyTimeout() const
 {
     return m_NotifyTimeout;
-}
-inline bool CQueue::GetDeleteDone() const
-{
-    return m_DeleteDone;
 }
 inline int CQueue::GetRunTimeout()  const
 {

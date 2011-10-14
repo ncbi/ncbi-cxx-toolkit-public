@@ -52,9 +52,6 @@ public:
     int GetNotifyTimeout() const
     { return m_Queue.m_NotifyTimeout; }
 
-    bool GetDeleteDone() const
-    { return m_Queue.m_DeleteDone; }
-
     int GetRunTimeout() const
     { return m_Queue.m_RunTimeout; }
 
@@ -89,24 +86,23 @@ public:
     { return m_Queue.m_WnodeHosts; }
 
     unsigned GetNumParams() const
-    { return 14; }
+    { return 13; }
 
     string GetParamName(unsigned int  n) const {
         switch (n) {
         case 0:  return "timeout";
         case 1:  return "notif_timeout";
-        case 2:  return "delete_done";
-        case 3:  return "run_timeout";
-        case 4:  return "run_timeout_precision";
-        case 5:  return "failed_retries";
-        case 6:  return "blacklist_time";
-        case 7:  return "empty_lifetime";
-        case 8:  return "max_input_size";
-        case 9:  return "max_output_size";
-        case 10: return "deny_access_violations";
-        case 11: return "program";
-        case 12: return "subm_host";
-        case 13: return "wnode_host";
+        case 2:  return "run_timeout";
+        case 3:  return "run_timeout_precision";
+        case 4:  return "failed_retries";
+        case 5:  return "blacklist_time";
+        case 6:  return "empty_lifetime";
+        case 7:  return "max_input_size";
+        case 8:  return "max_output_size";
+        case 9:  return "deny_access_violations";
+        case 10: return "program";
+        case 11: return "subm_host";
+        case 12: return "wnode_host";
         default: return "";
         }
     }
@@ -115,18 +111,17 @@ public:
         switch (n) {
         case 0:  return NStr::IntToString(m_Queue.m_Timeout);
         case 1:  return NStr::IntToString(m_Queue.m_NotifyTimeout);
-        case 2:  return m_Queue.m_DeleteDone ? "true" : "false";
-        case 3:  return NStr::IntToString(m_Queue.m_RunTimeout);
-        case 4:  return NStr::IntToString(m_Queue.m_RunTimeoutPrecision);
-        case 5:  return NStr::IntToString(m_Queue.m_FailedRetries);
-        case 6:  return NStr::Int8ToString(m_Queue.m_BlacklistTime);
-        case 7:  return NStr::Int8ToString(m_Queue.m_EmptyLifetime);
-        case 8:  return NStr::IntToString(m_Queue.m_MaxInputSize);
-        case 9:  return NStr::IntToString(m_Queue.m_MaxOutputSize);
-        case 10: return m_Queue.m_DenyAccessViolations ? "true" : "false";
-        case 11: return m_Queue.m_ProgramVersionList.Print();
-        case 12: return m_Queue.m_SubmHosts.Print();
-        case 13: return m_Queue.m_WnodeHosts.Print();
+        case 2:  return NStr::IntToString(m_Queue.m_RunTimeout);
+        case 3:  return NStr::IntToString(m_Queue.m_RunTimeoutPrecision);
+        case 4:  return NStr::IntToString(m_Queue.m_FailedRetries);
+        case 5:  return NStr::Int8ToString(m_Queue.m_BlacklistTime);
+        case 6:  return NStr::Int8ToString(m_Queue.m_EmptyLifetime);
+        case 7:  return NStr::IntToString(m_Queue.m_MaxInputSize);
+        case 8:  return NStr::IntToString(m_Queue.m_MaxOutputSize);
+        case 9:  return m_Queue.m_DenyAccessViolations ? "true" : "false";
+        case 10: return m_Queue.m_ProgramVersionList.Print();
+        case 11: return m_Queue.m_SubmHosts.Print();
+        case 12: return m_Queue.m_WnodeHosts.Print();
         default: return "";
         }
     }
