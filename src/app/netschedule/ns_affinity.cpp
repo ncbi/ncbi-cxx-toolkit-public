@@ -365,6 +365,18 @@ void  CNSAffinityRegistry::FinalizeAffinityDictionaryLoading(void)
 }
 
 
+void CNSAffinityRegistry::ClearMemoryAndDatabase(void)
+{
+    // Clear the data structures in memory
+    x_Clear();
+
+    // Clear the Berkley DB table.
+    // Safe truncate can delete avarything without a transaction.
+    m_AffDictDB->SafeTruncate();
+    return;
+}
+
+
 void CNSAffinityRegistry::x_Clear(void)
 {
 

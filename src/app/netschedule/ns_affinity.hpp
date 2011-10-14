@@ -112,6 +112,9 @@ class CNSAffinityRegistry
         void  AddJobToAffinity(unsigned int  job_id,  unsigned int  aff_id);
         void  FinalizeAffinityDictionaryLoading(void);
 
+        // Needs when all the jobs are deleted (DROPQ)
+        void  ClearMemoryAndDatabase(void);
+
     private:
         void x_Clear(void);
 

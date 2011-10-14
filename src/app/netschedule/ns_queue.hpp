@@ -234,9 +234,6 @@ public:
     /// Erase jobs from all structures, request delayed db deletion
     void Erase(const TNSBitVector& job_ids);
 
-    /// Erase all jobs from all structures, request delayed db deletion
-    void Clear();
-
     /// Persist deleted vectors so restarted DB will not reincarnate jobs
     void FlushDeletedVector(void);
 

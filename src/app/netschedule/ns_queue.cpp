@@ -807,9 +807,23 @@ unsigned int  CQueue::ReadJobFromDB(unsigned int  job_id, CJob &  job)
 }
 
 
+// Deletes all the jobs from the queue
 void CQueue::Truncate(void)
 {
-    Clear();
+    TNSBitVector bv;
+
+    {{
+        CFastMutexGuard     guard(m_OperationLock);
+
+        m_StatusTracker.ClearAll(&bv);
+        m_AffinityRegistry.ClearMemoryAndDatabase();
+
+        CWriteLockGuard     rtl_guard(m_RunTimeLineLock);
+        m_RunTimeLine->ReInit(0);
+    }}
+
+    Erase(bv);
+
     // Next call updates 'm_BecameEmpty' timestamp
     IsExpired(); // locks CQueue lock
 }
@@ -1178,23 +1192,6 @@ void CQueue::Erase(const TNSBitVector &  job_ids)
 
     m_JobsToDelete |= job_ids;
     FlushDeletedVector();
-}
-
-
-void CQueue::Clear()
-{
-    TNSBitVector bv;
-
-    {{
-        CFastMutexGuard     guard(m_OperationLock);
-
-        m_StatusTracker.ClearAll(&bv);
-
-        CWriteLockGuard     rtl_guard(m_RunTimeLineLock);
-        m_RunTimeLine->ReInit(0);
-    }}
-
-    Erase(bv);
 }
 
 
@@ -1612,6 +1609,15 @@ unsigned CQueue::CheckJobsExpiry(unsigned batch_size, TJobStatus status)
                 m_StatusTracker.Erase(job_id);
                 job_ids.set_bit(job_id);
                 ++del_count;
+
+                // check if the affinity should also be updated
+                if (job.GetAffinityId() != 0) {
+                    CNSTransaction      transaction(this, eAffinityTable);
+                    m_AffinityRegistry.RemoveJobFromAffinity(
+                                                    job_id,
+                                                    job.GetAffinityId());
+                    transaction.Commit();
+                }
             }
         }
     }}
@@ -1739,10 +1745,6 @@ unsigned CQueue::DeleteBatch(unsigned batch_size)
                 ERR_POST("BDB error " << ex.what());
             }
             x_DeleteJobEvents(job_id);
-
-            // check if the affinity should also be updated
-            if (aff_id != 0)
-                m_AffinityRegistry.RemoveJobFromAffinity(job_id, aff_id);
         }
 
         transaction.Commit();
