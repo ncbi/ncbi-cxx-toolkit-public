@@ -62,6 +62,7 @@ CSeedTop::CSeedTop(const string & pattern)
 void CSeedTop::x_ParsePattern()
 {
     vector <string> units;
+    NStr::TruncateSpacesInPlace(m_Pattern);
     NStr::Tokenize(m_Pattern, "-", units);
     ITERATE(vector<string>, unit, units){
         if (*unit != "") {
