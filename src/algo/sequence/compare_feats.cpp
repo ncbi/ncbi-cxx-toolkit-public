@@ -94,14 +94,14 @@ public:
         
             if(c1_same_product && !c2_same_product) return false;
             if(!c1_same_product && c2_same_product) return true;
-        } catch(CException& e) {
+        } catch(CException&) {
             ;
         }
 
 
         //the similarity score is a composite of the score based on shared sites, and the symmetrical overlap.
         //(both are 0..1). The constant below is used to give more weight to shared sites score
-        const float k = 0.8;
+        const float k = 0.8f;
 
         float score1(0.0f);
         float score2(0.0f);
@@ -322,6 +322,7 @@ void CCompareSeq_locs::x_Compare()
        it1;
        ++it1, ++it1_exon_ordinal) 
     {
+        CConstRef<CSeq_loc> ci_loc1 = it1.GetRangeAsSeq_loc();
         unsigned it2_exon_ordinal = 1;
         bool loc1_found_Overlap = false;
         
@@ -332,13 +333,13 @@ void CCompareSeq_locs::x_Compare()
             it2; 
             ++it2, ++it2_exon_ordinal) 
         {
-            FCompareLocs cmp_res = x_CompareInts(it1.GetSeq_loc(), it2.GetSeq_loc());
+            CConstRef<CSeq_loc> ci_loc2 = it2.GetRangeAsSeq_loc();
+            FCompareLocs cmp_res = x_CompareInts(*ci_loc1, *ci_loc2);
             
             try {
                 it1_cmp_it2 = adjust_for_strand * 
-                              (it1.GetSeq_loc().GetStart(eExtreme_Biological) > 
-                               it2.GetSeq_loc().GetStop(eExtreme_Biological) ? 1 : -1);
-                //it1_cmp_it2 = adjust_for_strand * it1.GetSeq_loc().Compare(it2.GetSeq_loc());
+                              (ci_loc1->GetStart(eExtreme_Biological) > 
+                               ci_loc2->GetStop(eExtreme_Biological) ? 1 : -1);
             } catch (...) {
                 ; //reuse the last value
             }
@@ -488,17 +489,19 @@ void CCompareSeq_locs::x_ComputeOverlapValues() const
         const float splice_jitter_thr = 5.0f;
 
         for(CSeq_loc_CI ci1(*m_loc1); ci1; ++ci1) {
-            TSeqPos seg1_start = sequence::GetStart(ci1.GetSeq_loc(), NULL);
-            TSeqPos seg1_stop = sequence::GetStop(ci1.GetSeq_loc(), NULL);
+            CConstRef<CSeq_loc> ci_loc1 = ci1.GetRangeAsSeq_loc();
+            TSeqPos seg1_start = sequence::GetStart(*ci_loc1, NULL);
+            TSeqPos seg1_stop = sequence::GetStop(*ci_loc1, NULL);
             float best_match_start = 0.0f;
             float best_match_stop = 0.0f;
             m_loc1_interval_count++;
             for(CSeq_loc_CI ci2(*merged_loc2); ci2; ++ci2) {
+                CConstRef<CSeq_loc> ci_loc2 = ci2.GetRangeAsSeq_loc();
                 if(m_loc1_interval_count == 1) {
                     m_loc2_interval_count++; //compute only once in this loop
                 }
-                ENa_strand strand1 = sequence::GetStrand(ci1.GetSeq_loc(), NULL);
-                ENa_strand strand2 = sequence::GetStrand(ci2.GetSeq_loc(), NULL);
+                ENa_strand strand1 = sequence::GetStrand(*ci_loc1, NULL);
+                ENa_strand strand2 = sequence::GetStrand(*ci_loc2, NULL);
                 bool same_strand = strand1 == strand2
                                || strand1 == eNa_strand_both
                                || strand2 == eNa_strand_both
@@ -508,8 +511,8 @@ void CCompareSeq_locs::x_ComputeOverlapValues() const
                     continue;
                 }
                 
-                TSeqPos seg2_start = sequence::GetStart(ci2.GetSeq_loc(), NULL);
-                TSeqPos seg2_stop = sequence::GetStop(ci2.GetSeq_loc(), NULL);
+                TSeqPos seg2_start = sequence::GetStart(*ci_loc2, NULL);
+                TSeqPos seg2_stop = sequence::GetStop(*ci_loc2, NULL);
                 
                 float thr = (seg1_start == terminal_start
                           || seg1_stop == terminal_stop
@@ -525,7 +528,7 @@ void CCompareSeq_locs::x_ComputeOverlapValues() const
         }   
 
         m_shared_sites_score = 0.5*m_shared_sites_score / (m_loc1_interval_count + m_loc2_interval_count - (0.5*m_shared_sites_score));
-    } catch (CException& e) {
+    } catch (CException&) {
         ;
     }
 

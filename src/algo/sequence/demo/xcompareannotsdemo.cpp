@@ -206,10 +206,11 @@ public:
         TSeqPos collapsed_len_total(0);
 
         for(CSeq_loc_CI it(*temp_loc); it; ++it) {
-            TSeqPos query_len = sequence::GetLength(it.GetSeq_loc(), NULL); //may belong to another scope
+            CConstRef<CSeq_loc> ci_loc = it.GetRangeAsSeq_loc();
+            TSeqPos query_len = sequence::GetLength(*ci_loc, NULL); //may belong to another scope
             query_len_total += query_len;
 
-            CRef<CSeq_loc> mapped_interval = m_mapper.Map(it.GetSeq_loc());
+            CRef<CSeq_loc> mapped_interval = m_mapper.Map(*ci_loc);
 
             if(mapped_interval->IsNull() || mapped_interval->IsEmpty()) {
                 continue;
@@ -255,7 +256,7 @@ public:
             if(aligned_len > query_len) {
                 //The identity formula relies on non-redundant remapping
                 string s2 = "";
-                it.GetSeq_loc().GetLabel(&s2);
+                ci_loc->GetLabel(&s2);
                 string s3 = "";
                 mapped_interval->GetLabel(&s3);
                 ERR_POST(Warning << "Detected non-redundant remapping from\n"
@@ -526,7 +527,7 @@ void AddDefaultSentinelFeats(CScope& scope, const CSeq_loc& loc)
     CMolInfo::TBiomol biomol =  CMolInfo::eBiomol_unknown;
     try {
         biomol = sequence::GetMolInfo(h)->GetBiomol();
-    } catch (CException& e) {};
+    } catch (CException&) {};
 
     bool biomol_rna = !(   biomol == CMolInfo::eBiomol_unknown
                            || biomol == CMolInfo::eBiomol_genomic
@@ -593,7 +594,7 @@ auto_ptr<CObjectIStream> GetIStream(string path, ESerialDataFormat serial_format
                 *(new CNcbiIfstream(path.c_str(), IOS_BASE::in | IOS_BASE::binary)),
                 new CZipStreamDecompressor(CZipCompression::fCheckFileHeader),
                 CCompressionStream::fOwnAll)),
-            true));
+            eTakeOwnership));
     } else {
         obj_istr.reset(CObjectIStream::Open(serial_format, path));
     }
@@ -623,7 +624,7 @@ TLoadScopeMethod LoadScope(string arg_path, CScope& scope, ESerialDataFormat ser
 
             _TRACE("Loaded from LDS");
             return eLoadScope_LDS;
-        } catch (CException& e) {}
+        } catch (CException&) {}
     }
 
 
@@ -662,7 +663,7 @@ TLoadScopeMethod LoadScope(string arg_path, CScope& scope, ESerialDataFormat ser
             _TRACE("Loaded as Seq-entry");
             method = eLoadScope_SeqEntry;
             continue;
-        } catch(CException& e) {};
+        } catch(CException&) {};
 
         try {
             auto_ptr<CObjectIStream> obj_istr = GetIStream(path, serial_format);
@@ -681,7 +682,7 @@ TLoadScopeMethod LoadScope(string arg_path, CScope& scope, ESerialDataFormat ser
             _TRACE("Loaded as Seq-annot");
             method = eLoadScope_SeqAnnot;
             continue;
-        } catch(CException& e) {};
+        } catch(CException&) {};
 
         try {
             auto_ptr<CObjectIStream> obj_istr = GetIStream(path, serial_format);
@@ -697,7 +698,7 @@ TLoadScopeMethod LoadScope(string arg_path, CScope& scope, ESerialDataFormat ser
             _TRACE("Loaded as genbank bioseqset");
             method = eLoadScope_GBR;
             continue;
-        } catch (CException& e) {}
+        } catch (CException&) {}
 
         //ERR_POST(Fatal << "Cannot load " << path);
         return eLoadScope_Failed; //should have 'continue'd in one of the tries above
