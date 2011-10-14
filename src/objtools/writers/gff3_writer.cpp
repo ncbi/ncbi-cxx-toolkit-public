@@ -129,14 +129,21 @@ bool CGff3Writer::x_WriteAlign(
     }
 
     switch( align.GetSegs().Which() ) {
-    default:
-        break;
-    case CSeq_align::TSegs::e_Denseg:
-        return x_WriteAlignDenseg( align, bInvertWidth );
-    case CSeq_align::TSegs::e_Spliced:
-        return x_WriteAlignSpliced( align, bInvertWidth );
-    case CSeq_align::TSegs::e_Disc:
-        return x_WriteAlignDisc( align, bInvertWidth );
+        default:
+            break;
+
+        case CSeq_align::TSegs::e_Denseg:
+            return x_WriteAlignDenseg( align, bInvertWidth );
+
+        case CSeq_align::TSegs::e_Spliced:
+            if (!x_WriteAlignSpliced( align, bInvertWidth )) {
+                return false;
+            }
+            m_uRecordId++;
+            return true;
+
+        case CSeq_align::TSegs::e_Disc:
+            return x_WriteAlignDisc( align, bInvertWidth );
     }
     return true;
 }
@@ -217,7 +224,7 @@ bool CGff3Writer::x_WriteAlignDenseg(
         if ( iSourceRow == iTargetRow ) {
             continue;
         }
-        CGffAlignmentRecord record( m_uFlags, m_uRecordId++ );
+        CGffAlignmentRecord record( m_uFlags, m_uRecordId );
 
         // Obtain and report basic source information:
         CConstRef<CSeq_id> pSourceId =
