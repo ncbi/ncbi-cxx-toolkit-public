@@ -44,6 +44,8 @@ EGREP_Q   = @EGREP_Q@
 deactivate = unlink
 @IF_DEACTIVATING@ deactivate = deactivate
 
+default_rule: all
+
 include $(top_srcdir)/src/build-system/Makefile.is_gmake
 include $(top_srcdir)/src/build-system/Makefile.meta.$(is_gmake)
 
