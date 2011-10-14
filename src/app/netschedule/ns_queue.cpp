@@ -391,7 +391,7 @@ unsigned int  CQueue::Submit(const CNSClientId &  client,
 
         was_empty = !m_StatusTracker.AnyPending();
         {{
-            CNSTransaction      transaction(this, eJobTable | eAffinityTable);
+            CNSTransaction      transaction(this);
 
             aff_id = m_AffinityRegistry.ResolveAffinityToken(aff_token, job_id);
             job.SetAffinityId(aff_id);
@@ -452,7 +452,7 @@ unsigned int  CQueue::SubmitBatch(const CNSClientId &             client,
         bool                was_empty = !m_StatusTracker.AnyPending();
 
         {{
-            CNSTransaction      transaction(this, eAffinityTable | eJobTable);
+            CNSTransaction      transaction(this);
 
             for (size_t  k = 0; k < batch_size; ++k) {
 
@@ -669,7 +669,7 @@ void CQueue::JobDelayExpiration(unsigned int     job_id,
 
 
         {{
-            CNSTransaction      transaction(this, eJobTable | eJobEventsTable);
+            CNSTransaction      transaction(this);
 
             if (job.Fetch(this, job_id) != CJob::eJF_Ok)
                 return;
@@ -727,7 +727,7 @@ bool CQueue::PutProgressMessage(unsigned int    job_id,
     CFastMutexGuard     guard(m_OperationLock);
 
     {{
-        CNSTransaction      transaction(this, eJobTable);
+        CNSTransaction      transaction(this);
 
         if (job.Fetch(this, job_id) != CJob::eJF_Ok)
             return false;
@@ -755,7 +755,7 @@ bool  CQueue::ReturnJob(const CNSClientId &     client,
         return true;
 
     {{
-         CNSTransaction      transaction(this, eJobTable | eJobEventsTable);
+         CNSTransaction      transaction(this);
 
         if (job.Fetch(this, job_id) != CJob::eJF_Ok)
             return false;   // Job not found
@@ -845,7 +845,7 @@ TJobStatus  CQueue::Cancel(const CNSClientId &  client,
         }
 
         {{
-            CNSTransaction      transaction(this, eJobTable | eJobEventsTable);
+            CNSTransaction      transaction(this);
             if (job.Fetch(this, job_id) != CJob::eJF_Ok)
                 return CNetScheduleAPI::eJobNotFound;
 
@@ -1029,7 +1029,7 @@ void CQueue::GetJobForReading(const CNSClientId &   client,
         return;
 
     {{
-         CNSTransaction     transaction(this, eJobTable | eJobEventsTable);
+         CNSTransaction     transaction(this);
 
         // Fetch the job and update it and flush
         job->Fetch(this, job_id);
@@ -1106,7 +1106,7 @@ void CQueue::x_ChangeReadingStatus(const CNSClientId &  client,
 
 
     {{
-        CNSTransaction      transaction(this, eJobTable | eJobEventsTable);
+        CNSTransaction      transaction(this);
 
         if (job.Fetch(this, job_id) != CJob::eJF_Ok)
             NCBI_THROW(CNetScheduleException, eInternalError,
@@ -1465,7 +1465,7 @@ void CQueue::x_CheckExecutionTimeout(unsigned   queue_run_timeout,
 
 
         {{
-            CNSTransaction      transaction(this, eJobTable | eJobEventsTable);
+            CNSTransaction      transaction(this);
 
             if (job.Fetch(this, job_id) != CJob::eJF_Ok)
                 return;
@@ -1612,7 +1612,7 @@ unsigned CQueue::CheckJobsExpiry(unsigned batch_size, TJobStatus status)
 
                 // check if the affinity should also be updated
                 if (job.GetAffinityId() != 0) {
-                    CNSTransaction      transaction(this, eAffinityTable);
+                    CNSTransaction      transaction(this);
                     m_AffinityRegistry.RemoveJobFromAffinity(
                                                     job_id,
                                                     job.GetAffinityId());
@@ -2084,7 +2084,7 @@ void CQueue::x_ResetDueTo(const CNSClientId &   client,
     CFastMutexGuard     guard(m_OperationLock);
 
     {{
-        CNSTransaction      transaction(this, eJobTable | eJobEventsTable);
+        CNSTransaction      transaction(this);
 
         if (job.Fetch(this, job_id) != CJob::eJF_Ok) {
             ERR_POST("Cannot fetch job to reset it due to " <<
@@ -2250,7 +2250,7 @@ unsigned int  CQueue::x_UpdateDB_GetJobNoLock(const CNSClientId &  client,
                                               unsigned int         job_id,
                                               CJob &               job)
 {
-    CNSTransaction      transaction(this, eJobTable | eJobEventsTable);
+    CNSTransaction      transaction(this);
 
     if (job.Fetch(this, job_id) != CJob::eJF_Ok)
         return 0;
