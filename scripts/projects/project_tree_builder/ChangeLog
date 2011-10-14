@@ -181,3 +181,11 @@ Modified generation of Unix flat makefile to mark excluded projects as ones
 whose build errors can be ignored.
 Added possibility to use configurable macros in DLL dependencies description.
 
+October 14, 2011
+version 3.6.0
+Enhanced generation of Unix makefile to obviate slowdown due to locking.
+Added possibility to assign project tags to DLL projects.
+Added possibility to access list of enabled features from programs.
+Made it possible to generate flat makefile on Unix when importing projects.
+Enhanced GUI tool to show list of default project tags - from the current LST file.
+
