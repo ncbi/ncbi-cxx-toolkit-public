@@ -651,7 +651,13 @@ bool CGff3WriteRecordFeature::x_AssignAttributeDbXref(
             values.push_back( s_MakeGffDbtag(*dbxrefs[i]) );
         }
     }
-    CMappedFeat parent = m_fc.FeatTree().GetParent( mf );
+
+    CMappedFeat parent;
+    try {
+        parent = m_fc.FeatTree().GetParent( mf );
+    }
+    catch(...) {
+    }
     if ( parent  &&  parent.IsSetDbxref()) {
         const CSeq_feat::TDbxref& more_dbxrefs = parent.GetDbxref();
         for ( size_t i=0; i < more_dbxrefs.size(); ++i ) {
