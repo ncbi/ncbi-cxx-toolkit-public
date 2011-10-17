@@ -1885,6 +1885,11 @@ static CRef<CGapItem> s_NewGapItem(CSeqMap_CI& gap_it, CBioseqContext& ctx)
 
     const CSeq_gap & gap = gap_it.GetData().GetGap();
 
+    // determine if we're linked
+    const bool is_linkage =
+        gap.CanGetLinkage() && 
+        gap.GetLinkage() == CSeq_gap::eLinkage_linked;
+
     // For /gap_type qual
     string sType;
     if( gap.CanGetType() ) {
@@ -1893,13 +1898,13 @@ static CRef<CGapItem> s_NewGapItem(CSeqMap_CI& gap_it, CBioseqContext& ctx)
             // don't show /gap_type
             break;
         case CSeq_gap::eType_fragment:
-            sType = "fragment";
+            sType = "within scaffold";
             break;
         case CSeq_gap::eType_clone:
-            sType = "clone";
+            sType = ( is_linkage ? "within scaffold" : "between scaffolds" );
             break;
         case CSeq_gap::eType_short_arm:
-            sType = "short arm";
+            sType = "short_arm";
             break;
         case CSeq_gap::eType_heterochromatin:
             sType = "heterochromatin";
@@ -1911,14 +1916,9 @@ static CRef<CGapItem> s_NewGapItem(CSeqMap_CI& gap_it, CBioseqContext& ctx)
             sType = "telomere";
             break;
         case CSeq_gap::eType_repeat:
-            // This one is a little special as it depends on linkage
-            if( gap.CanGetLinkage() && 
-                gap.GetLinkage() == CSeq_gap::eLinkage_unlinked ) 
-            {
-                sType = "repeat between scaffolds";
-            } else {
-                sType = "repeat within scaffolds";
-            }
+            sType = ( is_linkage ? 
+                "repeat within scaffold" : 
+                "repeat between scaffolds" );
             break;
         case CSeq_gap::eType_contig:
             sType = "between scaffolds";
@@ -1930,7 +1930,8 @@ static CRef<CGapItem> s_NewGapItem(CSeqMap_CI& gap_it, CBioseqContext& ctx)
             sType = "other";
             break;
         default:
-            sType = "(ERROR: UNRECOGNIZED TYPE)";
+            sType = "(ERROR: UNRECOGNIZED_GAP_TYPE:" +
+                NStr::IntToString(gap.GetType()) + ")";
             break;
         }
     }
