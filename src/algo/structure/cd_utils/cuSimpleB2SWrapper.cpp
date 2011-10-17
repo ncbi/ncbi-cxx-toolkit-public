@@ -52,7 +52,6 @@
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/structure/cd_utils/cuCdCore.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
-//#include <algo/blast/api/objmgrfree_query_data.hpp>
 
 #include <algo/structure/cd_utils/cuAlign.hpp>
 #include <algo/structure/cd_utils/cuSequence.hpp>

@@ -70,6 +70,9 @@ public:
 	void useWholeSequence(bool whole);
 	void setFootprintExtension(int nExt, int CExt);
 
+    //  Returns false if there was a problem setting up the Blast query factory object
+    //  for any of the sequences; results for other sequences are available even with
+    //  a false return value.
 	bool blast(NotifierFunction notifier=0);
 
 	//to do psi-blast
@@ -125,6 +128,9 @@ private:
 	int getCompositeIndex(int query, int subject);
 	//not needed for now
 	//CRef< CSeq_align > remapSeqAlign(int query, int subject, CRef< CSeq_align > seqAlign);
+
+    void RemoveAllDataLoaders();
+    bool FillOutSeqLoc(const CRef< CBioseq >& bs, CSeq_loc& seqLoc);
 };
 
 END_SCOPE(cd_utils)

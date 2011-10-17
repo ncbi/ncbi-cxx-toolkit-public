@@ -57,7 +57,6 @@
 #include <algo/structure/cd_utils/cuPssmMaker.hpp>
 #include <algo/structure/cd_utils/cuBlockIntersector.hpp>
 #include <algo/structure/cd_utils/cuBlockFormater.hpp>
-#include <algo/blast/api/objmgrfree_query_data.hpp>
 #include <objects/scoremat/Pssm.hpp>
 #include <algo/structure/cd_utils/cuAlignmentCollection.hpp>
 //#include <objects/seq/seqlocinfo.hpp>
@@ -473,7 +472,7 @@ bool CDUpdater::blast(bool wait, int row)
 		entrezQuery += m_config.entrezQuery;
 	if (!entrezQuery.empty())
 		rblast->SetEntrezQuery(entrezQuery.c_str());
-	CRef<IQueryFactory> queryFactory;
+
 	//set PSSM here
 	if (m_config.blastType == eBLAST)
 	{
@@ -511,8 +510,6 @@ bool CDUpdater::blast(bool wait, int row)
 			LOG_POST("Failed to write to blast_query");
 		*/
 		//end of debug
-		queryFactory = new CObjMgrFree_QueryFactory(bioseqs);
-		
 	}
 	else //psi-blast
 	{
@@ -546,8 +543,6 @@ bool CDUpdater::blast(bool wait, int row)
 			LOG_POST("PSSM is written to %s\n", fname.c_str());
 		*/
 		rblast->SetQueries(pssm);
-		CConstRef<CBioseq> bioseqCref (&(pssm->GetPssm().GetQuery().GetSeq()));
-		queryFactory = new CObjMgrFree_QueryFactory(bioseqCref);
 	}
 
 

@@ -44,10 +44,11 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/general/Object_id.hpp>
 //#include <algo/blast/api/bl2seq.hpp>
+#include <objmgr/object_manager.hpp>
 #include <algo/blast/api/blast_prot_options.hpp>
 #include <algo/blast/api/blast_advprot_options.hpp>
 #include <algo/blast/api/psiblast_options.hpp>
-#include <algo/blast/api/objmgrfree_query_data.hpp>
+#include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/structure/cd_utils/cuCdCore.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
@@ -62,7 +63,6 @@
 #include <algo/structure/cd_utils/cuBlast2Seq.hpp>
 #include <algo/structure/cd_utils/cuSequence.hpp>
 #include <objects/seq/NCBIeaa.hpp>
-//#include "cdLog.hpp"
 #include <algo/structure/cd_utils/cuCdReadWriteASN.hpp>
 #include <algo/structure/cd_utils/cuCdUpdater.hpp>
 
@@ -184,24 +184,47 @@ bool CdBlaster::blast(NotifierFunction notifier)
 	options->SetDbSeqNum(1);
 	options->SetCompositionBasedStats(eNoCompositionBasedStats);
 	CRef<CBlastProteinOptionsHandle> blastOptions((CBlastProteinOptionsHandle*)options.GetPointer());
-	int comIndex = 0;
 	
 	CRef< CSeq_align > nullRef;
 	m_scores.reserve(totalBlasts);
 
-	// use objmgr-free interface
+	// use objmgr interface
+    RemoveAllDataLoaders();
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope scope(*objmgr);
+
 	int numQueries = 0;
 	if (m_queryRows)
 		numQueries = m_queryRows->size();
 	else
 		numQueries = nrows-1;
+
+    bool result = true;
+    CSeq_loc querySeqLoc, subjectSeqLoc;
 	for (int qr = 0; qr < numQueries; qr++)
 	{
+        CBlastQueryVector queryVector, subjectVector;
+        scope.ResetDataAndHistory();
+
+        //  Set up the QueryFactory for the query sequence
+        scope.AddBioseq(*m_truncatedBioseqs[qr]);
+        if (FillOutSeqLoc(m_truncatedBioseqs[qr], querySeqLoc)) {
+            CRef<CBlastSearchQuery> bsqQuery(new CBlastSearchQuery(querySeqLoc, scope));
+            queryVector.AddQuery(bsqQuery);
+        } else {
+            result = false;
+            m_batchSizes[qr] = 0;
+            continue;
+        }
+        CRef<IQueryFactory> query(new CObjMgr_QueryFactory(queryVector));
+
+/*
 		CRef< CBioseq > queryBioseq = m_truncatedBioseqs[qr];
 		CRef<IQueryFactory> query(new CObjMgrFree_QueryFactory(queryBioseq));
-		//loop for subject rows
+
 		CRef< CBioseq_set > bioseqset(new CBioseq_set);
 		list< CRef< CSeq_entry > >& seqEntryList = bioseqset->SetSeq_set();
+*/
 		int subStart = qr +1;
 		int batchSize = (nrows -1) - (qr + 1) + 1;
 		if (m_queryRows)
@@ -209,23 +232,37 @@ bool CdBlaster::blast(NotifierFunction notifier)
 			subStart = m_queryRows->size();
 			batchSize = m_subjectRows->size();
 		}
+		//loop for subject rows
 		for (int sr = subStart; sr < nrows; sr++)
 		{
+/*
 			CRef< CSeq_entry > seqEntry(new CSeq_entry);
 			seqEntry->SetSeq(*m_truncatedBioseqs[sr]);
 			seqEntryList.push_back(seqEntry);
 			comIndex++;
+*/
+
+            scope.AddBioseq(*m_truncatedBioseqs[sr]);
+            //  Set up the QueryFactory for the subject sequences
+            if (FillOutSeqLoc(m_truncatedBioseqs[sr], subjectSeqLoc)) {
+                CRef<CBlastSearchQuery> bsqSubject(new CBlastSearchQuery(subjectSeqLoc, scope));
+                subjectVector.AddQuery(bsqSubject);
+            }
 		}
-		CRef<IQueryFactory> subject(new CObjMgrFree_QueryFactory(bioseqset));
+
+        assert((unsigned)batchSize == subjectVector.Size());
+		m_batchSizes[qr] = subjectVector.Size();  // in case there was a problem w/ FillOutSeqLoc above, use the actual size submitted instead of batchSize
+
+//		CRef<IQueryFactory> subject(new CObjMgrFree_QueryFactory(bioseqset));
+		CRef<IQueryFactory> subject(new CObjMgr_QueryFactory(subjectVector));
 		CPsiBl2Seq blaster(query,subject,blastOptions);
 		CSearchResultSet& hits = *blaster.Run();
-		m_batchSizes[qr] = batchSize;
-		numBlastsDone += batchSize;
+		numBlastsDone += batchSize;  // don't use subjectVector.Size() so notifier(...) works normally even if FillOutSeqLoc failed above
 		if (notifier)
 			notifier(numBlastsDone, totalBlasts);
 		processBlastHits(qr, hits);
 	}
-	return true;
+	return result;
 }
 	
 int  CdBlaster::psiBlast()
@@ -250,15 +287,33 @@ int  CdBlaster::psiBlast()
 	// debugging
 //	options->SetCompositionBasedStatsMode(true);
 
+	// use objmgr interface
+    RemoveAllDataLoaders();
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope scope(*objmgr);
+    CBlastQueryVector subjectVector;
+
+/*
 	CRef< CBioseq_set > bioseqset(new CBioseq_set);
 	list< CRef< CSeq_entry > >& seqEntryList = bioseqset->SetSeq_set();
+*/
+    CSeq_loc subjectSeqLoc;
 	for (int sr = 0; sr < nrows; sr++)
 	{
+        CRef< CBioseq > bs = truncateBioseq(sr);
+        scope.AddBioseq(*bs);
+        //  Set up the QueryFactory for the subject sequences
+        if (FillOutSeqLoc(bs, subjectSeqLoc)) {
+            CRef<CBlastSearchQuery> bsqSubject(new CBlastSearchQuery(subjectSeqLoc, scope));
+            subjectVector.AddQuery(bsqSubject);
+        }
+/*
 		// use footprint
 		
 		CRef< CSeq_entry > seqEntry(new CSeq_entry);
 		seqEntry->SetSeq(*truncateBioseq(sr));
 		seqEntryList.push_back(seqEntry);
+*/
 		// use whole sequence
 		/*
 		CRef< CSeq_entry > seqEntry;
@@ -268,7 +323,8 @@ int  CdBlaster::psiBlast()
 			bool wrong = true;
 			*/
 	}
-	CRef<IQueryFactory> subject(new CObjMgrFree_QueryFactory(bioseqset));
+    CRef<IQueryFactory> subject(new CObjMgr_QueryFactory(subjectVector));
+//	CRef<IQueryFactory> subject(new CObjMgrFree_QueryFactory(bioseqset));
 
 	CPsiBl2Seq blaster(m_psiTargetPssm, subject, options);
 	CRef<CSearchResultSet> hits = blaster.Run();
@@ -281,7 +337,7 @@ int  CdBlaster::psiBlast()
 		else
 			m_alignments.push_back(*(seqAlignList.begin()));
     }	
-	assert (m_alignments.size() == nrows);
+	assert (m_alignments.size() == (unsigned) nrows);
 	return m_alignments.size();
 }
 
@@ -498,6 +554,35 @@ void CdBlaster::ApplyEndShiftToRange(int& from, int nTermShift, int& to, int cTe
         }
 	}
 
+}
+
+bool CdBlaster::FillOutSeqLoc(const CRef< CBioseq>& bs, CSeq_loc& seqLoc)
+{
+    bool result = true;
+    CSeq_interval& seqInt = seqLoc.SetInt();
+    CSeq_id& seqId = seqInt.SetId();
+    seqInt.SetFrom(0);
+    
+    //  Assign the first identifier from the bioseq
+    if (bs.NotEmpty() && bs->GetFirstId() != 0) {
+        seqInt.SetTo(bs->GetLength() - 1);
+        seqId.Assign(*(bs->GetFirstId()));
+    } else {
+        result = false;
+    }
+
+    return result;
+}
+
+void CdBlaster::RemoveAllDataLoaders() {
+    int i = 1;
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CObjectManager::TRegisteredNames loader_names;
+    om->GetRegisteredNames(loader_names);
+    ITERATE(CObjectManager::TRegisteredNames, itr, loader_names) {
+        om->RevokeDataLoader(*itr);
+        ++i;
+    }
 }
 
 
