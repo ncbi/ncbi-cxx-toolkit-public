@@ -65,6 +65,9 @@ public:
         eSeqType_aa
     };
 
+    /// PostRead() hooks to establish correct, non-deprecated data layout
+    void PostRead();
+
     /// Set a standard single nucleotide variant.  The replaces set can include
     /// empty strings and/or '-' as a character to indicate a deletion.
     void SetSNV(const vector<string>& replaces,
@@ -162,12 +165,6 @@ public:
 
     /// @name Deprecated Methods
     /// @{
-    NCBI_DEPRECATED bool IsSetPopulation_data(void) const;
-    NCBI_DEPRECATED bool CanGetPopulation_data(void) const;
-    NCBI_DEPRECATED void ResetPopulation_data(void);
-    NCBI_DEPRECATED const TPopulation_data& GetPopulation_data(void) const;
-    NCBI_DEPRECATED TPopulation_data& SetPopulation_data(void);
-
     NCBI_DEPRECATED bool IsSetValidated(void) const;
     NCBI_DEPRECATED bool CanGetValidated(void) const;
     NCBI_DEPRECATED void ResetValidated(void);
@@ -208,6 +205,19 @@ public:
     NCBI_DEPRECATED TIs_ancestral_allele GetIs_ancestral_allele(void) const;
     NCBI_DEPRECATED void SetIs_ancestral_allele(TIs_ancestral_allele value);
     NCBI_DEPRECATED TIs_ancestral_allele& SetIs_ancestral_allele(void);
+    /// @}
+
+private:
+    /// Prohibited deprecated functions
+    /// Due to limitations in ASN spec-land, we cannot officially remove these
+    /// data elements from the spec.  We can, however, hide them from client
+    /// access.
+    /// @{
+    NCBI_DEPRECATED bool IsSetPopulation_data(void) const;
+    NCBI_DEPRECATED bool CanGetPopulation_data(void) const;
+    NCBI_DEPRECATED void ResetPopulation_data(void);
+    NCBI_DEPRECATED const TPopulation_data& GetPopulation_data(void) const;
+    NCBI_DEPRECATED TPopulation_data& SetPopulation_data(void);
 
     NCBI_DEPRECATED bool IsSetPub(void) const;
     NCBI_DEPRECATED bool CanGetPub(void) const;
@@ -245,6 +255,8 @@ private:
 
 };
 
+NCBISER_HAVE_POST_READ(CVariation_ref)
+
 /////////////////// CVariation_ref inline methods
 
 // constructor
@@ -252,405 +264,6 @@ inline
 CVariation_ref::CVariation_ref(void)
 {
 }
-
-//////////////////////////////////////////////////////////////////////////////
-inline
-bool CVariation_ref::IsSetPopulation_data(void) const
-{
-    return Tparent::IsSetPopulation_data();
-}
-
-inline
-bool CVariation_ref::CanGetPopulation_data(void) const
-{
-    return Tparent::CanGetPopulation_data();
-}
-
-inline
-void CVariation_ref::ResetPopulation_data(void)
-{
-    Tparent::ResetPopulation_data();
-}
-
-inline
-const CVariation_ref::TPopulation_data& CVariation_ref::GetPopulation_data(void) const
-{
-    return Tparent::GetPopulation_data();
-}
-
-inline
-CVariation_ref::TPopulation_data& CVariation_ref::SetPopulation_data(void)
-{
-    return Tparent::SetPopulation_data();
-}
-
-
-//////////////////////////////////////////////////////////////////////////////
-inline
-bool CVariation_ref::IsSetValidated(void) const
-{
-    return Tparent::IsSetValidated();
-}
-
-inline
-bool CVariation_ref::CanGetValidated(void) const
-{
-    return Tparent::CanGetValidated();
-}
-
-inline
-void CVariation_ref::ResetValidated(void)
-{
-    Tparent::ResetValidated();
-}
-
-inline
-CVariation_ref::TValidated CVariation_ref::GetValidated(void) const
-{
-    return Tparent::GetValidated();
-}
-
-inline
-void CVariation_ref::SetValidated(TValidated value)
-{
-    Tparent::SetValidated(value);
-}
-
-inline
-CVariation_ref::TValidated& CVariation_ref::SetValidated(void)
-{
-    return Tparent::SetValidated();
-}
-
-
-//////////////////////////////////////////////////////////////////////////////
-inline
-bool CVariation_ref::IsSetClinical_test(void) const
-{
-    return Tparent::IsSetClinical_test();
-}
-
-inline
-bool CVariation_ref::CanGetClinical_test(void) const
-{
-    return Tparent::CanGetClinical_test();
-}
-
-inline
-void CVariation_ref::ResetClinical_test(void)
-{
-    Tparent::ResetClinical_test();
-}
-
-inline
-const CVariation_ref::TClinical_test& CVariation_ref::GetClinical_test(void) const
-{
-    return Tparent::GetClinical_test();
-}
-
-inline
-CVariation_ref::TClinical_test& CVariation_ref::SetClinical_test(void)
-{
-    return Tparent::SetClinical_test();
-}
-
-
-//////////////////////////////////////////////////////////////////////////////
-inline
-bool CVariation_ref::IsSetAllele_origin(void) const
-{
-    return Tparent::IsSetAllele_origin();
-}
-
-inline
-bool CVariation_ref::CanGetAllele_origin(void) const
-{
-    return Tparent::CanGetAllele_origin();
-}
-
-inline
-void CVariation_ref::ResetAllele_origin(void)
-{
-    Tparent::ResetAllele_origin();
-}
-
-inline
-CVariation_ref::TAllele_origin CVariation_ref::GetAllele_origin(void) const
-{
-    return Tparent::GetAllele_origin();
-}
-
-inline
-void CVariation_ref::SetAllele_origin(TAllele_origin value)
-{
-    Tparent::SetAllele_origin(value);
-}
-
-inline
-CVariation_ref::TAllele_origin& CVariation_ref::SetAllele_origin(void)
-{
-    return Tparent::SetAllele_origin();
-}
-
-//////////////////////////////////////////////////////////////////////////////
-inline
-bool CVariation_ref::IsSetAllele_state(void) const
-{
-    return Tparent::IsSetAllele_state();
-}
-
-inline
-bool CVariation_ref::CanGetAllele_state(void) const
-{
-    return Tparent::CanGetAllele_state();
-}
-
-inline
-void CVariation_ref::ResetAllele_state(void)
-{
-    Tparent::ResetAllele_state();
-}
-
-inline
-CVariation_ref::TAllele_state CVariation_ref::GetAllele_state(void) const
-{
-    return Tparent::GetAllele_state();
-}
-
-inline
-void CVariation_ref::SetAllele_state(TAllele_state value)
-{
-    Tparent::SetAllele_state(value);
-}
-
-inline
-CVariation_ref::TAllele_state& CVariation_ref::SetAllele_state(void)
-{
-    return Tparent::SetAllele_state();
-}
-
-
-//////////////////////////////////////////////////////////////////////////////
-inline
-bool CVariation_ref::IsSetAllele_frequency(void) const
-{
-    return Tparent::IsSetAllele_frequency();
-}
-
-inline
-bool CVariation_ref::CanGetAllele_frequency(void) const
-{
-    return Tparent::CanGetAllele_frequency();
-}
-
-inline
-void CVariation_ref::ResetAllele_frequency(void)
-{
-    Tparent::ResetAllele_frequency();
-}
-
-inline
-CVariation_ref::TAllele_frequency CVariation_ref::GetAllele_frequency(void) const
-{
-    return Tparent::GetAllele_frequency();
-}
-
-inline
-void CVariation_ref::SetAllele_frequency(TAllele_frequency value)
-{
-    Tparent::SetAllele_frequency(value);
-}
-
-inline
-CVariation_ref::TAllele_frequency& CVariation_ref::SetAllele_frequency(void)
-{
-    return Tparent::SetAllele_frequency();
-}
-
-
-//////////////////////////////////////////////////////////////////////////////
-inline
-bool CVariation_ref::IsSetIs_ancestral_allele(void) const
-{
-    return Tparent::IsSetIs_ancestral_allele();
-}
-
-inline
-bool CVariation_ref::CanGetIs_ancestral_allele(void) const
-{
-    return Tparent::CanGetIs_ancestral_allele();
-}
-
-inline
-void CVariation_ref::ResetIs_ancestral_allele(void)
-{
-    Tparent::ResetIs_ancestral_allele();
-}
-
-inline
-CVariation_ref::TIs_ancestral_allele CVariation_ref::GetIs_ancestral_allele(void) const
-{
-    return Tparent::GetIs_ancestral_allele();
-}
-
-inline
-void CVariation_ref::SetIs_ancestral_allele(TIs_ancestral_allele value)
-{
-    Tparent::SetIs_ancestral_allele(value);
-}
-
-inline
-CVariation_ref::TIs_ancestral_allele& CVariation_ref::SetIs_ancestral_allele(void)
-{
-    return Tparent::SetIs_ancestral_allele();
-}
-
-
-//////////////////////////////////////////////////////////////////////////////
-inline
-bool CVariation_ref::IsSetPub(void) const
-{
-    return Tparent::IsSetPub();
-}
-
-inline
-bool CVariation_ref::CanGetPub(void) const
-{
-    return Tparent::CanGetPub();
-}
-
-inline
-void CVariation_ref::ResetPub(void)
-{
-    Tparent::ResetPub();
-}
-
-inline
-const CVariation_ref::TPub& CVariation_ref::GetPub(void) const
-{
-    return Tparent::GetPub();
-}
-
-inline
-void CVariation_ref::SetPub(TPub& value)
-{
-    Tparent::SetPub(value);
-}
-
-inline
-CVariation_ref::TPub& CVariation_ref::SetPub(void)
-{
-    return Tparent::SetPub();
-}
-
-
-//////////////////////////////////////////////////////////////////////////////
-inline
-bool CVariation_ref::IsSetLocation(void) const
-{
-    return Tparent::IsSetLocation();
-}
-
-inline
-bool CVariation_ref::CanGetLocation(void) const
-{
-    return Tparent::CanGetLocation();
-}
-
-inline
-void CVariation_ref::ResetLocation(void)
-{
-    Tparent::ResetLocation();
-}
-
-inline
-const CVariation_ref::TLocation& CVariation_ref::GetLocation(void) const
-{
-    return Tparent::GetLocation();
-}
-
-inline
-void CVariation_ref::SetLocation(TLocation& value)
-{
-    Tparent::SetLocation(value);
-}
-
-inline
-CVariation_ref::TLocation& CVariation_ref::SetLocation(void)
-{
-    return Tparent::SetLocation();
-}
-
-
-//////////////////////////////////////////////////////////////////////////////
-inline
-bool CVariation_ref::IsSetExt_locs(void) const
-{
-    return Tparent::IsSetExt_locs();
-}
-
-inline
-bool CVariation_ref::CanGetExt_locs(void) const
-{
-    return Tparent::CanGetExt_locs();
-}
-
-inline
-void CVariation_ref::ResetExt_locs(void)
-{
-    Tparent::ResetExt_locs();
-}
-
-inline
-const CVariation_ref::TExt_locs& CVariation_ref::GetExt_locs(void) const
-{
-    return Tparent::GetExt_locs();
-}
-
-inline
-CVariation_ref::TExt_locs& CVariation_ref::SetExt_locs(void)
-{
-    return Tparent::SetExt_locs();
-}
-
-//////////////////////////////////////////////////////////////////////////////
-inline
-bool CVariation_ref::IsSetExt(void) const
-{
-    return Tparent::IsSetExt();
-}
-
-inline
-bool CVariation_ref::CanGetExt(void) const
-{
-    return Tparent::CanGetExt();
-}
-
-inline
-void CVariation_ref::ResetExt(void)
-{
-    Tparent::ResetExt();
-}
-
-inline
-const CVariation_ref::TExt& CVariation_ref::GetExt(void) const
-{
-    return Tparent::GetExt();
-}
-
-inline
-void CVariation_ref::SetExt(TExt& value)
-{
-    Tparent::SetExt(value);
-}
-
-inline
-CVariation_ref::TExt& CVariation_ref::SetExt(void)
-{
-    return Tparent::SetExt();
-}
-
-
 
 /////////////////// end of CVariation_ref inline methods
 

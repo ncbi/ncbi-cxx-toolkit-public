@@ -52,6 +52,736 @@ CVariation_ref::~CVariation_ref(void)
 {
 }
 
+
+void CVariation_ref::PostRead()
+{
+    // population-data: ignore; deprecated, drop
+    if (Tparent::IsSetPopulation_data()) {
+        ERR_POST(Error
+                 << "Variation-ref.population-data is deprecated and "
+                 "will be ignored");
+        Tparent::ResetPopulation_data();
+    }
+
+    // validated: move to VariantProperties.other-validation
+    if (Tparent::IsSetValidated()) {
+        if (SetVariant_prop().IsSetOther_validation()) {
+            ERR_POST(Error
+                     << "Both Variation-ref.validated and "
+                     "Variation-ref.variant-properties.other-validation are "
+                     "set; ignoring Variation-ref.validated");
+        }
+        else {
+            SetVariant_prop().SetOther_validation(Tparent::GetValidated());
+        }
+        Tparent::ResetValidated();
+    }
+
+    // clinical-test: should be moved to Seq-feat.dbxref; no access here!
+    // FIXME: is this used anywhere?
+    if (Tparent::IsSetClinical_test()) {
+        ERR_POST(Error
+                 << "Variation-ref.clinical-test is deprecated and "
+                 "will be ignored");
+        Tparent::ResetClinical_test();
+    }
+
+    // allele-origin: move to Variant-properties
+    if (Tparent::IsSetAllele_origin()) {
+        if (SetVariant_prop().IsSetAllele_origin()) {
+            ERR_POST(Error
+                     << "Both Variation-ref.allele-origin and "
+                     "Variation-ref.variant-properties.allele-origin are "
+                     "set; ignoring Variation-ref.validated");
+        }
+        else {
+            SetVariant_prop().SetAllele_origin(Tparent::GetAllele_origin());
+        }
+        Tparent::ResetAllele_origin();
+    }
+
+    // allele-state: move to Variant-properties
+    if (Tparent::IsSetAllele_state()) {
+        if (SetVariant_prop().IsSetAllele_state()) {
+            ERR_POST(Error
+                     << "Both Variation-ref.allele-state and "
+                     "Variation-ref.variant-properties.allele-state are "
+                     "set; ignoring Variation-ref.validated");
+        }
+        else {
+            SetVariant_prop().SetAllele_state(Tparent::GetAllele_state());
+        }
+        Tparent::ResetAllele_state();
+    }
+
+    // allele-frequency: move to Variant-properties
+    if (Tparent::IsSetAllele_frequency()) {
+        if (SetVariant_prop().IsSetAllele_frequency()) {
+            ERR_POST(Error
+                     << "Both Variation-ref.allele-frequency and "
+                     "Variation-ref.variant-properties.allele-frequency are "
+                     "set; ignoring Variation-ref.validated");
+        }
+        else {
+            SetVariant_prop().SetAllele_frequency(Tparent::GetAllele_frequency());
+        }
+        Tparent::ResetAllele_frequency();
+    }
+
+    // is-ancestral-allele: move to Variant-properties
+    if (Tparent::IsSetIs_ancestral_allele()) {
+        if (SetVariant_prop().IsSetIs_ancestral_allele()) {
+            ERR_POST(Error
+                     << "Both Variation-ref.is-ancestral-allele and "
+                     "Variation-ref.variant-properties.is-ancestral-allele are "
+                     "set; ignoring Variation-ref.validated");
+        }
+        else {
+            SetVariant_prop().SetIs_ancestral_allele(Tparent::GetIs_ancestral_allele());
+        }
+        Tparent::ResetIs_ancestral_allele();
+    }
+
+    // pub: move to Seq-feat.dbxref; no access here
+    // FIXME: do we need to do this?
+    if (Tparent::IsSetPub()) {
+        ERR_POST(Error
+                 << "Variation-ref.pub is deprecated and "
+                 "will be ignored");
+        Tparent::ResetPub();
+    }
+
+    // location: deprecated, drop
+    if (Tparent::IsSetLocation()) {
+        ERR_POST(Error
+                 << "Variation-ref.location is deprecated and "
+                 "will be ignored");
+        Tparent::ResetLocation();
+    }
+
+    // ext-locs: deprecated, drop
+    if (Tparent::IsSetExt_locs()) {
+        ERR_POST(Error
+                 << "Variation-ref.ext-locs is deprecated and "
+                 "will be ignored");
+        Tparent::ResetExt_locs();
+    }
+
+    // ext: deprecated, drop
+    if (Tparent::IsSetExt()) {
+        ERR_POST(Error
+                 << "Variation-ref.ext is deprecated and "
+                 "will be ignored");
+        Tparent::ResetExt();
+    }
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+bool CVariation_ref::IsSetPopulation_data(void) const
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::IsSetPopulation_data(): "
+               "unsupported deprecated API");
+}
+
+
+bool CVariation_ref::CanGetPopulation_data(void) const
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::CanGetPopulation_data(): "
+               "unsupported deprecated API");
+}
+
+
+void CVariation_ref::ResetPopulation_data(void)
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::ResetPopulation_data(): "
+               "unsupported deprecated API");
+}
+
+
+const CVariation_ref::TPopulation_data& CVariation_ref::GetPopulation_data(void) const
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::GetPopulation_data(): "
+               "unsupported deprecated API");
+}
+
+
+CVariation_ref::TPopulation_data& CVariation_ref::SetPopulation_data(void)
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::SetPopulation_data(): "
+               "unsupported deprecated API");
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+bool CVariation_ref::IsSetValidated(void) const
+{
+    if (IsSetVariant_prop()) {
+        return GetVariant_prop().IsSetOther_validation();
+    }
+    return Tparent::IsSetValidated();
+}
+
+
+bool CVariation_ref::CanGetValidated(void) const
+{
+    if (CanGetVariant_prop()) {
+        return GetVariant_prop().CanGetOther_validation();
+    }
+    return Tparent::CanGetValidated();
+}
+
+
+void CVariation_ref::ResetValidated(void)
+{
+    if (IsSetVariant_prop()) {
+        SetVariant_prop().ResetOther_validation();
+    }
+    Tparent::ResetValidated();
+}
+
+
+CVariation_ref::TValidated CVariation_ref::GetValidated(void) const
+{
+    if (IsSetVariant_prop()) {
+        return GetVariant_prop().GetOther_validation();
+    }
+    return Tparent::GetValidated();
+}
+
+
+void CVariation_ref::SetValidated(TValidated value)
+{
+    if (Tparent::IsSetValidated()) {
+        Tparent::ResetValidated();
+    }
+    SetVariant_prop().SetOther_validation(value);
+}
+
+
+CVariation_ref::TValidated& CVariation_ref::SetValidated(void)
+{
+    if (Tparent::IsSetValidated()) {
+        if (SetVariant_prop().IsSetOther_validation()) {
+            ERR_POST(Error <<
+                     "Dropping deprecated conflicting data: "
+                     "Variation-ref.validated: "
+                     "Variation-ref.variant-prop.other-validation set");
+        }
+        else {
+            SetVariant_prop().SetOther_validation(Tparent::GetValidated());
+        }
+
+        Tparent::ResetValidated();
+    }
+    return SetVariant_prop().SetOther_validation();
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+bool CVariation_ref::IsSetClinical_test(void) const
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::IsSetClinical_test(): "
+               "unsupported deprecated API");
+}
+
+
+bool CVariation_ref::CanGetClinical_test(void) const
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::CanGetClinical_test(): "
+               "unsupported deprecated API");
+}
+
+
+void CVariation_ref::ResetClinical_test(void)
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::ResetClinical_test(): "
+               "unsupported deprecated API");
+}
+
+
+const CVariation_ref::TClinical_test& CVariation_ref::GetClinical_test(void) const
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::GetClinical_test(): "
+               "unsupported deprecated API");
+}
+
+
+CVariation_ref::TClinical_test& CVariation_ref::SetClinical_test(void)
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::SetClinical_test(): "
+               "unsupported deprecated API");
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+bool CVariation_ref::IsSetAllele_origin(void) const
+{
+    if (IsSetVariant_prop()) {
+        return GetVariant_prop().IsSetAllele_origin();
+    }
+    return Tparent::IsSetAllele_origin();
+}
+
+
+bool CVariation_ref::CanGetAllele_origin(void) const
+{
+    if (CanGetVariant_prop()) {
+        return GetVariant_prop().CanGetAllele_origin();
+    }
+    return Tparent::CanGetAllele_origin();
+}
+
+
+void CVariation_ref::ResetAllele_origin(void)
+{
+    if (IsSetVariant_prop()) {
+        SetVariant_prop().ResetAllele_origin();
+    }
+    Tparent::ResetAllele_origin();
+}
+
+
+CVariation_ref::TAllele_origin CVariation_ref::GetAllele_origin(void) const
+{
+    if (IsSetVariant_prop()) {
+        return GetVariant_prop().GetAllele_origin();
+    }
+    return Tparent::GetAllele_origin();
+}
+
+
+void CVariation_ref::SetAllele_origin(TAllele_origin value)
+{
+    if (Tparent::IsSetAllele_origin()) {
+        Tparent::ResetAllele_origin();
+    }
+    SetVariant_prop().SetAllele_origin(value);
+}
+
+
+CVariation_ref::TAllele_origin& CVariation_ref::SetAllele_origin(void)
+{
+    if (Tparent::IsSetAllele_origin()) {
+        if (SetVariant_prop().IsSetAllele_origin()) {
+            ERR_POST(Error <<
+                     "Dropping deprecated conflicting data: "
+                     "Variation-ref.allele-origin: "
+                     "Variation-ref.variant-prop.allele-origin set");
+        }
+        else {
+            SetVariant_prop().SetAllele_origin(Tparent::GetAllele_origin());
+        }
+
+        Tparent::ResetAllele_origin();
+    }
+    return SetVariant_prop().SetAllele_origin();
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+bool CVariation_ref::IsSetAllele_state(void) const
+{
+    if (IsSetVariant_prop()) {
+        return GetVariant_prop().IsSetAllele_state();
+    }
+    return Tparent::IsSetAllele_state();
+}
+
+
+bool CVariation_ref::CanGetAllele_state(void) const
+{
+    if (CanGetVariant_prop()) {
+        return GetVariant_prop().CanGetAllele_state();
+    }
+    return Tparent::CanGetAllele_state();
+}
+
+
+void CVariation_ref::ResetAllele_state(void)
+{
+    if (IsSetVariant_prop()) {
+        SetVariant_prop().ResetAllele_state();
+    }
+    Tparent::ResetAllele_state();
+}
+
+
+CVariation_ref::TAllele_state CVariation_ref::GetAllele_state(void) const
+{
+    if (IsSetVariant_prop()) {
+        return GetVariant_prop().GetAllele_state();
+    }
+    return Tparent::GetAllele_state();
+}
+
+
+void CVariation_ref::SetAllele_state(TAllele_state value)
+{
+    if (Tparent::IsSetAllele_state()) {
+        Tparent::ResetAllele_state();
+    }
+    SetVariant_prop().SetAllele_state(value);
+}
+
+
+CVariation_ref::TAllele_state& CVariation_ref::SetAllele_state(void)
+{
+    if (Tparent::IsSetAllele_state()) {
+        if (SetVariant_prop().IsSetAllele_state()) {
+            ERR_POST(Error <<
+                     "Dropping deprecated conflicting data: "
+                     "Variation-ref.allele-state: "
+                     "Variation-ref.variant-prop.allele-state set");
+        }
+        else {
+            SetVariant_prop().SetAllele_state(Tparent::GetAllele_state());
+        }
+
+        Tparent::ResetAllele_state();
+    }
+    return SetVariant_prop().SetAllele_state();
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+bool CVariation_ref::IsSetAllele_frequency(void) const
+{
+    if (IsSetVariant_prop()) {
+        return GetVariant_prop().IsSetAllele_frequency();
+    }
+    return Tparent::IsSetAllele_frequency();
+}
+
+
+bool CVariation_ref::CanGetAllele_frequency(void) const
+{
+    if (CanGetVariant_prop()) {
+        return GetVariant_prop().CanGetAllele_frequency();
+    }
+    return Tparent::CanGetAllele_frequency();
+}
+
+
+void CVariation_ref::ResetAllele_frequency(void)
+{
+    if (IsSetVariant_prop()) {
+        SetVariant_prop().ResetAllele_frequency();
+    }
+    Tparent::ResetAllele_frequency();
+}
+
+
+CVariation_ref::TAllele_frequency CVariation_ref::GetAllele_frequency(void) const
+{
+    if (IsSetVariant_prop()) {
+        return GetVariant_prop().GetAllele_frequency();
+    }
+    return Tparent::GetAllele_frequency();
+}
+
+
+void CVariation_ref::SetAllele_frequency(TAllele_frequency value)
+{
+    if (Tparent::IsSetAllele_frequency()) {
+        Tparent::ResetAllele_frequency();
+    }
+    SetVariant_prop().SetAllele_frequency(value);
+}
+
+
+CVariation_ref::TAllele_frequency& CVariation_ref::SetAllele_frequency(void)
+{
+    if (Tparent::IsSetAllele_frequency()) {
+        if (SetVariant_prop().IsSetAllele_frequency()) {
+            ERR_POST(Error <<
+                     "Dropping deprecated conflicting data: "
+                     "Variation-ref.allele-frequency: "
+                     "Variation-ref.variant-prop.allele-frequency set");
+        }
+        else {
+            SetVariant_prop().SetAllele_frequency(Tparent::GetAllele_frequency());
+        }
+
+        Tparent::ResetAllele_frequency();
+    }
+    return SetVariant_prop().SetAllele_frequency();
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+bool CVariation_ref::IsSetIs_ancestral_allele(void) const
+{
+    if (IsSetVariant_prop()) {
+        return GetVariant_prop().IsSetIs_ancestral_allele();
+    }
+    return Tparent::IsSetIs_ancestral_allele();
+}
+
+
+bool CVariation_ref::CanGetIs_ancestral_allele(void) const
+{
+    if (CanGetVariant_prop()) {
+        return GetVariant_prop().CanGetIs_ancestral_allele();
+    }
+    return Tparent::CanGetIs_ancestral_allele();
+}
+
+
+void CVariation_ref::ResetIs_ancestral_allele(void)
+{
+    if (IsSetVariant_prop()) {
+        SetVariant_prop().ResetIs_ancestral_allele();
+    }
+    Tparent::ResetIs_ancestral_allele();
+}
+
+
+CVariation_ref::TIs_ancestral_allele CVariation_ref::GetIs_ancestral_allele(void) const
+{
+    if (IsSetVariant_prop()) {
+        return GetVariant_prop().GetIs_ancestral_allele();
+    }
+    return Tparent::GetIs_ancestral_allele();
+}
+
+
+void CVariation_ref::SetIs_ancestral_allele(TIs_ancestral_allele value)
+{
+    if (Tparent::IsSetIs_ancestral_allele()) {
+        Tparent::ResetIs_ancestral_allele();
+    }
+    SetVariant_prop().SetIs_ancestral_allele(value);
+}
+
+
+CVariation_ref::TIs_ancestral_allele& CVariation_ref::SetIs_ancestral_allele(void)
+{
+    if (Tparent::IsSetIs_ancestral_allele()) {
+        if (SetVariant_prop().IsSetOther_validation()) {
+            ERR_POST(Error <<
+                     "Dropping deprecated conflicting data: "
+                     "Variation-ref.is-ancestral-allele: "
+                     "Variation-ref.variant-prop.is-ancestral-allele set");
+        }
+        else {
+            SetVariant_prop().SetIs_ancestral_allele(Tparent::GetIs_ancestral_allele());
+        }
+        Tparent::ResetIs_ancestral_allele();
+    }
+    return SetVariant_prop().SetIs_ancestral_allele();
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+bool CVariation_ref::IsSetPub(void) const
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::IsSetPub(): "
+               "unsupported deprecated API");
+}
+
+
+bool CVariation_ref::CanGetPub(void) const
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::CanGetPub(): "
+               "unsupported deprecated API");
+}
+
+
+void CVariation_ref::ResetPub(void)
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::ResetPub(): "
+               "unsupported deprecated API");
+}
+
+
+const CVariation_ref::TPub& CVariation_ref::GetPub(void) const
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::GetPub(): "
+               "unsupported deprecated API");
+}
+
+
+void CVariation_ref::SetPub(TPub& value)
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::SetPub(): "
+               "unsupported deprecated API");
+}
+
+
+CVariation_ref::TPub& CVariation_ref::SetPub(void)
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::SetPub(): "
+               "unsupported deprecated API");
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+bool CVariation_ref::IsSetLocation(void) const
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::IsSetLocation(): "
+               "unsupported deprecated API");
+}
+
+
+bool CVariation_ref::CanGetLocation(void) const
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::CanGetLocation(): "
+               "unsupported deprecated API");
+}
+
+
+void CVariation_ref::ResetLocation(void)
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::ResetLocation(): "
+               "unsupported deprecated API");
+}
+
+
+const CVariation_ref::TLocation& CVariation_ref::GetLocation(void) const
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::GetLocation(): "
+               "unsupported deprecated API");
+}
+
+
+void CVariation_ref::SetLocation(TLocation& value)
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::SetLocation(): "
+               "unsupported deprecated API");
+}
+
+
+CVariation_ref::TLocation& CVariation_ref::SetLocation(void)
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::SetLocation(): "
+               "unsupported deprecated API");
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+bool CVariation_ref::IsSetExt_locs(void) const
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::IsSetExt_locs(): "
+               "unsupported deprecated API");
+}
+
+
+bool CVariation_ref::CanGetExt_locs(void) const
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::CanGetExt_locs(): "
+               "unsupported deprecated API");
+}
+
+
+void CVariation_ref::ResetExt_locs(void)
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::ResetExt_locs(): "
+               "unsupported deprecated API");
+}
+
+
+const CVariation_ref::TExt_locs& CVariation_ref::GetExt_locs(void) const
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::GetExt_locs(): "
+               "unsupported deprecated API");
+}
+
+
+CVariation_ref::TExt_locs& CVariation_ref::SetExt_locs(void)
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::SetExt_locs(): "
+               "unsupported deprecated API");
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+bool CVariation_ref::IsSetExt(void) const
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::IsSetExt(): "
+               "unsupported deprecated API");
+}
+
+
+bool CVariation_ref::CanGetExt(void) const
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::CanGetExt(): "
+               "unsupported deprecated API");
+}
+
+
+void CVariation_ref::ResetExt(void)
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::ResetExt(): "
+               "unsupported deprecated API");
+}
+
+
+const CVariation_ref::TExt& CVariation_ref::GetExt(void) const
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::GetExt(): "
+               "unsupported deprecated API");
+}
+
+
+void CVariation_ref::SetExt(TExt& value)
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::SetExt(): "
+               "unsupported deprecated API");
+}
+
+
+CVariation_ref::TExt& CVariation_ref::SetExt(void)
+{
+    NCBI_THROW(CException, eUnknown,
+               "CVariation_ref::SetPub(): "
+               "unsupported deprecated API");
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+
 static void s_SetReplaces(CVariation_ref& ref,
                           const vector<string>& replaces,
                           CVariation_ref::ESeqType seq_type,
