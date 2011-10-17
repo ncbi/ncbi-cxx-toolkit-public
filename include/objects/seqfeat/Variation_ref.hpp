@@ -165,6 +165,30 @@ public:
 
     /// @name Deprecated Methods
     /// @{
+
+    /// NOTE: THESE ARE GOING AWAY SOON!!
+    NCBI_DEPRECATED bool IsSetLocation(void) const;
+    NCBI_DEPRECATED bool CanGetLocation(void) const;
+    NCBI_DEPRECATED void ResetLocation(void);
+    NCBI_DEPRECATED const TLocation& GetLocation(void) const;
+    NCBI_DEPRECATED void SetLocation(TLocation& value);
+    NCBI_DEPRECATED TLocation& SetLocation(void);
+
+    NCBI_DEPRECATED bool IsSetExt_locs(void) const;
+    NCBI_DEPRECATED bool CanGetExt_locs(void) const;
+    NCBI_DEPRECATED void ResetExt_locs(void);
+    NCBI_DEPRECATED const TExt_locs& GetExt_locs(void) const;
+    NCBI_DEPRECATED TExt_locs& SetExt_locs(void);
+
+    NCBI_DEPRECATED bool IsSetExt(void) const;
+    NCBI_DEPRECATED bool CanGetExt(void) const;
+    NCBI_DEPRECATED void ResetExt(void);
+    NCBI_DEPRECATED const TExt& GetExt(void) const;
+    NCBI_DEPRECATED void SetExt(TExt& value);
+    NCBI_DEPRECATED TExt& SetExt(void);
+
+
+
     NCBI_DEPRECATED bool IsSetValidated(void) const;
     NCBI_DEPRECATED bool CanGetValidated(void) const;
     NCBI_DEPRECATED void ResetValidated(void);
@@ -225,26 +249,6 @@ private:
     NCBI_DEPRECATED const TPub& GetPub(void) const;
     NCBI_DEPRECATED void SetPub(TPub& value);
     NCBI_DEPRECATED TPub& SetPub(void);
-
-    NCBI_DEPRECATED bool IsSetLocation(void) const;
-    NCBI_DEPRECATED bool CanGetLocation(void) const;
-    NCBI_DEPRECATED void ResetLocation(void);
-    NCBI_DEPRECATED const TLocation& GetLocation(void) const;
-    NCBI_DEPRECATED void SetLocation(TLocation& value);
-    NCBI_DEPRECATED TLocation& SetLocation(void);
-
-    NCBI_DEPRECATED bool IsSetExt_locs(void) const;
-    NCBI_DEPRECATED bool CanGetExt_locs(void) const;
-    NCBI_DEPRECATED void ResetExt_locs(void);
-    NCBI_DEPRECATED const TExt_locs& GetExt_locs(void) const;
-    NCBI_DEPRECATED TExt_locs& SetExt_locs(void);
-
-    NCBI_DEPRECATED bool IsSetExt(void) const;
-    NCBI_DEPRECATED bool CanGetExt(void) const;
-    NCBI_DEPRECATED void ResetExt(void);
-    NCBI_DEPRECATED const TExt& GetExt(void) const;
-    NCBI_DEPRECATED void SetExt(TExt& value);
-    NCBI_DEPRECATED TExt& SetExt(void);
 
     /// @}
 
