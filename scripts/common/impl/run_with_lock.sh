@@ -50,7 +50,7 @@ if "$get_lock" "$base" $$; then
         # Emulate egrep -q to avoid having to move from under scripts.
         if [ ! -f "$logfile" ]  \
           ||  $mydir/is_log_interesting.awk "$logfile.new"; then
-            mv "$logfile.new" "$logfile"
+            mv -f "$logfile.new" "$logfile"
         fi
         if [ -s "$status_file" ]; then
             status=`tr -d '\n\r' < "$status_file"`
