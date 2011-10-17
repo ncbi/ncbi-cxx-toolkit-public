@@ -204,7 +204,7 @@ BOOST_AUTO_TEST_CASE(RetrieveFromBlastDbOnly_TestSequenceDataWithAccession)
 {
     vector<string> accessions;
     // note the order, this comes second in the BLAST DB
-    accessions.push_back("AAB42302");   
+    accessions.push_back("CCD68076");   
     accessions.push_back("NP_001024503");
 
     const string kNonStdDb("prot_dbs");
