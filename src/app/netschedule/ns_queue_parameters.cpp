@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 
 SQueueParameters::SQueueParameters() :
     timeout(3600),
-    notif_timeout(7),
+    notif_timeout(0.1),
     run_timeout(3600),
     failed_retries(0),
     empty_lifetime(0),
@@ -56,7 +56,9 @@ SQueueParameters::SQueueParameters() :
 
 
 
-#define GetIntNoErr(name, dflt) reg.GetInt(sname, name, dflt, 0, IRegistry::eReturn)
+#define GetIntNoErr(name, dflt)    reg.GetInt(sname, name, dflt, 0, IRegistry::eReturn)
+#define GetDoubleNoErr(name, dflt) reg.GetDouble(sname, name, dflt, 0, IRegistry::eReturn)
+
 
 void SQueueParameters::Read(const IRegistry& reg, const string& sname)
 {
@@ -65,7 +67,12 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
     // Read parameters
     timeout = GetIntNoErr("timeout", 3600);
 
-    notif_timeout         = GetIntNoErr("notif_timeout", 7);
+    // Notification timeout
+    notif_timeout = GetDoubleNoErr("notif_timeout", 0.1);
+    notif_timeout = (int(notif_timeout * 10)) / 10.0;
+    if (notif_timeout <= 0)
+        notif_timeout = 0.1;
+
     run_timeout           = GetIntNoErr("run_timeout", timeout);
     run_timeout_precision = GetIntNoErr("run_timeout_precision", run_timeout);
     program_name          = reg.GetString(sname, "program", kEmptyStr);

@@ -49,7 +49,7 @@ public:
     int GetTimeout() const
     { return m_Queue.m_Timeout; }
 
-    int GetNotifyTimeout() const
+    double GetNotifyTimeout() const
     { return m_Queue.m_NotifyTimeout; }
 
     int GetRunTimeout() const
@@ -110,7 +110,7 @@ public:
     string GetParamValue(unsigned int  n) const {
         switch (n) {
         case 0:  return NStr::IntToString(m_Queue.m_Timeout);
-        case 1:  return NStr::IntToString(m_Queue.m_NotifyTimeout);
+        case 1:  return NStr::DoubleToString(m_Queue.m_NotifyTimeout);
         case 2:  return NStr::IntToString(m_Queue.m_RunTimeout);
         case 3:  return NStr::IntToString(m_Queue.m_RunTimeoutPrecision);
         case 4:  return NStr::IntToString(m_Queue.m_FailedRetries);

@@ -91,7 +91,7 @@ CQueue::CQueue(CRequestExecutor&     executor,
 
     m_ParamLock(CRWLock::fFavorWriters),
     m_Timeout(3600),
-    m_NotifyTimeout(7),
+    m_NotifyTimeout(0.1),
     m_RunTimeout(3600),
     m_RunTimeoutPrecision(-1),
     m_FailedRetries(0),
@@ -1397,6 +1397,25 @@ void CQueue::ClearWorkerNode(const CNSClientId &  client)
 
 void CQueue::NotifyListeners(bool unconditional, unsigned aff_id)
 {
+    if (unconditional == false) {
+        // This also means that the call comes from a notification thread.
+        // Test first that we should not skip this call due to the required
+        // notification frequency.
+        static double   last_notif_timeout = -1.0;
+        static size_t   skip_limit = 0;
+        static size_t   skip_count;
+
+        if (m_NotifyTimeout != last_notif_timeout) {
+            last_notif_timeout = m_NotifyTimeout;
+            skip_count = 0;
+            skip_limit = size_t(m_NotifyTimeout/0.1);
+        }
+
+        ++skip_count;
+        if (skip_count < skip_limit)
+            return;
+    }
+
     // TODO: if affinity valency is full for this aff_id, notify only nodes
     // with this aff_id, otherwise notify all nodes in the hope that some
     // of them will pick up the task with this aff_id

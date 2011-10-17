@@ -47,7 +47,7 @@ struct SQueueParameters
 
     /// General parameters, reconfigurable at run time
     int             timeout;
-    int             notif_timeout;
+    double          notif_timeout;
     int             run_timeout;
     string          program_name;
     int             failed_retries;

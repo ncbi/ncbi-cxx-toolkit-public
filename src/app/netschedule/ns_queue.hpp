@@ -113,7 +113,6 @@ public:
     void SetParameters(const SQueueParameters& params);
     TParameterList GetParameters() const;
     int GetTimeout() const;
-    int GetNotifyTimeout() const;
     int GetRunTimeout() const;
     int GetRunTimeoutPrecision() const;
     unsigned GetFailedRetries() const;
@@ -471,7 +470,7 @@ private:
     // When modifying this, modify all places marked with PARAMETERS
     mutable CRWLock              m_ParamLock;
     int                          m_Timeout;         ///< Result exp. timeout
-    int                          m_NotifyTimeout;   ///< Notification interval
+    double                       m_NotifyTimeout;   ///< Notification interval
     int                          m_RunTimeout;      ///< Execution timeout
     /// Its precision, set at startup only, not reconfigurable
     int                          m_RunTimeoutPrecision;
@@ -506,10 +505,6 @@ private:
 inline int CQueue::GetTimeout() const
 {
     return m_Timeout;
-}
-inline int CQueue::GetNotifyTimeout() const
-{
-    return m_NotifyTimeout;
 }
 inline int CQueue::GetRunTimeout()  const
 {
