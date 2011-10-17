@@ -1446,6 +1446,9 @@ that should be replaced or supplemented with more informative information.")),
     TErrStrs( "DifferntIdTypesInSeqLoc",
 "All ids in a single seq-loc which refer to the same bioseq should be of the \
 same id type")),
+   TErrTypStrs ( eErr_SEQ_FEAT_IntervalBeginsOrEndsInGap,
+   TErrStrs( "IntervalBeginsOrEndsInGap",
+"An internal interval of the feature starts or stops within a sequence gap.")),
 
 /* SEQ_ALIGN */
 

@@ -7009,6 +7009,8 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                     int num_gap = 0;
                     int num_unknown_gap = 0;
                     bool first_in_gap = false, last_in_gap = false;
+                    bool local_first_gap, local_last_gap;
+                    bool startsOrEndsInGap = false;
                     bool first = true;
 
                     for ( CSeq_loc_CI loc_it(loc); loc_it; ++loc_it ) {        
@@ -7040,14 +7042,19 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                                 ++pos;
                             }
                         }
+                        local_first_gap = false;
+                        local_last_gap = false;
+                        if (!vec.empty()) {
+                            local_first_gap = vec.IsInGap(0);
+                            local_last_gap = vec.IsInGap(vec.size() - 1);
+                        }
                         if (first) {
-                            if (!vec.empty() && vec.IsInGap(0)) {
-                                first_in_gap = true;
-                            }
+                            first_in_gap = local_first_gap;
                             first = false;
                         }
-                        if (!vec.empty()) {
-                            last_in_gap = vec.IsInGap(vec.size() - 1);
+                        last_in_gap = local_last_gap;
+                        if (local_first_gap || local_last_gap) {
+                            startsOrEndsInGap = true;
                         }
                     }
                     bool misc_feature_matches_gap = false;
@@ -7081,6 +7088,9 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                     } else if ((feat.GetData().IsCdregion() || feat.GetData().IsRna()) && num_unknown_gap > 0) {
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureCrossesGap, 
                                  "Feature crosses gap of unknown length", feat);
+                    } else if ((feat.GetData().IsCdregion() || feat.GetData().IsRna()) && startsOrEndsInGap) {
+                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_IntervalBeginsOrEndsInGap, 
+                                 "Internal interval begins or ends in gap", feat);
                     }            
                 } catch (CException ) {
                 } catch (std::exception ) {
