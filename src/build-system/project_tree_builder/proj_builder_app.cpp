@@ -401,7 +401,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(3,6,0) );
+    SetVersion( CVersionInfo(3,6,1) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -1209,20 +1209,23 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
             p->first.Type() != CProjKey::eDataSpec) {
 
             path_to_target[rel_path].push_back(target);
-            string stop_path(CDirEntry::AddTrailingPathSeparator("."));
-            string parent_path, prev_parent(rel_path);
-            for (;;) {
-                parent_path = ParentDir(prev_parent);
+            if (p->second.m_MakeType != eMakeType_Excluded &&
+                p->second.m_MakeType != eMakeType_ExcludedByReq) {
+                string stop_path(CDirEntry::AddTrailingPathSeparator("."));
+                string parent_path, prev_parent(rel_path);
+                for (;;) {
+                    parent_path = ParentDir(prev_parent);
 // see CXX-950
 #if 0
-                path_to_target[parent_path].push_back(prev_parent + ".real");
+                    path_to_target[parent_path].push_back(prev_parent + ".real");
 #else
-                path_to_target[parent_path].push_back(prev_parent);
+                    path_to_target[parent_path].push_back(prev_parent);
 #endif
-                if (parent_path == stop_path) {
-                    break;
+                    if (parent_path == stop_path) {
+                        break;
+                    }
+                    prev_parent = parent_path;
                 }
-                prev_parent = parent_path;
             }
         }
                                                             
