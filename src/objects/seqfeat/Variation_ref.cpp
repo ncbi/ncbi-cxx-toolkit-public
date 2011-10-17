@@ -151,6 +151,7 @@ void CVariation_ref::PostRead()
         Tparent::ResetPub();
     }
 
+    /**
     // location: deprecated, drop
     if (Tparent::IsSetLocation()) {
         ERR_POST(Error
@@ -158,7 +159,9 @@ void CVariation_ref::PostRead()
                  "will be ignored");
         Tparent::ResetLocation();
     }
+    **/
 
+    /**
     // ext-locs: deprecated, drop
     if (Tparent::IsSetExt_locs()) {
         ERR_POST(Error
@@ -166,7 +169,9 @@ void CVariation_ref::PostRead()
                  "will be ignored");
         Tparent::ResetExt_locs();
     }
+    **/
 
+    /**
     // ext: deprecated, drop
     if (Tparent::IsSetExt()) {
         ERR_POST(Error
@@ -174,6 +179,7 @@ void CVariation_ref::PostRead()
                  "will be ignored");
         Tparent::ResetExt();
     }
+    **/
 }
 
 
@@ -643,49 +649,37 @@ CVariation_ref::TPub& CVariation_ref::SetPub(void)
 
 bool CVariation_ref::IsSetLocation(void) const
 {
-    NCBI_THROW(CException, eUnknown,
-               "CVariation_ref::IsSetLocation(): "
-               "unsupported deprecated API");
+    return Tparent::IsSetLocation();
 }
 
 
 bool CVariation_ref::CanGetLocation(void) const
 {
-    NCBI_THROW(CException, eUnknown,
-               "CVariation_ref::CanGetLocation(): "
-               "unsupported deprecated API");
+    return Tparent::CanGetLocation();
 }
 
 
 void CVariation_ref::ResetLocation(void)
 {
-    NCBI_THROW(CException, eUnknown,
-               "CVariation_ref::ResetLocation(): "
-               "unsupported deprecated API");
+    Tparent::ResetLocation();
 }
 
 
 const CVariation_ref::TLocation& CVariation_ref::GetLocation(void) const
 {
-    NCBI_THROW(CException, eUnknown,
-               "CVariation_ref::GetLocation(): "
-               "unsupported deprecated API");
+    return Tparent::GetLocation();
 }
 
 
 void CVariation_ref::SetLocation(TLocation& value)
 {
-    NCBI_THROW(CException, eUnknown,
-               "CVariation_ref::SetLocation(): "
-               "unsupported deprecated API");
+    Tparent::SetLocation(value);
 }
 
 
 CVariation_ref::TLocation& CVariation_ref::SetLocation(void)
 {
-    NCBI_THROW(CException, eUnknown,
-               "CVariation_ref::SetLocation(): "
-               "unsupported deprecated API");
+    return Tparent::SetLocation();
 }
 
 
@@ -693,90 +687,68 @@ CVariation_ref::TLocation& CVariation_ref::SetLocation(void)
 
 bool CVariation_ref::IsSetExt_locs(void) const
 {
-    NCBI_THROW(CException, eUnknown,
-               "CVariation_ref::IsSetExt_locs(): "
-               "unsupported deprecated API");
+    return Tparent::IsSetExt_locs();
 }
 
 
 bool CVariation_ref::CanGetExt_locs(void) const
 {
-    NCBI_THROW(CException, eUnknown,
-               "CVariation_ref::CanGetExt_locs(): "
-               "unsupported deprecated API");
+    return Tparent::CanGetExt_locs();
 }
 
 
 void CVariation_ref::ResetExt_locs(void)
 {
-    NCBI_THROW(CException, eUnknown,
-               "CVariation_ref::ResetExt_locs(): "
-               "unsupported deprecated API");
+    Tparent::ResetExt_locs();
 }
 
 
 const CVariation_ref::TExt_locs& CVariation_ref::GetExt_locs(void) const
 {
-    NCBI_THROW(CException, eUnknown,
-               "CVariation_ref::GetExt_locs(): "
-               "unsupported deprecated API");
+    return Tparent::GetExt_locs();
 }
 
 
 CVariation_ref::TExt_locs& CVariation_ref::SetExt_locs(void)
 {
-    NCBI_THROW(CException, eUnknown,
-               "CVariation_ref::SetExt_locs(): "
-               "unsupported deprecated API");
+    return Tparent::SetExt_locs();
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
 bool CVariation_ref::IsSetExt(void) const
 {
-    NCBI_THROW(CException, eUnknown,
-               "CVariation_ref::IsSetExt(): "
-               "unsupported deprecated API");
+    return Tparent::IsSetExt();
 }
 
 
 bool CVariation_ref::CanGetExt(void) const
 {
-    NCBI_THROW(CException, eUnknown,
-               "CVariation_ref::CanGetExt(): "
-               "unsupported deprecated API");
+    return Tparent::CanGetExt();
 }
 
 
 void CVariation_ref::ResetExt(void)
 {
-    NCBI_THROW(CException, eUnknown,
-               "CVariation_ref::ResetExt(): "
-               "unsupported deprecated API");
+    Tparent::ResetExt();
 }
 
 
 const CVariation_ref::TExt& CVariation_ref::GetExt(void) const
 {
-    NCBI_THROW(CException, eUnknown,
-               "CVariation_ref::GetExt(): "
-               "unsupported deprecated API");
+    return Tparent::GetExt();
 }
 
 
 void CVariation_ref::SetExt(TExt& value)
 {
-    NCBI_THROW(CException, eUnknown,
-               "CVariation_ref::SetExt(): "
-               "unsupported deprecated API");
+    Tparent::SetExt(value);
 }
 
 
 CVariation_ref::TExt& CVariation_ref::SetExt(void)
 {
-    NCBI_THROW(CException, eUnknown,
-               "CVariation_ref::SetPub(): "
-               "unsupported deprecated API");
+    return Tparent::SetExt();
 }
 
 /////////////////////////////////////////////////////////////////////////////
