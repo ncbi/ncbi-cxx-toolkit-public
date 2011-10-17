@@ -798,6 +798,10 @@ unsigned int  CQueue::ReadJobFromDB(unsigned int  job_id, CJob &  job)
 
     {{
         CFastMutexGuard     guard(m_OperationLock);
+
+        m_QueueDbBlock->job_db.SetTransaction(NULL);
+        m_QueueDbBlock->events_db.SetTransaction(NULL);
+        m_QueueDbBlock->job_info_db.SetTransaction(NULL);
         res = job.Fetch(this, job_id);
     }}
 
@@ -1925,6 +1929,8 @@ size_t CQueue::PrintJobDbStat(CNetScheduleHandler &     handler,
         CFastMutexGuard         guard(m_OperationLock);
 
         m_QueueDbBlock->job_db.SetTransaction(NULL);
+        m_QueueDbBlock->events_db.SetTransaction(NULL);
+        m_QueueDbBlock->job_info_db.SetTransaction(NULL);
 
         CJob::EJobFetchResult   res = job.Fetch(this, job_id);
         if (res == CJob::eJF_Ok) {
@@ -1938,6 +1944,8 @@ size_t CQueue::PrintJobDbStat(CNetScheduleHandler &     handler,
 
         JobsWithStatus(status, &bv);
         m_QueueDbBlock->job_db.SetTransaction(NULL);
+        m_QueueDbBlock->events_db.SetTransaction(NULL);
+        m_QueueDbBlock->job_info_db.SetTransaction(NULL);
         for (TNSBitVector::enumerator en(bv.first());en.valid(); ++en) {
             CJob::EJobFetchResult   res = job.Fetch(this, *en);
             if (res == CJob::eJF_Ok) {
@@ -1956,6 +1964,11 @@ void CQueue::PrintAllJobDbStat(CNetScheduleHandler &   handler)
     unsigned            queue_run_timeout = GetRunTimeout();
     CJob                job;
     CFastMutexGuard     guard(m_OperationLock);
+
+    m_QueueDbBlock->job_db.SetTransaction(NULL);
+    m_QueueDbBlock->events_db.SetTransaction(NULL);
+    m_QueueDbBlock->job_info_db.SetTransaction(NULL);
+
     CQueueEnumCursor    cur(this);
 
     while (cur.Fetch() == eBDB_Ok) {
@@ -1973,6 +1986,10 @@ void CQueue::PrintQueue(CNetScheduleHandler &   handler,
     TNSBitVector        bv;
     CJob                job;
     CFastMutexGuard     guard(m_OperationLock);
+
+    m_QueueDbBlock->job_db.SetTransaction(NULL);
+    m_QueueDbBlock->events_db.SetTransaction(NULL);
+    m_QueueDbBlock->job_info_db.SetTransaction(NULL);
 
     JobsWithStatus(job_status, &bv);
     for (TNSBitVector::enumerator en(bv.first()); en.valid(); ++en)
