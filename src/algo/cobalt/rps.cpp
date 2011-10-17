@@ -663,6 +663,12 @@ CMultiAligner::SetDomainHits(const CBlast4_archive& archive)
                    "must be set before domain hits");
     }
 
+    if (m_Options->GetRpsDb().empty()) {
+        NCBI_THROW(CMultiAlignerException, eInvalidInput,
+                   "Domain database must be set in options if pre-computed "
+                   "domain hits are used");
+    }
+
     // initialized all queries as not searched for conserved domains
     m_IsDomainSearched.resize(m_tQueries.size(), false);
     m_DomainHits.PurgeAllHits();
@@ -753,6 +759,7 @@ CMultiAligner::SetDomainHits(const CBlast4_archive& archive)
     }
 
     CSeqDB seqdb(m_Options->GetRpsDb(), CSeqDB::eProtein);
+    is_presearched = false;
 
     // get domain hits
     const CSeq_align_set& aligns = archive.GetResults().GetAlignments();
@@ -822,6 +829,12 @@ CMultiAligner::SetDomainHits(const CBlast4_archive& archive)
         }
         m_DomainHits.AddToHitList(new CHit(query_idx, db_oid, 
                                            align_score, denseg));
+
+        is_presearched = true;
+    }
+
+    if (!is_presearched) {
+        m_IsDomainSearched.clear();
     }
 
     //-------------------------------------------------------
@@ -880,8 +893,9 @@ CMultiAligner::x_FindDomainHits(TSeqLocVector& queries,
 
         // find if there is at least one query that was not pre-searched
         bool do_search = false;
-        ITERATE (vector<bool>, it, m_IsDomainSearched) {
-            if (!*it) {
+        for (size_t i=0;i < indices.size();i++) {
+            _ASSERT(indices[i] < (int)m_IsDomainSearched.size());
+            if (!m_IsDomainSearched[indices[i]]) {
                 do_search = true;
                 break;
             }
