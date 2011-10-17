@@ -99,8 +99,6 @@ bool CleanDoubleQuote(string& str);
 
 bool OnlyPunctuation (string str);
 
-bool IsOnlinePub(const CPubdesc& pd);
-
 /// remove all spaces from a string
 bool RemoveSpaces(string& str);
 

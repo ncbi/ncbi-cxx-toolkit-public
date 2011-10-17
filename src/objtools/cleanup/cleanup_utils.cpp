@@ -573,22 +573,6 @@ bool OnlyPunctuation (string str)
     return true;
 }
 
-
-bool IsOnlinePub(const CPubdesc& pd)
-{
-    FOR_EACH_PUB_ON_PUBDESC (it, pd) {
-        if ((*it)->IsGen()) {
-            const CCit_gen& gen = (*it)->GetGen();
-            if (gen.IsSetCit()  &&
-                NStr::StartsWith(gen.GetCit(), "Online Publication", NStr::eNocase)) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-
 bool RemoveSpaces(string& str)
 {
     if (str.empty()) {

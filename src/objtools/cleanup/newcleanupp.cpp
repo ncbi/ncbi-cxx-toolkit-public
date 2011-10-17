@@ -1672,11 +1672,8 @@ void CNewCleanup_imp::PubdescBC (
     if ( FIELD_IS_SET(pubdesc, Comment)) {
         x_ConvertDoubleQuotesMarkChanged( GET_MUTABLE(pubdesc, Comment) );
     }
-    if (IsOnlinePub(pubdesc)) {
-        TRUNCATE_SPACES(pubdesc, Comment);
-    } else {
-        CLEAN_STRING_MEMBER(pubdesc, Comment);
-    }
+
+    CLEAN_STRING_MEMBER(pubdesc, Comment);
 
     if ( FIELD_IS_SET(pubdesc, Pub) ) {
         PubEquivBC( GET_MUTABLE(pubdesc, Pub) );
@@ -5454,23 +5451,62 @@ void CNewCleanup_imp::x_FixUnsetMolFromBiomol( CMolInfo& molinfo, CBioseq &biose
 
 // return position of " [" + sOrganism + "]", but only if it's
 // at the end and there are characters before it.
+// Also, returns the position of the organelle prefix in the title.
 static SIZE_TYPE s_TitleEndsInOrganism ( 
     const string & sTitle, 
-    const string & sOrganism )
+    const string & sOrganism,
+    SIZE_TYPE * out_piOrganellePos )
 {
+    if( out_piOrganellePos ) {
+        *out_piOrganellePos = NPOS;
+    }
+
+    SIZE_TYPE answer = NPOS;
+
     const string sPattern = " [" + sOrganism + "]";
     if( NStr::EndsWith(sTitle, sPattern, NStr::eNocase) ) {
-        SIZE_TYPE result = sTitle.length() - sPattern.length();
-        if( result >= 1 ) {
-            return result;
-        } else {
+        answer = sTitle.length() - sPattern.length();
+        if( answer < 1 ) {
             // title must have something before the pattern
-            return NPOS;
+            answer = NPOS;
         }
     } else {
         // pattern not found
-        return NPOS;
+        answer = NPOS;
     }
+
+    // find organelle prefix
+    static const string kOrganellePrefixes[] = {
+        " (chloroplast)",
+        " (mitochondrion)"
+    };
+    if( out_piOrganellePos ) {
+        const SIZE_TYPE space_left_for_organelle =
+            ( sTitle.length() >= sOrganism.length() ?
+              sTitle.length() - sOrganism.length() :
+              0 );
+
+        static const unsigned int kOrganellePrefixes_len = 
+            (sizeof(kOrganellePrefixes)/sizeof(kOrganellePrefixes[0]));
+        for( unsigned int ii = 0; ii < kOrganellePrefixes_len; ++ii ) {
+            const string & organelle_prefix = kOrganellePrefixes[ii];
+
+            // skip if organelle can't possibly fit on line
+            if (organelle_prefix.length() + 1 >= space_left_for_organelle) {
+                continue;
+            }
+
+            const SIZE_TYPE possible_organelle_start_pos = 
+                space_left_for_organelle - organelle_prefix.length();
+
+            if( NStr::EqualNocase( sTitle.substr(possible_organelle_start_pos, organelle_prefix.length()) , organelle_prefix ) ) {
+                *out_piOrganellePos = possible_organelle_start_pos;
+                break;
+            }
+        }
+    }
+
+    return answer;
 }
 
 void CNewCleanup_imp::x_AddPartialToProteinTitle( CBioseq &bioseq )
@@ -5490,14 +5526,71 @@ void CNewCleanup_imp::x_AddPartialToProteinTitle( CBioseq &bioseq )
             }
     }
 
+    static const char *kProteinOrganellePrefixes[] = {
+        NULL, // unknown
+        NULL, // genomic
+        "chloroplast", // chloroplast
+        NULL, // chromoplast
+        NULL, // kinetoplast
+        "mitochondrion", // mitochondrion
+        NULL, // plastid
+        NULL, // macronuclear
+        NULL, // extrachrom
+        NULL, // plasmid
+        NULL, // transposon
+        NULL, // insertion-seq
+        NULL, // cyanelle
+        NULL, // proviral
+        NULL, // virion
+        NULL, // nucleomorph
+        NULL, // apicoplast
+        NULL, // leucoplast
+        NULL, // proplastid
+        NULL, // endogenous-virus
+        NULL, // hydrogenosome
+        NULL, // chromosome
+        NULL // chromatophore
+    };
+
     // gather some info from the Seqdesc's on the bioseq, into
     // the following variables
     bool bPartial = false;
     string sTaxname;
     string sOldName;
     string *psTitle = NULL;
+    const char *organelle = NULL;
+
+    // iterate for title
     EDIT_EACH_SEQDESC_ON_BIOSEQ(descr_iter, bioseq) {
         CSeqdesc &descr = **descr_iter;
+        if( descr.IsTitle() ) {
+            psTitle = & GET_MUTABLE(descr, Title);
+        }
+    }
+    // bail if no title
+    if( (NULL == psTitle) || psTitle->empty() ) {
+        return;
+    }
+
+    // iterate Seqdescs from bottom to top
+    // accumulate seqdescs into here
+    typedef vector< CConstRef<CSeqdesc> > TSeqdescVec;
+    TSeqdescVec vecSeqdesc;
+    {
+        FOR_EACH_SEQDESC_ON_BIOSEQ(descr_iter, bioseq) {
+            vecSeqdesc.push_back( CConstRef<CSeqdesc>( &**descr_iter ) );
+        }
+        // climb up to get parent Seqdescs
+        CConstRef<CBioseq_set> bioseq_set( bioseq.GetParentSet() );
+        for( ; bioseq_set; bioseq_set = bioseq_set->GetParentSet() ) {
+            FOR_EACH_SEQDESC_ON_SEQSET(descr_iter, *bioseq_set) {
+                vecSeqdesc.push_back( CConstRef<CSeqdesc>( &**descr_iter ) );
+            }
+        }
+    }
+
+    ITERATE(TSeqdescVec, descr_iter, vecSeqdesc) {
+        const CSeqdesc &descr = **descr_iter;
         if( descr.IsMolinfo() && FIELD_IS_SET(descr.GetMolinfo(), Completeness) ) {
             switch( GET_FIELD(descr.GetMolinfo(), Completeness) ) {
                 case NCBI_COMPLETENESS(partial):
@@ -5509,25 +5602,41 @@ void CNewCleanup_imp::x_AddPartialToProteinTitle( CBioseq &bioseq )
                 default:
                     break;
             }
-        } else if( descr.IsSource() && FIELD_IS_SET(descr.GetSource(), Org) ) {
-            const COrg_ref & org = GET_FIELD(descr.GetSource(), Org);
-            if( ! RAW_FIELD_IS_EMPTY_OR_UNSET(org, Taxname) ) {
-                sTaxname = GET_FIELD(org, Taxname);
-            }
-            FOR_EACH_ORGMOD_ON_ORGREF(mod_iter, org) {
-                const COrgMod & orgmod = **mod_iter;
-                if( FIELD_EQUALS(orgmod, Subtype, NCBI_ORGMOD(old_name) ) ) {
-                    sOldName = GET_FIELD(orgmod, Subname);
-                }
-            }
-        } else if( descr.IsTitle() ) {
-            psTitle = & GET_MUTABLE(descr, Title);
+            // stop at first molinfo
+            break; 
         }
     }
 
-    // bail if no title
-    if( (NULL == psTitle) || psTitle->empty() ) {
-        return;
+    ITERATE(TSeqdescVec, descr_iter, vecSeqdesc) {
+        const CSeqdesc &descr = **descr_iter;
+        if( descr.IsSource() ) {
+            const TBIOSOURCE_GENOME genome = ( descr.GetSource().CanGetGenome() ?
+                descr.GetSource().GetGenome() :
+                NCBI_GENOME(unknown) );
+            if (genome >= NCBI_GENOME(chloroplast) &&
+                genome <= NCBI_GENOME(chromatophore) ) 
+            {
+                organelle = kProteinOrganellePrefixes[genome];
+            }
+
+            if( FIELD_IS_SET(descr.GetSource(), Org) ) {
+                const COrg_ref & org = GET_FIELD(descr.GetSource(), Org);
+                if( ! RAW_FIELD_IS_EMPTY_OR_UNSET(org, Taxname) ) {
+                    sTaxname = GET_FIELD(org, Taxname);
+                }
+                if ( NStr::StartsWith(sTaxname, organelle, NStr::eNocase) ) {
+                    organelle = NULL;
+                }
+                FOR_EACH_ORGMOD_ON_ORGREF(mod_iter, org) {
+                    const COrgMod & orgmod = **mod_iter;
+                    if( FIELD_EQUALS(orgmod, Subtype, NCBI_ORGMOD(old_name) ) ) {
+                        sOldName = GET_FIELD(orgmod, Subname);
+                    }
+                }
+            }
+            // stop at first source
+            break;
+        }
     }
 
     // put title into a reference, 
@@ -5537,21 +5646,30 @@ void CNewCleanup_imp::x_AddPartialToProteinTitle( CBioseq &bioseq )
     const string sOriginalTitle = sTitle;
 
     // search for partial, must be just before bracketed organism
-    const SIZE_TYPE partialPos = NStr::Find(sTitle, ", partial [");
+    SIZE_TYPE partialPos = NStr::Find(sTitle, ", partial [");
+    if( partialPos == NPOS ) {
+        partialPos = NStr::Find(sTitle, ", partial (");
+    }
 
     // find oldname or taxname in brackets at end of protein title
+    SIZE_TYPE penult = NPOS;
     SIZE_TYPE suffixPos = NPOS; // will point to " [${organism name}]" at end
     if ( ! sOldName.empty() && ! sTaxname.empty() ) {
-        suffixPos = s_TitleEndsInOrganism (sTitle, sOldName);
+        suffixPos = s_TitleEndsInOrganism (sTitle, sOldName, &penult);
     }
     if ( suffixPos == NPOS && ! sTaxname.empty() ) {
-        suffixPos = s_TitleEndsInOrganism (sTitle, sTaxname);
+        suffixPos = s_TitleEndsInOrganism (sTitle, sTaxname, &penult);
         if (suffixPos != NPOS) {
-            // bail if no need to change partial text or [organism name]
-            if ( bPartial && partialPos != NPOS) {
-                return;
-            } else if( ! bPartial && partialPos == NPOS ){
-                return;
+            if (organelle == NULL && penult != NPOS) {
+            } else if (organelle != NULL && penult == NPOS) {
+            } else if ( penult != NPOS && sTitle.substr(penult) == organelle ) {
+            } else {
+                // bail if no need to change partial text or [organism name]
+                if ( bPartial && partialPos != NPOS) {
+                    return;
+                } else if( ! bPartial && partialPos == NPOS ){
+                    return;
+                }
             }
         }
     }
@@ -5562,6 +5680,9 @@ void CNewCleanup_imp::x_AddPartialToProteinTitle( CBioseq &bioseq )
 
     // truncate bracketed info from end of title, will replace with current taxname
     sTitle.resize( suffixPos );
+    if (penult != NPOS) {
+        sTitle.resize(penult);
+    }
 
     // if ", partial [" was indeed just before the [genus species], it will now be ", partial"
     // Note: 9 is length of ", partial"
@@ -5574,6 +5695,9 @@ void CNewCleanup_imp::x_AddPartialToProteinTitle( CBioseq &bioseq )
     //
     if( bPartial && partialPos == NPOS ) {
         sTitle += ", partial";
+    }
+    if (organelle != NULL) {
+        sTitle += " (" + string(organelle) + ")";
     }
     if ( ! sTaxname.empty() ) {
         sTitle += " [" + sTaxname + "]";

@@ -106,11 +106,8 @@ void CCleanup_imp::BasicCleanup(CPubdesc& pd)
     if (pd.IsSetComment()) {
         CleanDoubleQuote(pd.SetComment());
     }
-    if (IsOnlinePub(pd)) {
-        TRUNCATE_SPACES(pd, Comment);
-    } else {
-        CLEAN_STRING_MEMBER(pd, Comment);
-    }
+
+    CLEAN_STRING_MEMBER(pd, Comment);
 }
 
 

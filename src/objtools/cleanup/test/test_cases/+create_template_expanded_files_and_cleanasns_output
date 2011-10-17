@@ -1,44 +1,230 @@
 #!/bin/bash
 
-# Does what its name implies.
-# additionally, it also erases
-# .test files. and old .cleanasns_output files.
+# Since the C toolkit cleanasn changes from time to time, sometimes
+# you need to rebuild all the files created from it.
+# This also rebuilds template_expanded, etc. and whatever else it can,
+# just to be sure.
 
-TEST_DIR=/home/kornbluh/asn2flat/asnfiles/cleanup
-EASY_AUTO_REPLACE=/home/kornbluh/bin/easy_auto_replace
+# This takes no arguments.
 
-must()
+# edited July 28, 2011
+# edited again Oct 13-14, 2011 so it works in the C++ build directory
+
+# Just to prevent people from running it accidentally and wreaking havoc
+# (Once you've updated it, you will probably change the string
+# that's checked against whoami)
+if [[ $(whoami) != kornbluh ]] ; then
+    die please edit the source of this script file and make sure it does exactly what you expect and works with your particular files
+fi
+
+set -x
+
+TEST_DIR=/home/kornbluh/c++.opt/src/objtools/cleanup/test/test_cases/
+EASY_AUTO_REPLACE=/home/kornbluh/c++.opt/src/objtools/cleanup/test/test_cases/+easy_auto_replace
+RUN_TESTS=/home/kornbluh/c++.opt/src/objtools/cleanup/test/test_cases/+run_tests
+# This is a simple program that takes two args: the file to truncate, and
+# the size to truncate to.  In C, the main() could be as simple as:
+# return truncate( argv[1], atoi(argv[2]) );
+FILE_TRUNCATOR=/home/kornbluh/bin/mytrunc
+
+echo START $(date)
+
+die()
 {
-    "$@" && return 0
-    echo FAILURE: "$@"
+    echo "$@" >&2
     exit 1
 }
 
+must()
+{
+    # run successfully or die
+    "$@" && return 0
+    die FAILURE: "$@"
+}
+
+silent()
+{
+    # run and don't care about output or failure
+    "$@" > /dev/null 2>&1
+}
+
+sort_by_middle_num()
+{
+    template_root=$1
+    file_ext=$2
+
+    
+    # find highest-numbered
+    MAX_NUM=0
+    for file in ${template_root}.*.${file_ext} ; do
+        file=$(basename $file)
+        while [[ $file != [0-9]* ]] ; do
+            file=${file#*.}
+        done
+        file=${file%%.*}
+        if (( $file > $MAX_NUM )) ; then
+            MAX_NUM=$file
+        fi
+    done
+
+    # print them from 0 to $MAX_NUM
+    for num in $(seq 0 $MAX_NUM) ; do
+        echo ${template_root}.${num}.${file_ext}
+    done
+}
+
+generate_cleanasns_output()
+{
+    template_root=$1
+
+    # for simplicity (but certainly not speed!) we split the template file
+    must $EASY_AUTO_REPLACE ${template_root}.template
+    
+    # no must because might fail just because of change
+    $RUN_TESTS $( sort_by_middle_num ${template_root} test ) -wco
+    
+    silent rm ${template_root}.cleanasns_output # make sure empty
+    for file in $( sort_by_middle_num ${template_root} cleanasns_output ) ; do
+        cat $file >> ${template_root}.cleanasns_output
+        # But, remove the extra newline at the end
+        file_size=$(stat --format %s ${template_root}.cleanasns_output )
+        must $FILE_TRUNCATOR ${template_root}.cleanasns_output $(( $file_size - 1 ))
+    done
+    # needs a newline at the end
+    echo >> ${template_root}.cleanasns_output
+
+    silent rm -f ${template_root}.*.test
+    silent rm -f ${template_root}.*.cleanasns_output
+}
+
+can_process()
+{
+    file_name=$1
+
+    # certain files can't be processed
+    if [[ $file_name == *highest_level* || $file_name == *unusable* ]] ; then
+        return 1 # failure
+    else
+        return 0 # success
+    fi
+}
+
 must cd $TEST_DIR
+must [ -x $EASY_AUTO_REPLACE ]
+must [ -x $RUN_TESTS ]
+must [ -x $FILE_TRUNCATOR ]
 
-# create template_expanded files
-for template_file in $(find -name '*.template') ; do
-    echo expanding $template_file
+# handle .template files
+for template_file_gz in $(find -name '*.template.gz') ; do
+
+    if can_process $template_file_gz ; then
+        echo $(date) processing $template_file_gz
+    else
+        echo $(date) skipping $template_file_gz
+        continue
+    fi
+
+    # varibles of the files we might look at (without the .gz extension,
+    # if any)
+    template_file=${template_file_gz%.gz}
+    template_root=${template_file%.template}
+    template_expanded_file=${template_root}.template_expanded
+    cleanasns_output_file=${template_root}.cleanasns_output
+    answer_file=${template_root}.answer
+    template_file_old_gz=${template_file}_OLD.gz
+    template_expanded_file_old_gz=${template_expanded_file}_OLD.gz
+    cleanasns_output_file_old_gz=${cleanasns_output_file}_OLD.gz
+
+    # these will store the old so we can compare if they've changed
+    must cp $template_file_gz $template_file_old_gz 
+    must mv ${template_expanded_file}.gz $template_expanded_file_old_gz
+    silent mv ${cleanasns_output_file}.gz  $cleanasns_output_file_old_gz
+
+    # regenerate the template_expanded file
+    must gunzip $template_file_gz
     must $EASY_AUTO_REPLACE -1 $template_file
-done
 
-# create .cleanasns_output files, when a .answer file doesn't exist
+    # if there's no answer file, we recreate the cleanasns_output
+    if [[ ! -f ${answer_file}.gz ]] ; then
+        generate_cleanasns_output $template_root
+    fi
 
-# first, erase existing .cleanasns_output files:
-find . -name '*.cleanasns_output' -exec rm {} \;
+    # zip the files back up (or restore from old one)
+    must rm -f $template_file
+    must mv $template_file_old_gz $template_file_gz
 
-# now, create new .cleanasns_output files where they
-# don't already exist
-for file in $(find -name '*.template' -o -name '*.raw_test' ) ; do
-    answer_file=${file%.*}.answer
+    if zdiff -q $template_expanded_file $template_expanded_file_old_gz ; then
+        must rm -f $template_expanded_file
+        must mv $template_expanded_file_old_gz ${template_expanded_file}.gz
+    else
+        must gzip $template_expanded_file
+        must rm -f $template_expanded_file_old_gz
+    fi
 
-    if [[ ! -f $answer_file ]] ; then
-        echo creating .cleanasns_output for: $file
-        ./+run_tests $file -wco
+    if [[ -f $cleanasns_output_file ]] ; then
+        if zdiff -q $cleanasns_output_file $cleanasns_output_file_old_gz ; then
+            must rm -f $cleanasns_output_file
+            must mv $cleanasns_output_file_old_gz ${cleanasns_output_file}.gz
+        else
+            must gzip $cleanasns_output_file
+            must rm -f $cleanasns_output_file_old_gz
+        fi
     fi
 done
 
-# clean up .test files that are lying around
+echo $(date) now processing raw_test files
+
+# handle .raw_test files
+for raw_test_gz in $(find -name '*.raw_test.gz') ; do
+    if can_process $raw_test_gz ; then
+        echo $(date) processing $raw_test_gz
+    else
+        echo $(date) skipping $raw_test_gz
+        continue
+    fi
+
+    # varibles of the files we might look at (without the .gz extension,
+    # if any)
+    raw_test=${raw_test_gz%.gz}
+    raw_root=${raw_test%.raw_test}
+    cleanasns_output_file=${raw_root}.cleanasns_output
+    answer_file=${raw_root}.answer
+    raw_test_old_gz=${raw_test}_OLD.gz
+    cleanasns_output_file_old_gz=${raw_root}.cleanasns_output_OLD.gz
+
+    # if there's already an answer, get out of here
+    if [[ -f ${answer_file}.gz ]] ; then
+        must [ ! -f ${cleanasns_output_file}.gz ]
+        continue
+    fi
+
+    cp $raw_test_gz $raw_test_old_gz
+    must gunzip $raw_test_gz
+
+    # erase stale file
+    # store the old so we can compare if it's changed
+    must mv ${cleanasns_output_file}.gz $cleanasns_output_file_old_gz
+
+    # no "must" because might fail just because of difference
+    $RUN_TESTS $raw_test -wco
+
+    # zip the files back up
+    must rm -f $raw_test
+    must mv $raw_test_old_gz $raw_test_gz
+
+    if zdiff -q $cleanasns_output_file $cleanasns_output_file_old_gz ; then
+        must mv $cleanasns_output_file_old_gz ${cleanasns_output_file}.gz
+        must rm -f $cleanasns_output_file
+    else
+        must gzip $cleanasns_output_file
+        must rm -f $cleanasns_output_file_old_gz 
+    fi
+
+done
+
+echo $(date): clean up .test files that are still lying around
 find . -name '*.test' -exec rm {} \;
+
+echo FINISH $(date)
 
 exit 0
