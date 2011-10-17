@@ -3,7 +3,7 @@
 # $Id$
 # Authors:  Eugene Vasilchenko, NCBI;  Aaron Ucko, NCBI
 
-top_srcdir="@top_srcdir@"
+top_srcdir="@abs_top_srcdir@"
 build_root="@build_root@"
 bindir=$build_root/bin
 libdir=$build_root/lib
