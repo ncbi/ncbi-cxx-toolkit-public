@@ -48,9 +48,10 @@ CGapItem::CGapItem
   const CGapItem::TEvidence &sEvidence,
   TSeqPos estimated_length ) :
     CFlatItem(&ctx), m_From(from + 1), m_To(to), 
+        m_EstimatedLength(estimated_length),
         m_sFeatureName(sFeatureName),
-        m_sType(sType), m_sEvidence(sEvidence),
-        m_EstimatedLength(estimated_length)
+        m_sType(sType), m_sEvidence(sEvidence)
+        
 {
 }
 
