@@ -41,8 +41,17 @@
 #include <serial/iterator.hpp>
 
 #include <objects/biotree/NodeSet.hpp>
+#include <objects/blast/Blast4_request.hpp>
+#include <objects/blast/Blast4_request_body.hpp>
+#include <objects/blast/Blast4_queue_search_reques.hpp>
+#include <objects/blast/Blast4_queries.hpp>
+#include <objects/blast/Blas_get_searc_resul_reply.hpp>
+
+#include <objects/scoremat/PssmWithParameters.hpp>
+#include <objects/scoremat/Pssm.hpp>
 
 #include <algo/cobalt/cobalt.hpp>
+#include <algo/cobalt/options.hpp>
 #include "cobalt_test_util.hpp"
 
 #include <corelib/hash_set.hpp>
@@ -67,10 +76,285 @@
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 
+/// Calculate the size of a static array
+#define STATIC_ARRAY_SIZE(array) (sizeof(array)/sizeof(*array))
+
 USING_NCBI_SCOPE;
 USING_SCOPE(cobalt);
+USING_SCOPE(objects);
 
 
+/// Representation of a hit for computing constraints
+struct SHit {
+    /// query id
+    string query;
+
+    /// subject ordinal id in the database
+    int subject;
+
+    /// alignment score
+    int score;
+
+    /// alignment extents
+    TRange query_range;
+    TRange subject_range;
+
+    SHit(void) : query("lcl|null"), subject(-1), score(-1),
+                 query_range(TRange(-1, -1)), subject_range(TRange(-1, -1))
+    {}
+};
+
+
+/// Test class for accessing CMultiAligner private attributes and methods
+class CMultiAlignerTest
+{
+public:
+    
+    /// Set queries in the aligner only as Seq-locs do not retrieve sequences.
+    /// Useful for testing functions that only match sequence ids and do not
+    /// align sequences
+    static void SetQuerySeqlocs(CMultiAligner& aligner,
+                                const vector< CRef<CSeq_loc> >& queries)
+    {
+        aligner.m_tQueries.clear();
+        ITERATE (vector< CRef<CSeq_loc> >, it, queries) {
+            BOOST_REQUIRE(it->NotEmpty());
+            aligner.m_tQueries.push_back(*it);
+        }
+    }
+
+    static const vector<bool>& GetIsDomainSearched(
+                                             const CMultiAligner& aligner)
+    {
+        return aligner.m_IsDomainSearched;
+    }
+
+    static const CHitList& GetDomainHits(const CMultiAligner& aligner)
+    {
+        return aligner.m_DomainHits;
+    }
+
+    /// Quit after doing RPS-BLAST search
+    static bool InterruptAfterRpsBlastSearch(CMultiAligner::SProgress* progress)
+    {
+        return progress->stage == CMultiAligner::eDomainHitsSearch;
+    }
+
+    /// Compare domain hits in CMultiAligner with reference alignements
+    /// @param expected_hits Reference alignments [in]
+    /// @param aligner CMultiAligner object with with domain hits to compare [in]
+    /// @param err Error messages [out]
+    /// @return True if all hits are the same as reference, false otherwise
+    static bool CompareDomainHits(const vector<SHit>& expected_hits,
+                                  const CMultiAligner& aligner,
+                                  string& err)
+    {
+        bool retval = true;
+        const CHitList& hitlist = aligner.m_DomainHits;
+
+        // compare numbers of hits
+        if ((int)expected_hits.size() != hitlist.Size()) {
+            err += "Hitlist sizes "
+                + NStr::UIntToString((unsigned)expected_hits.size())
+                + " and "
+                + NStr::IntToString(hitlist.Size())
+                + " do not match\n";
+
+            retval = false;
+        }
+    
+        for (size_t i=0;i < min(expected_hits.size(), (size_t)hitlist.Size());
+             i++) {
+
+            string header = "Hit " + NStr::UIntToString((unsigned)i) + ": ";
+            const CHit* hit = hitlist.GetHit(i);
+
+            // compare query ids
+            CSeq_id expected_query_id(expected_hits[i].query);
+            if (aligner.GetQueries()[hit->m_SeqIndex1]->GetId()
+                ->CompareOrdered(expected_query_id) != 0) {
+
+                err += header + "Query ids " + expected_hits[i].query
+                    + " and " + aligner.GetQueries()[hit->m_SeqIndex1]
+                    ->GetId()->AsFastaString() + " do not match\n";
+
+                retval = false;
+            }
+
+            // compare subject ordinal ids
+            if (expected_hits[i].subject != hit->m_SeqIndex2) {
+                err += header + "Subject ids "
+                    + NStr::IntToString(expected_hits[i].subject)
+                    + " and " + NStr::IntToString(hit->m_SeqIndex2)
+                    + " do not match\n";
+
+                retval = false;
+            }
+
+            // compare query ranges
+            if (expected_hits[i].query_range.GetFrom()
+                != hit->m_SeqRange1.GetFrom()
+                || expected_hits[i].query_range.GetTo()
+                != hit->m_SeqRange1.GetTo()) {
+
+                err += header + "Query ranges "
+                    + NStr::IntToString(expected_hits[i].query_range.GetFrom())
+                    + "-"
+                    + NStr::IntToString(expected_hits[i].query_range.GetTo())
+                    + " and "
+                    + NStr::IntToString(hit->m_SeqRange1.GetFrom()) + "-"
+                    + NStr::IntToString(hit->m_SeqRange1.GetTo())
+                    + " do not match\n";
+
+                retval = false;
+            }
+                    
+            // compare subjet ranges
+            if (expected_hits[i].subject_range.GetFrom()
+                != hit->m_SeqRange2.GetFrom()
+                || expected_hits[i].subject_range.GetTo()
+                != hit->m_SeqRange2.GetTo()) {
+
+                err += header + "Subject ranges "
+                    + NStr::IntToString(expected_hits[i].subject_range.GetFrom())
+                    + "-"
+                    + NStr::IntToString(expected_hits[i].subject_range.GetTo())
+                    + " and "
+                    + NStr::IntToString(hit->m_SeqRange2.GetFrom()) + "-"
+                    + NStr::IntToString(hit->m_SeqRange2.GetTo())
+                    + " do not match\n";
+
+                retval = false;
+            }
+
+            // compare alignment scores
+            if (expected_hits[i].score != hit->m_Score) {
+                err += header + "Scores "
+                    + NStr::IntToString(expected_hits[i].score)
+                    + " and "
+                    + NStr::IntToString(hit->m_Score)
+                    + " do not match\n";
+
+                retval = false;
+            }
+        }
+
+        return retval;
+    }
+};
+
+
+/// Fixture class initialized for each multialigner test
+class CMultiAlignerFixture
+{
+public:
+    static CRef<CObjectManager> m_Objmgr;   
+    static CRef<CScope> m_Scope;
+    static vector< CRef<CSeq_loc> > m_Sequences;
+    static CRef<CSeq_align> m_Align1;
+    static CRef<CSeq_align> m_Align2;
+    static CRef<CBlast4_archive> m_RpsArchive;
+
+    CRef<CMultiAlignerOptions> m_Options;
+    CRef<CMultiAligner> m_Aligner;
+    
+    CMultiAlignerFixture(void)
+    {
+        m_Options.Reset(new CMultiAlignerOptions);
+
+#if defined(WORDS_BIGENDIAN) || defined(IS_BIG_ENDIAN)
+        m_Options->SetRpsDb("data/cddtest_be");
+#else
+        m_Options->SetRpsDb("data/cddtest_le");
+#endif
+
+        m_Aligner.Reset(new CMultiAligner(m_Options));
+    }
+
+    ~CMultiAlignerFixture()
+    {
+        m_Options.Reset();
+        m_Aligner.Reset();
+    }
+
+    /// Initialize scope
+    static void x_InitScope(void)
+    {
+        m_Objmgr = CObjectManager::GetInstance();
+        m_Scope.Reset(new CScope(*m_Objmgr));
+        m_Scope->AddDefaults();
+    }
+
+    /// Read test sequences in FASTA format from file
+    static void x_ReadSequences(void)
+    {
+        bool kParseDeflines = true;
+        int status = ReadFastaQueries("data/small.fa", m_Sequences, m_Scope,
+                                      kParseDeflines);
+
+        if (status) {
+            NCBI_THROW(CException, eInvalid,
+                       "Reading FASTA sequences has failed");
+        }
+    }
+
+    /// Read test MSAs from files
+    static void x_ReadAlignments(void)
+    {
+        bool kParseDeflines = true;
+        int status = ReadMsa("data/msa1.fa", m_Align1, m_Scope,
+                             kParseDeflines);
+
+        if (status) {
+            NCBI_THROW(CException, eInvalid, "Reading alignments failed");
+        }
+
+        status = ReadMsa("data/msa2.fa", m_Align2, m_Scope,
+                         kParseDeflines);
+
+        if (status) {
+            NCBI_THROW(CException, eInvalid, "Reading alignments failed");
+        }
+    }
+
+    /// Read test RPS-BLAST output in the archive format from file
+    static void x_ReadRpsArchive(void)
+    {
+        m_RpsArchive.Reset(new CBlast4_archive);
+        CNcbiIfstream istr("data/rps_archive_seqloclist.asn");
+        if (!istr) {
+            NCBI_THROW(CException, eInvalid, "RPS-BLAST archive not found");
+        }
+        istr >> MSerial_AsnText >> *m_RpsArchive;
+    }
+
+    /// Initialize static attributes
+    static void Initialize(void)
+    {
+        x_InitScope();
+        x_ReadSequences();
+        x_ReadAlignments();
+        x_ReadRpsArchive();
+    }
+
+    /// Release static attributes
+    static void Finalize(void)
+    {
+        m_Sequences.clear();
+        m_Scope.Reset();
+        m_Objmgr.Reset();
+        m_Align1.Reset();
+        m_Align2.Reset();
+        m_RpsArchive.Reset();
+    }
+};
+
+CRef<CObjectManager> CMultiAlignerFixture::m_Objmgr;
+CRef<CScope> CMultiAlignerFixture::m_Scope;
+vector< CRef<CSeq_loc> > CMultiAlignerFixture::m_Sequences;
+CRef<CSeq_align> CMultiAlignerFixture::m_Align1;
+CRef<CSeq_align> CMultiAlignerFixture::m_Align2;
+CRef<CBlast4_archive> CMultiAlignerFixture::m_RpsArchive;
 
 
 // Queries returned by aligner must be in the same order as
@@ -117,7 +401,17 @@ static void s_MakeBioseqs(const vector< CRef<CSeq_loc> >& seqlocs,
 
 }
 
-BOOST_AUTO_TEST_SUITE(multialigner)
+NCBITEST_AUTO_INIT()
+{
+    CMultiAlignerFixture::Initialize();
+}
+
+NCBITEST_AUTO_FINI()
+{
+    CMultiAlignerFixture::Finalize();
+}
+
+BOOST_FIXTURE_TEST_SUITE(multialigner, CMultiAlignerFixture)
 
 
 // Make sure assiging query sequences are assigned properly
@@ -855,9 +1149,9 @@ BOOST_AUTO_TEST_CASE(TestAlignMSAs)
     CRef<objects::CSeqIdGenerator> id_generator(new objects::CSeqIdGenerator());
 
     // read input MSAs
-    int st = ReadMsa("data/msa1.fa", align1, scope, id_generator);
+    int st = ReadMsa("data/msa1.fa", align1, scope, false, id_generator);
     BOOST_REQUIRE_EQUAL(st, 0);
-    st = ReadMsa("data/msa2.fa", align2, scope, id_generator);
+    st = ReadMsa("data/msa2.fa", align2, scope, false, id_generator);
     BOOST_REQUIRE_EQUAL(st, 0);
 
     set<int> repr;
@@ -883,7 +1177,7 @@ BOOST_AUTO_TEST_CASE(TestAlignMSAWithSequence)
     CRef<objects::CSeqIdGenerator> id_generator(new objects::CSeqIdGenerator());
 
     // read input alignment
-    int status = ReadMsa("data/msa1.fa", align1, scope, id_generator);
+    int status = ReadMsa("data/msa1.fa", align1, scope, false, id_generator);
     BOOST_REQUIRE_EQUAL(status, 0);
 
     // read sequence
@@ -923,9 +1217,9 @@ BOOST_AUTO_TEST_CASE(TestAlignMSAsWithRepresentatives)
     CRef<objects::CSeqIdGenerator> id_generator(new objects::CSeqIdGenerator());
 
     // read input MSAs
-    int status = ReadMsa("data/msa1.fa", align1, scope, id_generator);
+    int status = ReadMsa("data/msa1.fa", align1, scope, false, id_generator);
     BOOST_REQUIRE_EQUAL(status, 0);
-    status = ReadMsa("data/msa2.fa", align2, scope, id_generator);
+    status = ReadMsa("data/msa2.fa", align2, scope, false, id_generator);
     BOOST_REQUIRE_EQUAL(status, 0);
 
     // set representatives
@@ -954,9 +1248,9 @@ BOOST_AUTO_TEST_CASE(TestAlignMSAsWithWrongRepresentatives)
     CRef<objects::CSeqIdGenerator> id_generator(new objects::CSeqIdGenerator());
 
     // read input MSAs
-    int status = ReadMsa("data/msa1.fa", align1, scope, id_generator);
+    int status = ReadMsa("data/msa1.fa", align1, scope, false, id_generator);
     BOOST_REQUIRE_EQUAL(status, 0);
-    status = ReadMsa("data/msa2.fa", align2, scope, id_generator);
+    status = ReadMsa("data/msa2.fa", align2, scope, false, id_generator);
     BOOST_REQUIRE_EQUAL(status, 0);
 
     // set representatives
@@ -978,6 +1272,503 @@ BOOST_AUTO_TEST_CASE(TestAlignMSAsWithWrongRepresentatives)
     BOOST_CHECK_THROW(aligner.SetInputMSAs(*align1, *align2, repr, repr, scope),
                      CMultiAlignerException);
 }
+
+BOOST_AUTO_TEST_CASE(TestSetPrecomputedDomainHitsWithQueriesAsBioseqset)
+{
+    // make a copy of sequence ids
+    vector< CRef<CSeq_id> > expected_queries;
+    ITERATE(vector< CRef<CSeq_loc> >, it, m_Sequences) {
+        string id = (*it)->GetId()->AsFastaString();
+        expected_queries.push_back(CRef<CSeq_id>(new CSeq_id(id)));
+    }
+
+    // set options
+    m_Options->SetUseQueryClusters(false);
+    m_Options->SetRpsEvalue(0.1);
+
+    m_Aligner.Reset(new CMultiAligner(m_Options));
+    m_Aligner->SetQueries(m_Sequences, m_Scope);
+
+    // read RPS-BLAST archive
+    CBlast4_archive archive;
+    CNcbiIfstream istr("data/rps_archive_bioseqset.asn");
+    istr >> MSerial_AsnText >> archive;
+
+    // check pre conditions
+    BOOST_REQUIRE_EQUAL(m_Options->GetUseQueryClusters(), false);
+    BOOST_REQUIRE(fabs(m_Options->GetRpsEvalue() - 0.1) < 0.01);
+                         
+    // set pre-computed domain hits
+    m_Aligner->SetDomainHits(archive);
+
+    // Tests
+
+    // verify sure that queries did not change
+    BOOST_REQUIRE_EQUAL(expected_queries.size(),
+                        m_Aligner->GetQueries().size());
+
+    for (size_t i=0;i < expected_queries.size();i++) {
+        BOOST_REQUIRE(expected_queries[i]->CompareOrdered(
+                          *m_Aligner->GetQueries()[i]->GetId()) == 0);
+    }
+
+    // expected values of CMultiAligner::m_IsSearchedDomain
+    vector<bool> expected_is_domain_searched(m_Sequences.size(), false);
+    expected_is_domain_searched[0] = true;
+    expected_is_domain_searched[2] = true;
+
+    BOOST_REQUIRE_EQUAL(expected_is_domain_searched.size(),
+                CMultiAlignerTest::GetIsDomainSearched(*m_Aligner).size());
+
+    for (size_t i=0;i < expected_is_domain_searched.size();i++) {
+        BOOST_REQUIRE_EQUAL(expected_is_domain_searched[i],
+                    CMultiAlignerTest::GetIsDomainSearched(*m_Aligner)[i]);
+    }
+
+
+    // Compare domain hits
+
+    const size_t kNumExpectedPreHits = 7;
+    vector<SHit> expected_hits(kNumExpectedPreHits);
+
+    // Domain Hit #0
+    expected_hits[0].query = "lcl|1buc_A";
+    expected_hits[0].subject = 1;
+    expected_hits[0].query_range = TRange(6, 382);
+    expected_hits[0].subject_range = TRange(0, 372);
+    expected_hits[0].score = 1414;
+
+    // Domain Hit #1
+    expected_hits[1].query = "lcl|1buc_A";
+    expected_hits[1].subject = 0;
+    expected_hits[1].query_range = TRange(95, 377);
+    expected_hits[1].subject_range = TRange(42, 325);
+    expected_hits[1].score = 885;
+
+    // Domain Hit #2
+    expected_hits[2].query = "lcl|1buc_A";
+    expected_hits[2].subject = 2;
+    expected_hits[2].query_range = TRange(1, 382);
+    expected_hits[2].subject_range = TRange(19, 405);
+    expected_hits[2].score = 718;
+
+    // Domain Hit #3
+    expected_hits[3].query = "lcl|Q8jzn5";
+    expected_hits[3].subject = 2;
+    expected_hits[3].query_range = TRange(41, 448);
+    expected_hits[3].subject_range = TRange(0, 408);
+    expected_hits[3].score = 1779;
+
+    // Domain Hit #4
+    expected_hits[4].query = "lcl|Q8jzn5";
+    expected_hits[4].subject = 1;
+    expected_hits[4].query_range = TRange(88, 440);
+    expected_hits[4].subject_range = TRange(22, 367);
+    expected_hits[4].score = 981;
+
+    // Domain Hit #5
+    expected_hits[5].query = "lcl|Q8jzn5";
+    expected_hits[5].subject = 0;
+    expected_hits[5].query_range = TRange(151, 440);
+    expected_hits[5].subject_range = TRange(42, 325);
+    expected_hits[5].score = 872;
+
+    // Domain Hit #6
+    expected_hits[6].query = "lcl|Q8jzn5";
+    expected_hits[6].subject = 0;
+    expected_hits[6].query_range = TRange(511, 581);
+    expected_hits[6].subject_range = TRange(208, 280);
+    expected_hits[6].score = 75;
+
+    string errors;
+    bool hits_match = CMultiAlignerTest::CompareDomainHits(expected_hits,
+                                                           *m_Aligner,
+                                                           errors);
+
+    BOOST_REQUIRE_MESSAGE(hits_match, errors);
+
+
+    // Do RPS-BLAST search inside aligner and verify that the search was done
+    // only for queries without pre-computed domain hits
+
+    // set interrupt so that COBALT quits right after RPS-BLAST search
+    m_Aligner->SetInterruptCallback(
+                          CMultiAlignerTest::InterruptAfterRpsBlastSearch);
+    m_Aligner->Run();
+
+    const size_t kNumExpectedHits = 10;
+    BOOST_REQUIRE(kNumExpectedHits > kNumExpectedPreHits);
+    expected_hits.resize(kNumExpectedHits);
+
+
+    // Domain Hit #7
+    expected_hits[7].query = "lcl|Q10535";
+    expected_hits[7].subject = 2;
+    expected_hits[7].query_range = TRange(27, 432);
+    expected_hits[7].subject_range = TRange(0, 400);
+    expected_hits[7].score = 768;
+    
+    // Domain Hit #8
+    expected_hits[8].query = "lcl|Q10535";
+    expected_hits[8].subject = 0;
+    expected_hits[8].query_range = TRange(138, 433);
+    expected_hits[8].subject_range = TRange(42, 326);
+    expected_hits[8].score = 738;
+
+    // Domain Hit #9
+    expected_hits[9].query = "lcl|Q10535";
+    expected_hits[9].subject = 1;
+    expected_hits[9].query_range = TRange(75, 434);
+    expected_hits[9].subject_range = TRange(24, 369);
+    expected_hits[9].score = 704;
+
+
+    hits_match = CMultiAlignerTest::CompareDomainHits(expected_hits, *m_Aligner,
+                                                      errors);
+
+    BOOST_REQUIRE_MESSAGE(hits_match, errors);
+}
+
+BOOST_AUTO_TEST_CASE(TestSetPrecomputedDomainHitsWithQueriesAsSeqLocs)
+{
+    // make a copy of sequence ids
+    vector< CRef<CSeq_id> > expected_queries;
+    ITERATE(vector< CRef<CSeq_loc> >, it, m_Sequences) {
+        string id = (*it)->GetId()->AsFastaString();
+        expected_queries.push_back(CRef<CSeq_id>(new CSeq_id(id)));
+    }
+
+    // set options
+    m_Options->SetUseQueryClusters(false);
+    m_Options->SetRpsEvalue(0.1);
+    m_Aligner.Reset(new CMultiAligner(m_Options));
+
+    m_Aligner->SetQueries(m_Sequences, m_Scope);
+
+    // check pre conditions
+    BOOST_REQUIRE_EQUAL(m_Options->GetUseQueryClusters(), false);
+    BOOST_REQUIRE(fabs(m_Options->GetRpsEvalue() - 0.1) < 0.01);
+                         
+    // set pre-computed domain hits
+    m_Aligner->SetDomainHits(*m_RpsArchive);
+
+    // Tests
+
+    // verify sure that queries did not change
+    BOOST_REQUIRE_EQUAL(expected_queries.size(),
+                        m_Aligner->GetQueries().size());
+
+    for (size_t i=0;i < expected_queries.size();i++) {
+        BOOST_REQUIRE(expected_queries[i]->CompareOrdered(
+                          *m_Aligner->GetQueries()[i]->GetId()) == 0);
+    }
+
+    // expected values of CMultiAligner::m_IsSearchedDomain
+    vector<bool> expected_is_domain_searched(m_Sequences.size(), false);
+    expected_is_domain_searched[0] = true;
+    expected_is_domain_searched[2] = true;
+
+    BOOST_REQUIRE_EQUAL(expected_is_domain_searched.size(),
+                CMultiAlignerTest::GetIsDomainSearched(*m_Aligner).size());
+
+    for (size_t i=0;i < expected_is_domain_searched.size();i++) {
+        BOOST_REQUIRE_EQUAL(expected_is_domain_searched[i],
+                    CMultiAlignerTest::GetIsDomainSearched(*m_Aligner)[i]);
+    }
+
+
+    // Compare domain hits
+
+    const size_t kNumExpectedPreHits = 7;
+    vector<SHit> expected_hits(kNumExpectedPreHits);
+
+    // Domain Hit #0
+    expected_hits[0].query = "lcl|1buc_A";
+    expected_hits[0].subject = 1;
+    expected_hits[0].query_range = TRange(6, 382);
+    expected_hits[0].subject_range = TRange(0, 372);
+    expected_hits[0].score = 1414;
+
+    // Domain Hit #1
+    expected_hits[1].query = "lcl|1buc_A";
+    expected_hits[1].subject = 0;
+    expected_hits[1].query_range = TRange(95, 377);
+    expected_hits[1].subject_range = TRange(42, 325);
+    expected_hits[1].score = 885;
+
+    // Domain Hit #2
+    expected_hits[2].query = "lcl|1buc_A";
+    expected_hits[2].subject = 2;
+    expected_hits[2].query_range = TRange(1, 382);
+    expected_hits[2].subject_range = TRange(19, 405);
+    expected_hits[2].score = 718;
+
+    // Domain Hit #3
+    expected_hits[3].query = "lcl|Q8jzn5";
+    expected_hits[3].subject = 2;
+    expected_hits[3].query_range = TRange(41, 448);
+    expected_hits[3].subject_range = TRange(0, 408);
+    expected_hits[3].score = 1779;
+
+    // Domain Hit #4
+    expected_hits[4].query = "lcl|Q8jzn5";
+    expected_hits[4].subject = 1;
+    expected_hits[4].query_range = TRange(88, 440);
+    expected_hits[4].subject_range = TRange(22, 367);
+    expected_hits[4].score = 981;
+
+    // Domain Hit #5
+    expected_hits[5].query = "lcl|Q8jzn5";
+    expected_hits[5].subject = 0;
+    expected_hits[5].query_range = TRange(151, 440);
+    expected_hits[5].subject_range = TRange(42, 325);
+    expected_hits[5].score = 872;
+
+    // Domain Hit #6
+    expected_hits[6].query = "lcl|Q8jzn5";
+    expected_hits[6].subject = 0;
+    expected_hits[6].query_range = TRange(511, 581);
+    expected_hits[6].subject_range = TRange(208, 280);
+    expected_hits[6].score = 75;
+
+    string errors;
+    bool hits_match = CMultiAlignerTest::CompareDomainHits(expected_hits,
+                                                           *m_Aligner,
+                                                           errors);
+
+    BOOST_REQUIRE_MESSAGE(hits_match, errors);
+
+
+    // Do RPS-BLAST search inside aligner and verify that the search was done
+    // only for queries without pre-computed domain hits
+
+    // set interrupt so that COBALT quits right after RPS-BLAST search
+    m_Aligner->SetInterruptCallback(
+                          CMultiAlignerTest::InterruptAfterRpsBlastSearch);
+    m_Aligner->Run();
+
+    const size_t kNumExpectedHits = 10;
+    BOOST_REQUIRE(kNumExpectedHits > kNumExpectedPreHits);
+    expected_hits.resize(kNumExpectedHits);
+
+
+    // Domain Hit #7
+    expected_hits[7].query = "lcl|Q10535";
+    expected_hits[7].subject = 2;
+    expected_hits[7].query_range = TRange(27, 432);
+    expected_hits[7].subject_range = TRange(0, 400);
+    expected_hits[7].score = 768;
+    
+    // Domain Hit #8
+    expected_hits[8].query = "lcl|Q10535";
+    expected_hits[8].subject = 0;
+    expected_hits[8].query_range = TRange(138, 433);
+    expected_hits[8].subject_range = TRange(42, 326);
+    expected_hits[8].score = 738;
+
+    // Domain Hit #9
+    expected_hits[9].query = "lcl|Q10535";
+    expected_hits[9].subject = 1;
+    expected_hits[9].query_range = TRange(75, 434);
+    expected_hits[9].subject_range = TRange(24, 369);
+    expected_hits[9].score = 704;
+
+
+    hits_match = CMultiAlignerTest::CompareDomainHits(expected_hits, *m_Aligner,
+                                                      errors);
+
+    BOOST_REQUIRE_MESSAGE(hits_match, errors);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestSetPrecomputedDomainHitsWithNoMatchingQueries)
+{
+    // create cobalt queries with fake Seq-ids
+    vector< CRef<CSeq_loc> > queries;
+    CRef<CSeq_loc> seq(new CSeq_loc);
+    seq->SetWhole().Set("lcl|fake");
+    queries.push_back(seq);
+    queries.push_back(seq);
+    
+    // set cobalt queries without retrieving sequences
+    CMultiAlignerTest::SetQuerySeqlocs(*m_Aligner, queries);
+    
+    // set pre-computed domain hits
+    m_Aligner->SetDomainHits(*m_RpsArchive);
+
+    // verify that none of the pre-computed hits made it to the domain hit list
+    BOOST_REQUIRE_EQUAL(CMultiAlignerTest::GetDomainHits(*m_Aligner).Size(), 0);
+
+    BOOST_REQUIRE(CMultiAlignerTest::GetIsDomainSearched(*m_Aligner).empty());
+}
+
+
+BOOST_AUTO_TEST_CASE(TestSetPrecomputedDomainHitsAboveEThresh)
+{
+    // create cobalt queries that match at least one query in the RPS-BLAST
+    // archive, and are added to m_Scope
+    vector< CRef<CSeq_loc> > queries;
+    CRef<CSeq_loc> seq(new CSeq_loc);
+    seq->SetWhole().Set("gi|129295");
+    queries.push_back(seq);
+    queries.push_back(seq);
+    
+    // set options
+    m_Options->SetRpsEvalue(10);
+
+    // First make sure that there is a hit
+
+    m_Aligner.Reset(new CMultiAligner(m_Options));
+
+    // set cobalt queries
+    m_Aligner->SetQueries(queries, m_Scope);
+
+    // set pre-computed domain hits
+    m_Aligner->SetDomainHits(*m_RpsArchive);
+
+    // verify that there is at least one matching RPS-BLAST query with results
+    BOOST_REQUIRE(CMultiAlignerTest::GetDomainHits(*m_Aligner).Size() > 0);
+
+
+    // Test for low RPS-BLAST E-value
+
+    m_Options->SetRpsEvalue(0.00001);
+    m_Aligner.Reset(new CMultiAligner(m_Options));
+    
+    // set cobalt queries
+    m_Aligner->SetQueries(queries, m_Scope);
+
+    // set pre-computed domain hits
+    m_Aligner->SetDomainHits(*m_RpsArchive);
+
+    // verify that none of the pre-computed hits made it to the hit list
+    BOOST_REQUIRE_EQUAL(CMultiAlignerTest::GetDomainHits(*m_Aligner).Size(), 0);
+    BOOST_REQUIRE_EQUAL(
+                     CMultiAlignerTest::GetIsDomainSearched(*m_Aligner).size(),
+                     0u);
+}
+
+
+// verify that alignment runs without errors
+BOOST_AUTO_TEST_CASE(TestAlignSequencesWithPrecomputedDomainHits)
+{
+    // test no query clusters
+    m_Options->SetUseQueryClusters(false);
+    m_Aligner.Reset(new CMultiAligner(m_Options));
+    m_Aligner->SetQueries(m_Sequences, m_Scope);
+    m_Aligner->SetDomainHits(*m_RpsArchive);
+    m_Aligner->Run();
+
+    s_TestResults(*m_Aligner);
+
+
+    // test with query clusters
+    m_Options->SetUseQueryClusters(true);
+    m_Aligner.Reset(new CMultiAligner(m_Options));
+    m_Aligner->SetQueries(m_Sequences, m_Scope);
+    m_Aligner->SetDomainHits(*m_RpsArchive);
+    m_Aligner->Run();
+
+    s_TestResults(*m_Aligner);
+}
+
+BOOST_AUTO_TEST_CASE(TestAlignMSAsWithPrecomputedDomainHits)
+{
+    // set a larger RPS-BLAST e-value threshold, due to hits in m_RpsArchive
+    m_Options->SetRpsEvalue(10);
+    m_Aligner.Reset(new CMultiAligner(m_Options));
+    set<int> repr;
+
+    // Test without representative sequences
+
+    m_Aligner->SetInputMSAs(*m_Align1, *m_Align2, repr, repr, m_Scope);
+    m_Aligner->SetDomainHits(*m_RpsArchive);
+    m_Aligner->Run();
+
+    // test result
+    s_TestAlignmentFromMSAs(m_Aligner->GetResults(), m_Align1, m_Align2);
+
+
+    // Test with representative sequences
+    repr.insert(0);
+
+    m_Aligner.Reset(new CMultiAligner(m_Options));
+
+    m_Aligner->SetInputMSAs(*m_Align1, *m_Align2, repr, repr, m_Scope);
+    m_Aligner->SetDomainHits(*m_RpsArchive);
+    m_Aligner->Run();
+
+    // test result
+    s_TestAlignmentFromMSAs(m_Aligner->GetResults(), m_Align1, m_Align2);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestPrecomputedDomainSubjectNotInDatabase)
+{
+    m_Aligner->SetQueries(m_Sequences, m_Scope);
+
+    // read RPS-BLAST archive
+    CBlast4_archive archive;
+    CNcbiIfstream istr("data/rps_archive_subjectnotindb.asn");
+    BOOST_REQUIRE(istr);
+    istr >> MSerial_AsnText >> archive;
+
+    // get domain hits
+    const CSeq_align& align =
+        *archive.GetResults().GetAlignments().Get().front();
+
+    // veryfy that expected query and subject pair is in the domain hits
+    BOOST_REQUIRE_EQUAL(align.GetSeq_id(0).AsFastaString(),
+                        (string)"lcl|1buc_A");
+    BOOST_REQUIRE_EQUAL(align.GetSeq_id(1).AsFastaString(),
+                        (string)"gnl|CDD|273847");
+
+    // verify that all subjects in the domain hits must exist in the domain
+    // database used by cobalt
+    BOOST_REQUIRE_THROW(m_Aligner->SetDomainHits(archive),
+                        CMultiAlignerException);
+}
+
+BOOST_AUTO_TEST_CASE(TestSetPrecomputedDomainHitsBeforeQueries)
+{
+    // verify that domain hits must be set after either queries or input MSAs
+    // are set
+    BOOST_REQUIRE_THROW(m_Aligner->SetDomainHits(*m_RpsArchive),
+                        CMultiAlignerException);
+}
+
+BOOST_AUTO_TEST_CASE(TestSetDomainHitsWithNoCDD)
+{
+    // create a new aligner with options without specifying domain database
+    m_Options.Reset(new CMultiAlignerOptions);
+    m_Aligner.Reset(new CMultiAligner(m_Options));
+
+    m_Aligner->SetQueries(m_Sequences, m_Scope);
+
+    // domain database must be specified if pre-computed hits are used
+    BOOST_REQUIRE_THROW(m_Aligner->SetDomainHits(*m_RpsArchive),
+                        CMultiAlignerException);
+}
+
+BOOST_AUTO_TEST_CASE(TestSetDomainHitsWithUnsupportedQueries)
+{
+    m_Aligner->SetQueries(m_Sequences, m_Scope);
+
+    // change queries to PSSM
+    CPssm& pssm = m_RpsArchive->SetRequest().SetBody().SetQueue_search()
+        .SetQueries().SetPssm().SetPssm();
+
+    pssm.SetNumRows(28);
+    pssm.SetNumColumns(200);
+
+    // PSSM as query is not supported
+    BOOST_REQUIRE_THROW(m_Aligner->SetDomainHits(*m_RpsArchive),
+                        CMultiAlignerException);
+
+    // re-read RPS-BLAST archive so that it is not changed for future tests
+    CMultiAlignerFixture::x_ReadRpsArchive();
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
 

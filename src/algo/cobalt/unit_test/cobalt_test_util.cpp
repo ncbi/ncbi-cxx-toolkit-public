@@ -51,6 +51,7 @@ USING_SCOPE(objects);
 int ReadFastaQueries(const string& filename,
                       vector< CRef<objects::CSeq_loc> >& seqs,
                       CRef<objects::CScope>& scope,
+                      bool parse_deflines /* = false*/,
                       objects::CSeqIdGenerator* id_generator /* = NULL*/)
 {
     seqs.clear();
@@ -60,18 +61,22 @@ int ReadFastaQueries(const string& filename,
     }
 
     CStreamLineReader line_reader(instream);
-    CFastaReader fasta_reader(line_reader, 
-                              CFastaReader::fAssumeProt |
-                              CFastaReader::fForceType |
-                              CFastaReader::fNoParseID);
+    CFastaReader::TFlags flags =  CFastaReader::fAssumeProt |
+        CFastaReader::fForceType;
+    
+    if (!parse_deflines) {
+        flags |= CFastaReader::fNoParseID;
+    }
+
+    CFastaReader fasta_reader(line_reader, flags);
 
     if (id_generator) {
         fasta_reader.SetIDGenerator(*id_generator);
     }
 
+    scope->AddDefaults();
     while (!line_reader.AtEOF()) {
 
-        scope->AddDefaults();
         CRef<CSeq_entry> entry = fasta_reader.ReadOneSeq();
 
         if (entry == 0) {
@@ -90,8 +95,8 @@ int ReadFastaQueries(const string& filename,
 
 
 int ReadMsa(const string& filename, CRef<CSeq_align>& align,
-            CRef<CScope> scope, objects::CSeqIdGenerator* id_generator
-            /* = NULL*/)
+            CRef<CScope> scope, bool parse_deflines /* = false*/,
+            objects::CSeqIdGenerator* id_generator /* = NULL*/)
 {
     if (scope.Empty()) {
         return -1;
@@ -102,10 +107,15 @@ int ReadMsa(const string& filename, CRef<CSeq_align>& align,
         return -1;
     }
     CStreamLineReader line_reader(instream);
-    CFastaReader fasta_reader(line_reader, CFastaReader::fAssumeProt | 
-                              CFastaReader::fForceType |
-                              CFastaReader::fNoParseID |
-                              CFastaReader::fValidate);
+
+    CFastaReader::TFlags flags =  CFastaReader::fAssumeProt |
+        CFastaReader::fForceType | CFastaReader::fValidate;
+    
+    if (!parse_deflines) {
+        flags |= CFastaReader::fNoParseID;
+    }
+
+    CFastaReader fasta_reader(line_reader, flags);
 
     if (id_generator) {
         fasta_reader.SetIDGenerator(*id_generator);

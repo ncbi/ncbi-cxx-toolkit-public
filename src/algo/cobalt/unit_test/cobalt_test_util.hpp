@@ -48,11 +48,13 @@ USING_SCOPE(objects);
 /// @param seqs The read sequences [out]
 /// @param scope The sequences read are added to this scope [in|out]
 /// @param id_generator Sequence id generator, must be used when reading more
+/// @param parse_deflines Should deflines be parsed for sequence ids [in]
 /// than one set of sequences, so that unique sequence ids are assigned [in|out]
 /// @return 0 on success, -1 on error
 int ReadFastaQueries(const string& filename, vector< CRef<CSeq_loc> >& seqs,
-                      CRef<CScope>& scope,
-                      CSeqIdGenerator* id_generator = NULL);
+                     CRef<CScope>& scope,
+                     bool parse_deflines = false,
+                     CSeqIdGenerator* id_generator = NULL);
 
 /// Read multiple sequence alignment from a file
 /// @param filename File name [in]
@@ -60,7 +62,9 @@ int ReadFastaQueries(const string& filename, vector< CRef<CSeq_loc> >& seqs,
 /// @param scope The sequences in the alignment are added to this scope [in|out]
 /// @param id_generator Sequence id generator, must be used when reading more
 /// than one set of sequences, so that unique sequence ids are assigned [in|out]
+/// @param parse_deflines Should deflines be parsed for sequence ids [in]
 /// @return 0 on success, -1 on error
 int ReadMsa(const string& filename, CRef<CSeq_align>& align,
-            CRef<CScope> scope, CSeqIdGenerator* id_generator = NULL);
+            CRef<CScope> scope, bool parse_deflines = false,
+            CSeqIdGenerator* id_generator = NULL);
 

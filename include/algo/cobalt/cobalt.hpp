@@ -59,6 +59,8 @@ Contents: Interface for CMultiAligner
 /// @file cobalt.hpp
 /// Interface for CMultiAligner
 
+class CMultiAlignerTest;
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)
 
@@ -713,6 +715,8 @@ protected:
 
     // Minimum tree node id for root of cluster subtree
     static const int kClusterNodeId = 16000;
+
+    friend class ::CMultiAlignerTest;
 };
 
 END_SCOPE(cobalt)

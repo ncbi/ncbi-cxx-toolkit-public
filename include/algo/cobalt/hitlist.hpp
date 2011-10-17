@@ -72,7 +72,7 @@ public:
     /// Retrieve number of hits in list
     /// @return The number of hits
     ///
-    int Size() { return m_List.size(); }
+    int Size() const { return m_List.size(); }
 
     /// Determine whether a list contains no hits
     /// @return true if list has no hits
@@ -95,6 +95,17 @@ public:
         _ASSERT(index < Size());
         return m_List[index].second; 
     }
+
+    /// Retrieve a hit from the hitlist
+    /// @param index Which hit to retrieve [in]
+    /// @return Pointer to the specified hit
+    ///
+    const CHit *GetHit(int index) const
+    { 
+        _ASSERT(index < Size());
+        return m_List[index].second; 
+    }
+
 
     /// Determine whether a hit in the hitlist has
     /// been scheduled for deletion

@@ -1,0 +1,1267 @@
+Blast4-archive ::= {
+  request {
+    ident "",
+    body queue-search {
+      program "blastp",
+      service "rpsblast",
+      queries seq-loc-list {
+          whole local str "1buc_A",
+          whole local str "Q8jzn5",
+          whole gi 129295,
+          whole gi 71897377
+      },
+      subject database "data/cddtest",
+      algorithm-options {
+        {
+          name "EvalueThreshold",
+          value cutoff e-value { 1, 10, 1 }
+        },
+        {
+          name "MaskAtHash",
+          value boolean FALSE
+        },
+        {
+          name "SegFilteringWindow",
+          value integer 12
+        },
+        {
+          name "SegFilteringLocut",
+          value real { 22, 10, -1 }
+        },
+        {
+          name "SegFilteringHicut",
+          value real { 25, 10, -1 }
+        },
+        {
+          name "HitlistSize",
+          value integer 250
+        },
+        {
+          name "MatrixName",
+          value string "BLOSUM62"
+        },
+        {
+          name "GapOpeningCost",
+          value integer 11
+        },
+        {
+          name "GapExtensionCost",
+          value integer 1
+        },
+        {
+          name "EffectiveSearchSpace",
+          value big-integer 345308
+        }
+      }
+    }
+  },
+  results {
+    alignments {
+      {
+        type partial,
+        dim 2,
+        score {
+          {
+            id str "score",
+            value int 1414
+          },
+          {
+            id str "e_value",
+            value real { 307798820763006, 10, -174 }
+          },
+          {
+            id str "bit_score",
+            value real { 548407295574813, 10, -12 }
+          },
+          {
+            id str "num_ident",
+            value int 209
+          }
+        },
+        segs denseg {
+          dim 2,
+          numseg 5,
+          ids {
+            local str "1buc_A",
+            general {
+              db "CDD",
+              tag id 173847
+            }
+          },
+          starts {
+            6,
+            0,
+            65,
+            -1,
+            68,
+            59,
+            149,
+            -1,
+            150,
+            140
+          },
+          lens {
+            59,
+            3,
+            81,
+            1,
+            233
+          },
+          strands {
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown
+          }
+        }
+      },
+      {
+        type partial,
+        dim 2,
+        score {
+          {
+            id str "score",
+            value int 885
+          },
+          {
+            id str "e_value",
+            value real { 65701793388677, 10, -112 }
+          },
+          {
+            id str "bit_score",
+            value real { 344652624765837, 10, -12 }
+          },
+          {
+            id str "num_ident",
+            value int 138
+          }
+        },
+        segs denseg {
+          dim 2,
+          numseg 7,
+          ids {
+            local str "1buc_A",
+            general {
+              db "CDD",
+              tag id 173838
+            }
+          },
+          starts {
+            95,
+            42,
+            150,
+            -1,
+            151,
+            97,
+            -1,
+            125,
+            179,
+            126,
+            -1,
+            263,
+            316,
+            264
+          },
+          lens {
+            55,
+            1,
+            28,
+            1,
+            137,
+            1,
+            62
+          },
+          strands {
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown
+          }
+        }
+      },
+      {
+        type partial,
+        dim 2,
+        score {
+          {
+            id str "score",
+            value int 718
+          },
+          {
+            id str "e_value",
+            value real { 132487348860525, 10, -93 }
+          },
+          {
+            id str "bit_score",
+            value real { 28050873303163, 10, -11 }
+          },
+          {
+            id str "num_ident",
+            value int 148
+          }
+        },
+        segs denseg {
+          dim 2,
+          numseg 17,
+          ids {
+            local str "1buc_A",
+            general {
+              db "CDD",
+              tag id 173850
+            }
+          },
+          starts {
+            1,
+            19,
+            -1,
+            33,
+            15,
+            37,
+            29,
+            -1,
+            31,
+            51,
+            66,
+            -1,
+            68,
+            86,
+            75,
+            -1,
+            77,
+            93,
+            -1,
+            167,
+            151,
+            168,
+            -1,
+            199,
+            182,
+            203,
+            -1,
+            326,
+            305,
+            327,
+            -1,
+            337,
+            315,
+            338
+          },
+          lens {
+            14,
+            4,
+            14,
+            2,
+            35,
+            2,
+            7,
+            2,
+            74,
+            1,
+            31,
+            4,
+            123,
+            1,
+            10,
+            1,
+            68
+          },
+          strands {
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown
+          }
+        }
+      },
+      {
+        type partial,
+        dim 2,
+        score {
+          {
+            id str "score",
+            value int 1779
+          },
+          {
+            id str "e_value",
+            value real { 0, 10, 0 }
+          },
+          {
+            id str "bit_score",
+            value real { 689205483079942, 10, -12 }
+          },
+          {
+            id str "num_ident",
+            value int 268
+          }
+        },
+        segs denseg {
+          dim 2,
+          numseg 3,
+          ids {
+            local str "Q8jzn5",
+            general {
+              db "CDD",
+              tag id 173850
+            }
+          },
+          starts {
+            41,
+            0,
+            -1,
+            29,
+            70,
+            30
+          },
+          lens {
+            29,
+            1,
+            379
+          },
+          strands {
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown
+          }
+        }
+      },
+      {
+        type partial,
+        dim 2,
+        score {
+          {
+            id str "score",
+            value int 47
+          },
+          {
+            id str "e_value",
+            value real { 130031300310757, 10, -15 }
+          },
+          {
+            id str "bit_score",
+            value real { 220398175910864, 10, -13 }
+          },
+          {
+            id str "num_ident",
+            value int 10
+          }
+        },
+        segs denseg {
+          dim 2,
+          numseg 1,
+          ids {
+            local str "Q8jzn5",
+            general {
+              db "CDD",
+              tag id 173850
+            }
+          },
+          starts {
+            521,
+            294
+          },
+          lens {
+            26
+          },
+          strands {
+            unknown,
+            unknown
+          }
+        }
+      },
+      {
+        type partial,
+        dim 2,
+        score {
+          {
+            id str "score",
+            value int 981
+          },
+          {
+            id str "e_value",
+            value real { 783536014233936, 10, -124 }
+          },
+          {
+            id str "bit_score",
+            value real { 381615879202599, 10, -12 }
+          },
+          {
+            id str "num_ident",
+            value int 168
+          }
+        },
+        segs denseg {
+          dim 2,
+          numseg 15,
+          ids {
+            local str "Q8jzn5",
+            general {
+              db "CDD",
+              tag id 173847
+            }
+          },
+          starts {
+            88,
+            22,
+            -1,
+            65,
+            131,
+            66,
+            205,
+            -1,
+            207,
+            140,
+            233,
+            -1,
+            238,
+            166,
+            -1,
+            173,
+            245,
+            174,
+            356,
+            -1,
+            359,
+            285,
+            -1,
+            293,
+            367,
+            295,
+            377,
+            -1,
+            378,
+            305
+          },
+          lens {
+            43,
+            1,
+            74,
+            2,
+            26,
+            5,
+            7,
+            1,
+            111,
+            3,
+            8,
+            2,
+            10,
+            1,
+            63
+          },
+          strands {
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown
+          }
+        }
+      },
+      {
+        type partial,
+        dim 2,
+        score {
+          {
+            id str "score",
+            value int 31
+          },
+          {
+            id str "e_value",
+            value real { 977772276915587, 10, -14 }
+          },
+          {
+            id str "bit_score",
+            value real { 156762820811139, 10, -13 }
+          },
+          {
+            id str "num_ident",
+            value int 6
+          }
+        },
+        segs denseg {
+          dim 2,
+          numseg 1,
+          ids {
+            local str "Q8jzn5",
+            general {
+              db "CDD",
+              tag id 173847
+            }
+          },
+          starts {
+            75,
+            89
+          },
+          lens {
+            10
+          },
+          strands {
+            unknown,
+            unknown
+          }
+        }
+      },
+      {
+        type partial,
+        dim 2,
+        score {
+          {
+            id str "score",
+            value int 872
+          },
+          {
+            id str "e_value",
+            value real { 296295247456467, 10, -111 }
+          },
+          {
+            id str "bit_score",
+            value real { 339645030278911, 10, -12 }
+          },
+          {
+            id str "num_ident",
+            value int 132
+          }
+        },
+        segs denseg {
+          dim 2,
+          numseg 7,
+          ids {
+            local str "Q8jzn5",
+            general {
+              db "CDD",
+              tag id 173838
+            }
+          },
+          starts {
+            151,
+            42,
+            206,
+            -1,
+            208,
+            97,
+            233,
+            -1,
+            236,
+            122,
+            373,
+            -1,
+            374,
+            259
+          },
+          lens {
+            55,
+            2,
+            25,
+            3,
+            137,
+            1,
+            67
+          },
+          strands {
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown
+          }
+        }
+      },
+      {
+        type partial,
+        dim 2,
+        score {
+          {
+            id str "score",
+            value int 75
+          },
+          {
+            id str "e_value",
+            value real { 80855431713553, 10, -18 }
+          },
+          {
+            id str "bit_score",
+            value real { 326409682727805, 10, -13 }
+          },
+          {
+            id str "num_ident",
+            value int 20
+          }
+        },
+        segs denseg {
+          dim 2,
+          numseg 3,
+          ids {
+            local str "Q8jzn5",
+            general {
+              db "CDD",
+              tag id 173838
+            }
+          },
+          starts {
+            511,
+            208,
+            -1,
+            219,
+            522,
+            221
+          },
+          lens {
+            11,
+            2,
+            60
+          },
+          strands {
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown
+          }
+        }
+      },
+      {
+        type partial,
+        dim 2,
+        score {
+          {
+            id str "score",
+            value int 35
+          },
+          {
+            id str "e_value",
+            value real { 126067488076685, 10, -14 }
+          },
+          {
+            id str "bit_score",
+            value real { 172170803847833, 10, -13 }
+          },
+          {
+            id str "num_ident",
+            value int 10
+          }
+        },
+        segs denseg {
+          dim 2,
+          numseg 5,
+          ids {
+            gi 129295,
+            general {
+              db "CDD",
+              tag id 173847
+            }
+          },
+          starts {
+            30,
+            175,
+            36,
+            -1,
+            38,
+            181,
+            -1,
+            185,
+            42,
+            186
+          },
+          lens {
+            6,
+            2,
+            4,
+            1,
+            9
+          },
+          strands {
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown
+          }
+        }
+      },
+      {
+        type partial,
+        dim 2,
+        score {
+          {
+            id str "score",
+            value int 31
+          },
+          {
+            id str "e_value",
+            value real { 378742813813812, 10, -14 }
+          },
+          {
+            id str "bit_score",
+            value real { 156762820811139, 10, -13 }
+          },
+          {
+            id str "num_ident",
+            value int 9
+          }
+        },
+        segs denseg {
+          dim 2,
+          numseg 3,
+          ids {
+            gi 129295,
+            general {
+              db "CDD",
+              tag id 173847
+            }
+          },
+          starts {
+            130,
+            190,
+            -1,
+            198,
+            138,
+            199
+          },
+          lens {
+            8,
+            1,
+            21
+          },
+          strands {
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown
+          }
+        }
+      },
+      {
+        type partial,
+        dim 2,
+        score {
+          {
+            id str "score",
+            value int 28
+          },
+          {
+            id str "e_value",
+            value real { 782972350584504, 10, -14 }
+          },
+          {
+            id str "bit_score",
+            value real { 145206833533618, 10, -13 }
+          },
+          {
+            id str "num_ident",
+            value int 5
+          }
+        },
+        segs denseg {
+          dim 2,
+          numseg 1,
+          ids {
+            gi 129295,
+            general {
+              db "CDD",
+              tag id 173847
+            }
+          },
+          starts {
+            125,
+            103
+          },
+          lens {
+            10
+          },
+          strands {
+            unknown,
+            unknown
+          }
+        }
+      },
+      {
+        type partial,
+        dim 2,
+        score {
+          {
+            id str "score",
+            value int 35
+          },
+          {
+            id str "e_value",
+            value real { 129130133937009, 10, -14 }
+          },
+          {
+            id str "bit_score",
+            value real { 174174226800782, 10, -13 }
+          },
+          {
+            id str "num_ident",
+            value int 13
+          }
+        },
+        segs denseg {
+          dim 2,
+          numseg 7,
+          ids {
+            gi 129295,
+            general {
+              db "CDD",
+              tag id 173850
+            }
+          },
+          starts {
+            148,
+            240,
+            -1,
+            251,
+            159,
+            262,
+            175,
+            -1,
+            179,
+            278,
+            187,
+            -1,
+            195,
+            286
+          },
+          lens {
+            11,
+            11,
+            16,
+            4,
+            8,
+            8,
+            10
+          },
+          strands {
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown
+          }
+        }
+      },
+      {
+        type partial,
+        dim 2,
+        score {
+          {
+            id str "score",
+            value int 31
+          },
+          {
+            id str "e_value",
+            value real { 342082857248843, 10, -14 }
+          },
+          {
+            id str "bit_score",
+            value real { 15692186932417, 10, -12 }
+          },
+          {
+            id str "num_ident",
+            value int 5
+          }
+        },
+        segs denseg {
+          dim 2,
+          numseg 1,
+          ids {
+            gi 129295,
+            general {
+              db "CDD",
+              tag id 173838
+            }
+          },
+          starts {
+            146,
+            164
+          },
+          lens {
+            13
+          },
+          strands {
+            unknown,
+            unknown
+          }
+        }
+      },
+      {
+        type partial,
+        dim 2,
+        score {
+          {
+            id str "score",
+            value int 36
+          },
+          {
+            id str "e_value",
+            value real { 158921592014392, 10, -14 }
+          },
+          {
+            id str "bit_score",
+            value real { 176181848120037, 10, -13 }
+          },
+          {
+            id str "num_ident",
+            value int 6
+          }
+        },
+        segs denseg {
+          dim 2,
+          numseg 1,
+          ids {
+            gi 71897377,
+            general {
+              db "CDD",
+              tag id 173838
+            }
+          },
+          starts {
+            35,
+            281
+          },
+          lens {
+            17
+          },
+          strands {
+            unknown,
+            unknown
+          }
+        }
+      },
+      {
+        type partial,
+        dim 2,
+        score {
+          {
+            id str "score",
+            value int 34
+          },
+          {
+            id str "e_value",
+            value real { 30979504962854, 10, -13 }
+          },
+          {
+            id str "bit_score",
+            value real { 16847785660169, 10, -12 }
+          },
+          {
+            id str "num_ident",
+            value int 6
+          }
+        },
+        segs denseg {
+          dim 2,
+          numseg 1,
+          ids {
+            gi 71897377,
+            general {
+              db "CDD",
+              tag id 173838
+            }
+          },
+          starts {
+            37,
+            195
+          },
+          lens {
+            9
+          },
+          strands {
+            unknown,
+            unknown
+          }
+        }
+      },
+      {
+        type partial,
+        dim 2,
+        score {
+          {
+            id str "score",
+            value int 33
+          },
+          {
+            id str "e_value",
+            value real { 348524543667435, 10, -14 }
+          },
+          {
+            id str "bit_score",
+            value real { 166470235282435, 10, -13 }
+          },
+          {
+            id str "num_ident",
+            value int 6
+          }
+        },
+        segs denseg {
+          dim 2,
+          numseg 1,
+          ids {
+            gi 71897377,
+            general {
+              db "CDD",
+              tag id 173850
+            }
+          },
+          starts {
+            322,
+            32
+          },
+          lens {
+            14
+          },
+          strands {
+            unknown,
+            unknown
+          }
+        }
+      },
+      {
+        type partial,
+        dim 2,
+        score {
+          {
+            id str "score",
+            value int 31
+          },
+          {
+            id str "e_value",
+            value real { 625429525386493, 10, -14 }
+          },
+          {
+            id str "bit_score",
+            value real { 158766243764088, 10, -13 }
+          },
+          {
+            id str "num_ident",
+            value int 4
+          }
+        },
+        segs denseg {
+          dim 2,
+          numseg 1,
+          ids {
+            gi 71897377,
+            general {
+              db "CDD",
+              tag id 173850
+            }
+          },
+          starts {
+            281,
+            128
+          },
+          lens {
+            11
+          },
+          strands {
+            unknown,
+            unknown
+          }
+        }
+      },
+      {
+        type partial,
+        dim 2,
+        score {
+          {
+            id str "score",
+            value int 30
+          },
+          {
+            id str "e_value",
+            value real { 896873970832644, 10, -14 }
+          },
+          {
+            id str "bit_score",
+            value real { 152910825051965, 10, -13 }
+          },
+          {
+            id str "num_ident",
+            value int 10
+          }
+        },
+        segs denseg {
+          dim 2,
+          numseg 3,
+          ids {
+            gi 71897377,
+            general {
+              db "CDD",
+              tag id 173847
+            }
+          },
+          starts {
+            336,
+            67,
+            356,
+            -1,
+            374,
+            87
+          },
+          lens {
+            20,
+            18,
+            9
+          },
+          strands {
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown,
+            unknown
+          }
+        }
+      }
+    },
+    masks {
+      {
+        locations {
+          packed-int {
+            {
+              from 59,
+              to 67,
+              id local str "1buc_A"
+            },
+            {
+              from 248,
+              to 266,
+              id local str "1buc_A"
+            }
+          }
+        },
+        frame notset
+      },
+      {
+        locations {
+          packed-int {
+            {
+              from 10,
+              to 19,
+              id local str "Q8jzn5"
+            }
+          }
+        },
+        frame notset
+      }
+    },
+    ka-blocks {
+      {
+        lambda { 317402000735556, 10, -15 },
+        k { 134826717614236, 10, -15 },
+        h { 381947261940342, 10, -15 },
+        gapped FALSE
+      },
+      {
+        lambda { 267, 10, -3 },
+        k { 65360484, 10, -9 },
+        h { 14, 10, -2 },
+        gapped TRUE
+      }
+    },
+    search-stats {
+      "Effective search space: 345308",
+      "Effective search space used: 345308"
+    }
+  }
+}
