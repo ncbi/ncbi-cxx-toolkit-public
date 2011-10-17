@@ -6691,11 +6691,11 @@ if test -s "$build_root/inc/ncbiconf_extra.h"; then
    if test -f "$savedconf"  &&  cmp "$newconf" "$savedconf" >/dev/null; then
       echo "$ncbiconf is unchanged"
    else
-      cp -p "$newconf" "$savedconf"
+      cp -pf "$newconf" "$savedconf"
    fi
-   cp -p "$savedconf" "$ncbiconf"
+   cp -pf "$savedconf" "$ncbiconf"
 else
-   rm "$build_root/inc/ncbiconf_extra.h"
+   rm -f "$build_root/inc/ncbiconf_extra.h"
 fi
 
 dnl Avoid gratuitous relinking
