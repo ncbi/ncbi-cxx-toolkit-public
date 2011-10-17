@@ -2495,6 +2495,20 @@ static EIO_Status s_Select(size_t                n,
 }
 
 
+#ifdef __GNUC__
+#  pragma GCC diagnostic push  /*NCBI_FAKE_WARNING*/
+#  pragma GCC diagnostic ignored "-Wuninitialized"
+inline static void x_tvcpy(struct timeval* dst, struct timeval* src)
+{
+    memcpy(dst, src, sizeof(*dst));
+}
+#  pragma GCC diagnostic warning "-Wuninitialized"
+#  pragma GCC diagnostic pop   /*NCBI_FAKE_WARNING*/
+#else
+#  define x_tvcpy(d, s)  (void) memcpy((d), (s), sizeof(*(d)))
+#endif /*__GNUC__*/
+
+
 /* connect() could be async/interrupted by a signal or just cannot
  * establish connection immediately;  yet, it must have been in progress
  * (asynchronous), so wait here for it to succeed (become writeable).
@@ -2604,9 +2618,9 @@ static EIO_Status s_IsConnected(SOCK                  sock,
                 SOCK_SET_TIMEOUT(sock, w, tv);
                 status = sslopen(sock->session, error);
                 if ((sock->w_tv_set = wtv_set) != 0)
-                    memcpy(&sock->w_tv, &wtv, sizeof(sock->w_tv));
+                    x_tvcpy(&sock->w_tv, &wtv);
                 if ((sock->r_tv_set = rtv_set) != 0)
-                    memcpy(&sock->r_tv, &rtv, sizeof(sock->r_tv));
+                    x_tvcpy(&sock->r_tv, &rtv);
                 if (status != eIO_Success) {
                     if (status != eIO_Timeout) {
                         const char* strerr = s_StrError(sock, *error);
@@ -2905,7 +2919,7 @@ static EIO_Status s_Read(SOCK    sock,
         memset(&sock->r_tv, 0, sizeof(sock->r_tv));
     } while (peek < 0  ||  (!buf  &&  *n_read < size));
     if ((sock->r_tv_set = rtv_set) != 0)
-        memcpy(&sock->r_tv, &rtv, sizeof(sock->r_tv));
+        x_tvcpy(&sock->r_tv, &rtv);
 
     return *n_read ? eIO_Success : status;
 }
@@ -3327,7 +3341,7 @@ static EIO_Status s_WritePending(SOCK                  sock,
     } while (sock->w_len  &&  status == eIO_Success);
     if (restore) {
         if ((sock->w_tv_set = wtv_set) != 0)
-            memcpy(&sock->w_tv, &wtv, sizeof(sock->w_tv));
+            x_tvcpy(&sock->w_tv, &wtv);
     }
 
     assert((sock->w_len != 0) == (status != eIO_Success));
@@ -3461,9 +3475,9 @@ static EIO_Status s_Shutdown(SOCK                  sock,
                     SOCK_SET_TIMEOUT(sock, w, tv);
                     status = sslclose(sock->session, how, &x_error);
                     if ((sock->w_tv_set = wtv_set) != 0)
-                        memcpy(&sock->w_tv, &wtv, sizeof(sock->w_tv));
+                        x_tvcpy(&sock->w_tv, &wtv);
                     if ((sock->r_tv_set = rtv_set) != 0)
-                        memcpy(&sock->r_tv, &rtv, sizeof(sock->r_tv));
+                        x_tvcpy(&sock->r_tv, &rtv);
                     if (status != eIO_Success) {
                         const char* strerr = s_StrError(sock, x_error);
                         CORE_LOGF_ERRNO_EXX(127, eLOG_Trace,

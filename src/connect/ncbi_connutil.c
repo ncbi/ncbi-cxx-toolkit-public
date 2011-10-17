@@ -466,7 +466,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
             return 0/*failure*/;
         }
     } else {
-        scheme  = info->scheme;
+        scheme  = (EURLScheme) info->scheme;
         user    = pass    = host    = 0;
         userlen = passlen = hostlen = 0;
         path    = url;
@@ -1193,7 +1193,8 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
                                                     : x_Num(info->req_method,
                                                             buf))))));
     s_SaveKeyval    (s, "scheme",         (info->scheme
-                                           ? x_Scheme(info->scheme, buf)
+                                           ? x_Scheme((EURLScheme)info->scheme,
+                                                      buf)
                                            : "(unspec)"));
     s_SaveString    (s, "user",            info->user);
     if (*info->pass)
@@ -1259,7 +1260,7 @@ extern char* ConnNetInfo_URL(const SConnNetInfo* info)
     if (!info)
         return 0/*failed*/;
 
-    scheme = x_Scheme(info->scheme, buf);
+    scheme = x_Scheme((EURLScheme) info->scheme, buf);
     if ((!scheme  &&  info->req_method != eReqMethod_Connect)  ||
         ( scheme  &&  !isalpha((unsigned char)(*scheme)))) {
         return 0/*failed*/;
