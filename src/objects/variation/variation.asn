@@ -95,7 +95,10 @@ VariantPlacement ::= SEQUENCE
 
     ext SET OF User-object OPTIONAL, --for process-specific placement tags/labels
 
-    gene-location INTEGER OPTIONAL --Same semantics as VariantProperties.gene-location, except placement-specific
+    gene-location INTEGER OPTIONAL, --Same semantics as VariantProperties.gene-location, except placement-specific
+
+    id Object-id OPTIONAL,
+    parent-id Object-id OPTIONAL --id of the placement from which this one was derived
 }
 
 VariationMethod ::= SEQUENCE
