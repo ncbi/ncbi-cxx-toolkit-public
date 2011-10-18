@@ -308,7 +308,8 @@ CPssmEngine::x_CreatePssmFromFreqRatios()
              m_PssmInputFreqRatios->GetQueryLength(),
              m_ScoreBlk,
              freq_ratios,
-             kPSSM_NoImpalaScaling,
+             m_PssmInputFreqRatios->GetImpalaScaleFactor(),
+             //kPSSM_NoImpalaScaling,
              &pssm);
     if (status != PSI_SUCCESS) {
         string msg = x_ErrorCodeToString(status);

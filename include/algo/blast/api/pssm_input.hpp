@@ -79,6 +79,8 @@ struct IPssmInput_Base : public CObject
         return BLAST_GAP_EXTN_PROT;
     }
 
+
+
     /// Get a CBioseq object for attachment into the CPssmWithParameters
     /// that CPssmEngine produces (only attached if it's not NULL). This is
     /// required for any PSSM which is intended to be used as a starting point
@@ -138,6 +140,10 @@ struct IPssmInputFreqRatios : public IPssmInput_Base
     /// Obtain a matrix of frequency ratios with this->GetQueryLength() columns
     /// and BLASTAA_SIZE rows
     virtual const CNcbiMatrix<double>& GetData() = 0;
+
+    virtual double GetImpalaScaleFactor(){
+    	return kPSSM_NoImpalaScaling;
+    }
 };
 
 END_SCOPE(blast)

@@ -80,13 +80,15 @@ public:
                              const CNcbiMatrix<double>& freq_ratios,
                              const char* matrix_name = NULL,
                              int gap_existence = 0,
-                             int gap_extension = 0)
+                             int gap_extension = 0,
+                             double impala_scale_factor = 0)
         : m_Query(const_cast<unsigned char*>(query)), 
           m_QueryLength(query_length),
           m_MatrixName(matrix_name),
           m_GapExistence(gap_existence),
           m_GapExtension(gap_extension),
-          m_FreqRatios(freq_ratios)
+          m_FreqRatios(freq_ratios),
+          m_ImpalaScaleFactor(impala_scale_factor)
     {}
 
     /// No-op as we assume the data is passed in to the constructor
@@ -118,6 +120,13 @@ public:
          : IPssmInputFreqRatios::GetGapExtension();
     }
 
+    /// Obtain the IMPALA Scale Factor value to use when building the PSSM
+    double GetImpalaScaleFactor() {
+             return m_ImpalaScaleFactor
+             ? m_ImpalaScaleFactor
+             : IPssmInputFreqRatios::GetImpalaScaleFactor();
+        }
+
     /// Obtain a matrix of frequency ratios with this->GetQueryLength() columns
     /// and BLASTAA_SIZE rows
     const CNcbiMatrix<double>& GetData() {
@@ -137,6 +146,9 @@ private:
     int                 m_GapExtension;
     /// Frequency ratios
     CNcbiMatrix<double> m_FreqRatios;
+
+    // IMPALA Scale Factor
+    double	m_ImpalaScaleFactor;
 };
 
 /// This class is a concrete strategy for IPssmInputData, and it

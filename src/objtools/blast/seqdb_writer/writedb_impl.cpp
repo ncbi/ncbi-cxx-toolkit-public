@@ -553,6 +553,7 @@ CWriteDB_Impl::x_BuildDeflinesFromBioseq(const CBioseq                  & bioseq
         defline->SetSeqid() = ids;
         ids.clear();
         
+        /*
         size_t pos = titles.find(" >");
         string T;
         
@@ -580,9 +581,10 @@ CWriteDB_Impl::x_BuildDeflinesFromBioseq(const CBioseq                  & bioseq
         } else {
             T = titles;
         }
-        
-        defline->SetTitle(T);
-        
+
+        */
+        defline->SetTitle(titles);
+
         if (taxid_i < taxids.size()) {
             defline->SetTaxid(taxids[taxid_i++]);
         }
