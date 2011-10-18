@@ -1,7 +1,7 @@
 WATCHERS = fongah2 
 
 APP = makeprofiledb
-SRC = makeprofiledb 
+SRC = makeprofiledb
 LIB_ = $(BLAST_INPUT_LIBS) writedb $(BLAST_LIBS) $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 
