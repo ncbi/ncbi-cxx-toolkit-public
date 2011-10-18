@@ -35,6 +35,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbistl.hpp>
+#include <corelib/ncbi_system.hpp>
 #include <util/format_guess.hpp>
 #include <util/line_reader.hpp>
 
@@ -69,6 +70,28 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
+//  ============================================================================
+void
+DumpMemory(
+    const string& prefix)
+//  ============================================================================
+{
+    Uint8 totalMemory = GetPhysicalMemorySize();
+    size_t usedMemory; size_t residentMemory; size_t sharedMemory;
+    if (!GetMemoryUsage(&usedMemory, &residentMemory, &sharedMemory)) {
+        cerr << "Unable to get memory counts!" << endl;
+    }
+    else {
+        cerr << prefix
+            << "Total:" << totalMemory 
+            << " Used:" << usedMemory << "(" 
+                << (100*usedMemory)/totalMemory <<"%)" 
+            << " Resident:" << residentMemory << "(" 
+                << int((100.0*residentMemory)/totalMemory) <<"%)" 
+            << endl;
+    }
+}
+  
 //  ============================================================================
 class CMultiReaderApp
 //  ============================================================================
@@ -350,6 +373,24 @@ CMultiReaderApp::Run(void)
         break;
 
     case CFormatGuess::eWiggle:
+        try {
+            CIdMapper* pMapper = GetMapper();
+            CWiggleReader reader(m_iFlags);
+            CStreamLineReader lr(*m_pInput);
+            CRef<CSeq_annot> pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
+            while(pAnnot) {
+                if (pMapper) {
+                    pMapper->MapObject(*pAnnot);
+                }
+                *m_pOutput << MSerial_AsnText << *pAnnot;
+//                DumpMemory("! ");
+                pAnnot.Reset();
+                pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
+            }
+        }
+        catch ( CObjReaderLineException& /*err*/ ) {
+        }
+        break;
     case CFormatGuess::eBed:
     case CFormatGuess::eGtf:
         try {
@@ -471,12 +512,12 @@ void CMultiReaderApp::SetFlags(
         break;
        
     case CFormatGuess::eGtf:
-        if ( args["format"].AsString() == "gff3" ) {
-            m_iFlags |= CGFFReader::fSetVersion3;
-        }
-        if ( ! args["old-code"] ) {
-            m_iFlags |= CGff3Reader::fNewCode;
-        }
+//        if ( args["format"].AsString() == "gff3" ) {
+//            m_iFlags |= CGFFReader::fSetVersion3;
+//        }
+//        if ( ! args["old-code"] ) {
+//            m_iFlags |= CGff3Reader::fNewCode;
+//        }
         if ( args["all-ids-as-local"] ) {
             m_iFlags |= CGFFReader::fAllIdsAsLocal;
         }
