@@ -1883,17 +1883,19 @@ static CRef<CGapItem> s_NewGapItem(CSeqMap_CI& gap_it, CBioseqContext& ctx)
     TSeqPos pos     = gap_it.GetPosition();
     TSeqPos end_pos = gap_it.GetEndPosition();
 
-    const CSeq_gap & gap = gap_it.GetData().GetGap();
-
-    // determine if we're linked
-    const bool is_linkage =
-        gap.CanGetLinkage() && 
-        gap.GetLinkage() == CSeq_gap::eLinkage_linked;
-
-    // For /gap_type qual
     string sType;
-    if( gap.CanGetType() ) {
-        switch( gap.GetType() ) {
+    CGapItem::TEvidence sEvidence;
+    if( gap_it.IsSetData() && gap_it.GetData().IsGap() ) {
+        const CSeq_gap & gap = gap_it.GetData().GetGap();
+
+        // determine if we're linked
+        const bool is_linkage =
+            gap.CanGetLinkage() && 
+            gap.GetLinkage() == CSeq_gap::eLinkage_linked;
+
+        // For /gap_type qual
+        if( gap.CanGetType() ) {
+            switch( gap.GetType() ) {
         case CSeq_gap::eType_unknown:
             // don't show /gap_type
             break;
@@ -1918,7 +1920,7 @@ static CRef<CGapItem> s_NewGapItem(CSeqMap_CI& gap_it, CBioseqContext& ctx)
         case CSeq_gap::eType_repeat:
             sType = ( is_linkage ? 
                 "repeat within scaffold" : 
-                "repeat between scaffolds" );
+            "repeat between scaffolds" );
             break;
         case CSeq_gap::eType_contig:
             sType = "between scaffolds";
@@ -1933,21 +1935,20 @@ static CRef<CGapItem> s_NewGapItem(CSeqMap_CI& gap_it, CBioseqContext& ctx)
             sType = "(ERROR: UNRECOGNIZED_GAP_TYPE:" +
                 NStr::IntToString(gap.GetType()) + ")";
             break;
+            }
         }
-    }
 
-    // For linkage evidence
-    CGapItem::TEvidence sEvidence;
-    if( gap.CanGetLinkage_evidence() ) {
-        ITERATE( CSeq_gap::TLinkage_evidence, 
-            evidence_iter, 
-            gap.GetLinkage_evidence() ) 
-        {
-            const CLinkage_evidence & evidence = **evidence_iter;
-            if( evidence.CanGetType() ) {
-                switch( evidence.GetType() ) {
+        // For linkage evidence
+        if( gap.CanGetLinkage_evidence() ) {
+            ITERATE( CSeq_gap::TLinkage_evidence, 
+                evidence_iter, 
+                gap.GetLinkage_evidence() ) 
+            {
+                const CLinkage_evidence & evidence = **evidence_iter;
+                if( evidence.CanGetType() ) {
+                    switch( evidence.GetType() ) {
                 case CLinkage_evidence::eType_paired_ends:
-                    sEvidence.push_back("paired_ends");
+                    sEvidence.push_back("paired-ends");
                     break;
                 case CLinkage_evidence::eType_align_genus:
                     sEvidence.push_back("align_genus");
@@ -1977,8 +1978,10 @@ static CRef<CGapItem> s_NewGapItem(CSeqMap_CI& gap_it, CBioseqContext& ctx)
                     sEvidence.push_back("other");
                     break;
                 default:
-                    sEvidence.push_back("(UNRECOGNIZED LINKAGE EVIDENCE)");
+                    sEvidence.push_back("(UNRECOGNIZED LINKAGE EVIDENCE:" +
+                        NStr::IntToString( evidence.GetType() ) + ")");
                     break;
+                    }
                 }
             }
         }
