@@ -30,6 +30,9 @@
  *
  */
 
+#ifndef SOAP_CLIENT_HPP
+#define SOAP_CLIENT_HPP
+
 #include <corelib/ncbiobj.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/soap/soap_message.hpp>
@@ -73,3 +76,5 @@ private:
 
 
 END_NCBI_SCOPE
+
+#endif // SOAP_CLIENT_HPP

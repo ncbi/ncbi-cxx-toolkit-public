@@ -30,6 +30,9 @@
  *
  */
 
+#ifndef SOAP_SERVER_HPP
+#define SOAP_SERVER_HPP
+
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
 #include <serial/typeinfo.hpp>
@@ -125,3 +128,5 @@ private:
 };
 
 END_NCBI_SCOPE
+
+#endif // SOAP_SERVER_HPP
