@@ -273,15 +273,11 @@ string CGffWriteRecord::s_GetGffSourceString(
     CBioseq_Handle bsh )
 //  ----------------------------------------------------------------------------
 {
-    const CSeq_id* pBigId = 0;
-    try {
-        pBigId = sequence::GetId(bsh, sequence::eGetId_Best).GetSeqId();
+    CSeq_id_Handle best_idh = sequence::GetId(bsh, sequence::eGetId_Best);
+    if ( !best_idh ) {
+        best_idh = sequence::GetId(bsh, sequence::eGetId_Canonical);
     }
-    catch(...) {
-        return "Unknown";
-    }
-
-    switch ( pBigId->Which() ) {
+    switch ( best_idh.Which() ) {
         default:
             break;
         case CSeq_id::e_Local:
@@ -300,9 +296,9 @@ string CGffWriteRecord::s_GetGffSourceString(
         case CSeq_id::e_Other:
             return "RefSeq";
         case CSeq_id::e_General:
-            return pBigId->GetGeneral().GetDb();
+            return best_idh.GetSeqId()->GetGeneral().GetDb();
     }
-    string source = CSeq_id::SelectionName( pBigId->Which() );
+    string source = CSeq_id::SelectionName( best_idh.Which() );
     NStr::ToUpper( source );
     return source;
 }
@@ -914,7 +910,7 @@ bool CGffWriteRecordFeature::x_AssignSource(
         }
     }
 
-    CBioseq_Handle bsh = mf.GetScope().GetBioseqHandle( mf.GetLocationId() );
+    CBioseq_Handle bsh = mf.GetScope().GetBioseqHandle( mf.GetLocation() );
     m_strSource = s_GetGffSourceString( bsh );
     return true;
 }
