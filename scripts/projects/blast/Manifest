@@ -17,10 +17,10 @@
 # NOTE: When applications are added/removed from this list, please update
 # the application listings in post_build/win/{make_win.py,ncbi-blast.nsi},
 # post_build/macosx/ncbi-blast.sh, and post_build/rpm/ncbi-blast.spec
-APP: blastp blastn blastx tblastn tblastx psiblast rpsblast rpstblastn
+APP: blastp blastn blastx tblastn tblastx psiblast rpsblast rpstblastn seedtop
 APP: makembindex segmasker dustmasker windowmasker
 APP: makeblastdb blastdbcmd blastdb_aliastool convert2blastmask blastdbcheck
-APP: blast_formatter
+APP: makeprofiledb blast_formatter
 
 COPY: $srcdir/src/app/blast/legacy_blast.pl $installdir/bin
 COPY: $srcdir/src/app/blast/update_blastdb.pl $installdir/bin

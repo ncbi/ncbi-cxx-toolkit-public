@@ -10,9 +10,9 @@ if [ $# -ne 3 ] ; then
     exit 1;
 fi
 
-BLAST_BINS="blastn blastp blastx tblastn tblastx psiblast rpsblast rpstblastn blast_formatter legacy_blast.pl update_blastdb.pl"
+BLAST_BINS="blastn blastp blastx tblastn tblastx psiblast rpsblast rpstblastn blast_formatter legacy_blast.pl update_blastdb.pl seedtop"
 MASKING_BINS="windowmasker dustmasker segmasker"
-DB_BINS="blastdbcmd makeblastdb makembindex blastdb_aliastool convert2blastmask blastdbcheck"
+DB_BINS="blastdbcmd makeblastdb makeprofiledb makembindex blastdb_aliastool convert2blastmask blastdbcheck"
 ALL_BINS="$BLAST_BINS $MASKING_BINS $DB_BINS"
 
 rm -rf $PRODUCT.dmg $PRODUCT _stage $INSTALLDIR/installer
