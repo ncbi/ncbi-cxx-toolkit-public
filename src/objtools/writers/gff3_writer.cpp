@@ -44,6 +44,7 @@
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Spliced_seg.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
@@ -304,10 +305,68 @@ bool CGff3Writer::WriteHeader()
 }
 
 //  ----------------------------------------------------------------------------
+bool CGff3Writer::x_WriteSequenceHeader(
+    CBioseq_Handle bsh)
+//  ----------------------------------------------------------------------------
+{
+    //sequence-region
+    string id;
+    CConstRef<CSeq_id> pId = bsh.GetNonLocalIdOrNull();
+    if ( pId ) {
+        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle( *pId ); 
+        CSeq_id_Handle best_idh = 
+            sequence::GetId(idh, bsh.GetScope(), sequence::eGetId_Best); 
+        if ( !best_idh ) {
+            best_idh = idh;
+        }
+        best_idh.GetSeqId()->GetLabel(&id, CSeq_id::eContent);
+    }
+    if ( id.empty() ) {
+        id = "<unknown>";
+    }
+
+    string start = "1";
+    string stop = NStr::IntToString(bsh.GetBioseqLength());
+    m_Os << "##sequence-region " << id << " " << start << " " << stop << endl;
+
+    //species
+    const string base_url = 
+        "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?";
+    CSeqdesc_CI sdi( bsh.GetParentEntry(), CSeqdesc::e_Source, 0 );
+    if (sdi) {
+        const CBioSource& bs = sdi->GetSource();
+        if (bs.IsSetOrg()) {
+            string tax_id = NStr::IntToString(bs.GetOrg().GetTaxId());
+            m_Os << "##species " << base_url << "id=" << tax_id << endl;
+        }
+        else if (bs.IsSetOrgname()) {
+            string orgname = NStr::URLEncode(bs.GetTaxname());
+            m_Os << "##species " << base_url << "name=" << orgname << endl;        
+        }
+    }
+
+    //genome build
+//    for(CSeqdesc_CI udi(bsh.GetParentEntry(), CSeqdesc::e_User, 0); udi; ++udi) {
+//        const CUser_object& uo = udi->GetUser();
+//        if (!uo.IsSetType()  ||  uo.GetType().IsStr()  ||  
+//                uo.GetType().GetStr() != "GenomeBuild" ) {
+//            continue;
+//        }
+//        //awaiting specific instructions here ...
+//        break;
+//    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteBioseqHandle(
     CBioseq_Handle bsh ) 
 //  ----------------------------------------------------------------------------
 {
+    if ( ! x_WriteSequenceHeader(bsh) ) {
+        return false;
+    }
+
     SAnnotSelector sel = GetAnnotSelector();
     CFeat_CI feat_iter(bsh, sel);
     feature::CFeatTree feat_tree( feat_iter );

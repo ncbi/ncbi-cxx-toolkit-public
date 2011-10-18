@@ -106,6 +106,9 @@ public:
     virtual SAnnotSelector& GetAnnotSelector();
 
 protected:
+    virtual bool x_WriteSequenceHeader(
+        CBioseq_Handle ) { return true; };
+
     virtual bool x_WriteAnnot( 
         const CSeq_annot& );
     virtual bool x_WriteAlign( 

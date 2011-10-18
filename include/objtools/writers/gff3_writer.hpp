@@ -81,6 +81,8 @@ protected:
 
 //    TFlags m_uFlags;
 
+    virtual bool x_WriteSequenceHeader(
+        CBioseq_Handle );
     virtual bool x_WriteFeature(
         CGffFeatureContext&,
         CMappedFeat );
