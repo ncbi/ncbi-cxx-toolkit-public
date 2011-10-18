@@ -422,12 +422,20 @@ private:
 class CScore_SymmetricOverlap : public CScoreLookup::IScore
 {
 public:
+    enum EType {e_Min, e_Avg};
+    CScore_SymmetricOverlap(EType type)
+    : m_Type(type)
+    {
+    }
+
     virtual void PrintHelp(CNcbiOstream& ostr) const
     {
         ostr <<
             "Symmetric overlap, as a percent (0-100).  This is similar to "
             "coverage, except that it takes into account both query and "
-            "subject sequence lengths";
+            "subject sequence lengths. Alignment length is divided by "
+             << (m_Type == e_Min ? "minimum" : "average")
+             << " of the two sequence lengths";
     }
 
     virtual EComplexity GetComplexity() const { return eHard; };
@@ -440,14 +448,24 @@ public:
             CBioseq_Handle q = scope->GetBioseqHandle(align.GetSeq_id(0));
             CBioseq_Handle s = scope->GetBioseqHandle(align.GetSeq_id(1));
 
-            pct_overlap = 2 * length;
-            pct_overlap /= (q.GetBioseqLength() + s.GetBioseqLength());
-            pct_overlap *= 100;
+            pct_overlap = length * 100;
+            switch (m_Type) {
+                case e_Min:
+                    pct_overlap /= min(q.GetBioseqLength(), s.GetBioseqLength());
+                    break;
+
+                case e_Avg:
+		    pct_overlap /= (q.GetBioseqLength() + s.GetBioseqLength())/2;
+                    break;
+            }
         }
         catch (CException &) {
         }
         return pct_overlap;
     }
+
+private:
+    EType m_Type;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -908,7 +926,13 @@ void CScoreLookup::x_Init()
     m_Scores.insert
         (TScoreDictionary::value_type
          ("symmetric_overlap",
-          CIRef<IScore>(new CScore_SymmetricOverlap)));
+          CIRef<IScore>(new CScore_SymmetricOverlap(
+                            CScore_SymmetricOverlap::e_Avg))));
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("symmetric_overlap_min",
+          CIRef<IScore>(new CScore_SymmetricOverlap(
+                            CScore_SymmetricOverlap::e_Min))));
     m_Scores.insert
         (TScoreDictionary::value_type
          ("3prime_unaligned",

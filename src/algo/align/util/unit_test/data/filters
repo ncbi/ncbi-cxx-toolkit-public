@@ -54,6 +54,10 @@ max_intron_len > 10000
 2 9
 min_exon_len < 30
 2
+pct_coverage > 97.5
+0 1 2 3 4 5
+symmetric_overlap_min > 97.5
+0 1 2 3 4 5
 symmetric_overlap > 2
 5
 query_start > 50
