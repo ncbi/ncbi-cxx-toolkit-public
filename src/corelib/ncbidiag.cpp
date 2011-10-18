@@ -1594,7 +1594,7 @@ string CDiagContext::GetProperty(const string& name,
         return GetRequestContext().GetClientIP();
     }
     if (name == kProperty_SessionID) {
-        return GetRequestContext().GetSessionID();
+        return GetSessionID();
     }
     if (name == kProperty_ReqStatus) {
         return GetRequestContext().IsSetRequestStatus() ?
@@ -1984,6 +1984,53 @@ void CDiagContext::SetAppState(EDiagAppState state, EPropertyMode mode)
         GetRequestContext().SetAppState(state);
         break;
     }
+}
+
+
+NCBI_PARAM_DECL(string, Log, Session_Id);
+NCBI_PARAM_DEF_EX(string, Log, Session_Id, kEmptyStr, eParam_NoThread,
+                  NCBI_LOG_SESSION_ID);
+typedef NCBI_PARAM_TYPE(Log, Session_Id) TParamDefaultSessionId;
+
+
+const string& CDiagContext::GetDefaultSessionID(void) const
+{
+    if ( !m_DefaultSessionId.get() ) {
+        m_DefaultSessionId.reset(
+            new CEncodedString(TParamDefaultSessionId::GetDefault()));
+    }
+    return m_DefaultSessionId->GetOriginalString();
+}
+
+
+void CDiagContext::SetDefaultSessionID(const string& session_id)
+{
+    if ( !m_DefaultSessionId.get() ) {
+        m_DefaultSessionId.reset(new CEncodedString(session_id));
+    }
+    TParamDefaultSessionId::SetDefault(session_id);
+}
+
+
+const string& CDiagContext::GetSessionID(void) const
+{
+    CRequestContext& rctx = GetRequestContext();
+    if ( rctx.IsSetSessionID() ) {
+        return rctx.GetSessionID();
+    }
+    return GetDefaultSessionID();
+}
+
+
+const string& CDiagContext::GetEncodedSessionID(void) const
+{
+    CRequestContext& rctx = GetRequestContext();
+    if ( rctx.IsSetSessionID() ) {
+        return rctx.GetEncodedSessionID();
+    }
+    GetDefaultSessionID(); // Make sure the default value is initialized.
+    _ASSERT(m_DefaultSessionId.get());
+    return m_DefaultSessionId->GetEncodedString();
 }
 
 
@@ -4305,7 +4352,7 @@ void SDiagMessage::x_SaveContextData(void) const
 
     CRequestContext& rctx = dctx.GetRequestContext();
     m_Data->m_Client = rctx.GetClientIP();
-    m_Data->m_Session = rctx.GetEncodedSessionID();
+    m_Data->m_Session = dctx.GetEncodedSessionID();
 }
 
 
@@ -4328,7 +4375,7 @@ const string& SDiagMessage::GetClient(void) const
 const string& SDiagMessage::GetSession(void) const
 {
     return m_Data ? m_Data->m_Session
-        : CDiagContext::GetRequestContext().GetEncodedSessionID();
+        : GetDiagContext().GetEncodedSessionID();
 }
 
 

@@ -2071,6 +2071,19 @@ public:
     /// Set exit signal
     void SetExitSignal(int exit_sig) { m_ExitSig = exit_sig; }
 
+    /// Get defaule session id. The session id may be set using
+    /// SetDefaultSessionId(), NCBI_LOG_SESSION_ID env. variable
+    /// or Log.Session_Id value in the INI file.
+    const string& GetDefaultSessionID(void) const;
+    /// Set new default session id. This value is used only if the per-request
+    /// session id is not set.
+    void SetDefaultSessionID(const string& session_id);
+    /// Get the effective session id: the per-request session id if set,
+    /// or the default session id.
+    const string& GetSessionID(void) const;
+    /// Get url-encoded session id.
+    const string& GetEncodedSessionID(void) const;
+
     /// Write standard prefix to the stream. Use values from the message
     /// (PID/TID/RID etc.).
     void WriteStdPrefix(CNcbiOstream& ostr,
@@ -2179,6 +2192,7 @@ private:
     string                              m_HostIP;
     auto_ptr<CEncodedString>            m_Username;
     auto_ptr<CEncodedString>            m_AppName;
+    mutable auto_ptr<CEncodedString>    m_DefaultSessionId;
     int                                 m_ExitCode;
     int                                 m_ExitSig;
     EDiagAppState                       m_AppState;
