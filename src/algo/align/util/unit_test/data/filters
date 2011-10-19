@@ -57,7 +57,7 @@ min_exon_len < 30
 pct_coverage > 97.5
 0 1 2 3 4 5
 symmetric_overlap_min > 97.5
-0 1 2 3 4 5
+0 1 2 3 4
 symmetric_overlap > 2
 5
 query_start > 50

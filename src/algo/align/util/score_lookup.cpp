@@ -418,6 +418,17 @@ private:
 };
 
 //////////////////////////////////////////////////////////////////////////////
+/// Get sequence's length in nucleic acids
+static inline TSeqPos s_GetNaLength(CBioseq_Handle bsh)
+{
+    TSeqPos len = bsh.GetBioseqLength();
+    if (bsh.CanGetInst_Mol() && bsh.GetInst_Mol() == CSeq_inst::eMol_aa) {
+        /// This is an amino-acid sequence, so multiply length by 3
+        len *= 3;
+    }
+    return len;
+}
+
 
 class CScore_SymmetricOverlap : public CScoreLookup::IScore
 {
@@ -442,24 +453,20 @@ public:
 
     virtual double Get(const CSeq_align& align, CScope* scope) const
     {
-        double pct_overlap = 0;
-        try {
-            TSeqPos length = align.GetAlignLength(false);
-            CBioseq_Handle q = scope->GetBioseqHandle(align.GetSeq_id(0));
-            CBioseq_Handle s = scope->GetBioseqHandle(align.GetSeq_id(1));
+        TSeqPos length = align.GetAlignLength(false);
+        double pct_overlap = length * 100;
 
-            pct_overlap = length * 100;
-            switch (m_Type) {
-                case e_Min:
-                    pct_overlap /= min(q.GetBioseqLength(), s.GetBioseqLength());
-                    break;
+        CBioseq_Handle q = scope->GetBioseqHandle(align.GetSeq_id(0));
+        CBioseq_Handle s = scope->GetBioseqHandle(align.GetSeq_id(1));
 
-                case e_Avg:
-		    pct_overlap /= (q.GetBioseqLength() + s.GetBioseqLength())/2;
-                    break;
-            }
-        }
-        catch (CException &) {
+        switch (m_Type) {
+            case e_Min:
+                pct_overlap /= min(s_GetNaLength(q), s_GetNaLength(s));
+                break;
+
+            case e_Avg:
+                pct_overlap /= (s_GetNaLength(q) + s_GetNaLength(s))/2;
+                break;
         }
         return pct_overlap;
     }
