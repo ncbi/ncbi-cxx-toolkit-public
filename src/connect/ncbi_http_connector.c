@@ -553,7 +553,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
 
             s = sock;
             status = URL_ConnectEx(host, port, path, args,
-                                   uuu->net_info->req_method, len,
+                                   (EReqMethod) uuu->net_info->req_method, len,
                                    uuu->o_timeout, uuu->w_timeout,
                                    uuu->net_info->http_user_header,
                                    uuu->flags & fHTTP_UrlEncodeArgs, flags, 
