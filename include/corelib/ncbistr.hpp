@@ -436,6 +436,40 @@ public:
     ///   Return -1 on error.
     static int HexChar(char ch);
 
+    /// Convert numeric value to string.
+    ///
+    /// @param value
+    ///   Numeric value to be converted.
+    /// @param flags
+    ///   How to convert value to string.
+    /// @param base
+    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
+    ///   If necessary you should add it yourself.
+    ///   If value is float or double type, the parameter is ignored.
+    /// @return
+    ///   Converted string value.
+    template<typename TNumeric>
+    static string NumericToString(TNumeric value,
+        TNumToStringFlags flags = 0, int  base = 10);
+
+    /// Convert numeric value to string.
+    ///
+    /// @param out_str
+    ///   Output string variable.
+    /// @param value
+    ///   Numeric value to be converted.
+    /// @param flags
+    ///   How to convert value to string.
+    /// @param base
+    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
+    ///   If necessary you should add it yourself.
+    ///   If value is float or double type, the parameter is ignored.
+    template<typename TNumeric>
+    static void NumericToString(string& out_str, TNumeric value,
+        TNumToStringFlags flags = 0, int  base = 10);
+    
     /// Convert int to string.
     ///
     /// @param value
@@ -453,16 +487,20 @@ public:
 
     static string IntToString(unsigned int value, TNumToStringFlags flags = 0,
                               int  base = 10);
+    /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static string IntToString(long value, TNumToStringFlags flags = 0,
                               int  base = 10);
+    /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static string IntToString(unsigned long value, TNumToStringFlags flags = 0,
                               int  base = 10);
 #if (SIZEOF_LONG < 8)
+    /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static string IntToString(Int8 value, TNumToStringFlags flags = 0,
                               int  base = 10);
+    /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static string IntToString(Uint8 value, TNumToStringFlags flags = 0,
                               int  base = 10);
@@ -488,19 +526,23 @@ public:
     static void IntToString(string& out_str, unsigned int value, 
                             TNumToStringFlags flags = 0,
                             int               base  = 10);
+    /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static void IntToString(string& out_str, long value, 
                             TNumToStringFlags flags = 0,
                             int               base  = 10);
+    /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static void IntToString(string& out_str, unsigned long value, 
                             TNumToStringFlags flags = 0,
                             int               base  = 10);
 #if (SIZEOF_LONG < 8)
+    /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static void IntToString(string& out_str, Int8 value, 
                             TNumToStringFlags flags = 0,
                             int               base  = 10);
+    /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static void IntToString(string& out_str, Uint8 value, 
                             TNumToStringFlags flags = 0,
@@ -526,19 +568,23 @@ public:
     static string UIntToString(int               value,
                                TNumToStringFlags flags = 0,
                                int               base  = 10);
+    /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static string UIntToString(unsigned long     value,
                                TNumToStringFlags flags = 0,
                                int               base  = 10);
+    /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static string UIntToString(long              value,
                                TNumToStringFlags flags = 0,
                                int               base  = 10);
 #if (SIZEOF_LONG < 8)
+    /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static string UIntToString(Int8              value,
                                TNumToStringFlags flags = 0,
                                int               base  = 10);
+    /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static string UIntToString(Uint8             value,
                                TNumToStringFlags flags = 0,
@@ -564,19 +610,23 @@ public:
     static void UIntToString(string& out_str, int value,
                              TNumToStringFlags flags = 0,
                              int               base  = 10);
+    /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static void UIntToString(string& out_str, unsigned long value,
                              TNumToStringFlags flags = 0,
                              int               base  = 10);
+    /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static void UIntToString(string& out_str, long value,
                              TNumToStringFlags flags = 0,
                              int               base  = 10);
 #if (SIZEOF_LONG < 8)
+    /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static void UIntToString(string& out_str, Int8 value, 
                              TNumToStringFlags flags = 0,
                              int               base  = 10);
+    /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static void UIntToString(string& out_str, Uint8 value, 
                              TNumToStringFlags flags = 0,
@@ -3500,6 +3550,200 @@ const string& CNcbiEmptyString::Get(void)
 //  NStr::
 //
 
+//---------------------- char
+EMPTY_TEMPLATE inline
+string NStr::NumericToString<char>(char value,
+    TNumToStringFlags flags, int  base)
+{
+    return NStr::IntToString(value,flags,base);
+}
+
+EMPTY_TEMPLATE inline
+string NStr::NumericToString<unsigned char>(unsigned char value,
+    TNumToStringFlags flags, int  base)
+{
+    return NStr::UIntToString(value,flags,base);
+}
+
+EMPTY_TEMPLATE inline
+void NStr::NumericToString<char>(string& out_str, char value,
+    TNumToStringFlags flags, int  base)
+{
+    NStr::IntToString(out_str, value,flags,base);
+}
+
+EMPTY_TEMPLATE inline
+void NStr::NumericToString<unsigned char>(string& out_str, unsigned char value,
+    TNumToStringFlags flags, int  base)
+{
+    NStr::UIntToString(out_str, value,flags,base);
+}
+
+//---------------------- wchar_t
+EMPTY_TEMPLATE inline
+string NStr::NumericToString<wchar_t>(wchar_t value,
+    TNumToStringFlags flags, int  base)
+{
+    return NStr::IntToString(value,flags,base);
+}
+
+EMPTY_TEMPLATE inline
+void NStr::NumericToString<wchar_t>(string& out_str, wchar_t value,
+    TNumToStringFlags flags, int  base)
+{
+    NStr::IntToString(out_str, value,flags,base);
+}
+
+//---------------------- short
+EMPTY_TEMPLATE inline
+string NStr::NumericToString<short>(short value,
+    TNumToStringFlags flags, int  base)
+{
+    return NStr::IntToString(value,flags,base);
+}
+
+EMPTY_TEMPLATE inline
+string NStr::NumericToString<unsigned short>(unsigned short value,
+    TNumToStringFlags flags, int  base)
+{
+    return NStr::UIntToString(value,flags,base);
+}
+
+EMPTY_TEMPLATE inline
+void NStr::NumericToString<short>(string& out_str, short value,
+    TNumToStringFlags flags, int  base)
+{
+    NStr::IntToString(out_str, value,flags,base);
+}
+
+EMPTY_TEMPLATE inline
+void NStr::NumericToString<unsigned short>(string& out_str, unsigned short value,
+    TNumToStringFlags flags, int  base)
+{
+    NStr::UIntToString(out_str, value,flags,base);
+}
+
+//---------------------- int
+EMPTY_TEMPLATE inline
+string NStr::NumericToString<int>(int value,
+    TNumToStringFlags flags, int  base)
+{
+    return NStr::IntToString(value,flags,base);
+}
+
+EMPTY_TEMPLATE inline
+string NStr::NumericToString<unsigned int>(unsigned int value,
+    TNumToStringFlags flags, int  base)
+{
+    return NStr::UIntToString(value,flags,base);
+}
+
+EMPTY_TEMPLATE inline
+void NStr::NumericToString<int>(string& out_str, int value,
+    TNumToStringFlags flags, int  base)
+{
+    NStr::IntToString(out_str, value,flags,base);
+}
+
+EMPTY_TEMPLATE inline
+void NStr::NumericToString<unsigned int>(string& out_str, unsigned int value,
+    TNumToStringFlags flags, int  base)
+{
+    NStr::UIntToString(out_str, value,flags,base);
+}
+
+//---------------------- long
+EMPTY_TEMPLATE inline
+string NStr::NumericToString<long>(long value,
+    TNumToStringFlags flags, int  base)
+{
+    return NStr::LongToString(value,flags,base);
+}
+
+EMPTY_TEMPLATE inline
+string NStr::NumericToString<unsigned long>(unsigned long value,
+    TNumToStringFlags flags, int  base)
+{
+    return NStr::ULongToString(value,flags,base);
+}
+
+EMPTY_TEMPLATE inline
+void NStr::NumericToString<long>(string& out_str, long value,
+    TNumToStringFlags flags, int  base)
+{
+    NStr::LongToString(out_str, value,flags,base);
+}
+
+EMPTY_TEMPLATE inline
+void NStr::NumericToString<unsigned long>(string& out_str, unsigned long value,
+    TNumToStringFlags flags, int  base)
+{
+    NStr::ULongToString(out_str, value,flags,base);
+}
+
+//---------------------- int64
+#if (SIZEOF_LONG < 8)
+EMPTY_TEMPLATE inline
+string NStr::NumericToString<Int8>(Int8 value,
+    TNumToStringFlags flags, int  base)
+{
+    return NStr::Int8ToString(value,flags,base);
+}
+
+EMPTY_TEMPLATE inline
+string NStr::NumericToString<Uint8>(Uint8 value,
+    TNumToStringFlags flags, int  base)
+{
+    return NStr::UInt8ToString(value,flags,base);
+}
+
+EMPTY_TEMPLATE inline
+void NStr::NumericToString<Int8>(string& out_str, Int8 value,
+    TNumToStringFlags flags, int  base)
+{
+    NStr::Int8ToString(out_str, value,flags,base);
+}
+
+EMPTY_TEMPLATE inline
+void NStr::NumericToString<Uint8>(string& out_str, Uint8 value,
+    TNumToStringFlags flags, int  base)
+{
+    NStr::UInt8ToString(out_str, value,flags,base);
+}
+#endif
+
+//---------------------- float
+EMPTY_TEMPLATE inline
+string NStr::NumericToString<float>(float value,
+    TNumToStringFlags flags, int  /*base*/)
+{
+    return NStr::DoubleToString(value,-1,flags);
+}
+
+
+EMPTY_TEMPLATE inline
+void NStr::NumericToString<float>(string& out_str, float value,
+    TNumToStringFlags flags, int  /*base*/)
+{
+    NStr::DoubleToString(out_str, value,-1,flags);
+}
+
+//---------------------- double
+EMPTY_TEMPLATE inline
+string NStr::NumericToString<double>(double value,
+    TNumToStringFlags flags, int  /*base*/)
+{
+    return NStr::DoubleToString(value,-1,flags);
+}
+
+
+EMPTY_TEMPLATE inline
+void NStr::NumericToString<double>(string& out_str, double value,
+    TNumToStringFlags flags, int  /*base*/)
+{
+    NStr::DoubleToString(out_str, value,-1,flags);
+}
+//---------------------- 
 
 inline
 string NStr::IntToString(int value,

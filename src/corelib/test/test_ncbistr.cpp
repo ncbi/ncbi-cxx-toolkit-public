@@ -276,7 +276,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
         {{
             int value = NStr::StringToNumeric(str);
             NcbiCout << "numeric value: " << value << ", toString: '"
-                     << NStr::IntToString(value) << "'" << NcbiEndl;
+                     << NStr::NumericToString(value) << "'" << NcbiEndl;
             BOOST_CHECK_EQUAL(value, test->num);
         }}
 
@@ -284,12 +284,14 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
         try {
             int value = NStr::StringToInt(str, flags);
             NcbiCout << "int value: " << value << ", toString: '"
-                     << NStr::IntToString(value, str_flags) << "'"
+                     << NStr::NumericToString(value, str_flags) << "'"
                      << NcbiEndl;
             BOOST_CHECK(test->IsGoodInt());
             BOOST_CHECK_EQUAL(value, test->i);
-            if (allow_same_test)
+            if (allow_same_test) {
                 BOOST_CHECK(test->Same(NStr::IntToString(value, str_flags)));
+                BOOST_CHECK(test->Same(NStr::NumericToString(value, str_flags)));
+            }
         }
         catch (CException&) {
             if ( test->IsGoodInt() ) {
@@ -303,14 +305,16 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             int value = NStr::StringToInt(str, flags | NStr::fConvErr_NoThrow);
             int err = errno;
             NcbiCout << "int value: " << value << ", toString: '"
-                     << NStr::IntToString(value, str_flags) << "'"
+                     << NStr::NumericToString(value, str_flags) << "'"
                      << " errno: " << err << NcbiEndl;
             if ( value || !err ) {
                 BOOST_CHECK(!err);
                 BOOST_CHECK(test->IsGoodInt());
                 BOOST_CHECK_EQUAL(value, test->i);
-                if (allow_same_test)
+                if (allow_same_test) {
                     BOOST_CHECK(test->Same(NStr::IntToString(value, str_flags)));
+                    BOOST_CHECK(test->Same(NStr::NumericToString(value, str_flags)));
+                }
             }
             else {
                 BOOST_CHECK(err);
@@ -322,12 +326,14 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
         try {
             unsigned int value = NStr::StringToUInt(str, flags);
             NcbiCout << "unsigned int value: " << value << ", toString: '"
-                     << NStr::UIntToString(value, str_flags) << "'"
+                     << NStr::NumericToString(value, str_flags) << "'"
                      << NcbiEndl;
             BOOST_CHECK(test->IsGoodUInt());
             BOOST_CHECK_EQUAL(value, test->u);
-            if (allow_same_test)
+            if (allow_same_test) {
                 BOOST_CHECK(test->Same(NStr::UIntToString(value, str_flags)));
+                BOOST_CHECK(test->Same(NStr::NumericToString(value, str_flags)));
+            }
         }
         catch (CException&) {
             if ( test->IsGoodUInt() ) {
@@ -341,14 +347,16 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             unsigned int value = NStr::StringToUInt(str, flags | NStr::fConvErr_NoThrow);
             int err = errno;
             NcbiCout << "unsigned int value: " << value << ", toString: '"
-                     << NStr::UIntToString(value, str_flags) << "'"
+                     << NStr::NumericToString(value, str_flags) << "'"
                      << " errno: " << err << NcbiEndl;
             if ( value || !err ) {
                 BOOST_CHECK(!err);
                 BOOST_CHECK(test->IsGoodUInt());
                 BOOST_CHECK_EQUAL(value, test->u);
-                if (allow_same_test)
+                if (allow_same_test) {
                     BOOST_CHECK(test->Same(NStr::UIntToString(value, str_flags)));
+                    BOOST_CHECK(test->Same(NStr::NumericToString(value, str_flags)));
+                }
             }
             else {
                 BOOST_CHECK(err);
@@ -360,20 +368,24 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
         try {
             long value = NStr::StringToLong(str, flags);
             NcbiCout << "long value: " << value << ", toString: '"
-                     << NStr::LongToString(value, str_flags) << "', "
+                     << NStr::NumericToString(value, str_flags) << "', "
                      << "Int8ToString: '"
-                     << NStr::Int8ToString(value, str_flags) << "'"
+                     << NStr::NumericToString(value, str_flags) << "'"
                      << NcbiEndl;
             #if (SIZEOF_LONG == SIZEOF_INT)
                 BOOST_CHECK(test->IsGoodInt());
                 BOOST_CHECK_EQUAL(value, test->i);
-                if (allow_same_test)
+                if (allow_same_test) {
                     BOOST_CHECK(test->Same(NStr::LongToString(value, str_flags)));
+                    BOOST_CHECK(test->Same(NStr::NumericToString(value, str_flags)));
+                }
             #else
                 BOOST_CHECK(test->IsGoodInt8());
                 BOOST_CHECK_EQUAL(value, test->i8);
-                if (allow_same_test)
+                if (allow_same_test) {
                     BOOST_CHECK(test->Same(NStr::Int8ToString(value, str_flags)));
+                    BOOST_CHECK(test->Same(NStr::NumericToString(value, str_flags)));
+                }
             #endif
         }
         catch (CException&) {
@@ -397,22 +409,26 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             long value = NStr::StringToLong(str, flags | NStr::fConvErr_NoThrow);
             int err = errno;
             NcbiCout << "long value: " << value << ", toString: '"
-                     << NStr::LongToString(value, str_flags) << "', "
+                     << NStr::NumericToString(value, str_flags) << "', "
                      << "Int8ToString: '"
-                     << NStr::Int8ToString(value, str_flags) << "'"
+                     << NStr::NumericToString(value, str_flags) << "'"
                      << " errno: " << err << NcbiEndl;
             if ( value || !err ) {
                 BOOST_CHECK(!err);
             #if (SIZEOF_LONG == SIZEOF_INT)
                 BOOST_CHECK(test->IsGoodInt());
                 BOOST_CHECK_EQUAL(value, test->i);
-                if (allow_same_test)
+                if (allow_same_test) {
                     BOOST_CHECK(test->Same(NStr::LongToString(value, str_flags)));
+                    BOOST_CHECK(test->Same(NStr::NumericToString(value, str_flags)));
+                }
             #else
                 BOOST_CHECK(test->IsGoodInt8());
                 BOOST_CHECK_EQUAL(value, test->i8);
-                if (allow_same_test)
+                if (allow_same_test) {
                     BOOST_CHECK(test->Same(NStr::Int8ToString(value, str_flags)));
+                    BOOST_CHECK(test->Same(NStr::NumericToString(value, str_flags)));
+                }
             #endif
             }
             else {
@@ -429,20 +445,24 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
         try {
             unsigned long value = NStr::StringToULong(str, flags);
             NcbiCout << "unsigned long value: " << value << ", toString: '"
-                     << NStr::ULongToString(value, str_flags) << "', "
+                     << NStr::NumericToString(value, str_flags) << "', "
                      << "UInt8ToString: '"
-                     << NStr::UInt8ToString(value, str_flags) << "'"
+                     << NStr::NumericToString(value, str_flags) << "'"
                      << NcbiEndl;
             #if (SIZEOF_LONG == SIZEOF_INT)
                 BOOST_CHECK(test->IsGoodUInt());
                 BOOST_CHECK_EQUAL(value, test->u);
-                if (allow_same_test)
+                if (allow_same_test) {
                     BOOST_CHECK(test->Same(NStr::ULongToString(value, str_flags)));
+                    BOOST_CHECK(test->Same(NStr::NumericToString(value, str_flags)));
+                }
             #else
                 BOOST_CHECK(test->IsGoodUInt8());
                 BOOST_CHECK_EQUAL(value, test->u8);
-                if (allow_same_test)
+                if (allow_same_test) {
                     BOOST_CHECK(test->Same(NStr::UInt8ToString(value, str_flags)));
+                    BOOST_CHECK(test->Same(NStr::NumericToString(value, str_flags)));
+                }
             #endif
         }
         catch (CException&) {
@@ -466,22 +486,26 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             unsigned long value = NStr::StringToULong(str, flags | NStr::fConvErr_NoThrow);
             int err = errno;
             NcbiCout << "unsigned long value: " << value << ", toString: '"
-                     << NStr::ULongToString(value, str_flags) << "', "
+                     << NStr::NumericToString(value, str_flags) << "', "
                      << "UInt8ToString: '"
-                     << NStr::UInt8ToString(value, str_flags) << "'"
+                     << NStr::NumericToString(value, str_flags) << "'"
                      << " errno: " << err << NcbiEndl;
             if ( value || !err ) {
                 BOOST_CHECK(!err);
             #if (SIZEOF_LONG == SIZEOF_INT)
                 BOOST_CHECK(test->IsGoodUInt());
                 BOOST_CHECK_EQUAL(value, test->u);
-                if (allow_same_test)
+                if (allow_same_test) {
                     BOOST_CHECK(test->Same(NStr::ULongToString(value, str_flags)));
+                    BOOST_CHECK(test->Same(NStr::NumericToString(value, str_flags)));
+                }
             #else
                 BOOST_CHECK(test->IsGoodUInt8());
                 BOOST_CHECK_EQUAL(value, test->u8);
-                if (allow_same_test)
+                if (allow_same_test) {
                     BOOST_CHECK(test->Same(NStr::UInt8ToString(value, str_flags)));
+                    BOOST_CHECK(test->Same(NStr::NumericToString(value, str_flags)));
+                }
             #endif
             }
             else {
@@ -498,12 +522,14 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
         try {
             Int8 value = NStr::StringToInt8(str, flags);
             NcbiCout << "Int8 value: " << value << ", toString: '"
-                     << NStr::Int8ToString(value, str_flags) << "'"
+                     << NStr::NumericToString(value, str_flags) << "'"
                      << NcbiEndl;
             BOOST_CHECK(test->IsGoodInt8());
             BOOST_CHECK_EQUAL(value, test->i8);
-            if (allow_same_test)
+            if (allow_same_test) {
                 BOOST_CHECK(test->Same(NStr::Int8ToString(value, str_flags)));
+                BOOST_CHECK(test->Same(NStr::NumericToString(value, str_flags)));
+            }
         }
         catch (CException&) {
             if ( test->IsGoodInt8() ) {
@@ -517,14 +543,16 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             Int8 value = NStr::StringToInt8(str, flags | NStr::fConvErr_NoThrow);
             int err = errno;
             NcbiCout << "Int8 value: " << value << ", toString: '"
-                     << NStr::Int8ToString(value, str_flags) << "'"
+                     << NStr::NumericToString(value, str_flags) << "'"
                      << " errno: " << err << NcbiEndl;
             if ( value || !err ) {
                 BOOST_CHECK(!err);
                 BOOST_CHECK(test->IsGoodInt8());
                 BOOST_CHECK_EQUAL(value, test->i8);
-                if (allow_same_test)
+                if (allow_same_test) {
                     BOOST_CHECK(test->Same(NStr::Int8ToString(value, str_flags)));
+                    BOOST_CHECK(test->Same(NStr::NumericToString(value, str_flags)));
+                }
             }
             else {
                 BOOST_CHECK(err);
@@ -536,12 +564,14 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
         try {
             Uint8 value = NStr::StringToUInt8(str, flags);
             NcbiCout << "Uint8 value: " << value << ", toString: '"
-                     << NStr::UInt8ToString(value, str_flags) << "'"
+                     << NStr::NumericToString(value, str_flags) << "'"
                      << NcbiEndl;
             BOOST_CHECK(test->IsGoodUInt8());
             BOOST_CHECK_EQUAL(value, test->u8);
-            if (allow_same_test)
+            if (allow_same_test) {
                 BOOST_CHECK(test->Same(NStr::UInt8ToString(value, str_flags)));
+                BOOST_CHECK(test->Same(NStr::NumericToString(value, str_flags)));
+            }
         }
         catch (CException&) {
             if ( test->IsGoodUInt8() ) {
@@ -555,14 +585,16 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             Uint8 value = NStr::StringToUInt8(str, flags | NStr::fConvErr_NoThrow);
             int err = errno;
             NcbiCout << "Uint8 value: " << value << ", toString: '"
-                     << NStr::UInt8ToString(value, str_flags) << "'"
+                     << NStr::NumericToString(value, str_flags) << "'"
                      << " errno: " << err << NcbiEndl;
             if ( value || !err ) {
                 BOOST_CHECK(!err);
                 BOOST_CHECK(test->IsGoodUInt8());
                 BOOST_CHECK_EQUAL(value, test->u8);
-                if (allow_same_test)
+                if (allow_same_test) {
                     BOOST_CHECK(test->Same(NStr::UInt8ToString(value, str_flags)));
+                    BOOST_CHECK(test->Same(NStr::NumericToString(value, str_flags)));
+                }
             }
             else {
                 BOOST_CHECK(err);
@@ -580,7 +612,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
                             valueP == value-test->delta ||
                            (valueP <  value+test->delta && valueP > value-test->delta));
             NcbiCout << "double value: " << value << ", toString: '"
-                     << NStr::DoubleToString(value, -1, str_flags) << "'"
+                     << NStr::NumericToString(value, str_flags) << "'"
                      << NcbiEndl;
             BOOST_CHECK(test->IsGoodDouble());
 //            BOOST_CHECK_EQUAL(value, test->d);
@@ -601,7 +633,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             double value = NStr::StringToDouble(str, flags | NStr::fConvErr_NoThrow);
             int err = errno;
             NcbiCout << "double value: " << value << ", toString: '"
-                     << NStr::DoubleToString(value, -1, str_flags) << "'"
+                     << NStr::NumericToString(value, str_flags) << "'"
                      << " errno: " << err << NcbiEndl;
             if ( value || !err ) {
                 BOOST_CHECK(!err);
@@ -623,7 +655,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             double value = NStr::StringToDouble(str, flags | NStr::fDecimalPosix | NStr::fConvErr_NoThrow);
             int err = errno;
             NcbiCout << "double value: " << value << ", toString: '"
-                     << NStr::DoubleToString(value, -1, str_flags) << "'"
+                     << NStr::NumericToString(value, str_flags) << "'"
                      << " errno: " << err << NcbiEndl;
             if ( value || !err ) {
                 BOOST_CHECK(!err);
@@ -749,47 +781,67 @@ BOOST_AUTO_TEST_CASE(s_StringToDoublePosix)
     BOOST_CHECK( isnan(value) );
     NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
     BOOST_CHECK( NStr::Compare(out, "NAN") == 0 );
+    NStr::NumericToString(out, value, NStr::fDoublePosix);
+    BOOST_CHECK( NStr::Compare(out, "NAN") == 0 );
     value = NStr::StringToDoublePosix(out.c_str());
     BOOST_CHECK( isnan(value) );
     NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
+    BOOST_CHECK( NStr::Compare(out, "NAN") == 0 );
+    NStr::NumericToString(out, value, NStr::fDoublePosix);
     BOOST_CHECK( NStr::Compare(out, "NAN") == 0 );
 
     value = NStr::StringToDoublePosix("inf", &endptr);
     BOOST_CHECK( !finite(value) && value>0.);
     NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
     BOOST_CHECK( NStr::Compare(out, "INF") == 0 );
+    NStr::NumericToString(out, value, NStr::fDoublePosix);
+    BOOST_CHECK( NStr::Compare(out, "INF") == 0 );
     value = NStr::StringToDoublePosix(out.c_str(), &endptr);
     BOOST_CHECK( !finite(value) && value>0.);
     NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
+    BOOST_CHECK( NStr::Compare(out, "INF") == 0 );
+    NStr::NumericToString(out, value, NStr::fDoublePosix);
     BOOST_CHECK( NStr::Compare(out, "INF") == 0 );
 
     value = NStr::StringToDoublePosix("infinity", &endptr);
     BOOST_CHECK( !finite(value) && value>0. );
     NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
     BOOST_CHECK( NStr::Compare(out, "INF") == 0 );
+    NStr::NumericToString(out, value, NStr::fDoublePosix);
+    BOOST_CHECK( NStr::Compare(out, "INF") == 0 );
     value = NStr::StringToDoublePosix(out.c_str(), &endptr);
     BOOST_CHECK( !finite(value) && value>0. );
     NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
+    BOOST_CHECK( NStr::Compare(out, "INF") == 0 );
+    NStr::NumericToString(out, value, NStr::fDoublePosix);
     BOOST_CHECK( NStr::Compare(out, "INF") == 0 );
 
     value = NStr::StringToDoublePosix("+inf", &endptr);
     BOOST_CHECK( !finite(value) && value>0. );
     NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
     BOOST_CHECK( NStr::Compare(out, "INF") == 0 );
+    NStr::NumericToString(out, value, NStr::fDoublePosix);
+    BOOST_CHECK( NStr::Compare(out, "INF") == 0 );
 
     value = NStr::StringToDoublePosix("+infinity", &endptr);
     BOOST_CHECK( !finite(value) && value>0. );
     NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
+    BOOST_CHECK( NStr::Compare(out, "INF") == 0 );
+    NStr::NumericToString(out, value, NStr::fDoublePosix);
     BOOST_CHECK( NStr::Compare(out, "INF") == 0 );
 
     value = NStr::StringToDoublePosix("-inf", &endptr);
     BOOST_CHECK( !finite(value) && value<0. );
     NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
     BOOST_CHECK( NStr::Compare(out, "-INF") == 0 );
+    NStr::NumericToString(out, value, NStr::fDoublePosix);
+    BOOST_CHECK( NStr::Compare(out, "-INF") == 0 );
 
     value = NStr::StringToDoublePosix("-infinity", &endptr);
     BOOST_CHECK( !finite(value) && value<0. );
     NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
+    BOOST_CHECK( NStr::Compare(out, "-INF") == 0 );
+    NStr::NumericToString(out, value, NStr::fDoublePosix);
     BOOST_CHECK( NStr::Compare(out, "-INF") == 0 );
 }
 
@@ -865,7 +917,7 @@ BOOST_AUTO_TEST_CASE(s_StringToDouble)
         try {
             double value = NStr::StringToDouble(str, flags);
             NcbiCout << "double value: " << value << ", toString: '"
-                     << NStr::DoubleToString(value) << "'"
+                     << NStr::NumericToString(value) << "'"
                      << NcbiEndl;
             BOOST_CHECK(test->IsGoodDouble());
             BOOST_CHECK_EQUAL(value, test->d);
@@ -976,6 +1028,10 @@ BOOST_AUTO_TEST_CASE(s_StringToNumRadix)
                         << NcbiEndl;
                 BOOST_CHECK_EQUAL((Uint8)val, test->value);
                 BOOST_CHECK(test->Same(str));
+                if ( test->base ) {
+                    NStr::NumericToString(str, val, 0, test->base);
+                }
+                BOOST_CHECK(test->Same(str));
             }
         }
         catch (CException&) {
@@ -997,6 +1053,10 @@ BOOST_AUTO_TEST_CASE(s_StringToNumRadix)
                         << NcbiEndl;
                 BOOST_CHECK_EQUAL(val, test->value);
                 BOOST_CHECK(test->Same(str));
+                if ( test->base ) {
+                    NStr::NumericToString(str, val, 0, test->base);
+                }
+                BOOST_CHECK(test->Same(str));
             }
         }
         catch (CException&) {
@@ -1016,6 +1076,10 @@ BOOST_AUTO_TEST_CASE(s_StringToNumRadix)
                         << NcbiEndl;
                 BOOST_CHECK_EQUAL((Uint8)val, test->value);
                 BOOST_CHECK(test->Same(str));
+                if ( test->base ) {
+                    NStr::NumericToString(str, val, 0, test->base);
+                }
+                BOOST_CHECK(test->Same(str));
             }
         }
         catch (CException&) {
@@ -1034,6 +1098,10 @@ BOOST_AUTO_TEST_CASE(s_StringToNumRadix)
                      << NcbiEndl;
             BOOST_CHECK_EQUAL(val, test->value);
             BOOST_CHECK(test->Same(str));
+            if ( test->base ) {
+                NStr::NumericToString(str, val, 0, test->base);
+            }
+            BOOST_CHECK(test->Same(str));
         }
         catch (CException&) {
             BOOST_CHECK_EQUAL(test->value, (Uint8)kBad);
@@ -1050,8 +1118,20 @@ BOOST_AUTO_TEST_CASE(s_StringToNumRadix)
 #elif (SIZEOF_INT == 8)
     BOOST_CHECK(str == "111111111111111111111111111111111111111111111111111111111111111");
 #endif
+    NStr::NumericToString(str, kMax_Int, 0, 2);
+#if (SIZEOF_INT == 4)
+    BOOST_CHECK(str == "1111111111111111111111111111111");
+#elif (SIZEOF_INT == 8)
+    BOOST_CHECK(str == "111111111111111111111111111111111111111111111111111111111111111");
+#endif
 
     NStr::LongToString(str, kMax_Long, 0, 2);
+#if (SIZEOF_LONG == 4)
+    BOOST_CHECK(str == "1111111111111111111111111111111");
+#elif (SIZEOF_LONG == 8)
+    BOOST_CHECK(str == "111111111111111111111111111111111111111111111111111111111111111");
+#endif
+    NStr::NumericToString(str, kMax_Long, 0, 2);
 #if (SIZEOF_LONG == 4)
     BOOST_CHECK(str == "1111111111111111111111111111111");
 #elif (SIZEOF_LONG == 8)
@@ -1064,8 +1144,20 @@ BOOST_AUTO_TEST_CASE(s_StringToNumRadix)
 #elif (SIZEOF_INT == 8)
     BOOST_CHECK(str == "1111111111111111111111111111111111111111111111111111111111111111");
 #endif
+    NStr::NumericToString(str, kMax_UInt, 0, 2);
+#if (SIZEOF_INT == 4)
+    BOOST_CHECK(str == "11111111111111111111111111111111");
+#elif (SIZEOF_INT == 8)
+    BOOST_CHECK(str == "1111111111111111111111111111111111111111111111111111111111111111");
+#endif
 
     NStr::ULongToString(str, kMax_ULong, 0, 2);
+#if (SIZEOF_LONG == 4)
+    BOOST_CHECK(str == "11111111111111111111111111111111");
+#elif (SIZEOF_LONG == 8)
+    BOOST_CHECK(str == "1111111111111111111111111111111111111111111111111111111111111111");
+#endif
+    NStr::NumericToString(str, kMax_ULong, 0, 2);
 #if (SIZEOF_LONG == 4)
     BOOST_CHECK(str == "11111111111111111111111111111111");
 #elif (SIZEOF_LONG == 8)
@@ -1078,8 +1170,20 @@ BOOST_AUTO_TEST_CASE(s_StringToNumRadix)
 #elif (SIZEOF_INT == 8)
     BOOST_CHECK(str == "1777777777777777777777");
 #endif
+    NStr::NumericToString(str, -1, 0, 8);
+#if (SIZEOF_INT == 4) 
+    BOOST_CHECK(str == "37777777777");
+#elif (SIZEOF_INT == 8)
+    BOOST_CHECK(str == "1777777777777777777777");
+#endif
 
     NStr::LongToString(str, -1, 0, 8);
+#if (SIZEOF_LONG == 4) 
+    BOOST_CHECK(str == "37777777777");
+#elif (SIZEOF_LONG == 8)
+    BOOST_CHECK(str == "1777777777777777777777");
+#endif
+    NStr::NumericToString(str, (long)-1, 0, 8);
 #if (SIZEOF_LONG == 4) 
     BOOST_CHECK(str == "37777777777");
 #elif (SIZEOF_LONG == 8)
@@ -1092,6 +1196,12 @@ BOOST_AUTO_TEST_CASE(s_StringToNumRadix)
 #elif (SIZEOF_INT == 8)
     BOOST_CHECK(str == "FFFFFFFFFFFFFFFF");
 #endif
+    NStr::NumericToString(str, -1, 0, 16);
+#if (SIZEOF_INT == 4)
+    BOOST_CHECK(str == "FFFFFFFF");
+#elif (SIZEOF_INT == 8)
+    BOOST_CHECK(str == "FFFFFFFFFFFFFFFF");
+#endif
 
     NStr::LongToString(str, -1, 0, 16);
 #if (SIZEOF_LONG == 4)
@@ -1099,8 +1209,16 @@ BOOST_AUTO_TEST_CASE(s_StringToNumRadix)
 #elif (SIZEOF_LONG == 8)
     BOOST_CHECK(str == "FFFFFFFFFFFFFFFF");
 #endif
+    NStr::NumericToString(str, (long)-1, 0, 16);
+#if (SIZEOF_LONG == 4)
+    BOOST_CHECK(str == "FFFFFFFF");
+#elif (SIZEOF_LONG == 8)
+    BOOST_CHECK(str == "FFFFFFFFFFFFFFFF");
+#endif
 
     NStr::UInt8ToString(str, NCBI_CONST_UINT8(12345678901234567), 0, 16);
+    BOOST_CHECK(str == "2BDC545D6B4B87");
+    NStr::NumericToString(str, NCBI_CONST_UINT8(12345678901234567), 0, 16);
     BOOST_CHECK(str == "2BDC545D6B4B87");
 }
 
