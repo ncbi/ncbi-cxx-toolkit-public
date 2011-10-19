@@ -110,8 +110,8 @@ const streamsize kConn_DefaultBufSize = 4096;
 /// @sa
 ///   CONN_SetCallback, eCONN_OnClose
 
-class NCBI_XCONNECT_EXPORT CConn_IOStream : public virtual CConnIniter,
-                                            public         CNcbiIostream
+class NCBI_XCONNECT_EXPORT CConn_IOStream : public    CNcbiIostream,
+                                            protected CConnIniter
 {
 public:
     /// Create a stream based on a CONN, which is to be closed upon

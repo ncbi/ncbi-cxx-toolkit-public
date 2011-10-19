@@ -46,7 +46,7 @@
 BEGIN_NCBI_SCOPE
 
 
-class NCBI_XCONNECT_EXPORT CConnTest : public virtual CConnIniter
+class NCBI_XCONNECT_EXPORT CConnTest : protected CConnIniter
 {
 public:
     /// Note that each stage has a previous one as a prerequisite, with the

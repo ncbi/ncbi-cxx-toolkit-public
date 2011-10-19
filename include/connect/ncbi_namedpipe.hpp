@@ -94,7 +94,7 @@ class CNamedPipeHandle;
 /// @sa
 ///   CNamedPipeClient, CNamedPipeServer, CPipe
 
-class NCBI_XCONNECT_EXPORT CNamedPipe : public virtual CConnIniter
+class NCBI_XCONNECT_EXPORT CNamedPipe : protected CConnIniter
 {
 public:
     /// Default pipe buffer size.

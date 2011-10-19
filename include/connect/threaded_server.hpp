@@ -76,7 +76,7 @@ public:
 /// @deprecated  Use CServer instead.
 
 NCBI_DEPRECATED_CLASS NCBI_XCONNECT_EXPORT CThreadedServer
-    : public virtual CConnIniter
+    : protected CConnIniter
 {
 public:
     CThreadedServer(unsigned short port) :

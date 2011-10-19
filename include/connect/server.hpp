@@ -92,7 +92,7 @@ class CNetCacheServer;
 /// ProcessTimeout and set parameter accept_timeout to non-zero value).
 ///
 
-class NCBI_XCONNECT_EXPORT CServer : public virtual CConnIniter
+class NCBI_XCONNECT_EXPORT CServer : protected CConnIniter
 {
 public:
     // 'ctors

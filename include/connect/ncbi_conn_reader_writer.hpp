@@ -47,8 +47,8 @@
 BEGIN_NCBI_SCOPE
 
 
-class NCBI_XCONNECT_EXPORT CSocketReaderWriter : public virtual CConnIniter,
-                                                 public IReaderWriter
+class NCBI_XCONNECT_EXPORT CSocketReaderWriter : public    IReaderWriter,
+                                                 protected CConnIniter
 {
 public:
     CSocketReaderWriter(CSocket* sock, EOwnership if_to_own = eNoOwnership);

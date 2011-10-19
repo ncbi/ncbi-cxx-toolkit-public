@@ -74,7 +74,7 @@ class CPipeHandle;
 /// @sa
 ///   CNamedPipe, CExec
 
-class NCBI_XCONNECT_EXPORT CPipe : public virtual CConnIniter
+class NCBI_XCONNECT_EXPORT CPipe : protected CConnIniter
 {
 public:
     /// Flags for creating standard I/O handles of child process.
