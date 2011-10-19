@@ -31,7 +31,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include "traversal_attach_user_funcs_callback.hpp"
+#include "traversal_pattern_match_callback.hpp"
 
 #include <serial/error_codes.hpp>
 
@@ -39,9 +39,9 @@
 
 BEGIN_NCBI_SCOPE
 
-// CTraversalAttachUserFuncsCallback::TPatternVec CTraversalAttachUserFuncsCallback::kEmptyPatternVec;
+// CTraversalPatternMatchCallback::TPatternVec CTraversalPatternMatchCallback::kEmptyPatternVec;
 
-CTraversalAttachUserFuncsCallback::CTraversalAttachUserFuncsCallback( 
+CTraversalPatternMatchCallback::CTraversalPatternMatchCallback( 
     CTraversalSpecFileParser &spec_file_parser, 
     CTraversalNode::TNodeSet &nodesWithFunctions )
     : m_NodesWithFunctions(nodesWithFunctions)
@@ -64,9 +64,22 @@ CTraversalAttachUserFuncsCallback::CTraversalAttachUserFuncsCallback(
     ITERATE( std::vector<CTraversalSpecFileParser::CDescFileNodeRef>, pattern_iter, spec_file_parser.GetDescFileNodes() ) {
         x_TryToAttachPattern( *pattern_iter );
     }
+
+    // destroy nodes that match the "deprecated" pattern
+    CTraversalNode::TNodeSet nodes_to_destroy;
+    ITERATE( CTraversalSpecFileParser::TPatternVec, deprec_pattern_iter, spec_file_parser.GetDeprecatedPatterns() )
+    {
+        x_TryToDeprecatePatternMatchers( *deprec_pattern_iter, nodes_to_destroy );
+    }
+
+    // destroy the nodes we should
+    NON_CONST_ITERATE( CTraversalNode::TNodeSet, node_iter, nodes_to_destroy ) {
+        CRef<CTraversalNode> node = *node_iter;
+        node->Clear();
+    }
 }
 
-void CTraversalAttachUserFuncsCallback::x_TryToAttachPattern( CTraversalSpecFileParser::CDescFileNodeRef pattern )
+void CTraversalPatternMatchCallback::x_TryToAttachPattern( CTraversalSpecFileParser::CDescFileNodeRef pattern )
 {
     const string &last_node_in_pattern = pattern->GetPattern().back();
     bool pattern_was_used = false;
@@ -100,8 +113,29 @@ void CTraversalAttachUserFuncsCallback::x_TryToAttachPattern( CTraversalSpecFile
     }
 }
 
+void CTraversalPatternMatchCallback::x_TryToDeprecatePatternMatchers( 
+    const CTraversalSpecFileParser::TPattern & deprec_pattern, 
+    CTraversalNode::TNodeSet & nodes_to_destroy )
+{
+    const string &last_node_in_pattern = deprec_pattern.back();
+    bool pattern_was_used = false;
+
+    NON_CONST_ITERATE( CTraversalNode::TNodeVec, node_iter, m_LeafToPossibleNodes[last_node_in_pattern] ) {
+        if( x_PatternMatches( (*node_iter), deprec_pattern.rbegin(), deprec_pattern.rend() ) ) {
+            pattern_was_used = true;
+            nodes_to_destroy.insert( *node_iter );
+        }
+    }
+
+    // warn the user on unused patterns, since there's
+    // a high chance the user made a typo
+    if( ! pattern_was_used ) {
+        ERR_POST_X(2, Warning << "Deprecation pattern was unused: " << NStr::Join( deprec_pattern, "." ) );
+    }
+}
+
 bool 
-CTraversalAttachUserFuncsCallback::x_PatternMatches( 
+CTraversalPatternMatchCallback::x_PatternMatches( 
     CRef<CTraversalNode> node, 
     TPatternIter pattern_start, TPatternIter pattern_end )
 {
@@ -146,7 +180,7 @@ CTraversalAttachUserFuncsCallback::x_PatternMatches(
     return false;
 }
 
-bool CTraversalAttachUserFuncsCallback::x_AnyPatternMatches( 
+bool CTraversalPatternMatchCallback::x_AnyPatternMatches( 
     CRef<CTraversalNode> node,
     const CTraversalSpecFileParser::TPatternVec &patterns )
 {
@@ -159,7 +193,7 @@ bool CTraversalAttachUserFuncsCallback::x_AnyPatternMatches(
     return false;
 }
 
-void CTraversalAttachUserFuncsCallback::x_DoAttachment( 
+void CTraversalPatternMatchCallback::x_DoAttachment( 
     CRef<CTraversalNode> node, 
     CTraversalSpecFileParser::CDescFileNodeRef pattern )
 {
@@ -188,7 +222,7 @@ void CTraversalAttachUserFuncsCallback::x_DoAttachment(
     m_NodesWithFunctions.insert( node->Ref() );
 }
 
-CRef<CTraversalNode> CTraversalAttachUserFuncsCallback::x_TranslateArgToNode( 
+CRef<CTraversalNode> CTraversalPatternMatchCallback::x_TranslateArgToNode( 
     CRef<CTraversalNode> node, 
     const CTraversalSpecFileParser::TPattern &main_pattern,
     const CTraversalSpecFileParser::TPattern &extra_arg_pattern )
@@ -229,7 +263,7 @@ CRef<CTraversalNode> CTraversalAttachUserFuncsCallback::x_TranslateArgToNode(
     return current_node;
 }
 
-bool CTraversalAttachUserFuncsCallback::x_NodeIsUnmatchable( const CTraversalNode& node )
+bool CTraversalPatternMatchCallback::x_NodeIsUnmatchable( const CTraversalNode& node )
 {
     if( (node.GetType() == CTraversalNode::eType_Reference) && ! node.GetCallees().empty() ) {
         const CTraversalNode& node_child = *(**node.GetCallees().begin()).GetNode();
@@ -245,7 +279,7 @@ bool CTraversalAttachUserFuncsCallback::x_NodeIsUnmatchable( const CTraversalNod
 }
 
 const string &
-CTraversalAttachUserFuncsCallback::x_GetNodeVarName( const CTraversalNode &node )
+CTraversalPatternMatchCallback::x_GetNodeVarName( const CTraversalNode &node )
 {
     const CTraversalNode::TNodeCallSet &callers = node.GetCallers();
     if( callers.empty() ) {
@@ -256,8 +290,8 @@ CTraversalAttachUserFuncsCallback::x_GetNodeVarName( const CTraversalNode &node 
     }
 }
 
-CTraversalAttachUserFuncsCallback::ERefChoice 
-CTraversalAttachUserFuncsCallback::x_UseRefOrChild(
+CTraversalPatternMatchCallback::ERefChoice 
+CTraversalPatternMatchCallback::x_UseRefOrChild(
     const CTraversalNode& parent_ref,
     const CTraversalNode& child )
 {

@@ -41,14 +41,14 @@
 
 BEGIN_NCBI_SCOPE
 
-class CTraversalAttachUserFuncsCallback {
+class CTraversalPatternMatchCallback {
 public:
     typedef map<std::string, CTraversalNode::TNodeVec> TLeafToNodeMap;
 
     // This will attach the given user functions to any 
     // nodes they belong to, and add any nodes with functions
     // to out_nodesWithFunctions
-    CTraversalAttachUserFuncsCallback( 
+    CTraversalPatternMatchCallback( 
         CTraversalSpecFileParser &spec_file_parser, 
         CTraversalNode::TNodeSet &out_nodesWithFunctions );
 
@@ -56,6 +56,11 @@ private:
 
     // attach the given pattern to all relevant nodes
     void x_TryToAttachPattern( CTraversalSpecFileParser::CDescFileNodeRef pattern );
+
+    // mark as deprecated any nodes we can
+    void x_TryToDeprecatePatternMatchers( 
+        const CTraversalSpecFileParser::TPattern & deprec_pattern, 
+        CTraversalNode::TNodeSet & nodes_to_destroy );
 
     typedef std::vector<std::string>::const_reverse_iterator TPatternIter;
     // Check if the given node matches the given pattern

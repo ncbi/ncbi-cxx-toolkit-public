@@ -34,7 +34,7 @@
 #include <serial/error_codes.hpp>
 #include "traversal_merger.hpp"
 #include "traversal_code_generator.hpp"
-#include "traversal_attach_user_funcs_callback.hpp"
+#include "traversal_pattern_match_callback.hpp"
 
 #include "blocktype.hpp"
 #include "enumtype.hpp"
@@ -324,7 +324,7 @@ CTraversalCodeGenerator::CTraversalCodeGenerator(
     // This will attach functions to all nodes that should get them, and
     // fill in nodesWithFunctions
     // ( The constructor does all the work )
-    CTraversalAttachUserFuncsCallback( spec_file_parser, nodesWithFunctions );
+    CTraversalPatternMatchCallback( spec_file_parser, nodesWithFunctions );
 
     // remove empty nodes (or nodes that only call empty calls)
     // otherwise we might generate a huge number of functions

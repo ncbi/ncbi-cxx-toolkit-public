@@ -30,7 +30,8 @@
 *
 * File Description:
 *   Parses the description files used by the cleanup_code_generator.
-*   See the .cpp file for the format of the specification file.
+*   See the .cpp file for a detailed description of the format 
+*   of the specification file.
 */
 
 #include <vector>
@@ -120,6 +121,7 @@ public:
     const std::vector<std::string> &GetSourceIncludes(void) const { return m_SourceIncludes; }
     const TMemberRefVec &GetMembers(void) const { return m_Members; }
     const std::vector<std::string> &GetHeaderForwardDeclarations(void) const { return m_HeaderForwardDeclarations; }
+    const TPatternVec & GetDeprecatedPatterns(void) { return m_DeprecatedPatterns; }
 
     bool IsPruningAllowed(void) const { return m_IsPruningAllowed; }
     bool IsMergingAllowed(void) const { return m_IsMergingAllowed; }
@@ -189,6 +191,7 @@ private:
         CTokenizer &tokenizer );
     void x_ParseHeaderForwardDeclarationClause( CTokenizer &tokenizer );
     void x_ParseMemberMacro( CTokenizer &tokenizer );
+    void x_ParseDeprecated( CTokenizer &tokenizer );
 
     bool x_IsValidPattern( const std::string & pattern );
 
@@ -201,6 +204,7 @@ private:
     std::vector< std::string > m_SourceIncludes;
     TMemberRefVec m_Members;
     std::vector< std::string > m_HeaderForwardDeclarations;
+    TPatternVec m_DeprecatedPatterns;
 
     bool m_IsPruningAllowed;
     bool m_IsMergingAllowed;

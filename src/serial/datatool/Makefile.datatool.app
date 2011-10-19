@@ -14,7 +14,7 @@ SRC = datatool \
 	fileutil alexer aparser parser lexer exceptions comments srcutil \
 	dtdaux dtdlexer dtdparser rpcgen aliasstr xsdlexer xsdparser \
         wsdllexer wsdlparser wsdlstr \
-        traversal_attach_user_funcs_callback \
+        traversal_pattern_match_callback \
         traversal_code_generator traversal_merger \
         traversal_node traversal_spec_file_parser
 
