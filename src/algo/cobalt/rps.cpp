@@ -182,7 +182,8 @@ CMultiAligner::x_RealignBlocks(CHitList& rps_hits,
         // for each block that contains a portion of the
         // original alignment
     
-        while (itr->seq_index == db_seq && itr->GetFrom() < target.GetTo()) {
+        while (itr != blocklist.end() && itr->seq_index == db_seq
+               && itr->GetFrom() < target.GetTo()) {
     
             const int kMaxFudge = 6;
             TRange q_range, new_s_range; 
