@@ -32,6 +32,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbicfg.h>
 #include <corelib/error_codes.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbimisc.hpp>
@@ -1157,10 +1158,9 @@ CNcbiTestApplication::x_InitCommonParserVars(void)
     m_IniParser->AddSymbol("BUILD_Release",     !IS_VAR_DEFINED(_DEBUG));
 
 
-    // Add variables based on testsuite environment variable $FEATURES
+    // Add variables based on features available in the build
 
-    CNcbiEnvironment env;
-    string features_str = env.Get("FEATURES");
+    string features_str = NCBI_GetBuildFeatures();
     if (features_str.empty()) {
         return;
     }
