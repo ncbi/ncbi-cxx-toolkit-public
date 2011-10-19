@@ -685,7 +685,7 @@ extern const char* CORE_GetUsername(char* buf, size_t bufsize)
         assert(size < sizeof(temp)/sizeof(temp[0]));
         temp[size] = (TCHAR) 0;
         login = UTIL_TcharToUtf8(temp);
-        buf = x_Savestr(buf, login, bufsize);
+        buf = x_Savestr(login, buf, bufsize);
         UTIL_ReleaseBuffer(login);
         return buf;
     }
