@@ -235,7 +235,9 @@ CJob::CJob(const SNSCommandArguments &  request) :
     m_ProgressMsg(request.progress_msg),
     m_AffinityId(0),
     m_Mask(request.job_mask),
-    m_ClientSID(request.sid)
+    m_ClientIP(request.ip),
+    m_ClientSID(request.sid),
+    m_Output("")
 {
     SetInput(NStr::ParseEscapes(request.input));
 }

@@ -1028,9 +1028,7 @@ void CNetScheduleHandler::x_ProcessSubmit(CQueue* q)
 
     // Never leave Client IP empty, if we're not provided with a real one,
     // use peer address as a last resort. See also x_ProcessSubmitBatch.
-    if (!m_CommandArguments.ip.empty())
-        job.SetClientIP(m_CommandArguments.ip);
-    else {
+    if (m_CommandArguments.ip.empty()) {
         string  s_ip;
         NS_FormatIPAddress(m_ClientId.GetAddress(), s_ip);
         job.SetClientIP(s_ip);
