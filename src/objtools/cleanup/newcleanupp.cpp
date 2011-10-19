@@ -7851,6 +7851,18 @@ void CNewCleanup_imp::RnaFeatBC (
         }
     }
 
+    // This part is like C's FixncRNAClass
+    {
+        const CRNA_ref_Base::TType rna_type = 
+            ( rna.IsSetType() ? rna.GetType() : NCBI_RNAREF(unknown) );
+        if( rna_type == NCBI_RNAREF(ncRNA) && rna.IsSetExt() &&
+            rna.GetExt().IsGen() && rna.GetExt().GetGen().IsSetClass() &&
+            NStr::EqualNocase( rna.GetExt().GetGen().GetClass(), "antisense")  ) 
+        {
+            rna.SetExt().SetGen().SetClass("antisense_RNA");
+        }
+    }
+
     // this part is like C's ModernizeRNAFields
     const CRNA_ref_Base::TType rna_type = 
         ( rna.IsSetType() ? rna.GetType() : NCBI_RNAREF(unknown) );

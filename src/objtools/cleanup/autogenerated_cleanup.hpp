@@ -115,7 +115,6 @@
 #include <objects/seqfeat/Variation_ref.hpp>
 #include <objects/seqfeat/Variation_inst.hpp>
 #include <objects/seqfeat/Delta_item.hpp>
-#include <objects/seqfeat/Ext_loc.hpp>
 #include <objects/seqfeat/Phenotype.hpp>
 #include <objects/seqfeat/SeqFeatSupport.hpp>
 #include <objects/seqfeat/InferenceSupport.hpp>
@@ -478,16 +477,10 @@ void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_consequence( T
 void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_data_instance_instance_delta_ETC( Tcontainer_ncbi_cref_cdelta_item_ & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_data_instance_instance_ETC( CVariation_inst & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_data_instance_ETC( CVariation_inst & arg0 );
-  void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_ext_locs_E_E_ETC( CExt_loc & arg0 );
-  void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_ext_locs_E_ETC( CExt_loc & arg0 );
-  template< typename Tcontainer_ncbi_cref_cext_loc_ >
-void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_ext_locs_ETC( Tcontainer_ncbi_cref_cext_loc_ & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_phenotype_E_E_ETC( CPhenotype & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_phenotype_E_ETC( CPhenotype & arg0 );
   template< typename Tcontainer_ncbi_cref_cphenotype_ >
 void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_phenotype_ETC( Tcontainer_ncbi_cref_cphenotype_ & arg0 );
-  void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_pub_pub1789_ETC( CPub & arg0 );
-  void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_pub_ETC( CPub & arg0 );
   template< typename Tcvariation_ref_container_ncbi_cref_c_e_somatic_origin_c_e_somatic_origin_c_condition >
 void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_somatic_origin_E_condition_ETC( Tcvariation_ref_container_ncbi_cref_c_e_somatic_origin_c_e_somatic_origin_c_condition & arg0 );
   template< typename Tcvariation_ref_container_ncbi_cref_c_e_somatic_origin_c_e_somatic_origin >
