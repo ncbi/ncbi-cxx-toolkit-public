@@ -3551,131 +3551,131 @@ const string& CNcbiEmptyString::Get(void)
 //
 
 //---------------------- char
-EMPTY_TEMPLATE inline
-string NStr::NumericToString<char>(char value,
+template<> inline
+string NStr::NumericToString(char value,
     TNumToStringFlags flags, int  base)
 {
     return NStr::IntToString(value,flags,base);
 }
 
-EMPTY_TEMPLATE inline
-string NStr::NumericToString<unsigned char>(unsigned char value,
+template<> inline
+string NStr::NumericToString(unsigned char value,
     TNumToStringFlags flags, int  base)
 {
     return NStr::UIntToString(value,flags,base);
 }
 
-EMPTY_TEMPLATE inline
-void NStr::NumericToString<char>(string& out_str, char value,
+template<> inline
+void NStr::NumericToString(string& out_str, char value,
     TNumToStringFlags flags, int  base)
 {
     NStr::IntToString(out_str, value,flags,base);
 }
 
-EMPTY_TEMPLATE inline
-void NStr::NumericToString<unsigned char>(string& out_str, unsigned char value,
+template<> inline
+void NStr::NumericToString(string& out_str, unsigned char value,
     TNumToStringFlags flags, int  base)
 {
     NStr::UIntToString(out_str, value,flags,base);
 }
 
 //---------------------- wchar_t
-EMPTY_TEMPLATE inline
-string NStr::NumericToString<wchar_t>(wchar_t value,
+template<> inline
+string NStr::NumericToString(wchar_t value,
     TNumToStringFlags flags, int  base)
 {
     return NStr::IntToString(value,flags,base);
 }
 
-EMPTY_TEMPLATE inline
-void NStr::NumericToString<wchar_t>(string& out_str, wchar_t value,
+template<> inline
+void NStr::NumericToString(string& out_str, wchar_t value,
     TNumToStringFlags flags, int  base)
 {
     NStr::IntToString(out_str, value,flags,base);
 }
 
 //---------------------- short
-EMPTY_TEMPLATE inline
-string NStr::NumericToString<short>(short value,
+template<> inline
+string NStr::NumericToString(short value,
     TNumToStringFlags flags, int  base)
 {
     return NStr::IntToString(value,flags,base);
 }
 
-EMPTY_TEMPLATE inline
-string NStr::NumericToString<unsigned short>(unsigned short value,
+template<> inline
+string NStr::NumericToString(unsigned short value,
     TNumToStringFlags flags, int  base)
 {
     return NStr::UIntToString(value,flags,base);
 }
 
-EMPTY_TEMPLATE inline
-void NStr::NumericToString<short>(string& out_str, short value,
+template<> inline
+void NStr::NumericToString(string& out_str, short value,
     TNumToStringFlags flags, int  base)
 {
     NStr::IntToString(out_str, value,flags,base);
 }
 
-EMPTY_TEMPLATE inline
-void NStr::NumericToString<unsigned short>(string& out_str, unsigned short value,
+template<> inline
+void NStr::NumericToString(string& out_str, unsigned short value,
     TNumToStringFlags flags, int  base)
 {
     NStr::UIntToString(out_str, value,flags,base);
 }
 
 //---------------------- int
-EMPTY_TEMPLATE inline
-string NStr::NumericToString<int>(int value,
+template<> inline
+string NStr::NumericToString(int value,
     TNumToStringFlags flags, int  base)
 {
     return NStr::IntToString(value,flags,base);
 }
 
-EMPTY_TEMPLATE inline
-string NStr::NumericToString<unsigned int>(unsigned int value,
+template<> inline
+string NStr::NumericToString(unsigned int value,
     TNumToStringFlags flags, int  base)
 {
     return NStr::UIntToString(value,flags,base);
 }
 
-EMPTY_TEMPLATE inline
-void NStr::NumericToString<int>(string& out_str, int value,
+template<> inline
+void NStr::NumericToString(string& out_str, int value,
     TNumToStringFlags flags, int  base)
 {
     NStr::IntToString(out_str, value,flags,base);
 }
 
-EMPTY_TEMPLATE inline
-void NStr::NumericToString<unsigned int>(string& out_str, unsigned int value,
+template<> inline
+void NStr::NumericToString(string& out_str, unsigned int value,
     TNumToStringFlags flags, int  base)
 {
     NStr::UIntToString(out_str, value,flags,base);
 }
 
 //---------------------- long
-EMPTY_TEMPLATE inline
-string NStr::NumericToString<long>(long value,
+template<> inline
+string NStr::NumericToString(long value,
     TNumToStringFlags flags, int  base)
 {
     return NStr::LongToString(value,flags,base);
 }
 
-EMPTY_TEMPLATE inline
-string NStr::NumericToString<unsigned long>(unsigned long value,
+template<> inline
+string NStr::NumericToString(unsigned long value,
     TNumToStringFlags flags, int  base)
 {
     return NStr::ULongToString(value,flags,base);
 }
 
-EMPTY_TEMPLATE inline
-void NStr::NumericToString<long>(string& out_str, long value,
+template<> inline
+void NStr::NumericToString(string& out_str, long value,
     TNumToStringFlags flags, int  base)
 {
     NStr::LongToString(out_str, value,flags,base);
 }
 
-EMPTY_TEMPLATE inline
-void NStr::NumericToString<unsigned long>(string& out_str, unsigned long value,
+template<> inline
+void NStr::NumericToString(string& out_str, unsigned long value,
     TNumToStringFlags flags, int  base)
 {
     NStr::ULongToString(out_str, value,flags,base);
@@ -3683,29 +3683,29 @@ void NStr::NumericToString<unsigned long>(string& out_str, unsigned long value,
 
 //---------------------- int64
 #if !NCBI_INT8_IS_LONG
-EMPTY_TEMPLATE inline
-string NStr::NumericToString<Int8>(Int8 value,
+template<> inline
+string NStr::NumericToString(Int8 value,
     TNumToStringFlags flags, int  base)
 {
     return NStr::Int8ToString(value,flags,base);
 }
 
-EMPTY_TEMPLATE inline
-string NStr::NumericToString<Uint8>(Uint8 value,
+template<> inline
+string NStr::NumericToString(Uint8 value,
     TNumToStringFlags flags, int  base)
 {
     return NStr::UInt8ToString(value,flags,base);
 }
 
-EMPTY_TEMPLATE inline
-void NStr::NumericToString<Int8>(string& out_str, Int8 value,
+template<> inline
+void NStr::NumericToString(string& out_str, Int8 value,
     TNumToStringFlags flags, int  base)
 {
     NStr::Int8ToString(out_str, value,flags,base);
 }
 
-EMPTY_TEMPLATE inline
-void NStr::NumericToString<Uint8>(string& out_str, Uint8 value,
+template<> inline
+void NStr::NumericToString(string& out_str, Uint8 value,
     TNumToStringFlags flags, int  base)
 {
     NStr::UInt8ToString(out_str, value,flags,base);
@@ -3713,32 +3713,32 @@ void NStr::NumericToString<Uint8>(string& out_str, Uint8 value,
 #endif
 
 //---------------------- float
-EMPTY_TEMPLATE inline
-string NStr::NumericToString<float>(float value,
+template<> inline
+string NStr::NumericToString(float value,
     TNumToStringFlags flags, int  /*base*/)
 {
     return NStr::DoubleToString(value,-1,flags);
 }
 
 
-EMPTY_TEMPLATE inline
-void NStr::NumericToString<float>(string& out_str, float value,
+template<> inline
+void NStr::NumericToString(string& out_str, float value,
     TNumToStringFlags flags, int  /*base*/)
 {
     NStr::DoubleToString(out_str, value,-1,flags);
 }
 
 //---------------------- double
-EMPTY_TEMPLATE inline
-string NStr::NumericToString<double>(double value,
+template<> inline
+string NStr::NumericToString(double value,
     TNumToStringFlags flags, int  /*base*/)
 {
     return NStr::DoubleToString(value,-1,flags);
 }
 
 
-EMPTY_TEMPLATE inline
-void NStr::NumericToString<double>(string& out_str, double value,
+template<> inline
+void NStr::NumericToString(string& out_str, double value,
     TNumToStringFlags flags, int  /*base*/)
 {
     NStr::DoubleToString(out_str, value,-1,flags);
