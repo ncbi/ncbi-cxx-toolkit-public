@@ -44,13 +44,15 @@
 #  include <time.h>
 #endif
 #if defined(NCBI_OS_UNIX)
+#  ifndef HAVE_GETPWUID
+#    error "HAVE_GETPWUID is undefined on a UNIX system!"
+#  endif /*!HAVE_GETPWUID*/
 #  ifndef NCBI_OS_SOLARIS
 #    include <limits.h>
 #  endif
-#  if defined(HAVE_GETPWUID)  ||  defined(NCBI_HAVE_GETPWUID_R)
-#    include <pwd.h>
-#  endif
+#  include <pwd.h>
 #  include <unistd.h>
+#  include <sys/stat.h>
 #elif defined(NCBI_OS_MSWIN)
 #  if defined(_MSC_VER)  &&  (_MSC_VER > 1200)
 #    define WIN32_LEAN_AND_MEAN
@@ -414,9 +416,9 @@ extern char* LOG_ComposeMessage
         struct tm temp;
         Nlm_GetDayTime(&temp);
         tm = &temp;
-#  endif/*NCBI_CXX_TOOLKIT*/
+#  endif /*NCBI_CXX_TOOLKIT*/
         datetime_len = strftime(datetime, sizeof(datetime), timefmt, tm);
-#endif/*NCBI_OS_MSWIN*/
+#endif /*NCBI_OS_MSWIN*/
     }
     if ((format_flags & fLOG_Level) != 0
         &&  (call_data->level != eLOG_Note
@@ -623,28 +625,55 @@ extern const char* CORE_GetAppName(void)
  * CORE_GetUsername
  */
 
+static char* x_Savestr(const char* str, char* buf, size_t bufsize)
+{
+    assert(str);
+    if (buf) {
+        size_t len = strlen(str);
+        if (len++ < bufsize)
+            return memcpy(buf, str, len);
+        errno = ERANGE;
+    } else
+        errno = EINVAL;
+    return 0;
+}
+
 extern const char* CORE_GetUsername(char* buf, size_t bufsize)
 {
 #if defined(NCBI_OS_UNIX)
-#  if !defined(NCBI_OS_SOLARIS)  &&  defined(HAVE_GETLOGIN_R)
-#    ifndef LOGIN_NAME_MAX
-#      ifdef _POSIX_LOGIN_NAME_MAX
-#        define LOGIN_NAME_MAX _POSIX_LOGIN_NAME_MAX
+    struct passwd* pwd;
+    struct stat    st;
+    uid_t          uid;
+#  ifndef NCBI_OS_SOLARIS
+#    define NCBI_GETUSERNAME_MAXBUFSIZE 1024
+#    ifdef HAVE_GETLOGIN_R
+#      ifndef LOGIN_NAME_MAX
+#        ifdef _POSIX_LOGIN_NAME_MAX
+#          define LOGIN_NAME_MAX _POSIX_LOGIN_NAME_MAX
+#        else
+#          define LOGIN_NAME_MAX 256
+#        endif /*_POSIX_LOGIN_NAME_MAX*/
+#      endif /*!LOGIN_NAME_MAX*/
+#      define     NCBI_GETUSERNAME_BUFSIZE   LOGIN_NAME_MAX
+#    endif /*HAVE_GETLOGIN_R*/
+#    ifdef NCBI_HAVE_GETPWUID_R
+#      ifndef NCBI_GETUSERNAME_BUFSIZE
+#        define   NCBI_GETUSERNAME_BUFSIZE   NCBI_GETUSERNAME_MAXBUFSIZE
 #      else
-#        define LOGIN_NAME_MAX 256
-#      endif
-#    endif
-    char loginbuf[LOGIN_NAME_MAX + 1];
-#  endif
-    struct passwd* pw;
-#  if !defined(NCBI_OS_SOLARIS)  &&  defined(NCBI_HAVE_GETPWUID_R)
-    struct passwd pwd;
-    char pwdbuf[1024];
-#  endif
+#        if       NCBI_GETUSERNAME_BUFSIZE < NCBI_GETUSERNAME_MAXBUFSIZE
+#          undef  NCBI_GETUSERNAME_BUFSIZE
+#          define NCBI_GETUSERNAME_BUFSIZE   NCBI_GETUSERNAME_MAXBUFSIZE
+#        endif /* NCBI_GETUSERNAME_BUFSIZE < NCBI_GETUSERNAME_MAXBUFSIZE */
+#      endif /*NCBI_GETUSERNAME_BUFSIZE*/
+#    endif /*NCBI_HAVE_GETPWUID_R*/
+#    ifdef       NCBI_GETUSERNAME_BUFSIZE
+    char temp   [NCBI_GETUSERNAME_BUFSIZE + sizeof(*pwd)];
+#    endif /*    NCBI_GETUSERNAME_BUFSIZE    */
+#  endif /*!NCBI_OS_SOLARIS*/
 #elif defined(NCBI_OS_MSWIN)
-    TCHAR  loginbuf[256 + 1];
-    DWORD loginbufsize = sizeof(loginbuf)/sizeof(TCHAR) - 1;
-#endif
+    TCHAR temp  [256 + 1];
+    DWORD size = sizeof(temp)/sizeof(temp[0]) - 1;
+#endif /*NCBI_OS*/
     const char* login;
 
     assert(buf  &&  bufsize);
@@ -652,88 +681,92 @@ extern const char* CORE_GetUsername(char* buf, size_t bufsize)
 #ifndef NCBI_OS_UNIX
 
 #  ifdef NCBI_OS_MSWIN
-    if (GetUserName(loginbuf, &loginbufsize)) {
-        assert(loginbufsize < sizeof(loginbuf)/sizeof(TCHAR));
-        loginbuf[loginbufsize] = (TCHAR)0;
-        login = UTIL_TcharToUtf8(loginbuf);
-        strncpy0(buf, login, bufsize - 1);
+    if (GetUserName(temp, &size)) {
+        assert(size < sizeof(temp)/sizeof(temp[0]));
+        temp[size] = (TCHAR) 0;
+        login = UTIL_TcharToUtf8(temp);
+        buf = s_Savestr(buf, login, bufsize);
         UTIL_ReleaseBuffer(login);
         return buf;
     }
-    if ((login = getenv("USERNAME")) != 0) {
-        strncpy0(buf, login, bufsize - 1);
-        return buf;
-    }
-#  endif
+    if ((login = getenv("USERNAME")) != 0)
+        return x_Savestr(login, buf, bufsize);
+#  endif /*NCBI_OS_MSWIN*/
 
-#else /*!NCBI_OS_UNIX*/
+#else
 
+    /* NOTE:  getlogin() is not a very reliable call at least on Linux
+     * especially if programs mess up with "utmp":  since getlogin() first
+     * calls ttyname() to get the line name for FD 0, then searches "utmp"
+     * for the record of this line and returns the user name, any discrepancy
+     * can cause a false (stale) name to be returned.  So we use getlogin()
+     * here only as a fallback.
+     */
+    if (!isatty(STDIN_FILENO)  ||  fstat(STDIN_FILENO, &st) < 0) {
 #  if defined(NCBI_OS_SOLARIS)  ||  !defined(HAVE_GETLOGIN_R)
-    /* NB:  getlogin() is MT-safe on Solaris, yet getlogin_r() comes in two
-     * flavors that differ only in return type, so to make things simpler,
-     * use plain getlogin() here */
+        /* NB:  getlogin() is MT-safe on Solaris, yet getlogin_r() comes in two
+         * flavors that differ only in return type, so to make things simpler,
+         * use plain getlogin() here */
 #    ifndef NCBI_OS_SOLARIS
-    CORE_LOCK_WRITE;
-#    endif
-    if ((login = getlogin()) != 0)
-        strncpy0(buf, login, bufsize - 1);
+        CORE_LOCK_WRITE;
+#    endif /*!NCBI_OS_SOLARIS*/
+        if ((login = getlogin()) != 0)
+            buf = x_Savestr(login, buf, bufsize);
 #    ifndef NCBI_OS_SOLARIS
-    CORE_UNLOCK;
-#    endif
-    if (login)
-        return buf;
+        CORE_UNLOCK;
+#    endif /*!NCBI_OS_SOLARIS*/
+        if (login)
+            return buf;
 #  else
-    if (getlogin_r(loginbuf, sizeof(loginbuf) - 1) == 0) {
-        loginbuf[sizeof(loginbuf) - 1] = '\0';
-        strncpy0(buf, loginbuf, bufsize - 1);
-        return buf;
-    }
-#  endif
+        if (getlogin_r(temp, sizeof(temp) - 1) == 0) {
+            temp[sizeof(temp) - 1] = '\0';
+            return x_Savestr(temp, buf, bufsize);
+        }
+#  endif /*NCBI_OS_SOLARIS || !HAVE_GETLOGIN_R*/
+        uid = getuid();
+    } else
+        uid = st.st_uid;
 
-#  if defined(NCBI_OS_SOLARIS)  ||  \
-    (!defined(NCBI_HAVE_GETPWUID_R)  &&  defined(HAVE_GETPWUID))
+#  if defined(NCBI_OS_SOLARIS)  ||  !defined(NCBI_HAVE_GETPWUID_R)
     /* NB:  getpwuid() is MT-safe on Solaris, so use it here, if available */
 #  ifndef NCBI_OS_SOLARIS
     CORE_LOCK_WRITE;
-#  endif
-    if ((pw = getpwuid(getuid())) != 0) {
-        if (pw->pw_name)
-            strncpy0(buf, pw->pw_name, bufsize - 1);
+#  endif /*!NCBI_OS_SOLARIS*/
+    if ((pwd = getpwuid(uid)) != 0) {
+        if (pwd->pw_name)
+            buf = x_Savestr(pwd->pw_name, buf, bufsize);
         else
-            pw = 0;
+            pwd = 0;
     }
 #  ifndef NCBI_OS_SOLARIS
     CORE_UNLOCK;
-#  endif
-    if (pw)
+#  endif /*!NCBI_OS_SOLARIS*/
+    if (pwd)
         return buf;
 #  elif defined(NCBI_HAVE_GETPWUID_R)
 #    if   NCBI_HAVE_GETPWUID_R == 4
     /* obsolete but still existent */
-    pw = getpwuid_r(getuid(), &pwd, pwdbuf, sizeof(pwdbuf));
+    pwd = getpwuid_r(uid, (struct passwd*) temp, temp + sizeof(*pwd),
+                     sizeof(temp) - sizeof(*pwd));
 #    elif NCBI_HAVE_GETPWUID_R == 5
     /* POSIX-conforming */
-    if (getpwuid_r(getuid(), &pwd, pwdbuf, sizeof(pwdbuf), &pw) != 0)
-        pw = 0;
-#    else
-#      error "Unknown value of NCBI_HAVE_GETPWUID_R, 4 or 5 expected."
-#    endif
-    if (pw  &&  pw->pw_name) {
-        assert(pw == &pwd);
-        strncpy0(buf, pw->pw_name, bufsize - 1);
-        return buf;
+    if (getpwuid_r(uid, (struct passwd*) temp, temp + sizeof(*pwd),
+                   sizeof(temp) - sizeof(*pwd), &pwd) != 0) {
+        pwd = 0;
     }
+#    else
+#      error "Unknown value of NCBI_HAVE_GETPWUID_R: 4 or 5 expected."
+#    endif /*NCBI_HAVE_GETPWUID_R*/
+    if (pwd  &&  pwd->pw_name)
+        return x_Savestr(pwd->pw_name, buf, bufsize);
 #  endif /*NCBI_HAVE_GETPWUID_R*/
 
 #endif /*!NCBI_OS_UNIX*/
 
     /* last resort */
-    if (!(login = getenv("USER"))  &&  !(login = getenv("LOGNAME"))) {
-        buf[0] = '\0';
-        return 0;
-    }
-    strncpy0(buf, login, bufsize - 1);
-    return buf;
+    if (!(login = getenv("USER"))  &&  !(login = getenv("LOGNAME")))
+        login = "";
+    return x_Savestr(login, buf, bufsize);
 }
 
 
