@@ -7,9 +7,6 @@
 ; TCP/IP port number server responds on
 port=$PORT
 
-; UDP port server uses for event notification
-udp_port=$PORT
-
 ; maximum simultaneous connections
 max_connections=1000
 
@@ -115,9 +112,6 @@ run_timeout=7
 ; and CPU resources on the server side
 run_timeout_precision=5
 ; run_timeout_precision=30
-
-; When true immediately delete successful job from the queue
-delete_done=false
 
 max_input_size=1M
 max_output_size=1M
