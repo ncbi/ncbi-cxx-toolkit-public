@@ -495,7 +495,7 @@ public:
     NCBI_DEPRECATED
     static string IntToString(unsigned long value, TNumToStringFlags flags = 0,
                               int  base = 10);
-#if (SIZEOF_LONG < 8)
+#if !NCBI_INT8_IS_LONG
     /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static string IntToString(Int8 value, TNumToStringFlags flags = 0,
@@ -536,7 +536,7 @@ public:
     static void IntToString(string& out_str, unsigned long value, 
                             TNumToStringFlags flags = 0,
                             int               base  = 10);
-#if (SIZEOF_LONG < 8)
+#if !NCBI_INT8_IS_LONG
     /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static void IntToString(string& out_str, Int8 value, 
@@ -578,7 +578,7 @@ public:
     static string UIntToString(long              value,
                                TNumToStringFlags flags = 0,
                                int               base  = 10);
-#if (SIZEOF_LONG < 8)
+#if !NCBI_INT8_IS_LONG
     /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static string UIntToString(Int8              value,
@@ -620,7 +620,7 @@ public:
     static void UIntToString(string& out_str, long value,
                              TNumToStringFlags flags = 0,
                              int               base  = 10);
-#if (SIZEOF_LONG < 8)
+#if !NCBI_INT8_IS_LONG
     /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static void UIntToString(string& out_str, Int8 value, 
@@ -3682,7 +3682,7 @@ void NStr::NumericToString<unsigned long>(string& out_str, unsigned long value,
 }
 
 //---------------------- int64
-#if (SIZEOF_LONG < 8)
+#if !NCBI_INT8_IS_LONG
 EMPTY_TEMPLATE inline
 string NStr::NumericToString<Int8>(Int8 value,
     TNumToStringFlags flags, int  base)
@@ -3781,7 +3781,7 @@ string NStr::IntToString(unsigned long value,
     return ret;
 }
 
-#if (SIZEOF_LONG < 8)
+#if !NCBI_INT8_IS_LONG
 inline
 string NStr::IntToString(Int8 value,
                          TNumToStringFlags flags, int base)
@@ -3822,7 +3822,7 @@ void NStr::IntToString(string& out_str, unsigned long value,
     LongToString(out_str, value, flags, base);
 }
 
-#if (SIZEOF_LONG < 8)
+#if !NCBI_INT8_IS_LONG
 inline
 void NStr::IntToString(string& out_str, Int8 value, 
                        TNumToStringFlags flags, int base)
@@ -3874,7 +3874,7 @@ string NStr::UIntToString(long value,
     return ret;
 }
 
-#if (SIZEOF_LONG < 8)
+#if !NCBI_INT8_IS_LONG
 inline
 string NStr::UIntToString(Int8 value,
                           TNumToStringFlags flags, int base)
@@ -3922,7 +3922,7 @@ void NStr::UIntToString(string& out_str, long value,
     ULongToString(out_str, (unsigned long)value, flags, base);
 }
 
-#if (SIZEOF_LONG < 8)
+#if !NCBI_INT8_IS_LONG
 inline
 void NStr::UIntToString(string& out_str, Int8 value,
                         TNumToStringFlags flags, int base)
