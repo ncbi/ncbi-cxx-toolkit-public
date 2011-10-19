@@ -1016,21 +1016,25 @@ CGenbankFormatter::x_GetFeatureSpanAndScriptStart(
         << "_" << strKey << "_" << feat_type_count << "\" class=\"feature\">";
 
     // The javascript
-    if( NStr::Equal(strKey, "source") ) {
-        // special treatment for source features
+    pre_feature_html << "<script type=\"text/javascript\">";
 
-        if( ! m_bHavePrintedSourceFeatureJavascript ) {
-            pre_feature_html << "<script>if (typeof(oData) == \"undefined\") oData = []; oData.push ({gi:" << ctx.GetGI() << ",acc:\"" << s_GetAccessionWithoutPeriod(ctx) << "\",features: {}});</script>";
-            m_bHavePrintedSourceFeatureJavascript = true;
-        }
-
-    } else {
-        pre_feature_html << "<script type=\"text/javascript\">"
-            << "if (!oData[oData.length - 1].features[\"" << strKey << "\"]) oData[oData.length - 1].features[\"" << strKey << "\"] = [];"
-            << "oData[oData.length - 1].features[\"" << strKey << "\"].push(";
-        s_PrintLocAsJavascriptArray( ctx, pre_feature_html, feat_loc );
-        pre_feature_html << ");</script>";
+    // special treatment for source features
+    if( NStr::Equal(strKey, "source") && ! m_bHavePrintedSourceFeatureJavascript ) {
+        pre_feature_html << "if "
+            "(typeof(oData) == \"undefined\") oData = []; oData.push "
+            "({gi:" << ctx.GetGI() << ",acc:\"" 
+            << s_GetAccessionWithoutPeriod(ctx) 
+            << "\",features: {}});";
+        m_bHavePrintedSourceFeatureJavascript = true;
     }
+
+    pre_feature_html
+        << "if (!oData[oData.length - 1].features[\"" << strKey 
+        << "\"]) oData[oData.length - 1].features[\"" << strKey 
+        << "\"] = [];"
+        << "oData[oData.length - 1].features[\"" << strKey << "\"].push(";
+    s_PrintLocAsJavascriptArray( ctx, pre_feature_html, feat_loc );
+    pre_feature_html << ");</script>";
 
     return CNcbiOstrstreamToString(pre_feature_html);
 }
