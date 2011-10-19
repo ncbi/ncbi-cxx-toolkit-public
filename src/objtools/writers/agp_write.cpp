@@ -120,7 +120,8 @@ static void s_AgpWrite(CNcbiOstream& os,
                        const string* default_gap_type,
                        const bool* default_linkage,
                        CScope& scope,
-                       const vector<char>& component_types)
+                       const vector<char>& component_types,
+                       CAgpWriteComponentIdMapper * comp_id_mapper )
 {
     unsigned int count = 0;
 
@@ -205,6 +206,9 @@ static void s_AgpWrite(CNcbiOstream& os,
                                     sequence::eGetId_ForceAcc);
                 string id_str;
                 idh.GetSeqId()->GetLabel(&id_str, CSeq_id::eContent);
+                if( comp_id_mapper != NULL ) {
+                    comp_id_mapper->do_map( id_str );
+                }
                 os << id_str;
             }}
 
@@ -268,20 +272,23 @@ void AgpWrite(CNcbiOstream& os,
               const CSeqMap& seq_map,
               const string& object_id,
               CScope& scope,
-              const vector<char>& component_types)
+              const vector<char>& component_types,
+              CAgpWriteComponentIdMapper * comp_id_mapper )
 {
     s_AgpWrite(os, seq_map, 0, seq_map.GetLength(&scope),
-               object_id, NULL, NULL, scope, component_types);
+               object_id, NULL, NULL, scope, component_types,
+               comp_id_mapper);
 }
 
 void AgpWrite(CNcbiOstream& os,
               const CBioseq_Handle& handle,
               const string& object_id,
-              const vector<char>& component_types)
+              const vector<char>& component_types,
+              CAgpWriteComponentIdMapper * comp_id_mapper )
 {
     s_AgpWrite(os, *s_SeqMapForHandle(handle), 0, handle.GetBioseqLength(),
                object_id, NULL, NULL,
-               handle.GetScope(), component_types);
+               handle.GetScope(), component_types, comp_id_mapper);
 }
 
 
@@ -289,11 +296,12 @@ void AgpWrite(CNcbiOstream& os,
               const CBioseq_Handle& handle,
               TSeqPos from, TSeqPos to,
               const string& object_id,
-              const vector<char>& component_types)
+              const vector<char>& component_types,
+              CAgpWriteComponentIdMapper * comp_id_mapper )
 {
     s_AgpWrite(os, *s_SeqMapForHandle(handle), from, to,
                object_id, NULL, NULL,
-               handle.GetScope(), component_types);
+               handle.GetScope(), component_types, comp_id_mapper);
 }
 
 
@@ -303,11 +311,12 @@ void AgpWrite(CNcbiOstream& os,
               const string& default_gap_type,
               bool default_linkage,
               CScope& scope,
-              const vector<char>& component_types)
+              const vector<char>& component_types,
+              CAgpWriteComponentIdMapper * comp_id_mapper )
 {
     s_AgpWrite(os, seq_map, 0, seq_map.GetLength(&scope),
                object_id, &default_gap_type, &default_linkage,
-               scope, component_types);
+               scope, component_types, comp_id_mapper);
 }
 
 void AgpWrite(CNcbiOstream& os,
@@ -315,11 +324,12 @@ void AgpWrite(CNcbiOstream& os,
               const string& object_id,
               const string& default_gap_type,
               bool default_linkage,
-              const vector<char>& component_types)
+              const vector<char>& component_types,
+              CAgpWriteComponentIdMapper * comp_id_mapper )
 {
     s_AgpWrite(os, *s_SeqMapForHandle(handle), 0, handle.GetBioseqLength(),
                object_id, &default_gap_type, &default_linkage,
-               handle.GetScope(), component_types);
+               handle.GetScope(), component_types, comp_id_mapper);
 }
 
 
@@ -329,11 +339,12 @@ void AgpWrite(CNcbiOstream& os,
               const string& object_id,
               const string& default_gap_type,
               bool default_linkage,
-              const vector<char>& component_types)
+              const vector<char>& component_types,
+              CAgpWriteComponentIdMapper * comp_id_mapper )
 {
     s_AgpWrite(os, *s_SeqMapForHandle(handle), from, to,
                object_id, &default_gap_type, &default_linkage,
-               handle.GetScope(), component_types);
+               handle.GetScope(), component_types, comp_id_mapper);
 }
 
 

@@ -39,12 +39,31 @@ class CAgpwriteProcess
     : public CScopedProcess
 {
 public:
+
     //  ------------------------------------------------------------------------
-    CAgpwriteProcess()
+    class CTestCompIdMapper : public CAgpWriteComponentIdMapper
+    //  ------------------------------------------------------------------------
+    {
+    public:
+        void do_map( string &in_out_component_id ) {
+            in_out_component_id = "PREFIX" + in_out_component_id + "SUFFIX";
+        }
+    };
+
+    //  ------------------------------------------------------------------------
+    CAgpwriteProcess( const string & option )
     //  ------------------------------------------------------------------------
         : CScopedProcess()
         , m_out( 0 )
-    {};
+    {
+        if( option.empty() ) {
+            // do nothing
+        } else if( option == "map" ) {
+            comp_id_mapper.reset( new CTestCompIdMapper );
+        } else {
+            throw runtime_error("unknown process option: " + option );
+        }
+    }
 
     //  ------------------------------------------------------------------------
     ~CAgpwriteProcess()
@@ -85,7 +104,7 @@ public:
                 const CBioseq& bioseq = *bit;
                 if (bioseq.IsNa()) {
                     const CBioseq_Handle& bs = (*m_scope).GetBioseqHandle (bioseq);
-                    AgpWrite( *m_out, bs, "chr1");
+                    AgpWrite( *m_out, bs, "chr1", vector<char>(), comp_id_mapper.get() );
                 }
             }
         }
@@ -96,6 +115,7 @@ public:
 
 protected:
     CNcbiOstream* m_out;
+    auto_ptr<CTestCompIdMapper> comp_id_mapper;
 };
 
 #endif

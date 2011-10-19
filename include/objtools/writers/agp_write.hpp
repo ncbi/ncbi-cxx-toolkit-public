@@ -36,6 +36,13 @@
 
 BEGIN_NCBI_SCOPE
 
+// Sometimes, users may of this API may wish to change how accessions
+// are written.
+class CAgpWriteComponentIdMapper {
+public:
+    virtual void do_map( string &in_out_component_id ) = 0;
+};
+
 ///
 /// Write a SeqMap in AGP format, using provided scope.
 /// Gap-type and linkage evidence data must be present in sequence.
@@ -44,7 +51,8 @@ AgpWrite(CNcbiOstream& os,
          const objects::CSeqMap& seq_map,
          const string& object_id,
          objects::CScope& scope,
-         const vector<char>& component_types = vector<char>());
+         const vector<char>& component_types = vector<char>(),
+         CAgpWriteComponentIdMapper * comp_id_mapper = NULL );
 
 ///
 /// Write a bioseq in AGP format.
@@ -53,7 +61,8 @@ void NCBI_XOBJWRITE_EXPORT
 AgpWrite(CNcbiOstream& os,
          const objects::CBioseq_Handle& handle,
          const string& object_id,
-         const vector<char>& component_types = vector<char>());
+         const vector<char>& component_types = vector<char>(),
+         CAgpWriteComponentIdMapper * comp_id_mapper = NULL );
 
 ///
 /// Write a location in AGP format
@@ -63,7 +72,8 @@ AgpWrite(CNcbiOstream& os,
          const objects::CBioseq_Handle& handle,
          TSeqPos from, TSeqPos to,
          const string& object_id,
-         const vector<char>& component_types = vector<char>());
+         const vector<char>& component_types = vector<char>(),
+         CAgpWriteComponentIdMapper * comp_id_mapper = NULL );
 
 ///
 /// Write a SeqMap in AGP format, using provided scope.
@@ -76,7 +86,8 @@ AgpWrite(CNcbiOstream& os,
          const string& default_gap_type,
          bool default_linkage,
          objects::CScope& scope,
-         const vector<char>& component_types = vector<char>());
+         const vector<char>& component_types = vector<char>(),
+         CAgpWriteComponentIdMapper * comp_id_mapper = NULL );
 
 ///
 /// Write a bioseq in AGP format
@@ -88,7 +99,8 @@ AgpWrite(CNcbiOstream& os,
          const string& object_id,
          const string& default_gap_type,
          bool default_linkage,
-         const vector<char>& component_types = vector<char>());
+         const vector<char>& component_types = vector<char>(),
+         CAgpWriteComponentIdMapper * comp_id_mapper = NULL );
 
 ///
 /// Write a location in AGP format
@@ -101,7 +113,8 @@ AgpWrite(CNcbiOstream& os,
          const string& object_id,
          const string& default_gap_type,
          bool default_linkage,
-         const vector<char>& component_types = vector<char>());
+         const vector<char>& component_types = vector<char>(),
+         CAgpWriteComponentIdMapper * comp_id_mapper = NULL );
 
 
 END_NCBI_SCOPE

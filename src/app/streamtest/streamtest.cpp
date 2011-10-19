@@ -162,7 +162,8 @@ void CStreamTestApp::Init()
     
     arg_desc->AddDefaultKey( "options", 
         "Options",
-        "Test-specific options",
+        "Test-specific options. E.g. 'map' for agpwrite tests "
+        "the comp id mapper ",
         CArgDescriptions::eString,
         "" );
 
@@ -259,7 +260,7 @@ CStreamTestApp::GetProcess(
         pProcess = new CProsplignProcess;
     }
     if ( testcase == "agpwrite" ) {
-        pProcess = new CAgpwriteProcess;
+        pProcess = new CAgpwriteProcess( args["options"].AsString() );
     }
     if ( testcase == "title" ) {
         pProcess = new CTitleProcess;
