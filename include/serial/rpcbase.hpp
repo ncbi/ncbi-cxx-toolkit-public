@@ -56,8 +56,8 @@ BEGIN_NCBI_SCOPE
 /// to occur explicitly.
 
 template <class TRequest, class TReply>
-class CRPCClient : virtual public CConnIniter,
-                   public CObject
+class CRPCClient : public    CObject,
+                   protected CConnIniter
 {
 public:
     CRPCClient(const string&     service     = kEmptyStr,
