@@ -1639,7 +1639,7 @@ static EIO_Status s_StripToPattern
                     if ( discard )
                         BUF_Write(discard, buf + n_read, x_discarded - n_read);
                     if ( n_discarded )
-                        *n_discarded += x_discarded;
+                        *n_discarded += x_discarded - n_read;
                     /* return unused portion to the stream */
                     status = io_func(stream, buf + x_discarded,
                                      n_stored - x_discarded, 0, eIO_Write);
@@ -1652,13 +1652,13 @@ static EIO_Status s_StripToPattern
                 BUF_Write(discard, buf + n_read, x_read);
             if ( n_discarded )
                 *n_discarded += x_read;
-            n_read = n_stored;
 
-            if (n_read > pattern_size) {
-                size_t n_cut = n_read - pattern_size + 1;
-                n_read = pattern_size - 1;
-                memmove(buf, buf + n_cut, n_read);
-            }
+            if (n_stored >= pattern_size) {
+                n_read    = pattern_size - 1;
+                n_stored -= n_read;
+                memmove(buf, buf + n_stored, n_read);
+            } else
+                n_read = n_stored;
         }
     }
 
