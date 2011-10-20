@@ -918,7 +918,8 @@ void CMakeProfileDBApp::x_RPSUpdateStatistics(CPssmWithParameters & seq, Int4 se
  */
 void CMakeProfileDBApp::x_RPSUpdatePSSM(const CPssm & pssm, Int4 seq_index, Int4 seq_size)
 {
-     Int4 i, j;
+     Int4 i = 0;
+     Int4 j = 0;
 
      /* Note that RPS blast requires an extra column at
       * the end of the PSSM */
