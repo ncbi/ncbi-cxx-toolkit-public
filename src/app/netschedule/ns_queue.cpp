@@ -1604,27 +1604,29 @@ unsigned CQueue::CheckJobsExpiry(unsigned batch_size, TJobStatus status)
         unsigned int        job_id = 0;
         CFastMutexGuard     guard(m_OperationLock);
 
-        m_QueueDbBlock->job_db.SetTransaction(NULL);
-        m_QueueDbBlock->events_db.SetTransaction(NULL);
-        m_QueueDbBlock->job_info_db.SetTransaction(NULL);
-
         for (unsigned n = 0; n < batch_size; ++n) {
             job_id = m_StatusTracker.GetNext(status, job_id);
             if (job_id == 0)
                 break;
 
-            // FIXME: should fetch only main part of the job and event info,
-            // does not need potentially huge input/output
-            CJob::EJobFetchResult       res = job.Fetch(this, job_id);
-            if (res != CJob::eJF_Ok) {
-                if (res != CJob::eJF_NotFound)
-                    has_db_error = true;
-                // ? already deleted - report as a batch later
-                not_found_jobs.set_bit(job_id);
-                m_StatusTracker.Erase(job_id);
-                // Do not break the process of erasing expired jobs
-                continue;
-            }
+            {{
+                 m_QueueDbBlock->job_db.SetTransaction(NULL);
+                 m_QueueDbBlock->events_db.SetTransaction(NULL);
+                 m_QueueDbBlock->job_info_db.SetTransaction(NULL);
+
+                // FIXME: should fetch only main part of the job and event info,
+                // does not need potentially huge input/output
+                CJob::EJobFetchResult       res = job.Fetch(this, job_id);
+                if (res != CJob::eJF_Ok) {
+                    if (res != CJob::eJF_NotFound)
+                        has_db_error = true;
+                    // ? already deleted - report as a batch later
+                    not_found_jobs.set_bit(job_id);
+                    m_StatusTracker.Erase(job_id);
+                    // Do not break the process of erasing expired jobs
+                    continue;
+                }
+            }}
 
             // Is the job expired?
             if (job.GetJobExpirationTime(queue_timeout,

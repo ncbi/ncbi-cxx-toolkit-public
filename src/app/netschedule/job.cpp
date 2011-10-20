@@ -377,27 +377,18 @@ CJobEvent &  CJob::AppendEvent()
 
 const CJobEvent *  CJob::GetLastEvent() const
 {
-    if (m_Events.empty())
-        return NULL;
-
+    // The first event is attached when a job is submitted, so
+    // there is no way to have the events empty
     return &(m_Events[m_Events.size()-1]);
 }
 
 
 CJobEvent *  CJob::GetLastEvent()
 {
-    if (m_Events.empty())
-        return NULL;
-
+    // The first event is attached when a job is submitted, so
+    // there is no way to have the events empty
     m_Dirty |= fEventsPart;
     return &(m_Events[m_Events.size()-1]);
-}
-
-
-time_t  CJob::GetLastUpdateTime(void) const
-{
-    _ASSERT(!m_Events.empty());
-    return m_Events[m_Events.size()-1].GetTimestamp();
 }
 
 

@@ -290,7 +290,11 @@ public:
     CJobEvent *         GetLastEvent();
 
     // Time related helpers
-    time_t          GetLastUpdateTime(void) const;
+    time_t          GetLastUpdateTime(void) const
+    {   // When a job is submitted the first event is created, so
+        // it is impossible that the event list is empty
+        return m_Events[m_Events.size()-1].GetTimestamp();
+    }
     time_t          GetJobExpirationTime(time_t  queue_timeout,
                                          time_t  queue_run_timeout) const;
 
