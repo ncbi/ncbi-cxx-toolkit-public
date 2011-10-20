@@ -3046,6 +3046,7 @@ LGM-USP	c	Departamento de Microbiologia Lab. de Genetica de Microrganismos
 LGO	s	Columbia University
 LGPUT	s	Laboratory of Geology and Palaeontology
 LGU	s	Leningrad State University
+LHMS<ZAF >	b	Leslie Hill Molecular Systematics Laboratory
 LHT	s	Lahti City Museum
 LI	s	Oberoesterreichischen Landesmuseums, Botanische Abteilung
 LI:EVAR	s	Oberoesterreichischen Landesmuseums, Botanische Abteilung, Evertebrata Varia (Invertebrates other than Insects)
@@ -3105,7 +3106,6 @@ LMJ<MOZ>	s	Centro de Investigacao Cientifica Algodoeira, Botanical Department
 LMKG	s	Landesmuseum fur Karnten
 LMND	s	Landessammlungen fuer Naturkunde
 LMNH	s	Museum d'Histoire naturelle
-LMNS<ZAF >	b	Leslie Hill Molecular Systematics Laboratory
 LMRZ	s	Livingstone Museum
 LMS	c	Carolina Biological Supply Company
 LMSZ	s	Latvian University, Museum of Systemic Zoology
@@ -4333,7 +4333,7 @@ NZRM	c	New Zealand Reference Culture Collection, Medical Section
 NZRP	c	New Zealand Reference Culture Collection and Soil Section
 NZSI	s	Zoological Survey of India, National Zoological Collection
 O	s	Botanical Museum
-OAC	s	Botany Department, University of Guelph
+OAC	s	OAC Herbarium, Biodiversity Institute of Ontario
 OAKL	s	Oakland Museum of California, Natural Sciences Department
 OAMB	s	Open Air Museum of Ethnography and Natural Sciences
 OAX	s	Instituto Politecnico Nacional (CIIDIR-Oax., I.P.N.)
@@ -5988,7 +5988,7 @@ UNAF	s	University of North Alabama, Department of Biology
 UNAM	s	Universidad Nacional Autonoma de Mexico
 UNAM:CNPGG	s	Universidad Nacional Autonoma de Mexico, Coleccion Nacional del Phylum Porifera Gerardo Green
 UNAN	s	Universidad Nacional Autonoma de Nicaragua
-UNB	s	University of New Brunswick, Biology Department
+UNB	s	Connell Memorial Herbarium
 UNC-B	s	University of Northern Colorado
 UNCB	s	Universidad Nacional de Colombia, Insituto de Ciencias Naturales de la Universidad Nacional
 UNCC<COL>	s	Universidad Nacional de Caldas, Museo de Historia Natural
@@ -6221,7 +6221,7 @@ UZL	s	University of Zambia, Biological Sciences Department
 UZMC	s	Universidad del Zulia
 UZMH	s	University Museum (Zoology)
 UZMO	s	Zoologisk Museum
-V	s	Royal British Columbia Museum
+V	s	Royal British Columbia Museum - Herbarium
 VA	s	University of Virginia
 VAB	s	Universitat de Valencia, Departamento de Biologia Vegetal
 VAIC	s	Victorian Agricultural Insect Collection
