@@ -1655,10 +1655,9 @@ static EIO_Status s_StripToPattern
 
             if (n_stored >= pattern_size) {
                 n_read    = pattern_size - 1;
-                n_stored -= n_read;
-                memmove(buf, buf + n_stored, n_read);
+                memmove(buf, buf + n_stored - n_read, n_read);
             } else
-                n_read = n_stored;
+                n_read    = n_stored;
         }
     }
 
