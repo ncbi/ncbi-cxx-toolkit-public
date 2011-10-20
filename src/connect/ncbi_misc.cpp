@@ -34,7 +34,7 @@
 #include <corelib/ncbidbg.hpp>
 #include <connect/ncbi_misc.hpp>
 
-//#define DEBUG_RATE_MONITOR 1
+#define DEBUG_RATE_MONITOR 1
 
 #ifdef DEBUG_RATE_MONITOR
 #  include <iterator>  // distance()
@@ -118,7 +118,7 @@ double CRateMonitor::GetRate(void) const
     if (n > 2) {
         TMark prev = m_Data.front();
         list<TMark>::const_iterator it = m_Data.begin();
-        _ASSERT(prev.first - m_Data.back().first > kMinSpan);
+        _ASSERT(prev.first - m_Data.back().first > kSpan);
         for (++it;  it != m_Data.end();  ++it) {
             TMark next = *it;
             double dt = prev.second - next.second;

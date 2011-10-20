@@ -68,14 +68,13 @@ public:
     ///   must be within the interval (0, 1) (excluding both ends);
     ///   a value close to one (e.g. 0.9) makes recent marks more significant
     /// @precision
-    ///   ratio of minspan to consider sufficient for the next mark addition,
+    ///   fraction of minspan to consider sufficient to add next mark,
     ///   must be within the interval (0, 1] (excluding 0 but including 1)
     CRateMonitor(double minspan = 0.5, double maxspan   = 10.0,
                  double weight  = 0.5, double precision = 0.95)
         : kMinSpan(minspan), kMaxSpan(minspan > maxspan ?
                                       minspan + maxspan : maxspan),
-          kPrecision(precision), kWeight(weight),
-          kSpan(kMinSpan * kPrecision),
+          kWeight(weight), kSpan(kMinSpan * precision),
           m_Rate(0.0), m_Size(0)
     { }
 
@@ -122,7 +121,6 @@ public:
 protected:
     const double kMinSpan;
     const double kMaxSpan;
-    const double kPrecision;
     const double kWeight;
     const double kSpan;
 
