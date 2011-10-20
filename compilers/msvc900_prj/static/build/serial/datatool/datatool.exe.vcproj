@@ -1163,28 +1163,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\..\src\serial\datatool\traversal_attach_user_funcs_callback.cpp"
-				>
-				<FileConfiguration
-					Name="ReleaseDLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ReleaseDLL|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath="..\..\..\..\..\..\src\serial\datatool\traversal_code_generator.cpp"
 				>
 				<FileConfiguration
@@ -1230,6 +1208,28 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\..\..\src\serial\datatool\traversal_node.cpp"
+				>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\..\src\serial\datatool\traversal_pattern_match_callback.cpp"
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
