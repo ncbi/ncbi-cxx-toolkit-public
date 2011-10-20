@@ -5,4 +5,7 @@ SRC = ncbi_c_log
 LIB = clog
 LIBS = $(ORIG_C_LIBS)
 
-WATCHERS = ivanov
+# You can hardcode applicationa name used for logging specifying it here:
+# CPPFLAGS = $(ORIG_CPPFLAGS) -D NCBI_C_LOG_APPNAME=test_clog_ctx
+
+WATCHERS = ivanov 

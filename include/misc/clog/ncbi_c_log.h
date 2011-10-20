@@ -33,7 +33,51 @@
  *    The C library to provide C++ Toolkit-like logging semantics 
  *    and output for C/C++ programs and CGIs.
  *
- * This library will call assert() when presented with unexpected
+ * The C Logging API have two usage patterns:
+ *
+ *   1) First (recommended) method.
+ *      Usage:
+ *      - At the program start call NcbiLog_Init() (or MT/ST version),
+ *        only once, probably from the main thread.
+ *      - Call any logging methods.
+ *      - For each application's thread that have used the C Logging API 
+ *        call NcbiLog_Destroy_Thread() before thread termination.
+ *      - After using API, or before program's exit call NcbiLog_Destroy().
+ *
+ *   2) Second method should be used only in special cases, where impossible
+ *      to call NcbiLog_Init/NcbiLog_Destroy. Any of these two methods still 
+ *      can be used...  But, if you can call both of them, consider to use
+ *      pattern (1) instead. Forgot about NcbiLog_Destroy_Thread(), don't
+ *      use it at all. And aware, that default MT locking implementation
+ *      will be used automatically in MT configurations if you didn't use
+ *      NcbiLog_Init() with your own MT-handler explicitly.
+ *      Usage:
+ *      - First, if you didn't call NcbiLog_Init() yet, you can call
+ *        NcbiLog_InitForAttachedContext(). It does the same initializations
+ *        as NcbiLog_Init(), but have better MT protection, and can be called
+ *        as many times as you want, even in any thread. And even this step
+ *        can be skipped, and all initialization will be done in 
+ *        NcbiLog_Context_Create(). But you still have a possibility to pass
+ *        an application name into the logging API. Only first call of 
+ *        NcbiLog_Init*() have effect. All subsequent calls will be ignored.
+ *      - Call NcbiLog_Context_Create() to create thread-specific contex.
+ *      - Use NcbiLog_Context_Attach() to attach created context to the API.
+ *      - Call any logging methods. Do not call them before attaching context,
+ *        or you can get memory/resource leaks and unpredictable results.
+ *      - Detach context with NcbiLog_Context_Detach().
+ *        The pairs of NcbiLog_Context_Attach/NcbiLog_Context_Detach methods
+ *        can be used as many times as needed. The thread-specific context
+ *        should be saved somewhere between logging sessions. 
+ *      - Use NcbiLog_Context_Destroy() when logging is done and you don't
+ *        need a logging context object anymore.
+ *      - Call NcbiLog_Destroy() to shutdown API. Do this only if possible.
+ *        This step is recommended, and can help to avoid memory leaks.
+ *
+ * Any C logging API functions can be called only after first call of
+ * NcbiLog_Init*() or NcbiLog_Context_Create(), otherwise its call
+ * will be ignored.
+ *
+ * This library calls assert() when presented with unexpected
  * input or other error situations. In Release modes such errors can just
  * stop a logging, without aborting a program (except some critical cases).
  * But generally, very little graceful error recovery is attempted; that 
@@ -87,7 +131,7 @@ extern "C" {
  *  MT locking
  */
 
-/** Lock handle -- keeps all data needed for the locking and for the cleanup.
+/** Lock handle -- keeps all data needed for the locking and the cleanup.
  */
 struct         TNcbiLog_MTLock_tag;
 typedef struct TNcbiLog_MTLock_tag*  TNcbiLog_MTLock;
@@ -118,7 +162,7 @@ typedef enum {
  *    Operation that should be done in the callback handler.
  *  @return
  *    Non-zero value if the requested operation was successful.
- *  @par <b>NOTE:</b>
+ *  @note
  *    The "-1" value is reserved for unset handler;  you also
  *    may want to return "-1" if your locking function does no locking, and
  *    you don't consider it as an error, but still want the caller to be
@@ -164,7 +208,7 @@ extern void NcbiLog_MTLock_Delete(TNcbiLog_MTLock lock);
  *    Operation that should be done in the callback handler.
  *  @return
  *    Non-zero value if the requested operation was successful.
- * @sa
+ *  @sa
  *    FNcbiLog_MTLock_Handler, NcbiLog_MTLock_Create
  */
 extern int/*bool*/ NcbiLog_Default_MTLock_Handler
@@ -240,22 +284,32 @@ typedef TNcbiLog_UInt8 TNcbiLog_TID;
 typedef TNcbiLog_UInt8 TNcbiLog_Counter;
 
 
+/** Declaration for thread-specific context
+ */
+struct SContext_tag;
+typedef struct SContext_tag* TNcbiLog_Context;
+
+
 
 /******************************************************************************
  *  Logging setup functions
  */
 
 /** Initializing NcbiLog API.
- *  This function should be called before any other API's function,
- *  and only once. Preferable, in MT applications it should be called before
- *  creating any threads.
+ *  This function should be called before any other API's function.
+ *  Only first call of NcbiLog_Init() have effect. All subsequent calls
+ *  will be ignored. Preferable, in MT applications it should be called
+ *  before creating any child thread uses logging.
  *  @param appname
  *    Set the application name shown in logs and used for logfile names.
  *    By default the name is unknown. The application name can be set only
- *    once at API initialization (in NcbiLog_Init() call).
- *    This name could include path and extension, only base name will be used
- *    to show in logs. Also, any spaces contained in the base file name 
- *    will be URL-encoded.
+ *    once at API initialization (using NcbiLog_Init() call).
+ *    This name could include path and extension, only base name will be
+ *    used to show in logs. Also, any spaces contained in the base file 
+ *    name will be URL-encoded.
+ *    Also, the application name can be hard-coded on the compilation step,
+ *    using "-D NCBI_C_LOG_APPNAME=appname" in the compiler's command line
+ *    for this API. Hard-coded name have a priority over the passed parameter.
  *  @param mt_lock
  *    User defined MT lock. It is necessary to use NcbiLog API in
  *    multi-threaded applications.
@@ -264,9 +318,14 @@ typedef TNcbiLog_UInt8 TNcbiLog_Counter;
  *    then the MT lock handler will be destroyed in NcbiLog_Destroy().
  *  @note
  *    It is recommended to call NcbiLog_InitST() instead of NcbiLog_Init[MT]()
- *    if you don't use threads.
+ *    if you don't use logging simultaneously from some threads.
  *  @sa
- *    NcbiLog_InitMT, NcbiLog_InitST, NcbiLog_Destroy, NcbiLog_MTLock_Create
+ *    NcbiLog_InitMT, NcbiLog_InitST, NcbiLog_Destroy, NcbiLog_MTLock_Create, 
+ *    NcbiLog_Context_Create
+ *  @note
+ *    Sometimes, simplified logging initialization can be used. For details
+ *    please see NcbiLog_Context_Create() description and comments at 
+ *    the beginning of this file.
  */
 extern void NcbiLog_Init(const char*               appname, 
                          TNcbiLog_MTLock           mt_lock, 
@@ -274,31 +333,69 @@ extern void NcbiLog_Init(const char*               appname,
 
 
 /** Version of NcbiLog_Init with default MT lock implementation.
- *  This function should be called before any other API's function,
- *  and only once. Preferable, in MT applications it should be called before
- *  creating any threads.
+ *  This function should be called before any other API's function.
+ *  Preferable, in MT applications it should be called before
+ *  creating any child thread uses logging.
  *  @sa NcbiLog_Init, NcbiLog_InitST
  */
 extern void NcbiLog_InitMT(const char* appname);
 
 
 /** Version of NcbiLog_Init to use in single-threaded applications.
- *  This function should be called before any other API's function,
- *  and only once. Preferable, in MT applications it should be called before
- *  creating any threads.
+ *  This function should be called before any other API's function.
  *  @note
- *    It is recommended to call NcbiLog_InitST() instead of NcbiLog_Init[MT]()
- *    if you don't use threads.
+ *    You can call NcbiLog_InitST() instead of NcbiLog_Init[MT]()
+ *    in MT applications also if you don't use logging from some
+ *    threads simultaneously. This will turn off API's MT-safety.
  *  @sa NcbiLog_Init, NcbiLog_InitMT
  */
 extern void NcbiLog_InitST(const char* appname);
+
+
+/** Version of NcbiLog_Init to use with NcbiLog_Context_* functions only.
+ *  This function should be called before any other API's function.
+ *  Only first call of NcbiLog_InitForAttachedContext() have effect.
+ *  All subsequent calls will be ignored. You can skip it if you don't 
+ *  wish to set up an application name for logging, all initialization
+ *  will be done in background.
+ *  @note
+ *    Default MT locking implementation will be used, you cannot use
+ *    your own locking using with this type on initialization.
+ *  @note
+ *    For details please see NcbiLog_Context_Create() description
+ *    and comments at the beginning of this file.
+ *  @param appname
+ *    Set the application name shown in logs and used for logfile names.
+ *    By default the name is unknown. The application name can be set only
+ *    once at API initialization.
+ *    This name could include path and extension, only base name will be
+ *    used to show in logs. Also, any spaces contained in the base file 
+ *    name will be URL-encoded.
+ *    Also, the application name can be hard-coded on the compilation step,
+ *    using "-D NCBI_C_LOG_APPNAME=appname" in the compiler's command line
+ *    for this API. Hard-coded name have a priority over passed parameter.
+ *  @sa 
+ *    NcbiLog_Init, NcbiLog_InitForAttachedContextST, NcbiLog_Context_Create
+ */
+extern void NcbiLog_InitForAttachedContext(const char* appname);
+
+
+/** Version of NcbiLog_InitForAttachedContext() intended to use 
+  * in single-threaded applications. Use it if you use API from single thread
+  * only, it can be a little bit faster than NcbiLog_InitForAttachedContext()
+  * because don't use MT-safety.
+  * @sa 
+  *   NcbiLog_InitForAttachedContext, NcbiLog_Init, NcbiLog_InitST,
+  *   NcbiLog_Context_Create
+  */
+extern void NcbiLog_InitForAttachedContextST(const char* appname);
 
 
 /** Destroy NcbiLog API.
  *  This function should be called last. After it any other API's calls
  *  will be ignored. For MT applications see also NcbiLog_Destroy_Thread().
  *  @sa
- *    NcbiLog_Init, NcbiLog_Destroy_Thread
+ *    NcbiLog_Init, NcbiLog_InitForAttachedContext
  */
 extern void NcbiLog_Destroy(void);
 
@@ -311,9 +408,6 @@ extern void NcbiLog_Destroy(void);
  *  @note 
  *    Not necessary to call this function in single-threaded
  *    applications if NcbiLog_InitST() was used.
- *  @note
- *    It is not fatal do not call NcbiLog_Destroy_Thread(), but this
- *    prevent have memory leaks in your application.
  *  @sa
  *    NcbiLog_Init, NcbiLog_InitST, NcbiLog_Destroy
  */
@@ -416,6 +510,81 @@ extern void NcbiLog_SetSession(const char* session);
  *  Always returns the active level. 
  */
 extern ENcbiLog_Severity NcbiLog_SetPostLevel(ENcbiLog_Severity sev);
+
+
+
+/******************************************************************************
+ *  NcbiLog context functions.
+ *  NOTE:  see comments at the beginning of this file.
+ */
+
+/** Create new thread-specific logging context object.
+ *  These context-specific methods to create, attach, detach and
+ *  destroy thread-specific logging context objects allow to separate
+ *  context from the API, store it somewhere else and use when necessary,
+ *  even from different threads. Because the API initialization
+ *  can be done in background, it is impossible to pass application name
+ *  used in each logging message, so it will be "UNKNOWN" by default.
+ *  But, you can call NcbiLog_Init() or NcbiLog_InitForAttachedContext(),
+ *  or one of its variants. Or, you can hard-code application name on the
+ *  compilation step, using "-D NCBI_C_LOG_APPNAME=appname" in the compiler's
+ *  command line for this API.
+ *  @note
+ *    You should call this method first, before using any other API methods.
+ *  @note
+ *    Created context have a thread id of the thread that created it.
+ *    Thread id can be changed if necessary using NcbiLog_SetThreadId()
+ *    after attaching context to the API.
+ *  @note
+ *    Default MT locking implementation will be used in MT configurations,
+ *    you cannot use your own MT-handler with this type on initialization.
+ *  @note
+ *    Also, please read NcbiLog_Init() and comments at the beginning of this file.
+ *  @return
+ *    Handle to newly created context object or NULL on error.
+ *  @sa
+ *    NcbiLog_Context_Attach, NcbiLog_Context_Detach, NcbiLog_Context_Destroy,
+ *    NcbiLog_ForAttachedContext
+ */
+extern TNcbiLog_Context NcbiLog_Context_Create(void);
+
+
+/** Attach logging context object to the C Logging API.
+ *  @note
+ *    You should call this method before logging or using any other
+ *    methods that change context information. All API methods works
+ *    with attached context only, otherwise you can get unexpected results.
+ *  @param ctx
+ *    A handle previously obtained from NcbiLog_Context_Create().
+ *  @return
+ *    Non-zero value if the requested operation was successful.
+ *    Also, return zero value if some other context is already attached.
+ *  @sa
+ *    NcbiLog_Context_Create, NcbiLog_Context_Attach, NcbiLog_Context_Destroy
+ */
+extern int /*bool*/ NcbiLog_Context_Attach(TNcbiLog_Context ctx);
+
+
+/** Detach logging context object from the C Logging API.
+ *  @note
+ *    The C Logging API cannot be used without any context attached.
+ *  @return
+ *    Non-zero value if the requested operation was successful.
+ *  @sa
+ *    NcbiLog_Context_Create, NcbiLog_Context_Attach, NcbiLog_Context_Destroy
+ */
+extern void NcbiLog_Context_Detach(void);
+
+
+/** Destroy context structure.
+ *  @note
+ *    NcbiLog_Context_Detach() should be called before context destroying.
+ *  @param ctx
+ *    A handle previously obtained from NcbiLog_Context_Create().
+ *  @sa
+ *    NcbiLog_Context_Create, NcbiLog_Context_Attach, NcbiLog_Context_Detach
+ */
+extern void NcbiLog_Context_Destroy(TNcbiLog_Context ctx);
 
 
 

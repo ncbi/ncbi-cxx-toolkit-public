@@ -1,7 +1,7 @@
 # $Id$
 
 LIB_PROJ = clog 
-SUB_PROJ = demo test
+SUB_PROJ = app demo test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

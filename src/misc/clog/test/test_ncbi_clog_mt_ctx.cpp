@@ -26,7 +26,7 @@
  * Author:  Vladimir Ivanov
  *
  * File Description:
- *      Test for NCBI C Logging (clog.lib) in MT environment
+ *      Test for NCBI C Logging (clog.lib) in MT environment (thread-specific context)
  *
  */
 
@@ -52,36 +52,47 @@ public:
     virtual bool TestApp_Init(void);
     virtual bool TestApp_Exit(void);
     virtual bool Thread_Run(int idx);
-    virtual bool Thread_Exit(int idx);
 };
 
 
 bool CTestRegApp::TestApp_Init(void)
 {
-    // Initialize the C logging API with default MT locking imlementation
-    NcbiLog_InitMT(GetAppName().c_str());
-    // Set output to files in current directory
-    NcbiLog_SetDestination(eNcbiLog_Cwd);
-    // Start application
-    NcbiLog_AppStart(NULL);
-    NcbiLog_AppRun();
+    // API initialization -- call it here if possible
+    // NcbiLog_InitForAttachedContext("SomeAppName");
     return true;
 }
 
 
 bool CTestRegApp::TestApp_Exit(void)
 {
-    // Stop application
-    NcbiLog_AppStop(0);
-    // Deinitialize logging API
-    NcbiLog_Destroy();
+    // Deinitialize logging API -- call it heer if possible
+    // NcbiLog_Destroy();
     return true;
 }
 
 
 bool CTestRegApp::Thread_Run(int idx)
 {
+    // This call can be skipped, if you don't need to set up an
+    // application name. And it is better to make an initialization
+    // on application start, before any child thread creation if possible.
+    /*
+        NcbiLog_InitForAttachedContext("SomeAppName");
+    */
+
+    // Create context
+    TNcbiLog_Context ctx = NcbiLog_Context_Create();
+
+    // This is just a test. In real application you may call many API's
+    // functions only once, or when necessary, after NcbiLog_Init() or
+    // first NcbiLog_Context_Create() call. It is an overkill to call
+    // them for each context creation.
+    NcbiLog_SetDestination(eNcbiLog_Cwd);
+    
     for (int i=0; i<kRepeatCount; i++) {
+        /* Attach context */
+        int res = NcbiLog_Context_Attach(ctx);
+        assert(res);
 
         /* Standard messages */
         {{
@@ -134,15 +145,14 @@ bool CTestRegApp::Thread_Run(int idx)
             NcbiLog_Extra(params);
             NcbiLog_Perf(200, timespan, params);
         }}
+
+        /* Detach context */
+        NcbiLog_Context_Detach();
     }
-    return true;
-}
 
+    // Destroy context
+    NcbiLog_Context_Destroy(ctx);
 
-bool CTestRegApp::Thread_Exit(int idx)
-{
-    /* Destroy thread-specific NcbiLog API information */
-    NcbiLog_Destroy_Thread();
     return true;
 }
 
