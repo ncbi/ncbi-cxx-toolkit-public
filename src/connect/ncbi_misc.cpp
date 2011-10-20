@@ -34,7 +34,7 @@
 #include <corelib/ncbidbg.hpp>
 #include <connect/ncbi_misc.hpp>
 
-#define DEBUG_RATE_MONITOR 1
+//#define DEBUG_RATE_MONITOR 1
 
 #ifdef DEBUG_RATE_MONITOR
 #  include <iterator>  // distance()
