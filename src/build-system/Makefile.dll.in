@@ -145,7 +145,7 @@ ifeq "$(can_deactivate_dll)" "yes"
 	-$(RM) $(libdir)/$(XDLL) $(status_dir)/$(XDLLDEP)
 	@has_dll_loadable@-$(RM) $(libdir)/$(XDLL_LOADABLE)
   ifneq "$(DLL)" ""
-	-$(RM) $(libdir)/$(XDLLLINK) $(status_dir)/$(XDLLDEP_LINK)
+	-$(RM) $(libdir)/$(XDLL_LINK) $(status_dir)/$(XDLLDEP_LINK)
 	@has_dll_loadable@-$(RM) $(libdir)/$(XDLL_LOADABLE_LINK)
   endif
 endif
