@@ -2496,14 +2496,14 @@ static EIO_Status s_Select(size_t                n,
 
 
 #ifdef __GNUC__
-#  pragma GCC diagnostic push  /*NCBI_FAKE_WARNING*/
+#  pragma GCC diagnostic push  /* NCBI_FAKE_WARNING */
 #  pragma GCC diagnostic ignored "-Wuninitialized"
 inline static void x_tvcpy(struct timeval* dst, struct timeval* src)
 {
     memcpy(dst, src, sizeof(*dst));
 }
 #  pragma GCC diagnostic warning "-Wuninitialized"
-#  pragma GCC diagnostic pop   /*NCBI_FAKE_WARNING*/
+#  pragma GCC diagnostic pop   /* NCBI_FAKE_WARNING */
 #else
 #  define x_tvcpy(d, s)  (void) memcpy((d), (s), sizeof(*(d)))
 #endif /*__GNUC__*/
