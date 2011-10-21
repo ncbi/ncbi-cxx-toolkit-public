@@ -63,6 +63,7 @@ struct SUnLock
 
 /////////////////////////////////////////////////////////////////////////////
 CDBExceptionStorage::CDBExceptionStorage(void)
+    : m_ClosingConnect(false)
 {
 }
 

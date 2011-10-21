@@ -1104,6 +1104,13 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
     string          user_name;
 
     try {
+        // Ignoring "The connection has been marked dead" from connection's
+        // Close() method.
+        if (msg->msgnumber == 16843058
+            &&  GetCTLExceptionStorage().IsClosingConnect())
+        {
+            return CS_SUCCEED;
+        }
         if (msg->msgstring) {
             message.append(msg->msgstring);
         }

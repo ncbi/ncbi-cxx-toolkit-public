@@ -898,7 +898,15 @@ bool CTL_Connection::Close(void)
 
         // Finalyze connection ...
         Refresh();
-        m_Handle.Close();
+        GetCTLExceptionStorage().SetClosingConnect(true);
+        try {
+            m_Handle.Close();
+            GetCTLExceptionStorage().SetClosingConnect(false);
+        }
+        catch (...) {
+            GetCTLExceptionStorage().SetClosingConnect(false);
+            throw;
+        }
         // This method is often used as a destructor.
         // So, let's drop the connection handle.
         m_Handle.Drop();

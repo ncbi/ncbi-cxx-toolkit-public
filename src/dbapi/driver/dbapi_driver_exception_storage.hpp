@@ -52,11 +52,29 @@ public:
     void Accept(const CDB_Exception& e);
     void Handle(const CDBHandlerStack& handler);
     void Handle(const CDBHandlerStack& handler, const string& msg);
+    void SetClosingConnect(bool value);
+    bool IsClosingConnect(void);
 
 private:
     CFastMutex                      m_Mutex;
     CDB_UserHandler::TExceptions    m_Exceptions;
+    bool                            m_ClosingConnect;
 };
+
+
+
+inline void
+CDBExceptionStorage::SetClosingConnect(bool value)
+{
+    m_ClosingConnect = value;
+}
+
+inline bool
+CDBExceptionStorage::IsClosingConnect(void)
+{
+    return m_ClosingConnect;
+}
+
 
 }
 
