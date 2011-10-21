@@ -262,7 +262,7 @@ ATU	c	Dept.of Biotechnology University of Tokyo
 AU	s	Xiamen University, Biology Department
 AUA	s	Auburn University, Biological Sciences Department
 AUB	s	Andrews University
-AUBL	s	Museum of Natural History
+AUBL	s	Museum of Natural History, Beirut
 AUBSN	s	All-Union Botanical Society
 AUCE	s	El Azhar University
 AUEM	s	Auburn University Entomological Museum
@@ -1028,7 +1028,7 @@ CMNC	s	Canadian Museum of Nature, Neotropical Cerambycidae Collection
 CMNFI	s	Canadian Museum of Nature, Fish Collection
 CMNH	s	The Cleveland Museum of Natural History
 CMNH<USA-IL>	s	Chicago Museum of Natural History
-CMNS	s	Museum of Natural History
+CMNS	s	Museum of Natural History, Shanghai
 CMNZ	s	Canterbury Museum
 CMSK	s	City Museum
 CMSU	s	Central Missouri State University
@@ -3209,7 +3209,7 @@ LWG	s	National Botanical Research Institute
 LWKS	s	Institute of Ecology of the Carpathians
 LWL<DEU>	s	LWL-Museum fuer Naturkunde
 LWL<DEU>:DNA	b	LWL-Museum fuer Naturkunde, LWL-DNA- und Gewebearchiv
-LWS	s	Museum of Natural History
+LWS	s	Museum of Natural History, Lviv
 LWSM	s	Lewes Museum, Ann of Cleves House
 LWU	s	University of Lucknow, Botany Department
 LY	c	Laboratoire de Mycologie associe au CNRS
@@ -3778,7 +3778,7 @@ MSUH	s	University of Mosul, Biology Department
 MSUMC	s	Murray State University
 MSUMZ	s	Memphis State University
 MSUN	s	Westfaelische Wilhelms-Universitaet
-MSUT	s	Museum of Natural History
+MSUT	s	Museum of Natural History, Tirane
 MSUZ	s	Mississippi State University, Zoological Collections
 MSV	s	Museum der Stadt Villach
 MT<CAN>	s	Universite de Montreal
@@ -4074,7 +4074,7 @@ NHRI	s	Islandic Museum of Natural History
 NHRM	s	Naturhistoriska Rijkmuseet
 NHRS	s	Swedish Museum of Natural History, Entomology Collections
 NHSD	s	Natural History Society of Dublin
-NHST	s	Museum of Natural History
+NHST	s	Museum of Natural History, Reunion
 NHT	s	Tropical Pesticides Research Institute
 NHV	s	Institut fuer Landwirtschaftliche Botanik
 NI<JPN>	c	Nagao Institute
@@ -4303,6 +4303,7 @@ NVRL	s	Naturforschende Verein in Riga
 NVRW	s	Naturhistorisches Verein der Preussische Rheinland und Westfalens
 NWAU	s	North-West Agricultural University
 NWC	s	University of Northern Iowa, Nixon Wilson Collection
+NWC<GBR>	b	National Willows Collection
 NWFC	s	Northwest University of Agriculture Forestry Science & Technology
 NWH	s	Norfolk Museums and Archaeology Service, Natural History Department
 NWK	s	Newark District Council Museum
@@ -6049,7 +6050,7 @@ UPCC	c	Natural Sciences Research Institute Culture Collection
 UPEI	s	University of Prince Edward Island, Biology Department
 UPF	s	Universite de Polynesie Francaise Herbarium
 UPIE	b	Unidad de Patologia Infecciosa y Epidemiologia
-UPLB	s	Museum of Natural History
+UPLB	s	Museum of Natural History, University of the Philippines
 UPM<FRA>	s	Departement des Siences de la Terre
 UPM<MYS>	s	Universiti Pertanian Malaysia, Biology Department
 UPM<RUS>	s	Udory Paleontological Museum
