@@ -1885,14 +1885,14 @@ void CGenbankFormatter::FormatGap(const CGapItem& gap, IFlatTextOStream& text_os
 
     // format /gap_type
     if( gap.HasType() ) {
-        NStr::Wrap(gap.GetType(), GetWidth(), l, SetWrapFlags(),
+        NStr::Wrap('"' + gap.GetType() + '"', GetWidth(), l, SetWrapFlags(),
             GetFeatIndent(), GetFeatIndent() + "/gap_type=");
     }
 
     // format /linkage_evidence
     if( gap.HasEvidence() ) {
         ITERATE( CGapItem::TEvidence, evidence_iter, gap.GetEvidence() ) {
-            NStr::Wrap( *evidence_iter, GetWidth(), l, SetWrapFlags(),
+            NStr::Wrap( '"' + *evidence_iter + '"', GetWidth(), l, SetWrapFlags(),
                 GetFeatIndent(), GetFeatIndent() + "/linkage_evidence=");
         }
     }

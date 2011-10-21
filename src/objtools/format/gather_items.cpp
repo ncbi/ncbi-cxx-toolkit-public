@@ -1888,7 +1888,13 @@ static CRef<CGapItem> s_NewGapItem(CSeqMap_CI& gap_it, CBioseqContext& ctx)
     if( gap_it.IsSetData() && gap_it.GetData().IsGap() ) {
         const CSeq_gap & gap = gap_it.GetData().GetGap();
 
-        // determine if we're linked
+        // true if we need to have a /linkage-evidence tag.
+        // Also, if this is false, we should *not* have any
+        // linkage-evidence tag
+        bool need_evidence = false;
+
+        // determine if we're linked, and also determine if
+        // we need linkage-evidence
         const bool is_linkage =
             gap.CanGetLinkage() && 
             gap.GetLinkage() == CSeq_gap::eLinkage_linked;
@@ -1896,45 +1902,49 @@ static CRef<CGapItem> s_NewGapItem(CSeqMap_CI& gap_it, CBioseqContext& ctx)
         // For /gap_type qual
         if( gap.CanGetType() ) {
             switch( gap.GetType() ) {
-        case CSeq_gap::eType_unknown:
-            // don't show /gap_type
-            break;
-        case CSeq_gap::eType_fragment:
-            sType = "within scaffold";
-            break;
-        case CSeq_gap::eType_clone:
-            sType = ( is_linkage ? "within scaffold" : "between scaffolds" );
-            break;
-        case CSeq_gap::eType_short_arm:
-            sType = "short_arm";
-            break;
-        case CSeq_gap::eType_heterochromatin:
-            sType = "heterochromatin";
-            break;
-        case CSeq_gap::eType_centromere:
-            sType = "centromere";
-            break;
-        case CSeq_gap::eType_telomere:
-            sType = "telomere";
-            break;
-        case CSeq_gap::eType_repeat:
-            sType = ( is_linkage ? 
-                "repeat within scaffold" : 
-            "repeat between scaffolds" );
-            break;
-        case CSeq_gap::eType_contig:
-            sType = "between scaffolds";
-            break;
-        case CSeq_gap::eType_scaffold:
-            sType = "within scaffold";
-            break;
-        case CSeq_gap::eType_other:
-            sType = "other";
-            break;
-        default:
-            sType = "(ERROR: UNRECOGNIZED_GAP_TYPE:" +
-                NStr::IntToString(gap.GetType()) + ")";
-            break;
+            case CSeq_gap::eType_unknown:
+                // don't show /gap_type
+                break;
+            case CSeq_gap::eType_fragment:
+                sType = "within scaffold";
+                need_evidence = true;
+                break;
+            case CSeq_gap::eType_clone:
+                sType = ( is_linkage ? "within scaffold" : "between scaffolds" );
+                need_evidence = is_linkage;
+                break;
+            case CSeq_gap::eType_short_arm:
+                sType = "short_arm";
+                break;
+            case CSeq_gap::eType_heterochromatin:
+                sType = "heterochromatin";
+                break;
+            case CSeq_gap::eType_centromere:
+                sType = "centromere";
+                break;
+            case CSeq_gap::eType_telomere:
+                sType = "telomere";
+                break;
+            case CSeq_gap::eType_repeat:
+                sType = ( is_linkage ? 
+                    "repeat within scaffold" : 
+                    "repeat between scaffolds" );
+                need_evidence = is_linkage;
+                break;
+            case CSeq_gap::eType_contig:
+                sType = "between scaffolds";
+                break;
+            case CSeq_gap::eType_scaffold:
+                sType = "within scaffold";
+                need_evidence = is_linkage;
+                break;
+            case CSeq_gap::eType_other:
+                sType = "other";
+                break;
+            default:
+                sType = "(ERROR: UNRECOGNIZED_GAP_TYPE:" +
+                    NStr::IntToString(gap.GetType()) + ")";
+                break;
             }
         }
 
@@ -1984,6 +1994,14 @@ static CRef<CGapItem> s_NewGapItem(CSeqMap_CI& gap_it, CBioseqContext& ctx)
                     }
                 }
             }
+        }
+
+        if( need_evidence && sEvidence.empty() ) {
+            sEvidence.push_back("unspecified");
+        } else if( ! need_evidence && ! sEvidence.empty() ) {
+            // This case shouldn't happen if the validator is checking
+            // records first.
+            sEvidence.clear();
         }
     }
 
