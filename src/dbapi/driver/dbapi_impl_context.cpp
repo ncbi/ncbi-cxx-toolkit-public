@@ -65,6 +65,7 @@ namespace impl
 CDriverContext::CDriverContext(void) :
     m_LoginTimeout(0),
     m_Timeout(0),
+    m_CancelTimeout(0),
     m_MaxTextImageSize(0),
     m_ClientEncoding(eEncoding_ISO8859_1)
 {
