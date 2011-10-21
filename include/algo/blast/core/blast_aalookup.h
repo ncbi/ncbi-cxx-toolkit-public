@@ -145,6 +145,7 @@ typedef struct BlastAaLookupTable {
  * @param lookup the lookup table [in]
  * @return Zero.
  */
+NCBI_XBLAST_EXPORT
 Int4 BlastAaLookupFinalize(BlastAaLookupTable* lookup, EBoneType bone_type);
 
 /** Create a new protein lookup table.
@@ -152,7 +153,7 @@ Int4 BlastAaLookupFinalize(BlastAaLookupTable* lookup, EBoneType bone_type);
   * @param lut handle to lookup table structure [in/modified]
   * @return 0 if successful, nonzero on failure
   */
-  
+NCBI_XBLAST_EXPORT
 Int4 BlastAaLookupTableNew(const LookupTableOptions* opt, 
                            BlastAaLookupTable* * lut);
 
@@ -161,6 +162,7 @@ Int4 BlastAaLookupTableNew(const LookupTableOptions* opt,
  *  @param lookup The lookup table structure to be freed
  *  @return NULL
  */
+NCBI_XBLAST_EXPORT
 BlastAaLookupTable* BlastAaLookupTableDestruct(BlastAaLookupTable* lookup);
 
 /** Index a protein query.
@@ -174,6 +176,7 @@ BlastAaLookupTable* BlastAaLookupTableDestruct(BlastAaLookupTable* lookup);
  * @param query_bias number added to each offset put into lookup table 
  *              (only used for RPS blast database creation, otherwise 0) [in]
  */
+NCBI_XBLAST_EXPORT
 void BlastAaLookupIndexQuery(BlastAaLookupTable* lookup,
 			     Int4 ** matrix,
 			     BLAST_SequenceBlk* query,
