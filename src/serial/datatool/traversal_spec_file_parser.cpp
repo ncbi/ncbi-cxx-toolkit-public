@@ -672,7 +672,7 @@ bool CTraversalSpecFileParser::x_IsValidPattern( const std::string & pattern )
             // iterate through piece looking for bad chars
             string::const_iterator char_iter = start_of_piece;
             for( ; char_iter != end_of_piece; ++char_iter ) {
-                if( ! isalpha(*char_iter) && *char_iter != '-' ) {
+                if( ! isalpha(*char_iter) && *char_iter != '-' && *char_iter != ':' ) {
                     return false;
                 }
             }
