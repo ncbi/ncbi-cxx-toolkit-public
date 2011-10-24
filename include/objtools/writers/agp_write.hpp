@@ -41,6 +41,7 @@ BEGIN_NCBI_SCOPE
 class CAgpWriteComponentIdMapper {
 public:
     virtual void do_map( string &in_out_component_id ) = 0;
+    virtual ~CAgpWriteComponentIdMapper(void) { }
 };
 
 ///
