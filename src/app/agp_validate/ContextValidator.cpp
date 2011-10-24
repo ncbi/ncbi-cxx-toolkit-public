@@ -81,13 +81,11 @@ CAgpValidateReader::CAgpValidateReader(CAgpErrEx& agpErr, CMapCompLen& comp2len)
   // m_obj_id_sorted = 0; - not necessary, will be set to 0 on the first object_id
 }
 
-/* not necessary - there is only one object of this class
 CAgpValidateReader::~CAgpValidateReader()
 {
   delete m_obj_id_digits;
   delete m_prev_id_digits;
 }
-*/
 
 bool CAgpValidateReader::OnError()
 {
@@ -523,7 +521,8 @@ void CAgpValidateReader::x_PrintTotals() // without comment counts
     int linkageYesCnt =
       m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapClone   ]+
       m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapFragment]+
-      m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapRepeat  ];
+      m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapRepeat  ]+
+      m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapScaffold];
     int linkageNoCnt = m_GapCount - linkageYesCnt;
 
     int doNotBreakCnt= linkageYesCnt + m_GapTypeCnt[CAgpRow::eGapFragment];
@@ -531,23 +530,31 @@ void CAgpValidateReader::x_PrintTotals() // without comment counts
 
     cout<< "\n- do not break scaffold: "<<ALIGN_W(doNotBreakCnt);
     if(doNotBreakCnt) {
-      cout<< "\n  clone   , linkage yes: "<<
-            ALIGN_W(m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapClone   ]);
-      cout<< "\n  fragment, linkage yes: "<<
-            ALIGN_W(m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapFragment]);
-      cout<< "\n  fragment, linkage no : "<<
-            ALIGN_W(m_GapTypeCnt[                   CAgpRow::eGapFragment]);
-      cout<< "\n  repeat  , linkage yes: "<<
-            ALIGN_W(m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapRepeat  ]);
+      if(m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapClone   ])
+        cout<< "\n  clone   , linkage yes: "<<
+              ALIGN_W(m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapClone   ]);
+      if(m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapFragment])
+        cout<< "\n  fragment, linkage yes: "<<
+              ALIGN_W(m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapFragment]);
+      if(m_GapTypeCnt[                   CAgpRow::eGapFragment])
+        cout<< "\n  fragment, linkage no : "<<
+              ALIGN_W(m_GapTypeCnt[                   CAgpRow::eGapFragment]);
+      if(m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapRepeat  ])
+        cout<< "\n  repeat  , linkage yes: "<<
+              ALIGN_W(m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapRepeat  ]);
+      if(m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapScaffold  ])
+        cout<< "\n  repeat  , linkage yes: "<<
+              ALIGN_W(m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapRepeat  ]);
     }
 
     cout<< "\n- break it, linkage no : "<<ALIGN_W(breakCnt);
     if(breakCnt) {
       for(int i=0; i<CAgpRow::eGapCount; i++) {
         if(i==CAgpRow::eGapFragment) continue;
-        cout<< "\n\t"
-            << setw(15) << setiosflags(IOS_BASE::left) << CAgpRow::GapTypeToString(i)
-            << ": " << ALIGN_W( m_GapTypeCnt[i] );
+        if(m_GapTypeCnt[i])
+          cout<< "\n\t"
+              << setw(15) << setiosflags(IOS_BASE::left) << CAgpRow::GapTypeToString(i)
+              << ": " << ALIGN_W( m_GapTypeCnt[i] );
       }
     }
 
@@ -555,7 +562,9 @@ void CAgpValidateReader::x_PrintTotals() // without comment counts
   cout << "\n";
 
   if(m_ObjCount) {
-    x_PrintPatterns(m_objNamePatterns, "Object names");
+    x_PrintPatterns(m_objNamePatterns, "Object names",
+      m_CheckObjLen ? m_comp2len.m_count : 0
+    );
   }
 
   if(m_CompId2Spans.size()) {
@@ -565,7 +574,9 @@ void CAgpValidateReader::x_PrintTotals() // without comment counts
     {
       compNamePatterns.AddName(it->first);
     }
-    bool hasSuspicious = x_PrintPatterns(compNamePatterns, "Component names");
+    bool hasSuspicious = x_PrintPatterns(compNamePatterns, "Component names",
+      m_CheckObjLen ? 0 : m_comp2len.m_count
+    );
     if(!m_CheckCompNames && hasSuspicious ) {
       cout<< "Use -g or -a to print lines with suspicious accessions.\n";
     }
@@ -740,7 +751,7 @@ static int GetNameCategory(const string& s)
 
 // Sort by accession count, print not more than MaxPatterns or 2*MaxPatterns
 bool CAgpValidateReader::x_PrintPatterns(
-  CAccPatternCounter& namePatterns, const string& strHeader)
+  CAccPatternCounter& namePatterns, const string& strHeader, int fasta_count)
 {
   const int MaxPatterns=10;
 
@@ -785,7 +796,11 @@ bool CAgpValidateReader::x_PrintPatterns(
   if(mixedCategories && wPattern<20) wPattern=20;
   // Print the total
   cout<< setw(wPattern+2) << setiosflags(IOS_BASE::left)
-      << strHeader << ": " << ALIGN_W(totalCount) << "\n";
+      << strHeader << ": " << ALIGN_W(totalCount);
+  if(fasta_count && fasta_count!=totalCount) {
+    cout << " != " << fasta_count << " in the FASTA";
+  }
+  cout<< "\n";
 
   bool printNuc=(nucCount>0);
   // 1 or 2 (if mixedCategories) iterations

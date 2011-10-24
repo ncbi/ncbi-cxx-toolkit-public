@@ -40,7 +40,7 @@ using namespace ncbi;
 BEGIN_NCBI_SCOPE
 
 //// class CMapCompLen
-int CMapCompLen::AddCompLen(const string& acc, int len)
+int CMapCompLen::AddCompLen(const string& acc, int len, bool increment_count)
 {
   TMapStrInt::value_type acc_len(acc, len);
   TMapStrIntResult insert_result = insert(acc_len);
@@ -48,6 +48,7 @@ int CMapCompLen::AddCompLen(const string& acc, int len)
     if(insert_result.first->second != len)
       return insert_result.first->second; // error: already have a different length
   }
+  if(increment_count) m_count++;
   return 0; // success
 }
 

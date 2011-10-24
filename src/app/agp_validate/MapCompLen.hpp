@@ -44,9 +44,17 @@ typedef map<string, int> TMapStrInt ;
 class CMapCompLen : public TMapStrInt
 {
 public:
+  // may be less than size() because we add some names twice, e.g.: lcl|id1 and id1
+  int m_count;
+
   typedef pair<TMapStrInt::iterator, bool> TMapStrIntResult;
   // returns 0 on success, or a previous length not equal to the new one
-  int AddCompLen(const string& acc, int len);
+  int AddCompLen(const string& acc, int len, bool increment_count=true);
+  CMapCompLen()
+  {
+    m_count=0;
+  }
+
 };
 
 END_NCBI_SCOPE

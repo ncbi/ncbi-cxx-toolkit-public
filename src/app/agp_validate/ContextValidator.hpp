@@ -129,7 +129,7 @@ class CAgpValidateReader : public CAgpReader
 {
 public:
   CAgpValidateReader(CAgpErrEx& agpErr, CMapCompLen& comp2len); // , bool checkCompNames=false);
-  //virtual ~CAgpValidateReader();
+  virtual ~CAgpValidateReader();
   void PrintTotals();
   bool m_CheckCompNames;
   bool m_CheckObjLen; // false: check compoment lengths
@@ -138,7 +138,7 @@ public:
 protected:
   void x_PrintTotals(); // without comment counts
   // true: a suspicious mix of ids - some look like GenBank accessions, some do not.
-  static bool x_PrintPatterns(CAccPatternCounter& namePatterns, const string& strHeader);
+  static bool x_PrintPatterns(CAccPatternCounter& namePatterns, const string& strHeader, int fasta_count);
 
   int m_CommentLineCount;
   int m_EolComments;

@@ -349,8 +349,8 @@ int CAgpValidateApplication::Run(void)
 void CAgpValidateApplication::x_ReportFastaSeqCount()
 {
   string s;
-  if(m_comp2len.size()!=1) s="s";
-  cout<< m_comp2len.size() << " "
+  if(m_comp2len.m_count!=1) s="s";
+  cout<< m_comp2len.m_count << " "
       << (m_reader.m_CheckObjLen?"object name":"component_id")
       << s <<" and length" << s << " loaded from FASTA." << endl;
 }
@@ -476,44 +476,6 @@ void CAgpValidateApplication::Exit(void)
   SetDiagStream(0);
 }
 
-/*
-void CAgpValidateApplication::x_LoadLen(CNcbiIstream& istr, const string& filename)
-{
-  string line;
-  int line_num=0;
-  int acc_count=0;
-  char buf[65];
-  int len;
-
-  while( NcbiGetline(istr, line, "\r\n") ) {
-    line_num++;
-    if(line.size()==0) continue;
-
-    if( 2 != sscanf(line.c_str(), "%64s %i", buf, &len) || len<=0 ) {
-      cerr<< "ERROR - invalid line at " << filename << ":" << line_num << ":\n"
-          << line.substr(0, 100) << "\n"
-          << "\tExpecting: component_id length.\n";
-      exit(1);
-    }
-
-    int prev_len =  m_comp2len.AddCompLen(buf, len);
-    if(prev_len) {
-      cerr<< "ERROR - component length redefined from " << prev_len << " to " << len << "\n"
-          << "  component_id: " << buf << "\n"
-          << "  File: " << filename << "\n"
-          << "  Line: " <<  line_num << "\n\n";
-      exit(1);
-    }
-
-    acc_count++;
-  }
-
-  if(acc_count==0) {
-    cerr<< "WARNING - empty file " << filename << "\n";
-  }
-}
-*/
-
 // To be moved to MapCompLen.cpp
 void CAgpValidateApplication::x_LoadLenFa(CNcbiIstream& istr, const string& filename)
 {
@@ -534,7 +496,7 @@ void CAgpValidateApplication::x_LoadLenFa(CNcbiIstream& istr, const string& file
     if(line[0]=='>') {
       if( acc.size() ) {
         prev_len =  m_comp2len.AddCompLen(acc, len);
-        if(acc_long!=acc) prev_len =  m_comp2len.AddCompLen(acc_long, len);
+        if(acc_long!=acc) prev_len =  m_comp2len.AddCompLen(acc_long, len, false);
         if(prev_len) goto LengthRedefinedFa;
       }
 
@@ -559,13 +521,22 @@ void CAgpValidateApplication::x_LoadLenFa(CNcbiIstream& istr, const string& file
             << line.substr(0, 100) << "\n\n";
         exit(1);
       }
+
+      for(SIZE_TYPE i=0; i<line.size(); i++ ) {
+        if(!isalpha(line[i])) {
+          cerr<< "ERROR - non-alphabetic character in the FASTA:\n"
+                 "  file " << filename << "\n  line " << line_num << "\n  column " << i+1 << "\n\n";
+          exit(1);
+        }
+      }
+
       len+=line.size();
     }
   }
 
   if( acc.size() ) {
     prev_len =  m_comp2len.AddCompLen(acc, len);
-    if(acc_long!=acc) prev_len =  m_comp2len.AddCompLen(acc_long, len);
+    if(acc_long!=acc) prev_len =  m_comp2len.AddCompLen(acc_long, len, false);
     if(prev_len) goto LengthRedefinedFa;
   }
   if(acc_count==0) {
