@@ -415,7 +415,7 @@ void CAlignSort::SortAlignments(IAlignSource &align_source,
             }
         }
     }
-    catch (CException& e) {
+    catch (CException&) {
         ITERATE (vector<string>, it, tmp_volumes) {
             LOG_POST(Error << "removing tmp volume: " << *it);
             CFile(*it).Remove();

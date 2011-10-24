@@ -400,8 +400,8 @@ void CAlignCompare::x_GetCurrentGroup(int set)
     while (!source.EndOfData() && next_group.empty()) {
         AutoPtr<SAlignment> align = x_NextAlignment(set);
         if (current_group.empty() ||
-            align->query == current_group.front()->query &&
-            align->subject == current_group.front()->subject)
+            (align->query == current_group.front()->query &&
+             align->subject == current_group.front()->subject))
         {
             current_group.push_back(align);
         } else {
