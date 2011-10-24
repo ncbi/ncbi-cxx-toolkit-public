@@ -19,7 +19,7 @@ for dir in "$@"; do
         case "`basename $f`" in
             plugin_test | speedtest | streamtest \
                 | testipub | test_basic_cleanup | test_checksum | test_mghbn \
-                | test_ncbi_dblb \
+                | test_ncbi_connutil_hit | test_ncbi_dblb | test_ncbi_http_get \
                 | *.gz )
                 ;;
             *test* | *demo* | *sample* \
