@@ -578,7 +578,7 @@ CNCPeriodicSync::CanStartSyncCommand(Uint8  server_id,
     s_FindServerSlot(server_id, slot, slot_data, slot_srv);
     if (slot_srv == NULL)
         return eNetworkError;
-    
+
     CFastMutexGuard g_slot(slot_data->lock);
     if (slot_data->clean_required  &&  can_abort)
         return eServerBusy;
@@ -827,13 +827,13 @@ CActiveSyncControl::DoPeriodicSync(SSyncSlotData* slot_data,
     Uint8 log_size = CNCSyncLog::GetLogSize();
     if (s_LogFile) {
         fprintf(s_LogFile,
-                NCBI_BIGCOUNT_FORMAT_SPEC "," NCBI_BIGCOUNT_FORMAT_SPEC ",%u,"
-                NCBI_BIGCOUNT_FORMAT_SPEC "," NCBI_BIGCOUNT_FORMAT_SPEC ","
-                NCBI_BIGCOUNT_FORMAT_SPEC ",%d,%d,"
-                NCBI_BIGCOUNT_FORMAT_SPEC "," NCBI_BIGCOUNT_FORMAT_SPEC ","
-                NCBI_BIGCOUNT_FORMAT_SPEC "," NCBI_BIGCOUNT_FORMAT_SPEC ","
-                NCBI_BIGCOUNT_FORMAT_SPEC "," NCBI_BIGCOUNT_FORMAT_SPEC ","
-                NCBI_BIGCOUNT_FORMAT_SPEC ",%u,%u\n",
+                "%" NCBI_BIGCOUNT_FORMAT_SPEC ",%" NCBI_BIGCOUNT_FORMAT_SPEC
+                ",%u,%" NCBI_BIGCOUNT_FORMAT_SPEC ",%" NCBI_BIGCOUNT_FORMAT_SPEC
+                ",%" NCBI_BIGCOUNT_FORMAT_SPEC
+                ",%d,%d,%" NCBI_BIGCOUNT_FORMAT_SPEC ",%" NCBI_BIGCOUNT_FORMAT_SPEC
+                ",%" NCBI_BIGCOUNT_FORMAT_SPEC ",%" NCBI_BIGCOUNT_FORMAT_SPEC
+                ",%" NCBI_BIGCOUNT_FORMAT_SPEC ",%" NCBI_BIGCOUNT_FORMAT_SPEC
+                ",%" NCBI_BIGCOUNT_FORMAT_SPEC ",%u,%u\n",
                 TNCBI_BigCount(CNCDistributionConf::GetSelfID()),
                 TNCBI_BigCount(m_SrvId), m_Slot,
                 TNCBI_BigCount(start_time), TNCBI_BigCount(end_time),

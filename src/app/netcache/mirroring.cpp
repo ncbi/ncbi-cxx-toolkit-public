@@ -97,7 +97,7 @@ CNCMirroringThread::Main(void)
             int queue_size = s_TotalQueueSize.Add(-1);
             if (s_LogFile) {
                 Uint8 cur_time = CNetCacheServer::GetPreciseTime();
-                fprintf(s_LogFile, NCBI_BIGCOUNT_FORMAT_SPEC ",%d,%d\n",
+                fprintf(s_LogFile, "%" NCBI_BIGCOUNT_FORMAT_SPEC ",%d,%d\n",
                         TNCBI_BigCount(cur_time), queue_size, CThread::GetSelf());
             }
             ENCPeerFailure send_res = ePeerActionOK;
@@ -209,7 +209,7 @@ s_QueueEvent(SDistribution* distr, SNCMirrorEvent* event, Uint8 size)
         int queue_size = s_TotalQueueSize.Add(1);
         if (s_LogFile) {
             Uint8 cur_time = CNetCacheServer::GetPreciseTime();
-            fprintf(s_LogFile, NCBI_BIGCOUNT_FORMAT_SPEC ",%d,%d\n",
+            fprintf(s_LogFile, "%" NCBI_BIGCOUNT_FORMAT_SPEC ",%d,%d\n",
                     TNCBI_BigCount(cur_time), queue_size, CThread::GetSelf());
         }
 

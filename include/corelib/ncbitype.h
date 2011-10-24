@@ -54,6 +54,9 @@
 #include <ncbiconf.h>
 
 #ifdef HAVE_INTTYPES_H
+#  ifndef   __STDC_FORMAT_MACROS
+#    define __STDC_FORMAT_MACROS
+#  endif /*!__STDC_FORMAT_MACROS*/
 #  include <inttypes.h>
 #endif
 
