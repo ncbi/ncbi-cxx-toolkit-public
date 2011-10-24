@@ -239,7 +239,9 @@ CMultiAligner::x_RealignBlocks(CHitList& rps_hits,
 
             itr++;
             prev_itr++;
-            next_itr++;
+            if (next_itr != blocklist.end()) {
+                next_itr++;
+            }
     
             // Throw away alignments whose query range is too small
     
