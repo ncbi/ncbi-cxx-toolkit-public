@@ -40,10 +40,41 @@
 
 // generated includes
 #include <serial/soap/soap_fault.hpp>
-#include <serial/soap/soap_detail.hpp>
 
 BEGIN_NCBI_SCOPE
 // generated classes
+
+void CSoapFault_Base::C_Detail::ResetAnyContent(void)
+{
+    m_AnyContent.clear();
+    m_set_State[0] &= ~0x3;
+}
+
+void CSoapFault_Base::C_Detail::Reset(void)
+{
+    ResetAnyContent();
+}
+
+BEGIN_NAMED_CLASS_INFO("detail", CSoapFault_Base::C_Detail)
+{
+    SET_CLASS_MODULE("soap_11");
+    SET_NAMESPACE("http://schemas.xmlsoap.org/soap/envelope/")->SetNsQualified(false);
+    ADD_NAMED_MEMBER("AnyContent", m_AnyContent, STL_list, (STL_CRef, (STD, (ncbi::CAnyContentObject))))->SetOptional()->SetSetFlag(MEMBER_PTR(m_set_State[0]))->SetNoPrefix()->SetNotag();
+    info->RandomOrder();
+}
+END_CLASS_INFO
+
+// constructor
+CSoapFault_Base::C_Detail::C_Detail(void)
+{
+    memset(m_set_State,0,sizeof(m_set_State));
+}
+
+// destructor
+CSoapFault_Base::C_Detail::~C_Detail(void)
+{
+}
+
 
 void CSoapFault_Base::ResetFaultcode(void)
 {
@@ -76,7 +107,7 @@ void CSoapFault_Base::SetDetail(CSoapFault_Base::TDetail& value)
 CSoapFault_Base::TDetail& CSoapFault_Base::SetDetail(void)
 {
     if ( !m_Detail )
-        m_Detail.Reset(new CSoapDetail());
+        m_Detail.Reset(new C_Detail());
     return (*m_Detail);
 }
 
@@ -91,11 +122,11 @@ void CSoapFault_Base::Reset(void)
 BEGIN_NAMED_BASE_CLASS_INFO("Fault", CSoapFault)
 {
     SET_CLASS_MODULE("soap_11");
-    SET_NAMESPACE("http://schemas.xmlsoap.org/soap/envelope/");
+    SET_NAMESPACE("http://schemas.xmlsoap.org/soap/envelope/")->SetNsQualified(false);
     ADD_NAMED_STD_MEMBER("faultcode", m_Faultcode)->SetSetFlag(MEMBER_PTR(m_set_State[0]))->SetNoPrefix();
     ADD_NAMED_STD_MEMBER("faultstring", m_Faultstring)->SetSetFlag(MEMBER_PTR(m_set_State[0]))->SetNoPrefix();
     ADD_NAMED_STD_MEMBER("faultactor", m_Faultactor)->SetOptional()->SetSetFlag(MEMBER_PTR(m_set_State[0]))->SetNoPrefix();
-    ADD_NAMED_REF_MEMBER("detail", m_Detail, CSoapDetail)->SetOptional()->SetNoPrefix();
+    ADD_NAMED_REF_MEMBER("detail", m_Detail, C_Detail)->SetOptional()->SetNoPrefix();
     info->RandomOrder();
 }
 END_CLASS_INFO

@@ -169,7 +169,7 @@ void CSoapMessage::Write(CObjectOStream& out) const
     CObjectTypeInfo typeB = CType<CSoapBody>();
     typeB.SetLocalWriteHook(out, new CSoapWriteHook(m_Body));
 
-    CObjectTypeInfo typeF = CType<CSoapDetail>();
+    CObjectTypeInfo typeF = CType<CSoapFault::C_Detail>();
     typeF.SetLocalWriteHook(out, new CSoapWriteHook(m_FaultDetail));
 
     x_VerifyFaultObj(true);
@@ -198,7 +198,7 @@ void CSoapMessage::Read(CObjectIStream& in)
     CObjectTypeInfo typeB = CType<CSoapBody>();
     typeB.SetLocalReadHook(in, new CSoapReadHook(m_Body,m_Types));
 
-    CObjectTypeInfo typeF = CType<CSoapDetail>();
+    CObjectTypeInfo typeF = CType<CSoapFault::C_Detail>();
     typeF.SetLocalReadHook(in, new CSoapReadHook(m_FaultDetail,m_Types));
 
     in >> env;

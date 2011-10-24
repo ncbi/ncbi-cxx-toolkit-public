@@ -43,6 +43,7 @@
 #include <serial/serialbase.hpp>
 
 // generated includes
+#include <list>
 #include <string>
 
 BEGIN_NCBI_SCOPE
@@ -54,6 +55,7 @@ class CSoapDetail;
 // generated classes
 
 /////////////////////////////////////////////////////////////////////////////
+///	    Fault reporting structure
 class CSoapFault_Base : public ncbi::CSerialObject
 {
     typedef ncbi::CSerialObject Tparent;
@@ -66,18 +68,62 @@ public:
     // type info
     DECLARE_INTERNAL_TYPE_INFO();
 
+    /////////////////////////////////////////////////////////////////////////////
+    class C_Detail : public ncbi::CSerialObject
+    {
+        typedef ncbi::CSerialObject Tparent;
+    public:
+        // constructor
+        C_Detail(void);
+        // destructor
+        ~C_Detail(void);
+    
+        // type info
+        DECLARE_INTERNAL_TYPE_INFO();
+    
+        // types
+        typedef std::list< ncbi::CRef< ncbi::CAnyContentObject > > TAnyContent;
+    
+        // getters
+        // setters
+    
+        /// optional
+        /// typedef std::list< ncbi::CRef< ncbi::CAnyContentObject > > TAnyContent
+        ///  Check whether the AnyContent data member has been assigned a value.
+        bool IsSetAnyContent(void) const;
+        /// Check whether it is safe or not to call GetAnyContent method.
+        bool CanGetAnyContent(void) const;
+        void ResetAnyContent(void);
+        const TAnyContent& GetAnyContent(void) const;
+        TAnyContent& SetAnyContent(void);
+    
+        /// Reset the whole object
+        void Reset(void);
+    
+    
+    private:
+        // Prohibit copy constructor and assignment operator
+        C_Detail(const C_Detail&);
+        C_Detail& operator=(const C_Detail&);
+    
+        // data
+        Uint4 m_set_State[1];
+        TAnyContent m_AnyContent;
+    };
     // types
     typedef std::string TFaultcode;
     typedef std::string TFaultstring;
     typedef std::string TFaultactor;
-    typedef CSoapDetail TDetail;
+    typedef C_Detail TDetail;
 
     // getters
     // setters
 
     /// mandatory
     /// typedef std::string TFaultcode
+    ///  Check whether the Faultcode data member has been assigned a value.
     bool IsSetFaultcode(void) const;
+    /// Check whether it is safe or not to call GetFaultcode method.
     bool CanGetFaultcode(void) const;
     void ResetFaultcode(void);
     const TFaultcode& GetFaultcode(void) const;
@@ -86,7 +132,9 @@ public:
 
     /// mandatory
     /// typedef std::string TFaultstring
+    ///  Check whether the Faultstring data member has been assigned a value.
     bool IsSetFaultstring(void) const;
+    /// Check whether it is safe or not to call GetFaultstring method.
     bool CanGetFaultstring(void) const;
     void ResetFaultstring(void);
     const TFaultstring& GetFaultstring(void) const;
@@ -95,7 +143,9 @@ public:
 
     /// optional
     /// typedef std::string TFaultactor
+    ///  Check whether the Faultactor data member has been assigned a value.
     bool IsSetFaultactor(void) const;
+    /// Check whether it is safe or not to call GetFaultactor method.
     bool CanGetFaultactor(void) const;
     void ResetFaultactor(void);
     const TFaultactor& GetFaultactor(void) const;
@@ -103,8 +153,10 @@ public:
     TFaultactor& SetFaultactor(void);
 
     /// optional
-    /// typedef CSoapDetail TDetail
+    /// typedef C_Detail TDetail
+    ///  Check whether the Detail data member has been assigned a value.
     bool IsSetDetail(void) const;
+    /// Check whether it is safe or not to call GetDetail method.
     bool CanGetDetail(void) const;
     void ResetDetail(void);
     const TDetail& GetDetail(void) const;
@@ -136,6 +188,31 @@ private:
 ///////////////////////////////////////////////////////////
 ///////////////////// inline methods //////////////////////
 ///////////////////////////////////////////////////////////
+inline
+bool CSoapFault_Base::C_Detail::IsSetAnyContent(void) const
+{
+    return ((m_set_State[0] & 0x3) != 0);
+}
+
+inline
+bool CSoapFault_Base::C_Detail::CanGetAnyContent(void) const
+{
+    return true;
+}
+
+inline
+const CSoapFault_Base::C_Detail::TAnyContent& CSoapFault_Base::C_Detail::GetAnyContent(void) const
+{
+    return m_AnyContent;
+}
+
+inline
+CSoapFault_Base::C_Detail::TAnyContent& CSoapFault_Base::C_Detail::SetAnyContent(void)
+{
+    m_set_State[0] |= 0x1;
+    return m_AnyContent;
+}
+
 inline
 bool CSoapFault_Base::IsSetFaultcode(void) const
 {

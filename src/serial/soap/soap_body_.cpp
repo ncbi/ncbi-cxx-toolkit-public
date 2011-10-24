@@ -58,7 +58,7 @@ void CSoapBody_Base::Reset(void)
 BEGIN_NAMED_BASE_CLASS_INFO("Body", CSoapBody)
 {
     SET_CLASS_MODULE("soap_11");
-    SET_NAMESPACE("http://schemas.xmlsoap.org/soap/envelope/");
+    SET_NAMESPACE("http://schemas.xmlsoap.org/soap/envelope/")->SetNsQualified(false);
     ADD_NAMED_MEMBER("AnyContent", m_AnyContent, STL_list, (STL_CRef, (STD, (ncbi::CAnyContentObject))))->SetOptional()->SetSetFlag(MEMBER_PTR(m_set_State[0]))->SetNoPrefix()->SetNotag();
     info->RandomOrder();
 }

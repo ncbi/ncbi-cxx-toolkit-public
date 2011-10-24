@@ -37,7 +37,6 @@
 #include <ncbi_pch.hpp>
 #include <serial/soap/soap_11_module.hpp>
 #include <serial/soap/soap_body.hpp>
-#include <serial/soap/soap_detail.hpp>
 #include <serial/soap/soap_envelope.hpp>
 #include <serial/soap/soap_fault.hpp>
 #include <serial/soap/soap_header.hpp>
@@ -47,7 +46,6 @@ BEGIN_NCBI_SCOPE
 void soap_11_RegisterModuleClasses(void)
 {
     CSoapBody::GetTypeInfo();
-    CSoapDetail::GetTypeInfo();
     CSoapEnvelope::GetTypeInfo();
     CSoapFault::GetTypeInfo();
     CSoapHeader::GetTypeInfo();
