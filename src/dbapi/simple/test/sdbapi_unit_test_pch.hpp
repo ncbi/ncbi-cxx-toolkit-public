@@ -59,6 +59,11 @@ private:
     ETransBehavior  m_TransBehavior;
 };
 
+enum ESqlSrvType {
+    eSqlSrvMsSql,
+    eSqlSrvSybase
+};
+
 ///////////////////////////////////////////////////////////////////////////
 class CTestArguments : public CObject
 {
@@ -84,6 +89,11 @@ public:
         return m_ServerName;
     }
 
+    ESqlSrvType GetServerType(void) const
+    {
+        return m_ServerType;
+    }
+
     string GetUserName(void) const
     {
         return m_UserName;
@@ -104,6 +114,7 @@ private:
     string m_GatewayPort;
 
     string m_ServerName;
+    ESqlSrvType m_ServerType;
     string m_UserName;
     string m_Password;
     string m_DatabaseName;

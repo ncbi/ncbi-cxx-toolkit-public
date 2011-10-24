@@ -30,9 +30,7 @@
  * ===========================================================================
  */
 
-#include <ncbi_pch.hpp>
-
-#include "sdbapi_unit_test.hpp"
+#include "sdbapi_unit_test_pch.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -112,7 +110,11 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
             query.ExecuteSP("sp_server_info");
             query.PurgeResults();
 
-            BOOST_CHECK_EQUAL( size_t(29), query.GetRowCount() );
+            if (GetArgs().GetServerType() == eSqlSrvSybase) {
+                BOOST_CHECK_EQUAL( 30, query.GetRowCount() );
+            } else {
+                BOOST_CHECK_EQUAL( 29, query.GetRowCount() );
+            }
             BOOST_CHECK_EQUAL(query.GetStatus(), 0);
 
             // Set parameter to 1 ...
@@ -120,7 +122,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
             query.ExecuteSP("sp_server_info");
             query.PurgeResults();
 
-            BOOST_CHECK_EQUAL( size_t(1), query.GetRowCount() );
+            BOOST_CHECK_EQUAL( 1, query.GetRowCount() );
             BOOST_CHECK_EQUAL(query.GetStatus(), 0);
         }
     }
@@ -155,7 +157,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure2)
             query.ExecuteSP("sp_server_info");
             query.PurgeResults();
 
-            BOOST_CHECK_EQUAL( size_t(1), query.GetRowCount() );
+            BOOST_CHECK_EQUAL( 1, query.GetRowCount() );
             BOOST_CHECK_EQUAL(query.GetStatus(), 0);
         }
     }
@@ -204,7 +206,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure3)
         }
 
         // Multiple results plus column names with spaces.
-        {
+        if (GetArgs().GetServerType() == eSqlSrvMsSql) {
             CQuery query = GetDatabase().NewQuery();
 
             query.ExecuteSP("sp_spaceused");

@@ -30,11 +30,9 @@
  * ===========================================================================
  */
 
-#include <ncbi_pch.hpp>
+#include "sdbapi_unit_test_pch.hpp"
 
 #include <corelib/ncbiapp.hpp>
-
-#include "sdbapi_unit_test.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -154,6 +152,20 @@ CTestArguments::CTestArguments(void)
 
     // Get command-line arguments ...
     m_ServerName = args["S"].AsString();
+    if (NStr::CompareNocase(m_ServerName, "Sybase") == 0)
+        m_ServerType = eSqlSrvSybase;
+    else if (NStr::CompareNocase(m_ServerName, "MsSql") == 0)
+        m_ServerType = eSqlSrvMsSql;
+    else {
+        const string& srv_type = args["T"].AsString();
+        if (NStr::CompareNocase(srv_type, "Sybase") == 0)
+            m_ServerType = eSqlSrvSybase;
+        else {
+            if (NStr::CompareNocase(srv_type, "MsSql") != 0)
+                ERR_POST("Unknown server type: '" << srv_type << "'");
+            m_ServerType = eSqlSrvMsSql;
+        }
+    }
     m_UserName = args["U"].AsString();
     m_Password = args["P"].AsString();
     m_DatabaseName = args["D"].AsString();
@@ -163,17 +175,22 @@ CTestArguments::CTestArguments(void)
 NCBITEST_INIT_CMDLINE(arg_desc)
 {
 #if defined(NCBI_OS_MSWIN)
-#define DEF_SERVER    "MSSQL"
-
+#define DEF_SERVER      "MSSQL"
+#define DEF_SERVER_TYPE "MSSQL"
 #elif defined(HAVE_LIBSYBASE)
-#define DEF_SERVER    "Sybase"
+#define DEF_SERVER      "Sybase"
+#define DEF_SERVER_TYPE "Sybase"
 #else
-#define DEF_SERVER    "MSSQL"
+#define DEF_SERVER      "MSSQL"
+#define DEF_SERVER_TYPE "MSSQL"
 #endif
 
     arg_desc->AddDefaultKey("S", "server",
                             "Name of the SQL server to connect to",
                             CArgDescriptions::eString, DEF_SERVER);
+    arg_desc->AddDefaultKey("T", "server_type",
+                            "Type of the SQL server to connect to, can be Sybase or MsSql",
+                            CArgDescriptions::eString, DEF_SERVER_TYPE);
 
     arg_desc->AddDefaultKey("U", "username",
                             "User name",
@@ -185,6 +202,18 @@ NCBITEST_INIT_CMDLINE(arg_desc)
     arg_desc->AddDefaultKey("D", "database",
                             "Name of the database to connect",
                             CArgDescriptions::eString, "DBAPI_Sample");
+}
+
+NCBITEST_INIT_VARIABLES(parser)
+{
+#ifdef HAVE_LIBSYBASE
+    parser->AddSymbol("HAVE_Sybase", true);
+#else
+    parser->AddSymbol("HAVE_Sybase", false);
+#endif
+
+    parser->AddSymbol("SERVER_SybaseSQL", GetArgs().GetServerType() == eSqlSrvSybase);
+    parser->AddSymbol("SERVER_MicrosoftSQL", GetArgs().GetServerType() == eSqlSrvMsSql);
 }
 
 END_NCBI_SCOPE

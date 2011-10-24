@@ -18,5 +18,6 @@ CHECK_COPY = sdbapi_unit_test.ini
 CHECK_TIMEOUT = 600
 
 CHECK_CMD = sdbapi_unit_test -S MsSql
+CHECK_CMD = sdbapi_unit_test -S Sybase
 
 WATCHERS = ivanovp

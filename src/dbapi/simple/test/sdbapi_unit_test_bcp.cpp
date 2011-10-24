@@ -30,9 +30,7 @@
  * ===========================================================================
  */
 
-#include <ncbi_pch.hpp>
-
-#include "sdbapi_unit_test.hpp"
+#include "sdbapi_unit_test_pch.hpp"
 
 
 BEGIN_NCBI_SCOPE

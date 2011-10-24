@@ -30,9 +30,7 @@
  * ===========================================================================
  */
 
-#include <ncbi_pch.hpp>
-
-#include "sdbapi_unit_test.hpp"
+#include "sdbapi_unit_test_pch.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -222,6 +220,7 @@ size_t
 GetNumOfRecords(CQuery& query, const string& table_name)
 {
     int cur_rec_num = 0;
+    query.ClearParameters();
     query.SetSql("select count(*) FROM " + table_name);
     query.Execute();
     ITERATE(CQuery, it, query.SingleSet()) {
@@ -394,6 +393,7 @@ BOOST_AUTO_TEST_CASE(Test_Insert)
             sql  = " SELECT int_field, vc1000_field FROM " + GetTableName();
             sql += " ORDER BY int_field";
 
+            query.ClearParameters();
             query.SetSql(sql);
             query.Execute();
 

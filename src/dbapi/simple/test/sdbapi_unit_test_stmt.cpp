@@ -30,9 +30,7 @@
  * ===========================================================================
  */
 
-#include <ncbi_pch.hpp>
-
-#include "sdbapi_unit_test.hpp"
+#include "sdbapi_unit_test_pch.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -705,7 +703,11 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
                 query.SetNullParameter( "@attribute_id", eSDB_Int4 );
                 query.ExecuteSP("sp_server_info");
                 query.PurgeResults();
-                BOOST_CHECK_EQUAL( 29, query.GetRowCount() );
+                if (GetArgs().GetServerType() == eSqlSrvSybase) {
+                    BOOST_CHECK_EQUAL( 30, query.GetRowCount() );
+                } else {
+                    BOOST_CHECK_EQUAL( 29, query.GetRowCount() );
+                }
 
                 // Set parameter to 1 ...
                 query.SetParameter( "@attribute_id", 1 );
@@ -755,6 +757,7 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
                 sql = "SELECT int_field, vc1000_field FROM " + table_name +
                     " ORDER BY id";
 
+                query.ClearParameters();
                 query.SetSql(sql);
                 query.Execute();
                 BOOST_CHECK(query.HasMoreResultSets());
@@ -774,7 +777,13 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
                     } else {
                         BOOST_CHECK(it[1].IsNull());
                         BOOST_CHECK(!it[2].IsNull());
-                        BOOST_CHECK_EQUAL( vc1000_field, string() );
+                        // Old protocol version has this strange feature
+                        if (GetArgs().GetServerType() == eSqlSrvSybase) {
+                            BOOST_CHECK_EQUAL( vc1000_field, string(" ") );
+                        }
+                        else {
+                            BOOST_CHECK_EQUAL( vc1000_field, string() );
+                        }
                     }
                 }
 
@@ -819,6 +828,7 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
                 sql = "SELECT int_field, vc1000_field FROM " + GetTableName() +
                     " ORDER BY id";
 
+                query.ClearParameters();
                 query.SetSql(sql);
                 query.Execute();
                 BOOST_CHECK(query.HasMoreResultSets());
@@ -839,7 +849,13 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
                         BOOST_CHECK(it[1].IsNull());
 
                         BOOST_CHECK(!it[2].IsNull());
-                        BOOST_CHECK_EQUAL( vc1000_field, string("    ") );
+                        // Old protocol version has this strange feature
+                        if (GetArgs().GetServerType() == eSqlSrvSybase) {
+                            BOOST_CHECK_EQUAL( vc1000_field, string(" ") );
+                        }
+                        else {
+                            BOOST_CHECK_EQUAL( vc1000_field, string("    ") );
+                        }
                     }
                 }
 
