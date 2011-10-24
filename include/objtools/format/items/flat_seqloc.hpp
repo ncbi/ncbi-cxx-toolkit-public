@@ -34,6 +34,7 @@
 */
 
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <util/range.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 
@@ -105,8 +106,26 @@ private:
     void x_AddID(const CSeq_id& id, CNcbiOstrstream& oss,
         CBioseqContext& ctx, TType type);
 
+    bool x_IsAccessionVersion( CSeq_id_Handle id );
+
     // data
     string     m_String;    // whole location, as a GB-style string
+    
+    typedef std::map<CSeq_id_Handle, CSeq_id_Handle> TToAccessionMap;
+    // a map of Seq_id_Handle to Seq_id_Handle (accession) which is
+    // guarded by mutex (mutex needed since it's static)
+    class CGuardedToAccessionMap {
+    public:
+        void Insert( CSeq_id_Handle from, CSeq_id_Handle to );
+        // It's an empty Seq_id_Handle if not found
+        CSeq_id_Handle Get( CSeq_id_Handle query );
+
+    private:
+        // make sure to use the mutex anytime you read/write m_TheMap
+        CFastMutex m_MutexForTheMap;
+        TToAccessionMap m_TheMap;
+    };
+    static CGuardedToAccessionMap m_ToAccessionMap;
 };
 
 

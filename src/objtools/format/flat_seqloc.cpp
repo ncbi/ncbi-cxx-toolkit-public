@@ -48,11 +48,11 @@
 #include <algorithm>
 #include "utils.hpp"
 
-
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 USING_SCOPE(sequence);
 
+CFlatSeqLoc::CGuardedToAccessionMap CFlatSeqLoc::m_ToAccessionMap;
 
 static bool s_IsVirtualId(const CSeq_id_Handle& id, const CBioseq_Handle& seq)
 {
@@ -92,6 +92,52 @@ CFlatSeqLoc::CFlatSeqLoc
  CBioseqContext& ctx,
  TType type)
 {
+    // load the map that caches conversion to accession, because
+    // it's *much* faster when done in bulk vs. one at a time.
+    // Try accession DG000029 for an example that's really sped up
+    // by this code, or gbcon180 in general.
+    {
+        set<CSeq_id_Handle> handles_set;
+        CSeq_loc_CI loc_ci( loc );
+        for( ; loc_ci; ++loc_ci ) {
+            CSeq_id_Handle handle = loc_ci.GetSeq_id_Handle();
+
+            // skip ones whose value we've already cached
+            CSeq_id_Handle cached_handle = m_ToAccessionMap.Get(handle);
+            if( cached_handle ) {
+                continue;
+            }
+
+            // if it's already an accession, then it maps to itself
+            if( x_IsAccessionVersion( handle ) ) {
+                m_ToAccessionMap.Insert( handle, handle );
+                continue;
+            }
+
+            handles_set.insert( handle );
+        }
+        if( ! handles_set.empty() )
+        {
+            vector<CSeq_id_Handle> handles_vec;
+            copy( handles_set.begin(), handles_set.end(),
+                back_inserter(handles_vec) );
+
+            CScope::TSeq_id_Handles results;
+            // GetAccVers will divide our request into smaller requests,
+            // so don't worry about overwhelming ID2
+            ctx.GetScope().GetAccVers( &results, handles_vec );
+            _ASSERT( handles_vec.size() == results.size() );
+            for( unsigned int id_idx = 0; id_idx < handles_vec.size(); ++id_idx ) {
+                CSeq_id_Handle acc_handle = results[id_idx];
+                if( acc_handle ) {
+                    m_ToAccessionMap.Insert( 
+                        handles_vec[id_idx], acc_handle );
+                }
+            }
+        }
+
+    }
+
     CNcbiOstrstream oss;
     x_Add(loc, oss, ctx, type, true);
     ((string)CNcbiOstrstreamToString(oss)).swap( m_String );
@@ -509,7 +555,8 @@ void CFlatSeqLoc::x_AddID
 
     CConstRef<CSeq_id> idp;
     try {
-        CSeq_id_Handle handle = GetId(id, ctx.GetScope(), eGetId_ForceAcc);
+        CSeq_id_Handle handle = 
+            m_ToAccessionMap.Get( CSeq_id_Handle::GetHandle(id) );
         if( handle ) {
             idp = handle.GetSeqId();
         }
@@ -534,6 +581,36 @@ void CFlatSeqLoc::x_AddID
     }
 }
 
+bool CFlatSeqLoc::x_IsAccessionVersion( CSeq_id_Handle id )
+{
+    CConstRef<CSeq_id> seq_id = id.GetSeqIdOrNull();
+    if( ! seq_id ) {
+        return false;
+    }
+
+    return ( seq_id->GetTextseq_Id() != NULL );
+}
+
+void 
+CFlatSeqLoc::CGuardedToAccessionMap::Insert( 
+    CSeq_id_Handle from, CSeq_id_Handle to )
+{
+    CFastMutexGuard guard(m_MutexForTheMap);
+    m_TheMap.insert( CFlatSeqLoc::TToAccessionMap::value_type(from, to) );
+}
+
+CSeq_id_Handle
+CFlatSeqLoc::CGuardedToAccessionMap::Get( CSeq_id_Handle query )
+{
+    CFastMutexGuard guard(m_MutexForTheMap);
+    CFlatSeqLoc::TToAccessionMap::const_iterator map_iter =
+        m_TheMap.find(query);
+    if( map_iter == m_TheMap.end() ) {
+        return CSeq_id_Handle();
+    } else {
+        return map_iter->second;
+    }
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
