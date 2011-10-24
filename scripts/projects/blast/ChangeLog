@@ -1,26 +1,32 @@
-July 15, 2011
+October 31, 2011
 * 2.2.26 release.
 * Mac executables are now Universal Binaries for 32- and 64-bit architectures,
   we no longer produce PPC and Intel Universal binaries. The executable
   archive names remain unchanged.
 
 Improvements:
-* Added bl2seq support to blast_formatter application.
-* Added new PSI-BLAST options that work with multiple-sequence alignments:
-  ignore_msa_master and msa_master_idx.
-* Extended applicability of partial subject fetching functionality.
-* mkmbindex can now create masked indices from a BLAST database and ASN.1
-  masking data.
-* rpsblast now supports multi-threaded execution.
-* Finite size correction is used to compute E-values.
-* blastdbcmd supports end-of-sequence syntax to extract specific ranges of 
-  sequence data.
+* The blast_formatter application can now format bl2seq RIDs.
+* PSI-BLAST can produce archive format, blast_formatter can format that output.
+* PSI-BLAST has two new options that work with multiple-sequence alignments:
+  ignore_msa_master and msa_master_idx (see BLAST+ manual).
+* mkmbindex can now create masked indices from a BLAST database and ASN.1 masking data.
+* An improved finite size correction is now used for blastp/blastx/tblastn/rpsblast.
+  This results in more accurate expect values for alignments with a short query or target sequence.
+  Re-enable the old size correction by setting the enviroment variable OLD_FSC to a non-NULL value.
+* The blastdbcmd -range parameter now accepts a blank value for the second parameter to signify
+  the end of a sequence (e.g., -range "100-")
+* There was a performance improvement for long database sequences in results with many matches.
 
-Bug fixes: 
-* blastn problem with subject_loc and lcase_masking were used in conjunction.
-* Multi-threaded problem with blastx.
-* Percent identity calculation when best-hit algorithm is used.
-* Multiple BLAST database statistics report in XML format.
+Bug fixes:
+* There was a blastn problem if subject_loc and lcase_masking were used together.
+* There was a problem with multi-threaded blastx if the query included a long (10,000+) sequence of N's.
+* The percent identity calculation was wrong if the best-hit algorithm was used.
+* There was a problem with the multiple BLAST database statistics report in XML format.
+* Makeblastdb failed to return an error when input was not available.
+* The formatting option -outfmt "7 nident" always printed zero.
+* The search strategy was not properly saving the -db_soft_mask option.
+* An error message was emitted if there was a "<" in the query title.
+* A problem reading lower-case masking from the query could cause a search to fail.
 
 March 15, 2011
 * 2.2.25 release
