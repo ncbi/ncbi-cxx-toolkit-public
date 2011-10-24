@@ -116,6 +116,7 @@ void CTraversalNode::x_LoadDataFromASNNode( CDataType *asn_node )
     AutoPtr<CTypeStrings> c_type = asn_node->GetFullCType();
     const CNamespace& ns = c_type->GetNamespace();
     m_InputClassName = c_type->GetCType(ns);
+
     // handle inner classes
     if( (asn_node->IsEnumType() && ! dynamic_cast<CIntEnumDataType*>(asn_node) ) ||
         NStr::StartsWith( m_InputClassName, "C_" ) ) 
@@ -294,17 +295,19 @@ void CTraversalNode::GenerateCode( const string &func_class_name, CNcbiOstream& 
 
                 // some reference functions pass their argument directly and others
                 // have to call .Set() to get to it
-                bool needs_set = ( (child->m_Type == eType_Primitive) ||
+                const bool needs_set = ( (child->m_Type == eType_Primitive) ||
                     (child->m_Type == eType_UniSequence) );
+                const bool needs_isset = ( needs_set && 
+                    child->GetInputClassName() != "std::string" );
 
-                if( needs_set ) {
+                if( needs_isset ) {
                     traversal_output_file << "  if( arg0.IsSet() ) {" << endl;
                 }
 
                 string argString = ( needs_set ? "arg0.Set()" : "arg0" );
                 x_GenerateChildCall( traversal_output_file, child, argString );
 
-                if( needs_set ) {
+                if( needs_isset ) {
                     traversal_output_file << "  }" << endl;
                 }
             }
