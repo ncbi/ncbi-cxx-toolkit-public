@@ -481,31 +481,31 @@ Boolean Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp,
    
    score /= factor;
 
-   /* post processing: try to extend further */
-   ASSERT(esp->op_type[0] == eGapAlignSub);
-   ASSERT(esp->op_type[esp->size - 1] == eGapAlignSub);
+   if (best_start_esp_index < esp->size && best_end_esp_index < esp->size) {
+      /* post processing: try to extend further */
+      ASSERT(esp->op_type[best_start_esp_index] == eGapAlignSub);
+      ASSERT(esp->op_type[best_end_esp_index] == eGapAlignSub);
 
-   qp = best_q_start - q;
-   sp = best_s_start - s;
-   ext = 0;
-   while(qp > 0 && sp > 0 && (q[--qp] == s[--sp])) ext++;
-   best_q_start -= ext;
-   best_s_start -= ext;
-   esp->num[best_start_esp_index] += ext;
-   if (best_end_esp_index == best_start_esp_index) best_end_esp_num += ext;
-   score += ext * score_params->reward;
+      qp = best_q_start - q;
+      sp = best_s_start - s;
+      ext = 0;
+      while(qp > 0 && sp > 0 && (q[--qp] == s[--sp])) ext++;
+      best_q_start -= ext;
+      best_s_start -= ext;
+      esp->num[best_start_esp_index] += ext;
+      if (best_end_esp_index == best_start_esp_index) best_end_esp_num += ext;
+      score += ext * score_params->reward;
 
-   qp = best_q_end - q;
-   sp = best_s_end - s;
-   ext = 0;
-   while(qp < qlen && sp < slen && (q[qp++] == s[sp++])) ext++;
-   best_q_end += ext;
-   best_s_end += ext;
-   esp->num[best_end_esp_index] += ext;
-   best_end_esp_num += ext;
-   score += ext * score_params->reward;
-
-
+      qp = best_q_end - q;
+      sp = best_s_end - s;
+      ext = 0;
+      while(qp < qlen && sp < slen && (q[qp++] == s[sp++])) ext++;
+      best_q_end += ext;
+      best_s_end += ext;
+      esp->num[best_end_esp_index] += ext;
+      best_end_esp_num += ext;
+      score += ext * score_params->reward;
+   }
    
    /* Update HSP data. */
    return
