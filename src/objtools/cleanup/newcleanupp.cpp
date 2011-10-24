@@ -8618,6 +8618,19 @@ void CNewCleanup_imp::x_RememberSeqFeatCitPubs( CPub &pub )
     }
 }
 
+void CNewCleanup_imp::x_UniversalStringClean( std::string & str )
+{
+    // This is called for every single string so it should be as efficient
+    // as possible.  This is why it's a bit kludgy.
+
+    const static string kApos = "&apos;";
+
+    // If we need to "replace-in-place" more than just kApos,
+    // we will have to write our own replacement algo that can handle
+    // multiple strings, for maximum efficiency.
+    NStr::ReplaceInPlace( str, kApos, "'");
+}
+
 void CNewCleanup_imp::PCRReactionSetBC( CPCRReactionSet &pcr_reaction_set )
 {
     EDIT_EACH_PCRREACTION_IN_PCRREACTIONSET( reaction_iter, pcr_reaction_set ) {

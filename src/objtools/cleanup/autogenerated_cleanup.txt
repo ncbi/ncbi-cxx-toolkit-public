@@ -288,3 +288,7 @@ use m_NewCleanup.x_RememberPubOldLabel { Pub }
 use m_NewCleanup.x_AuthListBCWithFixInitials {
     Seq-submit.sub.cit.authors
 }
+
+use m_NewCleanup.x_UniversalStringClean {
+    std::string
+}
