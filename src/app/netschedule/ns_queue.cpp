@@ -1183,7 +1183,7 @@ void CQueue::EraseJob(unsigned int  job_id)
 
         if (!m_JobsToDelete[job_id]) {
             m_JobsToDelete.set_bit(job_id);
-            FlushDeletedVector();
+            x_FlushDeletedVector();
         }
     }}
     TimeLineRemove(job_id);
@@ -1195,11 +1195,11 @@ void CQueue::Erase(const TNSBitVector &  job_ids)
     CFastMutexGuard     jtd_guard(m_JobsToDeleteLock);
 
     m_JobsToDelete |= job_ids;
-    FlushDeletedVector();
+    x_FlushDeletedVector();
 }
 
 
-void CQueue::FlushDeletedVector(void)
+void CQueue::x_FlushDeletedVector(void)
 {
     m_JobsToDelete.optimize();
     m_QueueDbBlock->deleted_jobs_db.id = 0;
@@ -1716,63 +1716,54 @@ unsigned CQueue::DeleteBatch(unsigned batch_size)
 {
     TNSBitVector    batch;
     {{
+        bool                has_candidates = false;
+        unsigned int        job_id = 0;
         CFastMutexGuard     guard(m_JobsToDeleteLock);
-        unsigned int    job_id = 0;
         for (unsigned int  n = 0; n < batch_size &&
                              (job_id = m_JobsToDelete.extract_next(job_id));
              ++n)
         {
-            batch.set(job_id);
+            batch.set_bit(job_id);
+            has_candidates = true;
         }
-        if (batch.any())
-            FlushDeletedVector();
+        if (has_candidates)
+            x_FlushDeletedVector();
+        else
+            return 0;
     }}
-    if (batch.none())
-        return 0;
 
-    unsigned int  actual_batch_size = batch.count();
-    unsigned int  chunks = (actual_batch_size + 999) / 1000;
-    unsigned int  chunk_size = actual_batch_size / chunks;
-    unsigned int  residue = actual_batch_size - chunks*chunk_size;
-
+    static const size_t         chunk_size = 1000;
     unsigned int                del_rec = 0;
     TNSBitVector::enumerator    en = batch.first();
+
     while (en.valid()) {
-        unsigned int    txn_size = chunk_size;
-        if (residue) {
-            ++txn_size;
-            --residue;
-        }
+        {{
+            CFastMutexGuard     guard(m_OperationLock);
+            CNSTransaction      transaction(this);
 
-        CFastMutexGuard     guard(m_OperationLock);
-        CNSTransaction      transaction(this);
+            for (size_t n = 0; en.valid() && n < chunk_size; ++en, ++n) {
+                unsigned int    job_id = *en;
 
-        unsigned int        n;
-        for (n = 0; en.valid() && n < txn_size; ++en, ++n) {
-            unsigned int    job_id = *en;
-            unsigned int    aff_id = 0;
+                try {
+                    m_QueueDbBlock->job_db.id = job_id;
+                    m_QueueDbBlock->job_db.Delete();
+                    ++del_rec;
+                } catch (CBDB_ErrnoException& ex) {
+                    ERR_POST("BDB error " << ex.what());
+                }
 
-            m_QueueDbBlock->job_db.id = job_id;
-            if (m_QueueDbBlock->job_db.Fetch() == eBDB_Ok)
-                aff_id = m_QueueDbBlock->job_db.aff_id;
+                try {
+                    m_QueueDbBlock->job_info_db.id = job_id;
+                    m_QueueDbBlock->job_info_db.Delete();
+                } catch (CBDB_ErrnoException& ex) {
+                    ERR_POST("BDB error " << ex.what());
+                }
 
-            try {
-                m_QueueDbBlock->job_db.Delete();
-                ++del_rec;
-            } catch (CBDB_ErrnoException& ex) {
-                ERR_POST("BDB error " << ex.what());
+                x_DeleteJobEvents(job_id);
             }
 
-            m_QueueDbBlock->job_info_db.id = job_id;
-            try {
-                m_QueueDbBlock->job_info_db.Delete();
-            } catch (CBDB_ErrnoException& ex) {
-                ERR_POST("BDB error " << ex.what());
-            }
-            x_DeleteJobEvents(job_id);
-        }
-
-        transaction.Commit();
+            transaction.Commit();
+        }}
     }
 
     if (m_Log  &&  del_rec > 0)
@@ -1870,7 +1861,6 @@ void CQueue::x_PrintJobStat(CNetScheduleHandler &   handler,
     ITERATE(vector<CJobEvent>, it, events) {
         string          message("event" + NStr::IntToString(event++) + ": ");
         unsigned int    addr = it->GetNodeAddr();
-        // unsigned short  port = it->GetNodePort();
 
         // Address part
         message += "client=";
@@ -1918,6 +1908,8 @@ void CQueue::x_PrintJobStat(CNetScheduleHandler &   handler,
     handler.WriteMessage("OK:", "input: " + job.GetQuotedInput());
     handler.WriteMessage("OK:", "output: " + job.GetQuotedOutput());
     handler.WriteMessage("OK:", "progress_msg: '" + job.GetProgressMsg() + "'");
+    handler.WriteMessage("OK:", "remote_client_sid: " + job.GetClientSID());
+    handler.WriteMessage("OK:", "remote_client_ip: " + job.GetClientIP());
 }
 
 

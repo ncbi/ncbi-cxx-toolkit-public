@@ -233,9 +233,6 @@ public:
     /// Erase jobs from all structures, request delayed db deletion
     void Erase(const TNSBitVector& job_ids);
 
-    /// Persist deleted vectors so restarted DB will not reincarnate jobs
-    void FlushDeletedVector(void);
-
     void MarkForDeletion() {
         m_DeleteDatabase = true;
     }
@@ -410,6 +407,7 @@ private:
                       time_t                current_time,
                       TJobStatus            status_from,
                       CJobEvent::EJobEvent  event_type);
+    void x_FlushDeletedVector(void);
 
 private:
     friend class CJob;
