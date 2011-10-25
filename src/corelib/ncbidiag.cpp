@@ -2034,6 +2034,24 @@ const string& CDiagContext::GetEncodedSessionID(void) const
 }
 
 
+NCBI_PARAM_DECL(string, Log, Client_Ip);
+NCBI_PARAM_DEF_EX(string, Log, Client_Ip, kEmptyStr, eParam_NoThread,
+                  NCBI_LOG_CLIENT_IP);
+typedef NCBI_PARAM_TYPE(Log, Client_Ip) TParamDefaultClientIp;
+
+
+const string CDiagContext::GetDefaultClientIP(void)
+{
+    return TParamDefaultClientIp::GetDefault();
+}
+
+
+void CDiagContext::SetDefaultClientIP(const string& client_ip)
+{
+    TParamDefaultClientIp::SetDefault(client_ip);
+}
+
+
 const char* CDiagContext::kProperty_UserName    = "user";
 const char* CDiagContext::kProperty_HostName    = "host";
 const char* CDiagContext::kProperty_HostIP      = "host_ip_addr";
@@ -2115,6 +2133,15 @@ void CDiagContext::x_StartRequest(void)
         ERR_POST_ONCE(
             "Duplicate request-start or missing request-stop");
     }
+
+    // Use the default client ip if no other value is set.
+    if ( !ctx.IsSetClientIP() ) {
+        string ip = GetDefaultClientIP();
+        if ( !ip.empty() ) {
+            ctx.SetClientIP(ip);
+        }
+    }
+
     ctx.StartRequest();
 
     // Print selected environment and registry values.

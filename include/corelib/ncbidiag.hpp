@@ -2071,7 +2071,7 @@ public:
     /// Set exit signal
     void SetExitSignal(int exit_sig) { m_ExitSig = exit_sig; }
 
-    /// Get defaule session id. The session id may be set using
+    /// Get default session id. The session id may be set using
     /// SetDefaultSessionId(), NCBI_LOG_SESSION_ID env. variable
     /// or Log.Session_Id value in the INI file.
     const string& GetDefaultSessionID(void) const;
@@ -2083,6 +2083,15 @@ public:
     const string& GetSessionID(void) const;
     /// Get url-encoded session id.
     const string& GetEncodedSessionID(void) const;
+
+    /// Get default client ip. The ip may be set using SetDefaultClientIP(),
+    /// NCBI_LOG_CLIENT_IP env. variable or Log.Client_Ip value in the INI
+    /// file.
+    static const string GetDefaultClientIP(void);
+    /// Set new default client ip. This value is used only if by the time
+    /// 'request start' is logged there's no explicit ip set in the current
+    /// request context.
+    static void SetDefaultClientIP(const string& client_ip);
 
     /// Write standard prefix to the stream. Use values from the message
     /// (PID/TID/RID etc.).

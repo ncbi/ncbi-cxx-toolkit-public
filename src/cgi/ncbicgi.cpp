@@ -1160,6 +1160,10 @@ void CCgiRequest::x_SetClientIpProperty(TFlags flags) const
     if ((flags & fSkipDiagProperties) != 0) {
         return;
     }
+    // Don't try to change the ip if already set.
+    if (CDiagContext::GetRequestContext().IsSetClientIP()) {
+        return;
+    }
     // Set client IP for diagnostics
     string client;
     if ( x_GetPropertyByName("HTTP_CAF_EXTERNAL").empty() ) {
