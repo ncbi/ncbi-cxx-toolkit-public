@@ -95,6 +95,9 @@ BEGIN_NCBI_SCOPE
 /// @sa CCompressionStreambuf::CCompressionStreambuf
 const size_t kLZODefaultBlockSize = 24*1024;
 
+// Forward declaration of structure to define parameters for some level of compression.
+struct SCompressionParam;
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -133,18 +136,6 @@ public:
         fStoreFileInfo        = (1<<3) | fStreamFormat
     }; 
     typedef CLZOCompression::TFlags TLZOFlags; ///< Bitwise OR of EFlags
-
-    /// Define a pointer to LZO1X compression function.
-    typedef int(*TLZOCompressionFunc)
-            ( const void* src, size_t  src_len,
-                    void* dst, size_t* dst_len,
-                    void* wrkmem );
-
-    /// Structure to define parameters for some level of compression.
-    struct SCompressionParam {
-        TLZOCompressionFunc compress;  ///< Pointer to compression function.
-        size_t              workmem;   ///< Size of working memory for compressor.
-    };
 
     /// Constructor.
     CLZOCompression(
@@ -352,7 +343,7 @@ protected:
     size_t             m_BlockSize; ///< Block size for (de)compression.
     // Compression parameters
     AutoArray<char>    m_WorkMem;   ///< Working memory for compressor.
-    SCompressionParam  m_Param;     ///< Compression parameters.
+    SCompressionParam* m_Param;     ///< Compression parameters.
 };
 
 

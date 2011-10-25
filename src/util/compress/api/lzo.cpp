@@ -108,11 +108,24 @@ const size_t kMaxHeaderSize = 512;
 // CLZOCompression
 //
 
+/// Define a pointer to LZO1X compression function.
+typedef int(*TLZOCompressionFunc)
+        ( const lzo_bytep src, lzo_uint  src_len,
+                lzo_bytep dst, lzo_uintp dst_len,
+                lzo_voidp wrkmem );
+
+/// Structure to define parameters for some level of compression.
+struct SCompressionParam {
+    TLZOCompressionFunc compress;  ///< Pointer to compression function.
+    size_t              workmem;   ///< Size of working memory for compressor.
+};
+
 
 CLZOCompression::CLZOCompression(ELevel level, size_t blocksize)
     : CCompression(level), m_BlockSize(blocksize)
 {
-    m_Param.workmem = 0;
+    m_Param = new SCompressionParam;
+    m_Param->workmem = 0;
     return;
 }
 
@@ -151,16 +164,16 @@ void CLZOCompression::InitCompression(ELevel level)
     // Define compression parameters
     SCompressionParam param;
     if ( level == CCompression::eLevel_Best ) {
-        param.compress = (TLZOCompressionFunc)&lzo1x_999_compress;
+        param.compress = &lzo1x_999_compress;
         param.workmem  = LZO1X_999_MEM_COMPRESS;
     } else {
-        param.compress = (TLZOCompressionFunc)&lzo1x_1_compress;
+        param.compress = &lzo1x_1_compress;
         param.workmem  = LZO1X_1_MEM_COMPRESS;
     }
     // Reallocate compressor working memory buffer if needed
-    if (m_Param.workmem != param.workmem) {
+    if (m_Param->workmem != param.workmem) {
         m_WorkMem.reset(new char[param.workmem]);
-        m_Param = param;
+        *m_Param = param;
     }
 }
 
@@ -321,9 +334,11 @@ int CLZOCompression::CompressBlock(const void*   src_buf,
     size_t dst_size = *dst_len;
 
     // Compress buffer
-    int errcode = m_Param.compress(src_buf, src_len, dst_buf,
-                                   dst_len, m_WorkMem.get());
+    lzo_uint n = *dst_len;
+    int errcode = m_Param->compress((lzo_bytep)src_buf, (lzo_uint)src_len,
+                                    (lzo_bytep)dst_buf, &n, m_WorkMem.get());
     SetError(errcode, GetLZOErrorDescription(errcode));
+    *dst_len = n;
 
     if ( errcode == LZO_E_OK  &&  F_ISSET(fChecksum) ) {
         // Check destination buffer size
