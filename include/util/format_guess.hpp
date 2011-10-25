@@ -77,11 +77,15 @@ public:
         ePhrapAce            = 19, ///< Phrap ACE assembly file
         eTable               = 20, ///< Generic table
         eGtf                 = 21, ///< New GTF, CGtfReader
-		eGff3                = 22, ///< GFF3, CGff3Reader
-		eGff2                = 23, ///< GFF2, CGff2Reader, any GFF-like that doesn't fit the others
-		eHgvs                = 24, ///< HGVS, CHgvsParser
-		eGvf                 = 25, ///< GVF, CGvfReader
-		/// Max value of EFormat
+        eGff3                = 22, ///< GFF3, CGff3Reader
+        eGff2                = 23, ///< GFF2, CGff2Reader, any GFF-like that doesn't fit the others
+        eHgvs                = 24, ///< HGVS, CHgvsParser
+        eGvf                 = 25, ///< GVF, CGvfReader
+        eZip                 = 26, ///< zip compressed file
+        eGZip                = 27, ///< GNU zip compressed file
+        eBZip2               = 28, ///< bzip2 compressed file
+        eLzo                 = 29, ///< lzo compressed file
+        /// Max value of EFormat
         eFormat_max
     };
 
@@ -210,7 +214,7 @@ protected:
         EMode );
     bool TestFormatGvf(
 		EMode );
-	bool TestFormatGff3(
+    bool TestFormatGff3(
         EMode );
     bool TestFormatGff2(
         EMode );
@@ -248,9 +252,16 @@ protected:
         EMode );
     bool TestFormatWiggle(
         EMode );
-	bool TestFormatHgvs(
+    bool TestFormatHgvs(
         EMode );
-
+    bool TestFormatZip(
+        EMode );
+    bool TestFormatGZip(
+        EMode );
+    bool TestFormatBZip2(
+        EMode );
+    bool TestFormatLzo(
+        EMode );
 
     bool IsInputRepeatMaskerWithoutHeader();
     bool IsInputRepeatMaskerWithHeader();

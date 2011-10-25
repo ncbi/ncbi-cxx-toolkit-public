@@ -141,9 +141,13 @@ CFormatGuess::s_CheckOrder[] =
     //  must list all EFormats except eUnknown and eFormat_max. Will cause
     //  assertion if violated!
     //
+    eZip,
+    eGZip,
+    eBZip2,
+    eLzo,
     eRmo,
     eGtf,
-	eGvf,
+    eGvf,
     eGff3,
     eGff2,
     eGlimmer3,
@@ -193,11 +197,15 @@ const char* const CFormatGuess::sm_FormatNames[CFormatGuess::eFormat_max] = {
     "Taxplot",
     "Phrap ACE",
     "table",
-	"GTF",
-	"GFF3",
-	"GFF2",
-	"HGVS",
-	"GVF"
+    "GTF",
+    "GFF3",
+    "GFF2",
+    "HGVS",
+    "GVF",
+    "zip",
+    "gzip",
+    "bzip2",
+    "lzo"
 };
 
 const char*
@@ -458,7 +466,14 @@ bool CFormatGuess::x_TestFormat(EFormat format, EMode mode)
         return TestFormatTable( mode );
     case eHgvs:
         return TestFormatHgvs( mode );
-
+    case eZip:
+        return TestFormatZip( mode );
+    case eGZip:
+        return TestFormatGZip( mode );
+    case eBZip2:
+        return TestFormatBZip2( mode );
+    case eLzo:
+        return TestFormatLzo( mode );
     default:
         NCBI_THROW( CCoreException, eInvalidArg,
             "CFormatGuess::x_TestFormat(): Unsupported format ID." );
@@ -1361,6 +1376,110 @@ CFormatGuess::TestFormatHgvs(
         ++uHgvsLineCount;
     }
     return (uHgvsLineCount != 0);
+}
+
+
+//  ----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatZip(
+    EMode /* not used */ )
+{
+    if ( ! EnsureTestBuffer() ) {
+        return false;
+    }
+
+    // check if the first two bytes match with the zip magic number: 0x504B,
+    // or BK and the next two bytes match with any of 0x0102, 0x0304, 0x0506
+    // and 0x0708.
+    if ( m_iTestDataSize < 4) {
+        return false;
+    }
+
+    if (m_pTestBuffer[0] == 'P'  &&  m_pTestBuffer[1] == 'K'  &&
+        ((m_pTestBuffer[2] == (char)1  &&  m_pTestBuffer[3] == (char)2)  ||
+         (m_pTestBuffer[2] == (char)3  &&  m_pTestBuffer[3] == (char)4)  ||
+         (m_pTestBuffer[2] == (char)5  &&  m_pTestBuffer[3] == (char)6) ||
+         (m_pTestBuffer[2] == (char)7  &&  m_pTestBuffer[3] == (char)8) ) ) {
+        return true;
+    }
+
+    return false;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatGZip(
+    EMode /* not used */ )
+{
+    if ( ! EnsureTestBuffer() ) {
+        return false;
+    }
+
+    // check if the first two bytes match the gzip magic number: 0x1F8B
+    if ( m_iTestDataSize < 2) {
+        return false;
+    }
+
+    if (m_pTestBuffer[0] == (char)31  &&  m_pTestBuffer[1] == (char)139) {
+        return true;
+    }
+
+    return false;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatBZip2(
+    EMode /* not used */ )
+{
+    if ( ! EnsureTestBuffer() ) {
+        return false;
+    }
+
+    // check if the first two bytes match with the bzip2 magic number: 0x425A,
+    // or 'BZ' and the next two bytes match with 0x68(h) and 0x31-39(1-9)
+    if ( m_iTestDataSize < 4) {
+        return false;
+    }
+
+    if (m_pTestBuffer[0] == 'B'  &&  m_pTestBuffer[1] == 'Z'  &&
+        m_pTestBuffer[2] == 'h'  &&  m_pTestBuffer[3] >= '1'  &&
+        m_pTestBuffer[3] <= '9') {
+        return true;
+    }
+
+    return false;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatLzo(
+    EMode /* not used */ )
+{
+    if ( ! EnsureTestBuffer() ) {
+        return false;
+    }
+
+    if (m_iTestDataSize >= 3  &&  m_pTestBuffer[0] == 'L'  &&
+        m_pTestBuffer[1] == 'Z'  &&  m_pTestBuffer[2] == 'O') {
+        if (m_iTestDataSize == 3  ||
+            (m_iTestDataSize > 3  &&  m_pTestBuffer[3] == '\0')) {
+            return true;
+        }
+    }
+
+    if (m_iTestDataSize >= 4  &&  m_pTestBuffer[1] == 'L'  &&
+        m_pTestBuffer[2] == 'Z'  &&  m_pTestBuffer[3] == 'O') {
+        if (m_iTestDataSize == 4  ||
+            (m_iTestDataSize > 4  &&  m_pTestBuffer[4] == '\0')) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 
