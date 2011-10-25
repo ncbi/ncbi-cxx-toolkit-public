@@ -87,6 +87,12 @@ protected:
     // declare setbuf here to only throw an exception at run-time
     virtual streambuf*   setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
 
+#ifdef NCBI_OS_MSWIN
+    // See comments in "connect/ncbi_conn_streambuf.hpp"
+    virtual streamsize  _Xsgetn_s(CT_CHAR_TYPE* buf, size_t, streamsize n)
+    { return xsgetn(buf, n); }
+#endif /*NCBI_OS_MSWIN*/
+
 private:
     void                 x_FillBuffer(streamsize max_size);
     void                 x_DropBuffer(void);

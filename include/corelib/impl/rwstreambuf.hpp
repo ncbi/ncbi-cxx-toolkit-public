@@ -104,6 +104,13 @@ protected:
     virtual CT_POS_TYPE seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
                                 IOS_BASE::openmode which =
                                 IOS_BASE::in | IOS_BASE::out);
+
+#ifdef NCBI_OS_MSWIN
+    // See comments in "connect/ncbi_conn_streambuf.hpp"
+    virtual streamsize  _Xsgetn_s(CT_CHAR_TYPE* buf, size_t, streamsize n)
+    { return xsgetn(buf, n); }
+#endif /*NCBI_OS_MSWIN*/
+
 protected:
     CT_POS_TYPE    x_GetGPos(void)
     { return x_GPos - (CT_OFF_TYPE)(gptr() ? egptr() - gptr() : 0); }

@@ -1,7 +1,7 @@
 #ifndef UTIL_COMPRESS__STREAMBUF__HPP
 #define UTIL_COMPRESS__STREAMBUF__HPP
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Author:  Vladimir Ivanov
+ * Authors:  Vladimir Ivanov, Anton Lavrentiev
  *
  * File Description:  CCompression based C++ streambuf
  *
@@ -81,6 +81,12 @@ protected:
 
     // This method is declared here to be disabled (exception) at run-time
     virtual streambuf*  setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
+
+#ifdef NCBI_OS_MSWIN
+    // See comments in "connect/ncbi_conn_streambuf.hpp"
+    virtual streamsize  _Xsgetn_s(CT_CHAR_TYPE* buf, size_t, streamsize n)
+    { return xsgetn(buf, n); }
+#endif /*NCBI_OS_MSWIN*/
 
 protected:
     // Get compression/stream processor for specified I/O direction.

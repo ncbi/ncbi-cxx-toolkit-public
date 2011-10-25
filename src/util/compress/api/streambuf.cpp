@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Vladimir Ivanov
+ * Author:  Vladimir Ivanov
  *
  * File Description:  CCompression based C++ streambuf
  *

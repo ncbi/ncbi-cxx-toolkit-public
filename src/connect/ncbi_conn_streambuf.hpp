@@ -80,6 +80,19 @@ protected:
     virtual CT_POS_TYPE seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
                                 IOS_BASE::openmode which =
                                 IOS_BASE::in | IOS_BASE::out);
+
+#ifdef NCBI_OS_MSWIN
+    // Since MSWIN introduced their "secure" implementation of C++ STL stream
+    // API, they dropped use of xsgetn() and based their stream block read
+    // operations on the call below.  Unfortunately, they seem to have
+    // forgotten that xsgetn() is to optimize read operations for unbuffered
+    // streams, in particular;  yet the new "secure" implementation falls
+    // back to use uflow() instead (causing byte-by-byte input) -- very
+    // inefficient.  We redefine the "secure" API to go the standard way here.
+    virtual streamsize  _Xsgetn_s(CT_CHAR_TYPE* buf, size_t, streamsize n)
+    { return xsgetn(buf, n); }
+#endif /*NCBI_OS_MSWIN*/
+
 protected:
     int                 x_sync(void)
     { return pbase()  &&  pptr() > pbase() ? sync() : 0; }
