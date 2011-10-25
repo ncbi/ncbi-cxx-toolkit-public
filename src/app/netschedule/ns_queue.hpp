@@ -311,11 +311,9 @@ public:
     void PrintQueue(CNetScheduleHandler &   handler,
                     TJobStatus              job_status);
 
-    /// Queue dump
+    /// Dump a single job
     size_t PrintJobDbStat(CNetScheduleHandler &   handler,
-                          unsigned                job_id,
-                          TJobStatus              status
-                                = CNetScheduleAPI::eJobNotFound);
+                          unsigned                job_id);
     /// Dump all job records
     void PrintAllJobDbStat(CNetScheduleHandler &   handler);
 

@@ -794,6 +794,14 @@ bool  CQueue::ReturnJob(const CNSClientId &     client,
 
 unsigned int  CQueue::ReadJobFromDB(unsigned int  job_id, CJob &  job)
 {
+    // Check first that the job has not been deleted yet
+    {{
+        CFastMutexGuard     guard(m_JobsToDeleteLock);
+        if (m_JobsToDelete[job_id])
+            return 0;
+    }}
+
+
     CJob::EJobFetchResult   res;
 
     {{
@@ -1931,43 +1939,31 @@ void CQueue::x_PrintShortJobStat(CNetScheduleHandler &  handler,
 
 
 size_t CQueue::PrintJobDbStat(CNetScheduleHandler &     handler,
-                              unsigned                  job_id,
-                              TJobStatus                status)
+                              unsigned                  job_id)
 {
-    size_t      print_count = 0;
-    unsigned    queue_run_timeout = GetRunTimeout();
-    CJob        job;
+    // Check first that the job has not been deleted yet
+    {{
+        CFastMutexGuard     guard(m_JobsToDeleteLock);
+        if (m_JobsToDelete[job_id])
+            return 0;
+    }}
 
-    if (status == CNetScheduleAPI::eJobNotFound) {
-        CFastMutexGuard         guard(m_OperationLock);
+    size_t              print_count = 0;
+    unsigned            queue_run_timeout = GetRunTimeout();
+    CJob                job;
+    CFastMutexGuard     guard(m_OperationLock);
 
-        m_QueueDbBlock->job_db.SetTransaction(NULL);
-        m_QueueDbBlock->events_db.SetTransaction(NULL);
-        m_QueueDbBlock->job_info_db.SetTransaction(NULL);
+    m_QueueDbBlock->job_db.SetTransaction(NULL);
+    m_QueueDbBlock->events_db.SetTransaction(NULL);
+    m_QueueDbBlock->job_info_db.SetTransaction(NULL);
 
-        CJob::EJobFetchResult   res = job.Fetch(this, job_id);
-        if (res == CJob::eJF_Ok) {
-            handler.WriteMessage("");
-            x_PrintJobStat(handler, job, queue_run_timeout);
-            ++print_count;
-        }
-    } else {
-        TNSBitVector        bv;
-        CFastMutexGuard     guard(m_OperationLock);
-
-        JobsWithStatus(status, &bv);
-        m_QueueDbBlock->job_db.SetTransaction(NULL);
-        m_QueueDbBlock->events_db.SetTransaction(NULL);
-        m_QueueDbBlock->job_info_db.SetTransaction(NULL);
-        for (TNSBitVector::enumerator en(bv.first());en.valid(); ++en) {
-            CJob::EJobFetchResult   res = job.Fetch(this, *en);
-            if (res == CJob::eJF_Ok) {
-                handler.WriteMessage("");
-                x_PrintJobStat(handler, job, queue_run_timeout);
-                ++print_count;
-            }
-        }
+    CJob::EJobFetchResult   res = job.Fetch(this, job_id);
+    if (res == CJob::eJF_Ok) {
+        handler.WriteMessage("");
+        x_PrintJobStat(handler, job, queue_run_timeout);
+        ++print_count;
     }
+
     return print_count;
 }
 
@@ -1976,6 +1972,15 @@ void CQueue::PrintAllJobDbStat(CNetScheduleHandler &   handler)
 {
     unsigned            queue_run_timeout = GetRunTimeout();
     CJob                job;
+
+    // Make a copy of the deleted jobs vector
+    TNSBitVector        deleted_jobs;
+    {{
+        CFastMutexGuard     guard(m_JobsToDeleteLock);
+        deleted_jobs = m_JobsToDelete;
+    }}
+
+
     CFastMutexGuard     guard(m_OperationLock);
 
     m_QueueDbBlock->job_db.SetTransaction(NULL);
@@ -1986,8 +1991,10 @@ void CQueue::PrintAllJobDbStat(CNetScheduleHandler &   handler)
 
     while (cur.Fetch() == eBDB_Ok) {
         if (job.Fetch(this) == CJob::eJF_Ok) {
-            handler.WriteMessage("");
-            x_PrintJobStat(handler, job, queue_run_timeout);
+            if (!deleted_jobs[job.GetId()]) {
+                handler.WriteMessage("");
+                x_PrintJobStat(handler, job, queue_run_timeout);
+            }
         }
     }
 }
