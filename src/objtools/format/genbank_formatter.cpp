@@ -1306,7 +1306,14 @@ void CGenbankFormatter::FormatFeature
 
     ITERATE (vector<CRef<CFormatQual> >, it, quals ) {
         string qual = '/' + (*it)->GetName(), value = (*it)->GetValue();
-        TrimSpacesAndJunkFromEnds( value, true );
+        switch ( (*it)->GetTrim() ) {
+        case CFormatQual::eTrim_Normal:
+            TrimSpacesAndJunkFromEnds( value, true );
+            break;
+        case CFormatQual::eTrim_WhitespaceOnly:
+            NStr::TruncateSpacesInPlace( value );
+            break;
+        }
         if( bHtml ) {
             TryToSanitizeHtml( value );
         }

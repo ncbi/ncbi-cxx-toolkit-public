@@ -114,6 +114,11 @@ CFlatSeqLoc::CFlatSeqLoc
                 continue;
             }
 
+            // don't translate ones that are synonyms of this bioseq
+            if( ctx.GetHandle().IsSynonym( loc_ci.GetSeq_id() ) ) {
+                continue;
+            }
+
             handles_set.insert( handle );
         }
         if( ! handles_set.empty() )

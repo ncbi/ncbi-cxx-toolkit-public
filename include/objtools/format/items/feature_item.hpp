@@ -278,9 +278,11 @@ protected:
     void x_AddFTableBiosrcQuals(const CBioSource& src);
     void x_AddFTableDbxref(const CSeq_feat::TDbxref& dbxref);
     void x_AddFTableExtQuals(const CSeq_feat::TExt& ext);
-    void x_AddFTableQual(const string& name, const string& val = kEmptyStr) {
+    void x_AddFTableQual(const string& name, const string& val = kEmptyStr, 
+        CFormatQual::ETrim trim = CFormatQual::eTrim_Normal) 
+    {
         CFormatQual::EStyle style = val.empty() ? CFormatQual::eEmpty : CFormatQual::eQuoted;
-        m_FTableQuals.push_back(CRef<CFormatQual>(new CFormatQual(name, val, style)));
+        m_FTableQuals.push_back(CRef<CFormatQual>(new CFormatQual(name, val, style, 0, trim)));
     }
     
     // typdef

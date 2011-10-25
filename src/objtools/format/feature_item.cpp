@@ -1715,7 +1715,25 @@ public:
 
                 feat_ci.reset( new CFeat_CI(scope, *new_loc, sel) );
             } else {            
-                feat_ci.reset( new CFeat_CI(scope, loc, sel) );
+                // remove far parts, if necessary
+                bool loc_change_needed = false;
+                ITERATE( CSeq_loc, loc_iter, loc ) {
+                    if( ! m_BioseqHandle.IsSynonym( loc_iter.GetSeq_id() ) ) {
+                        loc_change_needed = true;
+                        break;
+                    }
+                }
+                if( loc_change_needed ) {
+                    CRef<CSeq_loc> new_loc( new CSeq_loc );
+                    ITERATE( CSeq_loc, loc_iter, loc ) {
+                        if( m_BioseqHandle.IsSynonym( loc_iter.GetSeq_id() ) ) {
+                            new_loc->Add( *loc_iter.GetRangeAsSeq_loc() );
+                        }
+                    }
+                    feat_ci.reset( new CFeat_CI(scope, *new_loc, sel) );
+                } else {
+                    feat_ci.reset( new CFeat_CI(scope, loc, sel) );
+                }
             }
         } else {
             feat_ci.reset( new CFeat_CI(scope, loc, sel) );
@@ -2331,7 +2349,7 @@ void CFeatureItem::x_AddQualOldLocusTag(
         }
         if ( qual->GetQual() == "old_locus_tag" ) {
             x_AddQual(eFQ_old_locus_tag, 
-                new CFlatStringQVal( qual->GetVal() ) );            
+                new CFlatStringQVal( qual->GetVal(), CFormatQual::eTrim_WhitespaceOnly ) );            
         }
     }
 }
@@ -2385,12 +2403,12 @@ void CFeatureItem::x_AddQuals(
 {
 //    /**fl**/
     // leaving this here since it's so useful for debugging purposes.
-    //97649..97654
+    //21822,22172
     /* if( 
-        (GetLoc().GetStart(eExtreme_Biological) == 97648 &&
-        GetLoc().GetStop(eExtreme_Biological) == 97653) ||
-        (GetLoc().GetStop(eExtreme_Biological) == 97648 &&
-        GetLoc().GetStart(eExtreme_Biological) == 97653)
+        (GetLoc().GetStart(eExtreme_Biological) == 21821 &&
+        GetLoc().GetStop(eExtreme_Biological) == 22171) ||
+        (GetLoc().GetStop(eExtreme_Biological) == 21821 &&
+        GetLoc().GetStart(eExtreme_Biological) == 22171)
         ) {
         cerr << ""; // a do-nothing statement in case we forget to comment it out
         } */
@@ -3721,11 +3739,11 @@ void CFeatureItem::x_AddQualsGene(
     if ( gene_ref  ||  subtype != CSeqFeatData::eSubtype_repeat_region ) {
         if (locus != NULL) {
             if (locus_tag != NULL) {
-                x_AddQual(eFQ_locus_tag, new CFlatStringQVal(*locus_tag));
+                x_AddQual(eFQ_locus_tag, new CFlatStringQVal(*locus_tag, CFormatQual::eTrim_WhitespaceOnly));
             }
         }
         else if (locus_tag != NULL) {
-            x_AddQual(eFQ_locus_tag, new CFlatStringQVal(*locus_tag));
+            x_AddQual(eFQ_locus_tag, new CFlatStringQVal(*locus_tag, CFormatQual::eTrim_WhitespaceOnly));
         }
     }
 
@@ -3786,7 +3804,8 @@ void CFeatureItem::x_AddQualsGene(
              ( is_embl_or_ddbj || ! is_type_where_allele_from_gene_forbidden_except_with_embl_or_ddbj ) ) 
         {
             if (gene_ref->IsSetAllele()  &&  !NStr::IsBlank(gene_ref->GetAllele())) {
-                x_AddQual(eFQ_gene_allele, new CFlatStringQVal(gene_ref->GetAllele()));
+                x_AddQual(eFQ_gene_allele, new CFlatStringQVal(gene_ref->GetAllele(), 
+                    CFormatQual::eTrim_WhitespaceOnly));
             }
         }
     }}
@@ -4249,7 +4268,8 @@ void CFeatureItem::x_ImportQuals(
             if (x_HasQual(eFQ_gene_allele)) {
                 continue;
             } else {
-                x_AddQual(slot, new CFlatStringQVal(val));
+                x_AddQual(slot, new CFlatStringQVal(val, 
+                    CFormatQual::eTrim_WhitespaceOnly));
             }
             break;
         case eFQ_codon:
@@ -4301,7 +4321,7 @@ void CFeatureItem::x_ImportQuals(
                 list<string> vals;
                 s_ParseParentQual(**it, vals);
                 ITERATE (list<string>, i, vals) {
-                    x_AddQual(slot, new CFlatStringQVal(*i, CFormatQual::eQuoted));
+                    x_AddQual(slot, new CFlatStringQVal(*i, CFormatQual::eQuoted, CFormatQual::eTrim_WhitespaceOnly));
                 }
             }
             break;
@@ -4395,6 +4415,10 @@ void CFeatureItem::x_ImportQuals(
                     x_AddQual(slot, new CFlatStringQVal(val));
                 }
             }}
+            break;
+
+        case eFQ_clone:
+            x_AddQual(slot, new CFlatStringQVal(val, CFormatQual::eTrim_WhitespaceOnly));
             break;
 
         default:
@@ -5448,10 +5472,10 @@ bool CFeatureItem::x_AddFTableGeneQuals(
 //  ----------------------------------------------------------------------------
 {
     if ( gene.IsSetLocus()  &&  !gene.GetLocus().empty() ) {
-        x_AddFTableQual("gene", gene.GetLocus());
+        x_AddFTableQual("gene", gene.GetLocus(), CFormatQual::eTrim_WhitespaceOnly);
     }
     ITERATE (CGene_ref::TSyn, it, gene.GetSyn()) {
-        x_AddFTableQual("gene_syn", *it);
+        x_AddFTableQual("gene_syn", *it, CFormatQual::eTrim_WhitespaceOnly);
     }
     if ( gene.IsSetDesc()  &&  !gene.GetDesc().empty() ) {
         x_AddFTableQual("gene_desc", gene.GetDesc());
@@ -5460,7 +5484,7 @@ bool CFeatureItem::x_AddFTableGeneQuals(
         x_AddFTableQual("map", gene.GetMaploc());
     }
     if ( gene.IsSetLocus_tag()  &&  !gene.GetLocus_tag().empty() ) {
-        x_AddFTableQual("locus_tag", gene.GetLocus_tag());
+        x_AddFTableQual("locus_tag", gene.GetLocus_tag(), CFormatQual::eTrim_WhitespaceOnly);
     }
 
     return (gene.IsSetPseudo()  &&  gene.GetPseudo());

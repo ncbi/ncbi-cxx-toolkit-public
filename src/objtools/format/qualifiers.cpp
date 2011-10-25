@@ -309,17 +309,18 @@ CFormatQual::CFormatQual
  const string& prefix,
  const string& suffix,
  TStyle style,
- TFlags flags) :
+ TFlags flags,
+ ETrim trim ) :
     m_Name(name), m_Value(value), m_Prefix(prefix), m_Suffix(suffix),
-    m_Style(style), m_Flags(flags), m_AddPeriod(false)
+    m_Style(style), m_Flags(flags), m_AddPeriod(false), m_Trim(trim)
 {
     NStr::TruncateSpacesInPlace(m_Value, NStr::eTrunc_End);
 }
 
 
-CFormatQual::CFormatQual(const string& name, const string& value, TStyle style, TFlags flags) :
+CFormatQual::CFormatQual(const string& name, const string& value, TStyle style, TFlags flags, ETrim trim) :
     m_Name(name), m_Value(value), m_Prefix(" "), m_Suffix(kEmptyStr),
-    m_Style(style), m_Flags(flags), m_AddPeriod(false)
+    m_Style(style), m_Flags(flags), m_AddPeriod(false), m_Trim(trim)
 {
     NStr::TruncateSpacesInPlace(m_Value, NStr::eTrunc_End);
 }
@@ -327,9 +328,9 @@ CFormatQual::CFormatQual(const string& name, const string& value, TStyle style, 
 
 // === CFlatStringQVal ======================================================
 
-CFlatStringQVal::CFlatStringQVal(const string& value, TStyle style)
+CFlatStringQVal::CFlatStringQVal(const string& value, TStyle style, ETrim trim)
     :  IFlatQVal(&kSpace, &kSemicolon),
-       m_Value(value), m_Style(style), m_AddPeriod(0)
+       m_Value(value), m_Style(style), m_AddPeriod(0), m_Trim(trim)
 {
     NStr::TruncateSpacesInPlace(m_Value);
 }
@@ -339,13 +340,23 @@ CFlatStringQVal::CFlatStringQVal
 (const string& value,
  const string& pfx,
  const string& sfx,
- TStyle style)
+ TStyle style,
+ ETrim trim)
     :   IFlatQVal(&pfx, &sfx),
         m_Value(value),
-        m_Style(style), m_AddPeriod(0)
+        m_Style(style), m_AddPeriod(0), m_Trim(trim)
 {
     NStr::TruncateSpacesInPlace(m_Value);
 }
+
+CFlatStringQVal::CFlatStringQVal(const string& value, 
+    ETrim trim )
+:   IFlatQVal(&kSpace, &kSemicolon),
+    m_Value(value), m_Style(CFormatQual::eQuoted), m_AddPeriod(0), m_Trim(trim)
+{
+    NStr::TruncateSpacesInPlace(m_Value);
+}
+
 
 typedef pair<const char*, ETildeStyle> TNameTildeStylePair;
 typedef CStaticArrayMap<const char*, ETildeStyle, PCase_CStr > TNameTildeStyleMap;
@@ -379,7 +390,7 @@ void CFlatStringQVal::Format(TFlatQuals& q, const string& name,
         strLink += "\">";
         strLink += m_Value;
         strLink += "</a>";
-        x_AddFQ(q, name, strLink, m_Style);
+        x_AddFQ(q, name, strLink, m_Style, 0, m_Trim);
         return;
     }
     flags |= m_AddPeriod;
@@ -409,7 +420,8 @@ void CFlatStringQVal::Format(TFlatQuals& q, const string& name,
     const bool prependNewline = (flags & fPrependNewline) && ! q.empty();
     TFlatQual qual = x_AddFQ(q, (is_note ? "note" : name), 
         (  prependNewline ? "\n" + m_Value : m_Value ), 
-        ( forceNoValue ? CFormatQual::eEmpty : m_Style ) );
+        ( forceNoValue ? CFormatQual::eEmpty : m_Style ),
+        0, m_Trim );
     
     if ((flags & fAddPeriod)  &&  qual) {
         qual->SetAddPeriod();
@@ -565,10 +577,10 @@ void CFlatGeneSynonymsQVal::Format
     stable_sort(sub.begin(), sub.end(), CLessThanNoCaseViaUpper() );
 
     if (ctx.IsRefSeq()) {
-        x_AddFQ( q, qual, NStr::Join(sub, "; "), m_Style );
+        x_AddFQ( q, qual, NStr::Join(sub, "; "), m_Style, 0, CFormatQual::eTrim_WhitespaceOnly );
     } else {
         ITERATE (vector<string>, it, sub) {
-            x_AddFQ( q, qual, *it, m_Style );
+            x_AddFQ( q, qual, *it, m_Style, 0, CFormatQual::eTrim_WhitespaceOnly );
         }
     }
 }
@@ -1266,6 +1278,9 @@ void CFlatSubSourceQVal::Format(TFlatQuals& q, const string& name,
 void CFlatXrefQVal::Format(TFlatQuals& q, const string& name,
                          CBioseqContext& ctx, IFlatQVal::TFlags flags) const
 {
+    // to avoid duplicates, keep track of ones we've already done
+    set<string> quals_already_done;
+
     ITERATE (TXref, it, m_Value) {
         const CDbtag& dbt = **it;
         if (!m_Quals.Empty()  &&  x_XrefInGeneXref(dbt)) {
@@ -1316,6 +1331,17 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const string& name,
                     id.erase(0, 4);
                 }
             }
+            // trim
+            TrimSpacesAndJunkFromEnds( id, true );
+            // remove initial/final parens
+            if( ! id.empty() ) {
+                if( id[0] == '(' ) {
+                    id = id.substr(1);
+                }
+                if( id[id.length()-1] == ')') {
+                    id.resize( id.length() - 1 );
+                }
+            }
         }
         if (NStr::IsBlank(id)) {
             continue;
@@ -1334,7 +1360,12 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const string& name,
             db_xref << id;
         }
 
-        x_AddFQ(q, name, CNcbiOstrstreamToString(db_xref));
+        // add quals not already done
+        string db_xref_str = CNcbiOstrstreamToString(db_xref);
+        if( quals_already_done.find(db_xref_str) == quals_already_done.end() ) {
+            quals_already_done.insert( db_xref_str );
+            x_AddFQ(q, name, db_xref_str);
+        }
     }
 }
 

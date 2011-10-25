@@ -82,16 +82,29 @@ public:
     };
     typedef int TFlags;
 
+    // The level of trimming to do for this feature
+    enum ETrim {
+        // *vast* majority use this
+        eTrim_Normal, 
+
+        // a few quals need "junk" like extra periods.
+        // for example, there's a gene allele of "2.." in
+        // DQ533690.1 which needs both periods.
+        eTrim_WhitespaceOnly
+    };
+
     CFormatQual(const string& name,
               const string& value, 
               const string& prefix,
               const string& suffix,
               TStyle style = eQuoted,
-              TFlags flags = 0 );
+              TFlags flags = 0,
+              ETrim trim = eTrim_Normal );
     CFormatQual(const string& name,
               const string& value,
               TStyle style = eQuoted,
-              TFlags flags = 0 );
+              TFlags flags = 0,
+              ETrim trim = eTrim_Normal );
 
     const string& GetName  (void) const { return m_Name;   }
     const string& GetValue (void) const { return m_Value;  }
@@ -99,6 +112,7 @@ public:
     const string& GetPrefix(void) const { return m_Prefix; }
     const string& GetSuffix(void) const { return m_Suffix; }
     TFlags        GetFlags (void) const { return m_Flags;  }
+    ETrim         GetTrim  (void) const { return m_Trim;   }
 
     void SetAddPeriod(bool add = true) { m_AddPeriod = add; }
     bool GetAddPeriod(void) const { return m_AddPeriod; }
@@ -107,6 +121,7 @@ private:
     string m_Name, m_Value, m_Prefix, m_Suffix;
     TStyle m_Style;
     TFlags m_Flags;
+    ETrim m_Trim;
     bool m_AddPeriod;
 };
 
@@ -138,14 +153,16 @@ public:
 
 protected:
     typedef CFormatQual::TStyle   TStyle;
+    typedef CFormatQual::ETrim    ETrim;
 
     IFlatQVal(const string* pfx = &kSpace, const string* sfx = &kEmptyStr)
         : m_Prefix(pfx), m_Suffix(sfx)
     { }
     TFlatQual x_AddFQ(TFlatQuals& q, const string& n, const string& v,
                       TStyle st = CFormatQual::eQuoted,
-                      CFormatQual::TFlags flags = 0 ) const {
-        TFlatQual res(new CFormatQual(n, v, *m_Prefix, *m_Suffix, st, flags));
+                      CFormatQual::TFlags flags = 0,
+                      ETrim trim = CFormatQual::eTrim_Normal ) const {
+        TFlatQual res(new CFormatQual(n, v, *m_Prefix, *m_Suffix, st, flags, trim));
         q.push_back(res); 
         return res;
     }
@@ -249,9 +266,13 @@ private:
 class NCBI_FORMAT_EXPORT CFlatStringQVal : public IFlatQVal
 {
 public:
-    CFlatStringQVal(const string& value, TStyle style = CFormatQual::eQuoted);
+    CFlatStringQVal(const string& value, 
+        TStyle style = CFormatQual::eQuoted,
+        ETrim trim  = CFormatQual::eTrim_Normal );
     CFlatStringQVal(const string& value, const string& pfx, const string& sfx,
-        TStyle style = CFormatQual::eQuoted);
+        TStyle style = CFormatQual::eQuoted, ETrim trim  = CFormatQual::eTrim_Normal );
+    CFlatStringQVal(const string& value, 
+        ETrim trim );
         
     void Format(TFlatQuals& quals, const string& name, CBioseqContext& ctx,
                 TFlags flags) const;
@@ -262,6 +283,7 @@ public:
 protected:
     mutable string    m_Value;
     TStyle            m_Style;
+    ETrim             m_Trim;
     IFlatQVal::TFlags m_AddPeriod;
 };
 
@@ -292,7 +314,7 @@ public:
 class NCBI_FORMAT_EXPORT CFlatGeneQVal : public CFlatStringQVal
 {
 public:
-    CFlatGeneQVal(const string& value) : CFlatStringQVal(value)
+    CFlatGeneQVal(const string& value) : CFlatStringQVal(value, CFormatQual::eTrim_WhitespaceOnly)
     {}
         
     void Format(TFlatQuals& quals, const string& name, CBioseqContext& ctx,
