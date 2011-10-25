@@ -323,6 +323,19 @@ typedef CCdregion::EFrame TCDSFRAME_TYPE;
 #define NCBI_SEQLOC(Type) CSeq_loc::e_##Type
 typedef CSeq_loc::E_Choice TSEQLOC_TYPE;
 
+// not_set
+// nuc_prot          segset            conset
+// parts             gibb              gi
+// genbank           pir               pub_set
+// equiv             swissprot         pdb_entry
+// mut_set           pop_set           phy_set
+// eco_set           gen_prod_set      wgs_set
+// named_annot       named_annot_prod  read_set
+// paired_end_reads  small_genome_set  other
+
+#define NCBI_BIOSEQSETCLASS(Type) CBioseq_set::eClass_##Type
+typedef CBioseq_set::EClass TBIOSEQSETCLASS_TYPE;
+
 /////////////////////////////////////////////////////////////////////////////
 /// Macros for obtaining closest specific CSeqdesc applying to a CBioseq
 /////////////////////////////////////////////////////////////////////////////

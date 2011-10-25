@@ -443,6 +443,7 @@ void CNewCleanup_imp::SeqsetBC (
     { 
         int num_nucs = 0;
         int num_prots = 0;
+        bool make_genbank = false;
         CBioseq_set_Handle handle = m_Scope->GetBioseq_setHandle( bss );
         if( handle ) {
             CBioseq_CI bioseq_it( handle, CSeq_inst::eMol_not_set, CBioseq_CI::eLevel_Mains );
@@ -453,9 +454,32 @@ void CNewCleanup_imp::SeqsetBC (
                     ++num_nucs;
                 }
             }
+
+            // Iterate descendent Bioseq_set's.
+            // Since there seems to be no such thing as CBioseq_set_CI,
+            // we iterate over the Seq-entry's since every Bioseq-set should
+            // be guaranteed to be in a Seq-entry.
+            CSeq_entry_CI seq_entry_ci( handle );
+            for( ; seq_entry_ci; ++seq_entry_ci ) {
+                if( seq_entry_ci->IsSet() ) {
+                    CBioseq_set_Handle bioseq_set = seq_entry_ci->GetSet();
+                    if( ! FIELD_EQUALS(bioseq_set, Class, NCBI_BIOSEQSETCLASS(segset)) && 
+                        ! FIELD_EQUALS(bioseq_set, Class, NCBI_BIOSEQSETCLASS(parts)) ) 
+                    {
+                        make_genbank = true;
+                    }
+                }
+            }
+            // separate check needed for top level due to the somewhat kludgy way
+            // we iterate over CBioseq-sets
+            if( ! FIELD_EQUALS(handle, Class, NCBI_BIOSEQSETCLASS(segset)) && 
+                ! FIELD_EQUALS(handle, Class, NCBI_BIOSEQSETCLASS(parts)) ) 
+            {
+                make_genbank = true;
+            }
         }
 
-        if( (num_nucs == 1) && (num_prots > 0) ) {
+        if( (num_nucs == 1) && (num_prots > 0) && ! make_genbank ) {
             bss.SetClass( CBioseq_set::eClass_nuc_prot );
             ChangeMade(CCleanupChange::eChangeBioseqSetClass);
         } else {
