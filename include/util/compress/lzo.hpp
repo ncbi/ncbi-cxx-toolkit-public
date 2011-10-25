@@ -64,7 +64,6 @@
 #if defined(HAVE_LIBLZO)
 
 #include <stdio.h>
-#include <lzo/lzo1x.h>
 
 /** @addtogroup Compression
  *
@@ -137,14 +136,14 @@ public:
 
     /// Define a pointer to LZO1X compression function.
     typedef int(*TLZOCompressionFunc)
-            ( const lzo_bytep src, lzo_uint  src_len,
-                    lzo_bytep dst, lzo_uintp dst_len,
-                    lzo_voidp wrkmem );
+            ( const void* src, size_t  src_len,
+                    void* dst, size_t* dst_len,
+                    void* wrkmem );
 
     /// Structure to define parameters for some level of compression.
     struct SCompressionParam {
         TLZOCompressionFunc compress;  ///< Pointer to compression function.
-        lzo_uint            workmem;   ///< Size of working memory for compressor.
+        size_t              workmem;   ///< Size of working memory for compressor.
     };
 
     /// Constructor.
@@ -320,23 +319,23 @@ protected:
     ///
     /// @return
     ///   Return compressor error code.
-    int CompressBlock(const lzo_bytep src_buf, lzo_uint src_len,
-                            lzo_bytep dst_buf, lzo_uintp dst_len /* out */);
+    int CompressBlock(const void* src_buf, size_t  src_len,
+                            void* dst_buf, size_t* dst_len /* out */);
 
     /// Compress block of data for stream format (fStreamFormat flag).
     ///
     /// @return
     ///   Return compressor error code.
     int CompressBlockStream(
-                      const lzo_bytep src_buf, lzo_uint src_len,
-                            lzo_bytep dst_buf, lzo_uintp dst_len /* out */);
+                      const void* src_buf, size_t  src_len,
+                            void* dst_buf, size_t* dst_len /* out */);
 
     /// Decompress block of data.
     ///
     /// @return
     ///   Return decompressor error code.
-    int DecompressBlock(const lzo_bytep src_buf, lzo_uint src_len,
-                              lzo_bytep dst_buf, lzo_uintp dst_len /* out */,
+    int DecompressBlock(const void* src_buf, size_t  src_len,
+                              void* dst_buf, size_t* dst_len /* out */,
                               TLZOFlags flags);
 
     /// Decompress block of data for stream format (fStreamFormat flag).
@@ -344,10 +343,10 @@ protected:
     /// @return
     ///   Return decompressor error code.
     int DecompressBlockStream(
-                        const lzo_bytep src_buf, lzo_uint src_len,
-                              lzo_bytep dst_buf, lzo_uintp dst_len /* out */,
+                        const void* src_buf, size_t  src_len,
+                              void* dst_buf, size_t* dst_len /* out */,
                               TLZOFlags flags,
-                              lzo_uintp processed /* out */);
+                              size_t* processed /* out */);
 
 protected:
     size_t             m_BlockSize; ///< Block size for (de)compression.

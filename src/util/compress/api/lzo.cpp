@@ -39,6 +39,8 @@
 
 #if defined(HAVE_LIBLZO)
 
+#include <lzo/lzo1x.h>
+
 BEGIN_NCBI_SCOPE
 
 
@@ -149,10 +151,10 @@ void CLZOCompression::InitCompression(ELevel level)
     // Define compression parameters
     SCompressionParam param;
     if ( level == CCompression::eLevel_Best ) {
-        param.compress = &lzo1x_999_compress;
+        param.compress = (TLZOCompressionFunc)&lzo1x_999_compress;
         param.workmem  = LZO1X_999_MEM_COMPRESS;
     } else {
-        param.compress = &lzo1x_1_compress;
+        param.compress = (TLZOCompressionFunc)&lzo1x_1_compress;
         param.workmem  = LZO1X_1_MEM_COMPRESS;
     }
     // Reallocate compressor working memory buffer if needed
@@ -310,17 +312,17 @@ void s_CollectFileInfo(const string& filename,
 }
 
 
-int CLZOCompression::CompressBlock(const lzo_bytep src_buf, 
-                                         lzo_uint  src_len,
-                                         lzo_bytep dst_buf, 
-                                         lzo_uintp dst_len)
+int CLZOCompression::CompressBlock(const void*   src_buf, 
+                                         size_t  src_len,
+                                         void*   dst_buf, 
+                                         size_t* dst_len)
 {
     // Save original destination buffer size
-    lzo_uint dst_size = *dst_len;
+    size_t dst_size = *dst_len;
 
     // Compress buffer
     int errcode = m_Param.compress(src_buf, src_len, dst_buf,
-                                   dst_len, (lzo_voidp)m_WorkMem.get());
+                                   dst_len, m_WorkMem.get());
     SetError(errcode, GetLZOErrorDescription(errcode));
 
     if ( errcode == LZO_E_OK  &&  F_ISSET(fChecksum) ) {
@@ -333,22 +335,22 @@ int CLZOCompression::CompressBlock(const lzo_bytep src_buf,
         // compressed data
         lzo_uint32 crc;
         crc = lzo_crc32(0, NULL, 0);
-        crc = lzo_crc32(crc, src_buf, src_len);
-        CCompressionUtil::StoreUI4(dst_buf + *dst_len, crc);
+        crc = lzo_crc32(crc, (lzo_bytep)src_buf, src_len);
+        CCompressionUtil::StoreUI4((lzo_bytep)dst_buf + *dst_len, crc);
         *dst_len += 4;
     }
     return errcode;
 }
 
 
-int CLZOCompression::CompressBlockStream(const lzo_bytep src_buf, 
-                                               lzo_uint  src_len,
-                                               lzo_bytep dst_buf, 
-                                               lzo_uintp dst_len)
+int CLZOCompression::CompressBlockStream(const void*   src_buf, 
+                                               size_t  src_len,
+                                               void*   dst_buf, 
+                                               size_t* dst_len)
 {
     // Reserve first 4 bytes for compressed bock size
     // + the size of CRC32 (4 bytes) if applicable.
-    lzo_uint offset = 4;
+    size_t offset = 4;
 
     // Check destination buffer size
     if ( *dst_len <= offset ) {
@@ -356,7 +358,7 @@ int CLZOCompression::CompressBlockStream(const lzo_bytep src_buf,
         return LZO_E_ERROR;
     }
     // Compress buffer
-    int errcode = CompressBlock(src_buf, src_len, dst_buf + offset, dst_len);
+    int errcode = CompressBlock(src_buf, src_len, (lzo_bytep)dst_buf + offset, dst_len);
 
     // Write size of compressed block
     CCompressionUtil::StoreUI4(dst_buf, (unsigned long)(*dst_len));
@@ -366,10 +368,10 @@ int CLZOCompression::CompressBlockStream(const lzo_bytep src_buf,
 }
 
 
-int CLZOCompression::DecompressBlock(const lzo_bytep src_buf, 
-                                           lzo_uint  src_len,
-                                           lzo_bytep dst_buf, 
-                                           lzo_uintp dst_len,
+int CLZOCompression::DecompressBlock(const void*     src_buf, 
+                                           size_t    src_len,
+                                           void*     dst_buf, 
+                                           size_t*   dst_len,
                                            TLZOFlags flags)
 {
     bool have_crc32 = (flags & fChecksum) > 0;
@@ -382,19 +384,21 @@ int CLZOCompression::DecompressBlock(const lzo_bytep src_buf,
         src_len -= 4;
     }
     // Decompress buffer
-    int errcode = lzo1x_decompress_safe(src_buf, src_len,
-                                        dst_buf, dst_len, 0);
+    lzo_uint n = *dst_len;
+    int errcode = lzo1x_decompress_safe((lzo_bytep)src_buf, src_len,
+                                        (lzo_bytep)dst_buf, &n, 0);
     SetError(errcode, GetLZOErrorDescription(errcode));
+    *dst_len = n;
 
     // CRC32 checksum going after the data block
     if ( F_ISSET(fChecksum)  &&  have_crc32 ) {
         // Read saved CRC32
         lzo_uint32 crc_saved = 
-            CCompressionUtil::GetUI4((void*)(src_buf + src_len));
+            CCompressionUtil::GetUI4((void*)((lzo_bytep)src_buf + src_len));
         // Compute CRC32 for decompressed data
         lzo_uint32 crc;
         crc = lzo_crc32(0, NULL, 0);
-        crc = lzo_crc32(crc, dst_buf, *dst_len);
+        crc = lzo_crc32(crc, (lzo_bytep)dst_buf, *dst_len);
         // Compare saved and computed CRC32
         if (crc != crc_saved) {
             errcode = LZO_E_ERROR;
@@ -405,12 +409,12 @@ int CLZOCompression::DecompressBlock(const lzo_bytep src_buf,
 }
 
 
-int CLZOCompression::DecompressBlockStream(const lzo_bytep src_buf, 
-                                           lzo_uint  src_len,
-                                           lzo_bytep dst_buf, 
-                                           lzo_uintp dst_len,
-                                           TLZOFlags flags,
-                                           lzo_uintp processed)
+int CLZOCompression::DecompressBlockStream(const void* src_buf, 
+                                           size_t      src_len,
+                                           void*       dst_buf, 
+                                           size_t*     dst_len,
+                                           TLZOFlags   flags,
+                                           size_t*     processed)
 {
     *processed = 0;
 
@@ -419,7 +423,7 @@ int CLZOCompression::DecompressBlockStream(const lzo_bytep src_buf,
         SetError(LZO_E_ERROR, "Incorrect data block format");
         return LZO_E_ERROR;
     }
-    lzo_uint32 block_len = CCompressionUtil::GetUI4((void*)src_buf);
+    size_t block_len = CCompressionUtil::GetUI4((void*)src_buf);
     *processed = 4;
 
     if ( !block_len ) {
@@ -432,7 +436,7 @@ int CLZOCompression::DecompressBlockStream(const lzo_bytep src_buf,
         SetError(LZO_E_ERROR, "Incomplete data block");
         return LZO_E_ERROR;
     }
-    int errcode = DecompressBlock(src_buf + *processed,
+    int errcode = DecompressBlock((lzo_bytep)src_buf + *processed,
                                   block_len, dst_buf, dst_len, flags);
     if ( errcode == LZO_E_OK) {
         *processed += block_len;
@@ -487,7 +491,7 @@ bool CLZOCompression::CompressBuffer(
     InitCompression(GetLevel());
 
     // Size of destination buffer
-    lzo_uint out_len = dst_size;
+    size_t out_len = dst_size;
     int errcode = LZO_E_OK;
 
     if ( F_ISSET(fStreamFormat) ) {
@@ -556,7 +560,7 @@ bool CLZOCompression::DecompressBuffer(
     LIMIT_SIZE_PARAM_U(dst_size);
 
     // Size of destination buffer
-    lzo_uint out_len = dst_size;
+    size_t out_len = dst_size;
     int errcode = LZO_E_OK;
     bool is_first_block = true;
 
@@ -577,7 +581,7 @@ bool CLZOCompression::DecompressBuffer(
             src_len -= header_len;
             // Decompress all blocks
             while ( src_len ) {
-                lzo_uint n = 0;
+                size_t n = 0;
                 out_len = dst_size;
                 errcode = DecompressBlockStream(src, src_len, dst, &out_len,
                                                 header_flags, &n);
@@ -1178,7 +1182,7 @@ CCompressionProcessor::EStatus CLZOCompressor::End(void)
 
 bool CLZOCompressor::CompressCache(void)
 {
-    lzo_uint out_len = m_OutSize;
+    size_t out_len = m_OutSize;
     int errcode = CompressBlockStream((lzo_bytep)m_InBuf, m_InLen,
                                       (lzo_bytep)m_OutBuf, &out_len);
     if ( errcode != LZO_E_OK ) {
@@ -1331,7 +1335,7 @@ CCompressionProcessor::EStatus CLZODecompressor::Process(
                 IncreaseProcessedSize((unsigned long)n);
             }
             if ( m_InLen >= 4 ) {
-                lzo_uint32 block_len = CCompressionUtil::GetUI4(m_InBuf);
+                size_t block_len = CCompressionUtil::GetUI4(m_InBuf);
                 m_BlockLen = block_len;
                 if ( !m_BlockLen  ) {
                     // End-of-data block
@@ -1482,7 +1486,7 @@ CCompressionProcessor::EStatus CLZODecompressor::End(void)
 
 bool CLZODecompressor::DecompressCache(void)
 {
-    lzo_uint out_len = m_OutSize;
+    size_t out_len = m_OutSize;
     int errcode = DecompressBlock((lzo_bytep)m_InBuf, m_BlockLen,
                                   (lzo_bytep)m_OutBuf, &out_len,
                                   m_HeaderFlags);
