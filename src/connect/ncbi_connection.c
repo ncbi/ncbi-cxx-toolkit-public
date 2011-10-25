@@ -166,9 +166,7 @@ static EIO_Status x_Callback(CONN conn, ECONN_Callback type)
         return eIO_Closed;
     if (!(func = conn->cb[type].func))
         return type == eCONN_OnTimeout ? eIO_Timeout : eIO_Success;
-    /* allow a CB only once */
     data = conn->cb[type].data;
-    memset(&conn->cb[type], 0, sizeof(conn->cb[type]));
     return (*func)(conn, type, data);
 }
 

@@ -107,7 +107,8 @@ public:
     EIO_Status        Timeout(bool);
     Uint8             GetSize(void)    const { return m_Monitor.GetSize(); }
     void              SetSize(Uint8 size)    { m_Monitor.SetSize(size);    }
-    double         GetElapsed(bool update = true);
+    double         SetElapsed(void);
+    double         GetElapsed(bool update);
     double         GetTimeout(void)    const { return m_Timeout / 1000.0;  }
     const string& GetFilename(void)    const { return m_Filename;          }
 
@@ -119,16 +120,17 @@ public:
     const CTar::TFiles& Filelist(void) const { return m_Filelist;          }
 
 private:
-    CStopWatch     m_Sw;
-    SCONN_Callback m_Cb;
-    double         m_Last;
-    double         m_LastIO;
-    bool           x_LastIO;
-    unsigned long  m_Timeout;
-    CRateMonitor   m_Monitor;
-    CTar::TFile    m_Current;
-    const string   m_Filename;
-    CTar::TFiles   m_Filelist;
+    CStopWatch          m_Sw;        // Stopwatch to mark time
+    SCONN_Callback      m_Cb;        // Callback to upcall (when closing)
+    double              x_Last;      // Last time mark
+    double              m_Last;      // Last time mark printed
+    double              m_LastIO;    // Time of last I/O or timeout callback
+    bool                x_LastIO;    // True when last CB was I/O, not timeout
+    const unsigned long m_Timeout;   // Timeout value in milliseconds (-1=inf)
+    CRateMonitor        m_Monitor;   // Rate monitor to measure download rate
+    CTar::TFile         m_Current;   // Current file name with size
+    const string        m_Filename;  // Filename being downloaded
+    CTar::TFiles        m_Filelist;  // Resultant file list
 };
 
 
@@ -137,24 +139,30 @@ EIO_Status CDownloadCallbackData::Timeout(bool io)
     if (m_Timeout != (unsigned long)(-1L)) {
         if (x_LastIO ^ io) {
             x_LastIO = io;
-            return m_Sw.Elapsed() - m_LastIO < GetTimeout()
+            return x_Last - m_LastIO < GetTimeout()
                 ? eIO_Success
                 : eIO_Timeout;
         }
-        m_LastIO = m_Sw.Elapsed();
+        m_LastIO = x_Last;
     }
     return eIO_Success;
 }
 
 
+double CDownloadCallbackData::SetElapsed(void)
+{
+    x_Last = m_Sw.Elapsed();
+    return x_Last;
+}
+
+
 double CDownloadCallbackData::GetElapsed(bool update)
 {
-    double next = m_Sw.Elapsed();
-    if (!update  &&  next < m_Last + 1.0) {
+    if (!update  &&  x_Last < m_Last + 1.0) {
         return 0.0;
     }
-    m_Last = next;
-    return next ? next : 0.001;
+    m_Last = x_Last;
+    return x_Last ? x_Last : 0.000001;
 }
 
 
@@ -441,23 +449,16 @@ static EIO_Status x_FtpCallback(void* data, const char* cmd, const char* arg)
 }
 
 
-static EIO_Status x_ConnectionCallback(CONN conn,
-                                       ECONN_Callback type, void* data)
+static EIO_Status x_ConnectionCallback(CONN           conn,
+                                       ECONN_Callback type,
+                                       void*          data)
 {
-    bool update;
-
-    // NB: callbacks are always one-shot
-    if (type != eCONN_OnClose  &&  !s_Signaled) {
-        // Reinstate the callback right away
-        const SCONN_Callback cb = { x_ConnectionCallback, data };
-        CONN_SetCallback(conn, type, &cb, 0);
-        update = false;
-    } else {
-        update = true;
-    }
+    bool update = type == eCONN_OnClose  ||  s_Signaled ? true : false;
 
     CDownloadCallbackData* dlcbdata
         = reinterpret_cast<CDownloadCallbackData*>(data);
+
+    dlcbdata->SetElapsed();
 
     EIO_Status status = eIO_Success;
 
@@ -783,7 +784,7 @@ int main(int argc, const char* argv[])
 
     ERR_POST(Info << "Total downloaded " << dlcbdata.Filelist().size()
              << " file" << &"s"[dlcbdata.Filelist().size() == 1] << " in "
-             << CTimeSpan(dlcbdata.GetElapsed() + 0.5).AsString("h:m:s")
+             << CTimeSpan(dlcbdata.SetElapsed() + 0.5).AsString("h:m:s")
              << "; combined file size " << NStr::UInt8ToString(totalsize));
 
     if (!files  ||  !dlcbdata.Filelist().size()) {

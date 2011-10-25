@@ -64,8 +64,8 @@ typedef struct SConnectionTag* CONN;      /* connection handle */
 
 
 typedef enum {
-    fCONN_Untie      = 1,  /* do not call flush method prior to every read   */
-    fCONN_Supplement = 2   /* supplement I/O with extended return codes      */
+    fCONN_Untie      = 1,  /* do not call flush method prior to every read */
+    fCONN_Supplement = 2   /* supplement I/O with extended return codes    */
 } ECONN_Flags;
 typedef unsigned int TCONN_Flags;  /* bitwise OR of ECONN_Flags   */
 
@@ -319,10 +319,11 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Close
  * The callback function is supplied with 3 arguments: the connection handle,
  * a type of event, and a user data (specified when the callback was set).
  * CONN_SetCallback() stores previous callback in "old_cb" (if it is not NULL).
- * The callbacks are acivated only once (they get reset each time prior to
- * been actually called), so the code that wants to get callbacks repeatedly
- * must reinstate them as necessary with CONN_SetCallback() calls
- * (e.g. from inside the callbacks themselves).
+ * The callbacks remain valid until they are explicitly changed / de-activated
+ * or the connection becomes closed.
+ * This means that if a callback is intercepted and then relayed to the old
+ * handler, the interceptor may not assume the callback remains set, and
+ * must re-instate itself upon each upcall of the old handler.
  * Normally, callback would return eIO_Success and let the operation continue;
  * non-eIO_Success return value causes it to be returned to the caller level
  * (but possibly with some processing already completed by then, e.g. such as
