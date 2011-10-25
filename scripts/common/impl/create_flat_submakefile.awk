@@ -6,6 +6,7 @@ BEGIN                        { stage = 0; target = ""; in_all_projects = 0 }
 (stage == 1)                 { print; next }
 /^all_projects[ \t]*=/       { in_all_projects = 1; next }
 /^all_dataspec[ \t]*=/       { in_all_dataspec = 1; next }
+/^all_dirs[ \t]*=/           { in_all_dirs = 1; last_dir = ""; print; next }
 (in_all_projects == 1)       {
     orig_all_projects[$1] = 1
     in_all_projects = ($NF == "\\")
@@ -14,6 +15,22 @@ BEGIN                        { stage = 0; target = ""; in_all_projects = 0 }
 (in_all_dataspec == 1)       {
     orig_all_dataspec[$1] = 1
     in_all_dataspec = ($NF == "\\")
+    next
+}
+(in_all_dirs == 1)           {
+    if ($1 == subdir) {
+        last_dir = "."
+    } else if (sub("^" subdir "/", "", $1)) {
+        if (last_dir != "") {
+            print "    " last_dir " \\"
+        }
+        last_dir = $1
+    }
+    if ($NF != "\\") {
+        print "    " last_dir
+        in_all_dirs = 0
+        stage = 1
+    }
     next
 }
 /\.real[ \t]*:/              {
@@ -25,9 +42,8 @@ BEGIN                        { stage = 0; target = ""; in_all_projects = 0 }
         sub("^" subdir "/", "", dep)
         deps = deps " " dep
     }
-    tgt = target
-    sub("^" subdir "/", "", tgt)
-    all_deps[tgt] = deps
+    sub("^" subdir "/", "", target)
+    all_deps[target] = deps
     rules = ""
     next
 }
@@ -92,7 +108,8 @@ END {
         print "\t" make " " p[i] ".real MTARGET=$(MTARGET)\n"
         printf "%s.real :", p[i]
         rules = all_rules[p[i]]
-        if (match(rules, /cd [^ ;]+/)) {
+        if (("/" p[i]) !~ /\/\.files$/  &&  all_deps[p[i]] !~ /\/\.files/ \
+            &&  match(rules, /cd [^ ;]+/)) {
             dir = substr(rules, RSTART + 3, RLENGTH - 3)
             printf " %s.files.real", dir
         } else {
