@@ -88,6 +88,7 @@ public:
         eDbtagType_ESTLIB,
         eDbtagType_EcoGene,
         eDbtagType_FANTOM_DB,
+        eDbtagType_FBOL,
         eDbtagType_FLYBASE,
         eDbtagType_GABI,
         eDbtagType_GDB,
