@@ -464,18 +464,21 @@ CJob::EJobFetchResult CJob::Fetch(CQueue* queue)
     // JobInfoDB, can be optimized by adding lazy load
     EBDB_ErrCode        res;
 
-    job_info_db.id = m_Id;
-    if ((res = job_info_db.Fetch()) != eBDB_Ok) {
-        if (res != eBDB_NotFound) {
-            ERR_POST("Error reading queue jobinfo db, job_key " <<
-                     queue->MakeKey(m_Id));
-            return eJF_DBErr;
+    if ((char) job_db.input_overflow ||
+        (char) job_db.output_overflow) {
+        job_info_db.id = m_Id;
+        if ((res = job_info_db.Fetch()) != eBDB_Ok) {
+            if (res != eBDB_NotFound) {
+                ERR_POST("Error reading queue jobinfo db, job_key " <<
+                         queue->MakeKey(m_Id));
+                return eJF_DBErr;
+            }
+        } else {
+            if ((char) job_db.input_overflow)
+                job_info_db.input.ToString(m_Input);
+            if ((char) job_db.output_overflow)
+                job_info_db.output.ToString(m_Output);
         }
-    } else {
-        if ((char) job_db.input_overflow)
-            job_info_db.input.ToString(m_Input);
-        if ((char) job_db.output_overflow)
-            job_info_db.output.ToString(m_Output);
     }
 
     // EventsDB
