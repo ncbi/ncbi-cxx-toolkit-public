@@ -307,16 +307,16 @@ extern int/*bool*/ BUF_PushBack(BUF* buf, const void* src, size_t size)
 }
 
 
-extern size_t BUF_PeekAtCB(BUF buf,
+extern size_t BUF_PeekAtCB(BUF    buf,
                            size_t pos,
                            void (*callback)(void*, void*, size_t),
-                           void* cbdata,
+                           void*  cbdata,
                            size_t size)
 {
     size_t     todo;
     SBufChunk* chunk;
 
-    if (!size  ||  !buf  ||  !buf->list)
+    if (!size  ||  !buf  ||  !buf->size  ||  !buf->list)
         return 0;
 
     /* special treatment for NULL callback */
@@ -381,7 +381,7 @@ extern size_t BUF_Read(BUF buf, void* dst, size_t size)
     /* peek to the callers data buffer, if non-NULL */
     if (dst)
         size = BUF_Peek(buf, dst, size);
-    else if (!buf  ||  !buf->list)
+    else if (!buf  ||  !buf->size  ||  !buf->list)
         return 0;
     if (!size)
         return 0;
