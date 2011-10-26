@@ -61,6 +61,14 @@ public:
                           const CSerialObject* obj = 0,
                           EAddNewline add_newline = eAddNewline_Yes );
 
+    NCBI_DEPRECATED
+    virtual void AddCLine( const char *line,
+                           const CSerialObject* obj = 0);
+
+    NCBI_DEPRECATED
+    virtual void AddRawText( const char *line,
+                             const CSerialObject* obj = 0);
+
 private:
     CNcbiOstream&   m_Ostream;
 };
