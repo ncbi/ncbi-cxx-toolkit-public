@@ -4858,6 +4858,7 @@ RM<CAN>	s	McGill University, Redpath Museum
 RM<NZL>	c	Rumen Microorganisms
 RM<SGP>	s	Raffles Museum
 RM<USA-WY>	s	University of Wyoming, Department of Botany, Dept. 3165
+RMA<USA-CA>	c	R. M. Alden Research Lab
 RMBL	s	Rocky Mountain Biological Laboratory
 RMBR	s	Raffles Museum of Biodiversity Research
 RMCA	s	Royal Museum for Central Africa
