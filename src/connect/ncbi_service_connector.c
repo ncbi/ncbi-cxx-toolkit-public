@@ -660,7 +660,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
 #else
              " (C Toolkit)"
 #endif
-             "\r\n");
+             );
     }
 
     if (!net_info->stateless  &&  (!info                         ||
