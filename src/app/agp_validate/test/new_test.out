@@ -17,6 +17,9 @@
 7:ps1010rel4_chr100014	1	158	1	W	ps1010rel4_chr100014	1	158	+
 	WARNING: object name (column 1) is the same as component_id (column 6)
 
+9:ps1010rel4_chr100016	319	364	2	N	46	fragment	yes
+	WARNING: assuming AGP version 1.1 since linkage evidence (column 9) is empty
+
 23:LACBIscaffold_1	1104	3435	2	U	2332	fragment	yes
 	WARNING: gap length (column 6) is not 100 for a gap of unknown size (an INSDC standard)
 
@@ -33,7 +36,7 @@
 30:LACBIscaffold_3	1	1103	1	W	LACBIscaffold_3_Cont1	1	1103	-
 	WARNING: in unplaced singleton scaffold, component orientation is not "+"
 
-No errors, 19 warnings; 7 not printed.
+No errors, 20 warnings; 7 not printed.
   Count Code  Description
       1  w27  duplicate component with non-draft type
       7  w31  gap line missing column 9 (null)
@@ -42,6 +45,7 @@ No errors, 19 warnings; 7 not printed.
       1  w39  scaffold-breaking gap between component lines with the same component_id
       1  w40  in unplaced singleton scaffold, component is not used in full
       2  w41  in unplaced singleton scaffold, component orientation is not "+"
+      1  w48  assuming AGP version X
 
 
 Objects                : 13
@@ -51,25 +55,16 @@ Scaffolds              : 14
 - with single component: 10
 
 Components             : 20 (W)
-	orientation +  : 18
-	orientation -  :  2
-	orientation 0  :  0
-	orientation na :  0
+	orientation +              : 18
+	orientation -              :  2
+	orientation ? (formerly 0) :  0
+	orientation na             :  0
 
 Gaps                   :  7 (N:6, U:1)
 - do not break scaffold:  6
-  clone   , linkage yes:  0
   fragment, linkage yes:  6
-  fragment, linkage no :  0
-  repeat  , linkage yes:  0
 - break it, linkage no :  1
-	clone          :  0
-	repeat         :  0
 	contig         :  1
-	centromere     :  0
-	short_arm      :  0
-	heterochromatin:  0
-	telomere       :  0
 
 Object names               : 13
   ps1010rel4_chr[1..100022]:  9

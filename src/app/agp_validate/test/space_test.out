@@ -32,10 +32,10 @@ Scaffolds              : 3
 - with single component: 0
 
 Components             : 6 (W)
-	orientation +  : 0
-	orientation -  : 6
-	orientation 0  : 0
-	orientation na : 0
+	orientation +              : 0
+	orientation -              : 6
+	orientation ? (formerly 0) : 0
+	orientation na             : 0
 
 Gaps                   : 0
 

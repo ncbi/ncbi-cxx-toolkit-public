@@ -8,6 +8,9 @@
 9:chrY	53044	93491	3	w	AADB02037552.1	1	40448	+
 	ERROR, line skipped: invalid value for component_type (column 5)
 
+10:chrY	93492	93591	4	N	100	fragment	yes	# another comment
+	WARNING: assuming AGP version 1.1 since linkage evidence (column 9) is empty
+
 11:chrY	93592	170572	5	9	AADB02037553.1	1	76981	+
 	ERROR, line skipped: invalid value for component_type (column 5)
 
@@ -27,7 +30,7 @@
 	ERROR, line skipped: invalid linkage "yes" for gap_type contig
 
 67:chrY	3473628	3565954	61	W	AADB02037581.1	1	92327	0
-	ERROR: 0 or na component orientation may only be used in a singleton scaffold
+	ERROR: 'na' or ? (formerly 0) component orientation may only be used in a singleton scaffold
 
 70:chrY	3623105	3673104	64	N	50000	centromere	yes	
 	ERROR, line skipped: invalid linkage "yes" for gap_type centromere
@@ -183,7 +186,7 @@
 236:
 	ERROR, line skipped: empty line
 
-50 errors, 15 warnings; 3 not printed.
+50 errors, 16 warnings; 3 not printed.
   Count Code  Description
       2  e01  expecting 9 tab-separated columns
       8  e02  column X is empty
@@ -199,7 +202,7 @@
       1  e12  first line of an object must have object_beg=1
       1  e13  first line of an object must have part_number=1
       1  e14  part number (column 4) != previous part number + 1
-      1  e15  0 or na component orientation may only be used in a singleton scaffold
+      1  e15  'na' or ? (formerly 0) component orientation may only be used in a singleton scaffold
       5  e16  object_beg != previous object_end + 1
       2  e18  consequtive gaps lines with the same type and linkage
       1  w21  gap at the end of object 
@@ -209,7 +212,7 @@
       4  w27  duplicate component with non-draft type
       1  w30  extra tab or space at the end of line
       2  w35  component_id looks like a WGS accession, component_type is not W
-         (Use -g to print lines with WGS component_id/component_type mismatch.)
+      1  w48  assuming AGP version X
 
 NOTE: 37 invalid lines were skipped (not subjected to all the checks, not included in most of the counts below).
 
@@ -222,24 +225,20 @@ Scaffolds              : 18
 ***no components, gaps only: 2
 
 Components             : 103 (W:89, F:10, D:2, O:1, P:1)
-	orientation +  : 82
-	orientation -  : 19
-	orientation 0  :  1
-	orientation na :  1
+	orientation +              : 82
+	orientation -              : 19
+	orientation ? (formerly 0) :  1
+	orientation na             :  1
 
 Gaps                   : 90 (N)
 - do not break scaffold: 79
   clone   , linkage yes:  1
   fragment, linkage yes: 77
-  fragment, linkage no :  0
   repeat  , linkage yes:  1
 - break it, linkage no : 11
 	clone          :  1
 	repeat         :  1
 	contig         :  8
-	centromere     :  0
-	short_arm      :  0
-	heterochromatin:  0
 	telomere       :  1
 
 Object names:  6

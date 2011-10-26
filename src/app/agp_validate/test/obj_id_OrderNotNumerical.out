@@ -1,11 +1,15 @@
 
+2:MICPUCscaffold_1	802	13515	2	N	12714	fragment	yes
+	WARNING: assuming AGP version 1.1 since linkage evidence (column 9) is empty
+
 10:MICPUCscaffold_20	1	6218	1	W	ACCP01000495.1	1	6218	+
 	WARNING: object names appear sorted, but not in a numerical order (MICPUCscaffold_111 before MICPUCscaffold_20)
 
-No errors, 5 warnings; 4 not printed.
+No errors, 6 warnings; 4 not printed.
   Count Code  Description
       4  w31  gap line missing column 9 (null)
       1  w34  object names appear sorted, but not in a numerical order
+      1  w48  assuming AGP version X
 
 
 Objects                : 5
@@ -15,17 +19,14 @@ Scaffolds              : 5
 - with single component: 1
 
 Components             : 9 (W)
-	orientation +  : 9
-	orientation -  : 0
-	orientation 0  : 0
-	orientation na : 0
+	orientation +              : 9
+	orientation -              : 0
+	orientation ? (formerly 0) : 0
+	orientation na             : 0
 
 Gaps                   : 4 (N)
 - do not break scaffold: 4
-  clone   , linkage yes: 0
   fragment, linkage yes: 4
-  fragment, linkage no : 0
-  repeat  , linkage yes: 0
 - break it, linkage no : 0
 
 Object names             :  5

@@ -29,7 +29,6 @@
  * File Description:
  *      AGP context-sensitive validation (uses information from several lines).
  *
- *
  */
 
 #include <ncbi_pch.hpp>
@@ -44,7 +43,7 @@ BEGIN_NCBI_SCOPE
 
 //// class CAgpValidateReader
 CAgpValidateReader::CAgpValidateReader(CAgpErrEx& agpErr, CMapCompLen& comp2len) //, bool checkCompNames
-  : CAgpReader(&agpErr), m_comp2len(comp2len)
+  : CAgpReader(&agpErr, false, eAgpVersion_auto), m_comp2len(comp2len)
 {
   m_CheckCompNames=false; // checkCompNames;
   m_CheckObjLen=false;
@@ -420,18 +419,17 @@ void CAgpValidateReader::x_PrintTotals() // without comment counts
     cout << ".";
     if(agpErr.m_MaxRepeat && (e_count+w_count) ) {
       cout << "\n";
-      // Do not print the count of skipped lines
-      // so that "(Use -g...)" hint appears right after the last count.
-      // (Will not work too well if we add more warnings...)
-      agpErr.PrintMessageCounts(cout, CAgpErrEx::CODE_First, CAgpErrEx::CODE_Last, false);
+      CAgpErrEx::TMapCcodeToString hints;
       if(!m_CheckCompNames && (
         agpErr.CountTotals(CAgpErrEx::W_CompIsWgsTypeIsNot) ||
         agpErr.CountTotals(CAgpErrEx::W_CompIsNotWgsTypeIs)
       ) ) {
-        cout << "         (Use -g to print lines with WGS component_id/component_type mismatch.)\n";
+          // W_CompIsNotWgsTypeIs is the last numerically, so the hint whiil get printed
+          // after one or both of the above warnings
+          hints[CAgpErrEx::W_CompIsNotWgsTypeIs] =
+              "(Use -g to print lines with WGS component_id/component_type mismatch.)";
       }
-      // Print only the count of skipped lines
-      agpErr.PrintMessageCounts(cout, CAgpErrEx::CODE_Last, CAgpErrEx::CODE_Last-1, true);
+      agpErr.PrintMessageCounts(cout, CAgpErrEx::CODE_First, CAgpErrEx::CODE_Last, true);
     }
   }
   if(m_ObjCount==0) {
@@ -497,10 +495,10 @@ void CAgpValidateReader::x_PrintTotals() // without comment counts
       }
     }
     cout << "\n"
-      "\torientation +  : " << ALIGN_W(m_CompOri[CCompVal::ORI_plus ]) << "\n"
-      "\torientation -  : " << ALIGN_W(m_CompOri[CCompVal::ORI_minus]) << "\n"
-      "\torientation 0  : " << ALIGN_W(m_CompOri[CCompVal::ORI_zero ]) << "\n"
-      "\torientation na : " << ALIGN_W(m_CompOri[CCompVal::ORI_na   ]) << "\n";
+      "\torientation +              : " << ALIGN_W(m_CompOri[CCompVal::ORI_plus ]) << "\n"
+      "\torientation -              : " << ALIGN_W(m_CompOri[CCompVal::ORI_minus]) << "\n"
+      "\torientation ? (formerly 0) : " << ALIGN_W(m_CompOri[CCompVal::ORI_zero ]) << "\n"
+      "\torientation na             : " << ALIGN_W(m_CompOri[CCompVal::ORI_na   ]) << "\n";
   }
 
   cout << "\n" << "Gaps                   : " << ALIGN_W(m_GapCount);

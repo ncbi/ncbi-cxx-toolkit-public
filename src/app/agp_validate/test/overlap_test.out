@@ -1,15 +1,17 @@
 
 1:AR182	1	421563	1	N	421563	fragment	yes
+	WARNING: assuming AGP version 1.1 since linkage evidence (column 9) is empty
 	WARNING: gap at the beginning of object AR182
 
 4:AR182	471778	568306	4	D	AC185503.2	33003	129531	-
 	WARNING: the span overlaps a previous span for this component: 128760..171535 at line 2
 
-No errors, 5 warnings; 3 not printed.
+No errors, 6 warnings; 3 not printed.
   Count Code  Description
       1  w22  gap at the beginning of object 
       1  w25  the span overlaps a previous span for this component
       3  w31  gap line missing column 9 (null)
+      1  w48  assuming AGP version X
 
 
 Objects                : 1
@@ -19,17 +21,15 @@ Scaffolds              : 1
 - with single component: 0
 
 Components             : 7 (D)
-	orientation +  : 2
-	orientation -  : 5
-	orientation 0  : 0
-	orientation na : 0
+	orientation +              : 2
+	orientation -              : 5
+	orientation ? (formerly 0) : 0
+	orientation na             : 0
 
 Gaps                   : 3 (N)
 - do not break scaffold: 3
-  clone   , linkage yes: 0
   fragment, linkage yes: 2
   fragment, linkage no : 1
-  repeat  , linkage yes: 0
 - break it, linkage no : 0
 
 Object names:  1

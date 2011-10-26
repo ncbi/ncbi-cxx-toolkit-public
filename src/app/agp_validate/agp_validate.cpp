@@ -413,7 +413,7 @@ void CAgpValidateApplication::x_ValidateFile(
   else {
     int line_num = 0;
     string  line;
-    CAgpRow agp_row(&agpErr);
+    CAgpRow agp_row(&agpErr, eAgpVersion_auto);
 
     // Allow Unix, DOS, Mac EOL characters
     while( NcbiGetline(istr, line, "\r\n") ) {

@@ -1,4 +1,7 @@
 
+2:scaffold_0	2107	4201	2	N	2095	fragment	yes
+	WARNING: assuming AGP version 1.1 since linkage evidence (column 9) is empty
+
 1:scaffold_0	1	2106	1	W	AAGU02000001.15	1	2106	+#bad version
 	ERROR: component_id not in GenBank: AAGU02000001.15
 
@@ -19,9 +22,10 @@ Components with incorrect taxids:
 	13: ABRQ01000007 - Taxid 9813
 
 7 lines with valid component accessions.
-15 errors, 10 not printed:
+16 errors, 10 not printed:
   Count Code  Description
      10  w31  gap line missing column 9 (null)
+      1  w48  assuming AGP version X
       1  g51  invalid component_id
       2  g52  component_id not in GenBank
       1  g53  component_id X is ambiguous without an explicit version

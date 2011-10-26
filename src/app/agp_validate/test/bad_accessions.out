@@ -1,13 +1,15 @@
 
 1:chr22	1	11330000	1	N	11330000	short_arm	no
+	WARNING: assuming AGP version 1.1 since linkage evidence (column 9) is empty
 2:chr22	11330001	13570000	2	N	2240000	centromere	no
 	WARNING: two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
 
-No errors, 105 warnings; 104 not printed.
+No errors, 106 warnings; 104 not printed.
   Count Code  Description
       1  w23  two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
     101  w31  gap line missing column 9 (null)
       3  w42  gap shorter than 10 bp
+      1  w48  assuming AGP version X
 
 
 Objects                :    1
@@ -17,24 +19,18 @@ Scaffolds              :  349
 - with single component:   54
 
 Components             : 4084 (W)
-	orientation +  : 2663
-	orientation -  : 1421
-	orientation 0  :    0
-	orientation na :    0
+	orientation +              : 2663
+	orientation -              : 1421
+	orientation ? (formerly 0) :    0
+	orientation na             :    0
 
 Gaps                   : 4086 (N)
 - do not break scaffold: 3735
-  clone   , linkage yes:    0
   fragment, linkage yes: 3735
-  fragment, linkage no :    0
-  repeat  , linkage yes:    0
 - break it, linkage no :  351
-	clone          :    0
-	repeat         :    0
 	contig         :  348
 	centromere     :    1
 	short_arm      :    1
-	heterochromatin:    0
 	telomere       :    1
 
 Object names:  1
