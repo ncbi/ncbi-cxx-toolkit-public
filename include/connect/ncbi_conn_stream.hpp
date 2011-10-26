@@ -479,7 +479,7 @@ private:
 /// http://host[:port]/path[?args]
 ///
 /// Note that "path" must include a leading slash, "args" can be empty,
-/// in which case the '?' is not appended to the path.
+/// in which case the '?' does not get appended to the path.
 ///
 /// "User_header" (if not empty) should be a sequence of lines in the form
 /// 'HTTP-tag: Tag value', with each line separated by a CR LF sequence,
@@ -554,9 +554,9 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// This stream exchanges the data with a named service, in a
-/// constraint that the service is implemented as one of the specified
-/// server "types" (details: <connect/ncbi_server_info.h>).
+/// This stream exchanges data with a named service, in a constraint that the
+/// service is implemented as one of the specified server "types"
+/// (details: <connect/ncbi_server_info.h>).
 ///
 /// Additional specifications can be passed in the SConnNetInfo structure,
 /// otherwise created by using service name as a registry section
@@ -736,17 +736,6 @@ public:
     /// clear stream error state when successful (eIO_Success returns).
     /// @note The call empties both the stream and the underlying CONN.
     virtual EIO_Status Drain(const STimeout* timeout = kDefaultTimeout);
-
-#ifndef NCBI_OS_MSWIN
-protected:
-    // Reserved for future extension
-    CConn_FtpStream
-    (const SConnNetInfo*  net_info = 0,
-     TFTP_Flags           flag     = 0,
-     const SFTP_Callback* cmcb     = 0,
-     const STimeout*      timeout  = kDefaultTimeout
-     );
-#endif
 
 private:
     // Disable copy constructor and assignment.
