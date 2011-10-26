@@ -98,6 +98,16 @@ extern NCBI_XCONNECT_EXPORT MT_LOCK g_CORE_MT_Lock;
 extern NCBI_XCONNECT_EXPORT char g_CORE_AppName[NCBI_CORE_APPNAME_MAXLEN + 1];
 
 
+
+/******************************************************************************
+ *  NCBI SID support
+ */
+
+typedef const char* (*FNcbiGetSid)(void);
+extern FNcbiGetSid g_CORE_NcbiGetSid;
+
+
+
 /******************************************************************************
  *  ERROR HANDLING and LOGGING
  */

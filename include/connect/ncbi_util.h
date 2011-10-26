@@ -46,6 +46,8 @@
  *                LOG_ToFILE[_Ex]()
  *
  * 2. Auxiliary API:
+ *       CORE_GetNcbiSid()
+ *       CORE_GetAppName()
  *       CORE_GetPlatform()
  *       CORE_GetUsername()
  *       CORE_GetVMPageSize()
@@ -377,11 +379,12 @@ extern NCBI_XCONNECT_EXPORT REG  CORE_GetREG(void);
  *  Auxiliary API
  */
 
-/**
+/** Obtain current NCBI SID (if known, per thread).
  * @return
- *  Return read-only textual but machine-readable platform description.
+ *  Return 0 when the SID cannot be determined
+ *  otherwise, return a NULL-terminated string.
  */
-extern NCBI_XCONNECT_EXPORT const char* CORE_GetPlatform(void);
+extern NCBI_XCONNECT_EXPORT const char* CORE_GetNcbiSid(void);
 
 
 /** Obtain current application name (toolkit dependent).
@@ -393,6 +396,13 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_GetPlatform(void);
  * call can cause undefined behavior or a stale pointer returned.
  */
 extern NCBI_XCONNECT_EXPORT const char* CORE_GetAppName(void);
+
+
+/**
+ * @return
+ *  Return read-only textual but machine-readable platform description.
+ */
+extern NCBI_XCONNECT_EXPORT const char* CORE_GetPlatform(void);
 
 
 /** Obtain and store current user's name in the buffer provided.

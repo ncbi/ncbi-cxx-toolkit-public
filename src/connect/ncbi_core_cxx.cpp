@@ -36,11 +36,12 @@
 #include <ncbi_pch.hpp>
 #include "ncbi_ansi_ext.h"
 #include "ncbi_priv.h"
-#include <connect/ncbi_core_cxx.hpp>
-#include <connect/error_codes.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbistr.hpp>
+#include <corelib/request_ctx.hpp>
+#include <connect/error_codes.hpp>
+#include <connect/ncbi_core_cxx.hpp>
 #include <stdlib.h>
 #include <time.h>
 
@@ -258,6 +259,17 @@ static void s_Fini(void)
 
 
 /***********************************************************************
+ *                               NCBI SID                              *
+ ***********************************************************************/
+extern "C" {
+static const char* s_GetSid(void)
+{
+    return CDiagContext::GetRequestContext().GetSessionID().c_str();
+}
+}
+
+
+/***********************************************************************
  *                                 Init                                *
  ***********************************************************************/
 
@@ -289,15 +301,19 @@ static void s_Init(CNcbiApplication* app = 0,
     if (s_ConnectInit == eConnectInit_Intact) {
         atexit(s_Fini);
     }
-    s_ConnectInit = how;
 
-    /* replace app name now */
+    /* set app name */
     if (app) {
         const char* appname = app->GetProgramDisplayName().c_str();
         if (appname  &&  *appname) {
             strrncpy0(g_CORE_AppName, appname, NCBI_CORE_APPNAME_MAXLEN);
         }
     }
+    /* setup sid retrieval callback */
+    g_CORE_NcbiGetSid = s_GetSid;
+
+    /* done! */
+    s_ConnectInit = how;
 }
 
 
