@@ -58,13 +58,13 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "first line of an object must have object_beg=1",
     "first line of an object must have part_number=1",
     "part number (column 4) != previous part number + 1",
-    "0 or na component orientation may only be used in a singleton scaffold",
+    "'na' or ? (formerly 0) component orientation may only be used in a singleton scaffold",
 
     "object_beg != previous object_end + 1",
     "no valid AGP lines",
     "consequtive gaps lines with the same type and linkage",
+    "missing linkage evidence (column 9) (AGP 2.0)",
     kEmptyCStr, // E_Last
-    kEmptyCStr,
 
     // Content Warnings
     "gap at the end of object ",
@@ -109,12 +109,12 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "in unplaced singleton scaffold, component orientation is not \"+\"",
     "gap shorter than 10 bp",
     "space in object name ",
-    "comments only allowed at the beginning for AGP v. 2.0",
-    "orientation '0' deprecated for AGP v. 2.0.  Use '?' instead.",
+    "comments only allowed at the beginning of the file in AGP 2.0",
+    "orientation '0' is deprecated in AGP 2.0;  use '?' instead",
 
-    "had to convert a value from an older version of the AGP spec.",
-    "old gap type which is not available in the chosen AGP spec",
-    kEmptyCStr,
+    "linkage (column 9) should be 'na' for a gap with linkage 'no' (AGP 2.0)",
+    "old gap type; not used in AGP 2.0",
+    "assuming AGP version X",
     kEmptyCStr,
     kEmptyCStr, // W_Last
 
@@ -208,8 +208,8 @@ const CAgpRow::TStr CAgpRow::gap_types[CAgpRow::eGapCount] = {
 CAgpRow::TMapStrEGap* CAgpRow::gap_type_codes=NULL;
 DEFINE_CLASS_STATIC_FAST_MUTEX(CAgpRow::init_mutex);
 
-CAgpRow::CAgpRow(EAgpVersion agp_version) :
-    m_agp_version(agp_version)
+CAgpRow::CAgpRow(EAgpVersion agp_version, CAgpReader* reader) :
+    m_agp_version(agp_version), m_reader(reader)
 {
     if(gap_type_codes==NULL) {
         // initialize this static map once
@@ -220,8 +220,8 @@ CAgpRow::CAgpRow(EAgpVersion agp_version) :
     m_AgpErr = new CAgpErr;
 }
 
-CAgpRow::CAgpRow(CAgpErr* arg, EAgpVersion agp_version) :
-    m_agp_version(agp_version)
+CAgpRow::CAgpRow(CAgpErr* arg, EAgpVersion agp_version, CAgpReader* reader) :
+    m_agp_version(agp_version), m_reader(reader)
 {
     if(gap_type_codes==NULL) {
         // initialize this static map once
@@ -387,13 +387,20 @@ int CAgpRow::FromString(const string& line)
         {
             is_gap=true;
             if(cols.size()==8 && tabsStripped==false) {
-                m_AgpErr->Msg(CAgpErr::W_GapLineMissingCol9);
+                /* We do not want to prevent checks all other checks...
+                if(m_agp_version == eAgpVersion_2_0) {
+                    m_AgpErr->Msg( CAgpErr::E_ColumnCount, ", found 8");
+                    return CAgpErr::E_ColumnCount;
+                }
+                else
+                */
+                m_AgpErr->Msg( CAgpErr::W_GapLineMissingCol9);
             }
             if( m_agp_version == eAgpVersion_2_0 && cols.size()==8 ) {
                 // just to make sure no out-of-bounds array accesses
-                cols.push_back(kEmptyStr);
+                cols.push_back(NcbiEmptyString);
             }
-            if(cols.size()==9 && cols[8].size()>0 && 
+            if(cols.size()==9 && cols[8].size()>0 &&
                 m_agp_version == eAgpVersion_1_1)
             {
                 m_AgpErr->Msg(CAgpErr::W_GapLineIgnoredCol9);
@@ -498,7 +505,7 @@ int CAgpRow::ParseGapCols(bool log_errors)
         return CAgpErr::E_InvalidValue;
     }
     gap_type=it->second;
-    
+
     if(GetLinkage()=="yes") {
         linkage=true;
     }
@@ -511,24 +518,40 @@ int CAgpRow::ParseGapCols(bool log_errors)
     }
 
     if(linkage) {
-        if( gap_type != eGapClone && 
-            gap_type != eGapRepeat && 
+        if( gap_type != eGapClone &&
+            gap_type != eGapRepeat &&
             gap_type != eGapFragment &&
-            gap_type != eGapScaffold ) 
+            gap_type != eGapScaffold )
         {
             if(log_errors) m_AgpErr->Msg(CAgpErr::E_InvalidYes, GetGapType() );
             return CAgpErr::E_InvalidYes;
         }
     }
 
+    if( log_errors && m_agp_version==eAgpVersion_auto ) {
+        string msg;
+        if( GetLinkageEvidence().size()==0 ) {
+            m_agp_version = eAgpVersion_1_1;
+            msg = "1.1 since linkage evidence (column 9) is empty";
+        }
+        else {
+            m_agp_version = eAgpVersion_2_0;
+            msg = "2.0 since linkage evidence (column 9) is NOT empty";
+        }
+        if(m_reader) m_reader->SetVersion(m_agp_version);
+        m_AgpErr->Msg(CAgpErr::W_AssumingVersion, msg );
+    }
+
     // check gap_type, but only after we know linkage
     if( m_agp_version == eAgpVersion_2_0 ) {
-        // certain gap-types are removed from AGP 2.0
+        // gap-types not in AGP 2.0
         if( gap_type == eGapClone || gap_type == eGapFragment ) {
-            m_AgpErr->Msg(CAgpErr::W_OldGapType);
+            // if(log_errors)
+            m_AgpErr->Msg(CAgpErr::W_OldGapType, ". Recommended replacement: " + SubstOldGap(false) );
         }
-    } else {
-        // certain gap-types did not exist in AGP 1.1
+    }
+    if(m_agp_version == eAgpVersion_1_1){
+        // gap-type not in AGP 1.1
         if( gap_type == eGapScaffold ) {
             if(log_errors) m_AgpErr->Msg(CAgpErr::E_InvalidValue, "gap_type (column 7)");
             return CAgpErr::E_InvalidValue;
@@ -537,40 +560,49 @@ int CAgpRow::ParseGapCols(bool log_errors)
 
     // linkage_evidence
     if( m_agp_version == eAgpVersion_2_0 ) {
-        vector<string> raw_linkage_evidences;
-        if( GetLinkageEvidence() != "na" ) {
-            NStr::Tokenize(GetLinkageEvidence(), ";", raw_linkage_evidences);
-            ITERATE( vector<string>, evid_iter, raw_linkage_evidences ) {
-                if( *evid_iter == "paired-ends" ) {
-                    linkage_evidences.push_back(eLinkageEvidence_paired_ends);
-                } else if( *evid_iter == "align_genus" ) {
-                    linkage_evidences.push_back(eLinkageEvidence_align_genus);
-                } else if( *evid_iter == "align_xgenus" ) {
-                    linkage_evidences.push_back(eLinkageEvidence_align_xgenus);
-                } else if( *evid_iter == "align_trnscpt" ) {
-                    linkage_evidences.push_back(eLinkageEvidence_align_trnscpt);
-                } else if( *evid_iter == "within_clone" ) {
-                    linkage_evidences.push_back(eLinkageEvidence_within_clone);
-                } else if( *evid_iter == "clone_contig" ) {
-                    linkage_evidences.push_back(eLinkageEvidence_clone_contig);
-                } else if( *evid_iter == "map" ) {
-                    linkage_evidences.push_back(eLinkageEvidence_map);
-                } else if( *evid_iter == "strobe" ) {
-                    linkage_evidences.push_back(eLinkageEvidence_strobe);
-                } else if( *evid_iter == "unspecified" ) {
-                    linkage_evidences.push_back(eLinkageEvidence_unspecified);
-                } else {
-                    if(log_errors) m_AgpErr->Msg(CAgpErr::E_InvalidValue, "linkage_evidence (column 9), unknown value: " + *evid_iter);
-                    return CAgpErr::E_InvalidValue;
-                }
+        if( GetLinkageEvidence().size()==0 ) {
+            if(log_errors) m_AgpErr->Msg(CAgpErr::E_MissingLinkage);
+            return CAgpErr::E_MissingLinkage;
+        }
+        if( GapEndsScaffold() ) {
+            if(GetLinkageEvidence() != "na") {
+                if(log_errors) m_AgpErr->Msg(CAgpErr::W_NaLinkageExpected);
             }
         }
-        if( linkage_evidences.empty() && linkage ) {
-            if(log_errors) m_AgpErr->Msg(CAgpErr::E_InvalidValue, "linkage_evidence (column 9) should be specified if linkage is yes");
-            return CAgpErr::E_InvalidValue;
-        } else if( ! linkage_evidences.empty() && ! linkage ) {
-            if(log_errors) m_AgpErr->Msg(CAgpErr::E_InvalidValue, "linkage_evidence (column 9) should be empty if no linkage");
-            return CAgpErr::E_InvalidValue;
+        else {
+            if(GetLinkageEvidence() == "na") {
+                if(log_errors) m_AgpErr->Msg(CAgpErr::E_InvalidValue,
+                    "linkage_evidence (column 9): 'na' can only be used for gaps with linkage 'no'");
+                return CAgpErr::E_InvalidValue;
+            }
+            else {
+                vector<string> raw_linkage_evidences;
+                NStr::Tokenize(GetLinkageEvidence(), ";", raw_linkage_evidences);
+                ITERATE( vector<string>, evid_iter, raw_linkage_evidences ) {
+                    if( *evid_iter == "paired-ends" ) {
+                        linkage_evidences.push_back(eLinkageEvidence_paired_ends);
+                    } else if( *evid_iter == "align_genus" ) {
+                        linkage_evidences.push_back(eLinkageEvidence_align_genus);
+                    } else if( *evid_iter == "align_xgenus" ) {
+                        linkage_evidences.push_back(eLinkageEvidence_align_xgenus);
+                    } else if( *evid_iter == "align_trnscpt" ) {
+                        linkage_evidences.push_back(eLinkageEvidence_align_trnscpt);
+                    } else if( *evid_iter == "within_clone" ) {
+                        linkage_evidences.push_back(eLinkageEvidence_within_clone);
+                    } else if( *evid_iter == "clone_contig" ) {
+                        linkage_evidences.push_back(eLinkageEvidence_clone_contig);
+                    } else if( *evid_iter == "map" ) {
+                        linkage_evidences.push_back(eLinkageEvidence_map);
+                    } else if( *evid_iter == "strobe" ) {
+                        linkage_evidences.push_back(eLinkageEvidence_strobe);
+                    } else if( *evid_iter == "unspecified" ) {
+                        linkage_evidences.push_back(eLinkageEvidence_unspecified);
+                    } else {
+                        if(log_errors) m_AgpErr->Msg(CAgpErr::E_InvalidValue, "linkage_evidence (column 9): " + *evid_iter);
+                        return CAgpErr::E_InvalidValue;
+                    }
+                }
+            }
         }
     }
 
@@ -638,6 +670,24 @@ bool CAgpRow::CheckComponentEnd( const string& comp_id, int comp_end, int comp_l
     return true;
 }
 
+const char* CAgpRow::le_str(CAgpRow::ELinkageEvidence le)
+{
+    switch( le ) {
+        case eLinkageEvidence_paired_ends  : return "paired-ends";
+        case eLinkageEvidence_align_genus  : return "align_genus";
+        case eLinkageEvidence_align_xgenus : return "align_xgenus";
+        case eLinkageEvidence_align_trnscpt: return "align_trnscpt";
+        case eLinkageEvidence_within_clone : return "within_clone";
+        case eLinkageEvidence_clone_contig : return "clone_contig";
+        case eLinkageEvidence_map          : return "map";
+        case eLinkageEvidence_strobe       : return "strobe";
+        case eLinkageEvidence_unspecified  : return "unspecified";
+        default:;
+    }
+    //return "ERROR:UNKNOWN_LINKAGE_EVIDENCE_TYPE:" +  NStr::IntToString( le );
+    return NcbiEmptyCStr;
+}
+
 string CAgpRow::LinkageEvidencesToString(void)
 {
     string result;
@@ -646,39 +696,9 @@ string CAgpRow::LinkageEvidencesToString(void)
         if( ! result.empty() ) {
             result += ';';
         }
-        switch( *evid_iter ) {
-        case eLinkageEvidence_paired_ends:
-            result += "paired-ends";
-            break;
-        case eLinkageEvidence_align_genus:
-            result += "align_genus";
-            break;
-        case eLinkageEvidence_align_xgenus:
-            result += "align_xgenus";
-            break;
-        case eLinkageEvidence_align_trnscpt:
-            result += "align_trnscpt";
-            break;
-        case eLinkageEvidence_within_clone:
-            result += "within_clone";
-            break;
-        case eLinkageEvidence_clone_contig:
-            result += "clone_contig";
-            break;
-        case eLinkageEvidence_map:
-            result += "map";
-            break;
-        case eLinkageEvidence_strobe:
-            result += "strobe";
-            break;
-        case eLinkageEvidence_unspecified:
-            result += "unspecified";
-            break;
-        default:
-            result += "ERROR:UNKNOWN_LINKAGE_EVIDENCE_TYPE:" + 
-                NStr::IntToString( (int)*evid_iter );
-            break;
-        }
+        const char* le = le_str( *evid_iter );
+        if(*le!='\0') result += le;
+        else result += "ERROR:UNKNOWN_LINKAGE_EVIDENCE_TYPE:" + NStr::IntToString( (int)*evid_iter );
     }
 
     return result;
@@ -696,9 +716,39 @@ string CAgpRow::OrientationToString( EOrientation orientation )
         case eOrientationIrrelevant:
             return "na";
         default:
-            return "ERROR:UNKNOWN_ORIENTATION:" + 
+            return "ERROR:UNKNOWN_ORIENTATION:" +
                 NStr::IntToString( (int)orientation );
     }
+}
+
+string CAgpRow::SubstOldGap(bool do_subst)
+{
+    ELinkageEvidence le=eLinkageEvidence_unspecified;
+    if( gap_type == eGapFragment ) {
+        le = linkage ? eLinkageEvidence_paired_ends : eLinkageEvidence_within_clone;
+    }
+    else if( gap_type == eGapClone ) {
+        if(linkage) {
+            le =  eLinkageEvidence_clone_contig;
+        }
+        else {
+            if(do_subst) gap_type = eGapContig;
+            return "gap type=contig, linkage=no, linkage evidence=na";
+        }
+
+    }
+    else return NcbiEmptyString; // no conversion
+
+    if(do_subst) {
+        gap_type = eGapScaffold;
+        linkage = true;
+    }
+    return string("gap type=scaffold, linkage=yes, linkage evidence=")+le_str(le)+" or unspecified";
+}
+
+void CAgpRow::SetVersion(EAgpVersion ver)
+{
+    m_agp_version=ver;
 }
 
 //// class CAgpReader
@@ -710,7 +760,7 @@ CAgpReader::CAgpReader(EAgpVersion agp_version) :
     Init();
 }
 
-CAgpReader::CAgpReader(CAgpErr* arg, bool ownAgpErr, 
+CAgpReader::CAgpReader(CAgpErr* arg, bool ownAgpErr,
                        EAgpVersion agp_version ) :
 m_agp_version(agp_version)
 {
@@ -721,8 +771,8 @@ m_agp_version(agp_version)
 
 void CAgpReader::Init()
 {
-    m_prev_row=new CAgpRow(m_AgpErr, m_agp_version);
-    m_this_row=new CAgpRow(m_AgpErr, m_agp_version);
+    m_prev_row=new CAgpRow(m_AgpErr, m_agp_version, this);
+    m_this_row=new CAgpRow(m_AgpErr, m_agp_version, this);
     m_at_beg=true;
     m_prev_line_num=-1;
 }
@@ -801,6 +851,15 @@ bool CAgpReader::ProcessThisRow()
     m_prev_line_skipped=m_line_skipped;
     return true;
 }
+
+void CAgpReader::SetVersion(EAgpVersion ver)
+{
+    // to do (?) : check that previous version is the same or eAgpVersion_auto
+    m_agp_version = ver;
+    m_this_row->SetVersion(ver);
+    m_prev_row->SetVersion(ver);
+}
+
 
 int CAgpReader::ReadStream(CNcbiIstream& is, bool finalize)
 {
@@ -1246,7 +1305,7 @@ int CAgpErrEx::CountTotals(int from, int to)
     return count;
 }
 
-void CAgpErrEx::PrintMessageCounts(CNcbiOstream& ostr, int from, int to, bool report_lines_skipped)
+void CAgpErrEx::PrintMessageCounts(CNcbiOstream& ostr, int from, int to, bool report_lines_skipped, TMapCcodeToString* hints)
 {
     if(to==E_First) {
         //// One argument: count errors/warnings/genbank errors/given type
@@ -1264,6 +1323,11 @@ void CAgpErrEx::PrintMessageCounts(CNcbiOstream& ostr, int from, int to, bool re
             ostr<< setw(7) << m_MsgCount[i] << "  "
                     << GetPrintableCode(i) << "  "
                     << GetMsg(i) << "\n";
+        }
+        // ouside of previous "if" because one hint may apply to one or more of several consequitive warnings
+        // (such as W_CompIsWgsTypeIsNot and W_CompIsNotWgsTypeIs)
+        if(hints && (*hints).find(i)!=(*hints).end() ) {
+            ostr << "         " << (*hints)[i] << "\n";
         }
     }
     if(m_lines_skipped && report_lines_skipped) {

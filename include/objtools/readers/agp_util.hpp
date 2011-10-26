@@ -52,11 +52,13 @@ BEGIN_NCBI_SCOPE
 
 // As time goes on, we should remove support for older versions.
 enum EAgpVersion {
-    eAgpVersion_1_1, // AGP spec 1.1
-    eAgpVersion_2_0  // AGP spec 2.0
+    eAgpVersion_auto, // auto-detect using the first gap line
+    eAgpVersion_1_1,  // AGP spec 1.1
+    eAgpVersion_2_0   // AGP spec 2.0
 };
 
 class CAgpErr; // full definition below
+class CAgpReader; // full definition below
 
 /// A container for both the original string column values (Get*() methods)
 /// and the values converted to int, char, bool types (member variables).
@@ -65,9 +67,10 @@ class CAgpErr; // full definition below
 class NCBI_XOBJREAD_EXPORT CAgpRow
 {
 public:
-    CAgpRow(CAgpErr* arg, EAgpVersion agp_version = eAgpVersion_2_0 );
+    // reader argument is used for notification of version auto-detection via SetVersion()
+    CAgpRow(CAgpErr* arg, EAgpVersion agp_version = eAgpVersion_2_0, CAgpReader* reader=NULL  );
     // constructs a default error handler
-    CAgpRow(EAgpVersion agp_version = eAgpVersion_2_0 );
+    CAgpRow(EAgpVersion agp_version = eAgpVersion_2_0, CAgpReader* reader=NULL );
     ~CAgpRow();
 
     // Returns:
@@ -92,12 +95,28 @@ public:
     string& GetComponentId  () {return cols[5];}  // no corresponding member variable
     string& GetComponentBeg () {return cols[6];}
     string& GetComponentEnd () {return cols[7];}
-    string& GetOrientation  () {return cols[8];}
+    string& GetOrientation  ()
+    {
+        if(cols.size()==8) {
+          // prevent out-of-range accesses in GetLinkageEvidence() and GetOrientation()
+          cols.push_back(NcbiEmptyString);
+        }
+
+        return cols[8];
+    }
 
     string& GetGapLength()        {return cols[5];}
     string& GetGapType  ()        {return cols[6];}
     string& GetLinkage  ()        {return cols[7];}
-    string& GetLinkageEvidence () {return cols[8];} // AGP v. 2.0
+    string& GetLinkageEvidence () // AGP v. 2.0
+    {
+        if(cols.size()==8) {
+          // prevent out-of-range accesses in GetLinkageEvidence() and GetOrientation()
+          cols.push_back(NcbiEmptyString);
+        }
+
+        return cols[8];
+    }
 
     //// Parsed columns
     int object_beg, object_end, part_number;
@@ -182,7 +201,8 @@ public:
 
     bool GapEndsScaffold() const
     {
-        if( m_agp_version == eAgpVersion_1_1 && gap_type==eGapFragment) return false;
+        // m_agp_version == eAgpVersion_1_1 &&
+        if( gap_type==eGapFragment) return false;
         return linkage==false;
     }
     bool GapValidAtObjectEnd() const
@@ -199,8 +219,15 @@ public:
     }
 
     string LinkageEvidencesToString(void);
+    static const char* le_str(ELinkageEvidence le);
+    /** Returns a string describing suggested replacement, or "" if none is needed.
+    Use do_subst=true to do the actial substitution in this object.
+    */
+    string SubstOldGap(bool do_subst);
 
     string OrientationToString( EOrientation orientation );
+
+    virtual void SetVersion(EAgpVersion ver);
 
 protected:
     int ParseComponentCols(bool log_errors=true);
@@ -213,7 +240,8 @@ protected:
     static TMapStrEGap* gap_type_codes;
 
 private:
-    const EAgpVersion m_agp_version;
+    EAgpVersion m_agp_version;
+    CAgpReader* m_reader;
     CAgpErr* m_AgpErr;
     bool m_OwnAgpErr;
     // for initializing gap_type_codes:
@@ -236,7 +264,7 @@ public:
 class NCBI_XOBJREAD_EXPORT CAgpReader
 {
 public:
-    CAgpReader(CAgpErr* arg, bool ownAgpErr=false, 
+    CAgpReader(CAgpErr* arg, bool ownAgpErr=false,
         EAgpVersion agp_version = eAgpVersion_2_0 );
     // constructs a default error handler for this object instance
     CAgpReader(EAgpVersion agp_version = eAgpVersion_2_0 );
@@ -258,8 +286,10 @@ public:
     /// and m_error_code=E_ObjRangeNeGap or E_ObjRangeNeComp.
     bool ProcessThisRow();
 
+    virtual void SetVersion(EAgpVersion ver);
+
 protected:
-    const EAgpVersion m_agp_version;
+    EAgpVersion m_agp_version;
 
     bool m_at_beg;  // m_this_row is the first valid component or gap line;
                     // m_prev_row undefined.
@@ -400,6 +430,7 @@ public:
         E_ObjBegNePrevEndPlus1, // CAgpReader
         E_NoValidLines,         // CAgpReader     (Make it a warning?)
         E_SameConseqGaps,
+        E_MissingLinkage,       // CAgpRow (v. >= 2.0 )
         E_Last, E_First=1, E_LastToSkipLine=E_ObjRangeNeComp,
 
         // Warnings.
@@ -436,8 +467,9 @@ public:
         W_CommentsAfterStart,   // CAgpRow (v. >= 2.0)
         W_OrientationZeroDeprecated, // CAgpRow (v. >= 2.0)
 
-        W_ConvertedOldValue,    // CAgpRow (v. >= 2.0 )
-        W_OldGapType,
+        W_NaLinkageExpected, // CAgpRow (v. >= 2.0 )
+        W_OldGapType,        // CAgpRow (v. >= 2.0 )
+        W_AssumingVersion,   // CAgpRow (v. == auto)
         W_Last, W_First = 21,
 
         // "GenBank" checks that rely on information about the sequence
@@ -574,7 +606,8 @@ public:
     int CountTotals(int from, int to=E_First);
 
     // Print individual error counts (important if we skipped some errors)
-    void PrintMessageCounts(CNcbiOstream& ostr, int from, int to=E_First, bool report_lines_skipped=false);
+    typedef map<int,string> TMapCcodeToString;
+    void PrintMessageCounts(CNcbiOstream& ostr, int from, int to=E_First, bool report_lines_skipped=false, TMapCcodeToString* hints=NULL);
 
 private:
     // Count errors of each type, including skipped ones.
