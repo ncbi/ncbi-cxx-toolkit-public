@@ -105,8 +105,7 @@ void CRequestContext::Reset(void)
     UnsetRequestStatus();
     UnsetBytesRd();
     UnsetBytesWr();
-    m_ReqTimer.Restart(); // Reset time to 0
-    m_ReqTimer.Stop();    // Stop the timer
+    m_ReqTimer.Reset();
 }
 
 

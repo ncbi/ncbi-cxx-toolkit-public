@@ -1704,6 +1704,9 @@ public:
     /// Result is 0.0 if Start() or Restart() wasn't previously called.
     double Restart(void);
 
+    /// Stop (if running) and reset the timer.
+    void Reset(void);
+
     /// Check state of stopwatch.
     /// @return
     ///   TRUE if stopwatch is "running", FALSE otherwise.
@@ -2472,15 +2475,15 @@ CStopWatch::CStopWatch(EStart state)
 }
 
 inline
-void CStopWatch::Start()
+void CStopWatch::Start(void)
 {
-    m_State = eStart;
     m_Start = GetTimeMark();
+    m_State = eStart;
 }
 
 
 inline
-double CStopWatch::Elapsed() const
+double CStopWatch::Elapsed(void) const
 {
     double total = m_Total;
     if ( m_State == eStop ) {
@@ -2497,21 +2500,30 @@ double CStopWatch::Elapsed() const
 
 
 inline
-void CStopWatch::Stop()
+void CStopWatch::Stop(void)
 {
     if ( m_State == eStop ) {
         return;
     }
+    m_State = eStop;
+
     double mark = GetTimeMark() - m_Start;
     if (mark > 0.0) {
         m_Total += mark;
     }
+}
+
+
+inline CStopWatch::Reset(void)
+{
     m_State = eStop;
+    m_Total = 0;
+    m_Start = 0;
 }
 
 
 inline
-double CStopWatch::Restart()
+double CStopWatch::Restart(void)
 {
     double total   = m_Total;
     double current = GetTimeMark();
