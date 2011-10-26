@@ -154,7 +154,10 @@ public:
     /// @param sc The scope containing the query.
     CBlastSearchQuery(const objects::CSeq_loc & sl,
                       objects::CScope         & sc)
-        : seqloc(& sl), scope(& sc), genetic_code_id(BLAST_GENETIC_CODE) {}
+        : seqloc(& sl), scope(& sc), genetic_code_id(BLAST_GENETIC_CODE) 
+    {
+        x_Validate();
+    }
 
     /// Constructor
     ///
@@ -167,7 +170,10 @@ public:
                       objects::CScope         & sc,
                       TMaskedQueryRegions       m)
         : seqloc(& sl), scope(& sc), mask(m), 
-          genetic_code_id(BLAST_GENETIC_CODE) {}
+          genetic_code_id(BLAST_GENETIC_CODE) 
+    {
+        x_Validate();
+    }
     
     /// Default constructor
     ///
@@ -251,6 +257,13 @@ private:
     /// If its value is numeric_limits<Uint4>::max(), it means that it's not
     /// applicable
     Uint4                            genetic_code_id;
+
+    /// Currently we only support whole or int.  Throw exception otherwise
+    void x_Validate() {
+        if (seqloc->IsWhole() || seqloc->IsInt()) return;
+        NCBI_THROW(CBlastException, eInvalidArgument,
+                   "Only whole or int typed seq_loc is supported for CBlastQueryVector");
+    }
 };
 
 
