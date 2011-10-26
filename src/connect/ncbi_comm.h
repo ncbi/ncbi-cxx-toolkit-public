@@ -36,6 +36,7 @@
 
 #define NCBID_WEBPATH          "/Service/ncbid.cgi"
 #define HTTP_CONNECTION_INFO   "Connection-Info:"
+#define HTTP_NCBI_SID          "NCBI-SID:"
 #define HTTP_DISP_FAILURES     "Dispatcher-Failures:"
 #define HTTP_DISP_MESSAGES     "Dispatcher-Messages:"
 #define HTTP_NCBI_MESSAGE      "NCBI-Message:"
