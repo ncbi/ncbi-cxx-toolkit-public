@@ -49,12 +49,10 @@ USING_SCOPE(ncbi::objects);
 
 CSparseAln::CSparseAln(const CAnchoredAln& anchored_aln,
                        objects::CScope& scope)
-    : m_AnchoredAln(&anchored_aln),
-      m_PairwiseAlns(m_AnchoredAln->GetPairwiseAlns()),
-      m_Scope(&scope),
+    : m_Scope(&scope),
       m_GapChar('-')
 {
-    UpdateCache();
+    x_Build(anchored_aln);
 }
 
     
@@ -64,37 +62,153 @@ CSparseAln::~CSparseAln()
 
 
 CSparseAln::TDim CSparseAln::GetDim() const {
-    return m_AnchoredAln->GetDim();
+    return m_Aln->GetDim();
 }
 
-void CSparseAln::UpdateCache()
+
+struct SGapRange
 {
-    const TDim& dim = m_AnchoredAln->GetDim();
+    TSignedSeqPos from; // original position of the gap
+    TSignedSeqPos len;  // length of the gap
+    int           row;  // Row, containing the gap.
+    size_t        idx;  // Index of the gap in the original vector.
+    // This gap's 'from' must be shifted by 'shift'.
+    // Segments at or after 'from' position must be offset by 'shift + len'.
+    TSignedSeqPos shift;
+
+    bool operator<(const SGapRange& rg) const
+    {
+        if (from != rg.from) return from < rg.from; // sort by pos
+        return row < rg.row; // lower rows go first.
+        // Don't check the length. Stable sort will preserve the order
+        // of consecutive gaps on the same row.
+    }
+};
+
+
+typedef vector<SGapRange> TGapRanges;
+
+
+void CSparseAln::x_Build(const CAnchoredAln& src_align)
+{
+    const TDim& dim = src_align.GetDim();
 
     m_BioseqHandles.clear();
     m_BioseqHandles.resize(dim);
 
     m_SeqVectors.clear();
     m_SeqVectors.resize(dim);
-    
+
+    // Collect all gaps on all rows. They need to be inserted into the
+    // new anchor as normal segments.
+    TGapRanges gaps;
+    for (TDim row = 0; row < dim; ++row) {
+        const CPairwiseAln& pw = *src_align.GetPairwiseAlns()[row];
+        const CPairwiseAln::TAlignRangeVector& ins_vec = pw.GetInsertions();
+        gaps.reserve(gaps.size() + ins_vec.size());
+        for (size_t i = 0; i < ins_vec.size(); i++) {
+            SGapRange gap;
+            gap.from = ins_vec[i].GetFirstFrom();
+            gap.len = ins_vec[i].GetLength();
+            gap.row = row;
+            gap.shift = 0;
+            gap.idx = i;
+            gaps.push_back(gap);
+        }
+    }
+    // We need to preserve the order of consecutive gaps at the same
+    // position on the same row. Use stable_sort.
+    stable_sort(gaps.begin(), gaps.end());
+    // Set shift for all gaps.
+    TSignedSeqPos shift = 0;
+    NON_CONST_ITERATE(TGapRanges, gap_it, gaps) {
+        gap_it->shift = shift;
+        shift += gap_it->len;
+    }
+
+    m_Aln.Reset(new CAnchoredAln());
+    m_Aln->SetDim(dim);
+    m_Aln->SetAnchorRow(src_align.GetAnchorRow());
+    m_Aln->SetScore(src_align.GetScore());
+
+    // Now for each row convert insertions to normal segments and change
+    // the old anchor coordinates to alignment coordinates.
+    for (TDim row = 0; row < dim; ++row) {
+        const CPairwiseAln& pw = *src_align.GetPairwiseAlns()[row];
+        const CPairwiseAln::TAlignRangeVector& ins_vec = pw.GetInsertions();
+        CPairwiseAln::const_iterator seg_it = pw.begin();
+        CPairwiseAln::TAlignRangeVector::const_iterator ins_it = ins_vec.begin();
+        TGapRanges::const_iterator gap = gaps.begin();
+        TGapRanges::const_iterator next_gap = gap;
+        ++next_gap;
+        TSignedSeqPos shift = 0;
+        CRef<CPairwiseAln> dst(new CPairwiseAln(
+            pw.GetFirstId(), pw.GetSecondId(), pw.GetFlags()));
+        while (seg_it != pw.end()  ||  ins_it != ins_vec.end()) {
+            // Have more insertions in the source?
+            // Is the next insertion at or before the next segment
+            // (or there are no more segments)?
+            CPairwiseAln::TAlignRange rg;
+            if (ins_it != ins_vec.end()  &&
+                (seg_it == pw.end()  ||
+                ins_it->GetFirstFrom() <= seg_it->GetFirstFrom())) {
+                rg = *ins_it;
+                size_t idx = ins_it - ins_vec.begin();
+                ++ins_it;
+                // Skip all gaps with lower positions and/or on lower rows.
+                while (next_gap != gaps.end()  &&
+                    (gap->row != row  ||  gap->idx != idx)) {
+                    ++next_gap;
+                    ++gap;
+                }
+                // The insertion must be in gaps.
+                _ASSERT(gap->from == rg.GetFirstFrom());
+                _ASSERT(gap->len == rg.GetLength());
+                _ASSERT(gap->row == row);
+                _ASSERT(gap->idx == idx);
+                rg.SetFirstFrom(rg.GetFirstFrom() + gap->shift);
+                shift = gap->shift + gap->len;
+                // This will merge new range with the previous one if necessary.
+                dst->push_back(rg);
+                continue;
+            }
+            else if (seg_it != pw.end()) {
+                rg = *seg_it;
+                ++seg_it;
+            }
+            // Check if there are new gaps at or before the new segment's position.
+            while (next_gap != gaps.end()  &&
+                next_gap->from <= rg.GetFirstFrom()) {
+                ++next_gap;
+                ++gap;
+                shift = gap->shift + gap->len;
+            }
+            rg.SetFirstFrom(rg.GetFirstFrom() + shift);
+            dst->push_back(rg);
+        }
+        m_Aln->SetPairwiseAlns()[row] = dst;
+    }
+    // Now the new anchored alignment should contain all segments and gaps
+    // aligned to the new anchor coordinates.
+
     m_SecondRanges.resize(dim);
     for (TDim row = 0;  row < dim;  ++row) {
 
         /// Check collections flags
-        _ASSERT( !m_PairwiseAlns[row]->IsSet(TAlnRngColl::fInvalid) );
-        _ASSERT( !m_PairwiseAlns[row]->IsSet(TAlnRngColl::fUnsorted) );
-        _ASSERT( !m_PairwiseAlns[row]->IsSet(TAlnRngColl::fOverlap) );
-        _ASSERT( !m_PairwiseAlns[row]->IsSet(TAlnRngColl::fMixedDir) );
+        _ASSERT( !m_Aln->GetPairwiseAlns()[row]->IsSet(TAlnRngColl::fInvalid) );
+        _ASSERT( !m_Aln->GetPairwiseAlns()[row]->IsSet(TAlnRngColl::fUnsorted) );
+        _ASSERT( !m_Aln->GetPairwiseAlns()[row]->IsSet(TAlnRngColl::fOverlap) );
+        _ASSERT( !m_Aln->GetPairwiseAlns()[row]->IsSet(TAlnRngColl::fMixedDir) );
 
         /// Determine m_FirstRange
         if (row == 0) {
-            m_FirstRange = m_PairwiseAlns[row]->GetFirstRange();
+            m_FirstRange = m_Aln->GetPairwiseAlns()[row]->GetFirstRange();
         } else {
-            m_FirstRange.CombineWith(m_PairwiseAlns[row]->GetFirstRange());
+            m_FirstRange.CombineWith(m_Aln->GetPairwiseAlns()[row]->GetFirstRange());
         }
 
         /// Determine m_SecondRanges
-        CAlignRangeCollExtender<TAlnRngColl> ext(*m_PairwiseAlns[row]);
+        CAlignRangeCollExtender<TAlnRngColl> ext(*m_Aln->GetPairwiseAlns()[row]);
         ext.UpdateIndex();
         m_SecondRanges[row] = ext.GetSecondRange();
     }
@@ -123,28 +237,28 @@ const CSparseAln::TAlnRngColl&
 CSparseAln::GetAlignCollection(TNumrow row)
 {
     _ASSERT(row >= 0  &&  row < GetDim());
-    return *m_PairwiseAlns[row];
+    return *m_Aln->GetPairwiseAlns()[row];
 }
 
 
 const CSeq_id& CSparseAln::GetSeqId(TNumrow row) const
 {
     _ASSERT(row >= 0  &&  row < GetDim());
-    return m_PairwiseAlns[row]->GetSecondId()->GetSeqId();
+    return m_Aln->GetPairwiseAlns()[row]->GetSecondId()->GetSeqId();
 }
 
 
 TSignedSeqPos   CSparseAln::GetSeqAlnStart(TNumrow row) const
 {
     _ASSERT(row >= 0  &&  row < GetDim());
-    return m_PairwiseAlns[row]->GetFirstFrom();
+    return m_Aln->GetPairwiseAlns()[row]->GetFirstFrom();
 }
 
 
 TSignedSeqPos CSparseAln::GetSeqAlnStop(TNumrow row) const
 {
     _ASSERT(row >= 0  &&  row < GetDim());
-    return m_PairwiseAlns[row]->GetFirstTo();
+    return m_Aln->GetPairwiseAlns()[row]->GetFirstTo();
 }
 
 
@@ -179,16 +293,16 @@ CSparseAln::TRange CSparseAln::GetSeqRange(TNumrow row) const
 bool CSparseAln::IsPositiveStrand(TNumrow row) const
 {
     _ASSERT(row >= 0  &&  row < GetDim());
-    _ASSERT( !m_PairwiseAlns[row]->IsSet(CPairwiseAln::fMixedDir) );
-    return m_PairwiseAlns[row]->IsSet(CPairwiseAln::fDirect);
+    _ASSERT( !m_Aln->GetPairwiseAlns()[row]->IsSet(CPairwiseAln::fMixedDir) );
+    return m_Aln->GetPairwiseAlns()[row]->IsSet(CPairwiseAln::fDirect);
 }
 
 
 bool CSparseAln::IsNegativeStrand(TNumrow row) const
 {
     _ASSERT(row >= 0  &&  row < GetDim());
-    _ASSERT( !m_PairwiseAlns[row]->IsSet(CPairwiseAln::fMixedDir) );
-    return m_PairwiseAlns[row]->IsSet(CPairwiseAln::fReversed);
+    _ASSERT( !m_Aln->GetPairwiseAlns()[row]->IsSet(CPairwiseAln::fMixedDir) );
+    return m_Aln->GetPairwiseAlns()[row]->IsSet(CPairwiseAln::fReversed);
 }
 
 
@@ -199,10 +313,10 @@ bool CSparseAln::IsTranslated() const {
     int base_width = k_unasigned_base_width;
     for (TDim row = 0;  row < GetDim();  ++row) {
         if (base_width == k_unasigned_base_width) {
-            base_width = m_PairwiseAlns[row]->GetFirstBaseWidth();
+            base_width = m_Aln->GetPairwiseAlns()[row]->GetFirstBaseWidth();
         }
-        if (base_width != m_PairwiseAlns[row]->GetFirstBaseWidth()  ||
-            base_width != m_PairwiseAlns[row]->GetSecondBaseWidth()) {
+        if (base_width != m_Aln->GetPairwiseAlns()[row]->GetFirstBaseWidth()  ||
+            base_width != m_Aln->GetPairwiseAlns()[row]->GetSecondBaseWidth()) {
             return true; //< there *at least one* base diff base width
         }
         /// TODO: or should this check be stronger:
@@ -244,7 +358,7 @@ CSparseAln::GetAlnPosFromSeqPos(TNumrow row,
     _ASSERT(row >= 0  &&  row < GetDim());
 
     TAlnRngColl::ESearchDirection c_dir = GetCollectionSearchDirection(dir);
-    return m_PairwiseAlns[row]->GetFirstPosBySecondPos(seq_pos, c_dir);
+    return m_Aln->GetPairwiseAlns()[row]->GetFirstPosBySecondPos(seq_pos, c_dir);
 }
 
 
@@ -255,7 +369,7 @@ TSignedSeqPos CSparseAln::GetSeqPosFromAlnPos(TNumrow row, TSeqPos aln_pos,
     _ASSERT(row >= 0  &&  row < GetDim());
 
     TAlnRngColl::ESearchDirection c_dir = GetCollectionSearchDirection(dir);
-    return m_PairwiseAlns[row]->GetSecondPosByFirstPos(aln_pos, c_dir);
+    return m_Aln->GetPairwiseAlns()[row]->GetSecondPosByFirstPos(aln_pos, c_dir);
 }
 
 
@@ -373,7 +487,7 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
     buffer.erase();
 
     if(aln_range.GetLength() > 0)   {
-        const CPairwiseAln& pairwise_aln = *m_PairwiseAlns[row];
+        const CPairwiseAln& pairwise_aln = *m_Aln->GetPairwiseAlns()[row];
         _ASSERT( !pairwise_aln.empty() );
         if (pairwise_aln.empty()) {
             string errstr = "Invalid (empty) row (" + NStr::IntToString(row) + ").  Seq id \"" +
@@ -471,13 +585,13 @@ CSparseAln::CreateSegmentIterator(TNumrow row,
                                   IAlnSegmentIterator::EFlags flag) const
 {
     _ASSERT(row >= 0  &&  row < GetDim());
-    _ASSERT( !m_PairwiseAlns[row]->empty() );
-    if (m_PairwiseAlns[row]->empty()) {
+    _ASSERT( !m_Aln->GetPairwiseAlns()[row]->empty() );
+    if (m_Aln->GetPairwiseAlns()[row]->empty()) {
         string errstr = "Invalid (empty) row (" + NStr::IntToString(row) + ").  Seq id \"" +
             GetSeqId(row).AsFastaString() + "\".";
         NCBI_THROW(CAlnException, eInvalidRequest, errstr);
     }
-    return new CSparse_CI(*m_PairwiseAlns[row], flag, range);
+    return new CSparse_CI(*m_Aln->GetPairwiseAlns()[row], flag, range);
 }
 
 

@@ -54,6 +54,13 @@ MergePairwiseAlns(CPairwiseAln& existing,
     SubtractAlnRngCollections(addition, // minuend
                               existing, // subtrahend
                               difference);
+    int gap_flags = CPairwiseAln::TAlnRngColl::fAllowAbutting |
+        CPairwiseAln::TAlnRngColl::fAllowMixedDir |
+        CPairwiseAln::TAlnRngColl::fAllowOverlap;
+    CPairwiseAln::TAlnRngColl gaps_coll(addition.GetInsertions(),
+        gap_flags);
+    CPairwiseAln::TAlnRngColl gaps_truncated(gap_flags);
+    SubtractAlnRngCollections(gaps_coll, existing, gaps_truncated);
 #ifdef _TRACE_MergeAlnRngColl
     cerr << endl;
     cerr << "existing:" << endl << existing << endl;
@@ -63,6 +70,7 @@ MergePairwiseAlns(CPairwiseAln& existing,
     ITERATE(CPairwiseAln, rng_it, difference) {
         existing.insert(*rng_it);
     }
+    existing.AddInsertions(gaps_truncated);
 #ifdef _TRACE_MergeAlnRngColl
     cerr << "result = existing + difference:" << endl << existing << endl;
 #endif

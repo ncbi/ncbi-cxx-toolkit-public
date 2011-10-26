@@ -274,6 +274,9 @@ CSparse_CI::operator bool() const
         if(m_Clip)  {
             return  (m_It_1 <= m_Clip->m_Last_It_1)  &&   (m_It_2 <= m_Clip->m_Last_It_2);
         }
+        else {
+            return m_It_1 != m_Coll->end();
+        }
     }
     return false;
 }

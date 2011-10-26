@@ -57,7 +57,7 @@ public:
     }
 };
 
-    
+
 ///////////////////////////////////////////////////////////////////////////////
 /// class CAlignRangeCollection<TAlignRange> represent a sorted collection of 
 /// TAlignRange. 
@@ -70,17 +70,17 @@ public:
 /// and all policies are enforced.
 /// If policy check fails
 template<class TAlnRange>
-    class CAlignRangeCollection 
+    class CAlignRangeCollection
 {
 public:
-    typedef TAlnRange     TAlignRange;
-    typedef typename TAlignRange::position_type    position_type;
+    typedef TAlnRange TAlignRange;
+    typedef typename TAlignRange::position_type position_type;
     typedef CAlignRangeCollection<TAlignRange>  TThisType;
-    typedef vector<TAlignRange>      TAlignRangeVector;    
-    typedef typename TAlignRangeVector::const_iterator    const_iterator;
-    typedef typename TAlignRangeVector::const_reverse_iterator    const_reverse_iterator;
+    typedef vector<TAlignRange> TAlignRangeVector;
+    typedef typename TAlignRangeVector::const_iterator const_iterator;
+    typedef typename TAlignRangeVector::const_reverse_iterator const_reverse_iterator;
     typedef typename TAlignRangeVector::size_type size_type;
-    
+
     enum EFlags {
         /// Policies:
         fKeepNormalized = 0x0001, /// enforce all policies after any modification
@@ -88,11 +88,11 @@ public:
         fAllowMixedDir  = 0x0002, /// allow segments with different orientation
         fAllowOverlap   = 0x0004, /// allow segments overlapping on the first sequence
         fAllowAbutting  = 0x0008, /// allows segments not separated by gaps
-        
+
         fDefaultPolicy  = fKeepNormalized,
 
         fPolicyMask     = 0x000f,
-        
+
         /// State flags:
         fNotValidated   = 0x0100, /// collection was modified and not validated
         fInvalid        = 0x0200,  /// one or more policies violated
@@ -102,8 +102,8 @@ public:
         fReversed     = 0x040000, /// contains at least one reversed range
         fMixedDir     = fDirect | fReversed,
         fOverlap      = 0x080000,
-        fAbutting     = 0x100000  
-        
+        fAbutting     = 0x100000
+
         /// if fUnsorted is set then there fOverlap and fAbutting are undefined (test is expensive)
         /// if fOverlap is set fAbutting is undefined
     };
@@ -117,15 +117,11 @@ public:
         eRight
     };
 
-    CAlignRangeCollection(int flags = fDefaultPolicy)   
+    CAlignRangeCollection(int flags = fDefaultPolicy)
         :   m_Flags(flags)
     { 
     }
-    CAlignRangeCollection(const CAlignRangeCollection &c)
-        : m_Flags(c.m_Flags)
-    {
-        m_Ranges = c.m_Ranges;
-    }
+
     CAlignRangeCollection(const TAlignRangeVector& v,
                           int flags)
         : m_Flags(flags)
@@ -140,116 +136,132 @@ public:
     {
         m_Ranges.reserve(count);
     }
-    const_iterator  begin() const   
-    {   
-        return m_Ranges.begin();   
+
+    const_iterator begin() const
+    {
+        return m_Ranges.begin();
     }
-    const_iterator  end() const     
-    {   
-        return m_Ranges.end(); 
+
+    const_iterator end() const
+    {
+        return m_Ranges.end();
     }
-    const_reverse_iterator  rbegin() const  
-    {   
-        return m_Ranges.rbegin();  
+
+    const_reverse_iterator rbegin() const
+    {
+        return m_Ranges.rbegin();
     }
-    const_reverse_iterator  rend() const    
-    {   
-        return m_Ranges.rend();    
+
+    const_reverse_iterator rend() const
+    {
+        return m_Ranges.rend();
     }
-    size_type size() const  
-    {   
-        return m_Ranges.size();    
+
+    size_type size() const
+    {
+        return m_Ranges.size();
     }
-    bool    empty() const
+
+    bool empty() const
     {
         return m_Ranges.empty();
-    } 
-    const_iterator  insert(const TAlignRange& r)
+    }
+
+    const_iterator insert(const TAlignRange& r)
     {
-        if(r.GetLength() > 0)  {
+        if (r.GetLength() > 0) {
             iterator it = end_nc();
 
-            if(IsSet(fKeepNormalized))  { // find insertion point                
-                PAlignRangeFromLess<TAlignRange>    p;
+            if (IsSet(fKeepNormalized)) { // find insertion point
+                PAlignRangeFromLess<TAlignRange> p;
                 it = std::lower_bound(begin_nc(), end_nc(), r.GetFirstFrom(), p);
             }
 
             return insert(it, r);
-        } 
+        }
         return end();
     }
+
     // insert(where, r)() will add a specified range into a specified position
     // if insertion violates policies the segment will be inserted and 
     // appropriate flags set (exception thrown)
-    const_iterator  insert(const_iterator where, const TAlignRange& r)
+    const_iterator insert(const_iterator where, const TAlignRange& r)
     {
         const_iterator it_ins = end(); // insertion point (return value)
-        if(r.GetLength() > 0)  {
+        if (r.GetLength() > 0) {
             iterator it = begin_nc() + (where - begin());
-            
+
             int r_dir = r.IsDirect() ? fDirect : fReversed;
             m_Flags |= r_dir;
 
-            if(IsSet(fKeepNormalized))  {                                
-                if(it != begin_nc())   {     // check left
-                    TAlignRange& r_left = *(it - 1);                    
-                    if(r_left.IsAbutting(r))    {
-                        if(IsSet(fAllowAbutting))    {
+            if (IsSet(fKeepNormalized)) {
+                if (it != begin_nc()) {     // check left
+                    TAlignRange& r_left = *(it - 1);
+                    if (r_left.IsAbutting(r)) {
+                        if (IsSet(fAllowAbutting)) {
                             m_Flags |= fAbutting;
-                        } else {
+                        }
+                        else {
                             r_left.CombineWithAbutting(r);
                             it_ins = it - 1;
                         }
-                    } else { // can overlap or be mixed
+                    }
+                    else { // can overlap or be mixed
                         int flags = ValidateRanges(r_left, r);
                         m_Flags |= flags; 
                     }
                 }
-                if(it != end_nc()) {    // check right
-                    TAlignRange& r_right = *it;                    
-                    if(r_right.IsAbutting(r))    {
-                        if(IsSet(fAllowAbutting))    {
+                if (it != end_nc()) {    // check right
+                    TAlignRange& r_right = *it;
+                    if (r_right.IsAbutting(r)) {
+                        if (IsSet(fAllowAbutting)) {
                             m_Flags |= fAbutting;
-                        } else {    // merge
-                            if(it_ins != end()) {
-                                TAlignRange& r_left = *(it - 1); 
+                        }
+                        else {    // merge
+                            if (it_ins != end()) {
+                                TAlignRange& r_left = *(it - 1);
                                 r_left.CombineWithAbutting(r_right);
                                 m_Ranges.erase(it);
-                            } else {
+                            }
+                            else {
                                 r_right.CombineWithAbutting(r);
                                 it_ins = it;
                             }
                         }
-                    } else { // can overlap or be mixed
+                    }
+                    else { // can overlap or be mixed
                         int flags = ValidateRanges(r, r_right);
                         m_Flags |= flags; 
                     }
                 }
 
-                if(it_ins == end())   {
-                    it_ins = m_Ranges.insert(it, r);                
+                if (it_ins == end()) {
+                    it_ins = m_Ranges.insert(it, r);
                 }
                 x_ValidateFlags(); // validate and throw exception if needed
-            } else {
+            }
+            else {
                 m_Flags |= fNotValidated;
-                it_ins = m_Ranges.insert(it, r);                
+                it_ins = m_Ranges.insert(it, r);
             }
         }
         return it_ins;
     }
-    const_iterator  erase(const_iterator it)
+
+    const_iterator erase(const_iterator it)
     {
         iterator it_del = begin_nc() + (it - begin());
         const_iterator it_res = end();
 
-        if(it_del >= begin_nc()  &&  it_del < end_nc())  {
+        if (it_del >= begin_nc()  &&  it_del < end_nc()) {
             it_res = m_Ranges.erase(it_del);
-            
-            if(empty())   {
+
+            if (empty()) {
                 x_ResetFlags(fInvalid | fNotValidated | fUnsorted | 
                              fMixedDir | fAbutting | fOverlap);
-            } else {
-                if(IsSet(fInvalid)) {
+            }
+            else {
+                if (IsSet(fInvalid)) {
                     x_SetFlags(fNotValidated); // erasing probably fixed the problem
                 }
             }
@@ -257,177 +269,200 @@ public:
         }
         return it_del;
     }
-    void    push_back(const TAlignRange& r)
+
+    void push_back(const TAlignRange& r)
     {
         insert(end(), r);
     }
-    void    pop_back()
+
+    void pop_back()
     {
         const_iterator it = end();
         erase(--it);
-    } 
-    const TAlignRange& operator[](size_type pos)   const   
-    {  
-        return m_Ranges[pos];  
     }
-    void    clear()
+
+    const TAlignRange& operator[](size_type pos) const
+    {
+        return m_Ranges[pos];
+    }
+
+    TAlignRange& operator[](size_type pos)
+    {
+        return m_Ranges[pos];
+    }
+
+    void clear()
     {
         m_Ranges.clear();
 
-        x_ResetFlags(fInvalid | fNotValidated | fUnsorted | 
+        x_ResetFlags(fInvalid | fNotValidated | fUnsorted |
                      fMixedDir | fAbutting | fOverlap);
     }
+
     // returns an iterator pointing to a range containing "pos" or end() if 
     // such a range does not exist
-    const_iterator  find(position_type pos)   const
+    const_iterator find(position_type pos) const
     {
         pair<const_iterator, bool> res = find_2(pos);
         return res.second ? res.first : m_Ranges.end();
     }
+
     /// returns an iterator pointing to a range containing "pos"; if such a 
     /// range does not exists an iterator points to a first range that has 
     /// ToOpen > pos; the bool element of pair specifies whether the range 
     /// contains the position.
-    pair<const_iterator, bool>  find_2(position_type pos) const
+    pair<const_iterator, bool> find_2(position_type pos) const
     {
-        PAlignRangeToLess<TAlignRange>    p;
+        PAlignRangeToLess<TAlignRange> p;
         const_iterator it = std::lower_bound(begin(), end(), pos, p); /* NCBI_FAKE_WARNING: WorkShop */
         bool b_contains = (it != end()  &&  it->GetFirstFrom() <= pos);
         return make_pair(it, b_contains);
-    }    
+    }
 
     const_iterator lower_bound(position_type pos) const
     {
-        PAlignRangeToLess<TAlignRange>    p;
+        PAlignRangeToLess<TAlignRange> p;
         return std::lower_bound(begin(), end(), pos, p);
     }
 
     const_iterator upper_bound(position_type pos) const
     {
-        PAlignRangeToLess<TAlignRange>    p;
+        PAlignRangeToLess<TAlignRange> p;
         return std::upper_bound(begin(), end(), pos, p);
     }
 
     /// @}
 
-    position_type   GetFirstFrom() const
+    position_type GetFirstFrom() const
     {
-        if( ! m_Ranges.empty()) {
+        if (!m_Ranges.empty()) {
             return begin()->GetFirstFrom();
-        } else {
+        }
+        else {
             return TAlignRange::GetEmptyFrom();
         }
     }
 
-    position_type   GetFirstToOpen() const
+    position_type GetFirstToOpen() const
     {
-        if( ! m_Ranges.empty()) {
+        if (!m_Ranges.empty()) {
             return rbegin()->GetFirstToOpen();
-        } else {
+        }
+        else {
             return TAlignRange::GetEmptyToOpen();
         }
     }
 
-    position_type   GetFirstTo() const
+    position_type GetFirstTo() const
     {
-        if(! m_Ranges.empty()) {
+        if (!m_Ranges.empty()) {
             return rbegin()->GetFirstTo();
-        } else {
+        }
+        else {
             return TAlignRange::GetEmptyTo();
         }
     }
 
-    position_type   GetFirstLength (void) const
+    position_type GetFirstLength (void) const
     {
-       if(! m_Ranges.empty())  {
+        if (!m_Ranges.empty()) {
             position_type from = begin()->GetFirstFrom();
             return rbegin()->GetFirstToOpen() - from;
-       } else {
-           return 0;
-       }
+        }
+        else {
+            return 0;
+        }
     }
 
-    CRange<position_type>   GetFirstRange() const
+    CRange<position_type> GetFirstRange() const
     {
         return CRange<position_type>(GetFirstFrom(), GetFirstTo());
     }
-    
+
     int GetFlags() const {
         return m_Flags;
     }
+
     bool IsSet(int flags) const {
         return (m_Flags & flags) == flags;
     }
+
     int GetPolicyFlags() const {
         return m_Flags & fPolicyMask;
     }
+
     int GetStateFlags() const {
         return m_Flags & ~fPolicyMask;
     }
 
-
-
-    TSignedSeqPos GetSecondPosByFirstPos(position_type pos, ESearchDirection dir = eNone) const
+    TSignedSeqPos GetSecondPosByFirstPos(position_type pos,
+                                         ESearchDirection dir = eNone) const
     {
         pair<const_iterator, bool> res = find_2(pos);
 
         // when translating from first to second eForward = eRight, eBackwards = eLeft
-        if( ! res.second)   {   // pos does not belong to a segment - adjust
-            if(dir == eRight  ||  dir == eForward)   {
-                if(res.first != end())    {
+        if (!res.second) {   // pos does not belong to a segment - adjust
+            if (dir == eRight  ||  dir == eForward) {
+                if (res.first != end()) {
                     res.second = true;
                     pos = res.first->GetFirstFrom();
-                } 
-            } else if(dir == eLeft  ||  dir == eBackwards) {
-                if(res.first != begin()) {
+                }
+            }
+            else if (dir == eLeft  ||  dir == eBackwards) {
+                if (res.first != begin()) {
                     --res.first;
                     res.second = true;
                     pos = res.first->GetFirstTo();
                 }
             }
         } 
-        return res.second   ?   res.first->GetSecondPosByFirstPos(pos)
-                            :   -1;
+        return res.second ? res.first->GetSecondPosByFirstPos(pos)
+            : -1;
     }
-    TSignedSeqPos GetFirstPosBySecondPos(position_type pos, ESearchDirection dir = eNone) const
+
+    TSignedSeqPos GetFirstPosBySecondPos(position_type pos,
+                                         ESearchDirection dir = eNone) const
     {
-        ESearchDirection dir_direct = eNone, dir_reversed = eNone; 
-        if(dir == eLeft) {
+        ESearchDirection dir_direct = eNone, dir_reversed = eNone;
+        if (dir == eLeft) {
             dir_direct = eBackwards;
             dir_reversed = eForward;
-        } else if(dir == eRight)    {
+        }
+        else if (dir == eRight) {
             dir_direct = eForward;
             dir_reversed = eBackwards;
         }
 
         const_iterator it_closest = end();
-        TSignedSeqPos min_dist = -1, min_pos = -1; 
-        
-        for( const_iterator it = begin();  it != end(); it++)   {
+        TSignedSeqPos min_dist = -1, min_pos = -1;
+
+        for (const_iterator it = begin(); it != end(); it++) {
             const TAlignRange& r = *it;
             TSignedSeqPos res = r.GetFirstPosBySecondPos(pos);
-            if(res != -1)   {
+            if(res != -1) {
                 return res;
-            } else if(dir != eNone) {
+            }
+            else if(dir != eNone) {
                 // it does not contain pos - check the distance between "r" and "pos"
                 int dist = -1;
                 int res_pos = -1;
                 ESearchDirection dir_2 = r.IsDirect() ? dir_direct : dir_reversed;
-                if(dir == eForward  ||  dir_2 == eForward) {
+                if (dir == eForward  ||  dir_2 == eForward) {
                     res_pos = r.GetSecondFrom();
                     dist = res_pos - pos;
-                } else if(dir == eBackwards  ||  dir_2 == eBackwards) {
+                }
+                else if (dir == eBackwards  ||  dir_2 == eBackwards) {
                     res_pos = it->GetSecondTo();
                     dist = pos - res_pos;
                 }
-                if(dist > 0  &&  (min_dist == -1  || min_dist > dist))  {
+                if (dist > 0  &&  (min_dist == -1  || min_dist > dist)) {
                     it_closest = it;
                     min_dist = dist;
                     min_pos = res_pos;
                 }
             }
         }
-        
+
         return (it_closest == end()) ? -1 : it_closest->GetFirstPosBySecondPos(min_pos);
     }
 
@@ -444,36 +479,37 @@ public:
     void SortInsertions(void)
     {
         std::sort(m_Insertions.begin(), m_Insertions.end(),
-                  PAlignRangeFromLess<TAlignRange>());
+            PAlignRangeFromLess<TAlignRange>());
     }
 
     /// merge adjacent segments together, merging changes collection size and invalidates
     /// iterators
-    void    CombineAbutting()
+    void CombineAbutting()
     {
-        if(IsSet(fUnsorted)  ||  IsSet(fOverlap))   {  // operation cannot be performed
+        if(IsSet(fUnsorted)  ||  IsSet(fOverlap)) {  // operation cannot be performed
             throw CAlignRangeCollException();
         }
 
         vector<bool>* dead = NULL; // vector of indexes for elements that need to be removed
         size_t size = m_Ranges.size();
 
-        for( size_t i = size - 1;  i > 0;  --i  )   {
-            if(m_Ranges[i - 1].IsAbutting(m_Ranges[i]))   {
-                if(dead == NULL)   {   // allocate temp vector
+        for (size_t i = size - 1; i > 0; --i) {
+            if (m_Ranges[i - 1].IsAbutting(m_Ranges[i])) {
+                if (dead == NULL) {   // allocate temp vector
                     dead = new vector<bool>(size, false);
-                    dead->reserve(size);                    
-                }       
+                    dead->reserve(size);
+                }
                 m_Ranges[i - 1].CombineWithAbutting(m_Ranges[i]); // merge i into i-1
                 (*dead)[i] = true;
             }
         }
-        if(dead)   {   // there are deal elements - need to compress
+        if (dead) {   // there are deal elements - need to compress
             size_t shift = 0;
-            for( size_t i = 0;  i < size;  i++ )    {
-                if((*dead)[i]) {
-                    ++shift; 
-                } else if(shift > 0) { 
+            for (size_t i = 0; i < size; i++ ) {
+                if ((*dead)[i]) {
+                    ++shift;
+                }
+                else if(shift > 0) {
                     m_Ranges[i - shift] = m_Ranges[i];
                 }
             }
@@ -483,33 +519,37 @@ public:
         x_ResetFlags(fAbutting);
         x_SetFlags(fNotValidated);
     }
+
     /// analyses segements and updates flags
-    void    Validate()
+    void Validate()
     {
-        if(IsSet(fNotValidated)  ||  IsSet(fInvalid))    {
+        if (IsSet(fNotValidated)  ||  IsSet(fInvalid)) {
             int complete = fUnsorted | fMixedDir | fAbutting | fOverlap;
             int flags = 0;
-            for( size_t i = 0; i < m_Ranges.size()-1;  i++ )    {
+            for (size_t i = 0; i < m_Ranges.size()-1; i++) {
                 flags |= ValidateRanges(m_Ranges[i], m_Ranges[i + 1]);
-                if(flags == complete)    {
+                if(flags == complete) {
                     break;
                 }
             }
-            if(flags == 0)  {
+            if (flags == 0) {
                 x_ResetFlags(fInvalid);
-            } else {
+            }
+            else {
                 x_SetFlags(flags | fInvalid);
             }
-            x_ResetFlags(fNotValidated);    
+            x_ResetFlags(fNotValidated);
         }
     }
+
     /// ensures that segments are sorted, if fAllowAdjust is not set - merges adjacent segments    
-    void    Normalize()    
-    {   
+    void Normalize()
+    {
         Sort();
         CombineAbutting();
         Validate();
     }
+
     /// determine conflicts between two ranges
     static int ValidateRanges(const TAlignRange& r_1, const TAlignRange& r_2)
     {
@@ -519,16 +559,17 @@ public:
         const TAlignRange* r_right = &r_2;
         int flags = 0;
 
-        if(r_1.IsDirect() != r_2.IsDirect())    {
+        if (r_1.IsDirect() != r_2.IsDirect()) {
             flags = fMixedDir;
-        } 
-        if(r_2.GetFirstFrom() < r_1.GetFirstFrom()) {
+        }
+        if (r_2.GetFirstFrom() < r_1.GetFirstFrom()) {
             flags |= fUnsorted;
             swap(r_left, r_right);
         }
-        if(r_left->GetFirstToOpen() > r_right->GetFirstFrom())  {
+        if (r_left->GetFirstToOpen() > r_right->GetFirstFrom()) {
             flags |= fOverlap;
-        } else if(r_1.IsAbutting(r_2)) {
+        }
+        else if (r_1.IsAbutting(r_2)) {
             flags |= fAbutting;
         }
         return flags;
@@ -563,59 +604,57 @@ public:
         return m_Insertions;
     }
 
-protected:   
-    void    x_SetFlags(int flags)   
-    {   
+protected:
+    void x_SetFlags(int flags)
+    {
         m_Flags |= flags;
     }
-    void    x_ResetFlags(int flags)
+    void x_ResetFlags(int flags)
     {
         m_Flags &= ~flags;
     }
-    void    x_ValidateFlags()
+    void x_ValidateFlags()
     {
-        if(IsSet(fKeepNormalized))   {
+        if (IsSet(fKeepNormalized)) {
             int invalid_flags = m_Flags & (fMixedDir | fOverlap | fAbutting);
-            if(IsSet(fAllowMixedDir) )   {
+            if (IsSet(fAllowMixedDir)) {
                 invalid_flags &= ~fMixedDir;
             }
-            if(IsSet(fAllowOverlap))  {
+            if (IsSet(fAllowOverlap)) {
                 invalid_flags &= ~fOverlap;
             }
-            if(IsSet(fAllowAbutting))  {
+            if (IsSet(fAllowAbutting)) {
                 invalid_flags &= ~fAbutting;
             }
-            if((invalid_flags & fMixedDir) == fMixedDir  ||  
-               (invalid_flags & (fOverlap | fAbutting)))   {
+            if ((invalid_flags & fMixedDir) == fMixedDir  ||
+               (invalid_flags & (fOverlap | fAbutting))) {
                 x_SetFlags(fInvalid);
                 throw CAlignRangeCollException(); // copy collection to exception?
             }
         }
     }
-        
-   
-protected:
-    typedef typename TAlignRangeVector::iterator    iterator;
-    typedef typename TAlignRangeVector::reverse_iterator    reverse_iterator;
 
-    iterator  begin_nc()   
-    {   
-        return m_Ranges.begin();   
+    typedef typename TAlignRangeVector::iterator iterator;
+    typedef typename TAlignRangeVector::reverse_iterator reverse_iterator;
+
+    iterator  begin_nc()
+    {
+        return m_Ranges.begin();
     }
     iterator  end_nc()
-    {   
-        return m_Ranges.end(); 
-    }    
-    bool    x_Equals(const TThisType &c) const
     {
-        if(&c == this)  {
+        return m_Ranges.end(); 
+    }
+    bool x_Equals(const TThisType &c) const
+    {
+        if (&c == this) {
             return true;
-        } else {
+        }
+        else {
             return m_Ranges == c.m_Ranges;
         }
     }
 
-protected:
     TAlignRangeVector    m_Ranges;
     TAlignRangeVector    m_Insertions;
     int m_Flags;    /// combination of EFlags
@@ -631,42 +670,45 @@ template <class TColl>
     class CAlignRangeCollExtender
 {
 public:
-    typedef typename TColl::TAlignRange    TAlignRange;
-    typedef typename TColl::position_type  position_type;
-    typedef typename TColl::ESearchDirection        TSearchDir;
+    typedef typename TColl::TAlignRange TAlignRange;
+    typedef typename TColl::position_type position_type;
+    typedef typename TColl::ESearchDirection TSearchDir;
 
-    typedef multimap<position_type, const TAlignRange*>    TFrom2Range;
-    typedef typename TFrom2Range::const_iterator     const_iterator;
+    typedef multimap<position_type, const TAlignRange*> TFrom2Range;
+    typedef typename TFrom2Range::const_iterator const_iterator;
 
-public:
     CAlignRangeCollExtender(const TColl& coll)
     {
         Init(coll);
     }
-    void    Init(const TColl& coll)
+
+    void Init(const TColl& coll)
     {
         m_Coll = &coll;
         m_Ranges.clear(); // we are lazy and do not rebuild the index right now
         m_MapDirty = true;
     }
-    void    Clear()
+
+    void Clear()
     {
         m_Ranges.clear();
         m_MapDirty = true;
     }
-    void    UpdateIndex() const
+
+    void UpdateIndex() const
     {
-        if(m_MapDirty)  {
+        if (m_MapDirty) {
             _ASSERT(m_Coll);
 
             m_Ranges.clear();
-            ITERATE (typename TColl, it, *m_Coll)  {
+            ITERATE(typename TColl, it, *m_Coll) {
                 const TAlignRange* r = &*it;
-                
-                if(m_Ranges.empty())   {
+
+                if (m_Ranges.empty()) {
                     m_From = r->GetSecondFrom();
                     m_ToOpen = r->GetSecondToOpen();
-                } else {
+                }
+                else {
                     m_From = min(m_From, r->GetSecondFrom());
                     m_ToOpen = max(m_ToOpen, r->GetSecondToOpen());
                 }
@@ -678,75 +720,83 @@ public:
             m_MapDirty = false;
         }
     }
+
     const_iterator begin() const
     {
         return m_Ranges.begin();
     }
+
     const_iterator end() const
     {
         return m_Ranges.end();
     }
+
     position_type   GetSecondFrom() const
     {
         UpdateIndex();
         return m_From; 
     }
-    position_type   GetSecondToOpen() const
+
+    position_type GetSecondToOpen() const
     {
         UpdateIndex();
         return m_ToOpen;
     }
-    position_type   GetSecondTo() const
+
+    position_type GetSecondTo() const
     {
         return GetSecondToOpen() - 1;
     }
-    position_type   GetSecondLength (void) const
+
+    position_type GetSecondLength (void) const
     {
         return m_ToOpen - m_From;
     }
-    CRange<position_type>   GetSecondRange() const
+
+    CRange<position_type> GetSecondRange() const
     {
         return CRange<position_type>(GetSecondFrom(), GetSecondTo());
     }
+
     /// finds a segment at logarithmic time (linear time on first call)
     /// returns an iterator to the fisrt segment containing "pos"
     const_iterator FindOnSecond(position_type pos) const
     {
         typename TFrom2Range::const_iterator it =
-            std::lower_bound(m_Ranges.begin(), m_Ranges.end(), pos, PItLess()); 
-        if(it != m_Ranges.end())    {
+            std::lower_bound(m_Ranges.begin(), m_Ranges.end(), pos, PItLess());
+        if (it != m_Ranges.end()) {
             const TAlignRange& r = *it->second;
             _ASSERT(r.GetSecondTo() >= pos);
             return r.SecondContains(pos) ? it : m_Ranges.end();
         }
         return it;
     }
+
 protected:
     struct PItLess
     {
         typedef typename TAlignRange::position_type   position_type;
-        bool    operator()(const typename TFrom2Range::value_type& p,
-                           position_type pos)  
-        { 
-            return p.second->GetSecondTo() < pos;  
-        }    
-        bool    operator()(position_type pos,
-                           const typename TFrom2Range::value_type& p)  
-        { 
-            return pos < p.second->GetSecondTo();  
-        }    
-        bool    operator()(const typename TFrom2Range::value_type& p1,
-                           const typename TFrom2Range::value_type& p2)  
-        { 
-            return p1.second->GetSecondTo() < p2.second->GetSecondTo();  
-        }    
+        bool operator()(const typename TFrom2Range::value_type& p,
+                        position_type pos)  
+        {
+            return p.second->GetSecondTo() < pos;
+        }
+        bool operator()(position_type pos,
+                        const typename TFrom2Range::value_type& p)  
+        {
+            return pos < p.second->GetSecondTo();
+        }
+        bool operator()(const typename TFrom2Range::value_type& p1,
+                        const typename TFrom2Range::value_type& p2)
+        {
+            return p1.second->GetSecondTo() < p2.second->GetSecondTo();
+        }
     };
-    
-protected:
+
     const TColl* m_Coll;
-    
-    mutable bool    m_MapDirty; // need to update map
-    mutable TFrom2Range     m_Ranges;    
+
+    mutable bool            m_MapDirty; // need to update map
+    mutable TFrom2Range     m_Ranges;
     mutable position_type   m_From;
     mutable position_type   m_ToOpen;
 };

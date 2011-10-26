@@ -59,10 +59,6 @@ public:
     CSparseAln(const CAnchoredAln& anchored_aln,
                objects::CScope& scope);
 
-    /// Update cache (Call if the dimension of the underlying
-    /// CAnchoredAln was changed and/or total ranges were modified)
-    void UpdateCache();
-
     /// Destructor
     virtual ~CSparseAln();
 
@@ -94,10 +90,10 @@ public:
 
     /// Anchor
     bool    IsSetAnchor() const {
-        return true; /// Always true for sparce alignments
+        return true; /// Always true for sparse alignments
     }
     TNumrow GetAnchor() const {
-        return m_AnchoredAln->GetAnchorRow();
+        return m_Aln->GetAnchorRow();
     }
 
     /// Sequence range in alignment coords (strand ignored)
@@ -161,14 +157,15 @@ public:
     static void TranslateNAToAA(const string& na, string& aa,
                                 int gen_code = kDefaultGenCode); //< per http://www.ncbi.nlm.nih.gov/collab/FT/#7.5.5
 protected:
+    void x_Build(const CAnchoredAln& src_align);
+
     CSeqVector& x_GetSeqVector(TNumrow row) const;
 
 
     typedef CAnchoredAln::TPairwiseAlnVector TPairwiseAlnVector;
 
 
-    const CConstRef<CAnchoredAln> m_AnchoredAln;
-    const TPairwiseAlnVector& m_PairwiseAlns;
+    CRef<CAnchoredAln> m_Aln;
     mutable CRef<objects::CScope> m_Scope;
     TRng m_FirstRange; ///< the extent of all segments in aln coords
     vector<TRng> m_SecondRanges;
