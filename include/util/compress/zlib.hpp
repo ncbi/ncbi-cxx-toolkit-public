@@ -140,7 +140,7 @@ public:
         ///< @sa DecompressFile, DecompressFileIntoDir
         fRestoreFileAttr       = (1<<4)
     };
-    typedef CZipCompression::TFlags TZipFlags; ///< Bitwise OR of EFlags
+    typedef CCompression::TFlags TZipFlags; ///< Bitwise OR of EFlags
 
     /// Constructor.
     CZipCompression(
