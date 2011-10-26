@@ -58,6 +58,7 @@ private:
   virtual void Exit(void);
 
   string m_CurrentFileName;
+  EAgpVersion m_agp_version;
 
   enum EValidationType {
       VT_Context, VT_Acc=1, VT_Len=2, VT_Taxid=4,
@@ -117,13 +118,8 @@ public:
     "  -obj       Use FASTA files to read names and lengths of objects (the default is components).\n"
     "  -un        Enable the checks specific to unplaced/unlocalized single-component scaffolds\n"
     "             (use the whole component in orientation '+').\n"
-    /*
-    "\n"
-    "  -fa  FILE (fasta)\n"
-    "  -len FILE (component_id and length, tab-separated)\n"
-    "    Check that each component_id from AGP can be found in the FILE(s),\n"
-    "    and component_end is within the sequence length. Multiple -fa and -len are allowed.\n"
-    */
+    "  -v VER     AGP version (1.1 or 2.0). The default is to choose automatically. 2.0 is chosen\n"
+    "             when the linkage evidence (column 9) is not empty in the first gap line encountered.\n"
     "\n"
     "  -list               List error and warning messages.\n"
     "  -limit COUNT        Print only the first COUNT messages of each type.\n"
@@ -160,15 +156,9 @@ void CAgpValidateApplication::Init(void)
     "add missing version 1 to component accessions",
     CArgDescriptions::eOutputFile);
 
-  /*
-  arg_desc->AddOptionalKey( "fa", "FILE",
-    "read component accessions and sequence lengths, compare to AGP",
-    CArgDescriptions::eInputFile, CArgDescriptions::fAllowMultiple );
-
-  arg_desc->AddOptionalKey( "len", "FILE",
-    "read component accessions and sequence lengths, compare to AGP",
-    CArgDescriptions::eString, CArgDescriptions::fAllowMultiple );
-  */
+  arg_desc->AddOptionalKey( "v", "ver",
+    "AGP version",
+    CArgDescriptions::eString);
 
   arg_desc->AddOptionalKey( "skip", "error_or_warning",
     "Message or message code to skip",
@@ -213,30 +203,6 @@ int CAgpValidateApplication::Run(void)
     CAgpErrEx::PrintAllMessages(cout);
     exit(0);
   }
-
-  /*
-  // 2 iterations
-  string arg_name="len";
-  for(;;) {
-
-    if( args[arg_name].HasValue() ) {
-      // Load component accessions and lengths
-      CArgValue::TStringArray args_len = args[arg_name].GetStringList();
-      for(CArgValue::TStringArray::iterator it = args_len.begin();  it != args_len.end(); ++it) {
-        CNcbiIfstream istr_len( it->c_str() );
-        if(!istr_len.good()) {
-          cerr<<"ERROR - cannot read " << *it << "\n";
-          exit(1);
-        }
-        if(arg_name!="fa") x_LoadLen(istr_len, *it );
-        else             x_LoadLenFa(istr_len, *it );
-      }
-    }
-
-    if(arg_name=="fa") break;
-    arg_name="fa";
-  }
-  */
 
   m_reader.m_CheckObjLen=args["obj"].HasValue();
   m_reader.m_unplaced   =args["un" ].HasValue();
@@ -331,6 +297,22 @@ int CAgpValidateApplication::Run(void)
   agpErr.m_MaxRepeat =
     args["limit"].HasValue() ? args["limit"].AsInteger() : 100;
 
+  if(args["v"].HasValue() ) {
+    if( args["v"].AsString()[0]=='1' ) {
+      m_agp_version=eAgpVersion_1_1;
+    }
+    else if( args["v"].AsString()[0]=='2' ) {
+      m_agp_version=eAgpVersion_2_0;
+    }
+    else {
+      cerr << "Error -- invalid AGP version after -v. Use 1.1 or 2.0.\n";
+      exit(1);
+    }
+    m_reader.SetVersion(m_agp_version);
+  }
+  else {
+    m_agp_version=eAgpVersion_auto; // save for CAgpRow; it is default for CAgpValidateReader
+  }
 
   //// Process files, print results
   x_ValidateUsingFiles(args);
@@ -413,7 +395,7 @@ void CAgpValidateApplication::x_ValidateFile(
   else {
     int line_num = 0;
     string  line;
-    CAgpRow agp_row(&agpErr, eAgpVersion_auto);
+    CAgpRow agp_row(&agpErr, m_agp_version);
 
     // Allow Unix, DOS, Mac EOL characters
     while( NcbiGetline(istr, line, "\r\n") ) {
