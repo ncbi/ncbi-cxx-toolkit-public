@@ -136,7 +136,7 @@ private:
     typedef set<CClassTypeInfoBase*> TClasses;
     typedef map<const type_info*, const CClassTypeInfoBase*,
         CLessTypeInfo> TClassesById;
-    typedef map<string, const CClassTypeInfoBase*> TClassesByName;
+    typedef multimap<string, const CClassTypeInfoBase*> TClassesByName;
 
     static TClasses* sm_Classes;
     static TClassesById* sm_ClassesById;

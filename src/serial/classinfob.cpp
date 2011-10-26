@@ -180,12 +180,8 @@ CClassTypeInfoBase::TClassesByName& CClassTypeInfoBase::ClassesByName(void)
             ITERATE ( TClasses, i, cc ) {
                 const CClassTypeInfoBase* info = *i;
                 if ( !info->GetName().empty() ) {
-                    if ( !classes->insert(
-                        TClassesByName::value_type(info->GetName(),
-                                                   info)).second ) {
-                        NCBI_THROW(CSerialException,eInvalidData,
-                            string("duplicate class name: ")+info->GetName());
-                    }
+                    classes->insert
+                        (TClassesByName::value_type(info->GetName(), info));
                 }
             }
             sm_ClassesByName = keep.release();
@@ -233,13 +229,22 @@ TTypeInfo CClassTypeInfoBase::GetClassInfoById(const type_info& id)
 TTypeInfo CClassTypeInfoBase::GetClassInfoByName(const string& name)
 {
     TClassesByName& classes = ClassesByName();
-    TClassesByName::iterator i = classes.find(name);
-    if ( i == classes.end() ) {
-        string msg("class not found: ");
-        msg += name;
-        NCBI_THROW(CSerialException,eInvalidData, msg);
+    pair<TClassesByName::iterator, TClassesByName::iterator> i =
+        classes.equal_range(name);
+    if (  i.first == i.second ) {
+        NCBI_THROW_FMT(CSerialException, eInvalidData,
+                       "class not found: "<<name);
     }
-    return i->second;
+    if ( --i.second != i.first ) {
+        // multiple types with the same name
+        const CClassTypeInfoBase* t1 = i.first->second;
+        const CClassTypeInfoBase* t2 = i.second->second;
+        NCBI_THROW_FMT
+            (CSerialException, eInvalidData,
+             "ambiguous class name: "<<t1->GetName()<<
+             " ("<<t1->GetModuleName()<<"&"<<t2->GetModuleName()<<")");
+    }
+    return i.first->second;
 }
 
 void CClassTypeInfoBase::GetRegisteredModuleNames(
