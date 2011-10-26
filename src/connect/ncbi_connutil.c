@@ -996,12 +996,6 @@ extern int/*bool*/ ConnNetInfo_SetupStandardArgs(SConnNetInfo* info,
     if (!info)
         return 0/*failed*/;
 
-    s = CORE_GetAppName();
-    if (s) {
-        char ua[16 + NCBI_CORE_APPNAME_MAXLEN];
-        sprintf(ua, "User-Agent: %." STR(NCBI_CORE_APPNAME_MAXLEN) "s\r\n", s);
-        ConnNetInfo_ExtendUserHeader(info, ua);
-    }
     /* Dispatcher CGI args (may sacrifice some if they don't fit altogether) */
     if (!(s = CORE_GetPlatform())  ||  !*s)
         ConnNetInfo_DeleteArg(info, kPlatform);
