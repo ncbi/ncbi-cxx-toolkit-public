@@ -1600,8 +1600,6 @@ static void x_FixupUserHeader(SConnNetInfo* net_info)
                 break;
             first = 0/*false*/;
         }
-        if (has_referer  &&  has_sid)
-            return;
     }
     if (!has_sid  &&  (s = CORE_GetNcbiSid()) != 0  &&  *s) {
         char sid[128];
