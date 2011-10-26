@@ -422,6 +422,13 @@ string CCgiContext::RetrieveTrackingId() const
     if (s_CheckRequestEntryForTID(m_Request.get(), cookie_or_entry_name_2, tid))
         return tid;
 
+    string tag_name = TCGI_TrackingTagName::GetDefault();
+    NStr::ReplaceInPlace(tag_name, "-", "_");
+    tid = m_Request->GetRandomProperty(tag_name, true);
+    if (!tid.empty()) {
+        return tid;
+    }
+
     return CDiagContext::GetRequestContext().IsSetSessionID() ?
         CDiagContext::GetRequestContext().GetSessionID() :
         CDiagContext::GetRequestContext().SetSessionID();

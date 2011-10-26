@@ -287,7 +287,7 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
         self->m_Cookies.Add(*m_TrackingCookie);
         self->SetHeaderValue(TCGI_TrackingTagName::GetDefault(),
             m_TrackingCookie->GetValue());
-        // Prevent storing the page in puplic caches.
+        // Prevent storing the page in public caches.
         string cc = GetHeaderValue(sm_CacheControl);
         if ( cc.empty() ) {
             cc = "private";
