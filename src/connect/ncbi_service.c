@@ -31,7 +31,6 @@
  */
 
 #include "ncbi_ansi_ext.h"
-#include "ncbi_comm.h"
 #include "ncbi_dispd.h"
 #include "ncbi_lbsmd.h"
 #include "ncbi_local.h"
@@ -108,14 +107,14 @@ static int/*bool*/ s_AddSkipInfo(SERV_ITER   iter,
 {
     size_t n;
     assert(name);
-    for (n = 0; n < iter->n_skip; n++) {
-        if (strcasecmp(name, SERV_NameOfInfo(iter->skip[n])) == 0  &&
-            (SERV_EqualInfo(info, iter->skip[n])  ||
-             (iter->skip[n]->type == fSERV_Firewall  &&
-              iter->skip[n]->u.firewall.type == info->u.firewall.type))) {
+    for (n = 0;  n < iter->n_skip;  n++) {
+        if (strcasecmp(name, SERV_NameOfInfo(iter->skip[n])) == 0
+            &&  (SERV_EqualInfo(info, iter->skip[n])  ||
+                 (iter->skip[n]->type == fSERV_Firewall  &&
+                  iter->skip[n]->u.firewall.type == info->u.firewall.type))) {
             /* Replace older version */
             if (iter->last == iter->skip[n])
-                iter->last =  info;
+                iter->last  = info;
             free(iter->skip[n]);
             iter->skip[n] = info;
             return 1;
@@ -214,7 +213,7 @@ static SERV_ITER s_Open(const char*          service,
 
     if (n_skip) {
         size_t i;
-        for (i = 0; i < n_skip; i++) {
+        for (i = 0;  i < n_skip;  i++) {
             const char* name = (iter->ismask  ||  skip[i]->type == fSERV_Dns
                                 ? SERV_NameOfInfo(skip[i]) : "");
             SSERV_Info* temp = SERV_CopyInfoEx(skip[i],
@@ -531,7 +530,7 @@ void SERV_Close(SERV_ITER iter)
     if (!iter)
         return;
     SERV_Reset(iter);
-    for (i = 0; i < iter->n_skip; i++)
+    for (i = 0;  i < iter->n_skip;  i++)
         free(iter->skip[i]);
     iter->n_skip = 0;
     if (iter->op) {
@@ -575,27 +574,15 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text, int code)
             if (!strncasecmp(p, used_server_info, sizeof(used_server_info) - 1)
                 &&  isdigit((unsigned char) p[sizeof(used_server_info) - 1])) {
                 p += sizeof(used_server_info) - 1;
-                if (sscanf(p, "%u: %n", &d1, &d2) >= 1  &&
-                    (info = SERV_ReadInfoEx(p + d2, "")) != 0) {
+                if (sscanf(p, "%u: %n", &d1, &d2) >= 1
+                    &&  (info = SERV_ReadInfoEx(p + d2, "")) != 0) {
                     if (!s_AddSkipInfo(iter, "", info))
                         free(info);
                     else
                         retval = 1/*updated*/;
                 }
-            } else if (strncasecmp(p, HTTP_NCBI_SID,
-                                   sizeof(HTTP_NCBI_SID) - 1) == 0) {
-                size_t xlen;
-                if (iter->sid)
-                    free((void*) iter->sid);
-                p   += sizeof(HTTP_NCBI_SID) - 1;
-                len -= sizeof(HTTP_NCBI_SID) - 1;
-                xlen = strspn(p, " \t");
-                memmove(t, p + xlen, len - xlen);
-                iter->sid = t;
-                t = 0;
             }
-            if (t)
-                free(t);
+            free(t);
         }
     }
     return retval;
@@ -718,24 +705,11 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
                 return 0;
             }
         }
-        if (iter->sid) {
-            const char* sid;
-            if (!(sid = CORE_GetNcbiSid())  ||  !*sid) {
-                if (!BUF_Write(&buf, HTTP_NCBI_SID,
-                               sizeof(HTTP_NCBI_SID) - 1)  ||
-                    !BUF_Write(&buf, " ", 1)               ||
-                    !BUF_Write(&buf, sid, strlen(sid))     ||
-                    !BUF_Write(&buf, "\r\n", 2)) {
-                    BUF_Destroy(buf);
-                    return 0;
-                }
-            }
-        }
         /* Drop any outdated skip entries */
         iter->time = (TNCBI_Time) time(0);
         s_SkipSkip(iter);
         /* Put all the rest into rejection list */
-        for (i = 0; i < iter->n_skip; i++) {
+        for (i = 0;  i < iter->n_skip;  i++) {
             /* NB: all skip infos are now kept with names (perhaps, empty) */
             const char* name    = SERV_NameOfInfo(iter->skip[i]);
             size_t      namelen = name  &&  *name ? strlen(name) : 0;
