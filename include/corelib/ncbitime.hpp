@@ -2514,7 +2514,8 @@ void CStopWatch::Stop(void)
 }
 
 
-inline CStopWatch::Reset(void)
+inline
+void CStopWatch::Reset(void)
 {
     m_State = eStop;
     m_Total = 0;
