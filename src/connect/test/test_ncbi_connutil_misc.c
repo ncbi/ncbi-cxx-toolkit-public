@@ -348,7 +348,8 @@ static void TEST_ConnNetInfo(void)
                                    "T1:    \t  \r\n"
                                    "T2:V2.1\r\n"
                                    "T3:V3\r\n"
-                                   "T4: W4");
+                                   "T6: V6\r\n"
+                                   "T4: W4 X4 Z4");
     str = UTIL_PrintableString(net_info->http_user_header, 0, buf, 0);
     if (str)
         *str = '\0';
@@ -358,15 +359,16 @@ static void TEST_ConnNetInfo(void)
                   "T0: V0\n"
                   "T2:V2.1\r\n"
                   "T3:V3\n"
-                  "T4: W4\r\n"
-                  "T5: V5\r\n") == 0);
+                  "T4: W4 X4 Z4\r\n"
+                  "T5: V5\n"
+                  "T6: V6\r\n") == 0);
 
     ConnNetInfo_ExtendUserHeader(net_info,
                                  "T0: V0\n"
                                  "T1:V1\r\n"
                                  "T2:V2\n"
                                  "T3: T3:V3\n"
-                                 "T4:\n"
+                                 "T4: X4\n"
                                  "T5");
     str = UTIL_PrintableString(net_info->http_user_header, 0, buf, 0);
     if (str)
@@ -377,14 +379,16 @@ static void TEST_ConnNetInfo(void)
                   "T0: V0\n"
                   "T2:V2.1 V2\r\n"
                   "T3:V3 T3:V3\n"
-                  "T4: W4\r\n"
-                  "T5: V5\r\n"
+                  "T4: W4 X4 Z4\r\n"
+                  "T5: V5\n"
+                  "T6: V6\r\n"
                   "T1:V1\r\n") == 0);
 
     ConnNetInfo_ExtendUserHeader(net_info,
                                  "T2: V2\n"
                                  "T3: V3\r\n"
-                                 "T4:W4");
+                                 "T4:X4\r\n"
+                                 "T4: Z4");
     str = UTIL_PrintableString(net_info->http_user_header, 0, buf, 0);
     if (str)
         *str = '\0';
@@ -394,9 +398,19 @@ static void TEST_ConnNetInfo(void)
                   "T0: V0\n"
                   "T2:V2.1 V2\r\n"
                   "T3:V3 T3:V3\n"
-                  "T4: W4\r\n"
-                  "T5: V5\r\n"
+                  "T4: W4 X4 Z4\r\n"
+                  "T5: V5\n"
+                  "T6: V6\r\n"
                   "T1:V1\r\n") == 0);
+
+    ConnNetInfo_DeleteUserHeader(net_info,
+                                 net_info->http_user_header);
+    str = UTIL_PrintableString(net_info->http_user_header, 0, buf, 0);
+    if (str)
+        *str = '\0';
+    printf("HTTP User Header after self-delete:\n%s%s%s\n",
+           "\"" + !str, str ? buf : "NULL", "\"" + !str);
+    assert(strcmp(net_info->http_user_header, "") == 0);
 
     ConnNetInfo_SetUserHeader(net_info, 0);
     str = UTIL_PrintableString(net_info->http_user_header, 0, buf, 0);
