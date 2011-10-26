@@ -88,7 +88,6 @@ struct SSERV_IterTag {
     const char*          val; /* value to match; original pointer            */
     size_t            vallen; /* == 0 for NULL pointer above                 */
     TNCBI_Time          time; /* the time of call                            */
-    const char*          sid; /* session ID as received in response          */
 };
 
 
