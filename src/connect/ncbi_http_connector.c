@@ -542,8 +542,8 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                      " (C++ Toolkit)"
 #else
                      " (C Toolkit)"
-#endif
-                     "\r\n");
+#endif /*NCBI_CXX_TOOLKIT*/
+                     );
                 reset_user_header = 1;
             } else
                 reset_user_header = 0;
@@ -1561,48 +1561,61 @@ static void s_Destroy(CONNECTOR connector)
 #define  STR(x)  _STR(x)
 
 /* NB: per the standard, the HTTP tag name is misspelled as "Referer" */
-static void x_AddAppNameRefererStripCAF(SConnNetInfo* net_info)
+static void x_FixupUserHeader(SConnNetInfo* net_info)
 {
-    const char* s;
+    int/*bool*/ has_referer = 0/*false*/;
+    int/*bool*/ has_sid = 0/*false*/;
     char* referer;
+    const char* s;
 
     s = CORE_GetAppName();
     if (s) {
         char ua[16 + NCBI_CORE_APPNAME_MAXLEN];
-        sprintf(ua, "User-Agent: %." STR(NCBI_CORE_APPNAME_MAXLEN) "s\r\n", s);
+        sprintf(ua, "User-Agent: %." STR(NCBI_CORE_APPNAME_MAXLEN) "s", s);
         ConnNetInfo_ExtendUserHeader(net_info, ua);
     }
     if ((s = net_info->http_user_header) != 0) {
-        int/*bool*/ found = 0/*false*/;
         int/*bool*/ first = 1/*true*/;
         while (*s) {
-            if (strncasecmp(s, "\nReferer: " + first, 10 - first) == 0) {
-                found = 1/*true*/;
+            if (strncasecmp(s, "\n" HTTP_NCBI_SID + first,
+                            sizeof(HTTP_NCBI_SID) - first) == 0)
+                has_sid = 1/*true*/;
+            else if (strncasecmp(s, "\nReferer:" + first, 9 - first) == 0) {
+                has_referer = 1/*true*/;
 #ifdef HAVE_LIBCONNEXT
             } else if (strncasecmp(s, "\nCAF" + first, 4 - first) == 0
                        &&  (s[4 - first] == '-'  ||  s[4 - first] == ':')) {
-                size_t off = (size_t)(s - net_info->http_user_header);
-                ConnNetInfo_DeleteUserHeader(net_info, s + !first);
-                if (!(s = net_info->http_user_header)  ||  !*(s += off))
-                    break;
-                continue;
-#else
-                break;
+                char* caftag = strndup(s + !first, strcspn(s + !first, " \t"));
+                if (caftag) {
+                    size_t cafoff = (size_t)(s - net_info->http_user_header);
+                    ConnNetInfo_DeleteUserHeader(net_info, caftag);
+                    free(caftag);
+                    if (!(s = net_info->http_user_header)  ||  !*(s += cafoff))
+                        break;
+                    continue;
+                }
 #endif /*HAVE_LIBCONNEXT*/
             }
             if (!(s = strchr(++s, '\n')))
                 break;
             first = 0/*false*/;
         }
-        if (found)
+        if (has_referer  &&  has_sid)
             return;
     }
+    if (!has_sid  &&  (s = CORE_GetNcbiSid()) != 0  &&  *s) {
+        char sid[128];
+        sprintf(sid, HTTP_NCBI_SID " %.80s", s);
+        ConnNetInfo_AppendUserHeader(net_info, sid);
+    }
+    if (has_referer)
+        return;
     if (!net_info->http_referer  ||  !*net_info->http_referer
-        ||  !(referer = (char*) malloc(strlen(net_info->http_referer) + 12))) {
+        ||  !(referer = (char*) malloc(strlen(net_info->http_referer) + 10))) {
         return;
     }
-    sprintf(referer, "Referer: %s\r\n", net_info->http_referer);
-    ConnNetInfo_ExtendUserHeader(net_info, referer);
+    sprintf(referer, "Referer: %s", net_info->http_referer);
+    ConnNetInfo_AppendUserHeader(net_info, referer);
     free(referer);
 }
 
@@ -1651,7 +1664,7 @@ static EIO_Status s_CreateHttpConnector
         }
         ConnNetInfo_DeleteUserHeader(xxx, "Referer:");
     }
-    x_AddAppNameRefererStripCAF(xxx);
+    x_FixupUserHeader(xxx);
 
     if ((flags & fHTTP_NoAutoRetry)  ||  !xxx->max_try)
         xxx->max_try = 1;

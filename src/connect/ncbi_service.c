@@ -31,6 +31,7 @@
  */
 
 #include "ncbi_ansi_ext.h"
+#include "ncbi_comm.h"
 #include "ncbi_dispd.h"
 #include "ncbi_lbsmd.h"
 #include "ncbi_local.h"
@@ -549,13 +550,12 @@ void SERV_Close(SERV_ITER iter)
 int/*bool*/ SERV_Update(SERV_ITER iter, const char* text, int code)
 {
     static const char used_server_info[] = "Used-Server-Info-";
-    static const char ncbi_sid[] = "NCBI-SID:";
     int retval = 0/*not updated yet*/;
 
     if (iter  &&  iter->op  &&  text) {
         const char *c, *b;
         iter->time = (TNCBI_Time) time(0);
-        for (b = text; (c = strchr(b, '\n')) != 0; b = c + 1) {
+        for (b = text;  (c = strchr(b, '\n')) != 0;  b = c + 1) {
             size_t len = (size_t)(c - b);
             SSERV_Info* info;
             unsigned int d1;
@@ -582,12 +582,13 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text, int code)
                     else
                         retval = 1/*updated*/;
                 }
-            } else if (strncasecmp(p, ncbi_sid, sizeof(ncbi_sid) - 1) == 0) {
+            } else if (strncasecmp(p, HTTP_NCBI_SID,
+                                   sizeof(HTTP_NCBI_SID) - 1) == 0) {
                 size_t xlen;
                 if (iter->sid)
                     free((void*) iter->sid);
-                p   += sizeof(ncbi_sid) - 1;
-                len -= sizeof(ncbi_sid) - 1;
+                p   += sizeof(HTTP_NCBI_SID) - 1;
+                len -= sizeof(HTTP_NCBI_SID) - 1;
                 xlen = strspn(p, " \t");
                 memmove(t, p + xlen, len - xlen);
                 iter->sid = t;
@@ -715,6 +716,19 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
                 !BUF_Write(&buf, "\r\n", 2)) {
                 BUF_Destroy(buf);
                 return 0;
+            }
+        }
+        if (iter->sid) {
+            const char* sid;
+            if (!(sid = CORE_GetNcbiSid())  ||  !*sid) {
+                if (!BUF_Write(&buf, HTTP_NCBI_SID,
+                               sizeof(HTTP_NCBI_SID) - 1)  ||
+                    !BUF_Write(&buf, " ", 1)               ||
+                    !BUF_Write(&buf, sid, strlen(sid))     ||
+                    !BUF_Write(&buf, "\r\n", 2)) {
+                    BUF_Destroy(buf);
+                    return 0;
+                }
             }
         }
         /* Drop any outdated skip entries */
