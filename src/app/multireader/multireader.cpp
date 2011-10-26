@@ -392,6 +392,28 @@ CMultiReaderApp::Run(void)
         }
         break;
     case CFormatGuess::eBed:
+        try {
+            CIdMapper* pMapper = GetMapper();
+            CBedReader reader(m_iFlags);
+            CStreamLineReader lr(*m_pInput);
+            CRef<CSeq_annot> pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
+            while(pAnnot) {
+                if (pMapper) {
+                    pMapper->MapObject(*pAnnot);
+                }
+                *m_pOutput << MSerial_AsnText << *pAnnot;
+//                DumpMemory("! ");
+                pAnnot.Reset();
+                if (lr.AtEOF()) {
+                    break;
+                }
+                pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
+            }
+        }
+        catch ( CObjReaderLineException& /*err*/ ) {
+        }
+        break;
+
     case CFormatGuess::eGtf:
         try {
             ReadAnnots( annots );

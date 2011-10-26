@@ -122,6 +122,7 @@ CBedReader::ReadSeqAnnot(
     CRef< CSeq_annot > annot( new CSeq_annot );
     CRef< CAnnot_descr > desc( new CAnnot_descr );
     annot->SetDesc( *desc );
+    annot->SetData().SetFtable();
 
     string line;
     int linecount = 0;
@@ -139,7 +140,10 @@ CBedReader::ReadSeqAnnot(
             if ( CReaderBase::x_ParseTrackLine( line, annot ) ) {
                 continue;
             }
-            x_ParseFeature( line, annot );
+            if (!x_ParseFeature( line, annot )) {
+                lr.UngetLine();
+                return annot;
+            }
         }
         catch( CObjReaderLineException& err ) {
             err.SetLineNumber( linecount );
@@ -266,8 +270,11 @@ bool CBedReader::x_ParseFeature(
     CRef<CSeq_annot>& annot ) /* throws CObjReaderLineException */
 //  ----------------------------------------------------------------------------
 {
-    CSeq_annot::C_Data::TFtable& ftable = annot->SetData().SetFtable();
-    CRef<CSeq_feat> feature;
+    const int MAX_RECORDS = 100000;
+    static string strc;
+    static int count = 0;
+    count++;
+
     vector<string> fields;
 
 	string record_copy = record;
@@ -293,7 +300,23 @@ bool CBedReader::x_ParseFeature(
             throw( err );
         }
     }
+
+    //  if feature tables get too big we _will_ run out of memory. To guard against
+    //  that, limit feature tables to a single id, and to MAX_RECORDS at the most.
+    if (strc != fields[0]  ||  count == MAX_RECORDS+1) {
+        if (strc == "") {
+            strc = fields[0];
+        }
+        else {
+            strc = "";
+            count = 0;
+            return false; //indicate no data has been processed 
+        }
+    }
+
     //  assign
+    CSeq_annot::C_Data::TFtable& ftable = annot->SetData().SetFtable();
+    CRef<CSeq_feat> feature;
     feature.Reset( new CSeq_feat );
     try {
         x_SetFeatureLocation( feature, fields );
