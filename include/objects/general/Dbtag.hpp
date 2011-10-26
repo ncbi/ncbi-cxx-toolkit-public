@@ -73,6 +73,7 @@ public:
         eDbtagType_BDGP_EST,
         eDbtagType_BDGP_INS,
         eDbtagType_BEETLEBASE,
+        eDbtagType_BGD,
         eDbtagType_BoLD,
         eDbtagType_CCDS,
         eDbtagType_CDD,

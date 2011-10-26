@@ -165,6 +165,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
 
 static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
     TDbxrefPair("BEEBASE", CDbtag::eDbtagType_BEEBASE),
+    TDbxrefPair("BGD", CDbtag::eDbtagType_BGD),
     TDbxrefPair("BioProject", CDbtag::eDbtagType_BioProject),
     TDbxrefPair("CCDS", CDbtag::eDbtagType_CCDS),
     TDbxrefPair("CGNC", CDbtag::eDbtagType_CGNC),
@@ -496,6 +497,7 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_ApiDB_PlasmoDB, "http://www.plasmodb.org/plasmo/showRecord.do?name=GeneRecordClasses.GeneRecordClass&project_id=&primary_key="),
     TDbtUrl(CDbtag::eDbtagType_ApiDB_ToxoDB, "http://www.toxodb.org/toxo/showRecord.do?name=GeneRecordClasses.GeneRecordClass&project_id=&primary_key="),
     TDbtUrl(CDbtag::eDbtagType_BEETLEBASE, "http://www.beetlebase.org/cgi-bin/report.cgi?name="),
+    TDbtUrl(CDbtag::eDbtagType_BGD, "http://genomes.arc.georgetown.edu/bovine/genepages/genes/"),
     TDbtUrl(CDbtag::eDbtagType_BoLD, "http://www.boldsystems.org/connectivity/specimenlookup.php?processid="),
     TDbtUrl(CDbtag::eDbtagType_CCDS, "http://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA="),
     TDbtUrl(CDbtag::eDbtagType_CDD, "http://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid="),
