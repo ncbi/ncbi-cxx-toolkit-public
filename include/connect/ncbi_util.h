@@ -381,7 +381,7 @@ extern NCBI_XCONNECT_EXPORT REG  CORE_GetREG(void);
 
 /** Obtain current NCBI SID (if known, per thread).
  * @return
- *  Return 0 when the SID cannot be determined
+ *  Return 0 when the SID cannot be determined;
  *  otherwise, return a NULL-terminated string.
  */
 extern NCBI_XCONNECT_EXPORT const char* CORE_GetNcbiSid(void);
