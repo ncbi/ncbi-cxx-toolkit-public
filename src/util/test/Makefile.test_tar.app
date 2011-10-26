@@ -2,7 +2,9 @@
 
 APP = test_tar
 SRC = test_tar
+CPPFLAGS = $(CMPRS_INCLUDE) $(ORIG_CPPFLAGS)
 LIB = $(COMPRESS_LIBS) xutil xncbi
+
 LIBS = $(CMPRS_LIBS) $(ORIG_LIBS)
 
 CHECK_REQUIRES = unix
