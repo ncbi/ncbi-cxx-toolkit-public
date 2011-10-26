@@ -36,7 +36,6 @@
 #include <connect/ncbi_conn_stream.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimtx.hpp>
-#include <corelib/request_ctx.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/serial.hpp>
@@ -63,8 +62,7 @@ public:
     CRPCClient(const string&     service     = kEmptyStr,
                ESerialDataFormat format      = eSerial_AsnBinary,
                unsigned int      retry_limit = 3)
-        : m_Service(service), m_SessionID(CRequestContext().SetSessionID()),
-          m_Format(format), m_Timeout(kDefaultTimeout),
+        : m_Service(service), m_Format(format), m_Timeout(kDefaultTimeout),
           m_RetryLimit(retry_limit)
         { }
     virtual ~CRPCClient(void);
@@ -104,8 +102,8 @@ protected:
 
     /// Retry policy; by default, just _TRACEs the event and returns
     /// true.  May reset the connection (or do anything else, really),
-    /// but note that Ask will already automatically reconnect if the
-    /// stream is explicitly bad.  (Ask also takes care of enforcing
+    /// but note that Ask() will always automatically reconnect if the
+    /// stream is explicitly bad.  (Ask() also takes care of enforcing
     /// m_RetryLimit.)
     virtual bool x_ShouldRetry(unsigned int tries);
 
@@ -123,7 +121,6 @@ private:
     auto_ptr<CObjectOStream> m_Out;
     string                   m_Service; ///< Used by default Connect().
     string                   m_Affinity;
-    string                   m_SessionID;
     ESerialDataFormat        m_Format;
     CMutex                   m_Mutex;   ///< To allow sharing across threads.
     const STimeout*          m_Timeout; ///< Cloned if not special.
@@ -231,7 +228,7 @@ EIO_Status CRPCClient<TRequest, TReply>::SetTimeout(const STimeout* timeout,
     CConn_IOStream* conn_stream
         = dynamic_cast<CConn_IOStream*>(m_Stream.get());
     if (conn_stream) {
-        return CONN_SetTimeout(conn_stream->GetCONN(), direction, timeout);
+        return conn_stream->SetTimeout(direction, timeout);
     } else if ( !m_Stream.get() ) {
         return eIO_Success; // we've saved it, which is the best we can do...
     } else {
@@ -248,7 +245,7 @@ const STimeout* CRPCClient<TRequest, TReply>::GetTimeout(EIO_Event direction)
     CConn_IOStream* conn_stream
         = dynamic_cast<CConn_IOStream*>(m_Stream.get());
     if (conn_stream) {
-        return CONN_GetTimeout(conn_stream->GetCONN(), direction);
+        return conn_stream->GetTimeout(direction);
     } else {
         return m_Timeout;
     }
@@ -277,7 +274,7 @@ void CRPCClient<TRequest, TReply>::Ask(const TRequest& request, TReply& reply)
                 throw;
             } else if (++tries == m_RetryLimit  ||  !x_ShouldRetry(tries) ) {
                 throw;
-            } else if ( !(tries % 2) ) {
+            } else if ( !(tries & 1) ) {
                 // reset on every other attempt in case we're out of sync
                 try {
                     Reset();
@@ -296,8 +293,6 @@ void CRPCClient<TRequest, TReply>::x_Connect(void)
 {
     _ASSERT( !m_Service.empty() );
     SConnNetInfo* net_info = ConnNetInfo_Create(m_Service.c_str());
-    string header = "Cookie: ncbi_sid=" + m_SessionID;
-    ConnNetInfo_AppendUserHeader(net_info, header.c_str());
     if (!m_Affinity.empty()) {
         ConnNetInfo_PostOverrideArg(net_info, m_Affinity.c_str(), 0);
     }
