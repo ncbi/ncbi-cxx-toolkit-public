@@ -264,6 +264,9 @@ static void s_Fini(void)
 extern "C" {
 static const char* s_GetSid(void)
 {
+    if (!CDiagContext::GetRequestContext().IsSetSessionID()) {
+        CDiagContext::GetRequestContext().SetSessionID();
+    }
     return CDiagContext::GetRequestContext().GetSessionID().c_str();
 }
 }
