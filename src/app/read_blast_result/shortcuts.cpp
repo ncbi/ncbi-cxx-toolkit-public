@@ -50,7 +50,7 @@ void CReadBlastApp::CheckUniqLocusTag()
   THaveIt locuses; 
   for(CTypeIterator< CSeq_feat > f = Begin(); f; ++f)
     {
-    const CSeq_loc&  loc = f->GetLocation();
+    // const CSeq_loc&  loc = f->GetLocation();
     if(f->GetData().IsGene())
       {
       if (f->GetData().GetGene().CanGetLocus_tag())
