@@ -176,7 +176,9 @@ CMultiAligner::x_RealignBlocks(CHitList& rps_hits,
 
         vector<SSegmentLoc>::iterator prev_itr(itr);
         vector<SSegmentLoc>::iterator next_itr(itr);
-        prev_itr--;
+		if (itr != blocklist.begin()) {
+            prev_itr--;
+        }
         next_itr++;
     
         // for each block that contains a portion of the
@@ -237,8 +239,10 @@ CMultiAligner::x_RealignBlocks(CHitList& rps_hits,
 
             // pre-advance the iterators
 
+            if (prev_itr != itr) {
+                prev_itr++;
+            }
             itr++;
-            prev_itr++;
             if (next_itr != blocklist.end()) {
                 next_itr++;
             }
