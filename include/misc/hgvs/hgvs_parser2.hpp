@@ -673,11 +673,12 @@ protected:
 
                 nuc_inv         = str_p("inv") >> !int_p;
 
-                ssr             = !raw_seq >> ( int_fuzz - (ch_p('?')|int_p) //don't want to interpret 'id:5_6?' as ssr
-                                              | list_p(discard_node_d[ch_p('[')]
-                                                    >> int_p
-                                                    >> discard_node_d[ch_p(']')],
-                                                       discard_node_d[ch_p('+')]));
+                ssr             = !raw_seq >> (  
+                                    (int_fuzz - (ch_p('?')|int_p)) //don't want to interpret 'id:5_6?' as ssr
+                                  | list_p(discard_node_d[ch_p('[')]
+                                                      >> int_p
+                                                      >> discard_node_d[ch_p(']')],
+                                                         discard_node_d[ch_p('+')]));
                     /*
                      * Note: It is not correct to match [5] and [3] in NM_000815.2:c.101TC[5]+[3]
                      * individually as list3a within c.101 location context, because

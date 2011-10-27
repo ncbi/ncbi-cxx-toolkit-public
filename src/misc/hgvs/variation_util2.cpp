@@ -93,8 +93,8 @@ void ChangeIdsInPlace(T& container, sequence::EGetIdType id_type, CScope& scope)
 {
     for(CTypeIterator<CSeq_id> it = Begin(container); it; ++it) {
         CSeq_id& id = *it;
-        if(    id_type == sequence::eGetId_ForceAcc && id.GetTextseq_Id()
-            || id_type == sequence::eGetId_ForceGi && id.IsGi())
+        if(    (id_type == sequence::eGetId_ForceAcc && id.GetTextseq_Id())
+            || (id_type == sequence::eGetId_ForceGi && id.IsGi()))
         {
             continue;
         } else {
@@ -332,16 +332,16 @@ CRef<CVariantPlacement> CVariationUtil::Remap(const CVariantPlacement& p, const 
 CRef<CVariantPlacement> CVariationUtil::Remap(const CVariantPlacement& p, CSeq_loc_Mapper& mapper)
 {
     CRef<CVariantPlacement> p2 = x_Remap(p, mapper);
-    if((p.IsSetStart_offset() || p.IsSetStop_offset()) && p2->GetMol() == CVariantPlacement::eMol_genomic
-       || p.GetMol() == CVariantPlacement::eMol_genomic
-          && p2->GetMol() != CVariantPlacement::eMol_genomic
-          && p2->GetMol() != CVariantPlacement::eMol_unknown /*in case remapped to nothing*/)
+    if(((p.IsSetStart_offset() || p.IsSetStop_offset()) && p2->GetMol() == CVariantPlacement::eMol_genomic)
+       || (p.GetMol() == CVariantPlacement::eMol_genomic
+           && p2->GetMol() != CVariantPlacement::eMol_genomic
+           && p2->GetMol() != CVariantPlacement::eMol_unknown) /*in case remapped to nothing*/)
     {
         NcbiCerr << "Mapped: " << MSerial_AsnText << *p2;
         //When mapping an offset-placement to a genomic placement, may need to resolve offsets.
         //or, when mapping from genomic to a product coordinates, may need to add offsets. In above cases
         //we need to use the seq-align-based mapping.
-        NCBI_THROW(CException, eUnknown, "Cannot use this method to remap between genomic and cdna coordinates");
+        NCBI_THROW(CException, eUnknown, "Cannot use Mapper-based method to remap intronic cases; must remap via spliced-seg alignment instead.");
     }
 
     return p2;
@@ -1075,9 +1075,9 @@ void CVariationUtil::AttachProteinConsequences(CVariation& v, const CSeq_id* tar
         const CVariantPlacement& placement = **it;
 
         if(!placement.GetLoc().GetId()
-           || target_id && !sequence::IsSameBioseq(*target_id,
+           || (target_id && !sequence::IsSameBioseq(*target_id,
                                                    sequence::GetId(placement.GetLoc(), NULL),
-                                                   m_scope))
+                                                   m_scope)))
         {
             continue;
         }

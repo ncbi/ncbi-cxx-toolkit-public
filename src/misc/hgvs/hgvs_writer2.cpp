@@ -671,7 +671,7 @@ string CHgvsParser::x_AsHgvsInstExpression(
     if(is_prot_inst && placement && placement->GetMol() != CVariantPlacement::eMol_protein) {
         NCBI_THROW(CException, eUnknown, "Can't make protein HGVS expression for nucleotide placement");
     }
-    bool is_prot = is_prot_inst || placement && placement->GetMol() == CVariantPlacement::eMol_protein;
+    bool is_prot = is_prot_inst || (placement && placement->GetMol() == CVariantPlacement::eMol_protein);
 
 
     CConstRef<CSeq_literal> asserted_seq(NULL);
