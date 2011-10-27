@@ -294,6 +294,11 @@ public:
     BlastAlignment(objects::CScope& scope,
                    const objects::CSeq_align& seq_align, int score_cutoff, int score_dropoff);
 
+    //Use this method to set/change genetic code field in genomic ASN 
+    //ProSplign tries to get genetic code from ASN. If fails, standart code (1) is used.
+    //Note that when sequence source is fasta or BLAST db, genetic code is not set in ASN
+    void AssignGeneticCode(objects::CScope& scope, const objects::CSeq_id& gid, int gcode);   
+
 
     /// deprecated internals
     CProSplign( CProSplignScoring scoring, bool intronless, bool one_stage, bool just_second_stage, bool old);
