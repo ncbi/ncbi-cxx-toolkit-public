@@ -186,6 +186,11 @@ use m_NewCleanup.x_RemoveSpacesBetweenTildesMarkChanged {
     Seqdesc.comment
 }
 
+use m_NewCleanup.x_DecodeXMLMarkChanged {
+    Seq-feat.comment ,
+    Seqdesc.comment
+}
+
 use m_NewCleanup.SeqIdBC { Seq-id }
 
 use m_NewCleanup.SeqLocBC { Seq-loc }

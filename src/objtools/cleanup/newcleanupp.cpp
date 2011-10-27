@@ -8642,6 +8642,52 @@ void CNewCleanup_imp::x_RememberSeqFeatCitPubs( CPub &pub )
     }
 }
 
+void CNewCleanup_imp::x_DecodeXMLMarkChanged( std::string & str )
+{
+    // transformations done by this function:
+    // "&amp;" -> '&'
+    // "&apos;" -> '\'' (actually, not done, since done by x_UniversalStringClean )
+    // "&gt;" -> '>'
+    // "&lt;" -> '<'
+    // "&quot;" -> '"'
+
+    const static string kAmp  = "amp;";
+    const static string kGt   = "gt;";
+    const static string kLt   = "lt;";
+    const static string kQuot = "quot;";
+
+    const SIZE_TYPE old_len = str.length();
+
+    SIZE_TYPE nextAmp = str.find('&');
+    for( ; nextAmp != NPOS && nextAmp < (str.length() - 3) ; nextAmp = str.find('&', nextAmp + 1 ) ) {
+        if( nextAmp < (str.length() - 5) ) {
+            if( str.substr(nextAmp + 1, 5) == kQuot ) {
+                str.replace( nextAmp, 6, "\"" );
+                continue;
+            }
+        }
+        if( nextAmp < (str.length() - 4) ) {
+            if( str.substr(nextAmp + 1, 4) == kAmp ) {
+                str.erase( nextAmp + 1, 4 );
+                continue;
+            }
+        }
+        if( str.substr(nextAmp + 1, 3) == kGt ) {
+            str.replace( nextAmp, 4, ">" );
+            continue;
+        } else if( str.substr(nextAmp + 1, 3) == kLt ) {
+            str.replace( nextAmp, 4, "<" );
+            continue;
+        }
+    }
+
+    // mark if changed
+    const SIZE_TYPE new_len = str.length();
+    if( old_len != new_len ) {
+        ChangeMade(CCleanupChange::eDecodeXML);
+    }
+}
+
 void CNewCleanup_imp::x_UniversalStringClean( std::string & str )
 {
     // This is called for every single string so it should be as efficient
@@ -8652,7 +8698,14 @@ void CNewCleanup_imp::x_UniversalStringClean( std::string & str )
     // If we need to "replace-in-place" more than just kApos,
     // we will have to write our own replacement algo that can handle
     // multiple strings, for maximum efficiency.
+    const SIZE_TYPE old_len = str.length();
     NStr::ReplaceInPlace( str, kApos, "'");
+    const SIZE_TYPE new_len = str.length();
+
+    // note if changed
+    if( old_len != new_len ) {
+        ChangeMade(CCleanupChange::eUniversalStringClean);
+    }
 }
 
 void CNewCleanup_imp::PCRReactionSetBC( CPCRReactionSet &pcr_reaction_set )

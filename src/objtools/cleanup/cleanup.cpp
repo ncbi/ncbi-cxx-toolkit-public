@@ -378,7 +378,9 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Add NcbiCleanupObject",
     "Clean Delta-ext",
     "Trim Flanking Quotes",
-    "Clean Bioseq Title"
+    "Clean Bioseq Title",
+    "Universal String Clean",
+    "Decode XML",
 
     // set when any other change is made.
     "Change Other", 

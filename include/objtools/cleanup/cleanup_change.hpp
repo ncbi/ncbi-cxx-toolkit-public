@@ -47,7 +47,7 @@ BEGIN_SCOPE(objects)
 class NCBI_CLEANUP_EXPORT CCleanupChange : public CObject
 {
 public:
-    // If you add to this, also edit sm_ChangeDesc's values in the .cpp file.
+    // If you add to this, also edit sm_ChangeDesc's values in the cleanup.cpp file.
     // They must be edited together.
     enum EChanges {
         eNoChange = 0,
@@ -154,6 +154,8 @@ public:
         eCleanDeltaExt,
         eTrimFlankingQuotes,
         eCleanBioseqTitle,
+        eUniversalStringClean,
+        eDecodeXML,
 
         // set when any other change is made.
         eChangeOther,

@@ -430,6 +430,8 @@ private:
     void x_RememberMuidThatMightBeConvertibleToPmid( int &muid, CPub &pub );
     void x_RememberSeqFeatCitPubs( CPub &pub );
 
+    void x_DecodeXMLMarkChanged( std::string & str );
+
     void x_UniversalStringClean( std::string & str );
 
 protected:
