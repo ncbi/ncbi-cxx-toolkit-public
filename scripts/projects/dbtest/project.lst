@@ -3,6 +3,9 @@ corelib/impl$
 util$
 util/cache$
 util/bitset$
+util/compress$
+util/compress/api$
+util/compress/zlib$
 util/regexp$ update-only
 serial$
 serial/impl$
