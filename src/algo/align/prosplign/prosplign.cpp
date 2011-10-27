@@ -43,6 +43,7 @@
 #include "Info.hpp"
 
 #include <objects/seqloc/seqloc__.hpp>
+#include <objects/seq/seq__.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -863,6 +864,28 @@ bool IsProteinSpanWhole(const CSpliced_seg& sps)
         prot_stop_pos.GetAmin()+1 == sps.GetProduct_length() && prot_stop_pos.GetFrame() == 3;
 }
 }
+
+    //Use this method to set/change genetic code field in ASN 
+
+
+void CProSplign::AssignGeneticCode(CScope& scope, const CSeq_id& gid, int gcode) {
+    CBioseq_Handle hp = scope.GetBioseqHandle(gid);
+//cout<<MSerial_AsnText<<*hp.GetTopLevelEntry().GetCompleteSeq_entry()<<endl;
+    list< CRef< CSeqdesc > > & ldesc = hp.GetTopLevelEntry().GetEditHandle().SetDescr().Set();
+    bool not_found = true;
+    NON_CONST_ITERATE(list< CRef< CSeqdesc > >, it, ldesc) {
+        if((*it)->IsSource()) {
+            (*it)->SetSource().SetOrg().SetOrgname().SetGcode(gcode);
+            not_found = false;
+        }
+    }
+    if(not_found) {
+        CRef< CSeqdesc > desc(new CSeqdesc);
+        desc->SetSource().SetOrg().SetOrgname().SetGcode(gcode);
+        ldesc.push_back(desc);
+    }
+}
+
 
 CRef<CSeq_align> CProSplign::FindGlobalAlignment(CScope& scope, const CSeq_id& protein, const CSeq_loc& genomic_orig)
 {
