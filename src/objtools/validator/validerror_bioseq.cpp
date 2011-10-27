@@ -2013,6 +2013,10 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
 
             bool is_patent = false;
             bool is_nc = false;
+            bool is_circular = false;
+            if (seq.GetInst().IsSetTopology() && seq.GetInst().GetTopology() == CSeq_inst::eTopology_circular) {
+                is_circular = true;
+            }
             FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
                 if ((*id_it)->IsPatent()) {
                     is_patent = true;
@@ -2031,7 +2035,7 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
             string sequence;
             
             // check for Ns and gaps at the beginning of the sequence
-            if ( (vec[0] == 'N')  ||  (vec[0] == 'n') ) {
+            if ( (! is_circular) && (vec[0] == 'N')  ||  (vec[0] == 'n') ) {
                 // if 10 or more Ns flag as error (except for NC, patent, or circular), 
                 // otherwise just warning
                 vec.GetSeqData(0, 10, sequence);
@@ -2055,7 +2059,7 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
             
             // check for Ns at the end of the sequence
             sev = eDiag_Warning;
-            if ( (vec[vec.size() - 1] == 'N')  ||  (vec[vec.size() - 1] == 'n') ) {
+            if ( (! is_circular) && (vec[vec.size() - 1] == 'N')  ||  (vec[vec.size() - 1] == 'n') ) {
                 // if 10 or more Ns flag as error (except for NC, patent, or circular), 
                 // otherwise just warning
                 vec.GetSeqData(vec.size() - 10, vec.size() , sequence);
@@ -4672,6 +4676,7 @@ void CValidError_bioseq::x_ValidateLocusTagGeneralMatch(const CBioseq_Handle& se
         }
 
         if (grp == NULL  ||  !grp->IsSetLocus_tag()  ||  grp->GetLocus_tag().empty()) {
+            ++fi;
             continue;
         }
         const string& locus_tag = grp->GetLocus_tag();
@@ -4680,6 +4685,7 @@ void CValidError_bioseq::x_ValidateLocusTagGeneralMatch(const CBioseq_Handle& se
         CBioseq_Handle prod = m_Scope->GetBioseqHandleFromTSE
             (GetId(feat.GetProduct(), m_Scope), m_Imp.GetTSE());
         if (!prod) {
+            ++fi;
             continue;
         }
         FOR_EACH_SEQID_ON_BIOSEQ (it, *(prod.GetCompleteBioseq())) {
