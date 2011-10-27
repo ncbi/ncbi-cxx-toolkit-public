@@ -2956,7 +2956,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "KUBL	s	Yoshida College, Biological Laboratory",
 "KUEC	s	Kyushu University",
 "KUEL	s	Kyushu University, Entomology Laboratory",
-"KUFC	c	Kasetsart University Fungus Collection, Department of Plant Pathology, Faculty of Agriculture",
+"KUFC	c	Kasetsart University Fungus Collection",
 "KUH	s	University of Karachi, Botany Department",
 "KUHE	s	Kyoto University, Graduate School of Human and Environmental Studies",
 "KUIC	s	Kagoshima University",
