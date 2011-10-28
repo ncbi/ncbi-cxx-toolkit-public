@@ -104,34 +104,11 @@ private:
         CNcbiOstream&,
         const CArgs& );
 
-    bool TrySeqAnnot(
-        CScope&,
-        CObjectIStream&,
-        CNcbiOstream& );
-
-    bool TrySeqEntry(
-        CScope&,
-        CObjectIStream&,
-        CNcbiOstream& );
-
-    bool TryBioseqSet(
-        CScope&,
-        CObjectIStream&,
-        CNcbiOstream& );
-
-    bool TryBioseq(
-        CScope&,
-        CObjectIStream&,
-        CNcbiOstream& );
-
-    bool TrySeqAlign(
-        CScope&,
-        CObjectIStream&,
-        CNcbiOstream& );
-
     CGff2Writer::TFlags GffFlags( 
         const CArgs& );
+
     string AssemblyName() const;
+
     string AssemblyAccession() const;
 
     CRef<CWriterBase> m_pWriter;
@@ -144,7 +121,7 @@ void CAnnotWriterApp::Init()
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(
         GetArguments().GetProgramBasename(),
-        "Convert an ASN.1 to alternative file formats",
+        "Convert ASN.1 to alternative file formats",
         false);
     
     // input
@@ -221,6 +198,7 @@ int CAnnotWriterApp::Run()
 //  ----------------------------------------------------------------------------
 {
 	CONNECT_Init(&GetConfig());
+//    __asm int 3;
 
     const CArgs& args = GetArgs();
 
@@ -250,163 +228,74 @@ int CAnnotWriterApp::Run()
         NCBI_THROW(CFlatException, eInternal, msg);
     }
 
-    while ( true ) {
-        if ( TrySeqAnnot( *pScope, *pIs, *pOs ) ) {
+    while (!pIs->EndOfData()) {
+//        __asm int 3;
+        string objtype = pIs->ReadFileHeader();
+
+        if (objtype == "Seq-entry") {
+            CSeq_entry seq_entry;
+            pIs->Read(ObjectInfo(seq_entry), CObjectIStream::eNoFileHeader);
+            CSeq_entry_Handle seh = pScope->AddTopLevelSeqEntry( seq_entry );
+            m_pWriter->WriteHeader();
+            m_pWriter->WriteSeqEntryHandle(seh, AssemblyName(), AssemblyAccession());
+            m_pWriter->WriteFooter();
+            pScope->RemoveEntry(seq_entry);
             continue;
         }
-        if ( TrySeqEntry( *pScope, *pIs, *pOs ) ) {
+
+        if (objtype == "Seq-annot") {
+            CSeq_annot seq_annot;
+            pIs->Read(ObjectInfo(seq_annot), CObjectIStream::eNoFileHeader);
+            m_pWriter->WriteHeader();
+            m_pWriter->WriteAnnot( seq_annot, AssemblyName(), AssemblyAccession() );
+            m_pWriter->WriteFooter();
             continue;
         }
-        if ( TryBioseqSet( *pScope, *pIs, *pOs ) ) {
+
+        if (objtype == "Bioseq") {
+            CBioseq bioseq;
+            pIs->Read(ObjectInfo(bioseq), CObjectIStream::eNoFileHeader);
+            m_pWriter->WriteHeader();
+            CTypeIterator<CSeq_annot> annot_iter(bioseq);
+            for ( ;  annot_iter;  ++annot_iter ) {
+                CRef<CSeq_annot> annot(annot_iter.operator->());
+                if (!m_pWriter->WriteAnnot( 
+                        *annot, AssemblyName(), AssemblyAccession())) {
+                    return false;
+                }
+            }
+            m_pWriter->WriteFooter();
             continue;
         }
-        if ( TryBioseq( *pScope, *pIs, *pOs ) ) {
+
+        if (objtype == "Bioseq-set") {
+            CBioseq_set seq_set;
+            pIs->Read(ObjectInfo(seq_set), CObjectIStream::eNoFileHeader);
+            CSeq_entry se;
+            se.SetSet( seq_set );
+            pScope->AddTopLevelSeqEntry( se );
+            m_pWriter->WriteHeader();
+            m_pWriter->WriteSeqEntryHandle( 
+                pScope->GetSeq_entryHandle(se), AssemblyName(), AssemblyAccession());
+            m_pWriter->WriteFooter();
+            pScope->RemoveEntry( se );
             continue;
         }
-        if ( TrySeqAlign( *pScope, *pIs, *pOs ) ) {
+
+        if (objtype == "Seq-align") {
+            CSeq_align align;
+            pIs->Read(ObjectInfo(align), CObjectIStream::eNoFileHeader);
+            m_pWriter->WriteHeader();
+            m_pWriter->WriteAlign( align, AssemblyName(), AssemblyAccession());
+            m_pWriter->WriteFooter();
             continue;
         }
-        if ( ! pIs->EndOfData() ) {
-            cerr << "Object type not supported!" << endl;
-        }
+        cerr << "Object type not supported!" << endl;
         break;
-    } 
+    }
     pOs->flush();
     pIs.reset();
     return 0;
-}
-
-//  -----------------------------------------------------------------------------
-bool CAnnotWriterApp::TrySeqAnnot(
-    CScope& scope,
-    CObjectIStream& istr,
-    CNcbiOstream& ostr )
-//  -----------------------------------------------------------------------------
-{
-    CNcbiStreampos curr = istr.GetStreamPos();
-    try {
-        CRef<CSeq_annot> pAnnot(new CSeq_annot);
-        istr >> *pAnnot;
-
-        m_pWriter->WriteHeader();
-        m_pWriter->WriteAnnot( *pAnnot, AssemblyName(), AssemblyAccession() );
-        m_pWriter->WriteFooter();
-        return true;
-    }
-    catch ( ... ) {
-        istr.SetStreamPos ( curr );
-        return false;
-    }
-}
-
-//  -----------------------------------------------------------------------------
-bool CAnnotWriterApp::TryBioseqSet(
-    CScope& scope,
-    CObjectIStream& istr,
-    CNcbiOstream& ostr )
-//  -----------------------------------------------------------------------------
-{
-    CNcbiStreampos curr = istr.GetStreamPos();
-
-    try {
-        CRef<CBioseq_set> pBioset(new CBioseq_set);
-        istr >> *pBioset;
-        CSeq_entry se;
-        se.SetSet( *pBioset );
-        scope.AddTopLevelSeqEntry( se );
-
-        m_pWriter->WriteHeader();
-        m_pWriter->WriteSeqEntryHandle( 
-            scope.GetSeq_entryHandle( se ), AssemblyName(), AssemblyAccession() );
-        m_pWriter->WriteFooter();
-
-        scope.RemoveEntry( se );
-        return true;
-    }
-    catch ( ... ) {
-        istr.SetStreamPos ( curr );
-        return false;
-    }
-}
-
-//  -----------------------------------------------------------------------------
-bool CAnnotWriterApp::TryBioseq(
-    CScope& scope,
-    CObjectIStream& istr,
-    CNcbiOstream& ostr )
-//  -----------------------------------------------------------------------------
-{
-    CNcbiStreampos curr = istr.GetStreamPos();
-    try {
-        CRef<CBioseq> pBioseq(new CBioseq);
-        istr >> *pBioseq;
-
-        m_pWriter->WriteHeader();
-        CTypeIterator<CSeq_annot> annot_iter( *pBioseq );
-        for ( ;  annot_iter;  ++annot_iter ) {
-            CRef< CSeq_annot > annot( annot_iter.operator->() );
-            if ( ! m_pWriter->WriteAnnot( 
-                    *annot, AssemblyName(), AssemblyAccession() ) ) {
-                return false;
-            }
-        }
-        m_pWriter->WriteFooter();
-        return true;
-    }
-    catch ( ... ) {
-        istr.SetStreamPos ( curr );
-        return false;
-    }
-}
-
-//  -----------------------------------------------------------------------------
-bool CAnnotWriterApp::TrySeqEntry(
-    CScope& scope,
-    CObjectIStream& istr,
-    CNcbiOstream& ostr )
-//  -----------------------------------------------------------------------------
-{
-    CNcbiStreampos curr = istr.GetStreamPos();
-    try {
-        CRef<CSeq_entry> pEntry( new CSeq_entry );
-        istr >> *pEntry;
-
-        CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry( *pEntry );
-        m_pWriter->WriteHeader();
-        m_pWriter->WriteSeqEntryHandle( 
-            seh, AssemblyName(), AssemblyAccession() );
-        m_pWriter->WriteFooter();
-        return true;
-
-    }
-    catch ( ... ) {
-        istr.SetStreamPos ( curr );
-        return false;
-    }
-}
-
-//  -----------------------------------------------------------------------------
-bool CAnnotWriterApp::TrySeqAlign(
-    CScope& scope,
-    CObjectIStream& istr,
-    CNcbiOstream& ostr )
-//  -----------------------------------------------------------------------------
-{
-    CNcbiStreampos curr = istr.GetStreamPos();
-    try {
-        CRef<CSeq_align> pAlign(new CSeq_align);
-        istr >> *pAlign;
-
-        m_pWriter->WriteHeader();
-        m_pWriter->WriteAlign( 
-            *pAlign, AssemblyName(), AssemblyAccession() );
-        m_pWriter->WriteFooter();
-        return true;
-    }
-    catch ( ... ) {
-        istr.SetStreamPos ( curr );
-        return false;
-    }
 }
 
 //  -----------------------------------------------------------------------------
@@ -416,6 +305,7 @@ CObjectIStream* CAnnotWriterApp::x_OpenIStream(
 {
     ESerialDataFormat serial = eSerial_AsnText;
     CNcbiIstream* pInputStream = &NcbiCin;
+    
     bool bDeleteOnClose = false;
     if ( args["i"] ) {
         pInputStream = new CNcbiIfstream( 
