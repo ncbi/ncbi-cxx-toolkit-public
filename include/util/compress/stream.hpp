@@ -346,6 +346,15 @@ public:
     unsigned long GetOutputSize(void) {
         return CCompressionStream::x_GetOutputSize(eWrite);
     };
+    /// Finalize stream's compression/decompression process for read/write.
+    /// This function just calls a streambuf Finalize().
+    virtual void Finalize(CCompressionStream::EDirection dir 
+        = CCompressionStream::eWrite) {
+        if ( m_StreamBuf ) {
+            CCompressionStream::Finalize(dir);
+            flush();
+        }
+    };
     /// Test if no stream operation has failed
     DECLARE_OPERATOR_BOOL((void *)*this != 0);
 
@@ -407,6 +416,15 @@ public:
     /// @sa CCompressionIStream, CCompressionOStream
     unsigned long GetOutputSize(CCompressionStream::EDirection dir) {
         return CCompressionStream::x_GetOutputSize(dir);
+    };
+    /// Finalize stream's compression/decompression process for read/write.
+    /// This function just calls a streambuf Finalize().
+    virtual void Finalize(CCompressionStream::EDirection dir 
+        = CCompressionStream::eReadWrite) {
+        if ( m_StreamBuf ) {
+            CCompressionStream::Finalize(dir);
+            flush();
+        }
     };
     /// Test if no stream operation has failed
     DECLARE_OPERATOR_BOOL((void *)*this != 0);
