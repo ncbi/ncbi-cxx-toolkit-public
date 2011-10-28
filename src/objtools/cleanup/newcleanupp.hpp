@@ -432,8 +432,6 @@ private:
 
     void x_DecodeXMLMarkChanged( std::string & str );
 
-    void x_UniversalStringClean( std::string & str );
-
 protected:
 
     CRef<CCleanupChange>  m_Changes;

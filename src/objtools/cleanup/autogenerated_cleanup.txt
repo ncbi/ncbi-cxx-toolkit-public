@@ -65,6 +65,12 @@ deprecated {
 # Call SetupBC as early as possible.
 use m_NewCleanup.SetupBC { Seq-entry }
 
+# Should be before other types of cleaning, since other cleaners
+# might remove the ';' at the end of XML codes
+use m_NewCleanup.x_DecodeXMLMarkChanged {
+    std::string
+}
+
 use m_NewCleanup.x_CompressStringSpacesMarkChanged {
     Affil.str ,
     Org-ref.mod.E ,
@@ -186,11 +192,6 @@ use m_NewCleanup.x_RemoveSpacesBetweenTildesMarkChanged {
     Seqdesc.comment
 }
 
-use m_NewCleanup.x_DecodeXMLMarkChanged {
-    Seq-feat.comment ,
-    Seqdesc.comment
-}
-
 use m_NewCleanup.SeqIdBC { Seq-id }
 
 use m_NewCleanup.SeqLocBC { Seq-loc }
@@ -294,6 +295,3 @@ use m_NewCleanup.x_AuthListBCWithFixInitials {
     Seq-submit.sub.cit.authors
 }
 
-use m_NewCleanup.x_UniversalStringClean {
-    std::string
-}

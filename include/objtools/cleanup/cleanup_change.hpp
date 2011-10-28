@@ -154,7 +154,6 @@ public:
         eCleanDeltaExt,
         eTrimFlankingQuotes,
         eCleanBioseqTitle,
-        eUniversalStringClean,
         eDecodeXML,
 
         // set when any other change is made.
