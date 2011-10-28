@@ -33,7 +33,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include "ContextValidator.hpp"
+#include <objtools/readers/agp_validate_reader.hpp>
 #include <algorithm>
 #include <objects/seqloc/Seq_id.hpp>
 
@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 
 //// class CAgpValidateReader
 CAgpValidateReader::CAgpValidateReader(CAgpErrEx& agpErr, CMapCompLen& comp2len) //, bool checkCompNames
-  : CAgpReader(&agpErr, false, eAgpVersion_auto), m_comp2len(comp2len)
+  : CAgpReader(&agpErr, false, eAgpVersion_auto), m_AgpErr(&agpErr), m_comp2len(comp2len)
 {
   m_CheckCompNames=false; // checkCompNames;
   m_CheckObjLen=false;
@@ -96,7 +96,7 @@ bool CAgpValidateReader::OnError()
     // For lines with non-syntax errors that are not skipped,
     // these are called from OnGapOrComponent()
     if(m_this_row->pcomment!=NPOS) m_EolComments++; // ??
-    agpErr.LineDone(m_line, m_line_num, true);
+    m_AgpErr->LineDone(m_line, m_line_num, true);
   }
 
   return true; // continue checking for errors
@@ -118,7 +118,7 @@ void CAgpValidateReader::OnGapOrComponent()
     m_GapTypeCnt[i]++;
 
     if(m_this_row->gap_length < 10) {
-      agpErr.Msg(CAgpErrEx::W_ShortGap);
+      m_AgpErr->Msg(CAgpErrEx::W_ShortGap);
     }
 
     m_prev_component_id.clear();
@@ -128,7 +128,7 @@ void CAgpValidateReader::OnGapOrComponent()
         m_prev_orientation && m_prev_orientation != '+' && m_prev_orientation != '-' // m_prev_orientation_unknown
         && m_componentsInLastScaffold==1 // can probably ASSERT this
       ) {
-        agpErr.Msg(CAgpErrEx::E_UnknownOrientation, NcbiEmptyString, CAgpErr::fAtPrevLine);
+        m_AgpErr->Msg(CAgpErrEx::E_UnknownOrientation, NcbiEmptyString, CAgpErr::fAtPrevLine);
         m_prev_orientation=0; // m_prev_orientation_unknown=false;
       }
     }
@@ -156,7 +156,7 @@ void CAgpValidateReader::OnGapOrComponent()
       // Make sure that prev_orientation_unknown
       // is not a leftover from the preceding singleton.
       if( m_componentsInLastScaffold==2 ) {
-        agpErr.Msg(CAgpErrEx::E_UnknownOrientation,
+        m_AgpErr->Msg(CAgpErrEx::E_UnknownOrientation,
           NcbiEmptyString, CAgpErr::fAtPrevLine);
       }
       m_prev_orientation=0; // m_prev_orientation_unknown=false;
@@ -175,7 +175,7 @@ void CAgpValidateReader::OnGapOrComponent()
     }
     else if( m_this_row->orientation != '+' && m_this_row->orientation != '-' ) {
       // This error is real, not "potential"; report it now.
-      agpErr.Msg(CAgpErrEx::E_UnknownOrientation, NcbiEmptyString);
+      m_AgpErr->Msg(CAgpErrEx::E_UnknownOrientation, NcbiEmptyString);
       m_prev_orientation=0;
     }
 
@@ -200,13 +200,13 @@ void CAgpValidateReader::OnGapOrComponent()
         comp.beg, comp.end, m_this_row->orientation!='-'
       );
       if( check_sp.second == CAgpErrEx::W_SpansOverlap  ) {
-        agpErr.Msg(CAgpErrEx::W_SpansOverlap,
-          string(": ")+ check_sp.first->ToString()
+        m_AgpErr->Msg(CAgpErrEx::W_SpansOverlap,
+          string(": ")+ check_sp.first->ToString(m_AgpErr)
         );
       }
       else if( ! m_this_row->IsDraftComponent() ) {
-        agpErr.Msg(check_sp.second, // W_SpansOrder or W_DuplicateComp
-          string("; preceding span: ")+ check_sp.first->ToString()
+        m_AgpErr->Msg(check_sp.second, // W_SpansOrder or W_DuplicateComp
+          string("; preceding span: ")+ check_sp.first->ToString(m_AgpErr)
         );
       }
 
@@ -215,7 +215,7 @@ void CAgpValidateReader::OnGapOrComponent()
     }
 
     //// check the component name [and its end vs its length]
-    if(m_this_row->GetComponentId()==m_this_row->GetObject()) agpErr.Msg(CAgpErrEx::W_ObjEqCompId);
+    if(m_this_row->GetComponentId()==m_this_row->GetObject()) m_AgpErr->Msg(CAgpErrEx::W_ObjEqCompId);
 
     CSeq_id::EAccessionInfo acc_inf = CSeq_id::IdentifyAccession( m_this_row->GetComponentId() );
     int div = acc_inf & CSeq_id::eAcc_division_mask;
@@ -224,17 +224,17 @@ void CAgpValidateReader::OnGapOrComponent()
       if(       acc_inf & CSeq_id::fAcc_prot ) msg="; looks like a protein accession";
       else if(!(acc_inf & CSeq_id::fAcc_nuc )) msg="; local or misspelled accession";
 
-      if(msg.size()) agpErr.Msg(CAgpErrEx::G_InvalidCompId, msg);
+      if(msg.size()) m_AgpErr->Msg(CAgpErrEx::G_InvalidCompId, msg);
     }
 
     if(acc_inf & CSeq_id::fAcc_nuc) {
       if( div == CSeq_id::eAcc_wgs ||
           div == CSeq_id::eAcc_wgs_intermed
       ) {
-        if(m_this_row->component_type != 'W') agpErr.Msg(CAgpErr::W_CompIsWgsTypeIsNot);
+        if(m_this_row->component_type != 'W') m_AgpErr->Msg(CAgpErr::W_CompIsWgsTypeIsNot);
       }
       else if( div == CSeq_id::eAcc_htgs ) {
-        if(m_this_row->component_type == 'W') agpErr.Msg(CAgpErr::W_CompIsNotWgsTypeIs);
+        if(m_this_row->component_type == 'W') m_AgpErr->Msg(CAgpErr::W_CompIsNotWgsTypeIs);
       }
     }
 
@@ -243,7 +243,7 @@ void CAgpValidateReader::OnGapOrComponent()
       if( it==m_comp2len.end() ) {
         //if( m_expected_obj_len==0 )
         //if(m_obj_name_matches==0 || m_comp_name_matches>0)
-        agpErr.Msg(CAgpErrEx::G_InvalidCompId, string(": ")+m_this_row->GetComponentId());
+        m_AgpErr->Msg(CAgpErrEx::G_InvalidCompId, string(": ")+m_this_row->GetComponentId());
       }
       else {
         m_comp_name_matches++;
@@ -254,7 +254,7 @@ void CAgpValidateReader::OnGapOrComponent()
 
     //// W_BreakingGapSameCompId
     if( m_prev_component_id==m_this_row->GetComponentId() ) {
-      agpErr.Msg(CAgpErrEx::W_BreakingGapSameCompId, CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine|CAgpErr::fAtPpLine);
+      m_AgpErr->Msg(CAgpErrEx::W_BreakingGapSameCompId, CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine|CAgpErr::fAtPpLine);
     }
   }
 
@@ -275,18 +275,18 @@ void CAgpValidateReader::OnScaffoldEnd()
     if(m_gapsInLastScaffold) m_SingleCompScaffolds_withGaps++;
 
     if(m_unplaced && m_prev_orientation) {
-      if(m_prev_orientation!='+') agpErr.Msg( CAgpErrEx::W_UnSingleOriNotPlus   , CAgpErr::fAtPrevLine );
+      if(m_prev_orientation!='+') m_AgpErr->Msg( CAgpErrEx::W_UnSingleOriNotPlus   , CAgpErr::fAtPrevLine );
 
       TMapStrInt::iterator it = m_comp2len.find( m_this_row->GetComponentId() );
       if( it!=m_comp2len.end() ) {
         int len = it->second;
         if(m_prev_component_beg!=1 || m_prev_component_end<len ) {
-          agpErr.Msg( CAgpErrEx::W_UnSingleCompNotInFull,
+          m_AgpErr->Msg( CAgpErrEx::W_UnSingleCompNotInFull,
             " (" + NStr::IntToString(m_prev_component_end-m_prev_component_beg+1) + " out of " + NStr::IntToString(len)+ " bp)",
             CAgpErr::fAtPrevLine );
         }
       }
-      else if(m_prev_component_beg!=1) agpErr.Msg( CAgpErrEx::W_UnSingleCompNotInFull, CAgpErr::fAtPrevLine );
+      else if(m_prev_component_beg!=1) m_AgpErr->Msg( CAgpErrEx::W_UnSingleCompNotInFull, CAgpErr::fAtPrevLine );
     }
 
   }
@@ -302,7 +302,7 @@ void CAgpValidateReader::OnObjectChange()
   if(!m_at_beg) {
     // m_prev_row = the last  line of the old object
     m_ObjCount++;
-    if(m_componentsInLastObject==0) agpErr.Msg(
+    if(m_componentsInLastObject==0) m_AgpErr->Msg(
       CAgpErrEx::W_ObjNoComp, string(" ") + m_prev_row->GetObject(),
       CAgpErr::fAtPrevLine
     );
@@ -317,12 +317,12 @@ void CAgpValidateReader::OnObjectChange()
         details += " != ";
         details += NStr::IntToString(m_expected_obj_len);
 
-        agpErr.Msg(CAgpErr::G_BadObjLen, details, CAgpErr::fAtPrevLine);
+        m_AgpErr->Msg(CAgpErr::G_BadObjLen, details, CAgpErr::fAtPrevLine);
       }
     }
     else if(m_comp2len.size() && m_CheckObjLen) {
       // if(m_obj_name_matches>0 || m_comp_name_matches==0)
-      agpErr.Msg(CAgpErrEx::G_InvalidObjId, m_prev_row->GetObject(), CAgpErr::fAtPrevLine);
+      m_AgpErr->Msg(CAgpErrEx::G_InvalidObjId, m_prev_row->GetObject(), CAgpErr::fAtPrevLine);
     }
 
     // if(m_prev_row->IsGap() && m_componentsInLastScaffold==0) m_ScaffoldCount--; (???)
@@ -334,14 +334,14 @@ void CAgpValidateReader::OnObjectChange()
     // m_this_row = the first line of the new object
     TObjSetResult obj_insert_result = m_ObjIdSet.insert(m_this_row->GetObject());
     if (obj_insert_result.second == false) {
-      agpErr.Msg(CAgpErrEx::E_DuplicateObj, m_this_row->GetObject(),
+      m_AgpErr->Msg(CAgpErrEx::E_DuplicateObj, m_this_row->GetObject(),
         CAgpErr::fAtThisLine);
     }
     else {
       // GCOL-1236: allow spaces in object names, emit a WARNING instead of an ERROR
       SIZE_TYPE p_space = m_this_row->GetObject().find(' ');
       if(NPOS != p_space) {
-        agpErr.Msg(CAgpErrEx::W_SpaceInObjName, m_this_row->GetObject());
+        m_AgpErr->Msg(CAgpErrEx::W_SpaceInObjName, m_this_row->GetObject());
       }
 
       // m_objNamePatterns report + W_ObjOrderNotNumerical (JIRA: GP-773)
@@ -370,7 +370,7 @@ void CAgpValidateReader::OnObjectChange()
                 if((*m_prev_id_digits)[i]<(*m_obj_id_digits)[i]) break;
                 if((*m_prev_id_digits)[i]>(*m_obj_id_digits)[i]) {
                   // literally sorted, but not numerically
-                  agpErr.Msg(CAgpErr::W_ObjOrderNotNumerical,
+                  m_AgpErr->Msg(CAgpErr::W_ObjOrderNotNumerical,
                     " ("+m_prev_row->GetObject()+" before "+m_this_row->GetObject()+")",
                     CAgpErr::fAtThisLine);
                   break;
@@ -402,34 +402,34 @@ void CAgpValidateReader::OnObjectChange()
 void CAgpValidateReader::x_PrintTotals() // without comment counts
 {
   //// Counts of errors and warnings
-  int e_count=agpErr.CountTotals(CAgpErrEx::E_Last);
+  int e_count=m_AgpErr->CountTotals(CAgpErrEx::E_Last);
   // In case -fa or -len was used, add counts for G_InvalidCompId and G_CompEndGtLength.
-  e_count+=agpErr.CountTotals(CAgpErrEx::G_Last);
-  int w_count=agpErr.CountTotals(CAgpErrEx::W_Last);
+  e_count+=m_AgpErr->CountTotals(CAgpErrEx::G_Last);
+  int w_count=m_AgpErr->CountTotals(CAgpErrEx::W_Last);
   if(e_count || w_count || m_ObjCount) {
-    if( m_ObjCount==0 && !agpErr.m_MaxRepeatTopped &&
-        e_count==agpErr.CountTotals(CAgpErrEx::E_NoValidLines)
+    if( m_ObjCount==0 && !m_AgpErr->m_MaxRepeatTopped &&
+        e_count==m_AgpErr->CountTotals(CAgpErrEx::E_NoValidLines)
     ) return; // all files are empty, no need to say it again
 
     cout << "\n";
-    agpErr.PrintTotals(cout, e_count, w_count, agpErr.m_msg_skipped);
-    if(agpErr.m_MaxRepeatTopped) {
+    m_AgpErr->PrintTotals(cout, e_count, w_count, m_AgpErr->m_msg_skipped);
+    if(m_AgpErr->m_MaxRepeatTopped) {
       cout << " (to print all: -limit 0; to skip some: -skip CODE)";
     }
     cout << ".";
-    if(agpErr.m_MaxRepeat && (e_count+w_count) ) {
+    if(m_AgpErr->m_MaxRepeat && (e_count+w_count) ) {
       cout << "\n";
       CAgpErrEx::TMapCcodeToString hints;
       if(!m_CheckCompNames && (
-        agpErr.CountTotals(CAgpErrEx::W_CompIsWgsTypeIsNot) ||
-        agpErr.CountTotals(CAgpErrEx::W_CompIsNotWgsTypeIs)
+        m_AgpErr->CountTotals(CAgpErrEx::W_CompIsWgsTypeIsNot) ||
+        m_AgpErr->CountTotals(CAgpErrEx::W_CompIsNotWgsTypeIs)
       ) ) {
           // W_CompIsNotWgsTypeIs is the last numerically, so the hint whiil get printed
           // after one or both of the above warnings
           hints[CAgpErrEx::W_CompIsNotWgsTypeIs] =
               "(Use -g to print lines with WGS component_id/component_type mismatch.)";
       }
-      agpErr.PrintMessageCounts(cout, CAgpErrEx::CODE_First, CAgpErrEx::CODE_Last, true);
+      m_AgpErr->PrintMessageCounts(cout, CAgpErrEx::CODE_First, CAgpErrEx::CODE_Last, true);
     }
   }
   if(m_ObjCount==0) {
@@ -925,6 +925,19 @@ CCompSpans::TCheckSpan CCompSpans::CheckSpan(int span_beg, int span_end, bool is
 void CCompSpans::AddSpan(const CCompVal& span)
 {
   push_back(span);
+}
+
+//// class CMapCompLen
+int CMapCompLen::AddCompLen(const string& acc, int len, bool increment_count)
+{
+  TMapStrInt::value_type acc_len(acc, len);
+  TMapStrIntResult insert_result = insert(acc_len);
+  if(insert_result.second == false) {
+    if(insert_result.first->second != len)
+      return insert_result.first->second; // error: already have a different length
+  }
+  if(increment_count) m_count++;
+  return 0; // success
 }
 
 END_NCBI_SCOPE

@@ -38,9 +38,8 @@
 
 #include <corelib/ncbiapp.hpp>
 #include <connect/ncbi_core_cxx.hpp>
-#include <objtools/readers/agp_util.hpp>
+#include <objtools/readers/agp_validate_reader.hpp>
 
-#include "ContextValidator.hpp"
 #include "AltValidator.hpp"
 
 

@@ -1,5 +1,5 @@
-#ifndef AGP_VALIDATE_ContextValidator
-#define AGP_VALIDATE_ContextValidator
+#ifndef AGP_VALIDATE_READER
+#define AGP_VALIDATE_READER
 
 /*  $Id$
  * ===========================================================================
@@ -30,7 +30,7 @@
  *      Victor Sapojnikov
  *
  * File Description:
- *      AGP context-sensetive validation (i.e. information from several lines).
+ *      Global (whole-file) AGP validation and statistics.
  *
  */
 
@@ -38,18 +38,34 @@
 #include <iostream>
 #include <objtools/readers/agp_util.hpp>
 
-// #include "LineValidator.hpp"
 #include <set>
-#include "MapCompLen.hpp"
 
 BEGIN_NCBI_SCOPE
+
+// Map of string->int populated by sequence ids->lengths from a FASTA file.
+typedef map<string, int> TMapStrInt ;
+class NCBI_XOBJREAD_EXPORT CMapCompLen : public TMapStrInt
+{
+public:
+  // may be less than size() because we add some names twice, e.g.: lcl|id1 and id1
+  int m_count;
+
+  typedef pair<TMapStrInt::iterator, bool> TMapStrIntResult;
+  // returns 0 on success, or a previous length not equal to the new one
+  int AddCompLen(const string& acc, int len, bool increment_count=true);
+  CMapCompLen()
+  {
+    m_count=0;
+  }
+
+};
 
  // Determines accession naming patterns, counts accessions.
 class CAccPatternCounter;
 
 // Count how many times a atring value appears;
 // report values and counts ordered by count.
-class CValuesCount : public map<string, int>
+class NCBI_XOBJREAD_EXPORT CValuesCount : public map<string, int>
 {
 public:
   void add(const string& c);
@@ -63,8 +79,7 @@ private:
   static int x_byCount( value_type* a, value_type* b );
 };
 
-extern CAgpErrEx agpErr;
-class CCompVal
+class NCBI_XOBJREAD_EXPORT CCompVal
 {
 public:
   int beg, end;
@@ -73,18 +88,18 @@ public:
 
   enum { ORI_plus, ORI_minus, ORI_zero, ORI_na,  ORI_count };
 
-  void init(const CAgpRow& row, int line_num_arg)
+  void init(CAgpRow& row, int line_num_arg)
   {
     beg=row.component_beg;
     end=row.component_end;
     ori=row.orientation;
 
     line_num=line_num_arg;
-    file_num=agpErr.GetFileNum();
+    file_num = ((CAgpErrEx*)(row.GetErrorHandler()))->GetFileNum();
   }
   int getLen() const { return end - beg + 1; }
 
-  string ToString() const
+  string ToString(CAgpErrEx* agpErrEx) const
   {
     string s;
     s += NStr::IntToString(beg);
@@ -92,7 +107,7 @@ public:
     s += NStr::IntToString(end);
     s += " at ";
     if(file_num) {
-      s += agpErr.GetFile(file_num);
+      s += agpErrEx->GetFile(file_num);
       s += ":";
     }
     else {
@@ -105,7 +120,7 @@ public:
 
 // To save memory, this is a vector instead of a map.
 // Multiple spans on one component are uncommon.
-class CCompSpans : public vector<CCompVal>
+class NCBI_XOBJREAD_EXPORT CCompSpans : public vector<CCompVal>
 {
 public:
   // Construct a vector with one element
@@ -125,7 +140,7 @@ public:
 };
 
 
-class CAgpValidateReader : public CAgpReader
+class NCBI_XOBJREAD_EXPORT CAgpValidateReader : public CAgpReader
 {
 public:
   CAgpValidateReader(CAgpErrEx& agpErr, CMapCompLen& comp2len); // , bool checkCompNames=false);
@@ -140,6 +155,7 @@ protected:
   // true: a suspicious mix of ids - some look like GenBank accessions, some do not.
   static bool x_PrintPatterns(CAccPatternCounter& namePatterns, const string& strHeader, int fasta_count);
 
+  CAgpErrEx* m_AgpErr;
   int m_CommentLineCount;
   int m_EolComments;
 
@@ -213,5 +229,5 @@ protected:
 
 END_NCBI_SCOPE
 
-#endif /* AGP_VALIDATE_ContextValidator */
+#endif /* AGP_VALIDATE_READER */
 

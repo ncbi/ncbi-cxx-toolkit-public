@@ -609,7 +609,7 @@ public:
     typedef map<int,string> TMapCcodeToString;
     void PrintMessageCounts(CNcbiOstream& ostr, int from, int to=E_First, bool report_lines_skipped=false, TMapCcodeToString* hints=NULL);
 
-private:
+protected:
     // Count errors of each type, including skipped ones.
     int m_MsgCount[CODE_Last];
     bool m_MustSkip[CODE_Last];
