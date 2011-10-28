@@ -64,7 +64,15 @@ public:
     virtual void AddLine( const CTempString& line,
                           const CSerialObject* obj = 0,
                           EAddNewline add_newline = eAddNewline_Yes ) = 0;
-                          
+
+    NCBI_DEPRECATED
+    virtual void AddCLine( const char *line,
+                           const CSerialObject* obj = 0) = 0;
+
+    NCBI_DEPRECATED
+    virtual void AddRawText( const char *line,
+                           const CSerialObject* obj = 0) = 0;
+
     virtual ~IFlatTextOStream(void) {}
 };
 
