@@ -67,11 +67,19 @@ public:
 
     NCBI_DEPRECATED
     virtual void AddCLine( const char *line,
-                           const CSerialObject* obj = 0) { }
+                           const CSerialObject* obj = 0) 
+    {
+        // must be overridden
+        _TROUBLE;
+    }
 
     NCBI_DEPRECATED
     virtual void AddRawText( const char *line,
-                             const CSerialObject* obj = 0) { }
+                             const CSerialObject* obj = 0) 
+    { 
+        // must be overridden
+        _TROUBLE;
+    }
 
     virtual ~IFlatTextOStream(void) {}
 };
