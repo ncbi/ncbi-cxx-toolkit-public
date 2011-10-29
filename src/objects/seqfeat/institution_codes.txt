@@ -1753,6 +1753,7 @@ FRCS	s	Forest Research Centre
 FRDC	b	Fruit Tree Research & Development Center of ThuaThien-Hue-Vietnam
 FRI<AUST>	s	Australian National Herbarium, Division of Forestry and Forest Products, CSIRO
 FRI<JPN>	c	Food Research Institute, Ministry of Agriculture, Forestry and Fisheries
+FRI<SVK>	c	Food Research Institute, Bratislava, Slovakia
 FRIHP	s	Fisheries Research Institute of Hunan Province
 FRIM	s	Forest Research Institute, Malaysia
 FRLC	s	Forest Insect and Disease Survey Reference Collection
@@ -4497,7 +4498,7 @@ PCMB	b	The Pacific Center for Molecular Biodiversity
 PCNZ	s	Lincoln Plant Health Station
 PCU<FRA>	s	Museum National d'Histoire Naturelle
 PCU<THA>	c	Department of Microbiology, Faculty of Pharmaceutical Sciences
-PD	c	Culture Collection of Plant Pathogenic Bacteria
+PD	c	Dutch Plant Protection Service, Culture Collection of Plant Pathogenic Bacteria
 PDA	s	Royal Botanic Gardens, Department of Agriculture
 PDD	s	New Zealand Fungal Herbarium
 PDTFAU	s	Paleoantropoloji Dil ve Tarih Cografya Facueltesi
