@@ -1602,9 +1602,8 @@ static EIO_Status s_Select_(size_t                n,
                 continue;
             }
 
-            type = (ESOCK_Type) sock->type;
             event = polls[i].event;
-            if (!type || (EIO_Event)(event | eIO_ReadWrite) != eIO_ReadWrite) {
+            if ((EIO_Event)(event | eIO_ReadWrite) != eIO_ReadWrite) {
                 polls[i].revent = eIO_Close;
                 if (!bad) {
                     ready = 0/*false*/;
@@ -1651,6 +1650,7 @@ static EIO_Status s_Select_(size_t                n,
             }
 #  endif /*!NCBI_OS_MSWIN && FD_SETSIZE*/
 
+            type = (ESOCK_Type) sock->type;
             switch (type & eSocket ? event : event & eIO_Read) {
             case eIO_Write:
             case eIO_ReadWrite:
