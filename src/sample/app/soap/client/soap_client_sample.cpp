@@ -67,7 +67,7 @@ CSampleSoapClient::CSampleSoapClient(void)
 // This Server URL is valid only within NCBI
 //        "http://graceland.ncbi.nlm.nih.gov:6224/staff/gouriano/cgi/samplesoap/samplesoap.cgi",
 //        "http://intranet.ncbi.nlm.nih.gov/staff/gouriano/cgi/samplesoap/samplesoap.cgi",
-        "http://intrawebdev:6224/staff/gouriano/samplesoap/samplesoap.cgi",
+        "http://intrawebdev2:6224/staff/gouriano/samplesoap/samplesoap.cgi",
         "http://ncbi.nlm.nih.gov/")
 {
 // Register incoming object types
