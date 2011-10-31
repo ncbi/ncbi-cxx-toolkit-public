@@ -99,6 +99,7 @@ namespace {
 CSplign::CSplign(void):
     m_CanResetHistory (true),
     m_MinExonIdty(s_GetDefaultMinExonIdty()),
+    m_MinPolyaExtIdty(s_GetDefaultPolyaExtIdty()),
     m_CompartmentPenalty(s_GetDefaultCompartmentPenalty()),
     m_MinCompartmentIdty(s_GetDefaultMinCompartmentIdty()),
     m_MinSingletonIdty(s_GetDefaultMinCompartmentIdty()),
@@ -205,6 +206,16 @@ void CSplign::SetMinExonIdentity( double idty )
     }
 }
 
+void CSplign::SetPolyaExtIdentity( double idty )
+{
+    if(!(0 <= idty && idty <= 1)) {
+        NCBI_THROW(CAlgoAlignException, eBadParameter, g_msg_BadIdentityThreshold);
+    }
+    else {
+        m_MinPolyaExtIdty = idty;
+    }
+}
+
 void CSplign::SetMinCompartmentIdentity( double idty )
 {
     if(!(0 <= idty && idty <= 1)) {
@@ -269,6 +280,14 @@ double CSplign::s_GetDefaultMinExonIdty(void)
     return 0.75;
 }
 
+double CSplign::GetPolyaExtIdentity( void ) const {
+    return m_MinPolyaExtIdty;
+}
+
+double CSplign::s_GetDefaultPolyaExtIdty(void)
+{
+    return 1.;
+}
 
 double CSplign::GetMinCompartmentIdentity(void) const {
     return m_MinCompartmentIdty;
@@ -1346,8 +1365,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         }
 
         // cut low identity flank region in extention
-        const double kMinExonFlankIdty (0.65);
-        _ASSERT( kMinExonFlankIdty < GetMinExonIdentity() );
+        const double kMinExonFlankIdty (GetPolyaExtIdentity());
         if(sh) {
             p = p0+(sh-1);
             q = q0+(sh-1);
@@ -1359,6 +1377,8 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
                 } else {
                     if( match_num < ct*kMinExonFlankIdty) {//cut flank
                         sh = p - p0;
+                        ct = 1;
+                        match_num = 0;
                     }
                 }
             }

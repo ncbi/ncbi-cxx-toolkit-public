@@ -93,6 +93,15 @@ void CSplignArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
          NStr::DoubleToString(CSplign::s_GetDefaultMinExonIdty()));
 
     argdescr->AddDefaultKey
+        ("min_polya_ext_idty",
+         "identity",
+         "Minimal identity to extend alignment into polya. "
+         "Polya candidate region on mRNA is detected first. Alignment is produced without the polya candidate region "
+         "After that alignment will be extended into the polya candidate region to deal with case when initial polya detection was wrong",
+         CArgDescriptions::eDouble,
+         NStr::DoubleToString(CSplign::s_GetDefaultPolyaExtIdty()));
+
+    argdescr->AddDefaultKey
         ("max_intron",
          "max_intron",
          "The upper bound on intron length, in base pairs.",
@@ -112,6 +121,7 @@ void CSplignArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
     CArgAllow * constrain01 (new CArgAllow_Doubles(0,1));
     argdescr->SetConstraint("min_compartment_idty", constrain01);
     argdescr->SetConstraint("min_exon_idty", constrain01);
+    argdescr->SetConstraint("min_polya_ext_idty", constrain01);
     argdescr->SetConstraint("compartment_penalty", constrain01);
 
     CArgAllow * constrain_7_2M (new CArgAllow_Integers(7,2000000));
@@ -143,6 +153,7 @@ void CSplignArgUtil::ArgsToSplign(CSplign* splign, const CArgs& args)
 
     splign->SetMinSingletonIdentityBps(args["min_singleton_idty_bps"].AsInteger());
     splign->SetMinExonIdentity(args["min_exon_idty"].AsDouble());
+    splign->SetPolyaExtIdentity(args["min_polya_ext_idty"].AsDouble());
     const bool query_low_quality (args["type"].AsString() == kQueryType_EST);
     double max_space (args["max_space"].AsDouble() * kMb);
     const Uint4 kMax32 (numeric_limits<Uint4>::max());
