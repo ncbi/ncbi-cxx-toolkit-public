@@ -4355,6 +4355,7 @@ BOOST_AUTO_TEST_CASE(Test_TerminalNs)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    /*
     entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
     SetCompleteness(entry, CMolInfo::eCompleteness_complete);
     expected_errors[0]->SetSeverity(eDiag_Warning);
@@ -4363,12 +4364,15 @@ BOOST_AUTO_TEST_CASE(Test_TerminalNs)
     CheckErrors (*eval, expected_errors);
 
     entry->SetSeq().SetInst().ResetTopology();
+    */
     SetCompleteness(entry, CMolInfo::eCompleteness_unknown);
     scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors[0]->SetAccession("NC_123456");
     expected_errors[1]->SetAccession("NC_123456");
+    expected_errors[0]->SetSeverity(eDiag_Warning);
+    expected_errors[1]->SetSeverity(eDiag_Warning);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -4407,12 +4411,14 @@ BOOST_AUTO_TEST_CASE(Test_TerminalNs)
     CheckErrors (*eval, expected_errors);
 
     // circular topology takes it back to warning
+    /*
     entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
     SetCompleteness(entry, CMolInfo::eCompleteness_complete);
     expected_errors[0]->SetSeverity(eDiag_Warning);
     expected_errors[1]->SetSeverity(eDiag_Warning);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    */
 
     // NC and patent IDs keep warning
     entry->SetSeq().SetInst().ResetTopology();
@@ -4423,6 +4429,8 @@ BOOST_AUTO_TEST_CASE(Test_TerminalNs)
     expected_errors[0]->SetAccession("NC_123456");
     expected_errors[1]->SetAccession("NC_123456");
     expected_errors[2]->SetAccession("NC_123456");
+    expected_errors[0]->SetSeverity(eDiag_Warning);
+    expected_errors[1]->SetSeverity(eDiag_Warning);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -4435,6 +4443,14 @@ BOOST_AUTO_TEST_CASE(Test_TerminalNs)
     expected_errors[1]->SetAccession("USA1_1");
     delete expected_errors[2];
     expected_errors.pop_back();
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // no more warnings if circular
+    entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
+    SetCompleteness(entry, CMolInfo::eCompleteness_complete);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -4886,6 +4902,7 @@ BOOST_AUTO_TEST_CASE(Test_TerminalGap)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    /*
     entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
     SetCompleteness(entry, CMolInfo::eCompleteness_complete);
     expected_errors[2]->SetSeverity(eDiag_Warning);
@@ -4894,6 +4911,7 @@ BOOST_AUTO_TEST_CASE(Test_TerminalGap)
     CheckErrors (*eval, expected_errors);
 
     entry->SetSeq().SetInst().ResetTopology();
+    */
     SetCompleteness(entry, CMolInfo::eCompleteness_unknown);
     scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
@@ -4902,6 +4920,8 @@ BOOST_AUTO_TEST_CASE(Test_TerminalGap)
     expected_errors[1]->SetAccession("NC_123456");
     expected_errors[2]->SetAccession("NC_123456");
     expected_errors[3]->SetAccession("NC_123456");
+    expected_errors[2]->SetSeverity(eDiag_Warning);
+    expected_errors[3]->SetSeverity(eDiag_Warning);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -4917,6 +4937,17 @@ BOOST_AUTO_TEST_CASE(Test_TerminalGap)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
+
+    // no more warnings if circular - changed to still show first/last delta component
+    entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
+    SetCompleteness(entry, CMolInfo::eCompleteness_complete);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDeltaSeq", "First delta seq component is a gap"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDeltaSeq", "Last delta seq component is a gap"));
+    expected_errors[0]->SetAccession("USA1_1");
+    expected_errors[1]->SetAccession("USA1_1");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
     CLEAR_ERRORS
 }
 
