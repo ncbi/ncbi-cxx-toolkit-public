@@ -317,17 +317,48 @@ static const char* s_StrError(SOCK sock, int error)
         {WSAVERNOTSUPPORTED,     "Winsock.dll version out of range"},
         {WSANOTINITIALISED,      "Not yet initialized"},
         {WSAEDISCON,             "Graceful shutdown in progress"},
-        {WSAENOMORE,             "No more retries"},
-        {WSAECANCELLED,          "Cancelled"},
+#  ifdef WSAENOMORE
+        /*NB: replaced with WSA_E_NO_MORE*/
+        {WSAENOMORE,             "No more data available"},
+#  endif /*WSAENOMORE*/
+#  ifdef WSA_E_NO_MORE
+        {WSA_E_NO_MORE,          "No more data available"},
+#  endif /*WSA_E_NO_MORE*/
+#  ifdef WSAECANCELLED
+        /*NB: replaced with WSA_E_CANCELLED*/
+        {WSAECANCELLED,          "Call has been cancelled"},
+#  endif /*WSAECANCELLED*/
+#  ifdef WSA_E_CANCELLED
+        {WSA_E_CANCELLED,        "Call has been cancelled"},
+#  endif /*WSA_E_CANCELLED*/
         {WSAEINVALIDPROCTABLE,   "Invalid procedure table"},
         {WSAEINVALIDPROVIDER,    "Invalid provider version number"},
         {WSAEPROVIDERFAILEDINIT, "Cannot init provider"},
         {WSASYSCALLFAILURE,      "System call failed"},
         {WSASERVICE_NOT_FOUND,   "Service not found"},
         {WSATYPE_NOT_FOUND,      "Class type not found"},
-        {WSA_E_NO_MORE,          "WSA_E_NO_MORE"},
-        {WSA_E_CANCELLED,        "WSA_E_CANCELLED"},
-        {WSAEREFUSED,            "Refused"},
+        {WSAEREFUSED,            "Query refused"},
+        /*
+         * WinSock 2 extension
+         */
+#  ifdef WSA_IO_PENDING
+        {WSA_IO_PENDING,         "Operation has been queued"},
+#  endif /*WSA_IO_PENDING*/
+#  ifdef WSA_IO_INCOMPLETE
+        {WSA_IO_INCOMPLETE,      "Operation still in progress"},
+#  endif /*WSA_IO_INCOMPLETE*/
+#  ifdef WSA_INVALID_HANDLE
+        {WSA_INVALID_HANDLE,     "Invalid handle"},
+#  endif /*WSA_INVALID_HANDLE*/
+#  ifdef WSA_INVALID_PARAMETER
+        {WSA_INVALID_PARAMETER,  "Invalid parameter"},
+#  endif /*WSA_INVALID_PARAMETER*/
+#  ifdef WSA_NOT_ENOUGH_MEMORY
+        {WSA_NOT_ENOUGH_MEMORY,  "Out of memory"},
+#  endif /*WSA_NOT_ENOUGH_MEMORY*/
+#  ifdef WSA_OPERATION_ABORTED
+        {WSA_OPERATION_ABORTED,  "Operation aborted"},
+#  endif /*WSA_OPERATION_ABORTED*/
 #endif /*NCBI_OS_MSWIN*/
 #ifdef NCBI_OS_MSWIN
 #  define EAI_BASE 0
