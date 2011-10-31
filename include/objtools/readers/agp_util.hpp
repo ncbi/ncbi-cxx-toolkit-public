@@ -71,7 +71,7 @@ public:
     CAgpRow(CAgpErr* arg, EAgpVersion agp_version = eAgpVersion_2_0, CAgpReader* reader=NULL  );
     // constructs a default error handler
     CAgpRow(EAgpVersion agp_version = eAgpVersion_2_0, CAgpReader* reader=NULL );
-    ~CAgpRow();
+    virtual ~CAgpRow();
 
     // Returns:
     //   -1 comment line (to be silently skipped)
