@@ -128,6 +128,10 @@ public:
     static double s_GetDefaultMinExonIdty(void);
     double GetMinExonIdentity(void) const;
 
+    void   SetPolyaExtIdentity(double idty);
+    static double s_GetDefaultPolyaExtIdty(void);
+    double GetPolyaExtIdentity(void) const;
+
     void   SetStartModelId(size_t model_id) {
         m_model_id = model_id - 1;
     }
@@ -300,8 +304,11 @@ protected:
     // alignment pattern
     vector<size_t>        m_pattern;
 
-    // min exon idty - others will be marked as gaps
+    // min exon idty - others will be marked as gaps 
     double                m_MinExonIdty;
+
+    // min idty to extend alignment into polya
+    double                m_MinPolyaExtIdty; 
 
     // compartment penalty as a per cent of the query (mRna) length
     double                m_CompartmentPenalty;
