@@ -46,6 +46,7 @@
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Seq_literal.hpp>
+#include <objects/submit/Seq_submit.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seq_vector.hpp>
@@ -55,6 +56,7 @@
 #include <objtools/lds2/lds2.hpp>
 #include <objtools/readers/agp_util.hpp>
 #include <objtools/readers/fasta.hpp>
+#include <objtools/readers/reader_exception.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -62,7 +64,7 @@ USING_SCOPE(objects);
 namespace {
     // command-line argument names
     const string kArgnameAgp = "agp";
-    const string kArgnameObjFasta = "objfasta";
+    const string kArgnameObjFile = "objfile";
     const string kArgnameLoadLog = "loadlog";
 }
 
@@ -200,8 +202,8 @@ private:
 
     typedef set<CSeq_id_Handle> TSeqIdSet;
 
-    void x_ProcessObjectFasta(CNcbiIstream& istr,
-                        TUniqueSeqs& seqs );
+    void x_ProcessObject( const string & filename,
+                          TUniqueSeqs& seqs );
     void x_ProcessAgp(CNcbiIstream& istr,
                       TUniqueSeqs& seqs);
 
@@ -213,6 +215,9 @@ private:
     void x_OutputDifferences(
         const TSeqIdSet & vSeqIdFASTAOnly,
         const TSeqIdSet & vSeqIdAGPOnly );
+
+    void x_SetBinaryVsText( CNcbiIstream & file_istrm, 
+        CFormatGuess::EFormat guess_format );
 };
 
 CAgpFastaCompareApplication::CAgpFastaCompareApplication(void)
@@ -236,8 +241,8 @@ void CAgpFastaCompareApplication::Init(void)
                      "AGP data to process",
                      CArgDescriptions::eInputFile);
 
-    arg_desc->AddKey(kArgnameObjFasta, "ObjFasta",
-                     "Fasta sequences to process, which contains the "
+    arg_desc->AddKey(kArgnameObjFile, "ObjFile",
+                     "Fasta or ASN.1 sequences to process, which contains the "
                      "objects we're comparing against the agp file.",
                      CArgDescriptions::eInputFile );
 
@@ -295,11 +300,11 @@ int CAgpFastaCompareApplication::Run(void)
         CObjectManager::eDefault, 2 );
 
     // calculate checksum of the AGP sequences and the FASTA sequences
-    CNcbiIstream& istr_fasta = args[kArgnameObjFasta].AsInputFile();
     CNcbiIstream& istr_agp = args[kArgnameAgp].AsInputFile();
 
+    // Guess the format of the file
     TUniqueSeqs fasta_ids;
-    x_ProcessObjectFasta(istr_fasta, fasta_ids);
+    x_ProcessObject( args[kArgnameObjFile].AsString(), fasta_ids );
 
     TUniqueSeqs agp_ids;
     x_ProcessAgp(istr_agp, agp_ids);
@@ -372,14 +377,17 @@ void CAgpFastaCompareApplication::x_Process(const CSeq_entry_Handle seh,
     // skipped is total minus loaded.
     int total = 0;
 
-    for (CBioseq_CI bioseq_it(seh);  bioseq_it;  ++bioseq_it) {
+    for (CBioseq_CI bioseq_it(seh, CSeq_inst::eMol_na);  bioseq_it;  ++bioseq_it) {
         ++total;
         CSeqVector vec(*bioseq_it, CBioseq_Handle::eCoding_Iupac);
         CSeq_id_Handle idh = sequence::GetId(*bioseq_it,
                                              sequence::eGetId_Best);
         string data;
         if( ! vec.CanGetRange(0, bioseq_it->GetBioseqLength() - 1) ) {
-            LOG_POST(Error << "  Skipping one: could not load due to error in AGP file (length issue) for " << idh);
+            LOG_POST(Error << "  Skipping one: could not load due to error in AGP file "
+                "(length issue or doesn't exist) for " << idh 
+                << " (though issue could be due to failure to resolve one of the contigs.  "
+                "Are all necessary components in GenBank or in files specified on the command-line?)");
             m_bSuccess = false;
             continue;
         }
@@ -424,31 +432,93 @@ void CAgpFastaCompareApplication::x_Process(const CSeq_entry_Handle seh,
 }
 
 
-void CAgpFastaCompareApplication::x_ProcessObjectFasta(CNcbiIstream& istr,
-                                                 TUniqueSeqs& fasta_ids)
+void CAgpFastaCompareApplication::x_ProcessObject( const string & filename,
+                                                   TUniqueSeqs& fasta_ids )
 {
     int iNumLoaded = 0;
     int iNumSkipped = 0;
 
-    LOG_POST(Error << "Processing FASTA...");
+    LOG_POST(Error << "Processing object file...");
     if( m_pLoadLogFile.get() != NULL ) {
-        *m_pLoadLogFile << "Processing FASTA..." << endl;
+        *m_pLoadLogFile << "Processing object file..." << endl;
     }
-    CFastaReader reader(istr);
-    while (istr) {
-        try {
-            CRef<CSeq_entry> entry = reader.ReadOneSeq();
+    try {
+        CFormatGuess guesser( filename );
+        const CFormatGuess::EFormat format = 
+            guesser.GuessFormat();
 
-            CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
-            CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
-            x_Process(seh, fasta_ids, &iNumLoaded, &iNumSkipped );
-        }
-        catch (CException& ) {
-            break;
+        if( format == CFormatGuess::eFasta ) {
+            CNcbiIfstream file_istrm( filename.c_str(), ios::binary );
+            CFastaReader reader(file_istrm);
+            while (file_istrm) {
+                CRef<CSeq_entry> entry = reader.ReadOneSeq();
+
+                CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+                CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+                x_Process(seh, fasta_ids, &iNumLoaded, &iNumSkipped );
+            }
+        } else if( format == CFormatGuess::eBinaryASN || 
+                   format == CFormatGuess::eTextASN )
+        {
+            // see if it's a submit
+            CRef<CSeq_submit> submit( new CSeq_submit );
+            {
+                CNcbiIfstream file_istrm( filename.c_str(), ios::binary );
+                x_SetBinaryVsText( file_istrm, format );
+                try {
+                    file_istrm >> *submit;
+                } catch(...) {
+                    // didn't work
+                }
+            }
+
+            if( submit ) {
+
+                if( ! submit->IsEntrys() ) {
+                    LOG_POST(Error << "Seq-submits must have 'entrys'.");
+                    return;
+                }
+
+                ITERATE( CSeq_submit::C_Data::TEntrys, entry_iter, 
+                    submit->GetData().GetEntrys() ) 
+                {
+                    const CSeq_entry &entry = **entry_iter;
+
+                    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+                    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(entry);
+                    x_Process(seh, fasta_ids, &iNumLoaded, &iNumSkipped );
+                }
+            } 
+            else
+            {
+                CRef<CSeq_entry> entry( new CSeq_entry );
+
+                CNcbiIfstream file_istrm( filename.c_str(), ios::binary );
+                x_SetBinaryVsText( file_istrm, format );
+                file_istrm >> *entry;
+
+                CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+                CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+                x_Process(seh, fasta_ids, &iNumLoaded, &iNumSkipped );
+            }
+        } else {
+            LOG_POST(Error << "Could not determine format of " << filename 
+                << ", best guess is: " << CFormatGuess::GetFormatName(format) );
+            return;
         }
     }
+    catch(CObjReaderParseException & ex ) {
+        if( ex.GetErrCode() == CObjReaderParseException::eEOF ) {
+            // end of file; no problem
+        } else {
+            LOG_POST(Error << "Error reading object file: " << ex.what() );
+        }
+    }
+    catch (CException& ex ) {
+        LOG_POST(Error << "Error reading object file: " << ex.what() );
+    }
 
-    LOG_POST(Error << "Loaded " << iNumLoaded << " FASTA sequence(s).");
+    LOG_POST(Error << "Loaded " << iNumLoaded << " object file sequence(s).");
     if( iNumSkipped > 0 ) {
         LOG_POST(Error << "  Skipped " << iNumSkipped << " FASTA sequence(s).");
     }
@@ -468,7 +538,12 @@ void CAgpFastaCompareApplication::x_ProcessAgp(CNcbiIstream& istr,
     while (istr) {
         vector< CRef<CSeq_entry> > entries;
         CAgpToSeqEntry agp_reader( entries );
-        agp_reader.ReadStream( istr ); // loads var entries
+        int err_code = agp_reader.ReadStream( istr ); // loads var entries
+        if( err_code != 0 ) {
+            LOG_POST(Error << "Error occurred reading AGP file: " << err_code );
+            m_bSuccess = false;
+            return;
+        }
         ITERATE (vector< CRef<CSeq_entry> >, it, entries) {
             CRef<CSeq_entry> entry = *it;
 
@@ -497,7 +572,7 @@ void CAgpFastaCompareApplication::x_OutputDifferences(
         vSeqIdAGPOnly.begin(), vSeqIdAGPOnly.end(),
         inserter(vSeqIdTempSet, vSeqIdTempSet.begin()) );
     if( ! vSeqIdTempSet.empty() ) {
-        LOG_POST(Error << "  These differ between FASTA and AGP:");
+        LOG_POST(Error << "  These differ between object file and AGP:");
         ITERATE( TSeqIdSet, id_iter, vSeqIdTempSet ) {
             LOG_POST(Error << "    " << *id_iter);
         }
@@ -510,7 +585,7 @@ void CAgpFastaCompareApplication::x_OutputDifferences(
         vSeqIdAGPOnly.begin(), vSeqIdAGPOnly.end(),
         inserter(vSeqIdTempSet, vSeqIdTempSet.begin()) );
     if( ! vSeqIdTempSet.empty() ) {
-        LOG_POST(Error << "  These are in FASTA only: " << "\n"
+        LOG_POST(Error << "  These are in Object file only: " << "\n"
             << "  (Check above: were some AGP sequences skipped due "
             << "to errors?)");
         ITERATE( TSeqIdSet, id_iter, vSeqIdTempSet ) {
@@ -534,6 +609,22 @@ void CAgpFastaCompareApplication::x_OutputDifferences(
     }
 }
 
+void CAgpFastaCompareApplication::x_SetBinaryVsText( CNcbiIstream & file_istrm, 
+                                                    CFormatGuess::EFormat guess_format )
+{
+    // set binary vs. text
+    switch( guess_format ) {
+        case CFormatGuess::eBinaryASN:
+            file_istrm >> MSerial_AsnBinary;
+            break;
+        case CFormatGuess::eTextASN:
+            file_istrm >> MSerial_AsnText;
+            break;
+        default:
+            break;
+            // a format where binary vs. text is irrelevant
+    }
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //  Cleanup
@@ -553,4 +644,5 @@ int main(int argc, const char* argv[])
 {
     // Execute main application function
     return CAgpFastaCompareApplication().AppMain(argc, argv);
+
 }
