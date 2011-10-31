@@ -173,7 +173,8 @@ struct SLDS2_Blob
         eBioseq_set_element = 4,
         eSeq_annot          = 5,
         eSeq_align_set      = 6,
-        eSeq_align          = 7
+        eSeq_align          = 7,
+        eSeq_submit         = 8
     };
 
     Int8        id;

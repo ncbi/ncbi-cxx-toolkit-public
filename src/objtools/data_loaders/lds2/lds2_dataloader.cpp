@@ -39,6 +39,7 @@
 #include <serial/serial.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
+#include <objects/submit/Seq_submit.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/tse_loadlock.hpp>
@@ -328,6 +329,18 @@ CRef<CSeq_entry> CLDS2_DataLoader::x_LoadTSE(const SLDS2_Blob& blob)
                 CRef<CSeq_annot> annot(new CSeq_annot);
                 annot->SetData().SetAlign().push_back(align);
                 entry->SetSet().SetAnnot().push_back(annot);
+                break;
+            }
+        case SLDS2_Blob::eSeq_submit:
+            {
+                CRef<CSeq_submit> submit( new CSeq_submit );
+                *obj_in >> *submit;
+                if( submit->IsEntrys() ) {
+                    entry->SetSet().SetSeq_set();
+                    copy( submit->GetData().GetEntrys().begin(),
+                        submit->GetData().GetEntrys().end(),
+                        back_inserter(entry->SetSet().SetSeq_set()) );
+                }
                 break;
             }
         default:

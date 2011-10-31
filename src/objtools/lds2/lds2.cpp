@@ -44,6 +44,7 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqres/Seq_graph.hpp>
+#include <objects/submit/Seq_submit.hpp>
 #include <objtools/error_codes.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/lds2/lds2.hpp>
@@ -476,6 +477,8 @@ CLDS2_ObjectParser::sx_GetObjectTypeInfo(SLDS2_Blob::EBlobType blob_type)
         return CType<CSeq_align_set>().GetTypeInfo();
     case SLDS2_Blob::eSeq_align:
         return CType<CSeq_align>().GetTypeInfo();
+    case SLDS2_Blob::eSeq_submit:
+        return CType<CSeq_submit>().GetTypeInfo();
     default:
         break;
     }
@@ -508,7 +511,8 @@ static const SLDS2_Blob::EBlobType kExpectedBlobTypes[] = {
     SLDS2_Blob::eBioseq_set,
     SLDS2_Blob::eSeq_annot,
     SLDS2_Blob::eSeq_align_set,
-    SLDS2_Blob::eSeq_align
+    SLDS2_Blob::eSeq_align,
+    SLDS2_Blob::eSeq_submit
 };
 
 
@@ -553,6 +557,9 @@ SLDS2_Blob::EBlobType CLDS2_ObjectParser::x_GetBlobType(void)
             }
             else if (obj_type == "Seq-align") {
                 ret = SLDS2_Blob::eSeq_align;
+            }
+            else if (obj_type == "Seq-submit") {
+                ret = SLDS2_Blob::eSeq_submit;
             }
             break;
         }
@@ -648,7 +655,9 @@ void CLDS2_ObjectParser::EndBlob(SLDS2_Blob::EBlobType blob_type)
             if (blob_type == SLDS2_Blob::eSeq_entry  ||
                 blob_type == SLDS2_Blob::eBioseq ||
                 blob_type == SLDS2_Blob::eBioseq_set  ||
-                blob_type == SLDS2_Blob::eBioseq_set_element) {
+                blob_type == SLDS2_Blob::eBioseq_set_element || 
+                blob_type == SLDS2_Blob::eSeq_submit ) 
+            {
                 if (m_BioseqIds.find(*id) != m_BioseqIds.end()) {
                     ref.second = false;
                 }
