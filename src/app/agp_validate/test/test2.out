@@ -216,6 +216,7 @@ test/alt_bad_test.agp:20:scaffold_0	62232	62557	20	N	326	fragment	yes
       1  w30  extra tab or space at the end of line
      10  w31  gap line missing column 9 (null)
       2  w35  component_id looks like a WGS accession, component_type is not W
+         (Use -g to print lines with WGS component_id/component_type mismatch.)
       1  w48  assuming AGP version X
 
 NOTE: 37 invalid lines were skipped (not subjected to all the checks, not included in most of the counts below).

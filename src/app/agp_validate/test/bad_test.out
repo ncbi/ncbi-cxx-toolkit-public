@@ -212,6 +212,7 @@
       4  w27  duplicate component with non-draft type
       1  w30  extra tab or space at the end of line
       2  w35  component_id looks like a WGS accession, component_type is not W
+         (Use -g to print lines with WGS component_id/component_type mismatch.)
       1  w48  assuming AGP version X
 
 NOTE: 37 invalid lines were skipped (not subjected to all the checks, not included in most of the counts below).

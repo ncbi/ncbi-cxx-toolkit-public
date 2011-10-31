@@ -429,7 +429,12 @@ void CAgpValidateReader::x_PrintTotals() // without comment counts
           hints[CAgpErrEx::W_CompIsNotWgsTypeIs] =
               "(Use -g to print lines with WGS component_id/component_type mismatch.)";
       }
-      m_AgpErr->PrintMessageCounts(cout, CAgpErrEx::CODE_First, CAgpErrEx::CODE_Last, true);
+      if(m_AgpErr->CountTotals(CAgpErrEx::W_ShortGap)) {
+          hints[CAgpErrEx::W_ShortGap] = "(Use -show "+
+              CAgpErrEx::GetPrintableCode(CAgpErrEx::W_ShortGap)+
+              " to print lines with short gaps.)";
+      }
+      m_AgpErr->PrintMessageCounts(cout, CAgpErrEx::CODE_First, CAgpErrEx::CODE_Last, true, &hints);
     }
   }
   if(m_ObjCount==0) {
