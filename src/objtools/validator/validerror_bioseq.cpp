@@ -2035,7 +2035,7 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
             string sequence;
             
             // check for Ns and gaps at the beginning of the sequence
-            if ( (! is_circular) && (vec[0] == 'N')  ||  (vec[0] == 'n') ) {
+            if ( (! is_circular) && ((vec[0] == 'N')  ||  (vec[0] == 'n')) ) {
                 // if 10 or more Ns flag as error (except for NC, patent, or circular), 
                 // otherwise just warning
                 vec.GetSeqData(0, 10, sequence);
@@ -2059,7 +2059,7 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
             
             // check for Ns at the end of the sequence
             sev = eDiag_Warning;
-            if ( (! is_circular) && (vec[vec.size() - 1] == 'N')  ||  (vec[vec.size() - 1] == 'n') ) {
+            if ( (! is_circular) && ((vec[vec.size() - 1] == 'N')  ||  (vec[vec.size() - 1] == 'n')) ) {
                 // if 10 or more Ns flag as error (except for NC, patent, or circular), 
                 // otherwise just warning
                 vec.GetSeqData(vec.size() - 10, vec.size() , sequence);
