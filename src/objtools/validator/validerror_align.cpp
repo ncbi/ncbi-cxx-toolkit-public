@@ -211,6 +211,8 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
     // Now calculate Percent Identity
     if (!align.IsSetSegs()) {
         return;
+    } else if (align.GetSegs().IsDendiag()) {
+        return;
     } else if (align.GetSegs().IsDenseg()) {
         const CDense_seg& denseg = align.GetSegs().GetDenseg();
         // first, make sure this isn't a TPA alignment
