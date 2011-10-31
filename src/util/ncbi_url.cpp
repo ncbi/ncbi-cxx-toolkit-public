@@ -122,6 +122,14 @@ void CUrlArgs_Parser::SetQueryString(const string& query,
             }
             continue;
         }
+        // Skip empty name=value pairs (allow a standalone '=') - see JIRA CXX-2772
+        if (query[beg] == '=') {
+            if (beg == len - 1  ||  query[beg + 1] == '&') {
+                beg++;
+                continue;
+            }
+        }
+
         // Alternative separator - ';'
         else if (!m_SemicolonIsNotArgDelimiter  &&  query[beg] == ';')
         {
