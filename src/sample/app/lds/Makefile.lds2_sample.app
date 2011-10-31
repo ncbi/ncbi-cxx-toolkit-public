@@ -12,10 +12,9 @@ SRC = lds2_sample
 # the lines reading "### BEGIN/END COPIED SETTINGS" in any way.
 
 ### BEGIN COPIED SETTINGS
-LIB = ncbi_xloader_lds2 lds2 xobjread sqlitewrapp xobjutil $(SOBJMGR_LIBS) \
-      xcompress $(CMPRS_LIB)
+LIB  = ncbi_xloader_lds2 lds2 xobjread xobjutil submit sqlitewrapp creaders xcompress $(COMPRESS_LIBS) $(SOBJMGR_LIBS)
 
-LIBS = $(SQLITE3_STATIC_LIBS) $(DL_LIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
+LIBS = $(SQLITE3_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 ### END COPIED SETTINGS
 
 WATCHERS = grichenk
