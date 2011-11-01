@@ -54,20 +54,19 @@ void CUrlArgs_Parser::x_SetIndexString(const string& query,
                                        const IUrlEncoder& encoder)
 {
     SIZE_TYPE len = query.size();
-    if ( !len ) {
-        return;
-    }
+    _ASSERT(len);
 
-    // No '=' and spaces must present in the parsed string
+    // No '=' and spaces must be present in the parsed string
     _ASSERT(query.find_first_of("= \t\r\n") == NPOS);
 
     // Parse into indexes
     unsigned int position = 1;
     for (SIZE_TYPE beg = 0; beg < len; ) {
         SIZE_TYPE end = query.find('+', beg);
-        if (end == beg  ||  end == len-1) {
-            NCBI_THROW2(CUrlParserException, eFormat,
-                "Invalid argument delimiter: \"" + query + "\"", end+1);
+        // Skip leading '+' (empty value).
+        if (end == beg) {
+            beg++;
+            continue;
         }
         if (end == NPOS) {
             end = len;
@@ -122,14 +121,6 @@ void CUrlArgs_Parser::SetQueryString(const string& query,
             }
             continue;
         }
-        // Skip empty name=value pairs (allow a standalone '=') - see JIRA CXX-2772
-        if (query[beg] == '=') {
-            if (beg == len - 1  ||  query[beg + 1] == '&') {
-                beg++;
-                continue;
-            }
-        }
-
         // Alternative separator - ';'
         else if (!m_SemicolonIsNotArgDelimiter  &&  query[beg] == ';')
         {
@@ -139,7 +130,7 @@ void CUrlArgs_Parser::SetQueryString(const string& query,
 
         // parse and URL-decode name
         string mid_seps = "=&";
-        string end_seps = " &";
+        string end_seps = "&";
         if (!m_SemicolonIsNotArgDelimiter)
         {
             mid_seps += ';';
@@ -147,9 +138,11 @@ void CUrlArgs_Parser::SetQueryString(const string& query,
         }
 
         SIZE_TYPE mid = query.find_first_of(mid_seps, beg);
+        // '=' is the first char (empty name)? Skip to the next separator.
         if (mid == beg) {
-            NCBI_THROW2(CUrlParserException, eFormat,
-                "Invalid arguments delimiter: \"" + query + "\"", mid+1);
+            beg = query.find_first_of(end_seps, beg);
+            if (beg == NPOS) break;
+            continue;
         }
         if (mid == NPOS) {
             mid = len;
@@ -162,11 +155,6 @@ void CUrlArgs_Parser::SetQueryString(const string& query,
         if (query[mid] == '=') { // has a value
             mid++;
             SIZE_TYPE end = query.find_first_of(end_seps, mid);
-            if (end != NPOS  &&  query[end] != '&'  &&
-                (m_SemicolonIsNotArgDelimiter  ||  query[end] != ';')) {
-                NCBI_THROW2(CUrlParserException, eFormat,
-                    "Invalid arguments delimiter: \"" + query + "\"", end+1);
-            }
             if (end == NPOS) {
                 end = len;
             }

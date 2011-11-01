@@ -290,7 +290,7 @@ static void TestCgi_Request_Static(void)
     entries.clear();
 
     // assert( !TestEntries(entries, "tt=qq=pp") );
-    assert( !TestEntries(entries, "=ggg&ppp=PPP") );
+    assert(  TestEntries(entries, "=ggg&ppp=PPP") );
     assert(  TestEntries(entries, "a=d&eee") );
     assert(  TestEntries(entries, "xxx&eee") );
     assert(  TestEntries(entries, "xxx+eee") );
@@ -314,14 +314,14 @@ static void TestCgi_Request_Static(void)
     assert( !TestIndexes(indexes, " jhg") );
     // assert( !TestIndexes(indexes, "e%h%2e+3") );
     assert(  TestIndexes(indexes, "aa+%20+bb") );
-    assert( !TestIndexes(indexes, "aa++bb") );
+    assert(  TestIndexes(indexes, "aa++bb") );
     indexes.clear();
-    assert( !TestIndexes(indexes, "+1") );
-    assert( !TestIndexes(indexes, "aa+") );
+    assert(  TestIndexes(indexes, "+1") );
+    assert(  TestIndexes(indexes, "aa+") );
     assert( !TestIndexes(indexes, "aa+bb  ") );
-    assert( !TestIndexes(indexes, "c++b") );
+    assert(  TestIndexes(indexes, "c++b") );
     assert( !TestIndexes(indexes, "ff++ ") );
-    assert( !TestIndexes(indexes, "++") );
+    assert(  TestIndexes(indexes, "++") );
 }
 
 static void TestCgi_Request_Full(CNcbiIstream*         istr,
