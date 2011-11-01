@@ -718,7 +718,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Shutdown
  * error flagged, or the timeout expires;  if there is any output pending,
  * that output will be flushed.
  * @param sock
- *  [in] socket handle to close
+ *  [in]  socket handle to close
  * @sa
  *  SOCK_Create, SOCK_CreateOnTop, DSOCK_Create, SOCK_SetTimeout
  */
@@ -729,7 +729,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Close(SOCK sock);
  * If eIO_Close timeout was specified (or NULL) then it blocks until
  * either all unsent data are sent, error flagged, or the timeout expires;
  * if there is any output pending, that output will be flushed.
- * @li <b>NOTE</b>  SOCK_CloseEx(sock, 1) is equivalent to SOCK_Close(sock);
+ * @note  SOCK_CloseEx(sock, 1) is equivalent to SOCK_Close(sock);
  * @param sock
  *  [in]  handle of the socket to close
  * @param destroy
@@ -768,9 +768,9 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CloseEx
  *  eIO_Interrupt  -- if the call had been interrupted by a signal before
  *                    any other verifiable status was available;
  *  eIO_InvalidArg -- if the "event" is not one of those mentioned above.
- * @li <b>NOTE:</b>  It is allowed to use a non-NULL zeroed STimeout to poll
- *                   on the socket for the immediately available event and
- *                   return it (or eIO_Timeout, otherwise) without blocking.
+ * @note It is allowed to use a non-NULL zeroed STimeout to poll
+ *       on the socket for the immediately available event and
+ *       return it (or eIO_Timeout, otherwise) without blocking.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Wait
 (SOCK            sock,
@@ -838,7 +838,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Poll
 
 /** Specify timeout for the connection i/o (see SOCK_[Read|Write|Close] funcs).
  * If "timeout" is NULL then set the timeout to be infinite;
- * @li <b>NOTE:</b> the default timeout is infinite (to wait indefinitely).
+ * @note The default timeout is infinite (to wait indefinitely).
  * @param sock
  *  [in]  socket handle
  * @param event
@@ -918,7 +918,7 @@ extern NCBI_XCONNECT_EXPORT const STimeout* SOCK_GetTimeout
  * @param buf
  *  [out] data buffer to read to
  * @param size
- *  [in] max # of bytes to read to "buf"
+ *  [in]  max # of bytes to read to "buf"
  * @param n_read
  *  [out] # of bytes read  (can be NULL)
  * @param how
@@ -948,7 +948,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Read
  * @param buf
  *  [out] data buffer to read to
  * @param size
- *  [in] max # of bytes to read to "buf"
+ *  [in]  max # of bytes to read to "buf"
  * @param n_read
  *  [out] # of bytes read  (can be NULL)
  * @return
@@ -1001,12 +1001,12 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_PushBack
  *   eIO_InvalidArg -- if "direction" is not one of the allowed above;
  *   eIO_Success    -- otherwise (also covers eIO_Timeout in last data I/O).
  *
- * @li <b>NOTE:</b>  SOCK_Read(eIO_ReadPeek) and SOCK_Wait(eIO_Read) will not
- *                   return any error as long as there is unread buffered
- *                   data left.  Thus, when you are "peeking" data (instead of
- *                   reading it out), then the only "non-destructive" way to
- *                   check whether an EOF or an error has actually occurred,
- *                   it is to use this call.
+ * @note SOCK_Read(eIO_ReadPeek) and SOCK_Wait(eIO_Read) will not
+ *       return any error as long as there is unread buffered
+ *       data left.  Thus, when you are "peeking" data (instead of
+ *       reading it out), then the only "non-destructive" way to
+ *       check whether an EOF or an error has actually occurred,
+ *       it is to use this call.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Status
 (SOCK      sock,
@@ -1018,13 +1018,13 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Status
  * @param sock
  *  [in]  socket handle
  * @param buf
- *  [in] data to write to the socket
+ *  [in]  data to write to the socket
  * @param size
- *  [in] # of bytes (starting at "buf") to write
+ *  [in]  # of bytes (starting at "buf") to write
  * @param n_written
  *  [out] # of written bytes (can be NULL)
  * @param how
- *  [in] eIO_WritePlain | eIO_WritePersist
+ *  [in]  eIO_WritePlain | eIO_WritePersist
  * @return
  *  In "*n_written", return the number of bytes actually written.
  *  eIO_WritePlain   --  write as many bytes as possible at once and return
@@ -1084,11 +1084,11 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Abort
  * and no "trueport" results are identical (with the exception that "trueport"
  * causes an additional system call, and the result is not stored).
  * @param sock
- *  [in] socket handle
+ *  [in]  socket handle
  * @param trueport
- *  [in] non-zero causes to refetch / no-cache port from the network layer
+ *  [in]  non-zero causes to refetch / no-cache port from the network layer
  * @param byte_order
- *  [in] byte order for port on return
+ *  [in]  byte order for port on return
  * @return
  *  The port number in requested byte order, or 0 in case of an error.
  * @sa
@@ -1106,9 +1106,9 @@ extern NCBI_XCONNECT_EXPORT unsigned short SOCK_GetLocalPortEx
  * inquires for the local port do not cause any system calls to occur.
  * Has exactly same effect as SOCK_GetLocalPortEx(sock, 0, byte_order)
  * @param sock
- *  [in] socket handle
+ *  [in]  socket handle
  * @param byte_order
- *  [in] byte order for port on return
+ *  [in]  byte order for port on return
  * @return
  *  Local port number in requested byte order, or 0 in case of an error.
  * @sa
@@ -1167,7 +1167,7 @@ extern NCBI_XCONNECT_EXPORT unsigned short SOCK_GetRemotePort
  *  [in]  socket handle
  * @param buf
  *  [out] pointer to provided buffer to store the text to
- * @param buflen
+ * @param bufsize
  *  [in]  usable size of the buffer above
  * @param format
  *  [in]  what parts of address to include
@@ -1183,7 +1183,7 @@ typedef enum {
 extern NCBI_XCONNECT_EXPORT char* SOCK_GetPeerAddressStringEx
 (SOCK                sock,
  char*               buf,
- size_t              buflen,
+ size_t              bufsize,
  ESOCK_AddressFormat format
  );
 
@@ -1192,7 +1192,7 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_GetPeerAddressStringEx
 extern NCBI_XCONNECT_EXPORT char* SOCK_GetPeerAddressString
 (SOCK   sock,
  char*  buf,
- size_t buflen
+ size_t bufsize
  );
 
 
@@ -1351,11 +1351,11 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_Create
  );
 
 
-/**
+/** Assosiate a datagram socket with a local port.
  * @param sock
- *  [in] SOCK from DSOCK_Create[Ex]()
+ *  [in]  SOCK from DSOCK_Create[Ex]()
  * @param port
- *  [in] port to bind to (!=0)
+ *  [in]  port to bind to (!=0)
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_Bind
 (SOCK           sock,
@@ -1363,13 +1363,13 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_Bind
  );
 
 
-/**
+/** Associate a datagram socket with a destination address.
  * @param sock
- *  [in] SOCK from DSOCK_Create[Ex]()
+ *  [in]  SOCK from DSOCK_Create[Ex]()
  * @param host
- *  [in] peer host
+ *  [in]  peer host
  * @param port
- *  [in] peer port
+ *  [in]  peer port
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_Connect
 (SOCK           sock,
@@ -1378,11 +1378,11 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_Connect
  );
 
 
-/**
+/** Wait for a datagram on a datagram socket.
  * @param sock
- *  [in] SOCK from DSOCK_Create[Ex]()
+ *  [in]  SOCK from DSOCK_Create[Ex]()
  * @param timeout
- *  [in] time to wait for message
+ *  [in]  time to wait for message
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_WaitMsg
 (SOCK            sock,
@@ -1390,17 +1390,17 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_WaitMsg
  );
 
 
-/**
+/** Send a datagram to a datagram socket.
  * @param sock
- *  [in] SOCK from DSOCK_Create[Ex]()
+ *  [in]  SOCK from DSOCK_Create[Ex]()
  * @param host
- *  [in] hostname or dotted IP
+ *  [in]  hostname or dotted IP
  * @param port
- *  [in] port number, host byte order
+ *  [in]  port number, host byte order
  * @param data
- *  [in] additional data to send
+ *  [in]  additional data to send
  * @param datalen
- *  [in] size of additional data (bytes)
+ *  [in]  size of additional data (bytes)
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_SendMsg
 (SOCK           sock,
@@ -1411,15 +1411,15 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_SendMsg
  );
 
 
-/**
+/** Receive a datagram from a datagram socket.
  * @param sock
- *  [in] SOCK from DSOCK_Create[Ex]()
+ *  [in]  SOCK from DSOCK_Create[Ex]()
  * @param buf
- *  [in] buf to store msg at,m.b.NULL
- * @param buflen
+ *  [in]  buf to store msg at, may be NULL
+ * @param bufsize
  *  [in]  buf length provided
  * @param maxmsglen
- *  [in] maximal expected message len
+ *  [in]  maximal expected message len
  * @param msglen
  *  [out] actual msg size, may be NULL
  * @param sender_addr
@@ -1430,7 +1430,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_SendMsg
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_RecvMsg
 (SOCK            sock,
  void*           buf,
- size_t          buflen,
+ size_t          bufsize,
  size_t          maxmsglen,
  size_t*         msglen,
  unsigned int*   sender_addr,
@@ -1438,33 +1438,35 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_RecvMsg
 );
 
 
-/**
+/** Clear message froma datagram socket
  * @param sock
- *  [in] SOCK from DSOCK_Create[Ex]()
+ *  [in]  SOCK from DSOCK_Create[Ex]()
  * @param direction
- *  [in] either of eIO_Read, eIO_Write
+ *  [in]  either of eIO_Read (incoming), eIO_Write (outgoing)
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_WipeMsg
 (SOCK      sock,
  EIO_Event direction
  );
 
-/**
+
+/** Set a datagram socket for broadcast.
  * @param sock
- *  [in] SOCK from DSOCK_Create[Ex]()
+ *  [in]  SOCK from DSOCK_Create[Ex]()
  * @param broadcast
- *  [in] set(1)/unset(0) broadcast capability
+ *  [in]  set(1)/unset(0) broadcast capability
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_SetBroadcast
 (SOCK         sock,
  int/**bool*/ broadcast
  );
 
-/**
+
+/** Get message count.
  * @param sock
- *  [in] socket handle (datagram socket only)
+ *  [in]  socket handle (datagram socket only)
  * @param direction
- *  [in] either eIO_Read or eIO_Write
+ *  [in]  either eIO_Read (in) or eIO_Write (out)
  * @return
  *  Total number of messages sent or received through this datagram socket.
  */
@@ -1480,9 +1482,9 @@ extern NCBI_XCONNECT_EXPORT TNCBI_BigCount DSOCK_GetMessageCount
  */
 
 
-/**
+/** Check whether a socket is a datagram one.
  * @param sock
- *  [in] socket handle
+ *  [in]  socket handle
  * @return
  *  Non-zero value if socket "sock" was created by DSOCK_Create[Ex]().
  *  Return zero otherwise.
@@ -1490,9 +1492,9 @@ extern NCBI_XCONNECT_EXPORT TNCBI_BigCount DSOCK_GetMessageCount
 extern NCBI_XCONNECT_EXPORT int/**bool*/ SOCK_IsDatagram(SOCK sock);
 
 
-/**
+/** Check whether a socket is client-side.
  * @param sock
- *  [in] socket handle
+ *  [in]  socket handle
  * @return
  *  Non-zero value if socket "sock" was created by SOCK_Create[Ex]().
  *  Return zero otherwise.
@@ -1500,9 +1502,9 @@ extern NCBI_XCONNECT_EXPORT int/**bool*/ SOCK_IsDatagram(SOCK sock);
 extern NCBI_XCONNECT_EXPORT int/**bool*/ SOCK_IsClientSide(SOCK sock);
 
 
-/**
+/** Check whether a socket is server-side.
  * @param sock
- *  [in] socket handle
+ *  [in]  socket handle
  * @return
  *  Non-zero value if socket "sock" was created by LSOCK_Accept().
  *  Return zero otherwise.
@@ -1510,9 +1512,9 @@ extern NCBI_XCONNECT_EXPORT int/**bool*/ SOCK_IsClientSide(SOCK sock);
 extern NCBI_XCONNECT_EXPORT int/**bool*/ SOCK_IsServerSide(SOCK sock);
 
 
-/**
+/** Check whether a socket is UNIX type.
  * @param sock
- *  [in] socket handle
+ *  [in]  socket handle
  * @return
  *  Non-zero value if socket "sock" is a UNIX family named socket
  *  Return zero otherwise.
@@ -1520,9 +1522,9 @@ extern NCBI_XCONNECT_EXPORT int/**bool*/ SOCK_IsServerSide(SOCK sock);
 extern NCBI_XCONNECT_EXPORT int/**bool*/ SOCK_IsUNIX(SOCK sock);
 
 
-/**
+/** Check whether a socket is using SSL (Secure Socket Layer).
  * @param sock
- *  [in] socket handle
+ *  [in]  socket handle
  * @return
  *  Non-zero value if socket "sock" is using Secure Socket Layer (SSL).
  *  Return zero otherwise.
@@ -1530,11 +1532,11 @@ extern NCBI_XCONNECT_EXPORT int/**bool*/ SOCK_IsUNIX(SOCK sock);
 extern NCBI_XCONNECT_EXPORT int/**bool*/ SOCK_IsSecure(SOCK sock);
 
 
-/**
+/** Get current read or write position within a socket.
  * @param sock
- *  [in] socket handle
+ *  [in]  socket handle
  * @param direction
- *  [in] either eIO_Read or eIO_Write
+ *  [in]  either eIO_Read or eIO_Write
  * @return
  *  Current read or write logical position, which takes any pending
  *  (i.e. unread or unwritten) data into account.
@@ -1545,11 +1547,11 @@ extern NCBI_XCONNECT_EXPORT TNCBI_BigCount SOCK_GetPosition
  );
 
 
-/**
+/** Get counts of read or written bytes.
  * @param sock
- *  [in] socket handle
+ *  [in]  socket handle
  * @param direction
- *  [in] either eIO_Read or eIO_Write
+ *  [in]  either eIO_Read or eIO_Write
  * @return
  *  Count of bytes actually read or written through this socket in the current
  *  session. For datagram sockets the count applies for the last message only;
@@ -1561,11 +1563,11 @@ extern NCBI_XCONNECT_EXPORT TNCBI_BigCount SOCK_GetCount
  );
 
 
-/**
+/** Get the total volume of data transferred by a socket.
  * @param sock
- *  [in] socket handle
+ *  [in]  socket handle
  * @param direction
- *  [in] either eIO_Read or eIO_Write
+ *  [in]  either eIO_Read or eIO_Write
  * @return
  *  Total number of bytes transferred through the socket in its lifetime.
  */
@@ -1649,7 +1651,7 @@ extern NCBI_XCONNECT_EXPORT void SOCK_SetReuseAddress
 /******************************************************************************
  *  Error & Data Logging
  *
- * @li <b>NOTE:</b>  Use CORE_SetLOG() from "ncbi_core.h" to set log handler.
+ * @note Use CORE_SetLOG() from "ncbi_core.h" to set log handler.
  *
  * @sa
  *  CORE_SetLOG
@@ -1745,7 +1747,7 @@ extern NCBI_XCONNECT_EXPORT TRIGGER  POLLABLE_ToTRIGGER(POLLABLE);
  *  [in]  must be in the network byte-order
  * @param buf
  *  [out] to be filled by smth. like "123.45.67.89\0"
- * @param buflen
+ * @param bufsize
  *  [in]  max # of bytes to put to "buf"
  * @return
  *  Zero on success, non-zero on error.  Vaguely related to BSD's
@@ -1754,15 +1756,15 @@ extern NCBI_XCONNECT_EXPORT TRIGGER  POLLABLE_ToTRIGGER(POLLABLE);
 extern NCBI_XCONNECT_EXPORT int SOCK_ntoa
 (unsigned int addr,
  char*        buf,
- size_t       buflen
+ size_t       bufsize
  );
 
 
 /**
  * @param host
- *  [in] '\0'-terminated string to check against being a plain IP address
+ *  [in]  '\0'-terminated string to check against being a plain IP address
  * @param fullquad
- *  [in] non-zero to only accept "host" if it is a full-quad IP notation
+ *  [in]  non-zero to only accept "host" if it is a full-quad IP notation
  * @return
  *  Non-zero (true) if given string is an IP address, zero (false) otherwise.
  */
@@ -1774,7 +1776,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_isipEx
 
 /** Equivalent of SOCK_isip(host, 0)
  * @param host
- *  [in] '\0'-terminated string to check against being a plain IP address
+ *  [in]  '\0'-terminated string to check against being a plain IP address
  * @return
  *  Non-zero (true) if given string is an IP address, zero (false) otherwise.
  */
@@ -1822,9 +1824,9 @@ unsigned short SOCK_htons(unsigned short);
  * @param name
  *  [out] (guaranteed to be '\0'-terminated)
  * @param namelen
- *  [in]  max # of bytes allowed to put to "name"
+ *  [in]   max # of bytes allowed to put to "name"
  * @param log
- *  [in]  whether to log failures
+ *  [in]   whether to log failures
  * @return
  *  Zero on success, non-zero on error.  See BSD gethostname().
  *  On error "name" returned emptied (name[0] == '\0').
@@ -1850,15 +1852,15 @@ extern NCBI_XCONNECT_EXPORT int SOCK_gethostname
 
 /**
  * @param hostname
- *  [in] specified host, or the current host if hostname is 0
+ *  [in]  specified host, or the current host if hostname is 0
  * @param log
- *  [in] whether to log failures
+ *  [in]  whether to log failures
  * @return
- *  INET host address (in network byte order) of the
- *  specified host (or local host, if hostname is passed as NULL),
- *  which can be either domain name or an IP address in
- *  dotted notation (e.g. "123.45.67.89\0"). Return 0 on error.
- *  @li <b>NOTE:</b> "0.0.0.0" and "255.255.255.255" are considered invalid.
+ *  INET host address (in network byte order) of the specified host
+ *  (or local host, if hostname is passed as NULL), which can be either
+ *  domain name or an IP address in the dotted notation
+ *  (e.g. "123.45.67.89\0").  Return 0 on error.
+ *  @note "0.0.0.0" and "255.255.255.255" are both considered invalid.
  * @sa
  *  SOCK_gethostbyname, SOCK_gethostname
  */
@@ -1957,7 +1959,8 @@ extern NCBI_XCONNECT_EXPORT const char* SOCK_StringToHostPort
  );
 
 
-/** Print host:port into provided buffer string, not to exceed 'buflen' size.
+/** Print host:port into provided buffer string, not to exceed 'bufsize' bytes
+ * (including the teminating '\0' character).
  * Suppress printing host if parameter 'host' is zero.
  * @param host
  *
@@ -1965,7 +1968,7 @@ extern NCBI_XCONNECT_EXPORT const char* SOCK_StringToHostPort
  *
  * @param buf
  *
- * @param buflen
+ * @param bufsize
  *
  * @return
  *  Number of bytes printed.
@@ -1974,7 +1977,7 @@ extern NCBI_XCONNECT_EXPORT size_t SOCK_HostPortToString
 (unsigned int   host,
  unsigned short port,
  char*          buf,
- size_t         buflen
+ size_t         bufsize
  );
 
 

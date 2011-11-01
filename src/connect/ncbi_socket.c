@@ -6167,35 +6167,34 @@ extern unsigned short SOCK_GetRemotePort(SOCK          sock,
 
 extern char* SOCK_GetPeerAddressString(SOCK   sock,
                                        char*  buf,
-                                       size_t buflen)
+                                       size_t bufsize)
 {
-    return SOCK_GetPeerAddressStringEx(sock, buf, buflen, eSAF_Full);
+    return SOCK_GetPeerAddressStringEx(sock, buf, bufsize, eSAF_Full);
 }
 
 
 extern char* SOCK_GetPeerAddressStringEx(SOCK                sock,
                                          char*               buf,
-                                         size_t              buflen,
+                                         size_t              bufsize,
                                          ESOCK_AddressFormat format)
 {
     char   port[10];
     size_t len;
 
-    if (!sock  ||  !buf  ||  !buflen)
+    if (!sock  ||  !buf  ||  !bufsize)
         return 0/*error*/;
     switch (format) {
     case eSAF_Full:
 #ifdef NCBI_OS_UNIX
         if (*sock->path) {
             size_t len = strlen(sock->path);
-            if (len < buflen) {
-                memcpy(buf, sock->path, len);
-                buf[len] = '\0';
-            } else
+            if (len < bufsize)
+                memcpy(buf, sock->path, len + 1);
+            else
                 return 0;
         } else
 #endif /*NCBI_OS_UNIX*/
-            if (!SOCK_HostPortToString(sock->host, sock->port, buf, buflen))
+            if (!SOCK_HostPortToString(sock->host, sock->port, buf, bufsize))
                 return 0/*error*/;
         break;
     case eSAF_Port:
@@ -6204,7 +6203,7 @@ extern char* SOCK_GetPeerAddressStringEx(SOCK                sock,
             *buf = '\0';
         else
 #endif /*NCBI_OS_UNIX*/
-            if ((len = (size_t) sprintf(port, "%hu", sock->port)) >= buflen)
+            if ((len = (size_t) sprintf(port, "%hu", sock->port)) >= bufsize)
                 return 0/*error*/;
             else
                 memcpy(buf, port, len + 1);
@@ -6215,7 +6214,7 @@ extern char* SOCK_GetPeerAddressStringEx(SOCK                sock,
             *buf = '\0';
         else
 #endif /*NCBI_OS_UNIX*/
-            if (SOCK_ntoa(sock->host, buf, buflen) != 0)
+            if (SOCK_ntoa(sock->host, buf, bufsize) != 0)
                 return 0/*error*/;
         break;
     default:
@@ -6835,7 +6834,7 @@ extern EIO_Status DSOCK_SendMsg(SOCK           sock,
 
 extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
                                 void*           buf,
-                                size_t          buflen,
+                                size_t          bufsize,
                                 size_t          msgsize,
                                 size_t*         msglen,
                                 unsigned int*   sender_addr,
@@ -6874,7 +6873,7 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
     x_msgsize = (msgsize  &&  msgsize < ((1 << 16) - 1))
         ? msgsize : ((1 << 16) - 1);
 
-    if (!(x_msg = (x_msgsize <= buflen
+    if (!(x_msg = (x_msgsize <= bufsize
                    ? buf : (x_msgsize <= sizeof(w)
                             ? w : malloc(x_msgsize))))) {
         sock->r_status = eIO_Unknown;
@@ -6911,19 +6910,19 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
                 *sender_addr =       sin.sin_addr.s_addr;
             if (sender_port)
                 *sender_port = ntohs(sin.sin_port);
-            if ((size_t) x_read > buflen
+            if ((size_t) x_read > bufsize
                 &&  !BUF_Write(&sock->r_buf,
-                               (char*) x_msg  + buflen,
-                               (size_t)x_read - buflen)) {
+                               (char*) x_msg  + bufsize,
+                               (size_t)x_read - bufsize)) {
                 CORE_LOGF_X(20, eLOG_Error,
                             ("%s[DSOCK::RecvMsg] "
                              " Message truncated: %lu/%u",
-                             s_ID(sock, w), (unsigned long) buflen, x_read));
+                             s_ID(sock, w), (unsigned long) bufsize, x_read));
                 status = eIO_Unknown;
             } else
                 status = eIO_Success;
-            if (buflen  &&  x_msgsize > buflen)
-                memcpy(buf, x_msg, buflen);
+            if (bufsize  &&  x_msgsize > bufsize)
+                memcpy(buf, x_msg, bufsize);
 
             /* statistics & logging */
             if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)){
@@ -6973,7 +6972,7 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
         break;
     }
 
-    if (x_msgsize > buflen  &&  x_msg != w)
+    if (x_msgsize > bufsize  &&  x_msg != w)
         free(x_msg);
     return status;
 }
@@ -7311,22 +7310,21 @@ extern SOCK  POLLABLE_ToSOCK(POLLABLE poll)
 
 extern int SOCK_ntoa(unsigned int host,
                      char*        buf,
-                     size_t       buflen)
+                     size_t       bufsize)
 {
     const unsigned char* b = (const unsigned char*) &host;
     char str[16/*sizeof("255.255.255.255")*/];
     int len;
 
-    assert(buf  &&  buflen > 0);
-    verify((len = sprintf(str, "%u.%u.%u.%u", b[0], b[1], b[2], b[3])) > 0);
-    assert((size_t) len < sizeof(str));
-
-    if ((size_t) len < buflen) {
-        memcpy(buf, str, len + 1);
-        return 0/*success*/;
+    if (buf  &&  bufsize > 0) {
+        len = sprintf(str, "%u.%u.%u.%u", b[0], b[1], b[2], b[3]);
+        assert(0 < len  &&  (size_t) len < sizeof(str));
+        if ((size_t) len < bufsize) {
+            memcpy(buf, str, len + 1);
+            return 0/*success*/;
+        }
+        buf[0] = '\0';
     }
-
-    buf[0] = '\0';
     return -1/*failed*/;
 }
 
@@ -7518,12 +7516,12 @@ extern const char* SOCK_StringToHostPort(const char*     str,
 extern size_t SOCK_HostPortToString(unsigned int   host,
                                     unsigned short port,
                                     char*          buf,
-                                    size_t         buflen)
+                                    size_t         bufsize)
 {
     char   x_buf[16/*sizeof("255.255.255.255")*/ + 6/*:port#*/];
     size_t n;
 
-    if (!buf  ||  !buflen)
+    if (!buf  ||  !bufsize)
         return 0;
     if (!host)
         *x_buf = '\0';
@@ -7535,8 +7533,10 @@ extern size_t SOCK_HostPortToString(unsigned int   host,
     if (port  ||  !host)
         n += sprintf(x_buf + n, ":%hu", port);
     assert(n < sizeof(x_buf));
-    if (n >= buflen)
-        n  = buflen - 1;
+    if (n >= bufsize) {
+        *buf = '\0';
+        return 0;
+    }
     memcpy(buf, x_buf, n);
     buf[n] = '\0';
     return n;

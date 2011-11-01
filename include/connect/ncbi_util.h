@@ -382,7 +382,7 @@ extern NCBI_XCONNECT_EXPORT REG  CORE_GetREG(void);
 /** Obtain current NCBI SID (if known, per thread).
  * @return
  *  Return 0 when the SID cannot be determined;
- *  otherwise, return a NULL-terminated string.
+ *  otherwise, return a NUL-terminated string.
  */
 extern NCBI_XCONNECT_EXPORT const char* CORE_GetNcbiSid(void);
 
@@ -390,7 +390,7 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_GetNcbiSid(void);
 /** Obtain current application name (toolkit dependent).
  * @return
  *  Return 0 when the application name cannot be determined;
- *  otherwise, return a NULL-terminated string
+ *  otherwise, return a NUL-terminated string
  *
  * NOTE that setting an application name concurrently with this
  * call can cause undefined behavior or a stale pointer returned.
