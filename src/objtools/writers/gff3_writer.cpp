@@ -397,21 +397,32 @@ bool CGff3Writer::x_WriteFeature(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    switch( mf.GetFeatSubtype() ) {
-        default:
-            if (mf.GetFeatType() == CSeqFeatData::e_Rna) {
-                return x_WriteFeatureRna( fc, mf );
-            }
-            return x_WriteFeatureGeneric( fc, mf );
-        case CSeqFeatData::eSubtype_gene: 
-            return x_WriteFeatureGene( fc, mf );
-        case CSeqFeatData::eSubtype_cdregion:
-            return x_WriteFeatureCds( fc, mf );
-        case CSeqFeatData::eSubtype_tRNA:
-            return x_WriteFeatureTrna( fc, mf );
+    CSeqFeatData::ESubtype subtype = mf.GetFeatSubtype();
 
-        case CSeqFeatData::eSubtype_pub:
-            return true; //ignore
+    try {
+        switch( mf.GetFeatSubtype() ) {
+            default:
+                if (mf.GetFeatType() == CSeqFeatData::e_Rna) {
+                    if (subtype != CSeqFeatData::eSubtype_mRNA) {
+                        cerr << "";
+                    }
+                    return x_WriteFeatureRna( fc, mf );
+                }
+                return x_WriteFeatureGeneric( fc, mf );
+            case CSeqFeatData::eSubtype_gene: 
+                return x_WriteFeatureGene( fc, mf );
+            case CSeqFeatData::eSubtype_cdregion:
+                return x_WriteFeatureCds( fc, mf );
+            case CSeqFeatData::eSubtype_tRNA:
+                return x_WriteFeatureTrna( fc, mf );
+
+            case CSeqFeatData::eSubtype_pub:
+                return true; //ignore
+        }
+    }
+    catch (...) {
+        cerr << "CGff3Writer: Unsupported feature type encountered: Removed." << endl;
+        return true;
     }
     return false;
 }

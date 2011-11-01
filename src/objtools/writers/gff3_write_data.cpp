@@ -676,6 +676,19 @@ bool CGff3WriteRecordFeature::x_AssignAttributeDbXref(
             }
         }
         CMappedFeat gene_feat = m_fc.FeatTree().GetParent( mf, CSeqFeatData::e_Gene );
+        if ( gene_feat  &&  mf.IsSetXref()) {
+            const CSeq_feat::TXref& xref = mf.GetXref();
+            for (CSeq_feat::TXref::const_iterator cit = xref.begin(); cit != xref.end(); ++cit) {
+                if ( (*cit)->IsSetData()  &&  (*cit)->GetData().IsGene()) {
+                    const CSeqFeatData::TGene& gene = (*cit)->GetData().GetGene();
+                    if (gene.IsSuppressed()) {
+                        gene_feat = CMappedFeat();
+                        break;
+                    }
+                }
+            }
+        }
+
         if ( gene_feat  &&  gene_feat.IsSetDbxref() ) {
             const CSeq_feat::TDbxref& dbxrefs = gene_feat.GetDbxref();
             for ( size_t i=0; i < dbxrefs.size(); ++i ) {
