@@ -1644,11 +1644,7 @@ CValidErrItem::CValidErrItem
     SetErrIndex(ec);
     SetMsg(msg);
     SetObjDesc(desc);
-    if (ver > 0) {
-        SetAccession(acc + "." + NStr::IntToString(ver));
-    } else {
-        SetAccession(acc);
-    }
+    SetAccession(acc);
     SetSeqOffset(seq_offset);
     if (ver > 0) {
         SetAccnver(acc + "." + NStr::IntToString(ver));
@@ -1676,11 +1672,7 @@ CValidErrItem::CValidErrItem
     SetErrIndex(ec);
     SetMsg(msg);
     SetObjDesc(desc);
-    if (ver > 0) {
-        SetAccession(acc + "." + NStr::IntToString(ver));
-    } else {
-        SetAccession(acc);
-    }
+    SetAccession(acc);
     SetFeatureId(feature_id);
     SetSeqOffset(seq_offset);
     if (ver > 0) {
@@ -1710,11 +1702,7 @@ CValidErrItem::CValidErrItem
     SetErrIndex(ec);
     SetMsg(msg);
     SetObjDesc(desc);
-    if (ver > 0) {
-        SetAccession(acc + "." + NStr::IntToString(ver));
-    } else {
-        SetAccession(acc);
-    }
+    SetAccession(acc);
     SetSeqOffset(seq_offset);
     if (ver > 0) {
         SetAccnver(acc + "." + NStr::IntToString(ver));
