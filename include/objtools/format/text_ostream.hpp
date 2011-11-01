@@ -58,12 +58,23 @@ public:
         eAddNewline_No
     };
 
+    // TODO: for SC-9, make this pure virtual
     virtual void AddParagraph(const list<string>&  text,
-                              const CSerialObject* obj = 0) = 0;
+                              const CSerialObject* obj = 0) 
+    {
+        // must be overridden
+        _TROUBLE;
+    }
 
+    // TODO: for SC-9, make this pure virtual
     virtual void AddLine( const CTempString& line,
                           const CSerialObject* obj = 0,
-                          EAddNewline add_newline = eAddNewline_Yes ) = 0;
+                          EAddNewline add_newline = eAddNewline_Yes )
+    {
+        // must be overridden
+        _TROUBLE;
+    }
+
 
     NCBI_DEPRECATED
     virtual void AddCLine( const char *line,
