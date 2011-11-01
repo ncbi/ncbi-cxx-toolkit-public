@@ -2993,8 +2993,9 @@ BlastGetOffsetsForGappedAlignment (const Uint1* query, const Uint1* subject,
     int s_start = hsp->subject.offset;
     
     if (q_length <= HSP_MAX_WINDOW) {
-        *q_retval = q_start + q_length/2;
-        *s_retval = s_start + q_length/2;
+        /* trust the original gapped start */
+        *q_retval = hsp->query.gapped_start;
+        *s_retval = hsp->subject.gapped_start;
         return TRUE;
     }
 
