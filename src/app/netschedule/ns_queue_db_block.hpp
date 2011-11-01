@@ -57,7 +57,6 @@ struct SQueueDbBlock
     SJobDB                  job_db;
     SJobInfoDB              job_info_db;
     SEventsDB               events_db;
-    SDeletedJobsDB          deleted_jobs_db;
     SAffinityDictDB         aff_dict_db;
     SStartCounterDB         start_from_db;
 

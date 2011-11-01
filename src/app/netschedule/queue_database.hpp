@@ -195,8 +195,8 @@ private:
     int x_AllocateQueue(const string& qname, const string& qclass,
                         int kind, const string& comment);
 
-    unsigned x_PurgeUnconditional(unsigned batch_size);
-    void     x_OptimizeStatusMatrix(void);
+    unsigned x_PurgeUnconditional(void);
+    void     x_OptimizeStatusMatrix(time_t  current_time);
     bool     x_CheckStopPurge(void);
     void     x_CleanParamMap(void);
 
@@ -225,6 +225,22 @@ private:
     CRef<CGetJobNotificationThread>          m_NotifThread;
     CRef<CJobQueueExecutionWatcherThread>    m_ExeWatchThread;
     CNetScheduleServer*                      m_Server;
+
+private:
+    string              m_PurgeQueue;
+    size_t              m_PurgeStatusIndex;
+    unsigned int        m_PurgeJobScanned;
+    time_t              m_PurgeLoopStartTime;
+
+    CQueueCollection::iterator  x_GetPurgeQueueIterator(void);
+    bool                        x_PurgeQueue(CQueue &  queue,
+                                             size_t    status_to_start,
+                                             size_t    status_to_end,
+                                             size_t    max_scanned,
+                                             size_t    max_deleted,
+                                             time_t    current_time,
+                                             size_t &  total_scanned,
+                                             size_t &  total_deleted);
 
 }; // CQueueDataBase
 

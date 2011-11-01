@@ -181,25 +181,6 @@ struct SEventsDB : public CBDB_File
 };
 
 
-/// Database of a vector of jobs to be deleted. Because deletion
-/// occurs in background we need to maintain a bit vector with deleted jobs.
-///
-/// @internal
-///
-struct SDeletedJobsDB : public CBDB_BvStore<TNSBitVector>
-{
-    ///< Vector ID, 0 - job table
-    CBDB_FieldUint4 id;
-
-    typedef CBDB_BvStore<TNSBitVector> TParent;
-
-    SDeletedJobsDB()
-    {
-        DisableNull();
-        BindKey("id", &id);
-    }
-};
-
 /// BDB table to store affinity
 ///
 /// @internal

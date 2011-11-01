@@ -47,7 +47,48 @@ class CQueueDataBase;
 
 
 
-void CJobQueueCleanerThread::DoJob(void)
+CJobQueueCleanerThread::CJobQueueCleanerThread(
+        CBackgroundHost &    host,
+        CQueueDataBase &     qdb,
+        unsigned int         sec_delay,
+        unsigned int         nanosec_delay,
+        const bool &         logging) :
+    m_Host(host),
+    m_QueueDB(qdb),
+    m_CleaningLogging(logging),
+    m_SecDelay(sec_delay),
+    m_NanosecDelay(nanosec_delay),
+    m_StopSignal(0, 10000000)
+{}
+
+
+CJobQueueCleanerThread::~CJobQueueCleanerThread()
+{}
+
+
+void CJobQueueCleanerThread::RequestStop(void)
+{
+    m_StopFlag.Add(1);
+    m_StopSignal.Post();
+    return;
+}
+
+
+void *  CJobQueueCleanerThread::Main(void)
+{
+    while (1) {
+        x_DoJob();
+
+        if (m_StopSignal.TryWait(m_SecDelay, m_NanosecDelay))
+            if (m_StopFlag.Get() != 0)
+                break;
+    } // while (1)
+
+    return 0;
+}
+
+
+void CJobQueueCleanerThread::x_DoJob(void)
 {
     if (!m_Host.ShouldRun())
         return;
@@ -67,11 +108,6 @@ void CJobQueueCleanerThread::DoJob(void)
 
     try {
         m_QueueDB.Purge();
-
-        #ifdef _DEBUG
-        if (m_DbgTriggerDBRecover)
-            BDB_ERRNO_THROW(DB_RUNRECOVERY, "Test of error processing");
-        #endif
     }
     catch (CBDB_ErrnoException &  ex) {
         if (ex.IsNoMem()) {
@@ -121,6 +157,7 @@ void CJobQueueCleanerThread::DoJob(void)
         GetDiagContext().SetRequestContext(NULL);
     }
 }
+
 
 
 void CJobQueueExecutionWatcherThread::DoJob(void)

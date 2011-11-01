@@ -57,6 +57,12 @@ struct SNS_Parameters : SServer_Parameters
     bool            log_execution_watcher_thread;
     bool            log_statistics_thread;
 
+    unsigned int    del_batch_size;     // Max number of jobs to be deleted from
+                                        // BDB during one Purge() call
+    unsigned int    scan_batch_size;    // Max number of jobs expiration checks during
+                                        // one Purge() call
+    double          purge_timeout;      // Timeout in seconds between Purge() calls
+
     std::string     admin_hosts;
 
     void Read(const IRegistry& reg, const std::string& sname);

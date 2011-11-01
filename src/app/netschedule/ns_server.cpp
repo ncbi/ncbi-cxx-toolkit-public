@@ -57,7 +57,10 @@ CNetScheduleServer::CNetScheduleServer()
       m_LogBatchEachJobFlag(false),
       m_LogNotificationThreadFlag(false),
       m_LogCleaningThreadFlag(false),
-      m_LogStatisticsThreadFlag(false)
+      m_LogStatisticsThreadFlag(false),
+      m_DeleteBatchSize(100),
+      m_ScanBatchSize(10000),
+      m_PurgeTimeout(0.1)
 {
     m_AtomicCommandNumber.Set(1);
     sm_netschedule_server = this;
@@ -114,6 +117,18 @@ void CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
     m_InactivityTimeout = params.network_timeout;
 
     m_AdminHosts.SetHosts(params.admin_hosts);
+
+    // Purge related parameters
+    m_DeleteBatchSize = params.del_batch_size;
+    m_ScanBatchSize = params.scan_batch_size;
+    m_PurgeTimeout = params.purge_timeout;
+
+    if (m_DeleteBatchSize == 0)
+        m_DeleteBatchSize = 100;    // default
+    if (m_ScanBatchSize == 0)
+        m_ScanBatchSize = 10000;    // default
+    if (m_PurgeTimeout <= 0.0)
+        m_PurgeTimeout = 0.1;       // default
 }
 
 
@@ -211,52 +226,10 @@ void CNetScheduleServer::PrintMemStat(CNcbiOstream& out)
 }
 
 
-unsigned CNetScheduleServer::GetInactivityTimeout(void)
-{
-    return m_InactivityTimeout;
-}
-
-
-std::string& CNetScheduleServer::GetHost()
-{
-    return m_Host;
-}
-
-
-unsigned CNetScheduleServer::GetPort() const
-{
-    return m_Port;
-}
-
-
-unsigned CNetScheduleServer::GetHostNetAddr() const
-{
-    return m_HostNetAddr;
-}
-
-
-const CTime& CNetScheduleServer::GetStartTime(void) const
-{
-    return m_StartTime;
-}
-
-
 bool CNetScheduleServer::AdminHostValid(unsigned host) const
 {
     return !m_AdminHosts.IsRestrictionSet() ||
             m_AdminHosts.IsAllowed(host);
-}
-
-
-CBackgroundHost& CNetScheduleServer::GetBackgroundHost()
-{
-    return m_BackgroundHost;
-}
-
-
-CRequestExecutor& CNetScheduleServer::GetRequestExecutor()
-{
-    return m_RequestExecutor;
 }
 
 

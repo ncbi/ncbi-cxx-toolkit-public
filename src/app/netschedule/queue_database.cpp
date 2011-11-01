@@ -171,7 +171,11 @@ CQueueDataBase::CQueueDataBase(CNetScheduleServer *  server)
   m_StopPurge(false),
   m_FreeStatusMemCnt(0),
   m_LastFreeMem(time(0)),
-  m_Server(server)
+  m_Server(server),
+  m_PurgeQueue(""),
+  m_PurgeStatusIndex(0),
+  m_PurgeJobScanned(0),
+  m_PurgeLoopStartTime(0)
 {}
 
 
@@ -823,104 +827,189 @@ const size_t kStatusesSize = sizeof(statuses_to_delete_from) /
 
 void CQueueDataBase::Purge(void)
 {
-    // Delete obsolete job records, based on time stamps
-    // and expiration timeouts
-    unsigned            n_queue_limit = 10000; // TODO: determine this based on load
-    unsigned            global_del_rec = 0;
     vector<string>      queues_to_delete;
+    size_t              max_deleted = m_Server->GetDeleteBatchSize();
+    size_t              max_scanned = m_Server->GetScanBatchSize();
+    SPurgeAttributes    purge_io;
+    size_t              total_scanned = 0;
+    size_t              total_deleted = 0;
+    time_t              current_time = time(0);
 
-    NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
+    // Part I: from the last end till the end of the list
+    CQueueCollection::iterator      start_iterator = x_GetPurgeQueueIterator();
+    size_t                          start_status_index = m_PurgeStatusIndex;
 
+    if (start_iterator == m_QueueCollection.begin()) {
+        if (m_PurgeLoopStartTime == current_time)
+            return;
+    }
+
+    for (CQueueCollection::iterator  it = start_iterator;
+         it != m_QueueCollection.end(); ++it) {
         if ((*it).IsExpired()) {
             queues_to_delete.push_back(it.GetName());
             continue;
         }
 
-        unsigned            queue_del_rec = 0;
-        const unsigned      batch_size = 100;
-        unsigned            deleted_by_status[kStatusesSize];
+        m_PurgeQueue = it.GetName();
+        if (x_PurgeQueue(*it, m_PurgeStatusIndex, kStatusesSize - 1,
+                         max_scanned, max_deleted,
+                         current_time,
+                         total_scanned, total_deleted) == true)
+            return;
 
-        for (size_t n = 0; n < kStatusesSize; ++n)
-            deleted_by_status[n] = 0;
-
-        for (bool stop_flag = false; !stop_flag; ) {
-            // stop if all statuses have less than batch_size jobs to delete
-            stop_flag = true;
-            for (size_t n = 0; n < kStatusesSize; ++n) {
-                unsigned    del_rec = (*it).CheckJobsExpiry(batch_size,
-                                                            statuses_to_delete_from[n]);
-
-                deleted_by_status[n] += del_rec;
-                stop_flag = stop_flag && (del_rec < batch_size);
-                queue_del_rec += del_rec;
-            }
-
-            // do not delete more than certain number of
-            // records from the queue in one Purge
-            if (queue_del_rec >= n_queue_limit)
-                break;
-
-            if (x_CheckStopPurge())
-                return;
-        }
-        for (size_t n = 0; n < kStatusesSize; ++n) {
-            CNetScheduleAPI::EJobStatus     s = statuses_to_delete_from[n];
-            if (deleted_by_status[n] > 0
-                &&  s == CNetScheduleAPI::ePending) { // ? other states
-                LOG_POST(Error << deleted_by_status[n]
-                               << " jobs deleted from non-final state "
-                               << CNetScheduleAPI::StatusToString(s));
-            }
-        }
-        global_del_rec += queue_del_rec;
+        if (total_deleted >= max_deleted ||
+            total_scanned >= max_scanned)
+            break;
     }
 
-    // Delete jobs unconditionally, from internal vector.
-    // This is done to spread massive job deletion in time
-    // and thus smooth out peak loads
-    // TODO: determine batch size based on load
-    unsigned        n_jobs_to_delete = 1000;
-    unsigned        unc_del_rec = x_PurgeUnconditional(n_jobs_to_delete);
+    // This is the point of the queue list beginning. If we cross this point
+    // within the same second twice or more we can safely skip scanning as it
+    // would be too often.
+    if (m_PurgeLoopStartTime != current_time) {
+        m_PurgeLoopStartTime = current_time;
 
-    global_del_rec += unc_del_rec;
 
+        // Part II: from the beginning of the list till the last end
+        if (total_deleted < max_deleted && total_scanned < max_scanned) {
+            for (CQueueCollection::iterator  it = m_QueueCollection.begin();
+                 it != start_iterator; ++it) {
+                if ((*it).IsExpired()) {
+                    queues_to_delete.push_back(it.GetName());
+                    continue;
+                }
+
+                m_PurgeQueue = it.GetName();
+                if (x_PurgeQueue(*it, m_PurgeStatusIndex, kStatusesSize - 1,
+                                 max_scanned, max_deleted,
+                                 current_time,
+                                 total_scanned, total_deleted) == true)
+                    return;
+
+                if (total_deleted >= max_deleted ||
+                    total_scanned >= max_scanned)
+                    break;
+            }
+        }
+
+        // Part III: it might need to check the statuses in the queue we started
+        // with if the start status was not the first one.
+        if (total_deleted < max_deleted && total_scanned < max_scanned) {
+            if (start_iterator != m_QueueCollection.end()) {
+                m_PurgeQueue = start_iterator.GetName();
+                if (start_status_index > 0) {
+                    if (x_PurgeQueue(*start_iterator, 0, start_status_index - 1,
+                                     max_scanned, max_deleted,
+                                     current_time,
+                                     total_scanned, total_deleted) == true)
+                        return;
+                }
+            }
+        }
+    }
+
+    // Part IV: purge the found candidates and optimize the memory if required
+    m_FreeStatusMemCnt += x_PurgeUnconditional();
     TransactionCheckPoint();
 
-    m_FreeStatusMemCnt += global_del_rec;
-    x_OptimizeStatusMatrix();
+    x_OptimizeStatusMatrix(current_time);
 
-    ITERATE(vector<string>, it, queues_to_delete) {
+    ITERATE(vector<string>, q_it, queues_to_delete) {
         try {
-            DeleteQueue((*it));
+            DeleteQueue(*q_it);
         } catch (...) { // TODO: use more specific exception
-            LOG_POST(Error << "Queue " << (*it) << " has already gone.");
+            LOG_POST(Error << "Queue " << (*q_it) << " has already gone.");
         }
     }
+
+    return;
 }
 
 
-unsigned CQueueDataBase::x_PurgeUnconditional(unsigned batch_size) {
+CQueueCollection::iterator  CQueueDataBase::x_GetPurgeQueueIterator(void)
+{
+    if (m_PurgeQueue.empty())
+        return m_QueueCollection.begin();
+
+    for (CQueueCollection::iterator  it = m_QueueCollection.begin(); it != m_QueueCollection.end(); ++it)
+        if (it.GetName() == m_PurgeQueue)
+            return it;
+
+    // Not found, which means the queue was deleted. Pick a random one
+    m_PurgeStatusIndex = 0;
+
+    int     queue_num = ((rand() * 1.0) / RAND_MAX) * m_QueueCollection.GetSize();
+    int     k = 1;
+    for (CQueueCollection::iterator  it = m_QueueCollection.begin(); it != m_QueueCollection.end(); ++it) {
+        if (k >= queue_num)
+            return it;
+        ++k;
+    }
+
+    // Cannot happened, so just be consistent with the return value
+    return m_QueueCollection.begin();
+}
+
+
+// Purges jobs from a queue starting from the given status.
+// Returns true if the purge should be stopped.
+// The status argument is a status to start from
+bool  CQueueDataBase::x_PurgeQueue(CQueue &  queue,
+                                   size_t    status,
+                                   size_t    status_to_end,
+                                   size_t    max_scanned,
+                                   size_t    max_deleted,
+                                   time_t    current_time,
+                                   size_t &  total_scanned,
+                                   size_t &  total_deleted)
+{
+    SPurgeAttributes    purge_io;
+
+    for (; status <= status_to_end; ++status) {
+        purge_io.scans = max_scanned - total_scanned;
+        purge_io.deleted = max_deleted - total_deleted;
+        purge_io.job_id = m_PurgeJobScanned;
+
+        purge_io = queue.CheckJobsExpiry(current_time, purge_io,
+                                         statuses_to_delete_from[status]);
+        total_scanned += purge_io.scans;
+        total_deleted += purge_io.deleted;
+        m_PurgeJobScanned = purge_io.job_id;
+
+        if (x_CheckStopPurge())
+            return true;
+
+        if (total_deleted >= max_deleted || total_scanned >= max_scanned) {
+            m_PurgeStatusIndex = status;
+            return false;
+        }
+    }
+    m_PurgeStatusIndex = 0;
+    return false;
+}
+
+
+unsigned CQueueDataBase::x_PurgeUnconditional(void) {
     // Purge unconditional jobs
     unsigned        del_rec = 0;
 
     NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
-        del_rec += (*it).DeleteBatch(batch_size);
+        del_rec += (*it).DeleteBatch();
     }
     return del_rec;
 }
 
 
-void CQueueDataBase::x_OptimizeStatusMatrix(void)
+void CQueueDataBase::x_OptimizeStatusMatrix(time_t  current_time)
 {
     // optimize memory every 15 min. or after 1 million of deleted records
-    const int       kMemFree_Delay = 15 * 60;
-    const unsigned  kRecordThreshold = 1000000;
-    time_t          curr = time(0);
+    static const int        kMemFree_Delay = 15 * 60;
+    static const unsigned   kRecordThreshold = 1000000;
 
     if ((m_FreeStatusMemCnt > kRecordThreshold) ||
-        (m_LastFreeMem + kMemFree_Delay <= curr)) {
+        (m_LastFreeMem + kMemFree_Delay <= current_time)) {
         m_FreeStatusMemCnt = 0;
-        m_LastFreeMem = curr;
+        m_LastFreeMem = current_time;
 
         NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
             (*it).OptimizeMem();
@@ -959,8 +1048,12 @@ bool CQueueDataBase::x_CheckStopPurge(void)
 
 void CQueueDataBase::RunPurgeThread(void)
 {
+    double              purge_timeout = m_Server->GetPurgeTimeout();
+    unsigned int        sec_delay = purge_timeout;
+    unsigned int        nanosec_delay = (purge_timeout - sec_delay)*1000000000;
+
     m_PurgeThread.Reset(new CJobQueueCleanerThread(
-                                m_Host, *this, 1,
+                                m_Host, *this, sec_delay, nanosec_delay,
                                 m_Server->IsLogCleaningThread()));
     m_PurgeThread->Run();
 }

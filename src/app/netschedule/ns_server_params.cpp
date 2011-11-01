@@ -39,6 +39,8 @@ USING_NCBI_SCOPE;
     reg.GetInt(sname, name, dflt, 0, IRegistry::eReturn)
 #define GetBoolNoErr(name, dflt) \
     reg.GetBool(sname, name, dflt, 0, IRegistry::eReturn)
+#define GetDoubleNoErr(name, dflt) \
+    reg.GetDouble(sname, name, dflt, 0, IRegistry::eReturn)
 
 
 void SNS_Parameters::Read(const IRegistry& reg, const string& sname)
@@ -69,6 +71,11 @@ void SNS_Parameters::Read(const IRegistry& reg, const string& sname)
     log_execution_watcher_thread = GetBoolNoErr("log_execution_watcher_thread", true);
     log_statistics_thread        = GetBoolNoErr("log_statistics_thread", true);
 
+    // Job deleting parameters
+    del_batch_size = GetIntNoErr("del_batch_size", 100);
+    scan_batch_size = GetIntNoErr("scan_batch_size", 10000);
+    purge_timeout  = GetDoubleNoErr("purge_timeout", 0.1);
+
     is_daemon   = GetBoolNoErr("daemon", false);
     admin_hosts = reg.GetString(sname, "admin_host", kEmptyStr);
     return;
@@ -91,7 +98,10 @@ static string s_NSParameters[] =
     "log_notification_thread",      // 11
     "log_cleaning_thread",          // 12
     "log_execution_watcher_thread", // 13
-    "log_statistics_thread"         // 14
+    "log_statistics_thread",        // 14
+    "del_batch_size",               // 15
+    "scan_batch_size",              // 16
+    "purge_timeout"                 // 17
 };
 static unsigned s_NumNSParameters = sizeof(s_NSParameters) / sizeof(string);
 
@@ -128,6 +138,9 @@ string SNS_Parameters::GetParamValue(unsigned n) const
     case 12: return NStr::BoolToString(log_cleaning_thread);
     case 13: return NStr::BoolToString(log_execution_watcher_thread);
     case 14: return NStr::BoolToString(log_statistics_thread);
+    case 15: return NStr::UIntToString(del_batch_size);
+    case 16: return NStr::UIntToString(scan_batch_size);
+    case 17: return NStr::DoubleToString(purge_timeout);
     default: return kEmptyStr;
     }
 }

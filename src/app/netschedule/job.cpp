@@ -392,21 +392,6 @@ CJobEvent *  CJob::GetLastEvent()
 }
 
 
-time_t  CJob::GetJobExpirationTime(time_t  queue_timeout,
-                                   time_t  queue_run_timeout) const
-{
-    if (m_Status == CNetScheduleAPI::eRunning ||
-        m_Status == CNetScheduleAPI::eReading) {
-        if (m_RunTimeout != 0)
-            return GetLastUpdateTime() + m_RunTimeout;
-        return GetLastUpdateTime() + queue_run_timeout;
-    }
-
-    if (m_Timeout != 0)
-        return GetLastUpdateTime() + m_Timeout;
-    return GetLastUpdateTime() + queue_timeout;
-}
-
 CJob::EAuthTokenCompareResult
 CJob::CompareAuthToken(const string &  auth_token) const
 {
@@ -530,6 +515,57 @@ CJob::EJobFetchResult  CJob::Fetch(CQueue *  queue, unsigned  id)
         return eJF_NotFound;
     }
     return Fetch(queue);
+}
+
+
+// Attention: this is a highly specialized member to fetch the only portion of
+// data which required to make a decision if a job is expired. In fact it
+// retrieves the following members:
+// m_AffinityId, m_Status, m_Timeout, m_RunTimeout and the m_Timestamp of the
+// last job event.
+// Do not use this member for anything else except of the fetching a job before
+// testing the job expiration! (See CQueue::CheckJobsExpiry)
+CJob::EJobFetchResult  CJob::FetchToTestExpiration(CQueue *      queue,
+                                                   unsigned int  id)
+{
+    SJobDB &        job_db = queue->m_QueueDbBlock->job_db;
+
+    job_db.id = id;
+    EBDB_ErrCode    res = job_db.Fetch();
+    if (res != eBDB_Ok) {
+        if (res != eBDB_NotFound) {
+            ERR_POST("Error reading queue job db, job_key " <<
+                     queue->MakeKey(id));
+            return eJF_DBErr;
+        }
+        return eJF_NotFound;
+    }
+
+    m_Status     = TJobStatus(int(job_db.status));
+    m_Timeout    = job_db.timeout;
+    m_RunTimeout = job_db.run_timeout;
+    m_AffinityId = job_db.aff_id;
+
+    // EventsDB
+    m_Events.clear();
+
+    SEventsDB &         events_db   = queue->m_QueueDbBlock->events_db;
+    CBDB_FileCursor &   cur = queue->GetEventsCursor();
+    CBDB_CursorGuard    cg(cur);
+
+    cur.SetCondition(CBDB_FileCursor::eEQ);
+    cur.From << m_Id;
+
+    time_t      last_event_timestamp = 0;
+    for (unsigned n = 0; (res = cur.Fetch()) == eBDB_Ok; ++n)
+        last_event_timestamp  = events_db.timestamp;
+
+    if (res != eBDB_NotFound)
+        return eJF_DBErr;
+
+    CJobEvent &       event = AppendEvent();
+    event.m_Timestamp  = last_event_timestamp;
+    return eJF_Ok;
 }
 
 

@@ -40,38 +40,61 @@ BEGIN_NCBI_SCOPE
 
 class CQueueDataBase;
 
+
+// Purge support
+// Used as argument and as return value of the method which checks jobs
+// expiration. See the comments to individual members.
+struct SPurgeAttributes
+{
+    unsigned int    scans;      // in: max # of scans to be done
+                                // out: # of scans done
+    unsigned int    deleted;    // in: max # of jobs to mark for deletion
+                                // out: # of jobs marks for deletion
+    unsigned int    job_id;     // in: job id to start scan from
+                                // out: last scanned job id
+
+    SPurgeAttributes() :
+        scans(0), deleted(0), job_id(0)
+    {}
+};
+
+
+
 /// Thread class, removes obsolete job records
 ///
 /// @internal
-class CJobQueueCleanerThread : public CThreadNonStop
+class CJobQueueCleanerThread : public CThread
 {
 public:
-    CJobQueueCleanerThread(CBackgroundHost&     host,
-                           CQueueDataBase&      qdb,
-                           unsigned             run_delay,
-                           const bool &         logging)
-    : CThreadNonStop(run_delay),
-      m_Host(host),
-      m_QueueDB(qdb),
-      m_CleaningLogging(logging)
-#ifdef _DEBUG
-      , m_DbgTriggerDBRecover(false)
-#endif
-    {}
+    CJobQueueCleanerThread(CBackgroundHost &    host,
+                           CQueueDataBase &     qdb,
+                           unsigned int         sec_delay,
+                           unsigned int         nanosec_delay,
+                           const bool &         logging);
+    ~CJobQueueCleanerThread();
 
-    virtual void DoJob(void);
+    void RequestStop(void);
+
+protected:
+    virtual void *  Main(void);
+
+private:
+    void x_DoJob(void);
+
+private:
+    CBackgroundHost &   m_Host;
+    CQueueDataBase &    m_QueueDB;
+    const bool &        m_CleaningLogging;
+    unsigned int        m_SecDelay;
+    unsigned int        m_NanosecDelay;
+
+private:
+    mutable CSemaphore                      m_StopSignal;
+    mutable CAtomicCounter_WithAutoInit     m_StopFlag;
 
 private:
     CJobQueueCleanerThread(const CJobQueueCleanerThread&);
     CJobQueueCleanerThread& operator=(const CJobQueueCleanerThread&);
-
-private:
-    CBackgroundHost&    m_Host;
-    CQueueDataBase&     m_QueueDB;
-    const bool &        m_CleaningLogging;
-#ifdef _DEBUG
-    bool                m_DbgTriggerDBRecover;
-#endif
 };
 
 

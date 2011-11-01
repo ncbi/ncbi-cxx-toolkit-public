@@ -295,8 +295,25 @@ public:
         // it is impossible that the event list is empty
         return m_Events[m_Events.size()-1].GetTimestamp();
     }
+
+    // This one called very often to test job expiration so it needs to be as
+    // fast as possible. Lets make it inline
     time_t          GetJobExpirationTime(time_t  queue_timeout,
-                                         time_t  queue_run_timeout) const;
+                                         time_t  queue_run_timeout) const
+    {
+        time_t      last_update = GetLastUpdateTime();
+
+        if (m_Status == CNetScheduleAPI::eRunning ||
+            m_Status == CNetScheduleAPI::eReading) {
+            if (m_RunTimeout != 0)
+                return last_update + m_RunTimeout;
+            return last_update + queue_run_timeout;
+        }
+
+        if (m_Timeout != 0)
+            return last_update + m_Timeout;
+        return last_update + queue_timeout;
+    }
 
     EAuthTokenCompareResult  CompareAuthToken(const string &  auth_token) const;
 
@@ -308,6 +325,12 @@ public:
     EJobFetchResult Fetch(CQueue* queue);
     // Fetch object by its numeric id
     EJobFetchResult Fetch(CQueue* queue, unsigned id);
+    // Fetch a strictly limited set of fields:
+    // m_AffinityId, m_Status, m_RunTimeout, m_Timeout, m_Events
+    // Attention: other fields are not initialized
+    EJobFetchResult FetchToTestExpiration(CQueue *      queue,
+                                          unsigned int  id);
+
     // Cursor like functionality - not here yet. May be we need
     // to create separate CJobIterator.
     // EJobFetchResult FetchNext(CQueue* queue);

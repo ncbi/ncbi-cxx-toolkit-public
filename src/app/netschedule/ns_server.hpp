@@ -91,15 +91,18 @@ public:
     void PrintMemStat(CNcbiOstream& out);
 
 
-    unsigned GetInactivityTimeout(void);
-    std::string& GetHost();
-    unsigned GetPort() const;
-    unsigned GetHostNetAddr() const;
-    const CTime& GetStartTime(void) const;
-    bool AdminHostValid(unsigned host) const;
+    unsigned GetInactivityTimeout(void) const   { return m_InactivityTimeout; }
+    std::string& GetHost()                      { return m_Host; }
+    unsigned GetPort() const                    { return m_Port; }
+    unsigned GetDeleteBatchSize(void) const     { return m_DeleteBatchSize; }
+    unsigned GetScanBatchSize(void) const       { return m_ScanBatchSize; }
+    double   GetPurgeTimeout(void) const        { return m_PurgeTimeout; }
+    unsigned GetHostNetAddr() const             { return m_HostNetAddr; }
+    const CTime& GetStartTime(void) const       { return m_StartTime; }
+    CBackgroundHost&  GetBackgroundHost()       { return m_BackgroundHost; }
+    CRequestExecutor& GetRequestExecutor()      { return m_RequestExecutor; }
 
-    CBackgroundHost&  GetBackgroundHost();
-    CRequestExecutor& GetRequestExecutor();
+    bool AdminHostValid(unsigned host) const;
 
     static CNetScheduleServer*  GetInstance(void);
 
@@ -128,6 +131,11 @@ private:
     bool                                        m_LogCleaningThreadFlag;
     bool                                        m_LogExecutionWatcherThreadFlag;
     bool                                        m_LogStatisticsThreadFlag;
+
+    // Purge() related parameters
+    unsigned int                                m_DeleteBatchSize;  // Max number of jobs to be deleted
+    unsigned int                                m_ScanBatchSize;    // Max number of scanned jobs
+    double                                      m_PurgeTimeout;     // Interval between purges
 
     /// Quick local timer
     CFastLocalTime                              m_LocalTimer;

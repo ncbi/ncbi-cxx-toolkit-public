@@ -55,6 +55,7 @@
 #include "ns_queue_parameters.hpp"
 #include "ns_clients_registry.hpp"
 #include "ns_notifications.hpp"
+#include "queue_clean_thread.hpp"
 
 #include <deque>
 #include <map>
@@ -289,10 +290,13 @@ public:
                                  time_t    curr_time,
                                  bool      logging);
 
-    /// Check jobs for expiry and if expired, delete up to batch_size jobs
-    /// @return
-    ///    Number of deleted jobs
-    unsigned CheckJobsExpiry(unsigned batch_size, TJobStatus status);
+    // Checks up to given # of jobs at the given status for expiration and
+    // marks up to given # of jobs for deletion.
+    // Returns the # of performed scans, the # of jobs marked for deletion and
+    // the last scanned job id.
+    SPurgeAttributes CheckJobsExpiry(time_t             current_time,
+                                     SPurgeAttributes   attributes,
+                                     TJobStatus         status);
 
     void TimeLineMove(unsigned job_id, time_t old_time, time_t new_time);
     void TimeLineAdd(unsigned job_id, time_t job_time);
@@ -301,7 +305,7 @@ public:
                           unsigned add_job_id,
                           time_t   new_time);
 
-    unsigned DeleteBatch(unsigned batch_size);
+    unsigned int  DeleteBatch(void);
 
     CBDB_FileCursor& GetEventsCursor();
 
@@ -384,10 +388,10 @@ private:
                                     CJob &                  job,
                                     const CNSClientId &     client);
 
-    unsigned int  x_UpdateDB_GetJobNoLock(const CNSClientId &  client,
-                                          time_t               curr,
-                                          unsigned int         job_id,
-                                          CJob &               job);
+    bool  x_UpdateDB_GetJobNoLock(const CNSClientId &  client,
+                                  time_t               curr,
+                                  unsigned int         job_id,
+                                  CJob &               job);
 
     void x_PrintJobStat(CNetScheduleHandler &   handler,
                         const CJob&             job,
@@ -405,7 +409,6 @@ private:
                       time_t                current_time,
                       TJobStatus            status_from,
                       CJobEvent::EJobEvent  event_type);
-    void x_FlushDeletedVector(void);
 
 private:
     friend class CJob;

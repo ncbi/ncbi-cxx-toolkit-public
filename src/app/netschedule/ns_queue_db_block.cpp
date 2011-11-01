@@ -79,13 +79,6 @@ void SQueueDbBlock::Open(CBDB_Env& env, const string& path, int pos_)
         events_db.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
 
         if (group_tables_for_queue)
-            tname = "deleted";
-        else
-            fname = prefix + "_deleted.db";
-        deleted_jobs_db.SetEnv(env);
-        deleted_jobs_db.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
-
-        if (group_tables_for_queue)
             tname = "affdict";
         else
             fname = prefix + "_affdict.db";
@@ -123,7 +116,6 @@ void SQueueDbBlock::Close()
 {
     start_from_db.Close();
     aff_dict_db.Close();
-    deleted_jobs_db.Close();
     events_db.Close();
     job_info_db.Close();
     job_db.Close();
@@ -134,7 +126,6 @@ void SQueueDbBlock::Truncate()
 {
     start_from_db.SafeTruncate();
     aff_dict_db.SafeTruncate();
-    deleted_jobs_db.SafeTruncate();
     events_db.SafeTruncate();
     job_info_db.SafeTruncate();
     job_db.SafeTruncate();
