@@ -46,7 +46,7 @@ struct PRangeLessPos
 {
     bool    operator()(const Range &R, Position Pos)     { return R.GetToOpen() <= Pos;  }    
     bool    operator()(Position Pos, const Range &R)     { return Pos < R.GetToOpen();  }    
-    bool    operator()(const Range &R1, const Range &R2) { return R1.GetToOpen() <= R2.GetToOpen();  }    
+    bool    operator()(const Range &R1, const Range &R2) { return R1.GetToOpen() < R2.GetToOpen();  }    
 };
     
 ///////////////////////////////////////////////////////////////////////////////
@@ -324,9 +324,9 @@ protected:
         iterator it_begin_m =
             lower_bound(begin_nc(), end_nc(), pos_from - 1, p); /* NCBI_FAKE_WARNING: WorkShop */
         if(it_begin_m != end_nc() && it_begin_m->GetFrom() <= pos_to_open)  { // intersection
-            it_begin_m->CombineWith(r);
-        
             iterator it_end_m = lower_bound(it_begin_m, end_nc(), pos_to_open, p);
+            it_begin_m->CombineWith(r);
+
             if(it_end_m != end_nc()  &&  it_end_m->GetFrom() <= pos_to_open) {// subject to merge
                 it_begin_m->SetToOpen(it_end_m->GetToOpen()); 
                 ++it_end_m; // including it into erased set
