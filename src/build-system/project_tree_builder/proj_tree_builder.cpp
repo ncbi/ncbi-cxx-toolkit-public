@@ -855,7 +855,7 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     list<string> req_lst;
     if (makefile.CollectValues("REQUIRES", req_lst,
         CSimpleMakeFileContents::eSortUnique)) {
-        project_makefile.Redefine(req_lst,requires);        
+        project_makefile.Redefine(req_lst,requires);
     }
 
     //LIBS
@@ -1021,6 +1021,12 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
         }
     }
 
+    project.m_ProjTags.push_back("exe");
+    if (find(requires.begin(), requires.end(), "internal") == requires.end() ) {
+        project.m_ProjTags.push_back("public");
+    } else {
+        project.m_ProjTags.push_back("internal");
+    }
     makefile.CollectValues("PROJ_TAG", project.m_ProjTags,
         CSimpleMakeFileContents::eMergePlusMinus);
 
@@ -1263,6 +1269,12 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
         tree->m_Projects[proj_key].m_Watchers = NStr::Join(lst_watchers, " ");
     }
 
+    tree->m_Projects[proj_key].m_ProjTags.push_back("lib");
+    if (find(requires.begin(), requires.end(), "internal") == requires.end() ) {
+        tree->m_Projects[proj_key].m_ProjTags.push_back("public");
+    } else {
+        tree->m_Projects[proj_key].m_ProjTags.push_back("internal");
+    }
     m->second.CollectValues("PROJ_TAG", tree->m_Projects[proj_key].m_ProjTags,
         CSimpleMakeFileContents::eMergePlusMinus);
 
@@ -1290,6 +1302,8 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
         item_dll.m_GUID  = IdentifySlnGUID(source_base_dir, proj_dll);
         item_dll.m_IsBundle = isbundle;
         item_dll.m_External = true;
+        item_dll.m_ProjTags = tree->m_Projects[proj_key].m_ProjTags;
+        item_dll.m_ProjTags.push_back("dll");
         tree->m_Projects[proj_dll] = item_dll;
     }
     ITERATE(list<CProjKey>, u,  unconditional_depends_ids) {
@@ -1451,6 +1465,7 @@ CProjKey SDllProjectT::DoCreate(const string& source_base_dir,
         CSimpleMakeFileContents::eSortUnique)) {
         tree->m_Projects[proj_key].m_Watchers = NStr::Join(lst_watchers, " ");
     }
+    tree->m_Projects[proj_key].m_ProjTags.push_back("dll");
     m->second.CollectValues("PROJ_TAG", tree->m_Projects[proj_key].m_ProjTags,
         CSimpleMakeFileContents::eMergePlusMinus);
     return proj_key;

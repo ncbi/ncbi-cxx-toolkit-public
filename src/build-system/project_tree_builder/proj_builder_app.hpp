@@ -137,6 +137,7 @@ public:
 
     string m_CustomConfFile;
     CSimpleMakeFileContents m_CustomConfiguration;
+    map<string,string>  m_CompositeProjectTags;
 
 public:
 
@@ -184,8 +185,7 @@ public:
     string GetDatatoolCommandLine (void) const;
 
     string GetProjectTreeRoot(void) const;
-    bool   IsAllowedProjectTag(const CProjItem& project, const list<string>& tags,
-                               string& unmet) const;
+    bool   IsAllowedProjectTag(const CProjItem& project, const string* filter = NULL) const;
     void   LoadProjectTags(const string& filename);
     string ProcessLocationMacros(string data);
     bool IsScanningWholeTree(void) const {return m_ScanningWholeTree;}

@@ -42,7 +42,174 @@
 BEGIN_NCBI_SCOPE
 #if NCBI_COMPILER_MSVC
 
+//------------------------------------------------------------------------------
+//  CPrjContext
+
+CPrjContext::CPrjContext(void)
+{
+    Clear();
+}
+
+
+CPrjContext::CPrjContext(const CPrjContext& context)
+{
+    SetFrom(context);
+}
+
+
+CPrjContext::CPrjContext(const CProjItem& project)
+    :m_Project(project)
+{
+    m_GUID = project.m_GUID;
+
+    CMsvcPrjProjectContext project_context(project);
+    if (project.m_ProjType == CProjKey::eMsvc) {
+        m_ProjectName = project_context.ProjectName();
+
+        string project_rel_path = project.m_Sources.front();
+        m_ProjectPath = CDirEntry::ConcatPath(project.m_SourcesBaseDir, 
+                                             project_rel_path);
+        m_ProjectPath = CDirEntry::NormalizePath(m_ProjectPath);
+
+    } else {
+        m_ProjectName = project_context.ProjectName();
+        m_ProjectPath = CDirEntry::ConcatPath(project_context.ProjectDir(),
+                                              project_context.ProjectName());
+        m_ProjectPath += CMsvc7RegSettings::GetVcprojExt();
+    }
+}
+
+
+CPrjContext& CPrjContext::operator= (const CPrjContext& context)
+{
+    if (this != &context) {
+        Clear();
+        SetFrom(context);
+    }
+    return *this;
+}
+
+
+CPrjContext::~CPrjContext(void)
+{
+    Clear();
+}
+
+
+void CPrjContext::Clear(void)
+{
+    //TODO
+}
+
+void CPrjContext::SetFrom(const CPrjContext& project_context)
+{
+    m_Project     = project_context.m_Project;
+
+    m_GUID        = project_context.m_GUID;
+    m_ProjectName = project_context.m_ProjectName;
+    m_ProjectPath = project_context.m_ProjectPath;
+}
+
 //-----------------------------------------------------------------------------
+// CUtilityProject
+
+CUtilityProject::CUtilityProject(
+    const string& full_path, const string& guid, const string& name)
+    : m_HasFilter(false), m_SaveEmpty(true),
+      m_Full_path(full_path), m_Guid(guid), m_Name(name)
+{
+}
+
+CUtilityProject::~CUtilityProject(void)
+{
+}
+
+bool CUtilityProject::IsIncluded(const CPrjContext& /*prj*/) const
+{
+    return false;
+}
+
+//-----------------------------------------------------------------------------
+class CUtilityBuildAllProject : public CUtilityProject
+{
+public:
+    CUtilityBuildAllProject(
+        const string& full_path, const string& guid, const string& name)
+        : CUtilityProject(full_path, guid, name)
+    {
+        m_HasFilter = true;
+    }
+    virtual bool IsIncluded(const CPrjContext& prj) const
+    {
+        if (prj.m_Project.m_MakeType == eMakeType_Excluded) {
+            _TRACE("For reference only: " << prj.m_ProjectName);
+            return false;
+        }
+        if (prj.m_Project.m_MakeType == eMakeType_ExcludedByReq) {
+            PTB_WARNING_EX(prj.m_ProjectName, ePTB_ProjectExcluded,
+                           "Excluded due to unmet requirements");
+            return false;
+        }
+        return true;
+    }
+};
+
+//-----------------------------------------------------------------------------
+class CUtilityAsnAllProject : public CUtilityProject
+{
+public:
+    CUtilityAsnAllProject(
+        const string& full_path, const string& guid, const string& name)
+        : CUtilityProject(full_path, guid, name)
+    {
+        m_HasFilter = true;
+    }
+    virtual bool IsIncluded(const CPrjContext& prj) const
+    {
+        return !prj.m_Project.m_DatatoolSources.empty();
+    }
+};
+
+//-----------------------------------------------------------------------------
+class CUtilityLibsAllProject : public CUtilityProject
+{
+public:
+    CUtilityLibsAllProject(
+        const string& full_path, const string& guid, const string& name)
+        : CUtilityProject(full_path, guid, name)
+    {
+        m_HasFilter = true;
+        m_SaveEmpty = false;
+    }
+    virtual bool IsIncluded(const CPrjContext& prj) const
+    {
+        return prj.m_Project.m_ProjType == CProjKey::eLib ||
+               prj.m_Project.m_ProjType == CProjKey::eDll;
+    }
+};
+
+//---------------------------------------------------------------------------
+class CUtilityTagProject : public CUtilityProject
+{
+public:
+    CUtilityTagProject(
+        const string& full_path, const string& guid, const string& name, const string& tags)
+        : CUtilityProject(full_path, guid, name), m_Tags(tags)
+    {
+        m_HasFilter = true;
+        m_SaveEmpty = false;
+    }
+    virtual bool IsIncluded(const CPrjContext& prj) const
+    {
+        return GetApp().IsAllowedProjectTag(prj.m_Project, &m_Tags);
+    }
+private:
+    string m_Tags;
+};
+
+//-----------------------------------------------------------------------------
+// CMsvcSolutionGenerator
+
 CMsvcSolutionGenerator::CMsvcSolutionGenerator
                                             (const list<SConfigInfo>& configs)
     :m_Configs(configs)
@@ -68,8 +235,8 @@ void CMsvcSolutionGenerator::AddUtilityProject(
     if (guid.empty()) {
         return;
     }
-    m_UtilityProjects.push_back(TUtilityProject(full_path, guid));
-    m_PathToName[full_path] = name;
+    m_Utils.push_back(
+        CRef<CUtilityProject>(new CUtilityProject(full_path, guid, name)));
 }
 
 
@@ -80,8 +247,8 @@ CMsvcSolutionGenerator::AddConfigureProject(
     if (guid.empty()) {
         return;
     }
-    m_ConfigureProjects.push_back(TUtilityProject(full_path, guid));
-    m_PathToName[full_path] = name;
+    m_Utils.push_back(
+        CRef<CUtilityProject>(new CUtilityProject(full_path, guid, name)));
 }
 
 
@@ -92,8 +259,8 @@ CMsvcSolutionGenerator::AddBuildAllProject(
     if (guid.empty()) {
         return;
     }
-    m_BuildAllProject = TUtilityProject(full_path, guid);
-    m_PathToName[full_path] = name;
+    m_Utils.push_back(
+        CRef<CUtilityProject>(new CUtilityBuildAllProject(full_path, guid, name)));
 }
 
 void 
@@ -103,8 +270,8 @@ CMsvcSolutionGenerator::AddAsnAllProject(
     if (guid.empty()) {
         return;
     }
-    m_AsnAllProject = TUtilityProject(full_path, guid);
-    m_PathToName[full_path] = name;
+    m_Utils.push_back(
+        CRef<CUtilityProject>(new CUtilityAsnAllProject(full_path, guid, name)));
 }
 
 void
@@ -114,8 +281,19 @@ CMsvcSolutionGenerator::AddLibsAllProject(
     if (guid.empty()) {
         return;
     }
-    m_LibsAllProject = TUtilityProject(full_path, guid);
-    m_PathToName[full_path] = name;
+    m_Utils.push_back(
+        CRef<CUtilityProject>(new CUtilityLibsAllProject(full_path, guid, name)));
+}
+
+void CMsvcSolutionGenerator::AddTagProject(
+    const string& full_path, const string& guid, const string& name,
+    const string& tags)
+{
+    if (guid.empty()) {
+        return;
+    }
+    m_Utils.push_back(
+        CRef<CUtilityProject>(new CUtilityTagProject(full_path, guid, name, tags)));
 }
 
 void CMsvcSolutionGenerator::VerifyProjectDependencies(void)
@@ -175,41 +353,23 @@ CMsvcSolutionGenerator::SaveSolution(const string& file_path)
     ofs << MSVC_SOLUTION_HEADER_LINE
         << GetApp().GetRegSettings().GetSolutionFileFormatVersion() << endl;
 
+    list<string> proj_guid;
     // Utility projects
-    ITERATE(list<TUtilityProject>, p, m_UtilityProjects) {
-        const TUtilityProject& utl_prj = *p;
-        WriteUtilityProject(utl_prj, ofs);
-    }
-    // Configure projects
-    ITERATE(list<TUtilityProject>, p, m_ConfigureProjects) {
-        const TUtilityProject& utl_prj = *p;
-        WriteConfigureProject(utl_prj, ofs);
-    }
-    // BuildAll project
-    if ( !m_BuildAllProject.first.empty() &&
-        !m_BuildAllProject.second.empty() ) {
-        WriteBuildAllProject(m_BuildAllProject, ofs);
-    }
-    // AsnAll project
-    if ( !m_AsnAllProject.first.empty() &&
-        !m_AsnAllProject.second.empty() ) {
-        WriteAsnAllProject(m_AsnAllProject, ofs);
-    }
-    // LibsAll
-    if ( !m_LibsAllProject.first.empty() &&
-        !m_LibsAllProject.second.empty() ) {
-        WriteLibsAllProject(m_LibsAllProject, ofs);
+    ITERATE(vector< CRef<CUtilityProject> >, p, m_Utils) {
+        const CUtilityProject& utl_prj = **p;
+        if (WriteUtilityProject(utl_prj, ofs)) {
+            proj_guid.push_back(utl_prj.Guid());
+        }
     }
 
     // Projects from the projects tree
     ITERATE(TProjects, p, m_Projects) {
-        
+        proj_guid.push_back(p->second.m_GUID);
         if (p->second.m_Project.m_MakeType == eMakeType_ExcludedByReq) {
             continue;
         }
         WriteProjectAndSection(ofs, p->second);
     }
-
 
     // Start "Global" section
     ofs << "Global" << endl;
@@ -235,33 +395,6 @@ CMsvcSolutionGenerator::SaveSolution(const string& file_path)
         ofs << '\t' << "GlobalSection(ProjectConfiguration) = postSolution" << endl;
     }
 
-    list<string> proj_guid;
-    // Utility projects
-    ITERATE(list<TUtilityProject>, p, m_UtilityProjects) {
-        const TUtilityProject& utl_prj = *p;
-        proj_guid.push_back(utl_prj.second);
-    }
-    ITERATE(list<TUtilityProject>, p, m_ConfigureProjects) {
-        const TUtilityProject& utl_prj = *p;
-        proj_guid.push_back(utl_prj.second);
-    }
-    // BuildAll project
-    if ( !m_BuildAllProject.first.empty() &&
-         !m_BuildAllProject.second.empty() ) {
-        proj_guid.push_back(m_BuildAllProject.second);
-    }
-    if ( !m_AsnAllProject.first.empty() &&
-         !m_AsnAllProject.second.empty() ) {
-        proj_guid.push_back(m_AsnAllProject.second);
-    }
-    if ( !m_LibsAllProject.first.empty() &&
-         !m_LibsAllProject.second.empty() ) {
-        proj_guid.push_back(m_LibsAllProject.second);
-    }
-    // Projects from tree
-    ITERATE(TProjects, p, m_Projects) {
-        proj_guid.push_back(p->second.m_GUID);
-    }
 //    proj_guid.sort();
 //    proj_guid.unique();
     WriteProjectConfigurations( ofs, proj_guid);
@@ -270,79 +403,6 @@ CMsvcSolutionGenerator::SaveSolution(const string& file_path)
     //End of global section
     ofs << "EndGlobal" << endl;
 }
-
-
-//------------------------------------------------------------------------------
-CMsvcSolutionGenerator::CPrjContext::CPrjContext(void)
-{
-    Clear();
-}
-
-
-CMsvcSolutionGenerator::CPrjContext::CPrjContext(const CPrjContext& context)
-{
-    SetFrom(context);
-}
-
-
-CMsvcSolutionGenerator::CPrjContext::CPrjContext(const CProjItem& project)
-    :m_Project(project)
-{
-    m_GUID = project.m_GUID;
-
-    CMsvcPrjProjectContext project_context(project);
-    if (project.m_ProjType == CProjKey::eMsvc) {
-        m_ProjectName = project_context.ProjectName();
-
-        string project_rel_path = project.m_Sources.front();
-        m_ProjectPath = CDirEntry::ConcatPath(project.m_SourcesBaseDir, 
-                                             project_rel_path);
-        m_ProjectPath = CDirEntry::NormalizePath(m_ProjectPath);
-
-    } else {
-        m_ProjectName = project_context.ProjectName();
-        m_ProjectPath = CDirEntry::ConcatPath(project_context.ProjectDir(),
-                                              project_context.ProjectName());
-        m_ProjectPath += CMsvc7RegSettings::GetVcprojExt();
-    }
-}
-
-
-CMsvcSolutionGenerator::CPrjContext& 
-CMsvcSolutionGenerator::CPrjContext::operator= (const CPrjContext& context)
-{
-    if (this != &context) {
-        Clear();
-        SetFrom(context);
-    }
-    return *this;
-}
-
-
-CMsvcSolutionGenerator::CPrjContext::~CPrjContext(void)
-{
-    Clear();
-}
-
-
-void 
-CMsvcSolutionGenerator::CPrjContext::Clear(void)
-{
-    //TODO
-}
-
-
-void 
-CMsvcSolutionGenerator::CPrjContext::SetFrom
-    (const CPrjContext& project_context)
-{
-    m_Project     = project_context.m_Project;
-
-    m_GUID        = project_context.m_GUID;
-    m_ProjectName = project_context.m_ProjectName;
-    m_ProjectPath = project_context.m_ProjectPath;
-}
-
 
 void CMsvcSolutionGenerator::CollectLibToLibDependencies(
         set<string>& dep, set<string>& visited,
@@ -449,148 +509,53 @@ CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream&     ofs,
 }
 
 void CMsvcSolutionGenerator::BeginUtilityProject(
-    const TUtilityProject& project, CNcbiOfstream& ofs)
+    const CUtilityProject& project, CNcbiOfstream& ofs)
 {
-    string name = m_PathToName[project.first];
+    string name = project.Name();
     ofs << "Project(\"" 
         << MSVC_SOLUTION_ROOT_GUID
         << "\") = \"" 
-        << name //CDirEntry(project.first).GetBase() //basename
+        << name
         << "\", \"";
 
-    ofs << CDirEntry::CreateRelativePath(m_SolutionDir, project.first)
+    ofs << CDirEntry::CreateRelativePath(m_SolutionDir, project.Path())
         << "\", \"";
 
-    ofs << project.second //m_GUID 
+    ofs << project.Guid()
         << "\"" 
         << endl;
 }
-
 void CMsvcSolutionGenerator::EndUtilityProject(
-    const TUtilityProject& project, CNcbiOfstream& ofs)
+    const CUtilityProject& /*project*/, CNcbiOfstream& ofs)
 {
     ofs << "EndProject" << endl;
 }
-
-void 
-CMsvcSolutionGenerator::WriteUtilityProject(const TUtilityProject& project,
-                                            CNcbiOfstream&         ofs)
+bool CMsvcSolutionGenerator::WriteUtilityProject(
+    const CUtilityProject& project, CNcbiOfstream& ofs)
 {
-    BeginUtilityProject(project,ofs);
-    EndUtilityProject(project,ofs);
-}
-
-void 
-CMsvcSolutionGenerator::WriteConfigureProject(const TUtilityProject& project,
-                                            CNcbiOfstream&         ofs)
-{
-    BeginUtilityProject(project,ofs);
-/*
-    if (CMsvc7RegSettings::GetMsvcVersion() > CMsvc7RegSettings::eMsvc710) {
-        string ptb("project_tree_builder");
-        CProjKey id_ptb(CProjKey::eApp,ptb);
-        TProjects::const_iterator n = m_Projects.find(id_ptb);
-        if (n == m_Projects.end()) {
-            LOG_POST(Warning << "Project " + 
-                    project.first + " depends on missing project " + id_ptb.Id());
-        } else {
-            const CPrjContext& prj_i = n->second;
-
+    list<string> proj_guid;
+    if (project.HasFilter()) {
+        ITERATE(TProjects, p, m_Projects) {
+            const CPrjContext& prj_i = p->second;
+            if (project.IsIncluded(prj_i)) {
+                proj_guid.push_back(prj_i.m_GUID);
+            }
+        }
+    }
+    if (!proj_guid.empty() || project.SaveEmpty()) {
+        BeginUtilityProject(project,ofs);
+        if (!proj_guid.empty()) {
             ofs << '\t' << "ProjectSection(ProjectDependencies) = postProject" << endl;
-            ofs << '\t' << '\t' 
-                << prj_i.m_GUID 
-                << " = " 
-                << prj_i.m_GUID << endl;
+            proj_guid.sort();
+            ITERATE(list<string>, p, proj_guid) {
+                ofs << '\t' << '\t' << *p << " = " << *p << endl;
+            }
             ofs << '\t' << "EndProjectSection" << endl;
         }
+        EndUtilityProject(project,ofs);
+        return true;
     }
-*/
-    EndUtilityProject(project,ofs);
-}
-
-
-void 
-CMsvcSolutionGenerator::WriteBuildAllProject(const TUtilityProject& project, 
-                                             CNcbiOfstream&         ofs)
-{
-    BeginUtilityProject(project,ofs);
-    list<string> proj_guid;
-    
-    ITERATE(TProjects, p, m_Projects) {
-//        const CProjKey&    id    = p->first;
-        const CPrjContext& prj_i = p->second;
-        if (prj_i.m_Project.m_MakeType == eMakeType_Excluded) {
-            _TRACE("For reference only: " << prj_i.m_ProjectName);
-            continue;
-        }
-        if (prj_i.m_Project.m_MakeType == eMakeType_ExcludedByReq) {
-            PTB_WARNING_EX(prj_i.m_ProjectName, ePTB_ProjectExcluded,
-                           "Excluded due to unmet requirements");
-            continue;
-        }
-        proj_guid.push_back(prj_i.m_GUID);
-    }
-
-    if (!proj_guid.empty()) {
-        ofs << '\t' << "ProjectSection(ProjectDependencies) = postProject" << endl;
-        proj_guid.sort();
-        ITERATE(list<string>, p, proj_guid) {
-            ofs << '\t' << '\t' << *p << " = " << *p << endl;
-        }
-        ofs << '\t' << "EndProjectSection" << endl;
-    }
-    EndUtilityProject(project,ofs);
-}
-
-void 
-CMsvcSolutionGenerator::WriteAsnAllProject(const TUtilityProject& project, 
-                                             CNcbiOfstream&         ofs)
-{
-    BeginUtilityProject(project,ofs);
-    list<string> proj_guid;
-    
-    ITERATE(TProjects, p, m_Projects) {
-        const CPrjContext& prj_i = p->second;
-        if (!prj_i.m_Project.m_DatatoolSources.empty()) {
-            proj_guid.push_back(prj_i.m_GUID);
-        }
-    }
-
-    if (!proj_guid.empty()) {
-        ofs << '\t' << "ProjectSection(ProjectDependencies) = postProject" << endl;
-        proj_guid.sort();
-        ITERATE(list<string>, p, proj_guid) {
-            ofs << '\t' << '\t' << *p << " = " << *p << endl;
-        }
-        ofs << '\t' << "EndProjectSection" << endl;
-    }
-    EndUtilityProject(project,ofs);
-}
-
-void 
-CMsvcSolutionGenerator::WriteLibsAllProject(const TUtilityProject& project, 
-                                            CNcbiOfstream&         ofs)
-{
-    BeginUtilityProject(project,ofs);
-    list<string> proj_guid;
-    
-    ITERATE(TProjects, p, m_Projects) {
-        const CPrjContext& prj_i = p->second;
-        if (prj_i.m_Project.m_ProjType == CProjKey::eLib ||
-            prj_i.m_Project.m_ProjType == CProjKey::eDll) {
-            proj_guid.push_back(prj_i.m_GUID);
-        }
-    }
-
-    if (!proj_guid.empty()) {
-        ofs << '\t' << "ProjectSection(ProjectDependencies) = postProject" << endl;
-        proj_guid.sort();
-        ITERATE(list<string>, p, proj_guid) {
-            ofs << '\t' << '\t' << *p << " = " << *p << endl;
-        }
-        ofs << '\t' << "EndProjectSection" << endl;
-    }
-    EndUtilityProject(project,ofs);
+    return false;
 }
 
 void 
@@ -646,39 +611,6 @@ void CMsvcSolutionGenerator::WriteProjectConfigurations(
             ofs << '\t' << '\t' << *p << '.' << cfg1
                 << ".Build.0 = " << ConfigName(config) << endl;
         }
-    }
-}
-
-
-void 
-CMsvcSolutionGenerator::WriteUtilityProjectConfiguration(const TUtilityProject& project,
-                                                        CNcbiOfstream& ofs)
-{
-    ITERATE(list<SConfigInfo>, p, m_Configs) {
-
-        const string& config = (*p).GetConfigFullName();
-        string cfg1 = config;
-        if (CMsvc7RegSettings::GetMsvcVersion() > CMsvc7RegSettings::eMsvc710) {
-            cfg1 = ConfigName(config);
-        }
-
-        ofs << '\t' 
-            << '\t' 
-            << project.second // project.m_GUID 
-            << '.' 
-            << cfg1
-            << ".ActiveCfg = " 
-            << ConfigName(config)
-            << endl;
-
-        ofs << '\t' 
-            << '\t' 
-            << project.second // project.m_GUID 
-            << '.' 
-            << cfg1
-            << ".Build.0 = " 
-            << ConfigName(config)
-            << endl;
     }
 }
 #endif //NCBI_COMPILER_MSVC

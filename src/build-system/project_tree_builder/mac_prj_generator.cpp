@@ -131,6 +131,12 @@ void CMacProjectGenerator::Generate(const string& solution)
     CRef<CArray> lib_dependencies( new CArray);
     CRef<CArray> dataspec_dependencies( new CArray);
     CRef<CArray> products( new CArray);
+    bool add_composite = GetApp().m_ProjTags == "*";
+    vector< CRef<CArray> > composite_dependencies;
+    for (map<string,string>::const_iterator composite = GetApp().m_CompositeProjectTags.begin();
+        composite != GetApp().m_CompositeProjectTags.end(); ++composite) {
+        composite_dependencies.push_back( CRef<CArray>(new CArray) );
+    }
 
     
 #if USE_VERBOSE_NAMES
@@ -178,18 +184,30 @@ void CMacProjectGenerator::Generate(const string& solution)
                            "Excluded due to unmet requirements");
             continue;
         }
-        bool excluded = (prj.m_MakeType >= eMakeType_Expendable);
+//        bool excluded = (prj.m_MakeType >= eMakeType_Expendable);
+        bool excluded = (prj.m_MakeType > eMakeType_Expendable);
 
         prj_files.DoCollect();
         if (!excluded) {
             if (prj.m_ProjType == CProjKey::eLib || prj.m_ProjType == CProjKey::eDll) {
                 AddString( *lib_dependencies, proj_dependency);
-            } else if (prj.m_ProjType == CProjKey::eApp) {
-                AddString( *app_dependencies, proj_dependency);
-            } else if (prj.m_ProjType == CProjKey::eDataSpec) {
+//            } else if (prj.m_ProjType == CProjKey::eApp) {
+//                AddString( *app_dependencies, proj_dependency);
+//            } else if (prj.m_ProjType == CProjKey::eDataSpec) {
+            } else if (!prj.m_DatatoolSources.empty()) {
                 AddString( *dataspec_dependencies, proj_dependency);
             } else {
                 continue;
+            }
+            if (add_composite) {
+                int c = 0;
+                for (map<string,string>::const_iterator composite = GetApp().m_CompositeProjectTags.begin();
+                    composite != GetApp().m_CompositeProjectTags.end(); ++composite, ++c) {
+                    
+                    if (GetApp().IsAllowedProjectTag(prj, &composite->second)) {
+                        AddString( *(composite_dependencies[c]), proj_dependency);
+                    }
+                }
             }
             AddString( *all_dependencies, proj_dependency);
         }
@@ -306,8 +324,20 @@ void CMacProjectGenerator::Generate(const string& solution)
     targets->Set().sort(s_String_less);
     dataspec_dependencies->Set().sort(s_String_less);
     lib_dependencies->Set().sort(s_String_less);
-    app_dependencies->Set().sort(s_String_less);
+//    app_dependencies->Set().sort(s_String_less);
     all_dependencies->Set().sort(s_String_less);
+    if (add_composite) {
+        int c = 0;
+        for (map<string,string>::const_iterator composite = GetApp().m_CompositeProjectTags.begin();
+            composite != GetApp().m_CompositeProjectTags.end(); ++composite, ++c) {
+            
+            if (!composite_dependencies[c]->Get().empty()) {
+                composite_dependencies[c]->Set().sort(s_String_less);
+                InsertString( *targets,
+                    AddAggregateTarget("zzzTag_" + composite->first, *dict_objects, composite_dependencies[c]));
+            }
+        }
+    }
 // aggregate targets
     string preconf_dependency(AddPreConfigureTarget(*targets,*dict_objects, root_name));
     InsertString( *targets,
@@ -317,9 +347,9 @@ void CMacProjectGenerator::Generate(const string& solution)
     InsertString( *targets,
         AddAggregateTarget("DATASPEC_ALL", *dict_objects, dataspec_dependencies));
     InsertString( *targets,
-        AddAggregateTarget("BUILD_LIBS", *dict_objects, lib_dependencies));
-    InsertString( *targets,
-        AddAggregateTarget("BUILD_APPS", *dict_objects, app_dependencies));
+        AddAggregateTarget("LIBS_ALL", *dict_objects, lib_dependencies));
+//    InsertString( *targets,
+//        AddAggregateTarget("BUILD_APPS", *dict_objects, app_dependencies));
     InsertString( *targets,
         AddAggregateTarget("BUILD_ALL",  *dict_objects, all_dependencies));
 

@@ -48,6 +48,62 @@ BEGIN_NCBI_SCOPE
 
 #if NCBI_COMPILER_MSVC
 
+//---------------------------------------------------------------------------
+class CPrjContext
+{
+public:
+
+    CPrjContext(void);
+    CPrjContext(const CPrjContext& context);
+    CPrjContext(const CProjItem& project);
+    CPrjContext& operator= (const CPrjContext& context);
+    ~CPrjContext(void);
+
+    CProjItem m_Project;
+
+    string    m_GUID;
+    string    m_ProjectName;
+    string    m_ProjectPath;
+
+private:
+    void Clear(void);
+    void SetFrom(const CPrjContext& project_context);
+};
+
+//---------------------------------------------------------------------------
+class CUtilityProject : public CObject
+{
+public:
+    CUtilityProject(
+        const string& full_path, const string& guid, const string& name);
+    virtual ~CUtilityProject(void);
+
+    virtual bool IsIncluded(const CPrjContext& prj) const;
+    
+    bool HasFilter(void) const {
+        return m_HasFilter;
+    }
+    bool SaveEmpty(void) const {
+        return m_SaveEmpty;
+    }
+    const string& Path(void) const {
+        return m_Full_path;
+    }
+    const string& Guid(void) const {
+        return m_Guid;
+    }
+    const string& Name(void) const {
+        return m_Name;
+    }
+protected:
+    bool m_HasFilter;
+    bool m_SaveEmpty;
+    const string m_Full_path;
+    const string m_Guid;
+    const string m_Name;
+};
+
+//---------------------------------------------------------------------------
 class CMsvcSolutionGenerator
 {
 public:
@@ -61,6 +117,8 @@ public:
     void AddBuildAllProject (const string& full_path, const string& guid, const string& name);
     void AddAsnAllProject   (const string& full_path, const string& guid, const string& name);
     void AddLibsAllProject  (const string& full_path, const string& guid, const string& name);
+    void AddTagProject      (const string& full_path, const string& guid, const string& name,
+                             const string& tags);
 
     void VerifyProjectDependencies(void);
     void SaveSolution(const string& file_path);
@@ -74,34 +132,10 @@ private:
     // Basename / GUID
     typedef pair<string, string> TUtilityProject;
     // Utility projects
-    list<TUtilityProject> m_UtilityProjects;
-    list<TUtilityProject> m_ConfigureProjects;
-    // BuildAll utility project
-    TUtilityProject m_BuildAllProject; 
-    TUtilityProject m_AsnAllProject; 
-    TUtilityProject m_LibsAllProject; 
     map<string, string> m_PathToName;
-
-    class CPrjContext
-    {
-    public:
-
-        CPrjContext(void);
-        CPrjContext(const CPrjContext& context);
-        CPrjContext(const CProjItem& project);
-        CPrjContext& operator= (const CPrjContext& context);
-        ~CPrjContext(void);
-
-        CProjItem m_Project;
-
-        string    m_GUID;
-        string    m_ProjectName;
-        string    m_ProjectPath;
     
-    private:
-        void Clear(void);
-        void SetFrom(const CPrjContext& project_context);
-    };
+    vector< CRef<CUtilityProject> > m_Utils;
+
     // Real projects
     typedef map<CProjKey, CPrjContext> TProjects;
     TProjects m_Projects;
@@ -114,33 +148,17 @@ private:
     void WriteProjectAndSection(CNcbiOfstream&     ofs, 
                                 const CPrjContext& project);
     
-    void BeginUtilityProject   (const TUtilityProject& project, 
+    void BeginUtilityProject   (const CUtilityProject& project, 
                                 CNcbiOfstream& ofs);
-    void EndUtilityProject   (const TUtilityProject& project, 
+    void EndUtilityProject   (const CUtilityProject& project, 
                                 CNcbiOfstream& ofs);
-
-    void WriteUtilityProject   (const TUtilityProject& project, 
-                                CNcbiOfstream& ofs);
-
-    void WriteConfigureProject (const TUtilityProject& project, 
-                                CNcbiOfstream& ofs);
-
-    void WriteBuildAllProject  (const TUtilityProject& project, 
-                                CNcbiOfstream& ofs);
-
-    void WriteAsnAllProject    (const TUtilityProject& project, 
-                                CNcbiOfstream& ofs);
-
-    void WriteLibsAllProject    (const TUtilityProject& project, 
+    bool WriteUtilityProject   (const CUtilityProject& project, 
                                 CNcbiOfstream& ofs);
 
     void WriteProjectConfigurations(CNcbiOfstream&     ofs, 
                                     const CPrjContext& project);
     void WriteProjectConfigurations(CNcbiOfstream&     ofs, 
                                     const list<string>& project);
-
-    void WriteUtilityProjectConfiguration(const TUtilityProject& project, 
-                                          CNcbiOfstream&         ofs);
 
     // Prohibited to:
     CMsvcSolutionGenerator(void);

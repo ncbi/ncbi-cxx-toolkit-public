@@ -335,7 +335,8 @@ struct PIsExcludedByTag
         const CProjItem& project = item.second;
         string unmet;
         if ( project.m_ProjType != CProjKey::eDataSpec && 
-            !GetApp().IsAllowedProjectTag(project, project.m_ProjTags, unmet) ) {
+            !GetApp().IsAllowedProjectTag(project) ) {
+            string unmet( NStr::Join(project.m_ProjTags,","));
             PTB_WARNING_EX(project.GetPath(), ePTB_ProjectExcluded,
                            "Excluded due to proj_tag; this project tags: " << unmet);
             return true;
@@ -401,7 +402,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(3,6,1) );
+    SetVersion( CVersionInfo(3,6,2) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -795,58 +796,56 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
         }
     }
 
-    // BuildAll utility project
-    string build_all_prj_path = CDirEntry::ConcatPath(utility_projects_dir, "_BUILD_ALL_");
-    build_all_prj_path += CMsvc7RegSettings::GetVcprojExt();
-    string build_all_guid, build_all_name;
-    if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvc1000) {
-        CVisualStudioProject xmlprj;
-        CreateUtilityProject("-BUILD-ALL-", *configurations, &xmlprj);
-        SaveIfNewer(build_all_prj_path, xmlprj);
-        build_all_guid = xmlprj.GetAttlist().GetProjectGUID();
-        build_all_name = xmlprj.GetAttlist().GetName();
-    } else {
-        string prj_dir =  GetApp().GetUtilityProjectsSrcDir();
-        CProjItem prj_item = CreateUtilityProjectItem(prj_dir, "-BUILD-ALL-");
-        prj_gen.Generate(prj_item);
-        build_all_guid = prj_item.m_GUID;
-        build_all_name = prj_item.m_Name;
+    string utils[] = {"_DATASPEC_ALL_", "-DATASPEC-ALL-",
+                      "_LIBS_ALL_", "-LIBS-ALL-",
+                      "_BUILD_ALL_","-BUILD-ALL-"};
+    vector<string> utils_id;
+    int i = 0, num_util = 3;
+    
+    for (i = 0; i < num_util; ++i) {
+        string prj_path = CDirEntry::ConcatPath(utility_projects_dir, utils[i*2]);
+        prj_path += CMsvc7RegSettings::GetVcprojExt();
+        utils_id.push_back(prj_path);
+        if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvc1000) {
+            CVisualStudioProject xmlprj;
+            CreateUtilityProject(utils[i*2+1], *configurations, &xmlprj);
+            SaveIfNewer(prj_path, xmlprj);
+            utils_id.push_back(xmlprj.GetAttlist().GetProjectGUID());
+            utils_id.push_back(xmlprj.GetAttlist().GetName());
+        } else {
+            string prj_dir =  GetApp().GetUtilityProjectsSrcDir();
+            CProjItem prj_item( CreateUtilityProjectItem(prj_dir, utils[i*2+1]));
+            prj_gen.Generate(prj_item);
+            utils_id.push_back(prj_item.m_GUID);
+            utils_id.push_back(prj_item.m_Name);
+        }
     }
+    if (m_ProjTags == "*") {
+        for (map<string,string>::const_iterator composite = m_CompositeProjectTags.begin();
+            composite != m_CompositeProjectTags.end(); ++composite) {
+            string composite_name = "zzzTag_" + composite->first;
+            string composite_filter = composite->second;
 
-    // AsnAll utility project
-    string asn_all_prj_path = CDirEntry::ConcatPath(utility_projects_dir, "_DATASPEC_ALL_");
-    asn_all_prj_path += CMsvc7RegSettings::GetVcprojExt();
-    string asn_all_guid, asn_all_name;
-    if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvc1000) {
-        CVisualStudioProject xmlprj;
-        CreateUtilityProject("-DATASPEC-ALL-", *configurations, &xmlprj);
-        SaveIfNewer(asn_all_prj_path, xmlprj);
-        asn_all_guid = xmlprj.GetAttlist().GetProjectGUID();
-        asn_all_name = xmlprj.GetAttlist().GetName();
-    } else {
-        string prj_dir =  GetApp().GetUtilityProjectsSrcDir();
-        CProjItem prj_item( CreateUtilityProjectItem(prj_dir, "-DATASPEC-ALL-"));
-        prj_gen.Generate(prj_item);
-        asn_all_guid = prj_item.m_GUID;
-        asn_all_name = prj_item.m_Name;
-    }
 
-    // LibAll utility project
-    string libs_all_prj_path = CDirEntry::ConcatPath(utility_projects_dir, "_LIBS_ALL_");
-    libs_all_prj_path += CMsvc7RegSettings::GetVcprojExt();
-    string libs_all_guid, libs_all_name;
-    if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvc1000) {
-        CVisualStudioProject xmlprj;
-        CreateUtilityProject("-LIBS-ALL-", *configurations, &xmlprj);
-        SaveIfNewer(libs_all_prj_path, xmlprj);
-        libs_all_guid = xmlprj.GetAttlist().GetProjectGUID();
-        libs_all_name = xmlprj.GetAttlist().GetName();
-    } else {
-        string prj_dir =  GetApp().GetUtilityProjectsSrcDir();
-        CProjItem prj_item = CreateUtilityProjectItem(prj_dir, "-LIBS-ALL-");
-        prj_gen.Generate(prj_item);
-        libs_all_guid = prj_item.m_GUID;
-        libs_all_name = prj_item.m_Name;
+            string prj_path = CDirEntry::ConcatPath(utility_projects_dir, composite_name);
+            prj_path += CMsvc7RegSettings::GetVcprojExt();
+            utils_id.push_back(prj_path);
+            if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvc1000) {
+                CVisualStudioProject xmlprj;
+                CreateUtilityProject(composite_name, *configurations, &xmlprj);
+                SaveIfNewer(prj_path, xmlprj);
+                utils_id.push_back(xmlprj.GetAttlist().GetProjectGUID());
+                utils_id.push_back(xmlprj.GetAttlist().GetName());
+            } else {
+                string prj_dir =  GetApp().GetUtilityProjectsSrcDir();
+                CProjItem prj_item( CreateUtilityProjectItem(prj_dir, composite_name));
+                prj_gen.Generate(prj_item);
+                utils_id.push_back(prj_item.m_GUID);
+                utils_id.push_back(prj_item.m_Name);
+            }
+            utils_id.push_back(composite_filter);
+            ++num_util;
+        }
     }
 
     // Solution
@@ -870,11 +869,29 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
 
         configure_generator.GetVisualStudioProject(cfg_path, cfg_guid, cfg_name, true);
         sln_gen.AddConfigureProject( cfg_path, cfg_guid, cfg_name);
-
-        sln_gen.AddAsnAllProject(   asn_all_prj_path,  asn_all_guid,  asn_all_name);
-        sln_gen.AddLibsAllProject( libs_all_prj_path, libs_all_guid, libs_all_name);
     }
-    sln_gen.AddBuildAllProject( build_all_prj_path, build_all_guid, build_all_name);
+
+    int u = 0;
+    for (i = 0; i < num_util; ++i) {
+        switch (i) {
+        case 0:
+            sln_gen.AddAsnAllProject(   utils_id[u],  utils_id[u+1],  utils_id[u+2]);
+            u += 3;
+            break;
+        case 1:
+            sln_gen.AddLibsAllProject(  utils_id[u],  utils_id[u+1],  utils_id[u+2]);
+            u += 3;
+            break;
+        case 2:
+            sln_gen.AddBuildAllProject( utils_id[u],  utils_id[u+1],  utils_id[u+2]);
+            u += 3;
+            break;
+        default:
+            sln_gen.AddTagProject( utils_id[u],  utils_id[u+1],  utils_id[u+2],  utils_id[u+3]);
+            u += 4;
+            break;
+        }
+    }
 
     sln_gen.SaveSolution(m_Solution);
 
@@ -1088,6 +1105,43 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
     ofs << endl << endl;
     ofs << "all_files" << dotreal << " :" << " $(all_dataspec:%=%" << dotreal << ")";
     ofs << endl << endl;
+
+// CompositeProjectTags -----------------------------------------------------
+// (add always)
+    /*if (m_ProjTags == "*")*/ {
+        for (map<string,string>::const_iterator composite = m_CompositeProjectTags.begin();
+            composite != m_CompositeProjectTags.end(); ++composite) {
+            string composite_name = "tag_" + composite->first;
+            string composite_filter = composite->second;
+            vector<string> matching;
+
+            ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
+                if (p->first.Type() == CProjKey::eMsvc ||
+                    p->first.Type() == CProjKey::eDataSpec) {
+                    continue;
+                }
+                if (IsAllowedProjectTag(p->second, &composite_filter)) {
+                    matching.push_back( CreateProjectName(p->first));
+                }
+            }
+            if (!matching.empty()) {
+                ofs << composite_name << "_projects =";
+                ITERATE(vector<string>, c, matching) {
+                    ofs << " \\" <<endl << "    " << *c;
+                }
+                ofs << endl << endl;
+
+                ofs << composite_name << " :" << endl
+                    << "\t$(MAKE) $(MFLAGS_NR) -f $(MINPUT) " << composite_name << dotreal
+                    << " MTARGET=$(MTARGET)";
+                ofs << endl << endl;
+                ofs << composite_name << dotreal << " :" << " $("
+                    << composite_name << "_projects" << ":%=%" << dotreal << ")";
+                ofs << endl << endl;
+                
+            }
+        }
+    }
 
 // --------------------------------------------------------------------------
     string datatool_key;
@@ -2163,12 +2217,12 @@ string CProjBulderApp::GetProjectTreeRoot(void) const
     return CDirEntry::AddTrailingPathSeparator(path);
 }
 
-bool CProjBulderApp::IsAllowedProjectTag(const CProjItem& project,
-    const list<string>& tags, string& unmet) const
+bool CProjBulderApp::IsAllowedProjectTag(
+    const CProjItem& project, const string* filter /*= NULL*/) const
 {
     // verify that all project tags are registered
     list<string>::const_iterator i;
-    for (i = tags.begin(); i != tags.end(); ++i) {
+    for (i = project.m_ProjTags.begin(); i != project.m_ProjTags.end(); ++i) {
         if (m_RegisteredProjectTags.find(*i) == m_RegisteredProjectTags.end()) {
             NCBI_THROW(CProjBulderAppException, eUnknownProjectTag,
                 project.GetPath() + ": Unregistered project tag: " + *i);
@@ -2176,18 +2230,20 @@ bool CProjBulderApp::IsAllowedProjectTag(const CProjItem& project,
         }
     }
 
+    if (filter == NULL) {
+        filter = &m_ProjTags;
+    }
     // no filter - everything is allowed
-    if (m_ProjTags.empty() || m_ProjTags == "*") {
+    if (filter->empty() || *filter == "*") {
         return true;
     }
 
     CExprParser parser;
     ITERATE( set<string>, p, m_RegisteredProjectTags) {
         parser.AddSymbol(p->c_str(),
-            find( tags.begin(), tags.end(), *p) != tags.end());
+            find( project.m_ProjTags.begin(), project.m_ProjTags.end(), *p) != project.m_ProjTags.end());
     }
-    parser.Parse(m_ProjTags.c_str());
-    unmet = NStr::Join(tags,",");
+    parser.Parse(filter->c_str());
     return parser.GetResult().GetBool();
 }
 
@@ -2197,13 +2253,31 @@ void CProjBulderApp::LoadProjectTags(const string& filename)
     if ( ifs.is_open() ) {
         string line;
         while ( NcbiGetlineEOL(ifs, line) ) {
+            if (line[0] == '#') {
+                continue;
+            }
             list<string> values;
+            if (line.find('=') != string::npos) {
+                NStr::Split(line, "=", values);
+                if (values.size() > 1) {
+                    string first = NStr::TruncateSpaces(values.front());
+                    string second = NStr::TruncateSpaces(values.back());
+                    m_CompositeProjectTags[first] = second;
+                    
+                }
+                continue;
+            }
             NStr::Split(line, LIST_SEPARATOR, values);
             ITERATE(list<string>,v,values) {
                 m_RegisteredProjectTags.insert(*v);
             }
         }
     }
+    m_RegisteredProjectTags.insert("exe");
+    m_RegisteredProjectTags.insert("lib");
+    m_RegisteredProjectTags.insert("dll");
+    m_RegisteredProjectTags.insert("public");
+    m_RegisteredProjectTags.insert("internal");
 }
 
 string CProjBulderApp::ProcessLocationMacros(string raw_data)
