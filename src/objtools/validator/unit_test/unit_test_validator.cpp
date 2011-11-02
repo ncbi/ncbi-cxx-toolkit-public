@@ -130,8 +130,8 @@ CExpectedError::~CExpectedError()
 
 void CExpectedError::Test(const CValidErrItem& err_item)
 {
-    if (!NStr::IsBlank (m_Accession) && !NStr::IsBlank (err_item.GetAccession())) {
-        BOOST_CHECK_EQUAL(err_item.GetAccession(), m_Accession);
+    if (!NStr::IsBlank (m_Accession) && !NStr::IsBlank (err_item.GetAccnver())) {
+        BOOST_CHECK_EQUAL(err_item.GetAccnver(), m_Accession);
     }
     BOOST_CHECK_EQUAL(err_item.GetSeverity(), m_Severity);
     BOOST_CHECK_EQUAL(err_item.GetErrCode(), m_ErrCode);
@@ -151,7 +151,7 @@ void WriteErrors(const CValidError& eval, bool debug_mode)
         printf ("\n-\n");
     }
     for ( CValidError_CI vit(eval); vit; ++vit) {
-        string description =  vit->GetAccession() + ":"
+        string description =  vit->GetAccnver() + ":"
                 + CValidErrItem::ConvertSeverity(vit->GetSeverity()) + ":"
                 + vit->GetErrCode() + ":"
                 + vit->GetMsg();
@@ -182,7 +182,7 @@ void CheckErrors(const CValidError& eval,
             expected_errors[err_pos]->Test(*vit);
             ++err_pos;
         } else {
-            string description =  vit->GetAccession() + ":"
+            string description =  vit->GetAccnver() + ":"
                 + CValidErrItem::ConvertSeverity(vit->GetSeverity()) + ":"
                 + vit->GetErrCode() + ":"
                 + vit->GetMsg();
