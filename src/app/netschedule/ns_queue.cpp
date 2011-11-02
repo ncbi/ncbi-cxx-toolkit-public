@@ -702,9 +702,9 @@ void CQueue::JobDelayExpiration(unsigned int     job_id,
         CTime       tmp_t(GetFastLocalTime());
         tmp_t.SetTimeT(curr + tm);
         tmp_t.ToLocalTime();
-        LOG_POST(Error << "Job: " << DecorateJobId(job_id)
-                       << " new_expiration_time: " << tmp_t.AsString()
-                       << " job_timeout(sec): " << run_timeout);
+        GetDiagContext().Extra()
+                        .Print("new_expiration_time", tmp_t.AsString())
+                        .Print("run_timeout", NStr::LongToString(run_timeout));
     }
     return;
 }
