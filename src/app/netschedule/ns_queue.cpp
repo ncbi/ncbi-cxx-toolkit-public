@@ -1316,19 +1316,15 @@ bool CQueue::FailJob(const CNSClientId &    client,
                 new_status = CNetScheduleAPI::ePending;
 
                 rescheduled = true;
-                if (m_Log)
-                    LOG_POST(Error <<"Job " << DecorateJobId(job_id)
-                                   << " rescheduled with "
-                                   << (failed_retries - run_count)
-                                   << " retries left");
             } else {
                 job.SetStatus(CNetScheduleAPI::eFailed);
                 event->SetStatus(CNetScheduleAPI::eFailed);
                 new_status = CNetScheduleAPI::eFailed;
                 rescheduled = false;
                 if (m_Log)
-                    LOG_POST(Error << "Job " << DecorateJobId(job_id)
-                                   << " failed");
+                    LOG_POST(Message << Warning << "Job " << DecorateJobId(job_id)
+                                     << " failed, exceeded max number of retries ("
+                                     << failed_retries << ")");
             }
 
             job.SetOutput(output);
