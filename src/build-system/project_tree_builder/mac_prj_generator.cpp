@@ -334,7 +334,7 @@ void CMacProjectGenerator::Generate(const string& solution)
             if (!composite_dependencies[c]->Get().empty()) {
                 composite_dependencies[c]->Set().sort(s_String_less);
                 InsertString( *targets,
-                    AddAggregateTarget("zzzTag_" + composite->first, *dict_objects, composite_dependencies[c]));
+                    AddAggregateTarget("_TAG_" + composite->first, *dict_objects, composite_dependencies[c]));
             }
         }
     }

@@ -823,7 +823,7 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
     if (m_ProjTags == "*") {
         for (map<string,string>::const_iterator composite = m_CompositeProjectTags.begin();
             composite != m_CompositeProjectTags.end(); ++composite) {
-            string composite_name = "zzzTag_" + composite->first;
+            string composite_name = "_TAG_" + composite->first;
             string composite_filter = composite->second;
 
 
@@ -1108,10 +1108,13 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
 
 // CompositeProjectTags -----------------------------------------------------
 // (add always)
+    ITERATE(set<string>, r, m_RegisteredProjectTags) {
+        m_CompositeProjectTags[*r] = *r;
+    }
     /*if (m_ProjTags == "*")*/ {
         for (map<string,string>::const_iterator composite = m_CompositeProjectTags.begin();
             composite != m_CompositeProjectTags.end(); ++composite) {
-            string composite_name = "tag_" + composite->first;
+            string composite_name = "TAG_" + composite->first;
             string composite_filter = composite->second;
             vector<string> matching;
 
