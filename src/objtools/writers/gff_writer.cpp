@@ -110,6 +110,7 @@ bool CGff2Writer::x_WriteAnnot(
     const CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
+    StackDown("Annot");
     CRef< CUser_object > pBrowserInfo = x_GetDescriptor( annot, "browser" );
     if ( pBrowserInfo ) {
         x_WriteBrowserLine( pBrowserInfo );
@@ -121,6 +122,7 @@ bool CGff2Writer::x_WriteAnnot(
     CSeq_annot_Handle sah = m_pScope->AddSeq_annot( annot );
     bool bWrite = x_WriteSeqAnnotHandle( sah );
     m_pScope->RemoveSeq_annot( sah );
+    StackUp();
     return bWrite;
 }
 
@@ -145,6 +147,7 @@ bool CGff2Writer::x_WriteSeqEntryHandle(
     CSeq_entry_Handle seh )
 //  ----------------------------------------------------------------------------
 {
+    StackDown("SeqEntryHandle");
     if (seh.IsSet()  &&  seh.GetSet().IsSetClass()  
             &&  seh.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot) {
         for ( CBioseq_CI bci( seh ); bci; ++bci ) {
@@ -164,6 +167,7 @@ bool CGff2Writer::x_WriteSeqEntryHandle(
             }
         }
     }
+    StackUp();
     return true;
 }
 
@@ -191,6 +195,8 @@ bool CGff2Writer::x_WriteBioseqHandle(
     CBioseq_Handle bsh ) 
 //  ----------------------------------------------------------------------------
 {
+   StackDown("BioseqHandle");
+
     SAnnotSelector sel = GetAnnotSelector();
     CFeat_CI feat_iter(bsh, sel);
     feature::CFeatTree feat_tree( feat_iter );
@@ -198,7 +204,8 @@ bool CGff2Writer::x_WriteBioseqHandle(
         if ( ! x_WriteFeature( feat_tree, *feat_iter ) ) {
             return false;
         }
-    }    
+    } 
+    StackUp();   
     return true;
 }
 
@@ -223,6 +230,7 @@ bool CGff2Writer::x_WriteSeqAnnotHandle(
     CSeq_annot_Handle sah )
 //  ----------------------------------------------------------------------------
 {
+    StackDown("SeqAnnotHandle");
     CConstRef<CSeq_annot> pAnnot = sah.GetCompleteSeq_annot();
 
     if ( pAnnot->IsAlign() ) {
@@ -231,6 +239,7 @@ bool CGff2Writer::x_WriteSeqAnnotHandle(
                 return false;
             }
         }
+        StackUp();
         return true;
     }
 
@@ -239,9 +248,11 @@ bool CGff2Writer::x_WriteSeqAnnotHandle(
     CGffFeatureContext fc(feature::CFeatTree(feat_iter), CBioseq_Handle(), sah);
     for ( /*0*/; feat_iter; ++feat_iter ) {
         if ( ! x_WriteFeature( fc, *feat_iter ) ) {
+            StackUp();
             return false;
         }
     }
+    StackUp();
     return true;
 }
 
@@ -328,6 +339,8 @@ bool CGff2Writer::x_WriteAlign(
     bool )
 //  ----------------------------------------------------------------------------
 {
+    StackDown("Align");
+    StackUp();
     return false;
 }
 

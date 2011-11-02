@@ -45,9 +45,28 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
+class CStackLogger {
+public:
+    CStackLogger() {
+        m_indent = 0;
+    }
+    void StackDown(
+        const string& objtype) {
+//        cerr << string(2*m_indent, ' ') << "[" << objtype << endl;
+//        m_indent++;
+    };
+    void StackUp() {
+//        m_indent--;
+//        cerr << string(2*m_indent, ' ') << "]" << endl;
+    }
+private:
+    int m_indent;
+};
+    
 //  ============================================================================
 class NCBI_XOBJWRITE_EXPORT CGff2Writer:
     public CWriterBase
+    , public CStackLogger
 //  ============================================================================
 {
 public:

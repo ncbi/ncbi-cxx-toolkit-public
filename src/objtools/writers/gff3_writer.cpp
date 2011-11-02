@@ -51,6 +51,7 @@
 #include <objects/seqalign/Score.hpp>
 
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/annot_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/mapped_feat.hpp>
 #include <objmgr/util/feature.hpp>
@@ -124,8 +125,10 @@ bool CGff3Writer::x_WriteAlign(
     bool bInvertWidth )
 //  ----------------------------------------------------------------------------
 {
+    StackDown("SeqAlign");
     if ( ! align.IsSetSegs() ) {
         cerr << "Object type not supported." << endl;
+        StackUp();
         return true;
     }
 
@@ -134,18 +137,23 @@ bool CGff3Writer::x_WriteAlign(
             break;
 
         case CSeq_align::TSegs::e_Denseg:
+            StackUp();
             return x_WriteAlignDenseg( align, bInvertWidth );
 
         case CSeq_align::TSegs::e_Spliced:
             if (!x_WriteAlignSpliced( align, bInvertWidth )) {
+                StackUp();
                 return false;
             }
             m_uRecordId++;
+            StackUp();
             return true;
 
         case CSeq_align::TSegs::e_Disc:
+            StackUp();
             return x_WriteAlignDisc( align, bInvertWidth );
     }
+    StackUp();
     return true;
 }
 
@@ -363,14 +371,15 @@ bool CGff3Writer::x_WriteBioseqHandle(
     CBioseq_Handle bsh ) 
 //  ----------------------------------------------------------------------------
 {
+    StackDown("BioseqHandle");
     if ( ! x_WriteSequenceHeader(bsh) ) {
+        StackUp();
         return false;
     }
 
     SAnnotSelector sel = GetAnnotSelector();
     CFeat_CI feat_iter(bsh, sel);
     feature::CFeatTree feat_tree( feat_iter );
-
     CGffFeatureContext fc(feature::CFeatTree(feat_iter), bsh);
 
     CSeqdesc_CI sdi( bsh.GetParentEntry(), CSeqdesc::e_Source, 0 );
@@ -385,9 +394,14 @@ bool CGff3Writer::x_WriteBioseqHandle(
     for ( ;  feat_iter;  ++feat_iter ) {
         
         if ( ! x_WriteFeature( fc, *feat_iter ) ) {
+            StackUp();
             return false;
         }
-    }    
+    }   
+    for (CAnnot_CI aci(bsh); aci; ++aci) {
+        x_WriteSeqAnnotHandle(*aci);
+    }
+    StackUp(); 
     return true;
 }
 
