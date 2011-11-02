@@ -23,17 +23,17 @@
  *
  * ===========================================================================
  *
- * Author:  Anton Lavrentiev, Denis Vakatov
+ * Authors:  Pavel Ivanov, Anton Lavrentiev, Denis Vakatov
  *
  * File Description:
+ *   errno->text conversion helper
  */
-
 
 #ifdef _FREETDS_LIBRARY_SOURCE
 
 #  define s_WinStrdup               s_WinStrdup_ftds64
-#  define s_StrError_NoSOCK         s_StrError_ftds64
-#  define s_StrError                s_StrError_NoSOCK
+#  define s_StrErrorInternal        s_StrErrorInternal_ftds64
+#  define s_StrError                s_StrErrorInternal
 #  define UTIL_TcharToUtf8          UTIL_TcharToUtf8_ftds64
 #  define UTIL_ReleaseBufferOnHeap  UTIL_ReleaseBufferOnHeap_ftds64
 
@@ -49,28 +49,30 @@ static const char* s_WinStrdup(const char* s)
     return p ? (const char*) memcpy(p, s, n) : 0;
 }
 
-#  define _NCBI_STRDUP(s)           s_WinStrdup(s)
+#  define   MSWIN_STRDUP(s)         s_WinStrdup(s)
 
-#  ifndef UTIL_ReleaseBuffer
+#  ifndef   UTIL_ReleaseBuffer
 #    define UTIL_ReleaseBuffer(x)   UTIL_ReleaseBufferOnHeap(x)
 #  endif
 
-#else  /* NCBI_OS_MSWIN && _UNICODE */
+#else /*NCBI_OS_MSWIN && _UNICODE*/
 
-#  define _NCBI_STRDUP(s)           s
+#  define   MSWIN_STRDUP(s)         (s)
 
-#  ifndef UTIL_TcharToUtf8
+#  ifndef   UTIL_TcharToUtf8
 #    define UTIL_TcharToUtf8(x)     (x)
 #  endif
 
-#  ifndef UTIL_ReleaseBuffer
+#  ifndef   UTIL_ReleaseBuffer
 #    define UTIL_ReleaseBuffer(x)   /*void*/
 #  endif
 
-#endif  /* NCBI_OS_MSWIN && _UNICODE */
+#endif /*NCBI_OS_MSWIN && _UNICODE*/
 
 
 #ifdef NCBI_OS_MSWIN
+
+
 #  ifdef _UNICODE
 
 extern const char* UTIL_TcharToUtf8(const TCHAR* buffer)
@@ -104,7 +106,7 @@ extern void UTIL_ReleaseBufferOnHeap(const void* buffer)
 #endif /*NCBI_OS_MSWIN*/
 
 
-static const char* s_StrError_NoSOCK(int error)
+static const char* s_StrErrorInternal(int error)
 {
     static const struct {
         int         errnum;
@@ -285,9 +287,9 @@ static const char* s_StrError_NoSOCK(int error)
 
     if (!error)
         return 0;
-    for (i = 0;  i < sizeof(errmap) / sizeof(errmap[0]) -1/*dummy*/;  i++) {
+    for (i = 0;  i < sizeof(errmap) / sizeof(errmap[0]) - 1/*dummy*/;  i++) {
         if (errmap[i].errnum == error)
-            return _NCBI_STRDUP(errmap[i].errtxt);
+            return MSWIN_STRDUP(errmap[i].errtxt);
     }
 #if defined(NCBI_OS_MSWIN)  &&  defined(_UNICODE)
     return UTIL_TcharToUtf8(error > 0 ? _wcserror(error) : L"");

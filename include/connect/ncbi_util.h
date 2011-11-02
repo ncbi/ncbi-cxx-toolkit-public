@@ -61,6 +61,8 @@
  *       UTIL_NcbiLocalHostName()
  *       UTIL_PrintableString[Size]()
  *
+ * 5. Internal MSWIN support for Unicode (mostly in error messages)
+ *
  */
 
 #include <connect/ncbi_core.h>
@@ -560,12 +562,11 @@ extern NCBI_XCONNECT_EXPORT char* UTIL_PrintableString
  );
 
 
-/** Conversion from Unicode to UTF8, and back.
- *  MSWIN-specific.
- *  NOTE:
- *    The caller must always use UTIL_ReleaseBufferOnHeap()
- *    to free the buffer returned from UTIL_TcharToUtf8OnHeap(),  and
- *    ReleaseBuffer() to free the one returned from UTIL_TcharToUtf8().
+/** Conversion from Unicode to UTF8, and back.  MSWIN-specific and internal.
+ *
+ * NOTE:  UTIL_ReleaseBufferOnHeap() must be used to free the buffers returned
+ *        from UTIL_TcharToUtf8OnHeap(),  and UTIL_ReleaseBuffer() to free the
+ *        ones returned from UTIL_TcharToUtf8().
  */
 
 #if defined(NCBI_OS_MSWIN)  &&  defined(_UNICODE)
@@ -573,10 +574,10 @@ extern const char*    UTIL_TcharToUtf8OnHeap(const wchar_t* buffer);
 extern const char*    UTIL_TcharToUtf8      (const wchar_t* buffer);
 extern const wchar_t* UTIL_Utf8ToTchar      (const    char* buffer);
 /*
-   If you change these macros (here and in #else) you need to change similar
-   ones in ncbi_strerror.c too.
-*/
-#  define             UTIL_ReleaseBuffer(x)  UTIL_ReleaseBufferOnHeap(x)
+ * NOTE:  If you change these macros (here and in #else) you need to make
+ *        similar changes in ncbi_strerror.c as well.
+ */
+#  define             UTIL_ReleaseBuffer(x)      UTIL_ReleaseBufferOnHeap(x)
 #else
 #  define             UTIL_TcharToUtf8OnHeap(x)  (x)
 #  define             UTIL_TcharToUtf8(x)        (x)

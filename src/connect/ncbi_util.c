@@ -1092,9 +1092,10 @@ extern const char* UTIL_TcharToUtf8OnHeap(const TCHAR* buffer)
     return p;
 }
 
+
 /*
-   Function UTIL_TcharToUtf8 is defined in ncbi_strerror.c
-*/
+ * UTIL_TcharToUtf8() is defined in ncbi_strerror.c
+ */
 
 
 extern const TCHAR* UTIL_Utf8ToTchar(const char* buffer)
@@ -1117,8 +1118,8 @@ extern const TCHAR* UTIL_Utf8ToTchar(const char* buffer)
 
 
 /*
-   Function UTIL_ReleaseBufferOnHeap is defined in ncbi_strerror.c
-*/
+ * UTIL_ReleaseBufferOnHeap() is defined in ncbi_strerror.c
+ */
 
 
 #endif /*NCBI_OS_MSWIN*/

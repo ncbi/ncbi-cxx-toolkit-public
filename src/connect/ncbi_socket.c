@@ -246,17 +246,17 @@ static const char* s_StrError(SOCK sock, int error)
 {
     if (!error)
         return 0;
+
     if (sock) {
         FSSLError sslerror = s_SSL ? s_SSL->Error : 0;
         if (sslerror) {
             const char* strerr = sslerror(sock->session == SESSION_INVALID
                                           ? 0 : sock->session, error);
             if (strerr)
-                return _NCBI_STRDUP(strerr);
+                return MSWIN_STRDUP(strerr);
         }
     }
-
-    return s_StrError_NoSOCK(error);
+    return s_StrErrorInternal(error);
 }
 
 
@@ -2167,7 +2167,8 @@ static EIO_Status s_Select(size_t                n,
                     CORE_LOGF_ERRNO_EXX(133, eLOG_Error,
                                         err, strerr ? strerr : "",
                                         ("[SOCK::Select] "
-                                         " Failed WaitForMultipleObjects"));
+                                         " Failed WaitForMultipleObjects(%u)",
+                                         (unsigned int) m));
                     UTIL_ReleaseBufferOnHeap(strerr);
                     break;
                 }
