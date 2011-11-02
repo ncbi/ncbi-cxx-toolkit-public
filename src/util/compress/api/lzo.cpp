@@ -132,7 +132,6 @@ CLZOCompression::CLZOCompression(ELevel level, size_t blocksize)
 
 CLZOCompression::~CLZOCompression(void)
 {
-    m_Param.reset();
     return;
 }
 
