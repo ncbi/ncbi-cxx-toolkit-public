@@ -1056,7 +1056,7 @@ bool GetModelEvidance(const CBioseq_Handle& bsh, SModelEvidance& me)
 static const char* kAANames[] = {
     "---", "Ala", "Asx", "Cys", "Asp", "Glu", "Phe", "Gly", "His", "Ile",
     "Lys", "Leu", "Met", "Asn", "Pro", "Gln", "Arg", "Ser", "Thr", "Val",
-    "Trp", "OTHER", "Tyr", "Glx", "Sec", "TERM", "Pyl"
+    "Trp", "OTHER", "Tyr", "Glx", "Sec", "TERM", "Pyl", "Xle"
 };
 
 
