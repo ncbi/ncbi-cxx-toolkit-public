@@ -166,7 +166,7 @@ public:
 /// Default implementation of a Seq-id resolver,
 /// which knows about FASTA-formatted sequence identifiers.
 ///
-class CFastaIdsResolver : public ISeqIdResolver
+class NCBI_XOBJREAD_EXPORT CFastaIdsResolver : public ISeqIdResolver
 {
 public:
     CSeq_id_Handle ResolveSeqId(const string& id) const;

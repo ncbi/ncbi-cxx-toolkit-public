@@ -347,7 +347,7 @@ public:
 ///     of IRepeat are not present in this format, and are thus
 ///     not available.
 ///
-class SRepeatRegion : public IRepeatRegion
+class NCBI_XOBJREAD_EXPORT SRepeatRegion : public IRepeatRegion
 {
 public:
     typedef SRepeatRegion TThisType;
@@ -417,7 +417,7 @@ public:
 
 /// Class acting as an interface to a RepeatMasker library.
 ///
-class CRepeatLibrary : public CObject
+class NCBI_XOBJREAD_EXPORT CRepeatLibrary : public CObject
 {
 public:
     typedef SRepeat TRepeat;
@@ -624,7 +624,7 @@ public:
 /// from tabular RepeatMasker output files, so this logic has been
 /// pulled off into its own independent class.
 ///
-class CRepeatToFeat : public IRmReaderFlags
+class NCBI_XOBJREAD_EXPORT CRepeatToFeat : public IRmReaderFlags
 {
 public:
     typedef CRepeatLibrary TRepeatLibrary;
@@ -686,7 +686,7 @@ private:
 /// Implements a concrete class for reading RepeatMasker output
 /// from tabular form and rendering it as ASN.1 using the NCBI data model.
 ///
-class CRepeatMaskerReader : public CReaderBase, public IRmReaderFlags
+class NCBI_XOBJREAD_EXPORT CRepeatMaskerReader : public CReaderBase, public IRmReaderFlags
 {
 public:
     typedef CRepeatToFeat TConverter;
