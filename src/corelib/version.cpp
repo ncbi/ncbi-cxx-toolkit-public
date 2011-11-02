@@ -174,8 +174,14 @@ CVersionInfo& CVersionInfo::operator=(const CVersionInfo& version)
 
 string CVersionInfo::Print(void) const
 {
+    if (m_Major < 0) {
+        return kEmptyStr;
+    }
     CNcbiOstrstream os;
-    os << m_Major << "." << m_Minor << "." << m_PatchLevel;
+    os << m_Major << "." << (m_Minor >= 0 ? m_Minor : 0);
+    if (m_PatchLevel >= 0) {
+        os << "." << m_PatchLevel;
+    }
     if ( !m_Name.empty() ) {
         os << " (" << m_Name << ")";
     }
@@ -295,7 +301,7 @@ void ParseVersionString(const string&  vstr,
 
     const char* vstr_str = vstr.c_str();
 
-    // 2.3.4 ( program)
+    // 2.3.4 (program)
 
     pos = lo_vstr.find("(");
     if (pos != string::npos) {

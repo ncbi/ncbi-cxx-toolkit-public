@@ -998,4 +998,35 @@ bool CCgiUserAgent::x_ParseToken(const string& token, int where)
 }
 
 
+string CCgiUserAgent::GetEngineName(void) const
+{
+    switch ( GetEngine() ) {
+        case eEngine_Unknown : return "Unknown";
+        case eEngine_IE      : return "IE";
+        case eEngine_Gecko   : return "Gecko";
+        case eEngine_KHTML   : return "KHTML";
+        case eEngine_Bot     : return "Bot";
+    }
+    _TROUBLE;
+    return kEmptyStr;
+}
+
+
+string CCgiUserAgent::GetPlatformName(void) const
+{
+    switch ( GetPlatform() ) {
+        case ePlatform_Unknown      : return "Unknown";
+        case ePlatform_Windows      : return "Windows";
+        case ePlatform_Mac          : return "Mac";
+        case ePlatform_Unix         : return "Unix";
+        case ePlatform_Palm         : return "Palm";
+        case ePlatform_Symbian      : return "Symbian";
+        case ePlatform_WindowsCE    : return "WindowsCE";
+        case ePlatform_MobileDevice : return "MobileDevice";
+    }
+    _TROUBLE;
+    return kEmptyStr;
+}
+
+
 END_NCBI_SCOPE

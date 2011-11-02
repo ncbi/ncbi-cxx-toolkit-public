@@ -91,14 +91,17 @@ public:
     void FromStr(const string& version);
 
     void SetVersion(int  ver_major,
-               int  ver_minor,
-               int  patch_level = 0);
+                    int  ver_minor,
+                    int  patch_level = 0);
 
     /// Print version information.
     ///
-    /// Version information is printed in the following forms:
-    /// - <ver_major>.<ver_minor>.<patch_level>
-    /// - <ver_major>.<ver_minor>.<patch_level> (<name>)
+    /// @return
+    ///   String representation of the version,
+    ///   Version information is printed in the following forms:
+    ///     - <ver_major>.<ver_minor>.<patch_level>
+    ///     - <ver_major>.<ver_minor>.<patch_level> (<name>)
+    ///   Return empty string if major version is undefined (< 0).
     virtual string Print(void) const;
 
     /// Major version

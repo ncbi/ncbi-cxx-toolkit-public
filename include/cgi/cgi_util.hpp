@@ -179,9 +179,9 @@ public:
     /// Browser engine types.
     enum EBrowserEngine {
         eEngine_Unknown = eUnknown,     ///< Unknown engine
-        eEngine_IE      = eIE,          ///< Microsoft Internet Explorer
+        eEngine_IE      = eIE,          ///< Microsoft Internet Explorer (Trident and etc)
         eEngine_Gecko   = eMozilla,     ///< Gecko-based
-        eEngine_KHTML   = eSafari,      ///< Apple WebKit
+        eEngine_KHTML   = eSafari,      ///< Apple KHTML (WebKit) -based
         eEngine_Bot     = eCrawler      ///< Search robot/bot/checker/...
     };
 
@@ -215,15 +215,17 @@ public:
     const string& GetBrowserName(void) const
         { return m_BrowserName; }
 
-    /// Get browser engine type.
+    /// Get browser engine type and name.
     /// @sa EBrowserEngine 
     EBrowserEngine GetEngine(void) const 
         { return m_Engine; }
+    string GetEngineName(void) const;
 
-    /// Get platform (OS) type.
+    /// Get platform (OS) type and name.
     /// @sa EPlatform
     EBrowserPlatform GetPlatform(void) const 
         { return m_Platform; }
+    string GetPlatformName(void) const;
 
     /// Get browser version information.
     ///
