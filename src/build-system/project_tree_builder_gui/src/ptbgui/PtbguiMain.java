@@ -52,6 +52,7 @@ public class PtbguiMain extends javax.swing.JFrame {
     private Map<String, String[]> m_ProjectTags;
     private SortedSet<String> m_UndefSelTags;
     private Vector<String> m_KnownTags;
+    private Vector<String> m_CompositeTags;
     private KTagsDialog m_KtagsDlg;
     enum eState {
         beforePtb,
@@ -72,6 +73,7 @@ public class PtbguiMain extends javax.swing.JFrame {
         m_ProjectTags = new HashMap<String, String[]>();
         m_UndefSelTags = new TreeSet<String>();
         m_KnownTags = new Vector<String>();
+        m_CompositeTags = new Vector<String>();
         ButtonGroup group = new ButtonGroup();
         group.add(jRadioButtonStatic);
         group.add(jRadioButtonDLL);
@@ -231,6 +233,7 @@ public class PtbguiMain extends javax.swing.JFrame {
             "/src/build-system/project_tags.txt";
         int n = 0;
         m_KnownTags.clear();
+        m_CompositeTags.clear();
         if (!ArgsParser.existsPath(from)) {
             return;
         }
@@ -239,7 +242,15 @@ public class PtbguiMain extends javax.swing.JFrame {
                 new FileInputStream(new File(nativeFileSeparator(from)))));
             String line;
             while ((line = r.readLine()) != null) {
-                String[] t = line.split("[, ]");
+                if (line.length() == 0 || line.charAt(0) == '#') {
+                    continue;
+                }
+                String[] t = line.split("=");
+                if (t.length > 1) {
+                    m_CompositeTags.add(line.trim());
+                    continue;
+                }
+                t = line.split("[, ]");
                 for (int i=0; i<t.length; ++i) {
                     if (t[i].trim().length() != 0) {
                         ++n;
@@ -763,9 +774,9 @@ public class PtbguiMain extends javax.swing.JFrame {
             while (m_PtbOut != null && /*m_PtbOut.ready() &&*/
                    (line = m_PtbOut.readLine()) != null) {
                 if (line.startsWith("*PTBGUI}*")) {
-                    Iterator tt = alltags.iterator();
+                    Iterator<String> tt = alltags.iterator();
                     while (tt.hasNext()) {
-                        addProject(jListTags,(String)tt.next(),false);
+                        addProject(jListTags,tt.next(),false);
                     }
                     countSelected();
                     return;
@@ -1650,7 +1661,7 @@ public class PtbguiMain extends javax.swing.JFrame {
             }
         });
 
-        jLabel13.setText("  version 1.2");
+        jLabel13.setText("  version 1.3");
         jLabel13.setEnabled(false);
 
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(getContentPane());
@@ -1829,7 +1840,7 @@ public class PtbguiMain extends javax.swing.JFrame {
             m_KtagsDlg.setLocationRelativeTo(this);
         }
         if (!m_KtagsDlg.isVisible()) {
-            m_KtagsDlg.setTextData(m_KnownTags);
+            m_KtagsDlg.setTextData(m_KnownTags, m_CompositeTags);
             m_KtagsDlg.setVisible(true);
         }
     }//GEN-LAST:event_jButtonKTagsActionPerformed

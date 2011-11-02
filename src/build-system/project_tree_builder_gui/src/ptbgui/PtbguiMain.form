@@ -1097,7 +1097,7 @@
     </Component>
     <Component class="javax.swing.JLabel" name="jLabel13">
       <Properties>
-        <Property name="text" type="java.lang.String" value="  version 1.2"/>
+        <Property name="text" type="java.lang.String" value="  version 1.3"/>
         <Property name="enabled" type="boolean" value="false"/>
       </Properties>
     </Component>
