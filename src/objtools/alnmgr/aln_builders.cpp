@@ -425,6 +425,8 @@ BuildAln(TAnchoredAlnVec& in_alns,
 
     /// 1. Build a single anchored_aln
     _ASSERT(out_aln.GetDim() == 0);
+    bool anchor_first = (options.m_MergeFlags & CAlnUserOptions::fAnchorRowFirst) != 0;
+
     switch (options.m_MergeAlgo) {
     case CAlnUserOptions::eQuerySeqMergeOnly:
         ITERATE(TAnchoredAlnVec, anchored_it, in_alns) {
@@ -434,13 +436,12 @@ BuildAln(TAnchoredAlnVec& in_alns,
                 continue;
             }
             // assumption is that anchor row is the last
-            _ASSERT(anchored.GetAnchorRow() == anchored.GetDim()-1);
             for (TDim row = 0; row < anchored.GetDim(); ++row) {
                 if (row == anchored.GetAnchorRow()) {
                     MergePairwiseAlns(*out_aln.SetPairwiseAlns().back(),
                                       *anchored.GetPairwiseAlns()[row],
                                       CAlnUserOptions::fTruncateOverlaps);
-                } else {
+                } else if (!anchor_first) {
                     // swap the anchor row with the new one
                     CRef<CPairwiseAln> anchor_pairwise(out_aln.GetPairwiseAlns().back());
                     out_aln.SetPairwiseAlns().back().Reset
@@ -502,6 +503,9 @@ BuildAln(TAnchoredAlnVec& in_alns,
             int flags = CAlnUserOptions::fTruncateOverlaps;
             flags |= options.m_MergeFlags & CAlnUserOptions::fAllowMixedStrand;
             CRef<CMergedPairwiseAln> merged_anchor(new CMergedPairwiseAln(flags));
+            if (anchor_first) {
+                merged_vec.push_back(merged_anchor);
+            }
             ITERATE(TAnchoredAlnVec, anchored_it, in_alns) {
                 const CAnchoredAln&       anchored_aln = **anchored_it;
                 const CAnchoredAln::TDim& anchor_row   = anchored_aln.GetAnchorRow();
@@ -544,7 +548,9 @@ BuildAln(TAnchoredAlnVec& in_alns,
 #endif
             }
             // finally, add the anchor
-            merged_vec.push_back(merged_anchor);
+            if (!anchor_first) {
+                merged_vec.push_back(merged_anchor);
+            }
             NON_CONST_ITERATE(TMergedVec, ma, merged_vec) {
                 (*ma)->SortInsertions();
             }
@@ -552,7 +558,7 @@ BuildAln(TAnchoredAlnVec& in_alns,
         }
         break;
     }
-    out_aln.SetAnchorRow(out_aln.GetPairwiseAlns().size() - 1);
+    out_aln.SetAnchorRow(anchor_first ? 0 : out_aln.GetPairwiseAlns().size() - 1);
     if ( !(options.m_MergeFlags & CAlnUserOptions::fUseAnchorAsAlnSeq) ) {
         if ( !pseudo_seqid ) {
             CRef<CSeq_id> seq_id (new CSeq_id("lcl|pseudo [timestamp: " + CTime(CTime::eCurrent).AsString() + "]"));

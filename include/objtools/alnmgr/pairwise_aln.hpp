@@ -145,8 +145,7 @@ public:
 
     /// How many rows
     TDim GetDim() const {
-        _ASSERT(m_AnchorRow == (TDim) m_PairwiseAlns.size() - 1);
-        return (TDim) m_PairwiseAlns.size();
+        return (TDim)m_PairwiseAlns.size();
     }
 
     /// Seq ids of the rows
@@ -191,7 +190,9 @@ public:
     }
 
     /// Modify anchor row (never do this unless you are creating a new
-    /// alignment and know what you're doing)
+    /// alignment and know what you're doing). Setting the anchor row
+    /// does not update the insertions - they are still aligned to the
+    /// old anchor.
     void SetAnchorRow(TDim anchor_row) {
         m_AnchorRow = anchor_row;
     }

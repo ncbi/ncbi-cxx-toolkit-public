@@ -97,7 +97,7 @@ public:
                                       ///  score thus allowing for
                                       ///  user-defined sort order.
 
-        fUseAnchorAsAlnSeq  = 1 << 4  ///< (Not recommended!) Use the
+        fUseAnchorAsAlnSeq  = 1 << 4, ///< (Not recommended!) Use the
                                       ///  anchor sequence as the
                                       ///  alignment sequence.
                                       ///  Otherwise (the default) a
@@ -108,6 +108,10 @@ public:
                                       ///  CSparseAln::*AlnPos*
                                       ///  methods incosistent with
                                       ///  CAlnVec::*AlnPos*.
+
+        fAnchorRowFirst     = 1 << 5  ///< Anchor row is stored in the first
+                                      ///  pairwise alignment, not the last
+                                      ///  one.
 
     };
     typedef int TMergeFlags;

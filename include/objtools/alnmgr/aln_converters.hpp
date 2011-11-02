@@ -235,17 +235,23 @@ CreateAnchoredAlnFromAln(const _TAlnStats& aln_stats,      ///< input
         /// the anchor.
     }
         
-    /// Create the anchored aln (which may shrink vertically due to resulting empty rows)
+    // Create the anchored aln (which may shrink vertically due to resulting empty rows)
     TDim new_dim = dim - empty_rows;
     _ALNMGR_ASSERT(new_dim > 0);
 
-    TDim target_anchor_row = new_dim - 1; ///< anchor row goes at the last row (TODO: maybe a candidate for a user option?)
+    // Anchor row goes at the last row (TODO: maybe a candidate for a user option?)
+    TDim target_anchor_row =
+        (options.m_MergeFlags & CAlnUserOptions::fAnchorRowFirst) != 0 ?
+        0 : new_dim - 1;
 
     CRef<CAnchoredAln> anchored_aln(new CAnchoredAln);
     anchored_aln->SetDim(new_dim);
 
     for (TDim row = 0, target_row = 0;  row < dim;  ++row) {
         if ( !pairwises[row]->empty() ) {
+            if (target_row == target_anchor_row) {
+                target_row++;
+            }
             anchored_aln->SetPairwiseAlns()[row == anchor_row ?
                                             target_anchor_row :
                                             target_row++].Reset(pairwises[row]);
