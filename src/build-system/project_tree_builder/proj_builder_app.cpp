@@ -2253,7 +2253,7 @@ void CProjBulderApp::LoadProjectTags(const string& filename)
     if ( ifs.is_open() ) {
         string line;
         while ( NcbiGetlineEOL(ifs, line) ) {
-            if (line[0] == '#') {
+            if (line.empty() || line[0] == '#') {
                 continue;
             }
             list<string> values;
