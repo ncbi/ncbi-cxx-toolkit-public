@@ -211,9 +211,19 @@ int CNetScheduleDApp::Run(void)
 
         if (params.is_daemon) {
             LOG_POST("Entering UNIX daemon mode...");
-            bool daemon = CProcess::Daemonize(0, CProcess::fDontChroot);
-            if (!daemon)
+            // Here's workaround for SQLite3 bug: if stdin is closed in forked
+            // process then 0 file descriptor is returned to SQLite after open().
+            // But there's assert there which prevents fd to be equal to 0. So
+            // we keep descriptors 0, 1 and 2 in child process open. Latter two -
+            // just in case somebody will try to write to them.
+            bool    is_good = CProcess::Daemonize(kEmptyCStr,
+                                                  CProcess::fDontChroot |
+                                                  CProcess::fKeepStdin  |
+                                                  CProcess::fKeepStdout);
+            if (!is_good) {
+                ERR_POST(Critical << "Error during daemonization");
                 return 0;
+            }
         }
         else
             LOG_POST("Operating in non-daemon mode...");
