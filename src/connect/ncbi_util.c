@@ -1092,24 +1092,9 @@ extern const char* UTIL_TcharToUtf8OnHeap(const TCHAR* buffer)
     return p;
 }
 
-
-extern const char* UTIL_TcharToUtf8(const TCHAR* buffer)
-{
-    char* p = NULL;
-    if (buffer) {
-        int n = WideCharToMultiByte(CP_UTF8, 0, buffer, -1, NULL,
-                                    0, NULL, NULL);
-        if (n >= 0) {
-            p = (char*) LocalAlloc(LMEM_FIXED, (n + 1) * sizeof(char));
-            if (p) {
-                WideCharToMultiByte(CP_UTF8, 0, buffer, -1, p,
-                                    n, NULL, NULL);
-                p[n] = '\0';
-            }
-        }
-    }
-    return p;
-}
+/*
+   Function UTIL_TcharToUtf8 is defined in ncbi_strerror.c
+*/
 
 
 extern const TCHAR* UTIL_Utf8ToTchar(const char* buffer)
@@ -1131,11 +1116,9 @@ extern const TCHAR* UTIL_Utf8ToTchar(const char* buffer)
 #  endif /*_UNICODE*/
 
 
-extern void UTIL_ReleaseBufferOnHeap(const void* buffer)
-{
-    if (buffer)
-        LocalFree((HLOCAL) buffer);
-}
+/*
+   Function UTIL_ReleaseBufferOnHeap is defined in ncbi_strerror.c
+*/
 
 
 #endif /*NCBI_OS_MSWIN*/

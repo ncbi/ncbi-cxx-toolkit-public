@@ -572,6 +572,10 @@ extern NCBI_XCONNECT_EXPORT char* UTIL_PrintableString
 extern const char*    UTIL_TcharToUtf8OnHeap(const wchar_t* buffer);
 extern const char*    UTIL_TcharToUtf8      (const wchar_t* buffer);
 extern const wchar_t* UTIL_Utf8ToTchar      (const    char* buffer);
+/*
+   If you change these macros (here and in #else) you need to change similar
+   ones in ncbi_strerror.c too.
+*/
 #  define             UTIL_ReleaseBuffer(x)  UTIL_ReleaseBufferOnHeap(x)
 #else
 #  define             UTIL_TcharToUtf8OnHeap(x)  (x)
