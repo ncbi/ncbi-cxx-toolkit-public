@@ -12,6 +12,7 @@ LIBS = $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 REQUIRES = Boost.Test.Included
 
 CHECK_CMD =
+CHECK_COPY = unit_test_validator.ini
 CHECK_TIMEOUT = 5000
 
 WATCHERS = bollin kans
