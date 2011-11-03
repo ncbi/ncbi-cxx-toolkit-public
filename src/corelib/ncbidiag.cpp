@@ -1996,8 +1996,10 @@ typedef NCBI_PARAM_TYPE(Log, Session_Id) TParamDefaultSessionId;
 const string& CDiagContext::GetDefaultSessionID(void) const
 {
     if ( !m_DefaultSessionId.get() ) {
-        m_DefaultSessionId.reset(
-            new CEncodedString(TParamDefaultSessionId::GetDefault()));
+        m_DefaultSessionId.reset(new CEncodedString);
+    }
+    if ( m_DefaultSessionId->IsEmpty() ) {
+        m_DefaultSessionId->SetString(TParamDefaultSessionId::GetDefault());
     }
     return m_DefaultSessionId->GetOriginalString();
 }
@@ -2006,9 +2008,9 @@ const string& CDiagContext::GetDefaultSessionID(void) const
 void CDiagContext::SetDefaultSessionID(const string& session_id)
 {
     if ( !m_DefaultSessionId.get() ) {
-        m_DefaultSessionId.reset(new CEncodedString(session_id));
+        m_DefaultSessionId.reset(new CEncodedString);
     }
-    TParamDefaultSessionId::SetDefault(session_id);
+    m_DefaultSessionId->SetString(session_id);
 }
 
 
