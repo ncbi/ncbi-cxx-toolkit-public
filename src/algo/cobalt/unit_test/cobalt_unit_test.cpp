@@ -417,18 +417,11 @@ BOOST_FIXTURE_TEST_SUITE(multialigner, CMultiAlignerFixture)
 // Make sure assiging query sequences are assigned properly
 BOOST_AUTO_TEST_CASE(TestSetQueries)
 {
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CRef<CScope> scope(new CScope(*objmgr));
-    scope->AddDefaults();
-
-    vector< CRef<CSeq_loc> > seqlocs;
     vector< CRef<CBioseq> > bioseqs;
 
     // Test for fasta input
-    int status = ReadFastaQueries("data/small.fa", seqlocs, scope);
-    BOOST_REQUIRE_EQUAL(status, 0);
-    s_MakeBioseqs(seqlocs, scope, bioseqs);
-    s_TestQueriesAsSeq_locs(seqlocs, scope);
+    s_MakeBioseqs(m_Sequences, m_Scope, bioseqs);
+    s_TestQueriesAsSeq_locs(m_Sequences, m_Scope);
     s_TestQueriesAsBioseqs(bioseqs);
 
     // Test for sequences as gis
@@ -436,14 +429,14 @@ BOOST_AUTO_TEST_CASE(TestSetQueries)
 
     // Using gis causes problems with CSeqVector
     CSeq_id id("gi|129295");
-    CBioseq_Handle h = scope->GetBioseqHandle(id);
+    CBioseq_Handle h = m_Scope->GetBioseqHandle(id);
     BOOST_CHECK(h.GetSeqId()->Match(id));
 
     CSeq_loc s;
     s.SetInt().SetFrom(0);
-    s.SetInt().SetTo(sequence::GetLength(id, scope)-1);
+    s.SetInt().SetTo(sequence::GetLength(id, m_Scope)-1);
     s.SetInt().SetId().Assign(id);
-    h = scope->GetBioseqHandle(s);
+    h = m_Scope->GetBioseqHandle(s);
 
     //TODO: test for sequences as gis and mix.
     // Currently there is a problem in CSeqVector used in CSequence
@@ -455,14 +448,11 @@ BOOST_AUTO_TEST_CASE(TestBadQueries)
 {
     CMultiAligner aligner;
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CRef<CScope> scope(new CScope(*objmgr));
-
     vector< CRef<CSeq_loc> > seqlocs;
     vector< CRef<CBioseq> > bioseqs;
 
     // Empty list of qurey sequences causes exception
-    BOOST_CHECK_THROW(aligner.SetQueries(seqlocs, scope),
+    BOOST_CHECK_THROW(aligner.SetQueries(seqlocs, m_Scope),
                       CMultiAlignerException);
 
     BOOST_CHECK_THROW(aligner.SetQueries(bioseqs), CMultiAlignerException);
@@ -470,31 +460,29 @@ BOOST_AUTO_TEST_CASE(TestBadQueries)
     // Empty seqloc or bioseq causes exception
     seqlocs.push_back(CRef<CSeq_loc>(new CSeq_loc()));
     seqlocs.push_back(CRef<CSeq_loc>(new CSeq_loc()));
-    BOOST_CHECK_THROW(aligner.SetQueries(seqlocs, scope),
+    BOOST_CHECK_THROW(aligner.SetQueries(seqlocs, m_Scope),
                       CMultiAlignerException);
 
     bioseqs.push_back(CRef<CBioseq>(new CBioseq()));
     bioseqs.push_back(CRef<CBioseq>(new CBioseq()));
     BOOST_CHECK_THROW(aligner.SetQueries(bioseqs), CMultiAlignerException);
 
-    scope.Reset(new CScope(*objmgr));
-    scope->AddDefaults();
-    int status = ReadFastaQueries("data/small.fa", seqlocs, scope);
-    BOOST_REQUIRE_EQUAL(status, 0);
+    seqlocs.clear();
+    seqlocs.push_back(m_Sequences.front());
 
     // Single input sequence causes exception
-    seqlocs.resize(1);
     BOOST_REQUIRE_EQUAL((int)seqlocs.size(), 1);
-    BOOST_CHECK_THROW(aligner.SetQueries(seqlocs, scope),
+    BOOST_CHECK_THROW(aligner.SetQueries(seqlocs, m_Scope),
                       CMultiAlignerException);
 
-    s_MakeBioseqs(seqlocs, scope, bioseqs);
+    s_MakeBioseqs(seqlocs, m_Scope, bioseqs);
     BOOST_CHECK_THROW(aligner.SetQueries(bioseqs), CMultiAlignerException);
 
     // A gap in input sequence causes exception
-    scope.Reset(new CScope(*objmgr));
-    scope->AddDefaults();
-    status = ReadFastaQueries("data/queries_with_gaps.fa", seqlocs, scope);
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CRef<CScope> scope(new CScope(*objmgr));
+    seqlocs.clear();
+    int status = ReadFastaQueries("data/queries_with_gaps.fa", seqlocs, scope);
     BOOST_REQUIRE_EQUAL(status, 0);
     BOOST_CHECK_THROW(aligner.SetQueries(seqlocs, scope),
                       CMultiAlignerException);
@@ -507,23 +495,14 @@ BOOST_AUTO_TEST_CASE(TestBadQueries)
 // Bad user constraints must be reported
 BOOST_AUTO_TEST_CASE(TestBadUserConstraints)
 {
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CRef<CScope> scope(new CScope(*objmgr));
-
-    vector< CRef<CSeq_loc> > seqlocs;
-    int status = ReadFastaQueries("data/small.fa", seqlocs, scope);
-    BOOST_REQUIRE_EQUAL(status, 0);
-
     vector< CRef<CBioseq> > bioseqs;
-    s_MakeBioseqs(seqlocs, scope, bioseqs);
+    s_MakeBioseqs(m_Sequences, m_Scope, bioseqs);
 
-    // user constraints for non-exiting queries must be reported
-    CRef<CMultiAlignerOptions> opts(new CMultiAlignerOptions());
-    
-    CMultiAlignerOptions::TConstraints& constr = opts->SetUserConstraints();
+    m_Options->SetRpsDb("");
+    CMultiAlignerOptions::TConstraints& constr = m_Options->SetUserConstraints();
     constr.resize(1);
     
-    int query_index = (int)seqlocs.size();
+    int query_index = (int)m_Sequences.size();
     constr[0].seq1_index = query_index;
     constr[0].seq1_start = 0;
     constr[0].seq1_stop = 50;
@@ -534,14 +513,14 @@ BOOST_AUTO_TEST_CASE(TestBadUserConstraints)
 
     // this problem cannot be detected in options validation before queries
     // are set
-    BOOST_REQUIRE(opts->Validate());
+    BOOST_REQUIRE(m_Options->Validate());
 
-    CRef<CMultiAligner> aligner(new CMultiAligner(opts));
-    BOOST_CHECK_THROW(aligner->SetQueries(seqlocs, scope),
+    m_Aligner.Reset(new CMultiAligner(m_Options));
+    BOOST_CHECK_THROW(m_Aligner->SetQueries(m_Sequences, m_Scope),
                       CMultiAlignerException);
 
-    aligner.Reset(new CMultiAligner(opts));
-    BOOST_CHECK_THROW(aligner->SetQueries(bioseqs),
+    m_Aligner.Reset(new CMultiAligner(m_Options));
+    BOOST_CHECK_THROW(m_Aligner->SetQueries(bioseqs),
                       CMultiAlignerException);
     
     // user constraint with position of ouf of sequence range must be reported
@@ -551,30 +530,29 @@ BOOST_AUTO_TEST_CASE(TestBadUserConstraints)
     constr[0].seq1_start = 0;
     constr[0].seq1_stop = 50;
 
-    int length = (int)sequence::GetLength(*seqlocs[1],
-                                          scope.GetNonNullPointer());
+    int length = (int)sequence::GetLength(*m_Sequences[1],
+                                          m_Scope.GetNonNullPointer());
 
     constr[0].seq2_index = 1;
     constr[0].seq2_start = 0;
     constr[0].seq2_stop = length + 1;
 
-    BOOST_REQUIRE(opts->Validate());
+    BOOST_REQUIRE(m_Options->Validate());
 
-    aligner.Reset(new CMultiAligner(opts));
-    BOOST_CHECK_THROW(aligner->SetQueries(seqlocs, scope),
+    m_Aligner.Reset(new CMultiAligner(m_Options));
+    BOOST_CHECK_THROW(m_Aligner->SetQueries(m_Sequences, m_Scope),
                       CMultiAlignerException);    
 
-    aligner.Reset(new CMultiAligner(opts));
-    BOOST_CHECK_THROW(aligner->SetQueries(bioseqs),
+    m_Aligner.Reset(new CMultiAligner(m_Options));
+    BOOST_CHECK_THROW(m_Aligner->SetQueries(bioseqs),
                       CMultiAlignerException);    
 }
 
 BOOST_AUTO_TEST_CASE(TestNoResults)
 {
     // Getting results without computing them causes exception
-    CMultiAligner aligner;
-    BOOST_CHECK_THROW(aligner.GetResults(), CMultiAlignerException);
-    BOOST_CHECK_THROW(aligner.GetTreeContainer(), CMultiAlignerException);
+    BOOST_CHECK_THROW(m_Aligner->GetResults(), CMultiAlignerException);
+    BOOST_CHECK_THROW(m_Aligner->GetTreeContainer(), CMultiAlignerException);
 }
 
 
@@ -585,16 +563,9 @@ static bool s_Interrupt(CMultiAligner::SProgress* progress)
 
 BOOST_AUTO_TEST_CASE(TestInterrupt)
 {
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-
-    CMultiAligner aligner;
-    vector< CRef<CSeq_loc> > queries;
-    CRef<CScope> scope(new CScope(*objmgr));
-    int st = ReadFastaQueries("data/small.fa", queries, scope);
-    BOOST_REQUIRE_EQUAL(st, 0);
-    aligner.SetQueries(queries, scope);
-    aligner.SetInterruptCallback(s_Interrupt);
-    CMultiAligner::TStatus status = aligner.Run();
+    m_Aligner->SetQueries(m_Sequences, m_Scope);
+    m_Aligner->SetInterruptCallback(s_Interrupt);
+    CMultiAligner::TStatus status = m_Aligner->Run();
     BOOST_CHECK_EQUAL((CMultiAligner::EStatus)status, CMultiAligner::eInterrupt);
 }
 
@@ -884,22 +855,15 @@ static void s_TestResults(CMultiAligner& aligner,
 // The default options should result in success status
 BOOST_AUTO_TEST_CASE(TestResultsForDefaultOpts)
 {
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CRef<CMultiAlignerOptions> opts(new CMultiAlignerOptions());
-    BOOST_REQUIRE(opts->Validate());
+    BOOST_REQUIRE(m_Options->Validate());
 
-    CMultiAligner aligner(opts);
-    vector< CRef<CSeq_loc> > queries;
-    CRef<CScope> scope(new CScope(*objmgr));
-    int st = ReadFastaQueries("data/small.fa", queries, scope);
-    BOOST_REQUIRE_EQUAL(st, 0);
-    aligner.SetQueries(queries, scope);
+    m_Aligner->SetQueries(m_Sequences, m_Scope);
 
-    CMultiAligner::TStatus status = aligner.Run();
+    CMultiAligner::TStatus status = m_Aligner->Run();
     BOOST_REQUIRE_EQUAL(status, (CMultiAligner::TStatus)CMultiAligner::eSuccess);
-    BOOST_CHECK_EQUAL((int)aligner.GetMessages().size(), 0);
+    BOOST_CHECK_EQUAL((int)m_Aligner->GetMessages().size(), 0);
 
-    s_TestResults(aligner);
+    s_TestResults(*m_Aligner);
 //    s_TestResults(aligner, "data/ref_seqalign.asn");
 }
 
@@ -907,78 +871,59 @@ BOOST_AUTO_TEST_CASE(TestResultsForDefaultOpts)
 // Max cluster diameter set to zero must cause a warning
 BOOST_AUTO_TEST_CASE(TestResultsForZeroClusterDiam)
 {
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CRef<CMultiAlignerOptions> opts(new CMultiAlignerOptions());
-    opts->SetMaxInClusterDist(0.0);
+    m_Options->SetMaxInClusterDist(0.0);
+    BOOST_REQUIRE(m_Options->Validate());
 
-    BOOST_REQUIRE(opts->Validate());
+    m_Aligner.Reset(new CMultiAligner(m_Options));
+    m_Aligner->SetQueries(m_Sequences, m_Scope);
 
-    CMultiAligner aligner(opts);
-    vector< CRef<CSeq_loc> > queries;
-    CRef<CScope> scope(new CScope(*objmgr));
-    int st = ReadFastaQueries("data/small.fa", queries, scope);
-    BOOST_REQUIRE_EQUAL(st, 0);
-    aligner.SetQueries(queries, scope);
-
-    CMultiAligner::TStatus status = aligner.Run();
+    CMultiAligner::TStatus status = m_Aligner->Run();
 
     //Bad input file - there are two exactly same sequences
 
     BOOST_REQUIRE_EQUAL(status, (CMultiAligner::TStatus)CMultiAligner::eSuccess);
-    BOOST_CHECK((int)aligner.GetMessages().size() == 0);
+    BOOST_CHECK((int)m_Aligner->GetMessages().size() == 0);
 
-    s_TestResults(aligner);
+    s_TestResults(*m_Aligner);
 }
 
 
 // Max cluster diameter set to 1 (maxiumu value) must cause a warning
 BOOST_AUTO_TEST_CASE(TestResultsForMaxClusterDiam)
 {
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CRef<CMultiAlignerOptions> opts(new CMultiAlignerOptions());
-    opts->SetMaxInClusterDist(1.0);
+    m_Options->SetMaxInClusterDist(1.0);
+    BOOST_REQUIRE(m_Options->Validate());
 
-    BOOST_REQUIRE(opts->Validate());
+    m_Aligner.Reset(new CMultiAligner(m_Options));
+    m_Aligner->SetQueries(m_Sequences, m_Scope);
 
-    CMultiAligner aligner(opts);
-    vector< CRef<CSeq_loc> > queries;
-    CRef<CScope> scope(new CScope(*objmgr));
-    int st = ReadFastaQueries("data/small.fa", queries, scope);
-    BOOST_REQUIRE_EQUAL(st, 0);
-    aligner.SetQueries(queries, scope);
-
-    CMultiAligner::TStatus status = aligner.Run();
+    CMultiAligner::TStatus status = m_Aligner->Run();
 
     //Bad input file - there are two exactly same sequences
 
     BOOST_REQUIRE_EQUAL(status, (CMultiAligner::TStatus)CMultiAligner::eWarnings);
-    BOOST_CHECK((int)aligner.GetMessages().size() > 0);
+    BOOST_CHECK((int)m_Aligner->GetMessages().size() > 0);
 
-    s_TestResults(aligner);
+    s_TestResults(*m_Aligner);
 }
 
 
 BOOST_AUTO_TEST_CASE(TestResultsForNoClusters)
 {
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CRef<CMultiAlignerOptions> opts(new CMultiAlignerOptions(
-                 CMultiAlignerOptions::fNoQueryClusters
-                 | CMultiAlignerOptions::fNoRpsBlast));
+    m_Options.Reset(new CMultiAlignerOptions(
+                                CMultiAlignerOptions::fNoQueryClusters
+                                | CMultiAlignerOptions::fNoRpsBlast));
 
-    BOOST_REQUIRE(opts->Validate());
+    BOOST_REQUIRE(m_Options->Validate());
 
-    CMultiAligner aligner(opts);
-    vector< CRef<CSeq_loc> > queries;
-    CRef<CScope> scope(new CScope(*objmgr));
-    int st = ReadFastaQueries("data/small.fa", queries, scope);
-    BOOST_REQUIRE_EQUAL(st, 0);
-    aligner.SetQueries(queries, scope);
+    m_Aligner.Reset(new CMultiAligner(m_Options));
+    m_Aligner->SetQueries(m_Sequences, m_Scope);
 
-    CMultiAligner::TStatus status = aligner.Run();
+    CMultiAligner::TStatus status = m_Aligner->Run();
     BOOST_REQUIRE_EQUAL(status, (CMultiAligner::TStatus)CMultiAligner::eSuccess);
-    BOOST_CHECK_EQUAL((int)aligner.GetMessages().size(), 0);
+    BOOST_CHECK_EQUAL((int)m_Aligner->GetMessages().size(), 0);
 
-    s_TestResults(aligner);
+    s_TestResults(*m_Aligner);
 }
 
 
@@ -986,11 +931,8 @@ BOOST_AUTO_TEST_CASE(TestResultsForNoClusters)
 // clusters
 BOOST_AUTO_TEST_CASE(TestResultsForClustersAndUserConstraints)
 {
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CRef<CMultiAlignerOptions> opts(new CMultiAlignerOptions());
-
     vector<CMultiAlignerOptions::SConstraint>& constr
-        = opts->SetUserConstraints();
+        = m_Options->SetUserConstraints();
 
     constr.resize(2);
     constr[0].seq1_index = 0;
@@ -1009,20 +951,16 @@ BOOST_AUTO_TEST_CASE(TestResultsForClustersAndUserConstraints)
     constr[1].seq2_start = 0;
     constr[1].seq2_stop = 50;
 
-    BOOST_REQUIRE(opts->Validate());
+    BOOST_REQUIRE(m_Options->Validate());
 
-    CMultiAligner aligner(opts);
-    vector< CRef<CSeq_loc> > queries;
-    CRef<CScope> scope(new CScope(*objmgr));
-    int st = ReadFastaQueries("data/small.fa", queries, scope);
-    BOOST_REQUIRE_EQUAL(st, 0);
-    aligner.SetQueries(queries, scope);
+    m_Aligner.Reset(new CMultiAligner(m_Options));
+    m_Aligner->SetQueries(m_Sequences, m_Scope);
 
-    CMultiAligner::TStatus status = aligner.Run();
+    CMultiAligner::TStatus status = m_Aligner->Run();
     BOOST_REQUIRE_EQUAL(status, (CMultiAligner::TStatus)CMultiAligner::eSuccess);
-    BOOST_CHECK_EQUAL((int)aligner.GetMessages().size(), 0);
+    BOOST_CHECK_EQUAL((int)m_Aligner->GetMessages().size(), 0);
 
-    s_TestResults(aligner);
+    s_TestResults(*m_Aligner);
 }
 
 
@@ -1030,33 +968,28 @@ BOOST_AUTO_TEST_CASE(TestResultsForClustersAndUserConstraints)
 // guide tree as cluster dendrogram
 BOOST_AUTO_TEST_CASE(TestTwoSequences)
 {
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CRef<CMultiAlignerOptions> opts(new CMultiAlignerOptions());
-
     // case with one cluster
-    opts->SetMaxInClusterDist(1.0);
-    CMultiAligner aligner(opts);
+    m_Options->SetMaxInClusterDist(1.0);
+    m_Aligner.Reset(new CMultiAligner(m_Options));
 
     vector< CRef<CSeq_loc> > queries;
-    CRef<CScope> scope(new CScope(*objmgr));
-    int st = ReadFastaQueries("data/small.fa", queries, scope);
-    BOOST_REQUIRE_EQUAL(st, 0);
-    queries.resize(2);
-    aligner.SetQueries(queries, scope);
+    queries.push_back(m_Sequences[0]);
+    queries.push_back(m_Sequences[1]);
+    m_Aligner->SetQueries(queries, m_Scope);
     
-    CMultiAligner::TStatus status = aligner.Run();
+    CMultiAligner::TStatus status = m_Aligner->Run();
     BOOST_CHECK(status == CMultiAligner::eSuccess
                 || status == CMultiAligner::eWarnings);
-    s_TestResults(aligner);
+    s_TestResults(*m_Aligner);
 
     // case with two clusters
-    opts->SetMaxInClusterDist(0.01);
-    aligner.SetQueries(queries, scope);
-    status = aligner.Run();
+    m_Options->SetMaxInClusterDist(0.01);
+    m_Aligner.Reset(new CMultiAligner(m_Options));
+    m_Aligner->SetQueries(queries, m_Scope);
+    status = m_Aligner->Run();
     BOOST_CHECK(status == CMultiAligner::eSuccess
                 || status == CMultiAligner::eWarnings);
-    s_TestResults(aligner);
-    
+    s_TestResults(*m_Aligner);
 }
 
 
@@ -1141,136 +1074,78 @@ void s_TestAlignmentFromMSAs(CRef<CSeq_align> result, CRef<CSeq_align> in_first,
 
 BOOST_AUTO_TEST_CASE(TestAlignMSAs)
 {
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CRef<objects::CScope> scope(new objects::CScope(*objmgr));
-
-    CRef<CSeq_align> align1, align2;
-
-    CRef<objects::CSeqIdGenerator> id_generator(new objects::CSeqIdGenerator());
-
-    // read input MSAs
-    int st = ReadMsa("data/msa1.fa", align1, scope, false, id_generator);
-    BOOST_REQUIRE_EQUAL(st, 0);
-    st = ReadMsa("data/msa2.fa", align2, scope, false, id_generator);
-    BOOST_REQUIRE_EQUAL(st, 0);
-
     set<int> repr;
 
     // align input MSAs
-    CMultiAligner aligner;
-    aligner.SetInputMSAs(*align1, *align2, repr, repr, scope);
-    aligner.Run();
+    m_Aligner->SetInputMSAs(*m_Align1, *m_Align2, repr, repr, m_Scope);
+    m_Aligner->Run();
 
     // test result
-    s_TestAlignmentFromMSAs(aligner.GetResults(), align1, align2);
+    s_TestAlignmentFromMSAs(m_Aligner->GetResults(), m_Align1, m_Align2);
 }
 
 
 BOOST_AUTO_TEST_CASE(TestAlignMSAWithSequence)
 {
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CRef<objects::CScope> scope(new objects::CScope(*objmgr));
-    CRef<CSeq_align> align1, align2;
-    vector< CRef< objects::CSeq_loc> > seq_loc;
     set<int> repr;
 
-    CRef<objects::CSeqIdGenerator> id_generator(new objects::CSeqIdGenerator());
-
-    // read input alignment
-    int status = ReadMsa("data/msa1.fa", align1, scope, false, id_generator);
-    BOOST_REQUIRE_EQUAL(status, 0);
-
-    // read sequence
-    status = ReadFastaQueries("data/single_seq.fa", seq_loc, scope,
-                              id_generator);
-    BOOST_REQUIRE_EQUAL(status, 0);
-
     // create a one-sequence Seq_align from the input sequence
-    align2.Reset(new objects::CSeq_align());
-    align2->SetType(objects::CSeq_align::eType_global);
-    align2->SetDim(1);
-    objects::CDense_seg& denseg = align2->SetSegs().SetDenseg();
+    CRef<CSeq_align> align(new CSeq_align());
+    align->SetType(CSeq_align::eType_global);
+    align->SetDim(1);
+    CDense_seg& denseg = align->SetSegs().SetDenseg();
     denseg.SetDim(1);
     denseg.SetNumseg(1);
-    denseg.SetIds().push_back(CRef<objects::CSeq_id>(
-                   const_cast<objects::CSeq_id*>(seq_loc.front()->GetId())));
+    denseg.SetIds().push_back(CRef<CSeq_id>(
+                         const_cast<CSeq_id*>(m_Sequences.front()->GetId())));
     denseg.SetStarts().push_back(0);
-    objects::CSeqVector v(*seq_loc.front(), *scope);
+    CSeqVector v(*m_Sequences.front(), *m_Scope);
     denseg.SetLens().push_back(v.size());
     
     // align MSA and sequence
-    CMultiAligner aligner;
-    aligner.SetInputMSAs(*align1, *align2, repr, repr, scope);
-    aligner.Run();
+    m_Aligner->SetInputMSAs(*m_Align1, *align, repr, repr, m_Scope);
+    m_Aligner->Run();
 
     // test result
-    s_TestAlignmentFromMSAs(aligner.GetResults(), align1, align2);
+    s_TestAlignmentFromMSAs(m_Aligner->GetResults(), m_Align1, align);
 }
 
 BOOST_AUTO_TEST_CASE(TestAlignMSAsWithRepresentatives)
 {
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CRef<objects::CScope> scope(new objects::CScope(*objmgr));
-
-    CRef<CSeq_align> align1, align2;
-
-    CRef<objects::CSeqIdGenerator> id_generator(new objects::CSeqIdGenerator());
-
-    // read input MSAs
-    int status = ReadMsa("data/msa1.fa", align1, scope, false, id_generator);
-    BOOST_REQUIRE_EQUAL(status, 0);
-    status = ReadMsa("data/msa2.fa", align2, scope, false, id_generator);
-    BOOST_REQUIRE_EQUAL(status, 0);
-
     // set representatives
-    BOOST_REQUIRE(align1->CheckNumRows() > 3);
-    BOOST_REQUIRE(align2->CheckNumRows() > 3);    
+    BOOST_REQUIRE(m_Align1->CheckNumRows() > 3);
+    BOOST_REQUIRE(m_Align2->CheckNumRows() > 3);
     set<int> repr;
     repr.insert(2);
     repr.insert(3);
 
     // align input MSAs
-    CMultiAligner aligner;
-    aligner.SetInputMSAs(*align1, *align2, repr, repr, scope);
-    aligner.Run();
+    m_Aligner->SetInputMSAs(*m_Align1, *m_Align2, repr, repr, m_Scope);
+    m_Aligner->Run();
 
     // test result
-    s_TestAlignmentFromMSAs(aligner.GetResults(), align1, align2);
+    s_TestAlignmentFromMSAs(m_Aligner->GetResults(), m_Align1, m_Align2);
 }
 
 BOOST_AUTO_TEST_CASE(TestAlignMSAsWithWrongRepresentatives)
 {
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CRef<objects::CScope> scope(new objects::CScope(*objmgr));
-
-    CRef<CSeq_align> align1, align2;
-
-    CRef<objects::CSeqIdGenerator> id_generator(new objects::CSeqIdGenerator());
-
-    // read input MSAs
-    int status = ReadMsa("data/msa1.fa", align1, scope, false, id_generator);
-    BOOST_REQUIRE_EQUAL(status, 0);
-    status = ReadMsa("data/msa2.fa", align2, scope, false, id_generator);
-    BOOST_REQUIRE_EQUAL(status, 0);
-
     // set representatives
     set<int> repr;
 
-    CMultiAligner aligner;
-
     // indeces of representatives must be non-negative
     repr.insert(-1);
-
-    BOOST_CHECK_THROW(aligner.SetInputMSAs(*align1, *align2, repr, repr, scope),
-                     CMultiAlignerException);
+    BOOST_CHECK_THROW(m_Aligner->SetInputMSAs(*m_Align1, *m_Align2, repr, repr,
+                                              m_Scope),
+                      CMultiAlignerException);
 
 
     // indeces of representatives must be smaller than number of sequences
     // in MSA
     repr.clear();
-    repr.insert(align1->CheckNumRows());
-    BOOST_CHECK_THROW(aligner.SetInputMSAs(*align1, *align2, repr, repr, scope),
-                     CMultiAlignerException);
+    repr.insert(m_Align1->CheckNumRows());
+    BOOST_CHECK_THROW(m_Aligner->SetInputMSAs(*m_Align1, *m_Align2, repr, repr,
+                                              m_Scope),
+                      CMultiAlignerException);
 }
 
 BOOST_AUTO_TEST_CASE(TestSetPrecomputedDomainHitsWithQueriesAsBioseqset)
