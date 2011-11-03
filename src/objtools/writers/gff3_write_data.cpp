@@ -136,12 +136,18 @@ string s_BestIdString(
     CScope& scope )
 //  ----------------------------------------------------------------------------
 {
+    if (!idh) {
+        return "";
+    }
     CSeq_id_Handle best_idh = sequence::GetId( idh, scope, sequence::eGetId_Best );
     if ( !best_idh ) {
         best_idh = idh;
     }
     string strId("");
-    best_idh.GetSeqId()->GetLabel( &strId, CSeq_id::eContent );
+    try {
+        best_idh.GetSeqId()->GetLabel( &strId, CSeq_id::eContent );
+    }
+    catch (...) {}
     return strId;
 }
     
@@ -942,10 +948,12 @@ bool CGff3WriteRecordFeature::x_AssignAttributeProduct(
         // Possibility 2:
         // Product name is from the prot-ref refered to by the seqfeat's 
         // data.product:
-        if ( mf.IsSetProduct() ) {
-            m_Attributes["product"] = 
-                s_BestIdString( mf.GetProductId(), mf.GetScope());
-            return true;
+        if (mf.IsSetProduct()) {
+            string product = s_BestIdString( mf.GetProductId(), mf.GetScope());
+            if (!product.empty()) {
+                m_Attributes["product"] = product;
+                return true;
+            }
         }
     }
 
@@ -1141,36 +1149,41 @@ bool CGff3WriteRecordFeature::x_AssignAttributeTranscriptId(
     }
 
     if ( mf.IsSetProduct() ) {
-        m_Attributes["transcript_id"] = 
-            s_BestIdString(mf.GetProductId(), mf.GetScope());
-        return true;
+        string transcript_id = s_BestIdString(mf.GetProductId(), mf.GetScope());
+        if (!transcript_id.empty()) {
+            m_Attributes["transcript_id"] = transcript_id;
+            return true;
+        }
     }
     return true;
 }
 
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecordFeature::x_AssignAttributeProteinId(
-    CMappedFeat mapped_feat )
+    CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! mapped_feat.IsSetProduct() ) {
+    if ( ! mf.IsSetProduct() ) {
         return true;
     }
-    m_Attributes["protein_id"] = 
-        s_BestIdString(mapped_feat.GetProductId(), mapped_feat.GetScope());
+    string protein_id = s_BestIdString(mf.GetProductId(), mf.GetScope());
+    if (!protein_id.empty()) {
+        m_Attributes["protein_id"] = protein_id;
+        return true;
+    }
     return true;
 }
 
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecordFeature::x_AssignAttributeException(
-    CMappedFeat mapped_feat )
+    CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    if ( mapped_feat.IsSetExcept_text() ) {
-        m_Attributes["exception"] = mapped_feat.GetExcept_text();
+    if ( mf.IsSetExcept_text() ) {
+        m_Attributes["exception"] = mf.GetExcept_text();
         return true;
     }
-    if ( mapped_feat.IsSetExcept() ) {
+    if ( mf.IsSetExcept() ) {
         // what should I do?
         return true;
     }
