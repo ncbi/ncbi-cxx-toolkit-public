@@ -130,7 +130,8 @@ void CBioseq_set::GetLabel(string* label, ELabelType type) const
     // Loop through CBioseqs looking for the best one to use for a label
     bool best_is_na = false, best_has_gb = false, best_has_accession = false;
     const CBioseq* best = 0;
-    for (CTypeConstIterator<CBioseq> si(ConstBegin(*this)); si; ++si) {
+    int max = 0;
+    for (CTypeConstIterator<CBioseq> si(ConstBegin(*this)); si && max < 100; ++si, ++max) {
         bool takeit = false, is_na, has_gb = false, has_accession = false;
         is_na = s_is_na(*si);
         for (CTypeConstIterator<CSeq_id> ii(ConstBegin(*si)); ii; ++ii) {
@@ -190,6 +191,15 @@ void CBioseq_set::GetLabel(string* label, ELabelType type) const
         if (best->GetFirstId()) {
             os << best->GetFirstId()->DumpAsFasta();
             *label += CNcbiOstrstreamToString(os);
+            if (this->IsSetSeq_set()) {
+                const TSeq_set& sset = this->GetSeq_set();
+                int len = sset.size();
+                if (len > 1) {
+                    *label += " (" + NStr::SizetToString(sset.size()) + " components)";
+                } else if (len == 1) {
+                    *label += " (1 component)";
+                }
+            }
         }
     }
 }
