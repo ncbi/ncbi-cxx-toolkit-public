@@ -517,6 +517,8 @@ private:
     /// String representation for whole test timeout (real value taken from
     /// CHECK_TIMEOUT in Makefile).
     string                    m_TimeoutStr;
+    /// Multiplicator for timeouts
+    double                    m_TimeMult;
     /// Timer measuring elapsed time for the whole test
     CStopWatch                m_Timer;
     /// Timeout that was set in currently executing unit before adjustment
@@ -799,6 +801,7 @@ CNcbiTestApplication::CNcbiTestApplication(void)
       m_RunMode  (0),
       m_DummyTest(NULL),
       m_Timeout  (0),
+      m_TimeMult (1),
       m_Timer    (CStopWatch::eStart)
 {
     m_Reporter = new CNcbiBoostReporter();
@@ -1387,19 +1390,18 @@ inline void
 CNcbiTestApplication::AdjustTestTimeout(but::test_unit* tu)
 {
     m_CurUnitTimeout = tu->p_timeout.get();
+    unsigned int new_timeout = (unsigned int)(m_CurUnitTimeout * m_TimeMult);
 
-    if (m_Timeout == 0)
-        return;
-
-    double elapsed = m_Timer.Elapsed();
-    if (m_Timeout <= elapsed) {
-        CNcbiEnvironment env;
-        printf("Maximum execution time of %s seconds is exceeded",
-               m_TimeoutStr.c_str());
-        throw but::test_being_aborted();
+    if (m_Timeout != 0) {
+        double elapsed = m_Timer.Elapsed();
+        if (m_Timeout <= elapsed) {
+            CNcbiEnvironment env;
+            printf("Maximum execution time of %s seconds is exceeded",
+                   m_TimeoutStr.c_str());
+            throw but::test_being_aborted();
+        }
+        new_timeout = (unsigned int)(m_Timeout - elapsed);
     }
-
-    unsigned int new_timeout = static_cast<unsigned int>(m_Timeout - elapsed);
     if (m_CurUnitTimeout == 0  ||  m_CurUnitTimeout > new_timeout) {
         tu->p_timeout.set(new_timeout);
     }
@@ -1510,9 +1512,12 @@ CNcbiTestApplication::x_CallUserFuncs(ETestUserFuncType func_type)
         try {
             (*it)();
         }
+        catch (CException& e) {
+            ERR_POST_X(1, "Exception in unit tests user function: " << e);
+            return false;
+        }
         catch (exception& e) {
-            ERR_POST_X(1, "Exception in unit tests user function: "
-                          << e.what());
+            ERR_POST_X(1, "Exception in unit tests user function: " << e.what());
             return false;
         }
     }
@@ -1583,6 +1588,10 @@ CNcbiTestApplication::InitTestFramework(int argc, char* argv[])
     else {
         m_Timeout = min(max(0.0, m_Timeout - 3), 0.9 * m_Timeout);
     }
+    string time_mult = env.Get("NCBI_CHECK_TIMEOUT_MULT");
+    m_TimeMult = NStr::StringToDouble(time_mult, NStr::fConvErr_NoThrow);
+    if (m_TimeMult <= 0)
+        m_TimeMult = 1;
 
     if (AppMain(argc, argv) == 0 && m_RunCalled) {
         x_CollectAllTests();
