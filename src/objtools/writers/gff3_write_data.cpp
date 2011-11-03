@@ -45,6 +45,7 @@
 #include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqfeat/RNA_gen.hpp>
+#include <objects/seqfeat/Trna_ext.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seqfeat/Code_break.hpp>
 
@@ -144,8 +145,6 @@ string s_BestIdString(
     return strId;
 }
     
-
-
 //  ----------------------------------------------------------------------------
 const char* s_GetAAName(unsigned char aa)
 //  ----------------------------------------------------------------------------
@@ -160,7 +159,8 @@ const char* s_GetAAName(unsigned char aa)
 }
 
 //  ----------------------------------------------------------------------------
-string s_CodeBreakString( const CCode_break& cb )
+string s_CodeBreakString(
+    const CCode_break& cb)
 //  ----------------------------------------------------------------------------
 {
     string cb_str = ("(pos:");
@@ -203,6 +203,81 @@ string s_CodeBreakString( const CCode_break& cb )
     }
     cb_str += ")";
     return cb_str;
+}
+
+//  ----------------------------------------------------------------------------
+string s_GetTrnaProductName(
+    const CTrna_ext& trna)
+//  ----------------------------------------------------------------------------
+{
+    static const string sTrnaList[] = {
+        "tRNA-Gap", "tRNA-Ala", "tRNA-Asx", "tRNA-Cys", "tRNA-Asp", "tRNA-Glu",
+        "tRNA-Phe", "tRNA-Gly", "tRNA-His", "tRNA-Ile", "tRNA-Xle", "tRNA-Lys",
+        "tRNA-Leu", "tRNA-Met", "tRNA-Asn", "tRNA-Pyl", "tRNA-Pro", "tRNA-Gln",
+        "tRNA-Arg", "tRNA-Ser", "tRNA-Thr", "tRNA-Sec", "tRNA-Val", "tRNA-Trp",
+        "tRNA-OTHER", "tRNA-Tyr", "tRNA-Glx", "tRNA-TERM"
+    };
+    static int AACOUNT = sizeof(sTrnaList)/sizeof(string);
+
+    if (!trna.IsSetAa()  ||  !trna.GetAa().IsNcbieaa()) {
+        return "";
+    }
+
+    int aa = trna.GetAa().GetNcbieaa();
+    (aa == '*') ? (aa = 25) : (aa -= 64);
+    return ((0 < aa  &&  aa < AACOUNT) ? sTrnaList[aa] : "");
+}
+
+//  ----------------------------------------------------------------------------
+string s_GetTrnaAnticodon(
+    const CTrna_ext& trna)
+//  ----------------------------------------------------------------------------
+{
+    if (!trna.IsSetAnticodon()) {
+        return "";
+    }
+    const CSeq_loc& loc = trna.GetAnticodon();
+    string anticodon;
+    switch( loc.Which() ) {
+        default: {
+            anticodon += NStr::IntToString( loc.GetStart(eExtreme_Positional)+1 );
+            anticodon += "..";
+            anticodon += NStr::IntToString( loc.GetStop(eExtreme_Positional)+1 );
+            break;
+        }
+        case CSeq_loc::e_Int: {
+            const CSeq_interval& intv = loc.GetInt();
+            anticodon += NStr::IntToString( intv.GetFrom()+1 );
+            anticodon += "..";
+            anticodon += NStr::IntToString( intv.GetTo()+1 );
+            if ( intv.IsSetStrand()  &&  intv.GetStrand() == eNa_strand_minus ) {
+                anticodon = "complement(" + anticodon + ")";
+            }
+            break;
+        }
+    }
+    return string("(pos:") + anticodon + ")";
+}
+
+//  ----------------------------------------------------------------------------
+string s_GetTrnaCodons(
+    const CTrna_ext& trna)
+//  ----------------------------------------------------------------------------
+{
+    if (!trna.IsSetCodon()) {
+        return "";
+    }
+    const list<int>& values = trna.GetCodon();
+    if (values.empty()) {
+        return "";
+    }
+    list<int>::const_iterator cit = values.begin();
+    string codons = NStr::IntToString(*cit);
+    for (cit++; cit != values.end(); ++cit) {
+        codons += ",";
+        codons += NStr::IntToString(*cit);
+    } 
+    return codons;
 }
 
 //  ----------------------------------------------------------------------------
@@ -497,8 +572,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributesMrna(
 //  ----------------------------------------------------------------------------
 {
     return (
-        x_AssignAttributeGene( mapped_feat )  &&
-        x_AssignAttributeProduct( mapped_feat ) );
+        x_AssignAttributeGene( mapped_feat ) );
 }
 
 //  ----------------------------------------------------------------------------
@@ -525,7 +599,6 @@ bool CGff3WriteRecordFeature::x_AssignAttributesCds(
 {
     return (
         x_AssignAttributeProteinId( mapped_feat )  &&
-        x_AssignAttributeProduct( mapped_feat )   &&
         x_AssignAttributeTranslationTable( mapped_feat )  &&
         x_AssignAttributeCodeBreak( mapped_feat ) );
 }
@@ -536,6 +609,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributesMiscFeature(
 //  ----------------------------------------------------------------------------
 {
     return (
+        x_AssignAttributeProduct( mapped_feat )   &&
         x_AssignAttributeException( mapped_feat )  &&
         x_AssignAttributeExonNumber( mapped_feat )  &&
         x_AssignAttributePseudo( mapped_feat )  &&
@@ -852,16 +926,76 @@ bool CGff3WriteRecordFeature::x_AssignAttributeProduct(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    const CProt_ref* pProtRef = mf.GetProtXref();
-    if ( pProtRef && pProtRef->IsSetName() ) {
-        const list<string>& names = pProtRef->GetName();
-        m_Attributes["product"] = *names.begin();
-        return true;
+    CSeqFeatData::ESubtype subtype = mf.GetFeatSubtype();
+    if (subtype == CSeqFeatData::eSubtype_cdregion) {
+
+        // Possibility 1:
+        // Product name comes from a prot-ref which stored in the seqfeat's 
+        // xrefs:
+        const CProt_ref* pProtRef = mf.GetProtXref();
+        if ( pProtRef && pProtRef->IsSetName() ) {
+            const list<string>& names = pProtRef->GetName();
+            m_Attributes["product"] = *names.begin();
+            return true;
+        }
+
+        // Possibility 2:
+        // Product name is from the prot-ref refered to by the seqfeat's 
+        // data.product:
+        if ( mf.IsSetProduct() ) {
+            m_Attributes["product"] = 
+                s_BestIdString( mf.GetProductId(), mf.GetScope());
+            return true;
+        }
     }
-    if ( ! mf.IsSetProduct() ) {
-        return true;
+
+    CSeqFeatData::E_Choice type = mf.GetFeatType();
+    if (type == CSeqFeatData::e_Rna) {
+        const CRNA_ref& rna = mf.GetData().GetRna();
+
+        if (subtype == CSeqFeatData::eSubtype_tRNA) {
+            if (rna.IsSetExt()  &&  rna.GetExt().IsTRNA()) {
+                const CTrna_ext& trna = rna.GetExt().GetTRNA();
+                string anticodon = s_GetTrnaAnticodon(trna);
+                if (!anticodon.empty()) {
+                    m_Attributes["anticodon"] = anticodon;
+                }
+                string codons = s_GetTrnaCodons(trna);
+                if (!codons.empty()) {
+                    m_Attributes["codons"] = codons;
+                }
+                string aa = s_GetTrnaProductName(trna);
+                if (!aa.empty()) {
+                    m_Attributes["product"] = aa;
+                    return true;
+                }
+            }
+        }
+
+        if (rna.IsSetExt()  &&  rna.GetExt().IsName()) {
+            m_Attributes["product"] = rna.GetExt().GetName();
+            return true;
+        }
+
+        if (rna.IsSetExt()  &&  rna.GetExt().IsGen()  &&  
+                rna.GetExt().GetGen().IsSetProduct() ) {
+            m_Attributes["product"] = rna.GetExt().GetGen().GetProduct();
+            return true;
+        }
     }
-    m_Attributes["product"] = s_BestIdString( mf.GetProductId(), mf.GetScope());
+
+    // finally, look for gb_qual
+    if (mf.IsSetQual()) {
+        const CSeq_feat::TQual& quals = mf.GetQual();
+        for ( CSeq_feat::TQual::const_iterator cit = quals.begin(); 
+                cit != quals.end(); ++cit) {
+            if ((*cit)->IsSetQual()  &&  (*cit)->IsSetVal()  &&  
+                    (*cit)->GetQual() == "product") {
+                m_Attributes["product"] = (*cit)->GetVal();
+                return true;
+            }
+        }
+    }
     return true;
 }
 
