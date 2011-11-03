@@ -57,8 +57,8 @@ public:
 
 private:
     typedef CSeq_align::TSegs TSegs;
-    typedef set<CConstRef<CSeq_align> > TAlnSet;
-    TAlnSet m_AlnSet;
+    typedef list<CConstRef<CSeq_align> > TAlnSet;
+	TAlnSet m_AlnSet;
 
 public:
     typedef TAlnSet::size_type size_type;
@@ -99,8 +99,12 @@ public:
         case TSegs::e_Packed:
         case TSegs::e_Spliced:
         case TSegs::e_Sparse:
+			NON_CONST_ITERATE(TAlnSet, iter, m_AlnSet) {
+				if( *iter == &seq_align )
+					return iter;
+			}
             ret_it =
-                m_AlnSet.insert(CConstRef<CSeq_align>(&seq_align)).first;
+                m_AlnSet.insert(m_AlnSet.end(), CConstRef<CSeq_align>(&seq_align));
             break;
         case TSegs::e_not_set:
             NCBI_THROW(CSeqalignException, eInvalidAlignment,
