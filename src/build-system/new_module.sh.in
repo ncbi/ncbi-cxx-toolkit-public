@@ -77,6 +77,7 @@ case "$1" in
         ext="wsdl"
         EXT="WSDL"
         shift
+	;;
     *)
         ext="asn"
         EXT="ASN"
