@@ -140,7 +140,9 @@ void CSparseAln::x_Build(const CAnchoredAln& src_align)
         CPairwiseAln::TAlignRangeVector::const_iterator ins_it = ins_vec.begin();
         TGapRanges::const_iterator gap = gaps.begin();
         TGapRanges::const_iterator next_gap = gap;
-        ++next_gap;
+        if (next_gap != gaps.end()) {
+            ++next_gap;
+        }
         TSignedSeqPos shift = 0;
         CRef<CPairwiseAln> dst(new CPairwiseAln(
             pw.GetFirstId(), pw.GetSecondId(), pw.GetFlags()));
