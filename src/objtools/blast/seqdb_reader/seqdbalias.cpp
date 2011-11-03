@@ -58,7 +58,8 @@ BEGIN_NCBI_SCOPE
 
 CSeqDBAliasFile::CSeqDBAliasFile(CSeqDBAtlas     & atlas,
                                  const string    & name_list,
-                                 char              prot_nucl)
+                                 char              prot_nucl,
+                                 bool              expand_links)
     : m_AliasSets        (atlas),
       m_IsProtein        (prot_nucl == 'p'),
       m_NumSeqs          (-1),
@@ -76,7 +77,8 @@ CSeqDBAliasFile::CSeqDBAliasFile(CSeqDBAtlas     & atlas,
         m_Node.Reset(new CSeqDBAliasNode(atlas,
                                          name_list,
                                          prot_nucl,
-                                         m_AliasSets));
+                                         m_AliasSets,
+                                         expand_links));
         
         m_Node->FindVolumePaths(m_VolumeNames, &m_AliasNames, true);
     }
@@ -99,12 +101,14 @@ void CSeqDBAliasNode::x_Tokenize(const string & dbnames)
 CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas     & atlas,
                                  const string    & dbname_list,
                                  char              prot_nucl,
-                                 CSeqDBAliasSets & alias_sets)
+                                 CSeqDBAliasSets & alias_sets,
+                                 bool              expand_links)
     : m_Atlas    (atlas),
       m_DBPath   ("."),
       m_ThisName ("-"),
       m_HasGiMask(true),
-      m_AliasSets(alias_sets)
+      m_AliasSets(alias_sets),
+      m_ExpandLinks(expand_links)
 {
     CSeqDBLockHold locked(atlas);
     m_Atlas.Verify(locked);
@@ -156,11 +160,13 @@ CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas           & atlas,
                                  char                    prot_nucl,
                                  CSeqDBAliasStack      & recurse,
                                  CSeqDBLockHold        & locked,
-                                 CSeqDBAliasSets       & alias_sets)
+                                 CSeqDBAliasSets       & alias_sets,
+                                 bool                    expand_links)
     : m_Atlas     (atlas),
       m_DBPath    (dbpath),
       m_ThisName  (m_DBPath, dbname, prot_nucl, 'a', 'l'),
-      m_AliasSets (alias_sets)
+      m_AliasSets (alias_sets),
+      m_ExpandLinks (expand_links)
 {
     recurse.Push(m_ThisName);
     
@@ -319,13 +325,17 @@ void CSeqDBAliasNode::x_ResolveNames(char prot_nucl, CSeqDBLockHold & locked)
                        msg);
         } else {
             // full dereferenced name but without suffix /X/base
-            string dir_name, base_name;
-            resolved_path.FindDirName().GetString(dir_name);
-            resolved_path.FindBaseName().GetString(base_name);
-            m_DBList[i].Assign(CSeqDB_Substring(
-                CDirEntry::NormalizePath(dir_name, eFollowLinks) + 
-                CDirEntry::GetPathSeparator() +
-                base_name  ));
+            if (m_ExpandLinks) {
+                string dir_name, base_name;
+                resolved_path.FindDirName().GetString(dir_name);
+                resolved_path.FindBaseName().GetString(base_name);
+                m_DBList[i].Assign(CSeqDB_Substring(
+                    CDirEntry::NormalizePath(dir_name, eFollowLinks) + 
+                    CDirEntry::GetPathSeparator() +
+                    base_name  ));
+            } else {
+                m_DBList[i].Assign(resolved_path.FindBasePath());
+            }
         }
     }
     
@@ -722,7 +732,8 @@ void CSeqDBAliasNode::x_AppendSubNode(CSeqDB_BasePath  & node_path,
                                      prot_nucl,
                                      recurse,
                                      locked,
-                                     m_AliasSets) );
+                                     m_AliasSets,
+                                     m_ExpandLinks) );
     
     m_SubNodes.push_back(subnode);
 }
@@ -769,13 +780,19 @@ void CSeqDBAliasNode::x_ExpandAliases(const CSeqDB_BasePath & this_name,
         if (m_DBList[i].FindDirName().Empty()) {
             if (m_DBList[i].FindBaseName() == this_name.FindBaseName()) {
                 
-                // normalize this_name
-                bool found = false;
-                string dir_name, base_name;
-                this_name.FindDirName().GetString(dir_name);
-                this_name.FindBaseName().GetString(base_name);
-                string normal_name = CDirEntry::NormalizePath(dir_name, eFollowLinks) + 
+                string normal_name;
+                if (m_ExpandLinks) {
+                    // normalize this_name
+                    string dir_name, base_name;
+                    this_name.FindDirName().GetString(dir_name);
+                    this_name.FindBaseName().GetString(base_name);
+                    normal_name = CDirEntry::NormalizePath(dir_name, eFollowLinks) + 
                       CDirEntry::GetPathSeparator() + base_name;
+                } else {
+                    normal_name = this_name.GetBasePathS();
+                }
+
+                bool found = false;
                 for (int i = 0; i < (int) m_VolNames.size(); i++) {
                     if (m_VolNames[i].GetBasePathS() == normal_name) {
                         found = true;
@@ -839,13 +856,17 @@ void CSeqDBAliasNode::x_ExpandAliases(const CSeqDB_BasePath & this_name,
         }
 
         if (found) {
-            // normalize this_name
-            string dir_name, base_name;
-            bp.FindDirName().GetString(dir_name);
-            bp.FindBaseName().GetString(base_name);
-            string normal_name = CDirEntry::NormalizePath(dir_name, eFollowLinks) + 
+            string normal_name;
+            if (m_ExpandLinks) {
+                // normalize this_name
+                string dir_name, base_name;
+                bp.FindDirName().GetString(dir_name);
+                bp.FindBaseName().GetString(base_name);
+                normal_name = CDirEntry::NormalizePath(dir_name, eFollowLinks) + 
                   CDirEntry::GetPathSeparator() + base_name;
-
+            } else {
+                normal_name = bp.GetBasePathS();
+            }
             found = false;
             for (int i = 0; i < (int) m_VolNames.size(); i++) {
                 if (m_VolNames[i].GetBasePathS() == normal_name) {
@@ -876,13 +897,18 @@ void CSeqDBAliasNode::x_ExpandAliases(const CSeqDB_BasePath & this_name,
             if (m_Atlas.DoesFileExist(new_alias, locked)) {
                 x_AppendSubNode( result, prot_nucl, recurse, locked );
             } else if (m_Atlas.DoesFileExist(new_volume, locked)) {
-                // normalize this_name
-                bool found = false;
-                string dir_name, base_name;
-                result.FindDirName().GetString(dir_name);
-                result.FindBaseName().GetString(base_name);
-                string normal_name = CDirEntry::NormalizePath(dir_name, eFollowLinks) + 
+                string normal_name;
+                if (m_ExpandLinks) {
+                    // normalize this_name
+                    string dir_name, base_name;
+                    result.FindDirName().GetString(dir_name);
+                    result.FindBaseName().GetString(base_name);
+                    normal_name = CDirEntry::NormalizePath(dir_name, eFollowLinks) + 
                       CDirEntry::GetPathSeparator() + base_name;
+                } else {
+                    normal_name = result.GetBasePathS();
+                }
+                bool found = false;
                 for (int i = 0; i < (int) m_VolNames.size(); i++) {
                     if (m_VolNames[i].GetBasePathS() == normal_name) {
                         found = true;

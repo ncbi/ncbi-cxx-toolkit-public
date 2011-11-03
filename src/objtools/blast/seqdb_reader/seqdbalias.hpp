@@ -453,10 +453,13 @@ public:
     ///   The type of sequences stored here.
     /// @param alias_sets
     ///   An alias file caching and combining layer.
+    /// @param expand_links
+    ///   Indicate if soft links should be expanded
     CSeqDBAliasNode(CSeqDBAtlas     & atlas,
                     const string    & name_list,
                     char              prot_nucl,
-                    CSeqDBAliasSets & alias_sets);
+                    CSeqDBAliasSets & alias_sets,
+                    bool              expand_links);
     
     /// Get the list of volume names
     ///
@@ -763,13 +766,16 @@ private:
     ///   The lock holder object for this thread. [in]
     /// @param alias_sets
     ///   An alias file caching and combining layer.
+    /// @param expand_links
+    ///   Indicate if soft links should be expanded
     CSeqDBAliasNode(CSeqDBAtlas           & atlas,
                     const CSeqDB_DirName  & dbpath,
                     const CSeqDB_BaseName & dbname,
                     char                    prot_nucl,
                     CSeqDBAliasStack      & recurse,
                     CSeqDBLockHold        & locked,
-                    CSeqDBAliasSets       & alias_sets);
+                    CSeqDBAliasSets       & alias_sets,
+                    bool                    expand_links);
     
     /// Read the alias file
     ///
@@ -938,6 +944,9 @@ private:
     
     /// Mask objects for this node.
     vector< CRef<CSeqDB_AliasMask> > m_NodeMasks;
+
+    /// Do not expand link when resolving paths
+    bool m_ExpandLinks;
     
     /// Disable copy operator.
     CSeqDBAliasNode & operator =(const CSeqDBAliasNode &);
@@ -974,9 +983,12 @@ public:
     ///   A space seperated list of database names.
     /// @param prot_nucl
     ///   Indicates whether the database is protein or nucleotide.
+    /// @param expand_links
+    ///   Indicates whether the soft links should be expanded
     CSeqDBAliasFile(CSeqDBAtlas  & atlas,
                     const string & name_list,
-                    char           prot_nucl);
+                    char           prot_nucl,
+                    bool           expand_links = true);
     
     /// Get the list of volume names.
     ///

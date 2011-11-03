@@ -1004,12 +1004,15 @@ public:
     ///   The set of resolved database alias file names
     /// @param recursive
     ///   If true, the search will traverse the full alias node tree
+    /// @param expand_links
+    ///   If true, the search will expand the soft links
     static void
     FindVolumePaths(const string   & dbname,
                     ESeqType         seqtype,
                     vector<string> & paths,
                     vector<string> * alias_paths = NULL,
-                    bool             recursive = true);
+                    bool             recursive = true,
+                    bool             expand_links = true);
     
     /// Find volume paths
     ///
