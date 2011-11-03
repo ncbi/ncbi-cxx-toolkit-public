@@ -14,6 +14,7 @@ ifneq "$(filter command, $(origin APP_PROJ) $(origin LIB_PROJ))" ""
     ASN_PROJ=
     DTD_PROJ=
     XSD_PROJ=
+    WSDL_PROJ=
   endif
 endif
 
@@ -88,10 +89,11 @@ $(foreach p,$(EXPENDABLE_USR_PROJ),-$(call make_one_usr_proj,$(p),$(1),1))
   endef
 endif
 
-SPEC_TYPES = ASN DTD XSD
+SPEC_TYPES = ASN DTD XSD WSDL
 MAKE_ASN = $(builddir)/new_module.sh "$$i"
 MAKE_DTD = $(builddir)/new_module.sh --dtd "$$i"
 MAKE_XSD = $(builddir)/new_module.sh --xsd "$$i"
+MAKE_WSDL = $(builddir)/new_module.sh --wsdl "$$i"
 
 # 1: proj_name, 2: proj_type, 3: target
 define make_one_spec_proj

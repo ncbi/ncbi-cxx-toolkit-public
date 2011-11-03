@@ -73,6 +73,10 @@ case "$1" in
         EXT="XSD"
         shift
         ;;
+    --soap | --wsdl)
+        ext="wsdl"
+        EXT="WSDL"
+        shift
     *)
         ext="asn"
         EXT="ASN"
@@ -125,28 +129,19 @@ impfiles=
 space=
 need_main=false
 for i in $imports; do
-    if test -f "$p/src/$i.asn"; then
-          impdeps="${impdeps}${space}${p}/src/$i.asn"
-          impfiles="${impfiles}${space}$i.asn"
-    elif test -f "$p/src/$i.xsd"; then
-          impdeps="${impdeps}${space}${p}/src/$i.xsd"
-          impfiles="${impfiles}${space}$i.xsd"
-    elif test -f "$p/src/$i.dtd"; then
-          impdeps="${impdeps}${space}${p}/src/$i.dtd"
-          impfiles="${impfiles}${space}$i.dtd"
-    elif test -f "$top_srcdir/src/$i.asn"; then
-          impdeps="${impdeps}${space}${top_srcdir}/src/$i.asn"
-          impfiles="${impfiles}${space}$i.asn"
-          need_main=true
-    elif test -f "$top_srcdir/src/$i.xsd"; then
-          impdeps="${impdeps}${space}${top_srcdir}/src/$i.xsd"
-          impfiles="${impfiles}${space}$i.xsd"
-          need_main=true
-    elif test -f "$top_srcdir/src/$i.dtd"; then
-          impdeps="${impdeps}${space}${top_srcdir}/src/$i.dtd"
-          impfiles="${impfiles}${space}$i.dtd"
-          need_main=true
-    else
+    found=no
+    for d in "$p" "$top_srcdir"; do
+        for x in asn xsd dtd wsdl; do
+            if test -f "$d/src/$i.$x"; then
+                impdeps="${impdeps}${space}${d}/src/$i.$x"
+                impfiles="${impfiles}${space}$i.$x"
+                found=yes
+            fi
+            [ $found = no ] || break
+        done
+        [ $found = no ] || break
+    done
+    if [ $found = no ]; then
           echo "Import file $i not found."
           exit 1
     fi
