@@ -62,6 +62,7 @@
 
 
 #include <objects/variation/VariationMethod.hpp>
+#include <objects/variation/VariationException.hpp>
 
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/Seq_data.hpp>
@@ -203,9 +204,11 @@ void CVariationUtil::s_ResolveIntronicOffsets(CVariantPlacement& p)
 
 void CVariationUtil::s_AddIntronicOffsets(CVariantPlacement& p, const CSpliced_seg& ss, CScope* scope)
 {
+#if 0
     if(!p.GetLoc().IsPnt() && !p.GetLoc().IsInt()) {
         NCBI_THROW(CException, eUnknown, "Expected simple loc (int or pnt)");
     }
+#endif
 
     if(p.IsSetStart_offset() || p.IsSetStop_offset() || p.IsSetStart_offset_fuzz() || p.IsSetStop_offset_fuzz()) {
         NCBI_THROW(CException, eUnknown, "Expected offset-free placement");
@@ -368,6 +371,29 @@ CRef<CVariantPlacement> CVariationUtil::x_Remap(const CVariantPlacement& p, CSeq
     CRef<CSeq_loc> mapped_loc = mapper.Map(p.GetLoc());
     p2->SetLoc(*mapped_loc);
     p2->SetPlacement_method(CVariantPlacement::ePlacement_method_projected);
+
+    {{
+        TSeqPos orig_len = p.GetLoc().Which() ? sequence::GetLength(p.GetLoc(), NULL) : 0;
+        TSeqPos mapped_len = mapped_loc->Which() ? sequence::GetLength(*mapped_loc, NULL) : 0;
+        bool orig_is_compound = p.GetLoc().IsMix() || p.GetLoc().IsPacked_int();
+        bool mapped_is_compound = mapped_loc->IsMix() || mapped_loc->IsPacked_int();
+	    CRef<CVariationException> exception;
+	    if(mapped_len == 0) {
+	        exception.Reset(new CVariationException);
+	        exception->SetCode(CVariationException::eCode_no_mapping);
+	    } else if(mapped_len < orig_len) {
+	        exception.Reset(new CVariationException);
+	        exception->SetCode(CVariationException::eCode_partial_mapping);
+	    } else if(!orig_is_compound && mapped_is_compound) {
+	        exception.Reset(new CVariationException);
+	        exception->SetCode(CVariationException::eCode_split_mapping);
+	    }
+	    if(exception) {
+	        exception->SetMessage("");
+	        p2->SetExceptions().push_back(exception);
+	    }
+    }}
+
 
     //AttachSeq(*p2);
 
