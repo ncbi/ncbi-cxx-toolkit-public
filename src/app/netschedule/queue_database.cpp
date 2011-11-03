@@ -197,7 +197,8 @@ bool CQueueDataBase::Open(const SNSDBEnvironmentParams& params,
         CDir dir(db_path);
 
         dir.Remove();
-        LOG_POST(Error << "Reinitialization. " << db_path << " removed.");
+        LOG_POST(Message << Warning
+                         << "Reinitialization. " << db_path << " removed.");
     }
 
     m_Path = CDirEntry::AddTrailingPathSeparator(db_path);
@@ -295,7 +296,7 @@ bool CQueueDataBase::Open(const SNSDBEnvironmentParams& params,
     if (!params.private_env && !fl.empty()) {
         // Opening db with recover flags is unreliable.
         BDB_RecoverEnv(m_Path, false);
-        LOG_POST(Error << "Running recovery...");
+        LOG_POST(Message << Warning << "Running recovery...");
     }
 
     CBDB_Env::TEnvOpenFlags opt = CBDB_Env::eThreaded;
@@ -319,14 +320,15 @@ bool CQueueDataBase::Open(const SNSDBEnvironmentParams& params,
                                   CBDB_Transaction::eTransASync);
 
     m_Env->OpenWithTrans(m_Path.c_str(), opt);
-    LOG_POST(Error << "Opened " << (params.private_env ? "private " : "")
-                   << "BDB environment with "
-                   << m_Env->GetMaxLocks() << " max locks, "
+    LOG_POST(Message << Warning
+                     << "Opened " << (params.private_env ? "private " : "")
+                     << "BDB environment with "
+                     << m_Env->GetMaxLocks() << " max locks, "
 //                    << m_Env->GetMaxLockers() << " max lockers, "
 //                    << m_Env->GetMaxLockObjects() << " max lock objects, "
-                   << (m_Env->GetTransactionSync() == CBDB_Transaction::eTransSync ?
-                                        "" : "a") << "syncronous transactions, "
-                   << m_Env->MutexGetMax() <<  " max mutexes");
+                     << (m_Env->GetTransactionSync() == CBDB_Transaction::eTransSync ?
+                                          "" : "a") << "syncronous transactions, "
+                     << m_Env->MutexGetMax() <<  " max mutexes");
 
 
     m_Env->SetDirectDB(params.direct_db);
@@ -591,9 +593,9 @@ unsigned CQueueDataBase::Configure(const IRegistry& reg)
                 sparams += ';';
             sparams += it1->first + '=' + it1->second;
         }
-        LOG_POST(Error << action << " queue '" << qname
-                       << "' of class '" << qclass
-                       << "' " << sparams);
+        LOG_POST(Message << Warning << action << " queue '" << qname
+                         << "' of class '" << qclass
+                         << "' " << sparams);
     }
     return min_run_timeout;
 }
@@ -636,7 +638,7 @@ void CQueueDataBase::MountQueue(const string&               qname,
     CQueue&             queue = m_QueueCollection.AddQueue(qname, q.release());
     unsigned            recs = queue.LoadStatusMatrix();
 
-    LOG_POST(Error << "Queue records = " << recs);
+    LOG_POST(Message << Warning << "Queue records = " << recs);
 }
 
 
@@ -772,11 +774,11 @@ void CQueueDataBase::Close()
     m_QueueDescriptionDB.Close();
     try {
         if (m_Env->CheckRemove())
-            LOG_POST(Error << "JS: '" << m_Name
-                           << "' Unmounted. BDB ENV deleted.");
+            LOG_POST(Message << Warning << "JS: '" << m_Name
+                             << "' Unmounted. BDB ENV deleted.");
         else
-            LOG_POST(Error << "JS: '" << m_Name
-                           << "' environment still in use.");
+            LOG_POST(Message << Warning << "JS: '" << m_Name
+                             << "' environment still in use.");
     }
     catch (exception& ex) {
         LOG_POST(Error << "JS: '" << m_Name
@@ -917,8 +919,16 @@ void CQueueDataBase::Purge(void)
     ITERATE(vector<string>, q_it, queues_to_delete) {
         try {
             DeleteQueue(*q_it);
-        } catch (...) { // TODO: use more specific exception
-            LOG_POST(Error << "Queue " << (*q_it) << " has already gone.");
+        }
+        catch (const CNetScheduleException &  ex) {
+            ERR_POST("Error deleting the queue '" << *q_it << "': " << ex);
+        }
+        catch (const CBDB_Exception &  ex) {
+            ERR_POST("Error deleting the queue '" << *q_it << "': " << ex);
+        }
+        catch (...) {
+            ERR_POST("Unknown error while deleting the queue '" << (*q_it)
+                                                                << "'.");
         }
     }
 
@@ -931,7 +941,8 @@ CQueueCollection::iterator  CQueueDataBase::x_GetPurgeQueueIterator(void)
     if (m_PurgeQueue.empty())
         return m_QueueCollection.begin();
 
-    for (CQueueCollection::iterator  it = m_QueueCollection.begin(); it != m_QueueCollection.end(); ++it)
+    for (CQueueCollection::iterator  it = m_QueueCollection.begin();
+         it != m_QueueCollection.end(); ++it)
         if (it.GetName() == m_PurgeQueue)
             return it;
 
@@ -940,7 +951,8 @@ CQueueCollection::iterator  CQueueDataBase::x_GetPurgeQueueIterator(void)
 
     int     queue_num = ((rand() * 1.0) / RAND_MAX) * m_QueueCollection.GetSize();
     int     k = 1;
-    for (CQueueCollection::iterator  it = m_QueueCollection.begin(); it != m_QueueCollection.end(); ++it) {
+    for (CQueueCollection::iterator  it = m_QueueCollection.begin();
+         it != m_QueueCollection.end(); ++it) {
         if (k >= queue_num)
             return it;
         ++k;
