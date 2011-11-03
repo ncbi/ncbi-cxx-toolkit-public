@@ -643,13 +643,9 @@ void CQueue::JobDelayExpiration(unsigned int     job_id,
     if (tm <= 0)
         return;
 
-    unsigned            queue_run_timeout = GetRunTimeout();
-    time_t              run_timeout = 0;
-    time_t              time_start = 0;
-    time_t              exp_time = 0;
-    time_t              curr = time(0);
-    bool                job_updated = false;
     CJob                job;
+    unsigned            queue_run_timeout = GetRunTimeout();
+    time_t              curr = time(0);
 
     {{
         CFastMutexGuard     guard(m_OperationLock);
@@ -657,56 +653,32 @@ void CQueue::JobDelayExpiration(unsigned int     job_id,
         if (GetJobStatus(job_id) != CNetScheduleAPI::eRunning)
             return;
 
-
+        time_t          time_start = 0;
+        time_t          run_timeout = 0;
         {{
             CNSTransaction      transaction(this);
 
             if (job.Fetch(this, job_id) != CJob::eJF_Ok)
                 return;
 
-            CJobEvent *         event = &job.AppendEvent();
-
-            time_start = event->GetTimestamp();
-            if (time_start == 0) {
-                // Impossible
-                ERR_POST("Internal error: time_start == 0 for running job " <<
-                         DecorateJobId(job_id));
-                // Fix it just in case
-                time_start = curr;
-                event->SetTimestamp(curr);
-                job_updated = true;
-            }
+            time_start = job.GetLastEvent()->GetTimestamp();
             run_timeout = job.GetRunTimeout();
             if (run_timeout == 0)
                 run_timeout = queue_run_timeout;
 
-            if (time_start + run_timeout > curr + tm) {
-                // Old timeout is enough to cover this request, keep it.
-                // If we already changed job object (fixing it), we flush it.
-                if (job_updated)
-                    job.Flush(this);
-                return;
-            }
+            if (time_start + run_timeout > curr + tm)
+                return;     // Old timeout is enough to cover
+                            // this request, so keep it.
 
             job.SetRunTimeout(curr + tm - time_start);
             job.Flush(this);
             transaction.Commit();
         }}
 
-        exp_time = run_timeout == 0 ? 0 : time_start + run_timeout;
+        time_t  exp_time = run_timeout == 0 ? 0 : time_start + run_timeout;
 
         TimeLineMove(job_id, exp_time, curr + tm);
     }}
-
-    if (m_Log) {
-        CTime       tmp_t(GetFastLocalTime());
-        tmp_t.SetTimeT(curr + tm);
-        tmp_t.ToLocalTime();
-        GetDiagContext().Extra()
-                        .Print("new_expiration_time", tmp_t.AsString())
-                        .Print("run_timeout", NStr::LongToString(run_timeout));
-    }
-    return;
 }
 
 
@@ -733,8 +705,6 @@ bool CQueue::PutProgressMessage(unsigned int    job_id,
 bool  CQueue::ReturnJob(const CNSClientId &     client,
                         unsigned int            job_id)
 {
-    // FIXME: Provide fallback to
-    // RegisterWorkerNodeVisit if unsuccessful
     if (!job_id)
         NCBI_THROW(CNetScheduleException, eInvalidParameter, "Invalid job ID");
 
@@ -1729,9 +1699,6 @@ unsigned int  CQueue::DeleteBatch(void)
             transaction.Commit();
         }}
     }
-
-    if (m_Log  &&  del_rec > 0)
-        LOG_POST(Error << del_rec << " job(s) deleted from database.");
 
     return del_rec;
 }
