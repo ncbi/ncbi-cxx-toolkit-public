@@ -30,7 +30,7 @@
  */
 
 
-#ifdef NCBI_STRERROR
+#ifdef NCBI_INCLUDE_STRERROR_C
 
 
 #  ifdef _FREETDS_LIBRARY_SOURCE
@@ -303,4 +303,4 @@ static const char* s_StrErrorInternal(int error)
 }
 
 
-#endif /*NCBI_STRERROR*/
+#endif /*NCBI_INCLUDE_STRERROR_C*/

@@ -239,7 +239,7 @@ static FSSLSetup s_SSLSetup;
  *  ERROR REPORTING
  */
 
-#define NCBI_STRERROR
+#define NCBI_INCLUDE_STRERROR_C
 #include "ncbi_strerror.c"
 
 
