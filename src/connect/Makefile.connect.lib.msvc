@@ -2,6 +2,6 @@
 ExcludeProject = FALSE
 
 [AddToProject]
-SourceFiles    = ncbi_lbsmd_stub
+SourceFiles    = ncbi_lbsmd_stub ncbi_strerror
 HeadersInInclude = *.h
 HeadersInSrc = *.h
