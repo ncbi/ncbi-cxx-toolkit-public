@@ -29,18 +29,22 @@
  *   errno->text conversion helper
  */
 
-#ifdef _FREETDS_LIBRARY_SOURCE
 
-#  define s_WinStrdup               s_WinStrdup_ftds64
-#  define s_StrErrorInternal        s_StrErrorInternal_ftds64
-#  define s_StrError                s_StrErrorInternal
-#  define UTIL_TcharToUtf8          UTIL_TcharToUtf8_ftds64
-#  define UTIL_ReleaseBufferOnHeap  UTIL_ReleaseBufferOnHeap_ftds64
-
-#endif  /* #ifdef _FREETDS_LIBRARY_SOURCE */
+#ifdef NCBI_STRERROR
 
 
-#if defined(NCBI_OS_MSWIN)  &&  defined(_UNICODE)
+#  ifdef _FREETDS_LIBRARY_SOURCE
+
+#    define s_WinStrdup               s_WinStrdup_ftds64
+#    define s_StrErrorInternal        s_StrErrorInternal_ftds64
+#    define s_StrError                s_StrErrorInternal
+#    define UTIL_TcharToUtf8          UTIL_TcharToUtf8_ftds64
+#    define UTIL_ReleaseBufferOnHeap  UTIL_ReleaseBufferOnHeap_ftds64
+
+#  endif /*_FREETDS_LIBRARY_SOURCE*/
+
+
+#  if defined(NCBI_OS_MSWIN)  &&  defined(_UNICODE)
 
 static const char* s_WinStrdup(const char* s)
 {
@@ -49,31 +53,31 @@ static const char* s_WinStrdup(const char* s)
     return p ? (const char*) memcpy(p, s, n) : 0;
 }
 
-#  define   MSWIN_STRDUP(s)         s_WinStrdup(s)
+#    define   MSWIN_STRDUP(s)         s_WinStrdup(s)
 
-#  ifndef   UTIL_ReleaseBuffer
-#    define UTIL_ReleaseBuffer(x)   UTIL_ReleaseBufferOnHeap(x)
-#  endif
+#    ifndef   UTIL_ReleaseBuffer
+#      define UTIL_ReleaseBuffer(x)   UTIL_ReleaseBufferOnHeap(x)
+#    endif
 
-#else /*NCBI_OS_MSWIN && _UNICODE*/
+#  else /*NCBI_OS_MSWIN && _UNICODE*/
 
-#  define   MSWIN_STRDUP(s)         (s)
+#    define   MSWIN_STRDUP(s)         (s)
 
-#  ifndef   UTIL_TcharToUtf8
-#    define UTIL_TcharToUtf8(x)     (x)
-#  endif
+#    ifndef   UTIL_TcharToUtf8
+#      define UTIL_TcharToUtf8(x)     (x)
+#    endif
 
-#  ifndef   UTIL_ReleaseBuffer
-#    define UTIL_ReleaseBuffer(x)   /*void*/
-#  endif
+#    ifndef   UTIL_ReleaseBuffer
+#      define UTIL_ReleaseBuffer(x)   /*void*/
+#    endif
 
-#endif /*NCBI_OS_MSWIN && _UNICODE*/
-
-
-#ifdef NCBI_OS_MSWIN
+#  endif /*NCBI_OS_MSWIN && _UNICODE*/
 
 
-#  ifdef _UNICODE
+#  ifdef NCBI_OS_MSWIN
+
+
+#    ifdef _UNICODE
 
 extern const char* UTIL_TcharToUtf8(const TCHAR* buffer)
 {
@@ -93,7 +97,7 @@ extern const char* UTIL_TcharToUtf8(const TCHAR* buffer)
     return p;
 }
 
-#  endif /*_UNICODE*/
+#    endif /*_UNICODE*/
 
 
 extern void UTIL_ReleaseBufferOnHeap(const void* buffer)
@@ -103,7 +107,7 @@ extern void UTIL_ReleaseBufferOnHeap(const void* buffer)
 }
 
 
-#endif /*NCBI_OS_MSWIN*/
+#  endif /*NCBI_OS_MSWIN*/
 
 
 static const char* s_StrErrorInternal(int error)
@@ -112,7 +116,7 @@ static const char* s_StrErrorInternal(int error)
         int         errnum;
         const char* errtxt;
     } errmap[] = {
-#ifdef NCBI_OS_MSWIN
+#  ifdef NCBI_OS_MSWIN
         {WSAEINTR,  "Interrupted system call"},
         {WSAEBADF,  "Bad file number"},
         {WSAEACCES, "Access denied"},
@@ -166,20 +170,20 @@ static const char* s_StrErrorInternal(int error)
         {WSAVERNOTSUPPORTED,     "Winsock.dll version out of range"},
         {WSANOTINITIALISED,      "Not yet initialized"},
         {WSAEDISCON,             "Graceful shutdown in progress"},
-#  ifdef WSAENOMORE
+#    ifdef WSAENOMORE
         /*NB: replaced with WSA_E_NO_MORE*/
         {WSAENOMORE,             "No more data available"},
-#  endif /*WSAENOMORE*/
-#  ifdef WSA_E_NO_MORE
+#    endif /*WSAENOMORE*/
+#    ifdef WSA_E_NO_MORE
         {WSA_E_NO_MORE,          "No more data available"},
-#  endif /*WSA_E_NO_MORE*/
-#  ifdef WSAECANCELLED
+#    endif /*WSA_E_NO_MORE*/
+#    ifdef WSAECANCELLED
         /*NB: replaced with WSA_E_CANCELLED*/
         {WSAECANCELLED,          "Call has been cancelled"},
-#  endif /*WSAECANCELLED*/
-#  ifdef WSA_E_CANCELLED
+#    endif /*WSAECANCELLED*/
+#    ifdef WSA_E_CANCELLED
         {WSA_E_CANCELLED,        "Call has been cancelled"},
-#  endif /*WSA_E_CANCELLED*/
+#    endif /*WSA_E_CANCELLED*/
         {WSAEINVALIDPROCTABLE,   "Invalid procedure table"},
         {WSAEINVALIDPROVIDER,    "Invalid provider version number"},
         {WSAEPROVIDERFAILEDINIT, "Cannot init provider"},
@@ -190,95 +194,95 @@ static const char* s_StrErrorInternal(int error)
         /*
          * WinSock 2 extension
          */
-#  ifdef WSA_IO_PENDING
+#    ifdef WSA_IO_PENDING
         {WSA_IO_PENDING,         "Operation has been queued"},
-#  endif /*WSA_IO_PENDING*/
-#  ifdef WSA_IO_INCOMPLETE
+#    endif /*WSA_IO_PENDING*/
+#    ifdef WSA_IO_INCOMPLETE
         {WSA_IO_INCOMPLETE,      "Operation still in progress"},
-#  endif /*WSA_IO_INCOMPLETE*/
-#  ifdef WSA_INVALID_HANDLE
+#    endif /*WSA_IO_INCOMPLETE*/
+#    ifdef WSA_INVALID_HANDLE
         {WSA_INVALID_HANDLE,     "Invalid handle"},
-#  endif /*WSA_INVALID_HANDLE*/
-#  ifdef WSA_INVALID_PARAMETER
+#    endif /*WSA_INVALID_HANDLE*/
+#    ifdef WSA_INVALID_PARAMETER
         {WSA_INVALID_PARAMETER,  "Invalid parameter"},
-#  endif /*WSA_INVALID_PARAMETER*/
-#  ifdef WSA_NOT_ENOUGH_MEMORY
+#    endif /*WSA_INVALID_PARAMETER*/
+#    ifdef WSA_NOT_ENOUGH_MEMORY
         {WSA_NOT_ENOUGH_MEMORY,  "Out of memory"},
-#  endif /*WSA_NOT_ENOUGH_MEMORY*/
-#  ifdef WSA_OPERATION_ABORTED
+#    endif /*WSA_NOT_ENOUGH_MEMORY*/
+#    ifdef WSA_OPERATION_ABORTED
         {WSA_OPERATION_ABORTED,  "Operation aborted"},
-#  endif /*WSA_OPERATION_ABORTED*/
-#endif /*NCBI_OS_MSWIN*/
-#ifdef NCBI_OS_MSWIN
-#  define EAI_BASE 0
-#else
-#  define EAI_BASE 100000
-#endif /*NCBI_OS_MSWIN*/
-#ifdef EAI_ADDRFAMILY
+#    endif /*WSA_OPERATION_ABORTED*/
+#  endif /*NCBI_OS_MSWIN*/
+#  ifdef NCBI_OS_MSWIN
+#    define EAI_BASE 0
+#  else
+#    define EAI_BASE 100000
+#  endif /*NCBI_OS_MSWIN*/
+#  ifdef EAI_ADDRFAMILY
         {EAI_ADDRFAMILY + EAI_BASE,
                                  "Address family not supported"},
-#endif /*EAI_ADDRFAMILY*/
-#ifdef EAI_AGAIN
+#  endif /*EAI_ADDRFAMILY*/
+#  ifdef EAI_AGAIN
         {EAI_AGAIN + EAI_BASE,
                                  "Temporary failure in name resolution"},
-#endif /*EAI_AGAIN*/
-#ifdef EAI_BADFLAGS
+#  endif /*EAI_AGAIN*/
+#  ifdef EAI_BADFLAGS
         {EAI_BADFLAGS + EAI_BASE,
                                  "Invalid value for lookup flags"},
-#endif /*EAI_BADFLAGS*/
-#ifdef EAI_FAIL
+#  endif /*EAI_BADFLAGS*/
+#  ifdef EAI_FAIL
         {EAI_FAIL + EAI_BASE,
                                  "Non-recoverable failure in name resolution"},
-#endif /*EAI_FAIL*/
-#ifdef EAI_FAMILY
+#  endif /*EAI_FAIL*/
+#  ifdef EAI_FAMILY
         {EAI_FAMILY + EAI_BASE,
                                  "Address family not supported"},
-#endif /*EAI_FAMILY*/
-#ifdef EAI_MEMORY
+#  endif /*EAI_FAMILY*/
+#  ifdef EAI_MEMORY
         {EAI_MEMORY + EAI_BASE,
                                  "Memory allocation failure"},
-#endif /*EAI_MEMORY*/
-#ifdef EAI_NODATA
+#  endif /*EAI_MEMORY*/
+#  ifdef EAI_NODATA
         {EAI_NODATA + EAI_BASE,
                                  "No address associated with nodename"},
-#endif /*EAI_NODATA*/
-#ifdef EAI_NONAME
+#  endif /*EAI_NODATA*/
+#  ifdef EAI_NONAME
         {EAI_NONAME + EAI_BASE,
                                  "Host/service name not known"},
-#endif /*EAI_NONAME*/
-#ifdef EAI_SERVICE
+#  endif /*EAI_NONAME*/
+#  ifdef EAI_SERVICE
         {EAI_SERVICE + EAI_BASE,
                                  "Service name not supported for socket type"},
-#endif /*EAI_SERVICE*/
-#ifdef EAI_SOCKTYPE
+#  endif /*EAI_SERVICE*/
+#  ifdef EAI_SOCKTYPE
         {EAI_SOCKTYPE + EAI_BASE,
                                  "Socket type not supported"},
-#endif /*EAI_SOCKTYPE*/
-#ifdef NCBI_OS_MSWIN
-#  define DNS_BASE 0
-#else
-#  define DNS_BASE 200000
-#endif /*NCBI_OS_MSWIN*/
-#ifdef HOST_NOT_FOUND
+#  endif /*EAI_SOCKTYPE*/
+#  ifdef NCBI_OS_MSWIN
+#    define DNS_BASE 0
+#  else
+#    define DNS_BASE 200000
+#  endif /*NCBI_OS_MSWIN*/
+#  ifdef HOST_NOT_FOUND
         {HOST_NOT_FOUND + DNS_BASE,
                                  "Host not found"},
-#endif /*HOST_NOT_FOUND*/
-#ifdef TRY_AGAIN
+#  endif /*HOST_NOT_FOUND*/
+#  ifdef TRY_AGAIN
         {TRY_AGAIN + DNS_BASE,
                                  "DNS server failure"},
-#endif /*TRY_AGAIN*/
-#ifdef NO_RECOVERY
+#  endif /*TRY_AGAIN*/
+#  ifdef NO_RECOVERY
         {NO_RECOVERY + DNS_BASE,
                                  "Unrecoverable DNS error"},
-#endif /*NO_RECOVERY*/
-#ifdef NO_ADDRESS
+#  endif /*NO_RECOVERY*/
+#  ifdef NO_ADDRESS
         {NO_ADDRESS + DNS_BASE,
                                  "No address record found in DNS"},
-#endif /*NO_ADDRESS*/
-#ifdef NO_DATA
+#  endif /*NO_ADDRESS*/
+#  ifdef NO_DATA
         {NO_DATA + DNS_BASE,
                                  "No DNS data of requested type"},
-#endif /*NO_DATA*/
+#  endif /*NO_DATA*/
 
         /* Last dummy entry - must present */
         {0, 0}
@@ -291,9 +295,12 @@ static const char* s_StrErrorInternal(int error)
         if (errmap[i].errnum == error)
             return MSWIN_STRDUP(errmap[i].errtxt);
     }
-#if defined(NCBI_OS_MSWIN)  &&  defined(_UNICODE)
+#  if defined(NCBI_OS_MSWIN)  &&  defined(_UNICODE)
     return UTIL_TcharToUtf8(error > 0 ? _wcserror(error) : L"");
-#else
+#  else
     return error > 0 ? strerror(error) : "";
-#endif /*NCBI_OS_MSWIN && _UNICODE*/
+#  endif /*NCBI_OS_MSWIN && _UNICODE*/
 }
+
+
+#endif /*NCBI_STRERROR*/
