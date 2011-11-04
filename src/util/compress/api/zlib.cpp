@@ -118,10 +118,10 @@ const int gz_magic[2] = {0x1f, 0x8b};
 #define EXTRA_FIELD  0x04 // bit 2 set: extra field present
 #define ORIG_NAME    0x08 // bit 3 set: original file name present
 #define COMMENT      0x10 // bit 4 set: file comment present
-#define RESERVED     0xE0 // bits 5..7: reserved/
+#define RESERVED     0xE0 // bits 5..7: reserved
 
 
-// Returns length of the .gz header if it exist or 0 otherwise.
+// Returns length of the .gz header if it exists or 0 otherwise.
 // If 'info' not NULL, fill it with information from header.
 static
 size_t s_CheckGZipHeader(const void* src_buf, size_t src_len,
@@ -143,7 +143,7 @@ size_t s_CheckGZipHeader(const void* src_buf, size_t src_len,
         return 0;
     }
     // Header length: 
-    // gz_magic (2) + methos (1) + flags (1) + time, xflags and OS code (6)
+    // gz_magic (2) + method (1) + flags (1) + time, xflags and OS code (6)
     size_t header_len = 10; 
 
     if ( info ) {
