@@ -2824,19 +2824,21 @@ const char *s_FindImpFeatType( const CImp_feat &imp )
 {
     // keep sorted in ASCII-betical order
     static const char *allowed_types[] = { 
-        "-10_signal",      "-35_signal",   "3'UTR",         "3'clip",          "5'UTR",
-        "5'clip",          "CAAT_signal",  "CDS",           "C_region",        "D-loop",
-        "D_segment",       "GC_signal",    "Import",        "J_segment",       "LTR",
-        "N_region",        "RBS",          "STS",           "S_region",        "Site-ref",
-        "TATA_signal",     "V_region",     "V_segment",     "allele",          "attenuator",
-        "conflict",        "enhancer",     "exon",          "gap",             "iDNA",
-        "intron",          "mat_peptide",  "misc_RNA",      "misc_binding",    "misc_difference",
-        "misc_feature",    "misc_recomb",  "misc_signal",   "misc_structure",  "mobile_element",
-        "modified_base",   "mutation",     "old_sequence",  "operon",          "oriT",
-        "polyA_signal",    "polyA_site",   "precursor_RNA", "prim_transcript", "primer_bind",
-        "promoter",        "protein_bind", "rep_origin",    "repeat_region",   "repeat_unit",
-        "satellite",       "sig_peptide",  "source",        "stem_loop",       "terminator",
-        "transit_peptide", "unsure",       "variation",     "virion" };
+        "-10_signal",     "-35_signal",   "3'UTR",          "3'clip",       "5'UTR",          
+        "5'clip",         "CAAT_signal",  "CDS",            "C_region",     "D-loop",         
+        "D_segment",      "GC_signal",    "Import",         "J_segment",    "LTR",            
+        "N_region",       "RBS",          "STS",            "S_region",     "Site-ref",       
+        "TATA_signal",    "V_region",     "V_segment",      "allele",       "attenuator",     
+        "centromere",     "conflict",     "enhancer",       "exon",         "gap",            
+        "iDNA",           "intron",       "mat_peptide",    "misc_RNA",     "misc_binding",   
+        "misc_difference","misc_feature", "misc_recomb",    "misc_signal",  "misc_structure", 
+        "mobile_element", "modified_base","mutation",       "old_sequence", "operon",         
+        "oriT",           "polyA_signal", "polyA_site",     "precursor_RNA","prim_transcript",
+        "primer_bind",    "promoter",     "protein_bind",   "rep_origin",   "repeat_region",  
+        "repeat_unit",    "satellite",    "sig_peptide",    "source",       "stem_loop",      
+        "telomere",       "terminator",   "transit_peptide","unsure",       "variation",      
+        "virion"
+    };
     static const int kAllowedTypesNumElems = ( sizeof(allowed_types) / sizeof(allowed_types[0]));
 
     static const char *kFeatBad = "???";
@@ -7459,6 +7461,18 @@ void CNewCleanup_imp::RnarefBC (
                         ! FIELD_IS_SET (gen, Quals)) {
                         RESET_FIELD (rr, Ext);
                         ChangeMade(CCleanupChange::eChangeRNAref);
+                    }
+
+                    if( ( FIELD_EQUALS(rr, Type, NCBI_RNAREF(mRNA)) || 
+                          FIELD_EQUALS(rr, Type, NCBI_RNAREF(rRNA)) ) &&
+                        STRING_FIELD_NOT_EMPTY(gen, Product) && 
+                        RAW_FIELD_IS_EMPTY_OR_UNSET(gen, Class) && 
+                        ! FIELD_IS_SET(gen, Quals) )
+                    {
+                        // convert RNA-Gen to name.
+                        // Careful: this invalidates the "gen" variable.
+                        const string product = GET_FIELD(gen, Product);
+                        SET_FIELD( ext, Name, product );
                     }
                 }
                 break;

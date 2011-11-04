@@ -9,6 +9,7 @@
 
 # edited July 28, 2011
 # edited again Oct 13-14, 2011 so it works in the C++ build directory
+# Nov 4, 2011: use my personal cleanasn
 
 # Just to prevent people from running it accidentally and wreaking havoc
 # (Once you've updated it, you will probably change the string
@@ -26,6 +27,7 @@ RUN_TESTS=/home/kornbluh/c++.opt/src/objtools/cleanup/test/test_cases/+run_tests
 # the size to truncate to.  In C, the main() could be as simple as:
 # return truncate( argv[1], atoi(argv[2]) );
 FILE_TRUNCATOR=/home/kornbluh/bin/mytrunc
+CLEANASN=/home/kornbluh/c_toolkit/ncbi/build/cleanasn
 
 echo START $(date)
 
@@ -81,7 +83,7 @@ generate_cleanasns_output()
     must $EASY_AUTO_REPLACE ${template_root}.template
     
     # no must because might fail just because of change
-    $RUN_TESTS $( sort_by_middle_num ${template_root} test ) -wco
+    $RUN_TESTS $( sort_by_middle_num ${template_root} test ) -wco -ca=$CLEANASN
     
     silent rm ${template_root}.cleanasns_output # make sure empty
     for file in $( sort_by_middle_num ${template_root} cleanasns_output ) ; do
@@ -113,6 +115,7 @@ must cd $TEST_DIR
 must [ -x $EASY_AUTO_REPLACE ]
 must [ -x $RUN_TESTS ]
 must [ -x $FILE_TRUNCATOR ]
+must [ -x $CLEANASN ]
 
 # handle .template files
 for template_file_gz in $(find -name '*.template.gz') ; do
@@ -206,7 +209,7 @@ for raw_test_gz in $(find -name '*.raw_test.gz') ; do
     must mv ${cleanasns_output_file}.gz $cleanasns_output_file_old_gz
 
     # no "must" because might fail just because of difference
-    $RUN_TESTS $raw_test -wco
+    $RUN_TESTS $raw_test -wco -ca=$CLEANASN
 
     # zip the files back up
     must rm -f $raw_test
