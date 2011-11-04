@@ -91,7 +91,7 @@ public:
         fStdErr_Open     = 0x004, ///< Do     open child's stderr.
         fStdErr_Close    =     0, ///< Do not open child's stderr (default).
         fStdErr_Share    = 0x008, ///< Keep stderr (share it with child).
-        fStdErr_Stdout   = 0x080, ///< Redirect stderr to whatever stdout goes.
+        fStdErr_StdOut   = 0x080, ///< Redirect stderr to whatever stdout goes.
         fKeepOnClose     = 0x010, ///< Close(): just return eIO_Timeout
                                   ///< if Close() cannot complete within
                                   ///< the allotted time;  don't close any

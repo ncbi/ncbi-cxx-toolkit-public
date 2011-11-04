@@ -394,7 +394,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                                "DuplicateHandle(stderr) failed");
                 }
             }
-        } else if ( IS_SET(create_flags, CPipe::fStderr_Stdout) ) {
+        } else if ( IS_SET(create_flags, CPipe::fStderr_StdOut) ) {
             child_stderr = child_stdout;
         }
 
@@ -1103,7 +1103,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                 ::close(pipe_err[0]);
             } else if ( IS_SET(create_flags, CPipe::fStdErr_Share) ) {
                 /*nothing to do*/;
-            } else if ( IS_SET(create_flags, CPipe::fStdErr_Stdout) ) {
+            } else if ( IS_SET(create_flags, CPipe::fStdErr_StdOut) ) {
                 _ASSERT(STDOUT_FILENO != STDERR_FILENO);
                 if (::dup2(STDOUT_FILENO, STDERR_FILENO) < 0) {
                     s_Exit(-1, status_pipe[1]);
