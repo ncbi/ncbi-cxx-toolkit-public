@@ -194,9 +194,12 @@ void CMacProjectGenerator::Generate(const string& solution)
 //            } else if (prj.m_ProjType == CProjKey::eApp) {
 //                AddString( *app_dependencies, proj_dependency);
 //            } else if (prj.m_ProjType == CProjKey::eDataSpec) {
-            } else if (!prj.m_DatatoolSources.empty()) {
+            }
+            if (!prj.m_DatatoolSources.empty()) {
                 AddString( *dataspec_dependencies, proj_dependency);
-            } else {
+            }
+            if (prj.m_ProjType != CProjKey::eLib && prj.m_ProjType != CProjKey::eDll &&
+                prj.m_ProjType != CProjKey::eApp && prj.m_ProjType != CProjKey::eDataSpec) {
                 continue;
             }
             if (add_composite) {
@@ -373,14 +376,16 @@ void CMacProjectGenerator::Save(const string& solution_name, CPlist& xproj)
     solution_dir += ".xcodeproj";
     CDir(solution_dir).CreatePath();
     string solution_file( CDirEntry::ConcatPath(solution_dir, "project.pbxproj"));
-    auto_ptr<CObjectOStream> out(CObjectOStream::Open(solution_file, eSerial_Xml));
-    CObjectOStreamXml *ox = dynamic_cast<CObjectOStreamXml*>(out.get());
-    ox->SetReferenceDTD(true);
-    ox->SetDTDPublicId("-//Apple//DTD PLIST 1.0//EN");
-    ox->SetDTDFilePrefix("http://www.apple.com/DTDs/");
-    ox->SetDTDFileName("PropertyList-1.0");
-    ox->SetEncoding(eEncoding_UTF8);
-    *out << xproj;
+    {
+        auto_ptr<CObjectOStream> out(CObjectOStream::Open(solution_file, eSerial_Xml));
+        CObjectOStreamXml *ox = dynamic_cast<CObjectOStreamXml*>(out.get());
+        ox->SetReferenceDTD(true);
+        ox->SetDTDPublicId("-//Apple//DTD PLIST 1.0//EN");
+        ox->SetDTDFilePrefix("http://www.apple.com/DTDs/");
+        ox->SetDTDFileName("PropertyList-1.0");
+        ox->SetEncoding(eEncoding_UTF8);
+        *out << xproj;
+    }
     GetApp().RegisterGeneratedFile( solution_file );
 }
 
