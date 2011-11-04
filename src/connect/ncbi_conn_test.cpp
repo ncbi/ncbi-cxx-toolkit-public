@@ -684,43 +684,66 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
 
         // Check results in random order but allow to modify status only once
         random_shuffle(v.begin(), v.end());
-        ITERATE(vector<CFWCheck>, ck, v) {
-            CConn_IOStream* is = ck->first;
-            if (!is) {
-                _ASSERT(status != eIO_Success);
-                _ASSERT(!ck->second->okay);
-                continue;
-            }
-            CIOGuard guard(m_IO, *is);
-            if (m_Canceled)
-                status = eIO_Interrupt;
-            else if (status != eIO_Success) {
-                size_t unused;
-                is->SetTimeout(eIO_Read, &kZeroTimeout);
-                CONN_Read(is->GetCONN(), 0, 1<<20, &unused, eIO_ReadPlain);
-            } else {
-                CONN conn = is->GetCONN();
-                CFWConnPoint* cp = ck->second;
-                status = CONN_Wait(conn, eIO_Read, &kZeroTimeout);
-                if (status == eIO_Timeout  ||  status == eIO_Success) {
-                    char line[sizeof(kFWSign) + 2/*"\r\0"*/];
-                    if (!is->getline(line, sizeof(line)))
-                        *line = '\0';
-                    else if (NStr::strncasecmp(line,kFWSign,sizeof(kFWSign)-1))
-                        cp->okay = false;
-                    status = ConnStatus(!*line  ||  !cp->okay, is);
-                    if (!cp->okay)
-                        status = eIO_NotSupported;
-                    else if (status != eIO_Success)
-                        cp->okay = false;
+        do {
+            NON_CONST_ITERATE(vector<CFWCheck>, ck, v) {
+                CConn_IOStream* is = ck->first;
+                if (!is)
+                    continue;
+                CIOGuard guard(m_IO, *is);
+                if (m_Canceled)
+                    status = eIO_Interrupt;
+                else if (status != eIO_Success) {
+                    size_t unused;
+                    is->SetTimeout(eIO_Read, &kZeroTimeout);
+                    CONN_Read(is->GetCONN(), 0, 1<<20, &unused, eIO_ReadPlain);
                 } else {
-                    // Connection refused
-                    ConnStatus(true, 0);
-                    cp->okay = false;
+                    CONN conn = is->GetCONN();
+                    CFWConnPoint* cp = ck->second;
+                    EIO_Status st = CONN_Wait(conn, eIO_Read, &kZeroTimeout);
+                    if (st == eIO_Timeout)
+                        continue;
+                    if (st == eIO_Success) {
+                        _ASSERT(status == eIO_Success);
+                        char line[sizeof(kFWSign) + 2/*"\r\0"*/];
+                        if (!is->getline(line, sizeof(line)))
+                            *line = '\0';
+                        else if (NStr::strncasecmp(line,
+                                                   kFWSign,sizeof(kFWSign)-1)){
+                            cp->okay = false;
+                        }
+                        status = ConnStatus(!*line  ||  !cp->okay, is);
+                        if (!cp->okay)
+                            status = eIO_NotSupported;
+                        else if (status != eIO_Success)
+                            cp->okay = false;
+                    } else {
+                        // Connection refused
+                        ConnStatus(true, 0);
+                        cp->okay = false;
+                        status = st;
+                    }
                 }
+                delete is;
+                ck->first = 0;
             }
-            delete is;
-        }
+            if (status != eIO_Success)
+                break;
+            vector< AutoPtr<CSocket> >  sock;
+            vector<CSocketAPI::SPoll>   poll;
+            ITERATE(vector<CFWCheck>, ck, v) {
+                CConn_SocketStream* fw = ck->first;
+                if (!fw)
+                    continue;
+                CSocket* s = new CSocket;
+                s->Reset(fw->GetSOCK(), eNoOwnership, eCopyTimeoutsFromSOCK);
+                sock.push_back(s);
+                poll.push_back(CSocketAPI::SPoll(sock.back().get(), eIO_Read));
+            }
+            _ASSERT(poll.size() == sock.size());
+            if (!poll.size())
+                break;
+            status = CSocketAPI::Poll(poll, net_info->timeout);
+        } while (status == eIO_Success);
 
         // Report results (only the first failed one;  all otherwise)
         NON_CONST_ITERATE(vector<CFWConnPoint>, cp, *fwd[n]) {
