@@ -52,6 +52,7 @@ class CSeqFeatData;
 class CSeq_descr;
 class CSeqdesc;
 class CSeq_loc;
+class CSeq_loc_mix;
 class CGene_ref;
 class CProt_ref;
 class CRNA_ref;
@@ -248,6 +249,7 @@ private:
 
     void SeqLocBC( CSeq_loc &loc );
     void ConvertSeqLocWholeToInt( CSeq_loc &loc );
+    void SeqLocMixBC( CSeq_loc_mix & loc_mix );
 
     void SeqfeatBC (CSeq_feat& sf);
 

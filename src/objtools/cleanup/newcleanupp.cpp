@@ -2666,6 +2666,102 @@ void CNewCleanup_imp::ConvertSeqLocWholeToInt( CSeq_loc &loc )
     }
 }
 
+static void 
+s_AddSeqLocMix( CSeq_loc_mix::Tdata & new_mix_pieces, 
+               CSeq_loc_mix::Tdata & mix_pieces, 
+               bool any_nulls_seen )
+{
+    NON_CONST_ITERATE( CSeq_loc_mix::Tdata, old_mix_iter, mix_pieces ) {
+        CRef<CSeq_loc> old_piece( *old_mix_iter );
+        if( old_piece->IsNull() ) {
+            // ignore
+        } else if( old_piece->IsMix() ) {
+            s_AddSeqLocMix( new_mix_pieces, old_piece->SetMix(), 
+                any_nulls_seen );
+        } else {
+            if( any_nulls_seen && ! new_mix_pieces.empty() ) {
+                CRef<CSeq_loc> null_piece( new CSeq_loc );
+                null_piece->SetNull();
+                new_mix_pieces.push_back( null_piece );
+            }
+            new_mix_pieces.push_back( old_piece );
+        }
+    }
+}
+
+void CNewCleanup_imp::SeqLocMixBC( CSeq_loc_mix & loc_mix )
+{
+    if( ! loc_mix.IsSet() || loc_mix.Set().empty() ) {
+        return;
+    }
+
+    // This function does two things simultaneously:
+    // It checks for mix-inside-mix and also checks if 
+    // we need to do "NULL-normalization"
+    bool have_seen_inner_mix = false;
+    bool any_nulls_seen = false;
+    bool alternates_not_null_then_null = true;
+
+    CSeq_loc_mix::Tdata & mix_pieces = loc_mix.Set();
+    if( (mix_pieces.size() % 2) == 0 ) {
+        // can't do notnull-null-notnull-null-notnull-....-null-notnull
+        // if we have an even number of items
+        alternates_not_null_then_null = false;
+    }
+
+    bool last_piece_was_null = true;
+    ITERATE( CSeq_loc_mix::Tdata, outer_mix_iter, mix_pieces ) {
+        const CSeq_loc &this_piece = **outer_mix_iter;
+        const bool this_piece_is_null = this_piece.IsNull();
+
+        // see if we've found any NULLs in this loc
+        if( this_piece_is_null ) {
+            any_nulls_seen = true;
+        }
+
+        // see if we break alternation of notnull and null
+        if( alternates_not_null_then_null ) {
+            if( this_piece_is_null == last_piece_was_null ) {
+                // two of the same kind in a row: does not alternate
+                alternates_not_null_then_null = false;
+            }
+        }
+
+        // see if there's a nested mix in here
+        if( this_piece.IsMix() ) {
+            have_seen_inner_mix = true;
+            alternates_not_null_then_null = false; // mix breaks alternation
+            // We have to check if the inner-mix contains any NULLs
+            if( ! any_nulls_seen ) {
+                CSeq_loc_CI inner_ci( this_piece, CSeq_loc_CI::eEmpty_Allow );
+                for( ; inner_ci; ++inner_ci ) {
+                    if( inner_ci.IsEmpty() ) {
+                        any_nulls_seen = true;
+                    }
+                }
+            }
+        }
+
+        // for next iteration
+        last_piece_was_null = this_piece_is_null;
+    }
+
+    // we've examined the location, so if there are any problems, we have
+    // to rebuild it.
+    if( have_seen_inner_mix || 
+        (any_nulls_seen && ! alternates_not_null_then_null) ) 
+    {
+        CSeq_loc_mix new_mix;
+        CSeq_loc_mix::Tdata & new_mix_pieces = new_mix.Set();
+
+        // has to be in a separate function because it's recursive
+        s_AddSeqLocMix( new_mix_pieces, mix_pieces, any_nulls_seen );
+
+        // swap is faster than assignment
+        loc_mix.Set().swap( new_mix_pieces );
+    }
+}
+
 static bool s_IsJustQuotes (const string& str)
 
 {

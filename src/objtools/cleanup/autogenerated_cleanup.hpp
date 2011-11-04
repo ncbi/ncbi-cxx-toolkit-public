@@ -258,7 +258,7 @@ void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_ext_locs_E_E_l
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix_mix_E( CSeq_loc & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_loc_ >
 void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix_mix( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
-  void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix( CSeq_loc_mix & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_mix_ETC( CSeq_loc_mix & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_interval_ >
 void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_packed_int_packed_int_ETC( Tcontainer_ncbi_cref_cseq_interval_ & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location_packed_int_ETC( CPacked_seqint & arg0 );
@@ -639,7 +639,6 @@ void x_BasicCleanupSeqFeat_exts( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
   template< typename Tcontainer_ncbi_cref_cfeat_id_ >
 void x_BasicCleanupSeqFeat_ids_ETC( Tcontainer_ncbi_cref_cfeat_id_ & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_location_location_equiv_ETC( CSeq_loc_equiv & arg0 );
-  void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_location_location_mix_ETC( CSeq_loc_mix & arg0 );
   void x_BasicCleanupSeqFeat_product_product1747_ETC( CSeq_loc & arg0 );
   void x_BasicCleanupSeqFeat_product_ETC( CSeq_loc & arg0 );
   void x_BasicCleanupSeqFeat_qual_E_E_ETC( CGb_qual & arg0 );

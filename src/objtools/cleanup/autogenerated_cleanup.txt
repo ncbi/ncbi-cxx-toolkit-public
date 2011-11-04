@@ -198,6 +198,7 @@ use m_NewCleanup.SeqLocBC { Seq-loc }
 use m_NewCleanup.ConvertSeqLocWholeToInt {
     Seq-loc EXCEPT { product }
 }
+use m_NewCleanup.SeqLocMixBC { Seq-loc.mix }
 
 use m_NewCleanup.SeqsetBC { Bioseq-set }
 
