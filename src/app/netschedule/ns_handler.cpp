@@ -451,7 +451,7 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
     catch (const CNSProtoParserException &  ex) {
         x_WriteMessageNoThrow("ERR:", string(ex.GetErrCodeString()) +
                                       ":" + ex.GetMsg());
-        ERR_POST("Server error: " << ex);
+        ERR_POST("Command parser error: " << ex);
         x_PrintRequestStop(eStatus_ServerError);
     }
     catch (const CNetServiceException &  ex) {
@@ -1704,7 +1704,9 @@ void CNetScheduleHandler::x_PrintRequestStart(CTempString  msg)
     if (m_Server->IsLog())
         GetDiagContext().PrintRequestStart()
                 .Print("_type", "cmd")
-                .Print("info", msg);
+                .Print("info", msg)
+                .Print("peer",  GetSocket().GetPeerAddress(eSAF_IP))
+                .Print("conn", m_ConnReqId);
 }
 
 

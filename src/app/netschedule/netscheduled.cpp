@@ -142,7 +142,7 @@ int CNetScheduleDApp::Run(void)
         return 0;
     }
 
-    LOG_POST(NETSCHEDULED_FULL_VERSION);
+    LOG_POST(Message << Warning << NETSCHEDULED_FULL_VERSION);
 
     const CNcbiRegistry& reg = GetConfig();
 
@@ -167,7 +167,8 @@ int CNetScheduleDApp::Run(void)
                 str_params += bdb_params.GetParamName(n) + '=' +
                               bdb_params.GetParamValue(n);
             }
-            LOG_POST(Info << "Effective [bdb] parameters: " << str_params);
+            LOG_POST(Message << Warning
+                             <<"Effective [bdb] parameters: " << str_params);
         }}
 
         // [server] section
@@ -182,7 +183,8 @@ int CNetScheduleDApp::Run(void)
                 str_params += params.GetParamName(n) + '=' +
                               params.GetParamValue(n);
             }
-            LOG_POST(Info << "Effective [server] parameters: " << str_params);
+            LOG_POST(Message << Warning
+                             <<"Effective [server] parameters: " << str_params);
         }}
 
         bool reinit = params.reinit || args["reinit"];
@@ -198,14 +200,16 @@ int CNetScheduleDApp::Run(void)
         // Use port passed through parameters
         server->AddDefaultListener(new CNetScheduleConnectionFactory(&*server));
         server->StartListening();
-        LOG_POST("Server listening on port " << params.port);
+        LOG_POST(Message << Warning
+                         <<"Server listening on port " << params.port);
 
         // two transactions per thread should be enough
         bdb_params.max_trans = params.max_threads * 2;
 
         auto_ptr<CQueueDataBase>    qdb(new CQueueDataBase(server.get()));
 
-        LOG_POST("Mounting database at " << bdb_params.db_path);
+        LOG_POST(Message << Warning
+                         << "Mounting database at " << bdb_params.db_path);
         if (qdb->Open(bdb_params, reinit) == false)
             return 1;
 
@@ -226,15 +230,16 @@ int CNetScheduleDApp::Run(void)
             }
         }
         else
-            LOG_POST("Operating in non-daemon mode...");
+            LOG_POST(Message << Warning << "Operating in non-daemon mode...");
 
         // [queue_*], [qclass_*] and [queues] sections
         // Scan and mount queues
         unsigned min_run_timeout = qdb->Configure(reg);
 
         min_run_timeout = min_run_timeout > 0 ? min_run_timeout : 2;
-        LOG_POST("Running execution control every " << min_run_timeout <<
-                 " seconds");
+        LOG_POST(Message << Warning
+                         << "Checking running jobs expiration: every "
+                         << min_run_timeout << " seconds");
 
 
         qdb->RunExecutionWatcherThread(min_run_timeout);

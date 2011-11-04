@@ -166,7 +166,8 @@ CNSAffinityRegistry::GetAffinityIDs(const list< string > &  tokens) const
          unsigned int,
          SNSTokenCompare >::const_iterator      found;
 
-    for (list<string>::const_iterator  k = tokens.begin(); k != tokens.end(); ++k) {
+    for (list<string>::const_iterator  k = tokens.begin();
+         k != tokens.end(); ++k) {
         const string &      token = *k;
 
         if (!token.empty()) {

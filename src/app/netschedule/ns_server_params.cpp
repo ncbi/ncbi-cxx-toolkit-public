@@ -58,7 +58,7 @@ void SNS_Parameters::Read(const IRegistry& reg, const string& sname)
     use_hostname    = GetBoolNoErr("use_hostname", false);
     network_timeout = GetIntNoErr("network_timeout", 10);
     if (network_timeout == 0) {
-        LOG_POST(Warning <<
+        LOG_POST(Message << Warning <<
             "INI file sets 0 sec. network timeout. Assume 10 seconds.");
         network_timeout =  10;
     }

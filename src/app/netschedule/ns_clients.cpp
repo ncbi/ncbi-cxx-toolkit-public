@@ -209,9 +209,9 @@ void CNSClientId::CheckAccess(TNSClientRole   role,
 
     if (report) {
         m_Unreported &= ~deficit;
-        LOG_POST(Warning << "Unauthorized access from: " +
-                            CSocketAPI::gethostbyaddr(m_Addr) + " " +
-                            m_ClientName + x_AccessViolationMessage(deficit));
+        ERR_POST("Unauthorized access from: " +
+                 CSocketAPI::gethostbyaddr(m_Addr) + " " +
+                 m_ClientName + x_AccessViolationMessage(deficit));
     } else
         m_Unreported = ~0L;
 
