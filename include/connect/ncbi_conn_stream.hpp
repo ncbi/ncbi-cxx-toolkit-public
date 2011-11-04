@@ -465,6 +465,14 @@ public:
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize);
 
+    /// Return the underlying SOCK object (which is currently in use!)
+    /// Don't call this method unless you absolutely need it and know what
+    /// you are doing;  otherwise, the stream can easily become corrupted.
+    SOCK GetSOCK(void) const { return *m_SockPtr; }
+
+protected:
+    SOCK* m_SockPtr;
+
 private:
     // Disable copy constructor and assignment.
     CConn_SocketStream(const CConn_SocketStream&);
