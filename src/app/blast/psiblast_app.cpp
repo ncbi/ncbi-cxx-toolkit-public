@@ -384,12 +384,18 @@ int CPsiBlastApp::Run(void)
         SetDiagPostLevel(eDiag_Warning);
 
         const CArgs& args = GetArgs();
-        RecoverSearchStrategy(args, m_CmdLineArgs);
+        bool saved_search_strategy = RecoverSearchStrategy(args, m_CmdLineArgs);
 
         CRef<CQueryOptionsArgs> query_opts = 
             m_CmdLineArgs->GetQueryOptionsArgs();
 
-        CRef<CBlastOptionsHandle> opts_hndl(m_CmdLineArgs->SetOptions(args));
+        CRef<CBlastOptionsHandle> opts_hndl;
+        if(saved_search_strategy) {
+           	opts_hndl.Reset(&*m_CmdLineArgs->SetOptionsForSavedStrategy(args));
+        }
+        else {
+           	opts_hndl.Reset(&*m_CmdLineArgs->SetOptions(args));
+        }
         const CBlastOptions& opt = opts_hndl->GetOptions();
 
         /*** Get the query sequence(s) or PSSM (these two options are mutually

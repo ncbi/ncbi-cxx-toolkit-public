@@ -520,12 +520,12 @@ s_ImportSearchStrategy(CNcbiIstream* in,
     }
 }
 
-void
+bool
 RecoverSearchStrategy(const CArgs& args, blast::CBlastAppArgs* cmdline_args)
 {
     CNcbiIstream* in = cmdline_args->GetImportSearchStrategyStream(args);
     if ( !in ) {
-        return;
+        return false;
     }
     const bool is_remote_search = 
         (args[kArgRemote].HasValue() && args[kArgRemote].AsBoolean());
@@ -537,6 +537,8 @@ RecoverSearchStrategy(const CArgs& args, blast::CBlastAppArgs* cmdline_args)
     if (CMbIndexArgs::HasBeenSet(args)) {
         ERR_POST(Warning << "Overriding megablast BLAST DB indexed options in saved strategy");
     }
+
+    return true;
 }
 
 // Process search strategies

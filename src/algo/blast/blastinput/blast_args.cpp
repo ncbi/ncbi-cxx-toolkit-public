@@ -2332,5 +2332,42 @@ SetUpCommandLineArguments(TBlastCmdLineArgs& args)
     return retval.release();
 }
 
+CRef<CBlastOptionsHandle>
+CBlastAppArgs::SetOptionsForSavedStrategy(const CArgs& args)
+{
+	if(m_OptsHandle.Empty())
+	{
+        NCBI_THROW(CInputException, eInvalidInput, "Empty Blast Options Handle");
+	}
+
+    // We're recovering from a saved strategy, so we need to still extract
+    // certain options from the command line, include overriding query
+    // and/or database
+    CBlastOptions& opts = m_OptsHandle->SetOptions();
+    // invoke ExtractAlgorithmOptions on certain argument classes
+    m_QueryOptsArgs->ExtractAlgorithmOptions(args, opts);
+    m_StdCmdLineArgs->ExtractAlgorithmOptions(args, opts);
+    m_RemoteArgs->ExtractAlgorithmOptions(args, opts);
+    m_DebugArgs->ExtractAlgorithmOptions(args, opts);
+    m_FormattingArgs->ExtractAlgorithmOptions(args, opts);
+    if (CBlastDatabaseArgs::HasBeenSet(args)) {
+          m_BlastDbArgs->ExtractAlgorithmOptions(args, opts);
+    }
+    if (CMbIndexArgs::HasBeenSet(args)) {
+        NON_CONST_ITERATE(TBlastCmdLineArgs, arg, m_Args) {
+            if (dynamic_cast<CMbIndexArgs*>(arg->GetPointer()) != NULL) {
+                (*arg)->ExtractAlgorithmOptions(args, opts);
+            }
+        }
+    }
+    m_HspFilteringArgs->ExtractAlgorithmOptions(args, opts);
+    m_IsUngapped = !opts.GetGappedMode();
+    try { m_OptsHandle->Validate(); }
+    catch (const CBlastException& e) {
+        NCBI_THROW(CInputException, eInvalidInput, e.GetMsg());
+    }
+    return m_OptsHandle;
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE

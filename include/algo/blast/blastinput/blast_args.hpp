@@ -992,6 +992,11 @@ public:
     /// @param args Commad line arguments [in]
     CRef<CBlastOptionsHandle> SetOptions(const CArgs& args);
 
+    /// Combine the command line arguments into a CBlastOptions object
+    /// recovered from saved search strategy
+    /// @param args Commad line arguments [in]
+    CRef<CBlastOptionsHandle> SetOptionsForSavedStrategy(const CArgs& args);
+
     /// Setter for the BLAST options handle, this is used if the options are
     /// recovered from a saved BLAST search strategy
     void SetOptionsHandle(CRef<CBlastOptionsHandle> opts_hndl) {

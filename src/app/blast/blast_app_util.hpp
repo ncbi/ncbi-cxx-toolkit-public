@@ -189,7 +189,8 @@ string RegisterOMDataLoader(CRef<CSeqDB> db_handle);
 /// @param args the command line arguments provided by the application [in]
 /// @param cmdline_args output command line arguments. Will have the database
 /// arguments set, as well as options handle [in|out]
-void
+/// @Return true if recovered from save search strategy
+bool
 RecoverSearchStrategy(const CArgs& args, blast::CBlastAppArgs* cmdline_args);
 
 /// Save the search strategy corresponding to the current command line search

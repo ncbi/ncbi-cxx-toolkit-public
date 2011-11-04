@@ -95,8 +95,13 @@ int CRPSBlastApp::Run(void)
 
         /*** Get the BLAST options ***/
         const CArgs& args = GetArgs();
-        RecoverSearchStrategy(args, m_CmdLineArgs);
-        CRef<CBlastOptionsHandle> opts_hndl(&*m_CmdLineArgs->SetOptions(args));
+        CRef<CBlastOptionsHandle> opts_hndl;
+        if(RecoverSearchStrategy(args, m_CmdLineArgs)) {
+        	opts_hndl.Reset(&*m_CmdLineArgs->SetOptionsForSavedStrategy(args));
+        }
+        else {
+        	opts_hndl.Reset(&*m_CmdLineArgs->SetOptions(args));
+        }
         const CBlastOptions& opt = opts_hndl->GetOptions();
 
         /*** Get the query sequence(s) ***/
