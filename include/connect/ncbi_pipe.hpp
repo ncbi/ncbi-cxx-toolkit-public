@@ -78,6 +78,8 @@ class NCBI_XCONNECT_EXPORT CPipe : protected CConnIniter
 {
 public:
     /// Flags for creating standard I/O handles of child process.
+    /// @note@  Flags pertaining to the same stdio handle processed in the
+    ///         order of their appearance in the definition below.
     ///
     /// Default is 0 
     ///    fStdIn_Open | fStdOut_Open | fStdErr_Close | fCloseOnClose.
@@ -89,11 +91,12 @@ public:
         fStdErr_Open     = 0x004, ///< Do     open child's stderr.
         fStdErr_Close    =     0, ///< Do not open child's stderr (default).
         fStdErr_Share    = 0x008, ///< Keep stderr (share it with child).
+        fStdErr_Stdout   = 0x080, ///< Redirect stderr to whatever stdout goes.
         fKeepOnClose     = 0x010, ///< Close(): just return eIO_Timeout
                                   ///< if Close() cannot complete within
                                   ///< the allotted time;  don't close any
                                   ///< pipe handles nor signal the child.
-        fCloseOnClose    =    0,  ///< Close(): always close all pipe handles
+        fCloseOnClose    =     0, ///< Close(): always close all pipe handles
                                   ///< but do not send any signal to running
                                   ///< process if Close()'s timeout expired.
         fKillOnClose     = 0x020, ///< Close(): kill child process if it hasn't

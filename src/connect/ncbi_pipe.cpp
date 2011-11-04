@@ -331,11 +331,11 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
 
         HANDLE stdout_handle = ::GetStdHandle(STD_OUTPUT_HANDLE);
         if (stdout_handle == NULL) {
-            stdout_handle = INVALID_HANDLE_VALUE;
+            stdout_handle  = INVALID_HANDLE_VALUE;
         }
         HANDLE stderr_handle = ::GetStdHandle(STD_ERROR_HANDLE);
         if (stderr_handle == NULL) {
-            stderr_handle = INVALID_HANDLE_VALUE;
+            stderr_handle  = INVALID_HANDLE_VALUE;
         }
         
         // Flush std.output buffers before remap
@@ -378,7 +378,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
 
         // Create pipe for child's stderr
         _ASSERT(CPipe::fStdErr_Open);
-        if ( IS_SET(create_flags, CPipe::fStdErr_Open) ) {
+        if        ( IS_SET(create_flags, CPipe::fStdErr_Open) ) {
             if ( !::CreatePipe(&m_ChildStdErr, &child_stderr, &attr, 0)) {
                 PIPE_THROW(::GetLastError(), "CreatePipe(stderr) failed");
             }
@@ -394,6 +394,8 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                                "DuplicateHandle(stderr) failed");
                 }
             }
+        } else if ( IS_SET(create_flags, CPipe::fStderr_Stdout) ) {
+            child_stderr = child_stdout;
         }
 
         // Create child process
@@ -436,7 +438,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         ::CloseHandle(child_stdin);
     if (child_stdout != INVALID_HANDLE_VALUE)
         ::CloseHandle(child_stdout);
-    if (child_stderr != INVALID_HANDLE_VALUE)
+    if (child_stderr != INVALID_HANDLE_VALUE  &&  child_stderr != child_stdout)
         ::CloseHandle(child_stderr);
     return status;
 }
@@ -706,8 +708,8 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
     // NOTE: WaitForSingleObject() doesn't work with anonymous pipes.
 
     for (;;) {
-        if ( (mask & CPipe::fStdOut)  &&
-             m_ChildStdOut != INVALID_HANDLE_VALUE ) {
+        if ( (mask & CPipe::fStdOut)
+             &&  m_ChildStdOut != INVALID_HANDLE_VALUE ) {
             DWORD bytes_avail = 0;
             if ( !::PeekNamedPipe(m_ChildStdOut, NULL, 0, NULL,
                                   &bytes_avail, NULL) ) {
@@ -721,8 +723,8 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
                 poll |= CPipe::fStdOut;
             }
         }
-        if ( (mask & CPipe::fStdErr)  &&
-             m_ChildStdErr != INVALID_HANDLE_VALUE ) {
+        if ( (mask & CPipe::fStdErr)
+             &&  m_ChildStdErr != INVALID_HANDLE_VALUE ) {
             DWORD bytes_avail = 0;
             if ( !::PeekNamedPipe(m_ChildStdErr, NULL, 0, NULL,
                                   &bytes_avail, NULL) ) {
@@ -1091,7 +1093,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
             } else {
                 (void) ::freopen("/dev/null", "w", stdout);
             }
-            if (  IS_SET(create_flags, CPipe::fStdErr_Open)  ) {
+            if        ( IS_SET(create_flags, CPipe::fStdErr_Open) ) {
                 if (pipe_err[1] != STDERR_FILENO) {
                     if (::dup2(pipe_err[1], STDERR_FILENO) < 0) {
                         s_Exit(-1, status_pipe[1]);
@@ -1099,7 +1101,14 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                     ::close(pipe_err[1]);
                 }
                 ::close(pipe_err[0]);
-            } else if ( !IS_SET(create_flags, CPipe::fStdErr_Share) ) {
+            } else if ( IS_SET(create_flags, CPipe::fStdErr_Share) ) {
+                /*nothing to do*/;
+            } else if ( IS_SET(create_flags, CPipe::fStdErr_Stdout) ) {
+                _ASSERT(STDOUT_FILENO != STDERR_FILENO);
+                if (::dup2(STDOUT_FILENO, STDERR_FILENO) < 0) {
+                    s_Exit(-1, status_pipe[1]);
+                }
+            } else {
                 (void) ::freopen("/dev/null", "a", stderr);
             }
 
@@ -1742,7 +1751,7 @@ const STimeout* CPipe::GetTimeout(EIO_Event event) const
     case eIO_Write:
         return m_WriteTimeout;
     default:
-        ;
+        break;
     }
     return kDefaultTimeout;
 }
