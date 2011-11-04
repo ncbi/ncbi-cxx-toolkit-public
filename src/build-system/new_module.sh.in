@@ -141,6 +141,7 @@ for i in $imports; do
             [ $found = no ] || break
         done
         [ $found = no ] || break
+        need_main=true
     done
     if [ $found = no ]; then
           echo "Import file $i not found."
