@@ -468,7 +468,7 @@ public:
     /// Return the underlying SOCK object (which is currently in use!)
     /// Don't call this method unless you absolutely need it and know what
     /// you are doing;  otherwise, the stream can easily become corrupted.
-    SOCK GetSOCK(void) const { return *m_SockPtr; }
+    SOCK GetSOCK(void) const { return m_SockPtr ? *m_SockPtr : 0; }
 
 protected:
     SOCK* m_SockPtr;

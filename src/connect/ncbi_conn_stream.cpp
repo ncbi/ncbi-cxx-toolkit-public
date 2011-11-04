@@ -157,12 +157,10 @@ void CConn_IOStream::x_Cleanup(void)
 }
 
 
-static CONNECTOR x_SC(CONNECTOR socket_connector, SOCK*&    sock)
+static CONNECTOR x_SC(CONNECTOR socket_connector, SOCK*& sockptr)
 {
-    if (socket_connector) {
-        // HACK * HACK * HACK
-        sock = (SOCK*) socket_connector->handle;
-    }
+    // HACK * HACK * HACK
+    sockptr = socket_connector ? (SOCK*) socket_connector->handle : 0;
     return socket_connector;
 }
 
