@@ -394,7 +394,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                                "DuplicateHandle(stderr) failed");
                 }
             }
-        } else if ( IS_SET(create_flags, CPipe::fStderr_StdOut) ) {
+        } else if ( IS_SET(create_flags, CPipe::fStdErr_StdOut) ) {
             child_stderr = child_stdout;
         }
 
