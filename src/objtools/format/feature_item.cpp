@@ -1220,7 +1220,9 @@ void CFeatureItem::x_AddQualPseudo(
 {
     if ( !pseudo || 
         subtype == CSeqFeatData::eSubtype_repeat_region ||
-        subtype == CSeqFeatData::eSubtype_mobile_element ) 
+        subtype == CSeqFeatData::eSubtype_mobile_element ||
+        subtype == CSeqFeatData::eSubtype_centromere ||
+        subtype == CSeqFeatData::eSubtype_telomere ) 
     {
         return;
     }
@@ -2458,7 +2460,10 @@ void CFeatureItem::x_AddQuals(
     CConstRef<CSeq_feat> gene_feat;
 
     const bool gene_forbidden_if_genbank = 
-        (subtype == CSeqFeatData::eSubtype_repeat_region || subtype == CSeqFeatData::eSubtype_mobile_element);
+        ( subtype == CSeqFeatData::eSubtype_repeat_region || 
+          subtype == CSeqFeatData::eSubtype_mobile_element ||
+          subtype == CSeqFeatData::eSubtype_centromere ||
+          subtype == CSeqFeatData::eSubtype_telomere );
     if ( type != CSeqFeatData::e_Gene &&
          subtype != CSeqFeatData::eSubtype_operon &&
          subtype != CSeqFeatData::eSubtype_gap && 
@@ -3797,8 +3802,10 @@ void CFeatureItem::x_AddQualsGene(
         // these bool vars just break up the if-statement to make it easier to understand
         const bool is_type_where_allele_from_gene_forbidden = (subtype == CSeqFeatData::eSubtype_variation);
         const bool is_type_where_allele_from_gene_forbidden_except_with_embl_or_ddbj = 
-            (subtype == CSeqFeatData::eSubtype_repeat_region ||
-            subtype == CSeqFeatData::eSubtype_mobile_element);
+            ( subtype == CSeqFeatData::eSubtype_repeat_region ||
+              subtype == CSeqFeatData::eSubtype_mobile_element || 
+              subtype == CSeqFeatData::eSubtype_centromere ||
+              subtype == CSeqFeatData::eSubtype_telomere );
         const bool is_embl_or_ddbj = ( GetContext()->IsEMBL() || GetContext()->IsDDBJ() );
         if ( ! is_type_where_allele_from_gene_forbidden && 
              ( is_embl_or_ddbj || ! is_type_where_allele_from_gene_forbidden_except_with_embl_or_ddbj ) ) 

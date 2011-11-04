@@ -88,6 +88,7 @@ static const SImportEntry kImportTable[] = {
     { "V_segment",           CSeqFeatData::eSubtype_V_segment },
     { "allele",              CSeqFeatData::eSubtype_allele },
     { "attenuator",          CSeqFeatData::eSubtype_attenuator },
+    { "centromere",          CSeqFeatData::eSubtype_centromere },
     { "conflict",            CSeqFeatData::eSubtype_conflict },
     { "enhancer",            CSeqFeatData::eSubtype_enhancer },
     { "exon",                CSeqFeatData::eSubtype_exon },
@@ -124,6 +125,7 @@ static const SImportEntry kImportTable[] = {
     { "site_ref",            CSeqFeatData::eSubtype_site_ref },
     { "source",              CSeqFeatData::eSubtype_source },
     { "stem_loop",           CSeqFeatData::eSubtype_stem_loop },
+    { "telomere",            CSeqFeatData::eSubtype_telomere },
     { "terminator",          CSeqFeatData::eSubtype_terminator },
     { "transit_peptide",     CSeqFeatData::eSubtype_transit_peptide },
     { "unsure",              CSeqFeatData::eSubtype_unsure },
@@ -537,7 +539,9 @@ static const SSubtypeInfo s_subtype_info[] = {
     SUBTYPE_INFO(             e_Clone,                 eSubtype_clone,  97),
     SUBTYPE_INFO(         e_Variation,         eSubtype_variation_ref,  98),
     SUBTYPE_INFO(               e_Imp,        eSubtype_mobile_element,  99),
-    SUBTYPE_INFO(           e_not_set,                   eSubtype_max, 100),
+    SUBTYPE_INFO(               e_Imp,            eSubtype_centromere, 100),
+    SUBTYPE_INFO(               e_Imp,              eSubtype_telomere, 101),
+    SUBTYPE_INFO(           e_not_set,                   eSubtype_max, 102),
     SUBTYPE_INFO(           e_not_set,                   eSubtype_any, 255)
 };
 static const size_t s_subtype_count =
@@ -2494,6 +2498,27 @@ START_SUBTYPE(variation_ref)
     ADD_QUAL(replace);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
+END_SUBTYPE
+
+START_SUBTYPE(centromere)
+    ADD_QUAL(citation);
+    ADD_QUAL(db_xref);
+    ADD_QUAL(experiment);
+    ADD_QUAL(inference);
+    ADD_QUAL(note);
+    ADD_QUAL(standard_name);
+END_SUBTYPE
+
+START_SUBTYPE(telomere)
+    ADD_QUAL(citation);
+    ADD_QUAL(db_xref);
+    ADD_QUAL(experiment);
+    ADD_QUAL(inference);
+    ADD_QUAL(note);
+    ADD_QUAL(rpt_type);
+    ADD_QUAL(rpt_unit_range);
+    ADD_QUAL(rpt_unit_seq);
+    ADD_QUAL(standard_name);
 END_SUBTYPE
 
 #undef START_SUBTYPE

@@ -207,7 +207,9 @@ public:
         eSubtype_clone              = 97,
         eSubtype_variation_ref      = 98, //< new variation (data.variant)
         eSubtype_mobile_element     = 99,
-        eSubtype_max                = 100,
+        eSubtype_centromere         = 100,
+        eSubtype_telomere           = 101,
+        eSubtype_max                = 102,
         eSubtype_any                = 255
     };
     ESubtype GetSubtype(void) const;
