@@ -1380,9 +1380,11 @@ string CDeflineGenerator::x_TitleFromProtein (
     taxname = m_Taxname;
 
     if (m_Genome >= NCBI_GENOME(chloroplast) && m_Genome <= NCBI_GENOME(chromatophore)) {
-        string organelle = s_proteinOrganellePrefix [m_Genome];
+        CTempString organelle(s_proteinOrganellePrefix [m_Genome]);
         if (! organelle.empty() && ! taxname.empty() && taxname.find(organelle) == NPOS) {
-            result += " (" + organelle + ")";
+            result += " (";
+            result += organelle;
+            result += ")";
         }
     }
 
