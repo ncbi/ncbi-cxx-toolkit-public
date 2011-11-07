@@ -223,12 +223,12 @@ void CCompressionUtil::StoreUI4(void* buffer, unsigned long value)
     }
 }
 
-Uint4 CCompressionUtil::GetUI4(void* buffer)
+Uint4 CCompressionUtil::GetUI4(const void* buffer)
 {
     if ( !buffer ) {
         NCBI_THROW(CCoreException, eInvalidArg, "Incorrect buffer pointer");
     }
-    unsigned char* buf = (unsigned char*)buffer;
+    const unsigned char* buf = (const unsigned char*)buffer;
     Uint4 value = 0;
     for (int i = 3; i >= 0; i--) {
         value <<= 8;
@@ -252,12 +252,12 @@ void CCompressionUtil::StoreUI2(void* buffer, unsigned long value)
     buf[1] = (unsigned char)(value & 0xff);
 }
 
-Uint2 CCompressionUtil::GetUI2(void* buffer)
+Uint2 CCompressionUtil::GetUI2(const void* buffer)
 {
     if ( !buffer ) {
         NCBI_THROW(CCoreException, eInvalidArg, "Incorrect buffer pointer");
     }
-    unsigned char* buf = (unsigned char*)buffer;
+    const unsigned char* buf = (const unsigned char*)buffer;
     Uint2 value = buf[1];
     value <<= 8;
     value += buf[0];
