@@ -1195,7 +1195,8 @@ Remove-descriptor-action ::= SEQUENCE {
 Autodef-list-type ::= ENUMERATED {
   feature-list (1) ,
   complete-sequence (2) ,
-  complete-genome (3) }
+  complete-genome (3) ,
+  sequence (4) }
   
 Autodef-action ::= SEQUENCE {
   modifiers SET OF Source-qual OPTIONAL ,
@@ -1277,6 +1278,14 @@ Update-sequences-action ::= SEQUENCE {
   filename VisibleString ,
   add-cit-subs BOOLEAN DEFAULT FALSE }
 
+Create-TSA-ids-src ::= CHOICE {
+  local-id NULL ,
+  defline Text-portion
+}
+
+Create-TSA-ids-action ::= SEQUENCE {
+  src Create-TSA-ids-src ,
+  suffix VisibleString OPTIONAL }  
 
 Macro-action-choice ::= CHOICE {
   aecr AECR-action ,
@@ -1308,7 +1317,8 @@ Macro-action-choice ::= CHOICE {
   fix-author Author-fix-action ,
   update-sequences Update-sequences-action ,
   add-trans-splicing NULL ,
-  remove-invalid-ecnumbers NULL }
+  remove-invalid-ecnumbers NULL ,
+  create-tsa-ids Create-TSA-ids-action }
 
 
 Macro-action-list ::= SET OF Macro-action-choice
