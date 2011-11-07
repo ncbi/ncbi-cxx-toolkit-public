@@ -613,6 +613,9 @@ static bool s_RoleFitsSubset(int role, CGC_Assembly::ESubset subset)
     case CGC_Assembly::eTopLevel:
         return role == eGC_SequenceRole_top_level;
 
+    case CGC_Assembly::eSubmitterPseudoScaffold:
+        return role == eGC_SequenceRole_submitter_pseudo_scaffold;
+
     default:
         NCBI_THROW(CException, eUnknown,
                    "Unexpected subset in call to CGC_Assembly::GetMolecules()");
