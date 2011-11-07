@@ -1783,7 +1783,7 @@ const string& CValidErrItem::ConvertErrGroup(unsigned int err_int)
 
 const string& CValidErrItem::GetErrGroup(void) const
 {
-    return ConvertErrCode(GetErrIndex());
+    return ConvertErrGroup(GetErrIndex());
 }
 
 
