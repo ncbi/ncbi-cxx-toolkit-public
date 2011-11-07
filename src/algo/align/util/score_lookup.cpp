@@ -143,6 +143,39 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 
+class CScore_FrameShifts : public CScoreLookup::IScore
+{
+public:
+    CScore_FrameShifts(int row = -1)
+        : m_Row(row)
+    {
+    }
+
+    virtual EComplexity GetComplexity() const { return eEasy; };
+
+    virtual bool IsInteger() const { return true; };
+
+    virtual double Get(const CSeq_align& align, CScope*) const
+    {
+        return align.GetNumFrameshifts(m_Row);
+    }
+
+    virtual void PrintHelp(CNcbiOstream& ostr) const
+    {
+        ostr << "Number of frame shifts";
+        if (m_Row == 0) {
+            ostr << " in query";
+        } else if(m_Row == 1) {
+            ostr << " in subject";
+        }
+    }
+
+private:
+    int m_Row;
+};
+
+/////////////////////////////////////////////////////////////////////////////
+
 class CScore_LongestGapLength : public CScoreLookup::IScore
 {
 public:
@@ -930,6 +963,18 @@ void CScoreLookup::x_Init()
         (TScoreDictionary::value_type
          ("genomic_gap_length",
           CIRef<IScore>(new CScore_GapCount(true, 1, true))));
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("frame",
+          CIRef<IScore>(new CScore_FrameShifts())));
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("qframe",
+          CIRef<IScore>(new CScore_FrameShifts(0))));
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("sframe",
+          CIRef<IScore>(new CScore_FrameShifts(1))));
     m_Scores.insert
         (TScoreDictionary::value_type
          ("symmetric_overlap",

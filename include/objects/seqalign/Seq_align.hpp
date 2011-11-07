@@ -212,6 +212,11 @@ public:
     /// @throws CSeqalignException if alignment type is not supported
     TSeqPos         GetNumGapOpenings(TDim row = -1) const;
 
+    /// Retrieves the number of times a given row shifts frames; i.e. the number
+    /// of gaps with a length that is not a multiple of 3.
+    /// @throws CSeqalignException if alignment type is not supported
+    TSeqPos         GetNumFrameshifts(TDim row = -1) const;
+
     /// Retrieves the locations of aligned bases in the given row, excluding
     /// gaps and incontinuities
     /// @throws CSeqalignException if alignment type is not supported
