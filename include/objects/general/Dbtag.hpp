@@ -162,6 +162,7 @@ public:
         eDbtagType_VBASE2,
         eDbtagType_VBRC,
         eDbtagType_VectorBase,
+        eDbtagType_Vega,
         eDbtagType_WorfDB,
         eDbtagType_WormBase,
         eDbtagType_Xenbase,
