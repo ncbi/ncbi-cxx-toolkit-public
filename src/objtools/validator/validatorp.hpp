@@ -406,6 +406,7 @@ public:
     void ValidateCitSub(const CCit_sub& cs, const CSerialObject& obj, const CSeq_entry *ctx = 0);
     void ValidateTaxonomy(const CSeq_entry& se); 
     void ValidateSpecificHost (const vector<CConstRef<CSeqdesc> > & src_descs, const vector<CConstRef<CSeq_entry> > & desc_ctxs, const vector<CConstRef<CSeq_feat> > & src_feats);
+    void ValidateTentativeName(const CSeq_entry& se);
     void ValidateTaxonomy(const COrg_ref& org, int genome = CBioSource::eGenome_unknown);
     void ValidateCitations (const CSeq_entry_Handle& seh);
     bool x_IsFarFetchFailure (const CSeq_loc& loc);
@@ -573,6 +574,7 @@ private:
     void FindCollidingSerialNumbers (const CSerialObject& obj);
 
     void GatherSources (const CSeq_entry& se, vector<CConstRef<CSeqdesc> >& src_descs, vector<CConstRef<CSeq_entry> >& desc_ctxs, vector<CConstRef<CSeq_feat> >& src_feats);
+    void GatherTentativeName (const CSeq_entry& se, vector<CConstRef<CSeqdesc> >& usr_descs, vector<CConstRef<CSeq_entry> >& desc_ctxs, vector<CConstRef<CSeq_feat> >& usr_feats);
 
     CLatLonCountryId *x_CalculateLatLonId(float lat_value, float lon_value, string country, string province);
     CLatLonCountryId::TClassificationFlags x_ClassifyLatLonId(CLatLonCountryId *id, string country, string province);

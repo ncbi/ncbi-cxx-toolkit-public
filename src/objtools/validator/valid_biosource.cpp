@@ -45,6 +45,8 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Person_id.hpp>
 #include <objects/general/Name_std.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
 
 #include <objects/seqalign/Seq_align.hpp>
 
@@ -2518,6 +2520,92 @@ void CValidError_imp::ValidateSourceQualTags
 }
 
 
+
+static bool x_HasTentativeName(const CUser_object &user_object)
+{
+    if( ! FIELD_IS_SET_AND_IS(user_object, Type, Str) ||
+        user_object.GetType().GetStr() != "StructuredComment" ) 
+    {
+        return false;
+    }
+
+    FOR_EACH_USERFIELD_ON_USEROBJECT( user_field_iter, user_object ) {
+        const CUser_field &field = **user_field_iter;
+        if( FIELD_IS_SET_AND_IS(field, Label, Str) && FIELD_IS_SET_AND_IS(field, Data, Str) ) {
+            if( GET_FIELD(field.GetLabel(), Str) == "Tentative Name" ) {
+                if( GET_FIELD(field.GetData(), Str) != "not provided" ) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+
+static string x_GetTentativeName(const CUser_object &user_object)
+{
+    if( ! FIELD_IS_SET_AND_IS(user_object, Type, Str) ||
+        user_object.GetType().GetStr() != "StructuredComment" ) 
+    {
+        return "";
+    }
+
+    FOR_EACH_USERFIELD_ON_USEROBJECT( user_field_iter, user_object ) {
+        const CUser_field &field = **user_field_iter;
+        if( FIELD_IS_SET_AND_IS(field, Label, Str) && FIELD_IS_SET_AND_IS(field, Data, Str) ) {
+            if( GET_FIELD(field.GetLabel(), Str) == "Tentative Name" ) {
+                if( GET_FIELD(field.GetData(), Str) != "not provided" ) {
+                    return GET_FIELD(field.GetData(), Str);
+                }
+            }
+        }
+    }
+
+    return "";
+}
+
+
+void CValidError_imp::GatherTentativeName
+(const CSeq_entry& se, 
+ vector<CConstRef<CSeqdesc> >& usr_descs,
+ vector<CConstRef<CSeq_entry> >& desc_ctxs,
+ vector<CConstRef<CSeq_feat> >& usr_feats)
+{
+    // get source descriptors
+    FOR_EACH_DESCRIPTOR_ON_SEQENTRY (it, se) {
+        if ((*it)->IsUser() && x_HasTentativeName((*it)->GetUser())) {
+            CConstRef<CSeqdesc> desc;
+            desc.Reset(*it);
+            usr_descs.push_back(desc);
+            CConstRef<CSeq_entry> r_se;
+            r_se.Reset(&se);
+            desc_ctxs.push_back(r_se);
+        }
+    }
+    // also get features
+    FOR_EACH_ANNOT_ON_SEQENTRY (annot_it, se) {
+        FOR_EACH_SEQFEAT_ON_SEQANNOT (feat_it, **annot_it) {
+            if ((*feat_it)->IsSetData() && (*feat_it)->GetData().IsUser()
+                && x_HasTentativeName((*feat_it)->GetData().GetUser())) {
+                CConstRef<CSeq_feat> feat;
+                feat.Reset(*feat_it);
+                usr_feats.push_back(feat);
+            }
+        }
+    }
+
+    // if set, recurse
+    if (se.IsSet()) {
+        FOR_EACH_SEQENTRY_ON_SEQSET (it, se.GetSet()) {
+            GatherTentativeName (**it, usr_descs, desc_ctxs, usr_feats);
+        }
+    }
+}
+
+
+
 void CValidError_imp::GatherSources
 (const CSeq_entry& se, 
  vector<CConstRef<CSeqdesc> >& src_descs,
@@ -2790,6 +2878,89 @@ void CValidError_imp::ValidateSpecificHost
 }
 
 
+void CValidError_imp::ValidateTentativeName(const CSeq_entry& se)
+{
+    vector<CConstRef<CSeqdesc> > src_descs;
+    vector<CConstRef<CSeq_entry> > desc_ctxs;
+    vector<CConstRef<CSeq_feat> > src_feats;
+
+    GatherTentativeName (se, src_descs, desc_ctxs, src_feats);
+
+    // request list for taxon3
+    vector< CRef<COrg_ref> > org_rq_list;
+
+    // first do descriptors
+    vector<CConstRef<CSeqdesc> >::iterator desc_it = src_descs.begin();
+    vector<CConstRef<CSeq_entry> >::iterator ctx_it = desc_ctxs.begin();
+    while (desc_it != src_descs.end() && ctx_it != desc_ctxs.end()) {
+        const string& taxname = x_GetTentativeName((*desc_it)->GetUser());
+        CRef<COrg_ref> rq(new COrg_ref);
+        rq->SetTaxname(taxname);
+        org_rq_list.push_back(rq);
+
+        ++desc_it;
+        ++ctx_it;
+    }
+
+    // now do features
+    vector<CConstRef<CSeq_feat> >::iterator feat_it = src_feats.begin();
+    while (feat_it != src_feats.end()) {
+        const string& taxname = x_GetTentativeName((*feat_it)->GetData().GetUser());
+        CRef<COrg_ref> rq(new COrg_ref);
+        rq->SetTaxname(taxname);
+        org_rq_list.push_back(rq);
+
+        ++feat_it;
+    }
+
+    if (org_rq_list.size() > 0) {
+        CTaxon3 taxon3;
+        taxon3.Init();
+        CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_rq_list);
+        if (reply) {
+            CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
+
+            // process descriptor responses
+            desc_it = src_descs.begin();
+            ctx_it = desc_ctxs.begin();
+
+            while (reply_it != reply->GetReply().end()
+                   && desc_it != src_descs.end()
+                   && ctx_it != desc_ctxs.end()) {
+                if ((*reply_it)->IsError()) {
+                    string err_str = "?";
+                    if ((*reply_it)->GetError().IsSetMessage()) {
+                        err_str = (*reply_it)->GetError().GetMessage();
+                    }
+                    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadTentativeName, 
+                                "Taxonomy lookup failed with message '" + err_str + "'",
+                                **desc_it, *ctx_it);
+                }
+                ++reply_it;
+                ++desc_it;
+                ++ctx_it;
+            }
+            // process feat responses
+            feat_it = src_feats.begin(); 
+            while (reply_it != reply->GetReply().end()
+                   && feat_it != src_feats.end()) {
+                if ((*reply_it)->IsError()) {
+                    string err_str = "?";
+                    if ((*reply_it)->GetError().IsSetMessage()) {
+                        err_str = (*reply_it)->GetError().GetMessage();
+                    }
+                    PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadTentativeName, 
+                            "Taxonomy lookup failed with message '" + err_str + "'",
+                            **feat_it);
+                }
+                ++reply_it;
+                ++feat_it;
+            }            
+        }
+    }
+}
+
+
 void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
 {
     vector<CConstRef<CSeqdesc> > src_descs;
@@ -2918,6 +3089,7 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
     // Now look at specific-host values
     ValidateSpecificHost (src_descs, desc_ctxs, src_feats);
 
+    ValidateTentativeName (se);
 }
 
 

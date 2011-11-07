@@ -229,6 +229,7 @@ enum EErrType {
     eErr_SEQ_DESCR_LatLonPrecision,
     eErr_SEQ_DESCR_DBLinkProblem,
     eErr_SEQ_DESCR_FinishedStatusForWGS,
+    eErr_SEQ_DESCR_BadTentativeName,
     ERR_CODE_END(SEQ_DESCR),
 
     ERR_CODE_BEGIN(GENERIC) = 2000,

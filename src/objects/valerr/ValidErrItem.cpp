@@ -595,6 +595,10 @@ bio_material/culture_collection/specimen_voucher type.")),
    TErrStrs( "FinishedStatusForWGS",
 "WGS projects should not have the Genome-Assembly-Data structured comment current \
 finishing status set to Finished.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_BadTentativeName,
+   TErrStrs( "BadTentativeName",
+"A structured comment descriptor or feature has a tentative name value that may \
+require a taxonomy consult.")),
 
 /* SEQ_GENERIC */
 
