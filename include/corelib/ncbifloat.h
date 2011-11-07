@@ -60,7 +60,7 @@ extern "C" {
 #   endif
 #endif
 
-#if defined(NCBI_OS_MSWIN)
+#if defined(NCBI_OS_MSWIN)  &&  !defined(isnan)
 /**
  * Define value of isnan (Is Not A Number).
  *
