@@ -105,6 +105,7 @@ public:
         eScaffold,
         eComponent,
         eTopLevel,
+        eSubmitterPseudoScaffold,
         eAll
     };
     /// Retrieve a subset of molecules
@@ -125,7 +126,7 @@ public:
     void Find(const CSeq_id_Handle& id,
               TSequenceList& sequences) const;
 
-    /// Find a single sequence corresponding to the supplied id. 
+    /// Find a single sequence corresponding to the supplied id.
     /// This variant will throw an exception if the sequence occurs more than
     /// once
     CConstRef<CGC_Sequence> Find(const CSeq_id_Handle& id) const;
