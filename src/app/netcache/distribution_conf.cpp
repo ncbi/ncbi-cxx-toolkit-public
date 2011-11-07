@@ -534,8 +534,8 @@ CNCDistributionConf::PrintBlobCopyStat(Uint8 create_time, Uint8 create_server, U
     if (s_CopyDelayLog) {
         Uint8 cur_time = CNetCacheServer::GetPreciseTime();
         fprintf(s_CopyDelayLog,
-                NCBI_BIGCOUNT_FORMAT_SPEC "," NCBI_BIGCOUNT_FORMAT_SPEC
-                "," NCBI_BIGCOUNT_FORMAT_SPEC "," NCBI_BIGCOUNT_FORMAT_SPEC "\n",
+                "%" NCBI_BIGCOUNT_FORMAT_SPEC ",%" NCBI_BIGCOUNT_FORMAT_SPEC
+                ",%" NCBI_BIGCOUNT_FORMAT_SPEC ",%" NCBI_BIGCOUNT_FORMAT_SPEC "\n",
                 TNCBI_BigCount(cur_time), TNCBI_BigCount(create_server),
                 TNCBI_BigCount(write_server), TNCBI_BigCount(cur_time - create_time));
     }

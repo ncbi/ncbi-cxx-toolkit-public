@@ -55,7 +55,6 @@ static const char* kNCStorage_BigPartsParam     = "parts_cnt_big_create";
 static const char* kNCStorage_RewritePartsParam = "parts_cnt_rewrite";
 static const char* kNCStorage_SmallSizeParam    = "small_blob_size_limit";
 static const char* kNCStorage_CntRewritesParam  = "cnt_rewrites_history";
-static const char* kNCStorage_RewriteWeightParam= "rewrite_time_weight";
 static const char* kNCStorage_GCDelayParam      = "gc_delay";
 static const char* kNCStorage_GCBatchParam      = "gc_batch_size";
 static const char* kNCStorage_MaxMetaSizeParam  = "max_metafile_size";
