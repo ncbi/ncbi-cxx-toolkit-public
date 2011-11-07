@@ -650,9 +650,7 @@ static string x_OrganelleName (
             break;
         case NCBI_GENOME(macronuclear):
         {
-            if (! wgs_suffix) {
-                result = "macronuclear";
-            }
+            result = "macronuclear";
             break;
         }
         case NCBI_GENOME(extrachrom):
