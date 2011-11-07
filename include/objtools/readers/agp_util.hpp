@@ -431,10 +431,15 @@ public:
         E_NoValidLines,         // CAgpReader     (Make it a warning?)
         E_SameConseqGaps,
         E_MissingLinkage,       // CAgpRow (v. >= 2.0 )
+        E_ScafBreakingGap,
+
+        E_WithinScafGap,
+        E_UnknownScaf,       // -- agp_validate --
+        E_UnusedScaf,        // -- agp_validate --
         E_Last, E_First=1, E_LastToSkipLine=E_ObjRangeNeComp,
 
         // Warnings.
-        W_GapObjEnd=21,         // CAgpReader
+        W_GapObjEnd=31,         // CAgpReader
         W_GapObjBegin,          // CAgpReader
         W_ConseqGaps,           // CAgpReader
         W_ObjNoComp,            // -- agp_validate --
@@ -470,10 +475,12 @@ public:
         W_NaLinkageExpected, // CAgpRow (v. >= 2.0 )
         W_OldGapType,        // CAgpRow (v. >= 2.0 )
         W_AssumingVersion,   // CAgpRow (v. == auto)
-        W_Last, W_First = 21,
+        W_ScafNotInFull,     // -- agp_validate --
+        //W_ChrGapCount,       // -- agp_validate --
+        W_Last, W_First = 31,
 
         // "GenBank" checks that rely on information about the sequence
-        G_InvalidCompId=51,     // -- agp_validate --
+        G_InvalidCompId=71,     // -- agp_validate --
         G_NotInGenbank,         // -- agp_validate --
         G_NeedVersion,          // -- agp_validate --
         G_CompEndGtLength,      // CAgpRow::CheckComponentEnd() (used in agp_validate)
@@ -604,6 +611,7 @@ public:
     //   other: errors/warnings of one given type
     // 2 arguments: range of int-s
     int CountTotals(int from, int to=E_First);
+    void ResetTotals();
 
     // Print individual error counts (important if we skipped some errors)
     typedef map<int,string> TMapCcodeToString;

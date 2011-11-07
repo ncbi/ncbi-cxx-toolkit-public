@@ -112,13 +112,21 @@ public:
     "  -out FILE  Save the AGP file, adding missing version 1 to the component accessions\n"
     "             (use with -alt).\n"
     "  The above options require that the components are available in GenBank.\n"
+    "\n"
     "  -g         Check that component names look like Nucleotide accessions\n"
     "             (this does not require components to be in GenBank).\n"
     "  -obj       Use FASTA files to read names and lengths of objects (the default is components).\n"
-    "  -un        Enable the checks specific to unplaced/unlocalized single-component scaffolds\n"
-    "             (use the whole component in orientation '+').\n"
     "  -v VER     AGP version (1.1 or 2.0). The default is to choose automatically. 2.0 is chosen\n"
     "             when the linkage evidence (column 9) is not empty in the first gap line encountered.\n"
+    "\n"
+    "  Extra checks specific to an object type:\n"
+    "  -un        Unplaced/unlocalized scaffolds:\n"
+    "             any single-component scaffold must use the whole component in orientation '+'\n"
+    "  -scaf      Scaffold from component AGP: no scaffold-breaking gaps allowed\n"
+    "  -chr       Chromosome from scaffold AGP: ONLY scaffold-breaking gaps allowed\n" //  + -cc
+    "  Specifying the last 2 options in this order: -scaf Scaf_AGP_file(s) -chr Chr_AGP_file(s)\n"
+    "  adds a check that all scaffolds in Scaf_AGP_file(s) are wholly included in Chr_AGP_file(s)\n"
+    //"  -cc        Chromosome from component: check telomere/centromere/short-arm gap counts per chromosome\n"
     "\n"
     "  -list               List error and warning messages.\n"
     "  -limit COUNT        Print only the first COUNT messages of each type.\n"
@@ -145,9 +153,11 @@ void CAgpValidateApplication::Init(void)
   // component_id  checks that involve GenBank: Accession Length Taxid
   arg_desc->AddFlag("alt", "");
 
-  arg_desc->AddFlag("g" , "");
-  arg_desc->AddFlag("obj", "");
-  arg_desc->AddFlag("un", "");
+  arg_desc->AddFlag("g"   , "");
+  arg_desc->AddFlag("obj" , "");
+  arg_desc->AddFlag("un"  , "");
+  arg_desc->AddFlag("scaf", "");
+  arg_desc->AddFlag("chr" , "");
 
   arg_desc->AddFlag("species", "allow components from different subspecies");
 
@@ -183,7 +193,9 @@ void CAgpValidateApplication::Init(void)
 
   // file list for file processing
   arg_desc->AddExtra(0, 1000, "files to be processed",
-                      CArgDescriptions::eInputFile);
+                      CArgDescriptions::eString
+                      //CArgDescriptions::eInputFile
+                      );
   // Setup arg.descriptions for this application
   SetupArgDescriptions(arg_desc.release());
 
@@ -205,6 +217,28 @@ int CAgpValidateApplication::Run(void)
 
   m_reader.m_CheckObjLen=args["obj"].HasValue();
   m_reader.m_unplaced   =args["un" ].HasValue();
+  if(args["chr" ].HasValue() || args["scaf" ].HasValue()) {
+    if( m_reader.m_unplaced  ) {
+      cerr << "Error -- cannot specify -un with -chr/-scaf.\n";
+      exit(1);
+    }
+    if( args["alt"].HasValue() || args["species"].HasValue() ) {
+      cerr << "Error -- cannot specify -chr/-scaf with -alt/-species.\n";
+      exit(1);
+    }
+  }
+  if( args["chr"].HasValue() ) {
+    if( args["scaf"].HasValue() ) {
+      cerr << "Error -- -scaf and -chr must precede different files.\n";
+      exit(1);
+    }
+    m_reader.m_is_chr=true;
+    m_reader.m_explicit_scaf=true;
+  }
+  else if( args["scaf"].HasValue() ) {
+    m_reader.m_explicit_scaf=true;
+  }
+
   if( args["alt"].HasValue() || args["species"].HasValue() ) {
     if(m_reader.m_CheckObjLen) {
       cerr << "Error -- cannot specify -obj with -alt/-species.\n";
@@ -339,21 +373,47 @@ void CAgpValidateApplication::x_ReportFastaSeqCount()
 void CAgpValidateApplication::x_ValidateUsingFiles(
   const CArgs& args)
 {
+  if(m_reader.m_is_chr) {
+    if(m_reader.m_explicit_scaf) {
+      cout << "===== Reading Chromosome from scaffold AGP =====" << endl;
+    }
+    // else: cout << "===== Reading Chromosome from component AGP =====" << endl;
+  }
+  else if(m_reader.m_explicit_scaf) {
+    cout << "===== Reading Scaffold from component AGP =====" << endl;
+  }
   if (args.GetNExtra() == 0) {
       x_ValidateFile(cin);
   }
   else {
     SIZE_TYPE num_fasta_files=0;
-    bool allowFasta=true;
+    bool allowFasta = !m_reader.m_explicit_scaf;
     for (unsigned int i = 1; i <= args.GetNExtra(); i++) {
 
-      m_CurrentFileName =
-          args['#' + NStr::IntToString(i)].AsString();
+      m_CurrentFileName = args['#' + NStr::IntToString(i)].AsString();
+      if(m_CurrentFileName=="-chr") {
+        if(m_reader.m_is_chr) {
+          cerr << "Error -- second -chr is not supported.\n";
+          exit(1);
+        }
+        if(!m_reader.m_explicit_scaf) {
+          cerr << "Error -- -chr after a file, but no preceding-scaf. Expecting:\n"
+               << "    -scaf Scaffold_AGP_file(s) -chr Chromosome_AGP_file(s)\n";
+          exit(1);
+        }
 
-      CNcbiIstream& istr =
-          args['#' + NStr::IntToString(i)].AsInputFile();
+        m_reader.PrintTotals();
+        m_reader.Reset(true);
+        agpErr.ResetTotals();
+
+        cout << "\n===== Reading Chromosome from scaffold AGP =====" << endl;
+        continue;
+      }
+
+      //CNcbiIstream& istr = args['#' + NStr::IntToString(i)].AsInputFile();
+      CNcbiIfstream istr(m_CurrentFileName.c_str());
       if (!istr) {
-          cerr << "Unable to open file : " << m_CurrentFileName;
+          cerr << "Error -- unable to open file : " << m_CurrentFileName << "\n";
           exit (1);
       }
 
@@ -372,7 +432,6 @@ void CAgpValidateApplication::x_ValidateUsingFiles(
         allowFasta=false;
       }
 
-      args['#' + NStr::IntToString(i)].CloseFile();
     }
     if(num_fasta_files==args.GetNExtra()) {
       //cerr << "No AGP files."; exit (1);

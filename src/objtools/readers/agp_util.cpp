@@ -64,6 +64,18 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "no valid AGP lines",
     "consequtive gaps lines with the same type and linkage",
     "missing linkage evidence (column 9) (AGP 2.0)",
+    "in \"Scaffold from component\" file, invalid scaffold-breaking gap",
+
+    "in \"Chromosome from scaffold\" file, invalid \"within-scaffold\" gap",
+    "scaffold X was not defined in any of \"Scaffold from component\" files",
+    "scaffold X is not used in any of \"Chromosome from scaffold\" files",
+    kEmptyCStr, //"expecting X gaps per chromosome", // => expecting {2 telomere,1 centromere,not more than 1 short_arm)..., found 3
+    kEmptyCStr,
+
+    kEmptyCStr,
+    kEmptyCStr,
+    kEmptyCStr,
+    kEmptyCStr,
     kEmptyCStr, // E_Last
 
     // Content Warnings
@@ -115,8 +127,20 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "linkage (column 9) should be 'na' for a gap with linkage 'no' (AGP 2.0)",
     "old gap type; not used in AGP 2.0",
     "assuming AGP version X",
+    "in \"Chromosome from scaffold\" file, scaffold is not used in full",
+    kEmptyCStr,  // W_Last
+
     kEmptyCStr,
-    kEmptyCStr, // W_Last
+    kEmptyCStr,
+    kEmptyCStr,
+    kEmptyCStr,
+    kEmptyCStr,
+
+    kEmptyCStr,
+    kEmptyCStr,
+    kEmptyCStr,
+    kEmptyCStr,
+    kEmptyCStr,
 
     // GenBank-related errors
     "invalid component_id",
@@ -1108,8 +1132,8 @@ CAgpErrEx::CAgpErrEx(CNcbiOstream* out) : m_out(out)
 
     m_two_lines_involved=false;
 
-    memset(m_MsgCount , 0, sizeof(m_MsgCount ));
     memset(m_MustSkip , 0, sizeof(m_MustSkip ));
+    ResetTotals();
     // errors that are "silenced" by default (only the count is printed)
     m_MustSkip[W_GapLineMissingCol9]=true;
     m_MustSkip[W_ExtraTab          ]=true;
@@ -1140,6 +1164,11 @@ CAgpErrEx::CAgpErrEx(CNcbiOstream* out) : m_out(out)
 
 
 //// class CAgpErrEx - non-static functions
+void CAgpErrEx::ResetTotals()
+{
+    memset(m_MsgCount, 0, sizeof(m_MsgCount));
+}
+
 void CAgpErrEx::Msg(int code, const string& details, int appliesTo)
 {
     // Ignore a possibly spurious errors generated after

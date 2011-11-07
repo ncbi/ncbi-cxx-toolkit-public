@@ -1,0 +1,348 @@
+===== Reading Scaffold from component AGP =====
+
+10:chrY	3044	53043	2	N	50000	contig	no	
+	WARNING: assuming AGP version 1.1 since linkage evidence (column 9) is empty
+	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
+
+12:chrY	3423628	3473627	4	N	50000	contig	no	
+	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
+
+14:chrY	3565955	3615954	6	N	50000	contig	no	
+	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
+
+16:chrY	3623105	3673104	8	N	50000	contig	no	
+	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
+
+18:chrY	3678683	3728682	10	N	50000	contig	no	
+	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
+
+20:chrY	3806629	3856628	12	N	50000	contig	no	
+	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
+
+22:chrY	5456405	5506404	14	N	50000	contig	no	
+	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
+
+24:chrY	6934573	6984572	16	N	50000	contig	no	
+	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
+
+26:chrY	7000632	7050631	18	N	50000	contig	no	
+	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
+
+28:chrY	7053382	7103381	20	N	50000	contig	no	
+	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
+
+30:chrY	7107651	7157650	22	N	50000	contig	no	
+	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
+
+32:chrY	8286154	8336153	24	N	50000	contig	no	
+	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
+
+34:chrY	8469375	8519374	26	N	50000	contig	no	
+	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
+
+36:chrY	8619860	8669859	28	N	50000	contig	no	
+	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
+
+38:chrY	9049335	9099334	30	N	50000	contig	no	
+	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
+
+40:chrY	9636536	9686535	32	N	50000	contig	no	
+	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
+
+42:chrY	9716129	9766128	34	N	50000	contig	no	
+	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
+
+44:chrY	9771186	9821185	36	N	50000	contig	no	
+	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
+
+46:chrY	10128961	10178960	38	N	50000	contig	no	
+	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
+
+48:chrY	10194984	10244983	40	N	50000	contig	no	
+	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
+
+50:chrY	10901301	10951300	42	N	50000	contig	no	
+	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
+
+52:chrY	10955352	11005351	44	N	50000	contig	no	
+	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
+
+22 errors, 1 warning.
+  Count Code  Description
+     22  e20  in "Scaffold from component" file, invalid scaffold-breaking gap
+      1  w58  assuming AGP version X
+
+
+Objects                :  1
+- with single component:  0
+
+Scaffolds              : 23
+- with single component: 23
+
+Components                   : 23 (W)
+  orientation +              : 20
+  orientation -              :  0
+  orientation ? (formerly 0) :  3
+  orientation na             :  0
+
+Gaps                   : 22 (N)
+- do not break scaffold:  0
+- break it, linkage no : 22
+	contig         : 22
+
+Object names:  1
+  chrY      :  1
+
+Component names      :  23
+  EG1_scaffold[1..23]:  23
+
+#Comment line count    : 8
+===== Reading Chromosome from scaffold AGP =====
+
+9:EG1_scaffold2	40449	40548	2	N	100	fragment	yes	
+	WARNING: assuming AGP version 1.1 since linkage evidence (column 9) is empty
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+11:EG1_scaffold2	117530	117629	4	N	100	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+13:EG1_scaffold2	145299	145398	6	N	100	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+15:EG1_scaffold2	148351	148450	8	N	100	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+17:EG1_scaffold2	152600	152699	10	N	100	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+19:EG1_scaffold2	158608	162958	12	N	4351	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+21:EG1_scaffold2	172477	172576	14	N	100	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+23:EG1_scaffold2	213230	213329	16	N	100	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+25:EG1_scaffold2	226467	226865	18	N	399	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+27:EG1_scaffold2	229868	230572	20	N	705	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+29:EG1_scaffold2	231749	232473	22	N	725	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+31:EG1_scaffold2	233676	233714	24	N	39	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+33:EG1_scaffold2	234926	248073	26	N	13148	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+35:EG1_scaffold2	1659548	1679066	28	N	19519	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+37:EG1_scaffold2	1683167	1683266	30	N	100	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+39:EG1_scaffold2	1688351	1690923	32	N	2573	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+41:EG1_scaffold2	1710574	1719568	34	N	8995	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+43:EG1_scaffold2	1799080	1799378	36	N	299	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+45:EG1_scaffold2	2333085	2333238	38	N	154	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+47:EG1_scaffold2	2536978	2561015	40	N	24038	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+49:EG1_scaffold2	2740900	2740999	42	N	100	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+51:EG1_scaffold2	2743992	2744311	44	N	320	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+53:EG1_scaffold2	2763866	2763965	46	N	100	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+55:EG1_scaffold2	2770884	2773727	48	N	2844	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+57:EG1_scaffold2	2920237	2920336	50	N	100	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+59:EG1_scaffold2	3249599	3249851	52	N	253	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+61:EG1_scaffold2	3292149	3292316	54	N	168	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+63:EG1_scaffold2	3298642	3299910	56	N	1269	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+69:EG1_scaffold6	4591	4781	2	N	191	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+72:EG1_scaffold7	1021538	1028000	2	N	6463	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+74:EG1_scaffold7	1427728	1427827	4	N	100	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+76:EG1_scaffold7	1443907	1473481	6	N	29575	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+78:EG1_scaffold7	1478789	1485892	8	N	7104	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+80:EG1_scaffold7	1490312	1519211	10	N	28900	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+82:EG1_scaffold7	1523062	1523161	12	N	100	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+84:EG1_scaffold7	1542096	1542770	14	N	675	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+86:EG1_scaffold7	1548619	1575002	16	N	26384	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+88:EG1_scaffold7	1596376	1596684	18	N	309	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+91:EG1_scaffold8	1926	9512	2	N	7587	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+93:EG1_scaffold8	285398	285563	4	N	166	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+95:EG1_scaffold8	1072951	1073050	6	N	100	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+98:EG1_scaffold9	5126	13025	2	N	7900	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+103:EG1_scaffold12	123771	125913	2	N	2143	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+105:EG1_scaffold12	673966	674065	4	N	100	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+107:EG1_scaffold12	704956	705055	6	N	100	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+110:EG1_scaffold13	72930	115319	2	N	42390	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+113:EG1_scaffold14	1517	1616	2	N	100	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+115:EG1_scaffold14	7839	10391	4	N	2553	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+117:EG1_scaffold14	12920	13055	6	N	136	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+119:EG1_scaffold14	14869	15013	8	N	145	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+121:EG1_scaffold14	16325	16564	10	N	240	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+123:EG1_scaffold14	17885	18191	12	N	307	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+125:EG1_scaffold14	21947	32415	14	N	10469	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+127:EG1_scaffold14	88966	95305	16	N	6340	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+131:EG1_scaffold16	203039	207736	2	N	4698	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+133:EG1_scaffold16	215712	222719	4	N	7008	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+135:EG1_scaffold16	225745	225844	6	N	100	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+137:EG1_scaffold16	228870	233098	8	N	4229	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+139:EG1_scaffold16	258890	258989	10	N	100	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+141:EG1_scaffold16	265090	265252	12	N	163	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+143:EG1_scaffold16	284225	285963	14	N	1739	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+145:EG1_scaffold16	289814	290554	16	N	741	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+147:EG1_scaffold16	323280	325500	18	N	2221	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+149:EG1_scaffold16	332522	335435	20	N	2914	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+151:EG1_scaffold16	343411	367568	22	N	24158	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+153:EG1_scaffold16	429037	429389	24	N	353	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+160:EG1_scaffold21	94671	105789	2	N	11119	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+162:EG1_scaffold21	139902	141260	4	N	1359	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+164:EG1_scaffold21	242058	258444	6	N	16387	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+166:EG1_scaffold21	262064	262163	8	N	100	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+168:EG1_scaffold21	264957	272037	10	N	7081	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+170:EG1_scaffold21	342399	343694	12	N	1296	fragment	yes	
+	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+
+72 errors, 1 warning.
+  Count Code  Description
+     72  e21  in "Chromosome from scaffold" file, invalid "within-scaffold" gap
+      1  w58  assuming AGP version X
+
+
+Objects                : 23
+- with single component: 13
+
+Scaffolds              : 23
+- with single component: 13
+
+Components                   : 95 (W)
+  orientation +              : 81
+  orientation -              : 14
+  orientation ? (formerly 0) :  0
+  orientation na             :  0
+
+Gaps                   : 72 (N)
+- do not break scaffold: 72
+  fragment, linkage yes: 72
+- break it, linkage no :  0
+
+Object names         :  23
+  EG1_scaffold[1..23]:  23
+
+Component names             :  95
+  AADB[02037551..02037645].1:  95
+
+#Comment line count    : 6

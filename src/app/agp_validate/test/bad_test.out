@@ -205,15 +205,15 @@
       1  e15  'na' or ? (formerly 0) component orientation may only be used in a singleton scaffold
       5  e16  object_beg != previous object_end + 1
       2  e18  consequtive gaps lines with the same type and linkage
-      1  w21  gap at the end of object 
-      1  w24  no components in object
-      4  w25  the span overlaps a previous span for this component
-      2  w26  component span appears out of order
-      4  w27  duplicate component with non-draft type
-      1  w30  extra tab or space at the end of line
-      2  w35  component_id looks like a WGS accession, component_type is not W
+      1  w31  gap at the end of object 
+      1  w34  no components in object
+      4  w35  the span overlaps a previous span for this component
+      2  w36  component span appears out of order
+      4  w37  duplicate component with non-draft type
+      1  w40  extra tab or space at the end of line
+      2  w45  component_id looks like a WGS accession, component_type is not W
          (Use -g to print lines with WGS component_id/component_type mismatch.)
-      1  w48  assuming AGP version X
+      1  w58  assuming AGP version X
 
 NOTE: 37 invalid lines were skipped (not subjected to all the checks, not included in most of the counts below).
 
@@ -225,11 +225,11 @@ Scaffolds              : 18
 - with single component:  5
 ***no components, gaps only: 2
 
-Components             : 103 (W:89, F:10, D:2, O:1, P:1)
-	orientation +              : 82
-	orientation -              : 19
-	orientation ? (formerly 0) :  1
-	orientation na             :  1
+Components                   : 103 (W:89, F:10, D:2, O:1, P:1)
+  orientation +              : 82
+  orientation -              : 19
+  orientation ? (formerly 0) :  1
+  orientation na             :  1
 
 Gaps                   : 90 (N)
 - do not break scaffold: 79

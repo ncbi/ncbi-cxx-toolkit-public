@@ -24,9 +24,9 @@ Components with incorrect taxids:
 7 lines with valid component accessions.
 16 errors, 10 not printed:
   Count Code  Description
-     10  w31  gap line missing column 9 (null)
-      1  w48  assuming AGP version X
-      1  g51  invalid component_id
-      2  g52  component_id not in GenBank
-      1  g53  component_id X is ambiguous without an explicit version
-      1  g54  component_end greater than sequence length
+     10  w41  gap line missing column 9 (null)
+      1  w58  assuming AGP version X
+      1  g71  invalid component_id
+      2  g72  component_id not in GenBank
+      1  g73  component_id X is ambiguous without an explicit version
+      1  g74  component_end greater than sequence length

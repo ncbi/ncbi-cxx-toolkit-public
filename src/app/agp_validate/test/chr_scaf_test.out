@@ -1,0 +1,68 @@
+===== Reading Chromosome from scaffold AGP =====
+
+10:chrY	3044	53043	2	N	50000	contig	no	
+	WARNING: assuming AGP version 1.1 since linkage evidence (column 9) is empty
+
+No errors, 1 warning.
+  Count Code  Description
+      1  w58  assuming AGP version X
+
+
+Objects                :  1
+- with single component:  0
+
+Scaffolds              : 23
+- with single component: 23
+
+Components                   : 23 (W)
+  orientation +              : 20
+  orientation -              :  0
+  orientation ? (formerly 0) :  3
+  orientation na             :  0
+
+Gaps                   : 22 (N)
+- do not break scaffold:  0
+- break it, linkage no : 22
+	contig         : 22
+
+Object names:  1
+  chrY      :  1
+
+Component names      :  23
+  EG1_scaffold[1..23]:  23
+
+#Comment line count    : 8
+===== Reading Scaffold from component AGP =====
+
+9:EG1_scaffold2	40449	40548	2	N	100	fragment	yes	
+	WARNING: assuming AGP version 1.1 since linkage evidence (column 9) is empty
+
+No errors, 1 warning.
+  Count Code  Description
+      1  w58  assuming AGP version X
+
+
+Objects                : 23
+- with single component: 13
+
+Scaffolds              : 23
+- with single component: 13
+
+Components                   : 95 (W)
+  orientation +              : 81
+  orientation -              : 14
+  orientation ? (formerly 0) :  0
+  orientation na             :  0
+
+Gaps                   : 72 (N)
+- do not break scaffold: 72
+  fragment, linkage yes: 72
+- break it, linkage no :  0
+
+Object names         :  23
+  EG1_scaffold[1..23]:  23
+
+Component names             :  95
+  AADB[02037551..02037645].1:  95
+
+#Comment line count    : 6

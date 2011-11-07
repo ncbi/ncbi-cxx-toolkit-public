@@ -18,9 +18,9 @@
 
 No errors, 8 warnings.
   Count Code  Description
-      4  w25  the span overlaps a previous span for this component
-      2  w40  in unplaced singleton scaffold, component is not used in full
-      2  w41  in unplaced singleton scaffold, component orientation is not "+"
+      4  w35  the span overlaps a previous span for this component
+      2  w50  in unplaced singleton scaffold, component is not used in full
+      2  w51  in unplaced singleton scaffold, component orientation is not "+"
 
 
 Objects                : 5
@@ -29,11 +29,11 @@ Objects                : 5
 Scaffolds              : 5
 - with single component: 5
 
-Components             : 5 (W)
-	orientation +              : 3
-	orientation -              : 1
-	orientation ? (formerly 0) : 0
-	orientation na             : 1
+Components                   : 5 (W)
+  orientation +              : 3
+  orientation -              : 1
+  orientation ? (formerly 0) : 0
+  orientation na             : 1
 
 Gaps                   : 0
 

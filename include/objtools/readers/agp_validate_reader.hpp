@@ -143,12 +143,24 @@ public:
 class NCBI_XOBJREAD_EXPORT CAgpValidateReader : public CAgpReader
 {
 public:
+
+  // false: called from constructor
+  // true : after finishing with scaf-fronm-ctg files, before starting with chr-from-scaf
+  void Reset(bool for_chr_from_scaf=false);
+
   CAgpValidateReader(CAgpErrEx& agpErr, CMapCompLen& comp2len); // , bool checkCompNames=false);
   virtual ~CAgpValidateReader();
   void PrintTotals();
   bool m_CheckCompNames;
-  bool m_CheckObjLen; // false: check compoment lengths
+  bool m_CheckObjLen; // false: check component lengths
   bool m_unplaced;    // check that singleton components are in '+' orientation
+
+  bool m_is_chr, m_explicit_scaf;
+  // false false - no extra checks
+  // true  false - check telomer/centromer/short_arm counts [-cc; not implemented]
+  // false true  - no breaking gaps allowed
+  // true true   - no within-scaffold gaps allowed
+  // to do: E_UnusedScaf
 
 protected:
   void x_PrintTotals(); // without comment counts
@@ -178,7 +190,8 @@ protected:
   CAccPatternCounter::TDoubleVec* m_obj_id_digits;
   CAccPatternCounter::TDoubleVec* m_prev_id_digits;
 
-  CMapCompLen& m_comp2len; // for optional check of component lengths (or maybe object lengths)
+  CMapCompLen* m_comp2len; // for optional check of component lengths (or maybe object lengths)
+  CMapCompLen m_scaf2len;  // for: -scaf Scaf_AGP_file(s) -chr Chr_AGP_file(s)
   int m_expected_obj_len;
   int m_comp_name_matches;
   int m_obj_name_matches;

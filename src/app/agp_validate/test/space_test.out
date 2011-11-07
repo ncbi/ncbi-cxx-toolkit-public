@@ -20,7 +20,7 @@
 4 errors, 2 warnings.
   Count Code  Description
       4  e01  expecting 9 tab-separated columns
-      2  w43  space in object name 
+      2  w53  space in object name 
 
 NOTE: 4 invalid lines were skipped (not subjected to all the checks, not included in most of the counts below).
 
@@ -31,11 +31,11 @@ Objects                : 3
 Scaffolds              : 3
 - with single component: 0
 
-Components             : 6 (W)
-	orientation +              : 0
-	orientation -              : 6
-	orientation ? (formerly 0) : 0
-	orientation na             : 0
+Components                   : 6 (W)
+  orientation +              : 0
+  orientation -              : 6
+  orientation ? (formerly 0) : 0
+  orientation na             : 0
 
 Gaps                   : 0
 
