@@ -38,6 +38,8 @@ Contents: Printer for standard multiple sequence alignmnet formats
 #include <ncbi_pch.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/seq/Seq_descr.hpp>
 #include <objtools/align_format/aln_printer.hpp>
 
 USING_NCBI_SCOPE;
@@ -53,6 +55,44 @@ static void s_ReplaceNonAlphaNum(string& str)
         }
     }
 }
+
+// Get sequence title from Bioseq
+static string s_GetTitle(const CBioseq_Handle& bhandle)
+{
+    string retval;
+    ITERATE(CSeq_descr::Tdata, it, bhandle.GetDescr().Get()) {
+        if ((*it)->IsTitle()) {
+            if (!retval.empty()) {
+                retval += " ";
+            }
+            retval += (*it)->GetTitle();
+        }
+    }
+    return retval;
+}
+
+// Get sequence label for Phylip formats, returns either sequence title or
+// Seq-id
+static string s_GetLabel(const CBioseq_Handle& bhandle)
+{
+    CConstRef<CSeq_id> id = bhandle.GetSeqId();
+
+    // for local id with text content, return content
+    if (id->IsLocal() && id->GetLocal().IsStr()) {
+        string label;
+        id->GetLabel(&label, CSeq_id::eContent);
+        return label;
+    }
+    
+    // otherwise return title or Seq-id if the title is empty
+    string retval = s_GetTitle(bhandle);
+    if (retval.empty()) {
+        retval = id->AsFastaString();
+    }
+
+    return retval;
+}
+
 
 CMultiAlnPrinter::CMultiAlnPrinter(const CSeq_align& seqalign,
                                    CScope& scope,
@@ -104,8 +144,35 @@ void CMultiAlnPrinter::x_PrintFastaPlusGaps(CNcbiOstream& ostr)
                                                  CScope::eGetBioseq_All);
 
         ostr << ">";
-        bhandle.GetSeqId()->WriteAsFasta(ostr);
-        ostr << " " << sequence::GetTitle(bhandle) << NcbiEndl;
+        CConstRef<CSeq_id> id = bhandle.GetSeqId();
+        // if Seq-id is local, then ...
+        if (id->IsLocal()) {
+            // ... for numeric ids print full Seq-id
+            if (id->GetLocal().IsId()) {
+                ostr << id->AsFastaString();
+            }
+            else {
+                // ... for text ids, print only content
+                string label;
+                id->GetLabel(&label, CSeq_id::eContent);
+                ostr << label;
+            }
+        }
+        else {
+            // for non-local Seq-ids, print all Seq-ids from Bioseq
+            const vector<CSeq_id_Handle>& ids = bhandle.GetId();
+            ITERATE (vector<CSeq_id_Handle>, it, ids) {
+                ostr << it->GetSeqId()->AsFastaString();
+                if (it + 1 != ids.end()) {
+                    ostr << "|";
+                }
+            }
+        }
+        string title = s_GetTitle(bhandle);
+        if (!title.empty()) {
+            ostr << " " << title;
+        }
+        ostr << NcbiEndl;
         
         m_AlnVec->GetWholeAlnSeqString(i, seq);
 
@@ -145,7 +212,7 @@ void CMultiAlnPrinter::x_PrintPhylipSequential(CNcbiOstream& ostr)
                                                  m_AlnVec->GetSeqId(i),
                                                  CScope::eGetBioseq_All);
 
-        string seq_title = sequence::GetTitle(bhandle);
+        string seq_title = s_GetLabel(bhandle);
         // sequence title width must be 10
         if (seq_title.length() > kSeqTitleWidth) {
             seq_title.erase(kSeqTitleWidth - 1, seq_title.size() - 1);
@@ -193,7 +260,7 @@ void CMultiAlnPrinter::x_PrintPhylipInterleaved(CNcbiOstream& ostr)
                                                  m_AlnVec->GetSeqId(i),
                                                  CScope::eGetBioseq_All);
 
-        string seq_title = sequence::GetTitle(bhandle);
+        string seq_title = s_GetLabel(bhandle);
         // the space for sequence title must be exactly 10 characters long
         if (seq_title.length() > kSeqTitleWidth) {
             seq_title.erase(kSeqTitleWidth - 1, seq_title.size() - 1);

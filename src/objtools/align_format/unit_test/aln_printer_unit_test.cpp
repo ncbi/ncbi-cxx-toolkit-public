@@ -98,8 +98,9 @@ BOOST_AUTO_TEST_CASE(TestFastaPlusGaps)
     string output = PrintAlignment(CMultiAlnPrinter::eFastaPlusGaps,
                                    protein_seqalign);
 
-    BOOST_REQUIRE(output.find(">gi|129295 RecName: Full=Ovalbumin-related pro"
-                              "tein X; AltName: Full=Gene X protein") != NPOS);
+    BOOST_REQUIRE(output.find(">gi|129295|sp|P01013.1|OVALX_CHICK RecName: "
+                              "Full=Ovalbumin-related protein X; AltName: "
+                              "Full=Gene X protein") != NPOS);
     BOOST_REQUIRE(output.find("--------------------------------MPQWANPVPAIA--G"
                               "AAPVVITSARAAISAGVDEA---GALGTSAAVP") != NPOS);
 

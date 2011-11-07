@@ -572,11 +572,44 @@ int CMultiApplication::Run(void)
         const vector<CSequence>& results(aligner.GetSeqResults());
         CRef<CSeq_align> align = aligner.GetResults();
         for (int i = 0; i < (int)results.size(); i++) {
+
             CBioseq_Handle bhandle = scope->GetBioseqHandle(
                                                     align->GetSeq_id(i),
                                                     CScope::eGetBioseq_All);
 
-            printf(">%s\n", sequence::GetTitle(bhandle).c_str());
+            // try to recreate the defline for parsed Seq-ids
+            if (args["parse_deflines"]) {
+                // if Seq-id is local then, do not print Seq-id type
+                const CSeq_id& id = align->GetSeq_id(i);
+                if (id.IsLocal()) {
+                    string label;
+                    id.GetLabel(&label, CSeq_id::eContent);
+                    printf(">%s", label.c_str());
+                }
+                else {
+                    // for non-local Seq-ids print all ids
+                    const vector<CSeq_id_Handle>& ids = bhandle.GetId();
+                    printf(">");
+                    ITERATE (vector<CSeq_id_Handle>, it, ids) {
+                        const string id_str = it->GetSeqId()->AsFastaString();
+                        printf("%s", id_str.c_str());
+                        if (it + 1 != ids.end()) {
+                            printf("|");
+                        }
+                    }
+                    
+                }
+                // do not print 'unnamed protein product' for empty title
+                string title = sequence::GetTitle(bhandle);
+                if (title != "unnamed protein product") {
+                    printf(" %s", title.c_str());
+                }
+                printf("\n");
+            }
+            else {
+                printf(">%s\n", sequence::GetTitle(bhandle).c_str());
+            }
+
             for (int j = 0; j < results[i].GetLength(); j++) {
                 printf("%c", results[i].GetPrintableLetter(j));
             }
