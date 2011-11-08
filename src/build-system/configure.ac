@@ -3448,8 +3448,10 @@ AC_SEARCH_LIBS(uuid_generate, uuid,
    [NCBI_PACKAGE(UUID)
     test "x$ac_cv_search_uuid_generate" = "xnone required" || \
        UUID_LIBS=$ac_cv_search_uuid_generate])
+LIBS=$orig_LIBS
 dnl NCBI_CHECK_LIBS(FUSE, fuse, fuse_loop)
 AC_SEARCH_LIBS(fuse_loop, fuse, [NCBI_PACKAGE(FUSE)])
+LIBS=$orig_LIBS
 NCBI_CHECK_LIBS(RT, rt posix4, clock_gettime)
 NCBI_CHECK_LIBS(DEMANGLE, demangle, cplus_demangle)
 # Add to (orig_)LIBS if present for the sake of corelib and the

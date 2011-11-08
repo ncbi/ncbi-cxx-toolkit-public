@@ -19947,6 +19947,7 @@ if test "$ac_cv_search_uuid_generate" != no; then
        UUID_LIBS=$ac_cv_search_uuid_generate
 fi
 
+LIBS=$orig_LIBS
 echo "$as_me:$LINENO: checking for library containing fuse_loop" >&5
 echo $ECHO_N "checking for library containing fuse_loop... $ECHO_C" >&6
 if test "${ac_cv_search_fuse_loop+set}" = set; then
@@ -20073,6 +20074,7 @@ if test "$ac_cv_search_fuse_loop" != no; then
             WithPackages="$WithPackages${WithPackagesSep}FUSE"; WithPackagesSep=" "
 fi
 
+LIBS=$orig_LIBS
 saved_LIBS=$LIBS
  echo "$as_me:$LINENO: checking for library containing clock_gettime" >&5
 echo $ECHO_N "checking for library containing clock_gettime... $ECHO_C" >&6
