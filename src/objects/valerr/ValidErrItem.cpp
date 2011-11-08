@@ -599,6 +599,18 @@ finishing status set to Finished.")),
    TErrStrs( "BadTentativeName",
 "A structured comment descriptor or feature has a tentative name value that may \
 require a taxonomy consult.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_OrganismNotFound,
+   TErrStrs( "OrganismNotFound",
+"The indicated organism is not in the taxonomy database.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_TaxonomyIsSpeciesProblem,
+   TErrStrs( "TaxonomyIsSpeciesProblem",
+"Taxonomy lookup of the indicated organism reports an is_species_level problem.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_TaxonomyConsultRequired,
+   TErrStrs( "TaxonomyConsultRequired",
+"A taxonomy consult is required for the indicated organism.")),
+   TErrTypStrs ( eErr_SEQ_DESCR_TaxonomyNucleomorphProblem,
+   TErrStrs( "TaxonomyNucleomorphProblem",
+"Taxonomy lookup indicates that the nucleomorph flag should be set for this organism.")),
 
 /* SEQ_GENERIC */
 

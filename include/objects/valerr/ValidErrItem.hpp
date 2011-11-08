@@ -230,7 +230,12 @@ enum EErrType {
     eErr_SEQ_DESCR_DBLinkProblem,
     eErr_SEQ_DESCR_FinishedStatusForWGS,
     eErr_SEQ_DESCR_BadTentativeName,
+    eErr_SEQ_DESCR_OrganismNotFound,
+    eErr_SEQ_DESCR_TaxonomyIsSpeciesProblem,
+    eErr_SEQ_DESCR_TaxonomyConsultRequired,
+    eErr_SEQ_DESCR_TaxonomyNucleomorphProblem,
     ERR_CODE_END(SEQ_DESCR),
+
 
     ERR_CODE_BEGIN(GENERIC) = 2000,
     eErr_GENERIC_NonAsciiAsn,
