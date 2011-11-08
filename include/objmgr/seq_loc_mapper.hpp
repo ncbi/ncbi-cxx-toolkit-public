@@ -257,6 +257,12 @@ private:
                           SSeqMapSelector     selector,
                           const CGC_Sequence* parent_seq);
 
+    // Creates and adds to the scope a virtual bioseq. If delta is not null,
+    // the bioseq uses it for the instance. Otherwise a virtual bioseq without
+    // length/data is created.
+    CBioseq_Handle x_AddVirtualBioseq(const TSynonyms&  synonyms,
+                                      const CDelta_ext* delta = 0);
+
 private:
     CHeapScope        m_Scope;
 };

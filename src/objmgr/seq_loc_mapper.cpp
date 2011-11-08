@@ -375,6 +375,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CGC_Assembly& gc_assembly,
     if ( scope ) {
         m_Scope.GetScope().AddScope(*scope);
     }
+    m_SeqInfo.Reset(new CScope_Mapper_Sequence_Info(m_Scope));
     x_InitGCAssembly(gc_assembly, to_alias);
 }
 
@@ -392,6 +393,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CGC_Assembly& gc_assembly,
     if ( scope ) {
         m_Scope.GetScope().AddScope(*scope);
     }
+    m_SeqInfo.Reset(new CScope_Mapper_Sequence_Info(m_Scope));
     x_InitGCAssembly(gc_assembly, direction, selector);
 }
 
@@ -506,39 +508,30 @@ void CSeq_loc_Mapper::x_InitializeSeqMap(CSeqMap_CI       seg_it,
 }
 
 
-// Special sequence info for managing GC-Sequence synonyms.
-class CGCSeq_Mapper_Sequence_Info : public IMapper_Sequence_Info
+CBioseq_Handle
+CSeq_loc_Mapper::x_AddVirtualBioseq(const TSynonyms&  synonyms,
+                                    const CDelta_ext* delta)
 {
-public:
-    CGCSeq_Mapper_Sequence_Info(IMapper_Sequence_Info& prev_info)
-        : m_PrevInfo(&prev_info) {}
-
-    virtual TSeqType GetSequenceType(const CSeq_id_Handle& idh)
-        { return m_PrevInfo->GetSequenceType(idh); }
-    virtual TSeqPos GetSequenceLength(const CSeq_id_Handle& idh)
-        { return m_PrevInfo->GetSequenceLength(idh); }
-    virtual void CollectSynonyms(const CSeq_id_Handle& id,
-                                 TSynonyms&            synonyms)
-        {
-            m_PrevInfo->CollectSynonyms(id, synonyms);
-            // Add this set of synonyms only if they match the requested id.
-            if (m_Synonyms.find(id) == m_Synonyms.end()) return;
-            ITERATE(TSynonymsSet, it, m_Synonyms) {
-                synonyms.insert(*it);
-            }
-        }
-
-    void AddSynonym(const CSeq_id& synonym)
-        {
-            m_Synonyms.insert(CSeq_id_Handle::GetHandle(synonym));
-        }
-
-private:
-    typedef set<CSeq_id_Handle> TSynonymsSet;
-
-    CRef<IMapper_Sequence_Info> m_PrevInfo;
-    TSynonymsSet                m_Synonyms;
-};
+    CRef<CBioseq> bioseq(new CBioseq);
+    ITERATE(IMapper_Sequence_Info::TSynonyms, syn, synonyms) {
+        CRef<CSeq_id> syn_id(new CSeq_id);
+        syn_id->Assign(*syn->GetSeqId());
+        bioseq->SetId().push_back(syn_id);
+    }
+    bioseq->SetInst().SetMol(CSeq_inst::eMol_na);
+    if ( delta ) {
+        // Create delta sequence
+        bioseq->SetInst().SetRepr(CSeq_inst::eRepr_delta);
+        // const_cast should be safe here - we are not going to modify data
+        bioseq->SetInst().SetExt().SetDelta(
+            const_cast<CDelta_ext&>(*delta));
+    }
+    else {
+        // Create virtual bioseq without length/data.
+        bioseq->SetInst().SetRepr(CSeq_inst::eRepr_virtual);
+    }
+    return m_Scope.GetScope().AddBioseq(*bioseq);
+}
 
 
 void CSeq_loc_Mapper::x_InitGCAssembly(const CGC_Assembly& gc_assembly,
@@ -614,13 +607,9 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
             }
             if ( dst_id ) break; // Use the first matching alias
         }
-        // Fisrt, setup a new sequence info which will handle synonyms.
-        CRef<IMapper_Sequence_Info> saved_seq_info(m_SeqInfo);
-        CRef<CGCSeq_Mapper_Sequence_Info> seq_info(
-            new CGCSeq_Mapper_Sequence_Info(*m_SeqInfo));
-        m_SeqInfo = seq_info;
         if ( dst_id ) {
-            seq_info->AddSynonym(gc_seq.GetSeq_id());
+            TSynonyms synonyms;
+            synonyms.insert(CSeq_id_Handle::GetHandle(gc_seq.GetSeq_id()));
             ITERATE(CGC_Sequence::TSeq_id_synonyms, it, gc_seq.GetSeq_id_synonyms()) {
                 // Add conversion for each synonym which can be used
                 // as a source id.
@@ -628,30 +617,30 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
                 switch ( id.Which() ) {
                 case CGC_TypedSeqId::e_Genbank:
                     if (to_alias != eGCA_Genbank) {
-                        seq_info->AddSynonym(id.GetGenbank().GetPublic());
-                        seq_info->AddSynonym(id.GetGenbank().GetGi());
+                        synonyms.insert(CSeq_id_Handle::GetHandle(id.GetGenbank().GetPublic()));
+                        synonyms.insert(CSeq_id_Handle::GetHandle(id.GetGenbank().GetGi()));
                         if ( id.GetGenbank().IsSetGpipe() ) {
-                            seq_info->AddSynonym(id.GetGenbank().GetGpipe());
+                            synonyms.insert(CSeq_id_Handle::GetHandle(id.GetGenbank().GetGpipe()));
                         }
                     }
                     break;
                 case CGC_TypedSeqId::e_Refseq:
                     if (to_alias != eGCA_Refseq) {
-                        seq_info->AddSynonym(id.GetRefseq().GetPublic());
-                        seq_info->AddSynonym(id.GetRefseq().GetGi());
+                        synonyms.insert(CSeq_id_Handle::GetHandle(id.GetRefseq().GetPublic()));
+                        synonyms.insert(CSeq_id_Handle::GetHandle(id.GetRefseq().GetGi()));
                         if ( id.GetRefseq().IsSetGpipe() ) {
-                            seq_info->AddSynonym(id.GetRefseq().GetGpipe());
+                            synonyms.insert(CSeq_id_Handle::GetHandle(id.GetRefseq().GetGpipe()));
                         }
                     }
                     break;
                 case CGC_TypedSeqId::e_Private:
                     if (dst_id != &id.GetPrivate()) {
-                        seq_info->AddSynonym(id.GetPrivate());
+                        synonyms.insert(CSeq_id_Handle::GetHandle(id.GetPrivate()));
                     }
                     break;
                 case CGC_TypedSeqId::e_External:
                     if (dst_id != &id.GetExternal().GetId()) {
-                        seq_info->AddSynonym(id.GetExternal().GetId());
+                        synonyms.insert(CSeq_id_Handle::GetHandle(id.GetExternal().GetId()));
                     }
                     break;
                 default:
@@ -660,11 +649,13 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
                     break;
                 }
             }
+            x_AddVirtualBioseq(synonyms);
             x_AddConversion(gc_seq.GetSeq_id(), 0, eNa_strand_unknown,
                 *dst_id, 0, eNa_strand_unknown, TRange::GetWholeLength(),
                 false, 0, kInvalidSeqPos, kInvalidSeqPos, kInvalidSeqPos );
         }
         else if (to_alias == eGCA_UCSC  ||  to_alias == eGCA_Refseq) {
+            TSynonyms synonyms;
             // The requested alias type not found,
             // check for UCSC random chromosomes.
             const CSeq_id& id = gc_seq.GetSeq_id();
@@ -675,17 +666,13 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
                 string lcl_str = id.GetLocal().GetStr();
                 CSeq_id lcl;
                 lcl.SetLocal().SetStr(lcl_str);
-                seq_info->AddSynonym(lcl);
+                synonyms.insert(CSeq_id_Handle::GetHandle(lcl));
                 if ( !NStr::StartsWith(lcl_str, "chr") ) {
                     lcl.SetLocal().SetStr("chr" + lcl_str);
-                    seq_info->AddSynonym(lcl);
+                    synonyms.insert(CSeq_id_Handle::GetHandle(lcl));
                 }
                 // Ignore other synonyms - they will probably never be set. (?)
-
-                // When mapping up to chrX, its synonyms are not required.
-                if (to_alias == eGCA_UCSC) {
-                    m_SeqInfo = saved_seq_info;
-                }
+                x_AddVirtualBioseq(synonyms);
 
                 // Use structure (delta-seq) to initialize the mapper.
                 // Here we use just one level of the delta and parse it
@@ -729,8 +716,6 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
                 }
             }
         }
-        // Restore previous seq-info if any.
-        m_SeqInfo = saved_seq_info;
     }
     if ( gc_seq.IsSetSequences() ) {
         ITERATE(CGC_Sequence::TSequences, seq, gc_seq.GetSequences()) {
@@ -789,65 +774,94 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
                                        SSeqMapSelector     selector,
                                        const CGC_Sequence* parent_seq)
 {
-    // Prepare to setup a new sequence info which will handle synonyms.
-    CRef<IMapper_Sequence_Info> saved_seq_info(m_SeqInfo);
+    CRef<CSeq_id> id(new CSeq_id);
+    id->Assign(gc_seq.GetSeq_id());
 
-    CBioseq_Handle bh;
-    CRef<CSeq_id> id;
+    // Special case - structure contains just one (whole) sequence and
+    // the same sequence is mentioned in the synonyms. Must skip this
+    // sequence and use the part instead.
+    CSeq_id_Handle struct_syn;
     if ( gc_seq.IsSetStructure() ) {
-        // Create virtual bioseq and use it to initialize the mapper
-        CRef<CBioseq> bioseq(new CBioseq);
-
-        id.Reset(new CSeq_id);
-        id->Assign(gc_seq.GetSeq_id());
-        bioseq->SetId().push_back(id);
-
-        // Add synonyms if any.
-        if ( gc_seq.IsSetSeq_id_synonyms() ) {
-            CRef<CGCSeq_Mapper_Sequence_Info> seq_info(
-                new CGCSeq_Mapper_Sequence_Info(*m_SeqInfo));
-            m_SeqInfo = seq_info;
-            seq_info->AddSynonym(*id);
-            ITERATE(CGC_Sequence::TSeq_id_synonyms, it, gc_seq.GetSeq_id_synonyms()) {
-                // Add conversion for each synonym which can be used
-                // as a source id.
-                const CGC_TypedSeqId& id = **it;
-                switch ( id.Which() ) {
-                case CGC_TypedSeqId::e_Genbank:
-                    seq_info->AddSynonym(id.GetGenbank().GetPublic());
-                    seq_info->AddSynonym(id.GetGenbank().GetGi());
-                    if ( id.GetGenbank().IsSetGpipe() ) {
-                        seq_info->AddSynonym(id.GetGenbank().GetGpipe());
+        if (gc_seq.GetStructure().Get().size() == 1) {
+            const CDelta_seq& delta = *gc_seq.GetStructure().Get().front();
+            if ( delta.IsLoc() ) {
+                const CSeq_loc& delta_loc = delta.GetLoc();
+                switch (delta_loc.Which()) {
+                case CSeq_loc::e_Whole:
+                    struct_syn = CSeq_id_Handle::GetHandle(delta_loc.GetWhole());
+                    break;
+                case CSeq_loc::e_Int:
+                    if (delta_loc.GetInt().GetFrom() == 0) {
+                        struct_syn = CSeq_id_Handle::GetHandle(delta_loc.GetInt().GetId());
                     }
-                    break;
-                case CGC_TypedSeqId::e_Refseq:
-                    seq_info->AddSynonym(id.GetRefseq().GetPublic());
-                    seq_info->AddSynonym(id.GetRefseq().GetGi());
-                    if ( id.GetRefseq().IsSetGpipe() ) {
-                        seq_info->AddSynonym(id.GetRefseq().GetGpipe());
-                    }
-                    break;
-                case CGC_TypedSeqId::e_Private:
-                    seq_info->AddSynonym(id.GetPrivate());
-                    break;
-                case CGC_TypedSeqId::e_External:
-                    seq_info->AddSynonym(id.GetExternal().GetId());
                     break;
                 default:
-                    NCBI_THROW(CAnnotMapperException, eOtherError,
-                               "Unsupported alias type in GC-Sequence synonyms");
                     break;
                 }
             }
         }
-
-        bioseq->SetInst().SetMol(CSeq_inst::eMol_na);
-        bioseq->SetInst().SetRepr(CSeq_inst::eRepr_delta);
-        // const_cast should be safe here - we are not going to modify data
-        bioseq->SetInst().SetExt().SetDelta(
-            const_cast<CDelta_ext&>(gc_seq.GetStructure()));
-        bh = m_Scope.GetScope().AddBioseq(*bioseq);
     }
+
+    // Add synonyms if any.
+    TSynonyms synonyms;
+    if ( gc_seq.IsSetSeq_id_synonyms() ) {
+        synonyms.insert(CSeq_id_Handle::GetHandle(*id));
+        ITERATE(CGC_Sequence::TSeq_id_synonyms, it, gc_seq.GetSeq_id_synonyms()) {
+            // Add conversion for each synonym which can be used
+            // as a source id.
+            const CGC_TypedSeqId& id = **it;
+            switch ( id.Which() ) {
+            case CGC_TypedSeqId::e_Genbank:
+                synonyms.insert(CSeq_id_Handle::GetHandle(id.GetGenbank().GetPublic()));
+                synonyms.insert(CSeq_id_Handle::GetHandle(id.GetGenbank().GetGi()));
+                if ( id.GetGenbank().IsSetGpipe() ) {
+                    synonyms.insert(CSeq_id_Handle::GetHandle(id.GetGenbank().GetGpipe()));
+                }
+                break;
+            case CGC_TypedSeqId::e_Refseq:
+            {
+                // If some of the ids is used in the structure (see above),
+                // ignore all refseq ids.
+                synonyms.insert(CSeq_id_Handle::GetHandle(id.GetRefseq().GetPublic()));
+                synonyms.insert(CSeq_id_Handle::GetHandle(id.GetRefseq().GetGi()));
+                if (id.GetRefseq().IsSetGpipe()) {
+                    synonyms.insert(CSeq_id_Handle::GetHandle(id.GetRefseq().GetGpipe()));
+                }
+                break;
+            }
+            case CGC_TypedSeqId::e_Private:
+                synonyms.insert(CSeq_id_Handle::GetHandle(id.GetPrivate()));
+                break;
+            case CGC_TypedSeqId::e_External:
+                synonyms.insert(CSeq_id_Handle::GetHandle(id.GetExternal().GetId()));
+                break;
+            default:
+                NCBI_THROW(CAnnotMapperException, eOtherError,
+                           "Unsupported alias type in GC-Sequence synonyms");
+                break;
+            }
+        }
+        // The sequence is referencing itself?
+        if (synonyms.find(struct_syn) != synonyms.end()) {
+            x_InitGCSequence(
+                *gc_seq.GetSequences().front()->GetSeqs().front(),
+                direction,
+                selector,
+                parent_seq);
+            return;
+        }
+    }
+
+    CBioseq_Handle bh;
+    // Create virtual bioseq and use it to initialize the mapper
+    if ( gc_seq.IsSetStructure() ) {
+        bh = x_AddVirtualBioseq(synonyms, &gc_seq.GetStructure());
+    }
+    else {
+        // Create literal sequence
+        x_AddVirtualBioseq(synonyms);
+    }
+
     if ( gc_seq.IsSetSequences() ) {
         ITERATE(CGC_Sequence::TSequences, seq, gc_seq.GetSequences()) {
             ITERATE(CGC_TaggedSequences::TSeqs, tseq, (*seq)->GetSeqs()) {
@@ -886,7 +900,6 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
             m_DstRanges.clear();
         }
     }
-    m_SeqInfo = saved_seq_info;
 }
 
 
