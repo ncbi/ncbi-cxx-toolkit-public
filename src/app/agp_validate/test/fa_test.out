@@ -1,4 +1,4 @@
-1 component_id and length loaded from FASTA.
+2 component_ids and lengths loaded from FASTA.
 
 1:LACBIscaffold_1	1	1103	1	W	LACBIscaffold_1_Cont1	1	1103	+
 	ERROR: component_end greater than sequence length: 1103 > LACBIscaffold_1_Cont1 length = 630 bp
@@ -49,5 +49,7 @@ Gaps                   : 5 (N)
 Object names     :  1
   LACBIscaffold_1:  1
 
-Component names             :  5 != 1 in the FASTA
+Component names             :  5 != 2 in the FASTA
   LACBIscaffold_1_Cont[1..5]:  5
+
+1 component name in FASTA not found in AGP: LACBIscaffold_extra

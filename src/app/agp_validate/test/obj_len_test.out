@@ -43,3 +43,7 @@ Object names           :  3 != 4 in the FASTA
 
 Component names             :  5
   ACCP[01000001..01000497].1:  5
+
+2 object names in FASTA not found in AGP: 
+  MICPUCscaffold_2
+  MICPUCscaffold_21

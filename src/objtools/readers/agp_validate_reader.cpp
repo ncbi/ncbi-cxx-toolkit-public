@@ -640,7 +640,8 @@ void CAgpValidateReader::x_PrintTotals() // without comment counts
       compNamePatterns.AddName(it->first);
     }
     bool hasSuspicious = x_PrintPatterns(compNamePatterns, "Component names",
-      m_CheckObjLen ? 0 : m_comp2len->m_count
+      m_CheckObjLen ? 0 : m_comp2len->m_count,
+      m_comp2len == &m_scaf2len ? " Scaffold from component AGP" : NULL
     );
     if(!m_CheckCompNames && hasSuspicious ) {
       cout<< "Use -g or -a to print lines with suspicious accessions.\n";
@@ -672,6 +673,10 @@ void CAgpValidateReader::x_PrintTotals() // without comment counts
 void CAgpValidateReader::PrintTotals()
 {
   x_PrintTotals();
+
+  if(m_comp2len->size()) {
+    x_PrintIdsNotInAgp();
+  }
 
   if(m_CommentLineCount || m_EolComments) cout << "\n";
   if(m_CommentLineCount) {
@@ -816,7 +821,7 @@ static int GetNameCategory(const string& s)
 
 // Sort by accession count, print not more than MaxPatterns or 2*MaxPatterns
 bool CAgpValidateReader::x_PrintPatterns(
-  CAccPatternCounter& namePatterns, const string& strHeader, int fasta_count)
+  CAccPatternCounter& namePatterns, const string& strHeader, int fasta_count, const char* count_label)
 {
   const int MaxPatterns=10;
 
@@ -860,12 +865,14 @@ bool CAgpValidateReader::x_PrintPatterns(
   bool mixedCategories=(nucCount && otherCount);
   if(mixedCategories && wPattern<20) wPattern=20;
   // Print the total
-  cout<< setw(wPattern+2) << setiosflags(IOS_BASE::left)
-      << strHeader << ": " << ALIGN_W(totalCount);
-  if(fasta_count && fasta_count!=totalCount) {
-    cout << " != " << fasta_count << " in the FASTA";
+  if(strHeader.size()) {
+    cout<< setw(wPattern+2) << setiosflags(IOS_BASE::left)
+        << strHeader << ": " << ALIGN_W(totalCount);
+    if(fasta_count && fasta_count!=totalCount) {
+      cout << " != " << fasta_count << " in the " << (count_label ? count_label : "FASTA");
+    }
+    cout<< "\n";
   }
-  cout<< "\n";
 
   bool printNuc=(nucCount>0);
   // 1 or 2 (if mixedCategories) iterations
@@ -934,6 +941,64 @@ bool CAgpValidateReader::x_PrintPatterns(
   }
   return mixedCategories||mixedPattern;
 }
+
+// label = "component(s) from FASTA not found in AGP"
+// label = "scaffold(s) not found in Chromosome from scaffold AGP"
+void CAgpValidateReader::x_PrintIdsNotInAgp()
+{
+  CAccPatternCounter patterns;
+  set<string> ids;
+  int cnt;
+
+    // ids in m_comp2len but not in m_CompId2Spans
+  for(CMapCompLen::iterator it = m_comp2len->begin();  it != m_comp2len->end(); ++it) {
+    string id;
+    if(m_CheckObjLen) {
+      // ids in m_comp2len but not in m_ObjIdSet
+      TObjSet::iterator obj = m_ObjIdSet.find(it->first);
+      if(obj==m_ObjIdSet.end()) {
+        id=it->first;
+      }
+    }
+    else {
+      TCompId2Spans::iterator spans = m_CompId2Spans.find(it->first);
+      if(spans==m_CompId2Spans.end()) {
+        id=it->first;
+      }
+    }
+    if( id.size() &&
+      id.find("|") == NPOS // works only if AGP contains plain accessions...
+    ) {
+      patterns.AddName(it->first);
+      ids.insert(it->first);
+      cnt++;
+    }
+  }
+
+  if(cnt>0) {
+    string label =
+      m_CheckObjLen ? "object name(s) in FASTA not found in AGP" :
+      m_comp2len == &m_scaf2len ? "scaffold(s) not found in Chromosome from scaffold AGP":
+      "component name(s) in FASTA not found in AGP";
+    string tmp;
+    NStr::Replace(label, "(s)", cnt==1 ? "" : "s", tmp);
+    cout << "\n" << cnt << " " << tmp << ": ";
+
+    if(cnt==1) {
+      cout << *(ids.begin()) << "\n";
+    }
+    else if(cnt<m_AgpErr->m_MaxRepeat||m_AgpErr->m_MaxRepeat==0) {
+      cout << "\n";
+      for(set<string>::iterator it = ids.begin();  it != ids.end(); ++it) {
+        cout << "  " << *it << "\n";
+      }
+    }
+    else {
+      x_PrintPatterns(patterns, NcbiEmptyString, 0);
+    }
+  }
+}
+
 
 //// class CValuesCount
 

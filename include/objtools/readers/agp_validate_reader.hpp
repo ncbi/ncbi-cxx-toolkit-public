@@ -151,6 +151,7 @@ public:
   CAgpValidateReader(CAgpErrEx& agpErr, CMapCompLen& comp2len); // , bool checkCompNames=false);
   virtual ~CAgpValidateReader();
   void PrintTotals();
+
   bool m_CheckCompNames;
   bool m_CheckObjLen; // false: check component lengths
   bool m_unplaced;    // check that singleton components are in '+' orientation
@@ -163,9 +164,11 @@ public:
   // to do: E_UnusedScaf
 
 protected:
-  void x_PrintTotals(); // without comment counts
+  void x_PrintTotals(); // without comment counts or ids not in AGP
+  void x_PrintIdsNotInAgp();
+
   // true: a suspicious mix of ids - some look like GenBank accessions, some do not.
-  static bool x_PrintPatterns(CAccPatternCounter& namePatterns, const string& strHeader, int fasta_count);
+  static bool x_PrintPatterns(CAccPatternCounter& namePatterns, const string& strHeader, int fasta_count, const char* count_label=NULL);
 
   CAgpErrEx* m_AgpErr;
   int m_CommentLineCount;

@@ -1,4 +1,4 @@
-1 component_id and length loaded from FASTA.
+2 component_ids and lengths loaded from FASTA.
 
 3:singleton_1	1	630	1	W	LACBIscaffold_1_Cont1	1	630	-
 	WARNING: the span overlaps a previous span for this component: 1..630 at line 2
@@ -41,7 +41,9 @@ Object names      :  5
   singleton_[0..3]:  4
   singleton_1na   :  1
 
-Component names        :  1
+Component names        :  1 != 2 in the FASTA
   LACBIscaffold_1_Cont1:  1
+
+1 component name in FASTA not found in AGP: LACBIscaffold_extra
 
 #Comment line count    : 1

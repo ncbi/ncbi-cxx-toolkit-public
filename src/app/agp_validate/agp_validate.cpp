@@ -370,8 +370,7 @@ void CAgpValidateApplication::x_ReportFastaSeqCount()
       << s <<" and length" << s << " loaded from FASTA." << endl;
 }
 
-void CAgpValidateApplication::x_ValidateUsingFiles(
-  const CArgs& args)
+void CAgpValidateApplication::x_ValidateUsingFiles(const CArgs& args)
 {
   if(m_reader.m_is_chr) {
     if(m_reader.m_explicit_scaf) {
