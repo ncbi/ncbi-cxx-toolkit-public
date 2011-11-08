@@ -3015,28 +3015,34 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
                     if ((*reply_it)->GetError().IsSetMessage()) {
                         err_str = (*reply_it)->GetError().GetMessage();
                     }
-                    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
-                                "Taxonomy lookup failed with message '" + err_str + "'",
-                                **desc_it, *ctx_it);
+                    if (NStr::Equal(err_str, "Organism not found")) {
+                        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_OrganismNotFound, 
+                                    "Organism not found in taxonomy database",
+                                    **desc_it, *ctx_it);
+                    } else {
+                        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
+                                    "Taxonomy lookup failed with message '" + err_str + "'",
+                                    **desc_it, *ctx_it);
+                    }
                 } else if ((*reply_it)->IsData()) {
                     bool is_species_level = true;
                     bool force_consult = false;
                     bool has_nucleomorphs = false;
                     (*reply_it)->GetData().GetTaxFlags(is_species_level, force_consult, has_nucleomorphs);
                     if (!is_species_level) {
-                        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
+                        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyIsSpeciesProblem, 
                                 "Taxonomy lookup reports is_species_level FALSE",
                                 **desc_it, *ctx_it);
                     }
                     if (force_consult) {
-                        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
+                        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyConsultRequired, 
                                 "Taxonomy lookup reports taxonomy consultation needed",
                                 **desc_it, *ctx_it);
                     }
                     if ((*desc_it)->GetSource().IsSetGenome()
                         && (*desc_it)->GetSource().GetGenome() == CBioSource::eGenome_nucleomorph
                         && !has_nucleomorphs) {
-                        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
+                        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyNucleomorphProblem, 
                                 "Taxonomy lookup does not have expected nucleomorph flag",
                                 **desc_it, *ctx_it);
                     }
@@ -3113,24 +3119,29 @@ void CValidError_imp::ValidateTaxonomy(const COrg_ref& org, int genome)
                 if ((*reply_it)->GetError().IsSetMessage()) {
                     err_str = (*reply_it)->GetError().GetMessage();
                 }
-                PostErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
-                            "Taxonomy lookup failed with message '" + err_str + "'", org);
+                if (NStr::Equal(err_str, "Organism not found")) {
+                    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_OrganismNotFound, 
+                                "Organism not found in taxonomy database", org);
+                } else {
+                    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
+                                "Taxonomy lookup failed with message '" + err_str + "'", org);
+                }
             } else if ((*reply_it)->IsData()) {
                 bool is_species_level = true;
                 bool force_consult = false;
                 bool has_nucleomorphs = false;
                 (*reply_it)->GetData().GetTaxFlags(is_species_level, force_consult, has_nucleomorphs);
                 if (!is_species_level) {
-                    PostErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
+                    PostErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyIsSpeciesProblem, 
                             "Taxonomy lookup reports is_species_level FALSE", org);
                 }
                 if (force_consult) {
-                    PostErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
+                    PostErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyConsultRequired, 
                             "Taxonomy lookup reports taxonomy consultation needed", org);
                 }
                 if (genome == CBioSource::eGenome_nucleomorph
                     && !has_nucleomorphs) {
-                    PostErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
+                    PostErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyNucleomorphProblem, 
                             "Taxonomy lookup does not have expected nucleomorph flag", org);
                 }
             }
