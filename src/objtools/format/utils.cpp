@@ -1007,6 +1007,12 @@ bool s_GetModelEvidance(const CBioseq_Handle& bsh, SModelEvidance& me)
         if (moduop.NotEmpty()) {
             result = true;
             CConstRef<CUser_field> ufp;
+            if( moduop->HasField("Contig Name") ) {
+                ufp = &(moduop->GetField("Contig Name"));
+                if ( ufp.NotEmpty()  &&  ufp->IsSetData()  &&  ufp->GetData().IsStr() ) {
+                    me.name = ufp->GetData().GetStr();
+                }
+            }
             if ( moduop->HasField("Method") ) {
                 ufp = &(moduop->GetField("Method"));
                 if ( ufp.NotEmpty()  &&  ufp->IsSetData()  &&  ufp->GetData().IsStr() ) {
