@@ -41,6 +41,8 @@ USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(Sls);
 
+const Int4 small_long=(Int4)((double)kMin_I4/2.0);
+
 alp::alp(//constructor
 alp_data *alp_data_
 )

@@ -71,9 +71,6 @@ const double mb_bytes=1048576.0;
 
 BEGIN_SCOPE(Sls)
 
-        static const Int4 small_long=(Int4)((double)kMin_I4/2.0);
-        static const double dbl_max_log=log(DBL_MAX);
-
         struct struct_for_randomization
         {
                 Int4 d_random_factor;

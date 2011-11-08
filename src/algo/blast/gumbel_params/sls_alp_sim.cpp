@@ -2501,6 +2501,7 @@ double &alpha_J_error_)
         double *cov_E_E=NULL;
         double *cov_E_E_error=NULL;
 
+        const double dbl_max_log = log(DBL_MAX);
 
         try
         {
