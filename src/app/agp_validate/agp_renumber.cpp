@@ -211,7 +211,7 @@ int ProcessStream(istream &in, ostream& out)
   string s;
   CNcbiOstrstream* buf=new CNcbiOstrstream();
   int buf_lines=0;
-  int code;
+  int code=0;
 
   // for reporting
   bool had_space    =false;
