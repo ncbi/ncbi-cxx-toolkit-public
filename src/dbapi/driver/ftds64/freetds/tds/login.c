@@ -405,14 +405,10 @@ tds_connect(TDSSOCKET * tds, TDSCONNECTION * connection)
         tdsdump_log(TDS_DBG_ERROR, "IP address pointer is empty\n");
         if (!tds_dstr_isempty(&connection->server_name)) {
             char err_msg[1024];
-            tdsdump_log(TDS_DBG_ERROR, "Server %s not found!\n", tds_dstr_cstr(&connection->server_name));
-            strcpy(err_msg, "Server ");
-            strcat(err_msg, tds_dstr_cstr(&connection->server_name));
-            strcat(err_msg, " not found");
+            snprintf(err_msg, sizeof(err_msg), "Server %s not found.", tds_dstr_cstr(&connection->server_name));
             tds_client_msg(tds->tds_ctx, NULL, 20010, 6, 0, 0, err_msg);
         } else {
-            tdsdump_log(TDS_DBG_ERROR, "No server specified!\n");
-            tds_client_msg(tds->tds_ctx, NULL, 20013, 6, 0, 0, "No server specified");
+            tds_client_msg(tds->tds_ctx, NULL, 20013, 6, 0, 0, "No server specified.");
         }
         return TDS_FAIL;
     }

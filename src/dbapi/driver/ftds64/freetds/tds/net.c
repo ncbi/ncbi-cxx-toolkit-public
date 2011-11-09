@@ -152,12 +152,7 @@ tds_report_error(const TDSCONTEXT* tds_ctx, TDSSOCKET* tds, int x_errno, int msg
     const char* str_err = s_StrError(x_errno);
     char err_msg[4096];
 
-    strcpy(err_msg, msg);
-    strcat(err_msg, " (");
-    itoa(x_errno, err_msg + strlen(err_msg), 10);
-    strcat(err_msg, ", ");
-    strcat(err_msg, str_err);
-    strcat(err_msg, ").");
+    snprintf(err_msg, sizeof(err_msg), "%s (%i, %s).", msg, x_errno, str_err);
     tds_client_msg(tds_ctx, tds, msgno, 6, 0, 0, err_msg);
 
     UTIL_ReleaseBuffer(str_err);
