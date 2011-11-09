@@ -20,6 +20,7 @@ digraph NetScheduleNew {
     Running     -> Done             [ label = "PUT\nJXCG" ];
     Running     -> Timeout          [ label = "timeout" ];
     Running     -> Tries            [ label = "FPUT" ];
+    Running     -> Tries            [ label = "CLRN\nnew session", style = "dashed" ];
 
     Tries       -> Failed;
     Tries       -> Pending;
@@ -28,15 +29,19 @@ digraph NetScheduleNew {
     Timeout     -> Failed;
 
     Failed      -> Canceled         [ label = "CANCEL" ];
+    Failed      -> Failed           [ label = "FPUT", style = "dashed" ];
 
     Done        -> Reading          [ label = "READ" ];
     Done        -> Canceled         [ label = "CANCEL" ];
+    Done        -> Done             [ label = "PUT\nJXCG", style = "dashed" ];
+    Done        -> Confirmed        [ label = "CFRM" ];
 
     Reading     -> Canceled         [ label = "CANCEL" ];
     Reading     -> Confirmed        [ label = "CFRM" ];
     Reading     -> Done             [ label = "RDRB" ];
     Reading     -> ReadTimeout      [ label = "timeout" ];
     Reading     -> ReadTries        [ label = "FRED" ];
+    Reading     -> ReadTries        [ label = "CLRN\nnew session", style = "dashed" ];
 
     ReadTries   -> ReadFailed;
     ReadTries   -> Done;
@@ -45,50 +50,13 @@ digraph NetScheduleNew {
     ReadTimeout -> ReadFailed;
 
     ReadFailed  -> Canceled         [ label = "CANCEL" ];
+    ReadFailed  -> ReadFailed       [ label = "FRED", style = "dashed" ];
 
     Confirmed   -> Canceled         [ label = "CANCEL" ];
+    Confirmed   -> Confirmed        [ label = "CFRM", style = "dashed" ];
+
+    Canceled    -> Canceled         [ label = "CANCEL", style = "dashed" ];
+
+    { rank = same; "Done"; "Pending" }
 }
 
-# Old diagrams
-
-#digraph NetSchedule {
-#  None -> Pending [label="submit"];
-#
-#  Pending -> Running [label="execute"];
-#  Pending -> Canceled [label="cancel"];
-#  Pending -> Done [label="out-of-sync success"];
-#
-#
-#  Running -> Returned [label="return"];
-#  Running -> Canceled [label="cancel"];
-#  Running -> Failed [label="fail"];
-#  Running -> Done [label="success"];
-#
-#  Returned -> Pending [label="r2p"];
-#  Returned -> Running [label="r2p-execute?"];
-#  Returned -> Canceled [label="cancel"];
-#  Returned -> Failed [label="fail"];
-#  Returned -> Done [label="out-of-sync success"];
-#}
-#
-#digraph Reschedule {
-#  Running -> Pending [label="reschedule?"];
-#  Canceled -> Pending [label="reschedule"];
-#  Failed -> Pending [label="reschedule"];
-#  Done -> Pending [label="reschedule"];
-#}
-#
-#digraph Ignore {
-#  Pending -> Returned;
-#  Pending -> Failed;
-#  Canceled -> Running;
-#  Canceled -> Returned;
-#  Canceled -> Failed;
-#  Canceled -> Done;
-#  Failed -> Returned;
-#  Failed -> Canceled;
-#  Failed -> Done;
-#  Done -> Returned;
-#  Done -> Canceled;
-#  Done -> Failed;
-#}
