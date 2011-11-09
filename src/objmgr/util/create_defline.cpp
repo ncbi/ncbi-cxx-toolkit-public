@@ -1370,7 +1370,7 @@ string CDeflineGenerator::x_TitleFromProtein (
     }
     */
 
-    if (partial && result.find(", partial") == NPOS) {
+    if (partial /* && result.find(", partial") == NPOS */) {
         result += ", partial";
     }
 
@@ -1379,7 +1379,7 @@ string CDeflineGenerator::x_TitleFromProtein (
 
     if (m_Genome >= NCBI_GENOME(chloroplast) && m_Genome <= NCBI_GENOME(chromatophore)) {
         CTempString organelle(s_proteinOrganellePrefix [m_Genome]);
-        if (! organelle.empty() && ! taxname.empty() && taxname.find(organelle) == NPOS) {
+        if (! organelle.empty() && ! taxname.empty() /* && taxname.find(organelle) == NPOS */) {
             result += " (";
             result += organelle;
             result += ")";
@@ -1403,7 +1403,7 @@ string CDeflineGenerator::x_TitleFromProtein (
         }
     }
 
-    if (! taxname.empty() && result.find(taxname) == NPOS) {
+    if (! taxname.empty() /* && result.find(taxname) == NPOS */) {
         result += " [" + taxname + "]";
     }
 
