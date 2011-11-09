@@ -429,7 +429,7 @@ void CDDAnnotateDialog::SetupGUIControls(int selectAnnot, int selectEvidence)
     bNewAnnot->Enable(!readOnly);
     bDelAnnot->Enable(selectedAnnot != NULL && !readOnly);
     bEditAnnot->Enable(selectedAnnot != NULL && !readOnly);
-    if (selectedAnnot->IsSetMotif()) 
+    if (selectedAnnot != NULL && selectedAnnot->IsSetMotif()) 
         bNewEditMotif->SetLabel("Edit Motif");
     else 
         bNewEditMotif->SetLabel("New Motif");
