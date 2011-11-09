@@ -140,7 +140,7 @@ tds_set_state(TDSSOCKET * tds, TDS_STATE state)
 		CHECK_TDS_EXTRA(tds);
 
 		if (tds->state == TDS_DEAD) {
-			tds_client_msg(tds->tds_ctx, tds, 20006, 9, 0, 0, "Write to SQL Server failed.");
+			tds_client_msg(tds->tds_ctx, tds, 20006, 6, 0, 0, "Write to SQL Server failed.");
 			return tds->state;
 		} else if (tds->state == TDS_READING) {
 			tdsdump_log(TDS_DBG_ERROR, "tds_submit_query(): state is READING\n");

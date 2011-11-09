@@ -80,6 +80,7 @@ public:
 public:
     // Return TRUE if "ex" is processed, FALSE if not (or if "ex" is NULL)
     virtual bool HandleIt(CDB_Exception* ex);
+    virtual bool HandleAll(const TExceptions& exceptions);
 
     // Get current global "last-resort" error handler.
     // If not set, then the default will be "CDB_UserHandler_Default".
@@ -139,6 +140,19 @@ bool CTestErrHandler::HandleIt(CDB_Exception* ex)
     // return false to find the next handler on the stack.
     // There is always one default stack
 
+    return false;
+}
+
+bool CTestErrHandler::HandleAll(const TExceptions& exceptions)
+{
+    m_Succeed = true;
+    ITERATE(TExceptions, it, exceptions) {
+        CDB_Exception* ex = *it;
+        if (ex && ex->GetSeverity() > m_max_severity)
+        {
+            m_max_severity = ex->GetSeverity();
+        }
+    }
     return false;
 }
 

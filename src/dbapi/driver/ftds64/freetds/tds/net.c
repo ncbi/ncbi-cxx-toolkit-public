@@ -168,7 +168,7 @@ int
 tds_open_socket(TDSSOCKET * tds, const char *ip_addr, unsigned int port, int timeout)
 {
 	struct sockaddr_in sin;
-	fd_set fds;
+	fd_set wfds, efds;
 #if !defined(DOS32X)
 	unsigned long ioctl_blocking = 1;
 	time_t start, now;
@@ -183,8 +183,6 @@ tds_open_socket(TDSSOCKET * tds, const char *ip_addr, unsigned int port, int tim
 #else
 	socklen_t optlen;
 #endif
-
-	FD_ZERO(&fds);
 
 	sin.sin_addr.s_addr = inet_addr(ip_addr);
 	if (sin.sin_addr.s_addr == INADDR_NONE) {
@@ -253,10 +251,13 @@ tds_open_socket(TDSSOCKET * tds, const char *ip_addr, unsigned int port, int tim
 	/* Select on writeability for connect_timeout */
 	now = start;
 	while ((retval == 0) && ((now - start) < timeout)) {
-		FD_SET(tds->s, &fds);
-		selecttimeout.tv_sec = (long)timeout - (long)(now - start);
+        FD_ZERO(&wfds);
+        FD_SET(tds->s, &wfds);
+        FD_ZERO(&efds);
+        FD_SET(tds->s, &efds);
+		selecttimeout.tv_sec = 1;
 		selecttimeout.tv_usec = 0;
-		retval = select(tds->s + 1, NULL, &fds, &fds, &selecttimeout);
+		retval = select(tds->s + 1, NULL, &wfds, &efds, &selecttimeout);
         x_errno = sock_errno;
 		/* on interrupt ignore */
 		if (retval < 0 && x_errno == TDSSOCK_EINTR)
@@ -266,22 +267,23 @@ tds_open_socket(TDSSOCKET * tds, const char *ip_addr, unsigned int port, int tim
 
 	if ((now - start) >= timeout) {
 		tds_close_socket(tds);
-		tds_client_msg(tds->tds_ctx, tds, 20003, 6, 0, 0, "SQL Server connection timed out.");
+		tds_client_msg(tds->tds_ctx, tds, 20015, 6, 0, 0, "SQL Server connection timed out.");
 		return TDS_FAIL;
 	}
 #endif
 	/* END OF NEW CODE */
 
 	/* check socket error */
-	optlen = sizeof(len);
-	if (getsockopt(tds->s, SOL_SOCKET, SO_ERROR, (char *) &len, &optlen) != 0) {
-        tds_report_error(tds->tds_ctx, tds, sock_errno, 20007, "Error in getsockopt");
-		tds_close_socket(tds);
-		return TDS_FAIL;
-	}
-	if (retval < 0 || len != 0) {
-        if (len != 0)
-            x_errno = len;
+    if (retval > 0  &&  FD_ISSET(tds->s, &efds)) {
+	    optlen = sizeof(x_errno);
+	    if (getsockopt(tds->s, SOL_SOCKET, SO_ERROR, (char *) &x_errno, &optlen) != 0) {
+            tds_report_error(tds->tds_ctx, tds, sock_errno, 20007, "Error in getsockopt");
+		    tds_close_socket(tds);
+		    return TDS_FAIL;
+	    }
+        retval = -1;
+    }
+	if (retval < 0) {
         tds_report_error(tds->tds_ctx, tds, x_errno, 20009, "Server is unavailable or does not exist");
 		tds_close_socket(tds);
 		return TDS_FAIL;
@@ -349,8 +351,14 @@ tds_goodread(TDSSOCKET * tds, unsigned char *buf, int buflen, unsigned char unfi
 	fd_set rfds, efds;
 	struct timeval tv;
     int canceled = 0;
+    int retval, x_errno;
+#if defined(DOS32X) || defined(WIN32)
+    int optlen;
+#else
+    socklen_t optlen;
+#endif
 
-	if (buf == NULL || buflen < 1 || tds == NULL)
+	if (buf == NULL || buflen < 1 || IS_TDSDEAD(tds))
 		return 0;
 
 	global_start = start = GetTimeMark();
@@ -372,30 +380,36 @@ tds_goodread(TDSSOCKET * tds, unsigned char *buf, int buflen, unsigned char unfi
         tv.tv_usec = 0;
         tv.tv_sec = 1;
 
-        if ((len = select(tds->s + 1, &rfds, NULL, &efds, &tv)) > 0) {
-
-			len = 0;
+        retval = select(tds->s + 1, &rfds, NULL, &efds, &tv);
+        x_errno = sock_errno;
+        len = 0;
+        if (retval > 0) {
             if (FD_ISSET(tds->s, &efds)) {
-                len = -1;
+                optlen = sizeof(x_errno);
+                if (getsockopt(tds->s, SOL_SOCKET, SO_ERROR, (char *) &x_errno, &optlen) != 0) {
+                    tds_report_error(tds->tds_ctx, tds, sock_errno, 20016, "Error in getsockopt");
+                    tds_close_socket(tds);
+                    return -1;
+                }
+                retval = -1;
             }
 			else if (FD_ISSET(tds->s, &rfds)) {
 #ifndef MSG_NOSIGNAL
-				len = READSOCKET(tds->s, buf + got, buflen);
+				retval = READSOCKET(tds->s, buf + got, buflen);
 #else
-				len = recv(tds->s, buf + got, buflen, MSG_NOSIGNAL);
+				retval = recv(tds->s, buf + got, buflen, MSG_NOSIGNAL);
 #endif
 				/* detect connection close */
-				if (len == 0) {
+				if (retval == 0) {
                     tds_client_msg(tds->tds_ctx, tds, 20011, 6, 0, 0, "EOF in the socket.");
 					tds_close_socket(tds);
 					return -1;
 				}
+                len = retval;
 			}
 		}
 
-		if (len < 0) {
-            int x_errno = sock_errno;
-
+		if (retval < 0) {
             switch(x_errno) {
 			case TDSSOCK_EINTR:
 			case EAGAIN:
@@ -405,7 +419,6 @@ tds_goodread(TDSSOCKET * tds, unsigned char *buf, int buflen, unsigned char unfi
                 tds_report_error(tds->tds_ctx, tds, x_errno, 20012, "select/recv finished with error");
 				return -1;
 			}
-			len = 0;
 		}
 
 		buflen -= len;
@@ -646,9 +659,15 @@ tds_goodwrite(TDSSOCKET * tds, const unsigned char *p, int len, unsigned char la
         now = start;
 
         retval = select(tds->s + 1, NULL, &wfds, &efds, &tv);
+        x_errno = sock_errno;
         if (retval > 0) {
-			retval = 0;
             if (FD_ISSET(tds->s, &efds)) {
+                optlen = sizeof(x_errno);
+                if (getsockopt(tds->s, SOL_SOCKET, SO_ERROR, (char *) &x_errno, &optlen) != 0) {
+                    tds_report_error(tds->tds_ctx, tds, sock_errno, 20001, "Error in getsockopt");
+                    tds_close_socket(tds);
+                    return -1;
+                }
                 retval = -1;
             }
 			else if (FD_ISSET(tds->s, &wfds)) {
@@ -659,14 +678,14 @@ tds_goodwrite(TDSSOCKET * tds, const unsigned char *p, int len, unsigned char la
 #else
                 retval = send(tds->s, p, left, MSG_NOSIGNAL);
 #endif
+                x_errno = sock_errno;
 				/* detect connection close */
 		        if (retval <= 0) {
-                    x_errno = sock_errno;
                     if (!retval || (x_errno != TDSSOCK_EINTR
                                     &&  x_errno != EAGAIN
                                     &&  x_errno != TDSSOCK_EINPROGRESS))
                     {
-                        tds_report_error(tds->tds_ctx, tds, x_errno, 20006, "Write to SQL Server failed");
+                        tds_report_error(tds->tds_ctx, tds, x_errno, 20017, "Write to SQL Server failed");
                         tds->in_pos = 0;
                         tds->in_len = 0;
                         tds_close_socket(tds);
@@ -678,16 +697,6 @@ tds_goodwrite(TDSSOCKET * tds, const unsigned char *p, int len, unsigned char la
         }
 
         if (retval < 0) {
-            x_errno = sock_errno;
-            optlen = sizeof(left);
-            if (getsockopt(tds->s, SOL_SOCKET, SO_ERROR, (char *) &left, &optlen) != 0) {
-                tds_report_error(tds->tds_ctx, tds, sock_errno, 20001, "Error in getsockopt");
-                tds_close_socket(tds);
-                return -1;
-            }
-            if (left != 0)
-                x_errno = left;
-
             switch(x_errno) {
             case TDSSOCK_EINTR:
             case EAGAIN:
@@ -697,7 +706,6 @@ tds_goodwrite(TDSSOCKET * tds, const unsigned char *p, int len, unsigned char la
                 tds_report_error(tds->tds_ctx, tds, x_errno, 20005, "select/send finished with error");
                 return -1;
             }
-            retval = 0;
         }
 
         left -= retval;

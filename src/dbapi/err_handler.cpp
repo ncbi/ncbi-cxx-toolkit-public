@@ -52,4 +52,12 @@ bool CToMultiExHandler::HandleIt(CDB_Exception* ex)
     return true;
 }
 
+bool CToMultiExHandler::HandleAll(const TExceptions& exceptions)
+{
+    ITERATE(TExceptions, it, exceptions) {
+        m_ex->Push(**it);
+    }
+    return true;
+}
+
 END_NCBI_SCOPE

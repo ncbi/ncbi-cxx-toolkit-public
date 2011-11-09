@@ -46,6 +46,7 @@ public:
 
     // Return TRUE (i.e. always process the "ex").
     virtual bool HandleIt(CDB_Exception* ex);
+    virtual bool HandleAll(const TExceptions& exceptions);
 
     CDB_MultiEx* GetMultiEx() {
         return m_ex.get();

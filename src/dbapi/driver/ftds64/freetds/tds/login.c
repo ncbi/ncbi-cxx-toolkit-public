@@ -412,7 +412,7 @@ tds_connect(TDSSOCKET * tds, TDSCONNECTION * connection)
             tds_client_msg(tds->tds_ctx, NULL, 20010, 6, 0, 0, err_msg);
         } else {
             tdsdump_log(TDS_DBG_ERROR, "No server specified!\n");
-            tds_client_msg(tds->tds_ctx, NULL, 20010, 6, 0, 0, "No server specified");
+            tds_client_msg(tds->tds_ctx, NULL, 20013, 6, 0, 0, "No server specified");
         }
         return TDS_FAIL;
     }

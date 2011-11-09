@@ -158,6 +158,7 @@ CDB_Exception::GetErrCodeString(void) const
         case eTimeout:  return "eTimeout";
         case eClient:   return "eClient";
         case eMulti:    return "eMulti";
+        case eTruncate: return "eTruncate";
         default:        return CException::GetErrCodeString();
     }
 }
