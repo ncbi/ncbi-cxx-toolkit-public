@@ -1136,6 +1136,14 @@
 #  define NCBI_XLOADER_SRA_EXPORT NCBI_DLL_IMPORT
 #endif
 
+/* Export specifier for library ncbi_xloader_sra
+ */
+#ifdef NCBI_XLOADER_CSRA_EXPORTS
+#  define NCBI_XLOADER_CSRA_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_XLOADER_CSRA_EXPORT NCBI_DLL_IMPORT
+#endif
+
 /* Export specifier for library ncbi_xloader_bam
  */
 #ifdef NCBI_XLOADER_BAM_EXPORTS
