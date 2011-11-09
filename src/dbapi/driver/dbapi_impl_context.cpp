@@ -292,7 +292,8 @@ void CDriverContext::CloseUnusedConnections(const string&   srv_name,
         if((!srv_name.empty()) && srv_name.compare(con->ServerName())) continue;
         if((!pool_name.empty()) && pool_name.compare(con->PoolName())) continue;
 
-        it = --m_NotInUse.erase(it);
+        it = m_NotInUse.erase(it);
+        --it;
         delete con;
     }
 }
@@ -907,7 +908,7 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
             CDB_ClientEx ex(DIAG_COMPILE_INFO, NULL, err, eDiag_Error, 100011);
             CDB_UserHandler::TExceptions* expts = factory->GetExceptions();
             if (expts) {
-                REVERSE_ITERATE(CDB_UserHandler::TExceptions, it, *expts) {
+                NON_CONST_REVERSE_ITERATE(CDB_UserHandler::TExceptions, it, *expts) {
                     ex.AddPrevious(*it);
                 }
             }
