@@ -63,13 +63,13 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "object_beg != previous object_end + 1",
     "no valid AGP lines",
     "consequtive gaps lines with the same type and linkage",
-    "missing linkage evidence (column 9) (AGP 2.0)",
     "in \"Scaffold from component\" file, invalid scaffold-breaking gap",
-
     "in \"Chromosome from scaffold\" file, invalid \"within-scaffold\" gap",
+
     "scaffold X was not defined in any of \"Scaffold from component\" files",
     "scaffold X is not used in any of \"Chromosome from scaffold\" files",
     kEmptyCStr, //"expecting X gaps per chromosome", // => expecting {2 telomere,1 centromere,not more than 1 short_arm)..., found 3
+    kEmptyCStr,
     kEmptyCStr,
 
     kEmptyCStr,
@@ -128,7 +128,7 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "old gap type; not used in AGP 2.0",
     "assuming AGP version X",
     "in \"Chromosome from scaffold\" file, scaffold is not used in full",
-    kEmptyCStr,  // W_Last
+    "missing linkage evidence (column 9) (AGP 2.0)",  // W_Last
 
     kEmptyCStr,
     kEmptyCStr,
@@ -585,8 +585,7 @@ int CAgpRow::ParseGapCols(bool log_errors)
     // linkage_evidence
     if( m_agp_version == eAgpVersion_2_0 ) {
         if( GetLinkageEvidence().size()==0 ) {
-            if(log_errors) m_AgpErr->Msg(CAgpErr::E_MissingLinkage);
-            return CAgpErr::E_MissingLinkage;
+            if(log_errors) m_AgpErr->Msg(CAgpErr::W_MissingLinkage);
         }
         if( GapEndsScaffold() ) {
             if(GetLinkageEvidence() != "na") {

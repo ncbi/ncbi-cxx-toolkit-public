@@ -430,10 +430,9 @@ public:
         E_ObjBegNePrevEndPlus1, // CAgpReader
         E_NoValidLines,         // CAgpReader     (Make it a warning?)
         E_SameConseqGaps,
-        E_MissingLinkage,       // CAgpRow (v. >= 2.0 )
         E_ScafBreakingGap,
-
         E_WithinScafGap,
+
         E_UnknownScaf,       // -- agp_validate --
         E_UnusedScaf,        // -- agp_validate --
         E_Last, E_First=1, E_LastToSkipLine=E_ObjRangeNeComp,
@@ -476,7 +475,7 @@ public:
         W_OldGapType,        // CAgpRow (v. >= 2.0 )
         W_AssumingVersion,   // CAgpRow (v. == auto)
         W_ScafNotInFull,     // -- agp_validate --
-        //W_ChrGapCount,       // -- agp_validate --
+        W_MissingLinkage,       // CAgpRow (v. >= 2.0 )
         W_Last, W_First = 31,
 
         // "GenBank" checks that rely on information about the sequence
