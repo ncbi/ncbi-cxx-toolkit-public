@@ -52,12 +52,7 @@ struct SUnLock
 {
     void operator() (CDB_UserHandler::TExceptions& resource) const
     {
-        NON_CONST_ITERATE(CDB_UserHandler::TExceptions, it, resource) {
-            CDB_Exception* ex = *it; // for debugging ...
-            delete ex;
-        }
-
-        resource.clear();
+        CDB_UserHandler::ClearExceptions(resource);
     }
 };
 

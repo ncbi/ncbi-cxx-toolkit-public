@@ -150,7 +150,7 @@ CDB_Exception::x_Assign(const CException& src)
 const char*
 CDB_Exception::GetErrCodeString(void) const
 {
-    switch ( GetErrCode() ) {
+    switch ( x_GetErrCode() ) {
         case eDS:       return "eDS";
         case eRPC:      return "eRPC";
         case eSQL:      return "eSQL";
@@ -300,8 +300,11 @@ string CDB_MultiEx::WhatThis(void) const
 {
     string str;
 
-    str += "---  [Multi-Exception in ";
-    str += GetModule();
+    str += "---  [Multi-Exception";
+    if (!GetModule().empty()) {
+        str += " in ";
+        str += GetModule();
+    }
     str += "]   Contains a backtrace of ";
     str += NStr::UIntToString( NofExceptions() );
     str += " exception";
@@ -419,6 +422,16 @@ CDB_UserHandler::~CDB_UserHandler(void)
 {
 }
 
+void
+CDB_UserHandler::ClearExceptions(TExceptions& expts)
+{
+    NON_CONST_ITERATE(CDB_UserHandler::TExceptions, it, expts) {
+        CDB_Exception* ex = *it; // for debugging ...
+        delete ex;
+    }
+    expts.clear();
+}
+
 
 //
 // ATTENTION:  Should you change the following static methods, please make sure
@@ -487,30 +500,10 @@ bool CDB_UserHandler_Diag::HandleIt(CDB_Exception* ex)
     if ( !ex )
         return true;
 
-    if (ex->GetSeverity() == eDiag_Info) {
-        if ( m_Prefix.empty() ) {
-            ERR_POST_X(1, Severity(ex->GetSeverity()) << ex->GetMsg());
-        } else {
-            ERR_POST_X(2, Severity(ex->GetSeverity()) << m_Prefix << ' ' <<
-                          ex->GetMsg());
-        }
+    if ( m_Prefix.empty() ) {
+        ERR_POST_X(1, *ex);
     } else {
-        if ( m_Prefix.empty() ) {
-            ERR_POST_X(3, Severity(ex->GetSeverity()) << ex->what() <<
-                       " SERVER: '" << ex->GetServerName() <<
-                       "' USER: '" << ex->GetUserName() << "'" <<
-                       (ex->GetExtraMsg().empty() ? "" : " CONTEXT: '" +
-                        ex->GetExtraMsg() + "'")
-                       );
-        } else {
-            ERR_POST_X(4, Severity(ex->GetSeverity()) << m_Prefix << ' ' <<
-                       ex->what() <<
-                       " SERVER: '" << ex->GetServerName() <<
-                       "' USER: '" << ex->GetUserName() << "'" <<
-                       (ex->GetExtraMsg().empty() ? "" : " CONTEXT: '" +
-                        ex->GetExtraMsg() + "'")
-                       );
-        }
+        ERR_POST_X(2, Severity(ex->GetSeverity()) << m_Prefix << " " << *ex);
     }
 
     return true;
@@ -562,7 +555,7 @@ bool CDB_UserHandler_Stream::HandleIt(CDB_Exception* ex)
     CFastMutexGuard mg(m_Mtx);
 
     if ( !m_Prefix.empty() ) {
-        *m_Output << m_Prefix << ' ';
+        *m_Output << m_Prefix << " ";
     }
 
     *m_Output << ex->what();
@@ -594,20 +587,57 @@ CDB_UserHandler_Exception::HandleIt(CDB_Exception* ex)
     CDB_TruncateEx* trunc_ex = dynamic_cast<CDB_TruncateEx*>(ex);
 
     if (trunc_ex) {
-        ERR_POST_X(7, Severity(ex->GetSeverity()) << ex->GetMsg());
+        ERR_POST_X(7, *ex);
         return true;
     }
 
-    string msg =
-        " SERVER: '" + ex->GetServerName() +
-        "' USER: '" + ex->GetUserName() + "'" +
-        (ex->GetExtraMsg().empty() ? "" : " CONTEXT: '" +
-         ex->GetExtraMsg() + "'")
-        ;
-
-    ex->AddBacklog(DIAG_COMPILE_INFO, msg, ex->GetSeverity()); 
     ex->Throw();
 
+    return true;
+}
+
+bool
+CDB_UserHandler_Exception::HandleAll(const TExceptions& exceptions)
+{
+    if (exceptions.empty())
+        return false;
+
+    TExceptions::const_iterator it = exceptions.end();
+    CDB_Exception* outer_ex = NULL;
+    bool ret_val = false;
+    while (it != exceptions.begin()  &&  !outer_ex) {
+        --it;
+        outer_ex = *it;
+        if (outer_ex) {
+            if (outer_ex->GetSeverity() == eDiag_Info)
+                outer_ex = NULL;
+            else if (outer_ex->GetDBErrCode() == 0) {
+                outer_ex = NULL;
+                ret_val = true;
+            }
+            else {
+                CDB_TruncateEx* trunc_ex = dynamic_cast<CDB_TruncateEx*>(outer_ex);
+                if (trunc_ex) {
+                    ERR_POST_X(7, *trunc_ex);
+                    outer_ex = NULL;
+                    ret_val = true;
+                }
+            }
+        }
+    }
+    if (!outer_ex)
+        return ret_val;
+
+    if (it != exceptions.begin()) {
+        do {
+            --it;
+            if (*it)
+                outer_ex->AddPrevious(*it);
+        }
+        while (it != exceptions.begin());
+    }
+
+    outer_ex->Throw();
     return true;
 }
 

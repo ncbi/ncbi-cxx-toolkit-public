@@ -107,6 +107,11 @@ protected:
             I_DriverContext& ctx,
             const CDBConnParams& params);
 
+    virtual CDB_UserHandler::TExceptions* GetExceptions(void)
+    {
+        return NULL;
+    }
+
 private:
     // Friends
     friend class impl::CDriverContext;

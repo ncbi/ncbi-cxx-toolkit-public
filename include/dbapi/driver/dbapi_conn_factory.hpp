@@ -159,7 +159,9 @@ private:
     CDB_Connection* MakeValidConnection(
         I_DriverContext& ctx,
         const CDBConnParams& params,
-        IConnValidator::EConnStatus& conn_status) const;
+        IConnValidator::EConnStatus& conn_status);
+
+    virtual CDB_UserHandler::TExceptions* GetExceptions(void);
 
     unsigned int CalculateConnectionTimeout(const I_DriverContext& ctx) const;
     unsigned int CalculateLoginTimeout(const I_DriverContext& ctx) const;
@@ -187,6 +189,7 @@ private:
 
     const CMapperFactory        m_MapperFactory;
     TValidatorSet               m_ValidatorSet;
+    CDB_UserHandler::TExceptions m_Errors;
     // 0 means *none* (even do not try to connect)
     unsigned int                m_MaxNumOfConnAttempts;
     // 0 means *unlimited*

@@ -892,10 +892,8 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
         act_params.SetDatabaseName(db_name);
         act_params.SetPassword(password);
 
-        t_con = CDbapiConnMgr::Instance().GetConnectionFactory()->MakeDBConnection(
-                    *this,
-                    act_params);
-
+        CRef<IDBConnectionFactory> factory = CDbapiConnMgr::Instance().GetConnectionFactory();
+        t_con = factory->MakeDBConnection(*this, act_params);
 
         if((!t_con && act_params.GetParam("do_not_connect") == "true")) {
             return NULL;
@@ -903,10 +901,17 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
 
         if (!t_con) {
             string err;
-
             err += "Cannot connect to the server '" + act_params.GetServerName();
             err += "' as user '" + act_params.GetUserName() + "'";
-            DATABASE_DRIVER_ERROR( err, 100011 );
+
+            CDB_ClientEx ex(DIAG_COMPILE_INFO, NULL, err, eDiag_Error, 100011);
+            CDB_UserHandler::TExceptions* expts = factory->GetExceptions();
+            if (expts) {
+                REVERSE_ITERATE(CDB_UserHandler::TExceptions, it, *expts) {
+                    ex.AddPrevious(*it);
+                }
+            }
+            throw ex;
         }
 
         // Set database ...

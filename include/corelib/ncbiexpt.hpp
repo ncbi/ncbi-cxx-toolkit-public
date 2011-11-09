@@ -647,6 +647,9 @@ public:
                     const string& message,
                     EDiagSev severity = eDiag_Error);
 
+    void AddPrevious(const CException* prev_exception);
+    void AddToMessage(const string& add_msg);
+
     /// Polymorphically (re)throw an exception whose exact type is
     /// uncertain.
     ///
@@ -811,7 +814,8 @@ private:
     string      m_Function;          ///< Function to report on
 
     mutable string m_What;           ///< What type of exception
-    const CException* m_Predecessor; ///< Previous exception
+    typedef const CException* TExceptionPtr;
+    mutable TExceptionPtr m_Predecessor; ///< Previous exception
 
     mutable bool m_InReporter;       ///< Reporter flag
     static  bool sm_BkgrEnabled;     ///< Background reporting enabled flag

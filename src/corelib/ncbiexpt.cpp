@@ -218,6 +218,29 @@ void CException::AddBacklog(const CDiagCompileInfo& info,
 }
 
 
+void CException::AddToMessage(const string& add_msg)
+{
+    m_Msg += add_msg;
+}
+
+
+void CException::AddPrevious(const CException* prev_exception)
+{
+    if (m_Predecessor) {
+        const CException* prev = m_Predecessor;
+        const CException* next = prev->m_Predecessor;
+        while (next) {
+            prev = next;
+            next = prev->m_Predecessor;
+        }
+        prev->m_Predecessor = prev_exception->x_Clone();
+    }
+    else {
+        m_Predecessor = prev_exception->x_Clone();
+    }
+}
+
+
 void CException::SetSeverity(EDiagSev severity)
 {
     if (CompareDiagPostLevel(severity, eDiag_Critical) >= 0  &&

@@ -50,13 +50,6 @@
 BEGIN_NCBI_SCOPE
 
 ///////////////////////////////////////////////////////////////////////////////
-inline
-CDiagCompileInfo GetBlankCompileInfo(void)
-{
-    return CDiagCompileInfo();
-}
-
-///////////////////////////////////////////////////////////////////////////////
 // Patterns to test:
 //      I) Statement:
 //          1) New/dedicated statement for each test
@@ -644,7 +637,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Exception)
             const int severity = 12345;
 
             CDB_Exception ex(
-                GetBlankCompileInfo(),
+                DIAG_COMPILE_INFO,
                 NULL,
                 CDB_Exception::eMulti,
                 message,
@@ -679,7 +672,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Exception)
 
         {
             CDB_DSEx ex(
-                GetBlankCompileInfo(),
+                DIAG_COMPILE_INFO,
                 NULL,
                 message,
                 eDiag_Fatal,
@@ -704,7 +697,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Exception)
             const int proc_line = 12345;
 
             CDB_RPCEx ex(
-                GetBlankCompileInfo(),
+                DIAG_COMPILE_INFO,
                 NULL,
                 message,
                 eDiag_Critical,
@@ -733,7 +726,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Exception)
             const int batch_line = 12345;
 
             CDB_SQLEx ex(
-                GetBlankCompileInfo(),
+                DIAG_COMPILE_INFO,
                 NULL,
                 message,
                 eDiag_Error,
@@ -760,7 +753,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Exception)
 
         {
             CDB_DeadlockEx ex(
-                GetBlankCompileInfo(),
+                DIAG_COMPILE_INFO,
                 NULL,
                 message);
 
@@ -778,7 +771,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Exception)
 
         {
             CDB_TimeoutEx ex(
-                GetBlankCompileInfo(),
+                DIAG_COMPILE_INFO,
                 NULL,
                 message,
                 msgnumber);
@@ -799,7 +792,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Exception)
 
         {
             CDB_ClientEx ex(
-                GetBlankCompileInfo(),
+                DIAG_COMPILE_INFO,
                 NULL,
                 message,
                 eDiag_Warning,
@@ -821,7 +814,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Exception)
 
         {
             CDB_MultiEx ex(
-                GetBlankCompileInfo(),
+                DIAG_COMPILE_INFO,
                 NULL);
 
             BOOST_CHECK_EQUAL(0, ex.GetDBErrCode());

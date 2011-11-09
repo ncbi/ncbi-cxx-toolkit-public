@@ -62,14 +62,6 @@ BEGIN_NCBI_SCOPE
 
 
 /////////////////////////////////////////////////////////////////////////////
-inline
-CDiagCompileInfo GetBlankCompileInfo(void)
-{
-    return CDiagCompileInfo();
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
 //
 //  CDblibContextRegistry (Singleton)
 //
@@ -452,7 +444,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
     case SYBEFCON:
     case SYBECONN:
         {
-            CDB_TimeoutEx ex(GetBlankCompileInfo(),
+            CDB_TimeoutEx ex(DIAG_COMPILE_INFO,
                              0,
                              message,
                              dberr);
@@ -467,7 +459,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
 
     default:
         if(dberr == 1205) {
-            CDB_DeadlockEx ex(GetBlankCompileInfo(),
+            CDB_DeadlockEx ex(DIAG_COMPILE_INFO,
                               0,
                               message);
 
@@ -488,7 +480,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
     case EXINFO:
     case EXUSER:
         {
-            CDB_ClientEx ex(GetBlankCompileInfo(),
+            CDB_ClientEx ex(DIAG_COMPILE_INFO,
                             0,
                             message,
                             eDiag_Info,
@@ -506,7 +498,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
     case EXSERVER:
     case EXPROGRAM:
         if ( dberr != 20018 ) {
-            CDB_ClientEx ex(GetBlankCompileInfo(),
+            CDB_ClientEx ex(DIAG_COMPILE_INFO,
                             0,
                             message,
                             eDiag_Error,
@@ -521,7 +513,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
         break;
     case EXTIME:
         {
-            CDB_TimeoutEx ex(GetBlankCompileInfo(),
+            CDB_TimeoutEx ex(DIAG_COMPILE_INFO,
                              0,
                              message,
                              dberr);
@@ -535,7 +527,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
         return INT_TIMEOUT;
     default:
         {
-            CDB_ClientEx ex(GetBlankCompileInfo(),
+            CDB_ClientEx ex(DIAG_COMPILE_INFO,
                             0,
                             message,
                             eDiag_Critical,
@@ -580,7 +572,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
     }
 
     if (msgno == 1205/*DEADLOCK*/) {
-        CDB_DeadlockEx ex(GetBlankCompileInfo(),
+        CDB_DeadlockEx ex(DIAG_COMPILE_INFO,
                           0,
                           message);
 
@@ -602,7 +594,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
             severity <  16 ? eDiag_Error : eDiag_Critical;
 
         if (!procname.empty()) {
-            CDB_RPCEx ex(GetBlankCompileInfo(),
+            CDB_RPCEx ex(DIAG_COMPILE_INFO,
                          0,
                          message,
                          sev,
@@ -616,7 +608,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
 
             GetDBLExceptionStorage().Accept(ex);
         } else {
-            CDB_DSEx ex(GetBlankCompileInfo(),
+            CDB_DSEx ex(DIAG_COMPILE_INFO,
                         0,
                         message,
                         sev,

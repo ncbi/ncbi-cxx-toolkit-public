@@ -141,6 +141,29 @@ TDS_RCSID(var, "$Id$");
 #define USE_NODELAY 1
 #endif
 
+
+#define NCBI_INCLUDE_STRERROR_C
+#include "ncbi_strerror.c"
+
+
+static void
+tds_report_error(const TDSCONTEXT* tds_ctx, TDSSOCKET* tds, int x_errno, int msgno, const char* msg)
+{
+    const char* str_err = s_StrError(x_errno);
+    char err_msg[4096];
+
+    strcpy(err_msg, msg);
+    strcat(err_msg, " (");
+    itoa(x_errno, err_msg + strlen(err_msg), 10);
+    strcat(err_msg, ", ");
+    strcat(err_msg, str_err);
+    strcat(err_msg, ").");
+    tds_client_msg(tds_ctx, tds, msgno, 6, 0, 0, err_msg);
+
+    UTIL_ReleaseBuffer(str_err);
+}
+
+
 int
 tds_open_socket(TDSSOCKET * tds, const char *ip_addr, unsigned int port, int timeout)
 {
@@ -153,6 +176,7 @@ tds_open_socket(TDSSOCKET * tds, const char *ip_addr, unsigned int port, int tim
 	int retval;
 #endif
 	int len;
+    int x_errno;
 	char ip[20];
 #if defined(DOS32X) || defined(WIN32)
 	int optlen;
@@ -174,8 +198,7 @@ tds_open_socket(TDSSOCKET * tds, const char *ip_addr, unsigned int port, int tim
 	tdsdump_log(TDS_DBG_INFO1, "Connecting to %s port %d.\n", tds_inet_ntoa_r(sin.sin_addr, ip, sizeof(ip)), ntohs(sin.sin_port));
 
 	if (TDS_IS_SOCKET_INVALID(tds->s = socket(AF_INET, SOCK_STREAM, 0))) {
-		tds_client_msg(tds->tds_ctx, tds, 20008, 9, 0, 0, "Unable to open socket.");
-		tdsdump_log(TDS_DBG_ERROR, "socket creation error: %s\n", strerror(sock_errno));
+        tds_report_error(tds->tds_ctx, tds, sock_errno, 20008, "Unable to open socket");
 		return TDS_FAIL;
 	}
 
@@ -222,7 +245,8 @@ tds_open_socket(TDSSOCKET * tds, const char *ip_addr, unsigned int port, int tim
 	}
 
 	retval = connect(tds->s, (struct sockaddr *) &sin, sizeof(sin));
-	if (retval < 0 && sock_errno == TDSSOCK_EINPROGRESS)
+    x_errno = sock_errno;
+	if (retval < 0 && x_errno == TDSSOCK_EINPROGRESS)
 		retval = 0;
 	/* if retval < 0 (error) fall through */
 
@@ -233,19 +257,16 @@ tds_open_socket(TDSSOCKET * tds, const char *ip_addr, unsigned int port, int tim
 		selecttimeout.tv_sec = (long)timeout - (long)(now - start);
 		selecttimeout.tv_usec = 0;
 		retval = select(tds->s + 1, NULL, &fds, &fds, &selecttimeout);
+        x_errno = sock_errno;
 		/* on interrupt ignore */
-		if (retval < 0 && sock_errno == TDSSOCK_EINTR)
+		if (retval < 0 && x_errno == TDSSOCK_EINTR)
 			retval = 0;
 		now = time(NULL);
 	}
 
-	if (retval < 0 || (now - start) >= timeout) {
-		tdsdump_log(TDS_DBG_ERROR, "tds_open_socket: %s:%d: %s\n", tds_inet_ntoa_r(sin.sin_addr, ip, sizeof(ip)), ntohs(sin.sin_port), strerror(sock_errno));
+	if ((now - start) >= timeout) {
 		tds_close_socket(tds);
-		if (retval < 0)
-			tds_client_msg(tds->tds_ctx, tds, 20009, 9, 0, 0, "Server is unavailable or does not exist.");
-		else
-			tds_client_msg(tds->tds_ctx, tds, 20003, 9, 0, 0, "SQL Server connection timed out.");
+		tds_client_msg(tds->tds_ctx, tds, 20003, 6, 0, 0, "SQL Server connection timed out.");
 		return TDS_FAIL;
 	}
 #endif
@@ -254,14 +275,15 @@ tds_open_socket(TDSSOCKET * tds, const char *ip_addr, unsigned int port, int tim
 	/* check socket error */
 	optlen = sizeof(len);
 	if (getsockopt(tds->s, SOL_SOCKET, SO_ERROR, (char *) &len, &optlen) != 0) {
-		tdsdump_log(TDS_DBG_ERROR, "getsockopt: %s\n", strerror(sock_errno));
+        tds_report_error(tds->tds_ctx, tds, sock_errno, 20007, "Error in getsockopt");
 		tds_close_socket(tds);
 		return TDS_FAIL;
 	}
-	if (len != 0) {
-		tdsdump_log(TDS_DBG_ERROR, "connect error: %s\n", strerror(len));
+	if (retval < 0 || len != 0) {
+        if (len != 0)
+            x_errno = len;
+        tds_report_error(tds->tds_ctx, tds, x_errno, 20009, "Server is unavailable or does not exist");
 		tds_close_socket(tds);
-		tds_client_msg(tds->tds_ctx, tds, 20009, 9, 0, 0, "Server is unavailable or does not exist.");
 		return TDS_FAIL;
 	}
 
@@ -334,9 +356,8 @@ tds_goodread(TDSSOCKET * tds, unsigned char *buf, int buflen, unsigned char unfi
 	global_start = start = GetTimeMark();
 
 	while (buflen > 0) {
-
 		int len;
-		double now = GetTimeMark();
+		double now;
 
 		if (IS_TDSDEAD(tds))
 			return -1;
@@ -365,6 +386,7 @@ tds_goodread(TDSSOCKET * tds, unsigned char *buf, int buflen, unsigned char unfi
 #endif
 				/* detect connection close */
 				if (len == 0) {
+                    tds_client_msg(tds->tds_ctx, tds, 20011, 6, 0, 0, "EOF in the socket.");
 					tds_close_socket(tds);
 					return -1;
 				}
@@ -372,13 +394,15 @@ tds_goodread(TDSSOCKET * tds, unsigned char *buf, int buflen, unsigned char unfi
 		}
 
 		if (len < 0) {
-			switch(sock_errno) {
+            int x_errno = sock_errno;
+
+            switch(x_errno) {
 			case TDSSOCK_EINTR:
-				tdsdump_log(TDS_DBG_NETWORK, "socket read interrupted\n");
 			case EAGAIN:
 			case TDSSOCK_EINPROGRESS:
 				break;
 			default:
+                tds_report_error(tds->tds_ctx, tds, x_errno, 20012, "select/recv finished with error");
 				return -1;
 			}
 			len = 0;
@@ -391,8 +415,6 @@ tds_goodread(TDSSOCKET * tds, unsigned char *buf, int buflen, unsigned char unfi
 		if (tds->query_timeout > 0 && (int)now - start >= tds->query_timeout) {
 
 			int timeout_action = TDS_INT_CONTINUE;
-
-			tdsdump_log(TDS_DBG_NETWORK, "exceeded query timeout: %d\n", tds->query_timeout);
 
             if (canceled)
                 return got;
@@ -467,7 +489,7 @@ tds_read_packet(TDSSOCKET * tds)
 	if ((len = goodread(tds, header, sizeof(header))) < (int) sizeof(header)) {
 		/* GW ADDED */
 		if (len < 0) {
-			tds_client_msg(tds->tds_ctx, tds, 20004, 9, 0, 0, "Read from SQL server failed.");
+			tds_client_msg(tds->tds_ctx, tds, 20004, 6, 0, 0, "Read from SQL server failed.");
 			tds_close_socket(tds);
 			tds->in_len = 0;
 			tds->in_pos = 0;
@@ -590,98 +612,103 @@ tds_read_packet(TDSSOCKET * tds)
 	return (tds->in_len);
 }
 
-/* TODO this code should be similar to read one... */
-static int
-tds_check_socket_write(TDSSOCKET * tds)
-{
-	int retcode = 0;
-	struct timeval selecttimeout;
-	time_t start, now;
-	fd_set fds;
-
-	/* Jeffs hack *** START OF NEW CODE */
-	FD_ZERO(&fds);
-
-	if (!tds->query_timeout) {
-		for (;;) {
-			FD_SET(tds->s, &fds);
-			retcode = select(tds->s + 1, NULL, &fds, NULL, NULL);
-			/* write available */
-			if (retcode >= 0)
-				return 0;
-			/* interrupted */
-			if (sock_errno == TDSSOCK_EINTR)
-				continue;
-			/* error, leave caller handle problems */
-			return -1;
-		}
-	}
-	start = time(NULL);
-	now = start;
-
-	while ((retcode == 0) && ((now - start) < tds->query_timeout)) {
-		FD_SET(tds->s, &fds);
-		selecttimeout.tv_sec = (long)tds->query_timeout - (long)(now - start);
-		selecttimeout.tv_usec = 0;
-		retcode = select(tds->s + 1, NULL, &fds, NULL, &selecttimeout);
-		if (retcode < 0 && sock_errno == TDSSOCK_EINTR) {
-			retcode = 0;
-		}
-
-		now = time(NULL);
-	}
-
-	return retcode;
-	/* Jeffs hack *** END OF NEW CODE */
-}
-
 /* goodwrite function adapted from patch by freddy77 */
 static int
 tds_goodwrite(TDSSOCKET * tds, const unsigned char *p, int len, unsigned char last)
 {
+    int retval = 0;
+    double start, now;
+    fd_set wfds, efds;
+    struct timeval tv;
 	int left = len;
-	int retval;
-
-	/* Fix of SIGSEGV when FD_SET() called with negative fd (Sergey A. Cherukhin, 23/09/2005) */
-	if (TDS_IS_SOCKET_INVALID(tds->s))
-		return -1;
-
-	while (left > 0) {
-		/*
-		 * If there's a timeout, we need to sit and wait for socket
-		 * writability
-		 * moved socket writability check to own function -- bsb
-		 */
-		/*
-		 * TODO we can avoid calling select for every send using
-		 * no-blocking socket... This will reduce syscalls
-		 */
-		tds_check_socket_write(tds);
-
-#ifdef USE_MSGMORE
-		retval = send(tds->s, p, left, last ? MSG_NOSIGNAL : MSG_NOSIGNAL|MSG_MORE);
-#elif !defined(MSG_NOSIGNAL)
-		retval = WRITESOCKET(tds->s, p, left);
+    int x_errno;
+#if defined(DOS32X) || defined(WIN32)
+    int optlen;
 #else
-		retval = send(tds->s, p, left, MSG_NOSIGNAL);
+    socklen_t optlen;
 #endif
 
-		if (retval <= 0) {
-            if (!retval || (sock_errno != TDSSOCK_EINTR
-                            &&  sock_errno != EAGAIN
-                            &&  sock_errno != TDSSOCK_EINPROGRESS))
-            {
-                tdsdump_log(TDS_DBG_NETWORK, "TDS: Write failed in tds_write_packet\nError: %d (%s)\n", sock_errno, strerror(sock_errno));
-                tds_client_msg(tds->tds_ctx, tds, 20006, 9, 0, 0, "Write to SQL Server failed.");
-                tds->in_pos = 0;
-                tds->in_len = 0;
+	while (left > 0) {
+        if (IS_TDSDEAD(tds))
+            return -1;
+
+	    FD_ZERO(&wfds);
+        FD_SET(tds->s, &wfds);
+        FD_ZERO(&efds);
+        FD_SET(tds->s, &efds);
+
+        /* tv structure is modified inside select() on Linux, so we need to
+           reinitialize it every time. */
+        tv.tv_usec = 0;
+        tv.tv_sec = 1;
+
+        start = GetTimeMark();
+        now = start;
+
+        retval = select(tds->s + 1, NULL, &wfds, &efds, &tv);
+        if (retval > 0) {
+			retval = 0;
+            if (FD_ISSET(tds->s, &efds)) {
+                retval = -1;
+            }
+			else if (FD_ISSET(tds->s, &wfds)) {
+#ifdef USE_MSGMORE
+                retval = send(tds->s, p, left, last ? MSG_NOSIGNAL : MSG_NOSIGNAL|MSG_MORE);
+#elif !defined(MSG_NOSIGNAL)
+                retval = WRITESOCKET(tds->s, p, left);
+#else
+                retval = send(tds->s, p, left, MSG_NOSIGNAL);
+#endif
+				/* detect connection close */
+		        if (retval <= 0) {
+                    x_errno = sock_errno;
+                    if (!retval || (x_errno != TDSSOCK_EINTR
+                                    &&  x_errno != EAGAIN
+                                    &&  x_errno != TDSSOCK_EINPROGRESS))
+                    {
+                        tds_report_error(tds->tds_ctx, tds, x_errno, 20006, "Write to SQL Server failed");
+                        tds->in_pos = 0;
+                        tds->in_len = 0;
+                        tds_close_socket(tds);
+                        return -1;
+                    }
+                    retval = 0;
+		        }
+			}
+        }
+
+        if (retval < 0) {
+            x_errno = sock_errno;
+            optlen = sizeof(left);
+            if (getsockopt(tds->s, SOL_SOCKET, SO_ERROR, (char *) &left, &optlen) != 0) {
+                tds_report_error(tds->tds_ctx, tds, sock_errno, 20001, "Error in getsockopt");
                 tds_close_socket(tds);
                 return -1;
             }
+            if (left != 0)
+                x_errno = left;
+
+            switch(x_errno) {
+            case TDSSOCK_EINTR:
+            case EAGAIN:
+            case TDSSOCK_EINPROGRESS:
+                break;
+            default:
+                tds_report_error(tds->tds_ctx, tds, x_errno, 20005, "select/send finished with error");
+                return -1;
+            }
             retval = 0;
-		}
-		left -= retval;
-		p += retval;
+        }
+
+        left -= retval;
+        p += retval;
+
+        now = GetTimeMark();
+        if (tds->query_timeout  &&  (now - start) >= tds->query_timeout) {
+            tds_client_msg(tds->tds_ctx, tds, 20002, 6, 0, 0, "Writing to SQL server exceeded timeout");
+            tds_close_socket(tds);
+            return -1;
+        }
 	}
 
 #ifdef USE_CORK

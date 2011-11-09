@@ -451,6 +451,7 @@ public:
     /// Exception container type
     /// @sa HandleAll()
     typedef deque<CDB_Exception*> TExceptions;
+    static void ClearExceptions(TExceptions& expts);
 
     /// Handle all of the exceptions resulting from a native API call.
     /// @param exceptions
@@ -534,6 +535,7 @@ public:
     virtual ~CDB_UserHandler_Exception(void);
 
     virtual bool HandleIt(CDB_Exception* ex);
+    virtual bool HandleAll(const TExceptions& exceptions);
 };
 
 

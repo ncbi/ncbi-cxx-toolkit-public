@@ -58,14 +58,6 @@
 BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
-inline
-CDiagCompileInfo GetBlankCompileInfo(void)
-{
-    return CDiagCompileInfo();
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
 //
 //  CODBCContextRegistry (Singleton)
 //
@@ -234,7 +226,7 @@ void CODBC_Reporter::ReportErrors(void) const
             case SQL_SUCCESS:
                 if(util::strncmp(SqlState, _T_NCBI_ODBC("HYT"), 3) == 0) { // timeout
 
-                    CDB_TimeoutEx to(GetBlankCompileInfo(),
+                    CDB_TimeoutEx to(DIAG_COMPILE_INFO,
                                     0,
                                     err_msg.c_str(),
                                     NativeError);
@@ -243,7 +235,7 @@ void CODBC_Reporter::ReportErrors(void) const
                 }
 				else if(util::strncmp(SqlState, _T_NCBI_ODBC("40001"), 5) == 0) {
 					// deadlock
-                    CDB_DeadlockEx dl(GetBlankCompileInfo(),
+                    CDB_DeadlockEx dl(DIAG_COMPILE_INFO,
                                     0,
                                     err_msg.c_str());
                     m_HStack->PostMsg(&dl);
@@ -253,7 +245,7 @@ void CODBC_Reporter::ReportErrors(void) const
                 }
                 else if(NativeError != 5701
                     && NativeError != 5703 ){
-                    CDB_SQLEx se(GetBlankCompileInfo(),
+                    CDB_SQLEx se(DIAG_COMPILE_INFO,
                                 0,
                                 err_msg.c_str(),
                                 (NativeError == 0 ? eDiag_Info : eDiag_Warning),
@@ -272,7 +264,7 @@ void CODBC_Reporter::ReportErrors(void) const
                 err_msg += GetExtraMsg();
 
                 {
-                    CDB_DSEx dse(GetBlankCompileInfo(),
+                    CDB_DSEx dse(DIAG_COMPILE_INFO,
                                 0,
                                 err_msg.c_str(),
                                 eDiag_Warning,
@@ -287,7 +279,7 @@ void CODBC_Reporter::ReportErrors(void) const
                 err_msg += GetExtraMsg();
 
                 {
-                    CDB_ClientEx ce(GetBlankCompileInfo(),
+                    CDB_ClientEx ce(DIAG_COMPILE_INFO,
                                     0,
                                     err_msg.c_str(),
                                     eDiag_Warning,
