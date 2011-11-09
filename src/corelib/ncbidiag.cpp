@@ -853,11 +853,8 @@ void CDiagContextThreadData::RemoveCollectGuard(CDiagCollectGuard* guard)
                     handler->PostToConsole(*itc);
                     // Make sure only messages with the severity above allowed
                     // are printed to normal log.
-                    EDiagSev gpsev = guard->GetPrintSeverity();
-                    EDiagSev gcsev = guard->GetCollectSeverity();
-                    EDiagSev post_sev =
-                        AdjustApplogPrintableSeverity(
-                        CompareDiagPostLevel(gpsev, gcsev) < 0 ? gpsev : gcsev);
+                    EDiagSev post_sev = AdjustApplogPrintableSeverity(
+                                            guard->GetCollectSeverity());
                     bool allow_trace = post_sev == eDiag_Trace;
                     if (itc->m_Severity == eDiag_Trace  &&  !allow_trace) {
                         continue; // trace is disabled
@@ -2800,7 +2797,7 @@ CDiagBuffer::CDiagBuffer(void)
 CDiagBuffer::~CDiagBuffer(void)
 {
 #if (_DEBUG > 1)
-    if (m_Diag  ||  dynamic_cast<CNcbiOstrstream*>(m_Stream)->pcount())
+    if (m_Diag  ||  m_Stream->pcount())
         Abort();
 #endif
     delete m_Stream;
@@ -2812,6 +2809,9 @@ void CDiagBuffer::DiagHandler(SDiagMessage& mess)
     bool is_console = (mess.m_Flags & eDPF_IsConsole) > 0;
     bool applog = (mess.m_Flags & eDPF_AppLog) > 0;
     bool is_printable = applog  ||  SeverityPrintable(mess.m_Severity);
+    if (!is_console  &&  !is_printable) {
+        return;
+    }
     if ( CDiagBuffer::sm_Handler ) {
         CDiagLock lock(CDiagLock::eRead);
         if ( CDiagBuffer::sm_Handler ) {
@@ -2821,9 +2821,6 @@ void CDiagBuffer::DiagHandler(SDiagMessage& mess)
             CDiagContext& ctx = GetDiagContext();
             mess.m_Prefix = diag_buf.m_PostPrefix.empty() ?
                 0 : diag_buf.m_PostPrefix.c_str();
-            if (!is_console  &&  !is_printable) {
-                return;
-            }
             if (is_console) {
                 // No throttling for console
                 CDiagBuffer::sm_Handler->PostToConsole(mess);
@@ -2885,9 +2882,7 @@ bool CDiagBuffer::SeverityDisabled(EDiagSev sev)
     EDiagSev post_sev = AdjustApplogPrintableSeverity(sm_PostSeverity);
     bool allow_trace = GetTraceEnabled();
     if ( guard ) {
-        EDiagSev gpsev = guard->GetPrintSeverity();
-        EDiagSev gcsev = guard->GetCollectSeverity();
-        post_sev = CompareDiagPostLevel(gpsev, gcsev) < 0 ? gpsev : gcsev;
+        post_sev = guard->GetCollectSeverity();
         allow_trace = post_sev == eDiag_Trace;
     }
     if (sev == eDiag_Trace  &&  !allow_trace) {
@@ -2906,9 +2901,12 @@ bool CDiagBuffer::SeverityPrintable(EDiagSev sev)
     CDiagContextThreadData& thr_data =
         CDiagContextThreadData::GetThreadData();
     CDiagCollectGuard* guard = thr_data.GetCollectGuard();
-    EDiagSev post_sev = AdjustApplogPrintableSeverity(
-        guard ? guard->GetPrintSeverity() : sm_PostSeverity);
-    bool allow_trace = guard ? post_sev == eDiag_Trace : GetTraceEnabled();
+    EDiagSev post_sev = AdjustApplogPrintableSeverity(sm_PostSeverity);
+    bool allow_trace = GetTraceEnabled();
+    if ( guard ) {
+        post_sev = AdjustApplogPrintableSeverity(guard->GetPrintSeverity());
+        allow_trace = post_sev == eDiag_Trace;
+    }
     if (sev == eDiag_Trace  &&  !allow_trace) {
         return false; // trace is disabled
     }
@@ -2937,7 +2935,7 @@ bool CDiagBuffer::SetDiag(const CNcbiDiag& diag)
     }
 
     if (m_Diag != &diag) {
-        if ( dynamic_cast<CNcbiOstrstream*>(m_Stream)->pcount() ) {
+        if ( m_Stream->pcount() ) {
             Flush();
         }
         m_Diag = &diag;
@@ -2965,21 +2963,17 @@ void CDiagBuffer::Flush(void)
     CRecursionGuard guard(m_InUse);
 
     EDiagSev sev = m_Diag->GetSeverity();
-    bool is_console = m_Diag && (m_Diag->GetPostFlags() & eDPF_IsConsole);
+    bool is_console = (m_Diag->GetPostFlags() & eDPF_IsConsole) != 0;
     bool is_disabled = SeverityDisabled(sev);
     // Do nothing if diag severity is lower than allowed
-    if (!m_Diag  || (!is_console  &&  is_disabled)) {
+    if ((!is_console  &&  is_disabled)  ||  !m_Stream->pcount()) {
         return;
     }
 
-    CNcbiOstrstream* ostr = dynamic_cast<CNcbiOstrstream*>(m_Stream);
-    const char* message = 0;
-    size_t size = 0;
-    if ( ostr->pcount() ) {
-        message = ostr->str();
-        size = ostr->pcount();
-        ostr->rdbuf()->freeze(false);
-    }
+    const char* message = m_Stream->str();
+    size_t size = m_Stream->pcount();
+    m_Stream->rdbuf()->freeze(false);
+
     TDiagPostFlags flags = m_Diag->GetPostFlags();
     if (sev == eDiag_Trace) {
         flags |= sm_TraceFlags;
@@ -2997,8 +2991,6 @@ void CDiagBuffer::Flush(void)
             message = dest.c_str();
             size = dest.length();
         }
-        CDiagContextThreadData& thr_data =
-            CDiagContextThreadData::GetThreadData();
         SDiagMessage mess(sev, message, size,
                           m_Diag->GetFile(),
                           m_Diag->GetLine(),
@@ -3010,19 +3002,7 @@ void CDiagBuffer::Flush(void)
                           m_Diag->GetModule(),
                           m_Diag->GetClass(),
                           m_Diag->GetFunction());
-        if (!SeverityPrintable(sev)) {
-            bool can_collect = thr_data.GetCollectGuard() != NULL;
-            if (!is_disabled  ||  (is_console  &&  can_collect)) {
-                thr_data.CollectDiagMessage(mess);
-                Reset(*m_Diag);
-                if ( can_collect ) {
-                    // The message has been collected, don't print to
-                    // the console now.
-                    return;
-                }
-            }
-        }
-        DiagHandler(mess);
+        PrintMessage(mess, *m_Diag);
     }
 
 #if defined(NCBI_COMPILER_KCC)
@@ -3053,6 +3033,27 @@ void CDiagBuffer::Flush(void)
         Abort();
 #endif // NCBI_COMPILER_MSVC
     }
+}
+
+
+void CDiagBuffer::PrintMessage(SDiagMessage& mess, const CNcbiDiag& diag)
+{
+    EDiagSev sev = diag.GetSeverity();
+    if (!SeverityPrintable(sev)) {
+        CDiagContextThreadData& thr_data =
+            CDiagContextThreadData::GetThreadData();
+        bool can_collect = thr_data.GetCollectGuard() != NULL;
+        bool is_console = (diag.GetPostFlags() & eDPF_IsConsole) != 0;
+        bool is_disabled = SeverityDisabled(sev);
+        if (!is_disabled  ||  (is_console  &&  can_collect)) {
+            thr_data.CollectDiagMessage(mess);
+            Reset(diag);
+            // The message has been collected, don't print to
+            // the console now.
+            return;
+        }
+    }
+    DiagHandler(mess);
 }
 
 
@@ -5573,7 +5574,6 @@ CNcbiDiag::CNcbiDiag(EDiagSev sev, TDiagPostFlags post_flags)
       m_ErrSubCode(0),
       m_Buffer(GetDiagBuffer()), 
       m_PostFlags(ForceImportantFlags(post_flags)),
-      m_CheckFilters(true),
       m_Line(0),
       m_ValChngFlags(0)
 {
@@ -5587,7 +5587,6 @@ CNcbiDiag::CNcbiDiag(const CDiagCompileInfo &info,
       m_ErrSubCode(0),
       m_Buffer(GetDiagBuffer()),
       m_PostFlags(ForceImportantFlags(post_flags)),
-      m_CheckFilters(true),
       m_CompileInfo(info),
       m_Line(info.GetLine()),
       m_ValChngFlags(0)
@@ -5644,11 +5643,6 @@ const CNcbiDiag& CNcbiDiag::SetFunction(const char* function) const
 
 bool CNcbiDiag::CheckFilters(void) const
 {
-    if ( !m_CheckFilters ) {
-        m_CheckFilters = true;
-        return true;
-    }
-
     EDiagSev current_sev = GetSeverity();
     if (current_sev == eDiag_Fatal) 
         return true;
@@ -5691,14 +5685,18 @@ const CNcbiDiag& CNcbiDiag::Put(const CStackTrace*,
 
 const CNcbiDiag& CNcbiDiag::x_Put(const CException& ex) const
 {
-    if ( !s_CheckDiagFilter(ex, GetSeverity(), GetFile()) ) {
-        m_Buffer.Reset(*this);
+    if (m_Buffer.SeverityDisabled(GetSeverity())  ||  !CheckFilters())
         return *this;
+
+    CDiagContextThreadData& thr_data =
+        CDiagContextThreadData::GetThreadData();
+    CDiagCollectGuard* guard = thr_data.GetCollectGuard();
+    EDiagSev print_sev = AdjustApplogPrintableSeverity(CDiagBuffer::sm_PostSeverity);
+    EDiagSev collect_sev = print_sev;
+    if ( guard ) {
+        print_sev = AdjustApplogPrintableSeverity(guard->GetPrintSeverity());
+        collect_sev = guard->GetCollectSeverity();
     }
-
-    m_CheckFilters = false;
-
-    *this << "\nNCBI C++ Exception:\n";
 
     const CException* pex;
     stack<const CException*> pile;
@@ -5727,8 +5725,21 @@ const CNcbiDiag& CNcbiDiag::x_Put(const CException& ex) const
         string err_type(pex->GetType());
         err_type += "::";
         err_type += pex->GetErrCodeString();
+
+        EDiagSev pex_sev = pex->GetSeverity();
+        if (CompareDiagPostLevel(GetSeverity(), print_sev) < 0) {
+            if (CompareDiagPostLevel(pex_sev, collect_sev) < 0)
+                pex_sev = collect_sev;
+        }
+        else {
+            if (CompareDiagPostLevel(pex_sev, print_sev) < 0)
+                pex_sev = print_sev;
+        }
+        if (CompareDiagPostLevel(GetSeverity(), pex_sev) < 0)
+            pex_sev = GetSeverity();
+
         SDiagMessage diagmsg
-            (pex->GetSeverity(),
+            (pex_sev,
             text.c_str(),
             text.size(),
             pex->GetFile().c_str(),
@@ -5741,10 +5752,8 @@ const CNcbiDiag& CNcbiDiag::x_Put(const CException& ex) const
             pex->GetModule().c_str(),
             pex->GetClass().c_str(),
             pex->GetFunction().c_str());
-        string report;
-        diagmsg.Write(report, SDiagMessage::fNoPrefix);
-        *this << "    "; // indentation
-        *this << report;
+
+        m_Buffer.PrintMessage(diagmsg, *this);
     }
     
 

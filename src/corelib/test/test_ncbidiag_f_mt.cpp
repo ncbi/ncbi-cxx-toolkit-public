@@ -66,7 +66,7 @@ private:
     typedef map<TCase, string>      TMessages;
     typedef set< pair<TCase,int> >  TThreads;
 
-    void   x_SetExpects(const string& expects);
+    void   x_SetExpects(const string& expects, const string& ex_expects);
     string x_MakeMessage(const string& msg, 
                          int           idx, 
                          const TCase&  ncase);
@@ -79,7 +79,6 @@ private:
     string    m_Case;
     TMessages m_Messages;
     TThreads  m_CaseExpected;
-    bool      m_Expected[NUM_TESTS];
 };
 
 
@@ -92,192 +91,192 @@ void CTestDiagApp::SetCase(int case_num)
     switch(case_num){
     case 1 :
         filter = string();
-        x_SetExpects("111111111");
+        x_SetExpects("111111111", "111111111");
         break;
     case 2 :
         filter = "module";
-        x_SetExpects("111100000");
+        x_SetExpects("111100000", "000000000");
         break;
     case 3 :
         filter = "::class";
-        x_SetExpects("110011000");
+        x_SetExpects("110011000", "000000000");
         break;
     case 4:
         filter = "function()";
-        x_SetExpects("101010100");
+        x_SetExpects("101010100", "000000000");
         break;
     case 5:
         filter = "?";
-        x_SetExpects("000011110");
+        x_SetExpects("000011110", "111111111");
         break;
     case 6:
         filter = "!foo";
-        x_SetExpects("111111110");
+        x_SetExpects("111111110", "111111111");
         break;
     case 7:
         filter = "/corelib";
-        x_SetExpects("111111111");
+        x_SetExpects("111111111", "111111111");
         break;
     case 8:
         filter = "/corelib/";
-        x_SetExpects("000000000");
+        x_SetExpects("000000000", "000000000");
         break;
     case 9:
         filter = "module::class::function()";
-        x_SetExpects("100000000");
+        x_SetExpects("100000000", "000000000");
         break;
     case 10:
         filter = "module::class";
-        x_SetExpects("110000000");
+        x_SetExpects("110000000", "000000000");
         break;
     case 11:
         filter = "::class::function()";
-        x_SetExpects("100010000");
+        x_SetExpects("100010000", "000000000");
         break;
     case 12:
         filter = "module foo";
-        x_SetExpects("111100001");
+        x_SetExpects("111100001", "000000000");
         break;
     case 13:
         filter = "::class ::boo";
-        x_SetExpects("110011001");
+        x_SetExpects("110011001", "000000000");
         break;
     case 14:
         // TWO spaces ...
         filter = "::class  ::boo";
-        x_SetExpects("110011001");
+        x_SetExpects("110011001", "000000000");
         break;
     case 15:
         filter = "function() doo()";
-        x_SetExpects("101010101");
+        x_SetExpects("101010101", "000000000");
         break;
     case 16:
         filter = "module ::boo";
-        x_SetExpects("111100001");
+        x_SetExpects("111100001", "000000000");
         break;
     case 17:
         filter = "module doo()";
-        x_SetExpects("111100001");
+        x_SetExpects("111100001", "000000000");
         break;
     case 18:
         filter = "::class doo()";
-        x_SetExpects("110011001");
+        x_SetExpects("110011001", "000000000");
         break;
     case 19:
         filter = "!module";
-        x_SetExpects("000011111");
+        x_SetExpects("000011111", "111111111");
         break;
     case 20:
         filter = "!::class";
-        x_SetExpects("001100111");
+        x_SetExpects("001100111", "111111111");
         break;
     case 21:
         filter = "!function()";
-        x_SetExpects("010101011");
+        x_SetExpects("010101011", "111111111");
         break;
     case 22:
         filter = "!module foo";
-        x_SetExpects("000000001");
+        x_SetExpects("000000001", "000000000");
         break;
     case 23:
         filter = "!module ::class";
-        x_SetExpects("000011000");
+        x_SetExpects("000011000", "000000000");
         break;
     case 24:
         filter = "!module function()";
-        x_SetExpects("000010100");
+        x_SetExpects("000010100", "000000000");
         break;
     case 25:
         filter = "!::class module";
-        x_SetExpects("001100000");
+        x_SetExpects("001100000", "000000000");
         break;
     case 26:
         filter = "!function() module";
-        x_SetExpects("010100000");
+        x_SetExpects("010100000", "000000000");
         break;
     case 27:
         filter = "module !foo";
-        x_SetExpects("111100000");
+        x_SetExpects("111100000", "000000000");
         break;
     case 28:
         filter = "module !::class";
-        x_SetExpects("001100000");
+        x_SetExpects("001100000", "000000000");
         break;
     case 29:
         filter = "module !function()";
-        x_SetExpects("010100000");
+        x_SetExpects("010100000", "000000000");
         break;
     case 30:
         filter = "!module !foo";
-        x_SetExpects("000011110");
+        x_SetExpects("000011110", "111111111");
         break;
     case 31:
         filter = "!module !::class";
-        x_SetExpects("000000111");
+        x_SetExpects("000000111", "111111111");
         break;
     case 32:
         filter = "!module !function()";
-        x_SetExpects("000001011");
+        x_SetExpects("000001011", "111111111");
         break;
     case 33:
         filter = "!foo !module";
-        x_SetExpects("000011110");
+        x_SetExpects("000011110", "111111111");
         break;
     case 34:
         filter = "!::class !module";
-        x_SetExpects("000000111");
+        x_SetExpects("000000111", "111111111");
         break;
     case 35:
         filter = "!function() !module";
-        x_SetExpects("000001011");
-        break;
-    case 38:
-        filter = "!function() !module !foo";
-        x_SetExpects("000001010");
+        x_SetExpects("000001011", "111111111");
         break;
     case 36:
         filter = "!/corelib";
-        x_SetExpects("000000000");
+        x_SetExpects("000000000", "000000000");
         break;
     case 37:
         filter = "!/corelib/";
-        x_SetExpects("111111111");
+        x_SetExpects("111111111", "111111111");
+        break;
+    case 38:
+        filter = "!function() !module !foo";
+        x_SetExpects("000001010", "111111111");
         break;
     case 39:
         filter = "!/corelib/test";
-        x_SetExpects("000000000");
+        x_SetExpects("000000000", "000000000");
         break;
     case 40:
         filter = "!/corelib/test/";
-        x_SetExpects("000000000");
+        x_SetExpects("000000000", "000000000");
         break;
     case 41:
         filter = "/corelib !/dbapi";
-        x_SetExpects("111111111");
+        x_SetExpects("111111111", "111111111");
         break;
     case 42:
         filter = "!/dbapi /corelib";
-        x_SetExpects("111111111");
+        x_SetExpects("111111111", "111111111");
         break;
     case 43:
         filter = "!/dbapi !/corelib";
-        x_SetExpects("000000000");
+        x_SetExpects("000000000", "000000000");
         break;
     case 44:
         filter = "/dbapi !/corelib";
-        x_SetExpects("000000000");
+        x_SetExpects("000000000", "000000000");
         break;
     case 45:
         filter = "!/corelib /dbapi";
-        x_SetExpects("000000000");
+        x_SetExpects("000000000", "000000000");
         break;
     case 46:
         filter = "!/dbapi !/corelib/";
-        x_SetExpects("111111111");
+        x_SetExpects("111111111", "111111111");
         break;
     case 47:
         filter = "!/corelib/ !/dbapi";
-        x_SetExpects("111111111");
+        x_SetExpects("111111111", "111111111");
         break;
     }
 
@@ -291,12 +290,16 @@ void CTestDiagApp::SetCase(int case_num)
 }
 
 
-void CTestDiagApp::x_SetExpects(const string& expects )
+void CTestDiagApp::x_SetExpects(const string& expects, const string& ex_expects)
 {
     for (int i = 0;  i < NUM_TESTS;  ++i) {
-        m_Expected[i] = (expects[i] == '1');
-        if (m_Expected[i]) {
-            for (int num = 0;  num < 3;  ++num) 
+        if (expects[i] == '1') {
+            for (unsigned int thr = 0;  thr < s_NumThreads;  ++thr)
+                m_CaseExpected.insert(
+                    TThreads::value_type(TCase(i, 0), thr) );
+        }
+        if (ex_expects[i] == '1') {
+            for (int num = 1;  num < 3;  ++num) 
                 for (unsigned int thr = 0;  thr < s_NumThreads;  ++thr)
                     m_CaseExpected.insert(
                         TThreads::value_type(TCase(i, num), thr) );

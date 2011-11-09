@@ -1131,7 +1131,6 @@ private:
     mutable int            m_ErrSubCode;   ///< Error subcode
             CDiagBuffer&   m_Buffer;       ///< This thread's error msg. buffer
     mutable TDiagPostFlags m_PostFlags;    ///< Bitwise OR of "EDiagPostFlag"
-    mutable bool           m_CheckFilters; ///< Whether to apply filters
 
     CDiagCompileInfo       m_CompileInfo;
 

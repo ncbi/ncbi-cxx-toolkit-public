@@ -1505,6 +1505,25 @@ CNcbiTestApplication::x_SetupBoostReporters(void)
     but::unit_test_log.set_formatter(m_Logger);
 }
 
+static const char*
+s_GetUserFuncName(ETestUserFuncType func_type)
+{
+    switch (func_type) {
+    case eTestUserFuncInit:
+        return "NCBITEST_AUTO_INIT()";
+    case eTestUserFuncFini:
+        return "NCBITEST_AUTO_FINI()";
+    case eTestUserFuncCmdLine:
+        return "NCBITEST_INIT_CMDLINE()";
+    case eTestUserFuncVars:
+        return "NCBITEST_INIT_VARIABLES()";
+    case eTestUserFuncDeps:
+        return "NCBITEST_INIT_TREE()";
+    default:
+        return NULL;
+    }
+}
+
 bool
 CNcbiTestApplication::x_CallUserFuncs(ETestUserFuncType func_type)
 {
@@ -1513,11 +1532,11 @@ CNcbiTestApplication::x_CallUserFuncs(ETestUserFuncType func_type)
             (*it)();
         }
         catch (CException& e) {
-            ERR_POST_X(1, "Exception in unit tests user function: " << e);
+            ERR_POST_X(1, "Exception in " << s_GetUserFuncName(func_type) << e);
             return false;
         }
         catch (exception& e) {
-            ERR_POST_X(1, "Exception in unit tests user function: " << e.what());
+            ERR_POST_X(1, "Exception in " << s_GetUserFuncName(func_type) << ": " << e.what());
             return false;
         }
     }

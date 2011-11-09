@@ -115,7 +115,7 @@ private:
     friend class CDiagCollectGuard;
 
     const CNcbiDiag*   m_Diag;    // present user
-    CNcbiOstream*      m_Stream;  // storage for the diagnostic message
+    CNcbiOstrstream*   m_Stream;  // storage for the diagnostic message
     IOS_BASE::fmtflags m_InitialStreamFlags;
     bool               m_InUse;   // Protection against nested posts
 
@@ -144,6 +144,7 @@ private:
 
     NCBI_XNCBI_EXPORT
     void Flush  (void);
+    void PrintMessage(SDiagMessage& mess, const CNcbiDiag& diag);
     void Reset  (const CNcbiDiag& diag);   // reset content of the diag.message
     void EndMess(const CNcbiDiag& diag);   // output current diag. message
     NCBI_XNCBI_EXPORT
@@ -344,8 +345,15 @@ const char* CNcbiDiag::SeverityName(EDiagSev sev) {
 //  ErrCode - class for manipulator ErrCode
 
 inline
+void CNcbiDiag::x_EndMess(void) const
+{
+    m_Buffer.EndMess(*this);
+}
+
+inline
 const CNcbiDiag& CNcbiDiag::Put(const ErrCode*, const ErrCode& err_code) const
 {
+    x_EndMess();
     return SetErrorCode(err_code.m_Code, err_code.m_SubCode);
 }
 
@@ -358,14 +366,6 @@ bool operator< (const ErrCode& ec1, const ErrCode& ec2)
 }
 
 
-inline
-void CNcbiDiag::x_EndMess(void) const
-{
-    m_Buffer.EndMess(*this);
-    m_Buffer.SetDiag(*this);
-}
-
-
 ///////////////////////////////////////////////////////
 //  Other CNcbiDiag:: manipulators
 
@@ -373,6 +373,7 @@ inline
 const CNcbiDiag& CNcbiDiag::Put(const Severity*,
                                 const Severity& severity) const
 {
+    x_EndMess();
     m_Severity = severity.m_Level;
     return *this;
 }
@@ -380,6 +381,8 @@ const CNcbiDiag& CNcbiDiag::Put(const Severity*,
 inline
 const CNcbiDiag& Reset(const CNcbiDiag& diag)  {
     diag.m_Buffer.Reset(diag);
+    diag.ResetIsMessageFlag();
+    diag.ResetIsConsoleFlag();
     diag.SetErrorCode(0, 0);
     return diag;
 }
@@ -432,11 +435,13 @@ const CNcbiDiag& Trace(const CNcbiDiag& diag)  {
 }
 inline
 const CNcbiDiag& Message(const CNcbiDiag& diag)  {
+    diag.x_EndMess();
     diag.m_PostFlags |= eDPF_IsMessage;
     return diag;
 }
 inline
 const CNcbiDiag& Console(const CNcbiDiag& diag)  {
+    diag.x_EndMess();
     diag.m_PostFlags |= eDPF_IsConsole;
     return diag;
 }
@@ -449,8 +454,6 @@ inline
 void CDiagBuffer::Reset(const CNcbiDiag& diag) {
     if (&diag == m_Diag) {
         m_Stream->rdbuf()->PUBSEEKOFF(0, IOS_BASE::beg, IOS_BASE::out);
-        diag.ResetIsMessageFlag();
-        diag.ResetIsConsoleFlag();
     }
 }
 
