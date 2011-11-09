@@ -54,6 +54,7 @@
 #include "queue_vc.hpp"
 #include "background_host.hpp"
 #include "queue_coll.hpp"
+#include "ns_statistics_thread.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -144,16 +145,21 @@ public:
     bool QueueExists(const string& qname) const
     { return m_QueueCollection.QueueExists(qname); }
 
-    /// Remove old jobs
+    // Remove old jobs
     void Purge(void);
     void StopPurge(void);
     void RunPurgeThread(void);
     void StopPurgeThread(void);
 
-    /// Notify all listeners
+    // Notify all listeners
     void NotifyListeners(void);
     void RunNotifThread(void);
     void StopNotifThread(void);
+
+    // Print statistics
+    void PrintStatistics(void);
+    void RunStatisticsThread(void);
+    void StopStatisticsThread(void);
 
     void CheckExecutionTimeout(bool  logging);
     void RunExecutionWatcherThread(unsigned run_delay);
@@ -216,6 +222,7 @@ private:
     CQueueDbBlockArray                      m_QueueDbBlockArray;
 
     CRef<CJobQueueCleanerThread>            m_PurgeThread;
+    CRef<CStatisticsThread>                 m_StatisticsThread;
 
     bool                 m_StopPurge;         ///< Purge stop flag
     CFastMutex           m_PurgeLock;

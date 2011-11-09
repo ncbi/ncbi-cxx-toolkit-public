@@ -46,6 +46,8 @@
 
 BEGIN_NCBI_SCOPE
 
+class CQueue;
+
 
 const CNetScheduleAPI::EJobStatus
         g_ValidJobStatuses[] = { CNetScheduleAPI::ePending,
@@ -99,9 +101,10 @@ public:
     /// in this case status change is ignored
     ///
     TJobStatus
-    ChangeStatus(unsigned   job_id,
-                 TJobStatus status,
-                 bool*      updated = NULL);
+    ChangeStatus(CQueue *      queue,
+                 unsigned int  job_id,
+                 TJobStatus    status,
+                 bool *        updated = NULL);
 
     /// Add closed interval of ids to pending status
     void AddPendingBatch(unsigned job_id_from, unsigned job_id_to);
@@ -117,13 +120,6 @@ public:
     /// (candidate_set &= pending_set)
     void PendingIntersect(TNSBitVector* candidate_set) const;
 
-    /// Group switch up to 'count' jobs, not including ones from
-    /// 'unwanted_jobs', from old_status to new_status
-    void SwitchJobs(unsigned count,
-                    TJobStatus old_status, TJobStatus new_status,
-                    TNSBitVector& jobs,
-                    const TNSBitVector* unwanted_jobs = NULL);
-
     /// Logical AND with statuses ORed cleans up a list from non-existing
     /// jobs
     void GetAliveJobs(TNSBitVector& ids);
@@ -134,7 +130,7 @@ public:
      /// Get next job in the specified status, or first if job_id is 0
     unsigned GetNext(TJobStatus status, unsigned job_id) const;
 
-   /// Set job status without logic control.
+    /// Set job status without logic control.
     /// @param status
     ///     Status to set (all other statuses are cleared)
     ///     Non existing status code clears all statuses
@@ -168,12 +164,6 @@ public:
     void StatusSnapshot(TJobStatus    status,
                         TNSBitVector* bv) const;
 
-    static bool IsCancelCode(TJobStatus status)
-    {
-        return (status == CNetScheduleAPI::eCanceled) ||
-               (status == CNetScheduleAPI::eFailed);
-    }
-
     /// Clear status storage
     ///
     /// @param bv
@@ -184,26 +174,25 @@ public:
     /// Optimize bitvectors memory
     void OptimizeMem();
 
-protected:
+private:
     TJobStatus x_GetStatusNoLock(unsigned job_id) const;
 
     /// Check if job is in specified status
     /// @return -1 if no, status value otherwise
     TJobStatus
-    IsStatusNoLock(unsigned   job_id,
-                   TJobStatus st1,
-                   TJobStatus st2 = CNetScheduleAPI::eJobNotFound,
-                   TJobStatus st3 = CNetScheduleAPI::eJobNotFound
+    x_IsStatusNoLock(unsigned   job_id,
+                     TJobStatus st1,
+                     TJobStatus st2 = CNetScheduleAPI::eJobNotFound,
+                     TJobStatus st3 = CNetScheduleAPI::eJobNotFound
         ) const;
 
-    void ReportInvalidStatus(unsigned   job_id,
-                             TJobStatus status,
-                             TJobStatus old_status);
+    void x_ReportInvalidStatus(unsigned   job_id,
+                               TJobStatus status,
+                               TJobStatus old_status);
     void x_SetClearStatusNoLock(unsigned   job_id,
                                 TJobStatus status,
                                 TJobStatus old_status);
-
-    void IncDoneJobs();
+    void x_IncDoneJobs(void);
 
 private:
     CJobStatusTracker(const CJobStatusTracker&);
@@ -212,11 +201,8 @@ private:
 private:
     TStatusStorage          m_StatusStor;
     mutable CRWLock         m_Lock;
-    TNSBitVector            m_UsedIds; /// id access lock
 
-    /// Last pending id
-    bm::id_t                m_LastPending;
-    /// Done jobs counter
+    // Done jobs counter
     unsigned                m_DoneCnt;
 
 };

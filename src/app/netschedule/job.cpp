@@ -671,7 +671,6 @@ bool CJob::Flush(CQueue* queue)
     m_New = false;
     m_Dirty = 0;
 
-    queue->CountEvent(CQueue::eStatDBWriteEvent, 1);
     return true;
 }
 

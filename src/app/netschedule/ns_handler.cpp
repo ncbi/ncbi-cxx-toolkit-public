@@ -1291,17 +1291,6 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
 
     WriteMessage("OK:Started: ", m_Server->GetStartTime().AsString());
 
-    WriteMessage("OK:",
-                 "Load: jobs dispatched: " +
-                 NStr::DoubleToString(q->GetAverage(CQueue::eStatGetEvent)) +
-                 "/sec, jobs complete: " +
-                 NStr::DoubleToString(q->GetAverage(CQueue::eStatPutEvent)) +
-                 "/sec, DB transactions: " +
-                 NStr::DoubleToString(q->GetAverage(CQueue::eStatDBTransactionEvent)) +
-                 "/sec, Job DB writes: " +
-                 NStr::DoubleToString(q->GetAverage(CQueue::eStatDBWriteEvent)) +
-                 "/sec");
-
     for (size_t  k = 0; k < g_ValidJobStatusesSize; ++k) {
         TJobStatus      st = g_ValidJobStatuses[k];
         unsigned        count = q->CountStatus(st);

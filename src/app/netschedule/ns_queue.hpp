@@ -56,6 +56,7 @@
 #include "ns_clients_registry.hpp"
 #include "ns_notifications.hpp"
 #include "queue_clean_thread.hpp"
+#include "ns_statistics_thread.hpp"
 
 #include <deque>
 #include <map>
@@ -326,33 +327,6 @@ public:
                           TNSBitVector::statistics *  st) const;
 
 
-    // Statistics gathering objects
-    friend class CStatisticsThread;
-    class CStatisticsThread : public CThreadNonStop
-    {
-        typedef CQueue TContainer;
-    public:
-        CStatisticsThread(TContainer &  container,
-                          const bool &  logging);
-        void DoJob(void);
-    private:
-        TContainer &        m_Container;
-        size_t              m_RunCounter;
-        const bool &        m_StatisticsLogging;
-    };
-    CRef<CStatisticsThread>     m_StatThread;
-
-    // Statistics
-    enum EStatEvent {
-        eStatGetEvent           = 0,
-        eStatPutEvent           = 1,
-        eStatDBTransactionEvent = 2,
-        eStatDBWriteEvent       = 3,
-        eStatNumEvents
-    };
-    typedef unsigned TStatEvent;
-    void CountEvent(TStatEvent event, int num=1);
-    double GetAverage(TStatEvent event);
     string MakeKey(unsigned job_id) const
     { return m_KeyGenerator.GenerateV1(job_id); }
 
@@ -370,6 +344,10 @@ public:
                              unsigned short       port,
                              unsigned int         timeout);
     void UnregisterGetListener(const CNSClientId &  client);
+    void PrintStatistics(void);
+    void CountTransition(CNetScheduleAPI::EJobStatus  from,
+                         CNetScheduleAPI::EJobStatus  to)
+    { m_StatisticsCounters.CountTransition(from, to); }
 
 private:
     friend class CNSTransaction;
@@ -404,11 +382,11 @@ private:
     void x_UpdateStartFromCounter(void);
     unsigned int x_ReadStartFromCounter(void);
     void x_DeleteJobEvents(unsigned int  job_id);
-    void x_ResetDueTo(const CNSClientId &   client,
-                      unsigned int          job_id,
-                      time_t                current_time,
-                      TJobStatus            status_from,
-                      CJobEvent::EJobEvent  event_type);
+    TJobStatus x_ResetDueTo(const CNSClientId &   client,
+                            unsigned int          job_id,
+                            time_t                current_time,
+                            TJobStatus            status_from,
+                            CJobEvent::EJobEvent  event_type);
 
 private:
     friend class CJob;
@@ -426,10 +404,6 @@ private:
 
     // Should we delete db upon close?
     bool                        m_DeleteDatabase;
-
-    // Statistics
-    CAtomicCounter              m_EventCounter[eStatNumEvents];
-    unsigned                    m_Average[eStatNumEvents];
 
     // Background executor
     CRequestExecutor&           m_Executor;
@@ -492,6 +466,8 @@ private:
     CNetScheduleKeyGenerator     m_KeyGenerator;
     const bool &                 m_Log;
     const bool &                 m_LogBatchEachJob;
+
+    CStatisticsCounters          m_StatisticsCounters;
 };
 
 
@@ -574,8 +550,6 @@ public:
                    EKeepFileAssociation  assoc = eNoAssociation)
         : CBDB_Transaction(queue->GetEnv(), tsync, assoc)
     {
-        queue->CountEvent(CQueue::eStatDBTransactionEvent);
-
         if (what_tables & eJobTable)
             queue->m_QueueDbBlock->job_db.SetTransaction(this);
 

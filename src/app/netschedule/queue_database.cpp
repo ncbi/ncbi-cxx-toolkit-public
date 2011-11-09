@@ -759,6 +759,7 @@ void CQueueDataBase::Close()
 
     StopNotifThread();
     StopPurgeThread();
+    StopStatisticsThread();
     StopExecutionWatcherThread();
 
     m_Env->ForceTransactionCheckpoint();
@@ -802,6 +803,14 @@ void CQueueDataBase::NotifyListeners(void)
 {
     NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
         (*it).NotifyListeners(false, 0);
+    }
+}
+
+
+void CQueueDataBase::PrintStatistics(void)
+{
+    NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
+        (*it).PrintStatistics();
     }
 }
 
@@ -1098,6 +1107,26 @@ void CQueueDataBase::StopNotifThread(void)
         m_NotifThread->RequestStop();
         m_NotifThread->Join();
         m_NotifThread.Reset(0);
+    }
+}
+
+
+void CQueueDataBase::RunStatisticsThread(void)
+{
+    // Once in 100 seconds
+    m_StatisticsThread.Reset(new CStatisticsThread(
+                                m_Host, *this, 100,
+                                m_Server->IsLogStatisticsThread()));
+    m_StatisticsThread->Run();
+}
+
+
+void CQueueDataBase::StopStatisticsThread(void)
+{
+    if (!m_StatisticsThread.Empty()) {
+        m_StatisticsThread->RequestStop();
+        m_StatisticsThread->Join();
+        m_StatisticsThread.Reset(0);
     }
 }
 
