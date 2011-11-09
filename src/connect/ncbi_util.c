@@ -53,12 +53,11 @@
 #  include <pwd.h>
 #  include <unistd.h>
 #  include <sys/stat.h>
-#elif defined(NCBI_OS_MSWIN)
-#  if defined(_MSC_VER)  &&  (_MSC_VER > 1200)
-#    define WIN32_LEAN_AND_MEAN
-#  endif
+#endif /*NCBI_OS_UNIX*/
+#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_CYGWIN)
+#  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
-#endif
+#endif /*NCBI_OS_MSWIN || NCBI_OS_CYGWIN*/
 
 #define NCBI_USE_ERRCODE_X   Connect_Util
 
@@ -314,7 +313,7 @@ extern const char* NcbiMessagePlusError
         release = 1/*true*/;
 #else
         descr = strerror(error);
-#endif
+#endif /*NCBI_OS_MSWIN && _UNICODE*/
     }
     if (!descr) {
         descr = "";
@@ -794,10 +793,10 @@ size_t CORE_GetVMPageSize(void)
     static size_t ps = 0;
 
     if (!ps) {
-#if defined(NCBI_OS_MSWIN)
+#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_CYGWIN)
         SYSTEM_INFO si;
-        GetSystemInfo(&si); 
-        ps = (size_t) si.dwAllocationGranularity;
+        GetSystemInfo(&si);
+        ps = (size_t) si.dwPageSize;
 #elif defined(NCBI_OS_UNIX) 
 #  if   defined(_SC_PAGESIZE)
 #    define NCBI_SC_PAGESIZE _SC_PAGESIZE

@@ -173,13 +173,19 @@ extern unsigned int GetCpuCount(void);
 
 
 /// [UNIX & Windows]
-/// Return granularity with which virtual memory is allocated.
+/// Return virtual memory page size.
 /// Return 0 if cannot determine it on current platform or if an error occurs.
 NCBI_XNCBI_EXPORT
 extern unsigned long GetVirtualMemoryPageSize(void);
 
 /// [UNIX & Windows]
-/// Return the amount of physical memory available on the machine.
+/// Return size of an allocation unit (usually it is a multiple of page size).
+/// Return 0 if cannot determine it on current platform or if an error occurs.
+NCBI_XNCBI_EXPORT
+extern unsigned long GetVirtualMemoryAllocationGranularity(void);
+
+/// [UNIX & Windows]
+/// Return the amount of physical memory available in the system.
 /// Return 0 if cannot determine it on current platform or if an error occurs.
 NCBI_XNCBI_EXPORT
 extern Uint8 GetPhysicalMemorySize(void);

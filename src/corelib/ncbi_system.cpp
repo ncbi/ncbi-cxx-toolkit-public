@@ -92,6 +92,12 @@ struct SProcessMemoryCounters
 
 #endif //NCBI_OS_MSWIN
 
+#ifdef NCBI_OS_CYGWIN
+#  define WINVER 0x0500
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>
+#endif //NCBI_OS_CYGWIN
+
 
 BEGIN_NCBI_SCOPE
 
@@ -423,10 +429,10 @@ bool SetCpuTimeLimit(size_t                max_cpu_time,
 
 unsigned int GetCpuCount(void)
 {
-#if defined(NCBI_OS_MSWIN)
-    SYSTEM_INFO sysInfo;
-    GetSystemInfo(&sysInfo);
-    return (unsigned int) sysInfo.dwNumberOfProcessors;
+#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_CYGWIN)
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    return (unsigned int) si.dwNumberOfProcessors;
 
 #elif defined(NCBI_OS_DARWIN)
     host_basic_info_data_t hinfo;
@@ -465,7 +471,7 @@ unsigned int GetCpuCount(void)
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// GetVirtualMemoryPageSize
+// Memory utilities
 //
 
 unsigned long GetVirtualMemoryPageSize(void)
@@ -473,10 +479,10 @@ unsigned long GetVirtualMemoryPageSize(void)
     static unsigned long ps = 0;
 
     if (!ps) {
-#if defined(NCBI_OS_MSWIN)
+#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_CYGWIN)
         SYSTEM_INFO si;
-        GetSystemInfo(&si); 
-        ps = si.dwAllocationGranularity;
+        GetSystemInfo(&si);
+        ps = (unsigned long) si.dwPageSize;
 #elif defined(NCBI_OS_UNIX) 
 #  if   defined(_SC_PAGESIZE)
 #    define NCBI_SC_PAGESIZE _SC_PAGESIZE
@@ -504,9 +510,27 @@ unsigned long GetVirtualMemoryPageSize(void)
     return ps;
 }
 
+
+unsigned long GetVirtualMemoryAllocationGranularity(void)
+{
+    static unsigned long ag = 0;
+
+    if (!ag) {
+#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_CYGWIN)
+        SYSTEM_INFO si;
+        GetSystemInfo(&si);
+        ag = (unsigned long) si.dwAllocationGranularity;
+#else
+        ag = GetVirtualMemoryPageSize();
+#endif //NCBI_OS_MSWIN || NCBI_OS_CYGWIN
+    }
+    return ag;
+}
+
+
 Uint8 GetPhysicalMemorySize(void)
 {
-#if defined(NCBI_OS_MSWIN)
+#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_CYGWIN)
 
     MEMORYSTATUSEX st;
     st.dwLength = sizeof(st);
@@ -642,7 +666,7 @@ bool GetMemoryUsage(size_t* total, size_t* resident, size_t* shared)
 
 void SleepMicroSec(unsigned long mc_sec, EInterruptOnSignal onsignal)
 {
-#if defined(NCBI_OS_MSWIN)
+#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_CYGWIN)
 
     // Unlike some of its (buggy) Unix counterparts, MS-Win's Sleep() is safe
     // to use with 0, which causes the current thread to sleep at most until
@@ -695,7 +719,7 @@ void SleepMicroSec(unsigned long mc_sec, EInterruptOnSignal onsignal)
 
 void SleepMilliSec(unsigned long ml_sec, EInterruptOnSignal onsignal)
 {
-#if defined(NCBI_OS_MSWIN)
+#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_CYGWIN)
     Sleep(ml_sec);
 #elif defined(NCBI_OS_UNIX)
     SleepMicroSec(ml_sec * 1000, onsignal);

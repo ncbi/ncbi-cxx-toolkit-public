@@ -4199,8 +4199,8 @@ CNcbiOstream& CTmpFile::AsOutputFile(EIfExists if_exists,
 // CMemoryFile
 //
 
-// Cached system's memory virtual page size.
-static unsigned long s_VirtualMemoryPageSize = 0;  
+// Cached system's memory allocation granularity
+static unsigned long s_VirtualMemoryAllocationGranularity = 0;  
 
 
 // Platform-dependent memory file handle definition
@@ -4316,8 +4316,9 @@ CMemoryFile_Base::CMemoryFile_Base(void)
                    "Memory-mapping is not supported by the C++ Toolkit"
                    " on this platform");
     }
-    if ( !s_VirtualMemoryPageSize ) {
-        s_VirtualMemoryPageSize = GetVirtualMemoryPageSize();
+    if ( !s_VirtualMemoryAllocationGranularity ) {
+        s_VirtualMemoryAllocationGranularity
+            = GetVirtualMemoryAllocationGranularity();
     }
 }
 
@@ -4399,14 +4400,14 @@ CMemoryFileSegment::CMemoryFileSegment(SMemoryFileHandle& handle,
                    "File mapping region size must be greater than 0");
     }
     // Get system's memory allocation granularity.
-    if ( !s_VirtualMemoryPageSize ) {
+    if ( !s_VirtualMemoryAllocationGranularity ) {
         NCBI_THROW(CFileException, eMemoryMap,
-                   "Cannot determine virtual page size");
+                   "Cannot determine virtual memory allocation granularity");
     }
     // Adjust mapped length and offset.
-    if ( m_Offset % s_VirtualMemoryPageSize ) {
-        m_OffsetReal -= (m_Offset % s_VirtualMemoryPageSize);
-        m_LengthReal += (m_Offset % s_VirtualMemoryPageSize);
+    if ( m_Offset % s_VirtualMemoryAllocationGranularity ) {
+        m_OffsetReal -= m_Offset % s_VirtualMemoryAllocationGranularity;
+        m_LengthReal += m_Offset % s_VirtualMemoryAllocationGranularity;
     }
     // Map file view to memory
     string errmsg;
