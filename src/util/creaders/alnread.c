@@ -1263,7 +1263,7 @@ s_LineInfoNew
         return NULL;
     }
     lip->data = strdup (string);
-    lip->line_num = line_num;
+    lip->line_num = line_num + 1;
     lip->line_offset = line_offset;
     lip->delete_me = eFalse;
     lip->next = NULL;
@@ -2857,7 +2857,7 @@ static void s_AddDeflineFromOrganismLine
             }
         }
         /* use new line numbers */
-        lip->line_num = line_num;
+        lip->line_num = line_num + 1;
         lip->line_offset = defline_offset;
         lip->delete_me = eFalse;        
     }
