@@ -194,7 +194,7 @@ public:
   string m_adjusted;
 
   CCustomErrorHandler custom_err;
-  CAgpRenumber(ostream& out) : CAgpReader(&custom_err), m_out(out)
+  CAgpRenumber(ostream& out) : CAgpReader(&custom_err, false, eAgpVersion_auto), m_out(out)
   {
     had_empty_line = false;
     renum_objs=no_renum_objs=0;
