@@ -38,6 +38,7 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
+#include <objects/seq/Linkage_evidence.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seq/Seq_gap.hpp>
@@ -79,6 +80,8 @@ inline string GetGapType(const CSeqMap_CI& iter,
             return "repeat";
         case CSeq_gap::eType_contig:
             return "contig";
+        case CSeq_gap::eType_scaffold:
+            return "scaffold";
         default:
             // unknown or other
             // do nothing (will use default_gap_type if non-null)
@@ -93,7 +96,6 @@ inline string GetGapType(const CSeqMap_CI& iter,
     throw runtime_error("couldn't get gap type");
 }
 
-
 inline bool GetLinkage(const CSeqMap_CI& iter,
                        const bool* default_linkage)
 {
@@ -107,6 +109,23 @@ inline bool GetLinkage(const CSeqMap_CI& iter,
         return *default_linkage;
     }
     throw runtime_error("couldn't get linkage");
+}
+
+static
+inline void WriteLinkageEvidence( CNcbiOstream &os, const CSeqMap_CI& iter )
+{
+    try {
+        const CSeq_gap & gap = iter.GetData().GetGap();
+        if( gap.IsSetLinkage_evidence() ) {
+            string linkage_evidence_str;
+            CLinkage_evidence::VecToString( 
+                linkage_evidence_str, 
+                gap.GetLinkage_evidence() );
+            os << linkage_evidence_str;
+        }
+    } catch (CSeqMapException&) {
+        // no Seq-data for this gap
+    }
 }
 
 
@@ -186,6 +205,7 @@ static void s_AgpWrite(CNcbiOstream& os,
             // col 9; Write an empty column.  The spec says there should
             //        be an empty column, rather than no column (i.e., no tab).
             os << '\t';
+            WriteLinkageEvidence( os, iter );
             break;
 
         case CSeqMap::eSeqRef:

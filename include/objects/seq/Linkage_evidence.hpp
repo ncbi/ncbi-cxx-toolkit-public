@@ -83,6 +83,17 @@ public:
         CSeq_gap::TLinkage_evidence& output_result, 
         const vector<string> &linkage_evidence );
 
+    // Convert a container of CLinkage_evidence into a 
+    // semicolon-delimited string.
+    // @param output_result the result
+    // @return False doesn't exactly imply failure, per se.
+    //         True if every linkage_evidence could be converted to a string.
+    //         If false, output_result will contain the string "UNKNOWN"
+    //         in some places,
+    //         representing a linkage_evidence(s) we couldn't convert, but
+    //         the rest of the string will be fine.
+    static bool VecToString( string & output_result,
+        const CSeq_gap::TLinkage_evidence & linkage_evidence );
 
 private:
     // Prohibit copy constructor and assignment operator

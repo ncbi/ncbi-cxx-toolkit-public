@@ -113,6 +113,60 @@ bool CLinkage_evidence::GetLinkageEvidence(
     }
 }
 
+bool CLinkage_evidence::VecToString( 
+    string & output_result,
+    const CSeq_gap::TLinkage_evidence & linkage_evidence )
+{
+    bool all_converted_okay = true;
+
+    ITERATE( CSeq_gap::TLinkage_evidence, evid_iter, linkage_evidence ) {
+        const char *evid_str = NULL;
+        if( (*evid_iter)->IsSetType() ) {
+            switch( (*evid_iter)->GetType() ) {
+                case eType_paired_ends:
+                    evid_str = "paired-ends";
+                    break;
+                case eType_align_genus:
+                    evid_str = "align_genus";
+                    break;
+                case eType_align_xgenus:
+                    evid_str = "align_xgenus";
+                    break;
+                case eType_align_trnscpt:
+                    evid_str = "align_trnscpt";
+                    break;
+                case eType_within_clone:
+                    evid_str = "within_clone";
+                    break;
+                case eType_clone_contig:
+                    evid_str = "clone_contig";
+                    break;
+                case eType_map:
+                    evid_str = "map";
+                    break;
+                case eType_strobe:
+                    evid_str = "strobe";
+                    break;
+                case eType_unspecified:
+                    evid_str = "unspecified";
+                    break;
+                default:
+                    break;
+            }
+        }
+        if( evid_str == NULL ) {
+            evid_str = "UNKNOWN";
+            all_converted_okay = false;
+        }
+        if( ! output_result.empty() ) {
+            output_result += ';';
+        }
+        output_result += evid_str;
+    }
+
+    return all_converted_okay;
+}
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
