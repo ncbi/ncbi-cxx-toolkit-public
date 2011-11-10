@@ -6,7 +6,7 @@ srcdir = @srcdir@
 include @builddir@/Makefile.meta
 
 TESTS=bad_test test2 acc_test fa_test un_test obj_len_test order_test overlap_test new_test space_test \
-  chr_scaf_test chr_scaf_test2 chr_scaf_test_bad
+  chr_scaf_test chr_scaf_test2 chr_scaf_test_bad ver2.0
 .PHONY : noalt test $(TESTS) alt_test
 
 noalt: $(TESTS)
@@ -73,5 +73,10 @@ chr_scaf_test_bad: agp_validate
 	sh -c "./agp_validate -scaf $(srcdir)/test/chr_from_scaffold_WGS.agp>chr_scaf_test_bad.out 2>&1"
 	sh -c "./agp_validate -chr $(srcdir)/test/scaffold_from_contig_WGS.agp>>chr_scaf_test_bad.out 2>&1"
 	diff ${DOPT} -u $(srcdir)/test/chr_scaf_test_bad.out chr_scaf_test_bad.out
+
+ver2.0: agp_validate
+	sh -c "./agp_validate -scaf $(srcdir)/test/scaffold_from_contig_WGS.agp2.0 -chr $(srcdir)/test/chr_from_scaffold_WGS.agp2.0>ver2.0.out 2>&1"
+	sh -c "./agp_validate $(srcdir)/test/chr_from_contig_BAC.agp2.0 $(srcdir)/test/chr_from_contig_WGS.agp2.0 >>ver2.0.out 2>&1"
+	diff ${DOPT} -u $(srcdir)/test/ver2.0.out ver2.0.out
 
 
