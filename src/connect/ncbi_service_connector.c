@@ -184,22 +184,26 @@ static int/*bool*/ s_ParseHeader(const char* header,
 
 #ifdef __cplusplus
 extern "C" {
-    static int s_ParseHeaderUCB  (const char*, void*);
-    static int s_ParseHeaderNoUCB(const char*, void*);
-}
-#endif /* __cplusplus */
-
-
+#endif /*__cplusplus*/
 static int s_ParseHeaderUCB  (const char* header, void* data, int server_error)
 {
     return s_ParseHeader(header, data, server_error, 1/*enable CB*/);
 }
+#ifdef __cplusplus
+}
+#endif /*__cplusplus*/
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif /*__cplusplus*/
 static int s_ParseHeaderNoUCB(const char* header, void* data, int server_error)
 {
     return s_ParseHeader(header, data, server_error, 0/*disable CB*/);
 }
+#ifdef __cplusplus
+}
+#endif /*__cplusplus*/
 
 
 /*ARGSUSED*/
@@ -491,7 +495,7 @@ static CONNECTOR s_CreateSocketConnector(const SConnNetInfo* net_info,
                                    | fHTTP_NoAutoRetry, &s);
         if (status == eIO_Success) {
             size_t handle_size = SOCK_OSHandleSize();
-            char*  handle      = malloc(handle_size);
+            char*  handle      = (char*) malloc(handle_size);
             status = SOCK_GetOSHandle(s, handle, handle_size);
             if (status == eIO_Success) {
                 status  = SOCK_CreateOnTopEx(handle, handle_size, &sock,
@@ -656,7 +660,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             (net_info, "User-Agent: NCBIServiceConnector/"
              DISP_PROTOCOL_VERSION
 #ifdef NCBI_CXX_TOOLKIT
-             " (C++ Toolkit)"
+             " (CXX Toolkit)"
 #else
              " (C Toolkit)"
 #endif

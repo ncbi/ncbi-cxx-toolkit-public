@@ -41,12 +41,6 @@
 
 #define NCBI_USE_ERRCODE_X   Connect_Sendmail
 
-#ifdef NCBI_CXX_TOOLKIT
-#define NCBI_SENDMAIL_TOOLKIT "C++"
-#else
-#define NCBI_SENDMAIL_TOOLKIT "C"
-#endif
-
 #define MX_MAGIC_NUMBER 0xBA8ADEDA
 #define MX_CRLF         "\r\n"
 
@@ -497,7 +491,12 @@ const char* CORE_SendMailEx(const char*          to,
                    "[SendMail]  Subject ignored in as-is messages");
 
     if (!s_SockWrite(sock, "X-Mailer: CORE_SendMail (NCBI "
-                     NCBI_SENDMAIL_TOOLKIT " Toolkit)" MX_CRLF, 0)) {
+#ifdef NCBI_CXX_TOOLKIT
+                     "CXX Toolkit"
+#else
+                     "C Toolkit"
+#endif /*NCBI_CXX_TOOLKIT*/
+                     ")" MX_CRLF, 0)) {
         SENDMAIL_RETURN(20, "Write error in sending mailer information");
     }
 

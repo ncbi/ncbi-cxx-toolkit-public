@@ -52,12 +52,12 @@
 
 /* "READ" mode states, see table below
  */
-enum {
+enum EReadState {
     eRS_RequestWrite = 0,
     eRS_HeaderRead   = 1,
     eRS_BodyRead     = 2,
     eRS_BodyDone     = 3
-} EReadState;
+};
 typedef unsigned       EBReadState;  /* packed EReadState */
 
 
@@ -539,7 +539,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 ConnNetInfo_ExtendUserHeader
                     (uuu->net_info, "User-Agent: NCBIHttpConnector"
 #ifdef NCBI_CXX_TOOLKIT
-                     " (C++ Toolkit)"
+                     " (CXX Toolkit)"
 #else
                      " (C Toolkit)"
 #endif /*NCBI_CXX_TOOLKIT*/
