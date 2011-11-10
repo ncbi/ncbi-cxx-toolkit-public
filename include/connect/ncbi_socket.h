@@ -1992,10 +1992,7 @@ typedef const struct SOCKSSL_struct* SOCKSSL;
 
 typedef SOCKSSL (*FSSLSetup)(void);
 
-
-extern NCBI_XCONNECT_EXPORT void SOCK_SetupSSL
-(FSSLSetup setup
- );
+extern NCBI_XCONNECT_EXPORT void SOCK_SetupSSL(FSSLSetup setup);
 
 
 #ifdef __cplusplus
