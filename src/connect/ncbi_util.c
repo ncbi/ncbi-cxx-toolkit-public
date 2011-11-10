@@ -64,15 +64,6 @@
 #define NCBI_USE_PRECOMPILED_CRC32_TABLES 1
 
 
-/* Static function pre-declarations to avoid C++ compiler warnings
- */
-#if defined(__cplusplus)
-extern "C" {
-    static void s_LOG_FileHandler(void* user_data, SLOG_Handler* call_data);
-    static void s_LOG_FileCleanup(void* user_data);
-}
-#endif /* __cplusplus */
-
 
 /******************************************************************************
  *  MT locking
@@ -507,6 +498,9 @@ typedef struct {
 
 
 /* Callback for LOG_ToFILE[_Ex]() */
+#ifdef __cplusplus
+extern "C" {
+#endif /*__cplusplus*/
 static void s_LOG_FileHandler(void* user_data, SLOG_Handler* call_data)
 {
     SLogData* data = (SLogData*) user_data;
@@ -522,9 +516,15 @@ static void s_LOG_FileHandler(void* user_data, SLOG_Handler* call_data)
         }
     }
 }
+#ifdef __cplusplus
+}
+#endif /*__cplusplus*/
 
 
 /* Callback for LOG_ToFILE[_Ex]() */
+#ifdef __cplusplus
+extern "C" {
+#endif /*__cplusplus*/
 static void s_LOG_FileCleanup(void* user_data)
 {
     SLogData* data = (SLogData*) user_data;
@@ -536,6 +536,9 @@ static void s_LOG_FileCleanup(void* user_data)
         fflush(data->fp);
     free(user_data);
 }
+#ifdef __cplusplus
+}
+#endif /*__cplusplus*/
 
 
 extern void LOG_ToFILE_Ex
@@ -643,7 +646,7 @@ static char* x_Savestr(const char* str, char* buf, size_t bufsize)
     if (buf) {
         size_t len = strlen(str);
         if (len++ < bufsize)
-            return memcpy(buf, str, len);
+            return (char*) memcpy(buf, str, len);
         errno = ERANGE;
     } else
         errno = EINVAL;

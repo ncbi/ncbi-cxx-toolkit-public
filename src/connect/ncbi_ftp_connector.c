@@ -1863,7 +1863,7 @@ static EIO_Status s_VT_Write
                     ++count;
                     ++s;
                 }
-                if (!(p = memchr(s, kIAC[0], size - count)))
+                if (!(p = (const char*) memchr(s, kIAC[0], size - count)))
                     part = size - count;
                 else
                     part = (size_t)(p - s);
