@@ -3229,7 +3229,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "LUGO	s	Universidad de Satniago de Compostela, Departamento de Produccion Vegetal",
 "LUH	s	University of Lagos, Biological Sciences Department, Botany Unit",
 "LUH<NLD>	c	Leiden University Medical Center",
-"LUNZ	s	Lincoln University",
+"LUNZ	s	Lincoln University Entomology Research Museum",
 "LUQ	s	Laval University",
 "LUS	s	Lushan Botanical Garden",
 "LUW	s	Landbouwuniversiteit Wageningen, Department of Entomology",
