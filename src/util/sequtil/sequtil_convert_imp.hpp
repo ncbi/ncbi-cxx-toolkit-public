@@ -230,16 +230,52 @@ private:
     static SIZE_TYPE x_ConvertStdaaToEaa(const char* src, TSeqPos pos, 
         TSeqPos length, char* dst);
 
-
-    // Advanced packing
-    static SIZE_TYPE x_Pack(const char* src, TSeqPos length, TCoding src_coding,
-                            const bool* not_ambig, IPackTarget& dst);    
-
     // Test for amibiguous bases (not A,C,G or T) starting at position 0.
     static bool x_HasAmbig(const char* src, TCoding src_coding, size_t length);
     static bool x_HasAmbigNcbi8na(const char* src, size_t length);
     static bool x_HasAmbigNcbi4na(const char* src, size_t length);
     static bool x_HasAmbigIupacna(const char* src, size_t length);
+
+    // Advanced packing
+
+    // General approach: always keep track of the best option ending
+    // in a full-width chunk, which may prove to be useful if a
+    // following short region wouldn't be worth the overhead.
+    // (Also, try to keep partial nucleotide bytes to a minimum.)
+
+    class CPacker {
+    public:
+        CPacker(TCoding src_coding, const TCoding* best_coding, bool gaps_ok,
+                IPackTarget& dst)
+            : m_SrcCoding(src_coding), m_BestCoding(best_coding),
+              m_Target(dst), m_SrcDensity(GetBasesPerByte(src_coding)),
+              m_GapsOK(gaps_ok), m_WideCoding(x_GetWideCoding(src_coding))
+            { }
+
+        SIZE_TYPE Pack(const char* src, TSeqPos length);
+
+    private:
+        void x_AddBoundary(TSeqPos pos, TCoding new_coding);
+        static TCoding x_GetWideCoding(const TCoding coding);
+
+        struct SArrangement {
+            vector<TCoding> codings;
+            SIZE_TYPE       cost;
+        };
+
+        const TCoding        m_SrcCoding;
+        const TCoding* const m_BestCoding;
+        IPackTarget&         m_Target;
+        const size_t         m_SrcDensity;
+        const bool           m_GapsOK;
+        const TCoding        m_WideCoding;
+
+        vector<TSeqPos> m_Boundaries;
+        SArrangement    m_EndingNarrow;
+        SArrangement    m_EndingWide;
+
+        static const TCoding kNoCoding;
+    };
 };
 
 

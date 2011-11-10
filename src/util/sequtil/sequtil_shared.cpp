@@ -192,4 +192,14 @@ size_t GetBasesPerByte(CSeqUtil::TCoding coding)
 }
 
 
+SIZE_TYPE GetBytesNeeded(CSeqUtil::TCoding coding, TSeqPos length)
+{
+    switch (coding) {
+    case CSeqUtil::e_not_set:  return 0;
+    case CSeqUtil::e_Ncbi2na:  return (length + 3) / 4;
+    case CSeqUtil::e_Ncbi4na:  return (length + 1) / 2;
+    default:                   return length;
+    }
+}
+
 END_NCBI_SCOPE

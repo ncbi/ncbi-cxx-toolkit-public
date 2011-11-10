@@ -2950,4 +2950,18 @@ const bool CNcbi8naAmbig::scm_Table[256] = {
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+//
+// Residue classification
+
+#define COUNT_GAPS
+const SBestCodings kBestCodingsWithGaps = {
+#include "sequtil_best_codings.inc"
+};
+
+#undef COUNT_GAPS
+const SBestCodings kBestCodingsWithoutGaps = {
+#include "sequtil_best_codings.inc"
+};
+
 END_NCBI_SCOPE

@@ -65,6 +65,8 @@ SIZE_TYPE revcmp(char* buf, TSeqPos pos, TSeqPos length, const Uint1* table);
 
 size_t GetBasesPerByte(CSeqUtil::TCoding coding);
 
+SIZE_TYPE GetBytesNeeded(CSeqUtil::TCoding coding, TSeqPos length);
+
 template <typename C>
 bool OutOfRange(TSeqPos pos, const C& container, CSeqUtil::TCoding coding)
 {
@@ -81,12 +83,7 @@ bool OutOfRange(TSeqPos pos, const C& container, CSeqUtil::TCoding coding)
 template <typename C>
 void ResizeDst(C& container, CSeqUtil::TCoding coding, TSeqPos length)
 {
-    size_t bases_per_byte = GetBasesPerByte(coding);
-    
-    size_t new_size = length / bases_per_byte;
-    if ( (length %  bases_per_byte) != 0 ) {
-        ++new_size;
-    }
+    size_t new_size = GetBytesNeeded(coding, length);
     
     if ( container.size() < new_size ) {
         container.resize(new_size);

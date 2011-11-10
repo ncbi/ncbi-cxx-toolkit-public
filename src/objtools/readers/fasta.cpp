@@ -462,11 +462,13 @@ void CFastaReader::ParseDefLine(const TStr& s)
 #endif   
     }
 
-    // store the raw defline in a User-object for reference
-    CRef<CSeqdesc> desc(new CSeqdesc);
-    desc->SetUser().SetType().SetStr("CFastaReader");
-    desc->SetUser().AddField("DefLine", NStr::PrintableString(s));
-    m_CurrentSeq->SetDescr().Set().push_back(desc);
+    if ( !TestFlag(fNoUserObjs) ) {
+        // store the raw defline in a User-object for reference
+        CRef<CSeqdesc> desc(new CSeqdesc);
+        desc->SetUser().SetType().SetStr("CFastaReader");
+        desc->SetUser().AddField("DefLine", NStr::PrintableString(s));
+        m_CurrentSeq->SetDescr().Set().push_back(desc);
+    }
 
     if (TestFlag(fUniqueIDs)) {
         ITERATE (CBioseq::TId, it, GetIDs()) {
@@ -737,7 +739,8 @@ void CFastaReader::AssembleSeq(void)
         } else {
             inst.SetLength(GetCurrentPos(eRawPos));
             CDelta_ext& delta_ext = inst.SetExt().SetDelta();
-            delta_ext.AddAndSplit(m_SeqData, format, inst.GetLength());
+            delta_ext.AddAndSplit(m_SeqData, format, inst.GetLength(),
+                                  TestFlag(fLetterGaps));
             if (delta_ext.Get().size() > 1) {
                 inst.SetRepr(CSeq_inst::eRepr_delta);
             } else { // simplify -- just one piece
@@ -758,7 +761,8 @@ void CFastaReader::AssembleSeq(void)
                 if (TestFlag(fNoSplit)) {
                     delta_ext.AddLiteral(chunk, inst.GetMol());
                 } else {
-                    delta_ext.AddAndSplit(chunk, format, m_Gaps[i].pos);
+                    delta_ext.AddAndSplit(chunk, format, m_Gaps[i].pos,
+                                          TestFlag(fLetterGaps));
                 }
             }
 
@@ -777,7 +781,8 @@ void CFastaReader::AssembleSeq(void)
                 if (TestFlag(fNoSplit)) {
                     delta_ext.AddLiteral(chunk, inst.GetMol());
                 } else {
-                    delta_ext.AddAndSplit(chunk, format, seq_len);
+                    delta_ext.AddAndSplit(chunk, format, seq_len,
+                                          TestFlag(fLetterGaps));
                 }
             }
         }

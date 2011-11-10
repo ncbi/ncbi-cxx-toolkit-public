@@ -127,7 +127,7 @@ public:
     /// Convert a raw nucleotide sequence with occasional ambiguities
     /// or gaps into a tighter (but somewhat more complex) delta-seq
     /// representation.
-    void PackAsDeltaSeq(void);
+    void PackAsDeltaSeq(bool gaps_ok = false);
 
 protected:
     // From CSerialUserOp

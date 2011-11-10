@@ -1064,109 +1064,196 @@ SIZE_TYPE CSeqConvert_imp::Pack(const char* src, TSeqPos length,
     if (length == 0) {
         return 0;
     }
+    bool gaps_ok = dst.GapsOK(CSeqUtil::GetCodingType(src_coding));
+    const SBestCodings& best_codings = (gaps_ok ? kBestCodingsWithGaps
+                                        : kBestCodingsWithoutGaps);
+    const TCoding* best_coding = NULL;
     switch (src_coding) {
     case CSeqUtil::e_Iupacna:
-        return x_Pack(src, length, src_coding, CIupacnaAmbig::GetTable(), dst);
-
-    case CSeqUtil::e_Ncbi4na:
-        return x_Pack(src, length, src_coding, CNcbi4naAmbig::GetTable(), dst);
-
-    case CSeqUtil::e_Ncbi4na_expand:
-    case CSeqUtil::e_Ncbi8na:
-        return x_Pack(src, length, src_coding, CNcbi8naAmbig::GetTable(), dst);
+        best_coding = best_codings.iupacna;
+        break;
 
     case CSeqUtil::e_Ncbi2na_expand:
         return Convert(src, src_coding, 0, length,
                        dst.NewSegment(CSeqUtil::e_Ncbi2na, length),
                        CSeqUtil::e_Ncbi2na);
 
-    case CSeqUtil::e_Ncbi2na:
-        memcpy(dst.NewSegment(src_coding, length), src, (length + 3) / 4);
-        return length;
+    case CSeqUtil::e_Ncbi4na:
+        best_coding = best_codings.ncbi4na;
+        break;
+
+    case CSeqUtil::e_Ncbi4na_expand:
+    case CSeqUtil::e_Ncbi8na:
+        best_coding = best_codings.ncbi8na;
+        break;
+
+    case CSeqUtil::e_Iupacaa:
+    case CSeqUtil::e_Ncbieaa:
+        if (gaps_ok) { // no point otherwise
+            best_coding = best_codings.ncbieaa;
+        }
+        break;
+
+    case CSeqUtil::e_Ncbi8aa:
+    case CSeqUtil::e_Ncbistdaa:
+        if (gaps_ok) {
+            best_coding = best_codings.ncbi8aa;
+        }
+        break;
 
     default:
-        memcpy(dst.NewSegment(src_coding, length), src, length);
+        break;
+    }
+
+    if (best_coding != NULL) {
+        return CPacker(src_coding, best_coding, gaps_ok, dst)
+            .Pack(src, length);
+    } else {
+        memcpy(dst.NewSegment(src_coding, length), src,
+               GetBytesNeeded(src_coding, length));
         return length;
     }    
 }
 
-SIZE_TYPE CSeqConvert_imp::x_Pack(const char* src, TSeqPos length,
-                                  TCoding src_coding, const bool* not_ambig,
-                                  IPackTarget& dst)
+const CSeqUtil::ECoding CSeqConvert_imp::CPacker::kNoCoding
+    = CSeqUtil::e_Ncbi2na_expand; // never used by best_coding
+
+SIZE_TYPE CSeqConvert_imp::CPacker::Pack(const char* src, TSeqPos length)
 {
-    typedef CRange<TSeqPos> TRange;
-    typedef list<TRange>    TRanges;
+    const char* src_end   = src + GetBytesNeeded(m_SrcCoding, length);
+    TCoding     prev_type = kNoCoding;
 
-    const SIZE_TYPE      overhead = dst.GetOverhead();
-    const size_t         bpb      = GetBasesPerByte(src_coding);
-    static const TSeqPos kMask    = ~(TSeqPos)3;
-    const char*          src_end  = src + (length + bpb - 1) / bpb;
-    const char*          p1;
-    const char*          p2       = src;
-    TRanges              ranges;
+    for (const char* p = src;  p < src_end;  ++p) {
+        unsigned char residue;
+        TCoding       curr_type;
+        do {
+            residue = static_cast<unsigned char>(*p);
+            curr_type = m_BestCoding[residue];
+        } while (curr_type == prev_type  &&  ++p < src_end);
 
-    while (p2 < src_end) {
-        for (p1 = p2;
-             p1 < src_end  &&  not_ambig[static_cast<unsigned char>(*p1)];
-             ++p1)
-            ;
-        if (p1 == src_end) {
-            break; // no further ambiguities
-        }
-        if (p1 == src_end - 1  &&  bpb > 1  &&  length % bpb) {
-            _ASSERT(src_coding == CSeqUtil::e_Ncbi4na  &&  bpb == 2);
-            if (not_ambig[(*p1 | 1) & 0xF1]) {
-                break;
+        if (curr_type == CSeqUtil::e_Ncbi4na_expand) {
+            TCoding type1 = m_BestCoding[(residue >> 4)   * 0x11],
+                    type2 = m_BestCoding[(residue & 0x0F) * 0x11];
+            if (type1 != prev_type) {
+                x_AddBoundary((p - src) * 2, type1);
             }
+            x_AddBoundary((p - src) * 2 + 1, type2);
+            prev_type = type2;
+        } else if (p != src_end) {
+            _ASSERT(curr_type != kNoCoding);
+            x_AddBoundary((p - src) * m_SrcDensity, curr_type);
+            prev_type = curr_type;
         }
-        for (p2 = p1 + 1;
-             p2 < src_end  &&  !not_ambig[static_cast<unsigned char>(*p2)];
-             ++p2)
-            ;
-        // incorporate small tails
-        // o + k/2 + x/2 > 2o + k/2 + x/4 => x > 4o
-        if ((p1 - src) * bpb < 4 * overhead) {
-            p1 = src;
-        }
-        if ((src_end - p2) * bpb < 4 * overhead) {
-            p2 = src_end;
+    }
+    x_AddBoundary(length, kNoCoding);
+
+    _ASSERT(m_Boundaries.at(0) == 0);
+
+    SArrangement* best_arrangement
+        = (m_EndingNarrow.cost < m_EndingWide.cost
+           ? &m_EndingNarrow : &m_EndingWide);
+
+    // XXX - fine-tune 4na/2na boundaries to minimize wastage?
+
+    size_t n = best_arrangement->codings.size();
+    _ASSERT(n == m_Boundaries.size() - 1);
+
+    SIZE_TYPE result = 0;
+    for (size_t i = 0;  i < n;  ++i) {
+        TCoding coding  = best_arrangement->codings[i];
+        TSeqPos start   = m_Boundaries[i];
+        while (i < n - 1  &&  best_arrangement->codings[i + 1] == coding) {
+            ++i; // merge when possible
         }
 
-        // force block sizes to multiples of four to avoid wastage
-        TSeqPos start = (p1 - src) & kMask,
-                end   = min(TSeqPos(p2 - src - 1) | 3, length - 1);
-
-        // o + k/2 + x/2 + l/2 > 3o + k/2 + x/4 + l/2 => x > 8o
-        if (ranges.empty()  ||  start > ranges.back().GetTo() + 8 * overhead) {
-            ranges.push_back(TRange(start, end));
+        TSeqPos length  = m_Boundaries[i + 1] - start;
+        char *  segment = m_Target.NewSegment(coding, length);
+        if (coding == CSeqUtil::e_not_set) { // gap
+            _ASSERT(m_GapsOK);
+            result += length;
         } else {
-            ranges.back().SetTo(end); // coalesce
+            result += CSeqConvert::Convert(src, m_SrcCoding, start, length,
+                                           segment, coding);
         }
-    }
-
-    SIZE_TYPE result   = 0;
-    TSeqPos   last_pos = 0;
-    ITERATE (TRanges, it, ranges) {
-        if (it->GetFrom() > 0) {
-            TSeqPos len = it->GetFrom() - last_pos;
-            result += CSeqConvert::Convert
-                (src, src_coding, last_pos, len,
-                 dst.NewSegment(CSeqUtil::e_Ncbi2na, len), CSeqUtil::e_Ncbi2na);
-        }
-        result += CSeqConvert::Convert
-            (src, src_coding, it->GetFrom(), it->GetLength(),
-             dst.NewSegment(CSeqUtil::e_Ncbi4na, it->GetLength()),
-             CSeqUtil::e_Ncbi4na);
-        last_pos = it->GetTo() + 1;
-    }
-    if (last_pos < length) {
-        TSeqPos len = length - last_pos;
-        result += CSeqConvert::Convert(src, src_coding, last_pos, len,
-                                       dst.NewSegment(CSeqUtil::e_Ncbi2na, len),
-                                       CSeqUtil::e_Ncbi2na);
     }
 
     return result;
+}
+
+void CSeqConvert_imp::CPacker::x_AddBoundary(TSeqPos pos, TCoding new_coding)
+{
+    if (m_Boundaries.empty()) {
+        _ASSERT(pos == 0);
+        m_Boundaries.push_back(pos);
+        m_EndingNarrow.codings.push_back(new_coding);
+        m_EndingWide.codings.push_back(m_WideCoding);
+        m_EndingWide.cost   = m_Target.GetOverhead(m_WideCoding);
+        m_EndingNarrow.cost = m_Target.GetOverhead(new_coding);
+        return;
+    }
+
+    TSeqPos last_length = pos - m_Boundaries.back();
+    _ASSERT(last_length > 0);
+    m_Boundaries.push_back(pos);
+
+    TCoding last_narrow = m_EndingNarrow.codings.back();
+    // This always rounds up to full bytes, and as such can slightly
+    // overestimate the total cost of ncbi4na.
+    m_EndingNarrow.cost += GetBytesNeeded(last_narrow,  last_length);
+    m_EndingWide.cost   += GetBytesNeeded(m_WideCoding, last_length);
+    if (last_narrow == m_WideCoding) {
+        _ASSERT(m_EndingNarrow.cost == m_EndingWide.cost);
+    }
+
+    _TRACE(static_cast<char>('@' + last_narrow) << last_length << ": ("
+           << m_EndingNarrow.cost << ", " << m_EndingWide.cost << ')');
+
+    _ASSERT(new_coding != last_narrow);
+    if (new_coding == kNoCoding) {
+        return;
+    }
+
+    if (new_coding != m_WideCoding
+        &&  m_EndingNarrow.cost > m_EndingWide.cost) {
+        m_EndingNarrow = m_EndingWide;
+        _TRACE("N <- W before N'");
+    }
+
+    SIZE_TYPE alt_wide_cost
+        = m_EndingNarrow.cost + m_Target.GetOverhead(m_WideCoding);
+    m_EndingNarrow.cost += m_Target.GetOverhead(new_coding);
+
+    if (m_EndingWide.cost > alt_wide_cost) {
+        m_EndingWide = m_EndingNarrow;
+        m_EndingWide.cost = alt_wide_cost;
+        _TRACE("W <- N");
+    } else if (new_coding == m_WideCoding) {
+        m_EndingNarrow = m_EndingWide;
+        _TRACE("N <- W before W");
+    }
+    _TRACE('(' << m_EndingNarrow.cost << ", " << m_EndingWide.cost << ')');
+
+    m_EndingNarrow.codings.push_back(new_coding);
+    m_EndingWide.codings.push_back(m_WideCoding);
+    _ASSERT(m_EndingNarrow.codings.size() == m_Boundaries.size());
+    _ASSERT(m_EndingWide.codings.size() == m_Boundaries.size());    
+}
+
+CSeqUtil::ECoding
+CSeqConvert_imp::CPacker::x_GetWideCoding(const TCoding coding)
+{
+    switch (coding) {
+    case CSeqUtil::e_Iupacna:
+    case CSeqUtil::e_Ncbi4na_expand:
+    case CSeqUtil::e_Ncbi8na: // ignore values >= 16 for now
+        return CSeqUtil::e_Ncbi4na;
+
+    case CSeqUtil::e_Ncbi2na_expand:
+        return CSeqUtil::e_Ncbi2na;
+
+    default:
+        return coding;
+    }
 }
 
 

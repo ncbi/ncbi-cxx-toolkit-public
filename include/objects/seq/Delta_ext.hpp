@@ -74,9 +74,9 @@ public:
     CDelta_seq& AddLiteral(const string& iupac_seq, CSeq_inst::EMol mol);
 
     /// add a chunk of sequence, splitting it as necessary for the
-    /// sake of compactness (isolating ambiguous portions)
+    /// sake of compactness (isolating ambiguous portions and optionally gaps)
     void AddAndSplit(const CTempString& src, CSeq_data::E_Choice format,
-                     TSeqPos length /* in residues */);
+                     TSeqPos length /* in residues */, bool gaps_ok = false);
 
     /// add a segment that refers to another segment
     CDelta_seq& AddSeqRange(const CSeq_id& id, TSeqPos from, TSeqPos to,

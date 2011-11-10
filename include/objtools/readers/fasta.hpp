@@ -87,7 +87,9 @@ public:
         fUniqueIDs   = 1<<14, ///< Forbid duplicate IDs
         fStrictGuess = 1<<15, ///< Assume no typos when guessing sequence type
         fLaxGuess    = 1<<16, ///< Use legacy heuristic for guessing seq. type
-        fAddMods     = 1<<17  ///< Parse defline mods and add to SeqEntry
+        fAddMods     = 1<<17, ///< Parse defline mods and add to SeqEntry
+        fLetterGaps  = 1<<18, ///< Parse runs of Ns when splitting data
+        fNoUserObjs  = 1<<19  ///< Don't save raw deflines in User-objects
     };
     typedef int TFlags; ///< binary OR of EFlags
 

@@ -314,7 +314,7 @@ TSeqPos CBioseq::GetLength(void) const
     return GetInst ().GetLength ();
 }
 
-void CBioseq::PackAsDeltaSeq(void)
+void CBioseq::PackAsDeltaSeq(bool gaps_ok)
 {
     CSeq_inst& inst = SetInst();
     if (inst.IsAa()  ||  !inst.IsSetSeq_data()  ||  inst.IsSetExt()) {
@@ -325,15 +325,18 @@ void CBioseq::PackAsDeltaSeq(void)
     switch (data.Which()) {
     case CSeq_data::e_Ncbi2na:
         return; // optimal as is
-    case CSeq_data::e_Iupacna:
-        src = data.GetIupacna().Get();
+#define CODING_CASE(x) \
+    case CSeq_data::e_##x: \
+        src.assign(&data.Get##x().Get()[0], data.Get##x().Get().size()); \
         break;
-    case CSeq_data::e_Ncbi4na:
-        src.assign(&data.GetNcbi4na().Get()[0], data.GetNcbi4na().Get().size());
-        break;
-    case CSeq_data::e_Ncbi8na:
-        src.assign(&data.GetNcbi8na().Get()[0], data.GetNcbi8na().Get().size());
-        break;
+    CODING_CASE(Iupacna)
+    CODING_CASE(Iupacaa)
+    CODING_CASE(Ncbi4na)
+    CODING_CASE(Ncbi8na)
+    CODING_CASE(Ncbi8aa)
+    CODING_CASE(Ncbieaa)
+    CODING_CASE(Ncbistdaa)
+#undef CODING_CASE
     default:
         ERR_POST_X(1, Warning << "PackAsDeltaSeq: unsupported encoding "
                       << CSeq_data::SelectionName(data.Which()));
@@ -341,7 +344,7 @@ void CBioseq::PackAsDeltaSeq(void)
     }
 
     CDelta_ext& ext = inst.SetExt().SetDelta();
-    ext.AddAndSplit(src, data.Which(), inst.GetLength());
+    ext.AddAndSplit(src, data.Which(), inst.GetLength(), gaps_ok);
     if (ext.Get().size() > 1) { // finalize
         inst.SetRepr(CSeq_inst::eRepr_delta);
         inst.ResetSeq_data();

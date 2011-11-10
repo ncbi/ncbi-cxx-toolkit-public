@@ -135,11 +135,18 @@ public:
     class IPackTarget
     {
     public:
+        typedef CSeqUtil::ECoding     TCoding;
+        typedef CSeqUtil::ECodingType TCodingType;
+
         // Virtual destructor, if only as a matter of principle.
         virtual ~IPackTarget() {}
 
-        // Return the approximate overhead per segment, in bytes
-        virtual SIZE_TYPE GetOverhead(void) const = 0;
+        // Return the approximate memory overhead per segment, in bytes
+        virtual SIZE_TYPE GetOverhead(TCoding coding) const = 0;
+
+        // Returning true signals that Pack may call NewSegment with
+        // coding = CSeqUtil::e_not_set as appropriate.
+        virtual bool GapsOK(TCodingType coding_type) const = 0;
 
         // Return a pointer to a character array suitable for storing
         // the given number of residues in the given format.

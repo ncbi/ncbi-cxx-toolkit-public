@@ -68,6 +68,14 @@ CDelta_ext::~CDelta_ext(void)
 /// this variant adds a gap literal
 CDelta_seq& CDelta_ext::AddLiteral(TSeqPos len)
 {
+    if ( !Get().empty()  &&  Get().back()->IsLiteral()
+        &&  !Get().back()->GetLiteral().IsSetSeq_data()
+        &&  !Get().back()->GetLiteral().IsSetFuzz()) {
+        // merge adjacent plain gaps
+        Set().back()->SetLiteral().SetLength() += len;
+        return *Set().back();
+    }
+
     CRef<CDelta_seq> seg(new CDelta_seq());
     seg->SetLiteral().SetLength(len);
 
@@ -110,17 +118,22 @@ CDelta_seq& CDelta_ext::AddLiteral(const string& iupac_seq,
 class CDelta_ext_PackTarget : public CSeqConvert::IPackTarget
 {
 public:
-    CDelta_ext_PackTarget(CDelta_ext& obj) : m_Obj(obj)
+    CDelta_ext_PackTarget(CDelta_ext& obj, bool gaps_ok)
+        : m_Obj(obj), m_GapsOK(gaps_ok)
         { }
 
-    // ballpark estimate; gives a threshold of 512 unambiguous bases
-    // at the ends and 1024 in the middle
-    SIZE_TYPE GetOverhead(void) const { return 128; }
+    // Rough memory overhead per segment, in bytes.  The actual values
+    // are system specific, but this code's behavior shouldn't be.
+    SIZE_TYPE GetOverhead(TCoding coding) const
+        { return coding == CSeqUtil::e_not_set ? 96 : 128; }
     
-    char* NewSegment(CSeqUtil::TCoding coding, TSeqPos length);
+    virtual bool GapsOK(TCodingType coding_type) const { return m_GapsOK; }
+
+    char* NewSegment(TCoding coding, TSeqPos length);
 
 private:
     CDelta_ext& m_Obj;
+    bool        m_GapsOK;
 };
 
 
@@ -133,18 +146,32 @@ char* CDelta_ext_PackTarget::NewSegment(CSeqUtil::TCoding coding,
     m_Obj.Set().push_back(ds);
 
     switch (coding) {
-    case CSeqUtil::e_Ncbi2na:
-    {
-        CNCBI2na& dest = lit.SetSeq_data().SetNcbi2na();
-        dest.Set().resize((length + 3) / 4);
-        return &dest.Set()[0];
+    case CSeqUtil::e_not_set:
+        return NULL;
+
+#define CODING_CASE_EX(key, type, setter, len) \
+    case CSeqUtil::key: \
+    { \
+        type& dest = lit.SetSeq_data().setter(); \
+        dest.Set().resize(len); \
+        return &dest.Set()[0]; \
     }
-    case CSeqUtil::e_Ncbi4na:
-    {
-        CNCBI4na& dest = lit.SetSeq_data().SetNcbi4na();
-        dest.Set().resize((length + 1) / 2);
-        return &dest.Set()[0];
-    }
+#define CODING_CASE(name, type) \
+    CODING_CASE_EX(e_##name, type, Set##name, length)
+
+    CODING_CASE_EX(e_Ncbi2na, CNCBI2na, SetNcbi2na, (length + 3) / 4)
+    CODING_CASE_EX(e_Ncbi4na, CNCBI4na, SetNcbi4na, (length + 1) / 2)
+
+    // case CSeqUtil::e_Ncbi4na_expand:
+    // CODING_CASE(Ncbi8na, CNCBI8na)
+
+    // CODING_CASE(Iupacaa,   CIUPACaa)
+    // CODING_CASE(Ncbi8aa,   CNCBI8aa)
+    CODING_CASE(Ncbieaa,   CNCBIeaa)
+    CODING_CASE(Ncbistdaa, CNCBIstdaa)
+#undef CODING_CASE
+#undef CODING_CASE_EX
+
     default:
         NCBI_THROW(CSeqUtilException, eInvalidCoding,
                    "CDelta_ext_PackTarget: unexpected coding");
@@ -153,19 +180,17 @@ char* CDelta_ext_PackTarget::NewSegment(CSeqUtil::TCoding coding,
 
 
 void CDelta_ext::AddAndSplit(const CTempString& src, CSeq_data::E_Choice format,
-                             TSeqPos length /* in residues */)
+                             TSeqPos length /* in residues */, bool gaps_ok)
 {
     CSeqUtil::TCoding coding;
     switch (format) {
-    case CSeq_data::e_Iupacna:
-        coding = CSeqUtil::e_Iupacna;
-        break;
-    case CSeq_data::e_Ncbi4na:
-        coding = CSeqUtil::e_Ncbi4na;
-        break;
-    case CSeq_data::e_Ncbi8na:
-        coding = CSeqUtil::e_Ncbi8na;
-        break;
+    case CSeq_data::e_Iupacna:    coding = CSeqUtil::e_Iupacna;     break;
+    case CSeq_data::e_Iupacaa:    coding = CSeqUtil::e_Iupacaa;     break;
+    case CSeq_data::e_Ncbi4na:    coding = CSeqUtil::e_Ncbi4na;     break;
+    case CSeq_data::e_Ncbi8na:    coding = CSeqUtil::e_Ncbi8na;     break;
+    case CSeq_data::e_Ncbi8aa:    coding = CSeqUtil::e_Ncbi8aa;     break;
+    case CSeq_data::e_Ncbieaa:    coding = CSeqUtil::e_Ncbieaa;     break;
+    case CSeq_data::e_Ncbistdaa:  coding = CSeqUtil::e_Ncbistdaa;   break;
     default:
     {
         // add as a single piece
@@ -179,7 +204,7 @@ void CDelta_ext::AddAndSplit(const CTempString& src, CSeq_data::E_Choice format,
     }
     }
 
-    CDelta_ext_PackTarget dst(*this);
+    CDelta_ext_PackTarget dst(*this, gaps_ok);
     CSeqConvert::Pack(src.data(), length, coding, dst);
 }
 

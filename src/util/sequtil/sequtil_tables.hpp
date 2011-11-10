@@ -31,7 +31,7 @@
  * File Description:
  *   Conversion tables
  */   
-#include <corelib/ncbistd.hpp>
+#include <util/sequtil/sequtil.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -624,6 +624,22 @@ private:
     static const bool    scm_Table[256];
 };
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Residue classification
+
+struct SBestCodings {
+    typedef CSeqUtil::ECoding TCoding;
+
+    TCoding iupacna[256];
+    TCoding ncbi4na[256];
+    TCoding ncbi8na[256];
+    TCoding ncbieaa[256];
+    TCoding ncbi8aa[256];
+};
+
+extern const SBestCodings kBestCodingsWithGaps, kBestCodingsWithoutGaps;
 
 END_NCBI_SCOPE
 
