@@ -13,7 +13,7 @@ APP: launcherd fwdaemon dispd.cgi
 #APP: lbsmd lbsm_feedback test_mghbn lbsmc testipub
 LIB: libconnect.a libconnext.a libmghbn.a liblbsmdapi.a
 
-DEFAULT_CONFIGURATIONS:  Linux32-Suse:GCC Linux64-Suse:GCC Linux64-Centos:GCC FreeBSD32:GCC FreeBSD32-v80:GCC SunOSx86:GCC SunOSSparc:WS64 IntelMAC:GCC
+DEFAULT_CONFIGURATIONS:  Linux32-Centos:GCC Linux64-Centos:GCC FreeBSD32:GCC FreeBSD32-v80:GCC SunOSx86:GCC SunOSSparc:WS64 IntelMAC:GCC
 
 COPY: $bindir/test_mghbn                     $installdir/bin/ncbi_mghbn
 COPY: $bindir/test_ncbi_dblb                 $installdir/bin/ncbi_dblb
@@ -30,10 +30,8 @@ COPY: $srcdir/include/internal/webenv2/id.h  $installdir/include/internal/webenv
 # Release configurator assumes that this script will eventually call standard configure script and pass all options
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
-Linux32-Suse    : ICC   : ICC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-Linux32-Suse    : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-Linux64-Suse    : ICC   : ICC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-Linux64-Suse    : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
+Linux32-Centos  : ICC   : ICC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
+Linux32-Centos  : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 Linux64-Centos  : ICC   : ICC.sh         --without-debug --without-mt --with-static --without-version --without-serial --without-runpath --with-flat-makefile
 Linux64-Centos  : GCC   : GCC.sh 4.4.2   --without-debug --without-mt --with-static --without-version --without-serial --without-runpath --with-flat-makefile
 FreeBSD32       : GCC   : GCC.sh 4.2.1   --without-debug --without-mt --with-static --without-version --without-serial --without-runpath --with-flat-makefile

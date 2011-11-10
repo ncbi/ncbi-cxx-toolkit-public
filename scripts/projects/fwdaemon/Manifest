@@ -11,8 +11,8 @@
 
 APP: fwdaemon
 
-DEFAULT_CONFIGURATIONS:  Linux32-Suse:GCC Linux64-Suse:GCC
+DEFAULT_CONFIGURATIONS:  Linux32-Centos:GCC Linux64-Centos:GCC
 
-Linux32-Suse    : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-Linux64-Suse    : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
+Linux32-Centos    : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
+Linux64-Centos    : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 

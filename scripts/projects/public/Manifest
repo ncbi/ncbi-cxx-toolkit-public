@@ -13,21 +13,20 @@
 USE_COMPONENTS
 
 Win32_9    : MSVC8 : static  32  ReleaseDLL
-#Win64      : MSVC8 : msvc800_prj  dll     64  DebugDLL
 Win64_9    : MSVC9-32 : dll     32  DebugDLL
 Win64_9    : MSVC9-64 : static  64  ReleaseDLL
 
-Linux32-Suse : GCC304  : GCC.sh 3.0.4 --with-dll --with-mt --with-distcc
-Linux32-Suse : GCC342  : GCC.sh 3.4.2 --without-flat-makefile --with-distcc
-Linux32-Suse : GCC412  : GCC.sh 4.1.2 --without-debug --with-mt  <ENV>NCBI=</ENV>
-Linux32-Suse : GCC423  : GCC.sh 4.2.3 --without-debug --with-distcc
-Linux32-Suse : ICC     : ICC.sh       --without-debug --with-dll --with-mt
+Linux32-Centos : GCC304  : GCC.sh 3.0.4 --with-dll --with-mt --with-distcc
+Linux32-Centos : GCC342  : GCC.sh 3.4.2 --without-flat-makefile --with-distcc
+Linux32-Centos : GCC412  : GCC.sh 4.1.2 --without-debug --with-mt  <ENV>NCBI=</ENV>
+Linux32-Centos : GCC423  : GCC.sh 4.2.3 --without-debug --with-distcc
+Linux32-Centos : ICC     : ICC.sh       --without-debug --with-dll --with-mt
 
-Linux64-Suse : GCC401  : GCC.sh 4.0.1 --without-debug --without-flat-makefile
-Linux64-Suse : GCC401d : GCC.sh 4.0.1 --with-mt --with-distcc  <ENV>NCBI=</ENV> 
-Linux64-Suse : GCC412  : GCC.sh 4.1.2 --with-distcc
-Linux64-Suse : GCC423  : GCC.sh 4.2.3 --without-debug --with-mt --with-distcc
-Linux64-Suse : ICC     : ICC.sh       --with-mt  <ENV>NCBI=</ENV>
+Linux64-Centos : GCC401  : GCC.sh 4.0.1 --without-debug --without-flat-makefile
+Linux64-Centos : GCC401d : GCC.sh 4.0.1 --with-mt --with-distcc  <ENV>NCBI=</ENV> 
+Linux64-Centos : GCC412  : GCC.sh 4.1.2 --with-distcc
+Linux64-Centos : GCC423  : GCC.sh 4.2.3 --without-debug --with-mt --with-distcc
+Linux64-Centos : ICC     : ICC.sh       --with-mt  <ENV>NCBI=</ENV>
 
 FreeBSD32 : GCC : GCC.sh --without-debug
 
@@ -36,5 +35,4 @@ SunOSx86 : WS64 : WorkShop59.sh 64 --with-debug --with-dll --with-mt
 SunOSSparc : GCC  : GCC.sh 4.1.1 --without-debug --with-mt  <ENV>NCBI=</ENV>
 SunOSSparc : WS32 : WorkShop55.sh 32 --with-debug
 
-#PowerMAC : GCC : GCC.sh --without-debug  <ENV>NCBI=</ENV>
 IntelMAC : GCC : GCC.sh --with-debug --with-dll --with-mt

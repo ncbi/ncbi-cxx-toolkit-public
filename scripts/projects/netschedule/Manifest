@@ -19,7 +19,7 @@ APP: test_netschedule_client+ test_netschedule_node+ test_netschedule_stress+ te
 APP: $srcdir/src/app/netschedule/test/ns.py $srcdir/src/app/netschedule/test/test_netschedule_bsub.py
 ETC: src/app/netschedule/netscheduled.ini
 
-DEFAULT_CONFIGURATIONS: Linux64-Suse:Bdb4520-Release Linux64-Centos:Bdb4520-Release
+DEFAULT_CONFIGURATIONS: Linux64-Centos:Bdb4520-Release
 
 # Each line describes a single configuration
 # The format is as follows:
@@ -28,8 +28,6 @@ DEFAULT_CONFIGURATIONS: Linux64-Suse:Bdb4520-Release Linux64-Centos:Bdb4520-Rele
 # Release configurator assumes that this script will eventually call standard configure script and pass all options
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
-Linux64-Suse : Bdb4520-Release : GCC.sh 4.0.1 --without-debug --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.5.20.dio.SuSE-ONLY
-Linux64-Suse : Bdb4520-Debug   : GCC.sh 4.0.1 --with-debug    --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.5.20.dio.SuSE-ONLY
 Linux64-Centos : Bdb4520-Release : GCC.sh 4.4.2 --without-debug --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.5.20.dio.SuSE-ONLY
 Linux64-Centos : Bdb4520-Debug   : GCC.sh 4.4.2 --with-debug    --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.5.20.dio.SuSE-ONLY
 

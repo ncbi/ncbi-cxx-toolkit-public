@@ -27,9 +27,9 @@ POSTBUILD: $srcdir/scripts/projects/dbtest/post_build/copy_cgi.sh $bindir $srcdi
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
 
-Linux32-Suse    : plain : GCC.sh           --without-debug --without-mt --with-static --with-flat-makefile
+Linux32-Centos    : plain : GCC.sh           --without-debug --without-mt --with-static --with-flat-makefile
 
-Linux64-Suse    : plain : GCC.sh           --without-debug --without-mt --with-static --with-flat-makefile
+Linux64-Centos    : plain : GCC.sh           --without-debug --without-mt --with-static --with-flat-makefile
 
 FreeBSD32  : plain : GCC.sh           --without-debug --without-mt --with-static --with-flat-makefile
 

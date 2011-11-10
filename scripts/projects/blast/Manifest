@@ -39,12 +39,11 @@ POSTBUILD: $srcdir/scripts/projects/blast/post_build/make_installers.py -v $vers
 # ICC gives us about 10% improvement in the core2 microarchitecture, so prefer
 # that. The build-root is needed so that rpmbuild can find the proper directories
 # to copy the binaries from
-Linux32-Suse     : icc : ICC.sh            --with-strip --without-debug --without-pcre --with-mt --with-flat-makefile --without-dll LDFLAGS=-static-libcxa
-Linux64-Suse     : icc : ICC.sh            --with-strip --without-debug --without-pcre --with-mt --with-flat-makefile
+Linux32-Centos   : icc : ICC.sh            --with-strip --without-debug --without-pcre --with-mt --with-flat-makefile --without-dll LDFLAGS=-static-libcxa
 Linux64-Centos   : icc : ICC.sh            --with-strip --without-debug --without-pcre --with-mt --with-flat-makefile
-#Linux64-Suse     : gcc-debug : GCC.sh            --with-strip --with-debug --without-pcre --with-mt --with-flat-makefile
+#Linux64-Centos     : gcc-debug : GCC.sh            --with-strip --with-debug --without-pcre --with-mt --with-flat-makefile
 
-DEFAULT_CONFIGURATIONS: Linux32-Suse:icc Linux64-Suse:icc
+DEFAULT_CONFIGURATIONS: Linux32-Centos:icc Linux64-Centos:icc
 
 Win32_9     : plain : static  32  ReleaseMT
 Win64_9     : plain : static  64  ReleaseMT

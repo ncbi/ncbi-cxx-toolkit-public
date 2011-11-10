@@ -23,12 +23,12 @@ APP: project_tree_builder
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
 
-#Linux32-Suse    : plain : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-Linux32-Suse    : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-#Linux32-Suse    : debug : GCC.sh           --with-debug    --without-mt --with-static --without-runpath --with-flat-makefile
+#Linux32-Centos    : plain : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+Linux32-Centos    : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+#Linux32-Centos    : debug : GCC.sh           --with-debug    --without-mt --with-static --without-runpath --with-flat-makefile
 
-#Linux64-Suse    : plain : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-Linux64-Suse    : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+#Linux64-Centos    : plain : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+Linux64-Centos    : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
 FreeBSD32  : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
