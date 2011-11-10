@@ -826,8 +826,13 @@ tds_process_tokens(TDSSOCKET *tds, TDS_INT *result_type, int *done_flags, unsign
         case TDS_RETURNSTATUS_TOKEN:
             ret_status = tds_get_int(tds);
             marker = tds_peek(tds);
-            if (marker != TDS_PARAM_TOKEN && marker != TDS_DONEPROC_TOKEN && marker != TDS_DONE_TOKEN)
+            if (marker != TDS_PARAM_TOKEN
+                &&  marker != TDS_DONEPROC_TOKEN
+                &&  marker != TDS_DONE_TOKEN
+                &&  marker != TDS5_PARAMFMT2_TOKEN)
+            {
                 break;
+            }
             if (tds->internal_sp_called) {
                 /* TODO perhaps we should use ret_status ?? */
             } else {
