@@ -440,10 +440,27 @@ void CPhyTreeCalc::x_ComputeTree(bool correct)
     m_FullDistMatrix.Resize(1, 1);
 
     if (correct) {
-        CDistMethods::ZeroNegativeBranches(m_Tree);
+        x_CorrectBranchLengths(m_Tree);
     }
 }
 
+void CPhyTreeCalc::x_CorrectBranchLengths(TPhyTreeNode* node)
+{
+    _ASSERT(node);
+    if (!node->IsLeaf()) {
+        for (TPhyTreeNode::TNodeList_CI it = node->SubNodeBegin();
+            it != node->SubNodeEnd(); ++it) {
+            x_CorrectBranchLengths(*it);
+        }
+    }
+
+    if (node->GetValue().IsSetDist()) {
+        double dist = node->GetValue().GetDist();
+        if (!finite(dist) || dist < 0.0) {
+            node->GetValue().SetDist(0.0);
+        }
+    }
+}
 
 bool CPhyTreeCalc::CalcBioTree(void)
 {

@@ -280,6 +280,11 @@ protected:
     ///
     void x_ComputeTree(bool correct = true);
 
+    /// Change non-finite and negative tree branch lengths to zeros
+    /// @param node Tree root [in]
+    ///
+    void x_CorrectBranchLengths(TPhyTreeNode* node);
+
 
 protected:
 
