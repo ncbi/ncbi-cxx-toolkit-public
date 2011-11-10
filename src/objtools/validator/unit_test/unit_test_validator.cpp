@@ -6122,7 +6122,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadOrganelle)
 
     SetGenome (entry, CBioSource::eGenome_nucleomorph);
     expected_errors[0]->SetErrMsg("Only Chlorarachniophyceae and Cryptophyta have nucleomorphs");
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "TaxonomyLookupProblem",
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "TaxonomyNucleomorphProblem",
                                                  "Taxonomy lookup does not have expected nucleomorph flag"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -6896,19 +6896,25 @@ BOOST_AUTO_TEST_CASE(Test_Descr_TaxonomyLookupProblem)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "TaxonomyLookupProblem",
-                              "Taxonomy lookup failed with message 'Organism not found'"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "OrganismNotFound",
+                              "Organism not found in taxonomy database"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "TaxonomyIsSpeciesProblem",
+                              "Taxonomy lookup reports is_species_level FALSE"));
     SetTaxname(entry, "Poeciliinae");
-    expected_errors[0]->SetErrMsg("Taxonomy lookup reports is_species_level FALSE");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "TaxonomyConsultRequired",
+                              "Taxonomy lookup reports taxonomy consultation needed"));
     SetTaxname(entry, "Anabaena circinalis");
-    expected_errors[0]->SetErrMsg("Taxonomy lookup reports taxonomy consultation needed");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -6918,7 +6924,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_TaxonomyLookupProblem)
     SetGenome(entry, CBioSource::eGenome_nucleomorph);
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadOrganelle",
                               "Only Chlorarachniophyceae and Cryptophyta have nucleomorphs"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "TaxonomyLookupProblem",
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "TaxonomyNucleomorphProblem",
                               "Taxonomy lookup does not have expected nucleomorph flag"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -8680,8 +8686,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_UnbalancedParentheses)
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "UnbalancedParentheses",
                               "Unbalanced parentheses in taxname 'Malio malefi (abc'"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "TaxonomyLookupProblem",
-                              "Taxonomy lookup failed with message 'Organism not found'"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "OrganismNotFound",
+                              "Organism not found in taxonomy database"));
     SetTaxname(entry, "Malio malefi (abc");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -10256,8 +10262,8 @@ BOOST_AUTO_TEST_CASE(Test_Generic_SgmlPresentInText)
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "SgmlPresentInText",
                               "taxname %s has SGML"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "TaxonomyLookupProblem",
-                              "Taxonomy lookup failed with message 'Organism not found'"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "OrganismNotFound",
+                              "Organism not found in taxonomy database"));
     ITERATE(vector<string>, it, sgml_tags) {
         string taxname = "a" + *it + "b";
         SetTaxname(entry, taxname);
