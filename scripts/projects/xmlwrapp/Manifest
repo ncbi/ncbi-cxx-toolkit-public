@@ -37,6 +37,7 @@ SunOSSparc : plain-WS64 : WorkShop59.sh 64 --without-debug --without-mt --with-s
 
 Linux64-Centos    : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 Linux32-Centos    : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+Linux32-Centos    : plain-ICC  : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 # Linux32-Ubuntu    : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
 # --with-flat-makefile is ommited for IntelMAC with the test purposes. Should
