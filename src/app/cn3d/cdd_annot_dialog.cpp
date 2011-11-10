@@ -110,30 +110,28 @@
 #define ID_B_EVID_DOWN 10016
 wxSizer *SetupCDDAnnotDialog( wxWindow *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
-#define ID_R_COMMENT 10014
-#define ID_ST_COMMENT 10015
-#define ID_T_COMMENT 10016
-#define ID_LINE 10017
-#define ID_R_PMID 10018
-#define ID_ST_PMID 10019
-#define ID_T_PMID 10020
-#define ID_R_STRUCTURE 10021
-#define ID_ST_STRUCTURE 10022
-#define ID_T_STRUCTURE 10023
-#define ID_B_RERANGE 10024
-#define ID_B_EDIT_OK 10025
-#define ID_B_EDIT_CANCEL 10026
+#define ID_R_COMMENT 10017
+#define ID_ST_COMMENT 10018
+#define ID_T_COMMENT 10019
+#define ID_LINE 10020
+#define ID_R_PMID 10021
+#define ID_ST_PMID 10022
+#define ID_T_PMID 10023
+#define ID_R_STRUCTURE 10024
+#define ID_ST_STRUCTURE 10025
+#define ID_T_STRUCTURE 10026
+#define ID_B_RERANGE 10027
+#define ID_B_EDIT_OK 10028
+#define ID_B_EDIT_CANCEL 10029
 wxSizer *SetupEvidenceDialog( wxWindow *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
-#define ID_ST_TYPE 10027
-#define ID_C_TYPE 10028
-#define ID_CB_PUTATIVE 10029
-#define ID_ST_DESCR 10030
-#define ID_T_DESCR 10031
-#define ID_ST_DESCR2 10032
-#define ID_CMB_DESCR 10033
-#define ID_B_DESCR_OK 10034
-#define ID_B_DESCR_CANCEL 10035
+#define ID_ST_TYPE 10030
+#define ID_C_TYPE 10031
+#define ID_CB_PUTATIVE 10032
+#define ID_ST_DESCR2 10033
+#define ID_CMB_DESCR 10034
+#define ID_B_DESCR_OK 10035
+#define ID_B_DESCR_CANCEL 10036
 wxSizer *SetupTypedDescriptionDialog( wxWindow *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -714,7 +712,6 @@ void CDDAnnotateDialog::NewOrEditMotif(void)
         //  If this is a new motif, use the master annotated residues as the default
         if (!wasMotifSet) {
             wxString defaultMotif(annotatedMasterResidues.c_str());
-            defaultMotif.MakeLower();
             dialog.m_Pattern->SetValue(defaultMotif);
         }
 
@@ -1752,10 +1749,10 @@ wxSizer *SetupCDDAnnotDialog( wxWindow *parent, bool call_fit, bool set_sizer )
     wxStaticBoxSizer *item2 = new wxStaticBoxSizer( item3, wxVERTICAL );
 
     wxString *strs4 = (wxString*) NULL;
-    wxListBox *item4 = new wxListBox( parent, ID_L_ANNOT, wxDefaultPosition, wxSize(300,100), 0, strs4, wxLB_SINGLE|wxLB_NEEDED_SB|wxHSCROLL );
+    wxListBox *item4 = new wxListBox( parent, ID_L_ANNOT, wxDefaultPosition, wxSize(350,100), 0, strs4, wxLB_SINGLE|wxLB_HSCROLL|wxLB_NEEDED_SB|wxHSCROLL );
     item2->Add( item4, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    wxGridSizer *item5 = new wxGridSizer( 2, 0, 0, 0 );
+    wxGridSizer *item5 = new wxGridSizer( 3, 0, 0, 0 );
 
     wxButton *item6 = new wxButton( parent, ID_B_NEW_ANNOT, wxT("New"), wxDefaultPosition, wxDefaultSize, 0 );
     item5->Add( item6, 0, wxALIGN_CENTER|wxALL, 5 );
@@ -1763,30 +1760,28 @@ wxSizer *SetupCDDAnnotDialog( wxWindow *parent, bool call_fit, bool set_sizer )
     wxButton *item7 = new wxButton( parent, ID_B_HIGHLIGHT, wxT("Highlight"), wxDefaultPosition, wxDefaultSize, 0 );
     item5->Add( item7, 0, wxALIGN_CENTER|wxALL, 5 );
 
-    wxButton *item8 = new wxButton( parent, ID_B_DEFINE_MOTIF, wxT("Define Motif"), wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item8 = new wxButton( parent, ID_B_ANNOT_UP, wxT("Move Up"), wxDefaultPosition, wxDefaultSize, 0 );
     item5->Add( item8, 0, wxALIGN_CENTER|wxALL, 5 );
 
-    item5->Add( 20, 20, 0, wxALIGN_CENTER|wxALL, 5 );
-
-    wxButton *item9 = new wxButton( parent, ID_B_ANNOT_UP, wxT("Move Up"), wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item9 = new wxButton( parent, ID_B_EDIT_ANNOT, wxT("Edit"), wxDefaultPosition, wxDefaultSize, 0 );
     item5->Add( item9, 0, wxALIGN_CENTER|wxALL, 5 );
 
-    wxButton *item10 = new wxButton( parent, ID_B_EDIT_ANNOT, wxT("Edit"), wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item10 = new wxButton( parent, ID_B_DEL_ANNOT, wxT("Delete"), wxDefaultPosition, wxDefaultSize, 0 );
     item5->Add( item10, 0, wxALIGN_CENTER|wxALL, 5 );
 
-    wxButton *item11 = new wxButton( parent, ID_B_DEL_ANNOT, wxT("Delete"), wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item11 = new wxButton( parent, ID_B_ANNOT_DOWN, wxT("Move Down"), wxDefaultPosition, wxDefaultSize, 0 );
     item5->Add( item11, 0, wxALIGN_CENTER|wxALL, 5 );
 
-    wxButton *item12 = new wxButton( parent, ID_B_DEL_MOTIF, wxT("Delete Motif"), wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item12 = new wxButton( parent, ID_B_DEFINE_MOTIF, wxT("Define Motif"), wxDefaultPosition, wxDefaultSize, 0 );
     item5->Add( item12, 0, wxALIGN_CENTER|wxALL, 5 );
 
-    wxButton *item13 = new wxButton( parent, ID_B_HIGHLIGHT_MOTIF, wxT("Show Motif"), wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item13 = new wxButton( parent, ID_B_HIGHLIGHT_MOTIF, wxT("Highlight Motif"), wxDefaultPosition, wxDefaultSize, 0 );
     item5->Add( item13, 0, wxALIGN_CENTER|wxALL, 5 );
 
-    wxButton *item14 = new wxButton( parent, ID_B_ANNOT_DOWN, wxT("Move Down"), wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item14 = new wxButton( parent, ID_B_DEL_MOTIF, wxT("Delete Motif"), wxDefaultPosition, wxDefaultSize, 0 );
     item5->Add( item14, 0, wxALIGN_CENTER|wxALL, 5 );
 
-    item2->Add( item5, 0, wxALIGN_CENTER|wxALL, 5 );
+    item2->Add( item5, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     item1->Add( item2, 0, wxALIGN_CENTER|wxALL, 5 );
 
@@ -1794,7 +1789,7 @@ wxSizer *SetupCDDAnnotDialog( wxWindow *parent, bool call_fit, bool set_sizer )
     wxStaticBoxSizer *item15 = new wxStaticBoxSizer( item16, wxVERTICAL );
 
     wxString *strs17 = (wxString*) NULL;
-    wxListBox *item17 = new wxListBox( parent, ID_L_EVID, wxDefaultPosition, wxSize(300,100), 0, strs17, wxLB_SINGLE );
+    wxListBox *item17 = new wxListBox( parent, ID_L_EVID, wxDefaultPosition, wxSize(350,100), 0, strs17, wxLB_SINGLE );
     item15->Add( item17, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     wxGridSizer *item18 = new wxGridSizer( 2, 0, 0, 0 );
@@ -1817,9 +1812,9 @@ wxSizer *SetupCDDAnnotDialog( wxWindow *parent, bool call_fit, bool set_sizer )
     wxButton *item24 = new wxButton( parent, ID_B_EVID_DOWN, wxT("Move Down"), wxDefaultPosition, wxDefaultSize, 0 );
     item18->Add( item24, 0, wxALIGN_CENTER|wxALL, 5 );
 
-    item15->Add( item18, 0, wxALIGN_CENTER|wxALL, 5 );
+    item15->Add( item18, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    item1->Add( item15, 0, wxALIGN_CENTER|wxALL, 5 );
+    item1->Add( item15, 0, wxGROW|wxALIGN_CENTER_HORIZONTAL|wxALL, 5 );
 
     item0->Add( item1, 0, wxALIGN_CENTER, 5 );
 
@@ -1832,6 +1827,7 @@ wxSizer *SetupCDDAnnotDialog( wxWindow *parent, bool call_fit, bool set_sizer )
     
     return item0;
 }
+
 
 /*  before added motif buttons, there were a couple extra lines at end;
     not sure if they were added by hand, or if wxDesigner simply no longer 
