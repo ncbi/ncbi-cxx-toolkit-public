@@ -1207,7 +1207,9 @@ string s_GetLinkFeatureKey(
 {
     CConstRef<CFlatFeature> feat = item.Format();
     string strRawKey = feat->GetKey();
-    if ( strRawKey == "gap" || strRawKey == "source" ) {
+    if ( strRawKey == "gap" || strRawKey == "assembly_gap" || 
+        strRawKey == "source" ) 
+    {
         return strRawKey;
     }
 
@@ -1867,12 +1869,16 @@ void CGenbankFormatter::FormatGap(const CGapItem& gap, IFlatTextOStream& text_os
     loc += NStr::UIntToString(gapEnd);
 
     Wrap(l, gap.GetFeatureName(), loc, eFeat);
-    if( bHtml && gap.GetContext()->Config().IsModeEntrez() ) {
-        CRef<CSeq_loc> gapLoc( new CSeq_loc );
-        gapLoc->SetInt().SetFrom(gapStart - 1);
-        gapLoc->SetInt().SetTo(gapEnd - 1);
-        *l.begin() = x_GetFeatureSpanAndScriptStart(gap.GetFeatureName().c_str(), *gapLoc, *gap.GetContext()) + *l.begin();
-    }
+
+    // gaps don't use the span stuff, but I'm leaving this code here
+    // (but commented out) in case that changes in the future.
+
+    //if( bHtml && gap.GetContext()->Config().IsModeEntrez() ) {
+    //    CRef<CSeq_loc> gapLoc( new CSeq_loc );
+    //    gapLoc->SetInt().SetFrom(gapStart - 1);
+    //    gapLoc->SetInt().SetTo(gapEnd - 1);
+    //    *l.begin() = x_GetFeatureSpanAndScriptStart(gap.GetFeatureName().c_str(), *gapLoc, *gap.GetContext()) + *l.begin();
+    //}
 
     // size zero gaps indicate non-consecutive residues
     if( isGapOfLengthZero ) {
@@ -1906,10 +1912,13 @@ void CGenbankFormatter::FormatGap(const CGapItem& gap, IFlatTextOStream& text_os
 
     text_os.AddParagraph(l, gap.GetObject());
 
-    if( bHtml && gap.GetContext()->Config().IsModeEntrez() ) {
-        text_os.AddLine("</span>", 0, 
-            IFlatTextOStream::eAddNewline_No );
-    }
+    // gaps don't use the span stuff, but I'm leaving this code here
+    // (but commented out) in case that changes in the future.
+
+    //if( bHtml && gap.GetContext()->Config().IsModeEntrez() ) {
+    //    text_os.AddLine("</span>", 0, 
+    //        IFlatTextOStream::eAddNewline_No );
+    //}
 }
 
 END_SCOPE(objects)
