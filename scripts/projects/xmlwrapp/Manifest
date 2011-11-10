@@ -15,7 +15,7 @@ APP: test_xslt tree_parsing xml_generation xslt_transformation
 
 LIB: libxmlwrapp.a
 
-DEFAULT_CONFIGURATIONS: Linux32-Suse:plain-ICC  Linux64-Suse:plain-ICC  SunOSx86:plain-WS64 SunOSSparc:plain-WS64
+DEFAULT_CONFIGURATIONS: SunOSx86:plain-WS64 SunOSSparc:plain-WS64 Linux32-Centos:plain-GCC Linux64-Centos:plain-GCC
 
 # Each line describes a single configuration
 # The format is as follows:
@@ -24,12 +24,6 @@ DEFAULT_CONFIGURATIONS: Linux32-Suse:plain-ICC  Linux64-Suse:plain-ICC  SunOSx86
 # Release configurator assumes that this script will eventually call standard configure script and pass all options
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
-
-Linux32-Suse    : plain-ICC  : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-Linux32-Suse    : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-
-Linux64-Suse    : plain-ICC  : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-Linux64-Suse    : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
 # FreeBSD32      : plain      : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
@@ -42,6 +36,7 @@ SunOSSparc : plain-WS32 : WorkShop59.sh 32 --without-debug --without-mt --with-s
 SunOSSparc : plain-WS64 : WorkShop59.sh 64 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
 Linux64-Centos    : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+Linux32-Centos    : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 # Linux32-Ubuntu    : plain-GCC  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
 # --with-flat-makefile is ommited for IntelMAC with the test purposes. Should
