@@ -808,8 +808,12 @@ unsigned int CTLibContext::GetTimeout(void) const
                             CS_TIMEOUT,
                             &t_out,
                             CS_UNUSED,
-                            NULL)) == CS_SUCCEED) {
-            return t_out == -1? 0: t_out;
+                            NULL)) == CS_SUCCEED)
+        {
+            if (t_out == -1  ||  t_out == CS_NO_LIMIT)
+                return 0;
+            else
+                return t_out;
         }
     }
 
