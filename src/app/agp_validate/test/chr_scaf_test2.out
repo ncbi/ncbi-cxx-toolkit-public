@@ -112,7 +112,7 @@ Component names             :  95
 
 2 errors, 2 warnings.
   Count Code  Description
-      1  e22  scaffold X was not defined in any of "Scaffold from component" files
+      1  e21  scaffold X was not defined in any of "Scaffold from component" files
       2  w59  in "Chromosome from scaffold" file, scaffold is not used in full
       1  g74  component_end greater than sequence length
 
