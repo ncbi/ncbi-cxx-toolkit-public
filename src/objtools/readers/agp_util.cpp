@@ -647,8 +647,10 @@ string CAgpRow::ToString()
         res +=
             NStr::IntToString(gap_length) + "\t" +
             gap_types[gap_type] + "\t" +
-            (linkage?"yes":"no") + "\t" +
-            LinkageEvidencesToString();
+            (linkage?"yes":"no") + "\t";
+        if(eAgpVersion_1_1!=m_agp_version) {
+            res += LinkageEvidencesToString();
+        }
     }
     else{
         res +=
@@ -724,7 +726,8 @@ string CAgpRow::LinkageEvidencesToString(void)
         else result += "ERROR:UNKNOWN_LINKAGE_EVIDENCE_TYPE:" + NStr::IntToString( (int)*evid_iter );
     }
 
-    return result;
+    if(result.size()) return result;
+    return linkage ? "unspecified" : "na";
 }
 
 string CAgpRow::OrientationToString( EOrientation orientation )
