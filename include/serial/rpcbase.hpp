@@ -341,7 +341,7 @@ template <class TRequest, class TReply>
 inline
 void CRPCClient<TRequest, TReply>::x_ConnectURL(const string& url)
 {
-    x_SetStream(new CConn_HttpStream(url, fHCC_AutoReconnect, m_Timeout));
+    x_SetStream(new CConn_HttpStream(url, fHTTP_AutoReconnect, m_Timeout));
 }
 
 
