@@ -102,7 +102,7 @@ void CSoapHttpClient::Invoke(CSoapMessage& response,
     CConn_HttpStream http(net_info,
         MIME_ComposeContentTypeEx(eMIME_T_Text, eMIME_Xml, eENCOD_None,
             content_type, sizeof(content_type) - 1)
-            ,0,0,0,0, fHCC_AutoReconnect | fHCC_KeepHeader
+            ,0,0,0,0, fHTTP_AutoReconnect | fHTTP_KeepHeader
             );
 
     auto_ptr<CObjectOStream> os(CObjectOStream::Open(eSerial_Xml, http));
