@@ -22,8 +22,15 @@ rm -f $log
 
 trap 'echo "`date`."' 0 1 2 3 15
 
-if [ -r /am/ncbiapdata/test_data/proxy/test_ncbi_proxy ]; then
-  . /am/ncbiapdata/test_data/proxy/test_ncbi_proxy
+ext="`expr $$ '%' 3`"
+
+if [ -r /am/ncbiapdata/test_data/proxy/test_ncbi_proxy.$ext ]; then
+  . /am/ncbiapdata/test_data/proxy/test_ncbi_proxy.$ext
+fi
+
+if [ "`expr '(' $$ / 10 ')' '%' 2`" = "0" ]; then
+  CONN_FIREWALL=TRUE
+  export CONN_FIREWALL
 fi
 
 $CHECK_EXEC test_ncbi_conn -nopause 2>&1
