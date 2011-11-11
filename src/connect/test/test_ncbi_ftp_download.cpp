@@ -570,12 +570,12 @@ int main(int argc, const char* argv[])
 {
     USING_NCBI_SCOPE;
 
-    typedef enum {
+    enum EProcessor {
         fProcessor_Null   = 0,  // Discard all read data
         fProcessor_List   = 1,  // List contents line-by-line
         fProcessor_Untar  = 2,  // Untar then discard read data
         fProcessor_Gunzip = 4   // Decompress then discard read data
-    } FProcessor;
+    };
     typedef unsigned int TProcessor;
 
     // Setup error posting

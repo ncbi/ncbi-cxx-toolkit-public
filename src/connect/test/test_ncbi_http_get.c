@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
     SConnNetInfo* net_info;
     char          blk[512];
     EIO_Status    status;
-    THCC_Flags    flags;
+    THTTP_Flags   flags;
     CONN          conn;
     FILE*         fp;
     time_t        t;

@@ -92,11 +92,11 @@ static void s_REG_Get
 
 int main(int argc, char* argv[])
 {
-    char*      user_header = 0;
-    CONNECTOR  connector;
-    FILE*      data_file;
-    STimeout   timeout;
-    THCC_Flags flags;
+    char*       user_header = 0;
+    CONNECTOR   connector;
+    FILE*       data_file;
+    STimeout    timeout;
+    THTTP_Flags flags;
 
     /* Log and data-log streams */
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
