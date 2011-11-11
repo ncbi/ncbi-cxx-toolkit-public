@@ -104,14 +104,14 @@ void CEUtils_Request::Connect(void)
             url,
             NULL,
             "Content-type: application/x-www-form-urlencoded\n",
-            fHCC_AutoReconnect,
+            fHTTP_AutoReconnect,
             timeout));
         *m_Stream << body;
     }
     else {
         m_Stream.reset(new CConn_HttpStream(
             url + "?" + body,
-            fHCC_AutoReconnect,
+            fHTTP_AutoReconnect,
             timeout));
     }
 }
