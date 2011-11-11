@@ -56,7 +56,7 @@ enum EReadState {
     eRS_RequestWrite = 0,
     eRS_HeaderRead   = 1,
     eRS_BodyRead     = 2,
-    eRS_BodyDone     = 3
+    eRS_BodyDone     = 3  /* NB: |eRS_BodyRead */
 };
 typedef unsigned       EBReadState;  /* packed EReadState */
 
@@ -74,14 +74,14 @@ typedef unsigned short TBHTTP_Flags;  /* packed THTTP_Flags */
 
 
 typedef enum {
-    eEM_Read = 0,
-    eEM_Drop = 1,
-    eEM_Wait = 2
+    eEM_Read,
+    eEM_Drop,
+    eEM_Wait
 } EExtractMode;
 
 
 typedef enum {
-    eRetry_None = 0,
+    eRetry_None,
     eRetry_Redirect,
     eRetry_Authenticate,
     eRetry_ProxyAuthenticate
@@ -1246,13 +1246,13 @@ static EIO_Status s_Disconnect(SHttpConnector* uuu,
                 status = eIO_Unknown;
         } while (status == eIO_Success);
         if (status == eIO_Closed)
-            status = eIO_Success;
+            status  = eIO_Success;
     }
 
     if (uuu->sock) /* s_PreRead() might have dropped the connection already */
         s_DropConnection(uuu, timeout);
     if (uuu->can_connect == eCC_Once)
-        uuu->can_connect =  eCC_None;
+        uuu->can_connect  = eCC_None;
 
     return status;
 }

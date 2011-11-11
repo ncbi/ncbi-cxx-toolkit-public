@@ -147,7 +147,7 @@
 
 #  define SOCK_INVALID          (-1)
 #  define SOCK_ERRNO            errno
-#  define SOCK_NFDS(s)          (s + 1)
+#  define SOCK_NFDS(s)          ((s) + 1)
 #  ifdef NCBI_OS_BEOS
 #    define SOCK_CLOSE(s)       closesocket(s)
 #  else
@@ -5246,10 +5246,10 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
                                  s_ID(x_sock, _id)));
             UTIL_ReleaseBuffer(strerr);
             x_sock->sock = SOCK_INVALID;
+            SOCK_Close(x_sock);
 #ifdef NCBI_OS_MSWIN
             CloseHandle(event);
 #endif /*NCBI_OS_MSWIN*/
-            SOCK_Close(x_sock);
             return eIO_NotSupported;
         }
         assert(session != SESSION_INVALID);

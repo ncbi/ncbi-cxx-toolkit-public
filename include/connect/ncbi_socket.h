@@ -180,16 +180,16 @@ typedef enum {
 
 
 /** Forward declarations of the hidden socket internal structures, and
- *  their upper-level handles to use by the LSOCK_*() and SOCK_*() API
+ *  their upper-level handles to use by the SOCK API.
  */
-struct LSOCK_tag;                  /* listening socket:  internal storage */
-typedef struct LSOCK_tag*   LSOCK; /* listening socket:  handle, opaque   */
+struct LSOCK_tag;                     /* listening socket:  internal storage */
+typedef struct LSOCK_tag*   LSOCK;    /* listening socket:  handle, opaque   */
 
-struct SOCK_tag;                   /* socket:  internal storage           */
-typedef struct SOCK_tag*    SOCK;  /* socket:  handle, opaque             */
+struct SOCK_tag;                      /* socket:  internal storage           */
+typedef struct SOCK_tag*    SOCK;     /* socket:  handle, opaque             */
 
-struct TRIGGER_tag;
-typedef struct TRIGGER_tag* TRIGGER;
+struct TRIGGER_tag;                   /* trigger: internal storage           */
+typedef struct TRIGGER_tag* TRIGGER;  /* trigger: handle, opaque             */
 
 
 

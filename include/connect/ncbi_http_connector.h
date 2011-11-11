@@ -102,8 +102,8 @@ extern "C" {
  *     done so yet on its own), and data to be written again get stored in the
  *     buffer until next "Read" etc, see item 1).  The following "Read" will
  *     first see the leftovers (if any) of data stored previously, then the
- *     new data generated in response to the latest request.  The behavior
- *     can be changed by the fHTTP_DropUnread flag, see below.
+ *     new data generated in response to the latest request.  The behavior can
+ *     be changed by the fHTTP_DropUnread flag, see below.
  *
  *  *) If "fHTTP_AutoReconnect" is set in "flags", then the connector makes
  *     an automatic reconnect to the same URL with just the same parameters
