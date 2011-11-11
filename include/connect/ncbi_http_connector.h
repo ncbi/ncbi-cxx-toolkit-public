@@ -175,6 +175,24 @@ enum EHTTP_Flag {
     fHTTP_DetachableTunnel= 0x1000/* SOCK_Close() won't close the OS handle  */
 };
 typedef unsigned int THTTP_Flags;  /* bitwise OR of "EHTTP_Flag"             */
+NCBI_HTTP_CONNECTOR_DEPRECATED
+enum EHCC_Flag {
+    /* DEPRECATED, do not use! */
+    fHCC_AutoReconnect    = fHTTP_AutoReconnect,
+    fHCC_SureFlush        = fHTTP_Flushable,
+    fHCC_KeepHeader       = fHTTP_KeepHeader,
+    fHCC_UrlDecodeInput   = fHTTP_UrlDecodeInput,
+    fHCC_UrlEncodeOutput  = fHTTP_UrlEncodeOutput,
+    fHCC_UrlCodec         = fHTTP_UrlCodec,
+    fHCC_UrlEncodeArgs    = fHTTP_UrlEncodeArgs,
+    fHCC_DropUnread       = fHTTP_DropUnread,
+    fHCC_NoUpread         = fHTTP_NoUpread,
+    fHCC_Flushable        = fHTTP_Flushable,
+    fHCC_NoAutoRetry      = fHTTP_NoAutoRetry
+};
+NCBI_HTTP_CONNECTOR_DEPRECATED
+typedef unsigned int THCC_Flags;   /* bitwise OR of "EHCC_Flag", deprecated */
+
 
 extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnector
 (const SConnNetInfo* net_info,
