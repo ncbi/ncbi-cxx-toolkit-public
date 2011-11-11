@@ -680,9 +680,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         uuu->port = 0;
         uuu->ticket = 0;
         net_info->max_try = 1;
-        c = HTTP_CreateConnectorEx(net_info,
-                                   (uuu->params.flags & fHTTP_Flushable)
-                                   | fHTTP_SureFlush/*flags*/,
+        c = HTTP_CreateConnectorEx(net_info, fHTTP_Flushable/*flags*/,
                                    s_ParseHeaderNoUCB, uuu/*user_data*/,
                                    0/*adjust*/, 0/*cleanup*/);
         /* Wait for connection info back (error-transparent by DISPD.CGI) */

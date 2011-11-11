@@ -286,21 +286,21 @@ static enum EConnectInit {
 
 
 /* NB: gets called under a lock */
-static void s_Init(CNcbiApplication* app = 0,
-                   IRWRegistry*      reg = 0,
+static void s_Init(CNcbiApplication* app  = 0,
+                   IRWRegistry*      reg  = 0,
                    CRWLock*          lock = 0,
-                   FConnectInitFlags flags = 0,
-                   EConnectInit      how = eConnectInit_Weak)
+                   TConnectInitFlags flag = 0,
+                   EConnectInit      how  = eConnectInit_Weak)
 {
     _ASSERT(how != eConnectInit_Intact);
     if (g_NCBI_ConnectRandomSeed == 0) {
-        g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
+        g_NCBI_ConnectRandomSeed  = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
         srand(g_NCBI_ConnectRandomSeed);
     }
     CORE_SetLOCK(MT_LOCK_cxx2c(lock,
-                               flags & eConnectInit_OwnLock ? true : false));
+                               flag & eConnectInit_OwnLock ? true : false));
     CORE_SetLOG(LOG_cxx2c());
-    CORE_SetREG(REG_cxx2c(reg, flags & eConnectInit_OwnRegistry));
+    CORE_SetREG(REG_cxx2c(reg, flag & eConnectInit_OwnRegistry));
     if (s_ConnectInit == eConnectInit_Intact) {
         atexit(s_Fini);
     }
@@ -340,12 +340,12 @@ static void s_InitInternal(void)
 /* PUBLIC */
 extern void CONNECT_Init(IRWRegistry*      reg,
                          CRWLock*          lock,
-                         FConnectInitFlags flags)
+                         TConnectInitFlags flag)
 {
     CFastMutexGuard guard(s_ConnectInitMutex);
     try {
         CNcbiApplication* app = CNcbiApplication::Instance();
-        s_Init(app, reg, lock, flags, eConnectInit_Explicit);
+        s_Init(app, reg, lock, flag, eConnectInit_Explicit);
     }
     NCBI_CATCH_ALL_X(8, "CONNECT_Init() failed");
 }

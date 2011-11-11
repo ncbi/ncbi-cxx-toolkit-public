@@ -503,7 +503,7 @@ private:
 /// sure the user header is passed empty, delete it from net_info
 /// by ConnNetInfo_DeleteUserHeader(net_info).
 ///
-/// THCC_Flags and other details: <connect/ncbi_http_connector.h>.
+/// THTTP_Flags and other details: <connect/ncbi_http_connector.h>.
 ///
 /// Provided "timeout" is set at connection level, and if different from
 /// kDefaultTimeout, it overrides a value supplied by HTTP connector
@@ -519,14 +519,14 @@ public:
      const string&       args         = kEmptyStr,
      const string&       user_header  = kEmptyStr,
      unsigned short      port         = 0, ///< 0 means default (80 for HTTP)
-     THTTP_Flags         flags        = fHCC_AutoReconnect,
+     THTTP_Flags         flags        = fHTTP_AutoReconnect,
      const STimeout*     timeout      = kDefaultTimeout,
      streamsize          buf_size     = kConn_DefaultBufSize
      );
 
     CConn_HttpStream
     (const string&       url,
-     THTTP_Flags         flags        = fHCC_AutoReconnect,
+     THTTP_Flags         flags        = fHTTP_AutoReconnect,
      const STimeout*     timeout      = kDefaultTimeout,
      streamsize          buf_size     = kConn_DefaultBufSize
      );
@@ -535,7 +535,7 @@ public:
     (const string&       url,
      const SConnNetInfo* net_info,
      const string&       user_header  = kEmptyStr,
-     THTTP_Flags         flags        = fHCC_AutoReconnect,
+     THTTP_Flags         flags        = fHTTP_AutoReconnect,
      const STimeout*     timeout      = kDefaultTimeout,
      streamsize          buf_size     = kConn_DefaultBufSize
      );
@@ -547,7 +547,7 @@ public:
      void*               user_data    = 0,
      FHTTP_Adjust        adjust       = 0,
      FHTTP_Cleanup       cleanup      = 0,
-     THTTP_Flags         flags        = fHCC_AutoReconnect,
+     THTTP_Flags         flags        = fHTTP_AutoReconnect,
      const STimeout*     timeout      = kDefaultTimeout,
      streamsize          buf_size     = kConn_DefaultBufSize
      );

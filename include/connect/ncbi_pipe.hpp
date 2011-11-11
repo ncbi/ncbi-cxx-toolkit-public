@@ -83,7 +83,7 @@ public:
     ///
     /// Default is 0 
     ///    fStdIn_Open | fStdOut_Open | fStdErr_Close | fCloseOnClose.
-    enum ECreateFlags {
+    enum ECreateFlag {
         fStdIn_Open      =     0, ///< Do     open child's stdin (default).
         fStdIn_Close     = 0x001, ///< Do not open child's stdin.
         fStdOut_Open     =     0, ///< Do     open child's stdout (default).
@@ -114,7 +114,7 @@ public:
                                   ///< The fKillOnClose flag kills child
                                   ///< and all its spawned processes.
     };
-    typedef unsigned int TCreateFlags;  ///< bitwise OR of "ECreateFlags"
+    typedef unsigned int TCreateFlags;  ///< bitwise OR of "ECreateFlag"
 
     /// Which of the child I/O handles to use.
     enum EChildIOHandle {
@@ -392,7 +392,7 @@ public:
         ///   Process Id to monitor
         /// @return
         ///   eStop if the process should be killed, eContinue otherwise
-        virtual EAction OnStart(TProcessHandle /*pid*/) {return eContinue;};
+        virtual EAction OnStart(TProcessHandle /*pid*/) { return eContinue; }
 
         /// This method is getting called periodically during
         /// the process execution by ExecWait method.

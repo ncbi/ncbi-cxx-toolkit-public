@@ -65,7 +65,7 @@
  *  INTERNAL -- Auxiliary types and static functions
  ***********************************************************************/
 
-typedef enum {                     /* NB: values must occupy 12 bits at most */
+enum EFTP_Feature {                /* NB: values must occupy 12 bits at most */
     fFtpFeature_NOOP =   0x01,     /* all implementations MUST support       */
     fFtpFeature_SYST =   0x02,
     fFtpFeature_SITE =   0x04,
@@ -76,8 +76,8 @@ typedef enum {                     /* NB: values must occupy 12 bits at most */
     fFtpFeature_EPRT =   0x80,
     fFtpFeature_EPSV = 0x1000,
     fFtpFeature_APSV = 0x3000      /* EPSV ALL -- a la "APSV" from RFC 1579  */
-} EFTP_Feature;
-typedef unsigned short TFTP_Features; /* bitwise OR of EFtpFeature's */
+};
+typedef unsigned short TFTP_Features; /* bitwise OR of EFtpFeature */
 
 
 /* All internal data necessary to perform I/O

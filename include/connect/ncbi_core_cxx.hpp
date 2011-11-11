@@ -66,19 +66,18 @@ extern NCBI_XCONNECT_EXPORT MT_LOCK MT_LOCK_cxx2c
  );
 
 
-typedef enum {
+enum EConnectInitFlag {
     eConnectInit_OwnNothing  = 0,
-    eConnectInit_OwnRegistry = 0x01,
-    eConnectInit_OwnLock     = 0x02
-} EConnectInitFlags;
-
-typedef unsigned int FConnectInitFlags;  // bitwise OR of EConnectInitFlags
+    eConnectInit_OwnRegistry = 1,
+    eConnectInit_OwnLock     = 2
+};
+typedef unsigned int TConnectInitFlags;  // bitwise OR of EConnectInitFlag
 
 
 extern NCBI_XCONNECT_EXPORT void CONNECT_Init
 (IRWRegistry*      reg  = 0,
  CRWLock*          lock = 0,
- FConnectInitFlags flag = eConnectInit_OwnNothing);
+ TConnectInitFlags flag = eConnectInit_OwnNothing);
 
 
 /////////////////////////////////////////////////////////////////////////////

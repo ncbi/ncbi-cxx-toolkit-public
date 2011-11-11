@@ -48,7 +48,7 @@ extern "C" {
 
 
 /* Options apply to various fields of SSendMailInfo structure, below */
-typedef enum {
+enum ESendMailOption {
     fSendMail_NoMxHeader       = (1 << 0), /* Don't add standard mail header,
                                             * just use what user provided    */
     fSendMail_StripNonFQDNHost = (1 << 8)  /* Strip host part in "from" field
@@ -56,7 +56,7 @@ typedef enum {
                                             * (i.e. doesn't have at least two
                                             * domain name labels separated by a
                                             * dot); leave only username part */
-} ESendMailOptions;
+};
 typedef unsigned int TSendMailOptions;     /* Bitwise OR of ESendMailOption  */
 
 

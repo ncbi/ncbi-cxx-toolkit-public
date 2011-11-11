@@ -134,11 +134,9 @@ typedef int TRIGGER_Handle;
 #if 0/*defined(__GNUC__)*/
 typedef ESwitch    EBSwitch;
 typedef EIO_Status EBIO_Status;
-typedef ESOCK_Side EBSOCK_Side;
 #else
 typedef unsigned   EBSwitch;
 typedef unsigned   EBIO_Status;
-typedef unsigned   EBSOCK_Side;
 #endif
 
 
@@ -148,6 +146,7 @@ typedef enum {
     eSocket    = 2,
     eDatagram  = 3/*2|1*/
 } ESOCK_Type;
+
 typedef unsigned TBSOCK_Type;
 
 
@@ -179,6 +178,16 @@ typedef struct TRIGGER_tag {
     int                out;     /* write end of the pipe                     */
 #endif /*NCBI_OS_UNIX*/
 } TRIGGER_struct;
+
+
+/* Sides of socket
+ */
+typedef enum {
+    eSOCK_Server = 0,
+    eSOCK_Client = 1
+} ESOCK_Side;
+
+typedef unsigned EBSOCK_Side;
 
 
 /* Listening socket [must be in one-2-one binary correspondene with TRIGGER]
@@ -220,14 +229,6 @@ typedef struct LSOCK_tag {
     char             path[1];   /* must go last                              */
 #endif /*NCBI_OS_UNIX*/
 } LSOCK_struct;
-
-
-/* Sides of connecting socket
- */
-typedef enum {
-    eSOCK_Server = 0,
-    eSOCK_Client = 1
-} ESOCK_Side;
 
 
 /* Socket [it must be in 1-2-1 binary correspondence with LSOCK above]

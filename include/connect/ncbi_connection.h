@@ -63,11 +63,11 @@ struct SConnectionTag;
 typedef struct SConnectionTag* CONN;      /* connection handle */
 
 
-typedef enum {
+enum ECONN_Flag {
     fCONN_Untie      = 1,  /* do not call flush method prior to every read */
     fCONN_Supplement = 2   /* supplement I/O with extended return codes    */
-} ECONN_Flags;
-typedef unsigned int TCONN_Flags;  /* bitwise OR of ECONN_Flags   */
+};
+typedef unsigned int TCONN_Flags;  /* bitwise OR of ECONN_Flag */
 
 
 /* Create all data necessary to establish a new connection (merely bind it to

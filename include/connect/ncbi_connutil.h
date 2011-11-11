@@ -156,7 +156,7 @@ typedef struct {
     EBReqMethod     req_method:3;     /* method to use in the request (HTTP) */
     EBURLScheme     scheme:3;         /* only pre-defined types (limited)    */
     unsigned        reserved:2;       /* MBZ                                 */
-    unsigned        firewall:2;       /* to use firewall (relay otherwise)   */
+    EBFWMode        firewall:2;       /* to use firewall (relay otherwise)   */
     unsigned        stateless:1;      /* to connect in HTTP-like fashion only*/
     unsigned        lb_disable:1;     /* to disable local load-balancing     */
     EBDebugPrintout debug_printout:2; /* switch to printout some debug info  */

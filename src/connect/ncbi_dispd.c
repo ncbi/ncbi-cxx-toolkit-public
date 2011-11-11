@@ -180,7 +180,7 @@ static void s_Resolve(SERV_ITER iter)
                                        : !net_info->stateless
                                        ? "Client-Mode: STATEFUL_CAPABLE\r\n"
                                        : "Client-Mode: STATELESS_ONLY\r\n")) {
-        conn = HTTP_CreateConnectorEx(net_info, fHTTP_SureFlush, s_ParseHeader,
+        conn = HTTP_CreateConnectorEx(net_info, fHTTP_Flushable, s_ParseHeader,
                                       iter/*data*/, s_Adjust, 0/*cleanup*/);
     }
     if (s) {

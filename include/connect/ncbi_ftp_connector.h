@@ -56,7 +56,7 @@ extern "C" {
 #endif
 
 
-typedef enum {
+enum EFTP_Flag {
     fFTP_LogControl   = 0x1,
     fFTP_LogData      = 0x2,
     fFTP_LogAll       = fFTP_LogControl | fFTP_LogData,
@@ -71,8 +71,8 @@ typedef enum {
     fFTP_NoSizeChecks = 0x400, /* do not check sizes of data transfers       */
     fFTP_NoExtensions = 0x800, /* do not use EPSV/EPRT protocol extensions   */
     fFTP_DelayRestart = 0x1000 /* delay RESTart until an actual xfer command */
-} EFTP_Flags;
-typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flags */
+};
+typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flag */
 
 
 /* FTP protocol implies the use of both control connection (to pass commands

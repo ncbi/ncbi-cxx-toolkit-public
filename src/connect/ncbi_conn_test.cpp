@@ -846,6 +846,8 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
             if (!cp->okay)
                 break;
         }
+        if (status == eIO_Interrupt)
+            break;
         if (status == eIO_Success  ||  m_FwdFB.empty())
             break;
     }
@@ -856,7 +858,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
             temp += " check FAILED";
         } else
             temp = "Firewall port check PASSED only with fallback port(s)";
-        if (!url) {
+        if (!url  &&  status != eIO_Interrupt) {
             temp += "; you may want to read this link for more information: "
                 NCBI_FW_URL;
         }
@@ -1090,7 +1092,7 @@ bool CConnTest::IsNcbiInhouseClient(void)
 {
     static const STimeout kFast = { 2, 0 };
     CConn_HttpStream http("http://www.ncbi.nlm.nih.gov/Service/getenv.cgi",
-                          fHCC_KeepHeader | fHCC_NoAutoRetry, &kFast);
+                          fHTTP_KeepHeader | fHTTP_NoAutoRetry, &kFast);
     char line[1024];
     if (!http  ||  !http.getline(line, sizeof(line)))
         return false;

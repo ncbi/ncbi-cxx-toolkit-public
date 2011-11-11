@@ -108,14 +108,14 @@
 
 /* Private flags, must not cross with ECONN_Flags defined in the header
  */
-typedef enum {
+enum ECONN_InternalFlag {
     fCONN_Flush = 1024                 /* auto-flush was successful          */
-} ECONN_InternalFlags;
+};
 
 
 /* Connection state
  */
-typedef enum ECONN_StateTag {
+typedef enum {
     eCONN_Unusable = -1,               /* iff !conn->meta.list               */
     eCONN_Closed   =  0,               /* "Open" can be attempted            */
     eCONN_Open     =  1,               /* operational state (I/O allowed)    */

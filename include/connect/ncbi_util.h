@@ -218,7 +218,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ CORE_SetLOGFILE_NAME
  * @sa
  *   CORE_SetLOGFormatFlags
  */
-typedef enum {
+enum ELOG_FormatFlag {
     fLOG_Default       = 0x0,    /**< fLOG_Short if NDEBUG, else fLOG_Full   */
     fLOG_Level         = 0x1,
     fLOG_Module        = 0x2,
@@ -227,8 +227,8 @@ typedef enum {
     fLOG_FullOctal     = 0x2000, /**< do not do reduction in octal data bytes*/
     fLOG_OmitNoteLevel = 0x4000, /**< do not add NOTE if eLOG_Note is level  */
     fLOG_None          = 0x8000  /**< nothing but spec'd parts, msg and data */
-} ELOG_Format;
-typedef unsigned int TLOG_FormatFlags; /**< binary OR of "ELOG_FormatFlags"  */
+};
+typedef unsigned int TLOG_FormatFlags;  /**< bitwise OR of "ELOG_FormatFlag" */
 #define fLOG_Short   fLOG_Level
 #define fLOG_Full   (fLOG_Level | fLOG_Module | fLOG_FileLine)
 
