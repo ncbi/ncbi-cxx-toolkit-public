@@ -176,7 +176,7 @@ enum EHTTP_Flag {
 };
 typedef unsigned int THTTP_Flags;  /* bitwise OR of "EHTTP_Flag"             */
 NCBI_HTTP_CONNECTOR_DEPRECATED
-enum EHCC_Flag {
+typedef enum {
     /* DEPRECATED, do not use! */
     fHCC_AutoReconnect    = fHTTP_AutoReconnect,
     fHCC_SureFlush        = fHTTP_Flushable,
@@ -189,7 +189,7 @@ enum EHCC_Flag {
     fHCC_NoUpread         = fHTTP_NoUpread,
     fHCC_Flushable        = fHTTP_Flushable,
     fHCC_NoAutoRetry      = fHTTP_NoAutoRetry
-};
+} EHCC_Flag;
 NCBI_HTTP_CONNECTOR_DEPRECATED
 typedef unsigned int THCC_Flags;   /* bitwise OR of "EHCC_Flag", deprecated */
 
