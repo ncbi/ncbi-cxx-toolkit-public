@@ -6658,7 +6658,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ZMC	s	Deptment of Biology, Zunyi Medical College",
 "ZMFMIB	s	Zoologial Museum Fan Memorial Institute of Biology",
 "ZMG<DEU-Gottingen>	s	Zoologisches Museum der Universitat Gottingen",
-"ZMG<DEU-Griefswald>	s	Zoologischen Museums Greifswald",
+"ZMG<DEU-Greifswald>	s	Zoologischen Museums Greifswald",
 "ZMH	s	Zoologisches Museum Hamburg",
 "ZMHB	s	Museum fuer Naturkunde der Humboldt-Universitat",
 "ZMHU	s	Zoologisches Museum der Humboldt Universitaet",
