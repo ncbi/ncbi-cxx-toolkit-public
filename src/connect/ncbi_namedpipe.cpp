@@ -67,7 +67,7 @@ typedef int        SOCK_socklen_t;
 
 
 // Predefined timeouts
-const size_t kDefaultPipeBufSize = (size_t)CNamedPipe::eDefaultBufSize;
+const size_t kDefaultPipeBufSize = (size_t) CNamedPipe::eDefaultBufSize;
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -96,7 +96,7 @@ inline void s_AdjustPipeBufSize(size_t& bufsize)
 {
     if (!bufsize) {
         bufsize = kDefaultPipeBufSize;
-    } else if (bufsize == (size_t) kMax_Int) {
+    } else if (bufsize == (size_t) CNamedPipe::eDefaultSysBufSize) {
         bufsize = 0 /* use system default buffer size */;
     }
 }

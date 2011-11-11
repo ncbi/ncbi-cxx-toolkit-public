@@ -97,9 +97,9 @@ class CNamedPipeHandle;
 class NCBI_XCONNECT_EXPORT CNamedPipe : protected CConnIniter
 {
 public:
-    /// Default pipe buffer size.
+    /// Exposition of default pipe buffer sizes (can be used for "pipebufsize")
     enum {
-        eDefaultBufSize    = 4096,      ///< portable default
+        eDefaultBufSize    = 4096,      ///< portable default (also as 0)
         eDefaultSysBufSize = kMax_Int   ///< use system-specific default
     };
 
@@ -237,14 +237,14 @@ public:
     ///       See CNamedPipe class description about pipe names.
     CNamedPipeClient(const string&   pipename,
                      const STimeout* timeout     = kDefaultTimeout,
-                     size_t          pipebufsize = 0 /* use default */);
+                     size_t          pipebufsize = 0/*use default*/);
 
     /// Open a client-side pipe connection.
     ///
     /// NOTE: Should not be called if already opened.
     virtual EIO_Status Open(const string&   pipename,
                             const STimeout* timeout     = kDefaultTimeout,
-                            size_t          pipebufsize = 0 /* use default*/);
+                            size_t          pipebufsize = 0/*use default*/);
 
     // Always returns eIO_Unknown in this class.
     virtual EIO_Status Create(const string&, const STimeout*, size_t);
@@ -279,12 +279,12 @@ public:
     ///   - See CNamedPipe class description about pipe names;
     ///   - Timeout from the argument becomes new timeout for a listening;
     ///   - The "pipebufsize" specify a maxium size of data block that can
-    ///     be transmitted through the pipe. The actual buffer size reserved
+    ///     be transmitted through the pipe.  The actual buffer size reserved
     ///     for each end of the named pipe is the specified size rounded
     ///     up to the next allocation boundary.
     CNamedPipeServer(const string&   pipename,
                      const STimeout* timeout     = kDefaultTimeout,
-                     size_t          pipebufsize = 0 /* use default */);
+                     size_t          pipebufsize = 0/*use default*/);
 
     /// Create a server-side pipe.
     ///
