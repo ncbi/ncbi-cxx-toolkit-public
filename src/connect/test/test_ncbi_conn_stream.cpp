@@ -438,8 +438,8 @@ int main(int argc, const char* argv[])
 
     LOG_POST("Test 5 of 8: Big buffer bounce via HTTP");
     CConn_HttpStream ios(0, "User-Header: My header\r\n", 0, 0, 0, 0,
-                         fHCC_UrlEncodeArgs | fHCC_AutoReconnect |
-                         fHCC_Flushable);
+                         fHTTP_AutoReconnect | fHTTP_Flushable |
+                         fHTTP_UrlEncodeArgs);
 
     char *buf1 = new char[kBufferSize + 1];
     char *buf2 = new char[kBufferSize + 2];
@@ -576,7 +576,7 @@ int main(int argc, const char* argv[])
 
     CConn_HttpStream http("http://www.ncbi.nlm.nih.gov"
                           "/cpp/network/dispatcher.html", 0,
-                          "My-Header: Header\r\n", fHCC_Flushable);
+                          "My-Header: Header\r\n", fHTTP_Flushable);
     http << "Sample input -- should be ignored";
 
     if (!http.good()  ||  !http.flush()  ||  !NcbiStreamCopy(null, http))
