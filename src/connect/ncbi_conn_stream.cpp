@@ -302,6 +302,17 @@ CConn_SocketStream::CConn_SocketStream(CSocket&        socket,
 }
 
 
+static void x_SetupUserAgent(SConnNetInfo* net_info)
+{
+    CNcbiApplication* theApp = CNcbiApplication::Instance();
+    if (theApp) {
+        string user_agent("User-Agent: ");
+        user_agent += theApp->GetProgramDisplayName();
+        ConnNetInfo_ExtendUserHeader(net_info, user_agent.c_str());
+    }
+}
+
+
 template<>
 struct Deleter<SConnNetInfo>
 {
@@ -361,6 +372,7 @@ static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo* x_net_info,
     }
     if (user_header  &&  *user_header)
         ConnNetInfo_OverrideUserHeader(net_info.get(), user_header);
+    x_SetupUserAgent(net_info.get());
     if (timeout  &&  timeout != kDefaultTimeout) {
         net_info->tmo     = *timeout;
         net_info->timeout = &net_info->tmo;
@@ -491,6 +503,7 @@ static CONNECTOR s_ServiceConnectorBuilder(const char*           service,
     }
     if (user_header  &&  *user_header)
         ConnNetInfo_OverrideUserHeader(net_info.get(), user_header);
+    x_SetupUserAgent(net_info.get());
     if (timeout  &&  timeout != kDefaultTimeout) {
         net_info->tmo     = *timeout;
         net_info->timeout = &net_info->tmo;

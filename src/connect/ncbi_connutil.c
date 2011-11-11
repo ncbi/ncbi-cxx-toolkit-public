@@ -613,16 +613,16 @@ static int/*bool*/ x_TagValueMatches(const char* oldval, size_t oldvallen,
 }
 
 
-typedef enum {
+enum EUserHeaderOp {
     eUserHeaderOp_Delete,
     eUserHeaderOp_Extend,
     eUserHeaderOp_Override
-} EUserHeaderOp;
+};
 
 
-static int/*bool*/ s_ModifyUserHeader(SConnNetInfo* info,
-                                      const char*   user_header,
-                                      EUserHeaderOp op)
+static int/*bool*/ s_ModifyUserHeader(SConnNetInfo*      info,
+                                      const char*        user_header,
+                                      enum EUserHeaderOp op)
 {
     int/*bool*/ retval;
     size_t newlinelen;
@@ -995,6 +995,13 @@ extern int/*bool*/ ConnNetInfo_SetupStandardArgs(SConnNetInfo* info,
 
     if (!info)
         return 0/*failed*/;
+
+    s = CORE_GetAppName();
+    if (s) {
+        char ua[16 + NCBI_CORE_APPNAME_MAXLEN];
+        sprintf(ua, "User-Agent: %." STR(NCBI_CORE_APPNAME_MAXLEN) "s", s);
+        ConnNetInfo_ExtendUserHeader(info, ua);
+    }
 
     /* Dispatcher CGI args (may sacrifice some if they don't fit altogether) */
     if (!(s = CORE_GetPlatform())  ||  !*s)
