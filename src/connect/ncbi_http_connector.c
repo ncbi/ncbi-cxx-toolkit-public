@@ -63,11 +63,11 @@ typedef unsigned       EBReadState;  /* packed EReadState */
 
 /* Whether the connector is allowed to connect
  */
-typedef enum {
+enum ECanConnect {
     eCC_None,
     eCC_Once,
     eCC_Unlimited
-} ECanConnect;
+};
 typedef unsigned       EBCanConnect;  /* packed ECanConnect */
 
 typedef unsigned short TBHTTP_Flags;  /* packed THTTP_Flags */
@@ -1265,7 +1265,7 @@ static void s_FlushAndDisconnect(SHttpConnector* uuu,
                                  const STimeout* timeout)
 {
     if (uuu->can_connect != eCC_None  &&  !uuu->sock
-        &&  ((uuu->flags & fHTTP_SureFlush)  ||  BUF_Size(uuu->w_buf))) {
+        &&  ((uuu->flags & fHTTP_Flushable)  ||  BUF_Size(uuu->w_buf))) {
         /* "WRITE" mode and data (or just flag) is still pending */
         s_PreRead(uuu, timeout, eEM_Drop);
     }
@@ -1561,10 +1561,9 @@ static void s_Destroy(CONNECTOR connector)
 #define  STR(x)  _STR(x)
 
 /* NB: per the standard, the HTTP tag name is misspelled as "Referer" */
-static void x_FixupUserHeader(SConnNetInfo* net_info)
+static void x_FixupUserHeader(SConnNetInfo* net_info, int/*bool*/ has_sid)
 {
     int/*bool*/ has_referer = 0/*false*/;
-    int/*bool*/ has_sid = 0/*false*/;
     char* referer;
     const char* s;
 
@@ -1577,10 +1576,7 @@ static void x_FixupUserHeader(SConnNetInfo* net_info)
     if ((s = net_info->http_user_header) != 0) {
         int/*bool*/ first = 1/*true*/;
         while (*s) {
-            if (strncasecmp(s, "\n" HTTP_NCBI_SID + first,
-                            sizeof(HTTP_NCBI_SID) - first) == 0)
-                has_sid = 1/*true*/;
-            else if (strncasecmp(s, "\nReferer:" + first, 9 - first) == 0) {
+            if (strncasecmp(s, "\nReferer:" + first, 9 - first) == 0) {
                 has_referer = 1/*true*/;
 #ifdef HAVE_LIBCONNEXT
             } else if (strncasecmp(s, "\nCAF" + first, 4 - first) == 0
@@ -1595,6 +1591,10 @@ static void x_FixupUserHeader(SConnNetInfo* net_info)
                     continue;
                 }
 #endif /*HAVE_LIBCONNEXT*/
+            } else if (!has_sid
+                       &&  strncasecmp(s, "\n" HTTP_NCBI_SID + first,
+                                       sizeof(HTTP_NCBI_SID) - first) == 0) {
+                has_sid = 1/*true*/;
             }
             if (!(s = strchr(++s, '\n')))
                 break;
@@ -1662,7 +1662,7 @@ static EIO_Status s_CreateHttpConnector
         }
         ConnNetInfo_DeleteUserHeader(xxx, "Referer:");
     }
-    x_FixupUserHeader(xxx);
+    x_FixupUserHeader(xxx, flags & fHTTP_NoAutomagicSID ? 1 : 0);
 
     if ((flags & fHTTP_NoAutoRetry)  ||  !xxx->max_try)
         xxx->max_try = 1;
