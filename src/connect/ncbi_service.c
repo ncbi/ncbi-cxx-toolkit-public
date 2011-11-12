@@ -653,11 +653,11 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
         /* Form accepted server types */
         buflen = sizeof(kAcceptedServerTypes) - 1;
         memcpy(buffer, kAcceptedServerTypes, buflen);
-        for (t = 1; t; t <<= 1) {
+        for (t = 1;  t;  t <<= 1) {
             if (iter->type & t) {
                 const char* name = SERV_TypeStr((ESERV_Type) t);
                 size_t namelen = strlen(name);
-                if (!namelen || buflen + 1 + namelen + 2 >= sizeof(buffer))
+                if (!namelen  ||  buflen + 1 + namelen + 2 >= sizeof(buffer))
                     break;
                 buffer[buflen++] = ' ';
                 memcpy(buffer + buflen, name, namelen);
@@ -800,6 +800,7 @@ unsigned short SERV_ServerPort(const char*  name,
     assert(port);
     return port;
 }
+
 
 #if 0
 int/*bool*/ SERV_MatchesHost(const SSERV_Info* info, unsigned int host)

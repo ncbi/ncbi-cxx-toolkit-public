@@ -95,7 +95,7 @@ extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenSimple
 
 /* Special "type" bit values that may be combined with server types.
  * NB:  Also, MSBs should be kept compatible with EMGHBN_Option */
-typedef enum {
+enum ESpecialType {
     fSERV_Any               = 0,
     fSERV_All               = 0x0000FFFF,
     /* Only stateless servers should be returned */
@@ -109,7 +109,7 @@ typedef enum {
     fSERV_IncludeDown       = 0x20000000,
     fSERV_IncludeSuppressed = 0x40000000,
     fSERV_Promiscuous       = 0x60000000
-} ESERV_SpecialType;
+};
 typedef unsigned int TSERV_Type;     /* Bitwise OR of ESERV_[Special]Type    */
 
 /* Simplified (uncluttered) type to use in 'skip' parameter below */
@@ -229,7 +229,7 @@ extern NCBI_XCONNECT_EXPORT void SERV_Close
  * @param name
  *   service name (of type fSERV_Standalone) to look up
  * @param host
- *   host address (or SERV_LOCALHOST or 0, same) to look the service up on
+ *   host address (or SERV_LOCALHOST, or 0, same) to look the service up on
  * @return
  *   the port number or 0 on error (no suitable service found)
  * Note that the call returns the first match, and does not check
