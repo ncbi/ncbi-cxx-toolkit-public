@@ -56,7 +56,7 @@
  *       #define REG_CONN_***
  *       #define DEF_CONN_***
  *
- *    2.Make a connection to an URL:
+ *    2.Make a connection via an URL:
  *       URL_Connect[Ex]()
  *       
  *    3.Perform URL encoding/decoding of data:
@@ -84,6 +84,7 @@
 
 /* Well-known port values */
 #define CONN_PORT_FTP             21
+#define CONN_PORT_SSH             22
 #define CONN_PORT_SMTP            25
 #define CONN_PORT_HTTP            80
 #define CONN_PORT_HTTPS           443
