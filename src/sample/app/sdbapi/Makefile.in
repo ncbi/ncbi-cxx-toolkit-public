@@ -2,5 +2,7 @@
 
 APP_PROJ = sdbapi_sample
 
+REQUIRES = dbapi FreeTDS
+
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
