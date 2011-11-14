@@ -779,8 +779,9 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
     m_ClientId.CheckAccess(extra.role, queue_ptr);
 
     // we want status request to be fast, skip version control
-    // TODO: How about two other status calls - SST and WST?
-    if (extra.processor != &CNetScheduleHandler::x_ProcessStatus)
+    if ((extra.processor != &CNetScheduleHandler::x_ProcessStatus) &&
+        (extra.processor != &CNetScheduleHandler::x_ProcessFastStatusS) &&
+        (extra.processor != &CNetScheduleHandler::x_ProcessFastStatusW))
         if (!m_ClientId.CheckVersion(queue_ptr)) {
             WriteMessage("ERR:eInvalidClientOrVersion:");
             x_CloseConnection();
