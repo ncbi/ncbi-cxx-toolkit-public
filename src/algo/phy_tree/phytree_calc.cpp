@@ -456,7 +456,7 @@ void CPhyTreeCalc::x_CorrectBranchLengths(TPhyTreeNode* node)
 
     if (node->GetValue().IsSetDist()) {
         double dist = node->GetValue().GetDist();
-        if (!finite(dist) || dist < 0.0) {
+        if (!isfinite(dist) || dist < 0.0) {
             node->GetValue().SetDist(0.0);
         }
     }
