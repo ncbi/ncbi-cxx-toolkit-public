@@ -10,32 +10,40 @@
 # Requirements checking
 requirements:  $(REQUIRES:%=$(status_dir)/%.enabled)
 
+ALL_SETTINGS = $(CFLAGS_ALL) $(CXXFLAGS_ALL) $(DLL_LIBS) \
+               $(LDFLAGS) $(LIB) $(LIBS)
+ifneq "" "$(filter @%@,$(ALL_SETTINGS))"
+  config_status = $(status_dir)/config.status
+  build_sys_dir = $(abs_top_srcdir)/src/build-system
+  $(config_status): $(build_sys_dir)/configure $(build_sys_dir)/config.h.in
+	$(abs_top_srcdir)/scripts/common/impl/maybe_reconfigure.sh $(builddir)
+endif
 
 ###  C++ compilation
-%@obj_ext@: ./%.cpp
+%@obj_ext@: ./%.cpp $(config_status)
 	$(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL) $< @f_outobj@$@ $(CXX_FILTER)
-%@obj_ext@: $(srcdir)/%.cpp
+%@obj_ext@: $(srcdir)/%.cpp $(config_status)
 	$(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL) $< @f_outobj@$@ $(CXX_FILTER)
 
 ###  C compilation
-%@obj_ext@: ./%.c
+%@obj_ext@: ./%.c $(config_status)
 	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) $< @f_outobj@$@ $(CC_FILTER)
-%@obj_ext@: $(srcdir)/%.c
+%@obj_ext@: $(srcdir)/%.c $(config_status)
 	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) $< @f_outobj@$@ $(CC_FILTER)
 
 ###  Header precompilation
 @GCCPCH@pchdir = $(incdir)/common/ncbi_pch_impl.hpp.gch
 @GCCPCH@pchsrc = $(includedir0)/common/ncbi_pch_impl.hpp
-@GCCPCH@$(pchdir)/normal: $(pchsrc)
+@GCCPCH@$(pchdir)/normal: $(pchsrc) $(config_status)
 @GCCPCH@	$(MKDIR) -p $(pchdir)
 @GCCPCH@	$(CXX_WRAPPER) $(ORIG_CXX) -xc++-header @f_compile@ $(ORIG_CXXFLAGS) $(ORIG_CPPFLAGS) -DNCBI_PCH__HPP= $(pchsrc) @f_outobj@$@ $(CXX_FILTER)
-@GCCPCH@$(pchdir)/dll: $(pchsrc)
+@GCCPCH@$(pchdir)/dll: $(pchsrc) $(config_status)
 @GCCPCH@	$(MKDIR) -p $(pchdir)
 @GCCPCH@	$(CXX_WRAPPER) $(ORIG_CXX) -xc++-header @f_compile@ $(ORIG_CXXFLAGS) $(CXXFLAGS_DLL) $(ORIG_CPPFLAGS) -DNCBI_PCH__HPP= $(pchsrc) @f_outobj@$@ $(CXX_FILTER)
-@GCCPCH@$(pchdir)/fast: $(pchsrc)
+@GCCPCH@$(pchdir)/fast: $(pchsrc) $(config_status)
 @GCCPCH@	$(MKDIR) -p $(pchdir)
 @GCCPCH@	$(CXX_WRAPPER) $(ORIG_CXX) -xc++-header @f_compile@ $(FAST_CXXFLAGS) $(ORIG_CPPFLAGS) -DNCBI_PCH__HPP= $(pchsrc) @f_outobj@$@ $(CXX_FILTER)
-@GCCPCH@$(pchdir)/fastdll: $(pchsrc)
+@GCCPCH@$(pchdir)/fastdll: $(pchsrc) $(config_status)
 @GCCPCH@	$(MKDIR) -p $(pchdir)
 @GCCPCH@	$(CXX_WRAPPER) $(ORIG_CXX) -xc++-header @f_compile@ $(FAST_CXXFLAGS) $(CXXFLAGS_DLL) $(ORIG_CPPFLAGS) -DNCBI_PCH__HPP= $(pchsrc) @f_outobj@$@ $(CXX_FILTER)
 
@@ -56,7 +64,7 @@ pkg_incdir = $(incdest)/$(PACKAGE_EXPORT)
 src_headers = $(HEADER_EXPORT:%=$(srcdir)/%)
 exp_headers = $(HEADER_EXPORT:%=$(pkg_incdir)/%)
 
-export-headers: $(exp_headers)
+export-headers: $(exp_headers) $(config_status)
 
 $(pkg_incdir)/%: $(srcdir)/%
 	@if [ -n "$(PACKAGE_EXPORT)" -a -n "$(HEADER_EXPORT)" ]; then \
