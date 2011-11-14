@@ -826,9 +826,11 @@ CNcbiTestApplication::Init(void)
     m_ArgDescrs = new CArgDescriptions();
     m_ArgDescrs->AddFlag("-help",
          "Print test framework related command line arguments");
+#ifndef NCBI_COMPILER_WORKSHOP
     m_ArgDescrs->AddOptionalKey("-run_test", "Filter",
          "Allows to filter which test units to run",
          CArgDescriptions::eString, CArgDescriptions::fMandatorySeparator);
+#endif
     m_ArgDescrs->AddFlag("dryrun",
                          "Do not actually run tests, "
                          "just print list of all available tests.");
@@ -1631,6 +1633,13 @@ CNcbiTestApplication::InitTestFramework(int argc, char* argv[])
                 SetGloballyDisabled();
                 x_AddDummyTest();
             }
+#ifdef NCBI_COMPILER_WORKSHOP
+            else if (!but::runtime_config::test_to_run().empty()) {
+                printf("Parameter --run_test is not supported in current configuration\n");
+                x_EnableAllTests(false);
+                x_AddDummyTest();
+            }
+#endif
 
             return NULL;
         }
