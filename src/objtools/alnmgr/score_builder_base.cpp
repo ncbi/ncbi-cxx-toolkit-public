@@ -709,6 +709,69 @@ void CScoreBuilderBase::GetMismatchCount(CScope& scope, const CSeq_align& align,
 }
 
 
+int CScoreBuilderBase::GetIdentityCount(CScope& scope, const CSeq_align& align,
+                                        const TSeqRange& range)
+{
+    int identities = 0;
+    int mismatches = 0;
+    s_GetCountIdentityMismatch(scope, align, &identities, &mismatches,
+                               CRangeCollection<TSeqPos>(range));
+    return identities;
+}
+
+
+int CScoreBuilderBase::GetMismatchCount(CScope& scope, const CSeq_align& align,
+                                        const TSeqRange& range)
+{
+    int identities = 0;
+    int mismatches = 0;
+    s_GetCountIdentityMismatch(scope, align, &identities,&mismatches,
+                               CRangeCollection<TSeqPos>(range));
+    return mismatches;
+}
+
+
+void CScoreBuilderBase::GetMismatchCount(CScope& scope, const CSeq_align& align,
+                                        const TSeqRange& range,
+                                     int& identities, int& mismatches)
+{
+    identities = 0;
+    mismatches = 0;
+    s_GetCountIdentityMismatch(scope, align, &identities, &mismatches,
+                               CRangeCollection<TSeqPos>(range));
+}
+
+
+int CScoreBuilderBase::GetIdentityCount(CScope& scope, const CSeq_align& align,
+                                        const CRangeCollection<TSeqPos> &ranges)
+{
+    int identities = 0;
+    int mismatches = 0;
+    s_GetCountIdentityMismatch(scope, align, &identities, &mismatches, ranges);
+    return identities;
+}
+
+
+int CScoreBuilderBase::GetMismatchCount(CScope& scope, const CSeq_align& align,
+                                        const CRangeCollection<TSeqPos> &ranges)
+{
+    int identities = 0;
+    int mismatches = 0;
+    s_GetCountIdentityMismatch(scope, align, &identities,&mismatches, ranges);
+    return mismatches;
+}
+
+
+void CScoreBuilderBase::GetMismatchCount(CScope& scope, const CSeq_align& align,
+                                        const CRangeCollection<TSeqPos> &ranges,
+                                     int& identities, int& mismatches)
+{
+    identities = 0;
+    mismatches = 0;
+    s_GetCountIdentityMismatch(scope, align, &identities, &mismatches, ranges);
+}
+
+
 int CScoreBuilderBase::GetPositiveCount(CScope& scope, const CSeq_align& align)
 {
     int positives = 0;

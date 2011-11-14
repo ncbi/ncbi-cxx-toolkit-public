@@ -126,6 +126,25 @@ public:
     void GetMismatchCount  (CScope& scope, const CSeq_align& align,
                             int& identities, int& mismatches);
 
+    /// Compute identity and/or mismatch counts within specified range
+    int GetIdentityCount  (CScope& scope, const CSeq_align& align,
+                           const TSeqRange &range);
+    int GetMismatchCount  (CScope& scope, const CSeq_align& align,
+                           const TSeqRange &range);
+    void GetMismatchCount  (CScope& scope, const CSeq_align& align,
+                           const TSeqRange &range,
+                            int& identities, int& mismatches);
+
+    /// Compute identity and/or mismatch counts within specified
+    /// collection of ranges
+    int GetIdentityCount  (CScope& scope, const CSeq_align& align,
+                           const CRangeCollection<TSeqPos> &ranges);
+    int GetMismatchCount  (CScope& scope, const CSeq_align& align,
+                           const CRangeCollection<TSeqPos> &ranges);
+    void GetMismatchCount  (CScope& scope, const CSeq_align& align,
+                           const CRangeCollection<TSeqPos> &ranges,
+                            int& identities, int& mismatches);
+
     /// counts based on substitution matrix for protein alignments
     int GetPositiveCount (CScope& scope, const CSeq_align& align);
     int GetNegativeCount (CScope& scope, const CSeq_align& align);
