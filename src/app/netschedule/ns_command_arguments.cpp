@@ -112,6 +112,9 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &  params)
                 job_key = val;
                 if (!val.empty())
                     job_id = CNetScheduleKey(val).id;
+                if (job_id == 0)
+                    NCBI_THROW(CNetScheduleException,
+                               eInvalidParameter, "Invalid job ID");
             }
             else if (key == "job_return_code")
                 job_return_code = NStr::StringToInt(val, NStr::fConvErr_NoThrow);

@@ -99,6 +99,7 @@ public:
         eStatus_NotFound            = 404, ///< Job is not found
         eStatus_BadQueue            = 405, ///< Queue not found
         eStatus_CmdTimeout          = 408, ///< Command timeout is exceeded
+        eStatus_InvalidJobStatus    = 409, ///< Invalid job status
         eStatus_ServerError         = 500, ///< Internal server error
         eStatus_NoImpl              = 501, ///< Command is not implemented
         eStatus_JobNotifierError    = 502, ///< Job noticication thread failed
@@ -175,6 +176,9 @@ private:
     void x_ProcessConfirm(CQueue*);
     void x_ProcessReadFailed(CQueue*);
     void x_ProcessReadRollback(CQueue*);
+    void x_FinalizeReadCommand(const string &  command,
+                               const string &  description,
+                               TJobStatus      status);
     void x_ProcessGetAffinityList(CQueue*);
     void x_ProcessInitWorkerNode(CQueue*);
     void x_ProcessClearWorkerNode(CQueue*);

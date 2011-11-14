@@ -150,40 +150,35 @@ public:
     unsigned SubmitBatch(const CNSClientId &             client,
                          vector< pair<CJob, string> > &  batch);
 
-    void PutResultGetJob(const CNSClientId &        client,
-                         // PutResult parameters
-                         unsigned                   done_job_id,
-                         int                        ret_code,
-                         const string *             output,
-                         // GetJob parameters
-                         const list<string> *       aff_list,
-                         CJob *                     new_job);
+    TJobStatus  PutResultGetJob(const CNSClientId &        client,
+                                // PutResult parameters
+                                unsigned                   done_job_id,
+                                int                        ret_code,
+                                const string *             output,
+                                // GetJob parameters
+                                const list<string> *       aff_list,
+                                CJob *                     new_job);
 
-    void PutResult(const CNSClientId &  client,
-                   time_t               curr,
-                   unsigned             job_id,
-                   int                  ret_code,
-                   const string *       output);
+    TJobStatus  PutResult(const CNSClientId &  client,
+                          time_t               curr,
+                          unsigned             job_id,
+                          int                  ret_code,
+                          const string *       output);
 
     void GetJob(const CNSClientId &     client,
                 time_t                  curr,
                 const list<string> *    aff_list,
                 CJob *                  new_job);
 
-    /// Extend job expiration timeout
-    /// @param tm
-    ///    Time worker node needs to execute the job (in seconds)
-    void JobDelayExpiration(unsigned        job_id,
-                            time_t          tm);
+    TJobStatus  JobDelayExpiration(unsigned        job_id,
+                                   time_t          tm);
 
     // Worker node-specific methods
     bool PutProgressMessage(unsigned      job_id,
                             const string& msg);
 
-    /// true - job was returned
-    /// false - job not found
-    bool  ReturnJob(const CNSClientId &     client,
-                    unsigned int            peer_addr);
+    TJobStatus  ReturnJob(const CNSClientId &     client,
+                          unsigned int            peer_addr);
 
     /// 0 - job not found
     unsigned int  ReadJobFromDB(unsigned int  job_id, CJob &  job);
@@ -217,17 +212,17 @@ public:
                           unsigned int          read_timeout,
                           CJob *                job);
     /// Confirm reading of these jobs
-    void ConfirmReadingJob(const CNSClientId &   client,
-                           unsigned int    job_id,
-                           const string &  auth_token);
+    TJobStatus  ConfirmReadingJob(const CNSClientId &   client,
+                                  unsigned int    job_id,
+                                  const string &  auth_token);
     /// Fail (negative acknowledge) reading of these jobs
-    void FailReadingJob(const CNSClientId &   client,
-                        unsigned int          job_id,
-                        const string &        auth_token);
+    TJobStatus  FailReadingJob(const CNSClientId &   client,
+                               unsigned int          job_id,
+                               const string &        auth_token);
     /// Return jobs to unread state without reservation
-    void ReturnReadingJob(const CNSClientId &   client,
-                          unsigned int          job_id,
-                          const string &        auth_token);
+    TJobStatus  ReturnReadingJob(const CNSClientId &   client,
+                                 unsigned int          job_id,
+                                 const string &        auth_token);
 
     /// Erase job from all structures, request delayed db deletion
     void EraseJob(unsigned job_id);
@@ -262,12 +257,11 @@ public:
     ///     affinity preference string
     string GetAffinityList();
 
-    /// @return is job modified
-    bool FailJob(const CNSClientId &    client,
-                 unsigned               job_id,
-                 const string &         err_msg,
-                 const string &         output,
-                 int                    ret_code);
+    TJobStatus FailJob(const CNSClientId &    client,
+                       unsigned               job_id,
+                       const string &         err_msg,
+                       const string &         output,
+                       int                    ret_code);
 
     string  GetAffinityTokenByID(unsigned int  aff_id) const;
 
@@ -353,10 +347,10 @@ private:
     friend class CNSTransaction;
     CBDB_Env &  GetEnv() { return *m_QueueDbBlock->job_db.GetEnv(); }
 
-    void x_ChangeReadingStatus(const CNSClientId &  client,
-                               unsigned int         job_id,
-                               const string &       auth_token,
-                               TJobStatus           target_status);
+    TJobStatus  x_ChangeReadingStatus(const CNSClientId &  client,
+                                      unsigned int         job_id,
+                                      const string &       auth_token,
+                                      TJobStatus           target_status);
 
     /// @return TRUE if job record has been found and updated
     bool x_UpdateDB_PutResultNoLock(unsigned                job_id,
