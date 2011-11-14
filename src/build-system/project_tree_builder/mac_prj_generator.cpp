@@ -184,8 +184,9 @@ void CMacProjectGenerator::Generate(const string& solution)
                            "Excluded due to unmet requirements");
             continue;
         }
-//        bool excluded = (prj.m_MakeType >= eMakeType_Expendable);
-        bool excluded = (prj.m_MakeType > eMakeType_Expendable);
+// see CXX-542
+        bool excluded = (prj.m_MakeType >= eMakeType_Expendable);
+//        bool excluded = (prj.m_MakeType > eMakeType_Expendable);
 
         prj_files.DoCollect();
         if (!excluded) {
