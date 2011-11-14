@@ -3610,7 +3610,7 @@ else
 fi
 NCBI_CHECK_THIRD_PARTY_LIB(gnutls,
  [[AC_LANG_PROGRAM([[#include <gnutls/gnutls.h>]],
-   [[gnutls_session s; gnutls_init(&s, GNUTLS_CLIENT);]])]],
+   [[gnutls_session_t s; gnutls_init(&s, GNUTLS_CLIENT);]])]],
  $GNUTLS_CONFIG_LIBS)
 if test -n "$GNUTLS_CONFIG_LIBS"; then
    NCBI_RPATHIFY_OUTPUT(GNUTLS_LIBS, [echo $GNUTLS_CONFIG_LIBS], [$no_usr_lib])

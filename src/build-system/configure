@@ -21460,7 +21460,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
-gnutls_session s; gnutls_init(&s, GNUTLS_CLIENT);
+gnutls_session_t s; gnutls_init(&s, GNUTLS_CLIENT);
   ;
   return 0;
 }
