@@ -213,6 +213,29 @@ CNetCacheServer::x_FindNextParamsSet(const SSpecParamsSet*  cur_set,
 }
 
 void
+CNetCacheServer::x_CheckDefClientConfig(SSpecParamsSet* cur_set,
+                                        SSpecParamsSet* prev_set,
+                                        Uint1 depth,
+                                        SSpecParamsSet* deflt)
+{
+    if (depth == 0) {
+        if (cur_set->entries.size() == 0) {
+            cur_set->entries.push_back(deflt->entries[0]);
+        }
+    }
+    else {
+        SSpecParamsSet* this_deflt = NULL;
+        if (deflt)
+            this_deflt = (SSpecParamsSet*)deflt->entries[0].value.GetPointer();
+        for (size_t i = 0; i < cur_set->entries.size(); ++i) {
+            x_CheckDefClientConfig((SSpecParamsSet*)cur_set->entries[i].value.GetPointer(),
+                                   cur_set, depth - 1, this_deflt);
+            this_deflt = (SSpecParamsSet*)cur_set->entries[0].value.GetPointer();
+        }
+    }
+}
+
+void
 CNetCacheServer::x_ReadPerClientConfig(const CNcbiRegistry& reg)
 {
     m_OldSpecParams = m_SpecParams;
@@ -261,7 +284,8 @@ CNetCacheServer::x_ReadPerClientConfig(const CNcbiRegistry& reg)
                                 = x_FindNextParamsSet(cur_set, key_value, next_ind);
                     if (!next_set) {
                         if (cur_set->entries.size() == 0) {
-                            cur_set->entries.push_back(SSpecParamsEntry(kEmptyStr, static_cast<SSpecParamsSet*>(prev_set->entries[0].value.GetPointer())->entries[0].value));
+                            cur_set->entries.push_back(SSpecParamsEntry(kEmptyStr, new SSpecParamsSet()));
+                            ++next_ind;
                         }
                         next_set = new SSpecParamsSet();
                         x_PutNewParams(cur_set, next_ind,
@@ -272,10 +296,10 @@ CNetCacheServer::x_ReadPerClientConfig(const CNcbiRegistry& reg)
                 }
                 else {
                     if (cur_set->entries.size() == 0) {
-                        cur_set->entries.push_back(SSpecParamsEntry(kEmptyStr, static_cast<SSpecParamsSet*>(prev_set->entries[0].value.GetPointer())->entries[0].value));
+                        cur_set->entries.push_back(SSpecParamsEntry(kEmptyStr, new SSpecParamsSet()));
                     }
                     prev_set = cur_set;
-                    cur_set = static_cast<SSpecParamsSet*>(cur_set->entries[0].value.GetPointer());
+                    cur_set = (SSpecParamsSet*)cur_set->entries[0].value.GetPointer();
                 }
             }
             if (cur_set->entries.size() != 0) {
@@ -290,6 +314,8 @@ CNetCacheServer::x_ReadPerClientConfig(const CNcbiRegistry& reg)
             }
             cur_set->entries.push_back(SSpecParamsEntry(kEmptyStr, params));
         }
+
+        x_CheckDefClientConfig(m_SpecParams, NULL, Uint1(m_SpecPriority.size()), NULL);
     }
 }
 

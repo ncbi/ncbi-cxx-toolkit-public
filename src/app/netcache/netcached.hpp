@@ -287,6 +287,10 @@ private:
                                         const string&         key,
                                         unsigned int&         best_index);
     void x_ReadPerClientConfig(const CNcbiRegistry& reg);
+    void x_CheckDefClientConfig(SSpecParamsSet* cur_set,
+                                SSpecParamsSet* prev_set,
+                                Uint1 depth,
+                                SSpecParamsSet* deflt);
 
 
     /// Print full server statistics into stream or diagnostics
