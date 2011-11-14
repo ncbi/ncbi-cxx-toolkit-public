@@ -43,10 +43,11 @@ ARGUMENTS:
      app/blast       to build an application using BLAST
      app/cgi         to build a CGI or FastCGI application
      app/dbapi       to build a DBAPI application
+     app/sdbapi      to build a Simple-DBAPI application
      app/eutils      to build an eUtils client application
-     app/lds         to build an application using a local data store
-     app/netcache    to build a NetCache application
-     app/netschedule to build an NCBI GRID (NetSchedule) application
+     app/lds         to build an application using a local data storage
+     app/netcache    to build a client application of NetCache
+     app/netschedule to build a NCBI GRID client application using NetSchedule
      app/objects     to build an application using ASN.1 objects
      app/objmgr      to build an application using the object manager
      app/soap/client to build a SOAP client
