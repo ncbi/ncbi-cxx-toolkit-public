@@ -554,7 +554,7 @@ CJob::EJobFetchResult  CJob::FetchToTestExpiration(CQueue *      queue,
     CBDB_CursorGuard    cg(cur);
 
     cur.SetCondition(CBDB_FileCursor::eEQ);
-    cur.From << m_Id;
+    cur.From << id;
 
     time_t      last_event_timestamp = 0;
     for (unsigned n = 0; (res = cur.Fetch()) == eBDB_Ok; ++n)
