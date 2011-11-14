@@ -1444,17 +1444,17 @@ BOOST_AUTO_TEST_CASE(OpenWithBLASTDBEnv)
 {
         CTmpEnvironmentSetter tmpenv("BLASTDB", "/blast/db/blast");
     CSeqDB db1("nr", CSeqDB::eProtein);
-    CSeqDB db2("genomes/rice", CSeqDB::eProtein);
-    CSeqDB db3("genomes/rice", CSeqDB::eNucleotide);
+    CSeqDB db2("Plants/Oryza_sativa_protein_sequences", CSeqDB::eProtein);
+    CSeqDB db3("Plants/Oryza_sativa_rice_genetically_mapped", CSeqDB::eNucleotide);
 }
 
 BOOST_AUTO_TEST_CASE(OpenWithoutBLASTDBEnv)
 {
         CTmpEnvironmentSetter tmpenv("BLASTDB");
     CSeqDB db1("nr", CSeqDB::eProtein);
-    CSeqDB db2("genomes/rice", CSeqDB::eNucleotide);
+    CSeqDB db2("Plants/Oryza_sativa_rice_genetically_mapped", CSeqDB::eNucleotide);
     // When the line below is removed, things work (06/02/08 2:53PM EST) ?
-    CSeqDB db3("genomes/rice", CSeqDB::eProtein);
+    CSeqDB db3("Plants/Oryza_sativa_protein_sequences", CSeqDB::eProtein);
 }
 
 BOOST_AUTO_TEST_CASE(GiLists)
@@ -1464,9 +1464,9 @@ BOOST_AUTO_TEST_CASE(GiLists)
     
     names.push_back("p,nr");
     names.push_back("n,nt");
-    names.push_back("n,genomes/rice");
-    names.push_back("p,genomes/rice");
-    names.push_back("n,genomes/tomato");
+    names.push_back("n,Plants/Oryza_sativa_rice_genetically_mapped");
+    names.push_back("p,Plants/Oryza_sativa_protein_sequences");
+    names.push_back("n,Plants/Solanum_lycopersicum_tomato_genetically");
     
     ITERATE(vector<string>, s, names) {
         BOOST_REQUIRE(s->length() > 2);
