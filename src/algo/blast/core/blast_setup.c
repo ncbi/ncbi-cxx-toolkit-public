@@ -736,13 +736,15 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
 
              /* if the database length was specified, do not
                 adjust it when calculating the search space;
-                it's counter-intuitive to specify a value and 
+                it's counter-intuitive to specify a value and
                 not have that value be used */
+        	 /* Changing this rule for now sicne cutoff score depends
+        	  * on the effective seach space length. SB-902
+        	  */
 
-             Int8 effective_db_length = db_length;
-
-             if (eff_len_options->db_length == 0)
-                 effective_db_length -= (Int8)db_num_seqs * length_adjustment;
+        	 Int8 effective_db_length = db_length;
+             //if (eff_len_options->db_length == 0)
+        	 effective_db_length -= (Int8)db_num_seqs * length_adjustment;
 
              effective_search_space = effective_db_length *
                              (query_length - length_adjustment);
