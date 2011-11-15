@@ -45,6 +45,9 @@
 
 #ifdef NCBI_COMPILER_MSVC
 #  define isfinite _finite
+#elif defined(NCBI_COMPILER_WORKSHOP)  &&  !defined(__builtin_isfinite)
+#  undef isfinite
+#  define isfinite finite
 #endif
 
 BEGIN_NCBI_SCOPE
