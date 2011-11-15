@@ -1710,12 +1710,15 @@ void CNetScheduleHandler::x_ProcessQueueInfo(CQueue*)
 
 void CNetScheduleHandler::x_ProcessGetParam(CQueue* q)
 {
-    string  max_input_size = NStr::IntToString(q->GetMaxInputSize());
-    string  max_output_size = NStr::IntToString(q->GetMaxOutputSize());
+    unsigned int    max_input_size;
+    unsigned int    max_output_size;
 
-    WriteMessage("OK:", "max_input_size=" + max_input_size + ";"
-                 "max_output_size=" + max_output_size + ";" +
-                 NETSCHEDULED_FEATURES);
+    q->GetMaxIOSizes(max_input_size, max_output_size);
+    WriteMessage("OK:", "max_input_size=" +
+                        NStr::IntToString(max_input_size) + ";"
+                        "max_output_size=" +
+                        NStr::IntToString(max_output_size) + ";" +
+                        NETSCHEDULED_FEATURES);
     x_PrintRequestStop(eStatus_OK);
 }
 

@@ -120,13 +120,13 @@ public:
     unsigned GetFailedRetries() const;
     time_t GetBlacklistTime() const;
     time_t GetEmptyLifetime() const;
-    unsigned GetMaxInputSize() const;
-    unsigned GetMaxOutputSize() const;
     bool GetDenyAccessViolations() const;
     bool IsVersionControl() const;
     bool IsMatchingClient(const CQueueClientInfo& cinfo) const;
     bool IsSubmitAllowed(unsigned host) const;
     bool IsWorkerAllowed(unsigned host) const;
+    void GetMaxIOSizes(unsigned int &  max_input_size,
+                       unsigned int &  max_output_size) const;
 
     ////
     // Status matrix related
@@ -498,14 +498,6 @@ inline time_t CQueue::GetEmptyLifetime() const
 {
     CReadLockGuard guard(m_ParamLock);
     return m_EmptyLifetime;
-}
-inline unsigned CQueue::GetMaxInputSize() const
-{
-    return m_MaxInputSize;
-}
-inline unsigned CQueue::GetMaxOutputSize() const
-{
-    return m_MaxOutputSize;
 }
 inline bool CQueue::GetDenyAccessViolations() const
 {

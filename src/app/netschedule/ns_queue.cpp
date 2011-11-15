@@ -230,6 +230,17 @@ CQueue::TParameterList CQueue::GetParameters() const
 }
 
 
+void CQueue::GetMaxIOSizes(unsigned int &  max_input_size,
+                           unsigned int &  max_output_size) const
+{
+    CQueueParamAccessor     qp(*this);
+
+    max_input_size = qp.GetMaxInputSize();
+    max_output_size = qp.GetMaxOutputSize();
+    return;
+}
+
+
 unsigned CQueue::LoadStatusMatrix()
 {
     // Load the known affinities
