@@ -68,9 +68,9 @@ class NCBI_XOBJREAD_EXPORT CAgpRow
 {
 public:
     // reader argument is used for notification of version auto-detection via SetVersion()
-    CAgpRow(CAgpErr* arg, EAgpVersion agp_version = eAgpVersion_2_0, CAgpReader* reader=NULL  );
+    CAgpRow(CAgpErr* arg, EAgpVersion agp_version = eAgpVersion_auto, CAgpReader* reader=NULL  );
     // constructs a default error handler
-    CAgpRow(EAgpVersion agp_version = eAgpVersion_2_0, CAgpReader* reader=NULL );
+    CAgpRow(EAgpVersion agp_version = eAgpVersion_auto, CAgpReader* reader=NULL );
     virtual ~CAgpRow();
 
     // Returns:
@@ -265,9 +265,9 @@ class NCBI_XOBJREAD_EXPORT CAgpReader
 {
 public:
     CAgpReader(CAgpErr* arg, bool ownAgpErr=false,
-        EAgpVersion agp_version = eAgpVersion_2_0 );
+        EAgpVersion agp_version = eAgpVersion_auto );
     // constructs a default error handler for this object instance
-    CAgpReader(EAgpVersion agp_version = eAgpVersion_2_0 );
+    CAgpReader(EAgpVersion agp_version = eAgpVersion_auto );
     virtual ~CAgpReader();
 
     virtual int ReadStream(CNcbiIstream& is, bool finalize=true);
