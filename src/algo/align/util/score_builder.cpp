@@ -318,6 +318,7 @@ double CScoreBuilder::GetBlastEValue(CScope& scope,
 
 
 double CScoreBuilder::ComputeScore(CScope& scope, const CSeq_align& align,
+                                   const CRangeCollection<TSeqPos> &ranges,
                                    CSeq_align::EScoreType score)
 {
     switch (score) {
@@ -332,8 +333,14 @@ double CScoreBuilder::ComputeScore(CScope& scope, const CSeq_align& align,
     case CSeq_align::eScore_PercentIdentity_GapOpeningOnly:
     case CSeq_align::eScore_PercentCoverage:
     case CSeq_align::eScore_HighQualityPercentCoverage:
-        return CScoreBuilderBase::ComputeScore(scope, align, score);
+        return CScoreBuilderBase::ComputeScore(scope, align, ranges, score);
+    default:
+        if (ranges.empty() || !ranges.begin()->IsWhole()) {
+            NCBI_THROW(CException, eUnknown, "Score not supported within a range");
+        }
+    }
 
+    switch (score) {
     case CSeq_align::eScore_Blast:
         return GetBlastScore(scope, align);
 

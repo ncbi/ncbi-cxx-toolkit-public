@@ -79,13 +79,19 @@ public:
     /// @name Functions to add scores directly to Seq-aligns
     /// @{
 
-    virtual double ComputeScore(CScope& scope, const CSeq_align& align,
-                                CSeq_align::EScoreType score);
     void AddScore(CScope& scope, CSeq_align& align,
                   CSeq_align::EScoreType score);
     void AddScore(CScope& scope, list< CRef<CSeq_align> >& aligns,
                   CSeq_align::EScoreType score);
 
+    double ComputeScore(CScope& scope, const CSeq_align& align,
+                        CSeq_align::EScoreType score);
+    double ComputeScore(CScope& scope, const CSeq_align& align,
+                        const TSeqRange &range,
+                        CSeq_align::EScoreType score);
+    virtual double ComputeScore(CScope& scope, const CSeq_align& align,
+                                const CRangeCollection<TSeqPos> &ranges,
+                                CSeq_align::EScoreType score);
     /// @}
 
     /// @name Functions to compute scores without adding
@@ -153,14 +159,27 @@ public:
 
     /// Compute the number of gaps in the alignment
     int GetGapCount       (const CSeq_align& align);
+    int GetGapCount       (const CSeq_align& align,
+                           const TSeqRange &range);
+    int GetGapCount       (const CSeq_align& align,
+                           const CRangeCollection<TSeqPos> &ranges);
 
     /// Compute the number of gap bases in the alignment (= length of all gap
     /// segments)
     int GetGapBaseCount   (const CSeq_align& align);
+    int GetGapBaseCount   (const CSeq_align& align,
+                           const TSeqRange &range);
+    int GetGapBaseCount   (const CSeq_align& align,
+                           const CRangeCollection<TSeqPos> &ranges);
 
     /// Compute the length of the alignment (= length of all segments, gaps +
     /// aligned)
     TSeqPos GetAlignLength(const CSeq_align& align, bool ungapped=false);
+    TSeqPos GetAlignLength(const CSeq_align& align,
+                           const TSeqRange &range, bool ungapped=false);
+    TSeqPos GetAlignLength(const CSeq_align& align,
+                           const CRangeCollection<TSeqPos> &ranges,
+                           bool ungapped=false);
 
     void SetSubstMatrix(const string &name);
 

@@ -472,12 +472,8 @@ static void s_GetPercentIdentity(CScope& scope, const CSeq_align& align,
         break;
 
     case CScoreBuilderBase::eGBDNA:
-        if (ranges.empty() || !ranges.begin()->IsWhole()) {
-            NCBI_THROW(CSeqalignException, eUnsupported,
-                "Can't calculate GBDNA-type pct identity within a range");
-        }
-        count_aligned  = align.GetAlignLength(false /* omit gaps */);
-        count_aligned += align.GetNumGapOpenings();
+        count_aligned  = align.GetAlignLengthWithinRanges(ranges, false /* omit gaps */);
+        count_aligned += align.GetNumGapOpeningsWithinRanges(ranges);
         break;
     }
 
@@ -817,6 +813,52 @@ TSeqPos CScoreBuilderBase::GetAlignLength(const CSeq_align& align, bool ungapped
 }
 
 
+int CScoreBuilderBase::GetGapBaseCount(const CSeq_align& align,
+                                       const TSeqRange &range)
+{
+    return align.GetTotalGapCountWithinRange(range);
+}
+
+
+int CScoreBuilderBase::GetGapCount(const CSeq_align& align,
+                                   const TSeqRange &range)
+{
+    return align.GetNumGapOpeningsWithinRange(range);
+}
+
+
+TSeqPos CScoreBuilderBase::GetAlignLength(const CSeq_align& align,
+                                          const TSeqRange &range,
+                                          bool ungapped)
+{
+    return align.GetAlignLengthWithinRange(range, !ungapped
+          /* true = include gaps = !ungapped */);
+}
+
+
+int CScoreBuilderBase::GetGapBaseCount(const CSeq_align& align,
+                                       const CRangeCollection<TSeqPos> &ranges)
+{
+    return align.GetTotalGapCountWithinRanges(ranges);
+}
+
+
+int CScoreBuilderBase::GetGapCount(const CSeq_align& align,
+                                   const CRangeCollection<TSeqPos> &ranges)
+{
+    return align.GetNumGapOpeningsWithinRanges(ranges);
+}
+
+
+TSeqPos CScoreBuilderBase::GetAlignLength(const CSeq_align& align,
+                                   const CRangeCollection<TSeqPos> &ranges,
+                                   bool ungapped)
+{
+    return align.GetAlignLengthWithinRanges(ranges, !ungapped
+          /* true = include gaps = !ungapped */);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 void CScoreBuilderBase::AddScore(CScope& scope, list< CRef<CSeq_align> >& aligns,
@@ -872,11 +914,26 @@ void CScoreBuilderBase::AddScore(CScope& scope, CSeq_align& align,
 double CScoreBuilderBase::ComputeScore(CScope& scope, const CSeq_align& align,
                                        CSeq_align::EScoreType score)
 {
+    return ComputeScore(scope, align,
+                      CRangeCollection<TSeqPos>(TSeqRange::GetWhole()), score);
+}
+
+double CScoreBuilderBase::ComputeScore(CScope& scope, const CSeq_align& align,
+                                       const TSeqRange &range,
+                                       CSeq_align::EScoreType score)
+{
+    return ComputeScore(scope, align, CRangeCollection<TSeqPos>(range), score);
+}
+
+double CScoreBuilderBase::ComputeScore(CScope& scope, const CSeq_align& align,
+                                       const CRangeCollection<TSeqPos> &ranges,
+                                       CSeq_align::EScoreType score)
+{
     switch (score) {
     case CSeq_align::eScore_Score:
         {{
              NCBI_THROW(CException, eUnknown,
-                        "CScoreBuilderBase::AddScore(): "
+                        "CScoreBuilderBase::ComputeScore(): "
                         "generic 'score' computation is undefined");
          }}
         break;
@@ -887,25 +944,33 @@ double CScoreBuilderBase::ComputeScore(CScope& scope, const CSeq_align& align,
     case CSeq_align::eScore_SumEValue:
     case CSeq_align::eScore_CompAdjMethod:
         NCBI_THROW(CException, eUnknown,
-                   "CScoreBuilderBase::AddScore(): "
+                   "CScoreBuilderBase::ComputeScore(): "
                    "BLAST scores are available in CScoreBuilder, "
                    "not CScoreBuilderBase");
         break;
 
     case CSeq_align::eScore_IdentityCount:
-        return GetIdentityCount(scope, align);
+        return GetIdentityCount(scope, align, ranges);
 
     case CSeq_align::eScore_PositiveCount:
+        if (ranges.empty() || !ranges.begin()->IsWhole()) {
+            NCBI_THROW(CException, eUnknown,
+                       "positive-count score not supported within a range");
+        }
         return GetPositiveCount(scope, align);
 
     case CSeq_align::eScore_NegativeCount:
+        if (ranges.empty() || !ranges.begin()->IsWhole()) {
+            NCBI_THROW(CException, eUnknown,
+                       "positive-count score not supported within a range");
+        }
         return GetNegativeCount(scope, align);
 
     case CSeq_align::eScore_MismatchCount:
-        return GetMismatchCount(scope, align);
+        return GetMismatchCount(scope, align, ranges);
 
     case CSeq_align::eScore_AlignLength:
-        return align.GetAlignLength(true /* include gaps */);
+        return align.GetAlignLengthWithinRanges(ranges, true /* include gaps */);
 
     case CSeq_align::eScore_PercentIdentity_Gapped:
         {{
@@ -914,7 +979,7 @@ double CScoreBuilderBase::ComputeScore(CScope& scope, const CSeq_align& align,
             double pct_identity = 0;
             s_GetPercentIdentity(scope, align,
                                  &identities, &mismatches, &pct_identity,
-                                 eGapped);
+                                 eGapped, ranges);
             return pct_identity;
         }}
         break;
@@ -926,7 +991,7 @@ double CScoreBuilderBase::ComputeScore(CScope& scope, const CSeq_align& align,
             double pct_identity = 0;
             s_GetPercentIdentity(scope, align,
                                  &identities, &mismatches, &pct_identity,
-                                 eUngapped);
+                                 eUngapped, ranges);
             return pct_identity;
         }}
         break;
@@ -938,7 +1003,7 @@ double CScoreBuilderBase::ComputeScore(CScope& scope, const CSeq_align& align,
             double pct_identity = 0;
             s_GetPercentIdentity(scope, align,
                                  &identities, &mismatches, &pct_identity,
-                                 eGBDNA);
+                                 eGBDNA, ranges);
             return pct_identity;
         }}
         break;
@@ -946,9 +1011,7 @@ double CScoreBuilderBase::ComputeScore(CScope& scope, const CSeq_align& align,
     case CSeq_align::eScore_PercentCoverage:
         {{
             double pct_coverage = 0;
-            s_GetPercentCoverage(scope, align,
-                                 CRangeCollection<TSeqPos>(TSeqRange::GetWhole()),
-                                 &pct_coverage);
+            s_GetPercentCoverage(scope, align, ranges, &pct_coverage);
             return pct_coverage;
         }}
         break;
@@ -961,6 +1024,11 @@ double CScoreBuilderBase::ComputeScore(CScope& scope, const CSeq_align& align,
                             "High-quality percent coverage not supported "
                             "for standard seg representation");
 
+            if (ranges.empty() || !ranges.begin()->IsWhole()) {
+                NCBI_THROW(CException, eUnknown,
+                           "High-quality percent coverage not supported "
+                           "within a range");
+            }
             /// If we have annotation for a high-quality region, it is in a ftable named
             /// "NCBI_GPIPE", containing a region Seq-feat named "alignable"
             TSeqRange alignable_range = TSeqRange::GetWhole();

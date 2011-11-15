@@ -73,7 +73,22 @@ public:
                   EScoreType score);
 
     double ComputeScore(CScope& scope, const CSeq_align& align,
+                        const CRangeCollection<TSeqPos> &ranges,
                         CSeq_align::EScoreType score);
+
+    double ComputeScore(CScope& scope, const CSeq_align& align,
+                  CSeq_align::EScoreType score)
+    {
+        return CScoreBuilderBase::ComputeScore(scope, align, score);
+    }
+
+    double ComputeScore(CScope& scope, const CSeq_align& align,
+                  const TSeqRange &range,
+                  CSeq_align::EScoreType score)
+    {
+        return CScoreBuilderBase::ComputeScore(scope, align, range, score);
+    }
+
     void AddScore(CScope& scope, CSeq_align& align,
                   CSeq_align::EScoreType score)
     {

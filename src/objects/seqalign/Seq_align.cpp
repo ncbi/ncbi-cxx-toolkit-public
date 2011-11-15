@@ -1405,6 +1405,17 @@ CRef<CSeq_align> RemapAlignToLoc(const CSeq_align& align,
     return mapper.Map(align, row);
 }
 
+/// Get length of intersection between a range and a range collection
+static inline TSeqPos s_IntersectionLength(const CRangeCollection<TSeqPos> &ranges,
+                                           const TSeqRange &range)
+{
+    TSeqPos length = 0;
+    ITERATE (CRangeCollection<TSeqPos>, it, ranges) {
+        length += it->IntersectionWith(range).GetLength();
+    }
+    return length;
+}
+
 /// Retrieves the number of gaps in an alignment
 /// @param align Alignment to examine [in]
 /// @param get_total_count if true, the total number of gaps is retrived,
@@ -1412,8 +1423,13 @@ CRef<CSeq_align> RemapAlignToLoc(const CSeq_align& align,
 /// @throws CSeqalignException if alignment type is not supported
 static TSeqPos 
 s_GetGapCount(const CSeq_align& align, CSeq_align::TDim row,
+              const CRangeCollection<TSeqPos> &ranges,
               bool get_total_count)
 {
+    if (ranges.empty()) {
+        return 0;
+    }
+
     TSeqPos retval = 0;
     switch (align.GetSegs().Which()) {
     case CSeq_align::TSegs::e_Denseg:
@@ -1430,7 +1446,23 @@ s_GetGapCount(const CSeq_align& align, CSeq_align::TDim row,
                     }
                 }
                 if (is_gapped) {
-                    retval += (get_total_count ? ds.GetLens()[i] : 1);
+                    TSeqPos gap_len = ds.GetLens()[i];
+                    if (!ranges.begin()->IsWhole()) {
+                        TSignedSeqPos gap_start = ds.GetStarts()[i * ds.GetDim()];
+                        if (gap_start >= 0) {
+                            gap_len = s_IntersectionLength(ranges,
+                                TSeqRange(gap_start, gap_start + gap_len - 1));
+                        } else {
+                            gap_start = ds.GetStarts()[(i-1) * ds.GetDim()]
+                                      + ds.GetLens()[i-1];
+                            if (s_IntersectionLength(ranges,
+                                    TSeqRange(gap_start, gap_start)) == 0)
+                            {
+                                gap_len = 0;
+                            }
+                        }
+                    }
+                    retval += (get_total_count ? gap_len : (gap_len ? 1 : 0));
                 }
             }
         }}
@@ -1440,7 +1472,7 @@ s_GetGapCount(const CSeq_align& align, CSeq_align::TDim row,
         {{
             ITERATE(CSeq_align::TSegs::TDisc::Tdata, iter, 
                     align.GetSegs().GetDisc().Get()) {
-                retval += s_GetGapCount(**iter, row, get_total_count);
+                retval += s_GetGapCount(**iter, row, ranges, get_total_count);
             }
         }}
         break;
@@ -1450,18 +1482,51 @@ s_GetGapCount(const CSeq_align& align, CSeq_align::TDim row,
             ITERATE (CSpliced_seg::TExons, iter, align.GetSegs().GetSpliced().GetExons()) {
                 const CSpliced_exon& exon = **iter;
                 if (exon.IsSetParts()) {
+                    TSeqPos part_start;
+                    if (exon.GetProduct_start().IsNucpos()) {
+                        part_start = exon.GetProduct_start().GetNucpos();
+                    } else if (exon.GetProduct_start().IsProtpos()) {
+                        TSeqPos start_frame =
+                            exon.GetProduct_start().GetProtpos().GetFrame();
+                        if(start_frame > 0)
+                            --start_frame;
+                        part_start = exon.GetProduct_start().GetProtpos().GetAmin()*3
+                                   + start_frame;
+                    } else {
+                        NCBI_THROW(CException, eUnknown,
+                                   "Spliced-exon is neither nuc nor prot");
+                    }
                     ITERATE (CSpliced_exon::TParts, it, exon.GetParts()) {
                         const CSpliced_exon_chunk& chunk = **it;
+                        int part_len = 0;
                         switch (chunk.Which()) {
+                        case CSpliced_exon_chunk::e_Match:
+                            part_len = chunk.GetMatch();
+                            break;
+
+                        case CSpliced_exon_chunk::e_Mismatch:
+                            part_len = chunk.GetMismatch();
+                            break;
+
+                        case CSpliced_exon_chunk::e_Diag:
+                            part_len = chunk.GetDiag();
+                            break;
+
                         case CSpliced_exon_chunk::e_Product_ins:
+                            part_len = chunk.GetProduct_ins();
                             if (row != 0) {
-                                retval +=
-                                    (get_total_count ? chunk.GetProduct_ins() : 1);
+                                TSeqPos gap_len = s_IntersectionLength(ranges,
+                                                TSeqRange(part_start,
+                                                  part_start + part_len - 1));
+                                retval += (get_total_count ? gap_len :
+                                               (gap_len ? 1 : 0));
                             }
                             break;
 
                         case CSpliced_exon_chunk::e_Genomic_ins:
-                            if (row != 1) {
+                            if (row != 1 && s_IntersectionLength(ranges,
+                                            TSeqRange(part_start, part_start)))
+                            {
                                 retval +=
                                     (get_total_count ? chunk.GetGenomic_ins() : 1);
                             }
@@ -1470,6 +1535,7 @@ s_GetGapCount(const CSeq_align& align, CSeq_align::TDim row,
                         default:
                             break;
                         }
+                        part_start += part_len;
                     }
                 }
             }
@@ -1477,7 +1543,7 @@ s_GetGapCount(const CSeq_align& align, CSeq_align::TDim row,
         break;
 
     case CSeq_align::TSegs::e_Std:
-        if (row < 0 && !get_total_count) {
+        if (row < 0 && !get_total_count && ranges.begin()->IsWhole()) {
             ITERATE (CSeq_align::TSegs::TStd, iter, align.GetSegs().GetStd()) {
                 const CStd_seg& seg = **iter;
                 ITERATE (CStd_seg::TLoc, it, seg.GetLoc()) {
@@ -1502,12 +1568,40 @@ s_GetGapCount(const CSeq_align& align, CSeq_align::TDim row,
 
 TSeqPos CSeq_align::GetTotalGapCount(TDim row) const
 {
-    return s_GetGapCount(*this, row, true);
+    return s_GetGapCount(*this, row,
+                         CRangeCollection<TSeqPos>(TSeqRange::GetWhole()),
+                         true);
 }
 
 TSeqPos CSeq_align::GetNumGapOpenings(TDim row) const
 {
-    return s_GetGapCount(*this, row, false);
+    return s_GetGapCount(*this, row,
+                         CRangeCollection<TSeqPos>(TSeqRange::GetWhole()),
+                         false);
+}
+
+TSeqPos CSeq_align::GetTotalGapCountWithinRange(
+    const TSeqRange &range, TDim row) const
+{
+    return s_GetGapCount(*this, row, CRangeCollection<TSeqPos>(range), true);
+}
+
+TSeqPos CSeq_align::GetNumGapOpeningsWithinRange(
+    const TSeqRange &range, TDim row) const
+{
+    return s_GetGapCount(*this, row, CRangeCollection<TSeqPos>(range), false);
+}
+
+TSeqPos CSeq_align::GetTotalGapCountWithinRanges(
+    const CRangeCollection<TSeqPos> &ranges, TDim row) const
+{
+    return s_GetGapCount(*this, row, ranges, true);
+}
+
+TSeqPos CSeq_align::GetNumGapOpeningsWithinRanges(
+    const CRangeCollection<TSeqPos> &ranges, TDim row) const
+{
+    return s_GetGapCount(*this, row, ranges, false);
 }
 
 TSeqPos CSeq_align::GetNumFrameshifts(TDim row) const
@@ -1732,17 +1826,6 @@ CRangeCollection<TSeqPos> CSeq_align::GetAlignedBases(TDim row) const
     return ranges;
 }
 
-
-/// Get length of intersection between a range and a range collection
-static inline TSeqPos s_IntersectionLength(const CRangeCollection<TSeqPos> &ranges,
-                                           const TSeqRange &range)
-{
-    TSeqPos length = 0;
-    ITERATE (CRangeCollection<TSeqPos>, it, ranges) {
-        length += it->IntersectionWith(range).GetLength();
-    }
-    return length;
-}
 
 /// Get length of dense-seg alignment within range
 static inline TSeqPos s_DenseSegLength(const CDense_seg& ds,

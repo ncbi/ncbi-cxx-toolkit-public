@@ -206,11 +206,19 @@ public:
     /// all gaps by default
     /// @throws CSeqalignException if alignment type is not supported
     TSeqPos         GetTotalGapCount(TDim row = -1) const;
+    TSeqPos         GetTotalGapCountWithinRange(const TSeqRange &range,
+                                                TDim row = -1) const;
+    TSeqPos         GetTotalGapCountWithinRanges(const CRangeCollection<TSeqPos> &ranges,
+                                                 TDim row = -1) const;
 
     /// Retrieves the number of gap openings in a given row in an alignment
     /// (ignoring how many gaps are in the gapped region); all gaps by default
     /// @throws CSeqalignException if alignment type is not supported
     TSeqPos         GetNumGapOpenings(TDim row = -1) const;
+    TSeqPos         GetNumGapOpeningsWithinRange(const TSeqRange &range,
+                                                 TDim row = -1) const;
+    TSeqPos         GetNumGapOpeningsWithinRanges(const CRangeCollection<TSeqPos> &ranges,
+                                                  TDim row = -1) const;
 
     /// Retrieves the number of times a given row shifts frames; i.e. the number
     /// of gaps with a length that is not a multiple of 3.
