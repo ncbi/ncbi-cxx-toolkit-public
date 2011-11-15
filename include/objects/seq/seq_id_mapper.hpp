@@ -149,9 +149,9 @@ CSeq_id_Which_Tree& CSeq_id_Mapper::x_GetTree(CSeq_id::E_Choice type)
 
 
 inline
-CSeq_id_Which_Tree& CSeq_id_Mapper::x_GetTree(const CSeq_id& id)
+CSeq_id_Which_Tree& CSeq_id_Mapper::x_GetTree(const CSeq_id& seq_id)
 {
-    return x_GetTree(id.Which());
+    return x_GetTree(seq_id.Which());
 }
 
 /* @} */

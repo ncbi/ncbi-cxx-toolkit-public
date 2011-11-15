@@ -299,9 +299,9 @@ public:
                 const CItemInfo* ii = i->second;
                 string name;
                 if (ii) {
-                    const CMemberId& id = ii->GetId();
-                    if (!id.IsAttlist() && !id.HasNotag()) {
-                        name = id.GetName();
+                    const CMemberId& mid = ii->GetId();
+                    if (!mid.IsAttlist() && !mid.HasNotag()) {
+                        name = mid.GetName();
                     }
                 } else {
                     if (loc.empty()) {

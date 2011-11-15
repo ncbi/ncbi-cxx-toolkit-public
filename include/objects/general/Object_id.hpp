@@ -111,10 +111,10 @@ public:
 
     /// Returns shared version of argument Object-id.
     /// Can be stored for later read-only use.
-    CObject_id& GetSharedObject_id(const CObject_id& id) {
-        return id.IsStr()?
-            GetSharedObject_id(id.GetStr()):
-            GetSharedObject_id(id.GetId());
+    CObject_id& GetSharedObject_id(const CObject_id& oid) {
+        return oid.IsStr()?
+            GetSharedObject_id(oid.GetStr()):
+            GetSharedObject_id(oid.GetId());
     }
 
     /// Reads Object-id and returns reference to its shared version.

@@ -171,41 +171,41 @@ public:
     /// Get the current thread ID.
     static CThreadSystemID GetCurrent(void)
         {
-            CThreadSystemID id;
+            CThreadSystemID tid;
 #if defined(NCBI_NO_THREADS)
-            id.m_ID = TID(0);
+            tid.m_ID = TID(0);
 #elif defined(NCBI_POSIX_THREADS)
-            id.m_ID = pthread_self();
+            tid.m_ID = pthread_self();
 #elif defined(NCBI_WIN32_THREADS)
-            id.m_ID = GetCurrentThreadId();
+            tid.m_ID = GetCurrentThreadId();
 #endif
-            return id;
+            return tid;
         }
 
     /// Equality operator for thread ID.
-    bool operator==(const CThreadSystemID& id) const
+    bool operator==(const CThreadSystemID& tid) const
         {
-            return m_ID == id.m_ID;
+            return m_ID == tid.m_ID;
         }
 
     /// Non-equality operator for thread ID.
-    bool operator!=(const CThreadSystemID& id) const
+    bool operator!=(const CThreadSystemID& tid) const
         {
-            return m_ID != id.m_ID;
+            return m_ID != tid.m_ID;
         }
 
     /// volatile versions of above methods
-    void Set(const CThreadSystemID& id) volatile
+    void Set(const CThreadSystemID& tid) volatile
         {
-            m_ID = id.m_ID;
+            m_ID = tid.m_ID;
         }
-    bool Is(const CThreadSystemID& id) const volatile
+    bool Is(const CThreadSystemID& tid) const volatile
         {
-            return m_ID == id.m_ID;
+            return m_ID == tid.m_ID;
         }
-    bool IsNot(const CThreadSystemID& id) const volatile
+    bool IsNot(const CThreadSystemID& tid) const volatile
         {
-            return m_ID != id.m_ID;
+            return m_ID != tid.m_ID;
         }
 };
 

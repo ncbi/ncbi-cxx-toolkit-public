@@ -314,9 +314,9 @@ private:
 /// searching template functions)
 template<>
 inline
-CConstRef<CSeq_id> Get_ConstRef_Seq_id(const CSeq_id_Handle& id)
+CConstRef<CSeq_id> Get_ConstRef_Seq_id(const CSeq_id_Handle& idh)
 {
-    return id.GetSeqId();
+    return idh.GetSeqId();
 }
 
 
