@@ -270,14 +270,16 @@ inline
 const string& CRequestContext::GetSessionID(void) const
 {
     return x_IsSetProp(eProp_SessionID) ?
-        m_SessionID.GetOriginalString() : kEmptyStr;
+        m_SessionID.GetOriginalString()
+        : GetDiagContext().GetDefaultSessionID();
 }
 
 inline
 const string& CRequestContext::GetEncodedSessionID(void) const
 {
     return x_IsSetProp(eProp_SessionID) ?
-        m_SessionID.GetEncodedString() : kEmptyStr;
+        m_SessionID.GetEncodedString()
+        : GetDiagContext().GetEncodedSessionID();
 }
 
 inline
@@ -290,7 +292,8 @@ void CRequestContext::SetSessionID(const string& session)
 inline
 bool CRequestContext::IsSetSessionID(void) const
 {
-    return x_IsSetProp(eProp_SessionID);
+    return x_IsSetProp(eProp_SessionID)  ||
+        !GetDiagContext().GetDefaultSessionID().empty();
 }
 
 inline
