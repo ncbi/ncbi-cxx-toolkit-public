@@ -166,6 +166,11 @@ class CNSClient
         TNSBitVector    m_BlacklistedJobs;  // The jobs that should not be given
                                             // to the node neither for
                                             // executing nor for reading
+        TNSBitVector    m_RunHistory;       // The jobs which have ever been
+                                            // given to the client for
+                                            // execution.
+        TNSBitVector    m_ReadHistory;      // The jobs which have ever been
+                                            // given to the client for reading.
         unsigned short  m_WaitPort;         // Port, provided in WGET command or
                                             // 0 otherwise
 

@@ -300,6 +300,8 @@ CNSClient::CNSClient() :
     m_RunningJobs(bm::BM_GAP),
     m_ReadingJobs(bm::BM_GAP),
     m_BlacklistedJobs(bm::BM_GAP),
+    m_RunHistory(bm::BM_GAP),
+    m_ReadHistory(bm::BM_GAP),
     m_WaitPort(0)
 {}
 
@@ -314,6 +316,8 @@ CNSClient::CNSClient(const CNSClientId &  client_id) :
     m_RunningJobs(bm::BM_GAP),
     m_ReadingJobs(bm::BM_GAP),
     m_BlacklistedJobs(bm::BM_GAP),
+    m_RunHistory(bm::BM_GAP),
+    m_ReadHistory(bm::BM_GAP),
     m_WaitPort(0)
 {
     if (!client_id.IsComplete())
@@ -389,6 +393,7 @@ void CNSClient::RegisterRunningJob(unsigned int  job_id)
     m_Type |= eWorkerNode;
 
     m_RunningJobs.set(job_id, true);
+    m_RunHistory.set(job_id, true);
     return;
 }
 
@@ -399,6 +404,7 @@ void CNSClient::RegisterReadingJob(unsigned int  job_id)
     m_Type |= eReader;
 
     m_ReadingJobs.set(job_id, true);
+    m_ReadHistory.set(job_id, true);
     return;
 }
 
@@ -563,12 +569,38 @@ void CNSClient::Print(const string &         node_name,
             handler.WriteMessage("OK:    " + queue->MakeKey(*en));
     }
 
+    if (m_RunHistory.any()) {
+        if (verbose) {
+            handler.WriteMessage("OK:  RUNNING JOBS HISTORY:");
+
+            TNSBitVector::enumerator    en(m_RunHistory.first());
+            for ( ; en.valid(); ++en)
+                handler.WriteMessage("OK:    " + queue->MakeKey(*en));
+        } else {
+            handler.WriteMessage("OK:  NUMBER OF JOBS IN RUNNING HISTORY: " +
+                                 NStr::UIntToString(m_RunHistory.count()));
+        }
+    }
+
     if (m_ReadingJobs.any()) {
         handler.WriteMessage("OK:  READING JOBS:");
 
         TNSBitVector::enumerator    en(m_ReadingJobs.first());
         for ( ; en.valid(); ++en)
             handler.WriteMessage("OK:    " + queue->MakeKey(*en));
+    }
+
+    if (m_ReadHistory.any()) {
+        if (verbose) {
+            handler.WriteMessage("OK:  READING JOBS HISTORY:");
+
+            TNSBitVector::enumerator    en(m_ReadHistory.first());
+            for ( ; en.valid(); ++en)
+                handler.WriteMessage("OK:    " + queue->MakeKey(*en));
+        } else {
+            handler.WriteMessage("OK:  NUMBER OF JOBS IN READING HISTORY: " +
+                                 NStr::UIntToString(m_ReadHistory.count()));
+        }
     }
 
     return;
