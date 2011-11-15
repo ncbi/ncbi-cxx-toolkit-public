@@ -3362,7 +3362,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadDeltaSeq)
     entry->SetSeq().SetInst().SetLength(94);
     SetTech(entry, CMolInfo::eTech_wgs);
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDeltaSeq", "First delta seq component is a gap"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDeltaSeq", "There are 2 adjacent gaps in delta seq"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDeltaSeq", "There is 1 adjacent gap in delta seq"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDeltaSeq", "Last delta seq component is a gap"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);

@@ -3026,7 +3026,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
     }
     if ( num_adjacent_gaps >= 1 ) {
         string msg = (num_adjacent_gaps == 1) ?
-            "There is one adjacent gap in delta seq" :
+            "There is 1 adjacent gap in delta seq" :
             "There are " + NStr::SizetToString(num_adjacent_gaps) +
             " adjacent gaps in delta seq";
         PostErr(eDiag_Error, eErr_SEQ_INST_BadDeltaSeq, msg, seq);
