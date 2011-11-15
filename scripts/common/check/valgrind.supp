@@ -33,6 +33,33 @@
 ################################################################################
 
 {
+   BerkeleyDB 4.6.21.1 glitch -- both alloc and use happen inside the same call
+   Memcheck:Param
+   pwrite64(buf)
+   fun:__pwrite_nocancel
+   fun:__os_io
+   fun:__memp_pgwrite
+   fun:__memp_bhwrite
+   fun:__memp_sync_int
+   fun:__memp_fsync
+   fun:__db_sync
+   fun:__db_refresh
+   fun:__db_close
+   fun:__fop_subdb_setup
+   fun:__db_open
+   fun:__db_open_pp
+}
+
+{
+   Googles as an apparent LZO2' intentional overread for performance
+   Memcheck:Value8
+   fun:find_match
+   fun:lzo1x_999_compress_internal
+   fun:lzo1x_999_compress_level
+   fun:lzo1x_999_compress
+}
+
+{
     I think this is glibc's ultra optimised getenv doing 2 byte reads
     Memcheck:Addr2
     fun:getenv
