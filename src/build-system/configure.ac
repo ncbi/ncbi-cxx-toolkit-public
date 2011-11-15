@@ -974,6 +974,8 @@ esac
 #### Provide default environment setup for known platforms/compilers
 DEPFLAGS="-M"
 DEPFLAGS_POST="" # Needed for VisualAge
+OBJCXX_CXXFLAGS=
+OBJCXX_LIBS=
 case "$host_os:$compiler" in
  solaris2\.6:GCC )
    echo "GCC compiler is not supported for:  $host"
@@ -1143,6 +1145,9 @@ case "$host_os:$compiler" in
 
    CPPFLAGS="-F/System/Library/Frameworks/CoreServices.framework/Frameworks $CPPFLAGS"
    LIBS="-Wl,-framework,ApplicationServices $LIBS"
+
+   OBJCXX_CXXFLAGS='-x objective-c++'
+   OBJCXX_LIBS='-lobjc'
 
    case `uname -m` in
       *64 ) : ${with_64=yes} ;;
@@ -6375,6 +6380,7 @@ AC_SUBST(CFLAGS)
 AC_SUBST(FAST_CFLAGS)
 AC_SUBST(CXXFLAGS)
 AC_SUBST(FAST_CXXFLAGS)
+AC_SUBST(OBJCXX_CXXFLAGS)
 AC_SUBST(CPPFLAGS)
 AC_SUBST(DEPFLAGS)
 AC_SUBST(DEPFLAGS_POST)
@@ -6384,6 +6390,7 @@ AC_SUBST(APP_LDFLAGS)
 AC_SUBST(DLL_LDFLAGS)
 AC_SUBST(LIBS)
 AC_SUBST(C_LIBS)
+AC_SUBST(OBJCXX_LIBS)
 AC_SUBST(GCCPCH)
 AC_SUBST(RUNPATH_ORIGIN)
 AC_SUBST(NO_STRICT_ALIASING)

@@ -228,7 +228,11 @@ OSTYPE   = @OSTYPE@
 ### Pointer size
 NCBI_PLATFORM_BITS = @NCBI_PLATFORM_BITS@
 
-### Post-link command (empty by default, needed for FLTK apps on MacOS X)
+### Support for Objective C++ (needed to use some Mac OS X APIs)
+OBJCXX_CXXFLAGS = @OBJCXX_CXXFLAGS@
+OBJCXX_LIBS     = @OBJCXX_LIBS@
+
+### Post-link command (empty by default, needed for FLTK apps on Mac OS X)
 POST_LINK = @:
 
 ### Configuration summary
