@@ -43,6 +43,9 @@
 
 #include <math.h>
 
+#ifdef NCBI_COMPILER_MSVC
+#  define isfinite _finite
+#endif
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);

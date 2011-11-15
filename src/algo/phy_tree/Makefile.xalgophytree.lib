@@ -10,6 +10,6 @@ DLL_LIB = biotree
 
 # The -I flag is necessary because filenames in #line directives throw
 # off some compilers (GCC 2.95 at least). :-/
-CPPFLAGS = $(ORIG_CPPFLAGS) -I$(srcdir)
+CPPFLAGS = $(ORIG_CPPFLAGS) -I$(srcdir) -D__C99FEATURES__
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
