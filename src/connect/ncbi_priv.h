@@ -26,21 +26,29 @@
  *
  * ===========================================================================
  *
- * Author:  Denis Vakatov
+ * Authors:  Denis Vakatov, Anton Lavrentiev, Pavel Ivanov
  *
  * File Description:
  *    Private aux. code for the "ncbi_*.[ch]"
  *
  *********************************
+ * Tracing and logging
+ *    C error codes:   NCBI_C_DEFINE_ERRCODE_X, NCBI_C_ERRCODE_X
+ *    private global:  g_CORE_Log
+ *    macros:          CORE_TRACE[F], CORE_LOG[F][_[EX]X],
+ *                     CORE_LOG[F]_ERRNO[_[EX]X](), CORE_DATA[F][_[EX]X]
+ * Critical section (basic multi-thread synchronization)
+ *    private global:  g_CORE_MT_Lock
+ *    macros:          CORE_LOCK_WRITE, CORE_LOCK_READ, CORE_UNLOCK
+ * Registry:
+ *    private global:  g_CORE_Registry
+ *    macros:          CORE_REG_GET, CORE_REG_SET
  * Random generator seeding support
  *    private global:  g_NCBI_ConnectRandomSeed
  *    macro:           NCBI_CONNECT_SRAND_ADDEND
- * Critical section (basic multi-thread synchronization):
- *    private global:  g_CORE_MT_Lock
- *    macros:          CORE_LOCK_WRITE, CORE_LOCK_READ, CORE_UNLOCK
- * Tracing and logging:
- *    private global:  g_CORE_Log
- *    macros:          CORE_LOG[F](), CORE_DATA[F](), CORE_LOG[F]_ERRNO[_EX]()
+ * App name and SID support
+ *    private globals: g_CORE_GetAppName
+ *                     g_CORE_GetSid
  *
  */
 
@@ -54,128 +62,61 @@ extern "C" {
 
 
 /******************************************************************************
- *  Random generator seeding support
+ *  Error handling and logging
+ *
+ * Several macros brought here from ncbidiag.hpp.  The names slightly
+ * changed (added _C) because some sources can include this header and
+ * ncbidiag.hpp simultaneously.
  */
 
-extern NCBI_XCONNECT_EXPORT int g_NCBI_ConnectRandomSeed;
-extern NCBI_XCONNECT_EXPORT int g_NCBI_ConnectSrandAddend(void);
-#define NCBI_CONNECT_SRAND_ADDEND g_NCBI_ConnectSrandAddend()
+/** Define global error code name with given value (err_code) */
+#define NCBI_C_DEFINE_ERRCODE_X(name, err_code, max_err_subcode)        \
+    enum enum##name {                                                   \
+        eErrCodeX_##name = err_code                                     \
+        /* automatic subcode checking is not implemented in C code */   \
+    }
 
-
-/******************************************************************************
- *  Multi-Thread SAFETY
+/* Here are only error codes used in C sources. For error codes used in
+ * C++ sources (in C++ Toolkit) see include/connect/error_codes.hpp.
  */
+NCBI_C_DEFINE_ERRCODE_X(Connect_Conn,     301,  35);
+NCBI_C_DEFINE_ERRCODE_X(Connect_LBSM,     302,  23);
+NCBI_C_DEFINE_ERRCODE_X(Connect_Util,     303,   8);
+NCBI_C_DEFINE_ERRCODE_X(Connect_Dispd,    304,   2);
+NCBI_C_DEFINE_ERRCODE_X(Connect_FTP,      305,  12);
+NCBI_C_DEFINE_ERRCODE_X(Connect_HeapMgr,  306,  33);
+NCBI_C_DEFINE_ERRCODE_X(Connect_HTTP,     307,  18);
+NCBI_C_DEFINE_ERRCODE_X(Connect_LBSMD,    308,   8);
+NCBI_C_DEFINE_ERRCODE_X(Connect_Sendmail, 309,  31);
+NCBI_C_DEFINE_ERRCODE_X(Connect_Service,  310,   9);
+NCBI_C_DEFINE_ERRCODE_X(Connect_Socket,   311, 162);
+NCBI_C_DEFINE_ERRCODE_X(Connect_Crypt,    312,   6);
+NCBI_C_DEFINE_ERRCODE_X(Connect_LocalNet, 313,   4);
+NCBI_C_DEFINE_ERRCODE_X(Connect_Mghbn,    314,  16);
 
-#ifdef _DEBUG
-extern NCBI_XCONNECT_EXPORT int g_NCBI_CoreCheckLock  (void);
-extern NCBI_XCONNECT_EXPORT int g_NCBI_CoreCheckUnlock(void);
-#  define CORE_CHECK_LOCK   g_NCBI_CoreCheckLock()
-#  define CORE_CHECK_UNLOCK g_NCBI_CoreCheckUnlock()
-#else
-#  define CORE_CHECK_LOCK   1/*TRUE*/
-#  define CORE_CHECK_UNLOCK 1/*TRUE*/
-#endif
+/** Make one identifier from 2 parts */
+#define NCBI_C_CONCAT_IDENTIFIER(prefix, postfix) prefix##postfix
 
-
-/* Always use the following macros and functions to access "g_CORE_MT_Lock",
- * do not access/change it directly!
+/** Return value of error code by its name defined by NCBI_DEFINE_ERRCODE_X
+ *
+ * @sa NCBI_C_DEFINE_ERRCODE_X
  */
-extern NCBI_XCONNECT_EXPORT MT_LOCK g_CORE_MT_Lock;
+#define NCBI_C_ERRCODE_X_NAME(name)             \
+    NCBI_C_CONCAT_IDENTIFIER(eErrCodeX_, name)
 
-#define CORE_LOCK_WRITE  verify(CORE_CHECK_LOCK  &&                     \
-                                MT_LOCK_Do(g_CORE_MT_Lock, eMT_Lock    ))
-#define CORE_LOCK_READ   verify(CORE_CHECK_LOCK  &&                     \
-                                MT_LOCK_Do(g_CORE_MT_Lock, eMT_LockRead))
-#define CORE_UNLOCK      verify(CORE_CHECK_UNLOCK  &&                   \
-                                MT_LOCK_Do(g_CORE_MT_Lock, eMT_Unlock  ))
-
-
-/******************************************************************************
- *  App name support
+/** Return currently set default error code.  Default error code is set by
+ *  definition of NCBI_USE_ERRCODE_X with name of error code as its value.
+ *
+ * @sa NCBI_DEFINE_ERRCODE_X
  */
-
-#define NCBI_CORE_APPNAME_MAXLEN 80
-extern NCBI_XCONNECT_EXPORT char g_CORE_AppName[NCBI_CORE_APPNAME_MAXLEN + 1];
+#define NCBI_C_ERRCODE_X   NCBI_C_ERRCODE_X_NAME(NCBI_USE_ERRCODE_X)
 
 
-
-/******************************************************************************
- *  NCBI SID support
- */
-
-typedef const char* (*FNcbiGetSid)(void);
-extern FNcbiGetSid g_CORE_NcbiGetSid;
-
-
-
-/******************************************************************************
- *  ERROR HANDLING and LOGGING
- */
-
-/* Always use the following macros and functions to access "g_CORE_Log",
- * dont access/change it directly!
- */
 extern NCBI_XCONNECT_EXPORT LOG g_CORE_Log;
 
-extern NCBI_XCONNECT_EXPORT const char* g_CORE_Sprintf(const char* fmt, ...)
-#ifdef __GNUC__
-         __attribute__((format(printf, 1, 2)))
-#endif
-;
-
-#define DO_CORE_LOG_X(_code, _subcode, _level, _message, _dynamic,      \
-                      _error, _descr, _raw_data, _raw_size)             \
-    do {                                                                \
-        ELOG_Level xx_level = (_level);                                 \
-        if (g_CORE_Log  ||  xx_level == eLOG_Fatal) {                   \
-            SLOG_Handler _mess;                                         \
-            _mess.dynamic     = _dynamic;                               \
-            _mess.message     = NcbiMessagePlusError(&_mess.dynamic,    \
-                                                     _message,          \
-                                                     _error,            \
-                                                     _descr);           \
-            _mess.level       = xx_level;                               \
-            _mess.module      = THIS_MODULE;                            \
-            _mess.file        = THIS_FILE;                              \
-            _mess.line        = __LINE__;                               \
-            _mess.raw_data    = (_raw_data);                            \
-            _mess.raw_size    = (_raw_size);                            \
-            _mess.err_code    = (_code);                                \
-            _mess.err_subcode = (_subcode);                             \
-            CORE_LOCK_READ;                                             \
-            LOG_WriteInternal(g_CORE_Log, &_mess);                      \
-            CORE_UNLOCK;                                                \
-        }                                                               \
-    } while (0)
-
-
-#define DO_CORE_LOG_WRITE(code, subcode, level,                         \
-                          message, dynamic)                             \
-    DO_CORE_LOG_X(code, subcode, level, message, dynamic, 0, 0, 0, 0)
-
-#define DO_CORE_LOG_DATA(code, subcode, level, data, size,              \
-                         message, dynamic)                              \
-    DO_CORE_LOG_X(code, subcode, level, message, dynamic, 0, 0, data, size)
-
-#define DO_CORE_LOG_ERRNO(code, subcode, level, error, descr,           \
-                          message, dynamic)                             \
-    DO_CORE_LOG_X(code, subcode, level, message, dynamic, error, descr, 0, 0)
-
-#define CORE_LOG_X(subcode, level, message)                             \
-    DO_CORE_LOG_WRITE(NCBI_C_ERRCODE_X, subcode, level,                 \
-                      message, 0)
-
-#define CORE_LOGF_X(subcode, level, fmt_args)                           \
-    DO_CORE_LOG_WRITE(NCBI_C_ERRCODE_X, subcode, level,                 \
-                      g_CORE_Sprintf fmt_args, 1)
-
-#define CORE_LOG(level, message)                                        \
-    DO_CORE_LOG_WRITE(0, 0, level,                                      \
-                      message, 0)
-
-#define CORE_LOGF(level, fmt_args)                                      \
-    DO_CORE_LOG_WRITE(0, 0, level,                                      \
-                      g_CORE_Sprintf fmt_args, 1)
+/* Always use the following macros and functions to access "g_CORE_Log",
+ * do not access/change it directly!
+ */
 
 #ifdef _DEBUG
 #  define CORE_TRACE(message)    CORE_LOG(eLOG_Trace, message)
@@ -187,37 +128,21 @@ extern NCBI_XCONNECT_EXPORT const char* g_CORE_Sprintf(const char* fmt, ...)
 #  define CORE_DEBUG_ARG(arg)    /*arg*/
 #endif /*_DEBUG*/
 
-#define CORE_DATA_X(subcode, data, size, message)                       \
-    DO_CORE_LOG_DATA(NCBI_C_ERRCODE_X, subcode, eLOG_Trace, data, size, \
-                     message, 0)
+#define CORE_LOG_X(subcode, level, message)                             \
+    DO_CORE_LOG(NCBI_C_ERRCODE_X, subcode, level,                       \
+                message, 0)
 
-#define CORE_DATAF_X(subcode, data, size, fmt_args)                     \
-    DO_CORE_LOG_DATA(NCBI_C_ERRCODE_X, subcode, eLOG_Trace, data, size, \
-                     g_CORE_Sprintf fmt_args, 1)
+#define CORE_LOGF_X(subcode, level, fmt_args)                           \
+    DO_CORE_LOG(NCBI_C_ERRCODE_X, subcode, level,                       \
+                g_CORE_Sprintf fmt_args, 1)
 
-#define CORE_DATA_EXX(subcode, level, data, size, message)              \
-    DO_CORE_LOG_DATA(NCBI_C_ERRCODE_X, subcode, level, data, size,      \
-                     message, 0)
-    
-#define CORE_DATAF_EXX(subcode, level, data, size, fmt_args)            \
-    DO_CORE_LOG_DATA(NCBI_C_ERRCODE_X, subcode, level, data, size,      \
-                     g_CORE_Sprintf fmt_args, 1)
+#define CORE_LOG(level, message)                                        \
+    DO_CORE_LOG(0, 0, level,                                            \
+                message, 0)
 
-#define CORE_DATA(data, size, message)                                  \
-    DO_CORE_LOG_DATA(0, 0, eLOG_Trace, data, size,                      \
-                     message, 0)
-    
-#define CORE_DATAF(data, size, fmt_args)                                \
-    DO_CORE_LOG_DATA(0, 0, eLOG_Trace, data, size,                      \
-                     g_CORE_Sprintf fmt_args, 1)
-
-#define CORE_DATA_EX(level, data, size, message)                        \
-    DO_CORE_LOG_DATA(0, 0, level, data, size,                           \
-                     message, 0)
-
-#define CORE_DATAF_EX(level, data, size, fmt_args)                      \
-    DO_CORE_LOG_DATA(0, 0, level, data, size,                           \
-                     g_CORE_Sprintf fmt_args, 1)
+#define CORE_LOGF(level, fmt_args)                                      \
+    DO_CORE_LOG(0, 0, level,                                            \
+                g_CORE_Sprintf fmt_args, 1)
 
 #define CORE_LOG_ERRNO_X(subcode, level, error, message)                \
     DO_CORE_LOG_ERRNO(NCBI_C_ERRCODE_X, subcode, level, error, 0,       \
@@ -251,46 +176,128 @@ extern NCBI_XCONNECT_EXPORT const char* g_CORE_Sprintf(const char* fmt, ...)
     DO_CORE_LOG_ERRNO(0, 0, level, error, descr,                        \
                       g_CORE_Sprintf fmt_args, 1)
 
+#define CORE_DATA_X(subcode, data, size, message)                       \
+    DO_CORE_LOG_DATA(NCBI_C_ERRCODE_X, subcode, eLOG_Trace, data, size, \
+                     message, 0)
+
+#define CORE_DATAF_X(subcode, data, size, fmt_args)                     \
+    DO_CORE_LOG_DATA(NCBI_C_ERRCODE_X, subcode, eLOG_Trace, data, size, \
+                     g_CORE_Sprintf fmt_args, 1)
+
+#define CORE_DATA_EXX(subcode, level, data, size, message)              \
+    DO_CORE_LOG_DATA(NCBI_C_ERRCODE_X, subcode, level, data, size,      \
+                     message, 0)
+    
+#define CORE_DATAF_EXX(subcode, level, data, size, fmt_args)            \
+    DO_CORE_LOG_DATA(NCBI_C_ERRCODE_X, subcode, level, data, size,      \
+                     g_CORE_Sprintf fmt_args, 1)
+
+#define CORE_DATA(data, size, message)                                  \
+    DO_CORE_LOG_DATA(0, 0, eLOG_Trace, data, size,                      \
+                     message, 0)
+    
+#define CORE_DATAF(data, size, fmt_args)                                \
+    DO_CORE_LOG_DATA(0, 0, eLOG_Trace, data, size,                      \
+                     g_CORE_Sprintf fmt_args, 1)
+
+#define CORE_DATA_EX(level, data, size, message)                        \
+    DO_CORE_LOG_DATA(0, 0, level, data, size,                           \
+                     message, 0)
+
+#define CORE_DATAF_EX(level, data, size, fmt_args)                      \
+    DO_CORE_LOG_DATA(0, 0, level, data, size,                           \
+                     g_CORE_Sprintf fmt_args, 1)
+
+/* helpers follow */
+#define DO_CORE_LOG_X(_code, _subcode, _level, _message, _dynamic,      \
+                      _error, _descr, _raw_data, _raw_size)             \
+    do {                                                                \
+        ELOG_Level xx_level = (_level);                                 \
+        if (g_CORE_Log  ||  xx_level == eLOG_Fatal) {                   \
+            SLOG_Handler _mess;                                         \
+            _mess.dynamic     = _dynamic;                               \
+            _mess.message     = NcbiMessagePlusError(&_mess.dynamic,    \
+                                                     _message,          \
+                                                     _error,            \
+                                                     _descr);           \
+            _mess.level       = xx_level;                               \
+            _mess.module      = THIS_MODULE;                            \
+            _mess.file        = THIS_FILE;                              \
+            _mess.line        = __LINE__;                               \
+            _mess.raw_data    = (_raw_data);                            \
+            _mess.raw_size    = (_raw_size);                            \
+            _mess.err_code    = (_code);                                \
+            _mess.err_subcode = (_subcode);                             \
+            CORE_LOCK_READ;                                             \
+            LOG_WriteInternal(g_CORE_Log, &_mess);                      \
+            CORE_UNLOCK;                                                \
+        }                                                               \
+    } while (0)
+
+#define DO_CORE_LOG(code, subcode, level,                               \
+                          message, dynamic)                             \
+    DO_CORE_LOG_X(code, subcode, level, message, dynamic, 0, 0, 0, 0)
+
+#define DO_CORE_LOG_ERRNO(code, subcode, level, error, descr,           \
+                          message, dynamic)                             \
+    DO_CORE_LOG_X(code, subcode, level, message, dynamic, error, descr, 0, 0)
+
+#define DO_CORE_LOG_DATA(code, subcode, level, data, size,              \
+                         message, dynamic)                              \
+    DO_CORE_LOG_X(code, subcode, level, message, dynamic, 0, 0, data, size)
+
+extern NCBI_XCONNECT_EXPORT const char* g_CORE_Sprintf(const char* fmt, ...)
+#ifdef __GNUC__
+         __attribute__((format(printf, 1, 2)))
+#endif
+;
+
 
 /******************************************************************************
- *  Error codes used throughout C-code
+ *  Multi-Thread SAFETY
  */
 
-/* Here are only error codes used in C sources. For error codes used in
- * C++ sources (in C++ Toolkit) see include/connect/error_codes.hpp.
+extern NCBI_XCONNECT_EXPORT MT_LOCK g_CORE_MT_Lock;
+
+/* Always use the following macros and functions to access "g_CORE_MT_Lock",
+ * do not access/change it directly!
  */
-NCBI_C_DEFINE_ERRCODE_X(Connect_Conn,     301,  35);
-NCBI_C_DEFINE_ERRCODE_X(Connect_LBSM,     302,  23);
-NCBI_C_DEFINE_ERRCODE_X(Connect_Util,     303,   8);
-NCBI_C_DEFINE_ERRCODE_X(Connect_Dispd,    304,   2);
-NCBI_C_DEFINE_ERRCODE_X(Connect_FTP,      305,  12);
-NCBI_C_DEFINE_ERRCODE_X(Connect_HeapMgr,  306,  33);
-NCBI_C_DEFINE_ERRCODE_X(Connect_HTTP,     307,  18);
-NCBI_C_DEFINE_ERRCODE_X(Connect_LBSMD,    308,   8);
-NCBI_C_DEFINE_ERRCODE_X(Connect_Sendmail, 309,  31);
-NCBI_C_DEFINE_ERRCODE_X(Connect_Service,  310,   8);
-NCBI_C_DEFINE_ERRCODE_X(Connect_Socket,   311, 162);
-NCBI_C_DEFINE_ERRCODE_X(Connect_Crypt,    312,   6);
-NCBI_C_DEFINE_ERRCODE_X(Connect_LocalNet, 313,   4);
-NCBI_C_DEFINE_ERRCODE_X(Connect_Mghbn,    314,  16);
+
+#define CORE_LOCK_WRITE  verify(CORE_CHECK_LOCK  &&                     \
+                                MT_LOCK_Do(g_CORE_MT_Lock, eMT_Lock    ))
+#define CORE_LOCK_READ   verify(CORE_CHECK_LOCK  &&                     \
+                                MT_LOCK_Do(g_CORE_MT_Lock, eMT_LockRead))
+#define CORE_UNLOCK      verify(CORE_CHECK_UNLOCK  &&                   \
+                                MT_LOCK_Do(g_CORE_MT_Lock, eMT_Unlock  ))
+
+#ifdef _DEBUG
+extern NCBI_XCONNECT_EXPORT int g_NCBI_CoreCheckLock  (void);
+extern NCBI_XCONNECT_EXPORT int g_NCBI_CoreCheckUnlock(void);
+#  define CORE_CHECK_LOCK       g_NCBI_CoreCheckLock()
+#  define CORE_CHECK_UNLOCK     g_NCBI_CoreCheckUnlock()
+#else
+#  define CORE_CHECK_LOCK       (1/*TRUE*/)
+#  define CORE_CHECK_UNLOCK     (1/*TRUE*/)
+#endif /*_DEBUG*/
 
 
 /******************************************************************************
- *  REGISTRY
+ *  Registry
  */
 
-/* Always use the following macros and functions to access "g_CORE_Registry",
- * dont access/change it directly!
- */
 extern NCBI_XCONNECT_EXPORT REG g_CORE_Registry;
 
-#define CORE_REG_GET(section, name, value, value_size, def_value) \
-    g_CORE_RegistryGET(section, name, value, value_size, def_value)
+/* Always use the following macros and functions to access "g_CORE_Registry",
+ * do not access/change it directly!
+ */
 
-#define CORE_REG_SET(section, name, value, storage)  do { \
-    CORE_LOCK_READ; \
-    REG_Set(g_CORE_Registry, section, name, value, storage); \
-    CORE_UNLOCK; \
+#define CORE_REG_GET(section, name, value, value_size, def_value)   \
+    g_CORE_RegistryGET(section, name, value, value_size, def_value)
+    
+#define CORE_REG_SET(section, name, value, storage)  do {           \
+    CORE_LOCK_READ;                                                 \
+    REG_Set(g_CORE_Registry, section, name, value, storage);        \
+    CORE_UNLOCK;                                                    \
 } while (0)
 
 
@@ -300,7 +307,33 @@ extern NCBI_XCONNECT_EXPORT const char* g_CORE_RegistryGET
  const char* name,
  char*       value,
  size_t      value_size,
- const char* def_value);
+ const char* def_value
+ );
+
+
+/******************************************************************************
+ *  Random generator seeding support
+ */
+
+extern NCBI_XCONNECT_EXPORT int   g_NCBI_ConnectRandomSeed;
+extern NCBI_XCONNECT_EXPORT int   g_NCBI_ConnectSrandAddend(void);
+#define NCBI_CONNECT_SRAND_ADDEND g_NCBI_ConnectSrandAddend()
+
+
+/******************************************************************************
+ *  App name support (may return NULL; gets converted to "" at the user level)
+ */
+
+typedef const char* (*FNcbiGetAppName)(void);
+extern NCBI_XCONNECT_EXPORT FNcbiGetAppName g_CORE_GetAppName;
+
+
+/******************************************************************************
+ *  NCBI SID support (return "as is" to the user)
+ */
+
+typedef const char* (*FNcbiGetSid)(void);
+extern NCBI_XCONNECT_EXPORT FNcbiGetSid g_CORE_GetSid;
 
 
 #ifdef __cplusplus
