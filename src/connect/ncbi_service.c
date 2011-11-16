@@ -47,12 +47,44 @@
 static ESwitch s_Fast = eOff;
 
 
+static unsigned int s_FWPorts[1024 / sizeof(unsigned int)] = { 0 };
+
+#define SizeOf(arr)  (sizeof(arr) / sizeof((arr)[0]))
+
+
 ESwitch SERV_DoFastOpens(ESwitch on)
 {
     ESwitch retval = s_Fast;
     if (on != eDefault)
         s_Fast = on;
     return retval;
+}
+
+
+int/*bool*/ SERV_AddFirewallPort(unsigned short port)
+{
+    if (port--) {
+        unsigned int n = port / (sizeof(*s_FWPorts) << 3);
+        unsigned int m = port % (sizeof(*s_FWPorts) << 3);
+        if ((size_t) n < SizeOf(s_FWPorts)) {
+            s_FWPorts[n] |= 1 << m;
+            return 1/*true*/;
+        }
+    }
+    return 0/*false*/;
+}
+
+
+int/*bool*/ SERV_IsFirewallPort(unsigned short port)
+{
+    if (port--) {
+        unsigned int n = port / (sizeof(*s_FWPorts) << 3);
+        unsigned int m = port % (sizeof(*s_FWPorts) << 3);
+        if ((size_t) n < SizeOf(s_FWPorts)) {
+            return s_FWPorts[n] & (1 << m) ? 1/*true*/ : 0/*false*/;
+        }
+    }
+    return 0/*false*/;
 }
 
 
@@ -589,6 +621,43 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text, int code)
 }
 
 
+static void s_PrintFWPorts(char* buf, size_t bufsize,
+                           const SConnNetInfo* net_info)
+{
+    EFWMode mode = net_info ? (EFWMode) net_info->firewall : eFWMode_Legacy;
+    size_t  len, n;
+    unsigned int m;
+
+    assert(buf  &&  bufsize > 1);
+    switch (mode) {
+    case eFWMode_Legacy:
+        *buf = '\0';
+        return;
+    case eFWMode_Primary:
+        memcpy(buf, "0", 2);
+        return;
+    default:
+        break;
+    }
+    len = 0;
+    for (m = 0, n = 0; n < SizeOf(s_FWPorts); n++, m += sizeof(*s_FWPorts)<<3){
+        unsigned short p;
+        unsigned int mask = s_FWPorts[n];
+        for (p = m + 1;  mask;  mask >>= 1, ++p) {
+            if (mask & 1) {
+                char port[10];
+                int  k = sprintf(port, " %hu" + !len, p);
+                if (len + k < bufsize) {
+                    memcpy(buf + len, port, k);
+                    len += k;
+                }
+            }
+        }
+    }
+    buf[len] = '\0';
+}
+
+
 static void s_SetDefaultReferer(SERV_ITER iter, SConnNetInfo* net_info)
 {
     char* str, *referer = 0;
@@ -630,6 +699,7 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
     static const char kClientRevision[] = "Client-Revision: %hu.%hu\r\n";
     static const char kAcceptedServerTypes[] = "Accepted-Server-Types:";
     static const char kUsedServerInfo[] = "Used-Server-Info: ";
+    static const char kNcbiFWPorts[] = "NCBI-Firewall-Ports: ";
     static const char kServerCount[] = "Server-Count: ";
     static const char kPreference[] = "Preference: ";
     static const char kSkipInfo[] = "Skip-Info-%u: ";
@@ -650,7 +720,7 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
     if (iter) {
         if (net_info && !net_info->http_referer && iter->op && iter->op->name)
             s_SetDefaultReferer(iter, net_info);
-        /* Form accepted server types */
+        /* Accepted server types */
         buflen = sizeof(kAcceptedServerTypes) - 1;
         memcpy(buffer, kAcceptedServerTypes, buflen);
         for (t = 1;  t;  t <<= 1) {
@@ -679,6 +749,17 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
                 !BUF_Write(&buf,
                            iter->ismask ? "10\r\n" : "ALL\r\n",
                            iter->ismask ?       4  :        5)) {
+                BUF_Destroy(buf);
+                return 0;
+            }
+        }
+        if (iter->type & fSERV_Firewall) {
+            /* Firewall */
+            s_PrintFWPorts(buffer, sizeof(buffer), net_info);
+            if (*buffer
+                &&  (!BUF_Write(&buf, kNcbiFWPorts, sizeof(kNcbiFWPorts)-1)  ||
+                     !BUF_Write(&buf, buffer, strlen(buffer))                ||
+                     !BUF_Write(&buf, "\r\n", 2))) {
                 BUF_Destroy(buf);
                 return 0;
             }
