@@ -742,9 +742,11 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
         	  * on the effective seach space length. SB-902
         	  */
 
-        	 Int8 effective_db_length = db_length;
-             //if (eff_len_options->db_length == 0)
-        	 effective_db_length -= (Int8)db_num_seqs * length_adjustment;
+        	 Int8 effective_db_length = db_length - ((Int8)db_num_seqs * length_adjustment);
+
+        	 // Just in case effective_db_length < 0
+        	 if (effective_db_length <= 0)
+        		 effective_db_length = 1;
 
              effective_search_space = effective_db_length *
                              (query_length - length_adjustment);
