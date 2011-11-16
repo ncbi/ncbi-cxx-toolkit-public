@@ -104,13 +104,12 @@ extern NCBI_XCONNECT_EXPORT MT_LOCK CORE_GetLOCK(void);
 
 
 /******************************************************************************
- *  ERROR HANDLING and LOGGING
+ *  Error handling and logging
  */
-
 
 /** Auxiliary plain macros to write message (maybe, with raw data) to the log.
  * @sa
- *   LOG_Write
+ *  LOG_Write
  */
 #define  LOG_WRITE(lg, code, subcode, level, message)                   \
     LOG_Write(lg, code, subcode, level, THIS_MODULE, THIS_FILE, __LINE__, \
@@ -180,7 +179,7 @@ extern NCBI_XCONNECT_EXPORT void CORE_SetLOGFILE_Ex
 /** Same as CORE_SetLOGFILE_Ex() with last parameter passed as 0
  * (all messages get posted).
  * @sa
- *   CORE_SetLOGFILE_Ex, CORE_SetLOG
+ *  CORE_SetLOGFILE_Ex, CORE_SetLOG
  */
 extern NCBI_XCONNECT_EXPORT void CORE_SetLOGFILE
 (FILE*       fp,
@@ -207,7 +206,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ CORE_SetLOGFILE_NAME_Ex
 /** Same as CORE_SetLOGFILE_NAME_Ex with last parameter passed as 0
  * (all messages pass).
  * @sa
- *   CORE_SetLOGFILE_NAME_Ex, CORE_SetLOG
+ *  CORE_SetLOGFILE_NAME_Ex, CORE_SetLOG
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ CORE_SetLOGFILE_NAME
 (const char* filename
@@ -281,7 +280,7 @@ extern NCBI_XCONNECT_EXPORT void LOG_ToFILE_Ex
 /** Same as LOG_ToFILEx with "cut_off" parameter passed as 0
  * (all messages pass).
  * @sa
- *   LOG_ToFILE_Ex
+ *  LOG_ToFILE_Ex
  */
 extern NCBI_XCONNECT_EXPORT void LOG_ToFILE
 (LOG         lg,
@@ -316,42 +315,9 @@ extern NCBI_XCONNECT_EXPORT const char* NcbiMessagePlusError
  );
 
 
-/* Several macros brought here from ncbidiag.hpp.  The names slightly
- * changed (added _C) because some sources can include this header and
- * ncbidiag.hpp simultaneously.
- */
-
-/** Defines global error code name with given value (err_code)
- */
-#define NCBI_C_DEFINE_ERRCODE_X(name, err_code, max_err_subcode)        \
-    enum enum##name {                                                   \
-        eErrCodeX_##name = err_code                                     \
-        /* automatic subcode checking is not implemented in C code */   \
-    }
-
-/** Makes one identifier from 2 parts
- */
-#define NCBI_C_CONCAT_IDENTIFIER(prefix, postfix) prefix##postfix
-
-/** Returns value of error code by its name defined by NCBI_DEFINE_ERRCODE_X
- *
- * @sa NCBI_C_DEFINE_ERRCODE_X
- */
-#define NCBI_C_ERRCODE_X_NAME(name)   \
-    NCBI_C_CONCAT_IDENTIFIER(eErrCodeX_, name)
-
-/** Returns currently set default error code. Default error code is set by
- *  definition of NCBI_USE_ERRCODE_X with name of error code as its value.
- *
- * @sa NCBI_DEFINE_ERRCODE_X
- */
-#define NCBI_C_ERRCODE_X   NCBI_C_ERRCODE_X_NAME(NCBI_USE_ERRCODE_X)
-
-
-
 
 /******************************************************************************
- *  REGISTRY
+ *  Registry
  */
 
 /** Set the registry (no registry if "rg" is passed zero) -- to be used by
@@ -383,16 +349,16 @@ extern NCBI_XCONNECT_EXPORT REG  CORE_GetREG(void);
 
 /** Obtain current NCBI SID (if known, per thread).
  * @return
- *  Return 0 when the SID cannot be determined;
- *  otherwise, return a NUL-terminated string.
+ *  Return NULL when the SID cannot be determined;
+ *  otherwise, return a '\0'-terminated string.
  */
 extern NCBI_XCONNECT_EXPORT const char* CORE_GetNcbiSid(void);
 
 
 /** Obtain current application name (toolkit dependent).
  * @return
- *  Return 0 when the application name cannot be determined;
- *  otherwise, return a NUL-terminated string
+ *  Return an empty string ("") when the application name cannot be determined;
+ *  otherwise, return a '\0'-terminated string
  *
  * NOTE that setting an application name concurrently with this
  * call can cause undefined behavior or a stale pointer returned.
@@ -478,6 +444,7 @@ extern NCBI_XCONNECT_EXPORT unsigned int UTIL_Adler32_Update
  );
 
 
+
 /******************************************************************************
  *  Miscellanea
  */
@@ -552,7 +519,8 @@ extern NCBI_XCONNECT_EXPORT size_t UTIL_PrintableStringSize
  * @full
  *  Whether to print full octal representation of non-printable characters
  * @return next position in the buffer past the last stored character.
- * @sa UTIL_PrintableStringSize
+ * @sa
+ *  UTIL_PrintableStringSize
  */
 extern NCBI_XCONNECT_EXPORT char* UTIL_PrintableString
 (const char* data,

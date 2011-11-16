@@ -599,11 +599,9 @@ extern REG CORE_GetREG(void)
  *  CORE_GetNcbiSid
  */
 
-FNcbiGetSid g_CORE_NcbiGetSid = 0;
-
 extern const char* CORE_GetNcbiSid(void)
 {
-    return g_CORE_NcbiGetSid ? g_CORE_NcbiGetSid() : getenv("HTTP_NCBI_SID");
+    return g_CORE_GetSid ? g_CORE_GetSid() : getenv("HTTP_NCBI_SID");
 }
 
 
@@ -612,11 +610,10 @@ extern const char* CORE_GetNcbiSid(void)
  *  CORE_GetAppName
  */
 
-char g_CORE_AppName[NCBI_CORE_APPNAME_MAXLEN + 1];
-
 extern const char* CORE_GetAppName(void)
 {
-    return *g_CORE_AppName ? g_CORE_AppName : 0;
+    const char* an;
+    return !g_CORE_GetAppName  ||  !(an = g_CORE_GetAppName()) ? "" : an;
 }
 
 
