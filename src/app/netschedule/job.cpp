@@ -452,18 +452,24 @@ CJob::EJobFetchResult CJob::Fetch(CQueue* queue)
     if ((char) job_db.input_overflow ||
         (char) job_db.output_overflow) {
         job_info_db.id = m_Id;
-        if ((res = job_info_db.Fetch()) != eBDB_Ok) {
+        res = job_info_db.Fetch();
+
+        if (res != eBDB_Ok) {
             if (res != eBDB_NotFound) {
-                ERR_POST("Error reading queue jobinfo db, job_key " <<
+                ERR_POST("Error reading the job input/output DB, job_key " <<
                          queue->MakeKey(m_Id));
                 return eJF_DBErr;
             }
-        } else {
-            if ((char) job_db.input_overflow)
-                job_info_db.input.ToString(m_Input);
-            if ((char) job_db.output_overflow)
-                job_info_db.output.ToString(m_Output);
+            ERR_POST("DB inconsistency detected. Long input/output "
+                     "expected but no record found in the DB. job_key " <<
+                     queue->MakeKey(m_Id));
+            return eJF_DBErr;
         }
+
+        if ((char) job_db.input_overflow)
+            job_info_db.input.ToString(m_Input);
+        if ((char) job_db.output_overflow)
+            job_info_db.output.ToString(m_Output);
     }
 
     // EventsDB
