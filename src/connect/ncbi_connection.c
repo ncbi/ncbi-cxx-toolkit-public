@@ -1023,7 +1023,7 @@ extern EIO_Status CONN_Status(CONN conn, EIO_Event dir)
 {
     CONN_NOT_NULL(26, Status);
 
-    if (dir != eIO_Read  &&  dir != eIO_Write)
+    if (dir != eIO_Open  &&  dir != eIO_Read  &&  dir != eIO_Write)
         return eIO_InvalidArg;
 
     if (conn->state == eCONN_Unusable)
@@ -1035,14 +1035,21 @@ extern EIO_Status CONN_Status(CONN conn, EIO_Event dir)
     if (conn->state != eCONN_Open)
         return eIO_Closed;
 
-    if (dir == eIO_Read) {
+    switch (dir) {
+    case eIO_Open:
+        return eIO_Success;
+    case eIO_Read:
         if (conn->r_status != eIO_Success)
             return conn->r_status;
-    } else {
+        break;
+    case eIO_Write:
         if (conn->w_status != eIO_Success)
             return conn->w_status;
+        break;
+    default:
+        assert(0);
+        return eIO_NotSupported;
     }
-
     return conn->meta.status
         ? conn->meta.status(conn->meta.c_status, dir)
         : eIO_NotSupported;

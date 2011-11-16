@@ -280,9 +280,12 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_ReadLine
  );
 
 
-/* Obtain status of the last IO operation. This is NOT a completion
- * code of the last CONN-call, but rather a status from the lower level
- * connector's layer.
+/* Obtain status of the last I/O operation.  This is NOT a completion
+ * code of the last CONN call, but rather a status from the lower level
+ * connector's layer (if available).
+ * Special case: eIO_Open as "dir" checks whether the connection is in open
+ * state (this does not assure/check any I/O availability), and returns
+ * eIO_Success if it is, or an error code otherwise.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Status
 (CONN      conn,  /* [in] connection handle     */
