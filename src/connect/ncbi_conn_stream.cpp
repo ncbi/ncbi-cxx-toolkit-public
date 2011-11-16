@@ -99,7 +99,7 @@ string CConn_IOStream::GetType(void) const
 {
     CONN        conn = GET_CONN(m_CSb);
     const char* type = conn ? CONN_GetType(conn) : 0;
-    return type ? string(type) : kEmptyStr;
+    return type ? type : kEmptyStr;
 }
 
 
@@ -107,10 +107,9 @@ string CConn_IOStream::GetDescription(void) const
 {
     CONN   conn = GET_CONN(m_CSb);
     char*  text = conn ? CONN_Description(conn) : 0;
-    string retval(text ? text : "");
-    if (text) {
+    string retval(text ? text : kEmptyStr);
+    if (text)
         free(text);
-    }
     return retval;
 }
 
@@ -217,25 +216,31 @@ static CONNECTOR s_TunneledSocketConnector(const SConnNetInfo* net_info,
     SOCK       sock = 0;
 
     _ASSERT(net_info);
-    if (*net_info->http_proxy_host) {
-        SOCK s = 0;
+    if (*net_info->http_proxy_host  &&  net_info->http_proxy_port) {
         status = HTTP_CreateTunnel(net_info, fHTTP_DetachableTunnel
-                                   | fHTTP_NoAutoRetry, &s);
+                                   | fHTTP_NoAutoRetry, &sock);
         if (status == eIO_Success) {
             size_t handle_size = SOCK_OSHandleSize();
             char*  handle      = new char[handle_size];
-            _VERIFY(SOCK_GetOSHandle(s, handle, handle_size) == eIO_Success);
-            status = SOCK_CreateOnTopEx(handle, handle_size, &sock,
-                                        init_data, init_size, flags);
-            delete[] handle;
-            if (status != eIO_Success) {
-                SOCK_Abort(s);
-                _ASSERT(!sock);
-            } else
-                _ASSERT(sock);
-            SOCK_Close(s);
+            status = SOCK_GetOSHandle(sock, handle, handle_size);
+            if (status == eIO_Success) {
+                SOCK_Close(sock);
+                status = SOCK_CreateOnTopEx(handle, handle_size, &sock,
+                                            init_data, init_size, flags);
+                if (status != eIO_Success) {
+                    SOCK_CloseOSHandle(handle, handle_size);
+                    _ASSERT(!sock);
+                } else
+                    _ASSERT(sock);
+            } else {
+                SOCK_Abort(sock);
+                SOCK_Close(sock);
+            }
+            delete handle;
         } else
-            _ASSERT(!s);
+            _ASSERT(!sock);
+        if (!sock  &&  !net_info->http_proxy_flex)
+            return 0;
     }
     if (!sock) {
         const char* host = (net_info->firewall  &&  *net_info->proxy_host
