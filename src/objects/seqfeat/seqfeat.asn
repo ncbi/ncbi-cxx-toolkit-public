@@ -511,6 +511,7 @@ VariantProperties ::= SEQUENCE {
         uniparental     (128),
         not-tested      (256),
         tested-inconclusive (512),
+        not-reported   (1024),
 
         -- stopper - 2^31
         other           (1073741824)
