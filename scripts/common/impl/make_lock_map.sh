@@ -27,8 +27,8 @@ common=_`basename $PWD`_common
 if [ -d "$cache_dir" ]; then
     cd $cache_dir
     for x in *; do
-        if test \! -f ../$x; then
-            rm -f $x
+        if test \! -f "../$x"; then
+            rm -f "$x"
             act=true
         fi
     done
@@ -83,7 +83,7 @@ fi
 print_rdep_count()
 {
     test -f Makefile.$1.$2  ||  return
-    target=`awk "/\.$4\.real :/ { x=\\$1 } /cd $d;.* $3_PROJ=$1 / { print x; exit }" $mff`
+    target=`awk "/\.$4\.real :/ { x=\\$1 } /cd $d[ ;&].* $3_PROJ=$1 / { print x; exit }" $mff`
     if [ -n "$target" ]; then
         echo `grep -c " $target" $mff` $target Makefile.$1.$2
     else
