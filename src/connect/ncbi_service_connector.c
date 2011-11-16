@@ -454,16 +454,16 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
 }
 
 
-static char* s_HostPort(const char* host, unsigned short aport)
+static char* s_HostPort(const char* host, unsigned short nport)
 {
     size_t hostlen = strlen(host), portlen;
     char*  hostport, port[16];
  
-    if (!aport) {
+    if (!nport) {
         portlen = 1;
         port[0] = '\0';
     } else
-        portlen = (size_t) sprintf(port, ":%hu", aport) + 1;
+        portlen = (size_t) sprintf(port, ":%hu", nport) + 1;
     hostport = (char*) malloc(hostlen + portlen);
     if (hostport) {
         memcpy(hostport,           host, hostlen);
@@ -489,28 +489,32 @@ static CONNECTOR s_CreateSocketConnector(const SConnNetInfo* net_info,
     SOCK        sock  = 0;
     TSOCK_Flags flags = (net_info->debug_printout == eDebugPrintout_Data
                          ? fSOCK_LogOn : fSOCK_LogDefault);
-    if (*net_info->http_proxy_host) {
-        SOCK s = 0;
+    if (*net_info->http_proxy_host  &&  net_info->http_proxy_port) {
         status = HTTP_CreateTunnel(net_info, fHTTP_DetachableTunnel
-                                   | fHTTP_NoAutoRetry, &s);
+                                   | fHTTP_NoAutoRetry, &sock);
         if (status == eIO_Success) {
             size_t handle_size = SOCK_OSHandleSize();
-            char*  handle      = (char*) malloc(handle_size);
-            status = SOCK_GetOSHandle(s, handle, handle_size);
+            void*  handle      = malloc(handle_size);
+            status = SOCK_GetOSHandle(sock, handle, handle_size);
             if (status == eIO_Success) {
+                SOCK_Close(sock);
                 status  = SOCK_CreateOnTopEx(handle, handle_size, &sock,
                                              init_data, init_size, flags);
+                if (status != eIO_Success) {
+                    SOCK_CloseOSHandle(handle, handle_size);
+                    assert(!sock);
+                } else
+                    assert(sock);
+            } else {
+                SOCK_Abort(sock);
+                SOCK_Close(sock);
             }
             if (handle)
                 free(handle);
-            if (status != eIO_Success) {
-                SOCK_Abort(s);
-                assert(!sock);
-            } else
-                assert(sock);
-            SOCK_Close(s);
         } else
-            assert(!s);
+            assert(!sock);
+        if (!sock  &&  !net_info->http_proxy_flex)
+            return 0;
     }
     if (!sock) {
         const char* host = (net_info->firewall  &&  *net_info->proxy_host
@@ -533,17 +537,25 @@ static CONNECTOR s_CreateSocketConnector(const SConnNetInfo* net_info,
 static CONNECTOR s_Open(SServiceConnector* uuu,
                         const STimeout*    timeout,
                         const SSERV_Info*  info,
-                        SConnNetInfo*      net_info,
-                        int/*bool*/        second_try)
+                        SConnNetInfo*      net_info)
 {
     int/*bool*/ but_last = 0/*false*/;
     const char* user_header; /* either "" or non-empty dynamic string */
     char*       iter_header;
     EReqMethod  req_method;
 
+    ConnNetInfo_ExtendUserHeader
+        (net_info, "User-Agent: NCBIServiceConnector/"
+         DISP_PROTOCOL_VERSION
+#ifdef NCBI_CXX_TOOLKIT
+         " (CXX Toolkit)"
+#else
+         " (C Toolkit)"
+#endif
+         );
+
     if (info  &&  info->type != fSERV_Firewall) {
         /* Not a firewall/relay connection here */
-        assert(!second_try);
         /* We know the connection point, let's try to use it! */
         if (info->type != fSERV_Standalone  ||  !net_info->stateless) {
             SOCK_ntoa(info->host, net_info->host, sizeof(net_info->host));
@@ -655,18 +667,6 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
     if (user_header && !ConnNetInfo_OverrideUserHeader(net_info, user_header))
         return 0;
 
-    if (!second_try) {
-        ConnNetInfo_ExtendUserHeader
-            (net_info, "User-Agent: NCBIServiceConnector/"
-             DISP_PROTOCOL_VERSION
-#ifdef NCBI_CXX_TOOLKIT
-             " (CXX Toolkit)"
-#else
-             " (C Toolkit)"
-#endif
-             );
-    }
-
     if (!net_info->stateless  &&  (!info                         ||
                                    info->type == fSERV_Firewall  ||
                                    info->type == fSERV_Ncbid)) {
@@ -688,8 +688,8 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             CONN_SetTimeout(conn, eIO_Open,      timeout);
             CONN_SetTimeout(conn, eIO_ReadWrite, timeout);
             CONN_SetTimeout(conn, eIO_Close,     timeout);
-            CONN_Flush(conn);
             /* This also triggers parse header callback */
+            CONN_Flush(conn);
             CONN_Close(conn);
         } else {
             const char* error = c ? IO_StatusStr(status) : 0;
@@ -703,13 +703,20 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             return 0/*failed, no connection info returned*/;
         if (uuu->host == (unsigned int)(-1)) {
             /* Firewall mode only in stateful mode, fallback requested */
-            assert((!info  ||  info->type == fSERV_Firewall)  &&  !second_try);
+            assert(!info  ||  info->type == fSERV_Firewall);
             /* Try to use stateless mode instead */
             net_info->stateless = 1/*true*/;
-            return s_Open(uuu, timeout, info, net_info, 1/*second try*/);
+            return s_Open(uuu, timeout, info, net_info);
         }
         SOCK_ntoa(uuu->host, net_info->host, sizeof(net_info->host));
+        if (net_info->firewall == eFWMode_Fallback
+            &&  !SERV_IsFirewallPort(uuu->port)) {
+            CORE_LOGF_X(9, eLOG_Trace,
+                        ("[%s]  Fallback firewall port :%hu is not in the set",
+                         uuu->service, uuu->port));
+        }
         net_info->port = uuu->port;
+        ConnNetInfo_DeleteUserHeader(net_info, uuu->user_header);
         return s_CreateSocketConnector(net_info, &uuu->ticket,
                                        uuu->ticket ? sizeof(uuu->ticket) : 0);
     }
@@ -803,7 +810,7 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
         }
 
         net_info->scheme = eURL_Unspec;
-        conn = s_Open(uuu, timeout, info, net_info, 0/*!second_try*/);
+        conn = s_Open(uuu, timeout, info, net_info);
         if (conn)
             uuu->descr = ConnNetInfo_URL(net_info);
         stateless = net_info->stateless;
