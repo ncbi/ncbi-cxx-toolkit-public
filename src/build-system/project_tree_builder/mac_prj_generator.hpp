@@ -65,6 +65,7 @@ private:
     set<string> m_RefLibs;
 
     void Save(const string& solution_name, ncbi::objects::CPlist& xproj);
+    void CreateConfigureScript(const string& name, bool with_gui) const;
 
     string CreateProjectFileGroups(
         const CProjItem& prj, const CProjectFileCollector& prj_files,

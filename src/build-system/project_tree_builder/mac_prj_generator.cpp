@@ -59,6 +59,8 @@ BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
 
+const char* s_ptb_makecandidate = "__PTB__MAKE__CANDIDATE__";
+
 bool s_ProjId_less(const CProjItem* x, const CProjItem* y)
 {
     return NStr::CompareNocase(
@@ -372,11 +374,16 @@ void CMacProjectGenerator::Generate(const string& solution)
 
 void CMacProjectGenerator::Save(const string& solution_name, CPlist& xproj)
 {
+    bool make_candidate = !GetApp().GetEnvironment().Get(s_ptb_makecandidate).empty();
     string solution_dir(m_SolutionDir);
     solution_dir = CDirEntry::ConcatPath(solution_dir, solution_name);
     solution_dir += ".xcodeproj";
     CDir(solution_dir).CreatePath();
     string solution_file( CDirEntry::ConcatPath(solution_dir, "project.pbxproj"));
+    GetApp().RegisterGeneratedFile( solution_file );
+    if (make_candidate) {
+        solution_file += ".candidate";
+    }
     {
         auto_ptr<CObjectOStream> out(CObjectOStream::Open(solution_file, eSerial_Xml));
         CObjectOStreamXml *ox = dynamic_cast<CObjectOStreamXml*>(out.get());
@@ -387,7 +394,57 @@ void CMacProjectGenerator::Save(const string& solution_name, CPlist& xproj)
         ox->SetEncoding(eEncoding_UTF8);
         *out << xproj;
     }
-    GetApp().RegisterGeneratedFile( solution_file );
+    CreateConfigureScript(solution_name, false);
+    CreateConfigureScript(solution_name, true);
+}
+
+void CMacProjectGenerator::CreateConfigureScript(const string& name, bool with_gui) const
+{
+    string script = CDirEntry::ConcatPath(m_SolutionDir,"UtilityProjects/configure_");
+    if (with_gui) {
+        script += "gui_";
+    }
+    script += name + ".sh";
+
+    CNcbiOfstream  ofs(script.c_str(), IOS_BASE::out | IOS_BASE::trunc);
+    if ( !ofs )
+        NCBI_THROW(CProjBulderAppException, eFileCreation, script);
+
+    GetApp().RegisterGeneratedFile( script );
+    ofs << "#!/bin/sh\n";
+    ofs << "export PTB_FLAGS=\"";
+    if ( GetApp().GetBuildType().GetType() == CBuildType::eDll )
+        ofs << " -dll";
+    if (!GetApp().m_BuildPtb) {
+        ofs << " -nobuildptb";
+    }
+    if (GetApp().m_AddMissingLibs) {
+        ofs << " -ext";
+    }
+    if (!GetApp().m_ScanWholeTree) {
+        ofs << " -nws";
+    }
+    if (!GetApp().m_BuildRoot.empty()) {
+        ofs << " -extroot \"" << GetApp().m_BuildRoot << "\"";
+    }
+    if (with_gui /*|| GetApp().m_ConfirmCfg*/) {
+        ofs << " -cfg";
+    }
+    if (GetApp().m_ProjTagCmnd) {
+        if (GetApp().m_ProjTags != "*") {
+            ofs << " -projtag \\\"" << GetApp().m_ProjTags << "\\\"";
+        } else {
+            ofs << " -projtag #";
+        }
+    }
+    ofs << "\"\n";
+    ofs << "export PTB_PROJECT_REQ=" << GetApp().m_Subtree << "\n";
+    ofs << "$BUILD_TREE_ROOT/ptb.sh\n";
+    ofs.close();
+    CDirEntry(script).SetMode(
+        CDirEntry::fExecute | CDirEntry::fRead | CDirEntry::fWrite,
+        CDirEntry::fExecute | CDirEntry::fRead | CDirEntry::fWrite,
+        CDirEntry::fExecute | CDirEntry::fRead | CDirEntry::fWrite);
 }
 
 string CMacProjectGenerator::CreateProjectFileGroups(
@@ -1244,7 +1301,7 @@ string CMacProjectGenerator::AddAggregateTarget(
     CRef<CDict> dict_target( AddDict( dict_objects, proj_target));
     AddString( *dict_target, "buildConfigurationList", configs_prj);
     AddArray(  *dict_target, "buildPhases");
-    AddString( *dict_target, "comments", NStr::UIntToString(dependencies->Get().size()) + " targets");
+    AddString( *dict_target, "comments", NStr::NumericToString(dependencies->Get().size()) + " targets");
     AddArray(  *dict_target, "dependencies", dependencies);
     AddString( *dict_target, "isa", "PBXAggregateTarget");
     AddString( *dict_target, "name", target_name);

@@ -1542,9 +1542,11 @@ void CProjBulderApp::CreateCheckList(const list<SConfigInfo>* configs,
 {
     PTB_INFO("Generating check.sh.list files...");
     string output_dir(m_Solution);
-    string::size_type n = output_dir.find_last_of('.');
-    if (n != string::npos) {
-        output_dir = output_dir.substr(0,n);
+    if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
+        string::size_type n = output_dir.find_last_of('.');
+        if (n != string::npos) {
+            output_dir = output_dir.substr(0,n);
+        }
     }
     output_dir += ".check";
     ITERATE(list<SConfigInfo>, c , *configs) {
