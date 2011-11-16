@@ -90,10 +90,6 @@ typedef enum {
     eIO_ReadPeek,       /**< do eIO_ReadPlain but leave data in input queue  */
     eIO_ReadPersist,    /**< read exactly as much as requested, w/waits      */
     eIO_ReadSupplement  /**< do eIO_ReadPlain but return extended status     */
-    /* deprecated -- DO NOT USE! */
-    /*eIO_Plain   = eIO_ReadPlain,*/
-    /*eIO_Peek    = eIO_ReadPeek,*/
-    /*eIO_Persist = eIO_ReadPersist*/
 } EIO_ReadMethod;
 
 
@@ -273,7 +269,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ MT_LOCK_DoInternal
 
 
 /******************************************************************************
- *  ERROR HANDLING and LOGGING
+ *  Error handling and logging
  */
 
 
@@ -496,7 +492,7 @@ extern NCBI_XCONNECT_EXPORT void LOG_Write
 
 
 /******************************************************************************
- *  REGISTRY
+ *  Registry
  */
 
 
