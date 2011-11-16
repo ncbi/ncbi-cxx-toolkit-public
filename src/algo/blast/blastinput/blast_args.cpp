@@ -1918,7 +1918,15 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
 
 void
 CMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
+
+
 {
+	if(m_IsRpsBlast)
+	{
+		x_SetArgumentDescriptionsRpsBlast(arg_desc);
+		return;
+	}
+
     const int kMinValue = static_cast<int>(CThreadable::kMinNumThreads);
 
     // number of threads
@@ -1941,8 +1949,37 @@ CMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 }
 
 void
+CMTArgs::x_SetArgumentDescriptionsRpsBlast(CArgDescriptions& arg_desc)
+{
+    // number of threads
+    arg_desc.SetCurrentGroup("Miscellaneous options");
+    arg_desc.AddDefaultKey(kArgNumThreads, "int_value",
+                           "Number of threads to use in RPS BLAST search:\n "
+                           "0 (auto = num of databases)\n "
+                           "1 (disable)\n max number of threads = num of databases",
+                           CArgDescriptions::eInteger,
+                           NStr::IntToString(kDefaultRpsNumThreads));
+    arg_desc.SetConstraint(kArgNumThreads,
+                           new CArgAllowValuesGreaterThanOrEqual(0));
+    arg_desc.SetDependency(kArgNumThreads,
+                           CArgDescriptions::eExcludes,
+                           kArgRemote);
+    /*
+    arg_desc.SetDependency(kArgNumThreads,
+                           CArgDescriptions::eExcludes,
+                           kArgUseIndex);
+    */
+    arg_desc.SetCurrentGroup("");
+}
+
+void
 CMTArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& /* opts */)
 {
+	if(m_IsRpsBlast)
+	{
+		x_ExtractAlgorithmOptionsRpsBlast(args);
+		return;
+	}
     if (args.Exist(kArgNumThreads) &&
         args[kArgNumThreads].HasValue()) {  // could be cancelled by the exclusion in CRemoteArgs
         m_NumThreads = args[kArgNumThreads].AsInteger();
@@ -1954,6 +1991,16 @@ CMTArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& /* opts */)
             LOG_POST(Warning << "'" << kArgNumThreads << "' is currently "
                      << "ignored when '" << kArgSubject << "' is specified.");
         }
+    }
+}
+
+void
+CMTArgs::x_ExtractAlgorithmOptionsRpsBlast(const CArgs& args)
+{
+    if (args.Exist(kArgNumThreads) &&
+        args[kArgNumThreads].HasValue())
+    {
+        m_NumThreads = args[kArgNumThreads].AsInteger();
     }
 }
 

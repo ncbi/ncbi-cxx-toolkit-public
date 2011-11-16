@@ -89,7 +89,7 @@ CRPSBlastAppArgs::CRPSBlastAppArgs()
     arg.Reset(m_FormattingArgs);
     m_Args.push_back(arg);
 
-    m_MTArgs.Reset(new CMTArgs);
+    m_MTArgs.Reset(new CMTArgs(true));
     arg.Reset(m_MTArgs);
     m_Args.push_back(arg);
 

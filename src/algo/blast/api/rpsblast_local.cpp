@@ -198,8 +198,8 @@ static void s_ModifyVolumePaths(vector<string> & rps_database)
 	for(unsigned int i=0; i < rps_database.size(); i++)
 	{
 		size_t found = rps_database[i].find(".pal");
-		_ASSERT(string::npos != found);
-		rps_database[i]= rps_database[i].substr(0, found);
+		if(string::npos != found)
+			rps_database[i]= rps_database[i].substr(0, found);
 	}
 }
 
@@ -249,16 +249,6 @@ static void s_MapDbToThread(vector<string> & db, unsigned int num_of_threads)
 		db[min_index] = db[min_index] + delimiter + p[i].first;
 	}
 
-}
-
-static bool s_IsSearchThreadable(const string & db)
-{
-	vector<string>	  rps_database;
-	CSeqDB::FindVolumePaths(db, CSeqDB::eProtein, rps_database, NULL, false);
-	if(rps_database.size() > 1)
-		return true;
-
-	return false;
 }
 
 CRef<CSearchResultSet> s_RunLocalRpsSearch(const string & db,
@@ -349,22 +339,64 @@ CLocalRPSBlast::CLocalRPSBlast(CRef<CBlastQueryVector> query_vector,
               	  	  	  	   m_num_of_threads(num_of_threads),
               	  	  	  	   m_db_name(db),
               	  	  	  	   m_opt_handle(options),
-              	  	  	  	   m_query_vector(query_vector)
+              	  	  	  	   m_query_vector(query_vector),
+              	  	  	  	   m_num_of_dbs(0)
 {
-	if(!s_IsSearchThreadable(m_db_name))
+	CSeqDB::FindVolumePaths(db, CSeqDB::eProtein, m_rps_databases, NULL, false);
+	m_num_of_dbs = m_rps_databases.size();
+	if( 1 == m_num_of_dbs)
 	{
-		m_num_of_threads = 0;
+		m_num_of_threads = kDisableThreadedSearch;
 	}
 }
 
+void CLocalRPSBlast::x_AdjustDbSize(void)
+{
+	if(m_opt_handle->GetOptions().GetEffectiveSearchSpace()!= 0)
+		return;
+
+	if(m_opt_handle->GetOptions().GetDbLength()!= 0)
+		return;
+
+	CSeqDB db(m_db_name, CSeqDB::eProtein);
+
+	Uint8 db_size = db.GetTotalLengthStats();
+	int num_seq = db.GetNumSeqsStats();
+
+	m_opt_handle->SetOptions().SetDbLength(db_size);
+	m_opt_handle->SetOptions().SetDbSeqNum(num_seq);
+
+	return;
+}
 
 CRef<CSearchResultSet> CLocalRPSBlast::Run(void)
 {
-	if(0 == m_num_of_threads)
+	if(1 != m_num_of_dbs)
 	{
-		return s_RunLocalRpsSearch(m_db_name,
-								   *m_query_vector,
-								   m_opt_handle);
+		x_AdjustDbSize();
+	}
+
+	if(kDisableThreadedSearch == m_num_of_threads)
+	{
+		if(1 == m_num_of_dbs)
+		{
+			return s_RunLocalRpsSearch(m_db_name, *m_query_vector, m_opt_handle);
+		}
+		else
+		{
+		   	s_ModifyVolumePaths(m_rps_databases);
+
+			vector<CRef<CSearchResultSet> >   results;
+			for(unsigned int i=0; i < m_num_of_dbs; i++)
+			{
+				results.push_back(s_RunLocalRpsSearch(m_rps_databases[i],
+													  *m_query_vector,
+													   m_opt_handle));
+
+			}
+			return s_CombineSearchSets(results, m_num_of_dbs);
+		}
+
 	}
 	else
 	{
@@ -375,20 +407,18 @@ CRef<CSearchResultSet> CLocalRPSBlast::Run(void)
 CRef<CSearchResultSet> CLocalRPSBlast::RunThreadedSearch(void)
 {
 
-   	vector<string>	  rps_database;
-   	CSeqDB::FindVolumePaths(m_db_name, CSeqDB::eProtein, rps_database, NULL, false);
-   	s_ModifyVolumePaths(rps_database);
+   	s_ModifyVolumePaths(m_rps_databases);
 
-   	if((CThreadable::kMinNumThreads == m_num_of_threads) ||
-   	  (m_num_of_threads > rps_database.size()))
+   	if((kAutoThreadedSearch == m_num_of_threads) ||
+   	  (m_num_of_threads > m_rps_databases.size()))
    	{
    		//Default num of thread : a thread for each db
-   		m_num_of_threads = rps_database.size();
+   		m_num_of_threads = m_rps_databases.size();
    	}
-   	else if(m_num_of_threads < rps_database.size())
+   	else if(m_num_of_threads < m_rps_databases.size())
    	{
    		// Combine databases, modified the size of rps_database
-   		s_MapDbToThread(rps_database, m_num_of_threads);
+   		s_MapDbToThread(m_rps_databases, m_num_of_threads);
    	}
 
    	vector<CRef<CSearchResultSet> * > 	thread_results(m_num_of_threads, NULL);
@@ -398,7 +428,7 @@ CRef<CSearchResultSet> CLocalRPSBlast::RunThreadedSearch(void)
    	for(unsigned int t=0; t < m_num_of_threads; t++)
    	{
    		// CThread destructor is protected, all threads destory themselves when terminated
-   		thread[t] = (new CRPSThread(m_query_vector, rps_database[t], m_opt_handle->SetOptions().Clone()));
+   		thread[t] = (new CRPSThread(m_query_vector, m_rps_databases[t], m_opt_handle->SetOptions().Clone()));
    		thread[t]->Run();
    	}
 

@@ -876,7 +876,9 @@ class NCBI_BLASTINPUT_EXPORT CMTArgs : public IBlastCmdLineArgs
 {
 public:
     /// Default Constructor
-    CMTArgs() : m_NumThreads(CThreadable::kMinNumThreads) {}
+    CMTArgs(bool isRpsBlast = false) :
+    	m_NumThreads(isRpsBlast? 0:CThreadable::kMinNumThreads),
+    	m_IsRpsBlast(isRpsBlast){}
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -887,6 +889,11 @@ public:
     size_t GetNumThreads() const { return m_NumThreads; }
 private:
     size_t m_NumThreads;        ///< Number of threads to spawn
+    bool m_IsRpsBlast;
+    static const int kDefaultRpsNumThreads = 1;
+
+    void x_SetArgumentDescriptionsRpsBlast(CArgDescriptions& arg_desc);
+    void x_ExtractAlgorithmOptionsRpsBlast(const CArgs& cmd_line_args);
 };
 
 /// Argument class to collect remote vs. local execution
