@@ -178,7 +178,6 @@ typedef unsigned int THTTP_Flags;  /* bitwise OR of "EHTTP_Flag"             */
 NCBI_HTTP_CONNECTOR_DEPRECATED
 typedef enum {
     /* DEPRECATED, do not use! */
-    fHTTP_SureFlush       = fHTTP_Flushable,
     fHCC_AutoReconnect    = fHTTP_AutoReconnect,
     fHCC_SureFlush        = fHTTP_Flushable,
     fHCC_KeepHeader       = fHTTP_KeepHeader,
