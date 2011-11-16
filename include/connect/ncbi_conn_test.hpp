@@ -114,19 +114,11 @@ public:
 protected:
 
     /// Auxiliary class to hold FWDaemon CP(connection point)
-    /// information and its current boolean status.
-    ///
-    /// Depending on the check progress !okay may mean the CP has
-    /// been marked FAIL at NCBI end at an earlier stage of testing,
-    /// as well as turned "false" at a later stage when the actual
-    /// connection attempt (to use the otherwise okay CP) failed.
-    ///
-    /// m_Fwd holds the list of CPs sorted by the port number.
-    ///
+    /// information and its current status.
     struct CFWConnPoint {
         unsigned int   host;  ///< Network byte order
         unsigned short port;  ///< Host byte order
-        bool           okay;  ///< True if okay
+        EIO_Status   status;  ///< Check result
 
         bool operator < (const CFWConnPoint& p) const
         { return port < p.port; }
@@ -218,8 +210,8 @@ protected:
     bool                  m_Firewall;
 
     /// Firewall daemon configuration
-    vector<CFWConnPoint>  m_Fwd;
-    vector<CFWConnPoint>  m_FwdFB;
+    vector<CFWConnPoint>  m_Fwd;    ///< Regular connection points
+    vector<CFWConnPoint>  m_FwdFB;  ///< Fallback connection points
 
     /// Check step start / stop indicator
     bool                  m_End;
