@@ -156,8 +156,10 @@ EIO_Status CConn_Streambuf::x_Close(bool close)
     if (pbase()  &&  pptr() > pbase()) {
         if ((status = CONN_Status(m_Conn, eIO_Write)) != eIO_Success) {
             m_Status = status;
-            _TRACE(x_Message("Close(): Cannot finalize implicitly"
-                             ", data loss may result"));
+            if (CONN_Status(m_Conn, eIO_Open) == eIO_Success) {
+                _TRACE(x_Message("Close(): Cannot finalize implicitly"
+                                 ", data loss may result"));
+            }
         } else if (sync() != 0)
             status = m_Status != eIO_Success ? m_Status : eIO_Unknown;
     } else
