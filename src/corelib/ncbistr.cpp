@@ -3019,7 +3019,6 @@ list<string>& NStr::Justify(const CTempString& str,
     for (SIZE_TYPE len = p->size();  pos < str.size();  len = p->size()) {
         list<CTempString> words;
         unsigned int nw = 0;  // How many words are there in the line
-        bool stop = false;
         bool big = false;
         do {
             while (pos < str.size()) {
@@ -3036,21 +3035,33 @@ list<string>& NStr::Justify(const CTempString& str,
             SIZE_TYPE wlen = pos - start;
             if (!wlen)
                 break;
-            if (len + wlen + nw >= width) {
-                if (p->size() + wlen > width)
-                    big = true;  // Long line with a long lonely word :-/
+            if (len + wlen + nw > width) {
                 if (nw) {
                     pos = start; // Will have to rescan this word again
                     break;
                 }
-                stop = true;
+                big = true;  // Long line with a long lonely word :-/
             }
             words.push_back(CTempString(str, start, wlen));
             len += wlen;
             ++nw;
-        } while (!stop);
+            if (str[pos - 1] == '.'  ||
+                str[pos - 1] == '!'  ||
+                str[pos - 1] == '?') {
+                if (len + 1 >= width)
+                    break;
+                words.push_back(CTempString("", 0));
+                _ASSERT(!big);
+                nw++;
+            }
+        } while (!big);
         if (!nw)
             break;
+        if (words.back().empty()) {
+            words.pop_back();
+            _ASSERT(nw > 1);
+            nw--;
+        }
         SIZE_TYPE space;
         if (nw > 1) {
             if (pos < str.size()  &&  len < width  &&  !big) {
