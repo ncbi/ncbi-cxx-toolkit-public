@@ -734,7 +734,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                 }
             } else
                 fw = 0;
-            v.push_back(make_pair(fw, &*cp));
+            v.push_back(make_pair(AutoPtr<CConn_SocketStream>(fw), &*cp));
         }
 
         // Check results randomly but let modify status not more than once
