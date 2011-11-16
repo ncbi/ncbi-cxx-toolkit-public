@@ -116,7 +116,7 @@ typedef enum {
     eURL_Https,
     eURL_File,
     eURL_Http,
-    eURL_Ftp    
+    eURL_Ftp
 } EURLScheme;
 
 typedef unsigned EBURLScheme;
@@ -126,7 +126,7 @@ typedef enum {
     eFWMode_Legacy   = 0,  /** Relay, no firewall                           */
     eFWMode_Primary  = 1,  /** Primary ports only, no fallback              */
     eFWMode_Fallback = 2,  /** Fallback ports only (w/o trying any primary) */
-    eFWMode_Flexible = 3   /** Primary ports first, then fallback           */
+    eFWMode_Adaptive = 3   /** Primary ports first, then fallback           */
 } EFWMode;
 
 typedef unsigned EBFWMode;
@@ -156,11 +156,11 @@ typedef struct {
     char            client_host[256]; /* effective client hostname ('\0'=def)*/
     EBReqMethod     req_method:3;     /* method to use in the request (HTTP) */
     EBURLScheme     scheme:3;         /* only pre-defined types (limited)    */
-    unsigned        reserved:2;       /* MBZ                                 */
     EBFWMode        firewall:2;       /* to use firewall (relay otherwise)   */
     unsigned        stateless:1;      /* to connect in HTTP-like fashion only*/
     unsigned        lb_disable:1;     /* to disable local load-balancing     */
     EBDebugPrintout debug_printout:2; /* switch to printout some debug info  */
+    unsigned        http_proxy_flex:1;/* non-zero when can fallback to direct*/
     char            user[64];         /* username (if specified)             */
     char            pass[64];         /* password (if any)                   */
     char            host[256];        /* host to connect to                  */
@@ -219,6 +219,9 @@ typedef struct {
 
 #define REG_CONN_HTTP_PROXY_PASS  "HTTP_PROXY_PASS"
 #define DEF_CONN_HTTP_PROXY_PASS  ""
+
+#define REG_CONN_HTTP_PROXY_FLEX  "HTTP_PROXY_FLEX"
+#define DEF_CONN_HTTP_PROXY_FLEX  ""
 
 #define REG_CONN_PROXY_HOST       "PROXY_HOST"
 #define DEF_CONN_PROXY_HOST       ""
@@ -306,10 +309,11 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_Boolean
  *  port              PORT
  *  path              PATH
  *  args              ARGS
- *  http_proxy_host   HTTP_PROXY_HOST   no HTTP proxy if empty/NULL
- *  http_proxy_port   HTTP_PROXY_PORT
+ *  http_proxy_host   HTTP_PROXY_HOST   if NULL http_proxy_port is set 0
+ *  http_proxy_port   HTTP_PROXY_PORT   no HTTP proxy if 0
  *  http_proxy_user   HTTP_PROXY_USER
  *  http_proxy_pass   HTTP_PROXY_PASS
+ *  http_proxy_must   HTTP_PROXY_MUST   for non-HTTP CONNECT links only
  *  proxy_host        PROXY_HOST
  *  timeout           TIMEOUT           "<sec>.<usec>": "3.00005", "infinite"
  *  max_try           MAX_TRY  
@@ -331,7 +335,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_Boolean
  * For default values see right above, within macros DEF_CONN_<NAME>.
  *
  * @sa
- *   ConnNetInfo_GetValue
+ *  ConnNetInfo_GetValue
  */
 extern NCBI_XCONNECT_EXPORT SConnNetInfo* ConnNetInfo_Create
 (const char* service
@@ -468,7 +472,10 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_ParseURL
 
 
 /* Setup standard arguments:  service(as passed), address, and platform.
+ * Also setup user-agent HTTP header using CORE_GetAppName().
  * Return non-zero on success; zero on error.
+ * @sa
+ *  CORE_GetAppName, CORE_GetPlatform
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetupStandardArgs
 (SConnNetInfo* info,
@@ -570,7 +577,7 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Destroy(SConnNetInfo* info);
  * means that in order for this to work, the passed "*sock" should have been
  * created with "fSOCK_KeepOnClose" set, and a new handle will be returned via
  * the same last parameter.  In case of errors, the original "*sock" will be
- * left alone yet the last parameter may be updated to return as NULL.
+ * destroyed/closed and the last parameter will be updated to return as NULL.
  *
  * On success, return eIO_Success and non-NULL handle of a socket via the last
  * parameter.
@@ -589,7 +596,7 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Destroy(SConnNetInfo* info);
  *       the resultant socket.  It is responsibility of the application to
  *       analyze the actual socket state in this case (see "ncbi_socket.h").
  * @sa
- *  SOCK_Create, SOCK_CreateOnTop, SOCK_Wait, SOCK_Close, SOCK_Abort
+ *  SOCK_Create, SOCK_CreateOnTop, SOCK_Wait, SOCK_Abort, SOCK_Close
  */
 
 extern NCBI_XCONNECT_EXPORT EIO_Status URL_ConnectEx

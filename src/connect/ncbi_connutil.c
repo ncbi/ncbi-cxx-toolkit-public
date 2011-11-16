@@ -179,12 +179,13 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
 }
 
 
-int/*bool*/ ConnNetInfo_Boolean(const char* str)
+extern int/*bool*/ ConnNetInfo_Boolean(const char* str)
 {
     return str  &&  *str  &&  (strcmp    (str, "1")    == 0  ||
                                strcasecmp(str, "on")   == 0  ||
                                strcasecmp(str, "yes")  == 0  ||
-                               strcasecmp(str, "true") == 0) ? 1 : 0;
+                               strcasecmp(str, "true") == 0)
+        ? 1/*true*/ : 0/*false*/;
 }
 
 
@@ -249,6 +250,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 
     len = service ? strlen(service) : 0;
 
+    /* NB: Not cleared up with all 0s */
     if (!(info = (SConnNetInfo*) malloc(sizeof(*info) + len)))
         return 0/*failure*/;
 
@@ -301,19 +303,23 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
         errno = 0;
         if (*str  &&  (val = strtoul(str, &e, 10)) > 0
             &&  !errno  &&  !*e  &&  val < (1 << 16)) {
-            info->http_proxy_port = val;
+            info->http_proxy_port =  val;
         } else
-            info->http_proxy_port = 0/*none*/;
+            info->http_proxy_port =  0/*none*/;
         /* HTTP proxy username */
         REG_VALUE(REG_CONN_HTTP_PROXY_USER, info->http_proxy_user,
                   DEF_CONN_HTTP_PROXY_USER);
         /* HTTP proxy password */
         REG_VALUE(REG_CONN_HTTP_PROXY_PASS, info->http_proxy_pass,
                   DEF_CONN_HTTP_PROXY_PASS);
+        /* HTTP proxy bypass */
+        REG_VALUE(REG_CONN_HTTP_PROXY_FLEX, str, DEF_CONN_HTTP_PROXY_FLEX);
+        info->http_proxy_flex    =   ConnNetInfo_Boolean(str);
     } else {
         info->http_proxy_port    =   0;
         info->http_proxy_user[0] = '\0';
         info->http_proxy_pass[0] = '\0';
+        info->http_proxy_flex    =   0;
     }
 
     /* non-transparent CERN-like firewall proxy server? */
@@ -344,8 +350,8 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
         info->firewall = eFWMode_Primary;
     else if (strcasecmp(str, "fallback") == 0)
         info->firewall = eFWMode_Fallback;
-    else if (strcasecmp(str, "flexible") == 0  ||  ConnNetInfo_Boolean(str))
-        info->firewall = eFWMode_Flexible;
+    else if (strcasecmp(str, "adaptive") == 0  ||  ConnNetInfo_Boolean(str))
+        info->firewall = eFWMode_Adaptive;
     else
         info->firewall = eFWMode_Legacy;
 
@@ -650,7 +656,7 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo*      info,
     memcpy(newhdr, user_header, newhdrlen + 1);
 
     retval = 1/*assume best: success*/;
-    for (newline = newhdr; *newline; newline += newlinelen) {
+    for (newline = newhdr;  *newline;  newline += newlinelen) {
         char*  eol = strchr(newline, '\n');
         char*  eot = strchr(newline,  ':');
         size_t newtaglen;
@@ -700,7 +706,7 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo*      info,
             assert(newlen);
         }
 
-        for (line = hdr; *line; line += linelen) {
+        for (line = hdr;  *line;  line += linelen) {
             size_t taglen;
             char*  temp;
             size_t len;
@@ -981,9 +987,6 @@ static const char* x_ClientAddress(const char* client_host,
 }
 
 
-#define _STR(x)  #x
-#define  STR(x)  _STR(x)
-
 extern int/*bool*/ ConnNetInfo_SetupStandardArgs(SConnNetInfo* info,
                                                  const char*   service)
 {
@@ -997,9 +1000,9 @@ extern int/*bool*/ ConnNetInfo_SetupStandardArgs(SConnNetInfo* info,
         return 0/*failed*/;
 
     s = CORE_GetAppName();
-    if (s) {
-        char ua[16 + NCBI_CORE_APPNAME_MAXLEN];
-        sprintf(ua, "User-Agent: %." STR(NCBI_CORE_APPNAME_MAXLEN) "s", s);
+    if (s  &&  *s) {
+        char ua[16 + 80];
+        sprintf(ua, "User-Agent: %.80s", s);
         ConnNetInfo_ExtendUserHeader(info, ua);
     }
 
@@ -1031,9 +1034,6 @@ extern int/*bool*/ ConnNetInfo_SetupStandardArgs(SConnNetInfo* info,
     }
     return 1/*succeeded*/;
 }
-
-#undef  STR
-#undef _STR
 
 
 extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
@@ -1084,7 +1084,7 @@ static const char* x_Firewall(unsigned int firewall)
         return "PRIMARY";
     case eFWMode_Fallback:
         return "FALLBACK";
-    case eFWMode_Flexible:
+    case eFWMode_Adaptive:
         return "TRUE";
     default:
         assert(!firewall);
@@ -1217,6 +1217,7 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
         s_SaveKeyval(s, "http_proxy_pass", "(set)");
     else
         s_SaveString(s, "http_proxy_pass", info->http_proxy_pass);
+    s_SaveBool      (s, "http_proxy_flex", info->http_proxy_flex);
     s_SaveString    (s, "proxy_host",      info->proxy_host);
     if (info->timeout) {
         s_SaveULong (s, "timeout(sec)",    info->timeout->sec);
@@ -1331,6 +1332,16 @@ extern void ConnNetInfo_Destroy(SConnNetInfo* info)
  */
 
 
+static EIO_Status x_URLConnectReturn(SOCK sock, EIO_Status status)
+{
+    if (sock) {
+        SOCK_Abort(sock);
+        SOCK_Close(sock);
+    }
+    return status;
+}
+
+
 extern EIO_Status URL_ConnectEx
 (const char*     host,
  unsigned short  port,
@@ -1365,9 +1376,12 @@ extern EIO_Status URL_ConnectEx
     if (!sock  ||  !host  ||  !*host  ||  !path  ||  !*path
         ||  (user_hdr  &&  *user_hdr  &&  user_hdr[user_hdr_len - 1] != '\n')){
         CORE_LOG_X(2, eLOG_Error, "[URL_Connect]  Bad argument(s)");
-        if (sock)
+        if (sock) {
+            s = *sock;
             *sock = 0;
-        return eIO_InvalidArg;
+        } else
+            s = 0;
+        return x_URLConnectReturn(s, eIO_InvalidArg);
     }
     s = *sock;
     *sock = 0;
@@ -1399,7 +1413,7 @@ extern EIO_Status URL_ConnectEx
                     ("[URL_Connect]  Unrecognized request method (#%u)",
                      (unsigned int) req_method));
         assert(0);
-        return eIO_InvalidArg;
+        return x_URLConnectReturn(s, eIO_InvalidArg);
     }
 
     hdr_len = 0;
@@ -1429,7 +1443,7 @@ extern EIO_Status URL_ConnectEx
                     CORE_LOGF_ERRNO_X(8, eLOG_Error, errno,
                                       ("[URL_Connect]  Out of memory (%lu)",
                                        (unsigned long) size));
-                    return eIO_Unknown;
+                    return x_URLConnectReturn(s, eIO_Unknown);
                 }
                 URL_Encode(args, args_len, &rd_len, x_args, size, &wr_len);
                 assert(args_len == rd_len);
@@ -1484,7 +1498,7 @@ extern EIO_Status URL_ConnectEx
         BUF_Destroy(buf);
         if (temp  &&  temp != args)
             free((void*) temp);
-        return eIO_Unknown;
+        return x_URLConnectReturn(s, eIO_Unknown);
     }
     if (temp  &&  temp != args)
         free((void*) temp);
@@ -1498,22 +1512,31 @@ extern EIO_Status URL_ConnectEx
         if (hdr)
             free(hdr);
         BUF_Destroy(buf);
-        return eIO_Unknown;
+        return x_URLConnectReturn(s, eIO_Unknown);
     }
     BUF_Destroy(buf);
 
-    /* connect to HTTPD */
     if (s) {
+        /* resuse connection to HTTPD */
         size_t handle_size = SOCK_OSHandleSize();
-        char*  handle      = (char*) malloc(handle_size);
-        verify(SOCK_GetOSHandle(s, handle, handle_size) == eIO_Success);
-        status = SOCK_CreateOnTopEx(handle, handle_size, sock,
-                                    hdr, hdr_len, flags);
+        void*  handle      = malloc(handle_size);
+        status = SOCK_GetOSHandle(s, handle, handle_size);
+        if (status == eIO_Success) {
+            SOCK_Close(s);
+            status  = SOCK_CreateOnTopEx(handle, handle_size, sock,
+                                         hdr, hdr_len, flags);
+            if (status != eIO_Success) {
+                SOCK_CloseOSHandle(handle, handle_size);
+                assert(!sock);
+            }
+        } else {
+            SOCK_Abort(s);
+            SOCK_Close(s);
+        }
         if (handle)
             free(handle);
-        if (status == eIO_Success)
-            verify(SOCK_Close(s) == eIO_Success);
     } else {
+        /* connect to HTTPD */
         status = SOCK_CreateEx(host, port, o_timeout, sock,
                                hdr, hdr_len, flags);
     }
@@ -1528,7 +1551,8 @@ extern EIO_Status URL_ConnectEx
         } else
             *hdr_buf = '\0';
         CORE_LOGF_X(7, eLOG_Error,
-                    ("[URL_Connect]  Failed to connect to %s:%hu: %s%s",
+                    ("[URL_Connect]  Failed to %s to %s:%hu: %s%s",
+                     s ? "use connection" : "connect",
                      host, port, IO_StatusStr(status), hdr_buf));
     } else
         verify(SOCK_SetTimeout(*sock, eIO_ReadWrite, rw_timeout)==eIO_Success);
