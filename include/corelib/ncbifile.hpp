@@ -2446,8 +2446,7 @@ public:
     /// If the sum of the current offset (from Map() method) and new size of
     /// the mapped region is more than current file size, that file size will
     /// be increased, added space filed with zeros and mapped region will
-    /// be remapped. The region will be remapped also in the case, when it
-    /// is wider/narrower than currently allocated memory pages.
+    /// be remapped. 
     /// @param new_length
     ///   New length of the mapped region. 
     ///   The value 0 means that file will be mapped from 'offset'

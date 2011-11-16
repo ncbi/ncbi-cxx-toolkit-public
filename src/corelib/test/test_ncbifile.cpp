@@ -1059,15 +1059,14 @@ static void s_TEST_MemoryFile(void)
         assert( m.GetSize() == 3 );
         assert( m.GetOffset() == offset );
 
-        // Extend() without remapping (to end of file)
+        // Extend() to the end of file
         char* p1 = (char*)m.Extend();
-        assert( p1 == p0 );
         assert( m.GetFileSize() == (Int8)s_DataLen );
         assert( m.GetSize() == s_DataLen - offset );
         assert( m.GetOffset() == offset );
         assert( memcmp(s_Data + offset, p1, m.GetSize()) == 0 );
         
-        // Extend() with remapping
+        // Extend() with increasing file size
         char* p2 = (char*)m.Extend(1000);
         assert( m.GetFileSize() == 1000 + offset );
         assert( m.GetSize() == 1000 );
