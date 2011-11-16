@@ -184,6 +184,7 @@ fi
 # -------------------------------------------------------------------------
 # Run PTB_EXE
 
+export __PTB__MAKE__CANDIDATE__=1
 echo "=============================================================================="
 echo "Running CONFIGURE, please wait."
 echo "$PTB_EXE $PTB_FLAGS $PTB_EXTRA $PTB_SAVED_CFG -logfile ${SLN_PATH}_configuration_log.txt -conffile $PTB_INI $TREE_ROOT $PTB_PROJECT $SLN_PATH"
@@ -220,4 +221,14 @@ if test "$TERM" = "dumb"; then
   fi
 fi
 
+CANDIDATE=".candidate"
+if test -f "$SLN_PATH.xcodeproj/project.pbxproj$CANDIDATE"; then
+  cd "$SLN_PATH.xcodeproj"
+  for item in *; do
+    if test "$item" != "project.pbxproj$CANDIDATE" -a "$item" != "project.pbxproj"; then
+      rm -rf "$item"
+    fi
+  done
+  mv -f "project.pbxproj$CANDIDATE" "project.pbxproj"
+fi
 exit 0
