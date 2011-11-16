@@ -60,8 +60,8 @@
 
 #ifdef NCBI_OS_MSWIN
 
-typedef SOCKET TSOCK_Handle;
-typedef HANDLE TRIGGER_Handle;
+typedef SOCKET TSOCK_Handle;    /* NB: same as HANDLE   */
+typedef HANDLE TRIGGER_Handle;  /* NB: same as WSAEVENT */
 
 #  ifdef _WIN64
 #    pragma pack(push, 4)

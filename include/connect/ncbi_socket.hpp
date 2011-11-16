@@ -622,10 +622,11 @@ class NCBI_XCONNECT_EXPORT CSocketAPI
 public:
     /// Generic
     ///
-    static EIO_Status Initialize  (void);
-    static EIO_Status Shutdown    (void);
-    static void       AllowSigPipe(void);
-    static size_t     OSHandleSize(void);
+    static EIO_Status Initialize   (void);
+    static EIO_Status Shutdown     (void);
+    static void       AllowSigPipe (void);
+    static size_t     OSHandleSize (void);
+    static EIO_Status CloseOSHandle(const void* handle, size_t handle_size);
 
     /// Utility
     ///
@@ -1034,6 +1035,13 @@ inline void CSocketAPI::AllowSigPipe(void)
 inline size_t CSocketAPI::OSHandleSize(void)
 {
     return SOCK_OSHandleSize();
+}
+
+
+inline EIO_Status CSocketAPI::CloseOSHandle(const void* handle,
+                                            size_t      handle_size)
+{
+    return SOCK_CloseOSHandle(handle, handle_size);
 }
 
 

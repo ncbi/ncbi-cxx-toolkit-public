@@ -66,6 +66,7 @@
  *  SOCK_Reconnect
  *  SOCK_Shutdown
  *  SOCK_Close[Ex]
+ *  SOCK_CloseHandle
  *  SOCK_Wait
  *  SOCK_Poll
  *  SOCK_SetTimeout
@@ -553,7 +554,9 @@ extern NCBI_XCONNECT_EXPORT unsigned short LSOCK_GetPort
 
 /** [CLIENT-side]  Connect client to another(server-side, listening) socket
  * (socket() + connect() [+ select()])
- *
+ * @note
+ *  SOCK_Close[Ex] will not close an underlying OS handle if fHTTP_KeepOnClose
+ *  is set in "flags".
  * @param host
  *  [in]  host to connect to
  * @param port
@@ -611,14 +614,15 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  * is not reopenable to its default peer (SOCK_Reconnect may not specify
  * zeros for the connection point).
  * All timeouts are set to default [infinite] values.
- * SOCK_Close will close the "handle" only if the "close_on_close"
- * parameter is passed non-zero (eSCOT_CloseOnClose).
+ * @note
+ *  SOCK_Close[Ex] will not close the passed OS "handle" if fHTTP_KeepOnClose
+ *  is set in "flags".
  * @param handle
  *  [in]  OS-dependent "handle" to be converted
  * @param handle_size
  *  [in]  "handle" size
  * @param sock
- *  [out] SOCK built on top of OS "handle"
+ *  [out] SOCK built on top of the OS "handle"
  * @param init_data
  *  [in]  initial output data segment (may be NULL)
  * @param init_size
@@ -630,7 +634,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  *  does not refer to an open socket [but e.g. to a normal file or a pipe];
  *  other error codes in case of other errors
  * @sa
- *  SOCK_CreateOnTop, SOCK_Reconnect, SOCK_Close
+ *  SOCK_GetOSHandle, SOCK_CreateOnTop, SOCK_Reconnect, SOCK_Close
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateOnTopEx
 (const void* handle,
@@ -650,9 +654,9 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateOnTopEx
  * @param handle_size
  *  [in]  "handle" size
  * @param sock
- *  [out] SOCK built on top of OS "handle"
+ *  [out] SOCK built on top of the OS "handle"
  * @sa
- *  SOCK_CreateOnTopEx
+ *  SOCK_GetOSHandle, SOCK_CreateOnTopEx, SOCK_Close
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateOnTop
 (const void* handle,
@@ -711,29 +715,46 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Shutdown
  );
 
 
-/** Close the connection, destroy relevant internal data.
- * The "sock" handle goes invalid after this function call, regardless
- * of whether the call was successful or not.  If eIO_Close timeout was
- * specified (or NULL) then it blocks until either all unsent data are sent,
- * error flagged, or the timeout expires;  if there is any output pending,
- * that output will be flushed.
+/** Close the SOCK handle, destroy relevant internal data.
+ * The "sock" handle goes invalid after this function call, regardless of
+ * whether the call was successful or not.  If eIO_Close timeout was specified
+ * (or NULL) then it blocks until either all unsent data are sent, an error
+ * flagged, or the timeout expires;  if there is any output pending, that
+ * output will be flushed.
+ * Connection may remain in the system if the socket was created with the
+ * fSOCK_KeepOnClose flag set;  otherwise, it gets closed.
+ * @note
+ *  On MS-Win closing a socket whose OS handle has been used elsewhere (e.g.
+ *  in SOCK_CreateOnTop) may render the OS handle unresponsive, so always make
+ *  sure to close the current socket first (assuming fSOCK_KeepOnClose), and
+ *  only then use the extracted handle to build another socket.
  * @param sock
- *  [in]  socket handle to close
+ *  [in]  socket handle to close(if not yet closed) and destroy(always)
  * @sa
- *  SOCK_Create, SOCK_CreateOnTop, DSOCK_Create, SOCK_SetTimeout
+ *  SOCK_Create, SOCK_CreateOnTop, DSOCK_Create, SOCK_SetTimeout, SOCK_CloseEx
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Close(SOCK sock);
 
 
-/** Close the connection, and conditionally destroy relevant internal data.
- * If eIO_Close timeout was specified (or NULL) then it blocks until
- * either all unsent data are sent, error flagged, or the timeout expires;
- * if there is any output pending, that output will be flushed.
- * @note  SOCK_CloseEx(sock, 1) is equivalent to SOCK_Close(sock);
+/** Close the SOCK handle, and conditionally destroy relevant internal data.
+ * If eIO_Close timeout was specified (or NULL) then it blocks until either all
+ * unsent data are sent, an error flagged, or the timeout expires;  if there is
+ * any output pending, that output will be flushed.
+ * Connection may remain in the system if the socket was created with the
+ * fSOCK_KeepOnClose flag set;  otherwise, it gets closed.
+ * @note
+ *  On MS-Win closing a socket whose OS handle has been used elsewhere (e.g.
+ *  in SOCK_CreateOnTop) may render the OS handle unresponsive, so always make
+ *  sure to close the current socket first (assuming fSOCK_KeepOnClose), and
+ *  only then use the extracted handle to build another socket.
  * @param sock
  *  [in]  handle of the socket to close
  * @param destroy
- *  [in]  =1 to destroy handle; =0 to keep handle
+ *  [in]  =1 to destroy the SOCK handle; =0 to keep the handle
+ * @note
+ *  A kept SOCK handle can be freed/destroyed by the SOCK_Close call.
+ * @note
+ *  SOCK_CloseEx(sock, 1) is equivalent to SOCK_Close(sock).
  * @sa
  *  SOCK_Close, SOCK_Create, SOCK_CreateOnTop, DSOCK_Create, SOCK_SetTimeout
  */
@@ -741,6 +762,23 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CloseEx
 (SOCK         sock,
  int/**bool*/ destroy
  );
+
+
+/** Close socket OS handle.
+ * The call retries repeatedly if interrupted by a singal (so no eIO_Interrupt
+ * shoud be expected).  Return eIO_Success when the handle has been closed
+ * successfuly, eIO_Closed if the handle has been passed already closed,
+ * eIO_InvalidArg if passed arguments are not valid, eIO_Unknow if the
+ * handle cannot be closed (per an error returned by the system).
+ * NOTE using this call on a handle that belongs to an active [LD]SOCK object
+ * is undefined.
+ * @sa
+ *  SOCK_GetOSHandle
+ */
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CloseOSHandle
+(const void* handle,
+ size_t      handle_size
+);
 
 
 /** Block on the socket until either the specified "event" is available or
