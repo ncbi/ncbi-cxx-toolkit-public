@@ -346,8 +346,19 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
 }
 
 
+void CCgiResponse::SetFilename(const string& name, size_t size)
+{
+    string disposition = sm_FilenamePrefix + NStr::PrintableString(name) + '"';
+    if (size > 0) {
+        disposition += "; size=";
+        disposition += NStr::SizetToString(size);
+    }
+    SetHeaderValue(sm_ContentDispoName, disposition);
+}
+
+
 void CCgiResponse::BeginPart(const string& name, const string& type_in,
-                             CNcbiOstream& os)
+                             CNcbiOstream& os, size_t size)
 {
     _ASSERT(m_IsMultipart != eMultipart_none);
     if ( !m_BetweenParts ) {
@@ -363,7 +374,11 @@ void CCgiResponse::BeginPart(const string& name, const string& type_in,
 
     if ( !name.empty() ) {
         os << sm_ContentDispoName << ": " << sm_FilenamePrefix
-           << Printable(name) << '"' << HTTP_EOL;
+           << Printable(name) << '"';
+        if (size > 0) {
+            os << "; size=" << size;
+        }
+        os << HTTP_EOL;
     } else if (m_IsMultipart != eMultipart_replace) {
         ERR_POST_X(2, Warning << "multipart content contains anonymous part");
     }

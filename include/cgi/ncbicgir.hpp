@@ -84,8 +84,9 @@ public:
 
     // Set filename for undisplayable content; please include an
     // appropriate extension, and don't bother with directory
-    // components (which clients generally discard).
-    void   SetFilename(const string& name);
+    // components (which clients generally discard).  Add a size
+    // parameter if the corresponding (optional) argument is nonzero.
+    void   SetFilename(const string& name, size_t size = 0);
 
     /// Set the "Location:" HTTP header
     void   SetLocation(const CUrl& url, const IUrlEncoder* encoder = 0);
@@ -102,11 +103,12 @@ public:
     void           SetMultipartMode(EMultipartMode mode = eMultipart_mixed);
     EMultipartMode GetMultipartMode(void);
 
-    void BeginPart  (const string& name, const string& type);
+    void BeginPart  (const string& name, const string& type, size_t size = 0);
     void EndPart    (void);
     void EndLastPart(void);
 
-    void BeginPart  (const string& name, const string& type, CNcbiOstream& os);
+    void BeginPart  (const string& name, const string& type, CNcbiOstream& os,
+                     size_t size = 0);
     void EndPart    (CNcbiOstream& os);
     void EndLastPart(CNcbiOstream& os);
 
@@ -230,12 +232,6 @@ inline string CCgiResponse::GetContentType(void) const
     return GetHeaderValue(sm_ContentTypeName);
 }
 
-inline void CCgiResponse::SetFilename(const string& name)
-{
-    SetHeaderValue(sm_ContentDispoName,
-                   sm_FilenamePrefix + NStr::PrintableString(name) + '"');
-}
-
 inline void CCgiResponse::SetLocation(const CUrl&        url,
                                       const IUrlEncoder* encoder)
 {
@@ -254,7 +250,8 @@ inline CCgiResponse::EMultipartMode CCgiResponse::GetMultipartMode(void)
     return m_IsMultipart;
 }
 
-inline void CCgiResponse::BeginPart(const string& name, const string& type)
+inline void CCgiResponse::BeginPart(const string& name, const string& type,
+                                    size_t size)
 {
     BeginPart(name, type, out());
 }
