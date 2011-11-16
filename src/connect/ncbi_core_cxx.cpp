@@ -259,6 +259,18 @@ static void s_Fini(void)
 
 
 /***********************************************************************
+ *                               App Name                              *
+ ***********************************************************************/
+extern "C" {
+static const char* s_GetAppName(void)
+{
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    return app ? app->GetProgramDisplayName().c_str() : 0;
+}
+}
+
+
+/***********************************************************************
  *                               NCBI SID                              *
  ***********************************************************************/
 extern "C" {
@@ -286,8 +298,7 @@ static enum EConnectInit {
 
 
 /* NB: gets called under a lock */
-static void s_Init(CNcbiApplication* app  = 0,
-                   IRWRegistry*      reg  = 0,
+static void s_Init(IRWRegistry*      reg  = 0,
                    CRWLock*          lock = 0,
                    TConnectInitFlags flag = 0,
                    EConnectInit      how  = eConnectInit_Weak)
@@ -305,15 +316,11 @@ static void s_Init(CNcbiApplication* app  = 0,
         atexit(s_Fini);
     }
 
-    /* set app name */
-    if (app) {
-        const char* appname = app->GetProgramDisplayName().c_str();
-        if (appname  &&  *appname) {
-            strrncpy0(g_CORE_AppName, appname, NCBI_CORE_APPNAME_MAXLEN);
-        }
-    }
     /* setup sid retrieval callback */
-    g_CORE_NcbiGetSid = s_GetSid;
+    g_CORE_GetSid = s_GetSid;
+
+    /* setup app name retrieval callback */
+    g_CORE_GetAppName = s_GetAppName;
 
     /* done! */
     s_ConnectInit = how;
@@ -327,7 +334,7 @@ static void s_InitInternal(void)
         try {
             if (s_ConnectInit == eConnectInit_Intact) {
                 CNcbiApplication* app = CNcbiApplication::Instance();
-                s_Init(app, app ? &app->GetConfig() : 0);
+                s_Init(app ? &app->GetConfig() : 0);
             }
         }
         NCBI_CATCH_ALL_X(7, "CONNECT_InitInternal() failed");
@@ -344,8 +351,7 @@ extern void CONNECT_Init(IRWRegistry*      reg,
 {
     CFastMutexGuard guard(s_ConnectInitMutex);
     try {
-        CNcbiApplication* app = CNcbiApplication::Instance();
-        s_Init(app, reg, lock, flag, eConnectInit_Explicit);
+        s_Init(reg, lock, flag, eConnectInit_Explicit);
     }
     NCBI_CATCH_ALL_X(8, "CONNECT_Init() failed");
 }
