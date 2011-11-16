@@ -1205,8 +1205,8 @@ void CSeqConvert_imp::CPacker::x_AddBoundary(TSeqPos pos, TCoding new_coding)
         _ASSERT(m_EndingNarrow.cost == m_EndingWide.cost);
     }
 
-    _TRACE(static_cast<char>('@' + last_narrow) << last_length << ": ("
-           << m_EndingNarrow.cost << ", " << m_EndingWide.cost << ')');
+    // _TRACE(static_cast<char>('@' + last_narrow) << last_length << ": ("
+    //        << m_EndingNarrow.cost << ", " << m_EndingWide.cost << ')');
 
     _ASSERT(new_coding != last_narrow);
     if (new_coding == kNoCoding) {
@@ -1216,7 +1216,7 @@ void CSeqConvert_imp::CPacker::x_AddBoundary(TSeqPos pos, TCoding new_coding)
     if (new_coding != m_WideCoding
         &&  m_EndingNarrow.cost > m_EndingWide.cost) {
         m_EndingNarrow = m_EndingWide;
-        _TRACE("N <- W before N'");
+        // _TRACE("N <- W before N'");
     }
 
     SIZE_TYPE alt_wide_cost
@@ -1226,12 +1226,12 @@ void CSeqConvert_imp::CPacker::x_AddBoundary(TSeqPos pos, TCoding new_coding)
     if (m_EndingWide.cost > alt_wide_cost) {
         m_EndingWide = m_EndingNarrow;
         m_EndingWide.cost = alt_wide_cost;
-        _TRACE("W <- N");
+        // _TRACE("W <- N");
     } else if (new_coding == m_WideCoding) {
         m_EndingNarrow = m_EndingWide;
-        _TRACE("N <- W before W");
+        // _TRACE("N <- W before W");
     }
-    _TRACE('(' << m_EndingNarrow.cost << ", " << m_EndingWide.cost << ')');
+    // _TRACE('(' << m_EndingNarrow.cost << ", " << m_EndingWide.cost << ')');
 
     m_EndingNarrow.codings.push_back(new_coding);
     m_EndingWide.codings.push_back(m_WideCoding);
