@@ -819,7 +819,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
             switch (cp->status) {
             case eIO_Success:
                 if (n  &&  (net_info->firewall & eFWMode_Fallback))
-                    SERV_AddFallbackPort(cp->port);
+                    SERV_AddFallbackFirewallPort(cp->port);
                 break;
             case eIO_Timeout:
                 m_CheckPoint = "Connection timed out";
