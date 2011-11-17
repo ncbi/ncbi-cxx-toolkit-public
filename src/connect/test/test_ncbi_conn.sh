@@ -26,13 +26,30 @@ ext="`expr $$ '%' 3`"
 
 if   [ -r /am/ncbiapdata/test_data/proxy/test_ncbi_proxy.$ext ]; then
   .       /am/ncbiapdata/test_data/proxy/test_ncbi_proxy.$ext
+  proxy=1
 elif [ -r /cygdrive/z/test_data/proxy/test_ncbi_proxy.$ext    ]; then
   .       /cygdrive/z/test_data/proxy/test_ncbi_proxy.$ext
+  proxy=1
 fi
 
 if [ "`expr '(' $$ / 10 ')' '%' 2`" = "0" ]; then
   CONN_FIREWALL=TRUE
+  if [ "$ext" = "0" ]; then
+    case "`expr '(' $$ / 100 ')' '%' 3`" in
+      0) CONN_FIREWALL=PRIMARY
+        ;;
+      1) CONN_FIREWALL=FALLBACK
+        ;;
+      *)
+        ;;
+    esac
+  fi
   export CONN_FIREWALL
+elif [ "${proxy:-0}" = "1" ]; then
+  if [ "$ext" != "0" -o "`expr '(' $$ / 100 ')' '%' 2`" != "0" ]; then
+    CONN_HTTP_PROXY_FLEX=TRUE
+    export CONN_HTTP_PROXY_FLEX
+  fi
 fi
 
 $CHECK_EXEC test_ncbi_conn -nopause 2>&1
