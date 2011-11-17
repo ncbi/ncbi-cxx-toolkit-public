@@ -50,8 +50,8 @@ BEGIN_SCOPE(blast)
 struct SPatternUnit {
     string allowed_letters;
     string disallowed_letters;
-    unsigned int at_least;
-    unsigned int at_most;
+    size_t at_least;
+    size_t at_most;
     bool is_x;
     SPatternUnit(const string unit) {
         unsigned int tail_start = 0;
@@ -80,7 +80,7 @@ struct SPatternUnit {
             at_most = 2;
         } else {
             string rep(unit, tail_start + 1, unit.size()-2-tail_start);
-            unsigned int pos_comma = rep.find(',');
+            size_t pos_comma = rep.find(',');
             if (pos_comma == rep.npos) {
                 at_least = NStr::StringToUInt(rep);
                 at_most = at_least + 1;
@@ -133,9 +133,9 @@ private:
     void x_MakeScoreBlk();
     // parsing the result into a list of ranges
     void x_GetPatternRanges(vector<int> &pos,
-                            Int4 off, 
+                            Uint4 off, 
                             Uint1 *seq, 
-                            Int4 len, 
+                            Uint4 len, 
                             vector<vector<int> > &ranges);
 };
 

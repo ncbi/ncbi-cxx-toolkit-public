@@ -131,8 +131,8 @@ CSeedTop::TSeedTopResults CSeedTop::Run(CRef<CLocalDbAdapter> db)
             for (int index = 0; index < hit_count; ++index) {
                 vector<vector<int> > pos_list;
                 vector<int> pos(m_Units.size());
-                int start = offset_pairs[index].phi_offsets.s_start;
-                int end = offset_pairs[index].phi_offsets.s_end + 1;
+                unsigned int start = offset_pairs[index].phi_offsets.s_start;
+                unsigned int end = offset_pairs[index].phi_offsets.s_end + 1;
                 x_GetPatternRanges(pos, 0, seq_arg.seq->sequence + start, end-start, pos_list);
                 ITERATE(vector<vector<int> >, it_pos, pos_list) {
                     CSeq_loc::TRanges ranges;
@@ -154,8 +154,8 @@ CSeedTop::TSeedTopResults CSeedTop::Run(CRef<CLocalDbAdapter> db)
                     retv.push_back(hit);
                 } 
                 // skip the next pos_list.size()-1 hits
-                _ASSERT(index + pos_list.size() - 1 < hit_count);
-                for (int i = 1; i< pos_list.size(); ++i) {
+                _ASSERT(index + (Int4)(pos_list.size()) - 1 < hit_count);
+                for (unsigned int i = 1; i< pos_list.size(); ++i) {
                     _ASSERT(offset_pairs[index + i].phi_offsets.s_start == start);
                     _ASSERT(offset_pairs[index + i].phi_offsets.s_end + 1 == end);
                 }
@@ -189,13 +189,13 @@ CSeedTop::TSeedTopResults CSeedTop::Run(CBioseq_Handle & bhl)
 }
 
 void
-CSeedTop::x_GetPatternRanges(vector<int> &pos, Int4 off, Uint1 *seq, Int4 len, 
+CSeedTop::x_GetPatternRanges(vector<int> &pos, Uint4 off, Uint1 *seq, Uint4 len, 
                              vector<vector<int> > &ranges)
 {
     // Not enough sequence letters
     if (len + off + m_Units[off].at_least < m_Units.size() + 1) return;
     // at least test
-    int rep;
+    unsigned int rep;
     for (rep =0; rep < m_Units[off].at_least; ++rep) {
         if (!m_Units[off].test(NCBISTDAA_TO_AMINOACID[seq[rep]])) return;
     }
