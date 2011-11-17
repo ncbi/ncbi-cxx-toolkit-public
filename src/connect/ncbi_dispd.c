@@ -407,15 +407,15 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 
     /* Reset request method to be GET ('cause no HTTP body is ever used) */
     data->net_info->req_method = eReqMethod_Get;
-    if (iter->stateless)
+    if ( iter->stateless)
         data->net_info->stateless = 1/*true*/;
-    if (iter->type & fSERV_Firewall)
-        data->net_info->firewall = 1/*true*/;
+    if ((iter->type & fSERV_Firewall)  &&  !data->net_info->firewall)
+        data->net_info->firewall = eFWMode_Adaptive;
     ConnNetInfo_ExtendUserHeader(data->net_info,
                                  "User-Agent: NCBIServiceDispatcher/"
                                  DISP_PROTOCOL_VERSION
 #ifdef NCBI_CXX_TOOLKIT
-                                 " (C++ Toolkit)"
+                                 " (CXX Toolkit)"
 #else
                                  " (C Toolkit)"
 #endif /*NCBI_CXX_TOOLKIT*/

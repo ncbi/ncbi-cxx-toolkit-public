@@ -61,7 +61,7 @@ ESwitch SERV_DoFastOpens(ESwitch on)
 }
 
 
-int/*bool*/ SERV_AddFirewallPort(unsigned short port)
+int/*bool*/ SERV_AddFallbackPort(unsigned short port)
 {
     if (port--) {
         unsigned int n = port / (sizeof(*s_FWPorts) << 3);
@@ -75,7 +75,7 @@ int/*bool*/ SERV_AddFirewallPort(unsigned short port)
 }
 
 
-int/*bool*/ SERV_IsFirewallPort(unsigned short port)
+int/*bool*/ SERV_IsFallbackPort(unsigned short port)
 {
     if (port--) {
         unsigned int n = port / (sizeof(*s_FWPorts) << 3);

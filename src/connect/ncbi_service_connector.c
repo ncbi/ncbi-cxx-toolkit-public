@@ -710,9 +710,9 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         }
         SOCK_ntoa(uuu->host, net_info->host, sizeof(net_info->host));
         if (net_info->firewall == eFWMode_Fallback
-            &&  !SERV_IsFirewallPort(uuu->port)) {
+            &&  !SERV_IsFallbackPort(uuu->port)) {
             CORE_LOGF_X(9, eLOG_Trace,
-                        ("[%s]  Fallback firewall port :%hu is not in the set",
+                        ("[%s]  Fallback port :%hu is not in the set",
                          uuu->service, uuu->port));
         }
         net_info->port = uuu->port;
@@ -975,10 +975,10 @@ extern CONNECTOR SERVICE_CreateConnectorEx
     free(x_service);
 
     /* now get ready for first probe dispatching */
-    if (types & fSERV_Stateless)
+    if ( types & fSERV_Stateless)
         xxx->net_info->stateless = 1/*true*/;
-    if (types & fSERV_Firewall)
-        xxx->net_info->firewall = 1/*true*/;
+    if ((types & fSERV_Firewall)  &&  !xxx->net_info->firewall)
+        xxx->net_info->firewall = eFWMode_Adaptive;
     if (!s_OpenDispatcher(xxx)) {
         s_Destroy(ccc);
         return 0;
