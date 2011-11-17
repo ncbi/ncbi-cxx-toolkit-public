@@ -1716,6 +1716,31 @@ static bool s_RareConsensusNotExpected (CBioseq_Handle seq)
 
     
 
+static bool s_ConsistentWithA (Char ch)
+
+{
+  return (bool) (strchr ("ANRMWHVD", ch) != NULL);
+}
+
+static bool s_ConsistentWithC (Char ch)
+
+{
+  return (bool) (strchr ("CNYMSHBV", ch) != NULL);
+}
+
+static bool s_ConsistentWithG (Char ch)
+
+{
+  return (bool) (strchr ("GNRKSBVD", ch) != NULL);
+}
+
+static bool s_ConsistentWithT (Char ch)
+
+{
+  return (bool) (strchr ("TNYKWHBD", ch) != NULL);
+}
+
+
 void CValidError_feat::ValidateIntron (const CSeq_feat& feat)
 {
     if (IsIntronShort(feat)) {
@@ -1786,8 +1811,8 @@ void CValidError_feat::ValidateIntron (const CSeq_feat& feat)
             //is ok
         } else if (strand == eNa_strand_minus) {
             if (end > 0 
-                && IsResidue (vec[end - 1]) && (vec[end - 1] == 'A' || vec[end - 1] == 'G')
-                && IsResidue (vec[end]) && vec[end] == 'C') {
+                && IsResidue (vec[end - 1]) && (s_ConsistentWithA(vec[end - 1]) || s_ConsistentWithG(vec[end - 1]))
+                && IsResidue (vec[end]) && s_ConsistentWithC(vec[end])) {
                 // matches donor
             } else if (end == seq_len - 1) {
                 PostErr (eDiag_Info, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
@@ -1802,8 +1827,8 @@ void CValidError_feat::ValidateIntron (const CSeq_feat& feat)
             }
         } else {
             if (end < seq_len - 1
-                && IsResidue (vec[end]) && vec[end] == 'G'
-                && IsResidue (vec[end + 1]) && (vec[end + 1] == 'T' || vec[end + 1] == 'C')) {
+                && IsResidue (vec[end]) && s_ConsistentWithG(vec[end])
+                && IsResidue (vec[end + 1]) && (s_ConsistentWithT(vec[end + 1]) || s_ConsistentWithC(vec[end + 1]))) {
                 // matches donor
             } else if (end == 0) {
                 PostErr (eDiag_Info, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
@@ -1840,8 +1865,8 @@ void CValidError_feat::ValidateIntron (const CSeq_feat& feat)
             }
         } else {
             if (end > 0
-                && IsResidue (vec[end - 1]) && vec[end - 1] == 'A'
-                && IsResidue (vec[end]) && vec[end] == 'G') {
+                && IsResidue (vec[end - 1]) && s_ConsistentWithA(vec[end - 1])
+                && IsResidue (vec[end]) && s_ConsistentWithG(vec[end])) {
                 // matches acceptor
             } else if (end == seq_len - 1) {
                 PostErr (eDiag_Info, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
@@ -1887,7 +1912,7 @@ void CValidError_feat::ValidateDonor
                              + NStr::IntToString (stop + 1) + " of " + label,
                              feat);
                 }
-            } else if (vec[stop - 1] == 'C' && vec[stop - 2] == 'A') {
+            } else if (s_ConsistentWithC(vec[stop - 1]) && s_ConsistentWithA(vec[stop - 2])) {
                 // it's ok, it's abutting the reverse complement of GU
             } else if (vec[stop - 1] == 'C' && vec[stop - 2] == 'G') {
                 // reverse complement of minor splice site GC
@@ -1931,7 +1956,7 @@ void CValidError_feat::ValidateDonor
                              + NStr::IntToString (stop + 1) + " of " + label,
                              feat);
                 }
-            } else if (vec[stop + 1] == 'G' && vec[stop + 2] == 'T') {
+            } else if (s_ConsistentWithG(vec[stop + 1]) && s_ConsistentWithT(vec[stop + 2])) {
                 // it's ok, it's abutting GT
             } else if (vec[stop + 1] == 'G' && vec[stop + 2] == 'C') {
                 // minor splice site GC
@@ -1991,7 +2016,7 @@ void CValidError_feat::ValidateAcceptor
                              + NStr::IntToString (start + 1) + " of " + label,
                              feat);
                 }
-            } else if (vec[start + 1] == 'C' && vec[start + 2] == 'T') {
+            } else if (s_ConsistentWithC(vec[start + 1]) && s_ConsistentWithT(vec[start + 2])) {
                 // it's ok, it's abutting the reverse complement of AG
             } else {
                 has_errors = true;
@@ -2024,7 +2049,7 @@ void CValidError_feat::ValidateAcceptor
                              + NStr::IntToString (start + 1) + " of " + label,
                              feat);
                 }
-            } else if (vec[start - 2] == 'A' && vec[start - 1] == 'G') {
+            } else if (s_ConsistentWithA(vec[start - 2]) && s_ConsistentWithG(vec[start - 1])) {
                 // it's ok, it's abutting AG
             } else {
                 has_errors = true;
@@ -6776,8 +6801,8 @@ bool CValidError_feat::Is5AtEndSpliceSiteOrGap (const CSeq_loc& loc)
                   } else {
                       // ok, location abuts gap
                   }
-              } else if (end < seq_len - 2 && IsResidue (vec[end + 1]) && vec[end + 1] == 'C'
-                         && IsResidue (vec[end + 2]) && vec[end + 2] == 'T') {
+              } else if (end < seq_len - 2 && IsResidue (vec[end + 1]) && s_ConsistentWithC(vec[end + 1])
+                         && IsResidue (vec[end + 2]) && s_ConsistentWithT(vec[end + 2])) {
                   // it's ok, it's abutting the reverse complement of AG
               } else {
                   return false;
@@ -6796,8 +6821,8 @@ bool CValidError_feat::Is5AtEndSpliceSiteOrGap (const CSeq_loc& loc)
                       // ok, location abuts gap
                   }
               } else {
-                  if (end > 1 && IsResidue (vec[end - 1]) && vec[end - 1] == 'G'
-                      && IsResidue(vec[end - 2]) && vec[end - 2] == 'A') {
+                  if (end > 1 && IsResidue (vec[end - 1]) && s_ConsistentWithG(vec[end - 1])
+                      && IsResidue(vec[end - 2]) && s_ConsistentWithA(vec[end - 2])) {
                       //it's ok, it's abutting "AG"
                   } else {
                       return false;
