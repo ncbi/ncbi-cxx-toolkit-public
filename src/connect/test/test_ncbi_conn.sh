@@ -24,8 +24,10 @@ trap 'echo "`date`."' 0 1 2 3 15
 
 ext="`expr $$ '%' 3`"
 
-if [ -r /am/ncbiapdata/test_data/proxy/test_ncbi_proxy.$ext ]; then
-  . /am/ncbiapdata/test_data/proxy/test_ncbi_proxy.$ext
+if   [ -r /am/ncbiapdata/test_data/proxy/test_ncbi_proxy.$ext ]; then
+  .       /am/ncbiapdata/test_data/proxy/test_ncbi_proxy.$ext
+elif [ -r /cygdrive/z/test_data/proxy/test_ncbi_proxy.$ext    ]; then
+  .       /cygdrive/z/test_data/proxy/test_ncbi_proxy.$ext
 fi
 
 if [ "`expr '(' $$ / 10 ')' '%' 2`" = "0" ]; then

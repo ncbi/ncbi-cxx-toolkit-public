@@ -7,7 +7,7 @@ ext="`expr $$ '%' 3`"
 if   [ -r /am/ncbiapdata/test_data/proxy/test_ncbi_proxy.$ext ]; then
   .       /am/ncbiapdata/test_data/proxy/test_ncbi_proxy.$ext
   proxy=1
-elif [ -r /cygdrive/z/test_data/proxy/test_ncbi_proxy.$ext ]; then
+elif [ -r /cygdrive/z/test_data/proxy/test_ncbi_proxy.$ext    ]; then
   .       /cygdrive/z/test_data/proxy/test_ncbi_proxy.$ext
   proxy=1
 fi
