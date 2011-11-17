@@ -988,7 +988,7 @@ void CValidError_imp::ValidateBioSource
 
     int chrom_count = 0;
     bool chrom_conflict = false;
-    int country_count = 0, lat_lon_count = 0;
+    int country_count = 0, lat_lon_count = 0, collection_date_count = 0;
     int fwd_primer_seq_count = 0, rev_primer_seq_count = 0;
     int fwd_primer_name_count = 0, rev_primer_name_count = 0;
     CPCRSetList pcr_set_list;
@@ -1190,6 +1190,7 @@ void CValidError_imp::ValidateBioSource
             break;
 
         case CSubSource::eSubtype_collection_date:
+            ++collection_date_count;
             break;
 
         default:
@@ -1256,6 +1257,10 @@ void CValidError_imp::ValidateBioSource
     if (rev_primer_name_count > 1) {
         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceQualifiers, 
                    "Multiple rev_primer_name qualifiers present", obj, ctx);
+    }
+    if (collection_date_count > 1) {
+        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceQualifiers, 
+                   "Multiple collection_date qualifiers present", obj, ctx);
     }
 
     if ((fwd_primer_seq_count > 0 && rev_primer_seq_count == 0)
