@@ -33,7 +33,7 @@ is_seg_type(spliced) = 0
 exon_count > 1
 2 4 9
 not exon_count > 1
-3 6 7 8
+0 1 3 5 6 7 8
 exon_count >= 1
 2 3 4 6 7 8 9
 exon_count != 1
