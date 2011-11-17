@@ -47,7 +47,7 @@
 static ESwitch s_Fast = eOff;
 
 
-static unsigned int s_FWPorts[1024 / sizeof(unsigned int)] = { 0 };
+static unsigned int s_FBFWPorts[1024 / sizeof(unsigned int)] = { 0 };
 
 #define SizeOf(arr)  (sizeof(arr) / sizeof((arr)[0]))
 
@@ -61,13 +61,13 @@ ESwitch SERV_DoFastOpens(ESwitch on)
 }
 
 
-int/*bool*/ SERV_AddFallbackPort(unsigned short port)
+int/*bool*/ SERV_AddFallbackFirewallPort(unsigned short port)
 {
     if (port--) {
-        unsigned int n = port / (sizeof(*s_FWPorts) << 3);
-        unsigned int m = port % (sizeof(*s_FWPorts) << 3);
-        if ((size_t) n < SizeOf(s_FWPorts)) {
-            s_FWPorts[n] |= 1 << m;
+        unsigned int n = port / (sizeof(*s_FBFWPorts) << 3);
+        unsigned int m = port % (sizeof(*s_FBFWPorts) << 3);
+        if ((size_t) n < SizeOf(s_FBFWPorts)) {
+            s_FBFWPorts[n] |= 1 << m;
             return 1/*true*/;
         }
     }
@@ -75,13 +75,13 @@ int/*bool*/ SERV_AddFallbackPort(unsigned short port)
 }
 
 
-int/*bool*/ SERV_IsFallbackPort(unsigned short port)
+int/*bool*/ SERV_IsFallbackFirewallPort(unsigned short port)
 {
     if (port--) {
-        unsigned int n = port / (sizeof(*s_FWPorts) << 3);
-        unsigned int m = port % (sizeof(*s_FWPorts) << 3);
-        if ((size_t) n < SizeOf(s_FWPorts)) {
-            return s_FWPorts[n] & (1 << m) ? 1/*true*/ : 0/*false*/;
+        unsigned int n = port / (sizeof(*s_FBFWPorts) << 3);
+        unsigned int m = port % (sizeof(*s_FBFWPorts) << 3);
+        if ((size_t) n < SizeOf(s_FBFWPorts)) {
+            return s_FBFWPorts[n] & (1 << m) ? 1/*true*/ : 0/*false*/;
         }
     }
     return 0/*false*/;
@@ -640,9 +640,10 @@ static void s_PrintFWPorts(char* buf, size_t bufsize,
         break;
     }
     len = 0;
-    for (m = 0, n = 0; n < SizeOf(s_FWPorts); n++, m += sizeof(*s_FWPorts)<<3){
+    for (n = 0, m = 0;  n < SizeOf(s_FBFWPorts);
+         n++,   m += sizeof(*s_FBFWPorts) << 3) {
         unsigned short p;
-        unsigned int mask = s_FWPorts[n];
+        unsigned int mask = s_FBFWPorts[n];
         for (p = m + 1;  mask;  mask >>= 1, ++p) {
             if (mask & 1) {
                 char port[10];
