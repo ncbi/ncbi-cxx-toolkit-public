@@ -622,6 +622,8 @@ public:
     /// Build a stream on top of an existing data area of a specified size.
     /// The contents of the area is what will be read first from the stream.
     /// Writing to the stream will _not_ modify the contents of the area.
+    /// The written data will appear following the initial data block when
+    /// read from the stream.
     /// Ownership of the area pointed to by "ptr" is controlled by the "owner"
     /// parameter, and if the ownership is passed to the stream the area will
     /// be deleted by "delete[] (char*)" at the stream dtor.  That is,
