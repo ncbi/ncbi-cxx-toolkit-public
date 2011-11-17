@@ -8,9 +8,12 @@ more_shims = $(more_shims_$(abs_top_srcdir:%=recursive))
 
 include $(more_shims)
 
-%:
+all sources libs clean purge clean_sources purge_sources check check_add:
 	@echo "Falling back to GNU Make ($(GMAKE))"
 	@+$(GMAKE) --version >/dev/null 2>&1
 	+$(GMAKE) $(MFLAGS) $@
 
-.INIT .DONE: ;
+%_l %_r %_p %_f %_fd %.usr %.nonusr %.locked %.real:
+	@echo "Falling back to GNU Make ($(GMAKE))"
+	@+$(GMAKE) --version >/dev/null 2>&1
+	+$(GMAKE) $(MFLAGS) $@
