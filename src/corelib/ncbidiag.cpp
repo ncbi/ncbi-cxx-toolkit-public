@@ -2014,7 +2014,7 @@ void CDiagContext::SetDefaultSessionID(const string& session_id)
 const string& CDiagContext::GetSessionID(void) const
 {
     CRequestContext& rctx = GetRequestContext();
-    if ( rctx.IsSetSessionID() ) {
+    if ( rctx.IsSetExplicitSessionID() ) {
         return rctx.GetSessionID();
     }
     return GetDefaultSessionID();
@@ -2024,7 +2024,7 @@ const string& CDiagContext::GetSessionID(void) const
 const string& CDiagContext::GetEncodedSessionID(void) const
 {
     CRequestContext& rctx = GetRequestContext();
-    if ( rctx.IsSetSessionID() ) {
+    if ( rctx.IsSetExplicitSessionID() ) {
         return rctx.GetEncodedSessionID();
     }
     GetDefaultSessionID(); // Make sure the default value is initialized.

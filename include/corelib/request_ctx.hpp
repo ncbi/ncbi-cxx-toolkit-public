@@ -91,6 +91,7 @@ public:
     const string& GetSessionID(void) const;
     void          SetSessionID(const string& session);
     bool          IsSetSessionID(void) const;
+    bool          IsSetExplicitSessionID(void) const; ///< Does not check default SID
     void          UnsetSessionID(void);
     /// Create and set new session ID
     const string& SetSessionID(void);
@@ -294,6 +295,12 @@ bool CRequestContext::IsSetSessionID(void) const
 {
     return x_IsSetProp(eProp_SessionID)  ||
         !GetDiagContext().GetDefaultSessionID().empty();
+}
+
+inline
+bool CRequestContext::IsSetExplicitSessionID(void) const
+{
+    return x_IsSetProp(eProp_SessionID);
 }
 
 inline
