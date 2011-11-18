@@ -44,12 +44,15 @@
 #define CONN_SERVICE_NAME  DEF_CONN_REG_SECTION "_" REG_CONN_SERVICE_NAME
 
 
+/* Use a property that "&a" for an array is equivalent to just "a", but for
+ * pointers it will increase indirection, so SizeOf() will always be 1. */
+#define SizeOf(arr)  (sizeof(arr) / sizeof((arr)[0]))
+
+
 static ESwitch s_Fast = eOff;
 
 
-static unsigned int s_FBFWPorts[1024 / sizeof(unsigned int)] = { 0 };
-
-#define SizeOf(arr)  (sizeof(arr) / sizeof((arr)[0]))
+static TNCBI_BigCount s_FWPorts[1024 / sizeof(TNCBI_BigCount)] = { 0 };
 
 
 ESwitch SERV_DoFastOpens(ESwitch on)
@@ -61,28 +64,25 @@ ESwitch SERV_DoFastOpens(ESwitch on)
 }
 
 
-int/*bool*/ SERV_AddFallbackFirewallPort(unsigned short port)
+int/*bool*/ SERV_AddFirewallPort(unsigned short port)
 {
-    if (port--) {
-        unsigned int n = port / (sizeof(*s_FBFWPorts) << 3);
-        unsigned int m = port % (sizeof(*s_FBFWPorts) << 3);
-        if ((size_t) n < SizeOf(s_FBFWPorts)) {
-            s_FBFWPorts[n] |= 1 << m;
-            return 1/*true*/;
-        }
+    unsigned int n = port / (sizeof(s_FWPorts[0]) << 3);
+    unsigned int m = port % (sizeof(s_FWPorts[0]) << 3);
+    if ((size_t) n < SizeOf(s_FWPorts)) {
+        s_FWPorts[n] |= (TNCBI_BigCount) 1 << m;
+        return 1/*true*/;
     }
     return 0/*false*/;
 }
 
 
-int/*bool*/ SERV_IsFallbackFirewallPort(unsigned short port)
+int/*bool*/ SERV_IsFirewallPort(unsigned short port)
 {
-    if (port--) {
-        unsigned int n = port / (sizeof(*s_FBFWPorts) << 3);
-        unsigned int m = port % (sizeof(*s_FBFWPorts) << 3);
-        if ((size_t) n < SizeOf(s_FBFWPorts)) {
-            return s_FBFWPorts[n] & (1 << m) ? 1/*true*/ : 0/*false*/;
-        }
+    unsigned int n = port / (sizeof(s_FWPorts[0]) << 3);
+    unsigned int m = port % (sizeof(s_FWPorts[0]) << 3);
+    if ((size_t) n < SizeOf(s_FWPorts)
+        &&  (s_FWPorts[n] & ((TNCBI_BigCount) 1 << m))) {
+        return 1/*true*/;
     }
     return 0/*false*/;
 }
@@ -621,8 +621,8 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text, int code)
 }
 
 
-static void s_PrintFWPorts(char* buf, size_t bufsize,
-                           const SConnNetInfo* net_info)
+static void s_PrintFirewallPorts(char* buf, size_t bufsize,
+                                 const SConnNetInfo* net_info)
 {
     EFWMode mode = net_info ? (EFWMode) net_info->firewall : eFWMode_Legacy;
     size_t  len, n;
@@ -633,18 +633,17 @@ static void s_PrintFWPorts(char* buf, size_t bufsize,
     case eFWMode_Legacy:
         *buf = '\0';
         return;
-    case eFWMode_Primary:
+    case eFWMode_Firewall:
         memcpy(buf, "0", 2);
         return;
     default:
         break;
     }
     len = 0;
-    for (n = 0, m = 0;  n < SizeOf(s_FBFWPorts);
-         n++,   m += sizeof(*s_FBFWPorts) << 3) {
+    for (n = m = 0; n < SizeOf(s_FWPorts); n++, m += sizeof(s_FWPorts[0])<<3) {
         unsigned short p;
-        unsigned int mask = s_FBFWPorts[n];
-        for (p = m + 1;  mask;  mask >>= 1, ++p) {
+        TNCBI_BigCount mask = s_FWPorts[n];
+        for (p = m;  mask;  p++, mask >>= 1) {
             if (mask & 1) {
                 char port[10];
                 int  k = sprintf(port, " %hu" + !len, p);
@@ -652,6 +651,8 @@ static void s_PrintFWPorts(char* buf, size_t bufsize,
                     memcpy(buf + len, port, k);
                     len += k;
                 }
+                if (!p)
+                    break;
             }
         }
     }
@@ -756,7 +757,7 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
         }
         if (iter->type & fSERV_Firewall) {
             /* Firewall */
-            s_PrintFWPorts(buffer, sizeof(buffer), net_info);
+            s_PrintFirewallPorts(buffer, sizeof(buffer), net_info);
             if (*buffer
                 &&  (!BUF_Write(&buf, kNcbiFWPorts, sizeof(kNcbiFWPorts)-1)  ||
                      !BUF_Write(&buf, buffer, strlen(buffer))                ||

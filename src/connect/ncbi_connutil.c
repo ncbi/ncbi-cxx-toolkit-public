@@ -346,12 +346,12 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     REG_VALUE(REG_CONN_FIREWALL, str, DEF_CONN_FIREWALL);
     if (!*str)
         info->firewall = eFWMode_Legacy;
-    else if (strcasecmp(str, "primary") == 0)
-        info->firewall = eFWMode_Primary;
-    else if (strcasecmp(str, "fallback") == 0)
-        info->firewall = eFWMode_Fallback;
     else if (strcasecmp(str, "adaptive") == 0  ||  ConnNetInfo_Boolean(str))
         info->firewall = eFWMode_Adaptive;
+    else if (strcasecmp(str, "firewall") == 0)
+        info->firewall = eFWMode_Firewall;
+    else if (strcasecmp(str, "fallback") == 0)
+        info->firewall = eFWMode_Fallback;
     else
         info->firewall = eFWMode_Legacy;
 
@@ -1080,12 +1080,12 @@ static const char* x_Port(unsigned short port, char buf[])
 static const char* x_Firewall(unsigned int firewall)
 {
     switch ((EFWMode) firewall) {
-    case eFWMode_Primary:
-        return "PRIMARY";
-    case eFWMode_Fallback:
-        return "FALLBACK";
     case eFWMode_Adaptive:
         return "TRUE";
+    case eFWMode_Firewall:
+        return "FIREWALL";
+    case eFWMode_Fallback:
+        return "FALLBACK";
     default:
         assert(!firewall);
         break;

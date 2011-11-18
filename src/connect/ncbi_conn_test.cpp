@@ -476,7 +476,7 @@ EIO_Status CConnTest::x_GetFirewallConfiguration(const SConnNetInfo* net_info)
              (!m_Firewall  &&  !(4444 <= cp.port  &&  cp.port <= 4544)))) {
             fb = true;
         }
-        if ( fb  &&  net_info->firewall == eFWMode_Primary)
+        if ( fb  &&  net_info->firewall == eFWMode_Firewall)
             continue;
         if (!fb  &&  net_info->firewall == eFWMode_Fallback)
             continue;
@@ -529,7 +529,12 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
     if (m_Firewall) {
         _ASSERT(net_info);
         switch (net_info->firewall) {
-        case eFWMode_Primary:
+        case eFWMode_Adaptive:
+            temp += "There are also fallback connection ports such as 22 and"
+                " 443 at 130.14.29.112.  They will be used if connections to"
+                " the ports in the range described above have failed\n";
+            break;
+        case eFWMode_Firewall:
             temp += "Also, your configuration explicitly forbids to use any"
                 " fallback firewall ports that may exist to improve network"
                 " connectivity\n";
@@ -539,11 +544,6 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
                 " fallback firewall ports (if any exist) are to be used for"
                 " connections: this also assumes that no conventional ports"
                 " from the range above will be used\n";
-            break;
-        case eFWMode_Adaptive:
-            temp += "There are also fallback connection ports such as 22 and"
-                " 443 at 130.14.29.112.  They will be used if connections to"
-                " the ports in the range described above have failed\n";
             break;
         default:
             temp += "Internal program error, please report!\n";
@@ -684,9 +684,9 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                 " services to work correctly and seamlessly, your network must"
                 " support all ports in the range as documented above\n";
         }
-        if (net_info->firewall & eFWMode_Fallback) {
-            temp += net_info->firewall == eFWMode_Fallback
-                ? "Fallback" : "Also, adaptive";
+        if (net_info->firewall & eFWMode_Adaptive) {
+            temp += net_info->firewall == eFWMode_Adaptive
+                ? "Also, adaptive" : "Fallback";
             temp += " firewall mode allows that some (but not all) fallback"
                 " firewall ports may fail to operate.  Only those ports found"
                 " in working order will be used to access NCBI services\n";
@@ -818,8 +818,8 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
             size_t k;
             switch (cp->status) {
             case eIO_Success:
-                if (n  &&  (net_info->firewall & eFWMode_Fallback))
-                    SERV_AddFallbackFirewallPort(cp->port);
+                if (n  &&  (net_info->firewall & eFWMode_Adaptive))
+                    SERV_AddFirewallPort(cp->port);
                 break;
             case eIO_Timeout:
                 m_CheckPoint = "Connection timed out";
@@ -953,6 +953,8 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                 NCBI_FW_URL;
         }
     } else {
+        if (m_Firewall)
+            SERV_AddFirewallPort(0);
         temp = "All " + string(m_Firewall
                                ? "firewall port(s)"
                                : "service entry point(s)") + " checked OK";

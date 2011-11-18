@@ -218,12 +218,12 @@ extern NCBI_XCONNECT_EXPORT double SERV_Preference
  );
 
 
-extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_AddFallbackFirewallPort
+extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_AddFirewallPort
 (unsigned short port
 );
 
 
-extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_IsFallbackFirewallPort
+extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_IsFirewallPort
 (unsigned short port
 );
 

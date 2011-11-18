@@ -124,9 +124,9 @@ typedef unsigned EBURLScheme;
 
 typedef enum {
     eFWMode_Legacy   = 0,  /** Relay, no firewall                           */
-    eFWMode_Primary  = 1,  /** Primary ports only, no fallback              */
-    eFWMode_Fallback = 2,  /** Fallback ports only (w/o trying any primary) */
-    eFWMode_Adaptive = 3   /** Primary ports first, then fallback           */
+    eFWMode_Adaptive = 1,  /** Regular firewall ports first, then fallback  */
+    eFWMode_Firewall = 2,  /** Regular firewall ports only, no fallback     */
+    eFWMode_Fallback = 3  /** Fallback ports only (w/o trying any regular) */
 } EFWMode;
 
 typedef unsigned EBFWMode;

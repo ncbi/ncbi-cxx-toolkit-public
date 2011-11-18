@@ -710,7 +710,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         }
         SOCK_ntoa(uuu->host, net_info->host, sizeof(net_info->host));
         if (net_info->firewall == eFWMode_Fallback
-            &&  !SERV_IsFallbackFirewallPort(uuu->port)) {
+            &&  !SERV_IsFirewallPort(uuu->port)) {
             CORE_LOGF_X(9, eLOG_Trace,
                         ("[%s]  Fallback port :%hu is not in the set",
                          uuu->service, uuu->port));

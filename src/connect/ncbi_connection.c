@@ -109,50 +109,50 @@
 /* Private flags, must not cross with ECONN_Flags defined in the header
  */
 enum ECONN_InternalFlag {
-    fCONN_Flush = 1024                 /* auto-flush was successful          */
+    fCONN_Flush = 1024           /* auto-flush was successful                */
 };
 
 
 /* Connection state
  */
 typedef enum {
-    eCONN_Unusable = -1,               /* iff !conn->meta.list               */
-    eCONN_Closed   =  0,               /* "Open" can be attempted            */
-    eCONN_Open     =  1,               /* operational state (I/O allowed)    */
-    eCONN_Bad      =  2,               /* non-operational (I/O not allowed)  */
-    eCONN_Cancel   =  3                /* NB: |= eCONN_Open (user-canceled)  */
+    eCONN_Unusable = -1,         /* iff !conn->meta.list                     */
+    eCONN_Closed   =  0,         /* "Open" can be attempted                  */
+    eCONN_Open     =  1,         /* operational state (I/O allowed)          */
+    eCONN_Bad      =  2,         /* non-operational (I/O not allowed)        */
+    eCONN_Cancel   =  3          /* NB: |= eCONN_Open (user-canceled)        */
 } ECONN_State;
 
 
 /* Connection internal data:  meta *must* come first
  */
 typedef struct SConnectionTag {
-    SMetaConnector         meta;       /* VTable of operations and list      */
+    SMetaConnector  meta;        /* VTable of operations and list            */
 
-    ECONN_State            state;      /* connection state                   */
-    TCONN_Flags            flags;      /* connection flags                   */
-    EIO_Status             r_status;   /* I/O status of last read            */
-    EIO_Status             w_status;   /* I/O status of last write           */
+    ECONN_State     state;       /* connection state                         */
+    TCONN_Flags     flags;       /* connection flags                         */
+    EIO_Status      r_status;    /* I/O status of last read                  */
+    EIO_Status      w_status;    /* I/O status of last write                 */
 
-    BUF                    buf;        /* storage for peek data              */
+    BUF             buf;         /* storage for peek data                    */
 
     /* "[c|r|w|l]_timeout" is either 0 (kInfiniteTimeout), kDefaultTimeout
        (to use connector-specific one), or points to "[cc|rr|ww|ll]_timeout" */
-    const STimeout*        o_timeout;  /* timeout on open                    */
-    const STimeout*        r_timeout;  /* timeout on read                    */
-    const STimeout*        w_timeout;  /* timeout on write                   */
-    const STimeout*        c_timeout;  /* timeout on close                   */
-    STimeout               oo_timeout; /* storage for "o_timeout"            */
-    STimeout               rr_timeout; /* storage for "r_timeout"            */
-    STimeout               ww_timeout; /* storage for "w_timeout"            */
-    STimeout               cc_timeout; /* storage for "c_timeout"            */
+    const STimeout* o_timeout;   /* timeout on open                          */
+    const STimeout* r_timeout;   /* timeout on read                          */
+    const STimeout* w_timeout;   /* timeout on write                         */
+    const STimeout* c_timeout;   /* timeout on close                         */
+    STimeout        oo_timeout;  /* storage for "o_timeout"                  */
+    STimeout        rr_timeout;  /* storage for "r_timeout"                  */
+    STimeout        ww_timeout;  /* storage for "w_timeout"                  */
+    STimeout        cc_timeout;  /* storage for "c_timeout"                  */
 
-    TNCBI_BigCount         r_pos;      /* read and ...                       */
-    TNCBI_BigCount         w_pos;      /*          ... write positions       */
+    TNCBI_BigCount  r_pos;       /* read and ...                             */
+    TNCBI_BigCount  w_pos;       /*          ... write positions             */
 
-    SCONN_Callback         cb[CONN_N_CALLBACKS];
+    SCONN_Callback  cb[CONN_N_CALLBACKS];
 
-    unsigned int           magic;      /* magic number for integrity checks  */
+    unsigned int    magic;       /* magic cookie for integrity checks        */
 } SConnection;
 
 
