@@ -282,7 +282,11 @@ export DIAG_SILENT_ABORT="Y"
 
 # Path to test data, used by some scripts and applications
 if test -z "\$NCBI_TEST_DATA"; then
-    export NCBI_TEST_DATA="//snowman/win-coremake/Scripts/test_data"
+    case `uname -s` in
+       CYGWIN* ) NCBI_TEST_DATA=//snowman/win-coremake/Scripts/test_data ;;
+       *)        NCBI_TEST_DATA=/am/ncbiapdata/test_data ;;
+    esac
+    export NCBI_TEST_DATA
 fi
 
 count_ok=0
