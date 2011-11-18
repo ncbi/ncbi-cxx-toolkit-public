@@ -763,6 +763,9 @@ public:
     /// Get "previous" exception from the backlog.
     const CException* GetPredecessor(void) const { return m_Predecessor; }
 
+    /// Check if exception has main text in the chain
+    bool HasMainText(void) const { return m_MainText; }
+
     /// Destructor.
     virtual ~CException(void) throw();
 
@@ -818,6 +821,7 @@ private:
     mutable TExceptionPtr m_Predecessor; ///< Previous exception
 
     mutable bool m_InReporter;       ///< Reporter flag
+    mutable bool m_MainText;         ///< Exception has main text
     static  bool sm_BkgrEnabled;     ///< Background reporting enabled flag
 
     auto_ptr<CStackTrace> m_StackTrace; ///< Saved stack trace

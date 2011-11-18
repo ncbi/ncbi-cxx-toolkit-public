@@ -1534,7 +1534,7 @@ CNcbiTestApplication::x_CallUserFuncs(ETestUserFuncType func_type)
             (*it)();
         }
         catch (CException& e) {
-            ERR_POST_X(1, "Exception in " << s_GetUserFuncName(func_type) << e);
+            ERR_POST_X(1, "Exception in " << s_GetUserFuncName(func_type) << ": " << e);
             return false;
         }
         catch (exception& e) {

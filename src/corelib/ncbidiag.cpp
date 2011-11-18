@@ -5682,6 +5682,19 @@ const CNcbiDiag& CNcbiDiag::Put(const CStackTrace*,
     return *this;
 }
 
+static string
+s_GetExceptionText(const CException* pex)
+{
+    string text(pex->GetMsg());
+    ostrstream os;
+    pex->ReportExtra(os);
+    if (os.pcount() != 0) {
+        text += " (";
+        text += (string) CNcbiOstrstreamToString(os);
+        text += ')';
+    }
+    return text;
+}
 
 const CNcbiDiag& CNcbiDiag::x_Put(const CException& ex) const
 {
@@ -5699,23 +5712,24 @@ const CNcbiDiag& CNcbiDiag::x_Put(const CException& ex) const
     }
 
     const CException* pex;
+    const CException* main_pex = NULL;
     stack<const CException*> pile;
     // invert the order
     for (pex = &ex; pex; pex = pex->GetPredecessor()) {
         pile.push(pex);
+        if (!main_pex  &&  pex->HasMainText())
+            main_pex = pex;
+    }
+    if (!main_pex)
+        main_pex = pile.top();
+    if (m_Buffer.m_Stream->pcount()) {
+        *this << "(" << main_pex->GetType() << "::"
+                     << main_pex->GetErrCodeString() << ") "
+              << s_GetExceptionText(main_pex);
     }
     for (; !pile.empty(); pile.pop()) {
         pex = pile.top();
-        string text(pex->GetMsg());
-        {
-            ostrstream os;
-            pex->ReportExtra(os);
-            if (os.pcount() != 0) {
-                text += " (";
-                text += (string) CNcbiOstrstreamToString(os);
-                text += ')';
-            }
-        }
+        string text(s_GetExceptionText(pex));
         const CStackTrace* stacktrace = pex->GetStackTrace();
         if ( stacktrace ) {
             ostrstream os;

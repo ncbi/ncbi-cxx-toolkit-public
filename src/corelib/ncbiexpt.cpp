@@ -163,13 +163,16 @@ CException::CException(const CDiagCompileInfo& info,
 : m_Severity(severity),
   m_ErrCode(err_code),
   m_Predecessor(0),
-  m_InReporter(false)
+  m_InReporter(false),
+  m_MainText(true)
 {
     if (CompareDiagPostLevel(severity, eDiag_Critical) >= 0  &&
         s_AbortIfCritical.Get()) {
         abort();
     }
     x_Init(info, message, prev_exception, severity);
+    if (prev_exception)
+        prev_exception->m_MainText = false;
 }
 
 
@@ -184,7 +187,8 @@ CException::CException(void)
   m_Line(-1),
   m_ErrCode(CException::eInvalid),
   m_Predecessor(0),
-  m_InReporter(false)
+  m_InReporter(false),
+  m_MainText(true)
 {
 // this only is called in case of multiple inheritance
 }
@@ -215,6 +219,7 @@ void CException::AddBacklog(const CDiagCompileInfo& info,
         delete prev;
     }
     x_Init(info, message, 0, severity);
+    m_MainText = false;
 }
 
 
@@ -238,6 +243,9 @@ void CException::AddPrevious(const CException* prev_exception)
     else {
         m_Predecessor = prev_exception->x_Clone();
     }
+
+    for (const CException* pex = prev_exception; pex; pex = pex->m_Predecessor)
+        pex->m_MainText = false;
 }
 
 
@@ -424,6 +432,7 @@ void CException::x_Assign(const CException& src)
 {
     m_Severity = src.m_Severity;
     m_InReporter = false;
+    m_MainText = src.m_MainText;
     m_File     = src.m_File;
     m_Line     = src.m_Line;
     m_Msg      = src.m_Msg;
