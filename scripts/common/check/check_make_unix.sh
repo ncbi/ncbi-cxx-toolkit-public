@@ -301,6 +301,12 @@ if test -z "\$NCBI_CHECK_TIMEOUT_MULT"; then
    NCBI_CHECK_TIMEOUT_MULT=1
 fi
 
+# Path to test data, used by some scripts and applications
+if test -z "\$NCBI_TEST_DATA"; then
+    NCBI_TEST_DATA=/am/ncbiapdata/test_data
+    export NCBI_TEST_DATA
+fi
+
 # Valgrind configuration
 VALGRIND_SUP="\${root_dir}/scripts/common/check/valgrind.supp"
 VALGRIND_CMD="--tool=memcheck --suppressions=\$VALGRIND_SUP"

@@ -280,6 +280,10 @@ export CHECK_SIGNATURE="\$signature"
 # Enable silent abort for NCBI applications on fatal errors
 export DIAG_SILENT_ABORT="Y"
 
+# Path to test data, used by some scripts and applications
+if test -z "\$NCBI_TEST_DATA"; then
+    export NCBI_TEST_DATA="//snowman/win-coremake/Scripts/test_data"
+fi
 
 count_ok=0
 count_err=0
