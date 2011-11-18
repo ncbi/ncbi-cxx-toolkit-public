@@ -242,7 +242,7 @@ int CTestNetScheduleClient::Run(void)
     NcbiCout << "Waiting for " << jcount << " jobs..." << NcbiEndl;
 
     unsigned long job_cnt;
-    while ((job_cnt = admin.Count("status=Pending")) != 0) {
+    while ((job_cnt = admin.CountActiveJobs()) != 0) {
         NcbiCout << job_cnt << " jobs to go" << NcbiEndl;
         SleepMilliSec(2000);
     }
