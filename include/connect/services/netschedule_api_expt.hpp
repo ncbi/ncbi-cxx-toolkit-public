@@ -84,13 +84,12 @@ public:
         eObsoleteCommand,
         eInvalidParameter,
         eInvalidAuthToken,
-        eNoJobsWithAffinity
+        eTooManyPreferredAffinities
     };
 
     virtual const char* GetErrCodeString(void) const
     {
-        switch (GetErrCode())
-        {
+        switch (GetErrCode()) {
         case eInternalError:       return "eInternalError";
         case eProtocolSyntaxError: return "eProtocolSyntaxError";
         case eAuthenticationError: return "eAuthenticationError";
@@ -107,7 +106,8 @@ public:
         case eObsoleteCommand:     return "eObsoleteCommand";
         case eInvalidParameter:    return "eInvalidParameter";
         case eInvalidAuthToken:    return "eInvalidAuthToken";
-        case eNoJobsWithAffinity:  return "eNoJobsWithAffinity";
+        case eTooManyPreferredAffinities:
+            return "eTooManyPreferredAffinities";
         default:                   return CNetServiceException::GetErrCodeString();
         }
     }

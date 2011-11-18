@@ -56,7 +56,8 @@ CNetScheduleExceptionMap::CNetScheduleExceptionMap()
     m_Map["eObsoleteCommand"]     = CNetScheduleException::eObsoleteCommand;
     m_Map["eInvalidParameter"]    = CNetScheduleException::eInvalidParameter;
     m_Map["eInvalidAuthToken"]    = CNetScheduleException::eInvalidAuthToken;
-    m_Map["eNoJobsWithAffinity"]  = CNetScheduleException::eNoJobsWithAffinity;
+    m_Map["eTooManyPreferredAffinities"] =
+        CNetScheduleException::eTooManyPreferredAffinities;
 }
 
 CException::TErrCode CNetScheduleExceptionMap::GetCode(const string& name)
