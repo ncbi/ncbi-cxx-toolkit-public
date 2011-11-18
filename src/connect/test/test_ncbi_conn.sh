@@ -22,31 +22,30 @@ rm -f $log
 
 trap 'echo "`date`."' 0 1 2 3 15
 
-ext="`expr $$ '%' 3`"
+. ncbi_test_data
 
-if   [ -r /am/ncbiapdata/test_data/proxy/test_ncbi_proxy.$ext ]; then
-  .       /am/ncbiapdata/test_data/proxy/test_ncbi_proxy.$ext
-  proxy=1
-elif [ -r /cygdrive/z/test_data/proxy/test_ncbi_proxy.$ext    ]; then
-  .       /cygdrive/z/test_data/proxy/test_ncbi_proxy.$ext
+ext="`expr $$ '%' 3`"
+if [ -r $NCBI_TEST_DATA/proxy/test_ncbi_proxy.$ext ]; then
+  .     $NCBI_TEST_DATA/proxy/test_ncbi_proxy.$ext
   proxy=1
 fi
 
-if [ "`expr '(' $$ / 10 ')' '%' 2`" = "0" ]; then
+fw="`expr '(' $$ / 10 ')' '%' 2`"
+if [ "$fw" = "1" ]; then
   CONN_FIREWALL=TRUE
-  if [ "$ext" = "0" ]; then
-    case "`expr '(' $$ / 100 ')' '%' 3`" in
-      0) CONN_FIREWALL=PRIMARY
-        ;;
-      1) CONN_FIREWALL=FALLBACK
-        ;;
-      *)
-        ;;
-    esac
-  fi
+  # Only proxy "0" is capable of forwarding the firewall port range
+  case "`expr '(' $$ / 100 ')' '%' 3`" in
+    0) test "$ext" = "0"  &&  CONN_FIREWALL=FIREWALL
+      ;;
+    1)                        CONN_FIREWALL=FALLBACK
+      ;;
+    *)
+      ;;
+  esac
   export CONN_FIREWALL
 elif [ "${proxy:-0}" = "1" ]; then
   if [ "$ext" != "0" -o "`expr '(' $$ / 100 ')' '%' 2`" != "0" ]; then
+    # Only proxy "0" is capable of forwarding the relay port range
     CONN_HTTP_PROXY_FLEX=TRUE
     export CONN_HTTP_PROXY_FLEX
   fi

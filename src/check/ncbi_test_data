@@ -1,0 +1,4 @@
+# Do not make executable -- source it instead!
+
+# Used to set default test data location
+: ${NCBI_TEST_DATA:=/am/ncbiapdata/test_data}
