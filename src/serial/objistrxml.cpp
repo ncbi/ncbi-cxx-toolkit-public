@@ -109,11 +109,11 @@ static inline
 bool IsBaseChar(char c)
 {
     return
-        c >= 'A' && c <='Z' ||
-        c >= 'a' && c <= 'z' ||
-        c >= '\xC0' && c <= '\xD6' ||
-        c >= '\xD8' && c <= '\xF6' ||
-        c >= '\xF8' && c <= '\xFF';
+        (c >= 'A' && c <='Z') ||
+        (c >= 'a' && c <= 'z') ||
+        (c >= '\xC0' && c <= '\xD6') ||
+        (c >= '\xD8' && c <= '\xF6') ||
+        (c >= '\xF8' && c <= '\xFF');
 }
 
 static inline
