@@ -41,6 +41,13 @@
 
 #include <objects/biotree/FeatureDescr.hpp>
 
+#ifdef NCBI_COMPILER_MSVC
+#  define isfinite _finite
+#elif defined(NCBI_COMPILER_WORKSHOP)  &&  !defined(__builtin_isfinite)
+#  undef isfinite
+#  define isfinite finite
+#endif
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
@@ -587,7 +594,7 @@ CRef<CBioTreeContainer> MakeBioTreeContainer(const TPhyTreeNode *tree)
 bool CDistMethods::AllFinite(const TMatrix& mat)
 {
     ITERATE (TMatrix::TData, it, mat.GetData()) {
-        if (!finite(*it)) {
+        if (!isfinite(*it)) {
             return false;
         }
     }

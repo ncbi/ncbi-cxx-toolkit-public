@@ -167,7 +167,7 @@ bool s_ValidateMatrix(const CPhyTreeCalc::CDistMatrix& mat)
     for (int i=0;i < mat.GetNumElements() - 1;i++) {
         for (int j=i+1;j < mat.GetNumElements();j++) {
             double val = mat(i, j);
-            if (!finite(val) || val < 0.0) {
+            if (!isfinite(val) || val < 0.0) {
                 return false;
             }
         }
@@ -201,11 +201,11 @@ bool CPhyTreeCalc::x_CalcDivergenceMatrix(vector<int>& included)
         // find divergence
         m_AlignDataSource->GetWholeAlnSeqString(i, sequences[i]);
         double dist = CDistMethods::Divergence(query_seq, sequences[i]);
-        _ASSERT(!finite(dist) || dist >= 0.0);
+        _ASSERT(!isfinite(dist) || dist >= 0.0);
 
         // if divergence is finite and smaller than cutoff save divergence
         // and mark sequence as included
-        if (finite(dist) && dist <= m_MaxDivergence) {
+        if (isfinite(dist) && dist <= m_MaxDivergence) {
             links.push_back(SLink(query_idx, i, dist));
             bitvector.set(i);
         }
@@ -244,10 +244,10 @@ bool CPhyTreeCalc::x_CalcDivergenceMatrix(vector<int>& included)
 
             // compute divergence
             double dist = CDistMethods::Divergence(seqi, seqj);
-            _ASSERT(!finite(dist) || dist >= 0.0);
+            _ASSERT(!isfinite(dist) || dist >= 0.0);
 
-            // if divergence finite and smaller than cutoff save divergence
-            if (finite(dist) && dist <= m_MaxDivergence) {
+            // if divergence is finite and smaller than cutoff save divergence
+            if (isfinite(dist) && dist <= m_MaxDivergence) {
                 links.push_back(SLink(it2->index2, it1->index2, dist));
             }
             else {
@@ -292,7 +292,10 @@ bool CPhyTreeCalc::x_CalcDivergenceMatrix(vector<int>& included)
             m_DivergenceMatrix(index1, index2) = it->distance;
         }
     }
-    _ASSERT(s_ValidateMatrix(m_DivergenceMatrix));
+    if (!s_ValidateMatrix(m_DivergenceMatrix)) {
+        NCBI_THROW(CPhyTreeCalcException, eDistMatrixError, "The calculated "
+                   "divergence matrix contains invalid or inifinite values");
+    }
 
     return included.size() > 1;
 }
@@ -402,7 +405,10 @@ void CPhyTreeCalc::x_CalcDistMatrix(void)
             m_DistMatrix(i, j) = m_FullDistMatrix(i, j);
         }
     }
-    _ASSERT(s_ValidateMatrix(m_DistMatrix));
+    if (!s_ValidateMatrix(m_DistMatrix)) {
+        NCBI_THROW(CPhyTreeCalcException, eDistMatrixError, "The calculated "
+                   "distance matrix contains invalid or infinite values");
+    }
 }
 
 // Compute phylogenetic tree
@@ -500,7 +506,7 @@ bool CPhyTreeCalc::CalcBioTree(void)
             int initial_num_seqs = m_AlignDataSource->GetNumRows();
             x_CreateValidAlign(used_inds);
             m_Messages.push_back(NStr::IntToString(initial_num_seqs
-                                                   - used_inds.size())
+                                                   - (int)used_inds.size())
                                  + " sequences were discarded due to"
                                  " divergence that exceeds maximum allowed.");
         }
