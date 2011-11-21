@@ -1840,13 +1840,13 @@ CFormattingArgs::x_IssueWarningsOnIncompatibleOptions(const CArgs& args) const
     case eAsnBinary:
     case eCommaSeparatedValues:
     case eArchiveFormat:
-        if (num_alignments_set && (m_NumAlignments != m_DfltNumAlignments)) {
-            LOG_POST(Warning << kArgNumAlignments << " should not be set "
-                     "with " << kArgOutputFormat << " " << (int)m_OutputFormat);
-        }
-        if (num_descr_set && (m_NumDescriptions != m_DfltNumDescriptions)) {
-            LOG_POST(Warning << kArgNumDescriptions << " should not be set "
-                     "with " << kArgOutputFormat << " " << (int)m_OutputFormat);
+        if ((num_alignments_set && (m_NumAlignments != m_DfltNumAlignments)) ||
+            (num_descr_set && (m_NumDescriptions != m_DfltNumDescriptions))) {
+            LOG_POST(Warning << "WARNING: Please use -" << kArgMaxTargetSequences 
+                     << " to control the number of hits for output format "
+                     << (int)m_OutputFormat << ". -" << kArgNumAlignments 
+                     << " and -" << kArgNumDescriptions << " are ignored when " 
+                     << "output format " << (int)m_OutputFormat << " is used.");
         }
     case eEndValue:
         break;
