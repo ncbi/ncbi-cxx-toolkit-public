@@ -1124,6 +1124,10 @@ protected:
     virtual CRef<CBlastOptionsHandle>
     x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
                           const CArgs& args) = 0;
+
+    /// Issue warnings when recovering from a search strategy (command line
+    /// applications only)
+    void x_IssueWarningsForIgnoredOptions(const CArgs& args);
 };
 
 /** 

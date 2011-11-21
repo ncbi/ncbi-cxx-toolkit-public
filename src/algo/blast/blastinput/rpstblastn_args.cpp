@@ -81,10 +81,6 @@ CRPSTBlastnAppArgs::CRPSTBlastnAppArgs()
     arg.Reset(new CFilteringArgs( !kQueryIsProtein ));
     m_Args.push_back(arg);
 
-    m_HspFilteringArgs.Reset(new CHspFilteringArgs);
-    arg.Reset(m_HspFilteringArgs);
-    m_Args.push_back(arg);
-
     arg.Reset(new CWindowSizeArg);
     m_Args.push_back(arg);
 

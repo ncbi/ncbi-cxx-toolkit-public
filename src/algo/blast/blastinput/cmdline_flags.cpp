@@ -81,6 +81,7 @@ const string kArgComplexityAdj("complexity_adjust");
 
 /* Turn on masklevel parameter for RMBlastN -RMH- */
 const string kArgMaskLevel("mask_level");
+const string kDfltArgMaskLevel("-1");
 
 const string kArgEvalue("evalue");
 const string kArgMinRawGappedScore("min_raw_gapped_score");
@@ -137,6 +138,7 @@ const string kArgGapTrigger("gap_trigger");
 const string kArgUngapped("ungapped");
 
 const string kArgCompBasedStats("comp_based_stats");
+const string kDfltArgCompBasedStats("2");
 
 const string kDfltArgNoFiltering("no");
 const string kDfltArgApplyFiltering("yes");
@@ -157,6 +159,8 @@ const string kArgFilteringDb("filtering_db");
 const string kArgWindowMaskerTaxId("window_masker_taxid");
 const string kArgWindowMaskerDatabase("window_masker_db");
 const string kArgLookupTableMaskingOnly("soft_masking");
+const string kDfltArgLookupTableMaskingOnlyProt("false");
+const string kDfltArgLookupTableMaskingOnlyNucl("true");
 
 const string kArgPSINumIterations("num_iterations");
 const string kArgPSIInputChkPntFile("in_pssm");

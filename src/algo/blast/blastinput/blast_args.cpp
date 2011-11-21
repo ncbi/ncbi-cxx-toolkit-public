@@ -289,7 +289,8 @@ CFilteringArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                         ? kDfltArgSegFiltering : kDfltArgNoFiltering);
         arg_desc.AddDefaultKey(kArgLookupTableMaskingOnly, "soft_masking",
                         "Apply filtering locations as soft masks",
-                        CArgDescriptions::eBoolean, "false");
+                        CArgDescriptions::eBoolean,
+                        kDfltArgLookupTableMaskingOnlyProt);
     } else {
         arg_desc.AddDefaultKey(kArgDustFiltering, "DUST_options",
                         "Filter query sequence with DUST "
@@ -312,7 +313,8 @@ CFilteringArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
         arg_desc.AddDefaultKey(kArgLookupTableMaskingOnly, "soft_masking",
                         "Apply filtering locations as soft masks",
-                        CArgDescriptions::eBoolean, "true");
+                        CArgDescriptions::eBoolean,
+                        kDfltArgLookupTableMaskingOnlyNucl);
     }
 
     arg_desc.SetCurrentGroup("");
@@ -483,7 +485,7 @@ CRMBlastNArg::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             "Masklevel - percentage overlap allowed per "
                             "query domain [0-101]",
                             CArgDescriptions::eInteger,
-                            NStr::IntToString(-1) );
+                            kDfltArgMaskLevel);
     arg_desc.SetConstraint(kArgMaskLevel,
                            new CArgAllowValuesLessThanOrEqual(101));
 
@@ -704,7 +706,7 @@ CCompositionBasedStatsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                       "    2005, unconditionally\n"
                       "For programs other than tblastn, must either be "
                       "absent or be D, F or 0",
-                      CArgDescriptions::eString, "2");
+                      CArgDescriptions::eString, kDfltArgCompBasedStats);
 
     arg_desc.SetCurrentGroup("Miscellaneous options");
     // Use Smith-Waterman algorithm in traceback stage
@@ -2298,6 +2300,7 @@ CBlastAppArgs::SetOptions(const CArgs& args)
     // and/or database
     if (m_OptsHandle.NotEmpty()) {
         CBlastOptions& opts = m_OptsHandle->SetOptions();
+        //opts.DebugDumpText(cerr, "OptionsBeforeLoop", 1);
         const bool mbidxargs_set = CMbIndexArgs::HasBeenSet(args);
         const bool dbargs_set = CBlastDatabaseArgs::HasBeenSet(args);
         NON_CONST_ITERATE(TBlastCmdLineArgs, arg, m_Args) {
@@ -2316,6 +2319,7 @@ CBlastAppArgs::SetOptions(const CArgs& args)
         catch (const CBlastException& e) {
             NCBI_THROW(CInputException, eInvalidInput, e.GetMsg());
         }
+        //opts.DebugDumpText(cerr, "OptionsAfterLoop", 1);
         return m_OptsHandle;
     }
 
@@ -2379,6 +2383,106 @@ SetUpCommandLineArguments(TBlastCmdLineArgs& args)
     return retval.release();
 }
 
+void
+CBlastAppArgs::x_IssueWarningsForIgnoredOptions(const CArgs& args)
+{
+    set<string> can_override;
+    can_override.insert(kArgQuery);
+    can_override.insert(kArgQueryLocation);
+    can_override.insert(kArgSubject);
+    can_override.insert(kArgSubjectLocation);
+    can_override.insert(kArgUseLCaseMasking);
+    can_override.insert(kArgDb);
+    can_override.insert(kArgDbSize);
+    can_override.insert(kArgEntrezQuery);
+    can_override.insert(kArgDbSoftMask);
+    can_override.insert(kArgDbHardMask);
+    can_override.insert(kArgUseIndex);
+    can_override.insert(kArgIndexName);
+    can_override.insert(kArgStrand);
+    can_override.insert(kArgParseDeflines);
+    can_override.insert(kArgOutput);
+    can_override.insert(kArgOutputFormat);
+    can_override.insert(kArgNumDescriptions);
+    can_override.insert(kArgNumAlignments);
+    can_override.insert(kArgRemote);
+    can_override.insert(kArgNumThreads);
+    can_override.insert(kArgInputSearchStrategy);
+    can_override.insert(kArgRemote);
+    can_override.insert("remote_verbose");
+    can_override.insert("verbose");
+
+    // this stores the arguments (and their defaults) that cannot be overriden
+    map<string, string> has_defaults;
+    has_defaults[kArgNumDescriptions] =
+        NStr::SizetToString(kDfltArgNumDescriptions);
+    has_defaults[kArgNumAlignments] = 
+        NStr::SizetToString(kDfltArgNumAlignments);
+    has_defaults[kArgOutputFormat] = 
+        NStr::IntToString(kDfltArgOutputFormat);
+    has_defaults[kArgCompBasedStats] = kDfltArgCompBasedStats;
+    // FIX the line below for igblast, and add igblast options
+    has_defaults[kArgEvalue] = NStr::DoubleToString(BLAST_EXPECT_VALUE);
+    has_defaults[kTask] = m_Task;
+    has_defaults[kArgMaxHSPsPerSubject] =
+        NStr::IntToString(kDfltArgMaxHSPsPerSubject);
+    if (Blast_QueryIsProtein(m_OptsHandle->GetOptions().GetProgramType())) {
+        if (NStr::Find(m_Task, "blastp") != NPOS || 
+            NStr::Find(m_Task, "psiblast") != NPOS) {
+            has_defaults[kArgSegFiltering] = kDfltArgNoFiltering;
+        } else {
+            has_defaults[kArgSegFiltering] = kDfltArgSegFiltering;
+        }
+        has_defaults[kArgLookupTableMaskingOnly] =
+            kDfltArgLookupTableMaskingOnlyProt;
+        has_defaults[kArgGapTrigger] =
+            NStr::IntToString((int)BLAST_GAP_TRIGGER_PROT);
+    } else {
+        has_defaults[kArgDustFiltering] = kDfltArgDustFiltering;
+        has_defaults[kArgLookupTableMaskingOnly] =
+            kDfltArgLookupTableMaskingOnlyNucl;
+        has_defaults[kArgGapTrigger] =
+            NStr::IntToString((int)BLAST_GAP_TRIGGER_NUCL);
+    }
+    has_defaults[kArgOffDiagonalRange] =
+        NStr::IntToString(kDfltOffDiagonalRange);
+    has_defaults[kArgMaskLevel] = kDfltArgMaskLevel;
+    has_defaults[kArgMaxIntronLength] =
+        NStr::IntToString(kDfltArgMaxIntronLength);
+    has_defaults[kArgQueryGeneticCode] = NStr::IntToString((int)BLAST_GENETIC_CODE);
+    has_defaults[kArgDbGeneticCode] = NStr::IntToString((int)BLAST_GENETIC_CODE);
+    // pssm engine/psiblast default options
+    has_defaults[kArgPSIPseudocount] =
+        NStr::IntToString(PSI_PSEUDO_COUNT_CONST);
+    has_defaults[kArgPSIInclusionEThreshold] =
+        NStr::DoubleToString(PSI_INCLUSION_ETHRESH);
+    has_defaults[kArgPSINumIterations] = NStr::IntToString(1);
+
+    // get arguments, remove the supported ones and warn about those that
+    // cannot be overridden.
+    typedef vector< CRef<CArgValue> > TArgs;
+    TArgs arguments = args.GetAll();
+    ITERATE(TArgs, a, arguments) {
+        const string& arg_name = (*a)->GetName();
+        const string& arg_value = (*a)->AsString();
+        // if it has a default value, ignore it if it's not different from the
+        // default, otherwise, issue a warning
+        if (has_defaults.find(arg_name) != has_defaults.end()) {
+            if (has_defaults[arg_name] == arg_value) { 
+                continue;
+            } else {
+                LOG_POST(Warning << arg_name << " cannot be overridden when "
+                         "using a search strategy");
+            }
+        } 
+        // if the argument cannot be overridden, issue a warning
+        if (can_override.find(arg_name) == can_override.end()) {
+            LOG_POST(Warning << arg_name << " cannot be overridden when "
+                     "using a search strategy");
+        }
+    }
+}
+
 CRef<CBlastOptionsHandle>
 CBlastAppArgs::SetOptionsForSavedStrategy(const CArgs& args)
 {
@@ -2391,12 +2495,14 @@ CBlastAppArgs::SetOptionsForSavedStrategy(const CArgs& args)
     // certain options from the command line, include overriding query
     // and/or database
     CBlastOptions& opts = m_OptsHandle->SetOptions();
-    // invoke ExtractAlgorithmOptions on certain argument classes
+    // invoke ExtractAlgorithmOptions on certain argument classes, i.e.: those
+    // that should have their arguments overriden
     m_QueryOptsArgs->ExtractAlgorithmOptions(args, opts);
     m_StdCmdLineArgs->ExtractAlgorithmOptions(args, opts);
     m_RemoteArgs->ExtractAlgorithmOptions(args, opts);
     m_DebugArgs->ExtractAlgorithmOptions(args, opts);
     m_FormattingArgs->ExtractAlgorithmOptions(args, opts);
+    m_MTArgs->ExtractAlgorithmOptions(args, opts);
     if (CBlastDatabaseArgs::HasBeenSet(args)) {
           m_BlastDbArgs->ExtractAlgorithmOptions(args, opts);
     }
@@ -2407,8 +2513,8 @@ CBlastAppArgs::SetOptionsForSavedStrategy(const CArgs& args)
             }
         }
     }
-    m_HspFilteringArgs->ExtractAlgorithmOptions(args, opts);
     m_IsUngapped = !opts.GetGappedMode();
+    x_IssueWarningsForIgnoredOptions(args);
     try { m_OptsHandle->Validate(); }
     catch (const CBlastException& e) {
         NCBI_THROW(CInputException, eInvalidInput, e.GetMsg());

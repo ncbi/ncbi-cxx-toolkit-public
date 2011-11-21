@@ -98,6 +98,7 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgMatrixName;
 
 // Argurment for mask_level for RMBlastN -RMH-
 NCBI_BLASTINPUT_EXPORT extern const string kArgMaskLevel;
+NCBI_BLASTINPUT_EXPORT extern const string kDfltArgMaskLevel;
 
 // Argurment for complexity adjustment mode of RMBlastN -RMH-
 NCBI_BLASTINPUT_EXPORT extern const string kArgComplexityAdj;
@@ -205,6 +206,8 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgUngapped;
 
 /// Argument to specify the composition based statistics mode to sue
 NCBI_BLASTINPUT_EXPORT extern const string kArgCompBasedStats;
+/// Default argument for composition based statistics
+NCBI_BLASTINPUT_EXPORT extern const string kDfltArgCompBasedStats;
 
 /// Default argument to specify no filtering
 NCBI_BLASTINPUT_EXPORT extern const string kDfltArgNoFiltering;
@@ -233,6 +236,10 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgWindowMaskerDatabase;
 
 /// Argument to specify to mask query during lookup table creation
 NCBI_BLASTINPUT_EXPORT extern const string kArgLookupTableMaskingOnly;
+/// Default argument mask a protein query during lookup table construction
+NCBI_BLASTINPUT_EXPORT extern const string kDfltArgLookupTableMaskingOnlyProt;
+/// Default argument mask a nucleotide query during lookup table construction
+NCBI_BLASTINPUT_EXPORT extern const string kDfltArgLookupTableMaskingOnlyNucl;
 
 /* PSI-BLAST options */
 
