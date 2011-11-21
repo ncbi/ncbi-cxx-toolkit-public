@@ -38,6 +38,8 @@
 #include <objects/biotree/BioTreeContainer.hpp>
 #include <objtools/alnmgr/alnmix.hpp>
 
+/// Class used in unit tests
+class CTestPhyTreeCalc;
 
 BEGIN_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -338,6 +340,8 @@ protected:
 
     /// Error/warning messages
     vector<string> m_Messages;    
+
+    friend class ::CTestPhyTreeCalc;
 };
 
 

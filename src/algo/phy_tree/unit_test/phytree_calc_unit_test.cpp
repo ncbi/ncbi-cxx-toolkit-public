@@ -47,10 +47,18 @@
 #include <serial/objostr.hpp>
 
 #include <algo/phy_tree/phytree_calc.hpp>
+#include <math.h>
 
 #include <corelib/test_boost.hpp>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
+
+#ifdef NCBI_COMPILER_MSVC
+#  define isfinite _finite
+#elif defined(NCBI_COMPILER_WORKSHOP)  &&  !defined(__builtin_isfinite)
+#  undef isfinite
+#  define isfinite finite
+#endif
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -82,6 +90,15 @@ static bool s_TestCalc(const CSeq_align& seq_align,
 static bool s_TestCalc(const CSeq_align_set& seq_align_set,
                        const CPhyTreeCalc& calc);
 
+/// Test class for accessing CPhyTreeCalc private methods and attributes
+class CTestPhyTreeCalc
+{
+public:
+    static bool CalcDivergenceMatrix(CPhyTreeCalc& calc, vector<int>& included)
+    {
+        return calc.x_CalcDivergenceMatrix(included);
+    }
+};
 
 
 BOOST_AUTO_TEST_SUITE(guide_tree_calc)
@@ -309,6 +326,99 @@ BOOST_AUTO_TEST_CASE(TestFastMETree)
 
     s_TestTree(calc.GetSeqIds().size(), calc.GetTree());
 }
+
+// Verify that CDistMethods::Divergence() does not return a finite number for
+// a pair of sequences with a gap in each position. Make sure that the function
+// isfinite() works.
+BOOST_AUTO_TEST_CASE(TestNanDivergence)
+{
+    const string kSeq1 = "A--";
+    const string kSeq2 = "-A-";
+
+    // sequence lengths must be the same
+    BOOST_REQUIRE_EQUAL(kSeq1.length(), kSeq2.length());
+    // there must not be a column with a residue in both sequences
+    for (size_t i=0;i < kSeq1.length();i++) {
+        BOOST_REQUIRE(kSeq1[i] == '-' || kSeq2[i] == '-');
+    }
+
+    // for a pair of sequences with a gap in each column divergence must not
+    // be finite
+    BOOST_REQUIRE(!isfinite(CDistMethods::Divergence(kSeq1, kSeq2)));
+}
+
+// Verify that tree computing functions throw when non-finite number is present
+// in the distance matrix
+BOOST_AUTO_TEST_CASE(TestRejectNanDistance)
+{
+    // create a distance matrix
+    CDistMethods::TMatrix dmat(2, 2, 0.0);
+
+    // test for infinity
+    dmat(0, 1) = dmat(1, 0) = numeric_limits<double>::infinity();
+    BOOST_REQUIRE_THROW(CDistMethods::NjTree(dmat), invalid_argument);
+    BOOST_REQUIRE_THROW(CDistMethods::FastMeTree(dmat), invalid_argument);
+
+    // test for quiet NaN
+    dmat(0, 1) = dmat(1, 0) = numeric_limits<double>::quiet_NaN();
+    BOOST_REQUIRE_THROW(CDistMethods::NjTree(dmat), invalid_argument);
+    BOOST_REQUIRE_THROW(CDistMethods::FastMeTree(dmat), invalid_argument);
+
+    // test for signaling NaN
+    dmat(0, 1) = dmat(1, 0) = numeric_limits<double>::signaling_NaN();
+    BOOST_REQUIRE_THROW(CDistMethods::NjTree(dmat), invalid_argument);
+    BOOST_REQUIRE_THROW(CDistMethods::FastMeTree(dmat), invalid_argument);
+}
+
+// Verify that alignment with a gap in each column is rejected during
+// divergence computation
+BOOST_AUTO_TEST_CASE(TestRejectPairWithGapInEachPosition)
+{
+    CRef<CScope> scope = s_CreateScope("data/protein.fa");
+    const int num_seqs = 2;
+
+    // create alignment with a gap in each position
+    CSeq_align align;
+    align.SetDim(num_seqs);
+    CRef<CSeq_id> id(new CSeq_id("lcl|1"));
+    CDense_seg& denseg = align.SetSegs().SetDenseg();
+    denseg.SetDim(num_seqs);
+    denseg.SetNumseg(2);
+    denseg.SetIds().push_back(id);
+    denseg.SetIds().push_back(id);
+    // starts = {0, -1, -1, 0}
+    denseg.SetStarts().push_back(0);
+    denseg.SetStarts().push_back(-1);
+    denseg.SetStarts().push_back(-1);
+    denseg.SetStarts().push_back(0);
+    // lens = {10, 10}
+    denseg.SetLens().push_back(10);
+    denseg.SetLens().push_back(10);
+    denseg.Validate();
+        
+    // make sure that there is a gap in each position for a pair of sequences
+    // in the alignment
+    const vector<int>& starts = denseg.GetStarts();
+    for (size_t i=0;i < starts.size();i+=num_seqs) {
+        BOOST_REQUIRE(starts[i] < 0 || starts[i+1] < 0);
+    }
+
+    CPhyTreeCalc calc(align, scope);
+    vector<int> included_inds;
+    bool valid = CTestPhyTreeCalc::CalcDivergenceMatrix(calc, included_inds);
+
+    // for alignment with 2 sequences, one was rejected, and the function must
+    // return false
+    BOOST_REQUIRE_EQUAL(valid, false);
+
+    // the first sequence is always included, and the second myst be rejected
+    // because the divergence in infinite
+    BOOST_REQUIRE_EQUAL(included_inds.size(), 1u);
+
+    // the first sequence is always included
+    BOOST_REQUIRE_EQUAL(included_inds[0], 0);
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
 
