@@ -1606,6 +1606,9 @@ bool CCompoundRWRegistry::LoadBaseRegistries(TFlags flags, int metareg_flags)
         if (entry2.registry) {
             m_BaseRegNames.insert(*it);
             bases.push_back(TNewBase(*it, entry2.registry));
+        } else {
+            ERR_POST(Warning << "Base registry " << *it
+                     << " absent or unreadable");
         }
     }
 
