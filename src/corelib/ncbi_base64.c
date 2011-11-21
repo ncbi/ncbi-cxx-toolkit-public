@@ -204,6 +204,9 @@ extern int/*bool*/ BASE64_Decode
     return i  &&  j ? 1/*true*/ : 0/*false*/;
 }
 
+
+#ifdef NCBI_CXX_TOOLKIT
+
 static const unsigned char xlat_bytes1and4[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
@@ -349,3 +352,5 @@ extern EBase64_Result base64url_decode(const void* src_buf, size_t src_size,
 
     return eBase64_OK;
 }
+
+#endif /*NCBI_CXX_TOOLKIT*/
