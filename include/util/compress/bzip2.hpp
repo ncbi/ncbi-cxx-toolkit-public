@@ -226,6 +226,12 @@ protected:
     int    m_Verbosity;       ///< Verbose monitoring/debugging output level
     int    m_WorkFactor;      ///< See description above
     int    m_SmallDecompress; ///< Use memory-frugal decompression algorithm
+
+private:
+    /// Private copy constructor to prohibit copy.
+    CBZip2Compression(const CBZip2Compression&);
+    /// Private assignment operator to prohibit assignment.
+    CBZip2Compression& operator= (const CBZip2Compression&);
 };
 
 
@@ -316,6 +322,12 @@ public:
 protected:
     FILE*      m_FileStream;   ///< Underlying file stream
     bool       m_EOF;          ///< EOF flag for read mode
+
+private:
+    /// Private copy constructor to prohibit copy.
+    CBZip2CompressionFile(const CBZip2CompressionFile&);
+    /// Private assignment operator to prohibit assignment.
+    CBZip2CompressionFile& operator= (const CBZip2CompressionFile&);
 };
 
 

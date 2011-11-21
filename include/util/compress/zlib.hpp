@@ -336,6 +336,12 @@ protected:
     int    m_MemLevel;   ///< The allocation memory level for the
                          ///< internal compression state.
     int    m_Strategy;   ///< The parameter to tune compression algorithm.
+
+private:
+    /// Private copy constructor to prohibit copy.
+    CZipCompression(const CZipCompression&);
+    /// Private assignment operator to prohibit assignment.
+    CZipCompression& operator= (const CZipCompression&);
 };
 
  
@@ -448,6 +454,12 @@ protected:
     EMode                  m_Mode;     ///< I/O mode (read/write).
     CNcbiFstream*          m_File;     ///< File stream.
     CCompressionIOStream*  m_Stream;   ///< [De]comression stream.
+
+private:
+    /// Private copy constructor to prohibit copy.
+    CZipCompressionFile(const CZipCompressionFile&);
+    /// Private assignment operator to prohibit assignment.
+    CZipCompressionFile& operator= (const CZipCompressionFile&);
 };
 
 

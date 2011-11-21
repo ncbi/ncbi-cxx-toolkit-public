@@ -340,10 +340,16 @@ protected:
                               size_t* processed /* out */);
 
 protected:
-    size_t             m_BlockSize;  ///< Block size for (de)compression.
+    size_t                      m_BlockSize;  ///< Block size for (de)compression.
     // Compression parameters
-    AutoArray<char>    m_WorkMem;    ///< Working memory for compressor.
-    SCompressionParam* m_Param;      ///< Compression parameters.
+    AutoArray<char>             m_WorkMem;    ///< Working memory for compressor.
+    auto_ptr<SCompressionParam> m_Param;      ///< Compression parameters.
+
+private:
+    /// Private copy constructor to prohibit copy.
+    CLZOCompression(const CLZOCompression&);
+    /// Private assignment operator to prohibit assignment.
+    CLZOCompression& operator= (const CLZOCompression&);
 };
 
 
@@ -453,6 +459,12 @@ protected:
     EMode                  m_Mode;     ///< I/O mode (read/write).
     CNcbiFstream*          m_File;     ///< File stream.
     CCompressionIOStream*  m_Stream;   ///< [De]comression stream.
+
+private:
+    /// Private copy constructor to prohibit copy.
+    CLZOCompressionFile(const CLZOCompressionFile&);
+    /// Private assignment operator to prohibit assignment.
+    CLZOCompressionFile& operator= (const CLZOCompressionFile&);
 };
 
 
@@ -489,6 +501,12 @@ private:
     // Friend classes
     friend class CLZOCompressor;
     friend class CLZODecompressor;
+
+private:
+    /// Private copy constructor to prohibit copy.
+    CLZOBuffer(const CLZOBuffer&);
+    /// Private assignment operator to prohibit assignment.
+    CLZOBuffer& operator= (const CLZOBuffer&);
 };
 
 

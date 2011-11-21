@@ -177,6 +177,12 @@ protected:
     CCompressionStreamProcessor* m_Reader;    ///< Read processor.
     CCompressionStreamProcessor* m_Writer;    ///< Write processor.
     TOwnership                   m_Ownership; ///< Bitwise OR of EOwnership.
+
+private:
+    /// Private copy constructor to prohibit copy.
+    CCompressionStream(const CCompressionStream&);
+    /// Private assignment operator to prohibit assignment.
+    CCompressionStream& operator= (const CCompressionStream&);
 };
 
 
@@ -235,6 +241,12 @@ private:
     // Friend classes
     friend class CCompressionStream;
     friend class CCompressionStreambuf;
+
+private:
+    /// Private copy constructor to prohibit copy.
+    CCompressionStreamProcessor(const CCompressionStreamProcessor&);
+    /// Private assignment operator to prohibit assignment.
+    CCompressionStreamProcessor& operator= (const CCompressionStreamProcessor&);
 };
 
 

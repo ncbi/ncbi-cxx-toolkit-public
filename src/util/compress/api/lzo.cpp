@@ -124,7 +124,7 @@ struct SCompressionParam {
 CLZOCompression::CLZOCompression(ELevel level, size_t blocksize)
     : CCompression(level), m_BlockSize(blocksize)
 {
-    m_Param = new SCompressionParam;
+    m_Param.reset(new SCompressionParam);
     m_Param->workmem = 0;
     return;
 }
@@ -132,7 +132,6 @@ CLZOCompression::CLZOCompression(ELevel level, size_t blocksize)
 
 CLZOCompression::~CLZOCompression(void)
 {
-    delete m_Param;
     return;
 }
 
