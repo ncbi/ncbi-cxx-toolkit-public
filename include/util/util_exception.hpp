@@ -65,7 +65,8 @@ public:
     enum EErrCode {
         eRead,
         eWrite,
-        eFlush
+        eFlush,
+        eCanceled
     };
     virtual const char* GetErrCodeString(void) const;
     NCBI_EXCEPTION_DEFAULT(CIOException, CUtilException);

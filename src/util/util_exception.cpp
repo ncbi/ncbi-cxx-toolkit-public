@@ -55,6 +55,7 @@ const char* CIOException::GetErrCodeString(void) const
     case eRead:  return "eRead";
     case eWrite: return "eWrite";
     case eFlush: return "eFlush";
+    case eCanceled: return "eCanceled";
     default:     return CException::GetErrCodeString();
     }
 }

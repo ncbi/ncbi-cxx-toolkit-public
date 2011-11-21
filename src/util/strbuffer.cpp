@@ -56,7 +56,8 @@ CIStreamBuffer::CIStreamBuffer(void)
       m_BufferSize(0), m_Buffer(0),
       m_CurrentPos(0), m_DataEndPos(0),
       m_Line(1),
-      m_CollectPos(0)
+      m_CollectPos(0),
+      m_CanceledCallback(0)
 {
 }
 
@@ -65,7 +66,8 @@ CIStreamBuffer::CIStreamBuffer(const char* buffer, size_t size)
       m_BufferSize(0), m_Buffer(const_cast<char*>(buffer)),
       m_CurrentPos(buffer), m_DataEndPos(buffer+size),
       m_Line(1),
-      m_CollectPos(0)
+      m_CollectPos(0),
+      m_CanceledCallback(0)
 {
 }
 
@@ -121,6 +123,11 @@ void CIStreamBuffer::Close(void)
     m_DataEndPos = m_Buffer;
     m_Line = 1;
     m_Error = 0;
+}
+
+void CIStreamBuffer::SetCanceledCallback(const ICanceled* canceled_callback)
+{
+    m_CanceledCallback = canceled_callback;
 }
 
 void CIStreamBuffer::StartSubSource(void)
@@ -265,6 +272,12 @@ size_t CIStreamBuffer::PeekFindChar(char c, size_t limit)
 const char* CIStreamBuffer::FillBuffer(const char* pos, bool noEOF)
     THROWS1((CIOException, bad_alloc))
 {
+    if ( const ICanceled* callback = m_CanceledCallback ) {
+        if ( callback->IsCanceled() ) {
+            m_Error = "canceled";
+            NCBI_THROW(CIOException,eCanceled,m_Error);
+        }
+    }
     _ASSERT(pos >= m_DataEndPos);
     // remove unused portion of buffer at the beginning
     _ASSERT(m_CurrentPos >= m_Buffer);
@@ -681,7 +694,8 @@ COStreamBuffer::COStreamBuffer(CNcbiOstream& out, bool deleteOut)
       m_CurrentPos(m_Buffer),
       m_BufferEnd(m_Buffer + KInitialBufferSize),
       m_Line(1), m_LineLength(0),
-      m_BackLimit(0), m_UseIndentation(true)
+      m_BackLimit(0), m_UseIndentation(true),
+      m_CanceledCallback(0)
 {
 }
 
@@ -714,9 +728,20 @@ void COStreamBuffer::Close(void)
     m_LineLength = 0;
 }
 
+void COStreamBuffer::SetCanceledCallback(const ICanceled* callback)
+{
+    m_CanceledCallback = callback;
+}
+
 void COStreamBuffer::FlushBuffer(bool fullBuffer)
     THROWS1((CIOException))
 {
+    if ( const ICanceled* callback = m_CanceledCallback ) {
+        if ( callback->IsCanceled() ) {
+            m_Error = "canceled";
+            NCBI_THROW(CIOException,eCanceled,m_Error);
+        }
+    }
     size_t used = GetUsedSpace();
     size_t count;
     size_t leave;

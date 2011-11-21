@@ -35,6 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <util/util_exception.hpp>
+#include <util/icanceled.hpp>
 #include <string.h>
 
 #include <util/bytesrc.hpp>
@@ -70,6 +71,11 @@ public:
     void Open(CByteSourceReader& reader);
     void Open(const char* buffer, size_t size);
     void Close(void);
+
+    // Set cancellation check callback.
+    // The CIStreamBuffer will throw an exception when the callback return
+    // cancel request. The callback is called from FillBuffer().
+    void SetCanceledCallback(const ICanceled* callback);
 
     char PeekChar(size_t offset = 0)
         THROWS1((CIOException, bad_alloc));
@@ -188,6 +194,8 @@ private:
 
     const char* m_CollectPos;
     CRef<CSubSourceCollector> m_Collector;
+
+    const ICanceled* m_CanceledCallback;
 };
 
 class NCBI_XUTIL_EXPORT COStreamBuffer
@@ -202,6 +210,11 @@ public:
     const char* GetError(void) const;
 
     void Close(void);
+
+    // Set cancellation check callback.
+    // The COStreamBuffer will throw an exception when the callback return
+    // cancel request. The callback is called from FlushBuffer().
+    void SetCanceledCallback(const ICanceled* callback);
 
     // return: current line counter
     size_t GetLine(void) const THROWS1_NONE;
@@ -303,6 +316,8 @@ private:
     size_t m_LineLength;
     size_t m_BackLimit;
     bool m_UseIndentation;
+
+    const ICanceled* m_CanceledCallback;
 };
 
 
