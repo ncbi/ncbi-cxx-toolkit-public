@@ -1852,7 +1852,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
         }
         linkout_list.push_back(url_link);
     }
-    if (linkout & eStructure){
+    if ((linkout & eStructure) && cdd_rid != "" && cdd_rid != "0"){        
         url_link = kStructureUrl;        
         lnk_displ = textLink ? "Structure" : kStructureImg;  
         if(!disableLink) {
