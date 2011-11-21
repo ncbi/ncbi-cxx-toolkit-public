@@ -492,10 +492,9 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
         x_IsFieldRequested(ePositives) ||
         x_IsFieldRequested(ePercentPositives) ||
         x_IsFieldRequested(eBTOP) ||
-        // num_ident may not be available in un-gapped protein alignment
-        (num_ident < 0 && (x_IsFieldRequested(eNumIdentical) || 
-          x_IsFieldRequested(eMismatches) ||
-          x_IsFieldRequested(ePercentIdentical)))) {
+        x_IsFieldRequested(eNumIdentical) ||
+        x_IsFieldRequested(eMismatches) ||
+        x_IsFieldRequested(ePercentIdentical)) {
 
         alnVec->SetGapChar('-');
         alnVec->GetWholeAlnSeqString(0, m_QuerySeq);
@@ -504,10 +503,9 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
         if (x_IsFieldRequested(ePositives) ||
             x_IsFieldRequested(ePercentPositives) ||
             x_IsFieldRequested(eBTOP) ||
-            // num_ident may not be available in un-gapped protein alignment
-            (num_ident < 0 && (x_IsFieldRequested(eNumIdentical) || 
-              x_IsFieldRequested(eMismatches) ||
-              x_IsFieldRequested(ePercentIdentical)))) {
+            x_IsFieldRequested(eNumIdentical) ||
+            x_IsFieldRequested(eMismatches) ||
+            x_IsFieldRequested(ePercentIdentical)) {
 
             string btop_string = "";
             int num_matches = 0;
