@@ -92,7 +92,7 @@ extern NCBI_XNCBI_EXPORT int/*bool*/ BASE64_Decode
 typedef enum {
     eBase64_OK,             /** Transcoded successfully. */
     eBase64_BufferTooSmall, /** The output buffer is too small. */
-    eBase64_InvalidInput,   /** Input contains characters outside alphabet. */
+    eBase64_InvalidInput    /** Input contains characters outside alphabet. */
 } EBase64_Result;
 
 
