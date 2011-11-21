@@ -1469,11 +1469,11 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
         fd_set wfds;
         fd_set efds;
 
-        FD_ZERO(&efds);
-
         int max = -1;
         bool rd = false;
         bool wr = false;
+
+        FD_ZERO(&efds);
 
         if ( (mask & CPipe::fStdIn)   &&  m_ChildStdIn  != -1 ) {
             wr = true;
@@ -1515,19 +1515,19 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
             break;
         }
         if (n > 0) {
-            if ( m_ChildStdIn  != -1  &&
-                ( FD_ISSET(m_ChildStdIn,  &wfds)  ||
-                  FD_ISSET(m_ChildStdIn,  &efds) ) ) {
+            if ( wr
+                 &&  ( FD_ISSET(m_ChildStdIn,  &wfds)  ||
+                       FD_ISSET(m_ChildStdIn,  &efds) ) ) {
                 poll |= CPipe::fStdIn;
             }
-            if ( m_ChildStdOut != -1  &&
-                ( FD_ISSET(m_ChildStdOut, &rfds)  ||
-                  FD_ISSET(m_ChildStdOut, &efds) ) ) {
+            if ( (mask & CPipe::fStdOut)  &&  m_ChildStdOut != -1
+                 &&  ( FD_ISSET(m_ChildStdOut, &rfds)  ||
+                       FD_ISSET(m_ChildStdOut, &efds) ) ) {
                 poll |= CPipe::fStdOut;
             }
-            if ( m_ChildStdErr != -1  &&
-                ( FD_ISSET(m_ChildStdErr, &rfds)  ||
-                  FD_ISSET(m_ChildStdErr, &efds) ) ) {
+            if ( (mask & CPipe::fStdErr)  &&  m_ChildStdErr != -1
+                 &&  ( FD_ISSET(m_ChildStdErr, &rfds)  ||
+                       FD_ISSET(m_ChildStdErr, &efds) ) ) {
                 poll |= CPipe::fStdErr;
             }
             break;
