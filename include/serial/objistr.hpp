@@ -432,6 +432,12 @@ public:
     ///   TRUE if there is no more data
     virtual bool EndOfData(void);
 
+
+    /// Set cancellation check callback.
+    /// The stream will periodically check for a cancellation request and
+    /// throw an exception when requested.
+    void SetCanceledCallback(const ICanceled* callback);
+
     /// @deprecated
     ///   Use GetStreamPos() instead
     /// @sa GetStreamPos()

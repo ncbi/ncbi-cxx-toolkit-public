@@ -80,9 +80,9 @@ CRef<CByteSource> CObjectIStream::GetSource(ESerialDataFormat format,
                                             const string& fileName,
                                             TSerialOpenFlags openFlags)
 {
-    if ( (openFlags & eSerial_StdWhenEmpty) && fileName.empty() ||
-         (openFlags & eSerial_StdWhenDash) && fileName == "-" ||
-         (openFlags & eSerial_StdWhenStd) && fileName == "stdin" ) {
+    if ( ((openFlags & eSerial_StdWhenEmpty) && fileName.empty()) ||
+         ((openFlags & eSerial_StdWhenDash) && fileName == "-") ||
+         ((openFlags & eSerial_StdWhenStd) && fileName == "stdin") ) {
         return CRef<CByteSource>(new CStreamByteSource(NcbiCin));
     }
     else {
@@ -1795,5 +1795,11 @@ char ReplaceVisibleChar(char c, EFixNonPrint fix_method, size_t at_line)
     }
     return '#';
 }
+
+void CObjectIStream::SetCanceledCallback(const ICanceled* callback)
+{
+    m_Input.SetCanceledCallback(callback);
+}
+
 
 END_NCBI_SCOPE

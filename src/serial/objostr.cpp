@@ -75,9 +75,9 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
 {
     CNcbiOstream* outStream = 0;
     bool deleteStream;
-    if ( (openFlags & eSerial_StdWhenEmpty) && fileName.empty() ||
-         (openFlags & eSerial_StdWhenDash) && fileName == "-" ||
-         (openFlags & eSerial_StdWhenStd) && fileName == "stdout" ) {
+    if ( ((openFlags & eSerial_StdWhenEmpty) && fileName.empty()) ||
+         ((openFlags & eSerial_StdWhenDash) && fileName == "-") ||
+         ((openFlags & eSerial_StdWhenStd) && fileName == "stdout") ) {
         outStream = &NcbiCout;
         deleteStream = false;
     }
@@ -1081,6 +1081,12 @@ void CObjectOStream::WriteSeparator(void)
 {
     // flush stream buffer by default
     FlushBuffer();
+}
+
+
+void CObjectOStream::SetCanceledCallback(const ICanceled* callback)
+{
+    m_Output.SetCanceledCallback(callback);
 }
 
 
