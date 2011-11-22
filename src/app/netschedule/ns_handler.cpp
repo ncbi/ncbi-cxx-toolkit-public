@@ -75,11 +75,11 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     /*** Admin role ***/
     { "SHUTDOWN", { &CNetScheduleHandler::x_ProcessShutdown,
                     eNSCR_Admin } },
+    { "GETCONF",  { &CNetScheduleHandler::x_ProcessGetConf,
+                    eNSCR_Admin } },
 
     /*** Any role ***/
     { "VERSION",  { &CNetScheduleHandler::x_ProcessVersion,
-                    eNSCR_Any } },
-    { "LOG",      { &CNetScheduleHandler::x_CmdNotImplemented,
                     eNSCR_Any } },
     { "QUIT",     { &CNetScheduleHandler::x_ProcessQuitSession,
                     eNSCR_Any } },
@@ -128,8 +128,6 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     { "MGET",     { &CNetScheduleHandler::x_ProcessGetMessage,
                     eNSCR_Queue },
         { { "job_key", eNSPT_Id, eNSPA_Required } } },
-    { "MONI",     { &CNetScheduleHandler::x_CmdNotImplemented,
-                    eNSCR_Queue } },
     // DUMP [ job_key : id ]
     { "DUMP",     { &CNetScheduleHandler::x_ProcessDump,
                     eNSCR_Queue },
@@ -142,10 +140,6 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     { "STSN",     { &CNetScheduleHandler::x_ProcessStatusSnapshot,
                     eNSCR_Queue },
         { { "aff", eNSPT_Str, eNSPA_Optional, "" } } },
-    { "QERY",     { &CNetScheduleHandler::x_CmdNotImplemented,
-                    eNSCR_Queue } },
-    { "QSEL",     { &CNetScheduleHandler::x_CmdNotImplemented,
-                    eNSCR_Queue } },
     // GETP [ client_info : id ]
     { "GETP",     { &CNetScheduleHandler::x_ProcessGetParam,
                     eNSCR_Queue } },
@@ -186,9 +180,6 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "timeout",      eNSPT_Int, eNSPA_Optional },
           { "ip",           eNSPT_Str, eNSPA_Optional, "" },
           { "sid",          eNSPT_Str, eNSPA_Optional, "" } } },
-    // FRES job_key : id
-    { "FRES",     { &CNetScheduleHandler::x_CmdNotImplemented,
-                    eNSCR_Submitter } },
     // READ [ timeout : int ] -> job key
     { "READ",     { &CNetScheduleHandler::x_ProcessReading,
                     eNSCR_Submitter },
@@ -246,9 +237,6 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "aff",       eNSPT_Str, eNSPA_Optional, "" },
           { "any_aff",   eNSPT_Int, eNSPA_Optional, 0 },
           { "wnode_aff", eNSPT_Int, eNSPA_Optional, 0 } } },
-    // JRTO job_key : id  timeout : uint
-    { "JRTO",     { &CNetScheduleHandler::x_CmdNotImplemented,
-                    eNSCR_Worker } },
     // FPUT job_key : id  err_msg : str  output : str  job_return_code : int
     { "FPUT",     { &CNetScheduleHandler::x_ProcessPutFailure,
                     eNSCR_Worker },
@@ -266,14 +254,6 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "aff",             eNSPT_Str, eNSPA_Optional, "" },
           { "any_aff",         eNSPT_Int, eNSPA_Optional, 0 },
           { "wnode_aff",       eNSPT_Int, eNSPA_Optional, 0 } } },
-    // REGC port : uint
-    { "REGC",     { &CNetScheduleHandler::x_ProcessRegisterClient,
-                    eNSCR_Worker },
-        { { "port", eNSPT_Int, eNSPA_Optional } } },
-    // URGC port : uint
-    { "URGC",     { &CNetScheduleHandler::x_ProcessUnRegisterClient,
-                    eNSCR_Worker },
-        { { "port", eNSPT_Int, eNSPA_Optional } } },
     // JDEX job_key : id timeout : uint
     { "JDEX",     { &CNetScheduleHandler::x_ProcessJobDelayExpiration,
                     eNSCR_Worker },
@@ -282,9 +262,28 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     // AFLS
     { "AFLS",     { &CNetScheduleHandler::x_ProcessGetAffinityList,
                     eNSCR_Worker } },
-    // INIT (obsolete)
+
+    // Obsolete commands
+    { "REGC",     { &CNetScheduleHandler::x_ProcessRegisterClient,
+                    eNSCR_Worker },
+        { { "port", eNSPT_Int, eNSPA_Optional } } },
+    { "URGC",     { &CNetScheduleHandler::x_ProcessUnRegisterClient,
+                    eNSCR_Worker },
+        { { "port", eNSPT_Int, eNSPA_Optional } } },
     { "INIT",     { &CNetScheduleHandler::x_ProcessInitWorkerNode,
                     eNSCR_Worker } },
+    { "JRTO",     { &CNetScheduleHandler::x_CmdNotImplemented,
+                    eNSCR_Worker } },
+    { "FRES",     { &CNetScheduleHandler::x_CmdNotImplemented,
+                    eNSCR_Submitter } },
+    { "QERY",     { &CNetScheduleHandler::x_CmdNotImplemented,
+                    eNSCR_Queue } },
+    { "QSEL",     { &CNetScheduleHandler::x_CmdNotImplemented,
+                    eNSCR_Queue } },
+    { "MONI",     { &CNetScheduleHandler::x_CmdNotImplemented,
+                    eNSCR_Queue } },
+    { "LOG",      { &CNetScheduleHandler::x_CmdNotImplemented,
+                    eNSCR_Any } },
 
     { NULL },
 };
@@ -1700,6 +1699,17 @@ void CNetScheduleHandler::x_ProcessShutdown(CQueue*)
     x_PrintRequestStop(eStatus_OK);
     WriteMessage("OK:");
     m_Server->SetShutdownFlag();
+}
+
+
+void CNetScheduleHandler::x_ProcessGetConf(CQueue*)
+{
+    CConn_SocketStream  ss(GetSocket().GetSOCK(), eNoOwnership);
+
+    CNcbiApplication::Instance()->GetConfig().Write(ss);
+    ss.flush();
+    WriteMessage("OK:END");
+    x_PrintRequestStop(eStatus_OK);
 }
 
 

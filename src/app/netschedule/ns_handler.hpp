@@ -163,6 +163,7 @@ private:
     void x_ProcessDump(CQueue*);
     void x_ProcessPrintQueue(CQueue*);
     void x_ProcessShutdown(CQueue*);
+    void x_ProcessGetConf(CQueue*);
     void x_ProcessVersion(CQueue*);
     void x_ProcessRegisterClient(CQueue*);
     void x_ProcessUnRegisterClient(CQueue*);
