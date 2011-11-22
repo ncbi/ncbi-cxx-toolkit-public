@@ -445,6 +445,10 @@ public:
     /// column of result set has the index 0. Method should be executed only
     /// after Step() returned TRUE, otherwise returned value is undefined.
     string GetString(int col_ind) const;
+    /// Get size of blob value from column col_ind in current row. The leftmost
+    /// column of result set has the index 0. Method should be executed only
+    /// after Step() returned TRUE, otherwise returned value is undefined.
+    size_t GetBlobSize(int col_ind) const;
     /// Read blob value from column col_ind in current row. The leftmost
     /// column of result set has the index 0. Method should be executed only
     /// after Step() returned TRUE, otherwise returned value is undefined.

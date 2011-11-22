@@ -736,6 +736,12 @@ CSQLITE_Statement::GetString(int col_ind) const
 }
 
 size_t
+CSQLITE_Statement::GetBlobSize(int col_ind) const
+{
+    return (size_t)sqlite3_column_bytes(m_StmtHandle, col_ind);
+}
+
+size_t
 CSQLITE_Statement::GetBlob(int col_ind, void* buffer, size_t size) const
 {
     _ASSERT(m_StmtHandle);
