@@ -293,7 +293,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Status
  );
 
 
-/* Cancel the connection's I/O ability.
+/* Cancel the connection's I/O ability.  DO NOT USE THIS API CALL!
  * This is *not* connection closure, but any data extraction or
  * insertion (Read/Write) will be effectively rejected after this call
  * (and eIO_Interrupt will result, same for CONN_Status()).
