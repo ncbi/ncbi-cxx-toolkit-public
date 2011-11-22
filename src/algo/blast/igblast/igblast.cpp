@@ -162,12 +162,18 @@ CIgBlast::Run()
     }
 
     /*** search user specified db */
-    x_SetupDbSearch(annots, qf);
+    bool skipped = false;
     if (m_IsLocal) {
-        CLocalBlast blast(qf, m_Options, m_LocalDb);
-        blast.SetNumberOfThreads(m_NumThreads);
-        result = blast.Run();
+        if (&(*m_LocalDb) != &(*(m_IgOptions->m_Db[0]))) {
+            x_SetupDbSearch(annots, qf);
+            CLocalBlast blast(qf, m_Options, m_LocalDb);
+            blast.SetNumberOfThreads(m_NumThreads);
+            result = blast.Run();
+        } else {
+            skipped = true;
+        }
     } else {
+        x_SetupDbSearch(annots, qf);
         CRef<CRemoteBlast> blast;
         if (m_RemoteDb.NotEmpty()) {
             _ASSERT(m_Subject.Empty());
@@ -177,8 +183,10 @@ CIgBlast::Run()
         }
         result = blast->GetResultSet();
     }
-    s_SortResultsByEvalue(result);
-    s_AppendResults(result, -1, -1, final_results);
+    if (! skipped) {
+        s_SortResultsByEvalue(result);
+        s_AppendResults(result, -1, -1, final_results);
+    }
 
     /*** set the chain type infor */
     x_SetChainType(final_results, annots);

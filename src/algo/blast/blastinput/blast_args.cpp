@@ -1216,7 +1216,7 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     arg_desc.SetCurrentGroup("Ig-BLAST options");
     const static string suffix = "VDJ";
-    const static int df_num_align[3] = {1,3,2};
+    const static int df_num_align[3] = {3,3,3};
     int num_genes = (m_IsProtein) ? 1 : 3;
 
     for (int gene=0; gene<num_genes; ++gene) {
@@ -1242,8 +1242,8 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             "Number of Germline sequences to show alignments for",
                             CArgDescriptions::eInteger,
                             NStr::IntToString(df_num_align[gene]));
-        arg_desc.SetConstraint(arg_na,
-                            new CArgAllowValuesBetween(0, 4));
+        //arg_desc.SetConstraint(arg_na,
+        //                   new CArgAllowValuesBetween(0, 4));
         // Seqidlist
         arg_desc.AddOptionalKey(arg_db + "_seqidlist", "filename",
                             "Restrict search of germline database to list of SeqIds's",
@@ -1648,7 +1648,7 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
         m_Subjects.Reset(new blast::CObjMgr_QueryFactory(*subjects));
 
     } else if (!m_IsIgBlast){
-        // IgBlast allows default db to germline database
+        // IgBlast permits use of germline database
         NCBI_THROW(CInputException, eInvalidInput,
            "Either a BLAST database or subject sequence(s) must be specified");
     }
