@@ -725,6 +725,17 @@ void CDB_BigInt::AssignValue(const CDB_Object& v)
 }
 
 
+inline size_t my_strnlen(const char* str, size_t maxlen)
+{
+    size_t len = 0;
+    while (len < maxlen  &&  *str != 0) {
+        ++len;
+        ++str;
+    }
+    return len;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 inline
 string MakeString(const string& s, string::size_type size)
@@ -745,7 +756,14 @@ string MakeString(const char* s, string::size_type size)
         return MakeString(kEmptyStr, size);
     }
 
-    return MakeString(string(s), size);
+    string str;
+    if (size == string::npos)
+        str.assign(s);
+    else {
+        size_t str_size = my_strnlen(s, size);
+        str.assign(s, str_size);
+    }
+    return MakeString(str, size);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -863,12 +881,10 @@ get_string_size_varchar(const char* str, string::size_type len)
     }
 
     if (str != NULL) {
-        const string::size_type str_len = strlen(str);
-        
         if (len == 0) {
-            return str_len; // Similar to string::npos ...
+            return strlen(str); // Similar to string::npos ...
         } else {
-            return min(len, str_len);
+            return my_strnlen(str, len);
         }
     }
 
@@ -1068,12 +1084,10 @@ get_string_size_longchar(const char* str, string::size_type len)
     }
 
     if (str != NULL) {
-        const string::size_type str_len = strlen(str);
-        
         if (len == 0) {
-            return str_len; // Similar to string::npos ...
+            return strlen(str); // Similar to string::npos ...
         } else {
-            return max(len, str_len); // This line is "min(len, str_len)" in case of varchar ...
+            return max(len, my_strnlen(str, len)); // This line is "min(len, str_len)" in case of varchar ...
         }
     }
 

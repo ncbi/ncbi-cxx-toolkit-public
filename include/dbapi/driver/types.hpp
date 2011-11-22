@@ -914,7 +914,7 @@ protected:
                           const char*  val);
     Uint1         m_Precision;
     Uint1         m_Scale;
-    unsigned char m_Body[34];
+    unsigned char m_Body[33];
 };
 
 
