@@ -172,12 +172,19 @@ int CNetScheduleDApp::Run(void)
         }}
 
         // [server] section
-        SNS_Parameters params;
+        SNS_Parameters      params;
         params.Read(reg, "server");
 
+        if (params.node_id.empty()) {
+            ERR_POST("Cannot read the [server]/node_id parameter."
+                     " The value must be provided.");
+            return 1;
+        }
+
+
         {{
-            string str_params;
-            unsigned nParams = params.GetNumParams();
+            string      str_params;
+            unsigned    nParams = params.GetNumParams();
             for (unsigned n = 0; n < nParams; ++n) {
                 if (n > 0) str_params += ';';
                 str_params += params.GetParamName(n) + '=' +

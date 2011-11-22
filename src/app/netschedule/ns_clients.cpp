@@ -39,6 +39,7 @@
 #include "ns_queue.hpp"
 #include "queue_vc.hpp"
 #include "ns_handler.hpp"
+#include "ns_affinity.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -49,14 +50,15 @@ BEGIN_NCBI_SCOPE
 // - new style clients; they have all three pieces,
 //                      address, node id and session id
 CNSClientId::CNSClientId() :
-    m_Addr(0), m_Capabilities(0)
+    m_Addr(0), m_Capabilities(0), m_ID(0)
 {}
 
 
 CNSClientId::CNSClientId(unsigned int            peer_addr,
                          const TNSProtoParams &  params) :
     m_Capabilities(0), m_Unreported(~0L),
-    m_VersionControl(true)
+    m_VersionControl(true),
+    m_ID(0)
 {
     Update(peer_addr, params);
     return;
@@ -77,6 +79,7 @@ void CNSClientId::Update(unsigned int            peer_addr,
     m_Capabilities   = 0;
     m_Unreported     = ~0L;
     m_VersionControl = true;
+    m_ID             = 0;
 
     found = params.find("client_node");
     if (found != params.end())
@@ -267,6 +270,19 @@ bool  CNSClientId::CheckVersion(const CQueue *  queue)
 }
 
 
+unsigned int  CNSClientId::GetID(void) const
+{
+    return m_ID;
+}
+
+
+void  CNSClientId::SetID(unsigned int  id)
+{
+    m_ID = id;
+    return;
+}
+
+
 string  CNSClientId::x_AccessViolationMessage(unsigned int  deficit)
 {
     string      message;
@@ -302,7 +318,9 @@ CNSClient::CNSClient() :
     m_BlacklistedJobs(bm::BM_GAP),
     m_RunHistory(bm::BM_GAP),
     m_ReadHistory(bm::BM_GAP),
-    m_WaitPort(0)
+    m_WaitPort(0),
+    m_ID(0),
+    m_Affinities(bm::BM_GAP)
 {}
 
 
@@ -318,7 +336,9 @@ CNSClient::CNSClient(const CNSClientId &  client_id) :
     m_BlacklistedJobs(bm::BM_GAP),
     m_RunHistory(bm::BM_GAP),
     m_ReadHistory(bm::BM_GAP),
-    m_WaitPort(0)
+    m_WaitPort(0),
+    m_ID(0),
+    m_Affinities(bm::BM_GAP)
 {
     if (!client_id.IsComplete())
         NCBI_THROW(CNetScheduleException, eInternalError,
@@ -511,10 +531,11 @@ void CNSClient::Touch(const CNSClientId &  client_id,
 
 
 // Prints the client info
-void CNSClient::Print(const string &         node_name,
-                      const CQueue *         queue,
-                      CNetScheduleHandler &  handler,
-                      bool                   verbose) const
+void CNSClient::Print(const string &               node_name,
+                      const CQueue *               queue,
+                      CNetScheduleHandler &        handler,
+                      const CNSAffinityRegistry &  aff_registry,
+                      bool                         verbose) const
 {
     handler.WriteMessage("OK:CLIENT " + node_name);
     if (m_Cleared)
@@ -603,6 +624,52 @@ void CNSClient::Print(const string &         node_name,
         }
     }
 
+    if (m_Affinities.any()) {
+        if (verbose) {
+            handler.WriteMessage("OK:  PREFERRED AFFINITIES:");
+
+            TNSBitVector::enumerator    en(m_Affinities.first());
+            for ( ; en.valid(); ++en)
+                handler.WriteMessage("OK:    " + aff_registry.GetTokenByID(*en));
+        } else {
+            handler.WriteMessage("OK:  NUMBER OF PREFERRED AFFINITIES: " +
+                                 NStr::UIntToString(m_Affinities.count()));
+        }
+    }
+
+    return;
+}
+
+
+unsigned int  CNSClient::GetID(void) const
+{
+    return m_ID;
+}
+
+
+void CNSClient::SetID(unsigned int  id)
+{
+    m_ID = id;
+    return;
+}
+
+
+TNSBitVector  CNSClient::GetPreferredAffinities(void) const
+{
+    return m_Affinities;
+}
+
+
+void  CNSClient::AddPreferredAffinities(const TNSBitVector &  aff)
+{
+    m_Affinities |= aff;
+    return;
+}
+
+
+void  CNSClient::RemovePreferredAffinities(const TNSBitVector &  aff)
+{
+    m_Affinities -= aff;
     return;
 }
 

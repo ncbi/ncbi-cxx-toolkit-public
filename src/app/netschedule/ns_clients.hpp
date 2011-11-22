@@ -46,6 +46,7 @@ BEGIN_NCBI_SCOPE
 // Forward declaration
 class CQueue;
 class CNetScheduleHandler;
+class CNSAffinityRegistry;
 
 
 // The CClientId serves two types of clients:
@@ -80,6 +81,8 @@ class CNSClientId
         void AddCapability(unsigned int  capabilities);
         void CheckAccess(TNSClientRole  role, const CQueue *  queue);
         bool CheckVersion(const CQueue *  queue);
+        unsigned int GetID(void) const;
+        void SetID(unsigned int  id);
 
     private:
         static string x_AccessViolationMessage(unsigned int  deficit);
@@ -101,6 +104,14 @@ class CNSClientId
 
         unsigned int        m_Unreported;
         bool                m_VersionControl;
+
+        // 0 for old style clients
+        // non 0 for new style clients.
+        // This identifier is set at the moment of touching the clients
+        // registry. The id is needed to support affinities. The affinity
+        // registry will store IDs of the clients which informed that a certain
+        // affinity is preferred.
+        unsigned int        m_ID;
 };
 
 
@@ -144,10 +155,16 @@ class CNSClient
 
         void Touch(const CNSClientId &  client_id,
                    CQueue *             queue);
-        void Print(const string &         node_name,
-                   const CQueue *         queue,
-                   CNetScheduleHandler &  handler,
-                   bool                   verbose) const;
+        void Print(const string &               node_name,
+                   const CQueue *               queue,
+                   CNetScheduleHandler &        handler,
+                   const CNSAffinityRegistry &  aff_registry,
+                   bool                         verbose) const;
+        unsigned int GetID(void) const;
+        void SetID(unsigned int  id);
+        TNSBitVector  GetPreferredAffinities(void) const;
+        void  AddPreferredAffinities(const TNSBitVector &  aff);
+        void  RemovePreferredAffinities(const TNSBitVector &  aff);
 
     private:
         bool            m_Cleared;        // Set to true when CLRN is received
@@ -173,6 +190,9 @@ class CNSClient
                                             // given to the client for reading.
         unsigned short  m_WaitPort;         // Port, provided in WGET command or
                                             // 0 otherwise
+        unsigned int    m_ID;               // Client identifier, see comments
+                                            // for CNSClientId::m_ID
+        TNSBitVector    m_Affinities;       // The client preferred affinities
 
         string  x_TypeAsString(void) const;
 };

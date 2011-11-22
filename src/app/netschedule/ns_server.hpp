@@ -101,6 +101,9 @@ public:
     const CTime& GetStartTime(void) const       { return m_StartTime; }
     CBackgroundHost&  GetBackgroundHost()       { return m_BackgroundHost; }
     CRequestExecutor& GetRequestExecutor()      { return m_RequestExecutor; }
+    unsigned GetMaxAffinities(void) const       { return m_MaxAffinities; }
+    string GetNodeID(void) const                { return m_NodeID; }
+    string GetSessionID(void) const             { return m_SessionID; }
 
     bool AdminHostValid(unsigned host) const;
 
@@ -137,6 +140,10 @@ private:
     unsigned int                                m_ScanBatchSize;    // Max number of scanned jobs
     double                                      m_PurgeTimeout;     // Interval between purges
 
+    unsigned int                                m_MaxAffinities;
+    string                                      m_NodeID;           // From the ini file
+    string                                      m_SessionID;        // Generated
+
     /// Quick local timer
     CFastLocalTime                              m_LocalTimer;
     /// List of admin stations
@@ -145,6 +152,9 @@ private:
     CAtomicCounter                              m_AtomicCommandNumber;
 
     static CNetScheduleServer*                  sm_netschedule_server;
+
+private:
+    string  x_GenerateGUID(void) const;
 };
 
 

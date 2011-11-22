@@ -61,6 +61,11 @@ void SNSCommandArguments::x_Reset()
     qclass.erase();
     sid.erase();
     job_status_string.erase();
+    aff_to_add.erase();
+    aff_to_del.erase();
+
+    any_affinity = false;
+    wnode_affinity = false;
 
     return;
 }
@@ -89,13 +94,25 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &  params)
         case 'a':
             if (key == "aff")
                 affinity_token = val;
-            else if (key == "auth_token") {
+            else if (key == "auth_token")
                 auth_token = val;
+            else if (key == "add")
+                aff_to_add = val;
+            else if (key == "any_aff") {
+                int tmp = NStr::StringToInt(val);
+                if (tmp != 0 && tmp != 1)
+                    NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                               "any_aff accepted values are 0 and 1.");
+                any_affinity = (tmp == 1);
             }
             break;
         case 'c':
             if (key == "comment")
                 comment = val;
+            break;
+        case 'd':
+            if (key == "del")
+                aff_to_del = val;
             break;
         case 'e':
             if (key == "err_msg")
@@ -153,6 +170,14 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &  params)
             if (key == "timeout")
                 timeout = NStr::StringToUInt(val, NStr::fConvErr_NoThrow);
             break;
+        case 'w':
+            if (key == "wnode_aff") {
+                int tmp = NStr::StringToInt(val);
+                if (tmp != 0 && tmp != 1)
+                    NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                               "wnode_aff accepted values are 0 and 1.");
+                wnode_affinity = (tmp == 1);
+            }
         default:
             break;
         }

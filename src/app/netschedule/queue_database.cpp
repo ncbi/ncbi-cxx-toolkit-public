@@ -807,10 +807,10 @@ void CQueueDataBase::NotifyListeners(void)
 }
 
 
-void CQueueDataBase::PrintStatistics(void)
+void CQueueDataBase::PrintStatistics(size_t &  aff_count)
 {
     NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
-        (*it).PrintStatistics();
+        (*it).PrintStatistics(aff_count);
     }
 }
 

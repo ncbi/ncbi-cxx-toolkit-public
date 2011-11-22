@@ -157,6 +157,8 @@ public:
                                 const string *             output,
                                 // GetJob parameters
                                 const list<string> *       aff_list,
+                                bool                       wnode_affinity,
+                                bool                       any_affinity,
                                 CJob *                     new_job);
 
     TJobStatus  PutResult(const CNSClientId &  client,
@@ -168,7 +170,14 @@ public:
     void GetJob(const CNSClientId &     client,
                 time_t                  curr,
                 const list<string> *    aff_list,
+                bool                    wnode_affinity,
+                bool                    any_affinity,
                 CJob *                  new_job);
+
+    string ChangeAffinity(const CNSClientId &     client,
+                          const list<string> &    aff_to_add,
+                          const list<string> &    aff_to_del,
+                          unsigned int            max_affinities);
 
     TJobStatus  JobDelayExpiration(unsigned        job_id,
                                    time_t          tm);
@@ -237,18 +246,6 @@ public:
     // Optimize bitvectors
     void OptimizeMem();
 
-    /// Find the pending job.
-    /// This method takes into account jobs available
-    /// in the job status matrix and current
-    /// worker node affinity association.
-    /// Sync.Locks: affinity map lock, main queue lock, status matrix
-    ///
-    /// @return job_id
-    unsigned
-    FindPendingJob(const CNSClientId &    client,
-                   const list<string> &   aff_list,
-                   time_t                 curr);
-
     /// Prepares affinity list of affinities accompanied by number
     /// of jobs belonging to them, e.g.
     /// "a1=500&a2=600a3=200"
@@ -278,12 +275,6 @@ public:
     /// Check execution timeout. Now checks reading timeout as well.
     /// All jobs failed to execute, go back to pending
     void CheckExecutionTimeout(bool logging);
-
-    /// Check timeout for a job
-    void x_CheckExecutionTimeout(unsigned  queue_run_timeout,
-                                 unsigned  job_id,
-                                 time_t    curr_time,
-                                 bool      logging);
 
     // Checks up to given # of jobs at the given status for expiration and
     // marks up to given # of jobs for deletion.
@@ -324,7 +315,7 @@ public:
     string MakeKey(unsigned job_id) const
     { return m_KeyGenerator.GenerateV1(job_id); }
 
-    void TouchClientsRegistry(const CNSClientId &  client);
+    void TouchClientsRegistry(CNSClientId &  client);
     void ResetRunningDueToClear(const CNSClientId &   client,
                                 const TNSBitVector &  jobs);
     void ResetReadingDueToClear(const CNSClientId &   client,
@@ -338,7 +329,7 @@ public:
                              unsigned short       port,
                              unsigned int         timeout);
     void UnregisterGetListener(const CNSClientId &  client);
-    void PrintStatistics(void);
+    void PrintStatistics(size_t &  aff_count);
     void CountTransition(CNetScheduleAPI::EJobStatus  from,
                          CNetScheduleAPI::EJobStatus  to)
     { m_StatisticsCounters.CountTransition(from, to); }
@@ -352,6 +343,16 @@ private:
                                       const string &       auth_token,
                                       TJobStatus           target_status);
 
+    unsigned int
+    x_FindPendingJob(const CNSClientId &    client,
+                     const list<string> &   aff_list,
+                     bool                   wnode_affinity,
+                     bool                   any_affinity);
+
+    unsigned int
+    x_FindPendingWithAffinity(const TNSBitVector &  aff_ids,
+                              const TNSBitVector &  blacklist_ids);
+
     /// @return TRUE if job record has been found and updated
     bool x_UpdateDB_PutResultNoLock(unsigned                job_id,
                                     time_t                  curr,
@@ -364,6 +365,11 @@ private:
                                   time_t               curr,
                                   unsigned int         job_id,
                                   CJob &               job);
+
+    void x_CheckExecutionTimeout(unsigned  queue_run_timeout,
+                                 unsigned  job_id,
+                                 time_t    curr_time,
+                                 bool      logging);
 
     void x_PrintJobStat(CNetScheduleHandler &   handler,
                         const CJob&             job,

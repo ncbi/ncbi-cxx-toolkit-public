@@ -72,7 +72,7 @@ public:
     void CountDBDeletion(size_t  count);
     void CountSubmit(size_t  count);
 
-    static void  PrintTotal(void);
+    static void  PrintTotal(size_t  affinities);
 
 private:
     static string x_GetTransitionCounterName(size_t  index_from,

@@ -388,14 +388,15 @@ void CStatisticsCounters::CountSubmit(size_t  count)
 }
 
 
-void  CStatisticsCounters::PrintTotal(void)
+void  CStatisticsCounters::PrintTotal(size_t  affinities)
 {
     CDiagContext_Extra      extra = GetDiagContext().Extra();
 
     // Prints the total counters
     extra.Print("counters", "total")
          .Print("submits", s_SubmitCounterTotal.Get())
-         .Print("dbdeletions", s_DBDeleteCounterTotal.Get());
+         .Print("dbdeletions", s_DBDeleteCounterTotal.Get())
+         .Print("affinities", affinities);
 
     for (size_t  index_from = 0;
          index_from < g_ValidJobStatusesSize; ++index_from) {
@@ -471,8 +472,9 @@ void CStatisticsThread::DoJob(void)
     ctx->SetRequestStatus(CNetScheduleHandler::eStatus_OK);
 
     // Print statistics for all the queues
-    m_QueueDB.PrintStatistics();
-    CStatisticsCounters::PrintTotal();
+    size_t      aff_count = 0;
+    m_QueueDB.PrintStatistics(aff_count);
+    CStatisticsCounters::PrintTotal(aff_count);
 
     // Close the logging context
     GetDiagContext().PrintRequestStop();

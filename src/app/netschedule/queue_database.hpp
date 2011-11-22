@@ -157,7 +157,7 @@ public:
     void StopNotifThread(void);
 
     // Print statistics
-    void PrintStatistics(void);
+    void PrintStatistics(size_t &  aff_count);
     void RunStatisticsThread(void);
     void StopStatisticsThread(void);
 

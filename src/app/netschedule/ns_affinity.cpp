@@ -73,6 +73,13 @@ void  CNSAffinityRegistry::InitLastAffinityID(unsigned int  value)
 }
 
 
+size_t  CNSAffinityRegistry::size(void) const
+{
+    CReadLockGuard      guard(m_Lock);
+    return m_AffinityIDs.size();
+}
+
+
 unsigned int
 CNSAffinityRegistry::GetIDByToken(const string &  aff_token) const
 {
@@ -108,7 +115,8 @@ string  CNSAffinityRegistry::GetTokenByID(unsigned int  aff_id) const
 // and adds the job to the affinity
 unsigned int
 CNSAffinityRegistry::ResolveAffinityToken(const string &     token,
-                                          unsigned int       job_id)
+                                          unsigned int       job_id,
+                                          unsigned int       client_id)
 {
     if (token.empty())
         return 0;
@@ -120,12 +128,15 @@ CNSAffinityRegistry::ResolveAffinityToken(const string &     token,
          unsigned int,
          SNSTokenCompare >::const_iterator      found = m_AffinityIDs.find(&token);
     if (found != m_AffinityIDs.end()) {
-        // This token is known. Update the jobs vector and finish
+        // This token is known. Update the jobs/clients vectors and finish
         unsigned int    aff_id = found->second;
 
         map< unsigned int,
              SNSJobsAffinity >::iterator        jobs_affinity = m_JobsAffinity.find(aff_id);
-        jobs_affinity->second.m_Jobs.set(job_id, true);
+        if (job_id != 0)
+            jobs_affinity->second.m_Jobs.set(job_id, true);
+        if (client_id != 0)
+            jobs_affinity->second.m_Clients.set(client_id, true);
         return aff_id;
     }
 
@@ -145,7 +156,10 @@ CNSAffinityRegistry::ResolveAffinityToken(const string &     token,
     // Create a record in the id->attributes map
     SNSJobsAffinity     new_job_affinity;
     new_job_affinity.m_AffToken = new_token;
-    new_job_affinity.m_Jobs.set(job_id, true);
+    if (job_id != 0)
+        new_job_affinity.m_Jobs.set(job_id, true);
+    if (client_id != 0)
+        new_job_affinity.m_Clients.set(client_id, true);
     m_JobsAffinity[aff_id] = new_job_affinity;
 
     // Update the database. The transaction is created in the outer scope.
@@ -237,7 +251,7 @@ CNSAffinityRegistry::GetJobsWithAffinity(unsigned int  aff_id) const
 
 
 // Removes the job from affinity and might remove the records if there are no
-// more jobs with this affinity. Deletes a record from the DB if required.
+// more jobs/clients with this affinity. Deletes a record from the DB if required.
 // The transaction is set in the outer scope.
 void CNSAffinityRegistry::RemoveJobFromAffinity(unsigned int  job_id,
                                                 unsigned int  aff_id)
@@ -254,25 +268,56 @@ void CNSAffinityRegistry::RemoveJobFromAffinity(unsigned int  job_id,
         return;
 
     TNSBitVector &      aff_jobs = found->second.m_Jobs;
+    TNSBitVector &      aff_clients = found->second.m_Clients;
 
     aff_jobs.set(job_id, false);
-    if (aff_jobs.any())
+    if (aff_jobs.any() || aff_clients.any())
         // There are still some jobs with this affinity
         return;
 
-    // No more jobs with this affinity - clean up the data structures
-    map< const string *,
-         unsigned int,
-         SNSTokenCompare >::iterator    aff_tok = m_AffinityIDs.find(found->second.m_AffToken);
-    if (aff_tok != m_AffinityIDs.end())
-        m_AffinityIDs.erase(aff_tok);
-
-    delete found->second.m_AffToken;
-    m_JobsAffinity.erase(found);
-
-    m_AffDictDB->aff_id = aff_id;
-    m_AffDictDB->Delete(CBDB_File::eIgnoreError);
+    // No more jobs/clients with this affinity
+    // so clean up the data structures
+    x_DeleteAffinity(aff_id, found);
     return;
+}
+
+
+// Removes the client from affinities and might remove the records if there are no
+// more jobs/clients with this affinity. Deletes a record from the DB if required.
+// The transaction is set in the outer scope.
+size_t
+CNSAffinityRegistry::RemoveClientFromAffinities(unsigned int          client_id,
+                                                const TNSBitVector &  aff_ids)
+{
+    if (client_id == 0 || !aff_ids.any())
+        return 0;
+
+    size_t              del_count = 0;
+    CWriteLockGuard     guard(m_Lock);
+
+    TNSBitVector::enumerator    en(aff_ids.first());
+    for ( ; en.valid(); ++en) {
+        map< unsigned int,
+             SNSJobsAffinity >::iterator    found = m_JobsAffinity.find(*en);
+        if (found == m_JobsAffinity.end())
+            continue;   // Affinity is not known.
+                        // This should never happened basically.
+
+        TNSBitVector &      aff_jobs = found->second.m_Jobs;
+        TNSBitVector &      aff_clients = found->second.m_Clients;
+
+        aff_clients.set(client_id, false);
+        if (aff_jobs.any() || aff_clients.any())
+            // There are still some jobs with this affinity
+            continue;
+
+        // No more jobs/clients with this affinity
+        // so clean up the data structures
+        x_DeleteAffinity(*en, found);
+        ++del_count;
+    }
+
+    return del_count;
 }
 
 
@@ -372,7 +417,7 @@ void CNSAffinityRegistry::ClearMemoryAndDatabase(void)
     x_Clear();
 
     // Clear the Berkley DB table.
-    // Safe truncate can delete avarything without a transaction.
+    // Safe truncate can delete everything without a transaction.
     m_AffDictDB->SafeTruncate();
     return;
 }
@@ -391,6 +436,26 @@ void CNSAffinityRegistry::x_Clear(void)
     // Clear containers
     m_AffinityIDs.clear();
     m_JobsAffinity.clear();
+    return;
+}
+
+
+void CNSAffinityRegistry::x_DeleteAffinity(
+                            unsigned int                   aff_id,
+                            map<unsigned int,
+                                SNSJobsAffinity>::iterator found_aff)
+{
+    map< const string *,
+         unsigned int,
+         SNSTokenCompare >::iterator    aff_tok = m_AffinityIDs.find(found_aff->second.m_AffToken);
+    if (aff_tok != m_AffinityIDs.end())
+        m_AffinityIDs.erase(aff_tok);
+
+    delete found_aff->second.m_AffToken;
+    m_JobsAffinity.erase(found_aff);
+
+    m_AffDictDB->aff_id = aff_id;
+    m_AffDictDB->Delete(CBDB_File::eIgnoreError);
     return;
 }
 

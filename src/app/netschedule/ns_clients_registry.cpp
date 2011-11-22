@@ -39,8 +39,13 @@
 BEGIN_NCBI_SCOPE
 
 
+CNSClientsRegistry::CNSClientsRegistry() :
+    m_LastID(0)
+{}
+
+
 // Called before any command is issued by the client
-void CNSClientsRegistry::Touch(const CNSClientId &  client,
+void CNSClientsRegistry::Touch(CNSClientId &        client,
                                CQueue *             queue)
 {
     // Check if it is an old-style client
@@ -53,11 +58,15 @@ void CNSClientsRegistry::Touch(const CNSClientId &  client,
     if (known_client == m_Clients.end()) {
         // The client is not known yet
         CNSClient       new_ns_client(client);
+        unsigned int    client_id = x_GetNextID();
 
+        new_ns_client.SetID(client_id);
+        client.SetID(client_id);
         m_Clients[ client.GetNode() ] = new_ns_client;
     } else {
         // The client has connected before
         known_client->second.Touch(client, queue);
+        client.SetID(known_client->second.GetID());
     }
     return;
 }
@@ -75,13 +84,10 @@ void  CNSClientsRegistry::AddToSubmitted(const CNSClientId &  client,
     CWriteLockGuard                     guard(m_Lock);
     map< string, CNSClient >::iterator  submitter = m_Clients.find(client.GetNode());
 
-    if (submitter == m_Clients.end()) {
-        // This is going to be an extremely rare case when the record has been
-        // deleted between Touch() and this calls. However it is better to be
-        // on the safe side.
-        CNSClient       new_ns_client(client);
-        submitter = m_Clients.insert(pair<string, CNSClient>(client.GetNode(), new_ns_client)).first;
-    }
+    if (submitter == m_Clients.end())
+        NCBI_THROW(CNetScheduleException, eInternalError,
+                   "Cannot find client '" + client.GetNode() +
+                   "' to set submitted job");
 
     submitter->second.RegisterSubmittedJob(job_id);
     return;
@@ -101,13 +107,10 @@ void  CNSClientsRegistry::AddToSubmitted(const CNSClientId &  client,
     CWriteLockGuard                     guard(m_Lock);
     map< string, CNSClient >::iterator  submitter = m_Clients.find(client.GetNode());
 
-    if (submitter == m_Clients.end()) {
-        // This is going to be an extremely rare case when the record has been
-        // deleted between Touch() and this calls. However it is better to be
-        // on the safe side.
-        CNSClient       new_ns_client(client);
-        submitter = m_Clients.insert(pair<string, CNSClient>(client.GetNode(), new_ns_client)).first;
-    }
+    if (submitter == m_Clients.end())
+        NCBI_THROW(CNetScheduleException, eInternalError,
+                   "Cannot find client '" + client.GetNode() +
+                   "' to set submitted jobs");
 
     submitter->second.RegisterSubmittedJobs(start_job_id, number_of_jobs);
     return;
@@ -126,13 +129,10 @@ void  CNSClientsRegistry::AddToReading(const CNSClientId &  client,
     CWriteLockGuard                     guard(m_Lock);
     map< string, CNSClient >::iterator  reader = m_Clients.find(client.GetNode());
 
-    if (reader == m_Clients.end()) {
-        // This is going to be an extremely rare case when the record has been
-        // deleted between Touch() and this calls. However it is better to be
-        // on the safe side.
-        CNSClient       new_ns_client(client);
-        reader = m_Clients.insert(pair<string, CNSClient>(client.GetNode(), new_ns_client)).first;
-    }
+    if (reader == m_Clients.end())
+        NCBI_THROW(CNetScheduleException, eInternalError,
+                   "Cannot find client '" + client.GetNode() +
+                   "' to set reading job");
 
     reader->second.RegisterReadingJob(job_id);
     return;
@@ -151,13 +151,10 @@ void  CNSClientsRegistry::AddToRunning(const CNSClientId &  client,
     CWriteLockGuard                     guard(m_Lock);
     map< string, CNSClient >::iterator  worker_node = m_Clients.find(client.GetNode());
 
-    if (worker_node == m_Clients.end()) {
-        // This is going to be an extremely rare case when the record has been
-        // deleted between Touch() and this calls. However it is better to be
-        // on the safe side.
-        CNSClient       new_ns_client(client);
-        worker_node = m_Clients.insert(pair<string, CNSClient>(client.GetNode(), new_ns_client)).first;
-    }
+    if (worker_node == m_Clients.end())
+        NCBI_THROW(CNetScheduleException, eInternalError,
+                   "Cannot find client '" + client.GetNode() +
+                   "' to set running job");
 
     worker_node->second.RegisterRunningJob(job_id);
     return;
@@ -176,13 +173,10 @@ void  CNSClientsRegistry::AddToBlacklist(const CNSClientId &  client,
     CWriteLockGuard                     guard(m_Lock);
     map< string, CNSClient >::iterator  worker_node = m_Clients.find(client.GetNode());
 
-    if (worker_node == m_Clients.end()) {
-        // This is going to be an extremely rare case when the record has been
-        // deleted between Touch() and this calls. However it is better to be
-        // on the safe side.
-        CNSClient       new_ns_client(client);
-        worker_node = m_Clients.insert(pair<string, CNSClient>(client.GetNode(), new_ns_client)).first;
-    }
+    if (worker_node == m_Clients.end())
+        NCBI_THROW(CNetScheduleException, eInternalError,
+                   "Cannot find client '" + client.GetNode() +
+                   "' to set blacklisted job");
 
     worker_node->second.RegisterBlacklistedJob(job_id);
     return;
@@ -201,15 +195,8 @@ void  CNSClientsRegistry::ClearReading(const CNSClientId &  client,
     CWriteLockGuard                     guard(m_Lock);
     map< string, CNSClient >::iterator  reader = m_Clients.find(client.GetNode());
 
-    if (reader == m_Clients.end()) {
-        // This is going to be an extremely rare case when the record has been
-        // deleted between Touch() and this calls. However it is better to be
-        // on the safe side.
-        CNSClient       new_ns_client(client);
-        reader = m_Clients.insert(pair<string, CNSClient>(client.GetNode(), new_ns_client)).first;
-    }
-
-    reader->second.UnregisterReadingJob(job_id);
+    if (reader != m_Clients.end())
+        reader->second.UnregisterReadingJob(job_id);
     return;
 }
 
@@ -259,15 +246,8 @@ void  CNSClientsRegistry::ClearExecuting(const CNSClientId &  client,
     CWriteLockGuard                     guard(m_Lock);
     map< string, CNSClient >::iterator  worker_node = m_Clients.find(client.GetNode());
 
-    if (worker_node == m_Clients.end()) {
-        // This is going to be an extremely rare case when the record has been
-        // deleted between Touch() and this calls. However it is better to be
-        // on the safe side.
-        CNSClient       new_ns_client(client);
-        worker_node = m_Clients.insert(pair<string, CNSClient>(client.GetNode(), new_ns_client)).first;
-    }
-
-    worker_node->second.UnregisterRunningJob(job_id);
+    if (worker_node != m_Clients.end())
+        worker_node->second.UnregisterRunningJob(job_id);
     return;
 }
 
@@ -320,15 +300,16 @@ void  CNSClientsRegistry::ClearWorkerNode(const CNSClientId &  client,
 }
 
 
-void CNSClientsRegistry::PrintClientsList(const CQueue *         queue,
-                                          CNetScheduleHandler &  handler,
-                                          bool                   verbose) const
+void CNSClientsRegistry::PrintClientsList(const CQueue *               queue,
+                                          CNetScheduleHandler &        handler,
+                                          const CNSAffinityRegistry &  aff_registry,
+                                          bool                         verbose) const
 {
     CReadLockGuard                              guard(m_Lock);
     map< string, CNSClient >::const_iterator    k = m_Clients.begin();
 
     for ( ; k != m_Clients.end(); ++k)
-        k->second.Print(k->first, queue, handler, verbose);
+        k->second.Print(k->first, queue, handler, aff_registry, verbose);
 
     return;
 }
@@ -344,13 +325,10 @@ void  CNSClientsRegistry::SetWaitPort(const CNSClientId &  client,
     CWriteLockGuard                     guard(m_Lock);
     map< string, CNSClient >::iterator  worker_node = m_Clients.find(client.GetNode());
 
-    if (worker_node == m_Clients.end()) {
-        // This is going to be an extremely rare case when the record has been
-        // deleted between a command from the workernode and this call. 
-        // However it is better to be on the safe side.
-        CNSClient       new_ns_client(client);
-        worker_node = m_Clients.insert(pair<string, CNSClient>(client.GetNode(), new_ns_client)).first;
-    }
+    if (worker_node == m_Clients.end())
+        NCBI_THROW(CNetScheduleException, eInternalError,
+                   "Cannot find client '" + client.GetNode() +
+                   "' to set wait port");
 
     worker_node->second.SetWaitPort(port);
     return;
@@ -375,28 +353,72 @@ CNSClientsRegistry::GetAndResetWaitPort(const CNSClientId &  client)
 
 
 
-static TNSBitVector     s_no_jobs = TNSBitVector();
+static TNSBitVector     s_empty_vector = TNSBitVector();
 
 TNSBitVector
 CNSClientsRegistry::GetBlacklistedJobs(const CNSClientId &  client)
 {
     if (!client.IsComplete())
-        return s_no_jobs;
+        return s_empty_vector;
 
     CWriteLockGuard                             guard(m_Lock);
     map< string, CNSClient >::const_iterator    found = m_Clients.find(client.GetNode());
 
-    if (found == m_Clients.end()) {
-        // This is going to be an extremely rare case when the record has been
-        // deleted between Touch() and this calls. However it is better to be
-        // on the safe side.
-        CNSClient       new_ns_client(client);
-        found = m_Clients.insert(pair<string, CNSClient>(client.GetNode(), new_ns_client)).first;
-    }
+    if (found == m_Clients.end())
+        return s_empty_vector;
 
     return found->second.GetBlacklistedJobs();
 }
 
+
+TNSBitVector  CNSClientsRegistry::GetPreferredAffinities(
+                                const CNSClientId &  client)
+{
+    if (!client.IsComplete())
+        return s_empty_vector;
+
+    CWriteLockGuard                             guard(m_Lock);
+    map< string, CNSClient >::const_iterator    found = m_Clients.find(client.GetNode());
+
+    if (found == m_Clients.end())
+        return s_empty_vector;
+
+    return found->second.GetPreferredAffinities();
+}
+
+
+void  CNSClientsRegistry::UpdatePreferredAffinities(
+                                const CNSClientId &   client,
+                                const TNSBitVector &  aff_to_add,
+                                const TNSBitVector &  aff_to_del)
+{
+    if (!client.IsComplete())
+        return;
+
+    CWriteLockGuard                     guard(m_Lock);
+    map< string, CNSClient >::iterator  found = m_Clients.find(client.GetNode());
+
+    if (found == m_Clients.end())
+        NCBI_THROW(CNetScheduleException, eInternalError,
+                   "Cannot find client '" + client.GetNode() +
+                   "' to update preferred affinities");
+
+    found->second.AddPreferredAffinities(aff_to_add);
+    found->second.RemovePreferredAffinities(aff_to_del);
+    return;
+}
+
+
+unsigned int  CNSClientsRegistry::x_GetNextID(void)
+{
+    CFastMutexGuard     guard(m_LastIDLock);
+
+    // 0 is an invalid value, so make sure the ID != 0
+    ++m_LastID;
+    if (m_LastID == 0)
+        m_LastID = 1;
+    return m_LastID;
+}
 
 END_NCBI_SCOPE
 

@@ -76,6 +76,16 @@ void SNS_Parameters::Read(const IRegistry& reg, const string& sname)
     scan_batch_size = GetIntNoErr("scan_batch_size", 10000);
     purge_timeout  = GetDoubleNoErr("purge_timeout", 0.1);
 
+    max_affinities = GetIntNoErr("max_affinities", 10000);
+    if (max_affinities <= 0) {
+        LOG_POST(Message << Warning <<
+            "INI file sets the max number of preferred affinities <= 0."
+            " Assume 10000 instead.");
+        max_affinities = 10000;
+    }
+
+    node_id = reg.GetString(sname, "node_id", kEmptyStr);
+
     is_daemon   = GetBoolNoErr("daemon", false);
     admin_hosts = reg.GetString(sname, "admin_host", kEmptyStr);
     return;
@@ -101,7 +111,9 @@ static string s_NSParameters[] =
     "log_statistics_thread",        // 14
     "del_batch_size",               // 15
     "scan_batch_size",              // 16
-    "purge_timeout"                 // 17
+    "purge_timeout",                // 17
+    "max_affinities",               // 18
+    "node_id"                       // 19
 };
 static unsigned s_NumNSParameters = sizeof(s_NSParameters) / sizeof(string);
 
@@ -141,6 +153,8 @@ string SNS_Parameters::GetParamValue(unsigned n) const
     case 15: return NStr::UIntToString(del_batch_size);
     case 16: return NStr::UIntToString(scan_batch_size);
     case 17: return NStr::DoubleToString(purge_timeout);
+    case 18: return NStr::UIntToString(max_affinities);
+    case 19: return node_id;
     default: return kEmptyStr;
     }
 }

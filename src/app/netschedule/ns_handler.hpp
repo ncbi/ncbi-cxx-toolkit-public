@@ -138,6 +138,7 @@ private:
     // Command processors
     void x_ProcessFastStatusS(CQueue*);
     void x_ProcessFastStatusW(CQueue*);
+    void x_ProcessChangeAffinity(CQueue*);
     void x_ProcessSubmit(CQueue*);
     void x_ProcessSubmitBatch(CQueue*);
     void x_ProcessBatchStart(CQueue*);
@@ -183,6 +184,7 @@ private:
     void x_ProcessInitWorkerNode(CQueue*);
     void x_ProcessClearWorkerNode(CQueue*);
     void x_CmdNotImplemented(CQueue*);
+    void x_CheckGetJobPrerequisites(bool  wnode_affinity);
 
 private:
     CRef<CQueue> GetQueue(void) {

@@ -46,15 +46,18 @@ BEGIN_NCBI_SCOPE
 
 class CNetScheduleHandler;
 class CQueue;
+class CNSAffinityRegistry;
 
 
 // The CNSClientsRegistry serves all the queue clients.
 class CNSClientsRegistry
 {
     public:
+        CNSClientsRegistry();
+
         // Called before any command is issued by the client.
         // The client record is created or updated.
-        void  Touch(const CNSClientId &  client,
+        void  Touch(CNSClientId &        client,
                     CQueue *             queue);
 
         // Methods to update the client records.
@@ -81,13 +84,18 @@ class CNSClientsRegistry
                               CQueue *             queue);
         TNSBitVector  GetBlacklistedJobs(const CNSClientId &  client);
 
-        void  PrintClientsList(const CQueue *         queue,
-                               CNetScheduleHandler &  handler,
-                               bool                   verbose) const;
+        void  PrintClientsList(const CQueue *               queue,
+                               CNetScheduleHandler &        handler,
+                               const CNSAffinityRegistry &  aff_registry,
+                               bool                         verbose) const;
 
         void  SetWaitPort(const CNSClientId &  client,
                           unsigned short       port);
         unsigned short  GetAndResetWaitPort(const CNSClientId &  client);
+        TNSBitVector  GetPreferredAffinities(const CNSClientId &  client);
+        void  UpdatePreferredAffinities(const CNSClientId &   client,
+                                        const TNSBitVector &  aff_to_add,
+                                        const TNSBitVector &  aff_to_del);
 
     private:
         map< string, CNSClient >    m_Clients;  // All the queue clients
@@ -95,6 +103,12 @@ class CNSClientsRegistry
                                                 // ClientNode -> struct {}
                                                 // e.g. service10:9300 - > {}
         mutable CRWLock             m_Lock;     // Lock for the map
+
+        // Client IDs support
+        unsigned int                m_LastID;
+        CFastMutex                  m_LastIDLock;
+
+        unsigned int  x_GetNextID(void);
 };
 
 

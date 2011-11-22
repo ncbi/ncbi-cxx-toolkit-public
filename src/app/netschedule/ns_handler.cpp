@@ -210,16 +210,23 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
         { { "job_key",    eNSPT_Id, eNSPA_Required },
           { "auth_token", eNSPT_Str, eNSPA_Required } } },
 
-    /*** Worker role ***/
+    /*** Worker node role ***/
     // WST job_key : id -- worker node fast status, does not change timestamp
     { "WST",      { &CNetScheduleHandler::x_ProcessFastStatusW,
                     eNSCR_Worker },
         { { "job_key", eNSPT_Id, eNSPA_Required } } },
+    // CHAFF [add: string] [del: string] -- change affinity
+    { "CHAFF",    { &CNetScheduleHandler::x_ProcessChangeAffinity,
+                    eNSCR_Worker },
+        { { "add", eNSPT_Str, eNSPA_Optional, "" },
+          { "del", eNSPT_Str, eNSPA_Optional, "" } } },
     // GET [ port : int ] [affinity_list : keystr(aff) ]
     { "GET",      { &CNetScheduleHandler::x_ProcessGetJob,
                     eNSCR_Worker },
-        { { "port", eNSPT_Id,  eNSPA_Optional },
-          { "aff",  eNSPT_Str, eNSPA_Optional, "" } } },
+        { { "port",      eNSPT_Id,  eNSPA_Optional },
+          { "aff",       eNSPT_Str, eNSPA_Optional, "" },
+          { "any_aff",   eNSPT_Int, eNSPA_Optional, 0 },
+          { "wnode_aff", eNSPT_Int, eNSPA_Optional, 0 } } },
     // PUT job_key : id  job_return_code : int  output : str
     { "PUT",      { &CNetScheduleHandler::x_ProcessPut,
                     eNSCR_Worker },
@@ -234,9 +241,11 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     //      [affinity_list : keystr(aff) ]
     { "WGET",     { &CNetScheduleHandler::x_ProcessWaitGet,
                     eNSCR_Worker },
-        { { "port",    eNSPT_Int, eNSPA_Required },
-          { "timeout", eNSPT_Int, eNSPA_Required },
-          { "aff",     eNSPT_Str, eNSPA_Optional, "" } } },
+        { { "port",      eNSPT_Int, eNSPA_Required },
+          { "timeout",   eNSPT_Int, eNSPA_Required },
+          { "aff",       eNSPT_Str, eNSPA_Optional, "" },
+          { "any_aff",   eNSPT_Int, eNSPA_Optional, 0 },
+          { "wnode_aff", eNSPT_Int, eNSPA_Optional, 0 } } },
     // JRTO job_key : id  timeout : uint
     { "JRTO",     { &CNetScheduleHandler::x_CmdNotImplemented,
                     eNSCR_Worker } },
@@ -254,7 +263,9 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
         { { "job_key",         eNSPT_Id,  eNSPA_Optchain },
           { "job_return_code", eNSPT_Int, eNSPA_Optchain },
           { "output",          eNSPT_Str, eNSPA_Optional },
-          { "aff",             eNSPT_Str, eNSPA_Optional, "" } } },
+          { "aff",             eNSPT_Str, eNSPA_Optional, "" },
+          { "any_aff",         eNSPT_Int, eNSPA_Optional, 0 },
+          { "wnode_aff",       eNSPT_Int, eNSPA_Optional, 0 } } },
     // REGC port : uint
     { "REGC",     { &CNetScheduleHandler::x_ProcessRegisterClient,
                     eNSCR_Worker },
@@ -1035,6 +1046,44 @@ void CNetScheduleHandler::x_ProcessFastStatusW(CQueue* q)
 }
 
 
+void CNetScheduleHandler::x_ProcessChangeAffinity(CQueue* q)
+{
+    // This functionality requires client name and the session
+    if (!m_ClientId.IsComplete()) {
+        ERR_POST(Warning << "The client did not provide the name and the "
+                            "session required by CHAFF");
+        WriteMessage("ERR:eInvalidParameter");
+        x_PrintRequestStop(eStatus_BadCmd);
+        return;
+    }
+
+    if (m_CommandArguments.aff_to_add.empty() &&
+        m_CommandArguments.aff_to_del.empty()) {
+        ERR_POST(Warning << "CHAFF with neither add list nor del list");
+        WriteMessage("ERR:eInvalidParameter");
+        x_PrintRequestStop(eStatus_BadCmd);
+        return;
+    }
+
+    list<string>    aff_to_add_list;
+    list<string>    aff_to_del_list;
+
+    NStr::Split(NStr::ParseEscapes(m_CommandArguments.aff_to_add),
+                "\t,", aff_to_add_list, NStr::eNoMergeDelims);
+    NStr::Split(NStr::ParseEscapes(m_CommandArguments.aff_to_del),
+                "\t,", aff_to_del_list, NStr::eNoMergeDelims);
+
+    string  msg = q->ChangeAffinity(m_ClientId, aff_to_add_list,
+                                                aff_to_del_list,
+                                                m_Server->GetMaxAffinities());
+    if (msg.empty())
+        WriteMessage("OK:");
+    else
+        WriteMessage("OK:WARNING:", msg + ";");
+    x_PrintRequestStop(eStatus_OK);
+}
+
+
 void CNetScheduleHandler::x_ProcessSubmit(CQueue* q)
 {
     CJob        job(m_CommandArguments);
@@ -1142,12 +1191,18 @@ void CNetScheduleHandler::x_ProcessStatus(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
 {
+    x_CheckGetJobPrerequisites(m_CommandArguments.wnode_affinity);
+
     list<string>    aff_list;
     NStr::Split(NStr::ParseEscapes(m_CommandArguments.affinity_token),
                 "\t,", aff_list, NStr::eNoMergeDelims);
 
     CJob            job;
-    q->GetJob(m_ClientId, time(0), &aff_list, &job);
+    q->GetJob(m_ClientId, time(0),
+              &aff_list,
+              m_CommandArguments.wnode_affinity,
+              m_CommandArguments.any_affinity,
+              &job);
 
     if (job.GetId())
         WriteMessage("OK:", x_FormGetJobResponse(q, job));
@@ -1162,12 +1217,18 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessWaitGet(CQueue* q)
 {
+    x_CheckGetJobPrerequisites(m_CommandArguments.wnode_affinity);
+
     list<string>        aff_list;
     NStr::Split(NStr::ParseEscapes(m_CommandArguments.affinity_token),
                 "\t,", aff_list, NStr::eNoMergeDelims);
 
     CJob                job;
-    q->GetJob(m_ClientId, time(0), &aff_list, &job);
+    q->GetJob(m_ClientId, time(0),
+              &aff_list,
+              m_CommandArguments.wnode_affinity,
+              m_CommandArguments.any_affinity,
+              &job);
 
     if (job.GetId()) {
         WriteMessage("OK:", x_FormGetJobResponse(q, job));
@@ -1228,6 +1289,8 @@ void CNetScheduleHandler::x_ProcessPut(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
 {
+    x_CheckGetJobPrerequisites(m_CommandArguments.wnode_affinity);
+
     list<string>        aff_list;
     NStr::Split(NStr::ParseEscapes(m_CommandArguments.affinity_token),
                 "\t,", aff_list, NStr::eNoMergeDelims);
@@ -1240,7 +1303,10 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
                                             m_CommandArguments.job_return_code,
                                             &output,
                                             // GetJob params
-                                            &aff_list, &job);
+                                            &aff_list,
+                                            m_CommandArguments.wnode_affinity,
+                                            m_CommandArguments.any_affinity,
+                                            &job);
 
     // The PUT part output cannot be sent to the client to avoid breaking
     // backward compatibillity. So it is logged only.
@@ -1639,7 +1705,13 @@ void CNetScheduleHandler::x_ProcessShutdown(CQueue*)
 
 void CNetScheduleHandler::x_ProcessVersion(CQueue*)
 {
-    WriteMessage("OK:" NETSCHEDULED_FULL_VERSION);
+    WriteMessage("OK:",
+                 "server_version=" NETSCHEDULED_VERSION
+                 "&storage_version=" NETSCHEDULED_STORAGE_VERSION
+                 "&protocol_version=" NETSCHEDULED_PROTOCOL_VERSION
+                 "&build_date=" + NStr::URLEncode(NETSCHEDULED_BUILD_DATE) +
+                 "&ns_node=" + m_Server->GetNodeID() +
+                 "&ns_session=" + m_Server->GetSessionID());
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -1846,6 +1918,20 @@ void CNetScheduleHandler::x_CmdNotImplemented(CQueue *)
 {
     WriteMessage("ERR:Not implemented");
     x_PrintRequestStop(eStatus_NoImpl);
+}
+
+
+void CNetScheduleHandler::x_CheckGetJobPrerequisites(bool  wnode_affinity)
+{
+    if (!wnode_affinity)
+        return;
+
+    if (m_ClientId.IsComplete())
+        return;
+
+    NCBI_THROW(CNetScheduleException, eInvalidClient,
+               "Anonymous client (no client_node and client_session"
+               " at handshake) cannot refer to preferred affinities.");
 }
 
 

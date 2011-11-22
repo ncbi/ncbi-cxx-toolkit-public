@@ -384,7 +384,8 @@ unsigned int  CQueue::Submit(const CNSClientId &  client,
         {{
             CNSTransaction      transaction(this);
 
-            aff_id = m_AffinityRegistry.ResolveAffinityToken(aff_token, job_id);
+            aff_id = m_AffinityRegistry.ResolveAffinityToken(aff_token,
+                                                             job_id, 0);
             job.SetAffinityId(aff_id);
             job.Flush(this);
 
@@ -465,7 +466,7 @@ unsigned int  CQueue::SubmitBatch(const CNSClientId &             client,
                 if (!aff_token.empty()) {
                     job.SetAffinityId(
                         m_AffinityRegistry.ResolveAffinityToken(
-                            aff_token, job_id_cnt)
+                            aff_token, job_id_cnt, 0)
                                      );
                     ++aff_count;
                 }
@@ -505,6 +506,8 @@ TJobStatus  CQueue::PutResultGetJob(const CNSClientId &        client,
                                     // GetJob parameters
                                     // in
                                     const list<string> *       aff_list,
+                                    bool                       wnode_affinity,
+                                    bool                       any_affinity,
                                     // out
                                     CJob *                     new_job)
 {
@@ -512,7 +515,7 @@ TJobStatus  CQueue::PutResultGetJob(const CNSClientId &        client,
 
     TJobStatus      old_status = PutResult(client, curr, done_job_id,
                                            ret_code, output);
-    GetJob(client, curr, aff_list, new_job);
+    GetJob(client, curr, aff_list, wnode_affinity, any_affinity, new_job);
     return old_status;
 }
 
@@ -595,6 +598,8 @@ TJobStatus  CQueue::PutResult(const CNSClientId &  client,
 void CQueue::GetJob(const CNSClientId &     client,
                     time_t                  curr,
                     const list<string> *    aff_list,
+                    bool                    wnode_affinity,
+                    bool                    any_affinity,
                     CJob *                  new_job)
 {
     // We need exactly 1 parameter - m_RunTimeout, so we can access it without
@@ -607,8 +612,10 @@ void CQueue::GetJob(const CNSClientId &     client,
             CFastMutexGuard     guard(m_OperationLock);
 
             for (;;) {
-                unsigned int        job_id = FindPendingJob(client,
-                                                            *aff_list, curr);
+                unsigned int        job_id = x_FindPendingJob(client,
+                                                              *aff_list,
+                                                              wnode_affinity,
+                                                              any_affinity);
                 if (!job_id)
                     return;
 
@@ -644,6 +651,132 @@ void CQueue::GetJob(const CNSClientId &     client,
             throw;
         }
     }
+}
+
+
+string  CQueue::ChangeAffinity(const CNSClientId &     client,
+                               const list<string> &    aff_to_add,
+                               const list<string> &    aff_to_del,
+                               unsigned int            max_affinities)
+{
+    // It is guaranteed here that the client is a new style one.
+    // I.e. it has both client_node and client_session.
+
+    string          msg;    // Warning message for the socket
+    unsigned int    client_id = client.GetID();
+    TNSBitVector    current_affinities =
+                         m_ClientsRegistry.GetPreferredAffinities(client);
+    TNSBitVector    aff_id_to_add;
+    TNSBitVector    aff_id_to_del;
+    bool            any_to_add = false;
+    bool            any_to_del = false;
+
+    // Identify the affinities which should be deleted
+    for (list<string>::const_iterator  k(aff_to_del.begin());
+         k != aff_to_del.end(); ++k) {
+        unsigned int    aff_id = m_AffinityRegistry.GetIDByToken(*k);
+
+        if (aff_id == 0) {
+            // The affinity is not known for NS at all
+            ERR_POST(Warning << "Client '" << client.GetNode()
+                             << "' deletes unknown affinity '"
+                             << *k << "'. Ignored.");
+            if (!msg.empty())
+                msg += "; ";
+            msg += "unknown affinity to delete: " + *k;
+            continue;
+        }
+
+        if (current_affinities[aff_id] == false) {
+            // This a try to delete something which has not been added or
+            // deleted before.
+            ERR_POST(Warning << "Client '" << client.GetNode()
+                             << "' deletes affinity '" << *k
+                             << "' which is not in the list of the "
+                                "preferred client affinities. Ignored.");
+            if (!msg.empty())
+                msg += "; ";
+            msg += "not registered affinity to delete: " + *k;
+            continue;
+        }
+
+        // The affinity will really be deleted
+        aff_id_to_del.set(aff_id, true);
+        any_to_del = true;
+    }
+
+
+    // Check that the update of the affinities list will not exceed the limit
+    // for the max number of affinities per client.
+    // Note: this is not precise check. There could be non-unique affinities in
+    // the add list or some of affinities to add could already be in the list.
+    // The precise checking however requires more CPU and blocking so only an
+    // approximate (but fast) checking is done.
+    if (current_affinities.count() + aff_to_add.size()
+                                   - aff_id_to_del.count() >
+                                         max_affinities) {
+        NCBI_THROW(CNetScheduleException, eTooManyPreferredAffinities,
+                   "The client '" + client.GetNode() +
+                   "' exceeds the limit (" +
+                   NStr::UIntToString(max_affinities) +
+                   ") of the preferred affinities. Changed request ignored.");
+    }
+
+    // To avoid logging under the lock
+    vector<string>  already_added_affinities;
+
+    {{
+
+        CFastMutexGuard     guard(m_OperationLock);
+        CNSTransaction      transaction(this);
+
+        // Convert the aff_to_add to the affinity IDs
+        for (list<string>::const_iterator  k(aff_to_add.begin());
+             k != aff_to_add.end(); ++k ) {
+            unsigned int    aff_id =
+                                 m_AffinityRegistry.ResolveAffinityToken(*k,
+                                                                 0, client_id);
+
+            if (current_affinities[aff_id] == true) {
+                already_added_affinities.push_back(*k);
+                continue;
+            }
+
+            aff_id_to_add.set(aff_id, true );
+            any_to_add = true;
+        }
+
+        transaction.Commit();
+    }}
+
+    // Log the warnings and add it to the warning message
+    for (vector<string>::const_iterator  j(already_added_affinities.begin());
+         j != already_added_affinities.end(); ++j) {
+        // That was a try to add something which has already been added
+        ERR_POST(Warning << "Client '" << client.GetNode()
+                         << "' adds affinity '" << *j
+                         << "' which is already in the list of the "
+                            "preferred client affinities. Ignored.");
+        if (!msg.empty())
+            msg += "; ";
+        msg += "already registered affinity to add: " + *j;
+    }
+
+    if (any_to_del) {
+        // There could be affinities deleted from the DB, so
+        // a transaction is required
+        CFastMutexGuard     guard(m_OperationLock);
+        CNSTransaction      transaction(this);
+
+        m_AffinityRegistry.RemoveClientFromAffinities(client_id,
+                                                      aff_id_to_del);
+        transaction.Commit();
+    }
+    if (any_to_add || any_to_del)
+        m_ClientsRegistry.UpdatePreferredAffinities(client,
+                                                    aff_id_to_add,
+                                                    aff_id_to_del);
+    return msg;
 }
 
 
@@ -1202,28 +1335,65 @@ void CQueue::OptimizeMem()
 }
 
 
-unsigned CQueue::FindPendingJob(const CNSClientId  &  client,
-                                const list<string> &  aff_list,
-                                time_t                curr)
+unsigned CQueue::x_FindPendingJob(const CNSClientId  &  client,
+                                  const list<string> &  aff_list,
+                                  bool                  wnode_affinity,
+                                  bool                  any_affinity)
 {
-    // It is straight forward if no affinity is given
-    if (aff_list.empty())
+    TNSBitVector    blacklisted_jobs =
+                            m_ClientsRegistry.GetBlacklistedJobs(client);
+
+    if (!aff_list.empty()) {
+        TNSBitVector    aff_ids = m_AffinityRegistry.GetAffinityIDs(aff_list);
+        unsigned int    job_id = x_FindPendingWithAffinity(aff_ids,
+                                                           blacklisted_jobs);
+
+        if (job_id != 0)
+            return job_id;
+    }
+
+
+    if (wnode_affinity) {
+        // Check that I know something about this client
+        TNSBitVector    client_aff =
+                            m_ClientsRegistry.GetPreferredAffinities(client);
+
+        if (!client_aff.any())
+            ERR_POST(Warning << "The client '" << client.GetNode()
+                             << "' requests jobs considering the node "
+                                "preferred affinities while the node "
+                                "preferred affinities list is empty.");
+
+        unsigned int    job_id = x_FindPendingWithAffinity(client_aff,
+                                                           blacklisted_jobs);
+
+        if (job_id != 0)
+            return job_id;
+    }
+
+    if (any_affinity || (aff_list.empty() && !wnode_affinity))
         return m_StatusTracker.GetJobByStatus(
-                                CNetScheduleAPI::ePending,
-                                m_ClientsRegistry.GetBlacklistedJobs(client));
+                                    CNetScheduleAPI::ePending,
+                                    blacklisted_jobs);
 
-    // Here: affinity is provided; pick a job respecting the given affinities
+    return 0;
+}
 
-    TNSBitVector    aff_ids = m_AffinityRegistry.GetAffinityIDs(aff_list);
+
+unsigned int
+CQueue::x_FindPendingWithAffinity(const TNSBitVector &  aff_ids,
+                                  const TNSBitVector &  blacklist_ids)
+{
     if (!aff_ids.any())
         return 0;
 
-    TNSBitVector    candidate_jobs = m_AffinityRegistry.GetJobsWithAffinity(aff_ids);
+    TNSBitVector    candidate_jobs =
+                         m_AffinityRegistry.GetJobsWithAffinity(aff_ids);
     if (!candidate_jobs.any())
         return 0;
 
     m_StatusTracker.PendingIntersect(&candidate_jobs);
-    candidate_jobs -= m_ClientsRegistry.GetBlacklistedJobs(client);
+    candidate_jobs -= blacklist_ids;
 
     if (!candidate_jobs.any())
         return 0;
@@ -1434,7 +1604,8 @@ void CQueue::NotifyListeners(bool unconditional, unsigned aff_id)
 void CQueue::PrintClientsList(CNetScheduleHandler &  handler,
                               bool                   verbose) const
 {
-    m_ClientsRegistry.PrintClientsList(this, handler, verbose);
+    m_ClientsRegistry.PrintClientsList(this, handler,
+                                       m_AffinityRegistry, verbose);
 }
 
 
@@ -2019,7 +2190,7 @@ void CQueue::StatusStatistics(TJobStatus                status,
 }
 
 
-void CQueue::TouchClientsRegistry(const CNSClientId &  client)
+void CQueue::TouchClientsRegistry(CNSClientId &  client)
 {
     m_ClientsRegistry.Touch(client, this);
     return;
@@ -2198,11 +2369,15 @@ void CQueue::UnregisterGetListener(const CNSClientId &  client)
 }
 
 
-void CQueue::PrintStatistics(void)
+void CQueue::PrintStatistics(size_t &  aff_count)
 {
-    // The member is called only if there us a request context
+    size_t      affinities = m_AffinityRegistry.size();
+    aff_count += affinities;
+
+    // The member is called only if there is a request context
     CDiagContext_Extra extra = GetDiagContext().Extra()
         .Print("queue", GetQueueName())
+        .Print("affinities", affinities)
         .Print("pending", CountStatus(CNetScheduleAPI::ePending))
         .Print("running", CountStatus(CNetScheduleAPI::eRunning))
         .Print("canceled", CountStatus(CNetScheduleAPI::eCanceled))

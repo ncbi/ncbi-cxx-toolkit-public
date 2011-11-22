@@ -60,7 +60,10 @@ CNetScheduleServer::CNetScheduleServer()
       m_LogStatisticsThreadFlag(false),
       m_DeleteBatchSize(100),
       m_ScanBatchSize(10000),
-      m_PurgeTimeout(0.1)
+      m_PurgeTimeout(0.1),
+      m_MaxAffinities(10000),
+      m_NodeID(""),
+      m_SessionID(x_GenerateGUID())
 {
     m_AtomicCommandNumber.Set(1);
     sm_netschedule_server = this;
@@ -129,6 +132,12 @@ void CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
         m_ScanBatchSize = 10000;    // default
     if (m_PurgeTimeout <= 0.0)
         m_PurgeTimeout = 0.1;       // default
+
+    m_MaxAffinities = params.max_affinities;
+    if (m_MaxAffinities <= 0)
+        m_MaxAffinities = 10000;    // default
+
+    m_NodeID = NStr::URLEncode(params.node_id);
 }
 
 
@@ -242,5 +251,15 @@ CNetScheduleServer*  CNetScheduleServer::GetInstance(void)
 void CNetScheduleServer::Exit()
 {
     m_QueueDB->Close();
+}
+
+
+string  CNetScheduleServer::x_GenerateGUID(void) const
+{
+    // Naive implementation of the unique identifier.
+    Int8        pid = CProcess::GetCurrentPid();
+    Int8        current_time = time(0);
+
+    return NStr::Int8ToString((pid << 32) | current_time);
 }
 

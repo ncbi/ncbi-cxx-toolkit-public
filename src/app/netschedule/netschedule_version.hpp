@@ -36,12 +36,13 @@
 #define NETSCHEDULED_VERSION NCBI_PACKAGE_VERSION
 #define NETSCHEDULED_STORAGE_VERSION  "4.3.1"
 #define NETSCHEDULED_PROTOCOL_VERSION "1.4.0"
+#define NETSCHEDULED_BUILD_DATE __DATE__ " " __TIME__
 
 #define NETSCHEDULED_FULL_VERSION \
     "NCBI NetSchedule server Version " NETSCHEDULED_VERSION \
     " Storage version " NETSCHEDULED_STORAGE_VERSION \
     " Protocol version " NETSCHEDULED_PROTOCOL_VERSION \
-    " build " __DATE__ " " __TIME__
+    " build " NETSCHEDULED_BUILD_DATE
 
 #define NETSCHEDULED_FEATURES \
     "fast_status=1;dyn_queues=1;read_confirm=1;version=" NETSCHEDULED_VERSION

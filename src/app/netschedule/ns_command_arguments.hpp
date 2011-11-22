@@ -64,6 +64,11 @@ struct SNSCommandArguments
     string          qclass;
     string          sid;
     string          job_status_string;
+    string          aff_to_add;
+    string          aff_to_del;
+
+    bool            any_affinity;
+    bool            wnode_affinity;
 
     void AssignValues(const TNSProtoParams &  params);
 
