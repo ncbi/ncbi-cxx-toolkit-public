@@ -9,4 +9,4 @@ if test -d "$syb" -o -z "$SYBASE"; then
     export SYBASE
 fi
 
-exec $CHECK_EXEC $NCBI_CHECK_TOOL "$@"
+exec $CHECK_EXEC "$@"
