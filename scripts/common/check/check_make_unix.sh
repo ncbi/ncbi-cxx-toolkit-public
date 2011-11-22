@@ -488,7 +488,7 @@ RunTest()
                 echo \$x_run | grep '.sh' > /dev/null 2>&1 
                 if test \$? -eq 0;  then
                     # Run script without any check tools.
-                    # It will be applied inside script using $CHECK_EXEC.
+                    # It will be applied inside script using \$CHECK_EXEC.
                     xx_run="\$x_run_fix"
                 else
                     # Run under check tool
