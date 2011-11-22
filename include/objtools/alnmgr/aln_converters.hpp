@@ -49,13 +49,16 @@
 BEGIN_NCBI_SCOPE
 
 
+typedef vector<TAlnSeqIdIRef> TAlnSeqIdVec;
+
 NCBI_XALNMGR_EXPORT
 void
 ConvertSeqAlignToPairwiseAln(CPairwiseAln& pairwise_aln,      ///< output
                              const objects::CSeq_align& sa,   ///< input Seq-align
                              objects::CSeq_align::TDim row_1, ///< which pair of rows
                              objects::CSeq_align::TDim row_2,
-                             CAlnUserOptions::EDirection direction = CAlnUserOptions::eBothDirections); ///< which direction
+                             CAlnUserOptions::EDirection direction = CAlnUserOptions::eBothDirections, ///< which direction
+                             const TAlnSeqIdVec* ids = 0);        ///< alignment seq-ids
 
 
 NCBI_XALNMGR_EXPORT
@@ -64,7 +67,8 @@ ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,       ///< output
                            const objects::CDense_seg& ds,    ///< input Dense-seg
                            objects::CSeq_align::TDim row_1,  ///< which pair of rows
                            objects::CSeq_align::TDim row_2,
-                           CAlnUserOptions::EDirection direction = CAlnUserOptions::eBothDirections); ///< which direction
+                           CAlnUserOptions::EDirection direction = CAlnUserOptions::eBothDirections, ///< which direction
+                           const TAlnSeqIdVec* ids = 0);        ///< alignment seq-ids
 
 
 NCBI_XALNMGR_EXPORT
@@ -73,7 +77,8 @@ ConvertPackedsegToPairwiseAln(CPairwiseAln& pairwise_aln,       ///< output
                               const objects::CPacked_seg& ps,   ///< input Packed-seg
                               objects::CSeq_align::TDim row_1,  ///< which pair of rows
                               objects::CSeq_align::TDim row_2,
-                              CAlnUserOptions::EDirection direction = CAlnUserOptions::eBothDirections); ///< which direction
+                              CAlnUserOptions::EDirection direction = CAlnUserOptions::eBothDirections, ///< which direction
+                              const TAlnSeqIdVec* ids = 0);        ///< alignment seq-ids
 
 
 NCBI_XALNMGR_EXPORT
@@ -82,7 +87,8 @@ ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,                   ///< ou
                            const objects::CSeq_align::TSegs::TStd& stds, ///< input Stds
                            objects::CSeq_align::TDim row_1,              ///< which pair of rows 
                            objects::CSeq_align::TDim row_2,
-                           CAlnUserOptions::EDirection direction = CAlnUserOptions::eBothDirections); ///< which direction
+                           CAlnUserOptions::EDirection direction = CAlnUserOptions::eBothDirections, ///< which direction
+                           const TAlnSeqIdVec* ids = 0);        ///< alignment seq-ids
 
 
 NCBI_XALNMGR_EXPORT
@@ -91,7 +97,8 @@ ConvertDendiagToPairwiseAln(CPairwiseAln& pairwise_aln,                         
                             const objects::CSeq_align::TSegs::TDendiag& dendiags, ///< input Dendiags
                             objects::CSeq_align::TDim row_1,                      ///< which pair of rows 
                             objects::CSeq_align::TDim row_2,
-                            CAlnUserOptions::EDirection direction = CAlnUserOptions::eBothDirections); ///< which direction
+                            CAlnUserOptions::EDirection direction = CAlnUserOptions::eBothDirections, ///< which direction
+                            const TAlnSeqIdVec* ids = 0);        ///< alignment seq-ids
 
 
 NCBI_XALNMGR_EXPORT
@@ -100,7 +107,8 @@ ConvertSparseToPairwiseAln(CPairwiseAln& pairwise_aln,             ///< output
                            const objects::CSparse_seg& sparse_seg, ///< input Sparse-seg
                            objects::CSeq_align::TDim row_1,        ///< which pair of rows 
                            objects::CSeq_align::TDim row_2,
-                           CAlnUserOptions::EDirection direction = CAlnUserOptions::eBothDirections); ///< which direction
+                           CAlnUserOptions::EDirection direction = CAlnUserOptions::eBothDirections, ///< which direction
+                           const TAlnSeqIdVec* ids = 0);        ///< alignment seq-ids
 
 
 NCBI_XALNMGR_EXPORT
@@ -109,7 +117,8 @@ ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,               ///< outpu
                             const objects::CSpliced_seg& spliced_seg, ///< input Splice-seg
                             objects::CSeq_align::TDim row_1,          ///< which pair of rows 
                             objects::CSeq_align::TDim row_2,
-                            CAlnUserOptions::EDirection direction = CAlnUserOptions::eBothDirections); ///< which direction
+                            CAlnUserOptions::EDirection direction = CAlnUserOptions::eBothDirections, ///< which direction
+                            const TAlnSeqIdVec* ids = 0);        ///< alignment seq-ids
 
 
 /// Build a pairwise alignment from a pair of seq-locs.
@@ -218,7 +227,8 @@ CreateAnchoredAlnFromAln(const _TAlnStats& aln_stats,      ///< input
              *aln_stats.GetAlnVec()[aln_idx],
              anchor_row,
              row,
-             row == anchor_row ? CAlnUserOptions::eDirect : options.m_Direction);
+             row == anchor_row ? CAlnUserOptions::eDirect : options.m_Direction,
+             &aln_stats.GetIdVec());
 
         if (pairwise_aln->empty()) {
             ++empty_rows;

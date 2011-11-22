@@ -61,12 +61,24 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
+template <class TAlnSeqId>
+class CAlnSeqIdConverter
+{
+public:
+    TAlnSeqId* operator() (const CSeq_id& id) const {
+        return new TAlnSeqId(id);
+    }
+};
+
 
 /// IAlnSeqId extracting functor
-template <class TAlnSeqId>
+template <class TAlnSeqId, class TIdConverter = CAlnSeqIdConverter<TAlnSeqId> >
 class CAlnSeqIdsExtract
 {
 public:
+    CAlnSeqIdsExtract(void) {}
+    CAlnSeqIdsExtract(const TIdConverter& id_conv) : m_IdConv(id_conv) {}
+
     typedef vector<TAlnSeqIdIRef> TIdVec;
 
     void operator()(const CSeq_align& seq_align, //< Input aln
@@ -116,7 +128,7 @@ public:
                     size_t row = 0;
                     ITERATE(CDense_diag::TIds, id_it, ids) {
                         if (first_diag) {
-                            id_vec[row].Reset(new TAlnSeqId(**id_it));
+                            id_vec[row].Reset(NewAlnSeqId(**id_it));
                         } else if (*id_vec[row] != TAlnSeqId(**id_it)) {
                             NCBI_THROW(CAlnException, eInvalidSeqId,
                                        string("Inconsistent Seq-ids: ") +
@@ -134,7 +146,7 @@ public:
                 const CDense_seg::TIds& ids = segs.GetDenseg().GetIds();
                 id_vec.resize(ids.size());
                 for(size_t i = 0;  i < ids.size();  ++i) {
-                    id_vec[i].Reset(new TAlnSeqId(*ids[i]));
+                    id_vec[i].Reset(NewAlnSeqId(*ids[i]));
                 }
             }
             break;
@@ -166,13 +178,13 @@ public:
                     ITERATE (CStd_seg::TLoc, loc_it, std_seg.GetLoc()) {
                         switch ((*loc_it)->Which()) {
                         case CSeq_loc::e_Empty:
-                            id.Reset(new TAlnSeqId((*loc_it)->GetEmpty()));
+                            id.Reset(NewAlnSeqId((*loc_it)->GetEmpty()));
                             break;
                         case CSeq_loc::e_Int:
-                            id.Reset(new TAlnSeqId((*loc_it)->GetInt().GetId()));
+                            id.Reset(NewAlnSeqId((*loc_it)->GetInt().GetId()));
                             break;
                         case CSeq_loc::e_Pnt:
-                            id.Reset(new TAlnSeqId((*loc_it)->GetPnt().GetId()));
+                            id.Reset(NewAlnSeqId((*loc_it)->GetPnt().GetId()));
                             break;
                         default:
                             string err_str =
@@ -231,7 +243,7 @@ public:
                 const CPacked_seg::TIds& ids = segs.GetPacked().GetIds();
                 id_vec.resize(ids.size());
                 for(size_t i = 0;  i < ids.size();  ++i) {
-                    id_vec[i].Reset(new TAlnSeqId(*ids[i]));
+                    id_vec[i].Reset(NewAlnSeqId(*ids[i]));
                 }
             }
             break;
@@ -240,7 +252,7 @@ public:
                 const CSparse_seg::TRows& rows = segs.GetSparse().GetRows();
                 for (size_t row = 0;  row < rows.size();  ++row) {
                     const CSparse_align& sa = *rows[row];
-                    TAlnSeqIdIRef first_id(new TAlnSeqId(sa.GetFirst_id()));
+                    TAlnSeqIdIRef first_id(NewAlnSeqId(sa.GetFirst_id()));
                     if (row == 0) {
                         id_vec.resize(segs.GetSparse().GetRows().size() + 1);
                         id_vec[0].Reset(first_id);
@@ -249,7 +261,7 @@ public:
                         err += NStr::IntToString(row) + ".";
                         NCBI_THROW(CAlnException, eInvalidSeqId, err);
                     }
-                    id_vec[row + 1].Reset(new TAlnSeqId(sa.GetSecond_id()));
+                    id_vec[row + 1].Reset(NewAlnSeqId(sa.GetSecond_id()));
                 }
             }
             break;
@@ -260,10 +272,10 @@ public:
 
                 bool prot = spliced_seg.GetProduct_type() == CSpliced_seg::eProduct_type_protein;
 
-                id_vec[0].Reset(new TAlnSeqId(spliced_seg.GetProduct_id()));
+                id_vec[0].Reset(NewAlnSeqId(spliced_seg.GetProduct_id()));
                 id_vec[0]->SetBaseWidth(prot ? 3 : 1);
 
-                id_vec[1].Reset(new TAlnSeqId(spliced_seg.GetGenomic_id()));
+                id_vec[1].Reset(NewAlnSeqId(spliced_seg.GetGenomic_id()));
                 id_vec[1]->SetBaseWidth(1);
             }
             break;
@@ -277,10 +289,17 @@ public:
     
     }
 
+    TAlnSeqId* NewAlnSeqId(const CSeq_id& id) const {
+        return m_IdConv(id);
+    }
+
     static bool IdVecEqual(const TIdVec& x, const TIdVec& y) {
         return x.size() == y.size()  &&
             equal(x.begin(), x.end(), y.begin(), SAlnSeqIdRefEqual());
     }
+
+private:
+    TIdConverter m_IdConv;
 };
 
 

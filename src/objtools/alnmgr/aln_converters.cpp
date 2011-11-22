@@ -60,11 +60,12 @@ USING_SCOPE(objects);
 
 
 void
-ConvertSeqAlignToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
-                             const CSeq_align& sa,        ///< input Seq-align
-                             CSeq_align::TDim row_1,      ///< which pair of rows
+ConvertSeqAlignToPairwiseAln(CPairwiseAln& pairwise_aln,
+                             const CSeq_align& sa,
+                             CSeq_align::TDim row_1,
                              CSeq_align::TDim row_2,
-                             CAlnUserOptions::EDirection direction) ///< which direction
+                             CAlnUserOptions::EDirection direction,
+                             const TAlnSeqIdVec* ids)
 {
     _ALNMGR_ASSERT(row_1 >=0  &&  row_2 >= 0);
     _ALNMGR_ASSERT(sa.CheckNumRows() > max(row_1, row_2));
@@ -75,34 +76,34 @@ ConvertSeqAlignToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
     switch(segs.Which())    {
     case CSeq_align::TSegs::e_Dendiag:
         ConvertDendiagToPairwiseAln(pairwise_aln, segs.GetDendiag(),
-                                    row_1, row_2, direction);
+                                    row_1, row_2, direction, ids);
         break;
     case CSeq_align::TSegs::e_Denseg: {
         ConvertDensegToPairwiseAln(pairwise_aln, segs.GetDenseg(),
-                                   row_1, row_2, direction);
+                                   row_1, row_2, direction, ids);
         break;
     }
     case CSeq_align::TSegs::e_Std:
         ConvertStdsegToPairwiseAln(pairwise_aln, segs.GetStd(),
-                                   row_1, row_2, direction);
+                                   row_1, row_2, direction, ids);
         break;
     case CSeq_align::TSegs::e_Packed:
         ConvertPackedsegToPairwiseAln(pairwise_aln, segs.GetPacked(),
-                                      row_1, row_2, direction);
+                                      row_1, row_2, direction, ids);
         break;
     case CSeq_align::TSegs::e_Disc:
         ITERATE(CSeq_align_set::Tdata, sa_it, segs.GetDisc().Get()) {
             ConvertSeqAlignToPairwiseAln(pairwise_aln, **sa_it,
-                                         row_1, row_2, direction);
+                                         row_1, row_2, direction, ids);
         }
         break;
     case CSeq_align::TSegs::e_Spliced:
         ConvertSplicedToPairwiseAln(pairwise_aln, segs.GetSpliced(),
-                                    row_1, row_2, direction);
+                                    row_1, row_2, direction, ids);
         break;
     case CSeq_align::TSegs::e_Sparse:
         ConvertSparseToPairwiseAln(pairwise_aln, segs.GetSparse(),
-                                   row_1, row_2, direction);
+                                   row_1, row_2, direction, ids);
         break;
     case CSeq_align::TSegs::e_not_set:
         NCBI_THROW(CAlnException, eInvalidRequest,
@@ -112,12 +113,34 @@ ConvertSeqAlignToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
 }
 
 
+// Check if the set of alignment seq-ids contains mixed sequence types.
+static bool IsMixedAlignment(const TAlnSeqIdVec* ids)
+{
+    if ( !ids ) return false;
+    bool have_nuc = false;
+    bool have_prot = false;
+    ITERATE(TAlnSeqIdVec, id, *ids) {
+        switch ((*id)->GetBaseWidth()) {
+        case 1:
+            have_nuc = true;
+            break;
+        case 3:
+            have_prot = true;
+            break;
+        }
+        if (have_nuc  &&  have_prot) return true;
+    }
+    return false;
+}
+
+
 void
-ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
-                           const CDense_seg& ds,        ///< input Dense-seg
-                           CSeq_align::TDim row_1,      ///< which pair of rows
+ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,
+                           const CDense_seg& ds,
+                           CSeq_align::TDim row_1,
                            CSeq_align::TDim row_2,
-                           CAlnUserOptions::EDirection direction) ///< which direction
+                           CAlnUserOptions::EDirection direction,
+                           const TAlnSeqIdVec* ids)
 {
     _ALNMGR_ASSERT(row_1 >=0  &&  row_1 < ds.GetDim());
     _ALNMGR_ASSERT(row_2 >=0  &&  row_2 < ds.GetDim());
@@ -128,6 +151,8 @@ ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
     const CDense_seg::TLens& lens = ds.GetLens();
     const CDense_seg::TStrands* strands = 
         ds.IsSetStrands() ? &ds.GetStrands() : NULL;
+
+    bool mixed = IsMixedAlignment(ids);
 
     CDense_seg::TNumseg seg;
     int pos_1, pos_2;
@@ -155,23 +180,14 @@ ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
             /// base-width adjustments
             const int& base_width_1 = pairwise_aln.GetFirstBaseWidth();
             const int& base_width_2 = pairwise_aln.GetSecondBaseWidth();
-            if (base_width_1 > 1  ||  base_width_2 > 1) {
+            if (mixed  ||  base_width_1 > 1) {
                 if (base_width_1 > 1) {
                     from_1 *= base_width_1;
                 }
                 if (base_width_2 > 1) {
                     from_2 *= base_width_2;
                 }
-                if (base_width_1 == base_width_2) {
-/*
-FIXME:
-This is wrong. Both may be prots, but some other row may contain nuc
-and the length is already genomic.
-Need to check if all rows are the same, not just these two. This can not
-be done here, where we have just two rows.
-*/
-                    len *= base_width_1;
-                }
+                len *= 3;
             }
                 
             /// if not a gap, insert it to the collection
@@ -200,7 +216,8 @@ ConvertPackedsegToPairwiseAln(CPairwiseAln& pairwise_aln,
                               const CPacked_seg& ps,
                               CSeq_align::TDim row_1,
                               CSeq_align::TDim row_2,
-                              CAlnUserOptions::EDirection direction)
+                              CAlnUserOptions::EDirection direction,
+                              const TAlnSeqIdVec* ids)
 {
     _ALNMGR_ASSERT(row_1 >=0  &&  row_1 < ps.GetDim());
     _ALNMGR_ASSERT(row_2 >=0  &&  row_2 < ps.GetDim());
@@ -212,6 +229,8 @@ ConvertPackedsegToPairwiseAln(CPairwiseAln& pairwise_aln,
     const CPacked_seg::TLens& lens = ps.GetLens();
     const CPacked_seg::TStrands* strands = 
         ps.IsSetStrands() ? &ps.GetStrands() : NULL;
+
+    bool mixed = IsMixedAlignment(ids);
 
     CPacked_seg::TNumseg seg;
     int pos_1, pos_2;
@@ -241,19 +260,14 @@ ConvertPackedsegToPairwiseAln(CPairwiseAln& pairwise_aln,
             /// base-width adjustments
             const int& base_width_1 = pairwise_aln.GetFirstBaseWidth();
             const int& base_width_2 = pairwise_aln.GetSecondBaseWidth();
-            if (base_width_1 > 1  ||  base_width_2 > 1) {
+            if (mixed  ||  base_width_1 > 1) {
                 if (base_width_1 > 1) {
                     from_1 *= base_width_1;
                 }
                 if (base_width_2 > 1) {
                     from_2 *= base_width_2;
                 }
-                if (base_width_1 == base_width_2) {
-/*
-FIXME: see the note in denseg converter
-*/
-                    len *= base_width_1;
-                }
+                len *= 3;
             }
                 
             /// if not a gap, insert it to the collection
@@ -278,11 +292,12 @@ FIXME: see the note in denseg converter
 
 
 void
-ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,          ///< output
-                           const CSeq_align::TSegs::TStd& stds, ///< input Stds
-                           CSeq_align::TDim row_1,              ///< which pair of rows 
+ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,
+                           const CSeq_align::TSegs::TStd& stds,
+                           CSeq_align::TDim row_1,
                            CSeq_align::TDim row_2,
-                           CAlnUserOptions::EDirection direction) ///< which direction
+                           CAlnUserOptions::EDirection direction,
+                           const TAlnSeqIdVec* ids)
 {
     _ALNMGR_ASSERT(row_1 >=0  &&  row_2 >= 0);
 
@@ -375,13 +390,16 @@ ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,          ///< output
 
 
 void
-ConvertDendiagToPairwiseAln(CPairwiseAln& pairwise_aln,                  ///< output
-                            const CSeq_align::TSegs::TDendiag& dendiags, ///< input Dendiags
-                            CSeq_align::TDim row_1,                      ///< which pair of rows 
+ConvertDendiagToPairwiseAln(CPairwiseAln& pairwise_aln,
+                            const CSeq_align::TSegs::TDendiag& dendiags,
+                            CSeq_align::TDim row_1,
                             CSeq_align::TDim row_2,
-                            CAlnUserOptions::EDirection direction) ///< which direction
+                            CAlnUserOptions::EDirection direction,
+                            const TAlnSeqIdVec* ids)
 {
     _ALNMGR_ASSERT(row_1 >=0  &&  row_2 >= 0);
+
+    bool mixed = IsMixedAlignment(ids);
 
     ITERATE (CSeq_align::TSegs::TDendiag, dendiag_it, dendiags) {
 
@@ -409,16 +427,14 @@ ConvertDendiagToPairwiseAln(CPairwiseAln& pairwise_aln,                  ///< ou
             /// base-width adjustments
             const int& base_width_1 = pairwise_aln.GetFirstBaseWidth();
             const int& base_width_2 = pairwise_aln.GetSecondBaseWidth();
-            if (base_width_1 > 1  ||  base_width_2 > 1) {
+            if (mixed  ||  base_width_1 > 1) {
                 if (base_width_1 > 1) {
                     from_1 *= base_width_1;
                 }
                 if (base_width_2 > 1) {
                     from_2 *= base_width_2;
                 }
-                if (base_width_1 == base_width_2) {
-                    len *= base_width_1;
-                }
+                len *= 3;
             }
 
             /// insert the range
@@ -430,11 +446,12 @@ ConvertDendiagToPairwiseAln(CPairwiseAln& pairwise_aln,                  ///< ou
 
 
 void
-ConvertSparseToPairwiseAln(CPairwiseAln& pairwise_aln,    ///< output
-                           const CSparse_seg& sparse_seg, ///< input Sparse-seg
-                           CSeq_align::TDim row_1,        ///< which pair of rows 
+ConvertSparseToPairwiseAln(CPairwiseAln& pairwise_aln,
+                           const CSparse_seg& sparse_seg,
+                           CSeq_align::TDim row_1,
                            CSeq_align::TDim row_2,
-                           CAlnUserOptions::EDirection direction) ///< which direction
+                           CAlnUserOptions::EDirection direction,
+                           const TAlnSeqIdVec* ids)
 {
     typedef CPairwiseAln::TAlnRngColl TAlnRngColl;
 
@@ -496,11 +513,12 @@ ConvertSparseToPairwiseAln(CPairwiseAln& pairwise_aln,    ///< output
 
 
 void
-ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,      ///< output
-                            const CSpliced_seg& spliced_seg, ///< input Spliced-seg
-                            CSeq_align::TDim row_1,          ///< which pair of rows 
+ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,
+                            const CSpliced_seg& spliced_seg,
+                            CSeq_align::TDim row_1,
                             CSeq_align::TDim row_2,
-                            CAlnUserOptions::EDirection direction) ///< which direction
+                            CAlnUserOptions::EDirection direction,
+                            const TAlnSeqIdVec* ids)
 {
     _ALNMGR_ASSERT(row_1 == 0  ||  row_1 == 1  &&  row_2 == 0  ||  row_2 == 1);
 

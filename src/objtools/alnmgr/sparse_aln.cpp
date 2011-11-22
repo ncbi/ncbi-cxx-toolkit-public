@@ -446,6 +446,11 @@ string& CSparseAln::GetSeqString(TNumrow row,
     _ASSERT(row >= 0  &&  row < GetDim());
 
     buffer.erase();
+    int width = m_Aln->GetPairwiseAlns()[row]->GetSecondBaseWidth();
+    if (width > 1) {
+        seq_from /= 3;
+        seq_to /= 3;
+    }
     if (seq_to >= seq_from) {
         CSeqVector& seq_vector = x_GetSeqVector(row);
 
@@ -504,6 +509,9 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
 
         // buffer holds sequence for "aln_range", 0 index corresonds to aln_range.GetFrom()
         size_t size = aln_range.GetLength();
+        if (translate) {
+            size /= 3;
+        }
         buffer.resize(size, ' ');
 
         // check whether we have a gap at start position
