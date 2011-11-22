@@ -380,6 +380,7 @@ static const char* const kBuiltInGuide[] = {
     "2+6  JO  gb_tsa_nuc",
     "2+6  JP  gb_tsa_nuc",
     "2+6  JQ  gb_dirsub",
+    "2+6  JR  gb_tsa_nuc",
     "2+6  ??  unreserved_nuc",
     "",
     "# Specially handled type-general Dbtag names; commented out for now in",
