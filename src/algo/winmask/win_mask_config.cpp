@@ -176,7 +176,7 @@ void CWinMaskConfig::AddWinMaskArgs(CArgDescriptions &arg_desc,
                                  ->Allow( "oascii" )
                                  ->Allow( "obinary" ) );
         arg_desc.AddDefaultKey( "smem", "available_memory",
-                                 "memory available for masking stage in megabytes",
+                                "target size of the output file containing the unit counts",
                                  CArgDescriptions::eInteger, "512" );
     }
     if(type == eAny || type >= eGenerateMasksWithDuster)
