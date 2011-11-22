@@ -7456,13 +7456,6 @@ void CNewCleanup_imp::RnarefBC (
                         }
                     }
 
-                    if (! FIELD_IS_SET (gen, Class) &&
-                        ! FIELD_IS_SET (gen, Product) &&
-                        ! FIELD_IS_SET (gen, Quals)) {
-                        RESET_FIELD (rr, Ext);
-                        ChangeMade(CCleanupChange::eChangeRNAref);
-                    }
-
                     if( ( FIELD_EQUALS(rr, Type, NCBI_RNAREF(mRNA)) || 
                           FIELD_EQUALS(rr, Type, NCBI_RNAREF(rRNA)) ) &&
                         STRING_FIELD_NOT_EMPTY(gen, Product) && 
@@ -7473,6 +7466,13 @@ void CNewCleanup_imp::RnarefBC (
                         // Careful: this invalidates the "gen" variable.
                         const string product = GET_FIELD(gen, Product);
                         SET_FIELD( ext, Name, product );
+                    }
+
+                    if (! FIELD_IS_SET (gen, Class) &&
+                        ! FIELD_IS_SET (gen, Product) &&
+                        ! FIELD_IS_SET (gen, Quals)) {
+                        RESET_FIELD (rr, Ext);
+                        ChangeMade(CCleanupChange::eChangeRNAref);
                     }
                 }
                 break;
