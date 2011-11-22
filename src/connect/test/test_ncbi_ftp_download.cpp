@@ -554,7 +554,8 @@ static void s_InitiateFtpRetrieval(CConn_IOStream& ftp,
     // RETR must be understood by all FTP implementations
     // LIST command obtains non-machine readable output
     // NLST command obtains a filename per line output (having the filelist,
-    ///     one can use SIZE and MDTM on each entry to get details about it)
+    //      one can use SIZE and MDTM on each entry to get details about it)
+    // MLSx commands (if supported by the server) can also be used
     const char* cmd = NStr::EndsWith(name, '/') ? "LIST " : "RETR ";
     ftp << cmd << name << endl;
     if (CONN_Status(ftp.GetCONN(), eIO_Write) != eIO_Success) {

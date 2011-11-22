@@ -115,6 +115,10 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flag */
  * LIST[<SP>d]         List curdir[or dir d]   Full directory listing
  * NLST[<SP>d]         Short list as in LIST   Short dirlist (filenames only)
  * RETR<SP>f           Retrieve file f         File contents
+ * MLSD[<SP>d]         List curdir[or dir d]   Mach-readable directory listing
+ * MLST[<SP>p]         Facts of curdir[or p]   Mach-readable path facts
+ * FEAT                FEAT command            FEAT list as returned by server
+ * OPTS<SP>opts        OPTS command            OPTS response as received
  * NOOP[<SP>anything]  Abort current download  <EOF>
  * STOR<SP>f           Store file f on server
  * APPE<SP>f           Append/create file f
@@ -158,12 +162,14 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flag */
  * pending command to be executed (even if the connection was created untied,
  * the additional flushing is done internally).
  *
- * When a RETR command gets executed, all subsequent reads from the connection
- * will retrieve the contents of the file (until eIO_Closed).  If the
- * connection returns eIO_Closed right away, it means that either the file does
- * not exist, is not a file but a directory, or is empty.  The first two cases
- * would cause CONN_Status(eIO_Write) to return a code different from
- * eIO_Success; and eIO_Success would only result in the case of an empty file.
+ * When a RETR/LIST/NLST/MLSD command gets executed, all subsequent reads from
+ * the connection will retrieve the contents of the file or directory (until
+ * eIO_Closed).  If the connection returns eIO_Closed right away, it means that
+ * either the file/directory does not exist, or RETR was attempted on a
+ * directory, or finally, the requested file/directory is empty.  The first two
+ * cases would cause CONN_Status(eIO_Write) to return a code different from
+ * eIO_Success;  and eIO_Success would only result in the case of an empty
+ * source.
  *
  * File size will be checked by the connector to see whether the download (or
  * upload, see below) was complete (sometimes, the information returned from
@@ -210,14 +216,14 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flag */
  * CONN_Wait(eIO_Read) will also cause the upload to finalize.
  *
  * Unfinalized uploads (such as when connection gets closed before the final
- * read) get reported to the log, and also cause CONN_Close() to return an
+ * read) get reported to the log, and also make CONN_Close() to return an
  * error.  Note that unlike file download (which occurs in READ mode), it is
  * impossible to abort an upload by writing any FTP commands (since writing in
- * SEND mode goes to file), but it is reading that will do the cancel.  So if
- * a connection is in undetermined state, the recovery would be to do a small
- * quick read (e.g. for just 1 byte with small timeout), then write the "NOOP"
- * command and cause an execution (e.g. writing "NOOP\n" does that), then
- * drain the connection by reading again until eIO_Closed.
+ * SEND mode goes to file), but it is reading that will cause the cancellation.
+ * So if a connection is in undetermined state, the recovery would be to do a
+ * small quick read (e.g. for just 1 byte with a small timeout), then write the
+ * "NOOP" command and cause an execution (e.g. writing "NOOP\n" does that),
+ * then drain the connection by reading again until eIO_Closed.
  *
  * Both downloads and uploads (but not file lists!) support restart mode (if
  * the server permits so).  The standard guarantees that the REST command
@@ -230,8 +236,8 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flag */
  * activity.  For those, the REST command can be delayed for issuance until
  * right before the data transfer starts (see flags).  In this case, a write
  * of such command does not result in the "350" response on read (still,
- * CONN_Write()/CONN_Flush()/CONN_Status() will all reported as successful if
- * the command was properly understood by the connector).
+ * CONN_Write()/CONN_Flush()/CONN_Status() will all be reported as successful
+ * if the command was properly understood by the connector).
  *
  * The connector drops any restart position, which remains for longer than
  * the next user command (so the restart position will not be accidentally
@@ -247,8 +253,9 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flag */
  * The supplement mode of CONN API can make use of FTP connection much easier:
  * instead of checking for CONN_Status(), direct return codes of read/write
  * operations can be used.  Care must be taken to interpret eIO_Closed that may
- * result from read operations (such as when extracting the code that is
- * immediately followed by the response boundary denoted as eIO_Closed).
+ * result from read operations (such as when extracting a numeric string of
+ * command completion that is immediately followed by the response boundary
+ * denoted as eIO_Closed).
  *
  * To make the code robust, it is always advised to first process the actual
  * byte count reported from CONN I/O and only then to analyze the return code.
