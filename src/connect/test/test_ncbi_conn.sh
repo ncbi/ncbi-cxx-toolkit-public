@@ -46,8 +46,9 @@ if [ "$fw" = "1" ]; then
 elif [ "${proxy:-0}" = "1" ]; then
   if [ "$ext" != "0" -o "`expr '(' $$ / 100 ')' '%' 2`" != "0" ]; then
     # Only proxy "0" is capable of forwarding the relay port range
-    CONN_HTTP_PROXY_FLEX=TRUE
-    export CONN_HTTP_PROXY_FLEX
+    CONN_HTTP_PROXY_FLEX=TRUE # FIXME: Remove (obsolete now)
+    CONN_HTTP_PROXY_LEAK=TRUE
+    export CONN_HTTP_PROXY_FLEX CONN_HTTP_PROXY_LEAK
   fi
 fi
 

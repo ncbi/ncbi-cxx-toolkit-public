@@ -513,7 +513,7 @@ static CONNECTOR s_CreateSocketConnector(const SConnNetInfo* net_info,
                 free(handle);
         } else
             assert(!sock);
-        if (!sock  &&  !net_info->http_proxy_flex)
+        if (!sock  &&  !net_info->http_proxy_leak)
             return 0;
     }
     if (!sock) {
@@ -709,9 +709,10 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             return s_Open(uuu, timeout, info, net_info);
         }
         SOCK_ntoa(uuu->host, net_info->host, sizeof(net_info->host));
-        if (net_info->firewall == eFWMode_Fallback
+        if ((net_info->firewall & eFWMode_Adaptive)
             &&  !SERV_IsFirewallPort(uuu->port)) {
-            CORE_LOGF_X(9, eLOG_Trace,
+            CORE_LOGF_X(9, net_info->firewall == eFWMode_Fallback
+                        ? eLOG_Warning : eLOG_Trace,
                         ("[%s]  Fallback port :%hu is not in the set",
                          uuu->service, uuu->port));
         }

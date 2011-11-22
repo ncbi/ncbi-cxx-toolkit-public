@@ -65,11 +65,11 @@ public:
 
     /// Create test suite
     /// @param timeout
-    ///   non-NULL pointer to a finite timeout, or NULL (infinite); or
-    ///   default timeout (which is 30 seconds).
+    ///  non-NULL pointer to a finite timeout, or NULL (infinite); or
+    ///  default timeout (which is 30 seconds).
     /// @param out
-    ///   test results get posted to the stream pointed to by this parameter;
-    ///   no output is produced if "out" is NULL.
+    ///  test results get posted to the stream pointed to by this parameter;
+    ///  no output is produced if "out" is NULL.
     ///
     CConnTest(const STimeout* timeout = kDefaultTimeout,
               CNcbiOstream* output = 0, SIZE_TYPE width = 72);
@@ -94,17 +94,24 @@ public:
     /// check to likely succeed).
     ///
     /// @param stage
-    ///   final stage requested or performed, when the call returns
+    ///  final stage requested or performed, when the call returns
     /// @param reason
-    ///   a pointer to a string to get a failure explanation
+    ///  a pointer to a string to get a failure explanation
     /// @return
-    ///   eIO_Success if all requested tests completed successfully;
-    ///   other code if not, and then also return an explanatory
-    ///   message at "*reason" (if "reason" passed non-NULL).
+    ///  eIO_Success if all requested tests completed successfully;
+    ///  other code if not, and then also return an explanatory
+    ///  message at "*reason" (if "reason" passed non-NULL).
     ///
     /// NOTE that "*reason" may contain non-empty string when the call
     /// completes successfully.  Always check return code, instead of
     /// making any assumption on the contents of "*reason".
+    ///
+    /// @note
+    ///  Running the test for a firewall mode client will globally modify the
+    ///  behavior of service-related stateful data retrievals.  That is, when
+    ///  the test is complete, only the safest route found operational will be
+    ///  used to connect to NCBI for the life of the program.  Re-running the
+    ///  test may clobber these results and, thus, is highly unrecommended!
     ///
     virtual EIO_Status Execute(EStage& stage, string* reason = 0);
 
@@ -231,9 +238,9 @@ private:
 
 public:
     /// Return TRUE if the client is inside NCBI, FALSE otherwise.
-    /// @note  Do not use this API anywhere else other than when deciding
-    ///        whether to proceed with Execute() in this class for thorough
-    ///        connection checks.
+    /// @note  Do not use this method anywhere else other than when deciding
+    ///        whether to proceed with Execute() in this class with more
+    ///        thorough connection checks!
     static bool IsNcbiInhouseClient(void);
 };
 

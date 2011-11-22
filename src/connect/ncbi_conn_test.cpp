@@ -542,7 +542,7 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
         case eFWMode_Fallback:
             temp += "However, your configuration explicitly requests that only"
                 " fallback firewall ports (if any exist) are to be used for"
-                " connections: this also assumes that no conventional ports"
+                " connections: this also implies that no conventional ports"
                 " from the range above will be used\n";
             break;
         default:
@@ -562,7 +562,7 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
         temp += ':';
         temp += NStr::UIntToString(net_info->http_proxy_port);
         temp += "'";
-        if (net_info  &&  net_info->http_proxy_flex) {
+        if (net_info  &&  net_info->http_proxy_leak) {
             temp += ".  If that is unsuccessful, a link bypassing the proxy"
                 " will then be attempted";
         }
@@ -685,8 +685,8 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                 " support all ports in the range as documented above\n";
         }
         if (net_info->firewall & eFWMode_Adaptive) {
-            temp += net_info->firewall == eFWMode_Adaptive
-                ? "Also, adaptive" : "Fallback";
+            temp += net_info->firewall == eFWMode_Fallback
+                ? "Fallback" : "Also, adaptive",
             temp += " firewall mode allows that some (but not all) fallback"
                 " firewall ports may fail to operate.  Only those ports found"
                 " in working order will be used to access NCBI services\n";

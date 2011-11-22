@@ -313,13 +313,13 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
         REG_VALUE(REG_CONN_HTTP_PROXY_PASS, info->http_proxy_pass,
                   DEF_CONN_HTTP_PROXY_PASS);
         /* HTTP proxy bypass */
-        REG_VALUE(REG_CONN_HTTP_PROXY_FLEX, str, DEF_CONN_HTTP_PROXY_FLEX);
-        info->http_proxy_flex    =   ConnNetInfo_Boolean(str);
+        REG_VALUE(REG_CONN_HTTP_PROXY_LEAK, str, DEF_CONN_HTTP_PROXY_LEAK);
+        info->http_proxy_leak    =   ConnNetInfo_Boolean(str);
     } else {
         info->http_proxy_port    =   0;
         info->http_proxy_user[0] = '\0';
         info->http_proxy_pass[0] = '\0';
-        info->http_proxy_flex    =   0;
+        info->http_proxy_leak    =   0;
     }
 
     /* non-transparent CERN-like firewall proxy server? */
@@ -1217,7 +1217,7 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
         s_SaveKeyval(s, "http_proxy_pass", "(set)");
     else
         s_SaveString(s, "http_proxy_pass", info->http_proxy_pass);
-    s_SaveBool      (s, "http_proxy_flex", info->http_proxy_flex);
+    s_SaveBool      (s, "http_proxy_leak", info->http_proxy_leak);
     s_SaveString    (s, "proxy_host",      info->proxy_host);
     if (info->timeout) {
         s_SaveULong (s, "timeout(sec)",    info->timeout->sec);

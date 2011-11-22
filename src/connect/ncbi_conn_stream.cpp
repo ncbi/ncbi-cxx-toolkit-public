@@ -239,7 +239,7 @@ static CONNECTOR s_TunneledSocketConnector(const SConnNetInfo* net_info,
             delete handle;
         } else
             _ASSERT(!sock);
-        if (!sock  &&  !net_info->http_proxy_flex)
+        if (!sock  &&  !net_info->http_proxy_leak)
             return 0;
     }
     if (!sock) {
