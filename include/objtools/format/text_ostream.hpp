@@ -59,6 +59,7 @@ public:
     };
 
     // TODO: for SC-9, make this pure virtual
+    /** This adds a list of strings to the stream one at a time, unconditionally adding a newline to each one. */
     virtual void AddParagraph(const list<string>&  text,
                               const CSerialObject* obj = 0) 
     {
@@ -67,6 +68,7 @@ public:
     }
 
     // TODO: for SC-9, make this pure virtual
+    /** This adds its given argument, appending a newline only if the add_newline argument is eAddNewline_Yes. */
     virtual void AddLine( const CTempString& line,
                           const CSerialObject* obj = 0,
                           EAddNewline add_newline = eAddNewline_Yes )
@@ -75,21 +77,33 @@ public:
         _TROUBLE;
     }
 
-
+    // TODO: for SC-9, remove this function
+    /**
+     * This function is deprecated because I wanted to remove it. but could
+     * not since some other code still depends on it.
+     *
+     * This adds its argument "line" without any changes whatsoever,
+     * except for adding a newline after the "line".
+     */
     NCBI_DEPRECATED
     virtual void AddCLine( const char *line,
                            const CSerialObject* obj = 0) 
     {
-        // must be overridden
-        _TROUBLE;
+        AddLine(line, obj, eAddNewline_Yes);
     }
 
+    // TODO: for SC-9, remove this function
+    /**
+     * This function is deprecated because I wanted to remove it. but could
+     * not since some other code still depends on it.
+     *
+     * This adds its argument "line" without any changes whatsoever.
+     */
     NCBI_DEPRECATED
     virtual void AddRawText( const char *line,
                              const CSerialObject* obj = 0) 
     { 
-        // must be overridden
-        _TROUBLE;
+        AddLine(line, obj, eAddNewline_No);
     }
 
     virtual ~IFlatTextOStream(void) {}
