@@ -83,6 +83,7 @@ CreateSeqAlignFromAnchoredAln(const CAnchoredAln& anchored_aln,   ///< input
         sa->SetSegs().SetDisc(*CreateAlignSetFromAnchoredAln(anchored_aln));
         break;
     case CSeq_align::TSegs::e_Spliced:
+        sa->SetSegs().SetSpliced(*CreateSplicedsegFromAnchoredAln(anchored_aln));
         break;
     case CSeq_align::TSegs::e_Sparse:
         break;
