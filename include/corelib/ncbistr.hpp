@@ -2621,7 +2621,15 @@ public:
     ///   The number of bytes in the buffer
     /// @return
     ///   Number of valid symbols (no exception thrown)
-    static SIZE_TYPE GetValidSymbolCount(const CTempString& src, SIZE_TYPE buf_size);
+    static SIZE_TYPE GetValidSymbolCount(const char* src, SIZE_TYPE buf_size);
+
+    /// Get the number of valid UTF-8 symbols (code points) in the character buffer
+    ///
+    /// @param src
+    ///   Zero-terminated character buffer, or string
+    /// @return
+    ///   Number of valid symbols (no exception thrown)
+    static SIZE_TYPE GetValidSymbolCount(const CTempString& src);
     
     /// Get the number of valid UTF-8 bytes (code units) in the buffer
     ///
@@ -2631,7 +2639,15 @@ public:
     ///   The number of bytes in the buffer
     /// @return
     ///   Number of valid bytes (no exception thrown)
-    static SIZE_TYPE GetValidBytesCount(const CTempString& src, SIZE_TYPE buf_size);
+    static SIZE_TYPE GetValidBytesCount(const char* src, SIZE_TYPE buf_size);
+
+    /// Get the number of valid UTF-8 bytes (code units) in the character buffer
+    ///
+    /// @param src
+    ///   Zero-terminated character buffer, or string
+    /// @return
+    ///   Number of valid bytes (no exception thrown)
+    static SIZE_TYPE GetValidBytesCount(const CTempString& src);
 
     /// Check that the character encoding of the string is valid UTF-8
     ///
@@ -2827,8 +2843,10 @@ public:
         eValidate   =1
     };
     static SIZE_TYPE GetSymbolCount(const CTempString& src);
-    static SIZE_TYPE GetValidSymbolCount(const CTempString& src, SIZE_TYPE buf_size);
-    static SIZE_TYPE GetValidBytesCount(const CTempString& src, SIZE_TYPE buf_size);
+    static SIZE_TYPE GetValidSymbolCount(const char* src, SIZE_TYPE buf_size);
+    static SIZE_TYPE GetValidSymbolCount(const CTempString& src);
+    static SIZE_TYPE GetValidBytesCount(const char* src, SIZE_TYPE buf_size);
+    static SIZE_TYPE GetValidBytesCount(const CTempString& src);
     static string AsSingleByteString(const CStringUTF8& self, EEncoding encoding, const char* substitute_on_error);
     static EEncoding GuessEncoding( const CTempString& src);
     static bool MatchEncoding( const CTempString& src, EEncoding encoding);
@@ -2851,14 +2869,24 @@ SIZE_TYPE CStringUTF8::GetSymbolCount(const CTempString& src)
     return CStringUTF8_Helper::GetSymbolCount(src);
 }
 inline
-SIZE_TYPE CStringUTF8::GetValidSymbolCount(const CTempString& src, SIZE_TYPE buf_size)
+SIZE_TYPE CStringUTF8::GetValidSymbolCount(const char* src, SIZE_TYPE buf_size)
 {
     return CStringUTF8_Helper::GetValidSymbolCount(src, buf_size);
 }
 inline
-SIZE_TYPE CStringUTF8::GetValidBytesCount(const CTempString& src, SIZE_TYPE buf_size)
+SIZE_TYPE CStringUTF8::GetValidSymbolCount(const CTempString& src)
+{
+    return CStringUTF8_Helper::GetValidSymbolCount(src);
+}
+inline
+SIZE_TYPE CStringUTF8::GetValidBytesCount(const char* src, SIZE_TYPE buf_size)
 {
     return CStringUTF8_Helper::GetValidBytesCount(src,buf_size);
+}
+inline
+SIZE_TYPE CStringUTF8::GetValidBytesCount(const CTempString& src)
+{
+    return CStringUTF8_Helper::GetValidBytesCount(src);
 }
 inline
 string CStringUTF8::AsSingleByteString(EEncoding encoding,

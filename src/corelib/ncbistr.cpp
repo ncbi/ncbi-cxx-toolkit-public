@@ -3982,16 +3982,14 @@ SIZE_TYPE CStringUTF8::GetSymbolCount( const CTempString& str)
     return count;
 }
 
-SIZE_TYPE CStringUTF8_Helper::GetValidSymbolCount(const CTempString& src, SIZE_TYPE buf_size)
+SIZE_TYPE CStringUTF8_Helper::GetValidSymbolCount(const char* src, SIZE_TYPE buf_size)
 {
     SIZE_TYPE count = 0, cur_size=0;
-    CTempString::const_iterator i = src.begin();
-    CTempString::const_iterator end = src.end();
-    for (; cur_size < buf_size && i != end; ++i, ++count, ++cur_size) {
+    for (; cur_size < buf_size && src && *src; ++src, ++count, ++cur_size) {
         SIZE_TYPE more = 0;
-        bool good = x_EvalFirst(*i, more);
+        bool good = x_EvalFirst(*src, more);
         while (more-- && good && ++cur_size < buf_size) {
-            good = x_EvalNext(*(++i));
+            good = x_EvalNext(*(++src));
         }
         if ( !good ) {
             return count;
@@ -3999,20 +3997,21 @@ SIZE_TYPE CStringUTF8_Helper::GetValidSymbolCount(const CTempString& src, SIZE_T
     }
     return count;
 }
+SIZE_TYPE CStringUTF8_Helper::GetValidSymbolCount(const CTempString& src)
+{
+    return GetValidSymbolCount(src.data(), src.length());
+}
 
-
-SIZE_TYPE CStringUTF8_Helper::GetValidBytesCount(const CTempString& src, SIZE_TYPE buf_size)
+SIZE_TYPE CStringUTF8_Helper::GetValidBytesCount(const char* src, SIZE_TYPE buf_size)
 {
     SIZE_TYPE count = 0;
     SIZE_TYPE cur_size = 0;
-    CTempString::const_iterator i = src.begin();
-    CTempString::const_iterator end = src.end();
 
-    for (; cur_size < buf_size && i != end; ++i, ++count, ++cur_size) {
+    for (; cur_size < buf_size && src && *src; ++src, ++count, ++cur_size) {
         SIZE_TYPE more = 0;
-        bool good = x_EvalFirst(*i, more);
+        bool good = x_EvalFirst(*src, more);
         while (more-- && good && cur_size < buf_size) {
-            good = x_EvalNext(*(++i));
+            good = x_EvalNext(*(++src));
             if (good) {
                 ++cur_size;
             }
@@ -4023,7 +4022,10 @@ SIZE_TYPE CStringUTF8_Helper::GetValidBytesCount(const CTempString& src, SIZE_TY
     }
     return cur_size;
 }
-
+SIZE_TYPE CStringUTF8_Helper::GetValidBytesCount(const CTempString& src)
+{
+    return GetValidBytesCount(src.data(),src.length());
+}
 
 #if defined(__NO_EXPORT_STRINGUTF8__)
 string CStringUTF8_Helper::AsSingleByteString(
