@@ -2096,6 +2096,16 @@ BOOST_AUTO_TEST_CASE(s_StringUTF8)
     str = sample;
     BOOST_CHECK_EQUAL(strcmp(str.c_str(),"micro=µ Agrave=À atilde=ã ccedil=ç"), 0);
     BOOST_CHECK_EQUAL( str.AsLatin1(), sample);
+
+    BOOST_CHECK_EQUAL(128, CStringUTF8::GetValidSymbolCount((const char*)s_Converted, sizeof(s_Converted)));
+    BOOST_CHECK_EQUAL(127, CStringUTF8::GetValidSymbolCount((const char*)s_ExtAscii));
+    BOOST_CHECK_EQUAL(34,  CStringUTF8::GetValidSymbolCount(str.data(), str.length()));
+    BOOST_CHECK_EQUAL(34,  CStringUTF8::GetValidSymbolCount(str));
+
+    BOOST_CHECK_EQUAL(256, CStringUTF8::GetValidBytesCount((const char*)s_Converted, sizeof(s_Converted)));
+    BOOST_CHECK_EQUAL(127, CStringUTF8::GetValidBytesCount((const char*)s_ExtAscii));
+    BOOST_CHECK_EQUAL(38,  CStringUTF8::GetValidBytesCount(str.data(), str.length()));
+    BOOST_CHECK_EQUAL(38,  CStringUTF8::GetValidBytesCount(str));
 }
 
 BOOST_AUTO_TEST_CASE(s_TruncateSpaces)
