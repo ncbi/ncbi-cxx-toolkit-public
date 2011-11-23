@@ -182,12 +182,14 @@ public:
 
     /// Return true if this feature was removed already
     bool IsRemoved(void) const;
+
     /// Remove the feature from Seq-annot
-    /// The method is deprecated, use CSeq_feat_EditHandle
+    /// @deprecated  Use CSeq_feat_EditHandle
     NCBI_DEPRECATED void Remove(void) const;
+
     /// Replace the feature with new Seq-feat object.
     /// All indexes are updated correspondingly.
-    /// The method is deprecated, use CSeq_feat_EditHandle
+    /// @deprecated Use CSeq_feat_EditHandle
     NCBI_DEPRECATED void Replace(const CSeq_feat& new_feat) const;
 
 
