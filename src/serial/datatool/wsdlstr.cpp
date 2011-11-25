@@ -233,7 +233,7 @@ void CWsdlTypeStrings::GenerateClassCode(
         //outputs
         string methodRet("void");
         list<string> methodOut;
-        int out_counter=0, hout_counter=0;
+        int out_counter=0;
         size_t out_total = headeroutputs.size() + outputs.size();
 
         ITERATE( list<TMembers::const_iterator>, out, headeroutputs) {
@@ -251,7 +251,6 @@ void CWsdlTypeStrings::GenerateClassCode(
                 methodOut.push_back(out_param);
             }
         }
-        hout_counter = out_counter;
         ITERATE( list<TMembers::const_iterator>, out, outputs) {
             ++out_counter;
             string reg("RegisterObjectType(");

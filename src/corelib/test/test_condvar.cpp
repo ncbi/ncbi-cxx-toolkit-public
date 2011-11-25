@@ -169,7 +169,6 @@ void CTestCondVarApp::Consume(int idx)
     CMutex wrongMtx;
     bool wrong = (idx % 4) != 0;
 #endif
-    int i=1;
     __TEST_OUTPUT(" consumer started");
     for (;;) {
 
@@ -267,7 +266,6 @@ void CTestCondVarApp::Consume(int idx)
 #endif
 
         size_t Item = m_Buffer[m_QueueStartOffset];
-        i=Item;
         __TEST_OUTPUT(" consumed: " << Item);
 
         --m_QueueSize;

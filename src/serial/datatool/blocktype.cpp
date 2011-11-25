@@ -346,7 +346,6 @@ void CDataMemberContainerType::PrintDTDElement(CNcbiOstream& out, bool contents_
 {
     string tag = XmlTagName();
     bool hasAttlist= false, isAttlist= false;
-    bool hasNotag= false;
     bool isSimple= false, isSeq= false;
 
     if (GetEnforcedStdXml()) {
@@ -358,7 +357,6 @@ void CDataMemberContainerType::PrintDTDElement(CNcbiOstream& out, bool contents_
         }
         if (GetDataMember()) {
             isAttlist = GetDataMember()->Attlist();
-            hasNotag   = GetDataMember()->Notag();
         }
         if (GetMembers().size()==1) {
             const CDataMember* member = GetMembers().front().get();
