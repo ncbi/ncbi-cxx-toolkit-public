@@ -125,7 +125,7 @@ double NCBI_GetCheckTimeoutMult(void)
         const char* env_str = getenv("NCBI_CHECK_TIMEOUT_MULT");
         if (env_str)
             env_val = strtod(env_str, NULL);
-        if (env_val < 1)
+        if (env_val <= 0)
             env_val = 1;
 
         check_mult = env_val;
