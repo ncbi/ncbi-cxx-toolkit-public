@@ -943,9 +943,10 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
             temp += " check FAILED";
         } else {
             temp = "Firewall port check PASSED";
-            if (net_info->firewall != eFWMode_Fallback)
+            if (net_info->firewall != eFWMode_Fallback) {
                 temp += " only with fallback port(s)";
-            else
+                m_Fwd.clear();
+            } else
                 note = false;
         }
         if (note  &&  status != eIO_Interrupt) {
@@ -1014,6 +1015,13 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
             str = 0;
         }
         if (iofail) {
+            if (status == eIO_Timeout) {
+                if (!str) {
+                    temp = n ? "Unrecognized" : "No";
+                    temp += " response received from service. ";
+                }
+                temp += x_TimeoutMsg();
+            }
             if (m_Stateless  ||  (net_info  &&  net_info->stateless)) {
                 temp += "STATELESS mode forced by your configuration may be"
                     " preventing this stateful service from operating"
@@ -1025,22 +1033,22 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
                 } else
                     temp += "CONN]STATELESS\n";
             } else if (!str) {
-                SERV_ITER iter = SERV_OpenSimple(kId2);
-                if (!iter  ||  !SERV_GetNextInfo(iter)) {
+                SERV_ITER iter = 0;
+                if (status != eIO_Timeout
+                    &&  (!(iter = SERV_OpenSimple(kId2))
+                         ||  !SERV_GetNextInfo(iter))) {
                     temp += "The service is currently unavailable;"
                         " you may want to contact " NCBI_HELP_DESK "\n";
-                } else if (m_Fwd.empty()) {
+                } else if (m_Fwd.empty()  &&  net_info
+                           &&  net_info->firewall != eFWMode_Fallback) {
                     temp += "The most likely reason for the failure is that"
                         " your ";
-                    temp += (net_info  &&  *net_info->proxy_host
-                             ? "forwarding proxy" : "firewall");
+                    temp += *net_info->proxy_host ? "forwarder" : "firewall";
                     temp += " is still blocking ports as reported above\n";
                 } else if (status != eIO_Timeout  ||  m_Timeout > kTimeout)
                     temp += "Please contact " NCBI_HELP_DESK "\n";
                 SERV_Close(iter);
             }
-            if (status == eIO_Timeout)
-                temp += x_TimeoutMsg();
         } else if (!str) {
             if (n  &&  net_info  &&  net_info->http_proxy_port
                 &&  NStr::strncasecmp(ry, kFWSign, n) == 0) {
