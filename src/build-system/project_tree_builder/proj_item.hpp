@@ -144,6 +144,7 @@ public:
     
     mutable bool m_IsBundle;
     bool m_External;
+    bool m_StyleObjcpp;
 private:
     void Clear(void);
     void SetFrom(const CProjItem& item);

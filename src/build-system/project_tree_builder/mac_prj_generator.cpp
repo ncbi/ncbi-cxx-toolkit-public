@@ -482,7 +482,7 @@ string CMacProjectGenerator::CreateProjectFileGroups(
 
     // for each source file in project
     ITERATE ( list<string>, f, prj_files.GetSources()) {
-        string src( AddFile( dict_objects, *f));
+        string src( AddFile( dict_objects, *f, prj.m_StyleObjcpp));
         if (!src.empty()) {
             bool added=false;
             if (prj.m_ProjType == CProjKey::eDll) {
@@ -500,7 +500,7 @@ string CMacProjectGenerator::CreateProjectFileGroups(
     }
     // for each header file in project
     ITERATE ( list<string>, f, prj_files.GetHeaders()) {
-        string src( AddFile( dict_objects, *f));
+        string src( AddFile( dict_objects, *f, prj.m_StyleObjcpp));
         if (!src.empty()) {
             bool added=false;
             if (prj.m_ProjType == CProjKey::eDll) {
@@ -523,7 +523,7 @@ string CMacProjectGenerator::CreateProjectFileGroups(
     }
     // dataspecs
     ITERATE ( list<string>, f, prj_files.GetDataSpecs()) {
-        string src( AddFile( dict_objects, *f));
+        string src( AddFile( dict_objects, *f, prj.m_StyleObjcpp));
         if (!src.empty()) {
             AddString( *specs,src);
         }
@@ -1229,6 +1229,7 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
 
 // preprocessor definitions    
     list<string> tmp_list = prj.m_Defines;
+    tmp_list = prj_files.GetProjectContext().Defines(cfg);
     string tmp_str = metamake.GetCompilerOpt("GCC_PREPROCESSOR_DEFINITIONS", cfg);
     NStr::Split(tmp_str, LIST_SEPARATOR, tmp_list);
     if (dll_build) {
@@ -1440,13 +1441,17 @@ string CMacProjectGenerator::GetUUID(void)
     return buffer;
 }
 
-string CMacProjectGenerator::AddFile(CDict& dict, const string& name)
+string CMacProjectGenerator::AddFile(CDict& dict, const string& name, bool style_objcpp)
 {
     string filetype;
     CDirEntry entry(name);
     string ext = entry.GetExt();
     if ( ext == ".cpp" || ext == ".c") {
-        filetype = string("sourcecode") + ext + ext;
+        if (style_objcpp) {
+            filetype = "sourcecode.cpp.objcpp";
+        } else {
+            filetype = string("sourcecode") + ext + ext;
+        }
     } else if (ext == ".hpp" || ext == ".inl") {
         filetype = "sourcecode.cpp.h";
     } else if (ext == ".h") {

@@ -878,10 +878,16 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     list<string> defines;
     k = makefile.m_Contents.find("CPPFLAGS");
     if (k != makefile.m_Contents.end()) {
-        const list<string> cpp_flags = k->second;
+        const list<string>& cpp_flags = k->second;
         SMakeProjectT::CreateIncludeDirs(cpp_flags, 
                                          source_base_dir, &include_dirs);
         SMakeProjectT::CreateDefines(cpp_flags, &defines);
+    }
+    bool style_objcpp = false;
+    k = makefile.m_Contents.find("CXXFLAGS");
+    if (k != makefile.m_Contents.end()) {
+        const list<string>& cxx_flags = k->second;
+        style_objcpp = find(cxx_flags.begin(), cxx_flags.end(), "objective-c++") != cxx_flags.end();
     }
 
     //NCBI_C_LIBS - Special case for NCBI C Toolkit
@@ -906,6 +912,7 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
         IdentifySlnGUID(source_base_dir, CProjKey(CProjKey::eApp, proj_id)));
     //
     project.m_NcbiCLibs = ncbi_clibs;
+    project.m_StyleObjcpp = style_objcpp;
 
     //DATATOOL_SRC
     list<CDataToolGeneratedSrc> datatool_sources;
@@ -1184,11 +1191,17 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
     list<string> defines;
     k = m->second.m_Contents.find("CPPFLAGS");
     if (k != m->second.m_Contents.end()) {
-        const list<string> cpp_flags = k->second;
+        const list<string>& cpp_flags = k->second;
         SMakeProjectT::CreateIncludeDirs(cpp_flags, 
                                          source_base_dir, &include_dirs);
         SMakeProjectT::CreateDefines(cpp_flags, &defines);
 
+    }
+    bool style_objcpp = false;
+    k = m->second.m_Contents.find("CXXFLAGS");
+    if (k != m->second.m_Contents.end()) {
+        const list<string>& cxx_flags = k->second;
+        style_objcpp = find(cxx_flags.begin(), cxx_flags.end(), "objective-c++") != cxx_flags.end();
     }
     
     string lib_or_dll;
@@ -1254,6 +1267,7 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
                                            defines,
                                            maketype,
         IdentifySlnGUID(source_base_dir, proj_key));
+    (tree->m_Projects[proj_key]).m_StyleObjcpp = style_objcpp;
 
     k = m->second.m_Contents.find("HEADER_EXPORT");
     if (k != m->second.m_Contents.end()) {
@@ -1302,6 +1316,7 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
         item_dll.m_GUID  = IdentifySlnGUID(source_base_dir, proj_dll);
         item_dll.m_IsBundle = isbundle;
         item_dll.m_External = true;
+        item_dll.m_StyleObjcpp = style_objcpp;
         item_dll.m_ProjTags = tree->m_Projects[proj_key].m_ProjTags;
         item_dll.m_ProjTags.push_back("dll");
         tree->m_Projects[proj_dll] = item_dll;
@@ -1417,11 +1432,17 @@ CProjKey SDllProjectT::DoCreate(const string& source_base_dir,
     list<string> defines;
     k = m->second.m_Contents.find("CPPFLAGS");
     if (k != m->second.m_Contents.end()) {
-        const list<string> cpp_flags = k->second;
+        const list<string>& cpp_flags = k->second;
         SMakeProjectT::CreateIncludeDirs(cpp_flags, 
                                          source_base_dir, &include_dirs);
         SMakeProjectT::CreateDefines(cpp_flags, &defines);
 
+    }
+    bool style_objcpp = false;
+    k = m->second.m_Contents.find("CXXFLAGS");
+    if (k != m->second.m_Contents.end()) {
+        const list<string>& cxx_flags = k->second;
+        style_objcpp = find(cxx_flags.begin(), cxx_flags.end(), "objective-c++") != cxx_flags.end();
     }
 
     list<CProjKey> depends_ids;
@@ -1451,6 +1472,7 @@ CProjKey SDllProjectT::DoCreate(const string& source_base_dir,
                                            maketype,
         IdentifySlnGUID(source_base_dir, proj_key));
     tree->m_Projects[proj_key].m_External = true;
+    tree->m_Projects[proj_key].m_StyleObjcpp = style_objcpp;
     
     k = m->second.m_Contents.find("HOSTED_LIBS");
     if (k != m->second.m_Contents.end()) {

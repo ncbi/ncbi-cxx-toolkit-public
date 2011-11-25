@@ -118,7 +118,7 @@ private:
         const string& products_group);
     
     string GetUUID(void);
-    string AddFile(CDict& dict, const string& name);
+    string AddFile(CDict& dict, const string& name, bool style_objcpp);
     string AddFileSource(CDict& dict, const string& name);
     void   AddGroupDict( CDict& dict, const string& key,
                          CRef<CArray>& children, const string& name);

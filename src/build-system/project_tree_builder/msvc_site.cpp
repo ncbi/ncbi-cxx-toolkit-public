@@ -712,7 +712,7 @@ bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent) const
     }
 
 
-    if ( !lib_info.valid || lib_info.IsEmpty() )
+    if ( !lib_info.valid /*|| lib_info.IsEmpty()*/ )
         return false;
 #ifndef PSEUDO_XCODE
     if ( !lib_info.m_IncludeDir.empty() ) {
