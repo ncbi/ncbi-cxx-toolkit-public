@@ -74,6 +74,11 @@ void        NCBI_SetSybasePath(const char* sybpath);
 NCBI_XNCBI_EXPORT
 const char* NCBI_GetBuildFeatures(void);
 
+/** Get multiplier for timeouts which depends on speed of the machine and
+    tools application is running under (such as valgrind). */
+NCBI_XNCBI_EXPORT
+double NCBI_GetCheckTimeoutMult(void);
+
 #ifdef __cplusplus
 }
 #endif

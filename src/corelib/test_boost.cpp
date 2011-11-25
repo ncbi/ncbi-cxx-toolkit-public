@@ -1609,10 +1609,7 @@ CNcbiTestApplication::InitTestFramework(int argc, char* argv[])
     else {
         m_Timeout = min(max(0.0, m_Timeout - 3), 0.9 * m_Timeout);
     }
-    string time_mult = env.Get("NCBI_CHECK_TIMEOUT_MULT");
-    m_TimeMult = NStr::StringToDouble(time_mult, NStr::fConvErr_NoThrow);
-    if (m_TimeMult <= 0)
-        m_TimeMult = 1;
+    m_TimeMult = NCBI_GetCheckTimeoutMult();
 
     if (AppMain(argc, argv) == 0 && m_RunCalled) {
         x_CollectAllTests();
