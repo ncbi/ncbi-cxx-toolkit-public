@@ -303,6 +303,9 @@ the whole of a sequence.")),
    TErrTypStrs ( eErr_SEQ_INST_SeqLitGapFuzzNot100,
    TErrStrs( "SeqLitGapFuzzNot100",
 "Gap of unknown length should have standard length of 100.")),
+   TErrTypStrs ( eErr_SEQ_INST_SeqGapProblem,
+   TErrStrs( "SeqGapProblem",
+"Inconsistent data in Seq-gap fields.")),
 
 /* SEQ_DESCR */
 
