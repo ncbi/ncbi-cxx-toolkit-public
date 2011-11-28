@@ -908,9 +908,10 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
     if ( !m_IsBl2Seq ) {
         CPsiBlastIterationState::TSeqIds prev_ids = CPsiBlastIterationState::TSeqIds();
         int skip_from = 0; 
-        int skip_to = results.m_NumActualV +results.m_NumActualD + results.m_NumActualJ;
-        if (m_IgOptions->m_Db[0]->GetDatabaseName() == m_DbName) 
-            skip_from = results.m_NumActualV; //keep V if the blast DB is the same as V germlines
+        int skip_to = 0;
+       /* int skip_to = results.m_NumActualV +results.m_NumActualD + results.m_NumActualJ;
+          if (m_IgOptions->m_Db[0]->GetDatabaseName() == m_DbName) 
+           skip_from = results.m_NumActualV; //keep V if the blast DB is the same as V germlines*/
         x_DisplayDeflines(aln_set, numeric_limits<unsigned int>::max(), prev_ids, skip_from, skip_to);
     }
 
