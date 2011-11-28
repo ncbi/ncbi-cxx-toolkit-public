@@ -590,17 +590,16 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
                                                 BLAST_SequenceBlk* * subject_blk)
     {
         const int kLength = 12;
-        const Uint1 kQuerySeq[kLength] = 
-           { 11, 19, 13, 1, 9, 22, 6, 10, 7, 12, 20, 10 };
+        const Uint1 kQuerySeq[kLength + 2] =
+           { 0, 11, 19, 13, 1, 9, 22, 6, 10, 7, 12, 20, 10, 0 };
         const Uint1 kSubjectSeq[3*kLength] = 
            { 2, 8, 4, 4, 8, 4, 1, 1, 10, 8, 15, 2, 1, 8, 1, 8, 8, 15, 8, 8, 8,
              1, 5, 1, 4, 4, 2, 1, 1, 1, 8, 4, 4, 4, 1, 4 };
 
         BlastSeqBlkNew(query_blk);
         BlastSeqBlkSetSequence(*query_blk, 
-                               (Uint1*) BlastMemDup(kQuerySeq, kLength), 
-                               kLength);
-        (*query_blk)->sequence = (*query_blk)->sequence_start;
+                               (Uint1*) BlastMemDup(kQuerySeq, kLength+2),
+                               kLength+2);
         BlastSeqBlkNew(subject_blk);
         BlastSeqBlkSetSequence(*subject_blk, 
                                (Uint1*) BlastMemDup(kSubjectSeq, 3*kLength), 
