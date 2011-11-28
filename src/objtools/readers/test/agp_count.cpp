@@ -105,12 +105,14 @@ public:
 
 int main(int argc, char* argv[])
 {
-    EAgpVersion agp_version = eAgpVersion_1_1;
+    EAgpVersion agp_version = eAgpVersion_auto;
     // rudimentary argument parsing, too simple to justify
     // heavyweight classes like CArgDescriptions
     for( int ii = 1; ii < argc; ++ii ) {
         const char *arg = argv[ii];
-        if( string("-v2.0") == arg ) {
+        if( string("-v1.1") == arg ) {
+            agp_version = eAgpVersion_1_1;
+        } else if( string("-v2.0") == arg ) {
             agp_version = eAgpVersion_2_0;
         } else {
             cerr << "unknown arg: " << arg << endl;

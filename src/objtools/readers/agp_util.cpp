@@ -130,8 +130,9 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "in \"Chromosome from scaffold\" file, scaffold is not used in full",
     "missing linkage evidence (column 9) (AGP 2.0)",  // W_Last
 
-    kEmptyCStr,
-    kEmptyCStr,
+
+    "AGP version comment was invalid.",
+    "AGP version comment unnecessary: either the version was programmatically specified or was specified multiple times.",
     kEmptyCStr,
     kEmptyCStr,
     kEmptyCStr,
@@ -911,6 +912,9 @@ int CAgpReader::ReadStream(CNcbiIstream& is, bool finalize)
     while( NcbiGetline(is, m_line, "\r\n") ) {
         m_line_num++;
 
+        // processes pragma comments on the line, if any
+        x_CheckPragmaComment();
+
         m_error_code = m_this_row->FromString(m_line);
         if( m_error_code != -1 ) {
             m_content_line_seen = true;
@@ -1020,6 +1024,41 @@ string CAgpReader::GetErrorMessage(const string& filename)
     // Messages printed at the end  apply to:
     // current line, 2 lines, no lines.
     return msg + m_AgpErr->GetErrorMessage(CAgpErr::fAtThisLine|CAgpErr::fAtNone);
+}
+
+void CAgpReader::x_CheckPragmaComment(void)
+{
+    const static string kAgpVersionCommentStart("##agp-version");
+    if( NStr::StartsWith(m_line, kAgpVersionCommentStart) ) {
+        // skip whitespace before and after version number
+        const SIZE_TYPE versionStartPos = m_line.find_first_not_of(
+            " \t\v\f",
+            kAgpVersionCommentStart.length() );
+        const SIZE_TYPE versionEndPos = m_line.find_last_not_of(
+            " \t\v\f" );
+        string version;
+        if( versionStartPos != NPOS && versionEndPos != NPOS ) {
+            version = m_line.substr( versionStartPos,
+                (versionEndPos - versionStartPos) + 1 );
+        }
+        if( m_agp_version == eAgpVersion_auto ) {
+            if( version == "1.1" ) {
+                m_agp_version = eAgpVersion_1_1;
+                m_prev_row->SetVersion( m_agp_version );
+                m_this_row->SetVersion( m_agp_version );
+            } else if( version == "2.0" ) {
+                m_agp_version = eAgpVersion_2_0;
+                m_prev_row->SetVersion( m_agp_version );
+                m_this_row->SetVersion( m_agp_version );
+            } else {
+                // unknown AGP version
+                m_AgpErr->Msg(CAgpErr::W_AGPVersionCommentInvalid);
+            }
+        } else {
+            // extra AGP version
+            m_AgpErr->Msg(CAgpErr::W_AGPVersionCommentUnnecessary);
+        }
+    }
 }
 
 //// class CAgpErrEx - static members and functions

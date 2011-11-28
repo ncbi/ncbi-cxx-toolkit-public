@@ -372,6 +372,8 @@ private:
     bool m_OwnAgpErr;
     void Init();
 
+    void x_CheckPragmaComment(void);
+
 public:
     CAgpErr* GetErrorHandler() { return m_AgpErr; }
     void SetErrorHandler(CAgpErr* arg);
@@ -476,6 +478,9 @@ public:
         W_AssumingVersion,   // CAgpRow (v. == auto)
         W_ScafNotInFull,     // -- agp_validate --
         W_MissingLinkage,       // CAgpRow (v. >= 2.0 )
+
+        W_AGPVersionCommentInvalid,
+        W_AGPVersionCommentUnnecessary,
         W_Last, W_First = 31,
 
         // "GenBank" checks that rely on information about the sequence
