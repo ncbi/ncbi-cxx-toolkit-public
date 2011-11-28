@@ -41,6 +41,7 @@
 
 
 #include <corelib/ncbistre.hpp>
+#include <corelib/ncbi_stack.hpp>
 #include <list>
 #include <vector>
 #include <map>
@@ -1007,6 +1008,9 @@ public:
     /// Do not flush current post or change the severity. The flag is reset
     /// by the next Flush().
     friend const CNcbiDiag& Console (const CNcbiDiag& diag);
+
+    /// Print stack trace
+    friend const CNcbiDiag& StackTrace (const CNcbiDiag& diag);
 
     /// Get a common symbolic name for the severity levels.
     static const char* SeverityName(EDiagSev sev);

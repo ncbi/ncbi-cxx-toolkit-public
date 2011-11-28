@@ -446,6 +446,14 @@ const CNcbiDiag& Console(const CNcbiDiag& diag)  {
     return diag;
 }
 
+inline
+const CNcbiDiag& StackTrace (const CNcbiDiag& diag) {
+    CStackTrace stk;
+    diag.Put(NULL,stk);
+    return diag;
+}
+
+
 
 ///////////////////////////////////////////////////////
 //  CDiagBuffer::
