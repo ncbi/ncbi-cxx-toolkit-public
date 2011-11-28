@@ -740,7 +740,7 @@ public:
         }
         int LockCount(void) const
         {
-            return m_Locks.size() - m_Unlocks.size();
+            return int(m_Locks.size() - m_Unlocks.size());
         }
         void Locked(const CObjectCounterLocker* locker, const CObject* object)
         {
