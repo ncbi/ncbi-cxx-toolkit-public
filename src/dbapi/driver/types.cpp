@@ -1046,9 +1046,10 @@ CDB_Char& CDB_Char::operator= (const char* s)
 
 void CDB_Char::SetValue(const char* str, size_t len, EEncoding enc)
 {
-    CheckStringTruncation(CDB_VarChar(str, len, enc).Size(), m_Size);
+    CDB_VarChar vc_value(str, len, enc);
+    CheckStringTruncation(vc_value.Size(), m_Size);
 
-    Assign(str, m_Size, enc);
+    Assign(vc_value.Value(), m_Size, enc);
 }
 
 
