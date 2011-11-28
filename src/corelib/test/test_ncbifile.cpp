@@ -1054,7 +1054,6 @@ static void s_TEST_MemoryFile(void)
         off_t offset = 2;
         CMemoryFile m(s_FileName, CMemoryFile::eMMP_ReadWrite,
                       CMemoryFile::eMMS_Shared, offset, 3);
-        char* p0 = (char*)m.GetPtr();
         assert( m.GetFileSize() == (Int8)s_DataLen );
         assert( m.GetSize() == 3 );
         assert( m.GetOffset() == offset );
