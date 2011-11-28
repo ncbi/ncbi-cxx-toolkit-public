@@ -192,3 +192,9 @@ Enhanced GUI tool to show list of default project tags - from the current LST fi
 October 18, 2011
 version 3.6.1
 In folder targets of Unix makefile, removed subdirectories with projects excluded from the build.
+
+November 29, 2011
+version 3.7.0
+Added support of automatic and composite project tags, and tag-based build targets.
+Added support of Objective-C source files on MacOSX.
+Added support for Xcode build system version 4.
