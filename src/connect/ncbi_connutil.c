@@ -1039,12 +1039,10 @@ extern int/*bool*/ ConnNetInfo_SetupStandardArgs(SConnNetInfo* info,
 extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
 {
     SConnNetInfo* x_info;
-    const char* svc;
 
     if (!info)
         return 0;
 
-    svc = info->svc;
     if (!(x_info = (SConnNetInfo*) malloc(sizeof(*info) + strlen(info->svc))))
         return 0;
 
