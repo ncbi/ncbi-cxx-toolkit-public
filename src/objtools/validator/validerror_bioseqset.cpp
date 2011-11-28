@@ -205,7 +205,8 @@ void CValidError_bioseqset::ValidateBioseqSet(const CBioseq_set& seqset)
             || seqset.GetClass() == CBioseq_set::eClass_mut_set
             || seqset.GetClass() == CBioseq_set::eClass_phy_set
             || seqset.GetClass() == CBioseq_set::eClass_eco_set
-            || seqset.GetClass() == CBioseq_set::eClass_wgs_set)) {
+            || seqset.GetClass() == CBioseq_set::eClass_wgs_set
+            || seqset.GetClass() == CBioseq_set::eClass_small_genome_set)) {
         ShouldHaveNoDblink(seqset);
     }
 
