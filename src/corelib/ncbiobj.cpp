@@ -460,18 +460,18 @@ CObject::~CObject(void)
         _ASSERT(ObjectStateReferenced(count));
         // referenced object
         ERR_POST_X(1, ObjFatal << "CObject::~CObject: "
-                      "Referenced CObject may not be deleted");
+                      "Referenced CObject may not be deleted"<<StackTrace);
     }
     else if ( count == eMagicCounterDeleted ||
               count == eMagicCounterPoolDeleted ) {
         // deleted object
         ERR_POST_X(2, ObjFatal << "CObject::~CObject: "
-                      "CObject is already deleted");
+                      "CObject is already deleted"<<StackTrace);
     }
     else {
         // bad object
         ERR_POST_X(3, ObjFatal << "CObject::~CObject: "
-                      "CObject is corrupted");
+                      "CObject is corrupted"<<StackTrace);
     }
     // mark object as deleted
     TCount final_magic;
@@ -546,16 +546,16 @@ void CObject::RemoveLastReference(TCount count) const
     // bad object
     if ( ObjectStateValid(count) ) {
         ERR_POST_X(4, ObjFatal << "CObject::RemoveLastReference: "
-                      "CObject was referenced again");
+                      "CObject was referenced again"<<StackTrace);
     }
     else if ( count == eMagicCounterDeleted ||
               count == eMagicCounterPoolDeleted ) {
         ERR_POST_X(5, ObjFatal << "CObject::RemoveLastReference: "
-                      "CObject is already deleted");
+                      "CObject is already deleted"<<StackTrace);
     }
     else {
         ERR_POST_X(6, ObjFatal << "CObject::RemoveLastReference: "
-                      "CObject is corrupted");
+                      "CObject is corrupted"<<StackTrace);
     }
 }
 
@@ -635,7 +635,7 @@ void CObject::DoDeleteThisObject(void)
     }}
     if ( ObjectStateValid(count) ) {
         ERR_POST_X(7, ObjFatal << "CObject::DoDeleteThisObject: "
-                      "object was created without heap signature");
+                      "object was created without heap signature"<<StackTrace);
     }
     else if ( count == eMagicCounterDeleted ||
          count == eMagicCounterPoolDeleted ) {
@@ -837,7 +837,7 @@ void CObjectCounterLocker::UnlockRelease(const CObject* object) const
     if ( MonitoredType(object) ) {
         LOG_POST("UnlockRelease<"<<typeid(*object).name()<<">"
                  "("<<this<<", "<<object<<")"
-                 " @ " << CStackTrace());
+                 " @ " << StackTrace);
         sx_LocksMonitor.Get().Unlocked(this, object);
     }
     object->ReleaseReference();
@@ -895,7 +895,8 @@ void CObjectCounterLocker::ReportIncompatibleType(const type_info& type)
 {
 #ifdef _DEBUG
     ERR_POST_X(8, Fatal <<
-                  "Type " << type.name() << " must be derived from CObject");
+                  "Type " << type.name() << " must be derived from CObject" <<
+                  StackTrace);
 #else
     NCBI_THROW(CCoreException, eInvalidArg,
                string("Type ")+type.name()+" must be derived from CObject");
@@ -999,7 +1000,8 @@ void CPtrToObjectProxy::ReportIncompatibleType(const type_info& type)
 {
 #ifdef _DEBUG
     ERR_POST_X(8, Fatal <<
-               "Type " << type.name() << " must be derived from CWeakObject");
+               "Type " << type.name() << " must be derived from CWeakObject"<<
+               StackTrace);
 #else
     NCBI_THROW(CCoreException, eInvalidArg, string("Type ") +
                type.name() + " must be derived from CWeakObject");
