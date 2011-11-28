@@ -131,8 +131,8 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "missing linkage evidence (column 9) (AGP 2.0)",  // W_Last
 
 
-    "AGP version comment was invalid.",
-    "AGP version comment unnecessary: either the version was programmatically specified or was specified multiple times.",
+    "AGP version comment is invalid",
+    "ignoring AGP version comment - version already set to X",
     kEmptyCStr,
     kEmptyCStr,
     kEmptyCStr,
@@ -1056,7 +1056,7 @@ void CAgpReader::x_CheckPragmaComment(void)
             }
         } else {
             // extra AGP version
-            m_AgpErr->Msg(CAgpErr::W_AGPVersionCommentUnnecessary);
+            m_AgpErr->Msg(CAgpErr::W_AGPVersionCommentUnnecessary, m_agp_version == eAgpVersion_1_1 ? "1.1" : "2.0" );
         }
     }
 }
