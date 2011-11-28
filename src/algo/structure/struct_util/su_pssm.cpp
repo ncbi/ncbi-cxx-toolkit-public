@@ -157,7 +157,7 @@ static void FillInAlignmentData(const BlockMultipleAlignment *bma, PSIMsa *data)
     BlockMultipleAlignment::ConstBlockList blocks;
 	bma->GetBlockList(blocks);
 
-    unsigned int b, row, column, masterStart, masterWidth, slaveStart, slaveWidth, left=0, right=0, middle=0;
+    unsigned int b, row, column, masterStart, masterWidth, slaveStart, slaveWidth, left=0, /*right=0,*/ middle=0;
     const Block::Range *range;
     const Sequence *seq;
 
@@ -239,7 +239,7 @@ static void FillInAlignmentData(const BlockMultipleAlignment *bma, PSIMsa *data)
                     if (column == 0) {
                         left = (slaveWidth + 1) / 2;    // +1 means left gets more in uneven split
                         middle = masterWidth - slaveWidth;
-                        right = slaveWidth - left;
+                        //right = slaveWidth - left;
                     }
                     if (column < left)
                         cell.letter = LookupNCBIStdaaNumberFromCharacter(seq->m_sequenceString[slaveStart + column]);
@@ -254,7 +254,7 @@ static void FillInAlignmentData(const BlockMultipleAlignment *bma, PSIMsa *data)
                 else {  // slaveWidth > masterWidth
                     if (column == 0) {
                         left = (masterWidth + 1) / 2;   // +1 means left gets more in uneven split
-                        right = masterWidth - left;
+                        //right = masterWidth - left;
                     }
                     if (column < left)
                         cell.letter = LookupNCBIStdaaNumberFromCharacter(seq->m_sequenceString[slaveStart + column]);

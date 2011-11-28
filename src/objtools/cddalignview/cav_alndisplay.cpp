@@ -555,7 +555,7 @@ int AlignmentDisplay::DumpCondensed(CNcbiOstream& os, unsigned int options,
 
     // set up the titles and uids, figure out how much space any seqLoc string will take
     vector < string > titles(nDisplayRows), uids(doHTML ? GetNRows() : 0);
-    int maxTitleLength = 0, maxSeqLocStrLength = 0, leftMargin, decimalLength;
+    int maxTitleLength = 0, maxSeqLocStrLength = 0, /*leftMargin,*/ decimalLength;
     for (row=0; row<nDisplayRows; ++row) {
         if (options & CAV_ANNOT_BOTTOM) {
             alnRow = row;
@@ -584,7 +584,7 @@ int AlignmentDisplay::DumpCondensed(CNcbiOstream& os, unsigned int options,
 				uids[alnRow] = indexAlnLocToSeqLocRows[alnRow]->sequence->GetLabel();
         }
     }
-    leftMargin = maxTitleLength + maxSeqLocStrLength + 2;
+    //leftMargin = maxTitleLength + maxSeqLocStrLength + 2;
 
     // need to keep track of first, last seqLocs for each row in each paragraph;
     // find seqLoc of first residue >= firstCol

@@ -55,7 +55,7 @@ int	*gi;		/* Pointer to current row in segment pair table */
 int	ms,cs,ls;
 /*int	nrt;*/		/* Number of residue types */
 /*int	ntot;*/		/* Number of residues in the alignment */
-int	s0;
+/*int	s0;*/
 
 /*nrt=spc->nrt;*/
 /*ntot=0;*/
@@ -65,7 +65,7 @@ int	s0;
 
 /* Sum energies for segments and segment pairs */
 
-nsc=spe->nsc; g=0; ms=0; cs=0; ls=0; s0=0;
+nsc=spe->nsc; g=0; ms=0; cs=0; ls=0; /*s0=0;*/
 for(i=0;i<nsc;i++) {
 	
 	g+=spe->gs[i];

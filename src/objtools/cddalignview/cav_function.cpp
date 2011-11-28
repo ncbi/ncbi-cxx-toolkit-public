@@ -74,7 +74,7 @@ static int LoadASNFromIstream(CNcbiIstream& asnIstream,
     static const string
         asciiMimeFirstWord = "Ncbi-mime-asn1",
         asciiCDDFirstWord = "Cdd";
-    bool isMime = false, isCDD = false, isBinary = true;
+    bool isMime = false, /*isCDD = false,*/ isBinary = true;
 
     string firstWord;
     asnIstream >> firstWord;
@@ -82,7 +82,7 @@ static int LoadASNFromIstream(CNcbiIstream& asnIstream,
         isMime = true;
         isBinary = false;
     } else if (firstWord == asciiCDDFirstWord) {
-        isCDD = true;
+        //isCDD = true;
         isBinary = false;
     }
 

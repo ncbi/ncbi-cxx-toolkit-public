@@ -71,7 +71,7 @@ int     fnr;            /* Fixed contact counts for a residue type */
 int     nsc;            /* Number of threaded segments in core definition */
 int     s0;
 int     mn, mx;
-int     ntot, ms;
+int     ntot/*, ms*/;
 
 nrt=cxe->nrt;
 ndi=cxe->ndi;
@@ -162,7 +162,7 @@ for(i=0; i<ndi; i++) {
 
 /* Compute expected energy for template sequence motif and profile-profile term */
 
-ms=0; s0=0;
+/*ms=0;*/ s0=0;
 nrt=spc->nrt;
 
 for(i=0;i<nsc;i++){
