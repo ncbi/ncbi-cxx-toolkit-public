@@ -394,7 +394,8 @@ static void s_MakeBioseqs(const vector< CRef<CSeq_loc> >& seqlocs,
     bioseqs.clear();
     ITERATE(vector< CRef<CSeq_loc> >, it, seqlocs) {
 
-        CBioseq_Handle handle = scope->GetBioseqHandle(**it);
+        BOOST_REQUIRE((*it)->GetId());
+        CBioseq_Handle handle = scope->GetBioseqHandle(*(*it)->GetId());
         CBioseq* bseq = (CBioseq*)handle.GetCompleteBioseq().GetNonNullPointer();
         bioseqs.push_back(CRef<CBioseq>(bseq));
     }
@@ -436,7 +437,8 @@ BOOST_AUTO_TEST_CASE(TestSetQueries)
     s.SetInt().SetFrom(0);
     s.SetInt().SetTo(sequence::GetLength(id, m_Scope)-1);
     s.SetInt().SetId().Assign(id);
-    h = m_Scope->GetBioseqHandle(s);
+    BOOST_REQUIRE(s.GetId());
+    h = m_Scope->GetBioseqHandle(*s.GetId());
 
     //TODO: test for sequences as gis and mix.
     // Currently there is a problem in CSeqVector used in CSequence

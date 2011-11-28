@@ -173,7 +173,8 @@ void CSparseKmerCounts::Reset(const objects::CSeq_loc& seq,
                    "Unsupported SeqLoc encountered");
     }
 
-    objects::CSeqVector sv = scope.GetBioseqHandle(seq).GetSeqVector();
+    _ASSERT(seq.GetId());
+    objects::CSeqVector sv = scope.GetBioseqHandle(*seq.GetId()).GetSeqVector();
 
     unsigned int num_elements;
     unsigned int seq_len = sv.size();
@@ -512,7 +513,8 @@ void CBinaryKmerCounts::Reset(const objects::CSeq_loc& seq,
                    "Unsupported SeqLoc encountered");
     }
 
-    objects::CSeqVector sv = scope.GetBioseqHandle(seq).GetSeqVector();
+    _ASSERT(seq.GetId());
+    objects::CSeqVector sv = scope.GetBioseqHandle(*seq.GetId()).GetSeqVector();
 
     unsigned int num_elements;
     unsigned int seq_len = sv.size();
