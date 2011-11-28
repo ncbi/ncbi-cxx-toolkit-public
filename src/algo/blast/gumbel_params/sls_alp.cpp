@@ -469,12 +469,7 @@ bool alp::one_step_of_importance_sampling_without_weight_calculation(
         Int4 d_dim1_,
         Int4 d_dim2_)
 {
-        char previous_state_;
-
         char &state_=d_IS_state;
-
-        bool length1_change_;
-        bool length2_change_;
 
         alp_data *&las_object_=d_alp_data;
 
@@ -498,11 +493,6 @@ bool alp::one_step_of_importance_sampling_without_weight_calculation(
         };
 
 
-        previous_state_=state_;
-
-        length1_change_=false;
-        length2_change_=false;
-
         if(state_=='D')
         {
                 if(length1_==d_dim1_)
@@ -518,7 +508,6 @@ bool alp::one_step_of_importance_sampling_without_weight_calculation(
 
                 d_seqi_rglobal_[length1_]=random_AA1();
                 length1_++;
-                length1_change_=true;
 
                 state_=alp_data::random_long(
                         las_object_->ran2(),
@@ -544,7 +533,6 @@ bool alp::one_step_of_importance_sampling_without_weight_calculation(
 
                 d_seqj_rglobal_[length2_]=random_AA2();
                 length2_++;
-                length2_change_=true;
 
                 state_=alp_data::random_long(
                         las_object_->ran2(),
@@ -579,8 +567,6 @@ bool alp::one_step_of_importance_sampling_without_weight_calculation(
 
                 length1_++;
                 length2_++;
-                length1_change_=true;
-                length2_change_=true;
 
                 state_=alp_data::random_long(
                         las_object_->ran2(),

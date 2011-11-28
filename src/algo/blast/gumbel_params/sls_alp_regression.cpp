@@ -514,9 +514,7 @@ bool &res_was_calculated_)
 
         double func_opt=DBL_MAX;
         double beta0_opt = 0.0;
-        double beta1_opt=beta1_;
         double beta0_opt_error = 0.0;
-        double beta1_opt_error=beta1_error_;
 
         Int4 k1,k2;
 
@@ -550,9 +548,7 @@ bool &res_was_calculated_)
                         {
                                 func_opt=tmp;
                                 beta0_opt=beta0_opt_tmp;
-                                beta1_opt=beta1_opt_tmp;
                                 beta0_opt_error=beta0_opt_error_tmp;
-                                beta1_opt_error=beta1_opt_error_tmp;
                                 k1_opt=k1;
                                 k2_opt=k2;
                                 res_was_calculated_=true;
