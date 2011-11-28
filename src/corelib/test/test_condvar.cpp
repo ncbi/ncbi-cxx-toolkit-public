@@ -265,8 +265,10 @@ void CTestCondVarApp::Consume(int idx)
         }
 #endif
 
+#if USE_TEST_OUTPUT
         size_t Item = m_Buffer[m_QueueStartOffset];
         __TEST_OUTPUT(" consumed: " << Item);
+#endif
 
         --m_QueueSize;
         ++m_QueueStartOffset;
