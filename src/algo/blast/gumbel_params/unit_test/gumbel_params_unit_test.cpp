@@ -33,6 +33,7 @@
 */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbicfg.h>
 
 #include <algo/blast/gumbel_params/general_score_matrix.hpp>
 #include <algo/blast/gumbel_params/gumbel_params.hpp>
@@ -129,6 +130,36 @@ static void s_ReadRandParams(const string& filename,
     params->SetTotalReNumberKilling(param_val);
 }
 
+static CRef<CGumbelParamsResult>
+s_CalcGumbelParams(CRef<CGumbelParamsOptions> opts, double time,
+                   CRef<CGumbelParamsRandDiagnostics> params =
+                   CRef<CGumbelParamsRandDiagnostics>())
+{
+    double mult = NCBI_GetCheckTimeoutMult();
+    opts->SetMaxCalcTime(time * mult);
+    BOOST_REQUIRE(opts->Validate());
+    CRef<CGumbelParamsCalc> calc;
+    if (params.Empty()) {
+        calc.Reset(new CGumbelParamsCalc(opts));
+    }
+    else {
+        calc.Reset(new CGumbelParamsCalc(opts, params));
+    }
+
+    try {
+        calc->Run();
+    }
+    catch (CGumbelParamsException& e) {
+        if (e.GetErrCode() == CGumbelParamsException::eLimitsExceeded) {
+            BOOST_REQUIRE_MESSAGE(false, (string)"Time out with threshold "
+                                  + NStr::DoubleToString(time) + "s and "
+                                  "multiplier " + NStr::DoubleToString(mult));
+        }
+    }
+
+    return calc->GetResult();
+}
+
 
 BOOST_AUTO_TEST_CASE(TestGumbelParamsOptionsFactory)
 {
@@ -137,10 +168,8 @@ BOOST_AUTO_TEST_CASE(TestGumbelParamsOptionsFactory)
     CRef<CGumbelParamsOptions> 
         opts = CGumbelParamsOptionsFactory::CreateStandard20AAOptions();
     // make sure that the unit test does not fail because time limit is exceeded
-    opts->SetMaxCalcTime(2.0);
-    BOOST_REQUIRE(opts->Validate());
-    CRef<CGumbelParamsCalc> gp_calc(new CGumbelParamsCalc(opts));
-    BOOST_REQUIRE(!gp_calc->Run().Empty());
+    CRef<CGumbelParamsResult> result = s_CalcGumbelParams(opts, 2.0);
+    BOOST_REQUIRE(!result.Empty());
 
     opts = CGumbelParamsOptionsFactory::CreateBasicOptions();
     CRef<CGeneralScoreMatrix> smat = s_ReadScoreMatrix("data/blosum62.txt");
@@ -150,10 +179,9 @@ BOOST_AUTO_TEST_CASE(TestGumbelParamsOptionsFactory)
     opts->SetSeq1ResidueProbs(probs);
     opts->SetSeq2ResidueProbs(probs);
     // make sure that the unit test does not fail because time limit is exceeded
-    opts->SetMaxCalcTime(2.0);
-    BOOST_REQUIRE(opts->Validate());
-    gp_calc.Reset(new CGumbelParamsCalc(opts));
-    BOOST_REQUIRE(!gp_calc->Run().Empty());
+
+    result = s_CalcGumbelParams(opts, 2.0);
+    BOOST_REQUIRE(!result.Empty());
 }
 
 // Checks whether CGumbelParamsOptions::Validate() throws or reports warning
@@ -289,11 +317,7 @@ BOOST_AUTO_TEST_CASE(TestValidateScorePValuesOptions)
         gp_opts = CGumbelParamsOptionsFactory::CreateStandard20AAOptions();
 
     // make sure that the unit test does not fail because time limit is exceeded
-    gp_opts->SetMaxCalcTime(2.0);
-
-    BOOST_REQUIRE(gp_opts->Validate());
-    CGumbelParamsCalc gp_calc(gp_opts);
-    CRef<CGumbelParamsResult> gp_result = gp_calc.Run();
+    CRef<CGumbelParamsResult> gp_result = s_CalcGumbelParams(gp_opts, 2.0);
     BOOST_REQUIRE(!gp_result.Empty());
 
     // Reasonable options pass validation
@@ -455,8 +479,7 @@ BOOST_AUTO_TEST_CASE(TestGumbelParamsAndPvaluesCalcForGaplessAlignment)
     const int seq_len = 200;
     
     // calculate Gumbel parameters
-    CGumbelParamsCalc gp_calc(opts);
-    CRef<CGumbelParamsResult> result = gp_calc.Run();
+    CRef<CGumbelParamsResult> result = s_CalcGumbelParams(opts, 2.0);
 
     // Template input parameters always produce result
     BOOST_REQUIRE(!result.Empty());
@@ -531,8 +554,7 @@ BOOST_AUTO_TEST_CASE(TestGumbelParamsAndPvaluesCalcForGappedAlignment)
 
         s_ReadRandParams(param_file, params);
 
-        CGumbelParamsCalc gp_calc(opts, params);
-        CRef<CGumbelParamsResult> result = gp_calc.Run();
+        CRef<CGumbelParamsResult> result = s_CalcGumbelParams(opts, 2.0, params);
 
         // Template input parameters always produce result
         BOOST_REQUIRE(!result.Empty());
