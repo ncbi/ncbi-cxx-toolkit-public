@@ -186,10 +186,13 @@ test/bad_test.agp:235:chrC	201	300	3	W	AADB02037646.1	1	100	-
 test/bad_test.agp:236:
 	ERROR, line skipped: empty line
 
+test/alt_bad_test.agp:2:scaffold_0	2107	4201	2	N	2095	fragment	yes
+	WARNING: assuming AGP version 1.1 since linkage evidence (column 9) is empty
+
 test/alt_bad_test.agp:20:scaffold_0	62232	62557	20	N	326	fragment	yes
 	WARNING: gap at the end of object scaffold_0
 
-50 errors, 27 warnings; 13 not printed.
+50 errors, 28 warnings; 13 not printed.
   Count Code  Description
       2  e01  expecting 9 tab-separated columns
       8  e02  column X is empty
@@ -217,7 +220,7 @@ test/alt_bad_test.agp:20:scaffold_0	62232	62557	20	N	326	fragment	yes
      10  w41  gap line missing column 9 (null)
       2  w45  component_id looks like a WGS accession, component_type is not W
          (Use -g to print lines with WGS component_id/component_type mismatch.)
-      1  w58  assuming AGP version X
+      2  w58  assuming AGP version X
 
 NOTE: 37 invalid lines were skipped (not subjected to all the checks, not included in most of the counts below).
 

@@ -1,6 +1,11 @@
 ===== Reading Scaffold from component AGP =====
+./test/scaffold_from_contig_WGS.agp2.0:
+	WARNING: ignoring AGP version comment - version already set to 2.0
 
-No errors, no warnings.
+No errors, 1 warning.
+  Count Code  Description
+      1  w62  ignoring AGP version comment - version already set to X
+
 
 Objects                : 23
 - with single component: 13
@@ -28,8 +33,13 @@ Component names             :  95
 #Comment line count    : 7
 
 ===== Reading Chromosome from scaffold AGP =====
+./test/chr_from_scaffold_WGS.agp2.0:
+	WARNING: ignoring AGP version comment - version already set to 2.0
 
-No errors, no warnings.
+No errors, 1 warning.
+  Count Code  Description
+      1  w62  ignoring AGP version comment - version already set to X
+
 
 Objects                :  1
 - with single component:  0
@@ -57,16 +67,21 @@ Component names      :  23
   EG1_scaffold[1..23]:  23
 
 #Comment line count    : 9
+./test/chr_from_contig_BAC.agp2.0_bad_ver:
+	WARNING: AGP version comment is invalid, expecting ##agp-version 1.1 or ##agp-version 2.0
 
-./test/chr_from_contig_BAC.agp2.0:10:chr37	1	8000000	1	N	8000000	short_arm	no	na
-./test/chr_from_contig_BAC.agp2.0:11:chr37	8000001	8050000	2	N	50000	heterochromatin	no	na
+./test/chr_from_contig_BAC.agp2.0_bad_ver:10:chr37	1	8000000	1	N	8000000	short_arm	no	na
+	WARNING: assuming AGP version 2.0 since linkage evidence (column 9) is NOT empty
+./test/chr_from_contig_BAC.agp2.0_bad_ver:11:chr37	8000001	8050000	2	N	50000	heterochromatin	no	na
 	WARNING: two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
-./test/chr_from_contig_BAC.agp2.0:12:chr37	8050001	9050000	3	N	1000000	centromere	no	na
+./test/chr_from_contig_BAC.agp2.0_bad_ver:12:chr37	8050001	9050000	3	N	1000000	centromere	no	na
 	WARNING: two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
 
-No errors, 2 warnings.
+No errors, 4 warnings.
   Count Code  Description
       2  w33  two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
+      1  w58  assuming AGP version X
+      1  w61  AGP version comment is invalid, expecting ##agp-version 1.1 or ##agp-version 2.0
 
 
 Objects                :   2

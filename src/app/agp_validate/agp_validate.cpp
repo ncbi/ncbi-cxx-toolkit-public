@@ -192,7 +192,7 @@ void CAgpValidateApplication::Init(void)
   arg_desc->AddFlag("list", "all possible errors and warnings");
 
   // file list for file processing
-  arg_desc->AddExtra(0, 1000, "files to be processed",
+  arg_desc->AddExtra(0, 10000, "files to be processed",
                       CArgDescriptions::eString
                       //CArgDescriptions::eInputFile
                       );
@@ -341,7 +341,6 @@ int CAgpValidateApplication::Run(void)
       cerr << "Error -- invalid AGP version after -v. Use 1.1 or 2.0.\n";
       exit(1);
     }
-    m_reader.SetVersion(m_agp_version);
   }
   else {
     m_agp_version=eAgpVersion_auto; // save for CAgpRow; it is default for CAgpValidateReader
@@ -445,8 +444,9 @@ void CAgpValidateApplication::x_ValidateFile(
   CNcbiIstream& istr)
 {
 
-  if( 0==m_ValidationType & VT_Acc) {
+  if( 0==(m_ValidationType&VT_Acc) ) {
     // CAgpReader
+    m_reader.SetVersion(m_agp_version);
     m_reader.ReadStream(istr); // , false
   }
   else {
