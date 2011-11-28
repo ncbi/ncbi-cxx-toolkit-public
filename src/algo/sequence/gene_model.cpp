@@ -1302,7 +1302,7 @@ SImplementation::x_CreateCdsFeature(const CSeq_feat* cdregion_on_mrna,
                     int cds_start = cdregion_on_mrna->GetLocation().GetTotalRange().GetFrom();
                     if (cds_start >= 3) {
                         CBioseq_Handle handle =
-                            m_scope->GetBioseqHandle(cdregion_on_mrna->GetLocation());
+                            m_scope->GetBioseqHandle(*cdregion_on_mrna->GetLocation().GetId());
                         string strprot;
                         if (handle) {
                             CSeqVector vec(handle, CBioseq_Handle::eCoding_Iupac);
@@ -1726,7 +1726,7 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
         /// we trust only featu-id xrefs here
         ///
         if (feat.IsSetXref()) {
-            CBioseq_Handle bsh = m_scope->GetBioseqHandle(feat.GetLocation());
+            CBioseq_Handle bsh = m_scope->GetBioseqHandle(*feat.GetLocation().GetId());
             const CTSE_Handle& tse = bsh.GetTSE_Handle();
 
             ITERATE (CSeq_feat::TXref, it, feat.GetXref()) {
@@ -1805,7 +1805,7 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
     bool has_mismatches = false;
     bool has_gaps = false;
 
-    CBioseq_Handle prod_bsh    = m_scope->GetBioseqHandle(feat.GetProduct());
+    CBioseq_Handle prod_bsh    = m_scope->GetBioseqHandle(*feat.GetProduct().GetId());
     if ( !prod_bsh ) {
         NCBI_THROW(CException, eUnknown,
                    "failed to retrieve bioseq for "
@@ -1944,7 +1944,7 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
         /// we trust only featu-id xrefs here
         ///
         if (feat.IsSetXref()) {
-            CBioseq_Handle bsh = m_scope->GetBioseqHandle(feat.GetLocation());
+            CBioseq_Handle bsh = m_scope->GetBioseqHandle(*feat.GetLocation().GetId());
             const CTSE_Handle& tse = bsh.GetTSE_Handle();
 
             ITERATE (CSeq_feat::TXref, it, feat.GetXref()) {
@@ -2170,7 +2170,7 @@ void CFeatureGenerator::SImplementation::x_SetExceptText(
 
     if ( !except_text.empty() ) {
         /// Check whether this is a Refseq product
-        CBioseq_Handle bsh = m_scope->GetBioseqHandle(feat.GetProduct());
+        CBioseq_Handle bsh = m_scope->GetBioseqHandle(*feat.GetProduct().GetId());
         ITERATE(CBioseq_Handle::TId, it, bsh.GetId())
         if(it->GetSeqId()->IsOther() &&
            it->GetSeqId()->GetOther().GetAccession()[0] == 'N' &&
