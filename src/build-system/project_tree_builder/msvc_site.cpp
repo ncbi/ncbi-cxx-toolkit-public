@@ -710,7 +710,7 @@ bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent) const
     if (li != m_AllLibInfo.end()) {
         return lib_info.m_good;
     }
-
+    silent = false;
 
     if ( !lib_info.valid /*|| lib_info.IsEmpty()*/ )
         return false;
