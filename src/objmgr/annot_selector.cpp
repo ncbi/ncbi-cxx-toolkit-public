@@ -171,6 +171,7 @@ SAnnotSelector& SAnnotSelector::operator=(const SAnnotSelector& sel)
         else {
             m_SourceLoc.reset();
         }
+        m_IgnoreFarLocationsForSorting = sel.m_IgnoreFarLocationsForSorting;
     }
     return *this;
 }

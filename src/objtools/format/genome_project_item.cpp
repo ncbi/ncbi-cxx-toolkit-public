@@ -49,8 +49,7 @@ BEGIN_SCOPE(objects)
 
 
 CGenomeProjectItem::CGenomeProjectItem(CBioseqContext& ctx) :
-    CFlatItem(&ctx),
-    m_ProjectNumber(0)
+    CFlatItem(&ctx)
 {
     x_GatherInfo(ctx);
 }
@@ -64,8 +63,8 @@ void CGenomeProjectItem::Format
     formatter.FormatGenomeProject(*this, text_os);
 }
 
-int CGenomeProjectItem::GetProjectNumber() const {
-    return m_ProjectNumber;
+const vector<int> & CGenomeProjectItem::GetProjectNumbers() const {
+    return m_ProjectNumbers;
 }
 
 const CGenomeProjectItem::TDBLinkLineVec & CGenomeProjectItem::GetDBLinkLines() const {
@@ -127,7 +126,7 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
             if ( field.IsSetLabel()  &&  field.GetLabel().IsStr() ) {
                 const string& label = field.GetLabel().GetStr();
                 if ( NStr::EqualNocase(label, "ProjectID")) {
-                    m_ProjectNumber = field.GetData().GetInt();
+                    m_ProjectNumbers.push_back( field.GetData().GetInt() );
                 }
             }
         }

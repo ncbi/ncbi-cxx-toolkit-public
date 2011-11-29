@@ -61,14 +61,14 @@ public:
     CGenomeProjectItem(CBioseqContext& ctx);
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
     
-    int GetProjectNumber(void) const;
+    const vector<int> & GetProjectNumbers(void) const;
     const TDBLinkLineVec & GetDBLinkLines(void) const;
 
 private:
     void x_GatherInfo(CBioseqContext& ctx);
 
     // data
-    int m_ProjectNumber;
+    vector<int> m_ProjectNumbers;
     TDBLinkLineVec m_DBLinkLines;
 };
 

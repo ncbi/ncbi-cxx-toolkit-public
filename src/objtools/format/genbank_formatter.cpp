@@ -371,18 +371,25 @@ void CGenbankFormatter::FormatGenomeProject(
     list<string> l;
     const char *prefix = "DBLINK";
 
-    if (0 != gp.GetProjectNumber()) {
+    if ( ! gp.GetProjectNumbers().empty() ) {
 
         CNcbiOstrstream project_line;
         project_line << "Project: ";
 
-        const int proj_num = gp.GetProjectNumber(); 
         const bool is_html = GetContext().GetConfig().DoHTML();
-        if( is_html ) {
-            project_line << "<a href=\"" << strLinkBaseGenomePrj << proj_num << "\">" << 
-                proj_num << "</a>";
-        } else {
-            project_line << proj_num;
+        ITERATE( vector<int>, proj_num_iter, gp.GetProjectNumbers() ) {
+            // put ", " before all but first
+            if( proj_num_iter != gp.GetProjectNumbers().begin() ) {
+                project_line << ", ";
+            }
+
+            const int proj_num = *proj_num_iter;
+            if( is_html ) {
+                project_line << "<a href=\"" << strLinkBaseGenomePrj << proj_num << "\">" << 
+                    proj_num << "</a>";
+            } else {
+                project_line << proj_num;
+            }
         }
 
         string project_line_str = CNcbiOstrstreamToString(project_line);
