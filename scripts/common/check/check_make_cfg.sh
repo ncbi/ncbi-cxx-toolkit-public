@@ -442,6 +442,12 @@ RunTest() {
       count_absent=\`expr \$count_absent + 1\`
       test -n "\$NCBI_AUTOMATED_BUILD" && echo "SKP" >> "\$x_test_rep"
       
+   elif grep NCBI_UNITTEST_TIMEOUTS_BUT_NO_ERRORS \$x_test_out >/dev/null; then
+      echo "TO  --  \$x_cmd"
+      echo "TO  --  \$x_cmd" >> \$res_log
+      count_timeout=\`expr \$count_timeout + 1\`
+      test -n "\$NCBI_AUTOMATED_BUILD" && echo "TO" >> "\$x_test_rep"
+
    elif egrep "Maximum execution .* is exceeded" \$x_test_out >/dev/null; then
       echo "TO  --  \$x_cmd     (\$exec_time)"
       echo "TO  --  \$x_cmd     (\$exec_time)" >> \$res_log

@@ -42,6 +42,7 @@
 #ifndef BOOST_TEST_NO_LIB
 #  define BOOST_TEST_NO_LIB
 #endif
+#define BOOST_TEST_NO_MAIN
 #include <corelib/test_boost.hpp>
 
 #include <boost/preprocessor/cat.hpp>
@@ -234,6 +235,9 @@ public:
 
     /// Method called when some exception was caught during execution of unit
     virtual void exception_caught(boost::execution_exception const& ex);
+
+    virtual void test_unit_aborted(but::test_unit const& tu);
+    virtual void assertion_result(bool passed);
 };
 
 
@@ -415,6 +419,8 @@ public:
     void AdjustTestTimeout(but::test_unit* tu);
     /// Mark test case as failed due to hit of the timeout
     void SetTestTimedOut(but::test_case* tc);
+    /// Register the fact of test failure
+    void SetTestErrored(but::test_case* tc);
     /// Check if given test is marked as requiring fixing in the future
     bool IsTestToFix(const but::test_unit* tu);
 
@@ -428,6 +434,11 @@ public:
     but::test_case* GetDummyTest(void);
     /// Check if user initialization functions failed
     bool IsInitFailed(void);
+
+    /// Check if there were any test errors
+    bool HasTestErrors(void);
+    /// Check if there were any timeouted tests
+    bool HasTestTimeouts(void);
 
 private:
     typedef list<TNcbiTestUserFunction> TUserFuncsList;
@@ -525,6 +536,10 @@ private:
     ///
     /// @sa AdjustTestTimeout()
     unsigned int              m_CurUnitTimeout;
+    /// Flag showing if there were some test errors
+    bool                      m_HasTestErrors;
+    /// Flag showing if there were some timeouted tests
+    bool                      m_HasTestTimeouts;
 };
 
 
@@ -802,7 +817,9 @@ CNcbiTestApplication::CNcbiTestApplication(void)
       m_DummyTest(NULL),
       m_Timeout  (0),
       m_TimeMult (1),
-      m_Timer    (CStopWatch::eStart)
+      m_Timer    (CStopWatch::eStart),
+      m_HasTestErrors(false),
+      m_HasTestTimeouts(false)
 {
     m_Reporter = new CNcbiBoostReporter();
     m_Logger   = new CNcbiBoostLogger();
@@ -1386,6 +1403,14 @@ CNcbiTestApplication::SetTestTimedOut(but::test_case* tc)
     if (tc->p_timeout.get() == m_CurUnitTimeout) {
         m_TimedOutTests.insert(tc);
     }
+    m_HasTestTimeouts = true;
+}
+
+inline void
+CNcbiTestApplication::SetTestErrored(but::test_case* tc)
+{
+    if (m_TimedOutTests.find(tc) == m_TimedOutTests.end())
+        m_HasTestErrors = true;
 }
 
 inline void
@@ -1535,11 +1560,13 @@ CNcbiTestApplication::x_CallUserFuncs(ETestUserFuncType func_type)
         }
         catch (CException& e) {
             ERR_POST_X(1, "Exception in " << s_GetUserFuncName(func_type) << ": " << e);
-            return false;
+            throw;
+            //return false;
         }
         catch (exception& e) {
             ERR_POST_X(1, "Exception in " << s_GetUserFuncName(func_type) << ": " << e.what());
-            return false;
+            throw;
+            //return false;
         }
     }
 
@@ -1575,7 +1602,7 @@ CNcbiTestApplication::x_GetEnabledTestsCount(void)
     return tcc.p_count;
 }
 
-inline but::test_suite*
+but::test_suite*
 CNcbiTestApplication::InitTestFramework(int argc, char* argv[])
 {
     // Do not detect memory leaks using msvcrt - this information is useless
@@ -1649,6 +1676,18 @@ CNcbiTestApplication::InitTestFramework(int argc, char* argv[])
     return NULL;
 }
 
+inline bool
+CNcbiTestApplication::HasTestErrors(void)
+{
+    return m_HasTestErrors;
+}
+
+inline bool
+CNcbiTestApplication::HasTestTimeouts(void)
+{
+    return m_HasTestTimeouts;
+}
+
 void
 CNcbiTestsCollector::visit(but::test_case const& test)
 {
@@ -1714,6 +1753,25 @@ CNcbiTestsObserver::exception_caught(boost::execution_exception const& ex)
     if (ex.code() == boost::execution_exception::timeout_error) {
         s_GetTestApp().SetTestTimedOut(const_cast<but::test_case*>(
                                        &but::framework::current_test_case()));
+    }
+    else {
+        s_GetTestApp().SetTestErrored(const_cast<but::test_case*>(
+                                      &but::framework::current_test_case()));
+    }
+}
+
+void
+CNcbiTestsObserver::test_unit_aborted(but::test_unit const& tu)
+{
+    s_GetTestApp().SetTestErrored((but::test_case*)&tu);
+}
+
+void
+CNcbiTestsObserver::assertion_result(bool passed)
+{
+    if (!passed) {
+        s_GetTestApp().SetTestErrored(const_cast<but::test_case*>(
+                                      &but::framework::current_test_case()));
     }
 }
 
@@ -1917,9 +1975,72 @@ NcbiTestGetUnit(CTempString test_name)
 END_NCBI_SCOPE
 
 
+using namespace but;
+
 /// Global initialization function called from Boost framework
-but::test_suite*
+test_suite*
 init_unit_test_suite(int argc, char* argv[])
 {
     return NCBI_NS_NCBI::s_GetTestApp().InitTestFramework(argc, argv);
+}
+
+// This main() is mostly a copy from Boost's unit_test_main.ipp
+int
+main(int argc, char* argv[])
+{
+    int result = boost::exit_success;
+
+    try {
+        framework::init( &init_unit_test_suite, argc, argv );
+
+        if( !runtime_config::test_to_run().is_empty() ) {
+            test_case_filter filter( runtime_config::test_to_run() );
+
+            traverse_test_tree( framework::master_test_suite().p_id, filter );
+        }
+
+        framework::run();
+
+        // Let's try to make report in case of any error after all catches.
+        //results_reporter::make_report();
+
+        if (!runtime_config::no_result_code()) {
+            result = results_collector.results( framework::master_test_suite().p_id ).result_code();
+            if (!NCBI_NS_NCBI::s_GetTestApp().HasTestErrors()
+                &&  NCBI_NS_NCBI::s_GetTestApp().HasTestTimeouts())
+            {
+                // This should certainly go to the output. So we can use only
+                // printf, nothing else.
+                printf("There were no test failures, only timeouts.\n"
+                       " (for autobuild scripts: NCBI_UNITTEST_TIMEOUTS_BUT_NO_ERRORS)\n");
+            }
+        }
+    }
+    catch( framework::nothing_to_test const& ) {
+        result = boost::exit_success;
+    }
+    catch( framework::internal_error const& ex ) {
+        results_reporter::get_stream() << "Boost.Test framework internal error: " << ex.what() << std::endl;
+        
+        result = boost::exit_exception_failure;
+    }
+    catch( framework::setup_error const& ex ) {
+        results_reporter::get_stream() << "Test setup error: " << ex.what() << std::endl;
+        
+        result = boost::exit_exception_failure;
+    }
+    catch( std::exception const& ex ) {
+        results_reporter::get_stream() << "Test framework error: " << ex.what() << std::endl;
+
+        result = boost::exit_exception_failure;
+    }
+    catch( ... ) {
+        results_reporter::get_stream() << "Boost.Test framework internal error: unknown reason" << std::endl;
+        
+        result = boost::exit_exception_failure;
+    }
+
+    results_reporter::make_report();
+
+    return result;
 }
