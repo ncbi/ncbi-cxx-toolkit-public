@@ -930,7 +930,7 @@ void CShowBlastDefline::x_InitDeflineTable(void)
                 if(m_MaxTotalScoreLen < sci->total_bit_string.size()){
                     m_MaxTotalScoreLen = sci->total_bit_string.size();
                 }
-                percent_identity = 100*sci->match/sci->align_length;
+                percent_identity = CAlignFormatUtil::GetPercentMatch(sci->match,sci->align_length);
                 if(m_MaxPercentIdentityLen < NStr::IntToString(percent_identity).size()) {
                     m_MaxPercentIdentityLen = NStr::IntToString(percent_identity).size();
                 }
@@ -963,7 +963,7 @@ void CShowBlastDefline::x_InitDeflineTable(void)
         if(m_MaxTotalScoreLen < sci->total_bit_string.size()){
             m_MaxScoreLen = sci->total_bit_string.size();
         }
-        percent_identity = 100*sci->match/sci->align_length;
+        percent_identity = CAlignFormatUtil::GetPercentMatch(sci->match,sci->align_length);
         if(m_MaxPercentIdentityLen < NStr::IntToString(percent_identity).size()) {
             m_MaxPercentIdentityLen =  NStr::IntToString(percent_identity).size();
         }
@@ -1247,8 +1247,8 @@ void CShowBlastDefline::x_DisplayDeflineTableBody(CNcbiOstream & out)
             out << kTwoSpaceMargin << (*iter)->evalue_string;
             CAlignFormatUtil::AddSpace(out, m_MaxEvalueLen - (*iter)->evalue_string.size());
         }
-        if(m_Option & eShowPercentIdent){
-            percent_identity = 100*(*iter)->match/(*iter)->align_length;
+        if(m_Option & eShowPercentIdent){            
+            percent_identity = CAlignFormatUtil::GetPercentMatch((*iter)->match,(*iter)->align_length);
             if (m_Option & eHtml) {        
                 out << "<td>" << percent_identity << "%</td>";
             }
@@ -1566,6 +1566,7 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_id",deflId);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_rid",m_Rid);    
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_hspnum",iter->hspNum); 
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_blast_rank",iter->blast_rank); 
 	/*****************This block of code is for future use with AJAX end***************************/ 
 
     defLine = CAlignFormatUtil::MapTemplate(defLine,"total_bit_string",iter->total_bit_string);
@@ -1577,7 +1578,7 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     defLine = CAlignFormatUtil::MapTemplate(defLine,"evalue_string",iter->evalue_string);
 
     if(m_Option & eShowPercentIdent){
-        int percent_identity = 100*iter->match/iter->align_length;                                
+        int percent_identity = CAlignFormatUtil::GetPercentMatch(iter->match, iter->align_length);
         defLine = CAlignFormatUtil::MapTemplate(defLine,"percent_identity",NStr::IntToString(percent_identity));
     }
         
