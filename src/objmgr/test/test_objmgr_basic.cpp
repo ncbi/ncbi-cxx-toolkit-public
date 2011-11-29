@@ -273,7 +273,7 @@ NcbiCout << "1.1.3 Handling Data loader==========================" << NcbiEndl;
                 int v = rand()%10;
                 string accv = acc+"."+NStr::IntToString(v);
                 //NcbiCout<<"IsIncludedNamedAnnotAccession("<<accv<<")"<<NcbiEndl;
-                if ( !vv || !vv->empty() && !vv->count(v) ) {
+                if ( !vv || (!vv->empty() && !vv->count(v)) ) {
                     assert(!sel.IsIncludedNamedAnnotAccession(accv));
                 }
                 else {
