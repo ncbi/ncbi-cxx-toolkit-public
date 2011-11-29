@@ -99,7 +99,7 @@ CIgAnnotationInfo::CIgAnnotationInfo(CConstRef<CIgBlastOptions> &ig_opt)
     }
 
     // read chain type info and frame info from aux files
-    fn = ig_opt->m_ChainType;
+    fn = ig_opt->m_AuxFilename;
     s_ReadLinesFromFile(fn, lines);
     if (lines.size() == 0) {
         ERR_POST(Warning << "Auxilary data file could not be found");
@@ -108,10 +108,7 @@ CIgAnnotationInfo::CIgAnnotationInfo(CConstRef<CIgBlastOptions> &ig_opt)
         vector<string> tokens;
         NStr::Tokenize(*l, " \t\n\r", tokens, NStr::eMergeDelims);
         if (!tokens.empty()) {
-            if (tokens[1] != "N/A") {
-                m_ChainType[tokens[0]] = tokens[1];
-            }
-            int frame = NStr::StringToInt(tokens[2]);
+            int frame = NStr::StringToInt(tokens[1]);
             if (frame != -1) {
                 m_FrameOffset[tokens[0]] = frame;
             }
@@ -134,6 +131,7 @@ CIgBlast::Run()
         x_SetupVSearch(qf, opts_hndl);
         CLocalBlast blast(qf, opts_hndl, m_IgOptions->m_Db[0]);
         results[0] = blast.Run();
+        x_ConvertResultType(results[0]);
         s_SortResultsByEvalue(results[0]);
         x_AnnotateV(results[0], annots);
     }
@@ -142,6 +140,8 @@ CIgBlast::Run()
     {
         CLocalBlast blast(qf, opts_hndl, m_IgOptions->m_Db[3]);
         results[3] = blast.Run();
+        x_ConvertResultType(results[3]);
+        // TODO the number of results may be different for 0 and 3
         x_AnnotateDomain(results[0], results[3], annots);
     }
 
@@ -152,6 +152,7 @@ CIgBlast::Run()
         for (int gene = 1; gene < num_genes; ++gene) {
             CLocalBlast blast(qf, opts_hndl, m_IgOptions->m_Db[gene]);
             results[gene] = blast.Run();
+            x_ConvertResultType(results[gene]);
         }
         x_AnnotateDJ(results[1], results[2], annots);
     }
@@ -184,11 +185,12 @@ CIgBlast::Run()
         result = blast->GetResultSet();
     }
     if (! skipped) {
+        x_ConvertResultType(result);
         s_SortResultsByEvalue(result);
         s_AppendResults(result, -1, -1, final_results);
     }
 
-    /*** set the chain type infor */
+    /*** set chain type info */
     x_SetChainType(final_results, annots);
 
     /*** attach annotation info back to the results */
@@ -446,16 +448,6 @@ void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
             CSeq_align_set::Tdata::iterator it = align_list.begin();
             while (it != align_list.end()) {
                 bool keep = true;
-                /* chain type test */
-                if (q_ct != "N/A") {
-                    string sid = (*it)->GetSeq_id(1).AsFastaString();
-                    if (sid.substr(0, 4) == "lcl|") sid = sid.substr(4, sid.length());
-                    string sct = m_AnnotationInfo.GetChainType(sid);
-                    if (sct != "N/A") {
-                        if (q_ct == "VH" && sct != "JH" ||
-                            q_ct != "VH" && sct == "JH") keep = false;
-                    }
-                }
                 /* strand test */
                 if ((*it)->GetSeqStrand(0) != q_st) keep = false;
                 /* subject start test */
@@ -557,7 +549,7 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
     ITERATE(CSearchResultSet, result, *dm_results) {
 
         CIgAnnotation *annot = &*(annots[iq]);
-        annot->m_ChainType.push_back("NON");  // Assuming non-ig sequence first
+        annot->m_ChainType[0] = "NON";  // Assuming non-ig sequence first
 
         if ((*result)->HasAlignments() && (*gl_results)[iq].HasAlignments()) {
 
@@ -723,8 +715,8 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
     }
 };
 
-void CIgBlast::x_SetChainType(CRef<CSearchResultSet>  &results,
-                              vector<CRef <CIgAnnotation> > &annots) 
+void CIgBlast::x_SetChainType(CRef<CSearchResultSet> &results,
+                              vector<CRef <CIgAnnotation> > &annots)
 {
     int iq = 0;
     ITERATE(CSearchResultSet, result, *results) {
@@ -732,12 +724,20 @@ void CIgBlast::x_SetChainType(CRef<CSearchResultSet>  &results,
         CIgAnnotation *annot = &*(annots[iq++]);
 
         if ((*result)->HasAlignments()) {
-
-            const CSeq_align_set::Tdata & align_list = (*result)->GetSeqAlign()->Get();
-            ITERATE(CSeq_align_set::Tdata, it, align_list) {
-                string sid = (*it)->GetSeq_id(1).AsFastaString();
-                if (sid.substr(0, 4) == "lcl|") sid = sid.substr(4, sid.length());
-                annot->m_ChainType.push_back(m_AnnotationInfo.GetChainType(sid));
+            int num_aligns = (*result)->GetSeqAlign()->Size();
+            CIgBlastResults *ig_result = dynamic_cast<CIgBlastResults *>
+                                     (const_cast<CSearchResults *>(&**result));
+            for (int i=0; i<ig_result->m_NumActualV; ++i, --num_aligns) {
+                 annot->m_ChainType.push_back("V");
+            }
+            for (int i=0; i<ig_result->m_NumActualD; ++i, --num_aligns) {
+                 annot->m_ChainType.push_back("D");
+            }
+            for (int i=0; i<ig_result->m_NumActualJ; ++i, --num_aligns) {
+                 annot->m_ChainType.push_back("J");
+            }
+            for (int i=0; i<num_aligns; ++i) {
+                 annot->m_ChainType.push_back("N/A");
             }
         }
     }
@@ -745,9 +745,6 @@ void CIgBlast::x_SetChainType(CRef<CSearchResultSet>  &results,
 
 void CIgBlast::s_SortResultsByEvalue(CRef<CSearchResultSet>& results)
 {
-    if (results->GetResultType() == eSequenceComparison) {
-        //TODO convert bl2seq align_set to db align_set
-    }
     ITERATE(CSearchResultSet, result, *results) {
         if ((*result)->HasAlignments()) {
             CRef<CSeq_align_set> align(const_cast<CSeq_align_set *>
@@ -758,7 +755,51 @@ void CIgBlast::s_SortResultsByEvalue(CRef<CSearchResultSet>& results)
     }
 };
 
-            // keep only the first num_alignments
+// convert sequencecomparison to database mode
+void CIgBlast::x_ConvertResultType(CRef<CSearchResultSet> &result) 
+{
+    if (result->GetResultType() != eSequenceComparison) {
+        return;
+    }
+
+    int num_queries = m_Query->Size();
+    int num_results = result->GetNumResults();
+    int ir = 0;
+    CSearchResultSet *retv = new CSearchResultSet();
+
+    for (int iq = 0; iq< num_queries && ir< num_results; ++iq) {
+
+        CSearchResults &res = (*result)[ir++];
+        CRef<CBlastAncillaryData> ancillary = res.GetAncillaryData();
+        TQueryMessages errmsg = res.GetErrors();
+        CConstRef<CSeq_id> rid = res.GetSeqId();
+        CRef<CSeq_align_set> align(const_cast<CSeq_align_set *>
+                          (&*(res.GetSeqAlign())));
+        CSeq_align_set::Tdata & align_list = align->Set();
+
+        CConstRef<CSeq_id> qid = m_Query->GetBlastSearchQuery(iq)->GetQueryId();
+        while(!qid->Match(*rid)) {
+            CRef<CSeq_align_set> empty;
+            CRef<CSearchResults> r(new CSearchResults(qid, empty, errmsg, ancillary));
+            retv->push_back(r);
+            qid = m_Query->GetBlastSearchQuery(++iq)->GetQueryId();
+        }
+
+        while(ir < num_results && (*result)[ir].GetSeqId()->Match(*qid)) {
+            CSearchResults &add_res = (*result)[ir++];
+            CRef<CSeq_align_set> add;
+            add.Reset(const_cast<CSeq_align_set *>
+                          (&*(add_res.GetSeqAlign())));
+            CSeq_align_set::Tdata & add_list = add->Set();
+            align_list.insert(align_list.end(), add_list.begin(), add_list.end());
+        }
+        CRef<CSearchResults> r(new CSearchResults(qid, align, errmsg, ancillary));
+        retv->push_back(r);
+    }
+    
+    result.Reset(retv);
+};
+
 void CIgBlast::s_AppendResults(CRef<CSearchResultSet> &results,
                                int                     num_aligns,
                                int                     gene,
@@ -794,16 +835,17 @@ void CIgBlast::s_AppendResults(CRef<CSearchResultSet> &results,
         }
 
         TQueryMessages errmsg = (*result)->GetErrors();
+        CConstRef<CSeq_id> query = (*result)->GetSeqId();
 
         CIgBlastResults *ig_result;
         if (new_result) {
-            CConstRef<CSeq_id> query = (*result)->GetSeqId();
             // TODO maybe we need the db ancillary instead?
             CRef<CBlastAncillaryData> ancillary = (*result)->GetAncillaryData();
             ig_result = new CIgBlastResults(query, align, errmsg, ancillary);
             CRef<CSearchResults> r(ig_result);
             final_results->push_back(r);
         } else {
+            while( !(*final_results)[iq].GetSeqId()->Match(*query)) ++iq;
             ig_result = dynamic_cast<CIgBlastResults *> (&(*final_results)[iq]);
             if (!align.Empty()) {
                 CSeq_align_set::Tdata & ig_list = ig_result->SetSeqAlign()->Set();
@@ -831,7 +873,6 @@ void CIgBlast::s_AppendResults(CRef<CSearchResultSet> &results,
         case 2: ig_result->m_NumActualJ = actual_align; break;
         default: break;
         }
-        ++iq;
     }
 };
 

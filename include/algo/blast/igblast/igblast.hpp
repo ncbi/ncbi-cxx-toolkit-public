@@ -56,7 +56,7 @@ public:
     bool m_IsProtein;                // search molecular type
     string m_Origin;                 // the origin of species
     string m_DomainSystem;           // domain system for annotation
-    string m_ChainType;              // sequence chain type info filename
+    string m_AuxFilename;            // auxulary file name
     CRef<CLocalDbAdapter> m_Db[4];   // user specified germline database
                                      // 0-2: - user specified V, D, J
                                      // 3:   - the default V gl db
@@ -116,13 +116,6 @@ public:
         return "N/A";
     }
 
-    const string GetChainType(const string sid) {
-        if (m_ChainType.find(sid) != m_ChainType.end()) {
-            return m_ChainType[sid];
-        }
-        return "N/A";
-    }
-
     const int GetFrameOffset(const string sid) {
         if (m_FrameOffset.find(sid) != m_FrameOffset.end()) {
             return m_FrameOffset[sid];
@@ -133,7 +126,6 @@ public:
 private:
     map<string, int> m_DomainIndex;
     vector<int> m_DomainData;
-    map<string, string> m_ChainType;
     map<string, string> m_DomainChainType;
     map<string, int> m_FrameOffset;
 };
@@ -275,6 +267,9 @@ private:
     /// Set the subject chain type and frame info
     void x_SetChainType(CRef<CSearchResultSet>        &results, 
                         vector<CRef <CIgAnnotation> > &annot);
+
+    /// Convert bl2seq result to database search mode
+    void x_ConvertResultType(CRef<CSearchResultSet>  &results);
 
     /// Sort blast results according to evalue
     static void s_SortResultsByEvalue(CRef<CSearchResultSet> &results);

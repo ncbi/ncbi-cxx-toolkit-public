@@ -26,15 +26,15 @@ for origin in ['human', 'mouse']:
     for item in items:
         id, slen = item.split('=')
         offset = (int(slen) - offset_table[origin][chain_type[id]]) % 3
-        f.write('%s\t%s\t%d\n' %(id, chain_type[id], offset))
+        f.write('%s\t%d\n' %(id, offset))
         del chain_type[id]
 
     for line in open(origin + '_gl.n.dm.kabat').readlines():
 	line = line.strip()
 	if len(line) == 0 or line[0]=='#': continue
 	id = line.split()[0]
-    	f.write('%s\t%s\t0\n' %(id, chain_type[id]))
+    	f.write('%s\t0\n' %(id, ))
         del chain_type[id]
     for id in chain_type.keys():
-    	f.write('%s\t%s\t-1\n' %(id, chain_type[id]))
+    	f.write('%s\t-1\n' %(id, ))
     f.close()
