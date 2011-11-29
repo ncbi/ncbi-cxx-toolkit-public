@@ -231,7 +231,7 @@ bool RemoveDupsNoSort(Cont& l, bool case_insensitive = false)
 
 #define COMPRESS_STRING_MEMBER(o, x) \
     if ((o).IsSet##x()) { \
-        const int old_len = (o).Set##x().length(); \
+        const size_t old_len = (o).Set##x().length(); \
         CompressSpaces((o).Set##x()); \
         if( old_len != (o).Set##x().length() ) { \
             ChangeMade(CCleanupChange::eTrimSpaces); \

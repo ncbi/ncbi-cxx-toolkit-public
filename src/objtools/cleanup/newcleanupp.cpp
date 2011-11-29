@@ -2634,7 +2634,12 @@ void CNewCleanup_imp::SeqLocBC( CSeq_loc &loc )
     {
         CBioseq_Handle bsh;
         if (m_Scope) {
-            bsh = m_Scope->GetBioseqHandle(loc);
+            ITERATE( CSeq_loc, loc_ci, loc ) {
+                bsh = m_Scope->GetBioseqHandle(loc_ci.GetSeq_id());
+                if( bsh ) {
+                    break;
+                }
+            }
         }
         if ( bsh && bsh.IsProtein() && FIELD_IS_SET(loc, Strand) ) { 
             RESET_FIELD(loc, Strand);
@@ -3520,7 +3525,10 @@ CNewCleanup_imp::x_SeqFeatCDSGBQualBC(CSeq_feat& feat, CCdregion& cds, const CGb
         // try to get existing prot_feat
         CBioseq_Handle prot_handle;
         if ( FIELD_IS_SET(feat, Product) ) {
-            prot_handle = m_Scope->GetBioseqHandle(feat.GetProduct());
+            const CSeq_id *prod_seq_id = feat.GetProduct().GetId();
+            if( prod_seq_id != NULL ) {
+                prot_handle = m_Scope->GetBioseqHandle(*prod_seq_id);
+            }
         }
         if( prot_handle ) {
             // find main protein feature
@@ -8227,7 +8235,11 @@ bool CNewCleanup_imp::x_InGpsGenomic( const CSeq_feat& seqfeat )
     if( ! FIELD_IS_SET(seqfeat, Location) ) {
         return false;
     }
-    CBioseq_Handle bioseq_handle = m_Scope->GetBioseqHandle( GET_FIELD(seqfeat, Location) );
+    const CSeq_id *loc_seq_id = GET_FIELD(seqfeat, Location).GetId();
+    if( loc_seq_id == NULL ) {
+        return false;
+    }
+    CBioseq_Handle bioseq_handle = m_Scope->GetBioseqHandle( *loc_seq_id );
     if( ! bioseq_handle ) {
         return false;
     }
@@ -8807,7 +8819,7 @@ void CNewCleanup_imp::x_DecodeXMLMarkChanged( std::string & str )
         static CFastMutex searcher_mtx;
         CFastMutexGuard searcher_mtx_guard( searcher_mtx );
         if( ! searcher.IsPrimed() ) {
-            for( int idx = 0;
+            for( size_t idx = 0;
                 idx < sizeof(transformations)/sizeof(transformations[0]); 
                 ++idx ) 
             {

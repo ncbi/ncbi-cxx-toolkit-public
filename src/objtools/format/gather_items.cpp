@@ -1277,11 +1277,20 @@ void CFlatGatherer::x_CollectBioSources(TSourceFeatSet& srcs) const
         const CSeq_feat* cds = GetCDSForProduct(ctx.GetHandle());
         if ( cds != 0 ) {
             const CSeq_loc& cds_loc = cds->GetLocation();
-            x_CollectBioSourcesOnBioseq(
-                scope->GetBioseqHandle(cds_loc),
-                cds_loc.GetTotalRange(),
-                ctx,
-                srcs);
+            CBioseq_Handle bioseq_h;
+            ITERATE( CSeq_loc, cds_loc_ci, cds_loc ) {
+                bioseq_h = scope->GetBioseqHandle(cds_loc_ci.GetSeq_id());
+                if( bioseq_h ) {
+                    break;
+                }
+            }
+            if( bioseq_h ) {
+                x_CollectBioSourcesOnBioseq(
+                    bioseq_h,
+                    cds_loc.GetTotalRange(),
+                    ctx,
+                    srcs);
+            }
         }
     }
 
@@ -2372,7 +2381,13 @@ void CFlatGatherer::x_CopyCDSFromCDNA
 {
     CScope& scope = ctx.GetScope();
 
-    CBioseq_Handle cdna = scope.GetBioseqHandle(feat.GetProduct());
+    CBioseq_Handle cdna;
+    ITERATE( CSeq_loc, prod_loc_ci, feat.GetProduct() ) {
+        cdna = scope.GetBioseqHandle( prod_loc_ci.GetSeq_id() );
+        if( cdna ) {
+            break;
+        }
+    }
     if ( !cdna ) {
         return;
     }
@@ -2490,11 +2505,14 @@ void CFlatGatherer::x_GatherFeatures(void) const
             // it's a common case that we map one residue past the edge of the protein (e.g. NM_131089).
             // In that case, we shrink the cds's location back one residue.
             if( cds_prod->IsInt() && cds.GetProduct().IsWhole() ) {
-                CBioseq_Handle prod_bioseq_handle = ctx.GetScope().GetBioseqHandle( cds.GetProduct() );
-                if( prod_bioseq_handle ) {
-                    const TSeqPos bioseq_len = prod_bioseq_handle.GetBioseqLength();
-                    if( cds_prod->GetInt().GetTo() >= bioseq_len ) {
-                        cds_prod->SetInt().SetTo( bioseq_len - 1 );
+                const CSeq_id *cds_prod_seq_id = cds.GetProduct().GetId();
+                if( cds_prod_seq_id != NULL ) {
+                    CBioseq_Handle prod_bioseq_handle = ctx.GetScope().GetBioseqHandle( *cds_prod_seq_id );
+                    if( prod_bioseq_handle ) {
+                        const TSeqPos bioseq_len = prod_bioseq_handle.GetBioseqLength();
+                        if( cds_prod->GetInt().GetTo() >= bioseq_len ) {
+                            cds_prod->SetInt().SetTo( bioseq_len - 1 );
+                        }
                     }
                 }
             }

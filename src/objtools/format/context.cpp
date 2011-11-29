@@ -108,9 +108,9 @@ CBioseqContext::CBioseqContext
     m_HasOperon(false),
     m_HasMultiIntervalGenes(true), // true is the safe choice if we're not sure
     m_IsGenomeAssembly(false),
+    m_eUnverified(eUnverified_None),
     m_FFCtx(ffctx),
     m_Master(mctx),
-    m_eUnverified(eUnverified_None),
     m_TLSeqEntryCtx(tlsec)
 {
     x_Init(seq, m_FFCtx.GetLocation());
@@ -159,9 +159,9 @@ CBioseqContext::CBioseqContext
     m_HasOperon(false),
     m_HasMultiIntervalGenes(true), // true is the safe choice if we're not sure
     m_IsGenomeAssembly(false),
+    m_eUnverified(eUnverified_None),
     m_FFCtx(ffctx),
     m_Master(mctx),
-    m_eUnverified(eUnverified_None),
     m_TLSeqEntryCtx(tlsec)
 {
     x_Init(seq, m_FFCtx.GetLocation());

@@ -1225,7 +1225,6 @@ string s_GetLinkFeatureKey(
     if( 0 == iGi ) {
         iGi = item.GetContext()->GetGI();
     }
-    CSeqFeatData::E_Choice type = item.GetFeat().GetFeatType();
     if ( iFrom == 0 && iFrom == iTo ) {
         return strRawKey;
     }
@@ -1233,8 +1232,14 @@ string s_GetLinkFeatureKey(
     // check if this is a protein or nucleotide link
     bool is_prot = false;
     {{
-        CBioseq_Handle bioseq_h = 
-            item.GetContext()->GetScope().GetBioseqHandle( item.GetFeat().GetLocation() );
+        CBioseq_Handle bioseq_h;
+        const CSeq_loc & loc = item.GetFeat().GetLocation();
+        ITERATE( CSeq_loc, loc_ci, loc ) {
+            bioseq_h = item.GetContext()->GetScope().GetBioseqHandle( loc_ci.GetSeq_id() );
+            if( bioseq_h ) {
+                break;
+            }
+        }
         if( bioseq_h ) {
             is_prot = ( bioseq_h.GetBioseqMolType() == CSeq_inst::eMol_aa );
         }
@@ -1855,7 +1860,7 @@ void CGenbankFormatter::FormatOrigin
 
 void CGenbankFormatter::FormatGap(const CGapItem& gap, IFlatTextOStream& text_os)
 {
-    const bool bHtml = gap.GetContext()->Config().DoHTML();
+    // const bool bHtml = gap.GetContext()->Config().DoHTML();
 
     list<string> l;
 

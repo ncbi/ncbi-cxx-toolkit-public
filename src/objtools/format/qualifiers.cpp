@@ -64,27 +64,6 @@ const string IFlatQVal::kSemicolon = ";";
 const string IFlatQVal::kComma     = ",";
 const string IFlatQVal::kEOL       = "\n";
 
-static void s_StripTags( string& str )
-{
-    // Purpose: Strip HTML like tags from the given string
-    string stripped;
-    string::size_type gt = str.find('<');
-    while ( gt != string::npos ) {
-        string::size_type lt = str.find( '>', gt );
-        if ( lt != string::npos ) {
-            stripped += str.substr( 0, gt );
-            str = str.substr( lt+1 );
-            gt = str.find('<');
-        }
-        else {
-            break;
-        }
-    }
-    stripped += str;
-    str = stripped;
-}
-
-
 static bool s_IsNote(IFlatQVal::TFlags flags, CBioseqContext& ctx)
 {
     return (flags & IFlatQVal::fIsNote)  &&  !ctx.Config().IsModeDump();
@@ -312,7 +291,7 @@ CFormatQual::CFormatQual
  TFlags flags,
  ETrim trim ) :
     m_Name(name), m_Value(value), m_Prefix(prefix), m_Suffix(suffix),
-    m_Style(style), m_Flags(flags), m_AddPeriod(false), m_Trim(trim)
+    m_Style(style), m_Flags(flags), m_Trim(trim), m_AddPeriod(false)
 {
     NStr::TruncateSpacesInPlace(m_Value, NStr::eTrunc_End);
 }
@@ -320,7 +299,7 @@ CFormatQual::CFormatQual
 
 CFormatQual::CFormatQual(const string& name, const string& value, TStyle style, TFlags flags, ETrim trim) :
     m_Name(name), m_Value(value), m_Prefix(" "), m_Suffix(kEmptyStr),
-    m_Style(style), m_Flags(flags), m_AddPeriod(false), m_Trim(trim)
+    m_Style(style), m_Flags(flags), m_Trim(trim), m_AddPeriod(false)
 {
     NStr::TruncateSpacesInPlace(m_Value, NStr::eTrunc_End);
 }
@@ -330,7 +309,7 @@ CFormatQual::CFormatQual(const string& name, const string& value, TStyle style, 
 
 CFlatStringQVal::CFlatStringQVal(const string& value, TStyle style, ETrim trim)
     :  IFlatQVal(&kSpace, &kSemicolon),
-       m_Value(value), m_Style(style), m_AddPeriod(0), m_Trim(trim)
+       m_Value(value), m_Style(style), m_Trim(trim), m_AddPeriod(0)
 {
     NStr::TruncateSpacesInPlace(m_Value);
 }
@@ -344,7 +323,7 @@ CFlatStringQVal::CFlatStringQVal
  ETrim trim)
     :   IFlatQVal(&pfx, &sfx),
         m_Value(value),
-        m_Style(style), m_AddPeriod(0), m_Trim(trim)
+        m_Style(style), m_Trim(trim), m_AddPeriod(0)
 {
     NStr::TruncateSpacesInPlace(m_Value);
 }
@@ -352,7 +331,7 @@ CFlatStringQVal::CFlatStringQVal
 CFlatStringQVal::CFlatStringQVal(const string& value, 
     ETrim trim )
 :   IFlatQVal(&kSpace, &kSemicolon),
-    m_Value(value), m_Style(CFormatQual::eQuoted), m_AddPeriod(0), m_Trim(trim)
+    m_Value(value), m_Style(CFormatQual::eQuoted), m_Trim(trim), m_AddPeriod(0)
 {
     NStr::TruncateSpacesInPlace(m_Value);
 }
