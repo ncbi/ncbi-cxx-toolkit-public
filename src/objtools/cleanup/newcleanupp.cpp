@@ -752,6 +752,47 @@ bool s_RemoveInitial( string &str, const string &prefix, NStr::ECase case_to_use
     return false;
 }
 
+// Given the position of the opening paren in a string, this returns
+// the position of the closing paren (keeping track of any nested parens
+// in the middle.
+// It returns NPOS if the paren is not closed.
+// This function is not currently smart; it doesn't know about quotes
+// or anything
+static
+SIZE_TYPE s_MatchingParenPos( const string &str, SIZE_TYPE open_paren_pos )
+{
+    _ASSERT( str[open_paren_pos] == '(' );
+    _ASSERT( open_paren_pos < str.length() );
+
+    // nesting level. start at 1 since we know there's an open paren
+    int level = 1;
+
+    SIZE_TYPE pos = open_paren_pos + 1;
+    for( ; pos < str.length(); ++pos ) {
+        switch( str[pos] ) {
+            case '(':
+                // nesting deeper
+                ++level;
+                break;
+            case ')':
+                // closed a level of nesting
+                --level;
+                if( 0 == level ) {
+                    // reached the top: we're closing the initial paren,
+                    // so we return our position
+                    return pos;
+                }
+                break;
+            default:
+                // ignore other characters.
+                // maybe in the future we'll handle ignoring parens in quotes or
+                // things like that.
+                break;
+        }
+    }
+    return NPOS;
+}
+
 static bool s_AccessionCompare (
     const string& str1,
     const string& str2
@@ -3688,7 +3729,8 @@ static CRef<CTrna_ext> s_ParseTRnaFromAnticodonString (const string &str, const 
     if (NStr::IsBlank (str)) return trna;
 
     if (NStr::StartsWith (str, "(pos:")) {
-        string::size_type pos_end = NStr::Find (str, ")");
+        // find position of closing paren
+        string::size_type pos_end = s_MatchingParenPos( str, 0 );
         if (pos_end != string::npos) {
             trna.Reset( new CTrna_ext );
             string pos_str = str.substr (5, pos_end - 5);
@@ -3710,7 +3752,9 @@ static CRef<CTrna_ext> s_ParseTRnaFromAnticodonString (const string &str, const 
                 }
             }
             CRef<CSeq_loc> anticodon = ReadLocFromText (pos_str, feat.GetLocation().GetId(), scope);
-            anticodon->SetStrand(eNa_strand_plus); // anticodon is always on plus strand
+            if( anticodon ) {
+                anticodon->SetStrand(eNa_strand_plus); // anticodon is always on plus strand
+            }
             if (anticodon == NULL) {
                 trna->ResetAa();
             } else {
@@ -4212,9 +4256,13 @@ CNewCleanup_imp::EAction CNewCleanup_imp::x_ParseCodeBreak(const CSeq_feat& feat
     while (loc_pos < str.length() && isspace (str[loc_pos])) {
         loc_pos++;
     }
-    end_pos = NStr::Find (str, ",", loc_pos);
-    if (end_pos == string::npos) {
-        end_pos = str.length();
+
+    end_pos = NStr::Find (str, ",aa:", loc_pos);
+    if( end_pos == NPOS ) {
+        end_pos = NStr::Find (str, ",", loc_pos);
+        if (end_pos == NPOS) {
+            end_pos = str.length();
+        }
     }
 
     break_loc = ReadLocFromText (str.substr(loc_pos, end_pos - loc_pos), feat_loc_seq_id, m_Scope);
