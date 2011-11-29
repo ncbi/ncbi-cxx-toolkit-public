@@ -207,8 +207,8 @@ void CBlobSplitterImpl::CopySkeleton(CBioseq& dst, const CBioseq& src)
         const CSeq_id& id = **it;
         CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id);
         if ( !place_id.IsBioseq() ||
-             !place_id.GetBioseqId().IsGi() &&
-             (idh.IsGi() || idh.IsBetter(place_id.GetBioseqId())) ) {
+             (!place_id.GetBioseqId().IsGi() &&
+              (idh.IsGi() || idh.IsBetter(place_id.GetBioseqId()))) ) {
             place_id = CPlaceId(idh);
         }
         dst.SetId().push_back(Ref(&NonConst(id)));

@@ -708,7 +708,7 @@ bool CBlobSplitterImpl::IsWhole(const CSeq_id_Handle& id,
                                 const TRange& range) const
 {
     return range == range.GetWhole() ||
-        range.GetFrom() <= 0 && range.GetToOpen() >= GetLength(id);
+        (range.GetFrom() <= 0 && range.GetToOpen() >= GetLength(id));
 }
 
 
