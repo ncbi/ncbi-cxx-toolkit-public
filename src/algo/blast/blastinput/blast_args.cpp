@@ -1302,7 +1302,7 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
     m_IgOptions->m_DomainSystem = args[kArgGLDomainSystem].AsString();
     m_IgOptions->m_FocusV = args.Exist(kArgGLFocusV) ? args[kArgGLFocusV] : false;
     m_IgOptions->m_Translate = args.Exist(kArgTranslate) ? args[kArgTranslate] : false;
-    m_IgOptions->m_ChainType = (args.Exist(kArgGLChainType) && args[kArgGLChainType])
+    m_IgOptions->m_AuxFilename = (args.Exist(kArgGLChainType) && args[kArgGLChainType])
                              ? args[kArgGLChainType].AsString()
                              : m_IgOptions->m_Origin + "_gl.aux";
 
