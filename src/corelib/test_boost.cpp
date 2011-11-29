@@ -2016,9 +2016,11 @@ main(int argc, char* argv[])
             }
         }
     }
+#if BOOST_VERSION >= 104200
     catch( framework::nothing_to_test const& ) {
         result = boost::exit_success;
     }
+#endif
     catch( framework::internal_error const& ex ) {
         results_reporter::get_stream() << "Boost.Test framework internal error: " << ex.what() << std::endl;
         
