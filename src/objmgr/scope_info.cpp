@@ -246,7 +246,6 @@ void CDataSource_ScopeInfo::AttachTSE(CTSE_ScopeInfo& info,
 
 void CDataSource_ScopeInfo::x_IndexTSE(CTSE_ScopeInfo& tse)
 {
-    CTSE_ScopeInfo::TBlobOrder order = tse.GetBlobOrder();
     ITERATE ( CTSE_ScopeInfo::TSeqIds, it, tse.GetBioseqsIds() ) {
         m_TSE_BySeqId.insert(TTSE_BySeqId::value_type(*it, Ref(&tse)));
     }
@@ -255,7 +254,6 @@ void CDataSource_ScopeInfo::x_IndexTSE(CTSE_ScopeInfo& tse)
 
 void CDataSource_ScopeInfo::x_UnindexTSE(const CTSE_ScopeInfo& tse)
 {
-    CTSE_ScopeInfo::TBlobOrder order = tse.GetBlobOrder();
     ITERATE ( CTSE_ScopeInfo::TSeqIds, it, tse.GetBioseqsIds() ) {
         TTSE_BySeqId::iterator tse_it = m_TSE_BySeqId.lower_bound(*it);
         while ( tse_it != m_TSE_BySeqId.end() && tse_it->first == *it ) {
