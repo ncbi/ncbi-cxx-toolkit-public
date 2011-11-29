@@ -973,13 +973,16 @@ void CFeature_table_reader_imp::x_TokenizeLenient(
     } else {
         // parse a feature line
 
-        // Since we're being lenient, we consider it to be 3 parts separated by whitespace
+        // Since we're being lenient, we consider it to be 3 ( or 6 ) parts separated by whitespace
         const string::const_iterator first_column_start = line.begin();
         const string::const_iterator first_whitespace = find_if( first_column_start, line.end(), CIsSpace() );
         const string::const_iterator second_column_start = find_if( first_whitespace, line.end(), CIsNotSpace() );
         const string::const_iterator second_whitespace = find_if( second_column_start, line.end(), CIsSpace() );
         const string::const_iterator third_column_start = find_if( second_whitespace, line.end(), CIsNotSpace() );
         const string::const_iterator third_whitespace = find_if( third_column_start, line.end(), CIsSpace() );
+        // columns 4 and 5 are unused on feature lines
+        const string::const_iterator sixth_column_start = find_if( third_whitespace, line.end(), CIsNotSpace() );
+        const string::const_iterator sixth_whitespace = find_if( sixth_column_start, line.end(), CIsSpace() );
 
         out_tokens.push_back(kEmptyStr);
         string &first = out_tokens.back();
@@ -992,6 +995,16 @@ void CFeature_table_reader_imp::x_TokenizeLenient(
         out_tokens.push_back(kEmptyStr);
         string &third = out_tokens.back();
         copy( third_column_start, third_whitespace, back_inserter(third) );
+
+        if( sixth_column_start != line.end() ) {
+            // columns 4 and 5 are unused
+            out_tokens.push_back(kEmptyStr);
+            out_tokens.push_back(kEmptyStr);
+
+            out_tokens.push_back(kEmptyStr);
+            string &sixth = out_tokens.back();
+            copy( sixth_column_start, sixth_whitespace, back_inserter(sixth) );
+        }
     }
 }
 
