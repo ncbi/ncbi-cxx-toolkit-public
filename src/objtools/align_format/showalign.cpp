@@ -2307,9 +2307,9 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
             //print each defline 
             bool bMultipleDeflines = false;
             int numBdl = 0;
+            int maxNumBdl = (aln_vec_info->use_this_gi.empty()) ? bdl.size() : aln_vec_info->use_this_gi.size();
             for(list< CRef< CBlast_def_line > >::const_iterator 
-                    iter = bdl.begin(); iter != bdl.end(); iter++){
-                numBdl++;
+                    iter = bdl.begin(); iter != bdl.end(); iter++){                
 				SAlnDispParams *alnDispParams = x_FillAlnDispParams(*iter,
                                                                     bsp_handle,
 																	aln_vec_info->use_this_gi,
@@ -2318,17 +2318,17 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
 																	
 
                 if(alnDispParams) {
-                
+                    numBdl++;
                     if(isFirst){
                         out << ">";                  
                     } else{
                         out << " ";
-                        if (m_AlignOption&eHtml && (int)(bdl.size()) > k_MaxDeflinesToShow && numBdl == k_MinDeflinesToShow + 1){ 
+                        if (m_AlignOption&eHtml && (int)(maxNumBdl) > k_MaxDeflinesToShow && numBdl == k_MinDeflinesToShow + 1){ 
                             //Show first 3 deflines out of 8 or more, hide the rest
                             string mdlTag = aln_vec_info->id_label;
                             //string mdlTag = id_label  + "_" + NStr::IntToString(m_cur_align);                        
                             out << "<a href=\"#\" title=\"Other sequence titles\"  onmouseover=\"showInfo(this)\" class=\"resArrowLinkW mdl hiding\" id=\"" <<
-                                mdlTag << "\">" << bdl.size() - k_MinDeflinesToShow << " more sequence titles" << "</a>\n";
+                                mdlTag << "\">" << maxNumBdl - k_MinDeflinesToShow << " more sequence titles" << "</a>\n";
                         
                             out << " <div id=\"" << "info_" << mdlTag << "\" class=\"helpbox mdlbox hidden\">";
                             bMultipleDeflines = true;
@@ -3541,12 +3541,13 @@ CDisplaySeqalign::x_FormatDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnIn
         } else {
             //format each defline             
             int numBdl = 0;
+            int maxNumBdl = (aln_vec_info->use_this_gi.empty()) ? bdl.size() : aln_vec_info->use_this_gi.size();
             for(list< CRef< CBlast_def_line > >::const_iterator 
-                    iter = bdl.begin(); iter != bdl.end(); iter++){
-                numBdl++;                
+                    iter = bdl.begin(); iter != bdl.end(); iter++){                
 				alnDispParams = x_FillAlnDispParams(*iter,bsp_handle,use_this_gi,firstGi);                
 				if(alnDispParams) {
-					bool hideDefline = (int)(bdl.size()) > k_MaxDeflinesToShow && numBdl >= k_MinDeflinesToShow + 1;
+                    numBdl++;                
+					bool hideDefline = (int)(maxNumBdl) > k_MaxDeflinesToShow && numBdl >= k_MinDeflinesToShow + 1;
 					string alnDefLine = x_MapDefLine(alnDispParams,isFirst,m_AlignOption&eLinkout,hideDefline);                    
                     if(isFirst){
                         firstGi = alnDispParams->gi;                        
