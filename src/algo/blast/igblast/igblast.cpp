@@ -549,7 +549,7 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
     ITERATE(CSearchResultSet, result, *dm_results) {
 
         CIgAnnotation *annot = &*(annots[iq]);
-        annot->m_ChainType[0] = "NON";  // Assuming non-ig sequence first
+        annot->m_ChainType.push_back("NON");  // Assuming non-ig sequence first
 
         if ((*result)->HasAlignments() && (*gl_results)[iq].HasAlignments()) {
 
