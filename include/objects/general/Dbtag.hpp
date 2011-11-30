@@ -137,6 +137,7 @@ public:
         eDbtagType_PIR,
         eDbtagType_PSEUDO,
         eDbtagType_Pathema,
+        eDbtagType_PomBase,
         eDbtagType_PseudoCap,
         eDbtagType_RAP_DB,
         eDbtagType_RATMAP,
