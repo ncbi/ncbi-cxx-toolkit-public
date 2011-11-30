@@ -77,11 +77,24 @@ Component names      :  23
 ./test/chr_from_contig_BAC.agp2.0_bad_ver:12:chr37	8050001	9050000	3	N	1000000	centromere	no	na
 	WARNING: two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
 
-No errors, 4 warnings.
+./test/chr_from_contig_BAC.agp2.0_bad_ver:23:chr37	10205086	10205208	14	N	123	scaffold	yes	paired-ends;unspecified
+	ERROR, line skipped: invalid value for linkage_evidence (column 9) -- "unspecified" cannot be combined with other terms
+
+./test/chr_from_contig_BAC.agp2.0_bad_ver:29:chr37	10702843	10702919	20	N	77	scaffold	yes	paired-ends;paired-ends
+	WARNING: linkage evidence term paired-ends appears more than once
+
+./test/chr_from_contig_BAC.agp2.0_bad_ver:33:chr37	10939269	10956946	24	N	17678	scaffold	yes	clone_contig;
+	ERROR, line skipped: invalid value for linkage_evidence (column 9): 
+
+2 errors, 5 warnings.
   Count Code  Description
+      2  e04  invalid value for X
       2  w33  two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
       1  w58  assuming AGP version X
       1  w61  AGP version comment is invalid, expecting ##agp-version 1.1 or ##agp-version 2.0
+      1  w63  linkage evidence term X appears more than once
+
+NOTE: 2 invalid lines were skipped (not subjected to all the checks, not included in most of the counts below).
 
 
 Objects                :   2
@@ -96,8 +109,8 @@ Components                   : 208 (W:95, F:80, A:18, D:15)
   orientation ? (formerly 0) :   0
   orientation na             :   0
 
-Gaps                   : 127 (N:115, U:12)
-- do not break scaffold:  96
+Gaps                   : 125 (N:113, U:12)
+- do not break scaffold:  94
   repeat  , linkage yes:   0
 - break it, linkage no :  31
 	contig         :  24

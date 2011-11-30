@@ -80,7 +80,7 @@ public:
     int FromString(const string& line);
     // Generates G_CompEndGtLength message and returns false on error.
     string GetErrorMessage();
-    string ToString(); // 9 column tab-separated string without EOL comments
+    string ToString(bool reorder_linkage_evidences=false); // 9 column tab-separated string without EOL comments
 
     //// Unparsed columns
     SIZE_TYPE pcomment; // NPOS if no comment for this line, 0 if the entire line is comment
@@ -159,20 +159,22 @@ public:
     bool linkage;
 
     enum ELinkageEvidence {
-        eLinkageEvidence_paired_ends,
-        eLinkageEvidence_align_genus,
-        eLinkageEvidence_align_xgenus,
-        eLinkageEvidence_align_trnscpt,
-        eLinkageEvidence_within_clone,
-        eLinkageEvidence_clone_contig,
-        eLinkageEvidence_map,
-        eLinkageEvidence_strobe,
-        eLinkageEvidence_unspecified,
+        fLinkageEvidence_paired_ends  = 1,
+        fLinkageEvidence_align_genus  = 2,
+        fLinkageEvidence_align_xgenus = 4,
+        fLinkageEvidence_align_trnscpt= 8,
+        fLinkageEvidence_within_clone =16,
+        fLinkageEvidence_clone_contig =32,
+        fLinkageEvidence_map          =64,
+        fLinkageEvidence_strobe       =128,
+        fLinkageEvidence_unspecified  =0,
 
-        eLinkageEvidence_COUNT,
-        eLinkageEvidence_INVALID
+        //fLinkageEvidence_COUNT,
+        fLinkageEvidence_INVALID = -1,
+        fLinkageEvidence_na = -2
     };
     vector<ELinkageEvidence> linkage_evidences;
+    int linkage_evidence_flags; // a bit map
 
     static bool IsGap(char c)
     {
@@ -218,8 +220,16 @@ public:
         return CheckComponentEnd(GetComponentId(), component_end, comp_len, *m_AgpErr);
     }
 
+    // terms in the original order
     string LinkageEvidencesToString(void);
+    // terms in the preferred order
+    static string LinkageEvidenceFlagsToString(int le);
+    string LinkageEvidenceFlagsToString()
+    {
+        return LinkageEvidenceFlagsToString(linkage_evidence_flags);
+    }
     static const char* le_str(ELinkageEvidence le);
+    static int str_to_le(const string& str);
     /** Returns a string describing suggested replacement, or "" if none is needed.
     Use do_subst=true to do the actial substitution in this object.
     */
@@ -423,11 +433,11 @@ public:
         // Other errors, some detected only by agp_validate.
         // We define the codes here to preserve the historical error codes.
         // CAgpRow and CAgpReader do not know of such errors.
-        E_DuplicateObj  ,       // -- agp_validate --
+        E_DuplicateObj  ,       // CAgpValidateReader
         E_ObjMustBegin1 ,       // CAgpReader
         E_PartNumberNot1,       // CAgpReader
         E_PartNumberNotPlus1,   // CAgpReader
-        E_UnknownOrientation,   // -- agp_validate --
+        E_UnknownOrientation,   // CAgpValidateReader
 
         E_ObjBegNePrevEndPlus1, // CAgpReader
         E_NoValidLines,         // CAgpReader     (Make it a warning?)
@@ -435,19 +445,19 @@ public:
         E_ScafBreakingGap,
         E_WithinScafGap,
 
-        E_UnknownScaf,       // -- agp_validate --
-        E_UnusedScaf,        // -- agp_validate --
+        E_UnknownScaf,       // CAgpValidateReader
+        E_UnusedScaf,        // CAgpValidateReader
         E_Last, E_First=1, E_LastToSkipLine=E_ObjRangeNeComp,
 
         // Warnings.
         W_GapObjEnd=31,         // CAgpReader
         W_GapObjBegin,          // CAgpReader
         W_ConseqGaps,           // CAgpReader
-        W_ObjNoComp,            // -- agp_validate --
-        W_SpansOverlap,         // -- agp_validate --
+        W_ObjNoComp,            // CAgpValidateReader
+        W_SpansOverlap,         // CAgpValidateReader
 
-        W_SpansOrder,           // -- agp_validate --
-        W_DuplicateComp,        // -- agp_validate --
+        W_SpansOrder,           // CAgpValidateReader
+        W_DuplicateComp,        // CAgpValidateReader
         W_LooksLikeGap,         // CAgpRow
         W_LooksLikeComp,        // CAgpRow
         W_ExtraTab,             // CAgpRow
@@ -455,44 +465,45 @@ public:
         W_GapLineMissingCol9,   // CAgpRow
         W_NoEolAtEof,           // CAgpReader
         W_GapLineIgnoredCol9,   // CAgpRow
-        W_ObjOrderNotNumerical, // -- agp_validate --
+        W_ObjOrderNotNumerical, // CAgpValidateReader
         // NOTE: "Wgs" warnings must come last so that  "Use -g..." hint
         //        printed in CAgpValidateReader::x_PrintTotals()
         //        comes right after the "Wgs" warning counts.
-        W_CompIsWgsTypeIsNot,   // -- agp_validate --
+        W_CompIsWgsTypeIsNot,   // CAgpValidateReader
 
-        W_CompIsNotWgsTypeIs,   // -- agp_validate --
-        W_ObjEqCompId,          // -- agp_validate --
+        W_CompIsNotWgsTypeIs,   // CAgpValidateReader
+        W_ObjEqCompId,          // CAgpValidateReader
         W_GapSizeNot100,        // CAgpRow
-        W_BreakingGapSameCompId,// -- agp_validate --
-        W_UnSingleCompNotInFull,// -- agp_validate --
+        W_BreakingGapSameCompId,// CAgpValidateReader
+        W_UnSingleCompNotInFull,// CAgpValidateReader
 
-        W_UnSingleOriNotPlus,   // -- agp_validate --
-        W_ShortGap          ,   // -- agp_validate --
-        W_SpaceInObjName    ,   // -- agp_validate --
+        W_UnSingleOriNotPlus,   // CAgpValidateReader
+        W_ShortGap          ,   // CAgpValidateReader
+        W_SpaceInObjName    ,   // CAgpValidateReader
         W_CommentsAfterStart,   // CAgpRow (v. >= 2.0)
         W_OrientationZeroDeprecated, // CAgpRow (v. >= 2.0)
 
         W_NaLinkageExpected, // CAgpRow (v. >= 2.0 )
         W_OldGapType,        // CAgpRow (v. >= 2.0 )
         W_AssumingVersion,   // CAgpRow (v. == auto)
-        W_ScafNotInFull,     // -- agp_validate --
+        W_ScafNotInFull,     // CAgpValidateReader
         W_MissingLinkage,       // CAgpRow (v. >= 2.0 )
 
         W_AGPVersionCommentInvalid,
         W_AGPVersionCommentUnnecessary,
+        W_DuplicateEvidence,    // CAgpRow (v. >= 2.0 )
         W_Last, W_First = 31,
 
         // "GenBank" checks that rely on information about the sequence
-        G_InvalidCompId=71,     // -- agp_validate --
-        G_NotInGenbank,         // -- agp_validate --
-        G_NeedVersion,          // -- agp_validate --
+        G_InvalidCompId=71,     // CAgpValidateReader
+        G_NotInGenbank,         // CAgpValidateReader
+        G_NeedVersion,          // CAgpValidateReader
         G_CompEndGtLength,      // CAgpRow::CheckComponentEnd() (used in agp_validate)
-        G_DataError,            // -- agp_validate --
+        G_DataError,            // CAgpValidateReader
 
-        G_TaxError,             // -- agp_validate --
-        G_InvalidObjId,         // -- agp_validate --
-        G_BadObjLen,            // -- agp_validate --
+        G_TaxError,             // CAgpValidateReader
+        G_InvalidObjId,         // CAgpValidateReader
+        G_BadObjLen,            // CAgpValidateReader
         G_Last,
 
         G_First = G_InvalidCompId,

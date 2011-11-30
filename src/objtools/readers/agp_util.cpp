@@ -133,7 +133,7 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
 
     "AGP version comment is invalid, expecting ##agp-version 1.1 or ##agp-version 2.0",
     "ignoring AGP version comment - version already set to X",
-    kEmptyCStr,
+    "linkage evidence term X appears more than once",
     kEmptyCStr,
     kEmptyCStr,
 
@@ -512,6 +512,21 @@ int CAgpRow::ParseComponentCols(bool log_errors)
     return CAgpErr::E_InvalidValue;
 }
 
+int CAgpRow::str_to_le(const string& str)
+{
+    if( str == "paired-ends"   ) return fLinkageEvidence_paired_ends;
+    if( str == "align_genus"   ) return fLinkageEvidence_align_genus;
+    if( str == "align_xgenus"  ) return fLinkageEvidence_align_xgenus;
+    if( str == "align_trnscpt" ) return fLinkageEvidence_align_trnscpt;
+    if( str == "within_clone"  ) return fLinkageEvidence_within_clone;
+    if( str == "clone_contig"  ) return fLinkageEvidence_clone_contig;
+    if( str == "map"           ) return fLinkageEvidence_map;
+    if( str == "strobe"        ) return fLinkageEvidence_strobe;
+    if( str == "unspecified"   ) return fLinkageEvidence_unspecified;
+    //if( str == "na"            ) return fLinkageEvidence_na;
+    return fLinkageEvidence_INVALID;
+}
+
 int CAgpRow::ParseGapCols(bool log_errors)
 {
     linkage_evidences.clear();
@@ -584,6 +599,7 @@ int CAgpRow::ParseGapCols(bool log_errors)
     }
 
     // linkage_evidence
+    linkage_evidence_flags=0;
     if( m_agp_version == eAgpVersion_2_0 ) {
         if( GetLinkageEvidence().size()==0 ) {
             if(log_errors) m_AgpErr->Msg(CAgpErr::W_MissingLinkage);
@@ -591,10 +607,15 @@ int CAgpRow::ParseGapCols(bool log_errors)
         if( GapEndsScaffold() ) {
             if(GetLinkageEvidence() != "na") {
                 if(log_errors) m_AgpErr->Msg(CAgpErr::W_NaLinkageExpected);
+                linkage_evidence_flags=fLinkageEvidence_INVALID;
+            }
+            else {
+                linkage_evidence_flags=fLinkageEvidence_na;
             }
         }
         else {
             if(GetLinkageEvidence() == "na") {
+                linkage_evidence_flags=fLinkageEvidence_INVALID;
                 if(log_errors) m_AgpErr->Msg(CAgpErr::E_InvalidValue,
                     "linkage_evidence (column 9): 'na' can only be used for gaps with linkage 'no'");
                 return CAgpErr::E_InvalidValue;
@@ -602,29 +623,27 @@ int CAgpRow::ParseGapCols(bool log_errors)
             else {
                 vector<string> raw_linkage_evidences;
                 NStr::Tokenize(GetLinkageEvidence(), ";", raw_linkage_evidences);
+                bool has_unspecified=false;
                 ITERATE( vector<string>, evid_iter, raw_linkage_evidences ) {
-                    if( *evid_iter == "paired-ends" ) {
-                        linkage_evidences.push_back(eLinkageEvidence_paired_ends);
-                    } else if( *evid_iter == "align_genus" ) {
-                        linkage_evidences.push_back(eLinkageEvidence_align_genus);
-                    } else if( *evid_iter == "align_xgenus" ) {
-                        linkage_evidences.push_back(eLinkageEvidence_align_xgenus);
-                    } else if( *evid_iter == "align_trnscpt" ) {
-                        linkage_evidences.push_back(eLinkageEvidence_align_trnscpt);
-                    } else if( *evid_iter == "within_clone" ) {
-                        linkage_evidences.push_back(eLinkageEvidence_within_clone);
-                    } else if( *evid_iter == "clone_contig" ) {
-                        linkage_evidences.push_back(eLinkageEvidence_clone_contig);
-                    } else if( *evid_iter == "map" ) {
-                        linkage_evidences.push_back(eLinkageEvidence_map);
-                    } else if( *evid_iter == "strobe" ) {
-                        linkage_evidences.push_back(eLinkageEvidence_strobe);
-                    } else if( *evid_iter == "unspecified" ) {
-                        linkage_evidences.push_back(eLinkageEvidence_unspecified);
-                    } else {
+                    int le_flag = str_to_le(*evid_iter);
+                    if( le_flag<0 ) {
+                        linkage_evidence_flags = fLinkageEvidence_INVALID;
                         if(log_errors) m_AgpErr->Msg(CAgpErr::E_InvalidValue, "linkage_evidence (column 9): " + *evid_iter);
                         return CAgpErr::E_InvalidValue;
                     }
+                    if( le_flag==fLinkageEvidence_unspecified ) has_unspecified=true;
+                    else {
+                        linkage_evidences.push_back((ELinkageEvidence)le_flag);
+                        if( linkage_evidence_flags&le_flag ) {
+                            if(log_errors) m_AgpErr->Msg(CAgpErr::W_DuplicateEvidence, *evid_iter);
+                        }
+                        linkage_evidence_flags |= le_flag;
+                    }
+                }
+                if(has_unspecified && raw_linkage_evidences.size()>1) {
+                    if(log_errors) m_AgpErr->Msg(CAgpErr::E_InvalidValue,
+                        "linkage_evidence (column 9) -- \"unspecified\" cannot be combined with other terms");
+                    return CAgpErr::E_InvalidValue;
                 }
             }
         }
@@ -633,7 +652,7 @@ int CAgpRow::ParseGapCols(bool log_errors)
     return 0;
 }
 
-string CAgpRow::ToString()
+string CAgpRow::ToString(bool reorder_linkage_evidences)
 {
     string res=
         GetObject() + "\t" +
@@ -650,7 +669,7 @@ string CAgpRow::ToString()
             gap_types[gap_type] + "\t" +
             (linkage?"yes":"no") + "\t";
         if(eAgpVersion_1_1!=m_agp_version) {
-            res += LinkageEvidencesToString();
+            res += reorder_linkage_evidences ? LinkageEvidenceFlagsToString(): LinkageEvidencesToString();
         }
     }
     else{
@@ -699,19 +718,33 @@ bool CAgpRow::CheckComponentEnd( const string& comp_id, int comp_end, int comp_l
 const char* CAgpRow::le_str(CAgpRow::ELinkageEvidence le)
 {
     switch( le ) {
-        case eLinkageEvidence_paired_ends  : return "paired-ends";
-        case eLinkageEvidence_align_genus  : return "align_genus";
-        case eLinkageEvidence_align_xgenus : return "align_xgenus";
-        case eLinkageEvidence_align_trnscpt: return "align_trnscpt";
-        case eLinkageEvidence_within_clone : return "within_clone";
-        case eLinkageEvidence_clone_contig : return "clone_contig";
-        case eLinkageEvidence_map          : return "map";
-        case eLinkageEvidence_strobe       : return "strobe";
-        case eLinkageEvidence_unspecified  : return "unspecified";
+        case fLinkageEvidence_paired_ends  : return "paired-ends";
+        case fLinkageEvidence_align_genus  : return "align_genus";
+        case fLinkageEvidence_align_xgenus : return "align_xgenus";
+        case fLinkageEvidence_align_trnscpt: return "align_trnscpt";
+        case fLinkageEvidence_within_clone : return "within_clone";
+        case fLinkageEvidence_clone_contig : return "clone_contig";
+        case fLinkageEvidence_map          : return "map";
+        case fLinkageEvidence_strobe       : return "strobe";
+        case fLinkageEvidence_unspecified  : return "unspecified";
+        case fLinkageEvidence_na           : return "na";
+        case fLinkageEvidence_INVALID      : return "INVALED_LINKAGE_EVIDENCE";
         default:;
     }
     //return "ERROR:UNKNOWN_LINKAGE_EVIDENCE_TYPE:" +  NStr::IntToString( le );
     return NcbiEmptyCStr;
+}
+
+string CAgpRow::LinkageEvidenceFlagsToString(int le)
+{
+    string res = le_str( (ELinkageEvidence)le );
+    if(res.size()) return res;
+    for(unsigned mask=1; mask<=fLinkageEvidence_strobe; mask <<= 1 ) {
+        if(le&mask) {
+            if(res.size()) res += ";";
+            res += le_str( (ELinkageEvidence)mask );
+        }
+    }
 }
 
 string CAgpRow::LinkageEvidencesToString(void)
@@ -750,13 +783,13 @@ string CAgpRow::OrientationToString( EOrientation orientation )
 
 string CAgpRow::SubstOldGap(bool do_subst)
 {
-    ELinkageEvidence le=eLinkageEvidence_unspecified;
+    ELinkageEvidence le=fLinkageEvidence_unspecified;
     if( gap_type == eGapFragment ) {
-        le = linkage ? eLinkageEvidence_paired_ends : eLinkageEvidence_within_clone;
+        le = linkage ? fLinkageEvidence_paired_ends : fLinkageEvidence_within_clone;
     }
     else if( gap_type == eGapClone ) {
         if(linkage) {
-            le =  eLinkageEvidence_clone_contig;
+            le =  fLinkageEvidence_clone_contig;
         }
         else {
             if(do_subst) gap_type = eGapContig;
@@ -769,6 +802,10 @@ string CAgpRow::SubstOldGap(bool do_subst)
     if(do_subst) {
         gap_type = eGapScaffold;
         linkage = true;
+        if(linkage_evidence_flags==0 && le!=fLinkageEvidence_unspecified) {
+            linkage_evidence_flags = le;
+            linkage_evidences.clear(); linkage_evidences.push_back(le);
+        }
     }
     return string("gap type=scaffold, linkage=yes, linkage evidence=")+le_str(le)+" or unspecified";
 }
