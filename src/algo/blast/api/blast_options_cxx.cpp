@@ -1902,8 +1902,10 @@ CBlastOptions::SetComplexityAdjMode(bool m)
 double 
 CBlastOptions::GetLowScorePerc() const
 {
-    if (m_Local)
-        m_Local->GetLowScorePerc();
+    if (! m_Local) {
+        x_Throwx("Error: GetLowScorePerc() not available.");
+    }
+    return m_Local->GetLowScorePerc();
 }
 
 void 
