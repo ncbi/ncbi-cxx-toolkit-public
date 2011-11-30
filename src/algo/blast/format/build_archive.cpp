@@ -182,12 +182,6 @@ BlastBuildArchive(blast::IQueryFactory& queries,
                      const CSearchResultSet& results,
                      blast::IQueryFactory& subjects)
 {
-        CSearchDatabase::EMoleculeType mol_type = CSearchDatabase::eBlastDbIsNucleotide;
-        if (Blast_SubjectIsNucleotide(options_handle.GetOptions().GetProgramType()))
-        	mol_type = CSearchDatabase::eBlastDbIsNucleotide;
-	else
-        	mol_type = CSearchDatabase::eBlastDbIsProtein;
-
         CRef<blast::IQueryFactory> iquery_ref(&queries);
         CRef<blast::IQueryFactory> isubject_ref(&subjects);
         CRef<blast::CBlastOptionsHandle> options_ref(&options_handle);

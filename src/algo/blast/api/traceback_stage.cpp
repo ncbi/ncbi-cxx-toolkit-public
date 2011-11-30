@@ -175,9 +175,6 @@ CBlastTracebackSearch::x_Init(CRef<IQueryFactory>   qf,
         _ASSERT(m_InternalData->m_RpsData == NULL);
         CRef< CBlastSeqLocWrap > lookup_segments_wrap( 
                 new CBlastSeqLocWrap( lookup_segments ) );
-        int num_pat_occurrences_in_db = 0;
-        if (m_DBscanInfo && m_DBscanInfo->m_NumPatOccurInDB != m_DBscanInfo->kNoPhiBlastPattern)
-           num_pat_occurrences_in_db = m_DBscanInfo->m_NumPatOccurInDB;
         LookupTableWrap* lut =
             CSetupFactory::CreateLookupTable(query_data, m_OptsMemento,
                  m_InternalData->m_ScoreBlk->GetPointer(), lookup_segments_wrap);
