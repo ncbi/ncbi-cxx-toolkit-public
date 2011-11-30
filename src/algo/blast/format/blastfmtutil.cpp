@@ -323,6 +323,10 @@ CBlastFormatUtil::CreateSeqAnnotFromSeqAlignSet(const objects::CSeq_align_set & 
     {
     	blast_db_info->AddField( "n/a", false );
     }
+    else if(0 == NStr::CompareNocase(db_name, "SRA"))
+    {
+    	blast_db_info->AddField( db_name, true );
+    }
     else
     {
     	bool is_nucl = Blast_SubjectIsNucleotide(EProgramToEBlastProgramType(program));
