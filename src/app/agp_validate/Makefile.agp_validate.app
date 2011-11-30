@@ -9,6 +9,7 @@ LIB = entrez2cli entrez2 taxon1 xobjutil xobjread \
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects -Cygwin
-CXXFLAGS = $(ORIG_CXXFLAGS) -Wno-parentheses
+CXXFLAGS = $(ORIG_CXXFLAGS)
+# -Wno-parentheses
 
 WATCHERS = sapojnik

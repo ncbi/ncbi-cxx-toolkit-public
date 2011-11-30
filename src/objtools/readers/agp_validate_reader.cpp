@@ -40,8 +40,6 @@
 using namespace ncbi;
 using namespace objects;
 BEGIN_NCBI_SCOPE
-#pragma GCC diagnostic ignored "-Wparentheses"
-#pragma GCC diagnostic ignored "-Wdeprecated"
 
 //// class CAgpValidateReader
 void CAgpValidateReader::Reset(bool for_chr_from_scaf)
@@ -528,7 +526,7 @@ void CAgpValidateReader::x_PrintTotals() // without comment counts
   //// Various counts of AGP elements
 
   // w: width for right alignment
-  int w = NStr::IntToString(m_CompId2Spans.size()).size(); // +1;
+  int w = NStr::IntToString((unsigned)(m_CompId2Spans.size())).size(); // +1;
 
   cout << "\n"
     "Objects                : "<<ALIGN_W(m_ObjCount           )<<"\n"
@@ -948,7 +946,7 @@ void CAgpValidateReader::x_PrintIdsNotInAgp()
 {
   CAccPatternCounter patterns;
   set<string> ids;
-  int cnt;
+  int cnt=0;
 
     // ids in m_comp2len but not in m_CompId2Spans
   for(CMapCompLen::iterator it = m_comp2len->begin();  it != m_comp2len->end(); ++it) {
@@ -1038,8 +1036,8 @@ CCompSpans::TCheckSpan CCompSpans::CheckSpan(int span_beg, int span_end, bool is
 
   for(iterator it = begin();  it != end(); ++it) {
     // A high priority warning
-    if( it->beg <= span_beg && span_beg <= it->end ||
-        it->beg <= span_end && span_end <= it->end )
+    if( (it->beg <= span_beg && span_beg <= it->end) ||
+        (it->beg <= span_end && span_end <= it->end) )
       return TCheckSpan(it, CAgpErrEx::W_SpansOverlap);
 
     // A lower priority warning (to be ignored for draft seqs)

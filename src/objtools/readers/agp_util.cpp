@@ -320,7 +320,7 @@ int CAgpRow::FromString(const string& line)
     else if( cols.size() < 8 || cols.size() > 9 ) {
         // skip this entire line, report an error
         m_AgpErr->Msg(CAgpErr::E_ColumnCount,
-            string(", found ") + NStr::IntToString(cols.size()) );
+            string(", found ") + NStr::IntToString((unsigned)(cols.size())) );
         return CAgpErr::E_ColumnCount;
     }
 
@@ -745,6 +745,7 @@ string CAgpRow::LinkageEvidenceFlagsToString(int le)
             res += le_str( (ELinkageEvidence)mask );
         }
     }
+    return res;
 }
 
 string CAgpRow::LinkageEvidencesToString(void)
