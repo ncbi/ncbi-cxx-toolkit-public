@@ -1311,7 +1311,7 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
     m_Scope.Reset(new CScope(*CObjectManager::GetInstance()));
 
     // default germline database name for annotation
-    string df_db_name = "internal_data/" + m_IgOptions->m_Origin + "_gl_V";
+    string df_db_name = "internal_data/" + m_IgOptions->m_Origin + "/" + m_IgOptions->m_Origin + "_V";
     CRef<CSearchDatabase> db(new CSearchDatabase(df_db_name, mol_type));
     m_IgOptions->m_Db[3].Reset(new CLocalDbAdapter(*db));
     try {
