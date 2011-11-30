@@ -2511,6 +2511,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "IMM<CHN-Bejing>	s	Chinese Academy of Medical Science",
 "IMM<CHN-Hohhot>	s	Inner Mongolian Museum",
 "IMMH	c	Collection of Animal Viruses",
+"IMMIB<DEU>	c	Culture Collection of the Institute of Medical Microbiology and Immunology of the University of Bonn",
 "IMPC	s	Sichuan Academy of Traditional Chinese Medicine and Pharmacy",
 "IMRU	c	Waksman Institute of Microbiology",
 "IMS<TZA>	s	Institute of Marine Sciences",
