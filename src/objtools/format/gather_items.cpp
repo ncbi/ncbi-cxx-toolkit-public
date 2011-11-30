@@ -1892,18 +1892,6 @@ static CRef<CGapItem> s_NewGapItem(CSeqMap_CI& gap_it, CBioseqContext& ctx)
     TSeqPos pos     = gap_it.GetPosition();
     TSeqPos end_pos = gap_it.GetEndPosition();
 
-    // remove this code after Dec 1 (JIRA GCOL-1091), when the quarantine 
-    // period ends
-    if( ctx.Config().IsModeRelease() ) {
-        // don't do gap_type or linkage_evidence, and
-        // don't let gaps be assembly_gap
-        CRef<CGapItem> retval(gap_it.IsUnknownLength() ? 
-            new CGapItem(pos, end_pos, ctx, kRegularGap, kEmptyStr, CGapItem::TEvidence() ) :
-        new CGapItem(pos, end_pos, ctx, kRegularGap, kEmptyStr, CGapItem::TEvidence(), 
-            gap_it.GetLength() ));
-        return retval;
-    }
-
     string sType;
     CGapItem::TEvidence sEvidence;
     if( gap_it.IsSetData() && gap_it.GetData().IsGap() ) {
