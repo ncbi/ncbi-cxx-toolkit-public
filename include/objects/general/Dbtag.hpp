@@ -251,6 +251,33 @@ public:
     //   the URL or an empty string if non is available
     string GetUrl(void) const;
 
+    // Get a URL to the resource (if available)
+    // @param taxid organism taxid for URL generation
+    // @return
+    //   the URL or an empty string if non is available
+    string GetUrl(int taxid) const;
+
+    // Get a URL to the resource (if available)
+    // @param taxname organism taxname (e.g. "Danio rerio") for URL generation
+    // @return
+    //   the URL or an empty string if non is available
+    string GetUrl(const string &taxname) const;
+
+    // Get a URL to the resource (if available).  This function assumes
+    // that only 1 of the following 3 states can occur: 1. all parameters
+    // empty.  2. genus and species set, but not subspecies.
+    // 3. all parameters set.
+    // Any other state of parameters may give an unexpected result, but
+    // no crash or exception will be thrown.
+    // @param genus       organism genus for URL generation
+    // @param species     organism species for URL generation
+    // @param subspecies  organism subspecies for URL generation
+    // @return
+    //   the URL or an empty string if non is available
+    string GetUrl(const string & genus,
+                  const string & species,
+                  const string & subspecies = kEmptyStr ) const;
+
 private:
 
     // our enumerated (parsed) type

@@ -235,6 +235,40 @@ DEFINE_STATIC_ARRAY_MAP(TDbxrefTypeMap, sc_ApprovedSrcDb,    kApprovedSrcDbXrefs
 DEFINE_STATIC_ARRAY_MAP(TDbxrefTypeMap, sc_ApprovedProbeDb,  kApprovedProbeDbXrefs);
 DEFINE_STATIC_ARRAY_MAP(TDbxrefSet,     sc_SkippableDbXrefs, kSkippableDbXrefs);
 
+struct STaxidTaxname {
+    STaxidTaxname( 
+        const string & genus,
+        const string & species,
+        const string & subspecies ) :
+        m_genus(genus), m_species(species), m_subspecies(subspecies) { }
+
+    string m_genus;
+    string m_species;
+    string m_subspecies;
+};
+// Is hard-coding this here the best way to do this?
+typedef pair<int, STaxidTaxname> TTaxIdTaxnamePair;
+static const TTaxIdTaxnamePair sc_taxid_taxname_pair[] = {
+    TTaxIdTaxnamePair(7955, STaxidTaxname("Danio", "rerio", kEmptyStr) ),
+    TTaxIdTaxnamePair(8022, STaxidTaxname("Oncorhynchus", "mykiss", kEmptyStr) ),
+    TTaxIdTaxnamePair(9606, STaxidTaxname("Homo", "sapiens", kEmptyStr) ),
+    TTaxIdTaxnamePair(9615, STaxidTaxname("Canis", "lupus", "familiaris") ),
+    TTaxIdTaxnamePair(9838, STaxidTaxname("Camelus", "dromedarius", kEmptyStr) ),
+    TTaxIdTaxnamePair(9913, STaxidTaxname("Bos", "taurus", kEmptyStr) ),
+    TTaxIdTaxnamePair(9986, STaxidTaxname("Oryctolagus", "cuniculus", kEmptyStr) ),
+    TTaxIdTaxnamePair(10090, STaxidTaxname("Mus", "musculus", kEmptyStr) ),
+    TTaxIdTaxnamePair(10093, STaxidTaxname("Mus", "pahari", kEmptyStr) ),
+    TTaxIdTaxnamePair(10094, STaxidTaxname("Mus", "saxicola", kEmptyStr) ),
+    TTaxIdTaxnamePair(10096, STaxidTaxname("Mus", "spretus", kEmptyStr) ),
+    TTaxIdTaxnamePair(10098, STaxidTaxname("Mus", "cookii", kEmptyStr) ),
+    TTaxIdTaxnamePair(10105, STaxidTaxname("Mus", "minutoides", kEmptyStr) ),
+    TTaxIdTaxnamePair(10116, STaxidTaxname("Rattus", "norvegicus", kEmptyStr) ),
+    TTaxIdTaxnamePair(10117, STaxidTaxname("Rattus", "rattus", kEmptyStr) )
+};
+
+typedef CStaticArrayMap<int, STaxidTaxname> TTaxIdTaxnameMap;
+DEFINE_STATIC_ARRAY_MAP(TTaxIdTaxnameMap, sc_TaxIdTaxnameMap, sc_taxid_taxname_pair);
+
 // destructor
 CDbtag::~CDbtag(void)
 {
@@ -598,8 +632,73 @@ static const TDbtUrl sc_url_prefix[] = {
 typedef CStaticArrayMap<CDbtag::EDbtagType, string> TUrlPrefixMap;
 DEFINE_STATIC_ARRAY_MAP(TUrlPrefixMap, sc_UrlMap, sc_url_prefix);
 
-
 string CDbtag::GetUrl(void) const
+{
+    return GetUrl( kEmptyStr, kEmptyStr, kEmptyStr );
+}
+
+string CDbtag::GetUrl(int taxid) const
+{   
+    TTaxIdTaxnameMap::const_iterator find_iter = sc_TaxIdTaxnameMap.find(taxid);
+    if( find_iter == sc_TaxIdTaxnameMap.end() ) {
+        return GetUrl();
+    } else {
+        const STaxidTaxname & taxinfo = find_iter->second;
+        return GetUrl( taxinfo.m_genus, taxinfo.m_species, taxinfo.m_subspecies );
+    }
+}
+
+string CDbtag::GetUrl(const string & taxname_arg ) const
+{
+    // The exact number doesn't matter, as long as it's long enough
+    // to cover all reasonable cases
+    const static SIZE_TYPE kMaxLen = 500;
+
+    if( taxname_arg.empty() || taxname_arg.length() > kMaxLen ) {
+        return GetUrl();
+    }
+
+    // make a copy because we're changing it
+    string taxname = taxname_arg;
+
+    // convert all non-alpha chars to spaces
+    NON_CONST_ITERATE( string, str_iter, taxname ) {
+        const char ch = *str_iter;
+        if( ! isalpha(ch) ) {
+            *str_iter = ' ';
+        }
+    }
+
+    // remove initial and final spaces
+    NStr::TruncateSpacesInPlace( taxname );
+
+    // extract genus, species, subspeces
+
+    vector<string> taxname_parts;
+    NStr::Tokenize( taxname, " ", taxname_parts, NStr::eMergeDelims );
+
+    if( taxname_parts.size() == 2 || taxname_parts.size() == 3 ) {
+        string genus;
+        string species;
+        string subspecies;
+
+        genus = taxname_parts[0];
+        species = taxname_parts[1];
+
+        if( taxname_parts.size() == 3 ) {
+            subspecies = taxname_parts[2];
+        }
+
+        return GetUrl( genus, species, subspecies );
+    }
+
+    // if we couldn't figure out the taxname, use the default behavior
+    return GetUrl();
+}
+
+string CDbtag::GetUrl(const string & genus,
+                      const string & species,
+                      const string & subspecies) const
 {
     TUrlPrefixMap::const_iterator it = sc_UrlMap.find(GetType());
     if (it == sc_UrlMap.end()) {
@@ -719,6 +818,19 @@ string CDbtag::GetUrl(void) const
         case eDbtagType_ViPR:
             tag += "&decorator=vipr";
             break;
+
+    case CDbtag::eDbtagType_IMGT_GENEDB:
+        if( ! genus.empty() ) {
+            string taxname_url_piece = genus + "+" + species;
+            if( ! subspecies.empty() ) {
+                taxname_url_piece += "+" + subspecies;
+            }
+            return NStr::Replace( *prefix,
+                                  "species=Homo+sapiens&",
+                                  "species=" + taxname_url_piece + "&" ) +
+                tag;
+        }
+        break;
 
         default:
             break;
