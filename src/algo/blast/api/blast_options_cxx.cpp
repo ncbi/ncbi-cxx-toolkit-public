@@ -1899,6 +1899,22 @@ CBlastOptions::SetComplexityAdjMode(bool m)
     }
 }
 
+double 
+CBlastOptions::GetLowScorePerc() const
+{
+    if (m_Local)
+        m_Local->GetLowScorePerc();
+}
+
+void 
+CBlastOptions::SetLowScorePerc(double p)
+{
+    if (m_Local) 
+        m_Local->SetLowScorePerc(p);
+}
+
+
+
 /************************ Scoring options ************************/
 const char* 
 CBlastOptions::GetMatrixName() const

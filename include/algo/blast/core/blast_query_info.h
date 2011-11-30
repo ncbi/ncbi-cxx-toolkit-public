@@ -94,6 +94,18 @@ BlastQueryInfo* BlastQueryInfoDup(BlastQueryInfo* query_info);
 NCBI_XBLAST_EXPORT
 Int4 Blast_GetQueryIndexFromContext(Int4 context, EBlastProgramType program);
 
+
+/** Return the query index (zero based), given the query offset
+ *   in the initial HSP as the program.
+ * @param query_offset Offset of the query in the initial HSP [in]
+ * @param program EBlastProgramType [in]
+ * @param query_info information about all the queries [in]
+ * @return Query Index in a set of queries
+*/
+NCBI_XBLAST_EXPORT
+Int4 Blast_GetQueryIndexFromQueryOffset(Int4 query_offset, EBlastProgramType program, const BlastQueryInfo* query_info);
+
+
 /** Retrieve a query sequence's search space
  * @param qinfo BlastQueryInfo structure [in]
  * @param program CORE program type [in]

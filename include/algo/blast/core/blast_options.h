@@ -368,6 +368,13 @@ typedef struct BlastHitSavingOptions {
     */
    BlastHSPFilteringOptions* hsp_filt_opt;
 
+   /** Low-score option.  Do not pass ungapped alignments on for later processing if
+    * the hitlist is already full of other alignments unless the ungapped aligment 
+    * is above the fraction X of the least significant database match.
+    * zero should turn this off.
+    */
+   double low_score_perc;
+
 } BlastHitSavingOptions;
 
 /** Scoring options block 

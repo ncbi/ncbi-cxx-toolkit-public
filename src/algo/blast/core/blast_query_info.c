@@ -53,6 +53,14 @@ Blast_GetQueryIndexFromContext(Int4 context, EBlastProgramType program)
    }
 }
 
+Int4
+Blast_GetQueryIndexFromQueryOffset(Int4 query_offset, EBlastProgramType program, const BlastQueryInfo* query_info)
+{
+   int context = BSearchContextInfo(query_offset, query_info);
+  
+   return Blast_GetQueryIndexFromContext(context, program);
+}
+
 BlastQueryInfo* BlastQueryInfoNew(EBlastProgramType program, int num_queries)
 {
     const unsigned int kNumContexts = BLAST_GetNumberOfContexts(program);

@@ -320,7 +320,7 @@ public:
     bool GetGappedMode() const;
     void SetGappedMode(bool m = true);
 
-    // Masklevel filtering option -RMH-
+    /// Masklevel filtering option -RMH-
     int GetMaskLevel() const;
     void SetMaskLevel(int s);
 
@@ -328,6 +328,10 @@ public:
     //  scoring is required, false otherwise. -RMH-
     bool GetComplexityAdjMode() const;
     void SetComplexityAdjMode(bool m = true);
+
+    /// Sets a low score to drop ungapped alignments if hit list is full.
+    double GetLowScorePerc() const;
+    void SetLowScorePerc(double p = 0.0);
 
     /************************ Scoring options ************************/
     const char* GetMatrixName() const;

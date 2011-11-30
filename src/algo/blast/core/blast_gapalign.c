@@ -2993,9 +2993,8 @@ BlastGetOffsetsForGappedAlignment (const Uint1* query, const Uint1* subject,
     int s_start = hsp->subject.offset;
     
     if (q_length <= HSP_MAX_WINDOW) {
-        /* trust the original gapped start */
-        *q_retval = hsp->query.gapped_start;
-        *s_retval = hsp->subject.gapped_start;
+        *q_retval = q_start + q_length/2;
+        *s_retval = s_start + q_length/2;
         return TRUE;
     }
 
@@ -3134,6 +3133,7 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
    Int4 context;
    BlastIntervalTree *tree;
    Int4 score;
+   Int4* found_high_score = NULL;
    Int4 **rpsblast_pssms = NULL;   /* Pointer to concatenated PSSMs in
                                        RPS-BLAST database */
    const int kHspNumMax = BlastHspNumMax(TRUE, hit_options);
@@ -3184,8 +3184,6 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
    else 
       hsp_list = *hsp_list_ptr;
 
-   init_hsp_array = init_hitlist->init_hsp_array;
-
    /* Initialize the interval tree with the maximum possible
       query and subject offsets. For query sequences this is always
       query->length, and for subject sequences it is subject->length
@@ -3211,11 +3209,26 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
    if (!tree)
      return BLASTERR_MEMORY;
 
+   
+   init_hsp_array = init_hitlist->init_hsp_array;
+   found_high_score = (Int4*) calloc(query_info->num_queries, sizeof(Int4));
+   if (hit_params->low_score)
+   {
+   	for (index=0; index<init_hitlist->total; index++)
+   	{
+      	    int query_index = 
+       		  Blast_GetQueryIndexFromQueryOffset(init_hsp_array[index].offsets.qs_offsets.q_off, program_number, query_info);
+      	    if (init_hsp_array[index].ungapped_data->score > hit_params->low_score[query_index])
+        	found_high_score[query_index] = 1;
+        }
+   }
+
    for (index=0; index<init_hitlist->total; index++)
    {
       BlastHSP tmp_hsp;
       BlastInitHSP tmp_init_hsp;
       BlastUngappedData tmp_ungapped_data;
+      int query_index=0;
 
       /* make a local copy of the initial HSP */
 
@@ -3228,6 +3241,13 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
 
       s_AdjustHspOffsetsAndGetQueryData(query, query_info, init_hsp, 
                                         &query_tmp, &context);
+
+      if (hit_params->low_score)
+      {
+      	query_index = Blast_GetQueryIndexFromContext(context, program_number);
+      	if (!found_high_score[query_index])
+         continue;
+      }
 
       if (rpsblast_pssms)
          gap_align->sbp->psi_matrix->pssm->data = rpsblast_pssms + 
@@ -3401,6 +3421,8 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
          }
       }
    }   
+
+   sfree(found_high_score);
 
    tree = Blast_IntervalTreeFree(tree);
    if (rpsblast_pssms) {

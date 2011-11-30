@@ -216,9 +216,13 @@ public:
     bool GetGappedMode() const;
     void SetGappedMode(bool m = true);
 
-    // Masklevel filtering option -RMH-
+    /// Masklevel filtering option -RMH-
     int GetMaskLevel() const;
     void SetMaskLevel(int s);
+
+    /// Sets low score percentages.
+    double GetLowScorePerc() const;
+    void SetLowScorePerc(double p = 0.0);
 
     /// Returns true if cross_match-like complexity adjusted
     //  scoring is required, false otherwise. -RMH-
@@ -1271,6 +1275,18 @@ inline void
 CBlastOptionsLocal::SetMaskLevel(int s)
 {
     m_HitSaveOpts->mask_level = s;
+}
+
+inline double
+CBlastOptionsLocal::GetLowScorePerc() const
+{
+    return m_HitSaveOpts->low_score_perc;
+}
+
+inline void
+CBlastOptionsLocal::SetLowScorePerc(double p)
+{
+    m_HitSaveOpts->low_score_perc = p;
 }
 
 /* Flag to indicate if cross_match-like complexity adjusted

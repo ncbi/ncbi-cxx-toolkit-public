@@ -97,4 +97,53 @@ BOOST_AUTO_TEST_CASE(EmptyBlastxGetQueryInfo) {
     BOOST_REQUIRE_EQUAL(0, query_info->contexts[5].query_length);
 }
 
+BOOST_AUTO_TEST_CASE(BlastnGetQueryInfo) {
+    const int kNumQueries=2;
+    CSeq_id id1("gi|3090");
+    CSeq_id id2("gi|555");
+    auto_ptr<SSeqLoc> qsl1(CTestObjMgr::Instance().CreateSSeqLoc(id1));
+    auto_ptr<SSeqLoc> qsl2(CTestObjMgr::Instance().CreateSSeqLoc(id2));
+    TSeqLocVector query_v;
+    query_v.push_back(*qsl1);
+    query_v.push_back(*qsl2);
+    CBlastQueryInfo query_info;
+    CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(eBlastn));
+
+    const CBlastOptions& kOpts = opts->GetOptions();
+    EBlastProgramType prog = kOpts.GetProgramType();
+    ENa_strand strand_opt = kOpts.GetStrandOption();
+
+    SetupQueryInfo(query_v, prog, strand_opt, &query_info);
+
+    BOOST_REQUIRE_EQUAL(kNumQueries, query_info->num_queries);
+    BOOST_REQUIRE_EQUAL(0, query_info->first_context);
+    BOOST_REQUIRE_EQUAL(3, query_info->last_context);
+    BOOST_REQUIRE_EQUAL(0, query_info->contexts[0].query_offset);
+    BOOST_REQUIRE_EQUAL(2338, query_info->contexts[0].query_length);
+}
+
+BOOST_AUTO_TEST_CASE(BlastnGetQueryIndex) {
+    CSeq_id id1("gi|3090");
+    CSeq_id id2("gi|555");
+    auto_ptr<SSeqLoc> qsl1(CTestObjMgr::Instance().CreateSSeqLoc(id1));
+    auto_ptr<SSeqLoc> qsl2(CTestObjMgr::Instance().CreateSSeqLoc(id2));
+    TSeqLocVector query_v;
+    query_v.push_back(*qsl1);
+    query_v.push_back(*qsl2);
+    CBlastQueryInfo query_info;
+    CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(eBlastn));
+
+    const CBlastOptions& kOpts = opts->GetOptions();
+    EBlastProgramType prog = kOpts.GetProgramType();
+    ENa_strand strand_opt = kOpts.GetStrandOption();
+
+    SetupQueryInfo(query_v, prog, strand_opt, &query_info);
+
+    int query_index = Blast_GetQueryIndexFromQueryOffset(3000, prog, query_info);
+    BOOST_REQUIRE_EQUAL(0, query_index);
+    query_index = Blast_GetQueryIndexFromQueryOffset(5010, prog, query_info);
+    BOOST_REQUIRE_EQUAL(1, query_index);
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()

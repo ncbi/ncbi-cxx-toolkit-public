@@ -178,6 +178,9 @@ typedef struct BlastHitSavingParameters {
    Int4 mask_level; /**< Only keep the highest scoring HSP when more than
                           one HSP overlaps the same region of the query by
                           more than or equal to mask_level %. -RMH- */
+   Int4* low_score;             /**< lowest ungapped score that can trigger a
+				gapped alignment if the histlist is already full.
+                                One value for each query. */
 } BlastHitSavingParameters;
 
 /** Because approximate gapped alignment adds extra overhead,

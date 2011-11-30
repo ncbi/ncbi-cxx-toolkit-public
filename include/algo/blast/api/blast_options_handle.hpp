@@ -281,6 +281,11 @@ public:
     /// @param m ComplexityAdjMode [in]
     void SetComplexityAdjMode(bool m = true) { m_Opts->SetComplexityAdjMode(m); }
 
+    /// Returns low score percentage for ungapped alignments.
+    double GetLowScorePerc() const {return m_Opts->GetLowScorePerc(); }
+    /// Sets low score percentage for ungapped alignments.
+    void SetLowScorePerc(double p) { m_Opts->SetLowScorePerc(p); }
+
     /******************** Database (subject) options *******************/
     /// Returns DbLength
     Int8 GetDbLength() const { return m_Opts->GetDbLength(); }

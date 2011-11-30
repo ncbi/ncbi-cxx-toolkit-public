@@ -807,6 +807,11 @@ BlastHitSavingParametersNew(EBlastProgramType program_number,
       }
    }
 
+   if (options->low_score_perc > 0.00001)
+       params->low_score = calloc((size_t) query_info->num_queries, sizeof(int));
+   else 
+       params->low_score = NULL;
+
    status = BlastHitSavingParametersUpdate(program_number, sbp, query_info, 
                                            avg_subj_length, params);
 

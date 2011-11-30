@@ -1191,6 +1191,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
       }
 
       if (hsp_list && hsp_list->hspcnt > 0) {
+         int query_index=0; /* Used to loop over queries below. */
          if (!gapped_calculation) {
             /* The following must be performed for any ungapped 
                search with a nucleotide database. */
@@ -1241,6 +1242,15 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
          status = BlastHSPStreamWrite(hsp_stream, &hsp_list);
          if (status != 0)
             break;
+
+         if (hit_params->low_score)
+         {
+ 	    for (query_index=0; query_index<hsp_stream->results->num_queries; query_index++)
+              if (hsp_stream->results->hitlist_array[query_index] && hsp_stream->results->hitlist_array[query_index]->heapified)
+                   hit_params->low_score[query_index] = 
+			MAX(hit_params->low_score[query_index], 
+                           hit_params->options->low_score_perc*(hsp_stream->results->hitlist_array[query_index]->low_score));
+         }
       }
       
       BlastSeqSrcReleaseSequence(seq_src, &seq_arg);
