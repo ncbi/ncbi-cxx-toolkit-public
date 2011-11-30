@@ -634,6 +634,8 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
                     }
                     break;
                 case CGC_TypedSeqId::e_Private:
+                    // Ignore private local ids - they are not unique.
+                    if (id.GetPrivate().IsLocal()) continue;
                     if (dst_id != &id.GetPrivate()) {
                         synonyms.insert(CSeq_id_Handle::GetHandle(id.GetPrivate()));
                     }
@@ -830,6 +832,8 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
                 break;
             }
             case CGC_TypedSeqId::e_Private:
+                // Ignore private local ids.
+                if (id.GetPrivate().IsLocal()) continue;
                 synonyms.insert(CSeq_id_Handle::GetHandle(id.GetPrivate()));
                 break;
             case CGC_TypedSeqId::e_External:
