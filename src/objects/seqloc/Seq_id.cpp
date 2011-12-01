@@ -993,7 +993,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
 
 CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(void) const
 {
-    EAccessionInfo type = (EAccessionInfo)Which();
+    E_Choice type = Which();
     switch (type) {
     case e_Pir: case e_Swissprot: case e_Prf: // but *NOT* e_Pdb
         return (EAccessionInfo)(type | fAcc_prot); // always just protein
@@ -1011,10 +1011,10 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(void) const
             } else if ((ai & eAcc_type_mask) == type) {
                 return ai;
             } else { // misidentified or mislabeled; assume the former
-                return type;
+                return static_cast<EAccessionInfo>(type);
             }
         } else {
-            return type;
+            return static_cast<EAccessionInfo>(type);
         }
     }
 
@@ -1027,7 +1027,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(void) const
     }
 
     default:
-        return type;
+        return static_cast<EAccessionInfo>(type);
     }
 }
 
