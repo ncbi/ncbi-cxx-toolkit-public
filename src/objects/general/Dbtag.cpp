@@ -206,7 +206,6 @@ static const TDbxrefPair kApprovedSrcDbXrefs[] = {
     TDbxrefPair("RZPD", CDbtag::eDbtagType_RZPD),
     TDbxrefPair("UNILIB", CDbtag::eDbtagType_UNILIB),
     TDbxrefPair("UNITE", CDbtag::eDbtagType_UNITE), 
-    TDbxrefPair("ViPR", CDbtag::eDbtagType_ViPR), 
     TDbxrefPair("taxon", CDbtag::eDbtagType_taxon)
 };
 
