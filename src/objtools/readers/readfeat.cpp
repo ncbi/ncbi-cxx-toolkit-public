@@ -58,6 +58,7 @@
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/seq/Pubdesc.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
+#include <objects/seq/seq_loc_from_string.hpp>
 
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/BioSource.hpp>
@@ -80,7 +81,6 @@
 
 #include <objtools/readers/readfeat.hpp>
 #include <objtools/readers/table_filter.hpp>
-#include <objtools/cleanup/cleanup.hpp>
 #include <objtools/error_codes.hpp>
 
 #include <algorithm>
@@ -259,7 +259,8 @@ private:
                                    EQual qtype, const string& val,
                                    IErrorContainer *container, int line_num, const string &seq_id );
     bool x_AddQualifierToRna      (CSeqFeatData& sfdata,
-                                   EQual qtype, const string& val);
+                                   EQual qtype, const string& val,
+                                   IErrorContainer *container, int line_num, const string &seq_id );
     bool x_AddQualifierToImp      (CRef<CSeq_feat> sfp, CSeqFeatData& sfdata,
                                    EQual qtype, const string& qual, const string& val);
     bool x_AddQualifierToBioSrc   (CSeqFeatData& sfdata,
@@ -277,6 +278,10 @@ private:
     bool x_StringIsJustQuotes (const string& str);
 
     int x_ParseTrnaString (const string& val);
+
+    void x_ParseTrnaExtString(
+        CTrna_ext & ext_trna, const string & str, const CSeq_id *seq_id );
+    SIZE_TYPE x_MatchingParenPos( const string &str, SIZE_TYPE open_paren_pos );
 
     long x_StringToLongNoThrow (
         CTempString strToConvert,
@@ -1238,6 +1243,84 @@ int CFeature_table_reader_imp::x_ParseTrnaString (
     return 0;
 }
 
+void
+CFeature_table_reader_imp::x_ParseTrnaExtString(
+    CTrna_ext & ext_trna, const string & str, const CSeq_id *seq_id )
+{
+    if (NStr::IsBlank (str)) return;
+
+    if (NStr::StartsWith (str, "(pos:")) {
+        // find position of closing paren
+        string::size_type pos_end = x_MatchingParenPos( str, 0 );
+        if (pos_end != string::npos) {
+            string pos_str = str.substr (5, pos_end - 5);
+            string::size_type aa_start = NStr::FindNoCase (pos_str, "aa:");
+            if (aa_start != string::npos) {
+                string abbrev = pos_str.substr (aa_start + 3);
+                TTrnaMap::const_iterator t_iter = sm_TrnaKeys.find (abbrev.c_str ());
+                if (t_iter == sm_TrnaKeys.end ()) {
+                    // unable to parse
+                    return;
+                }
+                CRef<CTrna_ext::TAa> aa(new CTrna_ext::TAa);
+                aa->SetIupacaa (t_iter->second);
+                ext_trna.SetAa(*aa);
+                pos_str = pos_str.substr (0, aa_start);
+                NStr::TruncateSpacesInPlace (pos_str);
+                if (NStr::EndsWith (pos_str, ",")) {
+                    pos_str = pos_str.substr (0, pos_str.length() - 1);
+                }
+            }
+            CGetSeqLocFromStringHelper helper;
+            CRef<CSeq_loc> anticodon = GetSeqLocFromString (pos_str, seq_id, & helper);
+            if( anticodon ) {
+                anticodon->SetStrand(eNa_strand_plus); // anticodon is always on plus strand
+            }
+            if (anticodon == NULL) {
+                ext_trna.ResetAa();
+            } else {
+                ext_trna.SetAnticodon(*anticodon);
+            }
+        }
+    }
+}
+
+
+SIZE_TYPE CFeature_table_reader_imp::x_MatchingParenPos( 
+    const string &str, SIZE_TYPE open_paren_pos )
+{
+    _ASSERT( str[open_paren_pos] == '(' );
+    _ASSERT( open_paren_pos < str.length() );
+
+    // nesting level. start at 1 since we know there's an open paren
+    int level = 1;
+
+    SIZE_TYPE pos = open_paren_pos + 1;
+    for( ; pos < str.length(); ++pos ) {
+        switch( str[pos] ) {
+            case '(':
+                // nesting deeper
+                ++level;
+                break;
+            case ')':
+                // closed a level of nesting
+                --level;
+                if( 0 == level ) {
+                    // reached the top: we're closing the initial paren,
+                    // so we return our position
+                    return pos;
+                }
+                break;
+            default:
+                // ignore other characters.
+                // maybe in the future we'll handle ignoring parens in quotes or
+                // things like that.
+                break;
+        }
+    }
+    return NPOS;
+}
+
 long CFeature_table_reader_imp::x_StringToLongNoThrow (
     CTempString strToConvert,
     IErrorContainer *container, 
@@ -1289,9 +1372,11 @@ long CFeature_table_reader_imp::x_StringToLongNoThrow (
 bool CFeature_table_reader_imp::x_AddQualifierToRna (
     CSeqFeatData& sfdata,
     EQual qtype,
-    const string& val
+    const string& val,
+    IErrorContainer *container, 
+    int line_num, 
+    const string &seq_id
 )
-
 {
     CRNA_ref& rrp = sfdata.SetRna ();
     CRNA_ref::EType rnatyp = rrp.GetType ();
@@ -1335,10 +1420,21 @@ bool CFeature_table_reader_imp::x_AddQualifierToRna (
                     }
                     break;
                 case eQual_anticodon:
-                    /* !!! need to implement !!! */
+                    {
+                        CRNA_ref::TExt& tex = rrp.SetExt ();
+                        CRNA_ref::C_Ext::TTRNA & ext_trna = tex.SetTRNA();
+                        CRef<CSeq_id> seq_id_obj( new CSeq_id(seq_id) );
+                        x_ParseTrnaExtString(ext_trna, val, &*seq_id_obj);
+                    }
                     break;
-                case eQual_codon_recognized:
-                    /* !!! need to implement !!! */
+                case eQual_codon_recognized: 
+                    {
+                        CRNA_ref::TExt& tex = rrp.SetExt ();
+                        CRNA_ref::C_Ext::TTRNA & ext_trna = tex.SetTRNA();
+                        ext_trna.SetAa().SetNcbieaa();
+                        ext_trna.SetCodon().push_back( CGen_code_table::CodonToIndex(val) );
+                        return true;
+                    }
                     break;
                 default:
                     break;
@@ -1611,7 +1707,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                     if (x_AddQualifierToCdregion (sfp, sfdata, qtype, val, container, line, seq_id)) return true;
                     break;
                 case CSeqFeatData::e_Rna:
-                    if (x_AddQualifierToRna (sfdata, qtype, val)) return true;
+                    if (x_AddQualifierToRna (sfdata, qtype, val, container, line, seq_id)) return true;
                     break;
                 case CSeqFeatData::e_Imp:
                     if (x_AddQualifierToImp (sfp, sfdata, qtype, qual, val)) return true;
