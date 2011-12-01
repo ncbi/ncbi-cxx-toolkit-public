@@ -967,10 +967,10 @@ int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope)
 
 /////////////////////////////////////////////////////////////////////
 //
-//  Implementation of SeqLocRevCmp()
+//  Implementation of SeqLocRevCmpl()
 //
 
-CSeq_loc* SeqLocRevCmp(const CSeq_loc& loc, CScope* scope)
+CSeq_loc* SeqLocRevCmpl(const CSeq_loc& loc, CScope* scope)
 {
     CReverseComplementHelper helper;
     return GetReverseComplement( loc, &helper );

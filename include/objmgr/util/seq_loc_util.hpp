@@ -307,11 +307,18 @@ int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope);
 
 /* @} */
 
-
 /// Get reverse complement of the seq-loc (?)
 NCBI_XOBJUTIL_EXPORT
-CSeq_loc* SeqLocRevCmp(const CSeq_loc& loc, CScope* scope);
+CSeq_loc* SeqLocRevCmpl(const CSeq_loc& loc, CScope* scope);
 
+/// Old name for this function.  Now it's just a wrapper
+/// for the new name, which will be removed in the future.
+NCBI_DEPRECATED
+inline
+CSeq_loc* SeqLocRevCmp(const CSeq_loc& loc, CScope* scope)
+{
+    return SeqLocRevCmpl(loc, scope);
+}
 
 /** @name Operations
  * Seq-loc operations

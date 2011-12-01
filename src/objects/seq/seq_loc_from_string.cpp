@@ -210,7 +210,12 @@ namespace {
                     retval.Reset();
                     return retval;
                 } else {
-                    retval = helper->Seq_loc_Add (*retval, *add, 0);
+                    if( retval->Which() == CSeq_loc::e_not_set ) {
+                        retval.Reset( new CSeq_loc );
+                        retval->Assign( *add );
+                    } else {
+                        retval = helper->Seq_loc_Add (*retval, *add, 0);
+                    }
                 }
                 // skip over comma
                 list_pos ++;
@@ -221,7 +226,12 @@ namespace {
                 list_pos++;
             }
             add = ReadLocFromTokenList(before_comma_list, id, helper);
-            retval = helper->Seq_loc_Add (*retval, *add, 0);
+            if( retval->Which() == CSeq_loc::e_not_set ) {
+                retval.Reset( new CSeq_loc );
+                retval->Assign( *add );
+            } else {
+                retval = helper->Seq_loc_Add (*retval, *add, 0);
+            }
             return retval;
         } else {    
             
@@ -287,13 +297,12 @@ namespace {
                 case CLexToken::e_ParenPair:
                 case CLexToken::e_Join:
                 case CLexToken::e_Order:
+                case CLexToken::e_Complement:
                     if (token_list.size() > 1) {
                         retval.Reset();
                         return retval;
                     }
                     retval = token_list[0]->GetLocation(id, helper);
-                    break;
-                case CLexToken::e_Complement:
                     break;
                 case CLexToken::e_String:
                     break;
@@ -460,7 +469,8 @@ namespace {
 				            retval = false;
 				        } else {
 				            token_list.push_back (new CLexTokenParenPair (CLexToken::e_Complement, text.substr(offset + 1, paren_len - 2)));
-				        }				    
+				        }	
+                        offset += paren_len;
 				    } else {
 				        retval = false;
 				    }

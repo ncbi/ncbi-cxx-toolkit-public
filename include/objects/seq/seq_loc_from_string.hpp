@@ -45,7 +45,7 @@ BEGIN_SCOPE(objects)
 // if possible.
 class CGetSeqLocFromStringHelper {
 public:
-    // should act like SeqLocRevCmp in seq_loc_util.hpp
+    // should act like SeqLocRevCmpl in seq_loc_util.hpp
     // The default implementation does the best it can without a CScope.
     NCBI_SEQ_EXPORT
     virtual CRef<CSeq_loc> GetRevComplement(const CSeq_loc& loc);

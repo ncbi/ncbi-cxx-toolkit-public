@@ -53,7 +53,7 @@ private:
 };
 
 /// Get reverse complement of the seq-loc (?).
-/// This holds the implementation used by SeqLocRevCmp in a way
+/// This holds the implementation used by SeqLocRevCmpl in a way
 /// that prevents dependency on objmgr.  objmgr dependencies, if they
 /// arise in the future, can be taken care of via overridable methods
 /// of CReverseComplementHelper.

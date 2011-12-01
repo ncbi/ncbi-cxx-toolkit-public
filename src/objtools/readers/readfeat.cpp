@@ -1263,7 +1263,7 @@ CFeature_table_reader_imp::x_ParseTrnaExtString(
                     return;
                 }
                 CRef<CTrna_ext::TAa> aa(new CTrna_ext::TAa);
-                aa->SetIupacaa (t_iter->second);
+                aa->SetNcbieaa (t_iter->second);
                 ext_trna.SetAa(*aa);
                 pos_str = pos_str.substr (0, aa_start);
                 NStr::TruncateSpacesInPlace (pos_str);
@@ -1273,9 +1273,6 @@ CFeature_table_reader_imp::x_ParseTrnaExtString(
             }
             CGetSeqLocFromStringHelper helper;
             CRef<CSeq_loc> anticodon = GetSeqLocFromString (pos_str, seq_id, & helper);
-            if( anticodon ) {
-                anticodon->SetStrand(eNa_strand_plus); // anticodon is always on plus strand
-            }
             if (anticodon == NULL) {
                 ext_trna.ResetAa();
             } else {

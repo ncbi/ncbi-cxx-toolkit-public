@@ -167,7 +167,7 @@ bool CFlatSeqLoc::x_Add
     // deal with complement of entire location
     if ( type == eType_location ) {
         if ( show_comp  &&  GetStrand(loc, &scope) == eNa_strand_minus ) {
-            CRef<CSeq_loc> rev_loc(SeqLocRevCmp(loc, &scope));
+            CRef<CSeq_loc> rev_loc(SeqLocRevCmpl(loc, &scope));
             oss << "complement(";
             x_Add(*rev_loc, oss, ctx, type, false);
             oss << ')';
