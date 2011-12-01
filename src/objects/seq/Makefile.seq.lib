@@ -9,6 +9,7 @@ CPPFLAGS = -I$(srcdir) -I$(top_srcdir)/src/objects/seq $(ORIG_CPPFLAGS)
 LIB = seq
 SRC = $(ASN:%=%__) $(ASN:%=%___) seqport_util \
       seq_id_tree seq_id_handle seq_id_mapper \
-      seq_loc_mapper_base seq_align_mapper_base seqlocinfo sofa_map
+      seq_loc_mapper_base seq_align_mapper_base seqlocinfo sofa_map \
+      seq_loc_reverse_complementer
 
 WATCHERS = vasilche grichenk
