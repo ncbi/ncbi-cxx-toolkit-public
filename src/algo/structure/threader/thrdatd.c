@@ -100,8 +100,8 @@ int atd(Fld_Mtf* mtf, Cor_Def* cdf, Qry_Seq* qsq, Rcx_Ptl* pmf,
  int	nsc; 		/* Number of threaded segments in core definition     */
  int	nmt;		/* Number of residue positions in the folding motif   */
  int	nlp;		/* Number of loops, including n- and c-terminal tails */
- int	nrr;		/* Number of residue-residue contacts in motif        */
- /*int	nrp;		/* Number of residue-peptide contacts in motif        */
+ /*int	nrr;*/		/* Number of residue-residue contacts in motif        */
+ /*int	nrp;*/		/* Number of residue-peptide contacts in motif        */
  int	nrt;		/* Number of residue types in contact potential       */
  int	ndi;		/* Number of distance intervals in potential          */
 
@@ -128,10 +128,10 @@ int atd(Fld_Mtf* mtf, Cor_Def* cdf, Qry_Seq* qsq, Rcx_Ptl* pmf,
  int	ct=0;		/* Current terminus for segment location sampling     */
  int	al;		/* Current alignment of a core segment                */
  int	of;		/* Current terminus offset from reference position    */
- /*int	rf;		/* Reference position for a core element              */
+ /*int	rf;*/		/* Reference position for a core element              */
  int  tmp;  /* temp holder for ttb->mx */
  int  dist, dist2; /* for loop distances */
- /*float hh;*
+ /*float hh;*/
 
 /*----------------------------------------------------------------------------*/
 /* Function declarations for routines returning non-integer values            */
@@ -192,7 +192,7 @@ int atd(Fld_Mtf* mtf, Cor_Def* cdf, Qry_Seq* qsq, Rcx_Ptl* pmf,
   nsc=cdf->sll.n;
   nmt=mtf->n;
   nlp=cdf->lll.n;
-  nrr=mtf->rrc.n;
+  /*nrr=mtf->rrc.n;*/
   /*nrp=mtf->rpc.n;*/
   nrt=pmf->nrt;
   ndi=pmf->ndi;
@@ -201,7 +201,7 @@ int atd(Fld_Mtf* mtf, Cor_Def* cdf, Qry_Seq* qsq, Rcx_Ptl* pmf,
   printf("nsc %d\n",nsc);
   printf("nmt %d\n",nmt);
   printf("nlp %d\n",nlp);
-  printf("nrr %d\n",nrr);
+  /*printf("nrr %d\n",nrr);*/
   /*printf("nrp %d\n",nrp);*/
   printf("nrt %d\n",nrt);
   printf("ndi %d\n",ndi);

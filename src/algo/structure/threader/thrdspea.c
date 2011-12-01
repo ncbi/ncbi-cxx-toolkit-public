@@ -70,7 +70,7 @@ Cxl_Als *ca;	/* Pointer to contact list of the current segment */
 int	gs;		/* Potential profile energy sum */
 int	ms;		/* Motif energy sum */
 int	mn, mx;
-/*int     nrt;            /* Number of residue types in potential */
+/*int     nrt;*/            /* Number of residue types in potential */
 
 
 /* Parameters */

@@ -60,7 +60,7 @@
 int	nmt;		/* Number of motif residue positions */
 int	nsc;		/* Number of threaded core segments */
 int	ppi; 		/* Index of peptide group in potential */
-/*int	nrt;		/* Number of residue types */
+/*int	nrt;*/		/* Number of residue types */
 int	nqi;		/* Number of residues in query sequence */
 int	i,j,k;		/* Counters */
 int	t1,t2;		/* Motif residue types */

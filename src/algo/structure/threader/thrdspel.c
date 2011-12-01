@@ -68,7 +68,7 @@ int     css;             /* Conservation energies sum */
 int     s0;             /* Expected motif energy sum */
 int     ls;             /* Loopout energies sum */
 int     mn, mx;
-/*int     nrt;            /* Number of residue types in potential */
+/*int     nrt;*/            /* Number of residue types in potential */
 int	t1;
 
 /* Parameters */
