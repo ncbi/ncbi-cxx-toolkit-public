@@ -427,15 +427,9 @@ unsigned int  CQueue::Submit(const CNSClientId &  client,
 unsigned int  CQueue::SubmitBatch(const CNSClientId &             client,
                                   vector< pair<CJob, string> > &  batch)
 {
-    unsigned int    max_input_size;
     unsigned int    batch_size = batch.size();
     unsigned int    job_id = GetNextIdBatch(batch_size);
     size_t          aff_count = 0;
-
-    {{
-        CQueueParamAccessor     qp(*this);
-        max_input_size = qp.GetMaxInputSize();
-    }}
 
     {{
         unsigned int        job_id_cnt = job_id;
@@ -1428,12 +1422,12 @@ TJobStatus CQueue::FailJob(const CNSClientId &    client,
 {
     unsigned        failed_retries;
     unsigned        max_output_size;
-    time_t          blacklist_time;
+    // time_t          blacklist_time;
     {{
         CQueueParamAccessor     qp(*this);
         failed_retries  = qp.GetFailedRetries();
         max_output_size = qp.GetMaxOutputSize();
-        blacklist_time  = qp.GetBlacklistTime();
+        // blacklist_time  = qp.GetBlacklistTime();
     }}
 
     if (output.size() > max_output_size) {

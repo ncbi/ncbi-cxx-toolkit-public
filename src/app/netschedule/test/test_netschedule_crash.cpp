@@ -174,14 +174,15 @@ void CTestNetScheduleCrash::GetStatus( CNetScheduleExecuter &        executor,
     NcbiCout << NcbiEndl
              << "Get status of " << jobs.size() << " jobs..." << NcbiEndl;
 
-    CNetScheduleAPI::EJobStatus         status;
+    //CNetScheduleAPI::EJobStatus         status;
     unsigned                            i = 0;
     CStopWatch                          sw(CStopWatch::eStart);
 
     ITERATE(vector<unsigned int>, it, jobs) {
         unsigned int        job_id = *it;
 
-        status = executor.GetJobStatus(m_KeyGenerator->GenerateV1(job_id));
+        //status = 
+        executor.GetJobStatus(m_KeyGenerator->GenerateV1(job_id));
         if (i++ % 1000 == 0) {
             NcbiCout << "." << flush;
         }

@@ -94,7 +94,8 @@ CStatisticsCounters::CStatisticsCounters()
              index_from < g_ValidJobStatusesSize; ++index_from) {
             for (size_t  index_to = 0;
                  index_to < g_ValidJobStatusesSize; ++index_to) {
-                s_TransitionsTotal[index_from][index_to].Set(-1);
+                s_TransitionsTotal[index_from][index_to].Set(
+                                            static_cast<TNCBIAtomicValue>(-1));
             }
         }
 
@@ -159,7 +160,8 @@ CStatisticsCounters::CStatisticsCounters()
          index_from < g_ValidJobStatusesSize; ++index_from) {
         for (size_t  index_to = 0;
              index_to < g_ValidJobStatusesSize; ++index_to) {
-            m_Transitions[index_from][index_to].Set(-1);
+            m_Transitions[index_from][index_to].Set(
+                                static_cast<TNCBIAtomicValue>(-1));
         }
     }
 
@@ -231,7 +233,7 @@ void CStatisticsCounters::PrintTransitions(CDiagContext_Extra &  extra) const
 
             // All invalid transitions are marked as -1
             if (m_Transitions[index_from][index_to].Get() !=
-                    static_cast<unsigned int>(-1))
+                    static_cast<TNCBIAtomicValue>(-1))
                 extra.Print(x_GetTransitionCounterName(index_from, index_to),
                             m_Transitions[index_from][index_to].Get());
         }
@@ -276,7 +278,7 @@ void CStatisticsCounters::CountTransition(CNetScheduleAPI::EJobStatus  from,
     if (path_option == eNone) {
         // Debug checking. the release version should not check this
         if (m_Transitions[index_from][index_to].Get() ==
-               static_cast<unsigned int>(-1)) {
+               static_cast<TNCBIAtomicValue>(-1)) {
             ERR_POST("Disabled transition is conted. From index: " +
                      NStr::SizetToString(index_from) + " To index: " +
                      NStr::SizetToString(index_to));
@@ -405,7 +407,7 @@ void  CStatisticsCounters::PrintTotal(size_t  affinities)
 
             // All invalid transitions are marked as -1
             if (s_TransitionsTotal[index_from][index_to].Get() !=
-                   static_cast<unsigned int>(-1))
+                   static_cast<TNCBIAtomicValue>(-1))
                 extra.Print(x_GetTransitionCounterName(index_from, index_to),
                             s_TransitionsTotal[index_from][index_to].Get());
         }
