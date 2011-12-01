@@ -941,7 +941,7 @@ CAlignModel* RestoreModel(const CSeq_feat_Handle& internal_feat, const CSeq_feat
 CAlignModel* RestoreModelFromPublicMrnaFeature(const CSeq_feat_Handle& feat)
 {
     CScope& scope = feat.GetScope();
-    CBioseq_Handle mrna_handle = scope.GetBioseqHandle(feat.GetProduct());
+    CBioseq_Handle mrna_handle = scope.GetBioseqHandle(*feat.GetProduct().GetId());
     CConstRef<CBioseq> mrna = mrna_handle.GetCompleteBioseq();
     _ASSERT(mrna->IsNa());
 
