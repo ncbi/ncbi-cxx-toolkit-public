@@ -35,6 +35,8 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 
+#include <common/test_assert.h>  /* This header must go last, if used at all */
+
 USING_NCBI_SCOPE;
 
 
@@ -57,6 +59,11 @@ private:
 
 void CSampleBasicApplication::Init(void)
 {
+    // Set error posting and tracing on maximum
+    SetDiagTrace(eDT_Enable);
+    SetDiagPostFlag(eDPF_All);
+    SetDiagPostLevel(eDiag_Info);
+
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
@@ -80,7 +87,9 @@ void CSampleBasicApplication::Init(void)
          "This is a mandatory plain (named positional) argument",
          CArgDescriptions::eString);
     arg_desc->SetConstraint
-        ("barfooetc", &(*new CArgAllow_Strings, "foo", "bar", "etc"));
+        ("barfooetc", 
+        &(*new CArgAllow_Strings, "foo", "bar", "etc"),
+        CArgDescriptions::eConstraint);
 
     arg_desc->AddDefaultKey
         ("kd", "DefaultKey",
@@ -107,7 +116,8 @@ void CSampleBasicApplication::Init(void)
     arg_desc->AddOptionalKey
         ("ko", "OptionalKey",
          "This is another optional key argument, without default value",
-         CArgDescriptions::eBoolean);
+         CArgDescriptions::eBoolean,
+         CArgDescriptions::fAllowMultiple);
 
     arg_desc->AddFlag
         ("f2",
@@ -135,10 +145,15 @@ void CSampleBasicApplication::Init(void)
 int CSampleBasicApplication::Run(void)
 {
     // Get arguments
-    const CArgs& args = GetArgs();
+    CArgs args = GetArgs();
 
     // Do run
     cout << string(72, '=') << endl;
+
+    // Self test
+    assert(args.Exist("f1"));
+    assert(args.Exist("logfile"));
+    assert(args["barfooetc"]);
 
     // Stream to result output
     // (NOTE: "x_lg" is just a workaround for bug in SUN WorkShop 5.1 compiler)
@@ -158,14 +173,34 @@ int CSampleBasicApplication::Run(void)
     if ( args["ko"] ) {
         lg << "ko:        " << NStr::BoolToString(args["ko"].AsBoolean())
            << endl;
+
+        const CArgValue::TStringArray& ko_values = 
+            args["ko"].GetStringList();
+        if (!ko_values.empty()) {
+            lg << "ko list:";
+            ITERATE(CArgValue::TStringArray, it, ko_values) {
+                lg << *it << ", ";
+            }
+            lg << endl;
+        }
+
     } else {
         lg << "ko:        not provided" << endl;
         bool is_thrown = false;
         try {
             (void) args["ko"].AsString();
-        } catch (CArgException&) {
+        } catch (CArgException& e) {
+            NCBI_REPORT_EXCEPTION("CArgException is thrown:",e);
             is_thrown = true;
         }
+        assert(is_thrown);
+    }
+
+    if ( args["f1"] ) {
+        assert(args["f1"].AsBoolean());
+    }
+    if ( args["f2"] ) {
+        assert(args["f2"].AsBoolean());
     }
 
     // Extra (unnamed positional) arguments
@@ -209,5 +244,5 @@ void CSampleBasicApplication::Exit(void)
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CSampleBasicApplication().AppMain(argc, argv);
+    return CSampleBasicApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }
