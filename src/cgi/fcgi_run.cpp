@@ -117,6 +117,58 @@ private:
 };
 
 
+// Aux. class to clean up state associated with a Fast-CGI request object.
+class CAutoFCGX_Request
+{
+public:
+    ~CAutoFCGX_Request(void);
+
+#ifdef HAVE_FCGX_ACCEPT_R
+    FCGX_Request& GetRequest(void) {
+        return m_Request;
+    }
+#endif
+
+    void SetErrorStream(FCGX_Stream* pferr);
+
+private:
+    auto_ptr<CCgiObuffer>  m_Buffer;
+    auto_ptr<CNcbiOstream> m_SavedCerr;
+#ifdef HAVE_FCGX_ACCEPT_R
+    FCGX_Request           m_Request;
+#endif
+};
+
+CAutoFCGX_Request::~CAutoFCGX_Request(void) {
+    if (m_Buffer.get() != NULL) {
+        if (NcbiCerr.rdbuf() == m_Buffer.get()) {
+            NcbiCerr.rdbuf(m_SavedCerr->rdbuf());
+            NcbiCerr.clear(m_SavedCerr->rdstate());
+            // NcbiCerr.copyfmt(*m_SavedCerr);
+        } else {
+            ERR_POST(Warning
+                     << "Not restoring error stream, altered elsewhere.");
+        }
+        m_Buffer.reset();
+    }
+#ifdef HAVE_FCGX_ACCEPT_R
+    FCGX_Finish_r(&m_Request);
+#else
+    FCGX_Finish();
+#endif
+}
+
+void CAutoFCGX_Request::SetErrorStream(FCGX_Stream* pferr)
+{
+    if (pferr != NULL) {
+        m_SavedCerr.reset(new CNcbiOstream(NcbiCerr.rdbuf()));
+        m_SavedCerr->clear(NcbiCerr.rdstate());
+        // m_SavedCerr->copyfmt(NcbiCerr);
+        m_Buffer.reset(new CCgiObuffer(pferr));
+        NcbiCerr.rdbuf(m_Buffer.get());
+    }
+}
+
 // Aux. class for noticing changes to a file
 class CCgiWatchFile
 {
@@ -390,8 +442,10 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         FCGX_Stream *pfin, *pfout, *pferr;
         FCGX_ParamArray penv;
         int accept_errcode;
+        // Formally finish the Fast-CGI request when all done
+        CAutoFCGX_Request auto_request;
 # ifdef HAVE_FCGX_ACCEPT_R
-        FCGX_Request request;
+        FCGX_Request& request = auto_request.GetRequest();
         FCGX_InitRequest(&request, 0, FCGI_FAIL_ACCEPT_ON_INTR);
 #   ifdef USE_ALARM
         struct sigaction old_sa;
@@ -453,6 +507,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 # else
         accept_errcode = FCGX_Accept(&pfin, &pfout, &pferr, &penv);
 # endif
+        auto_request.SetErrorStream(pferr);
         if (accept_errcode != 0) {
             _TRACE("CCgiApplication::x_RunFastCGI: no more requests");
             break;
@@ -495,11 +550,6 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                     HTTP_EOL
                     "Done";
                 _TRACE("CCgiApplication::x_RunFastCGI: aborting by request");
-# ifdef HAVE_FCGX_ACCEPT_R
-                FCGX_Finish_r(&request);
-# else
-                FCGX_Finish();
-# endif
                 x_OnEvent(eEndRequest, 122);
                 break;
             }
@@ -644,11 +694,6 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                     // close current request
                     x_OnEvent(eExitOnFail, 113);
                     _TRACE("CCgiApplication::x_RunFastCGI: FINISHING(forced)");
-# ifdef HAVE_FCGX_ACCEPT_R
-                    FCGX_Finish_r(&request);
-# else
-                    FCGX_Finish();
-# endif
                     x_OnEvent(eEndRequest, 123);
                     break;
                 }
@@ -658,11 +703,6 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 
         // Close current request
         _TRACE("CCgiApplication::x_RunFastCGI: FINISHING");
-# ifdef HAVE_FCGX_ACCEPT_R
-        FCGX_Finish_r(&request);
-# else
-        FCGX_Finish();
-# endif
 
         // Logging
         if ( is_stat_log  &&  !skip_stat_log ) {
