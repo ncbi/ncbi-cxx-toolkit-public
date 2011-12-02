@@ -33,6 +33,43 @@
 ################################################################################
 
 {
+   Sybase DBLIB 12.5.1.10-ESD26-64bit (case 1)
+   Memcheck:Param
+   write(buf)
+   fun:__write_nocancel
+   fun:syb_tcp_write
+   fun:sendflush
+   fun:sendeom
+   fun:bcp__endbatch
+   fun:bcp_done
+}
+
+{
+   Sybase DBLIB 12.5.1.10-ESD26-64bit (case 2)
+   Memcheck:Param
+   write(buf)
+   fun:__write_nocancel
+   fun:syb_tcp_write
+   fun:sendflush
+   fun:sendserver
+   fun:bcp__send_text
+   fun:bcp_moretext
+}
+
+
+{
+   Sybase DBLIB 12.5.1.10-ESD26-64bit (case 3)
+   Memcheck:Param
+   write(buf)
+   fun:__write_nocancel
+   fun:syb_tcp_write
+   fun:sendflush
+   fun:sendserver
+   fun:bcp__buildrow
+   fun:bcp_sendrow
+}
+
+{
    BerkeleyDB 4.6.21.1 glitch -- both alloc and use happen inside the same call
    Memcheck:Param
    pwrite64(buf)
