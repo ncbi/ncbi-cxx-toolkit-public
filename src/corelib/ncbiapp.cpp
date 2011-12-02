@@ -1306,15 +1306,21 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
 
     // TRACE and POST filters
 
-    // [DIAG.TRACE_FILTER]
-    string trace_filter = reg->Get("DIAG", "TRACE_FILTER");
-    if ( !trace_filter.empty() )
-        SetDiagFilter(eDiagFilter_Trace, trace_filter.c_str());
+    try {
+        // [DIAG.TRACE_FILTER]
+        string trace_filter = reg->Get("DIAG", "TRACE_FILTER");
+        if ( !trace_filter.empty() )
+            SetDiagFilter(eDiagFilter_Trace, trace_filter.c_str());
+    } NCBI_CATCH_X(20,
+                   "Failed to load and set diag. filter for traces");
 
-    // [DIAG.POST_FILTER]
-    string post_filter = reg->Get("DIAG", "POST_FILTER");
-    if ( !post_filter.empty() )
-        SetDiagFilter(eDiagFilter_Post, post_filter.c_str());
+    try {
+        // [DIAG.POST_FILTER]
+        string post_filter = reg->Get("DIAG", "POST_FILTER");
+        if ( !post_filter.empty() )
+            SetDiagFilter(eDiagFilter_Post, post_filter.c_str());
+    } NCBI_CATCH_X(21,
+                   "Failed to load and set diag. filter for regular errors");
 }
 
 
