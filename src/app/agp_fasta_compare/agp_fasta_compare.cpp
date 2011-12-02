@@ -66,6 +66,9 @@ namespace {
     const string kArgnameAgp = "agp";
     const string kArgnameObjFile = "objfile";
     const string kArgnameLoadLog = "loadlog";
+
+    const string kArgnameIgnoreAGPOnly = "ignoreagponly";
+    const string kArgnameIgnoreObjfileOnly = "ignoreobjfileonly";
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -204,7 +207,7 @@ private:
 
     void x_ProcessObject( const string & filename,
                           TUniqueSeqs& seqs );
-    void x_ProcessAgp(CNcbiIstream& istr,
+    void x_ProcessAgp(const string & filename,
                       TUniqueSeqs& seqs);
 
     void x_Process(const CSeq_entry_Handle seh,
@@ -212,9 +215,16 @@ private:
                    int * in_out_pUniqueBioseqsLoaded,
                    int * in_out_pBioseqsSkipped );
 
+    enum FDiffsToHide {
+        fDiffsToHide_AGPOnly     = (1 << 0),
+        fDiffsToHide_ObjfileOnly = (1 << 1),
+        fDiffsToHide_InBoth      = (1 << 2)
+    };
+    typedef int TDiffsToHide;
     void x_OutputDifferences(
         const TSeqIdSet & vSeqIdFASTAOnly,
-        const TSeqIdSet & vSeqIdAGPOnly );
+        const TSeqIdSet & vSeqIdAGPOnly,
+        TDiffsToHide diffs_to_hide );
 
     void x_SetBinaryVsText( CNcbiIstream & file_istrm, 
         CFormatGuess::EFormat guess_format );
@@ -238,17 +248,24 @@ void CAgpFastaCompareApplication::Init(void)
                               "CArgDescriptions demo program");
 
     arg_desc->AddKey(kArgnameAgp, "Agp",
-                     "AGP data to process",
-                     CArgDescriptions::eInputFile);
+                     "AGP data to process.  This can contain glob characters "
+                     "(e.g. asterisks)",
+                     CArgDescriptions::eString);
 
     arg_desc->AddKey(kArgnameObjFile, "ObjFile",
                      "Fasta or ASN.1 sequences to process, which contains the "
-                     "objects we're comparing against the agp file.",
-                     CArgDescriptions::eInputFile );
+                     "objects we're comparing against the agp file.  This can "
+                     "contain glob characters (e.g. asterisks)",
+                     CArgDescriptions::eString );
 
     arg_desc->AddOptionalKey( kArgnameLoadLog, "LoadLog",
         "This file will receive the detailed list of all loaded sequences",
         CArgDescriptions::eOutputFile );
+
+    arg_desc->AddFlag( kArgnameIgnoreAGPOnly,
+                       "Don't list sequences that are in AGP only.  Ignore them." );
+    arg_desc->AddFlag( kArgnameIgnoreObjfileOnly,
+                       "Don't list sequences that are in objfile(s) only.  Ignore them." );
 
     arg_desc->AddExtra( 0, kMax_UInt, 
         "Optional Fasta sequences to process, which contains the "
@@ -300,14 +317,22 @@ int CAgpFastaCompareApplication::Run(void)
         CObjectManager::eDefault, 2 );
 
     // calculate checksum of the AGP sequences and the FASTA sequences
-    CNcbiIstream& istr_agp = args[kArgnameAgp].AsInputFile();
 
-    // Guess the format of the file
     TUniqueSeqs fasta_ids;
-    x_ProcessObject( args[kArgnameObjFile].AsString(), fasta_ids );
+    // process every objfile
+    list<string> objfiles;
+    FindFiles( args[kArgnameObjFile].AsString(), objfiles, fFF_File );
+    ITERATE( list<string>, objfile_iter, objfiles ) {
+        x_ProcessObject( *objfile_iter, fasta_ids );
+    }
 
     TUniqueSeqs agp_ids;
-    x_ProcessAgp(istr_agp, agp_ids);
+    // process every AGP file
+    list<string> agpfiles;
+    FindFiles( args[kArgnameAgp].AsString(), agpfiles, fFF_File );
+    ITERATE( list<string>, agpfile_iter, agpfiles ) {
+        x_ProcessAgp( *agpfile_iter, agp_ids);
+    }
 
     // will hold ones that are only in FASTA or only in AGP.
     // Of course, if one appears in both, we should print it in a more
@@ -349,7 +374,14 @@ int CAgpFastaCompareApplication::Run(void)
 
     // look at vSeqIdFASTAOnly and vSeqIdAGPOnly and 
     // print in user-friendly way
-    x_OutputDifferences( vSeqIdFASTAOnly, vSeqIdAGPOnly );
+    TDiffsToHide diffs_to_hide = 0;
+    if( args[kArgnameIgnoreAGPOnly] ) {
+        diffs_to_hide |= fDiffsToHide_AGPOnly;
+    }
+    if( args[kArgnameIgnoreObjfileOnly] ) {
+        diffs_to_hide |= fDiffsToHide_ObjfileOnly;
+    }
+    x_OutputDifferences( vSeqIdFASTAOnly, vSeqIdAGPOnly, diffs_to_hide );
 
     const bool bThereWereDifferences = ( 
         ! vSeqIdFASTAOnly.empty() ||
@@ -525,11 +557,13 @@ void CAgpFastaCompareApplication::x_ProcessObject( const string & filename,
 }
 
 
-void CAgpFastaCompareApplication::x_ProcessAgp(CNcbiIstream& istr,
+void CAgpFastaCompareApplication::x_ProcessAgp(const string & filename,
                                                TUniqueSeqs& agp_ids)
 {
     int iNumLoaded = 0;
     int iNumSkipped = 0;
+
+    CNcbiIfstream istr( filename.c_str() );
 
     LOG_POST(Error << "Processing AGP...");
     if( m_pLoadLogFile.get() != NULL ) {
@@ -540,7 +574,8 @@ void CAgpFastaCompareApplication::x_ProcessAgp(CNcbiIstream& istr,
         CAgpToSeqEntry agp_reader( entries );
         int err_code = agp_reader.ReadStream( istr ); // loads var entries
         if( err_code != 0 ) {
-            LOG_POST(Error << "Error occurred reading AGP file: " << err_code );
+            LOG_POST(Error << "Error occurred reading AGP file: "
+                           << agp_reader.GetErrorMessage() );
             m_bSuccess = false;
             return;
         }
@@ -563,7 +598,8 @@ void CAgpFastaCompareApplication::x_ProcessAgp(CNcbiIstream& istr,
 
 void CAgpFastaCompareApplication::x_OutputDifferences(
     const TSeqIdSet & vSeqIdFASTAOnly,
-    const TSeqIdSet & vSeqIdAGPOnly )
+    const TSeqIdSet & vSeqIdAGPOnly,
+    TDiffsToHide diffs_to_hide )
 {
     // find the ones in both
     TSeqIdSet vSeqIdTempSet;
@@ -584,7 +620,7 @@ void CAgpFastaCompareApplication::x_OutputDifferences(
         vSeqIdFASTAOnly.begin(), vSeqIdFASTAOnly.end(),
         vSeqIdAGPOnly.begin(), vSeqIdAGPOnly.end(),
         inserter(vSeqIdTempSet, vSeqIdTempSet.begin()) );
-    if( ! vSeqIdTempSet.empty() ) {
+    if( ! vSeqIdTempSet.empty() && ! (diffs_to_hide & fDiffsToHide_ObjfileOnly) ) {
         LOG_POST(Error << "  These are in Object file only: " << "\n"
             << "  (Check above: were some AGP sequences skipped due "
             << "to errors?)");
@@ -599,7 +635,7 @@ void CAgpFastaCompareApplication::x_OutputDifferences(
         vSeqIdAGPOnly.begin(), vSeqIdAGPOnly.end(),
         vSeqIdFASTAOnly.begin(), vSeqIdFASTAOnly.end(),
         inserter(vSeqIdTempSet, vSeqIdTempSet.begin()) );
-    if( ! vSeqIdTempSet.empty() ) {
+    if( ! vSeqIdTempSet.empty() && ! (diffs_to_hide & fDiffsToHide_AGPOnly) ) {
         LOG_POST(Error << "  These are in AGP only: " << "\n"
             << "  (Check above: were some FASTA sequences skipped due "
             << "to errors?)");
