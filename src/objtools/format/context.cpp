@@ -235,6 +235,8 @@ void CBioseqContext::x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc)
     sel.SetResolveAll();
 
     x_SetHasMultiIntervalGenes();
+
+    x_SetTaxname();
 }
 
 
@@ -317,6 +319,43 @@ void CBioseqContext::x_SetHasMultiIntervalGenes(void)
         }
         if( m_HasMultiIntervalGenes ) {
             break;
+        }
+    }
+}
+
+void CBioseqContext::x_SetTaxname(void)
+{
+    // look for taxname in Seqdescs
+    CSeqdesc_CI desc_ci( m_Handle, CSeqdesc::e_Source );
+    for( ; desc_ci; ++desc_ci ) {
+        if( desc_ci->IsSource() ) {
+            const CBioSource &bsrc = desc_ci->GetSource();
+            if( bsrc.IsSetTaxname() && ! bsrc.GetTaxname().empty() ) {
+                // we found a taxname; we're done
+                m_Taxname = bsrc.GetTaxname();
+                return;
+            }
+        }
+    }
+
+    // fall back on the Seq-feats
+
+    SAnnotSelector sel;
+    sel.SetFeatType( CSeqFeatData::e_Biosrc );
+
+    CFeat_CI biosrc_ci( m_Handle, sel );
+    for( ; biosrc_ci ; ++biosrc_ci ) {
+        CConstRef<CSeq_feat> seq_feat = biosrc_ci->GetSeq_feat();
+        if( seq_feat && seq_feat->IsSetData() ) {
+            const CSeqFeatData & seq_feat_data = seq_feat->GetData();
+            if( seq_feat_data.IsBiosrc() ) {
+                const CBioSource & bsrc = seq_feat_data.GetBiosrc();
+                if( bsrc.IsSetTaxname() && ! bsrc.GetTaxname().empty() ) {
+                    // we found a taxname; we're done
+                    m_Taxname = bsrc.GetTaxname();
+                    return;
+                }
+            }
         }
     }
 }

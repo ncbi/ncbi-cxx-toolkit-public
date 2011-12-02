@@ -1329,7 +1329,7 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const string& name,
         CNcbiOstrstream db_xref;
         db_xref << db << ':';
         if (ctx.Config().DoHTML()) {
-            string url = dbt.GetUrl();
+            string url = dbt.GetUrl( ctx.GetTaxname() );
             if (!NStr::IsBlank(url)) {
                 db_xref <<  "<a href=\"" << url << "\">" << id << "</a>";
             } else {

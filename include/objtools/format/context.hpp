@@ -217,6 +217,9 @@ public:
     bool HasOperon(void) const;
     bool HasMultiIntervalGenes(void) const;
 
+    // Empty string if unavailable
+    const string & GetTaxname(void) const { return m_Taxname; }
+
 private:
     void x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc);
     void x_SetId(void);
@@ -231,6 +234,7 @@ private:
     void x_SetMapper(const CSeq_loc& loc);
     void x_SetHasMultiIntervalGenes(void);
     void x_SetDataFromUserObjects(void);
+    void x_SetTaxname(void);
 
     CSeq_inst::TRepr x_GetRepr(void) const;
     const CMolInfo* x_GetMolInfo(void) const;
@@ -247,6 +251,7 @@ private:
     string                m_WGSMasterAccn;
     string                m_WGSMasterName;
     string                m_FinishingStatus;
+    string                m_Taxname;
 
     CSeq_inst::TRepr      m_Repr;
     CSeq_inst::TMol       m_Mol;
