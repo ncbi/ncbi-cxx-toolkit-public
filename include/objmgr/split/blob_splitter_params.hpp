@@ -47,7 +47,7 @@ struct NCBI_ID2_SPLIT_EXPORT SSplitterParams
     enum {
         kDefaultChunkSize = 20 * 1024,
         kDefaultMinChunkCount = 1,
-        kDefaultSplitNonFeatureSeqTables = 0
+        kDefaultSplitNonFeatureSeqTables = 1
     };
 
     void SetChunkSize(size_t size);
