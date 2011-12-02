@@ -451,26 +451,6 @@ CTypeInfo* CUniSetDataType::CreateTypeInfo(void)
 AutoPtr<CTypeStrings> CUniSetDataType::GetFullCType(void) const
 {
     string templ = GetAndVerifyVar("_type");
-    const CDataSequenceType* seq =
-        dynamic_cast<const CDataSequenceType*>(GetElementType());
-    if ( seq && seq->GetMembers().size() == 2 ) {
-        const CDataMember& keyMember = *seq->GetMembers().front();
-        const CDataMember& valueMember = *seq->GetMembers().back();
-        if ( !keyMember.Optional() && !valueMember.Optional() ) {
-            AutoPtr<CTypeStrings> tKey = keyMember.GetType()->GetFullCType();
-            if ( tKey->CanBeKey() ) {
-                AutoPtr<CTypeStrings> tValue = valueMember.GetType()->GetFullCType();
-                CTypeStrings::AdaptForSTL(tValue);
-                if ( templ.empty() )
-                    templ = "multimap";
-                return AutoPtr<CTypeStrings>(new CMapTypeStrings(templ,
-                                                                 tKey,
-                                                                 tValue,
-                                                                 GetNamespaceName(),
-                                                                 this));
-            }
-        }
-    }
     AutoPtr<CTypeStrings> tData = GetElementType()->GetFullCType();
     CTypeStrings::AdaptForSTL(tData);
     if ( templ.empty() ) {
