@@ -439,8 +439,8 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                << " iteration of " << max_iterations);
 
         // Accept the next request and obtain its data
-        FCGX_Stream *pfin, *pfout, *pferr;
-        FCGX_ParamArray penv;
+        FCGX_Stream *pfin = NULL, *pfout = NULL, *pferr = NULL;
+        FCGX_ParamArray penv = NULL;
         int accept_errcode;
         // Formally finish the Fast-CGI request when all done
         CAutoFCGX_Request auto_request;
