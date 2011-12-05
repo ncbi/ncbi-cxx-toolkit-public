@@ -543,6 +543,11 @@ namespace {
     }
 }
 
+CGetSeqLocFromStringHelper::~CGetSeqLocFromStringHelper(void)
+{
+    // do nothing
+}
+
 CRef<CSeq_loc> 
 CGetSeqLocFromStringHelper::GetRevComplement(const CSeq_loc& loc)
 {

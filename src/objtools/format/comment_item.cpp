@@ -291,7 +291,10 @@ static void s_GetAssemblyInfo(const CUser_object& uo,
 
             string accession;
             string name;
-            int gi = 0;
+            // gi currently unused, but may be used in the future.
+            // If you uncomment this, don't forget to uncomment other
+            // locations in this function
+            // int gi = 0;
             int from = 0;
             int to = 0;
 
@@ -312,7 +315,10 @@ static void s_GetAssemblyInfo(const CUser_object& uo,
                     }
                 } else if( uf.GetData().IsInt() ) {
                     if( label == "gi" ) {
-                        gi = uf.GetData().GetInt();
+                        // gi currently unused, but may be used in the future.
+                        // If you uncomment this, don't forget to uncomment other
+                        // locations in this function
+                        // gi = uf.GetData().GetInt();
                     } else if( label == "from" ) {
                         from = uf.GetData().GetInt();
                     } else if( label == "to" ) {
@@ -324,14 +330,17 @@ static void s_GetAssemblyInfo(const CUser_object& uo,
             if ( ! accession.empty() ) {
                 CNcbiOstrstream oss;
 
-                try {
-                    int new_gi = sequence::GetGiForAccession( accession, scope, sequence::eGetId_ForceGi | sequence::eGetId_VerifyId );
-                    if( 0 != new_gi ) {
-                        gi = new_gi;
-                    }
-                } catch(...) {
-                    // do nothing, we know there's an error because new_gi is zero
-                }
+                // gi currently unused, but may be used in the future.
+                // If you uncomment this, don't forget to uncomment other
+                // locations in this function
+                // try {
+                //     int new_gi = sequence::GetGiForAccession( accession, scope, sequence::eGetId_ForceGi | sequence::eGetId_VerifyId );
+                //     if( 0 != new_gi ) {
+                //         gi = new_gi;
+                //     }
+                // } catch(...) {
+                //     // do nothing, we know there's an error because new_gi is zero
+                // }
                 if( IsValidAccession(accession) ) {
                     NcbiId(oss, accession, is_html);
                 } else {
