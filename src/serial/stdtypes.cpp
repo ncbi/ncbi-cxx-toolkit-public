@@ -144,7 +144,7 @@ public:
     static void Skip(CObjectIStream& in, TTypeInfo )
         {
             TObjectType data;
-            in.ReadStd(data);
+            in.SkipStd(data);
         }
     static void Copy(CObjectStreamCopier& copier, TTypeInfo )
         {
