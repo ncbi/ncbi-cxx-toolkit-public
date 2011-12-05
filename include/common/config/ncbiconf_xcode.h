@@ -8,6 +8,7 @@
  *        "configure"-generated configuration headers.
  */
 
+#include <AvailabilityMacros.h>
 
 /* This is the NCBI C++ Toolkit. */
 #define NCBI_CXX_TOOLKIT 1
@@ -81,13 +82,13 @@
 /* #undef NCBI_COMPILER_WORKSHOP */
 
 /* Full GNU-style system type */
-#define HOST "powerpc-apple-darwin7.9.0"
+#define HOST "i686-apple-darwin10.8.0"
 
 /* CPU type only */
-#define HOST_CPU "powerpc"
+#define HOST_CPU "i686"
 
 /* System OS only */
-#define HOST_OS "darwin7.9.0"
+#define HOST_OS "darwin10.8.0"
 
 /* System vendor only */
 #define HOST_VENDOR "apple"
@@ -595,7 +596,11 @@
 /* #undef HAVE_NULLPTR */
 
 /* Define as const if the declaration of iconv() needs const. */
-#define ICONV_CONST const
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1050 /* MAC_OS_X_VERSION_10_5 */
+#  define ICONV_CONST
+#else
+#  define ICONV_CONST const
+#endif
 
 /* Define to 0xffffffff if your operating system doesn't. */
 /* #undef INADDR_NONE */
