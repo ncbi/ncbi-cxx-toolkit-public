@@ -213,6 +213,8 @@ void CDeflineGenerator::x_SetFlags (
     m_Plasmid.clear();
     m_Segment.clear();
 
+    m_Breed.clear();
+    m_Cultivar.clear();
     m_Isolate.clear();
     m_Strain.clear();
 
@@ -485,9 +487,19 @@ void CDeflineGenerator::x_SetBioSrc (
                         m_Strain = str;
                     }
                     break;
+                case NCBI_ORGMOD(cultivar):
+                    if (m_Cultivar.empty()) {
+                        m_Cultivar = str;
+                    }
+                    break;
                 case NCBI_ORGMOD(isolate):
                     if (m_Isolate.empty()) {
                         m_Isolate = str;
+                    }
+                    break;
+                case NCBI_ORGMOD(breed):
+                    if (m_Breed.empty()) {
+                        m_Breed = str;
                     }
                     break;
                 default:
@@ -1511,12 +1523,16 @@ string CDeflineGenerator::x_TitleFromSegSeq  (
 string CDeflineGenerator::x_TitleFromWGS (void)
 
 {
-    string chr, cln, mp, pls, stn, sfx;
+    string chr, cln, mp, pls, mod, sfx;
 
     if (! m_Strain.empty()) {
         if (! x_EndsWithStrain (m_Taxname, m_Strain)) {
-            stn = " strain " + m_Strain.substr (0, m_Strain.find(';'));
+            mod = " strain " + m_Strain.substr (0, m_Strain.find(';'));
         }
+    } else if (! m_Breed.empty()) {
+        mod = " breed " + m_Breed.substr (0, m_Breed.find(';'));
+    } else if (! m_Cultivar.empty()) {
+        mod = " cultivar " + m_Cultivar.substr (0, m_Cultivar.find(';'));
     }
     if (! m_Chromosome.empty()) {
         chr = " chromosome " + m_Chromosome;
@@ -1538,7 +1554,7 @@ string CDeflineGenerator::x_TitleFromWGS (void)
     }
 
     string title = NStr::TruncateSpaces
-        (m_Taxname + stn + chr + cln + mp + pls + sfx);
+        (m_Taxname + mod + chr + cln + mp + pls + sfx);
 
     if (islower ((unsigned char) title[0])) {
         title [0] = toupper ((unsigned char) title [0]);

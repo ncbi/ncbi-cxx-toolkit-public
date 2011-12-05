@@ -224,6 +224,8 @@ private:
     string m_Segment;
 
     /// orgmod fields
+    string m_Breed;
+    string m_Cultivar;
     string m_Isolate;
     string m_Strain;
 
