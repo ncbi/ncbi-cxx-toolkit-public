@@ -45,6 +45,7 @@ BEGIN_SCOPE(objects)
 // if possible.
 class CGetSeqLocFromStringHelper {
 public:
+    NCBI_SEQ_EXPORT
     virtual ~CGetSeqLocFromStringHelper(void);
 
     // should act like SeqLocRevCmpl in seq_loc_util.hpp
