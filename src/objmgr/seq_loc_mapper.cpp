@@ -365,17 +365,21 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(size_t           depth,
 
 CSeq_loc_Mapper::CSeq_loc_Mapper(const CGC_Assembly& gc_assembly,
                                  EGCAssemblyAlias    to_alias,
-                                 CScope*             scope)
+                                 CScope*             scope,
+                                 EScopeFlag          scope_flag)
     : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
-      m_Scope(new CScope(*CObjectManager::GetInstance()))
+      m_Scope(scope)
 {
     // While parsing GC-Assembly the mapper will need to add virtual
     // bioseqs to the scope. To keep the original scope clean of them,
     // create a new scope and add the original one as a child.
-    if ( scope ) {
-        m_Scope.GetScope().AddScope(*scope);
+    if (scope_flag == eCopyScope) {
+        m_Scope = CHeapScope(new CScope(*CObjectManager::GetInstance()));
+        if ( scope ) {
+            m_Scope.GetScope().AddScope(*scope);
+        }
+        m_SeqInfo.Reset(new CScope_Mapper_Sequence_Info(m_Scope));
     }
-    m_SeqInfo.Reset(new CScope_Mapper_Sequence_Info(m_Scope));
     x_InitGCAssembly(gc_assembly, to_alias);
 }
 
@@ -383,17 +387,21 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CGC_Assembly& gc_assembly,
 CSeq_loc_Mapper::CSeq_loc_Mapper(const CGC_Assembly& gc_assembly,
                                  ESeqMapDirection    direction,
                                  SSeqMapSelector     selector,
-                                 CScope*             scope)
+                                 CScope*             scope,
+                                 EScopeFlag          scope_flag)
     : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
-      m_Scope(new CScope(*CObjectManager::GetInstance()))
+      m_Scope(scope)
 {
     // While parsing GC-Assembly the mapper will need to add virtual
     // bioseqs to the scope. To keep the original scope clean of them,
     // create a new scope and add the original one as a child.
-    if ( scope ) {
-        m_Scope.GetScope().AddScope(*scope);
+    if (scope_flag == eCopyScope) {
+        m_Scope = CHeapScope(new CScope(*CObjectManager::GetInstance()));
+        if ( scope ) {
+            m_Scope.GetScope().AddScope(*scope);
+        }
+        m_SeqInfo.Reset(new CScope_Mapper_Sequence_Info(m_Scope));
     }
-    m_SeqInfo.Reset(new CScope_Mapper_Sequence_Info(m_Scope));
     x_InitGCAssembly(gc_assembly, direction, selector);
 }
 
@@ -450,26 +458,38 @@ void CSeq_loc_Mapper::x_InitializeSeqMap(CSeqMap_CI       seg_it,
                                          const CSeq_id*   top_id,
                                          ESeqMapDirection direction)
 {
+    // Start/stop of the top-level segment.
     TSeqPos top_start = kInvalidSeqPos;
     TSeqPos top_stop = kInvalidSeqPos;
+    // Segment start on the top-level sequence. This may be different
+    // from top_start in case of map built from a seq-loc - the
+    // top-level sequences are first-level references.
     TSeqPos dst_seg_start = kInvalidSeqPos;
+    // For bioseqs this is equal to top_id, for seq-locs -
+    // ids of the first-level references.
     CConstRef<CSeq_id> dst_id;
 
-    do {
-        if ( !seg_it ) break;
-        CSeqMap_CI prev_it = seg_it;
+    while (seg_it) {
+        // Remember iterator data before incrementing it.
+        _ASSERT(seg_it.GetType() == CSeqMap::eSeqRef);
+        size_t it_depth = seg_it.GetDepth();
+        TSeqPos it_pos = seg_it.GetPosition();
+        TSeqPos it_end = seg_it.GetEndPosition();
+        TSeqPos it_len = seg_it.GetLength();
+        CSeq_id_Handle it_ref_id = seg_it.GetRefSeqid();
+        TSeqPos it_ref_pos = seg_it.GetRefPosition();
+        bool it_ref_minus = seg_it.GetRefMinusStrand();
         ++seg_it;
 
         // When mapping down ignore non-leaf references.
         bool prev_is_leaf = !seg_it  ||
-            seg_it.GetDepth() <= prev_it.GetDepth();
+            seg_it.GetDepth() <= it_depth;
         if (direction == eSeqMap_Down  &&  !prev_is_leaf) continue;
 
-        _ASSERT(prev_it.GetType() == CSeqMap::eSeqRef);
-        if (prev_it.GetPosition() > top_stop  ||  !dst_id) {
+        if (it_pos > top_stop  ||  !dst_id) {
             // New top-level segment
-            top_start = prev_it.GetPosition();
-            top_stop = prev_it.GetEndPosition() - 1;
+            top_start = it_pos;
+            top_stop = it_end - 1;
             if (top_id) {
                 // Top level is a bioseq
                 dst_id.Reset(top_id);
@@ -478,20 +498,21 @@ void CSeq_loc_Mapper::x_InitializeSeqMap(CSeqMap_CI       seg_it,
             else {
                 // Top level is a seq-loc, positions are
                 // on the first-level references
-                dst_id = prev_it.GetRefSeqid().GetSeqId();
-                dst_seg_start = prev_it.GetRefPosition();
+                dst_id = it_ref_id.GetSeqId();
+                dst_seg_start = it_ref_pos;
                 continue;
             }
         }
-        // when top_id is set, destination position = GetPosition(),
+        // When top_id is set, destination position = GetPosition(),
         // else it needs to be calculated from top_start/stop and dst_start/stop.
-        TSeqPos dst_from = dst_seg_start + prev_it.GetPosition() - top_start;
+        TSeqPos dst_from = dst_seg_start + it_pos - top_start;
+
         _ASSERT(dst_from >= dst_seg_start);
-        TSeqPos dst_len = prev_it.GetLength();
-        CConstRef<CSeq_id> src_id(prev_it.GetRefSeqid().GetSeqId());
-        TSeqPos src_from = prev_it.GetRefPosition();
+        TSeqPos dst_len = it_len;
+        CConstRef<CSeq_id> src_id(it_ref_id.GetSeqId());
+        TSeqPos src_from = it_ref_pos;
         TSeqPos src_len = dst_len;
-        ENa_strand src_strand = prev_it.GetRefMinusStrand() ?
+        ENa_strand src_strand = it_ref_minus ?
             eNa_strand_minus : eNa_strand_unknown;
         switch (direction) {
         case eSeqMap_Up:
@@ -504,7 +525,7 @@ void CSeq_loc_Mapper::x_InitializeSeqMap(CSeqMap_CI       seg_it,
             break;
         }
         _ASSERT(src_len == 0  &&  dst_len == 0);
-    } while (seg_it);
+    };
 }
 
 
@@ -514,10 +535,17 @@ CSeq_loc_Mapper::x_AddVirtualBioseq(const TSynonyms&  synonyms,
 {
     CRef<CBioseq> bioseq(new CBioseq);
     ITERATE(IMapper_Sequence_Info::TSynonyms, syn, synonyms) {
+        if (!delta ) {
+            CBioseq_Handle h = m_Scope.GetScope().GetBioseqHandle(*syn);
+            if ( h ) {
+                return h;
+            }
+        }
         CRef<CSeq_id> syn_id(new CSeq_id);
         syn_id->Assign(*syn->GetSeqId());
         bioseq->SetId().push_back(syn_id);
     }
+
     bioseq->SetInst().SetMol(CSeq_inst::eMol_na);
     if ( delta ) {
         // Create delta sequence

@@ -201,16 +201,27 @@ public:
         eGCA_Other    ///< Map to 'private' seq-id
     };
 
+    /// Using CScope for virtual bioseqs created from GC-Assemblies.
+    enum EScopeFlag {
+        eOriginalScope, ///< Put the generated bioseqs into the original scope.
+        eCopyScope      ///< Create a new scope for virtual bioseqs. This keeps
+                        ///< The original scope clean, but any changes made to
+                        ///< it after creating the mapper will not be picked up
+                        ///< by the mapper.
+    };
+
     /// Initialize the mapper to map through a GC-Assembly
     /// to the selected alias type.
     CSeq_loc_Mapper(const CGC_Assembly& gc_assembly,
                     EGCAssemblyAlias    to_alias,
-                    CScope*             scope = 0);
+                    CScope*             scope = 0,
+                    EScopeFlag          scope_flag = eCopyScope);
     /// Initialize the mapper to map through deltas from a GC-Assembly.
     CSeq_loc_Mapper(const CGC_Assembly& gc_assembly,
                     ESeqMapDirection    direction,
                     SSeqMapSelector     selector,
-                    CScope*             scope = 0);
+                    CScope*             scope = 0,
+                    EScopeFlag          scope_flag = eCopyScope);
 
     ~CSeq_loc_Mapper(void);
 

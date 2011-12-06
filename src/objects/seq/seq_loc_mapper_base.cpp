@@ -2828,7 +2828,8 @@ void CSeq_loc_Mapper_Base::x_MapSeq_loc(const CSeq_loc& src_loc)
         const CSeq_id& src_id = src_loc.GetWhole();
         TSeqPos src_to = GetSequenceLength(src_id);
         TRange src_rg = TRange::GetWhole();
-        if ( src_to != kInvalidSeqPos) {
+        // Sequence length returned above may be zero - treat it as unknown.
+        if (src_to > 0  &&  src_to != kInvalidSeqPos) {
             src_rg.SetOpen(0, src_to);
         }
         // The length may still be unknown, but we'll try to map it anyway.

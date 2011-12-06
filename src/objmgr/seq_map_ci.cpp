@@ -418,8 +418,12 @@ bool CSeqMap_CI::x_Push(TSeqPos pos, bool resolveExternal)
                 m_Selector.AddUsedTSE(bh.GetTSE_Handle());
             }
         }
+        size_t depth = m_Stack.size();
         x_Push(ConstRef(&bh.GetSeqMap()), bh.GetTSE_Handle(),
                GetRefPosition(), GetLength(), GetRefMinusStrand(), pos);
+        if (m_Stack.size() == depth) {
+            return false;
+        }
         m_Selector.PushResolve();
         if ( (m_Stack.size() & 63) == 0 ) {
             // check for self-recursion every 64'th stack frame
@@ -460,6 +464,9 @@ void CSeqMap_CI::x_Push(const CConstRef<CSeqMap>& seqMap,
     TSeqPos findOffset = !minusStrand? pos: length - 1 - pos;
     push.m_Index = seqMap->x_FindSegment(from + findOffset, GetScope());
     if ( push.m_Index == size_t(-1) ) {
+        if ( !m_Stack.empty() ) {
+            return;
+        }
         push.m_Index = !minusStrand?
             seqMap->x_GetLastEndSegmentIndex():
             seqMap->x_GetFirstEndSegmentIndex();
