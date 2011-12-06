@@ -775,7 +775,7 @@ BOOST_AUTO_TEST_CASE(s_StringToDoublePosix)
     char *endptr;
     for (int i = 0; s_StrToDoublePosix[i].str; ++i) {
         const double& result  = s_StrToDoublePosix[i].result;
-        double delta   = finite(result)? abs(result)*1.11e-16: 0;
+        double delta   = finite(result)? fabs(result)*1.11e-16: 0;
         const char* str = s_StrToDoublePosix[i].str;
         NcbiCout << "*** Checking string '" << str << "'*** " << NcbiEndl;
         double valuep = NStr::StringToDouble(str, NStr::fDecimalPosix | NStr::fIgnoreErrno);
