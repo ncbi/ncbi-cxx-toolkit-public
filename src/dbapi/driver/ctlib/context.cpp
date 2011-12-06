@@ -230,9 +230,11 @@ Connection::Connection(CTLibContext& context,
 Connection::~Connection(void) throw()
 {
     try {
-        // Connection must be closed before it is allowed to be dropped.
-        Close();
-        Drop();
+        if (m_IsAllocated) {
+            // Connection must be closed before it is allowed to be dropped.
+            Close();
+            Drop();
+        }
     }
     NCBI_CATCH_ALL_X( 7, NCBI_CURRENT_FUNCTION )
 }
@@ -244,6 +246,7 @@ bool Connection::Drop(void)
     if (m_IsAllocated) {
         GetCTLConn().Check(ct_con_drop(m_Handle));
         m_IsAllocated = false;
+        m_IsOpen = false;
     }
 
     return !m_IsAllocated;
@@ -348,7 +351,7 @@ bool Connection::Open(const CDBConnParams& params)
 bool Connection::Close(void)
 {
     if (IsOpen()) {
-        if (IsDead()) {
+        if (IsDead()  ||  !IsAlive()) {
             if (GetCTLConn().Check(ct_close(GetNativeHandle(), CS_FORCE_CLOSE)) == CS_SUCCEED) {
                 m_IsOpen = false;
             }

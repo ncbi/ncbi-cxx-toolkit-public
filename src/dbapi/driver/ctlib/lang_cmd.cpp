@@ -36,6 +36,8 @@
 #include <dbapi/driver/public.hpp>
 #include <dbapi/error_codes.hpp>
 
+#include "ctlib_utils.hpp"
+
 
 #define NCBI_USE_ERRCODE_X   Dbapi_CTlib_Cmds
 
@@ -89,6 +91,8 @@ CTL_Cmd::CTL_Cmd(CTL_Connection& conn)
 
 CTL_Cmd::~CTL_Cmd(void)
 {
+    GetCTLExceptionStorage().SetClosingConnect(true);
+
     try {
         if (!IsDead()) {
             // Check(ct_cancel(NULL, x_GetSybaseCmd(), CS_CANCEL_CURRENT));
@@ -97,6 +101,8 @@ CTL_Cmd::~CTL_Cmd(void)
         }
     }
     NCBI_CATCH_ALL_X( 4, NCBI_CURRENT_FUNCTION )
+
+    GetCTLExceptionStorage().SetClosingConnect(false);
 }
 
 
