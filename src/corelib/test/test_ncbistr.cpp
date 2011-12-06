@@ -234,12 +234,20 @@ static const SStringNumericValues s_Str2NumTests[] = {
     { "7E-324",   DF, -1, kBad, kBad, kBad, kBad, 7E-324, 0. },
     { "7E-323",   DF, -1, kBad, kBad, kBad, kBad, 7E-323, 0. },
 #endif
-#if defined(NCBI_OS_LINUX) && (NCBI_PLATFORM_BITS == 32) && !defined(_DEBUG)
+#if 0 && defined(NCBI_OS_LINUX) && (NCBI_PLATFORM_BITS == 32) && !defined(_DEBUG)
     { "7E-38",   DF, -1, kBad, kBad, kBad, kBad, 7E-38, 0.000000000000002e-38 },
 #else
     { "7E-38",   DF, -1, kBad, kBad, kBad, kBad, 7E-38, 0. },
 #endif
     { "7E38",   DF, -1, kBad, kBad, kBad, kBad, 7E38, 0. },
+    { "7E-500",   DF, -1, kBad, kBad, kBad, kBad, kBad, 0. },
+    { "7E-512",   DF, -1, kBad, kBad, kBad, kBad, kBad, 0. },
+    { "7E500",   DF, -1, kBad, kBad, kBad, kBad, kBad, 0. },
+    { "7E512", DF, -1, kBad, kBad, kBad, kBad, kBad, 0. },
+    { "7E768", DF, -1, kBad, kBad, kBad, kBad, kBad, 0. },
+    { "7E4294967306", DF, -1, kBad, kBad, kBad, kBad, kBad, 0. },
+    { ".000000000000000000000000000001", DF, -1, kBad, kBad, kBad, kBad,
+      .000000000000000000000000000001, 0. },
     { "-123",     NStr::fAllowLeadingSymbols,  -1, -123, kBad, -123, kBad, -123, 0. }
 };
 
@@ -614,6 +622,9 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             NcbiCout << "double value: " << value << ", toString: '"
                      << NStr::NumericToString(value, str_flags) << "'"
                      << NcbiEndl;
+            NcbiCout << "double valueP: " << valueP << ", toString: '"
+                     << NStr::DoubleToString(valueP, -1, str_flags) << "'"
+                     << NcbiEndl;
             BOOST_CHECK(test->IsGoodDouble());
 //            BOOST_CHECK_EQUAL(value, test->d);
             BOOST_CHECK(    value == test->d ||
@@ -773,18 +784,23 @@ BOOST_AUTO_TEST_CASE(s_StringToDoublePosix)
                         valuep == result+delta ||
                         valuep == result-delta ||
                        (valuep <  result+delta && valuep > result-delta));
+        BOOST_CHECK( endptr && !*endptr );
     }
     
     string out;
     double value;
+
     value = NStr::StringToDoublePosix("nan", &endptr);
     BOOST_CHECK( isnan(value) );
+    BOOST_CHECK( endptr && !*endptr );
     NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
     BOOST_CHECK( NStr::Compare(out, "NAN") == 0 );
     NStr::NumericToString(out, value, NStr::fDoublePosix);
     BOOST_CHECK( NStr::Compare(out, "NAN") == 0 );
-    value = NStr::StringToDoublePosix(out.c_str());
+
+    value = NStr::StringToDoublePosix(out.c_str(), &endptr);
     BOOST_CHECK( isnan(value) );
+    BOOST_CHECK( endptr && !*endptr );
     NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
     BOOST_CHECK( NStr::Compare(out, "NAN") == 0 );
     NStr::NumericToString(out, value, NStr::fDoublePosix);
@@ -792,11 +808,14 @@ BOOST_AUTO_TEST_CASE(s_StringToDoublePosix)
 
     value = NStr::StringToDoublePosix("inf", &endptr);
     BOOST_CHECK( !finite(value) && value>0.);
+    BOOST_CHECK( endptr && !*endptr );
     NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
     BOOST_CHECK( NStr::Compare(out, "INF") == 0 );
     NStr::NumericToString(out, value, NStr::fDoublePosix);
     BOOST_CHECK( NStr::Compare(out, "INF") == 0 );
+
     value = NStr::StringToDoublePosix(out.c_str(), &endptr);
+    BOOST_CHECK( endptr && !*endptr );
     BOOST_CHECK( !finite(value) && value>0.);
     NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
     BOOST_CHECK( NStr::Compare(out, "INF") == 0 );
@@ -805,12 +824,15 @@ BOOST_AUTO_TEST_CASE(s_StringToDoublePosix)
 
     value = NStr::StringToDoublePosix("infinity", &endptr);
     BOOST_CHECK( !finite(value) && value>0. );
+    BOOST_CHECK( endptr && !*endptr );
     NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
     BOOST_CHECK( NStr::Compare(out, "INF") == 0 );
     NStr::NumericToString(out, value, NStr::fDoublePosix);
     BOOST_CHECK( NStr::Compare(out, "INF") == 0 );
+
     value = NStr::StringToDoublePosix(out.c_str(), &endptr);
     BOOST_CHECK( !finite(value) && value>0. );
+    BOOST_CHECK( endptr && !*endptr );
     NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
     BOOST_CHECK( NStr::Compare(out, "INF") == 0 );
     NStr::NumericToString(out, value, NStr::fDoublePosix);
@@ -818,6 +840,7 @@ BOOST_AUTO_TEST_CASE(s_StringToDoublePosix)
 
     value = NStr::StringToDoublePosix("+inf", &endptr);
     BOOST_CHECK( !finite(value) && value>0. );
+    BOOST_CHECK( endptr && !*endptr );
     NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
     BOOST_CHECK( NStr::Compare(out, "INF") == 0 );
     NStr::NumericToString(out, value, NStr::fDoublePosix);
@@ -825,6 +848,7 @@ BOOST_AUTO_TEST_CASE(s_StringToDoublePosix)
 
     value = NStr::StringToDoublePosix("+infinity", &endptr);
     BOOST_CHECK( !finite(value) && value>0. );
+    BOOST_CHECK( endptr && !*endptr );
     NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
     BOOST_CHECK( NStr::Compare(out, "INF") == 0 );
     NStr::NumericToString(out, value, NStr::fDoublePosix);
@@ -832,6 +856,7 @@ BOOST_AUTO_TEST_CASE(s_StringToDoublePosix)
 
     value = NStr::StringToDoublePosix("-inf", &endptr);
     BOOST_CHECK( !finite(value) && value<0. );
+    BOOST_CHECK( endptr && !*endptr );
     NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
     BOOST_CHECK( NStr::Compare(out, "-INF") == 0 );
     NStr::NumericToString(out, value, NStr::fDoublePosix);
@@ -839,6 +864,31 @@ BOOST_AUTO_TEST_CASE(s_StringToDoublePosix)
 
     value = NStr::StringToDoublePosix("-infinity", &endptr);
     BOOST_CHECK( !finite(value) && value<0. );
+    BOOST_CHECK( endptr && !*endptr );
+    NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
+    BOOST_CHECK( NStr::Compare(out, "-INF") == 0 );
+    NStr::NumericToString(out, value, NStr::fDoublePosix);
+    BOOST_CHECK( NStr::Compare(out, "-INF") == 0 );
+
+    value = NStr::StringToDoublePosix("+Infinity", &endptr);
+    BOOST_CHECK( !finite(value) && value>0. );
+    BOOST_CHECK( endptr && !*endptr );
+    NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
+    BOOST_CHECK( NStr::Compare(out, "INF") == 0 );
+    NStr::NumericToString(out, value, NStr::fDoublePosix);
+    BOOST_CHECK( NStr::Compare(out, "INF") == 0 );
+
+    value = NStr::StringToDoublePosix("Infinity", &endptr);
+    BOOST_CHECK( !finite(value) && value>0. );
+    BOOST_CHECK( endptr && !*endptr );
+    NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
+    BOOST_CHECK( NStr::Compare(out, "INF") == 0 );
+    NStr::NumericToString(out, value, NStr::fDoublePosix);
+    BOOST_CHECK( NStr::Compare(out, "INF") == 0 );
+
+    value = NStr::StringToDoublePosix("-infinity", &endptr);
+    BOOST_CHECK( !finite(value) && value<0. );
+    BOOST_CHECK( endptr && !*endptr );
     NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
     BOOST_CHECK( NStr::Compare(out, "-INF") == 0 );
     NStr::NumericToString(out, value, NStr::fDoublePosix);
@@ -2340,7 +2390,7 @@ BOOST_AUTO_TEST_CASE(s_SQLEncode)
 
 BOOST_AUTO_TEST_CASE(s_StringToIntSpeed)
 {
-    NcbiCout << NcbiEndl << "NStr:: String to Int speed tests...";
+    NcbiCout << NcbiEndl << "NStr:: String to Int speed tests..." << NcbiEndl;
 
     const int COUNT = 10000000;
     const int TESTS = 6;
@@ -2405,7 +2455,117 @@ BOOST_AUTO_TEST_CASE(s_StringToIntSpeed)
 }
 
 
+BOOST_AUTO_TEST_CASE(s_StringToDoubleSpeed)
+{
+    NcbiCout << NcbiEndl << "NStr:: String to Double speed tests..." << NcbiEndl;
+
+    const int COUNT = 10000000;
+    const string ss[] = {
+        "", "0", "1", "12", "123", "123456789", "1234567890", "TRACE",
+        "0e9", "1e9",
+        "1.234567890123456789e300", "-1.234567890123456789e-300",
+        "1.234567890123456789e200", "-1.234567890123456789e-200" 
+    };
+    const double ssr[] = {
+        -1, 0, 1, 12, 123, 123456789, 1234567890, -1,
+        0, 1e9,
+        1.234567890123456789e300, -1.234567890123456789e-300,
+        1.234567890123456789e200, -1.234567890123456789e-200
+    };
+    const int TESTS = ArraySize(ss);
+
+    int flags = NStr::fConvErr_NoThrow|NStr::fAllowLeadingSpaces;
+    double v;
+    for ( int t = 0; t < TESTS; ++t ) {
+        if ( 1 ) {
+            errno = 0;
+            v = NStr::StringToDouble(ss[t], flags|NStr::fDecimalPosix);
+            if ( errno ) v = -1;
+            if ( v != ssr[t] )
+                ERR_POST(Fatal<<v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
+        }
+
+        if ( 1 ) {
+            errno = 0;
+            v = NStr::StringToDouble(ss[t], flags);
+            if ( errno ) v = -1;
+            if ( v != ssr[t] )
+                ERR_POST(Fatal<<v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
+        }
+
+        if ( 1 ) {
+            errno = 0;
+            char* errptr;
+            v = NStr::StringToDoublePosix(ss[t].c_str(), &errptr);
+            if ( errno || (errptr&&(*errptr||errptr==ss[t].c_str())) ) v = -1;
+            if ( v != ssr[t] )
+                ERR_POST(Fatal<<v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
+        }
+
+        if ( 1 ) {
+            errno = 0;
+            char* errptr;
+            v = strtod(ss[t].c_str(), &errptr);
+            if ( errno || (errptr&&(*errptr||errptr==ss[t].c_str())) ) v = -1;
+            if ( v != ssr[t] )
+                ERR_POST(Fatal<<v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
+        }
+    }
+    for ( int t = 0; t < TESTS; ++t ) {
+        string s1 = ss[t];
+        CTempStringEx s = ss[t];
+        const char* s2 = ss[t].c_str();
+        CStopWatch sw;
+        double time;
+
+        if ( 1 ) {
+            sw.Restart();
+            for ( int i = 0; i < COUNT; ++i ) {
+                errno = 0;
+                v = NStr::StringToDouble(s, flags|NStr::fDecimalPosix);
+                if ( errno ) v = -1;
+            }
+            time = sw.Elapsed();
+            NcbiCout << "StringToDouble("<<ss[t]<<", Posix) time: " << time << endl;
+        }
+        if ( 1 ) {
+            sw.Restart();
+            for ( int i = 0; i < COUNT; ++i ) {
+                errno = 0;
+                v = NStr::StringToDouble(s, flags);
+                if ( errno ) v = -1;
+            }
+            time = sw.Elapsed();
+            NcbiCout << "StringToDouble("<<ss[t]<<") time: " << time << endl;
+        }
+        if ( 1 ) {
+            sw.Restart();
+            for ( int i = 0; i < COUNT; ++i ) {
+                errno = 0;
+                char* errptr;
+                v = NStr::StringToDoublePosix(s2, &errptr);
+                if ( errno || (errptr&&(*errptr||errptr==s2)) ) v = -1;
+            }
+            time = sw.Elapsed();
+            NcbiCout << "StringToDoublePosix("<<ss[t]<<") time: " << time << endl;
+        }
+        if ( 1 ) {
+            sw.Restart();
+            for ( int i = 0; i < COUNT; ++i ) {
+                errno = 0;
+                char* errptr;
+                v = strtod(s2, &errptr);
+                if ( errno || (errptr&&(*errptr||errptr==s2)) ) v = -1;
+            }
+            time = sw.Elapsed();
+            NcbiCout << "strtod("<<ss[t]<<") time: " << time << endl;
+        }
+    }
+}
+
+
 NCBITEST_INIT_TREE()
 {
     NCBITEST_DISABLE(s_StringToIntSpeed);
+    NCBITEST_DISABLE(s_StringToDoubleSpeed);
 }
