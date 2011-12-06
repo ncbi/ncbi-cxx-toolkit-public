@@ -725,6 +725,18 @@ bool CGff3WriteRecordFeature::x_AssignAttributeDbXref(
     vector<string> values;
     CSeqFeatData::E_Choice choice = mf.GetData().Which();
 
+//  >>>debug
+//    const CSeq_loc& loc = mf.GetLocation();
+//    if ( mf.GetFeatSubtype() == CSeqFeatData::eSubtype_tRNA) {
+//        try {
+//            int from = loc.GetInt().GetFrom();
+//            int to = loc.GetInt().GetTo();
+//            cerr << "";
+//        }
+//        catch(...) {}
+//    }
+//  <<<debug
+
     if ( mf.IsSetDbxref() ) {
         const CSeq_feat::TDbxref& dbxrefs = mf.GetDbxref();
         for ( size_t i=0; i < dbxrefs.size(); ++i ) {
@@ -732,51 +744,59 @@ bool CGff3WriteRecordFeature::x_AssignAttributeDbXref(
         }
     }
 
-    CMappedFeat parent;
-    try {
-        parent = m_fc.FeatTree().GetParent( mf );
-    }
-    catch(...) {
-    }
-    if ( parent  &&  parent.IsSetDbxref()) {
-        const CSeq_feat::TDbxref& more_dbxrefs = parent.GetDbxref();
-        for ( size_t i=0; i < more_dbxrefs.size(); ++i ) {
-            string str = s_MakeGffDbtag( *more_dbxrefs[ i ] );
-            if ( values.end() == find( values.begin(), values.end(), str ) ) {
-                values.push_back(str);
+    switch (choice) {
+        default: {
+            CMappedFeat parent;
+            try {
+                parent = m_fc.FeatTree().GetParent( mf );
             }
-        }
-    }
-
-    if ( choice == CSeq_feat::TData::e_Rna || choice == CSeq_feat::TData::e_Cdregion ) {
-        if ( mf.IsSetProduct() ) {
-            string str = s_MakeGffDbtag( mf.GetProductId(), mf.GetScope() );
-            if ( values.end() == find( values.begin(), values.end(), str ) ) {
-                values.push_back(str);
+            catch(...) {
             }
-        }
-        CMappedFeat gene_feat = m_fc.FeatTree().GetParent( mf, CSeqFeatData::e_Gene );
-        if ( gene_feat  &&  mf.IsSetXref()) {
-            const CSeq_feat::TXref& xref = mf.GetXref();
-            for (CSeq_feat::TXref::const_iterator cit = xref.begin(); cit != xref.end(); ++cit) {
-                if ( (*cit)->IsSetData()  &&  (*cit)->GetData().IsGene()) {
-                    const CSeqFeatData::TGene& gene = (*cit)->GetData().GetGene();
-                    if (gene.IsSuppressed()) {
-                        gene_feat = CMappedFeat();
-                        break;
+            if ( parent  &&  parent.IsSetDbxref()) {
+                const CSeq_feat::TDbxref& more_dbxrefs = parent.GetDbxref();
+                for ( size_t i=0; i < more_dbxrefs.size(); ++i ) {
+                    string str = s_MakeGffDbtag( *more_dbxrefs[ i ] );
+                    if ( values.end() == find( values.begin(), values.end(), str ) ) {
+                        values.push_back(str);
                     }
                 }
             }
+            break;
         }
 
-        if ( gene_feat  &&  gene_feat.IsSetDbxref() ) {
-            const CSeq_feat::TDbxref& dbxrefs = gene_feat.GetDbxref();
-            for ( size_t i=0; i < dbxrefs.size(); ++i ) {
-                string str = s_MakeGffDbtag( *dbxrefs[ i ] );
+        case CSeq_feat::TData::e_Rna:
+        case CSeq_feat::TData::e_Cdregion: {
+            if ( mf.IsSetProduct() ) {
+                string str = s_MakeGffDbtag( mf.GetProductId(), mf.GetScope() );
                 if ( values.end() == find( values.begin(), values.end(), str ) ) {
                     values.push_back(str);
                 }
             }
+
+            CMappedFeat gene_feat = m_fc.FeatTree().GetParent( mf, CSeqFeatData::e_Gene );
+            if ( gene_feat  &&  mf.IsSetXref()) {
+                const CSeq_feat::TXref& xref = mf.GetXref();
+                for (CSeq_feat::TXref::const_iterator cit = xref.begin(); cit != xref.end(); ++cit) {
+                    if ( (*cit)->IsSetData()  &&  (*cit)->GetData().IsGene()) {
+                        const CSeqFeatData::TGene& gene = (*cit)->GetData().GetGene();
+                        if (gene.IsSuppressed()) {
+                            gene_feat = CMappedFeat();
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if ( gene_feat  &&  gene_feat.IsSetDbxref() ) {
+                const CSeq_feat::TDbxref& dbxrefs = gene_feat.GetDbxref();
+                for ( size_t i=0; i < dbxrefs.size(); ++i ) {
+                    string str = s_MakeGffDbtag( *dbxrefs[ i ] );
+                    if ( values.end() == find( values.begin(), values.end(), str ) ) {
+                        values.push_back(str);
+                    }
+                }
+            }
+            break;
         }
     }
 
