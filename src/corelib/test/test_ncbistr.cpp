@@ -746,7 +746,8 @@ static const SStringDoublePosixTest s_StrToDoublePosix[] = {
     {"184467.44073709551616e25",   184467.44073709551616e25,   0.},
     {"184467.44073709551616e-25",  184467.44073709551616e-25,  0.},
 
-    {"1.7976931348623158e+308",  HUGE_VAL, 0.},
+    {"1.7976931348623160e+308",  HUGE_VAL, 0.},
+    {"1.7976931348623158e+308",  1.7976931348623158e+308, 0.},
     {"1.7976931348623156e+308",  1.7976931348623156e+308, 0.0000000000000003e+308},
     { "1.797693134862315e+307",  1.797693134862315e+307,  0.000000000000002e+307},
     { "1.797693134862315e+306",  1.797693134862315e+306,  0.},
@@ -775,7 +776,7 @@ BOOST_AUTO_TEST_CASE(s_StringToDoublePosix)
     char *endptr;
     for (int i = 0; s_StrToDoublePosix[i].str; ++i) {
         const double& result  = s_StrToDoublePosix[i].result;
-        double delta   = finite(result)? fabs(result)*1.11e-16: 0;
+        double delta   = finite(result)? fabs(result)*2.22e-16: 0;
         const char* str = s_StrToDoublePosix[i].str;
         NcbiCout << "*** Checking string '" << str << "'*** " << NcbiEndl;
         double valuep = NStr::StringToDouble(str, NStr::fDecimalPosix | NStr::fIgnoreErrno);
@@ -2144,15 +2145,15 @@ BOOST_AUTO_TEST_CASE(s_StringUTF8)
     BOOST_CHECK_EQUAL(strcmp(str.c_str(),"micro=µ Agrave=À atilde=ã ccedil=ç"), 0);
     BOOST_CHECK_EQUAL( str.AsLatin1(), sample);
 
-    BOOST_CHECK_EQUAL(128, CStringUTF8::GetValidSymbolCount((const char*)s_Converted, sizeof(s_Converted)));
-    BOOST_CHECK_EQUAL(127, CStringUTF8::GetValidSymbolCount((const char*)s_ExtAscii));
-    BOOST_CHECK_EQUAL(34,  CStringUTF8::GetValidSymbolCount(str.data(), str.length()));
-    BOOST_CHECK_EQUAL(34,  CStringUTF8::GetValidSymbolCount(str));
+    BOOST_CHECK_EQUAL(128u, CStringUTF8::GetValidSymbolCount((const char*)s_Converted, sizeof(s_Converted)));
+    BOOST_CHECK_EQUAL(127u, CStringUTF8::GetValidSymbolCount((const char*)s_ExtAscii));
+    BOOST_CHECK_EQUAL(34u,  CStringUTF8::GetValidSymbolCount(str.data(), str.length()));
+    BOOST_CHECK_EQUAL(34u,  CStringUTF8::GetValidSymbolCount(str));
 
-    BOOST_CHECK_EQUAL(256, CStringUTF8::GetValidBytesCount((const char*)s_Converted, sizeof(s_Converted)));
-    BOOST_CHECK_EQUAL(127, CStringUTF8::GetValidBytesCount((const char*)s_ExtAscii));
-    BOOST_CHECK_EQUAL(38,  CStringUTF8::GetValidBytesCount(str.data(), str.length()));
-    BOOST_CHECK_EQUAL(38,  CStringUTF8::GetValidBytesCount(str));
+    BOOST_CHECK_EQUAL(256u, CStringUTF8::GetValidBytesCount((const char*)s_Converted, sizeof(s_Converted)));
+    BOOST_CHECK_EQUAL(127u, CStringUTF8::GetValidBytesCount((const char*)s_ExtAscii));
+    BOOST_CHECK_EQUAL(38u,  CStringUTF8::GetValidBytesCount(str.data(), str.length()));
+    BOOST_CHECK_EQUAL(38u,  CStringUTF8::GetValidBytesCount(str));
 }
 
 BOOST_AUTO_TEST_CASE(s_TruncateSpaces)
