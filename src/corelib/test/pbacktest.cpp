@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include "pbacktest.hpp"
+#include <corelib/ncbicfg.h>
 #include <corelib/ncbidbg.hpp>
 #include <corelib/request_control.hpp>
 #include <corelib/stream_utils.hpp>
@@ -53,9 +54,6 @@
 BEGIN_NCBI_SCOPE
 
 
-static const size_t kBufferSize = 512*1024;
-
-
 /* NOTE about MSVC compiler and its C++ std. library:
  *
  * The C++ standard is very confusing on the stream's ability to do
@@ -65,7 +63,7 @@ static const size_t kBufferSize = 512*1024;
  * 3rd ed. by B.Stroustrup, p.644, which reads "what is guaranteed
  * is that you can back up one character after a successful read."
  *
- * Most implementation obey this;  but there are some that do not.
+ * Most implementations obey this;  but there are some that do not.
  *
  * A bug or not a bug, we had to put putback and unget tests to only
  * follow a first pushback operation, which (internally) changes the
@@ -164,8 +162,10 @@ static int s_StreamPushback(iostream&   ios,
             _ASSERT(nread + j <= size);
             if (!ios.good()) {
                 _ASSERT(ios.rdstate() & NcbiEofbit);
-                if (nread + j != size)
-                    ERR_POST("Got only " << j << " byte" << &"s"[j == 1]);
+                if (nread + j != size) {
+                    ERR_POST("Got only " << j << " byte" << &"s"[j == 1]
+                             << " (" << (nread + j) << '/' << size << ')');
+                }
                 _ASSERT(nread + j == size);
                 ios.clear();
             }
@@ -186,8 +186,10 @@ static int s_StreamPushback(iostream&   ios,
             } else {
                 if (!ios.good()) {
                     _ASSERT(ios.rdstate() == NcbiEofbit);
-                    if (nread + j != size)
-                        ERR_POST("Got only " << j << " byte" << &"s"[j == 1]);
+                    if (nread + j != size) {
+                        ERR_POST("Got only " << j << " byte" << &"s"[j == 1]
+                                 << " (" << (nread + j) << '/' << size << ')');
+                    }
                     _ASSERT(nread + j == size);
                     ios.clear();
                 } else if (j < i)
@@ -461,6 +463,9 @@ static int s_StreamPushback(iostream&   ios,
 extern int TEST_StreamPushback(iostream& ios,
                                bool      rewind)
 {
+    const size_t kBufferSize =
+        rewind  &&  NCBI_GetCheckTimeoutMult() > 1.0 ? 64*1024 : 512*1024;
+
     // Warnings, errors, etc
     GetDiagContext().SetLogRate_Limit(CDiagContext::eLogRate_Err,
                                       CRequestRateControl::kNoLimit);
@@ -468,7 +473,8 @@ extern int TEST_StreamPushback(iostream& ios,
     GetDiagContext().SetLogRate_Limit(CDiagContext::eLogRate_Trace,
                                       CRequestRateControl::kNoLimit);
 
-    ERR_POST(Info << "Generating array of random data");
+    ERR_POST(Info << "Generating array of random data (" << kBufferSize
+             << " byte" << &"s"[kBufferSize == 1] << ')');
     char* orig = new char[kBufferSize + 1];
     for (size_t j = 0; j < kBufferSize/1024; j++) {
         for (size_t i = 0; i < 1024 - 1; i++)
