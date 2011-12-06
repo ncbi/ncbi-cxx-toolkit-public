@@ -236,7 +236,7 @@ static CONNECTOR s_TunneledSocketConnector(const SConnNetInfo* net_info,
                 SOCK_Abort(sock);
                 SOCK_Close(sock);
             }
-            delete handle;
+            delete[] handle;
         } else
             _ASSERT(!sock);
         if (!sock  &&  !net_info->http_proxy_leak)
