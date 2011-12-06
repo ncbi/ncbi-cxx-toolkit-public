@@ -247,7 +247,7 @@ static const SStringNumericValues s_Str2NumTests[] = {
     { "7E768", DF, -1, kBad, kBad, kBad, kBad, kBad, 0. },
     { "7E4294967306", DF, -1, kBad, kBad, kBad, kBad, kBad, 0. },
     { ".000000000000000000000000000001", DF, -1, kBad, kBad, kBad, kBad,
-      .000000000000000000000000000001, 0. },
+      .000000000000000000000000000001, 1e-46 },
     { "-123",     NStr::fAllowLeadingSymbols,  -1, -123, kBad, -123, kBad, -123, 0. }
 };
 
@@ -615,22 +615,23 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             double value = NStr::StringToDouble(str, flags);
             double valueP = NStr::StringToDouble(str, flags | NStr::fDecimalPosix);
 //            BOOST_CHECK_EQUAL(value, valueP);
-            BOOST_CHECK(    valueP == value ||
-                            valueP == value+test->delta ||
-                            valueP == value-test->delta ||
-                           (valueP <  value+test->delta && valueP > value-test->delta));
             NcbiCout << "double value: " << value << ", toString: '"
                      << NStr::NumericToString(value, str_flags) << "'"
                      << NcbiEndl;
             NcbiCout << "double valueP: " << valueP << ", toString: '"
                      << NStr::DoubleToString(valueP, -1, str_flags) << "'"
                      << NcbiEndl;
+            if ( valueP != value ) {
+                NcbiCout << setprecision(24);
+                NcbiCout << "value : " << value << NcbiEndl;
+                NcbiCout << "valueP: " << valueP << NcbiEndl;
+                NcbiCout << setprecision(6);
+                NcbiCout << "diff=" << (valueP-value) << " delta=" << test->delta
+                    << NcbiEndl;
+            }
             BOOST_CHECK(test->IsGoodDouble());
-//            BOOST_CHECK_EQUAL(value, test->d);
-            BOOST_CHECK(    value == test->d ||
-                            value == test->d+test->delta ||
-                            value == test->d-test->delta ||
-                           (value <  test->d+test->delta && value > test->d-test->delta));
+            BOOST_CHECK(valueP >= test->d-test->delta && valueP <= test->d+test->delta);
+            BOOST_CHECK(value  >= test->d-test->delta && value  <= test->d+test->delta);
         }
         catch (CException&) {
             if ( test->IsGoodDouble() ) {
@@ -649,11 +650,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             if ( value || !err ) {
                 BOOST_CHECK(!err);
                 BOOST_CHECK(test->IsGoodDouble());
-//                BOOST_CHECK_EQUAL(value, test->d);
-                BOOST_CHECK(    value == test->d ||
-                                value == test->d+test->delta ||
-                                value == test->d-test->delta ||
-                               (value <  test->d+test->delta && value > test->d-test->delta));
+                BOOST_CHECK(value  >= test->d-test->delta && value  <= test->d+test->delta);
             }
             else {
                 BOOST_CHECK(err);
@@ -669,13 +666,17 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
                      << NStr::NumericToString(value, str_flags) << "'"
                      << " errno: " << err << NcbiEndl;
             if ( value || !err ) {
+                if ( value != test->d ) {
+                    NcbiCout << setprecision(24);
+                    NcbiCout << "value: " << value << NcbiEndl;
+                    NcbiCout << "  ref: " << test->d << NcbiEndl;
+                    NcbiCout << setprecision(6);
+                    NcbiCout << "diff=" << (value-test->d) << " delta=" << test->delta
+                        << NcbiEndl;
+                }
                 BOOST_CHECK(!err);
                 BOOST_CHECK(test->IsGoodDouble());
-//                BOOST_CHECK_EQUAL(value, test->d);
-                BOOST_CHECK(    value == test->d ||
-                                value == test->d+test->delta ||
-                                value == test->d-test->delta ||
-                               (value <  test->d+test->delta && value > test->d-test->delta));
+                BOOST_CHECK(value  >= test->d-test->delta && value  <= test->d+test->delta);
             }
             else {
                 BOOST_CHECK(err);
@@ -694,13 +695,13 @@ struct SStringDoublePosixTest
 };
 
 static const SStringDoublePosixTest s_StrToDoublePosix[] = {
-    {"123",                 123.,                0.},
-    {"123.",                123.,                0.},
-    {"123.456",             123.456,             0.},
-    {"-123.456",           -123.456,             0.},
-    {"-12.45",             -12.45,               0.},
-    {"0.01",                0.01,                0.},
-    {"0.01456000",          0.01456,             0.},
+    {"123",                 123.,                1e-13},
+    {"123.",                123.,                1e-13},
+    {"123.456",             123.456,             1e-13},
+    {"-123.456",           -123.456,             1e-14},
+    {"-12.45",             -12.45,               1e-15},
+    {"0.01",                0.01,                1e-18},
+    {"0.01456000",          0.01456,             1e-18},
     {"2147483649",          2147483649.,         0.},
     {"-2147483649",        -2147483649.,         0.},
     {"214748364913",        214748364913.,       0.},
@@ -756,7 +757,7 @@ static const SStringDoublePosixTest s_StrToDoublePosix[] = {
     {"2.2250738585072016e-307",  2.2250738585072016e-307, 0.0000000000000004e-307},/* NCBI_FAKE_WARNING */
     {"2.2250738585072016e-306",  2.2250738585072016e-306, 0.0000000000000004e-306},/* NCBI_FAKE_WARNING */
     {"2.2250738585072016e-305",  2.2250738585072016e-305, 0.0000000000000004e-305},/* NCBI_FAKE_WARNING */
-    {"-123.456e+4578",  HUGE_VAL, 0.},
+    {"-123.456e+4578",  -HUGE_VAL, 0.},
     {"-123.456e-4578",  0., 0.},
 
     { "7E0000000001", 70., 0.},
@@ -774,17 +775,13 @@ BOOST_AUTO_TEST_CASE(s_StringToDoublePosix)
     char *endptr;
     for (int i = 0; s_StrToDoublePosix[i].str; ++i) {
         const double& result  = s_StrToDoublePosix[i].result;
-        const double& delta   = s_StrToDoublePosix[i].delta;
+        double delta   = finite(result)? abs(result)*1.11e-16: 0;
         const char* str = s_StrToDoublePosix[i].str;
         NcbiCout << "*** Checking string '" << str << "'*** " << NcbiEndl;
-        double valued = strtod(str, &endptr);
         double valuep = NStr::StringToDouble(str, NStr::fDecimalPosix | NStr::fIgnoreErrno);
-//        BOOST_CHECK_EQUAL(valued, valuep);
-        BOOST_CHECK(    valuep == valued ||
-                        valuep == result+delta ||
-                        valuep == result-delta ||
-                       (valuep <  result+delta && valuep > result-delta));
-        BOOST_CHECK( endptr && !*endptr );
+        NcbiCout << setprecision(24) << result << " vs " << valuep
+            << setprecision(6) << NcbiEndl;
+        BOOST_CHECK(valuep >= result-delta && valuep <= result+delta);
     }
     
     string out;
@@ -922,10 +919,10 @@ static const SStringNumericValues s_Str2NumNonPosixTests[] = {
     { "12,34",  NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  12.34, 0. },
     { "12.34",  NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  12.34, 0. },
     { "12.34",  NStr::fDecimalPosix,           -1, kBad, kBad, kBad, kBad,  12.34, 0. },
-    { "12,34e-2",  DF,                         -1, kBad, kBad, kBad, kBad,  .1234, 0. },
-    { "12,34e-2",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  .1234, 0. },
-    { "12.34e-2",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  .1234, 0. },
-    { "12.34e-2",  NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  .1234, 0. },
+    { "12,34e-2",  DF,                         -1, kBad, kBad, kBad, kBad,  .1234, 1e-17 },
+    { "12,34e-2",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  .1234, 1e-17 },
+    { "12.34e-2",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  .1234, 1e-17 },
+    { "12.34e-2",  NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  .1234, 1e-17 },
     { "1234,",  NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  1234., 0. },
     { "1234.",  NStr::fDecimalPosix,           -1, kBad, kBad, kBad, kBad,  1234., 0. },
     { "1234",   NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  1234., 0. },
@@ -970,7 +967,7 @@ BOOST_AUTO_TEST_CASE(s_StringToDouble)
                      << NStr::NumericToString(value) << "'"
                      << NcbiEndl;
             BOOST_CHECK(test->IsGoodDouble());
-            BOOST_CHECK_EQUAL(value, test->d);
+            BOOST_CHECK(value >= test->d-test->delta && value <= test->d+test->delta);
         }
         catch (CException&) {
             if ( test->IsGoodDouble() ) {
@@ -2472,16 +2469,31 @@ BOOST_AUTO_TEST_CASE(s_StringToDoubleSpeed)
         1.234567890123456789e300, -1.234567890123456789e-300,
         1.234567890123456789e200, -1.234567890123456789e-200
     };
+    double ssr_min[sizeof(ssr)/sizeof(ssr[0])];
+    double ssr_max[sizeof(ssr)/sizeof(ssr[0])];
     const int TESTS = ArraySize(ss);
 
     int flags = NStr::fConvErr_NoThrow|NStr::fAllowLeadingSpaces;
     double v;
     for ( int t = 0; t < TESTS; ++t ) {
         if ( 1 ) {
+            double r_min = ssr[t], r_max = r_min;
+            if ( r_min < 0 ) {
+                r_min *= 1+1e-15;
+                r_max *= 1-1e-15;
+            }
+            else {
+                r_min *= 1-1e-15;
+                r_max *= 1+1e-15;
+            }
+            ssr_min[t] = r_min;
+            ssr_max[t] = r_max;
+        }
+        if ( 1 ) {
             errno = 0;
             v = NStr::StringToDouble(ss[t], flags|NStr::fDecimalPosix);
             if ( errno ) v = -1;
-            if ( v != ssr[t] )
+            if ( v < ssr_min[t] || v > ssr_max[t] )
                 ERR_POST(Fatal<<v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
         }
 
@@ -2489,7 +2501,7 @@ BOOST_AUTO_TEST_CASE(s_StringToDoubleSpeed)
             errno = 0;
             v = NStr::StringToDouble(ss[t], flags);
             if ( errno ) v = -1;
-            if ( v != ssr[t] )
+            if ( v < ssr_min[t] || v > ssr_max[t] )
                 ERR_POST(Fatal<<v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
         }
 
@@ -2498,7 +2510,7 @@ BOOST_AUTO_TEST_CASE(s_StringToDoubleSpeed)
             char* errptr;
             v = NStr::StringToDoublePosix(ss[t].c_str(), &errptr);
             if ( errno || (errptr&&(*errptr||errptr==ss[t].c_str())) ) v = -1;
-            if ( v != ssr[t] )
+            if ( v < ssr_min[t] || v > ssr_max[t] )
                 ERR_POST(Fatal<<v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
         }
 
@@ -2507,7 +2519,7 @@ BOOST_AUTO_TEST_CASE(s_StringToDoubleSpeed)
             char* errptr;
             v = strtod(ss[t].c_str(), &errptr);
             if ( errno || (errptr&&(*errptr||errptr==ss[t].c_str())) ) v = -1;
-            if ( v != ssr[t] )
+            if ( v < ssr_min[t] || v > ssr_max[t] )
                 ERR_POST(Fatal<<v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
         }
     }

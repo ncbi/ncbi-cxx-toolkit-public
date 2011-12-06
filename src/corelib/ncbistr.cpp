@@ -1000,12 +1000,26 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr)
                 ret *= mul1[exponent&15];
                 if ( exponent >>= 4 ) {
                     static const long double mul2[16] = {
-                        1, 1e16L, 1e32L, 1e48L, 1e64L, 1e80L, 1e96L, 1e112L,
-                        1e128L, 1e144L, 1e160L, 1e176L, 1e192L, 1e208L, 1e224L, 1e240L
+                        NCBI_CONST_LONGDOUBLE(1e0),
+                        NCBI_CONST_LONGDOUBLE(1e16),
+                        NCBI_CONST_LONGDOUBLE(1e32),
+                        NCBI_CONST_LONGDOUBLE(1e48),
+                        NCBI_CONST_LONGDOUBLE(1e64),
+                        NCBI_CONST_LONGDOUBLE(1e80),
+                        NCBI_CONST_LONGDOUBLE(1e96),
+                        NCBI_CONST_LONGDOUBLE(1e112),
+                        NCBI_CONST_LONGDOUBLE(1e128),
+                        NCBI_CONST_LONGDOUBLE(1e144),
+                        NCBI_CONST_LONGDOUBLE(1e160),
+                        NCBI_CONST_LONGDOUBLE(1e176),
+                        NCBI_CONST_LONGDOUBLE(1e192),
+                        NCBI_CONST_LONGDOUBLE(1e208),
+                        NCBI_CONST_LONGDOUBLE(1e224),
+                        NCBI_CONST_LONGDOUBLE(1e240)
                     };
                     ret *= mul2[exponent&15];
                     for ( exponent >>= 4; exponent; --exponent ) {
-                        ret *= 1e256L;
+                        ret *= NCBI_CONST_LONGDOUBLE(1e256);
                     }
                 }
                 if (!finite(double(ret))) {
@@ -1015,23 +1029,57 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr)
             else {
                 exponent = -exponent;
                 static const long double mul1[16] = {
-                    1, 1e-1L, 1e-2L, 1e-3L, 1e-4L, 1e-5L, 1e-6L, 1e-7L,
-                    1e-8L, 1e-9L, 1e-10L, 1e-11L, 1e-12L, 1e-13L, 1e-14L, 1e-15L
+                    NCBI_CONST_LONGDOUBLE(1e-0),
+                    NCBI_CONST_LONGDOUBLE(1e-1),
+                    NCBI_CONST_LONGDOUBLE(1e-2),
+                    NCBI_CONST_LONGDOUBLE(1e-3),
+                    NCBI_CONST_LONGDOUBLE(1e-4),
+                    NCBI_CONST_LONGDOUBLE(1e-5),
+                    NCBI_CONST_LONGDOUBLE(1e-6),
+                    NCBI_CONST_LONGDOUBLE(1e-7),
+                    NCBI_CONST_LONGDOUBLE(1e-8),
+                    NCBI_CONST_LONGDOUBLE(1e-9),
+                    NCBI_CONST_LONGDOUBLE(1e-10),
+                    NCBI_CONST_LONGDOUBLE(1e-11),
+                    NCBI_CONST_LONGDOUBLE(1e-12),
+                    NCBI_CONST_LONGDOUBLE(1e-13),
+                    NCBI_CONST_LONGDOUBLE(1e-14),
+                    NCBI_CONST_LONGDOUBLE(1e-15)
                 };
                 ret *= mul1[exponent&15];
                 if ( exponent >>= 4 ) {
                     static const long double mul2[16] = {
-                        1, 1e-16L, 1e-32L, 1e-48L, 1e-64L, 1e-80L, 1e-96L, 1e-112L,
-                        1e-128L, 1e-144L, 1e-160L, 1e-176L, 1e-192L, 1e-208L, 1e-224L, 1e-240L
+                        NCBI_CONST_LONGDOUBLE(1e-0),
+                        NCBI_CONST_LONGDOUBLE(1e-16),
+                        NCBI_CONST_LONGDOUBLE(1e-32),
+                        NCBI_CONST_LONGDOUBLE(1e-48),
+                        NCBI_CONST_LONGDOUBLE(1e-64),
+                        NCBI_CONST_LONGDOUBLE(1e-80),
+                        NCBI_CONST_LONGDOUBLE(1e-96),
+                        NCBI_CONST_LONGDOUBLE(1e-112),
+                        NCBI_CONST_LONGDOUBLE(1e-128),
+                        NCBI_CONST_LONGDOUBLE(1e-144),
+                        NCBI_CONST_LONGDOUBLE(1e-160),
+                        NCBI_CONST_LONGDOUBLE(1e-176),
+                        NCBI_CONST_LONGDOUBLE(1e-192),
+                        NCBI_CONST_LONGDOUBLE(1e-208),
+                        NCBI_CONST_LONGDOUBLE(1e-224),
+                        NCBI_CONST_LONGDOUBLE(1e-240)
                     };
                     ret *= mul2[exponent&15];
                     for ( exponent >>= 4; exponent; --exponent ) {
-                        ret *= 1e-256L;
+                        ret *= NCBI_CONST_LONGDOUBLE(1e-256);
                     }
                 }
-                if (double(ret) == 0.) {
+#if SIZEOF_LONG_DOUBLE == SIZEOF_DOUBLE
+                if ( ret < DBL_MIN ) {
                     errno = ERANGE;
                 }
+#else
+                if ( double(ret) == 0 ) {
+                    errno = ERANGE;
+                }
+#endif
             }
         }
     }
