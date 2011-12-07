@@ -519,7 +519,7 @@ BOOST_AUTO_TEST_CASE(ReadGenbankReport)
     blast::SSeqLoc ssl = source->GetNextSeqLocBatch(scope).front();
     BOOST_REQUIRE(source->End() == true);
 
-    string s(error_stream.str());
+    string s(error_stream.str(), 100);
     BOOST_REQUIRE(s.find("Ignoring invalid residue 1 at ") != NPOS);
 
     BOOST_REQUIRE(ssl.seqloc->IsInt() == true);
