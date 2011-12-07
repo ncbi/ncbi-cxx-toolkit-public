@@ -274,8 +274,12 @@ void CTestApp::Init(void)
                        "test string <-> double conversion");
     d->AddFlag("speed",
                "Run conversion speed benchmark");
-    d->AddFlag("precision",
-               "Run conversion precision benchmark");
+    d->AddOptionalKey("precision", "precision",
+                      "Run conversion precision benchmark",
+                      CArgDescriptions::eString);
+    d->SetConstraint("precision",
+                     &(*new CArgAllow_Strings,
+                       "Posix", "PosixOld", "strtod"));
     d->AddDefaultKey("count", "count",
                      "Number of test iterations to run",
                      CArgDescriptions::eInteger, "1000000");
@@ -925,9 +929,22 @@ void CTestApp::RunPrecisionBenchmark(void)
 
     const int COUNT = args["count"].AsInteger();
     double threshold = args["threshold"].AsDouble();
+    const int kCallPosix = 0;
+    const int kCallPosixOld = 1;
+    const int kCallstrtod = 2;
+    int call_type = kCallPosix;
+    if ( args["precision"].AsString() == "Posix" ) {
+        call_type = kCallPosix;
+    }
+    if ( args["precision"].AsString() == "PosixOld" ) {
+        call_type = kCallPosixOld;
+    }
+    if ( args["precision"].AsString() == "strtod" ) {
+        call_type = kCallstrtod;
+    }
 
     char str[200];
-    char* errptr;
+    char* errptr = 0;
     const int MAX_DIGITS = 24;
 
     typedef map<int, int> TErrCount;
@@ -950,7 +967,18 @@ void CTestApp::RunPrecisionBenchmark(void)
         double v_ref = PreciseStringToDouble(str);
         
         errno = 0;
-        double v = strtod(str, &errptr);
+        double v = 0;
+        switch ( call_type ) {
+        case kCallPosix:
+            v = NStr::StringToDoublePosix(str, &errptr);
+            break;
+        case kCallPosixOld:
+            v = StringToDoublePosixOld(str, &errptr);
+            break;
+        case kCallstrtod:
+            v = strtod(str, &errptr);
+            break;
+        }
         if ( errno||(errptr&&(*errptr||errptr==str)) ) {
             // error
             ERR_POST("Failed to convert: "<< str);
