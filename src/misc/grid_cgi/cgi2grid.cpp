@@ -87,7 +87,7 @@ CNcbiOstream& CGI2GRID_ComposeHtmlPage(CCgiApplication&    app,
     url += "&job_key=" + job_key;
     url += "&ctg_error_url=" + NStr::URLEncode(return_url);
     url += "&ctg_time=" +
-        NStr::IntToString((long) GetFastLocalTime().GetTimeT());
+        NStr::NumericToString(GetFastLocalTime().GetTimeT());
     os << "<html><head><<META HTTP-EQUIV=Refresh CONTENT=\"0;" 
        << url << "\"></head><body></body></html>";
     return os;

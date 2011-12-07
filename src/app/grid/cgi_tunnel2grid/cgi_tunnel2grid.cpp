@@ -329,7 +329,7 @@ void CCgiTunnel2Grid::OnJobSubmitted(CGridCgiContext& ctx)
     // Render a report page
     CTime time(GetFastLocalTime());
     time_t tt = time.GetTimeT();
-    string st = NStr::IntToString(tt);
+    string st = NStr::NumericToString(tt);
     ctx.DefinePersistentEntry(kElapsedTime,st);
     x_RenderView(ctx.GetHTMLPage(), "<@VIEW_JOB_SUBMITTED@>");
 }

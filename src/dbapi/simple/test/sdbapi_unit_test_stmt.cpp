@@ -586,7 +586,7 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
                         query.SetNullParameter( "@vc1000_field", eSDB_String );
                     } else {
                         query.SetNullParameter( "@int_field", eSDB_Int4 );
-                        query.SetParameter( "@vc1000_field", NStr::IntToString(ind) );
+                        query.SetParameter( "@vc1000_field", NStr::NumericToString(ind) );
                     }
 
                     // Execute a statement with parameters ...
@@ -617,7 +617,7 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
                     if (ind % 2 == 0) {
                         query.SetNullParameter( "@nvc255_field", eSDB_String );
                     } else {
-                        query.SetParameter( "@nvc255_field", NStr::IntToString(ind) );
+                        query.SetParameter( "@nvc255_field", NStr::NumericToString(ind) );
                     }
 
                     // Execute a statement with parameters ...
@@ -659,7 +659,7 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
 
                         BOOST_CHECK(!it[2].IsNull());
                         BOOST_CHECK_EQUAL( vc1000_field,
-                                           NStr::IntToString(ind) );
+                                           NStr::NumericToString(ind) );
                     }
                 }
 
@@ -686,7 +686,7 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
                         BOOST_CHECK_EQUAL( NStr::TruncateSpaces(
                                                 nvc255_field
                                                 ),
-                                           NStr::IntToString(ind) );
+                                           NStr::NumericToString(ind) );
                     }
                 }
 

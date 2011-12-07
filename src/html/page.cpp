@@ -806,7 +806,7 @@ void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& istrm, SIZE_TYPE size,
             // Tag not closed
             NCBI_THROW(CHTMLException, eTextUnclosedTag,
                 "opening tag \"" + name + "\" not closed, " \
-                "stream pos = " + NStr::IntToString((long)tag_start));
+                "stream pos = " + NStr::NumericToString(tag_start));
         }
         if (name_end != name_start) {
             // Tag found
@@ -831,7 +831,7 @@ void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& istrm, SIZE_TYPE size,
             // Tag not closed
             NCBI_THROW(CHTMLException, eTextUnclosedTag,
                 "closing tag \"" + name + "\" not closed, " \
-                "stream pos = " + NStr::IntToString((long)tag_end));
+                "stream pos = " + NStr::NumericToString(tag_end));
         }
         if ( name.empty() ) {
             tag_start = s_Find(*pstr, kTagStartBOL.c_str(),

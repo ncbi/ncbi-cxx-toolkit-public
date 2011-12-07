@@ -1955,7 +1955,7 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
                         auto_stmt->SetParam(CVariant(eDB_VarChar), "@vc1000_field");
                     } else {
                         auto_stmt->SetParam( CVariant(eDB_Int), "@int_field" );
-                        auto_stmt->SetParam( CVariant(NStr::IntToString(ind)),
+                        auto_stmt->SetParam( CVariant(NStr::NumericToString(ind)),
                                              "@vc1000_field"
                                              );
                     }
@@ -1987,9 +1987,8 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
                     if (ind % 2 == 0) {
                         auto_stmt->SetParam(CVariant(eDB_VarChar), "@nvc255_field");
                     } else {
-                        auto_stmt->SetParam( CVariant(NStr::IntToString(ind)),
-                                             "@nvc255_field"
-                                             );
+                        auto_stmt->SetParam( CVariant(NStr::NumericToString(ind)),
+                                             "@nvc255_field");
                     }
 
                     // Execute a statement with parameters ...
@@ -2032,7 +2031,7 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
 
                         BOOST_CHECK( !vc1000_field.IsNull() );
                         BOOST_CHECK_EQUAL( vc1000_field.GetString(),
-                                           NStr::IntToString(ind) );
+                                           NStr::NumericToString(ind) );
                     }
                 }
 
@@ -2060,7 +2059,7 @@ BOOST_AUTO_TEST_CASE(Test_NULL)
                         BOOST_CHECK_EQUAL( NStr::TruncateSpaces(
                                                 nvc255_field.GetString()
                                                 ),
-                                           NStr::IntToString(ind) );
+                                           NStr::NumericToString(ind) );
                     }
                 }
 

@@ -81,7 +81,7 @@ CDbapiSampleApp::CDbapiSampleApp(EUseSampleDatabase sd)
       m_UseSvcMapper(false)
 {
     m_TableUID += "_" + CSmallDNS::GetLocalHost() + "_";
-    m_TableUID += NStr::IntToString(CProcess::GetCurrentPid()) + "_";
+    m_TableUID += NStr::NumericToString(CProcess::GetCurrentPid()) + "_";
     m_TableUID += CTime(CTime::eCurrent).AsString("MDy");
     replace( m_TableUID.begin(), m_TableUID.end(), '-', '_' );
 

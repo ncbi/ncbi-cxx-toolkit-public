@@ -2048,9 +2048,9 @@ string CHgvsParser::x_SeqPntToStr(const CSeq_point& pnt, TSeqPos first_pos)
         point_pos--;
     }
 
-    string outs = NStr::IntToString(point_pos);
+    string outs = NStr::NumericToString(point_pos);
     if(offset != numeric_limits<long>::max()) {
-        outs +=  NStr::IntToString(offset, NStr::fWithSign);
+        outs +=  NStr::NumericToString(offset, NStr::fWithSign);
     }
 
     return outs;

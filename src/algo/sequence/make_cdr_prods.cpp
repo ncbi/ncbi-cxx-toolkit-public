@@ -88,7 +88,7 @@ CRef<CBioseq_set> CMakeCdrProds::MakeCdrProds(CRef<CSeq_annot> annot,
         seq_inst->SetLength(prot.size());
 
         CRef<CBioseq> bio_seq(new CBioseq);
-        string num = NStr::IntToString(sm_Counter.Add(1));
+        string num = NStr::NumericToString(sm_Counter.Add(1));
         // pad to five digits
         if (num.size() < 5) {
             num.insert(SIZE_TYPE(0), 5 - num.size(), '0');

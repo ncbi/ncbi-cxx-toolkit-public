@@ -293,7 +293,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
                         }
                     } else {
                         sql  = " SELECT text_field FROM " + GetTableName();
-                        sql += " WHERE int_field = " + NStr::IntToString(ind);
+                        sql += " WHERE int_field = " + NStr::NumericToString(ind);
 
                         if (ind % 2 == 0) {
                             auto_ptr<ICursor> auto_cursor(GetConnection().GetCursor("test03", sql));

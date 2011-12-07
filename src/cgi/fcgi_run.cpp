@@ -413,7 +413,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
     }
 
     // Diag.prefix related preparations
-    const string prefix_pid(NStr::IntToString(CProcess::GetCurrentPid()) + "-");
+    const string prefix_pid(NStr::NumericToString(CProcess::GetCurrentPid()) + "-");
 
 
     // Main Fast-CGI loop
@@ -559,9 +559,9 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                                         CNcbiRegistry::eErrPost);
             if ( is_debug ) {
                 m_Context->PutMsg
-                    ("FastCGI: "      + NStr::IntToString(m_Iteration) +
-                     " iteration of " + NStr::IntToString(max_iterations) +
-                     ", pid "         + NStr::IntToString(CProcess::GetCurrentPid()));
+                    ("FastCGI: "      + NStr::NumericToString(m_Iteration) +
+                     " iteration of " + NStr::NumericToString(max_iterations) +
+                     ", pid "         + NStr::NumericToString(CProcess::GetCurrentPid()));
             }
 
             ConfigureDiagnostics(*m_Context);
