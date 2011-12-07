@@ -7522,6 +7522,7 @@ void CNewCleanup_imp::RnarefBC (
                         // Careful: this invalidates the "gen" variable.
                         const string product = GET_FIELD(gen, Product);
                         SET_FIELD( ext, Name, product );
+                        break;
                     }
 
                     if (! FIELD_IS_SET (gen, Class) &&
