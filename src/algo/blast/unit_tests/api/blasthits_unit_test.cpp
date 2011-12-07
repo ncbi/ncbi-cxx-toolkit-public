@@ -599,7 +599,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         BlastSeqBlkNew(query_blk);
         BlastSeqBlkSetSequence(*query_blk, 
                                (Uint1*) BlastMemDup(kQuerySeq, kLength+2),
-                               kLength+2);
+                               kLength);
         BlastSeqBlkNew(subject_blk);
         BlastSeqBlkSetSequence(*subject_blk, 
                                (Uint1*) BlastMemDup(kSubjectSeq, 3*kLength), 

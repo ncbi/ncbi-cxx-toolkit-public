@@ -716,6 +716,7 @@ BOOST_AUTO_TEST_CASE( testExtParamNewSomeInvalidKbp )
     MakeSomeInvalidKBP(sb.kbp, k_num_contexts, 4, query_info);
     MakeSomeInvalidKBP(sb.kbp_gap, k_num_contexts, 4, query_info);
     sb.scale_factor = 0.0;
+    sb.matrix_only_scoring = false;
 
     BlastExtensionParameters* ext_params;
     BlastExtensionParametersNew(kBlastProgram, ext_options, &sb,
