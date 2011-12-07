@@ -392,7 +392,7 @@ void CWiggleTrack::MakeAsn(
     CSeq_annot& annot )
 //  ===========================================================================
 {
-    if ( uFlags && CWiggleReader::fAsGraph ) {
+    if ( uFlags & CWiggleReader::fAsGraph ) {
         MakeGraph( uFlags, strName, strTitle, annot );
     }
     else {
