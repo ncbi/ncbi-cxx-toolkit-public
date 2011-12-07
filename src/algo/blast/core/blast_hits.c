@@ -861,9 +861,9 @@ Blast_HSPGetNumIdentitiesAndPositives(const Uint1* query,
     return retval;
 }
 
-static inline Boolean s_HSPTest(BlastHSP* hsp,
-        					 const BlastHitSavingOptions* hit_options,
-        					 Int4 align_length)
+static Boolean s_HSPTest(BlastHSP* hsp,
+                         const BlastHitSavingOptions* hit_options,
+                         Int4 align_length)
 {
 	   return ((hsp->num_ident * 100.0 <
 			   align_length * hit_options->percent_identity) ||
