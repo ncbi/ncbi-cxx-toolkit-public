@@ -510,9 +510,9 @@ void CMultiReaderApp::SetFlags(
         if ( args["join-same"] ) {
             m_iFlags |= CWiggleReader::fJoinSame;
         }
-        if ( args["as-byte"] ) {
-            m_iFlags |= CWiggleReader::fAsByte;
-        }
+        //by default now. But still tolerate if explicitly specified.
+        m_iFlags |= CWiggleReader::fAsByte;
+
         if ( args["as-graph"] ) {
             m_iFlags |= CWiggleReader::fAsGraph;
         }
@@ -771,7 +771,7 @@ CMultiReaderApp::SetErrorContainer(
     }
     
     int iMaxErrorCount = args["max-error-count"].AsInteger();
-    int iMaxErrorLevel = eDiag_Warning;
+    int iMaxErrorLevel = eDiag_Error;
     string strMaxErrorLevel = args["max-error-level"].AsString();
     if ( strMaxErrorLevel == "info" ) {
         iMaxErrorLevel = eDiag_Info;
