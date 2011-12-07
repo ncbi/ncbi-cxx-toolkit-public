@@ -104,6 +104,7 @@ private:
     bool m_ScanningWholeTree;
     int m_ExitCode;
     set<CProjKey> m_SuspiciousProj;
+    list<string>  m_AbsDirs;
     list<string>  m_GeneratedFiles;
     list<string>  m_ProjWatchers;
     list<string>  m_CustomMetaData;
@@ -141,6 +142,7 @@ public:
 
 public:
 
+    bool UseAbsolutePath(const string& path) const;
     void AddCustomMetaData(const string& file);
     void GetMetaDataFiles(list<string>* files) const;
 

@@ -402,7 +402,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(3,7,0) );
+    SetVersion( CVersionInfo(3,7,1) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -1899,6 +1899,13 @@ void CProjBulderApp::ParseArguments(void)
     if ( m_MsvcRegSettings.get() ) {
         GetBuildConfigs(&m_MsvcRegSettings->m_ConfigInfo);
     }
+    m_AbsDirs.clear();
+    for (int j=0; !entry[j].empty(); ++j) {
+        string v;
+        if (m_CustomConfiguration.GetPathValue(entry[j], v)) {
+            m_AbsDirs.push_back(v);
+        }
+    }
 }
 
 void CProjBulderApp::VerifyArguments(void)
@@ -1942,6 +1949,16 @@ void CProjBulderApp::DumpFiles(const TFiles& files,
         p->second.Dump(ofs);
         ofs << "-------------------------\n";
     }
+}
+
+bool CProjBulderApp::UseAbsolutePath(const string& path) const
+{
+    ITERATE(list<string>, p, m_AbsDirs) {
+        if (NStr::strncasecmp(path.c_str(), p->c_str(), p->length()) == 0) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void CProjBulderApp::AddCustomMetaData(const string& file)

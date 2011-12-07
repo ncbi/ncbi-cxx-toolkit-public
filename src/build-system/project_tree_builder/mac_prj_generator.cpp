@@ -1588,7 +1588,7 @@ string CMacProjectGenerator::GetRelativePath(const string& name, const string* f
     if (!from) {
         from = &m_SolutionDir;
     }
-    if (!SameRootDirs(name, *from)) {
+    if (GetApp().UseAbsolutePath(*from) || !SameRootDirs(name, *from)) {
         return name;
     }
     string file_path;

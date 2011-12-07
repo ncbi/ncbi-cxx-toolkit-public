@@ -335,7 +335,8 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
         for (list<string>::const_iterator i = dirs.begin(); i != dirs.end(); ++i) {
             dir = *i;
             /*if (CDirEntry(dir).IsDir())*/ {
-                add_include_dirs_list.push_back(SameRootDirs(m_ProjectDir,dir) ?
+                add_include_dirs_list.push_back(
+                    !GetApp().UseAbsolutePath(dir) && SameRootDirs(m_ProjectDir,dir) ?
                         CDirEntry::CreateRelativePath(m_ProjectDir, dir) :
                         dir);
             }
@@ -367,7 +368,7 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
         for (list<string>::const_iterator i = dirs.begin(); i != dirs.end(); ++i) {
             dir = *i;
             if ( !dir.empty() ) {
-                if (SameRootDirs(m_ProjectDir,dir)) {
+                if (!GetApp().UseAbsolutePath(dir) && SameRootDirs(m_ProjectDir,dir)) {
                     dir = CDirEntry::CreateRelativePath(m_ProjectDir, dir);
                 }
                 if (find(add_include_dirs_list.begin(),
