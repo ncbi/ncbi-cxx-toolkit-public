@@ -35,6 +35,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <math.h>
 #include <map>
+#include <corelib/ncbifloat.h>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -605,7 +606,7 @@ CDecimal operator+(const CDecimal& d1, const CDecimal& d2)
         ret.m_Mantissa[pos+i] = '0'+v;
     }
     if ( c ) {
-        ret.m_Mantissa.insert(0, 1, '0'+c);
+        ret.m_Mantissa.insert(0, 1, char('0'+c));
         ret.m_Exponent += 1;
     }
     ret.Normalize();
@@ -685,7 +686,7 @@ CDecimal operator-(const CDecimal& d1, const CDecimal& d2)
         }
         int c = ret.Increment(size, 1);
         if ( c ) {
-            ret.m_Mantissa.insert(0, 1, '0'+c);
+            ret.m_Mantissa.insert(0, 1, char('0'+c));
             ret.m_Exponent += 1;
         }
     }
