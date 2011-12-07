@@ -642,10 +642,15 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
          if (!delete_hsp && !kGreedyTraceback) {
              /* Calculate number of identities and check if this HSP meets the
                 percent identity and length criteria. */
-             delete_hsp = 
-                    Blast_HSPTestIdentityAndLength(program_number, hsp, query_nomask, 
-                                                   adjusted_subject, 
-                                                   score_options, hit_options);
+             Int4 align_length = 0;
+             Blast_HSPGetNumIdentitiesAndPositives(query_nomask,
+                     							   adjusted_subject,
+                     							   hsp,
+                     							   score_options,
+                     							   &align_length,
+                     							   sbp);
+
+             delete_hsp = Blast_HSPTest(hsp, hit_options, align_length);
          }
          if (!delete_hsp) {
             Blast_HSPAdjustSubjectOffset(hsp, start_shift);

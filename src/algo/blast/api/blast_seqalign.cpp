@@ -917,6 +917,10 @@ s_CalculateScoreVectorSize(const BlastHSP* hsp, const vector<int>  & gi_list)
         retval++;
     }
     
+    if(hsp->num_positives > 0){
+    	retval++;
+    }
+
     if ( !gi_list.empty() ) {
         retval += gi_list.size();
     }
@@ -980,6 +984,10 @@ s_BuildScoreList(const BlastHSP     * hsp,
         }
     }
     
+    if (hsp->num_positives > 0) {
+            static const string kNumPositives("num_positives");
+            scores.push_back(s_MakeScore(kNumPositives, 0.0, hsp->num_positives));
+    }
     return;
 }
 

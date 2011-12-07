@@ -609,17 +609,22 @@ Blast_HSPReevaluateWithAmbiguitiesUngapped(BlastHSP* hsp, const Uint1* query_sta
  * @param hsp All information about the HSP [in]
  * @param num_ident_ptr Number of identities [out]
  * @param align_length_ptr The alignment length, including gaps [out]
+ * @param sbp Blast score blk [in]
+ * @param num_pos_ptr Number of Positives [out]
  * @return 0 on success, -1 on invalid parameters or error
  */
 static Int2
-s_Blast_HSPGetNumIdentities(const Uint1* query, const Uint1* subject, 
-                            const BlastHSP* hsp, Int4* num_ident_ptr, 
-                            Int4* align_length_ptr)
+s_Blast_HSPGetNumIdentitiesAndPositives(const Uint1* query, const Uint1* subject,
+                            			const BlastHSP* hsp, Int4* num_ident_ptr,
+                            			Int4* align_length_ptr, const BlastScoreBlk* sbp,
+                            			Int4* num_pos_ptr)
 {
    Int4 i, num_ident, align_length, q_off, s_off;
    Uint1* q,* s;
    Int4 q_length = hsp->query.end - hsp->query.offset;
    Int4 s_length = hsp->subject.end - hsp->subject.offset;
+   Int4** matrix = NULL;
+   Int4 num_pos = 0;
 
    q_off = hsp->query.offset;
    s_off = hsp->subject.offset;
@@ -633,6 +638,11 @@ s_Blast_HSPGetNumIdentities(const Uint1* query, const Uint1* subject,
    num_ident = 0;
    align_length = 0;
 
+   if(NULL != sbp)
+   {
+	   if(sbp->protein_alphabet)
+		   matrix = sbp->matrix->data;
+   }
 
    if (!hsp->gap_info) {
       /* Ungapped case. Check that lengths are the same in query and subject,
@@ -641,10 +651,17 @@ s_Blast_HSPGetNumIdentities(const Uint1* query, const Uint1* subject,
          return -1;
       align_length = q_length; 
       for (i=0; i<align_length; i++) {
-         if (*q++ == *s++)
+         if (*q == *s)
             num_ident++;
+         else if (NULL != matrix) {
+        	 if (matrix[*q][*s] > 0)
+        		 num_pos ++;
+             }
+         q++;
+         s++;
       }
-   } else {
+   	}
+    else {
       Int4 index;
       GapEditScript* esp = hsp->gap_info;
       for (index=0; index<esp->size; index++)
@@ -653,8 +670,15 @@ s_Blast_HSPGetNumIdentities(const Uint1* query, const Uint1* subject,
          switch (esp->op_type[index]) {
          case eGapAlignSub:
             for (i=0; i<esp->num[index]; i++) {
-               if (*q++ == *s++)
+               if (*q == *s) {
                   num_ident++;
+               }
+               else if (NULL != matrix) {
+            	   if (matrix[*q][*s] > 0)
+            		   num_pos ++;
+               }
+               q++;
+               s++;
             }
             break;
          case eGapAlignDel:
@@ -675,6 +699,10 @@ s_Blast_HSPGetNumIdentities(const Uint1* query, const Uint1* subject,
        *align_length_ptr = align_length;
    }
    *num_ident_ptr = num_ident;
+
+   if(NULL != matrix)
+	   *num_pos_ptr = num_pos + num_ident;
+
    return 0;
 }
 
@@ -685,21 +713,32 @@ s_Blast_HSPGetNumIdentities(const Uint1* query, const Uint1* subject,
  * @param program BLAST program (blastx or tblastn) [in]
  * @param num_ident_ptr Number of identities [out]
  * @param align_length_ptr The alignment length, including gaps [out]
+ * @param sbp Blast score blk [in]
+ * @param num_pos_ptr Number of Positives [out]
  * @return 0 on success, -1 on invalid parameters or error
  */
 static Int2
-s_Blast_HSPGetOOFNumIdentities(const Uint1* query, const Uint1* subject, 
-   const BlastHSP* hsp, EBlastProgramType program, 
-   Int4* num_ident_ptr, Int4* align_length_ptr)
+s_Blast_HSPGetOOFNumIdentitiesAndPositives(
+		const Uint1* query, const Uint1* subject,
+		const BlastHSP* hsp, EBlastProgramType program,
+		Int4* num_ident_ptr, Int4* align_length_ptr,
+		const BlastScoreBlk* sbp, Int4* num_pos_ptr)
 {
    Int4 num_ident, align_length;
    Int4 index;
    Uint1* q,* s;
    GapEditScript* esp;
+   Int4 ** matrix = NULL;
+   Int4 num_pos = 0;
 
    if (!hsp->gap_info || !subject || !query)
       return -1;
 
+   if(NULL != sbp)
+   {
+	   if(sbp->protein_alphabet)
+		   matrix = sbp->matrix->data;
+   }
 
    if (program == eBlastTypeTblastn ||
        program == eBlastTypeRpsTblastn) {
@@ -722,6 +761,10 @@ s_Blast_HSPGetOOFNumIdentities(const Uint1* query, const Uint1* subject,
          for (i=0; i<esp->num[index]; i++) {
             if (*q == *s)
                num_ident++;
+            else if (NULL != matrix) {
+              	 if (matrix[*q][*s] > 0)
+               		 num_pos ++;
+            }
             ++q;
             s += CODON_LENGTH;
          }
@@ -758,32 +801,74 @@ s_Blast_HSPGetOOFNumIdentities(const Uint1* query, const Uint1* subject,
    }
    *num_ident_ptr = num_ident;
 
+   if(NULL != matrix)
+	   *num_pos_ptr = num_pos + num_ident;
+
    return 0;
 }
 
 Int2
-Blast_HSPGetNumIdentities(const Uint1* query, 
-                          const Uint1* subject, 
-                          BlastHSP* hsp, 
+Blast_HSPGetNumIdentities(const Uint1* query,
+                          const Uint1* subject,
+                          BlastHSP* hsp,
                           const BlastScoringOptions* score_options,
                           Int4* align_length_ptr)
 {
     Int2 retval = 0;
 
-    /* Calculate alignment length and number of identical letters. 
+    /* Calculate alignment length and number of identical letters.
        Do not get the number of identities if the query is not available */
     if (score_options->is_ooframe) {
-        retval = s_Blast_HSPGetOOFNumIdentities(query, subject, hsp, 
-                                               score_options->program_number, 
-                                               &hsp->num_ident, 
-                                               align_length_ptr);
+        retval = s_Blast_HSPGetOOFNumIdentitiesAndPositives(query, subject, hsp,
+                                               	   	   	    score_options->program_number,
+                                               	   	   	    &hsp->num_ident,
+                                               	   	   	    align_length_ptr,
+                                               	   	   	    NULL, NULL);
     } else {
-        retval = s_Blast_HSPGetNumIdentities(query, subject, hsp, 
-                                            &hsp->num_ident, 
-                                            align_length_ptr);
+        retval = s_Blast_HSPGetNumIdentitiesAndPositives(query, subject, hsp,
+                                            		  	 &hsp->num_ident,
+                                            		  	 align_length_ptr,
+                                            		  	 NULL, NULL);
     }
 
     return retval;
+}
+Int2
+Blast_HSPGetNumIdentitiesAndPositives(const Uint1* query,
+        							  const Uint1* subject,
+        							  BlastHSP* hsp,
+        							  const BlastScoringOptions* score_options,
+        							  Int4* align_length_ptr,
+        							  const BlastScoreBlk * sbp)
+{
+    Int2 retval = 0;
+
+    /* Calculate alignment length and number of identical letters.
+       Do not get the number of identities if the query is not available */
+    if (score_options->is_ooframe) {
+        retval = s_Blast_HSPGetOOFNumIdentitiesAndPositives(query, subject, hsp,
+                                               	   	   	    score_options->program_number,
+                                               	   	   	    &hsp->num_ident,
+                                               	   	   	    align_length_ptr,
+                                               	   	   	    sbp, &hsp->num_positives);
+    } else {
+        retval = s_Blast_HSPGetNumIdentitiesAndPositives(query, subject, hsp,
+                                            		  	 &hsp->num_ident,
+                                            		  	 align_length_ptr,
+                                            		  	 sbp, &hsp->num_positives);
+    }
+
+    return retval;
+}
+
+static inline Boolean s_HSPTest(BlastHSP* hsp,
+        					 const BlastHitSavingOptions* hit_options,
+        					 Int4 align_length)
+{
+	   return ((hsp->num_ident * 100.0 <
+			   align_length * hit_options->percent_identity) ||
+			   align_length < hit_options->min_hit_length) ;
+
 }
 
 Boolean
@@ -804,13 +889,16 @@ Blast_HSPTestIdentityAndLength(EBlastProgramType program_number,
 
    /* Check whether this HSP passes the percent identity and minimal hit 
       length criteria, and delete it if it does not. */
-   if ((hsp->num_ident * 100.0 < 
-        align_length * hit_options->percent_identity) ||
-       align_length < hit_options->min_hit_length) {
-      delete_hsp = TRUE;
-   }
+   delete_hsp = s_HSPTest(hsp, hit_options, align_length);
 
    return delete_hsp;
+}
+
+Boolean Blast_HSPTest(BlastHSP* hsp,
+		 	 	 	  const BlastHitSavingOptions* hit_options,
+		 	 	 	  Int4 align_length)
+{
+	return s_HSPTest(hsp, hit_options, align_length);
 }
 
 void 
@@ -2298,11 +2386,15 @@ Blast_HSPListReevaluateUngapped(EBlastProgramType program,
       if (!delete_hsp) {
           const Uint1* query_nomask = query_blk->sequence_nomask +
               query_info->contexts[context].query_offset;
-          delete_hsp = 
-              Blast_HSPTestIdentityAndLength(program, hsp, query_nomask, 
-                                             subject_start, 
-                                             score_params->options, 
-                                             hit_params->options);
+          Int4 align_length = 0;
+          Blast_HSPGetNumIdentitiesAndPositives(query_nomask,
+                   							    subject_start,
+                               					hsp,
+                               					score_params->options,
+                               					&align_length,
+                               					sbp);
+
+           delete_hsp = Blast_HSPTest(hsp, hit_params->options, align_length);
       }
       if (delete_hsp) { /* This HSP is now below the cutoff */
          hsp_array[index] = Blast_HSPFree(hsp_array[index]);

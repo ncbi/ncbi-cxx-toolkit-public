@@ -444,7 +444,8 @@ s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
                        const BlastSeqSrc* seq_src,
                        BlastHSPList* hsp_list,
                        const BlastScoringOptions* scoring_options,
-                       const Uint1* gen_code_string)
+                       const Uint1* gen_code_string,
+                       const BlastScoreBlk* sbp)
 {
     Uint1* query = NULL;
     Uint1* query_nomask = NULL;
@@ -499,10 +500,10 @@ s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
         /* Translate subject if needed. */
         if (program_number == eBlastTypeTblastn) {
             const Uint1* target_sequence = Blast_HSPGetTargetTranslation(target_t, hsp, NULL);
-            status = Blast_HSPGetNumIdentities(query, target_sequence, hsp, scoring_options, 0);
+            status = Blast_HSPGetNumIdentitiesAndPositives(query, target_sequence, hsp, scoring_options, 0, sbp);
         }
         else
-            status = Blast_HSPGetNumIdentities(query_nomask, subject, hsp, scoring_options, 0);
+            status = Blast_HSPGetNumIdentitiesAndPositives(query_nomask, subject, hsp, scoring_options, 0, sbp);
 
         ASSERT(status == 0);
     }
@@ -2297,7 +2298,7 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
                                              localScalingFactor);
                      s_ComputeNumIdentities(queryBlk, queryInfo, seqSrc,
                                            hsp_list, scoringParams->options,
- 						genetic_code_string);
+                                           genetic_code_string, sbp);
                     status_code =
                         BlastCompo_HeapInsert(&redoneMatches[query_index],
                                               hsp_list, bestEvalue,

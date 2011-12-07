@@ -122,6 +122,7 @@ typedef struct BlastHSP {
                                               only for blastp and tblastn */
    SPHIHspInfo* pat_info; /**< In PHI BLAST, information about this pattern
                                  match. */
+   Int4 num_positives;
 } BlastHSP;
 
 /** The structure to hold all HSPs for a given sequence after the gapped 
@@ -283,6 +284,40 @@ Blast_HSPGetNumIdentities(const Uint1* query,
                           BlastHSP* hsp, 
                           const BlastScoringOptions* score_options,
                           Int4* align_length_ptr);
+
+/** Calculate number of identities and positives in an HSP and set the
+ *  BlastHSP::num_ident  and BlastHSP::num_positives fields
+ * @param query The query sequence [in]
+ * @param subject The uncompressed subject sequence [in]
+ * @param hsp All information about the HSP, the output of this function will
+ * be stored in its num_ident field [in|out]
+ * @param score_options Scoring options [in]
+ * @param align_length_ptr The alignment length, including gaps (optional) [out]
+ * @param sbp Score blk containing the matrix for counting positives [in]
+ * @return 0 on success, -1 on invalid parameters or error
+ */
+NCBI_XBLAST_EXPORT
+Int2
+Blast_HSPGetNumIdentitiesAndPositives(const Uint1* query,
+                          	  	  	  const Uint1* subject,
+                          			  BlastHSP* hsp,
+                          			  const BlastScoringOptions* score_options,
+                          			  Int4* align_length_ptr,
+                          			  const BlastScoreBlk* sbp);
+
+/** Determines whether this HSP should be kept or
+ * deleted.
+ * @param hsp An HSP structure [in] [out]
+ * @param hit_options Hit saving options containing percent identity and
+ *                    HSP length thresholds.
+ * @param align_length alignment length including gaps
+ * @return FALSE if HSP passes the test, TRUE if it should be deleted.
+ */
+NCBI_XBLAST_EXPORT
+Boolean
+Blast_HSPTest(BlastHSP* hsp,
+ 	 	 	  const BlastHitSavingOptions* hit_options,
+ 	 	 	  Int4 align_length);
 
 /** Calculates number of identities and alignment lengths of an HSP via
  * Blast_HSPGetNumIdentities and determines whether this HSP should be kept or
