@@ -75,6 +75,7 @@ BEGIN_NCBI_SCOPE
 static bool s_DiagUseRWLock = false;
 DEFINE_STATIC_MUTEX(s_DiagMutex);
 static CSafeStaticPtr<CRWLock> s_DiagRWLock;
+static CSafeStaticPtr<CAtomicCounter_WithAutoInit> s_ReopenEntered;
 
 
 void g_Diag_Use_RWLock(void)
@@ -138,6 +139,20 @@ private:
     bool      m_UsedRWLock;
     ELockType m_LockType;
 };
+
+
+class CDiagFileHandleHolder : public CObject
+{
+public:
+    CDiagFileHandleHolder(const string& fname, CDiagHandler::TReopenFlags flags);
+    virtual ~CDiagFileHandleHolder(void);
+
+    int GetHandle(void) { return m_Handle; }
+
+private:
+    int m_Handle;
+};
+
 
 
 #if defined(NCBI_POSIX_THREADS) && defined(HAVE_PTHREAD_ATFORK)
@@ -4858,11 +4873,39 @@ void CStreamDiagHandler::Post(const SDiagMessage& mess)
 }
 
 
+CDiagFileHandleHolder::CDiagFileHandleHolder(const string& fname,
+                                             CDiagHandler::TReopenFlags flags)
+    : m_Handle(-1)
+{
+    int mode = O_WRONLY | O_APPEND | O_CREAT;
+    if (flags & CDiagHandler::fTruncate) {
+        mode |= O_TRUNC;
+    }
+
+    mode_t perm = CDirEntry::MakeModeT(
+        CDirEntry::fRead | CDirEntry::fWrite,
+        CDirEntry::fRead | CDirEntry::fWrite,
+        CDirEntry::fRead | CDirEntry::fWrite,
+        0);
+    m_Handle = NcbiSys_open(
+        _T_XCSTRING(CFile::ConvertToOSPath(fname)),
+        mode, perm);
+}
+
+CDiagFileHandleHolder::~CDiagFileHandleHolder(void)
+{
+    if (m_Handle >= 0) {
+        close(m_Handle);
+    }
+}
+
+
 // CFileDiagHandler
 
-CFileHandleDiagHandler::CFileHandleDiagHandler(const string&   fname)
-    : m_Handle(-1),
-      m_LowDiskSpace(false),
+CFileHandleDiagHandler::CFileHandleDiagHandler(const string& fname)
+    : m_LowDiskSpace(false),
+      m_Handle(NULL),
+      m_HandleLock(new CSpinLock()),
       m_ReopenTimer(new CStopWatch())
 {
     SetLogName(fname);
@@ -4873,9 +4916,9 @@ CFileHandleDiagHandler::CFileHandleDiagHandler(const string&   fname)
 CFileHandleDiagHandler::~CFileHandleDiagHandler(void)
 {
     delete m_ReopenTimer;
-    if (m_Handle >= 0) {
-        close(m_Handle);
-    }
+    delete m_HandleLock;
+    if (m_Handle)
+        m_Handle->RemoveReference();
 }
 
 
@@ -4883,73 +4926,82 @@ const int kLogReopenDelay = 60; // Reopen log every 60 seconds
 
 void CFileHandleDiagHandler::Reopen(TReopenFlags flags)
 {
+    s_ReopenEntered->Add(1);
     CDiagLock lock(CDiagLock::ePost);
     // Period is longer than for CFileDiagHandler to prevent double-reopening
     if (flags & fCheck  &&  m_ReopenTimer->IsRunning()) {
         if (m_ReopenTimer->Elapsed() < kLogReopenDelay + 5) {
+            s_ReopenEntered->Add(-1);
             return;
         }
     }
 
-    if (m_Handle >= 0) {
-        long pos = lseek(m_Handle, 0, SEEK_CUR);
+    if (m_Handle) {
+        // This feature of automatic log rotation will work correctly only on
+        // Unix with only one CFileHandleDiagHandler for each physical file.
+        // This is how it was requested to work by Denis Vakatov.
+        long pos = lseek(m_Handle->GetHandle(), 0, SEEK_CUR);
         long limit = TLogSizeLimitParam::GetDefault();
         if (limit > 0  &&  pos > limit) {
             CFile f(GetLogName());
-            f.Rename(GetLogName() + "-backup");
+            f.Rename(GetLogName() + "-backup", CDirEntry::fRF_Overwrite);
         }
-        close(m_Handle);
-        m_Handle = -1;
     }
 
-    // Need at least 20K of free space to write logs
     m_LowDiskSpace = false;
-    try {
-        CDirEntry entry(GetLogName());
-        m_LowDiskSpace = CFileUtil::GetFreeDiskSpace(entry.GetDir()) < 1024*20;
+    CDiagFileHandleHolder* new_handle;
+    new_handle = new CDiagFileHandleHolder(GetLogName(), flags);
+    new_handle->AddReference();
+    if (new_handle->GetHandle() == -1) {
+        new_handle->RemoveReference();
+        new_handle = NULL;
     }
-    catch (CException) {
-        // Ignore error - could not check free space for some reason.
-        // Try to open the file anyway.
-    }
-
-    if ( !m_LowDiskSpace ) {
-        int mode = O_WRONLY | O_APPEND | O_CREAT;
-        if (flags & fTruncate) {
-            mode |= O_TRUNC;
+    else {
+        // Need at least 20K of free space to write logs
+        try {
+            CDirEntry entry(GetLogName());
+            m_LowDiskSpace = CFileUtil::GetFreeDiskSpace(entry.GetDir()) < 1024*20;
         }
-
-        mode_t perm = CDirEntry::MakeModeT(
-            CDirEntry::fRead | CDirEntry::fWrite,
-            CDirEntry::fRead | CDirEntry::fWrite,
-            CDirEntry::fRead | CDirEntry::fWrite,
-            0);
-        m_Handle = NcbiSys_open(
-            _T_XCSTRING(CFile::ConvertToOSPath(GetLogName())),
-            mode, perm);
+        catch (CException) {
+            // Ignore error - could not check free space for some reason.
+            // Try to open the file anyway.
+        }
+        if (m_LowDiskSpace) {
+            new_handle->RemoveReference();
+            new_handle = NULL;
+        }
     }
 
-    // Restart the timer even if failed to reopen the file.
-    m_ReopenTimer->Restart();
-    if (m_Handle == -1) {
+    CDiagFileHandleHolder* old_handle;
+    {{
+        CSpinGuard guard(*m_HandleLock);
+        // Restart the timer even if failed to reopen the file.
+        m_ReopenTimer->Restart();
+        old_handle = m_Handle;
+        m_Handle = new_handle;
+    }}
+
+    if (old_handle)
+        old_handle->RemoveReference();
+
+    if (!new_handle) {
         if ( !m_Messages.get() ) {
             m_Messages.reset(new TMessages);
         }
-        return;
     }
-    else {
+    else if ( m_Messages.get() ) {
         // Flush the collected messages, if any, once the handle if available
-        if ( m_Messages.get() ) {
-            ITERATE(TMessages, it, *m_Messages) {
-                CNcbiOstrstream str_os;
-                str_os << *it;
-                if (write(m_Handle, str_os.str(),
-                          (unsigned int)str_os.pcount())) {/*dummy*/};
-                str_os.rdbuf()->freeze(false);
-            }
-            m_Messages.reset();
+        ITERATE(TMessages, it, *m_Messages) {
+            CNcbiOstrstream str_os;
+            str_os << *it;
+            if (write(new_handle->GetHandle(), str_os.str(),
+                      (unsigned int)str_os.pcount())) {/*dummy*/};
+            str_os.rdbuf()->freeze(false);
         }
+        m_Messages.reset();
     }
+
+    s_ReopenEntered->Add(-1);
 }
 
 
@@ -4957,12 +5009,17 @@ void CFileHandleDiagHandler::Post(const SDiagMessage& mess)
 {
     // Period is longer than for CFileDiagHandler to prevent double-reopening
     if (!m_ReopenTimer->IsRunning()  ||
-        m_ReopenTimer->Elapsed() >= kLogReopenDelay + 5) {
-        CDiagLock lock(CDiagLock::ePost);
-        if (!m_ReopenTimer->IsRunning()  ||
-            m_ReopenTimer->Elapsed() >= kLogReopenDelay + 5) {
-            Reopen(fDefault);
+        m_ReopenTimer->Elapsed() >= kLogReopenDelay + 5)
+    {
+        if (s_ReopenEntered->Add(1) == 1  ||  !m_ReopenTimer->IsRunning()) {
+            CDiagLock lock(CDiagLock::ePost);
+            if (!m_ReopenTimer->IsRunning()  ||
+                m_ReopenTimer->Elapsed() >= kLogReopenDelay + 5)
+            {
+                Reopen(fDefault);
+            }
         }
+        s_ReopenEntered->Add(-1);
     }
 
     // If the handle is not available, collect the messages until they
@@ -4979,13 +5036,23 @@ void CFileHandleDiagHandler::Post(const SDiagMessage& mess)
         }
     }
 
-    // write() is atomic, no need to lock mutex. This is the only place
-    // which works faster when using s_DiagRWLock.
-    CNcbiOstrstream str_os;
-    str_os << mess;
-    if (write(m_Handle, str_os.str(),
-        (unsigned int)str_os.pcount())) {/*dummy*/};
-    str_os.rdbuf()->freeze(false);
+    CDiagFileHandleHolder* handle;
+    {{
+        CSpinGuard guard(*m_HandleLock);
+        handle = m_Handle;
+        if (handle)
+            handle->AddReference();
+    }}
+
+    if (handle) {
+        CNcbiOstrstream str_os;
+        str_os << mess;
+        if (write(handle->GetHandle(), str_os.str(),
+            (unsigned int)str_os.pcount())) {/*dummy*/};
+        str_os.rdbuf()->freeze(false);
+
+        handle->RemoveReference();
+    }
 }
 
 
@@ -5140,50 +5207,25 @@ void CFileDiagHandler::SetOwnership(CStreamDiagHandler_Base* handler, bool own)
 }
 
 
-bool s_CanOpenLogFile(const string& file_name)
-{
-    string abs_path;
-    try {
-        abs_path = CDirEntry::CreateAbsolutePath(file_name);
-    }
-    catch (CException) {
-        return false;
-    }
-    CDirEntry entry(abs_path);
-    int mode = O_WRONLY | O_APPEND | O_CREAT;
-    mode_t perm = CDirEntry::MakeModeT(
-        CDirEntry::fRead | CDirEntry::fWrite,
-        CDirEntry::fRead | CDirEntry::fWrite,
-        CDirEntry::fRead | CDirEntry::fWrite,
-        0);
-    int h = NcbiSys_open(
-        _T_XCSTRING(CFile::ConvertToOSPath(abs_path)),
-        mode, perm);
-    if (h == -1) {
-        return false;
-    }
-    close(h);
-    return true;
-}
-
-
-CStreamDiagHandler_Base*
+static bool
 s_CreateHandler(const string& fname,
-                bool&         failed)
+                auto_ptr<CStreamDiagHandler_Base>& handler)
 {
     if ( fname.empty()  ||  fname == "/dev/null") {
-        return 0;
+        handler.reset();
+        return true;
     }
     if (fname == "-") {
-        return new CStreamDiagHandler(&NcbiCerr, true, kLogName_Stderr);
+        handler.reset(new CStreamDiagHandler(&NcbiCerr, true, kLogName_Stderr));
+        return true;
     }
-    CFileHandleDiagHandler* fh = new CFileHandleDiagHandler(fname);
+    auto_ptr<CFileHandleDiagHandler> fh(new CFileHandleDiagHandler(fname));
     if ( !fh->Valid() ) {
-        failed = true;
         ERR_POST_X(7, Info << "Failed to open log file: " << fname);
-        return new CStreamDiagHandler(&NcbiCerr, true, kLogName_Stderr);
+        return false;
     }
-    return fh;
+    handler.reset(fh.release());
+    return true;
 }
 
 
@@ -5192,7 +5234,8 @@ bool CFileDiagHandler::SetLogFile(const string& file_name,
                                   bool          /*quick_flush*/)
 {
     bool special = s_IsSpecialLogName(file_name);
-    bool failed = false;
+    auto_ptr<CStreamDiagHandler_Base> err_handler, log_handler,
+                                      trace_handler, perf_handler;
     switch ( file_type ) {
     case eDiagFile_All:
         {
@@ -5201,7 +5244,6 @@ bool CFileDiagHandler::SetLogFile(const string& file_name,
             if ( !special ) {
                 CDirEntry entry(file_name);
                 string ext = entry.GetExt();
-                adj_name = file_name;
                 if (ext == ".log"  ||
                     ext == ".err"  ||
                     ext == ".trace"  ||
@@ -5214,51 +5256,41 @@ bool CFileDiagHandler::SetLogFile(const string& file_name,
             string trace_name = special ? adj_name : adj_name + ".trace";
             string perf_name = special ? adj_name : adj_name + ".perf";
 
-            if (!special  &&
-                (!s_CanOpenLogFile(err_name)  ||
-                !s_CanOpenLogFile(log_name)  ||
-                !s_CanOpenLogFile(trace_name)  ||
-                !s_CanOpenLogFile(perf_name))) {
+            if (!s_CreateHandler(err_name, err_handler))
                 return false;
-            }
-            x_SetHandler(&m_Err, &m_OwnErr,
-                s_CreateHandler(err_name, failed), true);
-            x_SetHandler(&m_Log, &m_OwnLog,
-                s_CreateHandler(log_name, failed), true);
-            x_SetHandler(&m_Trace, &m_OwnTrace,
-                s_CreateHandler(trace_name, failed), true);
-            x_SetHandler(&m_Perf, &m_OwnPerf,
-                s_CreateHandler(perf_name, failed), true);
+            if (!s_CreateHandler(log_name, log_handler))
+                return false;
+            if (!s_CreateHandler(trace_name, trace_handler))
+                return false;
+            if (!s_CreateHandler(perf_name, perf_handler))
+                return false;
+
+            x_SetHandler(&m_Err, &m_OwnErr, err_handler.release(), true);
+            x_SetHandler(&m_Log, &m_OwnLog, log_handler.release(), true);
+            x_SetHandler(&m_Trace, &m_OwnTrace, trace_handler.release(), true);
+            x_SetHandler(&m_Perf, &m_OwnPerf, perf_handler.release(), true);
             m_ReopenTimer->Restart();
             break;
         }
     case eDiagFile_Err:
-        if ( !special  &&  !s_CanOpenLogFile(file_name) ) {
+        if (!s_CreateHandler(file_name, err_handler))
             return false;
-        }
-        x_SetHandler(&m_Err, &m_OwnErr,
-            s_CreateHandler(file_name, failed), true);
+        x_SetHandler(&m_Err, &m_OwnErr, err_handler.release(), true);
         break;
     case eDiagFile_Log:
-        if ( !special  &&  !s_CanOpenLogFile(file_name) ) {
+        if (!s_CreateHandler(file_name, log_handler))
             return false;
-        }
-        x_SetHandler(&m_Log, &m_OwnLog,
-            s_CreateHandler(file_name, failed), true);
+        x_SetHandler(&m_Log, &m_OwnLog, log_handler.release(), true);
         break;
     case eDiagFile_Trace:
-        if ( !special  &&  !s_CanOpenLogFile(file_name) ) {
+        if (!s_CreateHandler(file_name, trace_handler))
             return false;
-        }
-        x_SetHandler(&m_Trace, &m_OwnTrace,
-            s_CreateHandler(file_name, failed), true);
+        x_SetHandler(&m_Trace, &m_OwnTrace, trace_handler.release(), true);
         break;
     case eDiagFile_Perf:
-        if ( !special  &&  !s_CanOpenLogFile(file_name) ) {
+        if (!s_CreateHandler(file_name, perf_handler))
             return false;
-        }
-        x_SetHandler(&m_Perf, &m_OwnPerf,
-            s_CreateHandler(file_name, failed), true);
+        x_SetHandler(&m_Perf, &m_OwnPerf, perf_handler.release(), true);
         break;
     }
     if (file_name == "") {
@@ -5270,7 +5302,7 @@ bool CFileDiagHandler::SetLogFile(const string& file_name,
     else {
         SetLogName(file_name);
     }
-    return !failed;
+    return true;
 }
 
 
@@ -5317,7 +5349,7 @@ void CFileDiagHandler::SetSubHandler(CStreamDiagHandler_Base* handler,
 {
     switch ( file_type ) {
     case eDiagFile_All:
-        // Must set all three handlers
+        // Must set all handlers
     case eDiagFile_Err:
         x_SetHandler(&m_Err, &m_OwnErr, handler, own);
         if (file_type != eDiagFile_All) break;
@@ -5326,16 +5358,21 @@ void CFileDiagHandler::SetSubHandler(CStreamDiagHandler_Base* handler,
         if (file_type != eDiagFile_All) break;
     case eDiagFile_Trace:
         x_SetHandler(&m_Trace, &m_OwnTrace, handler, own);
+        if (file_type != eDiagFile_All) break;
     case eDiagFile_Perf:
         x_SetHandler(&m_Perf, &m_OwnPerf, handler, own);
+        if (file_type != eDiagFile_All) break;
     }
 }
 
 
 void CFileDiagHandler::Reopen(TReopenFlags flags)
 {
+    s_ReopenEntered->Add(1);
+
     if (flags & fCheck  &&  m_ReopenTimer->IsRunning()) {
         if (m_ReopenTimer->Elapsed() < kLogReopenDelay) {
+            s_ReopenEntered->Add(-1);
             return;
         }
     }
@@ -5352,6 +5389,8 @@ void CFileDiagHandler::Reopen(TReopenFlags flags)
         m_Perf->Reopen(flags);
     }
     m_ReopenTimer->Restart();
+
+    s_ReopenEntered->Add(-1);
 }
 
 
@@ -5359,12 +5398,17 @@ void CFileDiagHandler::Post(const SDiagMessage& mess)
 {
     // Check time and re-open the streams
     if (!m_ReopenTimer->IsRunning()  ||
-        m_ReopenTimer->Elapsed() >= kLogReopenDelay) {
-        CDiagLock lock(CDiagLock::ePost);
-        if (!m_ReopenTimer->IsRunning()  ||
-            m_ReopenTimer->Elapsed() >= kLogReopenDelay) {
-            Reopen(fDefault);
+        m_ReopenTimer->Elapsed() >= kLogReopenDelay)
+    {
+        if (s_ReopenEntered->Add(1) == 1  ||  !m_ReopenTimer->IsRunning()) {
+            CDiagLock lock(CDiagLock::ePost);
+            if (!m_ReopenTimer->IsRunning()  ||
+                m_ReopenTimer->Elapsed() >= kLogReopenDelay)
+            {
+                Reopen(fDefault);
+            }
         }
+        s_ReopenEntered->Add(-1);
     }
 
     // Output the message
@@ -5383,10 +5427,8 @@ void CFileDiagHandler::Post(const SDiagMessage& mess)
             handler = m_Err;
         }
     }
-    if ( !handler ) {
-        return;
-    }
-    handler->Post(mess);
+    if (handler)
+        handler->Post(mess);
 }
 
 
@@ -5424,9 +5466,6 @@ extern bool SetLogFile(const string& file_name,
             SetDiagStream(&NcbiCerr, quick_flush, 0, 0, kLogName_Stderr);
         }
         else {
-            if ( !s_CanOpenLogFile(file_name) ) {
-                return false;
-            }
             // output to file
             auto_ptr<CFileHandleDiagHandler> fhandler(
                 new CFileHandleDiagHandler(file_name));
@@ -5453,7 +5492,6 @@ extern bool SetLogFile(const string& file_name,
                 fhandler->SetSubHandler(sub_handler, eDiagFile_All, false);
             }
             if ( fhandler->SetLogFile(file_name, file_type, quick_flush) ) {
-                handler = fhandler.get();
                 SetDiagHandler(fhandler.release());
                 return true;
             }
@@ -5535,32 +5573,6 @@ extern void SetDiagFilter(EDiagFilter what, const char* filter_str)
 
     if (what == eDiagFilter_Post  ||  what == eDiagFilter_All) 
         s_PostFilter->Fill(filter_str);
-}
-
-
-static
-bool s_CheckDiagFilter(const CException& ex, EDiagSev sev, const char* file)
-{
-    if (sev == eDiag_Fatal) 
-        return true;
-
-    CDiagLock lock(CDiagLock::eRead);
-
-    // check for trace filter
-    if (sev == eDiag_Trace) {
-        EDiagFilterAction action = s_TraceFilter->CheckFile(file);
-        if(action == eDiagFilter_None)
-            return s_TraceFilter->Check(ex, sev) == eDiagFilter_Accept;
-        return action == eDiagFilter_Accept;
-    }
-
-    // check for post filter
-    EDiagFilterAction action = s_PostFilter->CheckFile(file);
-    if (action == eDiagFilter_None) {
-        action = s_PostFilter->Check(ex, sev);
-    }
-
-    return (action == eDiagFilter_Accept);
 }
 
 

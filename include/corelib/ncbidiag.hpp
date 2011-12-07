@@ -43,6 +43,7 @@
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbi_stack.hpp>
 #include <list>
+#include <deque>
 #include <vector>
 #include <map>
 #include <memory>
@@ -1660,6 +1661,7 @@ inline CNcbiOstream& operator<< (CNcbiOstream& os, const SDiagMessage& mess) {
 ///
 /// NCBI diagnostic context. Storage for application-wide properties.
 
+class CSpinLock;
 class CStopWatch;
 class CDiagHandler;
 class CNcbiRegistry;
@@ -2384,6 +2386,8 @@ private:
 };
 
 
+class CDiagFileHandleHolder;
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CFileHandleDiagHandler --
@@ -2411,19 +2415,20 @@ public:
 
     bool Valid(void)
     {
-        return (m_Handle != -1)  ||  m_LowDiskSpace;
+        return m_Handle  ||  m_LowDiskSpace;
     }
 
     // Reopen file to enable log rotation.
     virtual void Reopen(TReopenFlags flags);
 
 private:
-    int         m_Handle;       ///< File handle
     bool        m_LowDiskSpace;
+    CDiagFileHandleHolder* m_Handle;
+    CSpinLock*  m_HandleLock;
     CStopWatch* m_ReopenTimer;
 
     /// Save messages if the handle is unavailable
-    typedef list<SDiagMessage> TMessages;
+    typedef deque<SDiagMessage> TMessages;
     auto_ptr<TMessages> m_Messages;
 };
 
