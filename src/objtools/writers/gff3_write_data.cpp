@@ -767,12 +767,20 @@ bool CGff3WriteRecordFeature::x_AssignAttributeDbXref(
         case CSeq_feat::TData::e_Rna:
         case CSeq_feat::TData::e_Cdregion: {
             if ( mf.IsSetProduct() ) {
-                string str = s_MakeGffDbtag( mf.GetProductId(), mf.GetScope() );
-                if ( values.end() == find( values.begin(), values.end(), str ) ) {
-                    values.push_back(str);
+                CSeq_id_Handle idh = sequence::GetId( 
+                    mf.GetProductId(), mf.GetScope(), sequence::eGetId_ForceAcc);
+                if (!idh) {
+                    idh = sequence::GetId(
+                        mf.GetProductId(), mf.GetScope(), sequence::eGetId_ForceGi);
+                }
+                if (idh) {
+                    string str;
+                    idh.GetSeqId()->GetLabel(&str, CSeq_id::eContent);
+                    if (values.end() == find(values.begin(), values.end(), str)) {
+                        values.push_back(str);
+                    }
                 }
             }
-
             CMappedFeat gene_feat = m_fc.FeatTree().GetParent( mf, CSeqFeatData::e_Gene );
             if ( gene_feat  &&  mf.IsSetXref()) {
                 const CSeq_feat::TXref& xref = mf.GetXref();
