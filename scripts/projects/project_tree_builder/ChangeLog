@@ -198,3 +198,7 @@ version 3.7.0
 Added support of automatic and composite project tags, and tag-based build targets.
 Added support of Objective-C source files on MacOSX.
 Added support for Xcode build system version 4.
+
+December 07, 2011
+version 3.7.1
+Changed to always use absolute paths when referencing 3rd party libraries.

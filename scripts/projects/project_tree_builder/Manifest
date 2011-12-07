@@ -23,29 +23,29 @@ APP: project_tree_builder
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
 
-#Linux32-Centos    : plain : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-Linux32-Centos    : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-#Linux32-Centos    : debug : GCC.sh           --with-debug    --without-mt --with-static --without-runpath --with-flat-makefile
+#Linux32-Centos    : plain : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
+Linux32-Centos    : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
+#Linux32-Centos    : debug : GCC.sh           --with-debug    --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
 
-#Linux64-Centos    : plain : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-Linux64-Centos    : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+#Linux64-Centos    : plain : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
+Linux64-Centos    : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
 
-FreeBSD32  : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+FreeBSD32  : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
 
-SunOSx86   : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-#SunOSx86   : plain : WorkShop55.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-#SunOSx86   : plain : WorkShop59.sh 64 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+SunOSx86   : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
+#SunOSx86   : plain : WorkShop55.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
+#SunOSx86   : plain : WorkShop59.sh 64 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
 
-#SunOSSparc : plain : WorkShop55.sh 64 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-SunOSSparc : plain : WorkShop59.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-#SunOSSparc : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+#SunOSSparc : plain : WorkShop55.sh 64 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
+SunOSSparc : plain : WorkShop59.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
+#SunOSSparc : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
 
-#PowerMAC   : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-IntelMAC   : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-#IntelMAC    : universal : GCC.sh        --without-debug --without-mt  --with-static --with-universal=i386,x86_64 --with-flat-makefile
+#PowerMAC   : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
+IntelMAC   : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
+#IntelMAC    : universal : GCC.sh        --without-debug --without-mt  --with-static --with-universal=i386,x86_64 --with-flat-makefile --without-ncbi-c
 
 #Win32_8    : 800 : static  32  ReleaseMT
 Win32_9    : 900 : static  32  ReleaseMT
 #Win64_9      : 900 : static  64  ReleaseDLL
 
-XCode      : plain  : Xcode.sh 30 --without-debug --with-universal=i386,x86_64
+XCode      : plain  : Xcode.sh 30 --without-debug --with-universal=i386,x86_64 --without-ncbi-c
