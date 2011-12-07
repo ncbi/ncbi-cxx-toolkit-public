@@ -6671,16 +6671,22 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
             if (!found && bsh.IsAa()) {
                 const CSeq_feat* cds = GetCDSForProduct(bsh);
                 if ( cds != 0 ) {
-                    CBioseq_Handle nbsh = m_Scope->GetBioseqHandle(cds->GetLocation());
-                    if (nbsh) {
-                        CFeat_CI nf (nbsh, sel);
-                        while (nf && !found) {
-                            string label;
-                            nf->GetData().GetGene().GetLabel(&label);
-                            if (NStr::Equal(label, gene_xref->GetLocus())) {
-                                found = true;
-                            } else {
-                                ++nf;
+                    if (cds->IsSetLocation()) {
+                        const CSeq_loc& loc = cds->GetLocation();
+                        const CSeq_id* id = loc.GetId();
+                        if (id != NULL) {
+                            CBioseq_Handle nbsh = m_Scope->GetBioseqHandle(*id);
+                            if (nbsh) {
+                                CFeat_CI nf (nbsh, sel);
+                                while (nf && !found) {
+                                    string label;
+                                    nf->GetData().GetGene().GetLabel(&label);
+                                    if (NStr::Equal(label, gene_xref->GetLocus())) {
+                                        found = true;
+                                    } else {
+                                        ++nf;
+                                    }
+                                }
                             }
                         }
                     }
@@ -6711,16 +6717,22 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
             if (!found && bsh.IsAa()) {
                 const CSeq_feat* cds = GetCDSForProduct(bsh);
                 if ( cds != 0 ) {
-                    CBioseq_Handle nbsh = m_Scope->GetBioseqHandle(cds->GetLocation());
-                    if (nbsh) {
-                        CFeat_CI nf (nbsh, sel);
-                        while (nf && !found) {
-                            string label;
-                            nf->GetData().GetGene().GetLabel(&label);
-                            if (NStr::Equal(label, gene_xref->GetLocus())) {
-                                found = true;
-                            } else {
-                                ++nf;
+                    if (cds->IsSetLocation()) {
+                        const CSeq_loc& loc = cds->GetLocation();
+                        const CSeq_id* id = loc.GetId();
+                        if (id != NULL) {
+                            CBioseq_Handle nbsh = m_Scope->GetBioseqHandle(*id);
+                            if (nbsh) {
+                                CFeat_CI nf (nbsh, sel);
+                                while (nf && !found) {
+                                    string label;
+                                    nf->GetData().GetGene().GetLabel(&label);
+                                    if (NStr::Equal(label, gene_xref->GetLocus())) {
+                                        found = true;
+                                    } else {
+                                        ++nf;
+                                    }
+                                }
                             }
                         }
                     }

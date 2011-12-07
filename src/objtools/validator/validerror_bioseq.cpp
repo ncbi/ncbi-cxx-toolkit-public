@@ -4027,7 +4027,10 @@ void CValidError_bioseq::ValidateCDSAndProtPartials (const CMappedFeat& feat)
         case NCBI_SEQFEAT(Cdregion):
             {
                 if (! feat.IsSetProduct()) return;
-                CBioseq_Handle prot_bsh = m_Scope->GetBioseqHandle(feat.GetProduct());
+                const CSeq_loc& loc = feat.GetProduct();
+                const CSeq_id* id = loc.GetId();
+                if (id == NULL) return;
+                CBioseq_Handle prot_bsh = m_Scope->GetBioseqHandle(*id);
                 if (!prot_bsh) {
                     return;
                 }
@@ -4044,7 +4047,10 @@ void CValidError_bioseq::ValidateCDSAndProtPartials (const CMappedFeat& feat)
             break;
         case NCBI_SEQFEAT(Prot):
             {
-                CBioseq_Handle prot_bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
+                const CSeq_loc& loc = feat.GetLocation();
+                const CSeq_id* id = loc.GetId();
+                if (id == NULL) return;
+                CBioseq_Handle prot_bsh = m_Scope->GetBioseqHandle(*id);
                 if (! prot_bsh) return;
                 const CBioseq& pbioseq = *(prot_bsh.GetCompleteBioseq());
                 const CSeq_feat* cds = m_Imp.GetCDSGivenProduct(pbioseq);
