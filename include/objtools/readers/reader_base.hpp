@@ -36,6 +36,7 @@
 #include <corelib/ncbistd.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <util/format_guess.hpp>
+#include <objtools/readers/line_error.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -169,6 +170,11 @@ protected:
     void
     ProcessError(
         CObjReaderLineException&,
+        IErrorContainer* );
+        
+    void
+    ProcessError(
+        CLineError&,
         IErrorContainer* );
         
     //

@@ -212,6 +212,22 @@ CReaderBase::ProcessError(
 }
 
 //  ----------------------------------------------------------------------------
+void
+CReaderBase::ProcessError(
+    CLineError& err,
+    IErrorContainer* pContainer )
+//  ----------------------------------------------------------------------------
+{
+    if ( 0 == pContainer ) {
+        throw( err );
+    }
+    if ( ! pContainer->PutError( err ) )
+    {
+        throw( err );
+    }
+}
+
+//  ----------------------------------------------------------------------------
 void CReaderBase::x_SetBrowserRegion(
     const string& strRaw,
     CAnnot_descr& desc )

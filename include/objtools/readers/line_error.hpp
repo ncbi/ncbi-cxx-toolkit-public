@@ -205,11 +205,23 @@ public:
     {
         out << "                " << SeverityStr() << ":" << endl;
         out << "Problem:        " << ProblemStr() << endl;
-        out << "SeqId:          " << SeqId() << endl;
+        string seqid = SeqId();
+        if (!seqid.empty()) {
+            out << "SeqId:          " << seqid << endl;
+        }
         out << "Line:           " << Line() << endl;
-        out << "FeatureName:    " << FeatureName() << endl;
-        out << "QualifierName:  " << QualifierName() << endl;
-        out << "QualifierValue: " << QualifierValue() << endl;
+        string feature = FeatureName();
+        if (!feature.empty()) {
+            out << "FeatureName:    " << feature << endl;
+        }
+        string qualname = QualifierName();
+        if (!qualname.empty()) {
+            out << "QualifierName:  " << qualname << endl;
+        }
+        string qualval = QualifierValue();
+        if (!qualval.empty()) {
+            out << "QualifierValue: " << qualval << endl;
+        }
         out << endl;
     };
         

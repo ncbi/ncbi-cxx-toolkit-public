@@ -108,6 +108,7 @@ CWiggleReader::CWiggleReader(
     CReaderBase(flags),
     m_uCurrentRecordType( TYPE_DATA_BED )
 {
+    m_uLineNumber = 0;
     m_pControlData = new CWiggleRecord;
 }
 
@@ -204,13 +205,34 @@ CWiggleReader::x_ParseSequence(
     m_uCurrentRecordType = TYPE_NONE;
 
     vector<string> parts;
-    while ( x_ReadLineData( lr, parts ) ) {
+    while (x_ReadLineData(lr, parts)) {
         
-        if ( x_ProcessLineData( parts, pTrack ) ) {
-            continue;
+        try {
+            if (!x_ProcessLineData(parts, pTrack)) {
+                lr.UngetLine();
+                if (0 != pTrack) {
+                    //if we got any track data, return it
+                    break;
+                }
+                else {
+                    //otherwise, reinitialize:
+                    m_pControlData->Reset();
+                    m_uCurrentRecordType = TYPE_NONE;
+                }
+            }
         }
-        lr.UngetLine();
-        break;
+        catch (CLineError& err) {
+            ProcessError(err, pErrorContainer);
+            while (x_ReadLineData(lr, parts)) {
+                //flush all data lines until we reach firm ground:
+                unsigned int uType = x_GetLineType(parts);
+                if (uType == TYPE_TRACK  ||  uType == TYPE_DECLARATION_VARSTEP  ||
+                        uType == TYPE_DECLARATION_FIXEDSTEP) {
+                    lr.UngetLine();
+                    break;
+                }
+            }
+        }
     }
     return (0 != pTrack);
 }
@@ -236,7 +258,7 @@ bool CWiggleReader::x_ProcessLineData(
     CWiggleTrack*& pTrack )
 //  ----------------------------------------------------------------------------
 {
-    unsigned int uLineType = x_GetLineType( linedata ); 
+    unsigned int uLineType = x_GetLineType( linedata );
     switch( uLineType ) {
         default: {
             x_ParseDataRecord( linedata );
@@ -373,7 +395,8 @@ unsigned int CWiggleReader::x_GetLineType(
         return TYPE_DATA_FIXEDSTEP;
     }
     
-    CObjReaderLineException err( eDiag_Error, 0, "Unrecognizable line type" );
+    CLineError err(
+        ILineError::eProblem_GeneralParsingError, eDiag_Error, "", m_uLineNumber);
     throw err;
 }
 
@@ -383,11 +406,11 @@ void CWiggleReader::x_AssignTrackData(
 //  ----------------------------------------------------------------------------
 {
     if ( !m_pTrackDefaults->Description().empty() ) {
-        annot->SetTitle(m_pTrackDefaults->Description());
+        annot->SetTitleDesc(m_pTrackDefaults->Description());
     }
 
     if ( !m_pTrackDefaults->Name().empty() ) {
-        annot->AddName(m_pTrackDefaults->Name());
+        annot->SetNameDesc(m_pTrackDefaults->Name());
     }
 
     CRef<CUser_object> trackdata( new CUser_object() );
