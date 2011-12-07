@@ -37,6 +37,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/util/feature.hpp>
 #include <objtools/writers/gff2_write_data.hpp>
+#include <objects/seqfeat/Cdregion.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
