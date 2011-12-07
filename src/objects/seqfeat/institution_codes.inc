@@ -2793,7 +2793,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "KA	s	Vytautas Magnus University",
 "KABA	s	University of Kabul",
 "KAC	c	Kalmar Algae Collection",
-"KACC	c	Korean Agricultural Culture Collection, National Institute of Agricultural Biotechnology",
+"KACC	c	Korean Agricultural Culture Collection",
 "KAG	s	Kagoshima University Museum",
 "KAGS	s	Kagoshima University, Biology Department",
 "KAI	s	Henan University, Biology Department",
