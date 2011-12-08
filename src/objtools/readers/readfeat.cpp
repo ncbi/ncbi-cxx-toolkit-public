@@ -279,7 +279,7 @@ private:
 
     int x_ParseTrnaString (const string& val);
 
-    void x_ParseTrnaExtString(
+    bool x_ParseTrnaExtString(
         CTrna_ext & ext_trna, const string & str, const CSeq_id *seq_id );
     SIZE_TYPE x_MatchingParenPos( const string &str, SIZE_TYPE open_paren_pos );
 
@@ -828,6 +828,10 @@ bool CFeature_table_reader_imp::x_ParseFeatureTableLine (
     }
     if (numtkns > 4) {
         val = NStr::TruncateSpaces(tkns[4]);
+        // trim enclosing double-quotes
+        if( val.length() >= 2 && val[0] == '"' && val[val.length()-1] == '"' ) {
+            val = val.substr(1, val.length() - 2);
+        }
     }
     if (numtkns > 5) {
         stnd = NStr::TruncateSpaces(tkns[5]);
@@ -1243,13 +1247,13 @@ int CFeature_table_reader_imp::x_ParseTrnaString (
     return 0;
 }
 
-void
+bool
 CFeature_table_reader_imp::x_ParseTrnaExtString(
     CTrna_ext & ext_trna, const string & str, const CSeq_id *seq_id )
 {
-    if (NStr::IsBlank (str)) return;
+    if (NStr::IsBlank (str)) return false;
 
-    if (NStr::StartsWith (str, "(pos:")) {
+    if ( NStr::StartsWith(str, "(pos:") ) {
         // find position of closing paren
         string::size_type pos_end = x_MatchingParenPos( str, 0 );
         if (pos_end != string::npos) {
@@ -1260,7 +1264,7 @@ CFeature_table_reader_imp::x_ParseTrnaExtString(
                 TTrnaMap::const_iterator t_iter = sm_TrnaKeys.find (abbrev.c_str ());
                 if (t_iter == sm_TrnaKeys.end ()) {
                     // unable to parse
-                    return;
+                    return false;
                 }
                 CRef<CTrna_ext::TAa> aa(new CTrna_ext::TAa);
                 aa->SetNcbieaa (t_iter->second);
@@ -1275,11 +1279,15 @@ CFeature_table_reader_imp::x_ParseTrnaExtString(
             CRef<CSeq_loc> anticodon = GetSeqLocFromString (pos_str, seq_id, & helper);
             if (anticodon == NULL) {
                 ext_trna.ResetAa();
+                return false;
             } else {
                 ext_trna.SetAnticodon(*anticodon);
+                return true;
             }
         }
     }
+
+    return false;
 }
 
 
@@ -1412,8 +1420,13 @@ bool CFeature_table_reader_imp::x_AddQualifierToRna (
                             taa.SetNcbieaa (aaval);
                             trx.SetAa (taa);
                             tex.SetTRNA (trx);
-                            return true;
+                        } else {
+                            x_ProcessMsg( container, 
+                                ILineError::eProblem_QualifierBadValue, eDiag_Error,
+                                seq_id, line_num,
+                                "tRNA", "product", val );
                         }
+                        return true;
                     }
                     break;
                 case eQual_anticodon:
@@ -1421,7 +1434,13 @@ bool CFeature_table_reader_imp::x_AddQualifierToRna (
                         CRNA_ref::TExt& tex = rrp.SetExt ();
                         CRNA_ref::C_Ext::TTRNA & ext_trna = tex.SetTRNA();
                         CRef<CSeq_id> seq_id_obj( new CSeq_id(seq_id) );
-                        x_ParseTrnaExtString(ext_trna, val, &*seq_id_obj);
+                        if( ! x_ParseTrnaExtString(ext_trna, val, &*seq_id_obj) ) {
+                            x_ProcessMsg( container, 
+                                ILineError::eProblem_QualifierBadValue, eDiag_Error,
+                                seq_id, line_num,
+                                "tRNA", "anticodon", val );
+                        }
+                        return true;
                     }
                     break;
                 case eQual_codon_recognized: 
@@ -1551,8 +1570,13 @@ bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (
                 if (g_iter != sm_GenomeKeys.end ()) {
                     CBioSource::EGenome gtype = g_iter->second;
                     bsp.SetGenome (gtype);
-                    return true;
+                } else {
+                    x_ProcessMsg( container, 
+                        ILineError::eProblem_QualifierBadValue, eDiag_Error,
+                        seq_id, line,
+                        feat_name, "organelle", val );
                 }
+                return true;
             }
         case eOrgRef_div:
             {
@@ -1803,9 +1827,13 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                         CInferencePrefixList::GetPrefixAndRemainder (val, prefix, remainder);
                         if (!NStr::IsBlank(prefix) && NStr::StartsWith (val, prefix)) {
                             x_AddGBQualToFeature (sfp, qual, val);
-                            return true;
+                        } else {
+                            x_ProcessMsg( container, 
+                                ILineError::eProblem_QualifierBadValue, eDiag_Error,
+                                seq_id, line,
+                                feat_name, qual, val );
                         }
-                        return false;
+                        return true;
                     }
                 case eQual_replace:
                     {

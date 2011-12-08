@@ -70,26 +70,28 @@ public:
     /// control-As.  Normally, the reader stops at the first
     /// control-A; however, this flag makes it parse all the IDs.
     enum EFlags {
-        fAssumeNuc   = 1<< 0, ///< Assume nucs unless accns indicate otherwise
-        fAssumeProt  = 1<< 1, ///< Assume prots unless accns indicate otherwise
-        fForceType   = 1<< 2, ///< Force specified type regardless of accession
-        fNoParseID   = 1<< 3, ///< Generate an ID (whole defline -> title)
-        fParseGaps   = 1<< 4, ///< Make a delta sequence if gaps found
-        fOneSeq      = 1<< 5, ///< Just read the first sequence found
-        fAllSeqIds   = 1<< 6, ///< Read Seq-ids past the first ^A (see note)
-        fNoSeqData   = 1<< 7, ///< Parse the deflines but skip the data
-        fRequireID   = 1<< 8, ///< Reject deflines that lack IDs
-        fDLOptional  = 1<< 9, ///< Don't require a leading defline
-        fParseRawID  = 1<<10, ///< Try to identify raw accessions
-        fSkipCheck   = 1<<11, ///< Skip (rudimentary) body content check
-        fNoSplit     = 1<<12, ///< Don't split out ambiguous sequence regions
-        fValidate    = 1<<13, ///< Check (alphabetic) residue validity
-        fUniqueIDs   = 1<<14, ///< Forbid duplicate IDs
-        fStrictGuess = 1<<15, ///< Assume no typos when guessing sequence type
-        fLaxGuess    = 1<<16, ///< Use legacy heuristic for guessing seq. type
-        fAddMods     = 1<<17, ///< Parse defline mods and add to SeqEntry
-        fLetterGaps  = 1<<18, ///< Parse runs of Ns when splitting data
-        fNoUserObjs  = 1<<19  ///< Don't save raw deflines in User-objects
+        fAssumeNuc    = 1<< 0, ///< Assume nucs unless accns indicate otherwise
+        fAssumeProt   = 1<< 1, ///< Assume prots unless accns indicate otherwise
+        fForceType    = 1<< 2, ///< Force specified type regardless of accession
+        fNoParseID    = 1<< 3, ///< Generate an ID (whole defline -> title)
+        fParseGaps    = 1<< 4, ///< Make a delta sequence if gaps found
+        fOneSeq       = 1<< 5, ///< Just read the first sequence found
+        fAllSeqIds    = 1<< 6, ///< Read Seq-ids past the first ^A (see note)
+        fNoSeqData    = 1<< 7, ///< Parse the deflines but skip the data
+        fRequireID    = 1<< 8, ///< Reject deflines that lack IDs
+        fDLOptional   = 1<< 9, ///< Don't require a leading defline
+        fParseRawID   = 1<<10, ///< Try to identify raw accessions
+        fSkipCheck    = 1<<11, ///< Skip (rudimentary) body content check
+        fNoSplit      = 1<<12, ///< Don't split out ambiguous sequence regions
+        fValidate     = 1<<13, ///< Check (alphabetic) residue validity
+        fUniqueIDs    = 1<<14, ///< Forbid duplicate IDs
+        fStrictGuess  = 1<<15, ///< Assume no typos when guessing sequence type
+        fLaxGuess     = 1<<16, ///< Use legacy heuristic for guessing seq. type
+        fAddMods      = 1<<17, ///< Parse defline mods and add to SeqEntry
+        fLetterGaps   = 1<<18, ///< Parse runs of Ns when splitting data
+        fNoUserObjs   = 1<<19, ///< Don't save raw deflines in User-objects
+        fBadModThrow  = 1<<20, ///< Throw an exception if there's a bad modifier value (e.g. "[topology=nonsense]")
+        fUnknModThrow = 1<<21  ///< Throw if there are any unknown (unused) mods left over
     };
     typedef int TFlags; ///< binary OR of EFlags
 
@@ -203,6 +205,10 @@ protected:
     TSeqPos GetCurrentPos(EPosType pos_type);
 
     void x_RecursiveApplyAllMods( CSeq_entry& entry );
+
+    string x_ConvertBadIndexesToString(
+        const vector<TSeqPos> &badIndexes, 
+        int maxRanges );
 private:
     struct SGap {
         TSeqPos pos; // 0-based, and NOT counting previous gaps

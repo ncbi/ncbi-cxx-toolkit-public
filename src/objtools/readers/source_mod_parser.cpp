@@ -999,12 +999,19 @@ void CSourceModParser::GetLabel(string* s, TWhichMods which) const
 
 void CSourceModParser::x_HandleBadModValue(const SMod& mod)
 {
-    // Ignore, per the C Toolkit
-    //
-    // If we later change our mind and want to print out warnings, here's
-    // some reasonable code:
-    //
-    // cerr << "Warning: Bad modifier: [" << mod.key << "=" << mod.value << "]" << endl;
+    m_BadMods.insert(mod);
+
+    switch( m_HandleBadMod ) {
+    case eHandleBadMod_Ignore:
+        // nothing to do
+        break;
+    case eHandleBadMod_Throw:
+        throw CBadModError(mod);
+        break;
+    case eHandleBadMod_PrintToCerr:
+        cerr << "Warning: Bad modifier: " << mod.ToString() << endl;
+        break;
+    }
 }
 
 

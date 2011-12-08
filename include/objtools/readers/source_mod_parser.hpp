@@ -73,7 +73,15 @@ class CBioseq;
 class NCBI_XOBJREAD_EXPORT CSourceModParser
 {
 public:
-    CSourceModParser(void) { }
+    enum EHandleBadMod {
+        // regardless of choice, bad mods are still put in the bad mods set,
+        // although it may be incomplete if you exit early (e.g. from throw)
+        eHandleBadMod_Ignore = 1, // behavior of C toolkit is to ignore
+        eHandleBadMod_Throw,
+        eHandleBadMod_PrintToCerr
+    };
+    CSourceModParser(EHandleBadMod handleBadMod = eHandleBadMod_Ignore) 
+        : m_HandleBadMod(handleBadMod) { }
 
     /// Extract and store bracketed modifiers from a title string, returning a
     /// stripped version (which may well be empty at that point!)
@@ -108,6 +116,7 @@ public:
         bool   used;
 
         bool operator < (const SMod& rhs) const;
+        string ToString(void) const;
     };
     typedef set<SMod>              TMods;
     typedef TMods::const_iterator  TModsCI;
@@ -119,6 +128,17 @@ public:
         fAllMods    = 0x3
     };
     typedef int TWhichMods; // binary OR of EWhichMods
+
+    // class which may be thrown
+    class CBadModError : public runtime_error {
+    public:
+        CBadModError( const SMod & badMod )  
+          : runtime_error("bad modifier name or value: " + badMod.ToString() ),
+            m_BadMod(badMod) { }
+        const SMod & GetBadMod() const { return m_BadMod; }
+    private:
+        SMod m_BadMod;
+    };
 
     /// Return all modifiers matching the given criteria (if any) without
     /// affecting their status (used vs. unused).
@@ -137,10 +157,16 @@ public:
     /// in between if s is not empty and doesn't already end with one.
     void GetLabel(string* s, TWhichMods which = fAllMods) const;
 
+    // Allows user to get the list of bad mods
+    const TMods & GetBadMods(void) const { return m_BadMods; }
+
 private:
     static const unsigned char kKeyCanonicalizationTable[257];
 
+    EHandleBadMod m_HandleBadMod;
+
     TMods m_Mods;
+    TMods m_BadMods;
 
     void x_ApplyMods(CAutoInitRef<CBioSource>& bsrc, CTempString organism);
     void x_ApplyMods(CAutoInitRef<CMolInfo>& mi);
@@ -260,6 +286,14 @@ bool CSourceModParser::SMod::operator <(const SMod& rhs) const
 {
     int key_comp = CompareKeys(key, rhs.key);
     return key_comp < 0  ||  (key_comp == 0  &&  pos < rhs.pos);
+}
+
+inline
+string CSourceModParser::SMod::ToString(void) const
+{
+    return "[ key: (" + key + "), value: (" + value +
+        "), pos: " + NStr::IntToString(pos) +
+        ", used: " + string(used ? "true" : "false") + "]";
 }
 
 

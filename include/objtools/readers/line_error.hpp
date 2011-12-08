@@ -61,6 +61,7 @@ public:
         eProblem_QualifierWithoutFeature,
         eProblem_FeatureBadStartAndOrStop,
         eProblem_BadFeatureInterval,
+        eProblem_QualifierBadValue,
         eProblem_BadScoreValue,
         eProblem_MissingContext,
 
@@ -154,11 +155,12 @@ public:
             return "General parsing error";
         case eProblem_BadFeatureInterval:
             return "Bad feature interval";
+        case eProblem_QualifierBadValue:
+            return "Qualifier had bad value";
         case eProblem_BadScoreValue:
             return "Invalid score value";
         case eProblem_MissingContext:
             return "Value ignored due to missing context";
-
         default:
             return "Unknown problem";
         }

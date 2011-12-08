@@ -717,10 +717,13 @@ void CFastaReader::AssembleSeq(void)
         = inst.IsAa() ? CSeq_data::e_Ncbieaa : CSeq_data::e_Iupacna;
     if (TestFlag(fValidate)) {
         CSeq_data tmp_data(m_SeqData, format);
-        if ( !CSeqportUtil::FastValidate(tmp_data) ) {
+        vector<TSeqPos> badIndexes;
+        CSeqportUtil::Validate(tmp_data, &badIndexes);
+        if ( ! badIndexes.empty() ) {
             NCBI_THROW2(CObjReaderParseException, eFormat,
-                        "CFastaReader: Invalid residue(s) in input sequence",
-                        LineNumber());
+                "CFastaReader: Invalid residue(s) in input sequence at positions: " +
+                x_ConvertBadIndexesToString(badIndexes, 20),
+                LineNumber());
         }
     }
 
@@ -1664,16 +1667,88 @@ void CFastaReader::x_RecursiveApplyAllMods( CSeq_entry& entry )
         }
     } else {
         CBioseq&         seq = entry.SetSeq();
-        CSourceModParser smp;
+        CSourceModParser smp( TestFlag(fBadModThrow) ?
+            CSourceModParser::eHandleBadMod_Throw : 
+            CSourceModParser::eHandleBadMod_Ignore );
         CConstRef<CSeqdesc> title_desc
             = seq.GetClosestDescriptor(CSeqdesc::e_Title);
         if (title_desc) {
             string& title(const_cast<string&>(title_desc->GetTitle()));
             title = smp.ParseTitle(title);
             smp.ApplyAllMods(seq);
+            if( TestFlag(fUnknModThrow) ) {
+                CSourceModParser::TMods unused_mods = smp.GetMods(CSourceModParser::fUnusedMods);
+                if( ! unused_mods.empty() ) 
+                {
+                    // there are unused mods and user specified to throw if any
+                    // unused 
+                    CNcbiOstrstream err;
+                    err << "Unused mods:";
+                    ITERATE(CSourceModParser::TMods, mod_iter, unused_mods) {
+                        err << ' ' << mod_iter->ToString();
+                    }
+                    throw runtime_error((string)CNcbiOstrstreamToString(err));
+                }
+            }
             smp.GetLabel(&title, CSourceModParser::fUnusedMods);
         }
     }
+}
+
+string CFastaReader::x_ConvertBadIndexesToString(
+    const vector<TSeqPos> &badIndexes, 
+    int maxRanges )
+{
+    _ASSERT(is_sorted(badIndexes.begin(), badIndexes.end()));
+
+    typedef pair<TSeqPos, TSeqPos> TRange;
+    typedef vector<TRange> TRangeVec;
+
+    TRangeVec rangesFound;
+
+    ITERATE( vector<TSeqPos>, idx_iter, badIndexes ) {
+        const TSeqPos idx = *idx_iter;
+
+        // first one
+        if( rangesFound.empty() ) {
+            rangesFound.push_back(TRange(idx, idx));
+            continue;
+        }
+
+        const TSeqPos last_idx = rangesFound.back().second;
+        if( idx == (last_idx+1) ) {
+            // extend previous range
+            ++rangesFound.back().second;
+        } else {
+            // create new range
+            rangesFound.push_back(TRange(idx, idx));
+        }
+
+        if( rangesFound.size() > maxRanges ) {
+            break;
+        }
+    }
+
+    // turn the ranges found into a string
+    string result;
+    for( int rng_idx = 0; 
+        ( rng_idx < rangesFound.size() && rng_idx < maxRanges ); 
+        ++rng_idx ) 
+    {
+        if( ! result.empty() ) {
+            result += ", ";
+        }
+        const TRange &range = rangesFound[rng_idx];
+        result += NStr::IntToString(range.first);
+        if( range.first != range.second ) {
+            result += "-" + NStr::IntToString(range.second);
+        }
+    }
+    if( rangesFound.size() > maxRanges ) {
+        result += ", and more";
+    }
+
+    return result;
 }
 
 END_SCOPE(objects)
