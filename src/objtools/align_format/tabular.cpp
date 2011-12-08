@@ -988,9 +988,9 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
     SetJGene(annot->m_TopGeneIds[2], annot->m_GeneInfo[4], annot->m_GeneInfo[5]);
 
     // Compute Frame info
-    if (annot->m_FrameInfo[0] >= 0 && annot->m_FrameInfo[1] >= 0) {
-        int off = annot->m_FrameInfo[0];
-        int len = annot->m_FrameInfo[1] - off;
+    if (annot->m_FrameInfo[1] >= 0 && annot->m_FrameInfo[2] >= 0) {
+        int off = annot->m_FrameInfo[1];
+        int len = annot->m_FrameInfo[2] - off;
         if ( len % 3 == 0) {
             string seq_data(m_Query, off, len);
             string seq_trans;

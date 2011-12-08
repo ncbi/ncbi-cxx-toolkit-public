@@ -515,7 +515,7 @@ void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
             int frame_offset = m_AnnotationInfo.GetFrameOffset(sid);
             if (frame_offset >= 0) {
                 int frame_adj = (it.GetSeqStart(1) + 3 - frame_offset) % 3;
-                (*annot)->m_FrameInfo[1] = (q_ms) ?
+                (*annot)->m_FrameInfo[2] = (q_ms) ?
                                            it.GetSeqStop(0)  + frame_adj 
                                          : it.GetSeqStart(0) - frame_adj;
             } 
@@ -577,14 +577,6 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
                 q_ends[0] = master_align->GetSeqStart(0);
                 q_ends[1] = master_align->GetSeqStop(0);
                 q_dir = 1;
-            }
-
-            string sid = master_align->GetSeq_id(1).AsFastaString();
-            if (sid.substr(0, 4) == "lcl|") sid = sid.substr(4, sid.length());
-            int frame_offset = m_AnnotationInfo.GetFrameOffset(sid);
-            if (frame_offset >= 0) {
-                int frame_adj = (master_align->GetSeqStop(1) + 3 - frame_offset) % 3;
-                annot->m_FrameInfo[0] = q_ends[1] - q_dir * frame_adj;
             }
 
             const CSeq_align_set::Tdata & align_list = (*result)->GetSeqAlign()->Get();
@@ -717,7 +709,9 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
                     int frame_offset = m_AnnotationInfo.GetFrameOffset(sid);
                     if (frame_offset >= 0) {
                         int frame_adj = ((*it)->GetSeqStart(1) + 3 - frame_offset) % 3;
-                        annot->m_FrameInfo[2] = (q_ends[0] + 3 - q_dir * frame_adj) % 3;
+                        annot->m_FrameInfo[0] = ((*it)->GetSeqStart(0) + 3 - q_dir * frame_adj) % 3;
+                        frame_adj = ((*it)->GetSeqStop(1) + 3 - frame_offset) % 3;
+                        annot->m_FrameInfo[1] = ((*it)->GetSeqStop(0) + 3 - q_dir * frame_adj) % 3;
                     }
                     break;
 

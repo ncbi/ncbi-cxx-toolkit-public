@@ -72,8 +72,8 @@ public:
     vector<string> m_TopGeneIds;     // Top match germline gene ID
     vector<string> m_ChainType;      // chain types of the query ([0]) and subjects ([1:])
     int m_GeneInfo[6];               // The (start) and (end offset + 1) for VDJ
-    int m_FrameInfo[3];              // Coding frame start offset for V end,
-                                     // J start, and V start.
+    int m_FrameInfo[3];              // Coding frame start offset for V start, V end,
+                                     // and V start.
     int m_DomainInfo[12];            // The (start) and (end offset) for FWR1, 
                                      // CDR1, FWR2, CDR2, FWR3, CDR3 domains
                                      // note: the first and last domains are be extended
