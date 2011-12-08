@@ -122,7 +122,7 @@ static CNCBINode* s_TableRowHook(CHTMLPage*          page  /*never NULL*/,
     // they will be ignored by Internet browsers.
     node->AppendChild(new CHTMLText("\n"));
     node->AppendChild(new CHTMLComment("Table row #"
-                                       + NStr::IntToString(ctx->current+1)));
+                                       + NStr::NumericToString(ctx->current+1)));
     node->AppendChild(new CHTMLText("\n"));
     node->AppendChild(new CHTMLTagNode("table_row_template"));
 
