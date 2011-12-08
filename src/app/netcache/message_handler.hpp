@@ -51,7 +51,9 @@ enum {
     /// Initial size of the buffer used for reading/writing from socket.
     /// Reading buffer never changes its size from the initial, writing buffer
     /// can grow if there's need to.
-    kInitNetworkBufferSize = 5 * 1024
+    kReadNWBufSize = 4 * 1024,
+    kWriteNWMinSize = 1000,
+    kWriteNWBufSize = 2 * kWriteNWMinSize
 };
 
 typedef CSimpleBufferT<char> TNCBufferType;
@@ -80,11 +82,8 @@ public:
     bool IsWriteDataPending(void) const;
     bool HasError(void) const;
 
-    /// Read data from socket to the buffer.
-    ///
-    /// @return
-    ///   TRUE if some data is available in buffer, FALSE otherwise
-    bool Read(void);
+    bool ReadToBuf(void);
+    size_t Read(void* buf, size_t size);
     /// Read one line from socket (or buffer). After reading this line will
     /// be erased from the reading buffer.
     ///
@@ -94,12 +93,12 @@ public:
     bool ReadLine(CTempString* line);
 
     /// Get pointer to buffered data read from socket
-    const void* GetReadData(void) const;
+    const void* GetReadBufData(void) const;
     /// Get size of buffered data available
-    size_t      GetReadSize(void) const;
+    size_t GetReadReadySize(void) const;
     /// Erase first amount bytes from reading buffer - they're processed and
     /// no longer necessary.
-    void        EraseReadData(size_t amount);
+    void EraseReadBufData(size_t amount);
 
     /// Write message to the writing buffer. Message is created by
     /// concatenating prefix and msg texts. Nothing is written directly to
@@ -107,6 +106,8 @@ public:
     ///
     /// @sa Flush
     void   WriteMessage(CTempString prefix, CTempString msg);
+    size_t Write(const void* buf, size_t size);
+    void   WriteNoFail(const void* buf, size_t size);
     /// Prepare writing buffer for external writing and return pointer to it
     void*  PrepareDirectWrite(void);
     /// Get number of bytes that can be written into writing buffer via
@@ -120,8 +121,6 @@ public:
     /// in the buffer as is until next call and return without waiting.
     void Flush(void);
 
-    size_t WriteToSocket(const void* buff, size_t size);
-
 public:
     // For internal use only
 
@@ -131,6 +130,8 @@ public:
     void ResetSocketTimeout(void);
 
 private:
+    size_t x_ReadFromSocket(void* buf, size_t size);
+    size_t x_ReadFromBuf(void* dest, size_t size);
     /// Read end-of-line from buffer, advance buffer pointer to pass read
     /// characters. Method supports all possible variants of CRLF including
     /// CR, LF, CRLF, LFCR and 0 byte.
@@ -147,19 +148,10 @@ private:
     /// @param pos
     ///   Variable with buffer position that will be reseted
     void x_CompactBuffer(TNCBufferType& buffer, size_t& pos);
+    void x_CopyData(const void* buf, size_t size);
+    size_t x_WriteToSocket(const void* buf, size_t size);
+    size_t x_WriteNoPending(const void* buf, size_t size);
 
-
-    /// Special guard for setting and resetting value of read/write timeout
-    /// on the socket.
-    class CReadWriteTimeoutGuard
-    {
-    public:
-        CReadWriteTimeoutGuard(CBufferedSockReaderWriter* parent);
-        ~CReadWriteTimeoutGuard(void);
-
-    private:
-        CBufferedSockReaderWriter* m_Parent;
-    };
 
     /// Type of end-of-line bytes that can be read from buffer
     enum ECRLF_Byte {

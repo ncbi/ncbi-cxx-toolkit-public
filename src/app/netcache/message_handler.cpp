@@ -551,24 +551,7 @@ CBufferedSockReaderWriter::ResetSocketTimeout(void)
     m_Socket->SetTimeout(eIO_ReadWrite, &m_DefTimeout);
 }
 
-
-inline
-CBufferedSockReaderWriter::CReadWriteTimeoutGuard
-    ::CReadWriteTimeoutGuard(CBufferedSockReaderWriter* parent)
-    : m_Parent(parent)
-{
-    m_Parent->ZeroSocketTimeout();
-}
-
-inline
-CBufferedSockReaderWriter::CReadWriteTimeoutGuard
-    ::~CReadWriteTimeoutGuard(void)
-{
-    m_Parent->ResetSocketTimeout();
-}
-
-
-inline void
+void
 CBufferedSockReaderWriter::ResetSocket(CSocket* socket, unsigned int def_timeout)
 {
     m_ReadDataPos  = 0;
@@ -591,11 +574,10 @@ CBufferedSockReaderWriter::SetTimeout(unsigned int def_timeout)
     ResetSocketTimeout();
 }
 
-inline
 CBufferedSockReaderWriter::CBufferedSockReaderWriter(void)
-    : m_ReadBuff(kInitNetworkBufferSize),
-      m_WriteBuff(kInitNetworkBufferSize)
 {
+    m_ReadBuff.reserve_mem(kReadNWBufSize);
+    m_WriteBuff.reserve_mem(kWriteNWBufSize);
     m_DefTimeout.usec = m_ZeroTimeout.sec = m_ZeroTimeout.usec = 0;
     ResetSocket(NULL, 0);
 }
@@ -619,19 +601,19 @@ CBufferedSockReaderWriter::HasError(void) const
 }
 
 inline const void*
-CBufferedSockReaderWriter::GetReadData(void) const
+CBufferedSockReaderWriter::GetReadBufData(void) const
 {
     return m_ReadBuff.data() + m_ReadDataPos;
 }
 
 inline size_t
-CBufferedSockReaderWriter::GetReadSize(void) const
+CBufferedSockReaderWriter::GetReadReadySize(void) const
 {
     return m_ReadBuff.size() - m_ReadDataPos;
 }
 
 inline void
-CBufferedSockReaderWriter::EraseReadData(size_t amount)
+CBufferedSockReaderWriter::EraseReadBufData(size_t amount)
 {
     m_ReadDataPos = min(m_ReadDataPos + amount, m_ReadBuff.size());
 }
@@ -656,6 +638,11 @@ CBufferedSockReaderWriter::AddDirectWritten(size_t amount)
     m_WriteBuff.resize(m_WriteBuff.size() + amount);
 }
 
+inline void
+CBufferedSockReaderWriter::WriteNoFail(const void* buf, size_t size)
+{
+    x_CopyData(buf, size);
+}
 
 void
 CBufferedSockReaderWriter::x_ReadCRLF(bool force_read)
@@ -664,10 +651,10 @@ CBufferedSockReaderWriter::x_ReadCRLF(bool force_read)
         for (; HasDataToRead()  &&  m_CRLFMet != eCRLF; ++m_ReadDataPos) {
             char c = m_ReadBuff[m_ReadDataPos];
             if (c == '\n'  &&  (m_CRLFMet & eLF) == 0)
-                m_CRLFMet += eLF;
-            else if (c == '\r'  &&  (m_CRLFMet & eCR) == 0)
-                m_CRLFMet += eCR;
-            else if (c == '\0')
+                m_CRLFMet = eCRLF;
+            else if (c == '\r'  &&  m_CRLFMet == eNone)
+                m_CRLFMet = eCR;
+            else if (c == '\0'  &&  m_CRLFMet == eNone)
                 m_CRLFMet = eCRLF;
             else
                 break;
@@ -689,45 +676,57 @@ CBufferedSockReaderWriter::x_CompactBuffer(TNCBufferType& buffer, size_t& pos)
     }
 }
 
-bool
-CBufferedSockReaderWriter::Read(void)
+size_t
+CBufferedSockReaderWriter::x_ReadFromSocket(void* buf, size_t size)
 {
-    _ASSERT(m_Socket);
-
-    x_CompactBuffer(m_ReadBuff, m_ReadDataPos);
-
-    size_t cnt_read = 0;
-    EIO_Status status;
-    {{
-        CReadWriteTimeoutGuard guard(this);
-        status = m_Socket->Read(m_ReadBuff.data() + m_ReadBuff.size(),
-                                m_ReadBuff.capacity() - m_ReadBuff.size(),
-                                &cnt_read,
-                                eIO_ReadPlain);
-    }}
+    //LOG_POST("Reading from socket");
+    ZeroSocketTimeout();
+    size_t n_read = 0;
+    EIO_Status status = m_Socket->Read(buf, size, &n_read, eIO_ReadPlain);
+    ResetSocketTimeout();
+    //LOG_POST("Read from socket " << n_read << " bytes");
 
     switch (status) {
     case eIO_Success:
     case eIO_Timeout:
-        break;
     case eIO_Closed:
-        return m_ReadDataPos < m_ReadBuff.size();
+        break;
     default:
         ERR_POST("Error reading from socket: " << IO_StatusStr(status));
         m_HasError = true;
-        return false;
+        break;
     }
-    m_ReadBuff.resize(m_ReadBuff.size() + cnt_read);
+
+    return n_read;
+}
+
+bool
+CBufferedSockReaderWriter::ReadToBuf(void)
+{
+    x_CompactBuffer(m_ReadBuff, m_ReadDataPos);
+    size_t n_read = x_ReadFromSocket(m_ReadBuff.data() + m_ReadBuff.size(),
+                                     m_ReadBuff.capacity() - m_ReadBuff.size());
+    m_ReadBuff.resize(m_ReadBuff.size() + n_read);
     x_ReadCRLF(false);
-    return HasDataToRead();
+    return m_ReadDataPos < m_ReadBuff.size();
+}
+
+size_t
+CBufferedSockReaderWriter::x_ReadFromBuf(void* dest, size_t size)
+{
+    size_t to_copy = m_ReadBuff.size() - m_ReadDataPos;
+    if (size < to_copy)
+        to_copy = size;
+    memcpy(dest, m_ReadBuff.data() + m_ReadDataPos, to_copy);
+    m_ReadDataPos += to_copy;
+    return to_copy;
 }
 
 bool
 CBufferedSockReaderWriter::ReadLine(CTempString* line)
 {
-    if (!Read()) {
+    if (!ReadToBuf())
         return false;
-    }
 
     size_t crlf_pos;
     for (crlf_pos = m_ReadDataPos; crlf_pos < m_ReadBuff.size(); ++crlf_pos)
@@ -738,6 +737,12 @@ CBufferedSockReaderWriter::ReadLine(CTempString* line)
         }
     }
     if (crlf_pos >= m_ReadBuff.size()) {
+        if (m_ReadDataPos == 0  &&  m_ReadBuff.size() == m_ReadBuff.capacity())
+        {
+            ERR_POST(Critical << "Too long line in the protocol - at least "
+                              << m_ReadBuff.size() << " bytes");
+            m_HasError = true;
+        }
         return false;
     }
 
@@ -747,6 +752,51 @@ CBufferedSockReaderWriter::ReadLine(CTempString* line)
     return true;
 }
 
+size_t
+CBufferedSockReaderWriter::Read(void* buf, size_t size)
+{
+    size_t n_read = 0;
+    if (size != 0  &&  HasDataToRead()) {
+        size_t copied = x_ReadFromBuf(buf, size);
+        n_read += copied;
+        buf = (char*)buf + copied;
+        size -= copied;
+    }
+    if (size == 0)
+        return n_read;
+
+    if (size < kReadNWBufSize) {
+        if (ReadToBuf())
+            n_read += x_ReadFromBuf(buf, size);
+    }
+    else {
+        n_read += x_ReadFromSocket(buf, size);
+    }
+    return n_read;
+}
+
+size_t
+CBufferedSockReaderWriter::x_WriteToSocket(const void* buf, size_t size)
+{
+    ZeroSocketTimeout();
+    size_t n_written = 0;
+    EIO_Status status = m_Socket->Write(buf, size, &n_written, eIO_WritePlain);
+    ResetSocketTimeout();
+
+    switch (status) {
+    case eIO_Success:
+    case eIO_Timeout:
+    case eIO_Interrupt:
+        break;
+    default:
+        ERR_POST("Error writing to socket: " << IO_StatusStr(status));
+        m_HasError = true;
+        break;
+    }
+
+    return n_written;
+}
+
 void
 CBufferedSockReaderWriter::Flush(void)
 {
@@ -754,58 +804,62 @@ CBufferedSockReaderWriter::Flush(void)
         return;
     }
 
-    size_t n_written = 0;
-    EIO_Status status;
-    {{
-        CReadWriteTimeoutGuard guard(this);
-        status = m_Socket->Write(m_WriteBuff.data() + m_WriteDataPos,
-                                 m_WriteBuff.size() - m_WriteDataPos,
-                                 &n_written,
-                                 eIO_WritePlain);
-    }}
-
-    switch (status) {
-    case eIO_Success:
-    case eIO_Timeout:
-    case eIO_Interrupt:
-        break;
-    default:
-        ERR_POST("Error writing to socket: " << IO_StatusStr(status));
-        m_HasError = true;
-        return;
-    }
-
+    size_t n_written = x_WriteToSocket(m_WriteBuff.data() + m_WriteDataPos,
+                                       m_WriteBuff.size() - m_WriteDataPos);
     m_WriteDataPos += n_written;
     x_CompactBuffer(m_WriteBuff, m_WriteDataPos);
 }
 
-size_t
-CBufferedSockReaderWriter::WriteToSocket(const void* buff, size_t size)
+void
+CBufferedSockReaderWriter::x_CopyData(const void* buf, size_t size)
 {
-    if (IsWriteDataPending()) {
+    m_WriteBuff.resize(m_WriteBuff.size() + size);
+    void* data = m_WriteBuff.data() + m_WriteBuff.size() - size;
+    memcpy(data, buf, size);
+}
+
+inline size_t
+CBufferedSockReaderWriter::x_WriteNoPending(const void* buf, size_t size)
+{
+    if (size < kWriteNWMinSize) {
+        x_CopyData(buf, size);
+        return size;
+    }
+    else {
+        return x_WriteToSocket(buf, size);
+    }
+}
+
+size_t
+CBufferedSockReaderWriter::Write(const void* buf, size_t size)
+{
+    size_t has_size = m_WriteBuff.size() - m_WriteDataPos;
+    if (has_size == 0) {
+        return x_WriteNoPending(buf, size);
+    }
+    else if (has_size + size <= kWriteNWBufSize) {
+        x_CopyData(buf, size);
+        Flush();
+        return size;
+    }
+    else if (has_size < kWriteNWMinSize) {
+        size_t to_copy = kWriteNWMinSize - has_size;
+        x_CopyData(buf, to_copy);
+        Flush();
+        if (IsWriteDataPending())
+            return to_copy;
+
+        buf = (const char*)buf + to_copy;
+        size -= to_copy;
+        size_t n_written = x_WriteToSocket(buf, size);
+        return to_copy + n_written;
+    }
+    else {
         Flush();
         if (IsWriteDataPending())
             return 0;
+        return x_WriteNoPending(buf, size);
     }
-
-    size_t n_written = 0;
-    EIO_Status status;
-    {{
-        CReadWriteTimeoutGuard guard(this);
-        status = m_Socket->Write(buff, size, &n_written, eIO_WritePlain);
-    }}
-
-    switch (status) {
-    case eIO_Success:
-    case eIO_Timeout:
-    case eIO_Interrupt:
-        break;
-    default:
-        ERR_POST("Error writing to socket: " << IO_StatusStr(status));
-        m_HasError = true;
-    } // switch
-
-    return n_written;
 }
 
 void
@@ -1117,7 +1171,6 @@ CNCMessageHandler::OnBlockedOpFinish(void)
     CFastMutexGuard guard(m_ObjLock);
 
     x_UnsetFlag(fWaitForBlockedOp);
-    CNCStat::AddBlockedOperation();
     g_NetcacheServer->WakeUpPollCycle();
 }
 
@@ -1125,9 +1178,8 @@ bool
 CNCMessageHandler::x_ReadAuthMessage(void)
 {
     CTempString auth_line;
-    if (!m_SockBuffer.ReadLine(&auth_line)) {
+    if (!m_SockBuffer.ReadLine(&auth_line))
         return false;
-    }
 
     TNSProtoParams params;
     try {
@@ -1985,15 +2037,16 @@ CNCMessageHandler::x_FinishReadingBlob(void)
 bool
 CNCMessageHandler::x_ReadBlobSignature(void)
 {
-    if (m_SockBuffer.GetReadSize() < 4) {
-        m_SockBuffer.Read();
-    }
-    if (m_SockBuffer.GetReadSize() < 4) {
-        return false;
+    if (m_SockBuffer.GetReadReadySize() < 4) {
+        if (!m_SockBuffer.ReadToBuf()
+            ||  m_SockBuffer.GetReadReadySize() < 4)
+        {
+            return false;
+        }
     }
 
-    Uint4 sig = *static_cast<const Uint4*>(m_SockBuffer.GetReadData());
-    m_SockBuffer.EraseReadData(4);
+    Uint4 sig = *static_cast<const Uint4*>(m_SockBuffer.GetReadBufData());
+    m_SockBuffer.EraseReadBufData(4);
 
     if (sig == 0x04030201) {
         x_SetFlag(fSwapLengthBytes);
@@ -2020,15 +2073,16 @@ CNCMessageHandler::x_ReadBlobChunkLength(void)
         m_ChunkLen = 0xFFFFFFFF;
     }
     else {
-        if (m_SockBuffer.GetReadSize() < 4) {
-            m_SockBuffer.Read();
-        }
-        if (m_SockBuffer.GetReadSize() < 4) {
-            return false;
+        if (m_SockBuffer.GetReadReadySize() < 4) {
+            if (!m_SockBuffer.ReadToBuf()
+                ||  m_SockBuffer.GetReadReadySize() < 4)
+            {
+                return false;
+            }
         }
 
-        m_ChunkLen = *static_cast<const Uint4*>(m_SockBuffer.GetReadData());
-        m_SockBuffer.EraseReadData(4);
+        m_ChunkLen = *static_cast<const Uint4*>(m_SockBuffer.GetReadBufData());
+        m_SockBuffer.EraseReadBufData(4);
         if (x_IsFlagSet(fSwapLengthBytes)) {
             m_ChunkLen = CByteSwap::GetInt4(
                          reinterpret_cast<const unsigned char*>(&m_ChunkLen));
@@ -2057,14 +2111,16 @@ bool
 CNCMessageHandler::x_ReadBlobChunk(void)
 {
     while (m_ChunkLen != 0) {
-        if (!m_SockBuffer.HasDataToRead()  &&  !m_SockBuffer.Read())
-            return false;
-
-        Uint4 read_len = Uint4(min(m_SockBuffer.GetReadSize(), size_t(m_ChunkLen)));
         if (m_DataWriter.get()) {
+            if (!m_SockBuffer.HasDataToRead()  &&  !m_SockBuffer.ReadToBuf())
+                return false;
+
+            Uint4 read_len = Uint4(min(m_SockBuffer.GetReadReadySize(),
+                                       size_t(m_ChunkLen)));
             ERW_Result write_res = eRW_Error;
             try {
-                write_res = m_DataWriter->Write(m_SockBuffer.GetReadData(), read_len);
+                write_res = m_DataWriter->Write(m_SockBuffer.GetReadBufData(),
+                                                read_len);
             }
             catch (CNetServiceException& ex) {
                 ERR_POST(Warning << ex);
@@ -2074,18 +2130,27 @@ CNCMessageHandler::x_ReadBlobChunk(void)
                 x_CloseConnection();
                 return true;
             }
+            m_SockBuffer.EraseReadBufData(read_len);
+            m_ChunkLen -= read_len;
+            m_BlobSize += read_len;
         }
         else {
-            m_BlobAccess->WriteData(m_SockBuffer.GetReadData(), read_len);
+            Uint4 read_len = Uint4(m_BlobAccess->GetWriteMemSize());
             if (m_BlobAccess->HasError()) {
                 m_CmdCtx->SetRequestStatus(eStatus_ServerError);
                 x_CloseConnection();
                 return true;
             }
+            if (read_len > m_ChunkLen)
+                read_len = m_ChunkLen;
+            Uint4 n_read = Uint4(m_SockBuffer.Read(m_BlobAccess->GetWriteMemPtr(),
+                                                   read_len));
+            if (n_read == 0)
+                return false;
+            m_BlobAccess->MoveWritePos(n_read);
+            m_ChunkLen -= n_read;
+            m_BlobSize += n_read;
         }
-        m_SockBuffer.EraseReadData(read_len);
-        m_ChunkLen -= read_len;
-        m_BlobSize += read_len;
     }
     x_SetState(eReadBlobChunkLength);
     return true;
@@ -2110,27 +2175,28 @@ CNCMessageHandler::x_WaitForFirstData(void)
 bool
 CNCMessageHandler::x_WriteBlobData(void)
 {
+    size_t n_written;
     do {
-        void* write_buf  = m_SockBuffer.PrepareDirectWrite();
-        size_t want_read = m_SockBuffer.GetDirectWriteSize();
-        if (m_Size != Uint8(-1)  &&  m_Size < want_read)
-            want_read = size_t(m_Size);
-        size_t n_read = m_BlobAccess->ReadData(write_buf, want_read);
+        size_t want_read = m_BlobAccess->GetDataSize();
         if (m_BlobAccess->HasError()) {
             m_CmdCtx->SetRequestStatus(eStatus_ServerError);
             x_CloseConnection();
             return true;
         }
-        if (n_read == 0) {
+        if (want_read == 0) {
             x_SetState(eReadyForCommand);
             return true;
         }
-        m_SockBuffer.AddDirectWritten(n_read);
-        m_SockBuffer.Flush();
+        if (m_Size != Uint8(-1)  &&  m_Size < want_read)
+            want_read = size_t(m_Size);
+
+        n_written = m_SockBuffer.Write(m_BlobAccess->GetDataPtr(), want_read);
+        // HasError is processed in ManageCmdPipeline
         if (m_Size != Uint8(-1))
-            m_Size -= n_read;
+            m_Size -= n_written;
+        m_BlobAccess->MoveCurPos(n_written);
     }
-    while (!m_SockBuffer.HasError()  &&  !m_SockBuffer.IsWriteDataPending());
+    while (!m_SockBuffer.HasError()  &&  n_written != 0);
 
     return false;
 }
@@ -2138,8 +2204,8 @@ CNCMessageHandler::x_WriteBlobData(void)
 bool
 CNCMessageHandler::x_WriteSendBuff(void)
 {
-    size_t n_written = m_SockBuffer.WriteToSocket(m_SendBuff->data() + m_SendPos,
-                                                  m_SendBuff->size() - m_SendPos);
+    size_t n_written = m_SockBuffer.Write(m_SendBuff->data() + m_SendPos,
+                                          m_SendBuff->size() - m_SendPos);
     // HasError() will be processed in ManageCmdPipeline()
     m_SendPos += n_written;
     if (m_SendPos == m_SendBuff->size()) {
@@ -2203,7 +2269,9 @@ CNCMessageHandler::x_EcecuteProxyCmd(Uint8          srv_id,
         }
         else if (need_writer) {
             string response;
+            //LOG_POST("Sending cmd to peer");
             m_DataWriter.reset(srv_api.ExecWrite(proxy_cmd, &response));
+            //LOG_POST("Got response from peer: " << response);
             m_SockBuffer.WriteMessage("OK:", response);
             m_SockBuffer.Flush();
             if (m_Size == 0)
@@ -2659,7 +2727,6 @@ CNCMessageHandler::x_DoCmd_Health(void)
     m_SockBuffer.WriteMessage("OK:", "DISK_FREE=" + NStr::UInt8ToString(g_NetcacheServer->GetDiskFree()));
     m_SockBuffer.WriteMessage("OK:", "DISK_USED=" + NStr::UInt8ToString(g_NCStorage->GetDBSize()));
     m_SockBuffer.WriteMessage("OK:", "N_DB_FILES=" + NStr::IntToString(g_NCStorage->GetNDBFiles()));
-    m_SockBuffer.WriteMessage("OK:", "WRITE_QUEUE_SIZE=" + NStr::IntToString(CNCFileSystem::GetQueueSize()));
     m_SockBuffer.WriteMessage("OK:", "COPY_QUEUE_SIZE=" + NStr::UInt8ToString(CNCMirroring::GetQueueSize()));
     typedef map<Uint8, string> TPeers;
     const TPeers& peers(CNCDistributionConf::GetPeers());

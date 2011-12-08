@@ -1090,7 +1090,6 @@ CActiveSyncControl::x_DoBlobGet(ENCPeerFailure& task_res,
 void
 CActiveSyncControl::ExecuteSynTask(ESynTaskType task_type)
 {
-    CNCFileSystem::EnableTimeThrottling(m_SrvId);
     ++m_StartedCmds;
     GetDiagContext().SetRequestContext(m_DiagCtx);
 

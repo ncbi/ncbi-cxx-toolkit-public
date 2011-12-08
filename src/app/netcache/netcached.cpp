@@ -50,6 +50,7 @@
 #include "distribution_conf.hpp"
 #include "sync_log.hpp"
 #include "mirroring.hpp"
+#include "nc_storage.hpp"
 
 
 
@@ -438,7 +439,6 @@ CNetCacheServer::Initialize(bool do_reinit)
     g_NCStorage = new CNCBlobStorage();
     if (!g_NCStorage->Initialize(do_reinit))
         return false;
-    CNCFileSystem::SetDiskInitialized();
 
     Uint8 max_rec_no = g_NCStorage->GetMaxSyncLogRecNo();
     CNCSyncLog::Initialize(g_NCStorage->IsCleanStart(), max_rec_no);
@@ -512,7 +512,7 @@ CNetCacheServer::Finalize(void)
     CNCSyncLog::Finalize();
     CNCDistributionConf::Finalize();
 
-    g_NetcacheServer = NULL;
+    //g_NetcacheServer = NULL;
 }
 
 const SNCSpecificParams*
@@ -560,7 +560,7 @@ CNetCacheServer::x_PrintServerStats(CPrintTextProxy& proxy)
         g_NCStorage->PrintStat(proxy);
     proxy << endl
           << "Copy queue - " << CNCMirroring::GetQueueSize() << endl
-          << "Sync log queue - " << CNCSyncLog::GetLogSize() << endl;
+          << "Sync log queue - " << g_ToSmartStr(CNCSyncLog::GetLogSize()) << endl;
     CNCStat::Print(proxy);
 }
 
@@ -919,6 +919,10 @@ CNetCacheServer::x_WriteBlobToPeer(Uint8 server_id,
         }
         goto cleanup_and_exit;
     }
+    catch (CIOException& ex) {
+        ERR_POST(Warning << "Cannot execute command on peer: " << ex);
+        goto cleanup_and_exit;
+    }
     if (NStr::FindNoCase(response, "NEED_ABORT") != NPOS) {
         result = ePeerNeedAbort;
     }
@@ -929,28 +933,27 @@ CNetCacheServer::x_WriteBlobToPeer(Uint8 server_id,
         if (accessor->HasError())
             goto cleanup_and_exit;
 
-        char buf[65536];
         Uint8 total_read = 0;
         for (;;) {
-            size_t n_read = accessor->ReadData(buf, 65536);
+            size_t n_read = accessor->GetDataSize();
             if (accessor->HasError())
                 goto cleanup_and_exit;
             if (n_read == 0)
                 break;
             total_read += n_read;
-            size_t buf_pos = 0;
             size_t bytes_written;
             ERW_Result write_res = eRW_Success;
-            while (write_res == eRW_Success  &&  buf_pos < n_read) {
+            while (write_res == eRW_Success  &&  n_read != 0) {
                 bytes_written = 0;
                 try {
-                    write_res = writer->Write(buf + buf_pos, n_read - buf_pos, &bytes_written);
+                    write_res = writer->Write(accessor->GetDataPtr(), n_read, &bytes_written);
                 }
                 catch (CNetServiceException& ex) {
                     ERR_POST(Warning << "Cannot write to peer: " << ex);
                     goto cleanup_and_exit;
                 }
-                buf_pos += bytes_written;
+                accessor->MoveCurPos(bytes_written);
+                n_read -= bytes_written;
             }
             if (write_res != eRW_Success)
                 goto cleanup_and_exit;
@@ -1221,7 +1224,7 @@ CNetCacheServer::x_SyncGetBlobFromPeer(Uint8 server_id,
         ++param_it;
         create_server = NStr::StringToUInt8(*param_it);
         ++param_it;
-        TNCBlobId create_id = NStr::StringToUInt(*param_it);
+        Uint4 create_id = NStr::StringToUInt(*param_it);
         accessor->SetCreateServer(create_server, create_id, slot);
     }
     catch (CStringException& ex) {
@@ -1230,27 +1233,26 @@ CNetCacheServer::x_SyncGetBlobFromPeer(Uint8 server_id,
         return ePeerBadNetwork;
     }
 
-    char buf[65536];
-    for (;;) {
-        size_t bytes_read;
-        ERW_Result read_res = eRW_Error;
-        try {
-            read_res = reader->Read(buf, 65536, &bytes_read);
-        }
-        catch (CNetServiceException& ex) {
-            ERR_POST(Warning << "Cannot read from peer: " << ex);
-        }
-        if (read_res == eRW_Error) {
-            accessor->Release();
-            return ePeerBadNetwork;
-        }
-        accessor->WriteData(buf, bytes_read);
+    ERW_Result read_res = eRW_Success;
+    while (read_res == eRW_Success) {
+        size_t to_read = accessor->GetWriteMemSize();
         if (accessor->HasError()) {
             accessor->Release();
             return ePeerBadNetwork;
         }
-        if (read_res == eRW_Eof)
-            break;
+        size_t bytes_read = 0;
+        try {
+            read_res = reader->Read(accessor->GetWriteMemPtr(), to_read, &bytes_read);
+        }
+        catch (CNetServiceException& ex) {
+            ERR_POST(Warning << "Cannot read from peer: " << ex);
+            read_res = eRW_Error;
+        }
+        accessor->MoveWritePos(bytes_read);
+    }
+    if (read_res == eRW_Error) {
+        accessor->Release();
+        return ePeerBadNetwork;
     }
     accessor->Finalize();
     if (accessor->HasError()) {
@@ -1532,14 +1534,14 @@ CNetCacheServer::IsInitiallySynced(void)
 void
 CNetCacheServer::InitialSyncComplete(void)
 {
+    INFO_POST("Initial synchronization complete");
     g_NetcacheServer->m_InitiallySynced = true;
 }
 
 void
 CNetCacheServer::UpdateLastRecNo(void)
 {
-    Uint8 last_rec_no = CNCSyncLog::GetLastRecNo();
-    g_NCStorage->SetMaxSyncLogRecNo(last_rec_no);
+    g_NCStorage->SaveMaxSyncLogRecNo();
 }
 
 void
@@ -1569,6 +1571,17 @@ CNetCacheServer::IsDebugMode(void)
     return g_NetcacheServer  &&  g_NetcacheServer->m_DebugMode;
 }
 
+Uint8
+CNetCacheServer::GetDiskFree(void)
+{
+    try {
+        return CFileUtil::GetFreeDiskSpace(g_NCStorage->GetPath());
+    }
+    catch (CFileErrnoException& ex) {
+        ERR_POST(Critical << "Cannot read free disk space: " << ex);
+        return 0;
+    }
+}
 bool
 CNetCacheServer::AddDeferredTask(CStdRequest* task)
 {
@@ -1659,8 +1672,6 @@ CNetCacheDApp::Run(void)
     if (!CNCMemManager::InitializeApp())
         goto fin_mem;
     CSQLITE_Global::Initialize();
-    if (!CNCFileSystem::Initialize())
-        goto fin_fs;
     server = new CNetCacheServer();
     if (server->Initialize(args["reinit"])) {
         server->Run();
@@ -1670,8 +1681,6 @@ CNetCacheDApp::Run(void)
     }
     server->Finalize();
     //delete server;
-fin_fs:
-    CNCFileSystem::Finalize();
     CSQLITE_Global::Finalize();
 fin_mem:
     CNCMemManager::FinalizeApp();

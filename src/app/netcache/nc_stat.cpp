@@ -98,7 +98,6 @@ CNCStat::CNCStat(void)
       m_FakeConns(0),
       m_StartedCmds(0),
       m_TimedOutCmds(0),
-      m_BlockedOps(0),
       m_MaxBlobSize(0),
       m_MaxChunkSize(0),
       m_ReadBlobs(0),
@@ -113,9 +112,7 @@ CNCStat::CNCStat(void)
       m_WrittenSize(0),
       m_PartialWrites(0),
       m_WrittenBySize(40, 0),
-      m_ChunksWCntBySize(40, 0),
-      m_MovedBlobs(0),
-      m_MovedSize(0)
+      m_ChunksWCntBySize(40, 0)
 {
     m_ConnSpan        .Initialize();
     m_CmdSpan         .Initialize();
@@ -131,28 +128,10 @@ CNCStat::CNCStat(void)
     memset(m_HistProgressCmds, 0, sizeof(m_HistProgressCmds));
     memset(m_HistReadSize, 0, sizeof(m_HistReadSize));
     memset(m_HistWriteSize, 0, sizeof(m_HistWriteSize));
-    m_CountBlobs      .Initialize();
-    m_CountCacheNodes .Initialize();
-    m_CacheTreeHeight .Initialize();
-    m_NumOfMetaFiles  .Initialize();
-    m_NumOfDataFiles  .Initialize();
-    m_TotalMetaSize   .Initialize();
-    m_TotalDataSize   .Initialize();
-    m_TotalDBSize     .Initialize();
-    m_TotalUsefulCntMeta.Initialize();
-    m_TotalGarbageCntMeta.Initialize();
-    m_TotalUsefulCntData.Initialize();
-    m_TotalGarbageCntData.Initialize();
-    m_TotalUsefulSizeData.Initialize();
-    m_TotalGarbageSizeData.Initialize();
-    m_MetaFileSize    .Initialize();
-    m_MetaFileUsefulCnt.Initialize();
-    m_MetaFileGarbageCnt.Initialize();
-    m_DataFileSize    .Initialize();
-    m_DataFileUsefulCnt.Initialize();
-    m_DataFileGarbageCnt.Initialize();
-    m_DataFileUsefulSize.Initialize();
-    m_DataFileGarbageSize.Initialize();
+    m_CntBlobs      .Initialize();
+    m_NumOfFiles    .Initialize();
+    m_DBSize        .Initialize();
+    m_GarbageSize   .Initialize();
 }
 
 template <class Map, class Key>
@@ -419,16 +398,6 @@ CNCStat::AddChunkWritten(size_t size)
 }
 
 void
-CNCStat::AddBlobMoved(Uint8 blob_size)
-{
-    CNCStat* stat = sm_Getter.GetObjPtr();
-    stat->m_ObjLock.Lock();
-    ++stat->m_MovedBlobs;
-    stat->m_MovedSize += blob_size;
-    stat->m_ObjLock.Unlock();
-}
-
-void
 CNCStat::x_CollectTo(CNCStat* dest)
 {
     CSpinGuard guard(m_ObjLock);
@@ -489,29 +458,10 @@ CNCStat::x_CollectTo(CNCStat* dest)
         dest->m_HistReadSize[i] += m_HistReadSize[i + shift];
         dest->m_HistWriteSize[i] += m_HistWriteSize[i + shift];
     }
-    dest->m_BlockedOps      += m_BlockedOps;
-    dest->m_CountBlobs      .AddValues(m_CountBlobs);
-    dest->m_CountCacheNodes .AddValues(m_CountCacheNodes);
-    dest->m_CacheTreeHeight .AddValues(m_CacheTreeHeight);
-    dest->m_NumOfMetaFiles  .AddValues(m_NumOfMetaFiles);
-    dest->m_NumOfDataFiles  .AddValues(m_NumOfDataFiles);
-    dest->m_TotalMetaSize   .AddValues(m_TotalMetaSize);
-    dest->m_TotalDataSize   .AddValues(m_TotalDataSize);
-    dest->m_TotalDBSize     .AddValues(m_TotalDBSize);
-    dest->m_TotalUsefulCntMeta.AddValues(m_TotalUsefulCntMeta);
-    dest->m_TotalGarbageCntMeta.AddValues(m_TotalGarbageCntMeta);
-    dest->m_TotalUsefulCntData.AddValues(m_TotalUsefulCntData);
-    dest->m_TotalGarbageCntData.AddValues(m_TotalGarbageCntData);
-    dest->m_TotalUsefulSizeData.AddValues(m_TotalUsefulSizeData);
-    dest->m_TotalGarbageSizeData.AddValues(m_TotalGarbageSizeData);
-    dest->m_MetaFileSize    .AddValues(m_MetaFileSize);
-    dest->m_MetaFileUsefulCnt.AddValues(m_MetaFileUsefulCnt);
-    dest->m_MetaFileGarbageCnt.AddValues(m_MetaFileGarbageCnt);
-    dest->m_DataFileSize    .AddValues(m_DataFileSize);
-    dest->m_DataFileUsefulCnt.AddValues(m_DataFileUsefulCnt);
-    dest->m_DataFileGarbageCnt.AddValues(m_DataFileGarbageCnt);
-    dest->m_DataFileUsefulSize.AddValues(m_DataFileUsefulSize);
-    dest->m_DataFileGarbageSize.AddValues(m_DataFileGarbageSize);
+    dest->m_CntBlobs        .AddValues(m_CntBlobs);
+    dest->m_NumOfFiles      .AddValues(m_NumOfFiles);
+    dest->m_DBSize          .AddValues(m_DBSize);
+    dest->m_GarbageSize     .AddValues(m_GarbageSize);
     dest->m_MaxBlobSize      = max(dest->m_MaxBlobSize,  m_MaxBlobSize);
     dest->m_MaxChunkSize     = max(dest->m_MaxChunkSize, m_MaxChunkSize);
     dest->m_ReadBlobs       += m_ReadBlobs;
@@ -535,8 +485,6 @@ CNCStat::x_CollectTo(CNCStat* dest)
     for (size_t i = 0; i < m_ChunksWCntBySize.size(); ++i) {
         dest->m_ChunksWCntBySize[i] += m_ChunksWCntBySize[i];
     }
-    dest->m_MovedBlobs      += m_MovedBlobs;
-    dest->m_MovedSize       += m_MovedSize;
 }
 
 void
@@ -548,34 +496,26 @@ CNCStat::CollectAllStats(CNCStat& stat)
 }
 
 void
-CNCStat::PrintCntConnections(void)
-{
-    CNCStat stat;
-    CollectAllStats(stat);
-    LOG_POST("conns_cnt=" << (stat.m_OpenedConns - stat.m_ConnSpan.GetCount())
-             << ", active_cmds=" << stat.GetProgressCmds());
-}
-
-void
 CNCStat::Print(CPrintTextProxy& proxy)
 {
     CNCStat stat;
     CollectAllStats(stat);
 
-    proxy << "Connections - " << stat.m_OpenedConns           << " (open), "
-                              << stat.m_ConnSpan.GetCount()   << " (closed), "
-                              << stat.m_OverflowConns         << " (overflow), "
-                              << stat.m_FakeConns             << " (fake), "
+    proxy << "Connections - " << (stat.m_OpenedConns
+                                  - stat.m_ConnSpan.GetCount()) << " (now open), "
+                              << g_ToSmartStr(stat.m_ConnSpan.GetCount()) << " (closed), "
+                              << g_ToSmartStr(stat.m_OverflowConns) << " (overflow), "
+                              << g_ToSmartStr(stat.m_FakeConns) << " (fake), "
                               << stat.m_ConnSpan.GetAverage() << " (avg alive), "
                               << stat.m_ConnSpan.GetMaximum() << " (max alive)" << endl
           << "By status:" << endl;
     ITERATE(TConnsSpansMap, it_span, stat.m_ConnSpanByStat) {
         proxy << it_span->first << " - "
-                              << it_span->second.GetCount()   << " (cnt), "
+                              << g_ToSmartStr(it_span->second.GetCount()) << " (cnt), "
                               << it_span->second.GetAverage() << " (avg time), "
                               << it_span->second.GetMaximum() << " (max time)" << endl;
     }
-    proxy << "Commands    - " << stat.m_CmdSpan.GetCount()    << " (cnt), "
+    proxy << "Commands    - " << g_ToSmartStr(stat.m_CmdSpan.GetCount()) << " (cnt), "
                               << stat.m_CmdSpan.GetAverage()  << " (avg time), "
                               << stat.m_CmdSpan.GetMaximum()  << " (max time), "
                               << stat.m_NumCmdsPerConn.GetAverage() << " (avg/conn), "
@@ -586,82 +526,43 @@ CNCStat::Print(CPrintTextProxy& proxy)
         proxy << it_span_st->first << ":" << endl;
         ITERATE(TCmdsSpansMap, it_span, it_span_st->second) {
             proxy << it_span->first << " - "
-                              << it_span->second.GetCount()   << " (cnt), "
+                              << g_ToSmartStr(it_span->second.GetCount()) << " (cnt), "
                               << it_span->second.GetAverage() << " (avg time), "
                               << it_span->second.GetMaximum() << " (max time)" << endl;
         }
     }
     proxy << endl
-          << "Specs    - "
-                        << stat.m_BlockedOps   << " (blocked ops)" << endl
-          /*<< "Cache    - "
-                        << stat.m_CountBlobs.GetAverage()      << " avg blobs ("
-                        << stat.m_CountBlobs.GetMaximum()      << " max), "
-                        << stat.m_CountCacheNodes.GetAverage() << " avg nodes ("
-                        << stat.m_CountCacheNodes.GetMaximum() << " max), "
-                        << stat.m_CacheTreeHeight.GetAverage() << " avg height ("
-                        << stat.m_CacheTreeHeight.GetMaximum() << " max)" << endl*/
-          << "DB size  - "
-                        << stat.m_TotalDBSize.GetAverage()   << " avg ("
-                        << stat.m_TotalMetaSize.GetAverage() << " meta, "
-                        << stat.m_TotalDataSize.GetAverage() << " data), "
-                        << stat.m_TotalDBSize.GetMaximum()   << " max ("
-                        << stat.m_TotalMetaSize.GetMaximum() << " meta, "
-                        << stat.m_TotalDataSize.GetMaximum() << " data)" << endl
-          << "DB files - "
-                        << stat.m_NumOfMetaFiles.GetAverage()   << " avg cnt meta ("
-                        << stat.m_NumOfMetaFiles.GetMaximum()   << " max), "
-                        << stat.m_MetaFileSize.GetAverage()     << " avg size meta ("
-                        << stat.m_MetaFileSize.GetMaximum()     << " max), "
-                        << stat.m_NumOfDataFiles.GetAverage()   << " avg cnt data ("
-                        << stat.m_NumOfDataFiles.GetMaximum()   << " max), "
-                        << stat.m_DataFileSize.GetAverage()     << " avg size data ("
-                        << stat.m_DataFileSize.GetMaximum()     << " max)" << endl;
-    proxy << "DB meta  - useful: "
-                        << stat.m_TotalUsefulCntMeta.GetAverage() << " avg ("
-                        << stat.m_TotalUsefulCntMeta.GetMaximum() << " max); garbage: "
-                        << stat.m_TotalGarbageCntMeta.GetAverage() << " avg ("
-                        << stat.m_TotalGarbageCntMeta.GetMaximum() << " max)" << endl
-          << " by file - useful: "
-                        << stat.m_MetaFileUsefulCnt.GetAverage() << " avg ("
-                        << stat.m_MetaFileUsefulCnt.GetMaximum() << " max); garbage: "
-                        << stat.m_MetaFileGarbageCnt.GetAverage() << " avg ("
-                        << stat.m_MetaFileGarbageCnt.GetMaximum() << " max)" << endl
-          << "DB data  - useful: "
-                        << stat.m_TotalUsefulCntData.GetAverage() << " avg cnt ("
-                        << stat.m_TotalUsefulCntData.GetMaximum() << " max), "
-                        << stat.m_TotalUsefulSizeData.GetAverage() << " avg size ("
-                        << stat.m_TotalUsefulSizeData.GetMaximum() << " max); garbage: "
-                        << stat.m_TotalGarbageCntData.GetAverage() << " avg cnt ("
-                        << stat.m_TotalGarbageCntData.GetMaximum() << " max), "
-                        << stat.m_TotalGarbageSizeData.GetAverage() << " avg size ("
-                        << stat.m_TotalGarbageSizeData.GetMaximum() << " max)" << endl
-          << " by file - useful: "
-                        << stat.m_DataFileUsefulCnt.GetAverage() << " avg cnt ("
-                        << stat.m_DataFileUsefulCnt.GetMaximum() << " max), "
-                        << stat.m_DataFileUsefulSize.GetAverage() << " avg size ("
-                        << stat.m_DataFileUsefulSize.GetMaximum() << " max); garbage: "
-                        << stat.m_DataFileGarbageCnt.GetAverage() << " avg cnt ("
-                        << stat.m_DataFileGarbageCnt.GetMaximum() << " max), "
-                        << stat.m_DataFileGarbageSize.GetAverage() << " avg size ("
-                        << stat.m_DataFileGarbageSize.GetMaximum() << " max)" << endl
-          << endl;
-    proxy << "Moved - " << stat.m_MovedBlobs << " blobs, "
-                        << stat.m_MovedSize << " bytes" << endl;
+          << "Storage - "
+                        << g_ToSmartStr(stat.m_CntBlobs.GetAverage()) << " avg blobs ("
+                        << g_ToSmartStr(stat.m_CntBlobs.GetMaximum()) << " max)" << endl
+          << "Disk data - "
+                        << g_ToSizeStr(stat.m_DBSize.GetAverage()) << " avg size ("
+                        << g_ToSizeStr(stat.m_DBSize.GetMaximum()) << " max), "
+                        << stat.m_NumOfFiles.GetAverage()   << " avg files ("
+                        << stat.m_NumOfFiles.GetMaximum()   << " max)" << endl
+          << "Garbage - "
+                        << g_ToSizeStr(stat.m_GarbageSize.GetAverage()) << " avg size ("
+                        << g_ToSizeStr(stat.m_GarbageSize.GetMaximum())  << " max),"
+                        << (stat.m_DBSize.GetAverage() == 0? 0:
+                            stat.m_GarbageSize.GetAverage() * 100 / stat.m_DBSize.GetAverage()) << "% avg ("
+                        << (stat.m_DBSize.GetMaximum() == 0? 0:
+                            stat.m_GarbageSize.GetMaximum() * 100 / stat.m_DBSize.GetMaximum()) << "% max)"
+                        << endl;
     if (stat.m_DBReadSize == 0) {
-        proxy << "Read    - " << stat.m_ReadBlobs << " blobs" << endl;
+        proxy << "Read    - " << g_ToSmartStr(stat.m_ReadBlobs) << " blobs" << endl;
     }
     else {
-        proxy << "Read - " << stat.m_ReadBlobs << " full, "
-                           << stat.m_PartialReads << " partial, "
-                           << stat.m_ReadChunks << " chunks, "
-                           << stat.m_DBReadSize << " db bytes, "
-                           << stat.m_ClientReadSize << " client bytes" << endl
+        proxy << "Read - " << g_ToSmartStr(stat.m_ReadBlobs) << " full, "
+                           << g_ToSmartStr(stat.m_PartialReads) << " partial, "
+                           << g_ToSmartStr(stat.m_ReadChunks) << " chunks, "
+                           << g_ToSizeStr(stat.m_DBReadSize) << " from db, "
+                           << g_ToSizeStr(stat.m_ClientReadSize) << " for client" << endl
               << "By size:" << endl;
         size_t sz = kMinSizeInChart;
         for (size_t i = 0; i < stat.m_ReadBySize.size(); ++i, sz <<= 1) {
             if (stat.m_ReadBySize[i] != 0)
-                proxy << sz << " - " << stat.m_ReadBySize[i] << endl;
+                proxy << "<=" << sz << " - "
+                              << g_ToSmartStr(stat.m_ReadBySize[i]) << endl;
             if (sz >= stat.m_MaxBlobSize)
                 break;
         }
@@ -669,7 +570,8 @@ CNCStat::Print(CPrintTextProxy& proxy)
         sz = kMinSizeInChart;
         for (size_t i = 0; i < stat.m_ChunksRCntBySize.size(); ++i, sz <<= 1) {
             if (stat.m_ChunksRCntBySize[i] != 0) {
-                proxy << sz << " - " << stat.m_ChunksRCntBySize[i] << endl;
+                proxy << "<=" << sz << " - "
+                              << g_ToSmartStr(stat.m_ChunksRCntBySize[i]) << endl;
             }
             if (sz >= stat.m_MaxChunkSize)
                 break;
@@ -677,17 +579,18 @@ CNCStat::Print(CPrintTextProxy& proxy)
         proxy << endl;
     }
     if (stat.m_WrittenSize == 0) {
-        proxy << "Written - " << stat.m_WrittenBlobs << " blobs" << endl;
+        proxy << "Written - " << g_ToSmartStr(stat.m_WrittenBlobs) << " blobs" << endl;
     }
     else {
-        proxy << "Written - " << stat.m_WrittenBlobs << " full, "
-                              << stat.m_PartialWrites << " partial, "
-                              << stat.m_WrittenChunks << " chunks, "
-                              << stat.m_WrittenSize << " bytes" << endl;
+        proxy << "Written - " << g_ToSmartStr(stat.m_WrittenBlobs) << " full, "
+                              << g_ToSmartStr(stat.m_PartialWrites) << " partial, "
+                              << g_ToSmartStr(stat.m_WrittenChunks) << " chunks, "
+                              << g_ToSizeStr(stat.m_WrittenSize) << " in size" << endl;
         size_t sz = kMinSizeInChart;
         for (size_t i = 0; i < stat.m_WrittenBySize.size(); ++i, sz <<= 1) {
             if (stat.m_WrittenBySize[i] != 0)
-                proxy << sz << " - " << stat.m_WrittenBySize[i] << endl;
+                proxy << "<=" << sz << " - "
+                              << g_ToSmartStr(stat.m_WrittenBySize[i]) << endl;
             if (sz >= stat.m_MaxBlobSize)
                 break;
         }
@@ -695,7 +598,8 @@ CNCStat::Print(CPrintTextProxy& proxy)
         sz = kMinSizeInChart;
         for (size_t i = 0; i < stat.m_ChunksWCntBySize.size(); ++i, sz <<= 1) {
             if (stat.m_ChunksWCntBySize[i] != 0) {
-                proxy << sz << " - " << stat.m_ChunksWCntBySize[i] << endl;
+                proxy << "<=" << sz << " - "
+                              << g_ToSmartStr(stat.m_ChunksWCntBySize[i]) << endl;
             }
             if (sz >= stat.m_MaxChunkSize)
                 break;

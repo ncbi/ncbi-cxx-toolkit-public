@@ -29,6 +29,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiatomic.hpp>
+#include <corelib/ncbi_system.hpp>
 #include <util/thread_pool_old.hpp>
 
 #include "nc_utils.hpp"
@@ -61,6 +62,29 @@ g_GetNCThreadIndex(void)
         NCTlsSet(s_NCThreadIndexKey, reinterpret_cast<void*>(dummy));
     }
     return index;
+}
+
+
+string
+g_ToSizeStr(Uint8 size)
+{
+    static const char* const posts[] = {" B", " KB", " MB", " GB", " PB"};
+
+    string res = NStr::UInt8ToString(size);
+    size_t dot_pos = res.size();
+    Uint1 post_idx = 0;
+    while (dot_pos > 3  &&  post_idx < sizeof(posts) / sizeof(posts[0])) {
+        dot_pos -= 3;
+        ++post_idx;
+    }
+    if (dot_pos >= 3  ||  res.size() <= 3) {
+        res.resize(dot_pos);
+    }
+    else {
+        res.resize(3);
+        res.insert(dot_pos, 1, '.');
+    }
+    return res + posts[post_idx];
 }
 
 
@@ -136,7 +160,17 @@ void
 INCBlockedOpListener::Notify(void)
 {
     _ASSERT(s_NotifyThreadPool);
-    s_NotifyThreadPool->AcceptRequest(CRef<CStdRequest>(new CNCLongOpNotification(this)));
+    bool done = false;
+    while (!done) {
+        try {
+            s_NotifyThreadPool->AcceptRequest(CRef<CStdRequest>(new CNCLongOpNotification(this)));
+            done = true;
+        }
+        catch (CBlockingQueueException& ex) {
+            ERR_POST(Critical << ex);
+            SleepMilliSec(1000);
+        }
+    }
 }
 
 INCBlockedOpListener::~INCBlockedOpListener(void)

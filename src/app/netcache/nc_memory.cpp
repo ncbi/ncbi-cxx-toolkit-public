@@ -146,9 +146,6 @@ static const int kNCMMSQLiteBigBlockMin = 2 * kNCMMChunkSize - kNCMMSetBaseSize;
 /// @sa kNCMMSQLiteBigBlockMin, s_SQLITE_Mem_Malloc
 static const int kNCMMSQLiteBigBlockReal = 2010000;
 
-/// "The goal" for hash-table in database cache on the number of pages to have
-/// for each hash value.
-static const int    kNCMMDBHashSizeFactor     = 8;
 /// Frequency of background thread iterations in seconds between them.
 static const int    kNCMMBGThreadWaitSecs     = 5;
 /// Number of chunks that manager allows to be used on top of global limit for
@@ -178,10 +175,6 @@ static const int kNCMmapProtection  = PROT_READ | PROT_WRITE;
 
 #endif
 
-
-CFastMutex   CNCMMDBPage::sm_LRULock;
-CNCMMDBPage* CNCMMDBPage::sm_LRUHead = NULL;
-CNCMMDBPage* CNCMMDBPage::sm_LRUTail = NULL;
 
 CNCMMMutex       CNCMMChunksPool_Getter::sm_CreateLock;
 CNCMMChunksPool  CNCMMChunksPool_Getter::sm_Pools   [kNCMMMaxThreadsCnt];
@@ -289,7 +282,6 @@ CNCMMStats::InitInstance(void)
     m_RsrvMemAggr   .Initialize();
     m_OvrhdMemAggr  .Initialize();
     m_LostMemAggr   .Initialize();
-    m_DBCacheMemAggr.Initialize();
     m_DataMemAggr   .Initialize();
 }
 
@@ -303,14 +295,12 @@ CNCMMStats::x_CollectAllTo(CNCMMStats* stats)
     stats->m_ReservedMem            += m_ReservedMem;
     stats->m_OverheadMem            += m_OverheadMem;
     stats->m_LostMem                += m_LostMem;
-    stats->m_DBCacheMem             += m_DBCacheMem;
     stats->m_DataMem                += m_DataMem;
     stats->m_SysMemAggr    .AddValues(m_SysMemAggr);
     stats->m_FreeMemAggr   .AddValues(m_FreeMemAggr);
     stats->m_RsrvMemAggr   .AddValues(m_RsrvMemAggr);
     stats->m_OvrhdMemAggr  .AddValues(m_OvrhdMemAggr);
     stats->m_LostMemAggr   .AddValues(m_LostMemAggr);
-    stats->m_DBCacheMemAggr.AddValues(m_DBCacheMemAggr);
     stats->m_DataMemAggr   .AddValues(m_DataMemAggr);
 
     stats->m_SysAllocs              += m_SysAllocs;
@@ -324,8 +314,6 @@ CNCMMStats::x_CollectAllTo(CNCMMStats* stats)
     stats->m_SlabsFreed             += m_SlabsFreed;
     stats->m_BigAlloced             += m_BigAlloced;
     stats->m_BigFreed               += m_BigFreed;
-    stats->m_DBPagesRequested       += m_DBPagesRequested;
-    stats->m_DBPagesHit             += m_DBPagesHit;
     for (unsigned int i = 0; i < kNCMMCntSmallSizes; ++i) {
         stats->m_BlocksAlloced[i]   += m_BlocksAlloced[i];
         stats->m_BlocksFreed[i]     += m_BlocksFreed[i];
@@ -343,7 +331,7 @@ CNCMMStats::AggregateUsage(CNCMMStats* stats)
 {
     stats->m_SystemMem = CNCMMCentral::GetStats().m_SystemMem;
     stats->m_FreeMem = stats->m_ReservedMem = stats->m_OverheadMem = 0;
-    stats->m_LostMem = stats->m_DBCacheMem = stats->m_DataMem = 0;
+    stats->m_LostMem = stats->m_DataMem = 0;
     for (unsigned int i = 0; i < kNCMMMaxThreadsCnt; ++i) {
         CNCMMMutexGuard guard(sm_Stats[i].m_ObjLock);
 
@@ -351,7 +339,6 @@ CNCMMStats::AggregateUsage(CNCMMStats* stats)
         stats->m_ReservedMem += sm_Stats[i].m_ReservedMem;
         stats->m_OverheadMem += sm_Stats[i].m_OverheadMem;
         stats->m_LostMem     += sm_Stats[i].m_LostMem;
-        stats->m_DBCacheMem  += sm_Stats[i].m_DBCacheMem;
         stats->m_DataMem     += sm_Stats[i].m_DataMem;
     }
 }
@@ -455,26 +442,6 @@ CNCMMStats::ChunksPoolCleaned(unsigned int chunks_cnt)
     stat->m_ObjLock.Lock();
     ++stat->m_ChunksPoolCleans;
     stat->m_ReservedMem -= chunks_cnt * kNCMMChunkSize;
-    stat->m_ObjLock.Unlock();
-}
-
-inline void
-CNCMMStats::DBPageCreated(void)
-{
-    CNCMMStats* stat = sm_Getter.GetObjPtr();
-    stat->m_ObjLock.Lock();
-    stat->m_DBCacheMem  += kNCMMDBPageDataSize;
-    stat->m_OverheadMem += kNCMMChunkSize - kNCMMDBPageDataSize;
-    stat->m_ObjLock.Unlock();
-}
-
-inline void
-CNCMMStats::DBPageDeleted(void)
-{
-    CNCMMStats* stat = sm_Getter.GetObjPtr();
-    stat->m_ObjLock.Lock();
-    stat->m_DBCacheMem  -= kNCMMDBPageDataSize;
-    stat->m_OverheadMem -= kNCMMChunkSize - kNCMMDBPageDataSize;
     stat->m_ObjLock.Unlock();
 }
 
@@ -609,25 +576,6 @@ CNCMMStats::BigBlockFreed(size_t block_size)
     stat->m_ObjLock.Unlock();
 }
 
-inline void
-CNCMMStats::DBPageHitInCache(void)
-{
-    CNCMMStats* stat = sm_Getter.GetObjPtr();
-    stat->m_ObjLock.Lock();
-    ++stat->m_DBPagesRequested;
-    ++stat->m_DBPagesHit;
-    stat->m_ObjLock.Unlock();
-}
-
-inline void
-CNCMMStats::DBPageNotInCache(void)
-{
-    CNCMMStats* stat = sm_Getter.GetObjPtr();
-    stat->m_ObjLock.Lock();
-    ++stat->m_DBPagesRequested;
-    stat->m_ObjLock.Unlock();
-}
-
 void
 CNCMMStats::AddAggregateMeasures(const CNCMMStats& stats)
 {
@@ -638,7 +586,6 @@ CNCMMStats::AddAggregateMeasures(const CNCMMStats& stats)
     m_RsrvMemAggr   .AddValue(stats.m_ReservedMem);
     m_OvrhdMemAggr  .AddValue(stats.m_OverheadMem);
     m_LostMemAggr   .AddValue(stats.m_LostMem    );
-    m_DBCacheMemAggr.AddValue(stats.m_DBCacheMem );
     m_DataMemAggr   .AddValue(stats.m_DataMem    );
 }
 
@@ -654,12 +601,6 @@ CNCMMStats::GetFreeMem(void) const
     return m_FreeMem;
 }
 
-inline size_t
-CNCMMStats::GetDBCacheMem(void) const
-{
-    return m_DBCacheMem;
-}
-
 void
 CNCMMStats::CollectAllStats(CNCMMStats* stats)
 {
@@ -673,34 +614,29 @@ CNCMMStats::CollectAllStats(CNCMMStats* stats)
 void
 CNCMMStats::Print(CPrintTextProxy& proxy)
 {
-    proxy << "Memory  - " << m_SystemMem                   << " (sys), "
-                          << m_DataMem                     << " (data), "
-                          << m_DBCacheMem                  << " (db), "
-                          << m_FreeMem                     << " (free), "
-                          << m_ReservedMem                 << " (rsrv), "
-                          << m_OverheadMem                 << " (ovrhd), "
-                          << m_LostMem                     << " (lost)" << endl
-          << "Mem avg - " << m_SysMemAggr.GetAverage()     << " (sys), "
-                          << m_DataMemAggr.GetAverage()    << " (data), "
-                          << m_DBCacheMemAggr.GetAverage() << " (db), "
-                          << m_FreeMemAggr.GetAverage()    << " (free), "
-                          << m_RsrvMemAggr.GetAverage()    << " (rsrv), "
-                          << m_OvrhdMemAggr.GetAverage()   << " (ovrhd), "
-                          << m_LostMemAggr.GetAverage()    << " (lost)" << endl
-          << "Mem max - " << m_SysMemAggr.GetMaximum()     << " (sys), "
-                          << m_DataMemAggr.GetMaximum()    << " (data), "
-                          << m_DBCacheMemAggr.GetMaximum() << " (db), "
-                          << m_FreeMemAggr.GetMaximum()    << " (free), "
-                          << m_RsrvMemAggr.GetMaximum()    << " (rsrv), "
-                          << m_OvrhdMemAggr.GetMaximum()   << " (ovrhd), "
-                          << m_LostMemAggr.GetMaximum()    << " (lost)" << endl;
-    proxy << "System  - " << int(double(m_DBPagesHit)
-                                 / m_DBPagesRequested * 100)  << "% cache hit, "
-                          << m_SysAllocs                      << " (allocs), "
+    proxy << "Memory  - " << g_ToSizeStr(m_SystemMem)      << " (sys), "
+                          << g_ToSizeStr(m_DataMem)        << " (data), "
+                          << g_ToSizeStr(m_FreeMem)        << " (free), "
+                          << g_ToSizeStr(m_ReservedMem)    << " (rsrv), "
+                          << g_ToSizeStr(m_OverheadMem)    << " (ovrhd), "
+                          << g_ToSizeStr(m_LostMem)        << " (lost)" << endl
+          << "Mem avg - " << g_ToSizeStr(m_SysMemAggr.GetAverage())  << " (sys), "
+                          << g_ToSizeStr(m_DataMemAggr.GetAverage()) << " (data), "
+                          << g_ToSizeStr(m_FreeMemAggr.GetAverage()) << " (free), "
+                          << g_ToSizeStr(m_RsrvMemAggr.GetAverage()) << " (rsrv), "
+                          << g_ToSizeStr(m_OvrhdMemAggr.GetAverage()) << " (ovrhd), "
+                          << g_ToSizeStr(m_LostMemAggr.GetAverage()) << " (lost)" << endl
+          << "Mem max - " << g_ToSizeStr(m_SysMemAggr.GetMaximum())  << " (sys), "
+                          << g_ToSizeStr(m_DataMemAggr.GetMaximum()) << " (data), "
+                          << g_ToSizeStr(m_FreeMemAggr.GetMaximum()) << " (free), "
+                          << g_ToSizeStr(m_RsrvMemAggr.GetMaximum()) << " (rsrv), "
+                          << g_ToSizeStr(m_OvrhdMemAggr.GetMaximum()) << " (ovrhd), "
+                          << g_ToSizeStr(m_LostMemAggr.GetMaximum()) << " (lost)" << endl;
+    proxy << "System  - " << m_SysAllocs                      << " (allocs), "
                           << m_SysFrees                       << " (frees), "
                           << m_SysReallocs                    << " (reallocs), "
-                          << CNCMMCentral::GetMemLimit()      << " (mem lim), "
-                          << CNCMMCentral::GetMemAlertLevel() << " (alert)" << endl
+                          << g_ToSizeStr(CNCMMCentral::GetMemLimit()) << " (mem lim), "
+                          << g_ToSizeStr(CNCMMCentral::GetMemAlertLevel()) << " (alert)" << endl
           << "Allocs  - " << m_SlabsAlloced                << " (+slabs), "
                           << m_SlabsFreed                  << " (-slabs), "
                           << m_BigAlloced                  << " (+big), "
@@ -712,35 +648,24 @@ CNCMMStats::Print(CPrintTextProxy& proxy)
           << "By size:" << endl;
     for (unsigned int i = 0; i < kNCMMCntSmallSizes; ++i) {
         if (m_BlocksAlloced[i] != 0) {
-            proxy << kNCMMSmallSize[i]  << " - "
-                  << m_BlocksAlloced[i] << " (+blocks), "
-                  << m_BlocksFreed[i]   << " (-blocks), "
-                  << m_SetsCreated[i]   << " (+sets), "
-                  << m_SetsDeleted[i]   << " (-sets), "
-                  << (m_BlocksAlloced[i] - m_BlocksFreed[i])
-                     * kNCMMSmallSize[i] << " (total)" << endl;
+            proxy << "<=" << kNCMMSmallSize[i]  << " - "
+                  << g_ToSmartStr(m_BlocksAlloced[i]) << " (+blocks), "
+                  << g_ToSmartStr(m_BlocksFreed[i])   << " (-blocks), "
+                  << g_ToSmartStr(m_SetsCreated[i])   << " (+sets), "
+                  << g_ToSmartStr(m_SetsDeleted[i])   << " (-sets), "
+                  << g_ToSizeStr((m_BlocksAlloced[i] - m_BlocksFreed[i])
+                                 * kNCMMSmallSize[i]) << " (total)" << endl;
         }
     }
-    Uint8 other_alloced = 0, other_freed = 0;
     for (unsigned int i = 1; i <= kNCMMCntChunksInSlab; ++i) {
-        // A bit of hard coding - NetCache doesn't allocate other chain sizes
-        // anyway.
         if (m_ChainsAlloced[i] != 0) {
-            proxy << (i * kNCMMChunkSize - kNCMMSetBaseSize) << " - "
-                  << m_ChainsAlloced[i] << " (+blocks), "
-                  << m_ChainsFreed[i]   << " (-blocks), "
-                  << (m_ChainsAlloced[i] - m_ChainsFreed[i])
-                     * (i * kNCMMChunkSize - kNCMMSetBaseSize)
+            proxy << "<=" << (i * kNCMMChunkSize - kNCMMSetBaseSize) << " - "
+                  << g_ToSmartStr(m_ChainsAlloced[i]) << " (+blocks), "
+                  << g_ToSmartStr(m_ChainsFreed[i])   << " (-blocks), "
+                  << g_ToSizeStr((m_ChainsAlloced[i] - m_ChainsFreed[i])
+                                 * (i * kNCMMChunkSize - kNCMMSetBaseSize))
                                         << " (total)" << endl;
         }
-        else {
-            other_alloced += m_ChainsAlloced[i];
-            other_freed   += m_ChainsFreed  [i];
-        }
-    }
-    if (other_alloced != 0) {
-        proxy << "other - " << other_alloced << " (+blocks), "
-                            << other_freed   << " (-blocks)" << endl;
     }
 }
 
@@ -953,24 +878,6 @@ inline bool
 CNCMMCentral::IsOnAlert(void)
 {
     return sm_OnAlert;
-}
-
-inline void
-CNCMMCentral::DBPageCreated(void)
-{
-    CNCMMStats::DBPageCreated();
-    if (sm_Mode == eNCMemGrowing  &&  sm_CntCanAlloc.Add(-1) == 0) {
-        sm_Mode = eNCMemStable;
-    }
-}
-
-inline void
-CNCMMCentral::DBPageDeleted(void)
-{
-    CNCMMStats::DBPageDeleted();
-    if (sm_Mode == eNCMemShrinking  &&  sm_CntCanAlloc.Add(-1) == 0) {
-        sm_Mode = eNCMemStable;
-    }
 }
 
 
@@ -1310,240 +1217,6 @@ CNCMMChunksPool::PutChunk(void* mem_ptr)
 }
 
 
-inline CNCMMDBPage*
-CNCMMDBPage::FromDataPtr(void* data)
-{
-    return reinterpret_cast<CNCMMDBPage*>(
-        static_cast<char*>(data) - (sizeof(CNCMMDBPage) - kNCMMDBPageDataSize));
-}
-
-inline void*
-CNCMMDBPage::GetData(void)
-{
-    return m_Data;
-}
-
-inline CNCMMDBCache*
-CNCMMDBPage::GetCache(void)
-{
-    return m_Cache;
-}
-
-inline void
-CNCMMDBPage::SetCache(CNCMMDBCache* cache)
-{
-    _ASSERT(m_Cache == NULL  ||  cache == NULL);
-
-    m_Cache = cache;
-}
-
-inline bool
-CNCMMDBPage::x_IsReallyInLRU(void)
-{
-    return m_PrevInLRU  ||  sm_LRUHead == this;
-}
-
-inline bool
-CNCMMDBPage::IsInLRU(void)
-{
-    return (m_StateFlags & fInLRU) != 0;
-}
-
-inline void
-CNCMMDBPage::x_AddToLRUImpl(void)
-{
-    if ((m_StateFlags & fPeeked) == 0) {
-        m_PrevInLRU = sm_LRUTail;
-        if (sm_LRUTail) {
-            sm_LRUTail->m_NextInLRU = this;
-        }
-        else {
-            _ASSERT(!sm_LRUHead);
-            sm_LRUHead = this;
-        }
-        sm_LRUTail = this;
-    }
-}
-
-void
-CNCMMDBPage::AddToLRU(void)
-{
-    sm_LRULock.Lock();
-    _ASSERT(!IsInLRU());
-    if (m_StateFlags < fCounterStep) {
-        x_AddToLRUImpl();
-    }
-    m_StateFlags |= fInLRU;
-    sm_LRULock.Unlock();
-}
-
-inline void
-CNCMMDBPage::x_RemoveFromLRUImpl(void)
-{
-    if (m_PrevInLRU) {
-        m_PrevInLRU->m_NextInLRU = m_NextInLRU;
-    }
-    else {
-        _ASSERT(sm_LRUHead == this);
-        sm_LRUHead = m_NextInLRU;
-    }
-    if (m_NextInLRU) {
-        m_NextInLRU->m_PrevInLRU = m_PrevInLRU;
-    }
-    else {
-        _ASSERT(sm_LRUTail == this);
-        sm_LRUTail = m_PrevInLRU;
-    }
-    m_PrevInLRU = m_NextInLRU = NULL;
-}
-
-void
-CNCMMDBPage::RemoveFromLRU(void)
-{
-    sm_LRULock.Lock();
-    if (x_IsReallyInLRU())
-        x_RemoveFromLRUImpl();
-    m_StateFlags &= ~fInLRU;
-    sm_LRULock.Unlock();
-}
-
-CNCMMDBPage::CNCMMDBPage(void)
-    : m_Cache(NULL),
-      m_StateFlags(0),
-      m_PrevInLRU(NULL),
-      m_NextInLRU(NULL)
-{
-    // Required by SQLite if page is new for the cache instance
-    memset(m_Data, 0, sizeof(void*));
-}
-
-inline
-CNCMMDBPage::~CNCMMDBPage(void)
-{
-    if ((m_StateFlags & ~fInLRU) != 0)
-        abort();
-}
-
-CNCMMDBPage*
-CNCMMDBPage::PeekLRUForDestroy(void)
-{
-    sm_LRULock.Lock();
-    CNCMMDBPage* page = sm_LRUHead;
-    if (page) {
-        page->m_StateFlags |= fPeeked;
-        page->x_RemoveFromLRUImpl();
-    }
-    sm_LRULock.Unlock();
-    return page;
-}
-
-inline void
-CNCMMDBPage::operator delete(void* mem_ptr)
-{
-    //memset(mem_ptr, 0xab, sizeof(CNCMMDBPage));
-    CNCMMChunksPool::PutChunk(mem_ptr);
-    CNCMMCentral::DBPageDeleted();
-}
-
-void*
-CNCMMDBPage::operator new(size_t _DEBUG_ARG(size))
-{
-    _ASSERT(size == kNCMMChunkSize);
-
-    void* page = NULL;
-    ENCMMMode mode = CNCMMCentral::GetMemMode();
-    switch (mode) {
-    case eNCMemShrinking:
-        page = CNCMMDBCache::DestroyOnePage();
-        // fall through
-    case eNCMemStable: {
-        void* second_page = CNCMMDBCache::DestroyOnePage();
-        if (second_page) {
-            if (page) {
-                operator delete(second_page);
-            }
-            else {
-                page = second_page;
-            }
-        }
-        break;
-        }
-    default:
-        break;
-    }
-    if (!page) {
-        page = CNCMMChunksPool::GetChunk();
-        CNCMMCentral::DBPageCreated();
-    }
-    //memset(page, 0xba, sizeof(CNCMMDBPage));
-    return page;
-}
-
-void
-CNCMMDBPage::DeletedFromHash(void)
-{
-    TStateFlags flags;
-
-    sm_LRULock.Lock();
-    if (x_IsReallyInLRU())
-        x_RemoveFromLRUImpl();
-    m_Cache = NULL;
-    flags = m_StateFlags;
-    sm_LRULock.Unlock();
-
-    if (flags < fCounterStep  &&  (flags & fPeeked) == 0)
-        delete this;
-}
-
-void
-CNCMMDBPage::Lock(void)
-{
-    sm_LRULock.Lock();
-    m_StateFlags += fCounterStep;
-    _ASSERT(!x_IsReallyInLRU());
-    sm_LRULock.Unlock();
-}
-
-void
-CNCMMDBPage::Unlock(void)
-{
-    bool need_delete = false;
-
-    sm_LRULock.Lock();
-    _ASSERT(m_StateFlags >= fCounterStep);
-    m_StateFlags -= fCounterStep;
-    if (m_StateFlags < fCounterStep) {
-        if (IsInLRU()) {
-            x_AddToLRUImpl();
-        }
-        else if (m_Cache == NULL) {
-            need_delete = true;
-        }
-    }
-    sm_LRULock.Unlock();
-
-    if (need_delete)
-        delete this;
-}
-
-inline void
-CNCMMDBPage::SetDirtyFlag(bool value)
-{
-    sm_LRULock.Lock();
-    if (value)
-        m_StateFlags |= fDirty;
-    else
-        m_StateFlags &= ~fDirty;
-    sm_LRULock.Unlock();
-}
-
-inline bool
-CNCMMDBPage::IsDirty(void) const
-{
-    return (m_StateFlags & fDirty) != 0;
-}
-
-
 inline
 CNCMMBlocksSetBase::CNCMMBlocksSetBase(void)
 {}
@@ -1696,6 +1369,7 @@ CNCMMSlab::MarkChainOccupied(const SNCMMChainInfo& chain)
     m_CntFree -= chain.size;
     x_CalcEmptyGrade();
     m_FreeMask.InvertBits(x_GetChunkIndex(chain.start), chain.size);
+    _ASSERT(m_FreeMask.GetCntSet() == m_CntFree);
     return m_EmptyGrade;
 }
 
@@ -1714,15 +1388,21 @@ CNCMMSlab::MarkChainFree(SNCMMChainInfo* chain,
 
     unsigned int chain_index = x_GetChunkIndex(chain->start);
     m_FreeMask.InvertBits(chain_index, chain->size);
+    _ASSERT(m_FreeMask.GetCntSet() == m_CntFree);
 
     if (chain_index != 0  &&  m_FreeMask.IsBitSet(chain_index - 1)) {
         chain_left->AssignFromChain(&m_Chunks[chain_index - 1]);
+        _ASSERT(chain_left->slab_grade < kNCMMSlabEmptyGrades
+                &&  chain_left->size + chain->size <= kNCMMCntChunksInSlab);
     }
     unsigned int next_index = chain_index + chain->size;
     if (next_index < kNCMMCntChunksInSlab
         &&  m_FreeMask.IsBitSet(next_index))
     {
         chain_right->AssignFromChain(&m_Chunks[next_index]);
+        _ASSERT(chain_right->slab_grade < kNCMMSlabEmptyGrades
+                &&  chain_right->size + chain->size
+                    + (chain_left->start? chain_left->size: 0)<= kNCMMCntChunksInSlab);
     }
 }
 
@@ -2744,10 +2424,8 @@ void
 CNCMMCentral::x_CalcMemoryMode(const CNCMMStats& stats)
 {
     size_t free_mem     = stats.GetFreeMem();
-    size_t db_cache_mem = stats.GetDBCacheMem();
     size_t sys_mem      = sm_Stats.GetSystemMem();
     size_t used_mem     = sys_mem - free_mem;
-    size_t db_mem_limit = sm_MemLimit / 2;
 
     sm_OnAlert = sys_mem >= sm_MemAlertLevel;
 
@@ -2765,25 +2443,6 @@ CNCMMCentral::x_CalcMemoryMode(const CNCMMStats& stats)
             sm_Mode = eNCMemGrowing;
         }
     }
-    else if (db_cache_mem < db_mem_limit) {
-        size_t alloc_cnt = (db_mem_limit - db_cache_mem) / kNCMMChunkSize + 1;
-        sm_CntCanAlloc.Set(CAtomicCounter::TValue(alloc_cnt));
-        sm_Mode = eNCMemGrowing;
-    }
-    else {
-        size_t cnt_for_db = (db_cache_mem - db_mem_limit) / kNCMMChunkSize;
-        size_t cnt_total  = (used_mem - sm_MemLimit) / kNCMMChunkSize;
-        cnt_total = min(cnt_total, cnt_for_db);
-        if (cnt_total <= kNCMMLimitToleranceChunks) {
-            sm_Mode = eNCMemStable;
-        }
-        else {
-            sm_CntCanAlloc.Set(CAtomicCounter::TValue(
-                                      cnt_total - kNCMMLimitToleranceChunks));
-            sm_Mode = eNCMemShrinking;
-        }
-    }
-    //printf("sys=%llu, free=%llu, used=%llu, cache=%llu, mode=%d\n", sys_mem, free_mem, used_mem, db_cache_mem, sm_Mode);
 }
 
 
@@ -2800,372 +2459,7 @@ CNCMMCentral::x_DoBackgroundWork(void)
 }
 
 
-
-inline CNCMMDBPage**
-CNCMMDBPagesHash::x_AllocHash(int size)
-{
-    size_t mem_size = size * sizeof(CNCMMDBPage*);
-    CNCMMDBPage** hash = reinterpret_cast<CNCMMDBPage**>(
-                                         CNCMMCentral::AllocMemory(mem_size));
-    //? CNCMMStats::OverheadMemAlloced(mem_size);
-
-    memset(hash, 0, mem_size);
-    return hash;
-}
-
-inline void
-CNCMMDBPagesHash::x_FreeHash(CNCMMDBPage** hash, int size)
-{
-    if (size != 0) {
-        CNCMMCentral::DeallocMemory(hash);
-        //? size_t mem_size = size * sizeof(CNCMMDBPage*);
-        //? CNCMMStats::OverheadMemFreed(mem_size);
-    }
-}
-
-inline
-CNCMMDBPagesHash::CNCMMDBPagesHash(void)
-    : m_Hash(NULL),
-      m_Size(0)
-{}
-
-inline
-CNCMMDBPagesHash::~CNCMMDBPagesHash(void)
-{
-    x_FreeHash(m_Hash, m_Size);
-}
-
-void
-CNCMMDBPagesHash::SetOptimalSize(int new_size)
-{
-    new_size /= kNCMMDBHashSizeFactor;
-    for (;;) {
-        int next_num = new_size & (new_size - 1);
-        if (next_num == 0)
-            break;
-        new_size = next_num;
-    }
-    if (new_size == m_Size)
-        return;
-
-    CNCMMDBPage** new_hash = x_AllocHash(new_size);
-    for (int i = 0; i < m_Size; ++i) {
-        CNCMMDBPage* page = m_Hash[i];
-        while (page) {
-            CNCMMDBPage* next = page->m_NextInHash;
-            CNCMMDBPage*& hash_val = new_hash[page->m_Key & (new_size - 1)];
-            page->m_NextInHash = hash_val;
-            hash_val = page;
-            page = next;
-        }
-    }
-    x_FreeHash(m_Hash, m_Size);
-    m_Hash = new_hash;
-    m_Size = new_size;
-}
-
-void
-CNCMMDBPagesHash::PutPage(unsigned int key, CNCMMDBPage* page)
-{
-    // According to SQLite's implementation of page cache adding to hash when
-    // there's other page with the same key exist should not ever happen.
-    // So we will keep the same assumption and will not check its
-    // truthfulness.
-    CNCMMDBPage*& hash_val = m_Hash[key & (m_Size - 1)];
-    page->m_NextInHash = hash_val;
-    page->m_Key        = key;
-    hash_val           = page;
-}
-
-CNCMMDBPage*
-CNCMMDBPagesHash::GetPage(unsigned int key)
-{
-    unsigned int index = key & (m_Size - 1);
-    CNCMMDBPage* page = m_Hash[index];
-    while (page  &&  page->m_Key != key) {
-        _ASSERT((page->m_Key & (m_Size - 1)) == index);
-        page = page->m_NextInHash;
-    }
-    return page;
-}
-
-bool
-CNCMMDBPagesHash::RemovePage(CNCMMDBPage* page)
-{
-    unsigned int index = page->m_Key & (m_Size - 1);
-    CNCMMDBPage** hash_val = &m_Hash[index];
-    while (*hash_val  &&  *hash_val != page) {
-        _ASSERT(((*hash_val)->m_Key & (m_Size - 1)) == index);
-        hash_val = &(*hash_val)->m_NextInHash;
-    }
-    if (*hash_val) {
-        *hash_val = page->m_NextInHash;
-        return true;
-    }
-    return false;
-}
-
-int
-CNCMMDBPagesHash::RemoveAllPages(unsigned int min_key)
-{
-    int cnt_removed = 0;
-    for (int i = 0; i < m_Size; ++i) {
-        CNCMMDBPage** page_ptr = &m_Hash[i];
-        for (CNCMMDBPage* page = *page_ptr; page; page = *page_ptr) {
-            _ASSERT(int(page->m_Key & (m_Size - 1)) == i);
-            if (page->m_Key >= min_key) {
-                *page_ptr = page->m_NextInHash;
-                page->m_NextInHash = NULL;
-                page->DeletedFromHash();
-                ++cnt_removed;
-            }
-            else {
-                page_ptr = &page->m_NextInHash;
-            }
-        }
-    }
-    return cnt_removed;
-}
-
-
-inline
-CNCMMDBCache::CNCMMDBCache(int page_size, bool purgeable)
-    : m_Purgable(purgeable),
-      m_CacheSize(0),
-      m_MaxKey(0)
-{
-    if (size_t(page_size) > kNCMMDBPageDataSize)
-        abort();
-    //? CNCMMStats::OverheadMemAlloced(sizeof(*this));
-}
-
-void
-CNCMMDBCache::SetOptimalSize(int num_pages)
-{
-    CFastMutexGuard guard(m_ObjLock);
-
-    m_Pages.SetOptimalSize(num_pages);
-}
-
-inline int
-CNCMMDBCache::GetSize(void)
-{
-    return m_CacheSize;
-}
-
-void
-CNCMMDBCache::x_AttachPage(unsigned int key, CNCMMDBPage* page)
-{
-    m_Pages.PutPage(key, page);
-    page->SetCache(this);
-    ++m_CacheSize;
-    m_MaxKey = max(m_MaxKey, key);
-}
-
-void
-CNCMMDBCache::DetachPage(CNCMMDBPage* page)
-{
-    _ASSERT(page->GetCache() == this);
-
-    if (m_Pages.RemovePage(page)) {
-        _ASSERT(m_CacheSize > 0);
-        if (--m_CacheSize == 0) {
-            m_MaxKey = 0;
-        }
-    }
-    // We shouldn't call page->SetCache(NULL) because it will cause race in
-    // CNCMMDBPage::Unlock().
-}
-
-void
-CNCMMDBCache::DeleteAllPages(unsigned int min_key)
-{
-    CFastMutexGuard guard(m_ObjLock);
-
-    if (m_MaxKey < min_key  ||  m_CacheSize == 0)
-        return;
-
-    int cnt_removed = m_Pages.RemoveAllPages(min_key);
-    //printf("DeleteAll removed %d\n", cnt_removed);
-    _ASSERT(m_CacheSize >= cnt_removed);
-    m_CacheSize -= cnt_removed;
-    m_MaxKey = (min_key == 0 || m_CacheSize == 0? 0: min_key - 1);
-}
-
-void*
-CNCMMDBCache::PinPage(unsigned int key, EPageCreate create_flag)
-{
-    CFastMutexGuard guard(m_ObjLock);
-
-    CNCMMDBPage* page = m_Pages.GetPage(key);
-    if (page) {
-        if (page->IsInLRU()) {
-            CNCMMStats::DBPageHitInCache();
-            page->RemoveFromLRU();
-        }
-        // If page is not in LRU then it's already pinned, so we will not
-        // count it as a new page request.
-    }
-    else {
-        // Page is not found, so it's always a new page request
-        CNCMMStats::DBPageNotInCache();
-        if (create_flag == eDoNotCreate) {
-            return NULL;
-        }
-        guard.Release();
-        page = new CNCMMDBPage();
-        guard.Guard(m_ObjLock);
-        x_AttachPage(key, page);
-    }
-    return page->GetData();
-}
-
-void
-CNCMMDBCache::UnpinPage(void* data, bool must_delete)
-{
-    CNCMMDBPage* page = CNCMMDBPage::FromDataPtr(data);
-    if (must_delete) {
-        CFastMutexGuard guard(m_ObjLock);
-        DetachPage(page);
-        page->DeletedFromHash();
-    }
-    else if (m_Purgable) {
-        page->AddToLRU();
-    }
-}
-
-CNCMMDBCache::~CNCMMDBCache(void)
-{
-    CFastMutexGuard guard(s_CacheDeleteLock);
-    DeleteAllPages(0);
-    _ASSERT(m_CacheSize == 0);
-
-    //? CNCMMStats::OverheadMemFreed(sizeof(*this));
-}
-
-inline void*
-CNCMMDBCache::operator new(size_t size)
-{
-    return ::operator new(size);
-}
-
-inline void
-CNCMMDBCache::operator delete(void* ptr)
-{
-    ::operator delete(ptr);
-}
-
-// Special place for this method because it uses CNCMMDBCache::DetachPage().
-bool
-CNCMMDBPage::DoPeekedDestruction(void)
-{
-    sm_LRULock.Lock();
-    _ASSERT((m_StateFlags & fPeeked) != 0);
-    bool do_destroy = IsInLRU()  &&  m_StateFlags < fCounterStep;
-    m_StateFlags &= ~fPeeked;
-    sm_LRULock.Unlock();
-
-    if (do_destroy) {
-        // m_Cache is always changed to NULL under sm_LRULock along with
-        // do_destroy. So if do_destroy is true here then m_Cache cannot be
-        // changed already.
-        if (m_Cache) {
-            m_Cache->DetachPage(this);
-        }
-        this->~CNCMMDBPage();
-    }
-    return do_destroy;
-}
-
-void*
-CNCMMDBCache::DestroyOnePage(void)
-{
-    CFastMutexGuard guard(eEmptyGuard);
-    CNCMMDBPage* page;
-    for (;;) {
-        page = CNCMMDBPage::PeekLRUForDestroy();
-        if (!page)
-            break;
-        CFastMutexGuard g2(s_CacheDeleteLock);
-        CNCMMDBCache* cache = page->GetCache();
-        if (cache)
-            guard.Guard(cache->m_ObjLock);
-        if (page->DoPeekedDestruction())
-            break;
-        guard.Release();
-        // Page should have been extracted from LRU by somebody.
-    }
-    return page;
-}
-
-
-
 // Functions for exposing memory manager to SQLite
-
-/// Initialize database cache
-static int
-s_SQLITE_PCache_Init(void*)
-{
-    return SQLITE_OK;
-}
-
-/// Deinitialize database cache
-static void
-s_SQLITE_PCache_Shutdown(void*)
-{}
-
-/// Create new cache instance
-static sqlite3_pcache *
-s_SQLITE_PCache_Create(int szPage, int bPurgeable)
-{
-    return reinterpret_cast<sqlite3_pcache*>(
-                           new CNCMMDBCache(size_t(szPage), bPurgeable != 0));
-}
-
-/// Set size of database cache (number of pages)
-static void
-s_SQLITE_PCache_SetSize(sqlite3_pcache* pcache, int nCachesize)
-{
-    reinterpret_cast<CNCMMDBCache*>(pcache)->SetOptimalSize(nCachesize);
-}
-
-/// Get number of pages stored in cache
-static int
-s_SQLITE_PCache_GetSize(sqlite3_pcache* pcache)
-{
-    return reinterpret_cast<CNCMMDBCache*>(pcache)->GetSize();
-}
-
-/// Get page from cache
-static void*
-s_SQLITE_PCache_GetPage(sqlite3_pcache* pcache,
-                        unsigned int    key,
-                        int             createFlag)
-{
-    return reinterpret_cast<CNCMMDBCache*>(pcache)
-                        ->PinPage(key, CNCMMDBCache::EPageCreate(createFlag));
-}
-
-/// Release page (make it reusable by others)
-static void
-s_SQLITE_PCache_UnpinPage(sqlite3_pcache* pcache, void* page, int discard)
-{
-    reinterpret_cast<CNCMMDBCache*>(pcache)->UnpinPage(page, discard != 0);
-}
-
-/// Truncate cache, delete all pages with keys greater or equal to given limit
-static void
-s_SQLITE_PCache_Truncate(sqlite3_pcache* pcache, unsigned int iLimit)
-{
-    reinterpret_cast<CNCMMDBCache*>(pcache)->DeleteAllPages(iLimit);
-}
-
-/// Destroy cache instance
-static void
-s_SQLITE_PCache_Destroy(sqlite3_pcache* pcache)
-{
-    delete reinterpret_cast<CNCMMDBCache*>(pcache);
-}
 
 /// Allocate memory for SQLite
 static void*
@@ -3223,21 +2517,6 @@ s_SQLITE_Mem_Shutdown(void*)
 {}
 
 
-/// All methods of database cache exposed to SQLite
-static sqlite3_pcache_methods s_NCDBCacheMethods = {
-    NULL,                       /* pArg */
-    s_SQLITE_PCache_Init,       /* xInit */
-    s_SQLITE_PCache_Shutdown,   /* xShutdown */
-    s_SQLITE_PCache_Create,     /* xCreate */
-    s_SQLITE_PCache_SetSize,    /* xCachesize */
-    s_SQLITE_PCache_GetSize,    /* xPagecount */
-    s_SQLITE_PCache_GetPage,    /* xFetch */
-    s_SQLITE_PCache_UnpinPage,  /* xUnpin */
-    NULL,                       /* xRekey */
-    s_SQLITE_PCache_Truncate,   /* xTruncate */
-    s_SQLITE_PCache_Destroy     /* xDestroy */
-};
-
 /// All methods of memory management exposed to SQLite
 static sqlite3_mem_methods s_NCMallocMethods = {
     s_SQLITE_Mem_Malloc,    /* xMalloc */
@@ -3256,7 +2535,6 @@ bool
 CNCMemManager::InitializeApp(void)
 {
     try {
-        CSQLITE_Global::SetCustomPageCache(&s_NCDBCacheMethods);
         CSQLITE_Global::SetCustomMallocFuncs(&s_NCMallocMethods);
     }
     catch (CSQLITE_Exception& ex) {
@@ -3306,45 +2584,6 @@ CNCMemManager::GetMemoryUsed(void)
     CNCMMStats::CollectAllStats(&stat);
     return stat.GetSystemMem();
 }
-
-static CNCMMDBPage*
-s_DataPtrToDBPage(const void* data_ptr)
-{
-    void* ptr = const_cast<void*>(data_ptr);
-    CNCMMSlab* slab = CNCMMCentral::GetSlab(ptr);
-    return reinterpret_cast<CNCMMDBPage*>(slab->GetBlocksSet(ptr));
-}
-
-void
-CNCMemManager::LockDBPage(const void* data_ptr)
-{
-    s_DataPtrToDBPage(data_ptr)->Lock();
-}
-
-void
-CNCMemManager::UnlockDBPage(const void* data_ptr)
-{
-    s_DataPtrToDBPage(data_ptr)->Unlock();
-}
-
-void
-CNCMemManager::SetDBPageDirty(const void* data_ptr)
-{
-    s_DataPtrToDBPage(data_ptr)->SetDirtyFlag(true);
-}
-
-void
-CNCMemManager::SetDBPageClean(const void* data_ptr)
-{
-    s_DataPtrToDBPage(data_ptr)->SetDirtyFlag(false);
-}
-
-bool
-CNCMemManager::IsDBPageDirty(const void* data_ptr)
-{
-    return s_DataPtrToDBPage(data_ptr)->IsDirty();
-}
-
 
 END_NCBI_SCOPE
 
