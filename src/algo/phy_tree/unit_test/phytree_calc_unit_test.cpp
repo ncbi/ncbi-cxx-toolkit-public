@@ -90,6 +90,9 @@ static bool s_TestCalc(const CSeq_align& seq_align,
 static bool s_TestCalc(const CSeq_align_set& seq_align_set,
                        const CPhyTreeCalc& calc);
 
+// Generate tree in Newick-like format
+static string s_GetNewickLike(const TPhyTreeNode* tree);
+
 /// Test class for accessing CPhyTreeCalc private methods and attributes
 class CTestPhyTreeCalc
 {
@@ -112,10 +115,23 @@ BOOST_AUTO_TEST_CASE(TestProteinSeqAlign)
     CSeq_align seq_align;
     istr >> MSerial_AsnText >> seq_align;
 
+    const int kNumSeqs = 12;
+
     CPhyTreeCalc calc(seq_align, scope);
+    vector<string> labels = calc.SetLabels();
+    for (int i=1;i <= kNumSeqs;i++) {
+        labels.push_back(NStr::IntToString(i));
+    }
     BOOST_REQUIRE(calc.CalcBioTree());
 
     s_TestCalc(seq_align, calc);
+
+    // test for specific result
+    BOOST_REQUIRE_EQUAL(s_GetNewickLike(calc.GetTree()),
+                        "((4:0.948, (1:0.814, ((2:0.092, 3:0.060):0.586, "
+                        "(((9:0.044, ((7:0.012, 8:0.020):0.045, 6:0.044)"
+                        ":0.018):0.070, 10:0.000):0.390, (0:0.000, 5:0.034)"
+                        ":0.393):0.078):0.072):0.000):0.000)");
 }
 
 
@@ -131,10 +147,23 @@ BOOST_AUTO_TEST_CASE(TestProteinSeqAlignSet)
     CSeq_align_set seq_align_set;
     seq_align_set.Set() = seq_annot.GetData().GetAlign();
 
+    const int kNumSeqs = 12;
+    
     CPhyTreeCalc calc(seq_align_set, scope);
+    vector<string> labels = calc.SetLabels();
+    for (int i=1;i <= kNumSeqs;i++) {
+        labels.push_back(NStr::IntToString(i));
+    }
     BOOST_REQUIRE(calc.CalcBioTree());
 
     s_TestCalc(seq_align_set, calc);
+
+    // test for specific result
+    BOOST_REQUIRE_EQUAL(s_GetNewickLike(calc.GetTree()),
+                        "((4:0.899, ((1:0.699, (2:0.061, 3:0.062):0.440)"
+                        ":0.070, (((9:0.038, ((7:0.005, 8:0.017):0.044, "
+                        "6:0.037):0.017):0.050, 10:0.000):0.403, (0:0.000, "
+                        "5:0.034):0.360):0.104):0.000):0.000)");
 }
 
 
@@ -152,6 +181,13 @@ BOOST_AUTO_TEST_CASE(TestNucleotideSeqAlign)
     BOOST_REQUIRE(calc.CalcBioTree());
 
     s_TestCalc(seq_align, calc);
+
+    // test for specific result
+    BOOST_REQUIRE_EQUAL(s_GetNewickLike(calc.GetTree()),
+                        "(((5:0.000, 9:0.000):0.003, (7:0.000, (3:0.000, "
+                        "(4:0.001, (1:0.000, (0:0.000, ((6:0.000, 8:0.000)"
+                        ":0.000, 2:0.000):0.000):0.000):0.001):0.000):0.000)"
+                        ":0.000):0.000)");
 }
 
 // Test tree computation with nucleotide Seq-align-set as input
@@ -171,6 +207,13 @@ BOOST_AUTO_TEST_CASE(TestNucleotideSeqAlignSet)
     BOOST_REQUIRE(calc.CalcBioTree());
 
     s_TestCalc(seq_align_set, calc);
+
+    // test for specific result
+    BOOST_REQUIRE_EQUAL(s_GetNewickLike(calc.GetTree()),
+                        "(((5:0.000, 9:0.000):0.003, (7:0.000, (3:0.000, "
+                        "(4:0.001, (1:0.000, (0:0.000, ((6:0.000, 8:0.000)"
+                        ":0.000, 2:0.000):0.000):0.000):0.001):0.000):0.000)"
+                        ":0.000):0.000)");
 }
 
 
@@ -499,6 +542,41 @@ static bool s_TestTree(int num_sequences, const TPhyTreeNode* tree)
 
     return true;
 }
+
+// This is not really Newick format, because it prints root's edge length
+// and doean not put ';' at the end.
+static void s_GetNewick(const TPhyTreeNode* node, string& result)
+{
+    if (!node->IsLeaf()) {
+        result += "(";
+
+        TPhyTreeNode::TNodeList_CI child(node->SubNodeBegin());
+        while (child != node->SubNodeEnd()) {
+            if (child != node->SubNodeBegin()) {
+                result += ", ";
+            }
+            s_GetNewick(*child, result);
+            child++;
+        }
+        result += ")";
+    }
+
+    result += node->GetValue().GetLabel();
+    result += ":";
+    result += NStr::DoubleToString(node->GetValue().GetDist(), 3);
+    
+}
+
+static string s_GetNewickLike(const TPhyTreeNode* tree)
+{
+    string result;
+    result += "(";
+    s_GetNewick(tree, result);
+    result += ")";
+
+    return result;
+}
+
 
 // Traverse BioTreeDynamic
 static void s_TraverseDynTree(const CBioTreeDynamic::CBioNode* node,
