@@ -175,6 +175,7 @@ ANC	s	Universita di Ancona, Dipartimento di Biotecnologie Agrarie ed Ambientali
 ANCB	s	Museo Nacional de Historia Natural, La Paz
 AND	s	Slezske zemske muzeum Opava, Arboretum Nopvy Dvur, Dendrology Department
 ANDES	s	La Universidad de Los Andes
+ANDES:A	s	La Universidad de Los Andes, Amphibian Collection
 ANDES:O	s	La Universidad de Los Andes, Ornithology Collection
 ANES	s	Anadolu University, Biology Department
 ANFM	s	Associazione Naturalisti Forlivesi Pro Museo
@@ -1040,6 +1041,14 @@ CMY	s	R. G. Kar Medical College, Botany Department
 CN<FR>	s	Universite de Caen
 CN<UK>	c	Wellcome Collection of Bacteria, Burroughs Wellcome Research Laboratories
 CNC	s	Canadian National Collection of Insects, Arachnids, and Nematodes
+CNC:Arachnida	s	Canadian National Collection of Insects, Arachnids, and Nematodes, Arachnida (Mites, Ticks, Spiders)
+CNC:Coleoptera	s	Canadian National Collection of Insects, Arachnids, and Nematodes, Coleoptera (Beetles)
+CNC:Diptera	s	Canadian National Collection of Insects, Arachnids, and Nematodes, Diptera (Flies)
+CNC:Hemiptera		Canadian National Collection of Insects, Arachnids, and Nematodes, 
+CNC:Hymenoptera	s	Canadian National Collection of Insects, Arachnids, and Nematodes, Hymenoptera (Sawflies, Parasitic Wasps, Ants, Wasps, Bees)
+CNC:Lepidoptera	s	Canadian National Collection of Insects, Arachnids, and Nematodes, Lepidoptera (Butterflies, Moths)
+CNC:Miscellaneous	s	Canadian National Collection of Insects, Arachnids, and Nematodes, Miscellaneous Insect Orders
+CNC:Nematoda	s	Canadian National Collection of Insects, Arachnids, and Nematodes, Nematoda (Roundworms)
 CNCI	s	Canadian National Collection Insects
 CNCM	c	Collection Nationale de Cultures de Microorganismes
 CNCTC	c	Czech National Collection of Type Cultures
@@ -3845,7 +3854,6 @@ MVNP	s	Mesa Verde National Park
 MVP	s	Museum of Vicotria
 MVSC	s	Millersville University, Biology Department
 MVUP	s	Museo de Vertebrados de la Universidad de Panama
-MVUP	s	Museo de Vertebrados, Universidad de Panama
 MVZ	s	Museum of Vertebrate Zoology, University of California at Berkeley
 MVZ:Bird	s	Museum of Vertebrate Zoology, University of California at Berkeley, Bird Collection
 MVZ:Egg	s	Museum of Vertebrate Zoology, University of California at Berkeley, Egg Collection
