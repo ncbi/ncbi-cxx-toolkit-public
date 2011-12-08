@@ -96,10 +96,14 @@ CIgAnnotationInfo::CIgAnnotationInfo(CConstRef<CIgBlastOptions> &ig_opt)
             }
             index += 10;
             m_DomainChainType[tokens[0]] = tokens[11];
+            int frame = NStr::StringToInt(tokens[12]);
+            if (frame != -1) {
+                m_FrameOffset[tokens[0]] = frame;
+            }
         } 
     }
 
-    // read chain type info and frame info from aux files
+    // read frame info from aux files
     fn = ig_opt->m_AuxFilename;
     s_ReadLinesFromFile(fn, lines);
     if (lines.size() == 0) {
@@ -137,12 +141,11 @@ CIgBlast::Run()
         x_AnnotateV(results[0], annots);
     }
 
-    /*** search V for domain annotation */
+    /*** search internal V for domain annotation */
     {
         CLocalBlast blast(qf, opts_hndl, m_IgOptions->m_Db[3]);
         results[3] = blast.Run();
-        x_ConvertResultType(results[3]);
-        // TODO the number of results may be different for 0 and 3
+        s_SortResultsByEvalue(results[3]);
         x_AnnotateDomain(results[0], results[3], annots);
     }
 
@@ -580,7 +583,6 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
             if (sid.substr(0, 4) == "lcl|") sid = sid.substr(4, sid.length());
             int frame_offset = m_AnnotationInfo.GetFrameOffset(sid);
             if (frame_offset >= 0) {
-                annot->m_FrameInfo[2] = frame_offset;
                 int frame_adj = (master_align->GetSeqStop(1) + 3 - frame_offset) % 3;
                 annot->m_FrameInfo[0] = q_ends[1] - q_dir * frame_adj;
             }
@@ -688,9 +690,10 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
                         start = q_map.GetSeqPosFromSeqPos(1, 0, start+q_dir, IAlnExplorer::eForward);
                         start = q_map.GetSeqPosFromSeqPos(0, 1, start);
  
-                        if ((start - q_ends[1])*q_dir > 0) continue;
-                        annot->m_DomainInfo[10] = start;
-                        annot->m_DomainInfo[11] = q_ends[1];
+                        if ((start - q_ends[1])*q_dir <= 0) {
+                            annot->m_DomainInfo[10] = start;
+                            annot->m_DomainInfo[11] = q_ends[1];
+                        }
                     }
 
                     // extension of the first and last annotated domain (if any)
@@ -707,8 +710,17 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
                                                    s_map.GetSeqPosFromSeqPos(1, 0, annot->m_DomainInfo[i],
                                                                              IAlnExplorer::eForward))*q_dir;
                         if (annot->m_DomainInfo[i] < 0) annot->m_DomainInfo[i] = 0;
-                        break;
                     }
+
+                 
+                    // annotate the query frame offset
+                    int frame_offset = m_AnnotationInfo.GetFrameOffset(sid);
+                    if (frame_offset >= 0) {
+                        int frame_adj = ((*it)->GetSeqStart(1) + 3 - frame_offset) % 3;
+                        annot->m_FrameInfo[2] = (q_ends[0] + 3 - q_dir * frame_adj) % 3;
+                    }
+                    break;
+
                 }
             }
         }
