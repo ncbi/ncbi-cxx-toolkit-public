@@ -83,7 +83,7 @@ CRef<CSeq_id> s_ResolveId(
 
 //  ===========================================================================
 CWiggleData::CWiggleData(
-    unsigned int seq_start,
+    int seq_start,
     unsigned int seq_span,
     double value ):
 //  ===========================================================================
@@ -129,22 +129,24 @@ void CWiggleRecord::ParseTrackDefinition(
 {
     Reset();
     if ( data.size() < 2 || data[0] != "track" ) {
-        CObjReaderLineException err( 
-            eDiag_Critical,
-            0,
-            "Missing track line --- Is this even WIGGLE?" );
-        throw( err );
+        CLineError err( 
+            ILineError::eProblem_GeneralParsingError,
+            eDiag_Error, 
+            "", 
+            0);
+        throw(err);
     }
     vector<string>::const_iterator it = data.begin();
     for ( ++it; it != data.end(); ++it ) {
         string strKey;
         string strValue;
         if ( ! NStr::SplitInTwo( *it, "=", strKey, strValue ) ) {
-            CObjReaderLineException err( 
-                eDiag_Error,
-                0,
-                "Invalid track line format --- only <key>=<value> pairs expected." );
-            throw( err );
+            CLineError err( 
+                ILineError::eProblem_GeneralParsingError,
+                eDiag_Error, 
+                "", 
+                0);
+            throw(err);
         }
         NStr::ReplaceInPlace( strValue, "\"", "" );
         if ( strKey == "name" ) {
@@ -159,42 +161,46 @@ void CWiggleRecord::ParseDataBed(
 //  ----------------------------------------------------------------------------
 {
     if ( data.size() != 4 ) {
-        CObjReaderLineException err( 
-            eDiag_Error,
-            0,
-            "Invalid data line --- BED data with exactly four columns expected" );
-        throw( err );
+        CLineError err( 
+            ILineError::eProblem_GeneralParsingError,
+            eDiag_Error, 
+            "", 
+            0);
+        throw(err);
     }
     m_strChrom = data[0];
     try {
         m_uSeqStart = NStr::StringToUInt( data[1] );
     }
     catch ( ... ) {
-        CObjReaderLineException err( 
-            eDiag_Error,
-            0,
-            "Invalid data line --- Bad \"ChromStart\" value." );
-        throw( err );
+        CLineError err( 
+            ILineError::eProblem_FeatureBadStartAndOrStop,
+            eDiag_Error, 
+            "", 
+            0);
+        throw(err);
     }
     try {
         m_uSeqSpan = NStr::StringToUInt( data[2] ) - m_uSeqStart;
     }
     catch ( ... ) {
-        CObjReaderLineException err( 
-            eDiag_Error,
-            0,
-            "Invalid data line --- Bad \"ChromEnd\" value." );
-        throw( err );
+        CLineError err( 
+            ILineError::eProblem_FeatureBadStartAndOrStop,
+            eDiag_Error, 
+            "", 
+            0);
+        throw(err);
     }
     try {
         m_dValue = NStr::StringToDouble( data[3] );
     }
     catch ( ... ) {
-        CObjReaderLineException err( 
-            eDiag_Error,
-            0,
-            "Invalid data line --- Bad \"Score\" value." );
-        throw( err );
+        CLineError err( 
+            ILineError::eProblem_BadScoreValue,
+            eDiag_Error, 
+            "", 
+            0);
+        throw(err);
     }
 }
 
@@ -204,24 +210,26 @@ void CWiggleRecord::ParseDataVarstep(
 //  ----------------------------------------------------------------------------
 {
     try {
-        m_uSeqStart = NStr::StringToUInt( data[0] ) - 1; // varStep is 1- based
+        m_uSeqStart = NStr::StringToInt( data[0] ) - 1; // varStep is 1- based
     }
     catch ( ... ) {
-        CObjReaderLineException err( 
-            eDiag_Error,
-            0,
-            "Invalid data line --- Bad \"ChromStart\" value." );
-        throw( err );
+        CLineError err( 
+            ILineError::eProblem_FeatureBadStartAndOrStop,
+            eDiag_Error, 
+            "", 
+            0);
+        throw(err);
     }
     try {
         m_dValue = NStr::StringToDouble( data[1] );
     }
     catch ( ... ) {
-        CObjReaderLineException err( 
-            eDiag_Error,
-            0,
-            "Invalid data line --- Bad \"Score\" value." );
-        throw( err );
+        CLineError err( 
+            ILineError::eProblem_BadScoreValue,
+            eDiag_Error, 
+            "", 
+            0);
+        throw(err);
     }
 }
 
@@ -235,11 +243,12 @@ void CWiggleRecord::ParseDataFixedstep(
         m_dValue = NStr::StringToDouble( data[0] );
     }
     catch ( ... ) {
-        CObjReaderLineException err( 
-            eDiag_Error,
-            0,
-            "Invalid data line --- Bad \"Score\" value." );
-        throw( err );
+        CLineError err( 
+            ILineError::eProblem_BadScoreValue,
+            eDiag_Error, 
+            "", 
+            0);
+        throw(err);
     }
 }
 
@@ -259,11 +268,12 @@ void CWiggleRecord::ParseDeclarationVarstep(
         CWiggleReader::Tokenize( *it, "=", key_value_pair );
 
         if ( key_value_pair.size() != 2 ) {
-            CObjReaderLineException err( 
-                eDiag_Error,
-                0,
-                "Invalid VarStep declaration --- only key value pairs allowed." );
-            throw( err );
+            CLineError err( 
+                ILineError::eProblem_GeneralParsingError,
+                eDiag_Error, 
+                "", 
+                0);
+            throw(err);
         }
         if ( key_value_pair[0] == "chrom" ) {
             m_strChrom = key_value_pair[1];
@@ -273,12 +283,12 @@ void CWiggleRecord::ParseDeclarationVarstep(
             m_uSeqSpan = NStr::StringToUInt( key_value_pair[1] );
             continue;
         }
-        CObjReaderLineException err( 
-            eDiag_Error,
-            0,
-            "Invalid VarStep declaration --- only \"chrom\" and \"span\" are "
-            "permissible as keys." );
-        throw( err );
+        CLineError err( 
+            ILineError::eProblem_UnrecognizedQualifierName,
+            eDiag_Error, 
+            "", 
+            0);
+        throw(err);
     }
 }
 
@@ -295,11 +305,12 @@ void CWiggleRecord::ParseDeclarationFixedstep(
         CWiggleReader::Tokenize( *it, "=", key_value_pair );
 
         if ( key_value_pair.size() != 2 ) {
-            CObjReaderLineException err( 
-                eDiag_Error,
-                0,
-                "Invalid FixedStep declaration --- only key value pairs allowed." );
-            throw( err );
+            CLineError err( 
+                ILineError::eProblem_GeneralParsingError,
+                eDiag_Error, 
+                "", 
+                0);
+            throw(err);
         }
         if ( key_value_pair[0] == "chrom" ) {
             m_strChrom = key_value_pair[1];
@@ -317,12 +328,12 @@ void CWiggleRecord::ParseDeclarationFixedstep(
             m_uSeqStep = NStr::StringToUInt( key_value_pair[1] );
             continue;
         }
-        CObjReaderLineException err( 
-            eDiag_Error,
-            0,
-            "Invalid VarStep declaration --- only \"chrom\", \"span\", \"start\" "
-            "and \"step\" are permissible as keys." );
-        throw( err );
+        CLineError err( 
+            ILineError::eProblem_UnrecognizedQualifierName,
+            eDiag_Error, 
+            "", 
+            0);
+        throw(err);
     }
     m_uSeqStart -= m_uSeqStep;
 }
@@ -373,7 +384,7 @@ void CWiggleTrack::AddRecord(
     if ( m_uSeqStart > record.SeqStart() ) {
         m_uSeqStart = record.SeqStart();
     }
-    if ( m_uSeqStop < record.SeqStart() + record.SeqSpan() ) {
+    if ( m_uSeqStop < record.SeqStart() + (int)record.SeqSpan() ) {
         m_uSeqStop = record.SeqStart() + record.SeqSpan();
     }
     if ( m_dMaxValue < record.Value() ) {

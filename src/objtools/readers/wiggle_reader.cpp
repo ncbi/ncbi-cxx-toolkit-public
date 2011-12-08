@@ -210,6 +210,7 @@ CWiggleReader::x_ParseSequence(
         try {
             if (!x_ProcessLineData(parts, pTrack)) {
                 lr.UngetLine();
+                --m_uLineNumber;
                 if (0 != pTrack) {
                     //if we got any track data, return it
                     break;
@@ -222,14 +223,28 @@ CWiggleReader::x_ParseSequence(
             }
         }
         catch (CLineError& err) {
+            if (err.Line() == 0) {
+                err.PatchLineNumber(m_uLineNumber);
+            }
             ProcessError(err, pErrorContainer);
+
+            CLineError warn( 
+                ILineError::eProblem_MissingContext,
+                eDiag_Warning, 
+                "", 
+                0);
             while (x_ReadLineData(lr, parts)) {
                 //flush all data lines until we reach firm ground:
                 unsigned int uType = x_GetLineType(parts);
                 if (uType == TYPE_TRACK  ||  uType == TYPE_DECLARATION_VARSTEP  ||
                         uType == TYPE_DECLARATION_FIXEDSTEP) {
                     lr.UngetLine();
+                    --m_uLineNumber;
                     break;
+                }
+                else if (uType != TYPE_COMMENT) {
+                    warn.PatchLineNumber(m_uLineNumber);
+                    ProcessError(warn, pErrorContainer);
                 }
             }
         }
@@ -262,6 +277,11 @@ bool CWiggleReader::x_ProcessLineData(
     switch( uLineType ) {
         default: {
             x_ParseDataRecord( linedata );
+            if (m_pControlData->SeqStart() < 0) {
+                //we regard negative positions as legal but out of the range where
+                // we collect data
+                return true;
+            }
             if ( 0 == pTrack ) {
                 pTrack = new CWiggleTrack( *m_pControlData );
             }
@@ -338,16 +358,21 @@ void CWiggleReader::x_ParseDataRecord(
 {  
     unsigned int uLineType = x_GetLineType( parts );
     if ( m_uCurrentRecordType != uLineType ) {
-                CObjReaderLineException err( eDiag_Error, 0, 
-                    "Invalid data line --- does not agree with last seen step" );
+                CLineError err( 
+                    ILineError::eProblem_GeneralParsingError,
+                    eDiag_Error, 
+                    "", 
+                    m_uLineNumber);
                 throw err;
     }
     switch ( uLineType ) {
 
         default: {
-            CObjReaderLineException err( eDiag_Critical, 0, 
-                "Internal error --- please report and submit input file for "
-                "inspection" );
+                CLineError err( 
+                    ILineError::eProblem_GeneralParsingError,
+                    eDiag_Error, 
+                    "", 
+                    m_uLineNumber);
             throw err;
         }
         case TYPE_DATA_BED:

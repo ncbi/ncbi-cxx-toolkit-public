@@ -60,7 +60,7 @@ class CWiggleData
     friend class CWiggleTrack;
 public:
     CWiggleData(
-        unsigned int,
+        int,
         unsigned int=0,
         double = 0 );
     CWiggleData(
@@ -71,8 +71,8 @@ public:
     void Dump(
         CNcbiOstream& );
         
-    unsigned int SeqStart() const { return m_uSeqStart; };
-    unsigned int SeqSpan() const { return m_uSeqSpan; };
+    int SeqStart() const { return m_uSeqStart; };
+    int SeqSpan() const { return m_uSeqSpan; };
     double Value() const { return m_dValue; };
 
     bool operator<(const CWiggleData& d) const {
@@ -93,8 +93,8 @@ protected:
         CSeq_graph&,
         const CWiggleTrack&);
 
-    unsigned int m_uSeqStart;
-    unsigned int m_uSeqSpan;
+    int m_uSeqStart;
+    int m_uSeqSpan;
     double m_dValue;
 };
 
@@ -140,9 +140,9 @@ public:
         
     const string& Chrom() const { return m_strChrom; };
     size_t Count() const { return m_Data.size(); };
-    unsigned int SeqStart() const { return m_uSeqStart; };
-    unsigned int SeqStop() const { return m_uSeqStop-1; };
-    unsigned int SeqSpan() const { return m_uSeqSpan; };
+    int SeqStart() const { return m_uSeqStart; };
+    int SeqStop() const { return m_uSeqStop-1; };
+    int SeqSpan() const { return m_uSeqSpan; };
     
 protected:
     void FillGraphsReal(
@@ -171,9 +171,9 @@ protected:
     std::string m_strName;                       
     std::string m_strChrom;
     unsigned int m_uGraphType;
-    unsigned int m_uSeqStart;
-    unsigned int m_uSeqStop;
-    unsigned int m_uSeqSpan;
+    int m_uSeqStart;
+    int m_uSeqStop;
+    int m_uSeqSpan;
     double m_dMaxValue;
     double m_dMinValue;
     bool m_bEvenlySpaced;
@@ -195,39 +195,39 @@ public:
 
     void ParseTrackDefinition( 
         const std::vector<std::string>& );
-    /* throws CObjReaderLineException */
+    /* throws CLineError */
     
     void ParseDeclarationVarstep(
         const std::vector<std::string>& );
-    /* throws CObjReaderLineException */
+    /* throws CLineError */
 
     void ParseDeclarationFixedstep(
         const std::vector<std::string>& );
-    /* throws CObjReaderLineException */
+    /* throws CLineError */
 
     void ParseDataBed(
         const std::vector<std::string>& );
-    /* throws CObjReaderLineException */
+    /* throws CLineError */
 
     void ParseDataVarstep(
         const std::vector<std::string>& );
-    /* throws CObjReaderLineException */
+    /* throws CLineError */
 
     void ParseDataFixedstep(
         const std::vector<std::string>& );
-    /* throws CObjReaderLineException */
+    /* throws CLineError */
 
     const string& Chrom() const { return m_strChrom; };
     const string& Name() const { return m_strName; };
-    unsigned int SeqStart() const { return m_uSeqStart; };
-    unsigned int SeqSpan() const { return m_uSeqSpan; };
+    int SeqStart() const { return m_uSeqStart; };
+    int SeqSpan() const { return m_uSeqSpan; };
     double Value() const { return m_dValue; };
     
 protected:
     std::string m_strName;
     std::string m_strChrom;
-    unsigned int m_uSeqStart;
-    unsigned int m_uSeqSpan;
+    int m_uSeqStart;
+    int m_uSeqSpan;
     unsigned int m_uSeqStep;
     double m_dValue;
 };

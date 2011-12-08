@@ -61,6 +61,8 @@ public:
         eProblem_QualifierWithoutFeature,
         eProblem_FeatureBadStartAndOrStop,
         eProblem_BadFeatureInterval,
+        eProblem_BadScoreValue,
+        eProblem_MissingContext,
 
         eProblem_GeneralParsingError
     };
@@ -152,6 +154,11 @@ public:
             return "General parsing error";
         case eProblem_BadFeatureInterval:
             return "Bad feature interval";
+        case eProblem_BadScoreValue:
+            return "Invalid score value";
+        case eProblem_MissingContext:
+            return "Value ignored due to missing context";
+
         default:
             return "Unknown problem";
         }
@@ -178,7 +185,10 @@ public:
      { }
     
     virtual ~CLineError(void) throw() {}
-        
+       
+    void PatchLineNumber(
+        unsigned int uLine) { m_uLine = uLine; };
+ 
     EProblem
     Problem(void) const { return m_eProblem; }
 
