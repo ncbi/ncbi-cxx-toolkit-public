@@ -60,6 +60,9 @@ public:
     // destructor
     ~CGC_AssemblyUnit(void);
 
+    /// Retrieve this unit's name
+	string GetName() const;
+
     /// Retrieve this unit's accession
 	string GetAccession() const;
 

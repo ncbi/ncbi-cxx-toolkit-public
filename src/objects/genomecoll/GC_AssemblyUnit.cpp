@@ -61,6 +61,12 @@ CGC_AssemblyUnit::~CGC_AssemblyUnit(void)
 {
 }
 
+string CGC_AssemblyUnit::GetName() const
+{
+    return GetDesc().GetName();
+}
+
+
 string CGC_AssemblyUnit::GetAccession() const
 {
 	string accession;
