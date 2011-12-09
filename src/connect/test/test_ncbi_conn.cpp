@@ -59,15 +59,21 @@ BEGIN_NCBI_SCOPE
 
 static const char kLogfile[] = "test_ncbi_conn.log";
 
+static volatile bool s_Canceled = false;
 
-static list<CNcbiOstream*> s_MakeList(CNcbiOstream& os1,
-                                      CNcbiOstream& os2)
+
+class CConnTestInterruptible : public CConnTest
 {
-    list<CNcbiOstream*> rv;
-    rv.push_front(&os1);
-    rv.push_back (&os2);
-    return rv;
-}
+public:
+    CConnTestInterruptible(const STimeout* timeout = kDefaultTimeout,
+                           CNcbiOstream*   output = 0,
+                           SIZE_TYPE       width = PAGE_WIDTH)
+        : CConnTest(timeout, output, width)
+    { }
+
+protected:
+    virtual bool IsCanceled(void) { return s_Canceled; }
+};
 
 
 ////////////////////////////////
@@ -79,30 +85,16 @@ class CTestApp : public CNcbiApplication
 public:
     CTestApp(CNcbiOstream& log);
 
-    virtual void Init  (void);
-    virtual int  Run   (void);
-
-    static  void Cancel(void);
+    virtual void Init(void);
+    virtual int  Run (void);
 
 protected:
     virtual bool LoadConfig(CNcbiRegistry& reg, const string* conf);
     using CNcbiApplication::LoadConfig;
 
-protected:
-    static CConnTest m_Test;
-
 private:
     CWStream m_Tee;
 };
-
-
-CConnTest CTestApp::m_Test;
-
-
-void CTestApp::Cancel(void)
-{
-    m_Test.Cancel();
-}
 
 
 #if   defined(NCBI_OS_MSWIN)
@@ -111,7 +103,7 @@ static BOOL WINAPI s_Interrupt(DWORD type)
     switch (type) {
     case CTRL_C_EVENT:
     case CTRL_BREAK_EVENT:
-        CTestApp::Cancel();
+        s_Canceled = true;
         return TRUE;  // handled
     case CTRL_CLOSE_EVENT:
     case CTRL_LOGOFF_EVENT:
@@ -125,10 +117,20 @@ static BOOL WINAPI s_Interrupt(DWORD type)
 extern "C" {
 static void s_Interrupt(int /*signo*/)
 {
-    CTestApp::Cancel();
+    s_Canceled = true;
 }
 }
-#endif // NCBI_OS_
+#endif // NCBI_OS
+
+
+static list<CNcbiOstream*> s_MakeList(CNcbiOstream& os1,
+                                      CNcbiOstream& os2)
+{
+    list<CNcbiOstream*> rv;
+    rv.push_front(&os1);
+    rv.push_back (&os2);
+    return rv;
+}
 
 
 CTestApp::CTestApp(CNcbiOstream& log)
@@ -200,14 +202,12 @@ int CTestApp::Run(void)
     tmo.sec  = (unsigned int)  timeout;
     tmo.usec = (unsigned int)((timeout - tmo.sec) * 1000000.0);
 
-    m_Test.SetTimeout(&tmo);
-    m_Test.SetOutput(&m_Tee);
-    m_Test.SetWidth(PAGE_WIDTH);
+    CConnTestInterruptible test(&tmo, &m_Tee);
 
     CConnTest::EStage everything = CConnTest::eStatefulService;
-    EIO_Status status = m_Test.Execute(everything);
+    EIO_Status status = test.Execute(everything);
 
-    m_Test.SetOutput(0);
+    test.SetOutput(0);
 
     if (status != eIO_Success) {
         list<string> msg;

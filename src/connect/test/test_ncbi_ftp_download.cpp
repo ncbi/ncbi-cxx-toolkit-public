@@ -470,7 +470,7 @@ static EIO_Status x_ConnectionCallback(CONN           conn,
         // Finalize the filelist
         dlcbdata->Append();
     } else if (s_Signaled) {
-        CONN_Cancel(conn);
+        status = eIO_Interrupt;
         _ASSERT(update);
     } else if (type == eCONN_OnTimeout) {
         status = dlcbdata->Timeout(false);

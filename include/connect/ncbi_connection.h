@@ -33,7 +33,7 @@
  *   Several methods can be used to establish the connection, and each of them
  *   yields in a simple handle(of type "CONN") that contains a handle(of type
  *   "CONNECTOR") to a data and methods implementing the generic connection I/O
- *   operations. E.g. this API can be used to:
+ *   operations.  E.g. this API can be used to:
  *     1) connect using HTTPD-based dispatcher (e.g. to NCBI services);
  *     2) hit a CGI script;
  *     3) connect to a bare socket at some "host:port";
@@ -348,24 +348,26 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Close
  * or the connection becomes closed.
  * This means that if a callback is intercepted and then relayed to the old
  * handler, the interceptor may not assume the callback remains set, and
- * must re-instate itself upon each upcall of the old handler.
+ * must re-instate itself upon each upcall of the old handler (in general).
  * Normally, callback would return eIO_Success and let the operation continue;
  * non-eIO_Success return value causes it to be returned to the caller level
  * (but possibly with some processing already completed by then, e.g. such as
  * a partial read for eCONN_OnRead from an internal connection buffer).
+ * NOTE:  eIO_Interrupt returned from the callback switches connection into the
+ * cancelled state, and any further connection I/O to fail with eIO_Interrupt.
  * NOTE:  non-eIO_Success from an eCONN_OnClose callback cannot postpone the
  * connection closure (but the error code is still passed through to the user).
- * NOTE:  eCONN_OnTimeout can restart I/O that has timed out by returning
+ * NOTE:  eCONN_OnTimeout can restart the I/O that has timed out by returning
  * eIO_Success.
  * @sa
  *  CONN_Read, CONN_Write, CONN_Close
  */
 typedef enum {
-    eCONN_OnClose  = 0,   /** NB: CONN has been flushed prior to the call    */
-    eCONN_OnRead   = 1,   /** Read from connector is about to occur          */
-    eCONN_OnWrite  = 2,   /** Write to connector is about to occur           */
-    eCONN_OnCancel = 3,   /** CONN_Cancel() is about to take effect          */
-    eCONN_OnTimeout= 4    /** Connection I/O has timed out                   */
+    eCONN_OnClose   = 0,  /** NB: CONN has been flushed prior to the call    */
+    eCONN_OnRead    = 1,  /** Read from connector is about to occur          */
+    eCONN_OnWrite   = 2,  /** Write to connector is about to occur           */
+    eCONN_OnFlush   = 3,  /** Connector is about to be flushed               */
+    eCONN_OnTimeout = 4   /** Connector I/O has timed out                    */
 } ECONN_Callback;
 #define CONN_N_CALLBACKS  5
 

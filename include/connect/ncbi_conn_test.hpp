@@ -70,7 +70,8 @@ public:
     /// @param out
     ///  test results get posted to the stream pointed to by this parameter;
     ///  no output is produced if "out" is NULL.
-    ///
+    /// @param width
+    ///  page width for output (in characters)
     CConnTest(const STimeout* timeout = kDefaultTimeout,
               CNcbiOstream* output = 0, SIZE_TYPE width = 72);
 
@@ -84,8 +85,8 @@ public:
 
     virtual ~CConnTest() { /*nothing*/ }
 
-    /// Execute the test suite from the very first (eHttp) up to
-    ///  and including the requested stage "stage".
+    /// Execute the test suite from the very first (eHttp) up to and including
+    /// the requested "stage".
     ///
     /// It is expected that the call advances to the next check only
     /// if the previous one was successful (or conditionally successful,
@@ -115,10 +116,9 @@ public:
     ///
     virtual EIO_Status Execute(EStage& stage, string* reason = 0);
 
-    ///
-    virtual void       Cancel(void);
-
 protected:
+    /// Return true if the check has been canceled
+    virtual bool       IsCanceled(void) { return false; }
 
     /// Auxiliary class to hold FWDaemon CP(connection point)
     /// information and its current status.
@@ -224,8 +224,6 @@ protected:
     bool                  m_End;
 
 private:
-    CConn_IOStream*       m_IO;
-    volatile bool         m_Canceled;
     string                m_CheckPoint;
     STimeout              m_TimeoutStorage;
 
@@ -235,6 +233,10 @@ private:
     string     x_TimeoutMsg(void);
     /// Obtain and populate FWD connection points
     EIO_Status x_GetFirewallConfiguration(const SConnNetInfo* net_info);
+
+    /// Cancellation support
+    void              x_SetCancelCheckCB(CConn_IOStream& io);
+    static EIO_Status x_IsCanceled(CONN conn, ECONN_Callback type, void* data);
 
 public:
     /// Return TRUE if the client is inside NCBI, FALSE otherwise.

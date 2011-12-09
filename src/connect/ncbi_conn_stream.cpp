@@ -135,13 +135,6 @@ EIO_Status CConn_IOStream::Status(EIO_Event dir) const
 }
 
 
-EIO_Status CConn_IOStream::Cancel(void) const
-{
-    CONN conn = GET_CONN(m_CSb);
-    return conn ? CONN_Cancel(conn) : eIO_Closed;
-}
-
-
 EIO_Status CConn_IOStream::Close(void)
 {
     return m_CSb ? m_CSb->Close() : eIO_Closed;

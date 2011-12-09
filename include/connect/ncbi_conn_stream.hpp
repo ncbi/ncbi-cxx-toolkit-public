@@ -202,11 +202,6 @@ public:
     ///   CONN_Status
     EIO_Status      Status(EIO_Event direction = eIO_Open) const;
 
-    /// Cancel stream connection
-    /// @sa
-    ///   CONN_Cancel, NcbiCancel
-    EIO_Status      Cancel(void) const;
-
     /// Close CONNection, free all internal buffers and underlying structures,
     /// and render stream unusable for further I/O.
     /// Can be used at places where reaching end-of-scope for the stream
@@ -231,34 +226,6 @@ private:
     CConn_IOStream(const CConn_IOStream&);
     CConn_IOStream& operator= (const CConn_IOStream&);
 };
-
-
-/// Parameterless manipulators
-typedef CConn_IOStream& (*FConn_IOManip)(CConn_IOStream& ios);
-
-
-/// Output manipulator
-inline CConn_IOStream& operator<< (CConn_IOStream& os, FConn_IOManip manip)
-{
-    return manip(os);
-}
-
-
-/// Input manipulator
-inline CConn_IOStream& operator>> (CConn_IOStream& is, FConn_IOManip manip)
-{
-    return manip(is);
-}
-
-
-/// Cancellation manipulator "ios << NcbiCancel" or "ios >> NcbiCancel"
-inline CConn_IOStream& NcbiCancel(CConn_IOStream& ios)
-{
-    if (ios.good()  &&  ios.Cancel() != eIO_Success) {
-        ios.clear(IOS_BASE::badbit);
-    }
-    return ios;
-}
 
 
 class CConn_IOStreamSetTimeout {

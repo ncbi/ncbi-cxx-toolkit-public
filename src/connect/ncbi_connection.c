@@ -158,6 +158,7 @@ typedef struct SConnectionTag {
 
 static EIO_Status x_Callback(CONN conn, ECONN_Callback type)
 {
+    EIO_Status     status;
     FCONN_Callback func;
     void*          data;
 
@@ -167,7 +168,30 @@ static EIO_Status x_Callback(CONN conn, ECONN_Callback type)
     if (!(func = conn->cb[type].func))
         return type == eCONN_OnTimeout ? eIO_Timeout : eIO_Success;
     data = conn->cb[type].data;
-    return (*func)(conn, type, data);
+    status = (*func)(conn, type, data);
+    if (status == eIO_Interrupt)
+        conn->state = eCONN_Cancel;
+    return status;
+}
+
+
+static EIO_Status x_Flush(CONN conn, const STimeout* timeout)
+{
+    EIO_Status status;
+
+    if ((status = x_Callback(conn, eCONN_OnFlush)) != eIO_Success)
+        return status;
+
+    /* call current connector's "FLUSH" method */
+    if (conn->meta.flush) {
+        if (timeout == kDefaultTimeout)
+            timeout  = conn->meta.default_timeout;
+        status = conn->meta.flush(conn->meta.c_flush, timeout);
+        if (status != eIO_Success)
+            return status;
+    }
+    conn->flags |= fCONN_Flush;
+    return eIO_Success;
 }
 
 
@@ -179,13 +203,9 @@ static EIO_Status x_ReInit(CONN conn, CONNECTOR connector)
 
     assert(conn->meta.list  ||  conn->state == eCONN_Unusable);
 
-    /* call current connector's "FLUSH" method */
-    status = conn->meta.list  &&  conn->state == eCONN_Open && conn->meta.flush
-        ? conn->meta.flush(conn->meta.c_flush,
-                           conn->c_timeout == kDefaultTimeout
-                           ? conn->meta.default_timeout
-                           : conn->c_timeout)
-        : eIO_Success;
+    /* flush connection first, if open */
+    status = conn->meta.list  &&  conn->state == eCONN_Open
+        ? x_Flush(conn, conn->c_timeout) : eIO_Success;
 
     for (x_conn = conn->meta.list;  x_conn;  x_conn = x_conn->next) {
         if (x_conn == connector) {
@@ -288,10 +308,10 @@ static EIO_Status s_Open(CONN conn)
         conn->flags   &= ~fCONN_Flush;
         conn->r_status = eIO_Success;
         conn->w_status = eIO_Success;
-        conn->state = eCONN_Open;
+        conn->state    = eCONN_Open;
     } else {
         CONN_LOG(5, Open, eLOG_Error, "Failed to open connection");
-        conn->state = eCONN_Bad;
+        conn->state    = eCONN_Bad;
     }
     return status;
 }
@@ -571,17 +591,8 @@ static EIO_Status s_CONN_Write
     }
 
     for (;;) {
-        if (conn->state == eCONN_Cancel) {
-            status = eIO_Interrupt;
-            break;
-        }
-
         if ((status = x_Callback(conn, eCONN_OnWrite)) != eIO_Success)
             break;
-        if (conn->state == eCONN_Cancel) {
-            status = eIO_Interrupt;
-            break;
-        }
 
         /* call current connector's "WRITE" method */
         timeout = (conn->w_timeout == kDefaultTimeout
@@ -713,7 +724,6 @@ extern EIO_Status CONN_PushBack
 extern EIO_Status CONN_Flush
 (CONN conn)
 {
-    const STimeout* timeout;
     EIO_Status status;
 
     CONN_NOT_NULL(20, Flush);
@@ -723,20 +733,17 @@ extern EIO_Status CONN_Flush
         return status;
     assert((conn->state & eCONN_Open)  &&  conn->meta.list);
 
-    /* call current connector's "FLUSH" method */
-    if (conn->meta.flush) {
-        timeout = (conn->w_timeout == kDefaultTimeout
-                   ? conn->meta.default_timeout
-                   : conn->w_timeout);
-        status = conn->meta.flush(conn->meta.c_flush, timeout);
-        if (status != eIO_Success)
-            CONN_LOG(21, Flush, eLOG_Warning, "Failed to flush");
-        else
-            conn->flags |= fCONN_Flush;
+    status = x_Flush(conn, conn->w_timeout);
+    if (status != eIO_Success) {
+        /* this is only for the log message */
+        const STimeout* timeout = status != eIO_Timeout ? 0
+            : (conn->w_timeout == kDefaultTimeout
+               ? conn->meta.default_timeout
+               : conn->w_timeout);
+        CONN_LOG(21, Flush, eLOG_Warning, "Failed to flush");
+    }
+    if (conn->meta.flush)
         conn->w_status = status;
-    } else
-        status = eIO_Success;
-
     return status;
 }
 
@@ -762,13 +769,10 @@ static EIO_Status s_CONN_Read
         return status;
     }
 
-    for (;;) {
+    if (conn->state == eCONN_Cancel)
+        status = eIO_Interrupt;
+    else for (;;) {
         size_t x_read;
-
-        if (conn->state == eCONN_Cancel) {
-            status = eIO_Interrupt;
-            break;
-        }
 
         /* read data from the internal peek buffer, if any */
         if (size) {
@@ -785,10 +789,6 @@ static EIO_Status s_CONN_Read
 
         if ((status = x_Callback(conn, eCONN_OnRead)) != eIO_Success)
             break;
-        if (conn->state == eCONN_Cancel) {
-            status = eIO_Interrupt;
-            break;
-        }
 
         x_read = 0;
         /* call current connector's "READ" method */
@@ -863,15 +863,8 @@ static EIO_Status s_CONN_ReadPersist
             break;
 
         /* keep flushing any pending unwritten output data */
-        if (!(conn->flags & (fCONN_Untie | fCONN_Flush))) {
-            if (conn->meta.flush  &&
-                conn->meta.flush(conn->meta.c_flush,
-                                 conn->r_timeout == kDefaultTimeout
-                                 ? conn->meta.default_timeout
-                                 : conn->r_timeout) == eIO_Success) {
-                conn->flags |= fCONN_Flush;
-            }
-        }
+        if (!(conn->flags & (fCONN_Untie | fCONN_Flush)))
+            x_Flush(conn, conn->r_timeout);
     }
 
     conn->r_status = status;
@@ -902,15 +895,8 @@ extern EIO_Status CONN_Read
     assert((conn->state & eCONN_Open)  &&  conn->meta.list);
 
     /* flush pending unwritten output data (if any) */
-    if (!(conn->flags & (fCONN_Untie | fCONN_Flush))) {
-        if (conn->meta.flush  &&
-            conn->meta.flush(conn->meta.c_flush,
-                             conn->r_timeout == kDefaultTimeout
-                             ? conn->meta.default_timeout
-                             : conn->r_timeout) == eIO_Success) {
-            conn->flags |= fCONN_Flush;
-        }
-    }
+    if (!(conn->flags & (fCONN_Untie | fCONN_Flush)))
+        x_Flush(conn, conn->r_timeout);
 
     /* now do read */
     switch (how) {
@@ -975,15 +961,8 @@ extern EIO_Status CONN_ReadLine
             x_size  = sizeof(w);
 
         /* keep flushing any pending unwritten output data then read */
-        if (!(conn->flags & (fCONN_Untie | fCONN_Flush))) {
-            if (conn->meta.flush  &&
-                conn->meta.flush(conn->meta.c_flush,
-                                 conn->r_timeout == kDefaultTimeout
-                                 ? conn->meta.default_timeout
-                                 : conn->r_timeout) == eIO_Success) {
-                conn->flags |= fCONN_Flush;
-            }
-        }
+        if (!(conn->flags & (fCONN_Untie | fCONN_Flush)))
+            x_Flush(conn, conn->r_timeout);
         status = s_CONN_Read(conn, x_buf, size ? x_size : 0, &x_read, 0);
         conn->r_status = status;
 
@@ -1068,27 +1047,6 @@ extern EIO_Status CONN_Close(CONN conn)
     conn->buf = 0;
     free(conn);
     return status == eIO_Closed ? eIO_Success : status;
-}
-
-
-extern EIO_Status CONN_Cancel(CONN conn)
-{
-    EIO_Status status;
-
-    CONN_NOT_NULL(33, Cancel);
-    
-    if (conn->state == eCONN_Unusable)
-        return eIO_InvalidArg;
-
-    if (conn->state == eCONN_Cancel)
-        return eIO_Interrupt;
-
-    if (conn->state != eCONN_Open)
-        return eIO_Closed;
-
-    if ((status = x_Callback(conn, eCONN_OnCancel)) == eIO_Success)
-        conn->state = eCONN_Cancel;
-    return status;
 }
 
 

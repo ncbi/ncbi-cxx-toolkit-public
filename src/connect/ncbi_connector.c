@@ -89,7 +89,7 @@ extern EIO_Status METACONN_Add
 
     if (connector->next  ||  !connector->setup) {
         EIO_Status status = eIO_Unknown;
-        METACONN_LOG(35, eLOG_Error,
+        METACONN_LOG(33, eLOG_Error,
                      "[METACONN_Add]  Connector is in use/uninitable");
         return status;
     }

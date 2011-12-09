@@ -62,21 +62,6 @@ static const char kFWSign[] =
 const STimeout CConnTest::kTimeout = { 30, 0 };
 
 
-class CIOGuard
-{
-    friend class CConnTest;
-
-protected:
-    CIOGuard(CConn_IOStream*& ptr, CConn_IOStream& stream)
-        : m_Ptr(ptr) { m_Ptr = &stream; }
-
-    ~CIOGuard() { CORE_LOCK_WRITE; m_Ptr = 0; CORE_UNLOCK; }
-
-private:
-    CConn_IOStream*& m_Ptr;
-};
-
-
 inline bool operator > (const STimeout* t1, const STimeout& t2)
 {
     if (!t1)
@@ -88,8 +73,7 @@ inline bool operator > (const STimeout* t1, const STimeout& t2)
 CConnTest::CConnTest(const STimeout* timeout,
                      CNcbiOstream* output, SIZE_TYPE width)
     : m_Output(output), m_Width(width),
-      m_HttpProxy(false), m_Stateless(false), m_Firewall(false),
-      m_End(false), m_IO(0), m_Canceled(false)
+      m_HttpProxy(false), m_Stateless(false), m_Firewall(false), m_End(false)
 {
     SetTimeout(timeout);
 }
@@ -102,18 +86,6 @@ void CConnTest::SetTimeout(const STimeout* timeout)
         m_Timeout        = &m_TimeoutStorage;
     } else
         m_Timeout        = kInfiniteTimeout/*0*/;
-}
-
-
-void CConnTest::Cancel(void)
-{
-    m_Canceled = true;
-    if (m_IO) {
-        CORE_LOCK_READ;
-        if (m_IO)
-            m_IO->Cancel();
-        CORE_UNLOCK;
-    }
 }
 
 
@@ -132,7 +104,6 @@ EIO_Status CConnTest::Execute(EStage& stage, string* reason)
 
     // Reset everything
     m_HttpProxy = m_Stateless = m_Firewall = m_End = false;
-    _ASSERT(!m_IO);
     m_Fwd.clear();
     if (reason)
         reason->clear();
@@ -141,18 +112,11 @@ EIO_Status CConnTest::Execute(EStage& stage, string* reason)
     int s = eHttp;
     EIO_Status status;
     do {
-        if (m_Canceled) {
-            if ( reason )
-                *reason = kCanceled;
-            status = eIO_Interrupt;
-            break;
-        }
         if ((status = (this->*check[s])(reason)) != eIO_Success) {
             stage = EStage(s);
             break;
         }
     } while (EStage(s++) < stage);
-    _ASSERT(!m_IO);
     return status;
 }
 
@@ -172,6 +136,30 @@ string CConnTest::x_TimeoutMsg(void)
 }
 
 
+void CConnTest::x_SetCancelCheckCB(CConn_IOStream& io)
+{
+    CONN conn = io.GetCONN();
+    if (conn) {
+        SCONN_Callback cb;
+        memset(&cb, 0, sizeof(cb));
+        cb.func = (FCONN_Callback) x_IsCanceled;
+        cb.data = this;
+        CONN_SetCallback(conn, eCONN_OnRead,  &cb, 0);
+        CONN_SetCallback(conn, eCONN_OnWrite, &cb, 0);
+        CONN_SetCallback(conn, eCONN_OnFlush, &cb, 0);
+    }
+}
+
+
+EIO_Status CConnTest::x_IsCanceled(CONN conn, ECONN_Callback type, void* data)
+{
+    _ASSERT(conn  &&  data);
+    _ASSERT(type != eCONN_OnTimeout);
+    CConnTest* test = reinterpret_cast<CConnTest*>(data);
+    return /*test &&*/ test->IsCanceled() ? eIO_Interrupt : eIO_Success;
+}
+
+
 EIO_Status CConnTest::ConnStatus(bool failure, CConn_IOStream* io)
 {
     string type = io ? io->GetType()        : kEmptyStr;
@@ -179,8 +167,6 @@ EIO_Status CConnTest::ConnStatus(bool failure, CConn_IOStream* io)
     m_CheckPoint = (type
                     + (!type.empty()  &&  !text.empty() ? "; " : "") +
                     text);
-    if (m_Canceled)
-        return eIO_Interrupt;
     if (!failure)
         return eIO_Success;
     if (!io)
@@ -218,7 +204,7 @@ EIO_Status CConnTest::HttpOkay(string* reason)
     CConn_HttpStream http("http://" + host + port + "/Service/index.html",
                           net_info, kEmptyStr/*user_header*/,
                           0/*flags*/, m_Timeout);
-    CIOGuard guard(m_IO, http);
+    x_SetCancelCheckCB(http);
     string temp;
     http >> temp;
     EIO_Status status = ConnStatus(temp.empty(), &http);
@@ -308,7 +294,7 @@ EIO_Status CConnTest::DispatcherOkay(string* reason)
     CConn_HttpStream http(net_info, kEmptyStr/*user_header*/,
                           s_ParseHeader, &okay, 0/*adjust*/, 0/*cleanup*/,
                           0/*flags*/, m_Timeout);
-    CIOGuard guard(m_IO, http);
+    x_SetCancelCheckCB(http);
     char buf[1024];
     http.read(buf, sizeof(buf));
     CTempString str(buf, http.gcount());
@@ -362,7 +348,7 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
 
     CConn_ServiceStream svc(kService, fSERV_Stateless, net_info,
                             0/*params*/, m_Timeout);
-    CIOGuard guard(m_IO, svc);
+    x_SetCancelCheckCB(svc);
     svc << kTest << NcbiEndl;
     string temp;
     svc >> temp;
@@ -444,12 +430,12 @@ EIO_Status CConnTest::x_GetFirewallConfiguration(const SConnNetInfo* net_info)
         return eIO_InvalidArg;
     CConn_HttpStream fwdcgi(fwdurl, net_info, kEmptyStr/*user hdr*/,
                             0/*flags*/, m_Timeout);
-    CIOGuard guard(m_IO, fwdcgi);
+    x_SetCancelCheckCB(fwdcgi);
     fwdcgi << "selftest" << NcbiEndl;
 
     char line[256];
     bool responded = false;
-    while (!m_Canceled  &&  fwdcgi.getline(line, sizeof(line))) {
+    while (fwdcgi.getline(line, sizeof(line))) {
         responded = true;
         CTempString hostport, state;
         if (!NStr::SplitInTwo(line, "\t", hostport, state, NStr::eMergeDelims))
@@ -629,11 +615,6 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
         bool firewall = true;
         // Check primary ports only
         ITERATE(vector<CConnTest::CFWConnPoint>, cp, m_Fwd) {
-            if (m_Canceled) {
-                status = eIO_Interrupt;
-                temp = kCanceled;
-                break;
-            }
             if (cp->port < CONN_FWD_PORT_MIN  ||  CONN_FWD_PORT_MAX < cp->port)
                 firewall = false;
             if (cp->status != eIO_Success) {
@@ -711,27 +692,24 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
 
         // Spawn connections for all CPs
         NON_CONST_ITERATE(vector<CFWConnPoint>, cp, *fwd[n]) {
-            SOCK_ntoa(cp->host, net_info->host, sizeof(net_info->host));
-            net_info->port = cp->port;
-            if (m_Canceled) {
+            if (IsCanceled()) {
                 status = eIO_Interrupt;
                 break;
             }
+            SOCK_ntoa(cp->host, net_info->host, sizeof(net_info->host));
+            net_info->port = cp->port;
             CConn_SocketStream* fw;
             if (cp->status == eIO_Success) {
                 fw = new CConn_SocketStream(*net_info, "\r\n"/*data*/,
                                             2/*size*/, flags);
-                CIOGuard guard(m_IO, *fw);
                 if (!fw->good()  ||  !fw->GetCONN()) {
-                    CORE_LOCK_WRITE;
-                    m_IO = 0;
-                    CORE_UNLOCK;
                     delete fw;
                     fw = 0;
                     cp->status = eIO_InvalidArg;
                     if (!n)
                         status = eIO_InvalidArg;
-                }
+                } else
+                    x_SetCancelCheckCB(*fw);
             } else
                 fw = 0;
             v.push_back(make_pair(AutoPtr<CConn_SocketStream>(fw), &*cp));
@@ -744,11 +722,6 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                 CConn_IOStream* is = ck->first.get();
                 if (!is)
                     continue;
-                CIOGuard guard(m_IO, *is);
-                if (m_Canceled) {
-                    status = eIO_Interrupt;
-                    break;
-                }
                 CFWConnPoint* cp = ck->second;
                 if (cp->status != eIO_Success)
                     continue;
@@ -777,9 +750,6 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                     count++;
                 if (cp->status != eIO_Success  &&  !n)
                     status = cp->status;
-                CORE_LOCK_WRITE;
-                m_IO = 0;
-                CORE_UNLOCK;
                 ck->first.reset(0);
             }
             if (status != eIO_Success)
@@ -830,7 +800,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                 distance(fwd[n]->begin(), cp, k);
 #else
                 k = distance(fwd[n]->begin(), cp);
-#endif //NCBI_COMPILER_WORKSHOP
+#endif // NCBI_COMPILER_WORKSHOP
                 if (!v[k].first.get())
                     m_CheckPoint = "Connection closed";
                 else
@@ -984,7 +954,7 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
              "Checking reachability of a stateful service");
 
     CConn_ServiceStream id2(kId2, fSERV_Any, net_info, 0/*params*/, m_Timeout);
-    CIOGuard guard(m_IO, id2);
+    x_SetCancelCheckCB(id2);
 
     streamsize n = 0;
     bool iofail = !id2.write(kId2Init, sizeof(kId2Init) - 1)  ||  !id2.flush()
