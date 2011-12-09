@@ -134,7 +134,7 @@ CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
         if ( !m_Scope ) {
             string errstr = string("CAlnMix::Add(): ") 
                 + "Cannot force translation for Dense_seg "
-                + NStr::IntToString(m_InputDSs.size() + 1) + ". "
+                + NStr::NumericToString(m_InputDSs.size() + 1) + ". "
                 + "Neither CDense_seg::m_Widths are supplied, "
                 + "nor OM is used to identify molecule type.";
             NCBI_THROW(CAlnException, eMergeFailure, errstr);

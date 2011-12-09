@@ -201,7 +201,7 @@ public:
                             id_vec[i].Reset(id);
                         } else if (*id_vec[i] != *id) {
                             string err("Inconsistent Seq-ids found in seg ");
-                            err += NStr::IntToString(i) + 
+                            err += NStr::NumericToString(i) + 
                                 ".  Excpected " + id_vec[i]->AsString() +
                                 ", encountered " + id->AsString() + ".";
                             NCBI_THROW(CAlnException, eInvalidSeqId, err);
@@ -258,7 +258,7 @@ public:
                         id_vec[0].Reset(first_id);
                     } else if (*id_vec[0] != *first_id) {
                         string err("Inconsistent Seq-ids found in row ");
-                        err += NStr::IntToString(row) + ".";
+                        err += NStr::NumericToString(row) + ".";
                         NCBI_THROW(CAlnException, eInvalidSeqId, err);
                     }
                     id_vec[row + 1].Reset(NewAlnSeqId(sa.GetSecond_id()));
