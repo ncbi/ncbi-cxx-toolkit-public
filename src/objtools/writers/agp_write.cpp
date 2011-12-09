@@ -147,9 +147,9 @@ static void s_AgpWrite(CNcbiOstream& os,
     if (!component_types.empty()
         && component_types.size() != seq_map.GetSegmentsCount()) {
         string error_str = "length of component_types ("
-            + NStr::UIntToString(component_types.size())
+            + NStr::NumericToString(component_types.size())
             + ") is inconsistent with number of segments ("
-            + NStr::UIntToString(seq_map.GetSegmentsCount()) + ")";
+            + NStr::NumericToString(seq_map.GetSegmentsCount()) + ")";
         NCBI_THROW(CObjWriterException, eArgErr, error_str);
     }
 

@@ -133,15 +133,15 @@ void AgpRead(CNcbiIstream& is,
             if (fields.size() >= 5 && fields[4] != "N" && fields[4] != "U") {
                 NCBI_THROW2(CObjReaderParseException, eFormat,
                             string("error at line ") + 
-                            NStr::IntToString(line_num) + ": found " +
-                            NStr::IntToString(fields.size()) +
+                            NStr::NumericToString(line_num) + ": found " +
+                            NStr::NumericToString(fields.size()) +
                             " columns; there should be 9",
                             is.tellg() - CT_POS_TYPE(0));
             } else if (fields.size() != 8) {
                 NCBI_THROW2(CObjReaderParseException, eFormat,
                             string("error at line ") + 
-                            NStr::IntToString(line_num) + ": found " +
-                            NStr::IntToString(fields.size()) +
+                            NStr::NumericToString(line_num) + ": found " +
+                            NStr::NumericToString(fields.size()) +
                             " columns; there should be 8 or 9",
                             is.tellg() - CT_POS_TYPE(0));
             }
