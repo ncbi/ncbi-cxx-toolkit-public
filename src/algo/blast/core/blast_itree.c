@@ -1118,14 +1118,12 @@ BlastIntervalTreeMasksHSP(const BlastIntervalTree *tree,
     Int4 region_start;
     Int4 region_end;
     Int4 in_query_start;
-    Int4 tmp_qstart;
     Int4 middle;
     Int4 tmp_index = 0;
 
     SIntervalNode *node = tree->nodes + subtree_index;
 
     in_query_start = s_GetQueryStrandOffset(query_info, hsp->context);
-    tmp_qstart = in_query_start;
 
     if ( query_info->contexts[hsp->context].frame == -1 )
     {

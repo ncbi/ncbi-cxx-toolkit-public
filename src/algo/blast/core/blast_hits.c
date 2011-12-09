@@ -1843,12 +1843,9 @@ Int2 Blast_HSPListReapByRawScore(BlastHSPList* hsp_list,
    BlastHSP** hsp_array;
    Int4 hsp_cnt = 0;
    Int4 index;
-   double cutoff;
 
    if (hsp_list == NULL)
       return 0;
-
-   cutoff = hit_options->expect_value;
 
    hsp_array = hsp_list->hsp_array;
    for (index = 0; index < hsp_list->hspcnt; index++) {
