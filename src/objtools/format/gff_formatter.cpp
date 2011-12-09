@@ -479,7 +479,7 @@ string CGFFFormatter::x_GetTranscriptID
 
     string transcript_id = gene_id;
     transcript_id += ":unknown_transcript_";
-    transcript_id += NStr::IntToString(m_Transcripts[gene_id].size());
+    transcript_id += NStr::NumericToString(m_Transcripts[gene_id].size());
     return transcript_id;
 }
 

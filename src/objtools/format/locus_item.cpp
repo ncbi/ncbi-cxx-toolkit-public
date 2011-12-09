@@ -157,7 +157,7 @@ static void s_AddLocusSuffix(string &basename, CBioseqContext& ctx)
     CNcbiOstrstream locus;
     locus << basename;
 
-    size_t suffix_len = NStr::IntToString(numsegs).length();
+    size_t suffix_len = NStr::NumericToString(numsegs).length();
 
     if (s_IsSeperatorNeeded(basename, suffix_len)) {
         locus << 'S';

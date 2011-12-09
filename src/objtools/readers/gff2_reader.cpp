@@ -705,8 +705,8 @@ bool CGff2Reader::x_FeatureSetGffInfo(
     CRef< CUser_object > pGffInfo( new CUser_object );
     pGffInfo->SetType().SetStr( "gff-info" );    
     pGffInfo->AddField( "gff-attributes", record.AttributesLiteral() );
-    pGffInfo->AddField( "gff-start", NStr::UIntToString( record.SeqStart() ) );
-    pGffInfo->AddField( "gff-stop", NStr::UIntToString( record.SeqStop() ) );
+    pGffInfo->AddField( "gff-start", NStr::NumericToString( record.SeqStart() ) );
+    pGffInfo->AddField( "gff-stop", NStr::NumericToString( record.SeqStop() ) );
     pGffInfo->AddField( "gff-cooked", string( "false" ) );
 
     pFeature->SetExts().push_back( pGffInfo );
