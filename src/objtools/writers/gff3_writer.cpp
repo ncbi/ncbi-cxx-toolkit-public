@@ -392,13 +392,13 @@ bool CGff3Writer::x_WriteBioseqHandle(
     }
 
     for ( ;  feat_iter;  ++feat_iter ) {
-        
         if ( ! x_WriteFeature( fc, *feat_iter ) ) {
             StackUp();
             return false;
         }
     }   
-    for (CAnnot_CI aci(bsh); aci; ++aci) {
+    sel.SetAnnotType(CSeq_annot::C_Data::e_Align);
+    for (CAnnot_CI aci(bsh, sel); aci; ++aci) {
         x_WriteSeqAnnotHandle(*aci);
     }
     StackUp(); 
@@ -417,9 +417,6 @@ bool CGff3Writer::x_WriteFeature(
         switch( mf.GetFeatSubtype() ) {
             default:
                 if (mf.GetFeatType() == CSeqFeatData::e_Rna) {
-                    if (subtype != CSeqFeatData::eSubtype_mRNA) {
-                        cerr << "";
-                    }
                     return x_WriteFeatureRna( fc, mf );
                 }
                 return x_WriteFeatureGeneric( fc, mf );
