@@ -360,7 +360,7 @@ void CTestNetCacheStress::CheckBlob(unsigned char* blob,
         unsigned char prev = blob[i-1] + init;
         if (blob[i] != prev) {
             throw runtime_error("Incorrect blob value at position:" +
-                                NStr::IntToString(i));
+                                NStr::NumericToString(i));
         }
     } // for
 }
