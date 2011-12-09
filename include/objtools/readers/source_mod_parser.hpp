@@ -135,6 +135,8 @@ public:
         CBadModError( const SMod & badMod )  
           : runtime_error("bad modifier name or value: " + badMod.ToString() ),
             m_BadMod(badMod) { }
+        ~CBadModError() THROWS_NONE { } // required by GCC 4.6
+
         const SMod & GetBadMod() const { return m_BadMod; }
     private:
         SMod m_BadMod;
