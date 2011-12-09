@@ -312,20 +312,6 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Status
  );
 
 
-/* Cancel the connection's I/O ability. @deprecated DO NOT USE THIS API CALL!
- * This is *not* connection closure, but any data extraction or
- * insertion (Read/Write) will be effectively rejected after this call
- * (and eIO_Interrupt will result, same for CONN_Status()).
- * If an eCONN_Cancel callback is set and returns non-eIO_Success, the return
- * code gets passed as a result and the cancellation does not take effect.
- * CONN_Close() is still required to release internal connection structures.
- * @note DO NOT USE THIS CALL!  IT WILL BE REMOVED IN THE NEXT RELEASE.
- */
-extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Cancel
-(CONN conn  /* [in] connection handle */
- );
-
-
 /** Close the connection, destroy all relevant internal data.
  * @note  Whatever error code is returned, the connection handle "conn"
  *        will have become invalid (so, you should not use it anymore).
