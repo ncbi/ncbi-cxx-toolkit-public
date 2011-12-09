@@ -131,7 +131,7 @@ BOOST_AUTO_TEST_CASE(TestProteinSeqAlign)
                         "((4:0.948, (1:0.814, ((2:0.092, 3:0.060):0.586, "
                         "(((9:0.044, ((7:0.012, 8:0.020):0.045, 6:0.044)"
                         ":0.018):0.070, 10:0.000):0.390, (0:0.000, 5:0.034)"
-                        ":0.393):0.078):0.072):0.000):0.000)");
+                        ":0.393):0.078):0.072):0.000):x)");
 }
 
 
@@ -163,7 +163,7 @@ BOOST_AUTO_TEST_CASE(TestProteinSeqAlignSet)
                         "((4:0.899, ((1:0.699, (2:0.061, 3:0.062):0.440)"
                         ":0.070, (((9:0.038, ((7:0.005, 8:0.017):0.044, "
                         "6:0.037):0.017):0.050, 10:0.000):0.403, (0:0.000, "
-                        "5:0.034):0.360):0.104):0.000):0.000)");
+                        "5:0.034):0.360):0.104):0.000):x)");
 }
 
 
@@ -187,7 +187,7 @@ BOOST_AUTO_TEST_CASE(TestNucleotideSeqAlign)
                         "(((5:0.000, 9:0.000):0.003, (7:0.000, (3:0.000, "
                         "(4:0.001, (1:0.000, (0:0.000, ((6:0.000, 8:0.000)"
                         ":0.000, 2:0.000):0.000):0.000):0.001):0.000):0.000)"
-                        ":0.000):0.000)");
+                        ":0.000):x)");
 }
 
 // Test tree computation with nucleotide Seq-align-set as input
@@ -213,7 +213,7 @@ BOOST_AUTO_TEST_CASE(TestNucleotideSeqAlignSet)
                         "(((5:0.000, 9:0.000):0.003, (7:0.000, (3:0.000, "
                         "(4:0.001, (1:0.000, (0:0.000, ((6:0.000, 8:0.000)"
                         ":0.000, 2:0.000):0.000):0.000):0.001):0.000):0.000)"
-                        ":0.000):0.000)");
+                        ":0.000):x)");
 }
 
 
@@ -562,9 +562,9 @@ static void s_GetNewick(const TPhyTreeNode* node, string& result)
     }
 
     result += node->GetValue().GetLabel();
-    result += ":";
-    result += NStr::DoubleToString(node->GetValue().GetDist(), 3);
-    
+    result += ":";    
+    result += node->GetValue().IsSetDist()
+        ? NStr::DoubleToString(node->GetValue().GetDist(), 3) : "x";    
 }
 
 static string s_GetNewickLike(const TPhyTreeNode* tree)
