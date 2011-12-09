@@ -782,7 +782,13 @@ BOOST_AUTO_TEST_CASE(s_StringToDoublePosix)
         double valuep = NStr::StringToDouble(str, NStr::fDecimalPosix | NStr::fIgnoreErrno);
         NcbiCout << setprecision(24) << result << " vs " << valuep
             << setprecision(6) << NcbiEndl;
-        BOOST_CHECK(valuep >= result-delta && valuep <= result+delta);
+        if ( delta == 0 )
+            BOOST_CHECK(valuep == result);
+        double min = result-delta, max = result+delta;
+        if ( finite(min) )
+            BOOST_CHECK(valuep >= min);
+        if ( finite(max) )
+            BOOST_CHECK(valuep <= max);
     }
     
     string out;
