@@ -474,6 +474,7 @@ enum EErrType {
     eErr_SEQ_FEAT_MultipleBioseqs,
     eErr_SEQ_FEAT_DifferntIdTypesInSeqLoc,
     eErr_SEQ_FEAT_IntervalBeginsOrEndsInGap,
+    eErr_SEQ_FEAT_InconsistentRRNAstrands,
     ERR_CODE_END(SEQ_FEAT),
 
     ERR_CODE_BEGIN(SEQ_ALIGN) = 5000,

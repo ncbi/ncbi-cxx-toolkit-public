@@ -5776,111 +5776,118 @@ void CValidError_bioseq::x_ValidateAbuttingRNA(const CBioseq_Handle& seq)
         ++it2;
         while (it2) {
             ERnaPosition pos2 = s_RnaPosition (it2->GetOriginalFeature());
-            ENa_strand strand2 = eNa_strand_plus;
-            if (it2->GetLocation().IsSetStrand() && it2->GetLocation().GetStrand() == eNa_strand_minus) {
-                strand2 = eNa_strand_minus;
+            if (pos2 != e_RnaPosition_Ignore) {
+                ENa_strand strand2 = eNa_strand_plus;
+                if (it2->GetLocation().IsSetStrand() && it2->GetLocation().GetStrand() == eNa_strand_minus) {
+                    strand2 = eNa_strand_minus;
+                }
+                int left2 = it2->GetLocation().GetStart(eExtreme_Positional);
+                int right2 = it2->GetLocation().GetStop(eExtreme_Positional);
+    
+                if ((strand1 == eNa_strand_minus && strand2 != eNa_strand_minus)
+                    || (strand1 != eNa_strand_minus && strand2 == eNa_strand_minus)) {
+                    // different strands
+                    if (pos1 != e_RnaPosition_Ignore && pos2 != e_RnaPosition_Ignore) {
+                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_InconsistentRRNAstrands, 
+                                 "Inconsistent strands for rRNA components",
+                                 it2->GetOriginalFeature());
+                    }
+                } else if (pos1 == e_RnaPosition_Ignore || pos2 == e_RnaPosition_Ignore) {
+                    // ignore
+                } else if (right1 + 1 < left2) {
+                    // gap between features
+                    if (x_IsRangeGap (seq, right1 + 1, left2 - 1)) {
+                        // ignore, gap between features is gap in sequence
+                    } else if (strand1 == eNa_strand_minus) {
+                        if ((pos1 == e_RnaPosition_RIGHT_RIBOSOMAL_SUBUNIT && (pos2 == e_RnaPosition_INTERNAL_SPACER_2 || pos2 == e_RnaPosition_INTERNAL_SPACER_X)) ||
+                            (pos1 == e_RnaPosition_INTERNAL_SPACER_2 && pos2 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT) ||
+                            (pos1 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT && pos2 == e_RnaPosition_INTERNAL_SPACER_1) ||
+                            (pos1 == e_RnaPosition_INTERNAL_SPACER_1 && pos2 == e_RnaPosition_LEFT_RIBOSOMAL_SUBUNIT) ||
+                            (pos1 == e_RnaPosition_INTERNAL_SPACER_X && pos2 == e_RnaPosition_LEFT_RIBOSOMAL_SUBUNIT)) {
+                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_ITSdoesNotAbutRRNA, 
+                                     "ITS does not abut adjacent rRNA component",
+                                     it2->GetOriginalFeature());
+                        }
+                    } else {
+                        if ((pos1 == e_RnaPosition_LEFT_RIBOSOMAL_SUBUNIT && (pos2 == e_RnaPosition_INTERNAL_SPACER_1 || pos2 == e_RnaPosition_INTERNAL_SPACER_X)) ||
+                            (pos1 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT && pos2 == e_RnaPosition_INTERNAL_SPACER_2) ||
+                            (pos1 == e_RnaPosition_INTERNAL_SPACER_1 && pos2 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT) ||
+                            (pos1 == e_RnaPosition_INTERNAL_SPACER_2 && pos2 == e_RnaPosition_RIGHT_RIBOSOMAL_SUBUNIT) ||
+                            (pos1 == e_RnaPosition_INTERNAL_SPACER_X && pos2 == e_RnaPosition_RIGHT_RIBOSOMAL_SUBUNIT)) {
+                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_ITSdoesNotAbutRRNA, 
+                                     "ITS does not abut adjacent rRNA component",
+                                     it2->GetOriginalFeature());
+                        }
+                    }
+                } else if (right1 + 1 > left2) {
+                    // features overlap
+                    if (strand1 == eNa_strand_minus) {
+                        // on minus strand
+                        if ((pos1 == e_RnaPosition_RIGHT_RIBOSOMAL_SUBUNIT && (pos2 == e_RnaPosition_INTERNAL_SPACER_2 || pos2 == e_RnaPosition_INTERNAL_SPACER_X)) ||
+                            (pos1 == e_RnaPosition_INTERNAL_SPACER_2 && pos2 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT) ||
+                            (pos1 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT && pos2 == e_RnaPosition_INTERNAL_SPACER_1) ||
+                            (pos1 == e_RnaPosition_INTERNAL_SPACER_1 && pos2 == e_RnaPosition_LEFT_RIBOSOMAL_SUBUNIT) ||
+                            (pos1 == e_RnaPosition_INTERNAL_SPACER_X && pos2 == e_RnaPosition_LEFT_RIBOSOMAL_SUBUNIT)) {
+                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadRRNAcomponentOverlap, 
+                                     "ITS overlaps adjacent rRNA component",
+                                     it2->GetOriginalFeature());
+                        }
+                    } else {
+                        // on plus strand
+                        if ((pos1 == e_RnaPosition_LEFT_RIBOSOMAL_SUBUNIT && (pos2 == e_RnaPosition_INTERNAL_SPACER_1 || pos2 == e_RnaPosition_INTERNAL_SPACER_X)) ||
+                            (pos1 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT && pos2 == e_RnaPosition_INTERNAL_SPACER_2) ||
+                            (pos1 == e_RnaPosition_INTERNAL_SPACER_1 && pos2 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT) ||
+                            (pos1 == e_RnaPosition_INTERNAL_SPACER_2 && pos2 == e_RnaPosition_RIGHT_RIBOSOMAL_SUBUNIT) ||
+                            (pos1 == e_RnaPosition_INTERNAL_SPACER_X && pos2 == e_RnaPosition_RIGHT_RIBOSOMAL_SUBUNIT)) {
+                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadRRNAcomponentOverlap, 
+                                     "ITS overlaps adjacent rRNA component",
+                                     it2->GetOriginalFeature());
+                        }
+                    }
+    
+                } else {
+                    // features abut
+                    if (strand1 == eNa_strand_minus) {
+                        // on minus strand
+                        if (pos1 == pos2 
+                            && it->GetLocation().IsPartialStop (eExtreme_Positional)
+                            && it2->GetLocation().IsPartialStart (eExtreme_Positional)
+                            && seq.IsSetInst_Repr() && seq.GetInst_Repr() == CSeq_inst::eRepr_seg) {
+                          /* okay in segmented set */
+                        } else if ((pos1 == e_RnaPosition_RIGHT_RIBOSOMAL_SUBUNIT && (pos2 != e_RnaPosition_INTERNAL_SPACER_2 && pos2 != e_RnaPosition_INTERNAL_SPACER_X)) ||
+                            (pos1 == e_RnaPosition_INTERNAL_SPACER_2 && pos2 != e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT) ||
+                            (pos1 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT && pos2 != e_RnaPosition_INTERNAL_SPACER_1) ||
+                            (pos1 == e_RnaPosition_INTERNAL_SPACER_1 && pos2 != e_RnaPosition_LEFT_RIBOSOMAL_SUBUNIT) ||
+                            (pos1 == e_RnaPosition_INTERNAL_SPACER_X && pos2 != e_RnaPosition_LEFT_RIBOSOMAL_SUBUNIT)) {
+                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadRRNAcomponentOrder,
+                                     "Problem with order of abutting rRNA components",
+                                     it2->GetOriginalFeature());
+                        }
+                    } else {
+                        // on plus strand
+                        if (pos1 == pos2 
+                            && it->GetLocation().IsPartialStop (eExtreme_Positional)
+                            && it2->GetLocation().IsPartialStart (eExtreme_Positional)
+                            && seq.IsSetInst_Repr() && seq.GetInst_Repr() == CSeq_inst::eRepr_seg) {
+                          /* okay in segmented set */
+                        } else if ((pos1 == e_RnaPosition_LEFT_RIBOSOMAL_SUBUNIT && (pos2 != e_RnaPosition_INTERNAL_SPACER_1 && pos2 != e_RnaPosition_INTERNAL_SPACER_X)) ||
+                            (pos1 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT && pos2 != e_RnaPosition_INTERNAL_SPACER_2) ||
+                            (pos1 == e_RnaPosition_INTERNAL_SPACER_1 && pos2 != e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT) ||
+                            (pos1 == e_RnaPosition_INTERNAL_SPACER_2 && pos2 != e_RnaPosition_RIGHT_RIBOSOMAL_SUBUNIT) ||
+                            (pos1 == e_RnaPosition_INTERNAL_SPACER_X && pos2 != e_RnaPosition_RIGHT_RIBOSOMAL_SUBUNIT)) {
+                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadRRNAcomponentOrder,
+                                     "Problem with order of abutting rRNA components",
+                                     it2->GetOriginalFeature());
+                        }
+                    }
+                }
+                it = it2;
+                pos1 = pos2;
+                strand1 = strand2;
+                left1 = left2;
+                right1 = right2;
             }
-            int left2 = it2->GetLocation().GetStart(eExtreme_Positional);
-            int right2 = it2->GetLocation().GetStop(eExtreme_Positional);
-
-            if ((strand1 == eNa_strand_minus && strand2 != eNa_strand_minus)
-                || (strand1 != eNa_strand_minus && strand2 == eNa_strand_minus)) {
-                // different strands, do not compare
-            } else if (pos1 == e_RnaPosition_Ignore || pos2 == e_RnaPosition_Ignore) {
-                // ignore
-            } else if (right1 + 1 < left2) {
-                // gap between features
-                if (x_IsRangeGap (seq, right1 + 1, left2 - 1)) {
-                    // ignore, gap between features is gap in sequence
-                } else if (strand1 == eNa_strand_minus) {
-                    if ((pos1 == e_RnaPosition_RIGHT_RIBOSOMAL_SUBUNIT && (pos2 == e_RnaPosition_INTERNAL_SPACER_2 || pos2 == e_RnaPosition_INTERNAL_SPACER_X)) ||
-                        (pos1 == e_RnaPosition_INTERNAL_SPACER_2 && pos2 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT) ||
-                        (pos1 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT && pos2 == e_RnaPosition_INTERNAL_SPACER_1) ||
-                        (pos1 == e_RnaPosition_INTERNAL_SPACER_1 && pos2 == e_RnaPosition_LEFT_RIBOSOMAL_SUBUNIT) ||
-                        (pos1 == e_RnaPosition_INTERNAL_SPACER_X && pos2 == e_RnaPosition_LEFT_RIBOSOMAL_SUBUNIT)) {
-                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_ITSdoesNotAbutRRNA, 
-                                 "ITS does not abut adjacent rRNA component",
-                                 it2->GetOriginalFeature());
-                    }
-                } else {
-                    if ((pos1 == e_RnaPosition_LEFT_RIBOSOMAL_SUBUNIT && (pos2 == e_RnaPosition_INTERNAL_SPACER_1 || pos2 == e_RnaPosition_INTERNAL_SPACER_X)) ||
-                        (pos1 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT && pos2 == e_RnaPosition_INTERNAL_SPACER_2) ||
-                        (pos1 == e_RnaPosition_INTERNAL_SPACER_1 && pos2 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT) ||
-                        (pos1 == e_RnaPosition_INTERNAL_SPACER_2 && pos2 == e_RnaPosition_RIGHT_RIBOSOMAL_SUBUNIT) ||
-                        (pos1 == e_RnaPosition_INTERNAL_SPACER_X && pos2 == e_RnaPosition_RIGHT_RIBOSOMAL_SUBUNIT)) {
-                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_ITSdoesNotAbutRRNA, 
-                                 "ITS does not abut adjacent rRNA component",
-                                 it2->GetOriginalFeature());
-                    }
-                }
-            } else if (right1 + 1 > left2) {
-                // features overlap
-                if (strand1 == eNa_strand_minus) {
-                    // on minus strand
-                    if ((pos1 == e_RnaPosition_RIGHT_RIBOSOMAL_SUBUNIT && (pos2 == e_RnaPosition_INTERNAL_SPACER_2 || pos2 == e_RnaPosition_INTERNAL_SPACER_X)) ||
-                        (pos1 == e_RnaPosition_INTERNAL_SPACER_2 && pos2 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT) ||
-                        (pos1 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT && pos2 == e_RnaPosition_INTERNAL_SPACER_1) ||
-                        (pos1 == e_RnaPosition_INTERNAL_SPACER_1 && pos2 == e_RnaPosition_LEFT_RIBOSOMAL_SUBUNIT) ||
-                        (pos1 == e_RnaPosition_INTERNAL_SPACER_X && pos2 == e_RnaPosition_LEFT_RIBOSOMAL_SUBUNIT)) {
-                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadRRNAcomponentOverlap, 
-                                 "ITS overlaps adjacent rRNA component",
-                                 it2->GetOriginalFeature());
-                    }
-                } else {
-                    // on plus strand
-                    if ((pos1 == e_RnaPosition_LEFT_RIBOSOMAL_SUBUNIT && (pos2 == e_RnaPosition_INTERNAL_SPACER_1 || pos2 == e_RnaPosition_INTERNAL_SPACER_X)) ||
-                        (pos1 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT && pos2 == e_RnaPosition_INTERNAL_SPACER_2) ||
-                        (pos1 == e_RnaPosition_INTERNAL_SPACER_1 && pos2 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT) ||
-                        (pos1 == e_RnaPosition_INTERNAL_SPACER_2 && pos2 == e_RnaPosition_RIGHT_RIBOSOMAL_SUBUNIT) ||
-                        (pos1 == e_RnaPosition_INTERNAL_SPACER_X && pos2 == e_RnaPosition_RIGHT_RIBOSOMAL_SUBUNIT)) {
-                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadRRNAcomponentOverlap, 
-                                 "ITS overlaps adjacent rRNA component",
-                                 it2->GetOriginalFeature());
-                    }
-                }
-
-            } else {
-                // features abut
-                if (strand1 == eNa_strand_minus) {
-                    // on minus strand
-                    if (pos1 == pos2 
-                        && it->GetLocation().IsPartialStop (eExtreme_Positional)
-                        && it2->GetLocation().IsPartialStart (eExtreme_Positional)
-                        && seq.IsSetInst_Repr() && seq.GetInst_Repr() == CSeq_inst::eRepr_seg) {
-                      /* okay in segmented set */
-                    } else if ((pos1 == e_RnaPosition_RIGHT_RIBOSOMAL_SUBUNIT && (pos2 != e_RnaPosition_INTERNAL_SPACER_2 && pos2 != e_RnaPosition_INTERNAL_SPACER_X)) ||
-                        (pos1 == e_RnaPosition_INTERNAL_SPACER_2 && pos2 != e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT) ||
-                        (pos1 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT && pos2 != e_RnaPosition_INTERNAL_SPACER_1) ||
-                        (pos1 == e_RnaPosition_INTERNAL_SPACER_1 && pos2 != e_RnaPosition_LEFT_RIBOSOMAL_SUBUNIT) ||
-                        (pos1 == e_RnaPosition_INTERNAL_SPACER_X && pos2 != e_RnaPosition_LEFT_RIBOSOMAL_SUBUNIT)) {
-                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadRRNAcomponentOrder,
-                                 "Problem with order of abutting rRNA components",
-                                 it2->GetOriginalFeature());
-                    }
-                } else {
-                    // on plus strand
-                    if (pos1 == pos2 
-                        && it->GetLocation().IsPartialStop (eExtreme_Positional)
-                        && it2->GetLocation().IsPartialStart (eExtreme_Positional)
-                        && seq.IsSetInst_Repr() && seq.GetInst_Repr() == CSeq_inst::eRepr_seg) {
-                      /* okay in segmented set */
-                    } else if ((pos1 == e_RnaPosition_LEFT_RIBOSOMAL_SUBUNIT && (pos2 != e_RnaPosition_INTERNAL_SPACER_1 && pos2 != e_RnaPosition_INTERNAL_SPACER_X)) ||
-                        (pos1 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT && pos2 != e_RnaPosition_INTERNAL_SPACER_2) ||
-                        (pos1 == e_RnaPosition_INTERNAL_SPACER_1 && pos2 != e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT) ||
-                        (pos1 == e_RnaPosition_INTERNAL_SPACER_2 && pos2 != e_RnaPosition_RIGHT_RIBOSOMAL_SUBUNIT) ||
-                        (pos1 == e_RnaPosition_INTERNAL_SPACER_X && pos2 != e_RnaPosition_RIGHT_RIBOSOMAL_SUBUNIT)) {
-                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadRRNAcomponentOrder,
-                                 "Problem with order of abutting rRNA components",
-                                 it2->GetOriginalFeature());
-                    }
-                }
-            }
-            it = it2;
             ++it2;
-            pos1 = pos2;
-            strand1 = strand2;
-            left1 = left2;
-            right1 = right2;
         }
     }
 

@@ -3494,9 +3494,9 @@ void CValidError_imp::ValidateOrgModVoucher(const COrgMod& orgmod, const CSerial
                         obj, ctx);
             return;
         } else {   
-            if ((subtype == COrgMod::eSubtype_bio_material && !NStr::Equal (voucher_type, "b")) ||
-                (subtype == COrgMod::eSubtype_culture_collection && !NStr::Equal (voucher_type, "c")) ||
-                (subtype == COrgMod::eSubtype_specimen_voucher && !NStr::Equal (voucher_type, "s"))) {
+            if ((subtype == COrgMod::eSubtype_bio_material && NStr::FindNoCase (voucher_type, "b") != string::npos) ||
+                (subtype == COrgMod::eSubtype_culture_collection && NStr::FindNoCase (voucher_type, "c") != string::npos) ||
+                (subtype == COrgMod::eSubtype_specimen_voucher && NStr::FindNoCase (voucher_type, "s") != string::npos)) {
                 if (NStr::Equal (voucher_type, "b")) {
                     PostObjErr (eDiag_Info, eErr_SEQ_DESCR_WrongVoucherType, 
                                 "Institution code " + inst_coll + " should be bio_material", 

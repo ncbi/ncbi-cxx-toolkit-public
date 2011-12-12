@@ -1468,6 +1468,9 @@ same id type")),
    TErrTypStrs ( eErr_SEQ_FEAT_IntervalBeginsOrEndsInGap,
    TErrStrs( "IntervalBeginsOrEndsInGap",
 "An internal interval of the feature starts or stops within a sequence gap.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_InconsistentRRNAstrands,
+   TErrStrs( "InconsistentRRNAstrands",
+"rRNA and ITS features are not on the same strand.")),
 
 /* SEQ_ALIGN */
 
