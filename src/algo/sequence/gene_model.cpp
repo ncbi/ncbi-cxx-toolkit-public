@@ -48,6 +48,7 @@
 #include <objects/general/User_object.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Product_pos.hpp>
+#include <objects/seqalign/Prot_pos.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Spliced_exon_chunk.hpp>
 #include <objects/seqalign/Spliced_exon.hpp>
@@ -409,15 +410,61 @@ SImplementation::CleanAlignment(const CSeq_align& align_in)
     return align;
 }
 
+static void s_TransformToNucpos(CProduct_pos &pos)
+{
+    TSeqPos nucpos = pos.GetProtpos().GetAmin()*3;
+    if (pos.GetProtpos().CanGetFrame() && pos.GetProtpos().GetFrame() > 0) {
+        nucpos += pos.GetProtpos().GetFrame() - 1;
+    }
+    pos.SetNucpos(nucpos);
+}
+
 CRef<CSeq_feat>
 CFeatureGenerator::
-SImplementation::ConvertAlignToAnnot(const CSeq_align& align,
+SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
                                      CSeq_annot& annot,
                                      CBioseq_set& seqs,
                                      int gene_id,
                                      const CSeq_feat* cdregion,
                                      bool call_on_align_list)
 {
+    CConstRef<CSeq_align> align(&input_align);
+    CRef<CSeq_feat> cd_feat;
+    bool is_protein_align = align->CanGetSegs() && align->GetSegs().IsSpliced()
+                          && align->GetSegs().GetSpliced().GetProduct_type()
+                             == CSpliced_seg::eProduct_type_protein;
+    if (is_protein_align)
+    {
+        /// This is a protein alignment; transform it into a fake transcript alignment
+        /// so the rest of the processing can go on
+        CSeq_align *fake_transcript_align = new CSeq_align;
+        align.Reset(fake_transcript_align);
+        fake_transcript_align->Assign(input_align);
+        fake_transcript_align->SetSegs().SetSpliced().SetProduct_type(
+            CSpliced_seg::eProduct_type_transcript);
+        NON_CONST_ITERATE (CSpliced_seg::TExons, exon_it,
+                      fake_transcript_align->SetSegs().SetSpliced().SetExons())
+        {
+            s_TransformToNucpos((*exon_it)->SetProduct_start());
+            s_TransformToNucpos((*exon_it)->SetProduct_end());
+        }
+
+        if (!fake_transcript_align->GetSegs().GetSpliced().CanGetProduct_length()) {
+            NCBI_THROW(CException, eUnknown, "Can't get protein length");
+        }
+        TSeqPos prot_length =
+            fake_transcript_align->GetSegs().GetSpliced().GetProduct_length();
+        CRef<CSeq_id> prot_id(new CSeq_id);
+        prot_id->Assign(fake_transcript_align->GetSeq_id(0));
+        CRef<CSeq_loc> fake_prot_loc(new CSeq_loc(*prot_id, 0, prot_length*3-1));
+
+        cd_feat.Reset(new CSeq_feat);
+        cd_feat->SetData().SetCdregion().SetFrame(CCdregion::eFrame_one);
+        cd_feat->SetLocation(*fake_prot_loc);
+        cd_feat->SetProduct().SetWhole(*prot_id);
+        cdregion = cd_feat.GetPointer();
+    }
+
     CScopeTransaction tr = m_scope->GetTransaction(); // to rollback any changes at return
 
     CSeq_loc_Mapper::TMapOptions opts = 0;
@@ -428,11 +475,11 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& align,
     CScope mapper_scope(*CObjectManager::GetInstance());
     mapper_scope.AddScope(*m_scope);
 
-    SMapper mapper(align, mapper_scope, m_allowed_unaligned, opts);
+    SMapper mapper(*align, mapper_scope, m_allowed_unaligned, opts);
 
     CTime time(CTime::eCurrent);
 
-    const CSeq_id& rna_id = align.GetSeq_id(mapper.GetRnaRow());
+    const CSeq_id& rna_id = align->GetSeq_id(mapper.GetRnaRow());
 
     /// we always need the mRNA location as a reference
     CRef<CSeq_loc> loc(new CSeq_loc);
@@ -464,7 +511,7 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& align,
     }
 
     CRef<CSeq_feat> mrna_feat =
-        x_CreateMrnaFeature(align, loc, time, model_num,
+        x_CreateMrnaFeature(*align, loc, time, model_num,
                             seqs, rna_id, cdregion);
 
     CRef<CSeq_feat> gene_feat;
@@ -474,7 +521,7 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& align,
     }
 
     if(!call_on_align_list){
-        const CSeq_id& genomic_id = align.GetSeq_id(mapper.GetGenomicRow());
+        const CSeq_id& genomic_id = align->GetSeq_id(mapper.GetGenomicRow());
         if (gene_id) {
             TGeneMap::iterator gene = genes.find(gene_id);
             if (gene == genes.end()) {
@@ -512,7 +559,7 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& align,
         }
     }
 
-    if (mrna_feat) {
+    if (!is_protein_align && mrna_feat) {
         // NOTE: added after gene!
 
         _ASSERT(mrna_feat->GetData().Which() != CSeqFeatData::e_not_set);
@@ -522,14 +569,14 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& align,
     CSeq_annot::C_Data::TFtable propagated_features;
 
     CRef<CSeq_feat> cds_feat =
-        x_CreateCdsFeature(cdregion, align, loc, time, model_num, seqs, opts);
+        x_CreateCdsFeature(cdregion, *align, loc, time, model_num, seqs, opts);
 
     if(cds_feat)
         propagated_features.push_back(cds_feat);
 
     ITERATE(vector<CMappedFeat>, it, ncRNAs){
         CRef<CSeq_feat> ncrna_feat =
-            x_CreateNcRnaFeature(&it->GetOriginalFeature(), align, loc, opts);
+            x_CreateNcRnaFeature(&it->GetOriginalFeature(), *align, loc, opts);
         if(ncrna_feat)
             propagated_features.push_back(ncrna_feat);
     }
@@ -568,13 +615,13 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& align,
     }
 
     if (mrna_feat) {
-        SetFeatureExceptions(*mrna_feat, &align);
+        SetFeatureExceptions(*mrna_feat, align);
     }
     if (cds_feat) {
-        SetFeatureExceptions(*cds_feat, &align);
+        SetFeatureExceptions(*cds_feat, align);
     }
 
-    return mrna_feat;
+    return is_protein_align ? cds_feat : mrna_feat;
 }
 
 void
