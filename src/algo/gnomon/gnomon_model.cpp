@@ -1293,7 +1293,6 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
     bool confirmed_stop = false;
     bool has_start = false;
     bool has_stop = false;
-    int target_len = 0;
     
     vector<string> flags;
     NStr::Tokenize(attributes["flags"], ",", flags);
@@ -1364,9 +1363,6 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
     }
     
     a.SetComment(attributes["note"]);
-    
-    if (!attributes["TargetLen"].empty())
-        target_len = NStr::StringToInt(attributes["TargetLen"]);
     
     if (!attributes["Ident"].empty())
         a.SetIdent(NStr::StringToDouble(attributes["Ident"]));

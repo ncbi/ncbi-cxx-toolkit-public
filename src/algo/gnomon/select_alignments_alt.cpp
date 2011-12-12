@@ -548,7 +548,6 @@ void CGeneSelector::FindGenesPass2(const list<const CGeneModel*>& possibly_alter
 {
     ITERATE(list<const CGeneModel*>, it, possibly_alternative) {
         const CGeneModel& algn(**it);
-        bool nested = false;
         list<CAltSplice>::iterator included_in(alts.end());
         list<CAltSplice*> possibly_nested;
 
@@ -576,7 +575,6 @@ void CGeneSelector::FindGenesPass2(const list<const CGeneModel*>& possibly_alter
                 }
                 break;
             case eNested:
-                nested = true;
                 break;
             case eExternal:
                 possibly_nested.push_back(&(*itl));
