@@ -541,10 +541,10 @@ void CDense_seg::OrderAdjacentGaps()
 			if(next_seq_row < curr_seq_row) {
 				for(int j=0; j < GetDim(); ++j) {
 					swap(SetStarts()[IDX(i,j)], SetStarts()[IDX(i+1,j)]);
-					swap(SetLens()[i], SetLens()[i+1]);
 					if (GetStrands().size() > IDX(i+1,j)) 
 						swap(SetStrands()[IDX(i,j)], SetStrands()[IDX(i+1,j)]);
 				}
+                swap(SetLens()[i], SetLens()[i+1]);
 				swaps_made = true;
 			}
 		}
