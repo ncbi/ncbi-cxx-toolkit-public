@@ -1898,7 +1898,7 @@ static TStringCountPtr s_AddStringCount (
   TStringCountPtr list
 )
 {
-    TStringCountPtr  add_to, last;
+    TStringCountPtr  add_to, last = NULL;
     TIntLinkPtr      new_offset;
 
     if (string == NULL) {
@@ -1918,7 +1918,7 @@ static TStringCountPtr s_AddStringCount (
     }
     
     if (add_to == NULL) {
-        add_to = s_StringCountNew (list);
+        add_to = s_StringCountNew (last);
         if (list == NULL) list = add_to;
         if (add_to != NULL) {
             add_to->string = string;
@@ -4329,7 +4329,6 @@ static TLineInfoPtr s_RemoveCommentsFromTokens (TLineInfoPtr list)
 {
     TLineInfoPtr  lip;
     int           num_comment_starts;
-    char *        cp_l;
     char *        cp_r;
     char *        cp;
     EBool         in_comment;
@@ -4340,7 +4339,6 @@ static TLineInfoPtr s_RemoveCommentsFromTokens (TLineInfoPtr list)
         if (lip->data == NULL) {
             lip->delete_me = eTrue;
         } else {
-            cp_l = NULL;
             cp_r = NULL;
             for (cp = lip->data; *cp != 0; cp++) {
                 if (*cp == ']') {
@@ -4634,14 +4632,13 @@ s_CreateOffsetList
 {
     int          line_counter;
     TIntLinkPtr  offset_list, new_offset;
-    TSizeInfoPtr sip, prev_sip;
+    TSizeInfoPtr sip;
 
     if (list == NULL  ||  anchorpattern == NULL) {
         return NULL;
     }
     line_counter = 0;
     offset_list = NULL;
-    prev_sip = NULL;
     for (sip = list;  sip != NULL;  sip = sip->next) {
         if (s_SizeInfoIsEqual (sip, anchorpattern->lengthrepeats)) {
             new_offset = s_IntLinkNew (line_counter, offset_list);
@@ -4655,7 +4652,6 @@ s_CreateOffsetList
         }
  
         line_counter += sip->num_appearances;
-        prev_sip = sip;
     }
     return offset_list;
 }
@@ -5031,7 +5027,7 @@ static void s_InsertNewOffsets
  int          best_num_chars,
  char *       alphabet)
 {
-    TLineInfoPtr lip, prev_start;
+    TLineInfoPtr lip;
     TIntLinkPtr  prev_offset, new_offset, splice_offset;
     int          line_diff, num_chars, line_start;
 
@@ -5064,7 +5060,6 @@ static void s_InsertNewOffsets
                 }
             } else {
                 /* look for intermediate breaks */
-                prev_start = lip;
                 num_chars = 0;
                 for (line_diff = 0;
                      line_diff < new_offset->ival - prev_offset->ival
