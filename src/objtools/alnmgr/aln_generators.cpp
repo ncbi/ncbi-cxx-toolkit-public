@@ -349,9 +349,10 @@ CreateSplicedsegFromAnchoredAln(const CAnchoredAln& anchored_aln)
     /// Create a spliced_seg
     CRef<CSpliced_seg> spliced_seg(new CSpliced_seg);
 
-    const CPairwiseAln& pairwise = *anchored_aln.GetPairwiseAlns()[0];
-    _ASSERT(pairwise.GetSecondBaseWidth() == 1  ||
-            pairwise.GetSecondBaseWidth() == 3);
+    CAnchoredAln::TDim anchor_row = anchored_aln.GetAnchorRow();
+    const CPairwiseAln& pairwise = *anchored_aln.GetPairwiseAlns()[anchor_row == 0 ? 1 : 0];
+    _ASSERT(pairwise.GetFirstBaseWidth() == 1  ||
+            pairwise.GetFirstBaseWidth() == 3);
     _ASSERT(pairwise.GetSecondBaseWidth() == 1);
     bool prot = pairwise.GetFirstBaseWidth() == 3;
 
@@ -360,9 +361,8 @@ CreateSplicedsegFromAnchoredAln(const CAnchoredAln& anchored_aln)
     SerialAssign<CSeq_id>(*product_id, pairwise.GetFirstId()->GetSeqId());
     spliced_seg->SetProduct_id(*product_id);
     CRef<CSeq_id> genomic_id(new CSeq_id); 
-    SerialAssign<CSeq_id>(*genomic_id, pairwise.GetFirstId()->GetSeqId());
+    SerialAssign<CSeq_id>(*genomic_id, pairwise.GetSecondId()->GetSeqId());
     spliced_seg->SetGenomic_id(*genomic_id);
-
 
     /// Product type
     spliced_seg->SetProduct_type(prot ?

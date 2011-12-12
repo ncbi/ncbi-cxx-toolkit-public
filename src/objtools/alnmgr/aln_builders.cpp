@@ -358,14 +358,18 @@ s_TranslatePairwiseToAlnCoords(CPairwiseAln& out_pw,   ///< output pairwise (nee
         anchor_shift = ar.GetFirstFrom() - pos;
         ar.SetFirstFrom(pos);
         out_pw.insert(ar);
-        if (it != pw.end()  &&  gap_it != gaps.end()) {
+        if (gap_it != gaps.end()) {
             CPairwiseAln::const_iterator next_it = it;
             ++next_it;
             if (next_it != pw.end()) {
                 while (gap_it != gaps.end()  &&
                     gap_it->GetFirstFrom() <= next_it->GetFirstFrom()) {
                     CPairwiseAln::TAlnRng gap_rg = *gap_it;
-                    gap_rg.SetFirstFrom(gap_rg.GetFirstFrom() - anchor_shift);
+                    // Need to specify direction since the source point is out of
+                    // anchor ranges and will produce -1.
+                    CPairwiseAln::TPos new_gap_pos =
+                        tr.GetFirstPosBySecondPos(gap_rg.GetFirstFrom(), CPairwiseAln::eForward);
+                    gap_rg.SetFirstFrom(new_gap_pos);
                     out_pw.AddInsertion(gap_rg);
                     gap_it++;
                 }

@@ -68,8 +68,10 @@ CSparseAln::TDim CSparseAln::GetDim() const {
 
 struct SGapRange
 {
-    TSignedSeqPos from; // original position of the gap
+    TSignedSeqPos from; // original position of the gap on the anchor
+    TSignedSeqPos second_from; // position on the sequence
     TSignedSeqPos len;  // length of the gap
+    bool          direct;
     int           row;  // Row, containing the gap.
     size_t        idx;  // Index of the gap in the original vector.
     // This gap's 'from' must be shifted by 'shift'.
@@ -109,13 +111,16 @@ void CSparseAln::x_Build(const CAnchoredAln& src_align)
         for (size_t i = 0; i < ins_vec.size(); i++) {
             SGapRange gap;
             gap.from = ins_vec[i].GetFirstFrom();
+            gap.second_from = ins_vec[i].GetSecondFrom();
             gap.len = ins_vec[i].GetLength();
+            gap.direct = ins_vec[i].IsDirect();
             gap.row = row;
             gap.shift = 0;
             gap.idx = i;
             gaps.push_back(gap);
         }
     }
+
     // We need to preserve the order of consecutive gaps at the same
     // position on the same row. Use stable_sort.
     stable_sort(gaps.begin(), gaps.end());
@@ -135,58 +140,55 @@ void CSparseAln::x_Build(const CAnchoredAln& src_align)
     // the old anchor coordinates to alignment coordinates.
     for (TDim row = 0; row < dim; ++row) {
         const CPairwiseAln& pw = *src_align.GetPairwiseAlns()[row];
-        const CPairwiseAln::TAlignRangeVector& ins_vec = pw.GetInsertions();
         CPairwiseAln::const_iterator seg_it = pw.begin();
-        CPairwiseAln::TAlignRangeVector::const_iterator ins_it = ins_vec.begin();
         TGapRanges::const_iterator gap = gaps.begin();
-        TGapRanges::const_iterator next_gap = gap;
-        if (next_gap != gaps.end()) {
-            ++next_gap;
-        }
         TSignedSeqPos shift = 0;
         CRef<CPairwiseAln> dst(new CPairwiseAln(
             pw.GetFirstId(), pw.GetSecondId(), pw.GetFlags()));
-        while (seg_it != pw.end()  ||  ins_it != ins_vec.end()) {
-            // Have more insertions in the source?
-            // Is the next insertion at or before the next segment
-            // (or there are no more segments)?
-            CPairwiseAln::TAlignRange rg;
-            if (ins_it != ins_vec.end()  &&
-                (seg_it == pw.end()  ||
-                ins_it->GetFirstFrom() <= seg_it->GetFirstFrom())) {
-                rg = *ins_it;
-                size_t idx = ins_it - ins_vec.begin();
-                ++ins_it;
-                // Skip all gaps with lower positions and/or on lower rows.
-                while (next_gap != gaps.end()  &&
-                    (gap->row != row  ||  gap->idx != idx)) {
-                    ++next_gap;
-                    ++gap;
+        TSeqPos last_to = 0;
+        while (seg_it != pw.end()) {
+            CPairwiseAln::TAlignRange rg = *seg_it;
+            ++seg_it;
+            // Check if there are gaps before the new segment's end.
+            while (gap != gaps.end()  &&
+                gap->from < rg.GetFirstToOpen()) {
+                if (gap->row == row) {
+                    // Insertion in this row - align to the anchor.
+                    CPairwiseAln::TAlignRange ins(gap->from + shift,
+                        gap->second_from, gap->len, gap->direct);
+                    dst->push_back(ins);
                 }
-                // The insertion must be in gaps.
-                _ASSERT(gap->from == rg.GetFirstFrom());
-                _ASSERT(gap->len == rg.GetLength());
-                _ASSERT(gap->row == row);
-                _ASSERT(gap->idx == idx);
-                rg.SetFirstFrom(rg.GetFirstFrom() + gap->shift);
+                else if (gap->from > rg.GetFirstFrom()) {
+                    // Split the range if there are insertions in other rows.
+                    CPairwiseAln::TAlignRange sub = rg;
+                    sub.SetLength(gap->from - rg.GetFirstFrom());
+                    sub.SetFirstFrom(sub.GetFirstFrom() + shift);
+                    if (rg.IsDirect()) {
+                        rg.SetSecondFrom(rg.GetSecondFrom() + sub.GetLength());
+                    }
+                    else {
+                        sub.SetSecondFrom(rg.GetSecondToOpen() - sub.GetLength());
+                    }
+                    rg.SetFirstFrom(rg.GetFirstFrom() + sub.GetLength());
+                    rg.SetLength(rg.GetLength() - sub.GetLength());
+                    dst->push_back(sub);
+                }
                 shift = gap->shift + gap->len;
-                // This will merge new range with the previous one if necessary.
-                dst->push_back(rg);
-                continue;
-            }
-            else if (seg_it != pw.end()) {
-                rg = *seg_it;
-                ++seg_it;
-            }
-            // Check if there are new gaps at or before the new segment's position.
-            while (next_gap != gaps.end()  &&
-                next_gap->from <= rg.GetFirstFrom()) {
-                ++next_gap;
                 ++gap;
-                shift = gap->shift + gap->len;
             }
             rg.SetFirstFrom(rg.GetFirstFrom() + shift);
             dst->push_back(rg);
+            last_to = rg.GetSecondToOpen();
+        }
+        // Still have gaps in some rows?
+        while (gap != gaps.end()) {
+            if (gap->row == row) {
+                CPairwiseAln::TAlignRange ins(gap->from + shift,
+                    last_to, gap->len, gap->direct);
+                dst->push_back(ins);
+            }
+            shift = gap->shift + gap->len;
+            ++gap;
         }
         m_Aln->SetPairwiseAlns()[row] = dst;
     }
