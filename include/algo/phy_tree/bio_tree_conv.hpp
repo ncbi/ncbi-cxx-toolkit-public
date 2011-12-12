@@ -353,6 +353,8 @@ void BioTreeConvertContainer2Dynamic(TDynamicTree&             dyn_tree,
 
     const TNodeList node_list = tree_container.GetNodes().Get();
 
+    std::map<TBioTreeNodeId, TDynamicTree::TBioTreeNode*> pmap;
+
 	ITERATE(typename TNodeList, it, node_list) {
 
 		const CRef<TCNode>& cnode = *it;
@@ -384,7 +386,17 @@ void BioTreeConvertContainer2Dynamic(TDynamicTree&             dyn_tree,
 
 		if (cnode->CanGetParent()) {
 	        TBioTreeNodeId parent_id = cnode->GetParent();
-			/*TDynamicNodeType* dnode = */dyn_tree.AddNode(v, parent_id);
+            TDynamicTree::TBioTreeNode* node = NULL;
+			
+            TDynamicTree::TBioTreeNode* parent_node = pmap[parent_id];
+            if (parent_node != NULL) {              
+                node = dyn_tree.AddNode(v, parent_node);
+            }
+            else {
+                node = dyn_tree.AddNode(v, parent_id);
+            }
+                      
+            pmap[uid] = node;            
 		} else {
 			TDynamicNodeType* dnode = new TDynamicNodeType(v);
 			dyn_tree.SetTreeNode(dnode);

@@ -303,7 +303,7 @@ public:
         CBioNode* AddNode(const TBioNode& val = TBioNode())
         {
             CBioNode* subnode = new CBioNode(val);
-            AddNode(subnode);
+            AddNode(subnode);            
             return subnode;
         }
 
@@ -397,6 +397,11 @@ public:
     /// Add node to the tree (node location is defined by the parent id
     TBioTreeNode* AddNode(const TBioNodeType& node_value, 
                           TBioTreeNodeId      parent_id);
+
+    /// Add a node to the tree when you have already looked up
+    /// the parent node (faster)
+    TBioTreeNode* AddNode(const TBioNodeType& node_value, 
+                          TBioTreeNode* parent_node);
 
     /// Recursively set this tree as parent tree for the node
     void SetParentTree(CBioNode& node) { SetParentTree(node, this); }
@@ -589,8 +594,22 @@ CBioTree<TBioNode>::AddNode(const TBioNodeType& node_value,
     if (pnode) {
         TBioTreeNode* parent_node = const_cast<TBioTreeNode*>(pnode);
         ret = parent_node->AddNode(node_value);
-        TreeDepthFirstTraverse(*ret, CAssignTreeFunc(this));
+        // done by AddNode:
+        //TreeDepthFirstTraverse(*ret, CAssignTreeFunc(this));
     }
+	return ret;
+}
+
+template<class TBioNode>
+typename CBioTree<TBioNode>::TBioTreeNode* 
+CBioTree<TBioNode>::AddNode(const TBioNodeType& node_value, 
+                             TBioTreeNode* parent_node)
+{
+	TBioTreeNode* ret = 0;
+    ret = parent_node->AddNode(node_value);
+    //done by AddNode:
+    //TreeDepthFirstTraverse(*ret, CAssignTreeFunc(this));
+
 	return ret;
 }
 
