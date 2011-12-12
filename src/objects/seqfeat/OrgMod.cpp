@@ -134,20 +134,23 @@ static void s_ProcessInstitutionCollectionCodeLine(const CTempString& line)
         NStr::TruncateSpacesInPlace( tokens[0] );
         NStr::TruncateSpacesInPlace( tokens[1] );
         NStr::TruncateSpacesInPlace( tokens[2] );
-        switch (tokens[1].c_str()[0]) {
-            case 'b':
-                s_BiomaterialInstitutionCodeMap[tokens[0]] = tokens[2];
-                break;
-            case 'c':
-                s_CultureCollectionInstitutionCodeMap[tokens[0]] = tokens[2];
-                break;
-            case 's':
-                s_SpecimenVoucherInstitutionCodeMap[tokens[0]] = tokens[2];
-                break;
-            default:
-//                ERR_POST_X(1, Warning << "Bad format in institution_codes.txt entry " << line
-//                           << "; unrecognized subtype (" << tokens[1] << "); disregarding");
-                break;
+        string& vouch_types = tokens[1];
+        for (int i = 0; i < vouch_types.size(); i++) {
+            switch (vouch_types[i]) {
+                case 'b':
+                    s_BiomaterialInstitutionCodeMap[tokens[0]] = tokens[2];
+                    break;
+                case 'c':
+                    s_CultureCollectionInstitutionCodeMap[tokens[0]] = tokens[2];
+                    break;
+                case 's':
+                    s_SpecimenVoucherInstitutionCodeMap[tokens[0]] = tokens[2];
+                    break;
+                default:
+//                  ERR_POST_X(1, Warning << "Bad format in institution_codes.txt entry " << line
+//                             << "; unrecognized subtype (" << tokens[1] << "); disregarding");
+                    break;
+            }
         }
         s_CompleteInstitutionCodeMap[tokens[0]] = tokens[2];
 
@@ -204,7 +207,7 @@ bool COrgMod::IsInstitutionCodeValid(const string& inst_coll, string &voucher_ty
         } else if (NStr::EqualNocase (it->first, inst_coll)) {
             is_miscapitalized = true;
         }
-        voucher_type = it->second.substr(0, 1);
+        voucher_type = it->second;
         correct_cap = it->first;
         rval = true;
     } else {
