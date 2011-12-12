@@ -1071,15 +1071,9 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr)
                         ret *= NCBI_CONST_LONGDOUBLE(1e-256);
                     }
                 }
-#if SIZEOF_LONG_DOUBLE == SIZEOF_DOUBLE
                 if ( ret < DBL_MIN ) {
                     errno = ERANGE;
                 }
-#else
-                if ( double(ret) == 0 ) {
-                    errno = ERANGE;
-                }
-#endif
             }
         }
     }
