@@ -1968,6 +1968,10 @@ public:
     /// @sa PrintableString
     static string ParseEscapes(const CTempString& str);
 
+    static const char* ParseDoubleQuoted(const char* str,
+                                         const char* str_end,
+                                         string& out);
+
     /// Encode a string for C/C++.
     ///
     /// Synonym for PrintableString().

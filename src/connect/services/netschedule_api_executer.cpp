@@ -38,13 +38,19 @@
 
 BEGIN_NCBI_SCOPE
 
-static bool s_ParseGetJobResponse(CNetScheduleJob& job, const string& response)
+#define SKIP_SPACE(ptr) \
+    while (isspace((unsigned char) (*ptr))) \
+        ++ptr;
+
+#define SKIP_SPACE_PREINC(ptr) \
+    while (isspace((unsigned char) (*++ptr))) \
+        ;
+
+static bool s_DoParseGetJobResponse(
+    CNetScheduleJob& job, const string& response)
 {
     // Server message format:
     //    JOB_KEY "input" ["affinity" ["client_ip session_id"]] [mask]
-
-    if (response.empty())
-        return false;
 
     job.mask = CNetScheduleAPI::eEmptyMask;
     job.input.erase();
@@ -53,95 +59,73 @@ static bool s_ParseGetJobResponse(CNetScheduleJob& job, const string& response)
     job.client_ip.erase();
     job.session_id.erase();
 
-    const char* str = response.c_str();
+    // 1. Extract job ID.
+    const char* response_begin = response.c_str();
+    const char* response_end = response_begin + response.length();
 
-    while (*str && isspace((unsigned char) (*str)))
-        ++str;
-    if (*str == 0) {
-throw_err:
-        NCBI_THROW(CNetScheduleException, eProtocolSyntaxError,
-            "Internal error. Cannot parse server output. " +
-                job.job_id + "\n" + response);
-    }
+    SKIP_SPACE(response_begin);
 
-    for (; *str && !isspace((unsigned char) (*str)); ++str)
-        job.job_id += *str;
+    if (*response_begin == 0)
+        return false;
 
-    if (*str == 0)
-        goto throw_err;
+    const char* ptr = response_begin;
 
-    while (*str && isspace((unsigned char) (*str)))
-        ++str;
+    do
+        if (*++ptr == 0)
+            return false;
+    while (!isspace((unsigned char) (*ptr)));
 
-    if (*str && *str == '"') {
-        ++str;
-        for (; *str && *str; ++str) {
-            if (*str == '"' && str[-1] != '\\') {
-                ++str;
-                break;
-            }
-            job.input += *str;
-        }
-    } else {
-        goto throw_err;
-    }
+    job.job_id.assign(response_begin, ptr - response_begin);
 
-    job.input = NStr::ParseEscapes(job.input);
+    // 2. Extract job input
+    SKIP_SPACE_PREINC(ptr);
 
-    // parse "affinity"
-    while (*str && isspace((unsigned char) (*str)))
-        ++str;
+    if ((ptr = NStr::ParseDoubleQuoted(ptr, response_end, job.input)) == NULL)
+        return false;
 
-    if (*str != 0) {
-        if (*str == '"') {
-            ++str;
-            for (; *str && *str; ++str) {
-                if (*str == '"' && str[-1] != '\\') {
-                    ++str;
-                    break;
-                }
-                job.affinity += *str;
-            }
-        } else {
-            goto throw_err;
-        }
-        job.affinity = NStr::ParseEscapes(job.affinity);
+    // 3. Extract optional job affinity.
+    SKIP_SPACE_PREINC(ptr);
 
-        // parse "client_ip session_id"
-        while (*str && isspace((unsigned char) (*str)))
-            ++str;
+    if (*ptr != 0) {
+        if ((ptr = NStr::ParseDoubleQuoted(ptr,
+                response_end, job.affinity)) == NULL)
+            return false;
 
-        if (*str != 0) {
+        // 4. Extract optional "client_ip session_id".
+        SKIP_SPACE_PREINC(ptr);
+
+        if (*ptr != 0) {
             string client_ip_and_session_id;
 
-            if (*str == '"') {
-                ++str;
-                for( ;*str && *str; ++str) {
-                    if (*str == '"' && str[-1] != '\\') {
-                        ++str;
-                        break;
-                    }
-                    client_ip_and_session_id += *str;
-                }
-            } else {
-                goto throw_err;
-            }
+            if ((ptr = NStr::ParseDoubleQuoted(ptr,
+                    response_end, client_ip_and_session_id)) == NULL)
+                return false;
 
-            NStr::SplitInTwo(NStr::ParseEscapes(client_ip_and_session_id),
-                " ", job.client_ip, job.session_id);
+            NStr::SplitInTwo(client_ip_and_session_id, " ",
+                job.client_ip, job.session_id);
 
-            // parse mask
-            while (*str && isspace((unsigned char) (*str)))
-                ++str;
+            // 5. Parse job mask
+            SKIP_SPACE_PREINC(ptr);
 
-            if (*str != 0)
-                job.mask = atoi(str);
+            if (*ptr != 0)
+                job.mask = atoi(ptr);
         }
     }
 
-    _ASSERT(!job.job_id.empty());
-
     return true;
+}
+
+static bool s_ParseGetJobResponse(CNetScheduleJob& job, const string& response)
+{
+    if (response.empty())
+        return false;
+
+    if (s_DoParseGetJobResponse(job, response))
+        return true;
+
+    NCBI_THROW(CNetScheduleException, eProtocolSyntaxError,
+        "Cannot parse server output for " +
+            job.job_id + ":\n" + response);
 }
 
 ////////////////////////////////////////////////////////////////////////

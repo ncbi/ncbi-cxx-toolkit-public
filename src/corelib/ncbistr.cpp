@@ -2696,6 +2696,69 @@ string NStr::ParseEscapes(const CTempString& str)
 }
 
 
+const char* NStr::ParseDoubleQuoted(
+    const char* str, const char* str_end, string& out)
+{
+    if (*str != '"' || str_end - str < 2)
+        return NULL;
+
+    out.reserve(str_end - str - 2);
+    out.erase();
+
+    while (++str < str_end)
+        if (*str == '"')
+            return str + 1;
+        else if (*str != '\\')
+            out += *str;
+        else {
+            if (++str == str_end)
+                return NULL;
+            switch (*str) {
+            case 'a':
+                out += '\a';
+                break;
+            case 'b':
+                out += '\b';
+                break;
+            case 'f':
+                out += '\f';
+                break;
+            case 'n':
+                out += '\n';
+                break;
+            case 'r':
+                out += '\r';
+                break;
+            case 't':
+                out += '\t';
+                break;
+            case 'v':
+                out += '\v';
+                break;
+
+            case 'x':
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+                _ASSERT(0);
+
+            case '\n':
+                break;
+
+            default:
+                out += *str;
+            }
+        }
+
+        return false;
+}
+
+
 // Determines the end of an HTML <...> tag, accounting for attributes
 // and comments (the latter allowed only within <!...>).
 static SIZE_TYPE s_EndOfTag(const string& str, SIZE_TYPE start)
