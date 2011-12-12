@@ -158,7 +158,7 @@ static CSeq_id* s_MakeUniqueLocalId(void)
 {
     static size_t count = 0;
 
-    return new CSeq_id("lcl|segset_" + NStr::UIntToString(++count));
+    return new CSeq_id("lcl|segset_" + NStr::NumericToString(++count));
 }
 
 
