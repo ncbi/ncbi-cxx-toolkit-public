@@ -39,6 +39,7 @@
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Score.hpp>
 #include <objects/seqalign/Spliced_seg.hpp>
+#include <objects/seqalign/Spliced_seg_modifier.hpp>
 #include <objects/seqalign/Spliced_exon_chunk.hpp>
 #include <objects/seqalign/Product_pos.hpp>
 #include <objects/seqalign/Prot_pos.hpp>
@@ -589,6 +590,54 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
+class CScore_StartStopCodon : public CScoreLookup::IScore
+{
+public:
+    CScore_StartStopCodon(bool start_codon)
+    : m_StartCodon(start_codon)
+    {
+    }
+
+    virtual void PrintHelp(CNcbiOstream& ostr) const
+    {
+        ostr << "1 if a " << (m_StartCodon ? "start" : "stop")
+             << " codon was found, 0 otherwise. Note that this score has "
+              "meaning only for Spliced-seg alignments, as would be generated "
+              "by Splign or ProSplign.";
+    }
+
+    virtual EComplexity GetComplexity() const { return eEasy; };
+
+    virtual bool IsInteger() const { return true; };
+
+    virtual double Get(const CSeq_align& align, CScope*) const
+    {
+        if (align.GetSegs().IsSpliced()) {
+            const CSpliced_seg& seg = align.GetSegs().GetSpliced();
+            ITERATE (CSpliced_seg::TModifiers, it, seg.GetModifiers()) {
+                if (m_StartCodon
+                    ? ((*it)->IsStart_codon_found() &&
+                       (*it)->GetStart_codon_found())
+                    : ((*it)->IsStop_codon_found() &&
+                       (*it)->GetStop_codon_found()))
+                {
+                    return 1;
+                }
+            }
+            return 0;
+        }
+
+        NCBI_THROW(CException, eUnknown,
+                   "'start_codon' and 'stop_codon' scores valid only for "
+                   "Spliced-seg alignments");
+    }
+
+private:
+    bool m_StartCodon;
+};
+
+//////////////////////////////////////////////////////////////////////////////
+
 class CScore_CdsInternalStops : public CScoreLookup::IScore
 {
 public:
@@ -596,9 +645,9 @@ public:
     {
         ostr <<
             "Count of the number of internal stop codons encountered when "
-            "translating the coding region associated with the aligned "
-            "transcript.  Note that this has meaning only for Spliced-seg "
-            "transcript alignments.";
+            "translating the aligned coding region. Note that this has meaning "
+            "only for Spliced-seg transcript alignments with a transcript that "
+            "has an annotated cdregion, or for Spliced-seg protein alignments.";
     }
 
     virtual EComplexity GetComplexity() const { return eHard; };
@@ -1116,6 +1165,16 @@ void CScoreLookup::x_Init()
         (TScoreDictionary::value_type
          ("blast_score_ratio",
           CIRef<IScore>(new CScore_BlastRatio(*this))));
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("start_codon",
+          CIRef<IScore>(new CScore_StartStopCodon(true))));
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("stop_codon",
+          CIRef<IScore>(new CScore_StartStopCodon(false))));
 }
 
 
