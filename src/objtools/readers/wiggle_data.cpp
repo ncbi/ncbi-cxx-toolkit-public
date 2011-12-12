@@ -351,6 +351,7 @@ CWiggleTrack::CWiggleTrack(
     m_uSeqSpan = record.SeqSpan();
     m_dMaxValue = record.Value();
     m_dMinValue = record.Value();
+    m_bAllDataIsInteger = (record.Value() == floor(record.Value()));
     m_uSeqStart = record.SeqStart();
     m_uSeqStop = record.SeqStart() + record.SeqSpan();
 };
@@ -393,6 +394,8 @@ void CWiggleTrack::AddRecord(
     if ( record.Value() < m_dMinValue ) {
         m_dMinValue = record.Value();
     }
+    m_bAllDataIsInteger = m_bAllDataIsInteger  &&  
+        (record.Value() == floor(record.Value()));
 };
 
 //  ===========================================================================
@@ -534,8 +537,35 @@ void CWiggleTrack::MakeTable(
         }
     }
 
-    if ( bAsByte ) { // values
+    if (m_bAllDataIsInteger  &&  0 <= m_dMinValue  &&  m_dMaxValue <= 255) {
+        CRef<CSeqTable_column> col_min(new CSeqTable_column);
+        table.SetColumns().push_back(col_min);
+        col_min->SetHeader().SetField_name("value_min");
+        col_min->SetDefault().SetReal(0.0);
 
+        CRef<CSeqTable_column> col_step(new CSeqTable_column);
+        table.SetColumns().push_back(col_step);
+        col_step->SetHeader().SetField_name("value_step");
+        col_step->SetDefault().SetReal(1.0);
+
+        CRef<CSeqTable_column> col_val(new CSeqTable_column);
+        table.SetColumns().push_back(col_val);
+        col_val->SetHeader().SetField_name("values");
+        
+        AutoPtr< vector<char> > values(new vector<char>());
+        values->reserve(uSize);
+        ITERATE ( DataVector, it, m_Data ) {
+            pos.push_back(it->SeqStart());
+            if ( span_ptr ) {
+                span_ptr->push_back(it->SeqSpan());
+            }
+            values->push_back((char)(it->Value()));
+        }
+        col_val->SetData().SetBytes().push_back(values.release());
+        return;
+    }
+
+    if (bAsByte) {
         CRef<CSeqTable_column> col_min(new CSeqTable_column);
         table.SetColumns().push_back(col_min);
         col_min->SetHeader().SetField_name("value_min");
@@ -562,21 +592,22 @@ void CWiggleTrack::MakeTable(
             values->push_back(val);
         }
         col_val->SetData().SetBytes().push_back(values.release());
+        return;
     }
-    else {
-        CRef<CSeqTable_column> col_val(new CSeqTable_column);
-        table.SetColumns().push_back(col_val);
-        col_val->SetHeader().SetField_name("values");
-        CSeqTable_multi_data::TReal& values = col_val->SetData().SetReal();
-        values.reserve(uSize);
-        
-        ITERATE ( DataVector, it, m_Data ) {
-            pos.push_back(it->SeqStart());
-            if ( span_ptr ) {
-                span_ptr->push_back(it->SeqSpan());
-            }
-            values.push_back(it->Value());
+
+    //default: make a real valued table
+    CRef<CSeqTable_column> col_val(new CSeqTable_column);
+    table.SetColumns().push_back(col_val);
+    col_val->SetHeader().SetField_name("values");
+    CSeqTable_multi_data::TReal& values = col_val->SetData().SetReal();
+    values.reserve(uSize);
+    
+    ITERATE ( DataVector, it, m_Data ) {
+        pos.push_back(it->SeqStart());
+        if ( span_ptr ) {
+            span_ptr->push_back(it->SeqSpan());
         }
+        values.push_back(it->Value());
     }
 }
 
@@ -628,6 +659,12 @@ void CWiggleTrack::MakeGraph(
                 
             default:
                 FillGraphsByte( graph->SetGraph().SetByte() );
+                if (m_bAllDataIsInteger  &&  0 <= m_dMinValue  &&  m_dMaxValue <= 255) {
+                    graph->SetA(1.0);
+                    graph->SetB(0.0);
+                    graph->SetGraph().SetByte().SetMin((unsigned char)m_dMinValue);
+                    graph->SetGraph().SetByte().SetMin((unsigned char)m_dMaxValue);
+                }
                 break;
         
             case GRAPH_REAL:
@@ -730,11 +767,11 @@ void CWiggleTrack::FillGraphsByte(
     graph.SetMin( 0 );         // the interval we are scaling the y-values
     graph.SetMax( 255 );       //   into...
     graph.SetAxis( 0 );
-    
+
     unsigned int uDataSize = (SeqStop() - SeqStart() + 1) / SeqSpan();
-    vector<char> values( uDataSize, 0 );
+    vector<char> values(uDataSize, 0);
     for ( unsigned int u = 0; u < uDataSize; ++u ) {
-        values[ u ] = ByteGraphValue( SeqStart() + u * SeqSpan() );
+        values[ u ] = ByteGraphValue(SeqStart() + u * SeqSpan());
     }
     graph.SetValues() = values;
 }
@@ -792,16 +829,19 @@ unsigned char CWiggleTrack::ByteGraphValue(
     double dRaw( 0 );
     if ( ! DataValue( uStart, dRaw ) ) {
         // return 0 as the default value
-        return static_cast<unsigned char>( 0 );
+        return static_cast<unsigned char>(0);
     }
     else {
+        if (m_bAllDataIsInteger  &&  0 <= m_dMinValue  &&  m_dMaxValue <= 255) {
+            return static_cast<unsigned char>(dRaw);
+        }
         // scale into interval [0,255]
         if ( MinGraphValue() == MaxGraphValue() ) {
-            return static_cast<unsigned char>( (dRaw ? 255 : 0) );
+            return static_cast<unsigned char>(dRaw + 0.5);
         }
         double dScaled =
-            ( 255 * (dRaw - MinGraphValue()) / (MaxGraphValue() - MinGraphValue()) );
-        return static_cast<unsigned char>( dScaled + 0.5 );
+            (255 * (dRaw - MinGraphValue()) / (MaxGraphValue() - MinGraphValue()));
+        return static_cast<unsigned char>(dScaled + 0.5);
     }
     
     

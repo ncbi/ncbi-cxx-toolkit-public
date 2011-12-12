@@ -176,6 +176,7 @@ protected:
     int m_uSeqSpan;
     double m_dMaxValue;
     double m_dMinValue;
+    bool m_bAllDataIsInteger;
     bool m_bEvenlySpaced;
     DataVector m_Data;
     
