@@ -971,8 +971,8 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
             default:
                 {
                     string msg = string("Invalid byte in text GI list [") +
-                        NStr::UIntToString(int(*p)) + " at location " +
-                        NStr::UIntToString(p-fbeginp) + "].";
+                        NStr::UIntToString((unsigned char)(*p)) + " at location " +
+                        NStr::NumericToString(p-fbeginp) + "].";
                     
                     NCBI_THROW(CSeqDBException, eFileErr, msg);
                 }
@@ -1186,8 +1186,8 @@ void SeqDB_ReadMemoryTiList(const char * fbeginp,
             default:
                 {
                     string msg = string("Invalid byte in text TI list [") +
-                        NStr::UIntToString(int(*p)) + " at location " +
-                        NStr::UIntToString(p-fbeginp) + "].";
+                        NStr::UIntToString((unsigned char)(*p)) + " at location " +
+                        NStr::NumericToString(p-fbeginp) + "].";
                     
                     NCBI_THROW(CSeqDBException, eFileErr, msg);
                 }

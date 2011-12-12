@@ -585,7 +585,7 @@ void CSeqDBAliasSets::x_ReadAliasSetFile(const CSeqDB_Path & aset_path,
             
             if (name != key || value.empty()) {
                 string msg("Alias set file: syntax error near offset "
-                           + NStr::IntToString(offsets[i] - bp) + ".");
+                           + NStr::NumericToString(offsets[i] - bp) + ".");
                 
                 NCBI_THROW(CSeqDBException, eFileErr, msg);
             }
