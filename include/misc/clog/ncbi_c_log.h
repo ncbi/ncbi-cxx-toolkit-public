@@ -423,7 +423,10 @@ extern void NcbiLog_Destroy_Thread(void);
 extern void NcbiLog_SetDestination(ENcbiLog_Destination ds);
 
 
-/** Set PID/TID values */
+/** Set PID/TID values
+ *  @note
+ *    This methods do not affect GUID value if called after starting logging.
+ */
 extern void NcbiLog_SetProcessId(TNcbiLog_PID pid);
 extern void NcbiLog_SetThreadId (TNcbiLog_TID tid);
 
@@ -463,6 +466,8 @@ extern void NcbiLog_SetTime(time_t timer, unsigned long nanoseconds);
  *  @param host
  *    New host name.
  *    Will be set to 'UNK_HOST' if parameter is NULL or empty string.
+ *  @note
+ *    This method do not affect GUID value if called after starting logging.
  */
 extern void NcbiLog_SetHost(const char* host);
 

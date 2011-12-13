@@ -32,9 +32,9 @@
  */
 
 
-#include <misc/clog/ncbi_c_log.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "ncbi_c_log_p.h"
 
 #if defined(NCBI_OS_UNIX)
 #  include <string.h>
@@ -100,115 +100,12 @@
  */
 
 /** Maximum length of each log entry, all text after this position will be truncated */
-#define NCBILOG_ENTRY_MAX   8191  /* 8Kb - 1 for ending '\0' */ 
+#define NCBILOG_ENTRY_MAX    8191  /* 8Kb - 1 for ending '\0' */ 
 
-#define HOST_MAX            256
-#define CLIENT_MAX          256
-#define SESSION_MAX         256
-#define APPNAME_MAX         1024
-
-#define UNKNOWN_HOST        "UNK_HOST"
-#define UNKNOWN_CLIENT      "UNK_CLIENT"
-#define UNKNOWN_SESSION     "UNK_SESSION"
-#define UNKNOWN_APPNAME     "UNK_APP"
-
-
-/******************************************************************************
- *  Internal types and definitions
- */
-
-/** Application access log and error postings info structure.
- */
-struct STime_tag {
-    time_t         sec;      /**< GMT time                    */
-    unsigned long  ns;       /**< Nanosecond part of te time  */
-};
-typedef struct STime_tag STime;
-
-
-/** Application execution states shown in the std prefix
- */
-typedef enum {
-    eNcbiLog_NotSet = 0,     /**< Reserved value, never used in messages */
-    eNcbiLog_AppBegin,       /**< AB  */
-    eNcbiLog_AppRun,         /**< A   */
-    eNcbiLog_AppEnd,         /**< AE  */
-    eNcbiLog_RequestBegin,   /**< RB  */
-    eNcbiLog_Request,        /**< R   */
-    eNcbiLog_RequestEnd      /**< RE  */
-} ENcbiLog_AppState;
-
-
-/** Type of file for the output.
- *  Specialization for the file-based diagnostics.
- *  Splits output into four files: .err, .log, .trace, .perf.
- */
-typedef enum {
-    eDiag_Trace,             /**< .trace */
-    eDiag_Err,               /**< .err   */
-    eDiag_Log,               /**< .log   */
-    eDiag_Perf               /**< .perf  */
-} ENcbiLog_DiagFile;
-
-
-/** Application access log and error postings info structure (global).
- */
-struct SInfo_tag {
-
-    /* Posting data */
-
-    TNcbiLog_PID      pid;                      /**< Process ID                                          */
-    TNcbiLog_Counter  rid;                      /**< Request ID (e.g. iteration number in case of a CGI) */
-    ENcbiLog_AppState state;                    /**< Application state                                   */
-    TNcbiLog_Int8     guid;                     /**< Globally unique process ID                          */
-    TNcbiLog_Counter  psn;                      /**< Serial number of the posting within the process     */
-    STime             post_time;                /**< GMT time at which the message was posted, 
-                                                     use current time if it is not specified (equal to 0)*/
-    char              host[HOST_MAX+1];         /**< Name of the host where the process runs 
-                                                     (UNK_HOST if unknown)                               */
-    char              appname[3*APPNAME_MAX+1]; /**< Name of the application (UNK_APP if unknown)        */
-    
-    char*             message;                  /**< Buffer used to collect a message and log it         */
-
-    /* Control parameters */
-    
-    ENcbiLog_Severity post_level;               /**< Posting level                                */
-    STime             app_start_time;           /**< Application start time                       */
-    char*             app_full_name;            /**< Pointer to a full application name (argv[0]) */
-    char*             app_base_name;            /**< Poiter to application base name              */
-
-
-    /* Log file names and handles */
-
-    ENcbiLog_Destination destination;           /**< Current logging destination            */
-    time_t            last_reopen_time;         /**< Last reopen time for log files         */
-    FILE*             file_trace;               /**< Saved files for log files              */
-    FILE*             file_err;
-    FILE*             file_log;
-    FILE*             file_perf;
-    char*             file_trace_name;          /**< Saved file names for log files         */
-    char*             file_err_name;
-    char*             file_log_name;
-    char*             file_perf_name;
-    int               reuse_file_names;         /**< File names where not changed, reuse it */
-};
-typedef struct SInfo_tag TNcbiLog_Info;
-
-
-/** Thread-specific context data.
- */
-struct SContext_tag {
-    TNcbiLog_TID      tid;                      /**< Thread  ID                                          */
-    TNcbiLog_Counter  tsn;                      /**< Serial number of the posting within the thread      */
-    TNcbiLog_Counter  rid;                      /**< Request ID (e.g. iteration number in case of a CGI) */
-                                                /**< Local value, use global value if equal to 0         */
-    ENcbiLog_AppState state;                    /**< Application state                                   */
-                                                /**< Local value, use global value if eNcbiLog_NotSet    */
-    char              client[CLIENT_MAX+1];     /**< Client IP address (UNK_CLIENT if unknown)           */
-    char              session[3*SESSION_MAX+1]; /**< Session ID (UNK_SESSION if unknown)                 */
-    STime             req_start_time;           /**< Rrequest start time                                 */
-};
-typedef struct SContext_tag TNcbiLog_Context_Data;
+#define UNKNOWN_HOST         "UNK_HOST"
+#define UNKNOWN_CLIENT       "UNK_CLIENT"
+#define UNKNOWN_SESSION      "UNK_SESSION"
+#define UNKNOWN_APPNAME      "UNK_APP"
 
 
 
@@ -727,22 +624,24 @@ static int/*bool*/ s_GetTimeStr
 static const char* s_GetClientIP(void)
 {
     static const char* client = NULL;
+    const char* ext = NULL;
     if ( client ) {
         return client;
     }
-    if ( (client = getenv("HTTP_CAF_EXTERNAL")) != NULL ) {
+    ext = getenv("HTTP_CAF_EXTERNAL");
+    if ( !ext  ||  !ext[0] ) {
+        // !HTTP_CAF_EXTERNAL
+        if ( (client = getenv("HTTP_CLIENT_HOST")) != NULL  &&  client[0] ) {
+            return client;
+        }
+    }
+    if ( (client = getenv("HTTP_CAF_PROXIED_HOST")) != NULL  &&  client[0] ) {
         return client;
     }
-    if ( (client = getenv("HTTP_CLIENT_HOST")) != NULL ) {
+    if ( (client = getenv("PROXIED_IP")) != NULL  &&  client[0] ) {
         return client;
     }
-    if ( (client = getenv("HTTP_CAF_PROXIED_HOST")) != NULL ) {
-        return client;
-    }
-    if ( (client = getenv("PROXIED_IP")) != NULL ) {
-        return client;
-    }
-    if ( (client = getenv("REMOTE_ADDR")) != NULL ) {
+    if ( (client = getenv("REMOTE_ADDR")) != NULL  &&  client[0] ) {
         return client;
     }
     return NULL;
@@ -1384,8 +1283,8 @@ static void s_SetHost(const char* host)
     if (host  &&  *host) {
         size_t len;
         len = strlen(host);
-        memcpy((char*)sx_Info->host, host, len > HOST_MAX ? HOST_MAX : len);
-        sx_Info->host[HOST_MAX] = '\0';
+        memcpy((char*)sx_Info->host, host, len > NCBILOG_HOST_MAX ? NCBILOG_HOST_MAX : len);
+        sx_Info->host[NCBILOG_HOST_MAX] = '\0';
     } else {
         sx_Info->host[0] = '\0';
     }
@@ -1397,8 +1296,8 @@ static void s_SetClient(TNcbiLog_Context ctx, const char* client)
     if (client  &&  *client) {
         size_t len;
         len = strlen(client);
-        memcpy((char*)ctx->client, client, len > CLIENT_MAX ? CLIENT_MAX : len);
-        ctx->client[CLIENT_MAX] = '\0';
+        memcpy((char*)ctx->client, client, len > NCBILOG_CLIENT_MAX ? NCBILOG_CLIENT_MAX : len);
+        ctx->client[NCBILOG_CLIENT_MAX] = '\0';
     } else {
         ctx->client[0] = '\0';
     }
@@ -1580,6 +1479,27 @@ static size_t s_PrintParams(char* dst, size_t pos, const SNcbiLog_Param* params)
 }
 
 
+/** Print parameters to message buffer (string version).
+ *  The 'params' must be already prepared URL-encoded string.
+ *  Return current position in the buffer, or zero on error.
+ */
+static size_t s_PrintParamsStr(char* dst, size_t pos, const char* params)
+{
+    size_t len;
+
+    if (!params) {
+        return pos;
+    }
+    len = strlen(params);
+    if (len > NCBILOG_ENTRY_MAX - pos) {
+        return pos;
+    }
+    memcpy(dst + pos, params, len);
+    dst[pos+len] = '\0';
+    return pos + len;
+}
+
+
 /* Severity string representation  */
 static const char* sx_SeverityStr[] = {
     "Trace", "Info", "Warning", "Error", "Critical", "Fatal" 
@@ -1693,7 +1613,7 @@ void s_Init(const char* appname)
     /* URL-encode base name and use it as display name */ 
     len = strlen(sx_Info->app_base_name);
     s_URL_Encode(sx_Info->app_base_name, len, &r_len,
-                (char*)sx_Info->appname, 3*APPNAME_MAX, &w_len);
+                (char*)sx_Info->appname, 3*NCBILOG_APPNAME_MAX, &w_len);
     sx_Info->appname[w_len] = '\0';
 
     /* Allocate memory for message buffer */
@@ -1936,6 +1856,20 @@ void NcbiLog_SetDestination(ENcbiLog_Destination ds)
 }
 
 
+void NcbiLogP_SetDestination(ENcbiLog_Destination ds)
+{
+    MT_LOCK_API;
+    /* Set new destination */
+    sx_Info->destination = ds;
+    if (sx_Info->destination != eNcbiLog_Disable) {
+        /* and force to initialize it */
+        sx_Info->last_reopen_time = 0;
+        s_InitDestination();
+    }
+    MT_UNLOCK;
+}
+
+
 void NcbiLog_SetProcessId(TNcbiLog_PID pid)
 {
     MT_LOCK_API;
@@ -2009,7 +1943,7 @@ void NcbiLog_SetSession(const char* session)
         /* URL-encode session name */
         size_t len, r_len, w_len;
         len = strlen(session);
-        s_URL_Encode(session, len, &r_len, (char*)ctx->session, 3*SESSION_MAX, &w_len);
+        s_URL_Encode(session, len, &r_len, (char*)ctx->session, 3*NCBILOG_SESSION_MAX, &w_len);
         ctx->session[w_len] = '\0';
     } else {
         ctx->session[0] = '\0';
@@ -2123,16 +2057,11 @@ void NcbiLog_AppStopSignal(int exit_status, int exit_signal)
 }
 
 
-void NcbiLog_ReqStart(const SNcbiLog_Param* params)
+static int s_ReqStart(TNcbiLog_Context ctx)
 {
-    TNcbiLog_Context ctx = NULL;
-    int   n, pos;
-    char* buf;
+    int n, pos;
 
-    MT_LOCK_API;
-    ctx = s_GetContext();
     CHECK_APP_START(ctx);
-
     s_SetState(ctx, eNcbiLog_RequestBegin);
 
     /* Increase global request number, and save it in the context */
@@ -2151,13 +2080,16 @@ void NcbiLog_ReqStart(const SNcbiLog_Param* params)
         x_guid_lo = (int) (sx_Info->guid & 0xFFFFFFFF);
         n = sprintf((char*)ctx->session, "%08X%08X_%04" NCBILOG_UINT8_FORMAT_SPEC "SID", 
                      x_guid_hi, x_guid_lo, sx_Info->rid);
-        VERIFY(n > 0);
+        if (n <= 0) {
+            return 0;
+        }
     }
     
     /* Prefix */
-    buf = sx_Info->message;
     pos = s_PrintCommonPrefix(ctx);
-    VERIFY(pos > 0);
+    if (pos <= 0) {
+        return 0;
+    }
     /* We already have current time in sx_Info->post_time */
     /* Save it into sx_RequestStartTime. */
     ctx->req_start_time.sec = sx_Info->post_time.sec;
@@ -2168,11 +2100,49 @@ void NcbiLog_ReqStart(const SNcbiLog_Param* params)
     */
 
     /* Event name */
-    n = sprintf(buf + pos, "%-13s ", "request-start");
-    VERIFY(n > 0);
+    n = sprintf(sx_Info->message + pos, "%-13s ", "request-start");
+    if (pos <= 0) {
+        return 0;
+    }
     pos += n;
+
+    /* Return position in the message buffer */
+    return pos;
+}
+
+
+void NcbiLog_ReqStart(const SNcbiLog_Param* params)
+{
+    TNcbiLog_Context ctx = NULL;
+    int   n, pos;
+
+    MT_LOCK_API;
+    ctx = s_GetContext();
+    /* Common request info */
+    pos = s_ReqStart(ctx);
+    VERIFY(pos > 0);
     /* Parameters */
-    n = s_PrintParams(buf, pos, params);
+    n = s_PrintParams(sx_Info->message, pos, params);
+    VERIFY(n > 0);
+    /* Post a message */
+    s_Post(ctx, eDiag_Log);
+
+    MT_UNLOCK;
+}
+
+
+void NcbiLogP_ReqStartStr(const char* params)
+{
+    TNcbiLog_Context ctx = NULL;
+    int   n, pos;
+
+    MT_LOCK_API;
+    ctx = s_GetContext();
+    /* Common request info */
+    pos = s_ReqStart(ctx);
+    VERIFY(pos > 0);
+    /* Parameters */
+    n = s_PrintParamsStr(sx_Info->message, pos, params);
     VERIFY(n > 0);
     /* Post a message */
     s_Post(ctx, eDiag_Log);
@@ -2251,6 +2221,34 @@ void NcbiLog_Extra(const SNcbiLog_Param* params)
 }
 
 
+void NcbiLogP_ExtraStr(const char* params)
+{
+    TNcbiLog_Context ctx = NULL;
+    int   n, pos;
+    char* buf;
+
+    MT_LOCK_API;
+    ctx = s_GetContext();
+    CHECK_APP_START(ctx);
+
+    /* Prefix */
+    buf = sx_Info->message;
+    pos = s_PrintCommonPrefix(ctx);
+    VERIFY(pos > 0);
+    /* Event name */
+    n = sprintf(buf + pos, "%-13s ", "extra");
+    VERIFY(n > 0);
+    pos += n;
+    /* Parameters */
+    n = s_PrintParamsStr(buf, pos, params);
+    VERIFY(n > 0);
+    /* Post a message */
+    s_Post(ctx, eDiag_Log);
+
+    MT_UNLOCK;
+}
+
+
 void NcbiLog_Perf(int status, double timespan,
                   const SNcbiLog_Param* params)
 {
@@ -2272,6 +2270,34 @@ void NcbiLog_Perf(int status, double timespan,
     pos += n;
     /* Parameters */
     n = s_PrintParams(buf, pos, params);
+    VERIFY(n > 0);
+    /* Post a message */
+    s_Post(ctx, eDiag_Perf);
+
+    MT_UNLOCK;
+}
+
+
+void NcbiLogP_PerfStr(int status, double timespan, const char* params)
+{
+    TNcbiLog_Context ctx = NULL;
+    int   n, pos;
+    char* buf;
+
+    MT_LOCK_API;
+    ctx = s_GetContext();
+    CHECK_APP_START(ctx);
+
+    /* Prefix */
+    buf = sx_Info->message;
+    pos = s_PrintCommonPrefix(ctx);
+    VERIFY(pos > 0);
+    /* Print event name, status and timespan */
+    n = sprintf(buf + pos, "%-13s %d %f ", "perf", status, timespan);
+    VERIFY(n > 0);
+    pos += n;
+    /* Parameters */
+    n = s_PrintParamsStr(buf, pos, params);
     VERIFY(n > 0);
     /* Post a message */
     s_Post(ctx, eDiag_Perf);
@@ -2308,4 +2334,19 @@ void NcbiLog_Critical(const char* msg)
 void NcbiLog_Fatal(const char* msg)
 {
     s_PrintMessage(eNcbiLog_Fatal, msg);
+}
+
+
+/******************************************************************************
+ *  Logging setup functions --- for internal use only
+ */
+
+TNcbiLog_Info*   NcbiLogP_GetInfoPtr(void)
+{
+    return (TNcbiLog_Info*)sx_Info;
+}
+
+TNcbiLog_Context NcbiLogP_GetContextPtr(void)
+{
+    return s_GetContext();
 }
