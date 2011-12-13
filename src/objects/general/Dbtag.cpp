@@ -160,6 +160,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("dbSNP", CDbtag::eDbtagType_dbSNP),
     TDbxrefPair("dbSTS", CDbtag::eDbtagType_dbSTS),
     TDbxrefPair("dictyBase", CDbtag::eDbtagType_dictyBase),
+    TDbxrefPair("miRBase", CDbtag::eDbtagType_miRBase),
     TDbxrefPair("niaEST", CDbtag::eDbtagType_niaEST), 
     TDbxrefPair("taxon", CDbtag::eDbtagType_taxon)
 };
@@ -178,8 +179,7 @@ static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
     TDbxrefPair("PBR", CDbtag::eDbtagType_PBR),
     TDbxrefPair("REBASE", CDbtag::eDbtagType_REBASE),
     TDbxrefPair("SK-FST", CDbtag::eDbtagType_SK_FST),
-    TDbxrefPair("VBRC", CDbtag::eDbtagType_VBRC),
-    TDbxrefPair("miRBase", CDbtag::eDbtagType_miRBase)
+    TDbxrefPair("VBRC", CDbtag::eDbtagType_VBRC)
 };
 
 static const TDbxrefPair kApprovedSrcDbXrefs[] = {
