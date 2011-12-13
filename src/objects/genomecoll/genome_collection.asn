@@ -502,6 +502,8 @@ GC-Scaf-stats ::= SEQUENCE {
         count-chromosome-replicons (101), -- # of chromosomal replicons
         assembly-status (102), -- Assembly status 1 - Contig only;2 - Unplaced scaffolds only; 3 - Some chromosomes assembled;
                     -- 4 - all chromosomes assembled; 5 - complete sequence genome; 6-unlocalized and unplaced scaffolds.
+        net-count-scaffold (103),  -- number of scaffolds that are not also chromosomes (22 - 75)
+        net-count-component (104), -- number of components that are not also chromosomes or scaffolds (30 - 75 -73)
         other (255) -- catch all
     },
     value INTEGER
