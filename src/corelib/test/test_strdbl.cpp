@@ -41,6 +41,13 @@
 
 USING_NCBI_SCOPE;
 
+#if 0
+# undef SIZEOF_LONG_DOUBLE
+# define SIZEOF_LONG_DOUBLE SIZEOF_DOUBLE
+# undef NCBI_CONST_LONGDOUBLE
+# define NCBI_CONST_LONGDOUBLE(v) v
+#endif
+
 static const double EPS = 2.22e-16; // 2^-52
 
 /////////////////////////////////////////////////////////////////////////////
@@ -67,12 +74,17 @@ double StringToDoublePosixOld(const char* ptr, char** endptr)
     for ( ; isspace(*ptr); ++ptr)
         ;
     const char* start = ptr;
-    long double ret = NCBI_CONST_LONGDOUBLE(0.);
+#if SIZEOF_LONG_DOUBLE == SIZEOF_DOUBLE
+    typedef double Double;
+#else
+    typedef long double Double;
+#endif
+    Double ret = NCBI_CONST_LONGDOUBLE(0.);
     bool sign= false, negate= false, dot= false, expn=false, anydigits=false;
     int digits = 0, dot_position = 0, exponent = 0;
     unsigned int first=0, second=0, first_exp=1;
-    long double second_exp=NCBI_CONST_LONGDOUBLE(1.),
-                third    = NCBI_CONST_LONGDOUBLE(0.);
+    Double second_exp = NCBI_CONST_LONGDOUBLE(1.);
+    Double third = NCBI_CONST_LONGDOUBLE(0.);
     char c;
 // up to exponent
     for( ; ; ++ptr) {
@@ -199,7 +211,7 @@ double StringToDoublePosixOld(const char* ptr, char** endptr)
             exponent = expnegate ? exponent - expvalue : exponent + expvalue;
         }
     }
-    ret = ((long double)first * first_exp + second)* second_exp + third;
+    ret = ((Double)first * first_exp + second)* second_exp + third;
     // calculate exponent
     if ((first || second) && exponent) {
         if (exponent > 2*DBL_MAX_10_EXP) {
@@ -212,8 +224,8 @@ double StringToDoublePosixOld(const char* ptr, char** endptr)
             for (; exponent < -256; exponent += 256) {
                 ret /= NCBI_CONST_LONGDOUBLE(1.e256);
             }
-            long double power      = NCBI_CONST_LONGDOUBLE(1.),
-                        power_mult = NCBI_CONST_LONGDOUBLE(10.);
+            Double power      = NCBI_CONST_LONGDOUBLE(1.);
+            Double power_mult = NCBI_CONST_LONGDOUBLE(10.);
             unsigned int mask = 1;
             unsigned int uexp = exponent < 0 ? -exponent : exponent;
             int count = 1;
@@ -333,7 +345,9 @@ public:
         }
     CDecimal(double value, int digits);
 
-    string ToString(void) const;
+    ostream& Print(ostream& out, int exp_shift = 0) const;
+
+    string ToString(int exp_shift = 0) const;
 
     CDecimal& operator=(int v);
     CDecimal& operator=(const CTempStringEx& s);
@@ -344,7 +358,7 @@ public:
     int Increment(size_t i, int c);
     int Decrement(size_t i, int c);
 
-    double ToDouble(void) const;
+    double ToDouble(int exp_shift = 0) const;
 
     int m_Sign;
     int m_Exponent;
@@ -352,37 +366,44 @@ public:
 };
 
 
-ostream& operator<<(ostream& out, const CDecimal& d)
+ostream& CDecimal::Print(ostream& out, int exp_shift) const
 {
-    if ( d.m_Sign == 0 )
+    if ( m_Sign == 0 )
         out << '0';
     else {
-        if ( d.m_Sign < 0 ) out << '-';
-        out << '.' << d.m_Mantissa;
-        if ( d.m_Exponent )
-            out << 'e' << d.m_Exponent;
+        if ( m_Sign < 0 ) out << '-';
+        out << '.' << m_Mantissa;
+        int exp = m_Exponent+exp_shift;
+        if ( exp )
+            out << 'e' << exp;
     }
     return out;
 }
 
 
-string CDecimal::ToString(void) const
+inline ostream& operator<<(ostream& out, const CDecimal& d)
+{
+    return d.Print(out);
+}
+
+
+string CDecimal::ToString(int exp_shift) const
 {
     CNcbiOstrstream out;
-    out << *this;
+    Print(out, exp_shift);
     return CNcbiOstrstreamToString(out);
 }
 
 
-double CDecimal::ToDouble(void) const
+double CDecimal::ToDouble(int exp_shift) const
 {
-    return NStr::StringToDouble(ToString());
+    return NStr::StringToDouble(ToString(exp_shift));
 }
 
 
 CDecimal::CDecimal(double value, int digits)
 {
-    *this = NStr::DoubleToString(value, digits, NStr::fDoubleScientific|NStr::fDecimalPosix);
+    *this = NStr::DoubleToString(value, digits, NStr::fDoubleScientific|NStr::fDoublePosix);
 }
 
 
@@ -610,7 +631,7 @@ CDecimal operator+(const CDecimal& d1, const CDecimal& d2)
         ret.m_Mantissa[pos+i] = '0'+v;
     }
     if ( c ) {
-        ret.m_Mantissa.insert(0, 1, char('0'+c));
+        ret.m_Mantissa.insert(0u, 1u, char('0'+c));
         ret.m_Exponent += 1;
     }
     ret.Normalize();
@@ -688,14 +709,23 @@ CDecimal operator-(const CDecimal& d1, const CDecimal& d2)
         for ( size_t i = 0; i < size; ++i ) {
             ret.m_Mantissa[i] = '0'+(9-(ret.m_Mantissa[i]-'0'));
         }
-        int c = ret.Increment(size, 1);
+        c = ret.Increment(size, 1);
         if ( c ) {
-            ret.m_Mantissa.insert(0, 1, char('0'+c));
+            ret.m_Mantissa.insert(0u, 1u, char('0'+c));
             ret.m_Exponent += 1;
         }
     }
     //LOG_POST("ret="<<ret);
     ret.Normalize();
+    return ret;
+}
+
+
+CDecimal abs(const CDecimal& d)
+{
+    CDecimal ret = d;
+    if ( ret.m_Sign == -1 )
+        ret.m_Sign = 1;
     return ret;
 }
 
@@ -732,13 +762,13 @@ double CTestApp::PreciseStringToDouble(const CTempStringEx& s0)
 {
     double best_ret = NStr::StringToDouble(s0);
     CDecimal d0(s0);
-    double best_err = (CDecimal(best_ret, 24)-d0).ToDouble();
-    if ( best_err == 0 ) {
+    CDecimal best_err = CDecimal(best_ret, 24)-d0, first_err = best_err;
+    if ( best_err.m_Sign == 0 ) {
         return best_ret;
     }
-    double last_v = best_ret, last_err = best_err;
+    double last_v = best_ret;
     double toward_v;
-    if ( (last_v > 0) == (last_err > 0) ) {
+    if ( (last_v > 0) == (first_err.m_Sign > 0) ) {
         toward_v = 0;
     }
     else {
@@ -747,16 +777,16 @@ double CTestApp::PreciseStringToDouble(const CTempStringEx& s0)
     //LOG_POST(s0<<" err: "<<best_err);
     for ( ;; ) {
         double v = GetNextToward(last_v, toward_v);
-        double err = (CDecimal(v, 24)-d0).ToDouble();
+        CDecimal err = CDecimal(v, 24)-d0;
         //LOG_POST(" new err: "<<err);
-        if ( fabs(err) < fabs(best_err) ) {
-            if ( err == 0 ) {
+        if ( (abs(err) - abs(best_err)).m_Sign < 0 ) {
+            if ( err.m_Sign == 0 ) {
                 return v;
             }
             best_err = err;
             best_ret = v;
         }
-        if ( (err > 0) != (last_err > 0) ) {
+        if ( (err.m_Sign > 0) != (first_err.m_Sign > 0) ) {
             break;
         }
         last_v = v;
@@ -788,6 +818,7 @@ void CTestApp::RunSpeedBenchmark(void)
     NStr::Tokenize(test_strings, ",", ss);
     const size_t TESTS = ss.size();
     vector<double> ssr(TESTS), ssr_min(TESTS), ssr_max(TESTS);
+    static const int kConvertError = -555;
     for ( size_t i = 0; i < TESTS; ++i ) {
         double r;
         try {
@@ -795,7 +826,7 @@ void CTestApp::RunSpeedBenchmark(void)
         }
         catch ( CException& /*exc*/ ) {
             //ERR_POST(exc);
-            ssr[i] = ssr_min[i] = ssr_max[i] = -1;
+            ssr[i] = ssr_min[i] = ssr_max[i] = kConvertError;
             continue;
         }
         ssr[i] = r;
@@ -818,7 +849,7 @@ void CTestApp::RunSpeedBenchmark(void)
         if ( 1 ) {
             errno = 0;
             v = NStr::StringToDouble(ss[t], flags|NStr::fDecimalPosix);
-            if ( errno ) v = -1;
+            if ( errno ) v = kConvertError;
             if ( v < ssr_min[t] || v > ssr_max[t] )
                 ERR_POST(Fatal<<v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
         }
@@ -826,7 +857,7 @@ void CTestApp::RunSpeedBenchmark(void)
         if ( 1 ) {
             errno = 0;
             v = NStr::StringToDouble(ss[t], flags);
-            if ( errno ) v = -1;
+            if ( errno ) v = kConvertError;
             if ( v < ssr_min[t] || v > ssr_max[t] )
                 ERR_POST(Fatal<<v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
         }
@@ -835,7 +866,7 @@ void CTestApp::RunSpeedBenchmark(void)
             errno = 0;
             char* errptr;
             v = NStr::StringToDoublePosix(ss[t].c_str(), &errptr);
-            if ( errno || (errptr&&(*errptr||errptr==ss[t].c_str())) ) v = -1;
+            if ( errno || (errptr&&(*errptr||errptr==ss[t].c_str())) ) v = kConvertError;
             if ( v < ssr_min[t] || v > ssr_max[t] )
                 ERR_POST(Fatal<<v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
         }
@@ -844,7 +875,7 @@ void CTestApp::RunSpeedBenchmark(void)
             errno = 0;
             char* errptr;
             v = StringToDoublePosixOld(ss[t].c_str(), &errptr);
-            if ( errno || (errptr&&(*errptr||errptr==ss[t].c_str())) ) v = -1;
+            if ( errno || (errptr&&(*errptr||errptr==ss[t].c_str())) ) v = kConvertError;
             if ( v < ssr_min[t] || v > ssr_max[t] )
                 ERR_POST(Fatal<<v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
         }
@@ -853,7 +884,7 @@ void CTestApp::RunSpeedBenchmark(void)
             errno = 0;
             char* errptr;
             v = strtod(ss[t].c_str(), &errptr);
-            if ( errno || (errptr&&(*errptr||errptr==ss[t].c_str())) ) v = -1;
+            if ( errno || (errptr&&(*errptr||errptr==ss[t].c_str())) ) v = kConvertError;
             if ( v < ssr_min[t] || v > ssr_max[t] )
                 ERR_POST(Fatal<<v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
         }
@@ -871,7 +902,7 @@ void CTestApp::RunSpeedBenchmark(void)
             for ( int i = 0; i < COUNT; ++i ) {
                 errno = 0;
                 v = NStr::StringToDouble(s, flags|NStr::fDecimalPosix);
-                if ( errno ) v = -1;
+                if ( errno ) v = kConvertError;
             }
             time = sw.Elapsed();
             NcbiCout << "   StringToDouble(Posix): " << time << endl;
@@ -881,7 +912,7 @@ void CTestApp::RunSpeedBenchmark(void)
             for ( int i = 0; i < COUNT; ++i ) {
                 errno = 0;
                 v = NStr::StringToDouble(s, flags);
-                if ( errno ) v = -1;
+                if ( errno ) v = kConvertError;
             }
             time = sw.Elapsed();
             NcbiCout << "        StringToDouble(): " << time << endl;
@@ -892,7 +923,7 @@ void CTestApp::RunSpeedBenchmark(void)
                 errno = 0;
                 char* errptr;
                 v = NStr::StringToDoublePosix(s2, &errptr);
-                if ( errno || (errptr&&(*errptr||errptr==s2)) ) v = -1;
+                if ( errno || (errptr&&(*errptr||errptr==s2)) ) v = kConvertError;
             }
             time = sw.Elapsed();
             NcbiCout << "   StringToDoublePosix(): " << time << endl;
@@ -903,7 +934,7 @@ void CTestApp::RunSpeedBenchmark(void)
                 errno = 0;
                 char* errptr;
                 v = StringToDoublePosixOld(s2, &errptr);
-                if ( errno || (errptr&&(*errptr||errptr==s2)) ) v = -1;
+                if ( errno || (errptr&&(*errptr||errptr==s2)) ) v = kConvertError;
             }
             time = sw.Elapsed();
             NcbiCout << "StringToDoublePosixOld(): " << time << endl;
@@ -914,7 +945,7 @@ void CTestApp::RunSpeedBenchmark(void)
                 errno = 0;
                 char* errptr;
                 v = strtod(s2, &errptr);
-                if ( errno || (errptr&&(*errptr||errptr==s2)) ) v = -1;
+                if ( errno || (errptr&&(*errptr||errptr==s2)) ) v = kConvertError;
             }
             time = sw.Elapsed();
             NcbiCout << "                strtod(): " << time << endl;
@@ -991,8 +1022,11 @@ void CTestApp::RunPrecisionBenchmark(void)
         CDecimal d0(str);
         CDecimal d_ref(v_ref, 24);
         CDecimal d_v(v, 24);
-        double err_ref = fabs((d_ref-d0).ToDouble());
-        double err_v = fabs((d_v-d0).ToDouble());
+        int exp_shift = 0;
+        if ( d0.m_Exponent > 200 ) exp_shift = -100;
+        if ( d0.m_Exponent < -200 ) exp_shift = 100;
+        double err_ref = fabs((d_ref-d0).ToDouble(exp_shift));
+        double err_v = fabs((d_v-d0).ToDouble(exp_shift));
         if ( err_v <= err_ref*(1+threshold) ) {
             if ( m_VerboseLevel >= 2 ) {
                 LOG_POST("d_str: "<<d0);
