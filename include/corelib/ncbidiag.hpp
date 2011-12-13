@@ -2525,6 +2525,49 @@ private:
 };
 
 
+//////////////////////////////////////////////////////////////////////////
+/// CAsyncDiagHandler --
+///
+/// Special handler that offloads physical printing of log messages to a
+/// separate thread. This handler should be installed into diagnostics
+/// only when it is completely initialized, i.e. no earlier than
+/// CNcbiApplication::Run() is called. Also it shouldn't be installed
+/// using standard SetDiagHandler() function, you have to use
+/// InstallToDiag() method of this handler. And don't forget to call
+/// RemoveFromDiag() before your application is finished.
+
+class CAsyncDiagThread;
+
+class CAsyncDiagHandler : public CDiagHandler
+{
+public:
+    CAsyncDiagHandler(void);
+    virtual ~CAsyncDiagHandler(void);
+
+    /// Install this DiagHandler into diagnostics.
+    /// Method should be called only when diagnostics is completely
+    /// initialized, i.e. no earlier than CNcbiApplication::Run() is called.
+    /// Method can throw CThreadException if dedicated thread failed
+    /// to start.
+    void InstallToDiag(void);
+    /// Remove this DiagHandler from diagnostics.
+    /// This method must be called if InstallToDiag was called. Object cannot
+    /// be destroyed if InstallToDiag was called and RemoveFromDiag wasn't
+    /// called. If InstallToDiag wasn't called then this method does nothing
+    /// and is safe to be executed.
+    void RemoveFromDiag(void);
+
+    /// Implementation of CDiagHandler
+    virtual void Post(const SDiagMessage& mess);
+    virtual string GetLogName(void);
+    virtual void Reopen(TReopenFlags flags);
+
+private:
+    /// Thread handling all physical printing of log messages
+    CAsyncDiagThread* m_AsyncThread;
+};
+
+
 /// Output diagnostics using both old and new style handlers.
 NCBI_DEPRECATED
 NCBI_XNCBI_EXPORT extern void SetDoubleDiagHandler(void); ///< @deprecated

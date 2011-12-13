@@ -5432,6 +5432,125 @@ void CFileDiagHandler::Post(const SDiagMessage& mess)
 }
 
 
+class CAsyncDiagThread : public CThread
+{
+public:
+    CAsyncDiagThread(void)
+        : m_NeedStop(false),
+          m_SubHandler(NULL)
+    {}
+    virtual ~CAsyncDiagThread(void)
+    {}
+
+    virtual void* Main(void);
+
+
+    bool m_NeedStop;
+    CDiagHandler* m_SubHandler;
+    CFastMutex m_QueueLock;
+    CConditionVariable m_QueueCond;
+    deque<SDiagMessage*> m_MsgQueue;
+};
+
+
+CAsyncDiagHandler::CAsyncDiagHandler(void)
+    : m_AsyncThread(NULL)
+{}
+
+CAsyncDiagHandler::~CAsyncDiagHandler(void)
+{
+    _ASSERT(!m_AsyncThread);
+}
+
+void
+CAsyncDiagHandler::InstallToDiag(void)
+{
+    m_AsyncThread = new CAsyncDiagThread();
+    m_AsyncThread->AddReference();
+    try {
+        m_AsyncThread->Run();
+    }
+    catch (CThreadException&) {
+        m_AsyncThread->RemoveReference();
+        m_AsyncThread = NULL;
+        throw;
+    }
+    m_AsyncThread->m_SubHandler = GetDiagHandler(true);
+    SetDiagHandler(this, false);
+}
+
+void
+CAsyncDiagHandler::RemoveFromDiag(void)
+{
+    if (!m_AsyncThread)
+        return;
+
+    _ASSERT(GetDiagHandler(false) == this);
+    SetDiagHandler(m_AsyncThread->m_SubHandler);
+    m_AsyncThread->m_NeedStop = true;
+    try {
+        m_AsyncThread->m_QueueCond.SignalAll();
+        m_AsyncThread->Join();
+    }
+    catch (CException& ex) {
+        ERR_POST_X(24, Critical
+                       << "Error while removing AsyncDiagHandler: " << ex);
+    }
+    m_AsyncThread->RemoveReference();
+    m_AsyncThread = NULL;
+}
+
+string
+CAsyncDiagHandler::GetLogName(void)
+{
+    return m_AsyncThread->m_SubHandler->GetLogName();
+}
+
+void
+CAsyncDiagHandler::Reopen(TReopenFlags flags)
+{
+    m_AsyncThread->m_SubHandler->Reopen(flags);
+}
+
+void
+CAsyncDiagHandler::Post(const SDiagMessage& mess)
+{
+    CAsyncDiagThread* thr = m_AsyncThread;
+    SDiagMessage* save_msg = new SDiagMessage(mess);
+
+    CFastMutexGuard guard(thr->m_QueueLock);
+    thr->m_MsgQueue.push_back(save_msg);
+    if (thr->m_MsgQueue.size() == 1)
+        thr->m_QueueCond.SignalSome();
+}
+
+
+void*
+CAsyncDiagThread::Main(void)
+{
+    deque<SDiagMessage*> save_msgs;
+    for (;;) {
+        {{
+            CFastMutexGuard guard(m_QueueLock);
+            while (m_MsgQueue.size() == 0  &&  !m_NeedStop)
+                m_QueueCond.WaitForSignal(m_QueueLock);
+            save_msgs.swap(m_MsgQueue);
+        }}
+
+        if (save_msgs.size() == 0)
+            break;
+
+        while (!save_msgs.empty()) {
+            SDiagMessage* msg = save_msgs.front();
+            save_msgs.pop_front();
+            m_SubHandler->Post(*msg);
+            delete msg;
+        }
+    }
+    return NULL;
+}
+
+
 extern bool SetLogFile(const string& file_name,
                        EDiagFileType file_type,
                        bool quick_flush)

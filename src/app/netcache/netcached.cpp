@@ -1610,76 +1610,6 @@ CNCSyncBlockedOpListener::OnBlockedOpFinish(void)
 }
 
 
-static CDiagHandler* s_SubHandler = NULL;
-static CFastMutex s_DiagQueueLock;
-static CConditionVariable s_DiagQueueCond;
-static deque<SDiagMessage*> s_DiagQueue;
-
-
-CNCDiagHandler::CNCDiagHandler(void)
-{}
-
-CNCDiagHandler::~CNCDiagHandler(void)
-{}
-
-void
-CNCDiagHandler::Post(const SDiagMessage& mess)
-{
-    SDiagMessage* save_msg = new SDiagMessage(mess);
-    s_DiagQueueLock.Lock();
-    s_DiagQueue.push_back(save_msg);
-    if (s_DiagQueue.size() == 1)
-        s_DiagQueueCond.SignalSome();
-    s_DiagQueueLock.Unlock();
-}
-
-string
-CNCDiagHandler::GetLogName(void)
-{
-    return s_SubHandler->GetLogName();
-}
-
-void
-CNCDiagHandler::Reopen(TReopenFlags flags)
-{
-    s_SubHandler->Reopen(flags);
-}
-
-
-CNCDiagThread::CNCDiagThread(void)
-{}
-
-CNCDiagThread::~CNCDiagThread(void)
-{}
-
-void*
-CNCDiagThread::Main(void)
-{
-    deque<SDiagMessage*> save_msgs;
-    for (;;) {
-        s_DiagQueueLock.Lock();
-        while (s_DiagQueue.size() == 0
-               &&  !g_NetcacheServer->ShutdownRequested())
-        {
-            s_DiagQueueCond.WaitForSignal(s_DiagQueueLock);
-        }
-        save_msgs.swap(s_DiagQueue);
-        s_DiagQueueLock.Unlock();
-
-        if (save_msgs.size() == 0)
-            break;
-
-        while (!save_msgs.empty()) {
-            SDiagMessage* msg = save_msgs.front();
-            save_msgs.pop_front();
-            s_SubHandler->Post(*msg);
-            delete msg;
-        }
-    }
-    return NULL;
-}
-
-
 void
 CNetCacheDApp::Init(void)
 {
@@ -1737,23 +1667,20 @@ CNetCacheDApp::Run(void)
     signal(SIGTERM, s_NCSignalHandler);
 #endif
 
-    CRef<CNCDiagThread> diag_thread;
     CNetCacheServer* server = NULL;
+    CAsyncDiagHandler diag_handler;
     if (!CNCMemManager::InitializeApp())
         goto fin_mem;
     CSQLITE_Global::Initialize();
     server = new CNetCacheServer();
     if (server->Initialize(args["reinit"])) {
         try {
-            diag_thread = new CNCDiagThread();
-            diag_thread->Run();
+            diag_handler.InstallToDiag();
         }
         catch (CThreadException& ex) {
             ERR_POST(Critical << ex);
             goto fin_server;
         }
-        s_SubHandler = GetDiagHandler(true);
-        SetDiagHandler(new CNCDiagHandler());
         server->Run();
         if (server->GetSignalCode()) {
             INFO_POST("Server got " << server->GetSignalCode() << " signal.");
@@ -1763,17 +1690,7 @@ fin_server:
     server->Finalize();
     //delete server;
     CSQLITE_Global::Finalize();
-    if (s_SubHandler)
-        SetDiagHandler(s_SubHandler);
-    if (diag_thread) {
-        s_DiagQueueCond.SignalAll();
-        try {
-            diag_thread->Join();
-        }
-        catch (CThreadException& ex) {
-            ERR_POST(Critical << ex);
-        }
-    }
+    diag_handler.RemoveFromDiag();
 fin_mem:
     CNCMemManager::FinalizeApp();
 

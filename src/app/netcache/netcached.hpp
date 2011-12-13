@@ -354,29 +354,6 @@ protected:
 };
 
 
-class CNCDiagHandler : public CDiagHandler
-{
-public:
-    CNCDiagHandler(void);
-    virtual ~CNCDiagHandler(void);
-
-    virtual void Post(const SDiagMessage& mess);
-    virtual string GetLogName(void);
-    virtual void Reopen(TReopenFlags flags);
-};
-
-
-class CNCDiagThread : public CThread
-{
-public:
-    CNCDiagThread(void);
-    virtual ~CNCDiagThread(void);
-
-private:
-    virtual void* Main(void);
-};
-
-
 
 inline bool
 CNetCacheServer::ShutdownRequested(void)
