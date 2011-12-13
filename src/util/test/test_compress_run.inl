@@ -263,12 +263,10 @@
         assert(zf.Close()); 
 
         // Compare original and "decompressed" data
-#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_DARWIN)
         if (memcmp(src_buf, cmp_buf, kDataLen) != 0) {
 #  ifdef NCBI_OS_MSWIN
             string new_file_name = string("s:\\") + kFileName;
-#  endif
-#  ifdef NCBI_OS_DARWIN
+#  else
             string new_file_name = string("/tmp/") + kFileName;
 #  endif
             string new_file_name_cmp = new_file_name + ".cmp";
@@ -279,7 +277,6 @@
             ERR_POST("Original data file: " << new_file_name << 
                      ", cmp_buf dumped into: " << new_file_name_cmp);
         }
-#endif
         assert(memcmp(src_buf, cmp_buf, kDataLen) == 0);
 
         CFile(kFileName).Remove();
