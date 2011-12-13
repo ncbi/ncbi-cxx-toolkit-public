@@ -5432,6 +5432,8 @@ void CFileDiagHandler::Post(const SDiagMessage& mess)
 }
 
 
+#if defined(NCBI_HAVE_CONDITIONAL_VARIABLE)
+
 class CAsyncDiagThread : public CThread
 {
 public:
@@ -5549,6 +5551,8 @@ CAsyncDiagThread::Main(void)
     }
     return NULL;
 }
+
+#endif
 
 
 extern bool SetLogFile(const string& file_name,

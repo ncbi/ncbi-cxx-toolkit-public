@@ -2525,6 +2525,8 @@ private:
 };
 
 
+#if defined(NCBI_HAVE_CONDITIONAL_VARIABLE)
+
 //////////////////////////////////////////////////////////////////////////
 /// CAsyncDiagHandler --
 ///
@@ -2566,6 +2568,8 @@ private:
     /// Thread handling all physical printing of log messages
     CAsyncDiagThread* m_AsyncThread;
 };
+
+#endif
 
 
 /// Output diagnostics using both old and new style handlers.
