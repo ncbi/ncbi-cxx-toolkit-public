@@ -637,8 +637,12 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
                             if (start_copy < d_start) start_copy = d_start;
                             if (stop_copy > d_stop) stop_copy = d_stop;
                             if (start_copy <= stop_copy) {
-                                annot->m_DomainInfo_S[i] = 
-                                   d_map->GetSeqPosFromSeqPos(1, 0, start_copy, IAlnExplorer::eForward);
+                                if (i>0 && annot->m_DomainInfo_S[i-1]>=0) {
+                                    annot->m_DomainInfo_S[i] = annot->m_DomainInfo_S[i-1] + 1;
+                                } else {
+                                    annot->m_DomainInfo_S[i] = 
+                                       d_map->GetSeqPosFromSeqPos(1, 0, start_copy, IAlnExplorer::eForward);
+                                }
                                 annot->m_DomainInfo_S[i+1] = 
                                    d_map->GetSeqPosFromSeqPos(1, 0, stop_copy, IAlnExplorer::eBackwards);
                             }
@@ -695,6 +699,11 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
                                        s_map.GetSeqPosFromSeqPos(1, 0, annot->m_DomainInfo[i],
                                                                  IAlnExplorer::eBackwards))*q_dir;
                     if (annot->m_DomainInfo[i] < 0) annot->m_DomainInfo[i] = 0;
+                    i+=2;
+                    while (i<10 && annot->m_DomainInfo[i] >=0) {
+                        annot->m_DomainInfo[i] = annot->m_DomainInfo[i-1] + q_dir;
+                        i+=2;
+                    }
                     i = 9;
                     while (i>0 && annot->m_DomainInfo[i] < 0) i-=2;
                     if (i >= 0) {
