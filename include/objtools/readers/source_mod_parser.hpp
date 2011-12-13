@@ -44,6 +44,8 @@
 #include <objects/seqfeat/Gene_ref.hpp>
 #include <objects/seqfeat/Prot_ref.hpp>
 
+#include <objtools/readers/reader_exception.hpp>
+
 #include <set>
 
 /** @addtogroup Miscellaneous

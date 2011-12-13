@@ -35,6 +35,7 @@
 #include <ncbi_pch.hpp>
 #include <objtools/readers/fasta.hpp>
 #include "fasta_aln_builder.hpp"
+#include <objtools/readers/fasta_exception.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/source_mod_parser.hpp>
 #include <objtools/error_codes.hpp>
@@ -636,10 +637,10 @@ void CFastaReader::ParseDataLine(const TStr& s)
             break;
         } else if ( !isspace(c) ) {
             if (TestFlag(fValidate)) {
-                NCBI_THROW2(CObjReaderParseException, eFormat,
+                NCBI_THROW2(CBadResiduesException, eBadResidues,
                             string("CFastaReader: Invalid residue ") + s[pos]
                             + " at position " + NStr::UInt8ToString(pos),
-                            LineNumber());
+                                CBadResiduesException::SBadResiduePositions( pos, LineNumber() ) );
             } else {
                 ERR_POST_X(1, Warning
                            << "CFastaReader: Ignoring invalid residue " << c
@@ -720,10 +721,9 @@ void CFastaReader::AssembleSeq(void)
         vector<TSeqPos> badIndexes;
         CSeqportUtil::Validate(tmp_data, &badIndexes);
         if ( ! badIndexes.empty() ) {
-            NCBI_THROW2(CObjReaderParseException, eFormat,
-                "CFastaReader: Invalid residue(s) in input sequence at positions: " +
-                x_ConvertBadIndexesToString(badIndexes, 20),
-                LineNumber());
+            NCBI_THROW2(CBadResiduesException, eBadResidues,
+                "CFastaReader: Invalid residue(s) in input sequence",
+                CBadResiduesException::SBadResiduePositions( badIndexes, LineNumber() ) );
         }
     }
 
@@ -1691,64 +1691,10 @@ void CFastaReader::x_RecursiveApplyAllMods( CSeq_entry& entry )
                 }
             }
             smp.GetLabel(&title, CSourceModParser::fUnusedMods);
+            copy( smp.GetBadMods().begin(), smp.GetBadMods().end(),
+                inserter(m_BadMods, m_BadMods.begin()) );
         }
     }
-}
-
-string CFastaReader::x_ConvertBadIndexesToString(
-    const vector<TSeqPos> &badIndexes, 
-    int maxRanges )
-{
-    _ASSERT(is_sorted(badIndexes.begin(), badIndexes.end()));
-
-    typedef pair<TSeqPos, TSeqPos> TRange;
-    typedef vector<TRange> TRangeVec;
-
-    TRangeVec rangesFound;
-
-    ITERATE( vector<TSeqPos>, idx_iter, badIndexes ) {
-        const TSeqPos idx = *idx_iter;
-
-        // first one
-        if( rangesFound.empty() ) {
-            rangesFound.push_back(TRange(idx, idx));
-            continue;
-        }
-
-        const TSeqPos last_idx = rangesFound.back().second;
-        if( idx == (last_idx+1) ) {
-            // extend previous range
-            ++rangesFound.back().second;
-        } else {
-            // create new range
-            rangesFound.push_back(TRange(idx, idx));
-        }
-
-        if( rangesFound.size() > maxRanges ) {
-            break;
-        }
-    }
-
-    // turn the ranges found into a string
-    string result;
-    for( int rng_idx = 0; 
-        ( rng_idx < rangesFound.size() && rng_idx < maxRanges ); 
-        ++rng_idx ) 
-    {
-        if( ! result.empty() ) {
-            result += ", ";
-        }
-        const TRange &range = rangesFound[rng_idx];
-        result += NStr::IntToString(range.first);
-        if( range.first != range.second ) {
-            result += "-" + NStr::IntToString(range.second);
-        }
-    }
-    if( rangesFound.size() > maxRanges ) {
-        result += ", and more";
-    }
-
-    return result;
 }
 
 END_SCOPE(objects)

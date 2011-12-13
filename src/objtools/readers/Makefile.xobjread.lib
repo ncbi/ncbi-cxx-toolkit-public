@@ -16,7 +16,7 @@ SRC = format_guess_ex \
       gff2_data gff2_reader \
       gvf_reader \
       vcf_reader \
-      best_feat_finder source_mod_parser
+      best_feat_finder source_mod_parser fasta_exception
 
 
 DLL_LIB = creaders

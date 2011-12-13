@@ -39,6 +39,7 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objtools/readers/source_mod_parser.hpp>
 // #include <objects/seqset/Seq_entry.hpp>
 #include <stack>
 
@@ -139,6 +140,9 @@ public:
 
     /// Re-allow previously seen IDs even if fUniqueIds is on.
     void ResetIDTracker(void) { m_IDTracker.clear(); }
+        
+    const CSourceModParser::TMods & GetBadMods(void) const { return m_BadMods; }
+    void ClearBadMods(void) { m_BadMods.clear(); }
 
 protected:
     enum EInternalFlags {
@@ -206,9 +210,6 @@ protected:
 
     void x_RecursiveApplyAllMods( CSeq_entry& entry );
 
-    string x_ConvertBadIndexesToString(
-        const vector<TSeqPos> &badIndexes, 
-        int maxRanges );
 private:
     struct SGap {
         TSeqPos pos; // 0-based, and NOT counting previous gaps
@@ -217,26 +218,27 @@ private:
     typedef vector<SGap>        TGaps;
     typedef set<CSeq_id_Handle> TIDTracker;
 
-    CRef<ILineReader>     m_LineReader;
-    stack<TFlags>         m_Flags;
-    CRef<CBioseq>         m_CurrentSeq;
-    TMask                 m_CurrentMask;
-    TMask                 m_NextMask;
-    TMasks *              m_MaskVec;
-    CRef<CSeqIdGenerator> m_IDGenerator;
-    string                m_SeqData;
-    TGaps                 m_Gaps;
-    TSeqPos               m_CurrentPos; // does not count gaps
-    TSeqPos               m_ExpectedEnd;
-    TSeqPos               m_MaskRangeStart;
-    TSeqPos               m_SegmentBase;
-    TSeqPos               m_CurrentGapLength;
-    TSeqPos               m_TotalGapLength;
-    CRef<CSeq_id>         m_BestID;
-    TStartsMap            m_Starts;
-    TRowNum               m_Row;
-    TSeqPos               m_Offset;
-    TIDTracker            m_IDTracker;
+    CRef<ILineReader>       m_LineReader;
+    stack<TFlags>           m_Flags;
+    CRef<CBioseq>           m_CurrentSeq;
+    TMask                   m_CurrentMask;
+    TMask                   m_NextMask;
+    TMasks *                m_MaskVec;
+    CRef<CSeqIdGenerator>   m_IDGenerator;
+    string                  m_SeqData;
+    TGaps                   m_Gaps;
+    TSeqPos                 m_CurrentPos; // does not count gaps
+    TSeqPos                 m_ExpectedEnd;
+    TSeqPos                 m_MaskRangeStart;
+    TSeqPos                 m_SegmentBase;
+    TSeqPos                 m_CurrentGapLength;
+    TSeqPos                 m_TotalGapLength;
+    CRef<CSeq_id>           m_BestID;
+    TStartsMap              m_Starts;
+    TRowNum                 m_Row;
+    TSeqPos                 m_Offset;
+    TIDTracker              m_IDTracker;
+    CSourceModParser::TMods m_BadMods;
 };
 
 
