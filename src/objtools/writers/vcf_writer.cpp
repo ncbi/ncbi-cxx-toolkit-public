@@ -155,7 +155,6 @@ bool CVcfWriter::x_WriteMeta(
     if ( !pVcfMetaInfo ) {
         return x_WriteMetaCreateNew( annot );
     }
-    unsigned int pos = 1;
     const CAnnotdesc::TUser& meta = *pVcfMetaInfo;
     const vector<string>& directives = 
         meta.GetFieldRef("meta-information")->GetData().GetStrs();
@@ -562,7 +561,6 @@ bool CVcfWriter::x_WriteFeatureInfo(
         }
     }
 
-    bool bAF = false;
     vector<string> values; 
 
     if ( var.IsSetVariant_prop() ) {
@@ -570,7 +568,6 @@ bool CVcfWriter::x_WriteFeatureInfo(
         if ( props.IsSetAllele_frequency() ) {
             infos.push_back( string("AF=") + 
                 NStr::DoubleToString( props.GetAllele_frequency(), 4 ) );
-            bAF = true;
         }
         if ( props.IsSetResource_link() ) {
             int rl = props.GetResource_link();
@@ -648,12 +645,6 @@ bool CVcfWriter::x_WriteFeatureInfo(
                 values.push_back( "genotype_conflict" );
             }
             infos.push_back( string("QC=\"") + NStr::Join( values, "," ) + string("\"") );
-        }
-    }
-    else {
-        if ( ! bAF  &&  var.IsSetAllele_frequency() ) {
-            infos.push_back( string("AF=")
-                + NStr::DoubleToString( var.GetAllele_frequency(), 4 ) );
         }
     }
 

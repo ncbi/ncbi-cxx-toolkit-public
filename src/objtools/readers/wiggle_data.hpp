@@ -155,7 +155,7 @@ protected:
         CByte_graph& );
         
     bool DataValue(
-        unsigned int,
+        int,
         double& );
 
     unsigned char ByteGraphValue(

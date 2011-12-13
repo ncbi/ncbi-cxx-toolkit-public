@@ -411,8 +411,6 @@ bool CGff3Writer::x_WriteFeature(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    CSeqFeatData::ESubtype subtype = mf.GetFeatSubtype();
-
     try {
         switch( mf.GetFeatSubtype() ) {
             default:

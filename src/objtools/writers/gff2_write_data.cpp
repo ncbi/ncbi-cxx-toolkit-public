@@ -910,7 +910,7 @@ bool CGffWriteRecordFeature::x_AssignSource(
         }
     }
 
-    CBioseq_Handle bsh = mf.GetScope().GetBioseqHandle( mf.GetLocation() );
+    CBioseq_Handle bsh = mf.GetScope().GetBioseqHandle(mf.GetLocationId());
     m_strSource = s_GetGffSourceString( bsh );
     return true;
 }

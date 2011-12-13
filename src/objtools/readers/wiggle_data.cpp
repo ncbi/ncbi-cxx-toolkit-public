@@ -464,7 +464,7 @@ void CWiggleTrack::MakeTable(
     col_pos->SetHeader().SetField_id(CSeqTable_column_info::eField_id_location_from);
     CSeqTable_multi_data::TInt& pos = col_pos->SetData().SetInt();
     
-    TSeqPos span = 1;
+    int span = 1;
     double min = 0, max = 0, step = 1;
     bool fixed_span = true, sorted = true;
     { // analyze
@@ -805,7 +805,7 @@ void CWiggleData::FillGraphsByte(
 
 //  ===========================================================================
 bool CWiggleTrack::DataValue(
-    unsigned int uStart,
+    int uStart,
     double& dValue )
 //  ===========================================================================
 {
@@ -836,7 +836,7 @@ unsigned char CWiggleTrack::ByteGraphValue(
             return static_cast<unsigned char>(dRaw);
         }
         // scale into interval [0,255]
-        if ( MinGraphValue() == MaxGraphValue() ) {
+        if (MinGraphValue() == MaxGraphValue()) {
             return static_cast<unsigned char>(dRaw + 0.5);
         }
         double dScaled =

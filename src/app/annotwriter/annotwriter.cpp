@@ -313,7 +313,7 @@ CObjectIStream* CAnnotWriterApp::x_OpenIStream(
         bDeleteOnClose = true;
     }
     CObjectIStream* pI = CObjectIStream::Open( 
-        serial, *pInputStream, bDeleteOnClose );
+        serial, *pInputStream, (bDeleteOnClose ? eTakeOwnership : eNoOwnership));
     return pI;
 }
 

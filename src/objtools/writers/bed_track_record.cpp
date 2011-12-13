@@ -106,7 +106,6 @@ bool CBedTrackRecord::Assign(
     if ( ! annot.IsSetDesc() ) {
         return true; // results in a dummy track line without any directives
     }
-    const CAnnot_descr& descr = annot.GetDesc();
     list< CRef< CAnnotdesc > > fields = annot.GetDesc().Get();
     list< CRef< CAnnotdesc > >::const_iterator it = fields.begin();
     for ( ; it != fields.end(); ++it ) {

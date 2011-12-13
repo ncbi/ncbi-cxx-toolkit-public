@@ -528,10 +528,10 @@ bool CGff2Reader::x_InitAnnot(
     }
 
     if ( !m_AnnotName.empty() ) {
-        pAnnot->AddName(m_AnnotName);
+        pAnnot->SetNameDesc(m_AnnotName);
     }
     if ( !m_AnnotTitle.empty() ) {
-        pAnnot->SetTitle(m_AnnotTitle);
+        pAnnot->SetTitleDesc(m_AnnotTitle);
     }
 
     return x_UpdateAnnot( gff, pAnnot );
@@ -748,8 +748,6 @@ bool CGff2Reader::x_FeatureSetDataGene(
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    CGene_ref& geneRef = pFeature->SetData().SetGene();  
- 
     return true;
 }
 
@@ -771,7 +769,6 @@ bool CGff2Reader::x_FeatureSetDataCDS(
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    CCdregion& cdr = pFeature->SetData().SetCdregion();
     return true;
 }
 
