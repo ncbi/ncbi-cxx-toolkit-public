@@ -98,6 +98,7 @@ public:
     /// @param custom_output_format custom output format specification for
     /// tabular/comma-separated value output format. An empty string implies to
     /// use the default value when applicable. [in]
+    /// @param domain_db_adapter Domain database for Delta-blast [in]
     CBlastFormat(const blast::CBlastOptions& opts, 
                  blast::CLocalDbAdapter& db_adapter,
                  blast::CFormattingArgs::EOutputFormat format_type, 
@@ -116,7 +117,8 @@ public:
                  const string& custom_output_format = kEmptyStr,
                  bool is_megablast = false,
                  bool is_indexed = false,
-                 const blast::CIgBlastOptions * ig_opts = NULL);
+                 const blast::CIgBlastOptions * ig_opts = NULL,
+                 const blast::CLocalDbAdapter* domain_db_adapter = NULL);
 
     /// Constructor
     /// @param opts BLAST options used in the search [in]
@@ -166,12 +168,15 @@ public:
     /// numeric_limits<unsigned int>::max() [in]
     /// @param prev_seqids list of previously found Seq-ids, if applicable,
     /// otherwise it should be an empty list [in]
+    /// @param is_deltablast_domain_result True if Delta-blast CDD search
+    /// results are being formatted [in]
     void PrintOneResultSet(const blast::CSearchResults& results,
                            CConstRef<blast::CBlastQueryVector> queries,
                            unsigned int itr_num =
                            numeric_limits<unsigned int>::max(),
                            blast::CPsiBlastIterationState::TSeqIds prev_seqids =
-                           blast::CPsiBlastIterationState::TSeqIds());
+                           blast::CPsiBlastIterationState::TSeqIds(),
+                           bool is_deltablast_domain_result = false);
 
     /// Print all Ig alignment information for a single query sequence along with
     /// any errors or warnings (errors are deemed fatal)
@@ -287,6 +292,9 @@ private:
 
     /// Used by Igblast formatting.
     CConstRef<blast::CIgBlastOptions> m_IgOptions;
+
+    /// Information about DELTA-BLAST domain database
+    vector<CBlastFormatUtil::SDbInfo> m_DomainDbInfo;
 
     /// Output the ancillary data for one query that was searched
     /// @param summary The ancillary data to report [in]

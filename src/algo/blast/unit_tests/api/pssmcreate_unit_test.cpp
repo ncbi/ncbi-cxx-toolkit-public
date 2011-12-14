@@ -77,6 +77,7 @@
 
 // Unit test auxiliary includes
 #include "blast_test_util.hpp"
+#include "pssm_test_util.hpp"
 // #include "psiblast_test_util.hpp"
 
 // Object manager includes
@@ -94,54 +95,6 @@ using namespace std;
 using namespace ncbi;
 using namespace ncbi::objects;
 using namespace ncbi::blast;
-
-/// This class exists merely to call private methods in CPsiBlastInputData
-/// and CPssmEngine.  Both clases declare this one as a friend.
-class CPssmCreateTestFixture {
-public:
-   /// Gets error strings from a CPssmEngine private method
-   /// @param error_code input integer code
-   static string 
-   x_ErrorCodeToString(int error_code)
-   {
-         return CPssmEngine::x_ErrorCodeToString(error_code); 
-   }
-
-   /// Gets Subject sequence from a CPsiBlastInputData private method
-   /// @param ds alignment input
-   /// @param scope allos fetching of sequence
-   /// @param sequence_data return value for sequence.
-   static void
-   x_GetSubjectSequence(const objects::CDense_seg& ds, objects::CScope& scope,
-                          string& sequence_data)
-   {
-         return CPsiBlastInputData::x_GetSubjectSequence(ds, scope, sequence_data);
-   }
-
-   /// Accesses CPssmEngine private method.
-   /// Copies query sequence and adds protein sentinel bytes at the beginning
-   /// and at the end of the sequence.
-   /// @param query sequence to copy [in]
-   /// @param query_length length of the sequence above [in]
-   /// @throws CBlastException if does not have enough memory
-   /// @return copy of query guarded by protein sentinel bytes
-   static unsigned char*
-   x_GuardProteinQuery(const unsigned char* query,
-                                 unsigned int query_length)
-   {
-         return CPssmEngine::x_GuardProteinQuery(query, query_length);
-   }
-
-   /// Accesses CPsiBlastInputData private method.  
-   /// Returns the number of sequences that make up the multiple sequence
-   /// alignment
-   /// @param input Instance of CPsiBlastInputData
-   static unsigned int 
-   GetNumAlignedSequences(const CPsiBlastInputData& input)
-   {
-         return input.GetNumAlignedSequences();
-   }
-};
 
 
 /******************************* copied from blast_psi_cxx.cpp **************/
@@ -611,100 +564,8 @@ const Uint1 CPssmInputTestData::kQuery[CPssmInputTestData::kQueryLength] = {
      6, 11,  6, 11,  9, 10,  8, 13, 14, 18, 13, 18,  9, 19, 22, 
      6,  7, 16, 22, 20, 17, 14};
 
-/// template specializations to automate deallocation of internal BLAST
-/// structures with ncbi::AutoPtr
-BEGIN_NCBI_SCOPE
-
-// FIXME: declare RAII classes for these?
-template <>
-struct Deleter<_PSIAlignedBlock> {
-    static void Delete(_PSIAlignedBlock* p)
-    { _PSIAlignedBlockFree(p); }
-};
-
-template <>
-struct Deleter<_PSISequenceWeights> {
-    static void Delete(_PSISequenceWeights* p)
-    { _PSISequenceWeightsFree(p); }
-};
-
-template <>
-struct Deleter<_PSIInternalPssmData> {
-    static void Delete(_PSIInternalPssmData* p)
-    { _PSIInternalPssmDataFree(p); }
-};
-
-template <>
-struct Deleter<_PSIMsa> {
-    static void Delete(_PSIMsa* p)
-    { _PSIMsaFree(p); }
-};
-
-template <>
-struct Deleter<_PSIPackedMsa> {
-    static void Delete(_PSIPackedMsa* p)
-    { _PSIPackedMsaFree(p); }
-};
-
-END_NCBI_SCOPE
 
 BOOST_FIXTURE_TEST_SUITE(pssmcreate, CPssmCreateTestFixture)
-
-
-/// @param query protein sequence in ncbistdaa with sentinel bytes
-/// @param query_size length of the query sequence (w/o including sentinel
-//  bytes)
-static BlastScoreBlk* InitializeBlastScoreBlk(const unsigned char* query,
-                                                  Uint4 query_size) {
-        const EBlastProgramType kProgramType = eBlastTypeBlastp;
-        const double kScaleFactor = 1.0;
-        Blast_Message* errors = NULL;
-        short status = 0;
-
-        // Setup the scoring options
-        CBlastScoringOptions opts;
-        status = BlastScoringOptionsNew(kProgramType, &opts);
-        BOOST_REQUIRE(status == 0);
-
-        // Setup the sequence block structure
-        CBLAST_SequenceBlk query_blk;
-        status = BlastSeqBlkNew(&query_blk);
-        BOOST_REQUIRE(status == 0);
-        status = BlastSeqBlkSetSequence(query_blk, query, query_size);
-        BOOST_REQUIRE(status == 0);
-        // don't delete the sequences upon exit!
-        query_blk->sequence_allocated = FALSE;
-        query_blk->sequence_start_allocated = FALSE;
-
-        const Uint1 kNullByte = GetSentinelByte(eBlastEncodingProtein);
-        BOOST_REQUIRE(query_blk.Get() != NULL);
-        BOOST_REQUIRE(query_blk->sequence[0] != kNullByte);
-        BOOST_REQUIRE(query_blk->sequence[query_blk->length - 1] != kNullByte);
-        BOOST_REQUIRE(query_blk->sequence_start[0] == kNullByte);
-        BOOST_REQUIRE(query_blk->sequence_start[query_blk->length + 1] ==
-                       kNullByte);
-
-        // Setup the query info structure
-        CBlastQueryInfo query_info(TestUtil::CreateProtQueryInfo(query_size));
-
-        BlastScoreBlk* retval = NULL;
-        status = BlastSetup_ScoreBlkInit(query_blk,
-                                          query_info,
-                                          opts,
-                                          kProgramType,
-                                          &retval,
-                                          kScaleFactor,
-                                          &errors,
-                                          &BlastFindMatrixPath);
-        if (status) {
-            throw runtime_error(errors->message);
-        }
-        BOOST_REQUIRE(retval->kbp_ideal);
-
-        /*********************************************************************/
-
-        return retval;
-}
 
 
 BOOST_AUTO_TEST_CASE(testFullPssmEngineRunWithDiagnosticsRequest) {

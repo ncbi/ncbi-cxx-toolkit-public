@@ -104,6 +104,9 @@ typedef struct BlastRPSInfo {
     BlastRPSLookupFileHeader *lookup_header; /**< for '.loo' file */
     BlastRPSProfileHeader *profile_header;   /**< for '.rps' file */
     BlastRPSAuxInfo aux_info;                /**< for '.aux' file */
+
+    BlastRPSProfileHeader *freq_header;      /**< for '.wcounts' file */
+    BlastRPSProfileHeader *obsr_header;      /**< for '.obsr' file */
 } BlastRPSInfo;
 
 #ifdef __cplusplus

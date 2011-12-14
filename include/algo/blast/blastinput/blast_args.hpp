@@ -346,11 +346,20 @@ public:
 class NCBI_BLASTINPUT_EXPORT CCompositionBasedStatsArgs : public IBlastCmdLineArgs
 {
 public:
+    /// Constructor
+    ///@param is_deltablast Are the arguments set up for Delta blast [in]
+    CCompositionBasedStatsArgs(bool is_deltablast = false)
+        : m_IsDeltaBlast(is_deltablast) {}
+
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
                                          CBlastOptions& options);
+
+protected:
+    /// Are these areguments for Delta Blast
+    bool m_IsDeltaBlast;
 };
 
 /** Argument class for collecting gapped options */
@@ -438,11 +447,20 @@ private:
 class NCBI_BLASTINPUT_EXPORT CPssmEngineArgs : public IBlastCmdLineArgs
 {
 public:
+    /// Constructor
+    /// @param is_deltablast Are the aruments set up for Delta Blast [in]
+    CPssmEngineArgs(bool is_deltablast = false) : m_IsDeltaBlast(is_deltablast)
+    {}
+
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
                                          CBlastOptions& options);
+
+private:
+    /// Are these arumnets for Delta Blast
+    bool m_IsDeltaBlast;
 };
 
 /// Argument class to import/export the search strategy
@@ -475,10 +493,13 @@ public:
      * @brief Constructor
      * 
      * @param db_target Molecule type of the database
+     * @param is_deltablast Are the aruments set up for Delta Blast
      */
-    CPsiBlastArgs(ETargetDatabase db_target = eProteinDb) 
+    CPsiBlastArgs(ETargetDatabase db_target = eProteinDb,
+                  bool is_deltablast = false) 
         : m_DbTarget(db_target), m_NumIterations(1),
-        m_CheckPointOutput(0), m_AsciiMatrixOutput(0)
+          m_CheckPointOutput(0), m_AsciiMatrixOutput(0),
+          m_IsDeltaBlast(is_deltablast)
     {};
 
     /// Our virtual destructor
@@ -540,6 +561,9 @@ private:
     /// PSSM
     CRef<objects::CPssmWithParameters> m_Pssm;
 
+    /// Are the aruments set up for Delta Blast
+    bool m_IsDeltaBlast;
+
     /// Prohibit copy constructor
     CPsiBlastArgs(const CPsiBlastArgs& rhs);
     /// Prohibit assignment operator
@@ -562,6 +586,45 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
                                          CBlastOptions& options);
+};
+
+/// Argument class to collect options specific to DELTA-BLAST
+class NCBI_BLASTINPUT_EXPORT CDeltaBlastArgs : public IBlastCmdLineArgs
+{
+public:
+
+    /// Constructor
+    CDeltaBlastArgs(void) : m_ShowDomainHits(false) {}
+
+    /// Our virtual destructor
+    virtual ~CDeltaBlastArgs() {}
+
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
+    virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+                                         CBlastOptions& options);
+
+    /// Get domain database
+    CRef<CSearchDatabase> GetDomainDatabase(void)
+    {return m_DomainDb;}
+
+    /// Get show domain hits option value
+    bool GetShowDomainHits(void) const {return m_ShowDomainHits;}
+
+private:
+    /// Prohibit copy constructor
+    CDeltaBlastArgs(const CDeltaBlastArgs& rhs);
+    /// Prohibit assignment operator
+    CDeltaBlastArgs& operator=(const CDeltaBlastArgs& rhs);
+
+private:
+
+    /// Conserved Domain Database
+    CRef<CSearchDatabase> m_DomainDb;
+
+    /// Is printing CDD hits requested
+    bool m_ShowDomainHits;
 };
 
 /*****************************************************************************/

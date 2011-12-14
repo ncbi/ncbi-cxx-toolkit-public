@@ -335,6 +335,9 @@ typedef struct _PSISequenceWeights {
     Uint4 posDistinctDistrib_size; /**< Kept to deallocate field above. */
     int* posNumParticipating; /**< number of sequences at each position.  Copied from
                                 posit.h:posSearchItems.posNumParticipating  */
+    double* independent_observations; /**< Number of independent sequences
+                                       per column */
+
 } _PSISequenceWeights;
 
 /** Allocates and initializes the _PSISequenceWeights structure.
@@ -383,6 +386,8 @@ _PSISequenceWeightsFree(_PSISequenceWeights* seq_weights);
 #define PSIERR_STARTINGGAP      (-10)
 /** Found flanking gap at end of alignment */
 #define PSIERR_ENDINGGAP        (-11)
+/** Errors in conserved domain profile */
+#define PSIERR_BADPROFILE       (-12)
 /** Unknown error */
 #define PSIERR_UNKNOWN          (-255)
 
@@ -448,6 +453,20 @@ _PSIComputeSequenceWeights(const _PSIMsa* msa,
                            Boolean nsg_compatibility_mode,
                           _PSISequenceWeights* seq_weights);
 
+/** Main function to calculate CD weights and combine weighted residue counts
+ * from matched CDs
+ * @param cd_msa multiple alignment of conserved domains data structure [in]
+ * @param sbp BLAST score block [in]
+ * @param options CDD-related options [in]
+ * @param seq_weights data structure with CD frequencies [out]
+ */
+int
+_PSIComputeFrequenciesFromCDs(const PSICdMsa* cd_msa,
+                              BlastScoreBlk* sbp,
+                              const PSIBlastOptions* options,
+                              _PSISequenceWeights* seq_weights);
+    
+
 /** Main function to compute the PSSM's frequency ratios (stage 5).
  * Implements formula 2 in Nucleic Acids Research, 2001, Vol 29, No 14.
  * Corresponds to posit.c:posComputePseudoFreqs
@@ -473,6 +492,23 @@ _PSIComputeFreqRatios(const _PSIMsa* msa,
                       Int4 pseudo_count,
                       Boolean nsg_compatibility_mode,
                       _PSIInternalPssmData* internal_pssm);
+
+/** Main function to compute CD-based PSSM's frequency ratios
+ * @param cd_msa multiple alignment of CDs [in]
+ * @param seq_weights contains weighted residue frequencies and effective number
+ * of observations [in]
+ * @param sbp initialized score block data structure [in]
+ * @param pseudo_count pseudo count constant [in]
+ * @param internal_pssm PSSM [out]
+ * @return status
+ */
+int
+_PSIComputeFreqRatiosFromCDs(const PSICdMsa* cd_msa,
+                             const _PSISequenceWeights* seq_weights,
+                             const BlastScoreBlk* sbp,
+                             Int4 pseudo_count,
+                             _PSIInternalPssmData* internal_pssm);
+
 
 /** Converts the PSSM's frequency ratios obtained in the previous stage to a 
  * PSSM of scores. (stage 6) 
@@ -622,6 +658,22 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
                     const _PSIInternalPssmData* internal_pssm,
                     PSIDiagnosticsResponse* diagnostics);
 
+/** Collects diagnostic information from the process of creating the CDD-based
+ * PSSM 
+ * @param cd_msa multiple alignment of CDs data structure [in]
+ * @param seq_weights sequence weights data structure [in]
+ * @param internal_pssm structure containing PSSM's frequency ratios [in]
+ * @param diagnostics output parameter [out]
+ * @return PSI_SUCCESS on success, PSIERR_OUTOFMEM if memory allocation fails
+ * or PSIERR_BADPARAM if any of its arguments is NULL
+ */
+int
+_PSISaveCDDiagnostics(const PSICdMsa* msa,
+                      const _PSISequenceWeights* seq_weights,
+                      const _PSIInternalPssmData* internal_pssm,
+                      PSIDiagnosticsResponse* diagnostics);
+
+
 /** Calculates the information content from the scoring matrix
  * @param score_mat alphabet by alphabet_sz matrix of scores (const) [in]
  * @param std_prob standard residue probabilities [in]
@@ -685,6 +737,16 @@ _PSIStructureGroupCustomization(_PSIMsa* msa);
 NCBI_XBLAST_EXPORT 
 int
 _PSIValidateMSA_StructureGroup(const _PSIMsa* msa);
+
+/** Validation of multiple alignment of conserved domains structure
+ * @param cd_msa multiple alignment of CDs [in]
+ * @param alphabet_size alphabet size [in]
+ * @return One of the errors defined above if validation fails or bad
+ * parameter is passed in, else PSI_SUCCESS
+ */
+NCBI_XBLAST_EXPORT 
+int
+_PSIValidateCdMSA(const PSICdMsa* cd_msa, Uint4 alphabet_size);
 
 #ifdef __cplusplus
 }

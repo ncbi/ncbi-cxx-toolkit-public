@@ -693,20 +693,23 @@ CCompositionBasedStatsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     // composition based statistics, keep in sync with ECompoAdjustModes
     // documentation in composition_constants.h
     arg_desc.AddDefaultKey(kArgCompBasedStats, "compo", 
-                      "Use composition-based statistics for blastp / tblastn:\n"
+              (string)"Use composition-based statistics for blastp / tblastn:\n"
                       "    D or d: default (equivalent to 2)\n"
                       "    0 or F or f: no composition-based statistics\n"
                       "    1: Composition-based statistics "
-                                      "as in NAR 29:2994-3005, 2001\n"
-                      "    2 or T or t : Composition-based score adjustment as in "
+                                      "as in NAR 29:2994-3005, 2001\n" +
+                      (m_IsDeltaBlast ? "" : 
+
+              (string)"    2 or T or t : Composition-based score adjustment as in "
                                       "Bioinformatics 21:902-911,\n"
                       "    2005, conditioned on sequence properties\n"
                       "    3: Composition-based score adjustment as in "
                                       "Bioinformatics 21:902-911,\n"
                       "    2005, unconditionally\n"
                       "For programs other than tblastn, must either be "
-                      "absent or be D, F or 0",
-                      CArgDescriptions::eString, kDfltArgCompBasedStats);
+                      "absent or be D, F or 0"),
+                      CArgDescriptions::eString, m_IsDeltaBlast ? "1" :
+                                                      kDfltArgCompBasedStats);
 
     arg_desc.SetCurrentGroup("Miscellaneous options");
     // Use Smith-Waterman algorithm in traceback stage
@@ -739,7 +742,8 @@ s_SetCompositionBasedStats(CBlastOptions& opt,
 {
     const EProgram program = opt.GetProgram();
     if (program == eBlastp || program == eTblastn || 
-        program == ePSIBlast || program == ePSITblastn) {
+        program == ePSIBlast || program == ePSITblastn ||
+        program == eDeltaBlast) {
 
         ECompoAdjustModes compo_mode = eNoCompositionBasedStats;
     
@@ -952,6 +956,14 @@ CPssmEngineArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                            CArgDescriptions::eInteger,
                            NStr::IntToString(PSI_PSEUDO_COUNT_CONST));
 
+    if (m_IsDeltaBlast) {
+        arg_desc.AddDefaultKey(kArgDomainInclusionEThreshold, "ethresh",
+                               "E-value inclusion threshold for alignments "
+                               "with conserved domains",
+                               CArgDescriptions::eDouble,
+                               NStr::DoubleToString(DELTA_INCLUSION_ETHRESH));
+    }
+
     // Evalue inclusion threshold
     arg_desc.AddDefaultKey(kArgPSIInclusionEThreshold, "ethresh", 
                    "E-value inclusion threshold for pairwise alignments", 
@@ -971,6 +983,13 @@ CPssmEngineArgs::ExtractAlgorithmOptions(const CArgs& args,
 
     if (args[kArgPSIInclusionEThreshold]) {
         opt.SetInclusionThreshold(args[kArgPSIInclusionEThreshold].AsDouble());
+    }
+
+    if (args.Exist(kArgDomainInclusionEThreshold)
+        && args[kArgDomainInclusionEThreshold]) {
+
+        opt.SetDomainInclusionThreshold(
+                             args[kArgDomainInclusionEThreshold].AsDouble());
     }
 }
 
@@ -1011,74 +1030,80 @@ CPsiBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                 "File name to store ASCII version of PSSM",
                                 CArgDescriptions::eOutputFile);
 
-        vector<string> msa_exclusions;
-        msa_exclusions.push_back(kArgPSIInputChkPntFile);
-        msa_exclusions.push_back(kArgQuery);
-        msa_exclusions.push_back(kArgQueryLocation);
-        // pattern and MSA is not supported
-        msa_exclusions.push_back(kArgPHIPatternFile);   
-        arg_desc.SetCurrentGroup("");
+        if (!m_IsDeltaBlast) {
+            vector<string> msa_exclusions;
+            msa_exclusions.push_back(kArgPSIInputChkPntFile);
+            msa_exclusions.push_back(kArgQuery);
+            msa_exclusions.push_back(kArgQueryLocation);
+            // pattern and MSA is not supported
+            msa_exclusions.push_back(kArgPHIPatternFile);   
+            arg_desc.SetCurrentGroup("");
+            arg_desc.SetCurrentGroup("");
 
-        // MSA restart file
-        arg_desc.SetCurrentGroup("PSSM engine options");
-        arg_desc.AddOptionalKey(kArgMSAInputFile, "align_restart",
-                                "File name of multiple sequence alignment to "
-                                "restart PSI-BLAST",
-                                CArgDescriptions::eInputFile);
-        ITERATE(vector<string>, exclusion, msa_exclusions) {
-            arg_desc.SetDependency(kArgMSAInputFile,
-                                   CArgDescriptions::eExcludes,
-                                   *exclusion);
-        }
+            // MSA restart file
+            arg_desc.SetCurrentGroup("PSSM engine options");
+            arg_desc.AddOptionalKey(kArgMSAInputFile, "align_restart",
+                                    "File name of multiple sequence alignment to "
+                                    "restart PSI-BLAST",
+                                    CArgDescriptions::eInputFile);
+            ITERATE(vector<string>, exclusion, msa_exclusions) {
+                arg_desc.SetDependency(kArgMSAInputFile,
+                                       CArgDescriptions::eExcludes,
+                                       *exclusion);
+            }
 
-        arg_desc.AddOptionalKey(kArgMSAMasterIndex, "index",
-                                "Ordinal number (1-based index) of the sequence"
-                                " to use as a master in the multiple sequence "
-                                "alignment. If not provided, the first sequence"
-                                " in the multiple sequence alignment will be "
-                                "used", CArgDescriptions::eInteger);
-        arg_desc.SetConstraint(kArgMSAMasterIndex, 
-                               new CArgAllowValuesGreaterThanOrEqual(1));
-        ITERATE(vector<string>, exclusion, msa_exclusions) {
+            arg_desc.AddOptionalKey(kArgMSAMasterIndex, "index",
+                                    "Ordinal number (1-based index) of the sequence"
+                                    " to use as a master in the multiple sequence "
+                                    "alignment. If not provided, the first sequence"
+                                    " in the multiple sequence alignment will be "
+                                    "used", CArgDescriptions::eInteger);
+            arg_desc.SetConstraint(kArgMSAMasterIndex, 
+                                   new CArgAllowValuesGreaterThanOrEqual(1));
+            ITERATE(vector<string>, exclusion, msa_exclusions) {
+                arg_desc.SetDependency(kArgMSAMasterIndex,
+                                       CArgDescriptions::eExcludes,
+                                       *exclusion);
+            }
+            arg_desc.SetDependency(kArgMSAMasterIndex,
+                                   CArgDescriptions::eRequires,
+                                   kArgMSAInputFile);
             arg_desc.SetDependency(kArgMSAMasterIndex,
                                    CArgDescriptions::eExcludes,
-                                   *exclusion);
-        }
-        arg_desc.SetDependency(kArgMSAMasterIndex,
-                               CArgDescriptions::eRequires,
-                               kArgMSAInputFile);
-        arg_desc.SetDependency(kArgMSAMasterIndex,
-                               CArgDescriptions::eExcludes,
-                               kArgIgnoreMsaMaster);
+                                   kArgIgnoreMsaMaster);
 
-        arg_desc.AddFlag(kArgIgnoreMsaMaster, 
-                         "Ignore the master sequence when creating PSSM", true);
-        vector<string> ignore_pssm_master_exclusions;
-        ignore_pssm_master_exclusions.push_back(kArgMSAMasterIndex);
-        ignore_pssm_master_exclusions.push_back(kArgPSIInputChkPntFile);
-        ignore_pssm_master_exclusions.push_back(kArgQuery);
-        ignore_pssm_master_exclusions.push_back(kArgQueryLocation);
-        ITERATE(vector<string>, exclusion, msa_exclusions) {
+            arg_desc.AddFlag(kArgIgnoreMsaMaster, 
+                             "Ignore the master sequence when creating PSSM", true);
+
+            vector<string> ignore_pssm_master_exclusions;
+            ignore_pssm_master_exclusions.push_back(kArgMSAMasterIndex);
+            ignore_pssm_master_exclusions.push_back(kArgPSIInputChkPntFile);
+            ignore_pssm_master_exclusions.push_back(kArgQuery);
+            ignore_pssm_master_exclusions.push_back(kArgQueryLocation);
+            ITERATE(vector<string>, exclusion, msa_exclusions) {
+                arg_desc.SetDependency(kArgIgnoreMsaMaster,
+                                       CArgDescriptions::eExcludes,
+                                       *exclusion);
+            }
             arg_desc.SetDependency(kArgIgnoreMsaMaster,
-                                   CArgDescriptions::eExcludes,
-                                   *exclusion);
-        }
-        arg_desc.SetDependency(kArgIgnoreMsaMaster,
-                               CArgDescriptions::eRequires,
-                               kArgMSAInputFile);
+                                   CArgDescriptions::eRequires,
+                                   kArgMSAInputFile);
 
-        // PSI-BLAST checkpoint
-        arg_desc.AddOptionalKey(kArgPSIInputChkPntFile, "psi_chkpt_file", 
-                                "PSI-BLAST checkpoint file",
-                                CArgDescriptions::eInputFile);
+            // PSI-BLAST checkpoint
+            arg_desc.AddOptionalKey(kArgPSIInputChkPntFile, "psi_chkpt_file", 
+                                    "PSI-BLAST checkpoint file",
+                                    CArgDescriptions::eInputFile);
+        }
     }
 
-    arg_desc.SetDependency(kArgPSIInputChkPntFile,
-                           CArgDescriptions::eExcludes,
-                           kArgQuery);
-    arg_desc.SetDependency(kArgPSIInputChkPntFile,
-                           CArgDescriptions::eExcludes,
-                           kArgQueryLocation);
+    if (!m_IsDeltaBlast) {
+        arg_desc.SetDependency(kArgPSIInputChkPntFile,
+                               CArgDescriptions::eExcludes,
+                               kArgQuery);
+        arg_desc.SetDependency(kArgPSIInputChkPntFile,
+                               CArgDescriptions::eExcludes,
+                               kArgQueryLocation);
+    }
     arg_desc.SetCurrentGroup("");
 }
 
@@ -1124,7 +1149,7 @@ CPsiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
                 (new CAutoOutputFileReset
                  (args[kArgAsciiPssmOutputFile].AsString()));
         }
-        if (args[kArgMSAInputFile]) {
+        if (args.Exist(kArgMSAInputFile) && args[kArgMSAInputFile]) {
             CNcbiIstream& in = args[kArgMSAInputFile].AsInputFile();
             unsigned int msa_master_idx = 0;
             if (args[kArgMSAMasterIndex]) {
@@ -1134,7 +1159,9 @@ CPsiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
                                          msa_master_idx, 
                                          args[kArgIgnoreMsaMaster]);
         }
-        opt.SetIgnoreMsaMaster(args[kArgIgnoreMsaMaster]);
+        if (!m_IsDeltaBlast) {
+            opt.SetIgnoreMsaMaster(args[kArgIgnoreMsaMaster]);
+        }
     }
 
     if (args.Exist(kArgPSIInputChkPntFile) && args[kArgPSIInputChkPntFile]) {
@@ -1208,6 +1235,29 @@ CPhiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
         else
             NCBI_THROW(CInputException, eInvalidInput, 
                        "PHI pattern not read");
+    }
+}
+
+void
+CDeltaBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
+{
+    arg_desc.SetCurrentGroup("DELTA-BLAST options");
+
+    arg_desc.AddKey(kArgRpsDb, "database_name", "BLAST domain "
+                    "database name", CArgDescriptions::eString);
+
+    arg_desc.AddFlag(kArgShowDomainHits, "Show domain hits");
+}
+
+void
+CDeltaBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
+                                         CBlastOptions& opt)
+{
+    m_DomainDb.Reset(new CSearchDatabase(args[kArgRpsDb].AsString(),
+                                         CSearchDatabase::eBlastDbIsProtein));
+
+    if (args.Exist(kArgShowDomainHits)) {
+        m_ShowDomainHits = args[kArgShowDomainHits];
     }
 }
 

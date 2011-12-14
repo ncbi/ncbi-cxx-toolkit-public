@@ -39,6 +39,7 @@ static char const rcsid[] =
 #include "blast_posit.h"
 #include <algo/blast/core/ncbi_math.h>
 #include <algo/blast/core/blast_util.h>
+#include <algo/blast/composition_adjustment/composition_constants.h>
 #include "blast_dynarray.h"
 
 #include <algo/blast/composition_adjustment/matrix_frequency_data.h>
@@ -616,6 +617,13 @@ _PSISequenceWeightsNew(const PSIMsaDimensions* dimensions,
         return _PSISequenceWeightsFree(retval);
     }
 
+    retval->independent_observations
+        = (double*)calloc(1+dimensions->query_length, sizeof(double));
+    if ( !retval->independent_observations ) {
+        return _PSISequenceWeightsFree(retval);
+    }
+                                    
+
     return retval;
 }
 
@@ -658,6 +666,10 @@ _PSISequenceWeightsFree(_PSISequenceWeights* seq_weights)
 
     if (seq_weights->posNumParticipating) {
         sfree(seq_weights->posNumParticipating);
+    }
+
+    if (seq_weights->independent_observations) {
+        sfree(seq_weights->independent_observations);
     }
 
     sfree(seq_weights);
@@ -845,6 +857,56 @@ _PSIValidateMSA(const _PSIMsa* msa, Boolean ignore_unaligned_positions)
     retval = s_PSIValidateParticipatingSequences(msa);
     if (retval != PSI_SUCCESS) {
         return retval;
+    }
+
+    return retval;
+}
+
+int
+_PSIValidateCdMSA(const PSICdMsa* cd_msa, Uint4 alphabet_size)
+{
+    int retval = PSI_SUCCESS;
+    const Uint1 kGapResidue = AMINOACID_TO_NCBISTDAA['-'];
+    Uint4 p = 0; /* index on query position */
+    Uint4 s = 0; /* index on domains */
+    
+    if ( !cd_msa || !cd_msa->dimensions) {
+        return PSIERR_BADPARAM;
+    }
+
+    // validate no gaps in query
+    for (p = 0; p < cd_msa->dimensions->query_length; p++) {
+        if (cd_msa->query[p] == kGapResidue) {
+            return PSIERR_GAPINQUERY;
+        }
+    }
+
+    // validate profile data
+    for (s = 0; s < cd_msa->dimensions->num_seqs; s++) {
+        for (p = 0;  p < cd_msa->dimensions->query_length; p++) {
+            double sum = 0.0;
+            Uint4 k = 0;
+
+            if (cd_msa->msa[s][p].is_aligned) {
+                if (!cd_msa->msa[s][p].data) {
+                    return PSIERR_BADPROFILE;
+                }
+                if (!cd_msa->msa[s][p].data->wfreqs
+                    || cd_msa->msa[s][p].data->iobsr < kEpsilon) {
+                    return PSIERR_BADPROFILE;
+                }
+                
+                for (k = 0; k < alphabet_size; k++) {
+                    if (cd_msa->msa[s][p].data->wfreqs[k] < 0.0) {
+                        return PSIERR_BADPROFILE;
+                    }
+                    sum += cd_msa->msa[s][p].data->wfreqs[k];
+                }
+                if (fabs(sum - 1.0) > kEpsilon) {
+                    return PSIERR_BADPROFILE;
+                }
+            }
+        }
     }
 
     return retval;
@@ -1578,6 +1640,112 @@ _PSIComputeSequenceWeights(const _PSIMsa* msa,                      /* [in] */
     return retval;
 }
 
+static void s_PSIComputeFrequenciesFromCDsCleanup(double* sum_weights)
+{
+    if (sum_weights) {
+        sfree(sum_weights);
+    }
+}
+
+int
+_PSIComputeFrequenciesFromCDs(const PSICdMsa* cd_msa,         /* [in] */
+                     BlastScoreBlk* sbp,                      /* [in] */
+                     const PSIBlastOptions* options,          /* [in] */
+                     _PSISequenceWeights* seq_weights)        /* [out] */
+{
+    Uint4 kQueryLength = 0;         /* length of the query */
+    Uint4 pos = 0;                  /* position index */
+    int retval = PSI_SUCCESS;       /* return value */
+    double* sum_weights = NULL;
+
+    const Uint1 kXResidue = AMINOACID_TO_NCBISTDAA['X'];
+
+    if ( !cd_msa || !seq_weights || !sbp || !options) {
+        return PSIERR_BADPARAM;
+    }
+  
+    /* quit of no CDs aligned to the query */
+    if (cd_msa->dimensions->num_seqs == 0) {
+        return retval;
+    }
+
+    sum_weights = (double*)malloc(sbp->alphabet_size * sizeof(double));
+
+    if ( !sum_weights) {
+        s_PSIComputeFrequenciesFromCDsCleanup(sum_weights);
+
+        return PSIERR_OUTOFMEM;
+    }
+   
+    kQueryLength = cd_msa->dimensions->query_length;
+
+    /* for each position in query */
+    for (pos = 0; pos < kQueryLength; pos++) {
+        double total_observations = 0.0;  /* total number of observations */
+        Uint4 msa_index;                  /* index of aligned CDs in msa */
+        Uint4 residue;                    /* residue index */
+        Uint4 query_residue = cd_msa->query[pos]; /* query residue */
+
+        memset(sum_weights, 0, sbp->alphabet_size * sizeof(double));
+
+        /* for each matching CD */
+        for (msa_index = 0; msa_index < cd_msa->dimensions->num_seqs;
+             msa_index++) {
+
+            /* disregard CDs not alined to this position */
+            if (!cd_msa->msa[msa_index][pos].is_aligned) {
+                continue;
+            }
+
+            ASSERT(cd_msa->msa[msa_index][pos].data);
+
+            /* add number of independent observations */
+            total_observations +=
+                cd_msa->msa[msa_index][pos].data->iobsr;
+
+
+            /* for each residue add weighted residue counts weighted by
+               number of independent observations for the CD */
+            for (residue = 0; residue < sbp->alphabet_size; residue++) {
+                sum_weights[residue] +=
+                    cd_msa->msa[msa_index][pos].data->wfreqs[residue]
+                    * cd_msa->msa[msa_index][pos].data->iobsr;
+            }
+        }
+
+        /* Include query residue unless it is already observed in a matching
+           domain */
+        if (total_observations > 0.0 && query_residue != kXResidue
+            && sum_weights[query_residue] == 0.0) {
+
+            sum_weights[query_residue] = 1.0;
+            total_observations += 1.0;
+        }
+
+        /* normalize the summed weighted counts */
+        if (total_observations > 0.0) {
+            double sum = 0.0;
+            for (residue = 0; residue < sbp->alphabet_size; residue++) {
+                seq_weights->match_weights[pos][residue] =
+                    sum_weights[residue] / total_observations;
+                sum += seq_weights->match_weights[pos][residue];
+            }
+            ASSERT(fabs(sum - 1.0) < 1e-5);
+        }
+
+        /* the procedure that estimates frequency ratios (and adds pseudo
+           counts) was developed for estimation of the effective number of
+           independent observations from the 2009 paper, where 400 is the
+           maximum estimate */
+        seq_weights->independent_observations[pos] = MIN(400.0,
+                                                         total_observations);
+    }
+
+    s_PSIComputeFrequenciesFromCDsCleanup(sum_weights);
+    
+    return retval;
+}
+
 static void
 _PSICalculateNormalizedSequenceWeights(
     const _PSIMsa* msa,
@@ -1943,6 +2111,10 @@ _PSIComputeFreqRatios(const _PSIMsa* msa,
         {
            observations = s_effectiveObservations(aligned_blocks, seq_weights, p, msa->dimensions->query_length, expno);
 
+           // this is done so that effective observations can be reported in
+           // diagnostics
+           seq_weights->independent_observations[p] = observations;
+
            if (0 == pseudo_count)
               columnCounts = s_columnSpecificPseudocounts(seq_weights, p, backgroundProbabilities, observations);
            else
@@ -2015,6 +2187,120 @@ _PSIComputeFreqRatios(const _PSIMsa* msa,
 
     return PSI_SUCCESS;
 }
+
+
+int
+_PSIComputeFreqRatiosFromCDs(const PSICdMsa* cd_msa,
+                             const _PSISequenceWeights* seq_weights,
+                             const BlastScoreBlk* sbp,
+                             Int4 pseudo_count,
+                             _PSIInternalPssmData* internal_pssm)
+{
+    const Uint1 kXResidue = AMINOACID_TO_NCBISTDAA['X'];
+    SFreqRatios* freq_ratios = NULL;/* matrix-specific frequency ratios */
+    Uint4 p = 0;                    /* index on positions */
+    Uint4 r = 0;                    /* index on residues */
+    const double kZeroObsPseudo = 30.0; /*arbitrary constant to use for columns with
+                             zero observations in actual data (ZERO_OBS_PSEUDO in posit.c) */
+
+    const double* backgroundProbabilities = NULL;
+
+    if ( !cd_msa || !seq_weights || !sbp || !internal_pssm || pseudo_count < 0) {
+        return PSIERR_BADPARAM;
+    }
+
+    freq_ratios = _PSIMatrixFrequencyRatiosNew(sbp->name);
+    if ( !freq_ratios ) {
+        return PSIERR_OUTOFMEM;
+    }
+
+    backgroundProbabilities = Blast_GetMatrixBackgroundFreq(sbp->name);
+    if ( !backgroundProbabilities ) {
+        return PSIERR_OUTOFMEM;
+    }
+
+
+    for (p = 0; p < cd_msa->dimensions->query_length; p++) {
+        double columnCounts = 0.0; /*column-specific pseudocounts*/
+        double observations = 0.0;
+        double pseudoWeight; /*multiplier for pseudocounts term*/
+
+        if (cd_msa->query[p] != kXResidue)
+        {
+            /* observations will be used as alpha in equation 2 in the 2001
+               paper */
+            observations = MAX(0.0,
+                               seq_weights->independent_observations[p] - 1.0);
+
+           if (0 == pseudo_count)
+              columnCounts = s_columnSpecificPseudocounts(seq_weights, p, backgroundProbabilities, observations);
+           else
+              columnCounts = pseudo_count;
+        }
+
+        if (columnCounts >= PSEUDO_MAX) {
+           pseudoWeight = kZeroObsPseudo;
+           observations = 0;
+        }
+        else {
+           pseudoWeight = columnCounts;
+        }
+
+        for (r = 0; r < sbp->alphabet_size; r++) {
+
+            /* If there is an 'X' in the query sequence at position p
+               or the standard probability of residue r is close to 0 */
+            if (cd_msa->query[p] == kXResidue ||
+                seq_weights->std_prob[r] <= kEpsilon) {
+                internal_pssm->freq_ratios[p][r] = 0.0;
+            } else {
+
+                Uint4 i = 0;             /* loop index */
+
+                /* beta( Sum_j(f_j r_ij) ) in formula 2 */
+                double pseudo = 0.0;            
+                /* Renamed to match the formula in the paper */
+                const double kBeta = pseudoWeight;
+                double numerator = 0.0;         /* intermediate term */
+                double denominator = 0.0;       /* intermediate term */
+                double qOverPEstimate = 0.0;    /* intermediate term */
+
+                /* As specified in 2001 paper, underlying matrix frequency 
+                   ratios are used here */
+                for (i = 0; i < sbp->alphabet_size; i++) {
+                    if (sbp->matrix->data[r][i] != BLAST_SCORE_MIN) {
+                        pseudo += (seq_weights->match_weights[p][i] *
+                                   freq_ratios->data[r][i]);
+                    }
+                }
+                pseudo *= kBeta;
+
+                numerator =
+                    (observations * seq_weights->match_weights[p][r] / 
+                     seq_weights->std_prob[r]) 
+                    + pseudo;
+
+                denominator = observations + kBeta;
+
+                ASSERT(denominator != 0.0);
+
+                qOverPEstimate = numerator/denominator;
+
+                /* Note artificial multiplication by standard probability
+                 * to normalize */
+                internal_pssm->freq_ratios[p][r] = qOverPEstimate *
+                    seq_weights->std_prob[r];
+
+            }
+        }
+    }
+
+    freq_ratios = _PSIMatrixFrequencyRatiosFree(freq_ratios);
+
+    return PSI_SUCCESS;
+}
+
+
 
 /* port of posInitializeInformation */
 double*
@@ -2542,7 +2828,7 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
          !internal_pssm  || !internal_pssm->freq_ratios ) {
         return PSIERR_BADPARAM;
     }
-
+    
     ASSERT(msa->dimensions->query_length == diagnostics->query_length);
 
     if (diagnostics->information_content) {
@@ -2620,9 +2906,72 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
             diagnostics->num_matching_seqs[p] = msa->num_matching_seqs[p];
         }
     }
+
+    if (diagnostics->independent_observations) {
+        for (p = 0; p < diagnostics->query_length; p++) {
+            diagnostics->independent_observations[p] =
+                seq_weights->independent_observations[p];
+        }
+    }
     return PSI_SUCCESS;
 }
 
+int
+_PSISaveCDDiagnostics(const PSICdMsa* cd_msa,
+                      const _PSISequenceWeights* seq_weights,
+                      const _PSIInternalPssmData* internal_pssm,
+                      PSIDiagnosticsResponse* diagnostics)
+{
+    Uint4 p = 0;                  /* index on positions */
+    Uint4 r = 0;                  /* index on residues */
+
+    if ( !diagnostics || !cd_msa || !seq_weights ||
+         !internal_pssm  || !internal_pssm->freq_ratios ) {
+        return PSIERR_BADPARAM;
+    }
+    
+    ASSERT(cd_msa->dimensions->query_length == diagnostics->query_length);
+
+    if (diagnostics->information_content) {
+        double* info = _PSICalculateInformationContentFromFreqRatios(
+                internal_pssm->freq_ratios, seq_weights->std_prob,
+                diagnostics->query_length, 
+                diagnostics->alphabet_size);
+        if ( !info ) {
+            return PSIERR_OUTOFMEM;
+        }
+        for (p = 0; p < diagnostics->query_length; p++) {
+            diagnostics->information_content[p] = info[p];
+        }
+        sfree(info);
+    }
+
+    if (diagnostics->weighted_residue_freqs) {
+        for (p = 0; p < diagnostics->query_length; p++) {
+            for (r = 0; r < diagnostics->alphabet_size; r++) {
+                diagnostics->weighted_residue_freqs[p][r] =
+                    seq_weights->match_weights[p][r];
+            }
+        }
+    }
+    
+    if (diagnostics->frequency_ratios) {
+        for (p = 0; p < diagnostics->query_length; p++) {
+            for (r = 0; r < diagnostics->alphabet_size; r++) {
+                diagnostics->frequency_ratios[p][r] =
+                    internal_pssm->freq_ratios[p][r];
+            }
+        }
+    }
+
+    if (diagnostics->independent_observations) {
+        for (p = 0; p < diagnostics->query_length; p++) {
+            diagnostics->independent_observations[p] =
+                seq_weights->independent_observations[p];
+        }
+    }
+    return PSI_SUCCESS;
+}
 
 
 /** Reorders in the same manner as returned by Blast_GetMatrixBackgroundFreq 

@@ -17,7 +17,8 @@ psiblast_args \
 rpsblast_args \
 rpstblastn_args \
 igblastn_args \
-igblastp_args
+igblastp_args \
+deltablast_args
 
 SRC  = $(SRC_CXX)
 

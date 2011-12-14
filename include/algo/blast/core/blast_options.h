@@ -146,9 +146,10 @@ extern "C" {
                                      value exceeds this number are discarded */
 #define BLAST_HITLIST_SIZE 500 /**< Number of database sequences to save hits 
                                   for */
-/** Defaults for PSI-BLAST options */
+/** Defaults for PSI-BLAST and DELTA-BLAST options */
 #define PSI_INCLUSION_ETHRESH 0.002 /**< Inclusion threshold for PSI BLAST */
 #define PSI_PSEUDO_COUNT_CONST 0 /**< Pseudo-count constant for PSI-BLAST */
+#define DELTA_INCLUSION_ETHRESH 0.05 /**< Inclusion threshold for DELTA-BLAST */
 
 /** Default genetic code for query and/or database */
 #define BLAST_GENETIC_CODE 1  /**< Use the standard genetic code for converting
@@ -475,6 +476,7 @@ typedef struct PSIBlastOptions {
     Boolean ignore_unaligned_positions;
 
 } PSIBlastOptions;
+
 
 /** Options used to create the ReadDBFILE structure 
  *  Include database name and various information for restricting the database

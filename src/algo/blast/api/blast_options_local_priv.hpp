@@ -287,6 +287,10 @@ public:
     bool GetIgnoreMsaMaster() const;
     void SetIgnoreMsaMaster(bool val);
     
+    /******************** DELTA-Blast options *******************/
+    double GetDomainInclusionThreshold() const;
+    void SetDomainInclusionThreshold(double incthr);
+        
     /******************** Megablast Database Index *******************/
     bool GetUseIndex() const;
     bool GetForceIndex() const;
@@ -317,6 +321,9 @@ private:
 
     /// PSI-Blast settings
     CPSIBlastOptions              m_PSIBlastOpts;
+
+    /// Delta-Blast settings
+    CPSIBlastOptions              m_DeltaBlastOpts;
 
     /// Blast database settings
     CBlastDatabaseOptions         m_DbOpts;
@@ -1497,6 +1504,19 @@ CBlastOptionsLocal::SetPHIPattern(const char* pattern, bool is_dna)
         m_LutOpts->phi_pattern = strdup(pattern);
     else if (m_LutOpts->phi_pattern)
         sfree(m_LutOpts->phi_pattern);
+}
+
+/******************** DELTA BLAST Options ************************/
+inline double
+CBlastOptionsLocal::GetDomainInclusionThreshold(void) const
+{
+    return m_DeltaBlastOpts->inclusion_ethresh;
+}
+
+inline void
+CBlastOptionsLocal::SetDomainInclusionThreshold(double incthr)
+{
+    m_DeltaBlastOpts->inclusion_ethresh = incthr;
 }
 
 /******************** Megablast Database Index *******************/

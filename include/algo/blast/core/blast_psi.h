@@ -103,6 +103,42 @@ NCBI_XBLAST_EXPORT
 PSIMsa*
 PSIMsaFree(PSIMsa* msa);
 
+/*******************************************************************
+* Data structures for computing PSSM from using Conserved Domains
+*
+*/
+
+/** Data needed for PSSM computation stored in MSA cell for single column in
+ *  CD aligned to a position in the query */
+typedef struct PSICdMsaCellData {
+
+    double* wfreqs;                  /**< Frequencies for each residue in
+                                          CD column */
+
+    double iobsr;                    /**< Effective number of independent
+                                          observations in a CD column */
+} PSICdMsaCellData;
+
+/** Alignment cell that represents one column of CD aligned to a position 
+ *  in the query*/
+typedef struct PSICdMsaCell {
+    Uint1 is_aligned;          /**< Does this cell represent column aligned 
+                                    to a CD */
+
+    PSICdMsaCellData* data;    /**< Data needed for PSSM computation */
+} PSICdMsaCell;
+
+
+/** Data structure representing multiple alignemnt of CDs and query sequence
+    along with data needed for PSSM computation */
+typedef struct PSICdMsa {
+    unsigned char* query;         /**< Query sequence as Ncbistdaa */
+    PSIMsaDimensions* dimensions; /**< Query length and number of aligned cds */
+
+    PSICdMsaCell **msa;          /**< Multiple alignment of CDs */
+} PSICdMsa;
+
+
 #ifdef DEBUG_PSSM_ENGINE
 NCBI_XBLAST_EXPORT
 void PrintMsa(const char* filename, const PSIMsa* msa);
@@ -155,6 +191,9 @@ typedef struct PSIDiagnosticsRequest {
     Boolean interval_sizes;                 /**< request interval sizes */
     Boolean num_matching_seqs;              /**< request number of matching 
                                               sequences */
+    Boolean independent_observations;       /**< request number of independent
+                                                 observations */
+
 } PSIDiagnosticsRequest;
 
 /** This structure contains the diagnostics information requested using the
@@ -184,6 +223,9 @@ typedef struct PSIDiagnosticsResponse {
     Uint4 query_length;                    /**< Specifies the number of
                                              positions in the PSSM */
     Uint4 alphabet_size;                   /**< Specifies length of alphabet */
+
+    double* independent_observations;      /**< Effective number of
+                                                observations per column */
 } PSIDiagnosticsResponse;
 
 /** Allocates a PSIDiagnosticsRequest structure, setting all fields to false
@@ -275,6 +317,25 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,
                              const PSIDiagnosticsRequest* request,
                              PSIMatrix** pssm,
                              PSIDiagnosticsResponse** diagnostics);
+
+/** Main entry point to core PSSM engine for computing CDD-based PSSMs
+ * @param cd_msa information about CDs that match to query sequence [in]
+ * @param options options to PSSM engine [in]
+ * @param sbp BLAST score block structure [in|out]
+ * @param request diagnostics information request [in]
+ * @param pssm PSSM [out]
+ * @param diagnostics diagnostics information response, expects a pointer to
+ * uninitialized structure [in|out]
+ */
+int
+PSICreatePssmFromCDD(const PSICdMsa* cd_msa,       
+                     const PSIBlastOptions* options,
+                     BlastScoreBlk* sbp, 
+                     const PSIDiagnosticsRequest* request,
+                     PSIMatrix** pssm,
+                     PSIDiagnosticsResponse** diagnostics);
+
+
 
 /** Top-level function to create a PSSM given a matrix of frequency ratios
  * and perform scaling on the resulting PSSM (i.e.: performs the last two 

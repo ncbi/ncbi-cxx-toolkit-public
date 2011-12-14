@@ -125,6 +125,7 @@ CPsiBlastInputData::~CPsiBlastInputData()
 void
 CPsiBlastInputData::Process()
 {
+
     _ASSERT(m_Query != NULL);
 
     // Update the number of aligned sequences

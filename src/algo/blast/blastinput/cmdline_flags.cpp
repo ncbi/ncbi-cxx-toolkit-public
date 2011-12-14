@@ -197,6 +197,10 @@ const string kArgIndexName("index_name");
 
 const string kArgEntrezQuery("entrez_query");
 
+const string kArgRpsDb("rpsdb");
+const string kArgDomainInclusionEThreshold("domain_inclusion_ethresh");
+const string kArgShowDomainHits("show_domain_hits");
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

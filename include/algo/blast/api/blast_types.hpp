@@ -65,9 +65,10 @@ enum EProgram {
     eMegablast,         ///< Nucl-Nucl (traditional megablast)
     eDiscMegablast,     ///< Nucl-Nucl using discontiguous megablast
     ePSIBlast,          ///< PSI Blast
-    ePSITblastn,	///< PSI Tblastn
+    ePSITblastn,        ///< PSI Tblastn
     ePHIBlastp,         ///< Protein PHI BLAST
     ePHIBlastn,         ///< Nucleotide PHI BLAST
+    eDeltaBlast,        ///< Delta Blast
     eBlastProgramMax    ///< Undefined program
 };
 

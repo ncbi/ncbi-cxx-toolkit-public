@@ -154,6 +154,29 @@ s_Validate(IPssmInputData* pssm_input_msa)
 /// engine. Should be called after invoking Process() on its argument
 /// @throws CPssmEngineException if validation fails
 static void
+s_Validate(IPssmInputCdd* pssm_input)
+{
+    _ASSERT(pssm_input);
+
+    if ( !pssm_input->GetData() ) {
+        NCBI_THROW(CPssmEngineException, eNullInputData,
+           "IPssmInputData returns NULL multiple sequence alignment");
+    }
+
+    Blast_Message* errors = NULL;
+    if (PSIBlastOptionsValidate(pssm_input->GetOptions(), &errors) != 0) {
+        string msg("IPssmInputData returns invalid PSIBlastOptions: ");
+        msg += string(errors->message);
+        errors = Blast_MessageFree(errors);
+        NCBI_THROW(CBlastException, eInvalidOptions, msg);
+    }
+}
+
+
+/// Performs validation on data provided before invoking the CORE PSSM
+/// engine. Should be called after invoking Process() on its argument
+/// @throws CPssmEngineException if validation fails
+static void
 s_Validate(IPssmInputFreqRatios* pssm_input_fr)
 {
     _ASSERT(pssm_input_fr);
@@ -180,6 +203,15 @@ CPssmEngine::CPssmEngine(IPssmInputFreqRatios* input)
     s_CheckAgainstNullData(input);
     x_InitializeScoreBlock(x_GetQuery(), x_GetQueryLength(), x_GetMatrixName(),
            x_GetGapExistence(), x_GetGapExtension());
+}
+
+CPssmEngine::CPssmEngine(IPssmInputCdd* input) : m_PssmInput(NULL),
+                                                 m_PssmInputFreqRatios(NULL),
+                                                 m_PssmInputCdd(input)
+{
+    x_InitializeScoreBlock(input->GetQuery(), input->GetQueryLength(),
+                           input->GetMatrixName(), input->GetGapExistence(),
+                           input->GetGapExtension());
 }
 
 CPssmEngine::~CPssmEngine()
@@ -241,6 +273,10 @@ CPssmEngine::x_ErrorCodeToString(int error_code)
         retval = "Found flanking gap at end of alignment";
         break;
 
+    case PSIERR_BADPROFILE:
+        retval = "Errors in conserved domain profile";
+        break;
+
     default:
         retval = "Unknown error code returned from PSSM engine: " + 
             NStr::IntToString(error_code);
@@ -252,7 +288,20 @@ CPssmEngine::x_ErrorCodeToString(int error_code)
 CRef<CPssmWithParameters>
 CPssmEngine::Run()
 {
-    return (m_PssmInput ? x_CreatePssmFromMsa() : x_CreatePssmFromFreqRatios());
+    if (m_PssmInput) {
+        return x_CreatePssmFromMsa();
+    }
+
+    if (m_PssmInputFreqRatios) {
+        return x_CreatePssmFromFreqRatios();
+    }
+
+    if (m_PssmInputCdd) {
+        return x_CreatePssmFromCDD();
+    }
+
+    NCBI_THROW(CPssmEngineException, eNullInputData, "All pointers to pre-"
+               "processing input data strategies are null");
 }
 
 /// Auxiliary class to convert from a CNcbiMatrix into a double** as
@@ -355,6 +404,44 @@ CPssmEngine::x_CreatePssmFromMsa()
     retval = x_PSIMatrix2Asn1(pssm, m_PssmInput->GetMatrixName(), 
                               m_PssmInput->GetOptions(), diagnostics);
     CRef<CBioseq> query = m_PssmInput->GetQueryForPssm();
+    if (query.NotEmpty()) {
+        retval->SetQuery().SetSeq(*query);
+    }
+
+    return retval;
+}
+
+
+CRef<CPssmWithParameters>
+CPssmEngine::x_CreatePssmFromCDD(void)
+{
+    _ASSERT(m_PssmInputCdd);
+
+    m_PssmInputCdd->Process();
+    s_Validate(m_PssmInputCdd);
+
+    CPSIMatrix pssm;
+    CPSIDiagnosticsResponse diagnostics;
+    int status = 
+        PSICreatePssmFromCDD(m_PssmInputCdd->GetData(),
+                         m_PssmInputCdd->GetOptions(),
+                         m_ScoreBlk, 
+                         m_PssmInputCdd->GetDiagnosticsRequest(),
+                         &pssm, 
+                         &diagnostics);
+
+    if (status != PSI_SUCCESS) {
+        // FIXME: need to use core level perror-like facility
+        string msg = x_ErrorCodeToString(status);
+        NCBI_THROW(CBlastException, eCoreBlastError, msg);
+    }
+
+    // Convert core BLAST matrix structure into ASN.1 score matrix object
+    CRef<CPssmWithParameters> retval;
+    retval = x_PSIMatrix2Asn1(pssm, m_PssmInputCdd->GetMatrixName(), 
+                              m_PssmInputCdd->GetOptions(), diagnostics);
+
+    CRef<CBioseq> query = m_PssmInputCdd->GetQueryForPssm();
     if (query.NotEmpty()) {
         retval->SetQuery().SetSeq(*query);
     }
@@ -691,6 +778,14 @@ CPssmEngine::x_PSIMatrix2Asn1(const PSIMatrix* pssm,
             asn1_pssm.SetIntermediateData().SetNumMatchingSeqs();
         for (Uint4 i = 0; i < diagnostics->query_length; i++) {
             num_matching_seqs.push_back(diagnostics->num_matching_seqs[i]);
+        }
+    }
+
+    if (diagnostics->independent_observations) {
+        CPssmIntermediateData::TNumIndeptObsr& num_indept_obsr =
+            asn1_pssm.SetIntermediateData().SetNumIndeptObsr();
+        for (Uint4 i = 0; i < diagnostics->query_length; i++) {
+            num_indept_obsr.push_back(diagnostics->independent_observations[i]);
         }
     }
 

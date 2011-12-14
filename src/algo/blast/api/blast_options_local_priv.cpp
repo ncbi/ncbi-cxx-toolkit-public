@@ -64,6 +64,7 @@ CBlastOptionsLocal::CBlastOptionsLocal()
     BlastEffectiveLengthsOptionsNew(&m_EffLenOpts);
     BlastDatabaseOptionsNew(&m_DbOpts);
     PSIBlastOptionsNew(&m_PSIBlastOpts);
+    PSIBlastOptionsNew(&m_DeltaBlastOpts);
     m_Program = eBlastNotSet;
     m_UseMBIndex = false;
     m_ForceMBIndex = false;
@@ -399,6 +400,7 @@ CBlastOptionsLocal::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
     m_ExtnOpts.DebugDump(ddc, depth);
     m_HitSaveOpts.DebugDump(ddc, depth);
     m_PSIBlastOpts.DebugDump(ddc, depth);
+    m_DeltaBlastOpts.DebugDump(ddc, depth);
     m_DbOpts.DebugDump(ddc, depth);
     m_ScoringOpts.DebugDump(ddc, depth);
     m_EffLenOpts.DebugDump(ddc, depth);
@@ -529,6 +531,11 @@ CBlastOptionsLocal::operator==(const CBlastOptionsLocal& rhs) const
 
     a = static_cast<void*>( (PSIBlastOptions*) m_PSIBlastOpts);
     b = static_cast<void*>( (PSIBlastOptions*) rhs.m_PSIBlastOpts);
+    if ( x_safe_memcmp(a, b, sizeof(PSIBlastOptions)) != 0 )
+         return false;
+
+    a = static_cast<void*>( (PSIBlastOptions*) m_DeltaBlastOpts);
+    b = static_cast<void*>( (PSIBlastOptions*) rhs.m_DeltaBlastOpts);
     if ( x_safe_memcmp(a, b, sizeof(PSIBlastOptions)) != 0 )
          return false;
 

@@ -56,6 +56,7 @@ static char const rcsid[] =
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Delta_ext.hpp>
+#include <objects/scoremat/Pssm.hpp>
 #include <serial/typeinfo.hpp>      // for CTypeInfo, needed by SerialClone
 #include <objtools/data_loaders/blastdb/bdbloader_rmt.hpp>
 
@@ -706,5 +707,22 @@ void BlastFormatter_PreFetchSequenceData(const blast::CSearchResultSet&
                    "please try again later");
     }
 }
+
+/// Auxiliary function to extract the ancillary data from the PSSM.
+CRef<CBlastAncillaryData>
+ExtractPssmAncillaryData(const CPssmWithParameters& pssm)
+{
+    _ASSERT(pssm.CanGetPssm());
+    pair<double, double> lambda, k, h;
+    lambda.first = pssm.GetPssm().GetLambdaUngapped();
+    lambda.second = pssm.GetPssm().GetLambda();
+    k.first = pssm.GetPssm().GetKappaUngapped();
+    k.second = pssm.GetPssm().GetKappa();
+    h.first = pssm.GetPssm().GetHUngapped();
+    h.second = pssm.GetPssm().GetH();
+    return CRef<CBlastAncillaryData>(new CBlastAncillaryData(lambda, k, h, 0,
+                                                             true));
+}
+
 
 END_NCBI_SCOPE

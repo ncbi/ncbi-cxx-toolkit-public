@@ -724,6 +724,7 @@ EProgramToEBlastProgramType(EProgram p)
         return eBlastTypeRpsTblastn;
         
     case ePSIBlast:
+    case eDeltaBlast:
         return eBlastTypePsiBlast;
         
     case ePSITblastn:

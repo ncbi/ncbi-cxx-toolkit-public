@@ -213,6 +213,14 @@ void
 BlastFormatter_PreFetchSequenceData(const blast::CSearchResultSet&
                                     results, CRef<CScope> scope);
 
+/// Auxiliary function to extract the ancillary data from the PSSM.
+/// Used in PSI-BLAST and DELTA-BLAST
+///@param pssm Pssm [in]
+///@return Ancillary data extracted from Pssm
+CRef<blast::CBlastAncillaryData>
+ExtractPssmAncillaryData(const objects::CPssmWithParameters& pssm);
+
+
 END_NCBI_SCOPE
 
 #endif /* APP__BLAST_APP_UTIL__HPP */

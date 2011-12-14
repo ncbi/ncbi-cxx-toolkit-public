@@ -78,7 +78,8 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
                  const string& custom_output_format /* = kEmptyStr */,
                  bool is_megablast /* = false */,
                  bool is_indexed /* = false */,
-                 const blast::CIgBlastOptions *ig_opts /* = NULL */)
+                 const blast::CIgBlastOptions *ig_opts /* = NULL */,
+                 const blast::CLocalDbAdapter* domain_db_adapter /* = NULL*/)
         : m_FormatType(format_type), m_IsHTML(is_html), 
           m_DbIsAA(db_adapter.IsProtein()), m_BelieveQuery(believe_query),
           m_Outfile(outfile), m_NumSummary(num_summary),
@@ -128,6 +129,17 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
     }
 
     CAlignFormatUtil::GetAsciiProteinMatrix(m_MatrixName, m_ScoringMatrix);
+
+    if (options.GetProgram() == eDeltaBlast) {
+        _ASSERT(options.GetProgramType() == eBlastTypePsiBlast);
+        m_Program = "deltablast";
+
+        if (domain_db_adapter) {
+            CBlastFormatUtil::GetBlastDbInfo(m_DomainDbInfo,
+                                         domain_db_adapter->GetDatabaseName(),
+                                         true, -1, is_remote_search);
+        }
+    }
 }
 
 CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts, 
@@ -183,6 +195,11 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts,
         m_ShowLinkedSetSize = true;
     }
     CAlignFormatUtil::GetAsciiProteinMatrix(m_MatrixName, m_ScoringMatrix);
+
+    if (opts.GetProgram() == eDeltaBlast) {
+        _ASSERT(opts.GetProgramType() == eBlastTypePsiBlast);
+        m_Program = "deltablast";
+    }
 }
 
 static const string kHTML_Prefix =
@@ -254,7 +271,14 @@ CBlastFormat::PrintProlog()
                               (bool)(m_Program == "psiblast"));
     }
 
-    m_Outfile << "\n\n";
+    if (m_Program == "deltablast" && !m_DomainDbInfo.empty()) {
+        m_Outfile << "\n\n" << "Conserved Domain ";
+        CBlastFormatUtil::PrintDbReport(m_DomainDbInfo, kFormatLineLength, 
+                                        m_Outfile, true);
+    }
+    else {
+        m_Outfile << "\n\n";
+    }
     CBlastFormatUtil::PrintDbReport(m_DbInfo, kFormatLineLength, 
                                     m_Outfile, true);
 }
@@ -266,7 +290,8 @@ CBlastFormat::x_PrintOneQueryFooter(const blast::CBlastAncillaryData& summary)
     if ( m_DisableKAStats )
       return;
 
-    const Blast_KarlinBlk *kbp_ungap = (m_Program == "psiblast") 
+    const Blast_KarlinBlk *kbp_ungap = 
+        (m_Program == "psiblast" || m_Program == "deltablast")
         ? summary.GetPsiUngappedKarlinBlk() 
         : summary.GetUngappedKarlinBlk();
     m_Outfile << "\n";
@@ -277,7 +302,8 @@ CBlastFormat::x_PrintOneQueryFooter(const blast::CBlastAncillaryData& summary)
                                             false);
     }
 
-    const Blast_KarlinBlk *kbp_gap = (m_Program == "psiblast") 
+    const Blast_KarlinBlk *kbp_gap = 
+        (m_Program == "psiblast" || m_Program == "deltablast")
         ? summary.GetPsiGappedKarlinBlk()
         : summary.GetGappedKarlinBlk();
     m_Outfile << "\n";
@@ -679,7 +705,8 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
                         unsigned int itr_num
                         /* = numeric_limits<unsigned int>::max() */,
                         blast::CPsiBlastIterationState::TSeqIds prev_seqids
-                        /* = CPsiBlastIterationState::TSeqIds() */)
+                        /* = CPsiBlastIterationState::TSeqIds() */,
+                        bool is_deltablast_domain_result /* = false */)
 {
     // For remote searches, we don't retrieve the sequence data for the query
     // sequence when initially sending the request to the BLAST server (if it's
@@ -717,6 +744,10 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
         return;
     }
     const bool kIsTabularOutput = false;
+
+    if (is_deltablast_domain_result) {
+        m_Outfile << "Results from domain search" << "\n";
+    }
 
     if (itr_num != numeric_limits<unsigned int>::max()) {
         m_Outfile << "Results from round " << itr_num << "\n";
@@ -1288,6 +1319,12 @@ CBlastFormat::PrintEpilog(const blast::CBlastOptions& options)
     }
 
     m_Outfile << "\n\n";
+    if (m_Program == "deltablast" && !m_DomainDbInfo.empty()) {
+        m_Outfile << "Conserved Domain";
+        CBlastFormatUtil::PrintDbReport(m_DomainDbInfo, kFormatLineLength,
+                                        m_Outfile, false);
+    }
+
     if ( !m_IsBl2Seq ) {
         CBlastFormatUtil::PrintDbReport(m_DbInfo, kFormatLineLength, 
                                         m_Outfile, false);

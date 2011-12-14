@@ -38,6 +38,8 @@ static char const rcsid[] = "";
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbimisc.hpp>
+#include <corelib/ncbitime.hpp>
 #include <util/math/matrix.hpp>
 #include <serial/objistrasn.hpp>
 #include <algo/blast/api/version.hpp>
@@ -73,6 +75,9 @@ static const string kMaxFileSize("max_file_sz");
 static const string kOutDbType("out_db_type");
 static const string kPssmScaleFactor("pssm_sf");
 static const string kOutIndexFile("index_file");
+static const string kObsrThreshold("obsr_threshold");
+static const string kExcludeInvalid("exclude_invalid");
+static const string kBinaryScoremat("binary_scoremat");
 
 static const string kLogFile("logfile");
 
@@ -96,8 +101,15 @@ static const string kDefaultMatrix(kMatrixBLOSUM62);
 static const string kDefaultMaxFileSize("1GB");
 static const string kDefaultOutDbType(kOutDbRps);
 static const string kDefaultOutIndexFile("true");
+static const string kDefaultExcludeInvalid("true");
+static const string kDefaultBinaryScoremat("false");
 #define kDefaultWordScoreThreshold (9.82)
 #define kDefaultPssmScaleFactor (100.00)
+#define kDefaultObsrThreshold (6.0)
+
+//Fix point scale factor for delta blast
+static const Uint4 kFixedPointScaleFactor = 1000;
+#define kEpsylon (0.0001)
 
 #define DEFAULT_POS_MATRIX_SIZE	2000
 #define RPS_NUM_LOOKUP_CELLS 32768
@@ -156,7 +168,6 @@ void CMakeDbPosMatrix::Delete(void)
 	return;
 }
 
-
 class CMakeProfileDBApp : public CNcbiApplication
 {
 public:
@@ -185,6 +196,7 @@ private:
         CNcbiOfstream aux_file;
         CNcbiOfstream blocks_file;
         CNcbiOfstream freq_file;
+
         CMakeDbPosMatrix pos_matrix;
         Int4 gap_open;
         Int4 gap_extend;
@@ -223,6 +235,11 @@ private:
     void x_RPSUpdatePSSM(const CPssm & pssm, Int4 seq_index, Int4 seq_size);
     void x_RPS_DbClose(void);
     void x_UpdateCobalt( const CPssmWithParameters  & pssm_p, Int4 seq_size);
+    bool x_UpdateDelta( const CPssm  & pssm, Int4 seq_size, const string & filename,
+    					CNcbiOfstream & obsr_buff_file, CNcbiOfstream & freq_buff_file);
+    bool x_ValidateCd(const list<double>& freqs, const list<double>& observ, unsigned int alphabet_size);
+    void x_WrapUpDelta(CTmpFile & tmp_obsr_file, CTmpFile & tmp_freq_file);
+    vector<string> x_CreateDeltaList(void);
 
     // Data
     CNcbiOstream * m_LogFile;
@@ -238,11 +255,20 @@ private:
     double m_PssmScaleFactor;
     string m_Matrix;
     op_mode m_op_mode;
+    bool m_binary_scoremat;
 
     struct RPS_DbInfo	m_RpsDbInfo;
     CRef<CWriteDB>	m_OutputDb;
     CRef<CTaxIdSet> m_Taxids;
     bool m_Done;
+
+    //For Delta Blast
+	double m_ObsrvThreshold;
+	bool m_ExcludeInvalid;
+	list<Int4> m_FreqOffsets;
+	list<Int4> m_ObsrOffsets;
+	Int4 m_CurrFreqOffset;
+	Int4 m_CurrObsrOffset;
 };
 
 CMakeProfileDBApp::CMakeProfileDBApp(void)
@@ -250,7 +276,8 @@ CMakeProfileDBApp::CMakeProfileDBApp(void)
                   m_WordScoreThreshold(0), m_OutDbName(kEmptyStr), m_MaxFileSize(0),
                   m_OutDbType(kEmptyStr), m_CreateIndexFile(false),m_GapOpenPenalty(0),
                   m_GapExtPenalty(0), m_PssmScaleFactor(0),m_Matrix(kEmptyStr),  m_op_mode(op_invalid),
-                  m_Taxids(new CTaxIdSet()), m_Done(false)
+                  m_binary_scoremat(false), m_Taxids(new CTaxIdSet()), m_Done(false),
+                  m_ObsrvThreshold(0), m_ExcludeInvalid(false), m_CurrFreqOffset(0), m_CurrObsrOffset(0)
 {
 	CRef<CVersion> version(new CVersion());
 	version->SetVersionInfo(new CBlastVersion());
@@ -288,6 +315,14 @@ CMakeProfileDBApp::~CMakeProfileDBApp()
 		 		CFile(freq_str).Remove();
 		 	}
 
+		 	if(op_delta == m_op_mode)
+		 	{
+		 		string wcounts_str = m_OutDbName + ".wcounts";
+		 		string obsr_str = m_OutDbName + ".obsr";
+		 		CFile(wcounts_str).Remove();
+		 		CFile(obsr_str).Remove();
+		 	}
+
 		 	if(m_OutputDb.NotEmpty())
 		 	{
 		 		vector<string> tmp_files;
@@ -323,6 +358,11 @@ void CMakeProfileDBApp::x_SetupArgDescriptions(void)
     arg_desc->AddKey(kInPssmList, "in_pssm_list",
                      "Input file that contains a list of smp files (delimited by space, tab or newline)",
                      CArgDescriptions::eInputFile);
+
+    arg_desc->AddDefaultKey(kBinaryScoremat, "is_binary_scoremat",
+       						"Scoremats are in binary format",
+       						CArgDescriptions::eBoolean,
+       						kDefaultBinaryScoremat);
 
     arg_desc->SetCurrentGroup("Configuration options");
     arg_desc->AddOptionalKey(kArgDbTitle, "database_title",
@@ -373,6 +413,17 @@ void CMakeProfileDBApp::x_SetupArgDescriptions(void)
     arg_desc->SetConstraint(kArgMatrixName, &(*new CArgAllow_Strings,kMatrixBLOSUM62, kMatrixBLOSUM80,
     						kMatrixBLOSUM50, kMatrixBLOSUM45, kMatrixBLOSUM90, kMatrixPAM250, kMatrixPAM30, kMatrixPAM70));
 
+    //Delta Blast Options
+    arg_desc->SetCurrentGroup("Delta Blast Options");
+    arg_desc->AddDefaultKey(kObsrThreshold, "observations_threshold", "Exclude domains with "
+                            "with maximum number of independent observations "
+                            "below this threshold", CArgDescriptions::eDouble,
+                            NStr::DoubleToString(kDefaultObsrThreshold));
+
+    arg_desc->AddDefaultKey(kExcludeInvalid, "exclude_invalid", "Exclude domains that do "
+                            "not pass validation test",
+                            CArgDescriptions::eBoolean, kDefaultExcludeInvalid);
+
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -380,7 +431,7 @@ void CMakeProfileDBApp::x_InitProgramParameters(void)
 {
 	const CArgs& args = GetArgs();
 
-	//in_list
+	//log_file
 	if (args[kLogFile].HasValue())
 		m_LogFile = &args[kLogFile].AsOutputFile();
 	else
@@ -392,6 +443,9 @@ void CMakeProfileDBApp::x_InitProgramParameters(void)
 		m_InPssmList = &args[kInPssmList].AsInputFile();
 	else
 		NCBI_THROW(CInputException, eInvalidInput,  "Please provide an input file with list of smp files");
+
+	// Binary Scoremat
+	m_binary_scoremat = args[kBinaryScoremat].AsBoolean();
 
 	//title
 	if (args[kArgDbTitle].HasValue())
@@ -447,6 +501,10 @@ void CMakeProfileDBApp::x_InitProgramParameters(void)
 
 	//matrix
 	m_Matrix = args[kArgMatrixName].AsString();
+
+	//Delta Blast Parameters
+	m_ObsrvThreshold = args[kObsrThreshold].AsDouble();
+	m_ExcludeInvalid = args[kExcludeInvalid].AsBoolean();
 
 }
 
@@ -521,10 +579,6 @@ CMakeProfileDBApp::x_CheckInputScoremat(const CPssmWithParameters & pssm_w_param
 				NCBI_THROW(CInputException, eInvalidInput,  err);
 			}
 
-		}
-		else if(op_delta == m_op_mode)
-		{
-			// place holder: check for delta input scoremat requirement
 		}
 
 		if(pssm.IsSetFinalData())
@@ -748,8 +802,6 @@ void CMakeProfileDBApp::x_RPSUpdateStatistics(CPssmWithParameters & seq, Int4 se
      double threshold = m_RpsDbInfo.scale_factor * m_WordScoreThreshold;
 
      /* create BLAST lookup table */
-     m_RpsDbInfo.lookup_options = NULL;
-     m_RpsDbInfo.lookup = NULL;
      if (LookupTableOptionsNew(eBlastTypeBlastp, &(m_RpsDbInfo.lookup_options)) != 0)
     	 NCBI_THROW(CBlastException, eCoreBlastError, "Cannot create lookup options");
 
@@ -836,7 +888,8 @@ void CMakeProfileDBApp::x_RPSUpdateStatistics(CPssmWithParameters & seq, Int4 se
 	 }
 
 	 // Update .freq file
-	 Int4 i, j;
+	 Int4 i = 0;
+	 Int4 j = 0;
 	 double row[BLASTAA_SIZE];
 	 Int4 alphabet_size = pssm.GetNumRows();
 
@@ -1010,6 +1063,8 @@ void CMakeProfileDBApp::x_RPS_DbClose(void)
     m_RpsDbInfo.pssm_file.write((const char *) &m_RpsDbInfo.curr_seq_offset, sizeof(Int4));
 
     /* Pack the lookup table into its compressed form */
+    if(NULL == m_RpsDbInfo.lookup)
+        NCBI_THROW(CBlastException, eCoreBlastError, "Empty database");
 
     if (BlastAaLookupFinalize(m_RpsDbInfo.lookup, eBackbone) != 0) {
         NCBI_THROW(CBlastException, eCoreBlastError, "Failed to compress lookup table");
@@ -1108,6 +1163,7 @@ void CMakeProfileDBApp::x_RPS_DbClose(void)
     	m_RpsDbInfo.freq_file.flush();
     	m_RpsDbInfo.freq_file.close();
     }
+
 }
 
 void CMakeProfileDBApp::Init(void)
@@ -1118,7 +1174,7 @@ void CMakeProfileDBApp::Init(void)
 
 int CMakeProfileDBApp::Run(void)
 {
-	vector<string> smpFilenames = x_GetSMPFilenames();
+	vector<string> smpFilenames = (op_delta == m_op_mode )? x_CreateDeltaList():x_GetSMPFilenames();
 
 	x_InitRPSDbInfo((Int4) smpFilenames.size());
 	x_InitOutputDb();
@@ -1133,12 +1189,18 @@ int CMakeProfileDBApp::Run(void)
 			NCBI_THROW(CInputException, eInvalidInput,  err);
 		}
 
-		//*m_LogFile << "Processing " + filename << "\n";
-
 		//Read PssmWithParameters from file
-		CNcbiIfstream	in_stream(filename.c_str());
 		CPssmWithParameters pssm_w_parameters;
-		in_stream >> MSerial_AsnText >> pssm_w_parameters;
+		if(m_binary_scoremat)
+		{
+			CNcbiIfstream	in_stream(filename.c_str(), ios::binary);
+			in_stream >> MSerial_AsnBinary >> pssm_w_parameters;
+		}
+		else
+		{
+			CNcbiIfstream	in_stream(filename.c_str());
+			in_stream >> MSerial_AsnText >> pssm_w_parameters;
+		}
 
 		CheckInputScoremat_RV sm = x_CheckInputScoremat(pssm_w_parameters, filename);
 		// Should have error out already....
@@ -1149,15 +1211,16 @@ int CMakeProfileDBApp::Run(void)
 		}
 
 		const CPssm & pssm = pssm_w_parameters.GetPssm();
+		int seq_size = pssm.GetQueryLength();
+
 		const CBioseq & bioseq = pssm.GetQuery().GetSeq();
-		CRef<CBlast_def_line_set> deflines = CWriteDB::ExtractBioseqDeflines(bioseq );
+		CRef<CBlast_def_line_set> deflines = CWriteDB::ExtractBioseqDeflines(bioseq);
 		m_Taxids->FixTaxId(deflines);
 		m_OutputDb->AddSequence(bioseq);
 		m_OutputDb->SetDeflines(*deflines);
 
-		int seq_size = pssm.GetQueryLength();
 		//Complete RpsDnInfo init with data from first file
-		if(0 == seq_index)
+		if(NULL == m_RpsDbInfo.lookup)
 		{
 			x_RPSAddFirstSequence(pssm_w_parameters, sm == sm_valid_freq_only);
 		}
@@ -1175,7 +1238,6 @@ int CMakeProfileDBApp::Run(void)
 
 		}
 
-		//tmp(pssm_w_parameters);
 		x_RPSUpdatePSSM(pssm, seq_index, seq_size);
 		x_RPSUpdateLookup(seq_size);
 
@@ -1186,13 +1248,305 @@ int CMakeProfileDBApp::Run(void)
 
 		if(op_cobalt == m_op_mode)
 			x_UpdateCobalt(pssm_w_parameters, seq_size);
-
 	}
 
 	m_OutputDb->Close();
 	x_RPS_DbClose();
 	m_Done = true;
 	return 0;
+}
+
+static void s_WriteInt4List(CNcbiOfstream & ostr, const list<Int4> & l)
+{
+	ITERATE(list<Int4>, it, l)
+	{
+		ostr.write((char*)&(*it), sizeof(Int4));
+	}
+}
+
+static void s_WriteUint4List(CNcbiOfstream & ostr, const list<Uint4> & l)
+{
+	ITERATE(list<Uint4>, it, l)
+	{
+		ostr.write((char*)&(*it), sizeof(Uint4));
+	}
+}
+
+vector<string> CMakeProfileDBApp::x_CreateDeltaList(void)
+{
+	vector<string> smpFilenames = x_GetSMPFilenames();
+	vector<string> deltaList;
+
+	CTmpFile tmp_obsr_file(CTmpFile::eRemove);
+	CTmpFile tmp_freq_file(CTmpFile::eRemove);
+	CNcbiOfstream  tmp_obsr_buff(tmp_obsr_file.GetFileName().c_str(), IOS_BASE::out | IOS_BASE::binary);
+	CNcbiOfstream  tmp_freq_buff(tmp_freq_file.GetFileName().c_str(), IOS_BASE::out | IOS_BASE::binary);
+
+	for(int seq_index=0; seq_index < smpFilenames.size(); seq_index++)
+	{
+		string filename = smpFilenames[seq_index];
+		CFile f(filename);
+		if(!f.Exists())
+		{
+			string err = filename + " does not exists";
+			NCBI_THROW(CInputException, eInvalidInput,  err);
+		}
+
+		//Read PssmWithParameters from file
+		CPssmWithParameters pssm_w_parameters;
+		if(m_binary_scoremat)
+		{
+			CNcbiIfstream	in_stream(filename.c_str(), ios::binary);
+			in_stream >> MSerial_AsnBinary >> pssm_w_parameters;
+		}
+		else
+		{
+			CNcbiIfstream	in_stream(filename.c_str());
+			in_stream >> MSerial_AsnText >> pssm_w_parameters;
+		}
+
+		CheckInputScoremat_RV sm = x_CheckInputScoremat(pssm_w_parameters, filename);
+		// Should have error out already....
+		if(sm_invalid == sm)
+		{
+			string err = filename + " contains invalid scoremat";
+			NCBI_THROW(CInputException, eInvalidInput,  err);
+		}
+
+		const CPssm & pssm = pssm_w_parameters.GetPssm();
+		int seq_size = pssm.GetQueryLength();
+		if(!pssm.IsSetIntermediateData()|| !pssm.GetIntermediateData().IsSetWeightedResFreqsPerPos())
+		{
+			string err = filename + " contains no weighted residue frequencies for building delta database";
+			NCBI_THROW(CInputException, eInvalidInput,  err);
+		}
+
+		if(!pssm.GetIntermediateData().IsSetNumIndeptObsr())
+		{
+			string err = filename + " contains no observations information for building delta database";
+			NCBI_THROW(CInputException, eInvalidInput,  err);
+		}
+
+		if (true == x_UpdateDelta(pssm, seq_size, filename, tmp_obsr_buff, tmp_freq_buff))
+		{
+			deltaList.push_back(filename);
+		}
+
+	}
+
+	tmp_obsr_buff.flush();
+	tmp_freq_buff.flush();
+	x_WrapUpDelta(tmp_obsr_file, tmp_freq_file);
+
+	return deltaList;
+}
+
+bool CMakeProfileDBApp::x_ValidateCd(const list<double>& freqs,
+                                     const list<double>& observ,
+                                     unsigned int alphabet_size)
+{
+
+    if (freqs.size() / alphabet_size != observ.size())
+    {
+    	string err = "Number of frequency and observations columns do not match";
+        NCBI_THROW(CException, eInvalid, err);
+    }
+
+    ITERATE (list<double>, it, freqs)
+    {
+        int residue = 0;
+        double sum = 0.0;
+        while (residue < alphabet_size - 1)
+        {
+            sum += *it;
+            it++;
+            residue++;
+        }
+        sum += *it;
+
+        if (fabs(sum - 1.0) > kEpsylon)
+            return false;
+    }
+
+    ITERATE (list<double>, it, observ)
+    {
+           if (*it < 1.0)
+               return false;
+   }
+
+    return true;
+}
+
+
+bool CMakeProfileDBApp::x_UpdateDelta( const CPssm  & pssm, Int4 seq_size, const string & filename,
+									   CNcbiOfstream & obsr_buff_file, CNcbiOfstream & freq_buff_file)
+{
+
+    // get weightd residue frequencies
+   const list<double>& orig_freqs = pssm.GetIntermediateData().GetWeightedResFreqsPerPos();
+
+    // get number of independent observations
+    const list<double>& obsr = pssm.GetIntermediateData().GetNumIndeptObsr();
+
+    int alphabet_size = pssm.GetNumRows();
+    list<double> modify_freqs;
+
+    if(pssm.GetByRow())
+    {
+    	// need to flip the freq matrix
+    	vector<double> tmp(orig_freqs.size());
+    	list<double>::const_iterator f_itr = orig_freqs.begin();
+
+    	for(int i = 0; i < alphabet_size; i++)
+    	{
+    		for(int j = 0; j < seq_size; j++)
+    		{
+    			tmp[i + j*alphabet_size] = *f_itr;
+    			++f_itr;
+    		}
+    	}
+    	copy(tmp.begin(), tmp.end(), modify_freqs.begin());
+    }
+
+    // Pad matrix if necessary
+  	if(alphabet_size < BLASTAA_SIZE)
+  	{
+  		if(0 == modify_freqs.size())
+  			copy(orig_freqs.begin(), orig_freqs.end(), modify_freqs.begin());
+
+  		list<double>::iterator p_itr = modify_freqs.begin();
+
+  		for (int j=0; j < seq_size; j++)
+  		{
+  			for(int i=0; i < alphabet_size; i++)
+  			{
+  				if(modify_freqs.end() == p_itr)
+  					break;
+
+  				++p_itr;
+  			}
+
+  			modify_freqs.insert(p_itr, (BLASTAA_SIZE-alphabet_size), 0);
+  		}
+    }
+
+  	const list<double> & freqs = (modify_freqs.size()? modify_freqs:orig_freqs );
+    double max_obsr = *max_element(obsr.begin(), obsr.end()) + 1.0;
+    if(max_obsr < m_ObsrvThreshold)
+    {
+    	*m_LogFile << filename +
+    			" was excluded: due to too few independent observations\n";
+    	return false;
+    }
+
+    if( !x_ValidateCd(freqs, obsr, BLASTAA_SIZE) && m_ExcludeInvalid)
+    {
+    	*m_LogFile << filename +
+    			" was excluded: it conatins an invalid CD \n";
+    	return false;
+    }
+
+    //save offset for this record
+    m_ObsrOffsets.push_back(m_CurrObsrOffset);
+
+    list<Uint4> ObsrBuff;
+    // write effective observations in compressed form
+    // as a list of pairs: value, number of occurences
+    unsigned int num_obsr_columns = 0;
+    list<double>::const_iterator obsr_it = obsr.begin();
+    do
+    {
+    	double current = *obsr_it;
+        Uint4 num = 1;
+        num_obsr_columns++;
+        obsr_it++;
+        while (obsr_it != obsr.end() && fabs(*obsr_it - current) < 1e-4)
+        {
+        	obsr_it++;
+            num++;
+            num_obsr_columns++;
+        }
+
+        // +1 because pssm engine returns alpha (in psi-blast papers)
+        // which is number of independent observations - 1
+        ObsrBuff.push_back((Uint4)((current + 1.0) * kFixedPointScaleFactor));
+        ObsrBuff.push_back(num);
+    }
+  	while (obsr_it != obsr.end());
+
+    Uint4 num_weighted_counts = 0;
+
+    // save offset for this frequencies record
+    m_FreqOffsets.push_back(m_CurrFreqOffset / BLASTAA_SIZE);
+
+    list<Uint4> FreqBuff;
+    // save weighted residue frequencies
+    ITERATE (list<double>, it, freqs)
+    {
+      	FreqBuff.push_back((Uint4)(*it * kFixedPointScaleFactor));
+      	num_weighted_counts++;
+    }
+
+    if (num_obsr_columns != num_weighted_counts / BLASTAA_SIZE)
+    {
+    	string err = "Number of frequencies and observations columns do not match in " + filename;
+    	NCBI_THROW(CException, eInvalid, err);
+    }
+
+    // additional column of zeros is added for compatibility with rps database
+    unsigned int padded_size = FreqBuff.size() + BLASTAA_SIZE;
+    FreqBuff.resize(padded_size, 0);
+
+    m_CurrFreqOffset += FreqBuff.size();
+    m_CurrObsrOffset += ObsrBuff.size();
+    s_WriteUint4List(freq_buff_file, FreqBuff);
+    s_WriteUint4List(obsr_buff_file, ObsrBuff);
+
+    return true;
+}
+
+
+
+void CMakeProfileDBApp::x_WrapUpDelta(CTmpFile & tmp_obsr_file, CTmpFile & tmp_freq_file)
+{
+    m_FreqOffsets.push_back(m_CurrFreqOffset / BLASTAA_SIZE);
+    m_ObsrOffsets.push_back(m_CurrObsrOffset);
+
+    string wcounts_str = m_OutDbName + ".wcounts";
+    CNcbiOfstream wcounts_file(wcounts_str.c_str(), ios::out | ios::binary);
+    if (!wcounts_file.is_open())
+    	 NCBI_THROW(CSeqDBException, eFileErr,"Failed to open output .wcounts file");
+
+    string obsr_str = m_OutDbName + ".obsr";
+    CNcbiOfstream 	 obsr_file(obsr_str.c_str(), IOS_BASE::out|IOS_BASE::binary);
+    if (!obsr_file.is_open())
+    	 NCBI_THROW(CSeqDBException, eFileErr,"Failed to open output .obsr file");
+
+ 	CNcbiIfstream tmp_obsr_buff (tmp_obsr_file.GetFileName().c_str(), IOS_BASE::in | IOS_BASE::binary);
+ 	CNcbiIfstream tmp_freq_buff (tmp_freq_file.GetFileName().c_str(), IOS_BASE::in | IOS_BASE::binary);
+
+    // write RPS BLAST database magic number
+    Int4 magic_number = RPS_MAGIC_NUM_28;
+    wcounts_file.write((char*)&magic_number, sizeof(Int4));
+    obsr_file.write((char*)&magic_number, sizeof(Int4));
+
+    // write number of recrods
+    Int4 num_wcounts_records = m_FreqOffsets.size() -1;
+    Int4 num_obsr_records = m_ObsrOffsets.size() -1;
+    wcounts_file.write((char*)&num_wcounts_records, sizeof(Int4));
+    obsr_file.write((char*)&num_obsr_records, sizeof(Int4));
+
+    s_WriteInt4List(wcounts_file, m_FreqOffsets);
+    wcounts_file.flush();
+    wcounts_file << tmp_freq_buff.rdbuf();
+    wcounts_file.flush();
+    wcounts_file.close();
+
+    s_WriteInt4List(obsr_file, m_ObsrOffsets);
+    obsr_file.flush();
+    obsr_file << tmp_obsr_buff.rdbuf();
+    obsr_file.flush();
+    obsr_file.close();
 }
 
 

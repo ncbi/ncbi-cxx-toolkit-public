@@ -359,17 +359,119 @@ CRpsPssmFile::operator()() const
     return m_Data;
 }
 
-CBlastRPSInfo::CBlastRPSInfo(const string& rps_dbname)
-    : m_RpsInfo(0)
-{
-    auto_ptr<BlastRPSInfo> rps_info;
 
-    // Allocate the core data structure
-    try { rps_info.reset(new BlastRPSInfo); }
-    catch (const bad_alloc&) {
-        NCBI_THROW(CBlastSystemException, eOutOfMemory,
-                   "RPSInfo allocation failed");
+/////////////////////////////////////////////////////////////////////////////
+//
+// CRpsFreqsFile
+//
+/////////////////////////////////////////////////////////////////////////////
+
+/// This class represents the .wcounts file in a RPS-BLAST file, which contains
+/// the weighted residue frequencies for the database
+class CRpsFreqsFile : public CRpsMmappedFile {
+public:
+    /// Extension associated with the RPS-BLAST database PSSM file
+    static const string kExtension;
+
+    /// Parametrized constructor
+    /// @param filename_no_extn name of the file without extension
+    CRpsFreqsFile(const string& filename_no_extn);
+
+    /// Lend the caller the pointer to the data structure this object manages.
+    /// Caller MUST NOT deallocate the return value.
+    const BlastRPSProfileHeader* operator()() const;
+private:
+    /// The data this class manages
+    BlastRPSProfileHeader* m_Data;
+};
+
+const string CRpsFreqsFile::kExtension(".wcounts");
+
+CRpsFreqsFile::CRpsFreqsFile(const string& filename_no_extn)
+    : CRpsMmappedFile(filename_no_extn + kExtension)
+{
+
+    m_Data = (BlastRPSProfileHeader*)m_MmappedFile->GetPtr();
+
+    if (m_Data->magic_number != RPS_MAGIC_NUM &&
+        m_Data->magic_number != RPS_MAGIC_NUM_28) {
+        m_Data = NULL;
+        NCBI_THROW(CBlastException, eRpsInit,
+               "RPS BLAST profile file (" + filename_no_extn + kExtension + 
+               ") is either corrupt or constructed for an incompatible "
+               "architecture");
     }
+}
+
+const BlastRPSProfileHeader*
+CRpsFreqsFile::operator()() const
+{
+    return m_Data;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// CRpsObsrFile
+//
+/////////////////////////////////////////////////////////////////////////////
+
+/// This class represents the .obsr file in a RPS-BLAST file, which contains
+/// the numbers of independent observations for the database
+class CRpsObsrFile : public CRpsMmappedFile {
+public:
+    /// Extension associated with the RPS-BLAST database PSSM file
+    static const string kExtension;
+
+    /// Parametrized constructor
+    /// @param filename_no_extn name of the file without extension
+    CRpsObsrFile(const string& filename_no_extn);
+
+    /// Lend the caller the pointer to the data structure this object manages.
+    /// Caller MUST NOT deallocate the return value.
+    const BlastRPSProfileHeader* operator()() const;
+private:
+    /// Header
+    BlastRPSProfileHeader* m_Data;
+};
+
+const string CRpsObsrFile::kExtension(".obsr");
+
+CRpsObsrFile::CRpsObsrFile(const string& filename_no_extn)
+    : CRpsMmappedFile(filename_no_extn + kExtension)
+{
+    m_Data = (BlastRPSProfileHeader*)m_MmappedFile->GetPtr();
+
+    if (m_Data->magic_number != RPS_MAGIC_NUM &&
+        m_Data->magic_number != RPS_MAGIC_NUM_28) {
+        m_Data = NULL;
+        NCBI_THROW(CBlastException, eRpsInit,
+               "RPS BLAST profile file (" + filename_no_extn + kExtension + 
+               ") is either corrupt or constructed for an incompatible "
+               "architecture");
+    }
+}
+
+const BlastRPSProfileHeader*
+CRpsObsrFile::operator()() const
+{
+    return m_Data;
+}
+
+
+CBlastRPSInfo::CBlastRPSInfo(const string& rps_dbname)
+{
+    x_Init(rps_dbname, fRpsBlast);
+}
+
+CBlastRPSInfo::CBlastRPSInfo(const string& rps_dbname, int flags)
+{
+    x_Init(rps_dbname, flags);
+}
+
+void CBlastRPSInfo::x_Init(const string& rps_dbname, int flags)
+{
+    m_RpsInfo = NULL;
 
     // Obtain the full path to the database
     string path;
@@ -383,21 +485,68 @@ CBlastRPSInfo::CBlastRPSInfo(const string& rps_dbname)
     }
     _ASSERT(!path.empty());
 
-    // Load the various files
-    m_AuxFile.Reset(new CRpsAuxFile(path));
-    m_LutFile.Reset(new CRpsLookupTblFile(path));
-    m_PssmFile.Reset(new CRpsPssmFile(path));
+    auto_ptr<BlastRPSInfo> rps_info;
+
+    // Allocate the core data structure
+    try { rps_info.reset(new BlastRPSInfo); }
+    catch (const bad_alloc&) {
+        NCBI_THROW(CBlastSystemException, eOutOfMemory,
+                   "RPSInfo allocation failed");
+    }
 
     // Assign the pointers to the core data structure
     m_RpsInfo = rps_info.release();
-    // Note that these const_casts are only needed because the data structure
-    // doesn't take const pointers, but these won't be modified at all
-    m_RpsInfo->lookup_header = 
-        const_cast<BlastRPSLookupFileHeader*>((*m_LutFile)());
-    m_RpsInfo->profile_header = 
-        const_cast<BlastRPSProfileHeader*>((*m_PssmFile)());
-    m_RpsInfo->aux_info = 
-        *const_cast<BlastRPSAuxInfo*>((*m_AuxFile)());
+
+    m_RpsInfo->lookup_header = NULL;
+    m_RpsInfo->profile_header = NULL;
+    m_RpsInfo->freq_header = NULL;
+    m_RpsInfo->obsr_header = NULL;
+
+        // Load the various files
+    if (flags & fAuxInfoFile) {
+        m_AuxFile.Reset(new CRpsAuxFile(path));
+
+        // Note that these const_casts are only needed because the data structure
+        // doesn't take const pointers, but these won't be modified at all
+        m_RpsInfo->aux_info = 
+            *const_cast<BlastRPSAuxInfo*>((*m_AuxFile)());
+    }
+
+    if (flags & fLookupTableFile) {
+        m_LutFile.Reset(new CRpsLookupTblFile(path));
+
+        // Note that these const_casts are only needed because the data structure
+        // doesn't take const pointers, but these won't be modified at all
+        m_RpsInfo->lookup_header = 
+            const_cast<BlastRPSLookupFileHeader*>((*m_LutFile)());
+    }
+
+    if (flags & fPssmFile) {
+        m_PssmFile.Reset(new CRpsPssmFile(path));
+
+        // Note that these const_casts are only needed because the data structure
+        // doesn't take const pointers, but these won't be modified at all
+        m_RpsInfo->profile_header = 
+            const_cast<BlastRPSProfileHeader*>((*m_PssmFile)());
+    }
+
+    if (flags & fFrequenciesFile) {
+        m_FreqsFile.Reset(new CRpsFreqsFile(path));
+
+        // Note that these const_casts are only needed because the data structure
+        // doesn't take const pointers, but these won't be modified at all
+        m_RpsInfo->freq_header = 
+            const_cast<BlastRPSProfileHeader*>((*m_FreqsFile)());
+    }
+
+    if (flags & fObservationsFile) {
+        m_ObsrFile.Reset(new CRpsObsrFile(path));
+
+        // Note that these const_casts are only needed because the data structure
+        // doesn't take const pointers, but these won't be modified at all
+        m_RpsInfo->obsr_header =
+            const_cast<BlastRPSProfileHeader*>((*m_ObsrFile)());
+    }
 }
 
 CBlastRPSInfo::~CBlastRPSInfo()

@@ -385,6 +385,13 @@ public:
     bool GetIgnoreMsaMaster() const;
     void SetIgnoreMsaMaster(bool val);
     
+
+    /******************** DELTA-BLAST options *******************/
+
+    double GetDomainInclusionThreshold(void) const;
+    void SetDomainInclusionThreshold(double th);
+
+
     /******************** Megablast Database Index *******************/
     bool GetUseIndex() const;
     bool GetForceIndex() const;

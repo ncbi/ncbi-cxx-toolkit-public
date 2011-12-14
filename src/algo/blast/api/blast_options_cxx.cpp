@@ -125,7 +125,8 @@ enum EBlastOptIdx {
     eBlastOpt_MbIndexName,          // corresponds to -index_name flag
     eBlastOpt_BestHitScoreEdge,
     eBlastOpt_BestHitOverhang,
-    eBlastOpt_IgnoreMsaMaster
+    eBlastOpt_IgnoreMsaMaster,
+    eBlastOpt_DomainInclusionThreshold  // options for DELTA-BLAST
 };
 
 /// Encapsulates all blast input parameters
@@ -2229,6 +2230,27 @@ CBlastOptions::SetIgnoreMsaMaster(bool val)
     }
     if (m_Remote) {
         m_Remote->SetValue(eBlastOpt_IgnoreMsaMaster, val);
+    }
+}
+
+/******************** DELTA-Blast options *******************/
+double
+CBlastOptions::GetDomainInclusionThreshold() const
+{
+    if (! m_Local) {
+        x_Throwx("Error: GetQueryNumObservations() not available.");
+    }
+    return m_Local->GetDomainInclusionThreshold();
+}
+
+void
+CBlastOptions::SetDomainInclusionThreshold(double th)
+{
+    if (m_Local) {
+        m_Local->SetDomainInclusionThreshold(th);
+    }
+    if (m_Remote) {
+        m_Remote->SetValue(eBlastOpt_DomainInclusionThreshold, th);
     }
 }
 

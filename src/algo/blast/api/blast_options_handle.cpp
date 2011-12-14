@@ -46,6 +46,7 @@
 #include <algo/blast/api/psiblast_options.hpp>
 #include <algo/blast/api/phiblast_nucl_options.hpp>
 #include <algo/blast/api/phiblast_prot_options.hpp>
+#include <algo/blast/api/deltablast_options.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -172,6 +173,10 @@ CBlastOptionsFactory::Create(EProgram program, EAPILocality locality)
         retval = new CPHIBlastNuclOptionsHandle(locality);
         break;
 
+    case eDeltaBlast:
+        retval = new CDeltaBlastOptionsHandle(locality);
+        break;
+
     case eBlastNotSet:
         NCBI_THROW(CBlastException, eInvalidArgument,
                    "eBlastNotSet may not be used as argument");
@@ -201,6 +206,7 @@ CBlastOptionsFactory::GetTasks(ETaskSets choice /* = eAll */)
     if (choice == eProtProt || choice == eAll) {
         retval.insert("blastp");
         retval.insert("blastp-short");
+        retval.insert("deltablast");
     }
 
     if (choice == eAll) {
@@ -268,6 +274,9 @@ CBlastOptionsFactory::GetDocumentation(const string& task_name)
     } else if (task == "tblastx") {
         retval.assign("Search of a (translated) nucleotide query against ");
         retval += "a (translated) nucleotide database";
+    } else if (task == "deltablast") {
+        retval.assign("DELTA-BLAST builds profile using conserved domain ");
+        retval += "and uses this profile to search protein database";
     } else {
         retval.assign("Unknown task");
     }
@@ -374,6 +383,10 @@ CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
     else if (!NStr::CompareNocase(task, "tblastx"))
     {
          retval = CBlastOptionsFactory::Create(eTblastx, locality);
+    }
+    else if (!NStr::CompareNocase(task, "deltablast"))
+    {
+         retval = CBlastOptionsFactory::Create(eDeltaBlast, locality);
     }
     else
     {

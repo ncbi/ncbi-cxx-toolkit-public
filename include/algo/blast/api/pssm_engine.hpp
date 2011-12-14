@@ -39,6 +39,7 @@
 #include <algo/blast/api/pssm_input.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 #include <algo/blast/api/blast_results.hpp> // for CBlastAncillaryData
+#include <algo/blast/api/cdd_pssm_input.hpp>
 
 // Forward declarations
 class CPssmCreateTestFixture;      // unit test class
@@ -111,6 +112,10 @@ public:
     /// @throws CPssmEngineException if validation fails
     CPssmEngine(IPssmInputFreqRatios* input);
 
+    /// Constructor to configure the PSSM engine with a PSSM input data
+    /// strategy object for CDD-based PSSM computation
+    CPssmEngine(IPssmInputCdd* input);
+
     /// Destructor
     ~CPssmEngine();
 
@@ -134,6 +139,10 @@ private:
     IPssmInputFreqRatios*   m_PssmInputFreqRatios;
     /// Blast score block structure
     CBlastScoreBlk          m_ScoreBlk;
+
+    /// Pointer to strategy to process raw PSSM input data
+    /// Note: Only one m_PssmInput* should be non-NULL
+    IPssmInputCdd* m_PssmInputCdd;
 
     /// Copies query sequence and adds protein sentinel bytes at the beginning
     /// and at the end of the sequence.
@@ -199,6 +208,12 @@ private:
     /// frequency ratios, creates a PSSM using the CORE C PSSM engine API
     CRef<objects::CPssmWithParameters>
     x_CreatePssmFromFreqRatios();
+
+    /// Using IPssmInputCdd as a delegate to provide data in the form of
+    /// multiple alignment of CDs, creates PSSM using the CORE C PSSM
+    /// engine API
+    CRef<objects::CPssmWithParameters>
+    x_CreatePssmFromCDD();
 
     /// Converts the PSIMatrix structure into a ASN.1 CPssmWithParameters object
     /// @param pssm input PSIMatrix structure [in]

@@ -33,7 +33,7 @@
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] = 
-	"$Id$";
+        "$Id$";
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <ncbi_pch.hpp>
@@ -163,22 +163,6 @@ CPsiBlastApp::ComputePssmForNextIteration(const CBioseq& bioseq,
                                             m_AncillaryData, diags);
 }
 
-/// Auxiliary function to extract the ancillary data from the PSSM.
-static CRef<CBlastAncillaryData>
-s_ExtractAncillaryData(const CPssmWithParameters& pssm)
-{
-    _ASSERT(pssm.CanGetPssm());
-    pair<double, double> lambda, k, h;
-    lambda.first = pssm.GetPssm().GetLambdaUngapped();
-    lambda.second = pssm.GetPssm().GetLambda();
-    k.first = pssm.GetPssm().GetKappaUngapped();
-    k.second = pssm.GetPssm().GetKappa();
-    h.first = pssm.GetPssm().GetHUngapped();
-    h.second = pssm.GetPssm().GetH();
-    return CRef<CBlastAncillaryData>(new CBlastAncillaryData(lambda, k, h, 0,
-                                                             true));
-}
-
 bool 
 CPsiBlastApp::DoIterations(CRef<CBlastOptionsHandle> opts_hndl,
                            CRef<CBlastQueryVector> query,
@@ -271,7 +255,7 @@ CPsiBlastApp::DoIterations(CRef<CBlastOptionsHandle> opts_hndl,
                 } else {
                     psiblast.Reset(new CPsiBlast(query_factory, db_adapter, psi_opts));
                 }
-            	psiblast->SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());
+                    psiblast->SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());
             }
 
             while (itr) {
@@ -322,20 +306,20 @@ CPsiBlastApp::DoIterations(CRef<CBlastOptionsHandle> opts_hndl,
 
                 if (run_token & 2)
                 {
-                	CConstRef<CSeq_align_set> aln(results_1st_query.GetSeqAlign());
-                	CPsiBlastIterationState::TSeqIds ids;
-                	CPsiBlastIterationState::GetSeqIds(aln, psi_opts, ids);
+                        CConstRef<CSeq_align_set> aln(results_1st_query.GetSeqAlign());
+                        CPsiBlastIterationState::TSeqIds ids;
+                        CPsiBlastIterationState::GetSeqIds(aln, psi_opts, ids);
 
-                	itr.Advance(ids);
+                        itr.Advance(ids);
 
-                	if (itr) {
+                        if (itr) {
                         CConstRef<CBioseq> seq =
                          s_GetQueryBioseq(query, scope, pssm);
                         pssm = 
                          ComputePssmForNextIteration(*seq, aln, psi_opts, scope,
-                                      results_1st_query.GetAncillaryData());
+                                     results_1st_query.GetAncillaryData());
                         psiblast->SetPssm(pssm);
-                	}
+                        }
                 }
                 else
                   break;
@@ -365,7 +349,7 @@ CPsiBlastApp::SavePssmToFile(CRef<CPssmWithParameters> pssm,
          itr->GetIterationNumber() >= 1)) {
         if (m_AncillaryData.Empty() && pssm.NotEmpty()) {
             _ASSERT(itr->GetIterationNumber() == 1);
-            m_AncillaryData = s_ExtractAncillaryData(*pssm);
+            m_AncillaryData = ExtractPssmAncillaryData(*pssm);
         }
         CBlastFormatUtil::PrintAsciiPssm(*pssm, 
                                          m_AncillaryData,

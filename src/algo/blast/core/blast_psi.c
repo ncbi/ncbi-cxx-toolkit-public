@@ -229,6 +229,102 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
     return PSI_SUCCESS;
 }
 
+int
+PSICreatePssmFromCDD(const PSICdMsa* cd_msa,                /* [in] */
+                     const PSIBlastOptions* options,        /* [in] */
+                     BlastScoreBlk* sbp,                    /* [in] */
+                     const PSIDiagnosticsRequest* request,  /* [in] */
+                     PSIMatrix** pssm,                      /* [out] */
+                     PSIDiagnosticsResponse** diagnostics)  /* [out] */
+{
+    _PSISequenceWeights* seq_weights = NULL; 
+    _PSIInternalPssmData* internal_pssm = NULL;
+    int status = 0;
+
+    if ( !cd_msa || !options || !sbp || !pssm ) {
+        return PSIERR_BADPARAM;
+    }
+
+    /*** Run the engine's stages ***/
+
+
+    /*** Allocate data structures ***/
+    seq_weights = _PSISequenceWeightsNew(cd_msa->dimensions, sbp);
+    internal_pssm = _PSIInternalPssmDataNew(cd_msa->dimensions->query_length,
+                                            (Uint4) sbp->alphabet_size);
+    *pssm = PSIMatrixNew(cd_msa->dimensions->query_length, 
+                         (Uint4) sbp->alphabet_size);
+    if ( !seq_weights || !internal_pssm || !*pssm ) {
+        s_PSICreatePssmCleanUp(pssm, NULL, NULL, NULL, seq_weights,
+                               internal_pssm);
+        return PSIERR_OUTOFMEM;
+    }
+
+    status = _PSIValidateCdMSA(cd_msa, sbp->alphabet_size);
+    if (status != PSI_SUCCESS) {
+        s_PSICreatePssmCleanUp(pssm, NULL, NULL, NULL, seq_weights,
+                               internal_pssm);
+        return status;
+    }
+
+    status = _PSIComputeFrequenciesFromCDs(cd_msa, sbp, options, seq_weights);
+
+    if (status != PSI_SUCCESS) {
+        s_PSICreatePssmCleanUp(pssm, NULL, NULL, NULL, seq_weights,
+                               internal_pssm);
+        return status;
+    }
+
+    status = _PSIComputeFreqRatiosFromCDs(cd_msa, seq_weights, sbp,  
+                                          options->pseudo_count, 
+                                          internal_pssm);
+    if (status != PSI_SUCCESS) {
+        s_PSICreatePssmCleanUp(pssm, NULL, NULL, NULL, seq_weights,
+                               internal_pssm);
+        return status;
+    }
+
+    status = _PSICreateAndScalePssmFromFrequencyRatios
+        (internal_pssm, cd_msa->query, cd_msa->dimensions->query_length, 
+         seq_weights->std_prob, sbp, options->impala_scaling_factor);
+    if (status != PSI_SUCCESS) {
+        s_PSICreatePssmCleanUp(pssm, NULL, NULL, NULL, seq_weights,
+                               internal_pssm);
+        return status;
+    }
+    /*** Save the pssm outgoing parameter ***/
+    s_PSISavePssm(internal_pssm, sbp, *pssm);
+
+
+    /*** Save diagnostics if required ***/
+    if (request && diagnostics) {
+
+        *diagnostics = PSIDiagnosticsResponseNew(
+                                        cd_msa->dimensions->query_length,
+                                        (Uint4) sbp->alphabet_size,
+                                        request);
+        if ( !*diagnostics ) {
+            /* FIXME: This could be changed to return a warning and not
+              * deallocate PSSM data */
+            s_PSICreatePssmCleanUp(pssm, NULL, NULL, NULL, seq_weights,
+                                   internal_pssm);
+            return PSIERR_OUTOFMEM;
+        }
+        status = _PSISaveCDDiagnostics(cd_msa, seq_weights, internal_pssm,
+                                       *diagnostics);
+        if (status != PSI_SUCCESS) {
+            *diagnostics = PSIDiagnosticsResponseFree(*diagnostics);
+            s_PSICreatePssmCleanUp(pssm, NULL, NULL, NULL, seq_weights,
+                                   internal_pssm);
+            return status;
+        }
+    }
+    s_PSICreatePssmCleanUp(NULL, NULL, NULL, NULL, seq_weights, internal_pssm);
+
+    return PSI_SUCCESS;
+
+}
+
 /** Convenience function to deallocate data structures allocated in
  * PSICreatePssmFromFrequencyRatios
  * @param pssm PSSM and statistical information [in|out]
@@ -610,6 +706,14 @@ PSIDiagnosticsResponseNew(Uint4 query_length, Uint4 alphabet_size,
         }
     }
 
+    if (wants->independent_observations) {
+        retval->independent_observations =
+            (double*) calloc(query_length, sizeof(double));
+        if ( !retval->independent_observations ) {
+            return PSIDiagnosticsResponseFree(retval);
+        }
+    }
+
     return retval;
 }
 
@@ -640,6 +744,10 @@ PSIDiagnosticsResponseFree(PSIDiagnosticsResponse* diags)
 
     if (diags->gapless_column_weights) {
         sfree(diags->gapless_column_weights);
+    }
+
+    if (diags->independent_observations) {
+        sfree(diags->independent_observations);
     }
 
     sfree(diags);

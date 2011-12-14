@@ -50,6 +50,8 @@ class CBlastRPSAuxInfo;
 class CRpsAuxFile;
 class CRpsLookupTblFile;
 class CRpsPssmFile;
+class CRpsFreqsFile;
+class CRpsObsrFile;
 
 // The BLAST Engine currently needs the BlastRPSInfo structure for both the
 // preliminary stage and the traceback search. In practice, the setup code
@@ -64,9 +66,36 @@ class CRpsPssmFile;
 /// the CORE of BLAST. This class is meant to be kept in a CRef<>.
 class NCBI_XBLAST_EXPORT CBlastRPSInfo : public CObject {
 public:
+
+    /// Flags for opening database files
+    enum EOpenFlags {
+        // Open lookup table file
+        fLookupTableFile = 1,
+        /// Open pssm file
+        fPssmFile = 2,
+        /// Open auxiliary information file
+        fAuxInfoFile = 4,
+        /// Open residue frequencies file
+        fFrequenciesFile = 8,
+        /// Open file with numbers of independent observations
+        fObservationsFile = 16,
+
+        /// Flags set for RPS-BLAST
+        fRpsBlast = fLookupTableFile | fPssmFile | fAuxInfoFile,
+
+        /// Flags set for DELTA-BLAST
+        fDeltaBlast = fFrequenciesFile | fObservationsFile
+    };
+
+public:
     /// Parametrized constructor
     /// @param rps_dbname name of the RPS-BLAST database
     CBlastRPSInfo(const string& rps_dbname);
+
+    /// Parametrized constructor
+    /// @param rps_dbname name of the RPS-BLAST database
+    /// @param flags Flags for which database files to open
+    CBlastRPSInfo(const string& rps_dbname, int flags);
 
     /// Destructor
     ~CBlastRPSInfo();
@@ -91,6 +120,13 @@ public:
 
     /// Returns the gap extension cost associated with the scoring matrix above
     int GetGapExtensionCost() const;
+
+
+protected:
+
+    /// Initialize attributes
+    void x_Init(const string& rps_dbname, int flags);
+
 private:
     /// Prohibit copy-constructor
     CBlastRPSInfo(const CBlastRPSInfo& rhs);
@@ -104,6 +140,14 @@ private:
     /// The lookup table RPS-BLAST file (.loo)
     CRef<CRpsLookupTblFile> m_LutFile;
 
+    /// Weighted residue frequencies file (.wcounts)
+    /// used by delta-blast
+    CRef<CRpsFreqsFile> m_FreqsFile;
+
+    /// Number of independent observations file (.obsr)
+    /// used by delta-blast
+    CRef<CRpsObsrFile> m_ObsrFile;
+    
     /// Pointer which contains pointers to data managed by the data members
     /// above
     BlastRPSInfo* m_RpsInfo;

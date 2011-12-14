@@ -18,7 +18,8 @@ SRC = test_objmgr blast_test_util blast_unit_test bl2seq_unit_test \
     querydata_unit_test queryinfo_unit_test redoalignment_unit_test \
     search_strategy_unit_test setupfactory_unit_test mockseqsrc1_unit_test \
 	mockseqsrc2_unit_test seqinfosrc_unit_test ntlookup_unit_test \
-	seqsrc_unit_test seqsrc_mock
+	seqsrc_unit_test seqsrc_mock pssm_test_util pssmcreate_cdd_unit_test \
+        delta_unit_test
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE) -I$(srcdir)/../../api \
            -I$(srcdir)/../../core -I$(top_srcdir)/algo/blast/api \

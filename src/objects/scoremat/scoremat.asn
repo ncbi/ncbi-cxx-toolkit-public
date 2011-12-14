@@ -203,7 +203,11 @@ PssmIntermediateData ::= SEQUENCE {
     -- query)
     -- NOTE: this is needed for diagnostics information only (i.e.:
     -- -out_ascii_pssm option in psiblast)
-    numMatchingSeqs             SEQUENCE OF INTEGER OPTIONAL
+    numMatchingSeqs             SEQUENCE OF INTEGER OPTIONAL,
+
+    -- Number of independent observations per position of the PSSM
+    -- NOTE: this is needed for building CDD database for DELTA-BLAST
+    numIndeptObsr               SEQUENCE OF REAL OPTIONAL
 }
 
 -- Position-specific scoring matrix

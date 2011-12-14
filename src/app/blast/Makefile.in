@@ -20,7 +20,8 @@ rpstblastn \
 igblastn \
 igblastp \
 seedtop \
-blast_formatter
+blast_formatter \
+deltablast
 
 USR_PROJ = legacy_blast update_blastdb
 
@@ -57,4 +58,6 @@ rmblastn: lib
 	make -f Makefile.rmblastn_app
 seedtop: lib
 	make -f Makefile.seedtop_app
+deltablast: lib
+	make -f Makefile.deltablast_app
 
