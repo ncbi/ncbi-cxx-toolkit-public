@@ -2138,6 +2138,7 @@ HIWNT	s	Hampshire and Isle of Wight Naturalists' Trust Ltd.
 HJBL	s	Escuela Nacional de Ciencias Forestales
 HJBS	s	Fundacio Jardi Botanic de Soller
 HK	s	Agriculture, Fisheries, and Conservation Department
+HKAS	s	Cryptogamic Herbarium of Kunming Institute of Botany
 HKBU	s	Hong Kong Baptist University, Biology Department
 HKFRS	s	Hong Kong Fisheries Research Station
 HKGL	s	Naturwissenschaftliche Sammlungen des Kantons Glarus
@@ -3882,6 +3883,7 @@ MZ<CZE>	s	Jihomoravske muzeum Znojmo
 MZ<POL>	s	Museum of the Earth, Polish Academy of Sciences
 MZAF	s	Museo Zoologico dell'Accademia dei Fisiocritici
 MZB	s	Museum Zoologicum Bogoriense
+MZB:Amp	s	Museum Zoologicum Bogoriense, Amphibian Collection
 MZBL	s	Museo de Zoologica
 MZBS	s	Museo Zoologia
 MZCP	s	Universidade de Coimbra
@@ -5926,6 +5928,7 @@ UKEN	s	University of Kentucky
 UKKP	c	Universiti Kebangsaan Kultur Perubatan
 UKKY	s	University of Kunming
 UKMB	s	Universiti Kebangsaan Malaysia, Botany Department
+UKMHC	s	Universiti Kebangsaan Malaysia Herpetological Collection
 UKMS<MYS>	s	Universiti Kebangsaan Malaysia, Kampus Sabah
 UKMS<SDN>	s	Sudan Natural History Museum
 UKS	s	University of Khartoum
