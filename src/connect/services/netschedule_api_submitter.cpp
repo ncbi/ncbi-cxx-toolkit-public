@@ -313,6 +313,8 @@ bool CNetScheduleSubmitter::Read(string& batch_id,
     vector<string>& job_ids,
     unsigned max_jobs, unsigned timeout)
 {
+    job_ids.clear();
+
     string cmd("READ ");
 
     cmd.append(NStr::UIntToString(max_jobs));
