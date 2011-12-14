@@ -1361,16 +1361,24 @@ SplitSeqalignByMolecularType(vector< CRef<CSeq_align_set> >&
                              ILinkoutDB* linkoutdb,
                              const string& mv_build_name)
 {
+    CConstRef<CSeq_id> prevSubjectId;
+    int count = 0;
     ITERATE(CSeq_align_set::Tdata, iter, source.Get()) { 
         
-        const CSeq_id& id = (*iter)->GetSeq_id(1);
+        const CSeq_id& id = (*iter)->GetSeq_id(1);        
         try {
-            const CBioseq_Handle& handle = scope.GetBioseqHandle(id);
+            const CBioseq_Handle& handle = scope.GetBioseqHandle(id);            
             if (handle) {
-                int linkout = linkoutdb 
-                    ? linkoutdb->GetLinkout(id, mv_build_name) 
-                    : 0;
-                        
+                int linkout,linkoutPrev;
+                if(prevSubjectId.Empty() || !id.Match(*prevSubjectId)){
+                    prevSubjectId = &id;
+                    linkout = linkoutdb ? linkoutdb->GetLinkout(id, mv_build_name): 0;
+                    linkoutPrev = linkout;
+                    count++;
+                }
+                else {
+                    linkout = linkoutPrev;
+                }                        
                 if (linkout & eGenomicSeq) {
                     if (sort_method == 1) {
                         target[1]->Set().push_back(*iter);
@@ -1394,11 +1402,9 @@ SplitSeqalignByMolecularType(vector< CRef<CSeq_align_set> >&
             
         } catch (const CException&){
             target[0]->Set().push_back(*iter); //no bioseq found, leave untouched
-        }
-        
-    }
+        }        
+    }    
 }
-
 
 void CAlignFormatUtil::HspListToHitList(list< CRef<CSeq_align_set> >& target,
                                         const CSeq_align_set& source) 
