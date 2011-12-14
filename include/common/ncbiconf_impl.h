@@ -56,7 +56,6 @@
 #if defined(_MT)  &&  !defined(NCBI_WITHOUT_MT)
 #  if defined(NCBI_OS_MSWIN)
 #    define NCBI_WIN32_THREADS
-#    define NCBI_USE_CRITICAL_SECTION
 #  elif defined(NCBI_OS_UNIX)
 #    define NCBI_POSIX_THREADS
 #  else
@@ -68,10 +67,6 @@
 
 #if !defined(NCBI_NO_THREADS)
 #  define NCBI_THREADS
-#endif
-
-#if defined(NCBI_POSIX_THREADS) || (defined(NCBI_WIN32_THREADS) && defined(NCBI_USE_CRITICAL_SECTION))
-#  define NCBI_HAVE_CONDITIONAL_VARIABLE
 #endif
 
 

@@ -5432,14 +5432,15 @@ void CFileDiagHandler::Post(const SDiagMessage& mess)
 }
 
 
-#if defined(NCBI_HAVE_CONDITIONAL_VARIABLE)
-
 class CAsyncDiagThread : public CThread
 {
 public:
     CAsyncDiagThread(void)
         : m_NeedStop(false),
           m_SubHandler(NULL)
+#ifndef NCBI_HAVE_CONDITIONAL_VARIABLE
+        , m_QueueSem(0, 100)
+#endif
     {}
     virtual ~CAsyncDiagThread(void)
     {}
@@ -5450,7 +5451,11 @@ public:
     bool m_NeedStop;
     CDiagHandler* m_SubHandler;
     CFastMutex m_QueueLock;
+#ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
     CConditionVariable m_QueueCond;
+#else
+    CSemaphore m_QueueSem;
+#endif
     deque<SDiagMessage*> m_MsgQueue;
 };
 
@@ -5491,7 +5496,11 @@ CAsyncDiagHandler::RemoveFromDiag(void)
     SetDiagHandler(m_AsyncThread->m_SubHandler);
     m_AsyncThread->m_NeedStop = true;
     try {
+#ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
         m_AsyncThread->m_QueueCond.SignalAll();
+#else
+        m_AsyncThread->m_QueueSem.Post(10);
+#endif
         m_AsyncThread->Join();
     }
     catch (CException& ex) {
@@ -5522,8 +5531,13 @@ CAsyncDiagHandler::Post(const SDiagMessage& mess)
 
     CFastMutexGuard guard(thr->m_QueueLock);
     thr->m_MsgQueue.push_back(save_msg);
-    if (thr->m_MsgQueue.size() == 1)
+    if (thr->m_MsgQueue.size() == 1) {
+#ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
         thr->m_QueueCond.SignalSome();
+#else
+        thr->m_QueueSem.Post();
+#endif
+    }
 }
 
 
@@ -5531,17 +5545,22 @@ void*
 CAsyncDiagThread::Main(void)
 {
     deque<SDiagMessage*> save_msgs;
-    for (;;) {
+    while (!m_NeedStop) {
         {{
             CFastMutexGuard guard(m_QueueLock);
-            while (m_MsgQueue.size() == 0  &&  !m_NeedStop)
+            while (m_MsgQueue.size() == 0  &&  !m_NeedStop) {
+#ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
                 m_QueueCond.WaitForSignal(m_QueueLock);
+#else
+                guard.Release();
+                m_QueueSem.Wait();
+                guard.Guard(m_QueueLock);
+#endif
+            }
             save_msgs.swap(m_MsgQueue);
         }}
 
-        if (save_msgs.size() == 0)
-            break;
-
+drain_messages:
         while (!save_msgs.empty()) {
             SDiagMessage* msg = save_msgs.front();
             save_msgs.pop_front();
@@ -5549,10 +5568,12 @@ CAsyncDiagThread::Main(void)
             delete msg;
         }
     }
+    if (m_MsgQueue.size() != 0) {
+        save_msgs.swap(m_MsgQueue);
+        goto drain_messages;
+    }
     return NULL;
 }
-
-#endif
 
 
 extern bool SetLogFile(const string& file_name,
