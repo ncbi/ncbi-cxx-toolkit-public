@@ -134,8 +134,6 @@ typedef pthread_mutex_t TSystemMutex;
 
 #elif defined(NCBI_WIN32_THREADS)
 
-#  define NCBI_USE_CRITICAL_SECTION
-
 /// Define a platform independent system mutex.
 #  if defined(NCBI_USE_CRITICAL_SECTION)
 typedef CRITICAL_SECTION TSystemMutex;
@@ -1374,10 +1372,6 @@ private:
 /// CConditionVariable --
 ///
 ///   Condition variable.
-
-#if defined(NCBI_POSIX_THREADS) || (defined(NCBI_WIN32_THREADS) && defined(NCBI_USE_CRITICAL_SECTION))
-#  define NCBI_HAVE_CONDITIONAL_VARIABLE
-#endif
 
 #if defined(NCBI_HAVE_CONDITIONAL_VARIABLE)
 
