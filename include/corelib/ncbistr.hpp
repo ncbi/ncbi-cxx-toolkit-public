@@ -3742,6 +3742,34 @@ void NStr::NumericToString(string& out_str, Uint8 value,
 {
     NStr::UInt8ToString(out_str, value,flags,base);
 }
+#elif SIZEOF_LONG_LONG
+template<> inline
+string NStr::NumericToString(long long value,
+    TNumToStringFlags flags, int  base)
+{
+    return NStr::Int8ToString(value,flags,base);
+}
+
+template<> inline
+string NStr::NumericToString(unsigned long long value,
+    TNumToStringFlags flags, int  base)
+{
+    return NStr::UInt8ToString(value,flags,base);
+}
+
+template<> inline
+void NStr::NumericToString(string& out_str, long long value,
+    TNumToStringFlags flags, int  base)
+{
+    NStr::Int8ToString(out_str, value,flags,base);
+}
+
+template<> inline
+void NStr::NumericToString(string& out_str, unsigned long long value,
+    TNumToStringFlags flags, int  base)
+{
+    NStr::UInt8ToString(out_str, value,flags,base);
+}
 #endif
 
 //---------------------- float
