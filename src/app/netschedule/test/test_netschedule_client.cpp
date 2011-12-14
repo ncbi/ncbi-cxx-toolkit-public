@@ -54,8 +54,7 @@ static const int s_DTokenLength   = 2;
 static char **s_Tokens;
 static char s_TokenLetters[] = "0123456789"
                                "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                               "abcdefghijklmnopqrstuvwxyz"
-                               "~!@#$%^&*()_+:;<,>.?/\\";
+                               "abcdefghijklmnopqrstuvwxyz";
 
 static void s_SeedTokens(int num_aff_tokens)
 {
@@ -256,47 +255,50 @@ int CTestNetScheduleClient::Run(void)
 
     NcbiCout << "Waiting for " << jcount << " jobs..." << NcbiEndl;
 
-    unsigned done_jobs = 0;
-    unsigned failed_jobs = 0;
-
     for (;;) {
         string batch_id;
         vector<string> read_job_ids;
 
         while (submitter.Read(batch_id, read_job_ids, 1)) {
             ITERATE(vector<string>, job_id, read_job_ids) {
-                if (submitted_job_ids.erase(*job_id))
-                    ++done_jobs;
+                submitted_job_ids.erase(*job_id);
             }
             submitter.ReadConfirm(batch_id, read_job_ids);
         }
 
-        if (done_jobs == jcount)
+        if (submitted_job_ids.empty())
+            break;
+
+        bool all_deliberately_failed = true;
+
+        CNetScheduleJob job;
+
+        ITERATE(set<string>, job_id, submitted_job_ids) {
+            job.job_id = *job_id;
+            if (cl.GetJobDetails(job) != CNetScheduleAPI::eFailed ||
+                    job.error_msg != "DELIBERATE_FAILURE") {
+                all_deliberately_failed = false;
+                break;
+            }
+        }
+
+        if (all_deliberately_failed)
             break;
 
         if (sw.Elapsed() > double(maximum_runtime)) {
-            ITERATE(set<string>, job_id, submitted_job_ids) {
-                CNetScheduleJob job;
-                job.job_id = *job_id;
-                if (cl.GetJobDetails(job) != CNetScheduleAPI::eFailed ||
-                        job.error_msg != "DELIBERATE_FAILURE") {
-                    fprintf(stderr, "The test has exceeded its maximum run time "
-                            "of %u seconds.\nUse '-maxruntime' to override.\n",
-                            maximum_runtime);
-                    return 3;
-                }
-                ++failed_jobs;
-            }
-            break;
+            fprintf(stderr, "The test has exceeded its maximum "
+                    "run time of %u seconds.\nUse '-maxruntime' "
+                    "to override.\n", maximum_runtime);
+            return 3;
         }
 
-        NcbiCout << (jcount - done_jobs) << " jobs to go" << NcbiEndl;
+        NcbiCout << submitted_job_ids.size() << " jobs to go" << NcbiEndl;
         SleepMilliSec(2000);
     }
 
     NcbiCout << "Done. Wall-clock time: " << sw.Elapsed() << NcbiEndl;
-    if (failed_jobs > 0)
-        NcbiCout << failed_jobs <<
+    if (!submitted_job_ids.empty())
+        NcbiCout << submitted_job_ids.size() <<
             " jobs were deliberately failed by the worker node(s)." << NcbiEndl;
 
     return 0;

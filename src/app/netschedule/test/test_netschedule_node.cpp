@@ -200,8 +200,8 @@ int CTestNetScheduleNode::Run(void)
 
             job.ret_code = 0;
 
-            if (s_Random.GetRand() >
-                    TParam_FailureRate::GetDefault() * s_Random.GetMax())
+            if (s_Random.GetRand() >= (s_Random.GetMax() + 1) *
+                    TParam_FailureRate::GetDefault())
                 ns_exec.PutResult(job);
             else {
                 job.error_msg = "DELIBERATE_FAILURE";
