@@ -235,7 +235,7 @@ private:
     EIO_Status x_GetFirewallConfiguration(const SConnNetInfo* net_info);
 
     /// Cancellation support
-    void              x_SetCancelCheckCB(CConn_IOStream& io);
+    void              x_EnableCancelCB(CConn_IOStream& io);
     static EIO_Status x_IsCanceled(CONN conn, ECONN_Callback type, void* data);
 
 public:
