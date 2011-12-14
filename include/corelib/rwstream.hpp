@@ -77,8 +77,8 @@ BEGIN_NCBI_SCOPE
 ///
 /// However, any portable implementation should *not* rely on how data chunks
 /// are being flushed or requested by the stream implementations.  If further
-/// factoring into blocks (e.g. specifically-sized) is necessary for an I/O
-/// device to operate properly, that should be implemented at the level of
+/// factoring into blocks (e.g. specially-sized) is necessary for the I/O
+/// device to operate correctly, that should be implemented at the level of
 /// respective IReader/IWriter API explicitly.
 
 
@@ -95,7 +95,7 @@ BEGIN_NCBI_SCOPE
 ///
 /// @param flags
 ///     controls whether IReader is destroyed upon stream destruction,
-///     whether exceptions cause logging (or leaked, or caught silently), etc.
+///     whether exceptions get logged (or leaked, or caught silently), etc.
 ///
 /// Special case of "buf_size" == 1 and "buf" == 0 creates unbuffered stream.
 ///
@@ -131,7 +131,7 @@ private:
 ///
 /// @param flags
 ///     controls whether IWriter is destroyed upon stream destruction,
-///     whether exceptions cause logging (or leaked, or caught silently), etc.
+///     whether exceptions get logged (or leaked, or caught silently), etc.
 ///
 /// Special case of "buf_size" == 1 and "buf" == 0 creates unbuffered stream.
 ///
@@ -168,7 +168,7 @@ private:
 ///
 /// @param flags
 ///     controls whether IReaderWriter is destroyed upon stream destruction,
-///     whether exceptions cause logging (or leaked, or caught silently), etc.
+///     whether exceptions get logged (or leaked, or caught silently), etc.
 ///
 /// Special case of "buf_size" == 1 and "buf" == 0 creates unbuffered stream.
 ///
