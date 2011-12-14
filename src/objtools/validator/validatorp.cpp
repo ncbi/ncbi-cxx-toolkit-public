@@ -1348,7 +1348,7 @@ bool CValidError_imp::Validate
             }
             ++feat_inf;
         }
-        if (num_inferences > 1000 || num_accessions > 1000) {
+        if (/* num_inferences > 1000 || */ num_accessions > 1000) {
             // warn about too many inferences
             PostErr (eDiag_Info, eErr_SEQ_FEAT_TooManyInferenceAccessions,
                      "Skipping validation of " + NStr::SizetToString (num_inferences) + " /inference qualifiers with "
