@@ -135,9 +135,11 @@ int CTestNetScheduleNode::Run(void)
 
     string program_name = GetProgramDisplayName();
 
-    LOG_POST(Info << program_name << " started");
-    LOG_POST(Info << "UDP port: " << udp_port);
-    LOG_POST(Info << "Failure rate: " << TParam_FailureRate::GetDefault());
+    if (verbose) {
+        LOG_POST(Info << program_name << " started");
+        LOG_POST(Info << "UDP port: " << udp_port);
+        LOG_POST(Info << "Failure rate: " << TParam_FailureRate::GetDefault());
+    }
 
     CNetScheduleAPI ns_api(service, program_name, queue_name);
 
