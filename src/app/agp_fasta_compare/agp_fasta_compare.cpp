@@ -397,8 +397,10 @@ int CAgpFastaCompareApplication::Run(void)
     x_OutputDifferences( vSeqIdFASTAOnly, vSeqIdAGPOnly, diffs_to_hide );
 
     const bool bThereWereDifferences = ( 
-        ! vSeqIdFASTAOnly.empty() ||
-        ! vSeqIdAGPOnly.empty() );
+        ( ! vSeqIdFASTAOnly.empty() &&
+          ! (diffs_to_hide & fDiffsToHide_ObjfileOnly) ) ||
+        ( ! vSeqIdAGPOnly.empty() &&
+          ! (diffs_to_hide & fDiffsToHide_AGPOnly) ) );
     if( ! bThereWereDifferences ) {
         LOG_POST(Error << "Success: No differences found");
     }
