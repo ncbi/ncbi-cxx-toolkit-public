@@ -171,25 +171,25 @@ public:
     /// application-specific way. Returns true if resolved, with the
     /// data item's value in 'value'
     ///
-    virtual bool ResolveIdentifier(const std::string& identifier, 
-                                   bool& value) { return false; }
-    virtual bool ResolveIdentifier(const std::string& identifier, 
-                                   int& value) { return false; }
-    virtual bool ResolveIdentifier(const std::string& identifier, 
-                                   double& value) { return false; }
-    virtual bool ResolveIdentifier(const std::string& identifier, 
-                                   std::string& value) { return false; }
-    virtual bool HasIdentifier(const std::string& identifier) { return false; }
+    virtual bool ResolveIdentifier(const std::string& /* identifier */, 
+                                   bool& /* value */) { return false; }
+    virtual bool ResolveIdentifier(const std::string& /* identifier */, 
+                                   int& /* value */) { return false; }
+    virtual bool ResolveIdentifier(const std::string& /* identifier */, 
+                                   double& /* value */) { return false; }
+    virtual bool ResolveIdentifier(const std::string& /* identifier */, 
+                                   std::string& /* value */) { return false; }
+    virtual bool HasIdentifier(const std::string& /* identifier */) { return false; }
     
     /// Some applications may know the type of an identifier.  This hook
     /// should be overriden to return an identifier's type, when available.
     /// Return one of eIntConst, eBoolConst, eFloatConst, eString, or eNotSet.
-    virtual CQueryParseNode::EType IdentifierType(const std::string& identifier)
+    virtual CQueryParseNode::EType IdentifierType(const std::string& /* identifier */)
         { return CQueryParseNode::eNotSet; }
 
     virtual void EvalStart() {}
     /// Move to the next row for eval, return false if table size < m_EvalRow+1
-    virtual bool EvalNext(CQueryParseTree& qtree) {return false;}
+    virtual bool EvalNext(CQueryParseTree& /* qtree */) {return false;}
     virtual bool EvalComplete() {return true;}
 
     int GetQueriedCount() const { return  m_QueriedCount; }
