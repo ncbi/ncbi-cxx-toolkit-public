@@ -110,6 +110,7 @@ static const int k_IdStartMargin = 2;
 static const int k_SeqStopMargin = 2;
 static const int k_StartSequenceMargin = 2;
 static const int k_AlignStatsMargin = 2;
+static const int k_SequencePropertyLabelMargin = 2;
 
 static const string k_UncheckabeCheckbox = "<input type=\"checkbox\" \
 name=\"getSeqMaster\" value=\"\" onClick=\"uncheckable('getSeqAlignment%d',\
@@ -192,6 +193,7 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign,
     m_Ctx = NULL;
     m_Matrix = NULL; //-RMH-    
     m_DomainInfo = NULL;
+    m_SeqPropertyLabel = new vector<string>;
     m_TranslatedFrameForLocalSeq = eFirst;
     CNcbiMatrix<int> mtx;
     CAlignFormatUtil::GetAsciiProteinMatrix(matrix_name 
@@ -1206,41 +1208,14 @@ void CDisplaySeqalign::x_AddTranslationForLocalSeq(vector<TSAlnFeatureInfoList>&
             }
         }
         
-
-        int subject_frame_extra = m_AV->GetSeqPosFromAlnPos(1, non_gap_aln_pos)%3;
-        int subject_frame_start;
-
-        if (subject_frame_extra == m_TranslatedFrameForLocalSeq) {
-            subject_frame_start = m_AV->GetSeqPosFromAlnPos(1, non_gap_aln_pos);
-        } else {
-           subject_frame_start = m_AV->GetSeqStart(1) + 
-            (3 - (subject_frame_extra - m_TranslatedFrameForLocalSeq));
-        }
-    
-        CRef<CSeq_loc> subject_loc(new CSeq_loc((CSeq_loc::TId &) m_AV->GetSeqId(1),
-                                           (CSeq_loc::TPoint) subject_frame_start,
-                                           (CSeq_loc::TPoint) m_AV->GetSeqStop(1)));
-        string subject_translation;
-        CSeqTranslator::Translate(*subject_loc,
-                                  m_Scope,
-                                  subject_translation);
-        int subject_first_encoding_base = m_AV->GetAlnPosFromSeqPos(1, subject_frame_start);
-        string subject_feat = s_GetFinalTranslatedString(*subject_loc, m_Scope, 
-                                                         subject_first_encoding_base,
-                                                         m_AV->GetAlnStop() + 1,
-                                                         subject_translation, 
-                                                         sequence[1], gap_char);
-          
-        CRef<SAlnFeatureInfo> subject_featInfo(new SAlnFeatureInfo);
-        
-        x_SetFeatureInfo(subject_featInfo, *subject_loc, 0, m_AV->GetAlnStop(), 
-                         m_AV->GetAlnStop(), ' ',
-                         " ", subject_feat);   
-
-        retval[1].push_back(subject_featInfo);
-        
+                
         //master
-        int master_frame_start = m_AV->GetSeqPosFromSeqPos(0, 1, subject_frame_start);
+        int master_frame_extra = m_AV->GetSeqPosFromAlnPos(0, non_gap_aln_pos)%3;
+        int master_frame_start;
+        //= m_AV->GetSeqPosFromSeqPos(0, 1, subject_frame_start);
+        master_frame_start = m_AV->GetSeqPosFromAlnPos(0, non_gap_aln_pos) + 
+                (3 - (master_frame_extra - m_TranslatedFrameForLocalSeq))%3;
+       
         CRef<CSeq_loc> master_loc(new CSeq_loc((CSeq_loc::TId &) m_AV->GetSeqId(0),
                                                master_frame_start,
                                                m_AV->GetSeqStop(0)));
@@ -1262,6 +1237,32 @@ void CDisplaySeqalign::x_AddTranslationForLocalSeq(vector<TSAlnFeatureInfoList>&
                          " ", master_feat);   
 
         retval[0].push_back(master_featInfo);
+
+        //subject
+        int subject_frame_start = m_AV->GetSeqPosFromSeqPos(1, 0, master_frame_start);
+
+        CRef<CSeq_loc> subject_loc(new CSeq_loc((CSeq_loc::TId &) m_AV->GetSeqId(1),
+                                           (CSeq_loc::TPoint) subject_frame_start,
+                                           (CSeq_loc::TPoint) m_AV->GetSeqStop(1)));
+        string subject_translation;
+        CSeqTranslator::Translate(*subject_loc,
+                                  m_Scope,
+                                  subject_translation);
+        int subject_first_encoding_base = m_AV->GetAlnPosFromSeqPos(1, subject_frame_start);
+        string subject_feat = s_GetFinalTranslatedString(*subject_loc, m_Scope, 
+                                                         subject_first_encoding_base,
+                                                         m_AV->GetAlnStop() + 1,
+                                                         subject_translation, 
+                                                         sequence[1], gap_char);
+          
+        CRef<SAlnFeatureInfo> subject_featInfo(new SAlnFeatureInfo);
+        
+        x_SetFeatureInfo(subject_featInfo, *subject_loc, 0, m_AV->GetAlnStop(), 
+                         m_AV->GetAlnStop(), ' ',
+                         " ", subject_feat);   
+
+        retval[1].push_back(subject_featInfo);
+
     }
 }
 
@@ -1334,7 +1335,9 @@ CDisplaySeqalign::SAlnRowInfo *CDisplaySeqalign::x_PrepareRowData(void)
     vector<double> percent_ident(rowNum-1);
     vector<int> align_length(rowNum-1);
     vector<string> align_stats(rowNum-1);
+    vector<string> seq_property_label(rowNum-1);
     int max_align_stats = 0;
+    int max_seq_property_label = 0;
 
     //Add external query feature info such as phi blast pattern
     vector<TSAlnFeatureInfoList> bioseqFeature;
@@ -1398,7 +1401,21 @@ CDisplaySeqalign::SAlnRowInfo *CDisplaySeqalign::x_PrepareRowData(void)
             max_align_stats = max(max_align_stats,
                                   (int)align_stats[row-1].size());
         }
-
+        
+        //seq property label
+        if(row > 0 && 
+           m_AlignOption & eShowSequencePropertyLabel &&
+           m_AlignOption&eMergeAlign && m_AV->GetWidth(row) != 3) {
+            
+            if((int)m_SeqPropertyLabel->size() >= row -1){
+                seq_property_label[row-1] = (*m_SeqPropertyLabel)[row]; //skip the first one which is for query
+            } else {//something is wrong
+                seq_property_label[row-1] = NcbiEmptyString;
+            } 
+            
+            max_seq_property_label = max(max_seq_property_label,
+                                         (int)seq_property_label[row-1].size());
+        }
 
         if (row == 1 && eShowTranslationForLocalSeq & m_AlignOption 
             && m_AV->GetWidth(row) != 3 
@@ -1477,6 +1494,8 @@ CDisplaySeqalign::SAlnRowInfo *CDisplaySeqalign::x_PrepareRowData(void)
     alnRoInfo->align_length = align_length;
     alnRoInfo->align_stats = align_stats;
     alnRoInfo->max_align_stats_len=max_align_stats;
+    alnRoInfo->seq_property_label = seq_property_label;
+    alnRoInfo->max_seq_property_label = max_seq_property_label;
     return alnRoInfo;
 }
 //uses m_AV    m_LineLen m_AlignOption m_QueryNumber
@@ -1490,11 +1509,21 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
     vector<int> prev_stop(rowNum);
     CNcbiOstrstream out;
     bool show_align_stats = false;
+    bool show_seq_property_label = false;
+    
      //only for untranslated alignment
     if(m_AlignOption&eShowAlignStatsForMultiAlignView &&
        m_AlignOption&eMergeAlign && 
        m_AV->GetWidth(0) != 3 && m_AV->GetWidth(1) != 3) {
         show_align_stats = true;
+    }
+
+    
+     //only for untranslated alignment
+    if(m_AlignOption&eShowSequencePropertyLabel &&
+       m_AlignOption&eMergeAlign &&
+       m_AV->GetWidth(0) != 3 && m_AV->GetWidth(1) != 3) {
+        show_seq_property_label = true;
     }
 
     //output rows    
@@ -1527,10 +1556,16 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
                                   insertList);
                 }
                 //feature for query
-                if(row == 0){          
+                if(row == 0){    
+                    int base_margin = alnRoInfo->maxIdLen;
+                    if (show_align_stats) {
+                        base_margin += alnRoInfo->max_align_stats_len + k_AlignStatsMargin;
+                    }
+                    if (show_seq_property_label){
+                        base_margin += alnRoInfo->max_seq_property_label + k_SequencePropertyLabelMargin;
+                    }
                     x_PrintFeatures(alnRoInfo->bioseqFeature[row], row, curRange,
-                                    j,(int)actualLineLen,  show_align_stats ? 
-                                    ((int)alnRoInfo->maxIdLen + alnRoInfo->max_align_stats_len + k_AlignStatsMargin) : alnRoInfo->maxIdLen,
+                                    j,(int)actualLineLen,  base_margin,
                                     alnRoInfo->maxStartLen, alnRoInfo->max_feature_num, 
                                     master_feat_str, out); 
                 }
@@ -1606,16 +1641,29 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
                         }        
                     }
                 }
-             
+
+                if(show_seq_property_label){
+                    if (row > 0){
+                        
+                        out<<alnRoInfo->seq_property_label[row-1];
+                        CAlignFormatUtil::AddSpace(out, alnRoInfo->max_seq_property_label -
+                                                   (int)alnRoInfo->seq_property_label[row-1].size() + k_SequencePropertyLabelMargin);
+                    } else {
+                        CAlignFormatUtil::AddSpace(out, alnRoInfo->max_seq_property_label + k_SequencePropertyLabelMargin);
+                    }
+                } 
+                
                 if(show_align_stats){
                     if (row > 0){
                         out<<alnRoInfo->align_stats[row-1];
                         CAlignFormatUtil::AddSpace(out, alnRoInfo->max_align_stats_len -
                                                    (int)alnRoInfo->align_stats[row-1].size() + k_AlignStatsMargin);
                     } else {
-                        CAlignFormatUtil::AddSpace(out, alnRoInfo->max_align_stats_len +  + k_AlignStatsMargin);
+                        CAlignFormatUtil::AddSpace(out, alnRoInfo->max_align_stats_len + k_AlignStatsMargin);
                     }
                 }
+             
+                
                 //highlight the seqid for pairwise-with-identity format
                 if(row>0 && m_AlignOption&eHtml && !(m_AlignOption&eMergeAlign)
                    && m_AlignOption&eShowIdentity && has_mismatch && 
@@ -1684,14 +1732,19 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
                                         m_QueryNumber);
                                 out << checkboxBuf;
                             }
-                            CAlignFormatUtil::AddSpace(out, 
-                                                       show_align_stats ? 
-                                                       ((int)alnRoInfo->maxIdLen
-                                                        + alnRoInfo->max_align_stats_len + 
-                                                        k_AlignStatsMargin) : alnRoInfo->maxIdLen
-                                                       +k_IdStartMargin
-                                                       +alnRoInfo->maxStartLen
-                                                       +k_StartSequenceMargin);
+                            
+                            int base_margin = alnRoInfo->maxIdLen
+                                +k_IdStartMargin
+                                +alnRoInfo->maxStartLen
+                                +k_StartSequenceMargin;
+                            
+                            if (show_align_stats) {
+                                base_margin += alnRoInfo->max_align_stats_len + k_AlignStatsMargin;
+                            }
+                            if (show_seq_property_label){
+                                base_margin += alnRoInfo->max_seq_property_label + k_SequencePropertyLabelMargin;
+                            }
+                            CAlignFormatUtil::AddSpace(out, base_margin);
                             out << insertPosString<<"\n";
                         }
                         if((m_AlignOption&eHtml)
@@ -1702,22 +1755,33 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
                                     m_QueryNumber);
                             out << checkboxBuf;
                         }
-                        CAlignFormatUtil::AddSpace(out, show_align_stats ? 
-                                                       ((int)alnRoInfo->maxIdLen
-                                                        + alnRoInfo->max_align_stats_len + 
-                                                        k_AlignStatsMargin) : alnRoInfo->maxIdLen
-                                                   +k_IdStartMargin
-                                                   +alnRoInfo->maxStartLen
-                                                   +k_StartSequenceMargin);
+                        int base_margin = alnRoInfo->maxIdLen
+                            +k_IdStartMargin
+                            +alnRoInfo->maxStartLen
+                            +k_StartSequenceMargin;
+                        
+                        if (show_align_stats) {
+                            base_margin += alnRoInfo->max_align_stats_len + k_AlignStatsMargin;
+                        }
+                        if (show_seq_property_label){
+                            base_margin += alnRoInfo->max_seq_property_label + k_SequencePropertyLabelMargin;
+                        }
+                        CAlignFormatUtil::AddSpace(out, base_margin);
                         out<<*iter<<"\n";
                         insertAlready = true;
                     }
                 } 
                 //display subject sequence feature.
                 if(row > 0){ 
+                    int base_margin = alnRoInfo->maxIdLen;
+                    if (show_align_stats) {
+                        base_margin += alnRoInfo->max_align_stats_len + k_AlignStatsMargin;
+                    }
+                    if (show_seq_property_label){
+                        base_margin += alnRoInfo->max_seq_property_label + k_SequencePropertyLabelMargin;
+                    }
                     x_PrintFeatures(alnRoInfo->bioseqFeature[row], row, curRange,
-                                    j,(int)actualLineLen, show_align_stats ? 
-                                    ((int)alnRoInfo->maxIdLen + alnRoInfo->max_align_stats_len + k_AlignStatsMargin) : alnRoInfo->maxIdLen,
+                                    j,(int)actualLineLen, base_margin,
                                     alnRoInfo->maxStartLen, alnRoInfo->max_feature_num, 
                                     master_feat_str, out);
                 }

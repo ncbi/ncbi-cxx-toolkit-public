@@ -177,7 +177,9 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
                                                   //local master nuc sequence
                                                   //and first local subject seq only.
 
-        eShowAlignStatsForMultiAlignView = (1 << 30)
+        eShowAlignStatsForMultiAlignView = (1 << 30),  //percent identity etc. only for multi-align view.
+
+        eShowSequencePropertyLabel = (1 << 31) //Property label (such as chain type for igblast) only for multi-align view
     };
     
     enum TranslatedFrameForLocalSeq {
@@ -418,6 +420,11 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
         
         m_DomainInfo = domain;
     }
+
+    void SetSequencePropertyLabel(const vector<string>* SequencePropertyLabel) {
+        m_SeqPropertyLabel = SequencePropertyLabel;
+    }
+
 private:
 
     /// Prohibit copy constructor
@@ -476,6 +483,8 @@ private:
         vector<double> percent_ident;
         vector<string> align_stats;
         int max_align_stats_len;
+        vector<string> seq_property_label;
+        int max_seq_property_label;
     };
 
     
@@ -546,6 +555,8 @@ private:
     /// external feature such as phiblast
     list < FeatureInfo * >* m_QueryFeature; 
     list <CRef<DomainInfo> >* m_DomainInfo; 
+    const vector<string>* m_SeqPropertyLabel;
+
     objects::CScope & m_Scope;
     objects::CAlnVec *m_AV;                  // current aln vector
     int **m_Matrix;                 // matrix used to compute the midline

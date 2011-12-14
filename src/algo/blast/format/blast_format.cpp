@@ -960,7 +960,8 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
     const CRef<CIgAnnotation> & annots = results.GetIgAnnotation();
     
     for (int i=0; i<9; i = i + 2) {
-        if (annots->m_DomainInfo[i] >= 0){            CRef<CDisplaySeqalign::DomainInfo> temp(new CDisplaySeqalign::DomainInfo);
+        if (annots->m_DomainInfo[i] >= 0){      
+            CRef<CDisplaySeqalign::DomainInfo> temp(new CDisplaySeqalign::DomainInfo);
             int start = annots->m_DomainInfo[i];
             int subject_start = annots->m_DomainInfo_S[i];
 
@@ -996,8 +997,16 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
         display.SetTranslatedFrameForLocalSeq((CDisplaySeqalign::TranslatedFrameForLocalSeq) annots->m_FrameInfo[0]); 
         flags += CDisplaySeqalign::eShowTranslationForLocalSeq;
     }
- 
-   
+    flags += CDisplaySeqalign::eShowSequencePropertyLabel;
+    vector<string> chain_type_list;
+    ITERATE(vector<string>, iter, annots->m_ChainType) {
+        if (*iter=="N/A"){
+            chain_type_list.push_back(NcbiEmptyString);
+        } else {
+            chain_type_list.push_back(*iter); 
+        }
+    }
+    display.SetSequencePropertyLabel(&chain_type_list);
     // set the alignment flags
     display.SetAlignOption(flags);
     if (m_Program == "blastn") {
