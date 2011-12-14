@@ -912,7 +912,7 @@ CRef<CSeq_literal> CHgvsParser::x_raw_seq(TIterator const& i, const CContext& co
     CSeqportUtil::Validate(literal->GetSeq_data(), &bad);
 
     if(bad.size() > 0) {
-        HGVS_THROW(eSemantic, "Invalid sequence at pos " +  NStr::IntToString(bad[0]) + " in " + seq_str);
+        HGVS_THROW(eSemantic, "Invalid sequence at pos " +  NStr::NumericToString(bad[0]) + " in " + seq_str);
     }
 
     return literal;
@@ -1678,7 +1678,7 @@ CRef<CSeq_feat> CHgvsParser::AsVariationFeat(const string& hgvs_expression, TOpF
             tree_to_xml(ostr, info.trees, hgvs_expression.c_str() , CHgvsParser::SGrammar::s_GetRuleNames());
             string tree_str = CNcbiOstrstreamToString(ostr);
 #endif
-            HGVS_THROW(eGrammatic, "Syntax error at pos " + NStr::IntToString(info.length + 1));
+            HGVS_THROW(eGrammatic, "Syntax error at pos " + NStr::NumericToString(info.length + 1));
         } else {
             CContext context(m_scope);
             feat = x_root(info.trees.begin(), context);
@@ -1798,7 +1798,7 @@ string CHgvsParser::x_InstToString(const CVariation_inst& inst, CSeq_loc& loc)
             out += x_LocToSeqStr(*hgvs_loc);
         } else {
             //...del25
-            out += NStr::IntToString(len);
+            out += NStr::NumericToString(len);
         }
     } else if(inst.GetType() == CVariation_inst::eType_ins) {
         //If the insertion is this*2 then this is a dup
