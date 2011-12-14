@@ -37,6 +37,7 @@
 #include <connect/ncbi_core_cxx.hpp>
 #include <util/random_gen.hpp>
 
+#include <set>
 
 USING_NCBI_SCOPE;
 
@@ -112,7 +113,7 @@ void CTestNetScheduleClient::Init(void)
     CONNECT_Init();
     SetDiagPostFlag(eDPF_Trace);
     SetDiagPostLevel(eDiag_Info);
-    
+
     // Setup command line arguments and parameters
 
     // Create command-line argument descriptions class
@@ -123,15 +124,18 @@ void CTestNetScheduleClient::Init(void)
                               "NetSchedule client");
 
     arg_desc->AddKey("service", "ServiceName",
-        "NetSchedule service name (format: host:port or servcie_name)", 
+        "NetSchedule service name (format: host:port or servcie_name)",
         CArgDescriptions::eString);
 
     arg_desc->AddKey("queue", "QueueName",
         "NetSchedule queue name",
         CArgDescriptions::eString);
-    
+
     arg_desc->AddOptionalKey("ilen", "InputLength", "Average input length",
                              CArgDescriptions::eInteger);
+
+    arg_desc->AddOptionalKey("maxruntime", "MaxRunTime",
+            "Maximum run time of this test", CArgDescriptions::eInteger);
 
     arg_desc->AddOptionalKey("input", "InputString", "Input string",
                              CArgDescriptions::eString);
@@ -142,7 +146,7 @@ void CTestNetScheduleClient::Init(void)
     arg_desc->AddOptionalKey("naff", "AffinityTokens",
         "Number of different affinities", CArgDescriptions::eInteger);
 
-    
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
@@ -152,11 +156,16 @@ int CTestNetScheduleClient::Run(void)
 {
     CArgs args = GetArgs();
     const string&  service  = args["service"].AsString();
-    const string&  queue_name = args["queue"].AsString();  
+    const string&  queue_name = args["queue"].AsString();
 
-    unsigned jcount = 10000;
-    if (args["jobs"])
+    unsigned jcount = 1000;
+    if (args["jobs"]) {
         jcount = args["jobs"].AsInteger();
+        if (jcount == 0) {
+            fputs("The 'jobs' parameter cannot be zero.\n", stderr);
+            return 1;
+        }
+    }
 
     unsigned naff = 17;
     if (args["naff"])
@@ -167,6 +176,10 @@ int CTestNetScheduleClient::Run(void)
     if (args["ilen"])
         input_length = args["ilen"].AsInteger();
 
+    unsigned maximum_runtime = 60;
+    if (args["maxruntime"])
+        maximum_runtime = args["maxruntime"].AsInteger();
+
     CNetScheduleAPI::EJobStatus status;
     CNetScheduleAPI cl(service, "client_test", queue_name);
 
@@ -176,7 +189,6 @@ int CTestNetScheduleClient::Run(void)
     cl.GetService().SetCommunicationTimeout(comm_timeout);
 
     CNetScheduleSubmitter submitter = cl.GetSubmitter();
-    CNetScheduleAdmin admin = cl.GetAdmin();
 
     string input;
     if (args["input"]) {
@@ -186,14 +198,6 @@ int CTestNetScheduleClient::Run(void)
     } else {
         input = "Hello " + queue_name;
     }
-
-    /*
-    CNetScheduleJob job(input);
-    submitter.SubmitJob(job);
-    NcbiCout << job.job_id << NcbiEndl;
-
-    vector<string> jobs;
-    */
 
     if (0)
     {{
@@ -205,20 +209,25 @@ int CTestNetScheduleClient::Run(void)
     if (status == CNetScheduleAPI::eDone) {
         NcbiCout << j1.job_id << " done." << NcbiEndl;
     } else {
-        NcbiCout << j1.job_id << " is not done in " 
+        NcbiCout << j1.job_id << " is not done in "
                  << wait_time << " seconds." << NcbiEndl;
     }
     NcbiCout << "SubmitAndWait...done." << NcbiEndl;
     }}
 
+    set<string> submitted_job_ids;
+
+    CStopWatch sw(CStopWatch::eStart);
 
     {{
-    CStopWatch sw(CStopWatch::eStart);
     NcbiCout << "Batch submit " << jcount << " jobs..." << NcbiEndl;
 
-    for (unsigned i = 0; i < jcount; i += 1000) {
+    unsigned batch_size = 1000;
+
+    for (unsigned i = 0; i < jcount; i += batch_size) {
         vector<CNetScheduleJob> jobs;
-        unsigned batch_size = jcount - i < 1000 ? jcount - i : 1000;
+        if (jcount - i < batch_size)
+            batch_size = jcount - i;
         for (unsigned j = 0; j < batch_size; ++j) {
             CNetScheduleJob job(input);
             job.tags.push_back(CNetScheduleAPI::TJobTag("test", ""));
@@ -226,8 +235,14 @@ int CTestNetScheduleClient::Run(void)
             jobs.push_back(job);
         }
         submitter.SubmitJobBatch(jobs);
+        ITERATE(vector<CNetScheduleJob>, job, jobs) {
+            submitted_job_ids.insert(job->job_id);
+        }
         NcbiCout << "." << flush;
     }
+
+    _ASSERT(submitted_job_ids.size() == jcount);
+
     NcbiCout << NcbiEndl << "Done." << NcbiEndl;
     double elapsed = sw.Elapsed();
 
@@ -241,11 +256,48 @@ int CTestNetScheduleClient::Run(void)
 
     NcbiCout << "Waiting for " << jcount << " jobs..." << NcbiEndl;
 
-    unsigned long job_cnt;
-    while ((job_cnt = admin.CountActiveJobs()) != 0) {
-        NcbiCout << job_cnt << " jobs to go" << NcbiEndl;
+    unsigned done_jobs = 0;
+    unsigned failed_jobs = 0;
+
+    for (;;) {
+        string batch_id;
+        vector<string> read_job_ids;
+
+        while (submitter.Read(batch_id, read_job_ids, 1)) {
+            ITERATE(vector<string>, job_id, read_job_ids) {
+                if (submitted_job_ids.erase(*job_id))
+                    ++done_jobs;
+            }
+            submitter.ReadConfirm(batch_id, read_job_ids);
+        }
+
+        if (done_jobs == jcount)
+            break;
+
+        if (sw.Elapsed() > double(maximum_runtime)) {
+            ITERATE(set<string>, job_id, submitted_job_ids) {
+                CNetScheduleJob job;
+                job.job_id = *job_id;
+                if (cl.GetJobDetails(job) != CNetScheduleAPI::eFailed ||
+                        job.error_msg != "DELIBERATE_FAILURE") {
+                    fprintf(stderr, "The test has exceeded its maximum run time "
+                            "of %u seconds.\nUse '-maxruntime' to override.\n",
+                            maximum_runtime);
+                    return 3;
+                }
+                ++failed_jobs;
+            }
+            break;
+        }
+
+        NcbiCout << (jcount - done_jobs) << " jobs to go" << NcbiEndl;
         SleepMilliSec(2000);
     }
+
+    NcbiCout << "Done. Wall-clock time: " << sw.Elapsed() << NcbiEndl;
+    if (failed_jobs > 0)
+        NcbiCout << failed_jobs <<
+            " jobs were deliberately failed by the worker node(s)." << NcbiEndl;
 
     return 0;
 }
