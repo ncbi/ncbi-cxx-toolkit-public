@@ -35,6 +35,7 @@
 #include <serial/exception.hpp>
 #include <serial/objectiter.hpp>
 #include <serial/iterator.hpp>
+#include <serial/objistr.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -426,6 +427,14 @@ TObjectPtr CType_Base::GetObjectPtr(const CTypesIterator& it)
 TConstObjectPtr CType_Base::GetObjectPtr(const CTypesConstIterator& it)
 {
     return it.GetFoundPtr();
+}
+
+TObjectPtr CType_Base::GetParentObjectPtr(CObjectIStream& in,
+                                          TTypeInfo typeInfo,
+                                          size_t max_depth,
+                                          size_t min_depth)
+{
+    return in.GetParentObjectPtr(typeInfo, max_depth, min_depth);
 }
 
 class CCObjectClassInfo : public CVoidTypeInfo

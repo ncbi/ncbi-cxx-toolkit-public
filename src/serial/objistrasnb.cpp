@@ -1008,7 +1008,7 @@ void CObjectIStreamAsnBinary::EndClassMember(void)
 void CObjectIStreamAsnBinary::ReadClassRandom(const CClassTypeInfo* classType,
                                               TObjectPtr classPtr)
 {
-    BEGIN_OBJECT_FRAME2(eFrameClass, classType);
+    BEGIN_OBJECT_FRAME3(eFrameClass, classType, classPtr);
     ExpectContainer(classType->RandomOrder());
 
     ReadClassRandomContentsBegin(classType);
@@ -1029,7 +1029,7 @@ void
 CObjectIStreamAsnBinary::ReadClassSequential(const CClassTypeInfo* classType,
                                              TObjectPtr classPtr)
 {
-    BEGIN_OBJECT_FRAME2(eFrameClass, classType);
+    BEGIN_OBJECT_FRAME3(eFrameClass, classType, classPtr);
     ExpectContainer(classType->RandomOrder());
     ReadClassSequentialContentsBegin(classType);
 

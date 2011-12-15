@@ -1282,7 +1282,7 @@ CObjectIStreamAsn::BeginClassMember(const CClassTypeInfo* classType,
 void CObjectIStreamAsn::ReadClassRandom(const CClassTypeInfo* classType,
                                         TObjectPtr classPtr)
 {
-    BEGIN_OBJECT_FRAME2(eFrameClass, classType);
+    BEGIN_OBJECT_FRAME3(eFrameClass, classType, classPtr);
     StartBlock();
     
     ReadClassRandomContentsBegin(classType);
@@ -1301,7 +1301,7 @@ void CObjectIStreamAsn::ReadClassRandom(const CClassTypeInfo* classType,
 void CObjectIStreamAsn::ReadClassSequential(const CClassTypeInfo* classType,
                                             TObjectPtr classPtr)
 {
-    BEGIN_OBJECT_FRAME2(eFrameClass, classType);
+    BEGIN_OBJECT_FRAME3(eFrameClass, classType, classPtr);
     StartBlock();
     
     ReadClassSequentialContentsBegin(classType);

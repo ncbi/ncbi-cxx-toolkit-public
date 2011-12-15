@@ -75,9 +75,12 @@ public:
     
     EFrameType GetFrameType(void) const;
     bool HasTypeInfo(void) const;
+    bool HasTypeInfo(TTypeInfo type) const;
     TTypeInfo GetTypeInfo(void) const;
     bool HasMemberId(void) const;
     const CMemberId& GetMemberId(void) const;
+
+    TConstObjectPtr GetObjectPtr(void) const;
 
     void SetNotag(bool set=true);
     bool GetNotag(void) const;
@@ -96,10 +99,11 @@ private:
     friend class CObjectStack;
 
     EFrameType m_FrameType;
-    TTypeInfo m_TypeInfo;
-    const CMemberId* m_MemberId;
     bool m_Notag;
     ENsQualifiedMode m_NsqMode;
+    TTypeInfo m_TypeInfo;
+    const CMemberId* m_MemberId;
+    TConstObjectPtr m_ObjectPtr;
 };
 
 #define ThrowError(flag, mess) \
@@ -116,7 +120,8 @@ public:
 
     size_t GetStackDepth(void) const;
 
-    TFrame& PushFrame(EFrameType type, TTypeInfo typeInfo);
+    TFrame& PushFrame(EFrameType type, TTypeInfo typeInfo,
+                      TConstObjectPtr objectPtr = 0);
     TFrame& PushFrame(EFrameType type, const CMemberId& memberId);
     TFrame& PushFrame(EFrameType type);
 
@@ -191,10 +196,12 @@ private:
     BEGIN_OBJECT_FRAME_OFx(Stream, (CObjectStackFrame::Type))
 #define BEGIN_OBJECT_FRAME_OF2(Stream, Type, Arg) \
     BEGIN_OBJECT_FRAME_OFx(Stream, (CObjectStackFrame::Type, Arg))
+#define BEGIN_OBJECT_FRAME_OF3(Stream, Type, Arg1, Arg2)                \
+    BEGIN_OBJECT_FRAME_OFx(Stream, (CObjectStackFrame::Type, Arg1, Arg2))
 
 #define BEGIN_OBJECT_FRAME(Type) BEGIN_OBJECT_FRAME_OF(*this, Type)
 #define BEGIN_OBJECT_FRAME2(Type, Arg) BEGIN_OBJECT_FRAME_OF2(*this, Type, Arg)
-#define BEGIN_OBJECT_FRAME3(Type, Arg) BEGIN_OBJECT_FRAME_OFx(*this, (Type, Arg))
+#define BEGIN_OBJECT_FRAME3(Type, Arg1, Arg2) BEGIN_OBJECT_FRAME_OF3(*this, Type, Arg1, Arg2)
 #define END_OBJECT_FRAME() END_OBJECT_FRAME_OF(*this)
 
 #define BEGIN_OBJECT_2FRAMES_OFx(Stream, Args) \

@@ -271,7 +271,7 @@ void CChoiceTypeInfoFunctions::ReadChoiceDefault(CObjectIStream& in,
     const CChoiceTypeInfo* choiceType =
         CTypeConverter<CChoiceTypeInfo>::SafeCast(objectType);
 
-    BEGIN_OBJECT_FRAME_OF2(in, eFrameChoice, choiceType);
+    BEGIN_OBJECT_FRAME_OF3(in, eFrameChoice, choiceType, objectPtr);
     in.BeginChoice(choiceType);
     BEGIN_OBJECT_FRAME_OF(in, eFrameChoiceVariant);
     TMemberIndex index = in.BeginChoiceVariant(choiceType);
@@ -311,7 +311,7 @@ void CChoiceTypeInfoFunctions::WriteChoiceDefault(CObjectOStream& out,
     const CChoiceTypeInfo* choiceType =
         CTypeConverter<CChoiceTypeInfo>::SafeCast(objectType);
 
-    BEGIN_OBJECT_FRAME_OF2(out, eFrameChoice, choiceType);
+    BEGIN_OBJECT_FRAME_OF3(out, eFrameChoice, choiceType, objectPtr);
     out.BeginChoice(choiceType);
     TMemberIndex index = choiceType->GetVariants().FirstIndex();
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
@@ -378,5 +378,46 @@ void CChoiceTypeInfoFunctions::SkipChoiceDefault(CObjectIStream& in,
     in.EndChoice();
     END_OBJECT_FRAME_OF(in);
 }
+
+
+class CPreReadVariantHook : public CReadChoiceVariantHook
+{
+public:
+    CPreReadVariantHook(TPreReadVariantFunction func)
+        : m_PreRead(func)
+        {
+        }
+
+    void ReadChoiceVariant(CObjectIStream& in,
+                           const CObjectInfoCV& variant)
+        {
+            m_PreRead(in, variant);
+            DefaultRead(in, variant);
+        }
+
+private:
+    TPreReadVariantFunction m_PreRead;
+};
+
+void CChoiceTypeInfo::SetPreReadVariantFunction(const CTempString& variants,
+                                                TPreReadVariantFunction func)
+{
+    CRef<CPreReadVariantHook> hook(new CPreReadVariantHook(func));
+    if ( variants == "*" ) {
+        for ( CIterator i(this); i.Valid(); ++i ) {
+            const_cast<CVariantInfo*>(GetVariantInfo(i))->
+                SetGlobalReadHook(hook);
+        }
+    }
+    else {
+        vector<CTempString> tokens;
+        NStr::Tokenize(variants, ",", tokens);
+        ITERATE ( vector<CTempString>, it, tokens ) {
+            const_cast<CVariantInfo*>(GetVariantInfo(*it))->
+                SetGlobalReadHook(hook);
+        }
+    }
+}
+
 
 END_NCBI_SCOPE

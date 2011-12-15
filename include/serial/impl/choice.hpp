@@ -95,7 +95,7 @@ public:
     const CItemsInfo& GetVariants(void) const;
     const CVariantInfo* GetVariantInfo(TMemberIndex index) const;
     const CVariantInfo* GetVariantInfo(const CIterator& i) const;
-    const CVariantInfo* GetVariantInfo(const string& name) const;
+    const CVariantInfo* GetVariantInfo(const CTempString& name) const;
 
     CVariantInfo* AddVariant(const char* variantId,
                              const void* variantPtr,
@@ -120,6 +120,11 @@ public:
 
     TConstObjectPtr GetData(TConstObjectPtr object, TMemberIndex index) const;
     TObjectPtr GetData(TObjectPtr object, TMemberIndex index) const;
+
+    typedef void (*TPreReadVariantFunction)(CObjectIStream& in,
+                                            const CObjectInfoCV& variant);
+    void SetPreReadVariantFunction(const CTempString& variant_name,
+                                   TPreReadVariantFunction func);
 
 protected:
     void SetSelectDelayFunction(TSelectDelayFunction func);

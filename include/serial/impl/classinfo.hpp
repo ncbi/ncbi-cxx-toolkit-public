@@ -52,6 +52,7 @@ class COObjectList;
 class CMemberId;
 class CMemberInfo;
 class CClassInfoHelperBase;
+class CObjectInfoMI;
 
 class NCBI_XSERIAL_EXPORT CClassTypeInfo : public CClassTypeInfoBase
 {
@@ -86,7 +87,7 @@ public:
     const CItemsInfo& GetMembers(void) const;
     const CMemberInfo* GetMemberInfo(TMemberIndex index) const;
     const CMemberInfo* GetMemberInfo(const CIterator& i) const;
-    const CMemberInfo* GetMemberInfo(const string& name) const;
+    const CMemberInfo* GetMemberInfo(const CTempString& name) const;
 
     virtual bool IsDefault(TConstObjectPtr object) const;
     virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2,
@@ -110,6 +111,11 @@ public:
 
     const CClassTypeInfo* GetParentClassInfo(void) const;
     void SetParentClass(TTypeInfo parentClass);
+
+    typedef void (*TPreReadMemberFunction)(CObjectIStream& in,
+                                           const CObjectInfoMI& member);
+    void SetPreReadMemberFunction(const CTempString& member_name,
+                                  TPreReadMemberFunction func);
 
 public:
 

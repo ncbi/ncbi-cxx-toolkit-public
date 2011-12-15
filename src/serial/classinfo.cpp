@@ -506,4 +506,44 @@ CClassTypeInfo::CalcMayContainType(TTypeInfo typeInfo) const
     return ret;
 }
 
+class CPreReadMemberHook : public CReadClassMemberHook
+{
+public:
+    CPreReadMemberHook(TPreReadMemberFunction func)
+        : m_PreRead(func)
+        {
+        }
+
+    void ReadClassMember(CObjectIStream& in,
+                         const CObjectInfoMI& member)
+        {
+            m_PreRead(in, member);
+            DefaultRead(in, member);
+        }
+
+private:
+    TPreReadMemberFunction m_PreRead;
+};
+
+void CClassTypeInfo::SetPreReadMemberFunction(const CTempString& members,
+                                              TPreReadMemberFunction func)
+{
+    CRef<CPreReadMemberHook> hook(new CPreReadMemberHook(func));
+    if ( members == "*" ) {
+        for ( CIterator i(this); i.Valid(); ++i ) {
+            const_cast<CMemberInfo*>(GetMemberInfo(i))->
+                SetGlobalReadHook(hook);
+        }
+    }
+    else {
+        vector<CTempString> tokens;
+        NStr::Tokenize(members, ",", tokens);
+        ITERATE ( vector<CTempString>, it, tokens ) {
+            const_cast<CMemberInfo*>(GetMemberInfo(*it))->
+                SetGlobalReadHook(hook);
+        }
+    }
+}
+
+
 END_NCBI_SCOPE

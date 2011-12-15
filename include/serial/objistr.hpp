@@ -983,6 +983,11 @@ public:
     {
         return m_MemberDefault;
     }
+
+    TObjectPtr GetParentObjectPtr(TTypeInfo type,
+                                  size_t max_depth = 1,
+                                  size_t min_depth = 1) const;
+
 protected:
     CObjectIStream(ESerialDataFormat format);
     CObjectIStream(CNcbiIstream& in, bool deleteIn = false);

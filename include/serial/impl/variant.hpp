@@ -62,6 +62,7 @@ class CCopyChoiceVariantHook;
 class CDelayBuffer;
 
 class CVariantInfoFunctions;
+class CObjectInfoCV;
 
 class NCBI_XSERIAL_EXPORT CVariantInfo : public CItemInfo
 {

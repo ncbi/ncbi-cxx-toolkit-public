@@ -36,10 +36,11 @@ inline
 void CObjectStackFrame::Reset(void)
 {
     m_FrameType = eFrameOther;
-    m_TypeInfo = 0;
-    m_MemberId = 0;
     m_Notag = false;
     m_NsqMode = eNSQNotSet;
+    m_TypeInfo = 0;
+    m_MemberId = 0;
+    m_ObjectPtr = 0;
 }
 
 inline
@@ -57,12 +58,24 @@ bool CObjectStackFrame::HasTypeInfo(void) const
 }
 
 inline
+bool CObjectStackFrame::HasTypeInfo(TTypeInfo type) const
+{
+    return m_TypeInfo == type;
+}
+
+inline
 TTypeInfo CObjectStackFrame::GetTypeInfo(void) const
 {
     _ASSERT(m_FrameType != eFrameOther &&
             m_FrameType != eFrameChoiceVariant);
     _ASSERT(m_TypeInfo != 0);
     return m_TypeInfo;
+}
+
+inline
+TConstObjectPtr CObjectStackFrame::GetObjectPtr(void) const
+{
+    return m_ObjectPtr;
 }
 
 inline
@@ -151,7 +164,8 @@ CObjectStack::TFrame& CObjectStack::PushFrame(EFrameType type)
 
 inline
 CObjectStack::TFrame& CObjectStack::PushFrame(EFrameType type,
-                                              TTypeInfo typeInfo)
+                                              TTypeInfo typeInfo,
+                                              TConstObjectPtr objectPtr)
 {
     _ASSERT(type != TFrame::eFrameOther &&
             type != TFrame::eFrameClassMember &&
@@ -159,6 +173,7 @@ CObjectStack::TFrame& CObjectStack::PushFrame(EFrameType type,
     _ASSERT(typeInfo != 0);
     TFrame& frame = PushFrame(type);
     frame.m_TypeInfo = typeInfo;
+    frame.m_ObjectPtr = objectPtr;
     return frame;
 }
 

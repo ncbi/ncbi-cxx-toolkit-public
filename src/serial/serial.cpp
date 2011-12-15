@@ -41,6 +41,7 @@
 #include <serial/impl/choice.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
+#include <serial/objectiter.hpp>
 #include <serial/impl/memberlist.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 
@@ -468,6 +469,27 @@ void SetPostRead(CChoiceTypeInfo* info, TPostReadFunction func)
     info->SetPostReadFunction(func);
 }
 
+void SetPreReadMember(CClassTypeInfo* class_info, const char* member_name,
+                      TPreReadMemberFunction func)
+{
+    class_info->SetPreReadMemberFunction(member_name, func);
+}
+
+void SetPreReadVariant(CChoiceTypeInfo* choice_info, const char* variant_name,
+                       TPreReadVariantFunction func)
+{
+    choice_info->SetPreReadVariantFunction(variant_name, func);
+}
+
+TObjectPtr GetClassObjectPtr(const CObjectInfoMI& member)
+{
+    return member.GetClassObject().GetObjectPtr();
+}
+
+TObjectPtr GetChoiceObjectPtr(const CObjectInfoCV& variant)
+{
+    return variant.GetChoiceObject().GetObjectPtr();
+}
 
 // Functions preventing memory leaks due to undestroyed type info objects
 

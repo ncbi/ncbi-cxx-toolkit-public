@@ -68,6 +68,10 @@ protected:
     static void AddTo(CTypesConstIterator& it,  TTypeInfo typeInfo);
     static TObjectPtr GetObjectPtr(const CTypesIterator& it);
     static TConstObjectPtr GetObjectPtr(const CTypesConstIterator& it);
+    static TObjectPtr GetParentObjectPtr(CObjectIStream& in,
+                                         TTypeInfo typeInfo,
+                                         size_t max_depth,
+                                         size_t min_depth);
 };
 
 template<class C>
@@ -141,6 +145,13 @@ public:
             if ( !Match(object) )
                 return 0;
             return GetUnchecked(object);
+        }
+    static C* GetParent(CObjectIStream& in,
+                        size_t max_depth = 1,
+                        size_t min_depth = 1)
+        {
+            return &CTypeConverter<C>::Get
+                (GetParentObjectPtr(in, GetTypeInfo(), max_depth, min_depth));
         }
 };
 

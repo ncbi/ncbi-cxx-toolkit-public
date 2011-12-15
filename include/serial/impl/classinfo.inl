@@ -51,7 +51,7 @@ const CMemberInfo* CClassTypeInfo::GetMemberInfo(const CIterator& i) const
 }
 
 inline
-const CMemberInfo* CClassTypeInfo::GetMemberInfo(const string& name) const
+const CMemberInfo* CClassTypeInfo::GetMemberInfo(const CTempString& name) const
 {
     return GetMemberInfo(GetMembers().Find(name));
 }

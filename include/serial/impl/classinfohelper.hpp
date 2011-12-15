@@ -188,6 +188,22 @@ public:
             NCBISERSetPreWrite(object, info);
             NCBISERSetPostWrite(object, info);
         }
+    static void SetReadWriteMemberMethods(NCBI_NS_NCBI::CClassTypeInfo* info)
+        {
+            const CClassType* object = 0;
+            NCBISERSetPreReadMember(object, info);
+            //NCBISERSetPostReadMember(object, info);
+            //NCBISERSetPreWriteMember(object, info);
+            //NCBISERSetPostWriteMember(object, info);
+        }
+    static void SetReadWriteVariantMethods(NCBI_NS_NCBI::CChoiceTypeInfo* info)
+        {
+            const CClassType* object = 0;
+            NCBISERSetPreReadVariant(object, info);
+            //NCBISERSetPostReadVariant(object, info);
+            //NCBISERSetPreWriteVariant(object, info);
+            //NCBISERSetPostWriteVariant(object, info);
+        }
 
     static CClassTypeInfo* CreateAbstractClassInfo(const char* name)
         {

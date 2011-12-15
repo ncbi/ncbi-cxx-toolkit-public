@@ -71,7 +71,7 @@ const CVariantInfo* CChoiceTypeInfo::GetVariantInfo(const CIterator& i) const
 }
 
 inline
-const CVariantInfo* CChoiceTypeInfo::GetVariantInfo(const string& name) const
+const CVariantInfo* CChoiceTypeInfo::GetVariantInfo(const CTempString& name) const
 {
     return GetVariantInfo(GetVariants().Find(name));
 }

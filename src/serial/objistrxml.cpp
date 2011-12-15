@@ -2286,7 +2286,7 @@ void CObjectIStreamXml::ReadChoice(const CChoiceTypeInfo* choiceType,
         ReadChoiceContents(choiceType, choicePtr);
     }
     else {
-        BEGIN_OBJECT_FRAME2(eFrameChoice, choiceType);
+        BEGIN_OBJECT_FRAME3(eFrameChoice, choiceType, choicePtr);
 
         OpenTag(choiceType);
         ReadChoiceContents(choiceType, choicePtr);

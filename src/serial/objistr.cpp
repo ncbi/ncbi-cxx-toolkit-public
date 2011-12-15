@@ -1304,7 +1304,7 @@ void CObjectIStream::EndClassMember(void)
 void CObjectIStream::ReadClassRandom(const CClassTypeInfo* classType,
                                      TObjectPtr classPtr)
 {
-    BEGIN_OBJECT_FRAME2(eFrameClass, classType);
+    BEGIN_OBJECT_FRAME3(eFrameClass, classType, classPtr);
     BeginClass(classType);
 
     ReadClassRandomContentsBegin(classType);
@@ -1327,7 +1327,7 @@ void CObjectIStream::ReadClassSequential(const CClassTypeInfo* classType,
                                          TObjectPtr classPtr)
 {
     TMemberIndex prevIndex = kInvalidMember;
-    BEGIN_OBJECT_FRAME2(eFrameClass, classType);
+    BEGIN_OBJECT_FRAME3(eFrameClass, classType, classPtr);
     BeginClass(classType);
     
     ReadClassSequentialContentsBegin(classType);
@@ -1410,7 +1410,7 @@ void CObjectIStream::EndChoiceVariant(void)
 void CObjectIStream::ReadChoice(const CChoiceTypeInfo* choiceType,
                                 TObjectPtr choicePtr)
 {
-    BEGIN_OBJECT_FRAME2(eFrameChoice, choiceType);
+    BEGIN_OBJECT_FRAME3(eFrameChoice, choiceType, choicePtr);
     BeginChoice(choiceType);
     BEGIN_OBJECT_FRAME(eFrameChoiceVariant);
     TMemberIndex index = BeginChoiceVariant(choiceType);
@@ -1799,6 +1799,26 @@ char ReplaceVisibleChar(char c, EFixNonPrint fix_method, size_t at_line)
 void CObjectIStream::SetCanceledCallback(const ICanceled* callback)
 {
     m_Input.SetCanceledCallback(callback);
+}
+
+
+TObjectPtr CObjectIStream::GetParentObjectPtr(TTypeInfo type,
+                                              size_t max_depth,
+                                              size_t min_depth) const
+{
+    for ( size_t i = 1, depth = 0, size = GetStackDepth(); i < size; ++i ) {
+        const TFrame& frame = FetchFrameFromTop(i);
+        if ( frame.GetFrameType() == TFrame::eFrameClass ||
+             frame.GetFrameType() == TFrame::eFrameChoice ) {
+            if ( depth >= min_depth && frame.HasTypeInfo(type) ) {
+                return const_cast<TObjectPtr>(frame.GetObjectPtr());
+            }
+            if ( ++depth > max_depth ) {
+                break;
+            }
+        }
+    }
+    return 0;
 }
 
 

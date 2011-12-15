@@ -428,7 +428,9 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 #define SET_NAMESPACE(name) \
     info->SetNamespaceName(name)
 
-#define END_CLASS_INFO END_TYPE_INFO
+#define END_CLASS_INFO                                                  \
+    NCBI_NS_NCBI::CClassInfoHelper<CClass>::SetReadWriteMemberMethods(info); \
+    END_TYPE_INFO
 
 #define BEGIN_NAMED_ABSTRACT_CLASS_INFO(ClassAlias,ClassName) \
     BEGIN_TYPE_INFO(ClassName, \
@@ -474,7 +476,9 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 #define SET_CHOICE_DELAYED() \
     info->SetSelectDelay(&NCBI_NS_NCBI::CClassInfoHelper<CClass>::SelectDelayBuffer)
 
-#define END_CHOICE_INFO END_TYPE_INFO
+#define END_CHOICE_INFO                                                 \
+    NCBI_NS_NCBI::CClassInfoHelper<CClass>::SetReadWriteVariantMethods(info); \
+    END_TYPE_INFO
 
 // sub class definition
 #define SET_PARENT_CLASS(ParentClassName) \
