@@ -6191,6 +6191,45 @@ void s_StructuredCommentDbnameFromString( string &out_dbname, const string &fiel
     }
 }
 
+static
+int s_GetBarcodeOrder( const CRef<CUser_field> &field )
+{
+    typedef pair<const string, int>  TBarcodeOrderElem;
+    static const TBarcodeOrderElem sc_barcode_order_map[] = {
+        TBarcodeOrderElem("Barcode Index Number", 2),
+        TBarcodeOrderElem("Order Assignment", 3),
+        TBarcodeOrderElem("StructuredCommentPrefix", 1),
+        TBarcodeOrderElem("StructuredCommentSuffix", 6),
+        TBarcodeOrderElem("iBOL Release Status", 5),
+        TBarcodeOrderElem("iBOL Working Group", 4)
+    };
+    typedef CStaticArrayMap<const string, int, PCase> TBarcodeOrderMap;
+    DEFINE_STATIC_ARRAY_MAP(TBarcodeOrderMap, sc_BarcodeOrderMap, sc_barcode_order_map);
+
+    if( ! field || ! field->IsSetLabel() || ! field->GetLabel().IsStr() ) {
+        return 0;
+    }
+
+    const string & label_str = field->GetLabel().GetStr();
+
+    TBarcodeOrderMap::const_iterator find_iter = sc_BarcodeOrderMap.find(label_str);
+    if( find_iter == sc_BarcodeOrderMap.end() ) {
+        return 0;
+    }
+
+    return find_iter->second;
+}
+
+static
+bool s_BarcodeCompare( 
+    const CRef<CUser_field> &field1, 
+    const CRef<CUser_field> &field2 ) 
+{
+    const int idx1 = s_GetBarcodeOrder( field1 );
+    const int idx2 = s_GetBarcodeOrder( field2 );
+    return idx1 < idx2;
+}
+
 void CNewCleanup_imp::x_CleanStructuredComment( CUser_object &user_object )
 {
     if( ! FIELD_IS_SET_AND_IS(user_object, Type, Str) ||
@@ -6200,6 +6239,7 @@ void CNewCleanup_imp::x_CleanStructuredComment( CUser_object &user_object )
     }
 
     bool genome_assembly_data = false;
+    bool ibol_data = false;
 
     EDIT_EACH_USERFIELD_ON_USEROBJECT( user_field_iter, user_object ) {
         CUser_field &field = **user_field_iter;
@@ -6214,6 +6254,8 @@ void CNewCleanup_imp::x_CleanStructuredComment( CUser_object &user_object )
                 }
                 if (core == "Genome-Assembly-Data") {
                     genome_assembly_data = true;
+                } else if( core == "International Barcode of Life (iBOL)Data" ) {
+                    ibol_data = true;
                 }
             } else if ( GET_FIELD(field.GetLabel(), Str) == "StructuredCommentSuffix" ) {
                 string core;
@@ -6225,6 +6267,8 @@ void CNewCleanup_imp::x_CleanStructuredComment( CUser_object &user_object )
                 }
                 if (core == "Genome-Assembly-Data") {
                     genome_assembly_data = true;
+                } else if( core == "International Barcode of Life (iBOL)Data" ) {
+                    ibol_data = true;
                 }
             }
         }
@@ -6259,6 +6303,13 @@ void CNewCleanup_imp::x_CleanStructuredComment( CUser_object &user_object )
                 field_str = "Noncontiguous Finished";
                 ChangeMade(CCleanupChange::eCleanUserObjectOrField);
             }
+        }
+    }
+
+    if( ibol_data ) {
+        if( ! USERFIELD_ON_USEROBJECT_IS_SORTED(user_object, s_BarcodeCompare) ) {
+            SORT_USERFIELD_ON_USEROBJECT(user_object, s_BarcodeCompare);
+            ChangeMade(CCleanupChange::eCleanUserObjectOrField);
         }
     }
 }
