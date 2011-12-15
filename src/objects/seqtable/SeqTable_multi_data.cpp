@@ -39,6 +39,12 @@
 
 // generated includes
 #include <objects/seqtable/SeqTable_multi_data.hpp>
+#include <objects/seqtable/CommonString_table.hpp>
+#include <objects/seqtable/CommonBytes_table.hpp>
+#include <objects/seqtable/Seq_table.hpp>
+#include <serial/iterator.hpp>
+#include <serial/objectiter.hpp>
+#include <corelib/ncbi_param.hpp>
 
 // generated classes
 
@@ -79,6 +85,61 @@ size_t CSeqTable_multi_data::GetSize(void) const
         break;
     }
     return 0;
+}
+
+
+NCBI_PARAM_DECL(int, OBJECTS, SEQ_TABLE_RESERVE);
+NCBI_PARAM_DEF_EX(int, OBJECTS, SEQ_TABLE_RESERVE, 1,
+                  eParam_NoThread, OBJECTS_SEQ_TABLE_RESERVE);
+static NCBI_PARAM_TYPE(OBJECTS, SEQ_TABLE_RESERVE) s_Reserve;
+
+
+void CSeqTable_multi_data::PreReadVariant(CObjectIStream& in,
+                                          const CObjectInfoCV& variant)
+{
+    if ( !s_Reserve.Get() ) {
+        return;
+    }
+    if ( CSeq_table* table = CType<CSeq_table>::GetParent(in, 2, 2) ) {
+        size_t size = table->GetNum_rows();
+        switch ( variant.GetVariantIndex() ) {
+        case e_Int:
+            SetInt().reserve(size);
+            break;
+        case e_Real:
+            SetReal().reserve(size);
+            break;
+        case e_String:
+            SetString().reserve(size);
+            break;
+        case e_Bytes:
+            SetBytes().reserve(size);
+            break;
+        case e_Common_string:
+            SetCommon_string().SetIndexes().reserve(size);
+            break;
+        case e_Common_bytes:
+            SetCommon_bytes().SetIndexes().reserve(size);
+            break;
+        case e_Bit:
+            SetBit().reserve((size+7)/8);
+            break;
+        case e_Loc:
+            SetLoc().reserve(size);
+            break;
+        case e_Id:
+            SetId().reserve(size);
+            break;
+        case e_Interval:
+            SetInterval().reserve(size);
+            break;
+        case e_Utf8_string:
+            SetUtf8_string().reserve(size);
+            break;
+        default:
+            break;
+        }
+    }
 }
 
 

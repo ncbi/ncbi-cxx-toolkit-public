@@ -45,6 +45,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <serial/objistr.hpp>
+#include <corelib/ncbi_param.hpp>
 
 // generated classes
 
@@ -1466,6 +1467,36 @@ CRef<CSeq_interval> CDense_seg::CreateRowSeq_interval(TDim row) const
         }
     }
     return ret;
+}
+
+
+NCBI_PARAM_DECL(int, OBJECTS, DENSE_SEG_RESERVE);
+NCBI_PARAM_DEF_EX(int, OBJECTS, DENSE_SEG_RESERVE, 1,
+                  eParam_NoThread, OBJECTS_DENSE_SEG_RESERVE);
+static NCBI_PARAM_TYPE(OBJECTS, DENSE_SEG_RESERVE) s_Reserve;
+
+
+void CDense_seg::PreReadMember(CObjectIStream& in,
+                               const CObjectInfoMI& member)
+{
+    if ( !s_Reserve.Get() ) {
+        return;
+    }
+    CDense_seg& ds = *CType<CDense_seg>::Get(member.GetClassObject());
+    size_t numseg = ds.GetNumseg();
+    switch ( member.GetMemberIndex() ) {
+    case 4: // "starts"
+        ds.SetStarts().reserve(ds.GetDim()*numseg);
+        break;
+    case 5: // "lens"
+        ds.SetLens().reserve(numseg);
+        break;
+    case 6: // "strands"
+        ds.SetStrands().reserve(ds.GetDim()*numseg);
+        break;
+    default:
+        break;
+    }
 }
 
 

@@ -150,6 +150,8 @@ public:
                         TSeqPos subj_start, ENa_strand subj_strand,
                         const string& transcript );
 
+    // reserve memory for "starts", "lens", and "strands" vectors
+    void PreReadMember(CObjectIStream& in, const CObjectInfoMI& member);
 
     static void SetReserveHooks(CObjectIStream& in);
     static void SetGlobalReserveHooks(void);
@@ -170,6 +172,8 @@ private:
     TWidths m_Widths;
 };
 
+
+NCBISER_HAVE_PRE_READ_MEMBER(CDense_seg, "starts,lens,strands");
 
 
 /////////////////// CDense_seg inline methods

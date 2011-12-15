@@ -61,6 +61,9 @@ public:
 
     size_t GetSize(void) const;
 
+    // reserve memory for multi-row data vectors
+    void PreReadVariant(CObjectIStream& in, const CObjectInfoCV& variant);
+
 private:
     // Prohibit copy constructor and assignment operator
     CSeqTable_multi_data(const CSeqTable_multi_data& value);
@@ -79,6 +82,8 @@ CSeqTable_multi_data::CSeqTable_multi_data(void)
 
 /////////////////// end of CSeqTable_multi_data inline methods
 
+
+NCBISER_HAVE_PRE_READ_VARIANT(CSeqTable_multi_data, "*")
 
 END_objects_SCOPE // namespace ncbi::objects::
 
