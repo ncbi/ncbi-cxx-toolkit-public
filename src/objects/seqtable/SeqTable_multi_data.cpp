@@ -133,9 +133,6 @@ void CSeqTable_multi_data::PreReadVariant(CObjectIStream& in,
         case e_Interval:
             SetInterval().reserve(size);
             break;
-        case e_Utf8_string:
-            SetUtf8_string().reserve(size);
-            break;
         default:
             break;
         }
