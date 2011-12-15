@@ -5201,15 +5201,21 @@ void CFileIO::Open(const string& filename,
     switch (access_mode) {
         case eRead:
             flags |= O_RDONLY;
-            mode  |= S_IREAD;
+            mode  |= CDirEntry::MakeModeT(CDirEntry::fRead,
+                                          CDirEntry::fRead,
+                                          CDirEntry::fRead, 0);
             break;
         case eWrite:
             flags |= O_WRONLY;
-            mode  |= S_IWRITE;
+            mode  |= CDirEntry::MakeModeT(CDirEntry::fWrite,
+                                          CDirEntry::fWrite,
+                                          CDirEntry::fWrite, 0);
             break;
         case eReadWrite:
             flags |= O_RDWR;
-            mode  |= (S_IREAD | S_IWRITE);
+            mode  |= CDirEntry::MakeModeT(CDirEntry::fRead | CDirEntry::fWrite,
+                                          CDirEntry::fRead | CDirEntry::fWrite,
+                                          CDirEntry::fRead | CDirEntry::fWrite, 0);
             break;
         default:
             _TROUBLE;
