@@ -1369,7 +1369,7 @@ SplitSeqalignByMolecularType(vector< CRef<CSeq_align_set> >&
         try {
             const CBioseq_Handle& handle = scope.GetBioseqHandle(id);            
             if (handle) {
-                int linkout,linkoutPrev;
+                int linkout,linkoutPrev = 0;
                 if(prevSubjectId.Empty() || !id.Match(*prevSubjectId)){
                     prevSubjectId = &id;
                     linkout = linkoutdb ? linkoutdb->GetLinkout(id, mv_build_name): 0;
