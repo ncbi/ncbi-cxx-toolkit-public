@@ -70,6 +70,13 @@ public:
         int m_LineNo;
     };
 
+    virtual void ReportExtra(ostream& out) const
+    {
+        out << "bad indexes = ";
+        x_ConvertBadIndexesToString( out, m_BadResiduePosition.m_BadIndexes, 20 );
+        out <<  ", line no = " << m_BadResiduePosition.m_LineNo;
+    }
+
     CBadResiduesException(const CDiagCompileInfo& info,
         const CException* prev_exception,
         EErrCode err_code, const string& message,
@@ -79,13 +86,6 @@ public:
         (CObjReaderException::EErrCode) CException::eInvalid,
         message), m_BadResiduePosition(badResiduePosition)
         NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CBadResiduesException, CObjReaderException);
-
-    virtual void ReportExtra(ostream& out) const
-    {
-        out << "bad indexes = ";
-        x_ConvertBadIndexesToString( out, m_BadResiduePosition.m_BadIndexes, 20 );
-        out <<  ", line no = " << m_BadResiduePosition.m_LineNo;
-    }
 
 public:
     // Returns the bad residues found, which might not be complete
