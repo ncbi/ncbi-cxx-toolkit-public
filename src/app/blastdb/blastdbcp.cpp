@@ -53,6 +53,9 @@ private: /* Private Methods */
     bool x_ShouldParseSeqIds(const string& dbname, 
                              CSeqDB::ESeqType seq_type) const;
 
+    bool x_ShouldCopyPIGs(const string& dbname,
+                          CSeqDB::ESeqType seq_type) const;
+
 private: /* Private Data */
     bool    m_bCheckOnly;
 };
@@ -207,6 +210,25 @@ bool BlastdbCopyApplication::x_ShouldParseSeqIds(const string& dbname,
     return retval;
 }
 
+bool BlastdbCopyApplication::x_ShouldCopyPIGs(const string& dbname,
+											  CSeqDB::ESeqType seq_type) const
+{
+	if(CSeqDB::eProtein != seq_type)
+		return false;
+
+	vector<string> file_paths;
+	CSeqDB::FindVolumePaths(dbname, CSeqDB::eProtein, file_paths);
+    ITERATE(vector<string>, f, file_paths) {
+    	CNcbiOstrstream oss;
+        oss << *f << "." << "ppd";
+        const string fname = CNcbiOstrstreamToString(oss);
+        CFile file(fname);
+        if (file.Exists() && file.GetLength() > 0)
+                return true;
+    }
+     return false;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  Run the program
@@ -238,11 +260,15 @@ int BlastdbCopyApplication::Run(void)
             title = CNcbiOstrstreamToString(oss);
         }
 
+        const bool kCopyPIGs = x_ShouldCopyPIGs(args[kArgDb].AsString(),
+                                                              seq_type);
         CBlastDbBioseqSource bioseq_source(sourcedb, gilist,
                                            args["membership_bits"]);
         const bool kIsSparse = false;
         const bool kParseSeqids = x_ShouldParseSeqIds(args[kArgDb].AsString(),
                                                       seq_type);
+
+
         const bool kUseGiMask = false;
         CStopWatch timer;
         timer.Start();
@@ -256,7 +282,7 @@ int BlastdbCopyApplication::Run(void)
         destdb.SetSourceDb(sourcedb);
         destdb.StartBuild();
         destdb.SetMembBits(bioseq_source.GetMembershipBits(), false);
-        destdb.AddSequences(bioseq_source);
+        destdb.AddSequences(bioseq_source, kCopyPIGs);
         destdb.EndBuild();
         timer.Stop();
         ERR_POST(Info << "Created BLAST database in " << timer.AsSmartString());

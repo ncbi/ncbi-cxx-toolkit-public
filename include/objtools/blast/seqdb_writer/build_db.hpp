@@ -299,8 +299,9 @@ public:
     /// the GetNext() method returns NULL.
     ///
     /// @param src An object providing one or more Bioseq objects.
+    /// @param add_pig true if PIG should be added if available
     /// @return True if at least one sequence was added.
-    bool AddSequences(IBioseqSource & src);
+    bool AddSequences(IBioseqSource & src, bool add_pig = false);
     
     /// Add sequences from an IRawSequenceSource object.
     ///
@@ -456,8 +457,10 @@ private:
     ///
     /// @param bs Bioseq to add to the database.
     /// @param bs Sequence data to add to the database.
+    /// @param add_pig true if PIG should be added if available
     void x_EditAndAddBioseq(CConstRef<objects::CBioseq>   bs,
-                            objects::CSeqVector         * sv);
+                            objects::CSeqVector         * sv,
+                            bool 						  add_pig = false);
     
     /// Add the masks for the Seq-id(s) (usually just one) to the database
     /// being created

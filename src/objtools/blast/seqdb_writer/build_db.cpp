@@ -445,7 +445,8 @@ CBuildDatabase::x_AddMasksForSeqId(const list< CRef<CSeq_id> >& ids)
 #endif
 
 void CBuildDatabase::x_EditAndAddBioseq(CConstRef<objects::CBioseq>   bs,
-                                        objects::CSeqVector         * sv)
+                                        objects::CSeqVector         * sv,
+                                        bool						  add_pig)
 {
     CRef<CBlast_def_line_set> headers =
         CWriteDB::ExtractBioseqDeflines(*bs, m_ParseIDs);
@@ -456,12 +457,19 @@ void CBuildDatabase::x_EditAndAddBioseq(CConstRef<objects::CBioseq>   bs,
     x_EditHeaders(headers);
     
     // Add the sequence
-    
     if (sv) {
         m_OutputDb->AddSequence(*bs, *sv);
     } else {
         bs = s_FixBioseqDeltas(bs);
         m_OutputDb->AddSequence(*bs);
+    }
+
+    if(add_pig) {
+    	int pig = 0;
+    	const CBlast_def_line  &  defline = *(headers->Get().front());
+    	if (defline.CanGetOther_info())
+    		pig = defline.GetOther_info().front();
+        m_OutputDb->SetPig(pig);
     }
     
     m_OutputDb->SetDeflines(*headers);
@@ -733,7 +741,7 @@ CConstRef<CBioseq> CFastaBioseqSource::GetNext()
     return rv;
 }
 
-bool CBuildDatabase::AddSequences(IBioseqSource & src)
+bool CBuildDatabase::AddSequences(IBioseqSource & src, bool add_pig)
 {
     bool found = false;
     
@@ -765,7 +773,7 @@ bool CBuildDatabase::AddSequences(IBioseqSource & src)
         
         // No linkouts or memberships here (yet).
         
-        x_EditAndAddBioseq(bs, NULL);
+        x_EditAndAddBioseq(bs, NULL, add_pig);
         found = true;
         
         count++;
