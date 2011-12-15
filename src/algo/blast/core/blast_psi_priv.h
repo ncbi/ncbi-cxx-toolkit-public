@@ -460,6 +460,7 @@ _PSIComputeSequenceWeights(const _PSIMsa* msa,
  * @param options CDD-related options [in]
  * @param seq_weights data structure with CD frequencies [out]
  */
+NCBI_XBLAST_EXPORT 
 int
 _PSIComputeFrequenciesFromCDs(const PSICdMsa* cd_msa,
                               BlastScoreBlk* sbp,

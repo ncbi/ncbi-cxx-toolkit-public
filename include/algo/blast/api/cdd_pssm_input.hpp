@@ -93,7 +93,7 @@ public:
 /// Strategy for pre-processing RPS-BLAST matches for PSSM computation. Builds
 /// multuiple alignment of CDs and retrieves weighted residue frequencies and
 /// effective number of observations for each CD matching to a query.
-class CCddInputData : public IPssmInputCdd
+class NCBI_XBLAST_EXPORT CCddInputData : public IPssmInputCdd
 {
 public:
     /// Type used for residue frequencies stored in CDD
