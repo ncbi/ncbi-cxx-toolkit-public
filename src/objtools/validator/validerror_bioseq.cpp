@@ -5788,9 +5788,15 @@ void CValidError_bioseq::x_ValidateAbuttingRNA(const CBioseq_Handle& seq)
                     || (strand1 != eNa_strand_minus && strand2 == eNa_strand_minus)) {
                     // different strands
                     if (pos1 != e_RnaPosition_Ignore && pos2 != e_RnaPosition_Ignore) {
-                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_InconsistentRRNAstrands, 
-                                 "Inconsistent strands for rRNA components",
-                                 it2->GetOriginalFeature());
+                        if ((pos1 == e_RnaPosition_LEFT_RIBOSOMAL_SUBUNIT || pos1 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT || pos1 == e_RnaPosition_RIGHT_RIBOSOMAL_SUBUNIT) &&
+                            (pos2 == e_RnaPosition_LEFT_RIBOSOMAL_SUBUNIT || pos2 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT || pos2 == e_RnaPosition_RIGHT_RIBOSOMAL_SUBUNIT)) {
+                        } else if ((pos1 == e_RnaPosition_INTERNAL_SPACER_1 || pos1 == e_RnaPosition_INTERNAL_SPACER_2 || pos1 == e_RnaPosition_INTERNAL_SPACER_X) &&
+                            (pos2 == e_RnaPosition_INTERNAL_SPACER_1 || pos2 == e_RnaPosition_INTERNAL_SPACER_2 || pos2 == e_RnaPosition_INTERNAL_SPACER_X)) {
+                        } else {
+                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_InconsistentRRNAstrands, 
+                                     "Inconsistent strands for rRNA components",
+                                     it2->GetOriginalFeature());
+                        }
                     }
                 } else if (pos1 == e_RnaPosition_Ignore || pos2 == e_RnaPosition_Ignore) {
                     // ignore
