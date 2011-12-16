@@ -685,10 +685,11 @@ BOOST_AUTO_TEST_CASE(TestConvertSeqalignToCdMsa)
                             BOOST_REQUIRE(data);
 
                             // verify that number of independent observations
-                            // is correct
-                            BOOST_REQUIRE_EQUAL((CCddInputData::TObsr)
-                                (data->iobsr * kScale),
-                                                obsr[s_index + pos]);
+                            // is correct;
+			    // we expec a small difference due to converting
+			    // real numbers to integers
+                            BOOST_REQUIRE(abs((Int4)(data->iobsr * kScale)
+					      - (Int4)obsr[s_index + pos]) < 2);
 
                             // verify that residue frequencies are correct
                             for (int j=0;j < kAlphabetSize;j++) {
