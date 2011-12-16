@@ -5052,6 +5052,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
 #endif /*NCBI_OS_UNIX*/
     } peer;
     TSOCK_Handle    fd;
+    struct linger   lgr;
 #ifdef NCBI_OS_MSWIN
     WSAEVENT        event;
 #endif /*NCBI_OS_MSWIN*/
@@ -5265,7 +5266,6 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
         x_sock->session = session;
     }
 
-
     if (x_sock->port) {
 #ifdef SO_KEEPALIVE
         if (!s_SetKeepAlive(fd, x_sock->keepalive)) {
@@ -5313,7 +5313,18 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
         UTIL_ReleaseBuffer(strerr);
 #endif /*NCBI_OS_MSWIN*/
     }
- 
+
+    memset(&lgr, 0, sizeof(lgr));
+    if (setsockopt(fd, SOL_SOCKET, SO_LINGER, (char*) &lgr, sizeof(lgr)) != 0){
+        const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
+        CORE_LOGF_ERRNO_EXX(163, eLOG_Warning,
+                            x_error, strerr,
+                            ("%s[SOCK::CreateOnTop] "
+                             " Failed setsockopt(SO_NOLINGER)",
+                             s_ID(x_sock, _id)));
+        UTIL_ReleaseBuffer(strerr);
+    }
+
     /* statistics & logging */
     if (x_sock->log == eOn  ||  (x_sock->log == eDefault  &&  s_Log == eOn))
         s_DoLog(eLOG_Trace, x_sock, eIO_Open, 0, 0, 0);
@@ -5451,7 +5462,7 @@ extern EIO_Status SOCK_CloseOSHandle(const void* handle, size_t handle_size)
         return eIO_Closed;
 
     /* drop all possible hold-ups w/o checks */
-    lgr.l_linger = 0;
+    lgr.l_linger = 0;  /* RFC 793, Abort */
     lgr.l_onoff  = 1;
     setsockopt(fd, SOL_SOCKET, SO_LINGER, (char*) &lgr, sizeof(lgr));
 #ifdef TCP_LINGER2
