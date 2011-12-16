@@ -195,7 +195,7 @@ private:
     const char* m_CollectPos;
     CRef<CSubSourceCollector> m_Collector;
 
-    const ICanceled* m_CanceledCallback;
+    CConstIRef<ICanceled> m_CanceledCallback;
 };
 
 class NCBI_XUTIL_EXPORT COStreamBuffer
@@ -317,7 +317,7 @@ private:
     size_t m_BackLimit;
     bool m_UseIndentation;
 
-    const ICanceled* m_CanceledCallback;
+    CConstIRef<ICanceled> m_CanceledCallback;
 };
 
 

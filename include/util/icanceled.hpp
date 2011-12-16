@@ -45,7 +45,8 @@ BEGIN_NCBI_SCOPE
  */
 
 
-/// Interface for testing cancellation request in a long lasting operation
+/// Interface for testing cancellation request in a long lasting operation.
+/// The implementation must have CObject as its first parent.
 class ICanceled
 {
 public:
