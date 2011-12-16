@@ -141,6 +141,7 @@ class CNSClient
         bool IsJobBlacklisted(unsigned int  job_id) const;
         void SetWaitPort(unsigned short  port);
         unsigned short GetAndResetWaitPort(void);
+        string GetSession(void) const;
 
         void RegisterRunningJob(unsigned int  job_id);
         void RegisterReadingJob(unsigned int  job_id);
@@ -165,6 +166,13 @@ class CNSClient
         TNSBitVector  GetPreferredAffinities(void) const;
         void  AddPreferredAffinities(const TNSBitVector &  aff);
         void  RemovePreferredAffinities(const TNSBitVector &  aff);
+
+        // WGET support
+        void  RegisterWaitAffinities(const TNSBitVector &  aff);
+        TNSBitVector  GetWaitAffinities(void) const;
+        bool  IsRequestedAffinity(const TNSBitVector &  aff,
+                                  bool                  use_preferred) const;
+        void  ClearWaitAffinities(void);
 
     private:
         bool            m_Cleared;        // Set to true when CLRN is received
@@ -193,6 +201,8 @@ class CNSClient
         unsigned int    m_ID;               // Client identifier, see comments
                                             // for CNSClientId::m_ID
         TNSBitVector    m_Affinities;       // The client preferred affinities
+        TNSBitVector    m_WaitAffinities;   // The list of affinities the client
+                                            // waits for on WGET
 
         string  x_TypeAsString(void) const;
 };

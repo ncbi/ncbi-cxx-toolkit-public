@@ -125,19 +125,15 @@ void CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
     m_DeleteBatchSize = params.del_batch_size;
     m_ScanBatchSize = params.scan_batch_size;
     m_PurgeTimeout = params.purge_timeout;
-
-    if (m_DeleteBatchSize == 0)
-        m_DeleteBatchSize = 100;    // default
-    if (m_ScanBatchSize == 0)
-        m_ScanBatchSize = 10000;    // default
-    if (m_PurgeTimeout <= 0.0)
-        m_PurgeTimeout = 0.1;       // default
-
     m_MaxAffinities = params.max_affinities;
-    if (m_MaxAffinities <= 0)
-        m_MaxAffinities = 10000;    // default
 
     m_NodeID = NStr::URLEncode(params.node_id);
+
+    m_AffinityHighMarkPercentage = params.affinity_high_mark_percentage;
+    m_AffinityLowMarkPercentage = params.affinity_low_mark_percentage;
+    m_AffinityHighRemoval = params.affinity_high_removal;
+    m_AffinityLowRemoval = params.affinity_low_removal;
+    m_AffinityDirtPercentage = params.affinity_dirt_percentage;
 }
 
 

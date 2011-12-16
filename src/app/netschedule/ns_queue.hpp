@@ -167,17 +167,21 @@ public:
                           int                  ret_code,
                           const string *       output);
 
-    void GetJob(const CNSClientId &     client,
-                time_t                  curr,
-                const list<string> *    aff_list,
-                bool                    wnode_affinity,
-                bool                    any_affinity,
-                CJob *                  new_job);
+    void GetJobOrWait(const CNSClientId &     client,
+                      unsigned short          port, // Port the client
+                                                    // will wait on
+                      unsigned int            timeout,
+                      time_t                  curr,
+                      const list<string> *    aff_list,
+                      bool                    wnode_affinity,
+                      bool                    any_affinity,
+                      CJob *                  new_job);
+
+    void CancelWaitGet(const CNSClientId &  client);
 
     string ChangeAffinity(const CNSClientId &     client,
                           const list<string> &    aff_to_add,
-                          const list<string> &    aff_to_del,
-                          unsigned int            max_affinities);
+                          const list<string> &    aff_to_del);
 
     TJobStatus  JobDelayExpiration(unsigned        job_id,
                                    time_t          tm);
@@ -268,9 +272,13 @@ public:
 
     void ClearWorkerNode(const CNSClientId &  client);
 
-    void NotifyListeners(bool unconditional, unsigned aff_id);
+    void NotifyListenersPeriodically(time_t  current_time);
     void PrintClientsList(CNetScheduleHandler &  handler,
                           bool                   verbose) const;
+    void PrintNotificationsList(CNetScheduleHandler &  handler,
+                                bool                   verbose) const;
+    void PrintAffinitiesList(CNetScheduleHandler &  handler,
+                             bool                   verbose) const;
 
     /// Check execution timeout. Now checks reading timeout as well.
     /// All jobs failed to execute, go back to pending
@@ -292,6 +300,7 @@ public:
                           time_t   new_time);
 
     unsigned int  DeleteBatch(void);
+    unsigned int  PurgeAffinities(void);
 
     CBDB_FileCursor& GetEventsCursor();
 
@@ -325,10 +334,6 @@ public:
     void ResetReadingDueToNewSession(const CNSClientId &   client,
                                      const TNSBitVector &  jobs);
 
-    void RegisterGetListener(const CNSClientId &  client,
-                             unsigned short       port,
-                             unsigned int         timeout);
-    void UnregisterGetListener(const CNSClientId &  client);
     void PrintStatistics(size_t &  aff_count);
     void CountTransition(CNetScheduleAPI::EJobStatus  from,
                          CNetScheduleAPI::EJobStatus  to)
@@ -345,7 +350,7 @@ private:
 
     unsigned int
     x_FindPendingJob(const CNSClientId &    client,
-                     const list<string> &   aff_list,
+                     const TNSBitVector &   aff_ids,
                      bool                   wnode_affinity,
                      bool                   any_affinity);
 
@@ -388,6 +393,15 @@ private:
                             TJobStatus            status_from,
                             CJobEvent::EJobEvent  event_type);
 
+    void x_RegisterGetListener(const CNSClientId &   client,
+                               unsigned short        port,
+                               unsigned int          timeout,
+                               const TNSBitVector &  aff_ids,
+                               bool                  wnode_aff,
+                               bool                  any_aff);
+    bool x_UnregisterGetListener(const CNSClientId &  client,
+                                 unsigned short       port);
+
 private:
     friend class CJob;
     friend class CQueueEnumCursor;
@@ -398,9 +412,6 @@ private:
     // Timeline object to control job execution timeout
     CJobTimeLine*               m_RunTimeLine;
     CRWLock                     m_RunTimeLineLock;
-
-    // Notifications support
-    CNSNotificationList         m_NotificationsList;
 
     // Should we delete db upon close?
     bool                        m_DeleteDatabase;
@@ -443,7 +454,6 @@ private:
     // When modifying this, modify all places marked with PARAMETERS
     mutable CRWLock              m_ParamLock;
     int                          m_Timeout;         ///< Result exp. timeout
-    double                       m_NotifyTimeout;   ///< Notification interval
     int                          m_RunTimeout;      ///< Execution timeout
     /// Its precision, set at startup only, not reconfigurable
     int                          m_RunTimeoutPrecision;
@@ -468,6 +478,20 @@ private:
     const bool &                 m_LogBatchEachJob;
 
     CStatisticsCounters          m_StatisticsCounters;
+
+    time_t                       m_LastAffinityGC;
+    unsigned int                 m_MaxAffinities;
+    unsigned int                 m_AffinityHighMarkPercentage;
+    unsigned int                 m_AffinityLowMarkPercentage;
+    unsigned int                 m_AffinityHighRemoval;
+    unsigned int                 m_AffinityLowRemoval;
+    unsigned int                 m_AffinityDirtPercentage;
+
+    // Notifications support
+    CNSNotificationList          m_NotificationsList;
+    double                       m_NotifHifreqInterval;
+    unsigned int                 m_NotifHifreqPeriod;
+    unsigned int                 m_NotifLofreqMult;
 };
 
 
@@ -529,7 +553,6 @@ inline bool CQueue::IsWorkerAllowed(unsigned host) const
     CReadLockGuard guard(m_ParamLock);
     return host == 0  ||  m_WnodeHosts.IsAllowed(host);
 }
-
 
 
 // Application specific defaults provider for DB transaction

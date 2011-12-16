@@ -47,7 +47,9 @@ struct SQueueParameters
 
     /// General parameters, reconfigurable at run time
     int             timeout;
-    double          notif_timeout;
+    double          notif_hifreq_interval;
+    unsigned int    notif_hifreq_period;
+    unsigned int    notif_lofreq_mult;
     int             run_timeout;
     string          program_name;
     int             failed_retries;
@@ -59,6 +61,7 @@ struct SQueueParameters
     bool            log_access_violations;
     string          subm_hosts;
     string          wnode_hosts;
+
     // This parameter is not reconfigurable
     int             run_timeout_precision;
 };

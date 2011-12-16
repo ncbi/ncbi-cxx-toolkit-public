@@ -34,9 +34,18 @@
 
 #include "ns_affinity.hpp"
 #include "ns_db.hpp"
+#include "ns_handler.hpp"
 
 
 BEGIN_NCBI_SCOPE
+
+
+bool SNSJobsAffinity::CanBeDeleted(void) const
+{
+    return (!m_Jobs.any()) &&
+           (!m_Clients.any()) &&
+           (!m_WaitGetClients.any());
+}
 
 
 CNSAffinityRegistry::CNSAffinityRegistry() :
@@ -171,6 +180,68 @@ CNSAffinityRegistry::ResolveAffinityToken(const string &     token,
 }
 
 
+// The function is used when a WGET is received and there were no jobs for this
+// client. In this case non-existed affinities must be resolved and the client
+// must be memorized as a referencer of the affinities.
+// The DB transaction must be set in the outer scope.
+TNSBitVector
+CNSAffinityRegistry::ResolveAffinitiesForWaitClient(
+                                const list< string > &  tokens,
+                                unsigned int            client_id)
+{
+    TNSBitVector            result;
+    CWriteLockGuard         guard(m_Lock);
+
+    for (list<string>::const_iterator  k(tokens.begin()); k != tokens.end(); ++k) {
+        // Search for this affinity token
+        map< const string *,
+             unsigned int,
+             SNSTokenCompare >::const_iterator      found = m_AffinityIDs.find(&(*k));
+        if (found != m_AffinityIDs.end()) {
+            // This token is known. Update the jobs/clients vectors and finish
+            unsigned int    aff_id = found->second;
+
+            if (client_id != 0) {
+                map< unsigned int,
+                     SNSJobsAffinity >::iterator        jobs_affinity = m_JobsAffinity.find(aff_id);
+                jobs_affinity->second.m_WaitGetClients.set(client_id, true);
+            }
+            result.set(aff_id, true);
+            continue;
+        }
+
+        // Here: this is a new token. The DB and memory structures should be
+        //       created. Let's start with a new identifier.
+        unsigned int    aff_id = x_GetNextAffinityID();
+        for (;;) {
+            if (m_JobsAffinity.find(aff_id) == m_JobsAffinity.end())
+                break;
+            aff_id = x_GetNextAffinityID();
+        }
+
+        // Create a record in the token->id map
+        string *    new_token = new string(*k);
+        m_AffinityIDs[new_token] = aff_id;
+
+        // Create a record in the id->attributes map
+        SNSJobsAffinity     new_job_affinity;
+        new_job_affinity.m_AffToken = new_token;
+        if (client_id != 0)
+            new_job_affinity.m_WaitGetClients.set(client_id, true);
+        m_JobsAffinity[aff_id] = new_job_affinity;
+
+        // Update the database. The transaction is created in the outer scope.
+        m_AffDictDB->aff_id = aff_id;
+        m_AffDictDB->token = *k;
+        m_AffDictDB->UpdateInsert();
+
+        result.set(aff_id, true);
+    }
+
+    return result;
+}
+
+
 TNSBitVector
 CNSAffinityRegistry::GetAffinityIDs(const list< string > &  tokens) const
 {
@@ -250,9 +321,8 @@ CNSAffinityRegistry::GetJobsWithAffinity(unsigned int  aff_id) const
 }
 
 
-// Removes the job from affinity and might remove the records if there are no
-// more jobs/clients with this affinity. Deletes a record from the DB if required.
-// The transaction is set in the outer scope.
+// Removes the job from affinity and memorizes the aff_id in a list of
+// candidates for the removal from the DB.
 void CNSAffinityRegistry::RemoveJobFromAffinity(unsigned int  job_id,
                                                 unsigned int  aff_id)
 {
@@ -267,33 +337,45 @@ void CNSAffinityRegistry::RemoveJobFromAffinity(unsigned int  job_id,
         // The affinity is not known
         return;
 
-    TNSBitVector &      aff_jobs = found->second.m_Jobs;
-    TNSBitVector &      aff_clients = found->second.m_Clients;
-
-    aff_jobs.set(job_id, false);
-    if (aff_jobs.any() || aff_clients.any())
-        // There are still some jobs with this affinity
-        return;
-
-    // No more jobs/clients with this affinity
-    // so clean up the data structures
-    x_DeleteAffinity(aff_id, found);
+    found->second.m_Jobs.set(job_id, false);
+    if (found->second.CanBeDeleted())
+        // Mark for deletion by the garbage collector
+        m_RemoveCandidates.set(aff_id, true);
     return;
 }
 
 
-// Removes the client from affinities and might remove the records if there are no
-// more jobs/clients with this affinity. Deletes a record from the DB if required.
-// The transaction is set in the outer scope.
+// Removes the client from affinities and memorize those affinities which do
+// not have any references to them in the list of candidates for deletion.
 size_t
 CNSAffinityRegistry::RemoveClientFromAffinities(unsigned int          client_id,
                                                 const TNSBitVector &  aff_ids)
 {
+    return x_RemoveClientFromAffinities(client_id, aff_ids, false);
+}
+
+
+// Removes the waiting client from affinities and memorize those affinities
+// which do not have any references to them in the list of candidates
+// for deletion.
+size_t
+CNSAffinityRegistry::RemoveWaitClientFromAffinities(unsigned int          client_id,
+                                                    const TNSBitVector &  aff_ids)
+{
+    return x_RemoveClientFromAffinities(client_id, aff_ids, true);
+}
+
+
+size_t
+CNSAffinityRegistry::x_RemoveClientFromAffinities(unsigned int          client_id,
+                                                  const TNSBitVector &  aff_ids,
+                                                  bool                  is_wait_client)
+{
     if (client_id == 0 || !aff_ids.any())
         return 0;
 
-    size_t              del_count = 0;
-    CWriteLockGuard     guard(m_Lock);
+    size_t                      del_count = 0;
+    CWriteLockGuard             guard(m_Lock);
 
     TNSBitVector::enumerator    en(aff_ids.first());
     for ( ; en.valid(); ++en) {
@@ -303,21 +385,107 @@ CNSAffinityRegistry::RemoveClientFromAffinities(unsigned int          client_id,
             continue;   // Affinity is not known.
                         // This should never happened basically.
 
-        TNSBitVector &      aff_jobs = found->second.m_Jobs;
-        TNSBitVector &      aff_clients = found->second.m_Clients;
+        if (is_wait_client)
+            found->second.m_WaitGetClients.set(client_id, false);
+        else
+            found->second.m_Clients.set(client_id, false);
 
-        aff_clients.set(client_id, false);
-        if (aff_jobs.any() || aff_clients.any())
-            // There are still some jobs with this affinity
-            continue;
-
-        // No more jobs/clients with this affinity
-        // so clean up the data structures
-        x_DeleteAffinity(*en, found);
-        ++del_count;
+        if (found->second.CanBeDeleted()) {
+            // Mark for the deletion by the garbage collector
+            m_RemoveCandidates.set(*en, true);
+            ++del_count;
+        }
     }
 
     return del_count;
+}
+
+
+void  CNSAffinityRegistry::SetWaitClientForAffinities(unsigned int          client_id,
+                                                      const TNSBitVector &  aff_ids)
+{
+    if (client_id == 0 || !aff_ids.any())
+        return;
+
+    CWriteLockGuard             guard(m_Lock);
+
+    TNSBitVector::enumerator    en(aff_ids.first());
+    for ( ; en.valid(); ++en) {
+        map< unsigned int,
+             SNSJobsAffinity >::iterator    found = m_JobsAffinity.find(*en);
+        if (found == m_JobsAffinity.end())
+            continue;   // Affinity is not known.
+                        // This should never happened basically.
+
+        found->second.m_WaitGetClients.set(client_id, true);
+    }
+
+    return;
+}
+
+
+void  CNSAffinityRegistry::Print(const CQueue *              queue,
+                                 CNetScheduleHandler &       handler,
+                                 const CNSClientsRegistry &  clients_registry,
+                                 bool                        verbose) const
+{
+    CReadLockGuard              guard(m_Lock);
+
+    handler.WriteMessage("OK:NUMBER OF ENTRIES: " + NStr::SizetToString(size()));
+
+    map< unsigned int,
+         SNSJobsAffinity >::const_iterator      k = m_JobsAffinity.begin();
+    for ( ; k != m_JobsAffinity.end(); ++k ) {
+        handler.WriteMessage("OK:AFFINITY: '" + *(k->second.m_AffToken) + "'");
+        handler.WriteMessage("OK:  ID: " + NStr::IntToString(k->first));
+
+        if (verbose) {
+            if (k->second.m_Jobs.any()) {
+                handler.WriteMessage("OK:  JOBS:");
+
+                TNSBitVector::enumerator    en(k->second.m_Jobs.first());
+                for ( ; en.valid(); ++en)
+                    handler.WriteMessage("OK:    " + queue->MakeKey(*en));
+            }
+            else
+                handler.WriteMessage("OK:  JOBS: NONE");
+        }
+        else
+            handler.WriteMessage("OK:  NUMBER OF JOBS: " +
+                                 NStr::IntToString(k->second.m_Jobs.count()));
+
+        if (verbose) {
+            if (k->second.m_Clients.any()) {
+                handler.WriteMessage("OK:  CLIENTS (PREFERRED):");
+
+                TNSBitVector::enumerator    en(k->second.m_Clients.first());
+                for ( ; en.valid(); ++en)
+                    handler.WriteMessage("OK:    " + clients_registry.GetNodeName(*en));
+            }
+            else
+                handler.WriteMessage("OK:  CLIENTS (PREFERRED): NONE");
+        }
+        else
+            handler.WriteMessage("OK:  NUMBER OF CLIENTS (PREFERRED): " +
+                                 NStr::IntToString(k->second.m_Clients.count()));
+
+        if (verbose) {
+            if (k->second.m_WaitGetClients.any()) {
+                handler.WriteMessage("OK:  CLIENTS (EXPLICIT WGET):");
+
+                TNSBitVector::enumerator    en(k->second.m_WaitGetClients.first());
+                for ( ; en.valid(); ++en)
+                    handler.WriteMessage("OK:    " + clients_registry.GetNodeName(*en));
+            }
+            else
+                handler.WriteMessage("OK:  CLIENTS (EXPLICIT WGET): NONE");
+        }
+        else
+            handler.WriteMessage("OK:  NUMBER OF CLIENTS (EXPLICIT WGET): " +
+                                 NStr::IntToString(k->second.m_WaitGetClients.count()));
+    }
+
+    return;
 }
 
 
@@ -423,9 +591,63 @@ void CNSAffinityRegistry::ClearMemoryAndDatabase(void)
 }
 
 
+// The DB transaction is set in the outer scope
+unsigned int  CNSAffinityRegistry::CollectGarbage(unsigned int  max_to_del)
+{
+    unsigned int                del_count = 0;
+
+    CWriteLockGuard             guard(m_Lock);
+    TNSBitVector::enumerator    en(m_RemoveCandidates.first());
+    for ( ; en.valid(); ++en) {
+        unsigned int                        aff_id = *en;
+        map< unsigned int,
+             SNSJobsAffinity >::iterator    found = m_JobsAffinity.find(aff_id);
+
+        if (found == m_JobsAffinity.end()) {
+            m_RemoveCandidates.set(aff_id, false);
+            continue;
+        }
+
+        if (found->second.CanBeDeleted()) {
+            x_DeleteAffinity(aff_id, found);
+            m_RemoveCandidates.set(aff_id, false);
+            ++del_count;
+            if (del_count >= max_to_del)
+                break;
+        }
+    }
+
+    return del_count;
+}
+
+
+unsigned int  CNSAffinityRegistry::CheckRemoveCandidates(void)
+{
+    unsigned int                still_candidate;
+
+    CWriteLockGuard             guard(m_Lock);
+    TNSBitVector::enumerator    en(m_RemoveCandidates.first());
+    for ( ; en.valid(); ++en) {
+        unsigned int                        aff_id = *en;
+        map< unsigned int,
+             SNSJobsAffinity >::iterator    found = m_JobsAffinity.find(aff_id);
+
+        if (found == m_JobsAffinity.end()) {
+            m_RemoveCandidates.set(aff_id, false);
+            continue;
+        }
+
+        if (found->second.CanBeDeleted())
+            ++still_candidate;
+        else
+            m_RemoveCandidates.set(aff_id, false);
+    }
+    return still_candidate;
+}
+
+
 void CNSAffinityRegistry::x_Clear(void)
 {
-
     // Delete all the allocated strings
     CWriteLockGuard                     guard(m_Lock);
     map< unsigned int,

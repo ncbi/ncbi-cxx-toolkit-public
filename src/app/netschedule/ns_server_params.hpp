@@ -69,7 +69,15 @@ struct SNS_Parameters : SServer_Parameters
 
     std::string     admin_hosts;
 
+    // Affinity GC settings
+    unsigned int    affinity_high_mark_percentage;
+    unsigned int    affinity_low_mark_percentage;
+    unsigned int    affinity_high_removal;
+    unsigned int    affinity_low_removal;
+    unsigned int    affinity_dirt_percentage;
+
     void Read(const IRegistry& reg, const std::string& sname);
+    void CheckAffinityGarbageCollectorSettings(void);
 
     unsigned GetNumParams() const;
     std::string GetParamName(unsigned n) const;

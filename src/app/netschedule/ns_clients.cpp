@@ -320,7 +320,8 @@ CNSClient::CNSClient() :
     m_ReadHistory(bm::BM_GAP),
     m_WaitPort(0),
     m_ID(0),
-    m_Affinities(bm::BM_GAP)
+    m_Affinities(bm::BM_GAP),
+    m_WaitAffinities(bm::BM_GAP)
 {}
 
 
@@ -338,7 +339,8 @@ CNSClient::CNSClient(const CNSClientId &  client_id) :
     m_ReadHistory(bm::BM_GAP),
     m_WaitPort(0),
     m_ID(0),
-    m_Affinities(bm::BM_GAP)
+    m_Affinities(bm::BM_GAP),
+    m_WaitAffinities(bm::BM_GAP)
 {
     if (!client_id.IsComplete())
         NCBI_THROW(CNetScheduleException, eInternalError,
@@ -363,6 +365,8 @@ void CNSClient::Clear(const CNSClientId &   client,
         m_ReadingJobs.clear();
     }
 
+    m_Affinities.clear();
+    m_WaitAffinities.clear();
     return;
 }
 
@@ -404,6 +408,12 @@ unsigned short CNSClient::GetAndResetWaitPort(void)
 
     m_WaitPort = 0;
     return old_port;
+}
+
+
+string CNSClient::GetSession(void) const
+{
+    return m_Session;
 }
 
 
@@ -524,6 +534,9 @@ void CNSClient::Touch(const CNSClientId &  client_id,
     // Update the session identifier
     m_Session = client_id.GetSession();
 
+    m_Affinities.clear();
+    m_WaitAffinities.clear();
+
     // There is no need to do anything neither with the blacklisted jobs
     // nor submitted jobs
     return;
@@ -637,6 +650,19 @@ void CNSClient::Print(const string &               node_name,
         }
     }
 
+    if (m_WaitAffinities.any()) {
+        if (verbose) {
+            handler.WriteMessage("OK:  REQUESTED AFFINITIES:");
+
+            TNSBitVector::enumerator    en(m_WaitAffinities.first());
+            for ( ; en.valid(); ++en)
+                handler.WriteMessage("OK:    " + aff_registry.GetTokenByID(*en));
+        } else {
+            handler.WriteMessage("OK:  NUMBER OF REQUESTED AFFINITIES: " +
+                                 NStr::UIntToString(m_WaitAffinities.count()));
+        }
+    }
+
     return;
 }
 
@@ -670,6 +696,42 @@ void  CNSClient::AddPreferredAffinities(const TNSBitVector &  aff)
 void  CNSClient::RemovePreferredAffinities(const TNSBitVector &  aff)
 {
     m_Affinities -= aff;
+    return;
+}
+
+
+void  CNSClient::RegisterWaitAffinities(const TNSBitVector &  aff)
+{
+    m_WaitAffinities = aff;
+    return;
+}
+
+
+TNSBitVector  CNSClient::GetWaitAffinities(void) const
+{
+    return m_WaitAffinities;
+}
+
+
+// Used in the notifications code to test if a notifications should be sent to
+// the client
+bool  CNSClient::IsRequestedAffinity(const TNSBitVector &  aff,
+                                     bool                  use_preferred) const
+{
+    if ((m_WaitAffinities & aff).any())
+        return true;
+
+    if (use_preferred)
+        if ((m_Affinities & aff).any())
+            return true;
+
+    return false;
+}
+
+
+void  CNSClient::ClearWaitAffinities(void)
+{
+    m_WaitAffinities.clear();
     return;
 }
 

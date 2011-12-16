@@ -237,6 +237,8 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "aff",       eNSPT_Str, eNSPA_Optional, "" },
           { "any_aff",   eNSPT_Int, eNSPA_Optional, 0 },
           { "wnode_aff", eNSPT_Int, eNSPA_Optional, 0 } } },
+    { "CWGET",    { &CNetScheduleHandler::x_ProcessCancelWaitGet,
+                    eNSCR_Worker } },
     // FPUT job_key : id  err_msg : str  output : str  job_return_code : int
     { "FPUT",     { &CNetScheduleHandler::x_ProcessPutFailure,
                     eNSCR_Worker },
@@ -1073,8 +1075,7 @@ void CNetScheduleHandler::x_ProcessChangeAffinity(CQueue* q)
                 "\t,", aff_to_del_list, NStr::eNoMergeDelims);
 
     string  msg = q->ChangeAffinity(m_ClientId, aff_to_add_list,
-                                                aff_to_del_list,
-                                                m_Server->GetMaxAffinities());
+                                                aff_to_del_list);
     if (msg.empty())
         WriteMessage("OK:");
     else
@@ -1197,19 +1198,19 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
                 "\t,", aff_list, NStr::eNoMergeDelims);
 
     CJob            job;
-    q->GetJob(m_ClientId, time(0),
-              &aff_list,
-              m_CommandArguments.wnode_affinity,
-              m_CommandArguments.any_affinity,
-              &job);
+    q->GetJobOrWait(m_ClientId,
+                    m_CommandArguments.port,
+                    0,  // This is GET, not WGET
+                    time(0), &aff_list,
+                    m_CommandArguments.wnode_affinity,
+                    m_CommandArguments.any_affinity,
+                    &job);
 
     if (job.GetId())
         WriteMessage("OK:", x_FormGetJobResponse(q, job));
     else
         WriteMessage("OK:");
 
-
-    q->UnregisterGetListener(m_ClientId);
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -1223,23 +1224,31 @@ void CNetScheduleHandler::x_ProcessWaitGet(CQueue* q)
                 "\t,", aff_list, NStr::eNoMergeDelims);
 
     CJob                job;
-    q->GetJob(m_ClientId, time(0),
-              &aff_list,
-              m_CommandArguments.wnode_affinity,
-              m_CommandArguments.any_affinity,
-              &job);
+    q->GetJobOrWait(m_ClientId, time(0),
+                    m_CommandArguments.port,
+                    m_CommandArguments.timeout,
+                    &aff_list,
+                    m_CommandArguments.wnode_affinity,
+                    m_CommandArguments.any_affinity,
+                    &job);
 
-    if (job.GetId()) {
+    if (job.GetId())
         WriteMessage("OK:", x_FormGetJobResponse(q, job));
-        x_PrintRequestStop(eStatus_OK);
-        return;
-    }
+    else
+        WriteMessage("OK:");
 
-    // job not found, initiate waiting mode
-    if (m_CommandArguments.port > 0 && m_CommandArguments.timeout > 0)
-        q->RegisterGetListener(m_ClientId, m_CommandArguments.port,
-                                           m_CommandArguments.timeout);
+    x_PrintRequestStop(eStatus_OK);
+}
 
+
+void CNetScheduleHandler::x_ProcessCancelWaitGet(CQueue* q)
+{
+    if (!m_ClientId.IsComplete())
+        NCBI_THROW(CNetScheduleException, eInvalidClient,
+               "Anonymous client (no client_node and client_session"
+               " at handshake) cannot cancel waiting after WGET.");
+
+    q->CancelWaitGet(m_ClientId);
     WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
 }
@@ -2028,12 +2037,15 @@ void CNetScheduleHandler::x_StatisticsNew(CQueue *        q,
                                           const string &  what,
                                           time_t          curr)
 {
-    if (what == "CLIENTS") {
-        if (m_CommandArguments.comment == "VERBOSE")
-            q->PrintClientsList(*this, true);
-        else
-            q->PrintClientsList(*this, false);
-    }
+    if (what == "CLIENTS")
+        q->PrintClientsList(*this,
+                            m_CommandArguments.comment == "VERBOSE");
+    else if (what == "NOTIFICATIONS")
+        q->PrintNotificationsList(*this,
+                                  m_CommandArguments.comment == "VERBOSE");
+    else if (what == "AFFINITIES")
+        q->PrintAffinitiesList(*this,
+                               m_CommandArguments.comment == "VERBOSE");
     else if (what == "JOBS") {
         size_t      total = 0;
         for (size_t  k = 0; k < g_ValidJobStatusesSize; ++k) {

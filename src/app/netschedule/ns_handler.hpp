@@ -147,6 +147,7 @@ private:
     void x_ProcessStatus(CQueue*);
     void x_ProcessGetJob(CQueue*);
     void x_ProcessWaitGet(CQueue*);
+    void x_ProcessCancelWaitGet(CQueue*);
     void x_ProcessPut(CQueue*);
     void x_ProcessJobExchange(CQueue*);
     void x_ProcessPutMessage(CQueue*);

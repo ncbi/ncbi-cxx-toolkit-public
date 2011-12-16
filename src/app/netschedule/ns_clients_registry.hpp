@@ -57,8 +57,9 @@ class CNSClientsRegistry
 
         // Called before any command is issued by the client.
         // The client record is created or updated.
-        void  Touch(CNSClientId &        client,
-                    CQueue *             queue);
+        unsigned short  Touch(CNSClientId &          client,
+                              CQueue *               queue,
+                              CNSAffinityRegistry &  aff_registry);
 
         // Methods to update the client records.
         void  AddToSubmitted(const CNSClientId &  client,
@@ -80,8 +81,9 @@ class CNSClientsRegistry
                              unsigned int         job_id);
         void  ClearExecuting(unsigned int  job_id);
         void  ClearExecutingSetBlacklist(unsigned int  job_id);
-        void  ClearWorkerNode(const CNSClientId &  client,
-                              CQueue *             queue);
+        unsigned short  ClearWorkerNode(const CNSClientId &    client,
+                                        CQueue *               queue,
+                                        CNSAffinityRegistry &  aff_registry);
         TNSBitVector  GetBlacklistedJobs(const CNSClientId &  client);
 
         void  PrintClientsList(const CQueue *               queue,
@@ -89,13 +91,25 @@ class CNSClientsRegistry
                                const CNSAffinityRegistry &  aff_registry,
                                bool                         verbose) const;
 
-        void  SetWaitPort(const CNSClientId &  client,
-                          unsigned short       port);
-        unsigned short  GetAndResetWaitPort(const CNSClientId &  client);
-        TNSBitVector  GetPreferredAffinities(const CNSClientId &  client);
+        void  SetWaiting(const CNSClientId &          client,
+                         unsigned short               port,
+                         const TNSBitVector &         aff_ids,
+                         CNSAffinityRegistry &        aff_registry);
+        unsigned short  ResetWaiting(const CNSClientId &    client,
+                                     CNSAffinityRegistry &  aff_registry);
+        unsigned short  ResetWaiting(const string &         name,
+                                     CNSAffinityRegistry &  aff_registry);
+        TNSBitVector  GetPreferredAffinities(const CNSClientId &  client) const;
+        TNSBitVector  GetPreferredAffinities(const string &  node) const;
+        TNSBitVector  GetWaitAffinities(const CNSClientId &  client) const;
+        TNSBitVector  GetWaitAffinities(const string &  node) const;
         void  UpdatePreferredAffinities(const CNSClientId &   client,
                                         const TNSBitVector &  aff_to_add,
                                         const TNSBitVector &  aff_to_del);
+        bool  IsRequestedAffinity(const string &         name,
+                                  const TNSBitVector &   aff,
+                                  bool                   use_preferred) const;
+        string  GetNodeName(unsigned int  id) const;
 
     private:
         map< string, CNSClient >    m_Clients;  // All the queue clients
@@ -109,6 +123,9 @@ class CNSClientsRegistry
         CFastMutex                  m_LastIDLock;
 
         unsigned int  x_GetNextID(void);
+
+        unsigned short  x_ResetWaiting(CNSClient &            client,
+                                       CNSAffinityRegistry &  aff_registry);
 };
 
 

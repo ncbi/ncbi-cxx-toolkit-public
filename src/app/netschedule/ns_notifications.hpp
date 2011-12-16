@@ -38,19 +38,41 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbithr.hpp>
 
-#include "ns_clients.hpp"
-
 #include <list>
 
+#include "ns_types.hpp"
 
 
 BEGIN_NCBI_SCOPE
+
+class CNSClientId;
+class CNSClientsRegistry;
+class CNSAffinityRegistry;
+class CNetScheduleHandler;
+
 
 struct SNSNotificationAttributes
 {
     unsigned int    m_Address;
     unsigned short  m_Port;
     time_t          m_Lifetime;
+
+    string          m_ClientNode;   // Non-empty for the new style lients
+    bool            m_WnodeAff;     // true if I need to consider the node
+                                    // preferred affinities.
+    bool            m_AnyJob;       // true if any job is suitable.
+
+    // Support for two stage (different frequency) notifications
+    // First stage is frequent (fast) within configured timeout from the moment
+    // when a job is available.
+    // second stage is infrequent (slow) till the end of the notifications.
+
+    bool            m_ShouldNotify; // If true then the notification thread
+                                    // will notify the client.
+    time_t          m_HifreqNotifyLifetime;
+    bool            m_SlowRate;     // true if the client did not come after
+                                    // fast notifications period.
+    unsigned int    m_SlowRateCount;
 };
 
 
@@ -61,22 +83,48 @@ class CNSNotificationList
     public:
         CNSNotificationList(const string &  qname);
 
-        void RegisterListener(const CNSClientId &  client,
-                              unsigned short       port,
-                              unsigned int         timeout);
+        void RegisterListener(const CNSClientId &   client,
+                              unsigned short        port,
+                              unsigned int          timeout,
+                              bool                  wnode_aff,
+                              bool                  any_job);
         void UnregisterListener(const CNSClientId &  client,
                                 unsigned short       port);
 
-        void Notify(const string &  aff_token);
-        void NotifySomeAffinity(void);
         void NotifyJobStatus(unsigned int    address,
                              unsigned short  port,
                              const string &  job_key);
-        void CheckTimeout(void);
+        void CheckTimeout(time_t                 current_time,
+                          CNSClientsRegistry &   clients_registry,
+                          CNSAffinityRegistry &  aff_registry);
+        void NotifyPeriodically(time_t                 current_time,
+                                unsigned int           notif_lofreq_mult,
+                                CNSClientsRegistry &   clients_registry,
+                                CNSAffinityRegistry &  aff_registry);
+        void Notify(unsigned int           aff_id,
+                    CNSClientsRegistry &   clients_registry,
+                    CNSAffinityRegistry &  aff_registry,
+                    unsigned int           notif_highfreq_period);
+        void Notify(const TNSBitVector &   affinities,
+                    CNSClientsRegistry &   clients_registry,
+                    CNSAffinityRegistry &  aff_registry,
+                    unsigned int           notif_highfreq_period);
+        void Print(CNetScheduleHandler &        handler,
+                   const CNSClientsRegistry &   clients_registry,
+                   const CNSAffinityRegistry &  aff_registry,
+                   bool                         verbose) const;
+
+    private:
+        void x_SendNotificationPacket(unsigned int    address,
+                                      unsigned short  port);
+        bool x_TestTimeout(time_t                       current_time,
+                           CNSClientsRegistry &         clients_registry,
+                           CNSAffinityRegistry &        aff_registry,
+                           list<SNSNotificationAttributes>::iterator &  record);
 
     private:
         list<SNSNotificationAttributes>     m_Listeners;
-        CFastMutex                          m_ListenersLock;
+        mutable CFastMutex                  m_ListenersLock;
 
         CDatagramSocket         m_GetNotificationSocket;
         char                    m_GetMsgBuffer[k_MessageBufferSize];

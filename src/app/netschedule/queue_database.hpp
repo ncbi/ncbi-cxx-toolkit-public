@@ -151,6 +151,9 @@ public:
     void RunPurgeThread(void);
     void StopPurgeThread(void);
 
+    // Collect garbage from affinities
+    void PurgeAffinities(void);
+
     // Notify all listeners
     void NotifyListeners(void);
     void RunNotifThread(void);

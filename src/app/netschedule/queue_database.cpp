@@ -801,8 +801,9 @@ void CQueueDataBase::TransactionCheckPoint(bool clean_log)
 
 void CQueueDataBase::NotifyListeners(void)
 {
+    time_t      current_time = time(0);
     NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
-        (*it).NotifyListeners(false, 0);
+        (*it).NotifyListenersPeriodically(current_time);
     }
 }
 
@@ -1088,6 +1089,17 @@ void CQueueDataBase::StopPurgeThread(void)
         m_PurgeThread->Join();
         m_PurgeThread.Reset(0);
     }
+}
+
+
+void CQueueDataBase::PurgeAffinities(void)
+{
+    NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
+        (*it).PurgeAffinities();
+        if (x_CheckStopPurge())
+            return;
+    }
+    return;
 }
 
 

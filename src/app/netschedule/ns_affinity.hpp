@@ -53,6 +53,10 @@
 
 BEGIN_NCBI_SCOPE
 
+class CNetScheduleHandler;
+class CNSClientsRegistry;
+class CQueue;
+
 
 // Forward declaration of a Berkley DB table structure
 struct SAffinityDictDB;
@@ -76,6 +80,9 @@ struct SNSJobsAffinity
     const string *  m_AffToken;
     TNSBitVector    m_Jobs;
     TNSBitVector    m_Clients;
+    TNSBitVector    m_WaitGetClients;
+
+    bool CanBeDeleted(void) const;
 };
 
 
@@ -99,6 +106,8 @@ class CNSAffinityRegistry
         unsigned int  ResolveAffinityToken(const string &  token,
                                            unsigned int    job_id,
                                            unsigned int    client_id);
+        TNSBitVector  ResolveAffinitiesForWaitClient(const list< string > &  tokens,
+                                                     unsigned int            client_id);
         TNSBitVector  GetAffinityIDs(const list< string > &  tokens) const;
         map< string, unsigned int >  GetJobsPerToken(void) const;
         TNSBitVector  GetJobsWithAffinity(const TNSBitVector &  aff_ids) const;
@@ -106,6 +115,15 @@ class CNSAffinityRegistry
         void  RemoveJobFromAffinity(unsigned int  job_id, unsigned int  aff_id);
         size_t  RemoveClientFromAffinities(unsigned int          client_id,
                                            const TNSBitVector &  aff_ids);
+        size_t  RemoveWaitClientFromAffinities(unsigned int          client_id,
+                                               const TNSBitVector &  aff_ids);
+        void  SetWaitClientForAffinities(unsigned int          client_id,
+                                         const TNSBitVector &  aff_ids);
+
+        void  Print(const CQueue *              queue,
+                    CNetScheduleHandler &       handler,
+                    const CNSClientsRegistry &  clients_registry,
+                    bool                        verbose) const;
 
         // Used to load the affinity DB table and register loaded jobs.
         // The loading procedure has 3 steps:
@@ -120,7 +138,13 @@ class CNSAffinityRegistry
         // Needs when all the jobs are deleted (DROPQ)
         void  ClearMemoryAndDatabase(void);
 
+        unsigned int  CollectGarbage(unsigned int  max_to_del);
+        unsigned int  CheckRemoveCandidates(void);
+
     private:
+        size_t x_RemoveClientFromAffinities(unsigned int          client_id,
+                                            const TNSBitVector &  aff_ids,
+                                            bool                  is_wait_client);
         void x_Clear(void);
         void x_DeleteAffinity(unsigned int                   aff_id,
                               map<unsigned int,
@@ -134,6 +158,7 @@ class CNSAffinityRegistry
              SNSTokenCompare >  m_AffinityIDs;  // Aff token -> aff id
         map< unsigned int,
              SNSJobsAffinity >  m_JobsAffinity; // Aff id -> aff token and jobs
+        TNSBitVector            m_RemoveCandidates;
         mutable CRWLock         m_Lock;         // Lock for the operations
 
     private:

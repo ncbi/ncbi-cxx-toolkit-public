@@ -41,17 +41,31 @@
 BEGIN_NCBI_SCOPE
 
 
+static int              default_timeout = 3600;
+static double           default_notif_hifreq_interval = 0.1;
+static unsigned int     default_notif_hifreq_period = 5;
+static unsigned int     default_notif_lofreq_mult = 50;
+static int              default_run_timeout = 3600;
+static int              default_failed_retries = 0;
+static time_t           default_empty_lifetime = -1;
+static time_t           default_blacklist_time = 0;
+static int              default_run_timeout_precision = 3600;
+
+
 SQueueParameters::SQueueParameters() :
-    timeout(3600),
-    notif_timeout(0.1),
-    run_timeout(3600),
-    failed_retries(0),
-    empty_lifetime(0),
+    timeout(default_timeout),
+    notif_hifreq_interval(default_notif_hifreq_interval),
+    notif_hifreq_period(default_notif_hifreq_period),
+    notif_lofreq_mult(default_notif_lofreq_mult),
+    run_timeout(default_run_timeout),
+    failed_retries(default_failed_retries),
+    blacklist_time(default_blacklist_time),
+    empty_lifetime(default_empty_lifetime),
     max_input_size(kNetScheduleMaxDBDataSize),
     max_output_size(kNetScheduleMaxDBDataSize),
     deny_access_violations(false),
     log_access_violations(true),
-    run_timeout_precision(3600)
+    run_timeout_precision(default_run_timeout_precision)
 {}
 
 
@@ -65,21 +79,34 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
     // When modifying this, modify all places marked with PARAMETERS
 
     // Read parameters
-    timeout = GetIntNoErr("timeout", 3600);
+    timeout = GetIntNoErr("timeout", default_timeout);
 
     // Notification timeout
-    notif_timeout = GetDoubleNoErr("notif_timeout", 0.1);
-    notif_timeout = (int(notif_timeout * 10)) / 10.0;
-    if (notif_timeout <= 0)
-        notif_timeout = 0.1;
+    notif_hifreq_interval = GetDoubleNoErr("notif_hifreq_interval",
+                                           default_notif_hifreq_interval);
+    notif_hifreq_interval = (int(notif_hifreq_interval * 10)) / 10.0;
+    if (notif_hifreq_interval <= 0)
+        notif_hifreq_interval = default_notif_hifreq_interval;
 
-    run_timeout           = GetIntNoErr("run_timeout", timeout);
-    run_timeout_precision = GetIntNoErr("run_timeout_precision", run_timeout);
+    notif_hifreq_period = GetIntNoErr("notif_hifreq_period",
+                                      default_notif_hifreq_period);
+    if (notif_hifreq_period <= 0)
+        notif_hifreq_period = default_notif_hifreq_period;
+
+    notif_lofreq_mult = GetIntNoErr("notif_lofreq_mult",
+                                    default_notif_lofreq_mult);
+    if (notif_lofreq_mult <= 0)
+        notif_lofreq_mult = default_notif_lofreq_mult;
+
+    run_timeout           = GetIntNoErr("run_timeout",
+                                        default_run_timeout);
+    run_timeout_precision = GetIntNoErr("run_timeout_precision",
+                                        default_run_timeout_precision);
     program_name          = reg.GetString(sname, "program", kEmptyStr);
 
-    failed_retries = GetIntNoErr("failed_retries", 0);
-    blacklist_time = GetIntNoErr("blacklist_time", 0);
-    empty_lifetime = GetIntNoErr("empty_lifetime", -1);
+    failed_retries = GetIntNoErr("failed_retries", default_failed_retries);
+    blacklist_time = GetIntNoErr("blacklist_time", default_blacklist_time);
+    empty_lifetime = GetIntNoErr("empty_lifetime", default_empty_lifetime);
 
 
     // Max input size
@@ -109,6 +136,7 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
 
     subm_hosts = reg.GetString(sname,  "subm_host",  kEmptyStr);
     wnode_hosts = reg.GetString(sname, "wnode_host", kEmptyStr);
+    return;
 }
 
 
