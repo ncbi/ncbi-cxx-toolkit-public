@@ -66,7 +66,7 @@
  *  SOCK_Reconnect
  *  SOCK_Shutdown
  *  SOCK_Close[Ex]
- *  SOCK_CloseHandle
+ *  SOCK_CloseOSHandle
  *  SOCK_Wait
  *  SOCK_Poll
  *  SOCK_SetTimeout
@@ -764,10 +764,10 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CloseEx
  );
 
 
-/** Close socket OS handle.
+/** Close socket OS handle (ungracefully aborting the connection if necessary).
  * The call retries repeatedly if interrupted by a singal (so no eIO_Interrupt
- * shoud be expected).  Return eIO_Success when the handle has been closed
- * successfuly, eIO_Closed if the handle has been passed already closed,
+ * should be expected).  Return eIO_Success when the handle has been closed
+ * successfully, eIO_Closed if the handle has been passed already closed,
  * eIO_InvalidArg if passed arguments are not valid, eIO_Unknow if the
  * handle cannot be closed (per an error returned by the system).
  * NOTE using this call on a handle that belongs to an active [LD]SOCK object
