@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Denis Vakatov
+ * Author:  Denis Vakatov, Anton Lavrentiev
  *
  * File Description:
  *   Types and code shared by all "ncbi_*.[ch]" modules.
@@ -34,6 +34,22 @@
 #include "ncbi_assert.h"
 #include <connect/ncbi_core.h>
 #include <stdlib.h>
+
+#if defined(_MT)
+#  if defined(NCBI_OS_MSWIN)
+#    define WIN32_LEAN_AND_MEAN
+#    include <windows.h>
+#    define NCBI_WIN32_THREADS
+#  elif defined(NCBI_OS_UNIX)
+#    include <pthread.h>
+#    define NCBI_POSIX_THREADS
+#  else
+#    define NCBI_NO_THREADS
+#  endif
+#else
+#    define NCBI_NO_THREADS
+#endif
+
 
 
 /******************************************************************************
@@ -75,7 +91,78 @@ struct MT_LOCK_tag {
   FMT_LOCK_Cleanup cleanup;      /* cleanup function */
   unsigned int     magic_number; /* used internally to make sure it's init'd */
 };
-static const unsigned int kMT_LOCK_magic_number = 0x7A96283F;
+#define kMT_LOCK_magic_number 0x7A96283F
+
+
+/*ARGSUSED*/
+static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
+                                                  EMT_Lock action)
+{
+#if defined(NCBI_POSIX_THREADS)  &&  \
+    defined(PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP)
+
+    static pthread_mutex_t sx_Mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
+
+    switch (action) {
+    case eMT_Lock:
+    case eMT_LockRead:
+        return pthread_mutex_lock(&sx_Mutex)    == 0 ? 1 : 0;
+    case eMT_Unlock:
+        return pthread_mutex_unlock(&sx_Mutex)  == 0 ? 1 : 0;
+    case eMT_TryLock:
+    case eMT_TryLockRead:
+        return pthread_mutex_trylock(&sx_Mutex) == 0 ? 1 : 0;
+    default:
+        break;
+    }
+
+#elif defined(NCBI_WIN32_THREADS)
+
+    static CRITICAL_SECTION sx_Crit;
+    static LONG             sx_Init   = 0;
+    static int/*bool*/      sx_Inited = 0/*false*/;
+
+    LONG init = InterlockedCompareExchange(&sx_Init, 1, 0);
+    if (!init) {
+        InitializeCriticalSection(&sx_Crit);
+        sx_Inited = 1; /*go*/
+    } else while (!sx_Inited)
+        Sleep(10/*ms*/); /*spin*/
+
+    switch (action) {
+    case eMT_Lock:
+    case eMT_LockRead:
+        EnterCriticalSection(&sx_Crit);
+        return 1/*true*/;
+    case eMT_Unlock:
+        LeaveCriticalSection(&sx_Crit);
+        return 1/*true*/;
+    case eMT_TryLock:
+    case eMT_TryLockRead:
+        if (TryEnterCriticalSection(&sx_Crit))
+            return 1/*true*/;
+        /*FALLTHRU*/
+    default:
+        break;
+    }
+
+#endif
+
+    return 0/*failed*/;
+}
+
+
+struct MT_LOCK_tag g_CORE_MT_Lock_default = {
+    1/*ref count*/,
+    0/*user data*/,
+#ifndef NCBI_NO_THREADS
+    s_CORE_MT_Lock_default_handler,
+#else
+    0,
+#endif /*NCBI_CXX_TOOLKIT*/
+    0/*cleanup*/,
+    kMT_LOCK_magic_number
+};
 
 
 extern MT_LOCK MT_LOCK_Create
@@ -99,14 +186,15 @@ extern MT_LOCK MT_LOCK_Create
 extern MT_LOCK MT_LOCK_AddRef(MT_LOCK lk)
 {
     MT_LOCK_VALID;
-    lk->ref_count++;
+    if (lk != &g_CORE_MT_Lock_default)
+        lk->ref_count++;
     return lk;
 }
 
 
 extern MT_LOCK MT_LOCK_Delete(MT_LOCK lk)
 {
-    if (lk) {
+    if (lk  &&  lk != &g_CORE_MT_Lock_default) {
         MT_LOCK_VALID;
 
         if (!--lk->ref_count) {
@@ -162,7 +250,7 @@ struct LOG_tag {
     MT_LOCK      mt_lock;
     unsigned int magic_number;  /* used internally, to make sure it's init'd */
 };
-static const unsigned int kLOG_magic_number = 0x3FB97156;
+#define kLOG_magic_number 0x3FB97156
 
 
 extern const char* LOG_LevelStr(ELOG_Level level)
@@ -345,7 +433,7 @@ struct REG_tag {
     MT_LOCK      mt_lock;
     unsigned int magic_number;  /* used internally, to make sure it's init'd */
 };
-static const unsigned int kREG_magic_number = 0xA921BC08;
+#define kREG_magic_number 0xA921BC08
 
 
 extern REG REG_Create
