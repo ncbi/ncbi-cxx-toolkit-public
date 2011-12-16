@@ -42,8 +42,7 @@
 #include <objects/seqtable/CommonString_table.hpp>
 #include <objects/seqtable/CommonBytes_table.hpp>
 #include <objects/seqtable/Seq_table.hpp>
-#include <serial/iterator.hpp>
-#include <serial/objectiter.hpp>
+#include <serial/objhook.hpp>
 #include <corelib/ncbi_param.hpp>
 
 // generated classes
