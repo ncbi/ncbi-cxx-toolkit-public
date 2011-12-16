@@ -444,6 +444,7 @@ private:
                              Uint8& coord,
                              SFileRecHeader*& write_head);
     SFileRecHeader* x_GetRecordForCoord(Uint8 coord);
+    Uint1 x_CalcMapDepth(Uint8 size, Uint2 chunk_size, Uint2 map_size);
     void x_AddGarbageSize(Int8 size);
     void x_MoveSizeToGarbage(SNCDBFileInfo* file_info, Uint4 size);
     void x_MoveSizeToGarbage(Uint8 coord, Uint4 size);
@@ -521,8 +522,8 @@ private:
     AutoPtr<CFileLock> m_GuardLock;
     /// Flag if storage is stopped and in process of destroying
     bool               m_Stopped;
-    /// Semaphore allowing immediate stopping of background thread
-    CSemaphore         m_StopTrigger;
+    CFastMutex         m_StopLock;
+    CConditionVariable m_StopCond;
     /// Background thread running GC and caching
     CRef<CThread>      m_BGThread;
     CRef<CThread>      m_GCThread;
@@ -576,7 +577,8 @@ private:
     CNCBlobAccessor*         m_UsedAccessors;
     /// Number of lock holders in use
     unsigned int             m_CntUsedHolders;
-    CSemaphore               m_GCBlockWaiter;
+    CFastMutex               m_GCBlockLock;
+    CConditionVariable       m_GCBlockWaiter;
     CNCBlobAccessor*         m_GCAccessor;
     vector<string>           m_GCKeys;
     vector<Uint2>            m_GCSlots;

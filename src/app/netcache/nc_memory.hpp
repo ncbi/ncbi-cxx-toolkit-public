@@ -1372,8 +1372,9 @@ private:
     static CAtomicCounter sm_CntCanAlloc;
     /// Background thread of memory manager.
     static CThread*       sm_BGThread;
+    static CFastMutex     sm_WaitLock;
     /// Semaphore allowing quick finalization of the background thread.
-    static CSemaphore     sm_WaitForStop;
+    static CConditionVariable sm_WaitForStop;
 };
 
 END_NCBI_SCOPE

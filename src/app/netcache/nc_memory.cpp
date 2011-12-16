@@ -214,7 +214,8 @@ size_t          CNCMMCentral::sm_MemLimit      = kNCMMDefMemoryLimit;
 size_t          CNCMMCentral::sm_MemAlertLevel = 2 * kNCMMDefMemoryLimit;
 CAtomicCounter  CNCMMCentral::sm_CntCanAlloc;
 CThread*        CNCMMCentral::sm_BGThread      = NULL;
-CSemaphore      CNCMMCentral::sm_WaitForStop(0, 1);
+CFastMutex      CNCMMCentral::sm_WaitLock;
+CConditionVariable CNCMMCentral::sm_WaitForStop;
 
 static CFastMutex   s_CacheDeleteLock;
 
@@ -2408,7 +2409,7 @@ void
 CNCMMCentral::PrepareToStop(void)
 {
     sm_Mode = eNCFinalized;
-    sm_WaitForStop.Post();
+    sm_WaitForStop.SignalAll();
     if (sm_BGThread) {
         try {
             sm_BGThread->Join();
@@ -2454,7 +2455,11 @@ CNCMMCentral::x_DoBackgroundWork(void)
         CNCMMStats::AggregateUsage(&stats);
         x_CalcMemoryMode(stats);
         sm_Stats.AddAggregateMeasures(stats);
-        sm_WaitForStop.TryWait(kNCMMBGThreadWaitSecs);
+        sm_WaitLock.Lock();
+        if (GetMemMode() != eNCFinalized)
+            sm_WaitForStop.WaitForSignal(sm_WaitLock,
+                                         CTimeout(kNCMMBGThreadWaitSecs, 0));
+        sm_WaitLock.Unlock();
     }
 }
 

@@ -32,11 +32,7 @@
  *
  */
 
-#include <connect/services/netcache_api_expt.hpp>
-#include <connect/services/netcache_key.hpp>
-
 #include <connect/server.hpp>
-#include <connect/services/srv_connections.hpp>
 #include <util/thread_pool.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_config.hpp>
@@ -55,6 +51,9 @@ BEGIN_NCBI_SCOPE
 
 class CNetCacheDApp;
 class CNCMessageHandler;
+
+
+static const char* const kNCPeerClientName = "nc_peer";
 
 
 /// Policy for accepting passwords for reading and writing blobs
@@ -125,94 +124,10 @@ public:
     Uint8 GetDiskFree(void);
 
     static Uint8 GetPreciseTime(void);
-    static CNetServer GetPeerServer(Uint8 server_id);
-    static ESyncInitiateResult StartSyncWithPeer(Uint8  server_id,
-                                                 Uint2  slot,
-                                                 Uint8& local_rec_no,
-                                                 Uint8& remote_rec_no,
-                                                 TReducedSyncEvents& events_list,
-                                                 TNCBlobSumList& blobs_list);
-    static ENCPeerFailure GetBlobsListFromPeer(Uint8  server_id,
-                                               Uint2  slot,
-                                               TNCBlobSumList& blobs_list,
-                                               Uint8& remote_rec_no);
-    static ENCPeerFailure SendBlobToPeer(Uint8 server_id,
-                                         Uint2 slot,
-                                         const string& key,
-                                         Uint8 orig_rec_no,
-                                         bool  add_client_ip);
-    static ENCPeerFailure ReadBlobMetaData(Uint8 server_id,
-                                           const string& key,
-                                           bool& blob_exist,
-                                           SNCBlobSummary& blob_sum);
-    static ENCPeerFailure ProlongBlobOnPeer(Uint8 server_id,
-                                            Uint2 slot,
-                                            const string& key,
-                                            Uint8 orig_rec_no,
-                                            Uint8 orig_time);
-    static ENCPeerFailure SyncWriteBlobToPeer(Uint8 server_id,
-                                              Uint2 slot,
-                                              const string& key)
-    {
-        return x_WriteBlobToPeer(server_id, slot, key, 0, true, false);
-    }
-    static ENCPeerFailure SyncWriteBlobToPeer(Uint8 server_id,
-                                              Uint2 slot,
-                                              SNCSyncEvent* evt)
-    {
-        _ASSERT(evt->event_type == eSyncWrite);
-        return x_WriteBlobToPeer(server_id, slot, evt->key, evt->orig_rec_no,
-                                 true, false);
-    }
-    static ENCPeerFailure SyncProlongBlobOnPeer(Uint8 server_id,
-                                                Uint2 slot,
-                                                SNCSyncEvent* evt)
-    {
-        return x_ProlongBlobOnPeer(server_id, slot, evt->key,
-                                   evt->orig_server, evt->orig_rec_no,
-                                   evt->orig_time, true);
-    }
-    static ENCPeerFailure SyncProlongBlobOnPeer(Uint8 server_id,
-                                                Uint2 slot,
-                                                const string& key,
-                                                const SNCBlobSummary& blob_sum)
-    {
-        return x_ProlongBlobOnPeer(server_id, slot, key, blob_sum, 0, 0, 0, true);
-    }
-    static ENCPeerFailure SyncGetBlobFromPeer(Uint8 server_id,
-                                              Uint2 slot,
-                                              const string& key,
-                                              Uint8 create_time)
-    {
-        return x_SyncGetBlobFromPeer(server_id, slot, key, create_time, 0);
-    }
-    static ENCPeerFailure SyncGetBlobFromPeer(Uint8 server_id,
-                                              Uint2 slot,
-                                              SNCSyncEvent* evt)
-    {
-        return x_SyncGetBlobFromPeer(server_id, slot, evt->key,
-                                     evt->orig_time, evt->orig_rec_no);
-    }
-    static ENCPeerFailure SyncProlongOurBlob(Uint8 server_id,
-                                             Uint2 slot,
-                                             SNCSyncEvent* evt);
-    static ENCPeerFailure SyncProlongOurBlob(Uint8 server_id,
-                                             Uint2 slot,
-                                             const string& raw_key,
-                                             const SNCBlobSummary& blob_sum,
-                                             bool* need_event = NULL);
-    static bool SyncCommitOnPeer(Uint8 server_id,
-                                 Uint2 slot,
-                                 Uint8 local_rec_no,
-                                 Uint8 remote_rec_no);
-    static void SyncCancelOnPeer(Uint8 server_id, Uint2 slot);
     static void CachingCompleted(void);
     static bool IsInitiallySynced(void);
     static void InitialSyncComplete(void);
     static void UpdateLastRecNo(void);
-
-    static bool AddDeferredTask(CStdRequest* task);
-
     static bool IsCachingComplete(void);
     static bool IsDebugMode(void);
 
@@ -242,33 +157,6 @@ private:
 
     virtual void Init(void);
 
-
-    static ENCPeerFailure x_WriteBlobToPeer(Uint8 server_id,
-                                            Uint2 slot,
-                                            const string& key,
-                                            Uint8 orig_rec_no,
-                                            bool  is_sync,
-                                            bool  add_client_ip);
-    static ENCPeerFailure x_SyncGetBlobFromPeer(Uint8 server_id,
-                                                Uint2 slot,
-                                                const string& key,
-                                                Uint8 create_time,
-                                                Uint8 orig_rec_no);
-    static ENCPeerFailure x_ProlongBlobOnPeer(Uint8 server_id,
-                                              Uint2 slot,
-                                              const string& raw_key,
-                                              const SNCBlobSummary& blob_sum,
-                                              Uint8 orig_server,
-                                              Uint8 orig_rec_no,
-                                              Uint8 orig_time,
-                                              bool  is_sync);
-    static ENCPeerFailure x_ProlongBlobOnPeer(Uint8 server_id,
-                                              Uint2 slot,
-                                              const string& raw_key,
-                                              Uint8 orig_server,
-                                              Uint8 orig_rec_no,
-                                              Uint8 orig_time,
-                                              bool is_sync);
 
     /// Read server parameters from application's configuration file
     bool x_ReadServerParams(void);
@@ -325,19 +213,6 @@ private:
     bool                           m_DebugMode;
     bool                           m_InitiallySynced;
     bool                           m_CachingComplete;
-};
-
-
-class CNCSyncBlockedOpListener : public INCBlockedOpListener
-{
-public:
-    CNCSyncBlockedOpListener(CSemaphore& sem);
-    virtual ~CNCSyncBlockedOpListener(void);
-
-    virtual void OnBlockedOpFinish(void);
-
-private:
-    CSemaphore& m_Sem;
 };
 
 

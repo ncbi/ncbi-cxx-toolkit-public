@@ -34,15 +34,18 @@
 #include <corelib/ncbi_bswap.hpp>
 #include <util/md5.hpp>
 
-#include <connect/services/srv_connections.hpp>
+#include <connect/services/netcache_key.hpp>
+#include <connect/services/netcache_api_expt.hpp>
 
 #include "message_handler.hpp"
 #include "netcache_version.hpp"
 #include "nc_stat.hpp"
 #include "nc_memory.hpp"
-#include "mirroring.hpp"
+#include "peer_control.hpp"
 #include "distribution_conf.hpp"
 #include "periodic_sync.hpp"
+#include "active_handler.hpp"
+#include "nc_storage.hpp"
 
 #ifndef NCBI_OS_MSWIN
 # include <sys/types.h>
@@ -149,6 +152,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "cr_srv",  eNSPT_Int,  eNSPA_Required },
           { "cr_id",   eNSPT_Int,  eNSPA_Required },
           { "log_rec", eNSPT_Int,  eNSPA_Required },
+          { "cmd_ver", eNSPT_Int,  eNSPA_Optional, "0" },
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
     { "COPY_PROLONG",
@@ -387,7 +391,8 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "ver_dead",eNSPT_Int,  eNSPA_Required },
           { "cr_srv",  eNSPT_Int,  eNSPA_Required },
           { "cr_id",   eNSPT_Int,  eNSPA_Required },
-          { "log_rec", eNSPT_Int,  eNSPA_Required } } },
+          { "log_rec", eNSPT_Int,  eNSPA_Required },
+          { "cmd_ver", eNSPT_Int,  eNSPA_Optional, "0" } } },
     { "SYNC_PROLONG",
         {&CNCMessageHandler::x_DoCmd_SyncProlong,
             "SYNC_PROLONG",  eWithBlob,        eNCRead},
@@ -539,18 +544,6 @@ static SNSProtoArgument s_AuthArgs[] = {
 
 
 
-inline void
-CBufferedSockReaderWriter::ZeroSocketTimeout(void)
-{
-    m_Socket->SetTimeout(eIO_ReadWrite, &m_ZeroTimeout);
-}
-
-inline void
-CBufferedSockReaderWriter::ResetSocketTimeout(void)
-{
-    m_Socket->SetTimeout(eIO_ReadWrite, &m_DefTimeout);
-}
-
 void
 CBufferedSockReaderWriter::ResetSocket(CSocket* socket, unsigned int def_timeout)
 {
@@ -567,81 +560,12 @@ CBufferedSockReaderWriter::ResetSocket(CSocket* socket, unsigned int def_timeout
     }
 }
 
-inline void
-CBufferedSockReaderWriter::SetTimeout(unsigned int def_timeout)
-{
-    m_DefTimeout.sec = def_timeout;
-    ResetSocketTimeout();
-}
-
 CBufferedSockReaderWriter::CBufferedSockReaderWriter(void)
 {
     m_ReadBuff.reserve_mem(kReadNWBufSize);
     m_WriteBuff.reserve_mem(kWriteNWBufSize);
     m_DefTimeout.usec = m_ZeroTimeout.sec = m_ZeroTimeout.usec = 0;
     ResetSocket(NULL, 0);
-}
-
-inline bool
-CBufferedSockReaderWriter::HasDataToRead(void) const
-{
-    return m_ReadDataPos < m_ReadBuff.size();
-}
-
-inline bool
-CBufferedSockReaderWriter::IsWriteDataPending(void) const
-{
-    return m_WriteDataPos < m_WriteBuff.size();
-}
-
-inline bool
-CBufferedSockReaderWriter::HasError(void) const
-{
-    return m_HasError;
-}
-
-inline const void*
-CBufferedSockReaderWriter::GetReadBufData(void) const
-{
-    return m_ReadBuff.data() + m_ReadDataPos;
-}
-
-inline size_t
-CBufferedSockReaderWriter::GetReadReadySize(void) const
-{
-    return m_ReadBuff.size() - m_ReadDataPos;
-}
-
-inline void
-CBufferedSockReaderWriter::EraseReadBufData(size_t amount)
-{
-    m_ReadDataPos = min(m_ReadDataPos + amount, m_ReadBuff.size());
-}
-
-inline void*
-CBufferedSockReaderWriter::PrepareDirectWrite(void)
-{
-    return m_WriteBuff.data() + m_WriteBuff.size();
-}
-
-inline size_t
-CBufferedSockReaderWriter::GetDirectWriteSize(void) const
-{
-    return m_WriteBuff.capacity() - m_WriteBuff.size();
-}
-
-inline void
-CBufferedSockReaderWriter::AddDirectWritten(size_t amount)
-{
-    _ASSERT(amount <= m_WriteBuff.capacity() - m_WriteBuff.size());
-
-    m_WriteBuff.resize(m_WriteBuff.size() + amount);
-}
-
-inline void
-CBufferedSockReaderWriter::WriteNoFail(const void* buf, size_t size)
-{
-    x_CopyData(buf, size);
 }
 
 void
@@ -684,7 +608,7 @@ CBufferedSockReaderWriter::x_ReadFromSocket(void* buf, size_t size)
     size_t n_read = 0;
     EIO_Status status = m_Socket->Read(buf, size, &n_read, eIO_ReadPlain);
     ResetSocketTimeout();
-    //LOG_POST("Read from socket " << n_read << " bytes");
+    //LOG_POST("Read from socket " << n_read << " bytes: " << string((char*)buf, n_read));
 
     switch (status) {
     case eIO_Success:
@@ -778,10 +702,12 @@ CBufferedSockReaderWriter::Read(void* buf, size_t size)
 size_t
 CBufferedSockReaderWriter::x_WriteToSocket(const void* buf, size_t size)
 {
+    //LOG_POST("Writing to socket");
     ZeroSocketTimeout();
     size_t n_written = 0;
     EIO_Status status = m_Socket->Write(buf, size, &n_written, eIO_WritePlain);
     ResetSocketTimeout();
+    //LOG_POST("Written to socket " << n_written << " bytes: " << string((char*)buf, n_written));
 
     switch (status) {
     case eIO_Success:
@@ -875,6 +801,27 @@ CBufferedSockReaderWriter::WriteMessage(CTempString prefix, CTempString msg)
     *(char*)data = '\n';
 }
 
+size_t
+CBufferedSockReaderWriter::WriteFromBuffer(CBufferedSockReaderWriter& buf,
+                                           size_t max_size)
+{
+    size_t n_written = 0;
+    for (;;) {
+        size_t n_to_write = min(buf.GetReadReadySize(), max_size);
+        if (n_to_write != 0) {
+            n_to_write = Write(buf.GetReadBufData(), n_to_write);
+            if (n_to_write == 0)
+                break;
+            n_written += n_to_write;
+            max_size -= n_to_write;
+            buf.EraseReadBufData(n_to_write);
+        }
+        if (max_size == 0  ||  HasError()  ||  !buf.ReadToBuf())
+            break;
+    }
+    return n_written;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 // CNCMessageHandler implementation
@@ -961,8 +908,11 @@ CNCMessageHandler::CNCMessageHandler(void)
     : m_Socket(NULL),
       m_State(eSocketClosed),
       m_Parser(s_CommandMap),
+      m_CurCmd(NULL),
       m_CmdProcessor(NULL),
-      m_BlobAccess(NULL)
+      m_BlobAccess(NULL),
+      m_SrvsIndex(0),
+      m_ActiveHub(NULL)
 {}
 
 CNCMessageHandler::~CNCMessageHandler(void)
@@ -1023,8 +973,10 @@ CNCMessageHandler::OnTimeout(void)
     INFO_POST(Info << "Inactivity timeout expired, closing connection");
     if (m_CmdCtx)
         m_CmdCtx->SetRequestStatus(eStatus_CmdTimeout);
-    else
+    else if (m_ConnCtx)
         m_ConnCtx->SetRequestStatus(eStatus_Inactive);
+    else
+        abort();
 }
 
 void
@@ -1105,6 +1057,7 @@ CNCMessageHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
         CDiagContext_Extra extra = GetDiagContext().Extra();
         extra.Print("cmds_cnt", NStr::UInt8ToString(m_CntCmds));
         extra.Flush();
+        //LOG_POST(StackTrace);
         m_ConnCtx->SetBytesRd(m_Socket->GetCount(eIO_Read));
         m_ConnCtx->SetBytesWr(m_Socket->GetCount(eIO_Write));
         GetDiagContext().PrintRequestStop();
@@ -1116,14 +1069,14 @@ CNCMessageHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
     m_SockBuffer.ResetSocket(NULL, 0);
 }
 
-inline void
+void
 CNCMessageHandler::OnRead(void)
 {
     CFastMutexGuard guard(m_ObjLock);
     x_ManageCmdPipeline();
 }
 
-inline void
+void
 CNCMessageHandler::OnWrite(void)
 {
     CFastMutexGuard guard(m_ObjLock);
@@ -1136,7 +1089,8 @@ CNCMessageHandler::GetEventsToPollFor(const CTime** alarm_time) const
     if (alarm_time  &&  x_IsFlagSet(fCommandStarted)) {
         *alarm_time = &m_MaxCmdTime;
     }
-    if (x_GetState() == eWriteBlobData  ||  x_GetState() == eWriteSendBuff
+    if (x_GetState() == eWriteBlobData
+        ||  x_GetState() == eWriteSendBuff
         ||  m_SockBuffer.IsWriteDataPending())
     {
         return eIO_Write;
@@ -1147,30 +1101,73 @@ CNCMessageHandler::GetEventsToPollFor(const CTime** alarm_time) const
 bool
 CNCMessageHandler::IsReadyToProcess(void) const
 {
-    if (m_WaitForThrottle)
+    if (m_WaitForThrottle) {
         return CNetCacheServer::GetPreciseTime() >= m_ThrottleTime;
-    else if (x_GetState() == eWaitForDeferredTask)
-        return m_DeferredDone;
-    else if (x_IsFlagSet(fWaitForBlockedOp))
+    }
+    else if (m_ActiveHub != NULL) {
+        if (m_NeedFlushBuff)
+            return true;
+        if (x_GetState() == eReadBlobSignature)
+            return m_ActiveHub->GetStatus() != eNCHubCmdInProgress
+                   ||  m_GotInitialAnswer;
+        if (x_IsFlagSet(fWaitForActive)) {
+            return m_ActiveHub->GetStatus() != eNCHubCmdInProgress
+                   ||  m_ActiveHub->GetHandler()->IsBufferFlushed();
+        }
+        return m_ActiveHub->GetStatus() != eNCHubCmdInProgress
+               &&  m_ActiveHub->GetStatus() != eNCHubWaitForConn;
+    }
+    else if (x_IsFlagSet(fWaitForBlockedOp)) {
         return false;
-    /*else if (x_GetState() == eWaitForStorageBlock)
-        return g_NCStorage->IsBlockActive();*/
+    }
 
     return true;
 }
 
 void
-CNCMessageHandler::DeferredComplete(void)
+CNCMessageHandler::OnBlockedOpFinish(void)
 {
-    m_DeferredDone = true;
+    m_ObjLock.Lock();
+    x_UnsetFlag(fWaitForBlockedOp);
+    m_ObjLock.Unlock();
+
+    g_NetcacheServer->WakeUpPollCycle();
+}
+
+CBufferedSockReaderWriter&
+CNCMessageHandler::GetSockBuffer(void)
+{
+    CFastMutexGuard guard(m_ObjLock);
+    return m_SockBuffer;
 }
 
 void
-CNCMessageHandler::OnBlockedOpFinish(void)
+CNCMessageHandler::ForceBufferFlush(void)
 {
-    CFastMutexGuard guard(m_ObjLock);
+    m_NeedFlushBuff = true;
+}
 
-    x_UnsetFlag(fWaitForBlockedOp);
+void
+CNCMessageHandler::InitialAnswerWritten(void)
+{
+    m_GotInitialAnswer = true;
+}
+
+bool
+CNCMessageHandler::IsBufferFlushed(void)
+{
+    return !m_NeedFlushBuff;
+}
+
+void
+CNCMessageHandler::WriteInitWriteResponse(const string& response)
+{
+    m_ObjLock.Lock();
+    m_SockBuffer.WriteMessage("", response);
+    m_SockBuffer.Flush();
+    m_GotInitialAnswer = true;
+    m_ObjLock.Unlock();
+
     g_NetcacheServer->WakeUpPollCycle();
 }
 
@@ -1218,7 +1215,7 @@ bool
 CNCMessageHandler::x_CheckAdminClient(void)
 {
     if (m_ClientParams["client"] != g_NetcacheServer->GetAdminClient()
-        &&  m_ClientParams["client"] != "nc_peer")
+        &&  m_ClientParams["client"] != kNCPeerClientName)
     {
         m_SockBuffer.WriteMessage("ERR:", "Command is not accessible");
         return false;
@@ -1242,6 +1239,7 @@ CNCMessageHandler::x_AssignCmdParams(TNSProtoParams& params)
     m_OrigSrvId = 0;
     m_OrigTime = 0;
     m_Quorum = 1;
+    m_CmdVersion = 0;
     m_ForceLocal = false;
     m_ConfirmPut = false;
     bool quorum_was_set = false;
@@ -1249,26 +1247,39 @@ CNCMessageHandler::x_AssignCmdParams(TNSProtoParams& params)
 
     CTempString cache_name;
 
-    NON_CONST_ITERATE(TNSProtoParams, it, params) {
+    ERASE_ITERATE(TNSProtoParams, it, params) {
         const CTempString& key = it->first;
         CTempString& val = it->second;
 
         switch (key[0]) {
         case 'c':
-            if (key == "cache") {
-                cache_name = val;
-            }
-            else if (key == "confirm") {
-                m_ConfirmPut = val == "1";
-            }
-            else if (key == "cr_time") {
-                m_CopyBlobInfo.create_time = NStr::StringToUInt8(val);
-            }
-            else if (key == "cr_id") {
-                m_CopyBlobInfo.create_id = NStr::StringToUInt(val);
-            }
-            else if (key == "cr_srv") {
-                m_CopyBlobInfo.create_server = NStr::StringToUInt8(val);
+            switch (key[1]) {
+            case 'a':
+                if (key == "cache") {
+                    cache_name = val;
+                }
+                break;
+            case 'm':
+                if (key == "cmd_ver") {
+                    m_CmdVersion = NStr::StringToUInt(val);
+                }
+                break;
+            case 'o':
+                if (key == "confirm") {
+                    m_ConfirmPut = val == "1";
+                }
+                break;
+            case 'r':
+                if (key == "cr_time") {
+                    m_CopyBlobInfo.create_time = NStr::StringToUInt8(val);
+                }
+                else if (key == "cr_id") {
+                    m_CopyBlobInfo.create_id = NStr::StringToUInt(val);
+                }
+                else if (key == "cr_srv") {
+                    m_CopyBlobInfo.create_server = NStr::StringToUInt8(val);
+                }
+                break;
             }
             break;
         case 'd':
@@ -1318,8 +1329,10 @@ CNCMessageHandler::x_AssignCmdParams(TNSProtoParams& params)
                 m_RawBlobPass = val;
                 CMD5 md5;
                 md5.Update(val.data(), val.size());
-                m_BlobPass = md5.GetHexSum();
-                val = m_BlobPass;
+                unsigned char digest[16];
+                md5.Finalize(digest);
+                m_BlobPass.assign((char*)digest, 16);
+                params.erase(it);
             }
             break;
         case 'q':
@@ -1430,6 +1443,9 @@ CNCMessageHandler::x_PrintRequestStart(const SParsedCmd& cmd,
     diag_extra->Print("conn", m_ConnReqId);
     ITERATE(TNSProtoParams, it, cmd.params) {
         diag_extra->Print(it->first, it->second);
+    }
+    if (!m_BlobPass.empty()) {
+        diag_extra->Print("pass", g_NCStorage->PrintablePassword(m_BlobPass));
     }
 
     x_SetFlag(fCommandPrinted);
@@ -1565,7 +1581,12 @@ CNCMessageHandler::x_StartCommand(SParsedCmd& cmd)
             }
         }
         else {
-            x_SetState(eSendCmdAsProxy);
+            CDiagContext_Extra extra = GetDiagContext().Extra();
+            extra.Print("proxy", "1");
+            extra.Flush();
+
+            x_GetCurSlotServers();
+            x_SetState(eProxyToNextPeer);
         }
     }
     else {
@@ -1633,37 +1654,21 @@ CNCMessageHandler::x_ReadCommand(void)
 }
 
 void
-CNCMessageHandler::x_QuickFinishSyncCommand(void)
-{
-    if (NStr::CompareCase(m_CurCmd, "COPY_PUT") == 0
-        ||  NStr::CompareCase(m_CurCmd, "SYNC_PUT") == 0)
-    {
-        x_SetFlag(fConfirmBlobPut);
-        x_SetFlag(fSyncInProgress);
-        x_SetFlag(fCopyLogEvent);
-        x_SetState(eReadBlobSignature);
-    }
-    else
-        x_SetState(eReadyForCommand);
-}
-
-TServersList
 CNCMessageHandler::x_GetCurSlotServers(void)
 {
-    TServersList servers = CNCDistributionConf::GetServersForSlot(m_BlobSlot);
+    m_CheckSrvs = CNCDistributionConf::GetServersForSlot(m_BlobSlot);
     Uint8 main_srv_id = 0;
     if (m_BlobKey[0] == '\1')
         main_srv_id = CNCDistributionConf::GetMainSrvId(m_BlobKey);
     if (main_srv_id != 0  &&  main_srv_id != CNCDistributionConf::GetSelfID()) {
-        TServersList::iterator it = find(servers.begin(), servers.end(),
+        TServersList::iterator it = find(m_CheckSrvs.begin(), m_CheckSrvs.end(),
                                          main_srv_id);
-        if (it != servers.end()) {
+        if (it != m_CheckSrvs.end()) {
             Uint8 srv_id = *it;
-            servers.erase(it);
-            servers.insert(servers.begin(), srv_id);
+            m_CheckSrvs.erase(it);
+            m_CheckSrvs.insert(m_CheckSrvs.begin(), srv_id);
         }
     }
-    return servers;
 }
 
 bool
@@ -1709,14 +1714,8 @@ CNCMessageHandler::x_WaitForBlobAccess(void)
                 m_LatestBlobSum.expire = m_BlobAccess->GetCurBlobExpire();
                 m_LatestBlobSum.ver_expire = m_BlobAccess->GetCurVerExpire();
             }
-            m_DeferredDone = false;
-            m_DeferredTask = new CNCFindMetaData_Task(
-                                    this, x_GetCurSlotServers(), m_Quorum,
-                                    false, m_CmdCtx, m_BlobKey, m_LatestExist,
-                                    m_LatestBlobSum, m_LatestSrvId);
-            if (!CNetCacheServer::AddDeferredTask(m_DeferredTask))
-                m_DeferredDone = true;
-            x_SetState(eWaitForDeferredTask);
+            x_GetCurSlotServers();
+            x_SetState(eReadMetaNextPeer);
         }
         else {
             x_SetState(eCommandReceived);
@@ -1729,20 +1728,6 @@ CNCMessageHandler::x_WaitForBlobAccess(void)
 }
 
 bool
-CNCMessageHandler::x_WaitForDeferredTask(void)
-{
-    if (m_DeferredDone) {
-        m_DeferredTask.Reset();
-        x_SetState(eCommandReceived);
-        return true;
-    }
-    else {
-        g_NetcacheServer->DeferConnectionProcessing(m_Socket);
-        return false;
-    }
-}
-
-bool
 CNCMessageHandler::x_ProcessBadPassword(void)
 {
     m_SockBuffer.WriteMessage("ERR:", "Access denied.");
@@ -1752,20 +1737,7 @@ CNCMessageHandler::x_ProcessBadPassword(void)
     x_SetState(eReadyForCommand);
     return true;
 }
-/*
-bool
-CNCMessageHandler::x_WaitForStorageBlock(void)
-{
-    if (g_NCStorage->IsBlockActive()) {
-        x_SetState(eCommandReceived);
-        return true;
-    }
-    else {
-        g_NetcacheServer->DeferConnectionProcessing(m_Socket);
-        return false;
-    }
-}
-*/
+
 inline bool
 CNCMessageHandler::x_DoCommand(void)
 {
@@ -1799,8 +1771,8 @@ CNCMessageHandler::x_ProlongBlobDeadTime(void)
     event->orig_server = CNCDistributionConf::GetSelfID();
     event->orig_time = cur_time;
     CNCSyncLog::AddEvent(m_BlobSlot, event);
-    CNCMirroring::BlobProlongEvent(m_BlobKey, m_BlobSlot,
-                                   event->orig_rec_no, cur_time);
+    CNCPeerControl::MirrorProlong(m_BlobKey, m_BlobSlot,
+                                  event->orig_rec_no, cur_time, m_BlobAccess);
 }
 
 void
@@ -1823,8 +1795,8 @@ CNCMessageHandler::x_ProlongVersionLife(void)
     event->orig_server = CNCDistributionConf::GetSelfID();
     event->orig_time = cur_time;
     CNCSyncLog::AddEvent(m_BlobSlot, event);
-    CNCMirroring::BlobProlongEvent(m_BlobKey, m_BlobSlot,
-                                   event->orig_rec_no, cur_time);
+    CNCPeerControl::MirrorProlong(m_BlobKey, m_BlobSlot,
+                                  event->orig_rec_no, cur_time, m_BlobAccess);
 }
 
 void
@@ -1887,11 +1859,12 @@ CNCMessageHandler::x_FinishCommand(bool do_sock_write)
         m_SockBuffer.Flush();
     }
 
-    m_DataReader.reset();
-    if (m_DataWriter.get()) {
-        m_DataWriter->Abort();
-        m_DataWriter.reset();
+    if (m_ActiveHub) {
+        m_ActiveHub->Release();
+        m_ActiveHub = NULL;
     }
+    m_CheckSrvs.clear();
+    m_SrvsIndex = 0;
 
     int cmd_status = m_CmdCtx->GetRequestStatus();
     if (x_IsFlagSet(fCommandPrinted)) {
@@ -1901,6 +1874,7 @@ CNCMessageHandler::x_FinishCommand(bool do_sock_write)
         {
             CDiagContext_Extra diag_extra = GetDiagContext().Extra();
             diag_extra.Print("size", NStr::UInt8ToString(m_BlobSize));
+            diag_extra.Flush();
         }
         GetDiagContext().PrintRequestStop();
         x_UnsetFlag(fCommandPrinted);
@@ -1911,7 +1885,7 @@ CNCMessageHandler::x_FinishCommand(bool do_sock_write)
     x_UnsetFlag(fReadExactBlobSize);
     x_UnsetFlag(fSkipBlobEOF);
     x_UnsetFlag(fCopyLogEvent);
-    x_UnsetFlag(fSyncInProgress);
+    x_UnsetFlag(fWaitForActive);
 
     double cmd_span = (GetFastLocalTime() - m_CmdStartTime).GetAsDouble();
     CNCStat::AddFinishedCmd(m_CurCmd, cmd_span, cmd_status);
@@ -1949,6 +1923,7 @@ CNCMessageHandler::x_FinishReadingBlob(void)
                  << m_BlobSize << " bytes)");
         if (x_IsFlagSet(fConfirmBlobPut)) {
             m_SockBuffer.WriteMessage("ERR:", "Too few data for blob");
+            x_UnsetFlag(fConfirmBlobPut);
         }
         else {
             x_CloseConnection();
@@ -1958,22 +1933,6 @@ CNCMessageHandler::x_FinishReadingBlob(void)
     if (m_CmdCtx->GetRequestStatus() == eStatus_NewerBlob
         ||  m_CmdCtx->GetRequestStatus() == eStatus_SyncAborted)
     {
-        return;
-    }
-    if (m_DataWriter.get()) {
-        try {
-            m_DataWriter->Close();
-        }
-        catch (CNetServiceException& ex) {
-            ERR_POST(Warning << ex);
-            m_CmdCtx->SetRequestStatus(eStatus_PeerError);
-            x_CloseConnection();
-        }
-        catch (CNetSrvConnException& ex) {
-            ERR_POST(Warning << ex);
-            m_CmdCtx->SetRequestStatus(eStatus_PeerError);
-            x_CloseConnection();
-        }
         return;
     }
 
@@ -2009,22 +1968,14 @@ CNCMessageHandler::x_FinishReadingBlob(void)
     m_CmdCtx->SetBytesRd(m_BlobSize);
 
     if (!x_IsFlagSet(fCopyLogEvent)) {
-        Uint8 event_rec_no = CNCSyncLog::AddEvent(m_BlobSlot, write_event);
-        CNCMirroring::BlobWriteEvent(m_BlobKey, m_BlobSlot,
-                                     event_rec_no,
-                                     m_BlobAccess->GetNewBlobSize());
+        m_OrigRecNo = CNCSyncLog::AddEvent(m_BlobSlot, write_event);
+        CNCPeerControl::MirrorWrite(m_BlobKey, m_BlobSlot,
+                                    m_OrigRecNo, m_BlobAccess->GetNewBlobSize());
         if (m_Quorum != 1) {
             if (m_Quorum != 0)
                 --m_Quorum;
-            m_DeferredDone = false;
-            m_DeferredTask = new CNCPutToPeers_Task(this, x_GetCurSlotServers(),
-                                                    m_Quorum, m_CmdCtx,
-                                                    m_BlobSlot, m_BlobKey,
-                                                    event_rec_no);
-            if (!CNetCacheServer::AddDeferredTask(m_DeferredTask))
-                m_DeferredDone = true;
-            x_SetState(eWaitForDeferredTask);
-            m_CmdProcessor = &CNCMessageHandler::x_DoCmd_NoOp;
+            x_GetCurSlotServers();
+            x_SetState(ePutToNextPeer);
         }
     }
     else if (m_OrigRecNo != 0) {
@@ -2037,6 +1988,24 @@ CNCMessageHandler::x_FinishReadingBlob(void)
 bool
 CNCMessageHandler::x_ReadBlobSignature(void)
 {
+    if (m_ActiveHub) {
+        if (m_ActiveHub->GetStatus() == eNCHubError) {
+            ERR_POST(Warning << "Error executing command on peer: "
+                             << m_ActiveHub->GetErrMsg());
+            m_ActiveHub->Release();
+            m_ActiveHub = NULL;
+            x_SetState(eProxyToNextPeer);
+            return true;
+        }
+        else if (m_ActiveHub->GetStatus() != eNCHubCmdInProgress)
+            abort();
+
+        if (!m_GotInitialAnswer) {
+            g_NetcacheServer->DeferConnectionProcessing(m_Socket);
+            return false;
+        }
+    }
+
     if (m_SockBuffer.GetReadReadySize() < 4) {
         if (!m_SockBuffer.ReadToBuf()
             ||  m_SockBuffer.GetReadReadySize() < 4)
@@ -2060,6 +2029,7 @@ CNCMessageHandler::x_ReadBlobSignature(void)
         m_CmdCtx->SetRequestStatus(eStatus_BadCmd);
         ERR_POST("Cannot determine the byte order. Got: "
                  << NStr::UIntToString(sig, 0, 16));
+        //abort();
         x_CloseConnection();
     }
     return true;
@@ -2068,6 +2038,18 @@ CNCMessageHandler::x_ReadBlobSignature(void)
 bool
 CNCMessageHandler::x_ReadBlobChunkLength(void)
 {
+    if (m_ActiveHub) {
+        if (m_ActiveHub->GetStatus() == eNCHubError) {
+            ERR_POST(Critical << "Error executing command on peer: "
+                              << m_ActiveHub->GetErrMsg());
+            m_CmdCtx->SetRequestStatus(eStatus_PeerError);
+            x_CloseConnection();
+            return true;
+        }
+        else if (m_ActiveHub->GetStatus() != eNCHubCmdInProgress)
+            abort();
+    }
+
     if (x_IsFlagSet(fSkipBlobEOF)  &&  m_BlobSize == m_Size) {
         // Workaround for old STRS
         m_ChunkLen = 0xFFFFFFFF;
@@ -2090,7 +2072,13 @@ CNCMessageHandler::x_ReadBlobChunkLength(void)
     }
 
     if (m_ChunkLen == 0xFFFFFFFF) {
-        x_FinishReadingBlob();
+        if (m_ActiveHub) {
+            m_ActiveHub->GetHandler()->FinishBlobFromClient();
+            x_SetState(eWaitForActiveWrite);
+        }
+        else {
+            x_FinishReadingBlob();
+        }
     }
     else if (x_IsFlagSet(fReadExactBlobSize)
              &&  m_BlobSize + m_ChunkLen > m_Size)
@@ -2099,7 +2087,14 @@ CNCMessageHandler::x_ReadBlobChunkLength(void)
         ERR_POST("Too much data for blob size " << m_Size
                  << " (received at least "
                  << (m_BlobSize + m_ChunkLen) << " bytes)");
+        //abort();
         x_CloseConnection();
+    }
+    else if (m_ActiveHub) {
+        CNCActiveHandler* handler = m_ActiveHub->GetHandler();
+        CBufferedSockReaderWriter& active_buf = handler->GetSockBuffer();
+        active_buf.WriteNoFail(&m_ChunkLen, sizeof(m_ChunkLen));
+        x_SetState(eReadChunkToActive);
     }
     else {
         x_SetState(eReadBlobChunk);
@@ -2111,45 +2106,63 @@ bool
 CNCMessageHandler::x_ReadBlobChunk(void)
 {
     while (m_ChunkLen != 0) {
-        if (m_DataWriter.get()) {
-            if (!m_SockBuffer.HasDataToRead()  &&  !m_SockBuffer.ReadToBuf())
-                return false;
-
-            Uint4 read_len = Uint4(min(m_SockBuffer.GetReadReadySize(),
-                                       size_t(m_ChunkLen)));
-            ERW_Result write_res = eRW_Error;
-            try {
-                write_res = m_DataWriter->Write(m_SockBuffer.GetReadBufData(),
-                                                read_len);
-            }
-            catch (CNetServiceException& ex) {
-                ERR_POST(Warning << ex);
-            }
-            if (write_res != eRW_Success) {
-                m_CmdCtx->SetRequestStatus(eStatus_PeerError);
-                x_CloseConnection();
-                return true;
-            }
-            m_SockBuffer.EraseReadBufData(read_len);
-            m_ChunkLen -= read_len;
-            m_BlobSize += read_len;
+        Uint4 read_len = Uint4(m_BlobAccess->GetWriteMemSize());
+        if (m_BlobAccess->HasError()) {
+            m_CmdCtx->SetRequestStatus(eStatus_ServerError);
+            x_CloseConnection();
+            return true;
         }
-        else {
-            Uint4 read_len = Uint4(m_BlobAccess->GetWriteMemSize());
-            if (m_BlobAccess->HasError()) {
-                m_CmdCtx->SetRequestStatus(eStatus_ServerError);
-                x_CloseConnection();
-                return true;
-            }
-            if (read_len > m_ChunkLen)
-                read_len = m_ChunkLen;
-            Uint4 n_read = Uint4(m_SockBuffer.Read(m_BlobAccess->GetWriteMemPtr(),
-                                                   read_len));
-            if (n_read == 0)
-                return false;
-            m_BlobAccess->MoveWritePos(n_read);
-            m_ChunkLen -= n_read;
-            m_BlobSize += n_read;
+        if (read_len > m_ChunkLen)
+            read_len = m_ChunkLen;
+        Uint4 n_read = Uint4(m_SockBuffer.Read(m_BlobAccess->GetWriteMemPtr(),
+                                               read_len));
+        if (n_read == 0)
+            return false;
+        m_BlobAccess->MoveWritePos(n_read);
+        m_ChunkLen -= n_read;
+        m_BlobSize += n_read;
+    }
+    x_SetState(eReadBlobChunkLength);
+    return true;
+}
+
+bool
+CNCMessageHandler::x_ReadChunkToActive(void)
+{
+    x_UnsetFlag(fWaitForActive);
+
+    if (m_ActiveHub->GetStatus() == eNCHubError) {
+        m_CmdCtx->SetRequestStatus(eStatus_PeerError);
+        x_CloseConnection();
+        return true;
+    }
+    else if (m_ActiveHub->GetStatus() != eNCHubCmdInProgress)
+        abort();
+
+    CNCActiveHandler* handler = m_ActiveHub->GetHandler();
+    CBufferedSockReaderWriter& active_buf = handler->GetSockBuffer();
+    while (m_ChunkLen != 0) {
+        size_t n_read = active_buf.WriteFromBuffer(m_SockBuffer, m_ChunkLen);
+        m_ChunkLen -= Uint4(n_read);
+        m_BlobSize += n_read;
+        if (m_SockBuffer.HasError()) {
+            m_CmdCtx->SetRequestStatus(eStatus_BadCmd);
+            x_CloseConnection();
+            return true;
+        }
+        if (active_buf.HasError()) {
+            m_CmdCtx->SetRequestStatus(eStatus_PeerError);
+            x_CloseConnection();
+            return true;
+        }
+        if (active_buf.IsWriteDataPending()  ||  m_SockBuffer.HasDataToRead()) {
+            x_SetFlag(fWaitForActive);
+            handler->ForceBufferFlush();
+            g_NetcacheServer->DeferConnectionProcessing(m_Socket);
+            return false;
+        }
+        if (n_read == 0) {
+            return false;
         }
     }
     x_SetState(eReadBlobChunkLength);
@@ -2216,259 +2229,55 @@ CNCMessageHandler::x_WriteSendBuff(void)
 }
 
 bool
-CNCMessageHandler::x_WriteFromReader(void)
+CNCMessageHandler::x_ProxyToNextPeer(void)
 {
-    do {
-        void* write_buf  = m_SockBuffer.PrepareDirectWrite();
-        size_t want_read = m_SockBuffer.GetDirectWriteSize();
-        size_t n_read = 0;
-        ERW_Result read_res;
-        try {
-            read_res = m_DataReader->Read(write_buf, want_read, &n_read);
-        }
-        catch (CNetServiceException& ex) {
-            ERR_POST(Warning << ex);
-            m_CmdCtx->SetRequestStatus(eStatus_PeerError);
-            x_CloseConnection();
-            return true;
-        }
-        if (n_read != 0) {
-            m_SockBuffer.AddDirectWritten(n_read);
-            m_SockBuffer.Flush();
-            m_BlobSize += n_read;
-            m_CmdCtx->SetBytesWr(m_BlobSize);
-        }
-        if (read_res == eRW_Eof) {
-            x_SetState(eReadyForCommand);
-            return true;
-        }
-        else if (read_res != eRW_Success) {
-            m_CmdCtx->SetRequestStatus(eStatus_PeerError);
-            x_CloseConnection();
-            return true;
-        }
-    }
-    while (!m_SockBuffer.HasError()  &&  !m_SockBuffer.IsWriteDataPending());
-
-    return false;
-}
-
-bool
-CNCMessageHandler::x_EcecuteProxyCmd(Uint8          srv_id,
-                                     const string&  proxy_cmd,
-                                     bool           need_reader,
-                                     bool           need_writer)
-{
-    try {
-        CNetServer srv_api(CNetCacheServer::GetPeerServer(srv_id));
-        if (need_reader) {
-            string response;
-            m_DataReader.reset(srv_api.ExecRead(proxy_cmd, &response));
-            m_SockBuffer.WriteMessage("OK:", response);
-            x_SetState(eWriteFromReader);
-        }
-        else if (need_writer) {
-            string response;
-            //LOG_POST("Sending cmd to peer");
-            m_DataWriter.reset(srv_api.ExecWrite(proxy_cmd, &response));
-            //LOG_POST("Got response from peer: " << response);
-            m_SockBuffer.WriteMessage("OK:", response);
-            m_SockBuffer.Flush();
-            if (m_Size == 0)
-                x_SetState(eReadyForCommand);
-            else {
-                if (m_Size != Uint8(-1)) {
-                    x_SetFlag(fReadExactBlobSize);
-                    x_SetFlag(fSkipBlobEOF);
-                }
-                x_SetState(eReadBlobSignature);
-            }
-        }
-        else {
-            CNetServer::SExecResult exec_res(srv_api.ExecWithRetry(proxy_cmd));
-            m_SockBuffer.WriteMessage("OK:", exec_res.response);
-            x_SetState(eReadyForCommand);
-        }
+    if (m_SrvsIndex >= m_CheckSrvs.size()) {
+        ERR_POST(Warning << "Cannot connect to peer servers");
+        m_SockBuffer.WriteMessage("ERR:", "Cannot connect to peer servers");
+        m_CmdCtx->SetRequestStatus(eStatus_PeerError);
+        x_SetState(eReadyForCommand);
         return true;
     }
-    catch (CNetSrvConnException& ex) {
-        if (ex.GetErrCode() != CNetSrvConnException::eConnectionFailure
-            &&  ex.GetErrCode() != CNetSrvConnException::eServerThrottle)
-        {
-            ERR_POST(Warning << "Error executing command on peer: " << ex);
-        }
-        return false;
-    }
-    catch (CNetCacheException& ex) {
-        if (ex.GetErrCode() == CNetCacheException::eBlobNotFound) {
-            m_SockBuffer.WriteMessage("ERR:", "BLOB not found.");
-            m_CmdCtx->SetRequestStatus(eStatus_NotFound);
-            x_SetState(eReadyForCommand);
-            return true;
-        }
-        else {
-            ERR_POST(Warning << "Error executing command on peer: " << ex);
-            return false;
-        }
-    }
-}
 
-void
-CNCMessageHandler::x_CreateProxyGetCmd(string& proxy_cmd,
-                                       Uint1 quorum,
-                                       bool search,
-                                       bool force_local)
-{
-    string cache_name, key, subkey;
-    g_NCStorage->UnpackBlobKey(m_BlobKey, cache_name, key, subkey);
-
-    proxy_cmd += "PROXY_GET \"";
-    proxy_cmd += cache_name;
-    proxy_cmd += "\" \"";
-    proxy_cmd += key;
-    proxy_cmd += "\" \"";
-    proxy_cmd += subkey;
-    proxy_cmd += "\" ";
-    proxy_cmd += NStr::IntToString(m_BlobVersion);
-    proxy_cmd.append(1, ' ');
-    proxy_cmd += NStr::UInt8ToString(m_StartPos);
-    proxy_cmd.append(1, ' ');
-    proxy_cmd += NStr::Int8ToString(Int8(m_Size));
-    proxy_cmd.append(1, ' ');
-    proxy_cmd += NStr::UIntToString(quorum);
-    proxy_cmd.append(1, ' ');
-    proxy_cmd += NStr::UIntToString(Uint1(search));
-    proxy_cmd.append(1, ' ');
-    proxy_cmd += NStr::UIntToString(Uint1(force_local));
-    proxy_cmd += " \"";
-    proxy_cmd += m_CmdCtx->GetClientIP();
-    proxy_cmd += "\" \"";
-    proxy_cmd += m_CmdCtx->GetSessionID();
-    proxy_cmd.append(1, '"');
-    if (!m_RawBlobPass.empty()) {
-        proxy_cmd += " \"";
-        proxy_cmd += m_RawBlobPass;
-        proxy_cmd.append(1, '"');
-    }
-}
-
-void
-CNCMessageHandler::x_CreateProxyGetSizeCmd(string& proxy_cmd,
-                                           Uint1 quorum,
-                                           bool search,
-                                           bool force_local)
-{
-    string cache_name, key, subkey;
-    g_NCStorage->UnpackBlobKey(m_BlobKey, cache_name, key, subkey);
-
-    proxy_cmd += "PROXY_GSIZ \"";
-    proxy_cmd += cache_name;
-    proxy_cmd += "\" \"";
-    proxy_cmd += key;
-    proxy_cmd += "\" \"";
-    proxy_cmd += subkey;
-    proxy_cmd += "\" ";
-    proxy_cmd += NStr::IntToString(m_BlobVersion);
-    proxy_cmd.append(1, ' ');
-    proxy_cmd += NStr::UIntToString(quorum);
-    proxy_cmd.append(1, ' ');
-    proxy_cmd += NStr::UIntToString(Uint1(search));
-    proxy_cmd.append(1, ' ');
-    proxy_cmd += NStr::UIntToString(Uint1(force_local));
-    proxy_cmd += " \"";
-    proxy_cmd += m_CmdCtx->GetClientIP();
-    proxy_cmd += "\" \"";
-    proxy_cmd += m_CmdCtx->GetSessionID();
-    proxy_cmd.append(1, '"');
-    if (!m_RawBlobPass.empty()) {
-        proxy_cmd += " \"";
-        proxy_cmd += m_RawBlobPass;
-        proxy_cmd.append(1, '"');
-    }
-}
-
-void
-CNCMessageHandler::x_CreateProxyGetLastCmd(string& proxy_cmd,
-                                           Uint1 quorum,
-                                           bool search,
-                                           bool force_local)
-{
-    string cache_name, key, subkey;
-    g_NCStorage->UnpackBlobKey(m_BlobKey, cache_name, key, subkey);
-
-    proxy_cmd += "PROXY_READLAST \"";
-    proxy_cmd += cache_name;
-    proxy_cmd += "\" \"";
-    proxy_cmd += key;
-    proxy_cmd += "\" \"";
-    proxy_cmd += subkey;
-    proxy_cmd += "\" ";
-    proxy_cmd += NStr::UInt8ToString(m_StartPos);
-    proxy_cmd.append(1, ' ');
-    proxy_cmd += NStr::Int8ToString(Int8(m_Size));
-    proxy_cmd.append(1, ' ');
-    proxy_cmd += NStr::UIntToString(quorum);
-    proxy_cmd.append(1, ' ');
-    proxy_cmd += NStr::UIntToString(Uint1(search));
-    proxy_cmd.append(1, ' ');
-    proxy_cmd += NStr::UIntToString(Uint1(force_local));
-    proxy_cmd += " \"";
-    proxy_cmd += m_CmdCtx->GetClientIP();
-    proxy_cmd += "\" \"";
-    proxy_cmd += m_CmdCtx->GetSessionID();
-    proxy_cmd.append(1, '"');
-    if (!m_RawBlobPass.empty()) {
-        proxy_cmd += " \"";
-        proxy_cmd += m_RawBlobPass;
-        proxy_cmd.append(1, '"');
-    }
-}
-
-void
-CNCMessageHandler::x_CreateProxyGetMetaCmd(string& proxy_cmd,
-                                           Uint1 quorum,
-                                           bool force_local)
-{
-    string cache_name, key, subkey;
-    g_NCStorage->UnpackBlobKey(m_BlobKey, cache_name, key, subkey);
-
-    proxy_cmd += "PROXY_GETMETA \"";
-    proxy_cmd += cache_name;
-    proxy_cmd += "\" \"";
-    proxy_cmd += key;
-    proxy_cmd += "\" \"";
-    proxy_cmd += subkey;
-    proxy_cmd += "\" ";
-    proxy_cmd += NStr::UIntToString(quorum);
-    proxy_cmd.append(1, ' ');
-    proxy_cmd += NStr::UIntToString(Uint1(force_local));
-    proxy_cmd += " \"";
-    proxy_cmd += m_CmdCtx->GetClientIP();
-    proxy_cmd += "\" \"";
-    proxy_cmd += m_CmdCtx->GetSessionID();
-    proxy_cmd.append(1, '"');
+    Uint8 srv_id = m_CheckSrvs[m_SrvsIndex++];
+    if (m_ActiveHub)
+        abort();
+    m_ActiveHub = CNCActiveClientHub::Create(srv_id, this);
+    x_SetState(eSendCmdAsProxy);
+    return true;
 }
 
 bool
 CNCMessageHandler::x_SendCmdAsProxy(void)
 {
-    CDiagContext_Extra extra = GetDiagContext().Extra();
-    extra.Print("proxy", "1");
-    extra.Flush();
+    if (m_ActiveHub->GetStatus() == eNCHubWaitForConn) {
+        g_NetcacheServer->DeferConnectionProcessing(m_Socket);
+        return false;
+    }
+    if (m_ActiveHub->GetStatus() == eNCHubError) {
+        m_ActiveHub->Release();
+        m_ActiveHub = NULL;
+        x_SetState(eProxyToNextPeer);
+        return true;
+    }
+    if (m_ActiveHub->GetStatus() != eNCHubConnReady)
+        abort();
 
-    string cache_name, key, subkey;
-    g_NCStorage->UnpackBlobKey(m_BlobKey, cache_name, key, subkey);
+    m_NeedFlushBuff = false;
+    m_GotInitialAnswer = false;
 
     bool need_reader = false;
     bool need_writer = false;
-    string proxy_cmd;
     if (NStr::CompareCase(m_CurCmd, "GET2") == 0
         ||  NStr::CompareCase(m_CurCmd, "IC_READ") == 0
         ||  NStr::CompareCase(m_CurCmd, "GETPART") == 0
         ||  NStr::CompareCase(m_CurCmd, "IC_READPART") == 0
+        ||  NStr::CompareCase(m_CurCmd, "PROXY_GET") == 0
         ||  NStr::CompareCase(m_CurCmd, "GET") == 0)
     {
-        x_CreateProxyGetCmd(proxy_cmd, m_Quorum, m_SearchOnRead, false);
+        m_ActiveHub->GetHandler()->ProxyRead(m_CmdCtx, m_BlobKey, m_RawBlobPass,
+                                             m_BlobVersion, m_StartPos, m_Size,
+                                             m_Quorum, m_SearchOnRead, m_ForceLocal);
         need_reader = true;
     }
     else if (NStr::CompareCase(m_CurCmd, "PUT3") == 0
@@ -2476,28 +2285,8 @@ CNCMessageHandler::x_SendCmdAsProxy(void)
              ||  NStr::CompareCase(m_CurCmd, "IC_STRS") == 0
              ||  NStr::CompareCase(m_CurCmd, "PUT2") == 0)
     {
-        proxy_cmd += "PROXY_PUT \"";
-        proxy_cmd += cache_name;
-        proxy_cmd += "\" \"";
-        proxy_cmd += key;
-        proxy_cmd += "\" \"";
-        proxy_cmd += subkey;
-        proxy_cmd += "\" ";
-        proxy_cmd += NStr::IntToString(m_BlobVersion);
-        proxy_cmd += " ";
-        proxy_cmd += NStr::UIntToString(m_BlobTTL);
-        proxy_cmd.append(1, ' ');
-        proxy_cmd += NStr::UIntToString(m_Quorum);
-        proxy_cmd += " \"";
-        proxy_cmd += m_CmdCtx->GetClientIP();
-        proxy_cmd += "\" \"";
-        proxy_cmd += m_CmdCtx->GetSessionID();
-        proxy_cmd.append(1, '"');
-        if (!m_RawBlobPass.empty()) {
-            proxy_cmd += " \"";
-            proxy_cmd += m_RawBlobPass;
-            proxy_cmd.append(1, '"');
-        }
+        m_ActiveHub->GetHandler()->ProxyWrite(m_CmdCtx, m_BlobKey, m_RawBlobPass,
+                                              m_BlobVersion, m_BlobTTL, m_Quorum);
         need_writer = true;
         if (NStr::CompareCase(m_CurCmd, "PUT3") == 0  ||  m_ConfirmPut)
             x_SetFlag(fConfirmBlobPut);
@@ -2505,99 +2294,279 @@ CNCMessageHandler::x_SendCmdAsProxy(void)
     else if (NStr::CompareCase(m_CurCmd, "IC_HASB") == 0
              ||  NStr::CompareCase(m_CurCmd, "HASB") == 0)
     {
-        proxy_cmd += "PROXY_HASB \"";
-        proxy_cmd += cache_name;
-        proxy_cmd += "\" \"";
-        proxy_cmd += key;
-        proxy_cmd += "\" \"";
-        proxy_cmd += subkey;
-        proxy_cmd += "\" ";
-        proxy_cmd += NStr::UIntToString(m_Quorum);
-        proxy_cmd += " \"";
-        proxy_cmd += m_CmdCtx->GetClientIP();
-        proxy_cmd += "\" \"";
-        proxy_cmd += m_CmdCtx->GetSessionID();
-        proxy_cmd.append(1, '"');
-        if (!m_RawBlobPass.empty()) {
-            proxy_cmd += " \"";
-            proxy_cmd += m_RawBlobPass;
-            proxy_cmd.append(1, '"');
-        }
+        m_ActiveHub->GetHandler()->ProxyHasBlob(m_CmdCtx, m_BlobKey, m_RawBlobPass,
+                                                m_Quorum);
     }
     else if (NStr::CompareCase(m_CurCmd, "GetSIZe") == 0
-             ||  NStr::CompareCase(m_CurCmd, "IC_GetSIZe") == 0)
+             ||  NStr::CompareCase(m_CurCmd, "IC_GetSIZe") == 0
+             ||  NStr::CompareCase(m_CurCmd, "PROXY_GetSIZe") == 0)
     {
-        x_CreateProxyGetSizeCmd(proxy_cmd, m_Quorum, m_SearchOnRead, false);
+        m_ActiveHub->GetHandler()->ProxyGetSize(m_CmdCtx, m_BlobKey, m_RawBlobPass,
+                                                m_BlobVersion, m_Quorum,
+                                                m_SearchOnRead, m_ForceLocal);
     }
-    else if (NStr::CompareCase(m_CurCmd, "IC_READLAST") == 0) {
-        x_CreateProxyGetLastCmd(proxy_cmd, m_Quorum, m_SearchOnRead, false);
+    else if (NStr::CompareCase(m_CurCmd, "IC_READLAST") == 0
+             ||  NStr::CompareCase(m_CurCmd, "PROXY_READLAST") == 0)
+    {
+        m_ActiveHub->GetHandler()->ProxyReadLast(m_CmdCtx, m_BlobKey, m_RawBlobPass,
+                                                 m_StartPos, m_Size, m_Quorum,
+                                                 m_SearchOnRead, m_ForceLocal);
         need_reader = true;
     }
     else if (NStr::CompareCase(m_CurCmd, "IC_SETVALID") == 0) {
-        proxy_cmd += "PROXY_SETVALID \"";
-        proxy_cmd += cache_name;
-        proxy_cmd += "\" \"";
-        proxy_cmd += key;
-        proxy_cmd += "\" \"";
-        proxy_cmd += subkey;
-        proxy_cmd += "\" ";
-        proxy_cmd += NStr::IntToString(m_BlobVersion);
-        proxy_cmd += " \"";
-        proxy_cmd += m_CmdCtx->GetClientIP();
-        proxy_cmd += "\" \"";
-        proxy_cmd += m_CmdCtx->GetSessionID();
-        proxy_cmd.append(1, '"');
-        if (!m_RawBlobPass.empty()) {
-            proxy_cmd += " \"";
-            proxy_cmd += m_RawBlobPass;
-            proxy_cmd.append(1, '"');
-        }
+        m_ActiveHub->GetHandler()->ProxySetValid(m_CmdCtx, m_BlobKey, m_RawBlobPass,
+                                                 m_BlobVersion);
     }
     else if (NStr::CompareCase(m_CurCmd, "RMV2") == 0
              ||  NStr::CompareCase(m_CurCmd, "REMOVE") == 0
              ||  NStr::CompareCase(m_CurCmd, "IC_REMOve") == 0)
     {
-        proxy_cmd += "PROXY_RMV \"";
-        proxy_cmd += cache_name;
-        proxy_cmd += "\" \"";
-        proxy_cmd += key;
-        proxy_cmd += "\" \"";
-        proxy_cmd += subkey;
-        proxy_cmd += "\" ";
-        proxy_cmd += NStr::IntToString(m_BlobVersion);
-        proxy_cmd.append(1, ' ');
-        proxy_cmd += NStr::UIntToString(m_Quorum);
-        proxy_cmd += " \"";
-        proxy_cmd += m_CmdCtx->GetClientIP();
-        proxy_cmd += "\" \"";
-        proxy_cmd += m_CmdCtx->GetSessionID();
-        proxy_cmd.append(1, '"');
-        if (!m_RawBlobPass.empty()) {
-            proxy_cmd += " \"";
-            proxy_cmd += m_RawBlobPass;
-            proxy_cmd.append(1, '"');
-        }
+        m_ActiveHub->GetHandler()->ProxyRemove(m_CmdCtx, m_BlobKey, m_RawBlobPass,
+                                               m_BlobVersion, m_Quorum);
     }
     else if (NStr::CompareCase(m_CurCmd, "GETMETA") == 0
              ||  NStr::CompareCase(m_CurCmd, "IC_GETMETA") == 0)
     {
-        x_CreateProxyGetMetaCmd(proxy_cmd, m_Quorum, false);
+        m_ActiveHub->GetHandler()->ProxyGetMeta(m_CmdCtx, m_BlobKey,
+                                                m_Quorum, m_ForceLocal);
         need_reader = true;
     }
+    else
+        abort();
 
-    TServersList servers = x_GetCurSlotServers();
-    ITERATE(TServersList, it, servers) {
-        Uint8 srv_id = *it;
-        if (srv_id != CNCDistributionConf::GetSelfID()
-            &&  x_EcecuteProxyCmd(srv_id, proxy_cmd, need_reader, need_writer))
-        {
-            return true;
+    if (need_reader)
+        x_SetState(eWaitForActiveWrite);
+    else if (need_writer)
+        x_SetState(eReadBlobSignature);
+    else
+        x_SetState(eWaitForPeerAnswer);
+    return true;
+}
+
+bool
+CNCMessageHandler::x_WaitForPeerAnswer(void)
+{
+    if (m_ActiveHub->GetStatus() == eNCHubCmdInProgress) {
+        g_NetcacheServer->DeferConnectionProcessing(m_Socket);
+        return false;
+    }
+    
+    if (m_ActiveHub->GetStatus() == eNCHubError) {
+        if (NStr::StartsWith(m_ActiveHub->GetErrMsg(), "ERR:BLOB not found")) {
+            m_CmdCtx->SetRequestStatus(eStatus_NotFound);
+            goto successful_finish;
+        }
+        else {
+            ERR_POST(Warning << "Error executing command on peer: "
+                             << m_ActiveHub->GetErrMsg());
+            x_SetState(eProxyToNextPeer);
         }
     }
-    ERR_POST(Warning << "Cannot connect to peer servers");
-    m_SockBuffer.WriteMessage("ERR:", "Cannot connect to peer servers");
-    m_CmdCtx->SetRequestStatus(eStatus_PeerError);
-    x_SetState(eReadyForCommand);
+    else if (m_ActiveHub->GetStatus() == eNCHubSuccess) {
+successful_finish:
+        m_SockBuffer.WriteMessage("", m_ActiveHub->GetErrMsg());
+        x_SetState(eReadyForCommand);
+    }
+    else
+        abort();
+
+    m_ActiveHub->Release();
+    m_ActiveHub = NULL;
+    return true;
+}
+
+bool
+CNCMessageHandler::x_WaitForActiveWrite(void)
+{
+    if (m_ActiveHub->GetStatus() == eNCHubCmdInProgress) {
+        g_NetcacheServer->DeferConnectionProcessing(m_Socket);
+        return false;
+    }
+    
+    if (m_ActiveHub->GetStatus() == eNCHubError) {
+        if (NStr::StartsWith(m_ActiveHub->GetErrMsg(), "ERR:BLOB not found")) {
+            m_CmdCtx->SetRequestStatus(eStatus_NotFound);
+            m_SockBuffer.WriteMessage("", m_ActiveHub->GetErrMsg());
+            goto successful_finish;
+        }
+        else {
+            ERR_POST(Warning << "Error executing command on peer: "
+                             << m_ActiveHub->GetErrMsg());
+            if (m_GotInitialAnswer) {
+                m_CmdCtx->SetRequestStatus(eStatus_PeerError);
+                x_CloseConnection();
+                return true;
+            }
+            else {
+                x_SetState(eProxyToNextPeer);
+            }
+        }
+    }
+    else if (m_ActiveHub->GetStatus() == eNCHubSuccess) {
+successful_finish:
+        x_SetState(eReadyForCommand);
+    }
+    else
+        abort();
+
+    m_ActiveHub->Release();
+    m_ActiveHub = NULL;
+    return true;
+}
+
+bool
+CNCMessageHandler::x_ReadMetaNextPeer(void)
+{
+    if (m_SrvsIndex >= m_CheckSrvs.size()) {
+        x_SetState(eCommandReceived);
+        return true;
+    }
+
+    Uint8 srv_id = m_CheckSrvs[m_SrvsIndex++];
+    if (m_ActiveHub)
+        abort();
+    m_ActiveHub = CNCActiveClientHub::Create(srv_id, this);
+    x_SetState(eSendGetMetaCmd);
+    return true;
+}
+
+bool
+CNCMessageHandler::x_SendGetMetaCmd(void)
+{
+    if (m_ActiveHub->GetStatus() == eNCHubWaitForConn) {
+        g_NetcacheServer->DeferConnectionProcessing(m_Socket);
+        return false;
+    }
+    if (m_ActiveHub->GetStatus() == eNCHubError) {
+        m_ActiveHub->Release();
+        m_ActiveHub = NULL;
+        x_SetState(eReadMetaNextPeer);
+        return true;
+    }
+    if (m_ActiveHub->GetStatus() != eNCHubConnReady)
+        abort();
+
+    m_ActiveHub->GetHandler()->SearchMeta(m_CmdCtx, m_BlobKey);
+    x_SetState(eReadMetaResults);
+    return true;
+}
+
+bool
+CNCMessageHandler::x_ReadMetaResults(void)
+{
+    CNCActiveHandler* handler;
+    bool cur_exist;
+    const SNCBlobSummary* cur_blob_sum;
+    bool for_hasb = m_CmdProcessor == &CNCMessageHandler::x_DoCmd_HasBlobImpl;
+
+    if (m_ActiveHub->GetStatus() == eNCHubCmdInProgress) {
+        g_NetcacheServer->DeferConnectionProcessing(m_Socket);
+        return false;
+    }
+    if (m_ActiveHub->GetStatus() == eNCHubError)
+        goto results_processed;
+    if (m_ActiveHub->GetStatus() != eNCHubSuccess)
+        abort();
+
+    handler = m_ActiveHub->GetHandler();
+    cur_blob_sum = &handler->GetBlobSummary();
+    cur_exist = handler->IsBlobExists()
+                &&  cur_blob_sum->expire > int(time(NULL));
+    if (!cur_exist  &&  !for_hasb)
+        goto results_processed;
+
+    if (cur_exist  &&  for_hasb) {
+        m_LatestExist = true;
+        goto meta_search_finished;
+    }
+    if (cur_exist  &&  (!m_LatestExist
+                        ||  (!cur_blob_sum->isSameData(m_LatestBlobSum)
+                             &&  m_LatestBlobSum.isOlder(*cur_blob_sum))))
+    {
+        m_LatestExist = true;
+        m_LatestSrvId = m_CheckSrvs[m_SrvsIndex - 1];
+        m_LatestBlobSum = *cur_blob_sum;
+    }
+    if (m_Quorum == 1)
+        goto meta_search_finished;
+    if (m_Quorum != 0)
+        --m_Quorum;
+
+results_processed:
+    m_ActiveHub->Release();
+    m_ActiveHub = NULL;
+    x_SetState(eReadMetaNextPeer);
+    return true;
+
+meta_search_finished:
+    m_ActiveHub->Release();
+    m_ActiveHub = NULL;
+    m_CheckSrvs.clear();
+    m_SrvsIndex = 0;
+    x_SetState(eCommandReceived);
+    return true;
+}
+
+bool
+CNCMessageHandler::x_PutToNextPeer(void)
+{
+    if (m_SrvsIndex >= m_CheckSrvs.size()) {
+        x_SetState(eReadyForCommand);
+        return true;
+    }
+
+    Uint8 srv_id = m_CheckSrvs[m_SrvsIndex++];
+    m_ActiveHub = CNCActiveClientHub::Create(srv_id, this);
+    x_SetState(eSendPutToPeerCmd);
+    return true;
+}
+
+bool
+CNCMessageHandler::x_SendPutToPeerCmd(void)
+{
+    if (m_ActiveHub->GetStatus() == eNCHubWaitForConn) {
+        g_NetcacheServer->DeferConnectionProcessing(m_Socket);
+        return false;
+    }
+    if (m_ActiveHub->GetStatus() == eNCHubError) {
+        m_ActiveHub->Release();
+        m_ActiveHub = NULL;
+        x_SetState(ePutToNextPeer);
+        return true;
+    }
+    if (m_ActiveHub->GetStatus() != eNCHubSuccess)
+        abort();
+
+    m_ActiveHub->GetHandler()->CopyPut(m_CmdCtx, m_BlobKey, m_BlobSlot, m_OrigRecNo);
+    x_SetState(eReadPutResults);
+    return true;
+}
+
+bool
+CNCMessageHandler::x_ReadPutResults(void)
+{
+    if (m_ActiveHub->GetStatus() == eNCHubCmdInProgress) {
+        g_NetcacheServer->DeferConnectionProcessing(m_Socket);
+        return false;
+    }
+    if (m_ActiveHub->GetStatus() == eNCHubError)
+        goto results_processed;
+    if (m_ActiveHub->GetStatus() != eNCHubSuccess)
+        abort();
+
+    if (m_Quorum == 1) {
+        m_ActiveHub->Release();
+        m_ActiveHub = NULL;
+        x_SetState(eReadyForCommand);
+        return true;
+    }
+    if (m_Quorum != 0)
+        --m_Quorum;
+
+results_processed:
+    m_ActiveHub->Release();
+    m_ActiveHub = NULL;
+    x_SetState(ePutToNextPeer);
     return true;
 }
 
@@ -2617,8 +2586,11 @@ CNCMessageHandler::x_ManageCmdPipeline(void)
         CNCPeriodicSync::BeginTimeEvent(m_SrvId);
     }
 
-    bool do_next_step = true;
     m_SockBuffer.Flush();
+    if (m_NeedFlushBuff  &&  !m_SockBuffer.IsWriteDataPending()) {
+        m_NeedFlushBuff = false;
+    }
+    bool do_next_step = true;
     while (!m_SockBuffer.HasError()  &&  !m_SockBuffer.IsWriteDataPending()
            &&  do_next_step  &&  x_GetState() != eSocketClosed)
     {
@@ -2636,15 +2608,9 @@ CNCMessageHandler::x_ManageCmdPipeline(void)
         case eWaitForBlobAccess:
             do_next_step = x_WaitForBlobAccess();
             break;
-        case eWaitForDeferredTask:
-            do_next_step = x_WaitForDeferredTask();
-            break;
         case ePasswordFailed:
             do_next_step = x_ProcessBadPassword();
             break;
-        /*case eWaitForStorageBlock:
-            do_next_step = x_WaitForStorageBlock();
-            break;*/
         case eReadBlobSignature:
             do_next_step = x_ReadBlobSignature();
             break;
@@ -2653,6 +2619,9 @@ CNCMessageHandler::x_ManageCmdPipeline(void)
             break;
         case eReadBlobChunk:
             do_next_step = x_ReadBlobChunk();
+            break;
+        case eReadChunkToActive:
+            do_next_step = x_ReadChunkToActive();
             break;
         case eWaitForFirstData:
             do_next_step = x_WaitForFirstData();
@@ -2663,11 +2632,35 @@ CNCMessageHandler::x_ManageCmdPipeline(void)
         case eWriteSendBuff:
             do_next_step = x_WriteSendBuff();
             break;
+        case eProxyToNextPeer:
+            do_next_step = x_ProxyToNextPeer();
+            break;
         case eSendCmdAsProxy:
             do_next_step = x_SendCmdAsProxy();
             break;
-        case eWriteFromReader:
-            do_next_step = x_WriteFromReader();
+        case eWaitForPeerAnswer:
+            do_next_step = x_WaitForPeerAnswer();
+            break;
+        case eWaitForActiveWrite:
+            do_next_step = x_WaitForActiveWrite();
+            break;
+        case eReadMetaNextPeer:
+            do_next_step = x_ReadMetaNextPeer();
+            break;
+        case eSendGetMetaCmd:
+            do_next_step = x_SendGetMetaCmd();
+            break;
+        case eReadMetaResults:
+            do_next_step = x_ReadMetaResults();
+            break;
+        case ePutToNextPeer:
+            do_next_step = x_PutToNextPeer();
+            break;
+        case eSendPutToPeerCmd:
+            do_next_step = x_SendPutToPeerCmd();
+            break;
+        case eReadPutResults:
+            do_next_step = x_ReadPutResults();
             break;
         default:
             abort();
@@ -2702,12 +2695,6 @@ CNCMessageHandler::x_ManageCmdPipeline(void)
 }
 
 bool
-CNCMessageHandler::x_DoCmd_NoOp(void)
-{
-    return true;
-}
-
-bool
 CNCMessageHandler::x_DoCmd_Alive(void)
 {
     m_SockBuffer.WriteMessage("OK:", "");
@@ -2717,7 +2704,14 @@ CNCMessageHandler::x_DoCmd_Alive(void)
 bool
 CNCMessageHandler::x_DoCmd_Health(void)
 {
-    m_SockBuffer.WriteMessage("OK:", "HEALTH_COEFF=1");
+    string health_coeff = "1";
+    if (g_NCStorage->NeedStopWrite())
+        health_coeff = "0";
+    else if (!CNetCacheServer::IsCachingComplete())
+        health_coeff = "0.1";
+    else if (!CNetCacheServer::IsInitiallySynced())
+        health_coeff = "0.5";
+    m_SockBuffer.WriteMessage("OK:", "HEALTH_COEFF=" + health_coeff);
     m_SockBuffer.WriteMessage("OK:", "UP_TIME=" + NStr::IntToString(g_NetcacheServer->GetUpTime()));
     m_SockBuffer.WriteMessage("OK:", string("CACHING_COMPLETE=") + (CNetCacheServer::IsCachingComplete()? "yes": "no"));
     m_SockBuffer.WriteMessage("OK:", string("INITALLY_SYNCED=") + (CNetCacheServer::IsInitiallySynced()? "yes": "no"));
@@ -2727,11 +2721,12 @@ CNCMessageHandler::x_DoCmd_Health(void)
     m_SockBuffer.WriteMessage("OK:", "DISK_FREE=" + NStr::UInt8ToString(g_NetcacheServer->GetDiskFree()));
     m_SockBuffer.WriteMessage("OK:", "DISK_USED=" + NStr::UInt8ToString(g_NCStorage->GetDBSize()));
     m_SockBuffer.WriteMessage("OK:", "N_DB_FILES=" + NStr::IntToString(g_NCStorage->GetNDBFiles()));
-    m_SockBuffer.WriteMessage("OK:", "COPY_QUEUE_SIZE=" + NStr::UInt8ToString(CNCMirroring::GetQueueSize()));
+    m_SockBuffer.WriteMessage("OK:", "COPY_QUEUE_SIZE=" + NStr::UInt8ToString(CNCPeerControl::GetMirrorQueueSize()));
+
     typedef map<Uint8, string> TPeers;
     const TPeers& peers(CNCDistributionConf::GetPeers());
     ITERATE(TPeers, it_peer, peers) {
-        m_SockBuffer.WriteMessage("OK:", "QUEUE_SIZE_" + NStr::UInt8ToString(it_peer->first) + "=" + NStr::UInt8ToString(CNCMirroring::GetQueueSize(it_peer->first)));
+        m_SockBuffer.WriteMessage("OK:", "QUEUE_SIZE_" + NStr::UInt8ToString(it_peer->first) + "=" + NStr::UInt8ToString(CNCPeerControl::GetMirrorQueueSize(it_peer->first)));
     }
     m_SockBuffer.WriteMessage("OK:", "SYNC_LOG_SIZE=" + NStr::UInt8ToString(CNCSyncLog::GetLogSize()));
     m_SockBuffer.WriteMessage("OK:", "CONN_LIMIT=" + NStr::IntToString(g_NetcacheServer->GetMaxConnections()));
@@ -2837,54 +2832,24 @@ CNCMessageHandler::x_DoCmd_GetServerStats(void)
 bool
 CNCMessageHandler::x_DoCmd_Reinit(void)
 {
-    /*
-    x_CheckAdminClient();
-    g_NCStorage->Block();
-    x_SetState(eWaitForStorageBlock);
-    m_CmdProcessor = &CNCMessageHandler::x_DoCmd_ReinitImpl;
-    */
     m_SockBuffer.WriteMessage("ERR:", "Not implemented");
     return true;
 }
-/*
-bool
-CNCMessageHandler::x_DoCmd_ReinitImpl(void)
-{
-    g_NCStorage->ReinitializeCache(m_BlobKey);
-    g_NCStorage->Unblock();
-    m_SockBuffer.WriteMessage("OK:", "");
-    return true;
-}
-*/
+
 bool
 CNCMessageHandler::x_DoCmd_Reconf(void)
 {
-    /*
-    x_CheckAdminClient();
-    g_NCStorage->Block();
-    x_SetState(eWaitForStorageBlock);
-    m_CmdProcessor = &CNCMessageHandler::x_DoCmd_ReconfImpl;
-    */
     m_SockBuffer.WriteMessage("ERR:", "Not implemented");
     return true;
 }
-/*
-bool
-CNCMessageHandler::x_DoCmd_ReconfImpl(void)
-{
-    g_NetcacheServer->Reconfigure();
-    g_NCStorage->Unblock();
-    m_SockBuffer.WriteMessage("OK:", "");
-    return true;
-}
-*/
+
 bool
 CNCMessageHandler::x_DoCmd_Put2(void)
 {
     m_BlobAccess->SetBlobTTL(x_GetBlobTTL());
     m_BlobAccess->SetVersionTTL(0);
     m_BlobAccess->SetBlobVersion(0);
-    m_SockBuffer.WriteMessage("ID:", m_RawKey);
+    m_SockBuffer.WriteMessage("OK:ID:", m_RawKey);
     x_StartReadingBlob();
     return true;
 }
@@ -2904,12 +2869,11 @@ CNCMessageHandler::x_DoCmd_Get(void)
         extra.Print("proxy", "1");
         extra.Flush();
 
-        string proxy_cmd;
-        x_CreateProxyGetCmd(proxy_cmd, 1, false, true);
-        if (!x_EcecuteProxyCmd(m_LatestSrvId, proxy_cmd, true, false)) {
-            m_SockBuffer.WriteMessage("ERR:", "Connection with peer failed");
-            m_CmdCtx->SetRequestStatus(eStatus_PeerError);
-        }
+        m_Quorum = 1;
+        m_SearchOnRead = false;
+        m_ForceLocal = true;
+        m_CheckSrvs.push_back(m_LatestSrvId);
+        x_SetState(eProxyToNextPeer);
         return true;
     }
     if (!m_LatestExist) {
@@ -2945,12 +2909,11 @@ CNCMessageHandler::x_DoCmd_GetLast(void)
         extra.Print("proxy", "1");
         extra.Flush();
 
-        string proxy_cmd;
-        x_CreateProxyGetLastCmd(proxy_cmd, 1, false, true);
-        if (!x_EcecuteProxyCmd(m_LatestSrvId, proxy_cmd, true, false)) {
-            m_SockBuffer.WriteMessage("ERR:", "Connection with peer failed");
-            m_CmdCtx->SetRequestStatus(eStatus_PeerError);
-        }
+        m_Quorum = 1;
+        m_SearchOnRead = false;
+        m_ForceLocal = true;
+        m_CheckSrvs.push_back(m_LatestSrvId);
+        x_SetState(eProxyToNextPeer);
         return true;
     }
     if (!m_LatestExist) {
@@ -3010,12 +2973,11 @@ CNCMessageHandler::x_DoCmd_GetSize(void)
         extra.Print("proxy", "1");
         extra.Flush();
 
-        string proxy_cmd;
-        x_CreateProxyGetSizeCmd(proxy_cmd, 1, false, true);
-        if (!x_EcecuteProxyCmd(m_LatestSrvId, proxy_cmd, false, false)) {
-            m_SockBuffer.WriteMessage("ERR:", "Connection with peer failed");
-            m_CmdCtx->SetRequestStatus(eStatus_PeerError);
-        }
+        m_Quorum = 1;
+        m_SearchOnRead = false;
+        m_ForceLocal = true;
+        m_CheckSrvs.push_back(m_LatestSrvId);
+        x_SetState(eProxyToNextPeer);
         return true;
     }
     if (!m_LatestExist) {
@@ -3038,15 +3000,9 @@ CNCMessageHandler::x_DoCmd_HasBlob(void)
     if (!m_LatestExist  &&  m_Quorum != 1) {
         if (m_Quorum != 0)
             --m_Quorum;
-        m_DeferredDone = false;
-        m_DeferredTask = new CNCFindMetaData_Task(
-                                this, x_GetCurSlotServers(), m_Quorum, true,
-                                m_CmdCtx, m_BlobKey, m_LatestExist,
-                                m_LatestBlobSum, m_LatestSrvId);
-        if (!CNetCacheServer::AddDeferredTask(m_DeferredTask))
-            m_DeferredDone = true;
-        x_SetState(eWaitForDeferredTask);
+        x_GetCurSlotServers();
         m_CmdProcessor = &CNCMessageHandler::x_DoCmd_HasBlobImpl;
+        x_SetState(eReadMetaNextPeer);
         return true;
     }
     else
@@ -3152,6 +3108,7 @@ CNCMessageHandler::x_DoCmd_SyncStart(void)
     }
     else {
         x_SetFlag(fNeedSyncFinish);
+        string result;
         if (sync_res == eProceedWithEvents) {
             m_SendBuff.reset(new TNCBufferType());
             m_SendBuff->reserve_mem(sync_events.size() * 200);
@@ -3173,25 +3130,21 @@ CNCMessageHandler::x_DoCmd_SyncStart(void)
                     m_SendBuff->append(&evt->orig_time, sizeof(evt->orig_time));
                 }
             }
-            string result("SIZE=");
-            result += NStr::UInt8ToString(m_SendBuff->size());
-            result.append(1, ' ');
-            result += NStr::UInt8ToString(m_LocalRecNo);
-            result.append(1, ' ');
-            result += NStr::UInt8ToString(m_RemoteRecNo);
-            m_SockBuffer.WriteMessage("OK:", result);
         }
         else {
             _ASSERT(sync_res == eProceedWithBlobs);
-            Uint8 rec_no = CNCSyncLog::GetCurrentRecNo(m_Slot);
+            m_LocalRecNo = CNCSyncLog::GetCurrentRecNo(m_Slot);
             x_ReadFullBlobsList();
             m_CmdCtx->SetRequestStatus(eStatus_SyncBList);
-            string result("ALL_BLOBS,SIZE=");
-            result += NStr::UInt8ToString(m_SendBuff->size());
-            result.append(1, ' ');
-            result += NStr::UInt8ToString(rec_no);
-            m_SockBuffer.WriteMessage("OK:", result);
+            result += "ALL_BLOBS,";
         }
+        result += "SIZE=";
+        result += NStr::UInt8ToString(m_SendBuff->size());
+        result.append(1, ' ');
+        result += NStr::UInt8ToString(m_LocalRecNo);
+        result.append(1, ' ');
+        result += NStr::UInt8ToString(m_RemoteRecNo);
+        m_SockBuffer.WriteMessage("OK:", result);
         m_SendPos = 0;
         x_SetState(eWriteSendBuff);
     }
@@ -3208,9 +3161,14 @@ CNCMessageHandler::x_CanStartSyncCommand(bool can_abort /* = true */)
         m_CmdCtx->SetRequestStatus(eStatus_StaleSync);
     }
     else if (start_res == eServerBusy) {
-        m_SockBuffer.WriteMessage("OK:", "SIZE=0, NEED_ABORT");
+        m_SockBuffer.WriteMessage("OK:", "SIZE=0, NEED_ABORT1");
         m_CmdCtx->SetRequestStatus(eStatus_SyncAborted);
-        x_QuickFinishSyncCommand();
+        if (NStr::CompareCase(m_CurCmd, "SYNC_PUT") == 0  &&  m_CmdVersion == 0)
+        {
+            x_SetFlag(fConfirmBlobPut);
+            x_SetFlag(fCopyLogEvent);
+            x_SetState(eReadBlobSignature);
+        }
     }
     else
         return true;
@@ -3247,17 +3205,20 @@ CNCMessageHandler::x_DoCmd_CopyPut(void)
     m_CopyBlobInfo.ttl = m_BlobTTL;
     m_CopyBlobInfo.password = m_BlobPass;
     m_CopyBlobInfo.blob_ver = m_BlobVersion;
-    x_SetFlag(fConfirmBlobPut);
-    x_SetFlag(fCopyLogEvent);
-    if (m_BlobAccess->ReplaceBlobInfo(m_CopyBlobInfo)) {
+    bool need_read_blob = m_BlobAccess->ReplaceBlobInfo(m_CopyBlobInfo);
+    if (need_read_blob) {
         x_SetFlag(fReadExactBlobSize);
         m_SockBuffer.WriteMessage("OK:", kEmptyStr);
     }
     else {
         m_CmdCtx->SetRequestStatus(eStatus_NewerBlob);
-        m_SockBuffer.WriteMessage("OK:", "HAVE_NEWER");
+        m_SockBuffer.WriteMessage("OK:", "HAVE_NEWER1");
     }
-    x_StartReadingBlob();
+    if (need_read_blob  ||  m_CmdVersion == 0) {
+        x_SetFlag(fConfirmBlobPut);
+        x_SetFlag(fCopyLogEvent);
+        x_StartReadingBlob();
+    }
     return true;
 }
 
@@ -3267,7 +3228,6 @@ CNCMessageHandler::x_DoCmd_SyncPut(void)
     if (!x_CanStartSyncCommand())
         return true;
 
-    x_SetFlag(fSyncInProgress);
     x_SetFlag(fNeedSyncFinish);
     return x_DoCmd_CopyPut();
 }
@@ -3380,7 +3340,6 @@ CNCMessageHandler::x_DoCmd_SyncGet(void)
     m_SockBuffer.WriteMessage("OK:", result);
     if (m_BlobAccess->GetCurBlobSize() != 0) {
         m_BlobAccess->SetPosition(0);
-        x_SetFlag(fSyncInProgress);
         x_SetState(eWaitForFirstData);
     }
     return true;
@@ -3446,12 +3405,10 @@ CNCMessageHandler::x_DoCmd_GetMeta(void)
         extra.Print("proxy", "1");
         extra.Flush();
 
-        string proxy_cmd;
-        x_CreateProxyGetMetaCmd(proxy_cmd, 1, true);
-        if (!x_EcecuteProxyCmd(m_LatestSrvId, proxy_cmd, true, false)) {
-            m_SockBuffer.WriteMessage("ERR:", "Connection with peer failed");
-            m_CmdCtx->SetRequestStatus(eStatus_PeerError);
-        }
+        m_Quorum = 1;
+        m_ForceLocal = true;
+        m_CheckSrvs.push_back(m_LatestSrvId);
+        x_SetState(eProxyToNextPeer);
         return true;
     }
     if (!m_LatestExist) {
@@ -3627,119 +3584,6 @@ CNCMessageHandler::x_DoCmd_NotImplemented(void)
     m_CmdCtx->SetRequestStatus(eStatus_NoImpl);
     m_SockBuffer.WriteMessage("ERR:", "Not implemented");
     return true;
-}
-
-
-CNCFindMetaData_Task::CNCFindMetaData_Task(CNCMessageHandler* handler,
-                                           const vector<Uint8>& servers,
-                                           Uint1 quorum,
-                                           bool  for_hasb,
-                                           CRequestContext* req_ctx,
-                                           const string& key,
-                                           bool& latest_exist,
-                                           SNCBlobSummary& latest_blob_sum,
-                                           Uint8& latest_srv_id)
-    : m_Handler(handler),
-      m_Servers(servers),
-      m_Quorum(quorum),
-      m_ForHasb(for_hasb),
-      m_ReqCtx(req_ctx),
-      m_Key(key),
-      m_LatestExist(latest_exist),
-      m_LatestBlobSum(latest_blob_sum),
-      m_LatestSrvId(latest_srv_id)
-{}
-
-void
-CNCFindMetaData_Task::Process(void)
-{
-    GetDiagContext().SetRequestContext(m_ReqCtx);
-    for (Uint1 j = 0; j < m_Servers.size(); ++j) {
-        Uint8 srv_id = m_Servers[j];
-        if (srv_id == CNCDistributionConf::GetSelfID())
-            continue;
-
-        bool cur_exist = false;
-        SNCBlobSummary cur_blob_sum;
-        ENCPeerFailure read_res = CNetCacheServer::ReadBlobMetaData(
-                                  srv_id, m_Key, cur_exist, cur_blob_sum);
-        if (read_res == ePeerActionOK  &&  (cur_exist  ||  m_ForHasb)) {
-            if (cur_exist  &&  m_ForHasb) {
-                m_LatestExist = true;
-                goto return_completed;
-            }
-            if (cur_exist
-                &&  (!m_LatestExist
-                     ||  (!cur_blob_sum.isSameData(m_LatestBlobSum)
-                          &&  m_LatestBlobSum.isOlder(cur_blob_sum))))
-            {
-                m_LatestExist = true;
-                m_LatestSrvId = srv_id;
-                m_LatestBlobSum = cur_blob_sum;
-            }
-            if (m_Quorum == 1)
-                goto return_completed;
-            if (m_Quorum != 0)
-                --m_Quorum;
-        }
-    }
-
-return_completed:
-    g_NetcacheServer->WakeUpPollCycle();
-}
-
-void
-CNCFindMetaData_Task::OnStatusChange(EStatus /* old */, EStatus new_status)
-{
-    if (new_status == CQueueItemBase::eComplete)
-        m_Handler->DeferredComplete();
-}
-
-
-CNCPutToPeers_Task::CNCPutToPeers_Task(CNCMessageHandler* handler,
-                                       const vector<Uint8>& servers,
-                                       Uint1 quorum,
-                                       CRequestContext* req_ctx,
-                                       Uint2 slot,
-                                       const string& key,
-                                       Uint8 event_rec_no)
-    : m_Handler(handler),
-      m_Servers(servers),
-      m_Quorum(quorum),
-      m_Slot(slot),
-      m_ReqCtx(req_ctx),
-      m_Key(key),
-      m_EventRecNo(event_rec_no)
-{}
-
-void
-CNCPutToPeers_Task::Process(void)
-{
-    GetDiagContext().SetRequestContext(m_ReqCtx);
-    for (Uint1 j = 0; j < m_Servers.size(); ++j) {
-        Uint8 srv_id = m_Servers[j];
-        if (srv_id == CNCDistributionConf::GetSelfID())
-            continue;
-
-        ENCPeerFailure send_res = CNetCacheServer::SendBlobToPeer(
-                                  srv_id, m_Slot, m_Key, m_EventRecNo, true);
-        if (send_res == ePeerActionOK) {
-            if (m_Quorum == 1)
-                goto quorum_met;
-            else if (m_Quorum != 0)
-                --m_Quorum;
-        }
-    }
-
-quorum_met:
-    g_NetcacheServer->WakeUpPollCycle();
-}
-
-void
-CNCPutToPeers_Task::OnStatusChange(EStatus /* old */, EStatus new_status)
-{
-    if (new_status == CQueueItemBase::eComplete)
-        m_Handler->DeferredComplete();
 }
 
 

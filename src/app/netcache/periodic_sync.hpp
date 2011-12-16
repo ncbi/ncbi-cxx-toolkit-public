@@ -57,6 +57,10 @@
 BEGIN_NCBI_SCOPE
 
 
+class CNCPeerControl;
+class CNCActiveHandler;
+struct SNCCacheData;
+
 
 enum ESyncInitiateResult {
     eNetworkError,
@@ -138,6 +142,7 @@ enum ESynTaskType {
 };
 
 enum ESynActionType {
+    eSynActionNone,
     eSynActionRead,
     eSynActionWrite,
     eSynActionProlong,
@@ -161,7 +166,7 @@ struct SSyncSrvData
 struct SSyncSlotSrv
 {
     CFastMutex lock;
-    SSyncSrvData* srv_data;
+    CNCPeerControl* peer;
     bool    sync_started;
     bool    is_passive;
     bool    is_by_blobs;
@@ -172,7 +177,7 @@ struct SSyncSlotSrv
     Uint8   last_active_time;
     Uint8   cur_sync_id;
 
-    SSyncSlotSrv(SSyncSrvData* srv_data);
+    SSyncSlotSrv(CNCPeerControl* peer);
 };
 
 typedef map<Uint2, SSyncSlotSrv*>  TSlotSrvsList;
@@ -193,30 +198,50 @@ struct SSyncSlotData
 typedef map<Uint2, SSyncSlotData*>  TSyncSlotsMap;
 
 
-class CActiveSyncControl
+typedef TSyncEvents::const_iterator     TSyncEventsIt;
+typedef TNCBlobSumList::const_iterator  TBlobsListIt;
+
+struct SSyncTaskInfo
+{
+    ESynTaskType task_type;
+    TSyncEventsIt get_evt;
+    TSyncEventsIt send_evt;
+    TBlobsListIt local_blob;
+    TBlobsListIt remote_blob;
+};
+
+
+class CNCActiveSyncControl : public CThread
 {
 public:
-    CActiveSyncControl(void);
+    CNCActiveSyncControl(void);
+    virtual ~CNCActiveSyncControl(void);
 
-    bool DoPeriodicSync(SSyncSlotData* slot_data, SSyncSlotSrv*  slot_srv);
-    ESynTaskType GetSynTaskType(void);
-    void ExecuteSynTask(ESynTaskType task_type);
-    void FinalizeSync(void);
+    CRequestContext* GetDiagCtx(void);
+    Uint2 GetSyncSlot(void);
+    void StartResponse(Uint8 local_rec_no, Uint8 remote_rec_no, bool by_blobs);
+    void AddStartEvent(SNCSyncEvent* evt);
+    void AddStartBlob(const string& key, SNCCacheData* blob_sum);
+    bool GetNextTask(SSyncTaskInfo& task_info);
+    void ExecuteSyncTask(const SSyncTaskInfo& task_info, CNCActiveHandler* conn);
+    void CmdFinished(ESyncResult res, ESynActionType action, CNCActiveHandler* conn);
     void WakeUp(void);
 
 private:
-    void x_PrepareSyncByEvents(Uint8 local_start_rec_no,
-                               Uint8 remote_start_rec_no,
-                               const TReducedSyncEvents& remote_events,
-                               Uint8* local_synced_rec_no,
-                               Uint8* remote_synced_rec_no);
-    void x_PrepareSyncByBlobs(Uint8* local_synced_rec_no);
-    void x_DoEventSend(ENCPeerFailure& task_res, ESynActionType& action);
-    void x_DoEventGet(ENCPeerFailure& task_res, ESynActionType& action);
-    void x_DoBlobUpdateOur(ENCPeerFailure& task_res, ESynActionType& action);
-    void x_DoBlobUpdatePeer(ENCPeerFailure& task_res, ESynActionType& action);
-    void x_DoBlobSend(ENCPeerFailure& task_res, ESynActionType& action);
-    void x_DoBlobGet(ENCPeerFailure& task_res, ESynActionType& action);
+    virtual void* Main(void);
+
+    bool x_DoPeriodicSync(SSyncSlotData* slot_data, SSyncSlotSrv*  slot_srv);
+    void x_PrepareSyncByEvents(void);
+    void x_PrepareSyncByBlobs(void);
+    void x_CleanRemoteObjects(void);
+    void x_CalcNextTask(void);
+    void x_DoEventSend(const SSyncTaskInfo& task_info, CNCActiveHandler* conn);
+    void x_DoEventGet(const SSyncTaskInfo& task_info, CNCActiveHandler* conn);
+    void x_DoBlobUpdateOur(const SSyncTaskInfo& task_info, CNCActiveHandler* conn);
+    void x_DoBlobUpdatePeer(const SSyncTaskInfo& task_info, CNCActiveHandler* conn);
+    void x_DoBlobSend(const SSyncTaskInfo& task_info, CNCActiveHandler* conn);
+    void x_DoBlobGet(const SSyncTaskInfo& task_info, CNCActiveHandler* conn);
+    void x_DoFinalize(CNCActiveHandler* conn);
 
 
     SSyncSlotData*  m_SlotData;
@@ -225,19 +250,24 @@ private:
     Uint8       m_SrvId;
     Uint2       m_Slot;
     ESyncResult m_Result;
-    CSemaphore  m_WaitSem;
     CFastMutex  m_Lock;
-    bool        m_HasTasks;
+    CConditionVariable m_WaitCond;
     Uint4       m_StartedCmds;
 
-    TSyncEvents     m_Events2Get;
-    TSyncEvents     m_Events2Send;
-    TSyncEvents::const_iterator m_CurGetEvent;
-    TSyncEvents::const_iterator m_CurSendEvent;
-    TNCBlobSumList  m_LocalBlobs;
-    TNCBlobSumList  m_RemoteBlobs;
-    TNCBlobSumList::const_iterator  m_CurLocalBlob;
-    TNCBlobSumList::const_iterator  m_CurRemoteBlob;
+    Uint8 m_LocalStartRecNo;
+    Uint8 m_RemoteStartRecNo;
+    Uint8 m_LocalSyncedRecNo;
+    Uint8 m_RemoteSyncedRecNo;
+    ESynTaskType m_NextTask;
+    TReducedSyncEvents m_RemoteEvents;
+    TSyncEvents    m_Events2Get;
+    TSyncEvents    m_Events2Send;
+    TSyncEventsIt  m_CurGetEvent;
+    TSyncEventsIt  m_CurSendEvent;
+    TNCBlobSumList m_LocalBlobs;
+    TNCBlobSumList m_RemoteBlobs;
+    TBlobsListIt   m_CurLocalBlob;
+    TBlobsListIt   m_CurRemoteBlob;
     Uint8   m_ReadOK;
     Uint8   m_ReadERR;
     Uint8   m_WriteOK;
@@ -280,6 +310,49 @@ public:
     static void DeleteTlsObject(void* obj);
 };
 
+
+
+
+//////////////////////////////////////////////////////////////////////////
+//  Inline functions
+//////////////////////////////////////////////////////////////////////////
+
+inline CRequestContext*
+CNCActiveSyncControl::GetDiagCtx(void)
+{
+    return m_DiagCtx;
+}
+
+inline Uint2
+CNCActiveSyncControl::GetSyncSlot(void)
+{
+    return m_Slot;
+}
+
+inline void
+CNCActiveSyncControl::StartResponse(Uint8 local_rec_no,
+                                    Uint8 remote_rec_no,
+                                    bool by_blobs)
+{
+    m_LocalStartRecNo = local_rec_no;
+    m_RemoteStartRecNo = remote_rec_no;
+    m_SlotSrv->is_by_blobs = by_blobs;
+}
+
+inline void
+CNCActiveSyncControl::AddStartEvent(SNCSyncEvent* evt)
+{
+    if (evt->event_type == eSyncProlong)
+        m_RemoteEvents[evt->key].prolong_event = evt;
+    else
+        m_RemoteEvents[evt->key].wr_or_rm_event = evt;
+}
+
+inline void
+CNCActiveSyncControl::AddStartBlob(const string& key, SNCCacheData* blob_sum)
+{
+    m_RemoteBlobs[key] = blob_sum;
+}
 
 END_NCBI_SCOPE
 

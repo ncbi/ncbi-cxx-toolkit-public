@@ -529,7 +529,6 @@ CNCBlobStorage::x_DeleteDBFile(SNCDBFileInfo* file_info)
 
 CNCBlobStorage::CNCBlobStorage(void)
     : m_Stopped(false),
-      m_StopTrigger(0, 100),
       m_LastFileId(0),
       m_CurMetaFile(NULL),
       m_CurDataFile(NULL),
@@ -546,7 +545,6 @@ CNCBlobStorage::CNCBlobStorage(void)
       m_FreeAccessors(NULL),
       m_UsedAccessors(NULL),
       m_CntUsedHolders(0),
-      m_GCBlockWaiter(0, 1),
       m_IsStopWrite(eNoStop),
       m_DoExtraGC(false),
       m_LastRecNoSaveTime(0),
@@ -603,7 +601,7 @@ void
 CNCBlobStorage::Finalize(void)
 {
     m_Stopped = true;
-    m_StopTrigger.Post(2);
+    m_StopCond.SignalAll();
     m_NextFileSwitchLock.Lock();
     m_NextFileSwitch.SignalAll();
     m_NextFileSwitchLock.Unlock();
@@ -969,6 +967,18 @@ CNCBlobStorage::x_GetRecordForCoord(Uint8 coord)
     return header;
 }
 
+inline Uint1
+CNCBlobStorage::x_CalcMapDepth(Uint8 size, Uint2 chunk_size, Uint2 map_size)
+{
+    Uint1 map_depth = 0;
+    Uint8 cnt_chunks = size / chunk_size;
+    while (cnt_chunks > 1) {
+        ++map_depth;
+        cnt_chunks /= map_size;
+    }
+    return map_depth;
+}
+
 bool
 CNCBlobStorage::ReadBlobInfo(SNCBlobVerData* ver_data)
 {
@@ -1001,13 +1011,9 @@ CNCBlobStorage::ReadBlobInfo(SNCBlobVerData* ver_data)
     ver_data->chunk_size = meta_rec->chunk_size;
     ver_data->map_size = meta_rec->map_size;
 
-    ver_data->map_depth = 0;
-    Uint8 cnt_chunks = ver_data->size / ver_data->chunk_size;
-    while (cnt_chunks > 1) {
-        ++ver_data->map_depth;
-        cnt_chunks /= ver_data->map_size;
-    }
-
+    ver_data->map_depth = x_CalcMapDepth(ver_data->size,
+                                         ver_data->chunk_size,
+                                         ver_data->map_size);
     return true;
 }
 
@@ -1175,25 +1181,27 @@ CNCBlobStorage::WriteBlobInfo(const string& blob_key,
     ver_data->coord = coord;
     ver_data->data_coord = down_coord;
 
-    SFileRecHeader* down_head = x_GetRecordForCoord(down_coord);
-    if (!down_head) {
-        ERR_POST(Critical << "Storage data is corrupted at coord " << down_coord);
-        abort();
-        // This shouldn't happen
-        //return false;
-    }
-    switch (down_head->rec_type) {
-    case eFileRecChunkMap:
-        ((SFileChunkMapRec*)down_head)->up_coord = coord;
-        break;
-    case eFileRecChunkData:
-        ((SFileChunkDataRec*)down_head)->up_coord = coord;
-        break;
-    default:
-        ERR_POST(Critical << "Storage data is corrupted at coord " << down_coord);
-        abort();
-        // This shouldn't happen
-        //return false;
+    if (down_coord != 0) {
+        SFileRecHeader* down_head = x_GetRecordForCoord(down_coord);
+        if (!down_head) {
+            ERR_POST(Critical << "Storage data is corrupted at coord " << down_coord);
+            abort();
+            // This shouldn't happen
+            //return false;
+        }
+        switch (down_head->rec_type) {
+        case eFileRecChunkMap:
+            ((SFileChunkMapRec*)down_head)->up_coord = coord;
+            break;
+        case eFileRecChunkData:
+            ((SFileChunkDataRec*)down_head)->up_coord = coord;
+            break;
+        default:
+            ERR_POST(Critical << "Storage data is corrupted at coord " << down_coord);
+            abort();
+            // This shouldn't happen
+            //return false;
+        }
     }
 
     if (old_coord != 0) {
@@ -1580,7 +1588,7 @@ CNCBlobStorage::x_CollectStorageStats(void)
 void
 CNCBlobStorage::OnBlockedOpFinish(void)
 {
-    m_GCBlockWaiter.Post();
+    m_GCBlockWaiter.SignalAll();
 }
 
 bool
@@ -1651,12 +1659,9 @@ CNCBlobStorage::x_CacheMetaRec(SFileRecHeader* header,
     }
 
     if (meta_rec->size != 0) {
-        Uint1 map_depth = 0;
-        Uint8 cnt_chunks = meta_rec->size / meta_rec->chunk_size;
-        while (cnt_chunks != 0) {
-            ++map_depth;
-            cnt_chunks /= meta_rec->map_size;
-        }
+        Uint1 map_depth = x_CalcMapDepth(meta_rec->size,
+                                         meta_rec->chunk_size,
+                                         meta_rec->map_size);
         Uint2 last_chunk_size = Uint2(meta_rec->size % meta_rec->chunk_size);
         if (last_chunk_size == 0)
             last_chunk_size = meta_rec->chunk_size;
@@ -1734,12 +1739,9 @@ CNCBlobStorage::x_CacheMetaRec(SFileRecHeader* header,
         old_info->used_size -= old_rec->rec_size;
         if (old_rec->size != 0  &&  old_rec->down_coord != meta_rec->down_coord)
         {
-            Uint1 map_depth = 0;
-            Uint8 cnt_chunks = old_rec->size / old_rec->chunk_size;
-            while (cnt_chunks != 0) {
-                ++map_depth;
-                cnt_chunks /= old_rec->map_size;
-            }
+            Uint1 map_depth = x_CalcMapDepth(old_rec->size,
+                                             old_rec->chunk_size,
+                                             old_rec->map_size);
             Uint4 last_chunk_size = Uint4(old_rec->size % old_rec->chunk_size);
             if (last_chunk_size == 0)
                 last_chunk_size = old_rec->chunk_size;
@@ -1932,9 +1934,11 @@ CNCBlobStorage::x_GC_DeleteExpired(const string& key,
 {
     m_GCAccessor->Prepare(key, kEmptyStr, slot, eNCGCDelete);
     x_InitializeAccessor(m_GCAccessor);
+    m_GCBlockLock.Lock();
     while (m_GCAccessor->ObtainMetaInfo(this) == eNCWouldBlock) {
-        m_GCBlockWaiter.Wait();
+        m_GCBlockWaiter.WaitForSignal(m_GCBlockLock);
     }
+    m_GCBlockLock.Unlock();
     if (m_GCAccessor->IsBlobExists()
         &&  m_GCAccessor->GetCurBlobDeadTime() < dead_before)
     {
@@ -2178,7 +2182,6 @@ CNCBlobStorage::x_ShrinkDiskStorage(void)
 
     bool need_move = m_CurDBSize >= m_MinDBSize
                      &&  m_GarbageSize * 100 > m_CurDBSize * m_MaxGarbagePct;
-    //LOG_POST("Shrink: db_size=" << m_CurDBSize << ", garb=" << m_GarbageSize << ", need=" << (int)need_move);
     double max_pct = 0;
     SNCDBFileInfo* max_file = NULL;
     vector<SNCDBFileInfo*> files_to_del;
@@ -2205,16 +2208,12 @@ CNCBlobStorage::x_ShrinkDiskStorage(void)
                 if (this_file->garb_size + this_file->used_size != 0) {
                     double this_pct = double(this_file->garb_size)
                                       / (this_file->garb_size + this_file->used_size);
-                    //LOG_POST("Shrink: id=" << this_file->file_id << ", garb=" << this_file->garb_size << ", used=" << this_file->used_size << ", pct=" << this_pct);
                     if (this_pct > max_pct) {
                         max_pct = this_pct;
                         max_file = this_file;
                     }
                 }
                 this_file->size_lock.Unlock();
-            }
-            else {
-                //LOG_POST("Shrink: id=" << this_file->file_id << ", garb=" << this_file->garb_size << ", used=" << this_file->used_size);
             }
         }
     }
@@ -2248,7 +2247,6 @@ CNCBlobStorage::x_ShrinkDiskStorage(void)
         SFileMetaRec* meta_rec = NULL;
         x_ReadRecDeadTime(header, kNCMaxBlobMapsDepth, up_head, meta_rec);
 
-        //LOG_POST("Shrink: for " << (data - max_file->file_map) << " meta=" << meta_rec << ", del=" << (meta_rec? meta_rec->deleted: 1) << ", dead=" << (meta_rec? meta_rec->dead_time: 0) << ", thresh=" << (cur_time + m_MinMoveLife));
         if (meta_rec  &&  !meta_rec->deleted) {
             if (meta_rec->dead_time > cur_time + m_MinMoveLife) {
                 ++cnt_moved;
@@ -2272,7 +2270,6 @@ CNCBlobStorage::x_ShrinkDiskStorage(void)
         }
         data += header->rec_size;
     }
-    //LOG_POST("Shrink: Attempted to move " << max_file->file_id << ", moved=" << cnt_moved << ", skipped=" << cnt_skipped << ", failed=" << (int)failed << ", garb=" << max_file->garb_size << ", used=" << max_file->used_size);
     if (!failed) {
         if (max_file->used_size == 0) {
             x_DeleteDBFile(max_file);
@@ -2370,8 +2367,12 @@ CNCBlobStorage::x_DoBackgroundWork(void)
         x_FlushStorage();
 
         Uint8 end_time = CNetCacheServer::GetPreciseTime();
-        if (end_time - start_time < kNCTimeTicksInSec)
-            m_StopTrigger.TryWait(1, 0);
+        if (end_time - start_time < kNCTimeTicksInSec) {
+            m_StopLock.Lock();
+            if (!m_Stopped)
+                m_StopCond.WaitForSignal(m_StopLock, CTimeout(1, 0));
+            m_StopLock.Unlock();
+        }
     }
 }
 
@@ -2382,8 +2383,12 @@ CNCBlobStorage::x_DoGCWork(void)
         Uint8 start_time = CNetCacheServer::GetPreciseTime();
         x_RunGC();
         Uint8 end_time = CNetCacheServer::GetPreciseTime();
-        if (end_time - start_time < kNCTimeTicksInSec)
-            m_StopTrigger.TryWait(1, 0);
+        if (end_time - start_time < kNCTimeTicksInSec) {
+            m_StopLock.Lock();
+            if (!m_Stopped)
+                m_StopCond.WaitForSignal(m_StopLock, CTimeout(1, 0));
+            m_StopLock.Unlock();
+        }
     }
 }
 

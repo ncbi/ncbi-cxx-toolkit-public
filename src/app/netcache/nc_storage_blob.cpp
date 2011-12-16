@@ -441,7 +441,7 @@ CNCBlobAccessor::CNCBlobAccessor(void)
 {
     SNCChunkMapInfo map_info;
     m_CurMapsSize = (char*)map_info.coords - (char*)&map_info
-                    + kNCMaxChunksInMap * sizeof(map_info.coords[0]);
+                    + m_CurChunksInMap * sizeof(map_info.coords[0]);
     for (Uint1 i = 0; i <= kNCMaxBlobMapsDepth; ++i) {
         m_ChunkMaps[i] = (SNCChunkMapInfo*)malloc(m_CurMapsSize);
     }
@@ -543,8 +543,9 @@ CNCBlobAccessor::ObtainMetaInfo(INCBlockedOpListener* listener)
     if (m_VerManager->GetCurVersion(&m_CurData, listener) == eNCWouldBlock)
         return eNCWouldBlock;
     if (m_CurData  &&  m_CurData->map_size > m_CurChunksInMap) {
+        m_CurChunksInMap = m_CurData->map_size;
         m_CurMapsSize = (char*)m_ChunkMaps[0]->coords - (char*)m_ChunkMaps[0]
-                        + kNCMaxChunksInMap * sizeof(m_ChunkMaps[0]->coords[0]);
+                        + m_CurChunksInMap * sizeof(m_ChunkMaps[0]->coords[0]);
         for (Uint1 i = 0; i <= kNCMaxBlobMapsDepth; ++i) {
             free(m_ChunkMaps[i]);
             m_ChunkMaps[i] = (SNCChunkMapInfo*)calloc(m_CurMapsSize, 1);
@@ -562,7 +563,7 @@ CNCBlobAccessor::ObtainMetaInfo(INCBlockedOpListener* listener)
 inline bool
 CNCBlobAccessor::sx_IsOnlyOneChunk(SNCBlobVerData* ver_data)
 {
-    return ver_data->size <= kNCMaxBlobChunkSize;
+    return ver_data->size <= ver_data->chunk_size;
 }
 
 void
@@ -592,8 +593,8 @@ CNCBlobAccessor::x_ReadNextChunk(void)
         return;
 
     size_t need_size = size_t(m_CurData->size - GetPosition());
-    if (need_size > kNCMaxBlobChunkSize)
-        need_size = kNCMaxBlobChunkSize;
+    if (need_size > m_CurData->chunk_size)
+        need_size = m_CurData->chunk_size;
     if (m_Buffer->GetSize() != need_size)
         x_DelCorruptedVersion();
 }
@@ -670,7 +671,7 @@ CNCBlobAccessor::GetWriteMemSize(void)
         m_Buffer.Reset(s_BufferPool.Get());
         m_Buffer->Resize(0);
     }
-    if (m_Buffer->GetSize() == kNCMaxBlobChunkSize) {
+    if (m_Buffer->GetSize() == m_NewData->chunk_size) {
         if (!g_NCStorage->WriteChunkData(m_NewData, m_ChunkMaps, m_CurChunk, m_Buffer)) {
             m_HasError = true;
             return 0;
@@ -679,7 +680,7 @@ CNCBlobAccessor::GetWriteMemSize(void)
         ++m_CurChunk;
     }
 
-    return kNCMaxBlobChunkSize - m_Buffer->GetSize();
+    return m_NewData->chunk_size - m_Buffer->GetSize();
 }
 
 void

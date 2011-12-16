@@ -39,12 +39,15 @@
 #include <connect/services/netservice_protocol_parser.hpp>
 
 #include "netcached.hpp"
-#include "nc_storage.hpp"
 #include "sync_log.hpp"
 #include "distribution_conf.hpp"
 
 
 BEGIN_NCBI_SCOPE
+
+
+class CNCActiveClientHub;
+class CNCBlobAccessor;
 
 
 enum {
@@ -71,7 +74,7 @@ public:
     /// the object.
     void ResetSocket(CSocket* socket, unsigned int def_timeout);
     ///
-    void SetTimeout(unsigned int def_timeout);
+    void SetTimeout(double def_timeout);
 
     /// Check if there's something in the buffer to read from
     bool HasDataToRead(void) const;
@@ -108,18 +111,12 @@ public:
     void   WriteMessage(CTempString prefix, CTempString msg);
     size_t Write(const void* buf, size_t size);
     void   WriteNoFail(const void* buf, size_t size);
-    /// Prepare writing buffer for external writing and return pointer to it
-    void*  PrepareDirectWrite(void);
-    /// Get number of bytes that can be written into writing buffer via
-    /// external writing.
-    size_t GetDirectWriteSize(void) const;
-    /// Grow writing buffer by amount bytes because they were written directly
-    /// to the buffer.
-    void   AddDirectWritten(size_t amount);
     /// Write all data residing in writing buffer to the socket.
     /// If socket cannot accept all data immediately then leave what has left
     /// in the buffer as is until next call and return without waiting.
     void Flush(void);
+
+    size_t WriteFromBuffer(CBufferedSockReaderWriter& buf, size_t max_size);
 
 public:
     // For internal use only
@@ -230,7 +227,11 @@ public:
     /// not related to the request
     void ResetDiagnostics(void);
 
-    void DeferredComplete(void);
+    CBufferedSockReaderWriter& GetSockBuffer(void);
+    void InitialAnswerWritten(void);
+    void ForceBufferFlush(void);
+    bool IsBufferFlushed(void);
+    void WriteInitWriteResponse(const string& response);
 
     /// Type of method processing command and returning flag if shift to next
     /// state was made. If shift wasn't made then processing is postponed and
@@ -253,7 +254,6 @@ public:
     typedef CNetServProtoParser<SCommandExtra> TProtoParser;
 
     /// Command processors
-    bool x_DoCmd_NoOp(void);
     bool x_DoCmd_Alive(void);
     bool x_DoCmd_Health(void);
     bool x_DoCmd_Shutdown(void);
@@ -261,9 +261,7 @@ public:
     bool x_DoCmd_GetConfig(void);
     bool x_DoCmd_GetServerStats(void);
     bool x_DoCmd_Reinit(void);
-    //bool x_DoCmd_ReinitImpl(void);
     bool x_DoCmd_Reconf(void);
-    //bool x_DoCmd_ReconfImpl(void);
     bool x_DoCmd_Put2(void);
     bool x_DoCmd_Put3(void);
     bool x_DoCmd_Get(void);
@@ -332,22 +330,27 @@ private:
         eCommandReceived,      ///< Command received but not parsed yet
         eWaitForBlobAccess,    ///< Locking of blob needed for command is in
                                ///< progress
-        eWaitForDeferredTask,
         ePasswordFailed,       ///< Processing of bad password is needed
-        //eWaitForStorageBlock,  ///< Locking of all storages in the server is
-                               ///< in progress
         eReadBlobSignature,    ///< Reading of signature in blob transfer
                                ///< protocol
         eReadBlobChunkLength,  ///< Reading chunk length in blob transfer
                                ///< protocol
         eReadBlobChunk,        ///< Reading chunk data in blob transfer
                                ///< protocol
+        eReadChunkToActive,
         eWaitForFirstData,     ///<
         eWriteBlobData,        ///< Writing data from blob to socket
         eWriteSendBuff,
+        eProxyToNextPeer,
         eSendCmdAsProxy,
-        eWriteFromReader,
-        eReadToWriter,
+        eWaitForPeerAnswer,
+        eWaitForActiveWrite,
+        eReadMetaNextPeer,
+        eSendGetMetaCmd,
+        eReadMetaResults,
+        ePutToNextPeer,
+        eSendPutToPeerCmd,
+        eReadPutResults,
         eSocketClosed          ///< Connection closed or not opened yet
     };
     /// Additional flags that could be applied to object states
@@ -367,8 +370,8 @@ private:
         fWaitForBlockedOp  = 0x0400000,  ///< 
         fSkipBlobEOF       = 0x0800000,
         fCopyLogEvent      = 0x1000000,
-        fSyncInProgress    = 0x2000000,
-        fNeedSyncFinish    = 0x4000000,
+        fNeedSyncFinish    = 0x2000000,
+        fWaitForActive     = 0x4000000,
         eAllFlagsMask      = 0x7FF0000   ///< Sum of all flags above
     };
     /// Bit mask of EFlags plus one of EStates
@@ -407,24 +410,29 @@ private:
     /// Process "waiting" for blob locking. In fact just shift to next state
     /// if lock is acquired and just return if not.
     bool x_WaitForBlobAccess(void);
-    bool x_WaitForDeferredTask(void);
     /// Process the situation when password provided to access blob is incorrect
     bool x_ProcessBadPassword(void);
-    /// Process "waiting" for blocking of all storages in the server
-    //bool x_WaitForStorageBlock(void);
     /// Read signature in blob transfer protocol
     bool x_ReadBlobSignature(void);
     /// Read length of chunk in blob transfer protocol
     bool x_ReadBlobChunkLength(void);
     /// Read chunk data in blob transfer protocol
     bool x_ReadBlobChunk(void);
-    ///
+    bool x_ReadChunkToActive(void);
     bool x_WaitForFirstData(void);
     /// Write data from blob to socket
     bool x_WriteBlobData(void);
     bool x_WriteSendBuff(void);
+    bool x_ProxyToNextPeer(void);
     bool x_SendCmdAsProxy(void);
-    bool x_WriteFromReader(void);
+    bool x_WaitForPeerAnswer(void);
+    bool x_WaitForActiveWrite(void);
+    bool x_ReadMetaNextPeer(void);
+    bool x_SendGetMetaCmd(void);
+    bool x_ReadMetaResults(void);
+    bool x_PutToNextPeer(void);
+    bool x_SendPutToPeerCmd(void);
+    bool x_ReadPutResults(void);
 
     /// Close connection (or at least make CServer believe that we closed it
     /// by ourselves)
@@ -455,29 +463,9 @@ private:
 
     void x_ProlongBlobDeadTime(void);
     void x_ProlongVersionLife(void);
-    void x_QuickFinishSyncCommand(void);
     bool x_CanStartSyncCommand(bool can_abort = true);
     void x_ReadFullBlobsList(void);
-    TServersList x_GetCurSlotServers(void);
-    void x_CreateProxyGetCmd(string& proxy_cmd,
-                             Uint1 quorum,
-                             bool search,
-                             bool force_local);
-    void x_CreateProxyGetSizeCmd(string& proxy_cmd,
-                                 Uint1 quorum,
-                                 bool search,
-                                 bool force_local);
-    void x_CreateProxyGetLastCmd(string& proxy_cmd,
-                                 Uint1 quorum,
-                                 bool search,
-                                 bool force_local);
-    void x_CreateProxyGetMetaCmd(string& proxy_cmd,
-                                 Uint1 quorum,
-                                 bool force_local);
-    bool x_EcecuteProxyCmd(Uint8 srv_id,
-                           const string& proxy_cmd,
-                           bool  need_reader,
-                           bool  need_writer);
+    void x_GetCurSlotServers(void);
 
 
     /// Special guard to properly initialize and reset diagnostics
@@ -569,8 +557,6 @@ private:
     Uint1                     m_Quorum;
     bool                      m_SearchOnRead;
     string                    m_RawBlobPass;
-    auto_ptr<IReader>         m_DataReader;
-    auto_ptr<IEmbeddedStreamWriter> m_DataWriter;
     Uint8                     m_SyncId;
     bool                      m_LatestExist;
     bool                      m_InSyncCmd;
@@ -578,10 +564,14 @@ private:
     Uint8                     m_ThrottleTime;
     Uint8                     m_LatestSrvId;
     SNCBlobSummary            m_LatestBlobSum;
-    CRef<CStdRequest>         m_DeferredTask;
-    bool                      m_DeferredDone;
     bool                      m_ForceLocal;
     bool                      m_ConfirmPut;
+    bool                      m_GotInitialAnswer;
+    bool                      m_NeedFlushBuff;
+    Uint1                     m_SrvsIndex;
+    int                       m_CmdVersion;
+    TServersList              m_CheckSrvs;
+    CNCActiveClientHub*       m_ActiveHub;
 };
 
 
@@ -660,60 +650,72 @@ private:
 };
 
 
-class CNCFindMetaData_Task : public CStdRequest
+
+//////////////////////////////////////////////////////////////////////////
+// Inline functions
+//////////////////////////////////////////////////////////////////////////
+
+inline void
+CBufferedSockReaderWriter::ZeroSocketTimeout(void)
 {
-public:
-    CNCFindMetaData_Task(CNCMessageHandler* handler,
-                         const TServersList& servers,
-                         Uint1 quorum,
-                         bool  for_hasb,
-                         CRequestContext* req_ctx,
-                         const string& key,
-                         bool& latest_exist,
-                         SNCBlobSummary& latest_blob_sum,
-                         Uint8& latest_srv_id);
+    m_Socket->SetTimeout(eIO_ReadWrite, &m_ZeroTimeout);
+}
 
-private:
-    virtual void Process(void);
-    virtual void OnStatusChange(EStatus /* old */, EStatus new_status);
-
-    CNCMessageHandler* m_Handler;
-    TServersList    m_Servers;
-    Uint1           m_Quorum;
-    bool            m_ForHasb;
-    CRef<CRequestContext> m_ReqCtx;
-    string          m_Key;
-    bool&           m_LatestExist;
-    SNCBlobSummary& m_LatestBlobSum;
-    Uint8&          m_LatestSrvId;
-};
-
-
-class CNCPutToPeers_Task : public CStdRequest
+inline void
+CBufferedSockReaderWriter::ResetSocketTimeout(void)
 {
-public:
-    CNCPutToPeers_Task(CNCMessageHandler* handler,
-                       const TServersList& servers,
-                       Uint1 quorum,
-                       CRequestContext* req_ctx,
-                       Uint2 slot,
-                       const string& key,
-                       Uint8 event_rec_no);
+    m_Socket->SetTimeout(eIO_ReadWrite, &m_DefTimeout);
+}
 
-private:
-    virtual void Process(void);
-    virtual void OnStatusChange(EStatus /* old */, EStatus new_status);
+inline bool
+CBufferedSockReaderWriter::HasDataToRead(void) const
+{
+    return m_ReadDataPos < m_ReadBuff.size();
+}
 
+inline bool
+CBufferedSockReaderWriter::IsWriteDataPending(void) const
+{
+    return m_WriteDataPos < m_WriteBuff.size();
+}
 
-    CNCMessageHandler* m_Handler;
-    TServersList    m_Servers;
-    Uint1           m_Quorum;
-    Uint2           m_Slot;
-    CRef<CRequestContext> m_ReqCtx;
-    string          m_Key;
-    Uint8           m_EventRecNo;
-};
+inline bool
+CBufferedSockReaderWriter::HasError(void) const
+{
+    return m_HasError;
+}
 
+inline const void*
+CBufferedSockReaderWriter::GetReadBufData(void) const
+{
+    return m_ReadBuff.data() + m_ReadDataPos;
+}
+
+inline size_t
+CBufferedSockReaderWriter::GetReadReadySize(void) const
+{
+    return m_ReadBuff.size() - m_ReadDataPos;
+}
+
+inline void
+CBufferedSockReaderWriter::EraseReadBufData(size_t amount)
+{
+    m_ReadDataPos = min(m_ReadDataPos + amount, m_ReadBuff.size());
+}
+
+inline void
+CBufferedSockReaderWriter::WriteNoFail(const void* buf, size_t size)
+{
+    x_CopyData(buf, size);
+}
+
+inline void
+CBufferedSockReaderWriter::SetTimeout(double def_timeout)
+{
+    m_DefTimeout.sec = int(def_timeout);
+    m_DefTimeout.usec = int(def_timeout * 1000000);
+    ResetSocketTimeout();
+}
 
 
 inline

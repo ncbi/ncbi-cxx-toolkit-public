@@ -550,14 +550,14 @@ CNCBlobAccessor::GetAccessType(void) const
 inline void
 CNCBlobAccessor::SetPosition(Uint8 pos)
 {
-    m_CurChunk = pos / kNCMaxBlobChunkSize;
-    m_ChunkPos = size_t(pos % kNCMaxBlobChunkSize);
+    m_CurChunk = pos / m_CurData->chunk_size;
+    m_ChunkPos = size_t(pos % m_CurData->chunk_size);
 }
 
 inline Uint8
 CNCBlobAccessor::GetPosition(void)
 {
-    return m_CurChunk * kNCMaxBlobChunkSize + m_ChunkPos;
+    return m_CurChunk * m_CurData->chunk_size + m_ChunkPos;
 }
 
 inline const void*

@@ -3,9 +3,9 @@
 #################################
 
 APP = netcached
-SRC = netcached message_handler sync_log mirroring distribution_conf \
+SRC = netcached message_handler sync_log distribution_conf \
       nc_storage nc_storage_blob nc_db_files nc_stat nc_memory nc_utils \
-      periodic_sync
+      periodic_sync active_handler peer_control
 
 #REQUIRES = MT SQLITE3 Boost.Test.Included
 REQUIRES = MT SQLITE3 Boost.Test.Included Linux
