@@ -118,6 +118,9 @@ public:
     // Throws CPrefetchCanceled exception if the current token is canceled.
     static bool IsActive(void);
     
+    // Send cancel requests to all tasks, queued and executing
+    void CancelAllTasks(void);
+
     // Clears manager queue and stops all worker threads.
     void Shutdown(void);
     
