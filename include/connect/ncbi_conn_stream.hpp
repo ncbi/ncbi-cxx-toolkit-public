@@ -75,6 +75,8 @@
 #include <connect/ncbi_pipe_connector.hpp>
 #include <connect/ncbi_service_connector.h>
 #include <connect/ncbi_socket_connector.h>
+#include <util/icanceled.hpp>
+
 
 /** @addtogroup ConnStreams
  *
@@ -210,6 +212,13 @@ public:
     ///   CONN_Close
     EIO_Status      Close(void);
 
+    /// Cancellation support
+    /// @note ICanceled implementation must be derived from CObject as its
+    /// first subclass.
+    /// @sa
+    ///   ICanceled
+    EIO_Status      SetCanceledCallback(const ICanceled* canceled);
+
     /// @return
     ///   Internal CONNection handle (NULL if unset)
     /// @sa
@@ -220,7 +229,12 @@ protected:
     void x_Cleanup(void);
 
 private:
-    CConn_Streambuf* m_CSb;
+    CConn_Streambuf*      m_CSb;
+
+    // Cancellation
+    SCONN_Callback        m_CB[3];
+    CConstIRef<ICanceled> m_Canceled;
+    static EIO_Status x_IsCanceled(CONN conn, ECONN_Callback type, void* data);
 
     // Disable copy constructor and assignment.
     CConn_IOStream(const CConn_IOStream&);
@@ -781,7 +795,7 @@ private:
 /// for supported schemes) and make it available for reading.
 /// Writing to the stream is undefined.
 ///
-CConn_IOStream NcbiOpenURL(const string& url);
+CConn_IOStream* NcbiOpenURL(const string& url);
 
 #endif //0
 

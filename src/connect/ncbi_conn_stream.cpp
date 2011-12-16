@@ -149,6 +149,53 @@ void CConn_IOStream::x_Cleanup(void)
 }
 
 
+EIO_Status CConn_IOStream::SetCanceledCallback(const ICanceled* canceled)
+{
+    CONN conn = GetCONN();
+    if (!conn)
+        return eIO_Closed;
+
+    bool isset = m_Canceled.NotNull() ? 1 : 0;
+
+    if (canceled) {
+        SCONN_Callback cb;
+        m_Canceled = canceled;
+        memset(&cb, 0, sizeof(cb));
+        cb.func = (FCONN_Callback) x_IsCanceled;
+        cb.data = this;
+        CONN_SetCallback(conn, eCONN_OnRead,  &cb,      isset ? 0 : &m_CB[0]);
+        CONN_SetCallback(conn, eCONN_OnWrite, &cb,      isset ? 0 : &m_CB[1]);
+        CONN_SetCallback(conn, eCONN_OnFlush, &cb,      isset ? 0 : &m_CB[2]);
+    } else if (isset) {
+        CONN_SetCallback(conn, eCONN_OnFlush, &m_CB[2], 0);
+        CONN_SetCallback(conn, eCONN_OnWrite, &m_CB[1], 0);
+        CONN_SetCallback(conn, eCONN_OnRead,  &m_CB[0], 0);
+        m_Canceled = 0;
+    }
+
+    return eIO_Success;
+}
+
+
+EIO_Status CConn_IOStream::x_IsCanceled(CONN           conn,
+                                        ECONN_Callback type,
+                                        void*          data)
+{
+    _ASSERT(conn  &&  data);
+    CConn_IOStream* io = reinterpret_cast<CConn_IOStream*>(data);
+    if (/* io && */ io->m_Canceled.NotNull()  &&  io->m_Canceled->IsCanceled())
+        return eIO_Interrupt;
+    int n = (int) type - (int) eIO_Read;
+    _ASSERT(n >= 0  &&  (size_t) n < sizeof(m_CB) / sizeof(m_CB[0]));
+    _ASSERT((n == 0  &&  type == eCONN_OnRead)   ||
+            (n == 1  &&  type == eCONN_OnWrite)  ||
+            (n == 2  &&  type == eCONN_OnFlush));
+    if (!io->m_CB[n].func)
+        return eIO_Success;
+    return io->m_CB[n].func(conn, type, io->m_CB[n].data);
+}
+
+
 static CONNECTOR x_SC(CONNECTOR socket_connector, SOCK*& sockptr)
 {
     // HACK * HACK * HACK

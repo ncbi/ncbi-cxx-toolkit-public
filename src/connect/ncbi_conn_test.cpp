@@ -136,30 +136,6 @@ string CConnTest::x_TimeoutMsg(void)
 }
 
 
-void CConnTest::x_EnableCancelCB(CConn_IOStream& io)
-{
-    CONN conn = io.GetCONN();
-    if (conn) {
-        SCONN_Callback cb;
-        memset(&cb, 0, sizeof(cb));
-        cb.func = (FCONN_Callback) x_IsCanceled;
-        cb.data = this;
-        CONN_SetCallback(conn, eCONN_OnRead,  &cb, 0);
-        CONN_SetCallback(conn, eCONN_OnWrite, &cb, 0);
-        CONN_SetCallback(conn, eCONN_OnFlush, &cb, 0);
-    }
-}
-
-
-EIO_Status CConnTest::x_IsCanceled(CONN conn, ECONN_Callback type, void* data)
-{
-    _ASSERT(conn  &&  data);
-    _ASSERT(type != eCONN_OnTimeout);
-    CConnTest* test = reinterpret_cast<CConnTest*>(data);
-    return /*test &&*/ test->IsCanceled() ? eIO_Interrupt : eIO_Success;
-}
-
-
 EIO_Status CConnTest::ConnStatus(bool failure, CConn_IOStream* io)
 {
     string type = io ? io->GetType()        : kEmptyStr;
@@ -204,7 +180,7 @@ EIO_Status CConnTest::HttpOkay(string* reason)
     CConn_HttpStream http("http://" + host + port + "/Service/index.html",
                           net_info, kEmptyStr/*user_header*/,
                           0/*flags*/, m_Timeout);
-    x_EnableCancelCB(http);
+    http.SetCanceledCallback(m_Canceled);
     string temp;
     http >> temp;
     EIO_Status status = ConnStatus(temp.empty(), &http);
@@ -294,7 +270,7 @@ EIO_Status CConnTest::DispatcherOkay(string* reason)
     CConn_HttpStream http(net_info, kEmptyStr/*user_header*/,
                           s_ParseHeader, &okay, 0/*adjust*/, 0/*cleanup*/,
                           0/*flags*/, m_Timeout);
-    x_EnableCancelCB(http);
+    http.SetCanceledCallback(m_Canceled);
     char buf[1024];
     http.read(buf, sizeof(buf));
     CTempString str(buf, http.gcount());
@@ -348,7 +324,7 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
 
     CConn_ServiceStream svc(kService, fSERV_Stateless, net_info,
                             0/*params*/, m_Timeout);
-    x_EnableCancelCB(svc);
+    svc.SetCanceledCallback(m_Canceled);
     svc << kTest << NcbiEndl;
     string temp;
     svc >> temp;
@@ -430,7 +406,7 @@ EIO_Status CConnTest::x_GetFirewallConfiguration(const SConnNetInfo* net_info)
         return eIO_InvalidArg;
     CConn_HttpStream fwdcgi(fwdurl, net_info, kEmptyStr/*user hdr*/,
                             0/*flags*/, m_Timeout);
-    x_EnableCancelCB(fwdcgi);
+    fwdcgi.SetCanceledCallback(m_Canceled);
     fwdcgi << "selftest" << NcbiEndl;
 
     char line[256];
@@ -692,7 +668,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
 
         // Spawn connections for all CPs
         NON_CONST_ITERATE(vector<CFWConnPoint>, cp, *fwd[n]) {
-            if (IsCanceled()) {
+            if (m_Canceled.NotNull()  &&  m_Canceled->IsCanceled()) {
                 status = eIO_Interrupt;
                 break;
             }
@@ -709,7 +685,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                     if (!n)
                         status = eIO_InvalidArg;
                 } else
-                    x_EnableCancelCB(*fw);
+                    fw->SetCanceledCallback(m_Canceled);
             } else
                 fw = 0;
             v.push_back(make_pair(AutoPtr<CConn_SocketStream>(fw), &*cp));
@@ -954,7 +930,7 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
              "Checking reachability of a stateful service");
 
     CConn_ServiceStream id2(kId2, fSERV_Any, net_info, 0/*params*/, m_Timeout);
-    x_EnableCancelCB(id2);
+    id2.SetCanceledCallback(m_Canceled);
 
     streamsize n = 0;
     bool iofail = !id2.write(kId2Init, sizeof(kId2Init) - 1)  ||  !id2.flush()

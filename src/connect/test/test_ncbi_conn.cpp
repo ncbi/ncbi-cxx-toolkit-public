@@ -59,20 +59,14 @@ BEGIN_NCBI_SCOPE
 
 static const char kLogfile[] = "test_ncbi_conn.log";
 
+
 static volatile bool s_Canceled = false;
 
 
-class CConnTestInterruptible : public CConnTest
+class CCanceled : public CObject, public ICanceled
 {
 public:
-    CConnTestInterruptible(const STimeout* timeout = kDefaultTimeout,
-                           CNcbiOstream*   output = 0,
-                           SIZE_TYPE       width = PAGE_WIDTH)
-        : CConnTest(timeout, output, width)
-    { }
-
-protected:
-    virtual bool IsCanceled(void) { return s_Canceled; }
+    virtual bool IsCanceled(void) const { return s_Canceled; }
 };
 
 
@@ -202,7 +196,9 @@ int CTestApp::Run(void)
     tmo.sec  = (unsigned int)  timeout;
     tmo.usec = (unsigned int)((timeout - tmo.sec) * 1000000.0);
 
-    CConnTestInterruptible test(&tmo, &m_Tee);
+    CCanceled canceled;
+    CConnTest test(&tmo, &m_Tee);
+    test.SetCanceledCallback(&canceled);
 
     CConnTest::EStage everything = CConnTest::eStatefulService;
     EIO_Status status = test.Execute(everything);

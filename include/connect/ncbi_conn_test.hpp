@@ -83,6 +83,10 @@ public:
 
     void     SetTimeout(const STimeout* timeout = kDefaultTimeout);
 
+    // NB: ICanceled-impl must be derived from CObject (as a first subclass)
+    void     SetCanceledCallback(const ICanceled* canceled)
+    { m_Canceled = canceled; }
+
     virtual ~CConnTest() { /*nothing*/ }
 
     /// Execute the test suite from the very first (eHttp) up to and including
@@ -117,9 +121,6 @@ public:
     virtual EIO_Status Execute(EStage& stage, string* reason = 0);
 
 protected:
-    /// Return true if the check has been canceled
-    virtual bool       IsCanceled(void) { return false; }
-
     /// Auxiliary class to hold FWDaemon CP(connection point)
     /// information and its current status.
     struct CFWConnPoint {
@@ -235,8 +236,7 @@ private:
     EIO_Status x_GetFirewallConfiguration(const SConnNetInfo* net_info);
 
     /// Cancellation support
-    void              x_EnableCancelCB(CConn_IOStream& io);
-    static EIO_Status x_IsCanceled(CONN conn, ECONN_Callback type, void* data);
+    CConstIRef<ICanceled> m_Canceled;
 
 public:
     /// Return TRUE if the client is inside NCBI, FALSE otherwise.
