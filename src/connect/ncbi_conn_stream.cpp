@@ -186,7 +186,7 @@ EIO_Status CConn_IOStream::x_IsCanceled(CONN           conn,
     if (/* io && */ io->m_Canceled.NotNull()  &&  io->m_Canceled->IsCanceled())
         return eIO_Interrupt;
     int n = (int) type - (int) eIO_Read;
-    _ASSERT(n >= 0  &&  (size_t) n < sizeof(m_CB) / sizeof(m_CB[0]));
+    _ASSERT(n >= 0  &&  (size_t) n < sizeof(io->m_CB) / sizeof(io->m_CB[0]));
     _ASSERT((n == 0  &&  type == eCONN_OnRead)   ||
             (n == 1  &&  type == eCONN_OnWrite)  ||
             (n == 2  &&  type == eCONN_OnFlush));
