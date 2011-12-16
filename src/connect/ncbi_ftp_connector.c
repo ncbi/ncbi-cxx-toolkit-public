@@ -233,7 +233,7 @@ static EIO_Status x_FTPCloseData(SFTPConnector* xxx,
         if (!xxx->cntl) {
             how = eIO_Open;
         } else if (xxx->what  &&  how != eIO_Close) {
-            CORE_LOGF_X(1, eLOG_Error,
+            CORE_LOGF_X(1, xxx->send ? eLOG_Error : eLOG_Warning,
                         ("[FTP; %s]  Data connection transfer aborted",
                          xxx->what));
         }
@@ -2106,13 +2106,13 @@ static EIO_Status s_VT_Close
     if (data) {
         EIO_Event how;
         assert(!xxx->send  ||  xxx->open);
-        if (!xxx->cntl  ||  (xxx->r_status | xxx->w_status))
-            how = eIO_Close/*silent close*/;
-        else
+        if (xxx->cntl  &&  !(xxx->r_status | xxx->w_status)  &&  xxx->send)
             how = eIO_Open/*warning close*/;
+        else
+            how = eIO_Close/*silent close*/;
         status = x_FTPCloseData(xxx, how, 0);
         if (status == eIO_Success  &&  how == eIO_Open)
-            status  = xxx->send ? eIO_Unknown : eIO_Closed;
+            status  = eIO_Unknown;
     } else
         status = eIO_Success;
     assert(!xxx->data);
