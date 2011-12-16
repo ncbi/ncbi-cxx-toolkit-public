@@ -50,10 +50,9 @@ BEGIN_NCBI_SCOPE
 class ICanceled
 {
 public:
-    virtual bool IsCanceled() const = 0;
+    virtual bool IsCanceled(void) const = 0;
     virtual ~ICanceled() {}
 };
-
 
 
 /* @} */
