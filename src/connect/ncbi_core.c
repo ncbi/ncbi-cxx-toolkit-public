@@ -35,20 +35,20 @@
 #include <connect/ncbi_core.h>
 #include <stdlib.h>
 
-#if defined(_MT)
+#if defined(NCBI_CXX_TOOLKIT)  &&  defined(_MT)  &&  !defined(NCBI_WITHOUT_MT)
 #  if defined(NCBI_OS_MSWIN)
 #    define WIN32_LEAN_AND_MEAN
 #    include <windows.h>
-#    define NCBI_WIN32_THREADS
+#    define   NCBI_WIN32_THREADS
 #  elif defined(NCBI_OS_UNIX)
 #    include <pthread.h>
 #    define NCBI_POSIX_THREADS
 #  else
 #    define NCBI_NO_THREADS
-#  endif
+#  endif /*NCBI_OS*/
 #else
-#    define NCBI_NO_THREADS
-#endif
+#  define   NCBI_NO_THREADS
+#endif /*NCBI_CXX_TOOLKT && _MT && !NCBI_WITHOUT_MT*/
 
 
 
@@ -98,20 +98,20 @@ struct MT_LOCK_tag {
 static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
                                                   EMT_Lock action)
 {
-#if defined(NCBI_POSIX_THREADS)  &&  \
-    defined(PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP)
+#if   defined(NCBI_POSIX_THREADS)  &&  \
+      defined(PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP)
 
     static pthread_mutex_t sx_Mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 
     switch (action) {
     case eMT_Lock:
     case eMT_LockRead:
-        return pthread_mutex_lock(&sx_Mutex)    == 0 ? 1 : 0;
+        return pthread_mutex_lock(&sx_Mutex)    == 0 ? 1/*ok*/ : 0/*fail*/;
     case eMT_Unlock:
-        return pthread_mutex_unlock(&sx_Mutex)  == 0 ? 1 : 0;
+        return pthread_mutex_unlock(&sx_Mutex)  == 0 ? 1/*ok*/ : 0/*fail*/;
     case eMT_TryLock:
     case eMT_TryLockRead:
-        return pthread_mutex_trylock(&sx_Mutex) == 0 ? 1 : 0;
+        return pthread_mutex_trylock(&sx_Mutex) == 0 ? 1/*ok*/ : 0/*fail*/;
     default:
         break;
     }
@@ -133,14 +133,14 @@ static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
     case eMT_Lock:
     case eMT_LockRead:
         EnterCriticalSection(&sx_Crit);
-        return 1/*true*/;
+        return 1/*success*/;
     case eMT_Unlock:
         LeaveCriticalSection(&sx_Crit);
-        return 1/*true*/;
+        return 1/*success*/;
     case eMT_TryLock:
     case eMT_TryLockRead:
         if (TryEnterCriticalSection(&sx_Crit))
-            return 1/*true*/;
+            return 1/*success*/;
         /*FALLTHRU*/
     default:
         break;
@@ -148,19 +148,19 @@ static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
 
 #endif
 
-    return 0/*failed*/;
+    return 0/*failure*/;
 }
 
 
 struct MT_LOCK_tag g_CORE_MT_Lock_default = {
-    1/*ref count*/,
-    0/*user data*/,
+    1/* ref count */,
+    0/* user data */,
 #ifndef NCBI_NO_THREADS
     s_CORE_MT_Lock_default_handler,
 #else
-    0,
-#endif /*NCBI_CXX_TOOLKIT*/
-    0/*cleanup*/,
+    0/* noop handler */,
+#endif /*NCBI_NO_THREADS*/
+    0/* cleanup */,
     kMT_LOCK_magic_number
 };
 
