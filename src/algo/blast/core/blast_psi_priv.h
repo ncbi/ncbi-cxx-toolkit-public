@@ -503,6 +503,7 @@ _PSIComputeFreqRatios(const _PSIMsa* msa,
  * @param internal_pssm PSSM [out]
  * @return status
  */
+NCBI_XBLAST_EXPORT 
 int
 _PSIComputeFreqRatiosFromCDs(const PSICdMsa* cd_msa,
                              const _PSISequenceWeights* seq_weights,
