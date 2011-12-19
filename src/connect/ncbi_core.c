@@ -39,7 +39,7 @@
 #  if defined(NCBI_OS_MSWIN)
 #    define WIN32_LEAN_AND_MEAN
 #    include <windows.h>
-#    define   NCBI_WIN32_THREADS
+#    define NCBI_WIN32_THREADS
 #  elif defined(NCBI_OS_UNIX)
 #    include <pthread.h>
 #    define NCBI_POSIX_THREADS
@@ -94,12 +94,13 @@ struct MT_LOCK_tag {
 #define kMT_LOCK_magic_number 0x7A96283F
 
 
+#ifndef NCBI_NO_THREADS
 /*ARGSUSED*/
 static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
                                                   EMT_Lock action)
 {
-#if   defined(NCBI_POSIX_THREADS)  &&  \
-      defined(PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP)
+#  if   defined(NCBI_POSIX_THREADS)  &&  \
+        defined(PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP)
 
     static pthread_mutex_t sx_Mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 
@@ -112,11 +113,10 @@ static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
     case eMT_TryLock:
     case eMT_TryLockRead:
         return pthread_mutex_trylock(&sx_Mutex) == 0 ? 1/*ok*/ : 0/*fail*/;
-    default:
-        break;
     }
+    return 0/*failure*/;
 
-#elif defined(NCBI_WIN32_THREADS)
+#  elif defined(NCBI_WIN32_THREADS)
 
     static CRITICAL_SECTION sx_Crit;
     static LONG             sx_Init   = 0;
@@ -139,17 +139,17 @@ static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
         return 1/*success*/;
     case eMT_TryLock:
     case eMT_TryLockRead:
-        if (TryEnterCriticalSection(&sx_Crit))
-            return 1/*success*/;
-        /*FALLTHRU*/
-    default:
-        break;
+        return TryEnterCriticalSection(&sx_Crit) ? 1/*ok*/ : 0/*fail*/;
     }
-
-#endif
-
     return 0/*failure*/;
+
+#  else
+
+    return -1/*not implemented*/;
+
+#  endif /*NCBI_..._THREADS*/
 }
+#endif /*!NCBI_NO_THREADS*/
 
 
 struct MT_LOCK_tag g_CORE_MT_Lock_default = {
