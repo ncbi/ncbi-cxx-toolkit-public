@@ -231,9 +231,19 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
         // CServerConnectionRequest::Process()
         TConnBase* conn_base = it->first;
         SPerConnInfo& info = it->second;
-        if (info.type == eInactiveSocket  &&  info.expiration <= now) {
+        if (info.type == eClosedSocket
+            ||  (info.type == eInactiveSocket  &&  !conn_base->IsOpen()))
+        {
+            // If it's not eClosedSocket then This connection was closed
+            // by the client earlier in CServer::Run after Poll returned
+            // eIO_Close which was converted into eServIO_ClientClose.
+            // Then during OnSocketEvent(eServIO_ClientClose) it was marked
+            // as closed. Here we just clean it up from the connection pool.
+            to_delete.push_back(conn_base);
+        }
+        else if (info.type == eInactiveSocket  &&  info.expiration <= now)
+        {
             to_close_conns.push_back(conn_base);
-
         }
         else if ((info.type == eInactiveSocket  ||  info.type == eListener)
                  &&  conn_base->IsOpen())
@@ -262,16 +272,6 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
                 }
                 alarm_time = NULL;
             }
-        }
-        else if (info.type == eClosedSocket
-                 ||  (info.type == eInactiveSocket  &&  !conn_base->IsOpen()))
-        {
-            // If it's not eClosedSocket then This connection was closed
-            // by the client earlier in CServer::Run after Poll returned
-            // eIO_Close which was converted into eServIO_ClientClose.
-            // Then during OnSocketEvent(eServIO_ClientClose) it was marked
-            // as closed. Here we just clean it up from the connection pool.
-            to_delete.push_back(conn_base);
         }
         else if (info.type == eDeferredSocket
                  &&  conn_base->IsReadyToProcess())
