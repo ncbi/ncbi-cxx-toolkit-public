@@ -60,6 +60,10 @@ CThreadPool_Controller_PID::OnEvent(EEvent event)
         return;
     }
 
+    // All reads below are atomic reads of one variable, thus they cannot
+    // return bad results. They can be a little bit inconsistent with each
+    // other because of races with other threads but that's okay for the
+    // purposes of this controller.
     unsigned int threads_count = GetPool()->GetThreadsCount();
     unsigned int queued_tasks  = GetPool()->GetQueuedTasksCount();
     unsigned int run_tasks     = GetPool()->GetExecutingTasksCount();

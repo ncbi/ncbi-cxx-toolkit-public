@@ -368,7 +368,13 @@ private:
     ///
     /// @sa Abort()
     CSemaphore                       m_AbortWait;
-    /// If pool is suspended for exclusive task execution or not
+    /// If pool is suspended for exclusive task execution or not.
+    /// Thread Checker can complain that access to this variable everywhere is
+    /// not guarded by some mutex. But it's okay because special care is taken
+    /// to make any race a matter of timing - suspend will happen properly in
+    /// any case. Also everything is written with the assumption that there's
+    /// no other threads (besides this very thread pool) that could call any
+    /// methods here.
     volatile bool                    m_Suspended;
     /// Requested requirements for the exclusive execution environment
     volatile TExclusiveFlags         m_SuspendFlags;
@@ -931,6 +937,8 @@ CThreadPool_Task::x_Init(unsigned int priority)
 {
     m_Pool = NULL;
     m_Priority = priority;
+    // Thread Checker complains here but this code is called only from
+    // constructor, so no one else can reference this task yet.
     m_Status = eIdle;
     m_CancelRequested = false;
 }
@@ -972,6 +980,10 @@ CThreadPool_Task::x_SetOwner(CThreadPool_Impl* pool)
                    "Cannot add task in ThreadPool several times");
     }
 
+    // Thread Checker complains that this races with task canceling and
+    // resetting m_Pool below. But it's an thread pool usage error if
+    // someone tries to call concurrently AddTask and CancelTask. With a proper
+    // workflow CancelTask shouldn't be called until AddTask has returned.
     m_Pool = pool;
 }
 
@@ -987,11 +999,16 @@ CThreadPool_Task::x_SetStatus(EStatus new_status)
 {
     EStatus old_status = m_Status;
     if (old_status != new_status  &&  old_status != eCanceled) {
+        // Thread Checker complains here, but all status transitions are
+        // properly guarded with different mutexes and they cannot mix with
+        // each other.
         m_Status = new_status;
         OnStatusChange(old_status);
     }
 
     if (IsFinished()) {
+        // Thread Checker complains here. See comment in x_SetOwner above for
+        // details.
         m_Pool = NULL;
     }
 }
@@ -1004,6 +1021,8 @@ CThreadPool_Task::x_RequestToCancel(void)
     OnCancelRequested();
 
     if (GetStatus() <= eQueued) {
+        // This can race with calling task's Execute() method but it's okay.
+        // For details see comment in CThreadPool_ThreadImpl::Main().
         x_SetStatus(eCanceled);
     }
 }
@@ -1246,6 +1265,11 @@ inline void
 CThreadPool_ThreadImpl::CancelCurrentTask(void)
 {
     // Avoid resetting of the pointer during execution
+    // TODO: there's possible race if before we add reference on the task
+    // m_CurrentTask will be reset to NULL, last reference will be removed and
+    // task will be deleted. But nobody uses CThreadPool in this way, thus
+    // this assignment is safe (ThreadPool won't own the last reference to
+    // the task).
     CRef<CThreadPool_Task> task = m_CurrentTask;
     if (task.NotNull()) {
         CThreadPool_Impl::sx_RequestToCancel(task);
@@ -1261,6 +1285,12 @@ CThreadPool_ThreadImpl::Main(void)
     m_Interface->Initialize();
 
     while (!m_Finishing) {
+        // We have to heed call to CancelCurrentTask() only after this point.
+        // So we reset value of m_CancelRequested here without any mutexes.
+        // If CancelCurrentTask() is called earlier or this assignment races
+        // with assignment in CancelCurrentTask() then caller of
+        // CancelCurrentTask() will make sure that TryGetNextTask() returns
+        // NULL.
         m_CancelRequested = false;
         m_CurrentTask = m_Pool->TryGetNextTask();
 
@@ -1284,6 +1314,14 @@ CThreadPool_ThreadImpl::Main(void)
             x_SetIdleState(false);
             m_Pool->TaskStarting();
 
+            // This can race with canceling of the task. This can result in
+            // task's Execute() method called with the state of eCanceled
+            // already set or cancellation being totally ignored in the task's
+            // status (m_CancelRequested will be still set). Both outcomes are
+            // simple timing and cancellation should be checked in the task's
+            // Execute() method anyways. The worst outcome here is that task
+            // can be marked as eCanceled when it's completely and successfully
+            // executed. I don't think it's too bad though.
             CThreadPool_Impl::sx_SetTaskStatus(m_CurrentTask,
                                                CThreadPool_Task::eExecuting);
 

@@ -1340,6 +1340,10 @@ void CSyncQueue<Type, Container>::x_GuardedLock(const CTimeSpan* timeout) const
             ThrowSyncQueueTimeout();
         }
 
+        // Thread Checker says this races with setting in x_GuardedUnlock. But
+        // it's not because this happens only after wait on m_TrigLock's value
+        // (to be reset to 0) and in x_GuardedUnlock it happens before
+        // m_TrigLock's value raised to 1.
         CThread::GetSystemID(&m_CurGuardTID);
         m_LockCount = 1;
     }
@@ -1354,6 +1358,8 @@ void CSyncQueue<Type, Container>::x_GuardedUnlock(void) const
 
     --m_LockCount;
     if (0 == m_LockCount) {
+        // Thread Checker says this races with setting in x_GuardedLock. But
+        // it's not. See comment above for details.
         m_CurGuardTID = TThreadSystemID(kThreadSystemID_None);
         x_Unlock();
     }
