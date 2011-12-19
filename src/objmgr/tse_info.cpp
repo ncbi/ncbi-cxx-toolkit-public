@@ -650,6 +650,7 @@ void CTSE_Info::GetBioseqsIds(TSeqIds& ids) const
 
 void CTSE_Info::GetAnnotIds(TSeqIds& ids) const
 {
+    UpdateAnnotIndex();
     {{
         TAnnotLockReadGuard guard(GetAnnotLock());
         ITERATE ( TNamedAnnotObjs, it, m_NamedAnnotObjs ) {

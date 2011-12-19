@@ -893,7 +893,7 @@ void CScope_Impl::x_ClearCacheOnNewData(const CTSE_Info& new_tse)
     TIds seq_ids, annot_ids;
     new_tse.GetSeqAndAnnotIds(seq_ids, annot_ids);
     x_ClearCacheOnNewData(seq_ids, annot_ids);
-    x_ClearCacheOnNewAnnot(new_tse);
+    //x_ClearCacheOnNewAnnot(new_tse);
 }
 
 
