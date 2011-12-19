@@ -658,11 +658,12 @@ void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& istrm, SIZE_TYPE size,
                                   const string& file_name /* = kEmptyStr */,
                                   TTemplateLibFilter* filter)
 {
-    string  templbuf("\n");
-    string* pstr      = &templbuf;
+    string  template_buf("\n");
+    string* pstr      = &template_buf;
     bool    caching   = false;
     bool    need_read = true;
-    CNcbiIstream* is  = &istrm;
+
+    AutoPtr<CNcbiIstream> is(&istrm, eNoOwnership);
     TTemplateCache& cache = s_TemplateCache.Get();
 
     if ( !file_name.empty()  &&  sm_CacheTemplateFiles == eCTF_Enable ) {
@@ -676,109 +677,100 @@ void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& istrm, SIZE_TYPE size,
         }
     }
 
-    try {
-        // Load template in memory all-in-all
-        if ( need_read ) {
-            // Open and check file, if this is a file template
-            if ( !file_name.empty() ) {
-                Int8 x_size = CFile(file_name).GetLength();
-                if (x_size == 0) {
-                    return;
-                } else if (x_size < 0) {
-                    NCBI_THROW(CHTMLException, eTemplateAccess,
-                               "CHTMLPage::x_LoadTemplateLib(): failed to "  \
-                               "open template file '" + file_name  + "'");
-                } else if ((Uint8)x_size >= numeric_limits<size_t>::max()) {
-                    NCBI_THROW(CHTMLException, eTemplateTooBig,
-                               "CHTMLPage::x_LoadTemplateLib(): template " \
-                               "file '" + file_name + 
-                               "' is too big to handle");
-                }
-                is = new CNcbiIfstream(file_name.c_str());
-                size = (SIZE_TYPE)x_size;
+    // Load template in memory all-in-all
+    if ( need_read ) {
+        // Open and check file, if this is a file template
+        if ( !file_name.empty() ) {
+            Int8 x_size = CFile(file_name).GetLength();
+            if (x_size == 0) {
+                return;
+            } else if (x_size < 0) {
+                NCBI_THROW(CHTMLException, eTemplateAccess,
+                           "CHTMLPage::x_LoadTemplateLib(): failed to "  \
+                           "open template file '" + file_name  + "'");
+            } else if ((Uint8)x_size >= numeric_limits<size_t>::max()) {
+                NCBI_THROW(CHTMLException, eTemplateTooBig,
+                           "CHTMLPage::x_LoadTemplateLib(): template " \
+                           "file '" + file_name + 
+                           "' is too big to handle");
             }
+            is.reset(new CNcbiIfstream(file_name.c_str()), eTakeOwnership);
+            size = (SIZE_TYPE)x_size;
+        }
 
-            // Reserve space
-            if ( size ) {
-                pstr->reserve(size);
-            }
-            if (includes == eAllowIncludes) {
-                // Read line by line and parse it for #includes
-                string s;
-                static const char*     kInclude = "#include ";
-                static const SIZE_TYPE kIncludeLen = strlen(kInclude);
+        // Reserve space
+        if ( size ) {
+            pstr->reserve(size);
+        }
+        if (includes == eAllowIncludes) {
+            // Read line by line and parse it for #includes
+            string s;
+            static const char*     kInclude = "#include ";
+            static const SIZE_TYPE kIncludeLen = strlen(kInclude);
 
-                for (int i = 1;  NcbiGetline(*is, s, "\r\n");  ++i) {
+            for (int i = 1;  NcbiGetline(*is, s, "\r\n");  ++i) {
 
-                    if ( NStr::StartsWith(s, kInclude) ) {
-                        SIZE_TYPE pos = kIncludeLen;
-                        SIZE_TYPE len = s.length();
-                        while (pos < len  && isspace((unsigned char)s[pos])) {
-                            pos++;
-                        }
-                        bool error = false;
-                        if (pos < len  &&  s[pos] == '\"') {
-                            pos++;
-                            SIZE_TYPE pos_end = s.find("\"", pos);
-                            if (pos_end == NPOS) {
-                                error = true;
-                            } else {
-                                string fname = s.substr(pos, pos_end-pos);
-                                LoadTemplateLibFile(fname);
-                            }
-                        } else {
-                            error = true;
-                        }
-                        if ( error ) {
-                            NCBI_THROW(CHTMLException, eTemplateAccess,
-                                       "CHTMLPage::x_LoadTemplateLib(): " \
-                                       "incorrect #include syntax, file '" +
-                                       file_name + "', line " + 
-                                       NStr::IntToString(i));
-                        }
-
-                    } else {  // General line
-
-                        if (pstr->size() == pstr->capacity() &&
-                            s.length() > 0) {
-                            // We don't know how big str will need to be,
-                            // so we grow it exponentially.
-                            pstr->reserve(pstr->size() + 
-                                          max((SIZE_TYPE)is->gcount(),
-                                          pstr->size() / 2));
-                        }
-                        pstr->append(s + "\n");
+                if ( NStr::StartsWith(s, kInclude) ) {
+                    SIZE_TYPE pos = kIncludeLen;
+                    SIZE_TYPE len = s.length();
+                    while (pos < len  && isspace((unsigned char)s[pos])) {
+                        pos++;
                     }
-                }
-            } else {
-                // Use faster block read
-                char buf[kBufferSize];
-                while (is) {
-                    is->read(buf, sizeof(buf));
-                    if (pstr->size() == pstr->capacity()  &&
-                        is->gcount() > 0) {
+                    bool error = false;
+                    if (pos < len  &&  s[pos] == '\"') {
+                        pos++;
+                        SIZE_TYPE pos_end = s.find("\"", pos);
+                        if (pos_end == NPOS) {
+                            error = true;
+                        } else {
+                            string fname = s.substr(pos, pos_end-pos);
+                            LoadTemplateLibFile(fname);
+                        }
+                    } else {
+                        error = true;
+                    }
+                    if ( error ) {
+                        NCBI_THROW(CHTMLException, eTemplateAccess,
+                                   "CHTMLPage::x_LoadTemplateLib(): " \
+                                   "incorrect #include syntax, file '" +
+                                   file_name + "', line " + 
+                                   NStr::IntToString(i));
+                    }
+
+                } else {  // General line
+
+                    if (pstr->size() == pstr->capacity() &&
+                        s.length() > 0) {
                         // We don't know how big str will need to be,
                         // so we grow it exponentially.
                         pstr->reserve(pstr->size() + 
                                       max((SIZE_TYPE)is->gcount(),
                                       pstr->size() / 2));
                     }
-                    pstr->append(buf, is->gcount());
+                    pstr->append(s + "\n");
                 }
             }
-            if ( !is->eof() ) {
-                NCBI_THROW(CHTMLException, eTemplateAccess,
-                           "CHTMLPage::x_LoadTemplateLib(): " \
-                           "error reading template");
+        } else {
+            // Use faster block read
+            char buf[kBufferSize];
+            while (is) {
+                is->read(buf, sizeof(buf));
+                if (pstr->size() == pstr->capacity()  &&
+                    is->gcount() > 0) {
+                    // We don't know how big str will need to be,
+                    // so we grow it exponentially.
+                    pstr->reserve(pstr->size() + 
+                                  max((SIZE_TYPE)is->gcount(),
+                                  pstr->size() / 2));
+                }
+                pstr->append(buf, is->gcount());
             }
         }
-    }
-    catch (...) {
-        // Clean up allocated memory for input file template
-        if  ( is  &&  is != &istrm ) {
-            delete is;
+        if ( !is->eof() ) {
+            NCBI_THROW(CHTMLException, eTemplateAccess,
+                       "CHTMLPage::x_LoadTemplateLib(): " \
+                       "error reading template");
         }
-        throw;
     }
 
     // Cache template lib
@@ -790,10 +782,9 @@ void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& istrm, SIZE_TYPE size,
     // Note: never change pstr here!
 
     const string kTagStartBOL(string("\n") + kTagStart); 
-    SIZE_TYPE ts_size  = kTagStartBOL.length();
-    SIZE_TYPE te_size  = strlen(kTagEnd);
-    SIZE_TYPE tse_size = strlen(kTagStartEnd);
-
+    SIZE_TYPE ts_size   = kTagStartBOL.length();
+    SIZE_TYPE te_size   = strlen(kTagEnd);
+    SIZE_TYPE tse_size  = strlen(kTagStartEnd);
     SIZE_TYPE tag_start = s_Find(*pstr, kTagStartBOL.c_str());
 
     while ( tag_start != NPOS ) {
