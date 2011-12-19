@@ -404,6 +404,20 @@ CJobStatusTracker::GetJobByStatus(TJobStatus            status,
 }
 
 
+TNSBitVector
+CJobStatusTracker::GetJobs(const vector<CNetScheduleAPI::EJobStatus> &  statuses) const
+{
+    TNSBitVector        jobs;
+    CReadLockGuard      guard(m_Lock);
+
+    for (vector<CNetScheduleAPI::EJobStatus>::const_iterator  k = statuses.begin();
+         k != statuses.end(); ++k)
+        jobs |= *m_StatusStor[(int)(*k)];
+
+    return jobs;
+}
+
+
 void CJobStatusTracker::PendingIntersect(TNSBitVector* candidate_set) const
 {
     CReadLockGuard      guard(m_Lock);

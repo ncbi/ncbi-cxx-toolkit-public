@@ -116,6 +116,8 @@ public:
     unsigned int  GetJobByStatus(TJobStatus            status,
                                  const TNSBitVector &  unwanted_jobs) const;
 
+    TNSBitVector  GetJobs(const vector<CNetScheduleAPI::EJobStatus> &  statuses) const;
+
     /// Logical AND of candidates and pending jobs
     /// (candidate_set &= pending_set)
     void PendingIntersect(TNSBitVector* candidate_set) const;

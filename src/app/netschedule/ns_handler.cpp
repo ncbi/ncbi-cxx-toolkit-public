@@ -148,6 +148,8 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     // CLRN (obsolete)
     { "CLRN",     { &CNetScheduleHandler::x_ProcessClearWorkerNode,
                     eNSCR_Queue } },
+    { "CANCELQ",  { &CNetScheduleHandler::x_ProcessCancelQueue,
+                    eNSCR_Queue } },
 
     /*** Submitter role ***/
     // SST job_key : id -- submitter fast status, changes timestamp
@@ -1928,6 +1930,14 @@ void CNetScheduleHandler::x_ProcessInitWorkerNode(CQueue *)
 void CNetScheduleHandler::x_ProcessClearWorkerNode(CQueue* q)
 {
     q->ClearWorkerNode(m_ClientId);
+    WriteMessage("OK:");
+    x_PrintRequestStop(eStatus_OK);
+}
+
+
+void CNetScheduleHandler::x_ProcessCancelQueue(CQueue* q)
+{
+    q->CancelAllJobs(m_ClientId);
     WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
 }

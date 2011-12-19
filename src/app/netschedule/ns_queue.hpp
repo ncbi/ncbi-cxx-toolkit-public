@@ -204,6 +204,8 @@ public:
     TJobStatus  Cancel(const CNSClientId &  client,
                        unsigned int         job_id);
 
+    void CancelAllJobs(const CNSClientId &  client);
+
     TJobStatus GetJobStatus(unsigned job_id) const;
 
     /// count status snapshot for affinity token

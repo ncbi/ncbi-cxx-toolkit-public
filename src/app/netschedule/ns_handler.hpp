@@ -185,6 +185,7 @@ private:
     void x_ProcessGetAffinityList(CQueue*);
     void x_ProcessInitWorkerNode(CQueue*);
     void x_ProcessClearWorkerNode(CQueue*);
+    void x_ProcessCancelQueue(CQueue*);
     void x_CmdNotImplemented(CQueue*);
     void x_CheckGetJobPrerequisites(bool  wnode_affinity);
 

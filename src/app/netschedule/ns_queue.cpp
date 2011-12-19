@@ -954,10 +954,42 @@ unsigned int  CQueue::ReadJobFromDB(unsigned int  job_id, CJob &  job)
 // Deletes all the jobs from the queue
 void CQueue::Truncate(void)
 {
-    TNSBitVector bv;
+    CJob                                job;
+    TNSBitVector                        bv;
+    vector<CNetScheduleAPI::EJobStatus> statuses;
+    TNSBitVector                        jobs_to_notify;
+    time_t                              current_time = time(0);
+
+    // Pending and running jobs should be notified if requested
+    statuses.push_back(CNetScheduleAPI::ePending);
+    statuses.push_back(CNetScheduleAPI::eRunning);
 
     {{
         CFastMutexGuard     guard(m_OperationLock);
+
+        jobs_to_notify = m_StatusTracker.GetJobs(statuses);
+
+        // Make a decision if the jobs should really be notified
+        {{
+            CNSTransaction              transaction(this);
+            TNSBitVector::enumerator    en(jobs_to_notify.first());
+            for (; en.valid(); ++en) {
+                unsigned int    job_id = *en;
+
+                if (job.Fetch(this, job_id) != CJob::eJF_Ok) {
+                    ERR_POST("Cannot fetch job " << MakeKey(job_id) <<
+                             " while dropping all jobs in the queue");
+                    continue;
+                }
+
+                if (job.ShouldNotify(current_time))
+                    m_NotificationsList.NotifyJobStatus(job.GetSubmAddr(),
+                                                        job.GetSubmNotifPort(),
+                                                        MakeKey(job_id));
+            }
+
+            // There is no need to commit transaction - there were no changes
+        }}
 
         m_StatusTracker.ClearAll(&bv);
         m_AffinityRegistry.ClearMemoryAndDatabase();
@@ -978,6 +1010,7 @@ TJobStatus  CQueue::Cancel(const CNSClientId &  client,
 {
     TJobStatus          old_status;
     CJob                job;
+    time_t              current_time = time(0);
 
     {{
         CFastMutexGuard     guard(m_OperationLock);
@@ -1002,7 +1035,7 @@ TJobStatus  CQueue::Cancel(const CNSClientId &  client,
             event->SetNodeAddr(client.GetAddress());
             event->SetStatus(CNetScheduleAPI::eCanceled);
             event->SetEvent(CJobEvent::eCancel);
-            event->SetTimestamp(time(0));
+            event->SetTimestamp(current_time);
             event->SetClientNode(client.GetNode());
             event->SetClientSession(client.GetSession());
 
@@ -1023,12 +1056,79 @@ TJobStatus  CQueue::Cancel(const CNSClientId &  client,
     }}
 
     if ((old_status == CNetScheduleAPI::eRunning ||
-         old_status == CNetScheduleAPI::ePending) && job.ShouldNotify(time(0)))
+         old_status == CNetScheduleAPI::ePending) && job.ShouldNotify(current_time))
         m_NotificationsList.NotifyJobStatus(job.GetSubmAddr(),
                                             job.GetSubmNotifPort(),
                                             MakeKey(job_id));
 
     return old_status;
+}
+
+
+void  CQueue::CancelAllJobs(const CNSClientId &  client)
+{
+    CJob                                job;
+    TNSBitVector                        jobs_to_cancel;
+    vector<CNetScheduleAPI::EJobStatus> statuses;
+    time_t                              current_time = time(0);
+
+    // All except cancelled
+    statuses.push_back(CNetScheduleAPI::ePending);
+    statuses.push_back(CNetScheduleAPI::eRunning);
+    statuses.push_back(CNetScheduleAPI::eFailed);
+    statuses.push_back(CNetScheduleAPI::eDone);
+    statuses.push_back(CNetScheduleAPI::eReading);
+    statuses.push_back(CNetScheduleAPI::eConfirmed);
+    statuses.push_back(CNetScheduleAPI::eReadFailed);
+
+    CFastMutexGuard     guard(m_OperationLock);
+
+    jobs_to_cancel = m_StatusTracker.GetJobs(statuses);
+
+    TNSBitVector::enumerator    en(jobs_to_cancel.first());
+    for (; en.valid(); ++en) {
+        unsigned int    job_id = *en;
+        TJobStatus      old_status = m_StatusTracker.GetStatus(job_id);
+
+        {{
+            CNSTransaction              transaction(this);
+            if (job.Fetch(this, job_id) != CJob::eJF_Ok) {
+                ERR_POST("Cannot fetch job " << MakeKey(job_id) <<
+                         " while cancelling all jobs in the queue");
+                continue;
+            }
+
+            CJobEvent *     event = &job.AppendEvent();
+
+            event->SetNodeAddr(client.GetAddress());
+            event->SetStatus(CNetScheduleAPI::eCanceled);
+            event->SetEvent(CJobEvent::eCancel);
+            event->SetTimestamp(current_time);
+            event->SetClientNode(client.GetNode());
+            event->SetClientSession(client.GetSession());
+
+            job.SetStatus(CNetScheduleAPI::eCanceled);
+            job.Flush(this);
+
+            transaction.Commit();
+        }}
+
+        m_StatusTracker.ChangeStatus(this, job_id, CNetScheduleAPI::eCanceled);
+
+        TimeLineRemove(job_id);
+        if (old_status == CNetScheduleAPI::eRunning)
+            m_ClientsRegistry.ClearExecuting(job_id);
+        else if (old_status == CNetScheduleAPI::eReading)
+            m_ClientsRegistry.ClearReading(job_id);
+
+        if ((old_status == CNetScheduleAPI::eRunning ||
+             old_status == CNetScheduleAPI::ePending) && job.ShouldNotify(current_time))
+            m_NotificationsList.NotifyJobStatus(job.GetSubmAddr(),
+                                                job.GetSubmNotifPort(),
+                                                MakeKey(job_id));
+    }
+
+    return;
 }
 
 
