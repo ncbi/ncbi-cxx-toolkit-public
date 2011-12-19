@@ -2200,7 +2200,8 @@ void CValidError_imp::ValidateBioSourceForSeq
             // look at uncultured sequence length and required modifiers
             if (orgref.IsSetTaxname()) {
                   if (NStr::EqualNocase(orgref.GetTaxname(), "uncultured bacterium")
-                      && bsh.GetBioseqLength() >= 10000) {
+                      && bsh.GetBioseqLength() >= 10000
+                      && source.IsSetGenome() && source.GetGenome() != CBioSource::eGenome_plasmid) {
                       PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
                                  "Uncultured bacterium sequence length is suspiciously high",
                                  obj, ctx);
