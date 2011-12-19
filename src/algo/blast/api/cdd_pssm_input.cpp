@@ -775,7 +775,10 @@ bool CCddInputData::CHitSegment::Validate(void) const
     const int kQueryLength = m_QueryRange.GetTo() - m_QueryRange.GetFrom();
     const int kSubjectLength = m_SubjectRange.GetTo() - m_SubjectRange.GetFrom();
 
-    _ASSERT(kQueryLength == kSubjectLength);
+    if (kQueryLength != kSubjectLength) {
+        return false;
+    }
+
     _ASSERT((int)m_WFreqsData.size() == kSubjectLength * kAlphabetSize);
     _ASSERT((int)m_MsaData.size() == kSubjectLength);
 

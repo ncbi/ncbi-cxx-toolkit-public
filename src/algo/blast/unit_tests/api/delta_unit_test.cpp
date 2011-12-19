@@ -44,13 +44,15 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 
+#include <objmgr/scope.hpp>
+
 // PSSM includes
 #include <objects/scoremat/Pssm.hpp>
 #include <objects/scoremat/PssmWithParameters.hpp>
 
 // BLAST includes
 #include <algo/blast/api/deltablast.hpp>
-#include <algo/blast/api/objmgrfree_query_data.hpp>
+#include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/blast/api/deltablast_options.hpp>
 #include <algo/blast/api/uniform_search.hpp>
 #include <algo/blast/api/local_db_adapter.hpp>
@@ -86,12 +88,26 @@ struct CDeltaBlastTestFixture {
     /// Contains a Bioseq-set with two Bioseqs, gi 7450545 and gi 129295
     CRef<CSeq_entry> m_SeqSet;
 
+    /// Scope
+    CRef<CScope> m_Scope;
+
+    /// Seq-locs for creating instances of CObjMgr_QueryFactory
+    vector< CRef<CSeq_loc> > m_Seq_locs;
+
     void x_ReadSeqEntriesFromFile() {
 
         const string kPssmFile("data/pssm_freq_ratios.asn");
         m_Pssm = TestUtil::ReadObject<CPssmWithParameters>(kPssmFile);
         BOOST_REQUIRE(m_Pssm->GetPssm().CanGetQuery());
         m_SeqEntry.Reset(&m_Pssm->SetPssm().SetQuery());
+        BOOST_REQUIRE(m_SeqEntry->IsSeq());
+
+        CRef<CSeq_id> id(
+                    const_cast<CSeq_id*>(m_SeqEntry->SetSeq().GetFirstId()));
+        CRef<CSeq_loc> seqloc(new CSeq_loc(CSeq_loc::e_Whole));
+        seqloc->SetId(*id);
+        m_Seq_locs.push_back(seqloc);
+               
 
         const string kSeqEntryFile("data/7450545.seqentry.asn");
         CRef<CSeq_entry> seq_entry =
@@ -100,6 +116,17 @@ struct CDeltaBlastTestFixture {
         m_SeqSet.Reset(new CSeq_entry);
         m_SeqSet->SetSet().SetSeq_set().push_back(m_SeqEntry);
         m_SeqSet->SetSet().SetSeq_set().push_back(seq_entry);
+        BOOST_REQUIRE(m_SeqEntry->IsSeq());
+
+        id.Reset(const_cast<CSeq_id*>(seq_entry->SetSeq().GetFirstId()));
+        seqloc.Reset(new CSeq_loc(CSeq_loc::e_Whole));
+        seqloc->SetId(*id);
+        m_Seq_locs.push_back(seqloc);
+    }
+
+    void x_InitScope() {
+        m_Scope.Reset(new CScope(*CObjectManager::GetInstance()));
+        m_Scope->AddTopLevelSeqEntry(*m_SeqSet);
     }
 
     CDeltaBlastTestFixture() {
@@ -112,6 +139,7 @@ struct CDeltaBlastTestFixture {
                                      CSearchDatabase::eBlastDbIsProtein));
 
         x_ReadSeqEntriesFromFile();
+        x_InitScope();
     }
 
     ~CDeltaBlastTestFixture() {
@@ -120,6 +148,8 @@ struct CDeltaBlastTestFixture {
         m_DomainDb.Reset();
         m_SeqEntry.Reset();
         m_SeqSet.Reset();
+        m_Seq_locs.clear();
+        m_Scope.Reset();
     }
 
     int x_CountNumberUniqueIds(CConstRef<CSeq_align_set> sas)
@@ -159,10 +189,11 @@ BOOST_FIXTURE_TEST_SUITE(deltablast, CDeltaBlastTestFixture)
 
 BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
 {
+    TSeqLocVector query;
+    query.push_back(SSeqLoc(*m_Seq_locs.front(), *m_Scope));
+    CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(query));
 
-    CConstRef<CBioseq> bioseq(&m_SeqEntry->GetSeq());
-    CRef<IQueryFactory> query_factory
-        (new CObjMgrFree_QueryFactory(bioseq));
+
     CRef<CLocalDbAdapter> dbadapter(new CLocalDbAdapter(*m_SearchDb));
     CRef<CLocalDbAdapter> domain_dbadapter(new CLocalDbAdapter(*m_DomainDb));
     CDeltaBlast deltablast(query_factory, dbadapter, domain_dbadapter,
@@ -387,9 +418,10 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_NoCBS)
     m_OptHandle->SetCompositionBasedStats(eNoCompositionBasedStats);
     m_OptHandle->SetEvalueThreshold(5);
 
-    CConstRef<CBioseq> bioseq(&m_SeqEntry->GetSeq());
-    CRef<IQueryFactory> query_factory
-        (new CObjMgrFree_QueryFactory(bioseq));
+    TSeqLocVector query;
+    query.push_back(SSeqLoc(*m_Seq_locs.front(), *m_Scope));
+    CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(query));       
+
     CRef<CLocalDbAdapter> dbadapter(new CLocalDbAdapter(*m_SearchDb));
     CRef<CLocalDbAdapter> domain_dbadapter(new CLocalDbAdapter(*m_DomainDb));
     CDeltaBlast deltablast(query_factory, dbadapter, domain_dbadapter,
@@ -590,9 +622,11 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_NoCBS)
 
 BOOST_AUTO_TEST_CASE(TestMultipleQueries)
 {
-    CConstRef<CBioseq_set> bioseq_set(&m_SeqSet->GetSet());
-    CRef<IQueryFactory> query_factory
-        (new CObjMgrFree_QueryFactory(bioseq_set));
+    TSeqLocVector queries;
+    ITERATE (vector< CRef<CSeq_loc> >, it, m_Seq_locs) {
+        queries.push_back(SSeqLoc(**it, *m_Scope));
+    }
+    CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(queries));
 
     CRef<CLocalDbAdapter> dbadapter(new CLocalDbAdapter(*m_SearchDb));
     CRef<CLocalDbAdapter> domain_dbadapter(new CLocalDbAdapter(*m_DomainDb));
@@ -640,10 +674,9 @@ BOOST_AUTO_TEST_CASE(TestNullQuery)
 BOOST_AUTO_TEST_CASE(TestNullOptions)
 {
     m_OptHandle.Reset();
-
-    CConstRef<CBioseq> bioseq(&m_SeqEntry->GetSeq());
-    CRef<IQueryFactory> query_factory
-        (new CObjMgrFree_QueryFactory(bioseq));
+    TSeqLocVector query;
+    query.push_back(SSeqLoc(*m_Seq_locs.front(), *m_Scope));
+    CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(query));
     CRef<CLocalDbAdapter> dbadapter(new CLocalDbAdapter(*m_SearchDb));
     CRef<CLocalDbAdapter> domain_dbadapter(new CLocalDbAdapter(*m_DomainDb));
     BOOST_REQUIRE_THROW(CDeltaBlast deltablast(query_factory, dbadapter,
@@ -654,9 +687,9 @@ BOOST_AUTO_TEST_CASE(TestNullOptions)
 
 BOOST_AUTO_TEST_CASE(TestNullDatabase)
 {
-    CConstRef<CBioseq> bioseq(&m_SeqEntry->GetSeq());
-    CRef<IQueryFactory> query_factory
-        (new CObjMgrFree_QueryFactory(bioseq));
+    TSeqLocVector query;
+    query.push_back(SSeqLoc(*m_Seq_locs.front(), *m_Scope));
+    CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(query));
     CRef<CLocalDbAdapter> dbadapter;
     CRef<CLocalDbAdapter> domain_dbadapter(new CLocalDbAdapter(*m_DomainDb));
     BOOST_REQUIRE_THROW(CDeltaBlast deltablast(query_factory, dbadapter,
@@ -667,9 +700,9 @@ BOOST_AUTO_TEST_CASE(TestNullDatabase)
 
 BOOST_AUTO_TEST_CASE(TestNullDomainDatabase)
 {
-    CConstRef<CBioseq> bioseq(&m_SeqEntry->GetSeq());
-    CRef<IQueryFactory> query_factory
-        (new CObjMgrFree_QueryFactory(bioseq));
+    TSeqLocVector query;
+    query.push_back(SSeqLoc(*m_Seq_locs.front(), *m_Scope));
+    CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(query));
     CRef<CLocalDbAdapter> dbadapter(new CLocalDbAdapter(*m_SearchDb));
     CRef<CLocalDbAdapter> domain_dbadapter;
     BOOST_REQUIRE_THROW(CDeltaBlast deltablast(query_factory, dbadapter,
