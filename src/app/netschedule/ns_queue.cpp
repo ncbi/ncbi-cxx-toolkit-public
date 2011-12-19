@@ -1892,7 +1892,7 @@ void CQueue::x_CheckExecutionTimeout(unsigned   queue_run_timeout,
 
         if (new_status == CNetScheduleAPI::ePending)
             m_NotificationsList.Notify(job.GetAffinityId(), m_ClientsRegistry,
-                                       m_AffinityRegistry, m_NotifHifreqPeriod));
+                                       m_AffinityRegistry, m_NotifHifreqPeriod);
 
     }}
 
