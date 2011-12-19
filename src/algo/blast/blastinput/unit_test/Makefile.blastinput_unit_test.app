@@ -4,6 +4,7 @@ APP = blastinput_unit_test
 SRC = blastinput_unit_test blast_scope_src_unit_test
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
+CXXFLAGS = -Wno-unused-but-set-variable
 
 ENTREZ_LIBS = entrez2cli entrez2
 

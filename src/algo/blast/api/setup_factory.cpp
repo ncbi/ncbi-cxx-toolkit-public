@@ -306,6 +306,7 @@ CSetupFactory::CreateHspWriter(const CBlastOptionsMemento* opts_memento,
             writer_info = BlastHSPCullingInfoNew(params);
             hsp_writer_found = true;
         }
+        (void)hsp_writer_found; /* to pacify compiler warning */
     } else {
         /* Use the collector filtering algorithm as the default */
         BlastHSPCollectorParams * params = 

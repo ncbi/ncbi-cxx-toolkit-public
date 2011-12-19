@@ -1981,6 +1981,7 @@ BOOST_AUTO_TEST_CASE(DuplicateAlgoId)
     BOOST_REQUIRE_THROW( seg_repeated_id =
                  W.RegisterMaskAlgorithm(eBlast_filter_program_seg),
                  CWriteDBException );
+    (void)seg_repeated_id;  /* to pacify compiler warning */
 }
 
 BOOST_AUTO_TEST_CASE(TooManyAlgoId)
