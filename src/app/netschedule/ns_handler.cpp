@@ -543,7 +543,8 @@ void CNetScheduleHandler::WriteMessage(CTempString  prefix,
     if (GetSocket().Write(m_MsgBuffer, required_size,
                           &n_written) != eIO_Success) {
         NCBI_THROW(CNetServiceException,
-                   eCommunicationError, "Socket write error.");
+                   eCommunicationError, "Socket write error; peer: " +
+                                        GetSocket().GetPeerAddress());
     }
 }
 
@@ -568,7 +569,8 @@ void CNetScheduleHandler::WriteMessage(CTempString msg)
     if (GetSocket().Write(m_MsgBuffer, required_size,
                           &n_written) != eIO_Success) {
         NCBI_THROW(CNetServiceException,
-                   eCommunicationError, "Socket write error.");
+                   eCommunicationError, "Socket write error; peer: " +
+                                         GetSocket().GetPeerAddress());
     }
 }
 
