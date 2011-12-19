@@ -623,7 +623,7 @@ unsigned int  CNSAffinityRegistry::CollectGarbage(unsigned int  max_to_del)
 
 unsigned int  CNSAffinityRegistry::CheckRemoveCandidates(void)
 {
-    unsigned int                still_candidate;
+    unsigned int                still_candidate = 0;
 
     CWriteLockGuard             guard(m_Lock);
     TNSBitVector::enumerator    en(m_RemoveCandidates.first());
