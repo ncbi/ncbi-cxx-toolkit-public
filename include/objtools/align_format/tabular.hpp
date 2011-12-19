@@ -475,7 +475,7 @@ public:
         x_ResetIgFields();
     };
 
-    void PrintHeader(const string& program, 
+    virtual void PrintHeader(const string& program, 
                      const objects::CBioseq& bioseq, 
                      const string& dbname, 
                      const string& rid = kEmptyStr,
@@ -493,7 +493,7 @@ public:
                         CNcbiMatrix<int>*          matrix=0);
 
     /// Set fields for all other alignments
-    int SetFields(const objects::CSeq_align& align,
+    virtual int SetFields(const objects::CSeq_align& align,
                   objects::CScope&           scope,
                   const string&              chain_type,
                   CNcbiMatrix<int>*          matrix=0);

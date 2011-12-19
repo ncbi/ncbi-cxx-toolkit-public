@@ -1201,6 +1201,7 @@ void CIgBlastTabularInfo::x_PrintIgGenes(bool isHtml, const string& header) cons
 
     if (m_VGene.start <0) return;
 
+    a2 = a3 = 0;
     b0 = m_VGene.start;
     b1 = m_VGene.end;
     b2 = m_DGene.start;

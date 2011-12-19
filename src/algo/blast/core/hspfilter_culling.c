@@ -97,12 +97,12 @@ static Boolean s_DominateTest(LinkedHSP *p, LinkedHSP *y, Boolean drop_y_if_tie)
 
     if (d < 0 ||  
          /* the following is the 50% overlap condition */
-         (e1+b1-2*b2) * (e1+b1-2*e2) > 0
-      && (e2+b2-2*b1) * (e2+b2-2*e1) > 0) return FALSE;
+        ((e1+b1-2*b2) * (e1+b1-2*e2) > 0
+      && (e2+b2-2*b1) * (e2+b2-2*e1) > 0)) return FALSE;
 
     if (d > 0 || 
          /* when two hsps are identical, drop the 2nd one */
-         drop_y_if_tie && s1 == s2 && l1 == l2) return TRUE;
+         (drop_y_if_tie && s1 == s2 && l1 == l2)) return TRUE;
 
     /* non-identical case, use score as tie_break
        note: when two hsps are identical, drop the 1st one */
@@ -298,6 +298,7 @@ static void s_ForkChildren(CTreeNode * node) {
    }
 }
 
+#if 0
 static void s_Debug(CTreeNode *node) {
    LinkedHSP *p;
    if(!node) return;
@@ -311,6 +312,7 @@ static void s_Debug(CTreeNode *node) {
    s_Debug(node->right);
    return;
 }
+#endif
 
 /** recursively decrease the merit of all hsps within a subtree, 
     return TRUE if whole node is empty and should be deleted */

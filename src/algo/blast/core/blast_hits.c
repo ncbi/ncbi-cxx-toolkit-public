@@ -2159,6 +2159,7 @@ s_CutOffGapEditScript(BlastHSP* hsp, Int4 q_cut, Int4 s_cut, Boolean cut_begin)
    GapEditScript *esp = hsp->gap_info;
    qid = 0;
    sid = 0;
+   opid = 0;
    q_cut -= hsp->query.offset;
    s_cut -= hsp->subject.offset;
    for (index=0; index < esp->size; index++) {

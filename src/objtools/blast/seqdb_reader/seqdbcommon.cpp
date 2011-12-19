@@ -973,7 +973,6 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
                     string msg = string("Invalid byte in text GI list [") +
                         NStr::UIntToString((unsigned char)(*p)) + " at location " +
                         NStr::NumericToString(p-fbeginp) + "].";
-                    
                     NCBI_THROW(CSeqDBException, eFileErr, msg);
                 }
             }
@@ -1917,8 +1916,6 @@ ESeqDBIdType SeqDB_SimplifySeqid(CSeq_id       & bestid,
     
     const CTextseq_id * tsip = 0;
     
-    bool use_version = false;
-    
     bool matched = true;
 
     switch(bestid.Which()) {
@@ -2012,7 +2009,6 @@ ESeqDBIdType SeqDB_SimplifySeqid(CSeq_id       & bestid,
     case CSeq_id::e_Swissprot: /* swissprot (now with versions) */
     case CSeq_id::e_Gpipe:     /* internal NCBI genome pipeline */
         tsip = bestid.GetTextseq_Id();
-        use_version = true;
         break;
         
     case CSeq_id::e_Pir:       /* pir   */

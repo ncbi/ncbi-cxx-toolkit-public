@@ -113,11 +113,11 @@ public:
 
     }
 
-    void setUpLookupTable(char* pattern)
+    void setUpLookupTable(string pattern)
     {
         CLookupTableOptions lookup_options;
         LookupTableOptionsNew(m_Program, &lookup_options);
-        lookup_options->phi_pattern = strdup(pattern);
+        lookup_options->phi_pattern = strdup(pattern.c_str());
         // Lookup segments and rps info arguments are irrelevant and passed as 
         // NULL.
         LookupTableWrapInit(NULL, lookup_options, NULL, NULL, m_ScoreBlk, &m_Lookup, NULL, NULL);
@@ -367,10 +367,7 @@ BOOST_AUTO_TEST_CASE(testPHIGappedAlignmentWithTraceback) {
                                 m_QueryInfo, &ext_params);
     CBlastGapAlignStruct gap_align;
 
-    Int2 status = 0;
-    
-    status = 
-        BLAST_GapAlignStructNew(score_params, ext_params, 
+    BLAST_GapAlignStructNew(score_params, ext_params, 
                                 subject_blk->length, m_ScoreBlk, 
                                 &gap_align);
 

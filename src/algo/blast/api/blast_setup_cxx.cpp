@@ -666,7 +666,7 @@ s_SeqLoc2MaskedSubjRanges(const CSeq_loc* slp,
         p.first = MAX(slp->GetInt().GetFrom() - offset, 0);
         p.second = MIN(slp->GetInt().GetTo() - offset, length-1);
 
-        if (p.second >= 0 && p.first < length) {
+        if (slp->GetInt().GetTo() >= offset && p.first < length) {
             output.push_back(p);
         }
     } else if (slp->IsPacked_int()) {
@@ -676,7 +676,7 @@ s_SeqLoc2MaskedSubjRanges(const CSeq_loc* slp,
             p.first = MAX((*itr)->GetFrom() - offset, 0);
             p.second = MIN((*itr)->GetTo() - offset, length-1);
 
-            if (p.second >= 0 && p.first < length) {
+            if ((*itr)->GetTo() >= offset && p.first < length) {
                 output.push_back(p);
             }
         }
@@ -687,13 +687,15 @@ s_SeqLoc2MaskedSubjRanges(const CSeq_loc* slp,
             if ((*itr)->IsInt()) {
                 p.first = MAX((*itr)->GetInt().GetFrom() - offset, 0);
                 p.second = MIN((*itr)->GetInt().GetTo() - offset, length-1);
+                if ((*itr)->GetInt().GetTo() >= offset && p.first < length) {
+                    output.push_back(p);
+                }
             } else if ((*itr)->IsPnt()) {
                 p.first = MAX((*itr)->GetPnt().GetPoint() - offset, 0);
                 p.second = MIN((*itr)->GetPnt().GetPoint() - offset, length-1);
-            }
-
-            if (p.second >= 0 && p.first < length) {
-                output.push_back(p);
+                if ((*itr)->GetPnt().GetPoint() >= offset && p.first < length) {
+                    output.push_back(p);
+                }
             }
         }
     } else {

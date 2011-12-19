@@ -332,9 +332,9 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
             } else {
                 ITERATE(CBioseq::TId, iter_id, *cur_id) {
                     if ((*iter_id)->Match(aln_id) 
-                      || aln_id.IsGeneral() && aln_id.GetGeneral().CanGetDb() && 
+                      || (aln_id.IsGeneral() && aln_id.GetGeneral().CanGetDb() && 
                          (*iter_id)->IsGeneral() && (*iter_id)->GetGeneral().CanGetDb() &&
-                         aln_id.GetGeneral().GetDb() == (*iter_id)->GetGeneral().GetDb()) {
+                         aln_id.GetGeneral().GetDb() == (*iter_id)->GetGeneral().GetDb())) {
                         found = true;
                     }
                 }

@@ -593,7 +593,7 @@ BOOST_AUTO_TEST_CASE(testTBLASTNTraceBack) {
 
      CTBlastnOptionsHandle opts_handle;
      opts_handle.SetOptions().SetCompositionBasedStats(eNoCompositionBasedStats);
-     opts_handle.SetOptions().SetFilterString("L");
+     opts_handle.SetOptions().SetSegFiltering();
 
      CBl2Seq blaster(*qsl, *ssl, opts_handle);
 

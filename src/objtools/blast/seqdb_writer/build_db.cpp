@@ -806,7 +806,7 @@ bool CBuildDatabase::AddSequences(IRawSequenceSource & src)
     
     vector<string> all_names;
     map<int, int> in2out;
-    int mask_id;
+    int mask_id = -1;
     
     src.GetColumnNames(all_names);
     

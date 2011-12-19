@@ -116,7 +116,7 @@ public:
         return "N/A";
     }
 
-    const int GetFrameOffset(const string sid) {
+    int GetFrameOffset(const string sid) {
         if (m_FrameOffset.find(sid) != m_FrameOffset.end()) {
             return m_FrameOffset[sid];
         }

@@ -380,7 +380,6 @@ struct TestFixture {
     {
         Int4 query_bases, subject_bases;
         Int4 scan_range[2];
-        Int4 last_lut_word_end;
         Int4 bases_per_lut_word;
         Int4 hits;
         Uint4 last_s_off = 0;
@@ -405,7 +404,6 @@ struct TestFixture {
             discontig = mb_lt->discontiguous;
             //mb_lt->scan_step = 1;
 
-            last_lut_word_end = subject_bases;
             if (discontig) {
                 scan_range[1] = subject_bases - mb_lt->template_length;
             }
@@ -417,7 +415,6 @@ struct TestFixture {
             na_lt = (BlastSmallNaLookupTable *)lookup_wrap_ptr->lut;
             bases_per_lut_word = na_lt->lut_word_length;
             scan_range[1] = subject_bases - bases_per_lut_word;
-            last_lut_word_end = subject_bases - bases_per_lut_word;
         }
 
         while (scan_range[0] <= scan_range[1])
@@ -489,7 +486,6 @@ struct TestFixture {
         Int4 subject_bases;
         Int4 hits, found_hits, expected_hits;
         Int4 scan_range[2];
-        Int4 last_lut_word_end;
         Int4 new_max_size;
         BlastSmallNaLookupTable *na_lt = NULL;
         BlastMBLookupTable *mb_lt = NULL;
@@ -511,7 +507,6 @@ struct TestFixture {
             discontig = mb_lt->discontiguous;
             //mb_lt->scan_step = 1;
 
-            last_lut_word_end = subject_bases;
             if (discontig) {
                 scan_range[1] = subject_bases - mb_lt->template_length;
             }
@@ -522,7 +517,6 @@ struct TestFixture {
         else {
             na_lt = (BlastSmallNaLookupTable *)lookup_wrap_ptr->lut;
             scan_range[1] = subject_bases - na_lt->lut_word_length;
-            last_lut_word_end = subject_bases - na_lt->lut_word_length;
         }
 
         while (scan_range[0] <= scan_range[1])
@@ -561,7 +555,6 @@ struct TestFixture {
         Int4 subject_bases;
         Int4 hits, found_hits, expected_hits;
         Int4 scan_range[2];
-        Int4 last_lut_word_end;
         Int4 bases_per_lut_word;
         BlastSmallNaLookupTable *na_lt = NULL;
         BlastMBLookupTable *mb_lt = NULL;
@@ -584,7 +577,6 @@ struct TestFixture {
             discontig = mb_lt->discontiguous;
             //mb_lt->scan_step = 1;
 
-            last_lut_word_end = subject_bases;
             if (discontig) {
                 scan_range[1] = subject_bases - mb_lt->template_length;
             }
@@ -596,7 +588,6 @@ struct TestFixture {
             na_lt = (BlastSmallNaLookupTable *)lookup_wrap_ptr->lut;
             bases_per_lut_word = na_lt->lut_word_length;
             scan_range[1] = subject_bases - bases_per_lut_word;
-            last_lut_word_end = subject_bases - bases_per_lut_word;
         }
 
         while (scan_range[0] <= scan_range[1])
@@ -798,7 +789,6 @@ BOOST_AUTO_TEST_CASE( DiscontigTwoSubjects )
 {
     Int4 subject_bases;
     Int4 scan_range[2];
-    Int4 last_lut_word_end;
     Int4 hits;
     Int4 i;
     BlastMBLookupTable *mb_lt = NULL;
@@ -816,7 +806,6 @@ BOOST_AUTO_TEST_CASE( DiscontigTwoSubjects )
     scan_range[0] = 0;
     subject_bases = subject_blk->length;
     scan_range[1] = subject_bases - mb_lt->template_length;
-    last_lut_word_end = subject_bases;
 
     while (scan_range[0] <= scan_range[1])
     {
@@ -829,7 +818,6 @@ BOOST_AUTO_TEST_CASE( DiscontigTwoSubjects )
     scan_range[0] = 0;
     subject_bases = subject_blk->length;
     scan_range[1] = subject_bases - mb_lt->template_length;
-    last_lut_word_end = subject_bases;
 
     while (scan_range[0] <= scan_range[1])
     {
