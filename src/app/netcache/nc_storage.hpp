@@ -320,7 +320,7 @@ public:
                         Uint8 chunk_num,
                         const CNCBlobBuffer* data);
 
-    void DeleteBlobKey(Uint2 slot, const string& key);
+    bool DeleteBlobKey(Uint2 slot, const string& key);
     void RestoreBlobKey(Uint2 slot, const string& key, SNCCacheData* cache_data);
     void ChangeCacheDeadTime(SNCCacheData* cache_data, Uint8 coord, int new_dead_time);
 

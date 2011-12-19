@@ -471,7 +471,6 @@ CNCBlobStorage::x_CreateNewFile(ENCDBFileType file_type)
 
     m_DBFilesLock.WriteLock();
     m_DBFiles[file_id] = file_info;
-    m_DBFilesLock.WriteUnlock();
 
     m_NextWriteLock.Lock();
     switch (file_type) {
@@ -484,6 +483,8 @@ CNCBlobStorage::x_CreateNewFile(ENCDBFileType file_type)
     }
     m_CurDBSize += kSignatureSize;
     m_NextWriteLock.Unlock();
+
+    m_DBFilesLock.WriteUnlock();
 
     m_NextWaitLock.Lock();
     if (m_NextWaiters != 0)
@@ -830,18 +831,21 @@ CNCBlobStorage::GetBlobAccess(ENCAccessType access,
     return accessor;
 }
 
-void
+bool
 CNCBlobStorage::DeleteBlobKey(Uint2 slot, const string& key)
 {
     SSlotCache* cache = x_GetSlotCache(slot);
     cache->lock.WriteLock();
     SNCCacheData* data = &*cache->key_map.find(key, SCacheKeyCompare());
-    if (data->coord != 0)
-        abort();
+    if (data->coord != 0) {
+        cache->lock.WriteUnlock();
+        return false;
+    }
     data->key_deleted = true;
     data->key_del_time = int(time(NULL));
     cache->lock.WriteUnlock();
     cache->deleter.AddElement(key);
+    return true;
 }
 
 void
@@ -852,9 +856,10 @@ CNCBlobStorage::RestoreBlobKey(Uint2 slot,
     SSlotCache* cache = x_GetSlotCache(slot);
     cache->lock.WriteLock();
     SNCCacheData* data = &*cache->key_map.find(key, SCacheKeyCompare());
-    if (data != cache_data)
-        abort();
-    data->key_deleted = false;
+    if (data == cache_data)
+        data->key_deleted = false;
+    /*else
+        abort();*/
     cache->lock.WriteUnlock();
 }
 
@@ -2309,7 +2314,7 @@ CNCBlobStorage::x_FlushStorage(void)
     int cur_time = int(time(NULL));
     if (cur_time < m_LastFlushTime + m_FlushTimePeriod)
         return;
-/*
+
     m_DBFilesLock.ReadLock();
     TNCDBFilesMap::const_iterator file_it = m_DBFiles.begin();
     while (file_it != m_DBFiles.end()) {
@@ -2327,7 +2332,7 @@ CNCBlobStorage::x_FlushStorage(void)
         ++file_it;
     }
     m_DBFilesLock.ReadUnlock();
-*/
+
     m_LastFlushTime = cur_time;
 }
 
