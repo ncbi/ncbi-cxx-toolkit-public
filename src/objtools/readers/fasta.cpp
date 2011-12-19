@@ -639,15 +639,15 @@ void CFastaReader::ParseDataLine(const TStr& s)
             if (TestFlag(fValidate)) {
                 NCBI_THROW2(CBadResiduesException, eBadResidues,
                             string("CFastaReader: Invalid residue ") + s[pos]
-                            + " at position " + NStr::UInt8ToString(pos),
-                                CBadResiduesException::SBadResiduePositions( pos, LineNumber() ) );
+                            + " at position " + NStr::UInt8ToString(pos+1), // "+1" because 1-based for user
+                                CBadResiduesException::SBadResiduePositions( m_BestID, pos, LineNumber() ) );
             } else {
                 ERR_POST_X(1, Warning
                            << "CFastaReader: Ignoring invalid residue " << c
                            << " at line " << LineNumber()
                            << ", position " << pos);
             }
-        }
+        } 
     }
     m_SeqData.resize(m_CurrentPos);
 }
@@ -723,7 +723,7 @@ void CFastaReader::AssembleSeq(void)
         if ( ! badIndexes.empty() ) {
             NCBI_THROW2(CBadResiduesException, eBadResidues,
                 "CFastaReader: Invalid residue(s) in input sequence",
-                CBadResiduesException::SBadResiduePositions( badIndexes, LineNumber() ) );
+                CBadResiduesException::SBadResiduePositions( m_BestID, badIndexes, LineNumber() ) );
         }
     }
 
@@ -1682,12 +1682,9 @@ void CFastaReader::x_RecursiveApplyAllMods( CSeq_entry& entry )
                 {
                     // there are unused mods and user specified to throw if any
                     // unused 
-                    CNcbiOstrstream err;
-                    err << "Unused mods:";
-                    ITERATE(CSourceModParser::TMods, mod_iter, unused_mods) {
-                        err << ' ' << mod_iter->ToString();
-                    }
-                    throw runtime_error((string)CNcbiOstrstreamToString(err));
+                    NCBI_THROW2(CObjReaderParseException, eUnusedMods,
+                        "CFastaReader: Unused mods",
+                        LineNumber());
                 }
             }
             smp.GetLabel(&title, CSourceModParser::fUnusedMods);

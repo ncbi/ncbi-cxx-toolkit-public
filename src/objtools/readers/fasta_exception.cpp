@@ -36,11 +36,25 @@
 #include <objtools/readers/fasta_exception.hpp>
 #include <corelib/ncbistre.hpp>
 #include <algorithm>
+#include <objects/seqloc/Seq_id.hpp>
 
 using namespace std;
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+void CBadResiduesException::ReportExtra(ostream& out) const
+{
+    out << "bad indexes = ";
+    if( m_BadResiduePositions.m_SeqId ) {
+        out << MSerial_AsnText << *m_BadResiduePositions.m_SeqId;
+    } else {
+        out << "Seq-id ::= NULL";
+    }
+    out << ", line no = " << m_BadResiduePositions.m_LineNo;
+    out << ", positions: ";
+    x_ConvertBadIndexesToString( out, m_BadResiduePositions.m_BadIndexes, 20 );
+}
 
 void CBadResiduesException::x_ConvertBadIndexesToString(
         CNcbiOstream & out,
@@ -87,9 +101,9 @@ void CBadResiduesException::x_ConvertBadIndexesToString(
     {
         out << prefix;
         const TRange &range = rangesFound[rng_idx];
-        out << range.first;
+        out << (range.first + 1); // "+1" because 1-based for user
         if( range.first != range.second ) {
-            out << "-" << range.second;
+            out << "-" << (range.second + 1); // "+1" because 1-based for user
         }
 
         prefix = ", ";

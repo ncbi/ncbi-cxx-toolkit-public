@@ -33,9 +33,12 @@
 */
 
 #include <objtools/readers/reader_exception.hpp>
+#include <corelib/ncbiobj.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+class CSeq_id;
 
 class CBadResiduesException : public CObjReaderException
 {
@@ -57,46 +60,44 @@ public:
             : m_LineNo(-1) { }
 
         SBadResiduePositions( 
+            CConstRef<CSeq_id> seqId,
             const vector<TSeqPos> & badIndexes,
             int lineNo )
-            : m_BadIndexes(badIndexes), m_LineNo(lineNo) { }
-              SBadResiduePositions( TSeqPos badIndex, int lineNo )
-            : m_LineNo(lineNo)
+            : m_SeqId(seqId), m_BadIndexes(badIndexes), m_LineNo(lineNo) { }
+
+        SBadResiduePositions( CConstRef<CSeq_id> seqId, TSeqPos badIndex, int lineNo )
+            : m_SeqId(seqId), m_LineNo(lineNo)
         {
             m_BadIndexes.push_back(badIndex);
         }
 
+        CConstRef<CSeq_id> m_SeqId;
         vector<TSeqPos> m_BadIndexes;
         int m_LineNo;
     };
 
-    virtual void ReportExtra(ostream& out) const
-    {
-        out << "bad indexes = ";
-        x_ConvertBadIndexesToString( out, m_BadResiduePosition.m_BadIndexes, 20 );
-        out <<  ", line no = " << m_BadResiduePosition.m_LineNo;
-    }
+    virtual void ReportExtra(ostream& out) const;
 
     CBadResiduesException(const CDiagCompileInfo& info,
         const CException* prev_exception,
         EErrCode err_code, const string& message,
-        const SBadResiduePositions& badResiduePosition, 
+        const SBadResiduePositions& badResiduePositions, 
         EDiagSev severity = eDiag_Error) THROWS_NONE
         : CObjReaderException(info, prev_exception,
         (CObjReaderException::EErrCode) CException::eInvalid,
-        message), m_BadResiduePosition(badResiduePosition)
+        message), m_BadResiduePositions(badResiduePositions)
         NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CBadResiduesException, CObjReaderException);
 
 public:
     // Returns the bad residues found, which might not be complete
     // if we bailed out early.
-    const SBadResiduePositions& GetBadResiduePosition(void) const THROWS_NONE
+    const SBadResiduePositions& GetBadResiduePositions(void) const THROWS_NONE
     {
-        return m_BadResiduePosition;
+        return m_BadResiduePositions;
     }
 
 private:
-    SBadResiduePositions m_BadResiduePosition;
+    SBadResiduePositions m_BadResiduePositions;
 
     static void x_ConvertBadIndexesToString(
         CNcbiOstream & out,

@@ -54,7 +54,8 @@ public:
         eNoIDs,
         eAmbiguous,
         eBadSegSet,
-        eDuplicateID
+        eDuplicateID,
+        eUnusedMods
     };
     virtual const char* GetErrCodeString(void) const
     {
@@ -66,6 +67,7 @@ public:
         case eAmbiguous:   return "eAmbiguous";
         case eBadSegSet:   return "eBadSegSet";
         case eDuplicateID: return "eDuplicateID";
+        case eUnusedMods:  return "eUnusedMods";
         default:           return CException::GetErrCodeString();
         }
     }
