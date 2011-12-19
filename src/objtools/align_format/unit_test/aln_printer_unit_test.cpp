@@ -204,7 +204,7 @@ BOOST_AUTO_TEST_CASE(TestPhylipInterleaved)
                               "----------------------------------") != NPOS);
 
 
-    BOOST_REQUIRE(output.find("serine__o --------------------------------MPQWA"
+    BOOST_REQUIRE(output.find("unnamed_p --------------------------------MPQWA"
                               "NPVPAIA--GAAPVVITSARAAISAGVDEA---G") != NPOS);
 
     // last line
