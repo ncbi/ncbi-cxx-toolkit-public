@@ -94,6 +94,7 @@ BOOST_AUTO_TEST_CASE(testSeqVecIndexOutOfRange)
     Uint4 length;
     BOOST_REQUIRE_THROW(length = seqinfo_src.GetLength(kIndex),
                         CBlastException);
+    (void)length; /* to pacify compiler warning */
 }
 
 BOOST_AUTO_TEST_CASE(testSeqDbSeqInfoSrc)
@@ -107,6 +108,7 @@ BOOST_AUTO_TEST_CASE(testSeqDbSeqInfoSrc)
     BOOST_REQUIRE_EQUAL(kGoodLength, (int)length);
     CRef<CSeq_id> seqid(seqinfo_src.GetId(kOid).front());
     BOOST_REQUIRE(!strcmp(kGoodIdStr, seqid->GetSeqIdString().c_str()));
+    (void)length; /* to pacify compiler warning */
 }
 
 BOOST_AUTO_TEST_CASE(testBadDatabase)

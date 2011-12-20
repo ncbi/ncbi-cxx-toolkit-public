@@ -2535,28 +2535,39 @@ BOOST_AUTO_TEST_CASE(RawFastaNoSpaces_UpperCaseWithN)
 
 }
 
+template <typename T>
+inline void s_Ignore(const T&) {}
+
 BOOST_AUTO_TEST_CASE(ParseSequenceRange_EmptyRange) {
-    BOOST_REQUIRE_THROW(TSeqRange r = ParseSequenceRange("4-4"),
+    TSeqRange r;
+    BOOST_REQUIRE_THROW(r = ParseSequenceRange("4-4"),
                         CBlastException);
+    s_Ignore(r); /* to pacify compiler warnings */
 }
 
 BOOST_AUTO_TEST_CASE(ParseSequenceRange_0BasedRange) {
-    BOOST_REQUIRE_THROW(TSeqRange r = ParseSequenceRange("0-4"),
+    TSeqRange r;
+    BOOST_REQUIRE_THROW(r = ParseSequenceRange("0-4"),
                         CBlastException);
+    s_Ignore(r); /* to pacify compiler warnings */
 }
 
 BOOST_AUTO_TEST_CASE(ParseSequenceRange_InvalidDelimiter) {
-    BOOST_REQUIRE_THROW(TSeqRange r = ParseSequenceRange("3,4"),
+    TSeqRange r;
+    BOOST_REQUIRE_THROW(r = ParseSequenceRange("3,4"),
                         CBlastException);
+    s_Ignore(r); /* to pacify compiler warnings */
 }
 
 BOOST_AUTO_TEST_CASE(ParseSequenceRange_IncompleteRange) {
-    BOOST_REQUIRE_THROW(TSeqRange r = ParseSequenceRange("3"),
+    TSeqRange r;
+    BOOST_REQUIRE_THROW(r = ParseSequenceRange("3"),
                         CBlastException);
-    BOOST_REQUIRE_THROW(TSeqRange r = ParseSequenceRange("3-"),
+    BOOST_REQUIRE_THROW(r = ParseSequenceRange("3-"),
                         CBlastException);
-    BOOST_REQUIRE_THROW(TSeqRange r = ParseSequenceRange("-3"),
+    BOOST_REQUIRE_THROW(r = ParseSequenceRange("-3"),
                         CBlastException);
+    s_Ignore(r); /* to pacify compiler warnings */
 }
 
 BOOST_AUTO_TEST_CASE(ParseSequenceRange_InvalidRange) {
