@@ -271,7 +271,7 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
 
   int i, j;
   int wmax = 0;//max score in the last column
-  int imax = 0;//row number for wmax
+  //int imax = 0;//row number for wmax
   int jmax = jlen - 1;//column number for wmax
   CIgapIntronChain lsb; //last column best, corresponds to wmax
   lsb.SetPool(pool);
@@ -470,7 +470,7 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
         //remember the best W in the last column
         if(wmax <= crow->w[jlen - 1]) {
             wmax = crow->w[jlen - 1];
-            imax = i;
+            //imax = i;
             lsb.Clear();
             lsb.Copy(crow->wis[jlen - 1]);
         }
@@ -480,7 +480,7 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
     for(j=1;j<jlen;++j) {
         if(wmax <= crow->w[j]) {
             wmax = crow->w[j];
-            imax = ilen - 1;
+            //imax = ilen - 1;
             jmax = j;
         }
     }
