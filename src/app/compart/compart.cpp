@@ -189,8 +189,11 @@ int CCompartApp::Run()
     const CArgs& args (GetArgs());
 
     const bool is_qdb     (args["qdb"]);
-    const bool is_sdb     (args["sdb"]);
     const bool is_seqlens (args["seqlens"]);
+
+
+    /*
+    const bool is_sdb     (args["sdb"]);
     const bool is_ho      (args["ho"]);
     const bool is_maxvol  (args["maxvol"]);
     const bool is_n       (args["N"]);
@@ -201,6 +204,7 @@ int CCompartApp::Run()
     if(is_qdb  && is_n)        { invalid_args = true; }
     if(!is_qdb && is_ho)       { invalid_args = true; }
     if(!is_qdb && is_maxvol)   { invalid_args = true; }
+    */
 
     m_NoXF                     = args["noxf"];
     m_penalty                  = args["penalty"].AsDouble();
