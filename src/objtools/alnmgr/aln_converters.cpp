@@ -323,29 +323,41 @@ ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,
                  direction == CAlnUserOptions::eDirect :
                  direction == CAlnUserOptions::eReverse)) {
 
-                const int& base_width_1 = pairwise_aln.GetFirstBaseWidth();
-                const int& base_width_2 = pairwise_aln.GetSecondBaseWidth();
+                TSeqPos nuc_to_nuc_diff =
+                    abs((TSignedSeqPos)len_1 - (TSignedSeqPos)len_2);
+                TSeqPos prot_to_nuc_diff =
+                    abs((TSignedSeqPos)len_1*3 - (TSignedSeqPos)len_2);
+                TSeqPos nuc_to_prot_diff =
+                    abs((TSignedSeqPos)len_1 - (TSignedSeqPos)len_2*3);
+                bool row_1_is_protein = prot_to_nuc_diff < nuc_to_nuc_diff;
+                bool row_2_is_protein = nuc_to_prot_diff < nuc_to_nuc_diff;
 
                 CPairwiseAln::TAlnRng aln_rng;
                 aln_rng.SetDirect(direct);
-                if (base_width_1 == base_width_2) {
-                    _ALNMGR_ASSERT(len_1 == len_2);
-                    if (base_width_1 == 1) {
-                        aln_rng.SetFirstFrom(rng_1.GetFrom());
-                        aln_rng.SetSecondFrom(rng_2.GetFrom());
-                    } else {
-                        aln_rng.SetFirstFrom(rng_1.GetFrom() * base_width_1);
-                        aln_rng.SetSecondFrom(rng_2.GetFrom() * base_width_2);
-                    }
-                    aln_rng.SetLength(len_1 * base_width_1);
-                    pairwise_aln.insert(aln_rng);
-                } else if (base_width_1 == 1) {
-                    _ALNMGR_ASSERT(base_width_2 == 3);
+                if (!row_1_is_protein && !row_2_is_protein) {
                     aln_rng.SetFirstFrom(rng_1.GetFrom());
-                    aln_rng.SetSecondFrom(rng_2.GetFrom() * base_width_2);
-                    if (len_1 / base_width_2 < len_2) {
-                        _ALNMGR_ASSERT(len_1 / base_width_2 == len_2 - 1);
-                        TSeqPos remainder = len_1 % base_width_2;
+                    aln_rng.SetSecondFrom(rng_2.GetFrom());
+                    if (len_1 != len_2) {
+                        TSeqPos remainder =
+                            abs((TSignedSeqPos)len_1 - (TSignedSeqPos)len_2);
+                        aln_rng.SetLength(min(len_1,len_2));
+                        pairwise_aln.insert(aln_rng);
+                        pairwise_aln.insert
+                            (CPairwiseAln::TAlnRng
+                             (aln_rng.GetFirstToOpen(),
+                              aln_rng.GetSecondToOpen(),
+                              remainder,
+                              direct));
+                    } else {
+                        aln_rng.SetLength(len_1);
+                        pairwise_aln.insert(aln_rng);
+                    }
+                } else if (row_2_is_protein) {
+                    aln_rng.SetFirstFrom(rng_1.GetFrom());
+                    aln_rng.SetSecondFrom(rng_2.GetFrom() * 3);
+                    if (len_1 / 3 < len_2) {
+                        _ALNMGR_ASSERT(len_1 / 3 == len_2 - 1);
+                        TSeqPos remainder = len_1 % 3;
                         aln_rng.SetLength(len_1 - remainder);
                         pairwise_aln.insert(aln_rng);
                         pairwise_aln.insert
@@ -358,13 +370,12 @@ ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,
                         aln_rng.SetLength(len_1);
                         pairwise_aln.insert(aln_rng);
                     }
-                } else if (base_width_2 == 1) {
-                    _ALNMGR_ASSERT(base_width_1 == 3);
-                    aln_rng.SetFirstFrom(rng_1.GetFrom() * base_width_1);
+                } else { // row 1 is protein
+                    aln_rng.SetFirstFrom(rng_1.GetFrom() * 3);
                     aln_rng.SetSecondFrom(rng_2.GetFrom());
-                    if (len_2 / base_width_1 < len_1) {
-                        _ALNMGR_ASSERT(len_2 / base_width_1 == len_1 - 1);
-                        TSeqPos remainder = len_2 % base_width_2;
+                    if (len_2 / 3 < len_1) {
+                        _ALNMGR_ASSERT(len_2 / 3 == len_1 - 1);
+                        TSeqPos remainder = len_2 % 3;
                         aln_rng.SetLength(len_2 - remainder);
                         pairwise_aln.insert(aln_rng);
                         pairwise_aln.insert
@@ -377,10 +388,6 @@ ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,
                         aln_rng.SetLength(len_2);
                         pairwise_aln.insert(aln_rng);
                     }
-                } else {
-                    _ASSERT(len_1 * base_width_1 == len_2 * base_width_2);
-                    aln_rng.SetLength(len_1 * base_width_1);
-                    pairwise_aln.insert(aln_rng);
                 }
             }
         }
