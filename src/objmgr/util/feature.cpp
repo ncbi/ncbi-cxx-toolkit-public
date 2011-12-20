@@ -1939,11 +1939,17 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
                         p_feat.GetLocation();
                     CScope* scope = &p_feat.GetScope();
                     Int1 quality = s_GetParentQuality(info, *pc->m_Info);
-                    Int8 overlap = TestForOverlap64(p_loc,
+                    Int8 overlap;
+                    try {
+                        overlap = TestForOverlap64(p_loc,
                                                     c_loc,
                                                     overlap_type,
                                                     circular_length,
                                                     scope);
+                    }
+                    catch ( CException& /*ignored*/ ) {
+                        overlap = -1;
+                    }
                     if ( overlap >= 0 ) {
                         ci->m_Best->CheckBest(quality, overlap, pc->m_Info);
                         continue;
@@ -1963,11 +1969,16 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
                             c_loc2->SetStrand(eNa_strand_minus);
                         }
                     }
-                    overlap = TestForOverlap64(p_loc,
-                                               *c_loc2,
-                                               overlap_type,
-                                               circular_length,
-                                               scope);
+                    try {
+                        overlap = TestForOverlap64(p_loc,
+                                                   *c_loc2,
+                                                   overlap_type,
+                                                   circular_length,
+                                                   scope);
+                    }
+                    catch ( CException& /*ignored*/ ) {
+                        overlap = -1;
+                    }
                     if ( overlap >= 0 ) {
                         ci->m_Best->CheckBest(quality-1, overlap, pc->m_Info);
                     }
