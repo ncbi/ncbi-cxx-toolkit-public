@@ -443,6 +443,7 @@ BOOST_AUTO_TEST_CASE(s_FailedWritingTest)
                                             strGene2PubMedFile,
                                             strOutputDirPath),
                         CGeneInfoException);
+    BOOST_REQUIRE(pWriter == NULL);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
