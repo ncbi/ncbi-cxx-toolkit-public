@@ -8224,7 +8224,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("PI");
     ambig.push_back("CENA");
     ambig.push_back("IBRP");
-    ambig.push_back("UW");
     ambig.push_back("CUMZ");
     ambig.push_back("CRE");
     ambig.push_back("FSC");
