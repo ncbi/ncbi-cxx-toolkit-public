@@ -1,0 +1,7 @@
+GCClient*.cpp
+NCBI_GencollClient_module.cpp
+gencoll_client.dump
+gencoll_client.files
+gencoll_client__.cpp
+gencoll_client___.cpp
+genomic_collections_cli_.cpp
