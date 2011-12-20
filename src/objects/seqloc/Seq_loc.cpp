@@ -385,7 +385,7 @@ void CSeq_loc::x_UpdateId(const CSeq_id*& total_id, const CSeq_id* id) const
 
     if ( !total_id ) {
         total_id = id;
-    } else if ( (id  &&  !total_id->Equals(*id))  ||  !id ) {
+    } else if ( (id  &&  !total_id->Equals(*id)) ) {
         NCBI_THROW(CException, eUnknown,
                    "CSeq_loc::GetTotalRange() is not defined "
                    "for seq-loc with several different seq-ids");
@@ -1825,7 +1825,7 @@ void CSeq_loc::x_CheckId(const CSeq_id*& id) const
     case e_not_set:
     case e_Null:
         {
-            x_UpdateId(id, 0);
+            // no Seq-id
             break;
         }
     case e_Empty:
