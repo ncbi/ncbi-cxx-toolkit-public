@@ -166,8 +166,8 @@ void CMMAligner::x_DoSubmatrix( const SCoordRect& submatr,
     }
 
     // locate the transition point
-    size_t trans_pos;
-    ETransitionType trans_type;
+    size_t trans_pos = 0;
+    ETransitionType trans_type = eGG;
     TScore score1 = x_FindBestJ ( vEtop, vFtop, vGtop, vEbtm, vFbtm, vGbtm,
                                   trans_pos, trans_type );
     if(top_level)
