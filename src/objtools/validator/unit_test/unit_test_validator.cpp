@@ -12757,6 +12757,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
     legal_strings.push_back ("MaizeGDB");
     legal_strings.push_back ("MGI");
     legal_strings.push_back ("MIM");
+    legal_strings.push_back ("miRBase");
     legal_strings.push_back ("MycoBank");
     legal_strings.push_back ("NBRC");
     legal_strings.push_back ("NextDB");
@@ -12829,7 +12830,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
     refseq_strings.push_back ("ECOCYC");
     refseq_strings.push_back ("HPRD");
     refseq_strings.push_back ("LRG");
-    refseq_strings.push_back ("miRBase");
     refseq_strings.push_back ("PBR");
     refseq_strings.push_back ("REBASE");
     refseq_strings.push_back ("SK-FST");
