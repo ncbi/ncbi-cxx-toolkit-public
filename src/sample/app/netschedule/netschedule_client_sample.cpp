@@ -151,6 +151,7 @@ int CSampleNetScheduleClient::Run(void)
     SleepMilliSec(5000);
 
     CNetScheduleAdmin admin = cl.GetAdmin();
+    /*
     CNetScheduleKeys keys;
     admin.RetrieveKeys("status=pending", keys);
 
@@ -158,6 +159,7 @@ int CSampleNetScheduleClient::Run(void)
         it != keys.end(); ++it) {
         cout << string(*it) << endl;
     }
+    */
             
     unsigned last_jobs = 0;
     unsigned no_jobs_executes_cnt = 0;
