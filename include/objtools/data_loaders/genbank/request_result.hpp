@@ -659,6 +659,10 @@ public:
 
     double GetCurrentRequestTime(double time);
 
+    void ClearRetryDelay(void) { m_RetryDelay = 0; }
+    void AddRetryDelay(double delay) { m_RetryDelay += delay; }
+    double GetRetryDelay(void) const { return m_RetryDelay; }
+
 private:
     friend class CLoadInfoLock;
     friend class CReaderAllocatedConnection;
@@ -680,6 +684,7 @@ private:
     int             m_RecursionLevel;
     double          m_RecursiveTime;
     CReaderAllocatedConnection* m_AllocatedConnection;
+    double          m_RetryDelay;
 
 private: // hide methods
     CReaderRequestResult(const CReaderRequestResult&);

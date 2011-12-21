@@ -248,7 +248,8 @@ private:
     friend class CReaderAllocatedConnection;
     
     TConn x_AllocConnection(bool oldest = false);
-    void x_ReleaseConnection(TConn conn, bool oldest = false);
+    void x_ReleaseConnection(TConn conn, double retry_delay = 0);
+    void x_ReleaseClosedConnection(TConn conn);
     void x_AbortConnection(TConn conn, bool failed);
 
     void x_AddConnection(void);
@@ -260,8 +261,12 @@ private:
 
     // current state
     TConn            m_NextNewConnection;
-    typedef pair<TConn, CTime> TConnSlot;
-    typedef list<TConnSlot> TFreeConnections;
+    struct SConnSlot {
+        TConn m_Conn;
+        CTime m_LastUseTime;
+        double m_RetryDelay;
+    };
+    typedef list<SConnSlot> TFreeConnections;
     TFreeConnections m_FreeConnections;
     CMutex           m_ConnectionsMutex;
     CSemaphore       m_NumFreeConnections;

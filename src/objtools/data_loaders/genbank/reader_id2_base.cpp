@@ -1321,7 +1321,7 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
             }
             if ( num >= request_count || done[num] ) {
                 // unknown serial num - bad reply
-                if ( TErrorFlags error = x_GetError(*reply) ) {
+                if ( TErrorFlags error = x_GetError(result, *reply) ) {
                     if ( error & fError_inactivity_timeout ) {
                         conn.Restart();
                         NCBI_THROW_FMT(CLoaderException, eRepeatAgain,
@@ -1439,7 +1439,9 @@ void CId2ReaderBase::x_UpdateLoadedSet(CReaderRequestResult& result,
 }
 
 
-CId2ReaderBase::TErrorFlags CId2ReaderBase::x_GetError(const CID2_Error& error)
+CId2ReaderBase::TErrorFlags
+CId2ReaderBase::x_GetError(CReaderRequestResult& result,
+                           const CID2_Error& error)
 {
     TErrorFlags error_flags = 0;
     switch ( error.GetSeverity() ) {
@@ -1473,6 +1475,9 @@ CId2ReaderBase::TErrorFlags CId2ReaderBase::x_GetError(const CID2_Error& error)
     case CID2_Error::eSeverity_invalid_arguments:
         error_flags |= fError_bad_command;
         break;
+    }
+    if ( error.IsSetRetry_delay() ) {
+        result.AddRetryDelay(error.GetRetry_delay());
     }
     return error_flags;
 }
@@ -1533,12 +1538,13 @@ CId2ReaderBase::x_GetMessageError(const CID2_Error& error)
 
 
 CId2ReaderBase::TErrorFlags
-CId2ReaderBase::x_GetError(const CID2_Reply& reply)
+CId2ReaderBase::x_GetError(CReaderRequestResult& result,
+                           const CID2_Reply& reply)
 {
     TErrorFlags errors = 0;
     if ( reply.IsSetError() ) {
         ITERATE ( CID2_Reply::TError, it, reply.GetError() ) {
-            errors |= x_GetError(**it);
+            errors |= x_GetError(result, **it);
         }
     }
     return errors;
@@ -1562,7 +1568,8 @@ void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
                                     SId2LoadedSet& loaded_set,
                                     const CID2_Reply& reply)
 {
-    if ( x_GetError(reply) & (fError_bad_command | fError_bad_connection) ) {
+    if ( x_GetError(result, reply) &
+         (fError_bad_command | fError_bad_connection) ) {
         return;
     }
     switch ( reply.GetReply().Which() ) {

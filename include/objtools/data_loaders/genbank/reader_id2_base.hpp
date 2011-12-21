@@ -192,9 +192,11 @@ protected:
         fError_inactivity_timeout   = 1 << 8
     };
     typedef int TErrorFlags;
-    TErrorFlags x_GetError(const CID2_Error& error);
+    TErrorFlags x_GetError(CReaderRequestResult& result,
+                           const CID2_Error& error);
     TErrorFlags x_GetMessageError(const CID2_Error& error);
-    TErrorFlags x_GetError(const CID2_Reply& reply);
+    TErrorFlags x_GetError(CReaderRequestResult& result,
+                           const CID2_Reply& reply);
     TErrorFlags x_GetMessageError(const CID2_Reply& reply);
 
     void x_ProcessReply(CReaderRequestResult& result,

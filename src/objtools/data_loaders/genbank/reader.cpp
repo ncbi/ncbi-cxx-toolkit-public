@@ -148,7 +148,7 @@ void CReader::OpenInitialConnection(bool force)
                 return;
             }
             catch ( CLoaderException& exc ) {
-                x_ReleaseConnection(conn, true);
+                x_ReleaseClosedConnection(conn);
                 if ( exc.GetErrCode() == exc.eNoConnection ) {
                     // no connection can be opened
                     throw;
@@ -162,7 +162,7 @@ void CReader::OpenInitialConnection(bool force)
                 }
             }
             catch ( CException& exc ) {
-                x_ReleaseConnection(conn, true);
+                x_ReleaseClosedConnection(conn);
                 LOG_POST_X(2, Warning<<"CReader: "
                            "cannot open initial connection: "<<exc.what());
                 if ( attempt >= GetRetryCount() ) {
@@ -314,7 +314,7 @@ void CReader::x_AddConnection(void)
     CMutexGuard guard(m_ConnectionsMutex);
     TConn conn = m_NextNewConnection++;
     x_AddConnectionSlot(conn);
-    x_ReleaseConnection(conn, true);
+    x_ReleaseClosedConnection(conn);
     ++m_MaxConnections;
     _ASSERT(m_MaxConnections > 0);
 }
@@ -337,7 +337,7 @@ CReader::TConn CReader::x_AllocConnection(bool oldest)
     }
     m_NumFreeConnections.Wait();
     CMutexGuard guard(m_ConnectionsMutex);
-    TConnSlot slot;
+    SConnSlot slot;
     if ( oldest ) {
         slot =  m_FreeConnections.back();
         m_FreeConnections.pop_back();
@@ -346,26 +346,44 @@ CReader::TConn CReader::x_AllocConnection(bool oldest)
         slot =  m_FreeConnections.front();
         m_FreeConnections.pop_front();
     }
-    if ( !slot.second.IsEmpty() ) {
-        double age = CTime(CTime::eCurrent).DiffNanoSecond(slot.second)*1e-9;
+    if ( !slot.m_LastUseTime.IsEmpty() ) {
+        double age = CTime(CTime::eCurrent).DiffNanoSecond(slot.m_LastUseTime)*1e-9;
         if ( age > 60 ) {
             // too old, disconnect
-            x_DisconnectAtSlot(slot.first, false);
+            x_DisconnectAtSlot(slot.m_Conn, false);
+        }
+        else if ( age < slot.m_RetryDelay ) {
+            double wait_seconds = slot.m_RetryDelay - age;
+            LOG_POST_X(6, Warning << "CReader: waiting "<<
+                       wait_seconds<<"s before next command");
+            _TRACE("CReader: waiting "<<wait_seconds<<
+                   "s before next connection");
+            SleepMicroSec((unsigned long)(wait_seconds*1e6));
         }
     }
-    return slot.first;
+    return slot.m_Conn;
 }
 
 
-void CReader::x_ReleaseConnection(TConn conn, bool oldest)
+void CReader::x_ReleaseClosedConnection(TConn conn)
 {
     CMutexGuard guard(m_ConnectionsMutex);
-    if ( oldest ) {
-        m_FreeConnections.push_back(TConnSlot(conn, CTime()));
-    }
-    else {
-        m_FreeConnections.push_front(TConnSlot(conn, CTime(CTime::eCurrent)));
-    }
+    SConnSlot slot;
+    slot.m_Conn = conn;
+    slot.m_RetryDelay = 0;
+    m_FreeConnections.push_back(slot);
+    m_NumFreeConnections.Post(1);
+}
+
+
+void CReader::x_ReleaseConnection(TConn conn, double retry_delay)
+{
+    CMutexGuard guard(m_ConnectionsMutex);
+    SConnSlot slot;
+    slot.m_Conn = conn;
+    slot.m_LastUseTime = CTime(CTime::eCurrent);
+    slot.m_RetryDelay = retry_delay;
+    m_FreeConnections.push_front(slot);
     m_NumFreeConnections.Post(1);
 }
 
@@ -375,7 +393,7 @@ void CReader::x_AbortConnection(TConn conn, bool failed)
     CMutexGuard guard(m_ConnectionsMutex);
     try {
         x_DisconnectAtSlot(conn, failed);
-        x_ReleaseConnection(conn, true);
+        x_ReleaseClosedConnection(conn);
         return;
     }
     catch ( exception& exc ) {
@@ -1048,6 +1066,7 @@ CReaderAllocatedConnection::CReaderAllocatedConnection(CReaderRequestResult& res
         m_Conn = reader->x_AllocConnection();
         m_Reader = reader;
         m_Result = &result;
+        result.ClearRetryDelay();
         result.m_AllocatedConnection = this;
     }
     else if ( pconn->m_Reader == reader ) {
@@ -1090,9 +1109,10 @@ void CReaderAllocatedConnection::Release(void)
     if ( m_Result ) {
         _ASSERT(m_Result->m_AllocatedConnection == this);
         _ASSERT(m_Reader);
+        double retry_delay = m_Result->GetRetryDelay();
         m_Result->m_AllocatedConnection = 0;
         m_Result = 0;
-        m_Reader->x_ReleaseConnection(m_Conn);
+        m_Reader->x_ReleaseConnection(m_Conn, min(retry_delay, 60.0));
     }
 }
 

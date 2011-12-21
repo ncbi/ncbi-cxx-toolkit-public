@@ -582,7 +582,8 @@ CReaderRequestResult::CReaderRequestResult(const CSeq_id_Handle& requested_id)
       m_RequestedId(requested_id),
       m_RecursionLevel(0),
       m_RecursiveTime(0),
-      m_AllocatedConnection(0)
+      m_AllocatedConnection(0),
+      m_RetryDelay(0)
 {
 }
 
