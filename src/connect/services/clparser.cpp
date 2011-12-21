@@ -29,6 +29,8 @@
 
 #include <ncbi_pch.hpp>
 
+#include <corelib/ncbiapp.hpp>
+
 #include <connect/services/clparser.hpp>
 
 #include <algorithm>
@@ -102,13 +104,27 @@ struct SOptionInfo : public SOptionOrCommandInfo
 
 typedef list<const SOptionInfo*> TOptionInfoList;
 
-struct SCommandInfo : public SOptionOrCommandInfo
+struct SCommonParts
+{
+    SCommonParts(const string& synopsis, const string& usage) :
+        m_Synopsis(synopsis),
+        m_Usage(usage)
+    {
+    }
+
+    string m_Synopsis;
+    string m_Usage;
+
+    TOptionInfoList m_PositionalArguments;
+    TOptionInfoList m_AcceptedOptions;
+};
+
+struct SCommandInfo : public SOptionOrCommandInfo, public SCommonParts
 {
     SCommandInfo(int cmd_id, const string& name_variants,
             const string& synopsis, const string& usage) :
         SOptionOrCommandInfo(cmd_id, name_variants),
-        m_Synopsis(synopsis),
-        m_Usage(usage)
+        SCommonParts(synopsis, usage)
     {
     }
 
@@ -127,41 +143,40 @@ struct SCommandInfo : public SOptionOrCommandInfo
         result.push_back(')');
         return result;
     }
-
-    string m_Synopsis;
-    string m_Usage;
-
-    TOptionInfoList m_PositionalArguments;
-    TOptionInfoList m_AcceptedOptions;
 };
 
-typedef list<const SCommandInfo*> TCommandList;
+typedef list<const SCommandInfo*> TCommandInfoList;
 
 struct SCategoryInfo : public CObject
 {
     SCategoryInfo(const string& title) : m_Title(title) {}
 
     string m_Title;
-    TCommandList m_Commands;
+    TCommandInfoList m_Commands;
 };
 
-struct SCommandLineParserImpl : public CObject
+typedef list<const char*> TPositionalArgumentList;
+
+struct SCommandLineParserImpl : public CObject, public SCommonParts
 {
     SCommandLineParserImpl(
         const string& program_name,
-        const string& program_version,
-        const string& program_description);
+        const string& program_summary,
+        const string& program_description,
+        const string& program_version);
 
     void PrintWordWrapped(int topic_len, int indent,
         const string& text, int cont_indent = -1) const;
-    void Help() const;
-    void Throw(const string& error, const string& cmd = kEmptyStr);
+    void Help(const TPositionalArgumentList& commands,
+        bool using_help_command) const;
+    void HelpOnCommand(const SCommonParts* common_parts,
+        const string& name_for_synopsis, const string& name_for_usage) const;
+    void Throw(const string& error, const string& cmd = kEmptyStr) const;
     int ParseAndValidate(int argc, const char* const *argv);
 
     // Command and argument definitions.
     string m_ProgramName;
     string m_ProgramVersion;
-    string m_ProgramDescription;
     typedef map<string, const SOptionInfo*> TOptionNameToOptionInfoMap;
     typedef map<string, const SCommandInfo*> TCommandNameToCommandInfoMap;
     const SOptionInfo* m_SingleLetterOptions[256];
@@ -173,14 +188,17 @@ struct SCommandLineParserImpl : public CObject
     TCatIdToCategoryInfoMap m_CatIdToCatInfoMap;
     SOptionInfo m_VersionOption;
     SOptionInfo m_HelpOption;
-    SOptionInfo m_CommandOption;
-    SCommandInfo m_HelpCommand;
+
+    bool CommandsAreDefined() const
+    {
+        return !m_CommandNameToCommandInfoMap.empty();
+    }
 
     // Parsing results.
-    typedef pair<const SOptionInfo*, const char*> TOptionParameter;
-    typedef list<TOptionParameter> TOptionList;
-    TOptionList m_Options;
-    TOptionList::const_iterator m_NextOption;
+    typedef pair<const SOptionInfo*, const char*> TOptionValue;
+    typedef list<TOptionValue> TOptionValues;
+    TOptionValues m_OptionValues;
+    TOptionValues::const_iterator m_NextOptionValue;
 
     // Help text formatting.
     int m_MaxHelpTextWidth;
@@ -193,19 +211,16 @@ static const string s_Version("version");
 
 SCommandLineParserImpl::SCommandLineParserImpl(
         const string& program_name,
-        const string& program_version,
-        const string& program_description) :
+        const string& program_summary,
+        const string& program_description,
+        const string& program_version) :
+    SCommonParts(program_summary, program_description),
     m_ProgramName(program_name),
     m_ProgramVersion(program_version),
-    m_ProgramDescription(program_description),
     m_VersionOption(VERSION_OPT_ID, s_Version,
         CCommandLineParser::eSwitch, kEmptyStr),
     m_HelpOption(HELP_OPT_ID, s_Help,
         CCommandLineParser::eSwitch, kEmptyStr),
-    m_CommandOption(COMMAND_OPT_ID, "COMMAND",
-        CCommandLineParser::eZeroOrMorePositional, kEmptyStr),
-    m_HelpCommand(HELP_CMD_ID, s_Help,
-        "Describe the usage of this program or its commands.", kEmptyStr),
     m_MaxHelpTextWidth(DEFAULT_HELP_TEXT_WIDTH),
     m_CmdDescrIndent(DEFAULT_CMD_DESCR_INDENT),
     m_OptDescrIndent(DEFAULT_OPT_DESCR_INDENT)
@@ -213,8 +228,6 @@ SCommandLineParserImpl::SCommandLineParserImpl(
     memset(m_SingleLetterOptions, 0, sizeof(m_SingleLetterOptions));
     m_OptionToOptInfoMap[s_Version] = &m_VersionOption;
     m_OptionToOptInfoMap[s_Help] = &m_HelpOption;
-    m_HelpCommand.m_PositionalArguments.push_back(&m_CommandOption);
-    m_CommandNameToCommandInfoMap[s_Help] = &m_HelpCommand;
     m_CatIdToCatInfoMap[UNSPECIFIED_CATEGORY_ID] =
         new SCategoryInfo("Available commands");
 }
@@ -282,18 +295,36 @@ void SCommandLineParserImpl::PrintWordWrapped(int topic_len,
     } while ((line = next_line) < text_end);
 }
 
-void SCommandLineParserImpl::Help() const
+void SCommandLineParserImpl::Help(const TPositionalArgumentList& commands,
+    bool using_help_command) const
 {
-    if (m_Options.empty()) {
+    ITERATE(TOptionValues, option_value, m_OptionValues)
+        if (option_value->first->m_Id != HELP_OPT_ID) {
+            string opt_name(option_value->first->GetNameVariants());
+            if (using_help_command)
+                Throw("command 'help' doesn't accept option '" +
+                    opt_name + "'", s_Help);
+            else
+                Throw("'--help' cannot be combined with option '" +
+                    opt_name + "'", "--help");
+        }
+
+    if (!CommandsAreDefined())
+        HelpOnCommand(this, m_ProgramName, m_ProgramName);
+    else if (commands.empty()) {
         printf("Usage: %s <command> [options] [args]\n", m_ProgramName.c_str());
-        PrintWordWrapped(0, 0, m_ProgramDescription);
+        PrintWordWrapped(0, 0, m_Synopsis);
         printf("Type '%s help <command>' for help on a specific command.\n"
             "Type '%s --version' to see the program version.\n",
             m_ProgramName.c_str(), m_ProgramName.c_str());
+        if (!m_Usage.empty()) {
+            printf("\n");
+            PrintWordWrapped(0, 0, m_Usage);
+        }
         ITERATE(TCatIdToCategoryInfoMap, category, m_CatIdToCatInfoMap) {
             if (!category->second->m_Commands.empty()) {
                 printf("\n%s:\n\n", category->second->m_Title.c_str());
-                ITERATE(TCommandList, cmd, category->second->m_Commands)
+                ITERATE(TCommandInfoList, cmd, category->second->m_Commands)
                     PrintWordWrapped(printf("  %s",
                             (*cmd)->GetNameVariants().c_str()),
                         m_CmdDescrIndent - 2, "- " + (*cmd)->m_Synopsis,
@@ -302,69 +333,84 @@ void SCommandLineParserImpl::Help() const
         }
         printf("\n");
     } else {
-        ITERATE(TOptionList, cmd_name, m_Options) {
+        SCommandInfo help_command(HELP_CMD_ID, s_Help,
+           "Describe the usage of this program or its commands.", kEmptyStr);
+        SOptionInfo command_arg(COMMAND_OPT_ID, "COMMAND",
+            CCommandLineParser::eZeroOrMorePositional, kEmptyStr);
+        help_command.m_PositionalArguments.push_back(&command_arg);
+
+        ITERATE(TPositionalArgumentList, cmd_name, commands) {
+            const SCommandInfo* command_info;
             TCommandNameToCommandInfoMap::const_iterator cmd =
-                m_CommandNameToCommandInfoMap.find(cmd_name->second);
-            if (cmd == m_CommandNameToCommandInfoMap.end()) {
-                printf("'%s': unknown command.\n\n", cmd_name->second);
+                m_CommandNameToCommandInfoMap.find(*cmd_name);
+            if (cmd != m_CommandNameToCommandInfoMap.end())
+                command_info = cmd->second;
+            else if (*cmd_name == s_Help)
+                command_info = &help_command;
+            else {
+                printf("'%s': unknown command.\n\n", *cmd_name);
                 continue;
             }
 
-            const SCommandInfo* command_info = cmd->second;
-            string command_name(command_info->GetNameVariants());
-            PrintWordWrapped(printf("%s:", command_name.c_str()),
-                int(command_name.length() + 2), command_info->m_Synopsis);
-            printf("\n");
-
-            string args;
-            ITERATE(TOptionInfoList, arg, command_info->m_PositionalArguments) {
-                if (!args.empty())
-                    args.push_back(' ');
-                switch ((*arg)->m_Type) {
-                case CCommandLineParser::ePositionalArgument:
-                    args.append((*arg)->GetPrimaryName());
-                    break;
-                case CCommandLineParser::eOptionalPositional:
-                    args.push_back('[');
-                    args.append((*arg)->GetPrimaryName());
-                    args.push_back(']');
-                    break;
-                case CCommandLineParser::eZeroOrMorePositional:
-                    args.push_back('[');
-                    args.append((*arg)->GetPrimaryName());
-                    args.append("...]");
-                    break;
-                default: // always CCommandLineParser::eOneOrMorePositional
-                    args.append((*arg)->GetPrimaryName());
-                    args.append("...");
-                }
-            }
-            int usage_len = printf("Usage: %s %s",
-                m_ProgramName.c_str(), command_info->GetPrimaryName().c_str());
-            PrintWordWrapped(usage_len, usage_len + 1, args);
-
-            if (!command_info->m_Usage.empty()) {
-                printf("\n");
-                PrintWordWrapped(0, 0, command_info->m_Usage);
-            }
-
-            if (!command_info->m_AcceptedOptions.empty()) {
-                printf("\nValid options:\n");
-                ITERATE(TOptionInfoList, opt, command_info->m_AcceptedOptions)
-                    PrintWordWrapped(printf("  %-*s :", m_OptDescrIndent - 5,
-                        (*opt)->GetNameVariants().c_str()),
-                            m_OptDescrIndent, (*opt)->m_Description);
-            }
-            printf("\n");
+            HelpOnCommand(command_info, command_info->GetNameVariants(),
+                m_ProgramName + ' ' + command_info->GetPrimaryName());
         }
     }
 }
 
-void SCommandLineParserImpl::Throw(const string& error, const string& cmd)
+void SCommandLineParserImpl::HelpOnCommand(const SCommonParts* common_parts,
+    const string& name_for_synopsis, const string& name_for_usage) const
+{
+    int text_len = printf("%s:", name_for_synopsis.c_str());
+    PrintWordWrapped(text_len, text_len + 1, common_parts->m_Synopsis);
+    printf("\n");
+
+    string args;
+    ITERATE(TOptionInfoList, arg, common_parts->m_PositionalArguments) {
+        if (!args.empty())
+            args.push_back(' ');
+        switch ((*arg)->m_Type) {
+        case CCommandLineParser::ePositionalArgument:
+            args.append((*arg)->GetPrimaryName());
+            break;
+        case CCommandLineParser::eOptionalPositional:
+            args.push_back('[');
+            args.append((*arg)->GetPrimaryName());
+            args.push_back(']');
+            break;
+        case CCommandLineParser::eZeroOrMorePositional:
+            args.push_back('[');
+            args.append((*arg)->GetPrimaryName());
+            args.append("...]");
+            break;
+        default: // always CCommandLineParser::eOneOrMorePositional
+            args.append((*arg)->GetPrimaryName());
+            args.append("...");
+        }
+    }
+    text_len = printf("Usage: %s", name_for_usage.c_str());
+    PrintWordWrapped(text_len, text_len + 1, args);
+
+    if (!common_parts->m_Usage.empty()) {
+        printf("\n");
+        PrintWordWrapped(0, 0, common_parts->m_Usage);
+    }
+
+    if (!common_parts->m_AcceptedOptions.empty()) {
+        printf("\nValid options:\n");
+        ITERATE(TOptionInfoList, opt, common_parts->m_AcceptedOptions)
+            PrintWordWrapped(printf("  %-*s :", m_OptDescrIndent - 5,
+                (*opt)->GetNameVariants().c_str()),
+                    m_OptDescrIndent, (*opt)->m_Description);
+    }
+    printf("\n");
+}
+
+void SCommandLineParserImpl::Throw(const string& error, const string& cmd) const
 {
     string message(kEmptyStr);
     if (error.empty())
-        message.append(m_ProgramDescription);
+        message.append(m_Synopsis);
     else {
         message.append(m_ProgramName);
         message.append(": ");
@@ -372,7 +418,10 @@ void SCommandLineParserImpl::Throw(const string& error, const string& cmd)
     }
     message.append("\nType '");
     message.append(m_ProgramName);
-    if (cmd.empty())
+
+    if (!CommandsAreDefined())
+        message.append(" --help' for usage.\n");
+    else if (cmd.empty())
         message.append(" help' for usage.\n");
     else {
         message.append(" help ");
@@ -391,7 +440,6 @@ int SCommandLineParserImpl::ParseAndValidate(int argc, const char* const *argv)
             m_ProgramName = m_ProgramName.substr(basename_pos + 1);
     }
 
-    typedef list<const char*> TPositionalArgumentList;
     TPositionalArgumentList positional_arguments;
 
     // Part one: parsing.
@@ -474,81 +522,106 @@ int SCommandLineParserImpl::ParseAndValidate(int argc, const char* const *argv)
                         break;
                     }
 
-                    m_Options.push_back(TOptionParameter(
+                    m_OptionValues.push_back(TOptionValue(
                         option_info, opt_param));
                 }
             }
 
-            m_Options.push_back(TOptionParameter(option_info, opt_param));
+            m_OptionValues.push_back(TOptionValue(option_info, opt_param));
         }
     }
 
     // Part two: validation.
-    TOptionList::iterator option(m_Options.begin());
-    while (option != m_Options.end())
-        switch (option->first->m_Id) {
+    TOptionValues::iterator option_value(m_OptionValues.begin());
+    while (option_value != m_OptionValues.end())
+        switch (option_value->first->m_Id) {
         case VERSION_OPT_ID:
-            printf("%s version %s\n", m_ProgramName.c_str(),
-                m_ProgramVersion.c_str());
+            {
+                CNcbiApplication* app = CNcbiApplication::Instance();
+                if (app != NULL)
+                    fputs(app->GetFullVersion().Print(
+                        m_ProgramName, CVersion::fVersionInfo |
+                            CVersion::fPackageShort).c_str(), stdout);
+                else
+                    printf("%s version %s\n", m_ProgramName.c_str(),
+                        m_ProgramVersion.c_str());
+            }
             return HELP_CMD_ID;
 
         case HELP_OPT_ID:
-            positional_arguments.push_front("help");
-            m_Options.erase(option++);
-            break;
+            m_OptionValues.erase(option_value++);
+            Help(positional_arguments, false);
+            return HELP_CMD_ID;
 
         default:
-            ++option;
+            ++option_value;
         }
 
-    if (positional_arguments.empty())
-        Throw(!m_Options.empty() ? "a command is required" : kEmptyStr);
+    string command_name;
+    const TOptionInfoList* expected_positional_arguments;
+    int ret_val;
 
-    string command_name(positional_arguments.front());
-    positional_arguments.pop_front();
+    if (!CommandsAreDefined()) {
+        expected_positional_arguments = &m_PositionalArguments;
+        ret_val = 0;
+    } else {
+        if (positional_arguments.empty())
+            Throw(m_OptionValues.empty() ? kEmptyStr : "a command is required");
 
-    TCommandNameToCommandInfoMap::const_iterator command =
-        m_CommandNameToCommandInfoMap.find(command_name);
+        command_name = positional_arguments.front();
+        positional_arguments.pop_front();
 
-    if (command == m_CommandNameToCommandInfoMap.end())
-        Throw("unknown command '" + command_name + "'");
+        TCommandNameToCommandInfoMap::const_iterator command =
+            m_CommandNameToCommandInfoMap.find(command_name);
 
-    const SCommandInfo* command_info = command->second;
+        if (command == m_CommandNameToCommandInfoMap.end()) {
+            if (command_name == s_Help) {
+                Help(positional_arguments, true);
+                return HELP_CMD_ID;
+            }
+            Throw("unknown command '" + command_name + "'");
+        }
 
-    for (option = m_Options.begin(); option != m_Options.end(); ++option)
-        if (find(command_info->m_AcceptedOptions.begin(),
-                command_info->m_AcceptedOptions.end(), option->first) ==
+        const SCommandInfo* command_info = command->second;
+
+        ITERATE(TOptionValues, option_value, m_OptionValues)
+            if (find(command_info->m_AcceptedOptions.begin(),
+                command_info->m_AcceptedOptions.end(), option_value->first) ==
                     command_info->m_AcceptedOptions.end())
-            Throw("command '" + command_name + "' doesn't accept option '" +
-                option->first->GetNameVariants() + "'", command_name);
+                Throw("command '" + command_name + "' doesn't accept option '" +
+                        option_value->first->GetNameVariants() + "'",
+                            command_name);
+
+        expected_positional_arguments = &command_info->m_PositionalArguments;
+        ret_val = command_info->m_Id;
+    }
 
     TPositionalArgumentList::const_iterator arg_value =
         positional_arguments.begin();
     TOptionInfoList::const_iterator expected_arg =
-        command_info->m_PositionalArguments.begin();
+        expected_positional_arguments->begin();
 
     for (;;) {
-        if (expected_arg != command_info->m_PositionalArguments.end())
+        if (expected_arg != expected_positional_arguments->end())
             if (arg_value == positional_arguments.end())
                 switch ((*expected_arg)->m_Type) {
                 case CCommandLineParser::ePositionalArgument:
                 case CCommandLineParser::eOneOrMorePositional:
                     Throw("missing argument '" +
-                        (*expected_arg)->GetPrimaryName() + "'",
-                            command_info->GetPrimaryName());
+                        (*expected_arg)->GetPrimaryName() + "'", command_name);
                 }
             else
                 switch ((*expected_arg)->m_Type) {
                 case CCommandLineParser::ePositionalArgument:
                 case CCommandLineParser::eOptionalPositional:
-                    m_Options.push_back(TOptionParameter(
+                    m_OptionValues.push_back(TOptionValue(
                         *expected_arg, *arg_value));
                     ++arg_value;
                     ++expected_arg;
                     continue;
                 default:
                     do
-                        m_Options.push_back(TOptionParameter(
+                        m_OptionValues.push_back(TOptionValue(
                             *expected_arg, *arg_value));
                     while (++arg_value != positional_arguments.end());
                 }
@@ -558,22 +631,18 @@ int SCommandLineParserImpl::ParseAndValidate(int argc, const char* const *argv)
         break;
     }
 
-    m_NextOption = m_Options.begin();
+    m_NextOptionValue = m_OptionValues.begin();
 
-    if (command_info->m_Id == HELP_CMD_ID) {
-        Help();
-        return HELP_CMD_ID;
-    }
-
-    return command_info->m_Id;
+    return ret_val;
 }
 
 CCommandLineParser::CCommandLineParser(
         const string& program_name,
         const string& program_version,
+        const string& program_summary,
         const string& program_description) :
     m_Impl(new SCommandLineParserImpl(
-        program_name, program_version, program_description))
+        program_name, program_summary, program_description, program_version))
 {
 }
 
@@ -598,6 +667,8 @@ void CCommandLineParser::AddOption(CCommandLineParser::EOptionType type,
     default:
         _ASSERT(option_info->m_NameVariants.size() == 1 &&
             "Positional arguments do not allow name variants");
+
+        m_Impl->m_PositionalArguments.push_back(option_info);
         break;
 
     case eSwitch:
@@ -608,6 +679,8 @@ void CCommandLineParser::AddOption(CCommandLineParser::EOptionType type,
                     (unsigned char) name->at(0)] = option_info;
             else
                 m_Impl->m_OptionToOptInfoMap[*name] = option_info;
+
+        m_Impl->m_AcceptedOptions.push_back(option_info);
     }
 }
 
@@ -679,13 +752,13 @@ const string& CCommandLineParser::GetProgramName() const
 
 bool CCommandLineParser::NextOption(int* opt_id, const char** opt_value)
 {
-    if (m_Impl->m_NextOption == m_Impl->m_Options.end())
+    if (m_Impl->m_NextOptionValue == m_Impl->m_OptionValues.end())
         return false;
 
-    *opt_id = m_Impl->m_NextOption->first->m_Id;
-    *opt_value = m_Impl->m_NextOption->second;
+    *opt_id = m_Impl->m_NextOptionValue->first->m_Id;
+    *opt_value = m_Impl->m_NextOptionValue->second;
 
-    ++m_Impl->m_NextOption;
+    ++m_Impl->m_NextOptionValue;
 
     return true;
 }

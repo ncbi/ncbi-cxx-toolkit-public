@@ -49,7 +49,8 @@ class NCBI_XCONNECT_EXPORT CCommandLineParser
     CCommandLineParser(
         const string& program_name,
         const string& program_version,
-        const string& program_description);
+        const string& program_summary,
+        const string& program_description = kEmptyStr);
 
     void SetHelpTextMargins(
         int help_text_width,
@@ -86,7 +87,8 @@ class NCBI_XCONNECT_EXPORT CCommandLineParser
 
     /// @return One of the command identifiers or -1
     ///         if a help command was requested and
-    ///         has been already processed.
+    ///         has been already processed. The caller
+    ///         must exit with return code 0.
     int Parse(int argc, const char* const *argv);
 
     const string& GetProgramName() const;
