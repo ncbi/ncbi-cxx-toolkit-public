@@ -217,6 +217,9 @@ struct SOptionDefinition {
     {CCommandLineParser::eOptionWithParameter, eProgressMessage,
         "progress-message", "Set job progress message."},
 
+    {CCommandLineParser::eSwitch, eAllJobs,
+        "all-jobs", "Apply to all jobs in the queue."},
+
     {CCommandLineParser::eSwitch, eDropJobs,
         "drop-jobs", "Delete all job records from the queue, "
             "but preserve the queue itself. This option is "
@@ -448,7 +451,7 @@ struct SCommandDefinition {
         "canceljob", "Cancel a NetSchedule job.",
         "Mark the job as canceled. This command also instructs the worker "
         "node that may be processing this job to stop the processing.",
-        {eID, eNetSchedule, eQueue, eAuth, -1}},
+        {eID, eNetSchedule, eQueue, eAllJobs, eAuth, -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_RegWNode,
         "regwnode", "Register or unregister a worker node.",

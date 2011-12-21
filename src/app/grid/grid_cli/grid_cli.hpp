@@ -117,6 +117,7 @@ enum EOption {
     eDeferExpiration,
     eExtendLifetime,
     eProgressMessage,
+    eAllJobs,
     eDropJobs,
     eRegisterWNode,
     eUnregisterWNode,

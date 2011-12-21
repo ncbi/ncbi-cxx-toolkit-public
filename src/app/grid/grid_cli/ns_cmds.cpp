@@ -789,9 +789,15 @@ int CGridCommandLineInterfaceApp::Cmd_ReadJobs()
 
 int CGridCommandLineInterfaceApp::Cmd_CancelJob()
 {
-    SetUp_NetScheduleCmd(eNetScheduleAPI);
+    if (!IsOptionSet(eAllJobs)) {
+        SetUp_NetScheduleCmd(eNetScheduleAPI);
 
-    m_NetScheduleAPI.GetSubmitter().CancelJob(m_Opts.id);
+        m_NetScheduleAPI.GetSubmitter().CancelJob(m_Opts.id);
+    } else {
+        SetUp_NetScheduleCmd(eNetScheduleAdmin);
+
+        m_NetScheduleAdmin.CancelAllJobs();
+    }
 
     return 0;
 }

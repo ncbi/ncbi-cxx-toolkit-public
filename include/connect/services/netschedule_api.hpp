@@ -662,7 +662,11 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
     ///
     void ShutdownServer(EShutdownLevel level = eNormalShutdown);
 
-    /// Kill all jobs in the queue.
+    /// Cancel all jobs in the queue.
+    ///
+    void CancelAllJobs();
+
+    /// Delete all jobs from the queue.
     ///
     void DropQueue();
 

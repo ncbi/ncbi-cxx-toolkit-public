@@ -112,6 +112,15 @@ CNetServerMultilineCmdOutput CNetScheduleAdmin::DumpJob(const string& job_key)
     return m_Impl->m_API->GetServer(job_key).ExecWithRetry("DUMP " + job_key);
 }
 
+void CNetScheduleAdmin::CancelAllJobs()
+{
+    string cmd = "CANCELQ";
+
+    for (CNetServiceIterator it =
+            m_Impl->m_API->m_Service.Iterate(); it; ++it)
+        (*it).ExecWithRetry(cmd);
+}
+
 void CNetScheduleAdmin::DropQueue()
 {
     string cmd = "DROPQ";
