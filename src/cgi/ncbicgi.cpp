@@ -500,7 +500,7 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
         if (pos_beg == NPOS)
             return; // done
 
-        SIZE_TYPE pos_mid = str.find_first_of("=;\r\n", pos_beg);
+        SIZE_TYPE pos_mid = str.find_first_of("=;,\r\n", pos_beg);
         if (pos_mid == NPOS) {
             string name = str.substr(pos_beg);
             switch ( x_CheckField(name, CCgiCookie::eField_Name,
@@ -541,14 +541,15 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
             default:
                 break;
             }
-            if (str[pos_mid] != ';'  ||  ++pos_mid == str.length())
+            if ((str[pos_mid] != ';'  &&  str[pos_mid] != ',')  ||
+                ++pos_mid == str.length())
                 return; // done
             pos = pos_mid;
             continue;
         }
         string name = str.substr(pos_beg, pos_mid - pos_beg);
         bool quoted_value = false;
-        SIZE_TYPE pos_end = str.find(';', pos_mid);
+        SIZE_TYPE pos_end = str.find_first_of(";,", pos_mid);
         // Check for quoted value
         if (pos_mid + 1 < str.length()  &&  str[pos_mid + 1] == '"') {
             quoted_value = true;
@@ -561,7 +562,7 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
             bool valid_quotes = (pos_q != NPOS);
             string msg;
             if (valid_quotes) {
-                pos_end = str.find(';', pos_q + 1);
+                pos_end = str.find_first_of(";,", pos_q + 1);
                 size_t val_end = pos_end;
                 if (val_end == NPOS) {
                     val_end = str.size();
@@ -625,7 +626,7 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
         ECheckResult valid_name = x_CheckField(name, CCgiCookie::eField_Name,
             banned_symbols, on_bad_cookie);
         ECheckResult valid_value = quoted_value ? eCheck_Valid :
-            x_CheckField(val, CCgiCookie::eField_Value, ";",
+            x_CheckField(val, CCgiCookie::eField_Value, ";,",
             on_bad_cookie, &name);
         if ( valid_name == eCheck_Valid  &&  valid_value == eCheck_Valid ) {
             Add(need_decode ? NStr::URLDecode(name, dec_flag) : name,
