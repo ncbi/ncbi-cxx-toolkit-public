@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
 
 //////////////////////////////////////////////////////////////////////////////
 static void s_SerializeJob(string& cmd, const CNetScheduleJob& job,
-    unsigned short udp_port, unsigned wait_time, string& aff_prev)
+    unsigned short udp_port, unsigned wait_time)
 {
     cmd.append("\"");
     string ps_input = NStr::PrintableString(job.input);
@@ -69,14 +69,9 @@ static void s_SerializeJob(string& cmd, const CNetScheduleJob& job,
     }
 
     if (!job.affinity.empty()) {
-        if (job.affinity == aff_prev) { // exactly same affinity(sorted jobs)
-            cmd.append(" affp");
-        } else{
-            cmd.append(" aff=\"");
-            cmd.append(NStr::PrintableString(job.affinity));
-            cmd.append("\"");
-            aff_prev = job.affinity;
-        }
+        cmd.append(" aff=\"");
+        cmd.append(NStr::PrintableString(job.affinity));
+        cmd.append("\"");
     }
 
     if (job.mask != CNetScheduleAPI::eEmptyMask) {
@@ -139,8 +134,7 @@ string SNetScheduleSubmitterImpl::SubmitJobImpl(CNetScheduleJob& job,
 
     string cmd = "SUBMIT ";
 
-    string aff_prev;
-    s_SerializeJob(cmd, job, udp_port, wait_time, aff_prev);
+    s_SerializeJob(cmd, job, udp_port, wait_time);
 
     s_AppendClientIPAndSessionID(cmd);
 
@@ -192,10 +186,9 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs)
         exec_result.conn->WriteLine(cmd);
 
         unsigned batch_start = i;
-        string aff_prev;
         for (unsigned j = 0; j < batch_size; ++j,++i) {
             cmd.erase();
-            s_SerializeJob(cmd, jobs[i], 0, 0, aff_prev);
+            s_SerializeJob(cmd, jobs[i], 0, 0);
 
             exec_result.conn->WriteLine(cmd);
         }
