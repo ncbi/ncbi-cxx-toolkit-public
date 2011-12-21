@@ -114,8 +114,8 @@ public:
         /// buffer processing can be started now by calling SetNewBuffer().
         eEndOfBuffer,
 
-        /// Indicate a format error in the input stream. It is advisable to
-        /// stop processing upon recieving this event. A subsequent call to
+        /// Indicate a format error in the input stream. It is advised to
+        /// stop processing upon receiving this event. A subsequent call to
         /// GetChunkPart() will return the position in the input buffer at
         /// which the error has occured. A call to GetChunkPartSize() will
         /// return the accumulated length of the expected chunk, if any.
@@ -176,7 +176,7 @@ public:
     const char* GetChunkPart() const;
 
     /// Return the size of the buffer returned by the GetChunkPart() method.
-    /// The returned value is only value after a successful call to the
+    /// The returned value is only valid after a successful call to the
     /// GetNextEvent() method.
     /// @return
     ///   Size of the buffer returned by a call to the GetChunkPart() method.
