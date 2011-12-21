@@ -41,15 +41,17 @@ BEGIN_NCBI_SCOPE
 
 #define HELP_CMD_ID -1
 
+#define UNSPECIFIED_CATEGORY_ID -1
+
 #define DEFAULT_HELP_TEXT_WIDTH 72
 #define DEFAULT_CMD_DESCR_INDENT 24
 #define DEFAULT_OPT_DESCR_INDENT 32
 
 typedef list<string> TNameVariantList;
 
-struct SOptionOrCommand : public CObject
+struct SOptionOrCommandInfo : public CObject
 {
-    SOptionOrCommand(int id, const string& name_variants) : m_Id(id)
+    SOptionOrCommandInfo(int id, const string& name_variants) : m_Id(id)
     {
         NStr::Split(name_variants, "|", m_NameVariants);
     }
@@ -60,12 +62,12 @@ struct SOptionOrCommand : public CObject
     TNameVariantList m_NameVariants;
 };
 
-struct SOptionInfo : public SOptionOrCommand
+struct SOptionInfo : public SOptionOrCommandInfo
 {
     SOptionInfo(int opt_id, const string& name_variants,
             CCommandLineParser::EOptionType type,
             const string& description) :
-        SOptionOrCommand(opt_id, name_variants),
+        SOptionOrCommandInfo(opt_id, name_variants),
         m_Type(type),
         m_Description(description)
     {
@@ -100,11 +102,11 @@ struct SOptionInfo : public SOptionOrCommand
 
 typedef list<const SOptionInfo*> TOptionInfoList;
 
-struct SCommandInfo : public SOptionOrCommand
+struct SCommandInfo : public SOptionOrCommandInfo
 {
     SCommandInfo(int cmd_id, const string& name_variants,
             const string& synopsis, const string& usage) :
-        SOptionOrCommand(cmd_id, name_variants),
+        SOptionOrCommandInfo(cmd_id, name_variants),
         m_Synopsis(synopsis),
         m_Usage(usage)
     {
@@ -133,6 +135,16 @@ struct SCommandInfo : public SOptionOrCommand
     TOptionInfoList m_AcceptedOptions;
 };
 
+typedef list<const SCommandInfo*> TCommandList;
+
+struct SCategoryInfo : public CObject
+{
+    SCategoryInfo(const string& title) : m_Title(title) {}
+
+    string m_Title;
+    TCommandList m_Commands;
+};
+
 struct SCommandLineParserImpl : public CObject
 {
     SCommandLineParserImpl(
@@ -150,15 +162,15 @@ struct SCommandLineParserImpl : public CObject
     string m_ProgramName;
     string m_ProgramVersion;
     string m_ProgramDescription;
-    typedef list<const SCommandInfo*> TCommandList;
     typedef map<string, const SOptionInfo*> TOptionNameToOptionInfoMap;
     typedef map<string, const SCommandInfo*> TCommandNameToCommandInfoMap;
-    TCommandList m_Commands;
     const SOptionInfo* m_SingleLetterOptions[256];
     TOptionNameToOptionInfoMap m_OptionToOptInfoMap;
     map<int, CRef<SOptionInfo> > m_OptIdToOptionInfoMap;
     TCommandNameToCommandInfoMap m_CommandNameToCommandInfoMap;
     map<int, CRef<SCommandInfo> > m_CmdIdToCommandInfoMap;
+    typedef map<int, CRef<SCategoryInfo> > TCatIdToCategoryInfoMap;
+    TCatIdToCategoryInfoMap m_CatIdToCatInfoMap;
     SOptionInfo m_VersionOption;
     SOptionInfo m_HelpOption;
     SOptionInfo m_CommandOption;
@@ -203,6 +215,8 @@ SCommandLineParserImpl::SCommandLineParserImpl(
     m_OptionToOptInfoMap[s_Help] = &m_HelpOption;
     m_HelpCommand.m_PositionalArguments.push_back(&m_CommandOption);
     m_CommandNameToCommandInfoMap[s_Help] = &m_HelpCommand;
+    m_CatIdToCatInfoMap[UNSPECIFIED_CATEGORY_ID] =
+        new SCategoryInfo("Available commands");
 }
 
 void SCommandLineParserImpl::PrintWordWrapped(int topic_len,
@@ -274,15 +288,18 @@ void SCommandLineParserImpl::Help() const
         printf("Usage: %s <command> [options] [args]\n", m_ProgramName.c_str());
         PrintWordWrapped(0, 0, m_ProgramDescription);
         printf("Type '%s help <command>' for help on a specific command.\n"
-            "Type '%s --version' to see the program version.\n\n"
-            "Available commands:\n\n",
+            "Type '%s --version' to see the program version.\n",
             m_ProgramName.c_str(), m_ProgramName.c_str());
-        ITERATE(TCommandList, cmd, m_Commands)
-            PrintWordWrapped(printf("  %s", (*cmd)->GetNameVariants().c_str()),
-                m_CmdDescrIndent - 2, "- " + (*cmd)->m_Synopsis,
-                m_CmdDescrIndent);
-        PrintWordWrapped(printf("  help"), m_CmdDescrIndent - 2,
-            "- " + m_HelpCommand.m_Synopsis, m_CmdDescrIndent);
+        ITERATE(TCatIdToCategoryInfoMap, category, m_CatIdToCatInfoMap) {
+            if (!category->second->m_Commands.empty()) {
+                printf("\n%s:\n\n", category->second->m_Title.c_str());
+                ITERATE(TCommandList, cmd, category->second->m_Commands)
+                    PrintWordWrapped(printf("  %s",
+                            (*cmd)->GetNameVariants().c_str()),
+                        m_CmdDescrIndent - 2, "- " + (*cmd)->m_Synopsis,
+                        m_CmdDescrIndent);
+            }
+        }
         printf("\n");
     } else {
         ITERATE(TOptionList, cmd_name, m_Options) {
@@ -594,16 +611,27 @@ void CCommandLineParser::AddOption(CCommandLineParser::EOptionType type,
     }
 }
 
-void CCommandLineParser::AddCommand(int cmd_id,
-    const string& name_variants, const string& synopsis, const string& usage)
+void CCommandLineParser::AddCommandCategory(int cat_id, const string& title)
+{
+    _ASSERT(cat_id >= 0 && m_Impl->m_CatIdToCatInfoMap.find(cat_id) ==
+        m_Impl->m_CatIdToCatInfoMap.end() && "Category IDs must be unique");
+
+    m_Impl->m_CatIdToCatInfoMap[cat_id] = new SCategoryInfo(title);
+}
+
+void CCommandLineParser::AddCommand(int cmd_id, const string& name_variants,
+    const string& synopsis, const string& usage, int cat_id)
 {
     _ASSERT(cmd_id >= 0 && m_Impl->m_CmdIdToCommandInfoMap.find(cmd_id) ==
         m_Impl->m_CmdIdToCommandInfoMap.end() && "Command IDs must be unique");
 
+    _ASSERT(m_Impl->m_CatIdToCatInfoMap.find(cat_id) !=
+        m_Impl->m_CatIdToCatInfoMap.end() && "No such category ID");
+
     SCommandInfo* command_info = m_Impl->m_CmdIdToCommandInfoMap[cmd_id] =
         new SCommandInfo(cmd_id, name_variants, synopsis, usage);
 
-    m_Impl->m_Commands.push_back(command_info);
+    m_Impl->m_CatIdToCatInfoMap[cat_id]->m_Commands.push_back(command_info);
 
     ITERATE(TNameVariantList, name, command_info->m_NameVariants)
         m_Impl->m_CommandNameToCommandInfoMap[*name] = command_info;

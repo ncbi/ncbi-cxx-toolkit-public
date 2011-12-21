@@ -71,11 +71,16 @@ class NCBI_XCONNECT_EXPORT CCommandLineParser
         const string& name_variants,
         const string& description);
 
+    void AddCommandCategory(
+        int cat_id,
+        const string& title);
+
     void AddCommand(
         int cmd_id,
         const string& name_variants,
         const string& synopsis,
-        const string& usage);
+        const string& usage,
+        int cat_id = -1);
 
     void AddAssociation(int cmd_id, int opt_id);
 
