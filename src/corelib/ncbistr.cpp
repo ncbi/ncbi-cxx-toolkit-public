@@ -2705,7 +2705,9 @@ const char* NStr::ParseDoubleQuoted(
     out.reserve(str_end - str - 2);
     out.erase();
 
-    while (++str < str_end)
+    ++str;
+
+    while (str < str_end) {
         if (*str == '"')
             return str + 1;
         else if (*str != '\\')
@@ -2714,6 +2716,27 @@ const char* NStr::ParseDoubleQuoted(
             if (++str == str_end)
                 return NULL;
             switch (*str) {
+            case '\n':
+                break;
+
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+                {{
+                    int max_octal_digits = 3;
+                    unsigned char ch = (unsigned char) *str - '0';
+                    while (++str < str_end && --max_octal_digits > 0 &&
+                            *str >= '0' && *str <= '7')
+                        ch = (ch << 3) | ((unsigned char) *str - '0');
+                    out += ch;
+                }}
+                continue;
+
             case 'a':
                 out += '\a';
                 break;
@@ -2737,25 +2760,26 @@ const char* NStr::ParseDoubleQuoted(
                 break;
 
             case 'x':
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-                _ASSERT(0);
-
-            case '\n':
-                break;
+                {{
+                    const char* hex = ++str;
+                    while (str < str_end && isxdigit((unsigned char) *str))
+                        ++str;
+                    if (str == hex)
+                        // No hexadecimal digits after \x.
+                        return NULL;
+                    out += char(StringToUInt(
+                        CTempString(hex, str - hex), 0, 16));
+                }}
+                continue;
 
             default:
                 out += *str;
             }
         }
+        ++str;
+    }
 
-        return false;
+    return NULL;
 }
 
 
