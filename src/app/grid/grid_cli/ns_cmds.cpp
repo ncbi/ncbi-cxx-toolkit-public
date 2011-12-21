@@ -256,7 +256,7 @@ bool CGridCommandLineInterfaceApp::ParseAndPrintJobEvents(const string& line)
 
     while (*++event_info >= '0' && *event_info <= '9')
         ;
-    printf("[%.*s]\n", event_info - line.data(), line.data());
+    printf("[%.*s]\n", int(event_info - line.data()), line.data());
     if (*event_info != ':')
         return false;
     ++event_info;
@@ -270,12 +270,12 @@ bool CGridCommandLineInterfaceApp::ParseAndPrintJobEvents(const string& line)
         for (;;)
             if ((next_attr_type = attr_parser.NextAttribute(attr_name,
                     attr_value)) == CAttrListParser::eAttributeWithValue)
-                printf("    %.*s: %s\n", attr_name.length(), attr_name.data(),
-                    attr_value.c_str());
+                printf("    %.*s: %s\n", int(attr_name.length()),
+                    attr_name.data(), attr_value.c_str());
             else if (next_attr_type == CAttrListParser::eNoMoreAttributes)
                 break;
             else // CAttrListParser::eStandAloneAttribute
-                printf("    %.*s\n", attr_name.length(), attr_name.data());
+                printf("    %.*s\n", int(attr_name.length()), attr_name.data());
     }
     catch (CArgException&) {
         return false;
