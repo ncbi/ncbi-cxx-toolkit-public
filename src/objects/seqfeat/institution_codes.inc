@@ -4546,6 +4546,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "PCU<THA>	c	Department of Microbiology, Faculty of Pharmaceutical Sciences",
 "PD	c	Dutch Plant Protection Service, Culture Collection of Plant Pathogenic Bacteria",
 "PDA	s	Royal Botanic Gardens, Department of Agriculture",
+"PDBK<KOR>	b	Plant DNA Bank in Korea",
 "PDD	s	New Zealand Fungal Herbarium",
 "PDTFAU	s	Paleoantropoloji Dil ve Tarih Cografya Facueltesi",
 "PE	s	Institute of Botany, Chinese Academy of Sciences",
