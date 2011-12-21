@@ -136,6 +136,8 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::OnError(
         if (n_code != CException::eInvalid) {
             NCBI_THROW(CNetScheduleException, EErrCode(n_code), msg);
         }
+    } else if (err_msg == "Job not found") {
+        NCBI_THROW(CNetScheduleException, eJobNotFound, msg);
     }
     NCBI_THROW(CNetServiceException, eCommunicationError, err_msg);
 }

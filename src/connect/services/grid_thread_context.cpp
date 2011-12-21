@@ -264,6 +264,18 @@ void CGridThreadContext::PutFailure()
     m_JobContext->GetWorkerNode().x_NotifyJobWatcher(*m_JobContext,
         IWorkerNodeJobWatcher::eJobFailed);
 }
+
+void CGridThreadContext::PutFailureAndIgnoreErrors(const char* error_message)
+{
+    try {
+        m_JobContext->m_Job.error_msg = error_message;
+        PutFailure();
+    } catch (exception& e) {
+        ERR_POST_X(19, "Failed to report exception: " <<
+            m_JobContext->GetJobKey() << " " << e.what());
+    }
+}
+
 bool CGridThreadContext::IsJobCanceled()
 {
     _ASSERT(m_JobContext);

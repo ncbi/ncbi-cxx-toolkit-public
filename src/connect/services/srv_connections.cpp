@@ -159,6 +159,21 @@ void SNetServerConnectionImpl::ReadCmdOutputLine(string& result)
 
     if (NStr::StartsWith(result, "OK:")) {
         result.erase(0, sizeof("OK:") - 1);
+        if (NStr::StartsWith(result, "WARNING:")) {
+            string::size_type semicolon_pos =
+                result.find(';', sizeof("WARNING:") - 1);
+            if (semicolon_pos != string::npos) {
+                LOG_POST(Warning <<
+                    string(result.begin() + sizeof("WARNING:") - 1,
+                        result.begin() + semicolon_pos));
+                result.erase(0, semicolon_pos + 1);
+            } else {
+                LOG_POST(Warning <<
+                    string(result.begin() + sizeof("WARNING:") - 1,
+                        result.end()));
+                result.clear();
+            }
+        }
     } else if (NStr::StartsWith(result, "ERR:")) {
         result.erase(0, sizeof("ERR:") - 1);
         result = NStr::ParseEscapes(result);

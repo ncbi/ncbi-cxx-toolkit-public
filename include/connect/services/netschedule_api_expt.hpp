@@ -72,6 +72,7 @@ public:
         eProtocolSyntaxError,
         eAuthenticationError,
         eKeyFormatError,
+        eJobNotFound,
         eInvalidJobStatus,
         eUnknownQueue,
         eUnknownQueueClass,
@@ -94,6 +95,7 @@ public:
         case eProtocolSyntaxError: return "eProtocolSyntaxError";
         case eAuthenticationError: return "eAuthenticationError";
         case eKeyFormatError:      return "eKeyFormatError";
+        case eJobNotFound:         return "eJobNotFound";
         case eInvalidJobStatus:    return "eInvalidJobStatus";
         case eUnknownQueue:        return "eUnknownQueue";
         case eUnknownQueueClass:   return "eUnknownQueueClass";

@@ -60,6 +60,7 @@ public:
     bool PutResult(CNetScheduleJob& new_job);
     void ReturnJob();
     void PutFailure();
+    void PutFailureAndIgnoreErrors(const char* error_message);
     bool IsJobCanceled();
 
     IWorkerNodeJob* GetJob();

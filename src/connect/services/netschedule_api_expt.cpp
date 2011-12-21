@@ -43,6 +43,7 @@ CNetScheduleExceptionMap::CNetScheduleExceptionMap()
     m_Map["eProtocolSyntaxError"] = CNetScheduleException::eProtocolSyntaxError;
     m_Map["eAuthenticationError"] = CNetScheduleException::eAuthenticationError;
     m_Map["eKeyFormatError"]      = CNetScheduleException::eKeyFormatError;
+    m_Map["eJobNotFound"]         = CNetScheduleException::eJobNotFound;
     m_Map["eInvalidJobStatus"]    = CNetScheduleException::eInvalidJobStatus;
     m_Map["eUnknownQueue"]        = CNetScheduleException::eUnknownQueue;
     m_Map["eUnknownQueueClass"]   = CNetScheduleException::eUnknownQueueClass;
