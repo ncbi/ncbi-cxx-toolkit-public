@@ -621,16 +621,21 @@ public:
             CObjectCounterLocker::UnlockRelease(cobject);
         }
 
+#ifdef NCBI_OBJECT_LOCKER_INLINE
+    void TransferLock(const Interface* /*object*/,
+                      const CInterfaceObjectLocker<Interface>& /*old_locker*/) const
+        {
+        }
+#else
+    // only non-inline method does something
     void TransferLock(const Interface* object,
                       const CInterfaceObjectLocker<Interface>& old_locker) const
         {
-            // only non-inline method does something
-#ifndef NCBI_OBJECT_LOCKER_INLINE
             const CObject* cobject = dynamic_cast<const CObject*>(object);
             _ASSERT(cobject);
             CObjectCounterLocker::TransferLock(cobject, old_locker);
-#endif
         }
+#endif
 };
 
 
