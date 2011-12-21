@@ -43,9 +43,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 
-#include "cleanupp.hpp"
 #include "newcleanupp.hpp"
-
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
