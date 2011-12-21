@@ -158,6 +158,132 @@ bool CGridCommandLineInterfaceApp::MatchPrefixAndPrintStorageTypeAndData(
     return true;
 }
 
+class CAttrListParser
+{
+public:
+    enum ENextAttributeType {
+        eAttributeWithValue,
+        eStandAloneAttribute,
+        eNoMoreAttributes
+    };
+
+    void Reset(const char* position) {m_Position = position;}
+
+    ENextAttributeType NextAttribute(CTempString& attr_name,
+        string& attr_value);
+
+private:
+    const char* m_Position;
+};
+
+CAttrListParser::ENextAttributeType CAttrListParser::NextAttribute(
+    CTempString& attr_name, string& attr_value)
+{
+    while (isspace(*m_Position))
+        ++m_Position;
+
+    if (*m_Position == '\0')
+        return eNoMoreAttributes;
+
+    const char* start_pos = m_Position;
+
+    for (;;)
+        if (*m_Position == '=') {
+            attr_name.assign(start_pos, m_Position - start_pos);
+            break;
+        } else if (isspace(*m_Position)) {
+            attr_name.assign(start_pos, m_Position - start_pos);
+            while (isspace(*++m_Position))
+                ;
+            if (*m_Position == '=')
+                break;
+            else
+                return eStandAloneAttribute;
+        } else if (*++m_Position == '\0') {
+            attr_name.assign(start_pos, m_Position - start_pos);
+            return eStandAloneAttribute;
+        }
+
+    // Skip the equals sign and the spaces that may follow it.
+    while (isspace(*++m_Position))
+        ;
+
+    start_pos = m_Position;
+    char quotation_mark;
+
+    switch (*m_Position) {
+    case '\0':
+        NCBI_THROW_FMT(CArgException, eInvalidArg, PROGRAM_NAME
+            ": empty attribute value must be specified as " <<
+                attr_name << "=\"\"");
+    case '\'':
+    case '"':
+        quotation_mark = *start_pos++;
+        do {
+            if (*++m_Position == '\\' && *++m_Position != '\0')
+                ++m_Position;
+            if (*m_Position == '\0') {
+                NCBI_THROW(CArgException, eInvalidArg, PROGRAM_NAME
+                    ": unterminated attribute value");
+            }
+        } while (*m_Position != quotation_mark);
+        attr_value = NStr::ParseEscapes(
+            CTempString(start_pos, m_Position - start_pos));
+        ++m_Position;
+        break;
+    default:
+        while (*++m_Position != '\0' && !isspace(*m_Position))
+            ;
+        attr_value = NStr::ParseEscapes(
+            CTempString(start_pos, m_Position - start_pos));
+    }
+
+    return eAttributeWithValue;
+}
+
+#define EVENT_WORD "event"
+#define EVENT_WORD_LEN (sizeof(EVENT_WORD) - 1)
+
+bool CGridCommandLineInterfaceApp::ParseAndPrintJobEvents(const string& line)
+{
+    static const CTempString event_word(EVENT_WORD, EVENT_WORD_LEN);
+    if (!NStr::StartsWith(line, event_word))
+        return false;
+
+    const char* event_info = line.c_str() + EVENT_WORD_LEN;
+    if (*event_info < '0' || *event_info > '9')
+        return false;
+
+    while (*++event_info >= '0' && *event_info <= '9')
+        ;
+    printf("[%.*s]\n", event_info - line.data(), line.data());
+    if (*event_info != ':')
+        return false;
+    ++event_info;
+
+    try {
+        CAttrListParser attr_parser;
+        attr_parser.Reset(event_info);
+        CTempString attr_name;
+        string attr_value;
+        CAttrListParser::ENextAttributeType next_attr_type;
+        for (;;)
+            if ((next_attr_type = attr_parser.NextAttribute(attr_name,
+                    attr_value)) == CAttrListParser::eAttributeWithValue)
+                printf("    %.*s: %s\n", attr_name.length(), attr_name.data(),
+                    attr_value.c_str());
+            else if (next_attr_type == CAttrListParser::eNoMoreAttributes)
+                break;
+            else // CAttrListParser::eStandAloneAttribute
+                printf("    %.*s\n", attr_name.length(), attr_name.data());
+    }
+    catch (CArgException&) {
+        return false;
+    }
+
+    return true;
+}
+
 int CGridCommandLineInterfaceApp::Cmd_JobInfo()
 {
     SetUp_NetScheduleCmd(eNetScheduleAdmin);
@@ -208,7 +334,8 @@ int CGridCommandLineInterfaceApp::Cmd_JobInfo()
                 !MatchPrefixAndPrintStorageTypeAndData(line, s_InputPrefix,
                     sizeof(s_InputPrefix) - 1, "input-") &&
                 !MatchPrefixAndPrintStorageTypeAndData(line, s_OutputPrefix,
-                    sizeof(s_OutputPrefix) - 1, "output-"))
+                    sizeof(s_OutputPrefix) - 1, "output-") &&
+                !ParseAndPrintJobEvents(line))
                 PrintLine(line);
         }
     } else {
@@ -261,7 +388,7 @@ private:
     FILE* m_InputStream;
     size_t m_LineNumber;
     string m_Line;
-    const char* m_Position;
+    CAttrListParser m_AttrParser;
     EOption m_JobAttribute;
     string m_JobAttributeValue;
 };
@@ -283,7 +410,7 @@ bool CBatchSubmitAttrParser::NextLine()
                 m_Line.append(buffer, bytes_read);
             else {
                 m_Line.append(buffer, bytes_read - 1);
-                m_Position = m_Line.c_str();
+                m_AttrParser.Reset(m_Line.c_str());
                 return true;
             }
         }
@@ -293,44 +420,40 @@ bool CBatchSubmitAttrParser::NextLine()
     if (m_Line.empty())
         return false;
     else {
-        m_Position = m_Line.c_str();
+        m_AttrParser.Reset(m_Line.c_str());
         return true;
     }
 }
 
 bool CBatchSubmitAttrParser::NextAttribute()
 {
-    while (isspace(*m_Position))
-        ++m_Position;
-
-    if (*m_Position == '\0')
-        return false;
-
-    const char* name_beg = m_Position;
-
-    while (*m_Position >= 'a' && *m_Position <= 'z')
-        ++m_Position;
-
     m_JobAttribute = eUntypedArg;
-    size_t attribute_name_len = m_Position - name_beg;
 
 #define ATTR_CHECK_SET(name, type) \
-    if (attribute_name_len == sizeof(name) - 1 && \
-            memcmp(name_beg, name, sizeof(name) - 1) == 0) { \
+    if (attr_name.length() == sizeof(name) - 1 && \
+            memcmp(attr_name.data(), name, sizeof(name) - 1) == 0) { \
         m_JobAttribute = type; \
         break; \
     }
 
-    switch (*name_beg) {
+    CTempString attr_name;
+
+    CAttrListParser::ENextAttributeType next_attr_type =
+        m_AttrParser.NextAttribute(attr_name, m_JobAttributeValue);
+
+    if (next_attr_type == CAttrListParser::eNoMoreAttributes)
+        return false;
+
+    switch (attr_name[0]) {
     case 'i':
         ATTR_CHECK_SET("input", eInput);
         break;
     case 'a':
         ATTR_CHECK_SET("affinity", eAffinity);
         break;
-    /*case 't':
-        ATTR_CHECK_SET("tag", eTag);
-        break;*/
+    case 't':
+        ATTR_CHECK_SET("tag", eJobTag);
+        break;
     case 'e':
         ATTR_CHECK_SET("exclusive", eExclusiveJob);
         break;
@@ -338,59 +461,26 @@ bool CBatchSubmitAttrParser::NextAttribute()
         ATTR_CHECK_SET("progress_message", eProgressMessage);
     }
 
-    CTempString attr_name(name_beg, attribute_name_len);
-
 #define AT_POS(pos) " at line " << m_LineNumber << \
     ", column " << (pos - m_Line.data() + 1)
 
-    if (m_JobAttribute == eUntypedArg) {
+    switch (m_JobAttribute) {
+    case eUntypedArg:
         NCBI_THROW_FMT(CArgException, eInvalidArg, PROGRAM_NAME
-            ": unknown attribute " << attr_name << AT_POS(attr_name.data()));
-    }
+            ": unknown attribute " << attr_name <<
+                AT_POS(attr_name.data()));
 
-    while (isspace(*m_Position))
-        ++m_Position;
+    case eExclusiveJob:
+        break;
 
-    if (*m_Position != '=') {
-        if ((*m_Position == '\0' ||
-                (*m_Position >= 'a' && *m_Position <= 'z')) &&
-                m_JobAttribute == eExclusiveJob)
-            return true;
-        else {
+    default:
+        if (next_attr_type != CAttrListParser::eAttributeWithValue) {
             NCBI_THROW_FMT(CArgException, eInvalidArg, PROGRAM_NAME
                 ": attribute " << attr_name <<
-                    " requires a value" << AT_POS(m_Position));
+                    " requires a value" << AT_POS(attr_name.data()));
         }
     }
 
-    while (isspace(*++m_Position))
-        ;
-
-    const char* value_beg = m_Position;
-
-    switch (*m_Position) {
-    case '\0':
-        NCBI_THROW_FMT(CArgException, eInvalidArg, PROGRAM_NAME
-            ": empty attribute value must be specified as " <<
-                attr_name << "=\"\"" << AT_POS(m_Position));
-    case '"':
-        ++value_beg;
-        do {
-            if (*++m_Position == '\\' && *++m_Position != '\0')
-                ++m_Position;
-            if (*m_Position == '\0') {
-                NCBI_THROW_FMT(CArgException, eInvalidArg, PROGRAM_NAME
-                    ": unterminated attribute value" AT_POS(m_Position));
-            }
-        } while (*m_Position != '"');
-        ++m_Position;
-        break;
-    default:
-        while (*++m_Position != '\0' && !isspace(*m_Position))
-            ;
-    }
-    m_JobAttributeValue =
-        NStr::ParseEscapes(CTempString(value_beg, m_Position - value_beg));
     return true;
 }
 
@@ -407,7 +497,7 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
         if (m_Opts.batch_size <= 1) {
             while (attr_parser.NextLine()) {
                 CGridJobSubmitter& submitter(m_GridClient->GetJobSubmitter());
-                CNetScheduleAPI::TJobTags job_tags;
+                CNetScheduleAPI::TJobTags job_tags(m_Opts.job_tags);
                 bool input_set = false;
                 while (attr_parser.NextAttribute()) {
                     const string& attr_value(attr_parser.GetAttributeValue());
@@ -429,7 +519,7 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
                     case eJobTag:
                         NStr::SplitInTwo(attr_value, "=",
                             job_tag_name, job_tag_value);
-                        m_Opts.job_tags.push_back(CNetScheduleAPI::TJobTag(
+                        job_tags.push_back(CNetScheduleAPI::TJobTag(
                             job_tag_name, job_tag_value));
                         break;
                     case eExclusiveJob:
@@ -470,7 +560,7 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
                     remaining_batch_size = m_Opts.batch_size;
                 }
                 batch_submitter.PrepareNextJob();
-                CNetScheduleAPI::TJobTags job_tags;
+                CNetScheduleAPI::TJobTags job_tags(m_Opts.job_tags);
                 bool input_set = false;
                 while (attr_parser.NextAttribute()) {
                     const string& attr_value(attr_parser.GetAttributeValue());
@@ -492,7 +582,7 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
                     case eJobTag:
                         NStr::SplitInTwo(attr_value, "=",
                             job_tag_name, job_tag_value);
-                        m_Opts.job_tags.push_back(CNetScheduleAPI::TJobTag(
+                        job_tags.push_back(CNetScheduleAPI::TJobTag(
                             job_tag_name, job_tag_value));
                         break;
                     case eExclusiveJob:
