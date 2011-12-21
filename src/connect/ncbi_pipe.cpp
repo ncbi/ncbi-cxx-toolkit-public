@@ -848,6 +848,7 @@ public:
                     CPipe::TCreateFlags   create_flags,
                     const string&         current_dir,
                     const char* const     env[]);
+    void OpenSelf();
     EIO_Status Close(int* exitcode, const STimeout* timeout);
     EIO_Status CloseHandle(CPipe::EChildIOHandle handle);
     EIO_Status Read(void* buf, size_t count, size_t* read,
