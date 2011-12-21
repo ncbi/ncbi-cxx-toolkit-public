@@ -87,7 +87,7 @@ class NCBI_XCONNECT_EXPORT CCommandLineParser
 
     /// @return One of the command identifiers or -1
     ///         if a help command was requested and
-    ///         has been already processed. The caller
+    ///         has been already processed, in which case the caller
     ///         must exit with return code 0.
     int Parse(int argc, const char* const *argv);
 
