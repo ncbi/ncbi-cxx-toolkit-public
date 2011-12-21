@@ -212,6 +212,7 @@ public:
                     CPipe::TCreateFlags create_flags,
                     const string&       current_dir,
                     const char* const   env[]);
+    void OpenSelf();
     EIO_Status Close(int* exitcode, const STimeout* timeout);
     EIO_Status CloseHandle (CPipe::EChildIOHandle handle);
     EIO_Status Read(void* buf, size_t count, size_t* n_read,
@@ -229,7 +230,7 @@ private:
     // Get child's I/O handle.
     HANDLE x_GetHandle(CPipe::EChildIOHandle from_handle) const;
     // Trigger blocking mode on specified I/O handle.
-    bool   x_SetNonBlockingMode(HANDLE fd, bool nonblock = true) const;
+    void   x_SetNonBlockingMode(HANDLE fd) const;
     // Wait on the file descriptors I/O.
     CPipe::TChildPollMask x_Poll(CPipe::TChildPollMask mask,
                                  const STimeout* timeout) const;
@@ -241,11 +242,14 @@ private:
 
     // Child process descriptor.
     HANDLE m_ProcHandle;
-    // Child process pid.
-    TPid   m_Pid;
 
     // Pipe flags
     CPipe::TCreateFlags m_Flags;
+
+    // Flag that indicates whether the m_ChildStd* and m_ProcHandle
+    // member variables contain the relevant handles of the
+    // current process, in which case they won't be closed.
+    bool m_SelfHandles;
 };
 
 
@@ -254,7 +258,8 @@ CPipeHandle::CPipeHandle()
       m_ChildStdIn(INVALID_HANDLE_VALUE),
       m_ChildStdOut(INVALID_HANDLE_VALUE),
       m_ChildStdErr(INVALID_HANDLE_VALUE),
-      m_Flags(0)
+      m_Flags(0),
+      m_SelfHandles(false)
 {
     return;
 }
@@ -422,7 +427,6 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         }
         ::CloseHandle(pinfo.hThread);
         m_ProcHandle = pinfo.hProcess;
-        m_Pid        = pinfo.dwProcessId; 
 
         _ASSERT(m_ProcHandle != INVALID_HANDLE_VALUE);
 
@@ -444,8 +448,44 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
 }
 
 
+void CPipeHandle::OpenSelf()
+{
+    x_Clear();
+
+    if ((m_ChildStdIn = ::GetStdHandle(STD_OUTPUT_HANDLE)) ==
+            INVALID_HANDLE_VALUE) {
+        PIPE_THROW(::GetLastError(), "GetStdHandle(stdout) failed");
+    }
+    NcbiCout.flush();
+    ::fflush(stdout);
+    if (!::FlushFileBuffers(m_ChildStdIn)) {
+        PIPE_THROW(::GetLastError(), "FlushFileBuffers(stdout) failed");
+    }
+    if ((m_ChildStdOut = ::GetStdHandle(STD_INPUT_HANDLE)) ==
+            INVALID_HANDLE_VALUE) {
+        PIPE_THROW(::GetLastError(), "GetStdHandle(stdin) failed");
+    }
+
+    if (!::DuplicateHandle(::GetCurrentProcess(),
+            ::GetCurrentProcess(), ::GetCurrentProcess(),
+            &m_ProcHandle, 0, FALSE, DUPLICATE_SAME_ACCESS)) {
+        PIPE_THROW(::GetLastError(),
+            "DuplicateHandle(GetCurrentProcess()) failed");
+    }
+
+    m_SelfHandles = true;
+}
+
+
 EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
 {
+    if (m_SelfHandles)
+        return eIO_Success;
+
+    CloseHandle(CPipe::eStdIn);
+    CloseHandle(CPipe::eStdOut);
+    CloseHandle(CPipe::eStdErr);
+
     EIO_Status status;
 
     if (m_ProcHandle == INVALID_HANDLE_VALUE) {
@@ -665,7 +705,7 @@ void CPipeHandle::x_Clear(void)
         m_ChildStdErr = INVALID_HANDLE_VALUE;
     }
     m_ProcHandle = INVALID_HANDLE_VALUE;
-    m_Pid = 0;
+    m_SelfHandles = false;
 }
 
 
@@ -684,15 +724,15 @@ HANDLE CPipeHandle::x_GetHandle(CPipe::EChildIOHandle from_handle) const
 }
 
 
-bool CPipeHandle::x_SetNonBlockingMode(HANDLE fd, bool nonblock) const
+void CPipeHandle::x_SetNonBlockingMode(HANDLE fd) const
 {
     // Pipe is in the byte-mode.
     // NOTE: We cannot get a state of a pipe handle opened for writing.
     //       We cannot set a state of a pipe handle opened for reading.
-    DWORD state = (nonblock
-                   ? PIPE_READMODE_BYTE | PIPE_NOWAIT
-                   : PIPE_READMODE_BYTE);
-    return ::SetNamedPipeHandleState(fd, &state, NULL, NULL) != 0; 
+    DWORD state = PIPE_READMODE_BYTE | PIPE_NOWAIT;
+    if (!::SetNamedPipeHandleState(fd, &state, NULL, NULL)) {
+        PIPE_THROW(::GetLastError(), "x_SetNonBlockingMode() failed");
+    }
 }
 
 
@@ -825,7 +865,7 @@ private:
     // Get child's I/O handle.
     int  x_GetHandle(CPipe::EChildIOHandle from_handle) const;
     // Trigger blocking mode on specified I/O handle.
-    bool x_SetNonBlockingMode(int fd, bool nonblock = true) const;
+    bool x_SetNonBlockingMode(int fd) const;
     // Wait on the file descriptors I/O.
     CPipe::TChildPollMask x_Poll(CPipe::TChildPollMask mask,
                                  const STimeout* timeout) const;
@@ -841,12 +881,18 @@ private:
 
     // Pipe flags
     CPipe::TCreateFlags m_Flags;
+
+    // Flag that indicates whether the m_ChildStd* and m_Pid
+    // member variables contain the relevant handles of the
+    // current process, in which case they won't be closed.
+    bool m_SelfHandles;
 };
 
 
 CPipeHandle::CPipeHandle()
     : m_ChildStdIn(-1), m_ChildStdOut(-1), m_ChildStdErr(-1),
-      m_Pid((pid_t)(-1)), m_Flags(0)
+      m_Pid((pid_t)(-1)), m_Flags(0),
+      m_SelfHandles(false)
 {
     SOCK_AllowSigPipeAPI();
 }
@@ -1217,10 +1263,34 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
 }
 
 
+void CPipeHandle::OpenSelf()
+{
+    x_Clear();
+
+    // Flush std.output
+    NcbiCout.flush();
+    ::fflush(stdout);
+
+    m_ChildStdIn = 1;
+    m_ChildStdOut = 0;
+
+    m_Pid = getpid();
+
+    m_SelfHandles = true;
+}
+
+
 EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
-{    
+{
+    if (m_SelfHandles)
+        return eIO_Success;
+
+    CloseHandle(CPipe::eStdIn);
+    CloseHandle(CPipe::eStdOut);
+    CloseHandle(CPipe::eStdErr);
+
     EIO_Status status;
-    
+
     if (m_Pid == (pid_t)(-1)) {
         if ( exitcode ) {
             *exitcode = -1;
@@ -1420,6 +1490,7 @@ void CPipeHandle::x_Clear(void)
         m_ChildStdErr  = -1;
     }
     m_Pid = -1;
+    m_SelfHandles = false;
 }
 
 
@@ -1439,11 +1510,9 @@ int CPipeHandle::x_GetHandle(CPipe::EChildIOHandle from_handle) const
 }
 
 
-bool CPipeHandle::x_SetNonBlockingMode(int fd, bool nonblock) const
+bool CPipeHandle::x_SetNonBlockingMode(int fd) const
 {
-    return ::fcntl(fd, F_SETFL, nonblock
-                   ? ::fcntl(fd, F_GETFL, 0) |  O_NONBLOCK
-                   : ::fcntl(fd, F_GETFL, 0) & ~O_NONBLOCK) != -1;
+    return ::fcntl(fd, F_SETFL, ::fcntl(fd, F_GETFL, 0) |  O_NONBLOCK) != -1;
 }
 
 
@@ -1602,6 +1671,16 @@ EIO_Status CPipe::Open(const string& cmd, const vector<string>& args,
 }
 
 
+void CPipe::OpenSelf()
+{
+    if (m_PipeHandle) {
+        m_PipeHandle->OpenSelf();
+        m_ReadStatus  = eIO_Success;
+        m_WriteStatus = eIO_Success;
+    }
+}
+
+
 EIO_Status CPipe::Close(int* exitcode)
 {
     if ( !m_PipeHandle ) {
@@ -1610,9 +1689,6 @@ EIO_Status CPipe::Close(int* exitcode)
     m_ReadStatus  = eIO_Closed;
     m_WriteStatus = eIO_Closed;
 
-    m_PipeHandle->CloseHandle(eStdIn);
-    m_PipeHandle->CloseHandle(eStdOut);
-    m_PipeHandle->CloseHandle(eStdErr);
     return m_PipeHandle->Close(exitcode, m_CloseTimeout);
 }
 

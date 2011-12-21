@@ -197,6 +197,20 @@ public:
                     const string&         current_dir  = kEmptyStr,
                     const char* const     env[]        = 0);
 
+    /// Open the standard streams of the current process.
+    ///
+    /// The standard input stream is opened as if it's the output
+    /// stream of a child process, so it can be read from. Similarly,
+    /// the standard output stream is opened as if it's a child input
+    /// stream, so it can be written. The standard error stream is left
+    /// untouched.
+    ///
+    /// @return
+    ///   Completion status.
+    /// @sa
+    ///   Read, Write, Close
+    void OpenSelf();
+
     /// Close pipe.
     ///
     /// Wait for the spawned child process to terminate and then close
@@ -215,7 +229,7 @@ public:
     ///   eIO_Timeout - the eIO_Close timeout expired, child process
     ///                 is still running and the pipe has not yet closed
     ///                 (return only if fKeepOnClose create flag was set);
-    ///   eIO_Success - pipe was succesfully closed.  The running status of
+    ///   eIO_Success - pipe was successfully closed.  The running status of
     ///                 child process depends on the flags:
     ///       fKeepOnClose  - process has terminated with "exitcode";
     ///       fCloseOnClose - process has self-terminated if "exitcode" != -1,
