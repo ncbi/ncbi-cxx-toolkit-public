@@ -49,7 +49,7 @@ CGridCommandLineInterfaceApp::CGridCommandLineInterfaceApp(
     m_ArgV(argv),
     m_NetICacheClient(eVoid)
 {
-    SetVersion(CVersionInfo(PROGRAM_VERSION, PROGRAM_NAME));
+    SetVersion(CVersionInfo(PROGRAM_VERSION));
 }
 
 string CGridCommandLineInterfaceApp::GetProgramVersion() const
