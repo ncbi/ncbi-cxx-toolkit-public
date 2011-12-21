@@ -936,29 +936,6 @@ int CGridCommandLineInterfaceApp::Cmd_UpdateJob()
     return 0;
 }
 
-int CGridCommandLineInterfaceApp::Cmd_NetScheduleQuery()
-{
-    SetUp_NetScheduleCmd(eNetScheduleAdmin);
-
-    NStr::TruncateSpacesInPlace(m_Opts.query, NStr::eTrunc_Begin);
-
-    if (IsOptionSet(eCount))
-        NcbiCout << m_NetScheduleAdmin.Count(m_Opts.query) << NcbiEndl;
-    else if (IsOptionSet(eQueryField))
-        m_NetScheduleAdmin.Query(m_Opts.query, m_Opts.query_fields, NcbiCout);
-    else if (NStr::StartsWith(m_Opts.query, "SELECT", NStr::eNocase))
-        m_NetScheduleAdmin.Select(m_Opts.query, NcbiCout);
-    else {
-        CNetScheduleKeys keys;
-        m_NetScheduleAdmin.RetrieveKeys(m_Opts.query, keys);
-        ITERATE(CNetScheduleKeys, it, keys) {
-            NcbiCout << string(*it) << NcbiEndl;
-        }
-    }
-
-    return 0;
-}
-
 int CGridCommandLineInterfaceApp::Cmd_QueueInfo()
 {
     SetUp_NetScheduleCmd(eNetScheduleAdmin);

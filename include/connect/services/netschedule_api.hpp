@@ -721,13 +721,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
     typedef list<SServerQueueList> TQueueList;
 
     void GetQueueList(TQueueList& result);
-
-    /// Query by tags
-    unsigned long Count(const string& query);
-    void Query(const string& query, const vector<string>& fields, CNcbiOstream& os);
-    void Select(const string& select_stmt, CNcbiOstream& os);
-
-    void RetrieveKeys(const string& query, CNetScheduleKeys& ids);
 };
 
 

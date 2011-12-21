@@ -58,7 +58,6 @@
 #define ROLLBACK_READ_OPTION "rollback-read"
 #define FAIL_READ_OPTION "fail-read"
 #define JOB_ID_OPTION "job-id"
-#define QUERY_FIELD_OPTION "query-field"
 #define LISTENING_PORT_OPTION "listening-port"
 #define WAIT_TIMEOUT_OPTION "wait-timeout"
 #define FAIL_JOB_OPTION "fail-job"
@@ -107,9 +106,6 @@ enum EOption {
     eActiveJobCount,
     eJobsByAffinity,
     eJobsByStatus,
-    eQuery,
-    eCount,
-    eQueryField,
     eSelectByStatus,
     eBrief,
     eStatusOnly,
@@ -173,8 +169,6 @@ private:
         unsigned timeout;
         string reservation_token;
         std::vector<std::string> job_ids;
-        string query;
-        vector<string> query_fields;
         CNetScheduleAPI::EJobStatus job_status;
         time_t extend_lifetime_by;
         unsigned short listening_port;
@@ -251,7 +245,6 @@ public:
     int Cmd_CommitJob();
     int Cmd_ReturnJob();
     int Cmd_UpdateJob();
-    int Cmd_NetScheduleQuery();
     int Cmd_QueueInfo();
     int Cmd_DumpQueue();
     int Cmd_CreateQueue();

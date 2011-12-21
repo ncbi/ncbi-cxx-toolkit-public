@@ -184,17 +184,6 @@ struct SOptionDefinition {
             "is given, only the jobs with the specified affinity "
             "will be counted."},
 
-    {CCommandLineParser::ePositionalArgument, eQuery, "QUERY", NULL},
-
-    {CCommandLineParser::eSwitch, eCount,
-        "count", "Print only the number of records returned by the query."},
-
-    {CCommandLineParser::eOptionWithParameter, eQueryField,
-        QUERY_FIELD_OPTION, "Job attribute to return as an output "
-            "column. Multiple '--" QUERY_FIELD_OPTION "' options can be "
-            "specified for a query. If no such options are specified, "
-            "a single column of job IDs is printed."},
-
     {CCommandLineParser::eOptionWithParameter, eSelectByStatus,
         "select-by-status", "Filter output by job status."},
 
@@ -536,14 +525,6 @@ struct SCommandDefinition {
             eExtendLifetime, eProgressMessage, eAuth,
             eClientNode, eClientSession, -1}},
 
-    {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_NetScheduleQuery,
-        "nsquery", "Send a custom query to a NetSchedule server.",
-        "The syntax of the query must comply to the format expected "
-        "by the NetSchedule QERY command "
-        "(see http://mini.ncbi.nih.gov/hequ).",
-        {eQuery, eNetSchedule, eQueue, eQueryField, eCount, eAuth,
-            eClientNode, eClientSession, -1}},
-
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_QueueInfo,
         "queueinfo|qi", "Get information about a NetSchedule queue.",
         "Print queue type (static or dynamic). For dynamic queues, "
@@ -811,12 +792,6 @@ int CGridCommandLineInterfaceApp::Run()
                 break;
             case eJobId:
                 m_Opts.job_ids.push_back(opt_value);
-                break;
-            case eQuery:
-                m_Opts.query = opt_value;
-                break;
-            case eQueryField:
-                m_Opts.query_fields.push_back(opt_value);
                 break;
             case eSelectByStatus:
                 if ((m_Opts.job_status = CNetScheduleAPI::StringToStatus(
