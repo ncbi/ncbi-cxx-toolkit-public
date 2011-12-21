@@ -147,7 +147,7 @@ int CTestNetScheduleNode::Run(void)
     comm_timeout.sec  = 1200;
     comm_timeout.usec = 0;
     ns_api.GetService().SetCommunicationTimeout(comm_timeout);
-    CNetScheduleExecuter ns_exec = ns_api.GetExecuter(udp_port);
+    CNetScheduleExecuter ns_exec = ns_api.GetExecuter();
 
     string job_key;
     string input;
@@ -177,7 +177,7 @@ int CTestNetScheduleNode::Run(void)
     bool done = false;
 
     while (!done) {
-        if (ns_exec.WaitJob(job, 180)) {
+        if (ns_exec.WaitJob(job, udp_port, 180)) {
             if (job.input == "DIE") {
                 LOG_POST(Info << "Got poison pill, exiting.");
                 done = true;

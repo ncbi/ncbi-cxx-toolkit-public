@@ -135,12 +135,12 @@ int CSampleNetScheduleNode::Run(void)
     // It is strongly suggested that there is just one program using
     // specified UDP port on the machine.
 
-    CNetScheduleExecuter executer = cl.GetExecuter(udp_port);
+    CNetScheduleExecuter executor = cl.GetExecuter();
 
     CNetScheduleJob job;
 
     for (;;) {
-        job_exists = executer.WaitJob(job, 560);
+        job_exists = executor.WaitJob(job, udp_port, 560);
         if (job_exists) {
             if (first_try) {
                 NcbiCout << "\nProcessing." << NcbiEndl;
@@ -166,7 +166,7 @@ int CSampleNetScheduleNode::Run(void)
             // do no job here, just delay for a little while
             SleepMilliSec(50);
             job.output = "DONE " + queue_name;
-            executer.PutResult(job);
+            executor.PutResult(job);
 
             no_jobs_counter = 0;
             ++jobs_done;

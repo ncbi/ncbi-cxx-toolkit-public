@@ -173,7 +173,7 @@ void TestBatchSubmit(const string& service,
     job.output = "DONE";
 
     CStopWatch sw(CStopWatch::eStart);
-    CNetScheduleExecuter executer = cl.GetExecuter(WORKER_NODE_PORT);
+    CNetScheduleExecuter executer = cl.GetExecuter();
 
     for (;1;++cnt) {
         bool job_exists = executer.PutResultGetJob(job, job);
@@ -224,7 +224,7 @@ int CTestNetScheduleStress::Run(void)
     string input = "Hello " + queue;
 
     CNetScheduleSubmitter submitter = cl.GetSubmitter();
-    CNetScheduleExecuter executer = cl.GetExecuter(WORKER_NODE_PORT);
+    CNetScheduleExecuter executer = cl.GetExecuter();
 
     CNetScheduleJob job(input);
     job.progress_msg = "pmsg";
@@ -344,7 +344,7 @@ int CTestNetScheduleStress::Run(void)
     unsigned cnt = 0;
     for (; cnt < jcount/2; ++cnt) {
         CNetScheduleJob job;
-        bool job_exists = executer.WaitJob(job, 60);
+        bool job_exists = executer.WaitJob(job, WORKER_NODE_PORT, 60);
 //        bool job_exists = cl.GetJob(&job_key, &input);
         if (!job_exists)
             break;
