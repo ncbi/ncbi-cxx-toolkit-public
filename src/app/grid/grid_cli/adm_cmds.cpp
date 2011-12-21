@@ -187,9 +187,9 @@ int CGridCommandLineInterfaceApp::Cmd_Stats()
         return 0;
 
     case eNetScheduleAdmin:
-        if (IsOptionSet(eWorkerNodes))
+        if (IsOptionSet(eClientInfo))
             m_NetScheduleAdmin.PrintServerStatistics(NcbiCout,
-                CNetScheduleAdmin::eStatisticsWorkers);
+                CNetScheduleAdmin::eStatisticsClients);
         else if (IsOptionSet(eActiveJobCount))
             printf("%u\n", m_NetScheduleAdmin.CountActiveJobs());
         else if (IsOptionSet(eJobsByAffinity)) {

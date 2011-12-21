@@ -130,22 +130,24 @@ struct SNetScheduleAPIImpl : public CObject
 
         void SetAuthString(SNetScheduleAPIImpl* impl);
 
-        void MakeWorkerNodeInitCmd(const string& uid,
-            unsigned short control_port);
-
         virtual void OnInit(CObject* api_impl,
             CConfig* config, const string& config_section);
         virtual void OnConnected(CNetServerConnection::TInstance conn);
         virtual void OnError(const string& err_msg, SNetServerImpl* server);
 
         string m_Auth;
-        string m_WorkerNodeInitCmd;
         bool m_WorkerNodeCompatMode;
     };
 
     SNetScheduleAPIImpl(CConfig* config, const string& section,
         const string& service_name, const string& client_name,
         const string& queue_name);
+
+    void UpdateListener()
+    {
+        static_cast<CNetScheduleServerListener*>(
+            m_Service->m_Listener.GetPointer())->SetAuthString(this);
+    }
 
     string x_SendJobCmdWaitResponse(const string& cmd, const string& job_key)
     {
@@ -198,8 +200,10 @@ struct SNetScheduleAPIImpl : public CObject
     CNetService m_Service;
 
     static CNetScheduleExceptionMap sm_ExceptionMap;
-    string            m_Queue;
-    string            m_ProgramVersion;
+    string m_Queue;
+    string m_ProgramVersion;
+    string m_ClientNode;
+    string m_ClientSession;
 
     auto_ptr<CNetScheduleAPI::SServerParams> m_ServerParams;
     long m_ServerParamsAskCount;
@@ -233,32 +237,15 @@ inline SNetScheduleSubmitterImpl::SNetScheduleSubmitterImpl(
 
 struct SNetScheduleExecuterImpl : public CObject
 {
-    SNetScheduleExecuterImpl(CNetScheduleAPI::TInstance ns_api_impl,
-        unsigned short control_port, const string& guid);
+    SNetScheduleExecuterImpl(CNetScheduleAPI::TInstance ns_api_impl) :
+        m_API(ns_api_impl)
+    {
+    }
 
     bool GetJobImpl(const string& cmd, CNetScheduleJob& job);
 
     CNetScheduleAPI m_API;
-    string m_UID;
-    unsigned short m_ControlPort;
 };
-
-inline SNetScheduleExecuterImpl::SNetScheduleExecuterImpl(
-    CNetScheduleAPI::TInstance ns_api_impl, unsigned short control_port,
-        const string& guid) :
-    m_API(ns_api_impl),
-    m_UID(guid),
-    m_ControlPort(control_port)
-{
-    if (m_UID.empty())
-        m_UID = GetDiagContext().GetStringUID();
-
-    CFastMutexGuard g(ns_api_impl->m_FastMutex);
-
-    static_cast<SNetScheduleAPIImpl::CNetScheduleServerListener*>(
-        ns_api_impl->m_Service->m_Listener.GetPointer())->MakeWorkerNodeInitCmd(
-            m_UID, control_port);
-}
 
 struct SNetScheduleAdminImpl : public CObject
 {

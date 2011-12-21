@@ -60,6 +60,18 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::SetAuthString(
         auth += '\"';
     }
 
+    if (!impl->m_ClientNode.empty()) {
+        auth += " client_node=\"";
+        auth += impl->m_ClientNode;
+        auth += '\"';
+    }
+
+    if (!impl->m_ClientSession.empty()) {
+        auth += " client_session=\"";
+        auth += impl->m_ClientSession;
+        auth += '\"';
+    }
+
     auth += "\r\n";
 
     auth += impl->m_Queue;
@@ -71,14 +83,6 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::SetAuthString(
         auth += "\r\nVERSION";
 
     m_Auth = auth;
-}
-
-void SNetScheduleAPIImpl::CNetScheduleServerListener::MakeWorkerNodeInitCmd(
-    const string& uid, unsigned short control_port)
-{
-    m_WorkerNodeInitCmd = "INIT " + NStr::UIntToString(control_port);
-    m_WorkerNodeInitCmd += ' ';
-    m_WorkerNodeInitCmd += uid;
 }
 
 void SNetScheduleAPIImpl::CNetScheduleServerListener::OnInit(
@@ -119,16 +123,6 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::OnConnected(
         conn_object.Exec(m_Auth);
     else
         conn->WriteLine(m_Auth);
-
-    if (!m_WorkerNodeInitCmd.empty()) {
-        try {
-            conn_object.Exec(m_WorkerNodeInitCmd);
-        }
-        catch (CNetScheduleException& e) {
-            if (e.GetErrCode() != CNetScheduleException::eProtocolSyntaxError)
-                throw;
-        }
-    }
 }
 
 void SNetScheduleAPIImpl::CNetScheduleServerListener::OnError(
@@ -201,8 +195,8 @@ CNetScheduleAPI::CNetScheduleAPI(const string& service_name,
 void CNetScheduleAPI::SetProgramVersion(const string& pv)
 {
     m_Impl->m_ProgramVersion = pv;
-    static_cast<SNetScheduleAPIImpl::CNetScheduleServerListener*>(
-        m_Impl->m_Service->m_Listener.GetPointer())->SetAuthString(m_Impl);
+
+    m_Impl->UpdateListener();
 }
 
 const string& CNetScheduleAPI::GetProgramVersion() const
@@ -285,10 +279,9 @@ CNetScheduleSubmitter CNetScheduleAPI::GetSubmitter()
     return new SNetScheduleSubmitterImpl(m_Impl);
 }
 
-CNetScheduleExecuter CNetScheduleAPI::GetExecuter(unsigned short control_port,
-    const string& guid)
+CNetScheduleExecuter CNetScheduleAPI::GetExecuter()
 {
-    return new SNetScheduleExecuterImpl(m_Impl, control_port, guid);
+    return new SNetScheduleExecuterImpl(m_Impl);
 }
 
 CNetScheduleAdmin CNetScheduleAPI::GetAdmin()
@@ -464,6 +457,56 @@ void CNetScheduleAPI::GetProgressMsg(CNetScheduleJob& job)
     job.progress_msg = NStr::ParseEscapes(resp);
 }
 
+static void s_VerifyClientCredentialString(const string& str,
+    const CTempString& param_name)
+{
+    size_t len = str.length();
+
+    if (len == 0) {
+        NCBI_THROW_FMT(CConfigException, eParameterMissing,
+            "'" << param_name << "' cannot be empty");
+    }
+
+    const char* ch = str.data();
+
+    do {
+        switch (*ch) {
+        case '|':
+        case '-':
+        case ':':
+        case '_':
+            break;
+
+        default:
+            if ((*ch < 'a' || *ch > 'z') && (*ch < 'A' || *ch > 'Z') &&
+                    (*ch < '0' || *ch > '9')) {
+                NCBI_THROW_FMT(CConfigException, eParameterMissing,
+                    "parameter '" << param_name <<
+                        "' contains invalid character(s)");
+            }
+        }
+        ch++;
+    } while (--len != 0);
+}
+
+void CNetScheduleAPI::SetClientNode(const string& client_node)
+{
+    s_VerifyClientCredentialString(client_node, "client_node");
+
+    m_Impl->m_ClientNode = client_node;
+
+    m_Impl->UpdateListener();
+}
+
+void CNetScheduleAPI::SetClientSession(const string& client_session)
+{
+    s_VerifyClientCredentialString(client_session, "client_session");
+
+    m_Impl->m_ClientSession = client_session;
+
+    m_Impl->UpdateListener();
+}
+
 void CNetScheduleAPI::EnableWorkerNodeCompatMode()
 {
     SNetScheduleAPIImpl::CNetScheduleServerListener* listener =
@@ -478,8 +521,7 @@ void CNetScheduleAPI::UseOldStyleAuth()
 {
     m_Impl->m_Service->m_UseOldStyleAuth = true;
 
-    static_cast<SNetScheduleAPIImpl::CNetScheduleServerListener*>(
-        m_Impl->m_Service->m_Listener.GetPointer())->SetAuthString(m_Impl);
+    m_Impl->UpdateListener();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

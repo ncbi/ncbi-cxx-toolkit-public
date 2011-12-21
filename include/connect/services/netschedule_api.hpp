@@ -215,18 +215,13 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
     typedef pair<string,string> TJobTag;
     typedef vector<TJobTag>     TJobTags;
 
-
+    /// Create an instance of CNetScheduleSubmitter.
     CNetScheduleSubmitter GetSubmitter();
 
     /// Create an instance of CNetScheduleExecuter.
-    ///
-    /// @param port Control port that the worker node will be
-    ///             listening to.  If omitted, the INIT command
-    ///             will not be sent to NetSchedule.
-    CNetScheduleExecuter GetExecuter(unsigned short control_port = 0,
-        const string& guid = kEmptyStr);
+    CNetScheduleExecuter GetExecuter();
 
-    CNetScheduleAdmin     GetAdmin();
+    CNetScheduleAdmin GetAdmin();
 
     CNetService GetService();
 
@@ -245,6 +240,10 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
 
     void SetCommunicationTimeout(const STimeout& to)
         {GetService().SetCommunicationTimeout(to);}
+
+    void SetClientNode(const string& client_node);
+
+    void SetClientSession(const string& client_session);
 
     /// This method is for use by the grid_cli utility only.
     /// @internal
@@ -498,6 +497,8 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     ///
     /// @param job
     ///     NetSchedule job description structure
+    /// @param listening_port
+    ///    UDP port to listen for the server response.
     /// @param wait_time
     ///    Time in seconds function waits for new jobs to come.
     ///    If there are no jobs in the period of time,
@@ -508,8 +509,8 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     ///
     /// @sa GetJob, WaitNotification
     ///
-    bool WaitJob(CNetScheduleJob& job, unsigned wait_time,
-        const string& affinity = kEmptyStr);
+    bool WaitJob(CNetScheduleJob& job, unsigned short listening_port,
+        unsigned wait_time, const string& affinity = kEmptyStr);
 
 
     /// Put job result (job should be received by GetJob() or WaitJob())
@@ -584,11 +585,8 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     ///    finish the job.
     void JobDelayExpiration(const string& job_key, unsigned runtime_inc);
 
-
-    const string& GetGUID();
-
+    /// Retrieve queue parameters from the server.
     const CNetScheduleAPI::SServerParams& GetServerParams();
-
 
     /// Unregister client-listener. After this call, the
     /// server will not try to send any notification messages or
@@ -697,7 +695,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
     {
         eStatisticsAll,
         eStatisticsBrief,
-        eStatisticsWorkers
+        eStatisticsClients
     };
 
     void PrintServerStatistics(CNcbiOstream& output_stream,

@@ -290,7 +290,7 @@ void CNetScheduleAdmin::PrintServerStatistics(CNcbiOstream& output_stream,
     EStatisticsOptions opt)
 {
     m_Impl->m_API->m_Service.PrintCmdOutput(opt == eStatisticsBrief ? "STAT" :
-        opt == eStatisticsWorkers ? "STAT WNODE" : "STAT ALL",
+        opt == eStatisticsClients ? "STAT CLIENTS" : "STAT ALL",
         output_stream, CNetService::eMultilineOutput_NetCacheStyle);
 }
 

@@ -1053,10 +1053,11 @@ int CGridWorkerNode::Run()
             "the port(s).");
     }
 
+    m_ControlPort = control_thread->GetControlPort();
+
     m_RebalanceStrategy = CreateSimpleRebalanceStrategy(conf, "server");
 
-    m_NSExecuter =
-        m_NetScheduleAPI.GetExecuter(control_thread->GetControlPort());
+    m_NSExecuter = m_NetScheduleAPI.GetExecuter();
 
     m_NetScheduleAPI.SetProgramVersion(m_JobFactory->GetJobVersion());
 
@@ -1285,7 +1286,7 @@ bool CGridWorkerNode::x_GetNextJob(CNetScheduleJob& job)
         if (!WaitForExclusiveJobToFinish())
             return false;
 
-        job_exists = GetNSExecuter().WaitJob(job, m_NSTimeout);
+        job_exists = GetNSExecuter().WaitJob(job, m_ControlPort, m_NSTimeout);
 
         if (job_exists && job.mask & CNetScheduleAPI::eExclusiveJob)
             job_exists = EnterExclusiveModeOrReturnJob(job);

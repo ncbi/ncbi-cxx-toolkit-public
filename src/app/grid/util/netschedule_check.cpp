@@ -167,7 +167,7 @@ int CNetScheduleCheck::Run(void)
 int CNetScheduleCheck::Run(CNetScheduleAPI& nc)
 {
     CNetScheduleSubmitter submitter = nc.GetSubmitter();
-    CNetScheduleExecuter executer = nc.GetExecuter(WORKER_NODE_PORT);
+    CNetScheduleExecuter executer = nc.GetExecuter();
 
     const string input = "Hello ";
     const string output = "DONE ";
@@ -178,7 +178,7 @@ int CNetScheduleCheck::Run(CNetScheduleAPI& nc)
         //SleepSec(1);
 
         CNetScheduleJob job1;
-        bool job_exists = executer.WaitJob(job1, 5);
+        bool job_exists = executer.WaitJob(job1, WORKER_NODE_PORT, 5);
         if (job_exists) {
             if (job1.job_id != job.job_id)
                 executer.ReturnJob(job1.job_id);

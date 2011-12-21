@@ -59,7 +59,7 @@
 #define FAIL_READ_OPTION "fail-read"
 #define JOB_ID_OPTION "job-id"
 #define QUERY_FIELD_OPTION "query-field"
-#define WNODE_PORT_OPTION "wnode-port"
+#define LISTENING_PORT_OPTION "listening-port"
 #define WAIT_TIMEOUT_OPTION "wait-timeout"
 #define FAIL_JOB_OPTION "fail-job"
 #define NOW_OPTION "now"
@@ -103,7 +103,7 @@ enum EOption {
     eFailRead,
     eErrorMessage,
     eJobId,
-    eWorkerNodes,
+    eClientInfo,
     eActiveJobCount,
     eJobsByAffinity,
     eJobsByStatus,
@@ -119,11 +119,8 @@ enum EOption {
     eProgressMessage,
     eAllJobs,
     eDropJobs,
-    eRegisterWNode,
-    eUnregisterWNode,
-    eWNodePort,
-    eWNodeGUID,
     eWaitTimeout,
+    eListeningPort,
     eFailJob,
     eQueueArg,
     eModelQueue,
@@ -131,6 +128,9 @@ enum EOption {
     eNow,
     eDie,
     eCompatMode,
+    eExtendedOptionDelimiter,
+    eClientNode,
+    eClientSession,
     eTotalNumberOfOptions
 };
 
@@ -151,7 +151,7 @@ public:
 
 private:
     int m_ArgC;
-    const char* const* m_ArgV;
+    const char** m_ArgV;
 
     struct SOptions {
         string id;
@@ -177,8 +177,9 @@ private:
         vector<string> query_fields;
         CNetScheduleAPI::EJobStatus job_status;
         time_t extend_lifetime_by;
-        unsigned short wnode_port;
-        string wnode_guid;
+        unsigned short listening_port;
+        string client_node;
+        string client_session;
         string progress_message;
         string queue_description;
         string error_message;
@@ -198,7 +199,7 @@ private:
 
         SOptions() : offset(0), size(0), ttl(0), return_code(0),
             batch_size(0), limit(0), timeout(0), extend_lifetime_by(0),
-            wnode_port(0),
+            listening_port(0),
             input_stream(NULL), output_stream(NULL)
         {
             memset(option_flags, 0, eTotalNumberOfOptions);
@@ -246,7 +247,6 @@ public:
     int Cmd_GetJobOutput();
     int Cmd_ReadJobs();
     int Cmd_CancelJob();
-    int Cmd_RegWNode();
     int Cmd_RequestJob();
     int Cmd_CommitJob();
     int Cmd_ReturnJob();

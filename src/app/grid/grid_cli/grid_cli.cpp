@@ -166,8 +166,9 @@ struct SOptionDefinition {
         JOB_ID_OPTION, "Specify one or more job IDs directly "
             "on the command line."},
 
-    {CCommandLineParser::eSwitch, eWorkerNodes,
-        "worker-nodes", "Print the list of active worker nodes."},
+    {CCommandLineParser::eSwitch, eClientInfo,
+        "client-info", "Print information on the recently "
+            "connected clients."},
 
     {CCommandLineParser::eSwitch, eActiveJobCount,
         "active-job-count", "Only print the total number of "
@@ -225,6 +226,7 @@ struct SOptionDefinition {
             "but preserve the queue itself. This option is "
             "required for static queues."},
 
+/*
     {CCommandLineParser::eOptionWithParameter, eRegisterWNode,
         "register-wnode", "Generate and print a new GUID "
             "and register the specified worker node control "
@@ -233,16 +235,15 @@ struct SOptionDefinition {
     {CCommandLineParser::eOptionWithParameter, eUnregisterWNode,
         "unregister-wnode", "Unregister the worker node "
             "identified by the specified GUID."},
-
-    {CCommandLineParser::eOptionWithParameter, eWNodePort,
-        WNODE_PORT_OPTION, "Worker node control port number."},
-
-    {CCommandLineParser::eOptionWithParameter, eWNodeGUID,
-        "wnode-guid", "Worker node GUID."},
+*/
 
     {CCommandLineParser::eOptionWithParameter, eWaitTimeout,
         WAIT_TIMEOUT_OPTION, "Wait up to the specified "
             "number of seconds for a response."},
+
+    {CCommandLineParser::eOptionWithParameter, eListeningPort,
+        LISTENING_PORT_OPTION, "UDP port to listen for "
+            "the response."},
 
     {CCommandLineParser::eOptionWithParameter, eFailJob,
         FAIL_JOB_OPTION, "Report the job as failed "
@@ -263,6 +264,15 @@ struct SOptionDefinition {
 
     {CCommandLineParser::eSwitch, eCompatMode,
         "compat-mode", "Enable backward compatibility tweaks."},
+
+    {CCommandLineParser::eSwitch, eExtendedOptionDelimiter,
+        NULL, NULL},
+
+    {CCommandLineParser::eOptionWithParameter, eClientNode,
+        "client-node", "Client application identifier."},
+
+    {CCommandLineParser::eOptionWithParameter, eClientSession,
+        "client-session", "Client session identifier."},
 
 };
 
@@ -351,7 +361,8 @@ struct SCommandDefinition {
         "Print vital information about the specified NetSchedule job. "
         "Expired jobs will be reported as not found.",
         {eID, eNetSchedule, eQueue, eBrief, eStatusOnly, eDeferExpiration,
-            eProgressMessageOnly, eAuth, -1}},
+            eProgressMessageOnly, eAuth,
+            eClientNode, eClientSession, -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_SubmitJob,
         "submitjob", "Submit one or more jobs to a NetSchedule queue.",
@@ -390,13 +401,14 @@ struct SCommandDefinition {
         "ID per line.",
         {eNetSchedule, eQueue, eBatch, eNetCache, eInput, eInputFile,
             eAffinity, eJobTag, eExclusiveJob, eProgressMessage,
-            eOutputFile, eAuth, -1}},
+            eOutputFile, eAuth, eClientNode, eClientSession, -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_GetJobInput,
         "getjobinput", "Read job input.",
         "Retrieve and print job input to the standard output stream or "
         "save it to a file.",
-        {eID, eNetSchedule, eQueue, eOutputFile, eAuth, -1}},
+        {eID, eNetSchedule, eQueue, eOutputFile, eAuth,
+            eClientNode, eClientSession, -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_GetJobOutput,
         "getjoboutput", "Read job output if the job is completed.",
@@ -405,7 +417,8 @@ struct SCommandDefinition {
         "completed successfully, an appropriate error message is printed "
         "to the standard error stream and the program exits with a non-zero "
         "return code.",
-        {eID, eNetSchedule, eQueue, eOutputFile, eAuth, -1}},
+        {eID, eNetSchedule, eQueue, eOutputFile, eAuth,
+            eClientNode, eClientSession, -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_ReadJobs,
         READJOBS_COMMAND, "Bulk retrieval of completed jobs.",
@@ -445,19 +458,24 @@ struct SCommandDefinition {
         "run of '" READJOBS_COMMAND "'.",
         {eNetSchedule, eQueue, eLimit, eTimeout, eOutputFile,
             eConfirmRead, eRollbackRead, eFailRead, eErrorMessage,
-            eJobId, eInputFile, eAuth, -1}},
+            eJobId, eInputFile, eAuth,
+            eClientNode, eClientSession, -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_CancelJob,
         "canceljob", "Cancel a NetSchedule job.",
         "Mark the job as canceled. This command also instructs the worker "
         "node that may be processing this job to stop the processing.",
-        {eID, eNetSchedule, eQueue, eAllJobs, eAuth, -1}},
+        {eID, eNetSchedule, eQueue, eAllJobs, eAuth,
+            eClientNode, eClientSession, -1}},
 
+/*
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_RegWNode,
         "regwnode", "Register or unregister a worker node.",
         "This command initiates and terminates worker node sessions "
         "on NetSchedule servers.",
-        {eNetSchedule, eQueue, eRegisterWNode, eUnregisterWNode, eAuth, -1}},
+        {eNetSchedule, eQueue, eRegisterWNode, eUnregisterWNode, eAuth,
+            eClientNode, eClientSession, -1}},
+*/
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_RequestJob,
         REQUESTJOB_COMMAND, "Get a job from NetSchedule for processing.",
@@ -475,8 +493,9 @@ struct SCommandDefinition {
         "If none of the NetSchedule servers has pending jobs in the "
         "specified queue, nothing is printed and the exit code of zero "
         "is returned.",
-        {eNetSchedule, eQueue, eAffinity, eWNodePort, eWNodeGUID,
-            eOutputFile, eWaitTimeout, eAuth, -1}},
+        {eNetSchedule, eQueue, eAffinity,
+            eOutputFile, eWaitTimeout, eListeningPort, eAuth,
+            eClientNode, eClientSession, -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_CommitJob,
         "commitjob", "Mark the job as complete or failed.",
@@ -492,9 +511,10 @@ struct SCommandDefinition {
         "command makes an attempt to acquire another pending job and "
         "if it succeeds, its output is identical to that of the "
         REQUESTJOB_COMMAND " command. Otherwise, no output is produced.",
-        {eID, eNetSchedule, eQueue, eWNodePort, eWNodeGUID,
+        {eID, eNetSchedule, eQueue,
             eNetCache, eReturnCode, eJobOutput, eInputFile, eFailJob,
-            eGetNextJob, eAffinity, eOutputFile, eAuth, -1}},
+            eGetNextJob, eAffinity, eOutputFile, eAuth,
+            eClientNode, eClientSession, -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_ReturnJob,
         "returnjob", "Return a previously accepted job.",
@@ -505,40 +525,46 @@ struct SCommandDefinition {
         "Pending, but the information about previous runs will "
         "not be discarded, and the expiration time will not be "
         "advanced.",
-        {eID, eNetSchedule, eQueue, eWNodePort, eWNodeGUID, eAuth, -1}},
+        {eID, eNetSchedule, eQueue, eAuth,
+            eClientNode, eClientSession, -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_UpdateJob,
         "updatejob", "Modify attributes of an existing job.",
         "Change one or more job properties. The outcome depends "
         "on the current state of the job.",
-        {eID, eNetSchedule, eQueue, eWNodePort, eWNodeGUID,
-            eExtendLifetime, eProgressMessage, eAuth, -1}},
+        {eID, eNetSchedule, eQueue,
+            eExtendLifetime, eProgressMessage, eAuth,
+            eClientNode, eClientSession, -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_NetScheduleQuery,
         "nsquery", "Send a custom query to a NetSchedule server.",
         "The syntax of the query must comply to the format expected "
         "by the NetSchedule QERY command "
         "(see http://mini.ncbi.nih.gov/hequ).",
-        {eQuery, eNetSchedule, eQueue, eQueryField, eCount, eAuth, -1}},
+        {eQuery, eNetSchedule, eQueue, eQueryField, eCount, eAuth,
+            eClientNode, eClientSession, -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_QueueInfo,
         "queueinfo|qi", "Get information about a NetSchedule queue.",
         "Print queue type (static or dynamic). For dynamic queues, "
         "print also their model queue name and description.",
-        {eQueueArg, eNetSchedule, eAuth, -1}},
+        {eQueueArg, eNetSchedule, eAuth,
+            eClientNode, eClientSession, -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_DumpQueue,
         "dumpqueue", "Dump a NetSchedule queue.",
         "This command dumps the entire contents of a NetSchedule queue. "
         "It is also possible to filter the output by job status, but "
         "in this case significantly less information is printed.",
-        {eNetSchedule, eQueue, eSelectByStatus, eAuth, -1}},
+        {eNetSchedule, eQueue, eSelectByStatus, eAuth,
+            eClientNode, eClientSession, -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_CreateQueue,
         "createqueue", "Create a dynamic NetSchedule queue.",
         "This command creates a new NetSchedule queue using "
         "a template known as a model queue.",
-        {eQueueArg, eModelQueue, eNetSchedule, eQueueDescription, eAuth, -1}},
+        {eQueueArg, eModelQueue, eNetSchedule, eQueueDescription, eAuth,
+            eClientNode, eClientSession, -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_GetQueueList,
         "getqueuelist", "Print the list of available NetSchedule queues.",
@@ -549,7 +575,7 @@ struct SCommandDefinition {
         "queues available on all servers in the service. For each "
         "queue available only on a subset of servers, its servers "
         "are listed in parentheses after the queue name.",
-        {eNetSchedule, eAuth, -1}},
+        {eNetSchedule, eAuth, eClientNode, eClientSession, -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_DeleteQueue,
         "deletequeue", "Delete a queue or all jobs from a queue.",
@@ -559,7 +585,8 @@ struct SCommandDefinition {
         "Information about all jobs and their lifecycle events "
         "will be lost. "
         WN_NOT_NOTIFIED_DISCLAIMER,
-        {eQueueArg, eNetSchedule, eDropJobs, eAuth, -1}},
+        {eQueueArg, eNetSchedule, eDropJobs, eAuth,
+            eClientNode, eClientSession, -1}},
 
     {eGeneralCommand, &CGridCommandLineInterfaceApp::Cmd_ServerInfo,
         "serverinfo|si", "Print information about a Grid server.",
@@ -569,15 +596,16 @@ struct SCommandDefinition {
         "for a NetSchedule server, queue parameters will "
         "be printed as well.",
         {eNetCache, eNetSchedule, eWorkerNode, eQueue,
-            eCompatMode, eAuth, -1}},
+            eCompatMode, eAuth, eClientNode, eClientSession, -1}},
 
     {eGeneralCommand, &CGridCommandLineInterfaceApp::Cmd_Stats,
         "stats", "Show server access statistics.",
         "Dump accumulated statistics on server access and "
         "performance.",
         {eNetCache, eNetSchedule, eWorkerNode, eQueue, eBrief,
-            eWorkerNodes, eActiveJobCount, eJobsByAffinity,
-            eJobsByStatus, eAffinity, eCompatMode, eAuth, -1}},
+            eClientInfo, eActiveJobCount, eJobsByAffinity,
+            eJobsByStatus, eAffinity, eCompatMode, eAuth,
+            eClientNode, eClientSession, -1}},
 
     {eNetCacheCommand, &CGridCommandLineInterfaceApp::Cmd_Health,
         "health", "Evaluate availability of a server.",
@@ -593,7 +621,8 @@ struct SCommandDefinition {
         "getconf", "Dump actual configuration of a server.",
         "Print the effective configuration parameters of a "
         "running NetCache or NetSchedule server.",
-        {eNetCache, eNetSchedule, eQueue, eAuth, -1}},
+        {eNetCache, eNetSchedule, eQueue, eAuth,
+            eClientNode, eClientSession, -1}},
 
     {eGeneralCommand, &CGridCommandLineInterfaceApp::Cmd_Reconf,
         "reconf", "Reload server configuration.",
@@ -611,7 +640,7 @@ struct SCommandDefinition {
         "' are applicable only to NetSchedule servers and worker "
         "nodes.",
         {eNetCache, eNetSchedule, eWorkerNode, eNow, eDie,
-            eCompatMode, eAuth, -1}},
+            eCompatMode, eAuth, eClientNode, eClientSession, -1}},
 };
 
 #define TOTAL_NUMBER_OF_COMMANDS int(sizeof(s_CommandDefinitions) / \
@@ -632,15 +661,33 @@ int CGridCommandLineInterfaceApp::Run()
     const SCommandDefinition* cmd_def;
 
     {
+        bool enable_extended_cli = false;
+
+        int argc = m_ArgC - 1;
+        const char** argv = m_ArgV + 1;
+
+        while (--argc >= 0)
+            if (strcmp(*argv, "--extended-cli") != 0)
+                ++argv;
+            else {
+                enable_extended_cli = true;
+                --m_ArgC;
+                if (argc > 0)
+                    memcpy(argv, argv + 1, argc * sizeof(*argv));
+            }
+
         CCommandLineParser clparser(PROGRAM_NAME, PROGRAM_VERSION,
             "Utility to access and control NCBI Grid services.");
 
         const SOptionDefinition* opt_def = s_OptionDefinitions;
         int i = eTotalNumberOfOptions;
         do {
-            clparser.AddOption(opt_def->type, opt_def->opt_id,
-                opt_def->name_variants, opt_def->description ?
-                    opt_def->description : kEmptyStr);
+            if (opt_def->opt_id != eExtendedOptionDelimiter)
+                clparser.AddOption(opt_def->type, opt_def->opt_id,
+                    opt_def->name_variants, opt_def->description ?
+                        opt_def->description : kEmptyStr);
+            else if (!enable_extended_cli)
+                break;
             ++opt_def;
         } while (--i > 0);
 
@@ -656,7 +703,8 @@ int CGridCommandLineInterfaceApp::Run()
             clparser.AddCommand(i, cmd_def->name_variants,
                 cmd_def->synopsis, cmd_def->usage, cmd_def->cat_id);
             for (const int* opt_id = cmd_def->options; *opt_id >= 0; ++opt_id)
-                clparser.AddAssociation(i, *opt_id);
+                if (*opt_id < eExtendedOptionDelimiter || enable_extended_cli)
+                    clparser.AddAssociation(i, *opt_id);
             ++cmd_def;
         }
 
@@ -752,6 +800,10 @@ int CGridCommandLineInterfaceApp::Run()
             case eWaitTimeout:
                 m_Opts.timeout = NStr::StringToUInt(opt_value);
                 break;
+            case eListeningPort:
+                m_Opts.listening_port =
+                    (unsigned short) NStr::StringToUInt(opt_value);
+                break;
             case eConfirmRead:
             case eRollbackRead:
             case eFailRead:
@@ -777,14 +829,11 @@ int CGridCommandLineInterfaceApp::Run()
             case eExtendLifetime:
                 m_Opts.extend_lifetime_by = NStr::StringToUInt(opt_value);
                 break;
-            case eRegisterWNode:
-            case eWNodePort:
-                m_Opts.wnode_port =
-                    (unsigned short) NStr::StringToUInt(opt_value);
+            case eClientNode:
+                m_Opts.client_node = opt_value;
                 break;
-            case eUnregisterWNode:
-            case eWNodeGUID:
-                m_Opts.wnode_guid = opt_value;
+            case eClientSession:
+                m_Opts.client_session = opt_value;
                 break;
             case eProgressMessage:
                 m_Opts.progress_message = opt_value;

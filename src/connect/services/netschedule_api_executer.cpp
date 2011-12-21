@@ -140,11 +140,6 @@ bool CNetScheduleExecuter::GetJob(CNetScheduleJob& job, const string& affinity)
 {
     string cmd = "GET";
 
-    if (m_Impl->m_ControlPort != 0) {
-        cmd += ' ';
-        cmd += NStr::IntToString(m_Impl->m_ControlPort);
-    }
-
     if (!affinity.empty()) {
         cmd += " aff=\"";
         cmd += NStr::PrintableString(affinity);
@@ -178,16 +173,16 @@ struct SWaitQueuePred {
 
 
 bool CNetScheduleExecuter::WaitJob(CNetScheduleJob& job,
-                                   unsigned   wait_time,
+                                   unsigned short listening_port,
+                                   unsigned wait_time,
                                    const string& affinity)
 {
     string cmd = "WGET ";
 
-    _ASSERT(m_Impl->m_ControlPort != 0);
-
-    cmd += NStr::UIntToString(m_Impl->m_ControlPort);
+    cmd += NStr::UIntToString(listening_port);
     cmd += ' ';
     cmd += NStr::UIntToString(wait_time);
+
     if (!affinity.empty()) {
         cmd += ' ';
         cmd += NStr::PrintableString(affinity);
@@ -196,7 +191,7 @@ bool CNetScheduleExecuter::WaitJob(CNetScheduleJob& job,
     if (m_Impl->GetJobImpl(cmd, job))
         return true;
 
-    s_WaitNotification(wait_time, m_Impl->m_ControlPort,
+    s_WaitNotification(wait_time, listening_port,
         SWaitQueuePred(m_Impl->m_API.GetQueueName()));
 
     // no matter what WaitResult returned, re-try the request
@@ -317,12 +312,6 @@ bool SNetScheduleExecuterImpl::GetJobImpl(
         CNetService::eIncludePenalized);
 }
 
-
-const string& CNetScheduleExecuter::GetGUID()
-{
-    return m_Impl->m_UID;
-}
-
 const CNetScheduleAPI::SServerParams& CNetScheduleExecuter::GetServerParams()
 {
     return m_Impl->m_API->GetServerParams();
@@ -330,7 +319,7 @@ const CNetScheduleAPI::SServerParams& CNetScheduleExecuter::GetServerParams()
 
 void CNetScheduleExecuter::UnRegisterClient()
 {
-    string cmd("CLRN " + m_Impl->m_UID);
+    string cmd("CLRN");
 
     for (CNetServiceIterator it = m_Impl->m_API->m_Service.
             Iterate(CNetService::eIncludePenalized); it; ++it) {

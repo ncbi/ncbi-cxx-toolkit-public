@@ -69,12 +69,18 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         m_NetScheduleAPI = CNetScheduleAPI(key.host, m_Opts.auth, queue);
     }
 
+    if (IsOptionSet(eClientNode))
+        m_NetScheduleAPI.SetClientNode(m_Opts.client_node);
+    if (IsOptionSet(eClientSession))
+        m_NetScheduleAPI.SetClientSession(m_Opts.client_session);
+
     if (IsOptionSet(eCompatMode)) {
         m_NetScheduleAPI.UseOldStyleAuth();
         if (IsOptionSet(eWorkerNode))
             m_NetScheduleAPI.EnableWorkerNodeCompatMode();
     }
 
+    // Specialize NetSchedule API.
     switch (api_class) {
     case eNetScheduleAPI:
         break;
@@ -86,8 +92,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         m_NetScheduleSubmitter = m_NetScheduleAPI.GetSubmitter();
         break;
     case eNetScheduleExecutor:
-        m_NetScheduleExecutor =
-            m_NetScheduleAPI.GetExecuter(m_Opts.wnode_port, m_Opts.wnode_guid);
+        m_NetScheduleExecutor = m_NetScheduleAPI.GetExecuter();
         break;
     default:
         _ASSERT(0);
@@ -802,6 +807,7 @@ int CGridCommandLineInterfaceApp::Cmd_CancelJob()
     return 0;
 }
 
+/*
 int CGridCommandLineInterfaceApp::Cmd_RegWNode()
 {
     SetUp_NetScheduleCmd(eNetScheduleExecutor);
@@ -823,6 +829,7 @@ int CGridCommandLineInterfaceApp::Cmd_RegWNode()
 
     return 0;
 }
+*/
 
 int CGridCommandLineInterfaceApp::Cmd_RequestJob()
 {
@@ -834,13 +841,13 @@ int CGridCommandLineInterfaceApp::Cmd_RequestJob()
         if (m_NetScheduleExecutor.GetJob(job, m_Opts.affinity))
             return PrintJobAttrsAndDumpInput(job);
     } else {
-        if (!IsOptionSet(eWNodePort)) {
+        if (!IsOptionSet(eListeningPort)) {
             fprintf(stderr, PROGRAM_NAME " " REQUESTJOB_COMMAND
                 ": option '--" WAIT_TIMEOUT_OPTION "' requires '--"
-                WNODE_PORT_OPTION "' to be specified as well\n");
+                LISTENING_PORT_OPTION "' to be specified as well\n");
             return 2;
         }
-        if (m_NetScheduleExecutor.WaitJob(job,
+        if (m_NetScheduleExecutor.WaitJob(job, m_Opts.listening_port,
                 m_Opts.timeout, m_Opts.affinity))
             return PrintJobAttrsAndDumpInput(job);
     }
