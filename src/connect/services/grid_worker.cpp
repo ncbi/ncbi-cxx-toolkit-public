@@ -483,16 +483,16 @@ void CGridThreadContext::RunJobs(CWorkerNodeJobContext& job_context)
                 static_cast<CWorkerNodeJobCleanup*>(
                     job_context.GetCleanupEventSource())->CallEventHandlers();
         }
+        catch (CNetScheduleException& e) {
+            ERR_POST_X(20, m_JobContext->GetJobKey() <<
+                " Error in Job execution: " << e.what());
+            if (e.GetErrCode() != CNetScheduleException::eJobNotFound)
+                PutFailureAndIgnoreErrors(e.what());
+        }
         catch (exception& ex) {
             ERR_POST_X(18, m_JobContext->GetJobKey() <<
                 " Error in Job execution: " << ex.what());
-            try {
-                m_JobContext->m_Job.error_msg = ex.what();
-                PutFailure();
-            } catch (exception& ex1) {
-                ERR_POST_X(19, "Failed to report exception: " <<
-                    m_JobContext->GetJobKey() << " " << ex1.what());
-            }
+            PutFailureAndIgnoreErrors(ex.what());
         }
 
         m_JobContext->GetWorkerNode().x_NotifyJobWatcher(*m_JobContext,
