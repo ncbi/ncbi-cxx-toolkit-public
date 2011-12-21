@@ -273,7 +273,7 @@ enum ECommandCategory {
 struct SCommandCategoryDefinition {
     int cat_id;
     const char* title;
-} static const s_CategoryDefinitions[] {
+} static const s_CategoryDefinitions[eTotalNumberOfCommandCategories] = {
     {eGeneralCommand, "General commands"},
     {eNetCacheCommand, "NetCache commands"},
     {eNetScheduleCommand, "NetSchedule commands"},
@@ -837,11 +837,9 @@ int CGridCommandLineInterfaceApp::Run()
         return (this->*cmd_def->cmd_proc)();
     }
     catch (CArgException& e) {
-        if (e.GetErrCode() == CArgException::eInvalidArg) {
-            fprintf(stderr, "%s\n", e.GetMsg().c_str());
-            return 2;
-        }
-        throw;
+        fprintf(stderr, "%s\n", e.GetErrCode() == CArgException::eInvalidArg ?
+            e.GetMsg().c_str() : e.what());
+        return 2;
     }
     catch (CException& e) {
         fprintf(stderr, "%s\n", e.what());

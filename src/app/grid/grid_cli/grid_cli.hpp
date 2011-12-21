@@ -41,7 +41,7 @@
 
 
 #define PROGRAM_NAME "grid_cli"
-#define PROGRAM_VERSION "1.1.0"
+#define PROGRAM_VERSION "1.2.0"
 
 #define INPUT_OPTION "input"
 #define INPUT_FILE_OPTION "input-file"
