@@ -32,12 +32,13 @@
  */
 #include <ncbi_pch.hpp>
 #include <corelib/test_boost.hpp>
+#include <serial/iterator.hpp>
 
 // BLAST API includes
 #include <algo/blast/api/psiblast.hpp>
 #include <algo/blast/api/uniform_search.hpp>
 #include <algo/blast/api/local_db_adapter.hpp>
-#include <algo/blast/api/objmgrfree_query_data.hpp>
+#include <algo/blast/api/objmgr_query_data.hpp>
 
 #include <algo/blast/blastinput/blast_scope_src.hpp>
 
@@ -145,6 +146,33 @@ struct CPsiBlastTestFixture {
         return num_gis;
     }
 
+    IQueryFactory *s_SetupSubject(CConstRef<CBioseq> bioseq) {
+        TSeqLocVector subjects;
+        CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+        CConstRef<CSeq_id> sid = (scope->AddBioseq(*bioseq)).GetSeqId();
+        CRef<CSeq_loc> sl(new CSeq_loc());
+        sl->SetWhole();
+        sl->SetId(*sid);
+        SSeqLoc ssl(*sl, *scope);
+        subjects.push_back(ssl);
+        return (IQueryFactory *)(new CObjMgr_QueryFactory(subjects));
+    }
+
+    IQueryFactory *s_SetupSubject(CConstRef<CBioseq_set> bioseq_set) {
+        TSeqLocVector subjects;
+        CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+        CTypeConstIterator<CBioseq> itr(ConstBegin(*bioseq_set, eDetectLoops));
+        for (; itr; ++itr) {
+            CConstRef<CSeq_id> sid = (scope->AddBioseq(*itr)).GetSeqId();
+            CRef<CSeq_loc> sl(new CSeq_loc());
+            sl->SetWhole();
+            sl->SetId(*sid);
+            SSeqLoc ssl(*sl, *scope);
+            subjects.push_back(ssl);
+        }
+        return (IQueryFactory *)(new CObjMgr_QueryFactory(subjects));
+    }
+
     CRef<CPssmWithParameters> 
     x_ComputePssmForNextIteration(const CBioseq& query,
                                   CConstRef<CSeq_align_set> sset,
@@ -170,8 +198,7 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_ProteinAsQuery_NoCBS) {
     m_OptHandle->SetCompositionBasedStats(eNoCompositionBasedStats);
     m_OptHandle->SetEvalueThreshold(1.5);
     CConstRef<CBioseq> bioseq(&m_SeqEntry->GetSeq());
-    CRef<IQueryFactory> query_factory
-        (new CObjMgrFree_QueryFactory(bioseq));
+    CRef<IQueryFactory> query_factory(s_SetupSubject(bioseq));
     CRef<CLocalDbAdapter> dbadapter(new CLocalDbAdapter(*m_SearchDb));
     CPsiBlast psiblast(query_factory, dbadapter, m_OptHandle); 
 
@@ -257,8 +284,7 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_ProteinAsQuery_NoCBS) {
 BOOST_AUTO_TEST_CASE(TestSingleIteration_ProteinAsQuery_CBS) {
     m_OptHandle->SetCompositionBasedStats(eCompositionBasedStats);
     CConstRef<CBioseq> bioseq(&m_SeqEntry->GetSeq());
-    CRef<IQueryFactory> query_factory
-        (new CObjMgrFree_QueryFactory(bioseq));
+    CRef<IQueryFactory> query_factory(s_SetupSubject(bioseq));
     CRef<CLocalDbAdapter> dbadapter(new CLocalDbAdapter(*m_SearchDb));
     CPsiBlast psiblast(query_factory, dbadapter, m_OptHandle); 
 
@@ -332,8 +358,7 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_ProteinAsQuery_CBS) {
 BOOST_AUTO_TEST_CASE(TestSingleIteration_ProteinAsQuery_CBSConditional) {
     m_OptHandle->SetCompositionBasedStats(eCompositionMatrixAdjust);
     CConstRef<CBioseq> bioseq(&m_SeqEntry->GetSeq());
-    CRef<IQueryFactory> query_factory
-        (new CObjMgrFree_QueryFactory(bioseq));
+    CRef<IQueryFactory> query_factory(s_SetupSubject(bioseq));
     CRef<CLocalDbAdapter> dbadapter(new CLocalDbAdapter(*m_SearchDb));
     CPsiBlast psiblast(query_factory, dbadapter, m_OptHandle); 
 
@@ -417,8 +442,7 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_ProteinAsQuery_CBSConditional) {
 BOOST_AUTO_TEST_CASE(TestSingleIteration_ProteinAsQuery_CBSUniversal) {
     m_OptHandle->SetCompositionBasedStats(eCompoForceFullMatrixAdjust);
     CConstRef<CBioseq> bioseq(&m_SeqEntry->GetSeq());
-    CRef<IQueryFactory> query_factory
-        (new CObjMgrFree_QueryFactory(bioseq));
+    CRef<IQueryFactory> query_factory(s_SetupSubject(bioseq));
     CRef<CLocalDbAdapter> dbadapter(new CLocalDbAdapter(*m_SearchDb));
     CPsiBlast psiblast(query_factory, dbadapter, m_OptHandle); 
 
@@ -506,8 +530,7 @@ BOOST_AUTO_TEST_CASE(TestMultipleIterationsAndConvergence_ProteinAsQuery_NoCBS) 
     m_OptHandle->SetCompositionBasedStats(eNoCompositionBasedStats);
 
     CConstRef<CBioseq> bioseq(&m_SeqEntry->GetSeq());
-    CRef<IQueryFactory> query_factory
-        (new CObjMgrFree_QueryFactory(bioseq));
+    CRef<IQueryFactory> query_factory(s_SetupSubject(bioseq));
     CRef<CLocalDbAdapter> dbadapter(new CLocalDbAdapter(*m_SearchDb));
     CPsiBlast psiblast(query_factory, dbadapter, m_OptHandle);
 
@@ -1109,8 +1132,7 @@ BOOST_AUTO_TEST_CASE(TestMultipleIterationsAndConvergence_PssmAsQuery_CBS) {
 // Should throw exception as only one query sequence/pssm is allowed
 BOOST_AUTO_TEST_CASE(TestMultipleQueries) {
     CConstRef<CBioseq_set> bioseq_set(&m_SeqSet->GetSet());
-    CRef<IQueryFactory> query_factory
-        (new CObjMgrFree_QueryFactory(bioseq_set));
+    CRef<IQueryFactory> query_factory(s_SetupSubject(bioseq_set));
     CRef<CLocalDbAdapter> dbadapter(new CLocalDbAdapter(*m_SearchDb));
     BOOST_REQUIRE_THROW(CPsiBlast psiblast(query_factory, dbadapter, m_OptHandle), CBlastException);
 }
@@ -1170,8 +1192,7 @@ BOOST_AUTO_TEST_CASE(TestNonExistantDb) {
 BOOST_AUTO_TEST_CASE(TestNullOptions) {
     m_OptHandle.Reset();
     CConstRef<CBioseq> bioseq(&m_SeqEntry->GetSeq());
-    CRef<IQueryFactory> query_factory
-        (new CObjMgrFree_QueryFactory(bioseq));
+    CRef<IQueryFactory> query_factory(s_SetupSubject(bioseq));
     CRef<CLocalDbAdapter> dbadapter(new CLocalDbAdapter(*m_SearchDb));
     BOOST_REQUIRE_THROW(CPsiBlast psiblast(query_factory, dbadapter, m_OptHandle), 
                         CBlastException);

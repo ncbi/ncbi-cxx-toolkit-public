@@ -36,7 +36,7 @@
 #include <algo/blast/api/traceback_stage.hpp>
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <algo/blast/api/local_search.hpp>
-#include <algo/blast/api/objmgrfree_query_data.hpp>
+#include <algo/blast/api/objmgr_query_data.hpp>
 
 #include <algo/blast/core/blast_hspstream.h>
 #include <algo/blast/core/hspfilter_collector.h>
@@ -301,9 +301,10 @@ public:
         }
         
         CSeq_id query("gi|54607139");
-        
-        CRef<IQueryFactory> qf
-            (new CObjMgrFree_QueryFactory(query_seqdb->SeqidToBioseq(query)));
+        auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(query));
+        TSeqLocVector qv;
+        qv.push_back(*sl);
+        CRef<IQueryFactory> qf(new CObjMgr_QueryFactory(qv));
         
         // Note that the traceback code will (in some cases) modify
         // the options object.
@@ -355,8 +356,10 @@ BOOST_AUTO_TEST_CASE(TracebackWithPssm_AndWarning) {
     CRef<CSeqDB> subject_seqdb(new CSeqDB("nr", CSeqDB::eProtein));
 
     CSeq_id query("gi|129295");
-    CRef<IQueryFactory> qf
-        (new CObjMgrFree_QueryFactory(subject_seqdb->SeqidToBioseq(query)));
+    auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(query));
+    TSeqLocVector qv;
+    qv.push_back(*sl);
+    CRef<IQueryFactory> qf(new CObjMgr_QueryFactory(qv));
 
     // get the options
     CRef<CBlastOptionsHandle> opth(CBlastOptionsFactory::Create(ePSIBlast));

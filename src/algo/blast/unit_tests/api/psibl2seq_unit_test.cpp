@@ -32,11 +32,11 @@
  */
 #include <ncbi_pch.hpp>
 #include <corelib/test_boost.hpp>
+#include <serial/iterator.hpp>
 #include <algo/blast/api/psibl2seq.hpp>
 #include "psiblast_aux_priv.hpp"        // for PsiBlastComputePssmScores
 #include <algo/blast/api/bl2seq.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
-#include <algo/blast/api/objmgrfree_query_data.hpp>
 
 // Object includes
 #include <objects/scoremat/Pssm.hpp>
@@ -78,6 +78,7 @@ public:
     /// Contains a Bioseq-set with two Bioseqs, gi 7450545 and gi 129295
     CRef<CSeq_entry> m_SeqSet;
 
+    CRef<CScope> m_Scope;
 
     CPsiBl2SeqTestFixture() {
         m_OptHandle.Reset(new CPSIBlastOptionsHandle);
@@ -89,10 +90,11 @@ public:
         x_ReadSeqEntriesFromFile();
 
         CConstRef<CBioseq> bioseq(&m_SeqEntry->GetSeq());
-        m_Subject.Reset(new CObjMgrFree_QueryFactory(bioseq));
+        x_SetupSubject(bioseq);
     }
 
     ~CPsiBl2SeqTestFixture() {
+        m_Scope.Reset();
         m_Pssm.Reset();
         m_OptHandle.Reset();
         m_SeqEntry.Reset();
@@ -101,6 +103,33 @@ public:
     }
 
     // Auxiliary private functions go below...
+
+    void x_SetupSubject(CConstRef<CBioseq> bioseq) {
+        TSeqLocVector subjects;
+        m_Scope.Reset(new CScope(*CObjectManager::GetInstance()));
+        CConstRef<CSeq_id> sid = (m_Scope->AddBioseq(*bioseq)).GetSeqId();
+        CRef<CSeq_loc> sl(new CSeq_loc());
+        sl->SetWhole();
+        sl->SetId(*sid);
+        SSeqLoc ssl(*sl, *m_Scope);
+        subjects.push_back(ssl);
+        m_Subject.Reset(new CObjMgr_QueryFactory(subjects));
+    }
+
+    void x_SetupSubject(CConstRef<CBioseq_set> bioseq_set) {
+        TSeqLocVector subjects;
+        m_Scope.Reset(new CScope(*CObjectManager::GetInstance()));
+        CTypeConstIterator<CBioseq> itr(ConstBegin(*bioseq_set, eDetectLoops));
+        for (; itr; ++itr) {
+            CConstRef<CSeq_id> sid = (m_Scope->AddBioseq(*itr)).GetSeqId();
+            CRef<CSeq_loc> sl(new CSeq_loc());
+            sl->SetWhole();
+            sl->SetId(*sid);
+            SSeqLoc ssl(*sl, *m_Scope);
+            subjects.push_back(ssl);
+        }
+        m_Subject.Reset(new CObjMgr_QueryFactory(subjects));
+    }
 
     // Note that the scoremat stored in the file does not have scores
     void x_ReadPssmFromFile() {
@@ -287,7 +316,7 @@ BOOST_AUTO_TEST_CASE(TestMissingOptions) {
 
 BOOST_AUTO_TEST_CASE(TestComparePssmWithSingleSequence) {
     CConstRef<CBioseq> bioseq(&m_SeqEntry->GetSeq());
-    m_Subject.Reset(new CObjMgrFree_QueryFactory(bioseq));
+    x_SetupSubject(bioseq);
 
     CPsiBl2Seq blaster(m_Pssm, m_Subject, m_OptHandle);
     CSearchResultSet results(*blaster.Run());
@@ -310,7 +339,7 @@ BOOST_AUTO_TEST_CASE(TestComparePssmWithSingleSequence) {
 BOOST_AUTO_TEST_CASE(TestComparePssmWithMultipleSequences) {
     const size_t kNumSubjects = 2;
     CConstRef<CBioseq_set> bioseq_set(&m_SeqSet->GetSet());
-    m_Subject.Reset(new CObjMgrFree_QueryFactory(bioseq_set));
+    x_SetupSubject(bioseq_set);
 
     CPsiBl2Seq blaster(m_Pssm, m_Subject, m_OptHandle);
     CSearchResultSet results(*blaster.Run());
