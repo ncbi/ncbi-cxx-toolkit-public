@@ -263,6 +263,22 @@ struct SOptionDefinition {
 
 };
 
+enum ECommandCategory {
+    eGeneralCommand,
+    eNetCacheCommand,
+    eNetScheduleCommand,
+    eTotalNumberOfCommandCategories
+};
+
+struct SCommandCategoryDefinition {
+    int cat_id;
+    const char* title;
+} static const s_CategoryDefinitions[] {
+    {eGeneralCommand, "General commands"},
+    {eNetCacheCommand, "NetCache commands"},
+    {eNetScheduleCommand, "NetSchedule commands"},
+};
+
 #define ICACHE_KEY_FORMAT_EXPLANATION \
     "\n\nBoth NetCache and ICache modes are supported. " \
     "ICache mode requires blob ID to be specified in the " \
@@ -273,6 +289,7 @@ struct SOptionDefinition {
     "started job processing will not be notified."
 
 struct SCommandDefinition {
+    int cat_id;
     int (CGridCommandLineInterfaceApp::*cmd_proc)();
     const char* name_variants;
     const char* synopsis;
@@ -280,7 +297,7 @@ struct SCommandDefinition {
     int options[eTotalNumberOfOptions + 1];
 } static const s_CommandDefinitions[] = {
 
-    {&CGridCommandLineInterfaceApp::Cmd_WhatIs,
+    {eGeneralCommand, &CGridCommandLineInterfaceApp::Cmd_WhatIs,
         "whatis", "Determine argument type and characteristics.",
         "This command makes an attempt to guess the type of its "
         "argument. If the argument is successfully recognized "
@@ -288,14 +305,14 @@ struct SCommandDefinition {
         "dependent information about the object is printed.",
         {eUntypedArg, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_BlobInfo,
+    {eNetCacheCommand, &CGridCommandLineInterfaceApp::Cmd_BlobInfo,
         "blobinfo|bi", "Retrieve metadata of a NetCache blob.",
         "Print vital information about the specified blob. "
         "Expired blobs will be reported as not found."
         ICACHE_KEY_FORMAT_EXPLANATION,
         {eID, eNetCache, eCache, eAuth, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_GetBlob,
+    {eNetCacheCommand, &CGridCommandLineInterfaceApp::Cmd_GetBlob,
         "getblob|gb", "Retrieve a blob from NetCache.",
         "Read the blob identified by ID and send its contents "
         "to the standard output (or to the specified output "
@@ -304,7 +321,7 @@ struct SCommandDefinition {
         {eID, eNetCache, eCache, ePassword, eOffset,
             eSize, eOutputFile, eAuth, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_PutBlob,
+    {eNetCacheCommand, &CGridCommandLineInterfaceApp::Cmd_PutBlob,
         "putblob|pb", "Create or update a NetCache blob.",
         "Read data from the standard input (or a file) until EOF is "
         "encountered and save the received data as a NetCache blob."
@@ -312,28 +329,28 @@ struct SCommandDefinition {
         {eOptionalID, eNetCache, eCache, ePassword,
             eTTL, eEnableMirroring, eInput, eInputFile, eAuth, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_RemoveBlob,
+    {eNetCacheCommand, &CGridCommandLineInterfaceApp::Cmd_RemoveBlob,
         "rmblob|rb", "Remove a NetCache blob.",
         "Delete a blob if it exists. If the blob has expired "
         "(or never existed), no errors are reported."
         ICACHE_KEY_FORMAT_EXPLANATION,
         {eID, eNetCache, eCache, ePassword, eAuth, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_ReinitNetCache,
+    {eNetCacheCommand, &CGridCommandLineInterfaceApp::Cmd_ReinitNetCache,
         "reinitnc", "Delete all blobs and reset NetCache database.",
         "This command purges and resets the specified NetCache "
         "(or ICache) database. Administrative privileges are "
         "required.",
         {eNetCache, eCache, eAuth, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_JobInfo,
+    {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_JobInfo,
         "jobinfo|ji", "Print information about a NetSchedule job.",
         "Print vital information about the specified NetSchedule job. "
         "Expired jobs will be reported as not found.",
         {eID, eNetSchedule, eQueue, eBrief, eStatusOnly, eDeferExpiration,
             eProgressMessageOnly, eAuth, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_SubmitJob,
+    {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_SubmitJob,
         "submitjob", "Submit one or more jobs to a NetSchedule queue.",
         "Create one or multiple jobs by submitting input data to "
         "a NetSchedule queue. The first submitted job will be "
@@ -372,13 +389,13 @@ struct SCommandDefinition {
             eAffinity, eJobTag, eExclusiveJob, eProgressMessage,
             eOutputFile, eAuth, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_GetJobInput,
+    {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_GetJobInput,
         "getjobinput", "Read job input.",
         "Retrieve and print job input to the standard output stream or "
         "save it to a file.",
         {eID, eNetSchedule, eQueue, eOutputFile, eAuth, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_GetJobOutput,
+    {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_GetJobOutput,
         "getjoboutput", "Read job output if the job is completed.",
         "Retrieve and print job output to the standard output stream or "
         "save it to a file. If the job does not exist or has not been "
@@ -387,7 +404,7 @@ struct SCommandDefinition {
         "return code.",
         {eID, eNetSchedule, eQueue, eOutputFile, eAuth, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_ReadJobs,
+    {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_ReadJobs,
         READJOBS_COMMAND, "Bulk retrieval of completed jobs.",
         "Incrementally harvest IDs of completed jobs. This command "
         "has two modes of operation: reading of job IDs and "
@@ -427,19 +444,19 @@ struct SCommandDefinition {
             eConfirmRead, eRollbackRead, eFailRead, eErrorMessage,
             eJobId, eInputFile, eAuth, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_CancelJob,
+    {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_CancelJob,
         "canceljob", "Cancel a NetSchedule job.",
         "Mark the job as canceled. This command also instructs the worker "
         "node that may be processing this job to stop the processing.",
         {eID, eNetSchedule, eQueue, eAuth, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_RegWNode,
+    {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_RegWNode,
         "regwnode", "Register or unregister a worker node.",
         "This command initiates and terminates worker node sessions "
         "on NetSchedule servers.",
         {eNetSchedule, eQueue, eRegisterWNode, eUnregisterWNode, eAuth, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_RequestJob,
+    {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_RequestJob,
         REQUESTJOB_COMMAND, "Get a job from NetSchedule for processing.",
         "Return a job pending for execution. The status of the job is changed "
         "from \"Pending\" to \"Running\" before the job is returned. "
@@ -458,7 +475,7 @@ struct SCommandDefinition {
         {eNetSchedule, eQueue, eAffinity, eWNodePort, eWNodeGUID,
             eOutputFile, eWaitTimeout, eAuth, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_CommitJob,
+    {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_CommitJob,
         "commitjob", "Mark the job as complete or failed.",
         "Change the state of the job to either 'Done' or 'Failed'. This "
         "command can only be executed on jobs that are in the 'Running' "
@@ -476,7 +493,7 @@ struct SCommandDefinition {
             eNetCache, eReturnCode, eJobOutput, eInputFile, eFailJob,
             eGetNextJob, eAffinity, eOutputFile, eAuth, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_ReturnJob,
+    {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_ReturnJob,
         "returnjob", "Return a previously accepted job.",
         "Due to insufficient resources or for any other reason, "
         "this command can be used by a worker node to return a "
@@ -487,40 +504,40 @@ struct SCommandDefinition {
         "advanced.",
         {eID, eNetSchedule, eQueue, eWNodePort, eWNodeGUID, eAuth, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_UpdateJob,
+    {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_UpdateJob,
         "updatejob", "Modify attributes of an existing job.",
         "Change one or more job properties. The outcome depends "
         "on the current state of the job.",
         {eID, eNetSchedule, eQueue, eWNodePort, eWNodeGUID,
             eExtendLifetime, eProgressMessage, eAuth, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_NetScheduleQuery,
+    {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_NetScheduleQuery,
         "nsquery", "Send a custom query to a NetSchedule server.",
         "The syntax of the query must comply to the format expected "
         "by the NetSchedule QERY command "
         "(see http://mini.ncbi.nih.gov/hequ).",
         {eQuery, eNetSchedule, eQueue, eQueryField, eCount, eAuth, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_QueueInfo,
+    {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_QueueInfo,
         "queueinfo|qi", "Get information about a NetSchedule queue.",
         "Print queue type (static or dynamic). For dynamic queues, "
         "print also their model queue name and description.",
         {eQueueArg, eNetSchedule, eAuth, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_DumpQueue,
+    {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_DumpQueue,
         "dumpqueue", "Dump a NetSchedule queue.",
         "This command dumps the entire contents of a NetSchedule queue. "
         "It is also possible to filter the output by job status, but "
         "in this case significantly less information is printed.",
         {eNetSchedule, eQueue, eSelectByStatus, eAuth, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_CreateQueue,
+    {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_CreateQueue,
         "createqueue", "Create a dynamic NetSchedule queue.",
         "This command creates a new NetSchedule queue using "
         "a template known as a model queue.",
         {eQueueArg, eModelQueue, eNetSchedule, eQueueDescription, eAuth, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_GetQueueList,
+    {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_GetQueueList,
         "getqueuelist", "Print the list of available NetSchedule queues.",
         "This command takes a NetSchedule service name (or server "
         "address) and queries each server participating that service "
@@ -531,7 +548,7 @@ struct SCommandDefinition {
         "are listed in parentheses after the queue name.",
         {eNetSchedule, eAuth, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_DeleteQueue,
+    {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_DeleteQueue,
         "deletequeue", "Delete a queue or all jobs from a queue.",
         "Delete a dynamic NetSchedule queue or delete all jobs "
         "from any kind of queue. Static queues cannot be deleted, "
@@ -541,7 +558,7 @@ struct SCommandDefinition {
         WN_NOT_NOTIFIED_DISCLAIMER,
         {eQueueArg, eNetSchedule, eDropJobs, eAuth, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_ServerInfo,
+    {eGeneralCommand, &CGridCommandLineInterfaceApp::Cmd_ServerInfo,
         "serverinfo|si", "Print information about a Grid server.",
         "Query and print information about a running "
         "NetCache, NetSchedule, or worker node process.\n\n"
@@ -551,7 +568,7 @@ struct SCommandDefinition {
         {eNetCache, eNetSchedule, eWorkerNode, eQueue,
             eCompatMode, eAuth, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_Stats,
+    {eGeneralCommand, &CGridCommandLineInterfaceApp::Cmd_Stats,
         "stats", "Show server access statistics.",
         "Dump accumulated statistics on server access and "
         "performance.",
@@ -559,7 +576,7 @@ struct SCommandDefinition {
             eWorkerNodes, eActiveJobCount, eJobsByAffinity,
             eJobsByStatus, eAffinity, eCompatMode, eAuth, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_Health,
+    {eNetCacheCommand, &CGridCommandLineInterfaceApp::Cmd_Health,
         "health", "Evaluate availability of a server.",
         "Retrieve vital parameters of a running NetCache "
         "or NetSchedule server and estimate its availability "
@@ -569,20 +586,20 @@ struct SCommandDefinition {
         "\"raw\" is assumed."*/,
         {eNetCache, /*eOutputFormat,*/ eAuth, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_GetConf,
+    {eGeneralCommand, &CGridCommandLineInterfaceApp::Cmd_GetConf,
         "getconf", "Dump actual configuration of a server.",
         "Print the effective configuration parameters of a "
         "running NetCache or NetSchedule server.",
         {eNetCache, eNetSchedule, eQueue, eAuth, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_Reconf,
+    {eGeneralCommand, &CGridCommandLineInterfaceApp::Cmd_Reconf,
         "reconf", "Reload server configuration.",
         "Update configuration parameters of a running server. "
         "The server will look for a configuration file in the "
         "same location that was used during start-up.",
         {eNetCache, eNetSchedule, eAuth, -1}},
 
-    {&CGridCommandLineInterfaceApp::Cmd_Shutdown,
+    {eGeneralCommand, &CGridCommandLineInterfaceApp::Cmd_Shutdown,
         "shutdown", "Send a shutdown request to a remote server.",
         "Depending on the option specified, this command sends "
         "a shutdown request to a NetCache or NetSchedule server "
@@ -624,10 +641,17 @@ int CGridCommandLineInterfaceApp::Run()
             ++opt_def;
         } while (--i > 0);
 
+        const SCommandCategoryDefinition* cat_def = s_CategoryDefinitions;
+        i = eTotalNumberOfCommandCategories;
+        do {
+            clparser.AddCommandCategory(cat_def->cat_id, cat_def->title);
+            ++cat_def;
+        } while (--i > 0);
+
         cmd_def = s_CommandDefinitions;
         for (i = 0; i < TOTAL_NUMBER_OF_COMMANDS; ++i) {
             clparser.AddCommand(i, cmd_def->name_variants,
-                cmd_def->synopsis, cmd_def->usage);
+                cmd_def->synopsis, cmd_def->usage, cmd_def->cat_id);
             for (const int* opt_id = cmd_def->options; *opt_id >= 0; ++opt_id)
                 clparser.AddAssociation(i, *opt_id);
             ++cmd_def;
