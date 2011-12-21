@@ -59,6 +59,7 @@ CNetScheduleExceptionMap::CNetScheduleExceptionMap()
     m_Map["eInvalidAuthToken"]    = CNetScheduleException::eInvalidAuthToken;
     m_Map["eTooManyPreferredAffinities"] =
         CNetScheduleException::eTooManyPreferredAffinities;
+    m_Map["eTryAgain"]            = CNetScheduleException::eTryAgain;
 }
 
 CException::TErrCode CNetScheduleExceptionMap::GetCode(const string& name)

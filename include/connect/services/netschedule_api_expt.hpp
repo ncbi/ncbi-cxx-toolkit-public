@@ -85,7 +85,8 @@ public:
         eObsoleteCommand,
         eInvalidParameter,
         eInvalidAuthToken,
-        eTooManyPreferredAffinities
+        eTooManyPreferredAffinities,
+        eTryAgain,
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -110,6 +111,7 @@ public:
         case eInvalidAuthToken:    return "eInvalidAuthToken";
         case eTooManyPreferredAffinities:
             return "eTooManyPreferredAffinities";
+        case eTryAgain:            return "eTryAgain";
         default:                   return CNetServiceException::GetErrCodeString();
         }
     }

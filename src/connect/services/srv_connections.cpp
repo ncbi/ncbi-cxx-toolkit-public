@@ -33,7 +33,7 @@
 
 #include "srv_rw.hpp"
 
-#include <connect/services/srv_connections_expt.hpp>
+#include <connect/services/netschedule_api_expt.hpp>
 #include <connect/services/error_codes.hpp>
 
 #include <connect/ncbi_conn_exception.hpp>
@@ -541,6 +541,7 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd)
     unsigned attempt = 0;
 
     for (;;) {
+        string what;
         try {
             m_Impl->ConnectAndExec(cmd, exec_result);
             return exec_result;
@@ -559,11 +560,29 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd)
                 throw;
             }
 
-            LOG_POST(Warning << e.what() << ", reconnecting: attempt " <<
-                attempt << " of " << TServConn_ConnMaxRetries::GetDefault());
-
-            SleepMilliSec(s_GetRetryDelay());
+            what = e.what();
         }
+        catch (CNetScheduleException& e) {
+            if (++attempt > TServConn_ConnMaxRetries::GetDefault() ||
+                    e.GetErrCode() != CNetScheduleException::eTryAgain)
+                throw;
+
+            if (m_Impl->m_Service->m_MaxConnectionTime > 0 &&
+                    max_connection_time <= GetFastLocalTime()) {
+                LOG_POST(Error << "Timeout (max_connection_time=" <<
+                    m_Impl->m_Service->m_MaxConnectionTime <<
+                    "); cmd=" << cmd <<
+                    "; exception=" << e.GetMsg());
+                throw;
+            }
+
+            what = e.what();
+        }
+
+        LOG_POST(Warning << what << ", reconnecting: attempt " <<
+            attempt << " of " << TServConn_ConnMaxRetries::GetDefault());
+
+        SleepMilliSec(s_GetRetryDelay());
     }
 }
 
