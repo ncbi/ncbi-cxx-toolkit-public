@@ -205,7 +205,9 @@ private:
     void x_PrintRequestStop(EHTTPStatus  status);
     void x_CloseConnection(void);
 
-    std::string  x_FormGetJobResponse(const CQueue* q, const CJob& job) const;
+    void x_PrintGetJobResponse(const CQueue * q,
+                               const CJob &   job,
+                               bool           add_security_token);
 
     // Data
     size_t                          m_MsgBufferSize;

@@ -50,6 +50,7 @@ struct SNSCommandArguments
     unsigned int    job_mask;
     TJobStatus      job_status;
 
+    string          cmd;
     string          auth_token;
     string          input;
     string          output;
@@ -70,7 +71,8 @@ struct SNSCommandArguments
     bool            any_affinity;
     bool            wnode_affinity;
 
-    void AssignValues(const TNSProtoParams &  params);
+    void AssignValues(const TNSProtoParams &  params,
+                      const string &          command = "");
 
     private:
         void x_Reset();

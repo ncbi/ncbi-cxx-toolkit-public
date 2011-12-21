@@ -47,6 +47,7 @@ void SNSCommandArguments::x_Reset()
     job_mask        = 0;
     job_status      = CNetScheduleAPI::eJobNotFound;
 
+    cmd.erase();
     auth_token.erase();
     input.erase();
     output.erase();
@@ -71,9 +72,11 @@ void SNSCommandArguments::x_Reset()
 }
 
 
-void SNSCommandArguments::AssignValues(const TNSProtoParams &  params)
+void SNSCommandArguments::AssignValues(const TNSProtoParams &  params,
+                                       const string &          command)
 {
     x_Reset();
+    cmd = command;
 
     ITERATE(TNSProtoParams, it, params) {
         const CTempString &     key = it->first;

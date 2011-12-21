@@ -153,6 +153,7 @@ public:
     TJobStatus  PutResultGetJob(const CNSClientId &        client,
                                 // PutResult parameters
                                 unsigned                   done_job_id,
+                                const string &             auth_token,
                                 int                        ret_code,
                                 const string *             output,
                                 // GetJob parameters
@@ -164,6 +165,7 @@ public:
     TJobStatus  PutResult(const CNSClientId &  client,
                           time_t               curr,
                           unsigned             job_id,
+                          const string &       auth_token,
                           int                  ret_code,
                           const string *       output);
 
@@ -191,7 +193,9 @@ public:
                             const string& msg);
 
     TJobStatus  ReturnJob(const CNSClientId &     client,
-                          unsigned int            peer_addr);
+                          unsigned int            job_id,
+                          const string &          auth_token,
+                          string &                warning);
 
     /// 0 - job not found
     unsigned int  ReadJobFromDB(unsigned int  job_id, CJob &  job);
@@ -262,9 +266,11 @@ public:
 
     TJobStatus FailJob(const CNSClientId &    client,
                        unsigned               job_id,
+                       const string &         auth_token,
                        const string &         err_msg,
                        const string &         output,
-                       int                    ret_code);
+                       int                    ret_code,
+                       string                 warning);
 
     string  GetAffinityTokenByID(unsigned int  aff_id) const;
 
@@ -360,8 +366,8 @@ private:
     x_FindPendingWithAffinity(const TNSBitVector &  aff_ids,
                               const TNSBitVector &  blacklist_ids);
 
-    /// @return TRUE if job record has been found and updated
-    bool x_UpdateDB_PutResultNoLock(unsigned                job_id,
+    void x_UpdateDB_PutResultNoLock(unsigned                job_id,
+                                    const string &          auth_token,
                                     time_t                  curr,
                                     int                     ret_code,
                                     const string &          output,
@@ -378,9 +384,6 @@ private:
                                  time_t    curr_time,
                                  bool      logging);
 
-    void x_PrintJobStat(CNetScheduleHandler &   handler,
-                        const CJob&             job,
-                        unsigned                queue_run_timeout);
     void x_PrintShortJobStat(CNetScheduleHandler &  handler,
                              const CJob&            job);
     void x_LogSubmit(const CJob &   job,

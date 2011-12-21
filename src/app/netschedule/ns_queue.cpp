@@ -488,6 +488,7 @@ unsigned int  CQueue::SubmitBatch(const CNSClientId &             client,
 TJobStatus  CQueue::PutResultGetJob(const CNSClientId &        client,
                                     // PutResult parameters
                                     unsigned int               done_job_id,
+                                    const string &             auth_token,
                                     int                        ret_code,
                                     const string *             output,
                                     // GetJob parameters
@@ -501,7 +502,7 @@ TJobStatus  CQueue::PutResultGetJob(const CNSClientId &        client,
     time_t  curr = time(0);
 
     TJobStatus      old_status = PutResult(client, curr, done_job_id,
-                                           ret_code, output);
+                                           auth_token, ret_code, output);
     GetJobOrWait(client, 0, 0, curr, aff_list,
                  wnode_affinity, any_affinity, new_job);
     return old_status;
@@ -513,6 +514,7 @@ static const size_t     k_max_dead_locks = 10;  // max. dead lock repeats
 TJobStatus  CQueue::PutResult(const CNSClientId &  client,
                               time_t               curr,
                               unsigned int         job_id,
+                              const string &       auth_token,
                               int                  ret_code,
                               const string *       output)
 {
@@ -545,7 +547,7 @@ TJobStatus  CQueue::PutResult(const CNSClientId &  client,
 
             {{
                 CNSTransaction      transaction(this);
-                x_UpdateDB_PutResultNoLock(job_id, curr,
+                x_UpdateDB_PutResultNoLock(job_id, auth_token, curr,
                                            ret_code, *output, job,
                                            client);
                 transaction.Commit();
@@ -874,7 +876,9 @@ bool CQueue::PutProgressMessage(unsigned int    job_id,
 
 
 TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
-                             unsigned int            job_id)
+                              unsigned int            job_id,
+                              const string &          auth_token,
+                              string &                warning)
 {
     CJob                job;
     CFastMutexGuard     guard(m_OperationLock);
@@ -887,7 +891,32 @@ TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
          CNSTransaction      transaction(this);
 
         if (job.Fetch(this, job_id) != CJob::eJF_Ok)
-            return CNetScheduleAPI::eJobNotFound;
+            NCBI_THROW(CNetScheduleException, eInternalError,
+                       "Error fetching job: " + DecorateJobId(job_id));
+        if (job.GetStatus() != CNetScheduleAPI::eRunning)
+            NCBI_THROW(CNetScheduleException, eInvalidJobStatus,
+                       "Operation is applicable to eRunning job state only");
+
+        if (!auth_token.empty()) {
+            // Need to check authorization token first
+            CJob::EAuthTokenCompareResult   token_compare_result =
+                                            job.CompareAuthToken(auth_token);
+            if (token_compare_result == CJob::eInvalidTokenFormat)
+                NCBI_THROW(CNetScheduleException, eInvalidAuthToken,
+                           "Invalid authorization token format");
+            if (token_compare_result == CJob::eNoMatch)
+                NCBI_THROW(CNetScheduleException, eInvalidAuthToken,
+                           "Authorization token does not match");
+            if (token_compare_result == CJob::ePassportOnlyMatch) {
+                // That means the job has been given to another worker node
+                // by whatever reason (expired/failed/returned before)
+                ERR_POST(Message << Warning << "Received RETURN2 with only "
+                                               "passport matched.");
+                warning = "Only job passport matched. Command is ignored.";
+                return old_status;
+            }
+            // Here: the authorization token is OK, we can continue
+        }
 
 
         unsigned int    run_count = job.GetRunCount();
@@ -1551,9 +1580,11 @@ string CQueue::GetAffinityList()
 
 TJobStatus CQueue::FailJob(const CNSClientId &    client,
                            unsigned int           job_id,
+                           const string &         auth_token,
                            const string &         err_msg,
                            const string &         output,
-                           int                    ret_code)
+                           int                    ret_code,
+                           string                 warning)
 {
     unsigned        failed_retries;
     unsigned        max_output_size;
@@ -1594,13 +1625,29 @@ TJobStatus CQueue::FailJob(const CNSClientId &    client,
         {{
             CNSTransaction     transaction(this);
 
+            if (job.Fetch(this, job_id) != CJob::eJF_Ok)
+                NCBI_THROW(CNetScheduleException, eInternalError,
+                           "Error fetching job: " + DecorateJobId(job_id));
 
-            CJob::EJobFetchResult   res = job.Fetch(this, job_id);
-            if (res != CJob::eJF_Ok) {
-                // TODO: Integrity error or job just expired?
-                if (m_Log)
-                    LOG_POST(Error << "Can not fetch job " << DecorateJobId(job_id));
-                return CNetScheduleAPI::eJobNotFound;
+            if (!auth_token.empty()) {
+                // Need to check authorization token first
+                CJob::EAuthTokenCompareResult   token_compare_result =
+                                            job.CompareAuthToken(auth_token);
+                if (token_compare_result == CJob::eInvalidTokenFormat)
+                    NCBI_THROW(CNetScheduleException, eInvalidAuthToken,
+                               "Invalid authorization token format");
+                if (token_compare_result == CJob::eNoMatch)
+                    NCBI_THROW(CNetScheduleException, eInvalidAuthToken,
+                               "Authorization token does not match");
+                if (token_compare_result == CJob::ePassportOnlyMatch) {
+                    // That means the job has been given to another worker node
+                    // by whatever reason (expired/failed/returned before)
+                    ERR_POST(Message << Warning << "Received FPUT2 with only "
+                                                   "passport matched.");
+                    warning = "Only job passport matched. Command is ignored.";
+                    return old_status;
+                }
+                // Here: the authorization token is OK, we can continue
             }
 
             CJobEvent *     event = job.GetLastEvent();
@@ -2179,102 +2226,6 @@ void CQueue::PrintWNodeHosts(CNetScheduleHandler &  handler) const
 }
 
 
-#define NS_PRINT_TIME(field, t) \
-do { \
-    if (t == 0) \
-        handler.WriteMessage("OK:", field); \
-    else { \
-        CTime   _t(t); \
-        _t.ToLocalTime(); \
-        handler.WriteMessage("OK:", field + _t.AsString()); \
-    } \
-} while(0)
-
-
-void CQueue::x_PrintJobStat(CNetScheduleHandler &   handler,
-                            const CJob &            job,
-                            unsigned                queue_run_timeout)
-{
-    unsigned            run_timeout = job.GetRunTimeout();
-    unsigned            aff_id = job.GetAffinityId();
-
-
-    handler.WriteMessage("OK:", "id: " + NStr::IntToString(job.GetId()));
-    handler.WriteMessage("OK:", "key: " + MakeKey(job.GetId()));
-    handler.WriteMessage("OK:", "status: " +
-                                CNetScheduleAPI::StatusToString(job.GetStatus()));
-
-    handler.WriteMessage("OK:", "timeout: " +
-                                NStr::ULongToString(job.GetTimeout()));
-    handler.WriteMessage("OK:", "run_timeout: " +
-                                NStr::IntToString(run_timeout));
-    NS_PRINT_TIME("expiration_time: ",
-                  job.GetJobExpirationTime(GetTimeout(), GetRunTimeout()));
-
-    handler.WriteMessage("OK:", "subm_notif_port: " +
-                                NStr::IntToString(job.GetSubmNotifPort()));
-    handler.WriteMessage("OK:", "subm_notif_timeout: " +
-                                NStr::IntToString(job.GetSubmNotifTimeout()));
-
-    // Print detailed information about the job events
-    const vector<CJobEvent> &   events = job.GetEvents();
-    int                         event = 1;
-
-    ITERATE(vector<CJobEvent>, it, events) {
-        string          message("event" + NStr::IntToString(event++) + ": ");
-        unsigned int    addr = it->GetNodeAddr();
-
-        // Address part
-        message += "client=";
-        if (addr == 0)
-            message += "ns ";
-        else
-            message += CSocketAPI::gethostbyaddr(addr) + " ";
-
-        message += "event=" + CJobEvent::EventToString(it->GetEvent()) + " "
-                   "status=" +
-                   CNetScheduleAPI::StatusToString(it->GetStatus()) + " "
-                   "ret_code=" + NStr::IntToString(it->GetRetCode()) + " ";
-
-        // Time part
-        message += "timestamp=";
-        unsigned int    start = it->GetTimestamp();
-        if (start == 0) {
-            message += "n/a ";
-        }
-        else {
-            CTime   startTime(start);
-            startTime.ToLocalTime();
-            message += "'" + startTime.AsString() + "' ";
-        }
-
-        // The rest
-        message += "node=" + it->GetClientNode() + " "
-                   "session=" + it->GetClientSession() + " "
-                   "err_msg=" + it->GetQuotedErrorMsg();
-        handler.WriteMessage("OK:", message);
-    }
-
-    handler.WriteMessage("OK:", "run_counter: " +
-                                NStr::IntToString(job.GetRunCount()));
-    handler.WriteMessage("OK:", "read_counter: " +
-                                NStr::IntToString(job.GetReadCount()));
-
-    if (aff_id) {
-        string  token = m_AffinityRegistry.GetTokenByID(job.GetAffinityId());
-        handler.WriteMessage("OK:", "aff_token: '" + 
-                                    NStr::PrintableString(token) + "'");
-    }
-    handler.WriteMessage("OK:", "aff_id: " + NStr::IntToString(aff_id));
-    handler.WriteMessage("OK:", "mask: " + NStr::IntToString(job.GetMask()));
-    handler.WriteMessage("OK:", "input: " + job.GetQuotedInput());
-    handler.WriteMessage("OK:", "output: " + job.GetQuotedOutput());
-    handler.WriteMessage("OK:", "progress_msg: '" + job.GetProgressMsg() + "'");
-    handler.WriteMessage("OK:", "remote_client_sid: " + job.GetClientSID());
-    handler.WriteMessage("OK:", "remote_client_ip: " + job.GetClientIP());
-}
-
-
 void CQueue::x_PrintShortJobStat(CNetScheduleHandler &  handler,
                                  const CJob&            job)
 {
@@ -2303,7 +2254,6 @@ size_t CQueue::PrintJobDbStat(CNetScheduleHandler &     handler,
     }}
 
     size_t              print_count = 0;
-    unsigned            queue_run_timeout = GetRunTimeout();
     CJob                job;
     CFastMutexGuard     guard(m_OperationLock);
 
@@ -2314,7 +2264,7 @@ size_t CQueue::PrintJobDbStat(CNetScheduleHandler &     handler,
     CJob::EJobFetchResult   res = job.Fetch(this, job_id);
     if (res == CJob::eJF_Ok) {
         handler.WriteMessage("");
-        x_PrintJobStat(handler, job, queue_run_timeout);
+        job.Print(handler, *this, m_AffinityRegistry);
         ++print_count;
     }
 
@@ -2325,6 +2275,7 @@ size_t CQueue::PrintJobDbStat(CNetScheduleHandler &     handler,
 void CQueue::PrintAllJobDbStat(CNetScheduleHandler &   handler)
 {
     unsigned            queue_run_timeout = GetRunTimeout();
+    unsigned            queue_timeout = GetTimeout();
     CJob                job;
 
     // Make a copy of the deleted jobs vector
@@ -2347,7 +2298,7 @@ void CQueue::PrintAllJobDbStat(CNetScheduleHandler &   handler)
         if (job.Fetch(this) == CJob::eJF_Ok) {
             if (!deleted_jobs[job.GetId()]) {
                 handler.WriteMessage("");
-                x_PrintJobStat(handler, job, queue_run_timeout);
+                job.Print(handler, *this, m_AffinityRegistry);
             }
         }
     }
@@ -2603,16 +2554,35 @@ void CQueue::PrintStatistics(size_t &  aff_count)
 }
 
 
-bool CQueue::x_UpdateDB_PutResultNoLock(unsigned             job_id,
+void CQueue::x_UpdateDB_PutResultNoLock(unsigned             job_id,
+                                        const string &       auth_token,
                                         time_t               curr,
                                         int                  ret_code,
                                         const string &       output,
                                         CJob &               job,
                                         const CNSClientId &  client)
 {
-    if (job.Fetch(this, job_id) != CJob::eJF_Ok) {
-        ERR_POST("Put results for non-existent job " << DecorateJobId(job_id));
-        return false;
+    if (job.Fetch(this, job_id) != CJob::eJF_Ok)
+        NCBI_THROW(CNetScheduleException, eInternalError,
+                   "Error fetching job: " + DecorateJobId(job_id));
+
+    if (!auth_token.empty()) {
+        // Need to check authorization token first
+        CJob::EAuthTokenCompareResult   token_compare_result =
+                                        job.CompareAuthToken(auth_token);
+        if (token_compare_result == CJob::eInvalidTokenFormat)
+            NCBI_THROW(CNetScheduleException, eInvalidAuthToken,
+                       "Invalid authorization token format");
+        if (token_compare_result == CJob::eNoMatch)
+            NCBI_THROW(CNetScheduleException, eInvalidAuthToken,
+                       "Authorization token does not match");
+        if (token_compare_result == CJob::ePassportOnlyMatch) {
+            // That means that the job has been executing by another worker
+            // node at the moment, but we can accept the results anyway
+            ERR_POST(Message << Warning << "Received PUT2 with only "
+                                           "passport matched.");
+        }
+        // Here: the authorization token is OK, we can continue
     }
 
     // Append the event
@@ -2630,7 +2600,7 @@ bool CQueue::x_UpdateDB_PutResultNoLock(unsigned             job_id,
     job.SetOutput(output);
 
     job.Flush(this);
-    return true;
+    return;
 }
 
 

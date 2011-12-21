@@ -45,6 +45,8 @@ BEGIN_NCBI_SCOPE
 
 // Forward for CJob/CJobEvent friendship
 class CQueue;
+class CNetScheduleHandler;
+class CNSAffinityRegistry;
 
 
 // Used to specify what to fetch and what to include into a transaction
@@ -296,6 +298,9 @@ public:
         return m_Events[m_Events.size()-1].GetTimestamp();
     }
 
+    time_t          GetSubmitTime(void) const
+    { return m_Events[0].m_Timestamp; }
+
     // This one called very often to test job expiration so it needs to be as
     // fast as possible. Lets make it inline
     time_t          GetJobExpirationTime(time_t  queue_timeout,
@@ -339,6 +344,10 @@ public:
     // Should we notify submitter in the moment of time 'curr'
     bool ShouldNotify(time_t curr);
 
+    void Print(CNetScheduleHandler &        handler,
+               const CQueue &               queue,
+               const CNSAffinityRegistry &  aff_registry) const;
+
 private:
     // Service flags
     bool                m_New;     ///< Object should be inserted, not updated
@@ -357,7 +366,7 @@ private:
     unsigned short      m_SubmNotifPort;    ///< Submit notification port
     unsigned            m_SubmNotifTimeout; ///< Submit notification timeout
 
-    unsigned            m_RunCount;      ///< since last reschedule
+    unsigned            m_RunCount;
     unsigned            m_ReadCount;
     string              m_ProgressMsg;
     unsigned            m_AffinityId;

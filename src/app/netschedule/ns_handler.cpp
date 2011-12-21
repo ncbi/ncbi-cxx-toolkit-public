@@ -220,19 +220,42 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "aff",       eNSPT_Str, eNSPA_Optional, "" },
           { "any_aff",   eNSPT_Int, eNSPA_Optional, 0 },
           { "wnode_aff", eNSPT_Int, eNSPA_Optional, 0 } } },
+    { "GET2",     { &CNetScheduleHandler::x_ProcessGetJob,
+                    eNSCR_Worker },
+        { { "port",      eNSPT_Id,  eNSPA_Optional },
+          { "aff",       eNSPT_Str, eNSPA_Optional, "" },
+          { "any_aff",   eNSPT_Int, eNSPA_Optional, 0 },
+          { "wnode_aff", eNSPT_Int, eNSPA_Optional, 0 } } },
     // PUT job_key : id  job_return_code : int  output : str
     { "PUT",      { &CNetScheduleHandler::x_ProcessPut,
                     eNSCR_Worker },
         { { "job_key",         eNSPT_Id,  eNSPA_Required },
           { "job_return_code", eNSPT_Id,  eNSPA_Required },
           { "output",          eNSPT_Str, eNSPA_Required } } },
+    { "PUT2",     { &CNetScheduleHandler::x_ProcessPut,
+                    eNSCR_Worker },
+        { { "job_key",         eNSPT_Id,  eNSPA_Required },
+          { "auth_token",      eNSPT_Id,  eNSPA_Required },
+          { "job_return_code", eNSPT_Id,  eNSPA_Required },
+          { "output",          eNSPT_Str, eNSPA_Required } } },
     // RETURN job_key : id
     { "RETURN",   { &CNetScheduleHandler::x_ProcessReturn,
                     eNSCR_Worker },
         { { "job_key", eNSPT_Id, eNSPA_Required } } },
+    { "RETURN2",  { &CNetScheduleHandler::x_ProcessReturn,
+                    eNSCR_Worker },
+        { { "job_key",         eNSPT_Id,  eNSPA_Required },
+          { "auth_token",      eNSPT_Id,  eNSPA_Required } } },
     // WGET port : uint  timeout : uint
     //      [affinity_list : keystr(aff) ]
     { "WGET",     { &CNetScheduleHandler::x_ProcessWaitGet,
+                    eNSCR_Worker },
+        { { "port",      eNSPT_Int, eNSPA_Required },
+          { "timeout",   eNSPT_Int, eNSPA_Required },
+          { "aff",       eNSPT_Str, eNSPA_Optional, "" },
+          { "any_aff",   eNSPT_Int, eNSPA_Optional, 0 },
+          { "wnode_aff", eNSPT_Int, eNSPA_Optional, 0 } } },
+    { "WGET2",    { &CNetScheduleHandler::x_ProcessWaitGet,
                     eNSCR_Worker },
         { { "port",      eNSPT_Int, eNSPA_Required },
           { "timeout",   eNSPT_Int, eNSPA_Required },
@@ -248,6 +271,13 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "err_msg",         eNSPT_Str, eNSPA_Required },
           { "output",          eNSPT_Str, eNSPA_Required },
           { "job_return_code", eNSPT_Int, eNSPA_Required } } },
+    { "FPUT2",    { &CNetScheduleHandler::x_ProcessPutFailure,
+                    eNSCR_Worker },
+        { { "job_key",         eNSPT_Id,  eNSPA_Required },
+          { "auth_token",      eNSPT_Id,  eNSPA_Required },
+          { "err_msg",         eNSPT_Str, eNSPA_Required },
+          { "output",          eNSPT_Str, eNSPA_Required },
+          { "job_return_code", eNSPT_Int, eNSPA_Required } } },
     // JXCG [ job_key : id [ job_return_code : int [ output : str ] ] ]
     //      [affinity_list : keystr(aff) ]
     { "JXCG",     { &CNetScheduleHandler::x_ProcessJobExchange,
@@ -255,6 +285,15 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
         { { "job_key",         eNSPT_Id,  eNSPA_Optchain },
           { "job_return_code", eNSPT_Int, eNSPA_Optchain },
           { "output",          eNSPT_Str, eNSPA_Optional },
+          { "aff",             eNSPT_Str, eNSPA_Optional, "" },
+          { "any_aff",         eNSPT_Int, eNSPA_Optional, 0 },
+          { "wnode_aff",       eNSPT_Int, eNSPA_Optional, 0 } } },
+    { "JXCG2",    { &CNetScheduleHandler::x_ProcessJobExchange,
+                    eNSCR_Worker },
+        { { "job_key",         eNSPT_Id,  eNSPA_Required },
+          { "auth_token",      eNSPT_Id,  eNSPA_Required },
+          { "job_return_code", eNSPT_Int, eNSPA_Required },
+          { "output",          eNSPT_Str, eNSPA_Required },
           { "aff",             eNSPT_Str, eNSPA_Optional, "" },
           { "any_aff",         eNSPT_Int, eNSPA_Optional, 0 },
           { "wnode_aff",       eNSPT_Int, eNSPA_Optional, 0 } } },
@@ -771,7 +810,7 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
 
 
     // It throws an exception if the input is not valid
-    m_CommandArguments.AssignValues(cmd.params);
+    m_CommandArguments.AssignValues(cmd.params, cmd.command->cmd);
 
 
     if (extra.processor == &CNetScheduleHandler::x_ProcessQuitSession) {
@@ -1210,11 +1249,7 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
                     m_CommandArguments.any_affinity,
                     &job);
 
-    if (job.GetId())
-        WriteMessage("OK:", x_FormGetJobResponse(q, job));
-    else
-        WriteMessage("OK:");
-
+    x_PrintGetJobResponse(q, job, m_CommandArguments.cmd == "GET2");
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -1236,11 +1271,7 @@ void CNetScheduleHandler::x_ProcessWaitGet(CQueue* q)
                     m_CommandArguments.any_affinity,
                     &job);
 
-    if (job.GetId())
-        WriteMessage("OK:", x_FormGetJobResponse(q, job));
-    else
-        WriteMessage("OK:");
-
+    x_PrintGetJobResponse(q, job, m_CommandArguments.cmd == "WGET2");
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -1260,9 +1291,16 @@ void CNetScheduleHandler::x_ProcessCancelWaitGet(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessPut(CQueue* q)
 {
+    if (m_CommandArguments.cmd == "PUT2") {
+        if (m_CommandArguments.auth_token.empty())
+            NCBI_THROW(CNetScheduleException, eInvalidAuthToken,
+                       "Invalid authorization token. It cannot be empty.");
+    }
+
     string      output = NStr::ParseEscapes(m_CommandArguments.output);
     TJobStatus  old_status = q->PutResult(m_ClientId, time(0),
                                           m_CommandArguments.job_id,
+                                          m_CommandArguments.auth_token,
                                           m_CommandArguments.job_return_code,
                                           &output);
     if (old_status == CNetScheduleAPI::ePending ||
@@ -1302,6 +1340,11 @@ void CNetScheduleHandler::x_ProcessPut(CQueue* q)
 void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
 {
     x_CheckGetJobPrerequisites(m_CommandArguments.wnode_affinity);
+    if (m_CommandArguments.cmd == "JXCG2") {
+        if (m_CommandArguments.auth_token.empty())
+            NCBI_THROW(CNetScheduleException, eInvalidAuthToken,
+                       "Invalid authorization token. It cannot be empty.");
+    }
 
     list<string>        aff_list;
     NStr::Split(NStr::ParseEscapes(m_CommandArguments.affinity_token),
@@ -1312,6 +1355,7 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
     TJobStatus          old_status = q->PutResultGetJob(
                                             m_ClientId,
                                             m_CommandArguments.job_id,
+                                            m_CommandArguments.auth_token,
                                             m_CommandArguments.job_return_code,
                                             &output,
                                             // GetJob params
@@ -1339,10 +1383,7 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
                          << " results. The job has already been done.");
     }
 
-    if (job.GetId())
-        WriteMessage("OK:", x_FormGetJobResponse(q, job));
-    else
-        WriteMessage("OK:");
+    x_PrintGetJobResponse(q, job, m_CommandArguments.cmd == "JXCG2");
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -1381,12 +1422,21 @@ void CNetScheduleHandler::x_ProcessGetMessage(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessPutFailure(CQueue* q)
 {
+    if (m_CommandArguments.cmd == "FPUT2") {
+        if (m_CommandArguments.auth_token.empty())
+            NCBI_THROW(CNetScheduleException, eInvalidAuthToken,
+                       "Invalid authorization token. It cannot be empty.");
+    }
+
+    string      warning;
     TJobStatus  old_status = q->FailJob(
                                 m_ClientId,
                                 m_CommandArguments.job_id,
+                                m_CommandArguments.auth_token,
                                 NStr::ParseEscapes(m_CommandArguments.err_msg),
                                 NStr::ParseEscapes(m_CommandArguments.output),
-                                m_CommandArguments.job_return_code);
+                                m_CommandArguments.job_return_code,
+                                warning);
 
     if (old_status == CNetScheduleAPI::eJobNotFound) {
         WriteMessage("ERR:eJobNotFound");
@@ -1415,7 +1465,10 @@ void CNetScheduleHandler::x_ProcessPutFailure(CQueue* q)
     }
 
     // Here: all is fine
-    WriteMessage("OK:");
+    if (warning.empty())
+        WriteMessage("OK:");
+    else
+        WriteMessage("OK:", "WARNING: " + warning);
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -1430,11 +1483,23 @@ void CNetScheduleHandler::x_ProcessDropQueue(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessReturn(CQueue* q)
 {
+    if (m_CommandArguments.cmd == "RETURN2") {
+        if (m_CommandArguments.auth_token.empty())
+            NCBI_THROW(CNetScheduleException, eInvalidAuthToken,
+                       "Invalid authorization token. It cannot be empty.");
+    }
+
+    string          warning;
     TJobStatus      old_status = q->ReturnJob(m_ClientId,
-                                              m_CommandArguments.job_id);
+                                              m_CommandArguments.job_id,
+                                              m_CommandArguments.auth_token,
+                                              warning);
 
     if (old_status == CNetScheduleAPI::eRunning) {
-        WriteMessage("OK:");
+        if (warning.empty())
+            WriteMessage("OK:");
+        else
+            WriteMessage("OK:", "WARNING: " + warning);
         x_PrintRequestStop(eStatus_OK);
         return;
     }
@@ -1641,20 +1706,25 @@ void CNetScheduleHandler::x_ProcessStatusSnapshot(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
 {
-    CNcbiApplication* app = CNcbiApplication::Instance();
-
+    CNcbiApplication *      app = CNcbiApplication::Instance();
     bool                    reloaded = app->ReloadConfig(CMetaRegistry::fReloadIfChanged);
-    const CNcbiRegistry &   reg = app->GetConfig();
-    if (reloaded)
+
+    if (reloaded) {
+        const CNcbiRegistry &   reg = app->GetConfig();
+
         m_Server->Configure(reg);
 
-    // Logging from the [server] section
-    SNS_Parameters          params;
+        // Logging from the [server] section
+        SNS_Parameters          params;
 
-    params.Read(reg, "server");
-    m_Server->SetNSParameters(params, true);
+        params.Read(reg, "server");
+        m_Server->SetNSParameters(params, true);
 
-    WriteMessage("OK:");
+        WriteMessage("OK:");
+    }
+    else
+        WriteMessage("OK:WARNING:Configuration file has not been changed. RECO ignored.");
+
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -2025,23 +2095,39 @@ void CNetScheduleHandler::x_CloseConnection(void)
 
 // The function forms a responce for various 'get job' commands and prints
 // extra to the log if required
-string  CNetScheduleHandler::x_FormGetJobResponse(const CQueue *   q,
-                                                  const CJob &     job) const
+void
+CNetScheduleHandler::x_PrintGetJobResponse(const CQueue *  q,
+                                           const CJob &    job,
+                                           bool            security_token)
 {
-    string      job_key = q->MakeKey(job.GetId());
+    if (!job.GetId()) {
+        // No suitable job found
+        if (m_Server->IsLog())
+            GetDiagContext().Extra().Print("job_key", "none");
+        WriteMessage("OK:");
+        return;
+    }
+
+    // Here: a suitable job found
+    string      response = q->MakeKey(job.GetId());
 
     if (m_Server->IsLog()) {
         // The only piece required for logging is the job key
-        GetDiagContext().Extra().Print("job_key", job_key);
+        GetDiagContext().Extra().Print("job_key", response);
     }
 
     // We can re-use old jout and jerr job parameters for affinity and
     // session id/client ip respectively.
-    return job_key +
-           " \"" + NStr::PrintableString(job.GetInput()) + "\""
-           " \"" + NStr::PrintableString(q->GetAffinityTokenByID(job.GetAffinityId())) + "\""
-           " \"" + job.GetClientIP() + " " + job.GetClientSID() + "\""
-           " " + NStr::UIntToString(job.GetMask());
+    response += " \"" + NStr::PrintableString(job.GetInput()) + "\""
+                " \"" + NStr::PrintableString(
+                            q->GetAffinityTokenByID(job.GetAffinityId())) + "\""
+                " \"" + job.GetClientIP() + " " + job.GetClientSID() + "\""
+                " " + NStr::UIntToString(job.GetMask());
+    if (security_token)
+        response += " " + job.GetAuthToken();
+
+    WriteMessage("OK:", response);
+    return;
 }
 
 
