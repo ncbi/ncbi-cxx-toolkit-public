@@ -71,8 +71,37 @@ LoopConstraint ::= SEQUENCE {
 CoreDef ::= SEQUENCE {
   nblocks        INTEGER,                   -- number of core elements/blocks
   blocks         SEQUENCE OF CoreBlock,     -- nblocks locations
-  loops          SEQUENCE OF LoopConstraint -- (nblocks+1) constraints 
+  loops          SEQUENCE OF LoopConstraint, -- (nblocks+1) constraints
+
+  isDiscontinuous BOOLEAN OPTIONAL,         -- is it a discontinuous domain
+
+  insertions SEQUENCE OF INTEGER OPTIONAL   -- positions of long insertions
 }
+
+Site-annot ::= SEQUENCE {
+  startPosition  INTEGER,                -- location of the annotation,
+  stopPosition   INTEGER,                -- start and stop position in the
+                                         -- PSSM
+
+  description    VisibleString OPTIONAL, -- holds description or names, that
+                                         -- can be used for labels in
+                                         -- visualization
+
+  type           INTEGER OPTIONAL,       -- type of the annotated feature,
+                                         -- similarly to Align-annot in
+                                         -- NCBI-Cdd
+
+  aliases        SEQUENCE OF VisibleString OPTIONAL, -- additional names for
+                                                     -- the annotation
+
+  motif          VisibleString OPTIONAL, -- motif to validate mapping of sites
+
+  motifuse       INTEGER OPTIONAL        -- 0 for validation
+                                         -- 1 for motif in seqloc
+                                         -- 2 for multiple motifs in seqloc
+}
+
+Site-annot-set ::= SEQUENCE OF Site-annot
 
 -- ===========================================================================
 -- PSI-BLAST, formatrpsdb, RPS-BLAST workflow:
@@ -296,7 +325,13 @@ PssmParameters ::= SEQUENCE {
 
     -- alignment constraints needed by sequence-structure threader
     -- and other global or local block-alignment algorithms
-	constraints	CoreDef OPTIONAL
+    constraints     CoreDef OPTIONAL,
+
+    -- bit score threshold for specific conserved domain hits
+    bitScoreThresh  REAL OPTIONAL,
+
+    -- conserved functional sites with annotations
+    annotatedSites  Site-annot-set OPTIONAL
 }
 
 -- Envelope containing PSSM and the parameters used to create it. 
