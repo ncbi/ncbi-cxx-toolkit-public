@@ -598,6 +598,9 @@ CBlastFormat::x_PrintIgTabularReport(const blast::CIgBlastResults& results)
                 "IG" + NStr::ToUpper(m_Program) + " " + blast::CBlastVersion().Print();
     CConstRef<CBioseq> subject_bioseq = x_CreateSubjectBioseq();
 
+    if (m_IsHTML) {
+        m_Outfile << "<html><body><pre>\n";
+    }
     if (results.HasAlignments()) {
         const CRef<CIgAnnotation> & annots = results.GetIgAnnotation();
         CSeq_align_set::Tdata::const_iterator itr = aln_set->Get().begin();
@@ -625,6 +628,9 @@ CBlastFormat::x_PrintIgTabularReport(const blast::CIgBlastResults& results)
                                 numeric_limits<unsigned int>::max(),
                                 0, subject_bioseq, 
                                 m_IgOptions->m_DomainSystem);
+    }
+    if (m_IsHTML) {
+        m_Outfile << "\n</pre></body></html>\n";
     }
 }
 
@@ -966,7 +972,11 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
                                 &m_ScoringMatrix);
         tabinfo.SetIgAnnotation(annots, m_IgOptions->m_IsProtein);
         m_Outfile << "Domain classification requested: " << m_IgOptions->m_DomainSystem << endl << endl;
-        tabinfo.PrintMasterAlign("");
+        if (m_IsHTML) {
+            tabinfo.PrintHtmlSummary();
+        } else {
+            tabinfo.PrintMasterAlign("");
+        }
     }
 
     TMaskedQueryRegions masklocs;
