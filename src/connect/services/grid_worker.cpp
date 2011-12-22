@@ -1055,6 +1055,18 @@ int CGridWorkerNode::Run()
 
     m_ControlPort = control_thread->GetControlPort();
 
+    string client_node(reg.Get(kServerSec, "client_node"));
+    if (client_node.empty()) {
+        client_node = m_NetScheduleAPI->m_Service->m_ClientName;
+        client_node.append(2, ':');
+        client_node.append(CSocketAPI::gethostname());
+        client_node.append(1, ':');
+        client_node.append(NStr::NumericToString(m_ControlPort));
+    }
+    m_NetScheduleAPI.SetClientNode(client_node);
+
+    m_NetScheduleAPI.SetClientSession(GetDiagContext().GetStringUID());
+
     m_RebalanceStrategy = CreateSimpleRebalanceStrategy(conf, "server");
 
     m_NSExecuter = m_NetScheduleAPI.GetExecuter();
