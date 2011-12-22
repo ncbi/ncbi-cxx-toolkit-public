@@ -1647,6 +1647,15 @@ void CBDB_Cache::x_Close()
     delete m_Env;         m_Env = 0;
 }
 
+ICache::TFlags CBDB_Cache::GetFlags()
+{
+    return (TFlags) 0;
+}
+
+void CBDB_Cache::SetFlags(ICache::TFlags flags)
+{
+}
+
 void CBDB_Cache::SetTimeStampPolicy(TTimeStampFlags policy,
                                     unsigned int    timeout,
                                     unsigned int    max_timeout)
