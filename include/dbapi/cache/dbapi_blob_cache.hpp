@@ -126,6 +126,8 @@ public:
 
 
     // ICache interface
+    virtual TFlags GetFlags();
+    virtual void SetFlags(TFlags flags);
 
     virtual void SetTimeStampPolicy(TTimeStampFlags policy,
                                     unsigned int    timeout,

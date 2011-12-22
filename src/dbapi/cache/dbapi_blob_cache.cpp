@@ -636,6 +636,15 @@ void CDBAPI_Cache::Open(const string& driver,
 }
 
 
+ICache::TFlags CDBAPI_Cache::GetFlags()
+{
+    return (TFlags) 0;
+}
+
+void CDBAPI_Cache::SetFlags(ICache::TFlags flags)
+{
+}
+
 void CDBAPI_Cache::SetTimeStampPolicy(TTimeStampFlags policy,
                                       unsigned int    timeout,
                                       unsigned int    max_timeout)
