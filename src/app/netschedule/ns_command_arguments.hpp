@@ -48,6 +48,8 @@ struct SNSCommandArguments
     unsigned int    port;
     unsigned int    timeout;
     unsigned int    job_mask;
+    unsigned int    start_after_job_id;
+    unsigned int    count;
     TJobStatus      job_status;
 
     string          cmd;
@@ -67,6 +69,7 @@ struct SNSCommandArguments
     string          job_status_string;
     string          aff_to_add;
     string          aff_to_del;
+    string          start_after;
 
     bool            any_affinity;
     bool            wnode_affinity;

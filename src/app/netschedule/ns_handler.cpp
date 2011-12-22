@@ -131,7 +131,9 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     // DUMP [ job_key : id ]
     { "DUMP",     { &CNetScheduleHandler::x_ProcessDump,
                     eNSCR_Queue },
-        { { "job_key", eNSPT_Id, eNSPA_Optional } } },
+        { { "job_key",     eNSPT_Id,  eNSPA_Optional      },
+          { "start_after", eNSPT_Str, eNSPA_Optional,     },
+          { "count",       eNSPT_Int, eNSPA_Optional, "0" } } },
     // QPRT status : id
     { "QPRT",     { &CNetScheduleHandler::x_ProcessPrintQueue,
                     eNSCR_Queue },
@@ -1707,7 +1709,8 @@ void CNetScheduleHandler::x_ProcessStatusSnapshot(CQueue* q)
 void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
 {
     CNcbiApplication *      app = CNcbiApplication::Instance();
-    bool                    reloaded = app->ReloadConfig(CMetaRegistry::fReloadIfChanged);
+    bool                    reloaded = app->ReloadConfig(
+                                            CMetaRegistry::fReloadIfChanged);
 
     if (reloaded) {
         const CNcbiRegistry &   reg = app->GetConfig();
@@ -1723,7 +1726,8 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
         WriteMessage("OK:");
     }
     else
-        WriteMessage("OK:WARNING:Configuration file has not been changed. RECO ignored.");
+        WriteMessage("OK:WARNING:Configuration file has not "
+                     "been changed. RECO ignored.");
 
     x_PrintRequestStop(eStatus_OK);
 }
@@ -1742,7 +1746,8 @@ void CNetScheduleHandler::x_ProcessDump(CQueue* q)
 {
     if (m_CommandArguments.job_id == 0) {
         // The whole queue dump
-        q->PrintAllJobDbStat(*this);
+        q->PrintAllJobDbStat(*this, m_CommandArguments.start_after_job_id,
+                                    m_CommandArguments.count);
         WriteMessage("OK:END");
         x_PrintRequestStop(eStatus_OK);
         return;

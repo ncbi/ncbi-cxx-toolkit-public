@@ -52,10 +52,11 @@ BEGIN_NCBI_SCOPE
 
 
 //////////////////////////////////////////////////////////////////////////
-CQueueEnumCursor::CQueueEnumCursor(CQueue* queue)
+CQueueEnumCursor::CQueueEnumCursor(CQueue *  queue, unsigned int  start_after)
   : CBDB_FileCursor(queue->m_QueueDbBlock->job_db)
 {
-    SetCondition(CBDB_FileCursor::eFirst);
+    SetCondition(CBDB_FileCursor::eGT);
+    From << start_after;
 }
 
 
@@ -2272,10 +2273,10 @@ size_t CQueue::PrintJobDbStat(CNetScheduleHandler &     handler,
 }
 
 
-void CQueue::PrintAllJobDbStat(CNetScheduleHandler &   handler)
+void CQueue::PrintAllJobDbStat(CNetScheduleHandler &   handler,
+                               unsigned int            start_after_job_id,
+                               unsigned int            count)
 {
-    unsigned            queue_run_timeout = GetRunTimeout();
-    unsigned            queue_timeout = GetTimeout();
     CJob                job;
 
     // Make a copy of the deleted jobs vector
@@ -2292,13 +2293,18 @@ void CQueue::PrintAllJobDbStat(CNetScheduleHandler &   handler)
     m_QueueDbBlock->events_db.SetTransaction(NULL);
     m_QueueDbBlock->job_info_db.SetTransaction(NULL);
 
-    CQueueEnumCursor    cur(this);
+    CQueueEnumCursor    cur(this, start_after_job_id);
+    unsigned int        printed_count = 0;
 
     while (cur.Fetch() == eBDB_Ok) {
         if (job.Fetch(this) == CJob::eJF_Ok) {
             if (!deleted_jobs[job.GetId()]) {
                 handler.WriteMessage("");
                 job.Print(handler, *this, m_AffinityRegistry);
+                ++printed_count;
+                if (count != 0)
+                    if (printed_count >= count)
+                        break;
             }
         }
     }

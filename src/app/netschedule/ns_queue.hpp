@@ -71,7 +71,8 @@ class CQueue;
 class CQueueEnumCursor : public CBDB_FileCursor
 {
 public:
-    CQueueEnumCursor(CQueue* queue);
+    CQueueEnumCursor(CQueue *      queue,
+                     unsigned int  start_after);
 };
 
 
@@ -322,7 +323,9 @@ public:
     size_t PrintJobDbStat(CNetScheduleHandler &   handler,
                           unsigned                job_id);
     /// Dump all job records
-    void PrintAllJobDbStat(CNetScheduleHandler &   handler);
+    void PrintAllJobDbStat(CNetScheduleHandler &   handler,
+                           unsigned int            start_after_job_id,
+                           unsigned int            count);
 
     unsigned CountStatus(TJobStatus) const;
     void StatusStatistics(TJobStatus                  status,
