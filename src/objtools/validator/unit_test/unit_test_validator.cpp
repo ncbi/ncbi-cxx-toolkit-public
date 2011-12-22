@@ -2631,19 +2631,19 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_InvalidResidue)
     STANDARD_SETUP
 
     entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ");
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back(251);
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back(251);
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back(251);
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back(252);
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back(252);
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back(252);
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back(253);
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back(253);
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back(253);
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back(254);
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back(254);
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back(255);
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back(255);
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back('\xFB');
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back('\xFB');
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back('\xFB');
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back('\xFC');
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back('\xFC');
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back('\xFC');
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back('\xFD');
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back('\xFD');
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back('\xFD');
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back('\xFE');
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back('\xFE');
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back('\xFF');
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set().push_back('\xFF');
     entry->SetSeq().SetInst().SetLength(65);
     expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue 'E' at position [5]"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid nucleotide residue 'F' at position [6]"));
@@ -2699,19 +2699,19 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_InvalidResidue)
         }
     }
     entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ");
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set().push_back(251);
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set().push_back(251);
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set().push_back(251);
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set().push_back(252);
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set().push_back(252);
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set().push_back(252);
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set().push_back(253);
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set().push_back(253);
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set().push_back(253);
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set().push_back(254);
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set().push_back(254);
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set().push_back(255);
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set().push_back(255);
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set().push_back('\xFB');
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set().push_back('\xFB');
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set().push_back('\xFB');
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set().push_back('\xFC');
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set().push_back('\xFC');
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set().push_back('\xFC');
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set().push_back('\xFD');
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set().push_back('\xFD');
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set().push_back('\xFD');
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set().push_back('\xFE');
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set().push_back('\xFE');
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set().push_back('\xFF');
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set().push_back('\xFF');
     entry->SetSeq().SetInst().SetLength(65);
     CRef<CSeq_feat> feat (new CSeq_feat());
     feat->SetData().SetProt().SetName().push_back("fake protein name");
@@ -2844,7 +2844,7 @@ static void WriteOutTemp (CRef<CSeq_entry> entry)
     try {
         *outObject << *entry;
         outStream->flush();
-    } catch (exception& e) {
+    } catch (exception& ) {
     }
 }
 
@@ -16456,8 +16456,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_NotSpliceConsensusDonor)
 
     scope.RemoveTopLevelSeqEntry(seh);
     RevComp(entry);
-    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[16] = 251;
-    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[17] = 251;
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[16] = '\xFB';
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[17] = '\xFB';
     seh = scope.AddTopLevelSeqEntry(*entry);
     CLEAR_ERRORS
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Critical, "InvalidResidue", "Invalid residue [251] at position [17]"));
@@ -16540,8 +16540,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_NotSpliceConsensusAcceptor)
 
     scope.RemoveTopLevelSeqEntry(seh);
     RevComp(entry);
-    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[44] = 251;
-    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[45] = 251;
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[44] = '\xFB';
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[45] = '\xFB';
     seh = scope.AddTopLevelSeqEntry(*entry);
     CLEAR_ERRORS
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Critical, "InvalidResidue", 
@@ -18710,7 +18710,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphACGTScoreMany)
     annot->SetData().SetGraph().push_back(BuildGoodByteGraph(entry, 0, 12));
     CRef<CSeq_graph> graph = BuildGoodByteGraph(entry, 22, 12);
     graph->SetGraph().SetByte().ResetValues();
-    for (int i = 0; i < graph->GetNumval(); i++) {
+    for (size_t i = 0; i < graph->GetNumval(); i++) {
         graph->SetGraph().SetByte().SetValues().push_back(0);
     }
     graph->SetGraph().SetByte().SetMin(0);

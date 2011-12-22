@@ -135,8 +135,8 @@ void CValidError_align::ValidateSeqAlign(const CSeq_align& align)
     }
 	  try {
         x_ValidateAlignPercentIdentity (align, false);
-	  } catch (CException &x1) {
-	  } catch (std::exception &x2) {
+	  } catch (CException &) {
+	  } catch (std::exception &) {
 	  }
 
 }
@@ -295,14 +295,14 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
                   } else {
                       ids_missing = true;
                   }
-	          } catch (std::exception &x2) {
+	          } catch (std::exception &) {
                   // if sequence is not in scope,
                   // the above is impossible
                   // report 0 %, same as C Toolkit
                   col = aln_len;
                   ids_missing = true;
             }
-        } catch (CException &x1) {
+        } catch (CException &) {
             // if AlnVec can't resolve seq id, 
             // the above is impossible
             // report 0 %, same as C Toolkit
@@ -376,9 +376,9 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
                     TSignedSeqPos start = sparse_aln.GetSeqPosFromAlnPos(row, aln_start);
                     row_starts.push_back (start);
                     row_stops.push_back (sparse_aln.GetAlnPosFromSeqPos(row, sparse_aln.GetSeqAlnStop(row)));
-		            } catch (CException &x1) {
+		            } catch (CException &) {
                     ids_missing = true;
-		            } catch (std::exception &x2) {
+		            } catch (std::exception &) {
                     // if sequence is not in scope,
                     // the above is impossible
                     ids_missing = true;
@@ -427,9 +427,9 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
                     col++;
                 }
             }
-        } catch (CException &x1) {
+        } catch (CException &) {
             ids_missing = true;
-        } catch (std::exception &x2) {
+        } catch (std::exception &) {
             ids_missing = true;
         }
     }
@@ -931,7 +931,7 @@ static size_t s_PercentBioseqMatch (CBioseq_Handle b1, CBioseq_Handle b2)
 
         match = (match * 100) / min_len;
 
-    } catch (CException& x1) {
+    } catch (CException& ) {
         match = 0;
     }
     return match;

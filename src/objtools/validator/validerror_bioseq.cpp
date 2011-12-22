@@ -156,7 +156,7 @@ void CValidError_bioseq::ValidateBioseq (const CBioseq& seq)
         try {
             m_GeneIt = new CFeat_CI(m_CurrentHandle, CSeqFeatData::e_Gene);
             m_AllFeatIt = new CFeat_CI(m_CurrentHandle);
-        } catch ( const exception& e ) {
+        } catch ( const exception& ) {
             // sequence might be too broken to validate features
             m_GeneIt = NULL;
             m_AllFeatIt = NULL;
@@ -4577,7 +4577,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                               prot_feat.GetData().GetProt().GetProcessed() == CProt_ref::eProcessed_not_set)){
                             num_full_length_prot_ref ++;
                         }
-                    } catch ( const exception& e ) {
+                    } catch ( const exception& ) {
                         CSeq_loc::TRange range = it->GetLocation().GetTotalRange();
                         if ( (range.IsWhole()  ||
                               (range.GetFrom() == 0  &&  range.GetTo() == parent_len - 1) ) &&
@@ -6083,9 +6083,9 @@ static bool s_AreFeatureLabelsSame(const CSeq_feat& feat, const CSeq_feat& prev,
     string prev_label = "";
 
     feature::GetLabel(feat,
-        &curr_label, feature::eContent, scope);
+        &curr_label, feature::fFGL_Content, scope);
     feature::GetLabel(prev,
-        &prev_label, feature::eContent, scope);
+        &prev_label, feature::fFGL_Content, scope);
     if (!NStr::EqualNocase(curr_comment, prev_comment) ||
         !NStr::EqualNocase(curr_label, prev_label) ) {
         same_label = false;
@@ -6113,7 +6113,7 @@ static CConstRef <CSeq_feat> s_GetGeneForFeature (const CSeq_feat& f1, CScope *s
         CFeat_CI gene_it(bsh, sel);
         while (gene_it) {
             string feat_label;
-            feature::GetLabel(gene_it->GetOriginalFeature(), &feat_label, feature::eContent, scope);
+            feature::GetLabel(gene_it->GetOriginalFeature(), &feat_label, feature::fFGL_Content, scope);
             if (NStr::EqualCase(ref_label, feat_label)) {
                 gene.Reset (&(gene_it->GetOriginalFeature()));
                 return gene;

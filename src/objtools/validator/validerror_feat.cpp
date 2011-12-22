@@ -5841,7 +5841,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
                     CRef<CSeq_id> id(new CSeq_id());
                     id->Assign(feat.GetLocation().GetWhole());
                     CRef<CSeq_loc> tmp(new CSeq_loc(*id, start, bsh.GetInst_Length() - 1));
-                    CSeqTranslator::Translate(*tmp, bsh, transl_prot, genetic_code, true, false, &alt_start);
+                    CSeqTranslator::Translate(*tmp, bsh.GetScope(), transl_prot, genetic_code, true, false, &alt_start);
                     unable_to_translate = false;
                     if (!NStr::IsBlank(transl_prot)) {
                         if (NStr::EndsWith(transl_prot, "*")) {
@@ -6366,7 +6366,7 @@ vector < CConstRef <CSeq_feat> > GetFeaturesWithLabel (CBioseq_Handle bsh, strin
     string feat_label;
 
     for (CFeat_CI it(bsh); it; ++it) {
-        feature::GetLabel(it->GetOriginalFeature(), &feat_label, feature::eContent, scope);
+        feature::GetLabel(it->GetOriginalFeature(), &feat_label, feature::fFGL_Content, scope);
         if (NStr::Equal(label, feat_label)) {
             const CSeq_feat& f = it->GetOriginalFeature();
             CConstRef <CSeq_feat> r(&f);

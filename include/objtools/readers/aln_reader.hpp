@@ -62,10 +62,10 @@ public:
     ~CAlnError() {}
     
     // accessors
-    const EAlnErr GetCategory() const { return m_Category; }
-    const int     GetLineNum() const { return m_LineNum; }
-    const string&  GetID() const { return m_ID; }
-    const string&  GetMessage() const { return m_Message; }
+    EAlnErr        GetCategory() const { return m_Category; }
+    int            GetLineNum()  const { return m_LineNum; }
+    const string&  GetID()       const { return m_ID; }
+    const string&  GetMessage()  const { return m_Message; }
     
 private:
     EAlnErr m_Category;

@@ -1007,7 +1007,7 @@ static unsigned int s_GetProductFlagFromCDSProductNames (CBioseq_Handle bh)
                                                sequence::eOverlap_Simple,
                                                bh.GetScope());
         if (prot) {
-            feature::GetLabel(*prot, &label, feature::eContent);
+            feature::GetLabel(*prot, &label, feature::fFGL_Content);
 			if (NStr::Find (label, "macronuclear") != NCBI_NS_STD::string::npos) {
               product_flag = CBioSource::eGenome_macronuclear;
 			} else if (NStr::Find (label, "nucleomorph") != NCBI_NS_STD::string::npos) {

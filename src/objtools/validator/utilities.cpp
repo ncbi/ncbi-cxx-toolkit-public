@@ -121,8 +121,8 @@ int GetGIForSeqId(const CSeq_id& id)
     try {
         CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id);
         gi = scope->GetGi (idh);
-	} catch (CException &x1) {
-	} catch (std::exception &x2) {
+	} catch (CException &) {
+	} catch (std::exception &) {
     }
     return gi;
 }
@@ -140,8 +140,8 @@ CScope::TIds GetSeqIdsForGI(int gi)
     try {
         id_list = scope->GetIds(tmp_id);
 
-	} catch (CException &x1) {
-	} catch (std::exception &x2) {
+	} catch (CException &) {
+	} catch (std::exception &) {
     }
     return id_list;
 }
@@ -432,7 +432,7 @@ string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, 
                 }
                 // failed to find resolvable ID, use bare ID
                 return s_GetBioseqAcc(align.GetSeq_id(0), version);               
-            } catch (CException& x) {
+            } catch (CException& ) {
             }
         } else if (obj->GetThisTypeInfo() == CSeq_graph::GetTypeInfo()) {
             const CSeq_graph& graph = dynamic_cast<const CSeq_graph&>(*obj);
@@ -442,7 +442,7 @@ string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, 
                 if (id) {
                     return s_GetBioseqAcc (*id, version);
                 }
-            } catch (CException& x) {
+            } catch (CException& ) {
             }
         }
     }
