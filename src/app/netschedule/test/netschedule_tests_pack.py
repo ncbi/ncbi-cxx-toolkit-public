@@ -57,6 +57,15 @@ class TestBase:
         self.ns.setConfig( 1 )
         return
 
+    def fromScratch( self ):
+        " Starts a fresh copy of ns "
+        self.clear()
+        self.ns.start()
+        time.sleep( 1 )
+        if not self.ns.isRunning():
+            raise Exception( "Cannot start netschedule" )
+        return
+
 
 
 class Scenario00( TestBase ):
