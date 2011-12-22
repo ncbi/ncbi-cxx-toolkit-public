@@ -1968,6 +1968,22 @@ public:
     /// @sa PrintableString
     static string ParseEscapes(const CTempString& str);
 
+    /// Discard C-style backslash escapes and extract a double quoted
+    /// string from the specified character array.
+    ///
+    /// @param str
+    ///   The character array to extract a double quoted string from.
+    ///   Must start with a double quote.
+    /// @param str_end
+    ///   Pointer to the byte address succeeding the last character
+    ///   in 'str' so that (str_end - str) is the length of the array.
+    /// @param out
+    ///   The output string object. It receives the extracted
+    ///   string that's enclosed by double quotes in 'str'.
+    ///   The output string is also distilled of escapes.
+    /// @return
+    ///   Pointer to the character immediately following the second
+    ///   double quote, or NULL if a conversion error occurs.
     static const char* ParseDoubleQuoted(const char* str,
                                          const char* str_end,
                                          string& out);

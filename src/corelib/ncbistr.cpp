@@ -399,7 +399,7 @@ int NStr::StringToNumeric(const string& str)
         if (flags & NStr::fConvErr_NoThrow)  {                              \
             if ( force_errno || !errno )                                    \
                 errno = errcode;                                            \
-            /* ignore previosly converted value -- always return zero */    \
+            /* ignore previously converted value -- always return zero */   \
             return 0;                                                       \
         } else {                                                            \
             CTempString str_tmp(str);                                       \
@@ -2717,16 +2717,10 @@ const char* NStr::ParseDoubleQuoted(
                 return NULL;
             switch (*str) {
             case '\n':
+                /*quoted EOL means no EOL*/
                 break;
-
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
+            case '0':  case '1':  case '2':  case '3':
+            case '4':  case '5':  case '6':  case '7':
                 {{
                     int max_octal_digits = 3;
                     unsigned char ch = (unsigned char) *str - '0';
@@ -2736,29 +2730,13 @@ const char* NStr::ParseDoubleQuoted(
                     out += ch;
                 }}
                 continue;
-
-            case 'a':
-                out += '\a';
-                break;
-            case 'b':
-                out += '\b';
-                break;
-            case 'f':
-                out += '\f';
-                break;
-            case 'n':
-                out += '\n';
-                break;
-            case 'r':
-                out += '\r';
-                break;
-            case 't':
-                out += '\t';
-                break;
-            case 'v':
-                out += '\v';
-                break;
-
+            case 'a':  out += '\a';  break;
+            case 'b':  out += '\b';  break;
+            case 'f':  out += '\f';  break;
+            case 'n':  out += '\n';  break;
+            case 'r':  out += '\r';  break;
+            case 't':  out += '\t';  break;
+            case 'v':  out += '\v';  break;
             case 'x':
                 {{
                     const char* hex = ++str;
@@ -2767,11 +2745,15 @@ const char* NStr::ParseDoubleQuoted(
                     if (str == hex)
                         // No hexadecimal digits after \x.
                         return NULL;
-                    out += char(StringToUInt(
-                        CTempString(hex, str - hex), 0, 16));
+                    errno = 0;
+                    unsigned ch = StringToUInt(CTempString(hex, str - hex),
+                        NStr::fConvErr_NoThrow, 16);
+                    if (ch == 0 && errno != 0)
+                        // Conversion error.
+                        return NULL;
+                    out += (char) ch;
                 }}
                 continue;
-
             default:
                 out += *str;
             }
