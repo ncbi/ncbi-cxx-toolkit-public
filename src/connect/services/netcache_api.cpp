@@ -39,7 +39,7 @@
 #pragma warning (disable: 4191)
 #endif
 
-#include "netcache_rw.hpp"
+#include "netcache_api_impl.hpp"
 
 #include <connect/services/srv_connections_expt.hpp>
 #include <connect/services/error_codes.hpp>
@@ -306,22 +306,24 @@ string CNetCacheAPI::PutData(const void* buf, size_t size,
     return PutData(kEmptyStr, buf, size, time_to_live);
 }
 
-CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(string* blob_id,
-    unsigned time_to_live)
+CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(
+    CNetCacheWriter* nc_writer)
 {
     string cmd("PUT3 ");
-    cmd.append(NStr::IntToString(time_to_live));
+    cmd.append(NStr::IntToString(nc_writer->GetTimeToLive()));
 
-    bool write_existing_blob = !blob_id->empty();
+    const string& blob_id(nc_writer->GetBlobID());
+
+    bool write_existing_blob = !blob_id.empty();
     bool add_extensions;
     CNetCacheKey key;
     string stripped_blob_id;
 
     if (write_existing_blob) {
-        key.Assign(*blob_id);
+        key.Assign(blob_id);
         cmd.push_back(' ');
         stripped_blob_id = (add_extensions = !key.HasExtensions()) ?
-            *blob_id : key.StripKeyExtensions();
+            blob_id : key.StripKeyExtensions();
         cmd.append(stripped_blob_id);
         if (!m_EnableMirroring)
             add_extensions = false;
@@ -373,11 +375,13 @@ CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(string* blob_id,
                 "Server created " << exec_result.response <<
                 " in response to PUT3 \"" << stripped_blob_id << "\"");
         }
-    } else
-        *blob_id = exec_result.response;
+    } else {
+        if (add_extensions && m_Service.IsLoadBalanced())
+            CNetCacheKey::AddExtensions(exec_result.response,
+                m_Service.GetServiceName());
 
-    if (add_extensions && m_Service.IsLoadBalanced())
-        CNetCacheKey::AddExtensions(*blob_id, m_Service.GetServiceName());
+        nc_writer->SetBlobID(exec_result.response);
+    }
 
     return exec_result.conn;
 }

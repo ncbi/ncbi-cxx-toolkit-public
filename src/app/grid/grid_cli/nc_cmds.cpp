@@ -69,6 +69,9 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
             NCBI_THROW(CArgException, eNoValue, "\"--nc\" "
                 "option is required in icache mode.");
         }
+
+        if (!IsOptionSet(eCompatMode))
+            m_NetICacheClient.SetFlags(ICache::fBestReliability);
         break;
 
     default: // always eNetCacheAdmin

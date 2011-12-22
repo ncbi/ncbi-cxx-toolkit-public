@@ -31,9 +31,7 @@
  * File Description:
  */
 
-#include "netservice_api_impl.hpp"
-
-#include <connect/services/netcache_api.hpp>
+#include "netcache_rw.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -77,8 +75,7 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
         return m_Service->GetServer(key.GetHost(), key.GetPort());
     }
 
-    virtual CNetServerConnection InitiateWriteCmd(string* blob_id,
-        unsigned time_to_live);
+    virtual CNetServerConnection InitiateWriteCmd(CNetCacheWriter* nc_writer);
 
     void SetPassword(const string& password);
     void AppendClientIPSessionIDPassword(string* cmd);

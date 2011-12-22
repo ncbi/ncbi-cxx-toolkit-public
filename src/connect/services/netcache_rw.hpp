@@ -38,7 +38,9 @@
 ///
 
 #include "srv_rw.hpp"
-#include "netcache_api_impl.hpp"
+#include "netservice_api_impl.hpp"
+
+#include <connect/services/netcache_api.hpp>
 
 #include <connect/ncbi_conn_reader_writer.hpp>
 
@@ -111,6 +113,12 @@ public:
     virtual ERW_Result Flush(void);
 
     virtual void Close();
+
+    const string& GetBlobID() const {return m_BlobID;}
+
+    void SetBlobID(const string& blob_id) {m_BlobID = blob_id;}
+
+    unsigned GetTimeToLive() const {return m_TimeToLive;}
 
 private:
     void EstablishConnection();

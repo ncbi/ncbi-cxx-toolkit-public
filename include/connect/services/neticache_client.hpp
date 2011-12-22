@@ -106,6 +106,8 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
 
     // ICache interface implementation
 
+    virtual TFlags GetFlags();
+    virtual void SetFlags(TFlags flags);
     virtual void SetTimeStampPolicy(TTimeStampFlags policy,
                                     unsigned int    timeout,
                                     unsigned int    max_timeout = 0);

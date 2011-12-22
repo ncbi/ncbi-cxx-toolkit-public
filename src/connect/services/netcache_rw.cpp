@@ -32,7 +32,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include "netcache_rw.hpp"
+#include "netcache_api_impl.hpp"
 
 #include <connect/services/netcache_api_expt.hpp>
 #include <connect/services/error_codes.hpp>
@@ -208,7 +208,7 @@ void CNetCacheWriter::EstablishConnection()
 {
     ResetWriters();
 
-    m_Connection = m_NetCacheAPI->InitiateWriteCmd(&m_BlobID, m_TimeToLive);
+    m_Connection = m_NetCacheAPI->InitiateWriteCmd(this);
 
     m_SocketReaderWriter.reset(
         new CSocketReaderWriter(&m_Connection->m_Socket));

@@ -63,8 +63,37 @@ BEGIN_NCBI_SCOPE
 class ICache
 {
 public:
-    // Version of blob
     typedef int TBlobVersion;
+
+    /// Flags for the underlying storage
+    enum EFlags {
+        /// The storage to try to get to the best possible overall performance,
+        /// even if it means sacrificing some reliability.
+        /// If combined with 'fBestReliability' flag it at least tries to avoid
+        /// data corruption. If it is used without 'fBestReliability' flag,
+        /// then it even allows for a data corruption in pursuit of the best
+        /// performance.
+        fBestPerformance  = (0 << 0),
+
+        /// Usually, it's not a problem if something fails to get cached
+        /// sometimes. So, by default the storage can cut some corners to
+        /// get more performance by saving on the reliability of caching
+        /// operations.
+        /// This flag tells the storage to put more value on the reliability
+        /// (rather than on its performance) -- to the extent allowed by the
+        /// storage's inherent limitations.
+        fBestReliability  = (1 << 0),
+    };
+
+    /// Bitwise OR of "EFlags" flags
+    typedef int TFlags;
+
+    /// Retrieve the effective combination of flags
+    /// from the underlying storage.
+    virtual TFlags GetFlags() = 0;
+
+    /// Pass flags to the underlying storage
+    virtual void SetFlags(TFlags flags) = 0;
 
     /// ICache keeps timestamps of every cache entry.
     /// This enum defines the policy how it is managed.

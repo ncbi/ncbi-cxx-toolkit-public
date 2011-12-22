@@ -328,8 +328,8 @@ struct SCommandDefinition {
         "Read data from the standard input (or a file) until EOF is "
         "encountered and save the received data as a NetCache blob."
         ICACHE_KEY_FORMAT_EXPLANATION,
-        {eOptionalID, eNetCache, eCache, ePassword,
-            eTTL, eEnableMirroring, eInput, eInputFile, eAuth, -1}},
+        {eOptionalID, eNetCache, eCache, ePassword, eTTL, eEnableMirroring,
+            eInput, eInputFile, eCompatMode, eAuth, -1}},
 
     {eNetCacheCommand, &CGridCommandLineInterfaceApp::Cmd_RemoveBlob,
         "rmblob|rb", "Remove a NetCache blob.",

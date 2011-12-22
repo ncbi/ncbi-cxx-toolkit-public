@@ -104,6 +104,8 @@ public:
 
     void WriteBufferAndClose(const char* buf_ptr, size_t buf_size);
 
+    ENetCacheResponseType GetResponseType() const {return m_ResponseType;}
+
 protected:
     CNetServerWriter(ENetCacheResponseType response_type);
 

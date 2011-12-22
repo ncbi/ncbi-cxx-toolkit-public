@@ -32,7 +32,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include "netcache_rw.hpp"
+#include "netcache_api_impl.hpp"
 
 #include <connect/services/neticache_client.hpp>
 #include <connect/services/error_codes.hpp>
@@ -142,7 +142,8 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
             const string& cache_name) :
         SNetCacheAPIImpl(new SNetServiceImpl(s_NetICacheAPIName,
             client_name, new CNetICacheServerListener)),
-        m_CacheName(cache_name)
+        m_CacheName(cache_name),
+        m_CacheFlags(ICache::fBestPerformance)
     {
         m_Service->Init(this, service_name,
             config, section, s_NetICacheConfigSections);
@@ -156,8 +157,7 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
     string ExecStdCmd(const char* cmd_base, const string& key,
         int version, const string& subkey);
 
-    virtual CNetServerConnection InitiateWriteCmd(string* blob_id,
-        unsigned time_to_live);
+    virtual CNetServerConnection InitiateWriteCmd(CNetCacheWriter* nc_writer);
 
     IReader* GetReadStreamPart(const string& key,
         int version, const string& subkey,
@@ -169,6 +169,8 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
     string m_ICacheCmdPrefix;
 
     CNetServer m_SelectedServer;
+
+    ICache::TFlags m_CacheFlags;
 };
 
 void CNetICacheServerListener::OnInit(CObject* api_impl,
@@ -224,12 +226,14 @@ CNetICachePasswordGuard::CNetICachePasswordGuard(
 }
 
 CNetServerConnection SNetICacheClientImpl::InitiateWriteCmd(
-    string* blob_id, unsigned time_to_live)
+    CNetCacheWriter* nc_writer)
 {
     string cmd(m_ICacheCmdPrefix + "STOR ");
-    cmd.append(NStr::UIntToString(time_to_live));
+    cmd.append(NStr::UIntToString(nc_writer->GetTimeToLive()));
     cmd.push_back(' ');
-    cmd.append(*blob_id);
+    cmd.append(nc_writer->GetBlobID());
+    if (nc_writer->GetResponseType() == eNetCache_Wait)
+        cmd.append(" confirm=1");
     AppendClientIPSessionIDPassword(&cmd);
 
     return StickToServerAndExec(cmd).conn;
@@ -323,6 +327,18 @@ void CNetICacheClient::UnRegisterSession(unsigned pid)
 }
 
 
+ICache::TFlags CNetICacheClient::GetFlags()
+{
+    return m_Impl->m_CacheFlags;
+}
+
+
+void CNetICacheClient::SetFlags(ICache::TFlags flags)
+{
+    m_Impl->m_CacheFlags = flags;
+}
+
+
 void CNetICacheClient::SetTimeStampPolicy(TTimeStampFlags policy,
                                           unsigned int    timeout,
                                           unsigned int    max_timeout)
@@ -372,7 +388,8 @@ void CNetICacheClient::Store(const string&  key,
     string blob_id(s_MakeBlobID(SKeySubkeyVersion(key, subkey, version)));
 
     CNetCacheWriter writer(m_Impl, &blob_id, time_to_live,
-        eICache_NoWait, CNetCacheAPI::eCaching_Disable);
+        m_Impl->m_CacheFlags & ICache::fBestReliability ?
+            eNetCache_Wait : eICache_NoWait, CNetCacheAPI::eCaching_Disable);
 
     writer.WriteBufferAndClose(reinterpret_cast<const char*>(data), size);
 }
@@ -497,7 +514,8 @@ IEmbeddedStreamWriter* CNetICacheClient::GetNetCacheWriter(const string& key,
     string blob_id(s_MakeBlobID(SKeySubkeyVersion(key, subkey, version)));
 
     return new CNetCacheWriter(m_Impl, &blob_id, time_to_live,
-        eICache_NoWait, caching_mode);
+        m_Impl->m_CacheFlags & ICache::fBestReliability ?
+            eNetCache_Wait : eICache_NoWait, caching_mode);
 }
 
 
