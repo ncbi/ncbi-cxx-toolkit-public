@@ -72,7 +72,8 @@ void* CHspStreamWriteThread::Main(void)
         hsp_list = 
             setupHSPList(rand() % max_score, m_iNumQueries, index);
         status = BlastHSPStreamWrite(m_ipHspStream, &hsp_list);
-        ASSERT(status == kBlastHSPStream_Success);
+        if (status != kBlastHSPStream_Success)
+            abort();
         ASSERT(hsp_list == NULL);
     }
     return NULL;

@@ -158,6 +158,7 @@ CRandomlyFailMockBlastSeqSrc::x_PopulateBLAST_SequenceBlk(BlastSeqSrcGetSeqArg*
     rv = BlastSeqBlkSetSequence(seq_arg->seq, seq.data.release(), 
                                 sequence_length);
     ASSERT(rv == 0);
+    (void)rv;   /* to pacify compiler warning */
 }
 
 extern "C" {

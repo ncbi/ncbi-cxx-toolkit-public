@@ -470,6 +470,7 @@ s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
         seq_arg.check_oid_exclusion = TRUE;
         status = BlastSeqSrcGetSequence(seq_src, (void*) &seq_arg);
         ASSERT(status == 0);
+        (void)status; /* to pacify compiler warning */
     }
 
     if (program_number == eBlastTypeTblastn) {

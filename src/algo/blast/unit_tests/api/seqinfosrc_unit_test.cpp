@@ -120,9 +120,8 @@ BOOST_AUTO_TEST_CASE(testBadDatabase)
 BOOST_AUTO_TEST_CASE(testSeqDbOidOutOfRange)
 {
     const Uint4 kOid = 2005;
-    Uint4 length;
     CSeqDbSeqInfoSrc seqinfo_src("data/seqp", true);
-    BOOST_REQUIRE_THROW(length = seqinfo_src.GetLength(kOid), CSeqDBException);
+    BOOST_REQUIRE_THROW(seqinfo_src.GetLength(kOid), CSeqDBException);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

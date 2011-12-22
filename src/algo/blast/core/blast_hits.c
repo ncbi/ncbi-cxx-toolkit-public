@@ -886,6 +886,7 @@ Blast_HSPTestIdentityAndLength(EBlastProgramType program_number,
    status = Blast_HSPGetNumIdentities(query, subject, hsp, score_options,
                                       &align_length);
    ASSERT(status == 0);
+   (void)status;    /* to pacify compiler warning */
 
    /* Check whether this HSP passes the percent identity and minimal hit 
       length criteria, and delete it if it does not. */
