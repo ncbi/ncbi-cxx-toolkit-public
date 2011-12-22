@@ -571,15 +571,21 @@ TJobStatus  CQueue::PutResult(const CNSClientId &  client,
                     SleepMilliSec(100);
                     continue;
                 }
-                ERR_POST("Too many transaction repeats in CQueue::PutResult");
             } else if (ex.IsNoMem()) {
                 if (++dead_locks < k_max_dead_locks) {
                     ERR_POST("No resource repeat in CQueue::PutResult");
                     SleepMilliSec(100);
                     continue;
                 }
-                ERR_POST("Too many transaction repeats in CQueue::PutResult");
             }
+
+            if (ex.IsDeadLock() || ex.IsNoMem()) {
+                string  message = "Too many transaction repeats in "
+                                  "CQueue::PutResult";
+                ERR_POST(message);
+                NCBI_THROW(CNetScheduleException, eTryAgain, message);
+            }
+
             throw;
         }
     }
@@ -657,15 +663,21 @@ void  CQueue::GetJobOrWait(const CNSClientId &     client,
                     SleepMilliSec(100);
                     continue;
                 }
-                ERR_POST("Too many transaction repeats in CQueue::GetJobOrWait");
             } else if (ex.IsNoMem()) {
                 if (++dead_locks < k_max_dead_locks) {
                     ERR_POST("No resource repeat in CQueue::GetJobOrWait");
                     SleepMilliSec(100);
                     continue;
                 }
-                ERR_POST("Too many transaction repeats in CQueue::GetJobOrWait");
             }
+
+            if (ex.IsDeadLock() || ex.IsNoMem()) {
+                string  message = "Too many transaction repeats in "
+                                  "CQueue::GetJobOrWait";
+                ERR_POST(message);
+                NCBI_THROW(CNetScheduleException, eTryAgain, message);
+            }
+
             throw;
         }
     }
