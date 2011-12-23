@@ -191,6 +191,8 @@ struct SNCDBFileInfo
     CSpinLock    size_lock;
     TFileHandle  fd;
     int          create_time;
+    Uint4        last_shrink_pos;
+    int          last_shrink_time;
     ENCDBFileType file_type;
     string       file_name;
 };

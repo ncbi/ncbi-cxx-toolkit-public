@@ -510,6 +510,7 @@ private:
     int                m_FlushTimePeriod;
     Uint1              m_MaxGarbagePct;
     int                m_MinMoveLife;
+    Uint4              m_MaxShrinkScanSize;
     int                m_MaxIOWaitTime;
     Uint8              m_MinDBSize;
     /// Name of guard file excluding several instances to run on the same
@@ -536,7 +537,6 @@ private:
     CSpinRWLock              m_DBFilesLock;
     /// List of all database parts in the storage
     TNCDBFilesMap            m_DBFiles;
-    set<Uint4>               m_CleanedFiles;
     Uint4                    m_LastFileId;
     SNCDBFileInfo*           m_CurMetaFile;
     SNCDBFileInfo*           m_CurDataFile;

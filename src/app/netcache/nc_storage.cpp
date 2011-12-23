@@ -62,6 +62,7 @@ static const char* kNCStorage_FileSizeParam     = "each_file_size";
 static const char* kNCStorage_GarbagePctParam   = "max_garbage_pct";
 static const char* kNCStorage_MinDBSizeParam    = "min_storage_size";
 static const char* kNCStorage_MoveLifeParam     = "min_lifetime_to_move";
+static const char* kNCStorage_MaxScanSizeParam  = "max_shrink_scan_size";
 static const char* kNCStorage_MaxIOWaitParam    = "max_io_wait_time";
 static const char* kNCStorage_GCBatchParam      = "gc_batch_size";
 static const char* kNCStorage_FlushTimeParam    = "sync_time_period";
@@ -110,11 +111,13 @@ CNCBlobStorage::x_ReadVariableParams(void)
     str = reg.GetString(kNCStorage_RegSection, kNCStorage_MinDBSizeParam, "10Gb");
     m_MinDBSize = NStr::StringToUInt8_DataSize(str);
     m_MinMoveLife = reg.GetInt(kNCStorage_RegSection, kNCStorage_MoveLifeParam, 600);
+    str = reg.GetString(kNCStorage_RegSection, kNCStorage_MaxScanSizeParam, "10Mb");
+    m_MaxShrinkScanSize = Uint4(NStr::StringToUInt8_DataSize(str));
 
     m_MaxIOWaitTime = reg.GetInt(kNCStorage_RegSection, kNCStorage_MaxIOWaitParam, 10);
 
     m_MinRecNoSavePeriod = reg.GetInt(kNCStorage_RegSection, kNCStorage_MinRecNoSaveParam, 10);
-    m_FlushTimePeriod = reg.GetInt(kNCStorage_RegSection, kNCStorage_FlushTimeParam, 15);
+    m_FlushTimePeriod = reg.GetInt(kNCStorage_RegSection, kNCStorage_FlushTimeParam, 3);
 
     m_ExtraGCOnSize  = NStr::StringToUInt8_DataSize(reg.GetString(
                        kNCStorage_RegSection, kNCStorage_ExtraGCOnParam, "0"));
@@ -412,13 +415,11 @@ CNCBlobStorage::x_CreateNewFile(ENCDBFileType file_type)
     else
         file_id = m_LastFileId + 1;
     string file_name = x_GetFileName(file_id, file_type);
-    SNCDBFileInfo* file_info = new SNCDBFileInfo;
+    SNCDBFileInfo* file_info = new SNCDBFileInfo();
     file_info->file_id      = file_id;
     file_info->file_name    = file_name;
     file_info->create_time  = int(time(NULL));
     file_info->file_size    = m_NewFileSize;
-    file_info->used_size    = 0;
-    file_info->garb_size    = 0;
     file_info->file_type    = file_type;
 
 #ifdef NCBI_OS_LINUX
@@ -2185,6 +2186,7 @@ CNCBlobStorage::x_ShrinkDiskStorage(void)
     if (m_Stopped)
         return;
 
+    int cur_time = int(time(NULL));
     bool need_move = m_CurDBSize >= m_MinDBSize
                      &&  m_GarbageSize * 100 > m_CurDBSize * m_MaxGarbagePct;
     double max_pct = 0;
@@ -2195,38 +2197,36 @@ CNCBlobStorage::x_ShrinkDiskStorage(void)
     ITERATE(TNCDBFilesMap, it_file, m_DBFiles) {
         SNCDBFileInfo* this_file = it_file->second;
         m_NextWriteLock.Lock();
-        if (this_file == m_CurMetaFile  ||  this_file == m_CurDataFile
-            ||  this_file == m_NextMetaFile  ||  this_file == m_NextDataFile)
-        {
-            m_NextWriteLock.Unlock();
-            continue;
-        }
+        bool is_current = this_file == m_CurMetaFile
+                          ||  this_file == m_CurDataFile
+                          ||  this_file == m_NextMetaFile
+                          ||  this_file == m_NextDataFile;
         m_NextWriteLock.Unlock();
+        if (is_current)
+            continue;
 
         if (this_file->used_size == 0) {
             files_to_del.push_back(this_file);
         }
-        else if (need_move) {
-            if (m_CleanedFiles.find(this_file->file_id) == m_CleanedFiles.end())
-            {
-                this_file->size_lock.Lock();
-                if (this_file->garb_size + this_file->used_size != 0) {
-                    double this_pct = double(this_file->garb_size)
-                                      / (this_file->garb_size + this_file->used_size);
-                    if (this_pct > max_pct) {
-                        max_pct = this_pct;
-                        max_file = this_file;
-                    }
+        else if (need_move
+                 &&  cur_time - this_file->last_shrink_time > m_MinMoveLife)
+        {
+            this_file->size_lock.Lock();
+            if (this_file->garb_size + this_file->used_size != 0) {
+                double this_pct = double(this_file->garb_size)
+                                  / (this_file->garb_size + this_file->used_size);
+                if (this_pct > max_pct) {
+                    max_pct = this_pct;
+                    max_file = this_file;
                 }
-                this_file->size_lock.Unlock();
             }
+            this_file->size_lock.Unlock();
         }
     }
     m_DBFilesLock.ReadUnlock();
 
     ITERATE(vector<SNCDBFileInfo*>, it, files_to_del) {
         SNCDBFileInfo* file_info = *it;
-        m_CleanedFiles.erase(file_info->file_id);
         x_DeleteDBFile(file_info);
     }
 
@@ -2237,16 +2237,23 @@ CNCBlobStorage::x_ShrinkDiskStorage(void)
     if (max_file == NULL  ||  !need_move)
         return;
 
-    int cur_time = int(time(NULL));
     char* data = max_file->file_map;
     char* end_data = data + max_file->file_size;
-    data += kSignatureSize;
+    data += max_file->last_shrink_pos;
+    if (max_file->last_shrink_pos == 0)
+        data += kSignatureSize;
+    char* start_data = data;
     bool failed = false;
+    bool finished = false;
     Uint4 cnt_moved = 0, cnt_skipped = 0;
-    while (!m_Stopped  &&  data < end_data - sizeof(SFileRecHeader)) {
+    while (!m_Stopped  &&  data - start_data < m_MaxShrinkScanSize) {
         SFileRecHeader* header = (SFileRecHeader*)data;
-        if (header->rec_size == 0  ||  data > end_data - header->rec_size)
+        if (data >= end_data - sizeof(SFileRecHeader)
+            ||  header->rec_size == 0  ||  data > end_data - header->rec_size)
+        {
+            finished = true;
             break;
+        }
 
         SFileRecHeader* up_head = NULL;
         SFileMetaRec* meta_rec = NULL;
@@ -2275,13 +2282,15 @@ CNCBlobStorage::x_ShrinkDiskStorage(void)
         }
         data += header->rec_size;
     }
-    if (!failed) {
-        if (max_file->used_size == 0) {
-            x_DeleteDBFile(max_file);
-        }
-        else {
-            m_CleanedFiles.insert(max_file->file_id);
-        }
+    if (!failed  &&  max_file->used_size == 0) {
+        x_DeleteDBFile(max_file);
+    }
+    else if (finished) {
+        max_file->last_shrink_pos = 0;
+        max_file->last_shrink_time = cur_time;
+    }
+    else {
+        max_file->last_shrink_pos = Uint4(data - max_file->file_map);
     }
 }
 
@@ -2411,7 +2420,7 @@ CNCBlobStorage::x_DoNewFileWork(void)
         m_NextWaitLock.Unlock();
 
         m_NextFileSwitchLock.Lock();
-        if (m_NextMetaFile != NULL  &&  m_NextDataFile != NULL)
+        if (!m_Stopped  &&  m_NextMetaFile != NULL  &&  m_NextDataFile != NULL)
             m_NextFileSwitch.WaitForSignal(m_NextFileSwitchLock);
         m_NextFileSwitchLock.Unlock();
     }
