@@ -120,6 +120,11 @@ void CTestNetScheduleCrash::Init(void)
                              "Number of jobs to submit",
                              CArgDescriptions::eInteger);
 
+    arg_desc->AddOptionalKey("delay",
+                             "delay",
+                             "Number of seconds between operations",
+                             CArgDescriptions::eInteger);
+
     arg_desc->AddOptionalKey("main",
                              "main",
                              "Main loop (submit-get-put) only",
@@ -256,7 +261,7 @@ vector<unsigned int>  CTestNetScheduleCrash::GetDone( CNetScheduleExecuter &  ex
         CNetScheduleJob     job;
         bool                job_exists = executor.GetJob(job);
         if (!job_exists)
-            continue;
+            break;
 
         CNetScheduleKey     key( job.job_id );
         jobs_processed.push_back( key.id );
@@ -328,6 +333,10 @@ int CTestNetScheduleCrash::Run(void)
         jcount = args["jobs"].AsInteger();
     }
 
+    unsigned int        delay = 10;
+    if (args["delay"])
+        delay = args["delay"].AsInteger();
+
 
     CNetScheduleAPI                     cl(service, "crash_test", queue);
 
@@ -350,8 +359,8 @@ int CTestNetScheduleCrash::Run(void)
     vector<unsigned int>        jobs = this->Submit(submitter, jcount, queue);
 
 
-    NcbiCout << NcbiEndl << "Waiting 10 seconds ..." << NcbiEndl;
-    SleepMilliSec(10 * 1000);
+    NcbiCout << NcbiEndl << "Waiting " << delay << " second(s) ..." << NcbiEndl;
+    SleepMilliSec(delay * 1000);
     NcbiCout << NcbiEndl << "Ok." << NcbiEndl;
 
 
@@ -359,8 +368,8 @@ int CTestNetScheduleCrash::Run(void)
     this->GetStatus(executor, jobs);
 
 
-    NcbiCout << NcbiEndl << "Waiting 10 seconds ..." << NcbiEndl;
-    SleepMilliSec(10 * 1000);
+    NcbiCout << NcbiEndl << "Waiting " << delay << " second(s) ..." << NcbiEndl;
+    SleepMilliSec(delay * 1000);
     NcbiCout << NcbiEndl << "Ok." << NcbiEndl;
 
 
@@ -368,8 +377,8 @@ int CTestNetScheduleCrash::Run(void)
     vector<unsigned int>      jobs_returned = this->GetReturn(executor, jcount/2);
 
 
-    NcbiCout << NcbiEndl << "Waiting 10 seconds ..." << NcbiEndl;
-    SleepMilliSec(10 * 1000);
+    NcbiCout << NcbiEndl << "Waiting " << delay << " second(s) ..." << NcbiEndl;
+    SleepMilliSec(delay * 1000);
     NcbiCout << NcbiEndl << "Ok." << NcbiEndl;
 
 
@@ -377,8 +386,8 @@ int CTestNetScheduleCrash::Run(void)
     this->GetStatus(executor, jobs);
 
 
-    NcbiCout << NcbiEndl << "Waiting 10 seconds ..." << NcbiEndl;
-    SleepMilliSec(10 * 1000);
+    NcbiCout << NcbiEndl << "Waiting " << delay << " second(s) ..." << NcbiEndl;
+    SleepMilliSec(delay * 1000);
     NcbiCout << NcbiEndl << "Ok." << NcbiEndl;
 
 
@@ -386,8 +395,8 @@ int CTestNetScheduleCrash::Run(void)
     vector<unsigned int> jobs_processed = this->GetDone(executor);
 
 
-    NcbiCout << NcbiEndl << "Waiting 10 seconds ..." << NcbiEndl;
-    SleepMilliSec(10 * 1000);
+    NcbiCout << NcbiEndl << "Waiting " << delay << " second(s) ..." << NcbiEndl;
+    SleepMilliSec(delay * 1000);
     NcbiCout << NcbiEndl << "Ok." << NcbiEndl;
 
 
