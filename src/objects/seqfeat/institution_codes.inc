@@ -2819,6 +2819,8 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "KASSEL	s	Naturkundemuseum im Ottoneum",
 "KATH	s	Department of Plant Resources",
 "KATO	s	Karadeniz Technical University, Department of Forest Botany",
+"KAUM	s	Kagoshima University Museum",
+"KAUM:I	s	Kagoshima University Museum, Ichthyology Collection",
 "KAW	s	Kawanda Research Station, Department of Agriculture",
 "KAZ	s	Kazan State University",
 "KB	s	National Biological Resources Center, Department of Biological Sciences",
