@@ -151,18 +151,6 @@ public:
     unsigned SubmitBatch(const CNSClientId &             client,
                          vector< pair<CJob, string> > &  batch);
 
-    TJobStatus  PutResultGetJob(const CNSClientId &        client,
-                                // PutResult parameters
-                                unsigned                   done_job_id,
-                                const string &             auth_token,
-                                int                        ret_code,
-                                const string *             output,
-                                // GetJob parameters
-                                const list<string> *       aff_list,
-                                bool                       wnode_affinity,
-                                bool                       any_affinity,
-                                CJob *                     new_job);
-
     TJobStatus  PutResult(const CNSClientId &  client,
                           time_t               curr,
                           unsigned             job_id,

@@ -224,7 +224,8 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "wnode_aff", eNSPT_Int, eNSPA_Optional, 0 } } },
     { "GET2",     { &CNetScheduleHandler::x_ProcessGetJob,
                     eNSCR_Worker },
-        { { "port",      eNSPT_Id,  eNSPA_Optional },
+        { { "port",      eNSPT_Int, eNSPA_Optional },
+          { "timeout",   eNSPT_Int, eNSPA_Optional },
           { "aff",       eNSPT_Str, eNSPA_Optional, "" },
           { "any_aff",   eNSPT_Int, eNSPA_Optional, 0 },
           { "wnode_aff", eNSPT_Int, eNSPA_Optional, 0 } } },
@@ -250,14 +251,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "auth_token",      eNSPT_Id,  eNSPA_Required } } },
     // WGET port : uint  timeout : uint
     //      [affinity_list : keystr(aff) ]
-    { "WGET",     { &CNetScheduleHandler::x_ProcessWaitGet,
-                    eNSCR_Worker },
-        { { "port",      eNSPT_Int, eNSPA_Required },
-          { "timeout",   eNSPT_Int, eNSPA_Required },
-          { "aff",       eNSPT_Str, eNSPA_Optional, "" },
-          { "any_aff",   eNSPT_Int, eNSPA_Optional, 0 },
-          { "wnode_aff", eNSPT_Int, eNSPA_Optional, 0 } } },
-    { "WGET2",    { &CNetScheduleHandler::x_ProcessWaitGet,
+    { "WGET",     { &CNetScheduleHandler::x_ProcessGetJob,
                     eNSCR_Worker },
         { { "port",      eNSPT_Int, eNSPA_Required },
           { "timeout",   eNSPT_Int, eNSPA_Required },
@@ -296,6 +290,8 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "auth_token",      eNSPT_Id,  eNSPA_Required },
           { "job_return_code", eNSPT_Int, eNSPA_Required },
           { "output",          eNSPT_Str, eNSPA_Required },
+          { "port",            eNSPT_Int, eNSPA_Optional },
+          { "timeout",         eNSPT_Int, eNSPA_Optional },
           { "aff",             eNSPT_Str, eNSPA_Optional, "" },
           { "any_aff",         eNSPT_Int, eNSPA_Optional, 0 },
           { "wnode_aff",       eNSPT_Int, eNSPA_Optional, 0 } } },
@@ -309,13 +305,13 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
                     eNSCR_Worker } },
 
     // Obsolete commands
-    { "REGC",     { &CNetScheduleHandler::x_ProcessRegisterClient,
+    { "REGC",     { &CNetScheduleHandler::x_CmdObsolete,
                     eNSCR_Worker },
         { { "port", eNSPT_Int, eNSPA_Optional } } },
-    { "URGC",     { &CNetScheduleHandler::x_ProcessUnRegisterClient,
+    { "URGC",     { &CNetScheduleHandler::x_CmdObsolete,
                     eNSCR_Worker },
         { { "port", eNSPT_Int, eNSPA_Optional } } },
-    { "INIT",     { &CNetScheduleHandler::x_ProcessInitWorkerNode,
+    { "INIT",     { &CNetScheduleHandler::x_CmdObsolete,
                     eNSCR_Worker } },
     { "JRTO",     { &CNetScheduleHandler::x_CmdNotImplemented,
                     eNSCR_Worker } },
@@ -770,9 +766,6 @@ void CNetScheduleHandler::x_ProcessMsgQueue(BUF buffer)
             m_ClientId.AddCapability(eNSAC_Submitter);
     }
 
-    // TODO: When all worker nodes will learn to send the INIT command,
-    // the following line has to be changed to something like
-    // m_ProcessMessage = &CNetScheduleHandler::x_ProcessInitWorkerNode.
     m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
     x_SetQuickAcknowledge();
 }
@@ -1238,6 +1231,14 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
 {
     x_CheckGetJobPrerequisites(m_CommandArguments.wnode_affinity);
 
+    // GET & WGET are first versions of the command
+    bool    cmdv2(m_CommandArguments.cmd == "GET2");
+
+    if (cmdv2) {
+        x_CheckNonAnonymousClient("use GET2 command");
+        x_CheckPortAndTimeout();
+    }
+
     list<string>    aff_list;
     NStr::Split(NStr::ParseEscapes(m_CommandArguments.affinity_token),
                 "\t,", aff_list, NStr::eNoMergeDelims);
@@ -1245,45 +1246,20 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
     CJob            job;
     q->GetJobOrWait(m_ClientId,
                     m_CommandArguments.port,
-                    0,  // This is GET, not WGET
+                    m_CommandArguments.timeout,
                     time(0), &aff_list,
                     m_CommandArguments.wnode_affinity,
                     m_CommandArguments.any_affinity,
                     &job);
 
-    x_PrintGetJobResponse(q, job, m_CommandArguments.cmd == "GET2");
-    x_PrintRequestStop(eStatus_OK);
-}
-
-
-void CNetScheduleHandler::x_ProcessWaitGet(CQueue* q)
-{
-    x_CheckGetJobPrerequisites(m_CommandArguments.wnode_affinity);
-
-    list<string>        aff_list;
-    NStr::Split(NStr::ParseEscapes(m_CommandArguments.affinity_token),
-                "\t,", aff_list, NStr::eNoMergeDelims);
-
-    CJob                job;
-    q->GetJobOrWait(m_ClientId, time(0),
-                    m_CommandArguments.port,
-                    m_CommandArguments.timeout,
-                    &aff_list,
-                    m_CommandArguments.wnode_affinity,
-                    m_CommandArguments.any_affinity,
-                    &job);
-
-    x_PrintGetJobResponse(q, job, m_CommandArguments.cmd == "WGET2");
+    x_PrintGetJobResponse(q, job, cmdv2);
     x_PrintRequestStop(eStatus_OK);
 }
 
 
 void CNetScheduleHandler::x_ProcessCancelWaitGet(CQueue* q)
 {
-    if (!m_ClientId.IsComplete())
-        NCBI_THROW(CNetScheduleException, eInvalidClient,
-               "Anonymous client (no client_node and client_session"
-               " at handshake) cannot cancel waiting after WGET.");
+    x_CheckNonAnonymousClient("cancel waiting after WGET");
 
     q->CancelWaitGet(m_ClientId);
     WriteMessage("OK:");
@@ -1293,10 +1269,11 @@ void CNetScheduleHandler::x_ProcessCancelWaitGet(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessPut(CQueue* q)
 {
-    if (m_CommandArguments.cmd == "PUT2") {
-        if (m_CommandArguments.auth_token.empty())
-            NCBI_THROW(CNetScheduleException, eInvalidAuthToken,
-                       "Invalid authorization token. It cannot be empty.");
+    bool    cmdv2(m_CommandArguments.cmd == "PUT2");
+
+    if (cmdv2) {
+        x_CheckNonAnonymousClient("use PUT2 command");
+        x_CheckAuthorizationToken();
     }
 
     string      output = NStr::ParseEscapes(m_CommandArguments.output);
@@ -1342,51 +1319,63 @@ void CNetScheduleHandler::x_ProcessPut(CQueue* q)
 void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
 {
     x_CheckGetJobPrerequisites(m_CommandArguments.wnode_affinity);
-    if (m_CommandArguments.cmd == "JXCG2") {
-        if (m_CommandArguments.auth_token.empty())
-            NCBI_THROW(CNetScheduleException, eInvalidAuthToken,
-                       "Invalid authorization token. It cannot be empty.");
+
+    bool    cmdv2(m_CommandArguments.cmd == "JXCG2");
+
+    if (cmdv2) {
+        x_CheckNonAnonymousClient("use JXCG2 command");
+        x_CheckPortAndTimeout();
+        x_CheckAuthorizationToken();
     }
 
+
+    time_t      curr = time(0);
+    string      output = NStr::ParseEscapes(m_CommandArguments.output);
+
+    // PUT part
+    TJobStatus      old_status = q->PutResult(m_ClientId, curr,
+                                          m_CommandArguments.job_id,
+                                          m_CommandArguments.auth_token,
+                                          m_CommandArguments.job_return_code,
+                                          &output);
+
+    // cmdv2 has two lines output
+    if (old_status == CNetScheduleAPI::eJobNotFound) {
+        ERR_POST(Warning << "Cannot accept job "
+                         << m_CommandArguments.job_key
+                         << " results. The job is unknown");
+        if (cmdv2)
+            WriteMessage("OK:WARNING:The job is unknown;");
+    } else if (old_status != CNetScheduleAPI::ePending &&
+             old_status != CNetScheduleAPI::eRunning) {
+        ERR_POST(Warning << "Cannot accept job "
+                         << m_CommandArguments.job_key
+                         << " results. The job has already been done.");
+        if (cmdv2)
+            WriteMessage("OK:WARNING:The job has already been done;");
+    } else {
+        if (cmdv2)
+            WriteMessage("OK:");
+    }
+
+
+    // Get part
     list<string>        aff_list;
     NStr::Split(NStr::ParseEscapes(m_CommandArguments.affinity_token),
                 "\t,", aff_list, NStr::eNoMergeDelims);
 
     CJob                job;
-    string              output = NStr::ParseEscapes(m_CommandArguments.output);
-    TJobStatus          old_status = q->PutResultGetJob(
-                                            m_ClientId,
-                                            m_CommandArguments.job_id,
-                                            m_CommandArguments.auth_token,
-                                            m_CommandArguments.job_return_code,
-                                            &output,
-                                            // GetJob params
-                                            &aff_list,
-                                            m_CommandArguments.wnode_affinity,
-                                            m_CommandArguments.any_affinity,
-                                            &job);
+    q->GetJobOrWait(m_ClientId,
+                    m_CommandArguments.port,
+                    m_CommandArguments.timeout,
+                    curr, &aff_list,
+                    m_CommandArguments.wnode_affinity,
+                    m_CommandArguments.any_affinity,
+                    &job);
 
-    // The PUT part output cannot be sent to the client to avoid breaking
-    // backward compatibillity. So it is logged only.
-    if (old_status == CNetScheduleAPI::eDone) {
-        LOG_POST(Warning << "Cannot accept job "
-                         << m_CommandArguments.job_key
-                         << " results. The job has already been done.");
-    }
-    else if (old_status == CNetScheduleAPI::eJobNotFound) {
-        ERR_POST(Warning << "Cannot accept job "
-                         << m_CommandArguments.job_key
-                         << " results. The job is unknown");
-    }
-    else if (old_status != CNetScheduleAPI::ePending &&
-             old_status != CNetScheduleAPI::eRunning) {
-        ERR_POST(Warning << "Cannot accept job "
-                         << m_CommandArguments.job_key
-                         << " results. The job has already been done.");
-    }
-
-    x_PrintGetJobResponse(q, job, m_CommandArguments.cmd == "JXCG2");
+    x_PrintGetJobResponse(q, job, cmdv2);
     x_PrintRequestStop(eStatus_OK);
+    return;
 }
 
 
@@ -1424,10 +1413,11 @@ void CNetScheduleHandler::x_ProcessGetMessage(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessPutFailure(CQueue* q)
 {
-    if (m_CommandArguments.cmd == "FPUT2") {
-        if (m_CommandArguments.auth_token.empty())
-            NCBI_THROW(CNetScheduleException, eInvalidAuthToken,
-                       "Invalid authorization token. It cannot be empty.");
+    bool    cmdv2(m_CommandArguments.cmd == "FPUT2");
+
+    if (cmdv2) {
+        x_CheckNonAnonymousClient("use FPUT2 command");
+        x_CheckAuthorizationToken();
     }
 
     string      warning;
@@ -1470,7 +1460,7 @@ void CNetScheduleHandler::x_ProcessPutFailure(CQueue* q)
     if (warning.empty())
         WriteMessage("OK:");
     else
-        WriteMessage("OK:", "WARNING: " + warning);
+        WriteMessage("OK:WARNING:", warning + ";");
     x_PrintRequestStop(eStatus_OK);
 }
 
@@ -1485,10 +1475,11 @@ void CNetScheduleHandler::x_ProcessDropQueue(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessReturn(CQueue* q)
 {
-    if (m_CommandArguments.cmd == "RETURN2") {
-        if (m_CommandArguments.auth_token.empty())
-            NCBI_THROW(CNetScheduleException, eInvalidAuthToken,
-                       "Invalid authorization token. It cannot be empty.");
+    bool    cmdv2(m_CommandArguments.cmd == "RETURN2");
+
+    if (cmdv2) {
+        x_CheckNonAnonymousClient("use RETURN2 command");
+        x_CheckAuthorizationToken();
     }
 
     string          warning;
@@ -1501,7 +1492,7 @@ void CNetScheduleHandler::x_ProcessReturn(CQueue* q)
         if (warning.empty())
             WriteMessage("OK:");
         else
-            WriteMessage("OK:", "WARNING: " + warning);
+            WriteMessage("OK:WARNING:", warning + ";");
         x_PrintRequestStop(eStatus_OK);
         return;
     }
@@ -1727,7 +1718,7 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
     }
     else
         WriteMessage("OK:WARNING:Configuration file has not "
-                     "been changed. RECO ignored.");
+                     "been changed, RECO ignored;");
 
     x_PrintRequestStop(eStatus_OK);
 }
@@ -1814,20 +1805,6 @@ void CNetScheduleHandler::x_ProcessVersion(CQueue*)
 }
 
 
-void CNetScheduleHandler::x_ProcessRegisterClient(CQueue* q)
-{
-    WriteMessage("OK:WARNING:Obsolete");
-    x_PrintRequestStop(eStatus_OK);
-}
-
-
-void CNetScheduleHandler::x_ProcessUnRegisterClient(CQueue* q)
-{
-    WriteMessage("OK:WARNING:Obsolete");
-    x_PrintRequestStop(eStatus_OK);
-}
-
-
 void CNetScheduleHandler::x_ProcessQList(CQueue*)
 {
     WriteMessage("OK:", m_Server->GetQueueNames(";"));
@@ -1907,6 +1884,8 @@ void CNetScheduleHandler::x_ProcessGetConfiguration(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessReading(CQueue* q)
 {
+    x_CheckNonAnonymousClient("use READ command");
+
     CJob            job;
 
     q->GetJobForReading(m_ClientId, m_CommandArguments.timeout, &job);
@@ -1934,6 +1913,9 @@ void CNetScheduleHandler::x_ProcessReading(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessConfirm(CQueue* q)
 {
+    x_CheckNonAnonymousClient("use CFRM command");
+    x_CheckAuthorizationToken();
+
     TJobStatus      old_status = q->ConfirmReadingJob(
                                             m_ClientId,
                                             m_CommandArguments.job_id,
@@ -1944,6 +1926,9 @@ void CNetScheduleHandler::x_ProcessConfirm(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessReadFailed(CQueue* q)
 {
+    x_CheckNonAnonymousClient("use FRED command");
+    x_CheckAuthorizationToken();
+
     TJobStatus      old_status = q->FailReadingJob(
                                             m_ClientId,
                                             m_CommandArguments.job_id,
@@ -1954,6 +1939,9 @@ void CNetScheduleHandler::x_ProcessReadFailed(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessReadRollback(CQueue* q)
 {
+    x_CheckNonAnonymousClient("use RDRB command");
+    x_CheckAuthorizationToken();
+
     TJobStatus      old_status = q->ReturnReadingJob(
                                             m_ClientId,
                                             m_CommandArguments.job_id,
@@ -1997,13 +1985,6 @@ void CNetScheduleHandler::x_ProcessGetAffinityList(CQueue* q)
 }
 
 
-void CNetScheduleHandler::x_ProcessInitWorkerNode(CQueue *)
-{
-    WriteMessage("OK:WARNING:Obsolete");
-    x_PrintRequestStop(eStatus_OK);
-}
-
-
 void CNetScheduleHandler::x_ProcessClearWorkerNode(CQueue* q)
 {
     q->ClearWorkerNode(m_ClientId);
@@ -2027,17 +2008,52 @@ void CNetScheduleHandler::x_CmdNotImplemented(CQueue *)
 }
 
 
+void CNetScheduleHandler::x_CmdObsolete(CQueue*)
+{
+    WriteMessage("OK:WARNING:Obsolete;");
+    x_PrintRequestStop(eStatus_OK);
+}
+
+
 void CNetScheduleHandler::x_CheckGetJobPrerequisites(bool  wnode_affinity)
 {
     if (!wnode_affinity)
         return;
 
-    if (m_ClientId.IsComplete())
-        return;
+    x_CheckNonAnonymousClient("refer to preferred affinities");
+    return;
+}
 
-    NCBI_THROW(CNetScheduleException, eInvalidClient,
-               "Anonymous client (no client_node and client_session"
-               " at handshake) cannot refer to preferred affinities.");
+
+void CNetScheduleHandler::x_CheckNonAnonymousClient(const string &  message)
+{
+    if (!m_ClientId.IsComplete())
+        NCBI_THROW(CNetScheduleException, eInvalidClient,
+                   "Anonymous client (no client_node and client_session"
+                   " at handshake) cannot " + message);
+    return;
+}
+
+
+void CNetScheduleHandler::x_CheckPortAndTimeout(void)
+{
+    if ((m_CommandArguments.port != 0 &&
+         m_CommandArguments.timeout == 0) ||
+        (m_CommandArguments.port == 0 &&
+         m_CommandArguments.timeout != 0))
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                   "Either both or neither of the port and "
+                   "timeout parameters must be 0");
+    return;
+}
+
+
+void CNetScheduleHandler::x_CheckAuthorizationToken(void)
+{
+    if (m_CommandArguments.auth_token.empty())
+        NCBI_THROW(CNetScheduleException, eInvalidAuthToken,
+                   "Invalid authorization token. It cannot be empty.");
+    return;
 }
 
 
@@ -2162,7 +2178,7 @@ void CNetScheduleHandler::x_StatisticsNew(CQueue *        q,
         WriteMessage("OK:Total: ", NStr::SizetToString(total));
     }
     else if (what == "WNODE") {
-        WriteMessage("OK:WARNING:Obsolete; Use STAT CLIENTS instead.");
+        WriteMessage("OK:WARNING:Obsolete, use STAT CLIENTS instead;");
     }
     WriteMessage("OK:END");
     x_PrintRequestStop(eStatus_OK);

@@ -146,7 +146,6 @@ private:
     void x_ProcessCancel(CQueue*);
     void x_ProcessStatus(CQueue*);
     void x_ProcessGetJob(CQueue*);
-    void x_ProcessWaitGet(CQueue*);
     void x_ProcessCancelWaitGet(CQueue*);
     void x_ProcessPut(CQueue*);
     void x_ProcessJobExchange(CQueue*);
@@ -166,8 +165,6 @@ private:
     void x_ProcessShutdown(CQueue*);
     void x_ProcessGetConf(CQueue*);
     void x_ProcessVersion(CQueue*);
-    void x_ProcessRegisterClient(CQueue*);
-    void x_ProcessUnRegisterClient(CQueue*);
     void x_ProcessQList(CQueue*);
     void x_ProcessQuitSession(CQueue*);
     void x_ProcessCreateQueue(CQueue*);
@@ -183,11 +180,14 @@ private:
                                const string &  description,
                                TJobStatus      status);
     void x_ProcessGetAffinityList(CQueue*);
-    void x_ProcessInitWorkerNode(CQueue*);
     void x_ProcessClearWorkerNode(CQueue*);
     void x_ProcessCancelQueue(CQueue*);
     void x_CmdNotImplemented(CQueue*);
+    void x_CmdObsolete(CQueue*);
     void x_CheckGetJobPrerequisites(bool  wnode_affinity);
+    void x_CheckNonAnonymousClient(const string &  message);
+    void x_CheckPortAndTimeout(void);
+    void x_CheckAuthorizationToken(void);
 
 private:
     CRef<CQueue> GetQueue(void) {

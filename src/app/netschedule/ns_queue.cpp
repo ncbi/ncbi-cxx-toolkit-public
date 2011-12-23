@@ -486,30 +486,6 @@ unsigned int  CQueue::SubmitBatch(const CNSClientId &             client,
 
 
 
-TJobStatus  CQueue::PutResultGetJob(const CNSClientId &        client,
-                                    // PutResult parameters
-                                    unsigned int               done_job_id,
-                                    const string &             auth_token,
-                                    int                        ret_code,
-                                    const string *             output,
-                                    // GetJob parameters
-                                    // in
-                                    const list<string> *       aff_list,
-                                    bool                       wnode_affinity,
-                                    bool                       any_affinity,
-                                    // out
-                                    CJob *                     new_job)
-{
-    time_t  curr = time(0);
-
-    TJobStatus      old_status = PutResult(client, curr, done_job_id,
-                                           auth_token, ret_code, output);
-    GetJobOrWait(client, 0, 0, curr, aff_list,
-                 wnode_affinity, any_affinity, new_job);
-    return old_status;
-}
-
-
 static const size_t     k_max_dead_locks = 10;  // max. dead lock repeats
 
 TJobStatus  CQueue::PutResult(const CNSClientId &  client,
