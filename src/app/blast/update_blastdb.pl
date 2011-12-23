@@ -106,7 +106,7 @@ sub connect_to_ftp
         or die "Failed to login to " . NCBI_FTP . ": $!\n";
     $ftp->cwd(BLAST_DB_DIR);
     $ftp->binary();
-    print STDERR "Connected to NCBI\n" if $opt_verbose;
+    print "Connected to NCBI\n" if $opt_verbose;
     return $ftp;
 }
 
@@ -134,8 +134,8 @@ sub get_files_to_download
     my @retval = ();
 
     if (DEBUG) {
-        print STDERR "DEBUG: Found the following files on ftp site:\n";
-        print STDERR "DEBUG: $_\n" for (@blast_db_files);
+        print "DEBUG: Found the following files on ftp site:\n";
+        print "DEBUG: $_\n" for (@blast_db_files);
     }
 
     for my $requested_db (@ARGV) {
@@ -173,7 +173,7 @@ sub download($)
         if ($opt_verbose and &is_multivolume_db($file) and $file =~ /00/) {
             my $db_name = &extract_db_name($file);
             my $nvol = &get_num_volumes($db_name, @_);
-            print STDERR "Downloading $db_name (" . $nvol . " volumes) ...\n";
+            print "Downloading $db_name (" . $nvol . " volumes) ...\n";
         }
 
         # We preserve the checksum files as evidence of the downloaded archive
@@ -187,7 +187,7 @@ sub download($)
 
 download_file:
         if ($opt_force_download or $new_download or $update_available) {
-            print STDERR "Downloading $file..." if $opt_verbose;
+            print "Downloading $file..." if $opt_verbose;
             $ftp->get($file);
             unless ($ftp->get($checksum_file)) {
                 print STDERR "Failed to download $checksum_file!\n";
@@ -208,25 +208,25 @@ download_file:
                 }
             }
             if ($opt_decompress) {
-                print STDERR ", decompressing..." if $opt_verbose;
+                print ", decompressing..." if $opt_verbose;
                 my $decompress_succeeded = &decompress($file);
                 next unless ($decompress_succeeded);
                 unlink $file;   # Clean up archive, but preserve the checksum file
             }
-            print STDERR " [OK]\n" if $opt_verbose;
+            print " [OK]\n" if $opt_verbose;
             $retval = 1 if ($retval == 0);
         } else {
             my $msg = ($opt_decompress 
                        ? "The contents of $file are up to date in your system." 
                        : "$file is up to date.");
             if ($opt_decompress and -f $file) {
-                print STDERR "Decompressing $file ..." if $opt_verbose;
+                print "Decompressing $file ..." if $opt_verbose;
                 my $decompress_succeeded = &decompress($file);
                 next unless ($decompress_succeeded);
                 unlink $file;   # Clean up archive, but preserve the checksum file
                 $msg = "[OK]";
             }
-            print STDERR "$msg\n" if $opt_verbose;
+            print "$msg\n" if $opt_verbose;
         }
     }
     return $retval;
