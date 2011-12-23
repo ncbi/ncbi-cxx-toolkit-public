@@ -109,6 +109,12 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::OnInit(
             ns_impl->m_UseEmbeddedStorage = config->GetBool(config_section,
                 "use_embedded_input", CConfig::eErr_NoThrow, true);
         }
+
+        ns_impl->m_ClientNode = config->GetString(config_section,
+            "client_node", CConfig::eErr_NoThrow, kEmptyStr);
+
+        if (!ns_impl->m_ClientNode.empty())
+            ns_impl->m_ClientSession = GetDiagContext().GetStringUID();
     }
 
     SetAuthString(ns_impl);
