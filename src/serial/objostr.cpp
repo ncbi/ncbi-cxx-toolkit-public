@@ -61,6 +61,12 @@
 #include <serial/serialimpl.hpp>
 #include <serial/error_codes.hpp>
 
+#if defined(NCBI_OS_MSWIN)
+#  include <corelib/ncbi_os_mswin.hpp>
+#  include <io.h> 
+#  include <fcntl.h> 
+#endif
+
 #undef _TRACE
 #define _TRACE(arg) ((void)0)
 
@@ -78,6 +84,9 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
     if ( ((openFlags & eSerial_StdWhenEmpty) && fileName.empty()) ||
          ((openFlags & eSerial_StdWhenDash) && fileName == "-") ||
          ((openFlags & eSerial_StdWhenStd) && fileName == "stdout") ) {
+#if defined(NCBI_OS_MSWIN)
+        setmode(fileno(stdout), (format == eSerial_AsnBinary) ? O_BINARY : O_TEXT);
+#endif
         outStream = &NcbiCout;
         deleteStream = false;
     }

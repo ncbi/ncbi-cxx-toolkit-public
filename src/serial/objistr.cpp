@@ -68,6 +68,11 @@
 // In MSVC limits.h doesn't define FLT_MIN & FLT_MAX
 # include <float.h>
 #endif
+#if defined(NCBI_OS_MSWIN)
+#  include <corelib/ncbi_os_mswin.hpp>
+#  include <io.h> 
+#  include <fcntl.h> 
+#endif
 
 #undef _TRACE
 #define _TRACE(arg) ((void)0)
@@ -83,6 +88,9 @@ CRef<CByteSource> CObjectIStream::GetSource(ESerialDataFormat format,
     if ( ((openFlags & eSerial_StdWhenEmpty) && fileName.empty()) ||
          ((openFlags & eSerial_StdWhenDash) && fileName == "-") ||
          ((openFlags & eSerial_StdWhenStd) && fileName == "stdin") ) {
+#if defined(NCBI_OS_MSWIN)
+        setmode(fileno(stdin), (format == eSerial_AsnBinary) ? O_BINARY : O_TEXT);
+#endif
         return CRef<CByteSource>(new CStreamByteSource(NcbiCin));
     }
     else {
