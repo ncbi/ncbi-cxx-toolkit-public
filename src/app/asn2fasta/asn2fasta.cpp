@@ -146,7 +146,9 @@ int CAsn2FastaApp::Run(void)
         NCBI_THROW(CException, eUnknown,
                    "Could not create object manager");
     }
+    CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
     m_Scope.Reset(new CScope(*m_Objmgr));
+    m_Scope->AddDefaults();
 
     // open the output stream
     m_Os = args["o"] ? &(args["o"].AsOutputFile()) : &cout;
@@ -177,7 +179,6 @@ int CAsn2FastaApp::Run(void)
             //  Implies gbload; otherwise this feature would be pretty
             //  useless...
             //
-            CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
             m_Scope->AddDefaults();
             string seqID = args["id"].AsString();
             HandleSeqID( seqID );
@@ -192,11 +193,16 @@ int CAsn2FastaApp::Run(void)
                 //  a seq_entry:
                 //
                 seh = ObtainSeqEntryFromSeqEntry(*is);
-                if ( !seh ) {
-                    NCBI_THROW(CException, eUnknown,
-                               "Unable to construct Seq-entry object" );
+                while (seh) {
+                    try {
+                        HandleSeqEntry(seh);
+                    }
+                    catch (...) {
+                        cerr << "Resolution error: Sequence dropped." << endl;
+                    }
+                    seh = ObtainSeqEntryFromSeqEntry(*is);
                 }
-                HandleSeqEntry(seh);
+                return 0;
 			}
 			else if ( asn_type == "bioseq" ) {				
 				//
@@ -226,26 +232,32 @@ int CAsn2FastaApp::Run(void)
                 //
                 //  Try the first three in turn:
                 //
-                string strNextTypeName = is->PeekNextTypeName();
-
-                seh = ObtainSeqEntryFromSeqEntry(*is);
-                if ( !seh ) {
-                    is->Close();
-                    is.reset( x_OpenIStream( args ) );
-                    seh = ObtainSeqEntryFromBioseqSet(*is);
-                    if ( !seh ) {
-                        is->Close();
-                        is.reset( x_OpenIStream( args ) );
-                        seh = ObtainSeqEntryFromBioseq(*is);
-                        if ( !seh ) {
-                            NCBI_THROW(
-                                CException, eUnknown,
-                                "Unable to construct Seq-entry object"
-                            );
+                size_t streampos = is->GetStreamPos();
+                while (!is->EndOfData()) {
+                    seh = ObtainSeqEntryFromSeqEntry(*is);
+                    if (!seh) {
+                        if (is->EndOfData()) {
+                            break;
                         }
+                        is->ClearFailFlags(-1);
+                        is->SetStreamPos(streampos);
+                        seh = ObtainSeqEntryFromBioseqSet(*is);
                     }
+                    if (!seh) {
+                        if (is->EndOfData()) {
+                            break;
+                        }
+                        is->ClearFailFlags(-1);
+                        is->SetStreamPos(streampos);
+                        seh = ObtainSeqEntryFromBioseq(*is);
+                    }
+                    if (!seh) {
+                        NCBI_THROW(CException, eUnknown,
+                            "Unable to construct Seq-entry object" );
+                    }
+                    HandleSeqEntry(seh);
+                    streampos = is->GetStreamPos();
                 }
-                HandleSeqEntry(seh);
             }
         }
     }
@@ -268,7 +280,9 @@ CSeq_entry_Handle CAsn2FastaApp::ObtainSeqEntryFromSeqEntry(CObjectIStream& is)
         return m_Scope->AddTopLevelSeqEntry(*se);
     }
     catch (CException& e) {
-        ERR_POST(Error << e);
+        if (! (is.GetFailFlags() & is.eEOF)) {
+            ERR_POST(Error << e);
+        }
     }
     return CSeq_entry_Handle();
 }
@@ -282,7 +296,9 @@ CSeq_entry_Handle CAsn2FastaApp::ObtainSeqEntryFromBioseq(CObjectIStream& is)
         return bsh.GetTopLevelEntry();
     }
     catch (CException& e) {
-        ERR_POST(Error << e);
+        if (! (is.GetFailFlags() & is.eEOF)) {
+            ERR_POST(Error << e);
+        }
     }
     return CSeq_entry_Handle();
 }
@@ -295,7 +311,9 @@ CSeq_entry_Handle CAsn2FastaApp::ObtainSeqEntryFromBioseqSet(CObjectIStream& is)
         return m_Scope->AddTopLevelSeqEntry(*entry);
     }
     catch (CException& e) {
-        ERR_POST(Error << e);
+        if (! (is.GetFailFlags() & is.eEOF)) {
+            ERR_POST(Error << e);
+        }
     }
     return CSeq_entry_Handle();
 }
