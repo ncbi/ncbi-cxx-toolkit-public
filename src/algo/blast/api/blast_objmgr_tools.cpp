@@ -420,7 +420,12 @@ public:
     virtual void GetStrandData(objects::ENa_strand strand, unsigned char* buf) {
         x_FixStrand(strand);
         for (CSeqVector_CI itr(m_SeqVector, strand); itr; ++itr) {
-            *buf++ = *itr;
+            if (itr.IsInGap()) {
+                *buf++ = 0xf;
+            }
+            else {
+                *buf++ = *itr;
+            }
         }
     }
 
