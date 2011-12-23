@@ -269,6 +269,15 @@ size_t CIStreamBuffer::PeekFindChar(char c, size_t limit)
     return limit;
 }
 
+bool CIStreamBuffer::TrySetCurrentPos(const char* pos)
+{
+    if (m_BufferPos == 0 && pos >= m_Buffer && pos <= m_DataEndPos) {
+        m_CurrentPos = pos;
+        return true;
+    }
+    return false;
+}
+
 const char* CIStreamBuffer::FillBuffer(const char* pos, bool noEOF)
     THROWS1((CIOException, bad_alloc))
 {

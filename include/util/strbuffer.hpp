@@ -123,6 +123,8 @@ public:
         THROWS1((CIOException));
 
     const char* GetCurrentPos(void) const THROWS1_NONE;
+    // returns true if succeeded
+    bool TrySetCurrentPos(const char* pos);
 
     // return: current line counter
     size_t GetLine(void) const THROWS1_NONE;

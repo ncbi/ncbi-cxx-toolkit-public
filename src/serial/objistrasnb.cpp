@@ -1259,6 +1259,7 @@ set<TTypeInfo> CObjectIStreamAsnBinary::GuessDataType(
     vector<int> pattern;
 
     CNcbiStreampos str_pos = GetStreamPos();
+    const char* pos0 = m_Input.GetCurrentPos();
 #if CHECK_INSTREAM_STATE
     ETagState state = m_CurrentTagState;
 #endif
@@ -1266,7 +1267,9 @@ set<TTypeInfo> CObjectIStreamAsnBinary::GuessDataType(
     Int8 lim = m_CurrentTagLimit;
 #endif
     GetTagPattern(pattern, max_length*3);
-    SetStreamPos(str_pos);
+    if (!m_Input.TrySetCurrentPos(pos0)) {
+        SetStreamPos(str_pos);
+    }
 #if CHECK_INSTREAM_STATE
     m_CurrentTagState = state;
 #endif

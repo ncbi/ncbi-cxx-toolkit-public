@@ -862,8 +862,11 @@ set<TTypeInfo> CObjectIStream::GuessDataType(
 {
     set<TTypeInfo> matching_types;
     CNcbiStreampos str_pos = GetStreamPos();
+    const char* pos0 = m_Input.GetCurrentPos();
     string name = ReadFileHeader();
-    SetStreamPos(str_pos);
+    if (!m_Input.TrySetCurrentPos(pos0)) {
+        SetStreamPos(str_pos);
+    }
     ITERATE( set<TTypeInfo>, t, known_types) {
         if ((*t)->GetName() == name) {
             matching_types.insert(*t);
