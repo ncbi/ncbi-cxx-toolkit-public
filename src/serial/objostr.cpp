@@ -980,6 +980,7 @@ void CObjectOStream::CopyChoice(const CChoiceTypeInfo* choiceType,
         BeginClassMember(memberInfo->GetId());
         memberInfo->CopyMember(copier);
         EndClassMember();
+        copier.In().EndChoiceVariant();
         index = copier.In().BeginChoiceVariant(choiceType);
         if ( index == kInvalidMember )
             copier.ThrowError(CObjectIStream::fFormatError,

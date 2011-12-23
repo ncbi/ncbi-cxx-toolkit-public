@@ -1200,6 +1200,7 @@ void CObjectOStreamAsnBinary::WriteChoice(const CChoiceTypeInfo* choiceType,
     END_OBJECT_FRAME();
 }
 
+/*
 void CObjectOStreamAsnBinary::CopyChoice(const CChoiceTypeInfo* choiceType,
                                          CObjectStreamCopier& copier)
 {
@@ -1227,6 +1228,7 @@ void CObjectOStreamAsnBinary::CopyChoice(const CChoiceTypeInfo* choiceType,
     copier.In().EndChoice();
     END_OBJECT_FRAME_OF(copier.In());
 }
+*/
 #endif
 
 void CObjectOStreamAsnBinary::BeginBytes(const ByteBlock& block)

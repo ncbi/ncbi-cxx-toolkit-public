@@ -742,6 +742,7 @@ void CObjectOStreamAsn::WriteChoice(const CChoiceTypeInfo* choiceType,
     END_OBJECT_FRAME();
 }
 
+/*
 void CObjectOStreamAsn::CopyChoice(const CChoiceTypeInfo* choiceType,
                                    CObjectStreamCopier& copier)
 {
@@ -766,6 +767,7 @@ void CObjectOStreamAsn::CopyChoice(const CChoiceTypeInfo* choiceType,
     copier.In().EndChoice();
     END_OBJECT_FRAME_OF(copier.In());
 }
+*/
 #endif
 
 void CObjectOStreamAsn::BeginBytes(const ByteBlock& )

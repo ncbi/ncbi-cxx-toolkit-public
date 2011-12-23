@@ -183,8 +183,8 @@ protected:
                                  CObjectStreamCopier& copier);
     virtual void CopyClassSequential(const CClassTypeInfo* objectType,
                                      CObjectStreamCopier& copier);
-    virtual void CopyChoice(const CChoiceTypeInfo* choiceType,
-                            CObjectStreamCopier& copier);
+//    virtual void CopyChoice(const CChoiceTypeInfo* choiceType,
+//                            CObjectStreamCopier& copier);
 #endif
     virtual void BeginContainer(const CContainerTypeInfo* containerType);
     virtual void EndContainer(void);
