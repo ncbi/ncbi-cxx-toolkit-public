@@ -207,7 +207,7 @@ protected:
                        TChunkId chunk_id,
                        CNcbiIstream& stream);
 
-    bool m_JoinedBlobVersion;
+    ESwitch m_JoinedBlobVersion;
 };
 
 

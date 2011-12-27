@@ -233,7 +233,7 @@ void CCacheHolder::SetBlobCache(ICache* blob_cache)
 
 
 CCacheReader::CCacheReader(void)
-    : m_JoinedBlobVersion(true)
+    : m_JoinedBlobVersion(eDefault)
 {
     SetMaximumConnections(1);
 }
@@ -241,14 +241,15 @@ CCacheReader::CCacheReader(void)
 
 CCacheReader::CCacheReader(const TPluginManagerParamTree* params,
                            const string& driver_name)
-    : m_JoinedBlobVersion(true)
+    : m_JoinedBlobVersion(eDefault)
 {
     CConfig conf(params);
-    m_JoinedBlobVersion = conf.GetBool(
+    bool joined_blob_version = conf.GetBool(
         driver_name,
         NCBI_GBLOADER_READER_CACHE_PARAM_JOINED_BLOB_VERSION,
         CConfig::eErr_NoThrow,
         true);
+    m_JoinedBlobVersion = joined_blob_version? eDefault: eOff;
     SetMaximumConnections(1);
 }
 
@@ -799,7 +800,7 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
     string key = GetBlobKey(blob_id);
     string subkey = GetBlobSubkey(blob, chunk_id);
     if ( !blob.IsSetBlobVersion() ) {
-        if ( m_JoinedBlobVersion ) {
+        if ( m_JoinedBlobVersion != eOff ) {
             do { // artificial one-time cycle to allow breaking
                 CConn conn(result, this);
                 TBlobVersion version;
@@ -812,10 +813,19 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
                     reader.reset(m_BlobCache->GetReadStream(key, subkey,
                                                             &version,
                                                             &validity));
+                    if ( m_JoinedBlobVersion == eDefault ) {
+                        // joined blob version is supported by ICache
+                        m_JoinedBlobVersion = eOn;
+                    }
                 }
                 catch ( CException& /*ignored*/ ) {
+                    if ( m_JoinedBlobVersion == eOn ) {
+                        // we know already that joined blob version
+                        // is supported by ICache -> it's a transient exception
+                        throw;
+                    }
                     // joined blob version is not supported by ICache
-                    m_JoinedBlobVersion = false;
+                    m_JoinedBlobVersion = eOff;
                     conn.Release();
                     break; // continue with separate blob version
                 }
