@@ -411,7 +411,7 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
                 BOOST_CHECK(query.HasMoreResultSets());
                 it = query.begin();
                 BOOST_CHECK(it != query.end());
-                CTime value = it[1].AsDateTime();
+                /*CTime value =*/ it[1].AsDateTime();
                 //BOOST_CHECK_EQUAL(value, 1);
 
                 query.PurgeResults();
@@ -424,7 +424,7 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
                 BOOST_CHECK(query.HasMoreResultSets());
                 it = query.begin();
                 BOOST_CHECK(it != query.end());
-                CTime value = it[1].AsDateTime();
+                /*CTime value =*/ it[1].AsDateTime();
                 //BOOST_CHECK_EQUAL(value, 1);
 
                 query.PurgeResults();

@@ -522,7 +522,9 @@ CNCPeerControl::x_AddMirrorEvent(SNCMirrorEvent* event, Uint8 size)
             int queue_size = s_MirrorQueueSize.Add(1);
             if (s_MirrorLogFile) {
                 Uint8 cur_time = CNetCacheServer::GetPreciseTime();
-                fprintf(s_MirrorLogFile, "%lu,%d\n", cur_time, queue_size);
+                fprintf(s_MirrorLogFile,
+                        "%" NCBI_BIGCOUNT_FORMAT_SPEC ",%d\n",
+                        TNCBI_BigCount(cur_time), queue_size);
             }
         }
         else {

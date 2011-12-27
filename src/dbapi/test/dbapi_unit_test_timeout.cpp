@@ -352,9 +352,9 @@ BOOST_AUTO_TEST_CASE(Test_Heavy_Load)
             while (rs->Next()) {
                 /*int int_val =*/ rs->GetVariant(1).GetInt4();
                 /*double flt_val =*/ rs->GetVariant(2).GetDouble();
-                CTime date_val = rs->GetVariant(3).GetCTime();
-                string vc1_val = rs->GetVariant(4).GetString();
-                string vc2_val = rs->GetVariant(5).GetString();
+                /*CTime date_val =*/ rs->GetVariant(3).GetCTime();
+                /*string vc1_val =*/ rs->GetVariant(4).GetString();
+                /*string vc2_val =*/ rs->GetVariant(5).GetString();
                 const CVariant& txt_var = rs->GetVariant(6);
                 string txt_val;
                 txt_val.resize(txt_var.GetBlobSize());

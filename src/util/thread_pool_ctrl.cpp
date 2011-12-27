@@ -152,7 +152,7 @@ CThreadPool_Controller_PID::OnEvent(EEvent event)
 CTimeSpan
 CThreadPool_Controller_PID::GetSafeSleepTime(void) const
 {
-    double last_err = 0, last_time = 0, integr_err = 0;
+    double last_err = 0, integr_err = 0;
     CThreadPool* pool = GetPool();
     if (!pool) {
         return CTimeSpan(0, 0);
@@ -165,7 +165,6 @@ CThreadPool_Controller_PID::GetSafeSleepTime(void) const
         }
 
         last_err = m_ErrHistory.back().err;
-        last_time = m_ErrHistory.back().call_time;
         integr_err = m_IntegrErr;
     }}
 

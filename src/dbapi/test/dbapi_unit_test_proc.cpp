@@ -138,7 +138,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
                 }
             }
             // Get status
-            int status = auto_stmt->GetReturnStatus();
+            auto_stmt->GetReturnStatus();
 
 
             // Execute it second time ...
@@ -165,7 +165,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
                 }
             }
             // Get status
-            status = auto_stmt->GetReturnStatus();
+            auto_stmt->GetReturnStatus();
 
 
             // Same as before but do not retrieve data ...
