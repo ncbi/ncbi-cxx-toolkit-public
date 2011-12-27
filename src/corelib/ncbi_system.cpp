@@ -34,6 +34,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/error_codes.hpp>
+#include "ncbisys.hpp"
 
 
 #define NCBI_USE_ERRCODE_X   Corelib_System
@@ -663,14 +664,13 @@ bool GetMemoryUsage(size_t* total, size_t* resident, size_t* shared)
 
 #if !defined(HAVE_MADVISE)
 bool MemoryAdvise(void*, size_t, EMemoryAdvise) {
-    ERR_POST_X_ONCE(10, Warning << "Not supported on this platform");
     return false;
 }
 #else  /* HAVE_MADVISE */
 bool MemoryAdvise(void* addr, size_t len, EMemoryAdvise advise)
 {
     if ( !addr /*|| !len*/ ) {
-        ERR_POST_X(11, "Incorrect parameters");
+        ERR_POST_X(11, "Memory address is not specified");
         return false;
     }
     int adv;
@@ -723,7 +723,10 @@ bool MemoryAdvise(void* addr, size_t len, EMemoryAdvise advise)
     }
     // Conversion type of "addr" to char* -- Sun Solaris fix
     if ( madvise((char*) addr, len, adv) != 0 ) {
-        ERR_POST_X(13, "madvise() failed");
+        int x_errno = errno; \
+        ERR_POST_X(13, "madvise() failed: " << 
+                   _T_STDSTRING(NcbiSys_strerror(x_errno)));
+        errno = x_errno;
         return false;
     }
     return true;

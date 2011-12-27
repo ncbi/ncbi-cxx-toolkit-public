@@ -197,23 +197,32 @@ NCBI_XNCBI_EXPORT
 extern bool GetMemoryUsage(size_t* total, size_t* resident, size_t* shared);
 
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// 
+///
+
+
 /// What type of data access pattern will be used for specified memory region.
 ///
-/// Advises the VM system that the a certain region of memory will be accessed
-/// following a type of pattern. The VM system uses this information 
-/// to optimize work with mapped memory.
+/// Advises the VM system that the a certain region of memory will be
+/// accessed following a type of pattern. The VM system uses this
+/// information to optimize work with mapped memory.
 ///
 /// NOTE: Works on UNIX platform only.
 typedef enum {
     eMADV_Normal,      ///< No further special treatment -- by default
     eMADV_Random,      ///< Expect random page references
     eMADV_Sequential,  ///< Expect sequential page references
-    eMADV_WillNeed,    ///< Will need these pages (expect access in the near future)
-    eMADV_DontNeed,    ///< Don't need these pages (do not expect access in the near future)
-    eMADV_DoFork,      ///< Do inherit across fork() (since Linux 2.6.16) -- by default
-    eMADV_DontFork,    ///< Don't inherit across fork() (since Linux 2.6.16)
-    eMADV_Mergeable,   ///< KSM may merge identical pages (since Linux 2.6.32)
-    eMADV_Unmergeable  ///< KSM may not merge identical pages (since Linux 2.6.32) -- by default
+    eMADV_WillNeed,    ///< Expect access in the near future
+    eMADV_DontNeed,    ///< Do not expect access in the near future
+    // Available since Linux kernel 2.6.16
+    eMADV_DoFork,      ///< Do inherit across fork() -- by default
+    eMADV_DontFork,    ///< Don't inherit across fork()
+    // Available since Linux kernel 2.6.32
+    eMADV_Mergeable,   ///< KSM may merge identical pages
+    eMADV_Unmergeable  ///< KSM may not merge identical pages -- by default
 } EMemoryAdvise;
 
 
@@ -228,8 +237,8 @@ typedef enum {
 ///   Advise on expected memory usage pattern.
 /// @return
 ///   - TRUE, if memory advise operation successful.
-///   - FALSE, if memory advise operation not successful, or is not supported
-///     on current platform.
+///   - FALSE, if memory advise operation not successful, or is
+///     not supported on current platform.
 /// @sa
 ///   EMemoryAdvise
 NCBI_XNCBI_EXPORT
