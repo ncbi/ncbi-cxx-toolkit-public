@@ -521,11 +521,20 @@ bool CDataTool::ProcessData(void)
             copier.Copy(typeInfo, CObjectStreamCopier::eNoFileHeader);
             // In case the input stream has more than one object of this type,
             // keep converting them
-            for (bool go=true; go; ) {
-                try {
-                    copier.Copy(typeInfo);
-                } catch (CEofException&) {
-                    go = false;
+            {
+                set<TTypeInfo> known;
+                known.insert(typeInfo);
+                for (bool go=true; go; ) {
+                    try {
+                        set<TTypeInfo> matching = in->GuessDataType(known,2);
+                        go = !matching.empty() &&
+                             *matching.begin() == *known.begin();
+                        if (go) {
+                            copier.Copy(typeInfo);
+                        }
+                    } catch (CEofException&) {
+                        go = false;
+                    }
                 }
             }
         }
