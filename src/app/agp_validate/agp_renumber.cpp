@@ -52,6 +52,7 @@ const char* usage=
 "   the length of the component span or gap length.\n"
 " - Renumber the part numbers for each object.\n"
 " - Lowercase gap type and linkage.\n"
+" - Reorder linkage evidence terms: paired-ends;align_genus;align_xgenus;align_trnscpt;within_clone;clone_contig;map;strobe\n"
 " - Reformat white space to conform to the AGP format specification:\n"
 "   - add missing tabs at the ends of gap lines;\n"
 "   - drop blank lines;\n"
@@ -129,7 +130,9 @@ protected:
     m_part_num++;
 
     // cannot simply append the tail of m_line - it might have a missing tab...
-    string s = m_this_row->ToString();
+    string s = m_this_row->ToString(true);
+    string s_orig_linkage_evidence  = m_this_row->ToString(false);
+    if(s!=s_orig_linkage_evidence) reordered_ln_ev++;
     m_adjusted+= s.substr(
       s.find( "\t", 1+
       s.find( "\t", 1+
@@ -190,7 +193,7 @@ protected:
 public:
   bool had_empty_line;
   bool renum_current_obj;
-  int renum_objs, no_renum_objs;
+  int renum_objs, no_renum_objs, reordered_ln_ev;
   string m_adjusted;
 
   CCustomErrorHandler custom_err;
@@ -200,6 +203,7 @@ public:
     renum_objs=no_renum_objs=0;
     m_line_num_out = 0;
     renum_current_obj=false;
+    reordered_ln_ev = 0;
   }
 
 };
@@ -311,6 +315,7 @@ int ProcessStream(istream &in, ostream& out)
   if(renum.custom_err.had_missing_tab) cerr << "Missing tabs added at the ends of gap lines.\n";
   if(no_eol_at_eof       ) cerr << "Line break added at the end of file.\n";
   if(bad_case_gap        ) cerr << "Gap type/linkage converted to lower case.\n";
+  if(renum.reordered_ln_ev) cerr << "Linkage evidence terms reordered.\n";
   if(renum.renum_objs    ) cerr << renum.renum_objs << " object(s) renumbered.\n";
   if(renum.no_renum_objs ) {
     if(renum.renum_objs)
