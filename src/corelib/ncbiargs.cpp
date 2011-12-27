@@ -3394,6 +3394,15 @@ bool CArgAllow_Int8s::Verify(const string& value) const
 
 string CArgAllow_Int8s::GetUsage(void) const
 {
+    if (m_Min == m_Max) {
+        return NStr::Int8ToString(m_Min);
+    } else if (m_Min == kMin_I8 && m_Max != kMax_I8) {
+        return string("less or equal to ") + NStr::Int8ToString(m_Max);
+    } else if (m_Min != kMin_I8 && m_Max == kMax_I8) {
+        return string("greater or equal to ") + NStr::Int8ToString(m_Min);
+    } else if (m_Min == kMin_I8 && m_Max == kMax_I8) {
+        return kEmptyStr;
+    }
     return NStr::Int8ToString(m_Min) + ".." + NStr::Int8ToString(m_Max);
 }
 
@@ -3421,6 +3430,19 @@ CArgAllow_Integers::CArgAllow_Integers(int x_min, int x_max)
 {
 }
 
+string CArgAllow_Integers::GetUsage(void) const
+{
+    if (m_Min == m_Max) {
+        return NStr::Int8ToString(m_Min);
+    } else if (m_Min == kMin_Int && m_Max != kMax_Int) {
+        return string("less or equal to ") + NStr::Int8ToString(m_Max);
+    } else if (m_Min != kMin_Int && m_Max == kMax_Int) {
+        return string("greater or equal to ") + NStr::Int8ToString(m_Min);
+    } else if (m_Min == kMin_Int && m_Max == kMax_Int) {
+        return kEmptyStr;
+    }
+    return NStr::Int8ToString(m_Min) + ".." + NStr::Int8ToString(m_Max);
+}
 
 
 ///////////////////////////////////////////////////////
@@ -3449,6 +3471,15 @@ bool CArgAllow_Doubles::Verify(const string& value) const
 
 string CArgAllow_Doubles::GetUsage(void) const
 {
+    if (m_Min == m_Max) {
+        return NStr::DoubleToString(m_Min);
+    } else if (m_Min == kMin_Double && m_Max != kMax_Double) {
+        return string("less or equal to ") + NStr::DoubleToString(m_Max);
+    } else if (m_Min != kMin_Double && m_Max == kMax_Double) {
+        return string("greater or equal to ") + NStr::DoubleToString(m_Min);
+    } else if (m_Min == kMin_Double && m_Max == kMax_Double) {
+        return kEmptyStr;
+    }
     return NStr::DoubleToString(m_Min) + ".." + NStr::DoubleToString(m_Max);
 }
 
