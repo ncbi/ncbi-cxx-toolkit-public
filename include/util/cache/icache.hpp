@@ -262,17 +262,26 @@ public:
                                    TBlobVersion   version,
                                    const string&  subkey) = 0;
 
-    /// Whether a BLOB is valid from the point of view of underlying cache.
+    /// BLOB version existence and validity -- from the point of view of
+    /// the underlying cache implementation.
     ///
     /// The underlying cache implementation can expire blobs without actually
     /// deleting them. Then, the blob can still be read from the cache, and its
     /// validity confirmed (or not) against the original data source, and then
-    /// usually validated (or invalidated) in the cache accordingly.
-    /// @sa  SetBlobVersionAsValid(), GetReadStream()
-    enum EBlobValidity {
-        eValid,    ///< BLOB is considered valid
-        eExpired   ///< BLOB is considered expired
+    /// its version usually validated (or invalidated) in the cache,
+    /// accordingly.
+    /// @sa  SetCurrentBlobVersion(), GetReadStream()
+    enum EBlobVersionValidity {
+        eCurrent,       ///< The returned BLOB's version is considered valid
+        eExpired,       ///< Validity of the BLOB version cannot be confirmed
+        eValid = eCurrent,  ///< Synonym for eCurrent
     };
+
+    /// Backward-compatibility typedef
+    /// @deprecated Use EBlobVersionValidity instead
+    /// @sa  EBlobVersionValidity
+    NCBI_DEPRECATED
+    typedef EBlobVersionValidity EBlobValidity;
 
     /// Request the latest version of a BLOB.
     ///
@@ -281,19 +290,22 @@ public:
     /// @param[in] subkey
     ///    BLOB identification subkey
     /// @param[out] version
-    ///    BLOB version (current)
+    ///    Version of the returned BLOB
     /// @param[out] validity
-    ///    BLOB validity (whether the blob has expired)
+    ///    Validity of the version of the returned BLOB
     /// @return
     ///    Sequential stream interface to read BLOB data.
-    ///    Return NULL if BLOB does not exist.
-    /// @sa  SetBlobVersionAsValid()
-    virtual IReader* GetReadStream(const string&  key,
-                                   const string&  subkey,
-                                   TBlobVersion*  version,
-                                   EBlobValidity* validity) = 0;
+    ///    Return NULL if the BLOB data is not found in the cache.
+    /// @note
+    ///    If the BLOB data is not found in the cache, then neither 'version'
+    ///    nor 'validity' values will be set by the method.
+    /// @sa  SetCurrentBlobVersion()
+    virtual IReader* GetReadStream(const string&         key,
+                                   const string&         subkey,
+                                   TBlobVersion*         version,
+                                   EBlobVersionValidity* validity) = 0;
 
-    /// Set current version for a BLOB.
+    /// Set current valid version for a BLOB.
     ///
     /// @param[in] key
     ///    BLOB identification key
@@ -301,13 +313,19 @@ public:
     ///    BLOB identification subkey
     /// @param[in] version
     ///    BLOB version which must be considered valid from now on
-    /// @note Throw in case of communication errors or if the underlying cache
-    ///       cannot process this command. If the BLOB doesn't exist, then no
-    ///       exception should be thrown.
+    /// @note  Throw exception in case of transient errors.
+    /// @note  There is an important special case:  if the underlying storage
+    ///        is inherently incapable of storing BLOB version info without
+    ///        storing the BLOB itself, and there is currently no blob with the
+    ///        specified key/subkey/version present in the cache, then this
+    ///        function will just do nothing, and it will not throw exception.
+    ///
     /// @sa  GetReadStream()
-    virtual void SetBlobVersionAsValid(const string&  key,
-                                       const string&  subkey,
-                                       TBlobVersion   version) = 0;
+    virtual void SetBlobVersionAsCurrent(const string&  key,
+                                         const string&  subkey,
+                                         TBlobVersion   version) = 0;
+
+#define SetBlobVersionAsValid SetBlobVersionAsCurrent
 
     /// BLOB access descriptor
     struct SBlobAccessDescr

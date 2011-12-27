@@ -590,7 +590,8 @@ IReader* CNetICacheClient::GetReadStream(const string&  key,
 }
 
 IReader* CNetICacheClient::GetReadStream(const string& key,
-        const string& subkey, int* version, ICache::EBlobValidity* validity)
+        const string& subkey, int* version,
+        ICache::EBlobVersionValidity* validity)
 {
     try {
         CNetServer::SExecResult exec_result(m_Impl->StickToServerAndExec(
@@ -635,7 +636,7 @@ IReader* CNetICacheClient::GetReadStream(const string& key,
     }
 }
 
-void CNetICacheClient::SetBlobVersionAsValid(const string& key,
+void CNetICacheClient::SetBlobVersionAsCurrent(const string& key,
         const string& subkey, int version)
 {
     CNetServer::SExecResult exec_result(m_Impl->StickToServerAndExec(

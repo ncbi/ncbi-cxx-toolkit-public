@@ -214,7 +214,7 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
 
         ParseICacheKey(reader_select == 0, &version_is_defined);
 
-        ICache::EBlobValidity validity;
+        ICache::EBlobVersionValidity validity;
         switch (reader_select) {
         case 0: /* no special case */
             reader.reset(version_is_defined ?

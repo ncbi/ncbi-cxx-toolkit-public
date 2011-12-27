@@ -298,7 +298,7 @@ int CNetCacheControl::Run()
                     part_size, &blob_size, CNetCacheAPI::eCaching_Disable));
             }
         } else {
-            ICache::EBlobValidity validity;
+            ICache::EBlobVersionValidity validity;
             switch (reader_select) {
             case 0: /* no special case */
                 reader.reset(version_is_defined ?

@@ -163,9 +163,9 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
         const string& key,
         const string& subkey,
         int* version,
-        EBlobValidity* validity);
+        EBlobVersionValidity* validity);
 
-    virtual void SetBlobVersionAsValid(
+    virtual void SetBlobVersionAsCurrent(
         const string& key,
         const string& subkey,
         int version);
