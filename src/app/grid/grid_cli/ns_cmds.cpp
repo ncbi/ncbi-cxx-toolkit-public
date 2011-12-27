@@ -456,9 +456,6 @@ bool CBatchSubmitAttrParser::NextAttribute()
     case 'a':
         ATTR_CHECK_SET("affinity", eAffinity);
         break;
-    case 't':
-        ATTR_CHECK_SET("tag", eJobTag);
-        break;
     case 'e':
         ATTR_CHECK_SET("exclusive", eExclusiveJob);
         break;
@@ -496,13 +493,9 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
     if (IsOptionSet(eBatch)) {
         CBatchSubmitAttrParser attr_parser(m_Opts.input_stream);
 
-        CTempString job_tag_name;
-        CTempString job_tag_value;
-
         if (m_Opts.batch_size <= 1) {
             while (attr_parser.NextLine()) {
                 CGridJobSubmitter& submitter(m_GridClient->GetJobSubmitter());
-                CNetScheduleAPI::TJobTags job_tags(m_Opts.job_tags);
                 bool input_set = false;
                 while (attr_parser.NextAttribute()) {
                     const string& attr_value(attr_parser.GetAttributeValue());
@@ -521,12 +514,6 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
                     case eAffinity:
                         submitter.SetJobAffinity(attr_value);
                         break;
-                    case eJobTag:
-                        NStr::SplitInTwo(attr_value, "=",
-                            job_tag_name, job_tag_value);
-                        job_tags.push_back(CNetScheduleAPI::TJobTag(
-                            job_tag_name, job_tag_value));
-                        break;
                     case eExclusiveJob:
                         submitter.SetJobMask(CNetScheduleAPI::eExclusiveJob);
                         break;
@@ -543,8 +530,6 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
                         ": attribute \"input\" is required at line " <<
                             attr_parser.GetLineNumber());
                 }
-                if (!job_tags.empty())
-                    submitter.SetJobTags(job_tags);
                 fprintf(m_Opts.output_stream,
                     "%s\n", submitter.Submit(m_Opts.affinity).c_str());
             }
@@ -565,7 +550,6 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
                     remaining_batch_size = m_Opts.batch_size;
                 }
                 batch_submitter.PrepareNextJob();
-                CNetScheduleAPI::TJobTags job_tags(m_Opts.job_tags);
                 bool input_set = false;
                 while (attr_parser.NextAttribute()) {
                     const string& attr_value(attr_parser.GetAttributeValue());
@@ -584,12 +568,6 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
                     case eAffinity:
                         batch_submitter.SetJobAffinity(attr_value);
                         break;
-                    case eJobTag:
-                        NStr::SplitInTwo(attr_value, "=",
-                            job_tag_name, job_tag_value);
-                        job_tags.push_back(CNetScheduleAPI::TJobTag(
-                            job_tag_name, job_tag_value));
-                        break;
                     case eExclusiveJob:
                         batch_submitter.SetJobMask(
                             CNetScheduleAPI::eExclusiveJob);
@@ -607,8 +585,6 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
                         ": attribute \"input\" is required at line " <<
                             attr_parser.GetLineNumber());
                 }
-                if (!job_tags.empty())
-                    batch_submitter.SetJobTags(job_tags);
                 --remaining_batch_size;
             }
             if (remaining_batch_size < m_Opts.batch_size) {
@@ -643,9 +619,6 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
                     break;
             }
         }
-
-        if (IsOptionSet(eJobTag))
-            submitter.SetJobTags(m_Opts.job_tags);
 
         if (IsOptionSet(eExclusiveJob))
             submitter.SetJobMask(CNetScheduleAPI::eExclusiveJob);

@@ -123,10 +123,6 @@ struct SOptionDefinition {
     {CCommandLineParser::eOptionWithParameter, eAffinity,
         AFFINITY_OPTION, "Affinity token."},
 
-    {CCommandLineParser::eOptionWithParameter, eJobTag,
-        JOB_TAG_OPTION, "Define job tag in the form of NAME=VALUE. "
-            "Multiple '--" JOB_TAG_OPTION "' options can be specified."},
-
     {CCommandLineParser::eSwitch, eExclusiveJob,
         "exclusive-job", "Create an exclusive job."},
 
@@ -369,16 +365,13 @@ struct SCommandDefinition {
         "space-separated list of job attributes as follows:\n\n"
         "  input=\"DATA\"\n"
         "  affinity=\"TOKEN\"\n"
-        "  tag=\"MAME=VALUE\"\n"
         "  exclusive\n"
         "  progress_message=\"TEXT\"\n\n"
         "Special characters in all quoted strings must be properly "
         "escaped. It is OK to omit quotation marks for a string that "
-        "doesn't contain spaces. The \"input\" attribute is required. "
-        "There can be more than one \"tag\" attribute specified for a "
-        "job.\n\n"
+        "doesn't contain spaces. The \"input\" attribute is required.\n\n"
         "Example:\n\n"
-        "  input=\"db, 8548@394.701\" exclusive tag=backend=db\n\n"
+        "  input=\"db, 8548@394.701\" exclusive\n\n"
         "In single job submission mode, unless the '--" INPUT_FILE_OPTION
         "' or '--" INPUT_OPTION "' options are given, job input is read "
         "from the standard input stream, and the rest of attributes are "
@@ -389,7 +382,7 @@ struct SCommandDefinition {
         "standard output stream (or the specified output file) one job "
         "ID per line.",
         {eNetSchedule, eQueue, eBatch, eNetCache, eInput, eInputFile,
-            eAffinity, eJobTag, eExclusiveJob, eProgressMessage,
+            eAffinity, eExclusiveJob, eProgressMessage,
             eOutputFile, eAuth, eClientNode, eClientSession, -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_GetJobInput,
@@ -706,9 +699,6 @@ int CGridCommandLineInterfaceApp::Run()
         int opt_id;
         const char* opt_value;
 
-        CTempString job_tag_name;
-        CTempString job_tag_value;
-
         while (clparser.NextOption(&opt_id, &opt_value)) {
             m_Opts.option_flags[opt_id] = OPTION_SET;
             switch (EOption(opt_id)) {
@@ -754,11 +744,6 @@ int CGridCommandLineInterfaceApp::Run()
                 break;
             case eAffinity:
                 m_Opts.affinity = opt_value;
-                break;
-            case eJobTag:
-                NStr::SplitInTwo(opt_value, "=", job_tag_name, job_tag_value);
-                m_Opts.job_tags.push_back(
-                    CNetScheduleAPI::TJobTag(job_tag_name, job_tag_value));
                 break;
             case eJobOutput:
                 m_Opts.job_output = opt_value;

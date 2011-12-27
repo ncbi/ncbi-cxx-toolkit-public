@@ -310,7 +310,6 @@ CNetScheduleAPI::EJobStatus
     job.progress_msg.erase();
     job.affinity.erase();
     job.mask = 0;
-    job.tags.clear();
     ///
 
     string resp = m_Impl->x_SendJobCmdWaitResponse("STATUS" , job.job_id);

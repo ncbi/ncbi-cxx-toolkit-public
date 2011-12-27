@@ -76,10 +76,6 @@ public:
     ///
     void SetJobMask(CNetScheduleAPI::TJobMask mask);
 
-    /// Set job tags
-    ///
-    void SetJobTags(const CNetScheduleAPI::TJobTags& tags);
-
     /// Set a job affinity
     ///
     void SetJobAffinity(const string& affinity);
@@ -131,10 +127,6 @@ public:
     /// Set a job mask
     ///
     void SetJobMask(CNetScheduleAPI::TJobMask mask);
-
-    /// Set job tags
-    ///
-    void SetJobTags(const CNetScheduleAPI::TJobTags& tags);
 
     /// Set a job affinity
     ///

@@ -49,7 +49,6 @@
 #define QUEUE_OPTION "queue"
 #define BATCH_OPTION "batch"
 #define AFFINITY_OPTION "affinity"
-#define JOB_TAG_OPTION "job-tag"
 #define JOB_OUTPUT_OPTION "job-output"
 #define GET_NEXT_JOB_OPTION "get-next-job"
 #define LIMIT_OPTION "limit"
@@ -90,7 +89,6 @@ enum EOption {
     eWorkerNode,
     eBatch,
     eAffinity,
-    eJobTag,
     eExclusiveJob,
     eJobOutput,
     eReturnCode,
@@ -161,7 +159,6 @@ private:
         string ns_service;
         string queue;
         string affinity;
-        CNetScheduleAPI::TJobTags job_tags;
         string job_output;
         int return_code;
         unsigned batch_size;

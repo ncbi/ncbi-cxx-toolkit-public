@@ -78,21 +78,6 @@ static void s_SerializeJob(string& cmd, const CNetScheduleJob& job,
         cmd.append(" msk=");
         cmd.append(NStr::UIntToString(job.mask));
     }
-
-    if( !job.tags.empty() ) {
-        string tags;
-        ITERATE(CNetScheduleAPI::TJobTags, tag, job.tags) {
-            if( tag != job.tags.begin() )
-                tags.append("\t");
-            tags.append(tag->first);
-            tags.append("\t");
-            tags.append(tag->second);
-        }
-        cmd.append(" tags=\"");
-        cmd.append(NStr::PrintableString(tags));
-        cmd.append("\"");
-    }
-
 }
 
 static void s_AppendClientIPAndSessionID(string& cmd)

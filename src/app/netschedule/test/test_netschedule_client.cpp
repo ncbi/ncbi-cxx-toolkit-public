@@ -229,7 +229,6 @@ int CTestNetScheduleClient::Run(void)
             batch_size = jcount - i;
         for (unsigned j = 0; j < batch_size; ++j) {
             CNetScheduleJob job(input);
-            job.tags.push_back(CNetScheduleAPI::TJobTag("test", ""));
             job.affinity = s_GetRandomToken();
             jobs.push_back(job);
         }

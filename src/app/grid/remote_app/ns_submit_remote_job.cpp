@@ -122,11 +122,6 @@ void CNSSubmitRemoteJobApp::Init(void)
                              "file_names",
                              "Files for transfer to the remote applicaion side separated by ;",
                              CArgDescriptions::eString);
-    
-    arg_desc->AddOptionalKey("tags",
-                             "tags_list",
-                             "A list of key=value pairs separated by ;",
-                             CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("runtime", 
                              "time",
@@ -218,7 +213,6 @@ int CNSSubmitRemoteJobApp::Run(void)
     CRemoteAppRequest request(m_GridClient->GetNetCacheAPI());
     request.SetMaxInlineSize(input_size);
     CNetScheduleAPI::TJobMask jmask = CNetScheduleAPI::eEmptyMask;
-    CNetScheduleAPI::TJobTags jtags;
 
     if (args["args"]) {
         string cmd = args["args"].AsString();
@@ -253,28 +247,10 @@ int CNSSubmitRemoteJobApp::Run(void)
         if (args["exclusive"]) {
             jmask |= CNetScheduleAPI::eExclusiveJob;
         }
-        
-        if (args["tags"]) {
-            string stags = args["tags"].AsString();
-            if (!stags.empty()) {
-                list<string> ltags;
-                NStr::Split(stags, ";", ltags);
-                if (ltags.size() != 0) {
-                    ITERATE(list<string>, s, ltags) {
-                        string key, value;
-                        NStr::SplitInTwo(*s,"=", key, value);
-                        if( !key.empty() )
-                            jtags.push_back(CNetScheduleAPI::TJobTag(key,value));
-                    }
-                }
-            }
-        }
 
         CGridJobSubmitter& job_submitter = GetGridClient().GetJobSubmitter();
         job_submitter.SetJobAffinity(affinity);
         job_submitter.SetJobMask(jmask);
-        if (!jtags.empty())
-            job_submitter.SetJobTags(jtags);
         request.Send(job_submitter.GetOStream());
         string job_key = job_submitter.Submit();
         if (out)
@@ -322,7 +298,6 @@ int CNSSubmitRemoteJobApp::Run(void)
                 request.SetAppRunTimeout(rt);
             }
             CNetScheduleAPI::TJobMask jmask = CNetScheduleAPI::eEmptyMask;
-            CNetScheduleAPI::TJobTags jtags;
             srt = s_FindParam(line, "exclusive=\"");
             if (!srt.empty()) {
                 if(NStr::CompareNocase(srt, "yes") == 0 ||
@@ -330,27 +305,11 @@ int CNSSubmitRemoteJobApp::Run(void)
                    srt == "1" )
                     jmask |= CNetScheduleAPI::eExclusiveJob;
             }
-            string stags = s_FindParam(line, "tags=\"");
-            if (!stags.empty()) {
-                list<string> ltags;
-                NStr::Split(stags, ";", ltags);
-                if (ltags.size() != 0) {
-                    ITERATE(list<string>, s, ltags) {
-                        string key, value;
-                        NStr::SplitInTwo(*s,"=", key, value);
-                        if( !key.empty() )
-                            jtags.push_back(CNetScheduleAPI::TJobTag(key,value));
-                    }
-                }
-            }
-            
             if (!job_batch_submitter ) {
                 CGridJobSubmitter& job_submitter = GetGridClient().GetJobSubmitter();
                 request.Send(job_submitter.GetOStream());
                 job_submitter.SetJobAffinity(affinity);
                 job_submitter.SetJobMask(jmask);
-                if (!jtags.empty())
-                    job_submitter.SetJobTags(jtags);
                 string job_key = job_submitter.Submit();
                 if (out)
                     *out << job_key << NcbiEndl;
@@ -359,8 +318,6 @@ int CNSSubmitRemoteJobApp::Run(void)
                 request.Send(job_batch_submitter->GetOStream());
                 job_batch_submitter->SetJobAffinity(affinity);
                 job_batch_submitter->SetJobMask(jmask);
-                if (!jtags.empty())
-                    job_batch_submitter->SetJobTags(jtags);
                 if (++njob_in_batch >= batch_size) {
                     job_batch_submitter->Submit();
                     if (out) {
@@ -383,7 +340,7 @@ int CNSSubmitRemoteJobApp::Run(void)
             job_batch_submitter->Reset();
             job_batch_submitter = NULL;
         }
-            
+
         return 0;
     }
     NCBI_THROW(CArgException, eInvalidArg,

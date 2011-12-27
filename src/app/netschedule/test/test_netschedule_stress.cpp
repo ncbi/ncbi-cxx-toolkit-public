@@ -105,21 +105,6 @@ void CTestNetScheduleStress::Init(void)
 }
 
 
-struct SPeriodicTag
-{
-    int         period;
-    int         run;
-    const char* name;
-};
-
-
-SPeriodicTag s_Tags[] = {
-    { 35, 3, "scaffold" },
-    { 51, 4, "transcript" },
-    { -1 }
-};
-
-
 void TestBatchSubmit(const string& service,
                      const string& queue_name, unsigned jcount)
 {
@@ -132,12 +117,6 @@ void TestBatchSubmit(const string& service,
     for (unsigned i = 0; i < jcount; ++i) {
         CNetScheduleJob job("HELLO BSUBMIT", "affinity",
                             CNetScheduleAPI::eExclusiveJob);
-        for (int j = 0; s_Tags[j].period > 0; j++) {
-            int period = s_Tags[j].period;
-            int run    = s_Tags[j].run;
-            job.tags.push_back(CNetScheduleAPI::TJobTag(s_Tags[j].name,
-                            NStr::UIntToString((i / run) % period)));
-        }
         jobs.push_back(job);
     }
     

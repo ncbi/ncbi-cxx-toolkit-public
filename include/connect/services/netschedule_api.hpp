@@ -211,10 +211,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
     };
     typedef unsigned TJobMask;
 
-    /// Key-value pair, value can be empty
-    typedef pair<string,string> TJobTag;
-    typedef vector<TJobTag>     TJobTags;
-
     /// Create an instance of CNetScheduleSubmitter.
     CNetScheduleSubmitter GetSubmitter();
 
@@ -270,7 +266,6 @@ struct CNetScheduleJob
         input.erase();
         affinity.erase();
         mask = CNetScheduleAPI::eEmptyMask;
-        tags.clear();
         job_id.erase();
         ret_code = 0;
         output.erase();
@@ -290,7 +285,6 @@ struct CNetScheduleJob
     string session_id;
 
     CNetScheduleAPI::TJobMask  mask;
-    CNetScheduleAPI::TJobTags  tags;
 
     // output and error
 

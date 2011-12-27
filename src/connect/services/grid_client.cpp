@@ -118,10 +118,6 @@ void CGridJobSubmitter::SetJobMask(CNetScheduleAPI::TJobMask mask)
 {
     m_Job.mask = mask;
 }
-void CGridJobSubmitter::SetJobTags(const CNetScheduleAPI::TJobTags& tags)
-{
-    m_Job.tags = tags;
-}
 void CGridJobSubmitter::SetJobAffinity(const string& affinity)
 {
     m_Job.affinity = affinity;
@@ -210,14 +206,6 @@ void CGridJobBatchSubmitter::SetJobMask(CNetScheduleAPI::TJobMask mask)
     if (m_Jobs.empty())
         PrepareNextJob();
     m_Jobs[m_JobIndex].mask = mask;
-}
-
-void CGridJobBatchSubmitter::SetJobTags(const CNetScheduleAPI::TJobTags& tags)
-{
-    CheckIfAlreadySubmitted();
-    if (m_Jobs.empty())
-        PrepareNextJob();
-    m_Jobs[m_JobIndex].tags = tags;
 }
 
 void CGridJobBatchSubmitter::SetJobAffinity(const string& affinity)
