@@ -2287,6 +2287,12 @@ public:
                                 char               delimiter,
                                 EMergeDelims       merge = eNoMergeDelims);
 
+    // Template class for better error messages
+    // from unimplemented template methods
+    template<class Type>
+    class CNotImplemented {
+    };
+
 }; // class NStr
 
 
@@ -3597,6 +3603,24 @@ const string& CNcbiEmptyString::Get(void)
 /////////////////////////////////////////////////////////////////////////////
 //  NStr::
 //
+
+
+//-------------------- default implementation causes compilation error
+template<typename TNumeric>
+inline
+string NStr::NumericToString(TNumeric /*value*/,
+                             TNumToStringFlags /*flags*/, int  /*base*/)
+{
+    return CNotImplemented<TNumeric>::NumericToString_is_not_implemented_for_non_numeric_types();
+}
+
+template<typename TNumeric>
+inline
+void NStr::NumericToString(string& /*out_str*/, TNumeric /*value*/,
+                           TNumToStringFlags /*flags*/, int  /*base*/)
+{
+    CNotImplemented<TNumeric>::NumericToString_is_not_implemented_for_non_numeric_types();
+}
 
 //---------------------- char
 template<> inline
