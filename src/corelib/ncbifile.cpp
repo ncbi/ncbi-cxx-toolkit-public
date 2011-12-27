@@ -5442,7 +5442,7 @@ void CFileIO::SetFilePos(Int8 offset, EPositionMoveMethod move_method) const
         NCBI_THROW(CFileErrnoException, eFileIO,
                    "Cannot change file positon"
                    " (offset=" + NStr::Int8ToString(offset) +
-                   ", method=" + NStr::NumericToString(move_method) + ')');
+                   ", method=" + NStr::IntToString(move_method) + ')');
     }
 }
 
