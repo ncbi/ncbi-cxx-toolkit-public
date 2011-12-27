@@ -164,7 +164,7 @@ extern bool SetCpuTimeLimit(size_t                max_cpu_time,
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// System information
+/// System/memory information
 ///
 
 /// [UNIX & Windows]  Return number of active CPUs (never less than 1).
@@ -195,6 +195,47 @@ extern Uint8 GetPhysicalMemorySize(void);
 /// Returns true if able to determine memory usage, and false otherwise.
 NCBI_XNCBI_EXPORT
 extern bool GetMemoryUsage(size_t* total, size_t* resident, size_t* shared);
+
+
+/// What type of data access pattern will be used for specified memory region.
+///
+/// Advises the VM system that the a certain region of memory will be accessed
+/// following a type of pattern. The VM system uses this information 
+/// to optimize work with mapped memory.
+///
+/// NOTE: Works on UNIX platform only.
+typedef enum {
+    eMADV_Normal,      ///< No further special treatment -- by default
+    eMADV_Random,      ///< Expect random page references
+    eMADV_Sequential,  ///< Expect sequential page references
+    eMADV_WillNeed,    ///< Will need these pages (expect access in the near future)
+    eMADV_DontNeed,    ///< Don't need these pages (do not expect access in the near future)
+    eMADV_DoFork,      ///< Do inherit across fork() (since Linux 2.6.16) -- by default
+    eMADV_DontFork,    ///< Don't inherit across fork() (since Linux 2.6.16)
+    eMADV_Mergeable,   ///< KSM may merge identical pages (since Linux 2.6.32)
+    eMADV_Unmergeable  ///< KSM may not merge identical pages (since Linux 2.6.32) -- by default
+} EMemoryAdvise;
+
+
+/// [UNIX only]  Advise on memory usage for specified memory region.
+///
+/// @param addr
+///   Address of memory region whose usage is being advised.
+///   Some implementation requires that the address start be page-aligned. 
+/// @param len
+///   Length of memory region whose usage is being advised.
+/// @param advise
+///   Advise on expected memory usage pattern.
+/// @return
+///   - TRUE, if memory advise operation successful.
+///   - FALSE, if memory advise operation not successful, or is not supported
+///     on current platform.
+/// @sa
+///   EMemoryAdvise
+NCBI_XNCBI_EXPORT
+extern bool MemoryAdvise(void* addr, size_t len, EMemoryAdvise advise);
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///

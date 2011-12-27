@@ -43,6 +43,7 @@
 ///   CFileException.
 ///   Defines different file finding algorithms.
 
+#include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_mask.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <corelib/ncbimisc.hpp>
@@ -1998,21 +1999,27 @@ public:
     /// platform.
     static bool IsSupported(void);
 
+
     /// What type of data access pattern will be used for mapped region.
     ///
     /// Advises the VM system that the a certain region of user mapped memory 
     /// will be accessed following a type of pattern. The VM system uses this 
     /// information to optimize work with mapped memory.
     ///
-    /// NOTE: Now works on UNIX platform only.
+    /// NOTE: Works on UNIX platform only.
+    /// @sa
+    ///   EMemoryAdvise, MemoryAdvise
     typedef enum {
-        eMMA_Normal,      ///< No further special treatment
-        eMMA_Random,      ///< Expect random page references
-        eMMA_Sequential,  ///< Expect sequential page references
-        eMMA_WillNeed,    ///< Will need these pages
-        eMMA_DontNeed     ///< Don't need these pages
+        eMMA_Normal      = eMADV_Normal,
+        eMMA_Random      = eMADV_Random,
+        eMMA_Sequential  = eMADV_Sequential,
+        eMMA_WillNeed    = eMADV_WillNeed,
+        eMMA_DontNeed    = eMADV_DontNeed,
+        eMMA_DoFork      = eMADV_DoFork,
+        eMMA_DontFork    = eMADV_DontFork,
+        eMMA_Mergeable   = eMADV_Mergeable,
+        eMMA_Unmergeable = eMADV_Unmergeable
     } EMemMapAdvise;
-
 
     /// Advise on memory map usage for specified region.
     ///
@@ -2021,15 +2028,14 @@ public:
     /// @param len
     ///   Length of memory region whose usage is being advised.
     /// @param advise
-    ///   One of the values in EMemMapAdvise that advises on expected
-    ///   usage pattern.
+    ///   Advise on expected memory usage pattern.
     /// @return
-    ///   - TRUE, if memory advise operation successful. Always return
-    ///   TRUE if memory advise not implemented such as on Windows system.
-    ///   - FALSE, if memory advise operation not successful.
+    ///   - TRUE, if memory advise operation successful.
+    ///   - FALSE, if memory advise operation not successful, or is not supported
+    ///     on current platform.
     /// @sa
     ///   EMemMapAdvise, MemMapAdvise
-    static bool MemMapAdviseAddr(void* addr, size_t len,EMemMapAdvise advise);
+    static bool MemMapAdviseAddr(void* addr, size_t len, EMemMapAdvise advise);
 };
 
 
@@ -2143,15 +2149,14 @@ public:
     ///   TRUE on success; or FALSE on error.
     bool Unmap(void);
 
-    /// Advise on memory map usage.
+    /// Advise on mapped memory map usage.
     ///
     /// @param advise
-    ///   One of the values in EMemMapAdvise that advises on expected
-    ///   usage pattern.
+    ///   Advise on expected memory usage pattern.
     /// @return
-    ///   - TRUE, if memory advise operation successful. Always return
-    ///     TRUE if memory advise not implemented such as on Windows system.
-    ///   - FALSE, if memory advise operation not successful.
+    ///   - TRUE, if memory advise operation successful.
+    ///   - FALSE, if memory advise operation not successful, or is not supported
+    ///     on current platform.
     /// @sa
     ///   EMemMapAdvise, MemMapAdviseAddr
     bool MemMapAdvise(EMemMapAdvise advise) const;
@@ -2317,15 +2322,14 @@ public:
     ///   Pointer to memory file mapped segment. 
     const CMemoryFileSegment* GetMemoryFileSegment(void* ptr) const;
 
-    /// Advise on memory map usage.
+    /// Advise on mapped memory map usage.
     ///
     /// @param advise
-    ///   One of the values in EMemMapAdvise that advises on expected
-    ///   usage pattern.
+    ///   Advise on expected memory usage pattern.
     /// @return
-    ///   - TRUE, if memory advise operation successful. Always return
-    ///     TRUE if memory advise not implemented such as on Windows system.
-    ///   - FALSE, if memory advise operation not successful.
+    ///   - TRUE, if memory advise operation successful.
+    ///   - FALSE, if memory advise operation not successful, or is not supported
+    ///     on current platform.
     /// @sa
     ///   EMemMapAdvise, MemMapAdviseAddr
     bool MemMapAdvise(void* ptr, EMemMapAdvise advise) const;
@@ -2490,12 +2494,11 @@ public:
     /// Advise on memory map usage.
     ///
     /// @param advise
-    ///   One of the values in EMemMapAdvise that advises on expected
-    ///   usage pattern.
+    ///   Advise on expected memory usage pattern.
     /// @return
-    ///   - TRUE, if memory advise operation successful. Always return
-    ///   TRUE if memory advise not implemented such as on Windows system.
-    ///   - FALSE, if memory advise operation not successful.
+    ///   - TRUE, if memory advise operation successful.
+    ///   - FALSE, if memory advise operation not successful, or is not supported
+    ///     on current platform.
     /// @sa
     ///   EMemMapAdvise, MemMapAdviseAddr
     bool MemMapAdvise(EMemMapAdvise advise) const;
@@ -3611,6 +3614,16 @@ void CFileDeleteList::SetNames(CFileDeleteList::TNames& names)
 }
 
 
+// CMemoryFile_Base
+
+inline
+bool CMemoryFile_Base::MemMapAdviseAddr(void* addr, size_t len,
+                                        EMemMapAdvise advise)
+{
+    return MemoryAdvise(addr, len, (EMemoryAdvise)advise);
+}
+
+
 // CMemoryFileSegment
 
 inline
@@ -3649,6 +3662,15 @@ inline
 off_t CMemoryFileSegment::GetRealOffset(void) const
 {
     return m_OffsetReal;
+}
+
+inline
+bool CMemoryFileSegment::MemMapAdvise(EMemMapAdvise advise) const
+{
+    if ( !m_DataPtr ) {
+        return false;
+    }
+    return MemMapAdviseAddr(m_DataPtrReal, m_LengthReal, advise);
 }
 
 

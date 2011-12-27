@@ -32,7 +32,6 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_limits.h>
-#include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/error_codes.hpp>
 #include "ncbisys.hpp"
@@ -52,8 +51,8 @@
 #  include <dirent.h>
 #  include <pwd.h>
 #  include <fcntl.h>
-#  include <sys/time.h>
 #  include <sys/mman.h>
+#  include <sys/time.h>
 #  ifdef HAVE_SYS_STATVFS_H
 #    include <sys/statvfs.h>
 #  endif
@@ -4333,40 +4332,6 @@ bool CMemoryFile_Base::IsSupported(void)
 }
 
 
-#if !defined(HAVE_MADVISE)
-bool CMemoryFile_Base::MemMapAdviseAddr(void*, size_t, EMemMapAdvise) {
-    return true;
-}
-#else  /* HAVE_MADVISE */
-bool CMemoryFile_Base::MemMapAdviseAddr(void* addr, size_t len,
-                                        EMemMapAdvise advise)
-{
-    int adv;
-    if ( !addr || !len ) {
-        return false;
-    }
-    switch (advise) {
-    case eMMA_Random:
-        adv = MADV_RANDOM;     break;
-    case eMMA_Sequential:
-        adv = MADV_SEQUENTIAL; break;
-    case eMMA_WillNeed:
-        adv = MADV_WILLNEED;   break;
-    case eMMA_DontNeed:
-        adv = MADV_DONTNEED;   break;
-    default:
-        adv = MADV_NORMAL;
-    }
-    // Conversion type of "addr" to char* -- Sun Solaris fix
-    if ( madvise((char*) addr, len, adv) != 0 ) {
-        LOG_ERROR_AND_RETURN_ERRNO("CMemoryFile_Base::MemMapAdviseAddr():"
-                                   " madvise() failed");
-    }
-    return true;
-}
-#endif  /* HAVE_MADVISE */
-
-
 #if defined(NCBI_OS_MSWIN)
 string s_LastErrorMessage(void)
 {
@@ -4494,15 +4459,6 @@ void CMemoryFileSegment::x_Verify(void) const
         return;
     }
     NCBI_THROW(CFileException, eMemoryMap, "File not mapped");
-}
-
-
-bool CMemoryFileSegment::MemMapAdvise(EMemMapAdvise advise) const
-{
-    if ( !m_DataPtr ) {
-        return false;
-    }
-    return MemMapAdviseAddr(m_DataPtrReal, m_LengthReal, advise);
 }
 
 

@@ -45,6 +45,7 @@
 #  include <sys/time.h>
 #  include <sys/resource.h>
 #  include <sys/times.h>
+#  include <sys/mman.h>
 #  include <limits.h>
 #  include <time.h>
 #  include <unistd.h>
@@ -56,6 +57,7 @@
 #  endif //NCBI_OS_IRIX
 #  define USE_SETMEMLIMIT
 #  define USE_SETCPULIMIT
+#  define HAVE_MADVISE 1
 #endif //NCBI_OS_UNIX
 
 #ifdef NCBI_OS_DARWIN
@@ -657,6 +659,77 @@ bool GetMemoryUsage(size_t* total, size_t* resident, size_t* shared)
 #endif
     return false;
 }
+
+
+#if !defined(HAVE_MADVISE)
+bool MemoryAdvise(void*, size_t, EMemoryAdvise) {
+    ERR_POST_X_ONCE(10, Warning << "Not supported on this platform");
+    return false;
+}
+#else  /* HAVE_MADVISE */
+bool MemoryAdvise(void* addr, size_t len, EMemoryAdvise advise)
+{
+    if ( !addr /*|| !len*/ ) {
+        ERR_POST_X(11, "Incorrect parameters");
+        return false;
+    }
+    int adv;
+    switch (advise) {
+    case eMADV_Normal:
+        adv = MADV_NORMAL;     break;
+    case eMADV_Random:
+        adv = MADV_RANDOM;     break;
+    case eMADV_Sequential:
+        adv = MADV_SEQUENTIAL; break;
+    case eMADV_WillNeed:
+        adv = MADV_WILLNEED;   break;
+    case eMADV_DontNeed:
+        adv = MADV_DONTNEED;   break;
+    case eMADV_DontFork:
+        #if defined(MADV_DONTFORK)
+            adv = MADV_DONTFORK;
+            break;
+        #else
+            ERR_POST_X_ONCE(12, Warning << "MADV_DONTFORK not supported");
+            return false;
+        #endif        
+    case eMADV_DoFork:
+        #if defined(MADV_DOFORK)
+            adv = MADV_DOFORK;
+            break;
+        #else
+            ERR_POST_X_ONCE(12, Warning << "MADV_DOTFORK not supported");
+            return false;
+        #endif        
+    case eMADV_Mergeable:
+        #if defined(MADV_MERGEABLE)
+            adv = MADV_MERGEABLE;
+            break;
+        #else
+            ERR_POST_X_ONCE(12, Warning << "MADV_MERGEABLE not supported");
+            return false;
+        #endif        
+    case eMADV_Unmergeable:
+        #if defined(MADV_UNMERGEABLE)
+            adv = MADV_UNMERGEABLE;
+            break;
+        #else
+            ERR_POST_X_ONCE(12, Warning << "MADV_UNMERGEABLE not supported");
+            return false;
+        #endif        
+    default:
+        _TROUBLE;
+        return false;
+    }
+    // Conversion type of "addr" to char* -- Sun Solaris fix
+    if ( madvise((char*) addr, len, adv) != 0 ) {
+        ERR_POST_X(13, "madvise() failed");
+        return false;
+    }
+    return true;
+}
+#endif  /* HAVE_MADVISE */
+
 
 
 /////////////////////////////////////////////////////////////////////////////

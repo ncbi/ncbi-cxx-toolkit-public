@@ -45,7 +45,7 @@ NCBI_DEFINE_ERRCODE_X(Corelib_Env,        101,  5);
 NCBI_DEFINE_ERRCODE_X(Corelib_Config,     102, 23);
 NCBI_DEFINE_ERRCODE_X(Corelib_Blob,       103,  1);
 NCBI_DEFINE_ERRCODE_X(Corelib_Static,     104,  1);
-NCBI_DEFINE_ERRCODE_X(Corelib_System,     105, 10);
+NCBI_DEFINE_ERRCODE_X(Corelib_System,     105, 13);
 NCBI_DEFINE_ERRCODE_X(Corelib_App,        106, 21);
 NCBI_DEFINE_ERRCODE_X(Corelib_Diag,       107, 24);
 NCBI_DEFINE_ERRCODE_X(Corelib_File,       108,  4);
