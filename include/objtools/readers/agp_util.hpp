@@ -504,6 +504,7 @@ public:
         G_TaxError,             // CAgpValidateReader
         G_InvalidObjId,         // CAgpValidateReader
         G_BadObjLen,            // CAgpValidateReader
+        G_NsWithinCompSpan,
         G_Last,
 
         G_First = G_InvalidCompId,

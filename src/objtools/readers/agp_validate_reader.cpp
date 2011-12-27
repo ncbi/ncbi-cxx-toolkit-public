@@ -97,8 +97,8 @@ void CAgpValidateReader::Reset(bool for_chr_from_scaf)
   }
 }
 
-CAgpValidateReader::CAgpValidateReader(CAgpErrEx& agpErr, CMapCompLen& comp2len) //, bool checkCompNames
-  : CAgpReader(&agpErr, false, eAgpVersion_auto), m_AgpErr(&agpErr), m_comp2len(&comp2len)
+CAgpValidateReader::CAgpValidateReader(CAgpErrEx& agpErr, CMapCompLen& comp2len, TMapStrRangeColl& comp2range_coll) //, bool checkCompNames
+  : CAgpReader(&agpErr, false, eAgpVersion_auto), m_AgpErr(&agpErr), m_comp2len(&comp2len), m_comp2range_coll(&comp2range_coll)
 {
   m_CheckCompNames=false; // checkCompNames;
   m_unplaced=false;
@@ -301,6 +301,27 @@ void CAgpValidateReader::OnGapOrComponent()
     else if(m_explicit_scaf && m_is_chr) {
       if(m_this_row->component_beg>1) {
         m_AgpErr->Msg(CAgpErrEx::W_ScafNotInFull);
+      }
+    }
+
+    //// check that this span does not include gaps
+    if(m_comp2range_coll->size() && !m_CheckObjLen && !(m_is_chr && m_explicit_scaf) ) {
+      TMapStrRangeColl::iterator it = m_comp2range_coll->find( m_this_row->GetComponentId() );
+      if( it!=m_comp2range_coll->end() ) {
+        TRangeColl& intersection = it->second.IntersectWith(
+          TSeqRange(m_this_row->component_beg, m_this_row->component_end)
+        );
+        if(!intersection.empty()) {
+          string masked_spans;
+          TRangeColl::const_iterator it = intersection.begin();
+          for(; it != intersection.end() && masked_spans.size() < 80; ++it) {
+              if(masked_spans.size()) masked_spans += ", ";
+              masked_spans +=  NStr::IntToString(it->GetFrom()) + ".." + NStr::IntToString(it->GetTo());
+          }
+          if(it != intersection.end()) masked_spans += ", ...";
+
+          m_AgpErr->Msg(CAgpErrEx::G_NsWithinCompSpan, ": "+masked_spans);
+        }
       }
     }
 

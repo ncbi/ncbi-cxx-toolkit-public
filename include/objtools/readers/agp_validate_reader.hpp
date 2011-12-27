@@ -37,6 +37,7 @@
 #include <corelib/ncbistd.hpp>
 #include <iostream>
 #include <objtools/readers/agp_util.hpp>
+#include <util/range_coll.hpp>
 
 #include <set>
 
@@ -59,6 +60,10 @@ public:
   }
 
 };
+
+
+typedef CRangeCollection<TSeqPos> TRangeColl;
+typedef map<string, TRangeColl> TMapStrRangeColl;
 
  // Determines accession naming patterns, counts accessions.
 class CAccPatternCounter;
@@ -148,7 +153,7 @@ public:
   // true : after finishing with scaf-fronm-ctg files, before starting with chr-from-scaf
   void Reset(bool for_chr_from_scaf=false);
 
-  CAgpValidateReader(CAgpErrEx& agpErr, CMapCompLen& comp2len); // , bool checkCompNames=false);
+  CAgpValidateReader(CAgpErrEx& agpErr, CMapCompLen& comp2len, TMapStrRangeColl& comp2range_coll); // , bool checkCompNames=false);
   virtual ~CAgpValidateReader();
   void PrintTotals();
 
@@ -195,6 +200,7 @@ protected:
 
   CMapCompLen* m_comp2len; // for optional check of component lengths (or maybe object lengths)
   CMapCompLen m_scaf2len;  // for: -scaf Scaf_AGP_file(s) -chr Chr_AGP_file(s)
+  TMapStrRangeColl* m_comp2range_coll;
   int m_expected_obj_len;
   int m_comp_name_matches;
   int m_obj_name_matches;

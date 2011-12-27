@@ -153,6 +153,7 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "taxonomic data is not available",
     "object X not found in FASTA file(s)",
     "final object_end (column 3) not equal to object length in FASTA file(s)",
+    "run(s) of Ns within the component span",
     kEmptyCStr  // G_Last
 };
 

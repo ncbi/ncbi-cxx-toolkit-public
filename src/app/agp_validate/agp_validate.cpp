@@ -65,6 +65,7 @@ private:
   } m_ValidationType;
 
   CMapCompLen m_comp2len;
+  TMapStrRangeColl m_comp2range_coll;
 
   //void x_LoadLen  (CNcbiIstream& istr, const string& filename);
   void x_LoadLenFa(CNcbiIstream& istr, const string& filename);
@@ -78,7 +79,7 @@ private:
   void x_ReportFastaSeqCount();
 
 public:
-  CAgpValidateApplication() : m_reader(agpErr, m_comp2len)
+  CAgpValidateApplication() : m_reader(agpErr, m_comp2len, m_comp2range_coll)
   {
   }
 };
@@ -367,6 +368,14 @@ void CAgpValidateApplication::x_ReportFastaSeqCount()
   cout<< m_comp2len.m_count << " "
       << (m_reader.m_CheckObjLen?"object name":"component_id")
       << s <<" and length" << s << " loaded from FASTA." << endl;
+  if(m_comp2range_coll.size()) {
+      int runs_of_Ns=0;
+      for(TMapStrRangeColl::iterator it = m_comp2range_coll.begin();  it != m_comp2range_coll.end(); ++it) {
+          runs_of_Ns += it->second.size();
+      }
+      cout <<  m_comp2range_coll.size() << " component sequences have masked spans (" << runs_of_Ns << " spans)." << endl;
+  }
+
 }
 
 void CAgpValidateApplication::x_ValidateUsingFiles(const CArgs& args)
@@ -528,6 +537,12 @@ void CAgpValidateApplication::x_LoadLenFa(CNcbiIstream& istr, const string& file
   int len=0;
   int prev_len=0;
 
+  TRangeColl range_coll; // runs of Ns in the fasta of the current component
+  TSeqPos mfa_firstMasked=0;
+  TSeqPos mfa_pos=0;
+  bool mfa_bMasked=false;
+  bool mfa_prevMasked=false;
+
   while( NcbiGetline(istr, line, "\r\n") ) {
     line_num++;
     //if(line.size()==0) continue;
@@ -537,6 +552,19 @@ void CAgpValidateApplication::x_LoadLenFa(CNcbiIstream& istr, const string& file
         prev_len =  m_comp2len.AddCompLen(acc, len);
         if(acc_long!=acc) prev_len =  m_comp2len.AddCompLen(acc_long, len, false);
         if(prev_len) goto LengthRedefinedFa;
+
+        if(mfa_bMasked) {
+          if(mfa_pos-mfa_firstMasked > 10)
+            range_coll += TSeqRange(mfa_firstMasked, mfa_pos-1);
+        }
+        if(!range_coll.empty()) {
+          m_comp2range_coll[acc] = range_coll;
+        }
+
+        range_coll.clear();
+        mfa_firstMasked=mfa_pos=0;
+        mfa_bMasked=false;
+        mfa_prevMasked=false;
       }
 
       // Get first word, trim final '|' (if any).
@@ -567,9 +595,34 @@ void CAgpValidateApplication::x_LoadLenFa(CNcbiIstream& istr, const string& file
                  "  file " << filename << "\n  line " << line_num << "\n  column " << i+1 << "\n\n";
           exit(1);
         }
+
+        mfa_pos++;
+        mfa_bMasked = toupper(line[i]) == 'N';
+        if(mfa_bMasked!=mfa_prevMasked) {
+          if(mfa_bMasked) {
+            mfa_firstMasked=mfa_pos;
+          }
+          else{
+            if(mfa_pos-mfa_firstMasked > 10)
+              range_coll += TSeqRange(mfa_firstMasked, mfa_pos-1);
+          }
+        }
+        mfa_prevMasked=mfa_bMasked;
+
       }
 
       len+=line.size();
+
+      /* to do: save runs of Ns as CRangeCollection<TSeqPos>
+         later, will test component spans with:
+
+         // returns iterator pointing to the TRange that has ToOpen > pos
+          const_iterator  find(position_type pos)   const
+          {
+              PRangeLessPos<TRange, position_type> p;
+              return lower_bound(begin(), end(), pos, p);
+          }
+      */
     }
   }
 
@@ -577,6 +630,14 @@ void CAgpValidateApplication::x_LoadLenFa(CNcbiIstream& istr, const string& file
     prev_len =  m_comp2len.AddCompLen(acc, len);
     if(acc_long!=acc) prev_len =  m_comp2len.AddCompLen(acc_long, len, false);
     if(prev_len) goto LengthRedefinedFa;
+
+    if(mfa_bMasked) {
+      if(mfa_pos-mfa_firstMasked > 10)
+        range_coll += TSeqRange(mfa_firstMasked, mfa_pos-1);
+    }
+    if(!range_coll.empty()) {
+      m_comp2range_coll[acc] = range_coll;
+    }
   }
   if(acc_count==0) {
     cerr<< "WARNING - empty file " << filename << "\n";

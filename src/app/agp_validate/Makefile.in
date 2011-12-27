@@ -5,7 +5,7 @@ APP_PROJ = agp_validate agp_renumber
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
 
-TESTS=bad_test test2 acc_test fa_test un_test obj_len_test order_test overlap_test new_test space_test \
+TESTS=bad_test test2 acc_test fa_test un_test obj_len_test order_test overlap_test new_test space_test runs_of_ns\
   chr_scaf_test chr_scaf_test2 chr_scaf_test_bad ver2.0 ver2.0_bad
 .PHONY : noalt test $(TESTS) alt_test
 
@@ -58,6 +58,10 @@ new_test: agp_validate
 space_test: agp_validate
 	sh -c "./agp_validate $(srcdir)/test/space_test.agp>space_test.out 2>&1"
 	diff ${DOPT} -u $(srcdir)/test/space_test.out space_test.out
+
+runs_of_ns: agp_validate
+	sh -c "./agp_validate $(srcdir)/test/MedtrA17_3.5.head.comp_fa $(srcdir)/test/MedtrA17_3.5.head.agp>runs_of_ns.out 2>&1"
+	diff ${DOPT} -u $(srcdir)/test/runs_of_ns.out runs_of_ns.out
 
 chr_scaf_test: agp_validate
 	sh -c "./agp_validate -chr $(srcdir)/test/chr_from_scaffold_WGS.agp>chr_scaf_test.out 2>&1"
