@@ -1298,7 +1298,6 @@ protected:
     /// Print constraints in XML format
     virtual void PrintUsageXml(CNcbiOstream& out) const;
 
-private:
     Int8 m_Min;  ///< Minimum value of range
     Int8 m_Max;  ///< Maximum value of range 
 };
@@ -1321,6 +1320,10 @@ class NCBI_XNCBI_EXPORT CArgAllow_Integers : public CArgAllow_Int8s
 public:
     /// Constructor specifying range of allowed integer values.
     CArgAllow_Integers(int x_min, int x_max);
+
+protected:
+    /// Get usage information.
+    virtual string GetUsage(void) const;
 };
 
 
