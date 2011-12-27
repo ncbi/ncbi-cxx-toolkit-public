@@ -1007,7 +1007,6 @@ void CSourceModParser::x_HandleBadModValue(const SMod& mod)
         break;
     case eHandleBadMod_Throw:
         throw CBadModError(mod);
-        break;
     case eHandleBadMod_PrintToCerr:
         cerr << "Warning: Bad modifier: " << mod.ToString() << endl;
         break;

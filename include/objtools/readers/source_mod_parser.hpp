@@ -296,7 +296,7 @@ inline
 string CSourceModParser::SMod::ToString(void) const
 {
     return "[ key: (" + key + "), value: (" + value +
-        "), pos: " + NStr::IntToString(pos) +
+        "), pos: " + NStr::SizetToString(pos) +
         ", used: " + string(used ? "true" : "false") + "]";
 }
 
