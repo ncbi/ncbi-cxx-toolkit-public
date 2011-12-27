@@ -1140,9 +1140,9 @@ extern NCBI_XCONNECT_EXPORT unsigned short SOCK_GetLocalPortEx
 
 
 /** Get local port of the socket.
- * The returned port number is also cached within "sock" so all following
+ * The returned port number is also cached within "sock" so any further
  * inquires for the local port do not cause any system calls to occur.
- * Has exactly same effect as SOCK_GetLocalPortEx(sock, 0, byte_order)
+ * The call is exactly equavalent to SOCK_GetLocalPortEx(sock, 0, byte_order).
  * @param sock
  *  [in]  socket handle
  * @param byte_order
@@ -1331,19 +1331,19 @@ extern NCBI_XCONNECT_EXPORT void SOCK_DisableOSSendDelay
  *  How the datagram exchange API works:
  *
  *  Datagram socket is created with special DSOCK_Create[Ex] calls but the
- *  resulting object is a SOCK handle. That is, almost all SOCK routines
- *  may be applied to the handle. There are few exceptions, though.
+ *  resulting object is a SOCK handle.  That is, almost all SOCK routines
+ *  may be applied to the handle.  There are few exceptions, though.
  *  In datagram sockets I/O differs from how it is done in stream sockets:
  *
  *  SOCK_Write() writes data into an internal message buffer, appending new
- *  data as they come with each SOCK_Write(). When the message is complete,
+ *  data as they come with each SOCK_Write().  When the message is complete,
  *  SOCK_SendMsg() should be called (optionally with additional last,
  *  or the only [if no SOCK_Write() preceded the call] message fragment)
- *  to actually send the message down the wire. If successful, SOCK_SendMsg()
- *  cleans the internal buffer, and the process may repeat. If unsuccessful,
+ *  to actually send the message down the wire.  If successful, SOCK_SendMsg()
+ *  cleans the internal buffer, and the process may repeat.  If unsuccessful,
  *  SOCK_SendMsg() can be repeated with restiction that no additional data are
- *  provided in the call. This way, the entire message will be attempted to
- *  be sent again. On the other hand, if after any SOCK_SendMsg() new data
+ *  provided in the call.  This way, the entire message will be attempted to
+ *  be sent again.  On the other hand, if after any SOCK_SendMsg() new data
  *  are added [regardless of whether previous data were successfully sent
  *  or not], all previously written [and kept in the internal send buffer]
  *  data get dropped and replaced with the new data.
@@ -1354,12 +1354,12 @@ extern NCBI_XCONNECT_EXPORT void SOCK_DisableOSSendDelay
  *  SOCK_RecvMsg() receives the message into an internal receive buffer,
  *  and optionally can return the initial datagram fragment via provided
  *  buffer [this initial fragment is then stripped from what remains unread
- *  in the internal buffer]. Optimized version can supply a maximal message
+ *  in the internal buffer].  Optimized version can supply a maximal message
  *  size (if known in advance), or 0 to get a message of any allowed size.
  *  The actual size of the received message can be obtained via a
- *  pointer-type argument 'msgsize'. The message kept in the internal buffer
+ *  pointer-type argument 'msgsize'.  The message kept in the internal buffer
  *  can be read out in several SOCK_Read() calls, last returning eIO_Closed,
- *  when all data have been taken out. SOCK_Wait() returns eIO_Success while
+ *  when all data have been taken out.  SOCK_Wait() returns eIO_Success while
  *  there are data in the internal message buffer that SOCK_Read() can read.
  *
  *  SOCK_WipeMsg() can be used to clear the internal message buffers in
@@ -1390,10 +1390,18 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_Create
 
 
 /** Assosiate a datagram socket with a local port.
+ * All other attempts to use the same port will result in eIO_Closed (for "port
+ * busy") unless SOCK_SetReuseAddress() is called, which then allows multiple
+ * sockets to bind to the same port, and receive messages, in undefined order,
+ * arriving at that port.
+ * Passing 0 will ask the OS to automatically select an unused port, which then
+ * can be obtained via SOCK_GetLocalPort().
  * @param sock
  *  [in]  SOCK from DSOCK_Create[Ex]()
  * @param port
- *  [in]  port to bind to (!=0)
+ *  [in]  port to bind to (0 to auto-select)
+ * @sa
+ *  SOCK_SetReuseAddress, SOCK_GetLocalPort
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_Bind
 (SOCK           sock,
@@ -1656,8 +1664,8 @@ extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetInterruptOnSignal
  */
 
 /** Control address reuse for socket addresses taken by the API.
- * By default address is not marked for reuse in SOCK,
- * but is always reused for LSOCK.
+ * By default address is not marked for reuse in either SOCK or DSOCK,
+ * but is always reused for LSOCK (upon socket closure).
  * Pass "on_off" as eDefault to get the current setting.
  * @param on_off
  *  [in]  whether to turn on (eOn), turn off (eOff) or get current (eDefault)

@@ -431,13 +431,8 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
             strcpy(head, "Created");
             *tail = '\0';
         } else if (!data) {
-            if (sin->sin_port) {
-                strcpy(head, "Bound @");
-                sprintf(tail, "(:%hu)", ntohs(sin->sin_port));
-            } else {
-                strcpy(head, "Unbound");
-                *tail = '\0';
-            }
+            strcpy(head, "Bound @");
+            sprintf(tail, "(:%hu)", ntohs(sin->sin_port));
         } else if (sin->sin_family == AF_INET) {
             strcpy(head, "Associated with ");
             SOCK_HostPortToString(sin->sin_addr.s_addr,
@@ -740,7 +735,7 @@ extern EIO_Status SOCK_InitializeAPI(void)
 #elif defined(NCBI_OS_UNIX)
     if (!s_AllowSigPipe) {
         struct sigaction sa;
-        if (sigaction(SIGPIPE, 0, &sa) < 0  ||  sa.sa_handler == SIG_DFL) {
+        if (sigaction(SIGPIPE, 0, &sa) != 0  ||  sa.sa_handler == SIG_DFL) {
             memset(&sa, 0, sizeof(sa));
             sa.sa_handler = SIG_IGN;
             sigaction(SIGPIPE, &sa, 0);
@@ -2404,7 +2399,7 @@ static EIO_Status s_IsConnected(SOCK                  sock,
         char mtu[128];
 #  if defined(SOL_IP)  &&  defined(IP_MTU)
         if (sock->port) {
-            int             m;
+            int             m    = 0;
             TSOCK_socklen_t mlen = (TSOCK_socklen_t) sizeof(m);
             if (getsockopt(sock->sock, SOL_IP, IP_MTU, &m, &mlen) != 0) {
                 const char* strerr = SOCK_STRERROR(SOCK_ERRNO);
@@ -3949,7 +3944,7 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
     {{
         int fd[3];
 
-        if (pipe(fd) < 0) {
+        if (pipe(fd) != 0) {
             CORE_LOGF_ERRNO_X(28, eLOG_Error, errno,
                               ("TRIGGER#%u[?]: [TRIGGER::Create] "
                                " Cannot create pipe", x_id));
@@ -4352,7 +4347,7 @@ static EIO_Status s_CreateListening(const char*    path,
         u = 0/*dummy*/;
 #endif /*NCBI_OS_UNIX*/
     }
-    x_error = bind(x_lsock, &addr.sa, addrlen) < 0 ? SOCK_ERRNO : 0;
+    x_error = bind(x_lsock, &addr.sa, addrlen) != 0 ? SOCK_ERRNO : 0;
 #ifdef NCBI_OS_UNIX
     if (path)
         umask(u);
@@ -4387,7 +4382,8 @@ static EIO_Status s_CreateListening(const char*    path,
             ;
     else if (!port) {
         assert(addr.in.sin_family == AF_INET);
-        x_error = getsockname(x_lsock, &addr.sa, &addrlen) < 0? SOCK_ERRNO : 0;
+        x_error = getsockname(x_lsock, &addr.sa, &addrlen) != 0
+            ? SOCK_ERRNO : 0;
         if (x_error  ||  addr.sa.sa_family != AF_INET  ||  !addr.in.sin_port) {
             const char* strerr = SOCK_STRERROR(x_error);
             CORE_LOGF_ERRNO_EXX(150, eLOG_Error,
@@ -5090,7 +5086,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
 #ifdef HAVE_SIN_LEN
     peer.sa.sa_len = peerlen;
 #endif /*HAVE_SIN_LEN*/
-    if (getpeername(fd, &peer.sa, &peerlen) < 0) {
+    if (getpeername(fd, &peer.sa, &peerlen) != 0) {
         const char* strerr = s_StrError(0, x_error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(148, eLOG_Error,
                             x_error, strerr,
@@ -5126,7 +5122,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
 #  ifdef HAVE_SIN_LEN
             peer.sa.sa_len = peerlen;
 #  endif /*HAVE_SIN_LEN*/
-            if (getsockname(fd, &peer.sa, &peerlen) < 0)
+            if (getsockname(fd, &peer.sa, &peerlen) != 0)
                 return eIO_Closed;
             assert(peer.sa.sa_family == AF_UNIX);
             if (!peer.un.sun_path[0]) {
@@ -6412,7 +6408,10 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
 
 extern EIO_Status DSOCK_Bind(SOCK sock, unsigned short port)
 {
-    struct sockaddr_in sin;
+    union {
+        struct sockaddr    sa;
+        struct sockaddr_in in;
+    } addr;
     char _id[MAXIDLEN];
 
     if (sock->type != eDatagram) {
@@ -6432,14 +6431,14 @@ extern EIO_Status DSOCK_Bind(SOCK sock, unsigned short port)
     }
 
     /* bind */
-    memset(&sin, 0, sizeof(sin));
+    memset(&addr, 0, sizeof(addr));
 #ifdef HAVE_SIN_LEN
-    sin.sin_len         = (TSOCK_socklen_t) sizeof(sin);
+    addr.in.sin_len         = (TSOCK_socklen_t) sizeof(addr.in);
 #endif /*HAVE_SIN_LEN*/
-    sin.sin_family      = AF_INET;
-    sin.sin_addr.s_addr = htonl(INADDR_ANY);
-    sin.sin_port        = htons(port);
-    if (bind(sock->sock, (struct sockaddr*) &sin, sizeof(sin)) != 0) {
+    addr.in.sin_family      = AF_INET;
+    addr.in.sin_addr.s_addr = htonl(INADDR_ANY);
+    addr.in.sin_port        = htons(port);
+    if (bind(sock->sock, &addr.sa, sizeof(addr.in)) != 0) {
         int x_error = SOCK_ERRNO;
         const char* strerr = SOCK_STRERROR(x_error);
         CORE_LOGF_ERRNO_EXX(80, x_error == SOCK_EADDRINUSE
@@ -6447,14 +6446,32 @@ extern EIO_Status DSOCK_Bind(SOCK sock, unsigned short port)
                             x_error, strerr,
                             ("%s[DSOCK::Bind] "
                              " Failed bind(:%hu)",
-                             s_ID(sock,_id), port));
+                             s_ID(sock, _id), port));
         UTIL_ReleaseBuffer(strerr);
         return x_error == SOCK_EADDRINUSE ? eIO_Closed : eIO_Unknown;
+    }
+    if (!port) {
+        int x_error;
+        TSOCK_socklen_t addrlen = sizeof(addr);
+        assert(addr.sa.sa_family == AF_INET);
+        x_error = getsockname(sock->sock, &addr.sa, &addrlen) != 0
+            ? SOCK_ERRNO : 0;
+        if (x_error  ||  addr.sa.sa_family != AF_INET  ||  !addr.in.sin_port) {
+            const char* strerr = SOCK_STRERROR(x_error);
+            CORE_LOGF_ERRNO_EXX(164, eLOG_Error,
+                                x_error, strerr,
+                                ("%s[DSOCK::Bind] "
+                                 " Cannot obtain free socket port",
+                                 s_ID(sock, _id)));
+            UTIL_ReleaseBuffer(strerr);
+            return eIO_Closed;
+        }
+        port = ntohs(addr.in.sin_port);
     }
 
     /* statistics & logging */
     if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn))
-        s_DoLog(eLOG_Trace, sock, eIO_Open, 0, 0, &sin);
+        s_DoLog(eLOG_Trace, sock, eIO_Open, 0, 0, &addr.in);
 
     sock->myport = port;
     return eIO_Success;
