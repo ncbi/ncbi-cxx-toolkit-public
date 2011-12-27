@@ -601,9 +601,9 @@ public:
     virtual IReader* GetReadStream(const string&  key,
                                    const string&  subkey,
                                    int*           version,
-                                   EBlobValidity* validity);
+                                   EBlobVersionValidity* validity);
 
-    virtual void SetBlobVersionAsValid(const string&  key,
+    virtual void SetBlobVersionAsCurrent(const string&  key,
                                        const string&  subkey,
                                        int            version);
 

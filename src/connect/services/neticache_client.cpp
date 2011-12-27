@@ -617,7 +617,7 @@ IReader* CNetICacheClient::GetReadStream(const string& key,
 
         switch (exec_result.response[pos + sizeof("VALID=") - 1]) {
         case 't': case 'T': case 'y': case 'Y':
-            *validity = eValid;
+            *validity = eCurrent;
             break;
         case 'f': case 'F': case 'n': case 'N':
             *validity = eExpired;
@@ -644,7 +644,7 @@ void CNetICacheClient::SetBlobVersionAsCurrent(const string& key,
             SKeySubkeyVersion(key, subkey, version))));
 
     if (!exec_result.response.empty()) {
-        ERR_POST("SetBlobVersionAsValid(\"" << key << "\", " <<
+        ERR_POST("SetBlobVersionAsCurrent(\"" << key << "\", " <<
             version << ", \"" << subkey << "\"): " << exec_result.response);
     }
 }

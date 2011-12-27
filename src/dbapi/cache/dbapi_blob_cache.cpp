@@ -870,7 +870,7 @@ IReader* CDBAPI_Cache::GetReadStream(const string&  key,
 IReader* CDBAPI_Cache::GetReadStream(const string&  /* key */,
                                      const string&  /* subkey */,
                                      int*           /* version */,
-                                     ICache::EBlobValidity* /* validity */)
+                                     ICache::EBlobVersionValidity* /* validity */)
 {
     NCBI_THROW(CDBAPI_ICacheException, eNotImplemented,
         "CDBAPI_Cache::GetReadStream(key, subkey, &version, &validity) "
@@ -878,12 +878,12 @@ IReader* CDBAPI_Cache::GetReadStream(const string&  /* key */,
 }
 
 
-void CDBAPI_Cache::SetBlobVersionAsValid(const string&  /* key */,
+void CDBAPI_Cache::SetBlobVersionAsCurrent(const string&  /* key */,
                                          const string&  /* subkey */,
                                          int            /* version */)
 {
     NCBI_THROW(CDBAPI_ICacheException, eNotImplemented,
-        "CDBAPI_Cache::SetBlobVersionAsValid(key, subkey, version) "
+        "CDBAPI_Cache::SetBlobVersionAsCurrent(key, subkey, version) "
         "is not implemented");
 }
 

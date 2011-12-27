@@ -328,8 +328,8 @@ int CNetCacheControl::Run()
             if (!version_is_defined)
                 NcbiCerr << "Blob version: " <<
                         blob_address.version << NcbiEndl <<
-                    "Blob validity: " << (validity == ICache::eValid ?
-                        "valid" : "expired") << NcbiEndl;
+                    "Blob validity: " << (validity == ICache::eCurrent ?
+                        "current" : "expired") << NcbiEndl;
         }
         if (!reader.get()) {
             NCBI_THROW(CNetCacheException, eBlobNotFound,

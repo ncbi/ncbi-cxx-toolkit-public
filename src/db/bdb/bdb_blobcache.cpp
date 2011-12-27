@@ -2823,14 +2823,14 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
 IReader* CBDB_Cache::GetReadStream(const string&  /* key */,
                                    const string&  /* subkey */,
                                    int*           /* version */,
-                                   ICache::EBlobValidity* /* validity */)
+                                   ICache::EBlobVersionValidity* /* validity */)
 {
     NCBI_USER_THROW("CBDB_Cache::GetReadStream("
         "key, subkey, &version, &validity) is not implemented");
 }
 
 
-void CBDB_Cache::SetBlobVersionAsValid(const string&  /* key */,
+void CBDB_Cache::SetBlobVersionAsCurrent(const string&  /* key */,
                                        const string&  /* subkey */,
                                        int            /* version */)
 {

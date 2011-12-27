@@ -804,7 +804,7 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
             do { // artificial one-time cycle to allow breaking
                 CConn conn(result, this);
                 TBlobVersion version;
-                ICache::EBlobValidity validity;
+                ICache::EBlobVersionValidity validity;
                 auto_ptr<IReader> reader;
                 try {
                     if ( GetDebugLevel() ) {
@@ -834,7 +834,7 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
                     conn.Release();
                     return false;
                 }
-                if ( validity != ICache::eValid ) {
+                if ( validity != ICache::eCurrent ) {
                     // check if blob version is still the same
 
                     // read the blob to allow next ICache command
@@ -857,9 +857,9 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
                     }
                     // current blob version is still valid
                     if ( GetDebugLevel() ) {
-                        LOG_POST(Info<<"SetBlobVersionAsValid("<<key<<", "<<subkey<<", "<<version<<")");
+                        LOG_POST(Info<<"SetBlobVersionAsCurrent("<<key<<", "<<subkey<<", "<<version<<")");
                     }
-                    m_BlobCache->SetBlobVersionAsValid(key, subkey, version);
+                    m_BlobCache->SetBlobVersionAsCurrent(key, subkey, version);
                     x_ProcessBlob(result, blob_id, chunk_id, data);
                     return true;
                 }
