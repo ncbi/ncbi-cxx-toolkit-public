@@ -2199,7 +2199,7 @@ bool CDirEntry::GetOwner(string* owner, string* group,
         if ( pwd ) {
             owner->assign(pwd->pw_name);
         } else {
-            NStr::UIntToString(*owner, st.st_uid);
+            NStr::NumericToString(*owner, st.st_uid);
         }
     }
 
@@ -2210,7 +2210,7 @@ bool CDirEntry::GetOwner(string* owner, string* group,
         if ( grp ) {
             group->assign(grp->gr_name);
         } else {
-            NStr::UIntToString(*group, st.st_gid);
+            NStr::NumericToString(*group, st.st_gid);
         }
     }
 
@@ -5442,7 +5442,7 @@ void CFileIO::SetFilePos(Int8 offset, EPositionMoveMethod move_method) const
         NCBI_THROW(CFileErrnoException, eFileIO,
                    "Cannot change file positon"
                    " (offset=" + NStr::Int8ToString(offset) +
-                   ", method=" + NStr::IntToString(move_method) + ')');
+                   ", method=" + NStr::NumericToString(move_method) + ')');
     }
 }
 
@@ -5517,7 +5517,7 @@ void CFileIO::SetFileSize(Uint8 length, EPositionMoveMethod pos) const
     if (!res) {
         NCBI_THROW(CFileErrnoException, eFileIO,
                    "Cannot change file size"
-                   " (length=" + NStr::UInt8ToString(length) + ')');
+                   " (length=" + NStr::NumericToString(length) + ')');
     }
 }
 
