@@ -47,7 +47,7 @@ public:
   const string& GetLine() {return m_line;}
   int GetLineNum() {return m_line_num;}
 
-  CAgpValTestReader(CAgpErrEx& agpErr, CMapCompLen& comp2len) : CAgpValidateReader(agpErr, comp2len) {}
+  CAgpValTestReader(CAgpErrEx& agpErr, CMapCompLen& comp2len, TMapStrRangeColl& comp2range_coll) : CAgpValidateReader(agpErr, comp2len, comp2range_coll) {}
 };
 
 class CAgpErrXml : public CAgpErrEx
@@ -124,7 +124,8 @@ int main(int argc, char* argv[])
 
     CAgpErrXml error_handler(&cout);
     CMapCompLen comp2len;
-    CAgpValTestReader reader( error_handler, comp2len );
+    TMapStrRangeColl comp2range_coll;
+    CAgpValTestReader reader( error_handler, comp2len, comp2range_coll );
     reader.SetVersion(agp_version);
     error_handler.m_reader = &reader; // needed to call GetLine(), GetLineNum()
 
