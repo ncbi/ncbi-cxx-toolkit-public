@@ -134,7 +134,7 @@ public:
     "  -g         Check that component names look like Nucleotide accessions\n"
     "             (this does not require components to be in GenBank).\n"
     "  -out FILE  Save the AGP file, adding missing version 1 to the component accessions (need -alt),\n"
-    "             or substituting runs of Ns within component spans with gaps (need FASTA files).\n"
+    "             or adding gaps where runs of Ns longer than 10 bp are found in components (need FASTA files).\n"
     "  -obj       Use FASTA files to read names and lengths of objects (the default is components).\n"
     "  -v VER     AGP version (1.1 or 2.0). The default is to choose automatically. 2.0 is chosen\n"
     "             when the linkage evidence (column 9) is not empty in the first gap line encountered.\n"
