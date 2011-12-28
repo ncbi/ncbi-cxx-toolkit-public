@@ -174,7 +174,6 @@ void BMAUtils::GetResiduesForColumn(const BMA& bma, unsigned alignmentIndex, vec
 
 void BMAUtils::MapAlignmentIndexToSeqIndex(const BMA& bma, unsigned int row, map<unsigned int, unsigned int>& aI2sI) {
     char residue;
-    bool isAlignedBlock;
     unsigned int seqIndex = 0, alignmentIndex = 0;
     BMA::ConstBlockList blocks;
 	bma.GetBlockList(blocks);
@@ -187,8 +186,6 @@ void BMAUtils::MapAlignmentIndexToSeqIndex(const BMA& bma, unsigned int row, map
     }
 
     for (b=blocks.begin(); b!=be; ++b) {
-        isAlignedBlock = (*b)->IsAligned();
-
 
 /*        //  skip blocks which have wrong type
         if (!IsBlockConsistentWithType(*b, ctype)) {
@@ -443,7 +440,7 @@ void BMAUtils::PrintPSSMForColumn(const BMA& bma, unsigned int column, bool view
     }
 
     bool isAlignedBlock = false;
-    bool columnInPssm, validSeqIndex;
+    bool columnInPssm;
     char residue;
     int thisScore, score = 0;
     unsigned int alignmentIndex = 0, alignedBlockNum = 0, blockNum = 0;
@@ -491,7 +488,7 @@ void BMAUtils::PrintPSSMForColumn(const BMA& bma, unsigned int column, bool view
     for (row = 0; row < nRows; ++row) {
 
         //  returns false if the seqIndex is invalid (typically, the position is a gap),
-        validSeqIndex = BMAUtils::GetCharacterAndIndexForColumn(bma, column, row, &residue, &seqIndex);
+        BMAUtils::GetCharacterAndIndexForColumn(bma, column, row, &residue, &seqIndex);
         if (row == 0) masterSeqIndex = seqIndex;
 
         //cout << "    blockIndex " << blockIndex+1 << "  residue " << residue << "  seqIndex " << seqIndex+1 << " is Aligned " << isAlignedBlock << " (return from GCAIFC: " << validSeqIndex << ")\n";
@@ -541,7 +538,6 @@ void BMAUtils::PrintUnalignedBlocksByColumn(const BMA& bma, bool allowGapsInColu
 
 bool BMAUtils::IsColumnOfType(const BMA& bma, unsigned int column, AlignmentCharacterType ctype, bool& isInPssm, const Block* block) {
 
-    bool isAlignedBlock = false;
     unsigned int alignmentIndex = 0;
 
     //  See if the column is in the PSSM (don't need to look if eAlignedResidues)
@@ -572,7 +568,6 @@ bool BMAUtils::IsColumnOfType(const BMA& bma, unsigned int column, AlignmentChar
             } else {
                 block = *b;
             }
-            isAlignedBlock = block->IsAligned();
             break;
         }
         alignmentIndex += (*b)->m_width;

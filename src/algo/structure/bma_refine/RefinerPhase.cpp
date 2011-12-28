@@ -119,7 +119,6 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
     //  Initialize everything from the base class.
     ResetBase();
 
-    bool recomputeScores = false;
     bool writeDetails = (detailsStream != NULL || m_verbose);
     IOS_BASE::fmtflags initFlags = (detailsStream) ? detailsStream->flags() : cout.flags();
     EDiagSev originalPostLevel;
@@ -364,7 +363,6 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
             froms.clear();
             tos.clear();
             beforeLOORowScores.clear();
-            recomputeScores = false;
 
         }
     }

@@ -234,12 +234,10 @@ RefinerResultCode CBMARefinerEngine::RunTrials(ostream* detailsStream, TFProgres
 
 
     //  Check if we can do the refinement based on CD content and refiner parameters.
-    bool hasStructure = false;
     unsigned int nStructs = 0, nRows = (m_originalAlignment) ? m_originalAlignment->GetNRows() : 0;
     for (unsigned int i = 1; i < nRows; ++i) {      //  not checking the master, which can't be refined anyway
         if (m_originalAlignment->IsRowPDB(i)) {
             ++nStructs;
-            hasStructure = true;
         }
     }
 
