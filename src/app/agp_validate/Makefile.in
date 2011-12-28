@@ -60,8 +60,9 @@ space_test: agp_validate
 	diff ${DOPT} -u $(srcdir)/test/space_test.out space_test.out
 
 runs_of_ns: agp_validate
-	sh -c "./agp_validate $(srcdir)/test/MedtrA17_3.5.head.comp_fa $(srcdir)/test/MedtrA17_3.5.head.agp>runs_of_ns.out 2>&1"
+	sh -c "./agp_validate -out runs_of_ns.agp $(srcdir)/test/MedtrA17_3.5.head.comp_fa $(srcdir)/test/MedtrA17_3.5.head.agp>runs_of_ns.out 2>&1"
 	diff ${DOPT} -u $(srcdir)/test/runs_of_ns.out runs_of_ns.out
+	diff ${DOPT} -u $(srcdir)/test/runs_of_ns.agp runs_of_ns.agp
 
 chr_scaf_test: agp_validate
 	sh -c "./agp_validate -chr $(srcdir)/test/chr_from_scaffold_WGS.agp>chr_scaf_test.out 2>&1"

@@ -49,6 +49,25 @@ BEGIN_NCBI_SCOPE
 
 CAgpErrEx agpErr;
 
+class CAgpCompSpanSplitter: public IAgpRowOutput
+{
+public:
+  CNcbiOstream* m_out;
+  int part_number;
+  string object_name;
+  bool comp_or_gap_printed;
+  CAgpCompSpanSplitter(CNcbiOstream* out=NULL)
+  {
+    m_out=out;
+    part_number=0;
+    comp_or_gap_printed=false;
+  }
+
+  virtual void SaveRow(const string& s, CAgpRow* row, TRangeColl* runs_of_Ns);
+
+  virtual ~CAgpCompSpanSplitter() {}
+};
+
 class CAgpValidateApplication : public CNcbiApplication
 {
 private:
@@ -110,12 +129,12 @@ public:
     "  -alt       Check component Accessions, Lengths and Taxonomy ID using GenBank data.\n"
     "             This can be very time-consuming, and is done separately from most other checks.\n"
     "  -species   Allow components from different subspecies during Taxid checks (implies -alt).\n"
-    "  -out FILE  Save the AGP file, adding missing version 1 to the component accessions\n"
-    "             (use with -alt).\n"
     "  The above options require that the components are available in GenBank.\n"
     "\n"
     "  -g         Check that component names look like Nucleotide accessions\n"
     "             (this does not require components to be in GenBank).\n"
+    "  -out FILE  Save the AGP file, adding missing version 1 to the component accessions (need -alt),\n"
+    "             or substituting runs of Ns within component spans with gaps (need FASTA files).\n"
     "  -obj       Use FASTA files to read names and lengths of objects (the default is components).\n"
     "  -v VER     AGP version (1.1 or 2.0). The default is to choose automatically. 2.0 is chosen\n"
     "             when the linkage evidence (column 9) is not empty in the first gap line encountered.\n"
@@ -125,8 +144,8 @@ public:
     "             any single-component scaffold must use the whole component in orientation '+'\n"
     "  -scaf      Scaffold from component AGP: no scaffold-breaking gaps allowed\n"
     "  -chr       Chromosome from scaffold AGP: ONLY scaffold-breaking gaps allowed\n" //  + -cc
-    "  Specifying the last 2 options in this order: -scaf Scaf_AGP_file(s) -chr Chr_AGP_file(s)\n"
-    "  adds a check that all scaffolds in Scaf_AGP_file(s) are wholly included in Chr_AGP_file(s)\n"
+    "  Use both of the last 2 options in this order: -scaf Scaf_AGP_file(s) -chr Chr_AGP_file(s)\n"
+    "  to check that all scaffolds in Scaf_AGP_file(s) are wholly included in Chr_AGP_file(s)\n"
     //"  -cc        Chromosome from component: check telomere/centromere/short-arm gap counts per chromosome\n"
     "\n"
     "  -list               List error and warning messages.\n"
@@ -260,8 +279,7 @@ int CAgpValidateApplication::Run(void)
 
   }
   if(m_ValidationType & VT_Acc) {
-    //// Setup registry, error log, MT-lock for CONNECT library
-    CONNECT_Init(&GetConfig());
+    CONNECT_Init(&GetConfig()); // Setup registry, error log, MT-lock for CONNECT library
 
     m_AltValidator= new CAltValidator(m_ValidationType==VT_AccLenTaxid);
     m_AltValidator->Init();
@@ -389,8 +407,14 @@ void CAgpValidateApplication::x_ValidateUsingFiles(const CArgs& args)
   else if(m_reader.m_explicit_scaf) {
     cout << "===== Reading Scaffold from component AGP =====" << endl;
   }
+
+  if( 0==(m_ValidationType&VT_Acc) && args["out"].HasValue()) {
+    CAgpCompSpanSplitter *comp_splitter = new CAgpCompSpanSplitter(&(args["out"].AsOutputFile()));
+    m_reader.SetRowOutput(comp_splitter);
+  }
+
   if (args.GetNExtra() == 0) {
-      x_ValidateFile(cin);
+    x_ValidateFile(cin);
   }
   else {
     SIZE_TYPE num_fasta_files=0;
@@ -650,6 +674,81 @@ LengthRedefinedFa:
       << "  File: " << filename << "\n"
       << "  Lines: "<< header_line_num << ".." << line_num << "\n\n";
   exit(1);
+}
+
+void CAgpCompSpanSplitter::SaveRow(const string& s, CAgpRow* row, TRangeColl* runs_of_Ns)
+{
+  if( row ) {
+    comp_or_gap_printed=true;
+    if(object_name != row->GetObject() ) {
+      object_name = row->GetObject();
+      part_number = 1; // row->GetPartNumber();
+    }
+    CAgpRow tmp_row = *row;
+
+    if(runs_of_Ns && runs_of_Ns->size()) {
+
+      if( row->GetVersion() == eAgpVersion_auto ) {
+        cerr << "FATAL: need AGP version (for adding gap lines). Please use -v 1.1 or -v 2.0\n";
+        exit(1);
+      }
+      /*
+      CAgpRow tmp_gap_row = *row; // to retain the object name
+      tmp_gap_row.GetComponentType() = "N";
+      tmp_gap_row.is_gap   = true;
+      tmp_gap_row.linkage  = true;
+      tmp_gap_row.gap_type = row->GetVersion() == eAgpVersion_1_1 ? CAgpRow::eGapFragment : CAgpRow::eGapScaffold;
+      tmp_gap_row.linkage_evidence_flags = CAgpRow::fLinkageEvidence_unspecified;'
+      */
+      CAgpRow tmp_gap_row(NULL, row->GetVersion(), NULL);
+      tmp_gap_row.FromString(
+        row->GetObject()+
+        "\t1\t100\t1\tN\t100\t"+
+        string(row->GetVersion() == eAgpVersion_1_1 ? "fragment\tyes\t" : "scaffold\tyes\tunspecified")
+      );
+
+      int comp2obj_ofs = row->object_beg - row->component_beg;
+
+      for(TRangeColl::const_iterator it = runs_of_Ns->begin(); it != runs_of_Ns->end(); ++it) {
+        if( (TSeqPos) tmp_row.component_beg < it->GetFrom() ) {
+          // component line
+          tmp_row.component_end = it->GetFrom()-1;
+          tmp_row.object_end    = comp2obj_ofs + tmp_row.component_end;
+
+          tmp_row.part_number = part_number;
+          (*m_out) << tmp_row.ToString() << endl;
+          part_number++;
+        }
+
+        // gap line
+        tmp_gap_row.object_beg = comp2obj_ofs + it->GetFrom();
+        tmp_gap_row.object_end = comp2obj_ofs + it->GetTo();
+        tmp_gap_row.gap_length = it->GetTo() - it->GetFrom() + 1;
+
+        tmp_gap_row.part_number = part_number;
+        (*m_out) << tmp_gap_row.ToString(true) << endl; // true: use linkage_evidence_flags
+        part_number++;
+
+        tmp_row.component_beg = it->GetTo() + 1;
+        tmp_row.object_beg    = comp2obj_ofs + tmp_row.component_beg;
+      }
+
+      if(tmp_row.component_beg <= row->component_end) {
+        // this component does not end with Ns => need to print the final component span
+        tmp_row.component_end = row->component_end;
+        tmp_row.object_end    = row->object_end;
+      }
+      else return; // ends with Ns => skip printing the component row below
+    }
+
+    tmp_row.part_number = part_number;
+    (*m_out) << tmp_row.ToString() << endl;
+    part_number++;
+  }
+  else if(!comp_or_gap_printed){
+    // comment line (only at the head of file, to comply with AGP 2.0)
+    (*m_out) << s << endl;
+  }
 }
 
 END_NCBI_SCOPE
