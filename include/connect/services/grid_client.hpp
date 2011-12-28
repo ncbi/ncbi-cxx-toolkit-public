@@ -239,7 +239,7 @@ private:
     CGridJobStatus& operator=(const CGridJobStatus&);
 };
 
-/// Grid Client
+/// Grid Client (the submitter).
 ///
 class NCBI_XCONNECT_EXPORT CGridClient
 {
