@@ -334,10 +334,20 @@ static const char* kData_BZip2 =
     "\x04\x51\x80\x00\x10\x40\x00\x02\x20\x4c\x10\x20\x00\x22\x00\xf2"
     "\x84\x30\x20\xea\x41\x5f\x17\x72\x45\x38\x50\x90\x9a\x7c\x2e\xc9";
 
-static const char* kData_Lzo = 
+static const char kData_Lzo[] = 
     "\x4c\x5a\x4f\x00\x0b\x00\x00\x60\x00\x00\x00\x18\x00\x00\x00\x25"
     "\x7a\x69\x70\x20\x74\x65\x73\x74\x00\x73\x6f\x75\x72\x63\x65\x20"
     "\x73\x74\x72\x3a\x11\x00\x00\x00\x00\x00\x00\x00";
+
+static const char kData_Sra_BigEndian[] = 
+    "NCBI.sra\x05\x03\x19\x88\x00\x00\x00\x01";
+static const char kData_Sra_LittleEndian[] = 
+    "NCBI.sra\x88\x19\x03\x05\x01\x00\x00\x00";
+
+static const char kData_Bam[] =
+    "\x1f\x8b\x08\x04\x00\x00\x00\x00\x00\xff\x06\x00\x42\x43\x02\x00"
+    "\x19\x64\xc4\xbd\x0b\x70\x2c\x6d\x5a\x1e\xd6\xbf\x8e\x8e\x8e\xa4";
+    
 
 BOOST_AUTO_TEST_CASE(TestBinaryAsn)
 {
@@ -597,7 +607,29 @@ BOOST_AUTO_TEST_CASE(TestBZip2)
 
 BOOST_AUTO_TEST_CASE(TestLzo)
 {
-    CNcbiIstrstream str(kData_Lzo);
+    CNcbiIstrstream str(kData_Lzo, sizeof(kData_Lzo));
     CFormatGuess guess(str);
     BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eLzo);
+}
+
+BOOST_AUTO_TEST_CASE(TestSra)
+{
+    {{
+        CNcbiIstrstream str(kData_Sra_BigEndian, sizeof(kData_Sra_BigEndian));
+        CFormatGuess guess(str);
+        BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eSra);
+    }}
+    {{
+        CNcbiIstrstream str(kData_Sra_LittleEndian,
+                            sizeof(kData_Sra_LittleEndian));
+        CFormatGuess guess(str);
+        BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eSra);
+    }}
+}
+
+BOOST_AUTO_TEST_CASE(TestBam)
+{
+    CNcbiIstrstream str(kData_Bam, sizeof(kData_Bam));
+    CFormatGuess guess(str);
+    BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eBam);
 }
