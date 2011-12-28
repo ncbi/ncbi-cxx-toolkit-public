@@ -85,7 +85,7 @@ unsigned short  CNSClientsRegistry::Touch(CNSClientId &          client,
 // Updates the submitter job.
 // No need to check session id, it's done in Touch()
 void  CNSClientsRegistry::AddToSubmitted(const CNSClientId &  client,
-                                         unsigned int         job_id)
+                                         size_t               count)
 {
     // Check if it is an old-style client
     if (!client.IsComplete())
@@ -99,30 +99,7 @@ void  CNSClientsRegistry::AddToSubmitted(const CNSClientId &  client,
                    "Cannot find client '" + client.GetNode() +
                    "' to set submitted job");
 
-    submitter->second.RegisterSubmittedJob(job_id);
-    return;
-}
-
-
-// Updates the submitter jobs for batch submit.
-// No need to check session id, it's done in Touch()
-void  CNSClientsRegistry::AddToSubmitted(const CNSClientId &  client,
-                                         unsigned int         start_job_id,
-                                         unsigned int         number_of_jobs)
-{
-    // Check if it is an old-style client
-    if (!client.IsComplete())
-        return;
-
-    CWriteLockGuard                     guard(m_Lock);
-    map< string, CNSClient >::iterator  submitter = m_Clients.find(client.GetNode());
-
-    if (submitter == m_Clients.end())
-        NCBI_THROW(CNetScheduleException, eInternalError,
-                   "Cannot find client '" + client.GetNode() +
-                   "' to set submitted jobs");
-
-    submitter->second.RegisterSubmittedJobs(start_job_id, number_of_jobs);
+    submitter->second.RegisterSubmittedJobs(count);
     return;
 }
 

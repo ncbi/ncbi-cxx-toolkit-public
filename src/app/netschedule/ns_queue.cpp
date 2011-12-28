@@ -404,7 +404,7 @@ unsigned int  CQueue::Submit(const CNSClientId &  client,
         m_StatusTracker.SetStatus(job_id, CNetScheduleAPI::ePending);
 
         // Register the job with the client
-        m_ClientsRegistry.AddToSubmitted(client, job_id);
+        m_ClientsRegistry.AddToSubmitted(client, 1);
 
         // Make the decision whether to send or not a notification
         m_NotificationsList.Notify(aff_id,
@@ -468,7 +468,7 @@ unsigned int  CQueue::SubmitBatch(const CNSClientId &             client,
         }}
 
         m_StatusTracker.AddPendingBatch(job_id, job_id + batch_size - 1);
-        m_ClientsRegistry.AddToSubmitted(client, job_id, batch_size);
+        m_ClientsRegistry.AddToSubmitted(client, batch_size);
 
         // Make a decision whether to notify clients or not
         m_NotificationsList.Notify(affinities,

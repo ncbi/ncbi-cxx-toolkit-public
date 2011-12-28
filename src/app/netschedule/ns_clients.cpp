@@ -312,16 +312,16 @@ CNSClient::CNSClient() :
     m_Addr(0),
     m_LastAccess(),
     m_Session(),
-    m_SubmittedJobs(bm::BM_GAP),
     m_RunningJobs(bm::BM_GAP),
     m_ReadingJobs(bm::BM_GAP),
     m_BlacklistedJobs(bm::BM_GAP),
-    m_RunHistory(bm::BM_GAP),
-    m_ReadHistory(bm::BM_GAP),
     m_WaitPort(0),
     m_ID(0),
     m_Affinities(bm::BM_GAP),
-    m_WaitAffinities(bm::BM_GAP)
+    m_WaitAffinities(bm::BM_GAP),
+    m_NumberOfSubmitted(0),
+    m_NumberOfRead(0),
+    m_NumberOfRun(0)
 {}
 
 
@@ -331,16 +331,16 @@ CNSClient::CNSClient(const CNSClientId &  client_id) :
     m_Addr(client_id.GetAddress()),
     m_LastAccess(time(0)),
     m_Session(client_id.GetSession()),
-    m_SubmittedJobs(bm::BM_GAP),
     m_RunningJobs(bm::BM_GAP),
     m_ReadingJobs(bm::BM_GAP),
     m_BlacklistedJobs(bm::BM_GAP),
-    m_RunHistory(bm::BM_GAP),
-    m_ReadHistory(bm::BM_GAP),
     m_WaitPort(0),
     m_ID(0),
     m_Affinities(bm::BM_GAP),
-    m_WaitAffinities(bm::BM_GAP)
+    m_WaitAffinities(bm::BM_GAP),
+    m_NumberOfSubmitted(0),
+    m_NumberOfRead(0),
+    m_NumberOfRun(0)
 {
     if (!client_id.IsComplete())
         NCBI_THROW(CNetScheduleException, eInternalError,
@@ -423,7 +423,7 @@ void CNSClient::RegisterRunningJob(unsigned int  job_id)
     m_Type |= eWorkerNode;
 
     m_RunningJobs.set(job_id, true);
-    m_RunHistory.set(job_id, true);
+    ++m_NumberOfRun;
     return;
 }
 
@@ -434,29 +434,16 @@ void CNSClient::RegisterReadingJob(unsigned int  job_id)
     m_Type |= eReader;
 
     m_ReadingJobs.set(job_id, true);
-    m_ReadHistory.set(job_id, true);
+    ++m_NumberOfRead;
     return;
 }
 
 
-void CNSClient::RegisterSubmittedJob(unsigned int  job_id)
+void CNSClient::RegisterSubmittedJobs(size_t  count)
 {
     m_LastAccess = time(0);
     m_Type |= eSubmitter;
-    m_SubmittedJobs.set_bit(job_id, true);
-    return;
-}
-
-
-// Used for batch submits
-void CNSClient::RegisterSubmittedJobs(unsigned int  start_job_id,
-                                      unsigned int  number_of_jobs)
-{
-    m_LastAccess = time(0);
-    m_Type |= eSubmitter;
-    m_SubmittedJobs.set_range(start_job_id,
-                              start_job_id + number_of_jobs - 1,
-                              true);
+    m_NumberOfSubmitted += count;
     return;
 }
 
@@ -569,18 +556,8 @@ void CNSClient::Print(const string &               node_name,
 
     handler.WriteMessage("OK:  TYPE: " + x_TypeAsString());
 
-    if (m_SubmittedJobs.any()) {
-        if (verbose) {
-            handler.WriteMessage("OK:  SUBMITTED JOBS:");
-
-            TNSBitVector::enumerator    en(m_SubmittedJobs.first());
-            for ( ; en.valid(); ++en)
-                handler.WriteMessage("OK:    " + queue->MakeKey(*en));
-        } else {
-            handler.WriteMessage("OK:  NUMBER OF SUBMITTED JOBS: " +
-                                 NStr::UIntToString(m_SubmittedJobs.count()));
-        }
-    }
+    handler.WriteMessage("OK:  NUMBER OF SUBMITTED JOBS: " +
+                         NStr::SizetToString(m_NumberOfSubmitted));
 
     if (m_BlacklistedJobs.any()) {
         if (verbose) {
@@ -603,18 +580,8 @@ void CNSClient::Print(const string &               node_name,
             handler.WriteMessage("OK:    " + queue->MakeKey(*en));
     }
 
-    if (m_RunHistory.any()) {
-        if (verbose) {
-            handler.WriteMessage("OK:  RUNNING JOBS HISTORY:");
-
-            TNSBitVector::enumerator    en(m_RunHistory.first());
-            for ( ; en.valid(); ++en)
-                handler.WriteMessage("OK:    " + queue->MakeKey(*en));
-        } else {
-            handler.WriteMessage("OK:  NUMBER OF JOBS IN RUNNING HISTORY: " +
-                                 NStr::UIntToString(m_RunHistory.count()));
-        }
-    }
+    handler.WriteMessage("OK:  NUMBER OF JOBS GIVEN FOR EXECUTION: " +
+                         NStr::UIntToString(m_NumberOfRun));
 
     if (m_ReadingJobs.any()) {
         handler.WriteMessage("OK:  READING JOBS:");
@@ -624,18 +591,8 @@ void CNSClient::Print(const string &               node_name,
             handler.WriteMessage("OK:    " + queue->MakeKey(*en));
     }
 
-    if (m_ReadHistory.any()) {
-        if (verbose) {
-            handler.WriteMessage("OK:  READING JOBS HISTORY:");
-
-            TNSBitVector::enumerator    en(m_ReadHistory.first());
-            for ( ; en.valid(); ++en)
-                handler.WriteMessage("OK:    " + queue->MakeKey(*en));
-        } else {
-            handler.WriteMessage("OK:  NUMBER OF JOBS IN READING HISTORY: " +
-                                 NStr::UIntToString(m_ReadHistory.count()));
-        }
-    }
+    handler.WriteMessage("OK:  NUMBER OF JOBS GIVEN FOR READING: " +
+                         NStr::SizetToString(m_NumberOfRead));
 
     if (m_Affinities.any()) {
         if (verbose) {

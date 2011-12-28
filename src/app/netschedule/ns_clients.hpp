@@ -145,9 +145,7 @@ class CNSClient
 
         void RegisterRunningJob(unsigned int  job_id);
         void RegisterReadingJob(unsigned int  job_id);
-        void RegisterSubmittedJob(unsigned int  job_id);
-        void RegisterSubmittedJobs(unsigned int  start_job_id,
-                                   unsigned int  number_of_jobs);
+        void RegisterSubmittedJobs(size_t  count);
         void RegisterBlacklistedJob(unsigned int  job_id);
         void UnregisterReadingJob(unsigned int  job_id);
         bool MoveReadingJobToBlacklist(unsigned int  job_id);
@@ -183,7 +181,6 @@ class CNSClient
                                           // netschedule
         string          m_Session;        // Client session id
 
-        TNSBitVector    m_SubmittedJobs;    // The jobs the client submitted
         TNSBitVector    m_RunningJobs;      // The jobs the client is currently
                                             // executing
         TNSBitVector    m_ReadingJobs;      // The jobs the client is currently
@@ -191,11 +188,6 @@ class CNSClient
         TNSBitVector    m_BlacklistedJobs;  // The jobs that should not be given
                                             // to the node neither for
                                             // executing nor for reading
-        TNSBitVector    m_RunHistory;       // The jobs which have ever been
-                                            // given to the client for
-                                            // execution.
-        TNSBitVector    m_ReadHistory;      // The jobs which have ever been
-                                            // given to the client for reading.
         unsigned short  m_WaitPort;         // Port, provided in WGET command or
                                             // 0 otherwise
         unsigned int    m_ID;               // Client identifier, see comments
@@ -203,6 +195,9 @@ class CNSClient
         TNSBitVector    m_Affinities;       // The client preferred affinities
         TNSBitVector    m_WaitAffinities;   // The list of affinities the client
                                             // waits for on WGET
+        size_t          m_NumberOfSubmitted;// Number of submitted jobs
+        size_t          m_NumberOfRead;     // Number of jobs given for reading
+        size_t          m_NumberOfRun;      // Number of jobs given for executing
 
         string  x_TypeAsString(void) const;
 };

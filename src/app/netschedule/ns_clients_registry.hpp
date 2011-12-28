@@ -63,10 +63,7 @@ class CNSClientsRegistry
 
         // Methods to update the client records.
         void  AddToSubmitted(const CNSClientId &  client,
-                             unsigned int         job_id);
-        void  AddToSubmitted(const CNSClientId &  client,
-                             unsigned int         start_job_id,
-                             unsigned int         number_of_jobs);
+                             size_t               count);
         void  AddToReading(const CNSClientId &  client,
                            unsigned int         job_id);
         void  AddToRunning(const CNSClientId &  client,
