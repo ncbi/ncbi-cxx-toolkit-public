@@ -235,9 +235,6 @@ public:
     /// Erase job from all structures, request delayed db deletion
     void EraseJob(unsigned job_id);
 
-    /// Erase jobs from all structures, request delayed db deletion
-    void Erase(const TNSBitVector& job_ids);
-
     void MarkForDeletion() {
         m_DeleteDatabase = true;
     }
@@ -397,6 +394,9 @@ private:
                                bool                  any_aff);
     bool x_UnregisterGetListener(const CNSClientId &  client,
                                  unsigned short       port);
+
+    /// Erase jobs from all structures, request delayed db deletion
+    void x_Erase(const TNSBitVector& job_ids);
 
 private:
     friend class CJob;

@@ -1016,7 +1016,7 @@ void CQueue::Truncate(void)
         m_RunTimeLine->ReInit(0);
     }}
 
-    Erase(bv);
+    x_Erase(bv);
 
     // Next call updates 'm_BecameEmpty' timestamp
     IsExpired(); // locks CQueue lock
@@ -1452,12 +1452,11 @@ TJobStatus  CQueue::x_ChangeReadingStatus(const CNSClientId &  client,
 }
 
 
+// This function is called from places where the operations lock has been
+// already taken. So there is no lock around memory status tracker
 void CQueue::EraseJob(unsigned int  job_id)
 {
-    {{
-        CFastMutexGuard     guard(m_OperationLock);
-        m_StatusTracker.Erase(job_id);
-    }}
+    m_StatusTracker.Erase(job_id);
 
     {{
         // Request delayed record delete
@@ -1469,7 +1468,7 @@ void CQueue::EraseJob(unsigned int  job_id)
 }
 
 
-void CQueue::Erase(const TNSBitVector &  job_ids)
+void CQueue::x_Erase(const TNSBitVector &  job_ids)
 {
     CFastMutexGuard     jtd_guard(m_JobsToDeleteLock);
 
@@ -2035,7 +2034,7 @@ SPurgeAttributes  CQueue::CheckJobsExpiry(time_t             current_time,
     }}
 
     if (result.deleted > 0)
-        Erase(job_ids);
+        x_Erase(job_ids);
 
     return result;
 }
