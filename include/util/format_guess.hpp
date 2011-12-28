@@ -85,6 +85,8 @@ public:
         eGZip                = 27, ///< GNU zip compressed file
         eBZip2               = 28, ///< bzip2 compressed file
         eLzo                 = 29, ///< lzo compressed file
+        eSra                 = 30, ///< INSDC Sequence Read Archive file
+        eBam                 = 31, ///< Binary alignment/map file
         /// Max value of EFormat
         eFormat_max
     };
@@ -262,6 +264,10 @@ protected:
         EMode );
     bool TestFormatLzo(
         EMode );
+    bool TestFormatSra(
+        EMode );
+    bool TestFormatBam(
+        EMode mode );
 
     bool IsInputRepeatMaskerWithoutHeader();
     bool IsInputRepeatMaskerWithHeader();

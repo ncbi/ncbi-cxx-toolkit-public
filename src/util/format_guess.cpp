@@ -141,10 +141,12 @@ CFormatGuess::s_CheckOrder[] =
     //  must list all EFormats except eUnknown and eFormat_max. Will cause
     //  assertion if violated!
     //
+    eBam, // must precede eGZip!
     eZip,
     eGZip,
     eBZip2,
     eLzo,
+    eSra,
     eRmo,
     eGtf,
     eGvf,
@@ -205,7 +207,9 @@ const char* const CFormatGuess::sm_FormatNames[CFormatGuess::eFormat_max] = {
     "zip",
     "gzip",
     "bzip2",
-    "lzo"
+    "lzo",
+    "SRA",
+    "BAM"
 };
 
 const char*
@@ -474,6 +478,10 @@ bool CFormatGuess::x_TestFormat(EFormat format, EMode mode)
         return TestFormatBZip2( mode );
     case eLzo:
         return TestFormatLzo( mode );
+    case eSra:
+        return TestFormatSra( mode );
+    case eBam:
+        return TestFormatBam( mode );
     default:
         NCBI_THROW( CCoreException, eInvalidArg,
             "CFormatGuess::x_TestFormat(): Unsupported format ID." );
@@ -1477,6 +1485,35 @@ CFormatGuess::TestFormatLzo(
     return false;
 }
 
+
+bool CFormatGuess::TestFormatSra(EMode /* not used */ )
+{
+    if ( !EnsureTestBuffer()  ||  m_iTestDataSize < 16
+        ||  CTempString(m_pTestBuffer, 8) != "NCBI.sra") {
+        return false;
+    }
+
+    if (m_pTestBuffer[8] == '\x05'  &&  m_pTestBuffer[9] == '\x03'
+        &&  m_pTestBuffer[10] == '\x19'  &&  m_pTestBuffer[11] == '\x88') {
+        return true;
+    } else if (m_pTestBuffer[8] == '\x88'  &&  m_pTestBuffer[9] == '\x19'
+        &&  m_pTestBuffer[10] == '\x03'  &&  m_pTestBuffer[11] == '\x05') {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool CFormatGuess::TestFormatBam(EMode mode)
+{
+    // Check for a gzip header whose first (only) extra field spans
+    // at least six bytes and has the tag BC.
+    return (TestFormatGZip(mode)  &&  m_iTestDataSize >= 18
+            &&  (m_pTestBuffer[3] & 4) != 0 // extra field present
+            &&  (static_cast<unsigned char>(m_pTestBuffer[10]) >= 6
+                 ||  m_pTestBuffer[11] != 0) // at least six bytes
+            &&  m_pTestBuffer[12] == 'B'  &&  m_pTestBuffer[13] == 'C');
+}
 
 //  ----------------------------------------------------------------------------
 bool CFormatGuess::IsInputRepeatMaskerWithHeader()
