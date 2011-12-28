@@ -144,6 +144,11 @@ public:
 
 };
 
+class NCBI_XOBJREAD_EXPORT IAgpRowOutput
+{
+public:
+  virtual void SaveRow(const string& s, CAgpRow* row, TRangeColl* runs_of_Ns)=0;
+};
 
 class NCBI_XOBJREAD_EXPORT CAgpValidateReader : public CAgpReader
 {
@@ -168,6 +173,8 @@ public:
   // true true   - no within-scaffold gaps allowed
   // to do: E_UnusedScaf
 
+  void SetRowOutput(IAgpRowOutput* row_output);
+
 protected:
   void x_PrintTotals(); // without comment counts or ids not in AGP
   void x_PrintIdsNotInAgp();
@@ -184,12 +191,7 @@ protected:
   virtual void OnObjectChange();
   virtual void OnGapOrComponent();
   virtual bool OnError();
-  virtual void OnComment()
-  {
-    // Line that starts with "#".
-    // No other callbacks invoked for this line.
-    m_CommentLineCount++;
-  }
+  virtual void OnComment();
 
   // for W_ObjOrderNotNumerical (JIRA: GP-773)
   string m_obj_id_pattern; // object_id with each run of conseq digits replaced with '#'
@@ -246,6 +248,8 @@ protected:
   typedef map<string, CCompSpans> TCompId2Spans;
   typedef pair<string, CCompSpans> TCompIdSpansPair;
   TCompId2Spans m_CompId2Spans;
+
+  IAgpRowOutput* m_row_output;
 
 };
 

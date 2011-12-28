@@ -103,6 +103,7 @@ CAgpValidateReader::CAgpValidateReader(CAgpErrEx& agpErr, CMapCompLen& comp2len,
   m_CheckCompNames=false; // checkCompNames;
   m_unplaced=false;
   m_explicit_scaf=false;
+  m_row_output=NULL;
 
   Reset(false);
 }
@@ -127,6 +128,15 @@ bool CAgpValidateReader::OnError()
   }
 
   return true; // continue checking for errors
+}
+
+void CAgpValidateReader::OnComment()
+{
+  // Line that starts with "#".
+  // No other callbacks invoked for this line.
+  m_CommentLineCount++;
+
+  if(m_row_output) m_row_output->SaveRow(m_line, NULL, NULL);
 }
 
 void CAgpValidateReader::OnGapOrComponent()
@@ -171,6 +181,7 @@ void CAgpValidateReader::OnGapOrComponent()
         m_AgpErr->Msg(CAgpErrEx::E_ScafBreakingGap);
       }
     }
+    if(m_row_output) m_row_output->SaveRow(m_line, m_this_row, NULL);
   }
   else { // component line
     m_CompCount++;
@@ -305,6 +316,7 @@ void CAgpValidateReader::OnGapOrComponent()
     }
 
     //// check that this span does not include gaps
+    bool row_saved = false;
     if(m_comp2range_coll->size() && !m_CheckObjLen && !(m_is_chr && m_explicit_scaf) ) {
       TMapStrRangeColl::iterator it = m_comp2range_coll->find( m_this_row->GetComponentId() );
       if( it!=m_comp2range_coll->end() ) {
@@ -312,6 +324,9 @@ void CAgpValidateReader::OnGapOrComponent()
           TSeqRange(m_this_row->component_beg, m_this_row->component_end)
         );
         if(!intersection.empty()) {
+          if(m_row_output) m_row_output->SaveRow(m_line, m_this_row, &intersection);
+          row_saved=true;
+
           string masked_spans;
           TRangeColl::const_iterator it = intersection.begin();
           for(; it != intersection.end() && masked_spans.size() < 80; ++it) {
@@ -329,6 +344,8 @@ void CAgpValidateReader::OnGapOrComponent()
     if( m_prev_component_id==m_this_row->GetComponentId() ) {
       m_AgpErr->Msg(CAgpErrEx::W_BreakingGapSameCompId, CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine|CAgpErr::fAtPpLine);
     }
+
+    if(m_row_output && !row_saved) m_row_output->SaveRow(m_line, m_this_row, NULL);
   }
 
   CAgpErrEx* errEx = static_cast<CAgpErrEx*>(GetErrorHandler());
@@ -1018,6 +1035,10 @@ void CAgpValidateReader::x_PrintIdsNotInAgp()
   }
 }
 
+void CAgpValidateReader::SetRowOutput(IAgpRowOutput* row_output)
+{
+  m_row_output = row_output;
+}
 
 //// class CValuesCount
 
