@@ -162,10 +162,10 @@ bool CGridCommandLineInterfaceApp::MatchPrefixAndPrintStorageTypeAndData(
     PrintStorageType(data, new_prefix);
 
     if (data.length() <= MAX_VISIBLE_DATA_LENGTH)
-        printf("%sdata: \"%s\"\n", new_prefix,
+        printf("%sdata: '%s'\n", new_prefix,
             NStr::PrintableString(data).c_str());
     else
-        printf("%sdata: \"%s\"...\n", new_prefix,
+        printf("%sdata: '%s'...\n", new_prefix,
             NStr::PrintableString(CTempString(data.data(),
                 MAX_VISIBLE_DATA_LENGTH)).c_str());
 
