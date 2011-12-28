@@ -51,8 +51,61 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+//  ==========================================================================
+class CFilteringFastaOstream:
+    public CFastaOstream
+//  ==========================================================================
+{
+public:
+    enum {
+        INCLUDE_NONE = 0,
+        INCLUDE_NUC = 1<<0,
+        INCLUDE_PROT = 1<<1,
+        INCLUDE_ALL = (INCLUDE_NUC | INCLUDE_PROT),
+    };
 
-class CAsn2FastaApp : public CNcbiApplication, public CGBReleaseFile::ISeqEntryHandler
+public:
+    CFilteringFastaOstream(
+        CNcbiOstream& out,
+        unsigned int includes = INCLUDE_ALL)
+    : CFastaOstream(out) 
+    {
+        SetIncludes(includes);
+    };
+
+    virtual bool
+    SkipBioseq(
+        const CBioseq_Handle&);
+
+    void
+    SetIncludes(
+        unsigned int includes)
+    {
+        m_includes = includes;
+    };
+
+protected:
+    int m_includes;
+};
+
+//  --------------------------------------------------------------------------
+bool CFilteringFastaOstream::SkipBioseq(
+    const ncbi::objects::CBioseq_Handle& bsh)
+//  --------------------------------------------------------------------------
+{
+    if ((m_includes & INCLUDE_NUC)  &&  bsh.IsNucleotide()) {
+        return false;
+    }
+    if ((m_includes & INCLUDE_PROT)  &&  bsh.IsProtein()) {
+        return false;
+    }
+    return true;
+}
+
+//  ==========================================================================
+class CAsn2FastaApp: 
+    public CNcbiApplication, public CGBReleaseFile::ISeqEntryHandler
+//  ==========================================================================
 {
 public:
     void Init(void);
@@ -69,6 +122,7 @@ public:
 
 private:
     CObjectIStream* x_OpenIStream(const CArgs& args);
+    int x_GetFilterIncludes(const CArgs& args);
 
     // data
     CRef<CObjectManager>        m_Objmgr;       // Object Manager
@@ -78,8 +132,9 @@ private:
     bool m_DeflineOnly;
 };
 
-
+//  --------------------------------------------------------------------------
 void CAsn2FastaApp::Init(void)
+//  --------------------------------------------------------------------------
 {
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(
@@ -107,6 +162,10 @@ void CAsn2FastaApp::Init(void)
             CArgDescriptions::eString, "any" );
         arg_desc->SetConstraint( "type",
             &( *new CArgAllow_Strings, "any", "seq-entry", "bioseq", "bioseq-set" ) );
+
+        // filtering options:
+        arg_desc->AddFlag("nucs-only", "Only emit nucleotide sequences");
+        arg_desc->AddFlag("prots-only", "Only emit protein sequences");
     }}
 
 
@@ -132,8 +191,9 @@ void CAsn2FastaApp::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
-
+//  --------------------------------------------------------------------------
 int CAsn2FastaApp::Run(void)
+//  --------------------------------------------------------------------------
 {
 	// initialize conn library
 	CONNECT_Init(&GetConfig());
@@ -268,7 +328,10 @@ int CAsn2FastaApp::Run(void)
     return 0;
 }
 
-CSeq_entry_Handle CAsn2FastaApp::ObtainSeqEntryFromSeqEntry(CObjectIStream& is)
+//  --------------------------------------------------------------------------
+CSeq_entry_Handle CAsn2FastaApp::ObtainSeqEntryFromSeqEntry(
+    CObjectIStream& is)
+//  --------------------------------------------------------------------------
 {
     try {
         CRef<CSeq_entry> se(new CSeq_entry);
@@ -287,7 +350,10 @@ CSeq_entry_Handle CAsn2FastaApp::ObtainSeqEntryFromSeqEntry(CObjectIStream& is)
     return CSeq_entry_Handle();
 }
 
-CSeq_entry_Handle CAsn2FastaApp::ObtainSeqEntryFromBioseq(CObjectIStream& is)
+//  --------------------------------------------------------------------------
+CSeq_entry_Handle CAsn2FastaApp::ObtainSeqEntryFromBioseq(
+    CObjectIStream& is)
+//  --------------------------------------------------------------------------
 {
     try {
         CRef<CBioseq> bs(new CBioseq);
@@ -303,7 +369,10 @@ CSeq_entry_Handle CAsn2FastaApp::ObtainSeqEntryFromBioseq(CObjectIStream& is)
     return CSeq_entry_Handle();
 }
 
-CSeq_entry_Handle CAsn2FastaApp::ObtainSeqEntryFromBioseqSet(CObjectIStream& is)
+//  --------------------------------------------------------------------------
+CSeq_entry_Handle CAsn2FastaApp::ObtainSeqEntryFromBioseqSet(
+    CObjectIStream& is)
+//  --------------------------------------------------------------------------
 {
     try {
         CRef<CSeq_entry> entry(new CSeq_entry);
@@ -318,7 +387,9 @@ CSeq_entry_Handle CAsn2FastaApp::ObtainSeqEntryFromBioseqSet(CObjectIStream& is)
     return CSeq_entry_Handle();
 }
 
+//  --------------------------------------------------------------------------
 bool CAsn2FastaApp::HandleSeqID( const string& seq_id )
+//  --------------------------------------------------------------------------
 {
     CSeq_id id(seq_id);
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle( id );
@@ -334,7 +405,9 @@ bool CAsn2FastaApp::HandleSeqID( const string& seq_id )
     return HandleSeqEntry(seh);
 }
 
+//  --------------------------------------------------------------------------
 bool CAsn2FastaApp::HandleSeqEntry(CRef<CSeq_entry>& se)
+//  --------------------------------------------------------------------------
 {
     CSeq_entry_Handle seh = m_Scope->AddTopLevelSeqEntry(*se);
     bool ret = HandleSeqEntry(seh);
@@ -342,9 +415,11 @@ bool CAsn2FastaApp::HandleSeqEntry(CRef<CSeq_entry>& se)
     return ret;
 }
 
+//  --------------------------------------------------------------------------
 bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
+//  --------------------------------------------------------------------------
 {
-    CFastaOstream fasta_os( *m_Os );
+    CFilteringFastaOstream fasta_os( *m_Os, x_GetFilterIncludes(GetArgs()));
     fasta_os.SetFlag(CFastaOstream::fNoExpensiveOps);
     if (m_DeflineOnly) {
         for (CBioseq_CI bioseq_it(seh);  bioseq_it;  ++bioseq_it) {
@@ -356,8 +431,9 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
     return true;
 }
 
-
+//  --------------------------------------------------------------------------
 CObjectIStream* CAsn2FastaApp::x_OpenIStream(const CArgs& args)
+//  --------------------------------------------------------------------------
 {
 
     // determine the file serialization format.
@@ -403,17 +479,33 @@ CObjectIStream* CAsn2FastaApp::x_OpenIStream(const CArgs& args)
     return pI;
 }
 
-
+//  --------------------------------------------------------------------------
+int CAsn2FastaApp::x_GetFilterIncludes(
+    const CArgs& args)
+//  --------------------------------------------------------------------------
+{
+    bool bIncludeNucs = args["nucs-only"];
+    bool bIncludeProts = args["prots-only"];
+    if (bIncludeNucs && bIncludeProts) {
+        NCBI_THROW(CException, eUnknown,
+            "\"nucs-only\" and \"prots-only\" are mutually exclusive");
+    }
+    if (bIncludeNucs) {
+        return CFilteringFastaOstream::INCLUDE_NUC;
+    }
+    if (bIncludeProts) {
+        return CFilteringFastaOstream::INCLUDE_PROT;
+    }
+    return CFilteringFastaOstream::INCLUDE_ALL;
+}
+         
 END_NCBI_SCOPE
 
 USING_NCBI_SCOPE;
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Main
-
+//  ==========================================================================
 int main(int argc, const char** argv)
+//  ==========================================================================
 {
     return CAsn2FastaApp().AppMain(argc, argv);
 }
