@@ -267,6 +267,11 @@ public:
       if(i<0 || i>=eGapCount) return NcbiEmptyCStr;
       return gap_types[i];
     }
+
+    EAgpVersion GetVersion()
+    {
+        return m_agp_version;
+    }
 };
 
 /// Detects scaffolds, object boundaries, errors that involve 2 consequitive lines.
@@ -387,6 +392,10 @@ private:
 public:
     CAgpErr* GetErrorHandler() { return m_AgpErr; }
     void SetErrorHandler(CAgpErr* arg);
+    EAgpVersion GetVersion()
+    {
+        return m_agp_version;
+    }
 };
 
 
