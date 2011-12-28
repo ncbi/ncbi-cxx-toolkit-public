@@ -57,13 +57,10 @@ int CTaxNRItem::Compare(const CNRItem& rhs) const
 int CTaxNRItem::CompareItems(const CTaxNRItem& lhs, const CTaxNRItem& rhs) {
     bool gotAnswer = false;
     int result;
-    int taxIdLHS, taxIdRHS;
     TTaxItemId prefNodeIdLHS, prefNodeIdRHS, modelOrgIdLHS, modelOrgIdRHS;
     string nodeName, orgName;
     TTaxItemId badId = INVALID_TAX_ITEM_ID;
 
-    taxIdLHS = lhs.taxId;
-    taxIdRHS = rhs.taxId;
     prefNodeIdLHS = lhs.prefTaxnode;
     prefNodeIdRHS = rhs.prefTaxnode;
 

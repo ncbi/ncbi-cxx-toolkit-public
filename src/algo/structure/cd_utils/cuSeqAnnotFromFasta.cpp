@@ -142,7 +142,6 @@ bool CSeqAnnotFromFasta::MakeSeqAnnotFromFasta(CNcbiIstream& is, CFastaIOWrapper
     // create simply to use CCdCore methods.
     CCdCore dummyCD;  
     bool builtIt = false;
-    unsigned int testMasterIndex = 0;
 
     if (!fastaIO.ReadFile(is) || !fastaIO.HasSeqEntry()) {
         return builtIt;
@@ -180,7 +179,9 @@ bool CSeqAnnotFromFasta::MakeSeqAnnotFromFasta(CNcbiIstream& is, CFastaIOWrapper
             m_masterIndex = masterIndex;
         }
     }
-    testMasterIndex = DetermineMasterIndex(dummyCD, masterMethod);
+    DetermineMasterIndex(dummyCD, masterMethod);
+//    unsigned int testMasterIndex = 0;
+//    testMasterIndex = DetermineMasterIndex(dummyCD, masterMethod);
 //    cout << "Using sequence " << testMasterIndex+1 << " from input mFASTA as the alignment master.\n";
 
     //  Fill in all of the seq-aligns.
@@ -406,7 +407,7 @@ bool CSeqAnnotFromFasta::MakeAsIsSeqAnnot(CCdCore& dummyCD)
 unsigned int CSeqAnnotFromFasta::DetermineMasterIndex(CCdCore& dummyCD, MasteringMethod method)
 {
     unsigned int masterIndex = 0;
-    unsigned int i, j, len, maxLen, nSeq, nStructs;
+    unsigned int i, j, maxLen, nSeq, nStructs;
     unsigned int nAlignedMax, nGapsMin, nGaps;
     unsigned int firstCommon, lastCommon;
 //    unsigned int maxLen = 0, nSeq = (unsigned int) dummyCD.GetNumSequences();
@@ -520,8 +521,6 @@ unsigned int CSeqAnnotFromFasta::DetermineMasterIndex(CCdCore& dummyCD, Masterin
 
             if (isConsidered[i] == 0) continue;
 
-            const string& sequence = tmpSeqs[i];
-            len = sequence.length();
 //            cout << "    " << i << "    " << nAlignedBySeq[i] << "/" << nGapsBySeq[i] << endl;  //"  (full seq has " << nGaps << " gaps)\n";
 
             if (nAlignedBySeq[i] > nAlignedMax) {
@@ -545,11 +544,11 @@ unsigned int CSeqAnnotFromFasta::DetermineMasterIndex(CCdCore& dummyCD, Masterin
             nGapsMin = 1000000000;
             for (set<unsigned int>::iterator alignedSeqsIt = alignedSeqs.begin();
                  alignedSeqsIt != alignedSeqs.end(); ++alignedSeqsIt) {
-                const string& sequence = tmpSeqs[*alignedSeqsIt];
-                len = sequence.length();
 
                 //  If a sequence is shorter than the max length, would need extra
                 //  ending gaps to accommodate longest sequence if made master.
+//                const string& sequence = tmpSeqs[*alignedSeqsIt];
+//                unsigned int len = sequence.length();
 //                nGaps = count_if(sequence.begin(), sequence.end(), isNotAlpha) + (maxLen - len);
                 nGaps = nGapsBySeq[*alignedSeqsIt];
                 if (nGaps < nGapsMin) {

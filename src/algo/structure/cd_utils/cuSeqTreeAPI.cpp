@@ -329,23 +329,17 @@ bool SeqTreeAPI::loadAndValidateExistingTree()
 
 bool SeqTreeAPI::loadExistingTree(CCdCore* cd, TreeOptions* treeOptions, SeqTree* seqTree)
 {
-	if (!cd->IsSetSeqtree())
+	if (!cd->IsSetSeqtree() || !treeOptions)
 		return false;
 
 	//bool loaded = false;
 	SeqTree* tmpTree = 0;
-	TreeOptions* tmpOptions = 0;
 	SeqTree tmpTreeObj;
-	TreeOptions tmpOptionsObj;
 
 	if (seqTree)
 		tmpTree = seqTree;
 	else
 		tmpTree = &tmpTreeObj;
-	if (treeOptions)
-		tmpOptions = treeOptions;
-	else
-		tmpOptions = &tmpOptionsObj;
 
 	SeqLocToSeqItemMap liMap;
 	if (!SeqTreeAsnizer::convertToSeqTree(cd->SetSeqtree(), *tmpTree, liMap))

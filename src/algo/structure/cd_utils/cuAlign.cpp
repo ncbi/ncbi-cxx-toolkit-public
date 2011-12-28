@@ -267,14 +267,13 @@ bool SeqAlignsAreEquivalent(const CRef< CSeq_align >& align1, const CRef< CSeq_a
 
 void SeqAlignSwapMasterSlave(CRef< CSeq_align >& seqAlign, CRef< CSeq_align >& swappedSeqAlign) {
 
-    int result = 0;
     TDendiag* originalDDSet;
     TDendiag* swappedDDSet;
 
     swappedSeqAlign->Assign(*seqAlign);  //  copies over the non-DD data
     if (GetDDSetFromSeqAlign(*seqAlign, originalDDSet) && GetDDSetFromSeqAlign(*swappedSeqAlign, swappedDDSet)) {
         swappedDDSet->clear();
-        result = ddRecompose(originalDDSet, 1, 0, swappedDDSet);
+        ddRecompose(originalDDSet, 1, 0, swappedDDSet);
     }
 }
 

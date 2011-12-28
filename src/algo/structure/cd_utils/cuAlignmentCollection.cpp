@@ -516,18 +516,17 @@ bool AlignmentCollection::GetSeqEntryForRow(int row, CRef<CSeq_entry>& seqEntry)
 //  query row number is included in the returned vector, otherwise not.  
 //  Number of entries in 'rows' is returned, regardless of value of 'inclusive'.
 int AlignmentCollection::GetRowsWithSameSeqID(int rowToMatch, vector<int>& rows, bool inclusive) const {
-    int i, n;
+    int i;
     int result = -1, index = -1;
     vector<int>::iterator vit, vend = rows.end(), vrow = vend;
     CRef<CSeq_id> sID;
 
     rows.clear();
     if (GetSeqIDForRow(rowToMatch, sID) && GetRowsWithSeqID(sID, rows) > 0) {
-        n = rows.size();
-	for (vit = rows.begin(), i = 0; vit != vend; ++vit, ++i) {
-	    if (rowToMatch == *vit) {
+        for (vit = rows.begin(), i = 0; vit != vend; ++vit, ++i) {
+            if (rowToMatch == *vit) {
                 vrow = vit;
-		index = i;
+                index = i;
             }
         }
         if (!inclusive && vrow != vend) {

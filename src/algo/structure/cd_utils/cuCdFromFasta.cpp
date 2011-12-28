@@ -110,7 +110,7 @@ void CCdFromFasta::InitializeParameters(const Fasta2CdParams* params)
 
 bool CCdFromFasta::ImportAlignmentData(const string& fastaFile, bool cleanUp)
 {
-    unsigned int len, masterIndex, nSeq = 1;
+    unsigned int len, nSeq = 1;
     string test, err;
     TReadFastaFlags fastaFlags = CFastaReader::fAssumeProt | CFastaReader::fForceType;
 
@@ -127,9 +127,6 @@ bool CCdFromFasta::ImportAlignmentData(const string& fastaFile, bool cleanUp)
 
 //    fastaFlags |= fReadFasta_AllSeqIds;
 //    fastaFlags |= fReadFasta_RequireID;
-
-    //  Set master as row 0 by default.
-    masterIndex = 0;
 
     if (fastaFile.size() == 0) {
         m_fastaInputErrorMsg = "Unable to open file:  filename has size zero (?) \n";
