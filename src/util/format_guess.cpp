@@ -807,12 +807,11 @@ CFormatGuess::TestFormatGlimmer3(
 
     /// next lines should be easily parseable, with five columns
     for (++it;  it != m_TestLines.end();  ++it) {
-        if ( IsLineGlimmer3( *it ) ) {
-            return true;
+        if ( !IsLineGlimmer3( *it ) ) {
+            return false;
         }
     }
-
-    return false;
+    return true;
 }
 
 //  -----------------------------------------------------------------------------
@@ -823,16 +822,12 @@ CFormatGuess::TestFormatAgp(
     if ( ! EnsureTestBuffer() || ! EnsureSplitLines() ) {
         return false;
     }
-    bool LineFound = false;
     ITERATE( list<string>, it, m_TestLines ) {
-        if ( it->empty() || (*it)[0] == '#' ) {
-            continue;
-        }
-        if ( IsLineAgp( *it ) ) {
-            LineFound = true;
+        if ( !IsLineAgp( *it ) ) {
+            return false;
         }
     }
-    return LineFound;
+    return true;
 }
 
 //  -----------------------------------------------------------------------------
@@ -951,7 +946,7 @@ CFormatGuess::TestFormatFlatFileSequence(
     }
 
     ITERATE (list<string>, it, m_TestLines) {
-        if ( ! IsLineFlatFileSequence( *it ) ) {
+        if ( !IsLineFlatFileSequence( *it ) ) {
             return false;
         }
     }
@@ -2183,24 +2178,23 @@ CFormatGuess::EnsureSplitLines()
     //  Let's expect at least one line break in the given data:
     //
     string data( m_pTestBuffer, m_iTestDataSize );
-
     m_TestLines.clear();
-    if ( NStr::Split( data, "\r\n", m_TestLines ).size() <= 1 ) {
-        m_TestLines.clear();
-        if ( NStr::Split( data, "\r", m_TestLines ).size() <= 1 ) {
-            m_TestLines.clear();
-            NStr::Split( data, "\n", m_TestLines );
-        }
+
+    if ( string::npos != data.find( "\r\n" ) ) {
+        NStr::Split( data, "\r\n", m_TestLines );
     }
-    if ( (m_TestLines.size() <= 1) && (m_iTestDataSize == s_iTestBufferSize) ) {
-        //
-        //  single truncated line...
-        //
-        m_TestLines.clear();
+    else if ( string::npos != data.find( "\n" ) ) {
+        NStr::Split( data, "\n", m_TestLines );
+    }
+    else if ( string::npos != data.find( "\r" ) ) {
+        NStr::Split( data, "\r", m_TestLines );
+    }
+    else {
+        //single truncated line
         return false;
     }
 
-    if ( m_iTestDataSize == s_iTestBufferSize ) {
+    if ( m_iTestDataSize == s_iTestBufferSize   &&  m_TestLines.size() > 1 ) {
         m_TestLines.pop_back();
     }
     return !m_TestLines.empty();
