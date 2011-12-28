@@ -284,7 +284,7 @@ private:
     void PrintJobMeta(const CNetScheduleKey& key);
     static void PrintStorageType(const string& data, const char* prefix);
     static bool MatchPrefixAndPrintStorageTypeAndData(const string& line,
-        const char* prefix, size_t prefix_length, const char* new_prefix);
+        const CTempString& prefix, const char* new_prefix);
     static bool ParseAndPrintJobEvents(const string& line);
     int DumpJobInputOutput(const string& data_or_blob_id);
     int PrintJobAttrsAndDumpInput(const CNetScheduleJob& job);

@@ -124,41 +124,50 @@ void CGridCommandLineInterfaceApp::PrintJobMeta(const CNetScheduleKey& key)
 void CGridCommandLineInterfaceApp::PrintStorageType(
     const string& data, const char* prefix)
 {
-    unsigned long data_length = (unsigned long) data.length();
-
-    if (data_length >= 2 && data[1] == ' ') {
-        if (data[0] == 'D') {
-            printf("%sstorage: embedded, size=%lu\n", prefix, data_length - 2);
-            return;
-        } else if (data[0] == 'K') {
-            printf("%sstorage: netcache, key=%s\n", prefix, data.c_str() + 2);
-            return;
-        }
-    }
-
-    printf("%sstorage: raw, size=%lu\n", prefix, data_length);
+    if (NStr::StartsWith(data, "D "))
+        printf("%sstorage: embedded, size=%lu\n",
+            prefix, (unsigned long) data.length() - 2);
+    else if (NStr::StartsWith(data, "K "))
+        printf("%sstorage: netcache, key=%s\n",
+            prefix, data.c_str() + 2);
+    else
+        printf("%sstorage: raw, size=%lu\n",
+            prefix, (unsigned long) data.length());
 }
 
 bool CGridCommandLineInterfaceApp::MatchPrefixAndPrintStorageTypeAndData(
-    const string& line, const char* prefix, size_t prefix_length,
+    const string& line, const CTempString& prefix,
     const char* new_prefix)
 {
-    if (line.length() <= prefix_length || line[line.length() - 1] != '\'' ||
-            !NStr::StartsWith(line, CTempString(prefix, prefix_length)))
+    if (!NStr::StartsWith(line, prefix))
         return false;
 
-    string data(NStr::ParseEscapes(CTempString(line.data() +
-        prefix_length, line.length() - 1 - prefix_length)));
+    const char* data_begin = line.data() + prefix.length();
+    const char* data_end = line.data() + line.length();
+
+    while (data_begin < data_end && isspace(*data_begin))
+        ++data_begin;
+
+    --data_end;
+
+    if (data_begin >= data_end || *data_begin != *data_end ||
+            (*data_begin != '\'' && *data_begin != '"'))
+        return false;
+
+    ++data_begin;
+
+    string data(NStr::ParseEscapes(CTempString(data_begin,
+        data_end - data_begin)));
 
     PrintStorageType(data, new_prefix);
 
     if (data.length() <= MAX_VISIBLE_DATA_LENGTH)
-        printf("%sdata: '%s'\n", new_prefix, NStr::PrintableString(data).c_str());
-    else {
-        data.erase(data.begin() + MAX_VISIBLE_DATA_LENGTH, data.end());
-        printf("%sdata: '%s'...\n", new_prefix, NStr::PrintableString(
-            data.data(), MAX_VISIBLE_DATA_LENGTH).c_str());
-    }
+        printf("%sdata: \"%s\"\n", new_prefix,
+            NStr::PrintableString(data).c_str());
+    else
+        printf("%sdata: \"%s\"...\n", new_prefix,
+            NStr::PrintableString(CTempString(data.data(),
+                MAX_VISIBLE_DATA_LENGTH)).c_str());
 
     return true;
 }
@@ -326,21 +335,24 @@ int CGridCommandLineInterfaceApp::Cmd_JobInfo()
 
         static const char s_VersionString[] = "NCBI NetSchedule";
         static const char s_IdPrefix[] = "id:";
-        static const char s_InputPrefix[] = "input: '";
-        static const char s_OutputPrefix[] = "output: '";
+        static const char s_InputPrefix[] = "input:";
+        static const char s_OutputPrefix[] = "output:";
 
         while (output.ReadLine(line)) {
             if (!line.empty() &&
-                line[0] != '[' &&
-                !NStr::StartsWith(line, CTempString(s_VersionString,
-                    sizeof(s_VersionString) - 1)) &&
-                !NStr::StartsWith(line, CTempString(s_IdPrefix,
-                    sizeof(s_IdPrefix) - 1)) &&
-                !MatchPrefixAndPrintStorageTypeAndData(line, s_InputPrefix,
-                    sizeof(s_InputPrefix) - 1, "input-") &&
-                !MatchPrefixAndPrintStorageTypeAndData(line, s_OutputPrefix,
-                    sizeof(s_OutputPrefix) - 1, "output-") &&
-                !ParseAndPrintJobEvents(line))
+                    line[0] != '[' &&
+                    !NStr::StartsWith(line, CTempString(s_VersionString,
+                        sizeof(s_VersionString) - 1)) &&
+                    // Skip job ID -- it's already printed.
+                    !NStr::StartsWith(line,
+                        CTempString(s_IdPrefix, sizeof(s_IdPrefix) - 1)) &&
+                    !MatchPrefixAndPrintStorageTypeAndData(line,
+                        CTempString(s_InputPrefix, sizeof(s_InputPrefix) - 1),
+                            "input_") &&
+                    !MatchPrefixAndPrintStorageTypeAndData(line,
+                        CTempString(s_OutputPrefix, sizeof(s_OutputPrefix) - 1),
+                            "output_") &&
+                    !ParseAndPrintJobEvents(line))
                 PrintLine(line);
         }
     } else {
