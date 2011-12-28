@@ -581,7 +581,7 @@ void CNSClient::Print(const string &               node_name,
     }
 
     handler.WriteMessage("OK:  NUMBER OF JOBS GIVEN FOR EXECUTION: " +
-                         NStr::UIntToString(m_NumberOfRun));
+                         NStr::SizetToString(m_NumberOfRun));
 
     if (m_ReadingJobs.any()) {
         handler.WriteMessage("OK:  READING JOBS:");
