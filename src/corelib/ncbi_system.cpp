@@ -40,13 +40,17 @@
 #define NCBI_USE_ERRCODE_X   Corelib_System
 
 #ifdef NCBI_OS_UNIX
+#  include <sys/mman.h>
 #  if defined(NCBI_OS_SOLARIS)
 #    include <corelib/ncbifile.hpp>
+#    ifndef VALID_ATTR // correlated with madvise() prototype
+extern int madvise(caddr_t, size_t, int);
+#    endif
 #  endif //NCBI_OS_SOLARIS
 #  include <sys/time.h>
 #  include <sys/resource.h>
 #  include <sys/times.h>
-#  include <sys/mman.h>
+#  include <sys/types.h>
 #  include <limits.h>
 #  include <time.h>
 #  include <unistd.h>
