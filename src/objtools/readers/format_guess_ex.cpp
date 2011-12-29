@@ -264,7 +264,7 @@ bool CFormatGuessEx::x_TryWiggle()
 	CRef<CSeq_annot> Annot;
 	try {
 		Annot = Reader.ReadSeqAnnot(LineReader);
-	} catch(CException& e) {
+	} catch(CException&) {
 		;
 	}
 	if (!Annot.IsNull() &&
@@ -288,7 +288,7 @@ bool CFormatGuessEx::x_TryBed()
 	vector<CRef<CSeq_annot> > LocalAnnots;
 	try {
 		Reader.ReadSeqAnnots(LocalAnnots, LineReader);
-	} catch(CException& e) {
+	} catch(CException&) {
 		;
 	}
 	ITERATE(vector<CRef<CSeq_annot> >, AnnotIter, LocalAnnots) {
@@ -313,7 +313,7 @@ bool CFormatGuessEx::x_TryBed15()
 	CRef<CSeq_annot> Annot;
 	try {
 		Annot = Reader.ReadSeqAnnot(LineReader);
-	} catch(CException& e) {
+	} catch(CException&) {
 		;
 	}
 	if (!Annot.IsNull() &&
@@ -355,7 +355,7 @@ bool CFormatGuessEx::x_TryGtf()
 	vector<CRef<CSeq_annot> > LocalAnnots;
 	try {
 		Reader.ReadSeqAnnotsNew(LocalAnnots, LineReader);
-	} catch(CException& e) {
+	} catch(CException&) {
 		;
 	}
 	ITERATE(vector<CRef<CSeq_annot> >, AnnotIter, LocalAnnots) {
@@ -380,7 +380,7 @@ bool CFormatGuessEx::x_TryGff3()
 	vector<CRef<CSeq_annot> > LocalAnnots;
 	try {
 		Reader.ReadSeqAnnotsNew(LocalAnnots, LineReader);
-	} catch(CException& e) {
+	} catch(CException&) {
 		;
 	}
 	ITERATE(vector<CRef<CSeq_annot> >, AnnotIter, LocalAnnots) {
@@ -405,7 +405,7 @@ bool CFormatGuessEx::x_TryGff2()
 	vector<CRef<CSeq_annot> > LocalAnnots;
 	try {
 		Reader.ReadSeqAnnotsNew(LocalAnnots, LineReader);
-	} catch(CException& e) {
+	} catch(CException&) {
 		;
 	}
 	ITERATE(vector<CRef<CSeq_annot> >, AnnotIter, LocalAnnots) {
@@ -441,7 +441,7 @@ bool CFormatGuessEx::x_TryHgvs()
 		try {
 			Parsed = Parser.CanParseHgvsExpression(Line);
 			//Feat = Parser.AsVariationFeat(Line);
-		} catch(CException& e) {
+		} catch(CException&) {
 			break;
 		}
 

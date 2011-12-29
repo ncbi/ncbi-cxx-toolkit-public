@@ -49,7 +49,7 @@ BEGIN_NCBI_SCOPE
 ///  it tries every file reader until one works.
 /// 
 
-class NCBI_XUTIL_EXPORT CFormatGuessEx
+class NCBI_XOBJREAD_EXPORT CFormatGuessEx
 {
     //  Construction, destruction
 public:
