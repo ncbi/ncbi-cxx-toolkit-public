@@ -3130,7 +3130,6 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
     size_t i;
     size_t k;
     size_t state = 0;
-    size_t start_state = 0;
     size_t length = usable_size / 3;
     bool check_start = (is_5prime_complete && frame == 0);
     bool first_time = true;
@@ -3158,10 +3157,6 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
             } else {
                 is_gap = false;
             }
-        }
-
-        if (first_time) {
-            start_state = state;
         }
 
         if (is_gap) {
@@ -3205,10 +3200,6 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
         } else {
             for ( ;  k < 3;  ++k) {
                 state = tbl.NextCodonState(state, 'N');
-            }
-
-            if (first_time) {
-                start_state = state;
             }
 
             // save translated amino acid

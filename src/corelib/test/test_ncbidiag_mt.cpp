@@ -198,7 +198,6 @@ void CTestDiagApp::x_TestNewFormat(TStringList& messages)
         SDiagMessage msg(*it);
         assert(msg.GetUID() == uid);
         assert(msg.m_PID == pid);
-        SDiagMessage::TTID tid = 0;
 
         string msg_text(msg.m_Buffer, msg.m_BufferLen);
         size_t pos = msg_text.find(" created");
@@ -212,7 +211,6 @@ void CTestDiagApp::x_TestNewFormat(TStringList& messages)
         else if (msg_text.find("LOG ") == 0) {
             pos = msg_text.find_last_of(" ");
             assert(pos != NPOS);
-            tid = NStr::StringToUInt8(msg_text.substr(pos + 1));
 #if !defined(NCBI_NO_THREADS)
             assert(msg.m_TID != 0);
 #endif
@@ -225,7 +223,6 @@ void CTestDiagApp::x_TestNewFormat(TStringList& messages)
         else if (msg_text.find("ERROR ") == 0) {
             pos = msg_text.find_last_of(" ");
             assert(pos != NPOS);
-            tid = NStr::StringToUInt8(msg_text.substr(pos + 1));
 #if !defined(NCBI_NO_THREADS)
             assert(msg.m_TID != 0);
 #endif

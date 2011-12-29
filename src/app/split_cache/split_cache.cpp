@@ -1287,7 +1287,7 @@ void CSplitCacheApp::TestSplitBlob(CSeq_id_Handle id,
     if ( check_set_desc  ||  check_high_desc ) {
         NcbiCout << "Enumerating loaded descriptors..." << NcbiEndl;
         // Collect descriptors on the sleleton
-        pair<size_t, size_t> desc_counts = CollectDescriptors(*tse_core);
+        CollectDescriptors(*tse_core);
         if ( check_set_desc ) {
             // Load descriptors for each bioseq
             NcbiCout << "Loading bioseqs' descriptors..." << NcbiEndl;

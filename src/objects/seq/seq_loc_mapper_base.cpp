@@ -1611,19 +1611,11 @@ void CSeq_loc_Mapper_Base::x_InitSpliced(const CSpliced_seg& spliced,
     const CSeq_id* prod_id = spliced.IsSetProduct_id() ?
         &spliced.GetProduct_id() : 0;
 
-    int src_width = 1;
-    int dst_width = 1;
     bool prod_is_prot = false;
     // Spliced-seg already contains the information about sequence types.
     switch ( spliced.GetProduct_type() ) {
     case CSpliced_seg::eProduct_type_protein:
         prod_is_prot = true;
-        if (to_row == eSplicedRow_Prod) {
-            src_width = 3;
-        }
-        else {
-            dst_width = 3;
-        }
         break;
     case CSpliced_seg::eProduct_type_transcript:
         // Leave both widths = 1

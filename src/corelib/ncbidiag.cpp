@@ -3281,8 +3281,7 @@ SDiagMessage& SDiagMessage::operator=(const SDiagMessage& message)
             message.m_ExtraArgs.end());
 
         m_Buffer = m_Data->m_Message.empty() ? 0 : m_Data->m_Message.c_str();
-        m_BufferLen = m_Data->m_Message.empty() ?
-            0 : m_BufferLen = m_Data->m_Message.length();
+        m_BufferLen = m_Data->m_Message.empty() ? 0 : m_Data->m_Message.length();
         m_File = m_Data->m_File.empty() ? 0 : m_Data->m_File.c_str();
         m_Module = m_Data->m_Module.empty() ? 0 : m_Data->m_Module.c_str();
         m_Class = m_Data->m_Class.empty() ? 0 : m_Data->m_Class.c_str();

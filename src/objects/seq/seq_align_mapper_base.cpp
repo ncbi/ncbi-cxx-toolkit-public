@@ -2283,7 +2283,6 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
     CDense_seg& dseg = dst->SetSegs().SetDenseg();
     dst->SetType(CSeq_align::eType_partial);
     dseg.SetDim(m_Segs.front().m_Rows.size());
-    CDense_seg::TNumseg num_seg = m_Segs.size();
 
     int len_width = 1;
 
@@ -2346,7 +2345,6 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
             len_width = 3;
         }
     }
-    num_seg = last_seg - start_seg + 1;
 
     // Detect strands for all rows, they will be used for gaps.
     TStrands strands;
