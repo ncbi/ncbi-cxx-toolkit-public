@@ -117,12 +117,6 @@ class NCBI_XCONNECT_EXPORT CNetServer
     /// attempts to connect to the server and execute
     /// the specified command.
     SExecResult ExecWithRetry(const string& cmd);
-
-    /// Execute a command that is expected to return a binary stream.
-    IReader* ExecRead(const string& cmd, string* response);
-
-    /// Execute a command that expects an input binary stream.
-    IEmbeddedStreamWriter* ExecWrite(const string& cmd, string* response);
 };
 
 ///////////////////////////////////////////////////////////////////////////

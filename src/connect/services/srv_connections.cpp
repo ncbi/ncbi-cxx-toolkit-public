@@ -31,7 +31,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include "srv_rw.hpp"
+#include "netservice_api_impl.hpp"
 
 #include <connect/services/netschedule_api_expt.hpp>
 #include <connect/services/error_codes.hpp>
@@ -582,27 +582,6 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd)
 
         SleepMilliSec(s_GetRetryDelay());
     }
-}
-
-IReader* CNetServer::ExecRead(const string& cmd, string* response)
-{
-    SExecResult exec_result(ExecWithRetry(cmd));
-
-    if (response != NULL)
-        *response = exec_result.response;
-
-    return new CNetServerReader(exec_result);
-}
-
-IEmbeddedStreamWriter* CNetServer::ExecWrite(
-    const string& cmd, string* response)
-{
-    SExecResult exec_result(ExecWithRetry(cmd));
-
-    if (response != NULL)
-        *response = exec_result.response;
-
-    return new CNetServerWriter(exec_result);
 }
 
 END_NCBI_SCOPE

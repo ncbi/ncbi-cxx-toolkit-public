@@ -37,7 +37,6 @@
 /// NetCache client specs.
 ///
 
-#include "srv_rw.hpp"
 #include "netservice_api_impl.hpp"
 
 #include <connect/services/netcache_api.hpp>
@@ -69,7 +68,7 @@ inline size_t CheckBlobSize(Uint8 blob_size)
 #endif
 
 
-class NCBI_XCONNECT_EXPORT CNetCacheReader : public CNetServerReader
+class NCBI_XCONNECT_EXPORT CNetCacheReader : public IReader
 {
 public:
     CNetCacheReader(SNetCacheAPIImpl* impl,
@@ -87,6 +86,12 @@ public:
     virtual void Close();
 
 private:
+    void SocketRead(void* buf, size_t count, size_t* bytes_read);
+    void ReportPrematureEOF();
+
+    CNetServerConnection m_Connection;
+    Uint8 m_BlobBytesToRead; // Remaining number of bytes to be read
+
     CFileIO m_CacheFile;
     bool m_CachingEnabled;
 };
@@ -94,7 +99,12 @@ private:
 ///////////////////////////////////////////////////////////////////////////////
 //
 
-class NCBI_XCONNECT_EXPORT CNetCacheWriter : public CNetServerWriter
+enum ENetCacheResponseType {
+    eNetCache_Wait,
+    eICache_NoWait,
+};
+
+class NCBI_XCONNECT_EXPORT CNetCacheWriter : public IEmbeddedStreamWriter
 {
 public:
     CNetCacheWriter(SNetCacheAPIImpl* impl,
@@ -113,6 +123,11 @@ public:
     virtual ERW_Result Flush(void);
 
     virtual void Close();
+    virtual void Abort();
+
+    void WriteBufferAndClose(const char* buf_ptr, size_t buf_size);
+
+    ENetCacheResponseType GetResponseType() const {return m_ResponseType;}
 
     const string& GetBlobID() const {return m_BlobID;}
 
@@ -121,8 +136,18 @@ public:
     unsigned GetTimeToLive() const {return m_TimeToLive;}
 
 private:
+    bool IsConnectionOpen() { return m_TransmissionWriter.get() != NULL; }
+    void ResetWriters();
+    void AbortConnection();
+    void Transmit(const void* buf, size_t count, size_t* bytes_written);
+
     void EstablishConnection();
     void UploadCacheFile();
+
+    CNetServerConnection m_Connection;
+    auto_ptr<CSocketReaderWriter> m_SocketReaderWriter;
+    auto_ptr<CTransmissionWriter> m_TransmissionWriter;
+    ENetCacheResponseType m_ResponseType;
 
     CNetCacheAPI m_NetCacheAPI;
     string m_BlobID;
