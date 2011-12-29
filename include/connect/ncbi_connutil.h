@@ -152,7 +152,7 @@ typedef unsigned EBDebugPrintout;
  *             echo "password|base64value" | openssl enc {-e|-d} -base64
  *             or an online tool (search the Web for "base64 online").
  */
-typedef struct {
+typedef struct {  /* NCBI_FAKE_WARNING: ICC */
     char            client_host[256]; /* effective client hostname ('\0'=def)*/
     EBReqMethod     req_method:3;     /* method to use in the request (HTTP) */
     EBURLScheme     scheme:3;         /* only pre-defined types (limited)    */
