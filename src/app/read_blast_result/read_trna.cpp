@@ -118,7 +118,7 @@ int CReadBlastApp::ReadTRNA2(const string& file)
     int from_i=0, to_i=0;
     string type3 = "";
     double score = 0.0;
-    int key=0;
+    // int key=0;
     string codon="";
     string genome_name="";
     while(token != 0)
@@ -127,7 +127,7 @@ int CReadBlastApp::ReadTRNA2(const string& file)
       switch(icol)
         {
         case 1: genome_name = token; break;
-        case 2: key = atoi(token); break;
+        // case 2: key = atoi(token); break;
         case 3: from = atoi(token); break;
         case 4: to   = atoi(token); break;
         case 5: type3= token; if(type3=="SeC") type3="Sec"; break;

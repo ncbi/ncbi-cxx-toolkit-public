@@ -59,8 +59,8 @@ int CReadBlastApp::ReadRRNA2(const string& file)
     string hash;
     string strand1;
     string method;
-    int length=0;
-    double probability=0.0;
+    // int length=0;
+    // double probability=0.0;
     while(token != 0)
       {
       if(PrintDetails()) NcbiCerr << "ReadRRNA2(" << file << "): token[" << icol << "]: " << token << NcbiEndl;
@@ -72,8 +72,8 @@ int CReadBlastApp::ReadRRNA2(const string& file)
         case 4: strand1 = token; break; 
         case 5: type3 = token; break;
         case 6: method = token; break;
-        case 7: length = atoi(token); break;
-        case 8: probability = atof(token); break;
+        // case 7: length = atoi(token); break;
+        // case 8: probability = atof(token); break;
         default: break;
         }
       token = strtok(0, " \t");
@@ -83,8 +83,8 @@ int CReadBlastApp::ReadRRNA2(const string& file)
     bool new_rrna =  tmp_rrna.find(hash) == tmp_rrna.end();
     ENa_strand strand = strand1 == "-" ? eNa_strand_minus : eNa_strand_plus;
 // last for type
-    int ilast_for_type = 1;
-    if(last_for_type.find(type3) != last_for_type.end()) ilast_for_type = last_for_type[type3];
+    // int ilast_for_type = 1;
+    // if(last_for_type.find(type3) != last_for_type.end()) ilast_for_type = last_for_type[type3];
     last_for_type[type3]++;
 //
     strstream descstr;

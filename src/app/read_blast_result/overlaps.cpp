@@ -248,9 +248,9 @@ bool CReadBlastApp::overlaps_prot_na
        min2 = min(from2, to2);
        max1 = max(from1, to1);
        max2 = max(from2, to2);
-       int mint, maxt;
-       mint = min(min1, min2);
-       maxt = max(max1, max2);
+       // int mint; int maxt;
+       // mint = min(min1, min2);
+       // maxt = max(max1, max2);
 
        distanceReportStr *report = new distanceReportStr;
        int left_frame  = (from1-1)%3+1;

@@ -195,7 +195,7 @@ int CReadBlastApp::simple_overlaps()
        if(PrintDetails()) NcbiCerr << "seq2->type = " << seq2->type  << NcbiEndl;
        if(PrintDetails()) NcbiCerr << "strand = " << int(strand) << NcbiEndl;
        if(PrintDetails()) NcbiCerr << "seq2->exons[0].strand = " << int(seq2->exons[0].strand) << NcbiEndl;
-       absent =  absent && !overlap; // Absent
+       absent =  absent && (!overlap || ext_rna->type != seq2->type); // Absent
        bool bad_strand =  (overlap>0 && ext_rna->type == seq2->type &&  strand != seq2->exons[0].strand); // BadStrand
        if(!bad_strand) continue;
        string diag_name2 = seq2->name;
