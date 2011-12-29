@@ -231,6 +231,20 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
             "{\n" <<
             "}\n" <<
             "\n";
+        
+        // I/O operators
+        code.MethodStart(true) <<
+            "NCBI_NS_NCBI::CNcbiOstream& operator<<\n" <<
+            "(NCBI_NS_NCBI::CNcbiOstream& str, const " << className << "& obj)\n" <<
+            "{\n" <<
+            "    return WriteObject(str,&obj,obj.GetTypeInfo());\n" <<
+            "}\n\n";
+        code.MethodStart(true) <<
+            "NCBI_NS_NCBI::CNcbiIstream& operator>>\n" <<
+            "(NCBI_NS_NCBI::CNcbiIstream& str, " << className << "& obj)\n" <<
+            "{\n" <<
+            "    return ReadObject(str,&obj,obj.GetTypeInfo());\n" <<
+            "}\n\n";
     }
 
     // define typeinfo method
