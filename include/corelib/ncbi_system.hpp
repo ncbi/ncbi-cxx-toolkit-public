@@ -39,6 +39,15 @@
 #  include <corelib/ncbi_os_mswin.hpp>
 #endif
 
+#if defined(NCBI_OS_UNIX)
+#  include <sys/mman.h>
+#  if defined(NCBI_OS_SOLARIS)
+#    ifndef VALID_ATTR // correlated with madvise() prototype
+extern int madvise(caddr_t, size_t, int);
+#    endif
+#  endif //NCBI_OS_SOLARIS
+#endif
+
 
 BEGIN_NCBI_SCOPE
 
