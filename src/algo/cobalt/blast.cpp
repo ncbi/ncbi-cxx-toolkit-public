@@ -182,11 +182,11 @@ CMultiAligner::x_AlignFillerBlocks(const TSeqLocVector& queries,
     // Set the blast options
 
     double blastp_evalue = m_Options->GetBlastpEvalue();
-    CBlastProteinOptionsHandle blastp_opts;
+    CRef<CBlastProteinOptionsHandle> blastp_opts(new CBlastProteinOptionsHandle);
     // deliberately set the cutoff e-value too high
-    blastp_opts.SetEvalueThreshold(max(blastp_evalue, 10.0));
+    blastp_opts->SetEvalueThreshold(max(blastp_evalue, 10.0));
     //blastp_opts.SetGappedMode(false);
-    blastp_opts.SetSegFiltering(false);
+    blastp_opts->SetSegFiltering(false);
 
     // use blast on one batch of filler segments at a time
 
@@ -207,7 +207,7 @@ CMultiAligner::x_AlignFillerBlocks(const TSeqLocVector& queries,
             batch_size += fragment_size;
         }
 
-        CBl2Seq blaster(curr_batch, queries, blastp_opts);
+        CBl2Seq blaster(curr_batch, queries, *blastp_opts);
         TSeqAlignVector v = blaster.Run();
 
         // check for interrupt
@@ -397,15 +397,15 @@ auto_ptr< vector<int> > CMultiAligner::x_AlignClusterQueries(
     
     // Align the found pair of sequences - one from each subtree
     double blastp_evalue = m_Options->GetBlastpEvalue();
-    CBlastProteinOptionsHandle blastp_opts;
+    CRef<CBlastProteinOptionsHandle> blastp_opts(new CBlastProteinOptionsHandle);
     // deliberately set the cutoff e-value too high
-    blastp_opts.SetEvalueThreshold(max(blastp_evalue, 10.0));
-    blastp_opts.SetSegFiltering(false);
+    blastp_opts->SetEvalueThreshold(max(blastp_evalue, 10.0));
+    blastp_opts->SetSegFiltering(false);
 
     SSeqLoc left_query(*m_tQueries[left], *m_Scope);
     SSeqLoc right_query(*m_tQueries[right], *m_Scope);
 
-    CBl2Seq blaster(left_query, right_query, blastp_opts);
+    CBl2Seq blaster(left_query, right_query, *blastp_opts);
     CRef<CSearchResultSet> v = blaster.RunEx();
 
     // Add hit to hitlist
