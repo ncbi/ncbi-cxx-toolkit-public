@@ -40,6 +40,14 @@
 BEGIN_NCBI_SCOPE
 
 
+SNSJobsAffinity::SNSJobsAffinity() :
+    m_AffToken(NULL),
+    m_Jobs(bm::BM_GAP),
+    m_Clients(bm::BM_GAP),
+    m_WaitGetClients(bm::BM_GAP)
+{}
+
+
 bool SNSJobsAffinity::CanBeDeleted(void) const
 {
     return (!m_Jobs.any()) &&

@@ -82,6 +82,7 @@ struct SNSJobsAffinity
     TNSBitVector    m_Clients;
     TNSBitVector    m_WaitGetClients;
 
+    SNSJobsAffinity();
     bool CanBeDeleted(void) const;
 };
 
