@@ -41,8 +41,11 @@
 #include <objects/seqalign/Sparse_seg.hpp>
 #include <objects/seqalign/Spliced_seg.hpp>
 #include <objects/seqalign/Spliced_exon.hpp>
+#include <objects/seqalign/Spliced_exon_chunk.hpp>
 #include <objects/seqalign/Product_pos.hpp>
 #include <objects/seqalign/Prot_pos.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/bioseq_handle.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -50,6 +53,7 @@
 #include <objtools/alnmgr/aln_generators.hpp>
 #include <objtools/alnmgr/alnexception.hpp>
 #include <objtools/alnmgr/aln_serial.hpp>
+#include <objtools/alnmgr/aln_converters.hpp>
 
 #include <util/range_coll.hpp>
 
@@ -61,7 +65,8 @@ USING_SCOPE(objects);
 
 CRef<CSeq_align>
 CreateSeqAlignFromAnchoredAln(const CAnchoredAln& anchored_aln,   ///< input
-                              CSeq_align::TSegs::E_Choice choice) ///< choice of alignment 'segs'
+                              CSeq_align::TSegs::E_Choice choice, ///< choice of alignment 'segs'
+                              CScope* scope)
 {
     CRef<CSeq_align> sa(new CSeq_align);
     sa->SetType(CSeq_align::eType_not_set);
@@ -71,19 +76,19 @@ CreateSeqAlignFromAnchoredAln(const CAnchoredAln& anchored_aln,   ///< input
     case CSeq_align::TSegs::e_Dendiag:
         break;
     case CSeq_align::TSegs::e_Denseg: {
-        sa->SetSegs().SetDenseg(*CreateDensegFromAnchoredAln(anchored_aln));
+        sa->SetSegs().SetDenseg(*CreateDensegFromAnchoredAln(anchored_aln, scope));
         break;
     }
     case CSeq_align::TSegs::e_Std:
         break;
     case CSeq_align::TSegs::e_Packed:
-        sa->SetSegs().SetPacked(*CreatePackedsegFromAnchoredAln(anchored_aln));
+        sa->SetSegs().SetPacked(*CreatePackedsegFromAnchoredAln(anchored_aln, scope));
         break;
     case CSeq_align::TSegs::e_Disc:
-        sa->SetSegs().SetDisc(*CreateAlignSetFromAnchoredAln(anchored_aln));
+        sa->SetSegs().SetDisc(*CreateAlignSetFromAnchoredAln(anchored_aln, scope));
         break;
     case CSeq_align::TSegs::e_Spliced:
-        sa->SetSegs().SetSpliced(*CreateSplicedsegFromAnchoredAln(anchored_aln));
+        sa->SetSegs().SetSpliced(*CreateSplicedsegFromAnchoredAln(anchored_aln, scope));
         break;
     case CSeq_align::TSegs::e_Sparse:
         break;
@@ -175,7 +180,8 @@ public:
 
 
 CRef<CDense_seg>
-CreateDensegFromAnchoredAln(const CAnchoredAln& anchored_aln) 
+CreateDensegFromAnchoredAln(const CAnchoredAln& anchored_aln,
+                            CScope* scope) 
 {
     const CAnchoredAln::TPairwiseAlnVector& pairwises = anchored_aln.GetPairwiseAlns();
 
@@ -284,7 +290,8 @@ CreateDensegFromAnchoredAln(const CAnchoredAln& anchored_aln)
 
 
 CRef<CDense_seg>
-CreateDensegFromPairwiseAln(const CPairwiseAln& pairwise_aln)
+CreateDensegFromPairwiseAln(const CPairwiseAln& pairwise_aln,
+                            CScope* scope)
 {
     /// Create a dense-seg
     CRef<CDense_seg> ds(new CDense_seg);
@@ -342,35 +349,48 @@ CreateDensegFromPairwiseAln(const CPairwiseAln& pairwise_aln)
 
 
 CRef<CSpliced_seg>
-CreateSplicedsegFromAnchoredAln(const CAnchoredAln& anchored_aln)
+CreateSplicedsegFromAnchoredAln(const CAnchoredAln& anchored_aln,
+                                CScope* scope)
 {
     _ASSERT(anchored_aln.GetDim() == 2);
 
-    /// Create a spliced_seg
+    // Sort by product positions (if minus strand, then reverse).
+    // Make sure genomic positions are sorted in the corresponding direction too, no overlaps etc.
+    // Small one-row gap -> indel.
+    // Large genomic gap -> intron (start new exon).
+    // Other gaps -> intron, set 'partial' on both sides.
+    // If the product does not start/end at the sequence extreme, set 'partial' for the exon.
+
+    // Create a spliced_seg
     CRef<CSpliced_seg> spliced_seg(new CSpliced_seg);
 
     CAnchoredAln::TDim anchor_row = anchored_aln.GetAnchorRow();
-    const CPairwiseAln& pairwise = *anchored_aln.GetPairwiseAlns()[anchor_row == 0 ? 1 : 0];
+    const CPairwiseAln& pairwise = *anchored_aln.GetPairwiseAlns()[1 - anchor_row];
+    // Check strands - one per row.
+    _ASSERT((pairwise.GetFlags() & CPairwiseAln::fMixedDir) != CPairwiseAln::fMixedDir);
+    // Product is nuc or prot.
     _ASSERT(pairwise.GetFirstBaseWidth() == 1  ||
             pairwise.GetFirstBaseWidth() == 3);
-    _ASSERT(pairwise.GetSecondBaseWidth() == 1);
     bool prot = pairwise.GetFirstBaseWidth() == 3;
+    // The other row is genomic.
+    _ASSERT(pairwise.GetSecondBaseWidth() == 1);
+    // The alignment should be sorted by now.
+    // pairwise.Sort();
 
-    /// Ids
+    // Ids
     CRef<CSeq_id> product_id(new CSeq_id); 
-    SerialAssign<CSeq_id>(*product_id, pairwise.GetFirstId()->GetSeqId());
+    product_id->Assign(pairwise.GetFirstId()->GetSeqId());
     spliced_seg->SetProduct_id(*product_id);
     CRef<CSeq_id> genomic_id(new CSeq_id); 
-    SerialAssign<CSeq_id>(*genomic_id, pairwise.GetSecondId()->GetSeqId());
+    genomic_id->Assign(pairwise.GetSecondId()->GetSeqId());
     spliced_seg->SetGenomic_id(*genomic_id);
 
-    /// Product type
+    // Product type
     spliced_seg->SetProduct_type(prot ?
-                                 CSpliced_seg::eProduct_type_protein :
-                                 CSpliced_seg::eProduct_type_transcript);
+        CSpliced_seg::eProduct_type_protein
+        : CSpliced_seg::eProduct_type_transcript);
 
-
-    /// Exons
+    // Exons
     CSpliced_seg::TExons& exons = spliced_seg->SetExons();
 
     typedef TSignedSeqPos                  TPos;
@@ -378,28 +398,177 @@ CreateSplicedsegFromAnchoredAln(const CAnchoredAln& anchored_aln)
     typedef CAlignRange<TPos>              TAlnRng;
     typedef CAlignRangeCollection<TAlnRng> TAlnRngColl;
 
-    ITERATE (CPairwiseAln::TAlnRngColl, rng_it, pairwise) {
-        const CPairwiseAln::TAlnRng& rng = *rng_it;
-        CRef<CSpliced_exon> exon(new CSpliced_exon);
-        if (prot) {
-            exon->SetProduct_start().SetProtpos().SetAmin(rng.GetFirstFrom() / 3);
-            exon->SetProduct_start().SetProtpos().SetFrame(rng.GetFirstFrom() % 3 + 1);
-            exon->SetProduct_end().SetProtpos().SetAmin(rng.GetFirstTo() / 3);
-            exon->SetProduct_end().SetProtpos().SetFrame(rng.GetFirstTo() % 3 + 1);
-        } else {
-            exon->SetProduct_start().SetNucpos(rng.GetFirstFrom());
-            exon->SetProduct_end().SetNucpos(rng.GetFirstTo());
-        }
-        exon->SetGenomic_start(rng.GetSecondFrom());
-        exon->SetGenomic_end(rng.GetSecondTo());
+    static const TPos kMaxIndelLength = 15;
 
-        exon->SetProduct_strand(eNa_strand_plus);
-        exon->SetGenomic_strand(rng.IsDirect() ?
-                                eNa_strand_plus :
-                                eNa_strand_minus);
-        exons.push_back(exon);
+    TPos last_prod_end = 0;
+    TPos last_gen_end = 0;
+    CRef<CSpliced_exon> exon;
+    CPairwiseAln::TAlnRngColl::const_iterator rg_it = pairwise.begin();
+    bool gen_direct = rg_it == pairwise.end() || rg_it->IsDirect();
+    bool prod_direct = prot ||
+        rg_it == pairwise.end() || rg_it->IsFirstDirect();
+    if ( !prod_direct ) {
+        // gen_direct = !gen_direct;
     }
-    
+
+    TRng ex_prod_rg;
+    TRng ex_gen_rg;
+
+    for (; rg_it != pairwise.end(); ++rg_it) {
+        const CPairwiseAln::TAlnRng& rg = *rg_it;
+
+        // Unaligned ranges.
+        TPos prod_skip, gen_skip;
+        if (rg_it == pairwise.begin()) {
+            prod_skip = 0;
+            gen_skip = 0;
+        }
+        else {
+            prod_skip = rg.GetFirstFrom() - last_prod_end;
+            gen_skip = gen_direct ?
+                rg.GetSecondFrom() - last_gen_end
+                : last_gen_end - rg.GetSecondToOpen();
+        }
+
+        // Break exon, ignore long gaps between exons.
+        if (!exon  ||  prod_skip > kMaxIndelLength  ||  gen_skip > kMaxIndelLength) {
+            if ( exon ) {
+                _ASSERT(exon->IsSetProduct_start());
+                _ASSERT(exon->IsSetGenomic_start());
+                _ASSERT(exon->IsSetProduct_end());
+                _ASSERT(exon->IsSetGenomic_end());
+                if ( prod_direct ) {
+                    exons.push_back(exon);
+                }
+                else {
+                    exons.push_front(exon);
+                }
+                exon.Reset();
+                ex_prod_rg = TRng::GetEmpty();
+                ex_gen_rg = TRng::GetEmpty();
+            }
+            prod_skip = 0;
+            gen_skip = 0;
+        }
+
+        if (prod_skip > 0  ||  gen_skip > 0) {
+            _ASSERT(exon);
+            TSeqPos mismatch = min(prod_skip, gen_skip);
+            if (mismatch > 0) {
+                CRef<CSpliced_exon_chunk> chunk(new CSpliced_exon_chunk);
+                chunk->SetMismatch(mismatch);
+                if ( prod_direct ) {
+                    exon->SetParts().push_back(chunk);
+                }
+                else {
+                    exon->SetParts().push_front(chunk);
+                }
+                prod_skip -= mismatch;
+                gen_skip -= mismatch;
+            }
+            if (prod_skip > 0) {
+                CRef<CSpliced_exon_chunk> chunk(new CSpliced_exon_chunk);
+                chunk->SetProduct_ins(prod_skip);
+                if ( prod_direct ) {
+                    exon->SetParts().push_back(chunk);
+                }
+                else {
+                    exon->SetParts().push_front(chunk);
+                }
+            }
+            if (gen_skip > 0) {
+                CRef<CSpliced_exon_chunk> chunk(new CSpliced_exon_chunk);
+                chunk->SetGenomic_ins(gen_skip);
+                if ( prod_direct ) {
+                    exon->SetParts().push_back(chunk);
+                }
+                else {
+                    exon->SetParts().push_front(chunk);
+                }
+            }
+            prod_skip = 0;
+            gen_skip = 0;
+        }
+
+        if ( !exon ) {
+            // Start new exon
+            exon.Reset(new CSpliced_exon);
+            // The first exon must start at 0 or be partial.
+            if (exons.empty()  &&  rg.GetFirstFrom() > 0) {
+                exon->SetPartial(true);
+            }
+            if ( !prot ) {
+                exon->SetProduct_strand(prod_direct
+                    ? eNa_strand_plus : eNa_strand_minus);
+            }
+            exon->SetGenomic_strand(gen_direct
+                ? eNa_strand_plus : eNa_strand_minus);
+        }
+        // Aligned chunk
+        CRef<CSpliced_exon_chunk> chunk(new CSpliced_exon_chunk);
+        chunk->SetMatch(rg.GetLength());
+        if ( prod_direct ) {
+            exon->SetParts().push_back(chunk);
+        }
+        else {
+            exon->SetParts().push_front(chunk);
+        }
+
+        // Update exon extremes
+        ex_prod_rg.CombineWith(TRng(rg.GetFirstFrom(), rg.GetFirstTo()));
+        ex_gen_rg.CombineWith(TRng(rg.GetSecondFrom(), rg.GetSecondTo()));
+        if ( exon ) {
+            if (prot) {
+                exon->SetProduct_start().SetProtpos().SetAmin(ex_prod_rg.GetFrom() / 3);
+                exon->SetProduct_start().SetProtpos().SetFrame(ex_prod_rg.GetFrom() % 3 + 1);
+                exon->SetProduct_end().SetProtpos().SetAmin(ex_prod_rg.GetTo() / 3);
+                exon->SetProduct_end().SetProtpos().SetFrame(ex_prod_rg.GetTo() % 3 + 1);
+            } else {
+                exon->SetProduct_start().SetNucpos(ex_prod_rg.GetFrom());
+                exon->SetProduct_end().SetNucpos(ex_prod_rg.GetTo());
+            }
+            exon->SetGenomic_start(ex_gen_rg.GetFrom());
+            exon->SetGenomic_end(ex_gen_rg.GetTo());
+        }
+
+        last_prod_end = rg.GetFirstToOpen();
+        last_gen_end = gen_direct ?
+            rg.GetSecondToOpen() : rg.GetSecondFrom();
+    }
+    if ( exon ) {
+        _ASSERT(exon->IsSetProduct_start());
+        _ASSERT(exon->IsSetGenomic_start());
+        _ASSERT(exon->IsSetProduct_end());
+        _ASSERT(exon->IsSetGenomic_end());
+        if ( prod_direct ) {
+            exons.push_back(exon);
+        }
+        else {
+            exons.push_front(exon);
+        }
+    }
+    else if ( !exons.empty() ) {
+        // Get the last added exon.
+        exon = prod_direct ? exons.front() : exons.back();
+    }
+
+    // Check if the last exon ends at product end.
+    if (exon  &&  scope) {
+        TSeqPos prod_end = 0;
+        if ( exon->GetProduct_end().IsNucpos() ) {
+            prod_end = exon->GetProduct_end().GetNucpos();
+        }
+        else {
+            prod_end = exon->GetProduct_end().GetProtpos().GetAmin();
+        }
+        CBioseq_Handle h = scope->GetBioseqHandle(*product_id);
+        if ( h ) {
+            TSeqPos prod_len = h.GetBioseqLength();
+            if (prod_len != kInvalidSeqPos  &&  prod_len != prod_end + 1) {
+                exon->SetPartial(true);
+            }
+        }
+    }
 
 #ifdef _DEBUG
     spliced_seg->Validate(true);
@@ -429,7 +598,8 @@ CreateSeqAlignFromEachPairwiseAln
 (const CAnchoredAln::TPairwiseAlnVector pairwises, ///< input
  TDim anchor,                                      ///< choice of anchor
  vector<CRef<CSeq_align> >& out_seqaligns,         ///< output
- objects::CSeq_align::TSegs::E_Choice choice)      ///< choice of alignment 'segs'
+ CSeq_align::TSegs::E_Choice choice,      ///< choice of alignment 'segs'
+ CScope* scope)
 {
     out_seqaligns.resize(pairwises.size() - 1);
     for (TDim row = 0, sa_idx = 0;
@@ -448,17 +618,17 @@ CreateSeqAlignFromEachPairwiseAln
 
             switch(choice)    {
             case CSeq_align::TSegs::e_Denseg: {
-                CRef<CDense_seg> ds = CreateDensegFromPairwiseAln(*p);
+                CRef<CDense_seg> ds = CreateDensegFromPairwiseAln(*p, scope);
                 sa->SetSegs().SetDenseg(*ds);
                 break;
             }
             case CSeq_align::TSegs::e_Disc: {
-                CRef<CSeq_align_set> disc = CreateAlignSetFromPairwiseAln(*p);
+                CRef<CSeq_align_set> disc = CreateAlignSetFromPairwiseAln(*p, scope);
                 sa->SetSegs().SetDisc(*disc);
                 break;
             }
             case CSeq_align::TSegs::e_Packed: {
-                CRef<CPacked_seg> ps = CreatePackedsegFromPairwiseAln(*p);
+                CRef<CPacked_seg> ps = CreatePackedsegFromPairwiseAln(*p, scope);
                 sa->SetSegs().SetPacked(*ps);
                 break;
             }
@@ -480,7 +650,8 @@ CreateSeqAlignFromEachPairwiseAln
 
 
 CRef<CSeq_align_set>
-CreateAlignSetFromAnchoredAln(const CAnchoredAln& anchored_aln)
+CreateAlignSetFromAnchoredAln(const CAnchoredAln& anchored_aln,
+                              CScope* scope)
 {
     CRef<CSeq_align_set> disc(new CSeq_align_set);
 
@@ -587,7 +758,8 @@ CreateAlignSetFromAnchoredAln(const CAnchoredAln& anchored_aln)
 
 
 CRef<CSeq_align_set>
-CreateAlignSetFromPairwiseAln(const CPairwiseAln& pairwise_aln)
+CreateAlignSetFromPairwiseAln(const CPairwiseAln& pairwise_aln,
+                              CScope* scope)
 {
     CRef<CSeq_align_set> disc(new CSeq_align_set);
 
@@ -638,7 +810,8 @@ CreateAlignSetFromPairwiseAln(const CPairwiseAln& pairwise_aln)
 
 
 CRef<CPacked_seg>
-CreatePackedsegFromAnchoredAln(const CAnchoredAln& anchored_aln) 
+CreatePackedsegFromAnchoredAln(const CAnchoredAln& anchored_aln,
+                               CScope* scope) 
 {
     const CAnchoredAln::TPairwiseAlnVector& pairwises = anchored_aln.GetPairwiseAlns();
 
@@ -750,7 +923,8 @@ CreatePackedsegFromAnchoredAln(const CAnchoredAln& anchored_aln)
 
 
 CRef<CPacked_seg>
-CreatePackedsegFromPairwiseAln(const CPairwiseAln& pairwise_aln)
+CreatePackedsegFromPairwiseAln(const CPairwiseAln& pairwise_aln,
+                               CScope* scope)
 {
     // Create a packed-seg
     CRef<CPacked_seg> ps(new CPacked_seg);
@@ -805,6 +979,32 @@ CreatePackedsegFromPairwiseAln(const CPairwiseAln& pairwise_aln)
     _ASSERT(seg == numseg);
 
     return ps;
+}
+
+
+CRef<CSeq_align>
+ConvertSeq_align(const CSeq_align& src,
+                 CSeq_align::TSegs::E_Choice dst_choice,
+                 CSeq_align::TDim prod_row,
+                 CSeq_align::TDim gen_row,
+                 CScope* scope)
+{
+    TScopeAlnSeqIdConverter id_conv(scope);
+    TScopeIdExtract id_extract(id_conv);
+    TScopeAlnIdMap aln_id_map(id_extract, 1);
+    TAlnSeqIdVec ids;
+    id_extract(src, ids);
+    aln_id_map.push_back(src);
+
+    TAlnSeqIdIRef id1(Ref(new CAlnSeqId(dynamic_cast<const CAlnSeqId&>(*aln_id_map[0][prod_row]))));
+    TAlnSeqIdIRef id2(Ref(new CAlnSeqId(dynamic_cast<const CAlnSeqId&>(*aln_id_map[0][gen_row]))));
+
+    TScopeAlnStats aln_stats(aln_id_map);
+    CAlnUserOptions aln_user_options;
+    CRef<CAnchoredAln> anchored_aln =
+        CreateAnchoredAlnFromAln(aln_stats, 0, aln_user_options, prod_row);
+
+    return CreateSeqAlignFromAnchoredAln(*anchored_aln, dst_choice, scope);
 }
 
 

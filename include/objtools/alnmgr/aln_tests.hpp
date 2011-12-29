@@ -147,6 +147,7 @@ private:
 
 /// Typical usage:
 typedef CAlnIdMap<vector<const CSeq_align*>, TIdExtract> TAlnIdMap;
+typedef CAlnIdMap<vector<const CSeq_align*>, TScopeIdExtract> TScopeAlnIdMap;
 
 
 END_NCBI_SCOPE

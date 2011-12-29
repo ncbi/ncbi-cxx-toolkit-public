@@ -166,10 +166,11 @@ ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,
 
         /// determinte the direction
         bool direct = true;
+        bool first_direct = true;
         if (strands) {
-            bool minus_1 = (*strands)[pos_1] == eNa_strand_minus;
-            bool minus_2 = (*strands)[pos_2] == eNa_strand_minus;
-            direct = minus_1 == minus_2;
+            first_direct = !IsReverse((*strands)[pos_1]);
+            bool minus_2 = IsReverse((*strands)[pos_2]);
+            direct = first_direct != minus_2;
         }
 
         if (direction == CAlnUserOptions::eBothDirections  ||
@@ -189,18 +190,18 @@ ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,
                 }
                 len *= 3;
             }
-                
+
             /// if not a gap, insert it to the collection
             if (from_1 >= 0  &&  from_2 >= 0)  {
                 /// insert the range
-                pairwise_aln.insert
-                    (CPairwiseAln::TAlnRng(from_1, from_2, len, direct));
+                pairwise_aln.insert(CPairwiseAln::TAlnRng(
+                    from_1, from_2, len, direct, first_direct));
                 last_to_1 = from_1 + len;
             }
             else if (from_1 < 0  &&  from_2 >= 0) {
                 // Store gaps
-                pairwise_aln.AddInsertion(
-                    CPairwiseAln::TAlnRng(last_to_1, from_2, len, direct));
+                pairwise_aln.AddInsertion(CPairwiseAln::TAlnRng(
+                    last_to_1, from_2, len, direct, first_direct));
             }
             else if (from_1 >= 0) {
                 // Adjust next possible gap start
@@ -246,10 +247,11 @@ ConvertPackedsegToPairwiseAln(CPairwiseAln& pairwise_aln,
 
         /// determinte the direction
         bool direct = true;
+        bool first_direct = true;
         if (strands) {
-            bool minus_1 = (*strands)[pos_1] == eNa_strand_minus;
-            bool minus_2 = (*strands)[pos_2] == eNa_strand_minus;
-            direct = minus_1 == minus_2;
+            first_direct = !IsReverse((*strands)[pos_1]);
+            bool minus_2 = IsReverse((*strands)[pos_2]);
+            direct = first_direct != minus_2;
         }
 
         if (direction == CAlnUserOptions::eBothDirections  ||
@@ -273,14 +275,14 @@ ConvertPackedsegToPairwiseAln(CPairwiseAln& pairwise_aln,
             /// if not a gap, insert it to the collection
             if (present_1  &&  present_2)  {
                 /// insert the range
-                pairwise_aln.insert
-                    (CPairwiseAln::TAlnRng(from_1, from_2, len, direct));
+                pairwise_aln.insert(CPairwiseAln::TAlnRng(
+                    from_1, from_2, len, direct, first_direct));
                 last_to_1 = from_1 + len;
             }
             else if (!present_1  &&  present_2) {
                 // Store gaps
-                pairwise_aln.AddInsertion(
-                    CPairwiseAln::TAlnRng(last_to_1, from_2, len, direct));
+                pairwise_aln.AddInsertion(CPairwiseAln::TAlnRng(
+                    last_to_1, from_2, len, direct, first_direct));
             }
             else if (present_1) {
                 // Adjust next possible gap start
@@ -315,9 +317,8 @@ ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,
 
         if (len_1 > 0  &&  len_2 > 0) {
 
-            bool direct = 
-                loc[row_1]->IsReverseStrand() == loc[row_2]->IsReverseStrand();
-
+            bool first_direct = loc[row_1]->IsReverseStrand();
+            bool direct = first_direct == loc[row_2]->IsReverseStrand();
             if (direction == CAlnUserOptions::eBothDirections  ||
                 (direct ?
                  direction == CAlnUserOptions::eDirect :
@@ -334,20 +335,21 @@ ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,
 
                 CPairwiseAln::TAlnRng aln_rng;
                 aln_rng.SetDirect(direct);
+                aln_rng.SetFirstDirect(first_direct);
                 if (!row_1_is_protein && !row_2_is_protein) {
                     aln_rng.SetFirstFrom(rng_1.GetFrom());
                     aln_rng.SetSecondFrom(rng_2.GetFrom());
                     if (len_1 != len_2) {
                         TSeqPos remainder =
                             abs((TSignedSeqPos)len_1 - (TSignedSeqPos)len_2);
-                        aln_rng.SetLength(min(len_1,len_2));
+                        aln_rng.SetLength(min(len_1, len_2));
                         pairwise_aln.insert(aln_rng);
                         pairwise_aln.insert
                             (CPairwiseAln::TAlnRng
                              (aln_rng.GetFirstToOpen(),
                               aln_rng.GetSecondToOpen(),
                               remainder,
-                              direct));
+                              direct, first_direct));
                     } else {
                         aln_rng.SetLength(len_1);
                         pairwise_aln.insert(aln_rng);
@@ -365,7 +367,7 @@ ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,
                              (aln_rng.GetFirstToOpen(),
                               aln_rng.GetSecondToOpen(),
                               remainder,
-                              direct));
+                              direct, first_direct));
                     } else {
                         aln_rng.SetLength(len_1);
                         pairwise_aln.insert(aln_rng);
@@ -383,7 +385,7 @@ ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,
                              (aln_rng.GetFirstToOpen(),
                               aln_rng.GetSecondToOpen(),
                               remainder,
-                              direct));
+                              direct, first_direct));
                     } else {
                         aln_rng.SetLength(len_2);
                         pairwise_aln.insert(aln_rng);
@@ -420,10 +422,11 @@ ConvertDendiagToPairwiseAln(CPairwiseAln& pairwise_aln,
 
         /// determinte the strands
         bool direct = true;
+        bool first_direct = true;
         if (dd.IsSetStrands()) {
-            bool minus_1 = dd.GetStrands()[row_1] == eNa_strand_minus;
-            bool minus_2 = dd.GetStrands()[row_2] == eNa_strand_minus;
-            direct = minus_1 == minus_2;
+            first_direct = !IsReverse(dd.GetStrands()[row_1]);
+            bool minus_2 = IsReverse(dd.GetStrands()[row_2]);
+            direct = first_direct != minus_2;
         }
 
         if (direction == CAlnUserOptions::eBothDirections  ||
@@ -445,7 +448,8 @@ ConvertDendiagToPairwiseAln(CPairwiseAln& pairwise_aln,
             }
 
             /// insert the range
-            pairwise_aln.insert(CPairwiseAln::TAlnRng(from_1, from_2, len, direct));
+            pairwise_aln.insert(CPairwiseAln::TAlnRng(
+                from_1, from_2, len, direct, first_direct));
 
         }
     }
@@ -473,10 +477,8 @@ ConvertSparseToPairwiseAln(CPairwiseAln& pairwise_aln,
                 const CSparse_align::TLens& lens = sa.GetLens();
                 for (CSparse_align::TNumseg seg = 0;
                      seg < sa.GetNumseg();  seg++) {
-                    CPairwiseAln::TAlnRng aln_rng(starts_1[seg],
-                                                  starts_1[seg],
-                                                  lens[seg],
-                                                  true);
+                    CPairwiseAln::TAlnRng aln_rng(
+                        starts_1[seg], starts_1[seg], lens[seg]);
                     if (first_row) {
                         pairwise_aln.insert(aln_rng);
                     } else {
@@ -497,22 +499,18 @@ ConvertSparseToPairwiseAln(CPairwiseAln& pairwise_aln,
             _ALNMGR_ASSERT(row_2 > 0  &&  row_2 <= sparse_seg.CheckNumRows());
 
             const CSparse_align& sa = *sparse_seg.GetRows()[row_2 - 1];
-            
+
             const CSparse_align::TFirst_starts& starts_1 = sa.GetFirst_starts();
             const CSparse_align::TSecond_starts& starts_2 = sa.GetSecond_starts();
             const CSparse_align::TLens& lens = sa.GetLens();
             const CSparse_align::TSecond_strands* strands =
                 sa.IsSetSecond_strands() ? &sa.GetSecond_strands() : 0;
-            
+
             CSparse_align::TNumseg seg;
             for (seg = 0;  seg < sa.GetNumseg();  seg++) {
-                pairwise_aln.insert
-                    (CPairwiseAln::TAlnRng(starts_1[seg],
-                                           starts_2[seg],
-                                           lens[seg],
-                                           strands ?
-                                           (*strands)[seg] != eNa_strand_minus :
-                                           true));
+                pairwise_aln.insert(CPairwiseAln::TAlnRng(
+                    starts_1[seg], starts_2[seg], lens[seg],
+                    strands ? !IsReverse((*strands)[seg]) : true));
             }
         }
     }
@@ -527,7 +525,7 @@ ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,
                             CAlnUserOptions::EDirection direction,
                             const TAlnSeqIdVec* ids)
 {
-    _ALNMGR_ASSERT(row_1 == 0  ||  row_1 == 1  &&  row_2 == 0  ||  row_2 == 1);
+    _ALNMGR_ASSERT((row_1 == 0  ||  row_1 == 1)  &&  (row_2 == 0  ||  row_2 == 1));
 
     bool prot = spliced_seg.GetProduct_type() == CSpliced_seg::eProduct_type_protein;
 
@@ -543,9 +541,9 @@ ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,
         }
         bool product_plus = true;
         if (exon.CanGetProduct_strand()) {
-            product_plus = exon.GetProduct_strand() != eNa_strand_minus;
+            product_plus = !IsReverse(exon.GetProduct_strand());
         } else if (spliced_seg.CanGetProduct_strand()) {
-            product_plus = spliced_seg.GetProduct_strand() != eNa_strand_minus;
+            product_plus = !IsReverse(spliced_seg.GetProduct_strand());
         }
         _ALNMGR_ASSERT(prot ? product_plus : true);
 
@@ -556,12 +554,12 @@ ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,
         }
         bool genomic_plus = true;
         if (exon.CanGetGenomic_strand()) {
-            genomic_plus = exon.GetGenomic_strand() != eNa_strand_minus;
+            genomic_plus = !IsReverse(exon.GetGenomic_strand());
         } else if (spliced_seg.CanGetGenomic_strand()) {
-            genomic_plus = spliced_seg.GetGenomic_strand() != eNa_strand_minus;
+            genomic_plus = !IsReverse(spliced_seg.GetGenomic_strand());
         }
-        bool direct = product_plus  ==  genomic_plus;
-    
+        bool direct = product_plus == genomic_plus;
+        bool first_direct = row_1 == 0 ? product_plus : genomic_plus;
 
         /// Determine positions
         TSeqPos product_start;
@@ -607,7 +605,7 @@ ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,
         TSeqPos product_pos = prot ? 
             product_start : 
             (product_plus ? product_start : product_end);
-        
+
         TSeqPos genomic_start = exon.GetGenomic_start();
         TSeqPos genomic_end = exon.GetGenomic_end();
         TSeqPos genomic_pos = (genomic_plus ? 
@@ -627,13 +625,11 @@ ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,
                 (direct ?
                  direction == CAlnUserOptions::eDirect :
                  direction == CAlnUserOptions::eReverse)) {
-                pairwise_aln.insert
-                    (CPairwiseAln::TAlnRng(starts[row_1],
-                                           starts[row_2],
-                                           genomic_len,
-                                           row_1 == row_2 ? true : direct));
+                pairwise_aln.insert(CPairwiseAln::TAlnRng(
+                    starts[row_1], starts[row_2], genomic_len,
+                    row_1 == row_2 ? true : direct,
+                    first_direct));
             }
-            
         } else {
             /// Iterate trhough exon chunks
             TSeqPos last_product_to = 0;
@@ -668,15 +664,15 @@ ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,
                 if (row_1 == 0  &&  row_2 == 0) {
                     if (product_len != 0) {
                         /// insert the range
-                        pairwise_aln.insert(
-                            CPairwiseAln::TAlnRng(ppos, ppos, product_len, true));
+                        pairwise_aln.insert(CPairwiseAln::TAlnRng(
+                            ppos, ppos, product_len, true, first_direct));
                         last_product_to = ppos + product_len;
                     }
                 } else if (row_1 == 1  &&  row_2 == 1) {
                     if (genomic_len != 0) {
                         /// insert the range
-                        pairwise_aln.insert(
-                            CPairwiseAln::TAlnRng(gpos, gpos, genomic_len, true));
+                        pairwise_aln.insert(CPairwiseAln::TAlnRng(
+                            gpos, gpos, genomic_len, true, first_direct));
                         last_genomic_to = gpos + genomic_len;
                     }
                 } else {
@@ -687,11 +683,11 @@ ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,
                           direction == CAlnUserOptions::eReverse))) {
                         /// insert the range
                         if (row_1 == 0) {
-                            pairwise_aln.insert(
-                                CPairwiseAln::TAlnRng(ppos, gpos, genomic_len, direct));
+                            pairwise_aln.insert(CPairwiseAln::TAlnRng(
+                                ppos, gpos, genomic_len, direct, first_direct));
                         } else {
-                            pairwise_aln.insert(
-                                CPairwiseAln::TAlnRng(gpos, ppos, genomic_len, direct));
+                            pairwise_aln.insert(CPairwiseAln::TAlnRng(
+                                gpos, ppos, genomic_len, direct, first_direct));
                         }
                         last_product_to = ppos + product_len;
                         last_genomic_to = gpos + genomic_len;
@@ -700,9 +696,9 @@ ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,
                         // Gap on the first row?
                         if (row_1 == 0) {
                             if (product_len == 0  &&  genomic_len != 0) {
-                                pairwise_aln.AddInsertion(
-                                    CPairwiseAln::TAlnRng(
-                                    last_product_to, gpos, genomic_len, true));
+                                pairwise_aln.AddInsertion(CPairwiseAln::TAlnRng(
+                                    last_product_to, gpos, genomic_len,
+                                    direct, first_direct));
                             }
                             else if (product_len != 0  &&  genomic_len == 0) {
                                 if (product_plus) {
@@ -715,9 +711,9 @@ ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,
                         }
                         else if (row_1 == 1) {
                             if (genomic_len == 0  &&  product_len != 0) {
-                                pairwise_aln.AddInsertion(
-                                    CPairwiseAln::TAlnRng(
-                                    last_genomic_to, ppos, product_len, true));
+                                pairwise_aln.AddInsertion(CPairwiseAln::TAlnRng(
+                                    last_genomic_to, ppos, product_len,
+                                    direct, first_direct));
                             }
                             else if (genomic_len != 0  &&  product_len == 0) {
                                 if (genomic_plus) {
@@ -804,7 +800,7 @@ ConvertSeqLocsToPairwiseAln(CPairwiseAln& aln,
         if ( rev2 ) {
             start2 += len2 - len;
         }
-        aln.insert(CPairwiseAln::TAlnRng(start1, start2, len, rev1 == rev2));
+        aln.insert(CPairwiseAln::TAlnRng(start1, start2, len, rev1 == rev2, rev1));
         if ( rev1 ) {
             rshift1 += len;
         }

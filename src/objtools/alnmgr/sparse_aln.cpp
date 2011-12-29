@@ -311,7 +311,7 @@ bool CSparseAln::IsNegativeStrand(TNumrow row) const
 
 
 bool CSparseAln::IsTranslated() const {
-    /// TODO: Does BaseWidth of 1 always mean nucleotide?  Should we
+    /// TODO Does BaseWidth of 1 always mean nucleotide?  Should we
     /// have an enum (with an invalid (unasigned) value?
     const int k_unasigned_base_width = 0;
     int base_width = k_unasigned_base_width;
@@ -323,7 +323,7 @@ bool CSparseAln::IsTranslated() const {
             base_width != m_Aln->GetPairwiseAlns()[row]->GetSecondBaseWidth()) {
             return true; //< there *at least one* base diff base width
         }
-        /// TODO: or should this check be stronger:
+        /// TODO or should this check be stronger:
         if (base_width != 1) {
             return true;
         }

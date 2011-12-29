@@ -67,7 +67,8 @@ public:
     typedef CRange<Position>        TRange;
 
     enum    EFlags  {
-        fReversed = 0x01
+        fReversed = 0x01, // Second reversed compared to the first.
+        fFirstRev = 0x02  // First is on minus strand.
     };
 
     CAlignRange(void)
@@ -78,22 +79,33 @@ public:
     {
     }
 
-    CAlignRange(position_type first_from, position_type second_from, 
-                position_type len, bool direct = true)
+    CAlignRange(position_type first_from,
+                position_type second_from,
+                position_type len,
+                bool direct = true,
+                bool first_direct = true)
     :   m_FirstFrom(first_from),
         m_SecondFrom(second_from),
         m_Length(len),
         m_Flags(0)
     {
         SetDirect(direct);
+        SetFirstDirect(first_direct);
     }
-    
-    bool    IsDirect() const  {
+
+    bool IsDirect() const {
         return (m_Flags & fReversed) == 0;
     }
-    bool    IsReversed() const  {
+    bool IsReversed() const {
         return (m_Flags & fReversed) != 0;
     }
+    bool IsFirstDirect() const {
+        return (m_Flags & fFirstRev) == 0;
+    }
+    bool IsFirstReversed() const {
+        return (m_Flags & fFirstRev) != 0;
+    }
+
     position_type GetFirstFrom(void) const
     {
         return m_FirstFrom;
@@ -159,16 +171,30 @@ public:
     {
         return SetFirstFrom(first_from).SetSecondFrom(second_from).SetLength(len);
     }
-    void    SetDirect(bool direct = true)   
+    void SetDirect(bool direct = true)
     {
-        SetReversed( ! direct);
+        SetReversed(!direct);
     }
-    void    SetReversed(bool reversed = true)  
+    void SetReversed(bool reversed = true)
     {
-        if(reversed)    {
+        if (reversed) {
             m_Flags |= fReversed;
-        } else {
+        }
+        else {
             m_Flags &= ~fReversed;
+        }
+    }
+    void SetFirstDirect(bool direct = true)
+    {
+        SetFirstReversed(!direct);
+    }
+    void SetFirstReversed(bool reversed = true)
+    {
+        if (reversed) {
+            m_Flags |= fFirstRev;
+        }
+        else {
+            m_Flags &= ~fFirstRev;
         }
     }
     bool operator==(const TThisType& r) const

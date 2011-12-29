@@ -226,8 +226,8 @@ private:
                 cerr << "m_MergeFlags: " << m_MergeFlags << endl;
 #endif
                 _ASSERT(m_MergeFlags & CAlnUserOptions::fAllowMixedStrand  ||
-                        rng_it->IsDirect() && (*aln_it)->IsSet(CPairwiseAln::fDirect)  ||
-                        rng_it->IsReversed() && (*aln_it)->IsSet(CPairwiseAln::fReversed));
+                        (rng_it->IsDirect() && (*aln_it)->IsSet(CPairwiseAln::fDirect))  ||
+                        (rng_it->IsReversed() && (*aln_it)->IsSet(CPairwiseAln::fReversed)));
                 if (x_CanInsertRng(**aln_it, *rng_it)) {
                     break;
                 }
@@ -253,8 +253,8 @@ private:
             cerr << **aln_it;
 #endif
             _ASSERT(m_MergeFlags & CAlnUserOptions::fAllowMixedStrand  ||
-                    rng_it->IsDirect() && (*aln_it)->IsSet(CPairwiseAln::fDirect)  ||
-                    rng_it->IsReversed() && (*aln_it)->IsSet(CPairwiseAln::fReversed));
+                    (rng_it->IsDirect() && (*aln_it)->IsSet(CPairwiseAln::fDirect))  ||
+                    (rng_it->IsReversed() && (*aln_it)->IsSet(CPairwiseAln::fReversed)));
 
             // Add gaps
             CPairwiseAln::const_iterator next_rng_it = rng_it;

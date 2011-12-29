@@ -43,41 +43,49 @@
 
 
 BEGIN_NCBI_SCOPE
-
-
-NCBI_XALNMGR_EXPORT
-CRef<objects::CSeq_align>
-CreateSeqAlignFromAnchoredAln(const CAnchoredAln& anchored_aln,             ///< input
-                              objects::CSeq_align::TSegs::E_Choice choice); ///< choice of alignment 'segs'
-
+USING_SCOPE(objects);
 
 NCBI_XALNMGR_EXPORT
-CRef<CDense_seg>
-CreateDensegFromAnchoredAln(const CAnchoredAln& anchored_aln);
+CRef<CSeq_align>
+CreateSeqAlignFromAnchoredAln(const CAnchoredAln& anchored_aln,   ///< input
+                              CSeq_align::TSegs::E_Choice choice, ///< choice of alignment 'segs'
+                              CScope* scope = NULL);
 
-NCBI_XALNMGR_EXPORT
-CRef<CSeq_align_set>
-CreateAlignSetFromAnchoredAln(const CAnchoredAln& anchored_aln);
-
-NCBI_XALNMGR_EXPORT
-CRef<CPacked_seg>
-CreatePackedsegFromAnchoredAln(const CAnchoredAln& anchored_aln);
 
 NCBI_XALNMGR_EXPORT
 CRef<CDense_seg>
-CreateDensegFromPairwiseAln(const CPairwiseAln& pairwise_aln);
+CreateDensegFromAnchoredAln(const CAnchoredAln& anchored_aln,
+                            CScope* scope = NULL);
 
 NCBI_XALNMGR_EXPORT
 CRef<CSeq_align_set>
-CreateAlignSetFromPairwiseAln(const CPairwiseAln& pairwise_aln);
+CreateAlignSetFromAnchoredAln(const CAnchoredAln& anchored_aln,
+                              CScope* scope = NULL);
 
 NCBI_XALNMGR_EXPORT
 CRef<CPacked_seg>
-CreatePackedsegFromPairwiseAln(const CPairwiseAln& pairwise_aln);
+CreatePackedsegFromAnchoredAln(const CAnchoredAln& anchored_aln,
+                               CScope* scope = NULL);
+
+NCBI_XALNMGR_EXPORT
+CRef<CDense_seg>
+CreateDensegFromPairwiseAln(const CPairwiseAln& pairwise_aln,
+                            CScope* scope = NULL);
+
+NCBI_XALNMGR_EXPORT
+CRef<CSeq_align_set>
+CreateAlignSetFromPairwiseAln(const CPairwiseAln& pairwise_aln,
+                              CScope* scope = NULL);
+
+NCBI_XALNMGR_EXPORT
+CRef<CPacked_seg>
+CreatePackedsegFromPairwiseAln(const CPairwiseAln& pairwise_aln,
+                               CScope* scope = NULL);
 
 NCBI_XALNMGR_EXPORT
 CRef<CSpliced_seg>
-CreateSplicedsegFromAnchoredAln(const CAnchoredAln& anchored_aln);
+CreateSplicedsegFromAnchoredAln(const CAnchoredAln& anchored_aln,
+                                CScope* scope = NULL);
 
 
 NCBI_XALNMGR_EXPORT
@@ -86,8 +94,17 @@ CreateSeqAlignFromEachPairwiseAln
 (const CAnchoredAln::TPairwiseAlnVector pairwises, ///< input
  CAnchoredAln::TDim anchor,                        ///< choice of anchor
  vector<CRef<CSeq_align> >& out_seqaligns,         ///< output
- objects::CSeq_align::TSegs::E_Choice choice);     ///< choice of alignment 'segs'
-                  
+ CSeq_align::TSegs::E_Choice choice,      ///< choice of alignment 'segs'
+ CScope* scope = NULL);
+
+
+NCBI_XALNMGR_EXPORT
+CRef<CSeq_align>
+ConvertSeq_align(const CSeq_align& src,
+                 CSeq_align::TSegs::E_Choice dst_choice,
+                 CSeq_align::TDim prod_row,
+                 CSeq_align::TDim gen_row,
+                 CScope* scope = NULL);
 
 
 END_NCBI_SCOPE

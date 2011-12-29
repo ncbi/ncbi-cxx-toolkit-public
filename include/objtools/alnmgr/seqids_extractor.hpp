@@ -71,6 +71,28 @@ public:
 };
 
 
+template <class TAlnSeqId>
+class CScopeAlnSeqIdConverter
+{
+public:
+    CScopeAlnSeqIdConverter(CScope* scope) : m_Scope(scope) {}
+
+    TAlnSeqId* operator() (const CSeq_id& id) const {
+        CRef<CAlnSeqId> aln_id(new TAlnSeqId(id));
+        if (m_Scope) {
+            CBioseq_Handle h = m_Scope->GetBioseqHandle(id);
+            if (h.IsAa()) {
+                aln_id->SetBaseWidth(3);
+            }
+        }
+        return aln_id.Release();
+    }
+
+private:
+    mutable CRef<CScope> m_Scope;
+};
+
+
 /// IAlnSeqId extracting functor
 template <class TAlnSeqId, class TIdConverter = CAlnSeqIdConverter<TAlnSeqId> >
 class CAlnSeqIdsExtract
@@ -306,6 +328,8 @@ private:
 /// Typical usage:
 typedef CAlnSeqIdsExtract<CAlnSeqId> TIdExtract;
 
+typedef CScopeAlnSeqIdConverter<CAlnSeqId> TScopeAlnSeqIdConverter;
+typedef CAlnSeqIdsExtract<CAlnSeqId, TScopeAlnSeqIdConverter> TScopeIdExtract;
 
 
 END_NCBI_SCOPE

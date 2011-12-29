@@ -362,6 +362,7 @@ private:
 
 /// Typical usage:
 typedef CAlnStats<TAlnIdMap> TAlnStats;
+typedef CAlnStats<TScopeAlnIdMap> TScopeAlnStats;
 
 
 END_NCBI_SCOPE
