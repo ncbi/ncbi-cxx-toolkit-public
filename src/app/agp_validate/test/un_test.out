@@ -2,23 +2,28 @@
 
 3:singleton_1	1	630	1	W	LACBIscaffold_1_Cont1	1	630	-
 	WARNING: the span overlaps a previous span for this component: 1..630 at line 2
+	WARNING: component lines with the same component_id found on different scaffolds; previous occurance at line 2, in another object
 	WARNING: in unplaced singleton scaffold, component orientation is not "+"
 
 4:singleton_1na	1	630	1	W	LACBIscaffold_1_Cont1	1	630	na
 	WARNING: the span overlaps a previous span for this component: 1..630 at line 2
+	WARNING: component lines with the same component_id found on different scaffolds; previous occurance at line 3, in another object
 	WARNING: in unplaced singleton scaffold, component orientation is not "+"
 
 5:singleton_2	1	600	1	W	LACBIscaffold_1_Cont1	1	600	+
 	WARNING: the span overlaps a previous span for this component: 1..630 at line 2
+	WARNING: component lines with the same component_id found on different scaffolds; previous occurance at line 4, in another object
 	WARNING: in unplaced singleton scaffold, component is not used in full (600 out of 630 bp)
 
 6:singleton_3	1	600	1	W	LACBIscaffold_1_Cont1	31	630	+
 	WARNING: the span overlaps a previous span for this component: 1..630 at line 2
+	WARNING: component lines with the same component_id found on different scaffolds; previous occurance at line 5, in another object
 	WARNING: in unplaced singleton scaffold, component is not used in full (600 out of 630 bp)
 
-No errors, 8 warnings.
+No errors, 12 warnings.
   Count Code  Description
       4  w35  the span overlaps a previous span for this component
+      4  w49  component lines with the same component_id found on different scaffolds
       2  w50  in unplaced singleton scaffold, component is not used in full
       2  w51  in unplaced singleton scaffold, component orientation is not "+"
 

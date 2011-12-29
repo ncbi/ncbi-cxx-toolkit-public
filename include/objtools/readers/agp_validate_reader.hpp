@@ -249,8 +249,12 @@ protected:
   typedef pair<string, CCompSpans> TCompIdSpansPair;
   TCompId2Spans m_CompId2Spans;
 
+  // an optional callback object
   IAgpRowOutput* m_row_output;
 
+  int m_last_scaf_start_file;
+  int m_last_scaf_start_line;
+  bool m_last_scaf_start_is_obj;
 };
 
 END_NCBI_SCOPE

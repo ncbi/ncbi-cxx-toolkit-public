@@ -180,6 +180,10 @@ void CAgpValidateReader::OnGapOrComponent()
       if(m_explicit_scaf && !m_is_chr) {
         m_AgpErr->Msg(CAgpErrEx::E_ScafBreakingGap);
       }
+
+      m_last_scaf_start_file=m_AgpErr->GetFileNum();
+      m_last_scaf_start_line=m_line_num;
+      m_last_scaf_start_is_obj=false;
     }
     if(m_row_output) m_row_output->SaveRow(m_line, m_this_row, NULL);
   }
@@ -234,6 +238,8 @@ void CAgpValidateReader::OnGapOrComponent()
     pair<TCompId2Spans::iterator, bool> id_insert_result =
         m_CompId2Spans.insert(value_pair);
 
+    string sameComId_otherScaf;
+
     if(id_insert_result.second == false) {
       // Not inserted - the key already exists.
       CCompSpans& spans = (id_insert_result.first)->second;
@@ -254,6 +260,43 @@ void CAgpValidateReader::OnGapOrComponent()
         m_AgpErr->Msg(check_sp.second, // W_SpansOrder or W_DuplicateComp
           string("; preceding span: ")+ check_sp.first->ToString(m_AgpErr)
         );
+      }
+
+      // W_BreakingGapSameCompId
+      //
+      // to do: compare
+      //   *(spans.rbegin())->file_num
+      //   ((CAgpErrEx*)(row.GetErrorHandler()))->GetFileNum();
+      int prev_comp_file=spans.rbegin()->file_num;
+      int prev_comp_line=spans.rbegin()->line_num;
+      if(prev_comp_file < m_last_scaf_start_file || prev_comp_line < m_last_scaf_start_line) {
+        sameComId_otherScaf="; previous occurance at ";
+        if(prev_comp_file && prev_comp_file!=m_AgpErr->GetFileNum()) {
+          sameComId_otherScaf += m_AgpErr->GetFile(prev_comp_file);
+          sameComId_otherScaf += ":";
+        }
+        else {
+          sameComId_otherScaf+="line ";
+        }
+        sameComId_otherScaf+=NStr::IntToString(prev_comp_line);
+
+        if(m_last_scaf_start_is_obj) {
+          sameComId_otherScaf+=", in another object";
+        }
+        else {
+          sameComId_otherScaf+=", before a scaffold-breaking gap at ";
+
+          if(m_last_scaf_start_file && m_last_scaf_start_file!=m_AgpErr->GetFileNum()) {
+            // this branch is probably unneeded: it covers the case of one object spanning 2 files,
+            // which is probably caught elsewhere...
+            sameComId_otherScaf += m_AgpErr->GetFile(m_last_scaf_start_file);
+            sameComId_otherScaf += ":";
+          }
+          else {
+            sameComId_otherScaf+="line ";
+          }
+          sameComId_otherScaf+=NStr::IntToString(m_last_scaf_start_line);
+        }
       }
 
       // Add the span to the existing entry
@@ -342,7 +385,11 @@ void CAgpValidateReader::OnGapOrComponent()
 
     //// W_BreakingGapSameCompId
     if( m_prev_component_id==m_this_row->GetComponentId() ) {
-      m_AgpErr->Msg(CAgpErrEx::W_BreakingGapSameCompId, CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine|CAgpErr::fAtPpLine);
+      m_AgpErr->Msg(CAgpErrEx::W_BreakingGapSameCompId, " (a scaffold-breaking gap in between)", CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine|CAgpErr::fAtPpLine);
+    }
+    else if(sameComId_otherScaf.size()) {
+      // cannot show the other 2 lines involved in this error - they were encuntered too long ago
+      m_AgpErr->Msg(CAgpErrEx::W_BreakingGapSameCompId, sameComId_otherScaf);
     }
 
     if(m_row_output && !row_saved) m_row_output->SaveRow(m_line, m_this_row, NULL);
@@ -494,6 +541,9 @@ void CAgpValidateReader::OnObjectChange()
     }
   }
 
+  m_last_scaf_start_file=m_AgpErr->GetFileNum();
+  m_last_scaf_start_line=m_line_num;
+  m_last_scaf_start_is_obj=true;
 }
 
 #define ALIGN_W(x) setw(w) << resetiosflags(IOS_BASE::left) << (x)

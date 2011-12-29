@@ -105,7 +105,7 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     // Size for a gap of unknown length is not 100 bases. The International Sequence
     // Database Collaboration uses a length of 100 bases for all gaps of unknown length.
     "gap length (column 6) is not 100 for a gap of unknown size (an INSDC standard)",
-    "scaffold-breaking gap between component lines with the same component_id",
+    "component lines with the same component_id found on different scaffolds",
     /*
     "component X is not used in full in a single-component scaffold",
     "only a part of component X is included in a singleton scaffold",
