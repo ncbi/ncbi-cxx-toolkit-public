@@ -301,7 +301,7 @@ protected:
 ///
 
 template <class TPrim>
-class NCBI_XSERIAL_EXPORT CAliasBase //see CXX-2567: public CSerialObject
+class NCBI_XSERIAL_EXPORT CAliasBase
 {
 public:
     typedef CAliasBase<TPrim> TThis;
@@ -547,6 +547,9 @@ NCBI_XSERIAL_EXPORT CNcbiIstream& operator>> (CNcbiIstream& str, CSerialObject& 
 NCBI_XSERIAL_EXPORT CNcbiOstream& operator<< (CNcbiOstream& str, const CConstObjectInfo& obj);
 NCBI_XSERIAL_EXPORT CNcbiIstream& operator>> (CNcbiIstream& str, const CObjectInfo& obj);
 
+NCBI_XSERIAL_EXPORT CNcbiOstream& WriteObject(CNcbiOstream& str, TConstObjectPtr ptr, TTypeInfo info);
+NCBI_XSERIAL_EXPORT CNcbiIstream& ReadObject(CNcbiIstream& str, TObjectPtr ptr, TTypeInfo info);
+
 
 END_NCBI_SCOPE
 
@@ -659,6 +662,7 @@ void NCBISERSetPostWrite(const Class* /*object*/, CInfo* info) \
 
 //#define DECLARE_STD_ALIAS_TYPE_INFO() DECLARE_INTERNAL_TYPE_INFO()
 #define DECLARE_STD_ALIAS_TYPE_INFO() \
+           const NCBI_NS_NCBI::CTypeInfo* GetThisTypeInfo(void) const { return GetTypeInfo(); } \
     static const NCBI_NS_NCBI::CTypeInfo* GetTypeInfo(void)
 
 #if HAVE_NCBI_C

@@ -645,17 +645,36 @@ CNcbiIos& MSerial_VerifyDefValue(CNcbiIos& io)
 // Input/output
 CNcbiOstream& operator<< (CNcbiOstream& os, const CSerialObject& obj)
 {
+    return WriteObject(os,&obj,obj.GetThisTypeInfo());
+}
+
+CNcbiIstream& operator>> (CNcbiIstream& is, CSerialObject& obj)
+{
+    return ReadObject(is,&obj,obj.GetThisTypeInfo());
+}
+
+CNcbiOstream& operator<< (CNcbiOstream& os, const CConstObjectInfo& obj)
+{
+    return WriteObject(os,obj.GetObjectPtr(),obj.GetTypeInfo());
+}
+
+CNcbiIstream& operator>> (CNcbiIstream& is, const CObjectInfo& obj)
+{
+    return ReadObject(is,obj.GetObjectPtr(),obj.GetTypeInfo());
+}
+
+CNcbiOstream& WriteObject(CNcbiOstream& os, TConstObjectPtr ptr, TTypeInfo info)
+{
     auto_ptr<CObjectOStream> ostr( CObjectOStream::Open( s_FlagsToFormat(os), os) );
     ostr->SetVerifyData( s_FlagsToVerify(os) );
     if (ostr->GetDataFormat() == eSerial_Xml) {
         dynamic_cast<CObjectOStreamXml*>(ostr.get())->
             SetDefaultStringEncoding( s_FlagsToEncoding(os) );
     }
-    ostr->Write(&obj,obj.GetThisTypeInfo());
+    ostr->Write(ptr,info);
     return os;
 }
-
-CNcbiIstream& operator>> (CNcbiIstream& is, CSerialObject& obj)
+CNcbiIstream& ReadObject(CNcbiIstream& is, TObjectPtr ptr, TTypeInfo info)
 {
     auto_ptr<CObjectIStream> istr( CObjectIStream::Open(s_FlagsToFormat(is), is) );
     istr->SetVerifyData(s_FlagsToVerify(is));
@@ -663,31 +682,7 @@ CNcbiIstream& operator>> (CNcbiIstream& is, CSerialObject& obj)
         dynamic_cast<CObjectIStreamXml*>(istr.get())->
             SetDefaultStringEncoding( s_FlagsToEncoding(is) );
     }
-    istr->Read(&obj,obj.GetThisTypeInfo());
-    return is;
-}
-
-CNcbiOstream& operator<< (CNcbiOstream& os, const CConstObjectInfo& obj)
-{
-    auto_ptr<CObjectOStream> ostr( CObjectOStream::Open(s_FlagsToFormat(os), os) );
-    ostr->SetVerifyData(s_FlagsToVerify(os));
-    if (ostr->GetDataFormat() == eSerial_Xml) {
-        dynamic_cast<CObjectOStreamXml*>(ostr.get())->
-            SetDefaultStringEncoding( s_FlagsToEncoding(os) );
-    }
-    ostr->Write(obj);
-    return os;
-}
-
-CNcbiIstream& operator>> (CNcbiIstream& is, const CObjectInfo& obj)
-{
-    auto_ptr<CObjectIStream> istr( CObjectIStream::Open(s_FlagsToFormat(is), is) );
-    istr->SetVerifyData(s_FlagsToVerify(is));
-    if (istr->GetDataFormat() == eSerial_Xml) {
-        dynamic_cast<CObjectIStreamXml*>(istr.get())->
-            SetDefaultStringEncoding( s_FlagsToEncoding(is) );
-    }
-    istr->Read(obj);
+    istr->Read(ptr,info);
     return is;
 }
 
