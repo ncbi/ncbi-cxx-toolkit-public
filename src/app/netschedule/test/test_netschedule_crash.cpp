@@ -68,6 +68,7 @@ public:
                                      unsigned int            count );
     vector<unsigned int>  Submit( CNetScheduleSubmitter &  submitter,
                                   unsigned int             jcount,
+                                  unsigned int             naff,
                                   const string &           queue );
     vector<unsigned int>  GetDone( CNetScheduleExecuter &  executor );
     void  MainLoop( CNetScheduleSubmitter &  submitter,
@@ -125,6 +126,11 @@ void CTestNetScheduleCrash::Init(void)
                              "Number of seconds between operations",
                              CArgDescriptions::eInteger);
 
+    arg_desc->AddOptionalKey("naff",
+                             "naff",
+                             "Number of affinities",
+                             CArgDescriptions::eInteger);
+
     arg_desc->AddOptionalKey("main",
                              "main",
                              "Main loop (submit-get-put) only",
@@ -138,10 +144,12 @@ void CTestNetScheduleCrash::Init(void)
 
 vector<unsigned int>  CTestNetScheduleCrash::Submit( CNetScheduleSubmitter &  submitter,
                                                      unsigned int             jcount,
+                                                     unsigned int             naff,
                                                      const string &           queue )
 {
     string                  input = "Crash test for " + queue;
     vector<unsigned int>    jobs;
+    unsigned int            caff = 0;
 
     jobs.reserve(jcount);
     NcbiCout << "Submit " << jcount << " jobs..." << NcbiEndl;
@@ -149,6 +157,16 @@ vector<unsigned int>  CTestNetScheduleCrash::Submit( CNetScheduleSubmitter &  su
     CStopWatch      sw(CStopWatch::eStart);
     for (unsigned i = 0; i < jcount; ++i) {
         CNetScheduleJob         job(input);
+
+        if (naff > 0) {
+            char        buffer[ 1024 ];
+            sprintf( buffer, "aff%d", caff++ );
+            if (caff >= naff)
+                caff = 0;
+            job.affinity = string( buffer );
+        }
+
+
         submitter.SubmitJob(job);
 
         CNetScheduleKey     key( job.job_id );
@@ -337,6 +355,10 @@ int CTestNetScheduleCrash::Run(void)
     if (args["delay"])
         delay = args["delay"].AsInteger();
 
+    unsigned int        naff = 0;
+    if (args["naff"])
+        naff = args["naff"].AsInteger();
+
 
     CNetScheduleAPI                     cl(service, "crash_test", queue);
 
@@ -356,7 +378,7 @@ int CTestNetScheduleCrash::Run(void)
 
 
     /* ----- Submit jobs ----- */
-    vector<unsigned int>        jobs = this->Submit(submitter, jcount, queue);
+    vector<unsigned int>        jobs = this->Submit(submitter, jcount, naff, queue);
 
 
     NcbiCout << NcbiEndl << "Waiting " << delay << " second(s) ..." << NcbiEndl;
