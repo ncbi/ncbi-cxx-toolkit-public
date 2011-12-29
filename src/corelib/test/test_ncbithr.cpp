@@ -386,8 +386,8 @@ void* CTestThread::Main(void)
     }
 
     // ======= CThread test =======
-    for (int i = 0; i<sSpawnBy; i++) {
-        int idx;
+    for (int i = 0; i < sSpawnBy; i++) {
+        int idx;  /* NCBI_FAKE_WARNING: GCC */
         {{
             CFastMutexGuard spawn_guard(s_GlobalLock);
             if (s_NextIndex >= sNumThreads) {
@@ -871,8 +871,8 @@ int CThreadedApp::Run(void)
     }
     
     // Create and run threads
-    for (int i=0; i<sSpawnBy; i++) {
-        int idx;
+    for (int i = 0; i < sSpawnBy;  i++) {
+        int idx;  /* NCBI_FAKE_WARNING: GCC */
         {{
             CFastMutexGuard spawn_guard(s_GlobalLock);
             if (s_NextIndex >= sNumThreads) {
