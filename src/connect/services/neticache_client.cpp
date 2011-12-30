@@ -75,58 +75,55 @@ static const char* const s_NetICacheConfigSections[] = {
     NULL
 };
 
-#define KEY_VERSION_SUBKEY_EST_LENGTH (1 + ksv.key.length() + 2 + \
-    int(sizeof(ksv.version) * 1.5) + 2 + ksv.subkey.length() + 1)
-
-struct SKeySubkeyVersion {
-    string key;
-    string subkey;
-    int version;
-    bool version_defined;
-
-    SKeySubkeyVersion(const string& k, const string& sk, int v) :
-        key(k), subkey(sk), version(v), version_defined(true)
-    {
-    }
-    SKeySubkeyVersion(const string& k, const string& sk) :
-        key(k), subkey(sk), version_defined(false)
-    {
-    }
-};
-
-static void CheckAndAppendKeyVersionSubkey(string* outstr,
-    const SKeySubkeyVersion& ksv)
+static string s_CheckKeySubkey(
+    const string& key, const string& subkey, string* encoded_key)
 {
-    string encoded_key(NStr::CEncode(ksv.key));
-    string encoded_subkey(NStr::CEncode(ksv.subkey));
+    encoded_key->push_back('"');
+    encoded_key->append(NStr::CEncode(key));
 
-    if (encoded_key.length() > MAX_ICACHE_KEY_LENGTH ||
+    string encoded_subkey(NStr::CEncode(subkey));
+
+    if (encoded_key->length() > (1 + MAX_ICACHE_KEY_LENGTH) ||
             encoded_subkey.length() > MAX_ICACHE_SUBKEY_LENGTH) {
         NCBI_THROW(CNetCacheException, eKeyFormatError,
             "ICache key or subkey is too long");
     }
 
-    outstr->append(encoded_key);
-
-    if (ksv.version_defined) {
-        outstr->append("\" ", 2);
-        outstr->append(NStr::IntToString(ksv.version));
-        outstr->append(" \"", 2);
-    } else
-        outstr->append("\" \"", 3);
-
-    outstr->append(encoded_subkey);
-    outstr->push_back('"');
+    return encoded_subkey;
 }
 
-static string s_MakeBlobID(const SKeySubkeyVersion& ksv)
+static string s_KeySubkeyToBlobID(const string& key, const string& subkey)
 {
     string blob_id(kEmptyStr);
-    blob_id.reserve(KEY_VERSION_SUBKEY_EST_LENGTH);
+    blob_id.reserve(1 + key.length() + 3 + subkey.length() + 1);
+
+    string encoded_subkey(s_CheckKeySubkey(key, subkey, &blob_id));
+
+    blob_id.append("\" \"", 3);
+
+    blob_id.append(encoded_subkey);
 
     blob_id.push_back('"');
 
-    CheckAndAppendKeyVersionSubkey(&blob_id, ksv);
+    return blob_id;
+}
+
+static string s_KeyVersionSubkeyToBlobID(
+    const string& key, int version, const string& subkey)
+{
+    string blob_id(kEmptyStr);
+    blob_id.reserve(1 + key.length() + 2 +
+        int(sizeof(version) * 1.5) + 2 + subkey.length() + 1);
+
+    string encoded_subkey(s_CheckKeySubkey(key, subkey, &blob_id));
+
+    blob_id.append("\" ", 2);
+    blob_id.append(NStr::IntToString(version));
+    blob_id.append(" \"", 2);
+
+    blob_id.append(encoded_subkey);
+
+    blob_id.push_back('"');
 
     return blob_id;
 }
@@ -151,7 +148,7 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
 
     CNetServer::SExecResult StickToServerAndExec(const string& cmd);
 
-    string MakeStdCmd(const char* cmd_base, const SKeySubkeyVersion& ksv,
+    string MakeStdCmd(const char* cmd_base, const string& blob_id,
         const string& injection = kEmptyStr);
 
     string ExecStdCmd(const char* cmd_base, const string& key,
@@ -385,7 +382,7 @@ void CNetICacheClient::Store(const string&  key,
                              unsigned int   time_to_live,
                              const string&  /*owner*/)
 {
-    string blob_id(s_MakeBlobID(SKeySubkeyVersion(key, subkey, version)));
+    string blob_id(s_KeyVersionSubkeyToBlobID(key, version, subkey));
 
     CNetCacheWriter writer(m_Impl, &blob_id, time_to_live,
         m_Impl->m_CacheFlags & ICache::fBestReliability ?
@@ -419,15 +416,15 @@ IReader* SNetICacheClientImpl::GetReadStreamPart(
     size_t* blob_size_ptr, CNetCacheAPI::ECachingMode caching_mode)
 {
     try {
-        SKeySubkeyVersion ksv(key, subkey, version);
+        string blob_id(s_KeyVersionSubkeyToBlobID(key, version, subkey));
 
         string cmd(offset == 0 && part_size == 0 ?
-            MakeStdCmd("READ", ksv) : MakeStdCmd("READPART", ksv,
+            MakeStdCmd("READ", blob_id) : MakeStdCmd("READPART", blob_id,
                 ' ' + NStr::UInt8ToString((Uint8) offset) +
                 ' ' + NStr::UInt8ToString((Uint8) part_size)));
 
-        return new CNetCacheReader(this, StickToServerAndExec(cmd),
-            blob_size_ptr, caching_mode);
+        return new CNetCacheReader(this, blob_id,
+            StickToServerAndExec(cmd), blob_size_ptr, caching_mode);
     } catch (CNetCacheException& e) {
         if (e.GetErrCode() != CNetCacheException::eBlobNotFound)
             throw;
@@ -511,7 +508,7 @@ IEmbeddedStreamWriter* CNetICacheClient::GetNetCacheWriter(const string& key,
     unsigned time_to_live, const string& /*owner*/,
     CNetCacheAPI::ECachingMode caching_mode)
 {
-    string blob_id(s_MakeBlobID(SKeySubkeyVersion(key, subkey, version)));
+    string blob_id(s_KeyVersionSubkeyToBlobID(key, version, subkey));
 
     return new CNetCacheWriter(m_Impl, &blob_id, time_to_live,
         m_Impl->m_CacheFlags & ICache::fBestReliability ?
@@ -594,8 +591,10 @@ IReader* CNetICacheClient::GetReadStream(const string& key,
         ICache::EBlobVersionValidity* validity)
 {
     try {
+        string blob_id(s_KeySubkeyToBlobID(key, subkey));
+
         CNetServer::SExecResult exec_result(m_Impl->StickToServerAndExec(
-            m_Impl->MakeStdCmd("READLAST", SKeySubkeyVersion(key, subkey))));
+            m_Impl->MakeStdCmd("READLAST", blob_id)));
 
         string::size_type pos = exec_result.response.find("VER=");
 
@@ -627,7 +626,7 @@ IReader* CNetICacheClient::GetReadStream(const string& key,
                 "Invalid format of the VALID field in READLAST output");
         }
 
-        return new CNetCacheReader(m_Impl, exec_result,
+        return new CNetCacheReader(m_Impl, blob_id, exec_result,
             NULL, CNetCacheAPI::eCaching_AppDefault);
     } catch (CNetCacheException& e) {
         if (e.GetErrCode() != CNetCacheException::eBlobNotFound)
@@ -641,7 +640,7 @@ void CNetICacheClient::SetBlobVersionAsCurrent(const string& key,
 {
     CNetServer::SExecResult exec_result(m_Impl->StickToServerAndExec(
         m_Impl->MakeStdCmd("SETVALID",
-            SKeySubkeyVersion(key, subkey, version))));
+            s_KeyVersionSubkeyToBlobID(key, version, subkey))));
 
     if (!exec_result.response.empty()) {
         ERR_POST("SetBlobVersionAsCurrent(\"" << key << "\", " <<
@@ -654,7 +653,7 @@ void CNetICacheClient::PrintBlobInfo(const string& key,
 {
     CNetServerMultilineCmdOutput output(m_Impl->StickToServerAndExec(
         m_Impl->MakeStdCmd("GETMETA",
-            SKeySubkeyVersion(key, subkey, version))));
+            s_KeyVersionSubkeyToBlobID(key, version, subkey))));
 
     output->SetNetCacheCompatMode();
 
@@ -671,18 +670,16 @@ CNetServer CNetICacheClient::GetCurrentServer()
 
 
 string SNetICacheClientImpl::MakeStdCmd(const char* cmd_base,
-    const SKeySubkeyVersion& ksv, const string& injection)
+    const string& blob_id, const string& injection)
 {
     string cmd(kEmptyStr);
-    cmd.reserve(m_ICacheCmdPrefix.length() + strlen(cmd_base) +
-        1 + KEY_VERSION_SUBKEY_EST_LENGTH);
 
     cmd.append(m_ICacheCmdPrefix);
     cmd.append(cmd_base);
 
-    cmd.append(" \"", 2);
+    cmd.push_back(' ');
 
-    CheckAndAppendKeyVersionSubkey(&cmd, ksv);
+    cmd.append(blob_id);
 
     if (!injection.empty())
         cmd.append(injection);
@@ -696,7 +693,7 @@ string SNetICacheClientImpl::ExecStdCmd(const char* cmd_base,
     const string& key, int version, const string& subkey)
 {
     return StickToServerAndExec(MakeStdCmd(cmd_base,
-        SKeySubkeyVersion(key, subkey, version))).response;
+        s_KeyVersionSubkeyToBlobID(key, version, subkey))).response;
 }
 
 string CNetICacheClient::GetCacheName(void) const

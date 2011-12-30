@@ -56,9 +56,11 @@ static const string s_InputBlobCachePrefix = ".nc_cache_input.";
 static const string s_OutputBlobCachePrefix = ".nc_cache_output.";
 
 CNetCacheReader::CNetCacheReader(SNetCacheAPIImpl* impl,
+        const string& blob_id,
         const CNetServer::SExecResult& exec_result,
         size_t* blob_size_ptr,
         CNetCacheAPI::ECachingMode caching_mode) :
+    m_BlobID(blob_id),
     m_Connection(exec_result.conn),
     m_CachingEnabled(caching_mode == CNetCacheAPI::eCaching_AppDefault ?
         impl->m_CacheInput : caching_mode == CNetCacheAPI::eCaching_Enable)
@@ -70,7 +72,7 @@ CNetCacheReader::CNetCacheReader(SNetCacheAPIImpl* impl,
             "No SIZE field in reply to the blob reading command");
     }
 
-    m_BlobBytesToRead = NStr::StringToUInt8(
+    m_BlobBytesToRead = m_BlobSize = NStr::StringToUInt8(
         exec_result.response.c_str() + pos + sizeof("SIZE=") - 1,
         NStr::fAllowTrailingSymbols);
 
@@ -118,7 +120,7 @@ ERW_Result CNetCacheReader::Read(void*   buf,
     if (m_BlobBytesToRead == 0) {
         if (bytes_read_ptr != NULL)
             *bytes_read_ptr = 0;
-            return eRW_Eof;
+        return eRW_Eof;
     }
 
     if (m_BlobBytesToRead < count)
@@ -128,9 +130,16 @@ ERW_Result CNetCacheReader::Read(void*   buf,
 
     if (count > 0) {
         if (!m_CachingEnabled)
-            SocketRead(buf, count, bytes_read_ptr);
-        else if ((bytes_read = m_CacheFile.Read(buf, count)) == 0)
-            ReportPrematureEOF();
+            SocketRead(buf, count, &bytes_read);
+        else if ((bytes_read = m_CacheFile.Read(buf, count)) == 0) {
+            Uint8 remaining_bytes = m_BlobBytesToRead;
+            m_BlobBytesToRead = 0;
+            NCBI_THROW_FMT(CNetCacheException, eBlobClipped,
+                "Unexpected EOF while reading file cache for " << m_BlobID <<
+                " read from " << m_Connection->m_Server->m_Address.AsString() <<
+                " (blob size: " << m_BlobSize <<
+                ", unread bytes: " << remaining_bytes << ")");
+        }
 
         m_BlobBytesToRead -= bytes_read;
     }
@@ -178,8 +187,15 @@ void CNetCacheReader::SocketRead(void* buf, size_t count, size_t* bytes_read)
             "Timeout while reading blob contents");
 
     case eIO_Closed:
-        if (count > *bytes_read)
-            ReportPrematureEOF();
+        if (count > *bytes_read) {
+            Uint8 remaining_bytes = m_BlobBytesToRead;
+            m_BlobBytesToRead = 0;
+            NCBI_THROW_FMT(CNetCacheException, eBlobClipped,
+                "Unexpected EOF while reading " << m_BlobID <<
+                " from " << m_Connection->m_Server->m_Address.AsString() <<
+                " (blob size: " << m_BlobSize <<
+                ", unread bytes: " << remaining_bytes << ")");
+        }
         break;
 
     default:
@@ -188,14 +204,6 @@ void CNetCacheReader::SocketRead(void* buf, size_t count, size_t* bytes_read)
     }
 }
 
-void CNetCacheReader::ReportPrematureEOF()
-{
-    m_BlobBytesToRead = 0;
-    NCBI_THROW_FMT(CNetCacheException, eBlobClipped,
-        "Amount read is less than the expected blob size "
-        "(premature EOF while reading from " <<
-        m_Connection->m_Server->m_Address.AsString() << ")");
-}
 
 /////////////////////////////////////////////////
 CNetCacheWriter::CNetCacheWriter(SNetCacheAPIImpl* impl,
@@ -234,16 +242,12 @@ ERW_Result CNetCacheWriter::Write(const void* buf,
         size_t bytes_written = m_CacheFile.Write(buf, count);
         if (bytes_written_ptr != NULL)
             *bytes_written_ptr = bytes_written;
+    } else if (IsConnectionOpen())
+        Transmit(buf, count, bytes_written_ptr);
+    else
+        return eRW_Error;
 
-        return eRW_Success;
-    } else {
-        if (IsConnectionOpen())
-            Transmit(buf, count, bytes_written_ptr);
-        else
-            return eRW_Error;
-
-        return eRW_Success;
-    }
+    return eRW_Success;
 }
 
 ERW_Result CNetCacheWriter::Flush(void)

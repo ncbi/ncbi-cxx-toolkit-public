@@ -72,6 +72,7 @@ class NCBI_XCONNECT_EXPORT CNetCacheReader : public IReader
 {
 public:
     CNetCacheReader(SNetCacheAPIImpl* impl,
+        const string& blob_id,
         const CNetServer::SExecResult& exec_result,
         size_t* blob_size_ptr,
         CNetCacheAPI::ECachingMode caching_mode);
@@ -87,9 +88,11 @@ public:
 
 private:
     void SocketRead(void* buf, size_t count, size_t* bytes_read);
-    void ReportPrematureEOF();
+
+    string m_BlobID;
 
     CNetServerConnection m_Connection;
+    Uint8 m_BlobSize;
     Uint8 m_BlobBytesToRead; // Remaining number of bytes to be read
 
     CFileIO m_CacheFile;
