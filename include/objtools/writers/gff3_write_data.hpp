@@ -78,6 +78,12 @@ public:
 
     CRef<CSeq_loc> GetCircularLocation() const { return m_pLoc; };
 
+    static void ChangeToPackedInt(
+        CSeq_loc& loc);
+
+    static bool IsOrdered(
+        const CSeq_loc& loc);
+
 protected:
     virtual bool x_AssignType(
         CMappedFeat );
@@ -153,6 +159,8 @@ protected:
     virtual bool x_AssignAttributeOldLocusTag(
         CMappedFeat );
     virtual bool x_AssignAttributeName(
+        CMappedFeat );
+    virtual bool x_AssignAttributeIsOrdered(
         CMappedFeat );
 
     virtual void x_StrAttributesAppendValue(

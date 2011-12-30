@@ -273,34 +273,39 @@ string CGffWriteRecord::s_GetGffSourceString(
     CBioseq_Handle bsh )
 //  ----------------------------------------------------------------------------
 {
-    CSeq_id_Handle best_idh = sequence::GetId(bsh, sequence::eGetId_Best);
-    if ( !best_idh ) {
-        best_idh = sequence::GetId(bsh, sequence::eGetId_Canonical);
+    try {
+        CSeq_id_Handle best_idh = sequence::GetId(bsh, sequence::eGetId_Best);
+        if ( !best_idh ) {
+            best_idh = sequence::GetId(bsh, sequence::eGetId_Canonical);
+        }
+        switch ( best_idh.Which() ) {
+            default:
+                break;
+            case CSeq_id::e_Local:
+                return "Local";
+            case CSeq_id::e_Gibbsq:
+            case CSeq_id::e_Gibbmt:
+            case CSeq_id::e_Giim:
+            case CSeq_id::e_Gi:
+                return "GenInfo";
+            case CSeq_id::e_Genbank:
+                return "Genbank";
+            case CSeq_id::e_Swissprot:
+                return "SwissProt";
+            case CSeq_id::e_Patent:
+                return "Patent";
+            case CSeq_id::e_Other:
+                return "RefSeq";
+            case CSeq_id::e_General:
+                return best_idh.GetSeqId()->GetGeneral().GetDb();
+        }
+        string source = CSeq_id::SelectionName( best_idh.Which() );
+        NStr::ToUpper( source );
+        return source;
     }
-    switch ( best_idh.Which() ) {
-        default:
-            break;
-        case CSeq_id::e_Local:
-            return "Local";
-        case CSeq_id::e_Gibbsq:
-        case CSeq_id::e_Gibbmt:
-        case CSeq_id::e_Giim:
-        case CSeq_id::e_Gi:
-            return "GenInfo";
-        case CSeq_id::e_Genbank:
-            return "Genbank";
-        case CSeq_id::e_Swissprot:
-            return "SwissProt";
-        case CSeq_id::e_Patent:
-            return "Patent";
-        case CSeq_id::e_Other:
-            return "RefSeq";
-        case CSeq_id::e_General:
-            return best_idh.GetSeqId()->GetGeneral().GetDb();
+    catch(...) {
+        return ".";
     }
-    string source = CSeq_id::SelectionName( best_idh.Which() );
-    NStr::ToUpper( source );
-    return source;
 }
 
 //  ----------------------------------------------------------------------------
@@ -820,7 +825,7 @@ bool CGffWriteRecordFeature::x_AssignSeqId(
 	}
 
     if (m_strId.empty() ) {
-        m_strId = "<unknown>";
+        m_strId = ".";
     }
     return true;
 }
@@ -910,8 +915,12 @@ bool CGffWriteRecordFeature::x_AssignSource(
         }
     }
 
-    CBioseq_Handle bsh = mf.GetScope().GetBioseqHandle(mf.GetLocationId());
-    m_strSource = s_GetGffSourceString( bsh );
+    try {
+        m_strSource = s_GetGffSourceString( 
+            mf.GetScope().GetBioseqHandle(mf.GetLocationId()) );
+    }
+    catch(...) {
+    }
     return true;
 }
 

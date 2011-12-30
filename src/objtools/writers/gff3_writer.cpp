@@ -650,7 +650,7 @@ bool CGff3Writer::x_WriteFeatureRecords(
 {
     CRef< CSeq_loc > pPackedInt( new CSeq_loc( CSeq_loc::e_Mix ) );
     pPackedInt->Add( location );
-    pPackedInt->ChangeToPackedInt();
+    CGff3WriteRecordFeature::ChangeToPackedInt(*pPackedInt);
 
     if ( pPackedInt->IsPacked_int() && pPackedInt->GetPacked_int().CanGet() ) {
         const list< CRef< CSeq_interval > >& sublocs = pPackedInt->GetPacked_int().Get();
