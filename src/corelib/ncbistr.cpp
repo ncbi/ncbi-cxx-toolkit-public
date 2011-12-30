@@ -2696,72 +2696,30 @@ string NStr::ParseEscapes(const CTempString& str)
 }
 
 
-const char* NStr::ParseDoubleQuoted(
-    const char* str, const char* str_end, string& out)
+string NStr::ParseQuoted(const CTempString& str, size_t* n_read /*= NULL*/)
 {
-    if (*str != '"' || str_end - str < 2)
-        return NULL;
+    const char* str_pos = str.data();
+    char quote_char;
 
-    out.reserve(str_end - str - 2);
-    out.erase();
-
-    ++str;
-
-    while (str < str_end) {
-        if (*str == '"')
-            return str + 1;
-        else if (*str != '\\')
-            out += *str;
-        else {
-            if (++str == str_end)
-                return NULL;
-            switch (*str) {
-            case '\n':
-                /*quoted EOL means no EOL*/
-                break;
-            case '0':  case '1':  case '2':  case '3':
-            case '4':  case '5':  case '6':  case '7':
-                {{
-                    int max_octal_digits = 3;
-                    unsigned char ch = (unsigned char) *str - '0';
-                    while (++str < str_end && --max_octal_digits > 0 &&
-                            *str >= '0' && *str <= '7')
-                        ch = (ch << 3) | ((unsigned char) *str - '0');
-                    out += ch;
-                }}
-                continue;
-            case 'a':  out += '\a';  break;
-            case 'b':  out += '\b';  break;
-            case 'f':  out += '\f';  break;
-            case 'n':  out += '\n';  break;
-            case 'r':  out += '\r';  break;
-            case 't':  out += '\t';  break;
-            case 'v':  out += '\v';  break;
-            case 'x':
-                {{
-                    const char* hex = ++str;
-                    while (str < str_end && isxdigit((unsigned char) *str))
-                        ++str;
-                    if (str == hex)
-                        // No hexadecimal digits after \x.
-                        return NULL;
-                    errno = 0;
-                    unsigned ch = StringToUInt(CTempString(hex, str - hex),
-                        NStr::fConvErr_NoThrow, 16);
-                    if (ch == 0 && errno != 0)
-                        // Conversion error.
-                        return NULL;
-                    out += (char) ch;
-                }}
-                continue;
-            default:
-                out += *str;
-            }
-        }
-        ++str;
+    if (str.empty() || ((quote_char = *str_pos) != '"' && quote_char != '\'')) {
+        NCBI_THROW2(CStringException, eFormat,
+            "The source string must start with a quote", 0);
     }
 
-    return NULL;
+    const char* str_end = str_pos + str.length();
+    bool escaped = false;
+
+    while (++str_pos < str_end)
+        if (*str_pos == quote_char && !escaped) {
+            size_t pos = str_pos - str.data();
+            if (n_read != NULL)
+                *n_read = pos + 1;
+            return ParseEscapes(CTempString(str.data() + 1, pos - 1));
+        } else
+            escaped = *str_pos == '\\' ? !escaped : false;
+
+    NCBI_THROW2(CStringException, eFormat,
+        "Unterminated quoted string", str.length());
 }
 
 

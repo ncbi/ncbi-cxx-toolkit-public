@@ -39,12 +39,8 @@
 BEGIN_NCBI_SCOPE
 
 #define SKIP_SPACE(ptr) \
-    while (isspace((unsigned char) (*ptr))) \
+    while (isspace((unsigned char) *(ptr))) \
         ++ptr;
-
-#define SKIP_SPACE_PREINC(ptr) \
-    while (isspace((unsigned char) (*++ptr))) \
-        ;
 
 static bool s_DoParseGetJobResponse(
     CNetScheduleJob& job, const string& response)
@@ -77,39 +73,46 @@ static bool s_DoParseGetJobResponse(
 
     job.job_id.assign(response_begin, ptr - response_begin);
 
-    // 2. Extract job input
-    SKIP_SPACE_PREINC(ptr);
+    while (isspace((unsigned char) (*++ptr)))
+        ;
 
-    if ((ptr = NStr::ParseDoubleQuoted(ptr, response_end, job.input)) == NULL)
-        return false;
+    try {
+        size_t field_len;
 
-    // 3. Extract optional job affinity.
-    SKIP_SPACE_PREINC(ptr);
+        // 2. Extract job input
+        job.input = NStr::ParseQuoted(CTempString(ptr,
+            response_end - ptr), &field_len);
 
-    if (*ptr != 0) {
-        if ((ptr = NStr::ParseDoubleQuoted(ptr,
-                response_end, job.affinity)) == NULL)
-            return false;
+        ptr += field_len;
+        SKIP_SPACE(ptr);
 
-        // 4. Extract optional "client_ip session_id".
-        SKIP_SPACE_PREINC(ptr);
-
+        // 3. Extract optional job affinity.
         if (*ptr != 0) {
-            string client_ip_and_session_id;
+            job.affinity = NStr::ParseQuoted(CTempString(ptr,
+                response_end - ptr), &field_len);
 
-            if ((ptr = NStr::ParseDoubleQuoted(ptr,
-                    response_end, client_ip_and_session_id)) == NULL)
-                return false;
+            ptr += field_len;
+            SKIP_SPACE(ptr);
 
-            NStr::SplitInTwo(client_ip_and_session_id, " ",
-                job.client_ip, job.session_id);
+            // 4. Extract optional "client_ip session_id".
+            if (*ptr != 0) {
+                string client_ip_and_session_id(NStr::ParseQuoted(
+                    CTempString(ptr, response_end - ptr), &field_len));
 
-            // 5. Parse job mask
-            SKIP_SPACE_PREINC(ptr);
+                NStr::SplitInTwo(client_ip_and_session_id, " ",
+                    job.client_ip, job.session_id);
 
-            if (*ptr != 0)
-                job.mask = atoi(ptr);
+                ptr += field_len;
+                SKIP_SPACE(ptr);
+
+                // 5. Parse job mask
+                if (*ptr != 0)
+                    job.mask = atoi(ptr);
+            }
         }
+    }
+    catch (CStringException&) {
+        return false;
     }
 
     return true;

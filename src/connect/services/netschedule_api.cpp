@@ -302,87 +302,70 @@ CNetService CNetScheduleAPI::GetService()
     return m_Impl->m_Service;
 }
 
+#define SKIP_SPACE(ptr) \
+    while (isspace((unsigned char) *(ptr))) \
+        ++ptr;
+
 CNetScheduleAPI::EJobStatus
     CNetScheduleAPI::GetJobDetails(CNetScheduleJob& job)
 {
-
-    /// These attributes are not supported yet
-    job.progress_msg.erase();
+    job.input.erase();
     job.affinity.erase();
-    job.mask = 0;
-    ///
+    job.mask = CNetScheduleAPI::eEmptyMask;
+    job.ret_code = 0;
+    job.output.erase();
+    job.error_msg.erase();
+    job.progress_msg.erase();
 
     string resp = m_Impl->x_SendJobCmdWaitResponse("STATUS" , job.job_id);
 
     const char* str = resp.c_str();
 
-    int st = atoi(str);
-    EJobStatus status = (EJobStatus) st;
+    EJobStatus status = (EJobStatus) atoi(str);
 
-    if (status == eDone || status == eFailed
-        || status == eRunning || status == ePending
-        || status == eCanceled
-        || status == eReading || status == eConfirmed
-        || status == eReadFailed) {
-        for ( ;*str && !isspace((unsigned char)(*str)); ++str) {}
+    size_t field_len;
 
-        for ( ; *str && isspace((unsigned char)(*str)); ++str) {}
+    switch (status) {
+    case ePending:
+    case eRunning:
+    case eCanceled:
+    case eFailed:
+    case eDone:
+    case eReading:
+    case eConfirmed:
+    case eReadFailed:
+        while (*str && !isspace((unsigned char) *str))
+            ++str;
+        SKIP_SPACE(str);
 
         job.ret_code = atoi(str);
 
-        for ( ;*str && !isspace((unsigned char)(*str)); ++str) {}
-
-        job.output.erase();
-
-        for ( ; *str && isspace((unsigned char)(*str)); ++str) {}
-
-        if (*str && *str == '"') {
+        while (*str && !isspace((unsigned char) *str))
             ++str;
-            for( ;*str && *str; ++str) {
-                if (*str == '"' && *(str-1) != '\\') break;
-                job.output.push_back(*str);
+        SKIP_SPACE(str);
+
+        if (*str) {
+            job.output = NStr::ParseQuoted(str, &field_len);
+
+            str += field_len;
+            SKIP_SPACE(str);
+
+            if (*str) {
+                job.error_msg = NStr::ParseQuoted(str, &field_len);
+
+                str += field_len;
+                SKIP_SPACE(str);
+
+                if (*str)
+                    job.input = NStr::ParseQuoted(str);
             }
         }
-        job.output = NStr::ParseEscapes(job.output);
 
-        job.input.erase();
-        job.error_msg.erase();
-        if (!*str)
-            return status;
+        /* FALL THROUGH */
 
-        for (++str; *str && isspace((unsigned char)(*str)); ++str) {}
-
-        if (!*str)
-            return status;
-
-        if (*str && *str == '"') {
-            ++str;
-            for( ;*str && *str; ++str) {
-                if (*str == '"' && *(str-1) != '\\') break;
-                job.error_msg.push_back(*str);
-            }
-        }
-        job.error_msg = NStr::ParseEscapes(job.error_msg);
-
-        if (!*str)
-            return status;
-
-        for (++str; *str && isspace((unsigned char)(*str)); ++str) {}
-
-        if (!*str)
-            return status;
-
-        if (*str && *str == '"') {
-            ++str;
-            for( ;*str && *str; ++str) {
-                if (*str == '"' && *(str-1) != '\\') break;
-                job.input.push_back(*str);
-            }
-        }
-        job.input = NStr::ParseEscapes(job.input);
+    default:
+        return status;
     }
-
-    return status;
 }
 
 CNetScheduleAPI::EJobStatus SNetScheduleAPIImpl::x_GetJobStatus(
