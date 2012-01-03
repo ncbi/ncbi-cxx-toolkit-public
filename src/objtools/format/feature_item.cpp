@@ -175,84 +175,6 @@ static bool s_ValidId(const CSeq_id& id)
            id.IsGpipe();
 }
 
-// returns how many times ch appears in str
-static int s_CountChar( const string &str, const char ch ) {
-#ifdef NCBI_COMPILER_WORKSHOP
-    SIZE_TYPE n = 0;
-    count( str.begin(), str.end(), ch, n );
-    return n;
-#else
-    return count( str.begin(), str.end(), ch );
-#endif
-}
-
-static bool s_QualifiersMeetPrimerReqs( 
-    const string& fwd_name, 
-    const string& fwd_seq, 
-    const string& rev_name, 
-    const string& rev_seq )
-{
-    if ( fwd_seq.empty() ) {
-        return false;
-    }
-    if ( rev_seq.empty() ) {
-        return false;
-    }
-
-    // we make sure number of commas is the same in both, to cover the case of 
-    // compound sequences.
-    const int num_fwd_seqs = s_CountChar(fwd_seq, ',');
-    const int num_rev_seqs = s_CountChar(rev_seq, ',');
-    if( num_fwd_seqs != num_rev_seqs ) {
-        return false;
-    }
-
-    // watch out, there are probably more, related to compound values in each of the
-    // constituents. Test cases?
-    //
-
-    return true;
-}
-
-
-static string s_MakePcrPrimerNote(
-    const string& fwd_name,
-    const string& fwd_seq,
-    const string& rev_name,
-    const string& rev_seq )
-{
-    if ( fwd_name.empty() && fwd_seq.empty() && rev_name.empty() && rev_seq.empty() ) {
-        return "";
-    }
-
-    // split if necessary to handle the paren syntax (e.g. fwd_name of "(P6,P8)" )
-
-    string note( "PCR_primers=" );
-    size_t init_length = note.length();
-    if ( ! fwd_name.empty() ) {
-        note += string( "fwd_name: " ) + fwd_name;
-    }
-    if ( ! fwd_seq.empty() ) {
-        if ( note.length() > init_length ) {
-            note += ", ";
-        }
-        note += string( "fwd_seq: " ) + fwd_seq;
-    }
-    if ( ! rev_name.empty() ) {
-        if ( note.length() > init_length ) {
-            note += ", ";
-        }
-        note += string( "rev_name: " ) + rev_name;
-    }
-    if ( ! rev_seq.empty() ) {
-        if ( note.length() > init_length ) {
-            note += ", ";
-        }
-        note += string( "rev_seq: " ) + rev_seq;
-    }
-    return note;
-}
-
 static
 bool s_StrEqualDisregardFinalPeriod( 
     const string &s1, const string &s2, 
@@ -527,34 +449,6 @@ static bool s_CheckMandatoryQuals(const CMappedFeat& feat,
 
     return true;
 }
-
-/* "not used"
-
-static bool s_SuppressCommentFeature
-(const CSeq_feat& feat,
- const CSeq_loc& loc,
- CBioseqContext& ctx)
-{
-    _ASSERT(feat.GetData().IsComment());
-
-    ECompare comp = Compare(ctx.GetLocation(), loc, &ctx.GetScope());
-    if (comp == eContained  ||  comp == eSame) {
-        return true;
-    }
-
-    const CSeq_loc& orig_loc = feat.GetLocation();
-    if (orig_loc.IsWhole()) {
-        return true;
-    }
-
-    CBioseq_Handle feat_seq = ctx.GetScope().GetBioseqHandle(orig_loc);
-    if (orig_loc.GetStart(eExtreme_Positional) == 0  &&
-        orig_loc.GetStop(eExtreme_Positional) == feat_seq.GetInst_Length() - 1) {
-        return true;
-    }
-    return false;
-}
-*/
 
 static bool s_SkipFeature(const CMappedFeat& feat,
                           const CSeq_loc& loc,
@@ -2832,47 +2726,6 @@ void CFeatureItem::x_AddQualTranslation(
 }
 
 //  ----------------------------------------------------------------------------
-void CFeatureItem::x_AddQualCodeBreak( 
-    const CCdregion& cdr,
-    CBioseqContext& ctx )
-//  ----------------------------------------------------------------------------
-{
-    if ( ! cdr.IsSetCode_break() ) {
-        return;
-    }
-
-    ITERATE ( CCdregion::TCode_break, it, cdr.GetCode_break() ) {
-        if ( !(*it)->IsSetAa() ) {
-            continue;
-        }
-        const CCode_break::C_Aa& cbaa = (*it)->GetAa();
-        bool is_U = false;
-        switch ( cbaa.Which() ) {
-        case CCode_break::C_Aa::e_Ncbieaa:
-            is_U = (cbaa.GetNcbieaa() == 'U');
-            break;
-        case CCode_break::C_Aa::e_Ncbi8aa:
-            is_U = (cbaa.GetNcbieaa() == 'U');
-        case CCode_break::C_Aa::e_Ncbistdaa:
-            is_U = (cbaa.GetNcbieaa() == 24);
-            break;
-        default:
-            break;
-        }
-        
-/*        if ( is_U ) {
-            if ( ctx.Config().SelenocysteineToNote() ) {
-                x_AddQual( eFQ_selenocysteine_note,
-                    new CFlatStringQVal( "selenocysteine" ) );
-            } else {
-                x_AddQual( eFQ_selenocysteine, new CFlatBoolQVal( true ) );
-            }
-            break;
-        }
-*/    }
-}
-
-//  ----------------------------------------------------------------------------
 void CFeatureItem::x_AddQualTranslationTable( 
     const CCdregion& cdr,
     CBioseqContext& ctx )
@@ -3192,7 +3045,6 @@ void CFeatureItem::x_AddQualsCdregion(
     CMappedFeat protFeat;
     CConstRef<CSeq_id> prot_id;
 
-    x_AddQualCodeBreak( cdr, ctx );
     x_AddQualTranslationTable( cdr, ctx );
     x_AddQualCodonStart( cdr, ctx );
     x_AddQualTranslationException( cdr, ctx );
@@ -3205,7 +3057,7 @@ void CFeatureItem::x_AddQualsCdregion(
     // protein qualifiers
     if (m_Feat.IsSetProduct()) {
         CBioseq_Handle prot =
-            ctx.GetScope().GetBioseqHandle(m_Feat.GetProduct());
+            ctx.GetScope().GetBioseqHandle(m_Feat.GetProductId());
         x_GetAssociatedProtInfo( ctx, prot, protRef, protFeat, prot_id );
         x_AddQualProtComment( prot );
         x_AddQualProtMethod( prot );
@@ -3611,7 +3463,7 @@ void CFeatureItem::x_AddQualDbXref(
     if ( m_Feat.IsSetProduct()  &&
         ( !m_Feat.GetData().IsCdregion()  &&  ctx.IsProt() && ! IsMappedFromProt() ) ) {
         CBioseq_Handle prod = 
-            ctx.GetScope().GetBioseqHandle( m_Feat.GetProduct() );
+            ctx.GetScope().GetBioseqHandle( m_Feat.GetProductId() );
         if ( prod ) {
             const CBioseq_Handle::TId& ids = prod.GetId();
             if ( ! ids.empty() ) {
@@ -3910,7 +3762,7 @@ void CFeatureItem::x_AddQualsProt(
         }
         if ( m_Feat.IsSetProduct() ) {
             CBioseq_Handle prot = 
-                ctx.GetScope().GetBioseqHandle( m_Feat.GetProduct() );
+                ctx.GetScope().GetBioseqHandle( m_Feat.GetProductId() );
             if ( prot ) {
                 x_AddProductIdQuals(prot, eFQ_protein_id);
             } else {
@@ -5524,7 +5376,7 @@ void CFeatureItem::x_AddFTableRnaQuals(
 
     if ( feat.IsSetProduct() ) {
         CBioseq_Handle prod = 
-            ctx.GetScope().GetBioseqHandle(m_Feat.GetProduct());
+            ctx.GetScope().GetBioseqHandle(m_Feat.GetProductId());
         if ( prod ) {
             CConstRef<CSeq_id> id = GetId(prod, eGetId_Best).GetSeqId();
             string id_str;
@@ -5549,16 +5401,9 @@ void CFeatureItem::x_AddFTableCdregionQuals(
 {
     CBioseq_Handle prod;
     if ( feat.IsSetProduct() ) {
-        prod = ctx.GetScope().GetBioseqHandle(feat.GetProduct());
+        prod = ctx.GetScope().GetBioseqHandle(feat.GetProductId());
     }
     if ( prod ) {
-        /**
-        CConstRef<CSeq_feat> prot = GetBestOverlappingFeat(
-            feat.GetProduct(),
-            CSeqFeatData::e_Prot,
-            eOverlap_Simple,
-            ctx.GetScope());
-            **/
         CMappedFeat prot_ref = s_GetBestProtFeature(prod);
         if ( prot_ref ) {
             /// FIXME: we take the first; we want the longest
@@ -6679,8 +6524,6 @@ bool CFeatureItem::x_GetGbValue(
     }
     return false;
 }
-
-    
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

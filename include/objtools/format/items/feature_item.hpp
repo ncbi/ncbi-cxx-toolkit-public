@@ -219,7 +219,6 @@ protected:
     void x_AddQualTranslation( CBioseq_Handle&, CBioseqContext&, bool );
     void x_AddQualTranslationTable( const CCdregion&, CBioseqContext& );
     void x_AddQualCodonStart( const CCdregion&, CBioseqContext& );
-    void x_AddQualCodeBreak( const CCdregion&, CBioseqContext& );
     void x_AddQualTranslationException( const CCdregion&, CBioseqContext& );
     void x_AddQualProteinConflict( const CCdregion&, CBioseqContext& );
     void x_AddQualCodedBy( CBioseqContext& );
