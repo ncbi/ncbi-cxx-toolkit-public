@@ -27,7 +27,7 @@
  *      Victor Sapojnikov
  *
  * File Description:
- *      Validate AGP data. A command line option to chose either context
+ *      Validate AGP data. A command line option to choose either context
  *      or GenBank validation. Context validation uses only the information
  *      in the AGP file. GenBank validation queries sequence length and taxid
  *      via ObjectManager or CEntrez2Client.
@@ -41,7 +41,7 @@
 #include <objtools/readers/agp_validate_reader.hpp>
 
 #include "AltValidator.hpp"
-
+#include "AgpFastaComparator.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -146,6 +146,10 @@ public:
     "  -chr       Chromosome from scaffold AGP: ONLY scaffold-breaking gaps allowed\n" //  + -cc
     "  Use both of the last 2 options in this order: -scaf Scaf_AGP_file(s) -chr Chr_AGP_file(s)\n"
     "  to check that all scaffolds in Scaf_AGP_file(s) are wholly included in Chr_AGP_file(s)\n"
+    "  -comp      Compare AGP and FASTA data for differences\n"
+    "    -comploadlog        Specify loading log for -comp option\n"
+    "    -compignoreagponly  Have -comp ignore AGP-only differences\n"
+    "    -compignoreobjfileonly (...or objfile-only differences)\n"
     //"  -cc        Chromosome from component: check telomere/centromere/short-arm gap counts per chromosome\n"
     "\n"
     "  -list               List error and warning messages.\n"
@@ -178,6 +182,13 @@ void CAgpValidateApplication::Init(void)
   arg_desc->AddFlag("un"  , "");
   arg_desc->AddFlag("scaf", "");
   arg_desc->AddFlag("chr" , "");
+  arg_desc->AddFlag("comp", "");
+
+  arg_desc->AddOptionalKey( "comploadlog", "FILE",
+    "specifies where we write our loading log for -comp",
+    CArgDescriptions::eOutputFile);
+  arg_desc->AddFlag("compignoreagponly",     "");
+  arg_desc->AddFlag("compignoreobjfileonly", "");
 
   arg_desc->AddFlag("species", "allow components from different subspecies");
 
@@ -374,6 +385,36 @@ int CAgpValidateApplication::Run(void)
     cout << "\n";
     if(m_ValidationType & VT_Taxid) m_AltValidator->CheckTaxids();
     m_AltValidator->PrintTotals();
+  }
+
+  if( args["comp"] ) {
+      list<string> filenames;
+      for (unsigned int i = 1; i <= args.GetNExtra(); i++) {
+          const string filename = args['#' + NStr::IntToString(i)].AsString();
+          if( ! filename.empty() && filename[0] != '-' ) {
+              filenames.push_back(filename);
+          }
+      }
+
+      string comploadlog;
+      if( args["comploadlog"] ) {
+          comploadlog = args["comploadlog"].AsString();
+      }
+
+      CAgpFastaComparator::TDiffsToHide diffsToHide = 0;
+      if( args["compignoreagponly"] ) {
+          diffsToHide |= CAgpFastaComparator::fDiffsToHide_AGPOnly;
+      }
+      if( args["compignoreobjfileonly"] ) {
+          diffsToHide |= CAgpFastaComparator::fDiffsToHide_ObjfileOnly;
+      }
+
+      CAgpFastaComparator agpFastaComparator;
+      if( CAgpFastaComparator::eResult_Success !=
+          agpFastaComparator.Run(filenames, comploadlog, diffsToHide) )
+      {
+          cerr << "AGP/FASTA comparison failed." << endl;
+      }
   }
 
   return 0;
