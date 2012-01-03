@@ -56,6 +56,7 @@ const char* CIOException::GetErrCodeString(void) const
     case eWrite: return "eWrite";
     case eFlush: return "eFlush";
     case eCanceled: return "eCanceled";
+    case eOverflow: return "eOverflow";
     default:     return CException::GetErrCodeString();
     }
 }

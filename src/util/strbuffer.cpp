@@ -57,7 +57,8 @@ CIStreamBuffer::CIStreamBuffer(void)
       m_CurrentPos(0), m_DataEndPos(0),
       m_Line(1),
       m_CollectPos(0),
-      m_CanceledCallback(0)
+      m_CanceledCallback(0),
+      m_BufferLockSize(0)
 {
 }
 
@@ -67,7 +68,8 @@ CIStreamBuffer::CIStreamBuffer(const char* buffer, size_t size)
       m_CurrentPos(buffer), m_DataEndPos(buffer+size),
       m_Line(1),
       m_CollectPos(0),
-      m_CanceledCallback(0)
+      m_CanceledCallback(0),
+      m_BufferLockSize(0)
 {
 }
 
@@ -128,6 +130,21 @@ void CIStreamBuffer::Close(void)
 void CIStreamBuffer::SetCanceledCallback(const ICanceled* canceled_callback)
 {
     m_CanceledCallback = canceled_callback;
+}
+
+size_t CIStreamBuffer::SetBufferLock(size_t size)
+{
+    _ASSERT(size > 0);
+    size_t pos = m_CurrentPos - m_Buffer;
+    m_BufferLockSize = pos + size;
+    return pos;
+}
+
+void CIStreamBuffer::ResetBufferLock(size_t pos)
+{
+    _ASSERT(m_Buffer+pos <= m_CurrentPos);
+    m_BufferLockSize = 0;
+    m_CurrentPos = m_Buffer+pos;
 }
 
 void CIStreamBuffer::StartSubSource(void)
@@ -301,7 +318,8 @@ const char* CIStreamBuffer::FillBuffer(const char* pos, bool noEOF)
         }
     }
     size_t newPosOffset = pos - m_Buffer;
-    if ( newPosOffset >= m_BufferSize || m_DataEndPos == m_CurrentPos ) {
+    if ( m_BufferLockSize == 0 &&
+         (newPosOffset >= m_BufferSize || m_DataEndPos == m_CurrentPos) ) {
         // if new position is out of buffer, or if there is no data left
         // move pointers to the beginning
         size_t erase = m_CurrentPos - m_Buffer;
@@ -330,6 +348,12 @@ const char* CIStreamBuffer::FillBuffer(const char* pos, bool noEOF)
         size_t newSize = BiggerBufferSize(m_BufferSize);
         while ( newPosOffset >= newSize ) {
             newSize = BiggerBufferSize(newSize);
+        }
+        if ( m_BufferLockSize != 0 ) {
+            newSize = min(newSize, m_BufferLockSize);
+            if ( newPosOffset >= newSize ) {
+                NCBI_THROW(CIOException, eOverflow, "Locked buffer overflow");
+            }
         }
         char* newBuffer = new char[newSize];
         memcpy(newBuffer, m_Buffer, dataSize);

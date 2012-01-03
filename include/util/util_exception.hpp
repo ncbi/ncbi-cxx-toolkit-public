@@ -66,7 +66,8 @@ public:
         eRead,
         eWrite,
         eFlush,
-        eCanceled
+        eCanceled,
+        eOverflow
     };
     virtual const char* GetErrCodeString(void) const;
     NCBI_EXCEPTION_DEFAULT(CIOException, CUtilException);

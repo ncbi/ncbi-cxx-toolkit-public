@@ -168,6 +168,16 @@ public:
         return !m_Input ? (m_CurrentPos >= m_DataEndPos) : m_Input->EndOfData();
     }
 
+    // Setting buffer lock to a non-zero value locks read data until unlocked.
+    // The argument is the maximum size for the input buffer in bytes.
+    // If the reading would pass beyond the maximum size while locked,
+    // the reading will fail with the CIOException::eOverflow.
+    // The method returns current position in buffer to be used
+    // as an argument to ResetBufferLock().
+    size_t SetBufferLock(size_t size);
+    // Unlock buffer and restore buffer position.
+    void ResetBufferLock(size_t pos);
+
 protected:
     // action: fill buffer so *pos char is valid
     // return: new value of pos pointer if buffer content was shifted
@@ -198,6 +208,7 @@ private:
     CRef<CSubSourceCollector> m_Collector;
 
     CConstIRef<ICanceled> m_CanceledCallback;
+    size_t m_BufferLockSize;
 };
 
 class NCBI_XUTIL_EXPORT COStreamBuffer
