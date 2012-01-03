@@ -59,15 +59,18 @@ const bool CProSplignOptions_Base::default_allow_alt_starts = false;
 
 void CProSplignOptions_Base::SetupArgDescriptions(CArgDescriptions* arg_desc)
 {
-    if (arg_desc->Exist("score_matrix"))
-        return;
-    arg_desc->AddFlag("allow_alt_starts", "treat alternative starts same way as ATG for ASN flag 'start-codon-found' (this is an ASN output oprion)");
+    if (!arg_desc->Exist("score_matrix")) {
     arg_desc->AddDefaultKey
         ("score_matrix",
          "score_matrix",
          "Aminoacid substitution matrix",
          CArgDescriptions::eString,
          CProSplignScoring::default_score_matrix_name);
+    }
+ if (!arg_desc->Exist("allow_alt_starts")) {
+     arg_desc->AddFlag("allow_alt_starts", "treat alternative starts same way as ATG for ASN flag 'start-codon-found' (this is an ASN output oprion)");
+ }
+
 }
 
 CProSplignOptions_Base::CProSplignOptions_Base()
