@@ -323,7 +323,6 @@ int CMytestApplication::DoProcessFeatureGeneOverlap (
 
             if (bss.IsSetSeq_set()) {
                 NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
-                    CBioseq_set::TSeq_set::iterator it2 = it;
                     count += DoProcessFeatureGeneOverlap( ip, op, scope, *it, do_format );
                 }
             }

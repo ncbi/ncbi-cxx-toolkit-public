@@ -142,8 +142,6 @@ void CIdMapperApp::Init()
 int CIdMapperApp::Run()
 //  ============================================================================
 {
-    const CArgs& args = GetArgs();
-
     CIdMapper* pMapper = GetMapper();
     vector< string > SourceIds;
     GetSourceIds( SourceIds );

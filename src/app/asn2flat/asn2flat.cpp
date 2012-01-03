@@ -571,10 +571,11 @@ CObjectIStream* CAsn2FlatApp::x_OpenIStream(const CArgs& args)
             512, 512, kZlibDefaultWbits, CZipCompression::fCheckFileHeader );
         CCompressionIStream* pUnzipStream = new CCompressionIStream(
             *pInputStream, pDecompressor, CCompressionIStream::fOwnProcessor );
-        pI = CObjectIStream::Open( serial, *pUnzipStream, true );
+        pI = CObjectIStream::Open( serial, *pUnzipStream, eTakeOwnership );
     }
     else {
-        pI = CObjectIStream::Open( serial, *pInputStream, bDeleteOnClose );
+        pI = CObjectIStream::Open( 
+            serial, *pInputStream, (bDeleteOnClose ? eTakeOwnership : eNoOwnership));
     }
 
     if ( 0 != pI ) {
