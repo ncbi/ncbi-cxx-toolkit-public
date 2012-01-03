@@ -123,8 +123,10 @@ public:
                             EFixNonPrint how = eFNP_Default);
 
 
-    virtual set<TTypeInfo> GuessDataType(
-        set<TTypeInfo>& known_types, size_t max_length=16);
+    virtual set<TTypeInfo> GuessDataType(set<TTypeInfo>& known_types,
+                                         size_t max_length = 16,
+                                         size_t max_bytes  = 1024*1024);
+
     virtual TEnumValueType ReadEnum(const CEnumeratedTypeValues& values);
     virtual void ReadNull(void);
 

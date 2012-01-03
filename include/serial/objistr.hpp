@@ -519,10 +519,13 @@ public:
     ///   Set of known types.
     /// @param max_length
     ///   Maximum depth of the lookup.
+    /// @param max_bytes
+    ///   Maximum number of input bytes to use for the lookup.
     /// @return
     ///   Set of matching types.
-    virtual set<TTypeInfo> GuessDataType(
-        set<TTypeInfo>& known_types, size_t max_length=16);
+    virtual set<TTypeInfo> GuessDataType(set<TTypeInfo>& known_types,
+                                         size_t max_length = 16,
+                                         size_t max_bytes  = 1024*1024);
     // root reader
 
     /// Read object of know type

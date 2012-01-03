@@ -857,16 +857,27 @@ void CObjectIStream::EndOfRead(void)
         m_Objects->Clear();
 }
 
-set<TTypeInfo> CObjectIStream::GuessDataType(
-    set<TTypeInfo>& known_types, size_t /*max_length*/)
+set<TTypeInfo> CObjectIStream::GuessDataType(set<TTypeInfo>& known_types,
+                                             size_t /*max_length*/,
+                                             size_t max_bytes)
 {
     set<TTypeInfo> matching_types;
-    CNcbiStreampos str_pos = GetStreamPos();
-    const char* pos0 = m_Input.GetCurrentPos();
-    string name = ReadFileHeader();
-    if (!m_Input.TrySetCurrentPos(pos0)) {
-        SetStreamPos(str_pos);
+    string name;
+
+    // save state
+    size_t pos0 = m_Input.SetBufferLock(max_bytes);
+
+    try {
+        name = ReadFileHeader();
     }
+    catch ( ... ) {
+        // restore state
+        m_Input.ResetBufferLock(pos0);
+        throw;
+    }
+    // restore state
+    m_Input.ResetBufferLock(pos0);
+
     ITERATE( set<TTypeInfo>, t, known_types) {
         if ((*t)->GetName() == name) {
             matching_types.insert(*t);

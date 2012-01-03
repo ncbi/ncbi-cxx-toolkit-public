@@ -1252,24 +1252,54 @@ void CObjectIStreamAsnBinary::SkipAnyContent(void)
     }
 }
 
-set<TTypeInfo> CObjectIStreamAsnBinary::GuessDataType(
-    set<TTypeInfo>& known_types,size_t max_length)
+set<TTypeInfo>
+CObjectIStreamAsnBinary::GuessDataType(set<TTypeInfo>& known_types,
+                                       size_t max_length,
+                                       size_t max_bytes)
 {
     set<TTypeInfo> matching_types;
     vector<int> pattern;
 
-    CNcbiStreampos str_pos = GetStreamPos();
-    const char* pos0 = m_Input.GetCurrentPos();
+    // save state
+    size_t pos0 = m_Input.SetBufferLock(max_bytes);
 #if CHECK_INSTREAM_STATE
     ETagState state = m_CurrentTagState;
 #endif
 #if CHECK_INSTREAM_LIMITS
     Int8 lim = m_CurrentTagLimit;
 #endif
-    GetTagPattern(pattern, max_length*3);
-    if (!m_Input.TrySetCurrentPos(pos0)) {
-        SetStreamPos(str_pos);
+
+    try {
+        GetTagPattern(pattern, max_length*3);
     }
+    catch ( CIOException& exc ) {
+        if ( exc.GetErrCode() != CIOException::eOverflow ) {
+            // restore state
+            m_Input.ResetBufferLock(pos0);
+#if CHECK_INSTREAM_STATE
+            m_CurrentTagState = state;
+#endif
+#if CHECK_INSTREAM_LIMITS
+            m_CurrentTagLimit = lim;
+#endif
+            m_CurrentTagLength = 0;
+            throw;
+        }
+    }
+    catch ( ... ) {
+        // restore state
+        m_Input.ResetBufferLock(pos0);
+#if CHECK_INSTREAM_STATE
+        m_CurrentTagState = state;
+#endif
+#if CHECK_INSTREAM_LIMITS
+        m_CurrentTagLimit = lim;
+#endif
+        m_CurrentTagLength = 0;
+        throw;
+    }
+    // restore state
+    m_Input.ResetBufferLock(pos0);
 #if CHECK_INSTREAM_STATE
     m_CurrentTagState = state;
 #endif
