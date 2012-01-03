@@ -62,6 +62,8 @@ public:
     virtual ~CGff3Writer();
 
     virtual bool WriteHeader();
+    virtual bool WriteHeader(
+        const CSeq_annot& annot) { return CGff2Writer::WriteHeader(annot); };
 
 protected:
     virtual bool x_WriteBioseqHandle(
