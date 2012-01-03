@@ -493,18 +493,14 @@ bool CGff3WriteRecordFeature::x_AssignAttributesFromAsnCore(
     // if not, feature ids must trump ID tags).
     //
 
-    // Actually, I might be doing more harm that good. Disabling this logic 
-    // pending further investigation...
-    return true;
+    //*** Actually, I might be doing more harm that good. Disabling this logic 
+    //*** pending further investigation...
 
-    bool bIdAssigned = false;
-
-    if ( mapped_feat.IsSetId() ) {
-        const CSeq_feat::TId& id = mapped_feat.GetId();
-        string value = CGffWriteRecordFeature::x_FeatIdString( id );
-        m_Attributes["ID"] = value;
-        bIdAssigned = true;
-    }
+//    if (mapped_feat.IsSetId()) {
+//        const CSeq_feat::TId& id = mapped_feat.GetId();
+//        string value = CGffWriteRecordFeature::x_FeatIdString(id);
+//        m_Attributes["ID"] = value;
+//    }
     return true;
 }
 
@@ -529,37 +525,37 @@ string CGff3WriteRecordFeature::StrAttributes() const
     string strAttributes;
     strAttributes.reserve(256);
     CGffWriteRecord::TAttributes attrs;
-    attrs.insert( Attributes().begin(), Attributes().end() );
+    attrs.insert(Attributes().begin(), Attributes().end());
     CGffWriteRecord::TAttrIt it;
 
-    x_StrAttributesAppendValue( "ID", attrs, strAttributes );
-    x_StrAttributesAppendValue( "Name", attrs, strAttributes );
-    x_StrAttributesAppendValue( "Alias", attrs, strAttributes );
-    x_StrAttributesAppendValue( "Parent", attrs, strAttributes );
-    x_StrAttributesAppendValue( "Target", attrs, strAttributes );
-    x_StrAttributesAppendValue( "Gap", attrs, strAttributes );
-    x_StrAttributesAppendValue( "Derives_from", attrs, strAttributes );
-    x_StrAttributesAppendValue( "Note", attrs, strAttributes );
-    x_StrAttributesAppendValue( "Dbxref", attrs, strAttributes );
-    x_StrAttributesAppendValue( "Ontology_term", attrs, strAttributes );
+    x_StrAttributesAppendValueGff3("ID", attrs, strAttributes);
+    x_StrAttributesAppendValueGff3("Name", attrs, strAttributes);
+    x_StrAttributesAppendValueGff3("Alias", attrs, strAttributes);
+    x_StrAttributesAppendValueGff3("Parent", attrs, strAttributes);
+    x_StrAttributesAppendValueGff3("Target", attrs, strAttributes);
+    x_StrAttributesAppendValueGff3("Gap", attrs, strAttributes);
+    x_StrAttributesAppendValueGff3("Derives_from", attrs, strAttributes);
+    x_StrAttributesAppendValueGff3("Note", attrs, strAttributes);
+    x_StrAttributesAppendValueGff3("Dbxref", attrs, strAttributes);
+    x_StrAttributesAppendValueGff3("Ontology_term", attrs, strAttributes);
 
-    while ( !attrs.empty() ) {
-        x_StrAttributesAppendValue( attrs.begin()->first, attrs, strAttributes );
+    while (!attrs.empty()) {
+        x_StrAttributesAppendValueGff3(attrs.begin()->first, attrs, strAttributes);
     }
-    if ( strAttributes.empty() ) {
+    if (strAttributes.empty()) {
         strAttributes = ".";
     }
     return strAttributes;
 }
 
 //  ----------------------------------------------------------------------------
-void CGff3WriteRecordFeature::x_StrAttributesAppendValue(
+void CGff3WriteRecordFeature::x_StrAttributesAppendValueGff3(
     const string& strKey,
     map<string, string >& attrs,
     string& strAttributes ) const
 //  ----------------------------------------------------------------------------
 {
-    CGffWriteRecord::x_StrAttributesAppendValue( strKey, ATTR_SEPARATOR,
+    x_StrAttributesAppendValue( strKey, ATTR_SEPARATOR,
         MULTIVALUE_SEPARATOR, attrs, strAttributes );
 }
 

@@ -163,7 +163,7 @@ protected:
     virtual bool x_AssignAttributeIsOrdered(
         CMappedFeat );
 
-    virtual void x_StrAttributesAppendValue(
+    virtual void x_StrAttributesAppendValueGff3(
         const string&,
         map<string, string >&,
         string& ) const;
