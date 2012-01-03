@@ -1858,7 +1858,7 @@ BOOST_AUTO_TEST_CASE(FilterStringFalse)
     nucl_handle.SetFilterString("F");/* NCBI_FAKE_WARNING */
     BOOST_REQUIRE_EQUAL(false, nucl_handle.GetMaskAtHash());
     BOOST_REQUIRE_EQUAL(false, nucl_handle.GetDustFiltering());
-    BOOST_REQUIRE_EQUAL(false, nucl_handle.GetWindowMaskerTaxId());
+    BOOST_REQUIRE_EQUAL(0, nucl_handle.GetWindowMaskerTaxId());
     BOOST_REQUIRE(nucl_handle.GetWindowMaskerDatabase() == NULL);
 }
 
@@ -1884,7 +1884,7 @@ BOOST_AUTO_TEST_CASE(OptionsHandleClear) {
     nucl_handle.SetFilterString("R -d repeat/repeat_9606");/* NCBI_FAKE_WARNING */
     BOOST_REQUIRE_EQUAL(false, nucl_handle.GetDustFiltering());
     BOOST_REQUIRE_EQUAL(true, nucl_handle.GetRepeatFiltering());
-    BOOST_REQUIRE_EQUAL(false, nucl_handle.GetWindowMaskerTaxId());
+    BOOST_REQUIRE_EQUAL(0, nucl_handle.GetWindowMaskerTaxId());
     BOOST_REQUIRE(nucl_handle.GetWindowMaskerDatabase() == NULL);
 }
 
