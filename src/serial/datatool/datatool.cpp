@@ -132,9 +132,10 @@ void CDataTool::Init(void)
     d->AddOptionalKey("tvs", "traversalSpecFile",
                       "read traversal specification file",
                       CArgDescriptions::eInputFile);
-    d->AddOptionalKey("t", "type",
-                      "binary value type (see \"-d\" argument)",
-                      CArgDescriptions::eString);
+    d->AddDefaultKey("t", "type",
+                     "binary value type (see \"-d\" argument)",
+                     CArgDescriptions::eString,
+                     "?");
     d->AddOptionalKey("dn", "filename",
                       "DTD module name in XML header (no extension). "
                       "If empty, omit DOCTYPE line.",
@@ -350,7 +351,6 @@ bool CDataTool::ProcessData(void)
     // convert data
     ESerialDataFormat inFormat;
     string inFileName;
-    const CArgValue& t = args["t"];
     
     if ( const CArgValue& v = args["v"] ) {
         inFormat = eSerial_AsnText;
@@ -361,10 +361,6 @@ bool CDataTool::ProcessData(void)
         inFileName = vx.AsString();
     }
     else if ( const CArgValue& d = args["d"] ) {
-        if ( !t ) {
-            ERR_POST_X(3, "ASN.1 value type must be specified (-t)");
-            return false;
-        }
         inFormat = eSerial_AsnBinary;
         inFileName = d.AsString();
     }
@@ -382,17 +378,8 @@ bool CDataTool::ProcessData(void)
     }
 
     TTypeInfo typeInfo;
-    string typeName;
-    if ( t ) {
-        typeName = t.AsString();
-        if (typeName != "?") {
-            in->ReadFileHeader();
-        }
-    }
-    else {
-        typeName = in->ReadFileHeader();
-    }
-
+    string typeName = args["t"].AsString();
+    
     bool type_guessed = false;
     if (typeName != "?") {
         typeInfo =
@@ -402,7 +389,7 @@ bool CDataTool::ProcessData(void)
         type_guessed = true;
         set<TTypeInfo> known_types;
         generator.GetMainModules().CollectAllTypeinfo(known_types);
-        set<TTypeInfo> matching_types = in->GuessDataType(known_types, 16);
+        set<TTypeInfo> matching_types = in->GuessDataType(known_types);
         if (matching_types.size() == 0) {
             NCBI_THROW(CNotFoundException,eType,"No typeinfo matches");
         } else if (matching_types.size() == 1) {
@@ -414,7 +401,6 @@ bool CDataTool::ProcessData(void)
             }
             NCBI_THROW(CNotFoundException,eType,msg);
         }
-        in->ReadFileHeader();
     }
     
     // determine output data file
@@ -447,14 +433,14 @@ bool CDataTool::ProcessData(void)
         if (typeName == "?") {
             ERR_POST_X(4, "Data type: " << typeInfo->GetName());
         }
-        // no input data
+        // no output data
         outFormat = eSerial_None;
     }
 
     if ( args["F"] ) {
         // read fully in memory
         AnyType value;
-        in->Read(&value, typeInfo, CObjectIStream::eNoFileHeader);
+        in->Read(&value, typeInfo);
         if ( outFormat != eSerial_None ) {
             // store data
             auto_ptr<CObjectOStream>
@@ -518,7 +504,7 @@ bool CDataTool::ProcessData(void)
                 }
             }
             CObjectStreamCopier copier(*in, *out);
-            copier.Copy(typeInfo, CObjectStreamCopier::eNoFileHeader);
+            copier.Copy(typeInfo);
             // In case the input stream has more than one object of this type,
             // keep converting them
             {
@@ -541,7 +527,7 @@ bool CDataTool::ProcessData(void)
         else {
             // skip
             if (!type_guessed) {
-                in->Skip(typeInfo, CObjectIStream::eNoFileHeader);
+                in->Skip(typeInfo);
             }
         }
     }
