@@ -191,6 +191,13 @@ bool CMultiAlignerOptions::Validate(void)
         }
     }
 
+    // Check is CDD is specified if pre-computed domains are used
+    if (CanGetDomainHits() && m_RpsDb.empty()) {
+        NCBI_THROW(CMultiAlignerException, eInvalidOptions,
+                   "CDD database must be specified if pre-computed domain"
+                   " hits are used");
+    }
+
     return m_Messages.empty();
 }
 

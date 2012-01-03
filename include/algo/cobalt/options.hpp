@@ -43,6 +43,7 @@ Contents: Interface for CMultiAlignerOptions
 #include <corelib/ncbiobj.hpp>
 #include <algo/cobalt/kmercounts.hpp>
 #include <algo/align/nw/nw_pssm_aligner.hpp>
+#include <objects/blast/Blast4_archive.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -639,6 +640,24 @@ public:
     EInClustAlnMethod GetInClustAlnMethod(void) const
     {return m_InClustAlnMethod;}
 
+    /// Set pre-computed domain hits
+    /// @param archive Blast4 archive with precomputed domain hits [in]
+    ///
+    void SetDomainHits(CConstRef<objects::CBlast4_archive> archive)
+    {m_DomainHits = archive;}
+
+    /// Get pre-computed domain hits
+    /// @return Blast4 archive with pre-computed domain hits
+    ///
+    CConstRef<objects::CBlast4_archive> GetDomainHits(void) const
+    {return m_DomainHits;}
+
+    /// Are pre-computed domain hits set
+    /// @return true if pre-computed domain hits are set, false otherwise
+    ///
+    bool CanGetDomainHits(void) const
+    {return !m_DomainHits.Empty();}
+
 
     //--- Options validation ---
 
@@ -709,6 +728,9 @@ private:
     TScore m_GapExtend;
     TScore m_EndGapOpen;
     TScore m_EndGapExtend;
+
+    // Pre-computed hits
+    CConstRef<objects::CBlast4_archive> m_DomainHits;
 
     bool m_Verbose;
 

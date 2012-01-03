@@ -123,6 +123,19 @@ public:
         }
     }
 
+    /// Set pre-computed domain hits without invoking CMlultiAligner::Run()
+    static void SetDomainHits(CMultiAligner& aligner,
+                              CConstRef<CBlast4_archive> archive)
+    {
+        BOOST_REQUIRE(!aligner.m_tQueries.empty());
+        BOOST_REQUIRE(!archive.Empty());
+
+        blast::TSeqLocVector queries;
+        vector<int> indices;
+        aligner.x_CreateBlastQueries(queries, indices);
+        aligner.x_SetDomainHits(queries, indices, *archive);
+    }
+
     static const vector<bool>& GetIsDomainSearched(
                                              const CMultiAligner& aligner)
     {
@@ -1167,16 +1180,16 @@ BOOST_AUTO_TEST_CASE(TestSetPrecomputedDomainHitsWithQueriesAsBioseqset)
     m_Aligner->SetQueries(m_Sequences, m_Scope);
 
     // read RPS-BLAST archive
-    CBlast4_archive archive;
+    CRef<CBlast4_archive> archive(new CBlast4_archive);
     CNcbiIfstream istr("data/rps_archive_bioseqset.asn");
-    istr >> MSerial_AsnText >> archive;
+    istr >> MSerial_AsnText >> *archive;
 
     // check pre conditions
     BOOST_REQUIRE_EQUAL(m_Options->GetUseQueryClusters(), false);
     BOOST_REQUIRE(fabs(m_Options->GetRpsEvalue() - 0.1) < 0.01);
                          
     // set pre-computed domain hits
-    m_Aligner->SetDomainHits(archive);
+    CMultiAlignerTest::SetDomainHits(*m_Aligner, archive);
 
     // Tests
 
@@ -1327,7 +1340,7 @@ BOOST_AUTO_TEST_CASE(TestSetPrecomputedDomainHitsWithQueriesAsSeqLocs)
     BOOST_REQUIRE(fabs(m_Options->GetRpsEvalue() - 0.1) < 0.01);
                          
     // set pre-computed domain hits
-    m_Aligner->SetDomainHits(*m_RpsArchive);
+    CMultiAlignerTest::SetDomainHits(*m_Aligner, m_RpsArchive);
 
     // Tests
 
@@ -1460,18 +1473,19 @@ BOOST_AUTO_TEST_CASE(TestSetPrecomputedDomainHitsWithQueriesAsSeqLocs)
 
 BOOST_AUTO_TEST_CASE(TestSetPrecomputedDomainHitsWithNoMatchingQueries)
 {
+    m_Options->SetUseQueryClusters(false);
+    m_Aligner.Reset(new CMultiAligner(m_Options));
+
     // create cobalt queries with fake Seq-ids
     vector< CRef<CSeq_loc> > queries;
-    CRef<CSeq_loc> seq(new CSeq_loc);
-    seq->SetWhole().Set("lcl|fake");
-    queries.push_back(seq);
-    queries.push_back(seq);
+    queries.push_back(m_Sequences.back());
+    queries.push_back(m_Sequences.back());
     
     // set cobalt queries without retrieving sequences
-    CMultiAlignerTest::SetQuerySeqlocs(*m_Aligner, queries);
+    m_Aligner->SetQueries(queries, m_Scope);
     
     // set pre-computed domain hits
-    m_Aligner->SetDomainHits(*m_RpsArchive);
+    CMultiAlignerTest::SetDomainHits(*m_Aligner, m_RpsArchive);
 
     // verify that none of the pre-computed hits made it to the domain hit list
     BOOST_REQUIRE_EQUAL(CMultiAlignerTest::GetDomainHits(*m_Aligner).Size(), 0);
@@ -1492,6 +1506,7 @@ BOOST_AUTO_TEST_CASE(TestSetPrecomputedDomainHitsAboveEThresh)
     
     // set options
     m_Options->SetRpsEvalue(10);
+    m_Options->SetUseQueryClusters(false);
 
     // First make sure that there is a hit
 
@@ -1501,7 +1516,7 @@ BOOST_AUTO_TEST_CASE(TestSetPrecomputedDomainHitsAboveEThresh)
     m_Aligner->SetQueries(queries, m_Scope);
 
     // set pre-computed domain hits
-    m_Aligner->SetDomainHits(*m_RpsArchive);
+    CMultiAlignerTest::SetDomainHits(*m_Aligner, m_RpsArchive);
 
     // verify that there is at least one matching RPS-BLAST query with results
     BOOST_REQUIRE(CMultiAlignerTest::GetDomainHits(*m_Aligner).Size() > 0);
@@ -1516,7 +1531,7 @@ BOOST_AUTO_TEST_CASE(TestSetPrecomputedDomainHitsAboveEThresh)
     m_Aligner->SetQueries(queries, m_Scope);
 
     // set pre-computed domain hits
-    m_Aligner->SetDomainHits(*m_RpsArchive);
+    CMultiAlignerTest::SetDomainHits(*m_Aligner, m_RpsArchive);
 
     // verify that none of the pre-computed hits made it to the hit list
     BOOST_REQUIRE_EQUAL(CMultiAlignerTest::GetDomainHits(*m_Aligner).Size(), 0);
@@ -1531,9 +1546,10 @@ BOOST_AUTO_TEST_CASE(TestAlignSequencesWithPrecomputedDomainHits)
 {
     // test no query clusters
     m_Options->SetUseQueryClusters(false);
+    m_Options->SetDomainHits(m_RpsArchive);
+    BOOST_REQUIRE(m_Options->Validate());
     m_Aligner.Reset(new CMultiAligner(m_Options));
     m_Aligner->SetQueries(m_Sequences, m_Scope);
-    m_Aligner->SetDomainHits(*m_RpsArchive);
     m_Aligner->Run();
 
     s_TestResults(*m_Aligner);
@@ -1541,9 +1557,9 @@ BOOST_AUTO_TEST_CASE(TestAlignSequencesWithPrecomputedDomainHits)
 
     // test with query clusters
     m_Options->SetUseQueryClusters(true);
+    BOOST_REQUIRE(m_Options->CanGetDomainHits());
     m_Aligner.Reset(new CMultiAligner(m_Options));
     m_Aligner->SetQueries(m_Sequences, m_Scope);
-    m_Aligner->SetDomainHits(*m_RpsArchive);
     m_Aligner->Run();
 
     s_TestResults(*m_Aligner);
@@ -1553,13 +1569,14 @@ BOOST_AUTO_TEST_CASE(TestAlignMSAsWithPrecomputedDomainHits)
 {
     // set a larger RPS-BLAST e-value threshold, due to hits in m_RpsArchive
     m_Options->SetRpsEvalue(10);
+    m_Options->SetDomainHits(m_RpsArchive);
+    BOOST_REQUIRE(m_Options->Validate());
     m_Aligner.Reset(new CMultiAligner(m_Options));
     set<int> repr;
 
     // Test without representative sequences
 
     m_Aligner->SetInputMSAs(*m_Align1, *m_Align2, repr, repr, m_Scope);
-    m_Aligner->SetDomainHits(*m_RpsArchive);
     m_Aligner->Run();
 
     // test result
@@ -1568,11 +1585,11 @@ BOOST_AUTO_TEST_CASE(TestAlignMSAsWithPrecomputedDomainHits)
 
     // Test with representative sequences
     repr.insert(0);
-
+    
+    BOOST_REQUIRE(m_Options->CanGetDomainHits());
     m_Aligner.Reset(new CMultiAligner(m_Options));
 
     m_Aligner->SetInputMSAs(*m_Align1, *m_Align2, repr, repr, m_Scope);
-    m_Aligner->SetDomainHits(*m_RpsArchive);
     m_Aligner->Run();
 
     // test result
@@ -1582,17 +1599,19 @@ BOOST_AUTO_TEST_CASE(TestAlignMSAsWithPrecomputedDomainHits)
 
 BOOST_AUTO_TEST_CASE(TestPrecomputedDomainSubjectNotInDatabase)
 {
+    m_Options->SetUseQueryClusters(false);
+    m_Aligner.Reset(new CMultiAligner(m_Options));
     m_Aligner->SetQueries(m_Sequences, m_Scope);
 
     // read RPS-BLAST archive
-    CBlast4_archive archive;
+    CRef<CBlast4_archive> archive(new CBlast4_archive);
     CNcbiIfstream istr("data/rps_archive_subjectnotindb.asn");
     BOOST_REQUIRE(istr);
-    istr >> MSerial_AsnText >> archive;
+    istr >> MSerial_AsnText >> *archive;
 
     // get domain hits
     const CSeq_align& align =
-        *archive.GetResults().GetAlignments().Get().front();
+        *archive->GetResults().GetAlignments().Get().front();
 
     // veryfy that expected query and subject pair is in the domain hits
     BOOST_REQUIRE_EQUAL(align.GetSeq_id(0).AsFastaString(),
@@ -1602,33 +1621,14 @@ BOOST_AUTO_TEST_CASE(TestPrecomputedDomainSubjectNotInDatabase)
 
     // verify that all subjects in the domain hits must exist in the domain
     // database used by cobalt
-    BOOST_REQUIRE_THROW(m_Aligner->SetDomainHits(archive),
-                        CMultiAlignerException);
-}
-
-BOOST_AUTO_TEST_CASE(TestSetPrecomputedDomainHitsBeforeQueries)
-{
-    // verify that domain hits must be set after either queries or input MSAs
-    // are set
-    BOOST_REQUIRE_THROW(m_Aligner->SetDomainHits(*m_RpsArchive),
-                        CMultiAlignerException);
-}
-
-BOOST_AUTO_TEST_CASE(TestSetDomainHitsWithNoCDD)
-{
-    // create a new aligner with options without specifying domain database
-    m_Options.Reset(new CMultiAlignerOptions);
-    m_Aligner.Reset(new CMultiAligner(m_Options));
-
-    m_Aligner->SetQueries(m_Sequences, m_Scope);
-
-    // domain database must be specified if pre-computed hits are used
-    BOOST_REQUIRE_THROW(m_Aligner->SetDomainHits(*m_RpsArchive),
+    BOOST_REQUIRE_THROW(CMultiAlignerTest::SetDomainHits(*m_Aligner, archive),
                         CMultiAlignerException);
 }
 
 BOOST_AUTO_TEST_CASE(TestSetDomainHitsWithUnsupportedQueries)
 {
+    m_Options->SetUseQueryClusters(false);
+    m_Aligner.Reset(new CMultiAligner(m_Options));
     m_Aligner->SetQueries(m_Sequences, m_Scope);
 
     // change queries to PSSM
@@ -1639,7 +1639,8 @@ BOOST_AUTO_TEST_CASE(TestSetDomainHitsWithUnsupportedQueries)
     pssm.SetNumColumns(200);
 
     // PSSM as query is not supported
-    BOOST_REQUIRE_THROW(m_Aligner->SetDomainHits(*m_RpsArchive),
+    BOOST_REQUIRE_THROW(CMultiAlignerTest::SetDomainHits(*m_Aligner,
+                                                         m_RpsArchive),
                         CMultiAlignerException);
 
     // re-read RPS-BLAST archive so that it is not changed for future tests

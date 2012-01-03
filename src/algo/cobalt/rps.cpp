@@ -176,7 +176,7 @@ CMultiAligner::x_RealignBlocks(CHitList& rps_hits,
 
         vector<SSegmentLoc>::iterator prev_itr(itr);
         vector<SSegmentLoc>::iterator next_itr(itr);
-		if (itr != blocklist.begin()) {
+                if (itr != blocklist.begin()) {
             prev_itr--;
         }
         next_itr++;
@@ -659,33 +659,27 @@ bool compare_seqids(const pair<const CSeq_id*, int>& a,
 }
 
 void
-CMultiAligner::SetDomainHits(const CBlast4_archive& archive)
+CMultiAligner::x_SetDomainHits(const TSeqLocVector& pre_queries,
+                               const vector<int>& indices,
+                               const CBlast4_archive& archive)
 {
     // This function sets pre-computed alignments with of queries
     // with conserved domains. Note that the results need not include all
     // cobalt queries and not all domain queries need to be cobalt sequences
 
-    if (m_tQueries.empty()) {
-        NCBI_THROW(CMultiAlignerException, eInvalidInput, "Sequences to align "
-                   "must be set before domain hits");
-    }
+    _ASSERT(!pre_queries.empty());
+    _ASSERT(pre_queries.size() == indices.size());
 
-    if (m_Options->GetRpsDb().empty()) {
-        NCBI_THROW(CMultiAlignerException, eInvalidInput,
-                   "Domain database must be set in options if pre-computed "
-                   "domain hits are used");
-    }
-
-    // initialized all queries as not searched for conserved domains
+    // initialize all queries as not searched for conserved domains
     m_IsDomainSearched.resize(m_tQueries.size(), false);
     m_DomainHits.PurgeAllHits();
 
     // create a sorted list query seq_ids
     vector< pair<const CSeq_id*, int> > queries;
-    queries.reserve(m_tQueries.size());
-    for (size_t i=0;i < m_tQueries.size();i++) {
-        _ASSERT(m_tQueries[i]->GetId());
-        queries.push_back(make_pair(m_tQueries[i]->GetId(), (int)i));
+    queries.reserve(pre_queries.size());
+    for (size_t i=0;i < pre_queries.size();i++) {
+        _ASSERT(pre_queries[i].seqloc->GetId());
+        queries.push_back(make_pair(pre_queries[i].seqloc->GetId(), indices[i]));
     }
     sort(queries.begin(), queries.end(), compare_seqids);
 
@@ -742,9 +736,10 @@ CMultiAligner::SetDomainHits(const CBlast4_archive& archive)
     //-------------------------------------------------------
     if (m_Options->GetVerbose()) {
         printf("Pre-computed RPS queries:\n");
-        for (size_t i=0;i < m_tQueries.size();i++) {
-            if (m_IsDomainSearched[i]) {
-                printf("query: %d\n", (int)i);
+        for (size_t i=0;i < pre_queries.size();i++) {
+            _ASSERT(indices[i] < (int)m_IsDomainSearched.size());
+            if (m_IsDomainSearched[indices[i]]) {
+                printf("query: %d\n", indices[i]);
             }
         }
         printf("\n");
@@ -875,6 +870,11 @@ CMultiAligner::x_FindDomainHits(TSeqLocVector& queries,
 
     if (rps_db.empty()) {
         return;
+    }
+
+    // set pre-computed domain hits if available
+    if (m_Options->CanGetDomainHits()) {
+        x_SetDomainHits(queries, indices, *m_Options->GetDomainHits());
     }
 
     m_ProgressMonitor.stage = eDomainHitsSearch;

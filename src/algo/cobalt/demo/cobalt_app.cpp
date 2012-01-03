@@ -439,6 +439,13 @@ int CMultiApplication::Run(void)
                               : CMultiAlignerOptions::eNone);
 
 
+    // set pre-computed domain hits
+    if (args["domain_hits"]) {
+        CRef<CBlast4_archive> archive(new CBlast4_archive);
+        args["domain_hits"].AsInputFile() >> MSerial_AsnText >> *archive;
+        opts->SetDomainHits(archive);
+    }
+
     // Verbose level
     opts->SetVerbose(args["v"]);
 
@@ -519,13 +526,6 @@ int CMultiApplication::Run(void)
         }
 
         aligner.SetInputMSAs(*msa1, *msa2, repr1, repr2, scope);
-    }
-
-    // set pre-computed domain hits
-    if (args["domain_hits"]) {
-        CBlast4_archive archive;
-        args["domain_hits"].AsInputFile() >> MSerial_AsnText >> archive;
-        aligner.SetDomainHits(archive);
     }
 
     CMultiAligner::TStatus status = aligner.Run();

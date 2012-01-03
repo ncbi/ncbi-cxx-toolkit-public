@@ -175,18 +175,6 @@ public:
                       const set<int>& representatives2,
                       CRef<objects::CScope> scope);
 
-    /// Set pre-computed domain hits using BLAST archive format
-    /// @param archive BLAST archive format [in]
-    ///
-    /// Queries from the archive are matched to COBALT queries by Seq_ids.
-    /// The two sets of queries do not need to be the same. Domain hits for
-    /// the archive queries that do match to any of the COBALT queries are
-    /// ignored. COBALT will do RPS-BLAST search for all of its sequences that
-    /// were not matched to the archive queries. It is the responsibility of
-    /// user to ensure that the pre-computed hits and COBALT refer to the same
-    /// domain database.
-    void SetDomainHits(const objects::CBlast4_archive& archive);
-
     /// Get query sequences
     /// @return List of seq-ids and locations [in]
     ///
@@ -465,6 +453,25 @@ protected:
     /// Align multiple sequence alignments
     ///
     void x_AlignMSAs(void);
+
+    /// Set pre-computed domain hits using BLAST archive format
+    /// @param queries Sequences for which alignment hits will be searched for
+    /// in the pre-computed set [in]
+    /// @param indices Index of each query in the array of sequences to
+    /// align [in]
+    /// @param archive BLAST archive format [in]
+    ///
+    /// Queries from the archive are matched to COBALT queries by Seq_ids.
+    /// The two sets of queries do not need to be the same. Domain hits for
+    /// the archive queries that do match to any of the COBALT queries are
+    /// ignored. COBALT will do RPS-BLAST search for all of its sequences that
+    /// were not matched to the archive queries. It is the responsibility of
+    /// user to ensure that the pre-computed hits and COBALT refer to the same
+    /// domain database.
+    void x_SetDomainHits(const blast::TSeqLocVector& queruies,
+                         const vector<int>& indices,
+                         const objects::CBlast4_archive& archive);
+
 
 protected:
 

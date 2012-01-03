@@ -35,6 +35,7 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbi_system.hpp>
+#include <objects/blast/Blast4_archive.hpp>
 #include <algo/cobalt/cobalt.hpp>
 
 // This macro should be defined before inclusion of test_boost.hpp in all
@@ -169,6 +170,41 @@ BOOST_AUTO_TEST_CASE(TestOptionsValidation)
 
     opts->SetKmerAlphabet(CMultiAligner::TKMethods::eSE_B15);
     BOOST_CHECK(opts->Validate());
+
+    // Check pre-computed domain hits
+    CRef<objects::CBlast4_archive> archive(new objects::CBlast4_archive);
+    CNcbiIfstream istr("data/rps_archive_seqloclist.asn");
+    BOOST_REQUIRE(istr);
+    istr >> MSerial_AsnText >> *archive;
+
+    // verify that setting domain hits is valid
+    opts->SetDomainHits(archive);
+    opts->SetRpsDb("some_db");
+    BOOST_CHECK(opts->Validate());
+
+    // verify that setting domain hits with no CDD throws exception
+    opts->SetRpsDb("");
+    BOOST_CHECK_THROW(opts->Validate(), CMultiAlignerException);    
+}
+
+// verify the CMultiAlignerOptions::CanGetDomainHits() function
+BOOST_AUTO_TEST_CASE(TestCanGetDomainHits)
+{
+    CRef<objects::CBlast4_archive> archive(new objects::CBlast4_archive);
+    CNcbiIfstream istr("data/rps_archive_seqloclist.asn");
+    BOOST_REQUIRE(istr);
+    istr >> MSerial_AsnText >> *archive;
+
+    CMultiAlignerOptions opts;
+    
+    // verify for domain hits not set
+    BOOST_REQUIRE(opts.GetDomainHits().Empty());
+    BOOST_REQUIRE(!opts.CanGetDomainHits());
+
+    // verify for domain hits set
+    opts.SetDomainHits(archive);
+    BOOST_REQUIRE(!opts.GetDomainHits().Empty());
+    BOOST_REQUIRE(opts.CanGetDomainHits());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
