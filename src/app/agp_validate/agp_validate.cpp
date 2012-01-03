@@ -393,6 +393,9 @@ void CAgpValidateApplication::x_ReportFastaSeqCount()
       }
       cout <<  m_comp2range_coll.size() << " component sequences have masked spans (" << runs_of_Ns << " spans)." << endl;
   }
+  else if(!m_reader.m_CheckObjLen) {
+    cout << "No runs of Ns longer than 10 bp found in FASTA sequences." << endl;
+  }
 
 }
 

@@ -1,4 +1,5 @@
 2 component_ids and lengths loaded from FASTA.
+No runs of Ns longer than 10 bp found in FASTA sequences.
 
 3:singleton_1	1	630	1	W	LACBIscaffold_1_Cont1	1	630	-
 	WARNING: the span overlaps a previous span for this component: 1..630 at line 2

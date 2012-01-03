@@ -653,6 +653,13 @@ void CAgpValidateReader::x_PrintTotals() // without comment counts
       "  orientation ? (formerly 0) : " << ALIGN_W(m_CompOri[CCompVal::ORI_zero ]) << "\n"
       "  orientation na             : " << ALIGN_W(m_CompOri[CCompVal::ORI_na   ]) << "\n";
   }
+  if( m_comp2range_coll->size() &&
+      m_AgpErr->CountTotals(CAgpErrEx::G_NsWithinCompSpan)==0 &&
+      m_CompCount > m_AgpErr->CountTotals(CAgpErrEx::G_InvalidCompId)
+  ) {
+    cout << "Component spans in AGP are consistent with FASTA\n(i.e. do not include or intersect runs of Ns longer than 10 bp)." << endl;
+  }
+
 
   cout << "\n" << "Gaps                   : " << ALIGN_W(m_GapCount);
   if(m_GapCount) {
