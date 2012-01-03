@@ -45,7 +45,7 @@
 #include <db/bdb/bdb_env.hpp>
 
 #if defined(NCBI_OS_UNIX)
-# include <corelib/ncbi_os_unix.hpp>
+# include <corelib/ncbi_process.hpp>
 # include <signal.h>
 #endif
 
@@ -202,7 +202,7 @@ int CBDBEnvKeeperApp::Run(void)
 #if defined(NCBI_OS_UNIX)
         if (is_daemon) {
             LOG_POST("Entering UNIX daemon mode...");
-            bool daemon = Daemonize(0, fDaemon_DontChroot);
+            bool daemon = CProcess::Daemonize(0, CProcess::fDontChroot);
             if (!daemon) {
                 return 0;
             }
