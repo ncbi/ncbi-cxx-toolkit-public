@@ -92,6 +92,20 @@ extern const char* sc_TestEntry_GapInSeq4;
 extern const char* sc_TestEntry_GapInSeq5;
 extern const char* sc_TestEntry_CodeBreakForStopCodon;
 
+static string GetProteinString (CFeat_CI fi, CScope& scope)
+{
+    string real_prot_seq;
+    CBioseq_Handle bsh =
+       scope.GetBioseqHandle(*(fi->GetProduct().GetId()));
+    CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
+    vec.SetCoding(CSeq_data::e_Ncbieaa); // allow extensions
+    vec.GetSeqData(0, bsh.GetBioseqLength(), real_prot_seq);
+    return real_prot_seq;
+}
+
+
+#ifdef TEST_DEPRECATED
+// removed, CCdregion_translate::TranslateCdregion is deprecated, so discontinue unit test
 BOOST_AUTO_TEST_CASE(Test_TranslateCdregion)
 {
     CSeq_entry entry;
@@ -110,13 +124,7 @@ BOOST_AUTO_TEST_CASE(Test_TranslateCdregion)
             ///
             /// retrieve the actual protein sequence
             ///
-            string real_prot_seq;
-            {{
-                 CBioseq_Handle bsh =
-                     scope.GetBioseqHandle(feat_iter->GetProduct());
-                 CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
-                 vec.GetSeqData(0, bsh.GetBioseqLength(), real_prot_seq);
-             }}
+            string real_prot_seq = GetProteinString(feat_iter, scope);
 
             ///
             /// translate the CDRegion directly
@@ -138,6 +146,7 @@ BOOST_AUTO_TEST_CASE(Test_TranslateCdregion)
         }
     }
 }
+#endif
 
 
 BOOST_AUTO_TEST_CASE(Test_Translator_Raw)
@@ -161,13 +170,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_Raw)
             ///
             /// retrieve the actual protein sequence
             ///
-            string real_prot_seq;
-            {{
-                 CBioseq_Handle bsh =
-                     scope.GetBioseqHandle(feat_iter->GetProduct());
-                 CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
-                 vec.GetSeqData(0, bsh.GetBioseqLength(), real_prot_seq);
-             }}
+            string real_prot_seq = GetProteinString (feat_iter, scope);
 
             string nucleotide_sequence;
             vec.GetSeqData(feat_iter->GetTotalRange().GetFrom(),
@@ -216,13 +219,8 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeqVector)
             ///
             /// retrieve the actual protein sequence
             ///
-            string real_prot_seq;
-            {{
-                 CBioseq_Handle bsh =
-                     scope.GetBioseqHandle(feat_iter->GetProduct());
-                 CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
-                 vec.GetSeqData(0, bsh.GetBioseqLength(), real_prot_seq);
-             }}
+            string real_prot_seq = GetProteinString (feat_iter, scope);
+
 
             CSeqVector vec(feat_iter->GetLocation(), scope);
 
@@ -265,13 +263,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_loc_1)
             ///
             /// retrieve the actual protein sequence
             ///
-            string real_prot_seq;
-            {{
-                 CBioseq_Handle bsh =
-                     scope.GetBioseqHandle(feat_iter->GetProduct());
-                 CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
-                 vec.GetSeqData(0, bsh.GetBioseqLength(), real_prot_seq);
-             }}
+            string real_prot_seq = GetProteinString (feat_iter, scope);
 
             ///
             /// translate the CDRegion directly
@@ -313,13 +305,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_loc_2)
             ///
             /// retrieve the actual protein sequence
             ///
-            string real_prot_seq;
-            {{
-                 CBioseq_Handle bsh =
-                     scope.GetBioseqHandle(feat_iter->GetProduct());
-                 CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
-                 vec.GetSeqData(0, bsh.GetBioseqLength(), real_prot_seq);
-             }}
+            string real_prot_seq = GetProteinString (feat_iter, scope);
 
             ///
             /// translate the CDRegion directly
@@ -361,13 +347,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat)
             ///
             /// retrieve the actual protein sequence
             ///
-            string real_prot_seq;
-            {{
-                 CBioseq_Handle bsh =
-                     scope.GetBioseqHandle(feat_iter->GetProduct());
-                 CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
-                 vec.GetSeqData(0, bsh.GetBioseqLength(), real_prot_seq);
-             }}
+            string real_prot_seq = GetProteinString (feat_iter, scope);
 
             ///
             /// translate the CDRegion directly
@@ -411,13 +391,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_code_break)
             ///
             /// retrieve the actual protein sequence
             ///
-            string real_prot_seq;
-            {{
-                 CBioseq_Handle bsh =
-                     scope.GetBioseqHandle(feat_iter->GetProduct());
-                 CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
-                 vec.GetSeqData(0, bsh.GetBioseqLength(), real_prot_seq);
-             }}
+            string real_prot_seq = GetProteinString (feat_iter, scope);
 
             ///
             /// translate the CDRegion directly
@@ -461,13 +435,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_alt_frame)
             ///
             /// retrieve the actual protein sequence
             ///
-            string real_prot_seq;
-            {{
-                 CBioseq_Handle bsh =
-                     scope.GetBioseqHandle(feat_iter->GetProduct());
-                 CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
-                 vec.GetSeqData(0, bsh.GetBioseqLength(), real_prot_seq);
-             }}
+            string real_prot_seq = GetProteinString (feat_iter, scope);
 
             ///
             /// translate the CDRegion directly
@@ -511,14 +479,8 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_internal_stop)
             ///
             /// retrieve the actual protein sequence
             ///
-            string real_prot_seq;
-            {{
-                 CBioseq_Handle bsh =
-                     scope.GetBioseqHandle(feat_iter->GetProduct());
-                 CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
-                 vec.GetSeqData(0, bsh.GetBioseqLength(), real_prot_seq);
-                 real_prot_seq[51] = '*';
-             }}
+            string real_prot_seq = GetProteinString (feat_iter, scope);
+            real_prot_seq[51] = '*';
 
             ///
             /// translate the CDRegion directly
@@ -566,14 +528,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_5prime_partial)
             ///
             /// retrieve the actual protein sequence
             ///
-            string real_prot_seq;
-            {{
-                 CBioseq_Handle bsh =
-                     scope.GetBioseqHandle(feat_iter->GetProduct());
-                 CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
-                 vec.SetCoding(CSeq_data::e_Ncbieaa); // allow extensions
-                 vec.GetSeqData(0, bsh.GetBioseqLength(), real_prot_seq);
-             }}
+            string real_prot_seq = GetProteinString (feat_iter, scope);
 
             ///
             /// translate the CDRegion directly
@@ -628,14 +583,8 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_3prime_partial)
             ///
             /// retrieve the actual protein sequence
             ///
-            string real_prot_seq;
-            {{
-                 CBioseq_Handle bsh =
-                     scope.GetBioseqHandle(feat_iter->GetProduct());
-                 CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
-                 vec.GetSeqData(0, bsh.GetBioseqLength(), real_prot_seq);
-                 real_prot_seq[51] = '*';
-             }}
+            string real_prot_seq = GetProteinString (feat_iter, scope);
+            real_prot_seq[51] = '*';
 
             ///
             /// translate the CDRegion directly
@@ -671,14 +620,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_5prime_partial_minus)
             ///
             /// retrieve the actual protein sequence
             ///
-            string real_prot_seq;
-            {{
-                 CBioseq_Handle bsh =
-                     scope.GetBioseqHandle(feat_iter->GetProduct());
-                 CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
-                 vec.SetCoding(CSeq_data::e_Ncbieaa);
-                 vec.GetSeqData(0, bsh.GetBioseqLength(), real_prot_seq);
-             }}
+            string real_prot_seq = GetProteinString (feat_iter, scope);
 
             ///
             /// translate the CDRegion directly
@@ -728,14 +670,7 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_TerminalTranslExcept)
             ///
             /// retrieve the actual protein sequence
             ///
-            string real_prot_seq;
-            {{
-                 CBioseq_Handle bsh =
-                     scope.GetBioseqHandle(feat_iter->GetProduct());
-                 CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
-                 vec.SetCoding(CSeq_data::e_Ncbieaa);
-                 vec.GetSeqData(0, bsh.GetBioseqLength(), real_prot_seq);
-             }}
+            string real_prot_seq = GetProteinString (feat_iter, scope);
 
             ///
             /// translate the CDRegion directly
@@ -838,9 +773,11 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon)
 
     // set 5' complete false
     tmp.clear();
+#ifdef TEST_DEPRECATED
     CSeqTranslator::Translate(vec, tmp,
                               NULL, false, true, 0, false);
     BOOST_CHECK_EQUAL(partial_trans, tmp);
+#endif
     // try it with flag version
     tmp.clear();
     CSeqTranslator::Translate(vec, tmp, CSeqTranslator::fIs5PrimePartial | CSeqTranslator::fNoStop);
@@ -850,9 +787,11 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon)
     string seq_str;
     vec.GetSeqData(0, entry.GetSeq().GetLength(), seq_str);
     // default value for 5' complete is true
+#ifdef TEST_DEPRECATED
     CSeqTranslator::Translate(seq_str, tmp,
                               NULL, false, true);
     BOOST_CHECK_EQUAL(complete_trans, tmp);
+#endif
     // try it with flag version
     tmp.clear();
     CSeqTranslator::Translate(seq_str, tmp, CSeqTranslator::fNoStop);
@@ -860,9 +799,11 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon)
 
     // set 5' complete false
     tmp.clear();
+#ifdef TEST_DEPRECATED
     CSeqTranslator::Translate(seq_str, tmp,
                               NULL, false, true, 0, false);
     BOOST_CHECK_EQUAL(partial_trans, tmp);
+#endif
     // try it with flag version
     tmp.clear();
     CSeqTranslator::Translate(seq_str, tmp, CSeqTranslator::fIs5PrimePartial | CSeqTranslator::fNoStop);
@@ -925,9 +866,11 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon2)
 
     //
     // default value for 5' complete is true
+#ifdef TEST_DEPRECATED
     CSeqTranslator::Translate(vec, tmp,
                               NULL, true, true);
     BOOST_CHECK_EQUAL(complete_trans, tmp);
+#endif
 
     // try it with flag version
     tmp.clear();
@@ -937,9 +880,11 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon2)
     //
     // set 5' complete false
     tmp.clear();
+#ifdef TEST_DEPRECATED
     CSeqTranslator::Translate(vec, tmp,
                               NULL, true, true, 0, false);
     BOOST_CHECK_EQUAL(partial_trans, tmp);
+#endif
 
     // try it with flag version
     tmp.clear();
@@ -951,9 +896,11 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon2)
     string seq_str;
     vec.GetSeqData(0, entry.GetSeq().GetLength(), seq_str);
     // default value for 5' complete is true
+#ifdef TEST_DEPRECATED
     CSeqTranslator::Translate(seq_str, tmp,
                               NULL, true, true);
     BOOST_CHECK_EQUAL(complete_trans, tmp);
+#endif
     // try it with flag version
     tmp.clear();
     CSeqTranslator::Translate(seq_str, tmp, 0);
@@ -961,9 +908,11 @@ BOOST_AUTO_TEST_CASE(Test_Translator_CSeq_feat_FirstCodon2)
 
     // set 5' complete false
     tmp.clear();
+#ifdef TEST_DEPRECATED
     CSeqTranslator::Translate(seq_str, tmp,
                               NULL, true, true, 0, false);
     BOOST_CHECK_EQUAL(partial_trans, tmp);
+#endif
     // try it with flag version
     tmp.clear();
     CSeqTranslator::Translate(seq_str, tmp, CSeqTranslator::fIs5PrimePartial);
@@ -1183,13 +1132,7 @@ BOOST_AUTO_TEST_CASE(Test_Translate_CodeBreakForStopCodon)
             ///
             /// retrieve the actual protein sequence
             ///
-            string real_prot_seq;
-            {{
-                 CBioseq_Handle bsh =
-                     scope.GetBioseqHandle(feat_iter->GetProduct());
-                 CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
-                 vec.GetSeqData(0, bsh.GetBioseqLength(), real_prot_seq);
-             }}
+            string real_prot_seq = GetProteinString (feat_iter, scope);
 
             ///
             /// translate the CDRegion directly
