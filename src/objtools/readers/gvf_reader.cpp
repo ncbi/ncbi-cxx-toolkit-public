@@ -250,10 +250,10 @@ CRef<CSeq_annot> CGvfReader::x_GetAnnotById(
     }
 
     if ( !m_AnnotName.empty() ) {
-        pNewAnnot->AddName(m_AnnotName);
+        pNewAnnot->SetNameDesc(m_AnnotName);
     }
     if ( !m_AnnotTitle.empty() ) {
-        pNewAnnot->SetTitle(m_AnnotTitle);
+        pNewAnnot->SetTitleDesc(m_AnnotTitle);
     }
 
     // if available, add gvf pragma information
