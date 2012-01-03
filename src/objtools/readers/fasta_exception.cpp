@@ -45,7 +45,7 @@ BEGIN_SCOPE(objects)
 
 void CBadResiduesException::ReportExtra(ostream& out) const
 {
-    out << "bad indexes = ";
+    out << "Bad Residues = ";
     if( m_BadResiduePositions.m_SeqId ) {
         out << MSerial_AsnText << *m_BadResiduePositions.m_SeqId;
     } else {
