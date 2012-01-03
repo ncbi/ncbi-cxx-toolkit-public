@@ -2903,6 +2903,32 @@ GetBestOverlappingFeat(const CMappedFeat& feat,
 }
 
 
+CRef<CSeq_loc_Mapper>
+CreateSeqLocMapperFromFeat(const CSeq_feat& feat,
+                           CSeq_loc_Mapper::EFeatMapDirection dir,
+                           CScope* scope)
+{
+    CRef<CSeq_loc_Mapper> mapper;
+    if ( !feat.IsSetProduct() ) return mapper; // NULL
+
+    bool benign_feat_exception = feat.IsSetExcept_text()  &&
+        (feat.GetExcept_text() == "mismatches in translation"  ||
+        feat.GetExcept_text() == "mismatches in transcription");
+    bool severe_feat_exception = 
+        ((feat.IsSetExcept() && feat.GetExcept())  ||
+        feat.IsSetExcept_text())  && !benign_feat_exception;
+
+    if (severe_feat_exception  ||
+        feat.GetLocation().IsTruncatedStart(eExtreme_Biological)  ||
+        feat.GetLocation().IsPartialStart(eExtreme_Biological)) {
+        return mapper; // NULL
+    }
+
+    mapper.Reset(new CSeq_loc_Mapper(feat, dir, scope));
+    return mapper;
+}
+
+
 END_SCOPE(feature)
 END_SCOPE(objects)
 END_NCBI_SCOPE

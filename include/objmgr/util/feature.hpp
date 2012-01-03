@@ -35,6 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/mapped_feat.hpp>
+#include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 
@@ -466,6 +467,14 @@ GetBestOverlappingFeat(const CMappedFeat& feat,
                        CFeatTree* feat_tree = 0,
                        const SAnnotSelector* base_sel = 0);
 
+
+/// Create CSeq_loc_Mapper from a feature, check for special cases
+/// like exceptions in CDS features. Return null on error.
+NCBI_XOBJUTIL_EXPORT
+CRef<CSeq_loc_Mapper>
+CreateSeqLocMapperFromFeat(const CSeq_feat& feat,
+                           CSeq_loc_Mapper::EFeatMapDirection dir,
+                           CScope* scope = 0);
 
 END_SCOPE(feature)
 END_SCOPE(objects)
