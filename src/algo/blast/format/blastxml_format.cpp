@@ -554,15 +554,15 @@ s_BlastXMLAddIteration(CBlastOutput& bxmlout, const CSeq_align_set* alnset,
 
     // If Bioseq handle cannot return a title string here, it is not critical.
     // But make sure the exceptions are caught.
+    const CSeq_id& kSeqId = sequence::GetId(seqloc, scope);
     try {
-        CBioseq_Handle bh = scope->GetBioseqHandle(seqloc);
+        CBioseq_Handle bh = scope->GetBioseqHandle(kSeqId);
         // Get the full query Seq-id string.
         const CBioseq& kQueryBioseq = *bh.GetBioseqCore();
         one_query_iter->SetQuery_ID(
             CBlastFormatUtil::GetSeqIdString(kQueryBioseq));
         query_def = sequence::GetTitle(bh);
     } catch (const CException&) {
-        const CSeq_id& kSeqId = sequence::GetId(seqloc, scope);
         one_query_iter->SetQuery_ID(kSeqId.AsFastaString());
     };
 
@@ -698,15 +698,15 @@ BlastXML_FormatReport(CBlastOutput& bxmlout, const IBlastXMLReportData* data, CN
 
     // Try to retrieve all Seq-ids, using a Bioseq handle. If this fails,
     // report the one available Seq-id, retrieved from the query Seq-loc.
+    const CSeq_id& kSeqId = sequence::GetId(*kSeqLoc, scope);
     try {
-        CBioseq_Handle bh = scope->GetBioseqHandle(*kSeqLoc);
+        CBioseq_Handle bh = scope->GetBioseqHandle(kSeqId);
         // Get the full query Seq-id string.
         const CBioseq& kQueryBioseq = *bh.GetBioseqCore();
         bxmlout.SetQuery_ID(CBlastFormatUtil::GetSeqIdString(kQueryBioseq));
         query_def = sequence::GetTitle(bh);
     } catch (const CException&) {
-        const CSeq_id& seqid = sequence::GetId(*kSeqLoc, scope);
-        bxmlout.SetQuery_ID(seqid.AsFastaString());
+        bxmlout.SetQuery_ID(kSeqId.AsFastaString());
     };
 
     if (query_def == NcbiEmptyString)
