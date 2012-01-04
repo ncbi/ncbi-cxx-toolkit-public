@@ -376,6 +376,17 @@ int CAgpValidateApplication::Run(void)
     m_agp_version=eAgpVersion_auto; // save for CAgpRow; it is default for CAgpValidateReader
   }
 
+  if( ! args["comp"] ) {
+      // if "-comp" not specified, neither should the other
+      // comp-related args
+      if( args["comploadlog"] || args["compignoreagponly"] ||
+          args["compignoreobjfileonly"] )
+      {
+          cerr << "Don't specify comp-related options if you don't specify -comp" << endl;
+          exit(1);
+      }
+  }
+
   //// Process files, print results
   x_ValidateUsingFiles(args);
   if(m_ValidationType == VT_Context) {

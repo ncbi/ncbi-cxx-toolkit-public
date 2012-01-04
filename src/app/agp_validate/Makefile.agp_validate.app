@@ -8,8 +8,8 @@ LIB  = ncbi_xloader_lds2 lds2 xobjread xobjutil taxon1 entrez2cli \
 LIBS = $(SQLITE3_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) \
        $(DL_LIBS) $(ORIG_LIBS)
 
-REQUIRES = objects -Cygwin
+REQUIRES = objects -Cygwin SQLITE3
 CXXFLAGS = $(ORIG_CXXFLAGS)
 # -Wno-parentheses
 
-WATCHERS = sapojnik
+WATCHERS = kornbluh sapojnik

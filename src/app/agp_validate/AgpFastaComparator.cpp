@@ -35,6 +35,8 @@
 
 #include "AgpFastaComparator.hpp"
 
+#include <algorithm>
+
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
@@ -198,20 +200,24 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
     const std::string & loadlog,
     TDiffsToHide diffsToHide )
 {
+    LOG_POST(Error << "" );     // newline
+    LOG_POST(Error << "Starting AGP/Fasta Compare" );
+    LOG_POST(Error << "" );     // newline
+
     // figure out which files are AGP and which are FASTA
-    list<string> fastaFiles;
+    list<string> compAndObjFiles;
     list<string> agpFiles;
     ITERATE( std::list<std::string>, file_iter, files ) {
         const string & file = *file_iter;
-        // peek at the first character to see if it's a FASTA file
-        ifstream file_strm(file.c_str());
-        char ch = '\0';
-        file_strm >> ch;
-        const bool is_fasta = ( ch == '>' );
-        if( is_fasta ) {
-            fastaFiles.push_back(file);
-        } else {
+        switch( x_GuessFileType(file) ) {
+        case eFileType_FASTA:
+        case eFileType_ASN1:
+        case eFileType_Unknown: // unknown might be binary ASN.1 (we might want to fix that)
+            compAndObjFiles.push_back(file);
+            break;
+        case eFileType_AGP:
             agpFiles.push_back(file);
+            break;
         }
     }
 
@@ -236,8 +242,14 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
              << ldsdb_file->GetFileName() );
     lds_mgr.Reset(new CLDS2_Manager( ldsdb_file->GetFileName() ));
     list<string> objfiles;
-    ITERATE( list<string>, file_iter, fastaFiles ) {
-        // check if file is a component file
+    ITERATE( list<string>, file_iter, compAndObjFiles ) {
+        // check if file is a FASTA component file
+
+        if( eFileType_FASTA != x_GuessFileType( *file_iter ) ) {
+            // we support text ASN.1 object files
+            objfiles.push_back(*file_iter);
+            continue;
+        }
         ifstream file_strm( file_iter->c_str() );
         string line;
         NcbiGetline(file_strm, line, "\r\n");
@@ -728,4 +740,52 @@ void CAgpFastaComparator::x_SetBinaryVsText( CNcbiIstream & file_istrm,
             break;
             // a format where binary vs. text is irrelevant
     }
+}
+
+CAgpFastaComparator::EFileType CAgpFastaComparator::x_GuessFileType( const string & filename )
+{
+    // To prevent us from reading huge files
+    int iterations_remaining = 100;
+
+    ifstream file_strm(filename.c_str());
+    string line;
+
+    // find first non-blank line
+    while( file_strm && line.empty() &&
+           iterations_remaining-- > 0 )
+    {
+        // get line and trim it
+        NcbiGetline(file_strm, line, "\r\n");
+        NStr::TruncateSpacesInPlace( line );
+    }
+
+    if( line.empty() ) {
+        return eFileType_Unknown;
+    }
+
+    if( line[0] == '>' ) {
+        return eFileType_FASTA;
+    }
+
+    if( line.find("::=") != NPOS ) {
+        return eFileType_ASN1;
+    }
+
+    if( line[0] == '#' ) {
+        return eFileType_AGP;
+    }
+
+    int num_tabs = 0;
+    // did not use std::count because Sun WorkShop compiler defines it in
+    // a non-standard way and this is cleaner than preprocessor directives
+    ITERATE( string, str_iter, line ) {
+        if( *str_iter == '\t' ) {
+            ++num_tabs;
+        }
+    }
+    if( num_tabs >= 7 ) {
+        return eFileType_AGP;
+    }
+
+    return eFileType_Unknown;
 }

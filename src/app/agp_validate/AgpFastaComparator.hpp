@@ -97,6 +97,15 @@ private:
     void x_SetBinaryVsText( CNcbiIstream & file_istrm, 
         CFormatGuess::EFormat guess_format );
 
+    enum EFileType {
+        eFileType_FASTA = 1,
+        eFileType_ASN1,
+        eFileType_AGP,
+
+        eFileType_Unknown
+    };
+    EFileType x_GuessFileType( const string & filename );
+
 };
 
 END_NCBI_SCOPE
