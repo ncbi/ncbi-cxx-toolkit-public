@@ -64,11 +64,14 @@ public:
 
     void GetStatus( CNetScheduleExecuter &        executor,
                     const vector<unsigned int> &  jobs );
-    vector<unsigned int>  GetReturn( CNetScheduleExecuter &  executor,
-                                     unsigned int            count );
-    vector<unsigned int>  Submit( CNetScheduleSubmitter &  submitter,
+    void GetReturn( CNetScheduleExecuter &  executor,
+                    unsigned int            count );
+    vector<unsigned int>  Submit( CNetScheduleAPI &        server,
+                                  const string &           service,
                                   unsigned int             jcount,
                                   unsigned int             naff,
+                                  unsigned int             notif_port,
+                                  unsigned int             nclients,
                                   const string &           queue );
     vector<unsigned int>  GetDone( CNetScheduleExecuter &  executor );
     void  MainLoop( CNetScheduleSubmitter &  submitter,
@@ -131,6 +134,17 @@ void CTestNetScheduleCrash::Init(void)
                              "Number of affinities",
                              CArgDescriptions::eInteger);
 
+    arg_desc->AddOptionalKey("notifport",
+                             "notifport",
+                             "If given then ojbs are submitted with notif port"
+                             " and 100 sec notif timeout",
+                             CArgDescriptions::eInteger);
+
+    arg_desc->AddOptionalKey("nclients",
+                             "nclients",
+                             "Number of clients to simulate",
+                             CArgDescriptions::eInteger);
+
     arg_desc->AddOptionalKey("main",
                              "main",
                              "Main loop (submit-get-put) only",
@@ -142,41 +156,89 @@ void CTestNetScheduleCrash::Init(void)
 
 
 
-vector<unsigned int>  CTestNetScheduleCrash::Submit( CNetScheduleSubmitter &  submitter,
-                                                     unsigned int             jcount,
-                                                     unsigned int             naff,
-                                                     const string &           queue )
+vector<unsigned int>
+CTestNetScheduleCrash::Submit( CNetScheduleAPI &        cl,
+                               const string &           service,
+                               unsigned int             jcount,
+                               unsigned int             naff,
+                               unsigned int             notif_port,
+                               unsigned int             nclients,
+                               const string &           queue )
 {
     string                  input = "Crash test for " + queue;
     vector<unsigned int>    jobs;
     unsigned int            caff = 0;
+    unsigned int            client = 0;
+    string                  aff = "";
+
+
+    CNetServer              server = cl.GetService().Iterate().GetServer();
+    CNetScheduleSubmitter   submitter = cl.GetSubmitter();
+
 
     jobs.reserve(jcount);
     NcbiCout << "Submit " << jcount << " jobs..." << NcbiEndl;
 
     CStopWatch      sw(CStopWatch::eStart);
     for (unsigned i = 0; i < jcount; ++i) {
-        CNetScheduleJob         job(input);
+
+        if (nclients > 0) {
+            cl =  CNetScheduleAPI(service, "crash_test", queue);
+            cl.SetClientSession( "crash_test_session" );
+            char        buffer[ 1024 ];
+            sprintf( buffer, "node_%d", client++ );
+            if (client >= nclients)
+                client = 0;
+            cl.SetClientNode( buffer );
+            server = cl.GetService().Iterate().GetServer();
+            submitter = cl.GetSubmitter();
+        }
+
 
         if (naff > 0) {
             char        buffer[ 1024 ];
             sprintf( buffer, "aff%d", caff++ );
             if (caff >= naff)
                 caff = 0;
-            job.affinity = string( buffer );
+            aff = string( buffer );
+        }
+
+        // Two options here: with/without notifications
+        if (notif_port == 0) {
+            CNetScheduleJob         job(input);
+            job.affinity = aff;
+            submitter.SubmitJob(job);
+
+            CNetScheduleKey     key( job.job_id );
+            jobs.push_back( key.id );
+            if (m_KeyGenerator == NULL)
+                m_KeyGenerator = new CNetScheduleKeyGenerator( key.host,
+                                                               key.port );
+        }
+        else {
+            // back door - use manually formed command
+            char    buffer[ 1024 ];
+            sprintf( buffer,
+                     "SUBMIT input=\"Crash test for %s\" port=%d timeout=100",
+                     queue.c_str(), notif_port );
+            string  cmd = string( buffer );
+            if (aff.empty() == false)
+                cmd += " aff=" + aff;
+            CNetServer::SExecResult     result = server.ExecWithRetry( cmd );
+
+            // Dirty hack: 'OK:' need to be stripped
+            CNetScheduleKey     key( result.response.c_str() );
+            jobs.push_back( key.id );
+            if (m_KeyGenerator == NULL)
+                m_KeyGenerator = new CNetScheduleKeyGenerator( key.host,
+                                                               key.port );
         }
 
 
-        submitter.SubmitJob(job);
-
-        CNetScheduleKey     key( job.job_id );
-        jobs.push_back( key.id );
         if (i % 1000 == 0) {
             NcbiCout << "." << flush;
         }
 
-        if (m_KeyGenerator == NULL)
-            m_KeyGenerator = new CNetScheduleKeyGenerator( key.host, key.port );
     }
     double          elapsed = sw.Elapsed();
     double          avg = elapsed / jcount;
@@ -214,15 +276,16 @@ void CTestNetScheduleCrash::GetStatus( CNetScheduleExecuter &        executor,
     double      avg = elapsed / (double)jobs.size();
 
     NcbiCout.setf(IOS_BASE::fixed, IOS_BASE::floatfield);
-    NcbiCout << "Elapsed :"  << elapsed << " sec." << NcbiEndl;
+    NcbiCout << NcbiEndl
+             << "Elapsed :"  << elapsed << " sec." << NcbiEndl;
     NcbiCout << "Avg time :" << avg << " sec." << NcbiEndl;
     return;
 }
 
 
 /* Returns up to count jobs */
-vector<unsigned int>  CTestNetScheduleCrash::GetReturn( CNetScheduleExecuter &  executor,
-                                                        unsigned int            count )
+void  CTestNetScheduleCrash::GetReturn( CNetScheduleExecuter &  executor,
+                                        unsigned int            count )
 {
     NcbiCout << NcbiEndl << "Take and Return " << count << " jobs..." << NcbiEndl;
 
@@ -245,7 +308,11 @@ vector<unsigned int>  CTestNetScheduleCrash::GetReturn( CNetScheduleExecuter &  
     ITERATE(vector<unsigned int>, it, jobs_returned) {
         unsigned int        job_id = *it;
 
-        executor.ReturnJob(m_KeyGenerator->GenerateV1(job_id));
+        try {
+            executor.ReturnJob(m_KeyGenerator->GenerateV1(job_id));
+        }
+        catch (...)
+        {}
     }
     double          elapsed = sw.Elapsed();
 
@@ -262,7 +329,7 @@ vector<unsigned int>  CTestNetScheduleCrash::GetReturn( CNetScheduleExecuter &  
     else
         NcbiCout << "Returned 0 jobs." << NcbiEndl;
 
-    return jobs_returned;
+    return;
 }
 
 
@@ -333,7 +400,8 @@ void CTestNetScheduleCrash::MainLoop( CNetScheduleSubmitter &  submitter,
 
     double  avg = elapsed / jcount;
     NcbiCout.setf(IOS_BASE::fixed, IOS_BASE::floatfield);
-    NcbiCout << "Jobs processed: " << jcount << NcbiEndl;
+    NcbiCout << NcbiEndl
+             << "Jobs processed: " << jcount << NcbiEndl;
     NcbiCout << "Elapsed: "  << elapsed << " sec." << NcbiEndl;
     NcbiCout << "Avg time: " << avg << " sec." << NcbiEndl;
     return;
@@ -347,9 +415,8 @@ int CTestNetScheduleCrash::Run(void)
     const string &      queue = args["queue"].AsString();
 
     unsigned            jcount = 10000;
-    if (args["jobs"]) {
+    if (args["jobs"])
         jcount = args["jobs"].AsInteger();
-    }
 
     unsigned int        delay = 10;
     if (args["delay"])
@@ -358,6 +425,14 @@ int CTestNetScheduleCrash::Run(void)
     unsigned int        naff = 0;
     if (args["naff"])
         naff = args["naff"].AsInteger();
+
+    unsigned int        notif_port = 0;
+    if (args["notifport"])
+        notif_port = args["notifport"].AsInteger();
+
+    unsigned int        nclients = 0;
+    if (args["nclients"])
+        nclients = args["nclients"].AsInteger();
 
 
     CNetScheduleAPI                     cl(service, "crash_test", queue);
@@ -378,7 +453,8 @@ int CTestNetScheduleCrash::Run(void)
 
 
     /* ----- Submit jobs ----- */
-    vector<unsigned int>        jobs = this->Submit(submitter, jcount, naff, queue);
+    vector<unsigned int>    jobs = this->Submit(cl, service, jcount, naff,
+                                                notif_port, nclients, queue);
 
 
     NcbiCout << NcbiEndl << "Waiting " << delay << " second(s) ..." << NcbiEndl;
@@ -396,7 +472,7 @@ int CTestNetScheduleCrash::Run(void)
 
 
     /* ----- Get and return some jobs ----- */
-    vector<unsigned int>      jobs_returned = this->GetReturn(executor, jcount/2);
+    this->GetReturn(executor, jcount/100);
 
 
     NcbiCout << NcbiEndl << "Waiting " << delay << " second(s) ..." << NcbiEndl;
