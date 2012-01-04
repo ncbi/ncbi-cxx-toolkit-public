@@ -38,6 +38,7 @@
 
 #include <connect/ncbi_core.h>
 #include <corelib/ncbireg.hpp>
+#include <corelib/ncbitime.hpp>
 
 
 /** @addtogroup UtilityFunc
