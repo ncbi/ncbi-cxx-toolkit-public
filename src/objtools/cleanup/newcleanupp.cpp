@@ -6323,7 +6323,9 @@ void CNewCleanup_imp::x_MendSatelliteQualifier( string &val )
     static CRegexp prefixRegexp("^(micro|mini|)satellite");
     if( prefixRegexp.IsMatch(val) ) {
         int spot_just_after_match = prefixRegexp.GetResults(0)[1];
-        if( val[spot_just_after_match] == ' ' ) {
+        if( spot_just_after_match < val.length() && 
+            val[spot_just_after_match] == ' ' ) 
+        {
             val[spot_just_after_match] = ':';
             ChangeMade(CCleanupChange::eChangeQualifiers);
         }
