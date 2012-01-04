@@ -488,6 +488,8 @@ private:
     double                       m_NotifHifreqInterval;
     unsigned int                 m_NotifHifreqPeriod;
     unsigned int                 m_NotifLofreqMult;
+
+    unsigned int                 m_DumpBufferSize;
 };
 
 

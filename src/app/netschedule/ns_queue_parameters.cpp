@@ -45,6 +45,7 @@ static int              default_timeout = 3600;
 static double           default_notif_hifreq_interval = 0.1;
 static unsigned int     default_notif_hifreq_period = 5;
 static unsigned int     default_notif_lofreq_mult = 50;
+static unsigned int     default_dump_buffer_size = 100;
 static int              default_run_timeout = 3600;
 static int              default_failed_retries = 0;
 static time_t           default_empty_lifetime = -1;
@@ -57,6 +58,7 @@ SQueueParameters::SQueueParameters() :
     notif_hifreq_interval(default_notif_hifreq_interval),
     notif_hifreq_period(default_notif_hifreq_period),
     notif_lofreq_mult(default_notif_lofreq_mult),
+    dump_buffer_size(default_dump_buffer_size),
     run_timeout(default_run_timeout),
     failed_retries(default_failed_retries),
     blacklist_time(default_blacklist_time),
@@ -97,6 +99,13 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
                                     default_notif_lofreq_mult);
     if (notif_lofreq_mult <= 0)
         notif_lofreq_mult = default_notif_lofreq_mult;
+
+    dump_buffer_size = GetIntNoErr("dump_buffer_size",
+                                   default_dump_buffer_size);
+    if (dump_buffer_size < default_dump_buffer_size)
+        dump_buffer_size = default_dump_buffer_size;  // Avoid too small buffer
+    else if (dump_buffer_size > 10000)
+        dump_buffer_size = 10000;                     // Avoid too large buffer
 
     run_timeout           = GetIntNoErr("run_timeout",
                                         default_run_timeout);

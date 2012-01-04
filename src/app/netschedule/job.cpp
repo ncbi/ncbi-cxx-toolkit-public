@@ -767,7 +767,7 @@ void CJob::Print(CNetScheduleHandler &        handler,
 
         subm_exp_time.ToLocalTime();
         handler.WriteMessage("OK:", "subm_notif_expiration: " +
-                                    subm_exp_time.AsString() + "(duration " +
+                                    subm_exp_time.AsString() + " (duration " +
                                     NStr::IntToString(m_SubmNotifTimeout) + " sec)");
     }
     else

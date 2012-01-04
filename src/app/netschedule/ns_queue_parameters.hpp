@@ -50,6 +50,7 @@ struct SQueueParameters
     double          notif_hifreq_interval;
     unsigned int    notif_hifreq_period;
     unsigned int    notif_lofreq_mult;
+    unsigned int    dump_buffer_size;
     int             run_timeout;
     string          program_name;
     int             failed_retries;

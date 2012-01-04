@@ -112,7 +112,8 @@ CQueue::CQueue(CRequestExecutor&     executor,
     m_NotificationsList(queue_name),
     m_NotifHifreqInterval(0.1),
     m_NotifHifreqPeriod(5),
-    m_NotifLofreqMult(50)
+    m_NotifLofreqMult(50),
+    m_DumpBufferSize(100)
 {
     _ASSERT(!queue_name.empty());
 }
@@ -216,6 +217,7 @@ void CQueue::SetParameters(const SQueueParameters &  params)
     m_NotifHifreqInterval  = params.notif_hifreq_interval;
     m_NotifHifreqPeriod    = params.notif_hifreq_period;
     m_NotifLofreqMult      = params.notif_lofreq_mult;
+    m_DumpBufferSize       = params.dump_buffer_size;
 
     // program version control
     m_ProgramVersionList.Clear();
@@ -2264,37 +2266,75 @@ void CQueue::PrintAllJobDbStat(CNetScheduleHandler &   handler,
                                unsigned int            start_after_job_id,
                                unsigned int            count)
 {
-    CJob                job;
+    // Form a bit vector of all jobs to dump
+    vector<CNetScheduleAPI::EJobStatus>     statuses;
+    TNSBitVector                            jobs_to_dump;
 
-    // Make a copy of the deleted jobs vector
-    TNSBitVector        deleted_jobs;
+    // All statuses
+    statuses.push_back(CNetScheduleAPI::ePending);
+    statuses.push_back(CNetScheduleAPI::eRunning);
+    statuses.push_back(CNetScheduleAPI::eCanceled);
+    statuses.push_back(CNetScheduleAPI::eFailed);
+    statuses.push_back(CNetScheduleAPI::eDone);
+    statuses.push_back(CNetScheduleAPI::eReading);
+    statuses.push_back(CNetScheduleAPI::eConfirmed);
+    statuses.push_back(CNetScheduleAPI::eReadFailed);
+
     {{
-        CFastMutexGuard     guard(m_JobsToDeleteLock);
-        deleted_jobs = m_JobsToDelete;
+        CFastMutexGuard     guard(m_OperationLock);
+
+        jobs_to_dump = m_StatusTracker.GetJobs(statuses);
     }}
 
+    // Skip the jobs which should not be dumped
+    TNSBitVector::enumerator    en(jobs_to_dump.first());
+    while (en.valid() && *en <= start_after_job_id)
+        ++en;
 
-    CFastMutexGuard     guard(m_OperationLock);
+    // Identify the required buffer size for jobs
+    size_t      buffer_size = m_DumpBufferSize;
+    if (count != 0 && count < buffer_size)
+        buffer_size = count;
 
-    m_QueueDbBlock->job_db.SetTransaction(NULL);
-    m_QueueDbBlock->events_db.SetTransaction(NULL);
-    m_QueueDbBlock->job_info_db.SetTransaction(NULL);
+    {{
+        CJob    buffer[buffer_size];
 
-    CQueueEnumCursor    cur(this, start_after_job_id);
-    unsigned int        printed_count = 0;
+        size_t      read_jobs = 0;
+        size_t      printed_count = 0;
 
-    while (cur.Fetch() == eBDB_Ok) {
-        if (job.Fetch(this) == CJob::eJF_Ok) {
-            if (!deleted_jobs[job.GetId()]) {
+        for ( ; en.valid(); ) {
+            {{
+                CFastMutexGuard     guard(m_OperationLock);
+                m_QueueDbBlock->job_db.SetTransaction(NULL);
+                m_QueueDbBlock->events_db.SetTransaction(NULL);
+                m_QueueDbBlock->job_info_db.SetTransaction(NULL);
+
+                for ( ; en.valid() && read_jobs < buffer_size; ++en )
+                    if (buffer[read_jobs].Fetch(this, *en) == CJob::eJF_Ok) {
+                        ++read_jobs;
+                        ++printed_count;
+
+                        if (count != 0)
+                            if (printed_count >= count)
+                                break;
+                    }
+            }}
+
+            // Print what was read
+            for (size_t  index = 0; index < read_jobs; ++index) {
                 handler.WriteMessage("");
-                job.Print(handler, *this, m_AffinityRegistry);
-                ++printed_count;
-                if (count != 0)
-                    if (printed_count >= count)
-                        break;
+                buffer[index].Print(handler, *this, m_AffinityRegistry);
             }
+
+            if (count != 0)
+                if (printed_count >= count)
+                    break;
+
+            read_jobs = 0;
         }
-    }
+    }}
+
+    return;
 }
 
 
