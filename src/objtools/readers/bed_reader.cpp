@@ -122,6 +122,7 @@ CBedReader::ReadSeqAnnot(
     CRef< CSeq_annot > annot( new CSeq_annot );
     CRef< CAnnot_descr > desc( new CAnnot_descr );
     annot->SetDesc( *desc );
+    x_AssignTrackData(annot);
     annot->SetData().SetFtable();
 
     string line;
@@ -180,7 +181,8 @@ CBedReader::ReadSeqAnnots(
 //    annot->SetDesc( *desc );
 //    annots.push_back( annot );
 
-    CRef< CSeq_annot > annot = x_AppendAnnot( annots );
+    CRef< CSeq_annot > annot = x_AppendAnnot(annots);
+    x_AssignTrackData(annot);
 
     string line;
     int linecount = 0;
