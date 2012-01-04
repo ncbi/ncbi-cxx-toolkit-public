@@ -133,6 +133,10 @@ case "$ncbi_platform" in
 esac
 
 case "$ncbi_platform" in
+    *MAC       ) : ${PNG_PATH=/usr/X11} ;;
+esac
+
+case "$ncbi_platform" in
     *MAC )
         : ${PYTHON_PATH=/usr}
         : ${PYTHON24=/usr/bin/false}
