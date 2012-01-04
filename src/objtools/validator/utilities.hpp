@@ -143,6 +143,8 @@ bool SeqIsPatent (CBioseq_Handle seq);
 
 bool s_PartialAtGapOrNs (CScope* scope, const CSeq_loc& loc, unsigned int tag);
 
+CBioseq_Handle BioseqHandleFromLocation (CScope* m_Scope, const CSeq_loc& loc);
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE

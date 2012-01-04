@@ -37,6 +37,7 @@
 #include <objects/seqres/Seq_graph.hpp>
 #include <objmgr/graph_ci.hpp>
 #include "validatorp.hpp"
+#include "utilities.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -73,7 +74,7 @@ void CValidError_graph::ValidateSeqGraph(const CBioseq& seq)
                 if (!(*graph)->IsSetLoc()) {
                     m_Imp.IncrementMisplacedGraphCount(); 
                 } else {
-                    CBioseq_Handle bsh = m_Scope->GetBioseqHandle((*graph)->GetLoc());
+                    CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, (*graph)->GetLoc());
                     if (m_Scope->GetBioseqHandle(seq) != bsh) {
                         m_Imp.IncrementMisplacedGraphCount(); 
                     }
@@ -121,7 +122,7 @@ void CValidError_graph::ValidateSeqGraphContext(const CSeq_graph& graph, const C
     if (!graph.IsSetLoc()) {
         m_Imp.IncrementMisplacedGraphCount(); 
     } else {
-        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(graph.GetLoc());
+        CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, graph.GetLoc());
         if (m_Scope->GetBioseqHandle(seq) != bsh) {
             m_Imp.IncrementMisplacedGraphCount(); 
         }

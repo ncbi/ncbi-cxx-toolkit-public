@@ -858,7 +858,7 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
                         } 
                     }
                     if (!found && seq.GetInst().GetRepr() == CSeq_inst::eRepr_seg) {
-                        CBioseq_Handle part = m_Scope->GetBioseqHandle(loc_it.GetEmbeddingSeq_loc());
+                        CBioseq_Handle part = BioseqHandleFromLocation(m_Scope, loc_it.GetEmbeddingSeq_loc());
                         if (part) {
                             CSeq_entry_Handle parent = part.GetParentEntry();
                             if (parent && parent.IsSeq()) {
@@ -3566,7 +3566,9 @@ void CValidError_bioseq::ValidateMultipleGeneOverlap (const CBioseq_Handle& bsh)
     if (!m_GeneIt) {
         return;
     }
+    /*
     bool is_circular = bsh.IsSetInst_Topology() && bsh.GetInst_Topology() == CSeq_inst::eTopology_circular;
+    */
     try {
         vector< CConstRef < CSeq_feat > > containing_genes;
         vector< int > num_contained;
@@ -3736,7 +3738,7 @@ bool CValidError_bioseq::x_IsPartialAtSpliceSiteOrGap
         return false;
     }
 
-    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(*temp.GetRangeAsSeq_loc());
+    CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, *temp.GetRangeAsSeq_loc());
     if (!bsh) {
         return false;
     }
@@ -6003,7 +6005,7 @@ static bool s_SpecialFlybaseId (const CSeq_feat& feat, CScope * scope)
 {
     bool rval = false;
 
-    CBioseq_Handle bsh = scope->GetBioseqHandle(feat.GetLocation());
+    CBioseq_Handle bsh = BioseqHandleFromLocation(scope, feat.GetLocation());
 
     if (bsh) {
         FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(bsh.GetCompleteBioseq())) {
@@ -6051,7 +6053,7 @@ static bool s_SpecialDuplicateFeatID (const CSeq_feat& feat, CScope * scope)
 {
     bool rval = false;
 
-    CBioseq_Handle bsh = scope->GetBioseqHandle(feat.GetLocation());
+    CBioseq_Handle bsh = BioseqHandleFromLocation(scope, feat.GetLocation());
 
     if (bsh) {
         FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(bsh.GetCompleteBioseq())) {
@@ -6108,7 +6110,7 @@ static CConstRef <CSeq_feat> s_GetGeneForFeature (const CSeq_feat& f1, CScope *s
         string ref_label;
         g1->GetLabel(&ref_label);
 
-        CBioseq_Handle bsh = scope->GetBioseqHandle(f1.GetLocation());
+        CBioseq_Handle bsh = BioseqHandleFromLocation(scope, f1.GetLocation());
         SAnnotSelector sel(CSeqFeatData::e_Gene);
         CFeat_CI gene_it(bsh, sel);
         while (gene_it) {
@@ -6337,11 +6339,11 @@ bool CValidError_bioseq::x_AreFullLengthCodingRegionsWithDifferentFrames (CSeq_f
         return false;
     }
 
-    CBioseq_Handle bsh1 = m_Scope->GetBioseqHandle(f1.GetLocation());
+    CBioseq_Handle bsh1 = BioseqHandleFromLocation(m_Scope, f1.GetLocation());
     if (!s_IsLocFullLength (f1.GetLocation(), bsh1)) {
         return false;
     }
-    CBioseq_Handle bsh2 = m_Scope->GetBioseqHandle(f2.GetLocation());
+    CBioseq_Handle bsh2 = BioseqHandleFromLocation(m_Scope, f2.GetLocation());
     if (!s_IsLocFullLength (f2.GetLocation(), bsh2)) {
         return false;
     }
@@ -8260,7 +8262,7 @@ bool CValidError_bioseq::ValidateGraphLocation (const CSeq_graph& graph)
         return false;
     } else {
         const CSeq_loc& loc = graph.GetLoc();
-        CBioseq_Handle bsh = m_Scope->GetBioseqHandle (loc);
+        CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, loc);
         if (!bsh) {
             string label = "";
             if (loc.GetId() != 0) {

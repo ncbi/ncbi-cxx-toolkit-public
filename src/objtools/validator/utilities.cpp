@@ -80,7 +80,7 @@ bool IsClassInEntry(const CSeq_entry& se, CBioseq_set::EClass clss)
 
 bool IsDeltaOrFarSeg(const CSeq_loc& loc, CScope* scope)
 {
-    CBioseq_Handle bsh = scope->GetBioseqHandle(loc);
+    CBioseq_Handle bsh = BioseqHandleFromLocation(scope, loc);
     const CSeq_entry& se = *bsh.GetTopLevelEntry().GetCompleteSeq_entry();
 
     if ( bsh.IsSetInst_Repr() ) {
@@ -1257,6 +1257,17 @@ bool s_PartialAtGapOrNs (
     }
 
     return result;    
+}
+
+
+CBioseq_Handle BioseqHandleFromLocation (CScope* m_Scope, const CSeq_loc& loc)
+
+{
+    CBioseq_Handle bsh;
+    const CSeq_id* id = loc.GetId();
+    if (id == NULL) return bsh;
+    bsh = m_Scope->GetBioseqHandle (*id);
+    return bsh;
 }
 
 
