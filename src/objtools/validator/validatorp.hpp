@@ -113,7 +113,7 @@ class CCountryLine;
 class CCountryExtreme
 {
 public:
-    CCountryExtreme (string country_name, int min_x, int min_y, int max_x, int max_y);
+    CCountryExtreme (const string & country_name, int min_x, int min_y, int max_x, int max_y);
     ~CCountryExtreme (void);
 
     string GetCountry(void)         const { return m_CountryName; }
@@ -147,7 +147,7 @@ private:
 class CCountryLine
 {
 public:
-    CCountryLine (string country_name, double y, double min_x, double max_x, double scale);
+    CCountryLine (const string & country_name, double y, double min_x, double max_x, double scale);
     ~CCountryLine (void);
 
     string GetCountry(void)            const { return m_CountryName; }
@@ -174,7 +174,6 @@ private:
     int m_MinX;
     int m_MaxX;
   double m_Scale;
-
 };
 
 
@@ -333,9 +332,9 @@ public:
     void Validate(const CSeq_submit& ss, CScope* scope = 0);
     void Validate(const CSeq_annot_Handle& sa);
 
-    void Validate(const CSeq_feat& feat);
-    void Validate(const CBioSource& src);
-    void Validate(const CPubdesc& pubdesc);
+    void Validate(const CSeq_feat& feat, CScope* scope = 0);
+    void Validate(const CBioSource& src, CScope* scope = 0);
+    void Validate(const CPubdesc& pubdesc, CScope* scope = 0);
     void ValidateSubAffil(const CAffil::TStd& std, const CSerialObject& obj, const CSeq_entry *ctx);
 
     void SetProgressCallback(CValidator::TProgressCallback callback,
@@ -540,6 +539,20 @@ public:
     int m_unknown_count;
 
 private:
+
+    // This is so we can temporarily set m_Scope in a function
+    // and be sure that it will be set to its old value when we're done
+    class CScopeRestorer {
+    public:
+        CScopeRestorer( CRef<CScope> &scope ) : 
+          m_scopeToRestore(scope), m_scopeOriginalValue(scope) { }
+
+        ~CScopeRestorer(void) { m_scopeToRestore = m_scopeOriginalValue; }
+    private:
+        CRef<CScope> &m_scopeToRestore;
+        CRef<CScope> m_scopeOriginalValue;
+    };
+
     // Prohibit copy constructor & assignment operator
     CValidError_imp(const CValidError_imp&);
     CValidError_imp& operator= (const CValidError_imp&);

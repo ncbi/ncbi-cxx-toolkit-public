@@ -133,36 +133,57 @@ CConstRef<CValidError> CValidator::Validate
 
 CConstRef<CValidError> CValidator::Validate
 (const CSeq_feat& feat, 
+ CScope *scope,
  Uint4 options)
 {
     CRef<CValidError> errors(new CValidError(&feat));
     CValidError_imp imp(*m_ObjMgr, &(*errors), options);
-    imp.Validate(feat);
+    imp.Validate(feat, scope);
     return errors;
 }
 
+CConstRef<CValidError> CValidator::Validate
+(const CSeq_feat& feat, 
+ Uint4 options)
+{
+    return Validate(feat, NULL, options);
+}
+
+CConstRef<CValidError> CValidator::Validate
+(const CBioSource& src, 
+ CScope *scope,
+ Uint4 options)
+{
+    CRef<CValidError> errors(new CValidError(&src));
+    CValidError_imp imp(*m_ObjMgr, &(*errors), options);
+    imp.Validate(src, scope);
+    return errors;
+}
 
 CConstRef<CValidError> CValidator::Validate
 (const CBioSource& src, 
  Uint4 options)
 {
-    CRef<CValidError> errors(new CValidError(&src));
-    CValidError_imp imp(*m_ObjMgr, &(*errors), options);
-    imp.Validate(src);
-    return errors;
+    return Validate(src, NULL, options);
 }
 
+CConstRef<CValidError> CValidator::Validate
+(const CPubdesc& pubdesc, 
+ CScope *scope,
+ Uint4 options)
+{
+    CRef<CValidError> errors(new CValidError(&pubdesc));
+    CValidError_imp imp(*m_ObjMgr, &(*errors), options);
+    imp.Validate(pubdesc, scope);
+    return errors;
+}
 
 CConstRef<CValidError> CValidator::Validate
 (const CPubdesc& pubdesc, 
  Uint4 options)
 {
-    CRef<CValidError> errors(new CValidError(&pubdesc));
-    CValidError_imp imp(*m_ObjMgr, &(*errors), options);
-    imp.Validate(pubdesc);
-    return errors;
+    return Validate(pubdesc, NULL, options);
 }
-
 
 void CValidator::SetProgressCallback(TProgressCallback callback, void* user_data)
 {

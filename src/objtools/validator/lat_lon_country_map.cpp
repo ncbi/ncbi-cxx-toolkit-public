@@ -49,7 +49,7 @@ BEGIN_SCOPE(validator)
 
 // CCountryLine
 CCountryLine::CCountryLine 
-(string country_name, double y, double min_x, double max_x, double scale)
+(const string & country_name, double y, double min_x, double max_x, double scale)
 : m_CountryName(country_name) ,
   m_Scale (scale)
 {
@@ -122,7 +122,7 @@ int CCountryLine::x_ConvertLon (double x)
 }
 
 
-CCountryExtreme::CCountryExtreme (string country_name, int min_x, int min_y, int max_x, int max_y)
+CCountryExtreme::CCountryExtreme (const string & country_name, int min_x, int min_y, int max_x, int max_y)
 : m_CountryName(country_name) , m_MinX (min_x), m_MinY (min_y), m_MaxX(max_x), m_MaxY (max_y)
 {
     m_Area = (1 + m_MaxY - m_MinY) * (1 + m_MaxX - m_MinX);
@@ -337,25 +337,59 @@ bool CLatLonCountryMap::x_InitFromFile(const string& filename)
     } else {
         m_Scale = 20.0;
         string current_country = "";
+
+        // make sure to clear before using.  in this outer
+        // scope in the interest of speed (avoid repeated 
+        // construction/destruction)
+        vector<SIZE_TYPE> tab_positions;
+
         do {
-            const string& line = *++*lr;
-            if (line.c_str()[0] == '-') {
+            // const string& line = *++*lr;
+            CTempString line = *++*lr;
+            if (line[0] == '-') {
                 // skip comment
-            } else if (isalpha (line.c_str()[0])) {
+            } else if (isalpha (line[0])) {
                 current_country = line;
-            } else if (isdigit (line.c_str()[0])) {
+            } else if (isdigit (line[0])) {
                 m_Scale = NStr::StringToDouble(line);
             } else {          
-                vector<string> tokens;
-                  NStr::Tokenize(line, "\t", tokens);
-                if (tokens.size() > 3) {
-                    double y = NStr::StringToDouble(tokens[1]);
-                    for (size_t j = 2; j < tokens.size() - 1; j+=2) {
-                        m_CountryLineList.push_back(new CCountryLine(current_country, y, NStr::StringToDouble(tokens[j]), NStr::StringToDouble(tokens[j + 1]), m_Scale));
+                // NStr::Tokenize would be much simpler, but
+                // it's just too slow in this case, especially
+                // in debug mode.
+
+                // for the future, if we need even more speed,
+                // it should be possible to eliminate the tab_positions
+                // vector and collect tab positions on the fly without
+                // any heap-allocated memory
+
+                // find position of all tabs on this line
+                tab_positions.clear();
+                SIZE_TYPE tab_pos = line.find('\t');
+                while( tab_pos != NPOS ) {
+                    tab_positions.push_back(tab_pos);
+                    tab_pos = line.find('\t', tab_pos+1);
+                }
+                // an imaginary sentinel tab
+                tab_positions.push_back(line.length());
+
+                const char * line_start = line.data();
+                if( tab_positions.size() >= 4 ) {
+                    CTempString y_str( line_start + tab_positions[0]+1, tab_positions[1] - tab_positions[0] - 1 );
+                    double y = NStr::StringToDouble( y_str );
+
+                    // convert into line list
+                    for (size_t j = 1; j < tab_positions.size() - 2; j+=2) {
+                        const SIZE_TYPE pos1 = tab_positions[j];
+                        const SIZE_TYPE pos2 = tab_positions[j+1];
+                        const SIZE_TYPE pos3 = tab_positions[j+2];
+                        CTempString first_num( line_start + pos1 + 1, pos2 - pos1 - 1 );
+                        CTempString second_num( line_start + pos2 + 1, pos3 - pos2 - 1 );
+                        m_CountryLineList.push_back(new CCountryLine(current_country, y, NStr::StringToDouble(first_num), NStr::StringToDouble(second_num), m_Scale));
                     }
                 }
             }
         } while ( !lr->AtEOF() );
+
         return true;
     }
 }

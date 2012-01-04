@@ -65,7 +65,7 @@ static bool s_IsIllegal (string key)
 
 static void s_TestOneWrongQual(const string qual, const string val, const string feat, 
                           CSeq_entry_Handle seh, CRef<CSeq_feat> misc_feat,
-                          CValidator& validator, unsigned int options) 
+                          CValidator& validator, unsigned int options, CScope *scope) 
 {
     misc_feat->AddQualifier (qual, val);;
     string msg = "Wrong qualifier ";
@@ -87,7 +87,7 @@ static void s_TestOneWrongQual(const string qual, const string val, const string
         expected_errors.push_back(new CExpectedError("good", eDiag_Error, "LocusTagProblem", 
                                   "old_locus_tag without inherited locus_tag"));
     }
-    CConstRef<CValidError> eval = validator.Validate(seh, options);
+    CConstRef<CValidError> eval = validator.Validate(*misc_feat, scope, options);
     CheckErrors (*eval, expected_errors);
     misc_feat->SetQual().pop_back();
     CLEAR_ERRORS
@@ -4916,7 +4916,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_WrongQualOnImpFeat)
             last_key = s_KeyQualVal[i].key;
         }
         s_TestOneWrongQual (s_KeyQualVal[i].qual, s_KeyQualVal[i].val, s_KeyQualVal[i].key, 
-                                seh, imp, validator, options);
+                                seh, imp, validator, options, &scope);
     }
 
 }    

@@ -662,7 +662,10 @@ void CValidError_imp::PostErr
 
     // if feature ID, add with feature id, otherwise without
     int version = 0;
-    const string& accession = GetAccessionFromObjects(&ft, NULL, *m_Scope, &version);
+    string accession = "";
+    if (m_Scope) {
+        accession = GetAccessionFromObjects(&ft, NULL, *m_Scope, &version);
+    }
     if (NStr::IsBlank(feature_id)) {
         m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ft, accession, version, offset);
     } else {
@@ -1584,8 +1587,20 @@ void CValidError_imp::Validate(const CSeq_annot_Handle& sah)
 }
 
 
-void CValidError_imp::Validate(const CSeq_feat& feat)
+void CValidError_imp::Validate(const CSeq_feat& feat, CScope* scope)
 {
+    // automatically restores m_Scope to its old value when we leave
+    // the function
+    CScopeRestorer scopeRestorer( m_Scope );
+
+    if( scope != NULL ) {
+        m_Scope.Reset(scope);
+    }
+    if (!m_Scope) {
+        // set up a temporary local scope if there is no scope set already
+        m_Scope.Reset(new CScope(*m_ObjMgr));
+    }
+
     CValidError_feat feat_validator(*this);
     feat_validator.ValidateSeqFeat(feat);
     if (feat.IsSetData() && feat.GetData().IsBiosrc()) {
@@ -1599,8 +1614,20 @@ void CValidError_imp::Validate(const CSeq_feat& feat)
 }
 
 
-void CValidError_imp::Validate(const CBioSource& src)
+void CValidError_imp::Validate(const CBioSource& src, CScope* scope)
 {
+    // automatically restores m_Scope to its old value when we leave
+    // the function
+    CScopeRestorer scopeRestorer( m_Scope );
+
+    if( scope != NULL ) {
+        m_Scope.Reset(scope);
+    }
+    if (!m_Scope) {
+        // set up a temporary local scope if there is no scope set already
+        m_Scope.Reset(new CScope(*m_ObjMgr));
+    }
+
     ValidateBioSource(src, src);
     if (src.IsSetOrg()) {
         ValidateTaxonomy (src.GetOrg(), src.IsSetGenome() ? src.GetGenome() : CBioSource::eGenome_unknown);
@@ -1610,8 +1637,20 @@ void CValidError_imp::Validate(const CBioSource& src)
 }
 
 
-void CValidError_imp::Validate(const CPubdesc& pubdesc)
+void CValidError_imp::Validate(const CPubdesc& pubdesc, CScope* scope)
 {
+    // automatically restores m_Scope to its old value when we leave
+    // the function
+    CScopeRestorer scopeRestorer( m_Scope );
+
+    if( scope != NULL ) {
+        m_Scope.Reset(scope);
+    }
+    if (!m_Scope) {
+        // set up a temporary local scope if there is no scope set already
+        m_Scope.Reset(new CScope(*m_ObjMgr));
+    }
+
     ValidatePubdesc(pubdesc, pubdesc);
     FindEmbeddedScript(pubdesc);
     FindCollidingSerialNumbers(pubdesc);
