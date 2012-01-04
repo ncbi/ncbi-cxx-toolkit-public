@@ -402,11 +402,12 @@ void CBedReader::x_SetFeatureLocation(
     CRef<CSeq_id> id = x_ResolvedId( fields[0] );
 
     CRef<CSeq_loc> location( new CSeq_loc );
+    int from, to;
     CSeq_interval& interval = location->SetInt();
     try {
-		string cleaned;
-		NStr::Replace(fields[1], ",", "", cleaned);
-        interval.SetFrom( NStr::StringToInt( cleaned ) - 1);
+		string cleaned_from;
+		NStr::Replace(fields[1], ",", "", cleaned_from);
+        from = NStr::StringToInt( cleaned_from ) - 1;
     }
     catch ( ... ) {
         CObjReaderLineException err( 
@@ -416,15 +417,29 @@ void CBedReader::x_SetFeatureLocation(
         throw( err );
     }
     try {
-    	string cleaned;
-		NStr::Replace(fields[2], ",", "", cleaned);
-        interval.SetTo( NStr::StringToInt( cleaned ) - 1 );
+    	string cleaned_to;
+		NStr::Replace(fields[2], ",", "", cleaned_to);
+        to = NStr::StringToInt( cleaned_to ) - 1;
     }
     catch ( ... ) {
         CObjReaderLineException err( 
             eDiag_Error,
             0,
             "Invalid data line --- Bad \"SeqStop\" value." );
+        throw( err );
+    }
+    if (from == to) {
+        location->SetPnt().SetPoint(from);
+    }
+    else if (from < to) {
+        location->SetInt().SetFrom(from);
+        location->SetInt().SetTo(to);
+    }
+    else {
+        CObjReaderLineException err( 
+            eDiag_Error,
+            0,
+            "Invalid data line --- \"SeqStop\" less than \"SeqStart\"." );
         throw( err );
     }
 
