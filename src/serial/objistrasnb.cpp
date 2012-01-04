@@ -1308,11 +1308,13 @@ CObjectIStreamAsnBinary::GuessDataType(set<TTypeInfo>& known_types,
 #endif
     m_CurrentTagLength = 0;
 
-    ITERATE( set<TTypeInfo>, t, known_types) {
-        size_t pos = 0;
-        CObjectTypeInfo ti(*t);
-        if (ti.MatchPattern(pattern,pos,0) && pos == pattern.size()) {
-            matching_types.insert(*t);
+    if (pattern.size() != 0) {
+        ITERATE( set<TTypeInfo>, t, known_types) {
+            size_t pos = 0;
+            CObjectTypeInfo ti(*t);
+            if (ti.MatchPattern(pattern,pos,0) && pos == pattern.size()) {
+                matching_types.insert(*t);
+            }
         }
     }
     return matching_types;
@@ -1339,11 +1341,7 @@ void CObjectIStreamAsnBinary::GetTagPattern(vector<int>& pattern, size_t max_len
         ExpectIndefiniteLength();
     }
     else {
-        size_t length = ReadLength();
-        if (length) {
-            SkipBytes(length);
-        }
-        EndOfTag();
+        pattern.clear();
         return;
     }
     int depth = 1;
