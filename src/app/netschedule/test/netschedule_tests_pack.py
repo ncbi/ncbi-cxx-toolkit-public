@@ -1169,7 +1169,8 @@ class Scenario31( TestBase ):
                                            'JSID_01_7_130.14.24.83_9101',
                                            'lglglg' )
         except Exception, exc:
-            if 'Job not found' in str( exc ):
+            if 'Job not found' in str( exc ) or \
+               'eJobNotFound' in str( exc ):
                 return True
             raise
         return False
