@@ -110,27 +110,20 @@ public:
   string& PrintUsage(string& str, bool detailed) const
   {
     str="Validate data in the AGP format:\n"
-    "http://www.ncbi.nlm.nih.gov/genome/assembly/agp/AGP_Specification.shtml\n"
+    "http://www.ncbi.nlm.nih.gov/projects/genome/assembly/agp/AGP_Specification.shtml\n"
     "\n"
     "USAGE: agp_validate [-options] [FASTA files...] [AGP files...]\n"
     "\n"
-    "With no options: perform the checks that do not require\n"
-    "the component sequences to be available in GenBank.\n"
-    "Report component, gap, scaffold and object statistics.\n"
+    "There are 3 validations modes:\n"
+    "no mode option: (default mode) report component, gap, scaffold and object statistics, perform checks\n"
+    "                that do not require component sequences to be available in GenBank (see: -list).\n"
+    "-alt, -species: Check component Accessions, Lengths and Taxonomy ID using GenBank data;\n"
+    "                -species allows components from different subspecies during Taxid checks.\n"
+    "-comp  Check that the supplied object sequences (in FASTA or ASN.1 file) match what can be\n"
+    "       constructed from the AGP and the component sequences (in FASTA files or in GenBank).\n"
+    "       Run \"agp_validate -comp\" to see the options for this mode.\n"
     "\n"
-    "If component FASTA files are given in front of AGP files, also check that:\n"
-    "- component_id from AGP is present in FASTA;\n"
-    "- component_end does not exceed sequence length.\n"
-    "If FASTA files for objects are given (after -obj), check that:\n"
-    "- object_id from AGP is present in FASTA;\n"
-    "- object lengths in FASTA and in AGP match.\n"
-    "\n"
-    "OPTIONS:\n"
-    "  -alt       Check component Accessions, Lengths and Taxonomy ID using GenBank data.\n"
-    "             This can be very time-consuming, and is done separately from most other checks.\n"
-    "  -species   Allow components from different subspecies during Taxid checks (implies -alt).\n"
-    "  The above options require that the components are available in GenBank.\n"
-    "\n"
+    "OPTIONS (default and -alt modes):\n"
     "  -g         Check that component names look like Nucleotide accessions\n"
     "             (this does not require components to be in GenBank).\n"
     "  -out FILE  Save the AGP file, adding missing version 1 to the component accessions (need -alt),\n"
@@ -146,10 +139,6 @@ public:
     "  -chr       Chromosome from scaffold AGP: ONLY scaffold-breaking gaps allowed\n" //  + -cc
     "  Use both of the last 2 options in this order: -scaf Scaf_AGP_file(s) -chr Chr_AGP_file(s)\n"
     "  to check that all scaffolds in Scaf_AGP_file(s) are wholly included in Chr_AGP_file(s)\n"
-    "  -comp      Compare AGP and FASTA data for differences\n"
-    "    -comploadlog        Specify loading log for -comp option\n"
-    "    -compignoreagponly  Have -comp ignore AGP-only differences\n"
-    "    -compignoreobjfileonly (...or objfile-only differences)\n"
     //"  -cc        Chromosome from component: check telomere/centromere/short-arm gap counts per chromosome\n"
     "\n"
     "  -list               List error and warning messages.\n"
@@ -159,6 +148,13 @@ public:
     "  -show WHAT          Show the warning hidden by default (w30, w31, w35, w36, w42).\n"
     "  'WHAT' could be a part of the message text, an error code (e11, w22, etc; see -list),\n"
     "  or a keyword: all, warn, err, alt.\n"
+    "\n"
+    "If component FASTA files are given in front of AGP files, also check that:\n"
+    "- component_id from AGP is present in FASTA;\n"
+    "- component_end does not exceed sequence length.\n"
+    "If FASTA files for objects are given (after -obj), check that:\n"
+    "- object_id from AGP is present in FASTA;\n"
+    "- object lengths in FASTA and in AGP match.\n"
     "\n"
     ;
     return str;
@@ -184,11 +180,11 @@ void CAgpValidateApplication::Init(void)
   arg_desc->AddFlag("chr" , "");
   arg_desc->AddFlag("comp", "");
 
-  arg_desc->AddOptionalKey( "comploadlog", "FILE",
+  arg_desc->AddOptionalKey( "loadlog", "FILE",
     "specifies where we write our loading log for -comp",
     CArgDescriptions::eOutputFile);
-  arg_desc->AddFlag("compignoreagponly",     "");
-  arg_desc->AddFlag("compignoreobjfileonly", "");
+  arg_desc->AddFlag("ignoreagponly",     "");
+  arg_desc->AddFlag("ignoreobjfileonly", "");
 
   arg_desc->AddFlag("species", "allow components from different subspecies");
 
@@ -379,10 +375,10 @@ int CAgpValidateApplication::Run(void)
   if( ! args["comp"] ) {
       // if "-comp" not specified, neither should the other
       // comp-related args
-      if( args["comploadlog"] || args["compignoreagponly"] ||
-          args["compignoreobjfileonly"] )
+      if( args["loadlog"] || args["ignoreagponly"] ||
+          args["ignoreobjfileonly"] )
       {
-          cerr << "Don't specify comp-related options if you don't specify -comp" << endl;
+          cerr << "Error -- -comp mode options without -comp" << endl;
           exit(1);
       }
   }
@@ -408,15 +404,15 @@ int CAgpValidateApplication::Run(void)
       }
 
       string comploadlog;
-      if( args["comploadlog"] ) {
-          comploadlog = args["comploadlog"].AsString();
+      if( args["loadlog"] ) {
+          comploadlog = args["loadlog"].AsString();
       }
 
       CAgpFastaComparator::TDiffsToHide diffsToHide = 0;
-      if( args["compignoreagponly"] ) {
+      if( args["ignoreagponly"] ) {
           diffsToHide |= CAgpFastaComparator::fDiffsToHide_AGPOnly;
       }
-      if( args["compignoreobjfileonly"] ) {
+      if( args["ignoreobjfileonly"] ) {
           diffsToHide |= CAgpFastaComparator::fDiffsToHide_ObjfileOnly;
       }
 
@@ -811,6 +807,21 @@ END_NCBI_SCOPE
 
 int main(int argc, const char* argv[])
 {
+  if(argc==1+1 && string("-comp")==argv[1]) {
+    cout << "agp_validate -comp (formerly agp_fasta_compare):\n"
+      "check that the object sequences (in FASTA or ASN.1 file) match the AGP.\n"
+      "\n"
+      "USAGE: agp_validate -comp [-options] ASN.1/FASTA file(s)... AGP file(s)...\n"
+      "OPTIONS:\n"
+      "    -loadlog OUTPUT_FILE   Save the list of all loaded sequences.\n"
+      "    -ignoreagponly         Do not report objects present in AGP file(s) only.\n"
+      "    -ignoreobjfileonly     Do not report objects present in FASTA (or ASN.1) file(s) only.\n"
+      "\n"
+      "FASTA files for components are only needed if they are not yet in GenBank.\n"
+      ;
+    return 0;
+  }
+
   return CAgpValidateApplication().AppMain(
     argc, argv, 0, eDS_Default, 0
   );
