@@ -68,7 +68,7 @@ g_GetNCThreadIndex(void)
 string
 g_ToSizeStr(Uint8 size)
 {
-    static const char* const posts[] = {" B", " KB", " MB", " GB", " PB"};
+    static const char* const posts[] = {" B", " KB", " MB", " GB", " TB", " PB"};
 
     string res = NStr::UInt8ToString(size);
     size_t dot_pos = res.size();
