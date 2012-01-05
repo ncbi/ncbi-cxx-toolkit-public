@@ -124,8 +124,9 @@ void CNetScheduleDApp::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "netscheduled");
 
-    arg_desc->AddFlag("reinit",   "Recreate the storage directory.");
-    arg_desc->AddFlag("-version", "Package, storage, protocol versions and build date");
+    arg_desc->AddFlag("reinit",       "Recreate the storage directory.");
+    arg_desc->AddFlag("version-full", "Package, storage, protocol versions and build date.");
+    arg_desc->AddFlag("nodaemon",     "Turn off daemonization of NetSchedule at the start.");
 
     SetupArgDescriptions(arg_desc.release());
     //CONNECT_Init(&GetConfig());
@@ -137,7 +138,7 @@ int CNetScheduleDApp::Run(void)
 {
     const CArgs& args = GetArgs();
 
-    if (args["-version"]) {
+    if (args["version-full"]) {
         printf(NETSCHEDULED_FULL_VERSION "\n");
         return 0;
     }
@@ -220,7 +221,7 @@ int CNetScheduleDApp::Run(void)
         if (qdb->Open(bdb_params, reinit) == false)
             return 1;
 
-        if (params.is_daemon) {
+        if (!args["nodaemon"]) {
             LOG_POST("Entering UNIX daemon mode...");
             // Here's workaround for SQLite3 bug: if stdin is closed in forked
             // process then 0 file descriptor is returned to SQLite after open().
@@ -256,12 +257,12 @@ int CNetScheduleDApp::Run(void)
 
         server->SetQueueDB(qdb.release());
 
-        if (!params.is_daemon)
+        if (args["nodaemon"])
             NcbiCout << "Server started" << NcbiEndl;
 
         server->Run();
 
-        if (!params.is_daemon)
+        if (args["nodaemon"])
             NcbiCout << "Server stopped" << NcbiEndl;
 
     }

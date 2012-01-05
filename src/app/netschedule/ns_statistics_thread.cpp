@@ -279,7 +279,7 @@ void CStatisticsCounters::CountTransition(CNetScheduleAPI::EJobStatus  from,
         // Debug checking. the release version should not check this
         if (m_Transitions[index_from][index_to].Get() ==
                static_cast<TNCBIAtomicValue>(-1)) {
-            ERR_POST("Disabled transition is conted. From index: " +
+            ERR_POST("Disabled transition is counted. From index: " +
                      NStr::SizetToString(index_from) + " To index: " +
                      NStr::SizetToString(index_to));
             m_Transitions[index_from][index_to].Add(1);

@@ -49,7 +49,6 @@ struct SNS_Parameters : SServer_Parameters
     bool            use_hostname;
     unsigned        network_timeout;
 
-    bool            is_daemon;
     bool            is_log;
     bool            log_batch_each_job;
     bool            log_notification_thread;
