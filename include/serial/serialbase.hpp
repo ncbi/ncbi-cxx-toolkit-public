@@ -478,6 +478,8 @@ C* SerialClone(const C& src)
 // Helper base class
 class NCBI_XSERIAL_EXPORT MSerial_Flags
 {
+public:
+    static bool HasSerialFormatting(CNcbiIos& io);
 protected:
     MSerial_Flags(unsigned long all, unsigned long flags);
 private:
@@ -528,27 +530,28 @@ public:
 };
 
 // Formatting
-NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_AsnText(CNcbiIos& io);
+NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_AsnText(  CNcbiIos& io);
 NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_AsnBinary(CNcbiIos& io);
-NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_Xml(CNcbiIos& io);
-NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_Json(CNcbiIos& io);
+NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_Xml(      CNcbiIos& io);
+NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_Json(     CNcbiIos& io);
+NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_None(     CNcbiIos& io);
 
 // Class member assignment verification
-NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_VerifyDefault(CNcbiIos& io);
-NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_VerifyNo(CNcbiIos& io);
-NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_VerifyYes(CNcbiIos& io);
+NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_VerifyDefault( CNcbiIos& io);
+NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_VerifyNo(      CNcbiIos& io);
+NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_VerifyYes(     CNcbiIos& io);
 NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_VerifyDefValue(CNcbiIos& io);
 
 class CConstObjectInfo;
 class CObjectInfo;
 // Input/output
-NCBI_XSERIAL_EXPORT CNcbiOstream& operator<< (CNcbiOstream& str, const CSerialObject& obj);
-NCBI_XSERIAL_EXPORT CNcbiIstream& operator>> (CNcbiIstream& str, CSerialObject& obj);
+NCBI_XSERIAL_EXPORT CNcbiOstream& operator<< (CNcbiOstream& str, const CSerialObject&    obj);
+NCBI_XSERIAL_EXPORT CNcbiIstream& operator>> (CNcbiIstream& str, CSerialObject&          obj);
 NCBI_XSERIAL_EXPORT CNcbiOstream& operator<< (CNcbiOstream& str, const CConstObjectInfo& obj);
-NCBI_XSERIAL_EXPORT CNcbiIstream& operator>> (CNcbiIstream& str, const CObjectInfo& obj);
+NCBI_XSERIAL_EXPORT CNcbiIstream& operator>> (CNcbiIstream& str, const CObjectInfo&      obj);
 
 NCBI_XSERIAL_EXPORT CNcbiOstream& WriteObject(CNcbiOstream& str, TConstObjectPtr ptr, TTypeInfo info);
-NCBI_XSERIAL_EXPORT CNcbiIstream& ReadObject(CNcbiIstream& str, TObjectPtr ptr, TTypeInfo info);
+NCBI_XSERIAL_EXPORT CNcbiIstream& ReadObject( CNcbiIstream& str, TObjectPtr      ptr, TTypeInfo info);
 
 
 END_NCBI_SCOPE

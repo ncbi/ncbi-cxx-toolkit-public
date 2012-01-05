@@ -573,6 +573,11 @@ long s_EncodingToFlags(EEncoding fmt)
     return (enc << 16);
 }
 
+bool MSerial_Flags::HasSerialFormatting(CNcbiIos& io)
+{
+    return s_FlagsToFormat(io) != eSerial_None;
+}
+
 MSerial_Flags::MSerial_Flags(unsigned long all, unsigned long flags)
     : m_All(all), m_Flags(flags)
 {
@@ -615,6 +620,12 @@ CNcbiIos& MSerial_Xml(CNcbiIos& io)
 CNcbiIos& MSerial_Json(CNcbiIos& io)
 {
     s_SerFlags(io) = (s_SerFlags(io) & ~eFmt_All) | eFmt_Json;
+    return io;
+}
+
+CNcbiIos& MSerial_None(CNcbiIos& io)
+{
+    s_SerFlags(io) = (s_SerFlags(io) & ~eFmt_All);
     return io;
 }
 
