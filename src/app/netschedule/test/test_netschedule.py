@@ -14,6 +14,7 @@ import time
 from optparse import OptionParser
 from netschedule import NetSchedule
 import netschedule_tests_pack as pack
+import netschedule_tests_pack_4_10 as pack_4_10
 
 
 defaultGridCliPath = ""
@@ -33,8 +34,8 @@ latestNetscheduleVersion = "4.10.0"
 # netschedule version. The test ID is coming from netschedule_tests_pack.py
 excludeTestsMap = \
 {
-    "4.8.1":    [ 12 ],
-    "4.9.0":    [ 12 ],
+    "4.8.1":    [ 12, 100 ],
+    "4.9.0":    [ 12, 100 ],
     "4.10.0":   [ 12, 35, 44, 47, 48, 49, 51 ]
 }
 
@@ -235,6 +236,7 @@ def main():
               pack.Scenario54( netschedule ),
               # pack.Scenario55( netschedule ),
               # pack.Scenario56( netschedule )
+              pack_4_10.Scenario100( netschedule ),
             ]
 
     # Calculate the start test index
@@ -325,4 +327,3 @@ if __name__ == "__main__":
         returnValue = 1
 
     sys.exit( returnValue )
-
