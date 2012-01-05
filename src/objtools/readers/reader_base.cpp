@@ -310,15 +310,9 @@ void CReaderBase::x_AssignTrackData(
         trackdata->AddField( "description", m_pTrackDefaults->Description() );
         annot->SetTitleDesc(m_pTrackDefaults->Description());
     }
-    else {
-        annot->SetTitleDesc("No Title");
-    }
     if ( !m_pTrackDefaults->Name().empty() ) {
         annot->SetNameDesc(m_pTrackDefaults->Name());
         trackdata->AddField( "name", m_pTrackDefaults->Name() );
-    }
-    else {
-        annot->SetNameDesc("No Name");
     }
     map<string,string>::const_iterator cit = m_pTrackDefaults->Values().begin();
     while ( cit != m_pTrackDefaults->Values().end() ) {
