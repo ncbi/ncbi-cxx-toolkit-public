@@ -46,6 +46,7 @@ BEGIN_NCBI_SCOPE
 
 class CChoiceTypeInfoReader;
 class CClassInfoHelperBase;
+class CReadChoiceVariantHook;
 
 class CChoiceTypeInfoFunctions;
 
@@ -121,10 +122,8 @@ public:
     TConstObjectPtr GetData(TConstObjectPtr object, TMemberIndex index) const;
     TObjectPtr GetData(TObjectPtr object, TMemberIndex index) const;
 
-    typedef void (*TPreReadVariantFunction)(CObjectIStream& in,
-                                            const CObjectInfoCV& variant);
-    void SetPreReadVariantFunction(const CTempString& variant_name,
-                                   TPreReadVariantFunction func);
+    void SetGlobalHook(const CTempString& variant_names,
+                       CReadChoiceVariantHook* hook);
 
 protected:
     void SetSelectDelayFunction(TSelectDelayFunction func);

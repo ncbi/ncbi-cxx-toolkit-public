@@ -506,29 +506,10 @@ CClassTypeInfo::CalcMayContainType(TTypeInfo typeInfo) const
     return ret;
 }
 
-class CPreReadMemberHook : public CReadClassMemberHook
+void CClassTypeInfo::SetGlobalHook(const CTempString& members,
+                                   CReadClassMemberHook* hook_ptr)
 {
-public:
-    CPreReadMemberHook(TPreReadMemberFunction func)
-        : m_PreRead(func)
-        {
-        }
-
-    void ReadClassMember(CObjectIStream& in,
-                         const CObjectInfoMI& member)
-        {
-            m_PreRead(in, member);
-            DefaultRead(in, member);
-        }
-
-private:
-    TPreReadMemberFunction m_PreRead;
-};
-
-void CClassTypeInfo::SetPreReadMemberFunction(const CTempString& members,
-                                              TPreReadMemberFunction func)
-{
-    CRef<CPreReadMemberHook> hook(new CPreReadMemberHook(func));
+    CRef<CReadClassMemberHook> hook(hook_ptr);
     if ( members == "*" ) {
         for ( CIterator i(this); i.Valid(); ++i ) {
             const_cast<CMemberInfo*>(GetMemberInfo(i))->

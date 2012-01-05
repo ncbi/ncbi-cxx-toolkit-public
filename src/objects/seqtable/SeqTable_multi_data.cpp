@@ -93,44 +93,47 @@ NCBI_PARAM_DEF_EX(int, OBJECTS, SEQ_TABLE_RESERVE, 1,
 static NCBI_PARAM_TYPE(OBJECTS, SEQ_TABLE_RESERVE) s_Reserve;
 
 
-void CSeqTable_multi_data::PreReadVariant(CObjectIStream& in,
-                                          const CObjectInfoCV& variant)
+void CSeqTable_multi_data::CReserveHook::PreReadChoiceVariant(
+    CObjectIStream& in,
+    const CObjectInfoCV& variant)
 {
     if ( !s_Reserve.Get() ) {
         return;
     }
     if ( CSeq_table* table = CType<CSeq_table>::GetParent(in, 2, 2) ) {
         size_t size = table->GetNum_rows();
+        CSeqTable_multi_data* data =
+            CType<CSeqTable_multi_data>::Get(variant.GetChoiceObject());
         switch ( variant.GetVariantIndex() ) {
         case e_Int:
-            SetInt().reserve(size);
+            data->SetInt().reserve(size);
             break;
         case e_Real:
-            SetReal().reserve(size);
+            data->SetReal().reserve(size);
             break;
         case e_String:
-            SetString().reserve(size);
+            data->SetString().reserve(size);
             break;
         case e_Bytes:
-            SetBytes().reserve(size);
+            data->SetBytes().reserve(size);
             break;
         case e_Common_string:
-            SetCommon_string().SetIndexes().reserve(size);
+            data->SetCommon_string().SetIndexes().reserve(size);
             break;
         case e_Common_bytes:
-            SetCommon_bytes().SetIndexes().reserve(size);
+            data->SetCommon_bytes().SetIndexes().reserve(size);
             break;
         case e_Bit:
-            SetBit().reserve((size+7)/8);
+            data->SetBit().reserve((size+7)/8);
             break;
         case e_Loc:
-            SetLoc().reserve(size);
+            data->SetLoc().reserve(size);
             break;
         case e_Id:
-            SetId().reserve(size);
+            data->SetId().reserve(size);
             break;
         case e_Interval:
-            SetInterval().reserve(size);
+            data->SetInterval().reserve(size);
             break;
         default:
             break;

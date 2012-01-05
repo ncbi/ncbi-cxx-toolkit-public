@@ -56,8 +56,30 @@ void CReadClassMemberHook::ReadMissingClassMember(CObjectIStream& in,
         DefaultReadMissingMember(in, member.GetClassObject().GetObjectPtr());
 }
 
+CPreReadClassMemberHook::~CPreReadClassMemberHook(void)
+{
+}
+
+void CPreReadClassMemberHook::ReadClassMember(CObjectIStream& in,
+                                              const CObjectInfoMI& member)
+{
+    PreReadClassMember(in, member);
+    DefaultRead(in, member);
+}
+
 CReadChoiceVariantHook::~CReadChoiceVariantHook(void)
 {
+}
+
+CPreReadChoiceVariantHook::~CPreReadChoiceVariantHook(void)
+{
+}
+
+void CPreReadChoiceVariantHook::ReadChoiceVariant(CObjectIStream& in,
+                                                  const CObjectInfoCV& variant)
+{
+    PreReadChoiceVariant(in, variant);
+    DefaultRead(in, variant);
 }
 
 CReadContainerElementHook::~CReadContainerElementHook(void)

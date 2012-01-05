@@ -1476,8 +1476,8 @@ NCBI_PARAM_DEF_EX(int, OBJECTS, DENSE_SEG_RESERVE, 1,
 static NCBI_PARAM_TYPE(OBJECTS, DENSE_SEG_RESERVE) s_Reserve;
 
 
-void CDense_seg::PreReadMember(CObjectIStream& in,
-                               const CObjectInfoMI& member)
+void CDense_seg::CReserveHook::PreReadClassMember(CObjectIStream& in,
+                                                  const CObjectInfoMI& member)
 {
     if ( !s_Reserve.Get() ) {
         return;

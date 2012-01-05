@@ -36,6 +36,7 @@
 #include <serial/objcopy.hpp>
 #include <serial/delaybuf.hpp>
 #include <serial/serialbase.hpp>
+#include <serial/objhook.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -380,29 +381,10 @@ void CChoiceTypeInfoFunctions::SkipChoiceDefault(CObjectIStream& in,
 }
 
 
-class CPreReadVariantHook : public CReadChoiceVariantHook
+void CChoiceTypeInfo::SetGlobalHook(const CTempString& variants,
+                                    CReadChoiceVariantHook* hook_ptr)
 {
-public:
-    CPreReadVariantHook(TPreReadVariantFunction func)
-        : m_PreRead(func)
-        {
-        }
-
-    void ReadChoiceVariant(CObjectIStream& in,
-                           const CObjectInfoCV& variant)
-        {
-            m_PreRead(in, variant);
-            DefaultRead(in, variant);
-        }
-
-private:
-    TPreReadVariantFunction m_PreRead;
-};
-
-void CChoiceTypeInfo::SetPreReadVariantFunction(const CTempString& variants,
-                                                TPreReadVariantFunction func)
-{
-    CRef<CPreReadVariantHook> hook(new CPreReadVariantHook(func));
+    CRef<CReadChoiceVariantHook> hook(hook_ptr);
     if ( variants == "*" ) {
         for ( CIterator i(this); i.Valid(); ++i ) {
             const_cast<CVariantInfo*>(GetVariantInfo(i))->

@@ -53,6 +53,7 @@ class CMemberId;
 class CMemberInfo;
 class CClassInfoHelperBase;
 class CObjectInfoMI;
+class CReadClassMemberHook;
 
 class NCBI_XSERIAL_EXPORT CClassTypeInfo : public CClassTypeInfoBase
 {
@@ -112,10 +113,8 @@ public:
     const CClassTypeInfo* GetParentClassInfo(void) const;
     void SetParentClass(TTypeInfo parentClass);
 
-    typedef void (*TPreReadMemberFunction)(CObjectIStream& in,
-                                           const CObjectInfoMI& member);
-    void SetPreReadMemberFunction(const CTempString& member_name,
-                                  TPreReadMemberFunction func);
+    void SetGlobalHook(const CTempString& member_names,
+                       CReadClassMemberHook* hook);
 
 public:
 

@@ -150,11 +150,16 @@ public:
                         TSeqPos subj_start, ENa_strand subj_strand,
                         const string& transcript );
 
-    // reserve memory for "starts", "lens", and "strands" vectors
-    void PreReadMember(CObjectIStream& in, const CObjectInfoMI& member);
-
     static void SetReserveHooks(CObjectIStream& in);
     static void SetGlobalReserveHooks(void);
+
+    // reserve memory for "starts", "lens", and "strands" vectors
+    class NCBI_SEQALIGN_EXPORT CReserveHook
+        : public CPreReadClassMemberHook
+    {
+        virtual void PreReadClassMember(CObjectIStream& in,
+                                        const CObjectInfoMI& member);
+    };
 
     CRef<CSeq_interval> CreateRowSeq_interval(TDim row) const;
 
@@ -173,7 +178,8 @@ private:
 };
 
 
-NCBISER_HAVE_PRE_READ_MEMBER(CDense_seg, "starts,lens,strands");
+NCBISER_HAVE_GLOBAL_READ_MEMBER_HOOK(CDense_seg, "starts,lens,strands",
+                                     new CDense_seg::CReserveHook);
 
 
 /////////////////// CDense_seg inline methods

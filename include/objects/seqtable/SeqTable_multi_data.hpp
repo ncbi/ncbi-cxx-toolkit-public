@@ -43,6 +43,8 @@
 // generated includes
 #include <objects/seqtable/SeqTable_multi_data_.hpp>
 
+#include <serial/objhook.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -62,8 +64,12 @@ public:
     size_t GetSize(void) const;
 
     // reserve memory for multi-row data vectors
-    void PreReadVariant(CObjectIStream& in, const CObjectInfoCV& variant);
-
+    class NCBI_SEQ_EXPORT CReserveHook : public CPreReadChoiceVariantHook
+    {
+        virtual void PreReadChoiceVariant(CObjectIStream& in,
+                                          const CObjectInfoCV& variant);
+    };
+    
 private:
     // Prohibit copy constructor and assignment operator
     CSeqTable_multi_data(const CSeqTable_multi_data& value);
@@ -83,7 +89,8 @@ CSeqTable_multi_data::CSeqTable_multi_data(void)
 /////////////////// end of CSeqTable_multi_data inline methods
 
 
-NCBISER_HAVE_PRE_READ_VARIANT(CSeqTable_multi_data, "*")
+NCBISER_HAVE_GLOBAL_READ_VARIANT_HOOK(CSeqTable_multi_data, "*",
+                                      new CSeqTable_multi_data::CReserveHook)
 
 END_objects_SCOPE // namespace ncbi::objects::
 

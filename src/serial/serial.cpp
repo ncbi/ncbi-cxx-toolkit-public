@@ -469,16 +469,72 @@ void SetPostRead(CChoiceTypeInfo* info, TPostReadFunction func)
     info->SetPostReadFunction(func);
 }
 
-void SetPreReadMember(CClassTypeInfo* class_info, const char* member_name,
-                      TPreReadMemberFunction func)
+static void s_ResolveItems(CTypeInfo*& info, const char*& name,
+                           ETypeFamily req_family)
 {
-    class_info->SetPreReadMemberFunction(member_name, func);
+    TTypeInfo info0 = info;
+    const char* name0 = name;
+    while ( const char* dot = strchr(name, '.') ) {
+        CTempString item_name(name, dot-name);
+        TTypeInfo new_info;
+        switch ( info->GetTypeFamily() ) {
+        case eTypeFamilyClass:
+            new_info = dynamic_cast<CClassTypeInfo*>(info)
+                ->GetMemberInfo(item_name)->GetTypeInfo();
+            break;
+        case eTypeFamilyChoice:
+            new_info = dynamic_cast<CChoiceTypeInfo*>(info)
+                ->GetVariantInfo(item_name)->GetTypeInfo();
+            break;
+        case eTypeFamilyContainer:
+            if ( item_name != "E" ) {
+                NCBI_THROW_FMT(CSerialException,eInvalidData,
+                               info0->GetName()<<'.'<<
+                               CTempString(name0, name-name0)<<
+                               ": element name must be 'E'");
+            }
+            new_info = dynamic_cast<CContainerTypeInfo*>(info)
+                ->GetElementType();
+            break;
+        default:
+            new_info = info;
+            break;
+        }
+        // skip all pointers (CRef<>)
+        while ( new_info->GetTypeFamily() == eTypeFamilyPointer ) {
+            new_info = dynamic_cast<const CPointerTypeInfo*>(new_info)
+                ->GetPointedType();
+        }
+        info = const_cast<CTypeInfo*>(new_info);
+        name = dot+1;
+    }
+    if ( info->GetTypeFamily() != req_family ) {
+        NCBI_THROW_FMT(CSerialException,eInvalidData,
+                       info0->GetName()<<'.'<<
+                       CTempString(name0, name-name0)<<
+                       ": not a "<<
+                       (req_family == eTypeFamilyClass? "class": "choice"));
+    }
 }
 
-void SetPreReadVariant(CChoiceTypeInfo* choice_info, const char* variant_name,
-                       TPreReadVariantFunction func)
+void SetGlobalReadMemberHook(CTypeInfo* start_info,
+                             const char* member_names,
+                             CReadClassMemberHook* hook_ptr)
 {
-    choice_info->SetPreReadVariantFunction(variant_name, func);
+    CRef<CReadClassMemberHook> hook(hook_ptr);
+    s_ResolveItems(start_info, member_names, eTypeFamilyClass);
+    dynamic_cast<CClassTypeInfo*>(start_info)
+        ->SetGlobalHook(member_names, hook);
+}
+
+void SetGlobalReadVariantHook(CTypeInfo* start_info,
+                              const char* variant_names,
+                              CReadChoiceVariantHook* hook_ptr)
+{
+    CRef<CReadChoiceVariantHook> hook(hook_ptr);
+    s_ResolveItems(start_info, variant_names, eTypeFamilyChoice);
+    dynamic_cast<CChoiceTypeInfo*>(start_info)
+        ->SetGlobalHook(variant_names, hook);
 }
 
 TObjectPtr GetClassObjectPtr(const CObjectInfoMI& member)

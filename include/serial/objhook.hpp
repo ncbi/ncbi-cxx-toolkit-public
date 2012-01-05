@@ -95,6 +95,24 @@ public:
                          CObjectInfoMI::eErase_Optional);
 };
 
+/// Read hook for data member of a containing object (eg, SEQUENCE)
+class NCBI_XSERIAL_EXPORT CPreReadClassMemberHook
+    : public CReadClassMemberHook
+{
+public:
+    virtual ~CPreReadClassMemberHook(void);
+
+    /// This method will be called at approriate time
+    /// when the object of requested type is to be read
+    virtual void ReadClassMember(CObjectIStream& in,
+                                 const CObjectInfoMI& member);
+
+    /// Return true to invoke default reading method afterwards.
+    /// Return false if no firther reading needs to be done.
+    virtual void PreReadClassMember(CObjectIStream& in,
+                                    const CObjectInfoMI& member) = 0;
+};
+
 /// Read hook for a choice variant (CHOICE)
 class NCBI_XSERIAL_EXPORT CReadChoiceVariantHook : public CObject
 {
@@ -108,6 +126,24 @@ public:
     void DefaultRead(CObjectIStream& in,
                      const CObjectInfoCV& object);
     // No default skip method - can not skip variants
+};
+
+/// Read hook for a choice variant (CHOICE)
+class NCBI_XSERIAL_EXPORT CPreReadChoiceVariantHook
+    : public CReadChoiceVariantHook
+{
+public:
+    virtual ~CPreReadChoiceVariantHook(void);
+
+    /// This method will be called at approriate time
+    /// when the object of requested type is to be read
+    virtual void ReadChoiceVariant(CObjectIStream& in,
+                                   const CObjectInfoCV& variant);
+
+    /// Return true to invoke default reading method afterwards.
+    /// Return false if no firther reading needs to be done.
+    virtual void PreReadChoiceVariant(CObjectIStream& in,
+                                      const CObjectInfoCV& object) = 0;
 };
 
 /// Read hook for a container element (SEQUENCE OF)
