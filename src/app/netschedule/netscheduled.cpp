@@ -93,10 +93,22 @@ public:
     CNetScheduleDApp()
         : CNcbiApplication()
     {
-        SetVersion(CVersionInfo(
-            NCBI_PACKAGE_VERSION_MAJOR,
-            NCBI_PACKAGE_VERSION_MINOR,
-            NCBI_PACKAGE_VERSION_PATCH));
+        CVersionInfo        version(NCBI_PACKAGE_VERSION_MAJOR,
+                                    NCBI_PACKAGE_VERSION_MINOR,
+                                    NCBI_PACKAGE_VERSION_PATCH);
+        CRef<CVersion>      full_version(new CVersion(version));
+
+        full_version->AddComponentVersion("Storage",
+                                          NETSCHEDULED_STORAGE_VERSION_MAJOR,
+                                          NETSCHEDULED_STORAGE_VERSION_MINOR,
+                                          NETSCHEDULED_STORAGE_VERSION_PATCH);
+        full_version->AddComponentVersion("Protocol",
+                                          NETSCHEDULED_PROTOCOL_VERSION_MAJOR,
+                                          NETSCHEDULED_PROTOCOL_VERSION_MINOR,
+                                          NETSCHEDULED_PROTOCOL_VERSION_PATCH);
+
+        SetVersion(version);
+        SetFullVersion(full_version);
     }
 
     void Init(void);
@@ -125,27 +137,20 @@ void CNetScheduleDApp::Init(void)
                               "netscheduled");
 
     arg_desc->AddFlag("reinit",       "Recreate the storage directory.");
-    arg_desc->AddFlag("version-full", "Package, storage, protocol versions and build date.");
     arg_desc->AddFlag("nodaemon",     "Turn off daemonization of NetSchedule at the start.");
 
     SetupArgDescriptions(arg_desc.release());
-    //CONNECT_Init(&GetConfig());
+
     SOCK_InitializeAPI();
 }
 
 
 int CNetScheduleDApp::Run(void)
 {
-    const CArgs& args = GetArgs();
-
-    if (args["version-full"]) {
-        printf(NETSCHEDULED_FULL_VERSION "\n");
-        return 0;
-    }
-
     LOG_POST(Message << Warning << NETSCHEDULED_FULL_VERSION);
 
-    const CNcbiRegistry& reg = GetConfig();
+    const CArgs &           args = GetArgs();
+    const CNcbiRegistry &   reg = GetConfig();
 
     try {
         // attempt to get server gracefully shutdown on signal
