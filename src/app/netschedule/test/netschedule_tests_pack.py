@@ -114,7 +114,7 @@ class Scenario01( TestBase ):
             raise Exception( "Cannot start netschedule" )
 
         self.ns.shutdown()
-        time.sleep( 1 )
+        time.sleep( 6 )
         return not self.ns.isRunning()
 
 
@@ -635,13 +635,19 @@ class Scenario18( TestBase ):
             return False
 
         info = self.ns.getJobInfo( 'TEST', jobID )
-        return info[ 'status' ] == 'Pending' and \
-               info[ 'progress_msg' ] == "''" and \
-               info[ 'mask' ] == "0" and \
-               info[ 'aff_id' ] == "0" and \
-               info[ 'run_counter' ] == "0" and \
-               info[ 'input-storage' ] == "embedded, size=10" and \
-               info[ 'input-data' ] == "'D test input'"
+        if info[ 'status' ] != 'Pending' or \
+           info[ 'progress_msg' ] != "''" or \
+           info[ 'mask' ] != "0" or \
+           info[ 'run_counter' ] != "0" or \
+           info[ 'input-storage' ] != "embedded, size=10" or \
+           info[ 'input-data' ] != "'D test input'":
+            return False
+
+        if info.has_key( 'aff_id' ):
+            return info[ 'aff_id' ] == "0"
+
+        # NS 4.10.0 and up has different output
+        return info[ 'affinity' ] == "n/a"
 
 
 class Scenario19( TestBase ):
