@@ -652,7 +652,7 @@ BOOST_AUTO_TEST_CASE(TestConvertSeqalignToCdMsa)
                     // are marked as not aligned in MSA
                     while (k < q_index) {
                         BOOST_REQUIRE_EQUAL(cd_msa->msa[msa_index][k].is_aligned,
-                                            false);
+                                            (Uint1)false);
                         k++;
                     }
 
