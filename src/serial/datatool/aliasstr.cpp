@@ -237,13 +237,21 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
             "NCBI_NS_NCBI::CNcbiOstream& operator<<\n" <<
             "(NCBI_NS_NCBI::CNcbiOstream& str, const " << className << "& obj)\n" <<
             "{\n" <<
-            "    return WriteObject(str,&obj,obj.GetTypeInfo());\n" <<
+            "    if (NCBI_NS_NCBI::MSerial_Flags::HasSerialFormatting(str)) {\n" <<
+            "        return WriteObject(str,&obj,obj.GetTypeInfo());\n" <<
+            "    }\n" <<
+            "    str << obj.Get();\n" <<
+            "    return str;\n" <<
             "}\n\n";
         code.MethodStart(true) <<
             "NCBI_NS_NCBI::CNcbiIstream& operator>>\n" <<
             "(NCBI_NS_NCBI::CNcbiIstream& str, " << className << "& obj)\n" <<
             "{\n" <<
-            "    return ReadObject(str,&obj,obj.GetTypeInfo());\n" <<
+            "    if (NCBI_NS_NCBI::MSerial_Flags::HasSerialFormatting(str)) {\n" <<
+            "        return ReadObject(str,&obj,obj.GetTypeInfo());\n" <<
+            "    }\n" <<
+            "    str >> obj.Set();\n" <<
+            "    return str;\n" <<
             "}\n\n";
     }
 
