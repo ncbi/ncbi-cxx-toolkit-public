@@ -645,7 +645,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
 
             //////////
             {
-                string value = ConvertSafe(value_Int8);
+                string value = NCBI_CONVERT_TO(ConvertSafe(value_Int8), string);
                 BOOST_CHECK_EQUAL(value, str_Int8);
             }
 
@@ -667,7 +667,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
 
             //////////
             {
-                string value = ConvertSafe(value_Uint8);
+                string value = NCBI_CONVERT_TO(ConvertSafe(value_Uint8), string);
                 BOOST_CHECK_EQUAL(value, str_Uint8);
             }
 
@@ -689,7 +689,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
 
             //////////
             {
-                string value = ConvertSafe(value_Int4);
+                string value = NCBI_CONVERT_TO(ConvertSafe(value_Int4), string);
                 BOOST_CHECK_EQUAL(value, str_Int4);
             }
 
@@ -711,7 +711,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
 
             //////////
             {
-                string value = ConvertSafe(value_Uint4);
+                string value = NCBI_CONVERT_TO(ConvertSafe(value_Uint4), string);
                 BOOST_CHECK_EQUAL(value, str_Uint4);
             }
 
@@ -733,7 +733,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
 
             //////////
             {
-                string value = ConvertSafe(value_Int2);
+                string value = NCBI_CONVERT_TO(ConvertSafe(value_Int2), string);
                 BOOST_CHECK_EQUAL(value, str_Int2);
             }
 
@@ -755,7 +755,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
 
             //////////
             {
-                string value = ConvertSafe(value_Uint2);
+                string value = NCBI_CONVERT_TO(ConvertSafe(value_Uint2), string);
                 BOOST_CHECK_EQUAL(value, str_Uint2);
             }
 
@@ -777,7 +777,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
 
             //////////
             {
-                string value = ConvertSafe(value_Int1);
+                string value = NCBI_CONVERT_TO(ConvertSafe(value_Int1), string);
                 BOOST_CHECK_EQUAL(value, str_Int1);
             }
 
@@ -799,7 +799,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
 
             //////////
             {
-                string value = ConvertSafe(value_Uint1);
+                string value = NCBI_CONVERT_TO(ConvertSafe(value_Uint1), string);
                 BOOST_CHECK_EQUAL(value, str_Uint1);
             }
 
@@ -821,7 +821,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
 
             //////////
             {
-                string value = ConvertSafe(value_bool);
+                string value = NCBI_CONVERT_TO(ConvertSafe(value_bool), string);
                 BOOST_CHECK_EQUAL(value, str_bool);
             }
 
@@ -843,7 +843,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
 
             //////////
             {
-                string value = ConvertSafe(value_float);
+                string value = NCBI_CONVERT_TO(ConvertSafe(value_float), string);
                 BOOST_CHECK_EQUAL(value, str_float);
             }
 
@@ -865,7 +865,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
 
             //////////
             {
-                string value = ConvertSafe(value_double);
+                string value = NCBI_CONVERT_TO(ConvertSafe(value_double), string);
                 BOOST_CHECK_EQUAL(value, str_double);
             }
 
@@ -887,7 +887,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
 
             //////////
             {
-                string value = ConvertSafe(value_CTime);
+                string value = NCBI_CONVERT_TO(ConvertSafe(value_CTime), string);
                 BOOST_CHECK_EQUAL(value, value_CTime.AsString());
             }
 
@@ -1722,7 +1722,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
             //////////
             {
-                string value = Convert(value_Int8);
+                string value = NCBI_CONVERT_TO(Convert(value_Int8), string);
                 BOOST_CHECK_EQUAL(value, str_Int8);
             }
 
@@ -1737,7 +1737,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
             //////////
             {
-                string value = Convert(value_Uint8);
+                string value = NCBI_CONVERT_TO(Convert(value_Uint8), string);
                 BOOST_CHECK_EQUAL(value, str_Uint8);
             }
 
@@ -1752,7 +1752,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
             //////////
             {
-                string value = Convert(value_Int4);
+                string value = NCBI_CONVERT_TO(Convert(value_Int4), string);
                 BOOST_CHECK_EQUAL(value, str_Int4);
             }
 
@@ -1767,7 +1767,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
             //////////
             {
-                string value = Convert(value_Uint4);
+                string value = NCBI_CONVERT_TO(Convert(value_Uint4), string);
                 BOOST_CHECK_EQUAL(value, str_Uint4);
             }
 
@@ -1782,7 +1782,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
             //////////
             {
-                string value = Convert(value_Int2);
+                string value = NCBI_CONVERT_TO(Convert(value_Int2), string);
                 BOOST_CHECK_EQUAL(value, str_Int2);
             }
 
@@ -1797,7 +1797,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
             //////////
             {
-                string value = Convert(value_Uint2);
+                string value = NCBI_CONVERT_TO(Convert(value_Uint2), string);
                 BOOST_CHECK_EQUAL(value, str_Uint2);
             }
 
@@ -1812,7 +1812,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
             //////////
             {
-                string value = Convert(value_Int1);
+                string value = NCBI_CONVERT_TO(Convert(value_Int1), string);
                 BOOST_CHECK_EQUAL(value, str_Int1);
             }
 
@@ -1827,7 +1827,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
             //////////
             {
-                string value = Convert(value_Uint1);
+                string value = NCBI_CONVERT_TO(Convert(value_Uint1), string);
                 BOOST_CHECK_EQUAL(value, str_Uint1);
             }
 
@@ -1842,7 +1842,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
             //////////
             {
-                string value = Convert(value_bool);
+                string value = NCBI_CONVERT_TO(Convert(value_bool), string);
                 BOOST_CHECK_EQUAL(value, str_bool);
             }
 
@@ -1857,7 +1857,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
             //////////
             {
-                string value = Convert(value_float);
+                string value = NCBI_CONVERT_TO(Convert(value_float), string);
                 BOOST_CHECK_EQUAL(value, str_float);
             }
 
@@ -1872,7 +1872,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
             //////////
             {
-                string value = Convert(value_double);
+                string value = NCBI_CONVERT_TO(Convert(value_double), string);
                 BOOST_CHECK_EQUAL(value, str_double);
             }
 
@@ -1887,7 +1887,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
 
             //////////
             {
-                string value = Convert(value_CTime);
+                string value = NCBI_CONVERT_TO(Convert(value_CTime), string);
                 BOOST_CHECK_EQUAL(value, value_CTime.AsString());
             }
 
