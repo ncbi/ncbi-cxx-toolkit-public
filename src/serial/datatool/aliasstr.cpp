@@ -149,7 +149,8 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
     bool is_class = false;
 
     BeginClassDeclaration(ctx);
-    switch ( m_RefType->GetKind() ) {
+    CTypeStrings::EKind kind = m_RefType->GetKind();
+    switch ( kind ) {
     case eKindClass:
     case eKindObject:
         {
@@ -233,26 +234,40 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
             "\n";
         
         // I/O operators
+        bool kindIO = kind == eKindStd    || kind == eKindEnum ||
+                      kind == eKindString || kind == eKindPointer;
         code.MethodStart(true) <<
             "NCBI_NS_NCBI::CNcbiOstream& operator<<\n" <<
             "(NCBI_NS_NCBI::CNcbiOstream& str, const " << className << "& obj)\n" <<
-            "{\n" <<
-            "    if (NCBI_NS_NCBI::MSerial_Flags::HasSerialFormatting(str)) {\n" <<
-            "        return WriteObject(str,&obj,obj.GetTypeInfo());\n" <<
-            "    }\n" <<
-            "    str << obj.Get();\n" <<
-            "    return str;\n" <<
-            "}\n\n";
+            "{\n";
+        if (kindIO) {
+            code.Methods(true) <<
+                "    if (NCBI_NS_NCBI::MSerial_Flags::HasSerialFormatting(str)) {\n" <<
+                "        return WriteObject(str,&obj,obj.GetTypeInfo());\n" <<
+                "    }\n" <<
+                "    str << obj.Get();\n" <<
+                "    return str;\n";
+        } else {
+            code.Methods(true) <<
+                "    return WriteObject(str,&obj,obj.GetTypeInfo());\n";
+        }
+        code.Methods(true) << "}\n\n";
         code.MethodStart(true) <<
             "NCBI_NS_NCBI::CNcbiIstream& operator>>\n" <<
             "(NCBI_NS_NCBI::CNcbiIstream& str, " << className << "& obj)\n" <<
-            "{\n" <<
-            "    if (NCBI_NS_NCBI::MSerial_Flags::HasSerialFormatting(str)) {\n" <<
-            "        return ReadObject(str,&obj,obj.GetTypeInfo());\n" <<
-            "    }\n" <<
-            "    str >> obj.Set();\n" <<
-            "    return str;\n" <<
-            "}\n\n";
+            "{\n";
+        if (kindIO) {
+            code.Methods(true) <<
+                "    if (NCBI_NS_NCBI::MSerial_Flags::HasSerialFormatting(str)) {\n" <<
+                "        return ReadObject(str,&obj,obj.GetTypeInfo());\n" <<
+                "    }\n" <<
+                "    str >> obj.Set();\n" <<
+                "    return str;\n";
+        } else {
+            code.Methods(true) <<
+                "    return ReadObject(str,&obj,obj.GetTypeInfo());\n";
+        }
+        code.Methods(true) << "}\n\n";
     }
 
     // define typeinfo method
