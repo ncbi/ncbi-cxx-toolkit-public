@@ -1134,7 +1134,8 @@ class Scenario30( TestBase ):
                                                  'JSID_01_7_130.14.24.83_9101' )
             msg = msg   # pylint is happy
         except Exception, exc:
-            if 'Job not found' in str( exc ):
+            if 'Job not found' in str( exc ) or \
+                'eJobNotFound' in str( exc ):
                 return True
             raise
         return False
