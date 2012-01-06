@@ -281,6 +281,12 @@ void CNetScheduleAdmin::GetWorkerNodes(
 
 void CNetScheduleAdmin::PrintConf(CNcbiOstream& output_stream)
 {
+    m_Impl->m_API->m_Service.PrintCmdOutput("GETCONF",
+        output_stream, CNetService::eMultilineOutput);
+}
+
+void CNetScheduleAdmin::PrintQueueConf(CNcbiOstream& output_stream)
+{
     m_Impl->m_API->m_Service.PrintCmdOutput("GETC",
         output_stream, CNetService::eMultilineOutput);
 }

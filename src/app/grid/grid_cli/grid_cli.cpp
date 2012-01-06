@@ -594,7 +594,11 @@ struct SCommandDefinition {
     {eGeneralCommand, &CGridCommandLineInterfaceApp::Cmd_GetConf,
         "getconf", "Dump actual configuration of a server.",
         "Print the effective configuration parameters of a "
-        "running NetCache or NetSchedule server.",
+        "running NetCache or NetSchedule server.\n\n"
+        "If the '--" QUEUE_OPTION "' option is specified "
+        "for a NetSchedule server, a reduced number of "
+        "configuration parameters relevant to that queue "
+        "only will be printed.",
         {eNetCache, eNetSchedule, eQueue, eAuth,
             eClientNode, eClientSession, -1}},
 

@@ -251,7 +251,10 @@ int CGridCommandLineInterfaceApp::Cmd_GetConf()
         return 0;
 
     case eNetScheduleAdmin:
-        m_NetScheduleAdmin.PrintConf(NcbiCout);
+        if (IsOptionSet(eQueue))
+            m_NetScheduleAdmin.PrintQueueConf(NcbiCout);
+        else
+            m_NetScheduleAdmin.PrintConf(NcbiCout);
         return 0;
 
     default:

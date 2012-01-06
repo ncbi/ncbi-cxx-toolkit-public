@@ -685,6 +685,8 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
 
     void PrintConf(CNcbiOstream& output_stream);
 
+    void PrintQueueConf(CNcbiOstream& output_stream);
+
     enum EStatisticsOptions
     {
         eStatisticsAll,
