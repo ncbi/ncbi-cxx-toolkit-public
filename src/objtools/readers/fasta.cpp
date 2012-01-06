@@ -1683,9 +1683,20 @@ void CFastaReader::x_RecursiveApplyAllMods( CSeq_entry& entry )
                     // there are unused mods and user specified to throw if any
                     // unused 
                     CNcbiOstrstream err;
-                    err << "CFastaReader: Unused mods:";
+                    err << "CFastaReader: Unused mods on ";
+
+                    // get sequence ID
+                    const CSeq_id* seq_id = seq.GetFirstId();
+                    if( seq_id ) {
+                        err << seq_id->GetSeqIdString();
+                    } else {
+                        // seq-id unknown
+                        err << "sequence";
+                    }
+
+                    err << ":";
                     ITERATE(CSourceModParser::TMods, mod_iter, unused_mods) {
-                        err << ' ' << mod_iter->ToString();
+                        err << " [" << mod_iter->key << "=" << mod_iter->value << ']';
                     }
                     NCBI_THROW2(CObjReaderParseException, eUnusedMods,
                         (string)CNcbiOstrstreamToString(err),
