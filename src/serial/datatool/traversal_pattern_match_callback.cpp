@@ -56,6 +56,7 @@ CTraversalPatternMatchCallback::CTraversalPatternMatchCallback(
 
         CRef<CTraversalNode> node_ref = (*node_iter)->Ref();
         m_LeafToPossibleNodes[(*node_iter)->GetTypeName()].push_back( node_ref );
+        m_LeafToPossibleNodes[(*node_iter)->GetInputClassName()].push_back( node_ref );
 
         m_LeafToPossibleNodes[ x_GetNodeVarName(**node_iter) ].push_back( node_ref );
     }

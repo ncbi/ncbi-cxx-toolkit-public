@@ -57,25 +57,25 @@ static ENa_strand s_GetPackedPntStrand(const CSeq_loc & loc )
 
 static CSeq_interval* s_SeqIntRevCmp(const CSeq_interval& i)
 {
-    CRef<CSeq_interval> rev_int(new CSeq_interval);
+    auto_ptr<CSeq_interval> rev_int(new CSeq_interval);
     rev_int->Assign(i);
     
     ENa_strand s = i.CanGetStrand() ? i.GetStrand() : eNa_strand_unknown;
     rev_int->SetStrand(Reverse(s));
 
-    return rev_int.Release();
+    return rev_int.release();
 }
 
 
 static CSeq_point* s_SeqPntRevCmp(const CSeq_point& pnt)
 {
-    CRef<CSeq_point> rev_pnt(new CSeq_point);
+    auto_ptr<CSeq_point> rev_pnt(new CSeq_point);
     rev_pnt->Assign(pnt);
     
     ENa_strand s = pnt.CanGetStrand() ? pnt.GetStrand() : eNa_strand_unknown;
     rev_pnt->SetStrand(Reverse(s));
 
-    return rev_pnt.Release();
+    return rev_pnt.release();
 }
 
 CSeq_loc* 
@@ -83,7 +83,7 @@ GetReverseComplement(const CSeq_loc& loc, CReverseComplementHelper* helper)
 {
     _ASSERT( helper != NULL ); 
 
-    CRef<CSeq_loc> rev_loc(new CSeq_loc);
+    auto_ptr<CSeq_loc> rev_loc( new CSeq_loc );
 
     switch ( loc.Which() ) {
 
@@ -154,7 +154,7 @@ GetReverseComplement(const CSeq_loc& loc, CReverseComplementHelper* helper)
             "CSeq_loc::GetReverseComplement -- unsupported location type");
     }
 
-    return rev_loc.Release();
+    return rev_loc.release();
 }
 
 END_SCOPE(objects)
