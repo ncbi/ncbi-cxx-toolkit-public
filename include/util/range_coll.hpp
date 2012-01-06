@@ -350,7 +350,8 @@ protected:
             
             if(it_begin_e->GetFrom() < pos_from  &&  it_begin_e->GetToOpen() > pos_to_open)    { 
                 //it_begin_e contains R, split it in two
-                it_begin_e = m_vRanges.insert(it_begin_e, *it_begin_e);
+                TRange it_r = *it_begin_e;
+                it_begin_e = m_vRanges.insert(it_begin_e, it_r);
                 it_begin_e->SetToOpen(pos_from);
                 (++it_begin_e)->SetFrom(pos_to_open);
             } else  {
