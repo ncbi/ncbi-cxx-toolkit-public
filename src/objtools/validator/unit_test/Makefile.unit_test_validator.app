@@ -13,6 +13,6 @@ REQUIRES = Boost.Test.Included
 
 CHECK_CMD =
 CHECK_COPY = unit_test_validator.ini
-CHECK_TIMEOUT = 1000
+CHECK_TIMEOUT = 1500
 
 WATCHERS = bollin kans kornbluh
