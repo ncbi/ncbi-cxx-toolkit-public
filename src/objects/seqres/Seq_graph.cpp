@@ -76,6 +76,9 @@ void CSeq_graph::CReserveHook::PreReadChoiceVariant(
         case C_Graph::e_Int:
             graph->SetGraph().SetInt().SetValues().reserve(size);
             break;
+        case C_Graph::e_Byte:
+            graph->SetGraph().SetByte().SetValues().reserve(size);
+            break;
         default:
             break;
         }

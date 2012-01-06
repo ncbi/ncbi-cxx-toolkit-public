@@ -87,7 +87,7 @@ CSeq_graph::CSeq_graph(void)
 /////////////////// end of CSeq_graph inline methods
 
 
-NCBISER_HAVE_GLOBAL_READ_VARIANT_HOOK(CSeq_graph, "graph.int,real",
+NCBISER_HAVE_GLOBAL_READ_VARIANT_HOOK(CSeq_graph, "graph.*",
                                       new CSeq_graph::CReserveHook)
 
 END_objects_SCOPE // namespace ncbi::objects::
