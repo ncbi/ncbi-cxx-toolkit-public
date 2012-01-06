@@ -6,7 +6,8 @@ srcdir = @srcdir@
 include @builddir@/Makefile.meta
 
 TESTS=bad_test test2 acc_test fa_test un_test obj_len_test order_test overlap_test new_test space_test runs_of_ns\
-  chr_scaf_test chr_scaf_test2 chr_scaf_test_bad ver2.0 ver2.0_bad
+  chr_scaf_test chr_scaf_test2 chr_scaf_test_bad ver2.0 ver2.0_bad comp_test
+
 .PHONY : noalt test $(TESTS) alt_test
 
 noalt: $(TESTS)
@@ -90,3 +91,6 @@ ver2.0_bad: agp_validate
 	sh -c "./agp_validate $(srcdir)/test/chr_from_contig_BAC.agp2.0_bad_ver $(srcdir)/test/chr_from_contig_WGS.agp2.0 >>ver2.0_bad.out 2>&1"
 	diff ${DOPT} -u $(srcdir)/test/ver2.0_bad.out ver2.0_bad.out
 
+comp_test: agp_validate
+	sh -c "./agp_validate -comp -ignoreagponly -loadlog /dev/null test/comp_test.fsa test/comp_test.fa  test/comp_test.agp>comp_test.out 2>&1"
+	diff ${DOPT} -u $(srcdir)/test/comp_test.out comp_test.out
