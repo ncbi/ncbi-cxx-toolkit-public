@@ -79,6 +79,12 @@ public:
 
     /// @inheritDoc
     string GetBlastProgramName(void) const {
+        // Program type for deltablast is eBlastTypePsiBlast, because the
+        // sequence search is done by CPsiBlast
+        if (m_Options.GetProgram() == blast::eDeltaBlast) {
+            return "deltablast";
+        }
+
         return blast::Blast_ProgramNameFromType(m_Options.GetProgramType());
     }
 

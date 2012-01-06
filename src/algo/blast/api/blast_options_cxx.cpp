@@ -662,6 +662,10 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const double & v)
         x_SetParam(B4Param_BestHitOverhang, v);
         return;
 
+    case eBlastOpt_DomainInclusionThreshold:
+        x_SetParam(B4Param_DomainInclusionThreshold, v);
+        return;
+
     default:
         break;
     }
@@ -2238,7 +2242,7 @@ double
 CBlastOptions::GetDomainInclusionThreshold() const
 {
     if (! m_Local) {
-        x_Throwx("Error: GetQueryNumObservations() not available.");
+        x_Throwx("Error: GetDomainInclusionThreshold() not available.");
     }
     return m_Local->GetDomainInclusionThreshold();
 }

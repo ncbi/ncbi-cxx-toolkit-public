@@ -216,6 +216,7 @@ TField B4Param_UnifiedP              ("UnifiedP",              CBlast4_value::e_
 TField B4Param_ForceMbIndex          ("ForceMbIndex",          CBlast4_value::e_Boolean);
 TField B4Param_IgnoreMsaMaster       ("IgnoreMsaMaster",       CBlast4_value::e_Boolean);
 TField B4Param_MbIndexName           ("MbIndexName",           CBlast4_value::e_String);
+TField B4Param_DomainInclusionThreshold ("DomainInclusionThreshold", CBlast4_value::e_Real);
 
 TField B4Param_Web_BlastSpecialPage  ("Web_BlastSpecialPage", CBlast4_value::e_String);
 TField B4Param_Web_EntrezQuery       ("Web_EntrezQuery",      CBlast4_value::e_String);

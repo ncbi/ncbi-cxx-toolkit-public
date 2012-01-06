@@ -184,6 +184,7 @@ NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_WindowMaskerTaxId;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_ForceMbIndex;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_IgnoreMsaMaster;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_MbIndexName;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_DomainInclusionThreshold;
 
 // List of web-related options
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_BlastSpecialPage;
