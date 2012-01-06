@@ -119,7 +119,8 @@ public:
     "                that do not require component sequences to be available in GenBank (see: -list).\n"
     "-alt, -species: Check component Accessions, Lengths and Taxonomy ID using GenBank data;\n"
     "                -species allows components from different subspecies during Taxid checks.\n"
-    "-comp  Check that the supplied object sequences (in FASTA or ASN.1 file) match what can be\n"
+    //"-comp  Check that the supplied object sequences (in FASTA or ASN.1 file) match what can be\n"
+    "-comp  Check that the supplied object sequences (in FASTA files) match what can be\n"
     "       constructed from the AGP and the component sequences (in FASTA files or in GenBank).\n"
     "       Run \"agp_validate -comp\" to see the options for this mode.\n"
     "\n"
@@ -381,20 +382,22 @@ int CAgpValidateApplication::Run(void)
           cerr << "Error -- -comp mode options without -comp" << endl;
           exit(1);
       }
-  }
 
-  //// Process files, print results
-  x_ValidateUsingFiles(args);
-  if(m_ValidationType == VT_Context) {
-    m_reader.PrintTotals();
+      //// Process files, print results
+      x_ValidateUsingFiles(args);
+      if(m_ValidationType == VT_Context) {
+        m_reader.PrintTotals();
+      }
+      else if(m_ValidationType & VT_Acc) {
+        cout << "\n";
+        if(m_ValidationType & VT_Taxid) m_AltValidator->CheckTaxids();
+        m_AltValidator->PrintTotals();
+      }
   }
-  else if(m_ValidationType & VT_Acc) {
-    cout << "\n";
-    if(m_ValidationType & VT_Taxid) m_AltValidator->CheckTaxids();
-    m_AltValidator->PrintTotals();
-  }
+  else {
+      // Note: traditional validation (now in the "if" clause above) used to be done regardless of args["comp"].
+      // Doing it separately now since it does not yet work properly when both object and component FASTA files are given at the same time.
 
-  if( args["comp"] ) {
       list<string> filenames;
       for (unsigned int i = 1; i <= args.GetNExtra(); i++) {
           const string filename = args['#' + NStr::IntToString(i)].AsString();
@@ -809,15 +812,18 @@ int main(int argc, const char* argv[])
 {
   if(argc==1+1 && string("-comp")==argv[1]) {
     cout << "agp_validate -comp (formerly agp_fasta_compare):\n"
-      "check that the object sequences (in FASTA or ASN.1 file) match the AGP.\n"
+      // "check that the object sequences (in FASTA or ASN.1 file) match the AGP.\n" //
+      "check that the object sequences FASTA matches the AGP.\n" //
       "\n"
-      "USAGE: agp_validate -comp [-options] ASN.1/FASTA file(s)... AGP file(s)...\n"
+      //"USAGE: agp_validate -comp [-options] ASN.1/FASTA file(s)... AGP file(s)...\n"
+      "USAGE: agp_validate -comp [-options] FASTA file(s)... AGP file(s)...\n"
       "OPTIONS:\n"
       "    -loadlog OUTPUT_FILE   Save the list of all loaded sequences.\n"
       "    -ignoreagponly         Do not report objects present in AGP file(s) only.\n"
-      "    -ignoreobjfileonly     Do not report objects present in FASTA (or ASN.1) file(s) only.\n"
+      //"    -ignoreobjfileonly     Do not report objects present in FASTA (or ASN.1) file(s) only.\n"
+      "    -ignoreobjfileonly     Do not report objects present in FASTA file(s) only.\n"
       "\n"
-      "FASTA files for components are only needed if they are not yet in GenBank.\n"
+      "FASTA files for components can be provided (along with object FASTA files) if components are not yet in GenBank.\n"
       ;
     return 0;
   }
