@@ -60,11 +60,13 @@ void CSofaMap::x_Init()
     m_Map[ GT( e_Imp, eSubtype_3UTR ) ]         = SofaType( 205, "three_prime_UTR" );
     m_Map[ GT( e_Imp, eSubtype_5clip ) ]        = SofaType( 555, "five_prime_clip" );
     m_Map[ GT( e_Imp, eSubtype_5UTR ) ]         = SofaType( 204, "five_prime_UTR" );
+    m_Map[ GT( e_Imp, eSubtype_C_region ) ]     = SofaType( 478, "C_gene_segment" );
     m_Map[ GT( e_Imp, eSubtype_CAAT_signal ) ]  = SofaType( 172, "CAAT_signal" );
     m_Map[ GT( e_Imp, eSubtype_D_loop ) ]       = SofaType( 297, "D_loop" );
-    m_Map[ GT( e_Imp, eSubtype_D_segment ) ]    = SofaType( 458, "D_gene" );
+    m_Map[ GT( e_Imp, eSubtype_D_segment ) ]    = SofaType( 458, "D_gene_segment" );
     m_Map[ GT( e_Imp, eSubtype_exon ) ]         = SofaType( 147, "exon" );
     m_Map[ GT( e_Imp, eSubtype_GC_signal ) ]    = SofaType( 173, "GC_rich_region" );
+    m_Map[ GT( e_Imp, eSubtype_J_segment ) ]    = SofaType( 470, "J_gene_segment" );
     m_Map[ GT( e_Imp, eSubtype_LTR ) ]          = SofaType( 286, "long_terminal_repeat" );
     m_Map[ GT( e_Imp, eSubtype_RBS ) ]          = SofaType( 139, "ribosome_entry_site" );
     m_Map[ GT( e_Imp, eSubtype_STS ) ]          = SofaType( 331, "STS" );
@@ -102,6 +104,7 @@ void CSofaMap::x_Init()
     m_Map[ GT( e_Imp, eSubtype_stem_loop ) ]    = SofaType( 313, "stem_loop" );
     m_Map[ GT( e_Imp, eSubtype_terminator ) ]   = SofaType( 141, "terminator" );
     m_Map[ GT( e_Imp, eSubtype_transit_peptide ) ] = SofaType( 725, "transit_peptide" );
+    m_Map[ GT( e_Imp, eSubtype_V_segment ) ]    = SofaType( 466, "V_gene_segment" );
     m_Map[ GT( e_Imp, eSubtype_variation ) ]    = SofaType( 109, "sequence_variant" );
 };
 
