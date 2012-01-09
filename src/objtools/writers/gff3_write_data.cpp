@@ -104,6 +104,9 @@ string s_MakeGffDbtag(
         strGffTag += dbtag.GetDb();
         strGffTag += ":";
     }
+    else {
+        strGffTag += "NoDB:";
+    }
     if ( dbtag.IsSetTag() ) {
         if ( dbtag.GetTag().IsId() ) {
             strGffTag += NStr::UIntToString( dbtag.GetTag().GetId() );
@@ -785,7 +788,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeDbXref(
 
 //  >>>debug
 //    const CSeq_loc& loc = mf.GetLocation();
-//    if ( mf.GetFeatSubtype() == CSeqFeatData::eSubtype_tRNA) {
+//    if (mf.GetFeatSubtype() == CSeqFeatData::eSubtype_cdregion) {
 //        try {
 //            int from = loc.GetInt().GetFrom();
 //            int to = loc.GetInt().GetTo();
@@ -834,6 +837,17 @@ bool CGff3WriteRecordFeature::x_AssignAttributeDbXref(
                 if (idh) {
                     string str;
                     idh.GetSeqId()->GetLabel(&str, CSeq_id::eContent);
+                    if (isupper(str[0])) { //accession
+                        if (NPOS != str.find('_')) { //nucleotide
+                            str = string("Genbank:") + str;
+                        }
+                        else { //protein
+                            str = string("NCBI_GP:") + str;
+                        }
+                    }
+                    else { //GI
+                        str = string("NCBI_gi:") + str;
+                    }
                     if (values.end() == find(values.begin(), values.end(), str)) {
                         values.push_back(str);
                     }
