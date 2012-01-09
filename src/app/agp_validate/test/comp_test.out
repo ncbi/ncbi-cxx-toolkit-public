@@ -1,5 +1,4 @@
 Starting AGP/Fasta Compare
-Loading temporary component FASTA database at /tmp/7Bvu9g
 Warning: (210.70) [CZipDecompressor::Process]  data error;  error code = -3, number of processed bytes = 2.
 Processing AGP...
 Loaded 1 AGP sequence(s).
