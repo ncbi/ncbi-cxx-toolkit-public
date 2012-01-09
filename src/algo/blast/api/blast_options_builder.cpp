@@ -84,6 +84,9 @@ CBlastOptionsBuilder::ComputeProgram(const string & program,
         } else if (s == "phi") {
             // phi is just treated as a blastp here
             found = true;
+        } else if (s == "delta") {
+            p = "deltablast";
+            found = true;
         }
     } else if (p == "blastn") {
         if (s == "megablast") {
@@ -185,6 +188,8 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
             bo.SetDustFilteringLinker(v.GetInteger());
         } else if (B4Param_DbFilteringAlgorithmId.Match(p)) {
             m_DbFilteringAlgorithmId = v.GetInteger();
+        } else if (B4Param_DomainInclusionThreshold.Match(p)) {
+            bo.SetDomainInclusionThreshold(v.GetReal());
         } else {
             found = false;
         }

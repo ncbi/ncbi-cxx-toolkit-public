@@ -88,6 +88,12 @@ public:
     
 protected:
 
+    /// Set the program and service name for remote blast
+    virtual void SetRemoteProgramAndService_Blast3()
+    {
+        m_Opts->SetRemoteProgramAndService_Blast3("blastp", "delta");
+    }
+
     /// Override the parent class' default for filtering query sequence (i.e.:
     /// no filtering applied to the query by default)
     virtual void SetQueryOptionDefaults();
