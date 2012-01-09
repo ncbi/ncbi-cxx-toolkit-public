@@ -179,7 +179,7 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(void)
         char c = GetLineReader().PeekChar();
         if (GetLineReader().AtEOF()) {
             NCBI_THROW2(CObjReaderParseException, eEOF,
-                        "CFastaReader: Input stream no longer valid",
+                        "CFastaReader: Input stream no longer valid around line " + NStr::NumericToString(LineNumber()),
                         LineNumber());
         }
         if (c == '>') {
@@ -205,7 +205,7 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(void)
         } else if (c == ']') {
             if (need_defline) {
                 NCBI_THROW2(CObjReaderParseException, eEOF,
-                            "CFastaReader: Reached end of segmented set",
+                            "CFastaReader: Reached end of segmented set around line " + NStr::NumericToString(LineNumber()),
                             LineNumber());
             } else {
                 break;
@@ -229,7 +229,7 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(void)
                 GetLineReader().UngetLine();
                 NCBI_THROW2(CObjReaderParseException, eNoDefline,
                             "CFastaReader: Input doesn't start with"
-                            " a defline or comment",
+                            " a defline or comment around line " + NStr::NumericToString(LineNumber()),
                             LineNumber());
             }
         }
@@ -241,7 +241,7 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(void)
 
     if (need_defline  &&  GetLineReader().AtEOF()) {
         NCBI_THROW2(CObjReaderParseException, eEOF,
-                    "CFastaReader: Reached end of input",
+                    "CFastaReader: Reached end of input around line " + NStr::NumericToString(LineNumber()),
                     LineNumber());
     }
 
@@ -277,11 +277,11 @@ CRef<CSeq_entry> CFastaReader::x_ReadSegSet(void)
     }
     if (GetLineReader().AtEOF()) {
         NCBI_THROW2(CObjReaderParseException, eBadSegSet,
-                    "CFastaReader: Segmented set not properly terminated",
+                    "CFastaReader: Segmented set not properly terminated around line " + NStr::NumericToString(LineNumber()),
                     LineNumber());
     } else if (!parts->IsSet()  ||  parts->GetSet().GetSeq_set().empty()) {
         NCBI_THROW2(CObjReaderParseException, eBadSegSet,
-                    "CFastaReader: Segmented set contains no sequences",
+                    "CFastaReader: Segmented set contains no sequences around line " + NStr::NumericToString(LineNumber()),
                     LineNumber());
     }
 
@@ -405,7 +405,7 @@ void CFastaReader::ParseDefLine(const TStr& s)
         // No [usable] IDs
         if (TestFlag(fRequireID)) {
             NCBI_THROW2(CObjReaderParseException, eNoIDs,
-                        "CFastaReader: Defline lacks a proper ID",
+                        "CFastaReader: Defline lacks a proper ID around line " + NStr::NumericToString(LineNumber()),
                         LineNumber());
         }
         GenerateID();
@@ -477,7 +477,7 @@ void CFastaReader::ParseDefLine(const TStr& s)
             if ( !m_IDTracker.insert(h).second ) {
                 NCBI_THROW2(CObjReaderParseException, eDuplicateID,
                             "CFastaReader: Seq-id " + h.AsString()
-                            + " is a duplicate",
+                            + " is a duplicate around line " + NStr::NumericToString(LineNumber()),
                             LineNumber());
             }
         }
@@ -595,7 +595,7 @@ void CFastaReader::CheckDataLine(const TStr& s)
     if (bad >= good / 3  &&  (len > 3  ||  good == 0  ||  bad > good)) {
         NCBI_THROW2(CObjReaderParseException, eFormat,
                     "CFastaReader: Input not marked as defline or comment, but "
-                    "contains too many special characters to be plausible data",
+                    "contains too many special characters to be plausible data around line " + NStr::NumericToString(LineNumber()),
                     LineNumber());
     }
 }
@@ -833,7 +833,7 @@ void CFastaReader::AssignMolType(void)
     default:
         if (default_mol == CSeq_inst::eMol_not_set) {
             NCBI_THROW2(CObjReaderParseException, eAmbiguous,
-                        "CFastaReader: Unable to determine sequence type",
+                        "CFastaReader: Unable to determine sequence type around line " + NStr::NumericToString(LineNumber()),
                         LineNumber());
         } else {
             inst.SetMol(default_mol);
@@ -925,7 +925,7 @@ CRef<CSeq_entry> CFastaReader::x_ReadSeqsToAlign(TIds& ids)
             if (*it != len) {
                 NCBI_THROW2(CObjReaderParseException, eFormat,
                             "CFastaReader::ReadAlignedSet: Rows have different "
-                            "lengths", LineNumber());
+                            "lengths. For example, look around line " + NStr::NumericToString(LineNumber()), LineNumber());
             }
         }
     }
@@ -1698,6 +1698,7 @@ void CFastaReader::x_RecursiveApplyAllMods( CSeq_entry& entry )
                     ITERATE(CSourceModParser::TMods, mod_iter, unused_mods) {
                         err << " [" << mod_iter->key << "=" << mod_iter->value << ']';
                     }
+                    err << " around line " + NStr::NumericToString(LineNumber());
                     NCBI_THROW2(CObjReaderParseException, eUnusedMods,
                         (string)CNcbiOstrstreamToString(err),
                         LineNumber());
