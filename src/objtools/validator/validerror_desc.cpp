@@ -668,7 +668,7 @@ bool CValidError_desc::ValidateDblink
                     FOR_EACH_STRING_IN_VECTOR(st_itr, strs) {
                         const string& str = *st_itr;
                         if (x_IsBadBioSampleFormat (str)) {
-                            PostErr(eDiag_Warning, eErr_SEQ_DESCR_DBLinkProblem,
+                            PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
                                 "Bad BioSample format", *m_Ctx, desc);
                         }
                     }
@@ -679,7 +679,7 @@ bool CValidError_desc::ValidateDblink
                     FOR_EACH_STRING_IN_VECTOR(st_itr, strs) {
                         const string& str = *st_itr;
                         if (x_IsBadSRAFormat (str)) {
-                            PostErr(eDiag_Warning, eErr_SEQ_DESCR_DBLinkProblem,
+                            PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
                                 "Bad Sequence Read Archive format", *m_Ctx, desc);
                         }
                     }
@@ -690,7 +690,7 @@ bool CValidError_desc::ValidateDblink
                     FOR_EACH_STRING_IN_VECTOR(st_itr, strs) {
                         const string& str = *st_itr;
                         if (x_IsBadBioProjectFormat (str)) {
-                            PostErr(eDiag_Warning, eErr_SEQ_DESCR_DBLinkProblem,
+                            PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
                                 "Bad BioProject format", *m_Ctx, desc);
                         }
                     }
