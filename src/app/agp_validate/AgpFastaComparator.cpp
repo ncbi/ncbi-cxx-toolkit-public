@@ -238,8 +238,6 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
     auto_ptr<CTmpFile> ldsdb_file;
     CRef<CLDS2_Manager> lds_mgr;
     ldsdb_file.reset( new CTmpFile ); // file deleted on object destruction
-    LOG_POST(Error << "Loading temporary component FASTA database at " 
-             << ldsdb_file->GetFileName() );
     lds_mgr.Reset(new CLDS2_Manager( ldsdb_file->GetFileName() ));
     list<string> objfiles;
     ITERATE( list<string>, file_iter, compAndObjFiles ) {
