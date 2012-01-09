@@ -194,9 +194,11 @@ bool CGff3Writer::x_WriteAlignDenseg(
 {
     const CSeq_id& productId = align.GetSeq_id( 0 );
     CBioseq_Handle bsh = m_pScope->GetBioseqHandle( productId );
-    CRef<CSeq_id> pTargetId( new CSeq_id );
-    pTargetId->Assign( *sequence::GetId(
-        bsh, sequence::eGetId_Best).GetSeqId() );
+    CSeq_id_Handle pTargetId = bsh.GetSeq_id_Handle();
+    CSeq_id_Handle best = sequence::GetId(bsh, sequence::eGetId_Best);
+    if (best) {
+        pTargetId = best;
+    }
 
     const CDense_seg& ds = align.GetSegs().GetDenseg();
     CRef<CDense_seg> ds_filled = ds.FillUnaligned();
@@ -209,7 +211,7 @@ bool CGff3Writer::x_WriteAlignDenseg(
     int iTargetRow = -1;
     for ( int row = 0;  row < align_map.GetNumRows();  ++row ) {
         if ( sequence::IsSameBioseq( 
-            align_map.GetSeqId( row ), *pTargetId, m_pScope ) ) {
+            align_map.GetSeqId( row ), *pTargetId.GetSeqId(), m_pScope ) ) {
             iTargetRow = row;
             break;
         }
@@ -279,7 +281,7 @@ bool CGff3Writer::x_WriteAlignDenseg(
         }
 
         // Record basic target information:
-        record.SetTargetLocation( *pTargetId, targetStrand );
+        record.SetTargetLocation( *pTargetId.GetSeqId(), targetStrand );
 
         // Add scores, if available:
         if (align.IsSetScore()) {
