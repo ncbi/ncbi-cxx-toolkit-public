@@ -1286,7 +1286,7 @@ BOOST_AUTO_TEST_CASE(Test_CVariantConvert)
             BOOST_CHECK_EQUAL( Int8(Uint1_value), value_Int8 );
             bool_value  = Convert(variant_Int8);
 
-            string str_value = Convert(variant_Int8);
+            string str_value = NCBI_CONVERT_TO(Convert(variant_Int8), string);
         }
 
         {
@@ -1295,7 +1295,7 @@ BOOST_AUTO_TEST_CASE(Test_CVariantConvert)
             Int4_value = Convert(variant_Int4);
             BOOST_CHECK_EQUAL( Int4_value, value_Int4 );
 
-            string str_value = Convert(variant_Int4);
+            string str_value = NCBI_CONVERT_TO(Convert(variant_Int4), string);
         }
 
         {
@@ -1304,7 +1304,7 @@ BOOST_AUTO_TEST_CASE(Test_CVariantConvert)
             Int2_value = Convert(variant_Int2);
             BOOST_CHECK_EQUAL( Int2_value, value_Int2 );
 
-            string str_value = Convert(variant_Int2);
+            string str_value = NCBI_CONVERT_TO(Convert(variant_Int2), string);
         }
 
         {
@@ -1313,7 +1313,7 @@ BOOST_AUTO_TEST_CASE(Test_CVariantConvert)
             Uint1_value = Convert(variant_Uint1);
             BOOST_CHECK_EQUAL( Uint1_value, value_Uint1 );
 
-            string str_value = Convert(variant_Uint1);
+            string str_value = NCBI_CONVERT_TO(Convert(variant_Uint1), string);
         }
 
         {
@@ -1322,7 +1322,7 @@ BOOST_AUTO_TEST_CASE(Test_CVariantConvert)
             float_value = Convert(variant_float);
             BOOST_CHECK_EQUAL( float_value, value_float );
 
-            string str_value = Convert(variant_float);
+            string str_value = NCBI_CONVERT_TO(Convert(variant_float), string);
         }
 
         {
@@ -1331,7 +1331,7 @@ BOOST_AUTO_TEST_CASE(Test_CVariantConvert)
             double_value = Convert(variant_double);
             BOOST_CHECK_EQUAL( double_value, value_double );
 
-            string str_value = Convert(variant_double);
+            string str_value = NCBI_CONVERT_TO(Convert(variant_double), string);
         }
 
         {
@@ -1340,7 +1340,7 @@ BOOST_AUTO_TEST_CASE(Test_CVariantConvert)
             bool_value = Convert(variant_bool);
             BOOST_CHECK_EQUAL( bool_value, value_bool );
 
-            string str_value = Convert(variant_bool);
+            string str_value = NCBI_CONVERT_TO(Convert(variant_bool), string);
         }
 
         {
@@ -1423,7 +1423,7 @@ BOOST_AUTO_TEST_CASE(Test_CVariantConvertSafe)
             bool_value  = ConvertSafe(variant_Int8);
             */
 
-            string str_value = ConvertSafe(variant_Int8);
+            string str_value = NCBI_CONVERT_TO(ConvertSafe(variant_Int8), string);
         }
 
         {
@@ -1432,7 +1432,7 @@ BOOST_AUTO_TEST_CASE(Test_CVariantConvertSafe)
             Int4_value = ConvertSafe(variant_Int4);
             BOOST_CHECK_EQUAL( Int4_value, value_Int4 );
 
-            string str_value = ConvertSafe(variant_Int4);
+            string str_value = NCBI_CONVERT_TO(ConvertSafe(variant_Int4), string);
         }
 
         {
@@ -1441,7 +1441,7 @@ BOOST_AUTO_TEST_CASE(Test_CVariantConvertSafe)
             Int2_value = ConvertSafe(variant_Int2);
             BOOST_CHECK_EQUAL( Int2_value, value_Int2 );
 
-            string str_value = ConvertSafe(variant_Int2);
+            string str_value = NCBI_CONVERT_TO(ConvertSafe(variant_Int2), string);
         }
 
         {
@@ -1450,7 +1450,7 @@ BOOST_AUTO_TEST_CASE(Test_CVariantConvertSafe)
             Uint1_value = ConvertSafe(variant_Uint1);
             BOOST_CHECK_EQUAL( Uint1_value, value_Uint1 );
 
-            string str_value = ConvertSafe(variant_Uint1);
+            string str_value = NCBI_CONVERT_TO(ConvertSafe(variant_Uint1), string);
         }
 
         {
@@ -1459,7 +1459,7 @@ BOOST_AUTO_TEST_CASE(Test_CVariantConvertSafe)
             float_value = ConvertSafe(variant_float);
             BOOST_CHECK_EQUAL( float_value, value_float );
 
-            string str_value = ConvertSafe(variant_float);
+            string str_value = NCBI_CONVERT_TO(ConvertSafe(variant_float), string);
         }
 
         {
@@ -1468,7 +1468,7 @@ BOOST_AUTO_TEST_CASE(Test_CVariantConvertSafe)
             double_value = ConvertSafe(variant_double);
             BOOST_CHECK_EQUAL( double_value, value_double );
 
-            string str_value = ConvertSafe(variant_double);
+            string str_value = NCBI_CONVERT_TO(ConvertSafe(variant_double), string);
         }
 
         {
@@ -1477,7 +1477,7 @@ BOOST_AUTO_TEST_CASE(Test_CVariantConvertSafe)
             bool_value = ConvertSafe(variant_bool);
             BOOST_CHECK_EQUAL( bool_value, value_bool );
 
-            string str_value = ConvertSafe(variant_bool);
+            string str_value = NCBI_CONVERT_TO(ConvertSafe(variant_bool), string);
         }
 
         {
@@ -2990,7 +2990,7 @@ template <typename T>
 inline
 void DoTest_CDBObjectConvertSql(const string& sql, const T& v)
 {
-    T value = ConvertSQL(GetConnection().GetCDB_Connection()->LangCmd(sql));
+    T value = NCBI_CONVERT_TO(ConvertSQL(GetConnection().GetCDB_Connection()->LangCmd(sql)), T);
     BOOST_CHECK_EQUAL(value, v);
 }
 
@@ -3021,7 +3021,7 @@ template <typename T>
 inline
 void DoTest_CDBObjectConvertSqlSafe(const string& sql, const T& v)
 {
-    T value = ConvertSQLSafe(GetConnection().GetCDB_Connection()->LangCmd(sql));
+    T value = NCBI_CONVERT_TO(ConvertSQLSafe(GetConnection().GetCDB_Connection()->LangCmd(sql)), T);
     BOOST_CHECK_EQUAL(value, v);
 }
 
