@@ -51,6 +51,8 @@
 #include <objects/seq/MolInfo.hpp>
 #include <objtools/format/items/comment_item.hpp>
 
+#include <objects/misc/sequence_macros.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -565,6 +567,141 @@ bool CValidError_desc::ValidateStructuredComment
     return is_valid;
 }
 
+static bool x_IsBadBioSampleFormat (
+    const string& str
+)
+
+{
+    char  ch;
+    int   i;
+
+    if (str.length() < 5) return true;
+
+    if (str [0] != 'S') return true;
+    if (str [1] != 'A') return true;
+    if (str [2] != 'M') return true;
+    if (str [3] != 'E' && str [3] != 'N' && str [3] != 'D') return true;
+
+    for (i = 4; i < str.length(); i++) {
+        ch = str [i];
+        if (! isdigit (ch)) return true;
+    }
+
+    return false;
+}
+
+static bool x_IsBadSRAFormat (
+    const string& str
+)
+
+{
+    char  ch;
+    int   i;
+
+    if (str.length() < 9) return true;
+
+    if (str [0] != 'S') return true;
+    ch = str [1];
+    if (! isupper (ch)) return true;
+    ch = str [2];
+    if (! isupper (ch)) return true;
+
+    for (i = 3; i < str.length(); i++) {
+        ch = str [i];
+        if (! isdigit (ch)) return true;
+    }
+
+    return false;
+}
+
+static bool x_IsBadBioProjectFormat (
+    const string& str
+)
+
+{
+    char  ch;
+    int   i;
+
+    if (str.length() < 6) return true;
+
+    if (str [0] != 'P') return true;
+    if (str [1] != 'R') return true;
+    if (str [2] != 'J') return true;
+    if (str [3] != 'E' && str [3] != 'N' && str [3] != 'D') return true;
+    ch = str [4];
+    if (! isupper (ch)) return true;
+
+    for (i = 5; i < str.length(); i++) {
+        ch = str [i];
+        if (! isdigit (ch)) return true;
+    }
+
+    return false;
+}
+
+bool CValidError_desc::ValidateDblink
+(const CUser_object& usr,
+ const CSeqdesc& desc,
+ bool  report)
+{
+    bool is_valid = true;
+    if (!usr.IsSetType() || !usr.GetType().IsStr()
+        || !NStr::EqualCase(usr.GetType().GetStr(), "DBLink")) {
+        return false;
+    }
+    if (!usr.IsSetData() || usr.GetData().size() == 0) {
+        if (report) {
+            PostErr (eDiag_Warning, eErr_SEQ_DESCR_UserObjectProblem, 
+                     "DBLink user object descriptor is empty", *m_Ctx, desc);
+        }
+        return false;
+    }
+
+    vector< string > strs;
+    FOR_EACH_USERFIELD_ON_USEROBJECT(ufd_it, usr) {
+        const CUser_field& fld = **ufd_it;
+        if (FIELD_IS_SET_AND_IS(fld, Label, Str)) {
+            const string &label_str = GET_FIELD(fld.GetLabel(), Str);
+            if (NStr::EqualNocase(label_str, "BioSample")) {
+                if (fld.IsSetData() && fld.GetData().IsStrs()) {
+                    strs = fld.GetData().GetStrs();
+                    FOR_EACH_STRING_IN_VECTOR(st_itr, strs) {
+                        const string& str = *st_itr;
+                        if (x_IsBadBioSampleFormat (str)) {
+                            PostErr(eDiag_Warning, eErr_SEQ_DESCR_DBLinkProblem,
+                                "Bad BioSample format", *m_Ctx, desc);
+                        }
+                    }
+                }
+            } else if (NStr::EqualNocase(label_str, "Sequence Read Archive")) {
+                if (fld.IsSetData() && fld.GetData().IsStrs()) {
+                    strs = fld.GetData().GetStrs();
+                    FOR_EACH_STRING_IN_VECTOR(st_itr, strs) {
+                        const string& str = *st_itr;
+                        if (x_IsBadSRAFormat (str)) {
+                            PostErr(eDiag_Warning, eErr_SEQ_DESCR_DBLinkProblem,
+                                "Bad Sequence Read Archive format", *m_Ctx, desc);
+                        }
+                    }
+                }
+            } else if (NStr::EqualNocase(label_str, "BioProject")) {
+                if (fld.IsSetData() && fld.GetData().IsStrs()) {
+                    strs = fld.GetData().GetStrs();
+                    FOR_EACH_STRING_IN_VECTOR(st_itr, strs) {
+                        const string& str = *st_itr;
+                        if (x_IsBadBioProjectFormat (str)) {
+                            PostErr(eDiag_Warning, eErr_SEQ_DESCR_DBLinkProblem,
+                                "Bad BioProject format", *m_Ctx, desc);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return is_valid;
+}
+
 
 void CValidError_desc::ValidateUser
 (const CUser_object& usr,
@@ -604,6 +741,8 @@ void CValidError_desc::ValidateUser
         }
     } else if ( NStr::EqualCase(oi.GetStr(), "StructuredComment")) {
         ValidateStructuredComment(usr, desc);
+    } else if ( NStr::EqualCase(oi.GetStr(), "DBLink")) {
+        ValidateDblink(usr, desc);
     }
 }
 

@@ -990,6 +990,7 @@ public:
     void ValidateSeqDesc(const CSeqdesc& desc, const CSeq_entry& ctx);
 
     bool ValidateStructuredComment(const CUser_object& usr, const CSeqdesc& desc, bool report = true);
+    bool ValidateDblink(const CUser_object& usr, const CSeqdesc& desc, bool report = true);
 
     void ResetModifCounters(void);
 private:
