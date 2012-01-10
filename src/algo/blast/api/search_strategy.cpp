@@ -393,6 +393,7 @@ void CExportStrategy::x_Process_Pssm(CRef<CPssmWithParameters> & pssm)
     string psi_program("blastp");
     string old_service("plain");
     string new_service("psi");
+    string deltablast("delta");
 
     if (m_QueueSearchRequest->GetProgram() != psi_program)
     {
@@ -401,7 +402,8 @@ void CExportStrategy::x_Process_Pssm(CRef<CPssmWithParameters> & pssm)
     }
 
     if ((m_QueueSearchRequest->GetService() != old_service) &&
-        (m_QueueSearchRequest->GetService() != new_service))
+        (m_QueueSearchRequest->GetService() != new_service) &&
+        (m_QueueSearchRequest->GetService() != deltablast))
     {
         NCBI_THROW(CBlastException, eInvalidArgument,
                    string("PSI-Blast cannot also be ") +

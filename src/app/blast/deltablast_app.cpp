@@ -284,7 +284,10 @@ int CDeltaBlastApp::Run(void)
 
             // deltablast computed pssm does not have query title, so
             // it must be added if pssm is requested
-            if (m_CmdLineArgs->SaveCheckpoint()) {
+            if (m_CmdLineArgs->SaveCheckpoint()
+                || fmt_args->GetFormattedOutputChoice()
+                == CFormattingArgs::eArchiveFormat) {
+
                 s_AddSeqTitleToPssm(pssm, query_batch, scope);
             }
 
@@ -351,7 +354,10 @@ int CDeltaBlastApp::Run(void)
                                                    scope,
                                                    formatter);
 
-                if (retval && !fmt_args->HasStructuredOutputFormat()) {
+                if (retval && !fmt_args->HasStructuredOutputFormat()
+                    && fmt_args->GetFormattedOutputChoice()
+                    != CFormattingArgs::eArchiveFormat) {
+
                     m_CmdLineArgs->GetOutputStream() << NcbiEndl
                                                      << "Search has CONVERGED!"
                                                      << NcbiEndl;
@@ -395,11 +401,20 @@ CDeltaBlastApp::DoPsiBlastIterations(CRef<CBlastOptionsHandle> opts_hndl,
     psi_opts.Reset(dynamic_cast<CPSIBlastOptionsHandle*>(&*opts_hndl));
     CRef<CPsiBlast> psiblast;
 
+    CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(*query));
+
     BlastFormatter_PreFetchSequenceData(*results, scope);
-    ITERATE(blast::CSearchResultSet, result, *results) {
-        formatter.PrintOneResultSet(**result, query,
-                                    itr.GetIterationNumber(),
-                                    itr.GetPreviouslyFoundSeqIds());
+    if (CFormattingArgs::eArchiveFormat ==
+        m_CmdLineArgs->GetFormattingArgs()->GetFormattedOutputChoice()) {
+        formatter.WriteArchive(*query_factory, *opts_hndl, *results,
+                               itr.GetIterationNumber());
+    }
+    else {
+        ITERATE(blast::CSearchResultSet, result, *results) {
+            formatter.PrintOneResultSet(**result, query,
+                                        itr.GetIterationNumber(),
+                                        itr.GetPreviouslyFoundSeqIds());
+        }
     }
     // FIXME: what if there are no results!?!
         
@@ -435,10 +450,17 @@ CDeltaBlastApp::DoPsiBlastIterations(CRef<CBlastOptionsHandle> opts_hndl,
         results = psiblast->Run();
 
         BlastFormatter_PreFetchSequenceData(*results, scope);
-        ITERATE(blast::CSearchResultSet, result, *results) {
-            formatter.PrintOneResultSet(**result, query,
-                                        itr.GetIterationNumber(),
-                                        itr.GetPreviouslyFoundSeqIds());
+        if (CFormattingArgs::eArchiveFormat ==
+            m_CmdLineArgs->GetFormattingArgs()->GetFormattedOutputChoice()) {
+            formatter.WriteArchive(*pssm, *opts_hndl, *results,
+                                   itr.GetIterationNumber());
+        }
+        else {
+            ITERATE(blast::CSearchResultSet, result, *results) {
+                formatter.PrintOneResultSet(**result, query,
+                                            itr.GetIterationNumber(),
+                                            itr.GetPreviouslyFoundSeqIds());
+            }
         }
         // FIXME: what if there are no results!?!
 
