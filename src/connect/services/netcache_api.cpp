@@ -176,14 +176,20 @@ SNetCacheAPIImpl::SNetCacheAPIImpl(CConfig* config, const string& section,
 
 void SNetCacheAPIImpl::SetPassword(const string& password)
 {
-    string encoded_password(NStr::CEncode(password));
+    if (password.empty())
+        m_Password = kEmptyStr;
+    else {
+        string encoded_password(NStr::CEncode(password));
 
-    if (encoded_password.length() > MAX_NETCACHE_PASSWORD_LENGTH) {
-        NCBI_THROW(CNetCacheException,
-            eAuthenticationError, "Password is too long");
+        if (encoded_password.length() > MAX_NETCACHE_PASSWORD_LENGTH) {
+            NCBI_THROW(CNetCacheException,
+                eAuthenticationError, "Password is too long");
+        }
+
+        m_Password.assign(" pass=\"");
+        m_Password.append(encoded_password);
+        m_Password.append("\"");
     }
-
-    m_Password = encoded_password;
 }
 
 void SNetCacheAPIImpl::AppendClientIPSessionIDPassword(string* cmd)
@@ -193,11 +199,9 @@ void SNetCacheAPIImpl::AppendClientIPSessionIDPassword(string* cmd)
     cmd->append(req.GetClientIP());
     cmd->append("\" \"");
     cmd->append(req.GetSessionID());
-    if (!m_Password.empty()) {
-        cmd->append("\" pass=\"");
-        cmd->append(m_Password);
-    }
     cmd->append("\"");
+    if (!m_Password.empty())
+        cmd->append(m_Password);
 }
 
 string SNetCacheAPIImpl::MakeCmd(const char* cmd)
