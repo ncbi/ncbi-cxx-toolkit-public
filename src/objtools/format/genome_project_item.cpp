@@ -97,6 +97,19 @@ s_JoinLinkableStrs(const CUser_field_Base::C_Data::TStrs &strs,
     return CNcbiOstrstreamToString( result );
 }
 
+static string
+s_JoinNumbers( const CUser_field_Base::C_Data::TInts & ints, const string & separator )
+{
+    CNcbiOstrstream result;
+    ITERATE( CUser_field_Base::C_Data::TInts, int_iter, ints ) {
+        if( int_iter != ints.begin() ) {
+            result << separator;
+        }
+        result << *int_iter;
+    }
+    return CNcbiOstrstreamToString( result );
+}
+
 void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
 {
     const bool bHtml = ctx.Config().DoHTML();
@@ -132,40 +145,62 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
         }
     }
 
-    const static string kStrLinkBaseSRA = "http://www.ncbi.nlm.nih.gov/sites/entrez?db=sra&term=";
     const static string kStrLinkBaseBioProj = "http://www.ncbi.nlm.nih.gov/bioproject?term=";
+    const static string kStrLinkBaseBioSample = "http://www.ncbi.nlm.nih.gov/biosample?term=";
+    const static string kStrLinkBaseSRA = "http://www.ncbi.nlm.nih.gov/sites/entrez?db=sra&term=";
 
     // process DBLink
     // ( we have these temporary vectors because we can't push straight to m_DBLinkLines
-    //  because, e.g., SRA must be before BioProject even if out of order in ASN.1 )
-    vector<string> sraLines;
-    vector<string> bioprojectLines;
+    //  because we have to sort them in case they're out of order in the ASN.1 )
+    vector<string> dblinkLines;
     if( dblink_user_obj != NULL ) {
         ITERATE (CUser_object::TData, uf_it, dblink_user_obj->GetData()) {
             const CUser_field& field = **uf_it;
-            if ( field.IsSetLabel()  &&  field.GetLabel().IsStr() && 
-                field.CanGetData() && field.GetData().IsStrs() ) {
-                    const string& label = field.GetLabel().GetStr();
+            if ( field.IsSetLabel()  &&  field.GetLabel().IsStr() && field.CanGetData() ) {
+                const string& label = field.GetLabel().GetStr();
+                if( field.GetData().IsStrs() ) 
+                {
                     const CUser_field_Base::C_Data::TStrs &strs = field.GetData().GetStrs();
 
-                    if ( NStr::EqualNocase(label, "Sequence Read Archive") ) {
-                        sraLines.push_back( "Sequence Read Archive: " + 
-                            s_JoinLinkableStrs( strs, kStrLinkBaseSRA, bHtml ) );
-                        if( bHtml ) {
-                            TryToSanitizeHtml( sraLines.back() );
-                        }
-                    } else if( NStr::EqualNocase(label, "BioProject") ) {
-                        bioprojectLines.push_back( "BioProject: " + 
+                    if( NStr::EqualNocase(label, "BioProject") ) {
+                        dblinkLines.push_back( "BioProject: " + 
                             s_JoinLinkableStrs( strs, kStrLinkBaseBioProj, bHtml ) );
                         if( bHtml ) {
-                            TryToSanitizeHtml( bioprojectLines.back() );
+                            TryToSanitizeHtml( dblinkLines.back() );
+                        }
+                    } else if( NStr::EqualNocase(label, "BioSample") ) {
+                        dblinkLines.push_back( "BioSample: " + 
+                            s_JoinLinkableStrs( strs, kStrLinkBaseBioSample, bHtml ) );
+                        if( bHtml ) {
+                            TryToSanitizeHtml( dblinkLines.back() );
+                        }
+                    } else if( NStr::EqualNocase(label, "ProbeDB") ) {
+                        dblinkLines.push_back( "ProbeDB: " + 
+                            NStr::Join( strs, ", " ) );
+                        if( bHtml ) {
+                            TryToSanitizeHtml( dblinkLines.back() );
+                        }
+                    } else if ( NStr::EqualNocase(label, "Sequence Read Archive") ) {
+                        dblinkLines.push_back( "Sequence Read Archive: " + 
+                            s_JoinLinkableStrs( strs, kStrLinkBaseSRA, bHtml ) );
+                        if( bHtml ) {
+                            TryToSanitizeHtml( dblinkLines.back() );
                         }
                     }
+                } else if( field.GetData().IsInts() ) {
+                    const CUser_field_Base::C_Data::TInts &ints = field.GetData().GetInts();
+
+                    if( NStr::EqualNocase(label, "Trace Assembly Archive") ) {
+                        dblinkLines.push_back( "Trace Assembly Archive: " + 
+                            s_JoinNumbers( ints, ", " ) );
+                        // No need to sanitize; it's just numbers, commas, and spaces
+                    }
+                }
             }
         }
+        sort( dblinkLines.begin(), dblinkLines.end() );
+        copy( dblinkLines.begin(), dblinkLines.end(), back_inserter(m_DBLinkLines) );
     }
-    copy( sraLines.begin(), sraLines.end(), back_inserter(m_DBLinkLines) );
-    copy( bioprojectLines.begin(), bioprojectLines.end(), back_inserter(m_DBLinkLines) );
 }
 
 
