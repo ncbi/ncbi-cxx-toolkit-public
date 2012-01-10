@@ -5274,6 +5274,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SLU<CAN>	s	Laurentian University, Biology Department",
 "SLU<USA-LA>	s	Southeastern Louisiana University, Vertebrate Museum",
 "SLUB	s	St. Louis University Museum",
+"SLUM	s	Saint Louis University Museum Ichthylogy Collection",
 "SM<CHN>	s	Chongqing Municipal Academy of Chinese Materia Medica",
 "SM<DEU-Frankfurt>	s	Senckenberg Museum",
 "SM<DEU-Langenaltheim>	s	Schwegler Museum",
