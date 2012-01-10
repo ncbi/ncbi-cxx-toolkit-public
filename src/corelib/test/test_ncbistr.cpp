@@ -36,6 +36,8 @@
 #include <corelib/ncbi_xstr.hpp>
 #include <corelib/ncbifloat.h>
 #include <corelib/ncbitime.hpp>
+#include <corelib/ncbiexec.hpp>
+#include <corelib/ncbifile.hpp>
 #include <algorithm>
 #include <locale.h>
 #include <math.h>
@@ -2581,6 +2583,62 @@ BOOST_AUTO_TEST_CASE(s_StringToDoubleSpeed)
         }
     }
 }
+
+
+static const string s_ShellStr[] = {
+    "abc",            // normal string, no encoding
+    "ab\acd",         // non-printable chars, need BASH encoding
+    "ab\ncd",         // EOL in the string
+    "ab cd\tef",      // spaces - need quotes
+    "ab!{}cd?*",      // more special chars which need quotes
+    "ab'cd'ef",       // single quote - use double quotes around the string
+    "ab ' cd ' ef",   // the same with extra-spaces
+    "ab'$cd",         // additional chars ($, \) - can not use double quotes
+    "\"ab cd ef\"",   // double quotes - use single quotes around the string
+    "ab\\cd",         // backslash
+    "ab\\cd'ef",      // backslash with single quote
+    "ab\\cd\"ef",     // backslash with double quote
+    "ab'\\cd\"$ef",   // ', ", \, $
+    "",               // empty string
+    "''",             // empty single quotes
+    "\"\""            // empty double quotes
+};
+
+
+#ifdef NCBI_OS_UNIX
+BOOST_AUTO_TEST_CASE(s_ShellEncode)
+{
+    cout << endl << "ShellEncode tests..." << endl;
+
+    string echo_file = CFile::GetTmpName(CFile::eTmpFileCreate);
+
+    for (size_t i = 0;  i < sizeof(s_ShellStr) / sizeof(s_ShellStr[0]);  i++) {
+        string cmd = "echo ";
+        cmd += NStr::ShellEncode(s_ShellStr[i]);
+        cmd += " >> ";
+        cmd += echo_file;
+        BOOST_CHECK_EQUAL(CExec::System(cmd.c_str()), 0);
+    }
+
+    CNcbiIfstream in(echo_file.c_str());
+    string s, line;
+    for (size_t i = 0;  i < sizeof(s_ShellStr) / sizeof(s_ShellStr[0]);  i++) {
+        s.clear();
+        size_t eol_pos = 0;
+        do {
+            getline(in, line);
+            s.append(line);
+            eol_pos = s_ShellStr[i].find('\n', eol_pos);
+            if (eol_pos != NPOS) {
+                eol_pos++;
+                s.append("\n");
+            }
+        } while (eol_pos != NPOS);
+        BOOST_CHECK_EQUAL(s_ShellStr[i], s);
+    }
+    CFile(echo_file).Remove();
+}
+#endif
 
 
 NCBITEST_INIT_TREE()

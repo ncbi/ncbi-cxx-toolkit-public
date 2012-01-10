@@ -1333,13 +1333,13 @@ void CNcbiApplication::AppStart(void)
         }
         for (SIZE_TYPE arg = 1; arg < m_Arguments->Size(); ++arg) {
             cmd_line += " ";
-            cmd_line += (*m_Arguments)[arg];
+            cmd_line += NStr::ShellEncode((*m_Arguments)[arg]);
         }
     }
 
     // Print application start message
     if ( !CDiagContext::IsSetOldPostFormat() ) {
-        GetDiagContext().PrintStart(NStr::PrintableString(cmd_line));
+        GetDiagContext().PrintStart(cmd_line);
     }
 }
 

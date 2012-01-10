@@ -2001,6 +2001,18 @@ public:
     /// Encode a string for JSON.
     static string JsonEncode(const CTempString& str);
 
+    /// Quotes a string in Bourne Again Shell (BASH) syntax, in a way
+    /// that disallows non-printable characters in the result.
+    /// This function does NOT implement aesthetically optimal quoting,
+    /// but does try to avoid redundant quoting in simpler cases.
+    /// Also, since it implements BASH syntax, the result may be
+    /// incompatible with Bourne syntax, and may be non-obvious to
+    /// people who are not familiar with the extended quoting syntax.
+    /// @note The BASH shell has extensions beyond Bourne Shell quoting.
+    ///       Also, this is very different from C Shell quoting, and
+    ///       MS Windows Command Prompt quoting rules.
+    static string ShellEncode(const string& str);
+
     /// URL-encode flags
     enum EUrlEncode {
         eUrlEnc_SkipMarkChars,    ///< Do not convert chars like '!', '(' etc.

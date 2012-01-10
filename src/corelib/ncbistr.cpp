@@ -2624,6 +2624,117 @@ string NStr::JsonEncode(const CTempString& str)
 }
 
 
+string NStr::ShellEncode(const string& str)
+{
+    // 1. Special-case of non-printable characters. We have no choice and
+    //    must use BASH extensions if we want printable output. 
+    //
+    // Aesthetic issue: Most people are not familiar with the BASH-only
+    //     quoting style. Avoid it as much as possible.
+
+    if (find_if(str.begin(), str.end(), not1(ptr_fun(::isprint))) != str.end()) {
+        return "$'" + NStr::PrintableString(str) + "'";
+    }
+
+    /////////////////////////////////////////////////////////////////////////
+    // Bourne Shell quoting as IEEE-standard without special extensions.
+    //
+    // There are 3 basic ways to quote/escape in Bourne Shell:
+    //
+    // - Single-quotes. All characters (including non-printable
+    //   characters newlines, backslashes), are literal. There is no escape.
+    // - Double-quotes. Need to escape some metacharacters, such as literal
+    //   escape (\), variable expansion ($) and command substitution (`).
+    // - Escape without quotes. Use backslash.
+    /////////////////////////////////////////////////////////////////////////
+
+    // 2. Non-empty printable string without metacharacters.
+    //
+    // Shell special characters, according to IEEE Std 1003.1,
+    // plus ! (Bourne shell exit status negation and Bash history expansion),
+    // braces (Bourne enhanced expansion), space, tab, and newline.
+    //
+    // See http://www.opengroup.org/onlinepubs/009695399/toc.htm
+    // See Bourne and Bash man pages.
+
+    if (!str.empty()  &&
+        str.find_first_of("!{} \t\r\n[|&;<>()$`\"'*?#~=%\\") == NPOS) {
+        return str;
+    }
+
+    // 3. Printable string, but either empty or some shell metacharacters.
+    //
+    // Aesthetics preference:
+    // i)   If the string includes literal single-quotes, then prefer
+    //      double-quoting provided there is no need to escape embedded
+    //      literal double-quotes, escapes (\), variable substitution ($),
+    //      or command substitution (`).
+
+    if (str.find('\'') != NPOS  &&
+        str.find_first_of("\"\\$`") == NPOS) {
+        return "\"" + str + "\"";
+    }
+
+    // Use single-quoting. The only special case for Bourne shell
+    // single-quoting is a literal single-quote, which needs to
+    // be pulled out of the quoted region.
+    //
+    // Single-quoting does not have any escape character, so close
+    // the quoted string ('), then emit an escaped or quoted literal
+    // single-quote (\' or "'"), and resume the quoted string (').
+    //
+    // Aesthetics preferences:
+    // ii)  Prefer single-quoting over escape characters, especially
+    //      escaped whitespace. However, this is in compromise to optimal
+    //      quoting: if there are many literal single-quotes and the
+    //      use of double-quotes would involve the need to escape embedded
+    //      characters, then it may be more pleasing to escape the
+    //      shell metacharacters, and avoid the need for single-quoting
+    //      in the presence of literal single-quotes.
+    // iii) If there are no literal double-quotes, then all else being equal,
+    //      avoid double-quotes and prefer escaping. Double-quotes are
+    //      more commonly used by enclosing formats such as ASN.1 Text
+    //      and CVS, and would thus need to be escaped. If there are
+    //      literal double-quotes, then having them is in the output is
+    //      unavoidable, and this aesthetics rule becomes secondary to
+    //      the preference for avoiding escape characters. If there are
+    //      literal escape characters, then having them is unavoidable
+    //      and avoidance of double-quotes is once again recommended.
+
+    // TODO: Should simplify runs of multiple quotes, for example:
+    //       '\'''\'''\'' -> '"'''"'
+
+    bool avoid_double_quotes = (str.find('"') == NPOS  ||
+                                 str.find('\\') != NPOS);
+    string s = "'" + NStr::Replace(str, "'",
+            avoid_double_quotes ? "'\\''" : "'\"'\"'") + "'";
+
+    // Aesthetic improvement: Remove paired single-quotes ('')
+    // that aren't escaped, as these evaluate to an empty string.
+    // Don't apply this simplification for the degenerate case when
+    // the string is the empty string ''. (Nondegenerate strings
+    // must be length greater than 2). Implement the equivalent
+    // of the Perl regexp:
+    //
+    //     s/(?<!\\)''//g
+    //
+    if (s.size() > 2) {
+        size_t pos = 0;
+        while ( true ) {
+            pos = s.find("''", pos);
+            if (pos == NPOS) break;
+            if (pos == 0 || s[pos-1] != '\\') {
+                s.erase(pos, 2);
+            } else {
+                ++pos;
+            }
+        }
+    }
+
+    return s;
+}
+
+
 string NStr::ParseEscapes(const CTempString& str)
 {
     string out;
