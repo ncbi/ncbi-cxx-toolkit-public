@@ -286,6 +286,81 @@ SNetServerImplReal::~SNetServerImplReal()
     }
 }
 
+SNetServerInfoImpl::SNetServerInfoImpl(const string& version_string)
+{
+    try {
+        m_URLParser.reset(new CUrlArgs(version_string));
+        m_Attributes = &m_URLParser->GetArgs();
+    }
+    catch (CUrlParserException&) {
+        m_Attributes = &m_FreeFormVersionAttributes;
+
+        const char* version = version_string.c_str();
+        const char* prev_part_end = version;
+
+        string attr_name, attr_value;
+
+        for (; *version != '\0'; ++version) {
+            if ((*version == 'v' || *version == 'V') &&
+                    memcmp(version + 1, "ersion", 6) == 0) {
+                const char* version_number = version + 7;
+                attr_name.assign(prev_part_end, version_number);
+                // Bring the 'v' in 'version' to lower case.
+                attr_name[attr_name.size() - 7] = 'v';
+                while (isspace(*version_number) ||
+                        *version_number == ':' || *version_number == '=')
+                    ++version_number;
+                const char* version_number_end = version_number;
+                while (isdigit(*version_number_end) ||
+                        *version_number_end == '.')
+                    ++version_number_end;
+                attr_value.assign(version_number, version_number_end);
+                m_FreeFormVersionAttributes.push_back(
+                    CUrlArgs::TArg(attr_name, attr_value));
+                prev_part_end = version_number_end;
+                while (isspace(*prev_part_end) || *prev_part_end == '&')
+                    ++prev_part_end;
+            } else if ((*version == 'b' || *version == 'B') &&
+                    memcmp(version + 1, "uil", 3) == 0 &&
+                        (version[4] == 'd' || version[4] == 't')) {
+                const char* build = version + 5;
+                attr_name.assign(version, build);
+                // Bring the 'b' in 'build' to upper case.
+                attr_name[attr_name.size() - 5] = 'B';
+                while (isspace(*build) || *build == ':' || *build == '=')
+                    ++build;
+                attr_value.assign(build);
+                m_FreeFormVersionAttributes.push_back(
+                    CUrlArgs::TArg(attr_name, attr_value));
+                break;
+            }
+        }
+
+        if (prev_part_end < version) {
+            while (isspace(version[-1]))
+                if (--version == prev_part_end)
+                    break;
+
+            if (prev_part_end < version)
+                m_FreeFormVersionAttributes.push_back(CUrlArgs::TArg(
+                    "Details", string(prev_part_end, version)));
+        }
+    }
+
+    m_NextAttribute = m_Attributes->begin();
+}
+
+bool CNetServerInfo::GetNextAttribute(string& attr_name, string& attr_value)
+{
+    if (m_Impl->m_NextAttribute == m_Impl->m_Attributes->end())
+        return false;
+
+    attr_name = m_Impl->m_NextAttribute->name;
+    attr_value = m_Impl->m_NextAttribute->value;
+    ++m_Impl->m_NextAttribute;
+    return true;
+}
+
 string CNetServer::GetHost() const
 {
     return m_Impl->m_Address.host;
@@ -582,6 +657,11 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd)
 
         SleepMilliSec(s_GetRetryDelay());
     }
+}
+
+CNetServerInfo CNetServer::GetServerInfo()
+{
+    return new SNetServerInfoImpl(ExecWithRetry("VERSION").response);
 }
 
 END_NCBI_SCOPE

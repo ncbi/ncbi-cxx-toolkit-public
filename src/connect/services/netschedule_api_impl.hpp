@@ -121,29 +121,29 @@ template<> struct ToStr<int> {
     }
 };
 
+class CNetScheduleServerListener : public INetServerConnectionListener
+{
+public:
+    CNetScheduleServerListener() : m_WorkerNodeCompatMode(false) {}
+
+    void SetAuthString(SNetScheduleAPIImpl* impl);
+
+    virtual void OnInit(CObject* api_impl,
+        CConfig* config, const string& config_section);
+    virtual void OnConnected(CNetServerConnection::TInstance conn);
+    virtual void OnError(const string& err_msg, SNetServerImpl* server);
+
+    string m_Auth;
+    bool m_WorkerNodeCompatMode;
+};
+
 struct SNetScheduleAPIImpl : public CObject
 {
-    class CNetScheduleServerListener : public INetServerConnectionListener
-    {
-    public:
-        CNetScheduleServerListener() : m_WorkerNodeCompatMode(false) {}
-
-        void SetAuthString(SNetScheduleAPIImpl* impl);
-
-        virtual void OnInit(CObject* api_impl,
-            CConfig* config, const string& config_section);
-        virtual void OnConnected(CNetServerConnection::TInstance conn);
-        virtual void OnError(const string& err_msg, SNetServerImpl* server);
-
-        string m_Auth;
-        bool m_WorkerNodeCompatMode;
-    };
-
     SNetScheduleAPIImpl(CConfig* config, const string& section,
         const string& service_name, const string& client_name,
         const string& queue_name);
 
-    void UpdateListener()
+    void UpdateAuthString()
     {
         static_cast<CNetScheduleServerListener*>(
             m_Service->m_Listener.GetPointer())->SetAuthString(this);

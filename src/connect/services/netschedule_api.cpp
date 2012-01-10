@@ -49,8 +49,7 @@ BEGIN_NCBI_SCOPE
 
 /**********************************************************************/
 
-void SNetScheduleAPIImpl::CNetScheduleServerListener::SetAuthString(
-    SNetScheduleAPIImpl* impl)
+void CNetScheduleServerListener::SetAuthString(SNetScheduleAPIImpl* impl)
 {
     string auth(impl->m_Service->MakeAuthString());
 
@@ -85,7 +84,7 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::SetAuthString(
     m_Auth = auth;
 }
 
-void SNetScheduleAPIImpl::CNetScheduleServerListener::OnInit(
+void CNetScheduleServerListener::OnInit(
     CObject* api_impl, CConfig* config, const string& config_section)
 {
     SNetScheduleAPIImpl* ns_impl = static_cast<SNetScheduleAPIImpl*>(api_impl);
@@ -120,7 +119,7 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::OnInit(
     SetAuthString(ns_impl);
 }
 
-void SNetScheduleAPIImpl::CNetScheduleServerListener::OnConnected(
+void CNetScheduleServerListener::OnConnected(
     CNetServerConnection::TInstance conn)
 {
     CNetServerConnection conn_object(conn);
@@ -131,14 +130,15 @@ void SNetScheduleAPIImpl::CNetScheduleServerListener::OnConnected(
         conn->WriteLine(m_Auth);
 }
 
-void SNetScheduleAPIImpl::CNetScheduleServerListener::OnError(
+void CNetScheduleServerListener::OnError(
     const string& err_msg, SNetServerImpl* /*server*/)
 {
     string code;
     string msg;
     if (NStr::SplitInTwo(err_msg, ":", code, msg)) {
         // Map code into numeric value
-        CException::TErrCode n_code = sm_ExceptionMap.GetCode(code);
+        CException::TErrCode n_code =
+            SNetScheduleAPIImpl::sm_ExceptionMap.GetCode(code);
         if (n_code != CException::eInvalid) {
             NCBI_THROW(CNetScheduleException, EErrCode(n_code), msg);
         }
@@ -204,7 +204,7 @@ void CNetScheduleAPI::SetProgramVersion(const string& pv)
 {
     m_Impl->m_ProgramVersion = pv;
 
-    m_Impl->UpdateListener();
+    m_Impl->UpdateAuthString();
 }
 
 const string& CNetScheduleAPI::GetProgramVersion() const
@@ -485,7 +485,7 @@ void CNetScheduleAPI::SetClientNode(const string& client_node)
 
     m_Impl->m_ClientNode = client_node;
 
-    m_Impl->UpdateListener();
+    m_Impl->UpdateAuthString();
 }
 
 void CNetScheduleAPI::SetClientSession(const string& client_session)
@@ -494,13 +494,13 @@ void CNetScheduleAPI::SetClientSession(const string& client_session)
 
     m_Impl->m_ClientSession = client_session;
 
-    m_Impl->UpdateListener();
+    m_Impl->UpdateAuthString();
 }
 
 void CNetScheduleAPI::EnableWorkerNodeCompatMode()
 {
-    SNetScheduleAPIImpl::CNetScheduleServerListener* listener =
-        static_cast<SNetScheduleAPIImpl::CNetScheduleServerListener*>(
+    CNetScheduleServerListener* listener =
+        static_cast<CNetScheduleServerListener*>(
             m_Impl->m_Service->m_Listener.GetPointer());
 
     listener->m_WorkerNodeCompatMode = true;
@@ -511,7 +511,7 @@ void CNetScheduleAPI::UseOldStyleAuth()
 {
     m_Impl->m_Service->m_UseOldStyleAuth = true;
 
-    m_Impl->UpdateListener();
+    m_Impl->UpdateAuthString();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

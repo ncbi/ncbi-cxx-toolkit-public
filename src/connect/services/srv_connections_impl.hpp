@@ -38,6 +38,8 @@
 
 #include <corelib/ncbimtx.hpp>
 
+#include <util/ncbi_url.hpp>
+
 BEGIN_NCBI_SCOPE
 
 struct SNetServerMultilineCmdOutputImpl : public CObject
@@ -153,6 +155,20 @@ struct SNetServerImplReal : public SNetServerImpl
     SNetServerImplReal(const string& host, unsigned short port);
 
     virtual ~SNetServerImplReal();
+};
+
+struct SNetServerInfoImpl : public CObject
+{
+    typedef CUrlArgs::TArgs TAttributes;
+
+    auto_ptr<CUrlArgs> m_URLParser;
+
+    TAttributes m_FreeFormVersionAttributes;
+
+    TAttributes* m_Attributes;
+    TAttributes::const_iterator m_NextAttribute;
+
+    SNetServerInfoImpl(const string& version_string);
 };
 
 END_NCBI_SCOPE

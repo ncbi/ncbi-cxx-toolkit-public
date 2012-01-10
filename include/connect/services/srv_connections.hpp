@@ -96,6 +96,20 @@ public:
 
 ///////////////////////////////////////////////////////////////////////////
 //
+struct SNetServerInfoImpl;
+
+class NCBI_XCONNECT_EXPORT CNetServerInfo
+{
+    NCBI_NET_COMPONENT(NetServerInfo);
+
+    /// Return the next attribute. If there are no more attributes,
+    /// the method returns false, and attr_name and attr_value are
+    /// left unchanged.
+    bool GetNextAttribute(string& attr_name, string& attr_value);
+};
+
+///////////////////////////////////////////////////////////////////////////
+//
 struct SNetServerImpl;
 
 class NCBI_XCONNECT_EXPORT CNetServer
@@ -117,6 +131,10 @@ class NCBI_XCONNECT_EXPORT CNetServer
     /// attempts to connect to the server and execute
     /// the specified command.
     SExecResult ExecWithRetry(const string& cmd);
+
+    /// Retrieve basic information about the server as
+    /// attribute name-value pairs.
+    CNetServerInfo GetServerInfo();
 };
 
 ///////////////////////////////////////////////////////////////////////////

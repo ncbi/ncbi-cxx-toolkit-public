@@ -101,82 +101,55 @@ int CGridCommandLineInterfaceApp::Cmd_WhatIs()
     return 0;
 }
 
-static void PrintVersionParts(const char* version)
-{
-    const char* prev_part_end = version;
-
-    for (;;) {
-        switch (*version) {
-        case 'v':
-        case 'V':
-            if (memcmp(version + 1, "ersion", 6) == 0) {
-                const char* version_number = version + 7;
-                while (isspace(*version_number) || *version_number == ':')
-                    ++version_number;
-                const char* version_number_end = version_number;
-                while (isdigit(*version_number_end) ||
-                        *version_number_end == '.')
-                    ++version_number_end;
-                printf("%.*sversion: %.*s\n",
-                    int(version - prev_part_end), prev_part_end,
-                    int(version_number_end - version_number), version_number);
-                prev_part_end = version_number_end;
-                while (isspace(*prev_part_end))
-                    ++prev_part_end;
-            }
-            break;
-        case 'b':
-        case 'B':
-            if (memcmp(version + 1, "uil", 3) == 0 &&
-                    (version[4] == 'd' || version[4] == 't')) {
-                const char* build = version + 5;
-                while (isspace(*build) || *build == ':')
-                    ++build;
-                printf("Buil%c: %s\n", version[4], build);
-                if (version != prev_part_end) {
-                    while (isspace(version[-1]))
-                        --version;
-                    printf("Details: %.*s\n",
-                        int(version - prev_part_end), prev_part_end);
-                }
-                return;
-            }
-            break;
-        case '\0':
-            return;
-        }
-        ++version;
-    }
-}
-
 int CGridCommandLineInterfaceApp::Cmd_ServerInfo()
 {
-    switch (SetUp_AdminCmd()) {
+    CNetService service;
+
+    EAPIClass api_class = SetUp_AdminCmd();
+
+    switch (api_class) {
     case eNetCacheAdmin:
-        PrintVersionParts(m_NetCacheAdmin.GetServerVersion().c_str());
-        return 0;
+        service = m_NetCacheAPI.GetService();
+        break;
 
     case eNetScheduleAdmin:
-        PrintVersionParts(m_NetScheduleAdmin.GetServerVersion().c_str());
-        if (IsOptionSet(eQueue)) {
-            CNetScheduleAPI::SServerParams params =
-                m_NetScheduleAPI.GetServerParams();
-            printf("Maximum input size: %lu\n"
-                "Maximum output size: %lu\n"
-                "Fast status support: %s\n",
-                (unsigned long) params.max_input_size,
-                (unsigned long) params.max_output_size,
-                params.fast_status ? "yes" : "no");
-        }
-        return 0;
-
     case eWorkerNodeAdmin:
-        PrintVersionParts(m_NetScheduleAdmin.GetServerVersion().c_str());
-        return 0;
+        service = m_NetScheduleAPI.GetService();
+        break;
 
     default:
         return 2;
     }
+
+    bool print_server_address = service.IsLoadBalanced();
+
+    for (CNetServiceIterator it = service.Iterate(); it; ++it) {
+        if (print_server_address)
+            printf("[%s:%u]\n", (*it).GetHost().c_str(), (*it).GetPort());
+
+        CNetServerInfo server_info((*it).GetServerInfo());
+
+        string attr_name, attr_value;
+
+        while (server_info.GetNextAttribute(attr_name, attr_value))
+            printf("%s: %s\n", attr_name.c_str(), attr_value.c_str());
+
+        if (print_server_address)
+            printf("\n");
+    }
+
+    if (api_class == eNetScheduleAdmin && IsOptionSet(eQueue)) {
+        CNetScheduleAPI::SServerParams params =
+            m_NetScheduleAPI.GetServerParams();
+        printf("max_input_size: %lu\n"
+            "max_output_size: %lu\n"
+            "fast_status_support: %s\n",
+            (unsigned long) params.max_input_size,
+            (unsigned long) params.max_output_size,
+            params.fast_status ? "yes" : "no");
+    }
+
+    return 0;
 }
 
 int CGridCommandLineInterfaceApp::Cmd_Stats()
