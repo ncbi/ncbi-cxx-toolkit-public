@@ -179,15 +179,23 @@ typedef unsigned long long uintptr_t;
 #if (SIZEOF_LONG == 8)
 #  define NCBI_CONST_INT8(v)   v##L
 #  define NCBI_CONST_UINT8(v)  v##UL
+#  define NCBI_INT8_FORMAT_SPEC   "ld"
+#  define NCBI_UINT8_FORMAT_SPEC  "lu"
 #elif (SIZEOF_LONG_LONG == 8)
 #  define NCBI_CONST_INT8(v)   v##LL
 #  define NCBI_CONST_UINT8(v)  v##ULL
+#  define NCBI_INT8_FORMAT_SPEC   "lld"
+#  define NCBI_UINT8_FORMAT_SPEC  "llu"
 #elif defined(NCBI_USE_INT64)
 #  define NCBI_CONST_INT8(v)   v##i64
 #  define NCBI_CONST_UINT8(v)  v##ui64
+#  define NCBI_INT8_FORMAT_SPEC   "I64d"
+#  define NCBI_UINT8_FORMAT_SPEC  "I64u"
 #else
 #  define NCBI_CONST_INT8(v)   v
 #  define NCBI_CONST_UINT8(v)  v
+#  define NCBI_INT8_FORMAT_SPEC   "d"
+#  define NCBI_UINT8_FORMAT_SPEC  "u"
 #endif
 #if (SIZEOF_LONG_DOUBLE > SIZEOF_DOUBLE)
 #  define NCBI_CONST_LONGDOUBLE(v)   v##L
