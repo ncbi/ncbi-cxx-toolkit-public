@@ -8598,12 +8598,11 @@ void CNewCleanup_imp::UserObjectBC( CUser_object &user_object )
                 UserObjectBC( **user_obj_iter );
             }
             break;
-        // this is not done for C compatibility (Maybe in the future, we should)
-        //case NCBI_USERFIELD(Strs):
-        //    NON_CONST_ITERATE( CUser_field::C_Data::TStrs, str_iter, user_field.SetData().SetStrs() ) {
-        //        x_CleanupStringMarkChanged( *str_iter );
-        //    }
-        //    break;
+        case NCBI_USERFIELD(Strs):
+            NON_CONST_ITERATE( CUser_field::C_Data::TStrs, str_iter, user_field.SetData().SetStrs() ) {
+                x_CleanupStringMarkChanged( *str_iter );
+            }
+            break;
         default:
             break;
         }
