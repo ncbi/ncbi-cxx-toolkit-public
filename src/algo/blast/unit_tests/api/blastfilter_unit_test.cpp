@@ -547,8 +547,7 @@ BOOST_AUTO_TEST_CASE(WindowMasker)
           286, 329,
           348, 366,
           373, 688,
-          701, 971,
-          974, 1303,
+          701, 1303,
           1450, 1485,
           2858, 2887,
           3086, 3212,
@@ -563,8 +562,7 @@ BOOST_AUTO_TEST_CASE(WindowMasker)
           7170, 7189,
           7604, 7623,
           8454, 8476,
-          8829, 8851,
-          8860, 8889 };
+          8829, 8889 };
     
     size_t num_locs = sizeof(intervals) / pair_size;
     BOOST_REQUIRE(0 == (sizeof(intervals) % pair_size));
@@ -589,6 +587,7 @@ BOOST_AUTO_TEST_CASE(WindowMasker)
     BOOST_REQUIRE_EQUAL(num_locs, seqinterval_list.size());
     
     ITERATE(CPacked_seqint::Tdata, itr,  seqinterval_list) {
+        //cout << (*itr)->GetFrom() << " " << (*itr)->GetTo() << endl;
         BOOST_REQUIRE_EQUAL(intervals[loc_index],   (*itr)->GetFrom());
         BOOST_REQUIRE_EQUAL(intervals[loc_index+1], (*itr)->GetTo());
         BOOST_REQUIRE(! (*itr)->CanGetStrand());
