@@ -259,7 +259,26 @@
 
         // Transparent read from this file
         assert(zf.Open(kFileName, TCompressionFile::eMode_Read)); 
-        assert(zf.Read(cmp_buf, kDataLen) == (int)kDataLen);
+       
+        // temporary debug code: CXX-2491
+//        assert(zf.Read(cmp_buf, kDataLen) == (int)kDataLen);
+        {{
+            int n = zf.Read(cmp_buf, kDataLen);
+            if (n != (int)kDataLen) {
+#  ifdef NCBI_OS_MSWIN
+                string new_file_name = string("s:\\") + kFileName;
+#  else
+                string new_file_name = string("/tmp/") + kFileName;
+#  endif
+                CFile(kFileName).Copy(new_file_name);
+                ERR_POST("Debug: nread = " << n << 
+                    ", errcode = " << zf.GetErrorCode() <<
+                    " -- " << zf.GetErrorDescription() <<
+                    ". File saved as: " << new_file_name);
+            }
+            assert(n == (int)kDataLen);
+        }}
+
         assert(zf.Close()); 
 
         // Compare original and "decompressed" data
