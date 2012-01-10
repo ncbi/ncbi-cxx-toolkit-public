@@ -155,8 +155,12 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &  params,
                 option = val;
             break;
         case 'p':
-            if (key == "port")
+            if (key == "port") {
                 port = NStr::StringToUInt(val, NStr::fConvErr_NoThrow);
+                if (port < 0 || port > 65535)
+                    NCBI_THROW(CNetScheduleException,
+                               eInvalidParameter, "Invalid port number");
+            }
             else if (key == "progress_msg")
                 progress_msg = val;
             break;
