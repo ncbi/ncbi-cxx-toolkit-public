@@ -116,7 +116,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
         { { "job_key", eNSPT_Id, eNSPA_Required } } },
     // STAT [ option : id ] -- "ALL"
     { "STAT",     { &CNetScheduleHandler::x_ProcessStatistics,
-                    eNSCR_Queue },
+                    eNSCR_Any },
         { { "option",  eNSPT_Id, eNSPA_Optional },
           { "comment", eNSPT_Id, eNSPA_Optional } } },
     // MPUT job_key : id  progress_msg : str
@@ -765,6 +765,8 @@ void CNetScheduleHandler::x_ProcessMsgQueue(BUF buffer)
         if (q->IsSubmitAllowed(m_ClientId.GetAddress()))
             m_ClientId.AddCapability(eNSAC_Submitter);
     }
+    else
+        m_QueueRef.Reset(NULL);
 
     m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
     x_SetQuickAcknowledge();
@@ -824,6 +826,16 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
     if (extra.role & eNSAC_Queue) {
         queue_ref.Reset(GetQueue());
         queue_ptr = queue_ref.GetPointer();
+    }
+    else if (extra.processor == &CNetScheduleHandler::x_ProcessStatistics) {
+        // The STAT command could be with or without a queue
+        try {
+            queue_ref.Reset(GetQueue());
+            queue_ptr = queue_ref.GetPointer();
+        }
+        catch (...) {
+            // That means no queue were found. The STAT is for whole server
+        }
     }
 
     m_ClientId.CheckAccess(extra.role, queue_ptr);
@@ -1568,6 +1580,16 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
     const string &      what   = m_CommandArguments.option;
     time_t              curr   = time(0);
 
+    if (q == NULL) {
+        // Transition counters for all the queues
+        WriteMessage("OK:Started: ", m_Server->GetStartTime().AsString());
+        m_Server->PrintTransitionCounters(*this);
+        WriteMessage("OK:END");
+        x_PrintRequestStop(eStatus_OK);
+        return;
+    }
+
+
     socket.DisableOSSendDelay(false);
     if (!what.empty() && what != "ALL") {
         x_StatisticsNew(q, what, curr);
@@ -1669,6 +1691,9 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
 
     WriteMessage("OK:[Configured workers]:");
     q->PrintWNodeHosts(*this);
+
+    WriteMessage("OK:[Transitions counters]:");
+    q->PrintTransitionCounters(*this);
 
     WriteMessage("OK:END");
     x_PrintRequestStop(eStatus_OK);

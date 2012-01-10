@@ -59,6 +59,7 @@
 BEGIN_NCBI_SCOPE
 
 class CNetScheduleServer;
+class CNetScheduleHandler;
 
 
 
@@ -187,6 +188,8 @@ public:
     {
         m_Env->PrintMemStat(out);
     }
+
+    void PrintTransitionCounters(CNetScheduleHandler &  handler);
 
 private:
     // No copy

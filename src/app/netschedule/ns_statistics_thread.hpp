@@ -40,6 +40,7 @@ BEGIN_NCBI_SCOPE
 
 class CQueueDataBase;
 class CDiagContext_Extra;
+class CNetScheduleHandler;
 
 
 
@@ -66,6 +67,7 @@ public:
     CStatisticsCounters();
 
     void PrintTransitions(CDiagContext_Extra &  extra) const;
+    void PrintTransitions(CNetScheduleHandler &  handler) const;
     void CountTransition(CNetScheduleAPI::EJobStatus  from,
                          CNetScheduleAPI::EJobStatus  to,
                          ETransitionPathOption        path_option = eNone);

@@ -224,7 +224,7 @@ CStatisticsCounters::CStatisticsCounters()
 void CStatisticsCounters::PrintTransitions(CDiagContext_Extra &  extra) const
 {
     extra.Print("submits", m_SubmitCounter.Get())
-         .Print("dbdeletions",m_DBDeleteCounter.Get());
+         .Print("dbdeletions", m_DBDeleteCounter.Get());
 
     for (size_t  index_from = 0;
          index_from < g_ValidJobStatusesSize; ++index_from) {
@@ -267,6 +267,56 @@ void CStatisticsCounters::PrintTransitions(CDiagContext_Extra &  extra) const
          .Print("Reading_ReadFailed_timeout",
                 m_ToReadFailedDueToTimeoutCounter.Get());
 }
+
+
+void CStatisticsCounters::PrintTransitions(CNetScheduleHandler &  handler) const
+{
+    handler.WriteMessage("OK:submits: ", NStr::IntToString(m_SubmitCounter.Get()));
+    handler.WriteMessage("OK:dbdeletions: ", NStr::IntToString(m_DBDeleteCounter.Get()));
+
+    for (size_t  index_from = 0;
+         index_from < g_ValidJobStatusesSize; ++index_from) {
+        for (size_t  index_to = 0;
+             index_to < g_ValidJobStatusesSize; ++index_to) {
+
+            // All invalid transitions are marked as -1
+            if (m_Transitions[index_from][index_to].Get() !=
+                    static_cast<TNCBIAtomicValue>(-1))
+                handler.WriteMessage("OK:" + x_GetTransitionCounterName(index_from, index_to) + ": ",
+                                     NStr::IntToString(m_Transitions[index_from][index_to].Get()));
+        }
+    }
+    handler.WriteMessage("OK:Running_Pending_timeout: ",
+                         NStr::IntToString(m_ToPendingDueToTimeoutCounter.Get()));
+    handler.WriteMessage("OK:Running_Pending_fail: ",
+                         NStr::IntToString(m_ToPendingDueToFailCounter.Get()));
+    handler.WriteMessage("OK:Running_Pending_clear: ",
+                         NStr::IntToString(m_ToPendingDueToClearCounter.Get()));
+    handler.WriteMessage("OK:Running_Failed_clear: ",
+                         NStr::IntToString(m_ToFailedDueToClearCounter.Get()));
+    handler.WriteMessage("OK:Running_Pending_new_session: ",
+                         NStr::IntToString(m_ToPendingDueToNewSessionCounter.Get()));
+    handler.WriteMessage("OK:Running_Failed_new_session: ",
+                         NStr::IntToString(m_ToFailedDueToNewSessionCounter.Get()));
+    handler.WriteMessage("OK:Running_Failed_timeout: ",
+                         NStr::IntToString(m_ToFailedDueToTimeoutCounter.Get()));
+    handler.WriteMessage("OK:Reading_Done_timeout: ",
+                         NStr::IntToString(m_ToDoneDueToTimeoutCounter.Get()));
+    handler.WriteMessage("OK:Reading_Done_fail: ",
+                         NStr::IntToString(m_ToDoneDueToFailCounter.Get()));
+    handler.WriteMessage("OK:Reading_Done_clear: ",
+                         NStr::IntToString(m_ToDoneDueToClearCounter.Get()));
+    handler.WriteMessage("OK:Reading_ReadFailed_clear: ",
+                         NStr::IntToString(m_ToReadFailedDueToClearCounter.Get()));
+    handler.WriteMessage("OK:Reading_Done_new_session: ",
+                         NStr::IntToString(m_ToDoneDueToNewSessionCounter.Get()));
+    handler.WriteMessage("OK:Reading_ReadFailed_new_session: ",
+                         NStr::IntToString(m_ToReadFailedDueToNewSessionCounter.Get()));
+    handler.WriteMessage("OK:Reading_ReadFailed_timeout: ",
+                         NStr::IntToString(m_ToReadFailedDueToTimeoutCounter.Get()));
+    return;
+}
+
 
 void CStatisticsCounters::CountTransition(CNetScheduleAPI::EJobStatus  from,
                                           CNetScheduleAPI::EJobStatus  to,

@@ -42,6 +42,7 @@
 BEGIN_NCBI_SCOPE
 
 class CQueueDataBase;
+class CNetScheduleHandler;
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -89,7 +90,7 @@ public:
     void PrintMutexStat(CNcbiOstream& out);
     void PrintLockStat(CNcbiOstream& out);
     void PrintMemStat(CNcbiOstream& out);
-
+    void PrintTransitionCounters(CNetScheduleHandler &  handler);
 
     unsigned GetInactivityTimeout(void) const   { return m_InactivityTimeout; }
     std::string& GetHost()                      { return m_Host; }

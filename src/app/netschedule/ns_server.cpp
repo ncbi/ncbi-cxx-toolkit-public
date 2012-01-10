@@ -231,6 +231,12 @@ void CNetScheduleServer::PrintMemStat(CNcbiOstream& out)
 }
 
 
+void CNetScheduleServer::PrintTransitionCounters(CNetScheduleHandler &  handler)
+{
+    m_QueueDB->PrintTransitionCounters(handler);
+}
+
+
 bool CNetScheduleServer::AdminHostValid(unsigned host) const
 {
     return !m_AdminHosts.IsRestrictionSet() ||

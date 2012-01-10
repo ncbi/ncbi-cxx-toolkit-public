@@ -2587,6 +2587,15 @@ void CQueue::PrintStatistics(size_t &  aff_count)
 }
 
 
+void CQueue::PrintTransitionCounters(CNetScheduleHandler &  handler)
+{
+    m_StatisticsCounters.PrintTransitions(handler);
+    handler.WriteMessage("OK:garbage_jobs: " +
+                         NStr::IntToString(m_JobsToDelete.count()));
+    return;
+}
+
+
 void CQueue::x_UpdateDB_PutResultNoLock(unsigned             job_id,
                                         const string &       auth_token,
                                         time_t               curr,

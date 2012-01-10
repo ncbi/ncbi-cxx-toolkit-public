@@ -47,6 +47,7 @@
 #include "ns_util.hpp"
 #include "netschedule_version.hpp"
 #include "ns_server.hpp"
+#include "ns_handler.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -796,6 +797,15 @@ void CQueueDataBase::TransactionCheckPoint(bool clean_log)
     m_Env->TransactionCheckpoint();
     if (clean_log)
         m_Env->CleanLog();
+}
+
+
+void CQueueDataBase::PrintTransitionCounters(CNetScheduleHandler &  handler)
+{
+    NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
+        handler.WriteMessage("OK:[queue " + it.GetName() + "]");
+        (*it).PrintTransitionCounters(handler);
+    }
 }
 
 

@@ -331,6 +331,7 @@ public:
                                      const TNSBitVector &  jobs);
 
     void PrintStatistics(size_t &  aff_count);
+    void PrintTransitionCounters(CNetScheduleHandler &  handler);
     void CountTransition(CNetScheduleAPI::EJobStatus  from,
                          CNetScheduleAPI::EJobStatus  to)
     { m_StatisticsCounters.CountTransition(from, to); }
