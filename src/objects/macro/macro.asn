@@ -1285,7 +1285,8 @@ Create-TSA-ids-src ::= CHOICE {
 
 Create-TSA-ids-action ::= SEQUENCE {
   src Create-TSA-ids-src ,
-  suffix VisibleString OPTIONAL }  
+  suffix VisibleString OPTIONAL ,
+  id-text-portion Text-portion OPTIONAL }  
 
 Macro-action-choice ::= CHOICE {
   aecr AECR-action ,
