@@ -205,13 +205,14 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
                              vector<IServer_ConnectionBase*>& timer_requests,
                              STimeout* timer_timeout,
                              vector<IServer_ConnectionBase*>& revived_conns,
-                             vector<IServer_ConnectionBase*>& to_close_conns) const
+                             vector<IServer_ConnectionBase*>& to_close_conns,
+                             vector<IServer_ConnectionBase*>& to_delete_conns) const
 {
     CTime now = GetFastLocalTime();
     polls.clear();
     revived_conns.clear();
     to_close_conns.clear();
-    list<TConnBase*> to_delete;
+    to_delete_conns.clear();
 
     CMutexGuard guard(m_Mutex);
     TData& data = const_cast<TData&>(m_Data);
@@ -239,7 +240,7 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
             // eIO_Close which was converted into eServIO_ClientClose.
             // Then during OnSocketEvent(eServIO_ClientClose) it was marked
             // as closed. Here we just clean it up from the connection pool.
-            to_delete.push_back(conn_base);
+            to_delete_conns.push_back(conn_base);
         }
         else if (info.type == eInactiveSocket  &&  info.expiration <= now)
         {
@@ -280,14 +281,14 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
             revived_conns.push_back(conn_base);
         }
     }
-    ITERATE(list<TConnBase*>, it, to_delete) {
-        data.erase(*it);
+    for (size_t i = 0; i < to_delete_conns.size(); ++i) {
+        data.erase(to_delete_conns[i]);
+    }
+    for (size_t i = 0; i < to_close_conns.size(); ++i) {
+        data.erase(to_close_conns[i]);
     }
     guard.Release();
 
-    ITERATE(list<TConnBase*>, it, to_delete) {
-        delete *it;
-    }
     if (alarm_time_defined) {
         if (min_alarm_time == NULL)
             timer_timeout->usec = timer_timeout->sec = 0;

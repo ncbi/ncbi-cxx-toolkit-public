@@ -66,7 +66,8 @@ enum EServIO_Event {
     eServIO_ReadWrite   = 0x03, /**< eIO_Read | eIO_Write */
     eServIO_ClientClose = 0x04,
     eServIO_OurClose    = 0x08,
-    eServIO_Inactivity  = 0x10
+    eServIO_Inactivity  = 0x10,
+    eServIO_Delete      = 0x20
 };
 
 

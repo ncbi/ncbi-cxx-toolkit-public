@@ -291,7 +291,8 @@ CServer_Connection::CreateRequest(EServIO_Event           event,
     // Pull out socket from poll vector
     // See CServerConnectionRequest::Process and
     // CServer_ConnectionPool::GetPollAndTimerVec
-    conn_pool.SetConnType(this, CServer_ConnectionPool::eActiveSocket);
+    conn_pool.SetConnType(this, CServer_ConnectionPool::eActiveSocket,
+                          (event != eServIO_Delete  &&  event != eServIO_Inactivity));
     return new CServerConnectionRequest(event, conn_pool, timeout, this);
 }
 
@@ -304,24 +305,35 @@ void CServer_Connection::OnSocketEvent(EServIO_Event event)
 {
     if (event == (EServIO_Event) -1) {
         m_Handler->OnTimer();
-    } else if (eServIO_Open == event) {
+        return;
+    }
+    switch (event) {
+    case eServIO_Open:
         m_Handler->OnOpen();
-    } else if (eServIO_OurClose == event) {
+        break;
+    case eServIO_OurClose:
         m_Handler->OnClose(IServer_ConnectionHandler::eOurClose);
         m_Open = false;
-    } else if (eServIO_ClientClose == event) {
+        break;
+    case eServIO_ClientClose:
         m_Handler->OnClose(IServer_ConnectionHandler::eClientClose);
         m_Open = false;
-    } else if (eServIO_Inactivity == event) {
+        break;
+    case eServIO_Inactivity:
         OnTimeout();
         m_Handler->OnClose(IServer_ConnectionHandler::eOurClose);
+        //m_Open = false;
+        // fall through
+    case eServIO_Delete:
         Abort();
-        m_Open = false;
-    } else {
+        delete this;
+        break;
+    default:
         if (eServIO_Read & event)
             m_Handler->OnRead();
         if (eServIO_Write & event)
             m_Handler->OnWrite();
+        break;
     }
 }
 
@@ -403,13 +415,15 @@ void CServer::x_DoRun(void)
     TConnsList timer_requests;
     TConnsList revived_conns;
     TConnsList to_close_conns;
+    TConnsList to_delete_conns;
     STimeout   timer_timeout;
     const STimeout* timeout;
 
     while (!ShutdownRequested()) {
         bool has_timer = m_ConnectionPool->GetPollAndTimerVec(
                                            polls, timer_requests, &timer_timeout,
-                                           revived_conns, to_close_conns);
+                                           revived_conns, to_close_conns,
+                                           to_delete_conns);
 
         ITERATE(TConnsList, it, revived_conns) {
             EIO_Event evt = (*it)->GetEventsToPollFor(NULL);
@@ -417,6 +431,9 @@ void CServer::x_DoRun(void)
         }
         ITERATE(TConnsList, it, to_close_conns) {
             CreateRequest(*it, eServIO_Inactivity, m_Parameters->idle_timeout);
+        }
+        ITERATE(TConnsList, it, to_delete_conns) {
+            CreateRequest(*it, eServIO_Delete, m_Parameters->idle_timeout);
         }
 
         timeout = m_Parameters->accept_timeout;
