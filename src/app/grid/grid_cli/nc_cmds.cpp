@@ -75,8 +75,8 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
         break;
 
     default: // always eNetCacheAdmin
-        m_NetCacheAdmin = CNetCacheAPI(m_Opts.nc_service,
-            m_Opts.auth).GetAdmin();
+        m_NetCacheAPI = CNetCacheAPI(m_Opts.nc_service, m_Opts.auth);
+        m_NetCacheAdmin = m_NetCacheAPI.GetAdmin();
     }
 }
 
