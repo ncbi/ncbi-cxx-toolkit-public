@@ -125,7 +125,7 @@ int CGridCommandLineInterfaceApp::Cmd_ServerInfo()
 
     for (CNetServiceIterator it = service.Iterate(); it; ++it) {
         if (print_server_address)
-            printf("[%s:%u]\n", (*it).GetHost().c_str(), (*it).GetPort());
+            printf("[%s]\n", (*it).GetServerAddress().c_str());
 
         CNetServerInfo server_info((*it).GetServerInfo());
 

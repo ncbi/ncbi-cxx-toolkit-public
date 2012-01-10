@@ -371,6 +371,11 @@ unsigned short CNetServer::GetPort() const
     return m_Impl->m_Address.port;
 }
 
+string CNetServer::GetServerAddress() const
+{
+    return m_Impl->m_Address.AsString();
+}
+
 CNetServerConnection SNetServerImpl::GetConnectionFromPool()
 {
     for (;;) {

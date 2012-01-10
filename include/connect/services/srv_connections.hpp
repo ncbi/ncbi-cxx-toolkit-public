@@ -118,6 +118,7 @@ class NCBI_XCONNECT_EXPORT CNetServer
 
     string GetHost() const;
     unsigned short GetPort() const;
+    string GetServerAddress() const;
 
     struct SExecResult {
         string response;

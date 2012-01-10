@@ -480,7 +480,7 @@ void CNetService::PrintCmdOutput(const string& cmd,
 
     for (CNetServiceIterator it = Iterate(); it; ++it) {
         if (print_headers)
-            output_stream << '[' << (*it)->m_Address.AsString() << ']' << endl;
+            output_stream << '[' << (*it).GetServerAddress() << ']' << endl;
 
         CNetServer::SExecResult exec_result((*it).ExecWithRetry(cmd));
 
