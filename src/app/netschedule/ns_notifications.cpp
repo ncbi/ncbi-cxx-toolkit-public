@@ -297,23 +297,23 @@ CNSNotificationList::Print(CNetScheduleHandler &        handler,
             handler.WriteMessage("OK:  ANY JOB: FALSE");
 
         if (verbose == false) {
-            handler.WriteMessage("OK:  USE EXPLICIT AFFINITIES: n/a");
+            handler.WriteMessage("OK:  EXPLICIT AFFINITIES: n/a (available in VERBOSE mode)");
         }
         else {
             if (k->m_ClientNode.empty())
-                handler.WriteMessage("OK:  USE EXPLICIT AFFINITIES: n/a");
+                handler.WriteMessage("OK:  EXPLICIT AFFINITIES: CLIENT NOT FOUND");
             else {
                 TNSBitVector    wait_aff = clients_registry.GetWaitAffinities(k->m_ClientNode);
 
                 if (wait_aff.any()) {
-                    handler.WriteMessage("OK:  USE EXPLICIT AFFINITIES:");
+                    handler.WriteMessage("OK:  EXPLICIT AFFINITIES:");
 
                     TNSBitVector::enumerator    en(wait_aff.first());
                     for ( ; en.valid(); ++en)
                         handler.WriteMessage("OK:    " + aff_registry.GetTokenByID(*en));
                 }
                 else
-                    handler.WriteMessage("OK:  USE EXPLICIT AFFINITIES: NONE");
+                    handler.WriteMessage("OK:  EXPLICIT AFFINITIES: NONE");
             }
         }
 
