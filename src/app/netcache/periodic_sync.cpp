@@ -604,7 +604,7 @@ CNCActiveSyncControl::x_DoPeriodicSync(SSyncSlotData* slot_data,
         m_StartedCmds = 1;
         conn->SyncStart(this, m_LocalStartRecNo, m_RemoteStartRecNo);
         m_Lock.Lock();
-        while (m_StartedCmds != 0)
+        while (m_StartedCmds != 0  &&  !s_NeedFinish)
             m_WaitCond.WaitForSignal(m_Lock);
         m_Lock.Unlock();
         if (s_NeedFinish)
@@ -626,8 +626,11 @@ CNCActiveSyncControl::x_DoPeriodicSync(SSyncSlotData* slot_data,
             if (m_NextTask != eSynNeedFinalize) {
                 if (m_SlotSrv->peer->AddSyncControl(this)) {
                     m_Lock.Lock();
-                    while (m_NextTask != eSynNoTask  ||  m_StartedCmds != 0)
+                    while ((m_NextTask != eSynNoTask  ||  m_StartedCmds != 0)
+                           &&  !s_NeedFinish)
+                    {
                         m_WaitCond.WaitForSignal(m_Lock);
+                    }
                     m_Lock.Unlock();
                 }
                 else {
@@ -637,8 +640,11 @@ CNCActiveSyncControl::x_DoPeriodicSync(SSyncSlotData* slot_data,
             }
             else if (m_SlotSrv->peer->FinishSync(this)) {
                 m_Lock.Lock();
-                while (m_NextTask != eSynNoTask  ||  m_StartedCmds != 0)
+                while ((m_NextTask != eSynNoTask  ||  m_StartedCmds != 0)
+                       &&  !s_NeedFinish)
+                {
                     m_WaitCond.WaitForSignal(m_Lock);
+                }
                 m_Lock.Unlock();
             }
             else {
@@ -690,21 +696,18 @@ CNCActiveSyncControl::x_DoPeriodicSync(SSyncSlotData* slot_data,
         Uint8 end_time = CNetCacheServer::GetPreciseTime();
         Uint8 log_size = CNCSyncLog::GetLogSize();
         fprintf(s_LogFile,
-                "%" NCBI_BIGCOUNT_FORMAT_SPEC ",%" NCBI_BIGCOUNT_FORMAT_SPEC
-                ",%u,%" NCBI_BIGCOUNT_FORMAT_SPEC ",%" NCBI_BIGCOUNT_FORMAT_SPEC
-                ",%" NCBI_BIGCOUNT_FORMAT_SPEC
-                ",%d,%d,%" NCBI_BIGCOUNT_FORMAT_SPEC ",%" NCBI_BIGCOUNT_FORMAT_SPEC
-                ",%" NCBI_BIGCOUNT_FORMAT_SPEC ",%" NCBI_BIGCOUNT_FORMAT_SPEC
-                ",%" NCBI_BIGCOUNT_FORMAT_SPEC ",%" NCBI_BIGCOUNT_FORMAT_SPEC
-                ",%" NCBI_BIGCOUNT_FORMAT_SPEC ",%u,%u\n",
-                TNCBI_BigCount(CNCDistributionConf::GetSelfID()),
-                TNCBI_BigCount(m_SrvId), m_Slot,
-                TNCBI_BigCount(start_time), TNCBI_BigCount(end_time),
-                TNCBI_BigCount(end_time - start_time),
-                int(m_SlotSrv->is_by_blobs), m_Result, TNCBI_BigCount(log_size),
-                TNCBI_BigCount(m_ReadOK), TNCBI_BigCount(m_ReadERR),
-                TNCBI_BigCount(m_WriteOK), TNCBI_BigCount(m_WriteERR),
-                TNCBI_BigCount(m_ProlongOK), TNCBI_BigCount(m_ProlongERR),
+                "%" NCBI_UINT8_FORMAT_SPEC ",%" NCBI_UINT8_FORMAT_SPEC
+                ",%u,%" NCBI_UINT8_FORMAT_SPEC ",%" NCBI_UINT8_FORMAT_SPEC
+                ",%" NCBI_UINT8_FORMAT_SPEC
+                ",%d,%d,%" NCBI_UINT8_FORMAT_SPEC ",%" NCBI_UINT8_FORMAT_SPEC
+                ",%" NCBI_UINT8_FORMAT_SPEC ",%" NCBI_UINT8_FORMAT_SPEC
+                ",%" NCBI_UINT8_FORMAT_SPEC ",%" NCBI_UINT8_FORMAT_SPEC
+                ",%" NCBI_UINT8_FORMAT_SPEC ",%u,%u\n",
+                CNCDistributionConf::GetSelfID(), m_SrvId, m_Slot,
+                start_time, end_time, end_time - start_time,
+                int(m_SlotSrv->is_by_blobs), m_Result, log_size,
+                m_ReadOK, m_ReadERR, m_WriteOK, m_WriteERR,
+                m_ProlongOK, m_ProlongERR,
                 Uint4(CNCPeerControl::sm_TotalCopyRequests.Get()),
                 Uint4(CNCPeerControl::sm_CopyReqsRejected.Get()));
         fflush(s_LogFile);
@@ -747,7 +750,7 @@ CNCActiveSyncControl::x_PrepareSyncByEvents(void)
             m_StartedCmds = 1;
             conn->SyncBlobsList(this);
             m_Lock.Lock();
-            while (m_StartedCmds != 0)
+            while (m_StartedCmds != 0  &&  !s_NeedFinish)
                 m_WaitCond.WaitForSignal(m_Lock);
             m_Lock.Unlock();
             if (s_NeedFinish)
