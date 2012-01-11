@@ -1302,8 +1302,8 @@ void CPipeHandle::OpenSelf(void)
 
     NcbiCout.flush();
     ::fflush(stdout);
-    m_ChildStdIn  = ::fileno(stdout);
-    m_ChildStdOut = ::fileno(stdin);
+    m_ChildStdIn  = fileno(stdout);  // NB: a macro on BSD
+    m_ChildStdOut = fileno(stdin);
     m_Pid = ::getpid();
 
     m_SelfHandles = true;
