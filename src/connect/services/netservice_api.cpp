@@ -430,7 +430,12 @@ SActualService* SNetServiceImpl::FindOrCreateActualService(
 
 string SNetServiceImpl::MakeAuthString()
 {
-    string auth = m_ClientName;
+    string auth;
+    auth.reserve(256);
+
+    auth += '\"';
+    auth += NStr::PrintableString(m_ClientName);
+    auth += '\"';
 
     if (!m_UseOldStyleAuth) {
         if (m_MainService->m_ServiceType == eLoadBalancedService) {
