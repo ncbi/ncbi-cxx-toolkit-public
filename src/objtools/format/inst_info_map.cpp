@@ -56,12 +56,11 @@ CInstInfoMap::GetInstitutionVoucherInfo(
     static const string s_cori_base("http://ccr.coriell.org/Sections/Search/Sample_Detail.aspx?Ref=");
     static const string s_dsmz_base("http://www.dsmz.de/catalogues/details/culture/DSM-");
     static const string s_fsu_base("http://www.prz.uni-jena.de/data.php?fsu=");
-    static const string s_icmp_base("http://nzfungi.landcareresearch.co.nz/icmp/results_cultures.asp?ID=&icmpVAR=");
     static const string s_kctc_base("http://www.brc.re.kr/English/_SearchView.aspx?sn=");
     static const string s_ku_base("http://collections.nhm.ku.edu/");
+    static const string s_lcr_base("http://scd.landcareresearch.co.nz/Specimen/");
     static const string s_pcc_base("http://www.crbip.pasteur.fr/fiches/fichecata.jsp?crbip=PCC+");
     static const string s_pcmb_base("http://www2.bishopmuseum.org/HBS/PCMB/results3.asp?searchterm3=");
-    static const string s_pdd_base("http://nzfungi.landcareresearch.co.nz/html/data_collections_details.asp?CID=");
     static const string s_sag_base("http://sagdb.uni-goettingen.de/detailedList.php?str_number=");
     static const string s_tgrc_base("http://tgrc.ucdavis.edu/Data/Acc/AccDetail.aspx?AccessionNum=");
     static const string s_uam_base("http://arctos.database.museum/guid/");
@@ -81,6 +80,8 @@ CInstInfoMap::GetInstitutionVoucherInfo(
     static const string s_ypmorn_pfx("LE=orn&ID=");
 
     static const string s_bcrc_sfx("&type_id=6&keyword=;;");
+
+    static const string s_uscr_pfx("_");
     
     typedef pair<const string, TVoucherInfoRef> TVoucherInfoElem;
     static const TVoucherInfoElem sc_voucher_info_map[] = {
@@ -90,6 +91,7 @@ CInstInfoMap::GetInstitutionVoucherInfo(
         TVoucherInfoElem("CCAP",             TVoucherInfoRef(new SVoucherInfo(&s_ccap_base, false, NULL,          NULL,        "Culture Collection of Algae and Protozoa") ) ),
         TVoucherInfoElem("CCMP",             TVoucherInfoRef(new SVoucherInfo(&s_ccmp_base, false, NULL,          NULL,        "Provasoli-Guillard National Center for Culture of Marine Phytoplankton") ) ),
         TVoucherInfoElem("CCUG",             TVoucherInfoRef(new SVoucherInfo(&s_ccug_base, false, NULL,          NULL,        "Culture Collection, University of Goteborg, Department of Clinical Bacteriology") ) ),
+        TVoucherInfoElem("CHR",              TVoucherInfoRef(new SVoucherInfo(&s_lcr_base,  true,  &s_uscr_pfx,   NULL,        "Allan Herbarium, Landcare Research New Zealand Limited") ) ),
         TVoucherInfoElem("CRCM:Bird",        TVoucherInfoRef(new SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Washington State University, Charles R. Conner Museum, bird collection") ) ),
         TVoucherInfoElem("Coriell",          TVoucherInfoRef(new SVoucherInfo(&s_cori_base, false, NULL,          NULL,        "Coriell Institute for Medical Research") ) ),
         TVoucherInfoElem("DGR:Bird",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Division of Genomic Resources, University of New Mexico, bird tissue collection") ) ),
@@ -101,7 +103,7 @@ CInstInfoMap::GetInstitutionVoucherInfo(
         TVoucherInfoElem("DMNS:Mamm",        TVoucherInfoRef(new SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Denver Museum of Nature and Science, Mammology Collection") ) ),
         TVoucherInfoElem("DSM",              TVoucherInfoRef(new SVoucherInfo(&s_dsmz_base, false, NULL,          NULL,        "Deutsche Sammlung von Mikroorganismen und Zellkulturen GmbH") ) ),
         TVoucherInfoElem("FSU<DEU>",         TVoucherInfoRef(new SVoucherInfo(&s_fsu_base,  false, NULL,          NULL,        "Jena Microbial Resource Collection") ) ),
-        TVoucherInfoElem("ICMP",             TVoucherInfoRef(new SVoucherInfo(&s_icmp_base, false, NULL,          NULL,        "International Collection of Microorganisms from Plants") ) ),
+        TVoucherInfoElem("ICMP",             TVoucherInfoRef(new SVoucherInfo(&s_lcr_base,  true,  &s_uscr_pfx,   NULL,        "International Collection of Microorganisms from Plants") ) ),
         TVoucherInfoElem("KCTC",             TVoucherInfoRef(new SVoucherInfo(&s_kctc_base, false, NULL,          NULL,        "Korean Collection for Type Cultures") ) ),
         TVoucherInfoElem("KU:I",             TVoucherInfoRef(new SVoucherInfo(&s_ku_base,   false, &s_kui_pfx,    NULL,        "University of Kansas, Museum of Natural History, Ichthyology collection") ) ),
         TVoucherInfoElem("KU:IT",            TVoucherInfoRef(new SVoucherInfo(&s_ku_base,   false, &s_kuit_pfx,   NULL,        "University of Kansas, Museum of Natural History, Ichthyology tissue collection") ) ),
@@ -118,9 +120,10 @@ CInstInfoMap::GetInstitutionVoucherInfo(
         TVoucherInfoElem("MVZ:Page",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Museum of Vertebrate Zoology, University of California at Berkeley, Notebook Page Collection") ) ),
         TVoucherInfoElem("MVZObs:Herp",      TVoucherInfoRef(new SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Museum of Vertebrate Zoology, University of California at Berkeley, Herpetology Collection") ) ),
         TVoucherInfoElem("NBSB:Bird",        TVoucherInfoRef(new SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "National Biomonitoring Specimen Bank, U.S. Geological Survey, bird collection") ) ),
+        TVoucherInfoElem("NZAC",             TVoucherInfoRef(new SVoucherInfo(&s_lcr_base,  true,  &s_uscr_pfx,   NULL,        "New Zealand Arthropod Collection") ) ),
         TVoucherInfoElem("PCC",              TVoucherInfoRef(new SVoucherInfo(&s_pcc_base,  false, NULL,          NULL,        "Pasteur Culture Collection of Cyanobacteria") ) ),
         TVoucherInfoElem("PCMB",             TVoucherInfoRef(new SVoucherInfo(&s_pcmb_base, false, NULL,          NULL,        "The Pacific Center for Molecular Biodiversity") ) ),
-        TVoucherInfoElem("PDD",              TVoucherInfoRef(new SVoucherInfo(&s_pdd_base,  false, NULL,          NULL,        "New Zealand Fungal Herbarium") ) ),
+        TVoucherInfoElem("PDD",              TVoucherInfoRef(new SVoucherInfo(&s_lcr_base,  true,  &s_uscr_pfx,   NULL,        "New Zealand Fungal Herbarium") ) ),
         TVoucherInfoElem("PSU<USA-OR>:Mamm", TVoucherInfoRef(new SVoucherInfo(&s_uam_base,  false, &s_psu_pfx,    NULL,        "Portland State University, Vertebrate Biology Museum, Mammal Collection") ) ),
         TVoucherInfoElem("SAG",              TVoucherInfoRef(new SVoucherInfo(&s_sag_base,  false, NULL,          NULL,        "Sammlung von Algenkulturen at Universitat Gottingen") ) ),
         TVoucherInfoElem("TGRC",             TVoucherInfoRef(new SVoucherInfo(&s_tgrc_base, false, NULL,          NULL,        "C.M. Rick Tomato Genetics Resource Center") ) ),
