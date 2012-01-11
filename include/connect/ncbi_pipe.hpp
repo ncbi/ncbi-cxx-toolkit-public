@@ -104,15 +104,11 @@ public:
                                   ///< NOTE:  If both fKeepOnClose and
                                   ///< fKillOnClose are set, the safer
                                   ///< fKeepOnClose takes the effect.
-        fResetPipeSignal =     0, ///< Do not keep SIGPIPE signal
-                                  ///< processing for child process.
-        fKeepPipeSignal  = 0x040, ///< Keep SIGPIPE signal processing
-                                  ///< for child process.
+        fSigPipe_Restore = 0x040, ///< Restore SIGPIPE processing for child
+                                  ///< process to system default.
         fNewGroup        = 0x100  ///< UNIX: new process group will be
                                   ///< created and child become the leader
                                   ///< of the new process group.
-                                  ///< The fKillOnClose flag kills child
-                                  ///< and all its spawned processes.
     };
     typedef unsigned int TCreateFlags;  ///< bitwise OR of "ECreateFlag"
 
@@ -130,7 +126,7 @@ public:
     typedef unsigned int TChildPollMask;  ///< bit-wise OR of "EChildIOHandle"
 
     /// Constructor.
-    CPipe();
+    CPipe(void);
 
     /// Constructor.
     ///
@@ -200,16 +196,14 @@ public:
     /// Open the standard streams of the current process.
     ///
     /// The standard input stream is opened as if it's the output
-    /// stream of a child process, so it can be read from. Similarly,
+    /// stream of a child process, so it can be read from.  Similarly,
     /// the standard output stream is opened as if it's a child input
-    /// stream, so it can be written. The standard error stream is left
+    /// stream, so it can be written.  The standard error stream is left
     /// untouched.
     ///
-    /// @return
-    ///   Completion status.
     /// @sa
     ///   Read, Write, Close
-    void OpenSelf();
+    void       OpenSelf(void);
 
     /// Close pipe.
     ///

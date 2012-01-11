@@ -297,9 +297,9 @@ TPid CProcess::Fork(void)
 TPid CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
 {
 #ifdef NCBI_OS_UNIX
-    int fdin  = ::dup(STDIN_FILENO);
-    int fdout = ::dup(STDOUT_FILENO);
-    int fderr = ::dup(STDERR_FILENO);
+    int fdin  = ::fcntl(STDIN_FILENO,  F_DUPFD, STDERR_FILENO + 1);
+    int fdout = ::fcntl(STDOUT_FILENO, F_DUPFD, STDERR_FILENO + 1);
+    int fderr = ::fcntl(STDERR_FILENO, F_DUPFD, STDERR_FILENO + 1);
 
     try {
         if (flags & fKeepStdin) {
