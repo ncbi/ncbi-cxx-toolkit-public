@@ -330,7 +330,8 @@ static void s_Init(IRWRegistry*      reg  = 0,
 static void s_InitInternal(void)
 {
     CFastMutexGuard guard(s_ConnectInitMutex);
-    if (!g_CORE_Registry  &&  !g_CORE_Log  &&  !g_CORE_MT_Lock) {
+    if (!g_CORE_Registry  &&  !g_CORE_Log
+        &&  g_CORE_MT_Lock == &g_CORE_MT_Lock_default) {
         try {
             if (s_ConnectInit == eConnectInit_Intact) {
                 CNcbiApplication* app = CNcbiApplication::Instance();

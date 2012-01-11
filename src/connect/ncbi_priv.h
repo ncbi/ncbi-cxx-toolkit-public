@@ -257,7 +257,10 @@ extern NCBI_XCONNECT_EXPORT const char* g_CORE_Sprintf(const char* fmt, ...)
  *  Multi-Thread SAFETY
  */
 
+extern struct MT_LOCK_tag g_CORE_MT_Lock_default;
+
 extern NCBI_XCONNECT_EXPORT MT_LOCK g_CORE_MT_Lock;
+
 
 /* Always use the following macros and functions to access "g_CORE_MT_Lock",
  * do not access/change it directly!

@@ -32,7 +32,7 @@
 
 #include "ncbi_ansi_ext.h"
 #include "ncbi_assert.h"
-#include <connect/ncbi_core.h>
+#include "ncbi_priv.h"
 #include <stdlib.h>
 
 #if defined(NCBI_CXX_TOOLKIT)  &&  defined(_MT)  &&  !defined(NCBI_WITHOUT_MT)
@@ -79,7 +79,7 @@ extern const char* IO_StatusStr(EIO_Status status)
  */
 
 /* Check the validity of the MT locker */
-#define MT_LOCK_VALID \
+#define MT_LOCK_VALID  \
     assert(lk->ref_count  &&  lk->magic_number == kMT_LOCK_magic_number)
 
 
@@ -237,7 +237,7 @@ extern int/*bool*/ MT_LOCK_DoInternal(MT_LOCK lk, EMT_Lock how)
 
 
 /* Check the validity of the logger */
-#define LOG_VALID \
+#define LOG_VALID  \
     assert(lg->ref_count  &&  lg->magic_number == kLOG_magic_number)
 
 
@@ -419,7 +419,7 @@ extern void LOG_Write
 
 
 /* Check the validity of the registry */
-#define REG_VALID \
+#define REG_VALID  \
     assert(rg->ref_count  &&  rg->magic_number == kREG_magic_number)
 
 

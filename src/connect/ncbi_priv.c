@@ -43,9 +43,6 @@
 #include <string.h>
 
 
-/* Private GLOBAL */
-extern struct MT_LOCK_tag g_CORE_MT_Lock_default;
-
 /* GLOBALS */
 int             g_NCBI_ConnectRandomSeed = 0;
 MT_LOCK         g_CORE_MT_Lock           = &g_CORE_MT_Lock_default;
