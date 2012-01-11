@@ -210,13 +210,16 @@ public:
     /// Wait for the spawned child process to terminate and then close
     /// the associated pipe.
     ///
+    /// @note CPipe opened with OpenSelf() always closes with eIO_Success,
+    /// and *exitcode returned as 0 (yet the current process continues to run).
+    ///
     /// @param exitcode
     ///   Pointer to store the exit code at, if the child process terminated
-    ///   successfully, or -1 in case of an error. Can be passed as NULL.
+    ///   successfully, or -1 in case of an error.  Can be passed as NULL.
     /// @return
     ///   Completion status.
     ///   The returned status eIO_Timeout means that child process is still 
-    ///   running and the pipe was not yet closed. Any other return status
+    ///   running and the pipe was not yet closed.  Any other return status
     ///   means that the pipe is not suitable for further I/O until reopened.
     ///
     ///   eIO_Closed  - pipe was already closed;
@@ -224,7 +227,7 @@ public:
     ///                 is still running and the pipe has not yet closed
     ///                 (return only if fKeepOnClose create flag was set);
     ///   eIO_Success - pipe was successfully closed.  The running status of
-    ///                 child process depends on the flags:
+    ///                 the child process depends on the flags:
     ///       fKeepOnClose  - process has terminated with "exitcode";
     ///       fCloseOnClose - process has self-terminated if "exitcode" != -1,
     ///                       or is still running otherwise;
@@ -232,19 +235,17 @@ public:
     ///                       or has been forcibly terminated otherwise;
     ///   Otherwise   - an error was detected;
     /// @sa
-    ///   Open
-    ///   Description for flags fKeepOnClose, fCloseOnClose, fKillOnClose,
-    ///   fNewGroup.
+    ///   Open, OpenSelf, fKeepOnClose, fCloseOnClose, fKillOnClose, fNewGroup
     EIO_Status Close(int* exitcode = 0);
 
-    /// Close specified pipe handle.
+    /// Close specified pipe handle (even for CPipe opened with OpenSelf()).
     ///
     /// @param handle
     ///   Pipe handle to close
     /// @return
     ///   Completion status.
     /// @sa
-    ///   Close
+    ///   Close, OpenSelf
     EIO_Status CloseHandle(EChildIOHandle handle);
 
     /// Set standard output handle to read data from.
