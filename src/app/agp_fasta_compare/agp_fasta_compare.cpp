@@ -200,11 +200,12 @@ private:
     virtual int  Run(void);
     virtual void Exit(void);
 
-    // TKey pair is: MD5 checksum and sequence length
+    // TKey pair is: MD5 checksum and sequence length,
     typedef pair<string, TSeqPos> TKey;
-    typedef map<TKey, CSeq_id_Handle> TUniqueSeqs;
-
     typedef set<CSeq_id_Handle> TSeqIdSet;
+    // map MD5 checksum and sequence length to all
+    // the Seq-ids that match that
+    typedef map<TKey, TSeqIdSet> TUniqueSeqs;
 
     void x_ProcessObjects( const list<string> & filenames,
                           TUniqueSeqs& seqs );
@@ -364,11 +365,29 @@ int CAgpFastaCompareApplication::Run(void)
     LOG_POST(Error << "Reporting differences...");
     for ( ;  iter1 != iter1_end  &&  iter2 != iter2_end;  ) {
         if (iter1->first < iter2->first) {
-            vSeqIdFASTAOnly.insert( iter1->second );
+            copy( iter1->second.begin(), iter1->second.end(),
+                  inserter(vSeqIdFASTAOnly, vSeqIdFASTAOnly.begin() ) );
             ++iter1;
         }
         else if (iter2->first < iter1->first) {
-            vSeqIdAGPOnly.insert( iter2->second );
+            copy( iter2->second.begin(), iter2->second.end(),
+                  inserter(vSeqIdAGPOnly, vSeqIdAGPOnly.begin() ) );
+            ++iter2;
+        }
+        else if( iter1->second != iter2->second ) {
+            // Find the ones in FASTA but not AGP
+            set_difference( iter1->second.begin(), iter1->second.end(),
+                            iter2->second.begin(), iter2->second.end(),
+                            inserter(vSeqIdFASTAOnly,
+                                     vSeqIdFASTAOnly.begin() ) );
+
+            // Find the ones in AGP but not FASTA
+            set_difference( iter2->second.begin(), iter2->second.end(),
+                            iter1->second.begin(), iter1->second.end(),
+                            inserter(vSeqIdAGPOnly,
+                                     vSeqIdAGPOnly.begin() ) );
+
+            ++iter1;
             ++iter2;
         }
         else {
@@ -378,11 +397,13 @@ int CAgpFastaCompareApplication::Run(void)
     }
 
     for ( ;  iter1 != iter1_end;  ++iter1) {
-        vSeqIdFASTAOnly.insert( iter1->second );
+        copy( iter1->second.begin(), iter1->second.end(),
+              inserter(vSeqIdFASTAOnly, vSeqIdFASTAOnly.begin() ) );
     }
 
     for ( ;  iter2 != iter2_end;  ++iter2) {
-        vSeqIdAGPOnly.insert( iter2->second );
+        copy( iter2->second.begin(), iter2->second.end(),
+              inserter(vSeqIdAGPOnly, vSeqIdAGPOnly.begin() ) );
     }
 
     // look at vSeqIdFASTAOnly and vSeqIdAGPOnly and 
@@ -430,7 +451,7 @@ void CAgpFastaCompareApplication::x_Process(const CSeq_entry_Handle seh,
         CSeq_id_Handle idh = sequence::GetId(*bioseq_it,
                                              sequence::eGetId_Best);
         string data;
-        if( ! vec.CanGetRange(0, bioseq_it->GetBioseqLength() - 1) ) {
+        if( ! vec.CanGetRange(0, bioseq_it->GetBioseqLength()) ) {
             LOG_POST(Error << "  Skipping one: could not load due to error "
                      "in AGP file "
                      "(length issue or doesn't exist) for " << idh 
@@ -445,7 +466,7 @@ void CAgpFastaCompareApplication::x_Process(const CSeq_entry_Handle seh,
             continue;
         }
         try {
-            vec.GetSeqData(0, bioseq_it->GetBioseqLength() - 1, data);
+            vec.GetSeqData(0, bioseq_it->GetBioseqLength(), data);
         } catch(CSeqVectorException ex) {
             LOG_POST(Error << "  Skipping one: could not load due to error, probably in AGP file, possibly a length issue, for " << idh);
             m_bSuccess = false;
@@ -459,10 +480,10 @@ void CAgpFastaCompareApplication::x_Process(const CSeq_entry_Handle seh,
         cks.GetMD5Digest(md5);
 
         TKey key(md5, bioseq_it->GetBioseqLength());
-        pair<TUniqueSeqs::iterator, bool> insert_result =
-            seqs.insert(TUniqueSeqs::value_type(key, idh));
+        pair<TSeqIdSet::iterator, bool> insert_result =
+            seqs[key].insert(idh);
         if( ! insert_result.second ) {
-            LOG_POST(Error << "  Error: duplicate sequence " << idh );
+            LOG_POST(Error << "  Error: skipping duplicate sequence: " << idh);
             m_bSuccess = false;
             continue;
         }

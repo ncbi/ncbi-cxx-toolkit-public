@@ -49,6 +49,9 @@ public:
     enum FDiffsToHide {
         fDiffsToHide_AGPOnly     = (1 << 0),
         fDiffsToHide_ObjfileOnly = (1 << 1),
+        // this is NOT the same as 
+        // "fDiffsToHide_AGPOnly & fDiffsToHide_ObjfileOnly".
+        // It is a different kind of message.
         fDiffsToHide_InBoth      = (1 << 2)
     };
     typedef int TDiffsToHide;
@@ -72,7 +75,7 @@ private:
 
     // TKey pair is: MD5 checksum and sequence length
     typedef pair<string, TSeqPos> TKey;
-    typedef map<TKey, objects::CSeq_id_Handle> TUniqueSeqs;
+    typedef map<TKey, TSeqIdSet> TUniqueSeqs;
 
     void x_GetCompSeqIds( TSeqIdSet & out_compSeqIds,
                           const std::list<std::string> & agpFiles );
