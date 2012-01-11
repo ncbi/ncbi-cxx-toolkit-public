@@ -686,7 +686,8 @@ void CAgpFastaComparator::x_OutputDifferences(
         vSeqIdAGPOnly.begin(), vSeqIdAGPOnly.end(),
         inserter(vSeqIdTempSet, vSeqIdTempSet.begin()) );
     if( ! vSeqIdTempSet.empty() ) {
-        LOG_POST(Error << "  These differ between object file and AGP:");
+        LOG_POST(Error << "  These " << vSeqIdTempSet.size()
+                 << " differ between object file and AGP:");
         ITERATE( TSeqIdSet, id_iter, vSeqIdTempSet ) {
             LOG_POST(Error << "    " << *id_iter);
         }
@@ -699,9 +700,10 @@ void CAgpFastaComparator::x_OutputDifferences(
         vSeqIdAGPOnly.begin(), vSeqIdAGPOnly.end(),
         inserter(vSeqIdTempSet, vSeqIdTempSet.begin()) );
     if( ! vSeqIdTempSet.empty() && ! (diffs_to_hide & fDiffsToHide_ObjfileOnly) ) {
-        LOG_POST(Error << "  These are in Object file only: " << "\n"
-            << "  (Check above: were some AGP sequences skipped due "
-            << "to errors?)");
+        LOG_POST(Error << "  These " << vSeqIdTempSet.size()
+                 << " are in Object file only: " << "\n"
+                 << "  (Check above: were some AGP sequences skipped due "
+                 << "to errors?)");
         ITERATE( TSeqIdSet, id_iter, vSeqIdTempSet ) {
             LOG_POST(Error << "    " << *id_iter);
         }
@@ -714,9 +716,10 @@ void CAgpFastaComparator::x_OutputDifferences(
         vSeqIdFASTAOnly.begin(), vSeqIdFASTAOnly.end(),
         inserter(vSeqIdTempSet, vSeqIdTempSet.begin()) );
     if( ! vSeqIdTempSet.empty() && ! (diffs_to_hide & fDiffsToHide_AGPOnly) ) {
-        LOG_POST(Error << "  These are in AGP only: " << "\n"
-            << "  (Check above: were some FASTA sequences skipped due "
-            << "to errors?)");
+        LOG_POST(Error << "  These " << vSeqIdTempSet.size()
+                 << " are in AGP only: " << "\n"
+                 << "  (Check above: were some FASTA sequences skipped due "
+                 << "to errors?)");
         ITERATE( TSeqIdSet, id_iter, vSeqIdTempSet ) {
             LOG_POST(Error << "    " << *id_iter);
         }
