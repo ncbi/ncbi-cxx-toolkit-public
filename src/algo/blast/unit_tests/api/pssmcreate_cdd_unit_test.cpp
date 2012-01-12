@@ -664,7 +664,7 @@ BOOST_AUTO_TEST_CASE(TestConvertSeqalignToCdMsa)
 
                             BOOST_REQUIRE_EQUAL(
                                cd_msa->msa[msa_index][q_index + pos].is_aligned,
-                               false);
+                               (Uint1)false);
                         }
                     } else if (q_index == kGap) {
                         s_index += lengths[i];
@@ -676,7 +676,7 @@ BOOST_AUTO_TEST_CASE(TestConvertSeqalignToCdMsa)
                             // marked as aligned in MSA
                             BOOST_REQUIRE_EQUAL(
                               cd_msa->msa[msa_index][q_index + pos].is_aligned,
-                              true);
+                              (Uint1)true);
 
                             // verify profile data in msa
                             PSICdMsaCellData* data =
