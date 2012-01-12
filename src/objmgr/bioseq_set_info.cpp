@@ -379,7 +379,7 @@ void CBioseq_set_Info::AddEntry(CRef<CSeq_entry_Info> info, int index,
 
     CRef<CSeq_entry> obj(&info->x_GetObject());
 
-    _ASSERT(obj_seq_set.size() == m_Seq_set.size());
+    //_ASSERT(obj_seq_set.size() == m_Seq_set.size()); quadratic performance
     if ( size_t(index) >= m_Seq_set.size() ) {
         obj_seq_set.push_back(obj);
         m_Seq_set.push_back(info);
