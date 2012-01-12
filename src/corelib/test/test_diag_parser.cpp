@@ -225,7 +225,7 @@ int CDiagParserApp::Run(void)
                 "2006-10-17T12:59:47.000 widget3 UNK_CLIENT "
                 "UNK_SESSION my_app Error: TEST "
                 "CMyApp::Thread_Run() "
-                "--- Message from thread 6", false);
+                "--- Message from thread 6", true);
     x_CheckMessage("not a valid message", false);
     x_CheckMessage("", false);
 
