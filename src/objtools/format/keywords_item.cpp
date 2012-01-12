@@ -39,6 +39,7 @@
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/SubSource.hpp>
+#include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <util/static_set.hpp>
 #include <algorithm>
@@ -158,6 +159,8 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
         }
     }
 
+    bool is_tsa = false;
+
     // add keywords based on mol-info
     ETechFlags tech = e_not_set;
     // don't do tech-related keywords if molinfo isn't set
@@ -218,6 +221,7 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
         case CMolInfo::eTech_tsa:
             x_AddKeyword("TSA");
             x_AddKeyword("Transcriptome Shotgun Assembly");
+            is_tsa = true; // remember so we don't add it twice
             break;
 
         case CMolInfo::eTech_unknown:
@@ -230,6 +234,32 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
 
         default:
             break;
+        }
+    }
+
+    // propagate TSA keyword from nuc to prot in same nuc-prot set
+    if( ! is_tsa && ctx.IsProt() ) {
+        CBioseq_set_Handle parent_bioseq_set = 
+            ctx.GetHandle().GetParentBioseq_set();
+        if( parent_bioseq_set && parent_bioseq_set.CanGetLevel() &&
+            parent_bioseq_set.GetLevel() == CBioseq_set::eClass_nuc_prot )
+        {
+            CBioseq_CI bioseq_ci( parent_bioseq_set, CSeq_inst::eMol_na );
+            if( bioseq_ci ) {
+                CBioseq_Handle nuc = *bioseq_ci;
+                if( nuc ) {
+                    CSeqdesc_CI desc_ci( nuc, CSeqdesc::e_Molinfo );
+                    for( ; desc_ci; ++desc_ci ) {
+                        if( desc_ci->GetMolinfo().CanGetTech() &&
+                            desc_ci->GetMolinfo().GetTech() == CMolInfo::eTech_tsa ) 
+                        {
+                            x_AddKeyword("TSA");
+                            x_AddKeyword("Transcriptome Shotgun Assembly");
+                            break;
+                        }
+                    }
+                }
+            }
         }
     }
 
