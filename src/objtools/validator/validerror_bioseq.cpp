@@ -3878,12 +3878,6 @@ bool CValidError_bioseq::x_IsSameAsCDS(const CMappedFeat& feat)
             CSeqFeatData::e_Cdregion,
             overlap_type,
             *m_Scope);
-        TSeqPos circular_len = kInvalidSeqPos;
-        if (m_CurrentHandle && m_CurrentHandle.IsSetInst_Topology()
-            && m_CurrentHandle.GetInst_Topology() == CSeq_inst::eTopology_circular
-            && m_CurrentHandle.IsSetInst_Length()) {
-            circular_len = m_CurrentHandle.GetInst_Length();
-        }
 
         if ( cds ) {
             if ( TestForOverlapEx(
@@ -4146,12 +4140,6 @@ void CValidError_bioseq::ValidateFeatPartialInContext (const CMappedFeat& feat)
     for ( int j = 0; j < 4; ++j ) {
         int i = 0;
         if (partial_prod & errtype) {
-            bool is_gap = false;
-
-            if (feat.GetLocation().GetStop(eExtreme_Biological) == 2647) {
-                is_gap = false;
-            }
-
             if (feat.GetData().Which() == CSeqFeatData::e_Cdregion
                        && feat.IsSetExcept()
                        && NStr::Find(except_text, "rearrangement required for product") != string::npos) {
@@ -4355,20 +4343,6 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
             }
         }
 
-        // if this is a part of a segmented set, we only want to check feature 
-        // partials from the master segment (avoid duplicate errors for the same feature)
-        bool is_part = false;
-        if (seq.GetInst().GetRepr() == CSeq_inst::eRepr_raw) {
-            CSeq_entry * parent = seq.GetParentEntry();
-            if (parent && parent->IsSeq()) {
-                parent = parent->GetParentEntry();
-                if (parent && parent->IsSet() && parent->GetSet().IsSetClass()
-                    && parent->GetSet().GetClass() == CBioseq_set::eClass_parts) {
-                    is_part = true;
-                }
-            }
-        }
-
         if (m_AllFeatIt) {
             m_AllFeatIt->Rewind();            
             for ( CFeat_CI fi = *m_AllFeatIt; fi; ++fi ) {
@@ -4436,11 +4410,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
 
                 m_FeatValidator.ValidateSeqFeatContext(feat, seq);
                 
-#if 0
-                if (!is_part || ftype == CSeqFeatData::e_Gene) {
-#else
                 if (seq.GetInst().GetRepr() != CSeq_inst::eRepr_seg) {
-#endif
                     ValidateFeatPartialInContext (*fi);
                 }
 
@@ -5135,13 +5105,6 @@ void CmRNAAndCDSIndex::SetBioseq(CFeat_CI * feat_list, CBioseq_Handle bioseq, CS
         }
     }
 
-    TSeqPos circular_len = kInvalidSeqPos;
-    if (bioseq && bioseq.IsSetInst_Topology()
-        && bioseq.GetInst_Topology() == CSeq_inst::eTopology_circular
-        && bioseq.IsSetInst_Length()) {
-        circular_len = bioseq.GetInst_Length();
-    }
-
     // set up xref pairs
     vector < CMatchCDS * >::iterator cds_it = m_CdsList.begin();
     while (cds_it != m_CdsList.end()) {
@@ -5755,7 +5718,6 @@ void CValidError_bioseq::x_ValidateAbuttingRNA(const CBioseq_Handle& seq)
             strand1 = eNa_strand_minus;
         }
         ERnaPosition pos1 = s_RnaPosition (it->GetOriginalFeature());
-        int left1 = it->GetLocation().GetStart(eExtreme_Positional);
         int right1 = it->GetLocation().GetStop(eExtreme_Positional);
 
         CFeat_CI it2 = it;
@@ -5876,7 +5838,6 @@ void CValidError_bioseq::x_ValidateAbuttingRNA(const CBioseq_Handle& seq)
                 it = it2;
                 pos1 = pos2;
                 strand1 = strand2;
-                left1 = left2;
                 right1 = right2;
             }
             ++it2;
@@ -7273,7 +7234,7 @@ void CValidError_bioseq::ValidateMolInfoContext
             break;
 
         case CMolInfo::eBiomol_other_genetic:
-            if ( !x_IsArtificial(seq) ) {
+            if ( !is_artificial ) {
                 PostErr(eDiag_Warning, eErr_SEQ_DESCR_InvalidForType,
                     "Molinfo-biomol = other genetic", ctx, desc);
             }
@@ -7641,25 +7602,6 @@ bool CValidError_bioseq::IsSynthetic(const CBioseq& seq) const
                         return true;
                     }
                 }
-            }
-        }
-    }
-    return false;
-}
-
-
-bool CValidError_bioseq::x_IsArtificial(const CBioseq& seq) const
-{
-    if ( m_CurrentHandle ) {
-        CSeqdesc_CI sd(m_CurrentHandle, CSeqdesc::e_Source);
-        if ( sd ) {
-            const CSeqdesc::TSource& source = sd->GetSource();
-            if ( source.CanGetOrigin() ) {
-                CBioSource::TOrigin origin = source.GetOrigin();
-                return  
-                    origin == CBioSource::eOrigin_artificial  ||
-                    origin == CBioSource::eOrigin_mut         ||
-                    origin == CBioSource::eOrigin_synthetic;
             }
         }
     }
@@ -8842,13 +8784,6 @@ void CValidError_bioseq::CmRNACDSIndex::SetBioseq(CFeat_CI *feat_list, const CTS
                 m_CDSList.push_back(current_cds);
             }
             ++(*feat_list);
-        }
-
-        TSeqPos circular_len = kInvalidSeqPos;
-        if (bioseq && bioseq.IsSetInst_Topology()
-            && bioseq.GetInst_Topology() == CSeq_inst::eTopology_circular
-            && bioseq.IsSetInst_Length()) {
-            circular_len = bioseq.GetInst_Length();
         }
 
         // now replace pairings by xref etc.
