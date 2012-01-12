@@ -66,25 +66,24 @@ struct SLOCAL_Data {
 static int/*bool*/ s_AddService(const SSERV_Info* info,
                                 struct SLOCAL_Data* data)
 {
-    SLB_Candidate *src, *dst;
+    SLB_Candidate* temp;
     size_t n;
 
     if (data->a_cand <= data->n_cand) {
         n = data->a_cand + 10;
-        dst = (SLB_Candidate*)(data->cand
-                               ? realloc(data->cand, n * sizeof(*data->cand))
-                               : malloc (            n * sizeof(*data->cand)));
-        if (!dst)
+        temp = (SLB_Candidate*)(data->cand
+                                ? realloc(data->cand,n * sizeof(*data->cand))
+                                : malloc (           n * sizeof(*data->cand)));
+        if (!temp)
             return 0/*false*/;
         data->a_cand = n;
-        data->cand   = dst;
+        data->cand   = temp;
     }
 
     n = rand() % ++data->n_cand;
     if (n < data->n_cand - 1) {
-        src = data->cand + n++;
-        dst = data->cand + n;
-        memmove(dst, src, (data->n_cand - n) * sizeof(*data->cand));
+        temp = data->cand + n++;
+        memmove(temp + 1, temp, (data->n_cand - n) * sizeof(*data->cand));
     }
     data->cand[n].info = info;
     return 1/*true*/;
