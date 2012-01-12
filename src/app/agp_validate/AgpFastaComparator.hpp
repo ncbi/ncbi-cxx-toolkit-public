@@ -62,6 +62,7 @@ public:
     };
     EResult Run( const std::list<std::string> & files,
                  const std::string & loadlog,
+                 const std::string & agp_as_fasta_file,
                  TDiffsToHide diffsToHide );
 
     typedef set<objects::CSeq_id_Handle> TSeqIdSet;
@@ -72,6 +73,10 @@ private:
     // where we write detailed loading logs
     // This is unset if we're not writing anywhere
     auto_ptr<CNcbiOfstream> m_pLoadLogFile;
+
+    // where we output AGP in FASTA format (unset if we're not
+    // supposed to write it)
+    auto_ptr<CNcbiOfstream> m_pAgpAsFastaFile;
 
     // TKey pair is: MD5 checksum and sequence length
     typedef pair<string, TSeqPos> TKey;
@@ -88,7 +93,12 @@ private:
     void x_Process(const objects::CSeq_entry_Handle seh,
                    TUniqueSeqs& seqs,
                    int * in_out_pUniqueBioseqsLoaded,
-                   int * in_out_pBioseqsSkipped );
+                   int * in_out_pBioseqsSkipped,
+                   CNcbiOfstream *pDataOutFile );
+
+    void x_WriteDataAsFasta( CNcbiOfstream & dataOutFile,
+                             const objects::CSeq_id_Handle & idh,
+                             const std::string & data );
 
     void x_PrintDetailsOfLengthIssue( objects::CBioseq_Handle bioseq_h );
 

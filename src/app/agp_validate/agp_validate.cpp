@@ -181,9 +181,15 @@ void CAgpValidateApplication::Init(void)
   arg_desc->AddFlag("chr" , "");
   arg_desc->AddFlag("comp", "");
 
+  // -comp args
   arg_desc->AddOptionalKey( "loadlog", "FILE",
     "specifies where we write our loading log for -comp",
     CArgDescriptions::eOutputFile);
+  arg_desc->AddOptionalKey(
+      "write-agp", "OUTPUTFILE",
+      "if specified, we write the assembled AGP sequences to "
+      "the given file in FASTA format",
+      CArgDescriptions::eOutputFile );
   arg_desc->AddFlag("ignoreagponly",     "");
   arg_desc->AddFlag("ignoreobjfileonly", "");
 
@@ -377,7 +383,7 @@ int CAgpValidateApplication::Run(void)
       // if "-comp" not specified, neither should the other
       // comp-related args
       if( args["loadlog"] || args["ignoreagponly"] ||
-          args["ignoreobjfileonly"] )
+          args["ignoreobjfileonly"] || args["write-agp"] )
       {
           cerr << "Error -- -comp mode options without -comp" << endl;
           exit(1);
@@ -411,6 +417,11 @@ int CAgpValidateApplication::Run(void)
           comploadlog = args["loadlog"].AsString();
       }
 
+      string agp_as_fasta_file;
+      if( args["write-agp"] ) {
+          agp_as_fasta_file = args["write-agp"].AsString();
+      }
+
       CAgpFastaComparator::TDiffsToHide diffsToHide = 0;
       if( args["ignoreagponly"] ) {
           diffsToHide |= CAgpFastaComparator::fDiffsToHide_AGPOnly;
@@ -421,7 +432,8 @@ int CAgpValidateApplication::Run(void)
 
       CAgpFastaComparator agpFastaComparator;
       if( CAgpFastaComparator::eResult_Success !=
-          agpFastaComparator.Run(filenames, comploadlog, diffsToHide) )
+          agpFastaComparator.Run( filenames, comploadlog,
+                                  agp_as_fasta_file, diffsToHide) )
       {
           cerr << "AGP/FASTA comparison failed." << endl;
       }
@@ -819,8 +831,8 @@ int main(int argc, const char* argv[])
       "USAGE: agp_validate -comp [-options] FASTA file(s)... AGP file(s)...\n"
       "OPTIONS:\n"
       "    -loadlog OUTPUT_FILE   Save the list of all loaded sequences.\n"
+      "    -write-agp OUTPUT_FILE Save the assembled AGP sequences as FASTA.\n"
       "    -ignoreagponly         Do not report objects present in AGP file(s) only.\n"
-      //"    -ignoreobjfileonly     Do not report objects present in FASTA (or ASN.1) file(s) only.\n"
       "    -ignoreobjfileonly     Do not report objects present in FASTA file(s) only.\n"
       "\n"
       "FASTA files for components can be provided (along with object FASTA files) if components are not yet in GenBank.\n"

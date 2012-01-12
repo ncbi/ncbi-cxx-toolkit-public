@@ -198,6 +198,7 @@ CAgpFastaComparator::CAgpFastaComparator(void)
 CAgpFastaComparator::EResult CAgpFastaComparator::Run(
     const std::list<std::string> & files,
     const std::string & loadlog,
+    const std::string & agp_as_fasta_file,
     TDiffsToHide diffsToHide )
 {
     LOG_POST(Error << "" );     // newline
@@ -224,6 +225,11 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
     if( ! loadlog.empty() ) {
         m_pLoadLogFile.reset( 
             new CNcbiOfstream(loadlog.c_str() ) );
+    }
+
+    if( ! agp_as_fasta_file.empty() ) {
+        m_pAgpAsFastaFile.reset(
+            new CNcbiOfstream(agp_as_fasta_file.c_str()));
     }
 
     CRef<CObjectManager> om(CObjectManager::GetInstance());
@@ -377,9 +383,10 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
 
 
 void CAgpFastaComparator::x_Process(const CSeq_entry_Handle seh,
-                                            TUniqueSeqs& seqs,
-                                            int * in_out_pUniqueBioseqsLoaded,
-                                            int * in_out_pBioseqsSkipped )
+                                    TUniqueSeqs& seqs,
+                                    int * in_out_pUniqueBioseqsLoaded,
+                                    int * in_out_pBioseqsSkipped,
+                                    CNcbiOfstream *pDataOutFile )
 {
     _ASSERT( 
         in_out_pUniqueBioseqsLoaded != NULL && 
@@ -416,6 +423,10 @@ void CAgpFastaComparator::x_Process(const CSeq_entry_Handle seh,
             continue;
         }
 
+        if( pDataOutFile != NULL ) {
+            x_WriteDataAsFasta( *pDataOutFile, idh, data );
+        }
+
         CChecksum cks(CChecksum::eMD5);
         cks.AddLine(data);
 
@@ -446,6 +457,24 @@ void CAgpFastaComparator::x_Process(const CSeq_entry_Handle seh,
     }
 
     *in_out_pBioseqsSkipped = ( total -  *in_out_pUniqueBioseqsLoaded);
+}
+
+void CAgpFastaComparator::x_WriteDataAsFasta(
+    CNcbiOfstream & dataOutFile,
+    const CSeq_id_Handle & idh,
+    const std::string & data )
+{
+    const static SIZE_TYPE kFastaWidth = 60;
+
+    dataOutFile << '>' << idh << endl;
+
+    const SIZE_TYPE data_len = data.length();
+    SIZE_TYPE next_idx = 0;
+    for( ; next_idx < data_len ; next_idx += kFastaWidth ) {
+        SIZE_TYPE chars_to_copy = min( kFastaWidth, (data_len - next_idx) );
+        dataOutFile.write( data.c_str() + next_idx, chars_to_copy );
+        dataOutFile << '\n';
+    }
 }
 
 void CAgpFastaComparator::x_PrintDetailsOfLengthIssue(
@@ -583,7 +612,7 @@ void CAgpFastaComparator::x_ProcessObjects( const list<string> & filenames,
 
                     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
                     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
-                    x_Process(seh, fasta_ids, &iNumLoaded, &iNumSkipped );
+                    x_Process(seh, fasta_ids, &iNumLoaded, &iNumSkipped, NULL );
                 }
             } else if( format == CFormatGuess::eBinaryASN || 
                        format == CFormatGuess::eTextASN )
@@ -614,7 +643,7 @@ void CAgpFastaComparator::x_ProcessObjects( const list<string> & filenames,
 
                         CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
                         CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(entry);
-                        x_Process(seh, fasta_ids, &iNumLoaded, &iNumSkipped );
+                        x_Process(seh, fasta_ids, &iNumLoaded, &iNumSkipped, NULL );
                     }
                 } 
                 else
@@ -627,7 +656,7 @@ void CAgpFastaComparator::x_ProcessObjects( const list<string> & filenames,
 
                     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
                     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
-                    x_Process(seh, fasta_ids, &iNumLoaded, &iNumSkipped );
+                    x_Process(seh, fasta_ids, &iNumLoaded, &iNumSkipped, NULL );
                 }
             } else {
                 LOG_POST(Error << "Could not determine format of " << filename 
@@ -684,7 +713,7 @@ void CAgpFastaComparator::x_ProcessAgps(const list<string> & filenames,
                 CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
                 scope->AddDefaults();
 
-                x_Process(seh, agp_ids, &iNumLoaded, &iNumSkipped );
+                x_Process(seh, agp_ids, &iNumLoaded, &iNumSkipped, m_pAgpAsFastaFile.get() );
             }
         }
     }
