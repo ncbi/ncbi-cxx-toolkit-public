@@ -37,6 +37,8 @@
 
 #include <stdio.h>
 
+
+
 BEGIN_NCBI_SCOPE
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -152,7 +154,7 @@ int  CSnpBitfield2::GetWeight() const
 {
     const int mask   = 0x03;
     const int onByte = 5;
-    return (m_listBytes[onByte] & mask);
+	return (m_listBytes[onByte] & mask);
 }
 
 bool CSnpBitfield2::IsTrue(CSnpBitfield::EProperty prop) const

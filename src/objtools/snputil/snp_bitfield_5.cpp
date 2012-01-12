@@ -57,7 +57,7 @@ bool CSnpBitfield5::IsTrue(CSnpBitfield::EProperty prop) const
     // Return false if property queried is
     // newer than last property implemented at version 5 release
     // last property implemented was 'eTGP2010Production'
-    if(prop > CSnpBitfield::eTGP2010Production)
+    if(prop >= CSnpBitfield::ePropertyLast)
         return false;
 
     switch (prop) {
@@ -74,19 +74,40 @@ bool CSnpBitfield5::IsTrue(CSnpBitfield::EProperty prop) const
             ret = (m_listBytes[2] & BIT_7); // on byte 2, bit 7
             break;
         case CSnpBitfield::eIsSomatic:
-            ret = (m_listBytes[9] & BIT_6); // on byte 9, bit 6
+            ret = (m_listBytes[11] & BIT_6); // on byte 11 (F9), bit 6
             break;
         case CSnpBitfield::eTGP2009Pilot:
-            ret = (m_listBytes[6] & BIT_4); // on byte 6, bit 4
+            ret = 0; // obsolete
             break;
         case CSnpBitfield::eTGP2010Pilot:
-            ret = (m_listBytes[6] & BIT_5); // on byte 6, bit 5
-            break;
-        case CSnpBitfield::eTGPValidated:
-            ret = (m_listBytes[6] & BIT_6); // on byte 6, bit 6
+            ret = 0; // obsolete
             break;
         case CSnpBitfield::eTGP2010Production:
-            ret = (m_listBytes[6] & BIT_7); // on byte 6, bit 7
+            ret = 0; // obsolete
+            break;
+        case CSnpBitfield::eTGPValidated:
+            ret = (m_listBytes[8] & BIT_6); // on byte 8 (F6), bit 6
+            break;
+        case CSnpBitfield::eTGPPhase1:
+            ret = (m_listBytes[8] & BIT_5); // on byte 8 (F6), bit 5
+            break;
+        case CSnpBitfield::eTGPPilot:
+            ret = (m_listBytes[8] & BIT_4); // on byte 8 (F6), bit 4
+            break;
+        case CSnpBitfield::eTGPOnly:
+            ret = (m_listBytes[8] & (BIT_2 | BIT_3)) == 0x04; // on byte 8 (F6), bit 3 and _not_ bit 2
+            break;
+        case CSnpBitfield::eTGPNone:
+            ret = (m_listBytes[8] & (BIT_2 | BIT_3)) == 0x02; // on byte 8 (F6), bit 2 and _not_ bit 3
+            break;
+        case CSnpBitfield::eTGPBoth:
+            ret = (m_listBytes[8] & (BIT_2 | BIT_3)) == 0x06; // on byte 8 (F6), both bit 2 and bit 3 are set
+            break;
+        case CSnpBitfield::eTGPOnlyNotExclusive:
+            ret = (m_listBytes[8] & BIT_3); // on byte 8 (F6), bit 3
+            break;
+        case CSnpBitfield::eTGPNoneNotExclusive:
+            ret = (m_listBytes[8] & BIT_2); // on byte 8 (F6), bit 2
             break;
         default:
             ret = CSnpBitfield4::IsTrue(prop);
@@ -96,14 +117,14 @@ bool CSnpBitfield5::IsTrue(CSnpBitfield::EProperty prop) const
     return (bool) ret;
 }
 
-bool CSnpBitfield5::IsTrue( CSnpBitfield::EFunctionClass prop ) const 
+bool CSnpBitfield5::IsTrue( CSnpBitfield::EFunctionClass prop ) const
 {
     bool ret = false;
-    
+
     // looking for a specific function class
     unsigned char byte3 = m_listBytes[3];
     unsigned char byte4 = m_listBytes[4];
-    
+
     // the 'Has reference' bit may be set.  So turn it off for test.
     byte4 &= 0xfd; // 1111 1101 <- mask to set the 2nd bit to zero
 
@@ -116,7 +137,7 @@ bool CSnpBitfield5::IsTrue( CSnpBitfield::EFunctionClass prop ) const
             ret = CSnpBitfield2::IsTrue( prop );
     }
 
-    return ret;    
+    return ret;
 }
 
 CSnpBitfield::EFunctionClass CSnpBitfield5::GetFunctionClass() const
@@ -125,10 +146,10 @@ CSnpBitfield::EFunctionClass CSnpBitfield5::GetFunctionClass() const
     unsigned char byte3 = m_listBytes[3];
     unsigned char byte4 = m_listBytes[4];
 
-    // the 'Has reference' bit may be set.  So turn it off for now.    
+    // the 'Has reference' bit may be set.  So turn it off for now.
     byte4 &= 0xfd; // 1111 1101 <- mask to set the 2nd bit to zero
 
-    if (byte3 != 0 && byte4 != 0) 
+    if (byte3 != 0 && byte4 != 0)
         return CSnpBitfield::eMultipleFxn;
 
     switch ( byte4 )
