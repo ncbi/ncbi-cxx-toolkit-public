@@ -199,8 +199,6 @@ void CValidError_bioseq::ValidateBioseq (const CBioseq& seq)
 // validation for individual Seq-id
 void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
 {
-    bool is_tp = false;
-
     // see if ID can be used to find ctx
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(id);
     if (bsh) {
@@ -235,7 +233,6 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                     " should have Seq-hist.assembly for PRIMARY block", 
                     ctx);
             }
-            is_tp = true;
         // Fall thru 
         case CSeq_id::e_Genbank:
         case CSeq_id::e_Embl:
@@ -4866,19 +4863,6 @@ bool CValidError_bioseq::x_IdXrefsAreReciprocal (const CSeq_feat &cds, const CSe
 }
 
 
-static CSeq_feat_Handle s_GetSeq_feat_Handle(CScope& scope, const CSeq_feat& feat)
-{
-    SAnnotSelector sel(feat.GetData().GetSubtype());
-    sel.SetResolveAll().SetNoMapping().SetSortOrder(sel.eSortOrder_None);
-    for (CFeat_CI mf(scope, feat.GetLocation(), sel); mf; ++mf) {
-        if (mf->GetOriginalFeature().Equals(feat)) {
-            return mf->GetSeq_feat_Handle();
-        }
-    }
-    return CSeq_feat_Handle();
-}
-
-
 CMatchmRNA::CMatchmRNA(const CMappedFeat &mrna) : m_Mrna(mrna.GetSeq_feat()), m_AccountedFor(false)
 {
 }
@@ -5902,26 +5886,6 @@ void CValidError_bioseq::x_ValidateAbuttingRNA(const CBioseq_Handle& seq)
 }
 
 
-static const string& s_FeatName(const CMappedFeat& feat)
-{
-    static const string utr5 = "5'UTR";
-    static const string utr3 = "3'UTR";
-    static const string cds  = "CDS";
-
-    switch ( feat.GetData().GetSubtype() ) {
-    case CSeqFeatData::eSubtype_cdregion:
-        return cds;
-    case CSeqFeatData::eSubtype_5UTR:
-        return utr5;
-    case CSeqFeatData::eSubtype_3UTR:
-        return utr3;
-    default:
-        break;
-    }
-    return kEmptyStr;
-}
-
-
 static bool s_IsSameStrand(const CSeq_loc& l1, const CSeq_loc& l2, CScope& scope)
 {
     ENa_strand s1 = GetStrand(l1, &scope);
@@ -6250,7 +6214,9 @@ static bool s_AreLinkedToDifferentFeats (CSeq_feat_Handle f1, CSeq_feat_Handle f
     bool rval = false;
     
     if (f1.GetData().GetSubtype() == s1 && f2.GetData().GetSubtype() == s1) {
-        CBioseq_Handle bsh = f1.GetScope().GetBioseqHandle(f1.GetLocation());
+        CScope& scope = f1.GetScope();
+        const CSeq_loc& loc = f1.GetLocation();
+        CBioseq_Handle bsh = BioseqHandleFromLocation (&scope, loc);
         if (bsh) {
             const CTSE_Handle& tse = bsh.GetTSE_Handle();
             vector<int> mrna1;
@@ -7794,7 +7760,7 @@ void CValidError_bioseq::x_CompareStrings
     bool first = true;
     bool reported_first = false;
     const string* strp = 0;
-    const CSeq_feat* feat;
+    const CSeq_feat* feat = 0;
     ITERATE (TStrFeatMap, it, str_feat_map) {
         if ( first ) {
             first = false;
@@ -7868,7 +7834,7 @@ void CValidError_bioseq::ValidateCollidingGenes(const CBioseq& seq)
                 const CSeq_feat& feat = fi->GetOriginalFeature();
                 // record label
                 string label;
-                GetLabel(feat, &label, feature::eContent, m_Scope);
+                GetLabel(feat, &label, feature::fFGL_Content, m_Scope);
                 label_map.insert(TStrFeatMap::value_type(label, &feat));
                 // record locus_tag
                 const CGene_ref& gene = feat.GetData().GetGene();
