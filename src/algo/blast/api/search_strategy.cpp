@@ -393,7 +393,7 @@ void CExportStrategy::x_Process_Pssm(CRef<CPssmWithParameters> & pssm)
     string psi_program("blastp");
     string old_service("plain");
     string new_service("psi");
-    string deltablast("delta");
+    string deltablast("delta_blast");
 
     if (m_QueueSearchRequest->GetProgram() != psi_program)
     {

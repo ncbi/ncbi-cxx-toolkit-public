@@ -84,7 +84,7 @@ CBlastOptionsBuilder::ComputeProgram(const string & program,
         } else if (s == "phi") {
             // phi is just treated as a blastp here
             found = true;
-        } else if (s == "delta") {
+        } else if (s == "delta_blast") {
             p = "deltablast";
             found = true;
         }
