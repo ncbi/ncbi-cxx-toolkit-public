@@ -1140,7 +1140,7 @@ void CRemoteBlast::SetQueries(CRef<objects::CPssmWithParameters> pssm)
     string psi_program("blastp");
     string old_service("plain");
     string new_service("psi");
-    string delta_service("DELTA_BLAST");
+    string delta_service("delta_blast");
     
     if (m_QSR->GetProgram() != psi_program) {
         NCBI_THROW(CBlastException, eNotSupported,
