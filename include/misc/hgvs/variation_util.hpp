@@ -52,9 +52,6 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seq_vector.hpp>
 
-#include <dbapi/dbapi.hpp>
-#include <dbapi/driver/drivers.hpp>
-#include <dbapi/driver/dbapi_driver_conn_params.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
 
 BEGIN_NCBI_SCOPE

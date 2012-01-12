@@ -29,6 +29,8 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbiargs.hpp>
+
 #include <objects/seqloc/Seq_point.hpp>
 #include <objects/general/Object_id.hpp>
 
