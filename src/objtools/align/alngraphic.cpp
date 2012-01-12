@@ -553,7 +553,7 @@ void CAlnGraphic::x_DisplayMaster(int master_len, CNCBINode* center, CHTML_table
     //digits 
     //first scale digit
     string digit_str, previous_digitstr, first_digit_str;
-    int previous_digit;
+
     int first_digit = 0;
     column = 0;
     first_digit = m_MasterRange ? m_MasterRange->GetFrom() : 0;
@@ -584,7 +584,7 @@ void CAlnGraphic::x_DisplayMaster(int master_len, CNCBINode* center, CHTML_table
         column ++;
     }  
     
-    previous_digit = first_digit;
+
     previous_digitstr = first_digit_str;
   
     //print scale digits from second mark and on
