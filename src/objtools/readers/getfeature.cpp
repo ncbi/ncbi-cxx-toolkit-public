@@ -79,7 +79,6 @@ vector<SFeatInfo*>& CGetFeature::GetFeatInfo(const string& id_str,
             m_FeatFileIndex->clear();
         }
         
-        bool has_feature = false;
         m_FeatFile->seekg(offset); 
         int count = 0;
         //now look to retrieve feature info
@@ -95,7 +94,6 @@ vector<SFeatInfo*>& CGetFeature::GetFeatInfo(const string& id_str,
                 }
                 
                 if(seq_range.IntersectingWith(feat_info->range)){
-                    has_feature = true;
                     m_FeatInfoList.push_back(feat_info);
                     count ++;
                 } else {
