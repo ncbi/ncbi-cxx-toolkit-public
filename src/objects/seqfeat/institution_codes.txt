@@ -798,6 +798,7 @@ CCNL	s	Connecticut College, Botany Department
 CCNP	s	Carlsbad, Carlsbad Caverns National Park
 CCNU	s	Central China Normal University, Biology Department
 CCO	s	Carleton University, Biology Department
+CCOS<CHE>	c	Culture Collection of Switzerland
 CCR	s	Chichester District Museum
 CCRI	c	Collection du Centre de Recherche en Infectiologie
 CCSIIA	c	Culture Collection of Sichuan Industrial Institute Antibiotics
@@ -907,7 +908,7 @@ CHNCB	s	Centre d'Historia Natural de la Conca de Barbera
 CHOCO	s	Universidad Tecnologica del Choco
 CHOM	s	Okresni muzeum Chomutov
 CHPU	s	Chelyabinsk State Pedagogical University, Botany Department
-CHR	s	Allan Herbarium, Landcare Research New Zealand Limited
+CHR	s	Allan Herbarium
 CHRB	s	Rutgers University - Cook College
 CHRG	s	Grosvenor Museum
 CHSC	s	California State University, Biological Sciences Department
@@ -2374,7 +2375,7 @@ ICFC	c	IIB-INTECH Collection of Fungal Cultures
 ICGC	s	Istituto Calasanzio
 ICIS	s	Idaho Museum of Natural History
 ICM	s	Instituto de Ciencias del Mar
-ICMP	c	International Collection of Microorganisms from Plants
+ICMP	c	International Collection of Micro-organisms from Plants
 ICN<BRA>	s	Universidade Federal do Rio Grande do Sul, Departamento de Botanica
 ICN<COL>	s	Instituto de Ciencias Naturales, Museo de Historia Natural
 ICP	s	Islamia College, University of Peshawar, Botany Department
@@ -4516,7 +4517,7 @@ PCU<THA>	c	Department of Microbiology, Faculty of Pharmaceutical Sciences
 PD	c	Dutch Plant Protection Service, Culture Collection of Plant Pathogenic Bacteria
 PDA	s	Royal Botanic Gardens, Department of Agriculture
 PDBK<KOR>	b	Plant DNA Bank in Korea
-PDD	s	New Zealand Fungal Herbarium
+PDD	s	New Zealand Fungal and Plant Disease Herbarium
 PDTFAU	s	Paleoantropoloji Dil ve Tarih Cografya Facueltesi
 PE	s	Institute of Botany, Chinese Academy of Sciences
 PECA	s	Pratt Education Center and Aquarium
