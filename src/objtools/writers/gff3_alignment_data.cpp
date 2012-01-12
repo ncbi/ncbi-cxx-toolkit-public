@@ -76,7 +76,7 @@ void CGffAlignmentRecord::SetTargetLocation(
     strTarget += NStr::UIntToString( m_targetRange.GetTo()+1 );
     strTarget += " ";
     strTarget += (eStrand == eNa_strand_plus) ? "+" : "-";
-    m_strAttributes += ( "Target=\"" + strTarget + "\"" );
+    m_strAttributes += ( "Target=" + strTarget );
     
     // set source field
     switch( id.Which() ) {
@@ -171,7 +171,7 @@ void CGffAlignmentRecord::AddInsertion(
     m_targetRange += targetPiece;
 
     if ( ! m_strAlignment.empty() ) {
-        m_strAlignment += "+";
+        m_strAlignment += " ";
     }
     m_strAlignment += "I";
     m_strAlignment += NStr::IntToString( uSize );
@@ -192,7 +192,7 @@ void CGffAlignmentRecord::AddDeletion(
     m_uSeqStop = m_sourceRange.GetTo();
 
     if ( ! m_strAlignment.empty() ) {
-        m_strAlignment += "+";
+        m_strAlignment += " ";
     }
     m_strAlignment += "D";
     m_strAlignment += NStr::IntToString( uSize );
@@ -214,7 +214,7 @@ void CGffAlignmentRecord::AddMatch(
     m_uSeqStop = m_sourceRange.GetTo();
 
     if ( ! m_strAlignment.empty() ) {
-        m_strAlignment += "+";
+        m_strAlignment += " ";
     }
     m_strAlignment += "M";
     m_strAlignment += NStr::IntToString( uSize );

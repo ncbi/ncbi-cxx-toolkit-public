@@ -85,6 +85,8 @@ public:
         const CSeq_loc& loc);
 
 protected:
+    virtual bool x_NeedsQuoting(
+        const string& ) const;
     virtual bool x_AssignType(
         CMappedFeat );
     virtual bool x_AssignStart(

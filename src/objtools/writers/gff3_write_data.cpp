@@ -1049,6 +1049,21 @@ bool CGff3WriteRecordFeature::x_AssignAttributeProduct(
         // Product name is from the prot-ref refered to by the seqfeat's 
         // data.product:
         if (mf.IsSetProduct()) {
+            const CSeq_id* pId = mf.GetProduct().GetId();
+            if (pId) {
+                CBioseq_Handle bsh = mf.GetScope().GetBioseqHandle(*pId); 
+                if (bsh) {
+                    CFeat_CI it(bsh, SAnnotSelector(CSeqFeatData::eSubtype_prot));
+                    if (it  &&  it->IsSetData() 
+                            &&  it->GetData().GetProt().IsSetName()
+                            &&  !it->GetData().GetProt().GetName().empty()) {
+                        m_Attributes["product"] = 
+                            it->GetData().GetProt().GetName().front();
+                        return true;
+                    }
+                }
+            }
+            
             string product = s_BestIdString( mf.GetProductId(), mf.GetScope());
             if (!product.empty()) {
                 m_Attributes["product"] = product;
@@ -1436,6 +1451,14 @@ void CGff3WriteRecordFeature::ForceAttributeID(
 {
     m_Attributes["ID"] = strId;
 }  
+
+//  ----------------------------------------------------------------------------
+bool CGff3WriteRecordFeature::x_NeedsQuoting(
+    const string& str ) const
+//  ----------------------------------------------------------------------------
+{
+    return false;
+}
 
 END_objects_SCOPE
 END_NCBI_SCOPE

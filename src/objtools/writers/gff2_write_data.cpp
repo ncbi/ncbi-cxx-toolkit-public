@@ -486,7 +486,7 @@ string CGffWriteRecord::StrAttributes() const
 
 //  ----------------------------------------------------------------------------
 bool CGffWriteRecord::x_NeedsQuoting(
-    const string& str )
+    const string& str ) const
 //  ----------------------------------------------------------------------------
 {
     if( str.empty() )

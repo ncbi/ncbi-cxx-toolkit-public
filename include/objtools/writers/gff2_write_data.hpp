@@ -132,8 +132,8 @@ public:
         CBioseq_Handle );
 
 protected:
-    static bool x_NeedsQuoting(
-        const string& );
+    virtual bool x_NeedsQuoting(
+        const string& ) const;
 
     virtual void x_StrAttributesAppendValue(
         const string&,
