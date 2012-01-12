@@ -977,10 +977,10 @@ inline Uint1
 CNCBlobStorage::x_CalcMapDepth(Uint8 size, Uint2 chunk_size, Uint2 map_size)
 {
     Uint1 map_depth = 0;
-    Uint8 cnt_chunks = size / chunk_size;
+    Uint8 cnt_chunks = (size + chunk_size - 1) / chunk_size;
     while (cnt_chunks > 1) {
         ++map_depth;
-        cnt_chunks /= map_size;
+        cnt_chunks = (cnt_chunks + map_size - 1) / map_size;
     }
     return map_depth;
 }
