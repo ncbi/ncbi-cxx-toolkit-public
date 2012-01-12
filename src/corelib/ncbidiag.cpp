@@ -3759,12 +3759,9 @@ bool SDiagMessage::ParseMessage(const string& message)
             if ( !m_Data->m_Module.empty() ) {
                 m_Module = m_Data->m_Module.c_str();
             }
-            if (message[pos] != '"') {
-                return false;
-            }
         }
 
-        if (pos < sep_pos) {
+        if (pos < sep_pos  &&  message[pos] == '"') {
             // ["<file>", ][line <line>][:]
             pos++; // skip "
             tmp = s_ParseStr(message, pos, '"');
