@@ -157,7 +157,7 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &  params,
         case 'p':
             if (key == "port") {
                 port = NStr::StringToUInt(val, NStr::fConvErr_NoThrow);
-                if (port < 0 || port > 65535)
+                if (port > 65535)
                     NCBI_THROW(CNetScheduleException,
                                eInvalidParameter, "Invalid port number");
             }
