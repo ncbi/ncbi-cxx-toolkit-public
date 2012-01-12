@@ -168,12 +168,23 @@ public:
         eIsSomatic                      = 48,   // SNP is somatic, not germline.  Variation was detected in a Somatic tissue (e.g. cancer tumor).  The variation is not known to exist in heritable DNA
 
         // F6 Validation by HapMap/TGP properties
-        eTGP2009Pilot                   = 49,   // TGP 2009 pilot phase 1
-        eTGP2010Pilot                   = 50,   // TGP 2010 pilot (phases 1, 2, 3)
+        eTGP2009Pilot                   = 49,   // TGP 2009 pilot phase 1 -- obsolete
+        eTGP2010Pilot                   = 50,   // TGP 2010 pilot (phases 1, 2, 3) -- obsolete
         eTGPValidated                   = 51,   // TGP_validated (for subset that passed positive second platform validation)
-        eTGP2010Production              = 52    // TGP 2010 production (for data created and released prior to ASHG)
+        eTGP2010Production              = 52,   // TGP 2010 production (for data created and released prior to ASHG) -- obsolete
+		eTGPPhase1						= 53,	// TGP Phase 1 (include June interim phase 1)
+		eTGPPilot						= 54,	// TGP Pilot (1,2,3)
+		// the following two settings are exclusive (must be one and not the other)
+		eTGPOnly						= 55,   // RS Cluster has TGP Submission as of June 2011 (include all current RS from TGP): VCF - KGPROD
+		eTGPNone						= 56,	// RS Cluster has none TGP Submission (set VCF OTHERKG)
+		// the following is a combination of the previous two
+		eTGPBoth						= 57,	// RS Cluster has both TGP and none TGP Submission
+		// the following two settings are not exclusive (must be one, but don't care about the other)
+		eTGPOnlyNotExclusive			= 58,   // RS Cluster has TGP Submission as of June 2011 (include all current RS from TGP): VCF - KGPROD
+		eTGPNoneNotExclusive			= 59,	// RS Cluster has none TGP Submission (set VCF OTHERKG)
 
-        /// Add additional properties here.
+		/// Add additional properties here.
+		ePropertyLast
     };
 
     // A SNP can only be one class of variation
