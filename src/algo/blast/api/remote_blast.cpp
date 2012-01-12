@@ -1140,6 +1140,7 @@ void CRemoteBlast::SetQueries(CRef<objects::CPssmWithParameters> pssm)
     string psi_program("blastp");
     string old_service("plain");
     string new_service("psi");
+    string delta_service("DELTA_BLAST");
     
     if (m_QSR->GetProgram() != psi_program) {
         NCBI_THROW(CBlastException, eNotSupported,
@@ -1152,7 +1153,8 @@ void CRemoteBlast::SetQueries(CRef<objects::CPssmWithParameters> pssm)
     }
     
     if ((m_QSR->GetService() != old_service) &&
-        (m_QSR->GetService() != new_service)) {
+        (m_QSR->GetService() != new_service) &&
+        (m_QSR->GetService() != delta_service)) {
         
         // Allowing "psi" allows the matrix to be set, then replaced.
         
