@@ -110,6 +110,10 @@ public:
         /// character width so a call to GetChunkPartSize() will return 1.
         eControlSymbol,
 
+        /// Notify that a number has been read. Use the GetNumber()
+        /// method to retrieve its value.
+        eNumber,
+
         /// Notify that the end of the input buffer has been reached. New
         /// buffer processing can be started now by calling SetNewBuffer().
         eEndOfBuffer,
@@ -158,10 +162,15 @@ public:
     /// @sa EStreamParsingEvent
     EStreamParsingEvent GetNextEvent();
 
-    /// Return the control symbol that has been previously read.  The returned
+    /// Return the control symbol that has been just read.  The returned
     /// value is only valid after a successful call to the GetNextEvent()
     /// method, that is, when it returned eControlSymbol.
     char GetControlSymbol() const;
+
+    /// Return the number that has been just read.  The value is only valid
+    /// when the preceding call to GetNextEvent() returned eNumber.
+    /// GetChunkPartSize() is not applicable for this event.
+    Int8 GetNumber() const;
 
     /// Return a pointer to the buffer that contains a part of the chunk
     /// currently being read. Note that this buffer is not zero-terminated. Use
@@ -186,15 +195,15 @@ public:
 private:
     enum EStreamParsingState {
         eReadControlChars,
-        eReadChunkLength,
+        eReadNumber,
         eReadChunk
     };
 
     const char* m_Buffer, *m_ChunkPart;
     size_t m_BufferSize, m_ChunkPartSize;
     off_t m_Offset;
-    // Register for keeping intermediate values of chunk lengths.
-    size_t m_LengthAcc;
+    // Register for keeping intermediate values of numbers and chunk lengths.
+    Int8 m_LengthAcc;
     EStreamParsingState m_State;
     bool m_ChunkContinued;
 };
@@ -230,6 +239,11 @@ inline void CUTTPReader::SetNewBuffer(const char* buffer,
 inline char CUTTPReader::GetControlSymbol() const
 {
     return *m_ChunkPart;
+}
+
+inline Int8 CUTTPReader::GetNumber() const
+{
+    return m_LengthAcc;
 }
 
 inline const char* CUTTPReader::GetChunkPart() const
@@ -303,8 +317,8 @@ public:
     /// @return
     ///   True if adding "symbol" to the output buffer did not result in the
     ///   buffer overflow condition; false - when the output buffer is full and
-    ///   must be flushed with a call to GetOutputBuffer() before
-    ///   SendControlSymbol() or SendChunk() can be called again.
+    ///   must be flushed with a call to GetOutputBuffer() before any of
+    ///   SendControlSymbol(), SendNumber(), or SendChunk() can be called again.
     bool SendControlSymbol(char symbol);
 
     /// Send a chunk of data to the output buffer.
@@ -321,10 +335,20 @@ public:
     ///   True if after the specified chunk has been fit in the output buffer
     ///   completely and there is still some space available in the buffer;
     ///   false - when the buffer has been filled and needs to be flushed by a
-    ///   call to GetOutputBuffer() before the next chunk of data or control
-    ///   symbol can be sent.
+    ///   call to GetOutputBuffer() before the next chunk of data, number, or
+    ///   control symbol can be sent.
     bool SendChunk(const char* chunk, size_t chunk_length,
         bool to_be_continued);
+
+    /// Send an integer over the output buffer.
+    /// @param number
+    ///   The integer to be sent.
+    /// @return
+    ///   True if this addition to the output buffer did not result in the
+    ///   buffer overflow condition; false - when the output buffer is full and
+    ///   must be flushed with a call to GetOutputBuffer() before any of
+    ///   SendControlSymbol(), SendNumber(), or SendChunk() can be called again.
+    bool SendNumber(Int8 number);
 
     /// Return data to be sent over the output stream and extend internal
     /// pointers to the next buffer. This method can be called at any time,
@@ -368,7 +392,7 @@ private:
     //
     // Additionally, one byte is reserved for either space or plus character
     // that follows the chunk size.
-    char m_InternalBuffer[(sizeof(size_t) >> 1) * 5 + 1];
+    char m_InternalBuffer[(sizeof(Int8) >> 1) * 5 + 1];
 };
 
 inline void CUTTPWriter::Reset(char* buffer, size_t buffer_size)

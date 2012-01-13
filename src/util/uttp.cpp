@@ -64,14 +64,14 @@ CUTTPReader::EStreamParsingEvent CUTTPReader::GetNextEvent()
 
         // The current character is a digit - proceed with reading chunk
         // length.
-        m_State = eReadChunkLength;
+        m_State = eReadNumber;
         m_LengthAcc = digit;
         if (--m_BufferSize == 0)
             return eEndOfBuffer;
         ++m_Buffer;
-        /* FALLTHROUGH */
+        /* FALL THROUGH */
 
-    case eReadChunkLength:
+    case eReadNumber:
         while ((digit = (unsigned) *m_Buffer - '0') <= 9) {
             m_LengthAcc = m_LengthAcc * 10 + digit;
 
@@ -87,9 +87,17 @@ CUTTPReader::EStreamParsingEvent CUTTPReader::GetNextEvent()
         case ' ':
             m_ChunkContinued = false;
             break;
+        case '-':
+            m_LengthAcc = -m_LengthAcc;
+            /* FALL THROUGH */
+        case '=':
+            ++m_Offset;
+            ++m_Buffer;
+            --m_BufferSize;
+            return eNumber;
         default:
             m_ChunkPart = m_Buffer;
-            m_ChunkPartSize = m_LengthAcc;
+            m_ChunkPartSize = (size_t) m_LengthAcc;
             m_State = eReadControlChars;
             return eFormatError;
         }
@@ -103,18 +111,18 @@ CUTTPReader::EStreamParsingEvent CUTTPReader::GetNextEvent()
     default: /* case eReadChunk: */
         m_ChunkPart = m_Buffer;
 
-        if (m_BufferSize >= m_LengthAcc) {
-            m_BufferSize -= m_LengthAcc;
-            m_ChunkPartSize = m_LengthAcc;
-            m_Buffer += m_LengthAcc;
-            m_Offset += (off_t)m_LengthAcc;
+        if (m_BufferSize >= (size_t) m_LengthAcc) {
+            m_ChunkPartSize = (size_t) m_LengthAcc;
+            m_BufferSize -= m_ChunkPartSize;
+            m_Buffer += m_ChunkPartSize;
+            m_Offset += (off_t) m_ChunkPartSize;
             // The last part of the chunk has been read - get back to
             // reading control symbols.
             m_State = eReadControlChars;
             return m_ChunkContinued ? eChunkPart : eChunk;
         } else {
             m_ChunkPartSize = m_BufferSize;
-            m_Offset += (off_t)m_BufferSize;
+            m_Offset += (off_t) m_BufferSize;
             m_LengthAcc -= m_BufferSize;
             m_BufferSize = 0;
             return eChunkPart;
@@ -141,7 +149,7 @@ bool CUTTPWriter::SendControlSymbol(char symbol)
         m_InternalBufferSize == 0 && m_ChunkPartSize == 0 &&
         "Must be in the state of filling the output buffer.");
     _ASSERT((symbol < '0' || symbol > '9') &&
-        "Ensure the control symbol is not a digit.");
+        "Control symbol cannot be a digit.");
 
     m_Buffer[m_OutputBufferSize] = symbol;
     return ++m_OutputBufferSize < m_BufferSize;
@@ -158,7 +166,7 @@ bool CUTTPWriter::SendChunk(const char* chunk,
 
     *result = to_be_continued ? '+' : ' ';
 
-    size_t number = chunk_length;
+    Uint8 number = chunk_length;
 
     do
         *--result = char(number % 10) + '0';
@@ -186,6 +194,40 @@ bool CUTTPWriter::SendChunk(const char* chunk,
         m_ChunkPartSize = chunk_length;
         m_ChunkPart = chunk;
     }
+    m_OutputBufferSize = m_BufferSize;
+    return false;
+}
+
+bool CUTTPWriter::SendNumber(Int8 number)
+{
+    _ASSERT(m_OutputBuffer == m_Buffer && m_OutputBufferSize < m_BufferSize &&
+        m_InternalBufferSize == 0 && m_ChunkPartSize == 0 &&
+        "Must be in the state of filling the output buffer.");
+
+    char* result = m_InternalBuffer + sizeof(m_InternalBuffer) - 1;
+
+    if (number >= 0)
+        *result = '=';
+    else {
+        *result = '-';
+        number = -number;
+    }
+
+    do
+        *--result = char(number % 10) + '0';
+    while (number /= 10);
+
+    size_t string_len = m_InternalBuffer + sizeof(m_InternalBuffer) - result;
+    size_t free_buf_size = m_BufferSize - m_OutputBufferSize;
+
+    if (string_len < free_buf_size) {
+        memcpy(m_Buffer + m_OutputBufferSize, result, string_len);
+        m_OutputBufferSize += string_len;
+        return true;
+    }
+    memcpy(m_Buffer + m_OutputBufferSize, result, free_buf_size);
+    m_InternalBufferSize = string_len - free_buf_size;
+    m_ChunkPartSize = 0;
     m_OutputBufferSize = m_BufferSize;
     return false;
 }
