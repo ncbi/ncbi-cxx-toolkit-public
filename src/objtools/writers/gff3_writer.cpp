@@ -308,9 +308,12 @@ bool CGff3Writer::x_WriteAlignDenseg(
 bool CGff3Writer::WriteHeader()
 //  ----------------------------------------------------------------------------
 {
-    m_Os << "##gff-version 3" << endl;
-    m_Os << "#!gff-spec-version 1.20" << endl;
-    m_Os << "#!processor NCBI annotwriter" << endl;
+    if (!m_bHeaderWritten) {
+        m_Os << "##gff-version 3" << endl;
+        m_Os << "#!gff-spec-version 1.20" << endl;
+        m_Os << "#!processor NCBI annotwriter" << endl;
+        m_bHeaderWritten = true;
+    }
     return true;
 }
 

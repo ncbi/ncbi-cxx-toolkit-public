@@ -169,6 +169,7 @@ protected:
         const string& );
 
     CRef<CScope> m_pScope;
+    bool m_bHeaderWritten;
     auto_ptr<SAnnotSelector> m_Selector;
 };
 

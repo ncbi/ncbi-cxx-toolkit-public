@@ -67,7 +67,8 @@ CGff2Writer::CGff2Writer(
     CNcbiOstream& ostr,
     unsigned int uFlags ) :
 //  ----------------------------------------------------------------------------
-    CWriterBase( ostr, uFlags )
+    CWriterBase( ostr, uFlags ),
+    m_bHeaderWritten(false)
 {
     m_pScope.Reset( &scope );
 };
@@ -456,7 +457,10 @@ CRef< CUser_object > CGff2Writer::x_GetDescriptor(
 bool CGff2Writer::WriteHeader()
 //  ----------------------------------------------------------------------------
 {
-    m_Os << "##gff-version 2" << endl;
+    if (!m_bHeaderWritten) {
+        m_Os << "##gff-version 2" << endl;
+        m_bHeaderWritten = true;
+    }
     return true;
 }
 

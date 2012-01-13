@@ -86,7 +86,10 @@ CGtfWriter::~CGtfWriter()
 bool CGtfWriter::WriteHeader()
 //  ----------------------------------------------------------------------------
 {
-    m_Os << "#gtf-version 2.2" << endl;
+    if (!m_bHeaderWritten) {
+        m_Os << "#gtf-version 2.2" << endl;
+        m_bHeaderWritten = true;
+    }
     return true;
 };
 

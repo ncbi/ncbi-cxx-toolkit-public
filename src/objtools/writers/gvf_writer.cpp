@@ -117,7 +117,7 @@ bool CGvfWriter::WriteHeader(
     const CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
-    if (  ! annot.IsSetDesc()  ||  ! annot.GetDesc().IsSet() ) {
+    if (!annot.IsSetDesc()  ||  !annot.GetDesc().IsSet()) {
         return WriteHeader();
     }
     const list< CRef< CAnnotdesc > > descrs = annot.GetDesc().Get();
@@ -173,8 +173,11 @@ bool CGvfWriter::WriteHeader(
 bool CGvfWriter::WriteHeader()
 //  ----------------------------------------------------------------------------
 {
-    m_Os << "##gff-version 3" << endl;
-    m_Os << "##gvf-version 1.05" << endl;
+    if (!m_bHeaderWritten) {
+        m_Os << "##gff-version 3" << endl;
+        m_Os << "##gvf-version 1.05" << endl;
+        m_bHeaderWritten = true;
+    }
     return true;
 }
 
