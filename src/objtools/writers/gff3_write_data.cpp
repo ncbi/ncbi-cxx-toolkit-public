@@ -1425,7 +1425,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeIsOrdered(
 //  ----------------------------------------------------------------------------
 {
     if (IsOrdered(mf.GetLocation())) {
-        m_Attributes["Is_ordered"] = "true";
+        m_Attributes["is_ordered"] = "true";
     }
     return true;
 }
