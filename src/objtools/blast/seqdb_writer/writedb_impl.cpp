@@ -511,11 +511,20 @@ CWriteDB_Impl::x_BuildDeflinesFromBioseq(const CBioseq                  & bioseq
         if (desc.IsTitle()) {
             //defline->SetTitle((**iter)->GetTitle());
             titles = (**iter).GetTitle();
-        } else if (desc.IsSource()) {
-            if (desc.IsOrg() && desc.GetOrg().CanGetDb()) {
+        }
+        else {
+        	const COrg_ref * org_pt = NULL;
+        	if (desc.IsSource()) {
+        		org_pt = &(desc.GetSource().GetOrg());
+        	}
+        	else if( desc.IsOrg()) {
+        		org_pt = &(desc.GetOrg());
+        	}
+
+        	if((NULL != org_pt) && org_pt->CanGetDb()) {
                 ITERATE(vector< CRef< CDbtag > >,
                         dbiter,
-                        desc.GetOrg().GetDb()) {
+                        org_pt->GetDb()) {
                     
                     if ((**dbiter).CanGetDb() &&
                         (**dbiter).GetDb() == "taxon") {

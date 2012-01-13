@@ -447,6 +447,10 @@ private:
     ///
     /// @param headers Headers to modify.
     void x_EditHeaders(CRef<objects::CBlast_def_line_set> headers);
+
+    /// Add pig if id can be extracted from the deflines
+    /// @param headers Headers to extract the id if available.
+    void x_AddPig(CRef<objects::CBlast_def_line_set> headers);
     
     /// Modify a Bioseq as needed and add it to the database.
     ///
@@ -458,7 +462,8 @@ private:
     /// @param bs Bioseq to add to the database.
     /// @param bs Sequence data to add to the database.
     /// @param add_pig true if PIG should be added if available
-    void x_EditAndAddBioseq(CConstRef<objects::CBioseq>   bs,
+    /// @return ture if bioseq has been added, otherwise false
+    bool x_EditAndAddBioseq(CConstRef<objects::CBioseq>   bs,
                             objects::CSeqVector         * sv,
                             bool 						  add_pig = false);
     

@@ -309,6 +309,9 @@ static CConstRef<CBioseq> s_FixBioseqDeltas(CConstRef<objects::CBioseq> bs)
     try {
         const CDelta_ext & dext = bs->GetInst().GetExt().GetDelta();
         
+        if(dext.Get().front()->Which() != CDelta_seq::e_Literal)
+        	return bs;
+
         typedef list< CRef< CDelta_seq > > TItems;
         
         // Don't really want to use na4, because a half byte at the
@@ -407,6 +410,17 @@ static CConstRef<CBioseq> s_FixBioseqDeltas(CConstRef<objects::CBioseq> bs)
     return bs;
 }
 
+
+void CBuildDatabase::x_AddPig(CRef<objects::CBlast_def_line_set> headers)
+{
+	int pig = 0;
+	const CBlast_def_line  &  defline = *(headers->Get().front());
+	if (defline.IsSetOther_info())
+		pig = defline.GetOther_info().front();
+
+	m_OutputDb->SetPig(pig);
+}
+
 void CBuildDatabase::x_EditHeaders(CRef<objects::CBlast_def_line_set> headers)
 {
     // Always include the taxid; although OPTIONAL, some programs
@@ -444,15 +458,12 @@ CBuildDatabase::x_AddMasksForSeqId(const list< CRef<CSeq_id> >& ids)
 }
 #endif
 
-void CBuildDatabase::x_EditAndAddBioseq(CConstRef<objects::CBioseq>   bs,
+bool CBuildDatabase::x_EditAndAddBioseq(CConstRef<objects::CBioseq>   bs,
                                         objects::CSeqVector         * sv,
                                         bool						  add_pig)
 {
     CRef<CBlast_def_line_set> headers =
         CWriteDB::ExtractBioseqDeflines(*bs, m_ParseIDs);
-    
-    m_DeflineCount += headers->Get().size();
-    m_OIDCount ++;
     
     x_EditHeaders(headers);
     
@@ -461,15 +472,17 @@ void CBuildDatabase::x_EditAndAddBioseq(CConstRef<objects::CBioseq>   bs,
         m_OutputDb->AddSequence(*bs, *sv);
     } else {
         bs = s_FixBioseqDeltas(bs);
-        m_OutputDb->AddSequence(*bs);
+        if(bs->GetInst().CanGetSeq_data())
+        	m_OutputDb->AddSequence(*bs);
+        else
+        	return false;
     }
 
+    m_DeflineCount += headers->Get().size();
+    m_OIDCount ++;
+
     if(add_pig) {
-    	int pig = 0;
-    	const CBlast_def_line  &  defline = *(headers->Get().front());
-    	if (defline.CanGetOther_info())
-    		pig = defline.GetOther_info().front();
-        m_OutputDb->SetPig(pig);
+    	x_AddPig(headers);
     }
     
     m_OutputDb->SetDeflines(*headers);
@@ -479,6 +492,7 @@ void CBuildDatabase::x_EditAndAddBioseq(CConstRef<objects::CBioseq>   bs,
     const list< CRef<CSeq_id> > & ids = bs->GetId();
     x_AddMasksForSeqId(ids);
 #endif
+    return true;
 }
 
 void CBuildDatabase::x_AddOneRemoteSequence(const objects::CSeq_id & seqid,
@@ -508,18 +522,21 @@ void CBuildDatabase::x_AddOneRemoteSequence(const objects::CSeq_id & seqid,
         error = true;
     }
     
-    if (error) {
-        if (debug_mode > 5)
-            m_LogFile << "Could not find entry for: "
-                      << seqid.AsFastaString() << endl;
-        
-        found_all = false;
-        return;
-    }
     
+
     CSeqVector sv(bsh);
     
-    x_EditAndAddBioseq(bs, & sv);
+    if(!x_EditAndAddBioseq(bs, & sv))
+    	error = true;
+
+    if (error) {
+            if (debug_mode > 5)
+                m_LogFile << "Could not find entry for: "
+                          << seqid.AsFastaString() << endl;
+
+            found_all = false;
+            return;
+    }
     
     if (debug_mode > 5)
         m_LogFile << "-- REMOTE: Found sequence "
@@ -760,20 +777,25 @@ bool CBuildDatabase::AddSequences(IBioseqSource & src, bool add_pig)
             }
         }
 
-        if (bs->GetLength() == 0) {
+        if(bs->IsAa() != m_IsProtein ){
+                    bs = src.GetNext();
+                    continue;
+       }
+
+        if ((bs->GetLength() == 0) || (!x_EditAndAddBioseq(bs, NULL, add_pig))){
             m_LogFile << "Ignoring sequence '" << bioseq_id
                       << "' as it has no sequence data" << endl;
             bs = src.GetNext();
             continue;
         }
+
         if (m_Verbose) {
             m_LogFile << "Adding bioseq from fasta; first id is: '" << bioseq_id
                 << "'" << endl;
         }
         
         // No linkouts or memberships here (yet).
-        
-        x_EditAndAddBioseq(bs, NULL, add_pig);
+
         found = true;
         
         count++;
@@ -877,6 +899,7 @@ bool CBuildDatabase::AddSequences(IRawSequenceSource & src)
             x_EditHeaders(deflines);
             
             m_OutputDb->AddSequence(sequence, ambiguities);
+            x_AddPig(deflines);
             m_OutputDb->SetDeflines(*deflines);
             
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
