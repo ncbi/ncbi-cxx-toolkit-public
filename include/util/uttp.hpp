@@ -41,6 +41,7 @@
 /// stream and the latter deserializes these chunks back from the stream.
 
 #include <corelib/ncbimisc.hpp>
+#include <corelib/ncbitype.h>
 
 BEGIN_NCBI_SCOPE
 
