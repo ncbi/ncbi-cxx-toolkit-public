@@ -71,6 +71,7 @@ USING_SCOPE(sequence);
 #include "process_agpwrite.hpp"
 #include "process_cleanup.hpp"
 #include "process_defline.hpp"
+#include "process_eutils.hpp"
 #include "process_fasta.hpp"
 #include "process_gene_overlap.hpp"
 #include "process_macrotest.hpp"
@@ -152,6 +153,7 @@ void CStreamTestApp::Init()
                                         "null",
                                         "cleanup",
                                         "defline",
+                                        "eutils",
                                         "fasta",
                                         "gene-overlap",
                                         "macrotest",
@@ -187,6 +189,12 @@ void CStreamTestApp::Init()
         "Repeat process N times",
         CArgDescriptions::eInteger,
         "1" );
+
+    arg_desc->AddDefaultKey( "journal", 
+        "JournalName",
+        "Test Journal Lookup",
+        CArgDescriptions::eString,
+        "" );
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -246,6 +254,9 @@ CStreamTestApp::GetProcess(
     }
     if ( testcase == "defline" ) {
         pProcess = new CDeflineProcess;
+    }
+    if ( testcase == "eutils" ) {
+        pProcess = new CEUtilsProcess;
     }
     if ( testcase == "fasta" ) {
         pProcess = new CFastaProcess;
