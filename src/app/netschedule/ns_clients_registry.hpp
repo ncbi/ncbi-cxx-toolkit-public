@@ -55,6 +55,8 @@ class CNSClientsRegistry
     public:
         CNSClientsRegistry();
 
+        size_t  size(void) const;
+
         // Called before any command is issued by the client.
         // The client record is created or updated.
         unsigned short  Touch(CNSClientId &          client,

@@ -44,6 +44,12 @@ CNSClientsRegistry::CNSClientsRegistry() :
 {}
 
 
+size_t  CNSClientsRegistry::size(void) const
+{
+    return m_Clients.size();
+}
+
+
 // Called before any command is issued by the client
 // Returns waiting port != 0 if the client has reset waiting on WGET
 unsigned short  CNSClientsRegistry::Touch(CNSClientId &          client,

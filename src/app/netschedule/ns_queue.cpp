@@ -2592,6 +2592,10 @@ void CQueue::PrintTransitionCounters(CNetScheduleHandler &  handler)
     m_StatisticsCounters.PrintTransitions(handler);
     handler.WriteMessage("OK:garbage_jobs: " +
                          NStr::IntToString(m_JobsToDelete.count()));
+    handler.WriteMessage("OK:affinity_registry_size: " +
+                         NStr::SizetToString(m_AffinityRegistry.size()));
+    handler.WriteMessage("OK:client_registry_size: " +
+                         NStr::SizetToString(m_ClientsRegistry.size()));
     return;
 }
 

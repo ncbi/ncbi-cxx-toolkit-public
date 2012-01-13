@@ -439,12 +439,12 @@ void  CNSAffinityRegistry::Print(const CQueue *              queue,
 {
     CReadLockGuard              guard(m_Lock);
 
-    handler.WriteMessage("OK:NUMBER OF ENTRIES: " + NStr::SizetToString(size()));
-
     map< unsigned int,
          SNSJobsAffinity >::const_iterator      k = m_JobsAffinity.begin();
     for ( ; k != m_JobsAffinity.end(); ++k ) {
-        handler.WriteMessage("OK:AFFINITY: '" + *(k->second.m_AffToken) + "'");
+        handler.WriteMessage("OK:AFFINITY: '" +
+                             NStr::PrintableString(*(k->second.m_AffToken)) +
+                             "'");
         handler.WriteMessage("OK:  ID: " + NStr::IntToString(k->first));
 
         if (verbose) {
