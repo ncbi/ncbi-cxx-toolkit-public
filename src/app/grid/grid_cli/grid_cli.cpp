@@ -265,6 +265,7 @@ enum ECommandCategory {
     eGeneralCommand,
     eNetCacheCommand,
     eNetScheduleCommand,
+    eExtendedCLICommand,
     eTotalNumberOfCommandCategories
 };
 
@@ -275,6 +276,7 @@ struct SCommandCategoryDefinition {
     {eGeneralCommand, "General commands"},
     {eNetCacheCommand, "NetCache commands"},
     {eNetScheduleCommand, "NetSchedule commands"},
+    {eExtendedCLICommand, "Extended commands"},
 };
 
 #define ICACHE_KEY_FORMAT_EXPLANATION \
@@ -619,6 +621,13 @@ struct SCommandDefinition {
         "nodes.",
         {eNetCache, eNetSchedule, eWorkerNode, eNow, eDie,
             eCompatMode, eAuth, eClientNode, eClientSession, -1}},
+
+    {eExtendedCLICommand, &CGridCommandLineInterfaceApp::Cmd_Automate,
+        "automate", "Start as a pipe-based automation server.",
+        "This command starts " PROGRAM_NAME " as an automation "
+        "server that can be used to interact with Grid objects "
+        "through a Python module (ncbi.grid).",
+        {-1}},
 };
 
 #define TOTAL_NUMBER_OF_COMMANDS int(sizeof(s_CommandDefinitions) / \
@@ -677,13 +686,14 @@ int CGridCommandLineInterfaceApp::Run()
         } while (--i > 0);
 
         cmd_def = s_CommandDefinitions;
-        for (i = 0; i < TOTAL_NUMBER_OF_COMMANDS; ++i) {
+        for (i = 0; i < TOTAL_NUMBER_OF_COMMANDS; ++i, ++cmd_def) {
+            if (cmd_def->cat_id == eExtendedCLICommand && !enable_extended_cli)
+                continue;
             clparser.AddCommand(i, cmd_def->name_variants,
                 cmd_def->synopsis, cmd_def->usage, cmd_def->cat_id);
             for (const int* opt_id = cmd_def->options; *opt_id >= 0; ++opt_id)
                 if (*opt_id < eExtendedOptionDelimiter || enable_extended_cli)
                     clparser.AddAssociation(i, *opt_id);
-            ++cmd_def;
         }
 
         try {
@@ -860,6 +870,10 @@ int CGridCommandLineInterfaceApp::Run()
     catch (CException& e) {
         fprintf(stderr, "%s\n", e.what());
         return 3;
+    }
+    catch (string& s) {
+        fprintf(stderr, "%s\n", s.c_str());
+        return 4;
     }
 }
 

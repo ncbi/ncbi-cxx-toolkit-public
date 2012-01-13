@@ -257,6 +257,7 @@ public:
     int Cmd_GetConf();
     int Cmd_Reconf();
     int Cmd_Shutdown();
+    int Cmd_Automate();
 
 // Implementation details.
 private:
