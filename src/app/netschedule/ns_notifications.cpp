@@ -282,10 +282,10 @@ CNSNotificationList::Print(CNetScheduleHandler &        handler,
 
     for (list<SNSNotificationAttributes>::const_iterator
             k = m_Listeners.begin(); k != m_Listeners.end(); ++k) {
-        handler.WriteMessage("OK:CLIENT: " +
+        handler.WriteMessage("OK:CLIENT: " + k->m_ClientNode);
+        handler.WriteMessage("OK:  RECEPIENT ADDRESS: " +
                              CSocketAPI::gethostbyaddr(k->m_Address) + ":" +
                              NStr::IntToString(k->m_Port));
-        handler.WriteMessage("OK:  NODE: '" + k->m_ClientNode + "'");
 
         CTime   lifetime(k->m_Lifetime);
         lifetime.ToLocalTime();
