@@ -52,7 +52,10 @@ void CSofaMap::x_Init()
     m_Map[ GT( e_Rna, eSubtype_otherRNA ) ]     = SofaType( 673, "transcript" );
     m_Map[ GT( e_Rna, eSubtype_rRNA ) ]         = SofaType( 252, "rRNA" );
     m_Map[ GT( e_Rna, eSubtype_scRNA ) ]        = SofaType( 13, "scRNA" );
+    m_Map[ GT( e_Rna, eSubtype_snRNA ) ]        = SofaType( 274, "snRNA" );
+    m_Map[ GT( e_Rna, eSubtype_snoRNA ) ]       = SofaType( 275, "snoRNA" );
     m_Map[ GT( e_Rna, eSubtype_tRNA ) ]         = SofaType( 253, "tRNA" );
+    m_Map[ GT( e_Rna, eSubtype_tmRNA ) ]        = SofaType( 584, "tmRNA" );
 
     m_Map[ GT( e_Imp, eSubtype_10_signal ) ]    = SofaType( 175, "minus_10_signal" );
     m_Map[ GT( e_Imp, eSubtype_35_signal ) ]    = SofaType( 176, "minus_35_signal" );
@@ -86,7 +89,7 @@ void CSofaMap::x_Init()
     m_Map[ GT( e_Imp, eSubtype_misc_structure ) ] = SofaType( 2, "sequence_secondary_structure" );
     m_Map[ GT( e_Imp, eSubtype_modified_base ) ]= SofaType( 305, "modified_base_site" );
     m_Map[ GT( e_Imp, eSubtype_operon ) ]       = SofaType( 178, "operon" );
-    m_Map[ GT( e_Imp, eSubtype_oriT ) ]         = SofaType( 724, "origin_of_transfer" );
+    m_Map[ GT( e_Imp, eSubtype_oriT ) ]         = SofaType( 724, "oriT" );
     m_Map[ GT( e_Imp, eSubtype_polyA_signal ) ] = SofaType( 551, "polyA_signal_sequence" );
     m_Map[ GT( e_Imp, eSubtype_polyA_site ) ]   = SofaType( 553, "polyA_site" );
     m_Map[ GT( e_Imp, eSubtype_precursor_RNA ) ]= SofaType( 185, "primary_transcript" );
@@ -98,8 +101,6 @@ void CSofaMap::x_Init()
     m_Map[ GT( e_Imp, eSubtype_repeat_unit ) ]  = SofaType( 726, "repeat_unit" );
     m_Map[ GT( e_Imp, eSubtype_satellite ) ]    = SofaType( 5, "satellite_DNA" );
     m_Map[ GT( e_Imp, eSubtype_sig_peptide ) ]  = SofaType( 418, "signal_peptide" );
-    m_Map[ GT( e_Imp, eSubtype_snRNA ) ]        = SofaType( 274, "snRNA" );
-    m_Map[ GT( e_Imp, eSubtype_snoRNA ) ]       = SofaType( 275, "snoRNA" );
     m_Map[ GT( e_Imp, eSubtype_source ) ]       = SofaType( 2000061, "databank_entry" );
     m_Map[ GT( e_Imp, eSubtype_stem_loop ) ]    = SofaType( 313, "stem_loop" );
     m_Map[ GT( e_Imp, eSubtype_terminator ) ]   = SofaType( 141, "terminator" );
