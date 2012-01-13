@@ -147,7 +147,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
                     eNSCR_Queue } },
     { "GETC",     { &CNetScheduleHandler::x_ProcessGetConfiguration,
                     eNSCR_Queue } },
-    // CLRN (obsolete)
+    // CLRN
     { "CLRN",     { &CNetScheduleHandler::x_ProcessClearWorkerNode,
                     eNSCR_Queue } },
     { "CANCELQ",  { &CNetScheduleHandler::x_ProcessCancelQueue,

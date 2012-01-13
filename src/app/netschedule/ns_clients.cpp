@@ -537,7 +537,7 @@ void CNSClient::Print(const string &               node_name,
                       const CNSAffinityRegistry &  aff_registry,
                       bool                         verbose) const
 {
-    handler.WriteMessage("OK:CLIENT " + node_name);
+    handler.WriteMessage("OK:CLIENT: " + node_name);
     if (m_Cleared)
         handler.WriteMessage("OK:  STATUS: cleared");
     else
@@ -567,7 +567,7 @@ void CNSClient::Print(const string &               node_name,
             for ( ; en.valid(); ++en)
                 handler.WriteMessage("OK:    " + queue->MakeKey(*en));
         } else {
-            handler.WriteMessage("OK:  NUMBER OF BLACKLISTED JOBS:" +
+            handler.WriteMessage("OK:  NUMBER OF BLACKLISTED JOBS: " +
                                  NStr::UIntToString(m_BlacklistedJobs.count()));
         }
     }
