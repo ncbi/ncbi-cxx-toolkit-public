@@ -75,10 +75,10 @@ class CJsonNode
     const TArray& GetArray() const;
     TArray& GetArray();
 
-    void Push(CJsonNode::TInstance value);
-    void Push(const string& value);
-    void Push(TNumber value);
-    void Push(bool value);
+    void PushNode(CJsonNode::TInstance value);
+    void PushString(const string& value);
+    void PushNumber(TNumber value);
+    void PushBoolean(bool value);
     void PushNull();
 
     static CJsonNode NewObjectNode();
@@ -86,10 +86,10 @@ class CJsonNode
     const CJsonNode::TObject& GetObject() const;
     CJsonNode::TObject& GetObject();
 
-    void Set(const string& key, CJsonNode::TInstance value);
-    void Set(const string& key, const string& value);
-    void Set(const string& key, TNumber value);
-    void Set(const string& key, bool value);
+    void SetNode(const string& key, CJsonNode::TInstance value);
+    void SetString(const string& key, const string& value);
+    void SetNumber(const string& key, TNumber value);
+    void SetBoolean(const string& key, bool value);
     void SetNull(const string& key);
 
     const string& GetString() const;

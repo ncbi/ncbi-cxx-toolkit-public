@@ -99,8 +99,8 @@ CJsonNode SNetCacheAutomationObject::Call(const string& method,
         const CJsonNode::TArray& cmd_and_args)
 {
     CJsonNode reply(CJsonNode::NewArrayNode());
-    reply.Push(true);
-    reply.Push(method);
+    reply.PushBoolean(true);
+    reply.PushString(method);
     return reply;
 }
 
@@ -124,7 +124,7 @@ CJsonNode SNetScheduleAutomationObject::Call(const string& method,
         const CJsonNode::TArray& cmd_and_args)
 {
     CJsonNode reply(CJsonNode::NewArrayNode());
-    reply.Push(true);
+    reply.PushBoolean(true);
 
     if (method == "client_info") {
         CJsonNode result(CJsonNode::NewObjectNode());
@@ -140,9 +140,9 @@ CJsonNode SNetScheduleAutomationObject::Call(const string& method,
             while (output.ReadLine(line)) {
                 if (NStr::StartsWith(line, "CLIENT: ")) {
                     if (client_info)
-                        clients.Push(client_info);
+                        clients.PushNode(client_info);
                     client_info = CJsonNode::NewObjectNode();
-                    client_info.Set("client_node",
+                    client_info.SetString("client_node",
                             string(line, sizeof("CLIENT: ") - 1));
                 } else if (client_info) {
                     CTempString key, value;
@@ -151,15 +151,15 @@ CJsonNode SNetScheduleAutomationObject::Call(const string& method,
                                 NStr::eTrunc_Begin));
                     NStr::ToLower(key_str);
                     NStr::ReplaceInPlace(key_str, " ", "_");
-                    client_info.Set(key_str,
+                    client_info.SetString(key_str,
                             NStr::TruncateSpaces(value, NStr::eTrunc_Begin));
                 }
             }
             if (client_info)
-                clients.Push(client_info);
-            result.Set((*it).GetServerAddress(), clients);
+                clients.PushNode(client_info);
+            result.SetNode((*it).GetServerAddress(), clients);
         }
-        reply.Push(result);
+        reply.PushNode(result);
     } else {
         NCBI_THROW_FMT(CAutomationException, eCommandProcessingError,
                 "Unknown NetSchedule method '" << method << "'");
@@ -192,8 +192,8 @@ private:
 const CJsonNode& CAutomationProc::GetGreeting()
 {
     m_RootNode = CJsonNode::NewArrayNode();
-    m_RootNode.Push(PROGRAM_NAME);
-    m_RootNode.Push(PROGRAM_VERSION);
+    m_RootNode.PushString(PROGRAM_NAME);
+    m_RootNode.PushString(PROGRAM_VERSION);
     return m_RootNode;
 }
 
@@ -223,11 +223,11 @@ bool CAutomationProc::ProcessMessage(const CJsonNode& message)
             NCBI_THROW(CAutomationException, eInvalidInput,
                     "Insufficient number of arguments to 'call'");
         }
-        if (!cmd_and_args[1].IsString() || !cmd_and_args[2].IsString()) {
+        if (!cmd_and_args[1].IsNumber() || !cmd_and_args[2].IsString()) {
             NCBI_THROW(CAutomationException, eInvalidInput,
                     "Invalid type of argument in the 'call' command");
         }
-        size_t object_id = NStr::StringToNumeric(cmd_and_args[1].GetString());
+        size_t object_id = (size_t) cmd_and_args[1].GetNumber();
         if (object_id >= m_Objects.size() || !m_Objects[object_id]) {
             NCBI_THROW_FMT(CAutomationException, eCommandProcessingError,
                     "Object with id '" << object_id << "' does not exist");
@@ -274,7 +274,9 @@ bool CAutomationProc::ProcessMessage(const CJsonNode& message)
         }
         m_Objects.push_back(new_object);
 
-        PrepareReply(NStr::NumericToString(object_id));
+        m_RootNode = CJsonNode::NewArrayNode();
+        m_RootNode.PushBoolean(true);
+        m_RootNode.PushNumber(object_id);
     } else {
         NCBI_THROW_FMT(CAutomationException, eInvalidInput,
                 "Unknown command '" << command << "'");
@@ -286,8 +288,8 @@ bool CAutomationProc::ProcessMessage(const CJsonNode& message)
 void CAutomationProc::PrepareError(const CTempString& error_message)
 {
     m_RootNode = CJsonNode::NewArrayNode();
-    m_RootNode.Push(false);
-    m_RootNode.Push(error_message);
+    m_RootNode.PushBoolean(false);
+    m_RootNode.PushString(error_message);
 }
 
 inline const CJsonNode& CAutomationProc::GetOutputMessage() const
@@ -298,8 +300,8 @@ inline const CJsonNode& CAutomationProc::GetOutputMessage() const
 void CAutomationProc::PrepareReply(const string& reply)
 {
     m_RootNode = CJsonNode::NewArrayNode();
-    m_RootNode.Push(true);
-    m_RootNode.Push(reply);
+    m_RootNode.PushBoolean(true);
+    m_RootNode.PushString(reply);
 }
 
 int CGridCommandLineInterfaceApp::Cmd_Automate()

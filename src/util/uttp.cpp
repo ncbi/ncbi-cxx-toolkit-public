@@ -94,6 +94,7 @@ CUTTPReader::EStreamParsingEvent CUTTPReader::GetNextEvent()
             ++m_Offset;
             ++m_Buffer;
             --m_BufferSize;
+            m_State = eReadControlChars;
             return eNumber;
         default:
             m_ChunkPart = m_Buffer;

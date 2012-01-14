@@ -118,29 +118,29 @@ CJsonNode::TArray& CJsonNode::GetArray()
         m_Impl.GetPointerOrNull())->m_Array;
 }
 
-void CJsonNode::Push(CJsonNode::TInstance value)
+void CJsonNode::PushNode(CJsonNode::TInstance value)
 {
     GetArray().push_back(value);
 }
 
-void CJsonNode::Push(const string& value)
+void CJsonNode::PushString(const string& value)
 {
-    Push(new SJsonStringNodeImpl(value));
+    PushNode(new SJsonStringNodeImpl(value));
 }
 
-void CJsonNode::Push(CJsonNode::TNumber value)
+void CJsonNode::PushNumber(CJsonNode::TNumber value)
 {
-    Push(new SJsonFixedSizeNodeImpl(value));
+    PushNode(new SJsonFixedSizeNodeImpl(value));
 }
 
-void CJsonNode::Push(bool value)
+void CJsonNode::PushBoolean(bool value)
 {
-    Push(new SJsonFixedSizeNodeImpl(value));
+    PushNode(new SJsonFixedSizeNodeImpl(value));
 }
 
 void CJsonNode::PushNull()
 {
-    Push(new SJsonFixedSizeNodeImpl);
+    PushNode(new SJsonFixedSizeNodeImpl);
 }
 
 CJsonNode CJsonNode::NewObjectNode()
@@ -164,29 +164,29 @@ CJsonNode::TObject& CJsonNode::GetObject()
         m_Impl.GetPointerOrNull())->m_Object;
 }
 
-void CJsonNode::Set(const string& key, CJsonNode::TInstance value)
+void CJsonNode::SetNode(const string& key, CJsonNode::TInstance value)
 {
     GetObject()[key] = value;
 }
 
-void CJsonNode::Set(const string& key, const string& value)
+void CJsonNode::SetString(const string& key, const string& value)
 {
-    Set(key, new SJsonStringNodeImpl(value));
+    SetNode(key, new SJsonStringNodeImpl(value));
 }
 
-void CJsonNode::Set(const string& key, CJsonNode::TNumber value)
+void CJsonNode::SetNumber(const string& key, CJsonNode::TNumber value)
 {
-    Set(key, new SJsonFixedSizeNodeImpl(value));
+    SetNode(key, new SJsonFixedSizeNodeImpl(value));
 }
 
-void CJsonNode::Set(const string& key, bool value)
+void CJsonNode::SetBoolean(const string& key, bool value)
 {
-    Set(key, new SJsonFixedSizeNodeImpl(value));
+    SetNode(key, new SJsonFixedSizeNodeImpl(value));
 }
 
 void CJsonNode::SetNull(const string& key)
 {
-    Set(key, new SJsonFixedSizeNodeImpl);
+    SetNode(key, new SJsonFixedSizeNodeImpl);
 }
 
 const string& CJsonNode::GetString() const
@@ -245,11 +245,11 @@ CJsonOverUTTPReader::EParsingEvent
                 m_CurrentChunk.assign(reader.GetChunkPart(),
                     reader.GetChunkPartSize());
             if (m_CurrentNode.IsArray())
-                m_CurrentNode.Push(m_CurrentChunk);
+                m_CurrentNode.PushString(m_CurrentChunk);
             else // The current node is eObject.
                 if (m_HashValueIsExpected) {
                     m_HashValueIsExpected = false;
-                    m_CurrentNode.Set(m_HashKey, m_CurrentChunk);
+                    m_CurrentNode.SetString(m_HashKey, m_CurrentChunk);
                 } else {
                     m_HashValueIsExpected = true;
                     m_HashKey = m_CurrentChunk;
@@ -278,11 +278,11 @@ CJsonOverUTTPReader::EParsingEvent
                             CJsonNode::NewArrayNode() :
                             CJsonNode::NewObjectNode());
                         if (m_CurrentNode.IsArray())
-                            m_CurrentNode.Push(new_node);
+                            m_CurrentNode.PushNode(new_node);
                         else // The current node is eObject.
                             if (m_HashValueIsExpected) {
                                 m_HashValueIsExpected = false;
-                                m_CurrentNode.Set(m_HashKey, new_node);
+                                m_CurrentNode.SetNode(m_HashKey, new_node);
                             } else
                                 return eHashKeyMustBeString;
                         m_NodeStack.push_back(m_CurrentNode);
@@ -305,11 +305,11 @@ CJsonOverUTTPReader::EParsingEvent
                         bool boolean = control_symbol == 'Y';
 
                         if (m_CurrentNode.IsArray())
-                            m_CurrentNode.Push(boolean);
+                            m_CurrentNode.PushBoolean(boolean);
                         else // The current node is eObject.
                             if (m_HashValueIsExpected) {
                                 m_HashValueIsExpected = false;
-                                m_CurrentNode.Set(m_HashKey, boolean);
+                                m_CurrentNode.SetBoolean(m_HashKey, boolean);
                             } else
                                 return eHashKeyMustBeString;
                     }
@@ -336,11 +336,11 @@ CJsonOverUTTPReader::EParsingEvent
             if (m_ReadingChunk)
                 return eChunkContinuationExpected;
             if (m_CurrentNode.IsArray())
-                m_CurrentNode.Push(reader.GetNumber());
+                m_CurrentNode.PushNumber(reader.GetNumber());
             else // The current node is eObject.
                 if (m_HashValueIsExpected) {
                     m_HashValueIsExpected = false;
-                    m_CurrentNode.Set(m_HashKey, reader.GetNumber());
+                    m_CurrentNode.SetNumber(m_HashKey, reader.GetNumber());
                 } else
                     return eHashKeyMustBeString;
             break;
