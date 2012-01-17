@@ -7,4 +7,6 @@ LIB = xncbi
 CHECK_CMD  = test_ncbi_system.sh
 CHECK_COPY = test_ncbi_system.sh
 
+CHECK_REQUIRES = -Valgrind
+
 WATCHERS = ivanov
