@@ -590,14 +590,17 @@ void  CQueue::GetJobOrWait(const CNSClientId &     client,
             TNSBitVector        aff_ids;
             CFastMutexGuard     guard(m_OperationLock);
 
-            if (timeout != 0)
+            if (timeout != 0) {
                 // WGET:
                 // The affinities has to be resolved straight away, however at this
                 // point it is still unknown that the client will wait for them, so
                 // the client ID is passed as 0. Later on the client info will be
                 // updated in the affinity registry if the client really waits for
                 // this affinities.
+                CNSTransaction      transaction(this);
                 aff_ids = m_AffinityRegistry.ResolveAffinitiesForWaitClient(*aff_list, 0);
+                transaction.Commit();
+            }
             else
                 // GET:
                 // No need to create aff records if they are not known
