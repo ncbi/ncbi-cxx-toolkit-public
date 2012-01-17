@@ -6,7 +6,7 @@
 
 LIB_PROJ =
 
-APP_PROJ = test_nc_stress test_nc_stress_pubmed
+APP_PROJ = test_nc_stress test_nc_stress_pubmed logs_splitter logs_replay
 PROJ_TAG = test
 
 
