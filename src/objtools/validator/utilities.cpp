@@ -160,8 +160,10 @@ string GetSequenceStringFromLoc
     try {
         for (CSeq_loc_CI citer (loc); citer; ++citer) {
             const CSeq_loc& part = citer.GetEmbeddingSeq_loc();
-            CBioseq_Handle bsh = scope.GetBioseqHandle(part);
-            fasta_ostr.WriteSequence (bsh, &part);
+            CBioseq_Handle bsh = BioseqHandleFromLocation (&scope, part);
+            if (bsh) {
+                fasta_ostr.WriteSequence (bsh, &part);
+            }
         }
         s = CNcbiOstrstreamToString(oss);
         NStr::ReplaceInPlace(s, "\n", "");
@@ -228,7 +230,7 @@ static string s_GetBioseqAcc(const CBioseq_Handle& handle, int* version)
 
 static string s_GetSeq_featAcc(const CSeq_feat& feat, CScope& scope, int* version)
 {
-    CBioseq_Handle seq = scope.GetBioseqHandle(feat.GetLocation());
+    CBioseq_Handle seq = BioseqHandleFromLocation (&scope, feat.GetLocation());
     CBioseq_set_Handle parent = seq.GetParentBioseq_set();
     if (parent && parent.IsSetClass() && parent.GetClass() == CBioseq_set::eClass_parts) {
         parent = parent.GetParentBioseq_set();
@@ -1264,9 +1266,14 @@ CBioseq_Handle BioseqHandleFromLocation (CScope* m_Scope, const CSeq_loc& loc)
 
 {
     CBioseq_Handle bsh;
-    const CSeq_id* id = loc.GetId();
-    if (id == NULL) return bsh;
-    bsh = m_Scope->GetBioseqHandle (*id);
+    for ( CSeq_loc_CI citer (loc); citer; ++citer) {
+        const CSeq_id& id = citer.GetSeq_id();
+        CSeq_id_Handle sih = CSeq_id_Handle::GetHandle(id);
+        bsh = m_Scope->GetBioseqHandle (sih, CScope::eGetBioseq_All);
+        if (bsh) {
+            return bsh;
+        }
+    }
     return bsh;
 }
 

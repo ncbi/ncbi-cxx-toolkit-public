@@ -735,7 +735,7 @@ static bool s_BadCharsInAuthorName (string str, string& badauthor, bool allowcom
             || *ptr == '\''
             || *ptr == ' '
             || (*ptr == ',' && allowcomma)
-            || *ptr == '.' && (allowperiod || pos == stp)) {
+            || (*ptr == '.' && (allowperiod || pos == stp))) {
             // all these are ok
             ptr++;
             pos++;

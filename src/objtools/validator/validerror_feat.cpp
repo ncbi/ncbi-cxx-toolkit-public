@@ -1183,7 +1183,7 @@ static bool s_IsLocDirSub (const CSeq_loc& loc, CScope& scope)
         return false;
     }
 
-    CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
+    CBioseq_Handle bsh = BioseqHandleFromLocation (&scope, loc);
     if (!bsh) {
         return true;
     }
@@ -3700,7 +3700,7 @@ static bool s_IsValidRpt_typeQual (string val)
 
 void CValidError_feat::ValidateRptUnitVal (const string& val, const string& key, const CSeq_feat& feat)
 {
-    bool found = false, multiple_rpt_unit = true;
+    bool found = false, multiple_rpt_unit = true;  /* !!!!! */
     ITERATE(string, it, val) {
         if ( *it <= ' ' ) {
             found = true;
@@ -3777,7 +3777,7 @@ void CValidError_feat::ValidateRptUnitSeqVal (const string& val, const string& k
 
 void CValidError_feat::ValidateRptUnitRangeVal (const string& val, const CSeq_feat& feat)
 {
-    TSeqPos from, to;
+    TSeqPos from, to;  /* !!!!! */
     if (!s_RptUnitIsBaseRange(val, from, to)) {
         PostErr (eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
                  "/rpt_unit_range is not a base range", feat);
@@ -4750,7 +4750,7 @@ void CValidError_feat::ValidateCommonMRNAProduct(const CSeq_feat& feat)
 // and the gene on the mrna.
 void CValidError_feat::ValidatemRNAGene (const CSeq_feat &feat)
 {
-    bool is_interesting = false;
+    bool is_interesting = false;  /* !!!!! */
     if (feat.IsSetId() && feat.GetId().IsLocal() && feat.GetId().GetLocal().IsId()) {
         int id_num = feat.GetId().GetLocal().GetId();
         if (id_num == 8) {
@@ -4879,7 +4879,7 @@ void CValidError_feat::ValidateCommonCDSProduct
     }
     CBioseq_Handle nuc  = BioseqHandleFromLocation(m_Scope, feat.GetLocation());
     if ( nuc ) {
-        bool is_interesting = false;
+        bool is_interesting = false;  /* !!!!! */
         if (feat.IsSetId() && feat.GetId().IsLocal() && feat.GetId().GetLocal().IsId()) {
             int id_num = feat.GetId().GetLocal().GetId();
             if (id_num == 12) {
@@ -5037,7 +5037,7 @@ static bool s_CDS5primePartialTest (const CSeq_feat& feat, CScope *scope)
         return false;
     }
 
-    CBioseq_Handle bsh = scope->GetBioseqHandle (feat.GetLocation());
+    CBioseq_Handle bsh = BioseqHandleFromLocation (scope, feat.GetLocation());
     if (!bsh) {
         return false;
     }
@@ -5565,7 +5565,7 @@ static void s_LocIdType(const CSeq_loc& loc, CScope& scope, const CSeq_entry& ts
 
 static bool s_LocIsNmAccession (const CSeq_loc& loc, CScope& scope)
 {
-    CBioseq_Handle bsh = scope.GetBioseqHandle (loc);
+    CBioseq_Handle bsh = BioseqHandleFromLocation (&scope, loc);
     if (bsh) {
         FOR_EACH_SEQID_ON_BIOSEQ (it, *(bsh.GetBioseqCore())) {
             if ((*it)->IsOther() && (*it)->GetOther().IsSetAccession() 
@@ -5984,7 +5984,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
     }
 
     size_t num_mismatches = 0;
-    int num_total = 0;
+    int num_total = 0;  /* !!!!! */
     size_t len = 0;
 
     show_stop = true;
@@ -6449,7 +6449,7 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
     }
 
     const CGene_ref* gene_xref = feat.GetGeneXref();
-    TSeqPos circular_len = kInvalidSeqPos;
+    TSeqPos circular_len = kInvalidSeqPos;  /* !!!!! */
     if (bsh.IsSetInst_Topology()
         && bsh.GetInst_Topology() == CSeq_inst::eTopology_circular
         && bsh.IsSetInst_Length()) {
@@ -6766,7 +6766,7 @@ void CValidError_feat::ValidateOperon(const CSeq_feat& gene)
     }
 
     string label;
-    feature::GetLabel(gene, &label, feature::eContent, m_Scope);
+    feature::GetLabel(gene, &label, feature::fFGL_Content, m_Scope);
     if ( label.empty() ) {
         return;
     }
@@ -6795,7 +6795,7 @@ bool CValidError_feat::Is5AtEndSpliceSiteOrGap (const CSeq_loc& loc)
     }
 
     TSeqPos end = rng->GetStart(eExtreme_Biological);
-    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(*rng);
+    CBioseq_Handle bsh = BioseqHandleFromLocation (m_Scope, *rng);
     if (!bsh) {
         return false;
     }
