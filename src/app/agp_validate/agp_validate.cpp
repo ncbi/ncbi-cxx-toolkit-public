@@ -185,11 +185,6 @@ void CAgpValidateApplication::Init(void)
   arg_desc->AddOptionalKey( "loadlog", "FILE",
     "specifies where we write our loading log for -comp",
     CArgDescriptions::eOutputFile);
-  arg_desc->AddOptionalKey(
-      "write-agp", "OUTPUTFILE",
-      "if specified, we write the assembled AGP sequences to "
-      "the given file in FASTA format",
-      CArgDescriptions::eOutputFile );
   arg_desc->AddFlag("ignoreagponly",     "");
   arg_desc->AddFlag("ignoreobjfileonly", "");
 
@@ -383,7 +378,7 @@ int CAgpValidateApplication::Run(void)
       // if "-comp" not specified, neither should the other
       // comp-related args
       if( args["loadlog"] || args["ignoreagponly"] ||
-          args["ignoreobjfileonly"] || args["write-agp"] )
+          args["ignoreobjfileonly"] )
       {
           cerr << "Error -- -comp mode options without -comp" << endl;
           exit(1);
@@ -418,8 +413,8 @@ int CAgpValidateApplication::Run(void)
       }
 
       string agp_as_fasta_file;
-      if( args["write-agp"] ) {
-          agp_as_fasta_file = args["write-agp"].AsString();
+      if( args["out"] ) {
+          agp_as_fasta_file = args["out"].AsString();
       }
 
       CAgpFastaComparator::TDiffsToHide diffsToHide = 0;
@@ -831,9 +826,9 @@ int main(int argc, const char* argv[])
       "USAGE: agp_validate -comp [-options] FASTA file(s)... AGP file(s)...\n"
       "OPTIONS:\n"
       "    -loadlog OUTPUT_FILE   Save the list of all loaded sequences.\n"
-      "    -write-agp OUTPUT_FILE Save the assembled AGP sequences as FASTA.\n"
       "    -ignoreagponly         Do not report objects present in AGP file(s) only.\n"
       "    -ignoreobjfileonly     Do not report objects present in FASTA file(s) only.\n"
+      "    -out OUTPUT_FILE       Save the assembled AGP sequences as FASTA.\n"
       "\n"
       "FASTA files for components can be provided (along with object FASTA files) if components are not yet in GenBank.\n"
       ;

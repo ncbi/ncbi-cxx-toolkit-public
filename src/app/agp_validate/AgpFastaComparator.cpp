@@ -304,6 +304,10 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
     }
     x_ProcessObjects( objfiles, fasta_ids );
 
+    // check for duplicate sequences
+    x_CheckForDups( fasta_ids, "object file(s)" );
+    x_CheckForDups( agp_ids,   "AGP file(s)" );
+
     // will hold ones that are only in FASTA or only in AGP.
     // Of course, if one appears in both, we should print it in a more
     // user-friendly way
@@ -437,7 +441,7 @@ void CAgpFastaComparator::x_Process(const CSeq_entry_Handle seh,
         pair<TSeqIdSet::iterator, bool> insert_result =
             seqs[key].insert(idh);
         if( ! insert_result.second ) {
-            LOG_POST(Error << "  Error: skipping duplicate sequence: " << idh);
+            LOG_POST(Error << "  Error: skipping sequence with same name and values: " << idh);
             m_bSuccess = false;
             continue;
         }
@@ -771,6 +775,22 @@ void CAgpFastaComparator::x_OutputDifferences(
                  << "to errors?)");
         ITERATE( TSeqIdSet, id_iter, vSeqIdTempSet ) {
             LOG_POST(Error << "    " << *id_iter);
+        }
+    }
+}
+
+void CAgpFastaComparator::x_CheckForDups( TUniqueSeqs & unique_ids,
+                                          const string & file_type )
+{
+    ITERATE( TUniqueSeqs, unique_id_iter, unique_ids ) {
+        const TSeqIdSet & id_set = unique_id_iter->second;
+        if( id_set.size() > 1 ) {
+            CNcbiOstrstream errmsg;
+            errmsg << "WARNING: Identical sequences in " << file_type << ":";
+            ITERATE( TSeqIdSet, id_iter, id_set ) {
+                errmsg << " '" << *id_iter << "'";
+            }
+            LOG_POST( Error << (string)CNcbiOstrstreamToString(errmsg) );
         }
     }
 }

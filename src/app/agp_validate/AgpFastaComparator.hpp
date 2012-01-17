@@ -107,6 +107,9 @@ private:
         const TSeqIdSet & vSeqIdAGPOnly,
         TDiffsToHide diffs_to_hide );
 
+    void x_CheckForDups( TUniqueSeqs & unique_ids,
+                         const string & file_type );
+
     void x_SetBinaryVsText( CNcbiIstream & file_istrm, 
         CFormatGuess::EFormat guess_format );
 
