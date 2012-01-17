@@ -2084,12 +2084,12 @@ string CHgvsParser::x_SeqIdToHgvsHeader(const CSeq_id& id)
 
 string CHgvsParser::x_IntWithFuzzToStr(int value, const CInt_fuzz* fuzz)
 {
-    string out = NStr::IntToString(value);
+    string out = NStr::NumericToString(value);
 
     if(fuzz) {
         if(fuzz->IsRange()) {
-            string from = NStr::IntToString(fuzz->GetRange().GetMin());
-            string to = NStr::IntToString(fuzz->GetRange().GetMax());
+            string from = NStr::NumericToString(fuzz->GetRange().GetMin());
+            string to = NStr::NumericToString(fuzz->GetRange().GetMax());
             out = "(" + from + "_" + to + ")";
         } else if(fuzz->IsLim()) {
             if(fuzz->GetLim() == CInt_fuzz::eLim_gt || fuzz->GetLim() == CInt_fuzz::eLim_tr) {
