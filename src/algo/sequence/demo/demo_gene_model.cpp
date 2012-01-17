@@ -109,8 +109,8 @@ int CGeneModelDemoApp::Run(void)
         CFeatureGenerator gen(scope);
         gen.ConvertAlignToAnnot(align, annot, seqs);
 
-        annot.AddName("Demo Gene Models");
-        annot.SetTitle("Demo Gene Models");
+        annot.SetNameDesc("Demo Gene Models");
+        annot.SetTitleDesc("Demo Gene Models");
 
         /**
         CTypeIterator<CSeq_feat> feat_it(annot);

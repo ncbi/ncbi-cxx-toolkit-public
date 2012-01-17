@@ -264,9 +264,9 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
 
     if (count_invalid) {
         string msg;
-        msg += NStr::IntToString(count_invalid);
+        msg += NStr::NumericToString(count_invalid);
         msg += "/";
-        msg += NStr::IntToString(count);
+        msg += NStr::NumericToString(count);
         msg += " alignments failed validation.";
         if (count_invalid == count) {
             NCBI_THROW(CException, eUnknown, msg);
