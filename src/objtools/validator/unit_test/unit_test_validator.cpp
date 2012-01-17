@@ -786,27 +786,6 @@ static void SetCountryOnSrc (CBioSource& src, string country)
 }
 
 
-static void SetSubCountry (CRef<CSeq_entry> entry, string country)
-{
-    if (!entry) {
-        return;
-    }
-    if (entry->IsSeq()) {
-        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
-            if ((*it)->IsSource()) {
-                SetCountryOnSrc((*it)->SetSource(), country);
-            }
-        }
-    } else if (entry->IsSet()) {
-        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
-            if ((*it)->IsSource()) {
-                SetCountryOnSrc((*it)->SetSource(), country);
-            }
-        }
-    }
-}
-
-
 static void SetChromosome (CBioSource& src, string chromosome) 
 {
     if (NStr::IsBlank(chromosome)) {
@@ -11873,7 +11852,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_Range)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetTo(50);
-    trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetFrom(-1);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetFrom(kInvalidSeqPos);
     expected_errors[2]->SetErrMsg("Anticodon location [lcl|good:0-51] out of range");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -18349,11 +18328,11 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_UnexpectedAlignmentType)
 }
 
 
-static CRef<CSeq_graph> BuildGoodByteGraph(CRef<CSeq_entry> entry, TSeqPos offset = 0, TSeqPos len = -1)
+static CRef<CSeq_graph> BuildGoodByteGraph(CRef<CSeq_entry> entry, TSeqPos offset = 0, TSeqPos len = kInvalidSeqPos)
 {
     CRef<CSeq_graph> graph (new CSeq_graph());
     graph->SetTitle("Phrap Quality");
-    if (len == -1) {
+    if (len == kInvalidSeqPos) {
       len = entry->GetSeq().GetInst().GetLength() - offset;
     }
     graph->SetNumval(len);
