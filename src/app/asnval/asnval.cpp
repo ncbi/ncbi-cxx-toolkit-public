@@ -158,8 +158,8 @@ private:
 
 
 CAsnvalApp::CAsnvalApp(void) :
-    m_ObjMgr(0), m_In(0), m_Options(0), m_Continue(false), m_Level(0),
-    m_Reported(0), m_OnlyAnnots(false), m_ValidErrorStream(0), m_LogStream(0)
+    m_ObjMgr(0), m_In(0), m_Options(0), m_Continue(false), m_OnlyAnnots(false),
+    m_Level(0), m_Reported(0), m_ValidErrorStream(0), m_LogStream(0)
 {
 }
 
@@ -523,14 +523,14 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqFeat(void)
 {
     CRef<CSeq_feat> feat(ReadSeqFeat());
 
+    CRef<CScope> scope = BuildScope();
     if (m_DoCleanup) {
-        CRef<CScope> scope = BuildScope();
         m_Cleanup.SetScope (scope);
         m_Cleanup.BasicCleanup (*feat);
     }
 
     CValidator validator(*m_ObjMgr);
-    return validator.Validate(*feat, m_Options);
+    return validator.Validate(*feat, scope, m_Options);
 }
 
 
@@ -548,7 +548,8 @@ CConstRef<CValidError> CAsnvalApp::ProcessBioSource(void)
     CRef<CBioSource> src(ReadBioSource());
 
     CValidator validator(*m_ObjMgr);
-    return validator.Validate(*src, m_Options);
+    CRef<CScope> scope = BuildScope();
+    return validator.Validate(*src, scope, m_Options);
 }
 
 
@@ -566,7 +567,8 @@ CConstRef<CValidError> CAsnvalApp::ProcessPubdesc(void)
     CRef<CPubdesc> pd(ReadPubdesc());
 
     CValidator validator(*m_ObjMgr);
-    return validator.Validate(*pd, m_Options);
+    CRef<CScope> scope = BuildScope();
+    return validator.Validate(*pd, scope, m_Options);
 }
 
 
