@@ -274,7 +274,7 @@ void CAlignSort::SortAlignments(IAlignSource &align_source,
                 std::sort(aligns.begin(), aligns.end(), m_Predicate);
 
                 string fname = m_TmpPath;
-                fname += NStr::IntToString(tmp_volumes.size() + 1);
+                fname += NStr::NumericToString(tmp_volumes.size() + 1);
                 tmp_volumes.push_back(fname);
 
                 LOG_POST(Error << "  tmp volume: " << fname
@@ -304,7 +304,7 @@ void CAlignSort::SortAlignments(IAlignSource &align_source,
                 std::sort(aligns.begin(), aligns.end(), m_Predicate);
 
                 string fname = m_TmpPath;
-                fname += NStr::IntToString(tmp_volumes.size() + 1);
+                fname += NStr::NumericToString(tmp_volumes.size() + 1);
                 tmp_volumes.push_back(fname);
 
                 LOG_POST(Error << "  tmp volume: " << fname

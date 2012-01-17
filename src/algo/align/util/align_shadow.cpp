@@ -133,7 +133,7 @@ CAlignShadow::CAlignShadow(const objects::CSeq_align& seq_align, bool save_xcrip
                 }
                 m_Transcript.push_back(c);
                 if(*ii_lens > 1) {
-                    m_Transcript.append(NStr::IntToString(*ii_lens));
+                    m_Transcript.append(NStr::NumericToString(*ii_lens));
                 }
                 i += 2;
             }
@@ -888,7 +888,7 @@ string CAlignShadow::s_RunLengthEncode(const string& in)
         if(c != c0) {
             c0 = c;
             if(count > 1) {
-                out += NStr::IntToString(count);
+                out += NStr::NumericToString(count);
             }
             count = 1;
             out.append(1, c0);
@@ -899,7 +899,7 @@ string CAlignShadow::s_RunLengthEncode(const string& in)
     }
 
     if(count > 1) {
-        out += NStr::IntToString(count);
+        out += NStr::NumericToString(count);
     }
 
     return out;
