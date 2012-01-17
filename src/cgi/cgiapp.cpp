@@ -46,6 +46,8 @@
 #include <cgi/cgi_exception.hpp>
 #include <cgi/cgi_serial.hpp>
 #include <cgi/error_codes.hpp>
+#include <signal.h>
+
 
 #ifdef NCBI_OS_UNIX
 #  include <unistd.h>
@@ -74,6 +76,11 @@ NCBI_PARAM_DECL(bool, CGI, Print_Self_Url);
 NCBI_PARAM_DEF_EX(bool, CGI, Print_Self_Url, true, eParam_NoThread,
                   CGI_PRINT_SELF_URL);
 static NCBI_PARAM_TYPE(CGI, Print_Self_Url) s_PrintSelfUrlParam;
+
+NCBI_PARAM_DECL(bool, CGI, Allow_Sigpipe);
+NCBI_PARAM_DEF_EX(bool, CGI, Allow_Sigpipe, false, eParam_NoThread,
+                  CGI_ALLOW_SIGPIPE);
+typedef NCBI_PARAM_TYPE(CGI, Allow_Sigpipe) TParamAllowSigpipe;
 
 
 ///////////////////////////////////////////////////////
@@ -180,8 +187,13 @@ int CCgiApplication::Run(void)
     // Make sure to restore old diagnostic state after the Run()
     CDiagRestorer diag_restorer;
 
-    // Compose diagnostics prefix
 #if defined(NCBI_OS_UNIX)
+    // Disable SIGPIPE if not allowed.
+    if ( !TParamAllowSigpipe::GetDefault() ) {
+        signal(SIGPIPE, SIG_IGN);
+    }
+
+    // Compose diagnostics prefix
     PushDiagPostPrefix(NStr::IntToString(getpid()).c_str());
 #endif
     PushDiagPostPrefix(GetEnvironment().Get(m_DiagPrefixEnv).c_str());
@@ -199,7 +211,7 @@ int CCgiApplication::Run(void)
     //int orig_fd = -1;
     CNcbiStrstream result_copy;
     auto_ptr<CNcbiOstream> new_stream;
-    
+
     try {
         _TRACE("(CGI) CCgiApplication::Run: calling ProcessRequest");
         GetDiagContext().SetAppState(eDiagAppState_RequestBegin);
