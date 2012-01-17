@@ -146,7 +146,7 @@ void CValidError_align::ValidateSeqAlign(const CSeq_align& align)
 
 typedef struct ambchar {
   char ambig_char;
-  char * match_list;
+  const char * match_list;
 } AmbCharData;
 
 static const AmbCharData ambiguity_list[] = {
