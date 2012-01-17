@@ -653,10 +653,9 @@ bool CAlignFilter::x_Query_Op(const CQueryParseTree::TNode& l_node,
                 }
     
                 CConstRef<CSynonymsSet> syns = m_Scope->GetSynonyms(idh);
-                if ( !syns ) {
+                if ( !syns  ||  syns->empty() ) {
                     return false;
                 }
-    
                 return (syns->ContainsSynonym(other_idh) == !is_not);
             }
         }
