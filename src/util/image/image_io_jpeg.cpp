@@ -398,7 +398,7 @@ CImage* CImageIOJpeg::ReadImage(CNcbiIstream& istr)
                      jpeg_read_scanlines(&cinfo, scanline, 1);
                      if (jpeg_err_info.has_error) {
                          throw runtime_error("error reading scanline " +
-                                             NStr::IntToString(i));
+                                             NStr::NumericToString(i));
                      }
 
                      for (size_t j = 0;  j < stride;  ++j) {
@@ -416,7 +416,7 @@ CImage* CImageIOJpeg::ReadImage(CNcbiIstream& istr)
                 jpeg_read_scanlines(&cinfo, scanline, 1);
                 if (jpeg_err_info.has_error) {
                     throw runtime_error("error reading scanline " +
-                                        NStr::IntToString(i));
+                                        NStr::NumericToString(i));
                 }
                 scanline[0] += stride;
             }
@@ -518,13 +518,13 @@ CImage* CImageIOJpeg::ReadImage(CNcbiIstream& istr,
         // further validation: make sure we're actually on the image
         if (x >= cinfo.output_width  ||  y >= cinfo.output_height) {
             string msg("CImageIOJpeg::ReadImage(): invalid starting position: ");
-            msg += NStr::IntToString(x);
+            msg += NStr::NumericToString(x);
             msg += ", ";
-            msg += NStr::IntToString(y);
+            msg += NStr::NumericToString(y);
             msg += " (image dimensions: ";
-            msg += NStr::IntToString(cinfo.output_width);
+            msg += NStr::NumericToString(cinfo.output_width);
             msg += ", ";
-            msg += NStr::IntToString(cinfo.output_height);
+            msg += NStr::NumericToString(cinfo.output_height);
             msg += ")";
             NCBI_THROW(CImageException, eReadError, msg);
         }
@@ -752,9 +752,9 @@ void CImageIOJpeg::WriteImage(const CImage& image, CNcbiOstream& ostr,
     // validate our image position as inside the image we've been passed
     if (x >= image.GetWidth()  ||  y >= image.GetHeight()) {
         string msg("CImageIOJpeg::WriteImage(): invalid image position: ");
-        msg += NStr::IntToString(x);
+        msg += NStr::NumericToString(x);
         msg += ", ";
-        msg += NStr::IntToString(y);
+        msg += NStr::NumericToString(y);
         NCBI_THROW(CImageException, eWriteError, msg);
     }
 

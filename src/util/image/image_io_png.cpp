@@ -187,21 +187,21 @@ static void s_PngReadValidate(png_structp png_ptr,
     if ( color_type != PNG_COLOR_TYPE_RGB  &&
          color_type != PNG_COLOR_TYPE_RGB_ALPHA ) {
         string msg("CImageIOPng::ReadImage(): unhandled color type: ");
-        msg += NStr::IntToString((int)color_type);
+        msg += NStr::NumericToString((int)color_type);
         NCBI_THROW(CImageException, eReadError, msg);
     }
 
     // ...and only with a bit depth of 8
     if (bit_depth != 8) {
         string msg("CImageIOPng::ReadImage(): unhandled bit depth: ");
-        msg += NStr::IntToString((int)bit_depth);
+        msg += NStr::NumericToString((int)bit_depth);
         NCBI_THROW(CImageException, eReadError, msg);
     }
 
     // this goes along with RGB or RGBA
     if (depth != 3  &&  depth != 4) {
         string msg("CImageIOPng::ReadImage(): unhandled image channels: ");
-        msg += NStr::IntToString((int)depth);
+        msg += NStr::NumericToString((int)depth);
         NCBI_THROW(CImageException, eReadError, msg);
     }
 
@@ -210,9 +210,9 @@ static void s_PngReadValidate(png_structp png_ptr,
         // further validation: make sure we're actually on the image
         if (x >= width  ||  y >= height) {
             string msg("CImageIOPng::ReadImage(): invalid starting position: ");
-            msg += NStr::IntToString(x);
+            msg += NStr::NumericToString(x);
             msg += ", ";
-            msg += NStr::IntToString(y);
+            msg += NStr::NumericToString(y);
             NCBI_THROW(CImageException, eReadError, msg);
         }
 
@@ -486,7 +486,7 @@ void CImageIOPng::WriteImage(const CImage& image, CNcbiOstream& ostr,
     // validate our image - we need RGB or RGBA images
     if (image.GetDepth() != 3  &&  image.GetDepth() != 4) {
         string msg("CImageIOPng::WriteImage(): invalid image depth: ");
-        msg += NStr::IntToString(image.GetDepth());
+        msg += NStr::NumericToString(image.GetDepth());
         NCBI_THROW(CImageException, eWriteError, msg);
     }
 
@@ -543,7 +543,7 @@ void CImageIOPng::WriteImage(const CImage& image, CNcbiOstream& ostr,
     // validate our image - we need RGB or RGBA images
     if (image.GetDepth() != 3  &&  image.GetDepth() != 4) {
         string msg("CImageIOPng::WriteImage(): invalid image depth: ");
-        msg += NStr::IntToString(image.GetDepth());
+        msg += NStr::NumericToString(image.GetDepth());
         NCBI_THROW(CImageException, eWriteError, msg);
     }
 

@@ -385,7 +385,7 @@ void CImageIOGif::WriteImage(const CImage& image, CNcbiOstream& ostr,
         for (size_t i = 0;  i < image.GetHeight();  ++i) {
             if (EGifPutLine(fp, qdata_ptr, image.GetWidth()) == GIF_ERROR) {
                 string msg("CImageIOGif::WriteImage(): error writing line ");
-                msg += NStr::IntToString(i);
+                msg += NStr::NumericToString(i);
                 NCBI_THROW(CImageException, eWriteError, msg);
             }
 

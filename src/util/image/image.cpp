@@ -71,7 +71,7 @@ void CImage::Init(size_t width, size_t height, size_t depth)
     default:
         {{
              string msg("CImage::Init(): depth = ");
-             msg += NStr::IntToString(depth);
+             msg += NStr::NumericToString(depth);
              msg += " not implemented";
              NCBI_THROW(CImageException, eInvalidDimension, msg);
         }}
@@ -188,7 +188,7 @@ void CImage::SetDepth(size_t depth)
     default:
         {{
             string msg("CImage::SetDepth(): invalid depth: ");
-            msg += NStr::IntToString(depth);
+            msg += NStr::NumericToString(depth);
             NCBI_THROW(CImageException, eInvalidDimension, msg);
         }}
     }
@@ -234,9 +234,9 @@ CImage* CImage::GetSubImage(size_t x, size_t y, size_t w, size_t h) const
 
     if (x >= m_Width  ||  y >= m_Height) {
         string msg("CImage::GetSubImage(): invalid starting pos: ");
-        msg += NStr::IntToString(x);
+        msg += NStr::NumericToString(x);
         msg += ", ";
-        msg += NStr::IntToString(y);
+        msg += NStr::NumericToString(y);
         NCBI_THROW(CImageException, eInvalidImage, msg);
     }
 

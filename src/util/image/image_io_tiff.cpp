@@ -222,7 +222,7 @@ CImage* CImageIOTiff::ReadImage(CNcbiIstream& istr)
 
         if (depth != 1  &&  depth != 3  &&  depth != 4) {
             string msg("CImageIOTiff::ReadImage(): unhandled image depth: ");
-            msg += NStr::IntToString(depth);
+            msg += NStr::NumericToString(depth);
             NCBI_THROW(CImageException, eReadError, msg);
         }
 
