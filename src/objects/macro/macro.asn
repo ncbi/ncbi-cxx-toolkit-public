@@ -1220,11 +1220,15 @@ Sort-fields-action ::= SEQUENCE {
   order Sort-order ,
   constraint Constraint-choice-set OPTIONAL }
   
+Fix-author-caps ::= SEQUENCE {
+  last-name-only BOOLEAN }
+
 Fix-caps-action ::= CHOICE {
   pub Fix-pub-caps-action ,
   src-country NULL ,
   mouse-strain NULL ,
-  src-qual Source-qual }
+  src-qual Source-qual ,
+  author Fix-author-caps }
 
 Fix-format-action ::= CHOICE {
   collection-date NULL ,
