@@ -148,10 +148,10 @@ int CTestCompartApplication::Run(void)
         LOG_POST(Error << "  alignments = " << (*i)->Get().size());
 
         string title("Compartment ");
-        title += NStr::IntToString(count);
+        title += NStr::NumericToString(count);
         CSeq_annot annot;
-        annot.AddName(title);
-        annot.SetTitle(title);
+        annot.SetNameDesc(title);
+        annot.SetTitleDesc(title);
         annot.SetData().SetAlign() = (*i)->Get();
         ostr << MSerial_AsnText << annot;
     }
