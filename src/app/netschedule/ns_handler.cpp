@@ -721,7 +721,7 @@ void CNetScheduleHandler::x_ProcessMsgQueue(BUF buffer)
 
 
     if (m_Server->AdminHostValid(m_ClientId.GetAddress()) &&
-        m_ClientId.IsAdminClientName())
+        m_Server->IsAdminClientName(m_ClientId.GetClientName()))
     {
         // TODO: queue admin should be checked in ProcessMsgQueue,
         // when queue info is available

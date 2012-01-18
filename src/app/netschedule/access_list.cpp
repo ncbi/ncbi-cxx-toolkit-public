@@ -61,7 +61,7 @@ bool CNetSchedule_AccessList::IsAllowed(unsigned ha) const
 void CNetSchedule_AccessList::SetHosts(const string& host_names)
 {
     vector<string>      hosts;
-    NStr::Tokenize(host_names, ";, ", hosts, NStr::eMergeDelims);
+    NStr::Tokenize(host_names, ";, \n\r", hosts, NStr::eMergeDelims);
 
     CWriteLockGuard guard(m_Lock);
     m_Hosts.clear();

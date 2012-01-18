@@ -57,7 +57,7 @@ public:
 
     void AddDefaultListener(IServer_ConnectionFactory* factory);
     void SetNSParameters(const SNS_Parameters &  new_params,
-                         bool                    log_only);
+                         bool                    limited);
 
     virtual bool ShutdownRequested(void);
 
@@ -112,6 +112,7 @@ public:
     unsigned GetAffinityDirtPercentage(void) const      { return m_AffinityDirtPercentage; }
 
     bool AdminHostValid(unsigned host) const;
+    bool IsAdminClientName(const string &  name) const;
 
     static CNetScheduleServer*  GetInstance(void);
 
@@ -166,8 +167,12 @@ private:
 
     static CNetScheduleServer*                  sm_netschedule_server;
 
+    mutable CRWLock                             m_AdminClientsLock;
+    vector<string>                              m_AdminClientNames;
+
 private:
     string  x_GenerateGUID(void) const;
+    void    x_SetAdminClientNames(const string &  client_names);
 };
 
 

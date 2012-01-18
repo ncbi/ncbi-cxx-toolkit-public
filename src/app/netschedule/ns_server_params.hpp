@@ -67,6 +67,7 @@ struct SNS_Parameters : SServer_Parameters
     std::string     node_id;            // The server identifier
 
     std::string     admin_hosts;
+    std::string     admin_client_names;
 
     // Affinity GC settings
     unsigned int    affinity_high_mark_percentage;

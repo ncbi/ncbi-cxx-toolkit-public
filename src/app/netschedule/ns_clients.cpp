@@ -119,13 +119,6 @@ bool CNSClientId::IsComplete(void) const
 }
 
 
-bool CNSClientId::IsAdminClientName(void) const
-{
-    return m_ClientName == "netschedule_control" ||
-           m_ClientName == "netschedule_admin";
-}
-
-
 unsigned int CNSClientId::GetAddress(void) const
 {
     return m_Addr;

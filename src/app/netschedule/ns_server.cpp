@@ -85,7 +85,7 @@ void CNetScheduleServer::AddDefaultListener(IServer_ConnectionFactory* factory)
 
 
 void CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
-                                         bool                    log_only)
+                                         bool                    limited)
 {
     m_LogFlag = params.is_log;
     if (m_LogFlag) {
@@ -104,7 +104,10 @@ void CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
         m_LogStatisticsThreadFlag       = false;
     }
 
-    if (log_only)
+    m_AdminHosts.SetHosts(params.admin_hosts);
+    x_SetAdminClientNames(params.admin_client_names);
+
+    if (limited)
         return;
 
 
@@ -118,8 +121,6 @@ void CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
     }
 
     m_InactivityTimeout = params.network_timeout;
-
-    m_AdminHosts.SetHosts(params.admin_hosts);
 
     // Purge related parameters
     m_DeleteBatchSize = params.del_batch_size;
@@ -244,6 +245,18 @@ bool CNetScheduleServer::AdminHostValid(unsigned host) const
 }
 
 
+bool CNetScheduleServer::IsAdminClientName(const string &  name) const
+{
+    CReadLockGuard      guard(m_AdminClientsLock);
+
+    for (vector<string>::const_iterator  k(m_AdminClientNames.begin());
+         k != m_AdminClientNames.end(); ++k)
+        if (*k == name)
+            return true;
+    return false;
+}
+
+
 CNetScheduleServer*  CNetScheduleServer::GetInstance(void)
 {
     return sm_netschedule_server;
@@ -263,5 +276,16 @@ string  CNetScheduleServer::x_GenerateGUID(void) const
     Int8        current_time = time(0);
 
     return NStr::Int8ToString((pid << 32) | current_time);
+}
+
+
+void CNetScheduleServer::x_SetAdminClientNames(const string &  client_names)
+{
+    CWriteLockGuard     guard(m_AdminClientsLock);
+
+    m_AdminClientNames.clear();
+    NStr::Tokenize(client_names, ";, \n\r", m_AdminClientNames,
+                   NStr::eMergeDelims);
+    return;
 }
 

@@ -66,10 +66,6 @@ class CNSClientId
         // true if it is a new client identification
         bool IsComplete(void) const;
 
-        // true if the client name is one of the predefined
-        // admin names
-        bool IsAdminClientName(void) const;
-
         // Getters/setters
         unsigned int GetAddress(void) const;
         const string &  GetNode(void) const;
