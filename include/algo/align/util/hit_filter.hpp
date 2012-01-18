@@ -297,13 +297,10 @@ public:
             // Create additional markers for potential 'hot dogs'.
             // A hot dog is a higher-scoring hit within a lower scoring one.
             THitEnds hit_mids;
-            typename THit::TId id;
-            id = (*(hit_ends.begin()->m_Ptr))->GetId(hit_ends.begin()->m_Point/2);
+            typename THit::TId id(new typename THit::TId::element_type());
             typedef pair<THitRef*, Uint1> THitEndInfo;
             typedef set<THitEndInfo> TOpenHits;
             TOpenHits open_hits;
-            open_hits.insert(
-                THitEndInfo(hit_ends.begin()->m_Ptr,hit_ends.begin()->m_Point/2));
             ITERATE(typename THitEnds, ii, hit_ends) {
 
                 const Uint1 where = ii->m_Point/2;
