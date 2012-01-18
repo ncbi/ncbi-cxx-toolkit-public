@@ -1168,8 +1168,10 @@ void CRemoteBlast::SetQueries(CRef<objects::CPssmWithParameters> pssm)
     
     m_QSR->SetQueries(*queries_p);
     m_NeedConfig = ENeedConfig(m_NeedConfig & (~ eQueries));
-    
-    m_QSR->SetService(new_service);
+
+    if(m_QSR->GetService() != delta_service) {
+        m_QSR->SetService(new_service);
+    }
 }
 
 string CRemoteBlast::GetErrors(void)
