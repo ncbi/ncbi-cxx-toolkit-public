@@ -1243,8 +1243,9 @@ CDeltaBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     arg_desc.SetCurrentGroup("DELTA-BLAST options");
 
-    arg_desc.AddKey(kArgRpsDb, "database_name", "BLAST domain "
-                    "database name", CArgDescriptions::eString);
+    arg_desc.AddDefaultKey(kArgRpsDb, "database_name", "BLAST domain "
+                           "database name", CArgDescriptions::eString,
+                           kDfltArgRpsDb);
 
     arg_desc.AddFlag(kArgShowDomainHits, "Show domain hits");
 }

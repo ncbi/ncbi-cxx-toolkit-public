@@ -318,6 +318,8 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgEntrezQuery;
 // DELTA-BLAST argumnets
 /// Argument to specify domain database name for DELTA-BLAST
 NCBI_BLASTINPUT_EXPORT extern const string kArgRpsDb;
+/// Default value for domain database name
+NCBI_BLASTINPUT_EXPORT extern const string kDfltArgRpsDb;
 
 /// Argument to specify inclusion e-value threshold for conserved domains
 NCBI_BLASTINPUT_EXPORT extern const string kArgDomainInclusionEThreshold;

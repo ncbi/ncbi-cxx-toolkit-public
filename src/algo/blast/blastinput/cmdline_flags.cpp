@@ -198,6 +198,7 @@ const string kArgIndexName("index_name");
 const string kArgEntrezQuery("entrez_query");
 
 const string kArgRpsDb("rpsdb");
+const string kDfltArgRpsDb("cdd_delta");
 const string kArgDomainInclusionEThreshold("domain_inclusion_ethresh");
 const string kArgShowDomainHits("show_domain_hits");
 
