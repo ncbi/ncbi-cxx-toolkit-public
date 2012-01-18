@@ -624,7 +624,7 @@ void CValidError_imp::PostErr
     // Append label for bioseq of feature location
     if (!m_SuppressContext) {
         try {
-            CBioseq_Handle hnd = m_Scope->GetBioseqHandle(ft.GetLocation());
+            CBioseq_Handle hnd = /* m_Scope->GetBioseqHandle(ft.GetLocation()) */ BioseqHandleFromLocation (m_Scope, ft.GetLocation());
             if( hnd ) {
                 CBioseq_Handle::TBioseqCore bc = hnd.GetBioseqCore();
                 desc += " [";
@@ -1463,37 +1463,40 @@ bool CValidError_imp::Validate
 
     if (m_dblink_count > 1) {
         PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
-            "Multiple DBLink user objects apply to a Bioseq", *m_TSE);
+            NStr::IntToString(m_dblink_count) + " DBLink user objects apply to a Bioseq", *m_TSE);
     }
 
     if (m_taa_count > 1) {
         PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
-            "DBLink user object has multiple Trace Assembly Archive entries", *m_TSE);
+            "Trace Assembly Archive entries appear in " + NStr::IntToString(m_taa_count) + " DBLink user objects", *m_TSE);
     }
 
     if (m_bs_count > 1) {
         PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
-            "DBLink user object has multiple BioSample entries", *m_TSE);
+            "BioSample entries appear in " + NStr::IntToString(m_bs_count) + " DBLink user objects", *m_TSE);
     }
 
     if (m_pdb_count > 1) {
         PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
-            "DBLink user object has multiple ProbeDB entries", *m_TSE);
+            "ProbeDB entries appear in " + NStr::IntToString(m_pdb_count) + " DBLink user objects", *m_TSE);
     }
 
     if (m_sra_count > 1) {
         PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
-            "DBLink user object has multiple Sequence Read Archive entries", *m_TSE);
+            "Sequence Read Archive entries appear in " + NStr::IntToString(m_sra_count) + " DBLink user objects", *m_TSE);
     }
 
     if (m_bp_count > 1) {
         PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
-            "DBLink user object has multiple BioProject entries", *m_TSE);
+            "BioProject entries appear in " + NStr::IntToString(m_bp_count) + " DBLink user objects", *m_TSE);
     }
 
-    if (m_unknown_count > 0) {
+    if (m_unknown_count > 1) {
         PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
-            "DBLink user object has unrecognized entries", *m_TSE);
+            "Unrecognized entries appear in " + NStr::IntToString(m_unknown_count) + " DBLink user objects", *m_TSE);
+    } else if (m_unknown_count > 0) {
+        PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
+            "Unrecognized entries appear in " + NStr::IntToString(m_unknown_count) + " DBLink user object", *m_TSE);
     }
 
 
