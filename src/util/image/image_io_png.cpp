@@ -47,6 +47,7 @@
 
 // libpng main header
 #include <png.h>
+#include <zlib.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -177,11 +178,11 @@ static void s_PngReadValidate(png_structp png_ptr,
                               size_t& x, size_t& y, size_t& w, size_t& h)
 {
     // store and validate our image's parameters
-    width        = info_ptr->width;
-    height       = info_ptr->height;
-    depth        = info_ptr->channels;
-    png_byte color_type = info_ptr->color_type;
-    png_byte bit_depth  = info_ptr->bit_depth;
+    width        = png_get_image_width(png_ptr, info_ptr);
+    height       = png_get_image_height(png_ptr, info_ptr);
+    depth        = png_get_channels(png_ptr, info_ptr);
+    png_byte color_type = png_get_color_type(png_ptr, info_ptr);
+    png_byte bit_depth  = png_get_bit_depth(png_ptr, info_ptr);
 
     // we support only RGB and RGBA images
     if ( color_type != PNG_COLOR_TYPE_RGB  &&
