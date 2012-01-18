@@ -935,7 +935,8 @@ int CGridCommandLineInterfaceApp::Cmd_DumpQueue()
     SetUp_NetScheduleCmd(eNetScheduleAdmin);
 
     if (!IsOptionSet(eSelectByStatus))
-        m_NetScheduleAdmin.DumpQueue(NcbiCout);
+        m_NetScheduleAdmin.DumpQueue(NcbiCout,
+            m_Opts.start_after_job, m_Opts.job_count);
     else
         m_NetScheduleAdmin.PrintQueue(NcbiCout, m_Opts.job_status);
 

@@ -180,6 +180,12 @@ struct SOptionDefinition {
             "is given, only the jobs with the specified affinity "
             "will be counted."},
 
+    {CCommandLineParser::eOptionWithParameter, eStartAfterJob,
+        "start-after-job", "Specify the job key, the key of the last job in the previous dump batch."},
+
+    {CCommandLineParser::eOptionWithParameter, eJobCount,
+        "job-count", "Specify the maximum number of jobs in the output."},
+
     {CCommandLineParser::eOptionWithParameter, eSelectByStatus,
         "select-by-status", "Filter output by job status."},
 
@@ -532,8 +538,8 @@ struct SCommandDefinition {
         "This command dumps the entire contents of a NetSchedule queue. "
         "It is also possible to filter the output by job status, but "
         "in this case significantly less information is printed.",
-        {eNetSchedule, eQueue, eSelectByStatus, eAuth,
-            eClientNode, eClientSession, -1}},
+        {eNetSchedule, eQueue, eStartAfterJob, eJobCount,
+            eSelectByStatus, eAuth, eClientNode, eClientSession, -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_CreateQueue,
         "createqueue", "Create a dynamic NetSchedule queue.",
@@ -791,6 +797,12 @@ int CGridCommandLineInterfaceApp::Run()
                 break;
             case eJobId:
                 m_Opts.job_ids.push_back(opt_value);
+                break;
+            case eStartAfterJob:
+                m_Opts.start_after_job = opt_value;
+                break;
+            case eJobCount:
+                m_Opts.job_count = NStr::StringToSizet(opt_value);
                 break;
             case eSelectByStatus:
                 if ((m_Opts.job_status = CNetScheduleAPI::StringToStatus(

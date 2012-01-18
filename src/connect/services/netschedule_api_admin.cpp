@@ -146,9 +146,19 @@ string CNetScheduleAdmin::GetServerVersion()
 }
 
 
-void CNetScheduleAdmin::DumpQueue(CNcbiOstream& output_stream)
+void CNetScheduleAdmin::DumpQueue(CNcbiOstream& output_stream,
+    const string& start_after_job, size_t job_count)
 {
-    m_Impl->m_API->m_Service.PrintCmdOutput("DUMP",
+    string cmd("DUMP");
+    if (!start_after_job.empty()) {
+        cmd.append(" start_after=");
+        cmd.append(start_after_job);
+    }
+    if (job_count > 0) {
+        cmd.append(" count=");
+        cmd.append(NStr::NumericToString(job_count));
+    }
+    m_Impl->m_API->m_Service.PrintCmdOutput(cmd,
         output_stream, CNetService::eMultilineOutput);
 }
 

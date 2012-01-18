@@ -104,6 +104,8 @@ enum EOption {
     eActiveJobCount,
     eJobsByAffinity,
     eJobsByStatus,
+    eStartAfterJob,
+    eJobCount,
     eSelectByStatus,
     eBrief,
     eStatusOnly,
@@ -166,6 +168,8 @@ private:
         unsigned timeout;
         string reservation_token;
         std::vector<std::string> job_ids;
+        string start_after_job;
+        size_t job_count;
         CNetScheduleAPI::EJobStatus job_status;
         time_t extend_lifetime_by;
         unsigned short listening_port;
@@ -189,8 +193,8 @@ private:
         char option_flags[eTotalNumberOfOptions];
 
         SOptions() : offset(0), size(0), ttl(0), return_code(0),
-            batch_size(0), limit(0), timeout(0), extend_lifetime_by(0),
-            listening_port(0),
+            batch_size(0), limit(0), timeout(0), job_count(0),
+            extend_lifetime_by(0), listening_port(0),
             input_stream(NULL), output_stream(NULL)
         {
             memset(option_flags, 0, eTotalNumberOfOptions);
