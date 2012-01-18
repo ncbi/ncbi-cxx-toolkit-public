@@ -68,7 +68,9 @@ string CGenomicCollectionsService::x_GetURL()
 
 void CGenomicCollectionsService::x_Connect()
 {
-    LOG_POST("Connecting to url:" << x_GetURL().c_str());
+#ifdef _DEBUG
+    LOG_POST(Info << "Connecting to url:" << x_GetURL().c_str());
+#endif
     STimeout to5Min;
     to5Min.sec=600;
     to5Min.usec=0;
@@ -95,9 +97,11 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(string acc,
     req.SetScaf_flags(scafAttrFlags);
     req.SetComponent_flags(compAttrFlags);
     
+#ifdef _DEBUG
     ostringstream ostrstrm;
     ostrstrm << "Making request - " << MSerial_AsnText << req;
-    LOG_POST(ostrstrm.str());
+    LOG_POST(Info << ostrstrm.str());
+#endif
     
     try {
         return AskGet_assembly(req, &reply);
@@ -130,9 +134,11 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(int releaseId,
     req.SetScaf_flags(scafAttrFlags);
     req.SetComponent_flags(compAttrFlags);
     
+#ifdef _DEBUG
     ostringstream ostrstrm;
     ostrstrm << "Making request -" << MSerial_AsnText << req;
-    LOG_POST(ostrstrm.str());
+    LOG_POST(Info << ostrstrm.str());
+#endif
     
     try {
         return AskGet_assembly(req, &reply);
