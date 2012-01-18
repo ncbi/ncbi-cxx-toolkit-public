@@ -45,28 +45,9 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
-class CStackLogger {
-public:
-    CStackLogger() {
-        m_indent = 0;
-    }
-    void StackDown(
-        const string& objtype) {
-//        cerr << string(2*m_indent, ' ') << "[" << objtype << endl;
-//        m_indent++;
-    };
-    void StackUp() {
-//        m_indent--;
-//        cerr << string(2*m_indent, ' ') << "]" << endl;
-    }
-private:
-    int m_indent;
-};
-    
 //  ============================================================================
 class NCBI_XOBJWRITE_EXPORT CGff2Writer:
     public CWriterBase
-    , public CStackLogger
 //  ============================================================================
 {
 public:
@@ -80,15 +61,20 @@ public:
         CScope&,
         CNcbiOstream&,
         unsigned int = fNormal );
+
     CGff2Writer(
         CNcbiOstream&,
         unsigned int = fNormal );
+
     virtual ~CGff2Writer();
 
     virtual bool WriteHeader();
+
     virtual bool WriteHeader(
         const CSeq_annot& ) { return WriteHeader(); };
+
     virtual bool WriteFooter();
+
     virtual bool WriteFooter(
         const CSeq_annot& ) { return WriteFooter(); };
 
@@ -99,6 +85,7 @@ public:
         const CSeq_annot&,
         const string& = "",
         const string& = "" );
+
     bool WriteAlign( 
         const CSeq_align&,
         const string& = "",
@@ -130,44 +117,38 @@ protected:
 
     virtual bool x_WriteAnnot( 
         const CSeq_annot& );
-    virtual bool x_WriteAlign( 
+
+    virtual bool x_WriteAlign(
         const CSeq_align&,
         bool=false );
+
     virtual bool x_WriteSeqEntryHandle(
         CSeq_entry_Handle );
+
     virtual bool x_WriteBioseqHandle(
         CBioseq_Handle );
+
     virtual bool x_WriteSeqAnnotHandle(
         CSeq_annot_Handle );
 
     virtual bool x_WriteFeature(
-        feature::CFeatTree&,
-        CMappedFeat );
-    virtual bool x_WriteFeature(
         CGffFeatureContext&,
         CMappedFeat );
+
     virtual bool x_WriteAssemblyInfo(
         const string&,
         const string& );
 
     virtual bool x_WriteBrowserLine(
         const CRef< CUser_object > );
+
     virtual bool x_WriteTrackLine(
         const CRef< CUser_object > );
+
     virtual bool x_WriteRecord( 
         const CGffWriteRecord* );
 
-    CRef< CUser_object > x_GetDescriptor(
-        const CSeq_annot&,
-        const string& ) const;
-
-    CRef< CUser_object > x_GetDescriptor(
-        const CSeq_align&,
-        const string& ) const;
-
-    static bool x_NeedsQuoting(
-        const string& );
-
+    // data:
     CRef<CScope> m_pScope;
     bool m_bHeaderWritten;
     auto_ptr<SAnnotSelector> m_Selector;

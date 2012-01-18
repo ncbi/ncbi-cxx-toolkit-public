@@ -30,7 +30,7 @@
  */
 
 #ifndef OBJTOOLS_WRITERS___VCF_WRITER__HPP
-#define OBJTOOLS_READERS___VCF_WRITER__HPP
+#define OBJTOOLS_WRITERS___VCF_WRITER__HPP
 
 #include <objtools/writers/writer.hpp>
 
@@ -74,43 +74,43 @@ protected:
     bool x_WriteMetaCreateNew(
         const CSeq_annot& );
     bool x_WriteFeature(
-        feature::CFeatTree&,
+        CGffFeatureContext&,
         CMappedFeat );
 
     bool x_WriteFeatureChrom(
-        feature::CFeatTree&,
+        CGffFeatureContext&,
         CMappedFeat );
         
     bool x_WriteFeaturePos(
-        feature::CFeatTree&,
+        CGffFeatureContext&,
         CMappedFeat );
         
     bool x_WriteFeatureId(
-        feature::CFeatTree&,
+        CGffFeatureContext&,
         CMappedFeat );
         
     bool x_WriteFeatureRef(
-        feature::CFeatTree&,
+        CGffFeatureContext&,
         CMappedFeat );
         
     bool x_WriteFeatureAlt(
-        feature::CFeatTree&,
+        CGffFeatureContext&,
         CMappedFeat );
         
     bool x_WriteFeatureQual(
-        feature::CFeatTree&,
+        CGffFeatureContext&,
         CMappedFeat );
         
     bool x_WriteFeatureFilter(
-        feature::CFeatTree&,
+        CGffFeatureContext&,
         CMappedFeat );
         
     bool x_WriteFeatureInfo(
-        feature::CFeatTree&,
+        CGffFeatureContext&,
         CMappedFeat );
         
     bool x_WriteFeatureGenotypeData(
-        feature::CFeatTree&,
+        CGffFeatureContext&,
         CMappedFeat );
     
     CScope& m_Scope;

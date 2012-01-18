@@ -55,6 +55,7 @@
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
 
+#include <objtools/writers/write_util.hpp>
 #include <objtools/writers/gff3_write_data.hpp>
 #include <objtools/writers/gff_writer.hpp>
 
@@ -111,19 +112,19 @@ bool CGff2Writer::x_WriteAnnot(
     const CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
-    StackDown("Annot");
-    CRef< CUser_object > pBrowserInfo = x_GetDescriptor( annot, "browser" );
+    CRef< CUser_object > pBrowserInfo = CWriteUtil::GetDescriptor( 
+        annot, "browser" );
     if ( pBrowserInfo ) {
         x_WriteBrowserLine( pBrowserInfo );
     }
-    CRef< CUser_object > pTrackInfo = x_GetDescriptor( annot, "track" );
+    CRef< CUser_object > pTrackInfo = CWriteUtil::GetDescriptor( 
+        annot, "track" );
     if ( pTrackInfo ) {
         x_WriteTrackLine( pTrackInfo );
     }
     CSeq_annot_Handle sah = m_pScope->AddSeq_annot( annot );
     bool bWrite = x_WriteSeqAnnotHandle( sah );
     m_pScope->RemoveSeq_annot( sah );
-    StackUp();
     return bWrite;
 }
 
@@ -148,7 +149,6 @@ bool CGff2Writer::x_WriteSeqEntryHandle(
     CSeq_entry_Handle seh )
 //  ----------------------------------------------------------------------------
 {
-    StackDown("SeqEntryHandle");
     if (seh.IsSet()  &&  seh.GetSet().IsSetClass()  
             &&  seh.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot) {
         for ( CBioseq_CI bci( seh ); bci; ++bci ) {
@@ -168,7 +168,6 @@ bool CGff2Writer::x_WriteSeqEntryHandle(
             }
         }
     }
-    StackUp();
     return true;
 }
 
@@ -196,17 +195,14 @@ bool CGff2Writer::x_WriteBioseqHandle(
     CBioseq_Handle bsh ) 
 //  ----------------------------------------------------------------------------
 {
-   StackDown("BioseqHandle");
-
     SAnnotSelector sel = GetAnnotSelector();
     CFeat_CI feat_iter(bsh, sel);
-    feature::CFeatTree feat_tree( feat_iter );
-    for ( ;  feat_iter;  ++feat_iter ) {
-        if ( ! x_WriteFeature( feat_tree, *feat_iter ) ) {
+    CGffFeatureContext fc(feature::CFeatTree(feat_iter), bsh);
+    for (;  feat_iter; ++feat_iter) {
+        if (!x_WriteFeature(fc, *feat_iter)) {
             return false;
         }
     } 
-    StackUp();   
     return true;
 }
 
@@ -231,7 +227,6 @@ bool CGff2Writer::x_WriteSeqAnnotHandle(
     CSeq_annot_Handle sah )
 //  ----------------------------------------------------------------------------
 {
-    StackDown("SeqAnnotHandle");
     CConstRef<CSeq_annot> pAnnot = sah.GetCompleteSeq_annot();
 
     if ( pAnnot->IsAlign() ) {
@@ -240,26 +235,24 @@ bool CGff2Writer::x_WriteSeqAnnotHandle(
                 return false;
             }
         }
-        StackUp();
         return true;
     }
 
     SAnnotSelector sel = GetAnnotSelector();
     CFeat_CI feat_iter(sah, sel);
-    CGffFeatureContext fc(feature::CFeatTree(feat_iter), CBioseq_Handle(), sah);
+    feature::CFeatTree ft(feat_iter);
+    CGffFeatureContext fc(ft, CBioseq_Handle(), sah);
     for ( /*0*/; feat_iter; ++feat_iter ) {
         if ( ! x_WriteFeature( fc, *feat_iter ) ) {
-            StackUp();
             return false;
         }
     }
-    StackUp();
     return true;
 }
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::x_WriteFeature(
-    feature::CFeatTree& ftree,
+    CGffFeatureContext& context,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -285,18 +278,7 @@ bool CGff2Writer::x_WriteFeature(
         }
         return true;
     }
-    
-    // default behavior:
     return x_WriteRecord( pParent );    
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff2Writer::x_WriteFeature(
-    CGffFeatureContext& context,
-    CMappedFeat mf )
-//  ----------------------------------------------------------------------------
-{
-    return x_WriteFeature(context.FeatTree(), mf);
 }
 
 //  ----------------------------------------------------------------------------
@@ -320,14 +302,6 @@ bool CGff2Writer::WriteAlign(
     if ( ! x_WriteAssemblyInfo( strAssName, strAssAcc ) ) {
         return false;
     }
-    CRef< CUser_object > pBrowserInfo = x_GetDescriptor( align, "browser" );
-    if ( pBrowserInfo ) {
-        x_WriteBrowserLine( pBrowserInfo );
-    }
-    CRef< CUser_object > pTrackInfo = x_GetDescriptor( align, "track" );
-    if ( pTrackInfo ) {
-        x_WriteTrackLine( pTrackInfo );
-    }
     if ( ! x_WriteAlign( align ) ) {
         return false;
     }
@@ -340,8 +314,6 @@ bool CGff2Writer::x_WriteAlign(
     bool )
 //  ----------------------------------------------------------------------------
 {
-    StackDown("Align");
-    StackUp();
     return false;
 }
 
@@ -386,7 +358,7 @@ bool CGff2Writer::x_WriteTrackLine(
         }
         string strKey = (*cit)->GetLabel().GetStr();
         string strValue = (*cit)->GetData().GetStr();
-        if ( x_NeedsQuoting( strValue ) ) {
+        if ( CGffWriteRecord().NeedsQuoting( strValue ) ) {
             strValue = string( "\"" ) + strValue + string( "\"" );
         }
         strTrackLine += " ";
@@ -412,45 +384,7 @@ bool CGff2Writer::x_WriteRecord(
     m_Os << pRecord->StrStrand() << '\t';
     m_Os << pRecord->StrPhase() << '\t';
     m_Os << pRecord->StrAttributes() << endl;
-//    m_Os << "" << endl;
     return true;
-}
-
-//  ----------------------------------------------------------------------------
-CRef< CUser_object > CGff2Writer::x_GetDescriptor(
-    const CSeq_annot& annot,
-    const string& strType ) const
-//  ----------------------------------------------------------------------------
-{
-    CRef< CUser_object > pUser;
-    if ( ! annot.IsSetDesc() ) {
-        return pUser;
-    }
-
-    const list< CRef< CAnnotdesc > > descriptors = annot.GetDesc().Get();
-    list< CRef< CAnnotdesc > >::const_iterator it;
-    for ( it = descriptors.begin(); it != descriptors.end(); ++it ) {
-        if ( ! (*it)->IsUser() ) {
-            continue;
-        }
-        const CUser_object& user = (*it)->GetUser();
-        if ( user.GetType().GetStr() == strType ) {
-            pUser.Reset( new CUser_object );
-            pUser->Assign( user );
-            return pUser;
-        }
-    }    
-    return pUser;
-}
-
-//  ----------------------------------------------------------------------------
-CRef< CUser_object > CGff2Writer::x_GetDescriptor(
-    const CSeq_align& align,
-    const string& strType ) const
-//  ----------------------------------------------------------------------------
-{
-    CRef< CUser_object > pUser;
-    return pUser;
 }
 
 //  ----------------------------------------------------------------------------
@@ -486,24 +420,5 @@ bool CGff2Writer::x_WriteAssemblyInfo(
     }
     return true;
 }
-
-//  ----------------------------------------------------------------------------
-bool CGff2Writer::x_NeedsQuoting(
-    const string& str )
-//  ----------------------------------------------------------------------------
-{
-    if( str.empty() )
-		return true;
-
-	for ( size_t u=0; u < str.length(); ++u ) {
-        if ( str[u] == '\"' )
-			return false;
-		if ( str[u] == ' ' || str[u] == ';' ) {
-            return true;
-        }
-    }
-    return false;
-}
-
 
 END_NCBI_SCOPE

@@ -51,6 +51,7 @@
 #include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/SubSource.hpp>
 
+#include <objtools/writers/write_util.hpp>
 #include <objtools/writers/gff2_write_data.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
@@ -71,242 +72,6 @@ const string CGffWriteRecord::ATTR_SEPARATOR
 const string CGffWriteRecord::INTERNAL_SEPARATOR
 //  ----------------------------------------------------------------------------
     = "###";
-
-//  ----------------------------------------------------------------------------
-string CGffWriteRecord::s_GetSubtypeString( int subtype )
-//  ----------------------------------------------------------------------------
-{
-    switch ( subtype ) {
-        default: return "";
-        case COrgMod::eSubtype_strain: return "strain";
-        case COrgMod::eSubtype_substrain: return "substrain";
-        case COrgMod::eSubtype_type: return "type";
-        case COrgMod::eSubtype_subtype: return "subtype";
-        case COrgMod::eSubtype_variety: return "variety";
-        case COrgMod::eSubtype_serotype: return "serotype";
-        case COrgMod::eSubtype_serogroup: return "serogroup";
-        case COrgMod::eSubtype_serovar: return "serovar";
-        case COrgMod::eSubtype_cultivar: return "cultivar";
-        case COrgMod::eSubtype_pathovar: return "pathovar";
-        case COrgMod::eSubtype_chemovar: return "chemovar";
-        case COrgMod::eSubtype_biovar: return "biovar";
-        case COrgMod::eSubtype_biotype: return "biotype";
-        case COrgMod::eSubtype_group: return "group";
-        case COrgMod::eSubtype_subgroup: return "subgroup";
-        case COrgMod::eSubtype_isolate: return "isolate";
-        case COrgMod::eSubtype_common: return "common";
-        case COrgMod::eSubtype_acronym: return "acronym";
-        case COrgMod::eSubtype_dosage: return "dosage";
-        case COrgMod::eSubtype_nat_host: return "nat_host";
-        case COrgMod::eSubtype_sub_species: return "sub_species";
-        case COrgMod::eSubtype_specimen_voucher: return "specimen_voucher";
-        case COrgMod::eSubtype_authority: return "authority";
-        case COrgMod::eSubtype_forma: return "forma";
-        case COrgMod::eSubtype_forma_specialis: return "dosage";
-        case COrgMod::eSubtype_ecotype: return "ecotype";
-        case COrgMod::eSubtype_synonym: return "synonym";
-        case COrgMod::eSubtype_anamorph: return "anamorph";
-        case COrgMod::eSubtype_teleomorph: return "teleomorph";
-        case COrgMod::eSubtype_breed: return "breed";
-        case COrgMod::eSubtype_gb_acronym: return "gb_acronym";
-        case COrgMod::eSubtype_gb_anamorph: return "gb_anamorph";
-        case COrgMod::eSubtype_gb_synonym: return "gb_synonym";
-        case COrgMod::eSubtype_old_lineage: return "old_lineage";
-        case COrgMod::eSubtype_old_name: return "old_name";
-        case COrgMod::eSubtype_culture_collection: return "culture_collection";
-        case COrgMod::eSubtype_bio_material: return "bio_material";
-        case COrgMod::eSubtype_other: return "note";
-    }
-    return "";
-}
-
-//  ----------------------------------------------------------------------------
-string CGffWriteRecord::s_GetSubsourceString( 
-    int subtype )
-//  ----------------------------------------------------------------------------
-{
-    switch ( subtype ) {
-        case CSubSource::eSubtype_chromosome: return "chromosome";
-        case CSubSource::eSubtype_map: return "map";
-        case CSubSource::eSubtype_clone: return "clone";
-        case CSubSource::eSubtype_subclone: return "subclone";
-        case CSubSource::eSubtype_haplotype: return "haplotype";
-        case CSubSource::eSubtype_genotype: return "genotype";
-        case CSubSource::eSubtype_sex: return "sex";
-        case CSubSource::eSubtype_cell_line: return "cell_line";
-        case CSubSource::eSubtype_cell_type: return "cell_type";
-        case CSubSource::eSubtype_tissue_type: return "tissue_type";
-        case CSubSource::eSubtype_clone_lib: return "clone_lib";
-        case CSubSource::eSubtype_dev_stage: return "dev_stage";
-        case CSubSource::eSubtype_frequency: return "frequency";
-        case CSubSource::eSubtype_germline: return "germline";
-        case CSubSource::eSubtype_rearranged: return "rearranged";
-        case CSubSource::eSubtype_lab_host: return "lab_host";
-        case CSubSource::eSubtype_pop_variant: return "pop_variant";
-        case CSubSource::eSubtype_tissue_lib: return "tissue_lib";
-        case CSubSource::eSubtype_plasmid_name: return "plasmid_name";
-        case CSubSource::eSubtype_transposon_name: return "transposon_name";
-        case CSubSource::eSubtype_insertion_seq_name: return "insertion_seq_name";
-        case CSubSource::eSubtype_plastid_name: return "plastid_name";
-        case CSubSource::eSubtype_country: return "country";
-        case CSubSource::eSubtype_segment: return "segment";
-        case CSubSource::eSubtype_endogenous_virus_name: return "endogenous_virus_name";
-        case CSubSource::eSubtype_transgenic: return "transgenic";
-        case CSubSource::eSubtype_environmental_sample: return "environmental_sample";
-        case CSubSource::eSubtype_isolation_source: return "isolation_source";
-        case CSubSource::eSubtype_lat_lon: return "lat_lon";
-        case CSubSource::eSubtype_collection_date: return "collection_date";
-        case CSubSource::eSubtype_collected_by: return "collected_by";
-        case CSubSource::eSubtype_identified_by: return "identified_by";
-        case CSubSource::eSubtype_fwd_primer_seq: return "fwd_primer_seq";
-        case CSubSource::eSubtype_fwd_primer_name: return "fwd_primer_name";
-        case CSubSource::eSubtype_rev_primer_seq: return "rev_primer_seq";
-        case CSubSource::eSubtype_rev_primer_name: return "rev_primer_name";
-        case CSubSource::eSubtype_metagenomic: return "metagenomic";
-        case CSubSource::eSubtype_mating_type: return "mating_type";
-        case CSubSource::eSubtype_linkage_group: return "linkage_group";
-        case CSubSource::eSubtype_haplogroup: return "haplogroup";
-        case CSubSource::eSubtype_whole_replicon: return "whole_replicon";
-        case CSubSource::eSubtype_phenotype: return "phenotype";
-        case CSubSource::eSubtype_other: return "note";
-        default: return "";
-    }
-    return "";
-}
-
-//  ----------------------------------------------------------------------------
-string CGffWriteRecord::s_GetBiomolString(
-    int instmol, 
-    int biomol )
-//  ----------------------------------------------------------------------------
-{
-    switch( biomol ) {
-        default:
-            break;
-        case CMolInfo::eBiomol_genomic: {
-            switch (instmol) {
-                default:
-                    return "genomic";
-                case CSeq_inst::eMol_dna:
-                    return "genomic DNA";
-                case CSeq_inst::eMol_rna:
-                    return "genomic RNA";
-            }
-        }
-        case CMolInfo::eBiomol_mRNA: 
-            return "mRNA";
-        case CMolInfo::eBiomol_rRNA: 
-            return "rRNA";
-        case CMolInfo::eBiomol_tRNA: 
-            return "tRNA";
-        case CMolInfo::eBiomol_pre_RNA:
-        case CMolInfo::eBiomol_snRNA:
-        case CMolInfo::eBiomol_scRNA:
-        case CMolInfo::eBiomol_snoRNA:
-        case CMolInfo::eBiomol_ncRNA:
-        case CMolInfo::eBiomol_tmRNA:
-        case CMolInfo::eBiomol_transcribed_RNA: 
-            return "transcribed RNA";
-        case CMolInfo::eBiomol_other_genetic:
-        case CMolInfo::eBiomol_other: {
-            switch (instmol) {
-                default:
-                    return "other";
-                case CSeq_inst::eMol_dna:
-                    return "other DNA";
-                case CSeq_inst::eMol_rna:
-                    return "other RNA";
-            }
-        }
-        case CMolInfo::eBiomol_cRNA: 
-            return "viral cRNA";
-
-        case CMolInfo::eBiomol_genomic_mRNA: 
-            return "genomic RNA";
-    }
-    switch (instmol) {
-        default:
-            return "unassigned";
-        case CSeq_inst::eMol_dna:
-            return "unassigned DNA";
-        case CSeq_inst::eMol_rna:
-            return "unassigned RNA";
-    }
-    return "";
-}
-
-//  ----------------------------------------------------------------------------
-string CGffWriteRecord::s_GetGenomeString( int genome )
-//  ----------------------------------------------------------------------------
-{
-    switch ( genome ) {
-        default:
-            return "";
-        case CBioSource::eGenome_apicoplast: return "apicoplast";
-        case CBioSource::eGenome_chloroplast: return "chloroplast";
-        case CBioSource::eGenome_chromatophore: return "chromatophore";
-        case CBioSource::eGenome_chromoplast: return "chromoplast";
-        case CBioSource::eGenome_chromosome: return "chromosome";
-        case CBioSource::eGenome_cyanelle: return "cyanelle";
-        case CBioSource::eGenome_endogenous_virus: return "endogenous_virus";
-        case CBioSource::eGenome_extrachrom: return "extrachrom";
-        case CBioSource::eGenome_genomic: return "genomic";
-        case CBioSource::eGenome_hydrogenosome: return "hydrogenosome";
-        case CBioSource::eGenome_insertion_seq: return "insertion_seq";
-        case CBioSource::eGenome_kinetoplast: return "kinetoplast";
-        case CBioSource::eGenome_leucoplast: return "leucoplast";
-        case CBioSource::eGenome_macronuclear: return "macronuclear";
-        case CBioSource::eGenome_mitochondrion: return "mitochondrion";
-        case CBioSource::eGenome_nucleomorph: return "nucleomorph";
-        case CBioSource::eGenome_plasmid: return "plasmid";
-        case CBioSource::eGenome_plastid: return "plastid";
-        case CBioSource::eGenome_proplastid: return "proplastid";
-        case CBioSource::eGenome_proviral: return "proviral";
-        case CBioSource::eGenome_transposon: return "transposon";
-        case CBioSource::eGenome_unknown: return "unknown";
-        case CBioSource::eGenome_virion: return "virion";
-    }
-}
-
-//  ----------------------------------------------------------------------------
-string CGffWriteRecord::s_GetGffSourceString(
-    CBioseq_Handle bsh )
-//  ----------------------------------------------------------------------------
-{
-    try {
-        CSeq_id_Handle best_idh = sequence::GetId(bsh, sequence::eGetId_Best);
-        if ( !best_idh ) {
-            best_idh = sequence::GetId(bsh, sequence::eGetId_Canonical);
-        }
-        switch ( best_idh.Which() ) {
-            default:
-                break;
-            case CSeq_id::e_Local:
-                return "Local";
-            case CSeq_id::e_Gibbsq:
-            case CSeq_id::e_Gibbmt:
-            case CSeq_id::e_Giim:
-            case CSeq_id::e_Gi:
-                return "GenInfo";
-            case CSeq_id::e_Genbank:
-                return "Genbank";
-            case CSeq_id::e_Swissprot:
-                return "SwissProt";
-            case CSeq_id::e_Patent:
-                return "Patent";
-            case CSeq_id::e_Other:
-                return "RefSeq";
-            case CSeq_id::e_General:
-                return best_idh.GetSeqId()->GetGeneral().GetDb();
-        }
-        string source = CSeq_id::SelectionName( best_idh.Which() );
-        NStr::ToUpper( source );
-        return source;
-    }
-    catch(...) {
-        return ".";
-    }
-}
 
 //  ----------------------------------------------------------------------------
 string CGffWriteRecord::StrId() const
@@ -471,7 +236,7 @@ string CGffWriteRecord::StrAttributes() const
         strAttributes += "=";
 //        strAttributes += " ";
 		
-		bool quote = x_NeedsQuoting(it->second);
+		bool quote = NeedsQuoting(it->second);
 		if ( quote )
 			strAttributes += '\"';		
 		strAttributes += it->second;
@@ -485,7 +250,7 @@ string CGffWriteRecord::StrAttributes() const
 }
 
 //  ----------------------------------------------------------------------------
-bool CGffWriteRecord::x_NeedsQuoting(
+bool CGffWriteRecord::NeedsQuoting(
     const string& str ) const
 //  ----------------------------------------------------------------------------
 {
@@ -522,8 +287,8 @@ void CGffWriteRecord::x_StrAttributesAppendValue(
         if ( !strValue.empty() ) {
             strValue += multivalue_separator;
         }
-        string strTag = x_Encode( *pTag );
-        if (x_NeedsQuoting(strTag)) {
+        string strTag = CWriteUtil::UrlEncode( *pTag );
+        if (NeedsQuoting(strTag)) {
             strTag = string("\"") + strTag + string("\"");
         }
         strValue += strTag;
@@ -539,46 +304,6 @@ void CGffWriteRecord::x_StrAttributesAppendValue(
 	attrs.erase(it);
 }
 
-//  ----------------------------------------------------------------------------
-string CGffWriteRecord::x_Encode(
-    const string& strRaw )
-//  ----------------------------------------------------------------------------
-{
-    static const char s_Table[256][4] = {
-        "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07", "%08", "%09", 
-        "%0A", "%0B", "%0C", "%0D", "%0E", "%0F", "%10", "%11", "%12", "%13", 
-        "%14", "%15", "%16", "%17", "%18", "%19", "%1A", "%1B", "%1C", "%1D", 
-        "%1E", "%1F", " ",   "!",   "%22", "%23", "$",   "%25", "%26", "%27",
-        "%28", "%29", "%2A", "%2B", "%2C", "-",   ".",   "%2F", "0",   "1",   
-        "2",   "3",   "4",   "5",   "6",   "7",   "8",   "9",   ":",   "%3B", 
-        "%3C", "%3D", "%3E", "%3F", "@",   "A",   "B",   "C",   "D",   "E",   
-        "F",   "G",   "H",   "I",   "J",   "K",   "L",   "M",   "N",   "O",
-        "P",   "Q",   "R",   "S",   "T",   "U",   "V",   "W",   "X",   "Y",   
-        "Z",   "%5B", "%5C", "%5D", "^",   "_",   "%60", "a",   "b",   "c",   
-        "d",   "e",   "f",   "g",   "h",   "i",   "j",   "k",   "l",   "m",   
-        "n",   "o",   "p",   "q",   "r",   "s",   "t",   "u",   "v",   "w",
-        "x",   "y",   "z",   "%7B", "%7C", "%7D", "%7E", "%7F", "%80", "%81", 
-        "%82", "%83", "%84", "%85", "%86", "%87", "%88", "%89", "%8A", "%8B", 
-        "%8C", "%8D", "%8E", "%8F", "%90", "%91", "%92", "%93", "%94", "%95", 
-        "%96", "%97", "%98", "%99", "%9A", "%9B", "%9C", "%9D", "%9E", "%9F",
-        "%A0", "%A1", "%A2", "%A3", "%A4", "%A5", "%A6", "%A7", "%A8", "%A9", 
-        "%AA", "%AB", "%AC", "%AD", "%AE", "%AF", "%B0", "%B1", "%B2", "%B3", 
-        "%B4", "%B5", "%B6", "%B7", "%B8", "%B9", "%BA", "%BB", "%BC", "%BD", 
-        "%BE", "%BF", "%C0", "%C1", "%C2", "%C3", "%C4", "%C5", "%C6", "%C7",
-        "%C8", "%C9", "%CA", "%CB", "%CC", "%CD", "%CE", "%CF", "%D0", "%D1", 
-        "%D2", "%D3", "%D4", "%D5", "%D6", "%D7", "%D8", "%D9", "%DA", "%DB", 
-        "%DC", "%DD", "%DE", "%DF", "%E0", "%E1", "%E2", "%E3", "%E4", "%E5", 
-        "%E6", "%E7", "%E8", "%E9", "%EA", "%EB", "%EC", "%ED", "%EE", "%EF",
-        "%F0", "%F1", "%F2", "%F3", "%F4", "%F5", "%F6", "%F7", "%F8", "%F9", 
-        "%FA", "%FB", "|", "%FD", "%FE", "%FF"
-    };
-    string strEncoded;
-    for ( size_t i = 0;  i < strRaw.size();  ++i ) {
-        strEncoded += s_Table[static_cast<unsigned char>( strRaw[i] )];
-    }
-    return strEncoded;
-}
-    
 //  ----------------------------------------------------------------------------
 bool CGffWriteRecord::CorrectLocation(
     const CSeq_interval& interval ) 
@@ -680,11 +405,12 @@ bool CGffWriteRecordFeature::x_AssignBiosrcAttributes(
     const CBioSource& bs )
 //  ----------------------------------------------------------------------------
 {
-    if ( bs.IsSetGenome() ) {
-        m_Attributes["genome"] = s_GetGenomeString( bs.GetGenome() );
+    string value;
+    if (CWriteUtil::GetGenomeString(bs, value)) {
+        m_Attributes["genome"] = value;
     }
     if ( bs.IsSetOrg() ) {
-        const CBioSource::TOrg& org = bs.GetOrg();
+        const COrg_ref& org = bs.GetOrg();
         if ( org.IsSetDb() ) {
             const vector< CRef< CDbtag > >& tags = org.GetDb();
             string strAttr, strDb, strTag;
@@ -704,47 +430,26 @@ bool CGffWriteRecordFeature::x_AssignBiosrcAttributes(
             }
             m_Attributes["Dbxref"] = strAttr;
         }
+
         if ( org.IsSetOrgname() && org.GetOrgname().IsSetMod() ) {
             const list<CRef<COrgMod> >& orgmods = org.GetOrgname().GetMod();
-            for ( list<CRef<COrgMod> >::const_iterator it = orgmods.begin();
-                    it != orgmods.end(); ++it ) {
-                const COrgMod& mod = **it;
-                if ( !mod.IsSetSubtype() || !mod.IsSetSubname() ) {
-                    continue;
+            for (list<CRef<COrgMod> >::const_iterator it = orgmods.begin();
+                    it != orgmods.end(); ++it) {
+                string key, value;
+                if (CWriteUtil::GetOrgModSubType(**it, key, value)) {
+                    m_Attributes[key] = value;
                 }
-                string key = s_GetSubtypeString( mod.GetSubtype() );
-                if ( !key.empty() ) {
-                    m_Attributes[ key ] = mod.GetSubname();
-                }
-                cerr << "";
             }
         }
     }
+
     if ( bs.IsSetSubtype() ) {
         const list<CRef<CSubSource> >& subsources = bs.GetSubtype();
         for ( list<CRef<CSubSource> >::const_iterator it = subsources.begin();
                 it != subsources.end(); ++it ) {
-            const CSubSource& subsource = **it;
-            if ( !subsource.IsSetSubtype() || !subsource.IsSetName() ) {
-                continue;
-            }
-
-            CSubSource::TSubtype subtype = subsource.GetSubtype();
-            string key = s_GetSubsourceString( subsource.GetSubtype() );
-            if ( key.empty() ) {
-                continue;
-            }
-            switch ( subtype ) {
-                default: {
-                    if ( !key.empty() ) {
-                        m_Attributes[ key ] = subsource.GetName();
-                    }
-                    continue;
-                }
-            case CSubSource::eSubtype_environmental_sample: {
-                    m_Attributes[key] = "true";
-                    continue;
-                }
+            string key, value;
+            if (CWriteUtil::GetSubSourceSubType(**it, key, value)) {
+                m_Attributes[key] = value;
             }
         }
     }
@@ -773,7 +478,8 @@ bool CGffWriteRecordFeature::AssignSource(
     }
 
     m_strType = "region";
-    m_strSource = s_GetGffSourceString( bsh );
+    m_strSource = ".";
+    CWriteUtil::GetIdType(bsh, m_strSource);
     m_uSeqStart = 0;
     m_uSeqStop = bsh.GetBioseqLength() - 1;
     //score
@@ -784,16 +490,10 @@ bool CGffWriteRecordFeature::AssignSource(
 
     //  attributes:
     m_Attributes["gbkey"] = "Src";
-
-
-    CSeqdesc_CI md( bsh.GetParentEntry(), CSeqdesc::e_Molinfo, 0 );
-    if ( md ) {
-        const CMolInfo& molinfo = (*md).GetMolinfo();
-        if ( molinfo.IsSetBiomol() ) {
-            m_Attributes["mol_type"] = 
-                s_GetBiomolString( bsh.GetInst_Mol(), molinfo.GetBiomol() );
-        }
-    }
+    string value;
+    if (CWriteUtil::GetBiomolString(bsh, value)) {
+        m_Attributes["mol_type"] = value;
+    } 
 
     const CBioSource& bs = desc.GetSource();
     if ( ! x_AssignBiosrcAttributes( bs ) ) {
@@ -801,7 +501,7 @@ bool CGffWriteRecordFeature::AssignSource(
     }
     if ( bsh.IsSetInst_Topology() && 
             bsh.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
-       m_Attributes["Is_circular"] = "true";
+       m_Attributes["is_circular"] = "true";
     }
 
     return true;
@@ -915,12 +615,8 @@ bool CGffWriteRecordFeature::x_AssignSource(
         }
     }
 
-    try {
-        m_strSource = s_GetGffSourceString( 
-            mf.GetScope().GetBioseqHandle(mf.GetLocationId()) );
-    }
-    catch(...) {
-    }
+    CWriteUtil::GetIdType(
+        mf.GetScope().GetBioseqHandle(mf.GetLocationId()), m_strSource);
     return true;
 }
 

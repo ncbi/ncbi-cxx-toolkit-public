@@ -118,7 +118,7 @@ bool CGtfWriter::x_WriteRecord(
 
 //  ----------------------------------------------------------------------------
 bool CGtfWriter::x_WriteFeature(
-    feature::CFeatTree& ftree,
+    CGffFeatureContext& context,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -127,42 +127,42 @@ bool CGtfWriter::x_WriteFeature(
             // GTF is not interested --- ignore
             return true;
         case CSeqFeatData::eSubtype_gene: 
-            return x_WriteFeatureGene( ftree, mf );
+            return x_WriteFeatureGene( context, mf );
         case CSeqFeatData::eSubtype_mRNA:
-            return x_WriteFeatureMrna( ftree, mf );
+            return x_WriteFeatureMrna( context, mf );
         case CSeqFeatData::eSubtype_cdregion:
-            return x_WriteFeatureCds( ftree, mf );
+            return x_WriteFeatureCds( context, mf );
     }
     return false;
 }
 
 //  ----------------------------------------------------------------------------
 bool CGtfWriter::x_WriteFeatureGene(
-    feature::CFeatTree& ftree,
+    CGffFeatureContext& context,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    if ( m_uFlags & fNoGeneFeatures ) {
+    if (m_uFlags & fNoGeneFeatures) {
         return true;
     }
 
     CRef<CGtfRecord> pRecord( 
-        new CGtfRecord( ftree, (m_uFlags & fNoExonNumbers) ) );
-    if ( ! pRecord->AssignFromAsn( mf ) ) {
+        new CGtfRecord(context.FeatTree(), (m_uFlags & fNoExonNumbers)));
+    if (!pRecord->AssignFromAsn(mf)) {
         return false;
     }
-    return x_WriteRecord( pRecord );
+    return x_WriteRecord(pRecord);
 }
 
 //  ----------------------------------------------------------------------------
 bool CGtfWriter::x_WriteFeatureMrna(
-    feature::CFeatTree& ftree,
+    CGffFeatureContext& context,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
     m_exonMap.clear();
 
-    CRef<CGtfRecord> pMrna( new CGtfRecord( ftree ) );
+    CRef<CGtfRecord> pMrna( new CGtfRecord( context.FeatTree() ) );
     if ( ! pMrna->AssignFromAsn( mf ) ) {
         return false;
     }
@@ -181,12 +181,10 @@ bool CGtfWriter::x_WriteFeatureMrna(
         list< CRef< CSeq_interval > >::iterator it;
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             CSeq_interval& subint = **it;
-            CRef<CGtfRecord> pExon( new CGtfRecord( ftree, (m_uFlags & fNoExonNumbers) ) );
+            CRef<CGtfRecord> pExon( 
+                new CGtfRecord(context.FeatTree(), (m_uFlags & fNoExonNumbers)));
             pExon->MakeChildRecord( *pMrna, subint, uExonNumber++ );
             x_WriteRecord( pExon );
-//            set.AddOrMergeRecord( pExon );
-//            m_exonMap[ uExonNumber++ ] = CRef< CSeq_interval >( 
-//                new CSeq_interval( subint.SetId(), subint.SetFrom(), subint.SetTo() ) );
         }
     }
     return true;
@@ -194,13 +192,14 @@ bool CGtfWriter::x_WriteFeatureMrna(
 
 //  ----------------------------------------------------------------------------
 bool CGtfWriter::x_WriteFeatureCds(
-    feature::CFeatTree& ftree,
+    CGffFeatureContext& context,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
     const CSeq_feat& feature = mf.GetOriginalFeature();
        
-    CRef<CGtfRecord> pParent( new CGtfRecord( ftree, (m_uFlags & fNoExonNumbers) ) );
+    CRef<CGtfRecord> pParent( 
+        new CGtfRecord( context.FeatTree(), (m_uFlags & fNoExonNumbers) ) );
     if ( ! pParent->AssignFromAsn( mf ) ) {
         return false;
     }

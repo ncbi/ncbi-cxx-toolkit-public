@@ -84,9 +84,10 @@ public:
     static bool IsOrdered(
         const CSeq_loc& loc);
 
-protected:
-    virtual bool x_NeedsQuoting(
+    virtual bool NeedsQuoting(
         const string& ) const;
+
+protected:
     virtual bool x_AssignType(
         CMappedFeat );
     virtual bool x_AssignStart(

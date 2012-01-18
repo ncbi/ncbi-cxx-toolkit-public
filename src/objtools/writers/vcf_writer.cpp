@@ -55,6 +55,7 @@
 #include <objmgr/util/feature.hpp>
 #include <objmgr/seq_vector.hpp>
 
+#include <objtools/writers/feature_context.hpp>
 #include <objtools/writers/vcf_writer.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -238,9 +239,9 @@ bool CVcfWriter::x_WriteData(
     SAnnotSelector sel;
     sel.SetSortOrder( SAnnotSelector::eSortOrder_Normal );
 
-    feature::CFeatTree feat_tree( CFeat_CI( sah, sel) );
+    CGffFeatureContext fc(feature::CFeatTree(CFeat_CI(sah, sel)));
     for ( CFeat_CI mf( sah, sel ); mf; ++mf ) {
-        if ( ! x_WriteFeature( feat_tree, *mf ) ) {
+        if ( ! x_WriteFeature( fc, *mf ) ) {
             return false;
         }
     }
@@ -249,35 +250,35 @@ bool CVcfWriter::x_WriteData(
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeature(
-    feature::CFeatTree& ftree,
+    CGffFeatureContext& context,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! x_WriteFeatureChrom( ftree, mf ) ) {
+    if (!x_WriteFeatureChrom(context, mf)) {
         return false;
     }
-    if ( ! x_WriteFeaturePos( ftree, mf ) ) {
+    if (!x_WriteFeaturePos(context, mf)) {
         return false;
     }
-    if ( ! x_WriteFeatureId( ftree, mf ) ) {
+    if (!x_WriteFeatureId(context, mf)) {
         return false;
     }
-    if ( ! x_WriteFeatureRef( ftree, mf ) ) {
+    if (!x_WriteFeatureRef(context, mf)) {
         return false;
     }
-    if ( ! x_WriteFeatureAlt( ftree, mf ) ) {
+    if (!x_WriteFeatureAlt(context, mf)) {
         return false;
     }
-    if ( ! x_WriteFeatureQual( ftree, mf ) ) {
+    if (!x_WriteFeatureQual(context, mf)) {
         return false;
     }
-    if ( ! x_WriteFeatureFilter( ftree, mf ) ) {
+    if (!x_WriteFeatureFilter(context, mf)) {
         return false;
     }
-    if ( ! x_WriteFeatureInfo( ftree, mf ) ) {
+    if (!x_WriteFeatureInfo(context, mf)) {
         return false;
     }
-    if ( ! x_WriteFeatureGenotypeData( ftree, mf ) ) {
+    if (!x_WriteFeatureGenotypeData(context, mf)) {
         return false;
     }
     m_Os << endl;
@@ -286,7 +287,7 @@ bool CVcfWriter::x_WriteFeature(
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeatureChrom(
-    feature::CFeatTree& ftree,
+    CGffFeatureContext& context,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -299,11 +300,12 @@ bool CVcfWriter::x_WriteFeatureChrom(
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeaturePos(
-    feature::CFeatTree& ftree,
+    CGffFeatureContext& context,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
     m_Os << "\t";
+
     const CSeq_loc& loc = mf.GetLocation();
     unsigned int start = loc.GetStart(eExtreme_Positional);
     m_Os << NStr::UIntToString( start + 1 );
@@ -312,7 +314,7 @@ bool CVcfWriter::x_WriteFeaturePos(
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeatureId(
-    feature::CFeatTree& ftree,
+    CGffFeatureContext& context,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -335,7 +337,7 @@ bool CVcfWriter::x_WriteFeatureId(
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeatureRef(
-    feature::CFeatTree& ftree,
+    CGffFeatureContext& context,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -350,7 +352,6 @@ bool CVcfWriter::x_WriteFeatureRef(
         return true;
     }
     catch( ... ) {
-//        m_Os << "?";
     }
     try {
         typedef CVariation_ref::TData::TSet::TVariations TVARS;
@@ -383,7 +384,7 @@ bool CVcfWriter::x_WriteFeatureRef(
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeatureAlt(
-    feature::CFeatTree& ftree,
+    CGffFeatureContext& context,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -471,7 +472,7 @@ bool CVcfWriter::x_WriteFeatureAlt(
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeatureQual(
-    feature::CFeatTree& ftree,
+    CGffFeatureContext& context,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -496,12 +497,13 @@ bool CVcfWriter::x_WriteFeatureQual(
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeatureFilter(
-    feature::CFeatTree& ftree,
+    CGffFeatureContext& context,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
     m_Os << "\t";
 
+    feature::CFeatTree ftree = context.FeatTree();
     vector<string> filters;
     if ( mf.IsSetExt() ) {
         const CSeq_feat::TExt& ext = mf.GetExt();
@@ -524,7 +526,7 @@ bool CVcfWriter::x_WriteFeatureFilter(
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeatureInfo(
-    feature::CFeatTree& ftree,
+    CGffFeatureContext& context,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -545,7 +547,6 @@ bool CVcfWriter::x_WriteFeatureInfo(
     }
    
     vector<string> infos;
-
     const CVariation_ref& var = mf.GetData().GetVariation();
     if ( var.IsSetId() ) {
         string db = var.GetId().GetDb();
@@ -562,7 +563,6 @@ bool CVcfWriter::x_WriteFeatureInfo(
     }
 
     vector<string> values; 
-
     if ( var.IsSetVariant_prop() ) {
         const CVariantProperties& props = var.GetVariant_prop();
         if ( props.IsSetAllele_frequency() ) {
@@ -659,7 +659,7 @@ bool CVcfWriter::x_WriteFeatureInfo(
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeatureGenotypeData(
-    feature::CFeatTree& ftree,
+    CGffFeatureContext& context,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -667,13 +667,13 @@ bool CVcfWriter::x_WriteFeatureGenotypeData(
         return true;
     }
 
+    feature::CFeatTree ftree = context.FeatTree();
     CConstRef<CUser_field> pFormat = mf.GetExt().GetFieldRef("format");
     const vector<string>& labels = pFormat->GetData().GetStrs();
     m_Os << "\t" << NStr::Join(labels, ":");
 
     CConstRef<CUser_field> pGenotypeData = mf.GetExt().GetFieldRef("genotype-data");
     const vector<CRef<CUser_field> > columns = pGenotypeData->GetData().GetFields(); 
-
     for ( size_t hpos = 0; hpos < m_GenotypeHeaders.size(); ++hpos ) {
 
         _ASSERT(m_GenotypeHeaders[hpos] == columns[hpos]->GetLabel().GetStr());

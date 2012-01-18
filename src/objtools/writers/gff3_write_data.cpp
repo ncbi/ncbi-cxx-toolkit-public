@@ -1453,7 +1453,7 @@ void CGff3WriteRecordFeature::ForceAttributeID(
 }  
 
 //  ----------------------------------------------------------------------------
-bool CGff3WriteRecordFeature::x_NeedsQuoting(
+bool CGff3WriteRecordFeature::NeedsQuoting(
     const string& str ) const
 //  ----------------------------------------------------------------------------
 {

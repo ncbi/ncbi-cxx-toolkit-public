@@ -25,88 +25,63 @@
  *
  * Authors:  Frank Ludwig
  *
- * File Description:  Write gtf file
+ * File Description:  Common writer functions
  *
  */
 
-#ifndef OBJTOOLS_WRITERS___GTF_WRITER__HPP
-#define OBJTOOLS_READERS___GTF_WRITER__HPP
+#ifndef OBJTOOLS_READERS___WRITE_UTIL__HPP
+#define OBJTOOLS_READERS___WRITE_UTIL__HPP
 
 #include <corelib/ncbistd.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seqalign/Seq_align.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
-#include <objtools/writers/gff3_write_data.hpp>
-//#include <objtools/writers/gff_writer.hpp>
-#include <objmgr/util/feature.hpp>
+#include <objects/seqfeat/OrgMod.hpp>
+#include <objtools/writers/gff2_write_data.hpp>
+#include <objtools/writers/writer.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
-class CGtfRecord;
-
 //  ============================================================================
-class NCBI_XOBJWRITE_EXPORT CGtfWriter:
-    public CGff2Writer
+class NCBI_XOBJWRITE_EXPORT CWriteUtil
 //  ============================================================================
 {
 public:
-    enum {
-        fStructibutes = 1<<16,
-        fNoGeneFeatures = 1<<17,
-        fNoExonNumbers = 1<<18
-    };
+    static CRef<CUser_object> GetDescriptor(
+        const CSeq_annot& annot,
+        const string& );
 
-    CGtfWriter(
-        CScope&,
-        CNcbiOstream&,
-        unsigned int = 0 );
-    CGtfWriter(
-        CNcbiOstream&,
-        unsigned int = 0 );
-    ~CGtfWriter();
+    static bool GetGenomeString( 
+        const CBioSource&,
+        string& );
 
-    bool WriteHeader();
-    virtual bool WriteHeader(
-        const CSeq_annot& annot) { return CGff2Writer::WriteHeader(annot); };
+    static bool GetOrgModSubType(
+        const COrgMod&,
+        string&,
+        string& );
 
-protected:
-    bool x_WriteRecord( 
-        const CGffWriteRecord* );
+    static bool GetSubSourceSubType(
+        const CSubSource&,
+        string&,
+        string& );
 
-    virtual bool x_WriteFeature(
-        CGffFeatureContext&,
-        CMappedFeat );
-    virtual bool x_WriteFeatureGene(
-        CGffFeatureContext&,
-        CMappedFeat );
-    virtual bool x_WriteFeatureMrna(
-        CGffFeatureContext&,
-        CMappedFeat );
-    virtual bool x_WriteFeatureCds(
-        CGffFeatureContext&,
-        CMappedFeat );
-    virtual bool x_WriteFeatureCdsFragments(
-        CGtfRecord&,
-        const CSeq_loc& );
+    static bool GetBiomolString(
+        CBioseq_Handle,
+        string& );
 
-    bool x_SplitCdsLocation(
-        const CSeq_feat&,
-        CRef< CSeq_loc >&,
-        CRef< CSeq_loc >&,
-        CRef< CSeq_loc >& ) const;
+    static bool GetIdType(
+        CBioseq_Handle,
+        string& );
 
-    SAnnotSelector x_GetAnnotSelector();
-
-    typedef map< int, CRef< CSeq_interval > > TExonMap;
-    typedef TExonMap::const_iterator TExonCit;
-    TExonMap m_exonMap;
-//    unsigned int m_uFlags;
+    static string UrlEncode(
+        const string& );
 };
 
 END_objects_SCOPE
 END_NCBI_SCOPE
 
-#endif  // OBJTOOLS_WRITERS___GTF_WRITER__HPP
+#endif  // OBJTOOLS_WRITERS___WRITE_UTIL__HPP

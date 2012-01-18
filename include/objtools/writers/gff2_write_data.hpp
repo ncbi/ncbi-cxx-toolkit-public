@@ -38,29 +38,10 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/util/feature.hpp>
 
+#include <objtools/writers/feature_context.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
-
-//  ----------------------------------------------------------------------------
-class CGffFeatureContext
-//  ----------------------------------------------------------------------------
-{
-public:
-    CGffFeatureContext(
-        feature::CFeatTree ft=feature::CFeatTree(), 
-        CBioseq_Handle bsh=CBioseq_Handle(), 
-        CSeq_annot_Handle sah=CSeq_annot_Handle()) :
-        m_ft(ft), m_bsh(bsh), m_sah(sah)
-    {};
-    feature::CFeatTree& FeatTree() { return m_ft; };
-    CBioseq_Handle BioseqHandle() const { return m_bsh; };
-    CSeq_annot_Handle AnnotHandle() const { return m_sah; };
-
-protected:
-    feature::CFeatTree m_ft;
-    CBioseq_Handle m_bsh;
-    CSeq_annot_Handle m_sah;
-};
 
 //  ----------------------------------------------------------------------------
 class CGffWriteRecord
@@ -119,31 +100,16 @@ public:
     bool DropAttribute(
         const string& );
 
-    static string s_GetGenomeString(
-        int );
-    static string s_GetBiomolString( 
-        int,
-        int );
-    static string s_GetSubsourceString( 
-        int );
-    static string s_GetSubtypeString( 
-        int );
-    static string s_GetGffSourceString(
-        CBioseq_Handle );
-
-protected:
-    virtual bool x_NeedsQuoting(
+    virtual bool NeedsQuoting(
         const string& ) const;
 
+protected:
     virtual void x_StrAttributesAppendValue(
         const string&,
         const string&,
         const string&,
-        map<string, string >&,
+        map<string, string>&,
         string& ) const;
-
-    static string x_Encode( 
-        const string& );
 
     string m_strId;
     unsigned int m_uSeqStart;

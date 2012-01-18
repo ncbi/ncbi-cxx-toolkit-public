@@ -125,10 +125,8 @@ bool CGff3Writer::x_WriteAlign(
     bool bInvertWidth )
 //  ----------------------------------------------------------------------------
 {
-    StackDown("SeqAlign");
     if ( ! align.IsSetSegs() ) {
         cerr << "Object type not supported." << endl;
-        StackUp();
         return true;
     }
 
@@ -137,23 +135,18 @@ bool CGff3Writer::x_WriteAlign(
             break;
 
         case CSeq_align::TSegs::e_Denseg:
-            StackUp();
             return x_WriteAlignDenseg( align, bInvertWidth );
 
         case CSeq_align::TSegs::e_Spliced:
             if (!x_WriteAlignSpliced( align, bInvertWidth )) {
-                StackUp();
                 return false;
             }
             m_uRecordId++;
-            StackUp();
             return true;
 
         case CSeq_align::TSegs::e_Disc:
-            StackUp();
             return x_WriteAlignDisc( align, bInvertWidth );
     }
-    StackUp();
     return true;
 }
 
@@ -376,9 +369,7 @@ bool CGff3Writer::x_WriteBioseqHandle(
     CBioseq_Handle bsh ) 
 //  ----------------------------------------------------------------------------
 {
-    StackDown("BioseqHandle");
     if ( ! x_WriteSequenceHeader(bsh) ) {
-        StackUp();
         return false;
     }
 
@@ -398,7 +389,6 @@ bool CGff3Writer::x_WriteBioseqHandle(
 
     for ( ;  feat_iter;  ++feat_iter ) {
         if ( ! x_WriteFeature( fc, *feat_iter ) ) {
-            StackUp();
             return false;
         }
     }   
@@ -406,7 +396,6 @@ bool CGff3Writer::x_WriteBioseqHandle(
     for (CAnnot_CI aci(bsh, sel); aci; ++aci) {
         x_WriteSeqAnnotHandle(*aci);
     }
-    StackUp(); 
     return true;
 }
 
