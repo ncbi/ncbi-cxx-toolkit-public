@@ -611,8 +611,10 @@ static const char* const kBuiltInGuide[] = {
     "special  CAK26553           embl_tpa_prot",
     "special  CAK26777-CAK26786  embl_tpa_prot",
     "special  CAK32514           embl_tpa_prot",
-    "special  CAL08000-CAL08005  embl_tpa_prot",
+    "special  CAL07996-CAL08005  embl_tpa_prot",
     "special  CAL10024           embl_tpa_prot",
+    "special  CAL18285           embl_tpa_prot",
+    "special  CAL23232-CAL23233  embl_tpa_prot",
     "special  CAL36192           embl_tpa_prot",
     "special  CAL36432-CAL36433  embl_tpa_prot",
     "special  CAL41938-CAL41942  embl_tpa_prot",
@@ -9543,7 +9545,14 @@ static const char* const kBuiltInGuide[] = {
     "special  CBN69349           embl_tpa_prot",
     "special  CBV36767-CBV36776  embl_tpa_prot",
     "special  CBX24371-CBX24373  embl_tpa_prot",
+    "special  CBZ41152-CBZ41156  embl_tpa_prot",
+    "special  CBZ41159-CBZ41160  embl_tpa_prot",
+    "special  CBZ41162           embl_tpa_prot",
+    "special  CBZ41165           embl_tpa_prot",
+    "special  CBZ41168           embl_tpa_prot",
+    "special  CCC21095-CCC21104  embl_tpa_prot",
+    "special  CCD22089-CCD22162  embl_tpa_prot",
     "## Err on the side of caution on as yet unassigned IDs, and hope that",
     "## there's not *too* much more backfilling.",
-    "#special CCD30916-CZZ99999  unreserved_prot"
+    "#special CCF55027-CZZ99999  unreserved_prot"
 };
