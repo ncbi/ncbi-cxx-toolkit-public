@@ -84,7 +84,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     { "QUIT",     { &CNetScheduleHandler::x_ProcessQuitSession,
                     eNSCR_Any } },
     { "RECO",     { &CNetScheduleHandler::x_ProcessReloadConfig,
-                    eNSCR_Any } }, // ?? Admin
+                    eNSCR_Admin } },
     { "ACNT",     { &CNetScheduleHandler::x_ProcessActiveCount,
                     eNSCR_Any } },
     { "QLST",     { &CNetScheduleHandler::x_ProcessQList,
