@@ -120,6 +120,75 @@ struct SNetScheduleAutomationObject : public SAutomationObject
             const CJsonNode::TArray& cmd_and_args);
 };
 
+static string NormalizeStatKeyName(const CTempString& key)
+{
+    string key_norm(NStr::TruncateSpaces(key, NStr::eTrunc_Begin));
+    NStr::ToLower(key_norm);
+    NStr::ReplaceInPlace(key_norm, " ", "_");
+    return key_norm;
+}
+
+static bool IsInteger(const CTempString& value)
+{
+    if (value.empty())
+        return false;
+
+    const char* digit = value.end();
+
+    while (--digit > value.begin())
+        if (!isdigit(*digit))
+            return false;
+
+    return isdigit(*digit) || (*digit == '-' && value.length() > 1);
+}
+
+static CJsonNode StatOutputToJsonArray(CNetServerMultilineCmdOutput output)
+{
+    CJsonNode clients(CJsonNode::NewArrayNode());
+    CJsonNode client_info;
+    CJsonNode array_value;
+
+    string line;
+
+    while (output.ReadLine(line)) {
+        if (NStr::StartsWith(line, "CLIENT: ")) {
+            if (client_info)
+                clients.PushNode(client_info);
+            client_info = CJsonNode::NewObjectNode();
+            client_info.SetString("client_node",
+                    string(line, sizeof("CLIENT: ") - 1));
+        } else if (client_info && NStr::StartsWith(line, "  ")) {
+            if (NStr::StartsWith(line, "    ") && array_value) {
+                array_value.PushString(NStr::TruncateSpaces(line,
+                            NStr::eTrunc_Begin));
+            } else {
+                if (array_value)
+                    array_value = NULL;
+                CTempString key, value;
+                NStr::SplitInTwo(line, ":", key, value);
+                string key_norm(NormalizeStatKeyName(key));
+                value = NStr::TruncateSpaces(value, NStr::eTrunc_Begin);
+                if (value.empty())
+                    client_info.SetNode(key_norm, array_value =
+                            CJsonNode::NewArrayNode());
+                else if (IsInteger(value))
+                    client_info.SetNumber(key_norm, NStr::StringToInt8(value));
+                else if (NStr::CompareNocase(value, "FALSE") == 0)
+                    client_info.SetBoolean(key_norm, false);
+                else if (NStr::CompareNocase(value, "TRUE") == 0)
+                    client_info.SetBoolean(key_norm, true);
+                else if (NStr::CompareNocase(value, "NONE") == 0)
+                    client_info.SetNull(key_norm);
+                else
+                    client_info.SetString(key_norm, value);
+            }
+        }
+    }
+    if (client_info)
+        clients.PushNode(client_info);
+    return clients;
+}
+
 CJsonNode SNetScheduleAutomationObject::Call(const string& method,
         const CJsonNode::TArray& cmd_and_args)
 {
@@ -127,37 +196,14 @@ CJsonNode SNetScheduleAutomationObject::Call(const string& method,
     reply.PushBoolean(true);
 
     if (method == "client_info") {
+        string ns_cmd(cmd_and_args.size() > 3 && cmd_and_args[3].IsBoolean() &&
+                cmd_and_args[3].GetBoolean() ? "STAT CLIENTS VERBOSE" :
+                "STAT CLIENTS");
         CJsonNode result(CJsonNode::NewObjectNode());
         for (CNetServiceIterator it =
                 m_NetScheduleAPI.GetService().Iterate(); it; ++it) {
-            CJsonNode clients(CJsonNode::NewArrayNode());
-            CJsonNode client_info;
-            CNetServerMultilineCmdOutput output(
-                    (*it).ExecWithRetry("STAT CLIENTS"));
-
-            string line;
-
-            while (output.ReadLine(line)) {
-                if (NStr::StartsWith(line, "CLIENT: ")) {
-                    if (client_info)
-                        clients.PushNode(client_info);
-                    client_info = CJsonNode::NewObjectNode();
-                    client_info.SetString("client_node",
-                            string(line, sizeof("CLIENT: ") - 1));
-                } else if (client_info) {
-                    CTempString key, value;
-                    NStr::SplitInTwo(line, ":", key, value);
-                    string key_str(NStr::TruncateSpaces(key,
-                                NStr::eTrunc_Begin));
-                    NStr::ToLower(key_str);
-                    NStr::ReplaceInPlace(key_str, " ", "_");
-                    client_info.SetString(key_str,
-                            NStr::TruncateSpaces(value, NStr::eTrunc_Begin));
-                }
-            }
-            if (client_info)
-                clients.PushNode(client_info);
-            result.SetNode((*it).GetServerAddress(), clients);
+            result.SetNode((*it).GetServerAddress(),
+                StatOutputToJsonArray((*it).ExecWithRetry(ns_cmd)));
         }
         reply.PushNode(result);
     } else {
