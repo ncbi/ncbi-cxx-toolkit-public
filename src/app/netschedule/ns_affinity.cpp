@@ -468,7 +468,7 @@ void  CNSAffinityRegistry::Print(const CQueue *              queue,
 
                 TNSBitVector::enumerator    en(k->second.m_Clients.first());
                 for ( ; en.valid(); ++en)
-                    handler.WriteMessage("OK:    " + clients_registry.GetNodeName(*en));
+                    handler.WriteMessage("OK:    '" + clients_registry.GetNodeName(*en) + "'");
             }
             else
                 handler.WriteMessage("OK:  CLIENTS (PREFERRED): NONE");
@@ -483,7 +483,7 @@ void  CNSAffinityRegistry::Print(const CQueue *              queue,
 
                 TNSBitVector::enumerator    en(k->second.m_WaitGetClients.first());
                 for ( ; en.valid(); ++en)
-                    handler.WriteMessage("OK:    " + clients_registry.GetNodeName(*en));
+                    handler.WriteMessage("OK:    '" + clients_registry.GetNodeName(*en) + "'");
             }
             else
                 handler.WriteMessage("OK:  CLIENTS (EXPLICIT WGET): NONE");

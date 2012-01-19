@@ -282,7 +282,7 @@ CNSNotificationList::Print(CNetScheduleHandler &        handler,
 
     for (list<SNSNotificationAttributes>::const_iterator
             k = m_Listeners.begin(); k != m_Listeners.end(); ++k) {
-        handler.WriteMessage("OK:CLIENT: " + k->m_ClientNode);
+        handler.WriteMessage("OK:CLIENT: '" + k->m_ClientNode + "'");
         handler.WriteMessage("OK:  RECEPIENT ADDRESS: " +
                              CSocketAPI::gethostbyaddr(k->m_Address) + ":" +
                              NStr::IntToString(k->m_Port));
@@ -310,7 +310,7 @@ CNSNotificationList::Print(CNetScheduleHandler &        handler,
 
                     TNSBitVector::enumerator    en(wait_aff.first());
                     for ( ; en.valid(); ++en)
-                        handler.WriteMessage("OK:    " + aff_registry.GetTokenByID(*en));
+                        handler.WriteMessage("OK:    '" + aff_registry.GetTokenByID(*en) + "'");
                 }
                 else
                     handler.WriteMessage("OK:  EXPLICIT AFFINITIES: NONE");
@@ -334,7 +334,7 @@ CNSNotificationList::Print(CNetScheduleHandler &        handler,
 
                     TNSBitVector::enumerator    en(pref_aff.first());
                     for ( ; en.valid(); ++en)
-                        handler.WriteMessage("OK:    " + aff_registry.GetTokenByID(*en));
+                        handler.WriteMessage("OK:    '" + aff_registry.GetTokenByID(*en) + "'");
                 }
                 else
                     handler.WriteMessage("OK:  USE PREFERRED AFFINITIES: NONE");

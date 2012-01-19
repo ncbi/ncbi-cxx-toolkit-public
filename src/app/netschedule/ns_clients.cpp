@@ -530,7 +530,7 @@ void CNSClient::Print(const string &               node_name,
                       const CNSAffinityRegistry &  aff_registry,
                       bool                         verbose) const
 {
-    handler.WriteMessage("OK:CLIENT: " + node_name);
+    handler.WriteMessage("OK:CLIENT: '" + node_name + "'");
     if (m_Cleared)
         handler.WriteMessage("OK:  STATUS: cleared");
     else
@@ -545,7 +545,7 @@ void CNSClient::Print(const string &               node_name,
      if (m_Session.empty())
          handler.WriteMessage("OK:  SESSION: n/a");
      else
-         handler.WriteMessage("OK:  SESSION: " + m_Session);
+         handler.WriteMessage("OK:  SESSION: '" + m_Session + "'");
 
     handler.WriteMessage("OK:  TYPE: " + x_TypeAsString());
 
@@ -593,7 +593,7 @@ void CNSClient::Print(const string &               node_name,
 
             TNSBitVector::enumerator    en(m_Affinities.first());
             for ( ; en.valid(); ++en)
-                handler.WriteMessage("OK:    " + aff_registry.GetTokenByID(*en));
+                handler.WriteMessage("OK:    '" + aff_registry.GetTokenByID(*en) + "'");
         } else {
             handler.WriteMessage("OK:  NUMBER OF PREFERRED AFFINITIES: " +
                                  NStr::UIntToString(m_Affinities.count()));
@@ -606,7 +606,7 @@ void CNSClient::Print(const string &               node_name,
 
             TNSBitVector::enumerator    en(m_WaitAffinities.first());
             for ( ; en.valid(); ++en)
-                handler.WriteMessage("OK:    " + aff_registry.GetTokenByID(*en));
+                handler.WriteMessage("OK:    '" + aff_registry.GetTokenByID(*en) + "'");
         } else {
             handler.WriteMessage("OK:  NUMBER OF REQUESTED AFFINITIES: " +
                                  NStr::UIntToString(m_WaitAffinities.count()));
