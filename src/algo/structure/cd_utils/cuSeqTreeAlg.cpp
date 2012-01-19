@@ -275,10 +275,8 @@ bool GetMaxPath(const SeqTree& atree, double& dMax, SeqTree::iterator& end1, Seq
 //  Join the two branches to form the longest leaf-to-leaf path.
 bool GetMaxPath(const SeqTree::iterator& cursor, double& dMax, double& dBranch1, SeqTree::iterator& end1, double& dBranch2, SeqTree::iterator& end2) {
 
-//	return true;
-	
 	bool result = true;
-    bool updatedPath = false;
+//    bool updatedPath = false;
 	double localMax, localBranch1, localBranch2;
 	SeqTree::iterator localEnd1;
 	SeqTree::iterator localEnd2;
@@ -291,13 +289,11 @@ bool GetMaxPath(const SeqTree::iterator& cursor, double& dMax, double& dBranch1,
         dMax     = 0;
 		end1     = cursor;
 		end2     = SeqTree::iterator();
-        updatedPath = true;
+//        updatedPath = true;
 	} else {
 
 		double sibDist, testDist;
 		SeqTree::sibling_iterator sibCursor = cursor.begin();
-//		SeqTree::sibling_iterator sibEndCursor = cursor.end();
-
 
 		//  Recusive call to GetMaxPath in loop
 		while (result && sibCursor != cursor.end()) {
@@ -312,7 +308,7 @@ bool GetMaxPath(const SeqTree::iterator& cursor, double& dMax, double& dBranch1,
                 testDist = localBranch1 + sibDist + dBranch1;
                 //  sibCursor contains both ends of the longest path yet seen
                 if (localMax > dMax && localMax > testDist) {
-                    updatedPath = true;
+//                    updatedPath = true;
                     dMax = localMax;
                     end1 = localEnd1;
                     end2 = localEnd2;
@@ -320,7 +316,7 @@ bool GetMaxPath(const SeqTree::iterator& cursor, double& dMax, double& dBranch1,
                     dBranch2 = localBranch2 + sibDist;
                 //  sibCursor contains one end of the longest path yet seen
                 } else if (testDist >= localMax && testDist > dMax) {
-                    updatedPath = true;
+//                    updatedPath = true;
                     dMax = testDist;
                     if (localBranch1 + sibDist > dBranch1) {
                         end2 = end1;
