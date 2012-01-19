@@ -107,7 +107,7 @@ bool CGtfRecord::MakeChildRecord(
 
     m_Attributes.insert( parent.m_Attributes.begin(), parent.m_Attributes.end() );
     if ( 0 != uExonNumber ) {
-        m_Attributes["exon_number"] = NStr::UIntToString( uExonNumber );
+        SetAttribute("exon_number", NStr::UIntToString(uExonNumber));
     }
     return true;
 };
@@ -150,13 +150,13 @@ string CGtfRecord::StrAttributes() const
             continue;
         }
 
-        strAttributes += x_AttributeToString( strKey, it->second );
+        strAttributes += x_AttributeToString( strKey, it->second.front() );
     }
     
     if ( ! m_bNoExonNumbers ) {
         it = attrs.find( "exon_number" );
         if ( it != attrs.end() ) {
-            strAttributes += x_AttributeToString( "exon_number", it->second );
+            strAttributes += x_AttributeToString( "exon_number", it->second.front() );
         }
     }
     return strAttributes;
@@ -179,7 +179,7 @@ string CGtfRecord::StrStructibutes() const
 
     it = attrs.find( "exon_number" );
     if ( it != attrs.end() ) {
-        strAttributes += x_AttributeToString( "exon_number", it->second );
+        strAttributes += x_AttributeToString( "exon_number", it->second.front() );
     }
     return strAttributes;
 }
@@ -211,7 +211,7 @@ bool CGtfRecord::x_AssignAttributesFromAsnCore(
                 if ( (*it)->GetQual() == "gene_id" ) {
                     continue;
                 }
-                m_Attributes[(*it)->GetQual()] = (*it)->GetVal();
+                SetAttribute((*it)->GetQual(), (*it)->GetVal());
             }
         }
     }
@@ -228,20 +228,20 @@ bool CGtfRecord::x_AssignAttributesFromAsnExtended(
 
     string strDbxref = x_FeatureToDbxref( mapped_feature );
     if ( ! strDbxref.empty() ) {
-        m_Attributes["db_xref"] = strDbxref;
+        SetAttribute("db_xref", strDbxref);
     }
 
     string strNote = x_FeatureToNote( mapped_feature );
     if ( ! strNote.empty() ) {
-        m_Attributes["note"] = strNote;
+        SetAttribute("note", strNote);
     }
     
     if ( x_FeatureToPseudo( mapped_feature ) ) {    
-        m_Attributes["pseudo"] = "";
+        SetAttribute("pseudo", "");
     }
 
     if ( x_FeatureToPartial( mapped_feature ) ) {    
-        m_Attributes["partial"] = "";
+        SetAttribute("partial", "");
     }
 
     switch ( feature.GetData().GetSubtype() ) {
@@ -255,21 +255,21 @@ bool CGtfRecord::x_AssignAttributesFromAsnExtended(
 
             string strProteinId = x_CdsToProteinId( mapped_feature );
             if ( ! strProteinId.empty() ) {
-                m_Attributes["protein_id"] = strProteinId;
+                SetAttribute("protein_id", strProteinId);
             }
 
             if ( x_CdsToRibosomalSlippage( mapped_feature ) ) {
-                m_Attributes["ribosomal_slippage"] = "";
+                SetAttribute("ribosomal_slippage", "");
             }
 
             string strProduct = x_CdsToProduct( mapped_feature );
             if ( ! strProduct.empty() ) {
-                m_Attributes["product"] = strProduct; 
+                SetAttribute("product", strProduct); 
             }
 
             string strCode = x_CdsToCode( mapped_feature );
             if ( ! strCode.empty() ) {
-                m_Attributes["transl_table"] = strCode;
+                SetAttribute("transl_table", strCode);
             }
          }
         break;
@@ -281,7 +281,7 @@ bool CGtfRecord::x_AssignAttributesFromAsnExtended(
 
             string strProduct = x_MrnaToProduct( mapped_feature );
             if ( ! strProduct.empty() ) {
-                m_Attributes["product"] = strProduct; 
+                SetAttribute("product", strProduct); 
             }
          }
         break;
@@ -292,7 +292,7 @@ bool CGtfRecord::x_AssignAttributesFromAsnExtended(
 
             string strGeneSyn = x_GeneToGeneSyn( mapped_feature );
             if ( ! strGeneSyn.empty() ) {
-                m_Attributes["gene_synonym"] = strGeneSyn;
+                SetAttribute("gene_synonym", strGeneSyn);
             }                             
         }
         break;

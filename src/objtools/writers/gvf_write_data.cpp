@@ -58,6 +58,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 int CGvfWriteRecord::s_unique = 0;
 
+
 //  ----------------------------------------------------------------------------
 string CGvfWriteRecord::s_UniqueId()
 //  ----------------------------------------------------------------------------
@@ -241,7 +242,7 @@ bool CGvfWriteRecord::x_AssignAttributesCustom(
             continue;
         }
         key = key.substr( string("custom-").length() );
-        m_Attributes[key] = value;
+        SetAttribute(key, value);
     } 
     return true;
 }
@@ -257,25 +258,25 @@ bool CGvfWriteRecord::x_AssignAttributeID(
             ext.GetType().GetStr() == "GvfAttributes" ) 
         {
             if ( ext.HasField( "id" ) ) {
-                m_Attributes["ID"] = ext.GetField( "id" ).GetData().GetStr();
+                SetAttribute("ID", ext.GetField("id").GetData().GetStr());
                 return true;
             }
         }
     }
 
     if ( CSeqFeatData::eSubtype_variation_ref != mf.GetData().GetSubtype() ) {
-        m_Attributes["ID"] = s_UniqueId();
+        SetAttribute("ID", s_UniqueId());
         return true;
     }
     const CVariation_ref& var_ref = mf.GetData().GetVariation();
     if ( ! var_ref.IsSetId() ) {
-       m_Attributes["ID"] = s_UniqueId();
+       SetAttribute("ID", s_UniqueId());
         return true;
     }
     const CVariation_ref::TId& id = var_ref.GetId();
     string strId;
     id.GetLabel( &strId );
-    m_Attributes["ID"] = strId;
+    SetAttribute("ID", strId);
     return true;
 }
 
@@ -290,7 +291,7 @@ bool CGvfWriteRecord::x_AssignAttributeParent(
             ext.GetType().GetStr() == "GvfAttributes" ) 
         {
             if ( ext.HasField( "parent" ) ) {
-                m_Attributes["Parent"] = ext.GetField( "parent" ).GetData().GetStr();
+                SetAttribute("Parent", ext.GetField("parent").GetData().GetStr());
                 return true;
             }
         }
@@ -306,7 +307,7 @@ bool CGvfWriteRecord::x_AssignAttributeParent(
     const CVariation_ref::TId& id = var_ref.GetParent_id();
     string strId;
     id.GetLabel( &strId );
-    m_Attributes["Parent"] = strId;
+    SetAttribute("Parent", strId);
     return true;
 }
 
@@ -322,7 +323,7 @@ bool CGvfWriteRecord::x_AssignAttributeName(
     if ( ! var_ref.IsSetName() ) {
         return true;
     }
-    m_Attributes["Name"] = var_ref.GetName();
+    SetAttribute("Name", var_ref.GetName());
     return true;
 }
 
@@ -337,8 +338,8 @@ bool CGvfWriteRecord::x_AssignAttributeVarType(
             ext.GetType().GetStr() == "GvfAttributes" ) 
         {
             if ( ext.HasField( "custom-var_type" ) ) {
-                m_Attributes["var_type"] = 
-                    ext.GetField( "custom-var_type" ).GetData().GetStr();
+                SetAttribute("var_type", 
+                    ext.GetField( "custom-var_type" ).GetData().GetStr());
                 return true;
             }
         }
@@ -369,17 +370,17 @@ bool CGvfWriteRecord::x_AssignAttributeStartRange(
         case CInt_fuzz::e_Range: {
             int min = fuzz.GetRange().GetMin() + 1;
             int max = fuzz.GetRange().GetMax() + 1;
-            m_Attributes["Start_range"] = NStr::IntToString( min ) + "," +
-                NStr::IntToString( max );
+            SetAttribute("Start_range", NStr::IntToString(min) + "," +
+                NStr::IntToString(max));
             return true;
         }
         case CInt_fuzz::e_Lim: {
             string min = NStr::IntToString( intv.GetFrom() + 1 );
             if ( fuzz.GetLim() == CInt_fuzz::eLim_gt ) {
-                m_Attributes["Start_range"] = min + string(",.");
+                SetAttribute("Start_range", min + string(",."));
             }
             else if ( fuzz.GetLim() == CInt_fuzz::eLim_lt ) {
-                m_Attributes["Start_range"] = string(".,") + min;
+                SetAttribute("Start_range", string(".,") + min);
             }
             return true;
         }
@@ -410,17 +411,17 @@ bool CGvfWriteRecord::x_AssignAttributeEndRange(
         case CInt_fuzz::e_Range: {
             int min = fuzz.GetRange().GetMin() + 1;
             int max = fuzz.GetRange().GetMax() + 1;
-            m_Attributes["End_range"] = NStr::IntToString( min ) + "," +
-                NStr::IntToString( max );
+            SetAttribute("End_range", NStr::IntToString( min ) + "," +
+                NStr::IntToString(max));
             return true;
         }
         case CInt_fuzz::e_Lim: {
             string max = NStr::IntToString( intv.GetTo() + 1 );
             if ( fuzz.GetLim() == CInt_fuzz::eLim_gt ) {
-                m_Attributes["End_range"] = max + string(",.");
+                SetAttribute("End_range", max + string(",."));
             }
             else if ( fuzz.GetLim() == CInt_fuzz::eLim_lt ) {
-                m_Attributes["End_range"] = string(".,") + max;
+                SetAttribute("End_range", string(".,") + max);
             }
             return true;
         }
@@ -475,7 +476,7 @@ void CGvfWriteRecord::x_AppendAttribute(
 //  ----------------------------------------------------------------------------
 {
     string key = it->first;
-    string value = it->second;
+    string value = it->second.front();
     bool needsQuotes = ( NStr::Find( value, " " ) != NPOS );
 
     if ( !strAttributes.empty() ) {

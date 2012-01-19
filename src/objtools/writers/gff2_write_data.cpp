@@ -102,7 +102,7 @@ CGffWriteRecord::CGffWriteRecord(
 //  ----------------------------------------------------------------------------
 {
     if (!id.empty()) {
-        m_Attributes["ID"] = id;
+        SetAttribute("ID", id);
     }
 };
 
@@ -143,16 +143,33 @@ CGffWriteRecord::~CGffWriteRecord()
 };
 
 //  ----------------------------------------------------------------------------
-bool CGffWriteRecord::GetAttribute(
-    const string& strKey,
-    string& strValue ) const
+bool CGffWriteRecord::SetAttribute(
+    const string& key,
+    const string& value )
 //  ----------------------------------------------------------------------------
 {
-    TAttrCit it = m_Attributes.find( strKey );
-    if ( it == m_Attributes.end() ) {
+    TAttrIt it = m_Attributes.find(key);
+    if (it == m_Attributes.end()) {
+        m_Attributes[key] = vector<string>();
+    }
+    if (std::find(m_Attributes[key].begin(), m_Attributes[key].end(), value) == 
+            m_Attributes[key].end()) {
+        m_Attributes[key].push_back(value);
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGffWriteRecord::GetAttribute(
+    const string& key,
+    vector<string>& value ) const
+//  ----------------------------------------------------------------------------
+{
+    TAttrCit it = m_Attributes.find(key);
+    if (it == m_Attributes.end()  ||  it->second.empty()) {
         return false;
     }
-    strValue = it->second;
+    value = it->second;
     return true;
 }
 
@@ -160,9 +177,9 @@ bool CGffWriteRecord::GetAttribute(
 string CGffWriteRecord::StrType() const
 //  ----------------------------------------------------------------------------
 {
-    string strGffType;
-    if ( GetAttribute( "gff_type", strGffType ) ) {
-        return strGffType;
+    vector<string> gffType;
+    if ( GetAttribute( "gff_type", gffType ) ) {
+        return gffType.front();
     }
     return m_strType;
 }
@@ -236,10 +253,10 @@ string CGffWriteRecord::StrAttributes() const
         strAttributes += "=";
 //        strAttributes += " ";
 		
-		bool quote = NeedsQuoting(it->second);
+		bool quote = NeedsQuoting(it->second.front());
 		if ( quote )
 			strAttributes += '\"';		
-		strAttributes += it->second;
+		strAttributes += it->second.front();
 		if ( quote )
 			strAttributes += '\"';
     }
@@ -272,17 +289,19 @@ void CGffWriteRecord::x_StrAttributesAppendValue(
     const string& strKey,
     const string& attr_separator,
     const string& multivalue_separator,
-    map<string, string >& attrs,
+    map<string, vector<string> >& attrs,
     string& strAttributes ) const
 //  ----------------------------------------------------------------------------
 {
-    map< string, string >::iterator it = attrs.find( strKey );
+    TAttrIt it = attrs.find( strKey );
     if ( it == attrs.end() ) {
         return;
     }
     string strValue;
-    vector<string> tags;
-    NStr::Tokenize( it->second, INTERNAL_SEPARATOR, tags, NStr::eMergeDelims );
+    vector<string> tags = it->second;
+    if (strKey == "Parent"  &&  tags.size() > 1) {
+        cerr << "";
+    }
     for ( vector<string>::iterator pTag = tags.begin(); pTag != tags.end(); pTag++ ) {
         if ( !strValue.empty() ) {
             strValue += multivalue_separator;
@@ -357,11 +376,12 @@ bool CGffWriteRecord::AssignSequenceNumber(
     const string& strPrefix ) 
 //  ----------------------------------------------------------------------------
 {
-    TAttrIt it = m_Attributes.find( "ID" );
-    if ( it != m_Attributes.end() ) {
-        it->second += string( "|" ) + strPrefix + NStr::UIntToString( uSequenceNumber );
-        return true;
+    vector<string> ids;
+    if (!GetAttribute("ID", ids)) {
+        return false;
     }
+    ids.at(0) += string( "|" ) + strPrefix + NStr::UIntToString( uSequenceNumber );
+    TAttrIt it = m_Attributes.find( "ID" );
     return false;
 }
 
@@ -407,28 +427,25 @@ bool CGffWriteRecordFeature::x_AssignBiosrcAttributes(
 {
     string value;
     if (CWriteUtil::GetGenomeString(bs, value)) {
-        m_Attributes["genome"] = value;
+        SetAttribute("genome", value);
     }
     if ( bs.IsSetOrg() ) {
         const COrg_ref& org = bs.GetOrg();
         if ( org.IsSetDb() ) {
             const vector< CRef< CDbtag > >& tags = org.GetDb();
-            string strAttr, strDb, strTag;
             for ( vector< CRef< CDbtag > >::const_iterator it = tags.begin(); 
                     it != tags.end(); ++it ) {
-                if ( ! strAttr.empty() ) {
-                    strAttr += ';';
-                }
+                string attr;
                 if ((*it)->IsSetDb()) {
-                    strAttr += ((*it)->GetDb() + ":");
+                    attr += ((*it)->GetDb() + ":");
                 }
                 if ((*it)->IsSetTag()) {
                     const CDbtag::TTag& tag = (*it)->GetTag();
-                    strAttr +=
+                    attr +=
                         (tag.IsStr()) ? tag.GetStr() : NStr::UIntToString(tag.GetId());
                 }
+                SetAttribute("Dbxref", attr); 
             }
-            m_Attributes["Dbxref"] = strAttr;
         }
 
         if ( org.IsSetOrgname() && org.GetOrgname().IsSetMod() ) {
@@ -437,7 +454,7 @@ bool CGffWriteRecordFeature::x_AssignBiosrcAttributes(
                     it != orgmods.end(); ++it) {
                 string key, value;
                 if (CWriteUtil::GetOrgModSubType(**it, key, value)) {
-                    m_Attributes[key] = value;
+                    SetAttribute(key, value);
                 }
             }
         }
@@ -449,7 +466,7 @@ bool CGffWriteRecordFeature::x_AssignBiosrcAttributes(
                 it != subsources.end(); ++it ) {
             string key, value;
             if (CWriteUtil::GetSubSourceSubType(**it, key, value)) {
-                m_Attributes[key] = value;
+                SetAttribute(key, value);
             }
         }
     }
@@ -489,10 +506,13 @@ bool CGffWriteRecordFeature::AssignSource(
     // phase
 
     //  attributes:
-    m_Attributes["gbkey"] = "Src";
+    SetAttribute("gbkey", "Src");
     string value;
     if (CWriteUtil::GetBiomolString(bsh, value)) {
-        m_Attributes["mol_type"] = value;
+        SetAttribute("mol_type", value);
+    } 
+    if (CWriteUtil::GetBiomolString(bsh, value)) {
+        SetAttribute("mol_type", value);
     } 
 
     const CBioSource& bs = desc.GetSource();
@@ -501,7 +521,7 @@ bool CGffWriteRecordFeature::AssignSource(
     }
     if ( bsh.IsSetInst_Topology() && 
             bsh.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
-       m_Attributes["is_circular"] = "true";
+       SetAttribute("is_circular", "true");
     }
 
     return true;

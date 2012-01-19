@@ -49,9 +49,6 @@ class CGff3WriteRecordFeature
 {
 public:
     typedef CCdregion::EFrame TFrame;
-    typedef map<string, string> TAttributes;
-    typedef TAttributes::iterator TAttrIt;
-    typedef TAttributes::const_iterator TAttrCit;
 
 public:
     CGff3WriteRecordFeature(
@@ -168,7 +165,7 @@ protected:
 
     virtual void x_StrAttributesAppendValueGff3(
         const string&,
-        map<string, string >&,
+        map<string, vector<string> >&,
         string& ) const;
 
 protected:

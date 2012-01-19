@@ -440,8 +440,8 @@ bool CGff3Writer::x_WriteFeatureTrna(
     if ( ! pParent->AssignFromAsn( mf ) ) {
         return false;
     }
-    string strId;
-    if ( ! pParent->GetAttribute( "ID", strId ) ) {
+    vector<string> ids;
+    if ( ! pParent->GetAttribute( "ID", ids ) ) {
         pParent->ForceAttributeID( 
             string( "rna" ) + NStr::UIntToString( m_uPendingTrnaId ) );
     }
@@ -617,10 +617,10 @@ bool CGff3Writer::x_WriteFeatureGeneric(
     if ( ! pParent->AssignFromAsn( mf ) ) {
         return false;
     }
-    string strId;
-    if ( ! pParent->GetAttribute( "ID", strId ) ) {
+    vector<string> ids;
+    if ( ! pParent->GetAttribute("ID", ids) ) {
         pParent->ForceAttributeID( 
-            string( "id" ) + NStr::UIntToString( m_uPendingGenericId++ ) );
+            string("id") + NStr::UIntToString(m_uPendingGenericId++));
     }
 
     //

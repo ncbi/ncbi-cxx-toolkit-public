@@ -49,7 +49,7 @@ class CGffWriteRecord
     : public CObject
 {
 public:
-    typedef map<string, string> TAttributes;
+    typedef map<string, vector<string> > TAttributes;
     typedef TAttributes::iterator TAttrIt;
     typedef TAttributes::const_iterator TAttrCit;
 
@@ -93,9 +93,14 @@ public:
     const TAttributes& Attributes() const { 
         return m_Attributes; 
     };
+
+    bool SetAttribute(
+        const string&,
+        const string& );
+
     bool GetAttribute(
         const string&,
-        string& ) const;
+        vector<string>& ) const;
 
     bool DropAttribute(
         const string& );
@@ -108,7 +113,7 @@ protected:
         const string&,
         const string&,
         const string&,
-        map<string, string>&,
+        map<string, vector<string> >&,
         string& ) const;
 
     string m_strId;
