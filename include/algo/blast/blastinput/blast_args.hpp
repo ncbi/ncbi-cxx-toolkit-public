@@ -701,9 +701,11 @@ public:
     /// nucleotide database is searched
     /// @param is_rpsblast is it RPS-BLAST?
     /// @param is_igblast is it IG-BLAST?
+    /// @param is_deltablast is it DELTA-BLAST?
     CBlastDatabaseArgs(bool request_mol_type = false, 
                        bool is_rpsblast = false,
-                       bool is_igblast = false);
+                       bool is_igblast = false,
+                       bool is_deltablast = false);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -766,6 +768,7 @@ protected:
                                       */
     bool m_IsRpsBlast;              /**< true if the search is RPS-BLAST */
     bool m_IsIgBlast;               /**< true if the search is Ig-BLAST */
+    bool m_IsDeltaBlast;            /**< true if the search is DELTA-BLAST */
 
     bool m_IsProtein;               /**< Is the database/subject(s) protein? */
     CRef<IQueryFactory> m_Subjects; /**< The subject sequences */

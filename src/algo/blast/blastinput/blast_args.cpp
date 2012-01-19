@@ -1498,10 +1498,12 @@ CQueryOptionsArgs::ExtractAlgorithmOptions(const CArgs& args,
 
 CBlastDatabaseArgs::CBlastDatabaseArgs(bool request_mol_type /* = false */,
                                        bool is_rpsblast /* = false */,
-                                       bool is_igblast  /* = false */)
+                                       bool is_igblast  /* = false */,
+                                       bool is_deltablast /* = false */)
     : m_RequestMoleculeType(request_mol_type), 
       m_IsRpsBlast(is_rpsblast),
       m_IsIgBlast(is_igblast),
+      m_IsDeltaBlast(is_deltablast),
       m_IsProtein(true), 
       m_SupportsDatabaseMasking(false)
 {}
@@ -1569,22 +1571,26 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetDependency(kArgSeqIdList, CArgDescriptions::eExcludes, 
                            kArgNegativeGiList);
     // Entrez Query
-    arg_desc.AddOptionalKey(kArgEntrezQuery, "entrez_query", 
-                            "Restrict search with the given Entrez query",
-                            CArgDescriptions::eString);
+    // Deltablast does not support remote blast
+    if (!m_IsDeltaBlast) {
+        arg_desc.AddOptionalKey(kArgEntrezQuery, "entrez_query", 
+                                "Restrict search with the given Entrez query",
+                                CArgDescriptions::eString);
 
-    // For now, disable pairing -remote with either -gilist or
-    // -negative_gilist as this is not implemented in the BLAST server
-    arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes, 
-                           kArgRemote);
-    arg_desc.SetDependency(kArgSeqIdList, CArgDescriptions::eExcludes, 
-                           kArgRemote);
-    arg_desc.SetDependency(kArgNegativeGiList, CArgDescriptions::eExcludes, 
-                           kArgRemote);
 
-    // Entrez query currently requires the -remote option
-    arg_desc.SetDependency(kArgEntrezQuery, CArgDescriptions::eRequires, 
-                           kArgRemote);
+        // For now, disable pairing -remote with either -gilist or
+        // -negative_gilist as this is not implemented in the BLAST server
+        arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes, 
+                               kArgRemote);
+        arg_desc.SetDependency(kArgSeqIdList, CArgDescriptions::eExcludes, 
+                               kArgRemote);
+        arg_desc.SetDependency(kArgNegativeGiList, CArgDescriptions::eExcludes, 
+                               kArgRemote);
+
+        // Entrez query currently requires the -remote option
+        arg_desc.SetDependency(kArgEntrezQuery, CArgDescriptions::eRequires, 
+                               kArgRemote);
+    }
 
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
