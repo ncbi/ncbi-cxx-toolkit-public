@@ -142,6 +142,9 @@ static bool IsInteger(const CTempString& value)
     return isdigit(*digit) || (*digit == '-' && value.length() > 1);
 }
 
+#define CLIENT_PREFIX "CLIENT: "
+#define CLIENT_PREFIX_LEN (sizeof(CLIENT_PREFIX) - 1)
+
 static CJsonNode StatOutputToJsonArray(CNetServerMultilineCmdOutput output)
 {
     CJsonNode clients(CJsonNode::NewArrayNode());
@@ -151,12 +154,21 @@ static CJsonNode StatOutputToJsonArray(CNetServerMultilineCmdOutput output)
     string line;
 
     while (output.ReadLine(line)) {
-        if (NStr::StartsWith(line, "CLIENT: ")) {
+        if (NStr::StartsWith(line, CLIENT_PREFIX)) {
             if (client_info)
                 clients.PushNode(client_info);
             client_info = CJsonNode::NewObjectNode();
-            client_info.SetString("client_node",
-                    string(line, sizeof("CLIENT: ") - 1));
+            CTempString client_node(line.data() + CLIENT_PREFIX_LEN,
+                    line.length() - CLIENT_PREFIX_LEN);
+            switch (client_node[0]) {
+            case '\'':
+            case '"':
+                client_info.SetString("client_node",
+                        NStr::ParseQuoted(client_node));
+                break;
+            default:
+                client_info.SetString("client_node", client_node);
+            }
         } else if (client_info && NStr::StartsWith(line, "  ")) {
             if (NStr::StartsWith(line, "    ") && array_value) {
                 array_value.PushString(NStr::TruncateSpaces(line,
@@ -179,6 +191,8 @@ static CJsonNode StatOutputToJsonArray(CNetServerMultilineCmdOutput output)
                     client_info.SetBoolean(key_norm, true);
                 else if (NStr::CompareNocase(value, "NONE") == 0)
                     client_info.SetNull(key_norm);
+                else if (value[0] == '\'' || value[0] == '"')
+                    client_info.SetString(key_norm, NStr::ParseQuoted(value));
                 else
                     client_info.SetString(key_norm, value);
             }
