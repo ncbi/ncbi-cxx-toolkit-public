@@ -101,9 +101,9 @@ CDeltaBlastAppArgs::CDeltaBlastAppArgs()
      arg.Reset(m_MTArgs);
      m_Args.push_back(arg);
 
+     // remote args are initialized so that CBlastAppArgs::ExecuteRemotely()
+     // returns false
      m_RemoteArgs.Reset(new CRemoteArgs);
-     arg.Reset(m_RemoteArgs);
-     m_Args.push_back(arg);
 
      arg.Reset(new CCompositionBasedStatsArgs(kIsDeltaBlast));
      m_Args.push_back(arg);
