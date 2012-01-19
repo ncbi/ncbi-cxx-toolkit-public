@@ -331,10 +331,11 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign()
                     new_seg = true;
                 }
             } else {
-                const char& residue = toupper (m_Seqs[row_i][aln_pos]);
-                if (residue != m_MiddleGap[0]  &&
-                    residue != m_EndGap[0]  &&
-                    residue != m_Missing[0]) {
+                string residue = m_Seqs[row_i].substr(aln_pos, 1);
+                NStr::ToUpper(residue);
+                if (NStr::Find(m_MiddleGap, residue) == string::npos  &&
+                    NStr::Find(m_EndGap, residue) == string::npos  &&
+                    NStr::Find(m_BeginningGap, residue) == string::npos) {
 
                     if (is_gap[row_i]) {
                         is_gap[row_i] = false;
@@ -342,7 +343,7 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign()
                     }
 
                     // add to the sequence vector
-                    m_SeqVec[row_i][m_SeqLen[row_i]++] = residue;
+                    m_SeqVec[row_i][m_SeqLen[row_i]++] = residue.c_str()[0];
 
                 } else {
   
