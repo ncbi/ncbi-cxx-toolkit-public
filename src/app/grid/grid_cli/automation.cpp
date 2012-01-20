@@ -65,6 +65,118 @@ public:
     NCBI_EXCEPTION_DEFAULT(CAutomationException, CException);
 };
 
+class CArgArray
+{
+public:
+    CArgArray(const CJsonNode::TArray& args);
+
+    CJsonNode NextNodeOrNull();
+    CJsonNode NextNode();
+
+    string NextString();
+    string NextString(const string& default_value);
+
+    CJsonNode::TNumber NextNumber();
+    CJsonNode::TNumber NextNumber(CJsonNode::TNumber default_value);
+
+    bool NextBoolean();
+    bool NextBoolean(bool default_value);
+
+    void UpdateLocation(const string& location);
+
+private:
+    void Exception(const char* what);
+
+    const CJsonNode::TArray& m_Args;
+    CJsonNode::TArray::const_iterator m_Position;
+    string m_Location;
+};
+
+inline CArgArray::CArgArray(const CJsonNode::TArray& args) : m_Args(args)
+{
+    m_Position = args.begin();
+}
+
+inline CJsonNode CArgArray::NextNodeOrNull()
+{
+    return m_Position == m_Args.end() ? NULL : *m_Position++;
+}
+
+inline CJsonNode CArgArray::NextNode()
+{
+    CJsonNode next_node(NextNodeOrNull());
+    if (next_node)
+        return next_node;
+    else
+        Exception("insufficient number of arguments");
+}
+
+inline string CArgArray::NextString()
+{
+    CJsonNode next_node(NextNode());
+    if (!next_node.IsString())
+        Exception("invalid argument type (expected a string)");
+    return next_node.GetString();
+}
+
+inline string CArgArray::NextString(const string& default_value)
+{
+    CJsonNode next_node(NextNodeOrNull());
+    return next_node && next_node.IsString() ?
+        next_node.GetString() : default_value;
+}
+
+inline CJsonNode::TNumber CArgArray::NextNumber()
+{
+    CJsonNode next_node(NextNode());
+    if (!next_node.IsNumber())
+        Exception("invalid argument type (expected a string)");
+    return next_node.GetNumber();
+}
+
+inline CJsonNode::TNumber CArgArray::NextNumber(
+        CJsonNode::TNumber default_value)
+{
+    CJsonNode next_node(NextNodeOrNull());
+    return next_node && next_node.IsNumber() ?
+        next_node.GetNumber() : default_value;
+}
+
+inline bool CArgArray::NextBoolean()
+{
+    CJsonNode next_node(NextNode());
+    if (!next_node.IsBoolean())
+        Exception("invalid argument type (expected a boolean)");
+    return next_node.GetBoolean();
+}
+
+inline bool CArgArray::NextBoolean(bool default_value)
+{
+    CJsonNode next_node(NextNodeOrNull());
+    return next_node && next_node.IsBoolean() ?
+        next_node.GetBoolean() : default_value;
+}
+
+inline void CArgArray::UpdateLocation(const string& location)
+{
+    if (m_Location.empty())
+        m_Location = location;
+    else {
+        m_Location.push_back(' ');
+        m_Location.append(location);
+    }
+}
+
+void CArgArray::Exception(const char* what)
+{
+    if (m_Location.empty()) {
+        NCBI_THROW(CAutomationException, eInvalidInput, what);
+    } else {
+        NCBI_THROW_FMT(CAutomationException, eInvalidInput,
+                m_Location << ": insufficient number of arguments");
+    }
+}
+
 struct SAutomationObject : public CObject
 {
     size_t m_Id;
@@ -76,8 +188,7 @@ struct SAutomationObject : public CObject
         m_Id(object_id), m_Type(object_type)
     {
     }
-    virtual CJsonNode Call(const string& method,
-            const CJsonNode::TArray& cmd_and_args) = 0;
+    virtual CJsonNode Call(const string& method, CArgArray& arg_array) = 0;
 };
 
 struct SNetCacheAutomationObject : public SAutomationObject
@@ -91,12 +202,11 @@ struct SNetCacheAutomationObject : public SAutomationObject
     {
     }
 
-    virtual CJsonNode Call(const string& method,
-            const CJsonNode::TArray& cmd_and_args);
+    virtual CJsonNode Call(const string& method, CArgArray& arg_array);
 };
 
 CJsonNode SNetCacheAutomationObject::Call(const string& method,
-        const CJsonNode::TArray& cmd_and_args)
+        CArgArray& arg_array)
 {
     CJsonNode reply(CJsonNode::NewArrayNode());
     reply.PushBoolean(true);
@@ -116,8 +226,7 @@ struct SNetScheduleAutomationObject : public SAutomationObject
     {
     }
 
-    virtual CJsonNode Call(const string& method,
-            const CJsonNode::TArray& cmd_and_args);
+    virtual CJsonNode Call(const string& method, CArgArray& arg_array);
 };
 
 static string NormalizeStatKeyName(const CTempString& key)
@@ -142,6 +251,17 @@ static bool IsInteger(const CTempString& value)
     return isdigit(*digit) || (*digit == '-' && value.length() > 1);
 }
 
+static inline string UnquoteIfQuoted(const CTempString& str)
+{
+    switch (str[0]) {
+    case '"':
+    case '\'':
+        return NStr::ParseQuoted(str);
+    default:
+        return str;
+    }
+}
+
 #define CLIENT_PREFIX "CLIENT: "
 #define CLIENT_PREFIX_LEN (sizeof(CLIENT_PREFIX) - 1)
 
@@ -158,17 +278,9 @@ static CJsonNode StatOutputToJsonArray(CNetServerMultilineCmdOutput output)
             if (client_info)
                 clients.PushNode(client_info);
             client_info = CJsonNode::NewObjectNode();
-            CTempString client_node(line.data() + CLIENT_PREFIX_LEN,
-                    line.length() - CLIENT_PREFIX_LEN);
-            switch (client_node[0]) {
-            case '\'':
-            case '"':
-                client_info.SetString("client_node",
-                        NStr::ParseQuoted(client_node));
-                break;
-            default:
-                client_info.SetString("client_node", client_node);
-            }
+            client_info.SetString("client_node", UnquoteIfQuoted(
+                    CTempString(line.data() + CLIENT_PREFIX_LEN,
+                    line.length() - CLIENT_PREFIX_LEN)));
         } else if (client_info && NStr::StartsWith(line, "  ")) {
             if (NStr::StartsWith(line, "    ") && array_value) {
                 array_value.PushString(NStr::TruncateSpaces(line,
@@ -191,10 +303,8 @@ static CJsonNode StatOutputToJsonArray(CNetServerMultilineCmdOutput output)
                     client_info.SetBoolean(key_norm, true);
                 else if (NStr::CompareNocase(value, "NONE") == 0)
                     client_info.SetNull(key_norm);
-                else if (value[0] == '\'' || value[0] == '"')
-                    client_info.SetString(key_norm, NStr::ParseQuoted(value));
                 else
-                    client_info.SetString(key_norm, value);
+                    client_info.SetString(key_norm, UnquoteIfQuoted(value));
             }
         }
     }
@@ -204,15 +314,14 @@ static CJsonNode StatOutputToJsonArray(CNetServerMultilineCmdOutput output)
 }
 
 CJsonNode SNetScheduleAutomationObject::Call(const string& method,
-        const CJsonNode::TArray& cmd_and_args)
+        CArgArray& arg_array)
 {
     CJsonNode reply(CJsonNode::NewArrayNode());
     reply.PushBoolean(true);
 
     if (method == "client_info") {
-        string ns_cmd(cmd_and_args.size() > 3 && cmd_and_args[3].IsBoolean() &&
-                cmd_and_args[3].GetBoolean() ? "STAT CLIENTS VERBOSE" :
-                "STAT CLIENTS");
+        string ns_cmd(arg_array.NextBoolean(false) ?
+                "STAT CLIENTS VERBOSE" : "STAT CLIENTS");
         CJsonNode result(CJsonNode::NewObjectNode());
         for (CNetServiceIterator it =
                 m_NetScheduleAPI.GetService().Iterate(); it; ++it) {
@@ -259,75 +368,41 @@ const CJsonNode& CAutomationProc::GetGreeting()
 
 bool CAutomationProc::ProcessMessage(const CJsonNode& message)
 {
-    const CJsonNode::TArray& cmd_and_args(message.GetArray());
+    CArgArray arg_array(message.GetArray());
 
-    if (cmd_and_args.empty()) {
-        NCBI_THROW(CAutomationException, eInvalidInput,
-                "Empty input is not allowed");
-    }
+    string command(arg_array.NextString());
 
-    CJsonNode command_node(cmd_and_args[0]);
-
-    if (!command_node.IsString()) {
-        NCBI_THROW(CAutomationException, eInvalidInput,
-                "Invalid message format: must start with a command");
-    }
-
-    string command(command_node.GetString());
+    arg_array.UpdateLocation(command);
 
     if (command == "exit")
         return false;
 
     if (command == "call") {
-        if (cmd_and_args.size() < 3) {
-            NCBI_THROW(CAutomationException, eInvalidInput,
-                    "Insufficient number of arguments to 'call'");
-        }
-        if (!cmd_and_args[1].IsNumber() || !cmd_and_args[2].IsString()) {
-            NCBI_THROW(CAutomationException, eInvalidInput,
-                    "Invalid type of argument in the 'call' command");
-        }
-        size_t object_id = (size_t) cmd_and_args[1].GetNumber();
+        size_t object_id = (size_t) arg_array.NextNumber();
         if (object_id >= m_Objects.size() || !m_Objects[object_id]) {
             NCBI_THROW_FMT(CAutomationException, eCommandProcessingError,
                     "Object with id '" << object_id << "' does not exist");
         }
-        string method(cmd_and_args[2].GetString());
+        string method(arg_array.NextString());
+        arg_array.UpdateLocation(method);
         TAutomationObjectRef callee(m_Objects[object_id]);
-        m_RootNode = callee->Call(method, cmd_and_args);
+        m_RootNode = callee->Call(method, arg_array);
     } else if (command == "new") {
-        CJsonNode::TArray::const_iterator it = cmd_and_args.begin();
-        while (++it != cmd_and_args.end())
-            if (!(*it).IsString()) {
-                NCBI_THROW(CAutomationException, eInvalidInput,
-                        "Invalid type of argument in the 'new' command");
-            }
-        if (cmd_and_args.size() < 2) {
-            NCBI_THROW(CAutomationException, eInvalidInput,
-                    "Missing class name in the 'new' command");
-        }
-        string class_name(cmd_and_args[1].GetString());
+        string class_name(arg_array.NextString());
+        arg_array.UpdateLocation(class_name);
         TAutomationObjectRef new_object;
         size_t object_id = m_Objects.size();
         if (class_name == "NetCache") {
-            if (cmd_and_args.size() != 4) {
-                NCBI_THROW(CAutomationException, eInvalidInput,
-                        "Incorrect number of parameters passed to the "
-                        "NetCache constructor");
-            }
+            string service_name(arg_array.NextString());
+            string client_name(arg_array.NextString());
             new_object.Reset(new SNetCacheAutomationObject(object_id,
-                    cmd_and_args[2].GetString(),
-                    cmd_and_args[3].GetString()));
+                    service_name, client_name));
         } else if (class_name == "NetSchedule") {
-            if (cmd_and_args.size() != 5) {
-                NCBI_THROW(CAutomationException, eInvalidInput,
-                        "Incorrect number of parameters passed to the "
-                        "NetSchedule constructor");
-            }
+            string service_name(arg_array.NextString());
+            string queue_name(arg_array.NextString());
+            string client_name(arg_array.NextString());
             new_object.Reset(new SNetScheduleAutomationObject(object_id,
-                    cmd_and_args[2].GetString(),
-                    cmd_and_args[3].GetString(),
-                    cmd_and_args[4].GetString()));
+                    service_name, queue_name, client_name));
         } else {
             NCBI_THROW_FMT(CAutomationException, eInvalidInput,
                     "Unknown class '" << class_name << "'");
