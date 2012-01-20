@@ -69,7 +69,8 @@ string CTestApp::sm_URL;
 
 bool CTestApp::TestApp_Args(CArgDescriptions& args)
 {
-    args.AddPositional("url", "url", CArgDescriptions::eString);
+    args.AddPositional("url", "URL to read from (discard all read data)",
+                       CArgDescriptions::eString);
     args.SetUsageContext(GetArguments().GetProgramBasename(),
                          "CConn_IOStream API MT test");
     return true;

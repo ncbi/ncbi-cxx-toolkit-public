@@ -30,7 +30,7 @@ case "`expr '(' $$ / 10 ')' '%' 3`" in
   url='file:///etc/hosts'
   ;;
   2)
-  url='ftp://ftp.ncbi.nlm.nih.gov/README'
+  url='ftp://ftp.ncbi.nlm.nih.gov/README.ftp'
   ;;
 esac
 
