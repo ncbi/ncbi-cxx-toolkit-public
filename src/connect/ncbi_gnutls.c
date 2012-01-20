@@ -42,13 +42,27 @@
 
 #  include <gnutls/gnutls.h>
 
+#  ifdef NCBI_POSIX_THREADS
+#    include <gcrypt.h>
+#    include <pthread.h>
+#    ifdef __cplusplus
+extern "C" {
+#    endif /*__cplusplus*/
+
+    GCRY_THREAD_OPTION_PTHREAD_IMPL;
+
+#    ifdef __cplusplus
+}
+#    endif /*__cplusplus*/
+#  endif /*NCBI_POSIX_THREADS*/
+
 #  ifndef LIBGNUTLS_VERSION_NUMBER
 /* backport support for older gnutls */
-#    define gnutls_session_t                 gnutls_session
-#    define gnutls_transport_ptr_t           gnutls_transport_ptr
-#    define gnutls_connection_end_t          gnutls_connection_end
-#    define gnutls_anon_client_credentials_t gnutls_anon_client_credentials
-#    define gnutls_certificate_credentials_t gnutls_certificate_credentials
+#    define gnutls_session_t                  gnutls_session
+#    define gnutls_transport_ptr_t            gnutls_transport_ptr
+#    define gnutls_connection_end_t           gnutls_connection_end
+#    define gnutls_anon_client_credentials_t  gnutls_anon_client_credentials
+#    define gnutls_certificate_credentials_t  gnutls_certificate_credentials
 #  endif /*LIBGNUTLS_VERSION_NUMBER*/
 
 
@@ -119,9 +133,9 @@ static const int kGnuTlsKxPrio[] = {
 #endif /*LIBGNUTLS_VERSION_NUMBER || !NCBI_OS_SOLARIS*/
 
 
+static int                              s_GnuTlsLogLevel;
 static gnutls_anon_client_credentials_t s_GnuTlsCredAnon;
 static gnutls_certificate_credentials_t s_GnuTlsCredCert;
-static int                              s_GnuTlsLogLevel;
 static FSSLPull                         s_Pull;
 static FSSLPush                         s_Push;
 
@@ -415,6 +429,11 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
         }
     }
 
+#ifdef NCBI_POSIX_THREADS
+    if (gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread) != 0)
+        return eIO_NotSupported;
+#endif /*NCBI_POSIX_THREADS*/
+
     if (!pull  ||  !push  ||  !gnutls_check_version(LIBGNUTLS_VERSION)
         ||  gnutls_global_init() != GNUTLS_E_SUCCESS/*0*/) {
         return eIO_NotSupported;
@@ -431,22 +450,27 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
 
     s_GnuTlsCredAnon = acred;
     s_GnuTlsCredCert = xcred;
-    s_Pull = pull;
-    s_Push = push;
+    s_Pull           = pull;
+    s_Push           = push;
+
     return eIO_Success;
 }
 
 
 static void s_GnuTlsExit(void)
 {
-    assert(s_GnuTlsCredAnon);
+    gnutls_anon_client_credentials_t acred = s_GnuTlsCredAnon;
+    gnutls_certificate_credentials_t xcred = s_GnuTlsCredCert;
 
-    s_Push = 0;
-    s_Pull = 0;
-    gnutls_certificate_free_credentials(s_GnuTlsCredCert);
+    assert(acred);
+
+    s_Push           = 0;
+    s_Pull           = 0;
     s_GnuTlsCredCert = 0;
-    gnutls_anon_free_client_credentials(s_GnuTlsCredAnon);
     s_GnuTlsCredAnon = 0;
+
+    gnutls_certificate_free_credentials(xcred);
+    gnutls_anon_free_client_credentials(acred);
     gnutls_global_deinit();
     gnutls_global_set_log_level(s_GnuTlsLogLevel = 0);
     gnutls_global_set_log_function(0);
