@@ -437,39 +437,47 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         path    = host + hostlen;
 
         /* username:password */
-        if (!(s = (const char*) memrchr(host, '@', hostlen))) {
-            user    = pass    = "";
+        if (!hostlen) {
+            if (scheme != eURL_File)
+                return 0/*failure*/;
+            user = pass = host = "";
             userlen = passlen = 0;
+            port = 0/*none*/;
         } else {
-            user    = host;
-            userlen = (size_t)(s - user);
-            host    = ++s;
-            hostlen = (size_t)(path - s);
-            if (!(s = (const char*) memchr(user, ':', userlen))) {
-                pass    = "";
-                passlen = 0;
+            if (!(s = (const char*) memrchr(host, '@', hostlen))) {
+                user    = pass    = "";
+                userlen = passlen = 0;
             } else {
-                userlen = (size_t)(s++ - user);
-                pass    = s++;
-                passlen = (size_t)(host - s);
+                user    = host;
+                userlen = (size_t)(s - user);
+                host    = ++s;
+                hostlen = (size_t)(path - s);
+                if (!(s = (const char*) memchr(user, ':', userlen))) {
+                    pass    = "";
+                    passlen = 0;
+                } else {
+                    userlen = (size_t)(s++ - user);
+                    pass    = s++;
+                    passlen = (size_t)(host - s);
+                }
             }
-        }
 
-        /* port, if any */
-        if ((s = (const char*) memchr(host, ':', hostlen)) != 0) {
-            int n;
-            hostlen = (size_t)(s - host);
-            if (sscanf(++s, "%hu%n", &port, &n) < 1
-                ||  s + n != path  ||  !port) {
+            /* port, if any */
+            if ((s = (const char*) memchr(host, ':', hostlen)) != 0) {
+                int n;
+                hostlen = (size_t)(s - host);
+                if (sscanf(++s, "%hu%n", &port, &n) < 1
+                    ||  s + n != path  ||  !port) {
+                    return 0/*failure*/;
+                }
+            } else
+                port = 0/*default*/;
+
+            if (userlen >= sizeof(info->user)  ||
+                passlen >= sizeof(info->pass)  ||
+                hostlen >= sizeof(info->host)) {
                 return 0/*failure*/;
             }
-        } else
-            port = 0/*default*/;
-
-        if (userlen >= sizeof(info->user)  ||
-            passlen >= sizeof(info->pass)  ||
-            hostlen >= sizeof(info->host)) {
-            return 0/*failure*/;
         }
     } else {
         scheme  = (EURLScheme) info->scheme;
@@ -1203,7 +1211,9 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
     s_SaveString    (s, "host",            info->host);
     s_SaveKeyval    (s, "port",           (info->port
                                            ? x_Port(info->port, buf)
-                                           : "(default)"));
+                                           : *info->host
+                                           ? "(default)"
+                                           : "(none"));
     s_SaveString    (s, "path",            info->path);
     s_SaveString    (s, "args",            info->args);
     s_SaveString    (s, "http_proxy_host", info->http_proxy_host);
