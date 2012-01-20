@@ -184,7 +184,7 @@ foreach my $fmt (@format){
 
 #test imgt domain
 $testcasefile = "igblastntestcase.imgt";
-$base_parameters = " -germline_db_V database/human_gl_V -germline_db_J database/human_gl_J -germline_db_D database/human_gl_D -query igblastntestcase -auxilary_data optional_file/human_gl.aux -show_translation  -domain_system imgt -outfmt "; 
+$base_parameters = " -germline_db_V database/human_gl_V -germline_db_J database/human_gl_J -germline_db_D database/human_gl_D -query $testcasefile -auxilary_data optional_file/human_gl.aux -show_translation  -domain_system imgt -outfmt "; 
 
 
 
