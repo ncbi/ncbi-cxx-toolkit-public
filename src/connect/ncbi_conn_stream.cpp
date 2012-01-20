@@ -901,11 +901,18 @@ extern CConn_IOStream* NcbiOpenURL(const string& url)
             return new CConn_FileStream(net_info->path);
         case eURL_Ftp:
             return new CConn_FTPDownloadStream(net_info->host,
+                                               net_info->path,
                                                net_info->user,
                                                net_info->pass,
-                                               net_info->path,
                                                kEmptyStr,
-                                               net_info->port);
+                                               net_info->port,
+                                               net_info->debug_printout
+                                               == eDebugPrintout_Data
+                                               ? fFTP_LogAll
+                                               : net_info->debug_printout
+                                               == eDebugPrintout_Some
+                                               ? fFTP_LogControl
+                                               : 0);
         default:
             break;
         }
