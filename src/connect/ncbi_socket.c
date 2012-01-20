@@ -698,6 +698,7 @@ extern EIO_Status SOCK_InitializeAPI(void)
 
     if (s_Initialized) {
         CORE_UNLOCK;
+        CORE_TRACE("[SOCK::InitializeAPI]  Noop");
         return s_Initialized < 0 ? eIO_NotSupported : eIO_Success;
     }
 
@@ -940,8 +941,8 @@ static int s_gethostname(char* name, size_t namelen, ESwitch log)
 static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
 {
     CORE_DEBUG_ARG(char addr[40];)
+    char buf[MAXHOSTNAMELEN + 1];
     unsigned int host;
-    char buf[256];
 
     /* initialize internals */
     if (s_InitAPI(0) != eIO_Success)
@@ -4622,10 +4623,6 @@ static EIO_Status s_Accept(LSOCK           lsock,
         if (poll.revent == eIO_Close)
             return eIO_Unknown;
         assert(poll.revent == eIO_Read);
-#ifdef NCBI_OS_MSWIN
-        /* accept() [to follow shortly] resets IO event recording */
-        lsock->readable = 0/*false*/;
-#endif /*NCBI_OS_MSWIN*/
     }}
 
     x_id = (lsock->id * 1000 + ++s_ID_Counter) * 1000;
@@ -4647,6 +4644,10 @@ static EIO_Status s_Accept(LSOCK           lsock,
         addr.in.sin_len = addrlen;
 #endif /*HAVE_SIN_LEN*/
         assert(lsock->port);
+#ifdef NCBI_OS_MSWIN
+        /* accept() [to follow shortly] resets IO event recording */
+        lsock->readable = 0/*false*/;
+#endif /*NCBI_OS_MSWIN*/
     }
     if ((x_sock = accept(lsock->sock, &addr.sa, &addrlen)) == SOCK_INVALID) {
         const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
@@ -7420,12 +7421,12 @@ extern const char* SOCK_StringToHostPort(const char*     str,
                                          unsigned int*   host,
                                          unsigned short* port)
 {
+    char abuf[MAXHOSTNAMELEN + 1];
     unsigned short p;
     unsigned int h;
-    char abuf[256];
     const char* s;
     size_t alen;
-    int n = 0;
+    int n;
 
     if (host)
         *host = 0;
@@ -7438,20 +7439,21 @@ extern const char* SOCK_StringToHostPort(const char*     str,
             break;
     }
     if ((alen = (size_t)(s - str)) > sizeof(abuf) - 1)
+        return 0;
+    if (*s != ':') {
+        p = 0;
+        n = 0;
+    } else if (isspace((unsigned char) s[1])
+               ||  sscanf(++s, "%hu%n", &p, &n) < 1
+               ||  (s[n]  &&  !isspace((unsigned char) s[n]))) {
         return str;
+    }
     if (alen) {
         strncpy0(abuf, str, alen);
         if (!(h = SOCK_gethostbyname(abuf)))
             return str;
     } else
         h = 0;
-    if (*s == ':') {
-        if (isspace((unsigned char) s[1])
-            ||  sscanf(++s, "%hu%n", &p, &n) < 1
-            ||  (s[n]  &&  !isspace((unsigned char) s[n])))
-            return alen ? 0 : str;
-    } else
-        p = 0;
     if (host)
         *host = h;
     if (port)

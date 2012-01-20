@@ -1982,21 +1982,21 @@ extern NCBI_XCONNECT_EXPORT unsigned int SOCK_GetLocalHostAddress
  );
 
 
-/** Read (skipping leading blanks) "[host][:port]" from a string.
+/** Read (skipping leading blanks) "[host][:port]" from a string stopping
+ * at EOL or a blank character.
  * @param str
  *  must not be NULL
  * @param host
- *  must not be NULL
+ *  may be NULL for no assignment
  * @param port
- *  must not be NULL
+ *  may be NULL for no assignment
  * @return
  *  On success, return the advanced pointer past the host/port read.
- *  If no host/port detected, return 'str'.
- *  On format error, return 0.
- *  If host and/or port fragments are missing,
- *  then corresponding 'host'/'port' value returned as 0.
- *  Note that 'host' returned is in network byte order,
- *  unlike 'port', which always comes out in host (native) byte order.
+ *  If no host/port detected, return 'str'.  On format error, return 0.
+ *  If host and/or port fragments are missing, then the corresponding 'host'/
+ *  'port' parameters get a value of 0.
+ * @note that 'host' returned is in network byte order, unlike 'port', which
+ *  always comes out in host (native) byte order.
  */
 extern NCBI_XCONNECT_EXPORT const char* SOCK_StringToHostPort
 (const char*     str,
@@ -2009,15 +2009,15 @@ extern NCBI_XCONNECT_EXPORT const char* SOCK_StringToHostPort
  * (including the teminating '\0' character).
  * Suppress printing host if parameter 'host' is zero.
  * @param host
- *
+ *  in network byte order
  * @param port
- *
+ *  in host byte order
  * @param buf
- *
+ *  must not be NULL
  * @param bufsize
- *
+ *  must be large enough
  * @return
- *  Number of bytes printed.
+ *  Number of bytes printed, or 0 on error (e.g. buffer too short).
  */
 extern NCBI_XCONNECT_EXPORT size_t SOCK_HostPortToString
 (unsigned int   host,
