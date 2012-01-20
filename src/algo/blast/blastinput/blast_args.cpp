@@ -1301,9 +1301,11 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             CArgDescriptions::eString);
     }
 
-    arg_desc.AddOptionalKey(kArgGLChainType, "filename",
+    if (!m_IsProtein) {
+        arg_desc.AddOptionalKey(kArgGLChainType, "filename",
                             "File containing chain type of each sequence in germline database and coding frame start position for V and J sequence",
                             CArgDescriptions::eString);
+    }
 
     arg_desc.AddDefaultKey(kArgGLOrigin, "germline_origin",
                             "The organism for your query sequence (i.e., human, mouse, etc.)",
@@ -1353,9 +1355,11 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
     m_IgOptions->m_DomainSystem = args[kArgGLDomainSystem].AsString();
     m_IgOptions->m_FocusV = args.Exist(kArgGLFocusV) ? args[kArgGLFocusV] : false;
     m_IgOptions->m_Translate = args.Exist(kArgTranslate) ? args[kArgTranslate] : false;
-    m_IgOptions->m_AuxFilename = (args.Exist(kArgGLChainType) && args[kArgGLChainType])
+    if (!m_IsProtein) {
+        m_IgOptions->m_AuxFilename = (args.Exist(kArgGLChainType) && args[kArgGLChainType])
                              ? args[kArgGLChainType].AsString()
                              : m_IgOptions->m_Origin + "_gl.aux";
+    }
 
     _ASSERT(m_IsProtein == m_IgOptions->m_IsProtein);
 
