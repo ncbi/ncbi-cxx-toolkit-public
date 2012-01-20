@@ -104,6 +104,7 @@ CIgAnnotationInfo::CIgAnnotationInfo(CConstRef<CIgBlastOptions> &ig_opt)
     }
 
     // read frame info from aux files
+    if (ig_opt->m_IsProtein) return;
     fn = ig_opt->m_AuxFilename;
     s_ReadLinesFromFile(fn, lines);
     if (lines.size() == 0) {
