@@ -576,7 +576,7 @@ struct SCommandDefinition {
         "NetCache, NetSchedule, or worker node process.\n\n"
         "If the '--" QUEUE_OPTION "' option is specified "
         "for a NetSchedule server, queue parameters will "
-        "be printed as well.",
+        "be printed instead.",
         {eNetCache, eNetSchedule, eWorkerNode, eQueue,
             eCompatMode, eAuth, eClientNode, eClientSession, -1}},
 
