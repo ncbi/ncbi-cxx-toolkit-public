@@ -61,10 +61,6 @@
 #endif
 
 
-/* For the sake of backward compatibility only */
-#include <ncbiconf.h>
-
-
 /* Char, Uchar, Int[1,2,4], Uint[1,2,4]
  */
 

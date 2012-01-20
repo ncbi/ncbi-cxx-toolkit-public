@@ -37,14 +37,15 @@
  * Configuration macros.
  */
 
+#ifndef FORWARDING_NCBICONF_H
+#  error "The header can be used from <ncbiconf.h> only."
+#endif /*!FORWARDING_NCBICONF_H*/
+
+
 /** @addtogroup Portability
  *
  * @{
  */
-
-#ifndef FORWARDING_NCBICONF_H
-#  include <ncbiconf.h>
-#endif
 
 
 /* Threads configuration
@@ -101,9 +102,10 @@
 #  endif
 #endif
 
-#include <common/ncbi_skew_guard.h>
 
-#endif  /* COMMON___NCBICONF_IMPL__H */
+#include <common/ncbi_skew_guard.h>
 
 
 /* @} */
+
+#endif  /* COMMON___NCBICONF_IMPL__H */
