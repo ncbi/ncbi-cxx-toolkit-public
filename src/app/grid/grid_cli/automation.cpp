@@ -105,10 +105,9 @@ inline CJsonNode CArgArray::NextNodeOrNull()
 inline CJsonNode CArgArray::NextNode()
 {
     CJsonNode next_node(NextNodeOrNull());
-    if (next_node)
-        return next_node;
-    else
+    if (!next_node)
         Exception("insufficient number of arguments");
+    return next_node;
 }
 
 inline string CArgArray::NextString()
