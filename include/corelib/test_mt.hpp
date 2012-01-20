@@ -173,10 +173,10 @@ protected:
 
 private:
 
-    /// Initialize the thread.
+    /// Initialize the app.
     void Init(void);
 
-    /// Run the thread.
+    /// Run the threads.
     int Run(void);
 
     void x_InitializeThreadGroups(void);

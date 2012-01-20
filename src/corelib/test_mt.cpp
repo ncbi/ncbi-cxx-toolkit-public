@@ -1,5 +1,4 @@
-
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -50,11 +49,11 @@ DEFINE_STATIC_FAST_MUTEX(s_GlobalLock);
 static CThreadedApp* s_Application;
 
 // Default values
-unsigned int  s_NumThreads    = 34;
-int           s_SpawnBy       = 6;
+unsigned int  s_NumThreads = 34;
+int           s_SpawnBy    = 6;
 
 // Next test thread index
-static volatile unsigned int  s_NextIndex = 0;
+static volatile unsigned int s_NextIndex = 0;
 
 #define TESTAPP_LOG_POST(x)  do { ++m_LogMsgCount; LOG_POST(x); } while (0)
 
@@ -71,7 +70,7 @@ static string s_GroupsCount(void)
     return NStr::UIntToString( (unsigned int)sqrt((double)s_NumThreads));
 }
 NCBI_PARAM_DECL(string, TEST_MT, GroupsCount);
-NCBI_PARAM_DEF_WITH_INIT (string, TEST_MT, GroupsCount, kEmptyStr, s_GroupsCount);
+NCBI_PARAM_DEF_WITH_INIT(string, TEST_MT, GroupsCount, kEmptyStr, s_GroupsCount);
 
 // group.has_sync_point = (rand() % 100) < threshold;
 NCBI_PARAM_DECL(unsigned int, TEST_MT, IntragroupSyncPoint);
@@ -166,32 +165,32 @@ void CTestThread::RunNative(void)
     // Not all functionality will work in this mode. E.g. TLS
     // cleanup can not be done automatically.
 #if defined(NCBI_WIN32_THREADS)
-    // We need this parameter in WinNT - can not use NULL instead!
+    // We need this parameter on WinNT - cannot use NULL instead!
     DWORD thread_id;
     // Suspend thread to adjust its priority
     DWORD creation_flags = 0;
     m_Handle = CreateThread(NULL, 0, NativeWrapperCaller,
-        this, creation_flags, &thread_id);
+                            this, creation_flags, &thread_id);
     _ASSERT(m_Handle != NULL);
     // duplicate handle to adjust security attributes
     HANDLE oldHandle = m_Handle;
     _ASSERT(DuplicateHandle(GetCurrentProcess(), oldHandle,
-        GetCurrentProcess(), &m_Handle,
-        0, FALSE, DUPLICATE_SAME_ACCESS));
+                            GetCurrentProcess(), &m_Handle,
+                            0, FALSE, DUPLICATE_SAME_ACCESS));
     _ASSERT(CloseHandle(oldHandle));
 #elif defined(NCBI_POSIX_THREADS)
-        pthread_attr_t attr;
-        _ASSERT(pthread_attr_init (&attr) == 0);
-        _ASSERT(pthread_create(&m_Handle, &attr,
-                               NativeWrapperCaller, this) == 0);
-        _ASSERT(pthread_attr_destroy(&attr) == 0);
+    pthread_attr_t attr;
+    _ASSERT(pthread_attr_init(&attr) == 0);
+    _ASSERT(pthread_create(&m_Handle, &attr,
+                           NativeWrapperCaller, this) == 0);
+    _ASSERT(pthread_attr_destroy(&attr) == 0);
 #else
-        if (flags & fRunAllowST) {
-            Wrapper(this);
-        }
-        else {
-            _ASSERT(0);
-        }
+    if (flags & fRunAllowST) {
+        Wrapper(this);
+    }
+    else {
+        _ASSERT(0);
+    }
 #endif
 }
 
@@ -202,8 +201,8 @@ void CTestThread::JoinNative(void** result)
 #if defined(NCBI_WIN32_THREADS)
     _ASSERT(WaitForSingleObject(m_Handle, INFINITE) == WAIT_OBJECT_0);
     DWORD status;
-    _ASSERT(GetExitCodeThread(m_Handle, &status) &&
-                   status != DWORD(STILL_ACTIVE));
+    _ASSERT(GetExitCodeThread(m_Handle, &status)
+            &&  status != DWORD(STILL_ACTIVE));
     _ASSERT(CloseHandle(m_Handle));
     m_Handle = NULL;
 #elif defined(NCBI_POSIX_THREADS)
@@ -231,7 +230,7 @@ void CTestThread::StartCascadingThreads(void)
         s_NextIndex += s_SpawnBy;
     }}
     // Spawn more threads
-    for (int i = first_idx; i < first_idx + spawn_max; i++) {
+    for (int i = first_idx;  i < first_idx + spawn_max;  i++) {
         thr[i] = new CTestThread(i);
         // Allow threads to run even in single thread environment
 #ifdef USE_NATIVE_THREADS
@@ -246,7 +245,7 @@ void* CTestThread::Main(void)
 {
     StartCascadingThreads();
     // Run the test
-    if ( s_Application != 0 && s_Application->Thread_Run(m_Idx) ) {
+    if ( s_Application != 0  &&  s_Application->Thread_Run(m_Idx) ) {
         return this;
     }
 
@@ -313,7 +312,7 @@ void* CInGroupThread::Main(void)
     m_Group.ThreadWait();
     s_ThreadIdxTLS.SetValue(reinterpret_cast<int*>(m_Idx));
     // Run the test
-    if ( s_Application != 0 && s_Application->Thread_Run(m_Idx) ) {
+    if ( s_Application != 0  &&  s_Application->Thread_Run(m_Idx) ) {
         m_Group.ThreadComplete();
         return this;
     }
@@ -326,7 +325,7 @@ CThreadGroup::CThreadGroup(
     : m_Number_of_threads(number_of_threads), m_Has_sync_point(has_sync_point),
       m_Semaphore(0,number_of_threads), m_SyncCounter(0)
 {
-    for (unsigned int t =0; t < m_Number_of_threads; ++t) {
+    for (unsigned int t = 0;  t < m_Number_of_threads;  ++t) {
         thr[s_NextIndex] = new CInGroupThread(*this, s_NextIndex);
 #ifdef USE_NATIVE_THREADS
         thr[s_NextIndex]->RunNative();
@@ -435,15 +434,14 @@ void CThreadedApp::Init(void)
         ("spawnby", new CArgAllow_Integers(k_SpawnByMin, k_SpawnByMax));
 
     arg_desc->AddOptionalKey("seed", "Randomization",
-        "Randomization seed value", CArgDescriptions::eInteger);
+                             "Randomization seed value",
+                             CArgDescriptions::eInteger);
+
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
+                              "MT-environment test");
 
     // Let test application add its own arguments
     TestApp_Args(*arg_desc);
-
-    string prog_description =
-        "MT-environment test";
-    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              prog_description, false);
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -463,7 +461,7 @@ int CThreadedApp::Run(void)
 #if !defined(_MT)
     // Set reasonable repeats if not set through the argument
     if (!args["repeats"].AsInteger()) {
-        unsigned int repeats = s_NumThreads/6;
+        unsigned int repeats = s_NumThreads / 6;
         if (repeats < 4)
             repeats = 4;
         if (repeats < s_NumThreads)
@@ -476,10 +474,10 @@ int CThreadedApp::Run(void)
     //
     assert(TestApp_Init());
 
-    unsigned int seed = GetArgs()["seed"] ?
-        (unsigned int)GetArgs()["seed"].AsInteger() :
-        (unsigned int)(time( NULL )%1000000);
-    TESTAPP_LOG_POST( "Randomization seed value: " << seed);
+    unsigned int seed = GetArgs()["seed"]
+        ? (unsigned int)GetArgs()["seed"].AsInteger()
+        : (unsigned int)(time(NULL) % 1000000);
+    TESTAPP_LOG_POST("Randomization seed value: " << seed);
     srand(seed);
 
     unsigned int threshold = NCBI_PARAM_TYPE(TEST_MT, Cascading)::GetDefault();
@@ -509,19 +507,19 @@ int CThreadedApp::Run(void)
         unsigned int start_now = x_InitializeDelayedStart();
 
         for (unsigned int g = 0;  g < m_ThreadGroups.size();  ++g) {
-            thr_group[g] = new CThreadGroup(
-                m_ThreadGroups[g].number_of_threads,
-                m_ThreadGroups[g].has_sync_point);
+            thr_group[g] = new CThreadGroup
+                (m_ThreadGroups[g].number_of_threads,
+                 m_ThreadGroups[g].has_sync_point);
         }
         x_StartThreadGroup(start_now);
     }
 
     // Wait for all threads
     if ( cascading ) {
-        for (unsigned int i=0; i<s_NumThreads; i++) {
+        for (unsigned int i = 0;  i < s_NumThreads;  i++) {
             void* ok;
             // make sure all threads have started
-            assert( thr[i].NotEmpty());
+            assert(thr[i].NotEmpty());
 #ifdef USE_NATIVE_THREADS
             if (thr[i]) {
                 thr[i]->JoinNative(&ok);
@@ -534,16 +532,16 @@ int CThreadedApp::Run(void)
         }
     } else {
         // join only those that started
-        unsigned int i=0;
-        for (unsigned int g = 0; g < m_NextGroup; ++g) {
-            for (unsigned int t= 0;
-                t < m_ThreadGroups[g].number_of_threads; ++t, ++i) {
+        unsigned int i = 0;
+        for (unsigned int g = 0;  g < m_NextGroup;  ++g) {
+            for (unsigned int t = 0;
+                 t < m_ThreadGroups[g].number_of_threads; ++t, ++i) {
                 void* ok;
                 thr[i]->Join(&ok);
                 assert(ok);
             }
         }
-        assert( m_Reached.size() >= m_Min);
+        assert(m_Reached.size() >= m_Min);
     }
 
     assert(TestApp_Exit());
@@ -563,8 +561,8 @@ int CThreadedApp::Run(void)
 
 void CThreadedApp::x_InitializeThreadGroups(void)
 {
-    unsigned int count = NStr::StringToUInt(
-        NCBI_PARAM_TYPE(TEST_MT, GroupsCount)::GetDefault());
+    unsigned int count = NStr::StringToUInt
+        (NCBI_PARAM_TYPE(TEST_MT, GroupsCount)::GetDefault());
     if (count == 0) {
         return;
     }
@@ -587,7 +585,7 @@ void CThreadedApp::x_InitializeThreadGroups(void)
         group.number_of_threads = 1; // mio
         m_ThreadGroups.push_back(group);
     }
-    
+
     if (s_NumThreads > count) {
         threads_left = s_NumThreads - count;
         for (unsigned int t = 0;  t < threads_left;  ++t) {
