@@ -475,8 +475,9 @@ int CThreadedApp::Run(void)
     assert(TestApp_Init());
 
     unsigned int seed = GetArgs()["seed"]
-        ? (unsigned int)GetArgs()["seed"].AsInteger()
-        : (unsigned int)(time(NULL) % 1000000);
+        ? (unsigned int) GetArgs()["seed"].AsInteger()
+        : ((unsigned int) CProcess::GetCurrentPid() ^
+           (unsigned int) time(NULL)) % 1000000;
     TESTAPP_LOG_POST("Randomization seed value: " << seed);
     srand(seed);
 
