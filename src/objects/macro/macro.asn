@@ -1167,6 +1167,7 @@ Edit-feature-location-action ::= SEQUENCE {
   type Macro-feature-type ,
   action Location-edit-type ,
   retranslate-cds BOOLEAN OPTIONAL ,
+  also-edit-gene BOOLEAN OPTIONAL ,
   constraint Constraint-choice-set OPTIONAL }
 
 Molinfo-block ::= SEQUENCE {
