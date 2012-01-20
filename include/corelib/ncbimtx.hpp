@@ -124,13 +124,13 @@ NCBI_XNCBI_EXPORT void WriteMutexEvent(void* mutex_ptr, const char* message);
 
 /// Define a platform independent system mutex.
 typedef int TSystemMutex; // fake
-# define SYSTEM_MUTEX_INITIALIZER 0
+#  define SYSTEM_MUTEX_INITIALIZER 0
 
 #elif defined(NCBI_POSIX_THREADS)
 
 /// Define a platform independent system mutex.
 typedef pthread_mutex_t TSystemMutex;
-# define SYSTEM_MUTEX_INITIALIZER PTHREAD_MUTEX_INITIALIZER
+#  define SYSTEM_MUTEX_INITIALIZER PTHREAD_MUTEX_INITIALIZER
 
 #elif defined(NCBI_WIN32_THREADS)
 
@@ -143,10 +143,10 @@ typedef CRITICAL_SECTION TSystemMutex;
 typedef HANDLE TSystemMutex;
 #  endif
 
-# undef SYSTEM_MUTEX_INITIALIZER
+#  undef SYSTEM_MUTEX_INITIALIZER
 
 #else
-#  error Unknown threads type
+#  error "Unknown threading model."
 #endif
 
 
