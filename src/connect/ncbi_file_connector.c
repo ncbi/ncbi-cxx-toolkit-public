@@ -51,8 +51,8 @@
 /* All internal data necessary to perform the (re)connect and i/o
  */
 typedef struct {
-    const char*    inp_filename;
-    const char*    out_filename;
+    const char*    ifname;
+    const char*    ofname;
     FILE*          finp;
     FILE*          fout;
     SFILE_ConnAttr attr;
@@ -67,6 +67,7 @@ typedef struct {
 extern "C" {
 #endif /* __cplusplus */
     static const char* s_VT_GetType (CONNECTOR       connector);
+    static char*       s_VT_Descr   (CONNECTOR       connector);
     static EIO_Status  s_VT_Open    (CONNECTOR       connector,
                                      const STimeout* timeout);
     static EIO_Status  s_VT_Wait    (CONNECTOR       connector,
@@ -104,6 +105,30 @@ static const char* s_VT_GetType
 }
 
 
+static char* s_VT_Descr
+(CONNECTOR connector)
+{
+    SFileConnector* xxx = (SFileConnector*) connector->handle;
+    if (xxx->ifname  &&  xxx->ofname) {
+        size_t ifnlen = strlen(xxx->ifname);
+        size_t ofnlen = strlen(xxx->ofname);
+        char* descr = (char*) malloc(ifnlen + ofnlen + 3);
+        if (descr) {
+            memcpy(descr + 1,      xxx->ifname, ifnlen++);
+            descr[ifnlen++] = '>';
+            memcpy(descr + ifnlen, xxx->ofname, ++ofnlen);
+            descr[0] = '<';
+            return descr;
+        }
+    } else if (xxx->ifname) {
+        return strdup(xxx->ifname);
+    } else if (xxx->ofname) {
+        return strdup(xxx->ofname);
+    }
+    return 0;
+}
+
+
 /*ARGSUSED*/
 static EIO_Status s_VT_Open
 (CONNECTOR       connector,
@@ -115,46 +140,52 @@ static EIO_Status s_VT_Open
     assert(!xxx->finp  &&  !xxx->fout);
 
     /* open file for output */
-    switch ( xxx->attr.w_mode ) {
-    case eFCM_Truncate:
-        mode = "wb";
-        break;
-    case eFCM_Seek:
-        mode = "r+b";
-        break;
-    case eFCM_Append:
-        mode = "ab";
-        break;
-    default:
-        return eIO_InvalidArg;
-    }
-    if (!xxx->out_filename
-        ||  !(xxx->fout = fopen(xxx->out_filename, mode))) {
-        return eIO_Unknown;
-    }
-    if (xxx->attr.w_mode == eFCM_Seek  &&  xxx->attr.w_pos
-        &&  fseek(xxx->fout, xxx->attr.w_pos, SEEK_SET) != 0) {
-        fclose(xxx->fout);
-        xxx->fout = 0;
-        return eIO_Unknown;
+    if (xxx->ofname) {
+        switch ( xxx->attr.w_mode ) {
+        case eFCM_Truncate:
+            mode = "wb";
+            break;
+        case eFCM_Seek:
+            mode = "r+b";
+            break;
+        case eFCM_Append:
+            mode = "ab";
+            break;
+        default:
+            return eIO_InvalidArg;
+        }
+        if (!(xxx->fout = fopen(xxx->ofname, mode)))
+            return eIO_Unknown;
+        if (xxx->attr.w_mode == eFCM_Seek  &&  xxx->attr.w_pos
+            &&  fseek(xxx->fout, xxx->attr.w_pos, SEEK_SET) != 0) {
+            fclose(xxx->fout);
+            xxx->fout = 0;
+            return eIO_Unknown;
+        }
     }
 
     /* open file for input */
-    if (!xxx->inp_filename
-        ||  !(xxx->finp = fopen(xxx->inp_filename, "rb"))) {
-        fclose(xxx->fout);
-        xxx->fout = 0;
-        return eIO_Unknown;
-    }
-    if (xxx->attr.r_pos
-        &&  fseek(xxx->finp, xxx->attr.r_pos, SEEK_SET) != 0) {
-        fclose(xxx->finp);
-        fclose(xxx->fout);
-        xxx->finp = 0;
-        xxx->fout = 0;
-        return eIO_Unknown;
+    if (xxx->ifname) {
+        if (!(xxx->finp = fopen(xxx->ifname, "rb"))) {
+            if (xxx->fout) {
+                fclose(xxx->fout);
+                xxx->fout = 0;
+            }
+            return eIO_Unknown;
+        }
+        if (xxx->attr.r_pos
+            &&  fseek(xxx->finp, xxx->attr.r_pos, SEEK_SET) != 0) {
+            fclose(xxx->finp);
+            xxx->finp = 0;
+            if (xxx->fout) {
+                fclose(xxx->fout);
+                xxx->fout = 0;
+            }
+            return eIO_Unknown;
+        }
     }
 
+    assert(xxx->finp  ||  xxx->fout);
     return eIO_Success;
 }
 
@@ -179,8 +210,10 @@ static EIO_Status s_VT_Write
 {
     SFileConnector* xxx = (SFileConnector*) connector->handle;
 
-    assert(xxx->fout  &&  *n_written == 0);
+    assert(*n_written == 0);
 
+    if (!xxx->fout)
+        return eIO_Closed;
     if (!size)
         return eIO_Success;
 
@@ -197,7 +230,8 @@ static EIO_Status s_VT_Flush
 {
     SFileConnector* xxx = (SFileConnector*) connector->handle;
 
-    assert(xxx->fout);
+    if (!xxx->fout)
+        return eIO_Closed;
 
     return fflush(xxx->fout) != 0 ? eIO_Unknown : eIO_Success;
 }
@@ -213,8 +247,10 @@ static EIO_Status s_VT_Read
 {
     SFileConnector* xxx = (SFileConnector*) connector->handle;
 
-    assert(xxx->finp  &&  *n_read == 0);
+    assert(*n_read == 0);
 
+    if (!xxx->finp)
+        return eIO_Closed;
     if (!size)
         return eIO_Success;
 
@@ -232,12 +268,12 @@ static EIO_Status s_VT_Status
 
     switch (dir) {
     case eIO_Read:
-        assert(xxx->finp);
-        return feof(xxx->finp) ? eIO_Closed
+        return !xxx->finp ? eIO_Closed
+            : feof(xxx->finp) ? eIO_Closed
             : ferror(xxx->finp) ? eIO_Unknown : eIO_Success;
     case eIO_Write:
-        assert(xxx->fout);
-        return ferror(xxx->fout) ? eIO_Unknown : eIO_Success;
+        return !xxx->fout ? eIO_Closed
+            : ferror(xxx->fout) ? eIO_Unknown : eIO_Success;
     default:
         assert(0);
         break;
@@ -254,14 +290,18 @@ static EIO_Status s_VT_Close
     SFileConnector* xxx = (SFileConnector*) connector->handle;
     EIO_Status status = eIO_Success;
 
-    assert(xxx->finp  &&  xxx->fout);
+    assert(xxx->finp  ||  xxx->fout);
 
-    if (fclose(xxx->finp) != 0)
-        status = eIO_Unknown;
-    xxx->finp = 0;
-    if (fclose(xxx->fout) != 0)
-        status = eIO_Unknown;
-    xxx->fout = 0;
+    if (xxx->finp) {
+        if (fclose(xxx->finp) != 0)
+            status = eIO_Unknown;
+        xxx->finp = 0;
+    }
+    if (xxx->fout) {
+        if (fclose(xxx->fout) != 0)
+            status = eIO_Unknown;
+        xxx->fout = 0;
+    }
     return status;
 }
 
@@ -272,6 +312,7 @@ static void s_Setup
 {
     /* initialize virtual table */
     CONN_SET_METHOD(meta, get_type, s_VT_GetType, connector);
+    CONN_SET_METHOD(meta, descr,    s_VT_Descr,   connector);
     CONN_SET_METHOD(meta, open,     s_VT_Open,    connector);
     CONN_SET_METHOD(meta, wait,     s_VT_Wait,    connector);
     CONN_SET_METHOD(meta, write,    s_VT_Write,   connector);
@@ -290,14 +331,8 @@ static void s_Destroy
     connector->handle = 0;
 
     assert(!xxx->finp  &&  !xxx->fout);
-    if (xxx->inp_filename) {
-        free((void*) xxx->inp_filename);
-        xxx->inp_filename = 0;
-    }
-    if (xxx->out_filename) {
-        free((void*) xxx->out_filename);
-        xxx->out_filename = 0;
-    }
+    xxx->ifname = 0;
+    xxx->ofname = 0;
     free(xxx);
     free(connector);
 }
@@ -308,39 +343,47 @@ static void s_Destroy
  ***********************************************************************/
 
 extern CONNECTOR FILE_CreateConnector
-(const char* inp_filename,
- const char* out_filename)
+(const char* ifname,
+ const char* ofname)
 {
-    static const SFILE_ConnAttr def_attr = { eFCM_Truncate, 0, 0 };
-
-    return FILE_CreateConnectorEx(inp_filename, out_filename, &def_attr);
+    return FILE_CreateConnectorEx(ifname, ofname, NULL);
 }
 
 
 extern CONNECTOR FILE_CreateConnectorEx
-(const char*           inp_filename,
- const char*           out_filename,
+(const char*           ifname,
+ const char*           ofname,
  const SFILE_ConnAttr* attr)
 {
+    /* In fact, this is a whole-zero init */
+    static const SFILE_ConnAttr def_attr = { eFCM_Truncate };
+
     CONNECTOR       ccc;
     SFileConnector* xxx;
+    char*           str;
+    size_t          ifnlen = ifname  &&  *ifname ? strlen(ifname) + 1 : 0;
+    size_t          ofnlen = ofname  &&  *ofname ? strlen(ofname) + 1 : 0;
 
-    if (!inp_filename  ||  !out_filename)
+    if (!(ifnlen | ofnlen))
         return 0;
     if (!(ccc = (SConnector*)     malloc(sizeof(SConnector))))
         return 0;
-    if (!(xxx = (SFileConnector*) malloc(sizeof(*xxx)))) {
+    if (!(xxx = (SFileConnector*) malloc(sizeof(*xxx) + ifnlen + ofnlen))) {
         free(ccc);
         return 0;
     }
 
     /* initialize internal data structures */
-    xxx->inp_filename = strdup(inp_filename);
-    xxx->out_filename = strdup(out_filename);
-    xxx->finp         = 0;
-    xxx->fout         = 0;
-
-    memcpy(&xxx->attr, attr, sizeof(xxx->attr));
+    str  = (char*) xxx + sizeof(*xxx);
+    xxx->ifname = (const char*)(ifnlen ? memcpy(str, ifname, ifnlen) : 0);
+    str += ifnlen;
+    xxx->ofname = (const char*)(ofnlen ? memcpy(str, ofname, ofnlen) : 0);
+    xxx->finp   = 0;
+    xxx->fout   = 0;
+    if (xxx->ofname)
+        memcpy(&xxx->attr, attr ? attr : &def_attr, sizeof(xxx->attr));
+    else
+        memset(&xxx->attr, 0,                       sizeof(xxx->attr));
 
     /* initialize connector data */
     ccc->handle  = xxx;

@@ -50,12 +50,15 @@ extern "C" {
 #endif
 
 
-/* Create new CONNECTOR structure to handle a data transfer between two files.
+/* Create new CONNECTOR structure to handle a data transfer between two files
+ * (equivalent to FILE_CreateConnectorEx(.,.,NULL)).
+ * Can have either ifname or ofname (not both!) as NULL or empty causing
+ * either no input or no output available, respectively.
  * Return NULL on error.
  */
 extern NCBI_XCONNECT_EXPORT CONNECTOR FILE_CreateConnector
-(const char* inp_filename,  /* to read data from         */
- const char* out_filename   /* to write the read data to */
+(const char* ifname,  /* to read data from         */
+ const char* ofname   /* to write the read data to */
  );
 
 
@@ -80,8 +83,8 @@ typedef struct {
 /* An extended version of FILE_CreateConnector().
  */
 extern NCBI_XCONNECT_EXPORT CONNECTOR FILE_CreateConnectorEx
-(const char*           inp_filename,
- const char*           out_filename,
+(const char*           ifname,
+ const char*           ofname,
  const SFILE_ConnAttr* attr
  );
 
