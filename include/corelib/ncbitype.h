@@ -62,7 +62,7 @@
 
 
 /* For the sake of backward compatibility only */
-#include <common/ncbiconf_impl.h>
+#include <ncbiconf.h>
 
 
 /* Char, Uchar, Int[1,2,4], Uint[1,2,4]

@@ -36,9 +36,6 @@
  */
 
 #include <ncbiconf.h>
-/* NB:  The following include should be gone in the future,
- * when ncbiconf.h would be made a forwarding header to _impl. */
-#include <common/ncbiconf_impl.h>
 
 /** @addtogroup Threads
  *

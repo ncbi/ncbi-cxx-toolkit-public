@@ -42,7 +42,9 @@
  * @{
  */
 
-#include <ncbiconf.h>
+#ifndef FORWARDING_NCBICONF_H
+#  include <ncbiconf.h>
+#endif
 
 
 /* Threads configuration
@@ -99,6 +101,7 @@
 #  endif
 #endif
 
+#include <common/ncbi_skew_guard.h>
 
 #endif  /* COMMON___NCBICONF_IMPL__H */
 

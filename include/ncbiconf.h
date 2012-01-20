@@ -47,6 +47,6 @@
 #  include <common/config/ncbiconf_universal.h>
 #endif
 
-#include <common/ncbi_skew_guard.h>
+#include <common/ncbiconf_impl.h>
 
 #endif  /* FORWARDING_NCBICONF_H */
