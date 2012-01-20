@@ -34,4 +34,4 @@ case "`expr '(' $$ / 10 ')' '%' 3`" in
   ;;
 esac
 
-exec test_ncbi_conn_stream_mt -threads "`expr $$ % 10`" "$url"
+exec test_ncbi_conn_stream_mt -threads "`expr $$ % 10 + 2`" "$url"
