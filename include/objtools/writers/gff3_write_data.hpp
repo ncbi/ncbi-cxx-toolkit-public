@@ -75,12 +75,6 @@ public:
 
     CRef<CSeq_loc> GetCircularLocation() const { return m_pLoc; };
 
-    static void ChangeToPackedInt(
-        CSeq_loc& loc);
-
-    static bool IsOrdered(
-        const CSeq_loc& loc);
-
     virtual bool NeedsQuoting(
         const string& ) const;
 

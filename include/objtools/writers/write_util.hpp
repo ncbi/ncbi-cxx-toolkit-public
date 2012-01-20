@@ -77,8 +77,19 @@ public:
         CBioseq_Handle,
         string& );
 
+    static bool GetBestId(
+        CSeq_id_Handle,
+        CScope&, 
+        string& );
+
+    static bool IsLocationOrdered(
+        const CSeq_loc& );
+
     static string UrlEncode(
         const string& );
+
+    static void ChangeToPackedInt(
+        CSeq_loc& loc);
 };
 
 END_objects_SCOPE

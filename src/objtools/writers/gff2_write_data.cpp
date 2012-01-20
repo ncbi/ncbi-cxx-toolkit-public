@@ -481,16 +481,8 @@ bool CGffWriteRecordFeature::AssignSource(
 {
     // id
     CConstRef<CSeq_id> pId = bsh.GetNonLocalIdOrNull();
-    if ( pId ) {
-        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle( *pId ); 
-        CSeq_id_Handle best_idh = 
-            sequence::GetId(idh, bsh.GetScope(), sequence::eGetId_Best); 
-        if ( !best_idh ) {
-            best_idh = idh;
-        }
-        best_idh.GetSeqId()->GetLabel(&m_strId, CSeq_id::eContent);
-    }
-    if ( m_strId.empty() ) {
+    if (!pId  ||  !CWriteUtil::GetBestId(CSeq_id_Handle::GetHandle( *pId ),
+            bsh.GetScope(), m_strId)) {
         m_strId = "<unknown>";
     }
 
@@ -534,17 +526,8 @@ bool CGffWriteRecordFeature::x_AssignSeqId(
 {
 	const CSeq_loc& loc = mf.GetLocation();
     CConstRef<CSeq_id> id(loc.GetId());
-	if (id) {
-        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle( *id ); 
-        CSeq_id_Handle best_idh = 
-            sequence::GetId(idh, mf.GetScope(), sequence::eGetId_Best); 
-        if ( !best_idh ) {
-            best_idh = idh;
-        }
-        best_idh.GetSeqId()->GetLabel(&m_strId, CSeq_id::eContent);
-	}
-
-    if (m_strId.empty() ) {
+	if (!id  ||  !CWriteUtil::GetBestId(
+            CSeq_id_Handle::GetHandle(*id), mf.GetScope(), m_strId)) {
         m_strId = ".";
     }
     return true;

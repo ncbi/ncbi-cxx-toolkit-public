@@ -55,6 +55,7 @@
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
 
+#include <objtools/writers/write_util.hpp>
 #include <objects/seq/sofa_type.hpp>
 #include <objects/seq/sofa_map.hpp>
 
@@ -133,27 +134,6 @@ string s_MakeGffDbtag(
     return strGffTag;
 }
         
-//  ----------------------------------------------------------------------------
-string s_BestIdString(
-    CSeq_id_Handle idh,
-    CScope& scope )
-//  ----------------------------------------------------------------------------
-{
-    if (!idh) {
-        return "";
-    }
-    CSeq_id_Handle best_idh = sequence::GetId( idh, scope, sequence::eGetId_Best );
-    if ( !best_idh ) {
-        best_idh = idh;
-    }
-    string strId("");
-    try {
-        best_idh.GetSeqId()->GetLabel( &strId, CSeq_id::eContent );
-    }
-    catch (...) {}
-    return strId;
-}
-    
 //  ----------------------------------------------------------------------------
 const char* s_GetAAName(unsigned char aa)
 //  ----------------------------------------------------------------------------
@@ -343,74 +323,13 @@ CGff3WriteRecordFeature::~CGff3WriteRecordFeature()
 };
 
 //  ----------------------------------------------------------------------------
-bool CGff3WriteRecordFeature::IsOrdered(
-    const CSeq_loc& loc)
-//  Look whether the given location contains any eNull intervals. If so, the 
-//  location is ordered, otherwise not.
-//  ----------------------------------------------------------------------------
-{
-    switch ( loc.Which() ) {
-    case CSeq_loc::e_Null:
-        return true;
-    case CSeq_loc::e_Mix: {
-            ITERATE (CSeq_loc_mix::Tdata, sub_loc, loc.GetMix().Get()) {
-                if (IsOrdered(**sub_loc)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-    default:
-        return false;
-    }
-}
-    
-//  ----------------------------------------------------------------------------
-void CGff3WriteRecordFeature::ChangeToPackedInt(
-    CSeq_loc& loc)
-//  Special mission:
-//  Filter out eNull intervals before submitting the lication to the "normal"
-//  ChangeToPackedInt() method.
-//  ----------------------------------------------------------------------------
-{
-    switch ( loc.Which() ) {
-    case CSeq_loc::e_Null:
-        loc.SetPacked_int();
-        return;
-    case CSeq_loc::e_Mix: {
-            vector<CRef<CSeq_loc> > sub_locs;
-            sub_locs.reserve(loc.GetMix().Get().size());
-            ITERATE (CSeq_loc_mix::Tdata, orig_sub_loc, loc.GetMix().Get()) {
-                if ((*orig_sub_loc)->Which() == CSeq_loc::e_Null) {
-                    continue;
-                }
-                CRef<CSeq_loc> new_sub_loc(new CSeq_loc);
-                new_sub_loc->Assign(**orig_sub_loc);
-                ChangeToPackedInt(*new_sub_loc);
-                sub_locs.push_back(new_sub_loc);
-            }
-            loc.SetPacked_int();  // in case there are zero intervals
-            ITERATE (vector<CRef<CSeq_loc> >, sub_loc, sub_locs) {
-                copy((*sub_loc)->GetPacked_int().Get().begin(),
-                     (*sub_loc)->GetPacked_int().Get().end(),
-                     back_inserter(loc.SetPacked_int().Set()));
-            }
-        }
-        return;
-    default:
-        loc.ChangeToPackedInt();
-        return;
-    }
-}
-
-//  ----------------------------------------------------------------------------
 bool CGff3WriteRecordFeature::AssignFromAsn(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
     m_pLoc.Reset( new CSeq_loc( CSeq_loc::e_Mix ) );
     m_pLoc->Add( mf.GetLocation() );
-    ChangeToPackedInt(*m_pLoc);
+    CWriteUtil::ChangeToPackedInt(*m_pLoc);
 
     CBioseq_Handle bsh = m_fc.BioseqHandle();
     if (!bsh  ||  !bsh.IsSetInst_Topology()  
@@ -1030,8 +949,8 @@ bool CGff3WriteRecordFeature::x_AssignAttributeProduct(
                 }
             }
             
-            string product = s_BestIdString( mf.GetProductId(), mf.GetScope());
-            if (!product.empty()) {
+            string product;
+            if (CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), product)) {
                 SetAttribute("product", product);
                 return true;
             }
@@ -1230,8 +1149,8 @@ bool CGff3WriteRecordFeature::x_AssignAttributeTranscriptId(
     }
 
     if ( mf.IsSetProduct() ) {
-        string transcript_id = s_BestIdString(mf.GetProductId(), mf.GetScope());
-        if (!transcript_id.empty()) {
+        string transcript_id;
+        if (CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), transcript_id)) {
             SetAttribute("transcript_id", transcript_id);
             return true;
         }
@@ -1247,8 +1166,8 @@ bool CGff3WriteRecordFeature::x_AssignAttributeProteinId(
     if ( ! mf.IsSetProduct() ) {
         return true;
     }
-    string protein_id = s_BestIdString(mf.GetProductId(), mf.GetScope());
-    if (!protein_id.empty()) {
+    string protein_id;
+    if (CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), protein_id)) {
         SetAttribute("protein_id", protein_id);
         return true;
     }
@@ -1390,7 +1309,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeIsOrdered(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    if (IsOrdered(mf.GetLocation())) {
+    if (CWriteUtil::IsLocationOrdered(mf.GetLocation())) {
         SetAttribute("is_ordered", "true");
     }
     return true;

@@ -303,4 +303,90 @@ string CWriteUtil::UrlEncode(
     return encoded;
 }
 
+//  ----------------------------------------------------------------------------
+bool CWriteUtil::IsLocationOrdered(
+    const CSeq_loc& loc)
+//  Look whether the given location contains any eNull intervals. If so, the 
+//  location is ordered, otherwise not.
+//  ----------------------------------------------------------------------------
+{
+    switch ( loc.Which() ) {
+    case CSeq_loc::e_Null:
+        return true;
+    case CSeq_loc::e_Mix: {
+            ITERATE (CSeq_loc_mix::Tdata, sub_loc, loc.GetMix().Get()) {
+                if (IsLocationOrdered(**sub_loc)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    default:
+        return false;
+    }
+}
+    
+//  ----------------------------------------------------------------------------
+void CWriteUtil::ChangeToPackedInt(
+    CSeq_loc& loc)
+//  Special mission:
+//  Filter out eNull intervals before submitting the lication to the "normal"
+//  ChangeToPackedInt() method.
+//  ----------------------------------------------------------------------------
+{
+    switch ( loc.Which() ) {
+    case CSeq_loc::e_Null:
+        loc.SetPacked_int();
+        return;
+    case CSeq_loc::e_Mix: {
+            vector<CRef<CSeq_loc> > sub_locs;
+            sub_locs.reserve(loc.GetMix().Get().size());
+            ITERATE (CSeq_loc_mix::Tdata, orig_sub_loc, loc.GetMix().Get()) {
+                if ((*orig_sub_loc)->Which() == CSeq_loc::e_Null) {
+                    continue;
+                }
+                CRef<CSeq_loc> new_sub_loc(new CSeq_loc);
+                new_sub_loc->Assign(**orig_sub_loc);
+                ChangeToPackedInt(*new_sub_loc);
+                sub_locs.push_back(new_sub_loc);
+            }
+            loc.SetPacked_int();  // in case there are zero intervals
+            ITERATE (vector<CRef<CSeq_loc> >, sub_loc, sub_locs) {
+                copy((*sub_loc)->GetPacked_int().Get().begin(),
+                     (*sub_loc)->GetPacked_int().Get().end(),
+                     back_inserter(loc.SetPacked_int().Set()));
+            }
+        }
+        return;
+    default:
+        loc.ChangeToPackedInt();
+        return;
+    }
+}
+
+//  ----------------------------------------------------------------------------
+bool CWriteUtil::GetBestId(
+    CSeq_id_Handle idh,
+    CScope& scope,
+    string& best_id )
+//  ----------------------------------------------------------------------------
+{
+    if (!idh) {
+        return false;
+    }
+    CSeq_id_Handle best_idh = sequence::GetId( idh, scope, sequence::eGetId_Best );
+    if ( !best_idh ) {
+        best_idh = idh;
+    }
+    string backup = best_id;
+    try {
+        best_idh.GetSeqId()->GetLabel( &best_id, CSeq_id::eContent );
+    }
+    catch (...) {
+        best_id = backup;
+        return false;
+    }
+    return true;
+}
+    
 END_NCBI_SCOPE

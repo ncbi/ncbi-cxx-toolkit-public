@@ -57,6 +57,7 @@
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
 
+#include <objtools/writers/write_util.hpp>
 #include <objtools/writers/gff3_write_data.hpp>
 #include <objtools/writers/gff3_alignment_data.hpp>
 #include <objtools/writers/gff3_writer.hpp>
@@ -644,7 +645,7 @@ bool CGff3Writer::x_WriteFeatureRecords(
 {
     CRef< CSeq_loc > pPackedInt( new CSeq_loc( CSeq_loc::e_Mix ) );
     pPackedInt->Add( location );
-    CGff3WriteRecordFeature::ChangeToPackedInt(*pPackedInt);
+    CWriteUtil::ChangeToPackedInt(*pPackedInt);
 
     if ( pPackedInt->IsPacked_int() && pPackedInt->GetPacked_int().CanGet() ) {
         const list< CRef< CSeq_interval > >& sublocs = pPackedInt->GetPacked_int().Get();
