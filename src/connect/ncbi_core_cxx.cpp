@@ -358,7 +358,7 @@ extern void CONNECT_Init(IRWRegistry*      reg,
 }
 
 
-CConnIniter::CConnIniter()
+CConnIniter::CConnIniter(void)
 {
     if (s_ConnectInit == eConnectInit_Intact) {
         s_InitInternal();
