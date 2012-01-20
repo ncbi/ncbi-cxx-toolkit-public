@@ -37,6 +37,7 @@
 #include <connect/error_codes.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/ncbi_conn_stream.hpp>
+#include <connect/ncbi_file_connector.h>
 #include <connect/ncbi_socket.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <stdlib.h>
@@ -836,6 +837,27 @@ CConn_FTPUploadStream::CConn_FTPUploadStream(const string&   host,
 }
 
 
+/* non-public class */
+class CConn_FileStream : public CConn_IOStream
+{
+public:
+    CConn_FileStream(const string&   ifname,
+                     const string&   ofname = kEmptyStr,
+                     SFILE_ConnAttr* attr   = 0)
+        : CConn_IOStream(FILE_CreateConnectorEx(ifname.c_str(),
+                                                ofname.c_str(), attr),
+                         0/*timeout*/, 0/*unbuffered*/, false/*untied*/)
+    {
+        return;
+    }
+
+private:
+    // Disable copy constructor and assignment.
+    CConn_FileStream(const CConn_FileStream&);
+    CConn_FileStream& operator= (const CConn_FileStream&);
+};
+
+
 const char* CIO_Exception::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
@@ -847,6 +869,48 @@ const char* CIO_Exception::GetErrCodeString(void) const
     case eUnknown:       return "eIO_Unknown";
     default:             return  CException::GetErrCodeString();
     }
+}
+
+
+extern CConn_IOStream* NcbiOpenURL(const string& url)
+{
+    class CInternalIniter : public CConnIniter {
+    public:
+        CInternalIniter(void)
+        { }
+    };
+    CInternalIniter init;
+
+    AutoPtr<SConnNetInfo> net_info = ConnNetInfo_Create(0);
+
+    unsigned int   host;
+    unsigned short port;
+    if (url.size() == CSocketAPI::StringToHostPort(url, &host, &port))
+        net_info->req_method = eReqMethod_Connect;
+
+    if (ConnNetInfo_ParseURL(net_info.get(), url.c_str())) {
+        if (net_info->req_method == eReqMethod_Connect)
+            return new CConn_SocketStream(*net_info);
+        switch (net_info->scheme) {
+        case eURL_Https:
+        case eURL_Http:
+            return new CConn_HttpStream(net_info.get());
+        case eURL_File:
+            if (*net_info->host  ||  net_info->port)
+                break; /*not supported*/
+            return new CConn_FileStream(net_info->path);
+        case eURL_Ftp:
+            return new CConn_FTPDownloadStream(net_info->host,
+                                               net_info->user,
+                                               net_info->pass,
+                                               net_info->path,
+                                               kEmptyStr,
+                                               net_info->port);
+        default:
+            break;
+        }
+    }
+    return 0;
 }
 
 

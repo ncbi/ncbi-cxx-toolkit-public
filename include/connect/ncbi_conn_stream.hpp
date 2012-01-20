@@ -787,17 +787,18 @@ private:
 };
 
 
-#if 0 // Future extension of API
+#ifdef NCBI_CONN_STREAM_EXPERIMENTAL_API
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// Given the URL, open the data source (see <connect/ncbi_connutil.h>
-/// for supported schemes) and make it available for reading.
+/// Given the URL, open the data source and make it available for reading.
+/// See <connect/ncbi_connutil.h> for supported schemes.
 /// Writing to the stream is undefined.
 ///
+extern NCBI_XCONNECT_EXPORT
 CConn_IOStream* NcbiOpenURL(const string& url);
 
-#endif //0
+#endif //NCBI_CONN_STREAM_EXPERIMENTAL_API
 
 
 END_NCBI_SCOPE
