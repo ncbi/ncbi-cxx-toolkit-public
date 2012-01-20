@@ -2611,14 +2611,22 @@ BOOST_AUTO_TEST_CASE(s_ShellEncode)
     cout << endl << "ShellEncode tests..." << endl;
 
     string echo_file = CFile::GetTmpName(CFile::eTmpFileCreate);
+    string cmd_file = "./echo.sh";
 
-    for (size_t i = 0;  i < sizeof(s_ShellStr) / sizeof(s_ShellStr[0]);  i++) {
-        string cmd = "echo ";
-        cmd += NStr::ShellEncode(s_ShellStr[i]);
-        cmd += " >> ";
-        cmd += echo_file;
-        BOOST_CHECK_EQUAL(CExec::System(cmd.c_str()), 0);
-    }
+    {{
+        CNcbiOfstream out(cmd_file.c_str());
+        out << "#! /bin/bash" << endl;
+
+        for (size_t i = 0;  i < sizeof(s_ShellStr) / sizeof(s_ShellStr[0]);  i++) {
+            string cmd = "echo ";
+            cmd += NStr::ShellEncode(s_ShellStr[i]);
+            cmd += " >> ";
+            cmd += echo_file;
+           out << cmd << endl;
+        }
+    }}
+    CFile(cmd_file).SetMode(CFile::fDefaultUser | CFile::fExecute);
+    BOOST_CHECK_EQUAL(CExec::System(cmd_file.c_str()), 0);
 
     CNcbiIfstream in(echo_file.c_str());
     string s, line;
@@ -2637,6 +2645,7 @@ BOOST_AUTO_TEST_CASE(s_ShellEncode)
         BOOST_CHECK_EQUAL(s_ShellStr[i], s);
     }
     CFile(echo_file).Remove();
+    CFile(cmd_file).Remove();
 }
 #endif
 

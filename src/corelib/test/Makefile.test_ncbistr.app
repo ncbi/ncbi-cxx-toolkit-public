@@ -8,7 +8,6 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 REQUIRES = Boost.Test.Included
 
-CHECK_CMD  = test_ncbistr.sh
-CHECK_COPY = test_ncbistr.sh
+CHECK_CMD  =
 
 WATCHERS = ivanov
