@@ -42,6 +42,7 @@
 BEGIN_NCBI_SCOPE
 
 
+static CSpinLock s_RandomLock;
 static CRandom s_NCKeyRandom((CRandom::TValue(time(NULL))));
 
 #define KEY_PREFIX "NCID_"
@@ -213,7 +214,10 @@ CNetCacheKey::GenerateBlobKey(string*        key,
                               unsigned short port,
                               unsigned int   ver /* = 1 */)
 {
-    GenerateBlobKey(key, id, host, port, ver, s_NCKeyRandom.GetRand());
+    s_RandomLock.Lock();
+    unsigned int rnd_num = s_NCKeyRandom.GetRand();
+    s_RandomLock.Unlock();
+    GenerateBlobKey(key, id, host, port, ver, rnd_num);
 }
 
 void
