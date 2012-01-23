@@ -786,6 +786,7 @@ void CSeq_align_Mapper_Base::InitExon(const CSpliced_seg& spliced,
         // No parts, use the whole exon.
         TSeqPos seg_len = gen_end - gen_start;
         SAlignment_Segment& alnseg = x_PushSeg(seg_len, 2);
+        alnseg.m_PartType = CSpliced_exon_chunk::e_Match;
         alnseg.AddRow(CSeq_loc_Mapper_Base::eSplicedRow_Gen,
             *ex_gen_id, gen_start, m_HaveStrands, ex_gen_strand);
         alnseg.AddRow(CSeq_loc_Mapper_Base::eSplicedRow_Prod,
@@ -1815,6 +1816,10 @@ x_GetDstExon(CSpliced_seg&              spliced,
         // Discard it completely.
         partial = true;
         return;
+    }
+    // If there's just a single range match no need to use parts.
+    if (exon->GetParts().size() == 1  &&  exon->GetParts().front()->IsMatch()) {
+        exon->ResetParts();
     }
     if ( ex_partial ) {
         exon->SetPartial(true);
