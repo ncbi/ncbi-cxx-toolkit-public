@@ -1,4 +1,7 @@
-igblastn is the command line igblast (for nucleotide sequence only).
+There are two command line programs for igblast...igblastn and igblastp.  The former is for nucleotide sequence and the latter is for protein sequences.
+
+
+igblastn:
 
 1.  Required files. 
 1).       Blast database files for searching germline V, D, and J genes.  You can specify any germline databases you like (using -germline_db_V, -germline_db_J and -germline_db_D options).   The default databases are the following NCBI  human germline databases (i.e., the program will automatically look for these if not specified):
@@ -37,3 +40,15 @@ b).  To query one or more human Ig sequences (contained in myseq) against NCBI  
 Note the -remote option used with this search...-remote option directs igblast to send nr database searching to NCBI server which typically is much faster.
  
 
+
+igblastp:
+
+parameters are similar to those of igblastn except it does not need germline D database, germline J database and optional file.  igblastp only performs search against V gene database.
+
+Some examples:
+  
+1).  Searching germline gene database
+ ./igblastp -germline_db_V database/human_gl_V -query myseq -outfmt 3
+
+2).  Searching other databases in addition to germline database.
+ ./igblastp -germline_db_V database/human_gl_V -query myseq  -db database/igSeqProt -outfmt 3
