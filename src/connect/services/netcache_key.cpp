@@ -37,6 +37,7 @@
 
 #include <util/random_gen.hpp>
 #include <corelib/ncbistr.hpp>
+#include <corelib/ncbimtx.hpp>
 
 
 BEGIN_NCBI_SCOPE
