@@ -56,6 +56,7 @@ BEGIN_NCBI_SCOPE
 class CNetScheduleHandler;
 class CNSClientsRegistry;
 class CQueue;
+class CJobStatusTracker;
 
 
 // Forward declaration of a Berkley DB table structure
@@ -87,6 +88,15 @@ struct SNSJobsAffinity
 };
 
 
+struct SAffinityStatistics
+{
+    string      m_Token;
+    size_t      m_NumberOfPendingJobs;
+    size_t      m_NumberOfRunningJobs;
+    size_t      m_NumberOfPreferred;
+    size_t      m_NumberOfWaitGet;
+};
+
 
 
 // Provides storage, search and other high level affinity operations
@@ -110,7 +120,7 @@ class CNSAffinityRegistry
         TNSBitVector  ResolveAffinitiesForWaitClient(const list< string > &  tokens,
                                                      unsigned int            client_id);
         TNSBitVector  GetAffinityIDs(const list< string > &  tokens) const;
-        map< string, unsigned int >  GetJobsPerToken(void) const;
+        list< SAffinityStatistics >  GetAffinityStatistics(const CJobStatusTracker &  status_tracker) const;
         TNSBitVector  GetJobsWithAffinity(const TNSBitVector &  aff_ids) const;
         TNSBitVector  GetJobsWithAffinity(unsigned int  aff_id) const;
         void  RemoveJobFromAffinity(unsigned int  job_id, unsigned int  aff_id);

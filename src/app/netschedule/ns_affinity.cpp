@@ -35,6 +35,7 @@
 #include "ns_affinity.hpp"
 #include "ns_db.hpp"
 #include "ns_handler.hpp"
+#include "job_status.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -273,18 +274,35 @@ CNSAffinityRegistry::GetAffinityIDs(const list< string > &  tokens) const
 }
 
 
-map< string, unsigned int >
-CNSAffinityRegistry::GetJobsPerToken(void) const
+list< SAffinityStatistics >
+CNSAffinityRegistry::GetAffinityStatistics(const CJobStatusTracker &  status_tracker) const
 {
-    map< string, unsigned int >     result;
+    list< SAffinityStatistics >     result;
     CReadLockGuard                  guard(m_Lock);
 
     for (map< unsigned int,
               SNSJobsAffinity >::const_iterator  k = m_JobsAffinity.begin();
          k != m_JobsAffinity.end(); ++k) {
-        unsigned int    count = k->second.m_Jobs.count();
-        if (count > 0)
-            result[ *(k->second.m_AffToken) ] = count;
+        SAffinityStatistics     stat;
+
+        stat.m_Token = *k->second.m_AffToken;
+        stat.m_NumberOfPreferred = k->second.m_Clients.count();
+        stat.m_NumberOfWaitGet = k->second.m_WaitGetClients.count();
+
+        // Count the number of pending and running jobs
+        stat.m_NumberOfPendingJobs = 0;
+        stat.m_NumberOfRunningJobs = 0;
+
+        TNSBitVector::enumerator    en(k->second.m_Jobs.first());
+        for ( ; en.valid(); ++en) {
+            TJobStatus      status = status_tracker.GetStatus(*en);
+            if (status == CNetScheduleAPI::ePending)
+                ++stat.m_NumberOfPendingJobs;
+            else if (status == CNetScheduleAPI::eRunning)
+                ++stat.m_NumberOfRunningJobs;
+        }
+
+        result.push_back(stat);
     }
     return result;
 }

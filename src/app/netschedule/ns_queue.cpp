@@ -1555,17 +1555,20 @@ CQueue::x_FindPendingWithAffinity(const TNSBitVector &  aff_ids,
 
 string CQueue::GetAffinityList()
 {
-    map< string, unsigned int >
-                    jobs_per_token = m_AffinityRegistry.GetJobsPerToken();
+    list< SAffinityStatistics >
+                statistics = m_AffinityRegistry.GetAffinityStatistics(m_StatusTracker);
 
     string          aff_list;
-    for (map< string, unsigned int >::const_iterator  k = jobs_per_token.begin();
-         k != jobs_per_token.end(); ++k) {
+    for (list< SAffinityStatistics >::const_iterator  k = statistics.begin();
+         k != statistics.end(); ++k) {
         if (!aff_list.empty())
             aff_list += "&";
 
-        aff_list += NStr::URLEncode(k->first) + '=' +
-                    NStr::UIntToString(k->second);
+        aff_list += NStr::URLEncode(k->m_Token) + '=' +
+                    NStr::SizetToString(k->m_NumberOfPendingJobs) + "," +
+                    NStr::SizetToString(k->m_NumberOfRunningJobs) + "," +
+                    NStr::SizetToString(k->m_NumberOfPreferred) + "," +
+                    NStr::SizetToString(k->m_NumberOfWaitGet);
     }
     return aff_list;
 }
