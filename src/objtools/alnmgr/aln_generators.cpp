@@ -106,7 +106,7 @@ CreateSeqAlignFromAnchoredAln(const CAnchoredAln& anchored_aln,   ///< input
 ostream& operator<<(ostream& out, const CRangeCollection<CPairwiseAln::TPos>& segmetned_range_coll)
 {
     out << "CRangeCollection<CPairwiseAln::TPos>" << endl;
-    
+
     ITERATE (CRangeCollection<CPairwiseAln::TPos>, rng_it, segmetned_range_coll) {
         out << (CPairwiseAln::TRng)*rng_it << endl;
     }
@@ -144,12 +144,12 @@ public:
 #ifdef _TRACE_CSegmentedRangeCollection
         cerr << "After the cut:" << *this << endl;
 #endif
-        
+
         // Find the diff if any
         TParent addition;
         addition.CombineWith(r);
         addition.Subtract(*this);
-        
+
         if ( !addition.empty() ) {
 #ifdef _TRACE_CSegmentedRangeCollection
             cerr << "Addition: " << addition << endl;
@@ -407,8 +407,9 @@ CreateSplicedsegFromAnchoredAln(const CAnchoredAln& anchored_aln,
     bool gen_direct = rg_it == pairwise.end() || rg_it->IsDirect();
     bool prod_direct = prot ||
         rg_it == pairwise.end() || rg_it->IsFirstDirect();
+    // Adjust genomic strand - in CPairwiseAln it's relative to the first seq.
     if ( !prod_direct ) {
-        // gen_direct = !gen_direct;
+        gen_direct = !gen_direct;
     }
 
     TRng ex_prod_rg;
@@ -425,7 +426,7 @@ CreateSplicedsegFromAnchoredAln(const CAnchoredAln& anchored_aln,
         }
         else {
             prod_skip = rg.GetFirstFrom() - last_prod_end;
-            gen_skip = gen_direct ?
+            gen_skip = gen_direct == prod_direct ?
                 rg.GetSecondFrom() - last_gen_end
                 : last_gen_end - rg.GetSecondToOpen();
         }
@@ -532,7 +533,7 @@ CreateSplicedsegFromAnchoredAln(const CAnchoredAln& anchored_aln,
         }
 
         last_prod_end = rg.GetFirstToOpen();
-        last_gen_end = gen_direct ?
+        last_gen_end = gen_direct == prod_direct ?
             rg.GetSecondToOpen() : rg.GetSecondFrom();
     }
     if ( exon ) {
@@ -587,7 +588,7 @@ s_TranslatePairwise(CPairwiseAln& out_pw,   ///< output pairwise (needs to be em
         ar.SetFirstFrom(tr.GetSecondPosByFirstPos(ar.GetFirstFrom()));
         out_pw.insert(ar);
     }
-}    
+}
 
 
 typedef CAnchoredAln::TDim TDim;
@@ -609,7 +610,7 @@ CreateSeqAlignFromEachPairwiseAln
             CRef<CSeq_align> sa(new CSeq_align);
             sa->SetType(CSeq_align::eType_partial);
             sa->SetDim(2);
-            
+
             const CPairwiseAln& pw = *pairwises[row];
             CRef<CPairwiseAln> p(new CPairwiseAln(pairwises[anchor]->GetSecondId(),
                                                   pw.GetSecondId(),
@@ -985,8 +986,7 @@ CreatePackedsegFromPairwiseAln(const CPairwiseAln& pairwise_aln,
 CRef<CSeq_align>
 ConvertSeq_align(const CSeq_align& src,
                  CSeq_align::TSegs::E_Choice dst_choice,
-                 CSeq_align::TDim prod_row,
-                 CSeq_align::TDim gen_row,
+                 CSeq_align::TDim anchor_row,
                  CScope* scope)
 {
     TScopeAlnSeqIdConverter id_conv(scope);
@@ -996,13 +996,10 @@ ConvertSeq_align(const CSeq_align& src,
     id_extract(src, ids);
     aln_id_map.push_back(src);
 
-    TAlnSeqIdIRef id1(Ref(new CAlnSeqId(dynamic_cast<const CAlnSeqId&>(*aln_id_map[0][prod_row]))));
-    TAlnSeqIdIRef id2(Ref(new CAlnSeqId(dynamic_cast<const CAlnSeqId&>(*aln_id_map[0][gen_row]))));
-
     TScopeAlnStats aln_stats(aln_id_map);
     CAlnUserOptions aln_user_options;
     CRef<CAnchoredAln> anchored_aln =
-        CreateAnchoredAlnFromAln(aln_stats, 0, aln_user_options, prod_row);
+        CreateAnchoredAlnFromAln(aln_stats, 0, aln_user_options, anchor_row);
 
     return CreateSeqAlignFromAnchoredAln(*anchored_aln, dst_choice, scope);
 }

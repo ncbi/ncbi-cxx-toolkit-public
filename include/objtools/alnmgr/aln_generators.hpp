@@ -98,12 +98,13 @@ CreateSeqAlignFromEachPairwiseAln
  CScope* scope = NULL);
 
 
+/// Convert source alignment to a new type. For spliced-segs
+/// the anchor_row is used as product row.
 NCBI_XALNMGR_EXPORT
 CRef<CSeq_align>
 ConvertSeq_align(const CSeq_align& src,
                  CSeq_align::TSegs::E_Choice dst_choice,
-                 CSeq_align::TDim prod_row,
-                 CSeq_align::TDim gen_row,
+                 CSeq_align::TDim anchor_row = -1,
                  CScope* scope = NULL);
 
 
