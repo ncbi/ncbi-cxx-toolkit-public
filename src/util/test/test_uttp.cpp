@@ -291,7 +291,7 @@ bool CUTTPTestApp::TestWriter(size_t buffer_size)
 
 int CUTTPTestApp::Run()
 {
-    size_t buffer_size = (sizeof(size_t) >> 1) * 5 + 1;
+    size_t buffer_size = (sizeof(Int8) >> 1) * 5 + 1;
 
     do
         if (!TestWriter(buffer_size))
