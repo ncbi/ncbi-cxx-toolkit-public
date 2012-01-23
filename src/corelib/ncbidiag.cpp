@@ -651,7 +651,7 @@ static CSafeStaticPtr<CDiagRecycler> s_DiagRecycler;
 EDiagSev AdjustApplogPrintableSeverity(EDiagSev sev)
 {
     if ( !CDiagContext::IsApplogSeverityLocked() ) return sev;
-    return CompareDiagPostLevel(sev, eDiag_Warning) > 0
+    return CompareDiagPostLevel(sev, eDiag_Warning) < 0
         ? sev : eDiag_Warning;
 }
 
