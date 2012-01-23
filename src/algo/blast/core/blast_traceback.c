@@ -328,6 +328,113 @@ s_HSPListPostTracebackUpdate(EBlastProgramType program_number,
    return 0;
 }
 
+
+/** Split the HSP if it contains "non-bases"
+ * @param hsp_list HSPList obtained after a traceback alignment [in] [out]
+ * @param query_blk Query sequence block [in]
+ * @param query_info Query sequence information [in]
+ */
+static void
+s_SplitHsp(BlastHSPList* hsp_list, 
+           BLAST_SequenceBlk* query_blk, 
+           BlastQueryInfo* query_info)
+{
+    Int4 index, hspcnt;
+    hspcnt = hsp_list->hspcnt;
+    for (index=0; index < hspcnt; index++) {
+
+        Boolean found = FALSE;
+        BlastHSP *hsp = hsp_list->hsp_array[index];
+        Uint1 *query;
+        Int4 qid;
+
+        if (!hsp) continue;
+
+        query = query_blk->sequence +
+                   query_info->contexts[hsp->context].query_offset;
+
+        for (qid=hsp->query.offset; qid< hsp->query.end; ++qid) {
+            if (query[qid] == 0xf) {
+                found = TRUE;
+                break;
+            }
+        }
+
+        if (found) {
+            Int4 eid, oid, qid, sid;
+            Int4 qs, qe, ss, se, es, ee, os;
+            BlastHSP *new_hsp; 
+            GapEditScript *esp, *new_esp;
+            Boolean seek_start;
+ 
+            esp = hsp->gap_info;
+            qid = hsp->query.offset;
+            sid = hsp->subject.offset;
+            qs = qid;
+            ss = sid;
+            es = 0;
+            ee = 0;
+            os = 0;
+            seek_start = FALSE;
+
+            for (eid=0; eid < esp->size; eid++) {
+                for(oid=0; oid < esp->num[eid];) {
+                    if (!seek_start && query[qid] == 0xf) {
+                        new_esp = GapEditScriptNew(1 + ee - es);
+                        GapEditScriptPartialCopy(new_esp, 0, esp, es, ee);
+                        new_esp->num[0] -= os;
+                        if (eid == ee) {
+                            ASSERT(oid>0);
+                            new_esp->num[ee-es] = oid;
+                            qe = qid;
+                            se = sid;
+                        }
+                        Blast_HSPInit(qs, qe, ss, se, qs, ss,
+                              hsp->context,  hsp->query.frame, 
+                              hsp->subject.frame, 0, &new_esp, &new_hsp);
+                        Blast_HSPListSaveHSP(hsp_list, new_hsp);
+                        seek_start = TRUE;
+                    } 
+
+                    if (esp->op_type[eid] == eGapAlignSub) {
+                        if (seek_start && query[qid] != 0xf) {
+                            qs = qid;
+                            ss = sid;
+                            es = eid;
+                            ee = eid;
+                            os = oid;
+                            seek_start = FALSE;
+                        } 
+                        qid++;
+                        sid++;
+                        oid++;
+                        if (oid == esp->num[eid] && !seek_start) {
+                            qe = qid;
+                            se = sid;
+                            ee = eid;
+                        }
+                    } else if (esp->op_type[eid] == eGapAlignDel) {
+                        sid+=esp->num[eid];
+                        oid+=esp->num[eid];
+                    } else if (esp->op_type[eid] == eGapAlignIns) {
+                        qid++;
+                        oid++;
+                    }     
+                }
+            }
+            ASSERT(!seek_start);
+            new_esp = GapEditScriptNew(1 + ee - es);
+            GapEditScriptPartialCopy(new_esp, 0, esp, es, ee);
+            new_esp->num[0] -= os;
+            Blast_HSPInit(qs, qe, ss, se, qs, ss,
+                          hsp->context,  hsp->query.frame, 
+                          hsp->subject.frame, 0, &new_esp, &new_hsp);
+            Blast_HSPListSaveHSP(hsp_list, new_hsp);
+            hsp_list->hsp_array[index] = Blast_HSPFree(hsp);
+        }
+    }
+}
+
 /*
     Comments in blast_traceback.h
  */
@@ -685,10 +792,16 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
    }
    
    if (! fence_error) {
+
        /* Remove any HSPs that share a starting or ending diagonal
           with a higher-scoring HSP. */
        Int4 extra_start =
            Blast_HSPListPurgeHSPsWithCommonEndpoints(program_number, hsp_list, FALSE);
+
+       /* Check for possible non-base region and break HSP into segments */
+       if (program_number == eBlastTypeBlastn) {
+           s_SplitHsp(hsp_list, query_blk, query_info);
+       }
 
        /* Low level greedy algorithm ignores ambiguities, so the score
         * needs to be reevaluated. */
