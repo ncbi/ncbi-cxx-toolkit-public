@@ -497,7 +497,12 @@ bool CLDS2_DataLoader::CanGetBlobById(void) const
 CLDS2_DataLoader::TTSE_Lock
 CLDS2_DataLoader::GetBlobById(const TBlobId& blob_id)
 {
-    if (Int8(blob_id) <= 0) {
+    Int8 oid;
+    if ( const CBlobIdInt8* int8_blob_id =
+         dynamic_cast<const CBlobIdInt8*>(&*blob_id) ) {
+        oid = int8_blob_id->GetValue();
+    }
+    else {
         return TTSE_Lock();
     }
 
@@ -506,7 +511,7 @@ CLDS2_DataLoader::GetBlobById(const TBlobId& blob_id)
 
     CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(blob_id);
     if ( !load_lock.IsLoaded() ) {
-        SLDS2_Blob blob = m_Db->GetBlobInfo(blob_id);
+        SLDS2_Blob blob = m_Db->GetBlobInfo(oid);
         CRef<CSeq_entry> seq_entry = x_LoadTSE(blob);
         if ( !seq_entry ) {
             NCBI_THROW2(CBlobStateException, eBlobStateError,
