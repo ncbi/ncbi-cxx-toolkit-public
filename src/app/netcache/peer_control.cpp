@@ -54,13 +54,17 @@ CAtomicCounter CNCPeerControl::sm_CopyReqsRejected;
 
 
 
+static CSpinLock s_RndLock;
 static CRandom s_Rnd(CRandom::TValue(time(NULL)));
 
 static void
 s_SetNextTime(Uint8& next_time, Uint8 value, bool add_random)
 {
-    if (add_random)
+    if (add_random) {
+        s_RndLock.Lock();
         value += s_Rnd.GetRand(0, kNCTimeTicksInSec);
+        s_RndLock.Unlock();
+    }
     if (next_time < value)
         next_time = value;
 }

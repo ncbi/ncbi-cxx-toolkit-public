@@ -38,10 +38,10 @@
 BEGIN_NCBI_SCOPE
 
 
-static const Uint4 kNCMaxDBFileId = 0xFFFFFFFF;
+static const Uint4  kNCMaxDBFileId = 0xFFFFFFFF;
 /// Maximum size of blob chunk stored in database.
 static const size_t kNCMaxBlobChunkSize = 32768;
-static const Uint1  kNCMaxChunksInMap = 128;
+static const Uint2  kNCMaxChunksInMap = 128;
 
 
 ///
@@ -90,13 +90,12 @@ public:
     string  password;
     Uint8   create_server;
     Uint4   create_id;
-    Uint2   chunk_size;
+    Uint4   chunk_size;
     Uint2   map_size;
     Uint2   slot;
     Uint1   map_depth;
     bool    need_write;
     bool    has_error;
-    Uint8   disk_size;
     Uint8   data_coord;
 
     CRef<CNCBlobBuffer> data;
@@ -176,12 +175,17 @@ typedef map<string, SNCCacheData*>   TNCBlobSumList;
 
 
 enum ENCDBFileType {
-    eDBFileMeta,
-    eDBFileData
+    eDBFileMeta = 0x01,
+    eDBFileData = 0x02,
+    //fDBFileForMove = 0x80,
+    //eDBFileMoveMeta = eDBFileMeta + fDBFileForMove,
+    //eDBFileMoveData = eDBFileData + fDBFileForMove
 };
 
+struct SFileIndexRec;
+
 /// Information about database part in NetCache storage
-struct SNCDBFileInfo
+struct SNCDBFileInfo : public CObject
 {
     char*        file_map;
     Uint4        file_id;
@@ -189,15 +193,20 @@ struct SNCDBFileInfo
     Uint4        garb_size;
     Uint4        used_size;
     CSpinLock    size_lock;
+    SFileIndexRec* index_head;
+    CSpinLock    index_lock;
     TFileHandle  fd;
     int          create_time;
-    Uint4        last_shrink_pos;
     int          last_shrink_time;
     ENCDBFileType file_type;
     string       file_name;
+
+
+    SNCDBFileInfo(void);
+    virtual ~SNCDBFileInfo(void);
 };
 /// Information about all database parts in NetCache storage
-typedef map<Uint4, SNCDBFileInfo*> TNCDBFilesMap;
+typedef map<Uint4, CRef<SNCDBFileInfo> >  TNCDBFilesMap;
 
 
 

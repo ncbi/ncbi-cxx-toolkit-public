@@ -379,7 +379,6 @@ CNCBlobVerManager::CreateNewVersion(void)
     data->dead_time     = 0;
     data->size          = 0;
     data->blob_ver      = 0;
-    data->disk_size     = 0;
     data->data_coord    = 0;
     data->chunk_size    = kNCMaxBlobChunkSize;
     data->map_size      = kNCMaxChunksInMap;

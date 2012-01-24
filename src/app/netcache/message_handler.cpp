@@ -3300,13 +3300,18 @@ CNCMessageHandler::x_DoCmd_SyncGet(void)
     if (m_OrigTime != m_BlobAccess->GetCurBlobCreateTime()) {
         need_send = false;
     }
-    else if (m_BlobAccess->GetCurCreateServer() < m_CopyBlobInfo.create_server) {
+    else if (m_BlobAccess->GetCurBlobCreateTime() < m_CopyBlobInfo.create_time) {
         need_send = false;
     }
-    else if (m_BlobAccess->GetCurCreateServer() == m_CopyBlobInfo.create_server
-             &&  m_BlobAccess->GetCurCreateId() <= m_CopyBlobInfo.create_id)
-    {
-        need_send = false;
+    else if (m_BlobAccess->GetCurBlobCreateTime() == m_CopyBlobInfo.create_time) {
+        if (m_BlobAccess->GetCurCreateServer() < m_CopyBlobInfo.create_server) {
+            need_send = false;
+        }
+        else if (m_BlobAccess->GetCurCreateServer() == m_CopyBlobInfo.create_server
+                 &&  m_BlobAccess->GetCurCreateId() <= m_CopyBlobInfo.create_id)
+        {
+            need_send = false;
+        }
     }
     if (!need_send) {
         m_CmdCtx->SetRequestStatus(eStatus_NewerBlob);

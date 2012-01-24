@@ -52,6 +52,7 @@ static CFastMutex       s_MainLock;
 static CConditionVariable s_CleanerCond;
 static CConditionVariable s_MainsCond;
 static bool             s_NeedFinish = false;
+static CSpinLock        s_RndLock;
 static CRandom          s_Rnd(CRandom::TValue(time(NULL)));
 
 typedef vector< CRef<CNCActiveSyncControl> > TSyncControls;
@@ -324,6 +325,9 @@ CNCPeriodicSync::Initiate(Uint8  server_id,
     SSyncSlotData* slot_data;
     SSyncSlotSrv* slot_srv;
     s_FindServerSlot(server_id, slot, slot_data, slot_srv);
+    if (slot_srv) {
+        slot_srv->peer->RegisterConnSuccess();
+    }
     if (slot_srv == NULL
         ||  (CNCPeerControl::HasServersForInitSync()
              &&  (slot_srv->made_initial_sync
@@ -337,7 +341,6 @@ CNCPeriodicSync::Initiate(Uint8  server_id,
         return init_res;
 
     slot_srv->started_cmds = 1;
-    slot_srv->peer->RegisterConnSuccess();
     *sync_id = slot_srv->cur_sync_id;
     bool records_available = CNCSyncLog::GetEventsList(server_id,
                                                        slot,
@@ -485,7 +488,9 @@ CNCActiveSyncControl::Main(void)
                     slot_data->srvs.erase(it);
                     Uint2 rnd;
                     do {
+                        s_RndLock.Lock();
                         rnd = s_Rnd.GetRand(0, numeric_limits<Uint2>::max());
+                        s_RndLock.Unlock();
                     }
                     while (slot_data->srvs.find(rnd) != slot_data->srvs.end());
                     slot_data->srvs[rnd] = slot_srv;
@@ -543,7 +548,9 @@ CNCActiveSyncControl::Main(void)
                     wait_time = sync_interval;
             }
             else {
+                s_RndLock.Lock();
                 wait_time = s_Rnd.GetRand(0, 10000);
+                s_RndLock.Unlock();
             }
 
             Uint4 timeout_sec  = Uint4(wait_time / kNCTimeTicksInSec);

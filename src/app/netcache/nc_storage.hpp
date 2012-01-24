@@ -53,50 +53,38 @@ namespace intr = boost::intrusive;
 BEGIN_NCBI_SCOPE
 
 
-struct SLRUList_tag;
-struct SCoordMap_tag;
-struct SWriteQueue_tag;
-struct STimeTable_tag;
-struct SKeyMap_tag;
-
-typedef intr::list_base_hook< intr::tag<SLRUList_tag> >     TLRUHook;
-typedef intr::set_base_hook< intr::tag<SCoordMap_tag>,
-                             intr::optimize_size<true> >    TCoordMapHook;
-typedef intr::slist_base_hook< intr::tag<SWriteQueue_tag> > TWriteQueueHook;
-typedef intr::set_base_hook< intr::tag<STimeTable_tag>,
-                             intr::optimize_size<true> >    TTimeTableHook;
-typedef intr::set_base_hook< intr::tag<SKeyMap_tag>,
-                             intr::optimize_size<true> >    TKeyMapHook;
-
-struct SCacheDataRec;
-struct SCacheRecCompare;
-struct SWriteTask;
 struct SFileRecHeader;
 struct SFileMetaRec;
 struct SNCCacheData;
 struct SCacheDeadCompare;
 struct SCacheKeyCompare;
 
-typedef intr::list  <SCacheDataRec,
-                     intr::base_hook<TLRUHook>,
-                     intr::constant_time_size<false> >  TDataRecLRU;
-typedef intr::rbtree<SCacheDataRec,
-                     intr::base_hook<TCoordMapHook>,
-                     intr::constant_time_size<false>,
-                     intr::compare<SCacheRecCompare> >  TDataRecMap;
-typedef intr::slist <SWriteTask,
-                     intr::base_hook<TWriteQueueHook>,
-                     intr::constant_time_size<false>,
-                     intr::linear<true>,
-                     intr::cache_last<true> >           TWriteQueue;
+struct STimeTable_tag;
+struct SKeyMap_tag;
+
+typedef intr::set_base_hook< intr::tag<STimeTable_tag>,
+                             intr::optimize_size<true> >    TTimeTableHook;
+typedef intr::set_base_hook< intr::tag<SKeyMap_tag>,
+                             intr::optimize_size<true> >    TKeyMapHook;
 typedef intr::rbtree<SNCCacheData,
                      intr::base_hook<TTimeTableHook>,
                      intr::constant_time_size<false>,
-                     intr::compare<SCacheDeadCompare> > TTimeTableMap;
+                     intr::compare<SCacheDeadCompare> >     TTimeTableMap;
 typedef intr::rbtree<SNCCacheData,
                      intr::base_hook<TKeyMapHook>,
                      intr::constant_time_size<true>,
-                     intr::compare<SCacheKeyCompare> >  TKeyMap;
+                     intr::compare<SCacheKeyCompare> >      TKeyMap;
+
+
+#ifdef NCBI_COMPILER_GCC
+# define ATTR_PACKED    __attribute__ ((packed))
+# define ATTR_ALIGNED_2 __attribute__ ((aligned(2)))
+# define ATTR_ALIGNED_8 __attribute__ ((aligned(8)))
+#else
+# define ATTR_PACKED
+# define ATTR_ALIGNED_2
+# define ATTR_ALIGNED_8
+#endif
 
 
 enum EFileRecType {
@@ -107,86 +95,56 @@ enum EFileRecType {
     eFileRecAny
 };
 
-struct SFileRecHeader
+struct ATTR_PACKED SFileRecHeader
 {
-    Uint8   rec_num;
-    Uint2   rec_size;
+    Uint4   rec_num;
+    Uint4   rec_size;
     Uint1   rec_type;
 };
 
-struct SFileMetaRec : public SFileRecHeader
+struct ATTR_PACKED SFileMetaRec : public SFileRecHeader
 {
     Uint1   deleted;
     Uint2   slot;
-    Uint2   key_size;
+    Int4    dead_time;
     Uint8   down_coord;
     Uint8   size;
     Uint8   create_time;
     Uint8   create_server;
     Uint4   create_id;
-    Int4    dead_time;
     Int4    ttl;
     Int4    expire;
     Int4    blob_ver;
     Int4    ver_ttl;
     Int4    ver_expire;
-    Uint2   chunk_size;
+    Uint4   chunk_size;
     Uint2   map_size;
+    Uint2   key_size;
     Uint1   has_password;
     char    key_data[1];
 };
 
-struct SFileChunkMapRec : public SFileRecHeader
+struct ATTR_PACKED SFileChunkMapRec : public SFileRecHeader
 {
-    Uint2   map_idx;
-    Uint8   up_coord;
+    Uint2   ATTR_ALIGNED_2  map_idx;
+    Uint8   ATTR_ALIGNED_8  up_coord;
     Uint8   down_coords[1];
 };
 
-struct SFileChunkDataRec : public SFileRecHeader
+struct ATTR_PACKED SFileChunkDataRec : public SFileRecHeader
 {
-    Uint2   chunk_idx;
-    Uint8   up_coord;
+    Uint2   ATTR_ALIGNED_2  chunk_idx;
+    Uint8   ATTR_ALIGNED_8  up_coord;
     Uint8   chunk_num;
     Uint1   chunk_data[1];
 };
 
-struct SCacheDataRec : public TLRUHook, public TCoordMapHook
+struct SFileIndexRec
 {
-    Uint2 lock_lru_refs;
-    Uint8 coord;
-    SFileRecHeader* data;
-};
-
-struct SCacheRecCompare
-{
-    bool operator() (const SCacheDataRec& x, const SCacheDataRec& y) const
-    {
-        return x.coord < y.coord;
-    }
-    bool operator() (Uint8 coord, const SCacheDataRec& y) const
-    {
-        return coord < y.coord;
-    }
-    bool operator() (const SCacheDataRec& x, Uint8 coord) const
-    {
-        return x.coord < coord;
-    }
-};
-
-enum EWriteTask {
-    eWriteRecord,
-    eDelMetaInfo,
-    eDelBlob,
-    eMoveRecord,
-    eCancelMove
-};
-
-struct SWriteTask : public TWriteQueueHook
-{
-    EWriteTask  task_type;
-    Uint8 coord;
-    SCacheDataRec* cache_data;
+    Uint4   offset;
+    Int4    dead_time;
+    Uint4   prev_idx;
+    Uint4   next_idx;
 };
 
 
@@ -357,11 +315,26 @@ private:
     };
     typedef map<Uint2, SSlotCache*> TSlotCacheMap;
 
+    typedef map<Uint4, Uint4> TOffToNumMap;
+    typedef map<Uint4, TOffToNumMap> TFileRecsMap;
+
+
+    struct SWritingInfo
+    {
+        CRef<SNCDBFileInfo> cur_file;
+        CRef<SNCDBFileInfo> next_file;
+        Uint8 next_coord;
+        SFileIndexRec* last_index_rec;
+        Uint4 next_rec_num;
+        Uint4 left_file_size;
+    };
+
 
     /// Implementation of background thread. Mainly garbage collector plus
     /// caching of database data at the beginning of the storage work.
     void x_DoBackgroundWork(void);
     void x_DoGCWork(void);
+    void x_DoFlushWork(void);
 
     /// Read all storage parameters from registry
     bool x_ReadStorageParams(void);
@@ -431,55 +404,63 @@ private:
     /// Do set of procedures creating and initializing new database part and
     /// switching storage to using new database part as current one.
     bool x_CreateNewFile(ENCDBFileType file_type);
-    void x_DeleteDBFile(SNCDBFileInfo* file_info);
+    void x_DeleteDBFile(CRef<SNCDBFileInfo> file_info);
     bool x_SaveChunkMap(SNCBlobVerData* ver_data,
                         SNCChunkMapInfo** maps,
                         Uint2 cnt_chunks,
                         bool save_all_deps);
     virtual void OnBlockedOpFinish(void);
-    char* x_MapFile(TFileHandle fd, size_t file_size);
-    void x_UnmapFile(char* mem_ptr, size_t file_size);
+    void x_SwitchToNextFile(SWritingInfo* w_info);
     bool x_GetNextWriteCoord(ENCDBFileType file_type,
-                             Uint2 rec_size,
+                             Uint4 rec_size,
                              Uint8& coord,
                              SFileRecHeader*& write_head);
     SFileRecHeader* x_GetRecordForCoord(Uint8 coord);
-    Uint1 x_CalcMapDepth(Uint8 size, Uint2 chunk_size, Uint2 map_size);
-    void x_AddGarbageSize(Int8 size);
-    void x_MoveSizeToGarbage(SNCDBFileInfo* file_info, Uint4 size);
-    void x_MoveSizeToGarbage(Uint8 coord, Uint4 size);
+    Uint1 x_CalcMapDepth(Uint8 size, Uint4 chunk_size, Uint2 map_size);
+    CRef<SNCDBFileInfo> x_GetFileForCoord(Uint8 coord);
+    SFileIndexRec* x_DeleteIndexRec(SFileIndexRec* index_head, Uint4 rec_num);
+    void x_MoveSizeToGarbage(SNCDBFileInfo* file_info, Uint4 rec_num, Uint4 size);
+    void x_MoveSizeToGarbage(Uint8 coord, Uint4 rec_num, Uint4 size);
+    void x_UpdateDeadTime(Uint8 coord, Uint1 map_depth, int dead_time);
     bool x_UpdateUpCoords(SFileChunkMapRec* map_rec, Uint8 coord);
     void x_MoveDataToGarbage(Uint8 coord,
                              Uint1 map_depth,
-                             Uint2 chunk_size,
-                             Uint2 last_chunk_size);
+                             Uint4 chunk_size,
+                             Uint4 last_chunk_size);
     bool x_CacheMapRecs(Uint8 map_coord,
                         Uint1 map_depth,
-                        Uint2 chunk_size,
-                        Uint2 last_chunk_size,
-                        map<Uint4, Uint4>& sizes_map);
-    void x_CacheMetaRec(SFileRecHeader* header,
+                        Uint8 up_coord,
+                        Uint4 chunk_size,
+                        Uint4 last_chunk_size,
+                        map<Uint4, Uint4>& sizes_map,
+                        TFileRecsMap& recs_map);
+    bool x_CacheMetaRec(SFileRecHeader* header,
                         SNCDBFileInfo* file_info,
                         size_t offset,
-                        int cur_time);
+                        int cur_time,
+                        TFileRecsMap& recs_map);
     void x_CacheDatabase(void);
     void x_CollectStorageStats(void);
     void x_HeartBeat(void);
     void x_GC_DeleteExpired(const string& key, Uint2 slot, int dead_before);
     void x_RunGC(void);
     void x_ReadRecDeadFromUnfinished(Uint8 data_coord, int& dead_time);
-    void x_ReadRecDeadFromMeta(SFileRecHeader* header,
+    void x_ReadRecDeadFromMeta(Uint8 coord,
+                               SFileRecHeader* header,
                                SFileRecHeader*& up_head,
                                SFileMetaRec*& meta_rec);
-    void x_ReadRecDeadFromMap(SFileRecHeader* header,
+    void x_ReadRecDeadFromMap(Uint8 coord,
+                              SFileRecHeader* header,
                               Uint1 max_map_depth,
                               SFileRecHeader*& up_head,
                               SFileMetaRec*& meta_rec);
-    void x_ReadRecDeadFromData(SFileRecHeader* header,
+    void x_ReadRecDeadFromData(Uint8 coord,
+                               SFileRecHeader* header,
                                Uint1 max_map_depth,
                                SFileRecHeader*& up_head,
                                SFileMetaRec*& meta_rec);
-    void x_ReadRecDeadTime(SFileRecHeader* header,
+    void x_ReadRecDeadTime(Uint8 coord,
+                           SFileRecHeader* header,
                            Uint1 max_map_depth,
                            SFileRecHeader*& up_head,
                            SFileMetaRec*& meta_rec);
@@ -488,7 +469,7 @@ private:
                       SFileRecHeader* up_head,
                       SFileMetaRec* meta_rec,
                       bool& move_done);
-    void x_ShrinkDiskStorage(void);
+    bool x_ShrinkDiskStorage(void);
     void x_SaveLogRecNo(void);
     void x_FlushStorage(void);
     void x_DoNewFileWork(void);
@@ -510,7 +491,6 @@ private:
     int                m_FlushTimePeriod;
     Uint1              m_MaxGarbagePct;
     int                m_MinMoveLife;
-    Uint4              m_MaxShrinkScanSize;
     int                m_MaxIOWaitTime;
     Uint8              m_MinDBSize;
     /// Name of guard file excluding several instances to run on the same
@@ -529,22 +509,22 @@ private:
     CRef<CThread>      m_BGThread;
     CRef<CThread>      m_GCThread;
     CRef<CThread>      m_NewFileThread;
+    CRef<CThread>      m_FlushThread;
 
     CFastMutex               m_IndexLock;
     /// Index database file
     AutoPtr<CNCDBIndexFile>  m_IndexDB;
     /// Read-write lock to work with m_DBParts
-    CSpinRWLock              m_DBFilesLock;
+    CFastMutex               m_DBFilesLock;
     /// List of all database parts in the storage
     TNCDBFilesMap            m_DBFiles;
     Uint4                    m_LastFileId;
-    SNCDBFileInfo*           m_CurMetaFile;
-    SNCDBFileInfo*           m_CurDataFile;
-    CSpinLock                m_NextWriteLock;
-    Uint8                    m_NextMetaCoord;
-    Uint8                    m_NextDataCoord;
-    SNCDBFileInfo*           m_NextMetaFile;
-    SNCDBFileInfo*           m_NextDataFile;
+
+    CFastMutex               m_NextWriteLock;
+    SWritingInfo             m_MetaWriting;
+    SWritingInfo             m_DataWriting;
+    //SWritingInfo             m_MetaMoving;
+    //SWritingInfo             m_DataMoving;
     Uint4                    m_NewFileSize;
     CFastMutex               m_NextWaitLock;
     Uint2                    m_NextWaiters;
@@ -596,7 +576,6 @@ private:
     Uint8                    m_StopWriteOnSize;
     Uint8                    m_StopWriteOffSize;
     Uint8                    m_DiskFreeLimit;
-    Uint8                    m_NextRecNum;
 };
 
 
@@ -635,7 +614,7 @@ CNCBlobStorage::GetDBSize(void)
 inline int
 CNCBlobStorage::GetNDBFiles(void)
 {
-    CSpinReadGuard guard(m_DBFilesLock);
+    CFastMutexGuard guard(m_DBFilesLock);
     return int(m_DBFiles.size());
 }
 

@@ -70,6 +70,7 @@ static Uint2    s_MaxSlotNumber = 0;
 static Uint4    s_SlotRndShare  = numeric_limits<Uint4>::max();
 static Uint8    s_SelfID        = 0;
 static string   s_SelfGroup;
+static CSpinLock s_KeyRndLock;
 static CRandom  s_KeyRnd(CRandom::TValue(time(NULL)));
 static string   s_SelfHostIP;
 static CAtomicCounter s_BlobId;
@@ -95,7 +96,7 @@ static Uint4    s_MaxCleanLogBatch;
 static Uint8    s_MinForcedCleanPeriod;
 static Uint4    s_CleanAttemptInterval;
 static Uint8    s_PeriodicSyncInterval;
-static Uint8    s_PeriodicSyncHeadTime;
+//static Uint8    s_PeriodicSyncHeadTime;
 static Uint8    s_PeriodicSyncTailTime;
 static Uint8    s_PeriodicSyncTimeout;
 static Uint8    s_FailedSyncRetryDelay;
@@ -250,8 +251,8 @@ CNCDistributionConf::Initialize(Uint2 control_port)
         s_CleanAttemptInterval = reg.GetInt(kNCReg_NCPoolSection, "clean_log_attempt_interval", 1);
         s_PeriodicSyncInterval = reg.GetInt(kNCReg_NCPoolSection, "deferred_sync_interval", 10);
         s_PeriodicSyncInterval *= kNCTimeTicksInSec;
-        s_PeriodicSyncHeadTime = reg.GetInt(kNCReg_NCPoolSection, "deferred_sync_head_time", 1);
-        s_PeriodicSyncHeadTime *= kNCTimeTicksInSec;
+        //s_PeriodicSyncHeadTime = reg.GetInt(kNCReg_NCPoolSection, "deferred_sync_head_time", 1);
+        //s_PeriodicSyncHeadTime *= kNCTimeTicksInSec;
         s_PeriodicSyncTailTime = reg.GetInt(kNCReg_NCPoolSection, "deferred_sync_tail_time", 10);
         s_PeriodicSyncTailTime *= kNCTimeTicksInSec;
         s_PeriodicSyncTimeout = reg.GetInt(kNCReg_NCPoolSection, "deferred_sync_timeout", 10);
@@ -346,7 +347,9 @@ CNCDistributionConf::GetPeers(void)
 string
 CNCDistributionConf::GenerateBlobKey(Uint2 local_port)
 {
+    s_KeyRndLock.Lock();
     Uint4 rnd_num = s_KeyRnd.GetRand();
+    s_KeyRndLock.Unlock();
 
     Uint2 cnt_pieces = Uint2(s_SelfSlots.size());
     Uint4 piece_share = (CRandom::GetMax() + 1) / cnt_pieces + 1;
@@ -513,7 +516,8 @@ CNCDistributionConf::GetPeriodicSyncInterval(void)
 Uint8
 CNCDistributionConf::GetPeriodicSyncHeadTime(void)
 {
-    return s_PeriodicSyncHeadTime;
+    //return s_PeriodicSyncHeadTime;
+    return 0;
 }
 
 Uint8
