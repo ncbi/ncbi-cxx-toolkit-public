@@ -216,9 +216,6 @@ public:
         {
             return CConstRef<TObjectType>(GetPointer());
         }
-    // Some versions of Sun compiler fail to see operator bool defined
-    // in base class, so we have to reimplement it here.
-    DECLARE_OPERATOR_BOOL_REF(m_Object);
 };
 
 
