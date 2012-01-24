@@ -1401,10 +1401,10 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
             TSeqRange subj_range;
 
             const bool parse_deflines = args.Exist(kArgParseDeflines) 
-                ? args[kArgParseDeflines]
+	        ? bool(args[kArgParseDeflines])
                 : kDfltArgParseDeflines;
             const bool use_lcase_masks = args.Exist(kArgUseLCaseMasking)
-                ? args[kArgUseLCaseMasking]
+	        ? bool(args[kArgUseLCaseMasking])
                 : kDfltArgUseLCaseMasking;
             CRef<blast::CBlastQueryVector> subjects;
             CRef<CScope> scope = ReadSequencesToBlast(subj_input_stream, 
@@ -1697,10 +1697,10 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
         }
 
         const bool parse_deflines = args.Exist(kArgParseDeflines) 
-            ? args[kArgParseDeflines]
+	    ? bool(args[kArgParseDeflines])
             : kDfltArgParseDeflines;
         const bool use_lcase_masks = args.Exist(kArgUseLCaseMasking)
-            ? args[kArgUseLCaseMasking]
+	    ? bool(args[kArgUseLCaseMasking])
             : kDfltArgUseLCaseMasking;
         CRef<blast::CBlastQueryVector> subjects;
         m_Scope = ReadSequencesToBlast(subj_input_stream, IsProtein(),
