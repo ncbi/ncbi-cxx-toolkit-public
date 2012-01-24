@@ -994,6 +994,7 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
     
     if (m_IsHTML) {
           flags += CDisplaySeqalign::eHtml;
+          flags += CDisplaySeqalign::eHyperLinkSlaveSeqid;
     }
 
     list < CRef<CDisplaySeqalign::DomainInfo> >  domain;
