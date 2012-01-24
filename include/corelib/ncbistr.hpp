@@ -1998,6 +1998,11 @@ public:
     /// Replace relevant characters by predefined entities.
     static string XmlEncode(const CTempString& str);
 
+    /// Encode a string for HTML.
+    ///
+    /// Replace relevant characters by predefined entities.
+    static string HtmlEncode(const CTempString& str);
+
     /// Encode a string for JSON.
     static string JsonEncode(const CTempString& str);
 
@@ -4456,6 +4461,12 @@ list<string>& NStr::Justify(const CTempString& str, SIZE_TYPE width,
                             const CTempString& pfx1)
 {
     return Justify(str, width, par, &pfx, &pfx1);
+}
+
+inline
+string NStr::HtmlEncode(const CTempString& str)
+{
+    return XmlEncode(str);
 }
 
 
