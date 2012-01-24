@@ -91,16 +91,15 @@ private:
 
 public:
     vector<Uint8> m_CntWrites;
-    vector<Uint8> m_CntRewrites;
+    vector<Uint8> m_CntErased;
     vector<Uint8> m_CntReads;
     vector<Uint8> m_CntErrWrites;
-    vector<Uint8> m_CntErrRewrites;
     vector<Uint8> m_CntErrReads;
+    vector<Uint8> m_CntNotFound;
     vector<Uint8> m_SumWrites;
-    vector<Uint8> m_SumRewrites;
     vector<Uint8> m_SumReads;
     vector<Uint8> m_SizeWrites;
-    vector<Uint8> m_SizeRewrites;
+    vector<Uint8> m_SizeErased;
     vector<Uint8> m_SizeReads;
 };
 
@@ -185,49 +184,47 @@ static void
 s_PrintStats(int elapsed)
 {
     vector<Uint8> m_CntWrites(100);
-    vector<Uint8> m_CntRewrites(100);
+    vector<Uint8> m_CntErased(100);
     vector<Uint8> m_CntReads(100);
     vector<Uint8> m_CntErrWrites(100);
-    vector<Uint8> m_CntErrRewrites(100);
     vector<Uint8> m_CntErrReads(100);
+    vector<Uint8> m_CntNotFound(100);
     vector<Uint8> m_SumWrites(100);
-    vector<Uint8> m_SumRewrites(100);
     vector<Uint8> m_SumReads(100);
     vector<Uint8> m_SizeWrites(100);
-    vector<Uint8> m_SizeRewrites(100);
+    vector<Uint8> m_SizeErased(100);
     vector<Uint8> m_SizeReads(100);
 
-    Uint8 tot_w = 0, tot_rw = 0, tot_r = 0, tot_err = 0;
-    Uint8 tot_ws = 0, tot_rws = 0, tot_rs = 0;
+    Uint8 tot_w = 0, tot_er = 0, tot_r = 0, tot_err = 0, tot_nf = 0;
+    Uint8 tot_ws = 0, tot_ers = 0, tot_rs = 0;
     for (size_t i = 0; i < s_Threads.size(); ++i) {
         for (size_t j = 0; j < m_CntWrites.size(); ++j) {
             Uint8 cnt = s_Threads[i]->m_CntWrites[j];
             m_CntWrites[j] += cnt;
             tot_w += cnt;
-            cnt = s_Threads[i]->m_CntRewrites[j];
-            m_CntRewrites[j] += cnt;
-            tot_rw += cnt;
+            cnt = s_Threads[i]->m_CntErased[j];
+            m_CntErased[j] += cnt;
+            tot_er += cnt;
             cnt = s_Threads[i]->m_CntReads[j];
             m_CntReads[j] += cnt;
             tot_r += cnt;
             cnt = s_Threads[i]->m_CntErrWrites[j];
             m_CntErrWrites[j] += cnt;
             tot_err += cnt;
-            cnt = s_Threads[i]->m_CntErrRewrites[j];
-            m_CntErrRewrites[j] += cnt;
-            tot_err += cnt;
             cnt = s_Threads[i]->m_CntErrReads[j];
             m_CntErrReads[j] += cnt;
             tot_err += cnt;
+            cnt = s_Threads[i]->m_CntNotFound[j];
+            m_CntNotFound[j] += cnt;
+            tot_nf += cnt;
             m_SumWrites[j] += s_Threads[i]->m_SumWrites[j];
-            m_SumRewrites[j] += s_Threads[i]->m_SumRewrites[j];
             m_SumReads[j] += s_Threads[i]->m_SumReads[j];
             Uint8 size = s_Threads[i]->m_SizeWrites[j];
             m_SizeWrites[j] += size;
             tot_ws += size;
-            size = s_Threads[i]->m_SizeRewrites[j];
-            m_SizeRewrites[j] += size;
-            tot_rws += size;
+            size = s_Threads[i]->m_SizeErased[j];
+            m_SizeErased[j] += size;
+            tot_ers += size;
             size = s_Threads[i]->m_SizeReads[j];
             m_SizeReads[j] += size;
             tot_rs += size;
@@ -237,12 +234,14 @@ s_PrintStats(int elapsed)
     LOG_POST("   ");
     LOG_POST("   ");
     LOG_POST("Time: " << CTime(CTime::eCurrent));
-    LOG_POST("Elapsed: " << elapsed << " secs, processing " << s_InFile);
-    LOG_POST("Total: " << tot_w << " (w) " << tot_ws << " (ws) "
-                       << tot_rw << " (rw) " << tot_rws << " (rws) "
-                       << tot_r << " (r) " << tot_rs << " (rs) "
-                       << tot_err << " (err)");
-    Uint8 prev_size = 0, size = 1;
+    LOG_POST("Elapsed: " << elapsed << " secs, processing " << s_InFile
+                         << " starting from " << s_StartTime);
+    LOG_POST("Total: " << tot_w << " (w) " << s_ToSizeStr(tot_ws) << " (ws) "
+                       << tot_er << " (er) " << s_ToSizeStr(tot_ers) << " (ers) "
+                       << tot_r << " (r) " << s_ToSizeStr(tot_rs) << " (rs) "
+                       << tot_err << " (err), " << tot_nf << " (nf)");
+    LOG_POST("   ");
+    Uint8 prev_size = 0, size = 2;
     for (size_t i = 0; i < m_CntWrites.size(); ++i, prev_size = size + 1, size <<= 1)
     {
         if (m_CntWrites[i] == 0  &&  m_CntErrWrites[i] == 0)
@@ -252,14 +251,12 @@ s_PrintStats(int elapsed)
                  << m_CntWrites[i] << " (w) "
                  << s_ToSizeStr(m_SizeWrites[i]) << " (ws) "
                  << s_SafeDiv(m_SumWrites[i], m_CntWrites[i] - m_CntErrWrites[i]) << " (wt) "
-                 << m_CntRewrites[i] << " (rw) "
-                 << s_ToSizeStr(m_SizeRewrites[i]) << " (rws) "
-                 << s_SafeDiv(m_SumRewrites[i], m_CntRewrites[i] - m_CntErrRewrites[i]) << " (rwt) "
+                 << m_CntErased[i] << " (er) "
+                 << s_ToSizeStr(m_SizeErased[i]) << " (ers) "
                  << m_CntReads[i] << " (r) "
                  << s_ToSizeStr(m_SizeReads[i]) << " (rs) "
                  << s_SafeDiv(m_SumReads[i], m_CntReads[i] - m_CntErrReads[i]) << " (rt) "
                  << m_CntErrWrites[i] << " (we) "
-                 << m_CntErrRewrites[i] << " (rwe) "
                  << m_CntErrReads[i] << " (re) "
                 );
     }
@@ -273,18 +270,22 @@ CReplayThread::CReplayThread(const string& file_prefix, int file_num)
       m_InPos(0),
       m_InReadSize(0),
       m_CntWrites(100),
-      m_CntRewrites(100),
+      m_CntErased(100),
       m_CntReads(100),
       m_CntErrWrites(100),
-      m_CntErrRewrites(100),
       m_CntErrReads(100),
+      m_CntNotFound(100),
       m_SumWrites(100),
-      m_SumRewrites(100),
       m_SumReads(100),
       m_SizeWrites(100),
-      m_SizeRewrites(100),
+      m_SizeErased(100),
       m_SizeReads(100)
 {
+    STimeout to;
+    to.sec = 2;
+    to.usec = 0;
+    m_NC.SetCommunicationTimeout(to);
+
     string file_name = file_prefix;
     file_name += ".";
     file_name += NStr::IntToString(file_num);
@@ -332,18 +333,18 @@ CReplayThread::x_PutBlob(Uint8 key_id, bool gen_key, Uint8 size)
     string key;
     Uint8 blob_size = size;
     SKeyInfo* key_info = NULL;
-    Uint4 size_index = s_GetSizeIndex(size);
-    if (gen_key) {
-        ++m_CntWrites[size_index];
-    }
-    else {
+    if (!gen_key) {
         TIdKeyMap::iterator it_key = m_IdKeys.find(key_id);
-        if (it_key == m_IdKeys.end())
-            return;
-        key_info = &it_key->second;
-        key = key_info->key;
-        ++m_CntRewrites[size_index];
+        if (it_key == m_IdKeys.end()) {
+            gen_key = true;
+        }
+        else {
+            key_info = &it_key->second;
+            key = key_info->key;
+        }
     }
+    Uint4 size_index = s_GetSizeIndex(size);
+    ++m_CntWrites[size_index];
     try {
 #ifdef NCBI_OS_LINUX
         struct timespec ts;
@@ -370,17 +371,18 @@ CReplayThread::x_PutBlob(Uint8 key_id, bool gen_key, Uint8 size)
         clock_gettime(CLOCK_REALTIME, &ts);
         Uint8 end_time = Uint8(ts.tv_sec) * 1000000 + ts.tv_nsec / 1000;
         Uint8 pass_time = end_time - start_time;
-        if (gen_key) {
-            m_SumWrites[size_index] += pass_time;
-            m_SizeWrites[size_index] += blob_size;
-        }
-        else {
-            m_SumRewrites[size_index] += pass_time;
-            m_SizeRewrites[size_index] += blob_size;
-        }
+        m_SumWrites[size_index] += pass_time;
+        m_SizeWrites[size_index] += blob_size;
 #endif
 
-        if (!key_info) {
+        if (key_info) {
+            if (!key_info->md5.empty()) {
+                Uint4 old_index = s_GetSizeIndex(key_info->size);
+                ++m_CntErased[old_index];
+                m_SizeErased[old_index] += key_info->size;
+            }
+        }
+        else {
             key_info = &m_IdKeys[key_id];
             key_info->key = key;
         }
@@ -389,10 +391,7 @@ CReplayThread::x_PutBlob(Uint8 key_id, bool gen_key, Uint8 size)
     }
     catch (CException& ex) {
         ERR_POST("Error while writing blob with key '" << key << "': " << ex);
-        if (gen_key)
-            ++m_CntErrWrites[size_index];
-        else
-            ++m_CntErrRewrites[size_index];
+        ++m_CntErrWrites[size_index];
     }
 }
 
@@ -418,7 +417,7 @@ CReplayThread::x_GetBlob(Uint8 key_id)
             if (!key_info->md5.empty()) {
                 ERR_POST("Blob " << key_info->key << " not found");
                 key_info->md5.resize(0);
-                ++m_CntErrReads[size_index];
+                ++m_CntNotFound[size_index];
             }
             return;
         }
@@ -472,6 +471,9 @@ CReplayThread::x_Remove(Uint8 key_id)
     SKeyInfo* key_info = &it_key->second;
     try {
         m_NC.Remove(key_info->key);
+        Uint4 size_index = s_GetSizeIndex(key_info->size);
+        ++m_CntErased[size_index];
+        m_SizeErased[size_index] += key_info->size;
         key_info->md5.resize(0);
     }
     catch (CException& ex) {
@@ -530,11 +532,13 @@ CReplayThread::Main(void)
 }
 
 
+#ifdef NCBI_OS_LINUX
 static void
 s_ProcessHUP(int)
 {
     s_NeedConfReload = true;
 }
+#endif
 
 
 void
