@@ -66,3 +66,11 @@ September 22, 2011
 version 2.4.1
 Bug fix release (related to internal type names).
 
+January 23, 2012
+version 2.4.2
+Added possibility to match ASN binary data against known data types.
+Corrected code generation for SET OF SEQUENCE data type.
+When converting multiple data objects from one format to another, added data type verification.
+Added generation of serialization operators for Alias type objects.
+
+
