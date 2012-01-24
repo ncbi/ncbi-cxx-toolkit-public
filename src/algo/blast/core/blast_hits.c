@@ -1344,6 +1344,9 @@ s_BlastMergeTwoHSPs(BlastHSP* hsp1, BlastHSP* hsp2, Boolean allow_gap)
        return FALSE;
    }
 
+   if(hsp1->subject.frame != hsp2->subject.frame)
+	   return FALSE;
+
    /* combine the boundaries of the two HSPs, 
       assuming they intersect at all */
    if (CONTAINED_IN_HSP(hsp1->query.offset, hsp1->query.end,
