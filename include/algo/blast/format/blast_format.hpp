@@ -306,13 +306,11 @@ private:
     /// numeric_limits<unsigned int>::max() [in]
     /// @param prev_seqids list of previously found Seq-ids, if applicable,
     /// otherwise it should be an empty list [in]
-    /// @param skip_from skipping display from [in]
-    /// @param skip_to skipping display to [in]
+    /// @param additional show additional aligment summary [in]
     void x_DisplayDeflines(CConstRef<CSeq_align_set> aln_set,
                    unsigned int itr_num,
                    blast::CPsiBlastIterationState::TSeqIds& prev_seqids,
-                   int skip_from = -1,
-                   int skip_to = -1);
+                   int additional = 0);
 
     /// Split the full alignment into two sets of alignments: one for those
     /// seen in the previous iteration and used to build the PSSM and the other
