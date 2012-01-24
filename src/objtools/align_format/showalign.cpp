@@ -1615,18 +1615,7 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
                         sprintf(checkboxBuf, k_CheckboxEx.c_str(), id_str.c_str());
                         out << checkboxBuf;        
                     }                    
-                    if((row == 0 && (m_AlignOption & eHyperLinkMasterSeqid)) ||
-                       (row > 0 && (m_AlignOption & eHyperLinkSlaveSeqid))){
-						
-                        int linkout = m_LinkoutDB 
-                            ?
-                            m_LinkoutDB->GetLinkout(m_AV->GetSeqId(row),m_MapViewerBuildName) 
-                            : 0;
-                            
-                        m_cur_align = row;
-                        urlLink = x_GetUrl(gi,alnRoInfo->seqidArray[row],linkout,alnRoInfo->taxid[row],m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId());
-                        out << urlLink;            
-                    }        
+                   
                 }
                 
                 bool has_mismatch = false;
@@ -1663,8 +1652,20 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
                         CAlignFormatUtil::AddSpace(out, alnRoInfo->max_align_stats_len + k_AlignStatsMargin);
                     }
                 }
-             
-                
+                if(m_AlignOption & eHtml){       
+                    if((row == 0 && (m_AlignOption & eHyperLinkMasterSeqid)) ||
+                       (row > 0 && (m_AlignOption & eHyperLinkSlaveSeqid))){
+                        
+                        int linkout = m_LinkoutDB 
+                            ?
+                            m_LinkoutDB->GetLinkout(m_AV->GetSeqId(row),m_MapViewerBuildName) 
+                            : 0;
+                        
+                        m_cur_align = row;
+                        urlLink = x_GetUrl(gi,alnRoInfo->seqidArray[row],linkout,alnRoInfo->taxid[row],m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId());
+                        out << urlLink;            
+                    }        
+                }
                 //highlight the seqid for pairwise-with-identity format
                 if(row>0 && m_AlignOption&eHtml && !(m_AlignOption&eMergeAlign)
                    && m_AlignOption&eShowIdentity && has_mismatch && 
