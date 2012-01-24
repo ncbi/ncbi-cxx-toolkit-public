@@ -461,13 +461,6 @@ public:
     CConstObjectInfo& operator=(pair<TConstObjectPtr, TTypeInfo> object);
     CConstObjectInfo& operator=(pair<TObjectPtr, TTypeInfo> object);
 
-    /// Check if CObjectInfo initialized with valid object
-    bool Valid(void) const
-        {
-            return m_ObjectPtr != 0;
-        }
-    DECLARE_OPERATOR_BOOL_PTR(m_ObjectPtr);
-
     bool operator==(const CConstObjectInfo& obj) const
     {
         return m_ObjectPtr == obj.m_ObjectPtr;
@@ -476,8 +469,6 @@ public:
     {
         return m_ObjectPtr != obj.m_ObjectPtr;
     }
-
-    void ResetObjectPtr(void);
 
     /// Get pointer to object
     TConstObjectPtr GetObjectPtr(void) const;
@@ -602,6 +593,7 @@ public:
     CElementIterator BeginElements(void) const;
 
 protected:
+    void ResetObjectPtr(void);
     void Set(TConstObjectPtr objectPtr, TTypeInfo typeInfo);
     
 private:

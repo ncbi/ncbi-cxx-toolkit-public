@@ -68,6 +68,7 @@ void CReadObjectInfo::ResetObjectPtr(void)
 {
     m_ObjectPtr = 0;
     m_ObjectRef.Reset();
+    m_TypeInfo = 0;
 }
 
 inline
@@ -136,6 +137,7 @@ void CWriteObjectInfo::ResetObjectPtr(void)
 {
     m_ObjectPtr = 0;
     m_ObjectRef.Reset();
+    m_TypeInfo = 0;
 }
 
 inline

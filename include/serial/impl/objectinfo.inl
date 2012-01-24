@@ -104,7 +104,7 @@ CConstObjectInfo::CConstObjectInfo(void)
 inline
 CConstObjectInfo::CConstObjectInfo(TConstObjectPtr objectPtr,
                                    TTypeInfo typeInfo)
-    : CObjectTypeInfo(typeInfo), m_ObjectPtr(objectPtr),
+    : CObjectTypeInfo(objectPtr? typeInfo: 0), m_ObjectPtr(objectPtr),
       m_Ref(typeInfo->GetCObjectPtr(objectPtr))
 {
 }
@@ -113,7 +113,7 @@ inline
 CConstObjectInfo::CConstObjectInfo(TConstObjectPtr objectPtr,
                                    TTypeInfo typeInfo,
                                    ENonCObject)
-    : CObjectTypeInfo(typeInfo), m_ObjectPtr(objectPtr)
+    : CObjectTypeInfo(objectPtr? typeInfo: 0), m_ObjectPtr(objectPtr)
 {
     _ASSERT(!typeInfo->IsCObject() ||
             static_cast<const CObject*>(objectPtr)->Referenced() ||
@@ -122,14 +122,16 @@ CConstObjectInfo::CConstObjectInfo(TConstObjectPtr objectPtr,
 
 inline
 CConstObjectInfo::CConstObjectInfo(pair<TConstObjectPtr, TTypeInfo> object)
-    : CObjectTypeInfo(object.second), m_ObjectPtr(object.first),
+    : CObjectTypeInfo(object.first? object.second: 0),
+      m_ObjectPtr(object.first),
       m_Ref(object.second->GetCObjectPtr(object.first))
 {
 }
 
 inline
 CConstObjectInfo::CConstObjectInfo(pair<TObjectPtr, TTypeInfo> object)
-    : CObjectTypeInfo(object.second), m_ObjectPtr(object.first),
+    : CObjectTypeInfo(object.first? object.second: 0),
+      m_ObjectPtr(object.first),
       m_Ref(object.second->GetCObjectPtr(object.first))
 {
 }
