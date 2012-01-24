@@ -397,8 +397,7 @@ void
 CBlastFormat::x_DisplayDeflines(CConstRef<CSeq_align_set> aln_set, 
                         unsigned int itr_num,
                         blast::CPsiBlastIterationState::TSeqIds& prev_seqids,
-                        int skip_from,
-                        int skip_to)
+                        int additional)
 {
 
     if (itr_num != numeric_limits<unsigned int>::max() && 
@@ -430,8 +429,8 @@ CBlastFormat::x_DisplayDeflines(CConstRef<CSeq_align_set> aln_set,
     } else {
         CShowBlastDefline showdef(*aln_set, *m_Scope, 
                                   kFormatLineLength,
-                                  m_NumSummary);
-        x_ConfigCShowBlastDefline(showdef, skip_from, skip_to);
+                                  m_NumSummary + additional);
+        x_ConfigCShowBlastDefline(showdef, -1, -1);
         showdef.DisplayBlastDefline(m_Outfile);
     }
     m_Outfile << "\n";
@@ -944,12 +943,8 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
     // print 1-line summaries
     if ( !m_IsBl2Seq ) {
         CPsiBlastIterationState::TSeqIds prev_ids = CPsiBlastIterationState::TSeqIds();
-        int skip_from = 0; 
-        int skip_to = 0;
-       /* int skip_to = results.m_NumActualV +results.m_NumActualD + results.m_NumActualJ;
-          if (m_IgOptions->m_Db[0]->GetDatabaseName() == m_DbName) 
-           skip_from = results.m_NumActualV; //keep V if the blast DB is the same as V germlines*/
-        x_DisplayDeflines(aln_set, numeric_limits<unsigned int>::max(), prev_ids, skip_from, skip_to);
+        int additional =  results.m_NumActualV +results.m_NumActualD + results.m_NumActualJ;
+        x_DisplayDeflines(aln_set, numeric_limits<unsigned int>::max(), prev_ids, additional);
     }
 
     //-------------------------------------------------
