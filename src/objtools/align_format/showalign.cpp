@@ -941,7 +941,8 @@ static void s_OutputFeature(string& reference_feat_line,
                             bool color_feat_mismatch,
                             int start,
                             int len,  
-                            CNcbiOstream& out)
+                            CNcbiOstream& out,
+                            bool is_html)
 {
     if((int)feat_line.size() > start){
         string actual_feat = feat_line.substr(start, len);
@@ -983,7 +984,7 @@ static void s_OutputFeature(string& reference_feat_line,
                 }
             }
         } else {
-            out << actual_feat;
+            out << (is_html?CHTMLHelper::HTMLEncode(actual_feat):actual_feat);
         }
     }
     
@@ -1058,7 +1059,7 @@ void CDisplaySeqalign::x_PrintFeatures(TSAlnFeatureInfoList& feature,
             s_OutputFeature(master_feat_str, 
                             (*iter)->feature_string,
                             color_cds_mismatch, aln_start,
-                            line_length, out);
+                            line_length, out, (m_AlignOption & eHtml));
             if(row == 0){//set master feature as reference
                 master_feat_str = (*iter)->feature_string;
             }
