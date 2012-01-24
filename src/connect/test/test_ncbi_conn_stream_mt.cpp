@@ -69,7 +69,7 @@ string CTestApp::sm_URL;
 
 bool CTestApp::TestApp_Args(CArgDescriptions& args)
 {
-    args.AddPositional("url", "URL to read from (discard all read data)",
+    args.AddPositional("url", "URL to read from (and discard all read data)",
                        CArgDescriptions::eString);
     args.SetUsageContext(GetArguments().GetProgramBasename(),
                          "CConn_IOStream API MT test");
@@ -86,6 +86,7 @@ bool CTestApp::TestApp_Init(void)
 #endif //HAVE_LIBGNUTLS
 
     sm_URL = GetArgs()["url"].AsString();
+    ERR_POST(Info << "URL to test: " << sm_URL);
     return !sm_URL.empty();
 }
 
