@@ -1300,11 +1300,11 @@ _blk_build_bulk_insert_stmt(TDS_PBCB * clause, TDSCOLUMN * bcpcol, int first)
             break;
         case XSYBNVARCHAR:
             /* ssikorsk */
-            sprintf(column_type, "nvarchar(%d)", bcpcol->on_server.column_size);
+            sprintf(column_type, "nvarchar(%d)", bcpcol->on_server.column_size / 2);
             break;
         case XSYBNCHAR:
             /* ssikorsk */
-            sprintf(column_type, "nchar(%d)", bcpcol->on_server.column_size);
+            sprintf(column_type, "nchar(%d)", bcpcol->on_server.column_size / 2);
             break;
         case SYBNTEXT:
             sprintf(column_type, "ntext");
