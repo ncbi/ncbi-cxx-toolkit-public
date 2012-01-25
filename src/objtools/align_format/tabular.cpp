@@ -1248,8 +1248,8 @@ void CIgBlastTabularInfo::x_PrintIgGenes(bool isHtml, const string& header) cons
         m_Ostream << header << "V(D)J junction details (V end, ";
         if (m_ChainType == "VH")  m_Ostream << "V-D junction, D region, D-J junction, ";
         else m_Ostream << "V-J junction, ";
-        m_Ostream << "J start.  Note that overlapping nucleotides at VDJ junction, if any, are shown in parentheses (i.e., (TACT)) and"
-                  << " are not included under V, D, or J region itself)" << endl;
+        m_Ostream << "J start).  Note that possible overlapping nucleotides at VDJ junction (i.e, nucleotides that could be assigned to either joining gene segment) are indicated in parentheses (i.e., (TACT)) but"
+                  << " are not included under V, D, or J gene itself" << endl;
     }
 
     x_PrintPartialQuery(max(b0, a1 - 5), a1, isHtml); m_Ostream << m_FieldDelimiter;
@@ -1266,11 +1266,9 @@ void CIgBlastTabularInfo::x_PrintIgGenes(bool isHtml, const string& header) cons
         m_Ostream << "</tr>\n</table></pre>";
 
         m_Ostream << "*: Overlapping nucleotides may exist"
-                  << " at some V-D-J junction (i.e, nucleotides"
-                  << " that could be contributed by either joining segment "
-                  << " due to homology-directed rearrangement). "
-                  << "Such bases will be shown inside a parenthesis (i.e., (TACAT))"
-                  << " and will not be included under V, D or J region itself.\n";
+                  << " at V-D-J junction (i.e, nucleotides that could be assigned to either joining gene segment).\n"
+                  << " Such bases are indicated inside a parenthesis (i.e., (TACAT))"
+                  << " but are not included under V, D or J gene itself.\n";
     }
     m_Ostream << endl << endl;
 };
