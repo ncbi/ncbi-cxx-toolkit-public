@@ -12,6 +12,8 @@
 1.1.4.n	With a disulfide as acceptor
 1.1.5.-	With a quinone or similar compound as acceptor
 1.1.5.n	With a quinone or similar compound as acceptor
+1.1.9.-	With a copper protein as acceptor
+1.1.9.n	With a copper protein as acceptor
 1.1.98.-	With other, known, acceptors
 1.1.98.n	With other, known, acceptors
 1.1.99.-	With other acceptors
@@ -66,6 +68,8 @@
 1.4.5.n	With a quinone or similar compound as acceptor
 1.4.7.-	With an iron-sulfur protein as acceptor
 1.4.7.n	With an iron-sulfur protein as acceptor
+1.4.9.-	With a copper protein as acceptor
+1.4.9.n	With a copper protein as acceptor
 1.4.98.-	With other, known, acceptors
 1.4.98.n	With other, known, acceptors
 1.4.99.-	With other acceptors
@@ -116,6 +120,8 @@
 1.7.6.n	With a nitrogenous group as acceptor
 1.7.7.-	With an iron-sulfur protein as acceptor
 1.7.7.n	With an iron-sulfur protein as acceptor
+1.7.9.-	With a copper protein as acceptor
+1.7.9.n	With a copper protein as acceptor
 1.7.99.-	With other acceptors
 1.7.99.n	With other acceptors
 1.8.-.-	Acting on a sulfur group of donors
@@ -154,6 +160,8 @@
 1.10.2.n	With a cytochrome as acceptor
 1.10.3.-	With oxygen as acceptor
 1.10.3.n	With oxygen as acceptor
+1.10.9.-	With a copper protein as acceptor
+1.10.9.n	With a copper protein as acceptor
 1.10.98.-	With other, known, acceptors
 1.10.98.n	With other, known, acceptors
 1.10.99.-	With other acceptors
@@ -226,6 +234,8 @@
 1.16.5.n	With a quinone or similar compound as acceptor
 1.16.8.-	With flavin as acceptor
 1.16.8.n	With flavin as acceptor
+1.16.9.-	With a copper protein as acceptor
+1.16.9.n	With a copper protein as acceptor
 1.16.98.-	With other known acceptors
 1.16.98.n	With other known acceptors
 1.17.-.-	Acting on CH or CH(2) groups
@@ -256,14 +266,18 @@
 1.19.6.n	With dinitrogen as acceptor
 1.20.-.-	Acting on phosphorus or arsenic in donors
 1.20.n.n	Acting on phosphorus or arsenic in donors
-1.20.1.-	Acting on phosphorus or arsenic in donors, with NAD(P)(+) as acceptor
-1.20.1.n	Acting on phosphorus or arsenic in donors, with NAD(P)(+) as acceptor
-1.20.4.-	Acting on phosphorus or arsenic in donors, with disulfide as acceptor
-1.20.4.n	Acting on phosphorus or arsenic in donors, with disulfide as acceptor
-1.20.98.-	Acting on phosphorus or arsenic in donors, with other, known acceptors
-1.20.98.n	Acting on phosphorus or arsenic in donors, with other, known acceptors
-1.20.99.-	Acting on phosphorus or arsenic in donors, with other acceptors
-1.20.99.n	Acting on phosphorus or arsenic in donors, with other acceptors
+1.20.1.-	With NAD(P)(+) as acceptor
+1.20.1.n	With NAD(P)(+) as acceptor
+1.20.2.-	With a cytochrome as acceptor
+1.20.2.n	With a cytochrome as acceptor
+1.20.4.-	With disulfide as acceptor
+1.20.4.n	With disulfide as acceptor
+1.20.9.-	With a copper protein as acceptor
+1.20.9.n	With a copper protein as acceptor
+1.20.98.-	With other, known acceptors
+1.20.98.n	With other, known acceptors
+1.20.99.-	With other acceptors
+1.20.99.n	With other acceptors
 1.21.-.-	Acting on x-H and y-H to form an x-y bond
 1.21.n.n	Acting on x-H and y-H to form an x-y bond
 1.21.3.-	With oxygen as acceptor
