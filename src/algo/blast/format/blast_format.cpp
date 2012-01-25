@@ -1058,11 +1058,23 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
     results.GetSubjectMasks(subj_masks);
     display.SetSubjectMasks(subj_masks);
 
+    if (m_IsHTML) {
+     
+        m_Outfile << "\n<CENTER><b><FONT color=\"green\">Alignments</FONT></b></CENTER>" 
+                  << endl;
+
+    } else {
+        m_Outfile << "\nAlignments" << endl;
+    }
+       
     display.DisplaySeqalign(m_Outfile);
 
     // print the ancillary data for this query
 
     x_PrintOneQueryFooter(*results.GetAncillaryData());
+    if (m_IsHTML) {
+        m_Outfile << "<hr>" << endl;
+    }
 }
 
 void 
