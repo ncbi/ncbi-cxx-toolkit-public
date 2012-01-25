@@ -128,7 +128,6 @@ protected:
     TAttributes m_Attributes;
 
     static const string ATTR_SEPARATOR;
-    static const string INTERNAL_SEPARATOR;
 };
 
 //  ----------------------------------------------------------------------------
@@ -142,9 +141,6 @@ public:
 
     virtual bool AssignFromAsn(
         CMappedFeat );
-    virtual bool AssignSource(
-        CBioseq_Handle,
-        const CSeqdesc& );
 
 protected:
     virtual bool x_AssignType(
@@ -166,11 +162,6 @@ protected:
     virtual bool x_AssignAttributes(
         CMappedFeat );
 
-    virtual bool x_AssignBiosrcAttributes(
-        const CBioSource& );
-
-    static string x_FeatIdString(
-        const CFeat_id& id );
 };
 
 END_objects_SCOPE

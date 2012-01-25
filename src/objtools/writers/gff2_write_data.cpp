@@ -32,29 +32,9 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-#include <objects/general/Object_id.hpp>
-#include <objects/general/Dbtag.hpp>
-#include <objects/seqloc/Seq_interval.hpp>
-#include <objects/seqfeat/Cdregion.hpp>
-#include <objects/seq/Seq_annot.hpp>
-#include <objects/seq/Annot_descr.hpp>
-#include <objects/seq/MolInfo.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqfeat/Feat_id.hpp>
-#include <objects/seqfeat/Gb_qual.hpp>
-#include <objects/seqfeat/SeqFeatXref.hpp>
-#include <objects/seqfeat/Gene_ref.hpp>
-#include <objects/seqfeat/Cdregion.hpp>
-#include <objects/seqfeat/SeqFeatXref.hpp>
-#include <objects/seqfeat/Org_ref.hpp>
-#include <objects/seqfeat/OrgName.hpp>
-#include <objects/seqfeat/OrgMod.hpp>
-#include <objects/seqfeat/SubSource.hpp>
 
 #include <objtools/writers/write_util.hpp>
 #include <objtools/writers/gff2_write_data.hpp>
-#include <objmgr/seqdesc_ci.hpp>
-#include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/mapped_feat.hpp>
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -67,11 +47,6 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 const string CGffWriteRecord::ATTR_SEPARATOR
 //  ----------------------------------------------------------------------------
     = "; ";
-
-//  ----------------------------------------------------------------------------
-const string CGffWriteRecord::INTERNAL_SEPARATOR
-//  ----------------------------------------------------------------------------
-    = "###";
 
 //  ----------------------------------------------------------------------------
 string CGffWriteRecord::StrId() const
@@ -148,6 +123,9 @@ bool CGffWriteRecord::SetAttribute(
     const string& value )
 //  ----------------------------------------------------------------------------
 {
+    if (value.empty()) {
+        return false; //don't accept blank values 
+    }
     TAttrIt it = m_Attributes.find(key);
     if (it == m_Attributes.end()) {
         m_Attributes[key] = vector<string>();
@@ -381,7 +359,6 @@ bool CGffWriteRecord::AssignSequenceNumber(
         return false;
     }
     ids.at(0) += string( "|" ) + strPrefix + NStr::UIntToString( uSequenceNumber );
-    TAttrIt it = m_Attributes.find( "ID" );
     return false;
 }
 
@@ -417,105 +394,6 @@ bool CGffWriteRecordFeature::AssignFromAsn(
     if ( ! x_AssignAttributes( mapped_feature ) ) {
         return false;
     }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGffWriteRecordFeature::x_AssignBiosrcAttributes(
-    const CBioSource& bs )
-//  ----------------------------------------------------------------------------
-{
-    string value;
-    if (CWriteUtil::GetGenomeString(bs, value)) {
-        SetAttribute("genome", value);
-    }
-    if ( bs.IsSetOrg() ) {
-        const COrg_ref& org = bs.GetOrg();
-        if ( org.IsSetDb() ) {
-            const vector< CRef< CDbtag > >& tags = org.GetDb();
-            for ( vector< CRef< CDbtag > >::const_iterator it = tags.begin(); 
-                    it != tags.end(); ++it ) {
-                string attr;
-                if ((*it)->IsSetDb()) {
-                    attr += ((*it)->GetDb() + ":");
-                }
-                if ((*it)->IsSetTag()) {
-                    const CDbtag::TTag& tag = (*it)->GetTag();
-                    attr +=
-                        (tag.IsStr()) ? tag.GetStr() : NStr::UIntToString(tag.GetId());
-                }
-                SetAttribute("Dbxref", attr); 
-            }
-        }
-
-        if ( org.IsSetOrgname() && org.GetOrgname().IsSetMod() ) {
-            const list<CRef<COrgMod> >& orgmods = org.GetOrgname().GetMod();
-            for (list<CRef<COrgMod> >::const_iterator it = orgmods.begin();
-                    it != orgmods.end(); ++it) {
-                string key, value;
-                if (CWriteUtil::GetOrgModSubType(**it, key, value)) {
-                    SetAttribute(key, value);
-                }
-            }
-        }
-    }
-
-    if ( bs.IsSetSubtype() ) {
-        const list<CRef<CSubSource> >& subsources = bs.GetSubtype();
-        for ( list<CRef<CSubSource> >::const_iterator it = subsources.begin();
-                it != subsources.end(); ++it ) {
-            string key, value;
-            if (CWriteUtil::GetSubSourceSubType(**it, key, value)) {
-                SetAttribute(key, value);
-            }
-        }
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGffWriteRecordFeature::AssignSource(
-    CBioseq_Handle bsh,
-    const CSeqdesc& desc )
-//  ----------------------------------------------------------------------------
-{
-    // id
-    CConstRef<CSeq_id> pId = bsh.GetNonLocalIdOrNull();
-    if (!pId  ||  !CWriteUtil::GetBestId(CSeq_id_Handle::GetHandle( *pId ),
-            bsh.GetScope(), m_strId)) {
-        m_strId = "<unknown>";
-    }
-
-    m_strType = "region";
-    m_strSource = ".";
-    CWriteUtil::GetIdType(bsh, m_strSource);
-    m_uSeqStart = 0;
-    m_uSeqStop = bsh.GetBioseqLength() - 1;
-    //score
-    if ( bsh.CanGetInst_Strand() ) {
-        m_peStrand = new ENa_strand( eNa_strand_plus );
-    }
-    // phase
-
-    //  attributes:
-    SetAttribute("gbkey", "Src");
-    string value;
-    if (CWriteUtil::GetBiomolString(bsh, value)) {
-        SetAttribute("mol_type", value);
-    } 
-    if (CWriteUtil::GetBiomolString(bsh, value)) {
-        SetAttribute("mol_type", value);
-    } 
-
-    const CBioSource& bs = desc.GetSource();
-    if ( ! x_AssignBiosrcAttributes( bs ) ) {
-        return false;
-    }
-    if ( bsh.IsSetInst_Topology() && 
-            bsh.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
-       SetAttribute("is_circular", "true");
-    }
-
     return true;
 }
 
@@ -672,29 +550,6 @@ bool CGffWriteRecordFeature::x_AssignAttributes(
 {
     cerr << "FIXME: CGffWriteRecord::x_AssignAttributes" << endl;
     return true;
-}
-
-//  ----------------------------------------------------------------------------
-string CGffWriteRecordFeature::x_FeatIdString(
-    const CFeat_id& id )
-//  ----------------------------------------------------------------------------
-{
-    switch ( id.Which() ) {
-    default:
-        break;
-
-    case CFeat_id::e_Local: {
-        const CFeat_id::TLocal& local = id.GetLocal();
-        if ( local.IsId() ) {
-            return NStr::IntToString( local.GetId() );
-        }
-        if ( local.IsStr() ) {
-            return local.GetStr();
-        }
-        break;
-        }
-    }
-    return "FEATID";
 }
 
 END_objects_SCOPE

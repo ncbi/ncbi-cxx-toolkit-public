@@ -36,12 +36,11 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objects/seq/Seq_annot.hpp>
-#include <objects/seqalign/Seq_align.hpp>
 #include <objects/seq/Annotdesc.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
-#include <objtools/writers/gff2_write_data.hpp>
-#include <objtools/writers/writer.hpp>
+#include <objects/seqfeat/SubSource.hpp>
+#include <objects/seqfeat/Code_break.hpp>
+#include <objects/seqfeat/Trna_ext.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -69,7 +68,7 @@ public:
         string&,
         string& );
 
-    static bool GetBiomolString(
+    static bool GetBiomol(
         CBioseq_Handle,
         string& );
 
@@ -77,9 +76,37 @@ public:
         CBioseq_Handle,
         string& );
 
+    static bool GetAaName(
+        const CCode_break&,
+        string& );
+
+    static bool GetCodeBreak(
+        const CCode_break&,
+        string& );
+
+    static bool GetGeneRefGene(
+        const CGene_ref&,
+        string& );
+
+    static bool GetTrnaProductName(
+        const CTrna_ext&,
+        string& );
+
     static bool GetBestId(
         CSeq_id_Handle,
         CScope&, 
+        string& );
+
+    static bool GetTrnaCodons(
+        const CTrna_ext&,
+        string& );
+
+    static bool GetTrnaAntiCodon(
+        const CTrna_ext&,
+        string& );
+
+    static bool GetDbTag(
+        const CDbtag&,
         string& );
 
     static bool IsLocationOrdered(

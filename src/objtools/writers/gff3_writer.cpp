@@ -59,6 +59,7 @@
 
 #include <objtools/writers/write_util.hpp>
 #include <objtools/writers/gff3_write_data.hpp>
+#include <objtools/writers/gff3_source_data.hpp>
 #include <objtools/writers/gff3_alignment_data.hpp>
 #include <objtools/writers/gff3_writer.hpp>
 #include <objtools/alnmgr/alnmap.hpp>
@@ -379,20 +380,15 @@ bool CGff3Writer::x_WriteBioseqHandle(
     feature::CFeatTree feat_tree( feat_iter );
     CGffFeatureContext fc(feature::CFeatTree(feat_iter), bsh);
 
-    CSeqdesc_CI sdi( bsh.GetParentEntry(), CSeqdesc::e_Source, 0 );
-    if ( sdi ) {
-        CGff3WriteRecordFeature src_feat( 
-            fc, 
-            string( "id" ) + NStr::UIntToString( m_uPendingGenericId++ ) );
-        src_feat.AssignSource( bsh, *sdi );
-        x_WriteRecord( &src_feat );
+    if (!x_WriteSource(fc)) {
+        return false;
     }
-
-    for ( ;  feat_iter;  ++feat_iter ) {
-        if ( ! x_WriteFeature( fc, *feat_iter ) ) {
+    for ( ; feat_iter; ++feat_iter) {
+        if (!x_WriteFeature(fc, *feat_iter)) {
             return false;
         }
     }   
+
     sel.SetAnnotType(CSeq_annot::C_Data::e_Align);
     for (CAnnot_CI aci(bsh, sel); aci; ++aci) {
         x_WriteSeqAnnotHandle(*aci);
@@ -400,6 +396,25 @@ bool CGff3Writer::x_WriteBioseqHandle(
     return true;
 }
 
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::x_WriteSource(
+    CGffFeatureContext& fc )
+//  ----------------------------------------------------------------------------
+{
+    CBioseq_Handle bsh = fc.BioseqHandle();
+    CSeqdesc_CI sdi(bsh.GetParentEntry(), CSeqdesc::e_Source, 0);
+    if (!sdi) {
+        return true; 
+    }
+    CRef<CGff3SourceRecord> pSource( 
+        new CGff3SourceRecord( 
+            fc, 
+            string("id") + NStr::UIntToString(m_uPendingGenericId++)));
+    pSource->AssignData(fc, *sdi);
+    x_WriteRecord(pSource);
+    return true;
+}
+    
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteFeature(
     CGffFeatureContext& fc,

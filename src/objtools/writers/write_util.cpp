@@ -174,21 +174,234 @@ bool CWriteUtil::GetSubSourceSubType(
     string& subname)
 //  ----------------------------------------------------------------------------
 {
+#define EMIT(str) { subname = str; return true; }
     if (!sub.IsSetSubtype() || !sub.IsSetName()) {
         return false;
     }
     subtype = CSubSource::GetSubtypeName(sub.GetSubtype());
-    if (sub.GetSubtype() == CSubSource::eSubtype_environmental_sample) {
-        subname = "true";
+
+    switch (sub.GetSubtype()) {
+        case CSubSource::eSubtype_environmental_sample:
+            EMIT("true");
+        case CSubSource::eSubtype_germline:
+            EMIT("true");
+        default:
+            if (sub.GetName().empty()) {
+                EMIT("indeterminate");
+            }
+            EMIT(sub.GetName());
     }
-    else {
-        subname = sub.GetName();
+    return true;
+#undef EMIT
+}
+
+//  ----------------------------------------------------------------------------
+bool CWriteUtil::GetAaName(
+    const CCode_break& cb,
+    string& aaName )
+//  ----------------------------------------------------------------------------
+{
+    static const string AANames[] = {
+        "---", "Ala", "Asx", "Cys", "Asp", "Glu", "Phe", "Gly", "His", "Ile",
+        "Lys", "Leu", "Met", "Asn", "Pro", "Gln", "Arg", "Ser", "Thr", "Val",
+        "Trp", "OTHER", "Tyr", "Glx", "Sec", "TERM", "Pyl"
+    };
+    static const string other = "OTHER";
+
+    unsigned char aa(0);
+    switch (cb.GetAa().Which()) {
+        case CCode_break::C_Aa::e_Ncbieaa:
+            aa = cb.GetAa().GetNcbieaa();
+            break;
+        case CCode_break::C_Aa::e_Ncbi8aa:
+            aa = cb.GetAa().GetNcbi8aa();
+            break;
+        case CCode_break::C_Aa::e_Ncbistdaa:
+            aa = cb.GetAa().GetNcbistdaa();
+            break;
+        default:
+            return false;
     }
+    aaName = ((aa < sizeof(AANames)/sizeof(*AANames)) ? AANames[aa] : other);
     return true;
 }
 
 //  ----------------------------------------------------------------------------
-bool CWriteUtil::GetBiomolString(
+bool CWriteUtil::GetCodeBreak(
+    const CCode_break& cb,
+    string& cbString )
+//  ----------------------------------------------------------------------------
+{
+    string cb_str = ("(pos:");
+    if ( cb.IsSetLoc() ) {
+        const CCode_break::TLoc& loc = cb.GetLoc();
+        switch( loc.Which() ) {
+            default: {
+                cb_str += NStr::IntToString( loc.GetStart(eExtreme_Positional)+1 );
+                cb_str += "..";
+                cb_str += NStr::IntToString( loc.GetStop(eExtreme_Positional)+1 );
+                break;
+            }
+            case CSeq_loc::e_Int: {
+                const CSeq_interval& intv = loc.GetInt();
+                string intv_str = "";
+                intv_str += NStr::IntToString( intv.GetFrom()+1 );
+                intv_str += "..";
+                intv_str += NStr::IntToString( intv.GetTo()+1 );
+                if ( intv.IsSetStrand()  &&  intv.GetStrand() == eNa_strand_minus ) {
+                    intv_str = "complement(" + intv_str + ")";
+                }
+                cb_str += intv_str;
+                break;
+            }
+        }
+    }
+    cb_str += ",aa=";
+
+    string aaName;
+    if (!CWriteUtil::GetAaName(cb, aaName)) {
+        return false;
+    }
+    cb_str += aaName + ")";
+    cbString = cb_str;
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CWriteUtil::GetTrnaCodons(
+    const CTrna_ext& trna,
+    string& codonStr )
+//  ----------------------------------------------------------------------------
+{
+    if (!trna.IsSetCodon()) {
+        return false;
+    }
+    const list<int>& values = trna.GetCodon();
+    if (values.empty()) {
+        return false;
+    }
+    list<int>::const_iterator cit = values.begin();
+    string codons = NStr::IntToString(*cit);
+    for (cit++; cit != values.end(); ++cit) {
+        codons += ",";
+        codons += NStr::IntToString(*cit);
+    } 
+    codonStr = codons;
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CWriteUtil::GetGeneRefGene(
+    const CGene_ref& generef,
+    string& gene )
+//  ----------------------------------------------------------------------------
+{
+#define EMIT(str) { gene = str; return true; }
+   if (generef.IsSetLocus()) {
+        EMIT(generef.GetLocus());
+    }
+    if (generef.IsSetSyn()  && generef.GetSyn().size() > 0) {
+        EMIT(generef.GetSyn().front());
+    }
+    if (generef.IsSetDesc()) {
+        EMIT(generef.GetDesc());
+    }
+    return false;
+#undef EMIT
+}
+
+//  ----------------------------------------------------------------------------
+bool CWriteUtil::GetTrnaProductName(
+    const CTrna_ext& trna,
+    string& name )
+//  ----------------------------------------------------------------------------
+{
+    static const string sTrnaList[] = {
+        "tRNA-Gap", "tRNA-Ala", "tRNA-Asx", "tRNA-Cys", "tRNA-Asp", "tRNA-Glu",
+        "tRNA-Phe", "tRNA-Gly", "tRNA-His", "tRNA-Ile", "tRNA-Xle", "tRNA-Lys",
+        "tRNA-Leu", "tRNA-Met", "tRNA-Asn", "tRNA-Pyl", "tRNA-Pro", "tRNA-Gln",
+        "tRNA-Arg", "tRNA-Ser", "tRNA-Thr", "tRNA-Sec", "tRNA-Val", "tRNA-Trp",
+        "tRNA-OTHER", "tRNA-Tyr", "tRNA-Glx", "tRNA-TERM"
+    };
+    static int AACOUNT = sizeof(sTrnaList)/sizeof(string);
+
+    if (!trna.IsSetAa()  ||  !trna.GetAa().IsNcbieaa()) {
+        return false;
+    }
+    int aa = trna.GetAa().GetNcbieaa();
+    (aa == '*') ? (aa = 25) : (aa -= 64);
+    name = ((0 < aa  &&  aa < AACOUNT) ? sTrnaList[aa] : "");
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CWriteUtil::GetTrnaAntiCodon(
+    const CTrna_ext& trna,
+    string& acStr )
+//  ----------------------------------------------------------------------------
+{
+    if (!trna.IsSetAnticodon()) {
+        return false;
+    }
+    const CSeq_loc& loc = trna.GetAnticodon();
+    string anticodon;
+    switch( loc.Which() ) {
+        default: {
+            anticodon += NStr::IntToString( loc.GetStart(eExtreme_Positional)+1 );
+            anticodon += "..";
+            anticodon += NStr::IntToString( loc.GetStop(eExtreme_Positional)+1 );
+            break;
+        }
+        case CSeq_loc::e_Int: {
+            const CSeq_interval& intv = loc.GetInt();
+            anticodon += NStr::IntToString( intv.GetFrom()+1 );
+            anticodon += "..";
+            anticodon += NStr::IntToString( intv.GetTo()+1 );
+            if ( intv.IsSetStrand()  &&  intv.GetStrand() == eNa_strand_minus ) {
+                anticodon = "complement(" + anticodon + ")";
+            }
+            break;
+        }
+    }
+    acStr = string("(pos:") + anticodon + ")";
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CWriteUtil::GetDbTag( 
+    const CDbtag& dbtag,
+    string& dbTagStr )
+//
+//  Note: Different from CDbtag::GetLabel()
+//  ----------------------------------------------------------------------------
+{
+    string str;
+    if ( dbtag.IsSetDb() ) {
+        str += dbtag.GetDb();
+    }
+    else {
+        str += "NoDB";
+    }
+    if ( dbtag.IsSetTag() ) {
+        if (!str.empty()) {
+            str += ":";
+        }
+        if (dbtag.GetTag().IsId() ) {
+            str += NStr::UIntToString( dbtag.GetTag().GetId() );
+        }
+        if ( dbtag.GetTag().IsStr() ) {
+            str += dbtag.GetTag().GetStr();
+        }
+    }
+    if (str.empty()) {
+        return false;
+    }
+    dbTagStr = str;
+    return true;
+}
+        
+//  ----------------------------------------------------------------------------
+bool CWriteUtil::GetBiomol(
     CBioseq_Handle bsh,
     string& mol_str)
 //  ----------------------------------------------------------------------------

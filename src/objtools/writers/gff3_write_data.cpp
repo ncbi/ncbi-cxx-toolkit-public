@@ -35,29 +35,23 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/User_object.hpp>
-#include <objects/seqloc/Seq_interval.hpp>
-#include <objects/seqfeat/Cdregion.hpp>
-#include <objects/seq/Seq_annot.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqfeat/Feat_id.hpp>
-#include <objects/seqfeat/Gb_qual.hpp>
-#include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqfeat/RNA_gen.hpp>
 #include <objects/seqfeat/Trna_ext.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seqfeat/Code_break.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
+#include <objects/seqfeat/OrgName.hpp>
+#include <objects/seq/sofa_type.hpp>
+#include <objects/seq/sofa_map.hpp>
 
-#include <objtools/writers/gff3_write_data.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/mapped_feat.hpp>
-#include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
 
 #include <objtools/writers/write_util.hpp>
-#include <objects/seq/sofa_type.hpp>
-#include <objects/seq/sofa_map.hpp>
+#include <objtools/writers/gff3_write_data.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -74,52 +68,6 @@ const string CGff3WriteRecordFeature::MULTIVALUE_SEPARATOR
     = ",";
 
 //  ----------------------------------------------------------------------------
-string s_GeneRefToGene(
-    const CGene_ref& gene_ref )
-//  ----------------------------------------------------------------------------
-{
-    if ( gene_ref.IsSetLocus() ) {
-        return gene_ref.GetLocus();
-    }
-    if ( gene_ref.IsSetSyn()  && gene_ref.GetSyn().size() > 0 ) {
-        return *( gene_ref.GetSyn().begin() );
-    }
-    if ( gene_ref.IsSetDesc() ) {
-        return gene_ref.GetDesc();
-    }
-    return "";
-}
-
-//  ----------------------------------------------------------------------------
-string s_MakeGffDbtag( 
-    const CDbtag& dbtag )
-//
-//  Currently, simply produce "DB:TAG" (which is different from 
-//    dbtag.GetLabel() ).
-//  In the future, may have to convert between Genbank DB abbreviations and
-//    GFF DB abbreviations.
-//  ----------------------------------------------------------------------------
-{
-    string strGffTag;
-    if ( dbtag.IsSetDb() ) {
-        strGffTag += dbtag.GetDb();
-        strGffTag += ":";
-    }
-    else {
-        strGffTag += "NoDB:";
-    }
-    if ( dbtag.IsSetTag() ) {
-        if ( dbtag.GetTag().IsId() ) {
-            strGffTag += NStr::UIntToString( dbtag.GetTag().GetId() );
-        }
-        if ( dbtag.GetTag().IsStr() ) {
-            strGffTag += dbtag.GetTag().GetStr();
-        }
-    }
-    return strGffTag;
-}
-        
-//  ----------------------------------------------------------------------------
 string s_MakeGffDbtag( 
     const CSeq_id_Handle& idh,
     CScope& scope )
@@ -134,141 +82,6 @@ string s_MakeGffDbtag(
     return strGffTag;
 }
         
-//  ----------------------------------------------------------------------------
-const char* s_GetAAName(unsigned char aa)
-//  ----------------------------------------------------------------------------
-{
-    static const char* kAANames[] = {
-        "---", "Ala", "Asx", "Cys", "Asp", "Glu", "Phe", "Gly", "His", "Ile",
-        "Lys", "Leu", "Met", "Asn", "Pro", "Gln", "Arg", "Ser", "Thr", "Val",
-        "Trp", "OTHER", "Tyr", "Glx", "Sec", "TERM", "Pyl"
-    };
-
-    return (aa < sizeof(kAANames)/sizeof(*kAANames)) ? kAANames[aa] : "OTHER";
-}
-
-//  ----------------------------------------------------------------------------
-string s_CodeBreakString(
-    const CCode_break& cb)
-//  ----------------------------------------------------------------------------
-{
-    string cb_str = ("(pos:");
-    if ( cb.IsSetLoc() ) {
-        const CCode_break::TLoc& loc = cb.GetLoc();
-        switch( loc.Which() ) {
-            default: {
-                cb_str += NStr::IntToString( loc.GetStart(eExtreme_Positional)+1 );
-                cb_str += "..";
-                cb_str += NStr::IntToString( loc.GetStop(eExtreme_Positional)+1 );
-                break;
-            }
-            case CSeq_loc::e_Int: {
-                const CSeq_interval& intv = loc.GetInt();
-                string intv_str = "";
-                intv_str += NStr::IntToString( intv.GetFrom()+1 );
-                intv_str += "..";
-                intv_str += NStr::IntToString( intv.GetTo()+1 );
-                if ( intv.IsSetStrand()  &&  intv.GetStrand() == eNa_strand_minus ) {
-                    intv_str = "complement(" + intv_str + ")";
-                }
-                cb_str += intv_str;
-                break;
-            }
-        }
-    }
-    cb_str += ",aa=";
-    switch( cb.GetAa().Which() ) {
-    default:
-        return "";
-    case CCode_break::C_Aa::e_Ncbieaa:
-        cb_str += s_GetAAName(cb.GetAa().GetNcbieaa());
-        break;
-    case CCode_break::C_Aa::e_Ncbi8aa:
-        cb_str += s_GetAAName(cb.GetAa().GetNcbi8aa());
-        break;
-    case CCode_break::C_Aa::e_Ncbistdaa:
-        cb_str += s_GetAAName(cb.GetAa().GetNcbistdaa());
-        break;
-    }
-    cb_str += ")";
-    return cb_str;
-}
-
-//  ----------------------------------------------------------------------------
-string s_GetTrnaProductName(
-    const CTrna_ext& trna)
-//  ----------------------------------------------------------------------------
-{
-    static const string sTrnaList[] = {
-        "tRNA-Gap", "tRNA-Ala", "tRNA-Asx", "tRNA-Cys", "tRNA-Asp", "tRNA-Glu",
-        "tRNA-Phe", "tRNA-Gly", "tRNA-His", "tRNA-Ile", "tRNA-Xle", "tRNA-Lys",
-        "tRNA-Leu", "tRNA-Met", "tRNA-Asn", "tRNA-Pyl", "tRNA-Pro", "tRNA-Gln",
-        "tRNA-Arg", "tRNA-Ser", "tRNA-Thr", "tRNA-Sec", "tRNA-Val", "tRNA-Trp",
-        "tRNA-OTHER", "tRNA-Tyr", "tRNA-Glx", "tRNA-TERM"
-    };
-    static int AACOUNT = sizeof(sTrnaList)/sizeof(string);
-
-    if (!trna.IsSetAa()  ||  !trna.GetAa().IsNcbieaa()) {
-        return "";
-    }
-
-    int aa = trna.GetAa().GetNcbieaa();
-    (aa == '*') ? (aa = 25) : (aa -= 64);
-    return ((0 < aa  &&  aa < AACOUNT) ? sTrnaList[aa] : "");
-}
-
-//  ----------------------------------------------------------------------------
-string s_GetTrnaAnticodon(
-    const CTrna_ext& trna)
-//  ----------------------------------------------------------------------------
-{
-    if (!trna.IsSetAnticodon()) {
-        return "";
-    }
-    const CSeq_loc& loc = trna.GetAnticodon();
-    string anticodon;
-    switch( loc.Which() ) {
-        default: {
-            anticodon += NStr::IntToString( loc.GetStart(eExtreme_Positional)+1 );
-            anticodon += "..";
-            anticodon += NStr::IntToString( loc.GetStop(eExtreme_Positional)+1 );
-            break;
-        }
-        case CSeq_loc::e_Int: {
-            const CSeq_interval& intv = loc.GetInt();
-            anticodon += NStr::IntToString( intv.GetFrom()+1 );
-            anticodon += "..";
-            anticodon += NStr::IntToString( intv.GetTo()+1 );
-            if ( intv.IsSetStrand()  &&  intv.GetStrand() == eNa_strand_minus ) {
-                anticodon = "complement(" + anticodon + ")";
-            }
-            break;
-        }
-    }
-    return string("(pos:") + anticodon + ")";
-}
-
-//  ----------------------------------------------------------------------------
-string s_GetTrnaCodons(
-    const CTrna_ext& trna)
-//  ----------------------------------------------------------------------------
-{
-    if (!trna.IsSetCodon()) {
-        return "";
-    }
-    const list<int>& values = trna.GetCodon();
-    if (values.empty()) {
-        return "";
-    }
-    list<int>::const_iterator cit = values.begin();
-    string codons = NStr::IntToString(*cit);
-    for (cit++; cit != values.end(); ++cit) {
-        codons += ",";
-        codons += NStr::IntToString(*cit);
-    } 
-    return codons;
-}
-
 //  ----------------------------------------------------------------------------
 CConstRef<CUser_object> s_GetUserObjectByType(
     const CUser_object& uo,
@@ -409,20 +222,6 @@ bool CGff3WriteRecordFeature::x_AssignAttributesFromAsnCore(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
-    // If feature ids are present then they are likely used to show parent/child
-    // relationships, via corresponding xrefs. Thus, any feature ids override
-    // gb ID tags (feature ids and ID tags should agree in the first place, but
-    // if not, feature ids must trump ID tags).
-    //
-
-    //*** Actually, I might be doing more harm that good. Disabling this logic 
-    //*** pending further investigation...
-
-//    if (mapped_feat.IsSetId()) {
-//        const CSeq_feat::TId& id = mapped_feat.GetId();
-//        string value = CGffWriteRecordFeature::x_FeatIdString(id);
-//        m_Attributes["ID"] = value;
-//    }
     return true;
 }
 
@@ -628,30 +427,30 @@ bool CGff3WriteRecordFeature::x_AssignAttributeGene(
     string strGene;
     if ( mf.GetData().Which() == CSeq_feat::TData::e_Gene ) {
         const CGene_ref& gene_ref = mf.GetData().GetGene();
-        strGene = s_GeneRefToGene( gene_ref );
+        CWriteUtil::GetGeneRefGene(gene_ref, strGene);
     }
 
     if ( strGene.empty() && mf.IsSetXref() ) {
-        const vector< CRef< CSeqFeatXref > > xrefs = mf.GetXref();
-        for ( vector< CRef< CSeqFeatXref > >::const_iterator it = xrefs.begin();
+        const vector<CRef<CSeqFeatXref> > xrefs = mf.GetXref();
+        for ( vector<CRef<CSeqFeatXref> >::const_iterator it = xrefs.begin();
             it != xrefs.end();
             ++it ) {
             const CSeqFeatXref& xref = **it;
             if ( xref.CanGetData() && xref.GetData().IsGene() ) {
-                strGene = s_GeneRefToGene( xref.GetData().GetGene() );
+                CWriteUtil::GetGeneRefGene(xref.GetData().GetGene(), strGene);
                 break;
             }
         }
     }
 
     if ( strGene.empty() ) {
-        CMappedFeat gene = feature::GetBestGeneForFeat( mf, &m_fc.FeatTree() );
-        if ( gene.IsSetData()  &&  gene.GetData().IsGene() ) {
-            strGene = s_GeneRefToGene( gene.GetData().GetGene() );
+        CMappedFeat gene = feature::GetBestGeneForFeat(mf, &m_fc.FeatTree());
+        if (gene.IsSetData()  &&  gene.GetData().IsGene()) {
+            CWriteUtil::GetGeneRefGene(gene.GetData().GetGene(), strGene);
         }
     }
 
-    if ( ! strGene.empty() ) {
+    if (!strGene.empty()) {
         SetAttribute("gene", strGene);
     }
     return true;
@@ -707,7 +506,10 @@ bool CGff3WriteRecordFeature::x_AssignAttributeDbXref(
     if ( mf.IsSetDbxref() ) {
         const CSeq_feat::TDbxref& dbxrefs = mf.GetDbxref();
         for ( size_t i=0; i < dbxrefs.size(); ++i ) {
-            SetAttribute("Dbxref", s_MakeGffDbtag(*dbxrefs[i]));
+            string tag;
+            if (CWriteUtil::GetDbTag(*dbxrefs[i], tag)) {
+                SetAttribute("Dbxref", tag);
+            }
         }
     }
 
@@ -722,7 +524,10 @@ bool CGff3WriteRecordFeature::x_AssignAttributeDbXref(
             if ( parent  &&  parent.IsSetDbxref()) {
                 const CSeq_feat::TDbxref& more_dbxrefs = parent.GetDbxref();
                 for ( size_t i=0; i < more_dbxrefs.size(); ++i ) {
-                    SetAttribute("Dbxref", s_MakeGffDbtag(*more_dbxrefs[i]));
+                    string tag;
+                    if (CWriteUtil::GetDbTag(*more_dbxrefs[i], tag)) {
+                        SetAttribute("Dbxref", tag);
+                    }
                 }
             }
             break;
@@ -771,7 +576,10 @@ bool CGff3WriteRecordFeature::x_AssignAttributeDbXref(
             if ( gene_feat  &&  gene_feat.IsSetDbxref() ) {
                 const CSeq_feat::TDbxref& dbxrefs = gene_feat.GetDbxref();
                 for ( size_t i=0; i < dbxrefs.size(); ++i ) {
-                    SetAttribute("Dbxref", s_MakeGffDbtag(*dbxrefs[i]));
+                    string tag;
+                    if (CWriteUtil::GetDbTag(*dbxrefs[i], tag)) {
+                        SetAttribute("Dbxref", tag);
+                    }
                 }
             }
             break;
@@ -964,16 +772,16 @@ bool CGff3WriteRecordFeature::x_AssignAttributeProduct(
         if (subtype == CSeqFeatData::eSubtype_tRNA) {
             if (rna.IsSetExt()  &&  rna.GetExt().IsTRNA()) {
                 const CTrna_ext& trna = rna.GetExt().GetTRNA();
-                string anticodon = s_GetTrnaAnticodon(trna);
-                if (!anticodon.empty()) {
+                string anticodon;
+                if (CWriteUtil::GetTrnaAntiCodon(trna, anticodon)) {
                     SetAttribute("anticodon", anticodon);
                 }
-                string codons = s_GetTrnaCodons(trna);
-                if (!codons.empty()) {
+                string codons;
+                if (CWriteUtil::GetTrnaCodons(trna, codons)) {
                     SetAttribute("codons", codons);
                 }
-                string aa = s_GetTrnaProductName(trna);
-                if (!aa.empty()) {
+                string aa;
+                if (CWriteUtil::GetTrnaProductName(trna, aa)) {
                     SetAttribute("product", aa);
                     return true;
                 }
@@ -1246,12 +1054,12 @@ bool CGff3WriteRecordFeature::x_AssignAttributeCodeBreak(
     }
     const list<CRef<CCode_break> >& code_breaks = cds.GetCode_break();
     list<CRef<CCode_break> >::const_iterator it = code_breaks.begin();
-    string code_break_str = s_CodeBreakString(**it);
-    for ( ++it; it != code_breaks.end(); ++it ) {
-        code_break_str += INTERNAL_SEPARATOR;
-        code_break_str += s_CodeBreakString(**it);
+    for (; it != code_breaks.end(); ++it) {
+        string cbString;
+        if (CWriteUtil::GetCodeBreak(**it, cbString)) {
+            SetAttribute("transl_except", cbString);
+        }
     }
-    SetAttribute("transl_except", code_break_str);
     return true;
 }
 
@@ -1311,6 +1119,53 @@ bool CGff3WriteRecordFeature::x_AssignAttributeIsOrdered(
 {
     if (CWriteUtil::IsLocationOrdered(mf.GetLocation())) {
         SetAttribute("is_ordered", "true");
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3WriteRecordFeature::x_AssignBiosrcAttributes(
+    const CBioSource& bs )
+//  ----------------------------------------------------------------------------
+{
+    string value;
+    if (CWriteUtil::GetGenomeString(bs, value)) {
+        SetAttribute("genome", value);
+    }
+    if ( bs.IsSetOrg() ) {
+        const COrg_ref& org = bs.GetOrg();
+        if ( org.IsSetDb() ) {
+            const vector< CRef< CDbtag > >& tags = org.GetDb();
+            for ( vector< CRef< CDbtag > >::const_iterator it = tags.begin(); 
+                    it != tags.end(); ++it ) {
+                string tag;
+                if (CWriteUtil::GetDbTag(**it, tag)) {
+                    SetAttribute("Dbxref", tag);
+                }
+            }
+        }
+
+        if ( org.IsSetOrgname() && org.GetOrgname().IsSetMod() ) {
+            const list<CRef<COrgMod> >& orgmods = org.GetOrgname().GetMod();
+            for (list<CRef<COrgMod> >::const_iterator it = orgmods.begin();
+                    it != orgmods.end(); ++it) {
+                string key, value;
+                if (CWriteUtil::GetOrgModSubType(**it, key, value)) {
+                    SetAttribute(key, value);
+                }
+            }
+        }
+    }
+
+    if ( bs.IsSetSubtype() ) {
+        const list<CRef<CSubSource> >& subsources = bs.GetSubtype();
+        for ( list<CRef<CSubSource> >::const_iterator it = subsources.begin();
+                it != subsources.end(); ++it ) {
+            string key, value;
+            if (CWriteUtil::GetSubSourceSubType(**it, key, value)) {
+                SetAttribute(key, value);
+            }
+        }
     }
     return true;
 }

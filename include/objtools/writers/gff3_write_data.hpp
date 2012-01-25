@@ -157,6 +157,9 @@ protected:
     virtual bool x_AssignAttributeIsOrdered(
         CMappedFeat );
 
+    virtual bool x_AssignBiosrcAttributes(
+        const CBioSource& );
+
     virtual void x_StrAttributesAppendValueGff3(
         const string&,
         map<string, vector<string> >&,
