@@ -392,6 +392,8 @@ CReplayThread::x_PutBlob(Uint8 key_id, bool gen_key, Uint8 size)
     catch (CException& ex) {
         ERR_POST("Error while writing blob with key '" << key << "': " << ex);
         ++m_CntErrWrites[size_index];
+        if (key_info)
+            key_info->size = Uint8(-1);
     }
 }
 
@@ -414,14 +416,15 @@ CReplayThread::x_GetBlob(Uint8 key_id)
 
         auto_ptr<IReader> reader(m_NC.GetData(key_info->key, &blob_size));
         if (!reader.get()) {
-            if (!key_info->md5.empty()) {
-                ERR_POST("Blob " << key_info->key << " not found");
-                key_info->md5.resize(0);
+            if (!key_info->md5.empty()  &&  key_info->size != Uint8(-1)) {
+                ERR_POST(Warning << "Blob " << key_info->key << " not found");
                 ++m_CntNotFound[size_index];
             }
+            key_info->md5.resize(0);
+            key_info->size = Uint8(-1);
             return;
         }
-        if (blob_size != key_info->size) {
+        if (key_info->size != Uint8(-1)  &&  blob_size != key_info->size) {
             ERR_POST("Blob " << key_info->key << " has incorrect size "
                      << blob_size << " (expected " << key_info->size << ")");
             ++m_CntErrReads[size_index];
@@ -442,7 +445,7 @@ CReplayThread::x_GetBlob(Uint8 key_id)
         }
 
         string hash = md5.GetHexSum();
-        if (hash != key_info->md5) {
+        if (key_info->size != Uint8(-1)  &&  hash != key_info->md5) {
             ERR_POST("Blob " << key_info->key << " has wrong md5 hash");
             ++m_CntErrReads[size_index];
         }
@@ -574,6 +577,8 @@ CLogsReplayApp::Init(void)
 int
 CLogsReplayApp::Run(void)
 {
+    SetDiagPostLevel(eDiag_Warning);
+
     const CArgs& args = GetArgs();
     s_InFile = args["in_file_prefix"].AsString();
     int n_files = args["n_files"].AsInteger();
