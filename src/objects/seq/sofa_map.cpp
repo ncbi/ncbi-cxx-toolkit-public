@@ -50,6 +50,7 @@ void CSofaMap::x_Init()
     m_Map[ GT( e_Rna, eSubtype_mRNA ) ]         = SofaType( 234, "mRNA" );
     m_Map[ GT( e_Rna, eSubtype_ncRNA ) ]        = SofaType( 655, "ncRNA" );
     m_Map[ GT( e_Rna, eSubtype_otherRNA ) ]     = SofaType( 673, "transcript" );
+    m_Map[ GT( e_Rna, eSubtype_preRNA ) ]       = SofaType( 185, "primary_transcript" );
     m_Map[ GT( e_Rna, eSubtype_rRNA ) ]         = SofaType( 252, "rRNA" );
     m_Map[ GT( e_Rna, eSubtype_scRNA ) ]        = SofaType( 13, "scRNA" );
     m_Map[ GT( e_Rna, eSubtype_snRNA ) ]        = SofaType( 274, "snRNA" );
