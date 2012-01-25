@@ -129,6 +129,9 @@ public:
     /// Controlled by CParam(section="Log", entry="PerfLogging", default=false)
     static bool IsON(void);
 
+    /// Turn performance logging on/off globally.
+    static void SetON(bool enable = true);
+
 private:
     bool x_CheckValidity(const CTempString& err_msg) const;
     friend class CPerfLogGuard;

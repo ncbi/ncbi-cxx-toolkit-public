@@ -60,6 +60,12 @@ bool CPerfLogger::IsON(void)
     return TPerfLogging::GetDefault();
 }
 
+
+void CPerfLogger::SetON(bool enable) {
+    TPerfLogging::SetDefault(enable);
+}
+
+
 CDiagContext_Extra CPerfLogger::Post(int         status,
                                      CTempString resource,
                                      CTempString status_msg)
