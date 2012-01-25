@@ -970,7 +970,7 @@ CNCMessageHandler::OnTimeout(void)
 {
     CDiagnosticsGuard guard(this);
 
-    INFO_POST(Info << "Inactivity timeout expired, closing connection");
+    //INFO_POST(Info << "Inactivity timeout expired, closing connection");
     if (m_CmdCtx)
         m_CmdCtx->SetRequestStatus(eStatus_CmdTimeout);
     else if (m_ConnCtx)

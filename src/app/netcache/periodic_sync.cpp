@@ -1009,8 +1009,6 @@ CNCActiveSyncControl::ExecuteSyncTask(const SSyncTaskInfo& task_info,
     case eSynNeedFinalize:
         x_DoFinalize(conn);
         break;
-    case eSynNoTask:
-        abort();
     default:
         abort();
     }
