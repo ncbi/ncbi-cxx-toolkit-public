@@ -111,7 +111,8 @@ protected:
 
     virtual bool x_WriteFeatureRecords(
         const CGff3WriteRecordFeature&,
-        const CSeq_loc& );
+        const CSeq_loc&,
+        unsigned int );
 
     string x_GetParentId(
         CMappedFeat );

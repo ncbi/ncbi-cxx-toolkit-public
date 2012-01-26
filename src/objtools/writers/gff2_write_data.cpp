@@ -245,24 +245,6 @@ string CGffWriteRecord::StrAttributes() const
 }
 
 //  ----------------------------------------------------------------------------
-bool CGffWriteRecord::NeedsQuoting(
-    const string& str ) const
-//  ----------------------------------------------------------------------------
-{
-    if( str.empty() )
-		return true;
-
-	for ( size_t u=0; u < str.length(); ++u ) {
-        if ( str[u] == '\"' )
-			return false;
-		if ( str[u] == ' ' || str[u] == ';' || str[u] == ':' || str[u] == '=' ) {
-            return true;
-        }
-    }
-    return false;
-}
-
-//  ----------------------------------------------------------------------------
 void CGffWriteRecord::x_StrAttributesAppendValue(
     const string& strKey,
     const string& attr_separator,
@@ -277,9 +259,6 @@ void CGffWriteRecord::x_StrAttributesAppendValue(
     }
     string strValue;
     vector<string> tags = it->second;
-    if (strKey == "Parent"  &&  tags.size() > 1) {
-        cerr << "";
-    }
     for ( vector<string>::iterator pTag = tags.begin(); pTag != tags.end(); pTag++ ) {
         if ( !strValue.empty() ) {
             strValue += multivalue_separator;
@@ -303,7 +282,9 @@ void CGffWriteRecord::x_StrAttributesAppendValue(
 
 //  ----------------------------------------------------------------------------
 bool CGffWriteRecord::CorrectLocation(
-    const CSeq_interval& interval ) 
+    const CGffWriteRecord& parent,
+    const CSeq_interval& interval,
+    unsigned int seqLength ) 
 //  ----------------------------------------------------------------------------
 {
     if ( interval.CanGetFrom() ) {
@@ -319,6 +300,15 @@ bool CGffWriteRecord::CorrectLocation(
         else {
             *m_peStrand = interval.GetStrand();
         }
+    }
+
+    unsigned int parentStart = parent.m_uSeqStart;
+    unsigned int parentStop = parent.m_uSeqStop;
+    if (m_uSeqStart < parentStart  &&  m_uSeqStart+seqLength <= parentStop) {
+        m_uSeqStart += seqLength;
+    }
+    if (m_uSeqStop < parentStart  &&  m_uSeqStop+seqLength <= parentStop) {
+        m_uSeqStop += seqLength;
     }
     return true; 
 }

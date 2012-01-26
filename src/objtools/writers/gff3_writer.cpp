@@ -461,7 +461,8 @@ bool CGff3Writer::x_WriteFeatureTrna(
         pParent->ForceAttributeID( 
             string( "rna" ) + NStr::UIntToString( m_uPendingTrnaId ) );
     }
-    if (!x_WriteFeatureRecords( *pParent, mf.GetLocation() ) ) {
+    if (!x_WriteFeatureRecords( 
+            *pParent, mf.GetLocation(), fc.BioseqHandle().GetInst().GetLength() ) ) {
         return false;
     }
 
@@ -473,6 +474,10 @@ bool CGff3Writer::x_WriteFeatureTrna(
         return false;
     }
     const CSeq_loc& PackedInt = *pRna->GetCircularLocation();
+    unsigned int seqLength = 0;
+    if (CWriteUtil::IsSequenceCircular(fc.BioseqHandle())) {
+        seqLength = fc.BioseqHandle().GetInst().GetLength();
+    }
 
     if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
         const list< CRef< CSeq_interval > >& sublocs = PackedInt.GetPacked_int().Get();
@@ -483,7 +488,7 @@ bool CGff3Writer::x_WriteFeatureTrna(
                 new CGff3WriteRecordFeature( *pRna ) );
             pChild->CorrectType("exon");
             pChild->AssignParent(*pRna);
-            pChild->CorrectLocation( subint );
+            pChild->CorrectLocation( *pRna, subint, seqLength );
             pChild->ForceAttributeID(
                 string("id") + NStr::UIntToString(m_uPendingGenericId++));
             if ( ! x_WriteRecord( pChild ) ) {
@@ -503,13 +508,18 @@ bool CGff3Writer::x_WriteFeatureGene(
     CRef<CGff3WriteRecordFeature> pRecord( 
         new CGff3WriteRecordFeature( 
             fc,
-            string( "gene" ) + NStr::UIntToString( m_uPendingGeneId++ ) ) );
+            string("gene") + NStr::UIntToString(m_uPendingGeneId++)));
 
-    if ( ! pRecord->AssignFromAsn( mf ) ) {
+    if (!pRecord->AssignFromAsn(mf)) {
         return false;
     }
-    m_GeneMap[ mf ] = pRecord;
-    return x_WriteFeatureRecords( *pRecord, *pRecord->GetCircularLocation() );
+    m_GeneMap[mf] = pRecord;
+
+    unsigned int seqLength = 0;
+    if (CWriteUtil::IsSequenceCircular(fc.BioseqHandle())) {
+        seqLength = fc.BioseqHandle().GetInst().GetLength();
+    }
+    return x_WriteFeatureRecords(*pRecord, *pRecord->GetCircularLocation(), 0);
 }
 
 //  ----------------------------------------------------------------------------
@@ -548,6 +558,10 @@ bool CGff3Writer::x_WriteFeatureCds(
 //        iTotSize = iPhase-3;
         iPhase = 3-iPhase;
     }
+    unsigned int seqLength = 0;
+    if (CWriteUtil::IsSequenceCircular(fc.BioseqHandle())) {
+        seqLength = fc.BioseqHandle().GetInst().GetLength();
+    }
     if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
         list< CRef< CSeq_interval > > sublocs( PackedInt.GetPacked_int().Get() );
         list< CRef< CSeq_interval > >::const_iterator it;
@@ -555,7 +569,7 @@ bool CGff3Writer::x_WriteFeatureCds(
             const CSeq_interval& subint = **it;
             CRef<CGff3WriteRecordFeature> pExon( new CGff3WriteRecordFeature( *pCds ) );
             pExon->CorrectType( "CDS" );
-            pExon->CorrectLocation( subint );
+            pExon->CorrectLocation(*pCds, subint, seqLength);
             pExon->CorrectPhase( bStrandAdjust ? (3-iPhase) : iPhase );
             pExon->ForceAttributeID( string( "cds" ) + NStr::UIntToString( m_uPendingCdsId ) );
             if ( ! x_WriteRecord( pExon ) ) {
@@ -600,7 +614,10 @@ bool CGff3Writer::x_WriteFeatureRna(
     }    
 
     const CSeq_loc& PackedInt = *pRna->GetCircularLocation();
-
+    unsigned int seqLength = 0;
+    if (CWriteUtil::IsSequenceCircular(fc.BioseqHandle())) {
+        seqLength = fc.BioseqHandle().GetInst().GetLength();
+    }
     if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
         const list< CRef< CSeq_interval > >& sublocs = PackedInt.GetPacked_int().Get();
         list< CRef< CSeq_interval > >::const_iterator it;
@@ -610,7 +627,7 @@ bool CGff3Writer::x_WriteFeatureRna(
                 new CGff3WriteRecordFeature( *pRna ) );
             pChild->CorrectType("exon");
             pChild->AssignParent(*pRna);
-            pChild->CorrectLocation( subint );
+            pChild->CorrectLocation( *pRna, subint, seqLength );
             pChild->ForceAttributeID(
                 string("id") + NStr::UIntToString(m_uPendingGenericId++));
             pChild->DropAttribute( "Name" ); //explicitely not inherited
@@ -649,13 +666,15 @@ bool CGff3Writer::x_WriteFeatureGeneric(
             pParent->AssignParent( *( it->second ) );
         }
     }
-    return x_WriteFeatureRecords( *pParent, mf.GetLocation() );
+    return x_WriteFeatureRecords( 
+        *pParent, mf.GetLocation(), fc.BioseqHandle().GetInst().GetLength() );
 }
 
 //  ============================================================================
 bool CGff3Writer::x_WriteFeatureRecords(
     const CGff3WriteRecordFeature& record,
-    const CSeq_loc& location )
+    const CSeq_loc& location,
+    unsigned int seqLength )
 //  ============================================================================
 {
     CRef< CSeq_loc > pPackedInt( new CSeq_loc( CSeq_loc::e_Mix ) );
@@ -669,7 +688,7 @@ bool CGff3Writer::x_WriteFeatureRecords(
             const CSeq_interval& subint = **it;
             CRef<CGff3WriteRecordFeature> pChild( 
                 new CGff3WriteRecordFeature( record ) );
-            pChild->CorrectLocation( subint );
+            pChild->CorrectLocation( record, subint, seqLength );
             if ( ! x_WriteRecord( pChild ) ) {
                 return false;
             }

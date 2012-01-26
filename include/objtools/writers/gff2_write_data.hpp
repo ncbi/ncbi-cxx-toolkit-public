@@ -38,6 +38,7 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/util/feature.hpp>
 
+#include <objtools/writers/write_util.hpp>
 #include <objtools/writers/feature_context.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -64,7 +65,9 @@ public:
     //  Input/output:
     //
     virtual bool CorrectLocation(
-        const CSeq_interval& );
+        const CGffWriteRecord&,
+        const CSeq_interval&,
+        unsigned int );
 
     bool CorrectType(
         const string& strType ) {
@@ -106,7 +109,7 @@ public:
         const string& );
 
     virtual bool NeedsQuoting(
-        const string& ) const;
+        const string& str) const {return CWriteUtil::NeedsQuoting(str);};
 
 protected:
     virtual void x_StrAttributesAppendValue(

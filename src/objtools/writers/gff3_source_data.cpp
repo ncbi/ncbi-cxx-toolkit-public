@@ -83,8 +83,7 @@ bool CGff3SourceRecord::AssignData(
     if ( ! x_AssignBiosrcAttributes( bs ) ) {
         return false;
     }
-    if ( bsh.IsSetInst_Topology() && 
-            bsh.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
+    if ( CWriteUtil::IsSequenceCircular(bsh)) {
        SetAttribute("is_circular", "true");
     }
 

@@ -540,6 +540,36 @@ bool CWriteUtil::IsLocationOrdered(
 }
     
 //  ----------------------------------------------------------------------------
+bool CWriteUtil::IsSequenceCircular(
+    CBioseq_Handle bsh)
+//  ----------------------------------------------------------------------------
+{
+    if (!bsh  ||  !bsh.IsSetInst_Topology()  
+              ||  bsh.GetInst_Topology() != CSeq_inst::eTopology_circular) {
+        return false;
+    }
+    return true;
+}
+    
+//  ----------------------------------------------------------------------------
+bool CWriteUtil::NeedsQuoting(
+    const string& str )
+//  ----------------------------------------------------------------------------
+{
+    if(str.empty())
+		return true;
+
+	for (size_t u=0; u < str.length(); ++u) {
+        if (str[u] == '\"')
+			return false;
+		if (str[u] == ' ' || str[u] == ';' || str[u] == ':' || str[u] == '=') {
+            return true;
+        }
+    }
+    return false;
+}
+
+//  ----------------------------------------------------------------------------
 void CWriteUtil::ChangeToPackedInt(
     CSeq_loc& loc)
 //  Special mission:

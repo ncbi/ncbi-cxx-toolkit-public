@@ -271,7 +271,8 @@ bool CGff2Writer::x_WriteFeature(
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
             CRef<CGffWriteRecord> pChild( new CGffWriteRecord( *pParent ) );
-            pChild->CorrectLocation( subint );
+            pChild->CorrectLocation( *pParent, subint,
+                context.BioseqHandle().GetInst().GetLength() );
             if ( ! x_WriteRecord( pChild ) ) {
                 return false;
             }
@@ -358,7 +359,7 @@ bool CGff2Writer::x_WriteTrackLine(
         }
         string strKey = (*cit)->GetLabel().GetStr();
         string strValue = (*cit)->GetData().GetStr();
-        if ( CGffWriteRecord().NeedsQuoting( strValue ) ) {
+        if ( CWriteUtil::NeedsQuoting( strValue ) ) {
             strValue = string( "\"" ) + strValue + string( "\"" );
         }
         strTrackLine += " ";

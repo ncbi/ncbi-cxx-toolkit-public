@@ -145,8 +145,7 @@ bool CGff3WriteRecordFeature::AssignFromAsn(
     CWriteUtil::ChangeToPackedInt(*m_pLoc);
 
     CBioseq_Handle bsh = m_fc.BioseqHandle();
-    if (!bsh  ||  !bsh.IsSetInst_Topology()  
-              ||  bsh.GetInst_Topology() != CSeq_inst::eTopology_circular) {
+    if (!CWriteUtil::IsSequenceCircular(bsh)) {
         return CGffWriteRecordFeature::AssignFromAsn(mf);
     }
 
@@ -212,7 +211,13 @@ bool CGff3WriteRecordFeature::x_AssignStop(
 //  ----------------------------------------------------------------------------
 {
     if ( m_pLoc ) {
-        m_uSeqStop = m_pLoc->GetStop( eExtreme_Positional );;
+        m_uSeqStop = m_pLoc->GetStop( eExtreme_Positional );
+        if (m_uSeqStop < m_pLoc->GetStart(eExtreme_Positional)) {
+            CBioseq_Handle bsh = m_fc.BioseqHandle();
+            if (CWriteUtil::IsSequenceCircular(bsh)) {
+                m_uSeqStop += bsh.GetInst().GetLength();
+            }
+        }
     }
     return true;
 }
@@ -1196,14 +1201,6 @@ void CGff3WriteRecordFeature::ForceAttributeID(
     DropAttribute("ID");
     SetAttribute("ID", strId);
 }  
-
-//  ----------------------------------------------------------------------------
-bool CGff3WriteRecordFeature::NeedsQuoting(
-    const string& str ) const
-//  ----------------------------------------------------------------------------
-{
-    return false;
-}
 
 END_objects_SCOPE
 END_NCBI_SCOPE

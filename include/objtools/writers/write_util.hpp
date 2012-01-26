@@ -112,7 +112,13 @@ public:
     static bool IsLocationOrdered(
         const CSeq_loc& );
 
+    static bool IsSequenceCircular(
+        CBioseq_Handle );
+
     static string UrlEncode(
+        const string& );
+
+    static bool NeedsQuoting(
         const string& );
 
     static void ChangeToPackedInt(
