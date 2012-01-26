@@ -34,7 +34,7 @@ for base in $bases; do
     tool="datatool"
     asn="$base/all.asn"
 
-    for i in "-t Seq-entry -d $d/set.bin" "-d $d/set.bin" "-v $d/set.ent" "-vx $d/set.xml"; do
+    for i in "-t Seq-entry -d $d/set.bin" "-v $d/set.ent" "-vx $d/set.xml"; do
         do_test "$i -e" set.bin "$@"
         do_test "$i -p" set.ent "$@"
         do_test "$i -px" set.xml "$@"
