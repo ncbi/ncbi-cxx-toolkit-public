@@ -600,7 +600,8 @@ static bool x_IsBadSRAFormat (
 
     if (str.length() < 9) return true;
 
-    if (str [0] != 'S') return true;
+    ch = str [0];
+    if (ch != 'S' && ch != 'D' && ch != 'E') return true;
     ch = str [1];
     if (! isupper (ch)) return true;
     ch = str [2];
