@@ -73,4 +73,7 @@ Corrected code generation for SET OF SEQUENCE data type.
 When converting multiple data objects from one format to another, added data type verification.
 Added generation of serialization operators for Alias type objects.
 
+January 25, 2012
+version 2.4.3
+Bug fix release
 
