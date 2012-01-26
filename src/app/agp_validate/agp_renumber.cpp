@@ -89,6 +89,11 @@ public:
     if( code==W_GapLineMissingCol9 ) had_missing_tab=true;
     CAgpErr::Msg(code, details, appliesTo);
   }
+  // copied from CAgpErr - only to get rid of the pointless compiler warning
+  virtual void Msg(int code, int appliesTo=fAtThisLine)
+  {
+    Msg(code, NcbiEmptyString, appliesTo);
+  }
 };
 
 class CAgpRenumber : public CAgpReader
