@@ -138,6 +138,15 @@ s_SeqDbGetMaxLength(void* seqdb_handle, void*)
     return seqdb.GetMaxLength();
 }
 
+/// Retrieves the length of the shortest sequence in the BlastSeqSrc.
+/// @param seqdb_handle Pointer to initialized CSeqDB object [in]
+static Int4 
+s_SeqDbGetMinLength(void* seqdb_handle, void*)
+{
+    CSeqDB & seqdb = **(TSeqDBData *) seqdb_handle;
+    return seqdb.GetMinLength();
+}
+
 /// Setting number of threads in MT mode
 /// @param n_threads number of threads [in]
 static void
@@ -616,6 +625,7 @@ s_InitNewSeqDbSrc(BlastSeqSrc* retval, TSeqDBData * datap)
     _BlastSeqSrcImpl_SetGetNumSeqs    (retval, & s_SeqDbGetNumSeqs);
     _BlastSeqSrcImpl_SetGetNumSeqsStats(retval, & s_SeqDbGetNumSeqsStats);
     _BlastSeqSrcImpl_SetGetMaxSeqLen  (retval, & s_SeqDbGetMaxLength);
+    _BlastSeqSrcImpl_SetGetMinSeqLen  (retval, & s_SeqDbGetMinLength);
     _BlastSeqSrcImpl_SetGetAvgSeqLen  (retval, & s_SeqDbGetAvgLength);
     _BlastSeqSrcImpl_SetGetTotLen     (retval, & s_SeqDbGetTotLen);
     _BlastSeqSrcImpl_SetGetTotLenStats(retval, & s_SeqDbGetTotLenStats);

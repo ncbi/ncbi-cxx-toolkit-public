@@ -2033,6 +2033,11 @@ int CSeqDBVol::GetMaxLength() const
     return m_Idx->GetMaxLength();
 }
 
+int CSeqDBVol::GetMinLength() const
+{
+    return m_Idx->GetMinLength();
+}
+
 bool CSeqDBVol::PigToOid(int pig, int & oid, CSeqDBLockHold & locked) const
 {
     if (!m_PigFileOpened) x_OpenPigFile(locked);

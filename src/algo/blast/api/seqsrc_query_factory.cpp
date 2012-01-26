@@ -65,6 +65,7 @@ public:
     ~CQueryFactoryInfo();
     /// Setter and getter functions for the private fields
     Uint4 GetMaxLength();
+    Uint4 GetMinLength();
     Uint4 GetAvgLength();
     void SetAvgLength(Uint4 val);
     bool GetIsProtein();
@@ -74,6 +75,7 @@ private:
     bool m_IsProt; ///< Are these sequences protein or nucleotide? 
     vector<BLAST_SequenceBlk*> m_SeqBlkVector; ///< Vector of sequence blocks
     unsigned int m_MaxLength; ///< Length of the longest sequence in this set
+    unsigned int m_MinLength; ///< Length of the longest sequence in this set
     unsigned int m_AvgLength; ///< Average length of sequences in this set
     /// local query data obtained from the query factory
     CRef<IBlastQuerySource> m_QuerySource;
@@ -84,7 +86,7 @@ private:
 CQueryFactoryInfo::CQueryFactoryInfo(CRef<IQueryFactory> query_factory, 
                                      EBlastProgramType program)
 : m_IsProt(Blast_SubjectIsProtein(program) ? true : false), m_MaxLength(0),
-      m_AvgLength(0), m_QuerySource(0), m_NumSeqs(0)
+      m_MinLength(1), m_AvgLength(0), m_QuerySource(0), m_NumSeqs(0)
 {
     CRef<IRemoteQueryData> query_data(query_factory->MakeRemoteQueryData());
     CRef<CBioseq_set> bss(query_data->GetBioseqSet());
@@ -95,6 +97,7 @@ CQueryFactoryInfo::CQueryFactoryInfo(CRef<IQueryFactory> query_factory,
                    "Failed to initialize sequences for IQueryFactory");
     }
 
+    // TODO support for m_MinLength
     SetupSubjects_OMF(*m_QuerySource, program, &m_SeqBlkVector, &m_MaxLength);
     m_NumSeqs = static_cast<Uint4>(m_QuerySource->Size());
     _ASSERT(!m_SeqBlkVector.empty());
@@ -103,7 +106,7 @@ CQueryFactoryInfo::CQueryFactoryInfo(CRef<IQueryFactory> query_factory,
 CQueryFactoryInfo::CQueryFactoryInfo(const TSeqLocVector& subj_seqs,
                                      EBlastProgramType program)
 : m_IsProt(Blast_SubjectIsProtein(program) ? true : false), m_MaxLength(0),
-      m_AvgLength(0), m_QuerySource(0), m_NumSeqs(subj_seqs.size())
+      m_MinLength(1), m_AvgLength(0), m_QuerySource(0), m_NumSeqs(subj_seqs.size())
 {
     // Fix subject location for tblast[nx].  
     if (Blast_SubjectIsTranslated(program))
@@ -161,6 +164,12 @@ inline Uint4 CQueryFactoryInfo::GetMaxLength()
     return m_MaxLength;
 }
 
+/// Returns minimal length of a set of sequences
+inline Uint4 CQueryFactoryInfo::GetMinLength()
+{
+    return m_MinLength;
+}
+
 /// Returns average length
 inline Uint4 CQueryFactoryInfo::GetAvgLength()
 {
@@ -211,6 +220,17 @@ s_QueryFactoryGetMaxLength(void* multiseq_handle, void*)
         static_cast<CRef<CQueryFactoryInfo>*>(multiseq_handle);
     _ASSERT(seq_info);
     return (*seq_info)->GetMaxLength();
+}
+
+/// Retrieves the length of the longest sequence in the BlastSeqSrc.
+/// @param multiseq_handle Pointer to the structure containing sequences [in]
+static Int4 
+s_QueryFactoryGetMinLength(void* multiseq_handle, void*)
+{
+    CRef<CQueryFactoryInfo>* seq_info = 
+        static_cast<CRef<CQueryFactoryInfo>*>(multiseq_handle);
+    _ASSERT(seq_info);
+    return (*seq_info)->GetMinLength();
 }
 
 /// Retrieves the average length of the sequence in the BlastSeqSrc.
@@ -498,6 +518,7 @@ s_QueryFactorySrcNew(BlastSeqSrc* retval, void* args)
     _BlastSeqSrcImpl_SetGetNumSeqs(retval, &s_QueryFactoryGetNumSeqs);
     _BlastSeqSrcImpl_SetGetNumSeqsStats(retval, &s_QueryFactoryGetNumSeqsStats);
     _BlastSeqSrcImpl_SetGetMaxSeqLen(retval, &s_QueryFactoryGetMaxLength);
+    _BlastSeqSrcImpl_SetGetMinSeqLen(retval, &s_QueryFactoryGetMinLength);
     _BlastSeqSrcImpl_SetGetAvgSeqLen(retval, &s_QueryFactoryGetAvgLength);
     _BlastSeqSrcImpl_SetGetTotLen(retval, &s_QueryFactoryGetTotLen);
     _BlastSeqSrcImpl_SetGetTotLenStats(retval, &s_QueryFactoryGetTotLenStats);

@@ -41,6 +41,7 @@
 
 #include "seqdbvol.hpp"
 #include "seqdbfilter.hpp"
+#include <algo/blast/core/ncbi_std.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -523,6 +524,17 @@ public:
         }
 
         return max_len;
+    }       
+    
+    int GetMinLength() const
+    {
+        int min_len = INT4_MAX;
+
+        for(int index = 0; index < (int) m_VolList.size(); index++) {
+            min_len = min( min_len, m_VolList[index].Vol()->GetMinLength());
+        }
+
+        return min_len;
     }       
     
     /// Optimize the GI list configuration.

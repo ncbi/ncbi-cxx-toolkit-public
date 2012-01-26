@@ -237,9 +237,11 @@ void testRawCutoffs(CBl2Seq& blaster, EProgram program,
         gap_trigger = 19;
         break;
     case eBlastp_129295_129295:
+        gap_trigger = 19; break;
     case eTblastn_129295_555:
+        gap_trigger = 23; break;
     case eTblastn_129295_555_large_word:
-        gap_trigger = 20; break;
+        gap_trigger = 23; break;
     case eBlastp_129295_7662354:
         gap_trigger = 23; break;
     case eBlastx_555_129295:
@@ -419,9 +421,9 @@ void testBlastHitCounts(CBl2Seq& blaster, EBl2seqTest test_id)
     case eTblastn_129295_555_large_word:
         BOOST_CHECK_EQUAL(5, (int)ungapped_stats->lookup_hits);
         BOOST_CHECK_EQUAL(4, ungapped_stats->init_extends);
-        BOOST_CHECK_EQUAL(2, ungapped_stats->good_init_extends);
-        BOOST_CHECK_EQUAL(2, gapped_stats->extensions);
-        BOOST_CHECK_EQUAL(2, gapped_stats->good_extensions);
+        BOOST_CHECK_EQUAL(1, ungapped_stats->good_init_extends);
+        BOOST_CHECK_EQUAL(1, gapped_stats->extensions);
+        BOOST_CHECK_EQUAL(1, gapped_stats->good_extensions);
         break;
     case eTblastx_555_555:
         BOOST_CHECK_EQUAL(2590, (int)ungapped_stats->lookup_hits);
@@ -478,8 +480,8 @@ void testBlastHitCounts(CBl2Seq& blaster, EBl2seqTest test_id)
         // (changed blastp defaults)
         BOOST_CHECK_EQUAL(3939, (int)ungapped_stats->lookup_hits);
         BOOST_CHECK_EQUAL(159, ungapped_stats->init_extends);
-        BOOST_CHECK_EQUAL(59, ungapped_stats->good_init_extends);
-        BOOST_CHECK_EQUAL(25, gapped_stats->extensions);
+        BOOST_CHECK_EQUAL(63, ungapped_stats->good_init_extends);
+        BOOST_CHECK_EQUAL(27, gapped_stats->extensions);
         BOOST_CHECK_EQUAL(24, gapped_stats->good_extensions);
         break;
     case eTblastn_oof:
@@ -611,14 +613,14 @@ BOOST_AUTO_TEST_CASE(TBlastn2SeqsRevStrand1)
 
     CBl2Seq blaster(*query, *subj, eTblastn);
     TSeqAlignVector sav(blaster.Run());
-    BOOST_CHECK_EQUAL(12, (int) sav[0]->Get().size());
+    BOOST_CHECK_EQUAL(11, (int) sav[0]->Get().size());
     CRef<CSeq_align> sar = *(sav[0]->Get().begin());
     BOOST_CHECK_EQUAL(1, (int)sar->GetSegs().GetStd().size());
     vector < CRef< CSeq_loc > > locs = sar->GetSegs().GetStd().front()->GetLoc();
     BOOST_CHECK_EQUAL((int)eNa_strand_minus, (int)(locs[1])->GetStrand());
     int num_ident = 0;
     sar->GetNamedScore(CSeq_align::eScore_IdentityCount, num_ident);
-    BOOST_CHECK_EQUAL(155, num_ident);
+    BOOST_CHECK_EQUAL(161, num_ident);
 #if 0
 ofstream o("minus1.new.asn");
 ITERATE(TSeqAlignVector, v, sav) {
@@ -638,7 +640,7 @@ BOOST_AUTO_TEST_CASE(TBlastn2SeqsRevStrand2)
 
     CBl2Seq blaster(*query, *subj, eTblastn);
     TSeqAlignVector sav(blaster.Run());
-    BOOST_CHECK_EQUAL(2, (int) sav[0]->Get().size());
+    BOOST_CHECK_EQUAL(1, (int) sav[0]->Get().size());
     CRef<CSeq_align> sar = *(sav[0]->Get().begin());
     BOOST_CHECK_EQUAL(1, (int)sar->GetSegs().GetStd().size());
     vector < CRef< CSeq_loc > > locs = sar->GetSegs().GetStd().front()->GetLoc();
@@ -707,7 +709,7 @@ BOOST_AUTO_TEST_CASE(TBlastn2SeqsLargeWord)
 
     CBl2Seq blaster(*query, *subj, *opts);
     TSeqAlignVector sav(blaster.Run());
-    BOOST_CHECK_EQUAL(2, (int)sav[0]->Size());
+    BOOST_CHECK_EQUAL(1, (int)sav[0]->Size());
     testBlastHitCounts(blaster, eTblastn_129295_555_large_word);
     testRawCutoffs(blaster, eTblastn, eTblastn_129295_555_large_word);
 
@@ -1690,7 +1692,7 @@ BOOST_AUTO_TEST_CASE(TBlastx2Seqs_QueryMinusStrand) {
 
 
 BOOST_AUTO_TEST_CASE(TblastxManyHits) {
-    const int total_num_hsps = 50;
+    const int total_num_hsps = 49;
     const int num_hsps_to_check = 8;
     const int score_array[num_hsps_to_check] = 
         { 947, 125, 820, 113, 624, 221, 39, 778};
@@ -2242,7 +2244,7 @@ BOOST_AUTO_TEST_CASE(TblastnOutOfFrame2) {
     CBl2Seq blaster(*query, *subj, *opts);
     TSeqAlignVector sav(blaster.Run());
     CRef<CSeq_align> sar = *(sav[0]->Get().begin());
-    BOOST_REQUIRE_EQUAL(5, (int)sav[0]->Size());
+    BOOST_REQUIRE_EQUAL(3, (int)sav[0]->Size());
 
     // test fix for a bug generating OOF traceback
 
@@ -2251,7 +2253,7 @@ BOOST_AUTO_TEST_CASE(TblastnOutOfFrame2) {
     ITERATE(CSeq_align::TScore, itr, seqalign.GetScore()) {
         BOOST_REQUIRE((*itr)->IsSetId());
         if ((*itr)->GetId().GetStr() == "num_ident") {
-            BOOST_REQUIRE_EQUAL(55, (*itr)->GetValue().GetInt());
+            BOOST_REQUIRE_EQUAL(80, (*itr)->GetValue().GetInt());
             break;
         }
     }

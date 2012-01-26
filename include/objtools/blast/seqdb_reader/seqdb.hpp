@@ -267,7 +267,7 @@ public:
                                           sizeof(value_type));
                 if ( !reallocation ) {
                     string msg("Failed to allocate ");
-                    msg += NStr::NumericToString(num_elements + 1) + " elements";
+                    msg += NStr::SizetToString(num_elements + 1) + " elements";
                     NCBI_THROW(CSeqDBException, eMemErr, msg);
                 }
                 _data = (TSeqPos*) reallocation;
@@ -793,6 +793,12 @@ public:
     /// or alias files.  This might be used to chose buffer sizes.
     int GetMaxLength() const;
     
+    /// Returns the length of the shortest sequence in the database.
+    ///
+    /// This uses summary information stored in the database volumes
+    /// or alias files.  This might be used to chose cutoff score.
+    int GetMinLength() const;
+
     /// Returns a sequence iterator.
     ///
     /// This gets an iterator designed to allow traversal of the

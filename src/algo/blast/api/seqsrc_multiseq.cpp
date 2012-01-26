@@ -204,6 +204,22 @@ s_MultiSeqGetMaxLength(void* multiseq_handle, void*)
 /// Retrieves the length of the longest sequence in the BlastSeqSrc.
 /// @param multiseq_handle Pointer to the structure containing sequences [in]
 static Int4 
+s_MultiSeqGetMinLength(void* multiseq_handle, void*)
+{
+    Int4 retval = INT4_MAX;
+    Uint4 index;
+    CRef<CMultiSeqInfo>* seq_info =
+        static_cast<CRef<CMultiSeqInfo>*>(multiseq_handle);
+
+    for (index=0; index<(*seq_info)->GetNumSeqs(); ++index)
+        retval = MIN(retval, (*seq_info)->GetSeqBlk(index)->length);
+
+    return retval;
+}
+
+/// Retrieves the length of the longest sequence in the BlastSeqSrc.
+/// @param multiseq_handle Pointer to the structure containing sequences [in]
+static Int4 
 s_MultiSeqGetAvgLength(void* multiseq_handle, void*)
 {
     Int8 total_length = 0;
@@ -491,6 +507,7 @@ s_MultiSeqSrcNew(BlastSeqSrc* retval, void* args)
     _BlastSeqSrcImpl_SetGetNumSeqs(retval, &s_MultiSeqGetNumSeqs);
     _BlastSeqSrcImpl_SetGetNumSeqsStats(retval, &s_MultiSeqGetNumSeqsStats);
     _BlastSeqSrcImpl_SetGetMaxSeqLen(retval, &s_MultiSeqGetMaxLength);
+    _BlastSeqSrcImpl_SetGetMinSeqLen(retval, &s_MultiSeqGetMinLength);
     _BlastSeqSrcImpl_SetGetAvgSeqLen(retval, &s_MultiSeqGetAvgLength);
     _BlastSeqSrcImpl_SetGetTotLen(retval, &s_MultiSeqGetTotLen);
     _BlastSeqSrcImpl_SetGetTotLenStats(retval, &s_MultiSeqGetTotLenStats);

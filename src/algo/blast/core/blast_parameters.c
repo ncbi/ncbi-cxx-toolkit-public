@@ -919,7 +919,13 @@ BlastHitSavingParametersUpdate(EBlastProgramType program_number,
             searchsp /= NUM_FRAMES;
    
          /* Get cutoff_score for specified evalue. */
-         BLAST_Cutoffs(&new_cutoff, &evalue, kbp, searchsp, FALSE, 0);
+         if (sbp->gbp && sbp->gbp->filled) {
+             new_cutoff = BLAST_SpougeEtoS(evalue, kbp, sbp->gbp, 
+                         query_info->contexts[context].query_length,
+                         avg_subject_length);
+         } else {
+             BLAST_Cutoffs(&new_cutoff, &evalue, kbp, searchsp, FALSE, 0);
+         }
          params->cutoffs[context].cutoff_score = new_cutoff;
          params->cutoffs[context].cutoff_score_max = new_cutoff;
       }

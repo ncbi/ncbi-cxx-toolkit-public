@@ -489,6 +489,17 @@ public:
     /// Get the number of sequences available
     ///
     /// This iterates this node and possibly subnodes of it to compute
+    /// the shortest sequence length.
+    ///
+    /// @param volset
+    ///   The set of database volumes
+    /// @return
+    ///   The shortest sequence length
+    Int4 GetMinLength(const CSeqDBVolSet & volset) const;
+
+    /// Get the number of sequences available
+    ///
+    /// This iterates this node and possibly subnodes of it to compute
     /// the number of sequences available here.  Alias files may
     /// override this value (stopping traversal at that depth).  It is
     /// normally used to provide information on how many OIDs exist
@@ -1040,6 +1051,17 @@ public:
     
     /// Get the number of sequences available
     ///
+    /// This iterates this node and possibly subnodes of it to compute
+    /// the shortest sequence length.
+    ///
+    /// @param volset
+    ///   The set of database volumes
+    /// @return
+    ///   The shortest sequence length
+    Int4 GetMinLength(const CSeqDBVolSet & volset) const;
+
+    /// Get the number of sequences available
+    ///
     /// This iterates the alias node tree to compute the number of
     /// sequences available here.  Alias files may override this value
     /// (stopping traversal at that depth).  It is normally used to
@@ -1252,6 +1274,9 @@ private:
     
     /// True if this is a protein database.
     bool m_IsProtein;
+
+    /// Shortest sequence length
+    mutable Int4 m_MinLength;
     
     /// Number of sequences.
     mutable Int8 m_NumSeqs;

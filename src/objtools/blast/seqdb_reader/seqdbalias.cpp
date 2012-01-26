@@ -33,6 +33,7 @@
 /// Defines classes:
 ///     CSeqDB_TitleWalker 
 ///     CSeqDB_MaxLengthWalker 
+///     CSeqDB_MinLengthWalker 
 ///     CSeqDB_NSeqsWalker 
 ///     CSeqDB_NOIDsWalker 
 ///     CSeqDB_TotalLengthWalker 
@@ -62,6 +63,7 @@ CSeqDBAliasFile::CSeqDBAliasFile(CSeqDBAtlas     & atlas,
                                  bool              expand_links)
     : m_AliasSets        (atlas),
       m_IsProtein        (prot_nucl == 'p'),
+      m_MinLength        (-1),
       m_NumSeqs          (-1),
       m_NumSeqsStats     (-1),
       m_NumOIDs          (-1),
@@ -1108,6 +1110,62 @@ private:
     int m_Value;
 };
 
+class CSeqDB_MinLengthWalker : public CSeqDB_AliasWalker {
+public:
+    /// Constructor
+    CSeqDB_MinLengthWalker()
+    {
+        m_Value = INT4_MAX;
+    }
+    
+    /// This provides the alias file key used for this field.
+    virtual const char * GetFileKey() const
+    {
+        return "MIN_SEQ_LENGTH";
+    }
+    
+    /// Collect data from the volume
+    ///
+    /// If the MAX_SEQ_LENGTH field is not specified in an alias file,
+    /// the maximum values of all contributing volumes is used.
+    ///
+    /// @param vol
+    ///   A database volume
+    virtual void Accumulate(const CSeqDBVol & vol)
+    {
+        int new_min = vol.GetMinLength();
+        
+        if (new_min < m_Value) {
+            m_Value = new_min;
+        }
+    }
+    
+    /// Collect data from an alias file
+    ///
+    /// Values from alias node tree siblings are compared, and the
+    /// maximum value is used as the result.
+    ///
+    /// @param value
+    ///   A database volume
+    virtual void AddString(const string & value)
+    {
+        int new_min = NStr::StringToUInt(value);
+        
+        if (new_min < m_Value) {
+            m_Value = new_min;
+        }
+    }
+    
+    /// Returns the maximum sequence length.
+    int GetMinLength()
+    {
+        return m_Value;
+    }
+    
+private:
+    /// The maximum sequence length.
+    int m_Value;
+};
 
 /// Walker for NSEQ field of alias file
 ///
@@ -1515,6 +1573,13 @@ string CSeqDBAliasNode::GetTitle(const CSeqDBVolSet & volset) const
     return walk.GetTitle();
 }
 
+Int4 CSeqDBAliasNode::GetMinLength(const CSeqDBVolSet & vols) const
+{
+    CSeqDB_MinLengthWalker walk;
+    WalkNodes(& walk, vols);
+
+    return walk.GetMinLength();
+}
 
 Int8 CSeqDBAliasNode::GetNumSeqs(const CSeqDBVolSet & vols) const
 {
@@ -1678,6 +1743,13 @@ string CSeqDBAliasFile::GetTitle(const CSeqDBVolSet & volset) const
     return m_Title;
 }
 
+Int4 CSeqDBAliasFile::GetMinLength(const CSeqDBVolSet & volset) const
+{
+    if (m_MinLength == -1)
+        m_MinLength = m_Node->GetMinLength(volset);
+
+    return m_MinLength;
+}
 
 Int8 CSeqDBAliasFile::GetNumSeqs(const CSeqDBVolSet & volset) const
 {

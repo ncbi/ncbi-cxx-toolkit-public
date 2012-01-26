@@ -796,6 +796,7 @@ void CloneSeqSrc( BlastSeqSrc * dst, BlastSeqSrc * src )
     _BlastSeqSrcImpl_SetGetNumSeqs         ( dst, _BlastSeqSrcImpl_GetGetNumSeqs( src ) );
     _BlastSeqSrcImpl_SetGetNumSeqsStats    ( dst, _BlastSeqSrcImpl_GetGetNumSeqsStats( src ) );
     _BlastSeqSrcImpl_SetGetMaxSeqLen       ( dst, _BlastSeqSrcImpl_GetGetMaxSeqLen( src ) );
+    _BlastSeqSrcImpl_SetGetMinSeqLen       ( dst, _BlastSeqSrcImpl_GetGetMinSeqLen( src ) );
     _BlastSeqSrcImpl_SetGetAvgSeqLen       ( dst, _BlastSeqSrcImpl_GetGetAvgSeqLen( src ) );
     _BlastSeqSrcImpl_SetGetTotLen          ( dst, _BlastSeqSrcImpl_GetGetTotLen( src ) );
     _BlastSeqSrcImpl_SetGetTotLenStats     ( dst, _BlastSeqSrcImpl_GetGetTotLenStats( src ) );
@@ -874,6 +875,15 @@ static Int4 s_IDbGetMaxLength( void * handle, void * x )
     BlastSeqSrc * fw_seqsrc = s_GetForwardSeqSrc( handle );
     void * fw_handle = s_GetForwardSeqDb( handle );
     return _BlastSeqSrcImpl_GetGetMaxSeqLen( fw_seqsrc )( fw_handle, x );
+}
+
+//------------------------------------------------------------------------------
+/** Forwards the call to CIndexedDb::db_. */
+static Int4 s_IDbGetMinLength( void * handle, void * x )
+{
+    BlastSeqSrc * fw_seqsrc = s_GetForwardSeqSrc( handle );
+    void * fw_handle = s_GetForwardSeqDb( handle );
+    return _BlastSeqSrcImpl_GetGetMinSeqLen( fw_seqsrc )( fw_handle, x );
 }
 
 //------------------------------------------------------------------------------
@@ -1068,6 +1078,7 @@ static void s_IDbSrcInit( BlastSeqSrc * retval, CIndexedDb::TThreadLocal * idb )
     _BlastSeqSrcImpl_SetGetNumSeqs         (retval, & s_IDbGetNumSeqs);
     _BlastSeqSrcImpl_SetGetNumSeqsStats    (retval, & s_IDbGetNumSeqsStats);
     _BlastSeqSrcImpl_SetGetMaxSeqLen       (retval, & s_IDbGetMaxLength);
+    _BlastSeqSrcImpl_SetGetMinSeqLen       (retval, & s_IDbGetMinLength);
     _BlastSeqSrcImpl_SetGetAvgSeqLen       (retval, & s_IDbGetAvgLength);
     _BlastSeqSrcImpl_SetGetTotLen          (retval, & s_IDbGetTotLen);
     _BlastSeqSrcImpl_SetGetTotLenStats     (retval, & s_IDbGetTotLenStats);

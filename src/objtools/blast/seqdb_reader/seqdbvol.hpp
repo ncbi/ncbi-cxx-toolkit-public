@@ -441,6 +441,10 @@ public:
     /// Get the length of the largest sequence in this volume.
     /// @return The largest sequence's length.
     int GetMaxLength() const;
+
+    /// Get the length of the smallest sequence in this volume.
+    /// @return The smallest sequence's length.
+    int GetMinLength() const;
     
     /// Get the volume name.
     /// @return The volume name.

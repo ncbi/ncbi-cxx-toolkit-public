@@ -567,6 +567,11 @@ int CSeqDB::GetMaxLength() const
     return m_Impl->GetMaxLength();
 }
 
+int CSeqDB::GetMinLength() const
+{
+    return m_Impl->GetMinLength();
+}
+
 CSeqDB::~CSeqDB()
 {
     m_Impl->Verify();

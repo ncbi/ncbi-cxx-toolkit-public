@@ -631,6 +631,12 @@ public:
     {
         return m_MaxLen;
     }
+
+    /// Get the length of the shortest sequence in this volume.
+    int GetMinLength() const
+    {
+        return m_MinLen;
+    }
     
     /// Release any memory leases temporarily held here.
     void UnLease()
@@ -666,6 +672,9 @@ private:
     
     /// The length of the longest sequence in this volume.
     Uint4 m_MaxLen;
+    
+    /// The length of the shortest sequence in this volume.
+    Uint4 m_MinLen;
     
     // Other pointers and indices
     

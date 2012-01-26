@@ -55,35 +55,30 @@ using namespace ncbi::blast;
 
 void testNuclHitList(const CSeq_align_set& results, ENa_strand strand)
 {
-   const size_t num_hsps_total = 11;
-   const size_t num_hsps_plus = 4;
+   const size_t num_hsps_total = 7;
+   const size_t num_hsps_plus = 2;
    const int scores[num_hsps_total] = 
-     {62, 51, 49, 44, 44, 44, 43, 43, 48, 45, 46};
+     {62, 51, 49, 43, 43, 48, 45};
    const ENa_strand strands[num_hsps_total] = 
    {
        eNa_strand_minus,
        eNa_strand_plus,
        eNa_strand_minus,
-       eNa_strand_minus,
-       eNa_strand_minus,
-       eNa_strand_plus,
        eNa_strand_plus,
        eNa_strand_minus,
        eNa_strand_minus,
-       eNa_strand_minus,
-       eNa_strand_plus
+       eNa_strand_minus
    };
    const int q_offsets[num_hsps_total] =
-      {3244, 1045, 3133, 9204, 3163, 8179, 1090, 1328, 832, 6776, 3633};
+      {3244, 1045, 3133, 1090, 1328, 832, 6776};
    const int s_offsets[num_hsps_total] =
-      {700, 662, 812, 1385, 146, 538, 930, 1340, 1917, 1467, 966};
+      {700, 662, 812, 930, 1340, 1917, 1467};
    const int q_ends[num_hsps_total] =
-      {3430, 1159, 3283, 9300, 3328, 8287, 1174, 1388, 937, 6968, 3759};
+      {3430, 1159, 3283, 1174, 1388, 937, 6968};
    const int s_ends[num_hsps_total] =
-      {761, 699, 861, 1418, 205, 564, 958, 1360, 1952, 1531, 1007};
+      {761, 699, 861, 958, 1360, 1952, 1531};
    const double evalues[num_hsps_total] =
-      {0.0546847, 1.0657, 2.00126, 7.04787, 7.83533, 8.12416, 
-       9.05612, 9.84108, 2.53047, 5.47761, 3.70474};
+      {0.0546847, 1.0657, 2.00126, 9.05612, 9.84108, 2.53047, 5.47761};
 
    // compute the total number of alignments
    size_t num_hsps = results.Size();
@@ -247,10 +242,10 @@ BOOST_AUTO_TEST_CASE(testPreliminarySearch)
     const int kQueryGi = 129295;
     const int kNumHits = 2;
     const int kOids[kNumHits] = { 1, 3 };
-    const int kNumHsps[kNumHits] = { 2, 1 };
-    const int kTotalHsps = 3;
-    const int kScores[kTotalHsps] = { 7055, 6997, 6898 };
-    const int kLengths[kTotalHsps] = { 15, 15, 21 };
+    const int kNumHsps[kNumHits] = { 3, 1 };
+    const int kTotalHsps = 4;
+    const int kScores[kTotalHsps] = { 7055, 6997, 6542, 6898 };
+    const int kLengths[kTotalHsps] = { 15, 15, 10, 21 };
 
     CRef<CSeq_loc> query_loc(new CSeq_loc());
     query_loc->SetWhole().SetGi(kQueryGi);

@@ -60,6 +60,7 @@ struct BlastSeqSrc {
     GetInt4FnPtr      GetNumSeqs;     /**< Get number of sequences in set */
     GetInt4FnPtr      GetNumSeqsStats; /**< Number of sequences for statistical purposes. */
     GetInt4FnPtr      GetMaxSeqLen;   /**< Get length of longest seq in set */
+    GetInt4FnPtr      GetMinSeqLen;   /**< Get length of longest seq in set */
     GetInt4FnPtr      GetAvgSeqLen;   /**< Get average length of sequences in 
                                          the set */
     GetInt8FnPtr      GetTotLen;      /**< Get tot length of all seqs in set */
@@ -201,6 +202,14 @@ BlastSeqSrcGetMaxSeqLen(const BlastSeqSrc* seq_src)
     ASSERT(seq_src);
     ASSERT(seq_src->GetMaxSeqLen);
     return (*seq_src->GetMaxSeqLen)(seq_src->DataStructure, NULL);
+}
+
+Int4
+BlastSeqSrcGetMinSeqLen(const BlastSeqSrc* seq_src)
+{
+    ASSERT(seq_src);
+    ASSERT(seq_src->GetMinSeqLen);
+    return (*seq_src->GetMinSeqLen)(seq_src->DataStructure, NULL);
 }
 
 Int4
@@ -549,6 +558,7 @@ DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(SetInt4FnPtr, SetNumberOfThreads)
 DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetInt4FnPtr, GetNumSeqs)
 DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetInt4FnPtr, GetNumSeqsStats)
 DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetInt4FnPtr, GetMaxSeqLen)
+DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetInt4FnPtr, GetMinSeqLen)
 DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetInt4FnPtr, GetAvgSeqLen)
 DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLen)
 DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLenStats)

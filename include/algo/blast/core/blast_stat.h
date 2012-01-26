@@ -108,6 +108,8 @@ typedef struct Blast_GumbelBlk {
       Int8 db_length;    /**< total length of database */
 
       erfc_table *p;     /**< Tabulated results of erfc(x) */
+
+      Boolean filled;    /**< flag indicate the values of gbp are prepared */
       
    } Blast_GumbelBlk;
 
@@ -474,6 +476,16 @@ double BLAST_KarlinStoE_simple (Int4 S, Blast_KarlinBlk* kbp, Int8  searchsp);
  */
 NCBI_XBLAST_EXPORT
 double BLAST_SpougeStoE (Int4 S, Blast_KarlinBlk* kbp, Blast_GumbelBlk* gbp, Int4 qlen, Int4 slen);
+
+/** Estimate the score for a specified expect value.
+ * @param E the expect value of the alignment. [in]
+ * @param gbp the Gumbel parameters. [in]
+ * @param qlen the query length. [in]
+ * @param slen the subject length. [in]
+ * @return the score
+ */
+NCBI_XBLAST_EXPORT
+Int4 BLAST_SpougeEtoS (double E, Blast_KarlinBlk* kbp, Blast_GumbelBlk* gbp, Int4 qlen, Int4 slen);
 
 /** Convert a P-value to an E-value.
  *

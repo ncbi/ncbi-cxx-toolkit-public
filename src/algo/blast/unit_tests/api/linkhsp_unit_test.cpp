@@ -806,7 +806,7 @@ BOOST_AUTO_TEST_CASE(GappedBlastpCutoffs)
     m_ProgramType = eBlastTypeBlastp;
     m_Program = eBlastp;
     const AllCutoffScores kGoodCutoffs =
-        { 16, 38, 64, 41, 41, 72, false, 0, 0 };
+        { 16, 38, 64, 41, 19, 19, false, 0, 0 };
     AllCutoffScores* cutoffs = 
         setupCutoffScores(true, kDbLength, kDbNumSeqs, kSubjectLength);
     testAllCutoffs(kGoodCutoffs, *cutoffs);
@@ -822,8 +822,8 @@ BOOST_AUTO_TEST_CASE(GappedBlastxCutoffs)
     const Uint4 kDbNumSeqs = 1800000;
     const Uint4 kSubjectLength[kNumDbs] = {500, 2000};
     const AllCutoffScores kGoodCutoffs[kNumDbs] = {
-        { 16, 38, 64, 0, 41, 32, true, 41, 0 },
-        { 16, 38, 64, 0, 41, 37, true, 41, 0 } };
+        { 16, 38, 64, 0, 22, 22, true, 22, 0 },
+        { 16, 38, 64, 0, 27, 27, true, 27, 0 } };
     m_ProgramType = eBlastTypeBlastx;
     m_Program = eBlastx;
     for (int index = 0; index < kNumDbs; ++index) { 
@@ -845,9 +845,9 @@ BOOST_AUTO_TEST_CASE(GappedTblastnCutoffs)
     const Uint4 kDbNumSeqs[kNumDbs] = { 2000000, 20000000, 500 };
     const Uint4 kSubjectLengths[kNumDbs] = { 2000, 400, 3000000 };
     const AllCutoffScores kGoodCutoffs[kNumDbs] = { 
-        { 16, 38, 64, 41, 41, 38, true, 41, 0 },
-        { 16, 38, 64, 41, 41, 32, true, 41, 0 },
-        { 16, 38, 64, 41, 41, 65, true, 41, 0 } };
+        { 16, 38, 64, 41, 27, 27, true, 27, 0 },
+        { 16, 38, 64, 41, 21, 21, true, 21, 0 },
+        { 16, 38, 64, 41, 41, 54, true, 41, 0 } };
 
     AllCutoffScores* cutoffs = NULL;
     int index;

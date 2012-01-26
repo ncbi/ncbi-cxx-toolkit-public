@@ -3742,6 +3742,7 @@ Blast_GumbelBlkLoadFromTables(Blast_GumbelBlk* gbp, Int4 gap_open,
                gbp->b = 2.0 * gbp->G * (gbp->a_un - gbp->a);
                gbp->Beta = 2.0 * gbp->G * (gbp->Alpha_un - gbp->Alpha);
                gbp->Tau  = 2.0 * gbp->G * (gbp->Alpha_un - gbp->Sigma);
+               gbp->filled = TRUE;
             }
             found_values = TRUE;
             break;
@@ -5196,9 +5197,8 @@ BLAST_SpougeStoE(Int4 y_,
 
     double m_li_y, vi_y, sqrt_vi_y, m_F, P_m_F;
     double n_lj_y, vj_y, sqrt_vj_y, n_F, P_n_F;
-    double c_y, P_m_F_P_n_F, c_y_P_m_F_P_n_F;
+    double c_y, c_y_P_m_F_P_n_F;
     double p1, p2, p1_p2, area;
-
 
     m_li_y = m_ - MAX(0.0, ai_hat_*y_+bi_hat_);
     vi_y = MAX(0.0, alphai_hat_*y_+betai_hat_);
@@ -5215,10 +5215,45 @@ BLAST_SpougeStoE(Int4 y_,
     p2 = n_lj_y * P_n_F + sqrt_vj_y * const_val * exp(-0.5*n_F*n_F);
 
     c_y = MAX(0.0, sigma_hat_*y_+tau_hat_);
-    P_m_F_P_n_F = P_m_F * P_n_F;
-    c_y_P_m_F_P_n_F = c_y * P_m_F_P_n_F;
+    c_y_P_m_F_P_n_F = c_y * P_m_F * P_n_F;
     p1_p2 = MAX(p1 * p2, 0.0);
     area = MAX(p1_p2 + c_y_P_m_F_P_n_F, 0.0);
 
     return area * k_ * exp(-lambda_ * y_) * db_scale_factor;
+}
+
+Int4 
+BLAST_SpougeEtoS(double e0,
+                 Blast_KarlinBlk* kbp,
+                 Blast_GumbelBlk* gbp,
+                 Int4 m, Int4 n) 
+{
+    Int4 a, b, c;
+    double e;
+    double db_scale_factor = (gbp->db_length) ? 
+            (double)gbp->db_length : 1.0;
+
+    b = MAX((int)(log(db_scale_factor/e0) / kbp->Lambda), 2);
+
+    e = BLAST_SpougeStoE(b, kbp, gbp, m, n);
+
+    if (e > e0) {
+        while (e> e0) {
+            a = b;
+            b *= 2;
+            e = BLAST_SpougeStoE(b, kbp, gbp, m, n);
+        }
+    } else {
+        a = 0;
+    }
+    while(b-a > 1) {
+        c = (a+b)/2;
+        e = BLAST_SpougeStoE(c, kbp, gbp, m, n);
+        if (e> e0) {
+            a = c;
+        } else {
+            b = c;
+        }
+    }
+    return a;
 }

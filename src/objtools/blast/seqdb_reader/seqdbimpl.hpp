@@ -488,6 +488,12 @@ public:
     /// or alias files.  This might be used to chose buffer sizes.
     int GetMaxLength() const;
     
+    /// Returns the length of the smallest sequence in the database.
+    ///
+    /// This uses summary information stored in the database volumes
+    /// or alias files.  This might be used to estimate cutoff scores.
+    int GetMinLength() const;
+    
     /// Find an included OID, incrementing next_oid if necessary.
     ///
     /// If the specified OID is not included in the set (i.e. the OID
@@ -1104,6 +1110,9 @@ private:
     /// Returns the longest sequence lengths of all volumes.
     int x_GetMaxLength() const;
     
+    /// Returns the shortest sequence lengths of all volumes.
+    int x_GetMinLength() const;
+    
     /// Build the OID list
     ///
     /// OID list setup is done once, but not until needed.
@@ -1166,12 +1175,15 @@ private:
     ///   Returned sum of lengths of included sequences.
     /// @param max_count
     ///   Returned longest of included sequences.
+    /// @param min_count
+    ///   Returned shortest of included sequences.
     /// @param locked
     ///   The lock hold object for this thread.
     void x_ScanTotals(bool             approx,
                       int            * seq_count,
                       Uint8          * base_count, 
                       int            * max_count, 
+                      int            * min_count, 
                       CSeqDBLockHold & locked);
     
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
@@ -1297,6 +1309,9 @@ private:
     
     /// Longest database sequence
     int m_MaxLength;
+
+    /// Shortest database sequence
+    int m_MinLength;
 
     /// Type of sequences used by this instance.
     char m_SeqType;

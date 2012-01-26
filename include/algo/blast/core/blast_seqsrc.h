@@ -148,6 +148,13 @@ NCBI_XBLAST_EXPORT
 Int4
 BlastSeqSrcGetMaxSeqLen(const BlastSeqSrc* seq_src);
 
+/** Get the length of the longest sequence in the sequence source.
+ * @param seq_src the BLAST sequence source [in]
+ */
+NCBI_XBLAST_EXPORT
+Int4
+BlastSeqSrcGetMinSeqLen(const BlastSeqSrc* seq_src);
+
 /** Get the average length of all sequences in the sequence source.
  * @param seq_src the BLAST sequence source [in]
  */
