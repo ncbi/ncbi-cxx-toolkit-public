@@ -194,7 +194,7 @@ private:
         CRef<CQueue> ref(m_QueueRef.Lock());
         if (ref != NULL)
             return ref;
-        NCBI_THROW(CNetScheduleException, eUnknownQueue, "Job queue deleted");
+        NCBI_THROW(CNetScheduleException, eUnknownQueue, "Job queue unknown");
     }
 
     // Moved from CNetScheduleServer

@@ -824,6 +824,8 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
     CRef<CQueue>        queue_ref;
     CQueue *            queue_ptr = NULL;
     if (extra.role & eNSAC_Queue) {
+        if (m_QueueName == "noname" || m_QueueName.empty())
+            NCBI_THROW(CNetScheduleException, eUnknownQueue, "Job queue is required");
         queue_ref.Reset(GetQueue());
         queue_ptr = queue_ref.GetPointer();
     }
