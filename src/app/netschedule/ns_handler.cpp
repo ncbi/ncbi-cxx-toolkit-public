@@ -219,16 +219,14 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     { "GET",      { &CNetScheduleHandler::x_ProcessGetJob,
                     eNSCR_Worker },
         { { "port",      eNSPT_Id,  eNSPA_Optional },
-          { "aff",       eNSPT_Str, eNSPA_Optional, "" },
-          { "any_aff",   eNSPT_Int, eNSPA_Optional, 0 },
-          { "wnode_aff", eNSPT_Int, eNSPA_Optional, 0 } } },
+          { "aff",       eNSPT_Str, eNSPA_Optional, "" } } },
     { "GET2",     { &CNetScheduleHandler::x_ProcessGetJob,
                     eNSCR_Worker },
-        { { "port",      eNSPT_Int, eNSPA_Optional },
-          { "timeout",   eNSPT_Int, eNSPA_Optional },
+        { { "wnode_aff", eNSPT_Int, eNSPA_Required, 0 },
+          { "any_aff",   eNSPT_Int, eNSPA_Required, 0 },
           { "aff",       eNSPT_Str, eNSPA_Optional, "" },
-          { "any_aff",   eNSPT_Int, eNSPA_Optional, 0 },
-          { "wnode_aff", eNSPT_Int, eNSPA_Optional, 0 } } },
+          { "port",      eNSPT_Int, eNSPA_Optional },
+          { "timeout",   eNSPT_Int, eNSPA_Optional } } },
     // PUT job_key : id  job_return_code : int  output : str
     { "PUT",      { &CNetScheduleHandler::x_ProcessPut,
                     eNSCR_Worker },
@@ -255,9 +253,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
                     eNSCR_Worker },
         { { "port",      eNSPT_Int, eNSPA_Required },
           { "timeout",   eNSPT_Int, eNSPA_Required },
-          { "aff",       eNSPT_Str, eNSPA_Optional, "" },
-          { "any_aff",   eNSPT_Int, eNSPA_Optional, 0 },
-          { "wnode_aff", eNSPT_Int, eNSPA_Optional, 0 } } },
+          { "aff",       eNSPT_Str, eNSPA_Optional, "" } } },
     { "CWGET",    { &CNetScheduleHandler::x_ProcessCancelWaitGet,
                     eNSCR_Worker } },
     // FPUT job_key : id  err_msg : str  output : str  job_return_code : int
@@ -281,20 +277,18 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
         { { "job_key",         eNSPT_Id,  eNSPA_Optchain },
           { "job_return_code", eNSPT_Int, eNSPA_Optchain },
           { "output",          eNSPT_Str, eNSPA_Optional },
-          { "aff",             eNSPT_Str, eNSPA_Optional, "" },
-          { "any_aff",         eNSPT_Int, eNSPA_Optional, 0 },
-          { "wnode_aff",       eNSPT_Int, eNSPA_Optional, 0 } } },
+          { "aff",             eNSPT_Str, eNSPA_Optional, "" } } },
     { "JXCG2",    { &CNetScheduleHandler::x_ProcessJobExchange,
                     eNSCR_Worker },
         { { "job_key",         eNSPT_Id,  eNSPA_Required },
           { "auth_token",      eNSPT_Id,  eNSPA_Required },
           { "job_return_code", eNSPT_Int, eNSPA_Required },
           { "output",          eNSPT_Str, eNSPA_Required },
-          { "port",            eNSPT_Int, eNSPA_Optional },
-          { "timeout",         eNSPT_Int, eNSPA_Optional },
+          { "wnode_aff",       eNSPT_Int, eNSPA_Required, 0 },
+          { "any_aff",         eNSPT_Int, eNSPA_Required, 0 },
           { "aff",             eNSPT_Str, eNSPA_Optional, "" },
-          { "any_aff",         eNSPT_Int, eNSPA_Optional, 0 },
-          { "wnode_aff",       eNSPT_Int, eNSPA_Optional, 0 } } },
+          { "port",            eNSPT_Int, eNSPA_Optional },
+          { "timeout",         eNSPT_Int, eNSPA_Optional } } },
     // JDEX job_key : id timeout : uint
     { "JDEX",     { &CNetScheduleHandler::x_ProcessJobDelayExpiration,
                     eNSCR_Worker },
@@ -1243,14 +1237,18 @@ void CNetScheduleHandler::x_ProcessStatus(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
 {
-    x_CheckGetJobPrerequisites(m_CommandArguments.wnode_affinity);
-
     // GET & WGET are first versions of the command
     bool    cmdv2(m_CommandArguments.cmd == "GET2");
 
     if (cmdv2) {
         x_CheckNonAnonymousClient("use GET2 command");
         x_CheckPortAndTimeout();
+        x_CheckGetParameters();
+    }
+    else {
+        // The old clients must have any_affinity set to true
+        // depending on the explicit affinity - to conform the old behavior
+        m_CommandArguments.any_affinity = m_CommandArguments.affinity_token.empty();
     }
 
     list<string>    aff_list;
@@ -1332,14 +1330,18 @@ void CNetScheduleHandler::x_ProcessPut(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
 {
-    x_CheckGetJobPrerequisites(m_CommandArguments.wnode_affinity);
-
     bool    cmdv2(m_CommandArguments.cmd == "JXCG2");
 
     if (cmdv2) {
         x_CheckNonAnonymousClient("use JXCG2 command");
         x_CheckPortAndTimeout();
         x_CheckAuthorizationToken();
+        x_CheckGetParameters();
+    }
+    else {
+        // The old clients must have any_affinity set to true
+        // depending on the explicit affinity - to conform the old behavior
+        m_CommandArguments.any_affinity = m_CommandArguments.affinity_token.empty();
     }
 
 
@@ -2042,16 +2044,6 @@ void CNetScheduleHandler::x_CmdObsolete(CQueue*)
 }
 
 
-void CNetScheduleHandler::x_CheckGetJobPrerequisites(bool  wnode_affinity)
-{
-    if (!wnode_affinity)
-        return;
-
-    x_CheckNonAnonymousClient("refer to preferred affinities");
-    return;
-}
-
-
 void CNetScheduleHandler::x_CheckNonAnonymousClient(const string &  message)
 {
     if (!m_ClientId.IsComplete())
@@ -2080,6 +2072,21 @@ void CNetScheduleHandler::x_CheckAuthorizationToken(void)
     if (m_CommandArguments.auth_token.empty())
         NCBI_THROW(CNetScheduleException, eInvalidAuthToken,
                    "Invalid authorization token. It cannot be empty.");
+    return;
+}
+
+
+void CNetScheduleHandler::x_CheckGetParameters(void)
+{
+    // Checks that the given GETx/JXCGx parameters make sense
+    if (m_CommandArguments.wnode_affinity == false &&
+        m_CommandArguments.any_affinity == false &&
+        m_CommandArguments.affinity_token.empty()) {
+        ERR_POST(Warning << "The job request without explicit affinities, "
+                            "without preferred affinities and "
+                            "with any_aff flag set to false "
+                            "will never match any job.");
+        }
     return;
 }
 

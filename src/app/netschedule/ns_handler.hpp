@@ -184,10 +184,10 @@ private:
     void x_ProcessCancelQueue(CQueue*);
     void x_CmdNotImplemented(CQueue*);
     void x_CmdObsolete(CQueue*);
-    void x_CheckGetJobPrerequisites(bool  wnode_affinity);
     void x_CheckNonAnonymousClient(const string &  message);
     void x_CheckPortAndTimeout(void);
     void x_CheckAuthorizationToken(void);
+    void x_CheckGetParameters(void);
 
 private:
     CRef<CQueue> GetQueue(void) {
