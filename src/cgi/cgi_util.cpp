@@ -610,7 +610,7 @@ const SBrowser s_Browsers[] = {
 
     { CCgiUserAgent::eChrome,       "Google Chrome",            "Chrome",                   CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
     { CCgiUserAgent::eFluid,        "Fluid",                    "Fluid",                    CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
-    { CCgiUserAgent::eSafariMobile, "Mobile Safari",            "Mobile Safari",            CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_MobileDevice, fVendorProduct },
+    { CCgiUserAgent::eSafariMobile, "Mobile Safari",            "Mobile Safari",            CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_MobileDevice /* except iPad */, fVendorProduct },
     { CCgiUserAgent::eMidori,       "Midori",                   "Midori",                   CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fAny },
     { CCgiUserAgent::eMidori,       "Midori",                   "midori",                   CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fAppComment },
     { CCgiUserAgent::eNetNewsWire,  "NetNewsWire",              "NetNewsWire",              CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fAny },
@@ -726,7 +726,12 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
         search = USTR(" Mobile/");
         if (m_UserAgent.find(search) != NPOS) {
             m_Browser  = eSafariMobile;
-            m_Platform = ePlatform_MobileDevice;
+            search = USTR("(iPad;");
+            if (m_UserAgent.find(search) != NPOS) {
+                m_Platform = ePlatform_Mac;
+            } else {
+                m_Platform = ePlatform_MobileDevice;
+            }
         }
     }
 
