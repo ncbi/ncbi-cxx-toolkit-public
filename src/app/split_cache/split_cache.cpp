@@ -525,7 +525,7 @@ void CSplitCacheApp::Process(void)
 {
     const CArgs& args = GetArgs();
 
-    m_SplitterParams.m_Verbose = args["verbose"];
+    m_SplitterParams.m_Verbose = args["verbose"]? 1: 0;
     m_DumpAsnText = args["dump"];
     m_DumpAsnBinary = args["bdump"];
     if ( args["compress"] ) {
