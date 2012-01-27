@@ -4,6 +4,6 @@ APP = test_strdbl
 SRC = test_strdbl
 LIB = xncbi
 
-CHECK_CMD = test_strdbl
+CHECK_CMD = test_strdbl -randomize
 
-WATCHERS = vasilche
+WATCHERS = vasilche gouriano

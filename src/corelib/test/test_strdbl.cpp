@@ -62,7 +62,12 @@ public:
     void RunSpeedBenchmark(void);
     void RunPrecisionBenchmark(void);
 
+    void RunD2SSpeedBenchmark(void);
+    void RunD2SPrecisionBenchmark(void);
+    bool CompareSerialization(double data, size_t digits);
+
     static double PreciseStringToDouble(const CTempStringEx& s);
+    double GenerateDouble(void);
 
     int m_VerboseLevel;
 };
@@ -305,6 +310,19 @@ void CTestApp::Init(void)
                      "Close match threshold",
                      CArgDescriptions::eDouble, "0.01");
 
+    d->AddFlag("randomize",
+               "Randomize test data (for precision and double-to-string tests)");
+    d->AddDefaultKey("digits", "significantDigits",
+                     "The number of significant digits in double-to-string conversion",
+                     CArgDescriptions::eInteger, NStr::NumericToString(DBL_DIG));
+    d->SetConstraint("digits", new CArgAllow_Integers(1, DBL_DIG));
+
+    d->AddDefaultKey("mode", "testmode",
+                     "Test string-to-doube, or double-to-string",
+                     CArgDescriptions::eString, "both");
+    d->SetConstraint( "mode", &(*new CArgAllow_Strings,
+            "str2dbl", "dbl2str", "both"));
+
     SetupArgDescriptions(d.release());
 }
 
@@ -316,12 +334,29 @@ int CTestApp::Run(void)
 
     m_VerboseLevel = args["verbose"].AsInteger();
 
-    if ( args["speed"] ) {
-        RunSpeedBenchmark();
+    if (args["randomize"]) {
+        srand((unsigned int)time(0));
     }
+    if (args["mode"].AsString() == "str2dbl" || args["mode"].AsString() == "both") {
+
+        if ( args["speed"] ) {
+            RunSpeedBenchmark();
+        }
     
-    if ( args["precision"] ) {
-        RunPrecisionBenchmark();
+        if ( args["precision"] ) {
+            RunPrecisionBenchmark();
+        }
+    }
+    if (args["mode"].AsString() == "dbl2str" || args["mode"].AsString() == "both") {
+
+        if ( args["speed"] ) {
+            RunD2SSpeedBenchmark();
+        }
+    
+//        if ( args["precision"] )
+        {
+            RunD2SPrecisionBenchmark();
+        }
     }
 
     return 0;
@@ -1060,6 +1095,417 @@ void CTestApp::RunPrecisionBenchmark(void)
     }
 }
 
+
+double CTestApp::GenerateDouble(void)
+{
+    int exp = rand()%614-307;
+    double value = (1000 + rand()%9000)/1000.; // from 1.000 to 9.999
+    value += (rand()%10000)/1.e8;
+    value += (rand()%10000)/1.e12;
+#if 1
+    if (rand()%2)
+    {
+        value += (rand()%10000)/1.e16;
+        value += (rand()%10000)/1.e20;
+    }
+#endif
+    if (exp > 0) {
+        if (exp>=256) {value *= 1.e256; exp-=256;}
+        if (exp>=128) {value *= 1.e128; exp-=128;}
+        if (exp>= 64) {value *= 1.e64;  exp-= 64;}
+        if (exp>= 32) {value *= 1.e32;  exp-= 32;}
+        if (exp>= 16) {value *= 1.e16;  exp-= 16;}
+        if (exp>=  8) {value *= 1.e8;   exp-=  8;}
+        if (exp>=  4) {value *= 1.e4;   exp-=  4;}
+        if (exp>=  2) {value *= 1.e2;   exp-=  2;}
+        if (exp>=  1) {value *= 10.;    exp-=  1;}
+    } else {
+        if (exp<=-256) {value /= 1.e256; exp+=256;}
+        if (exp<=-128) {value /= 1.e128; exp+=128;}
+        if (exp<= -64) {value /= 1.e64;  exp+= 64;}
+        if (exp<= -32) {value /= 1.e32;  exp+= 32;}
+        if (exp<= -16) {value /= 1.e16;  exp+= 16;}
+        if (exp<=  -8) {value /= 1.e8;   exp+=  8;}
+        if (exp<=  -4) {value /= 1.e4;   exp+=  4;}
+        if (exp<=  -2) {value /= 1.e2;   exp+=  2;}
+        if (exp<=  -1) {value /= 10.;    exp+=  1;}
+    }
+    return value;
+}
+
+void CTestApp::RunD2SSpeedBenchmark(void)
+{
+    const CArgs& args = GetArgs();
+    // generate test data
+    const Int8 COUNT = args["count"].AsInt8();
+    const unsigned int precision = args["digits"].AsInteger();
+    vector<double> dbls;
+    NcbiCout << "--------------------------------" << NcbiEndl
+             << "DoubleToString speed: converting " << COUNT << " numbers" << NcbiEndl;
+    double dbl2str = 0.;
+    double sprn = 0.;
+    Int8 count=0;
+    const int count_per_iteration = 10000000;
+
+    do {
+        dbls.clear();
+        for (int i=0; i< count_per_iteration && count < COUNT; ++i, ++count) {
+            dbls.push_back( GenerateDouble());
+        }
+        // test double-to-string
+        char buffer[64];
+
+        CStopWatch sw(CStopWatch::eStart);
+        for (vector<double>::const_iterator d=dbls.begin(); d != dbls.end(); ++d) {
+            NStr::DoubleToStringPosix(*d, precision, buffer, sizeof(buffer));
+        }
+        dbl2str += sw.Restart();
+
+        for (vector<double>::const_iterator d=dbls.begin(); d != dbls.end(); ++d) {
+            sprintf(buffer, "%.*g", precision, *d);
+        }
+        sprn += sw.Elapsed();
+    } while (count < COUNT);
+
+    NcbiCout << "NStr::DoubleToStringPosix takes " << dbl2str << " sec" << NcbiEndl;
+    NcbiCout << "sprintf takes " << sprn << " sec" << NcbiEndl;
+    if (dbl2str != 0.) {
+        NcbiCout << "speedup: " << sprn/dbl2str << NcbiEndl;
+    }
+    NcbiCout << NcbiEndl;
+}
+
+void CTestApp::RunD2SPrecisionBenchmark(void)
+{
+    const CArgs& args = GetArgs();
+    // generate test data
+    const Int8 COUNT = args["count"].AsInt8();
+    const unsigned int precision = args["digits"].AsInteger();
+    vector<double> dbls;
+    NcbiCout << "-------------------------------------" << NcbiEndl
+             << "DoubleToString precision: converting " << COUNT << " numbers" << NcbiEndl;
+
+    bool first_iteration = true;
+    double special[] = {
+//            DBL_MIN, DBL_MAX,
+                        1e-17, 1e-16, 1e-15, 1e-14, 1e-13, 1e-12, 1e-11, 1e-10,
+            1e-9, 1e-8, 1e-7,  1e-6,   1e-5,  1e-4,  1e-3,  1e-2,  1e-1, 1.,
+                        1e+17, 1e+16, 1e+15, 1e+14, 1e+13, 1e+12, 1e+11, 1e+10,
+            1e+9, 1e+8, 1e+7,  1e+6,   1e+5,  1e+4,  1e+3,  1e+2,  1e+1,
+            1.00000000000000001e+11,
+            1.0000000000000001e+11,
+            1.000000000000001e+11,
+            1.00000000000001e+11,
+            1.0000000000001e+11,
+            0.99999999999999999e+11,
+            0.9999999999999999e+11,
+            0.999999999999999e+11,
+            0.99999999999999e+11,
+            0.99999999999999e+11,
+            0.9999999999999e+11
+            };
+
+    Int8 count=0;
+    const int count_per_iteration = 10000000;
+
+    Int8 diff=0;
+    Int8 errors=0;
+    Int8 roundtrip=0;
+    Int8 longer=0;
+    Int8 shorter=0;
+
+    char buffer1[64], buffer2[64], buffer0[64];
+    map<size_t,Int8> diffmap;
+    map<size_t,Int8> longermap;
+    map<size_t,Int8> shortermap;
+
+    do {
+
+    int i=0;
+    dbls.clear();
+    if (first_iteration) {
+        first_iteration = false;
+        for (; i<(int)(sizeof(special)/sizeof(double)); ++i, ++count) {
+            dbls.push_back( special[i]);
+        }
+    }
+    for (; i< count_per_iteration && count < COUNT; ++i, ++count) {
+        dbls.push_back( GenerateDouble());
+    }
+
+    for (vector<double>::const_iterator d=dbls.begin(); d != dbls.end(); ++d) {
+
+        buffer1[ NStr::DoubleToStringPosix( *d, precision, buffer1, sizeof(buffer1)) ] = '\0';
+        sprintf(buffer2, "%.*g", precision, *d);
+
+        {
+            char buffer_t[64];
+            double d_t;
+            d_t = NStr::StringToDouble(buffer2);
+            buffer_t[ NStr::DoubleToStringPosix( d_t, precision, buffer_t, sizeof(buffer_t)) ] = '\0';
+            if (strcmp(buffer2,buffer_t)) {
+                ++roundtrip;
+                LOG_POST("ERROR: roundtrip buf2: " << buffer1 << " vs " << buffer2 << " vs " << buffer_t);
+            }
+            if (strcmp(buffer1,buffer2)!=0) {
+                d_t = NStr::StringToDouble(buffer1);
+                buffer_t[ NStr::DoubleToStringPosix( d_t, precision, buffer_t, sizeof(buffer_t)) ] = '\0';
+                if (strcmp(buffer1,buffer_t)) {
+                    ++roundtrip;
+                    LOG_POST("ERROR: roundtrip buf1: " << buffer1 << " vs " << buffer2 << " vs " << buffer_t);
+                }
+            }
+        }
+        if (strcmp(buffer1,buffer2)==0) {
+            if (!CompareSerialization(*d, DBL_DIG)) {
+                ++errors;
+                LOG_POST("ERROR: serialization with high precision: " << buffer1);
+            }
+            if (!CompareSerialization(*d, FLT_DIG)) {
+                ++errors;
+                LOG_POST("ERROR: serialization with low precision: " << buffer1);
+            }
+            continue;
+        }
+        strcpy(buffer0,buffer2);
+        {
+            char *e;
+            double d1 = strtod(buffer1,&e);
+            double d2 = strtod(buffer2,&e);
+            double dr=1.;
+            if (d2 != 0.) {
+                dr = d1/d2;
+            } else if (d1 != 0.) {
+                dr = d2/d1;
+            }
+            if (dr < 0.) {dr=-dr;}
+            if (dr>=1.1 || dr<=0.9) {
+                ++errors;
+                LOG_POST("ERROR: strtod: " << buffer1 << " vs " << buffer2);
+            }
+        }
+        
+        if (strlen(buffer1) > strlen(buffer2)) {
+            ++longer;
+            size_t st = strlen(buffer1) - strlen(buffer2);
+            if (longermap.find(st) != longermap.end()) {
+                longermap[st] = longermap[st]+1;
+            } else {
+                longermap[st] = 1;
+            }
+        }
+        if (strlen(buffer1) < strlen(buffer2)) {
+            ++shorter;
+            size_t st = strlen(buffer2) - strlen(buffer1);
+            if (shortermap.find(st) != shortermap.end()) {
+                shortermap[st] = shortermap[st]+1;
+            } else {
+                shortermap[st] = 1;
+            }
+        }
+        ++diff;
+
+        char* b1 = strchr(buffer1, 'e');
+        char* b2 = strchr(buffer2, 'e');
+        if ((b1 && b2) || (!b1 && !b2)) {
+            if (b1 && b2) {
+                // compare exponent
+                if (strcmp(b1,b2)) {
+                    ++errors;
+                    LOG_POST("ERROR: exponent: " << buffer1 << " vs " << buffer2);
+                }
+                *b1 = *b2 = '\0';
+                if (strcmp(buffer1,buffer2)==0) {
+                    continue;
+                }
+            }
+            size_t s1 = min( strlen(buffer1), strlen(buffer2));
+            if (s1 != 0) {
+                char *sz;
+                sz = strchr(buffer1,'.');
+                if (sz) {
+                    memmove(sz,sz+1,strlen(sz));
+                }
+                sz = strchr(buffer2,'.');
+                if (sz) {
+                    memmove(sz,sz+1,strlen(sz));
+                }
+                size_t sb1 = strlen(buffer1);
+                size_t sb2 = strlen(buffer2);
+                while (sb1 < sb2) {
+                    buffer1[sb1++] = '0';
+                    buffer1[sb1]='\0';
+                }
+                while (sb2 < sb1) {
+                    buffer2[sb2++] = '0';
+                    buffer2[sb2]='\0';
+                }
+            }
+
+            while (s1>0) {
+                if (strncmp(buffer1,buffer2,s1) == 0) {
+
+                    Int8 l1 = NStr::StringToInt8(buffer1+s1);
+                    Int8 l2 = NStr::StringToInt8(buffer2+s1);
+                    int id = (int)max(l1-l2,l2-l1);
+                    size_t st = id;
+                    if (diffmap.find(st) != diffmap.end()) {
+                        diffmap[st] = diffmap[st]+1;
+                    } else {
+                        diffmap[st] = 1;
+                        if (st != 1) {
+                            LOG_POST("WARNING: diffmap[" << st << "]: "
+                                << buffer0 << " double = " << *d);
+                        }
+                    }
+                    if (st == 0) {
+                        ++errors;
+                        LOG_POST("ERROR: comparison: "  << buffer0);
+                    }
+                    break;
+
+
+                }
+                --s1;
+            }
+            if (s1 == 0) {
+                ++errors;
+                LOG_POST("ERROR: comparison: "  << buffer0);
+            }
+        }
+        else {
+            ++errors;
+            LOG_POST("ERROR: exponent: "  << buffer1 << " vs " << buffer2);
+        }
+    }
+    }  while (count < COUNT);
+
+    if (errors != 0) {
+        NcbiCout << "ERRORS (need immediate attention!): " << errors << NcbiEndl;
+    }
+    NcbiCout << "Different result: " << diff << "  (" << (100.*diff)/COUNT << "%)" << NcbiEndl;
+    for (map<size_t,Int8>::const_iterator t = diffmap.begin(); t != diffmap.end(); ++t) {
+        NcbiCout << "Differ in " << t->first << " decimal digit: " << t->second << endl;
+    }
+    NcbiCout << "DoubleToStringPosix produces longer string in " << longer << " cases" << NcbiEndl;
+    for (map<size_t,Int8>::const_iterator t = longermap.begin(); t != longermap.end(); ++t) {
+        NcbiCout << "    Longer by " << t->first << " chars: " << t->second << endl;
+    }
+    NcbiCout << "DoubleToStringPosix produces shorter string in " << shorter << " cases" << NcbiEndl;
+    for (map<size_t,Int8>::const_iterator t = shortermap.begin(); t != shortermap.end(); ++t) {
+        NcbiCout << "    Shorter by " << t->first << " chars: " << t->second << endl;
+    }
+    NcbiCout << "Roundtrip (string-double-string) errors: " << roundtrip << NcbiEndl;
+    if (errors != 0) {
+        ERR_POST(Fatal<< "ERRORS (need immediate attention!): " << errors);
+    }
+    NcbiCout << NcbiEndl;
+}
+
+// this is to compare old and new WriteDouble serialization code
+bool CTestApp::CompareSerialization(double data, size_t digits)
+{
+    bool res = true;
+
+// CObjectOStreamAsn::WriteDouble2(double data, size_t digits)
+    string asntext_old, asntext_new;
+    {{
+        if ( data == 0.0 ) {
+            asntext_old = "{ 0, 10, 0 }";
+        } else {
+            char buffer[128];
+            // ensure buffer is large enough to fit result
+            // (additional bytes are for sign, dot and exponent)
+            _ASSERT(sizeof(buffer) > digits + 16);
+            int width = sprintf(buffer, "%.*e", int(digits-1), data);
+            _ASSERT(int(strlen(buffer)) == width);
+            char* dotPos = strchr(buffer, '.');
+            if (!dotPos) {
+                dotPos = strchr(buffer, ','); // non-C locale?
+            }
+            _ASSERT(dotPos);
+            char* ePos = strchr(dotPos, 'e');
+            _ASSERT(ePos);
+
+            // now we have:
+            // mantissa with dot - buffer:ePos
+            // exponent - (ePos+1):
+
+            int exp;
+            // calculate exponent
+            sscanf(ePos + 1, "%d", &exp);
+            // remove trailing zeroes
+            int fractDigits = int(ePos - dotPos - 1);
+            while ( fractDigits > 0 && ePos[-1] == '0' ) {
+                --ePos;
+                --fractDigits;
+            }
+            asntext_old = "{ ";
+            asntext_old += string(buffer, dotPos - buffer);
+            asntext_old += string(dotPos + 1, fractDigits);
+            asntext_old += string(", 10, ");
+            asntext_old += NStr::NumericToString(exp - fractDigits);
+            asntext_old += string(" }");
+
+        }
+    }}
+    {{
+        char buffer[128];
+        int dec, sign;
+        size_t len = NStr::DoubleToString_Ecvt(
+            data, digits, buffer, sizeof(buffer), &dec, &sign);
+        //todo: verify that len > 0
+        asntext_new = "{ ";
+        if (sign < 0) {asntext_new += "-";}
+        asntext_new += string(buffer,len);
+        asntext_new += string(", 10, ");
+        asntext_new += NStr::NumericToString(dec - (int)(len-1));
+        asntext_new += string(" }");
+    }}
+    if (asntext_old != asntext_new) {
+        LOG_POST("ERROR: serialization ASN text: " << asntext_old << " vs " << asntext_new);
+        res = false;
+    }
+
+ // CObjectOStreamAsnBinary::WriteDouble2(double data, size_t digits)
+    string asnbin_old, asnbin_new;
+    {{
+        const size_t kMaxDoubleLength = 64;
+        int shift = 0;
+        int precision = int(digits - shift);
+        if ( precision < 0 )
+            precision = 0;
+        else if ( size_t(precision) > kMaxDoubleLength ) // limit precision of data
+            precision = int(kMaxDoubleLength);
+
+        // ensure buffer is large enough to fit result
+        // (additional bytes are for sign, dot and exponent)
+        char buffer[kMaxDoubleLength + 16];
+        int width = sprintf(buffer, "%.*g", precision, data);
+        _ASSERT(strlen(buffer) == size_t(width));
+        char* dot = strchr(buffer,',');
+        if (dot) {
+            *dot = '.'; // enforce C locale
+        }
+        asnbin_old = string(buffer, width);
+    }}
+    {{
+        char buffer[64];
+        size_t len = NStr::DoubleToStringPosix(data, digits, buffer, sizeof(buffer));
+        asnbin_new = string(buffer,len);
+    }}
+    if (asnbin_old != asnbin_new) {
+        LOG_POST("ERROR: serialization ASN bin: " << asnbin_old << " vs " << asnbin_new);
+        res = false;
+    }
+
+// CObjectOStreamXml::WriteDouble2(double data, size_t digits)
+// same as sprintf versus DoubleToStringPosix
+
+// CObjectOStreamJson::WriteDouble(double data)
+// Json uses 'fixed' format, not scientific; so, - nothing to compare
+    return res;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN

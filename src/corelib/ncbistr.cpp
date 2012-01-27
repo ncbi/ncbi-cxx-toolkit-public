@@ -1744,6 +1744,315 @@ SIZE_TYPE NStr::DoubleToString(double value, unsigned int precision,
 }
 
 
+char* s_ncbi_append_int2str(char* buffer, unsigned int value, size_t digits, bool zeros)
+{
+    char* buffer_start = buffer;
+    char* buffer_end = (buffer += digits-1);
+    if (zeros) {
+        do {
+            *buffer-- = (char)(48 + (value % 10));
+            value /= 10;
+        } while (--digits);
+    } else {
+        do {
+            *buffer-- = (char)(48 + (value % 10));
+        } while (value /= 10);
+
+        if (++buffer != buffer_start) {
+            memmove(buffer_start, buffer, buffer_end-buffer+1);
+            buffer_end -= buffer - buffer_start;
+        }
+    }
+    return ++buffer_end;
+}
+
+#define __NLG NCBI_CONST_LONGDOUBLE
+SIZE_TYPE NStr::DoubleToString_Ecvt( double val, unsigned int precision,
+                                     char* buffer, SIZE_TYPE bufsize,
+                                     int* dec, int* sign)
+{
+    *dec = *sign = 0;
+    if (precision==0) {
+        return 0;
+    }
+    if (precision > DBL_DIG) {
+        precision = DBL_DIG;
+    }
+    if (val == 0.) {
+        *buffer='0';
+        return 1;
+    }
+    *sign = val < 0. ? -1 : 1;
+    if (*sign < 0) {
+        val = -val;
+    }
+    bool high_precision = precision > 9;
+
+// calculate exponent
+    unsigned int exp=0;
+    bool exp_positive = val >= 1.;
+    unsigned int first, second;
+    long double mult = __NLG(1.);
+    long double value = val;
+
+    if (exp_positive) {
+        while (value>=__NLG(1.e256))
+            {value/=__NLG(1.e256); exp+=256;}
+        if (value >= __NLG(1.e16)) {
+            if      (value>=__NLG(1.e240)) {value*=__NLG(1.e-240); exp+=240;}
+            else if (value>=__NLG(1.e224)) {value*=__NLG(1.e-224); exp+=224;}
+            else if (value>=__NLG(1.e208)) {value*=__NLG(1.e-208); exp+=208;}
+            else if (value>=__NLG(1.e192)) {value*=__NLG(1.e-192); exp+=192;}
+            else if (value>=__NLG(1.e176)) {value*=__NLG(1.e-176); exp+=176;}
+            else if (value>=__NLG(1.e160)) {value*=__NLG(1.e-160); exp+=160;}
+            else if (value>=__NLG(1.e144)) {value*=__NLG(1.e-144); exp+=144;}
+            else if (value>=__NLG(1.e128)) {value*=__NLG(1.e-128); exp+=128;}
+            else if (value>=__NLG(1.e112)) {value*=__NLG(1.e-112); exp+=112;}
+            else if (value>=__NLG(1.e96))  {value*=__NLG(1.e-96);  exp+=96;}
+            else if (value>=__NLG(1.e80))  {value*=__NLG(1.e-80);  exp+=80;}
+            else if (value>=__NLG(1.e64))  {value*=__NLG(1.e-64);  exp+=64;}
+            else if (value>=__NLG(1.e48))  {value*=__NLG(1.e-48);  exp+=48;}
+            else if (value>=__NLG(1.e32))  {value*=__NLG(1.e-32);  exp+=32;}
+            else if (value>=__NLG(1.e16))  {value*=__NLG(1.e-16);  exp+=16;}
+        }
+        if      (value<   __NLG(1.)) {mult=__NLG(1.e+9); exp-= 1;}
+        else if (value<  __NLG(10.)) {mult=__NLG(1.e+8);         }
+        else if (value< __NLG(1.e2)) {mult=__NLG(1.e+7); exp+= 1;}
+        else if (value< __NLG(1.e3)) {mult=__NLG(1.e+6); exp+= 2;}
+        else if (value< __NLG(1.e4)) {mult=__NLG(1.e+5); exp+= 3;}
+        else if (value< __NLG(1.e5)) {mult=__NLG(1.e+4); exp+= 4;}
+        else if (value< __NLG(1.e6)) {mult=__NLG(1.e+3); exp+= 5;}
+        else if (value< __NLG(1.e7)) {mult=__NLG(1.e+2); exp+= 6;}
+        else if (value< __NLG(1.e8)) {mult=  __NLG(10.); exp+= 7;}
+        else if (value< __NLG(1.e9)) {mult=   __NLG(1.); exp+= 8;}
+        else if (value<__NLG(1.e10)) {mult=  __NLG(0.1); exp+= 9;}
+        else if (value<__NLG(1.e11)) {mult=__NLG(1.e-2); exp+=10;}
+        else if (value<__NLG(1.e12)) {mult=__NLG(1.e-3); exp+=11;}
+        else if (value<__NLG(1.e13)) {mult=__NLG(1.e-4); exp+=12;}
+        else if (value<__NLG(1.e14)) {mult=__NLG(1.e-5); exp+=13;}
+        else if (value<__NLG(1.e15)) {mult=__NLG(1.e-6); exp+=14;}
+        else if (value<__NLG(1.e16)) {mult=__NLG(1.e-7); exp+=15;}
+        else                         {mult=__NLG(1.e-8); exp+=16;}
+    } else {
+        while (value<=__NLG(1.e-256))
+            {value*=__NLG(1.e256); exp+=256;}
+        if (value <= __NLG(1.e-16)) {
+            if      (value<=__NLG(1.e-240)) {value*=__NLG(1.e240); exp+=240;}
+            else if (value<=__NLG(1.e-224)) {value*=__NLG(1.e224); exp+=224;}
+            else if (value<=__NLG(1.e-208)) {value*=__NLG(1.e208); exp+=208;}
+            else if (value<=__NLG(1.e-192)) {value*=__NLG(1.e192); exp+=192;}
+            else if (value<=__NLG(1.e-176)) {value*=__NLG(1.e176); exp+=176;}
+            else if (value<=__NLG(1.e-160)) {value*=__NLG(1.e160); exp+=160;}
+            else if (value<=__NLG(1.e-144)) {value*=__NLG(1.e144); exp+=144;}
+            else if (value<=__NLG(1.e-128)) {value*=__NLG(1.e128); exp+=128;}
+            else if (value<=__NLG(1.e-112)) {value*=__NLG(1.e112); exp+=112;}
+            else if (value<=__NLG(1.e-96))  {value*=__NLG(1.e96);  exp+=96;}
+            else if (value<=__NLG(1.e-80))  {value*=__NLG(1.e80);  exp+=80;}
+            else if (value<=__NLG(1.e-64))  {value*=__NLG(1.e64);  exp+=64;}
+            else if (value<=__NLG(1.e-48))  {value*=__NLG(1.e48);  exp+=48;}
+            else if (value<=__NLG(1.e-32))  {value*=__NLG(1.e32);  exp+=32;}
+            else if (value<=__NLG(1.e-16))  {value*=__NLG(1.e16);  exp+=16;}
+        }
+        if      (value<__NLG(1.e-15)) {mult=__NLG(1.e24); exp+=16;}
+        else if (value<__NLG(1.e-14)) {mult=__NLG(1.e23); exp+=15;}
+        else if (value<__NLG(1.e-13)) {mult=__NLG(1.e22); exp+=14;}
+        else if (value<__NLG(1.e-12)) {mult=__NLG(1.e21); exp+=13;}
+        else if (value<__NLG(1.e-11)) {mult=__NLG(1.e20); exp+=12;}
+        else if (value<__NLG(1.e-10)) {mult=__NLG(1.e19); exp+=11;}
+        else if (value<__NLG(1.e-9))  {mult=__NLG(1.e18); exp+=10;}
+        else if (value<__NLG(1.e-8))  {mult=__NLG(1.e17); exp+=9;}
+        else if (value<__NLG(1.e-7))  {mult=__NLG(1.e16); exp+=8;}
+        else if (value<__NLG(1.e-6))  {mult=__NLG(1.e15); exp+=7;}
+        else if (value<__NLG(1.e-5))  {mult=__NLG(1.e14); exp+=6;}
+        else if (value<__NLG(1.e-4))  {mult=__NLG(1.e13); exp+=5;}
+        else if (value<__NLG(1.e-3))  {mult=__NLG(1.e12); exp+=4;}
+        else if (value<__NLG(1.e-2))  {mult=__NLG(1.e11); exp+=3;}
+        else if (value<__NLG(1.e-1))  {mult=__NLG(1.e10); exp+=2;}
+        else if (value<__NLG(1.))     {mult=__NLG(1.e9);  exp+=1;}
+        else                          {mult=__NLG(1.e8);         }
+    }
+
+// get all digits
+    long double t1 = value * mult;
+    if (t1 >= __NLG(1.e9)) {
+        first = 999999999;
+    } else if (t1 < __NLG(1.e8)) {
+        first = 100000000;
+        t1 = first;
+    } else {
+        first = (unsigned int)t1;
+    }
+    if (high_precision) {
+        long double t2 = (t1-first) * __NLG(1.e8);
+        if (t2 >= __NLG(1.e8)) {
+            second = 99999999;
+        } else {
+            second = (unsigned int)t2;
+        }
+    }
+
+// convert them into string
+    bool use_ext_buffer = bufsize > 20;
+    char tmp[32];
+    char *digits = use_ext_buffer ? buffer : tmp;
+    char *digits_end = s_ncbi_append_int2str(digits,first,9,false);
+    if (high_precision) {
+        digits_end = s_ncbi_append_int2str(digits_end,second,8,true);
+    }
+    size_t digits_len = digits_end - digits;
+    size_t digits_got = digits_len;
+    size_t digits_expected = high_precision ? 17 : 9;
+
+// get significant digits according to requested precision
+    size_t pos = precision;
+    if (digits_len > precision) {
+        digits_len = precision;
+
+        // this is questionable, but in fact,
+        // improves the result (on average)
+#if 1
+        if (high_precision) {
+            if (digits[pos] == '4') {
+                size_t pt = pos-1;
+                while (pt != 0 && digits[--pt] == '9')
+                    ;
+                if (pt != 0 && (pos-pt) > precision/2)
+                    digits[pos]='5';
+            } else if (digits[pos] == '5') {
+                size_t pt = pos;
+                while (pt != 0 && digits[--pt] == '0')
+                    ;
+                if (pt != 0 && (pos-pt) > precision/2)
+                    digits[pos]='4';
+            }
+        }
+#endif
+
+        if (digits[pos] >= '5') {
+            do {
+                if (digits[--pos] < '9') {
+                    ++digits[pos++];
+                    break;
+                }
+                digits[pos]='0';
+            } while (pos > 0);
+            if (pos == 0) {
+    	        if (digits_expected <= digits_got) {
+                    if (exp_positive) {
+                       ++exp; 
+                    } else {
+// exp cannot be 0, by design
+                        exp_positive = --exp == 0;
+                    }
+		        }
+                *digits = '1';
+                digits_len = 1;
+            }
+        }
+    }
+
+// truncate trailing zeros
+    for (pos = digits_len; pos-- > 0 && digits[pos] == '0';)
+        --digits_len;
+
+    *dec = (int)exp;
+    if (!exp_positive) {
+        *dec = -*dec;
+    }
+    if (!use_ext_buffer) {
+        if (digits_len <= bufsize) {
+            strncpy(buffer,digits,digits_len);
+        } else {
+            NCBI_THROW2(CStringException, eConvert,
+                        "Destination buffer too small", 0);
+        }
+    }
+    return digits_len;
+}
+#undef __NLG
+
+
+SIZE_TYPE NStr::DoubleToStringPosix( double val, unsigned int precision,
+                                     char* buffer, SIZE_TYPE bufsize)
+{
+    if (bufsize < precision+8) {
+        NCBI_THROW2(CStringException, eConvert,
+                    "Destination buffer too small", 0);
+    }
+    int dec=0, sign=0;
+    char digits[32];
+    size_t digits_len = DoubleToString_Ecvt(
+        val, precision, digits, sizeof(digits), &dec, &sign);
+    if (digits_len == 0) {
+        return 0;
+    }
+    if (digits_len == 1 && dec == 0 && sign >=0) {
+        *buffer = digits[0];
+        return 1;
+    }
+    bool exp_positive = dec >= 0;
+    unsigned int exp= (unsigned int)(exp_positive ? dec : (-dec));
+
+// assemble the result
+    char *buffer_pos = buffer;
+//    char *buffer_end = buffer + bufsize;
+    char *digits_pos = digits;
+
+    if (sign < 0) {
+        *buffer_pos++ = '-';
+    }
+// The 'e' format is used when the exponent of the value is less than –4
+//  or greater than or equal to the precision argument
+    if ((exp_positive && exp >= precision) || (!exp_positive && exp > 4)) {
+        *buffer_pos++ = *digits_pos++;
+        --digits_len;
+        if (digits_len != 0) {
+            *buffer_pos++ = '.';
+            strncpy(buffer_pos,digits_pos,digits_len);
+            buffer_pos += digits_len;
+        }
+        *buffer_pos++ = 'e';
+        *buffer_pos++ = exp_positive ? '+' : '-';
+
+#if defined(NCBI_OS_MSWIN)
+        bool need_zeros = true;
+        size_t need_digits = 3;
+#else
+        bool need_zeros = exp < 10 ? true : false;
+        size_t need_digits = exp < 100 ? 2 : 3;
+#endif
+// assuming exp < 1000
+        buffer_pos = s_ncbi_append_int2str(buffer_pos, exp, need_digits,need_zeros);
+    } else if (exp_positive) {
+        *buffer_pos++ = *digits_pos++;
+        --digits_len;
+        if (digits_len > exp) {
+            strncpy(buffer_pos,digits_pos,exp);
+            buffer_pos += exp;
+            *buffer_pos++ = '.';
+            strncpy(buffer_pos,digits_pos+exp,digits_len-exp);
+            buffer_pos += digits_len-exp;
+        } else {
+            strncpy(buffer_pos,digits_pos,digits_len);
+            buffer_pos += digits_len;
+            exp -= (unsigned int)digits_len;
+            while (exp--) {
+                *buffer_pos++ = '0';
+            }
+        }
+    } else {
+        *buffer_pos++ = '0';
+        *buffer_pos++ = '.';
+        for (--exp; exp--;) {
+            *buffer_pos++ = '0';
+        }
+        strncpy(buffer_pos,digits_pos, digits_len);
+        buffer_pos += digits_len;
+    }
+    return buffer_pos - buffer;
+}
+
+
 string NStr::SizetToString(size_t value, TNumToStringFlags flags, int base)
 {
 #if (SIZEOF_SIZE_T > 4)

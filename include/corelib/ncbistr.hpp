@@ -767,7 +767,7 @@ public:
     /// @param precision
     ///   Precision value for conversion. If precision is more that maximum
     ///   for current platform, then it will be truncated to this maximum.
-    //    If it is negative, that double will be converted to number in
+    ///   If it is negative, that double will be converted to number in
     ///   scientific notation.
     /// @param flags
     ///   How to convert value to string.
@@ -789,7 +789,7 @@ public:
     /// @param precision
     ///   Precision value for conversion. If precision is more that maximum
     ///   for current platform, then it will be truncated to this maximum.
-    //    If it is negative, that double will be converted to number in
+    ///   If it is negative, that double will be converted to number in
     ///   scientific notation.
     /// @param flags
     ///   How to convert value to string.
@@ -822,6 +822,66 @@ public:
     static SIZE_TYPE DoubleToString(double value, unsigned int precision,
                                     char* buf, SIZE_TYPE buf_size,
                                     TNumToStringFlags flags = 0);
+
+    /// Convert double to string with specified precision and put the result
+    /// into a character buffer, in scientific format.
+    ///
+    /// NOTE:
+    ///   The output character buffer is NOT zero-terminated.
+    ///   The decimal separator is dot, always.
+    ///   This function DOES NOT check 'value' for being finite or not-a-number;
+    ///   if it is, the result is unpredictable.
+    ///   This function is less precise for a small fraction of values
+    ///   (the difference is in the last significant digit) than its
+    ///   'DoubleToString' siblings, but it is much faster.
+    ///
+    /// @param value
+    ///   Double value to be converted.
+    /// @param precision
+    ///   Maximum number of significant digits to preserve. If precision is greater than
+    ///   maximum for the current platform, it will be truncated to this maximum.
+    /// @param buf
+    ///   Put result of the conversion into this buffer.
+    /// @param buf_size
+    ///   Size of buffer, "buf".
+    /// @return
+    ///   The number of bytes written into "buf".
+    static SIZE_TYPE DoubleToStringPosix(double value,unsigned int precision,
+                                         char* buf, SIZE_TYPE buf_size);
+
+
+    /// Convert double to string with specified precision.
+    /// 
+    /// The result consists of three parts: significant digits, exponent and sign.
+    /// For example, input value -12345.67 will produce
+    /// buf = "1234567" , *dec = 4, and *sign = -1.
+    /// NOTE:
+    ///   The output character buffer is NOT zero-terminated.
+    ///   The buffer is NOT padded with zeros.
+    ///   This function DOES NOT check 'value' for being finite or not-a-number;
+    ///   if it is, the result is unpredictable.
+    ///   This function is less precise for a small fraction of values
+    ///   (the difference is in the last significant digit) than its
+    ///   'DoubleToString' siblings, but it is much faster.
+    ///
+    /// @param value
+    ///   Double value to be converted.
+    /// @param precision
+    ///   Maximum number of significant digits to preserve. If precision is greater than
+    ///   maximum for the current platform, it will be truncated to this maximum.
+    /// @param buf
+    ///   Put result of the conversion into this buffer.
+    /// @param buf_size
+    ///   Size of buffer, "buf".
+    /// @param dec
+    ///   Exponent
+    /// @param sign
+    ///   Sign of the value
+    /// @return
+    ///   The number of bytes written into "buf".
+    static SIZE_TYPE DoubleToString_Ecvt(double value,unsigned int precision,
+                                         char* buf, SIZE_TYPE buf_size,
+                                         int* dec, int* sign);
 
     /// Convert size_t to string.
     ///
