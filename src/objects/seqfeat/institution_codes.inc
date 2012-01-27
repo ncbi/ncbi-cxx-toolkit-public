@@ -3448,7 +3448,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MCVE	s	Museo di Storia Naturale di Venezia",
 "MCVM	s	Museo Civico, Villa Mirabello",
 "MCW	s	Milton College, Biology Department",
-"MCZ	s	Museum of Comparative Zoology, Harvard University",
+"MCZ	cb	Museum of Comparative Zoology, Harvard University",
 "MCZ:A	s	Museum of Comparative Zoology, Harvard University, Herpetology Amphibian Collection",
 "MCZ:HERP	s	Museum of Comparative Zoology, Harvard University, Herpetology Collection",
 "MCZ:I	s	Museum of Comparative Zoology, Harvard University, Ichthyology Collection",
