@@ -367,6 +367,32 @@ public:
 
     };
     
+    ///Structure that holds information for all hits of one subject in Seq Align Set    
+    struct SSeqAlignSetCalcParams {        
+        //values used in descriptions display
+        double evalue;                  //lowest evalue in Seq Align Set , displayed on the results page as 'Evalue', 
+        double bit_score;               //Highest bit_score in Seq Align Set, displayed on the results page as 'Max Score'
+        double total_bit_score;         //total bit_score for Seq Align Set, displayed on the results page as 'Total Score'
+        int percent_coverage;           //percent coverage for Seq Align Set, displayed on the results page as 'Query coverage'
+                                        //calulated as 100*master_covered_length/queryLength
+        int percent_identity;           //highest percent identity in Seq Align Set, displayed on the results page as 'Max ident'
+                                        //calulated as 100*match/align_length
+
+        int hspNum;                     //hsp number, number of hits
+
+        int raw_score;                  //raw score, read from the 'score' in first align in Seq Aln Set, not used        
+        list<int> use_this_gi;          //Limit formatting by these GI's, read from the first align in Seq Aln Set        
+        int sum_n;                      //sum_n in score block , read from the first align in Seq Aln Set        
+
+        int master_covered_length;      //total query length covered by alignment - calculated, used calculate percent_coverage
+
+        int match;                      //number of matches in the alignment with highest percent identity,used to calulate percent_identity
+        int align_length;               //length of the alignment with highest percent identity,used to calulate percent_identity
+        
+        CConstRef<objects::CSeq_id> id; //subject seq id               
+        CRange<TSeqPos> subjRange;      //total subject sequence range- calculated
+        bool flip;					    //indicates opposite strands in the first seq align	   
+    };  
       
     enum DbSortOrder {
         eNonGenomicFirst = 1,
@@ -1074,7 +1100,10 @@ public:
     static CAlignFormatUtil::DbType GetDbType(const objects::CSeq_align_set& actual_aln_list, 
                                               objects::CScope & scope);
                                           
-                                   
+    static CAlignFormatUtil::SSeqAlignSetCalcParams* GetSeqAlignCalcParams(const objects::CSeq_align& aln);
+
+    static CAlignFormatUtil::SSeqAlignSetCalcParams* GetSeqAlignSetCalcParams(const objects::CSeq_align_set& aln,int queryLength,bool do_translation);
+
     ///Get Gene symobol for gi
     ///@param  giForGeneLookup: gi
     ///@return: string gene symbol
