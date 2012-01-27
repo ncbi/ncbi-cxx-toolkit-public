@@ -3114,6 +3114,95 @@ CAlignFormatUtil::DbType CAlignFormatUtil::GetDbType(const CSeq_align_set& actua
     return type;
 }
 
+CAlignFormatUtil::SSeqAlignSetCalcParams* 
+CAlignFormatUtil::GetSeqAlignCalcParams(const CSeq_align& aln)
+{    
+    int score = 0;
+    double bits = 0;
+    double evalue = 0;
+    int sum_n = 0;
+    int num_ident = 0;
+    list<int> use_this_gi; 
+
+    use_this_gi.clear();
+    //Gets scores directly from seq align 
+    GetAlnScores(aln, score, bits, evalue, sum_n, 
+                                       num_ident, use_this_gi);
+
+    auto_ptr<SSeqAlignSetCalcParams> seqSetInfo(new SSeqAlignSetCalcParams);
+    seqSetInfo->sum_n = sum_n == -1 ? 1:sum_n ;
+    seqSetInfo->id = &(aln.GetSeq_id(1));
+    seqSetInfo->use_this_gi = use_this_gi;
+    seqSetInfo->bit_score = bits;
+    seqSetInfo->raw_score = score;
+    seqSetInfo->evalue = evalue;
+    seqSetInfo->id = &(aln.GetSeq_id(1));
+    seqSetInfo->subjRange = CRange<TSeqPos>(0,0);	
+    seqSetInfo->flip = false;
+    
+    return seqSetInfo.release();
+}
+
+
+
+CAlignFormatUtil::SSeqAlignSetCalcParams* 
+CAlignFormatUtil::GetSeqAlignSetCalcParams(const CSeq_align_set& aln,int queryLength, bool do_translation)
+{
+    int score = 0;
+    double bits = 0;
+    double evalue = 0;
+    int sum_n = 0;
+    int num_ident = 0;
+    SSeqAlignSetCalcParams* seqSetInfo = NULL;
+
+    if(aln.Get().empty())
+        return seqSetInfo;
+
+    seqSetInfo = GetSeqAlignCalcParams(*(aln.Get().front())); 
+
+    double total_bits = 0;
+    double highest_bits = 0;
+    double lowest_evalue = 0;
+    int highest_length = 1;
+    int highest_ident = 0;
+    int highest_identity = 0;
+    list<int> use_this_gi;   // Not used here, but needed for GetAlnScores.    
+    
+    seqSetInfo->subjRange = CAlignFormatUtil::GetSeqAlignCoverageParams(aln,&seqSetInfo->master_covered_length,&seqSetInfo->flip);	
+    seqSetInfo->percent_coverage = 100*seqSetInfo->master_covered_length/queryLength;
+
+    ITERATE(CSeq_align_set::Tdata, iter, aln.Get()) {
+        int align_length = CAlignFormatUtil::GetAlignmentLength(**iter, do_translation);
+                                                        
+        CAlignFormatUtil::GetAlnScores(**iter, score, bits, evalue, sum_n, 
+                                   num_ident, use_this_gi);  
+        use_this_gi.clear();
+    
+        total_bits += bits;
+    
+        if (100*num_ident/align_length > highest_identity) {
+            highest_length = align_length;
+            highest_ident = num_ident;
+            highest_identity = 100*num_ident/align_length;
+        }
+    
+        if (bits > highest_bits) {
+            highest_bits = bits;
+            lowest_evalue = evalue;
+        }       
+    }
+    seqSetInfo->match = highest_ident;      
+    seqSetInfo->align_length = highest_length;    
+    seqSetInfo->percent_identity = CAlignFormatUtil::GetPercentMatch(seqSetInfo->match, seqSetInfo->align_length);
+    
+    seqSetInfo->total_bit_score = total_bits;
+    seqSetInfo->bit_score = highest_bits;    
+    seqSetInfo->evalue = lowest_evalue;    
+    seqSetInfo->hspNum = aln.Size();	
+
+    return seqSetInfo;
+}
+
 
 END_SCOPE(align_format)
 END_NCBI_SCOPE
