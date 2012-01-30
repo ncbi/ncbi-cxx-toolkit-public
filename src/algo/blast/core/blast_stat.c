@@ -5151,6 +5151,7 @@ static double s_CalculateNormalProbability(double x_, double eps_)
 
 static double s_NormalProbability(double x, erfc_table *p, double eps) {
     Int4 x_n;
+    if (x < 0) return (1.0 - s_NormalProbability(-x, p, eps));
     if (x < p->a || x > p->b) return s_CalculateNormalProbability(x, eps);
     x_n = MIN((Int4) floor((x - p->a) / p->h),  p->N - 1);
     return p->p[x_n] + (p->p[x_n + 1] - p->p[x_n]) * (x - (p->h * x_n + p->a)) / p->h;
@@ -5197,27 +5198,24 @@ BLAST_SpougeStoE(Int4 y_,
 
     double m_li_y, vi_y, sqrt_vi_y, m_F, P_m_F;
     double n_lj_y, vj_y, sqrt_vj_y, n_F, P_n_F;
-    double c_y, c_y_P_m_F_P_n_F;
-    double p1, p2, p1_p2, area;
+    double c_y, p1, p2, area;
 
-    m_li_y = m_ - MAX(0.0, ai_hat_*y_+bi_hat_);
-    vi_y = MAX(0.0, alphai_hat_*y_+betai_hat_);
+    m_li_y = m_ - (ai_hat_*y_ + bi_hat_);
+    vi_y = MAX(2.0*alphai_hat_/lambda_, alphai_hat_*y_+betai_hat_);
     sqrt_vi_y = sqrt(vi_y);
-    m_F = (sqrt_vi_y==0.0) ? 1e100 : m_li_y/sqrt_vi_y;
+    m_F = m_li_y/sqrt_vi_y;
     P_m_F = s_NormalProbability(m_F, gbp->p, eps);
     p1 = m_li_y * P_m_F + sqrt_vi_y * const_val * exp(-0.5*m_F*m_F);
 
-    n_lj_y = n_ - MAX(0.0, aj_hat_*y_+bj_hat_);
-    vj_y = MAX(0.0, alphaj_hat_*y_+betaj_hat_);
-    sqrt_vj_y=sqrt(vj_y);
-    n_F = (sqrt_vj_y==0.0) ? 1e100 : n_lj_y/sqrt_vj_y;
+    n_lj_y = n_ - (aj_hat_*y_ + bj_hat_);
+    vj_y = MAX(2.0*alphaj_hat_/lambda_, alphaj_hat_*y_+betaj_hat_);
+    sqrt_vj_y = sqrt(vj_y);
+    n_F = n_lj_y/sqrt_vj_y;
     P_n_F = s_NormalProbability(n_F, gbp->p, eps);
     p2 = n_lj_y * P_n_F + sqrt_vj_y * const_val * exp(-0.5*n_F*n_F);
 
-    c_y = MAX(0.0, sigma_hat_*y_+tau_hat_);
-    c_y_P_m_F_P_n_F = c_y * P_m_F * P_n_F;
-    p1_p2 = MAX(p1 * p2, 0.0);
-    area = MAX(p1_p2 + c_y_P_m_F_P_n_F, 0.0);
+    c_y = MAX(2.0*sigma_hat_/lambda_, sigma_hat_*y_+tau_hat_);
+    area = p1 * p2 + c_y * P_m_F * P_n_F;
 
     return area * k_ * exp(-lambda_ * y_) * db_scale_factor;
 }
@@ -5257,3 +5255,4 @@ BLAST_SpougeEtoS(double e0,
     }
     return a;
 }
+

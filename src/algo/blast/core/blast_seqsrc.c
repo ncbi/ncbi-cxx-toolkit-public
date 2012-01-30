@@ -208,8 +208,9 @@ Int4
 BlastSeqSrcGetMinSeqLen(const BlastSeqSrc* seq_src)
 {
     ASSERT(seq_src);
-    ASSERT(seq_src->GetMinSeqLen);
-    return (*seq_src->GetMinSeqLen)(seq_src->DataStructure, NULL);
+    /* TODO this function may not be available for all seq_src */
+    return (seq_src->GetMinSeqLen) ?
+        (*seq_src->GetMinSeqLen)(seq_src->DataStructure, NULL) : 6;
 }
 
 Int4
