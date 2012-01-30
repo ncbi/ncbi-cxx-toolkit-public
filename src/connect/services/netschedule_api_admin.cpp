@@ -347,9 +347,11 @@ void CNetScheduleAdmin::StatusSnapshot(
 void CNetScheduleAdmin::AffinitySnapshot(
     CNetScheduleAdmin::TAffinityMap& affinity_map)
 {
+    static const SAffinityInfo new_affinity_info = {0, 0, 0, 0};
+
     string cmd = "AFLS";
 
-    string aff_str, cnt_str;
+    string affinity_token, cnt_str;
 
     for (CNetServiceIterator it =
             m_Impl->m_API->m_Service.Iterate(); it; ++it) {
@@ -357,17 +359,23 @@ void CNetScheduleAdmin::AffinitySnapshot(
         vector<CTempString> affinities;
         NStr::Tokenize(cmd_output, "&", affinities);
         ITERATE(vector<CTempString>, affinity, affinities) {
-            if (NStr::SplitInTwo(*affinity, "=", aff_str, cnt_str)) {
-                TWorkerNodeList worker_nodes;
-                NStr::Tokenize(cnt_str, ",", worker_nodes);
-                if (worker_nodes.size() > 1) {
-                    cnt_str = worker_nodes.front();
-                    TWorkerNodeList& wn_list = affinity_map[aff_str].second;
-                    wn_list.insert(wn_list.begin(),
-                        worker_nodes.begin() + 1, worker_nodes.end());
-                }
-                affinity_map[aff_str].first += NStr::StringToUInt(cnt_str);
-            }
+            if (!NStr::SplitInTwo(*affinity, "=", affinity_token, cnt_str))
+                continue;
+
+            SAffinityInfo& affinity_info = affinity_map.insert(
+                TAffinityMap::value_type(affinity_token,
+                    new_affinity_info)).first->second;
+
+            vector<CTempString> counters;
+            NStr::Tokenize(cnt_str, ",", counters);
+
+            if (counters.size() != 4)
+                continue;
+
+            affinity_info.pending_job_count += NStr::StringToUInt(counters[0]);
+            affinity_info.running_job_count += NStr::StringToUInt(counters[1]);
+            affinity_info.dedicated_workers += NStr::StringToUInt(counters[2]);
+            affinity_info.tentative_workers += NStr::StringToUInt(counters[3]);
         }
     }
 }

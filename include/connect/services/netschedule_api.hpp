@@ -613,15 +613,22 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
     void StatusSnapshot(TStatusMap& status_map,
         const string& affinity_token);
 
-    /// List of worker node IDs associated with affinities
-    /// returned by AffinitySnapshot().
-    typedef vector<string> TWorkerNodeList;
-    /// Affinity map, shows number of jobs per affinity.
-    typedef map<string, pair<unsigned, TWorkerNodeList> > TAffinityMap;
+    /// Affinity information returned by AffinitySnapshot().
+    struct SAffinityInfo {
+        unsigned pending_job_count;
+        unsigned running_job_count;
+        unsigned dedicated_workers;
+        unsigned tentative_workers;
+    };
+    /// Affinity map, shows the number of jobs and worker nodes per affinity.
+    typedef map<string, SAffinityInfo> TAffinityMap;
 
-    /// For each affinity, returns the number of jobs associated with it.
+    /// For each affinity, returns the number of jobs associated with it
+    /// as well as the number of worker nodes that are handling or have
+    /// requested this affinity.
+    ///
     /// @param affinity_map
-    ///    Map of affinity tokens to job number counters.
+    ///    Map of affinity tokens to job and worker node counters.
     void AffinitySnapshot(TAffinityMap& affinity_map);
 
     /// Create queue of given queue class
