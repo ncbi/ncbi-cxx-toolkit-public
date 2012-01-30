@@ -69,15 +69,15 @@ USING_SCOPE(objects);
 
 
 //Input args specify to makeprofiledb
-static const string kInPssmList("in_list");
+static const string kInPssmList("in");
 static const string kOutDbName("out");
 static const string kMaxFileSize("max_file_sz");
-static const string kOutDbType("out_db_type");
-static const string kPssmScaleFactor("pssm_sf");
-static const string kOutIndexFile("index_file");
+static const string kOutDbType("db_type");
+static const string kPssmScaleFactor("scale");
+static const string kOutIndexFile("index");
 static const string kObsrThreshold("obsr_threshold");
 static const string kExcludeInvalid("exclude_invalid");
-static const string kBinaryScoremat("binary_scoremat");
+static const string kBinaryScoremat("binary");
 
 static const string kLogFile("logfile");
 
@@ -102,7 +102,6 @@ static const string kDefaultMaxFileSize("1GB");
 static const string kDefaultOutDbType(kOutDbRps);
 static const string kDefaultOutIndexFile("true");
 static const string kDefaultExcludeInvalid("true");
-static const string kDefaultBinaryScoremat("false");
 #define kDefaultWordScoreThreshold (9.82)
 #define kDefaultPssmScaleFactor (100.00)
 #define kDefaultObsrThreshold (6.0)
@@ -359,10 +358,9 @@ void CMakeProfileDBApp::x_SetupArgDescriptions(void)
                      "Input file that contains a list of smp files (delimited by space, tab or newline)",
                      CArgDescriptions::eInputFile);
 
-    arg_desc->AddDefaultKey(kBinaryScoremat, "is_binary_scoremat",
-       						"Scoremats are in binary format",
-       						CArgDescriptions::eBoolean,
-       						kDefaultBinaryScoremat);
+    arg_desc->AddFlag(kBinaryScoremat,
+       				  "Scoremats are in binary format",
+       				  true);
 
     arg_desc->SetCurrentGroup("Configuration options");
     arg_desc->AddOptionalKey(kArgDbTitle, "database_title",
@@ -370,7 +368,7 @@ void CMakeProfileDBApp::x_SetupArgDescriptions(void)
                              CArgDescriptions::eString);
 
     arg_desc->AddDefaultKey(kArgWordScoreThreshold, "word_score_threshold",
-    						"Minimum word score such that the word is added to the lookup table",
+    						"Minimum word score to add a word to the lookup table",
     						CArgDescriptions::eDouble,
     						NStr::DoubleToString(kDefaultWordScoreThreshold));
 
@@ -384,7 +382,7 @@ void CMakeProfileDBApp::x_SetupArgDescriptions(void)
                             CArgDescriptions::eString, kDefaultMaxFileSize);
 
     arg_desc->AddDefaultKey(kOutDbType, "output_db_type",
-                            "Output database type: cobalt (future), delta (future)",
+                            "Output database type: cobalt, delta, rps",
                             CArgDescriptions::eString, kDefaultOutDbType);
     arg_desc->SetConstraint(kOutDbType, &(*new CArgAllow_Strings, kOutDbRps, kOutDbCobalt , kOutDbDelta ));
 
@@ -445,7 +443,7 @@ void CMakeProfileDBApp::x_InitProgramParameters(void)
 		NCBI_THROW(CInputException, eInvalidInput,  "Please provide an input file with list of smp files");
 
 	// Binary Scoremat
-	m_binary_scoremat = args[kBinaryScoremat].AsBoolean();
+	m_binary_scoremat = args[kBinaryScoremat];
 
 	//title
 	if (args[kArgDbTitle].HasValue())
@@ -551,7 +549,7 @@ CMakeProfileDBApp::x_CheckInputScoremat(const CPssmWithParameters & pssm_w_param
 			NCBI_THROW(CInputException, eInvalidInput,  err);
 		}
 
-		if(pssm.GetQueryLength() != pssm.GetNumColumns())
+		if((int) (pssm.GetQueryLength()) != pssm.GetNumColumns())
 		{
 			string err = filename + " 's num of columns does not match size of sequence";
 			NCBI_THROW(CInputException, eInvalidInput,  err);
@@ -743,7 +741,7 @@ void CMakeProfileDBApp::x_RPSUpdateStatistics(CPssmWithParameters & seq, Int4 se
 
     vector <char>   query_v = query_stdaa.Get();
 
-    if(query_v.size() != seq_size)
+    if((Int4) (query_v.size()) != seq_size)
     	 NCBI_THROW(CBlastException, eCoreBlastError, "Query sequence lengths mismatch");
 
     /* allocate query array and PSSM row array */
@@ -1282,7 +1280,7 @@ vector<string> CMakeProfileDBApp::x_CreateDeltaList(void)
 	CNcbiOfstream  tmp_obsr_buff(tmp_obsr_file.GetFileName().c_str(), IOS_BASE::out | IOS_BASE::binary);
 	CNcbiOfstream  tmp_freq_buff(tmp_freq_file.GetFileName().c_str(), IOS_BASE::out | IOS_BASE::binary);
 
-	for(int seq_index=0; seq_index < smpFilenames.size(); seq_index++)
+	for(unsigned int seq_index=0; seq_index < smpFilenames.size(); seq_index++)
 	{
 		string filename = smpFilenames[seq_index];
 		CFile f(filename);
@@ -1354,7 +1352,7 @@ bool CMakeProfileDBApp::x_ValidateCd(const list<double>& freqs,
 
     ITERATE (list<double>, it, freqs)
     {
-        int residue = 0;
+        unsigned int residue = 0;
         double sum = 0.0;
         while (residue < alphabet_size - 1)
         {
