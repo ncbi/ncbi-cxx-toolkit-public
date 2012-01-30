@@ -50,7 +50,7 @@ BEGIN_NCBI_SCOPE
 /////////////////////////////////////////////////////////////////////////////
 // Iterate over objects in input stream
 // IMPORTANT: the following API requires multi-threading
-#if defined(_MT) && !defined(NCBI_WITHOUT_MT)
+#if defined(NCBI_THREADS)
 
 template<typename TRoot, typename TObject>
 class CIStreamIteratorThread_Base;
