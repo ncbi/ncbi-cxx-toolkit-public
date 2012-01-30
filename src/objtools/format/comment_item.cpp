@@ -951,7 +951,7 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
     if( label_str == "GOLD Stamp ID" && NStr::StartsWith(data_str, "Gi") ) {
         CNcbiOstrstream result;
         result << "<a href=\"http://genomesonline.org/cgi-bin/GOLD/bin/GOLDCards.cgi?goldstamp=" << data_str 
-               << ".html\">" << data_str << "</a>";
+               << "\">" << data_str << "</a>";
         return CNcbiOstrstreamToString(result);
     } else {
         // normalize case: nothing to do
