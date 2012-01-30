@@ -1256,6 +1256,11 @@ bool s_TransSplicingFeatureAllowed(
         case CSeqFeatData::eSubtype_tRNA:
         case CSeqFeatData::eSubtype_preRNA:
         case CSeqFeatData::eSubtype_otherRNA:
+
+        // !!! exon/intron trans-splicing: quarantine until April 2012
+        // case CSeqFeatData::eSubtype_exon:
+        // case CSeqFeatData::eSubtype_intron:
+
         case CSeqFeatData::eSubtype_3clip:
         case CSeqFeatData::eSubtype_3UTR:
         case CSeqFeatData::eSubtype_5clip:

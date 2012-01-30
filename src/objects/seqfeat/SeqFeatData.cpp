@@ -1275,6 +1275,7 @@ START_SUBTYPE(exon)
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
+    ADD_QUAL(trans_splicing);
     ADD_QUAL(usedin);
 END_SUBTYPE
 
@@ -1334,6 +1335,7 @@ START_SUBTYPE(intron)
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
+    ADD_QUAL(trans_splicing);
     ADD_QUAL(usedin);
 END_SUBTYPE
 
