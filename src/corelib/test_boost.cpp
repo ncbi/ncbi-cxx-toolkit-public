@@ -304,7 +304,7 @@ private:
     void x_EnsureChildOrder(CNcbiTestTreeElement* leftElem,
                             CNcbiTestTreeElement* rightElem);
     void x_EnsureChildOrder(CNcbiTestTreeElement* leftElem,
-                            TElemsList::iterator  it_right);
+                            size_t                idx_right);
 
     /// Add leftElem (rightElem) in the list of elements that should be
     /// "lefter" ("righter") in the tests tree.
@@ -604,21 +604,28 @@ CNcbiTestTreeElement::AddChild(CNcbiTestTreeElement* element)
 
 void
 CNcbiTestTreeElement::x_EnsureChildOrder(CNcbiTestTreeElement* leftElem,
-                                         TElemsList::iterator  it_right)
+                                         size_t                idx_right)
 {
-    TElemsList::iterator it_left  = find(m_Children.begin(), m_Children.end(),
-                                         leftElem);
-    _ASSERT(it_left != m_Children.end());
+    size_t idx_left = 0;
+    for (; idx_left < m_Children.size(); ++ idx_left) {
+        if (m_Children[idx_left] == leftElem)
+            break;
+    }
+    _ASSERT(idx_left < m_Children.size());
 
-    if (it_left < it_right)
+    if (idx_left < idx_right)
         return;
 
     m_OrderChanged = true;
-    m_Children.erase(it_left);
-    it_right = m_Children.insert(it_right, leftElem);
+    m_Children.erase(m_Children.begin() + idx_left);
+    m_Children.insert(m_Children.begin() + idx_right, leftElem);
 
     ITERATE(TElemsSet, it, leftElem->m_MustLeft) {
-        x_EnsureChildOrder(*it, it_right);
+        x_EnsureChildOrder(*it, idx_right);
+        // If order is changed in the above call then leftElem will move to
+        // the right and we need to change our index.
+        while (m_Children[idx_right] != leftElem)
+            ++idx_right;
     }
 }
 
@@ -665,11 +672,14 @@ CNcbiTestTreeElement::x_EnsureChildOrder(CNcbiTestTreeElement* leftElem,
     x_AddToMustLeft(rightElem, leftElem);
     x_AddToMustRight(leftElem, rightElem);
 
-    TElemsList::iterator it_right = find(m_Children.begin(), m_Children.end(),
-                                         rightElem);
-    _ASSERT(it_right != m_Children.end());
+    size_t idx_right = 0;
+    for (; idx_right < m_Children.size(); ++idx_right) {
+        if (m_Children[idx_right] == rightElem)
+            break;
+    }
+    _ASSERT(idx_right < m_Children.size());
 
-    x_EnsureChildOrder(leftElem, it_right);
+    x_EnsureChildOrder(leftElem, idx_right);
 }
 
 void
