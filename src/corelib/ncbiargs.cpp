@@ -2049,6 +2049,9 @@ void CArgDescriptions::Delete(const string& name)
                 "Argument description is not found");
         }
         m_Args.erase(it);
+        if (m_AutoHelp && name == s_AutoHelp) {
+            m_AutoHelp = false;
+        }
 
         // take special care of the extra args
         if ( name.empty() ) {
