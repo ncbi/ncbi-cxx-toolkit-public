@@ -554,7 +554,15 @@ void CObjectOStreamXml::WriteDouble2(double data, size_t digits)
             }
         }
     } else {
-        width = sprintf(buffer, "%.*g", (int)digits, data);
+        if (m_FastWriteDouble) {
+            width = NStr::DoubleToStringPosix(data, digits, buffer, sizeof(buffer));
+        } else {
+            width = sprintf(buffer, "%.*g", (int)digits, data);
+            char* dot = strchr(buffer,',');
+            if (dot) {
+                *dot = '.'; // enforce C locale
+            }
+        }
     }
     m_Output.PutString(buffer, width);
 }

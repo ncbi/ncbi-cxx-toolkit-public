@@ -170,46 +170,62 @@ void CObjectOStreamAsn::WriteDouble2(double data, size_t digits)
     }
 
     char buffer[128];
-    // ensure buffer is large enough to fit result
-    // (additional bytes are for sign, dot and exponent)
-    _ASSERT(sizeof(buffer) > digits + 16);
-    int width = sprintf(buffer, "%.*e", int(digits-1), data);
-    if ( width <= 0 || width >= int(sizeof(buffer) - 1) )
-        ThrowError(fOverflow, "buffer overflow");
-    _ASSERT(int(strlen(buffer)) == width);
-    char* dotPos = strchr(buffer, '.');
-    if (!dotPos) {
-        dotPos = strchr(buffer, ','); // non-C locale?
+    if (m_FastWriteDouble) {
+        int dec, sign;
+        size_t len = NStr::DoubleToString_Ecvt(
+            data, digits, buffer, sizeof(buffer), &dec, &sign);
+        _ASSERT(len > 0);
+        m_Output.PutString("{ ");
+        if (sign < 0) {
+            m_Output.PutString("-");
+        }
+        m_Output.PutString(buffer,len);
+        m_Output.PutString(", 10, ");
+        m_Output.PutInt4(dec - (int)(len-1));
+        m_Output.PutString(" }");
+        
+    } else {
+        // ensure buffer is large enough to fit result
+        // (additional bytes are for sign, dot and exponent)
+        _ASSERT(sizeof(buffer) > digits + 16);
+        int width = sprintf(buffer, "%.*e", int(digits-1), data);
+        if ( width <= 0 || width >= int(sizeof(buffer) - 1) )
+            ThrowError(fOverflow, "buffer overflow");
+        _ASSERT(int(strlen(buffer)) == width);
+        char* dotPos = strchr(buffer, '.');
+        if (!dotPos) {
+            dotPos = strchr(buffer, ','); // non-C locale?
+        }
+        _ASSERT(dotPos);
+        char* ePos = strchr(dotPos, 'e');
+        _ASSERT(ePos);
+
+        // now we have:
+        // mantissa with dot - buffer:ePos
+        // exponent - (ePos+1):
+
+        int exp;
+        // calculate exponent
+        if ( sscanf(ePos + 1, "%d", &exp) != 1 )
+            ThrowError(fInvalidData, "double value conversion error");
+
+        // remove trailing zeroes
+        int fractDigits = int(ePos - dotPos - 1);
+        while ( fractDigits > 0 && ePos[-1] == '0' ) {
+            --ePos;
+            --fractDigits;
+        }
+
+        // now we have:
+        // mantissa with dot without trailing zeroes - buffer:ePos
+
+        m_Output.PutString("{ ");
+        m_Output.PutString(buffer, dotPos - buffer);
+        m_Output.PutString(dotPos + 1, fractDigits);
+        m_Output.PutString(", 10, ");
+        m_Output.PutInt4(exp - fractDigits);
+        m_Output.PutString(" }");
     }
-    _ASSERT(dotPos);
-    char* ePos = strchr(dotPos, 'e');
-    _ASSERT(ePos);
-
-    // now we have:
-    // mantissa with dot - buffer:ePos
-    // exponent - (ePos+1):
-
-    int exp;
-    // calculate exponent
-    if ( sscanf(ePos + 1, "%d", &exp) != 1 )
-        ThrowError(fInvalidData, "double value conversion error");
-
-    // remove trailing zeroes
-    int fractDigits = int(ePos - dotPos - 1);
-    while ( fractDigits > 0 && ePos[-1] == '0' ) {
-        --ePos;
-        --fractDigits;
-    }
-
-    // now we have:
-    // mantissa with dot without trailing zeroes - buffer:ePos
-
-    m_Output.PutString("{ ");
-    m_Output.PutString(buffer, dotPos - buffer);
-    m_Output.PutString(dotPos + 1, fractDigits);
-    m_Output.PutString(", 10, ");
-    m_Output.PutInt4(exp - fractDigits);
-    m_Output.PutString(" }");
 }
 
 void CObjectOStreamAsn::WriteDouble(double data)

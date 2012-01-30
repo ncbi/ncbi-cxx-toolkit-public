@@ -733,6 +733,7 @@ protected:
     ESerialDataFormat   m_DataFormat;
     bool  m_WriteNamedIntegersByValue;
     EDelayBufferParsing  m_ParseDelayBuffers;
+    bool  m_FastWriteDouble;
 
 private:
     static CObjectOStream* OpenObjectOStreamAsn(CNcbiOstream& out,

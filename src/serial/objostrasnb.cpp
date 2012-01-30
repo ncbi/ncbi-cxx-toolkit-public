@@ -666,27 +666,34 @@ void CObjectOStreamAsnBinary::WriteDouble2(double data, size_t digits)
     if (!finite(data)) {
         ThrowError(fInvalidData, "invalid double: infinite");
     }
-#if 0
-    int shift = int(ceil(log10(fabs(data))));
-#else
-    int shift = 0;
-#endif
-    int precision = int(digits - shift);
-    if ( precision < 0 )
-        precision = 0;
-    else if ( size_t(precision) > kMaxDoubleLength ) // limit precision of data
-        precision = int(kMaxDoubleLength);
 
-    // ensure buffer is large enough to fit result
-    // (additional bytes are for sign, dot and exponent)
     char buffer[kMaxDoubleLength + 16];
-    int width = sprintf(buffer, "%.*g", precision, data);
-    if ( width <= 0 || width >= int(sizeof(buffer) - 1) )
-        ThrowError(fOverflow, "buffer overflow");
-    _ASSERT(strlen(buffer) == size_t(width));
-    char* dot = strchr(buffer,',');
-    if (dot) {
-        *dot = '.'; // enforce C locale
+    int width;
+    if (m_FastWriteDouble) {
+        width = (int)NStr::DoubleToStringPosix(data, digits, buffer, sizeof(buffer));
+    } else {
+#if 0
+        int shift = int(ceil(log10(fabs(data))));
+#else
+        int shift = 0;
+#endif
+        int precision = int(digits - shift);
+        if ( precision < 0 )
+            precision = 0;
+        else if ( size_t(precision) > kMaxDoubleLength ) // limit precision of data
+            precision = int(kMaxDoubleLength);
+
+        // ensure buffer is large enough to fit result
+        // (additional bytes are for sign, dot and exponent)
+        width = sprintf(buffer, "%.*g", precision, data);
+        if ( width <= 0 || width >= int(sizeof(buffer) - 1) )
+            ThrowError(fOverflow, "buffer overflow");
+        _ASSERT(strlen(buffer) == size_t(width));
+        char* dot = strchr(buffer,',');
+        if (dot) {
+            *dot = '.'; // enforce C locale
+        }
+
     }
 
     WriteSysTag(eReal);

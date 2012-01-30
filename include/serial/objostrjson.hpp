@@ -120,6 +120,7 @@ protected:
     virtual void WriteUint8(Uint8 data);
     virtual void WriteFloat(float data);
     virtual void WriteDouble(double data);
+    void WriteDouble2(double data, size_t digits);
     virtual void WriteCString(const char* str);
     virtual void WriteString(const string& s,
                              EStringType type = eStringTypeVisible);
