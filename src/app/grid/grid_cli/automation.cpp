@@ -31,9 +31,8 @@
 
 #include <ncbi_pch.hpp>
 
-#include "grid_cli.hpp"
-
-#include "json_over_uttp.hpp"
+#include "ns_cmd_impl.hpp"
+#include "util.hpp"
 
 #ifdef WIN32
 #include <io.h>
@@ -73,13 +72,16 @@ public:
     CJsonNode NextNodeOrNull();
     CJsonNode NextNode();
 
-    string NextString();
+    string GetString(const CJsonNode& node);
+    string NextString() {return GetString(NextNode());}
     string NextString(const string& default_value);
 
-    CJsonNode::TNumber NextNumber();
+    CJsonNode::TNumber GetNumber(const CJsonNode& node);
+    CJsonNode::TNumber NextNumber() {return GetNumber(NextNode());}
     CJsonNode::TNumber NextNumber(CJsonNode::TNumber default_value);
 
-    bool NextBoolean();
+    bool GetBoolean(const CJsonNode& node);
+    bool NextBoolean() {return GetBoolean(NextNode());}
     bool NextBoolean(bool default_value);
 
     void UpdateLocation(const string& location);
@@ -110,50 +112,44 @@ inline CJsonNode CArgArray::NextNode()
     return next_node;
 }
 
-inline string CArgArray::NextString()
+inline string CArgArray::GetString(const CJsonNode& node)
 {
-    CJsonNode next_node(NextNode());
-    if (!next_node.IsString())
+    if (!node.IsString())
         Exception("invalid argument type (expected a string)");
-    return next_node.GetString();
+    return node.GetString();
 }
 
 inline string CArgArray::NextString(const string& default_value)
 {
     CJsonNode next_node(NextNodeOrNull());
-    return next_node && next_node.IsString() ?
-        next_node.GetString() : default_value;
+    return next_node ? GetString(next_node) : default_value;
 }
 
-inline CJsonNode::TNumber CArgArray::NextNumber()
+inline CJsonNode::TNumber CArgArray::GetNumber(const CJsonNode& node)
 {
-    CJsonNode next_node(NextNode());
-    if (!next_node.IsNumber())
-        Exception("invalid argument type (expected a string)");
-    return next_node.GetNumber();
+    if (!node.IsNumber())
+        Exception("invalid argument type (expected a number)");
+    return node.GetNumber();
 }
 
 inline CJsonNode::TNumber CArgArray::NextNumber(
         CJsonNode::TNumber default_value)
 {
     CJsonNode next_node(NextNodeOrNull());
-    return next_node && next_node.IsNumber() ?
-        next_node.GetNumber() : default_value;
+    return next_node ? GetNumber(next_node) : default_value;
 }
 
-inline bool CArgArray::NextBoolean()
+inline bool CArgArray::GetBoolean(const CJsonNode& node)
 {
-    CJsonNode next_node(NextNode());
-    if (!next_node.IsBoolean())
+    if (!node.IsBoolean())
         Exception("invalid argument type (expected a boolean)");
-    return next_node.GetBoolean();
+    return node.GetBoolean();
 }
 
 inline bool CArgArray::NextBoolean(bool default_value)
 {
     CJsonNode next_node(NextNodeOrNull());
-    return next_node && next_node.IsBoolean() ?
-        next_node.GetBoolean() : default_value;
+    return next_node ? GetBoolean(next_node) : default_value;
 }
 
 inline void CArgArray::UpdateLocation(const string& location)
@@ -171,8 +167,8 @@ void CArgArray::Exception(const char* what)
     if (m_Location.empty()) {
         NCBI_THROW(CAutomationException, eInvalidInput, what);
     } else {
-        NCBI_THROW_FMT(CAutomationException, eInvalidInput,
-                m_Location << ": insufficient number of arguments");
+        NCBI_THROW_FMT(CAutomationException, eInvalidInput, m_Location <<
+                ": " << what);
     }
 }
 
@@ -228,106 +224,35 @@ struct SNetScheduleAutomationObject : public SAutomationObject
     virtual CJsonNode Call(const string& method, CArgArray& arg_array);
 };
 
-static string NormalizeStatKeyName(const CTempString& key)
-{
-    string key_norm(NStr::TruncateSpaces(key, NStr::eTrunc_Begin));
-    NStr::ToLower(key_norm);
-    NStr::ReplaceInPlace(key_norm, " ", "_");
-    return key_norm;
-}
-
-static bool IsInteger(const CTempString& value)
-{
-    if (value.empty())
-        return false;
-
-    const char* digit = value.end();
-
-    while (--digit > value.begin())
-        if (!isdigit(*digit))
-            return false;
-
-    return isdigit(*digit) || (*digit == '-' && value.length() > 1);
-}
-
-static inline string UnquoteIfQuoted(const CTempString& str)
-{
-    switch (str[0]) {
-    case '"':
-    case '\'':
-        return NStr::ParseQuoted(str);
-    default:
-        return str;
-    }
-}
-
-#define CLIENT_PREFIX "CLIENT: "
-#define CLIENT_PREFIX_LEN (sizeof(CLIENT_PREFIX) - 1)
-
-static CJsonNode StatOutputToJsonArray(CNetServerMultilineCmdOutput output)
-{
-    CJsonNode clients(CJsonNode::NewArrayNode());
-    CJsonNode client_info;
-    CJsonNode array_value;
-
-    string line;
-
-    while (output.ReadLine(line)) {
-        if (NStr::StartsWith(line, CLIENT_PREFIX)) {
-            if (client_info)
-                clients.PushNode(client_info);
-            client_info = CJsonNode::NewObjectNode();
-            client_info.SetString("client_node", UnquoteIfQuoted(
-                    CTempString(line.data() + CLIENT_PREFIX_LEN,
-                    line.length() - CLIENT_PREFIX_LEN)));
-        } else if (client_info && NStr::StartsWith(line, "  ")) {
-            if (NStr::StartsWith(line, "    ") && array_value) {
-                array_value.PushString(NStr::TruncateSpaces(line,
-                            NStr::eTrunc_Begin));
-            } else {
-                if (array_value)
-                    array_value = NULL;
-                CTempString key, value;
-                NStr::SplitInTwo(line, ":", key, value);
-                string key_norm(NormalizeStatKeyName(key));
-                value = NStr::TruncateSpaces(value, NStr::eTrunc_Begin);
-                if (value.empty())
-                    client_info.SetNode(key_norm, array_value =
-                            CJsonNode::NewArrayNode());
-                else if (IsInteger(value))
-                    client_info.SetNumber(key_norm, NStr::StringToInt8(value));
-                else if (NStr::CompareNocase(value, "FALSE") == 0)
-                    client_info.SetBoolean(key_norm, false);
-                else if (NStr::CompareNocase(value, "TRUE") == 0)
-                    client_info.SetBoolean(key_norm, true);
-                else if (NStr::CompareNocase(value, "NONE") == 0)
-                    client_info.SetNull(key_norm);
-                else
-                    client_info.SetString(key_norm, UnquoteIfQuoted(value));
-            }
-        }
-    }
-    if (client_info)
-        clients.PushNode(client_info);
-    return clients;
-}
-
 CJsonNode SNetScheduleAutomationObject::Call(const string& method,
         CArgArray& arg_array)
 {
     CJsonNode reply(CJsonNode::NewArrayNode());
     reply.PushBoolean(true);
 
-    if (method == "client_info") {
-        string ns_cmd(arg_array.NextBoolean(false) ?
-                "STAT CLIENTS VERBOSE" : "STAT CLIENTS");
-        CJsonNode result(CJsonNode::NewObjectNode());
-        for (CNetServiceIterator it =
-                m_NetScheduleAPI.GetService().Iterate(); it; ++it) {
-            result.SetNode((*it).GetServerAddress(),
-                StatOutputToJsonArray((*it).ExecWithRetry(ns_cmd)));
-        }
-        reply.PushNode(result);
+    if (method == "set_node_session") {
+        CJsonNode arg(arg_array.NextNode());
+        if (!arg.IsNull())
+            m_NetScheduleAPI.SetClientNode(arg_array.GetString(arg));
+        arg = arg_array.NextNode();
+        if (!arg.IsNull())
+            m_NetScheduleAPI.SetClientSession(arg_array.GetString(arg));
+    } else if (method == "server_info")
+        reply.PushNode(LegacyStatToJson(m_NetScheduleAPI,
+                arg_array.NextBoolean(false)));
+    else if (method == "client_info")
+        reply.PushNode(GenericStatToJson(m_NetScheduleAPI,
+                eNetScheduleStatClients, arg_array.NextBoolean(false)));
+    else if (method == "notification_info")
+        reply.PushNode(GenericStatToJson(m_NetScheduleAPI,
+                eNetScheduleStatNotifications, arg_array.NextBoolean(false)));
+    else if (method == "affinity_info")
+        reply.PushNode(GenericStatToJson(m_NetScheduleAPI,
+                eNetScheduleStatAffinities, arg_array.NextBoolean(false)));
+    else if (method == "exec") {
+        string command(arg_array.NextString());
+        reply.PushNode(ExecToJson(m_NetScheduleAPI.GetService(),
+                command, arg_array.NextBoolean(false)));
     } else {
         NCBI_THROW_FMT(CAutomationException, eCommandProcessingError,
                 "Unknown NetSchedule method '" << method << "'");
@@ -341,32 +266,79 @@ typedef CRef<SAutomationObject> TAutomationObjectRef;
 class CAutomationProc
 {
 public:
-    const CJsonNode& GetGreeting();
+    CAutomationProc(CPipe& pipe, FILE* protocol_dump);
 
     bool ProcessMessage(const CJsonNode& message);
 
     void PrepareError(const CTempString& error_message);
 
-    const CJsonNode& GetOutputMessage() const;
+    void SendMessage();
 
 private:
+    typedef Int8 TObjectID;
+
+    size_t ObjectIdToIndex(TObjectID object_id);
+
     void PrepareReply(const string& reply);
+
+    char m_WriteBuf[1024];
+
+    Int8 m_Pid;
+
+    CPipe& m_Pipe;
+    CUTTPWriter m_Writer;
+    CJsonOverUTTPWriter m_JSONWriter;
+
+    FILE* m_ProtocolDumpFile;
+    string m_ProtocolDumpTimeFormat;
+    string m_DumpInputHeaderFormat;
+    string m_DumpOutputHeaderFormat;
 
     vector<TAutomationObjectRef> m_Objects;
 
     CJsonNode m_RootNode;
 };
 
-const CJsonNode& CAutomationProc::GetGreeting()
+CAutomationProc::CAutomationProc(CPipe& pipe, FILE* protocol_dump) :
+    m_Pipe(pipe),
+    m_JSONWriter(pipe, m_Writer),
+    m_ProtocolDumpFile(protocol_dump)
 {
+    m_Writer.Reset(m_WriteBuf, sizeof(m_WriteBuf));
+
+    m_Pid = (Int8) CProcess::GetCurrentPid();
+
     m_RootNode = CJsonNode::NewArrayNode();
     m_RootNode.PushString(PROGRAM_NAME);
     m_RootNode.PushString(PROGRAM_VERSION);
-    return m_RootNode;
+
+    if (protocol_dump != NULL) {
+        string pid_str(NStr::NumericToString(m_Pid));
+
+        m_DumpInputHeaderFormat.assign(1, '\n');
+        m_DumpInputHeaderFormat.append(71 + pid_str.length(), '=');
+        m_DumpInputHeaderFormat.append("\n----- IN ------ %s (pid: ");
+        m_DumpInputHeaderFormat.append(pid_str);
+        m_DumpInputHeaderFormat.append(") -----------------------\n");
+
+        m_DumpOutputHeaderFormat.assign("----- OUT ----- %s (pid: ");
+        m_DumpOutputHeaderFormat.append(pid_str);
+        m_DumpOutputHeaderFormat.append(") -----------------------\n");
+
+        m_ProtocolDumpTimeFormat = "Y/M/D h:m:s.l";
+    }
+
+    SendMessage();
 }
 
 bool CAutomationProc::ProcessMessage(const CJsonNode& message)
 {
+    if (m_ProtocolDumpFile != NULL) {
+        fprintf(m_ProtocolDumpFile, m_DumpInputHeaderFormat.c_str(),
+                GetFastLocalTime().AsString(m_ProtocolDumpTimeFormat).c_str());
+        PrintJSON(m_ProtocolDumpFile, message);
+    }
+
     CArgArray arg_array(message.GetArray());
 
     string command(arg_array.NextString());
@@ -377,30 +349,26 @@ bool CAutomationProc::ProcessMessage(const CJsonNode& message)
         return false;
 
     if (command == "call") {
-        size_t object_id = (size_t) arg_array.NextNumber();
-        if (object_id >= m_Objects.size() || !m_Objects[object_id]) {
-            NCBI_THROW_FMT(CAutomationException, eCommandProcessingError,
-                    "Object with id '" << object_id << "' does not exist");
-        }
+        TAutomationObjectRef callee(m_Objects[
+                ObjectIdToIndex((TObjectID) arg_array.NextNumber())]);
         string method(arg_array.NextString());
         arg_array.UpdateLocation(method);
-        TAutomationObjectRef callee(m_Objects[object_id]);
         m_RootNode = callee->Call(method, arg_array);
     } else if (command == "new") {
         string class_name(arg_array.NextString());
         arg_array.UpdateLocation(class_name);
         TAutomationObjectRef new_object;
-        size_t object_id = m_Objects.size();
+        TObjectID new_object_id = m_Pid + m_Objects.size();
         if (class_name == "NetCache") {
             string service_name(arg_array.NextString());
             string client_name(arg_array.NextString());
-            new_object.Reset(new SNetCacheAutomationObject(object_id,
+            new_object.Reset(new SNetCacheAutomationObject(new_object_id,
                     service_name, client_name));
         } else if (class_name == "NetSchedule") {
             string service_name(arg_array.NextString());
             string queue_name(arg_array.NextString());
             string client_name(arg_array.NextString());
-            new_object.Reset(new SNetScheduleAutomationObject(object_id,
+            new_object.Reset(new SNetScheduleAutomationObject(new_object_id,
                     service_name, queue_name, client_name));
         } else {
             NCBI_THROW_FMT(CAutomationException, eInvalidInput,
@@ -410,7 +378,11 @@ bool CAutomationProc::ProcessMessage(const CJsonNode& message)
 
         m_RootNode = CJsonNode::NewArrayNode();
         m_RootNode.PushBoolean(true);
-        m_RootNode.PushNumber(object_id);
+        m_RootNode.PushNumber(new_object_id);
+    } else if (command == "del") {
+        m_Objects[ObjectIdToIndex((TObjectID) arg_array.NextNumber())] = NULL;
+        m_RootNode = CJsonNode::NewArrayNode();
+        m_RootNode.PushBoolean(true);
     } else {
         NCBI_THROW_FMT(CAutomationException, eInvalidInput,
                 "Unknown command '" << command << "'");
@@ -426,9 +398,26 @@ void CAutomationProc::PrepareError(const CTempString& error_message)
     m_RootNode.PushString(error_message);
 }
 
-inline const CJsonNode& CAutomationProc::GetOutputMessage() const
+void CAutomationProc::SendMessage()
 {
-    return m_RootNode;
+    if (m_ProtocolDumpFile != NULL) {
+        fprintf(m_ProtocolDumpFile, m_DumpOutputHeaderFormat.c_str(),
+                GetFastLocalTime().AsString(m_ProtocolDumpTimeFormat).c_str());
+        PrintJSON(m_ProtocolDumpFile, m_RootNode);
+    }
+
+    m_JSONWriter.SendMessage(m_RootNode);
+}
+
+size_t CAutomationProc::ObjectIdToIndex(CAutomationProc::TObjectID object_id)
+{
+    size_t index = (size_t) (object_id - m_Pid);
+
+    if (index >= m_Objects.size() || !m_Objects[index]) {
+        NCBI_THROW_FMT(CAutomationException, eCommandProcessingError,
+                "Object with id '" << object_id << "' does not exist");
+    }
+    return index;
 }
 
 void CAutomationProc::PrepareReply(const string& reply)
@@ -452,18 +441,11 @@ int CGridCommandLineInterfaceApp::Cmd_Automate()
     size_t bytes_read;
 
     char read_buf[1024];
-    char write_buf[1024];
 
     CUTTPReader reader;
     CJsonOverUTTPReader suttp_reader;
 
-    CUTTPWriter writer;
-    writer.Reset(write_buf, sizeof(write_buf));
-    CJsonOverUTTPWriter suttp_writer(pipe, writer);
-
-    CAutomationProc proc;
-
-    suttp_writer.SendMessage(proc.GetGreeting());
+    CAutomationProc proc(pipe, m_Opts.protocol_dump);
 
     while (pipe.Read(read_buf, sizeof(read_buf), &bytes_read) == eIO_Success) {
         reader.SetNewBuffer(read_buf, bytes_read);
@@ -477,15 +459,20 @@ int CGridCommandLineInterfaceApp::Cmd_Automate()
                 if (!proc.ProcessMessage(suttp_reader.GetMessage()))
                     return 0;
             }
+            catch (CConfigException& e) {
+                proc.PrepareError(e.GetMsg());
+            }
             catch (CNetSrvConnException& e) {
+                proc.PrepareError(e.GetMsg());
+            }
+            catch (CNetServiceException& e) {
                 proc.PrepareError(e.GetMsg());
             }
             catch (CAutomationException& e) {
                 switch (e.GetErrCode()) {
                 case CAutomationException::eInvalidInput:
-                    //fprintf(stderr, "%s\n", e.GetMsg().c_str());
                     proc.PrepareError(e.GetMsg());
-                    suttp_writer.SendMessage(proc.GetOutputMessage());
+                    proc.SendMessage();
                     return 2;
                 default:
                     proc.PrepareError(e.GetMsg());
@@ -494,7 +481,7 @@ int CGridCommandLineInterfaceApp::Cmd_Automate()
 
             suttp_reader.Reset();
 
-            suttp_writer.SendMessage(proc.GetOutputMessage());
+            proc.SendMessage();
 
             /* FALL THROUGH */
 

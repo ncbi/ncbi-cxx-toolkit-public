@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 
+#include "util.hpp"
 #include "grid_cli.hpp"
 
 #include <string.h>
@@ -160,43 +161,7 @@ int CGridCommandLineInterfaceApp::Cmd_Stats()
         return 0;
 
     case eNetScheduleAdmin:
-        if (IsOptionSet(eClientInfo))
-            m_NetScheduleAdmin.PrintServerStatistics(NcbiCout,
-                CNetScheduleAdmin::eStatisticsClients);
-        else if (IsOptionSet(eActiveJobCount))
-            printf("%u\n", m_NetScheduleAdmin.CountActiveJobs());
-        else if (IsOptionSet(eJobsByAffinity)) {
-            CNetScheduleAdmin::TAffinityMap affinity_map;
-
-            m_NetScheduleAdmin.AffinitySnapshot(affinity_map);
-
-            ITERATE(CNetScheduleAdmin::TAffinityMap, it, affinity_map) {
-                printf("%s: %u", it->first.c_str(), it->second.first);
-                if (it->second.second.empty())
-                    printf("\n");
-                else {
-                    const char* sep = " [";
-                    ITERATE(CNetScheduleAdmin::TWorkerNodeList, wn,
-                            it->second.second) {
-                        printf("%s%s", sep, wn->c_str());
-                        sep = ", ";
-                    }
-                    printf("]\n");
-                }
-            }
-        } else if (IsOptionSet(eJobsByStatus)) {
-            CNetScheduleAdmin::TStatusMap st_map;
-            m_NetScheduleAdmin.StatusSnapshot(st_map, m_Opts.affinity);
-            ITERATE(CNetScheduleAdmin::TStatusMap, it, st_map) {
-                if (it->second > 0)
-                    printf("%s: %u\n",
-                        CNetScheduleAPI::StatusToString(it->first).c_str(),
-                        it->second);
-            }
-        } else
-            m_NetScheduleAdmin.PrintServerStatistics(NcbiCout,
-                IsOptionSet(eBrief) ? CNetScheduleAdmin::eStatisticsBrief :
-                    CNetScheduleAdmin::eStatisticsAll);
+        PrintNetScheduleStats();
         return 0;
 
     case eWorkerNodeAdmin:
@@ -284,4 +249,32 @@ int CGridCommandLineInterfaceApp::Cmd_Shutdown()
     default:
         return 2;
     }
+}
+
+int CGridCommandLineInterfaceApp::Cmd_Exec()
+{
+    CNetService service;
+
+    switch (SetUp_AdminCmd()) {
+    case eNetCacheAdmin:
+        service = m_NetCacheAPI.GetService();
+        break;
+
+    case eNetScheduleAdmin:
+        service = m_NetScheduleAPI.GetService();
+        break;
+
+    default:
+        return 2;
+    }
+
+    if (m_Opts.output_format == eRaw)
+        service.PrintCmdOutput(m_Opts.command, NcbiCout,
+                IsOptionSet(eMultiline) ? CNetService::eMultilineOutput :
+                CNetService::eSingleLineOutput);
+    else // Output format is eJSON.
+        PrintJSON(stdout, ExecToJson(service,
+                m_Opts.command, IsOptionSet(eMultiline)));
+
+    return 0;
 }

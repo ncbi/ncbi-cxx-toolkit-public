@@ -101,12 +101,15 @@ enum EOption {
     eErrorMessage,
     eJobId,
     eClientInfo,
+    eNotificationInfo,
+    eAffinityInfo,
     eActiveJobCount,
     eJobsByAffinity,
     eJobsByStatus,
     eStartAfterJob,
     eJobCount,
     eSelectByStatus,
+    eVerbose,
     eBrief,
     eStatusOnly,
     eProgressMessageOnly,
@@ -127,7 +130,23 @@ enum EOption {
     eExtendedOptionDelimiter,
     eClientNode,
     eClientSession,
-    eTotalNumberOfOptions
+    eCommand,
+    eMultiline,
+    eProtocolDump,
+    eNumberOfOptions
+};
+
+enum EOutputFormat {
+    eHumanReadable,
+    eRaw,
+    eJSON,
+    eNumberOfOutputFormats
+};
+
+enum ENetScheduleStatTopic {
+    eNetScheduleStatClients,
+    eNetScheduleStatNotifications,
+    eNetScheduleStatAffinities
 };
 
 #define OPTION_ACCEPTED 1
@@ -152,6 +171,7 @@ private:
     struct SOptions {
         string id;
         string auth;
+        EOutputFormat output_format;
         string nc_service;
         string cache_name;
         string password;
@@ -179,8 +199,10 @@ private:
         string queue_description;
         string error_message;
         string input;
+        string command;
         FILE* input_stream;
         FILE* output_stream;
+        FILE* protocol_dump;
 
         struct SICacheBlobKey {
             string key;
@@ -190,14 +212,14 @@ private:
             SICacheBlobKey() : version(0) {}
         } icache_key;
 
-        char option_flags[eTotalNumberOfOptions];
+        char option_flags[eNumberOfOptions];
 
         SOptions() : offset(0), size(0), ttl(0), return_code(0),
             batch_size(0), limit(0), timeout(0), job_count(0),
             extend_lifetime_by(0), listening_port(0),
-            input_stream(NULL), output_stream(NULL)
+            input_stream(NULL), output_stream(NULL), protocol_dump(NULL)
         {
-            memset(option_flags, 0, eTotalNumberOfOptions);
+            memset(option_flags, 0, eNumberOfOptions);
         }
     } m_Opts;
 
@@ -261,6 +283,7 @@ public:
     int Cmd_GetConf();
     int Cmd_Reconf();
     int Cmd_Shutdown();
+    int Cmd_Exec();
     int Cmd_Automate();
 
 // Implementation details.
@@ -293,6 +316,13 @@ private:
     static bool ParseAndPrintJobEvents(const string& line);
     int DumpJobInputOutput(const string& data_or_blob_id);
     int PrintJobAttrsAndDumpInput(const CNetScheduleJob& job);
+
+    EOutputFormat GetOutputFormatOption(
+            EOutputFormat* allowed_formats,
+            EOutputFormat default_format);
+
+    void PrintNetScheduleStats();
+    void PrintNetScheduleStats_Generic(ENetScheduleStatTopic topic);
 };
 
 END_NCBI_SCOPE

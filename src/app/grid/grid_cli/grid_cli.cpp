@@ -62,7 +62,7 @@ struct SOptionDefinition {
     int opt_id;
     const char* name_variants;
     const char* description;
-} static const s_OptionDefinitions[eTotalNumberOfOptions] = {
+} static const s_OptionDefinitions[eNumberOfOptions] = {
 
     {CCommandLineParser::ePositionalArgument, eUntypedArg, "ARG", NULL},
 
@@ -166,6 +166,14 @@ struct SOptionDefinition {
         "client-info", "Print information on the recently "
             "connected clients."},
 
+    {CCommandLineParser::eSwitch, eNotificationInfo,
+        "notification-info", "Print a snapshot of the "
+            "currently subscribed notification listeners."},
+
+    {CCommandLineParser::eSwitch, eAffinityInfo,
+        "affinity-info", "Print information on the "
+            "currently handled affinities."},
+
     {CCommandLineParser::eSwitch, eActiveJobCount,
         "active-job-count", "Only print the total number of "
             "Pending and Running jobs in all queues combined."},
@@ -181,13 +189,17 @@ struct SOptionDefinition {
             "will be counted."},
 
     {CCommandLineParser::eOptionWithParameter, eStartAfterJob,
-        "start-after-job", "Specify the job key, the key of the last job in the previous dump batch."},
+        "start-after-job", "Specify the key of the last job "
+            "in the previous dump batch."},
 
     {CCommandLineParser::eOptionWithParameter, eJobCount,
         "job-count", "Specify the maximum number of jobs in the output."},
 
     {CCommandLineParser::eOptionWithParameter, eSelectByStatus,
         "select-by-status", "Filter output by job status."},
+
+    {CCommandLineParser::eSwitch, eVerbose,
+        "verbose", "Produce more verbose output."},
 
     {CCommandLineParser::eSwitch, eBrief,
         "brief", "Produce less verbose output."},
@@ -265,6 +277,15 @@ struct SOptionDefinition {
     {CCommandLineParser::eOptionWithParameter, eClientSession,
         "client-session", "Client session identifier."},
 
+    {CCommandLineParser::ePositionalArgument, eCommand, "COMMAND", NULL},
+
+    {CCommandLineParser::eSwitch, eMultiline,
+        "multiline", "Expect multiple lines of output."},
+
+    {CCommandLineParser::eOptionWithParameter, eProtocolDump,
+        "protocol-dump", "Dump input and output messages of "
+            "the automation protocol to the specified file."},
+
 };
 
 enum ECommandCategory {
@@ -272,13 +293,13 @@ enum ECommandCategory {
     eNetCacheCommand,
     eNetScheduleCommand,
     eExtendedCLICommand,
-    eTotalNumberOfCommandCategories
+    eNumberOfCommandCategories
 };
 
 struct SCommandCategoryDefinition {
     int cat_id;
     const char* title;
-} static const s_CategoryDefinitions[eTotalNumberOfCommandCategories] = {
+} static const s_CategoryDefinitions[eNumberOfCommandCategories] = {
     {eGeneralCommand, "General commands"},
     {eNetCacheCommand, "NetCache commands"},
     {eNetScheduleCommand, "NetSchedule commands"},
@@ -300,7 +321,8 @@ struct SCommandDefinition {
     const char* name_variants;
     const char* synopsis;
     const char* usage;
-    int options[eTotalNumberOfOptions + 1];
+    int options[eNumberOfOptions + 1];
+    int output_formats[eNumberOfOutputFormats + 1];
 } static const s_CommandDefinitions[] = {
 
     {eGeneralCommand, &CGridCommandLineInterfaceApp::Cmd_WhatIs,
@@ -583,11 +605,17 @@ struct SCommandDefinition {
     {eGeneralCommand, &CGridCommandLineInterfaceApp::Cmd_Stats,
         "stats", "Show server access statistics.",
         "Dump accumulated statistics on server access and "
-        "performance.",
+        "performance.\n\n"
+        "When applied to a NetSchedule server, this operation "
+        "supports the following format options: \"raw\", "
+        "\"human-readable\", \"json\".  If none specified, "
+        "\"human-readable\" is assumed.",
         {eNetCache, eNetSchedule, eWorkerNode, eQueue, eBrief,
-            eClientInfo, eActiveJobCount, eJobsByAffinity,
-            eJobsByStatus, eAffinity, eCompatMode, eAuth,
-            eClientNode, eClientSession, -1}},
+            eClientInfo, eNotificationInfo, eAffinityInfo,
+            eActiveJobCount, eJobsByAffinity, eJobsByStatus,
+            eAffinity, eVerbose, eOutputFormat, eCompatMode,
+            eAuth, eClientNode, eClientSession, -1},
+            {eHumanReadable, eRaw, eJSON, -1}},
 
     {eNetCacheCommand, &CGridCommandLineInterfaceApp::Cmd_Health,
         "health", "Evaluate availability of a server.",
@@ -628,16 +656,31 @@ struct SCommandDefinition {
         {eNetCache, eNetSchedule, eWorkerNode, eNow, eDie,
             eCompatMode, eAuth, eClientNode, eClientSession, -1}},
 
+    {eExtendedCLICommand, &CGridCommandLineInterfaceApp::Cmd_Exec,
+        "exec", "Execute an arbitrary command on one or more servers.",
+        "This command is intended for testing and debugging purposes."
+        "\n\nThe following output formats are supported: \"raw\" and "
+        "\"json\". The default is \"raw\".",
+        {eCommand, eNetCache, eNetSchedule, eQueue, eMultiline,
+            eAuth, eClientNode, eClientSession, eOutputFormat, -1},
+        {eRaw, eJSON, -1}},
+
     {eExtendedCLICommand, &CGridCommandLineInterfaceApp::Cmd_Automate,
         "automate", "Start as a pipe-based automation server.",
         "This command starts " PROGRAM_NAME " as an automation "
         "server that can be used to interact with Grid objects "
         "through a Python module (ncbi.grid).",
-        {-1}},
+        {eProtocolDump, -1}},
 };
 
 #define TOTAL_NUMBER_OF_COMMANDS int(sizeof(s_CommandDefinitions) / \
     sizeof(*s_CommandDefinitions))
+
+static const char* const s_OutputFormats[eNumberOfOutputFormats] = {
+    "human-readable",   /* eHumanReadable   */
+    "raw",              /* eRaw             */
+    "json"              /* eJSON            */
+};
 
 int CGridCommandLineInterfaceApp::Run()
 {
@@ -673,7 +716,7 @@ int CGridCommandLineInterfaceApp::Run()
             "Utility to access and control NCBI Grid services.");
 
         const SOptionDefinition* opt_def = s_OptionDefinitions;
-        int i = eTotalNumberOfOptions;
+        int i = eNumberOfOptions;
         do {
             if (opt_def->opt_id != eExtendedOptionDelimiter)
                 clparser.AddOption(opt_def->type, opt_def->opt_id,
@@ -685,7 +728,7 @@ int CGridCommandLineInterfaceApp::Run()
         } while (--i > 0);
 
         const SCommandCategoryDefinition* cat_def = s_CategoryDefinitions;
-        i = eTotalNumberOfCommandCategories;
+        i = eNumberOfCommandCategories;
         do {
             clparser.AddCommandCategory(cat_def->cat_id, cat_def->title);
             ++cat_def;
@@ -716,6 +759,9 @@ int CGridCommandLineInterfaceApp::Run()
         for (const int* opt_id = cmd_def->options; *opt_id >= 0; ++opt_id)
             m_Opts.option_flags[*opt_id] = OPTION_ACCEPTED;
 
+        if (m_Opts.option_flags[eOutputFormat])
+            m_Opts.output_format = (EOutputFormat) *cmd_def->output_formats;
+
         int opt_id;
         const char* opt_value;
 
@@ -735,6 +781,18 @@ int CGridCommandLineInterfaceApp::Run()
                 m_Opts.auth = opt_value;
                 break;
             case eOutputFormat:
+                {
+                    const int* format = cmd_def->output_formats;
+                    while (NStr::CompareNocase(opt_value,
+                                s_OutputFormats[*format]) != 0)
+                        if (*++format < 0) {
+                            fprintf(stderr, PROGRAM_NAME
+                                    " %s: invalid output format '%s'.\n",
+                                    cmd_def->name_variants, opt_value);
+                            return 2;
+                        }
+                    m_Opts.output_format = (EOutputFormat) *format;
+                }
                 break;
             case eNetCache:
                 m_Opts.nc_service = opt_value;
@@ -834,6 +892,9 @@ int CGridCommandLineInterfaceApp::Run()
             case eInput:
                 m_Opts.input = opt_value;
                 break;
+            case eCommand:
+                m_Opts.command = opt_value;
+                break;
             case eInputFile:
                 if ((m_Opts.input_stream = fopen(opt_value, "rb")) == NULL) {
                     fprintf(stderr, "%s: %s\n", opt_value, strerror(errno));
@@ -842,6 +903,12 @@ int CGridCommandLineInterfaceApp::Run()
                 break;
             case eOutputFile:
                 if ((m_Opts.output_stream = fopen(opt_value, "wb")) == NULL) {
+                    fprintf(stderr, "%s: %s\n", opt_value, strerror(errno));
+                    return 2;
+                }
+                break;
+            case eProtocolDump:
+                if ((m_Opts.protocol_dump = fopen(opt_value, "a")) == NULL) {
                     fprintf(stderr, "%s: %s\n", opt_value, strerror(errno));
                     return 2;
                 }
