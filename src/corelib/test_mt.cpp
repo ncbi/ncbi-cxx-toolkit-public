@@ -56,6 +56,9 @@ int           s_SpawnBy    = 6;
 static volatile unsigned int s_NextIndex = 0;
 
 #define TESTAPP_LOG_POST(x)  do { ++m_LogMsgCount; LOG_POST(x); } while (0)
+#if defined(_MT) && !defined(NCBI_WITHOUT_MT)
+#define TESTAPP_USE_MT
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 // Randomization paramaters
@@ -452,13 +455,13 @@ int CThreadedApp::Run(void)
     // Process command line
     const CArgs& args = GetArgs();
 
-#if !defined(_MT)
+#if !defined(TESTAPP_USE_MT)
     s_NumThreads = args["repeats"].AsInteger();
     if ( !s_NumThreads )
 #endif
         s_NumThreads = args["threads"].AsInteger();
 
-#if !defined(_MT)
+#if !defined(TESTAPP_USE_MT)
     // Set reasonable repeats if not set through the argument
     if (!args["repeats"].AsInteger()) {
         unsigned int repeats = s_NumThreads / 6;
@@ -486,7 +489,7 @@ int CThreadedApp::Run(void)
         ERR_POST(Fatal << "Cascading threshold must be less than 100");
     }
     bool cascading = ((unsigned int)(rand() % 100)) < threshold;
-#if !defined(_MT)
+#if !defined(TESTAPP_USE_MT)
     cascading = true;
 #endif
 
@@ -496,7 +499,7 @@ int CThreadedApp::Run(void)
     }
     cascading = cascading || (m_ThreadGroups.size() == 0);
 
-#if defined(_MT)
+#if defined(TESTAPP_USE_MT)
     TESTAPP_LOG_POST("Running " << s_NumThreads << " threads");
 #else
     TESTAPP_LOG_POST("Simulating " << s_NumThreads << " threads in ST mode");
