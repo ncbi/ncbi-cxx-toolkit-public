@@ -731,7 +731,12 @@ void CNetScheduleHandler::x_ProcessMsgQueue(BUF buffer)
         }
     }
 
-    if (m_QueueName != "noname" && !m_QueueName.empty()) {
+    // Empty queue name is a synonim for hardcoded 'noname'.
+    // To have exactly one string comparison, make the name empty if 'noname'
+    if (m_QueueName == "noname" )
+        m_QueueName = "";
+
+    if (!m_QueueName.empty()) {
         try {
             m_QueueRef.Reset(m_Server->OpenQueue(m_QueueName));
         }
@@ -818,7 +823,7 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
     CRef<CQueue>        queue_ref;
     CQueue *            queue_ptr = NULL;
     if (extra.role & eNSAC_Queue) {
-        if (m_QueueName == "noname" || m_QueueName.empty())
+        if (m_QueueName.empty())
             NCBI_THROW(CNetScheduleException, eUnknownQueue, "Job queue is required");
         queue_ref.Reset(GetQueue());
         queue_ptr = queue_ref.GetPointer();
