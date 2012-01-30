@@ -7,7 +7,7 @@ SRC = align_shadow blast_tabular score_builder score_lookup align_filter \
 
 LIB = xalgoalignutil
 
-DLL_LIB = xalgoseq taxon1 xregexp $(BLAST_LIBS)
+DLL_LIB = xqueryparse xalgoseq taxon1 xregexp $(BLAST_LIBS)
 
 ASN_DEP = seqset xnetblast
 
