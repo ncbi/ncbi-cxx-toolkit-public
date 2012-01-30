@@ -1560,11 +1560,21 @@ CNCMessageHandler::x_StartCommand(SParsedCmd& cmd)
             {
                 m_Quorum = 0;
             }
-            if (cmd_extra.blob_access == eNCCreate
+            bool no_disk_space = false;
+            if ((cmd_extra.blob_access == eNCCreate
+                 ||  cmd_extra.blob_access == eNCCopyCreate)
                 &&  m_CmdProcessor != &CNCMessageHandler::x_DoCmd_Remove
-                &&  m_CmdProcessor != &CNCMessageHandler::x_DoCmd_Remove2
-                &&  g_NCStorage->NeedStopWrite())
+                &&  m_CmdProcessor != &CNCMessageHandler::x_DoCmd_Remove2)
             {
+                if ((cmd_extra.blob_access == eNCCreate
+                         &&  g_NCStorage->NeedStopWrite())
+                    ||  (cmd_extra.blob_access == eNCCopyCreate
+                         &&  !g_NCStorage->AcceptWritesFromPeers()))
+                {
+                    no_disk_space = true;
+                }
+            }
+            if (no_disk_space) {
                 m_CmdCtx->SetRequestStatus(eStatus_NoDiskSpace);
                 m_SockBuffer.WriteMessage("ERR:", "Not enough disk space");
                 m_SockBuffer.Flush();

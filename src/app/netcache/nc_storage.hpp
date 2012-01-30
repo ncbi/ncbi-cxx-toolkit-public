@@ -217,6 +217,7 @@ public:
 
     bool IsCleanStart(void);
     bool NeedStopWrite(void);
+    bool AcceptWritesFromPeers(void);
 
     /// Print usage statistics for the storage
     void PrintStat(CPrintTextProxy& proxy);
@@ -324,7 +325,6 @@ private:
         CRef<SNCDBFileInfo> cur_file;
         CRef<SNCDBFileInfo> next_file;
         Uint8 next_coord;
-        SFileIndexRec* last_index_rec;
         Uint4 next_rec_num;
         Uint4 left_file_size;
     };
@@ -415,18 +415,16 @@ private:
                              Uint4 rec_size,
                              Uint8& coord,
                              SFileRecHeader*& write_head);
+    SFileRecHeader* x_GetRecordForCoord(SNCDBFileInfo* file_info, Uint8 coord);
     SFileRecHeader* x_GetRecordForCoord(Uint8 coord);
     Uint1 x_CalcMapDepth(Uint8 size, Uint4 chunk_size, Uint2 map_size);
     CRef<SNCDBFileInfo> x_GetFileForCoord(Uint8 coord);
     SFileIndexRec* x_DeleteIndexRec(SFileIndexRec* index_head, Uint4 rec_num);
-    void x_MoveSizeToGarbage(SNCDBFileInfo* file_info, Uint4 rec_num, Uint4 size);
-    void x_MoveSizeToGarbage(Uint8 coord, Uint4 rec_num, Uint4 size);
+    void x_MoveRecToGarbage(SNCDBFileInfo* file_info, SFileRecHeader* rec_head);
     void x_UpdateDeadTime(Uint8 coord, Uint1 map_depth, int dead_time);
     bool x_UpdateUpCoords(SFileChunkMapRec* map_rec, Uint8 coord);
     void x_MoveDataToGarbage(Uint8 coord,
-                             Uint1 map_depth,
-                             Uint4 chunk_size,
-                             Uint4 last_chunk_size);
+                             Uint1 map_depth);
     bool x_CacheMapRecs(Uint8 map_coord,
                         Uint1 map_depth,
                         Uint8 up_coord,
@@ -478,7 +476,8 @@ private:
     enum EStopCause {
         eNoStop,
         eStopDBSize,
-        eStopDiskSpace
+        eStopDiskSpace,
+        eStopDiskCritical
     };
 
 
@@ -576,6 +575,7 @@ private:
     Uint8                    m_StopWriteOnSize;
     Uint8                    m_StopWriteOffSize;
     Uint8                    m_DiskFreeLimit;
+    Uint8                    m_DiskCritical;
 };
 
 
@@ -628,6 +628,12 @@ inline bool
 CNCBlobStorage::NeedStopWrite(void)
 {
     return m_IsStopWrite != eNoStop;
+}
+
+inline bool
+CNCBlobStorage::AcceptWritesFromPeers(void)
+{
+    return m_IsStopWrite != eStopDiskCritical;
 }
 
 inline Uint4
