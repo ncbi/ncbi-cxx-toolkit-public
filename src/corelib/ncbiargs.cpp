@@ -2225,7 +2225,7 @@ void CArgDescriptions::x_CheckAutoHelp(const string& arg) const
             NCBI_THROW(CArgHelpException,eHelp,kEmptyStr);
         }
     }
-    else if (arg.compare(string("-") + s_AutoHelpFull) == 0) {
+    if (arg.compare(string("-") + s_AutoHelpFull) == 0) {
         NCBI_THROW(CArgHelpException,eHelpFull,kEmptyStr);
     }
     else if (arg.compare(string("-") + s_AutoHelpXml) == 0) {
