@@ -63,54 +63,40 @@ END_NCBI_SCOPE
 USING_NCBI_SCOPE;
 
 #if 0
+
 #undef DECLARE_SAFE_BOOL_METHOD
-#undef DECLARE_OPERATOR_BOOL
 
-class CSafeBoolBase
+#define DECLARE_SAFE_BOOL_METHOD(Expr)                                  \
+    struct SSafeBoolTag {                                               \
+        void True(SSafeBoolTag*) {}                                     \
+        typedef void (SSafeBoolTag::*TBoolType)(SSafeBoolTag*);         \
+    };                                                                  \
+    operator SSafeBoolTag::TBoolType() const {                          \
+        return (Expr)? &SSafeBoolTag::True: 0;                          \
+    }                                                                   \
+    private:                                                            \
+    bool operator==(SSafeBoolTag::TBoolType) const;                     \
+    bool operator!=(SSafeBoolTag::TBoolType) const;                     \
+    public:                                                             \
+    typedef SSafeBoolTag::TBoolType TBoolType
+
+/*
+template<class Class>
+bool operator==(const Class&, typename Class::TBoolType)
 {
-public:
-    typedef bool TSafeBool;
-private:
-    void operator<(TSafeBool) const;
-    void operator>(TSafeBool) const;
-    void operator<=(TSafeBool) const;
-    void operator>=(TSafeBool) const;
-    void operator==(TSafeBool) const;
-    void operator!=(TSafeBool) const;
-    void operator+(TSafeBool) const;
-    void operator-(TSafeBool) const;
-    void operator+(int) const;
-    void operator-(int) const;
-};
-
-
-/// Low level macro for declaring safe bool operator.
-/// Its first argument specifies the type of returned pointer.
-#define HIDE_SAFE_BOOL_OPERATORS()                      \
-    private:                                            \
-    void operator<(bool) const;                         \
-    void operator>(bool) const;                         \
-    void operator<=(bool) const;                        \
-    void operator>=(bool) const;                        \
-    void operator==(bool) const;                        \
-    void operator!=(bool) const;                        \
-    void operator+(bool) const;                         \
-    void operator-(bool) const;                         \
-    public:                                             \
-
-/// Low level macro for declaring safe bool operator.
-/// Its first argument specifies the type of returned pointer.
-#define DECLARE_SAFE_BOOL_METHOD(Expr)                  \
-    operator bool(void) const {                         \
-        return (Expr);                                  \
-    }
-
-
-#define DECLARE_OPERATOR_BOOL(Expr) \
-    HIDE_SAFE_BOOL_OPERATORS()      \
-    DECLARE_SAFE_BOOL_METHOD(Expr)
-
-
+    return Class::SafeBoolIsNotComparable();
+}
+template<class Class>
+bool operator!=(const Class&, typename Class::TBoolType)
+{
+    return Class::SafeBoolIsNotComparable();
+}
+template<class Stream>
+Stream& operator<<(Stream&, void (CSafeBoolTag::*)(CSafeBoolTag*))
+{
+    return Stream::SafeBoolCannotWritten();
+}
+*/
 #endif
 
 
@@ -121,6 +107,8 @@ public:
     explicit A(int v) : value(v) {}
 
     DECLARE_OPERATOR_BOOL(value != 0);
+
+    int Value() const { return value; }
 
     bool operator==(const A& v) const { return value == v.value; }
     bool operator!=(const A& v) const { return value != v.value; }
@@ -138,6 +126,8 @@ public:
     explicit B(const char* v) : value(v) {}
 
     DECLARE_OPERATOR_BOOL_PTR(value);
+
+    const char* Value() const { return value; }
 
 protected:
     const char* value;
@@ -164,9 +154,23 @@ class CObjB : public CObject
 
 int TestOperatorBool(void)
 {
+    string s;
     A a2(2), a1(1), a0(0);
     B b2("2"), b1("1"), b0(0);
     AA aa2(2), aa1(1), aa0(0);
+
+    bool b_a0 = a0;
+    bool b_a1 = a1;
+    bool b_a2 = a2;
+    bool b_b0 = b0;
+    bool b_b1 = b1;
+    bool b_b2 = b2;
+    bool b_av0 = a0.Value();
+    bool b_av1 = a1.Value();
+    bool b_av2 = a2.Value();
+    bool b_bv0 = b0.Value();
+    bool b_bv1 = b1.Value();
+    bool b_bv2 = b2.Value();
 
     assert(a2);
     assert(a1);
@@ -174,6 +178,30 @@ int TestOperatorBool(void)
     assert(b2);
     assert(b1);
     assert(!b0);
+#if 0 // compile error ?
+    assert(a0==0);
+    assert(a1!=0);
+    assert(!(a0!=0));
+    assert(!(a1==0));
+#endif
+#if 0 // compile error ?
+    assert(a0==false);
+    assert(a1!=false);
+    assert(a0!=true);
+    assert(a1==true);
+#endif
+#if 0 // should not compile ?
+    cout << a0 << endl;
+    cout << b0 << endl;
+    cout << a2 << endl;
+    cout << b2 << endl;
+#endif
+#if 1 // should compile
+    cout << 0 << endl;
+    cout << 0.0 << endl;
+    cout << '\0' << endl;
+    cout << NULL << endl;
+#endif
 
     assert(a2 && a1);
     assert(b1 && a2);
@@ -193,6 +221,11 @@ int TestOperatorBool(void)
     assert(a1 < a2);
 
 #if 0 // should not compile
+    assert(a2 > a0);
+    assert(a2 > a1);
+#endif
+
+#if 0 // should not compile
     assert(b2 == b2);
     assert(b2 != b1);
     assert(b2 != b0);
@@ -204,7 +237,20 @@ int TestOperatorBool(void)
     assert(b0 == b0);
 #endif
 
+#if 0 // should not compile
     assert(aa2 != a1);
+    assert(aa1 == a1);
+    assert(!(aa1 != a1));
+    assert(!(aa2 == a1));
+#endif
+#if 1 // should compile with explicit comparison operator
+    assert(a2 != a1);
+    assert(a1 == a1);
+    assert(!(a1 != a1));
+    assert(!(a2 == a1));
+    assert(a1 < a2);
+    assert(!(a1 < a1));
+#endif
 
     CConstRef<CObject> o0(new CObject);
     CRef<CObjA> oa(new CObjA);
@@ -240,7 +286,7 @@ int TestOperatorBool(void)
 
     assert(coa == oapc);
     assert(oapc == coa);
-#if 0
+#if 1
     assert(coa == oap); // fails on Sun
     assert(oap == coa); // fails on Sun
 #endif
@@ -273,22 +319,35 @@ int TestOperatorBool(void)
     cobj_set.insert(o0);
     assert(*cobj_set.begin() == o0);
 
-#if 0 // this code produces errors on Sun C++ compiler
-    assert(oa == o0);
-    assert(ob == o0);
+#if 1 // this code produces errors on Sun C++ compiler
+    assert(oa != o0);
+    assert(ob != o0);
+    assert(!(oa == o0));
+    assert(!(ob == o0));
+    assert(oa == coa);
+    assert(oa == oca);
+    assert(!(oa != coa));
+    assert(!(oa != oca));
 #endif
 
 #if 0
     delete oa; // should not compile, but alas :(
     delete ob; // should not compile, but alas :(
+#endif
+#if 0
     delete a0; // should not compile
     delete b1; // should not compile
+#endif
+#if 0
     assert(a0 != b0); // should not compile
+#endif
+#if 0
     assert(a2 == o0); // should not compile
     assert(ob != oa); // should not compile
     assert(o0 == a0); // should not compile
+#endif
+#if 0
     assert(a0 + 1); // should not compile
-    assert(b2 - b0); // should not compile
     assert(a0 <= a1); // should not compile, but alas :(
     assert(b0 > b2); // should not compile, but alas :(
     assert(a0 < b0); // should not compile
@@ -296,8 +355,27 @@ int TestOperatorBool(void)
     assert(ob <= oa); // should not compile
     assert(o0 >= a0); // should not compile
 #endif
+#if 0
+    assert(b2 - b0); // should not compile, but compiles on WorkShop
+#endif
+#if 0
+    s = oa; // should not compile
+    s = ob; // should not compile
+    s = a0; // should not compile
+    s = a1; // should not compile
+    s = b0; // should not compile
+    s = b1; // should not compile
+#endif
+#if 0
+    void* pa0 = a0; // should not compile, but alas :(
+    const void* pa1 = a1; // should not compile, but alas :(
+    void* pb1 = b1; // should not compile, but alas :(
+    const void* pb0 = b0; // should not compile, but alas :(
+#endif
 
-    return o0p && oapc && oap && obp && oap0c && oap0 && obp0;
+    return (b_a0+b_a1+b_a2+b_b0+b_b1+b_b2+
+            b_av0+b_av1+b_av2+b_bv0+b_bv1+b_bv2) &&
+        (o0p && oapc && oap && obp && oap0c && oap0 && obp0);
 }
 
 

@@ -156,34 +156,27 @@ enum EInterruptOnSignal {
 /////////////////////////////////////////////////////////////////////////////
 
 
-/// Macro to hide all operators with bool argument which may be used
-/// unintentionally when second argument is of class having operator bool().
-/// All methods are simply declared private without body definition.
-#define HIDE_SAFE_BOOL_OPERATORS()                      \
-    private:                                            \
-    void operator<(bool) const;                         \
-    void operator>(bool) const;                         \
-    void operator<=(bool) const;                        \
-    void operator>=(bool) const;                        \
-    void operator==(bool) const;                        \
-    void operator!=(bool) const;                        \
-    void operator+(bool) const;                         \
-    void operator-(bool) const;                         \
-    public:
-
-
-/// Low level macro for declaring bool operator.
-#define DECLARE_SAFE_BOOL_METHOD(Expr)                  \
-    operator bool(void) const {                         \
-        return (Expr);                                  \
-    }
+/// Low level macro for declaring safe bool operator.
+#define DECLARE_SAFE_BOOL_METHOD(Expr)                                  \
+    struct SSafeBoolTag {                                               \
+        void SafeBoolTrue(SSafeBoolTag*) {}                             \
+    };                                                                  \
+    typedef void (SSafeBoolTag::*TBoolType)(SSafeBoolTag*);             \
+    operator TBoolType() const {                                        \
+        return (Expr)? &SSafeBoolTag::SafeBoolTrue: 0;                  \
+    }                                                                   \
+    private:                                                            \
+    bool operator==(TBoolType) const;                                   \
+    bool operator!=(TBoolType) const;                                   \
+    public:                                                             \
+    friend struct SSafeBoolTag
 
 
 /// Declaration of safe bool operator from boolean expression.
 /// Actual operator declaration will be:
-///    operator bool(void) const;
+///    operator TBoolType(void) const;
+/// where TBoolType is a typedef convertible to bool (member pointer).
 #define DECLARE_OPERATOR_BOOL(Expr)             \
-    HIDE_SAFE_BOOL_OPERATORS()                  \
     DECLARE_SAFE_BOOL_METHOD(Expr)
 
 
