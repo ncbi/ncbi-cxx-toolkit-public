@@ -72,7 +72,7 @@ USING_SCOPE(objects);
 static const string kInPssmList("in");
 static const string kOutDbName("out");
 static const string kMaxFileSize("max_file_sz");
-static const string kOutDbType("db_type");
+static const string kOutDbType("dbtype");
 static const string kPssmScaleFactor("scale");
 static const string kOutIndexFile("index");
 static const string kObsrThreshold("obsr_threshold");
