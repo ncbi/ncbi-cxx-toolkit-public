@@ -1778,7 +1778,7 @@ void CArgDescriptions::SetArgsType(EArgSetType args_type)
             if ( s_IsFlag(arg) ) {
                 const string& name = arg.GetName();
 
-                if (name == s_AutoHelp ||
+                if ((m_AutoHelp && name == s_AutoHelp) ||
                     name == s_AutoHelpFull ||
                     name == s_AutoHelpXml)  // help
                     continue;
@@ -2049,7 +2049,7 @@ void CArgDescriptions::Delete(const string& name)
                 "Argument description is not found");
         }
         m_Args.erase(it);
-        if (m_AutoHelp && name == s_AutoHelp) {
+        if (name == s_AutoHelp) {
             m_AutoHelp = false;
         }
 
@@ -2220,16 +2220,15 @@ CArgs* CArgDescriptions::CreateArgs(const CNcbiArguments& args) const
 
 void CArgDescriptions::x_CheckAutoHelp(const string& arg) const
 {
-//    _ASSERT(m_AutoHelp);
     if (m_AutoHelp) {
         if (arg.compare(string("-") + s_AutoHelp) == 0) {
             NCBI_THROW(CArgHelpException,eHelp,kEmptyStr);
         }
     }
-    if (arg.compare(string("-") + s_AutoHelpFull) == 0) {
+    else if (arg.compare(string("-") + s_AutoHelpFull) == 0) {
         NCBI_THROW(CArgHelpException,eHelpFull,kEmptyStr);
     }
-    if (arg.compare(string("-") + s_AutoHelpXml) == 0) {
+    else if (arg.compare(string("-") + s_AutoHelpXml) == 0) {
         NCBI_THROW(CArgHelpException,eHelpXml,kEmptyStr);
     }
 }
@@ -2820,7 +2819,8 @@ string& CArgDescriptions::PrintUsage(string& str, bool detailed) const
             } else if (dynamic_cast<const CArgDesc_Key*> (arg)) {
                 args.insert(it_keys, arg);
             } else if (dynamic_cast<const CArgDesc_Flag*> (arg)) {
-                if (strcmp(s_AutoHelp,     (arg->GetName()).c_str()) == 0  ||
+                if ((m_AutoHelp &&
+                    strcmp(s_AutoHelp,     (arg->GetName()).c_str()) == 0) ||
                     strcmp(s_AutoHelpFull, (arg->GetName()).c_str()) == 0)
                     args.push_front(arg);
                 else
