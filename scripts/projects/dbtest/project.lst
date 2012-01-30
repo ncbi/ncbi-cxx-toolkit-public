@@ -6,7 +6,8 @@ util/bitset$
 util/compress$
 util/compress/api$
 util/compress/zlib$
-util/regexp$ update-only
+util/regexp$
+util/xregexp$
 serial$
 serial/impl$
 serial/datatool$
