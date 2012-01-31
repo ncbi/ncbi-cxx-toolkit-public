@@ -2490,7 +2490,7 @@ void CArgDescriptions::x_PostCheck(CArgs&           args,
             if (args.Exist(dep->second.m_Arg)  &&  args[dep->second.m_Arg]) {
                 NCBI_THROW(CArgException, eConstraint,
                     s_ArgExptMsg(dep->second.m_Arg,
-                    "Does not allow argument", dep->first));
+                    "Incompatible with argument", dep->first));
             }
             exclude.insert(dep->second.m_Arg);
             break;
@@ -2532,7 +2532,7 @@ void CArgDescriptions::x_PostCheck(CArgs&           args,
             // Required argument must be present
             NCBI_THROW(CArgException, eConstraint,
                 s_ArgExptMsg(arg.GetName(),
-                "Explicit value required by", requester));
+                "Must be specified, as it is required by argument", requester));
         }
 
         if (exclude.find(arg.GetName()) != exclude.end()) {
