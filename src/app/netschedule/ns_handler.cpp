@@ -556,6 +556,8 @@ void CNetScheduleHandler::WriteMessage(CTempString  prefix,
 {
     size_t  prefix_size = prefix.size();
     size_t  msg_size = msg.size();
+    if (msg[msg_size-1] == '\n')
+        --msg_size;
     size_t  required_size = prefix_size + msg_size + 1;
 
     if (required_size > m_MsgBufferSize) {
@@ -583,6 +585,8 @@ void CNetScheduleHandler::WriteMessage(CTempString  prefix,
 void CNetScheduleHandler::WriteMessage(CTempString msg)
 {
     size_t  msg_size = msg.size();
+    if (msg[msg_size-1] == '\n')
+        --msg_size;
     size_t  required_size = msg_size + 1;
 
     if (required_size > m_MsgBufferSize) {

@@ -45,7 +45,6 @@ BEGIN_NCBI_SCOPE
 
 // Forward declaration
 class CQueue;
-class CNetScheduleHandler;
 class CNSAffinityRegistry;
 
 
@@ -150,11 +149,10 @@ class CNSClient
 
         void Touch(const CNSClientId &  client_id,
                    CQueue *             queue);
-        void Print(const string &               node_name,
-                   const CQueue *               queue,
-                   CNetScheduleHandler &        handler,
-                   const CNSAffinityRegistry &  aff_registry,
-                   bool                         verbose) const;
+        string Print(const string &               node_name,
+                     const CQueue *               queue,
+                     const CNSAffinityRegistry &  aff_registry,
+                     bool                         verbose) const;
         unsigned int GetID(void) const;
         void SetID(unsigned int  id);
         TNSBitVector  GetPreferredAffinities(void) const;

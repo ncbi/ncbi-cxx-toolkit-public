@@ -102,6 +102,7 @@ class CNSClientsRegistry
         TNSBitVector  GetPreferredAffinities(const string &  node) const;
         TNSBitVector  GetWaitAffinities(const CNSClientId &  client) const;
         TNSBitVector  GetWaitAffinities(const string &  node) const;
+        TNSBitVector  GetRegisteredClients(void) const;
         void  UpdatePreferredAffinities(const CNSClientId &   client,
                                         const TNSBitVector &  aff_to_add,
                                         const TNSBitVector &  aff_to_del);
@@ -120,11 +121,19 @@ class CNSClientsRegistry
         // Client IDs support
         unsigned int                m_LastID;
         CFastMutex                  m_LastIDLock;
+        TNSBitVector                m_RegisteredClients; // The identifiers
+                                                         // of all the clients
+                                                         // which are currently
+                                                         // in the registry
 
         unsigned int  x_GetNextID(void);
 
         unsigned short  x_ResetWaiting(CNSClient &            client,
                                        CNSAffinityRegistry &  aff_registry);
+        string x_PrintSelected(const TNSBitVector &         batch,
+                               const CQueue *               queue,
+                               const CNSAffinityRegistry &  aff_registry,
+                               bool                         verbose) const;
 };
 
 

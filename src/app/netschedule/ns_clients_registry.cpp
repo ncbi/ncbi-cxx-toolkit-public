@@ -72,6 +72,7 @@ unsigned short  CNSClientsRegistry::Touch(CNSClientId &          client,
         new_ns_client.SetID(client_id);
         client.SetID(client_id);
         m_Clients[ client.GetNode() ] = new_ns_client;
+        m_RegisteredClients.set_bit(client_id);
         return 0;
     }
 
@@ -305,13 +306,54 @@ void CNSClientsRegistry::PrintClientsList(const CQueue *               queue,
                                           const CNSAffinityRegistry &  aff_registry,
                                           bool                         verbose) const
 {
+    const size_t        max_batch_size = 1000;
+    TNSBitVector        batch;
+
+    TNSBitVector                registered_clients = GetRegisteredClients();
+    TNSBitVector::enumerator    en(registered_clients.first());
+
+    while (en.valid()) {
+        batch.set_bit(*en);
+        ++en;
+
+        if (batch.count() >= max_batch_size) {
+            handler.WriteMessage(x_PrintSelected(batch, queue,
+                                                 aff_registry,
+                                                 verbose).c_str());
+            batch.clear();
+        }
+    }
+
+    if (batch.count() > 0)
+        handler.WriteMessage(x_PrintSelected(batch, queue,
+                                             aff_registry,
+                                             verbose).c_str());
+    return;
+}
+
+
+string
+CNSClientsRegistry::x_PrintSelected(const TNSBitVector &         batch,
+                                    const CQueue *               queue,
+                                    const CNSAffinityRegistry &  aff_registry,
+                                    bool                         verbose) const
+{
+    string      buffer;
+    size_t      printed = 0;
+
     CReadLockGuard                              guard(m_Lock);
     map< string, CNSClient >::const_iterator    k = m_Clients.begin();
 
-    for ( ; k != m_Clients.end(); ++k)
-        k->second.Print(k->first, queue, handler, aff_registry, verbose);
+    for ( ; k != m_Clients.end(); ++k) {
+        if (batch[k->second.GetID()]) {
+            buffer += k->second.Print(k->first, queue, aff_registry, verbose);
+            ++printed;
+            if (printed >= batch.count())
+                break;
+        }
+    }
 
-    return;
+    return buffer;
 }
 
 
@@ -449,6 +491,13 @@ TNSBitVector  CNSClientsRegistry::GetWaitAffinities(
         return s_empty_vector;
 
     return found->second.GetWaitAffinities();
+}
+
+
+TNSBitVector  CNSClientsRegistry::GetRegisteredClients(void) const
+{
+    CReadLockGuard      guard(m_Lock);
+    return m_RegisteredClients;
 }
 
 

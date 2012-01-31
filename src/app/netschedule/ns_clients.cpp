@@ -38,7 +38,6 @@
 #include "ns_clients.hpp"
 #include "ns_queue.hpp"
 #include "queue_vc.hpp"
-#include "ns_handler.hpp"
 #include "ns_affinity.hpp"
 
 
@@ -524,96 +523,97 @@ void CNSClient::Touch(const CNSClientId &  client_id,
 
 
 // Prints the client info
-void CNSClient::Print(const string &               node_name,
-                      const CQueue *               queue,
-                      CNetScheduleHandler &        handler,
-                      const CNSAffinityRegistry &  aff_registry,
-                      bool                         verbose) const
+string CNSClient::Print(const string &               node_name,
+                        const CQueue *               queue,
+                        const CNSAffinityRegistry &  aff_registry,
+                        bool                         verbose) const
 {
-    handler.WriteMessage("OK:CLIENT: '" + node_name + "'");
+    string      buffer;
+
+    buffer += "OK:CLIENT: '" + node_name + "'\n";
     if (m_Cleared)
-        handler.WriteMessage("OK:  STATUS: cleared");
+        buffer += "OK:  STATUS: cleared\n";
     else
-        handler.WriteMessage("OK:  STATUS: active");
+        buffer += "OK:  STATUS: active\n";
 
      CTime       access_time;
      access_time.SetTimeT(m_LastAccess);
      access_time.ToLocalTime();
-     handler.WriteMessage("OK:  LAST ACCESS: " + access_time.AsString());
-     handler.WriteMessage("OK:  ADDRESS: " + CSocketAPI::gethostbyaddr(m_Addr));
+     buffer += "OK:  LAST ACCESS: " + access_time.AsString() + "\n";
+     buffer += "OK:  ADDRESS: " + CSocketAPI::gethostbyaddr(m_Addr) + "\n";
 
      if (m_Session.empty())
-         handler.WriteMessage("OK:  SESSION: n/a");
+         buffer += "OK:  SESSION: n/a\n";
      else
-         handler.WriteMessage("OK:  SESSION: '" + m_Session + "'");
+         buffer += "OK:  SESSION: '" + m_Session + "'\n";
 
-    handler.WriteMessage("OK:  TYPE: " + x_TypeAsString());
+    buffer += "OK:  TYPE: " + x_TypeAsString() + "\n";
 
-    handler.WriteMessage("OK:  NUMBER OF SUBMITTED JOBS: " +
-                         NStr::SizetToString(m_NumberOfSubmitted));
+    buffer += "OK:  NUMBER OF SUBMITTED JOBS: " +
+              NStr::SizetToString(m_NumberOfSubmitted) + "\n";
 
     if (m_BlacklistedJobs.any()) {
         if (verbose) {
-            handler.WriteMessage("OK:  BLACKLISTED JOBS:");
+            buffer += "OK:  BLACKLISTED JOBS:\n";
 
             TNSBitVector::enumerator    en(m_BlacklistedJobs.first());
             for ( ; en.valid(); ++en)
-                handler.WriteMessage("OK:    " + queue->MakeKey(*en));
+                buffer += "OK:    " + queue->MakeKey(*en) + "\n";
         } else {
-            handler.WriteMessage("OK:  NUMBER OF BLACKLISTED JOBS: " +
-                                 NStr::UIntToString(m_BlacklistedJobs.count()));
+            buffer += "OK:  NUMBER OF BLACKLISTED JOBS: " +
+                      NStr::UIntToString(m_BlacklistedJobs.count()) + "\n";
         }
     }
 
     if (m_RunningJobs.any()) {
-        handler.WriteMessage("OK:  RUNNING JOBS:");
+        buffer += "OK:  RUNNING JOBS:\n";
 
         TNSBitVector::enumerator    en(m_RunningJobs.first());
         for ( ; en.valid(); ++en)
-            handler.WriteMessage("OK:    " + queue->MakeKey(*en));
+            buffer += "OK:    " + queue->MakeKey(*en) + "\n";
     }
 
-    handler.WriteMessage("OK:  NUMBER OF JOBS GIVEN FOR EXECUTION: " +
-                         NStr::SizetToString(m_NumberOfRun));
+    buffer += "OK:  NUMBER OF JOBS GIVEN FOR EXECUTION: " +
+              NStr::SizetToString(m_NumberOfRun) + "\n";
 
     if (m_ReadingJobs.any()) {
-        handler.WriteMessage("OK:  READING JOBS:");
+        buffer += "OK:  READING JOBS:\n";
 
         TNSBitVector::enumerator    en(m_ReadingJobs.first());
         for ( ; en.valid(); ++en)
-            handler.WriteMessage("OK:    " + queue->MakeKey(*en));
+            buffer += "OK:    " + queue->MakeKey(*en) + "\n";
     }
 
-    handler.WriteMessage("OK:  NUMBER OF JOBS GIVEN FOR READING: " +
-                         NStr::SizetToString(m_NumberOfRead));
+    buffer += "OK:  NUMBER OF JOBS GIVEN FOR READING: " +
+              NStr::SizetToString(m_NumberOfRead) + "\n";
 
     if (m_Affinities.any()) {
         if (verbose) {
-            handler.WriteMessage("OK:  PREFERRED AFFINITIES:");
+            buffer += "OK:  PREFERRED AFFINITIES:\n";
 
             TNSBitVector::enumerator    en(m_Affinities.first());
             for ( ; en.valid(); ++en)
-                handler.WriteMessage("OK:    '" + aff_registry.GetTokenByID(*en) + "'");
+                buffer += "OK:    '" + aff_registry.GetTokenByID(*en) + "'\n";
         } else {
-            handler.WriteMessage("OK:  NUMBER OF PREFERRED AFFINITIES: " +
-                                 NStr::UIntToString(m_Affinities.count()));
+            buffer += "OK:  NUMBER OF PREFERRED AFFINITIES: " +
+                      NStr::UIntToString(m_Affinities.count()) + "\n";
         }
     }
 
     if (m_WaitAffinities.any()) {
         if (verbose) {
-            handler.WriteMessage("OK:  REQUESTED AFFINITIES:");
+            buffer += "OK:  REQUESTED AFFINITIES:\n";
 
             TNSBitVector::enumerator    en(m_WaitAffinities.first());
             for ( ; en.valid(); ++en)
-                handler.WriteMessage("OK:    '" + aff_registry.GetTokenByID(*en) + "'");
+                buffer += "OK:    '" + aff_registry.GetTokenByID(*en) + "'\n";
         } else {
-            handler.WriteMessage("OK:  NUMBER OF REQUESTED AFFINITIES: " +
-                                 NStr::UIntToString(m_WaitAffinities.count()));
+            buffer += "OK:  NUMBER OF REQUESTED AFFINITIES: " +
+                      NStr::UIntToString(m_WaitAffinities.count()) + "\n";
         }
     }
 
-    return;
+    return buffer;
 }
 
 
