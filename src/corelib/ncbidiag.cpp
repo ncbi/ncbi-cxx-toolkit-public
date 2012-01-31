@@ -2007,6 +2007,7 @@ typedef NCBI_PARAM_TYPE(Log, Session_Id) TParamDefaultSessionId;
 
 const string& CDiagContext::GetDefaultSessionID(void) const
 {
+    CDiagLock lock(CDiagLock::eRead);
     if ( !m_DefaultSessionId.get() ) {
         m_DefaultSessionId.reset(new CEncodedString);
     }
@@ -2019,6 +2020,7 @@ const string& CDiagContext::GetDefaultSessionID(void) const
 
 void CDiagContext::SetDefaultSessionID(const string& session_id)
 {
+    CDiagLock lock(CDiagLock::eWrite);
     if ( !m_DefaultSessionId.get() ) {
         m_DefaultSessionId.reset(new CEncodedString);
     }
