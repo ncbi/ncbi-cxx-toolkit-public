@@ -2220,15 +2220,13 @@ CArgs* CArgDescriptions::CreateArgs(const CNcbiArguments& args) const
 
 void CArgDescriptions::x_CheckAutoHelp(const string& arg) const
 {
-    if (m_AutoHelp) {
-        if (arg.compare(string("-") + s_AutoHelp) == 0) {
+    if (arg.compare(string("-") + s_AutoHelp) == 0) {
+        if (m_AutoHelp) {
             NCBI_THROW(CArgHelpException,eHelp,kEmptyStr);
         }
-    }
-    if (arg.compare(string("-") + s_AutoHelpFull) == 0) {
+    } else if (arg.compare(string("-") + s_AutoHelpFull) == 0) {
         NCBI_THROW(CArgHelpException,eHelpFull,kEmptyStr);
-    }
-    else if (arg.compare(string("-") + s_AutoHelpXml) == 0) {
+    } else if (arg.compare(string("-") + s_AutoHelpXml) == 0) {
         NCBI_THROW(CArgHelpException,eHelpXml,kEmptyStr);
     }
 }
@@ -2347,7 +2345,7 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
     const CArgDesc& arg = **it;
 
     if ( s_IsFlag(arg) ) {
-        x_CheckAutoHelp( arg1);
+        x_CheckAutoHelp(arg1);
     }
 
     // Check value separated by '='
