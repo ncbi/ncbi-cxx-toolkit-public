@@ -1,10 +1,10 @@
 [components]
-infrastructure  8.0
-core            8.0
-dbase           8.0
-web             8.0
-objects         8.0
-objtools        8.0
-algo            8.0
-blast           8.0
-app             8.0
+infrastructure  9.0
+core            9.0
+dbase           9.0
+web             9.0
+objects         9.0
+objtools        9.0
+algo            9.0
+blast           9.0
+app             9.0
