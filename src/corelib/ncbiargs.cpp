@@ -2475,7 +2475,7 @@ void CArgDescriptions::x_PostCheck(CArgs&           args,
 
     // Check dependencies, create set of exclusions
     set<string> exclude;
-    set<string> require;
+    map<string,string> require;
     ITERATE(TDependencies, dep, m_Dependencies) {
         // Skip missing and empty arguments
         if (!args.Exist(dep->first)  ||  !args[dep->first]) {
@@ -2483,14 +2483,14 @@ void CArgDescriptions::x_PostCheck(CArgs&           args,
         }
         switch ( dep->second.m_Dep ) {
         case eRequires:
-            require.insert(dep->second.m_Arg);
+            require.insert(make_pair(dep->second.m_Arg,dep->first));
             break;
         case eExcludes:
             // Excluded exists and is not empty?
             if (args.Exist(dep->second.m_Arg)  &&  args[dep->second.m_Arg]) {
                 NCBI_THROW(CArgException, eConstraint,
                     s_ArgExptMsg(dep->second.m_Arg,
-                    "Conflict with argument", dep->first));
+                    "Does not allow argument", dep->first));
             }
             exclude.insert(dep->second.m_Arg);
             break;
@@ -2528,10 +2528,11 @@ void CArgDescriptions::x_PostCheck(CArgs&           args,
         }
 
         if (require.find(arg.GetName()) != require.end() ) {
+            string requester(require.find(arg.GetName())->second);
             // Required argument must be present
             NCBI_THROW(CArgException, eConstraint,
                 s_ArgExptMsg(arg.GetName(),
-                "Explicit value required by dependencies", kEmptyStr));
+                "Explicit value required by", requester));
         }
 
         if (exclude.find(arg.GetName()) != exclude.end()) {
