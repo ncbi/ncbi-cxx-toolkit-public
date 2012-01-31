@@ -440,9 +440,9 @@ public:
         eState_NotSet = 0, ///< The param's value has not been set yet
         eState_InFunc = 1, ///< The initialization function is being executed
         eState_Func   = 2, ///< Initialized using FParamInit function
-        eState_EnvVar = 3, ///< The environment variable has been checked
-        eState_Config = 4, ///< The app. config file has been checked
-        eState_User   = 5  ///< Value has been set by user
+        eState_User   = 3, ///< Value has been set by user
+        eState_EnvVar = 4, ///< The environment variable has been checked
+        eState_Config = 5  ///< The app. config file has been checked
     };
 
 protected:
