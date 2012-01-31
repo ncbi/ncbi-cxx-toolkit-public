@@ -273,7 +273,17 @@ public:
                                      const CBioseq_set_EditHandle& seqset);
 
     // Get bioseq handle, limit id resolving
+    // get_flag can have values from CScope::EGetBioseqFlag
+    // and CScope_Impl::EGetBioseqFlag2
+    enum EGetBioseqFlag2 {
+        fUserFlagMask = 0xff,
+        fNoLockFlag = 0x100
+    };
     CBioseq_Handle GetBioseqHandle(const CSeq_id_Handle& id, int get_flag);
+
+    bool IsSameBioseq(const CSeq_id_Handle& id1,
+                      const CSeq_id_Handle& id2,
+                      int get_flag);
 
     CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
                                           const CTSE_Handle& tse);

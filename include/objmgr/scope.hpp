@@ -122,6 +122,11 @@ public:
     CBioseq_Handle GetBioseqHandle(const CSeq_id_Handle& id,
                                    EGetBioseqFlag get_flag);
 
+    /// Check if two seq-ids are resolved to the same Bioseq
+    bool IsSameBioseq(const CSeq_id_Handle& id1,
+                      const CSeq_id_Handle& id2,
+                      EGetBioseqFlag get_flag);
+
     typedef CBioseq_Handle::TId TIds;
     typedef vector<CBioseq_Handle> TBioseqHandles;
     /// Get bioseq handles for all ids. The returned vector contains

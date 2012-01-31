@@ -313,18 +313,7 @@ bool IsSameBioseq(const CSeq_id_Handle& id1, const CSeq_id_Handle& id2, CScope* 
     }
 
     // Compare handles
-    if (scope != NULL) {
-        try {
-            CBioseq_Handle hnd1 = scope->GetBioseqHandle(id1, get_flag);
-            CBioseq_Handle hnd2 = scope->GetBioseqHandle(id2, get_flag);
-            return hnd1  &&  hnd2  &&  (hnd1 == hnd2);
-        } catch (CException& e) {
-            ERR_POST_X(1, e.what() << ": CSeq_id1: " << id1.GetSeqId()->DumpAsFasta()
-                       << ": CSeq_id2: " << id2.GetSeqId()->DumpAsFasta());
-        }
-    }
-
-    return false;
+    return scope && scope->IsSameBioseq(id1, id2, get_flag);
 }
 
 

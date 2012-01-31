@@ -145,6 +145,14 @@ CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id_Handle& id,
 }
 
 
+bool CScope::IsSameBioseq(const CSeq_id_Handle& id1,
+                          const CSeq_id_Handle& id2,
+                          EGetBioseqFlag get_flag)
+{
+    return m_Impl->IsSameBioseq(id1, id2, get_flag);
+}
+
+
 CBioseq_set_Handle CScope::GetBioseq_setHandle(const CBioseq_set& seqset,
                                                EMissing action)
 {

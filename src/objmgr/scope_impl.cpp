@@ -1728,10 +1728,10 @@ CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_id_Handle& id,
         SSeqMatch_Scope match;
         CRef<CBioseq_ScopeInfo> info;
         TConfReadLockGuard rguard(m_ConfLock);
-        info = x_GetBioseq_Info(id, get_flag, match);
+        info = x_GetBioseq_Info(id, get_flag & fUserFlagMask, match);
         if ( info ) {
             ret.m_Handle_Seq_id = id;
-            if ( info->HasBioseq() ) {
+            if ( info->HasBioseq() && !(get_flag & fNoLockFlag) ) {
                 ret.m_Info = info->GetLock(match.m_Bioseq);
             }
             else {
@@ -1740,6 +1740,22 @@ CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_id_Handle& id,
         }
     }
     return ret;
+}
+
+
+bool CScope_Impl::IsSameBioseq(const CSeq_id_Handle& id1,
+                               const CSeq_id_Handle& id2,
+                               int get_flag)
+{
+    if ( id1 == id2 ) {
+        return true;
+    }
+    CBioseq_Handle bh1 = GetBioseqHandle(id1, get_flag | fNoLockFlag);
+    if ( !bh1 ) {
+        return false;
+    }
+    CBioseq_Handle bh2 = GetBioseqHandle(id2, get_flag | fNoLockFlag);
+    return bh2 == bh1;
 }
 
 
