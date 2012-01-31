@@ -83,11 +83,13 @@ public:
     CAlignCompare(IAlignSource &set1,
                   IAlignSource &set2,
                   EMode mode = e_Interval,
-                  bool strict = false)
+                  bool strict = false,
+                  bool ignore_not_present = false)
     : m_Set1(set1)
     , m_Set2(set2)
     , m_Mode(mode)
     , m_Strict(strict)
+    , m_IgnoreNotPresent(ignore_not_present)
     , m_CountSet1(0)
     , m_CountSet2(0)
     , m_CountEquivSet1(0)
@@ -125,6 +127,7 @@ private:
     IAlignSource &m_Set2;
     EMode m_Mode;
     bool m_Strict;
+    bool m_IgnoreNotPresent;
 
     size_t m_CountSet1;
     size_t m_CountSet2;

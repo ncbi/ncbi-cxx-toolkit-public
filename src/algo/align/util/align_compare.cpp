@@ -423,16 +423,20 @@ vector<const CAlignCompare::SAlignment *> CAlignCompare::NextGroup()
     vector<const SAlignment *> group;
     switch (next_group_set) {
     case 1:
-        m_CountOnlySet1 += m_CurrentSet1Group.size();
-        ITERATE (list< AutoPtr<SAlignment> >, it, m_CurrentSet1Group) {
-            group.push_back(&**it);
+        if (!m_IgnoreNotPresent) {
+            m_CountOnlySet1 += m_CurrentSet1Group.size();
+            ITERATE (list< AutoPtr<SAlignment> >, it, m_CurrentSet1Group) {
+                group.push_back(&**it);
+            }
         }
         break;
 
     case 2:
-        m_CountOnlySet2 += m_CurrentSet2Group.size();
-        ITERATE (list< AutoPtr<SAlignment> >, it, m_CurrentSet2Group) {
-            group.push_back(&**it);
+        if (!m_IgnoreNotPresent) {
+            m_CountOnlySet2 += m_CurrentSet2Group.size();
+            ITERATE (list< AutoPtr<SAlignment> >, it, m_CurrentSet2Group) {
+                group.push_back(&**it);
+            }
         }
         break;
 
