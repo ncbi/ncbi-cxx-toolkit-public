@@ -1,8 +1,10 @@
-October 31, 2011
+January 31, 2012
 * 2.2.26 release.
 * Mac executables are now Universal Binaries for 32- and 64-bit architectures,
   we no longer produce PPC and Intel Universal binaries. The executable
   archive names remain unchanged.
+* Added DELTA-BLAST - a new tool for sensitive protein searches
+* Added makeprofiledb - a tool for creating a database for RPS-BLAST
 
 Improvements:
 * The blast_formatter application can now format bl2seq RIDs.
@@ -11,8 +13,11 @@ Improvements:
   ignore_msa_master and msa_master_idx (see BLAST+ manual).
 * mkmbindex can now create masked indices from a BLAST database and ASN.1 masking data.
 * An improved finite size correction is now used for blastp/blastx/tblastn/rpsblast.
-  This results in more accurate expect values for alignments with a short query or target sequence.
-  Re-enable the old size correction by setting the enviroment variable OLD_FSC to a non-NULL value.
+  The FSC is subtracted from the query and database sequence length for the
+  calculation of the expect value.  The new FSC results in more accurate expect
+  values, especially for alignments with a short query or target sequence.
+  Re-enable the old size correction by setting the environment variable OLD_FSC
+  to a non-NULL value.
 * The blastdbcmd -range parameter now accepts a blank value for the second parameter to signify
   the end of a sequence (e.g., -range "100-")
 * There was a performance improvement for long database sequences in results with many matches.
