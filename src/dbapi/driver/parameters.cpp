@@ -191,9 +191,11 @@ g_SubstituteParam(const string& query, const string& name, const string& val)
             continue;
         }
         if (NStr::Compare(result, pos, name_len, name) == 0
-            && (pos == 0 || !isalnum((unsigned char) result[pos - 1]))
-            && !isalnum((unsigned char) result[pos + name_len])
-            && result[pos + name_len] != '_') {
+            &&  (pos == 0  ||  !isalnum((unsigned char) result[pos - 1]))
+            &&  (pos + name_len >= result.size()
+                 ||  (!isalnum((unsigned char) result[pos + name_len])
+                      &&  result[pos + name_len] != '_')))
+        {
             result.replace(pos, name_len, val);
             len = result.length();
             pos += val_len;
