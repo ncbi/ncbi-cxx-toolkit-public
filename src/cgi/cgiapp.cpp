@@ -172,6 +172,11 @@ CCgiApplication* CCgiApplication::Instance(void)
 }
 
 
+extern "C" void SigTermHandler(int)
+{
+}
+
+
 int CCgiApplication::Run(void)
 {
     // Value to return from this method Run()
@@ -191,6 +196,14 @@ int CCgiApplication::Run(void)
     // Disable SIGPIPE if not allowed.
     if ( !TParamAllowSigpipe::GetDefault() ) {
         signal(SIGPIPE, SIG_IGN);
+        struct sigaction sigterm,  sigtermold;
+        memset(&sigterm, 0, sizeof(sigterm));
+        sigterm.sa_handler = SigTermHandler;
+        sigterm.sa_flags = SA_RESETHAND;
+        if (sigaction(SIGTERM, &sigterm, &sigtermold) == 0
+            &&  sigtermold.sa_handler != SIG_DFL) {
+            sigaction(SIGTERM, &sigtermold, 0);
+        }
     }
 
     // Compose diagnostics prefix
