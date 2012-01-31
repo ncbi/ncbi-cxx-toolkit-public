@@ -5486,6 +5486,19 @@ void CValidError_bioseq::x_ValidateAbuttingUTR(const CBioseq_Handle& seq)
         }
     }    
 
+    if (is_mrna) {
+        cug_it.Rewind();
+        for ( ; cug_it; ++cug_it ) {
+            CSeqFeatData::ESubtype subtype = cug_it->GetData().GetSubtype();
+            if (subtype == CSeqFeatData::eSubtype_cdregion) {
+                if (cug_it->GetLocation().GetStrand() == eNa_strand_minus) {
+                    PostErr (eDiag_Error, eErr_SEQ_FEAT_CDSonMinusStrandMRNA,
+                             "CDS should not be on minus strand of mRNA molecule", cug_it->GetOriginalFeature());
+                }
+            }
+        }
+    }
+
     if (is_mrna || (num_cds == 1 && num_gene < 2)) {
 
         if (is_mrna) {

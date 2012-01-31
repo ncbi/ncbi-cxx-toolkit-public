@@ -1471,6 +1471,9 @@ same id type")),
    TErrTypStrs ( eErr_SEQ_FEAT_InconsistentRRNAstrands,
    TErrStrs( "InconsistentRRNAstrands",
 "rRNA and ITS features are not on the same strand.")),
+   TErrTypStrs ( eErr_SEQ_FEAT_CDSonMinusStrandMRNA,
+   TErrStrs( "CDSonMinusStrandMRNA",
+"Coding regions should be on the plus strand of mRNA molecules.")),
 
 /* SEQ_ALIGN */
 
