@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 """Script to create a source/binary RPM.
-
-Note: the user manual is NOT included in the RPM because it causes problems with
-creating relocatable packages (see 
-http://docs.fedoraproject.org/drafts/rpm-guide-en/ch10s05.html)
 """
 # $Id$
 

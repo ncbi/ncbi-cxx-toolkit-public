@@ -48,7 +48,6 @@ def main():
              "rpsblast.exe",
              "rpstblastn.exe",
              "psiblast.exe",
-             "seedtop.exe",
              "blastdbcmd.exe",
              "makeblastdb.exe",
              "makembindex.exe",
@@ -60,6 +59,7 @@ def main():
              "convert2blastmask.exe",
              "blastdbcheck.exe",
              "blast_formatter.exe",
+             "deltablast.exe",
              "legacy_blast.pl",
              "update_blastdb.pl" ]
     
