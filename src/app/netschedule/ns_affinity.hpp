@@ -123,6 +123,7 @@ class CNSAffinityRegistry
         list< SAffinityStatistics >  GetAffinityStatistics(const CJobStatusTracker &  status_tracker) const;
         TNSBitVector  GetJobsWithAffinity(const TNSBitVector &  aff_ids) const;
         TNSBitVector  GetJobsWithAffinity(unsigned int  aff_id) const;
+        TNSBitVector  GetRegisteredAffinities(void) const;
         void  RemoveJobFromAffinity(unsigned int  job_id, unsigned int  aff_id);
         size_t  RemoveClientFromAffinities(unsigned int          client_id,
                                            const TNSBitVector &  aff_ids);
@@ -176,6 +177,20 @@ class CNSAffinityRegistry
         unsigned int            m_LastAffinityID;
         CFastMutex              m_LastAffinityIDLock;
         unsigned int            x_GetNextAffinityID(void);
+
+        TNSBitVector            m_RegisteredAffinities;
+                                                // The identifiers of all the
+                                                // affinities which are
+                                                // currently in the registry
+        string  x_PrintSelected(const TNSBitVector &        batch,
+                                const CQueue *              queue,
+                                const CNSClientsRegistry &  clients_registry,
+                                bool                        verbose) const;
+        string  x_PrintOne(unsigned int                aff_id,
+                           const SNSJobsAffinity &     jobs_affinity,
+                           const CQueue *              queue,
+                           const CNSClientsRegistry &  clients_registry,
+                           bool                        verbose) const;
 };
 
 

@@ -180,6 +180,9 @@ CNSAffinityRegistry::ResolveAffinityToken(const string &     token,
         new_job_affinity.m_Clients.set(client_id, true);
     m_JobsAffinity[aff_id] = new_job_affinity;
 
+    // Memorize the new affinity id
+    m_RegisteredAffinities.set_bit(aff_id);
+
     // Update the database. The transaction is created in the outer scope.
     m_AffDictDB->aff_id = aff_id;
     m_AffDictDB->token = token;
@@ -238,6 +241,9 @@ CNSAffinityRegistry::ResolveAffinitiesForWaitClient(
         if (client_id != 0)
             new_job_affinity.m_WaitGetClients.set(client_id, true);
         m_JobsAffinity[aff_id] = new_job_affinity;
+
+        // Memorize the new affinity ID
+        m_RegisteredAffinities.set_bit(aff_id);
 
         // Update the database. The transaction is created in the outer scope.
         m_AffDictDB->aff_id = aff_id;
@@ -344,6 +350,14 @@ CNSAffinityRegistry::GetJobsWithAffinity(unsigned int  aff_id) const
     if (found != m_JobsAffinity.end())
         return found->second.m_Jobs;
     return TNSBitVector();
+}
+
+
+TNSBitVector
+CNSAffinityRegistry::GetRegisteredAffinities(void) const
+{
+    CReadLockGuard      guard(m_Lock);
+    return m_RegisteredAffinities;
 }
 
 
@@ -455,63 +469,116 @@ void  CNSAffinityRegistry::Print(const CQueue *              queue,
                                  const CNSClientsRegistry &  clients_registry,
                                  bool                        verbose) const
 {
-    CReadLockGuard              guard(m_Lock);
+    const size_t        max_batch_size = 1000;
+    TNSBitVector        batch;
 
+    TNSBitVector                registered_affs = GetRegisteredAffinities();
+    TNSBitVector::enumerator    en(registered_affs.first());
+
+    while (en.valid()) {
+        batch.set_bit(*en);
+        ++en;
+
+        if (batch.count() >= max_batch_size) {
+            handler.WriteMessage(x_PrintSelected(batch, queue,
+                                                 clients_registry,
+                                                 verbose).c_str());
+            batch.clear();
+        }
+    }
+
+    if (batch.count() > 0)
+        handler.WriteMessage(x_PrintSelected(batch, queue,
+                                             clients_registry,
+                                             verbose).c_str());
+    return;
+}
+
+
+string
+CNSAffinityRegistry::x_PrintSelected(const TNSBitVector &        batch,
+                                     const CQueue *              queue,
+                                     const CNSClientsRegistry &  clients_registry,
+                                     bool                        verbose) const
+{
+    string      buffer;
+    size_t      printed = 0;
+
+    CReadLockGuard              guard(m_Lock);
     map< unsigned int,
          SNSJobsAffinity >::const_iterator      k = m_JobsAffinity.begin();
     for ( ; k != m_JobsAffinity.end(); ++k ) {
-        handler.WriteMessage("OK:AFFINITY: '" +
-                             NStr::PrintableString(*(k->second.m_AffToken)) +
-                             "'");
-        handler.WriteMessage("OK:  ID: " + NStr::IntToString(k->first));
-
-        if (verbose) {
-            if (k->second.m_Jobs.any()) {
-                handler.WriteMessage("OK:  JOBS:");
-
-                TNSBitVector::enumerator    en(k->second.m_Jobs.first());
-                for ( ; en.valid(); ++en)
-                    handler.WriteMessage("OK:    " + queue->MakeKey(*en));
-            }
-            else
-                handler.WriteMessage("OK:  JOBS: NONE");
+        if (batch[k->first]) {
+            buffer += x_PrintOne(k->first, k->second,
+                                 queue, clients_registry, verbose);
+            ++printed;
+            if (printed >= batch.count())
+                break;
         }
-        else
-            handler.WriteMessage("OK:  NUMBER OF JOBS: " +
-                                 NStr::IntToString(k->second.m_Jobs.count()));
-
-        if (verbose) {
-            if (k->second.m_Clients.any()) {
-                handler.WriteMessage("OK:  CLIENTS (PREFERRED):");
-
-                TNSBitVector::enumerator    en(k->second.m_Clients.first());
-                for ( ; en.valid(); ++en)
-                    handler.WriteMessage("OK:    '" + clients_registry.GetNodeName(*en) + "'");
-            }
-            else
-                handler.WriteMessage("OK:  CLIENTS (PREFERRED): NONE");
-        }
-        else
-            handler.WriteMessage("OK:  NUMBER OF CLIENTS (PREFERRED): " +
-                                 NStr::IntToString(k->second.m_Clients.count()));
-
-        if (verbose) {
-            if (k->second.m_WaitGetClients.any()) {
-                handler.WriteMessage("OK:  CLIENTS (EXPLICIT WGET):");
-
-                TNSBitVector::enumerator    en(k->second.m_WaitGetClients.first());
-                for ( ; en.valid(); ++en)
-                    handler.WriteMessage("OK:    '" + clients_registry.GetNodeName(*en) + "'");
-            }
-            else
-                handler.WriteMessage("OK:  CLIENTS (EXPLICIT WGET): NONE");
-        }
-        else
-            handler.WriteMessage("OK:  NUMBER OF CLIENTS (EXPLICIT WGET): " +
-                                 NStr::IntToString(k->second.m_WaitGetClients.count()));
     }
 
-    return;
+    return buffer;
+}
+
+string
+CNSAffinityRegistry::x_PrintOne(unsigned int                aff_id,
+                                const SNSJobsAffinity &     jobs_affinity,
+                                const CQueue *              queue,
+                                const CNSClientsRegistry &  clients_registry,
+                                bool                        verbose) const
+{
+    string      buffer;
+
+    buffer += "OK:AFFINITY: '" +
+              NStr::PrintableString(*(jobs_affinity.m_AffToken)) + "'\n"
+              "OK:  ID: " + NStr::IntToString(aff_id) + "\n";
+
+    if (verbose) {
+        if (jobs_affinity.m_Jobs.any()) {
+            buffer += "OK:  JOBS:\n";
+
+            TNSBitVector::enumerator    en(jobs_affinity.m_Jobs.first());
+            for ( ; en.valid(); ++en)
+                buffer += "OK:    " + queue->MakeKey(*en) + "\n";
+        }
+        else
+            buffer += "OK:  JOBS: NONE\n";
+    }
+    else
+        buffer += "OK:  NUMBER OF JOBS: " +
+                  NStr::IntToString(jobs_affinity.m_Jobs.count()) + "\n";
+
+    if (verbose) {
+        if (jobs_affinity.m_Clients.any()) {
+            buffer += "OK:  CLIENTS (PREFERRED):\n";
+
+            TNSBitVector::enumerator    en(jobs_affinity.m_Clients.first());
+            for ( ; en.valid(); ++en)
+                buffer += "OK:    '" + clients_registry.GetNodeName(*en) + "'\n";
+        }
+        else
+            buffer += "OK:  CLIENTS (PREFERRED): NONE\n";
+    }
+    else
+        buffer += "OK:  NUMBER OF CLIENTS (PREFERRED): " +
+                  NStr::IntToString(jobs_affinity.m_Clients.count()) + "\n";
+
+    if (verbose) {
+        if (jobs_affinity.m_WaitGetClients.any()) {
+            buffer += "OK:  CLIENTS (EXPLICIT WGET):\n";
+
+            TNSBitVector::enumerator    en(jobs_affinity.m_WaitGetClients.first());
+            for ( ; en.valid(); ++en)
+                buffer += "OK:    '" + clients_registry.GetNodeName(*en) + "'\n";
+        }
+        else
+            buffer += "OK:  CLIENTS (EXPLICIT WGET): NONE\n";
+    }
+    else
+        buffer += "OK:  NUMBER OF CLIENTS (EXPLICIT WGET): " +
+                  NStr::IntToString(jobs_affinity.m_WaitGetClients.count()) + "\n";
+
+    return buffer;
 }
 
 
@@ -537,6 +604,8 @@ void  CNSAffinityRegistry::LoadAffinityDictionary(void)
 
         m_JobsAffinity[aff_id] = new_record;
         m_AffinityIDs[new_token] = aff_id;
+
+        m_RegisteredAffinities.set_bit(aff_id);
     }
     return;
 }
@@ -597,6 +666,8 @@ void  CNSAffinityRegistry::FinalizeAffinityDictionaryLoading(void)
             m_AffinityIDs.erase(aff_tok);
         delete candidate->second.m_AffToken;
         m_JobsAffinity.erase(candidate);
+
+        m_RegisteredAffinities.set(*aff_id, false);
     }
 
     // Update the affinity id
@@ -684,6 +755,7 @@ void CNSAffinityRegistry::x_Clear(void)
     // Clear containers
     m_AffinityIDs.clear();
     m_JobsAffinity.clear();
+    m_RegisteredAffinities.clear();
     return;
 }
 
@@ -704,6 +776,8 @@ void CNSAffinityRegistry::x_DeleteAffinity(
 
     m_AffDictDB->aff_id = aff_id;
     m_AffDictDB->Delete(CBDB_File::eIgnoreError);
+
+    m_RegisteredAffinities.set(aff_id, false);
     return;
 }
 
