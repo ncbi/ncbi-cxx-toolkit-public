@@ -126,9 +126,9 @@ void CStd_seg::Validate(bool /* full_test */) const
 
 void CStd_seg::SwapRows(int row0, int row1)
 {
-    _ASSERT(row0 < GetLoc().size());
-    _ASSERT(row1 < GetLoc().size());
-    if (row0 < GetLoc().size()  &&  row1 < GetLoc().size()) {
+    _ASSERT(row0 < (int)GetLoc().size());
+    _ASSERT(row1 < (int)GetLoc().size());
+    if (row0 < (int)GetLoc().size()  &&  row1 < (int)GetLoc().size()) {
         swap(SetLoc()[row0], SetLoc()[row1]);
         if (IsSetIds()) {
             swap(SetIds()[row0], SetIds()[row1]);
@@ -244,7 +244,7 @@ void CStd_seg::RemapToLoc(TDim row,
     _ASSERT(single_dst_id);
 
     if ( !single_src_id->Equals(*single_dst_id)  ||
-         IsSetIds()  &&  !single_dst_id->Equals(*GetIds()[row] )) {
+         (IsSetIds()  &&  !single_dst_id->Equals(*GetIds()[row])) ) {
         NCBI_THROW(CSeqalignException, eInvalidInputData,
                    "CStd_seg::RemapToLoc target seq-loc id does not equal row's id.");
     }

@@ -278,8 +278,8 @@ void CDense_seg::Validate(bool full_test) const
                             + " Row=" + NStr::SizetToString(numrow) +
                             " Seg=" + NStr::SizetToString(plus ? numseg :
                                                         numsegs - 1 - numseg) +
-                            " MinStart=" + NStr::IntToString(min_start) +
-                            " Start=" + NStr::IntToString(start);
+                            " MinStart=" + NStr::NumericToString(min_start) +
+                            " Start=" + NStr::NumericToString(start);
                         
                         NCBI_THROW(CSeqalignException, eInvalidAlignment,
                                    errstr);
@@ -542,7 +542,7 @@ void CDense_seg::OrderAdjacentGaps()
 			if(next_seq_row < curr_seq_row) {
 				for(int j=0; j < GetDim(); ++j) {
 					swap(SetStarts()[IDX(i,j)], SetStarts()[IDX(i+1,j)]);
-					if (GetStrands().size() > IDX(i+1,j)) 
+					if (GetStrands().size() > (size_t)IDX(i+1,j)) 
 						swap(SetStrands()[IDX(i,j)], SetStrands()[IDX(i+1,j)]);
 				}
                 swap(SetLens()[i], SetLens()[i+1]);
@@ -720,7 +720,7 @@ x_FindSegment(CDense_seg::TDim row, TSignedSeqPos pos) const
         NCBI_THROW(CSeqalignException, eInvalidAlignment,
                    "CDense_seg::x_FindSegment(): "
                    "Can't find a segment containing position " +
-                   NStr::IntToString(pos));
+                   NStr::NumericToString(pos));
     }
 
     return seg - 1;
@@ -737,7 +737,7 @@ ExtractSlice(TDim row, TSeqPos from, TSeqPos to) const
         NCBI_THROW(CSeqalignException, eInvalidRowNumber,
                    "CDense_seg::ExtractSlice():"
                    " Invalid row number ("
-                   + NStr::IntToString(row) + ")");
+                   + NStr::NumericToString(row) + ")");
     }
 
     if (from > to) {
@@ -746,13 +746,13 @@ ExtractSlice(TDim row, TSeqPos from, TSeqPos to) const
     if (from < GetSeqStart(row)) {
         NCBI_THROW(CSeqalignException, eOutOfRange,
                    "CDense_seg::ExtractSlice(): "
-                   "start position (" + NStr::IntToString(from) +
+                   "start position (" + NStr::NumericToString(from) +
                    ") off end of alignment");
     }
     if (to > GetSeqStop(row)) {
         NCBI_THROW(CSeqalignException, eOutOfRange,
                    "CDense_seg::ExtractSlice(): "
-                   "stop position (" + NStr::IntToString(to) +
+                   "stop position (" + NStr::NumericToString(to) +
                    ") off end of alignment");
     }
 
@@ -845,7 +845,7 @@ CRef<CDense_seg> CDense_seg::ExtractRows(const vector<TDim>& rows) const
             NCBI_THROW(CSeqalignException, eInvalidRowNumber,
                        "CDense_seg::ExtractRows():"
                        " Invalid row number ("
-                       + NStr::IntToString(*row) + ")");
+                       + NStr::NumericToString(*row) + ")");
         }
         // *copy* the ID (don't just make a reference to it)
         CRef<CSeq_id> id_copy(new CSeq_id);
@@ -929,11 +929,11 @@ void CDense_seg::RemapToLoc(TDim row, const CSeq_loc& loc,
                       " Seq-loc is not long enough to"
                       " cover the alignment!"
                       " Maximum row seq pos is ");
-        errstr += NStr::IntToString(row_stop);
+        errstr += NStr::NumericToString(row_stop);
         errstr += ". The total seq-loc len is only ";
         errstr += NStr::SizetToString(ttl_loc_len);
         errstr += ", it should be at least ";
-        errstr += NStr::IntToString(row_stop+1);
+        errstr += NStr::NumericToString(row_stop+1);
         errstr += " (= max seq pos + 1).";
         NCBI_THROW(CSeqalignException, eOutOfRange, errstr);
     }
@@ -1418,7 +1418,7 @@ CRef<CSeq_interval> CDense_seg::CreateRowSeq_interval(TDim row) const
     if (GetDim() <= row) {
         NCBI_THROW(CSeqalignException, eInvalidRowNumber,
             "Invalid row number in CreateRowSeq_interval(): " +
-            NStr::IntToString(row));
+            NStr::NumericToString(row));
     }
     CRef<CSeq_interval> ret(new CSeq_interval);
     TSeqPos from = kInvalidSeqPos;
