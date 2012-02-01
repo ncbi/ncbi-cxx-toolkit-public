@@ -650,7 +650,7 @@ TTypeInfo CDataType::GetAnyTypeInfo(void)
     if ( !typeInfo ) {
         typeInfo = GetRealTypeInfo();
         if ( NeedAutoPointer(typeInfo) ) {
-            if (IsAlias()) {
+            if (IsAlias() && !IsStdType()) {
                 CTypeInfo *alias =
                     new CAliasTypeInfo(GlobalName(),typeInfo);
                 alias->SetModuleName( typeInfo->GetModuleName());
