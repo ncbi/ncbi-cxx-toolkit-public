@@ -51,6 +51,98 @@ BEGIN_NCBI_SCOPE
 const char *    k_JobStateMsgPrefix = "JNTF ";
 
 
+string  SNSNotificationAttributes::Print(
+                       const CNSClientsRegistry &   clients_registry,
+                       const CNSAffinityRegistry &  aff_registry,
+                       bool                         verbose) const
+{
+    string      buffer;
+
+    buffer += "OK:CLIENT: '" + m_ClientNode + "'\n"
+              "OK:  RECEPIENT ADDRESS: " +
+                    CSocketAPI::gethostbyaddr(m_Address) + ":" +
+                    NStr::IntToString(m_Port) + "\n";
+
+    CTime   lifetime(m_Lifetime);
+    lifetime.ToLocalTime();
+    buffer += "OK:  LIFE TIME: " + lifetime.AsString() + "\n";
+
+    if (m_AnyJob)
+        buffer += "OK:  ANY JOB: TRUE\n";
+    else
+        buffer += "OK:  ANY JOB: FALSE\n";
+
+    if (verbose == false) {
+        buffer += "OK:  EXPLICIT AFFINITIES: n/a (available in VERBOSE mode)\n";
+    }
+    else {
+        if (m_ClientNode.empty())
+            buffer += "OK:  EXPLICIT AFFINITIES: CLIENT NOT FOUND\n";
+        else {
+            TNSBitVector    wait_aff = clients_registry.GetWaitAffinities(m_ClientNode);
+
+            if (wait_aff.any()) {
+                buffer += "OK:  EXPLICIT AFFINITIES:\n";
+
+                TNSBitVector::enumerator    en(wait_aff.first());
+                for ( ; en.valid(); ++en)
+                    buffer += "OK:    '" + aff_registry.GetTokenByID(*en) + "'\n";
+            }
+            else
+                buffer += "OK:  EXPLICIT AFFINITIES: NONE\n";
+        }
+    }
+
+    if (verbose == false) {
+        if (m_WnodeAff)
+            buffer += "OK:  USE PREFERRED AFFINITIES: TRUE\n";
+        else
+            buffer += "OK:  USE PREFERRED AFFINITIES: FALSE\n";
+    }
+    else {
+        if (m_WnodeAff) {
+
+            // Need to print resolved preferred affinities
+            TNSBitVector    pref_aff = clients_registry.GetPreferredAffinities(m_ClientNode);
+
+            if (pref_aff.any()) {
+                buffer += "OK:  USE PREFERRED AFFINITIES:\n";
+
+                TNSBitVector::enumerator    en(pref_aff.first());
+                for ( ; en.valid(); ++en)
+                    buffer += "OK:    '" + aff_registry.GetTokenByID(*en) + "'\n";
+            }
+            else
+                buffer += "OK:  USE PREFERRED AFFINITIES: NONE\n";
+        }
+        else
+            buffer += "OK:  USE PREFERRED AFFINITIES: FALSE\n";
+    }
+
+
+    if (m_ShouldNotify)
+        buffer += "OK:  ACTIVE: TRUE\n";
+    else
+        buffer += "OK:  ACTIVE: FALSE\n";
+
+    if (m_HifreqNotifyLifetime != 0) {
+        CTime   highfreq_lifetime(m_HifreqNotifyLifetime);
+        highfreq_lifetime.ToLocalTime();
+        buffer += "OK:  HIGH FREQUENCY LIFE TIME: " +
+                  highfreq_lifetime.AsString() + "\n";
+    }
+    else
+        buffer += "OK:  HIGH FREQUENCY LIFE TIME: n/a\n";
+
+    if (m_SlowRate)
+        buffer += "OK:  SLOW RATE ACTIVE: TRUE\n";
+    else
+        buffer += "OK:  SLOW RATE ACTIVE: FALSE\n";
+
+    return buffer;
+}
+
+
 CNSNotificationList::CNSNotificationList(const string &  qname)
 {
     strcpy(m_JobStateMsgBuffer, k_JobStateMsgPrefix);
@@ -278,91 +370,38 @@ CNSNotificationList::Print(CNetScheduleHandler &        handler,
                            const CNSAffinityRegistry &  aff_registry,
                            bool                         verbose) const
 {
-    CFastMutexGuard                             guard(m_ListenersLock);
+    const size_t                                        batch_size = 1000;
+    size_t                                              records_to_skip = 0;
+    string                                              buffer;
+    list<SNSNotificationAttributes>::const_iterator     current;
 
-    for (list<SNSNotificationAttributes>::const_iterator
-            k = m_Listeners.begin(); k != m_Listeners.end(); ++k) {
-        handler.WriteMessage("OK:CLIENT: '" + k->m_ClientNode + "'");
-        handler.WriteMessage("OK:  RECEPIENT ADDRESS: " +
-                             CSocketAPI::gethostbyaddr(k->m_Address) + ":" +
-                             NStr::IntToString(k->m_Port));
+    for (;;) {
+        {{
+            CFastMutexGuard     guard(m_ListenersLock);
 
-        CTime   lifetime(k->m_Lifetime);
-        lifetime.ToLocalTime();
-        handler.WriteMessage("OK:  LIFE TIME: " + lifetime.AsString());
+            current = x_SkipRecords(records_to_skip);
+            if (current == m_Listeners.end())
+                break;
 
-        if (k->m_AnyJob)
-            handler.WriteMessage("OK:  ANY JOB: TRUE");
-        else
-            handler.WriteMessage("OK:  ANY JOB: FALSE");
-
-        if (verbose == false) {
-            handler.WriteMessage("OK:  EXPLICIT AFFINITIES: n/a (available in VERBOSE mode)");
-        }
-        else {
-            if (k->m_ClientNode.empty())
-                handler.WriteMessage("OK:  EXPLICIT AFFINITIES: CLIENT NOT FOUND");
-            else {
-                TNSBitVector    wait_aff = clients_registry.GetWaitAffinities(k->m_ClientNode);
-
-                if (wait_aff.any()) {
-                    handler.WriteMessage("OK:  EXPLICIT AFFINITIES:");
-
-                    TNSBitVector::enumerator    en(wait_aff.first());
-                    for ( ; en.valid(); ++en)
-                        handler.WriteMessage("OK:    '" + aff_registry.GetTokenByID(*en) + "'");
-                }
-                else
-                    handler.WriteMessage("OK:  EXPLICIT AFFINITIES: NONE");
+            size_t      count = 0;
+            while (count < batch_size && current != m_Listeners.end()) {
+                buffer += current->Print(clients_registry,
+                                         aff_registry, verbose);
+                ++count;
+                ++current;
             }
-        }
 
-        if (verbose == false) {
-            if (k->m_WnodeAff)
-                handler.WriteMessage("OK:  USE PREFERRED AFFINITIES: TRUE");
-            else
-                handler.WriteMessage("OK:  USE PREFERRED AFFINITIES: FALSE");
-        }
-        else {
-            if (k->m_WnodeAff) {
+            if (current == m_Listeners.end())
+                break;
+        }}
 
-                // Need to print resolved preferred affinities
-                TNSBitVector    pref_aff = clients_registry.GetPreferredAffinities(k->m_ClientNode);
-
-                if (pref_aff.any()) {
-                    handler.WriteMessage("OK:  USE PREFERRED AFFINITIES:");
-
-                    TNSBitVector::enumerator    en(pref_aff.first());
-                    for ( ; en.valid(); ++en)
-                        handler.WriteMessage("OK:    '" + aff_registry.GetTokenByID(*en) + "'");
-                }
-                else
-                    handler.WriteMessage("OK:  USE PREFERRED AFFINITIES: NONE");
-            }
-            else
-                handler.WriteMessage("OK:  USE PREFERRED AFFINITIES: FALSE");
-        }
-
-
-        if (k->m_ShouldNotify)
-            handler.WriteMessage("OK:  ACTIVE: TRUE");
-        else
-            handler.WriteMessage("OK:  ACTIVE: FALSE");
-
-        if (k->m_HifreqNotifyLifetime != 0) {
-            CTime   highfreq_lifetime(k->m_HifreqNotifyLifetime);
-            highfreq_lifetime.ToLocalTime();
-            handler.WriteMessage("OK:  HIGH FREQUENCY LIFE TIME: " +
-                                 highfreq_lifetime.AsString());
-        }
-        else
-            handler.WriteMessage("OK:  HIGH FREQUENCY LIFE TIME: n/a");
-
-        if (k->m_SlowRate)
-            handler.WriteMessage("OK:  SLOW RATE ACTIVE: TRUE");
-        else
-            handler.WriteMessage("OK:  SLOW RATE ACTIVE: FALSE");
+        handler.WriteMessage(buffer.c_str());
+        buffer.clear();
+        records_to_skip += batch_size;
     }
+
+    if (!buffer.empty())
+        handler.WriteMessage(buffer.c_str());
 
     return;
 }
@@ -484,6 +523,21 @@ void CGetJobNotificationThread::x_DoJob(void)
 
 }
 
+
+// Service function to support printing of the list.
+// The lock must be acquired before calling this member.
+list<SNSNotificationAttributes>::const_iterator
+CNSNotificationList::x_SkipRecords(size_t count) const
+{
+    list<SNSNotificationAttributes>::const_iterator
+                                        current = m_Listeners.begin();
+
+    for (size_t  skipped = 0;
+            skipped < count && current != m_Listeners.end(); ++skipped)
+        ++current;
+
+    return current;
+}
 
 END_NCBI_SCOPE
 

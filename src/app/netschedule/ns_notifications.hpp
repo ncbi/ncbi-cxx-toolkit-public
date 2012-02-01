@@ -73,6 +73,10 @@ struct SNSNotificationAttributes
     bool            m_SlowRate;     // true if the client did not come after
                                     // fast notifications period.
     unsigned int    m_SlowRateCount;
+
+    string  Print(const CNSClientsRegistry &   clients_registry,
+                  const CNSAffinityRegistry &  aff_registry,
+                  bool                         verbose) const;
 };
 
 
@@ -125,6 +129,9 @@ class CNSNotificationList
     private:
         list<SNSNotificationAttributes>     m_Listeners;
         mutable CFastMutex                  m_ListenersLock;
+
+        list<SNSNotificationAttributes>::const_iterator
+                                    x_SkipRecords(size_t count) const;
 
         CDatagramSocket         m_GetNotificationSocket;
         char                    m_GetMsgBuffer[k_MessageBufferSize];
