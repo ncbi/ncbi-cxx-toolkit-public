@@ -2937,7 +2937,7 @@ KU:PB	s	University of Kansas, Museum of Natural History, Paleobotany Collection
 KU:VP	s	University of Kansas, Museum of Natural History, Vertebrate Paleontology Collection
 KU<CHN>	s	Kwangsi University
 KUBL	s	Yoshida College, Biological Laboratory
-KUEC	s	Kyushu University
+KUEC	s	Kyushu University Entomology Collection
 KUEL	s	Kyushu University, Entomology Laboratory
 KUFC	c	Kasetsart University Fungus Collection
 KUH	s	University of Karachi, Botany Department
@@ -2965,6 +2965,7 @@ KWP:Ento	s	Kenelm W. Philip Collection, University of Alaska Museum of the North
 KY	s	University of Kentucky
 KYM	s	University of Helsinki, Kymenlaakso Society of Naturalists
 KYO	s	Kyoto University, Botany Department
+KYUM<JPN>	s	Kyushu University Museum
 L	sb	Nationaal Herbarium Nederland, Leiden University branch
 LA	s	University of California
 LABCC	c	Lactic acid bacteria culture collection
