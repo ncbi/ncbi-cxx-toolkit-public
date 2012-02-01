@@ -103,8 +103,8 @@ static char* s_ServiceName(const char* service,
                      service, (unsigned long) depth));
         return 0/*failure*/;
     }
-    /*FIXME*/
-    assert(sizeof(buf) >= sizeof(CONN_SERVICE_NAME));
+    len = 0;
+    assert(sizeof(buf) > sizeof(CONN_SERVICE_NAME));
     if (!service  ||  (!ismask  &&  (!*service  ||  strpbrk(service, "?*")))
         ||  (len = strlen(service)) >= sizeof(buf)-sizeof(CONN_SERVICE_NAME)) {
         CORE_LOGF_X(8, eLOG_Error,
