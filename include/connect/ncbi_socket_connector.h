@@ -89,8 +89,8 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnector
  * sock, and that the delayed connection open will always result in eIO_Closed.
  */
 extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnectorOnTopEx
-(SOCK                   sock,    /* existing socket handle (may not be NULL) */
- unsigned short/*bool*/ own_sock,/* non-zero if connector will own "sock"    */
+(SOCK                   sock,    /* existing socket handle (NULL is allowed) */
+ unsigned short/*bool*/ own_sock,/* non-zero if connector is to own "sock"   */
  const char*            hostport /* connection point name taken verbatim     */
  );
 
@@ -98,8 +98,8 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnectorOnTopEx
 /* Equivalent to SOCK_CreateConnectorOnTopEx(sock, own_sock, 0)
  */
 extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnectorOnTop
-(SOCK                   sock,    /* existing socket handle (may not be NULL) */
- unsigned short/*bool*/ own_sock /* non-zero if connector will own "sock"    */
+(SOCK                   sock,    /* existing socket handle (NULL is allowed) */
+ unsigned short/*bool*/ own_sock /* non-zero if connector is to own "sock"   */
  );
 
 
