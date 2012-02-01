@@ -867,19 +867,20 @@ const char* CIO_Exception::GetErrCodeString(void) const
     case eInvalidArg:    return "eIO_InvalidArg";
     case eNotSupported:  return "eIO_NotSupported";
     case eUnknown:       return "eIO_Unknown";
-    default:             return  CException::GetErrCodeString();
+    default:             break;
     }
+    return  CException::GetErrCodeString();
 }
 
 
 extern CConn_IOStream* NcbiOpenURL(const string& url)
 {
-    class CInternalIniter : public CConnIniter {
+    class CPrivateIniter : public CConnIniter {
     public:
-        CInternalIniter(void)
+        CPrivateIniter(void)
         { }
     };
-    CInternalIniter init;
+    CPrivateIniter init;
 
     AutoPtr<SConnNetInfo> net_info = ConnNetInfo_Create(0);
 
@@ -904,7 +905,7 @@ extern CConn_IOStream* NcbiOpenURL(const string& url)
                                                net_info->path,
                                                net_info->user,
                                                net_info->pass,
-                                               kEmptyStr,
+                                               kEmptyStr/*path*/,
                                                net_info->port,
                                                net_info->debug_printout
                                                == eDebugPrintout_Data
