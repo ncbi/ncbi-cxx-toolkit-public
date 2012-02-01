@@ -117,12 +117,15 @@ void CGridThreadContext::PutProgressMessage(const string& msg, bool send_immedia
                 m_NetScheduleExecuter.GetProgressMsg(m_JobContext->m_Job);
             }
             if (m_NetCacheAPI) {
-                bool first_message = m_JobContext->m_Job.progress_msg.empty();
-                auto_ptr<CNcbiOstream> os(m_NetCacheAPI.CreateOStream(
-                    m_JobContext->m_Job.progress_msg));
-                *os << msg;
-                if (first_message)
+                if (!m_JobContext->m_Job.progress_msg.empty())
+                    m_NetCacheAPI.PutData(m_JobContext->m_Job.progress_msg,
+                            msg.data(), msg.length());
+                else {
+                    m_JobContext->m_Job.progress_msg =
+                            m_NetCacheAPI.PutData(msg.data(), msg.length());
+
                     m_NetScheduleExecuter.PutProgressMsg(m_JobContext->m_Job);
+                }
             }
         }
         if (debug_context) {
