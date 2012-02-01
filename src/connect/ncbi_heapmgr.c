@@ -60,7 +60,7 @@
  *
  * Prior to the heap use, the initialization is required, which comprises
  * call to either 'HEAP_Create' or 'HEAP_Attach' with the information about
- * the base heap pointer. 'HEAP_Create' also takes the size of initial
+ * the base heap pointer.  'HEAP_Create' also takes the size of initial
  * heap area (if there is one), and size of chunk (usually, a page size)
  * to be used in heap expansions (defaults to alignment if provided as 0).
  * Additionally (but not compulsory) the application program can provide
