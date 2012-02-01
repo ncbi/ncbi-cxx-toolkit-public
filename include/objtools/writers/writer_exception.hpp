@@ -41,7 +41,8 @@ class NCBI_XOBJWRITE_EXPORT CObjWriterException : public CException {
 public:
     enum EErrCode {
         /// Argument validation failed
-        eArgErr  
+        eArgErr,
+        eBadInput, 
     };
     
     virtual const char* GetErrCodeString() const

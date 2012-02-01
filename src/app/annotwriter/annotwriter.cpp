@@ -73,8 +73,6 @@
 #include <util/compress/stream.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objtools/writers/writer_exception.hpp>
-#include <objtools/writers/writer.hpp>
-#include <objtools/writers/gff_writer.hpp>
 #include <objtools/writers/gtf_writer.hpp>
 #include <objtools/writers/gff3_writer.hpp>
 #include <objtools/writers/wiggle_writer.hpp>
@@ -197,6 +195,8 @@ void CAnnotWriterApp::Init()
 int CAnnotWriterApp::Run()
 //  ----------------------------------------------------------------------------
 {
+    int retCode(0);         // final return code
+
 	CONNECT_Init(&GetConfig());
 //    __asm int 3;
 
@@ -228,74 +228,79 @@ int CAnnotWriterApp::Run()
         NCBI_THROW(CFlatException, eInternal, msg);
     }
 
-    while (!pIs->EndOfData()) {
-//        __asm int 3;
-        string objtype = pIs->ReadFileHeader();
+    try {
+        while (!pIs->EndOfData()) {
+            string objtype = pIs->ReadFileHeader();
 
-        if (objtype == "Seq-entry") {
-            CSeq_entry seq_entry;
-            pIs->Read(ObjectInfo(seq_entry), CObjectIStream::eNoFileHeader);
-            CSeq_entry_Handle seh = pScope->AddTopLevelSeqEntry( seq_entry );
-            m_pWriter->WriteHeader();
-            m_pWriter->WriteSeqEntryHandle(seh, AssemblyName(), AssemblyAccession());
-            m_pWriter->WriteFooter();
-            pScope->RemoveEntry(seq_entry);
-            continue;
-        }
-
-        if (objtype == "Seq-annot") {
-            CSeq_annot seq_annot;
-            pIs->Read(ObjectInfo(seq_annot), CObjectIStream::eNoFileHeader);
-            m_pWriter->WriteHeader();
-            m_pWriter->WriteAnnot( seq_annot, AssemblyName(), AssemblyAccession() );
-            m_pWriter->WriteFooter();
-            continue;
-        }
-
-        if (objtype == "Bioseq") {
-            CBioseq bioseq;
-            pIs->Read(ObjectInfo(bioseq), CObjectIStream::eNoFileHeader);
-            m_pWriter->WriteHeader();
-            CTypeIterator<CSeq_annot> annot_iter(bioseq);
-            for ( ;  annot_iter;  ++annot_iter ) {
-                CRef<CSeq_annot> annot(annot_iter.operator->());
-                if (!m_pWriter->WriteAnnot( 
-                        *annot, AssemblyName(), AssemblyAccession())) {
-                    return false;
-                }
+            if (objtype == "Seq-entry") {
+                CSeq_entry seq_entry;
+                pIs->Read(ObjectInfo(seq_entry), CObjectIStream::eNoFileHeader);
+                CSeq_entry_Handle seh = pScope->AddTopLevelSeqEntry( seq_entry );
+                m_pWriter->WriteHeader();
+                m_pWriter->WriteSeqEntryHandle(seh, AssemblyName(), AssemblyAccession());
+                m_pWriter->WriteFooter();
+                pScope->RemoveEntry(seq_entry);
+                continue;
             }
-            m_pWriter->WriteFooter();
-            continue;
-        }
 
-        if (objtype == "Bioseq-set") {
-            CBioseq_set seq_set;
-            pIs->Read(ObjectInfo(seq_set), CObjectIStream::eNoFileHeader);
-            CSeq_entry se;
-            se.SetSet( seq_set );
-            pScope->AddTopLevelSeqEntry( se );
-            m_pWriter->WriteHeader();
-            m_pWriter->WriteSeqEntryHandle( 
-                pScope->GetSeq_entryHandle(se), AssemblyName(), AssemblyAccession());
-            m_pWriter->WriteFooter();
-            pScope->RemoveEntry( se );
-            continue;
-        }
+            if (objtype == "Seq-annot") {
+                CSeq_annot seq_annot;
+                pIs->Read(ObjectInfo(seq_annot), CObjectIStream::eNoFileHeader);
+                m_pWriter->WriteHeader();
+                m_pWriter->WriteAnnot( seq_annot, AssemblyName(), AssemblyAccession() );
+                m_pWriter->WriteFooter();
+                continue;
+            }
 
-        if (objtype == "Seq-align") {
-            CSeq_align align;
-            pIs->Read(ObjectInfo(align), CObjectIStream::eNoFileHeader);
-            m_pWriter->WriteHeader();
-            m_pWriter->WriteAlign( align, AssemblyName(), AssemblyAccession());
-            m_pWriter->WriteFooter();
-            continue;
+            if (objtype == "Bioseq") {
+                CBioseq bioseq;
+                pIs->Read(ObjectInfo(bioseq), CObjectIStream::eNoFileHeader);
+                m_pWriter->WriteHeader();
+                CTypeIterator<CSeq_annot> annot_iter(bioseq);
+                for ( ;  annot_iter;  ++annot_iter ) {
+                    CRef<CSeq_annot> annot(annot_iter.operator->());
+                    if (!m_pWriter->WriteAnnot( 
+                            *annot, AssemblyName(), AssemblyAccession())) {
+                        return false;
+                    }
+                }
+                m_pWriter->WriteFooter();
+                continue;
+            }
+
+            if (objtype == "Bioseq-set") {
+                CBioseq_set seq_set;
+                pIs->Read(ObjectInfo(seq_set), CObjectIStream::eNoFileHeader);
+                CSeq_entry se;
+                se.SetSet( seq_set );
+                pScope->AddTopLevelSeqEntry( se );
+                m_pWriter->WriteHeader();
+                m_pWriter->WriteSeqEntryHandle( 
+                    pScope->GetSeq_entryHandle(se), AssemblyName(), AssemblyAccession());
+                m_pWriter->WriteFooter();
+                pScope->RemoveEntry( se );
+                continue;
+            }
+
+            if (objtype == "Seq-align") {
+                CSeq_align align;
+                pIs->Read(ObjectInfo(align), CObjectIStream::eNoFileHeader);
+                m_pWriter->WriteHeader();
+                m_pWriter->WriteAlign( align, AssemblyName(), AssemblyAccession());
+                m_pWriter->WriteFooter();
+                continue;
+            }
+            cerr << "Object type not supported!" << endl;
+            break;
         }
-        cerr << "Object type not supported!" << endl;
-        break;
+    }
+    catch(CObjWriterException& e) {
+        cerr << "Processing error: " << e.GetMsg() << endl;
+        retCode = 1;
     }
     pOs->flush();
     pIs.reset();
-    return 0;
+    return retCode;
 }
 
 //  -----------------------------------------------------------------------------

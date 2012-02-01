@@ -57,6 +57,7 @@
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
 
+#include <objtools/writers/writer_exception.hpp>
 #include <objtools/writers/write_util.hpp>
 #include <objtools/writers/gff3_write_data.hpp>
 #include <objtools/writers/gff3_source_data.hpp>
@@ -127,6 +128,14 @@ bool CGff3Writer::x_WriteAlign(
     bool bInvertWidth )
 //  ----------------------------------------------------------------------------
 {
+    try {
+        align.Validate(true);
+    }
+    catch(CException& e) {
+        string msg("Inconsistent alignment data ");
+        msg += ("\"\"\"" + e.GetMsg() + "\"\"\"");
+        NCBI_THROW(CObjWriterException, eBadInput, msg);
+    }
     if ( ! align.IsSetSegs() ) {
         cerr << "Object type not supported." << endl;
         return true;
@@ -162,7 +171,9 @@ bool CGff3Writer::x_WriteAlignDisc(
 
     const CSeq_align_set::Tdata& data = align.GetSegs().GetDisc().Get();
     for ( CASCIT cit = data.begin(); cit != data.end(); ++cit ) {
-        x_WriteAlign( **cit, bInvertWidth );
+        if (!x_WriteAlign(**cit, bInvertWidth)) {
+            return false;
+        }
     }
     return true;
 }
@@ -197,9 +208,9 @@ bool CGff3Writer::x_WriteAlignDenseg(
 
     const CDense_seg& ds = align.GetSegs().GetDenseg();
     CRef<CDense_seg> ds_filled = ds.FillUnaligned();
-    if ( bInvertWidth ) {
+//    if ( bInvertWidth ) {
 //        ds_filled->ResetWidths();
-    }
+//    }
 
     CAlnMap align_map( *ds_filled );
 
