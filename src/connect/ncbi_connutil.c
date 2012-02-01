@@ -1030,7 +1030,7 @@ extern int/*bool*/ ConnNetInfo_SetupStandardArgs(SConnNetInfo* info,
         ConnNetInfo_PreOverrideArg(info, kAddress, s);
     if (s != info->client_host)
         free((void*) s);
-    if (service  &&  *service) {
+    if (service) {
         if (!ConnNetInfo_PreOverrideArg(info, kService, service)) {
             ConnNetInfo_DeleteArg(info, kPlatform);
             if (!ConnNetInfo_PreOverrideArg(info, kService, service)) {
