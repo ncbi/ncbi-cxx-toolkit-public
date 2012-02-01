@@ -217,6 +217,7 @@ CShowBlastDefline::GetBioseqHandleDeflineAndId(const CBioseq_Handle& handle,
 {
     // Retrieve the CBlast_def_line_set object and save in a CRef, preventing
     // its destruction; then extract the list of CBlast_def_line objects.
+    if( !handle ) return; //  No bioseq for this handle ( deleted accession ? )
     CRef<CBlast_def_line_set> bdlRef = 
         CSeqDB::ExtractBlastDefline(handle);       
 
@@ -273,6 +274,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                                            SDeflineInfo* sdl,
                                            int blast_rank)
 {
+    if( !handle ) return; // invalid handle.
 
     const CRef<CBlast_def_line_set> bdlRef = CSeqDB::ExtractBlastDefline(handle);
     const list< CRef< CBlast_def_line > > &bdl = (bdlRef.Empty()) ? list< CRef< CBlast_def_line > >() : bdlRef->Get();
@@ -568,6 +570,7 @@ bool CShowBlastDefline::x_CheckForStructureLink()
 
       ITERATE(vector<SScoreInfo*>, iter, m_ScoreList) {
           const CBioseq_Handle& handle = m_ScopeRef->GetBioseqHandle(*(*iter)->id);
+	  if( !handle ) continue;  // invalid handle.
           const CRef<CBlast_def_line_set> bdlRef = CSeqDB::ExtractBlastDefline(handle);          
           const list< CRef< CBlast_def_line > > &bdl = (bdlRef.Empty()) ? list< CRef< CBlast_def_line > >() : bdlRef->Get();
           for(list< CRef< CBlast_def_line > >::const_iterator bdl_iter = bdl.begin();
@@ -1425,13 +1428,13 @@ CShowBlastDefline::SDeflineInfo*
 CShowBlastDefline::x_GetDeflineInfo(CConstRef<CSeq_id> id, list<int>& use_this_gi, int blast_rank)
 {
     SDeflineInfo* sdl = NULL;
-      
+    sdl = new SDeflineInfo;
+    sdl->id = id;
+    sdl->defline = "Unknown";
     try{
         const CBioseq_Handle& handle = m_ScopeRef->GetBioseqHandle(*id);
-        sdl = new SDeflineInfo;
         x_FillDeflineAndId(handle, *id, use_this_gi, sdl, blast_rank);
     } catch (const CException&){
-        sdl = new SDeflineInfo;
         sdl->defline = "Unknown";
         sdl->is_new = false;
         sdl->was_checked = false;
