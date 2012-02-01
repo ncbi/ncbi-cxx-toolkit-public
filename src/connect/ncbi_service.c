@@ -88,7 +88,8 @@ int/*bool*/ SERV_IsFirewallPort(unsigned short port)
 }
 
 
-static char* s_ServiceName(const char* service, size_t depth)
+static char* s_ServiceName(const char* service,
+                           int/*bool*/ ismask, size_t depth)
 {
     char   buf[128];
     char   srv[128];
@@ -96,40 +97,47 @@ static char* s_ServiceName(const char* service, size_t depth)
     char*  s;
 
     if (depth > 7) {
+        assert(service  &&  *service);
         CORE_LOGF_X(7, eLOG_Error,
                     ("[%s]  Maximal service name recursion depth reached: %lu",
                      service, (unsigned long) depth));
         return 0/*failure*/;
     }
-    if (!service  ||  !*service  ||
-        (len = strlen(service)) + sizeof(CONN_SERVICE_NAME) >= sizeof(buf)) {
+    /*FIXME*/
+    assert(sizeof(buf) >= sizeof(CONN_SERVICE_NAME));
+    if (!service  ||  (!ismask  &&  (!*service  ||  strpbrk(service, "?*")))
+        ||  (len = strlen(service)) >= sizeof(buf)-sizeof(CONN_SERVICE_NAME)) {
         CORE_LOGF_X(8, eLOG_Error,
                     ("%s%s%s%s service name",
                      !service  ||  !*service ? "" : "[",
                      !service ? "" : service,
                      !service  ||  !*service ? "" : "]  ",
-                     !service ? "NULL" : !*service ? "Empty" : "Too long"));
+                     !service ? "NULL" : !*service ? "Empty" :
+                     len < sizeof(buf)-sizeof(CONN_SERVICE_NAME) ? "Invalid" :
+                     "Too long"));
         return 0/*failure*/;
     }
-    s = (char*) memcpy(buf, service, len) + len;
-    *s++ = '_';
-    memcpy(s, CONN_SERVICE_NAME, sizeof(CONN_SERVICE_NAME));
-    /* Looking for "service_CONN_SERVICE_NAME" in the environment */
-    if (!(s = getenv(strupr(buf)))  ||  !*s) {
-        /* Looking for "CONN_SERVICE_NAME" in registry's section [service] */
-        buf[len++] = '\0';
-        CORE_REG_GET(buf, buf + len, srv, sizeof(srv), 0);
-        s = srv;
+    if (!s_Fast  &&  !ismask) {
+        s = (char*) memcpy(buf, service, len) + len;
+        *s++ = '_';
+        memcpy(s, CONN_SERVICE_NAME, sizeof(CONN_SERVICE_NAME));
+        /* Looking for "service_CONN_SERVICE_NAME" in the environment */
+        if (!(s = getenv(strupr(buf)))  ||  !*s) {
+            /* Looking for "CONN_SERVICE_NAME" in registry section [service] */
+            buf[len++] = '\0';
+            CORE_REG_GET(buf, buf + len, srv, sizeof(srv), 0);
+            s = srv;
+        }
+        if (*s  &&  strcasecmp(s, service) != 0)
+            return s_ServiceName(s, ismask, ++depth);
     }
-    if (!*s  ||  strcasecmp(s, service) == 0)
-        return strdup(service);
-    return s_ServiceName(s, ++depth);
+    return strdup(service);
 }
 
 
 char* SERV_ServiceName(const char* service)
 {
-    return s_ServiceName(service, 0);
+    return s_ServiceName(service, 0, 0);
 }
 
 
@@ -201,15 +209,14 @@ static SERV_ITER s_Open(const char*          service,
     const SSERV_VTable* op;
     SERV_ITER iter;
     const char* s;
-    
-    if (!service || !*service)
+
+    if (!(s = s_ServiceName(service, ismask, 0)))
         return 0;
-    if (!(s = ismask || s_Fast ? strdup(service) : s_ServiceName(service, 0)))
-        return 0;
-    if (!*s || !(iter = (SERV_ITER) calloc(1, sizeof(*iter)))) {
+    if (!(iter = (SERV_ITER) calloc(1, sizeof(*iter)))) {
         free((void*) s);
         return 0;
     }
+    assert(ismask  ||  *s);
 
     iter->name              = s;
     iter->type              = types & fSERV_All;
@@ -350,7 +357,8 @@ SERV_ITER SERV_OpenP(const char*          service,
                      const char*          arg,
                      const char*          val)
 {
-    return s_Open(service, strpbrk(service, "?*") != 0, types,
+    return s_Open(service,
+                  service  &&  (!*service  ||  strpbrk(service, "?*")), types,
                   preferred_host, preferred_port, preference,
                   net_info, skip, n_skip,
                   external, arg, val,
@@ -375,7 +383,7 @@ static void s_SkipSkip(SERV_ITER iter)
                         sizeof(*iter->skip)*(iter->n_skip - n));
             }
             if (iter->last == temp)
-                iter->last =  0;
+                iter->last  = 0;
             free(temp);
         } else
             n++;
@@ -572,8 +580,7 @@ void SERV_Close(SERV_ITER iter)
     }
     if (iter->skip)
         free(iter->skip);
-    if (iter->name)
-        free((void*) iter->name);
+    free((void*) iter->name);
     free(iter);
 }
 

@@ -177,8 +177,10 @@ static int/*bool*/ s_LoadServices(SERV_ITER iter)
             s[len++] = '\0';
         if (!(c = SERV_ServiceName(s)))
             break;
-        if ((iter->reverse_dns  ||  UTIL_MatchesMask(c, iter->name))  &&
-            s_LoadSingleService(c, iter)) {
+        if ((iter->reverse_dns
+             ||  (iter->ismask
+                  &&  (!*iter->name  ||  UTIL_MatchesMask(c, iter->name))))
+            &&  s_LoadSingleService(c, iter)) {
             ok = 1/*succeeded*/;
         }
         free((void*) c);
@@ -368,9 +370,6 @@ const SSERV_VTable* SERV_LOCAL_Open(SERV_ITER iter,
                                     SSERV_Info** info, HOST_INFO* u/*unused*/)
 {
     struct SLOCAL_Data* data;
-
-    if (!iter->ismask  &&  strpbrk(iter->name, "?*"))
-        return 0/*failed to start unallowed wildcard search*/;
 
     if (!(data = (struct SLOCAL_Data*) calloc(1, sizeof(*data))))
         return 0;

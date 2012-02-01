@@ -193,8 +193,9 @@ static void s_Resolve(SERV_ITER iter)
         CONN_Close(c);
     } else {
         CORE_LOGF_X(1, eLOG_Error,
-                    ("[%s]  Unable to create auxiliary HTTP %s: %s",
-                     iter->name, conn ? "connection" : "connector",
+                    ("%s%s%sUnable to create auxiliary HTTP %s: %s",
+                     &"["[!*iter->name], iter->name, *iter->name ? "]  " : "",
+                     conn ? "connection" : "connector",
                      IO_StatusStr(conn ? status : eIO_Unknown)));
         assert(0);
     }
@@ -385,9 +386,6 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
                                     SSERV_Info** info, HOST_INFO* u/*unused*/)
 {
     struct SDISPD_Data* data;
-
-    if (!iter->ismask  &&  strpbrk(iter->name, "?*"))
-        return 0/*failed to start unallowed wildcard search*/;
 
     if (!(data = (struct SDISPD_Data*) calloc(1, sizeof(*data))))
         return 0;
