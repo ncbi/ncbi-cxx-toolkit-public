@@ -53,6 +53,19 @@ CreateSeqAlignFromAnchoredAln(const CAnchoredAln& anchored_aln,   ///< input
 
 
 NCBI_XALNMGR_EXPORT
+CRef<CSeq_align>
+CreateSeqAlignFromPairwiseAln(const CPairwiseAln& pairwise_aln,   ///< input
+                              CSeq_align::TSegs::E_Choice choice, ///< choice of alignment 'segs'
+                              CScope* scope = NULL);
+
+
+NCBI_XALNMGR_EXPORT
+void
+CreateDense_diagFromAnchoredAln(CSeq_align::TSegs::TDendiag& dd,
+                                const CAnchoredAln& anchored_aln,
+                                CScope* scope = NULL);
+
+NCBI_XALNMGR_EXPORT
 CRef<CDense_seg>
 CreateDensegFromAnchoredAln(const CAnchoredAln& anchored_aln,
                             CScope* scope = NULL);
@@ -85,6 +98,12 @@ CreatePackedsegFromPairwiseAln(const CPairwiseAln& pairwise_aln,
 NCBI_XALNMGR_EXPORT
 CRef<CSpliced_seg>
 CreateSplicedsegFromAnchoredAln(const CAnchoredAln& anchored_aln,
+                                CScope* scope = NULL);
+
+
+NCBI_XALNMGR_EXPORT
+CRef<CSpliced_seg>
+CreateSplicedsegFromPairwiseAln(const CPairwiseAln& pairwise_aln,
                                 CScope* scope = NULL);
 
 

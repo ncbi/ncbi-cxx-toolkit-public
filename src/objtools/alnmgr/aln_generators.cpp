@@ -72,13 +72,13 @@ CreateSeqAlignFromAnchoredAln(const CAnchoredAln& anchored_aln,   ///< input
     sa->SetType(CSeq_align::eType_not_set);
     sa->SetDim(anchored_aln.GetDim());
 
-    switch(choice)    {
+    switch(choice) {
     case CSeq_align::TSegs::e_Dendiag:
+        CreateDense_diagFromAnchoredAln(sa->SetSegs().SetDendiag(), anchored_aln, scope);
         break;
-    case CSeq_align::TSegs::e_Denseg: {
+    case CSeq_align::TSegs::e_Denseg:
         sa->SetSegs().SetDenseg(*CreateDensegFromAnchoredAln(anchored_aln, scope));
         break;
-    }
     case CSeq_align::TSegs::e_Std:
         break;
     case CSeq_align::TSegs::e_Packed:
@@ -95,6 +95,40 @@ CreateSeqAlignFromAnchoredAln(const CAnchoredAln& anchored_aln,   ///< input
     case CSeq_align::TSegs::e_not_set:
         NCBI_THROW(CAlnException, eInvalidRequest,
                    "Invalid CSeq_align::TSegs type.");
+        break;
+    }
+    return sa;
+}
+
+
+CRef<CSeq_align>
+CreateSeqAlignFromPairwiseAln(const CPairwiseAln& pairwise_aln,   ///< input
+                              CSeq_align::TSegs::E_Choice choice, ///< choice of alignment 'segs'
+                              CScope* scope)
+{
+    CRef<CSeq_align> sa(new CSeq_align);
+    sa->SetType(CSeq_align::eType_not_set);
+    sa->SetDim(2);
+
+    switch(choice) {
+    case CSeq_align::TSegs::e_Denseg:
+        sa->SetSegs().SetDenseg(*CreateDensegFromPairwiseAln(pairwise_aln, scope));
+        break;
+    case CSeq_align::TSegs::e_Disc:
+        sa->SetSegs().SetDisc(*CreateAlignSetFromPairwiseAln(pairwise_aln, scope));
+        break;
+    case CSeq_align::TSegs::e_Packed:
+        sa->SetSegs().SetPacked(*CreatePackedsegFromPairwiseAln(pairwise_aln, scope));
+        break;
+    case CSeq_align::TSegs::e_Spliced:
+        sa->SetSegs().SetSpliced(*CreateSplicedsegFromPairwiseAln(pairwise_aln, scope));
+        break;
+    case CSeq_align::TSegs::e_Std:
+    case CSeq_align::TSegs::e_Dendiag:
+    case CSeq_align::TSegs::e_Sparse:
+    case CSeq_align::TSegs::e_not_set:
+        NCBI_THROW(CAlnException, eInvalidRequest,
+                   "Unsupported CSeq_align::TSegs type.");
         break;
     }
     return sa;
@@ -177,6 +211,118 @@ public:
 #endif
     }
 };
+
+
+void
+CreateDense_diagFromAnchoredAln(CSeq_align::TSegs::TDendiag& dd,
+                                const CAnchoredAln& anchored_aln,
+                                CScope* scope) 
+{
+    const CAnchoredAln::TPairwiseAlnVector& pairwises = anchored_aln.GetPairwiseAlns();
+
+    typedef CSegmentedRangeCollection TAnchorSegments;
+    TAnchorSegments anchor_segments;
+    ITERATE(CAnchoredAln::TPairwiseAlnVector, pairwise_aln_i, pairwises) {
+        ITERATE (CPairwiseAln::TAlnRngColl, rng_i, **pairwise_aln_i) {
+            anchor_segments.insert(CPairwiseAln::TRng(rng_i->GetFirstFrom(), rng_i->GetFirstTo()));
+        }
+    }
+
+    CSeq_align::TSegs::TDendiag diags;
+    CDense_diag::TDim dim = anchored_aln.GetDim();
+    size_t numseg = anchor_segments.size();
+    for (size_t seg = 0; seg < numseg; ++seg) {
+        CRef<CDense_diag> diag(new CDense_diag);
+        diag->SetDim(dim);
+        diag->SetIds().resize(dim);
+        for (int row = 0;  row < dim;  ++row) {
+            CRef<CSeq_id> id(new CSeq_id);
+            id->Assign(anchored_aln.GetId(dim - row - 1)->GetSeqId());
+            diag->SetIds()[row] = id;
+        }
+        diag->SetStarts().resize(dim, kInvalidSeqPos);
+        diag->SetStrands().resize(dim);
+        diag->SetLen(anchor_segments[seg].GetLength());
+        diags.push_back(diag);
+    }
+
+    for (int row = 0;  row < dim;  ++row) {
+        size_t seg = 0;
+        CSeq_align::TSegs::TDendiag::iterator diag_it = diags.begin();
+
+        TAnchorSegments::const_iterator seg_i = anchor_segments.begin();
+        CPairwiseAln::TAlnRngColl::const_iterator aln_rng_i =
+            pairwises[dim - row - 1]->begin();
+        bool direct = aln_rng_i->IsDirect();
+        TSignedSeqPos left_delta = 0;
+        TSignedSeqPos right_delta = aln_rng_i->GetLength();
+        while (seg_i != anchor_segments.end()) {
+            _ASSERT(seg < numseg);
+            if (aln_rng_i != pairwises[dim - row - 1]->end()  &&
+                seg_i->GetFrom() >= aln_rng_i->GetFirstFrom()) {
+                _ASSERT(seg_i->GetToOpen() <= aln_rng_i->GetFirstToOpen());
+                if (seg_i->GetToOpen() > aln_rng_i->GetFirstToOpen()) {
+                    NCBI_THROW(CAlnException, eInternalFailure,
+                               "seg_i->GetToOpen() > aln_rng_i->GetFirstToOpen()");
+                }
+
+                // dec right_delta
+                _ASSERT(right_delta >= seg_i->GetLength());
+                if (right_delta < seg_i->GetLength()) {
+                    NCBI_THROW(CAlnException, eInternalFailure,
+                               "right_delta < seg_i->GetLength()");
+                }
+                right_delta -= seg_i->GetLength();
+
+                (*diag_it)->SetStarts()[row] = 
+                    (direct ?
+                     aln_rng_i->GetSecondFrom() + left_delta :
+                     aln_rng_i->GetSecondFrom() + right_delta);
+
+                // inc left_delta
+                left_delta += seg_i->GetLength();
+
+                if (right_delta == 0) {
+                    _ASSERT(left_delta == aln_rng_i->GetLength());
+                    ++aln_rng_i;
+                    if (aln_rng_i != pairwises[dim - row - 1]->end()) {
+                        direct = aln_rng_i->IsDirect();
+                        left_delta = 0;
+                        right_delta = aln_rng_i->GetLength();
+                    }
+                }
+            }
+            (*diag_it)->SetStrands()[row] =
+                (direct ? eNa_strand_plus : eNa_strand_minus);
+            ++seg_i;
+            ++seg;
+            ++diag_it;
+        }
+    }
+    // Cleanup: remove rows with gaps, remove one-row diags.
+    NON_CONST_ITERATE(CSeq_align::TSegs::TDendiag, diag_it, diags) {
+        size_t row = 0;
+        CDense_diag& diag = **diag_it;
+        CDense_diag::TStarts& starts = diag.SetStarts();
+        while (row < starts.size()) {
+            if (starts[row] == kInvalidSeqPos) {
+                starts.erase(starts.begin() + row);
+                CDense_diag::TIds& ids = diag.SetIds();
+                ids.erase(ids.begin() + row);
+                CDense_diag::TStrands& strands = diag.SetStrands();
+                strands.erase(strands.begin() + row);
+                continue;
+            }
+            ++row;
+        }
+        if (diag.GetStarts().size() < 2) continue;
+        diag.SetDim(starts.size());
+#if _DEBUG
+        diag.Validate();
+#endif
+        dd.push_back(*diag_it);
+    }
+}
 
 
 CRef<CDense_seg>
@@ -348,12 +494,12 @@ CreateDensegFromPairwiseAln(const CPairwiseAln& pairwise_aln,
 }
 
 
-CRef<CSpliced_seg>
-CreateSplicedsegFromAnchoredAln(const CAnchoredAln& anchored_aln,
-                                CScope* scope)
-{
-    _ASSERT(anchored_aln.GetDim() == 2);
+static const TSignedSeqPos kMaxSplicedExonIndelLength = 15;
 
+void InitSplicedsegFromPairwiseAln(CSpliced_seg& spliced_seg,
+                                   const CPairwiseAln& pairwise_aln,
+                                   CScope* scope)
+{
     // Sort by product positions (if minus strand, then reverse).
     // Make sure genomic positions are sorted in the corresponding direction too, no overlaps etc.
     // Small one-row gap -> indel.
@@ -361,52 +507,43 @@ CreateSplicedsegFromAnchoredAln(const CAnchoredAln& anchored_aln,
     // Other gaps -> intron, set 'partial' on both sides.
     // If the product does not start/end at the sequence extreme, set 'partial' for the exon.
 
-    // Create a spliced_seg
-    CRef<CSpliced_seg> spliced_seg(new CSpliced_seg);
-
-    CAnchoredAln::TDim anchor_row = anchored_aln.GetAnchorRow();
-    const CPairwiseAln& pairwise = *anchored_aln.GetPairwiseAlns()[1 - anchor_row];
     // Check strands - one per row.
-    _ASSERT((pairwise.GetFlags() & CPairwiseAln::fMixedDir) != CPairwiseAln::fMixedDir);
+    _ASSERT((pairwise_aln.GetFlags() & CPairwiseAln::fMixedDir) != CPairwiseAln::fMixedDir);
     // Product is nuc or prot.
-    _ASSERT(pairwise.GetFirstBaseWidth() == 1  ||
-            pairwise.GetFirstBaseWidth() == 3);
-    bool prot = pairwise.GetFirstBaseWidth() == 3;
+    _ASSERT(pairwise_aln.GetFirstBaseWidth() == 1  ||
+            pairwise_aln.GetFirstBaseWidth() == 3);
+    bool prot = pairwise_aln.GetFirstBaseWidth() == 3;
     // The other row is genomic.
-    _ASSERT(pairwise.GetSecondBaseWidth() == 1);
-    // The alignment should be sorted by now.
-    // pairwise.Sort();
+    _ASSERT(pairwise_aln.GetSecondBaseWidth() == 1);
 
-    // Ids
-    CRef<CSeq_id> product_id(new CSeq_id); 
-    product_id->Assign(pairwise.GetFirstId()->GetSeqId());
-    spliced_seg->SetProduct_id(*product_id);
-    CRef<CSeq_id> genomic_id(new CSeq_id); 
-    genomic_id->Assign(pairwise.GetSecondId()->GetSeqId());
-    spliced_seg->SetGenomic_id(*genomic_id);
+    /// Ids
+    CRef<CSeq_id> product_id(new CSeq_id);
+    product_id->Assign(pairwise_aln.GetFirstId()->GetSeqId());
+    spliced_seg.SetProduct_id(*product_id);
+    CRef<CSeq_id> genomic_id(new CSeq_id);
+    genomic_id->Assign(pairwise_aln.GetSecondId()->GetSeqId());
+    spliced_seg.SetGenomic_id(*genomic_id);
 
     // Product type
-    spliced_seg->SetProduct_type(prot ?
+    spliced_seg.SetProduct_type(prot ?
         CSpliced_seg::eProduct_type_protein
         : CSpliced_seg::eProduct_type_transcript);
 
     // Exons
-    CSpliced_seg::TExons& exons = spliced_seg->SetExons();
+    CSpliced_seg::TExons& exons = spliced_seg.SetExons();
 
     typedef TSignedSeqPos                  TPos;
     typedef CRange<TPos>                   TRng; 
     typedef CAlignRange<TPos>              TAlnRng;
     typedef CAlignRangeCollection<TAlnRng> TAlnRngColl;
 
-    static const TPos kMaxIndelLength = 15;
-
     TPos last_prod_end = 0;
     TPos last_gen_end = 0;
     CRef<CSpliced_exon> exon;
-    CPairwiseAln::TAlnRngColl::const_iterator rg_it = pairwise.begin();
-    bool gen_direct = rg_it == pairwise.end() || rg_it->IsDirect();
+    CPairwiseAln::TAlnRngColl::const_iterator rg_it = pairwise_aln.begin();
+    bool gen_direct = rg_it == pairwise_aln.end() || rg_it->IsDirect();
     bool prod_direct = prot ||
-        rg_it == pairwise.end() || rg_it->IsFirstDirect();
+        rg_it == pairwise_aln.end() || rg_it->IsFirstDirect();
     // Adjust genomic strand - in CPairwiseAln it's relative to the first seq.
     if ( !prod_direct ) {
         gen_direct = !gen_direct;
@@ -415,12 +552,13 @@ CreateSplicedsegFromAnchoredAln(const CAnchoredAln& anchored_aln,
     TRng ex_prod_rg;
     TRng ex_gen_rg;
 
-    for (; rg_it != pairwise.end(); ++rg_it) {
+    /// Main loop to set all values
+    ITERATE(CPairwiseAln::TAlnRngColl, rg_it, pairwise_aln) {
         const CPairwiseAln::TAlnRng& rg = *rg_it;
 
         // Unaligned ranges.
         TPos prod_skip, gen_skip;
-        if (rg_it == pairwise.begin()) {
+        if (rg_it == pairwise_aln.begin()) {
             prod_skip = 0;
             gen_skip = 0;
         }
@@ -432,7 +570,8 @@ CreateSplicedsegFromAnchoredAln(const CAnchoredAln& anchored_aln,
         }
 
         // Break exon, ignore long gaps between exons.
-        if (!exon  ||  prod_skip > kMaxIndelLength  ||  gen_skip > kMaxIndelLength) {
+        if (!exon  ||  prod_skip > kMaxSplicedExonIndelLength  ||
+            gen_skip > kMaxSplicedExonIndelLength) {
             if ( exon ) {
                 _ASSERT(exon->IsSetProduct_start());
                 _ASSERT(exon->IsSetGenomic_start());
@@ -572,9 +711,41 @@ CreateSplicedsegFromAnchoredAln(const CAnchoredAln& anchored_aln,
     }
 
 #ifdef _DEBUG
-    spliced_seg->Validate(true);
+    spliced_seg.Validate(true);
 #endif
+}
+
+
+CRef<CSpliced_seg>
+CreateSplicedsegFromAnchoredAln(const CAnchoredAln& anchored_aln,
+                                CScope* scope)
+{
+    _ASSERT(anchored_aln.GetDim() == 2);
+
+    // Sort by product positions (if minus strand, then reverse).
+    // Make sure genomic positions are sorted in the corresponding direction too, no overlaps etc.
+    // Small one-row gap -> indel.
+    // Large genomic gap -> intron (start new exon).
+    // Other gaps -> intron, set 'partial' on both sides.
+    // If the product does not start/end at the sequence extreme, set 'partial' for the exon.
+
+    // Create a spliced_seg
+    CRef<CSpliced_seg> spliced_seg(new CSpliced_seg);
+    CAnchoredAln::TDim anchor_row = anchored_aln.GetAnchorRow();
+    const CPairwiseAln& pairwise = *anchored_aln.GetPairwiseAlns()[1 - anchor_row];
+    InitSplicedsegFromPairwiseAln(*spliced_seg, pairwise, scope);
     return spliced_seg;
+}
+
+
+CRef<CSpliced_seg>
+CreateSplicedsegFromPairwiseAln(const CPairwiseAln& pairwise_aln,
+                                CScope* scope)
+{
+    /// Create a dense-seg
+    CRef<CSpliced_seg> ss(new CSpliced_seg);
+    InitSplicedsegFromPairwiseAln(*ss, pairwise_aln, scope);
+    return ss;
 }
 
 
@@ -633,9 +804,13 @@ CreateSeqAlignFromEachPairwiseAln
                 sa->SetSegs().SetPacked(*ps);
                 break;
             }
+            case CSeq_align::TSegs::e_Spliced: {
+                CRef<CSpliced_seg> ss = CreateSplicedsegFromPairwiseAln(*p, scope);
+                sa->SetSegs().SetSpliced(*ss);
+                break;
+            }
             case CSeq_align::TSegs::e_Dendiag:
             case CSeq_align::TSegs::e_Std:
-            case CSeq_align::TSegs::e_Spliced:
             case CSeq_align::TSegs::e_Sparse:
                 NCBI_THROW(CAlnException, eInvalidRequest,
                            "Unsupported CSeq_align::TSegs type.");
