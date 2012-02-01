@@ -55,7 +55,6 @@ static char const rcsid[] =
 
 #include <algo/blast/core/blast_stat.h>
 #include <algo/blast/core/ncbi_math.h>
-#include <util/miscmath.h>
 #include "blast_psi_priv.h"
 
 #define BLAST_SCORE_RANGE_MAX   (BLAST_SCORE_MAX - BLAST_SCORE_MIN) /**< maximum allowed range of BLAST scores. */
