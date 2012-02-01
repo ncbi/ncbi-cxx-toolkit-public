@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include "type.hpp"
 #include <serial/impl/autoptrinfo.hpp>
+#include <serial/impl/aliasinfo.hpp>
 #include "value.hpp"
 #include "blocktype.hpp"
 #include "module.hpp"
@@ -649,6 +650,12 @@ TTypeInfo CDataType::GetAnyTypeInfo(void)
     if ( !typeInfo ) {
         typeInfo = GetRealTypeInfo();
         if ( NeedAutoPointer(typeInfo) ) {
+            if (IsAlias()) {
+                CTypeInfo *alias =
+                    new CAliasTypeInfo(GlobalName(),typeInfo);
+                alias->SetModuleName( typeInfo->GetModuleName());
+                typeInfo = alias;
+            }
             m_AnyTypeInfo.reset(new CAutoPointerTypeInfo(typeInfo));
             typeInfo = m_AnyTypeInfo.get();
         }
