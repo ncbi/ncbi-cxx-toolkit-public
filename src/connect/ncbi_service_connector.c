@@ -544,16 +544,6 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
     char*       iter_header;
     EReqMethod  req_method;
 
-    ConnNetInfo_ExtendUserHeader
-        (net_info, "User-Agent: NCBIServiceConnector/"
-         DISP_PROTOCOL_VERSION
-#ifdef NCBI_CXX_TOOLKIT
-         " (CXX Toolkit)"
-#else
-         " (C Toolkit)"
-#endif
-         );
-
     if (info  &&  info->type != fSERV_Firewall) {
         /* Not a firewall/relay connection here */
         /* We know the connection point, let's try to use it! */
@@ -640,6 +630,8 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         user_header = s_AdjustNetParams(uuu->service, net_info, req_method,
                                         0, 0, 0, user_header,
                                         mime_t, mime_s, mime_e, 0);
+        if (info)
+            but_last = 1/*true*/;
     }
     if (!user_header)
         return 0;
@@ -666,6 +658,16 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
     uuu->user_header = user_header;
     if (user_header && !ConnNetInfo_OverrideUserHeader(net_info, user_header))
         return 0;
+
+    ConnNetInfo_ExtendUserHeader
+        (net_info, "User-Agent: NCBIServiceConnector/"
+         DISP_PROTOCOL_VERSION
+#ifdef NCBI_CXX_TOOLKIT
+         " (CXX Toolkit)"
+#else
+         " (C Toolkit)"
+#endif
+         );
 
     if (!net_info->stateless  &&  (!info                         ||
                                    info->type == fSERV_Firewall  ||
@@ -866,11 +868,12 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
         if (!stateless  &&  (!info  ||  info->type == fSERV_Firewall)) {
             static const char kFWLink[] = { "http://www.ncbi.nlm.nih.gov"
                                             "/IEB/ToolBox/NETWORK"
-                                            "/dispatcher.html#Firewalling"};
+                                            "/dispatcher.html#Firewalling" };
             CORE_LOGF_X(6, eLOG_Error,
-                        ("[%s]  %s connection failed (%s) indicating possible "
-                         "firewall configuration problem; please consult <%s>",
-                         uuu->service, !info ? "Firewall" : "Stateful relay",
+                        ("[%s]  %s connection failure (%s) usually indicates"
+                         " possible firewall configuration problems;"
+                         " please consult <%s>", uuu->service,
+                         !info ? "Firewall" : "Stateful relay",
                          IO_StatusStr(status), kFWLink));
         }
         s_Close(connector, timeout, 0/*don't close dispatcher just as yet*/);
