@@ -189,7 +189,6 @@ struct CBlastExtendTestFixture
         
         m_ipScoreBlk = BlastScoreBlkNew(BLASTNA_SEQ_CODE, 2);
         if (m_ipScoreBlk->gbp) {
-            sfree(m_ipScoreBlk->gbp->p);
             sfree(m_ipScoreBlk->gbp);
             m_ipScoreBlk->gbp = NULL;
         }

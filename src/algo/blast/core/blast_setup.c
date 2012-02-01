@@ -410,7 +410,6 @@ BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk,
        sbp = BlastScoreBlkNew(BLASTNA_SEQ_CODE, query_info->last_context + 1);
        /* disable new FSC rules for nucleotide case for now */
        if (sbp && sbp->gbp) {
-           sfree(sbp->gbp->p);
            sfree(sbp->gbp);
            sbp->gbp = NULL;
        }
@@ -452,7 +451,6 @@ BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk,
           ASSERT(sbp->kbp_gap == NULL);
           /* for ungapped cases we do not have gbp filled */
           if (sbp->gbp) {
-              sfree(sbp->gbp->p);
               sfree(sbp->gbp);
               sbp->gbp=NULL;
           }

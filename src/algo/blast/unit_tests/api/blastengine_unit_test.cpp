@@ -179,7 +179,7 @@ BOOST_AUTO_TEST_CASE(testTBLASTNLongMatchBlastEngine) {
         { 368, 199, 160, 104, 99, 95, 94, 92, 94, 89, 108, 
           101, 97, 95, 89, 86, 84, 84, 83, 79, 75, 74, 74};
     const double kEvalueFinal[kNumHspsEnd] = 
-        {1.84474e-35, 4.47098e-34, 4.47098e-34, 4.47098e-34, 
+        {1.90868e-35, 4.47098e-34, 4.47098e-34, 4.47098e-34, 
          4.23245e-08, 4.23245e-08, 3.29958e-07, 3.29958e-07, 
          7.11395e-07, 7.11395e-07, 8.64076e-05, 0.000570668, 
          0.001678, 0.00287725, 0.0145032, 0.0325588, 
@@ -246,7 +246,7 @@ BOOST_AUTO_TEST_CASE(testTBLASTNShortMatchBlastEngine) {
    const int kQueryLengthFinal[kNumHspsEnd] = { 223,211,  35,  13,  46,  19,  25,  24};
    const int kScoreFinal[kNumHspsEnd] = {1138, 173, 72, 46, 40, 36, 32, 30}; 
    const double kEvalueFinal[kNumHspsEnd] = 
-       {5.16853e-155, 4.55739e-18, 2.45125e-05, 0.0352845, 0.187202, 0.568557, 1.72476, 3.0028};
+       {2.52769e-153, 4.98722e-18, 2.4525e-05, 0.0352845, 0.187202, 0.568557, 1.72476, 3.0028};
 
    CBlastHSPResults results
        (prelim_search.ComputeBlastHSPResults

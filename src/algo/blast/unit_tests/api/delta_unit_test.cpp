@@ -218,7 +218,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
     // HSP # 1
     { 
         expected_domain_results[0].score = 728;
-        expected_domain_results[0].evalue = 6.66473e-100;
+        expected_domain_results[0].evalue = 2.45396e-98;
         expected_domain_results[0].bit_score = 2841082571e-7;
         expected_domain_results[0].num_ident = 111;
         int starts[] = {1, 139, 80, -1, 81, 218, 162, -1, 163, 299};
@@ -232,7 +232,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
     // HSP # 2
     { 
         expected_domain_results[1].score = 698;
-        expected_domain_results[1].evalue = 2.19321e-95;
+        expected_domain_results[1].evalue = 7.61355e-94;
         expected_domain_results[1].bit_score = 2725169055e-7;
         expected_domain_results[1].num_ident = 107;
         int starts[] = {1, 135, 6, -1, 8, 140, -1, 190, 58, 191, 80, -1, 81,
@@ -248,7 +248,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
     // HSP # 3
     { 
         expected_domain_results[2].score = 661;
-        expected_domain_results[2].evalue = 9.15565e-90;
+        expected_domain_results[2].evalue = 2.92318e-88;
         expected_domain_results[2].bit_score = 2583366987e-7;
         expected_domain_results[2].num_ident = 106;
         int starts[] = {0, 137, 115, -1, 117, 252 };
@@ -297,7 +297,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
     // HSP # 1
     { 
         expected_results[0].score = 865;
-        expected_results[0].evalue = 7.84196e-110;
+        expected_results[0].evalue = 1.41573e-108;
         expected_results[0].bit_score = 3371923606e-7;
         int starts[] = {0, 941, -1, 1094, 153, 1095};
         int lengths[] = {153, 1, 79};
@@ -307,11 +307,10 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
              back_inserter(expected_results[0].lengths));
     }
 
-
     // HSP # 2
     {
         expected_results[1].score = 638;
-        expected_results[1].evalue = 9.26921e-78;
+        expected_results[1].evalue = 3.93488e-77;
         expected_results[1].bit_score = 2497520568e-7;
         int starts[] = {0, 154, -1, 307, 153, 308};
         int lengths[] = {153, 1, 25};
@@ -324,7 +323,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
     // HSP # 3
     {
         expected_results[2].score = 650;
-        expected_results[2].evalue = 8.76194e-85;
+        expected_results[2].evalue = 2.54216e-83;
         expected_results[2].bit_score = 2543744518e-7;
         int starts[] = {0, 190, 68, -1, 70, 258, 92, -1, 93, 280, 118, -1, 
                         119, 305, 151, -1, 152, 337, 161, -1, 162, 346, -1,
@@ -446,7 +445,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_NoCBS)
     // HSP # 1
     { 
         expected_domain_results[0].score = 728;
-        expected_domain_results[0].evalue = 6.66473e-100;
+        expected_domain_results[0].evalue = 2.45396e-98;
         expected_domain_results[0].bit_score = 2841082571e-7;
         expected_domain_results[0].num_ident = 111;
         int starts[] = {1, 139, 80, -1, 81, 218, 162, -1, 163, 299};
@@ -460,7 +459,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_NoCBS)
     // HSP # 2
     { 
         expected_domain_results[1].score = 698;
-        expected_domain_results[1].evalue = 2.19321e-95;
+        expected_domain_results[1].evalue = 7.61355e-94;
         expected_domain_results[1].bit_score = 2725169055e-7;
         expected_domain_results[1].num_ident = 107;
         int starts[] = {1, 135, 6, -1, 8, 140, -1, 190, 58, 191, 80, -1, 81,
@@ -476,7 +475,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_NoCBS)
     // HSP # 3
     { 
         expected_domain_results[2].score = 661;
-        expected_domain_results[2].evalue = 9.15565e-90;
+        expected_domain_results[2].evalue = 2.92318e-88;
         expected_domain_results[2].bit_score = 2583366987e-7;
         expected_domain_results[2].num_ident = 106;
         int starts[] = {0, 137, 115, -1, 117, 252 };
@@ -525,7 +524,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_NoCBS)
     // HSP # 1
     { 
         expected_results[0].score = 876;
-        expected_results[0].evalue = 2.02023e-111;
+        expected_results[0].evalue = 3.83527e-110;
         expected_results[0].bit_score = 3414303038e-7;
         expected_results[0].num_ident = 101;
         int starts[] = {0, 941, -1, 1094, 153, 1095};
@@ -540,7 +539,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_NoCBS)
     // HSP # 2
     {
         expected_results[1].score = 642;
-        expected_results[1].evalue = 2.43781e-78;
+        expected_results[1].evalue = 1.02795e-77;
         expected_results[1].bit_score = 2512936031e-7;
         expected_results[1].num_ident = 73;
         int starts[] = {0, 154, -1, 307, 153, 308};
@@ -554,7 +553,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_NoCBS)
     // HSP # 3
     {
         expected_results[2].score = 736;
-        expected_results[2].evalue = 1.11336e-97;
+        expected_results[2].evalue = 3.93428e-96;
         expected_results[2].bit_score = 2875023632e-7;
         expected_results[2].num_ident = 83;
         int starts[] = {0, 190, 68, -1, 70, 258, 92, -1, 93, 280, 118, -1,

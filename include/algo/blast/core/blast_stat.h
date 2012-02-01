@@ -107,8 +107,6 @@ typedef struct Blast_GumbelBlk {
 
       Int8 db_length;    /**< total length of database */
 
-      erfc_table *p;     /**< Tabulated results of erfc(x) */
-
       Boolean filled;    /**< flag indicate the values of gbp are prepared */
       
    } Blast_GumbelBlk;
