@@ -50,14 +50,14 @@ class CGff3SourceRecord
 public:
     CGff3SourceRecord(
         CGffFeatureContext& fc,
-        const string& id=""
-    ): CGff3WriteRecordFeature(fc, id) {};
+        const string& ="");
 
     bool AssignData(
-        CGffFeatureContext&,
         const CSeqdesc& );
 
 protected:
+    virtual bool x_AssignBiosrcAttributes(
+        const CBioSource& );
 };
 
 END_objects_SCOPE

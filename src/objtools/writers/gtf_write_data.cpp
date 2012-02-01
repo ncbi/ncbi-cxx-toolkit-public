@@ -367,7 +367,7 @@ CMappedFeat CGtfRecord::x_CdsFeatureToMrnaParent(
     CMappedFeat mapped_feat )
 //  ============================================================================
 {
-    return feature::GetBestMrnaForCds( mapped_feat, &m_feat_tree );
+    return feature::GetBestMrnaForCds( mapped_feat, &FeatTree() );
 }
 
 //  ============================================================================
@@ -375,7 +375,7 @@ CMappedFeat CGtfRecord::x_CdsFeatureToGeneParent(
     CMappedFeat mapped_feat )
 //  ============================================================================
 {
-    return feature::GetBestGeneForCds( mapped_feat, &m_feat_tree );
+    return feature::GetBestGeneForCds( mapped_feat, &FeatTree() );
 }
 
 //  ============================================================================
@@ -383,7 +383,7 @@ CMappedFeat CGtfRecord::x_MrnaFeatureToGeneParent(
     CMappedFeat mapped_feat )
 //  ============================================================================
 {
-    return feature::GetBestGeneForMrna( mapped_feat, &m_feat_tree );
+    return feature::GetBestGeneForMrna( mapped_feat, &FeatTree() );
 }
 
 //  ============================================================================

@@ -48,15 +48,15 @@ class CGffAlignmentRecord
 {
 public:
     CGffAlignmentRecord(
+            CGffFeatureContext& fc,
             unsigned int uFlags =0,
             unsigned int uRecordId =0 ):
-        m_uFlags( uFlags ),
-        m_bIsTrivial( true )
+        CGffWriteRecord(fc, NStr::UIntToString(uRecordId)),
+        m_uFlags(uFlags),
+        m_bIsTrivial(true) 
     {
         m_strType = "match";
-        if ( uRecordId ) {
-            m_strAttributes = string( "ID=" ) + NStr::UIntToString( uRecordId );
-        }
+        m_strAttributes = string( "ID=" ) + NStr::UIntToString( uRecordId );
     };
 
     virtual ~CGffAlignmentRecord() {};

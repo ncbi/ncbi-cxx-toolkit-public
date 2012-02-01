@@ -147,7 +147,7 @@ bool CGtfWriter::x_WriteFeatureGene(
     }
 
     CRef<CGtfRecord> pRecord( 
-        new CGtfRecord(context.FeatTree(), (m_uFlags & fNoExonNumbers)));
+        new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
     if (!pRecord->AssignFromAsn(mf)) {
         return false;
     }
@@ -162,7 +162,7 @@ bool CGtfWriter::x_WriteFeatureMrna(
 {
     m_exonMap.clear();
 
-    CRef<CGtfRecord> pMrna( new CGtfRecord( context.FeatTree() ) );
+    CRef<CGtfRecord> pMrna( new CGtfRecord( context ) );
     if ( ! pMrna->AssignFromAsn( mf ) ) {
         return false;
     }
@@ -182,7 +182,7 @@ bool CGtfWriter::x_WriteFeatureMrna(
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             CSeq_interval& subint = **it;
             CRef<CGtfRecord> pExon( 
-                new CGtfRecord(context.FeatTree(), (m_uFlags & fNoExonNumbers)));
+                new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
             pExon->MakeChildRecord( *pMrna, subint, uExonNumber++ );
             x_WriteRecord( pExon );
         }
@@ -199,7 +199,7 @@ bool CGtfWriter::x_WriteFeatureCds(
     const CSeq_feat& feature = mf.GetOriginalFeature();
        
     CRef<CGtfRecord> pParent( 
-        new CGtfRecord( context.FeatTree(), (m_uFlags & fNoExonNumbers) ) );
+        new CGtfRecord( context, (m_uFlags & fNoExonNumbers) ) );
     if ( ! pParent->AssignFromAsn( mf ) ) {
         return false;
     }
@@ -250,7 +250,7 @@ bool CGtfWriter::x_WriteFeatureCdsFragments(
                 break;
             }
         }
-        CGtfRecord* pRecord = new CGtfRecord( record.FeatTree() );
+        CGtfRecord* pRecord = new CGtfRecord(record);
         pRecord->MakeChildRecord( record, subint, uExonNumber );
         pRecord->SetCdsPhase( subints, location.GetStrand() );
         x_WriteRecord( pRecord );

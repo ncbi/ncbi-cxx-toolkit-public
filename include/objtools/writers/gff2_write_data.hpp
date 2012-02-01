@@ -56,6 +56,7 @@ public:
 
 public:
     CGffWriteRecord( 
+        CGffFeatureContext& fc,
         const string& id="" );
     CGffWriteRecord(
         const CGffWriteRecord& );
@@ -119,6 +120,8 @@ protected:
         map<string, vector<string> >&,
         string& ) const;
 
+    CGffFeatureContext& m_fc;
+
     string m_strId;
     unsigned int m_uSeqStart;
     unsigned int m_uSeqStop;
@@ -139,8 +142,9 @@ class CGffWriteRecordFeature
     : public CGffWriteRecord
 {
 public:
-    CGffWriteRecordFeature( 
-        const string& id="" ): CGffWriteRecord(id){};
+    CGffWriteRecordFeature(
+        CGffFeatureContext& fc,
+        const string& id="" ): CGffWriteRecord(fc, id){};
 
     virtual bool AssignFromAsn(
         CMappedFeat );

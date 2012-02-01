@@ -226,11 +226,12 @@ bool CGff3Writer::x_WriteAlignDenseg(
         targetStrand = eNa_strand_minus;
     }
 
+    CGffFeatureContext dummy;
     for ( int iSourceRow = 0;  iSourceRow < align_map.GetNumRows();  ++iSourceRow ) {
         if ( iSourceRow == iTargetRow ) {
             continue;
         }
-        CGffAlignmentRecord record( m_uFlags, m_uRecordId );
+        CGffAlignmentRecord record( dummy, m_uFlags, m_uRecordId );
 
         // Obtain and report basic source information:
         CConstRef<CSeq_id> pSourceId =
@@ -410,7 +411,7 @@ bool CGff3Writer::x_WriteSource(
         new CGff3SourceRecord( 
             fc, 
             string("id") + NStr::UIntToString(m_uPendingGenericId++)));
-    pSource->AssignData(fc, *sdi);
+    pSource->AssignData(*sdi);
     x_WriteRecord(pSource);
     return true;
 }

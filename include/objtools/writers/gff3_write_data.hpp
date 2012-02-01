@@ -105,8 +105,6 @@ protected:
         CMappedFeat );
     virtual bool x_AssignAttributesNcrna(
         CMappedFeat );
-    virtual bool x_AssignAttributesBiosrc(
-        CMappedFeat );
 
     virtual bool x_AssignAttributeGene(
         CMappedFeat );
@@ -157,16 +155,12 @@ protected:
     virtual bool x_AssignAttributeIsOrdered(
         CMappedFeat );
 
-    virtual bool x_AssignBiosrcAttributes(
-        const CBioSource& );
-
     virtual void x_StrAttributesAppendValueGff3(
         const string&,
         map<string, vector<string> >&,
         string& ) const;
 
 protected:
-    CGffFeatureContext& m_fc;
     CRef<CSeq_loc> m_pLoc;
 
     static const string ATTR_SEPARATOR;

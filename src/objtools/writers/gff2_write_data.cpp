@@ -64,8 +64,9 @@ string CGffWriteRecord::StrSource() const
 
 //  ----------------------------------------------------------------------------
 CGffWriteRecord::CGffWriteRecord(
+    CGffFeatureContext& fc,
     const string& id ):
-
+    m_fc(fc),
     m_strId( "" ),
     m_uSeqStart( 0 ),
     m_uSeqStop( 0 ),
@@ -84,6 +85,7 @@ CGffWriteRecord::CGffWriteRecord(
 //  ----------------------------------------------------------------------------
 CGffWriteRecord::CGffWriteRecord(
     const CGffWriteRecord& other ):
+    m_fc( other.m_fc ),
     m_strId( other.m_strId ),
     m_uSeqStart( other.m_uSeqStart ),
     m_uSeqStop( other.m_uSeqStop ),

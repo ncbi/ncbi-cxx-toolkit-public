@@ -41,8 +41,6 @@
 #include <objects/seqfeat/Trna_ext.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seqfeat/Code_break.hpp>
-#include <objects/seqfeat/Org_ref.hpp>
-#include <objects/seqfeat/OrgName.hpp>
 #include <objects/seq/sofa_type.hpp>
 #include <objects/seq/sofa_map.hpp>
 
@@ -116,7 +114,7 @@ CGff3WriteRecordFeature::CGff3WriteRecordFeature(
     CGffFeatureContext& fc,
     const string& id )
 //  ----------------------------------------------------------------------------
-    : CGffWriteRecordFeature(id), m_fc( fc )
+    : CGffWriteRecordFeature(fc, id)
 {
 };
 
@@ -124,8 +122,7 @@ CGff3WriteRecordFeature::CGff3WriteRecordFeature(
 CGff3WriteRecordFeature::CGff3WriteRecordFeature(
     const CGff3WriteRecordFeature& other )
 //  ----------------------------------------------------------------------------
-    : CGffWriteRecordFeature( other ),
-      m_fc( other.m_fc )
+    : CGffWriteRecordFeature( other )
 {
 };
 
@@ -328,8 +325,6 @@ bool CGff3WriteRecordFeature::x_AssignAttributes(
                 return false;
             }
             break;
-        case CSeqFeatData::eSubtype_biosrc:
-            return x_AssignAttributesBiosrc( mf );
     }
     
     //  deriviate attributes --- depend on other attributes. Hence need to be
@@ -407,21 +402,6 @@ bool CGff3WriteRecordFeature::x_AssignAttributesMiscFeature(
         x_AssignAttributeOldLocusTag( mapped_feat )  &&
         x_AssignAttributeIsOrdered( mapped_feat )  &&
         x_AssignAttributeTranscriptId( mapped_feat ) );
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff3WriteRecordFeature::x_AssignAttributesBiosrc(
-    CMappedFeat mf )
-//  ----------------------------------------------------------------------------
-{
-    //go for everything under biosrc.org...
-    if ( mf.GetFeatSubtype() != CSeqFeatData::eSubtype_biosrc ) {
-        return true;
-    }
-    if ( ! x_AssignBiosrcAttributes( mf.GetData().GetBiosrc() ) ) {
-        return false;
-    }
-    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -1124,53 +1104,6 @@ bool CGff3WriteRecordFeature::x_AssignAttributeIsOrdered(
 {
     if (CWriteUtil::IsLocationOrdered(mf.GetLocation())) {
         SetAttribute("is_ordered", "true");
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff3WriteRecordFeature::x_AssignBiosrcAttributes(
-    const CBioSource& bs )
-//  ----------------------------------------------------------------------------
-{
-    string value;
-    if (CWriteUtil::GetGenomeString(bs, value)) {
-        SetAttribute("genome", value);
-    }
-    if ( bs.IsSetOrg() ) {
-        const COrg_ref& org = bs.GetOrg();
-        if ( org.IsSetDb() ) {
-            const vector< CRef< CDbtag > >& tags = org.GetDb();
-            for ( vector< CRef< CDbtag > >::const_iterator it = tags.begin(); 
-                    it != tags.end(); ++it ) {
-                string tag;
-                if (CWriteUtil::GetDbTag(**it, tag)) {
-                    SetAttribute("Dbxref", tag);
-                }
-            }
-        }
-
-        if ( org.IsSetOrgname() && org.GetOrgname().IsSetMod() ) {
-            const list<CRef<COrgMod> >& orgmods = org.GetOrgname().GetMod();
-            for (list<CRef<COrgMod> >::const_iterator it = orgmods.begin();
-                    it != orgmods.end(); ++it) {
-                string key, value;
-                if (CWriteUtil::GetOrgModSubType(**it, key, value)) {
-                    SetAttribute(key, value);
-                }
-            }
-        }
-    }
-
-    if ( bs.IsSetSubtype() ) {
-        const list<CRef<CSubSource> >& subsources = bs.GetSubtype();
-        for ( list<CRef<CSubSource> >::const_iterator it = subsources.begin();
-                it != subsources.end(); ++it ) {
-            string key, value;
-            if (CWriteUtil::GetSubSourceSubType(**it, key, value)) {
-                SetAttribute(key, value);
-            }
-        }
     }
     return true;
 }

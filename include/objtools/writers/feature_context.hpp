@@ -40,6 +40,9 @@ class NCBI_XOBJWRITE_EXPORT CGffFeatureContext
 //  ----------------------------------------------------------------------------
 {
 public:
+    CGffFeatureContext()
+    {};
+
     CGffFeatureContext(
         feature::CFeatTree ft, 
         CBioseq_Handle bsh=CBioseq_Handle(), 

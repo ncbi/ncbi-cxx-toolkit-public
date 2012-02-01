@@ -181,15 +181,17 @@ bool CWriteUtil::GetSubSourceSubType(
     subtype = CSubSource::GetSubtypeName(sub.GetSubtype());
 
     switch (sub.GetSubtype()) {
-        case CSubSource::eSubtype_environmental_sample:
-            EMIT("true");
-        case CSubSource::eSubtype_germline:
-            EMIT("true");
         default:
             if (sub.GetName().empty()) {
                 EMIT("indeterminate");
             }
             EMIT(sub.GetName());
+        case CSubSource::eSubtype_environmental_sample:
+        case CSubSource::eSubtype_germline:
+        case CSubSource::eSubtype_transgenic:
+        case CSubSource::eSubtype_rearranged:
+        case CSubSource::eSubtype_metagenomic:
+            EMIT("true");
     }
     return true;
 #undef EMIT

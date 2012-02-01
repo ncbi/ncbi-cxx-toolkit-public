@@ -47,9 +47,10 @@ class CGtfRecord
 {
 public: 
     CGtfRecord(
-        feature::CFeatTree& feat_tree,
-        bool bNoExonNumbers = false )
-    : m_feat_tree( feat_tree ), m_bNoExonNumbers(bNoExonNumbers) {};
+        CGffFeatureContext& fc,
+        bool bNoExonNumbers = false ) :
+    CGffWriteRecordFeature(fc), 
+    m_bNoExonNumbers(bNoExonNumbers) {};
 
     ~CGtfRecord() {};
 
@@ -69,7 +70,7 @@ public:
     string GeneId() const { return m_strGeneId; };
     string TranscriptId() const { return m_strTranscriptId; };
 
-    feature::CFeatTree& FeatTree() { return m_feat_tree; };
+    feature::CFeatTree& FeatTree() { return m_fc.FeatTree(); };
 
 protected:
     virtual bool x_AssignAttributes(
@@ -155,7 +156,6 @@ protected:
         const string&,
         const string& );
 
-    feature::CFeatTree& m_feat_tree;
     string m_strGeneId;
     string m_strTranscriptId;
     bool m_bNoExonNumbers;

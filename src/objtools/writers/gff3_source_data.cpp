@@ -33,6 +33,8 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
+#include <objects/seqfeat/Org_ref.hpp>
+#include <objects/seqfeat/OrgName.hpp>
 #include <objmgr/util/sequence.hpp>
 
 #include <objtools/writers/write_util.hpp>
@@ -44,29 +46,39 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-bool CGff3SourceRecord::AssignData(
+CGff3SourceRecord::CGff3SourceRecord(
     CGffFeatureContext& fc,
+    const string& id): 
+//  ----------------------------------------------------------------------------
+    CGff3WriteRecordFeature(fc, id) 
+{};
+
+//  ----------------------------------------------------------------------------
+bool CGff3SourceRecord::AssignData(
     const CSeqdesc& desc )
 //  ----------------------------------------------------------------------------
 {
-    CBioseq_Handle bsh = fc.BioseqHandle();
+    CBioseq_Handle bsh = m_fc.BioseqHandle();
 
     // id
     CConstRef<CSeq_id> pId = bsh.GetNonLocalIdOrNull();
     if (!pId  ||  !CWriteUtil::GetBestId(CSeq_id_Handle::GetHandle( *pId ),
             bsh.GetScope(), m_strId)) {
-        m_strId = "<unknown>";
+        m_strId = ".";
     }
 
     m_strType = "region";
+
     m_strSource = ".";
     CWriteUtil::GetIdType(bsh, m_strSource);
+
     m_uSeqStart = 0;
     m_uSeqStop = bsh.GetBioseqLength() - 1;
-    //score
     if ( bsh.CanGetInst_Strand() ) {
         m_peStrand = new ENa_strand( eNa_strand_plus );
     }
+
+    //score
     // phase
 
     //  attributes:
@@ -75,18 +87,62 @@ bool CGff3SourceRecord::AssignData(
     if (CWriteUtil::GetBiomol(bsh, value)) {
         SetAttribute("mol_type", value);
     } 
-    if (CWriteUtil::GetBiomol(bsh, value)) {
-        SetAttribute("mol_type", value);
-    } 
 
     const CBioSource& bs = desc.GetSource();
-    if ( ! x_AssignBiosrcAttributes( bs ) ) {
+    if ( ! x_AssignBiosrcAttributes(bs) ) {
         return false;
     }
     if ( CWriteUtil::IsSequenceCircular(bsh)) {
        SetAttribute("is_circular", "true");
     }
 
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3SourceRecord::x_AssignBiosrcAttributes(
+    const CBioSource& bs )
+//  ----------------------------------------------------------------------------
+{
+    string value;
+    if (CWriteUtil::GetGenomeString(bs, value)) {
+        SetAttribute("genome", value);
+    }
+    if ( bs.IsSetOrg() ) {
+        const COrg_ref& org = bs.GetOrg();
+        if ( org.IsSetDb() ) {
+            const vector< CRef< CDbtag > >& tags = org.GetDb();
+            for ( vector< CRef< CDbtag > >::const_iterator it = tags.begin(); 
+                    it != tags.end(); ++it ) {
+                string tag;
+                if (CWriteUtil::GetDbTag(**it, tag)) {
+                    SetAttribute("Dbxref", tag);
+                }
+            }
+        }
+
+        if ( org.IsSetOrgname() && org.GetOrgname().IsSetMod() ) {
+            const list<CRef<COrgMod> >& orgmods = org.GetOrgname().GetMod();
+            for (list<CRef<COrgMod> >::const_iterator it = orgmods.begin();
+                    it != orgmods.end(); ++it) {
+                string key, value;
+                if (CWriteUtil::GetOrgModSubType(**it, key, value)) {
+                    SetAttribute(key, value);
+                }
+            }
+        }
+    }
+
+    if ( bs.IsSetSubtype() ) {
+        const list<CRef<CSubSource> >& subsources = bs.GetSubtype();
+        for ( list<CRef<CSubSource> >::const_iterator it = subsources.begin();
+                it != subsources.end(); ++it ) {
+            string key, value;
+            if (CWriteUtil::GetSubSourceSubType(**it, key, value)) {
+                SetAttribute(key, value);
+            }
+        }
+    }
     return true;
 }
 
