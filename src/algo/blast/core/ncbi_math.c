@@ -495,4 +495,5 @@ double BLAST_LnFactorial (double x) {
 /* erf/erfc implementation, cloned from the C++ Toolkit's util directory. */
 #define NCBI_Erf  BLAST_Erf
 #define NCBI_ErfC BLAST_ErfC
+#define NCBI_INCLUDE_NCBI_ERF_C 1
 #include "ncbi_erf.c"

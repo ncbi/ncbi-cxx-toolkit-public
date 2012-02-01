@@ -22,6 +22,8 @@
 * ===========================================================================
 */
 
+#ifdef NCBI_INCLUDE_NCBI_ERF_C
+
 #include <math.h>
 
 #ifndef HAVE_ERF
@@ -466,3 +468,5 @@ double NCBI_ErfC(double x)
 	}
 #endif
 }
+
+#endif /* NCBI_INCLUDE_NCBI_ERF_C */
