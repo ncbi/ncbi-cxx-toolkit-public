@@ -1901,26 +1901,35 @@ static size_t s_GetAlignmentLength(const CSeq_align& align,
              ITERATE (CSeq_align::TSegs::TStd, iter, align.GetSegs().GetStd()) {
                  const CStd_seg& seg = **iter;
 
-                 size_t i = 0;
+                 bool is_gap = false;
                  ITERATE (CStd_seg::TLoc, it, seg.GetLoc()) {
                      if ((*it)->IsEmpty()) {
-                         /// skip
-                     } else {
-                         if (sizes.empty()) {
-                             sizes.resize(seg.GetDim(), 0);
-                         } else if (sizes.size() != (size_t)seg.GetDim()) {
-                             NCBI_THROW(CException, eUnknown,
-                                        "invalid std-seg: "
-                                        "inconsistent number of locs");
-                         }
-
-                         for (CSeq_loc_CI loc_it(**it);  loc_it;  ++loc_it) {
-                             sizes[i] += loc_it.GetRange().GetLength();
-                         }
+                         is_gap = true;
+                         break;
                      }
-
-                     ++i;
                  }
+
+                 if ( !ungapped  ||  !is_gap) {
+                     size_t i = 0;
+                     ITERATE (CStd_seg::TLoc, it, seg.GetLoc()) {
+                         if ( !(*it)->IsEmpty() ) {
+                             if (sizes.empty()) {
+                                 sizes.resize(seg.GetDim(), 0);
+                             } else if (sizes.size() != (size_t)seg.GetDim()) {
+                                 NCBI_THROW(CException, eUnknown,
+                                            "invalid std-seg: "
+                                            "inconsistent number of locs");
+                             }
+
+                             for (CSeq_loc_CI loc_it(**it);  loc_it;  ++loc_it) {
+                                 sizes[i] += loc_it.GetRange().GetLength();
+                             }
+                         }
+
+                         ++i;
+                     }
+                 }
+
                  ++count;
              }
 
