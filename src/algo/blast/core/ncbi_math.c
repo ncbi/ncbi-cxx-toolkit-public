@@ -483,3 +483,16 @@ double BLAST_LnFactorial (double x) {
         return s_LnGamma(x + 1.0);
         
 }
+
+#ifdef _NCBILCL_ /* C Toolkit */
+#  ifdef OS_UNIX
+#    define HAVE_ERF 1
+#  endif
+#  ifdef IS_BIG_ENDIAN
+#    define WORDS_BIGENDIAN 1
+#  endif
+#endif
+/* erf/erfc implementation, cloned from the C++ Toolkit's util directory. */
+#define NCBI_Erf  BLAST_Erf
+#define NCBI_ErfC BLAST_ErfC
+#include "ncbi_erf.c"

@@ -137,6 +137,16 @@ long BLAST_Nint (double x);
 NCBI_XBLAST_EXPORT 
 double BLAST_Powi (double x, Int4 n);
 
+/** The error function of x: the integral from 0 to x of e(-t*t) dt,
+ *  scaled by 2/sqrt(pi) to fall within the range (-1,1). */
+NCBI_XBLAST_EXPORT
+double BLAST_Erf (double x);
+
+/** The complementary error function of x: 1 - erf(x), but calculated
+ *  more accurately for large x (where erf(x) approaches unity). */
+NCBI_XBLAST_EXPORT
+double BLAST_ErfC (double x);
+
 /** Number of derivatives of log(x) to carry in gamma-related 
     computations */
 #define LOGDERIV_ORDER_MAX	4  
