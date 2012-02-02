@@ -59,10 +59,10 @@ int main(int argc, char* argv[])
         char*          str;
         if (!(info = SERV_GetNextInfo(iter)))
             break;
-        /*if (!(str = SERV_WriteInfo(info)))
+        if (!(str = SERV_WriteInfo(info)))
             continue;
         CORE_LOG(eLOG_Note, str);
-        free(str);*/
+        free(str);
     }
     SERV_Close(iter);
 
