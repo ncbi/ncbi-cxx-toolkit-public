@@ -1690,8 +1690,7 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
                 if (rp) {
                     size_t pool_size = rp->GetSize();
                     if (pool_size) {
-                        WriteMessage("OK:",
-                                     "Pool [ " + NStr::SizetToString(i) +
+                        WriteMessage("OK:Pool [ " + NStr::SizetToString(i) +
                                      "] = " + NStr::SizetToString(pool_size));
                     }
                 }
