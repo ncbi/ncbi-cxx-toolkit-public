@@ -95,6 +95,9 @@ CSpliced_exon::CreateRowSeq_interval(CSeq_align::TDim    row,
         if ( IsSetProduct_strand() ) {
             ret->SetStrand(GetProduct_strand());
         }
+        else if ( seg.IsSetProduct_strand() ) {
+            ret->SetStrand(seg.GetProduct_strand());
+        }
     }
     else if (row == 1) {
         // Genomic
@@ -113,6 +116,9 @@ CSpliced_exon::CreateRowSeq_interval(CSeq_align::TDim    row,
         }
         if ( IsSetGenomic_strand() ) {
             ret->SetStrand(GetGenomic_strand());
+        }
+        else if ( seg.IsSetGenomic_strand() ) {
+            ret->SetStrand(seg.GetGenomic_strand());
         }
     }
     return ret;
