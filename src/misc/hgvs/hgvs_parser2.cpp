@@ -1201,6 +1201,11 @@ CRef<CVariation> CHgvsParser::x_nuc_inv(TIterator const& i, const CContext& cont
     delta->SetSeq().SetLoc().Assign(*loc);
     delta->SetSeq().SetLoc().FlipStrand();
     var_inst.SetDelta().push_back(delta);
+#else
+    //we used to explicitly put the inverted location, but now that we're using
+    //VariantPlacement(s) instead, a seq-loc is insufficient representation. Instead
+    //it is to be interpreted "the inversion applies to each placement, whatever they contain"
+    var_inst.SetDelta(); 
 #endif
 
     ++it;
