@@ -11,6 +11,7 @@ algo/blast/composition_adjustment
 algo/blast/dbindex
 algo/blast/format
 algo/blast/unit_tests
+algo/blast/igblast
 algo/dustmask$
 algo/winmask$
 algo/segmask$
