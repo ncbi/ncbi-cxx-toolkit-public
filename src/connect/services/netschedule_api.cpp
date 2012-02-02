@@ -461,17 +461,19 @@ static void s_VerifyClientCredentialString(const string& str,
 
     do {
         switch (*ch) {
-        case '|':
         case '-':
+        case '.':
         case ':':
         case '_':
+        case '|':
             break;
 
         default:
             if ((*ch < 'a' || *ch > 'z') && (*ch < 'A' || *ch > 'Z') &&
                     (*ch < '0' || *ch > '9')) {
                 NCBI_THROW_FMT(CConfigException, eParameterMissing,
-                    "Invalid character(s) in '" << param_name << "': " << str);
+                    "Invalid character #" << unsigned(*ch) <<
+                    " in '" << param_name << "': " << str);
             }
         }
         ch++;
