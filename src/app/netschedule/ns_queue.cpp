@@ -2265,22 +2265,21 @@ size_t CQueue::PrintJobDbStat(CNetScheduleHandler &     handler,
             return 0;
     }}
 
-    size_t              print_count = 0;
     CJob                job;
-    CFastMutexGuard     guard(m_OperationLock);
+    {{
+        CFastMutexGuard     guard(m_OperationLock);
 
-    m_QueueDbBlock->job_db.SetTransaction(NULL);
-    m_QueueDbBlock->events_db.SetTransaction(NULL);
-    m_QueueDbBlock->job_info_db.SetTransaction(NULL);
+        m_QueueDbBlock->job_db.SetTransaction(NULL);
+        m_QueueDbBlock->events_db.SetTransaction(NULL);
+        m_QueueDbBlock->job_info_db.SetTransaction(NULL);
 
-    CJob::EJobFetchResult   res = job.Fetch(this, job_id);
-    if (res == CJob::eJF_Ok) {
-        handler.WriteMessage("");
-        job.Print(handler, *this, m_AffinityRegistry);
-        ++print_count;
-    }
+        CJob::EJobFetchResult   res = job.Fetch(this, job_id);
+        if (res != CJob::eJF_Ok)
+            return 0;
+    }}
 
-    return print_count;
+    job.Print(handler, *this, m_AffinityRegistry);
+    return 1;
 }
 
 
