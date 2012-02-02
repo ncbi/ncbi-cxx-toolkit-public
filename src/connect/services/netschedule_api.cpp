@@ -471,8 +471,7 @@ static void s_VerifyClientCredentialString(const string& str,
             if ((*ch < 'a' || *ch > 'z') && (*ch < 'A' || *ch > 'Z') &&
                     (*ch < '0' || *ch > '9')) {
                 NCBI_THROW_FMT(CConfigException, eParameterMissing,
-                    "parameter '" << param_name <<
-                        "' contains invalid character(s)");
+                    "Invalid character(s) in '" << param_name << "': " << str);
             }
         }
         ch++;
