@@ -17,8 +17,6 @@ tblastx \
 psiblast \
 rpsblast \
 rpstblastn \
-igblastn \
-igblastp \
 seedtop \
 blast_formatter \
 deltablast
