@@ -337,7 +337,7 @@ public:
         CMappedFeat m_Feat;
         CRange<TSeqPos> m_MasterRange;
         CConstRef<CGb_qual> m_TranscriptId;
-        bool m_IsSetParent, m_IsSetChildren;
+        bool m_IsSetParent, m_IsSetChildren, m_MultiId;
         enum EIsLinkedToRoot NCBI_PACKED_ENUM_TYPE(Int1) {
             eIsLinkedToRoot_unknown,
             eIsLinkedToRoot_linked,

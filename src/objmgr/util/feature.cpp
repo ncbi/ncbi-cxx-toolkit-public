@@ -1482,6 +1482,7 @@ namespace {
                      SBestInfo* best,
                      const CSeq_loc& loc)
     {
+        info.m_MultiId = true;
         CHandleRangeMap hrmap;
         hrmap.AddLocation(loc);
         ITERATE ( CHandleRangeMap, it, hrmap ) {
@@ -1861,6 +1862,9 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
     }
     sort(cc.begin(), cc.end(), PLessByStart());
 
+    typedef pair<CFeatTree::CFeatInfo*, CFeatTree::CFeatInfo*> TFeatPair;
+    set<TFeatPair> multi_id_tested;
+
     // assign parents in single scan over both lists
     {{
         TRangeArray::iterator pi = pp.begin();
@@ -1931,6 +1935,11 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
                         if ( info.m_Gene != p_gene ) {
                             continue;
                         }
+                    }
+                    if ( info.m_MultiId && pc->m_Info->m_MultiId &&
+                         !multi_id_tested.insert(TFeatPair(&info, pc->m_Info)).second ) {
+                        // already tested this pair of child and parent
+                        continue;
                     }
                     const CMappedFeat& p_feat = pc->m_Info->m_Feat;
                     const CSeq_loc& p_loc =
@@ -2365,6 +2374,7 @@ CFeatTree::CFeatInfo::CFeatInfo(void)
     : m_AddIndex(0),
       m_IsSetParent(false),
       m_IsSetChildren(false),
+      m_MultiId(false),
       m_IsLinkedToRoot(eIsLinkedToRoot_unknown),
       m_Parent(0),
       m_Gene(0)
