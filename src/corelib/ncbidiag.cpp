@@ -4920,6 +4920,14 @@ CFileHandleDiagHandler::~CFileHandleDiagHandler(void)
 }
 
 
+void CFileHandleDiagHandler::SetLogName(const string& log_name)
+{
+    string abs_name = CDirEntry::IsAbsolutePath(log_name) ? log_name
+        : CDirEntry::CreateAbsolutePath(log_name);
+    TParent::SetLogName(abs_name);
+}
+
+
 const int kLogReopenDelay = 60; // Reopen log every 60 seconds
 
 void CFileHandleDiagHandler::Reopen(TReopenFlags flags)
@@ -5100,6 +5108,14 @@ CFileDiagHandler::~CFileDiagHandler(void)
     x_ResetHandler(&m_Trace, &m_OwnTrace);
     x_ResetHandler(&m_Perf, &m_OwnPerf);
     delete m_ReopenTimer;
+}
+
+
+void CFileDiagHandler::SetLogName(const string& log_name)
+{
+    string abs_name = CDirEntry::IsAbsolutePath(log_name) ? log_name
+        : CDirEntry::CreateAbsolutePath(log_name);
+    TParent::SetLogName(abs_name);
 }
 
 

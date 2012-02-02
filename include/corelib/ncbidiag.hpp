@@ -2400,6 +2400,8 @@ class CDiagFileHandleHolder;
 class NCBI_XNCBI_EXPORT CFileHandleDiagHandler : public CStreamDiagHandler_Base
 {
 public:
+    typedef CStreamDiagHandler_Base TParent;
+
     /// Constructor.
     ///
     /// Open file handle.
@@ -2420,6 +2422,9 @@ public:
 
     // Reopen file to enable log rotation.
     virtual void Reopen(TReopenFlags flags);
+
+protected:
+    virtual void SetLogName(const string& log_name);
 
 private:
     bool        m_LowDiskSpace;
@@ -2456,6 +2461,8 @@ enum EDiagFileType
 class NCBI_XNCBI_EXPORT CFileDiagHandler : public CStreamDiagHandler_Base
 {
 public:
+    typedef CStreamDiagHandler_Base TParent;
+
     /// Constructor. initializes log file(s) with the arguments.
     /// @sa SetLogFile
     CFileDiagHandler(void);
@@ -2501,6 +2508,9 @@ public:
 
     /// Change ownership for the given handler if it's currently installed.
     void SetOwnership(CStreamDiagHandler_Base* handler, bool own);
+
+protected:
+    virtual void SetLogName(const string& log_name);
 
 private:
     // Check if the object is owned and if it's used as more than one handler,
