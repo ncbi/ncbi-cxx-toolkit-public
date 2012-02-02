@@ -87,23 +87,20 @@ void CNetSchedule_AccessList::SetHosts(const string& host_names)
 }
 
 
-void CNetSchedule_AccessList::PrintHosts(CNetScheduleHandler &  handler) const
+// Used to print as a comma separated string - part of output
+// or as output in the socket with leading 'OK:'
+string CNetSchedule_AccessList::Print(const string &  prefix,
+                                      const string &  separator) const
 {
+    string                  s;
+
     CReadLockGuard          guard(m_Lock);
     THostVector::enumerator en(m_Hosts.first());
 
     for(; en.valid(); ++en) {
-        handler.WriteMessage("OK:", CSocketAPI::gethostbyaddr(*en));
-    }
-}
-
-
-string CNetSchedule_AccessList::Print(const char* sep) const
-{
-    string      s;
-    for(THostVector::enumerator en(m_Hosts.first()); en.valid(); ++en) {
-        if (s.size()) s += sep;
-        s += CSocketAPI::gethostbyaddr(*en);
+        if (!s.empty())
+            s += separator;
+        s += prefix + CSocketAPI::gethostbyaddr(*en);
     }
     return s;
 }

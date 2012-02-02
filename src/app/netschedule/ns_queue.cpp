@@ -2210,15 +2210,31 @@ CBDB_FileCursor& CQueue::GetEventsCursor()
 
 void CQueue::PrintSubmHosts(CNetScheduleHandler &  handler) const
 {
-    CQueueParamAccessor     qp(*this);
-    qp.GetSubmHosts().PrintHosts(handler);
+    string      hosts;
+
+    {{
+        CQueueParamAccessor     qp(*this);
+        hosts = qp.GetSubmHosts().Print("OK:", "\n");
+    }}
+
+    if (!hosts.empty())
+        hosts += "\n";
+    handler.WriteMessage(hosts);
 }
 
 
 void CQueue::PrintWNodeHosts(CNetScheduleHandler &  handler) const
 {
-    CQueueParamAccessor     qp(*this);
-    qp.GetWnodeHosts().PrintHosts(handler);
+    string      hosts;
+
+    {{
+         CQueueParamAccessor     qp(*this);
+         hosts = qp.GetWnodeHosts().Print("OK:", "\n");
+    }}
+
+    if (!hosts.empty())
+        hosts += "\n";
+    handler.WriteMessage(hosts);
 }
 
 

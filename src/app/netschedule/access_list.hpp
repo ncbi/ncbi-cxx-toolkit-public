@@ -66,8 +66,8 @@ public:
     /// Delimited lists of hosts allowed into the system
     void SetHosts(const string& host_names);
 
-    void PrintHosts(CNetScheduleHandler &  handler) const;
-    string Print(const char* sep=",") const;
+    string Print(const string &  prefix,
+                 const string &  separator) const;
 
 private:
     bool x_IsRestrictionSet() const

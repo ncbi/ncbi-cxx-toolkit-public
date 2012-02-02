@@ -132,8 +132,8 @@ public:
         case 11: return NStr::IntToString(m_Queue.m_MaxOutputSize);
         case 12: return m_Queue.m_DenyAccessViolations ? "true" : "false";
         case 13: return m_Queue.m_ProgramVersionList.Print();
-        case 14: return m_Queue.m_SubmHosts.Print();
-        case 15: return m_Queue.m_WnodeHosts.Print();
+        case 14: return m_Queue.m_SubmHosts.Print("", ",");
+        case 15: return m_Queue.m_WnodeHosts.Print("", ",");
         default: return "";
         }
     }
